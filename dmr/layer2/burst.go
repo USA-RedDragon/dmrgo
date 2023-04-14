@@ -186,7 +186,9 @@ func (b *Burst) ToString() string {
 		ret += fmt.Sprintf("SlotType: %v, ", b.SlotType.ToString())
 	}
 	if b.IsData {
-		ret += fmt.Sprintf("Data: %v, ", b.Data.ToString())
+		if b.Data != nil {
+			ret += fmt.Sprintf("Data: %v, ", b.Data.ToString())
+		}
 	} else {
 		ret += fmt.Sprintf("VoiceBurst: %v, Voice Data: %v, ", enums.VoiceBurstTypeToName(b.VoiceBurst), b.VoiceData.ToString())
 	}
