@@ -14,8 +14,8 @@ import (
 type Burst struct {
 	SyncPattern enums.SyncPattern
 	VoiceBurst  enums.VoiceBurstType
-	// VoiceData is in bits, true byte length is 27
-	VoiceData [216]byte
+
+	VoiceData pdu.Vocoder
 
 	HasSlotType bool
 	SlotType    pdu.SlotType
@@ -101,20 +101,22 @@ func NewBurstFromBytes(data [33]byte) *Burst {
 	}
 
 	if !burst.IsData {
+		var voiceBits [216]byte
 		for i := 0; i < 108; i++ {
 			if burst.bitData[i] {
-				burst.VoiceData[i] = 1
+				voiceBits[i] = 1
 			} else {
-				burst.VoiceData[i] = 0
+				voiceBits[i] = 0
 			}
 		}
 		for i := 0; i < 108; i++ {
 			if burst.bitData[156+i] {
-				burst.VoiceData[108+i] = 1
+				voiceBits[108+i] = 1
 			} else {
-				burst.VoiceData[108+i] = 0
+				voiceBits[108+i] = 0
 			}
 		}
+		burst.VoiceData = pdu.NewVocoderFromBits(voiceBits)
 	} else {
 		var bits [196]byte
 		for i := 0; i < 98; i++ {
@@ -186,16 +188,7 @@ func (b *Burst) ToString() string {
 	if b.IsData {
 		ret += fmt.Sprintf("Data: %v, ", b.Data.ToString())
 	} else {
-		var voiceBytes [27]byte
-		for i := 0; i < 27; i++ {
-			for j := 0; j < 8; j++ {
-				if b.VoiceData[i*8+j] == 1 {
-					voiceBytes[i] |= 1 << uint(7-j)
-				}
-			}
-		}
-
-		ret += fmt.Sprintf("VoiceBurst: %v, Voice Data: %x, ", enums.VoiceBurstTypeToName(b.VoiceBurst), voiceBytes)
+		ret += fmt.Sprintf("VoiceBurst: %v, Voice Data: %v, ", enums.VoiceBurstTypeToName(b.VoiceBurst), b.VoiceData.ToString())
 	}
 
 	ret += fmt.Sprintf("IsData: %v }", b.IsData)
