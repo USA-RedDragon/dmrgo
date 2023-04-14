@@ -34,20 +34,29 @@ var EXAMPLE_DMR_BURSTS = [DMR_BURST_COUNT][DMR_BURST_SIZE]byte{
 
 func main() {
 	var voiceData []byte
+	voiceData = append(voiceData, []byte(".amb")...)
 	for _, rawBurst := range EXAMPLE_DMR_BURSTS {
 		timeStarted := time.Now()
 		burst := layer2.NewBurstFromBytes(rawBurst)
 		timeElapsed := time.Since(timeStarted)
 		if !burst.IsData {
-			voiceBytes := make([]byte, 27)
-			for i := 0; i < 27; i++ {
-				for j := 0; j < 8; j++ {
-					if burst.VoiceData[i*8+j] == 1 {
-						voiceBytes[i] |= 1 << uint(7-j)
+			for _, frame := range burst.VoiceData.Frames {
+				// We create 8 bytes in this loop
+				// Byte 1 - always 0
+				voiceData = append(voiceData, 0x00)
+
+				// Bytes 2-7 are the first 48 bits of voice data
+				voiceFrames := make([]byte, 6)
+				for j := 0; j < 6; j++ {
+					for k := 0; k < 7; k++ {
+						voiceFrames[j] |= frame.DecodedBits[j*7+k] << uint(6-k)
 					}
 				}
+				voiceData = append(voiceData, voiceFrames...)
+
+				// Byte 8 is the 49th bit of voice data
+				voiceData = append(voiceData, frame.DecodedBits[48])
 			}
-			voiceData = append(voiceData, voiceBytes...)
 		}
 		fmt.Printf("%s: %v\n", enums.SyncPatternToName(burst.SyncPattern), burst.ToString())
 		fmt.Printf("Took %s to decode burst\n", timeElapsed)
