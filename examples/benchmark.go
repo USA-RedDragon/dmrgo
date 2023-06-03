@@ -129,35 +129,13 @@ var EXAMPLE_DMR_VOICE_BURSTS = [DMR_VOICE_BURST_COUNT][DMR_BURST_SIZE]byte{
 }
 
 func main() {
-	var voiceData []byte
-	voiceData = append(voiceData, []byte(".amb")...)
 	for _, rawBurst := range EXAMPLE_DMR_PARROT_KERCHUNK_BURSTS {
 		timeStarted := time.Now()
 		burst := layer2.NewBurstFromBytes(rawBurst)
 		timeElapsed := time.Since(timeStarted)
-		if !burst.IsData {
-			for _, frame := range burst.VoiceData.Frames {
-				// We create 8 bytes in this loop
-				// Byte 1 - always 0
-				voiceData = append(voiceData, 0x00)
-
-				// Bytes 2-7 are the first 48 bits of voice data
-				voiceFrames := make([]byte, 6)
-				for j := 0; j < 6; j++ {
-					for k := 0; k < 7; k++ {
-						voiceFrames[j] |= frame.DecodedBits[j*7+k] << uint(6-k)
-					}
-				}
-				voiceData = append(voiceData, voiceFrames...)
-
-				// Byte 8 is the 49th bit of voice data
-				voiceData = append(voiceData, frame.DecodedBits[48])
-			}
-		}
 		fmt.Printf("%s: %v\n", enums.SyncPatternToName(burst.SyncPattern), burst.ToString())
 		fmt.Printf("Took %s to decode burst\n", timeElapsed)
 	}
-	fmt.Printf("Voice data: %x\n", voiceData)
 
 	fmt.Println("---------------------------------")
 
@@ -171,34 +149,11 @@ func main() {
 
 	fmt.Println("---------------------------------")
 
-	var longVoiceData []byte
-	longVoiceData = append(longVoiceData, []byte(".amb")...)
-
 	for _, rawBurst := range EXAMPLE_DMR_VOICE_BURSTS {
 		timeStarted := time.Now()
 		burst := layer2.NewBurstFromBytes(rawBurst)
 		timeElapsed := time.Since(timeStarted)
-		if !burst.IsData {
-			for _, frame := range burst.VoiceData.Frames {
-				// We create 8 bytes in this loop
-				// Byte 1 - always 0
-				longVoiceData = append(longVoiceData, 0x00)
-
-				// Bytes 2-7 are the first 48 bits of voice data
-				voiceFrames := make([]byte, 6)
-				for j := 0; j < 6; j++ {
-					for k := 0; k < 7; k++ {
-						voiceFrames[j] |= frame.DecodedBits[j*7+k] << uint(6-k)
-					}
-				}
-				longVoiceData = append(longVoiceData, voiceFrames...)
-
-				// Byte 8 is the 49th bit of voice data
-				longVoiceData = append(longVoiceData, frame.DecodedBits[48])
-			}
-		}
 		fmt.Printf("%s: %v\n", enums.SyncPatternToName(burst.SyncPattern), burst.ToString())
 		fmt.Printf("Took %s to decode burst\n", timeElapsed)
 	}
-	fmt.Printf("Voice data: %x\n", longVoiceData)
 }
