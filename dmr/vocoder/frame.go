@@ -1,6 +1,7 @@
 package vocoder
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/vocoder/fec"
@@ -11,7 +12,13 @@ type VocoderFrame struct {
 }
 
 func (vf *VocoderFrame) ToString() string {
-	return fmt.Sprintf("{ DecodedBits: %x }", vf.DecodedBits)
+	// convert DecodedBits to a byte array
+	var data [7]byte
+	for i := 0; i < 6; i++ {
+		data[i] = (vf.DecodedBits[i*8] << 7) | (vf.DecodedBits[i*8+1] << 6) | (vf.DecodedBits[i*8+2] << 5) | (vf.DecodedBits[i*8+3] << 4) | (vf.DecodedBits[i*8+4] << 3) | (vf.DecodedBits[i*8+5] << 2) | (vf.DecodedBits[i*8+6] << 1) | (vf.DecodedBits[i*8+7] << 0)
+	}
+	data[6] = vf.DecodedBits[48] << 7
+	return fmt.Sprintf("{ DecodedFrame: %014s }", hex.EncodeToString(data[:]))
 }
 
 var aTable = []int{0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44,
