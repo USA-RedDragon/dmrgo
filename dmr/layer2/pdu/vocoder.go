@@ -1,8 +1,6 @@
 package pdu
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/dmr/vocoder"
 )
 
@@ -12,14 +10,14 @@ type Vocoder struct {
 }
 
 func (vc *Vocoder) ToString() string {
-	ret := fmt.Sprintf("{ Frames: [")
+	ret := "{ Frames: ["
 	for i, frame := range vc.Frames {
-		ret += fmt.Sprintf("%s", frame.ToString())
+		ret += frame.ToString()
 		if i < 2 {
-			ret += fmt.Sprintf(", ")
+			ret += ", "
 		}
 	}
-	ret += fmt.Sprintf("] }")
+	ret += "] }"
 	return ret
 }
 
