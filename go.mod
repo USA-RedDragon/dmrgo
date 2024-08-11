@@ -1,3 +1,3 @@
 module github.com/USA-RedDragon/dmrgo
 
-go 1.22.5
+go 1.22.6
