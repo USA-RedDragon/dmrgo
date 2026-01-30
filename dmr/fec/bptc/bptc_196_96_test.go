@@ -184,6 +184,9 @@ func TestBPTC19696Decode(t *testing.T) {
 		// Note: If we flip a bit, DeinterleaveDataBits returns correct data.
 		encodedErr := encoded
 		pos := rand.Intn(196)
+		for pos == int(dm[1]) { // dm[1] maps to the unused grid slot; flipping it is unobservable
+			pos = rand.Intn(196)
+		}
 		encodedErr[pos] ^= 1
 
 		decoded, errs, unc = bptcDiff.DeinterleaveDataBits(encodedErr)
