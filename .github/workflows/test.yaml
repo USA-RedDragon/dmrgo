@@ -12,7 +12,6 @@ permissions:
 
 jobs:
   benchmark-tests:
-    if: github.event_name != 'push'
     runs-on: ubuntu-24.04
 
     steps:
@@ -29,7 +28,6 @@ jobs:
       - run: CGO_ENABLED=0 go test -run ^$ -benchmem -bench=. ./...
 
   race-tests:
-    if: github.event_name != 'push'
     runs-on: ubuntu-24.04
 
     steps:
@@ -50,7 +48,6 @@ jobs:
         run: go test ./... -race
 
   unit-tests:
-    if: github.event_name != 'push'
     uses: ./.github/workflows/unit-test.yaml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
