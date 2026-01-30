@@ -26,7 +26,7 @@ func TestGolay2087Decode(t *testing.T) {
 		parity := Golay_20_8_Parity(data)
 		var cw [20]byte
 		copy(cw[:], data[:])
-		copy(cw[8:], parity)
+		copy(cw[8:], parity[:])
 
 		// Case 1: No Error
 		decoded, errs, unc := DecodeGolay2087(cw)
