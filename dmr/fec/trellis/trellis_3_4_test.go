@@ -107,29 +107,21 @@ func TestTrellis34Decode(t *testing.T) {
 
 		// 5. Test Error Correction?
 		// Flip one bit in encodedBits?
-		// Be careful, flipping 1 bit changes 1 dibit symbol.
-		// This changes 1 symbol.
-		// Trellis should correct it or at least detect it?
-		// Trellis corrects sequences.
-		// It might propagate errors if not careful, but it finds the Maximum Likelihood Path.
-		// Flipping 1 bit might cause a small burst of errors in output but should return to correct path.
+		// Deterministic single-symbol error: flip one dibit before conversion to bits.
+		corrupt := permutedDibits
+		symbolPos := rand.Intn(98) //nolint:gosec // test randomness only
+		corrupt[symbolPos] ^= 0b10 // flip first bit of dibit to introduce one symbol error
 
-		// Let's test 1 bit flip.
-		corruptBits := encodedBits
-		flipPos := rand.Intn(196) //nolint:gosec // pseudo-random adequate for tests
-		if corruptBits[flipPos] == 0 {
-			corruptBits[flipPos] = 1
-		} else {
-			corruptBits[flipPos] = 0
+		corruptBits := tr.dibitsToBits(corrupt)
+
+		baselineDiff := 0
+		for i := 0; i < 144; i++ {
+			if corruptBits[i] != expectedBits[i] {
+				baselineDiff++
+			}
 		}
 
 		decodedCorrupt, _ := tr.Decode(corruptBits)
-
-		// We expect the decoded bits to match expectedBits mostly.
-		// Depending on the strength, it might fix it completely or have few errors.
-		// Trellis 3/4 is not very strong against random errors? It IS a FEC.
-		// Let's check if it matches EXACTLY.
-		// It often does for single bit errors.
 
 		diffCount := 0
 		for i := 0; i < 144; i++ {
@@ -138,12 +130,8 @@ func TestTrellis34Decode(t *testing.T) {
 			}
 		}
 
-		// We don't assert 0 errors strictly because it's probabilistic/path metric based?
-		// But usually 1 bit error is correctable.
-		if diffCount > 0 {
-			t.Logf("Failed to correct single bit flip. Diff count: %d", diffCount)
-			// Not failing the test because I'm not 100% sure of the d_min of this code.
-			// But usually this verifies the decoder is working somewhat.
+		if diffCount > baselineDiff {
+			t.Errorf("Decoder increased errors after single symbol flip (before=%d, after=%d)", baselineDiff, diffCount)
 		}
 	}
 }
