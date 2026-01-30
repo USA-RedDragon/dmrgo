@@ -8,6 +8,11 @@ import (
 func TestTrellis34Decode(t *testing.T) {
 	tr := New()
 
+	symbolToDibits := make(map[byte][2]int8)
+	for pair, sym := range constellationPoints {
+		symbolToDibits[sym] = pair
+	}
+
 	for run := 0; run < 100; run++ {
 		// 1. Generate random inputs (49 tribits)
 		// We use 49 because the trellis processes 49 steps/symbols to produce 144 bits?
@@ -36,19 +41,12 @@ func TestTrellis34Decode(t *testing.T) {
 		// Map symbols -> Dibits (constellation)
 		var orderedDibits [98]int8
 		for i := 0; i < 49; i++ {
-			// Find pair for symbol
-			found := false
-			for pair, s := range constellationPoints {
-				if s == symbols[i] {
-					orderedDibits[i*2] = pair[0]
-					orderedDibits[i*2+1] = pair[1]
-					found = true
-					break
-				}
-			}
-			if !found {
+			pair, ok := symbolToDibits[symbols[i]]
+			if !ok {
 				t.Fatalf("Symbol %d not found in constellation", symbols[i])
 			}
+			orderedDibits[i*2] = pair[0]
+			orderedDibits[i*2+1] = pair[1]
 		}
 
 		// Interleave
@@ -105,33 +103,47 @@ func TestTrellis34Decode(t *testing.T) {
 			// Optional: Print diff
 		}
 
-		// 5. Test Error Correction?
-		// Flip one bit in encodedBits?
-		// Deterministic single-symbol error: flip one dibit before conversion to bits.
-		corrupt := permutedDibits
-		symbolPos := rand.Intn(98) //nolint:gosec // test randomness only
-		corrupt[symbolPos] ^= 0b10 // flip first bit of dibit to introduce one symbol error
-
-		corruptBits := tr.dibitsToBits(corrupt)
-
-		baselineDiff := 0
-		for i := 0; i < 144; i++ {
-			if corruptBits[i] != expectedBits[i] {
-				baselineDiff++
-			}
+		// 5. Single-symbol corruption that is guaranteed invalid for current state
+		corruptSymbols := symbols
+		corruptIndex := 10 % len(corruptSymbols)
+		prevState := byte(0)
+		if corruptIndex > 0 {
+			prevState = inputs[corruptIndex-1]
 		}
 
-		decodedCorrupt, _ := tr.Decode(corruptBits)
-
-		diffCount := 0
-		for i := 0; i < 144; i++ {
-			if decodedCorrupt[i] != expectedBits[i] {
-				diffCount++
+		invalidSymbol := byte(0xFF)
+		for sym := byte(0); sym < 16; sym++ {
+			if trellis34_transition_table[prevState][sym] == 0xFF {
+				invalidSymbol = sym
+				break
 			}
 		}
+		if invalidSymbol == 0xFF {
+			t.Fatalf("Failed to find invalid symbol for state %d", prevState)
+		}
 
-		if diffCount > baselineDiff {
-			t.Errorf("Decoder increased errors after single symbol flip (before=%d, after=%d)", baselineDiff, diffCount)
+		corruptSymbols[corruptIndex] = invalidSymbol
+
+		var corruptOrderedDibits [98]int8
+		for i := 0; i < 49; i++ {
+			pair, ok := symbolToDibits[corruptSymbols[i]]
+			if !ok {
+				t.Fatalf("Symbol %d not found in constellation (corrupt path)", corruptSymbols[i])
+			}
+			corruptOrderedDibits[i*2] = pair[0]
+			corruptOrderedDibits[i*2+1] = pair[1]
+		}
+
+		var corruptPermutedDibits [98]int8
+		for i := 0; i < 98; i++ {
+			corruptPermutedDibits[i] = corruptOrderedDibits[interleaveMatrix[i]]
+		}
+
+		corruptBits := tr.dibitsToBits(corruptPermutedDibits)
+		_, errCount := tr.Decode(corruptBits)
+
+		if errCount == 0 {
+			t.Errorf("Expected decoder to flag an error for invalid symbol at %d", corruptIndex)
 		}
 	}
 }
