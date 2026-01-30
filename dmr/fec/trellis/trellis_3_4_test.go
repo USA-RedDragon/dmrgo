@@ -16,7 +16,7 @@ func TestTrellis34Decode(t *testing.T) {
 		// We'll generate 49 inputs.
 		var inputs [49]byte
 		for i := 0; i < 49; i++ {
-			inputs[i] = byte(rand.Intn(8))
+			inputs[i] = byte(rand.Intn(8)) //nolint:gosec // pseudo-random adequate for tests
 		}
 
 		// 2. Encoder Model
@@ -116,7 +116,7 @@ func TestTrellis34Decode(t *testing.T) {
 
 		// Let's test 1 bit flip.
 		corruptBits := encodedBits
-		flipPos := rand.Intn(196)
+		flipPos := rand.Intn(196) //nolint:gosec // pseudo-random adequate for tests
 		if corruptBits[flipPos] == 0 {
 			corruptBits[flipPos] = 1
 		} else {
@@ -141,7 +141,7 @@ func TestTrellis34Decode(t *testing.T) {
 		// We don't assert 0 errors strictly because it's probabilistic/path metric based?
 		// But usually 1 bit error is correctable.
 		if diffCount > 0 {
-			// t.Logf("Failed to correct single bit flip. Diff count: %d", diffCount)
+			t.Logf("Failed to correct single bit flip. Diff count: %d", diffCount)
 			// Not failing the test because I'm not 100% sure of the d_min of this code.
 			// But usually this verifies the decoder is working somewhat.
 		}

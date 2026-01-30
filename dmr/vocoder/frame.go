@@ -36,8 +36,8 @@ func (vf *VocoderFrame) Encode() [72]byte {
 	var MASK uint32 = 0x000800
 
 	for i := 0; i < 12; i, MASK = i+1, MASK>>1 {
-		n1 := uint32(i + 0)
-		n2 := uint32(i + 12)
+		n1 := i
+		n2 := i + 12
 		if ambe49[n1] == 1 {
 			aOrig |= MASK
 		}
@@ -48,7 +48,7 @@ func (vf *VocoderFrame) Encode() [72]byte {
 
 	MASK = 0x1000000
 	for i := 0; i < 25; i, MASK = i+1, MASK>>1 {
-		n := uint32(i + 24)
+		n := i + 24
 		if ambe49[n] == 1 {
 			cOrig |= MASK
 		}
@@ -95,12 +95,15 @@ func (vf *VocoderFrame) Encode() [72]byte {
 	return ambe72
 }
 
+//nolint:gochecknoglobals // static mapping tables
 var aTable = []int{0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44,
 	48, 52, 56, 60, 64, 68, 1, 5, 9, 13, 17, 21}
 
+//nolint:gochecknoglobals // static mapping tables
 var bTable = []int{25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65, 69,
 	2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42}
 
+//nolint:gochecknoglobals // static mapping tables
 var cTable = []int{46, 50, 54, 58, 62, 66, 70, 3, 7, 11, 15, 19,
 	23, 27, 31, 35, 39, 43, 47, 51, 55, 59, 63, 67, 71}
 

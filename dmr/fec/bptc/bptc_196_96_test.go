@@ -154,7 +154,7 @@ func TestBPTC19696Decode(t *testing.T) {
 		// 1. Generate Random Data
 		var data [96]byte
 		for i := 0; i < 96; i++ {
-			data[i] = byte(rand.Intn(2))
+			data[i] = byte(rand.Intn(2)) //nolint:gosec // deterministic PRNG fine for tests
 		}
 
 		// 2. Encode
@@ -183,9 +183,9 @@ func TestBPTC19696Decode(t *testing.T) {
 		// We should pick a bit that maps to Data or Parity.
 		// Note: If we flip a bit, DeinterleaveDataBits returns correct data.
 		encodedErr := encoded
-		pos := rand.Intn(196)
+		pos := rand.Intn(196)   //nolint:gosec // deterministic PRNG fine for tests
 		for pos == int(dm[1]) { // dm[1] maps to the unused grid slot; flipping it is unobservable
-			pos = rand.Intn(196)
+			pos = rand.Intn(196) //nolint:gosec // deterministic PRNG fine for tests
 		}
 		encodedErr[pos] ^= 1
 

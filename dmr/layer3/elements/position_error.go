@@ -16,21 +16,22 @@ type PositionError struct {
 func (pe *PositionError) ToString() string {
 	ret := "PositionError{ "
 
-	if pe.PositionErrorUnknown {
+	switch {
+	case pe.PositionErrorUnknown:
 		ret += "PositionErrorUnknown: true"
-	} else if pe.PositionMoreThan200KM {
+	case pe.PositionMoreThan200KM:
 		ret += "PositionMoreThan200KM: true"
-	} else if pe.PositionLessThan200KM {
+	case pe.PositionLessThan200KM:
 		ret += "PositionLessThan200KM: true"
-	} else if pe.PositionLessThan20KM {
+	case pe.PositionLessThan20KM:
 		ret += "PositionLessThan20KM: true"
-	} else if pe.PositionLessThan2KM {
+	case pe.PositionLessThan2KM:
 		ret += "PositionLessThan2KM: true"
-	} else if pe.PositionLessThan200M {
+	case pe.PositionLessThan200M:
 		ret += "PositionLessThan200M: true"
-	} else if pe.PositionLessThan20M {
+	case pe.PositionLessThan20M:
 		ret += "PositionLessThan20M: true"
-	} else if pe.PositionLessThan2M {
+	case pe.PositionLessThan2M:
 		ret += "PositionLessThan2M: true"
 	}
 
@@ -42,7 +43,7 @@ func NewPositionErrorFromBits(infoBits [3]byte) *PositionError {
 	intForm := 0
 	for i := 0; i < 3; i++ {
 		if infoBits[i] == 1 {
-			intForm |= 1 << uint(2-i)
+			intForm |= 1 << (2 - i)
 		}
 	}
 

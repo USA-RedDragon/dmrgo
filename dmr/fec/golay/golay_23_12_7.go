@@ -16,7 +16,7 @@ func DecodeGolay23127(received uint32) (data uint16, errors int, uncorrectable b
 		dist := bits.OnesCount32(received ^ (codeword >> 1))
 		if dist < minDist {
 			minDist = dist
-			bestData = uint16(d)
+			bestData = uint16(d) //nolint:gosec // d is bounded by table length
 
 			if dist == 0 {
 				return bestData, 0, false
@@ -32,6 +32,7 @@ func DecodeGolay23127(received uint32) (data uint16, errors int, uncorrectable b
 	return bestData, minDist, true
 }
 
+//nolint:gochecknoglobals // static encoding lookup table
 var Golay_23_12_7_EncodingTable = []uint32{
 	0x000000, 0x0018EA, 0x00293E, 0x0031D4, 0x004A96, 0x00527C, 0x0063A8, 0x007B42, 0x008DC6, 0x00952C,
 	0x00A4F8, 0x00BC12, 0x00C750, 0x00DFBA, 0x00EE6E, 0x00F684, 0x010366, 0x011B8C, 0x012A58, 0x0132B2,

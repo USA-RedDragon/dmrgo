@@ -3,6 +3,8 @@ package golay
 // Golay (20,8,7) Syndrome Table
 // Maps 12-bit syndrome to 20-bit error pattern.
 // 0xFFFFFFFF indicates uncorrectable.
+//
+//nolint:gochecknoglobals // static lookup table
 var golay20_8_syndrome_table = [4096]uint32{
 	0x00000, 0x00100, 0x00200, 0x00300, 0x00400, 0x00500, 0x00600, 0x00700,
 	0x00800, 0x00900, 0x00A00, 0x00B00, 0x00C00, 0x00D00, 0x00E00, 0xFFFFFFFF,

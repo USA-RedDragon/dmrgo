@@ -96,7 +96,7 @@ func benchmarkEncode(b *testing.B, file string) {
 	bursts := loadBursts(b, file)
 
 	// Pre-decode bursts
-	var decodedBursts []*layer2.Burst
+	decodedBursts := make([]*layer2.Burst, 0, len(bursts))
 	for _, d := range bursts {
 		decodedBursts = append(decodedBursts, layer2.NewBurstFromBytes(d))
 	}

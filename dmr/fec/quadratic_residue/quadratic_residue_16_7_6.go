@@ -5,6 +5,8 @@ package quadratic_residue1676
 // Quadratic Residue (16,7,6) Syndrome Table
 // Maps 9-bit syndrome to 16-bit error pattern.
 // 0xFFFF indicates uncorrectable.
+//
+//nolint:gochecknoglobals // static syndrome lookup table
 var qr16_7_6_syndrome_table = [512]uint16{
 	0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0xFFFF,
 	0x0008, 0x0009, 0x000A, 0xFFFF, 0x000C, 0xFFFF, 0xFFFF, 0x8040,

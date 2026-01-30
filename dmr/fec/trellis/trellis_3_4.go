@@ -3,6 +3,8 @@ package trellis34
 // Trellis 3/4 State Transition Look-Up Table
 // Maps [CurrentState][ReceivedSymbol] -> Tribit (NextStateDiff).
 // 0xFF indicates an invalid transition (bit limit error).
+//
+//nolint:gochecknoglobals // static decoder lookup table
 var trellis34_transition_table = [8][16]byte{
 	{0x00, 0xFF, 0x04, 0xFF, 0x02, 0xFF, 0x06, 0xFF, 0x01, 0xFF, 0x05, 0xFF, 0x03, 0xFF, 0x07, 0xFF}, // State 0
 	{0x06, 0xFF, 0x02, 0xFF, 0x00, 0xFF, 0x04, 0xFF, 0x07, 0xFF, 0x03, 0xFF, 0x01, 0xFF, 0x05, 0xFF}, // State 1
@@ -14,6 +16,7 @@ var trellis34_transition_table = [8][16]byte{
 	{0x02, 0xFF, 0x06, 0xFF, 0x04, 0xFF, 0x00, 0xFF, 0x03, 0xFF, 0x07, 0xFF, 0x05, 0xFF, 0x01, 0xFF}, // State 7
 }
 
+//nolint:gochecknoglobals // static interleave mapping
 var interleaveMatrix = []byte{
 	0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57, 64, 65, 72, 73, 80, 81, 88, 89, 96, 97,
 	2, 3, 10, 11, 18, 19, 26, 27, 34, 35, 42, 43, 50, 51, 58, 59, 66, 67, 74, 75, 82, 83, 90, 91,
@@ -21,6 +24,7 @@ var interleaveMatrix = []byte{
 	6, 7, 14, 15, 22, 23, 30, 31, 38, 39, 46, 47, 54, 55, 62, 63, 70, 71, 78, 79, 86, 87, 94, 95,
 }
 
+//nolint:gochecknoglobals // static encoder mapping
 var encoderStateTransition = []byte{
 	0, 8, 4, 12, 2, 10, 6, 14,
 	4, 12, 2, 10, 6, 14, 0, 8,
@@ -32,6 +36,7 @@ var encoderStateTransition = []byte{
 	6, 14, 0, 8, 4, 12, 2, 10,
 }
 
+//nolint:gochecknoglobals // static constellation mapping
 var constellationPoints = map[[2]int8]byte{
 	{1, -1}:  0,
 	{-1, -1}: 1,
@@ -50,14 +55,6 @@ var constellationPoints = map[[2]int8]byte{
 	{3, 1}:   14,
 	{-3, 1}:  15,
 }
-
-var constellationPointsReverse = func() map[byte][2]int8 {
-	reverseMap := make(map[byte][2]int8)
-	for k, v := range constellationPoints {
-		reverseMap[v] = k
-	}
-	return reverseMap
-}()
 
 type Trellis34 struct {
 }
@@ -134,7 +131,7 @@ func (t *Trellis34) dibitsToPoints(dibits [98]int8) [49]byte {
 	var points [49]byte
 
 	for i := 0; i < 98; i += 2 {
-		o := int(i / 2)
+		o := i / 2
 		points[o] = constellationPoints[[2]int8{dibits[i], dibits[i+1]}]
 	}
 

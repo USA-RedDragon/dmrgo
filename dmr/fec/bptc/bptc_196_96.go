@@ -5,14 +5,33 @@ import "fmt"
 type BPTC19696 struct {
 }
 
-var (
-	// deinterleave matrix
-	dm = [256]uint8{}
-)
+// deinterleave matrix
+//
+//nolint:gochecknoglobals // lookup table shared across decoder instances
+var dm = [256]uint8{
+	0, 181, 166, 151, 136, 121, 106, 91, 76, 61, 46, 31, 16, 1, 182, 167,
+	152, 137, 122, 107, 92, 77, 62, 47, 32, 17, 2, 183, 168, 153, 138, 123,
+	108, 93, 78, 63, 48, 33, 18, 3, 184, 169, 154, 139, 124, 109, 94, 79,
+	64, 49, 34, 19, 4, 185, 170, 155, 140, 125, 110, 95, 80, 65, 50, 35,
+	20, 5, 186, 171, 156, 141, 126, 111, 96, 81, 66, 51, 36, 21, 6, 187,
+	172, 157, 142, 127, 112, 97, 82, 67, 52, 37, 22, 7, 188, 173, 158, 143,
+	128, 113, 98, 83, 68, 53, 38, 23, 8, 189, 174, 159, 144, 129, 114, 99,
+	84, 69, 54, 39, 24, 9, 190, 175, 160, 145, 130, 115, 100, 85, 70, 55,
+	40, 25, 10, 191, 176, 161, 146, 131, 116, 101, 86, 71, 56, 41, 26, 11,
+	192, 177, 162, 147, 132, 117, 102, 87, 72, 57, 42, 27, 12, 193, 178, 163,
+	148, 133, 118, 103, 88, 73, 58, 43, 28, 13, 194, 179, 164, 149, 134, 119,
+	104, 89, 74, 59, 44, 29, 14, 195, 180, 165, 150, 135, 120, 105, 90, 75,
+	60, 45, 30, 15, 0, 181, 166, 151, 136, 121, 106, 91, 76, 61, 46, 31,
+	16, 1, 182, 167, 152, 137, 122, 107, 92, 77, 62, 47, 32, 17, 2, 183,
+	168, 153, 138, 123, 108, 93, 78, 63, 48, 33, 18, 3, 184, 169, 154, 139,
+	124, 109, 94, 79, 64, 49, 34, 19, 4, 185, 170, 155, 140, 125, 110, 95,
+}
 
 // Syndrome table for Hamming (15,11) code
 // Maps 4-bit syndrome (0-15) to bit position (0-14). -1 indicates no error or uncorrectable
 // The syndrome is calculated as [S0, S1, S2, S3] treated as an integer.
+//
+//nolint:gochecknoglobals // static lookup table
 var hamming15_11_syndrome_table = [16]int{
 	-1, // 0000
 	11, // 0001
@@ -33,6 +52,8 @@ var hamming15_11_syndrome_table = [16]int{
 }
 
 // Hamming (13,9) Syndrome Table
+//
+//nolint:gochecknoglobals // static lookup table
 var hamming13_9_syndrome_table = [16]int{
 	-1, // 0000
 	9,  // 0001
@@ -50,12 +71,6 @@ var hamming13_9_syndrome_table = [16]int{
 	5,  // 1101
 	2,  // 1110
 	0,  // 1111
-}
-
-func init() {
-	for i := 0; i < 0x100; i++ {
-		dm[i] = uint8((i * 181) % 196)
-	}
 }
 
 func calculate_syndrome_15_11(bits [15]byte) int {
@@ -172,36 +187,4 @@ func hamming_correct(bits [196]byte) ([196]byte, int, bool) {
 	}
 
 	return corrected, totalErrors, uncorrectable
-}
-
-func hamming_15_11_3_syndrome(bits [15]byte) int {
-	if hamming_15_11_3_parity(bits) {
-		return 0
-	}
-	return 1
-}
-
-func hamming_13_9_3_syndrome(bits [13]byte) int {
-	if hamming_13_9_3_parity(bits) {
-		return 0
-	}
-	return 1
-}
-
-func hamming_15_11_3_parity(bits [15]byte) bool {
-	var errs [4]byte
-	errs[0] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8]
-	errs[1] = bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9]
-	errs[2] = bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[7] ^ bits[9] ^ bits[10]
-	errs[3] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7] ^ bits[10]
-	return (errs[0] == bits[11]) && (errs[1] == bits[12]) && (errs[2] == bits[13]) && (errs[3] == bits[14])
-}
-
-func hamming_13_9_3_parity(bits [13]byte) bool {
-	var errs [4]byte
-	errs[0] = bits[0] ^ bits[1] ^ bits[3] ^ bits[5] ^ bits[6]
-	errs[1] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7]
-	errs[2] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8]
-	errs[3] = bits[0] ^ bits[2] ^ bits[4] ^ bits[5] ^ bits[8]
-	return (errs[0] == bits[9]) && (errs[1] == bits[10]) && (errs[2] == bits[11]) && (errs[3] == bits[12])
 }

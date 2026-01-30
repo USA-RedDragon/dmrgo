@@ -56,5 +56,5 @@ func FLCOFromInt(i int) (FLCO, error) {
 	case FLCOTerminatorDataLinkControl:
 		return FLCOTerminatorDataLinkControl, nil
 	}
-	return 0, fmt.Errorf("Invalid FLCO value: %d", i)
+	return 0, fmt.Errorf("invalid FLCO value: %d", i)
 }

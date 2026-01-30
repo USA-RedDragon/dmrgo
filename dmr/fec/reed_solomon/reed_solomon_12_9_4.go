@@ -102,6 +102,7 @@ func Encode(data []byte) ([]byte, error) {
 
 var (
 	// DMR AI. spec. page 138.
+	//nolint:gochecknoglobals // precomputed table
 	rs_12_9_galois_exp_table = [256]uint8{
 		0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1d, 0x3a, 0x74, 0xe8, 0xcd, 0x87, 0x13, 0x26,
 		0x4c, 0x98, 0x2d, 0x5a, 0xb4, 0x75, 0xea, 0xc9, 0x8f, 0x03, 0x06, 0x0c, 0x18, 0x30, 0x60, 0xc0,
@@ -121,6 +122,7 @@ var (
 		0x2c, 0x58, 0xb0, 0x7d, 0xfa, 0xe9, 0xcf, 0x83, 0x1b, 0x36, 0x6c, 0xd8, 0xad, 0x47, 0x8e, 0x01,
 	}
 	// DMR AI. spec. page 138.
+	//nolint:gochecknoglobals // precomputed table
 	rs_12_9_galois_log_table = [256]uint8{
 		0, 0, 1, 25, 2, 50, 26, 198, 3, 223, 51, 238, 27, 104, 199, 75,
 		4, 100, 224, 14, 52, 141, 239, 129, 28, 193, 105, 248, 200, 8, 76, 113,
@@ -156,7 +158,7 @@ func ReedSolomon1294CalcSyndrome(data []byte, syndrome *ReedSolomon1294) error {
 	}
 
 	for j = 0; j < 3; j++ {
-		for i = 0; i < uint8(len(data)); i++ {
+		for i = 0; i < uint8(len(data)); i++ { //nolint:gosec // len(data) max 12
 			syndrome[j] = data[i] ^ ReedSolomon1294GaloisMul(rs_12_9_galois_exp_table[j+1], syndrome[j])
 		}
 	}
@@ -242,10 +244,10 @@ func ReedSolomon1294MulPolyZ(poly *ReedSolomon1294) {
 	poly[0] = 0
 }
 
-func ReedSolomon1294CalcDiscrepancy(locator, syndrome *ReedSolomon1294, L, n uint8) uint8 {
+func ReedSolomon1294CalcDiscrepancy(locator, syndrome *ReedSolomon1294, lVal, n uint8) uint8 {
 	var i, sum uint8
 
-	for i = 0; i < L; i++ {
+	for i = 0; i < lVal; i++ {
 		sum ^= ReedSolomon1294GaloisMul(locator[i], syndrome[n-i])
 	}
 
@@ -320,7 +322,7 @@ func ReedSolomon1294FindRoots(locator *ReedSolomon1294) []uint8 {
 		}
 
 		if sum == 0 {
-			roots = append(roots, uint8(255-r))
+			roots = append(roots, uint8(255-r)) //nolint:gosec // r range 1..255
 		}
 	}
 
@@ -329,11 +331,11 @@ func ReedSolomon1294FindRoots(locator *ReedSolomon1294) []uint8 {
 
 func ReedSolomon1294Calc(syndrome, locator, evaluator *ReedSolomon1294) {
 	var (
-		n, L, L2 uint8
-		k        int8
-		d, i     uint8
-		psi2     = make([]uint8, RS_12_9_POLY_MAXDEG)
-		D        = ReedSolomon1294{0, 1, 0}
+		n, lCur, l2 uint8
+		k           int8
+		d, i        uint8
+		psi2        = make([]uint8, RS_12_9_POLY_MAXDEG)
+		D           = ReedSolomon1294{0, 1, 0}
 	)
 
 	k = -1
@@ -343,20 +345,20 @@ func ReedSolomon1294Calc(syndrome, locator, evaluator *ReedSolomon1294) {
 	locator[0] = 1
 
 	for n = 0; n < RS_12_9_CHECKSUMSIZE; n++ {
-		d = ReedSolomon1294CalcDiscrepancy(locator, syndrome, L, n)
+		d = ReedSolomon1294CalcDiscrepancy(locator, syndrome, lCur, n)
 		if d != 0 {
 			// psi2 = locator - d*D
 			for i = 0; i < RS_12_9_POLY_MAXDEG; i++ {
 				psi2[i] = locator[i] ^ ReedSolomon1294GaloisMul(d, D[i])
 			}
 
-			if int8(L) < int8(n)-k {
-				L2 = uint8(int8(n) - k)
-				k = int8(int8(n) - int8(L))
+			if int(lCur) < int(n)-int(k) {
+				l2 = uint8(int(n) - int(k))  //nolint:gosec // bounds limited by RS degrees
+				k = int8(int(n) - int(lCur)) //nolint:gosec // small degree values only
 				for i = 0; i < RS_12_9_POLY_MAXDEG; i++ {
 					D[i] = ReedSolomon1294GaloisMul(locator[i], ReedSolomon1294GaloisInv(d))
 				}
-				L = L2
+				lCur = l2
 			}
 
 			// locator = psi2

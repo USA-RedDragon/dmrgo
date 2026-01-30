@@ -213,12 +213,14 @@ func NewFullLinkControlFromBits(infoBits []byte, dataType layer2Elements.DataTyp
 
 		flc.TalkerAliasData = make([]byte, taLen)
 		copy(flc.TalkerAliasData, infoBits[24:72])
+	case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
+		flc.TalkerAliasData = make([]byte, 56)
+		copy(flc.TalkerAliasData, infoBits[16:72])
+	case enums.FLCOTerminatorDataLinkControl:
+		// TODO: implement TLDC handling
+		return nil
 	default:
-		if FLCO == enums.FLCOTalkerAliasBlock1 || FLCO == enums.FLCOTalkerAliasBlock2 || FLCO == enums.FLCOTalkerAliasBlock3 {
-			copy(flc.TalkerAliasData, infoBits[16:72])
-		} else {
-			return nil
-		}
+		return nil
 	}
 
 	return &flc

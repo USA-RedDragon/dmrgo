@@ -160,7 +160,7 @@ func BenchmarkReedSolomon1294CalcSyndrome(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ReedSolomon1294CalcSyndrome(data, &syndrome)
+		_ = ReedSolomon1294CalcSyndrome(data, &syndrome)
 	}
 }
 

@@ -32,7 +32,7 @@ func NewEmbeddedSignallingFromBits(data [16]byte) EmbeddedSignalling {
 	// Convert the first 4 bits of data into an int
 	for i := 0; i < 4; i++ {
 		if data[i] == 1 {
-			es.ColorCode |= 1 << uint(3-i)
+			es.ColorCode |= 1 << (3 - i)
 		}
 	}
 
@@ -41,7 +41,7 @@ func NewEmbeddedSignallingFromBits(data [16]byte) EmbeddedSignalling {
 	var linkControlStartStop int
 	for i := 5; i < 7; i++ {
 		if data[i] == 1 {
-			linkControlStartStop |= 1 << uint(6-i)
+			linkControlStartStop |= 1 << (6 - i)
 		}
 	}
 

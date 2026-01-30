@@ -36,126 +36,130 @@ type Burst struct {
 // NewBurstFromBytes creates a new Burst from the given bytes.
 func NewBurstFromBytes(data [33]byte) *Burst {
 	burst := &Burst{}
+	burst.bitData = bytesToBits(data)
 
-	burst.bitData = [264]bool{}
-	for i := 0; i < 264; i++ {
-		burst.bitData[i] = (data[i/8] & (1 << (7 - (i % 8)))) != 0
-	}
+	burst.SyncPattern = extractSyncPattern(burst.bitData)
+	burst.IsData = isDataSync(burst.SyncPattern)
+	burst.VoiceBurst, burst.HasEmbeddedSignalling = classifyVoice(burst.SyncPattern)
 
-	// set syncOrEmbeddedSignalling from bits 108-156 in data
-	syncOrEmbeddedSignalling := [6]byte{}
-	for i := 0; i < 6; i++ {
-		for j := 0; j < 8; j++ {
-			if burst.bitData[108+(i*8)+j] {
-				syncOrEmbeddedSignalling[i] |= 1 << (7 - j)
-			}
-		}
-	}
-
-	burst.SyncPattern = enums.SyncPatternFromBytes(syncOrEmbeddedSignalling)
-
-	burst.IsData = burst.SyncPattern == enums.Tdma1Data || burst.SyncPattern == enums.Tdma2Data || burst.SyncPattern == enums.MsSourcedData || burst.SyncPattern == enums.BsSourcedData
-
-	isVoiceSuperFrameStart := false
-	burst.VoiceBurst = enums.VoiceBurstUnknown
-
-	if burst.SyncPattern == enums.Tdma2Voice || burst.SyncPattern == enums.Tdma1Voice || burst.SyncPattern == enums.MsSourcedVoice || burst.SyncPattern == enums.BsSourcedVoice {
-		isVoiceSuperFrameStart = true
-		burst.VoiceBurst = enums.VoiceBurstA
-	}
-
-	burst.HasEmbeddedSignalling = burst.SyncPattern == enums.EmbeddedSignallingPattern && !isVoiceSuperFrameStart
 	if burst.HasEmbeddedSignalling {
-		embeddedSignallingBits := [16]byte{}
-		for i := 0; i < 8; i++ {
-			if burst.bitData[108+i] {
-				embeddedSignallingBits[i] = 1
-			} else {
-				embeddedSignallingBits[i] = 0
-			}
-		}
-		for i := 0; i < 8; i++ {
-			if burst.bitData[148+i] {
-				embeddedSignallingBits[8+i] = 1
-			} else {
-				embeddedSignallingBits[8+i] = 0
-			}
-		}
-		burst.EmbeddedSignalling = pdu.NewEmbeddedSignallingFromBits(embeddedSignallingBits)
-
-		for i := 0; i < 32; i++ {
-			if burst.bitData[116+i] {
-				burst.EmbeddedSignallingData[i] = 1
-			} else {
-				burst.EmbeddedSignallingData[i] = 0
-			}
-		}
+		burst.EmbeddedSignalling, burst.EmbeddedSignallingData = parseEmbedded(burst.bitData)
 	}
 
 	burst.HasSlotType = burst.IsData
 	if burst.HasSlotType {
-		slotTypeBits := [20]byte{}
-		for i := 0; i < 10; i++ {
-			if burst.bitData[98+i] {
-				slotTypeBits[i] = 1
-			} else {
-				slotTypeBits[i] = 0
-			}
-		}
-		for i := 0; i < 10; i++ {
-			if burst.bitData[156+i] {
-				slotTypeBits[10+i] = 1
-			} else {
-				slotTypeBits[10+i] = 0
-			}
-		}
-		burst.SlotType = pdu.NewSlotTypeFromBits(slotTypeBits)
+		burst.SlotType = parseSlotType(burst.bitData)
 	}
 
 	if !burst.IsData {
-		var voiceBits [216]byte
-		for i := 0; i < 108; i++ {
-			if burst.bitData[i] {
-				voiceBits[i] = 1
-			} else {
-				voiceBits[i] = 0
-			}
-		}
-		for i := 0; i < 108; i++ {
-			if burst.bitData[156+i] {
-				voiceBits[108+i] = 1
-			} else {
-				voiceBits[108+i] = 0
-			}
-		}
-		burst.VoiceData = pdu.NewVocoderFromBits(voiceBits)
-	} else {
-		var bits [196]byte
-		for i := 0; i < 98; i++ {
-			if burst.bitData[i] {
-				bits[i] = 1
-			} else {
-				bits[i] = 0
-			}
-		}
-		for i := 0; i < 98; i++ {
-			if burst.bitData[166+i] {
-				bits[98+i] = 1
-			} else {
-				bits[98+i] = 0
-			}
-		}
-		burst.deinterleavedInfoBits, burst.PayloadCorrectedErrors, burst.PayloadUncorrectable = burst.deinterleave(bits, burst.SlotType.DataType)
-		burst.Data = burst.extractData()
+		burst.VoiceData = parseVoiceBits(burst.bitData)
+		return burst
 	}
 
-	//     # variables not standardized in ETSI, used for various DMR protocols processing
-	//     self.timeslot: int = 1
-	//     self.sequence_no: int = 0
-	//     self.stream_no: bytes = bytes(4)
-	//     self.transmission_type: TransmissionTypes = TransmissionTypes.Idle
+	bBits := extractDataBits(burst.bitData)
+	burst.deinterleavedInfoBits, burst.PayloadCorrectedErrors, burst.PayloadUncorrectable = burst.deinterleave(bBits, burst.SlotType.DataType)
+	burst.Data = burst.extractData()
 
 	return burst
+}
+
+func bytesToBits(data [33]byte) [264]bool {
+	var bits [264]bool
+	for i := 0; i < 264; i++ {
+		bits[i] = (data[i/8] & (1 << (7 - (i % 8)))) != 0
+	}
+	return bits
+}
+
+func extractSyncPattern(bitData [264]bool) enums.SyncPattern {
+	syncBytes := [6]byte{}
+	for i := 0; i < 6; i++ {
+		for j := 0; j < 8; j++ {
+			if bitData[108+(i*8)+j] {
+				syncBytes[i] |= 1 << (7 - j)
+			}
+		}
+	}
+	return enums.SyncPatternFromBytes(syncBytes)
+}
+
+func isDataSync(sync enums.SyncPattern) bool {
+	return sync == enums.Tdma1Data || sync == enums.Tdma2Data || sync == enums.MsSourcedData || sync == enums.BsSourcedData
+}
+
+func classifyVoice(sync enums.SyncPattern) (enums.VoiceBurstType, bool) {
+	if sync == enums.Tdma2Voice || sync == enums.Tdma1Voice || sync == enums.MsSourcedVoice || sync == enums.BsSourcedVoice {
+		return enums.VoiceBurstA, false
+	}
+	return enums.VoiceBurstUnknown, sync == enums.EmbeddedSignallingPattern
+}
+
+func parseEmbedded(bitData [264]bool) (pdu.EmbeddedSignalling, [32]byte) {
+	embeddedBits := [16]byte{}
+	for i := 0; i < 8; i++ {
+		if bitData[108+i] {
+			embeddedBits[i] = 1
+		}
+	}
+	for i := 0; i < 8; i++ {
+		if bitData[148+i] {
+			embeddedBits[8+i] = 1
+		}
+	}
+
+	embedded := pdu.NewEmbeddedSignallingFromBits(embeddedBits)
+	var embeddedData [32]byte
+	for i := 0; i < 32; i++ {
+		if bitData[116+i] {
+			embeddedData[i] = 1
+		}
+	}
+	return embedded, embeddedData
+}
+
+func parseSlotType(bitData [264]bool) pdu.SlotType {
+	slotBits := [20]byte{}
+	for i := 0; i < 10; i++ {
+		if bitData[98+i] {
+			slotBits[i] = 1
+		}
+	}
+	for i := 0; i < 10; i++ {
+		if bitData[156+i] {
+			slotBits[10+i] = 1
+		}
+	}
+	return pdu.NewSlotTypeFromBits(slotBits)
+}
+
+func parseVoiceBits(bitData [264]bool) pdu.Vocoder {
+	var voiceBits [216]byte
+	for i := 0; i < 108; i++ {
+		if bitData[i] {
+			voiceBits[i] = 1
+		}
+	}
+	for i := 0; i < 108; i++ {
+		if bitData[156+i] {
+			voiceBits[108+i] = 1
+		}
+	}
+	return pdu.NewVocoderFromBits(voiceBits)
+}
+
+func extractDataBits(bitData [264]bool) [196]byte {
+	var bits [196]byte
+	for i := 0; i < 98; i++ {
+		if bitData[i] {
+			bits[i] = 1
+		}
+	}
+	for i := 0; i < 98; i++ {
+		if bitData[166+i] {
+			bits[98+i] = 1
+		}
+	}
+	return bits
 }
 
 func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) ([]byte, int, bool) {
@@ -165,7 +169,7 @@ func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) ([]byte
 		decoded, errs := t.Decode(bits)
 		return decoded[:], errs, false
 	case elements.DataTypeRate1:
-		var deinterleaved []byte = make([]byte, 196)
+		var deinterleaved = make([]byte, 196)
 
 		// Table B.10B: Transmit bit ordering for rate 1 coded data
 		for i := 0; i < 96; i++ {
@@ -175,16 +179,23 @@ func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) ([]byte
 			deinterleaved[96+i] = bits[100+i]
 		}
 		return deinterleaved, 0, false
-	case elements.DataTypeReserved:
-		panic(fmt.Sprintf("Unknown data type %v", dataType))
-	default:
-		// here expected are: rate 1/2, PI header, voice headeader/terminator, csbk, data header, idle message,
-		// response header/data blocks, mbc header/continuation/last block, udt header/continuation/last block
-		// unified single block data and more
-		// See section B.0 table B.1, FEC and CRC summary, ETSI TS 102 361-1 V2.5.1 (2017-10)
+	case elements.DataTypePIHeader,
+		elements.DataTypeVoiceLCHeader,
+		elements.DataTypeTerminatorWithLC,
+		elements.DataTypeCSBK,
+		elements.DataTypeMBCHeader,
+		elements.DataTypeMBCContinuation,
+		elements.DataTypeDataHeader,
+		elements.DataTypeRate12,
+		elements.DataTypeIdle,
+		elements.DataTypeUnifiedSingleBlock:
 		bptc19696 := bptc.BPTC19696{}
 		decoded, corrected, uncorrectable := bptc19696.DeinterleaveDataBits(bits)
 		return decoded[:], corrected, uncorrectable
+	case elements.DataTypeReserved:
+		panic(fmt.Sprintf("Unknown data type %v", dataType))
+	default:
+		panic(fmt.Sprintf("Unhandled data type %v", dataType))
 	}
 }
 
@@ -215,31 +226,42 @@ func (b *Burst) extractData() elements.Data {
 	if !b.HasSlotType || b.SlotType.DataType == elements.DataTypeReserved {
 		return nil
 	}
-	if b.SlotType.DataType == elements.DataTypeCSBK {
-		// fmt.Println("CSBK")
-		// return pdu.NewCSBKFromBits(b.deinterleavedInfoBits)
-	} else if b.SlotType.DataType == elements.DataTypeVoiceLCHeader {
-		return pdu.NewFullLinkControlFromBits(b.deinterleavedInfoBits, b.SlotType.DataType)
-	} else if b.SlotType.DataType == elements.DataTypePIHeader {
-		// fmt.Println("PI")
-		// return pdu.NewPIHeaderFromBits(b.deinterleavedInfoBits)
-	} else if b.SlotType.DataType == elements.DataTypeTerminatorWithLC {
-		return pdu.NewFullLinkControlFromBits(b.deinterleavedInfoBits, b.SlotType.DataType)
-	} else if b.SlotType.DataType == elements.DataTypeDataHeader {
-		// fmt.Println("Data Header")
-		// return pdu.NewDataHeaderFromBits(b.deinterleavedInfoBits)
-	} else if b.SlotType.DataType == elements.DataTypeRate34 {
-		// fmt.Println("Data Rate 3/4")
-		// return pdu.NewRate34DataFromBits(b.deinterleavedInfoBits)
-	} else if b.SlotType.DataType == elements.DataTypeRate12 {
-		// fmt.Println("Data Rate 1/2")
-		// return pdu.NewRate12DataFromBits(b.deinterleavedInfoBits)
-	} else if b.SlotType.DataType == elements.DataTypeRate1 {
-		// fmt.Println("Data Rate 1")
-		// return pdu.NewRate1DataFromBits(b.deinterleavedInfoBits)
-	}
 
-	return nil
+	dt := b.SlotType.DataType
+	switch dt {
+	case elements.DataTypeCSBK:
+		// TODO: implement CSBK parsing
+		return nil
+	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
+		return pdu.NewFullLinkControlFromBits(b.deinterleavedInfoBits, dt)
+	case elements.DataTypePIHeader:
+		// TODO: implement PI header parsing
+		return nil
+	case elements.DataTypeDataHeader:
+		// TODO: implement data header parsing
+		return nil
+	case elements.DataTypeRate34:
+		// TODO: implement rate 3/4 data parsing
+		return nil
+	case elements.DataTypeRate12:
+		// TODO: implement rate 1/2 data parsing
+		return nil
+	case elements.DataTypeRate1:
+		// TODO: implement rate 1 data parsing
+		return nil
+	case elements.DataTypeMBCHeader, elements.DataTypeMBCContinuation:
+		// TODO: implement MBC parsing
+		return nil
+	case elements.DataTypeIdle:
+		return nil
+	case elements.DataTypeUnifiedSingleBlock:
+		// TODO: implement unified single block parsing
+		return nil
+	case elements.DataTypeReserved:
+		return nil
+	default:
+		return nil
+	}
 }
 
 // Encode returns the encoded bytes of the burst.

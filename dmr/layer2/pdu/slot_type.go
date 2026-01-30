@@ -30,18 +30,18 @@ func NewSlotTypeFromBits(data [20]byte) SlotType {
 
 	for i := 0; i < 4; i++ {
 		if data[i] == 1 {
-			st.ColorCode |= 1 << uint(3-i)
+			st.ColorCode |= 1 << (3 - i)
 		}
 	}
 
-	dt := 0
+	var dt elements.DataType
 	for i := 4; i < 8; i++ {
 		if data[i] == 1 {
-			dt |= 1 << uint(7-i)
+			dt |= elements.DataType(1) << (7 - i)
 		}
 	}
 
-	st.DataType = elements.DataType(dt)
+	st.DataType = dt
 
 	return st
 }

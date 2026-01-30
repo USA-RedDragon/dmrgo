@@ -13,7 +13,7 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		// 1. Generate random data (7 bits)
 		var data [7]byte
 		for j := 0; j < 7; j++ {
-			if rand.Intn(2) == 1 {
+			if rand.Intn(2) == 1 { //nolint:gosec // pseudo-random adequate for fuzz-style test
 				data[j] = 1
 			}
 		}
@@ -35,7 +35,7 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 
 		// Case 2: 1 Error
 		cwErr1 := cw
-		pos := rand.Intn(16)
+		pos := rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
 		cwErr1[pos] ^= 1
 		decoded, errs, unc = Decode(cwErr1)
 		if unc || errs != 1 {
@@ -49,9 +49,9 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 
 		// Case 3: 2 Errors
 		cwErr2 := cw
-		p1, p2 := rand.Intn(16), rand.Intn(16)
+		p1, p2 := rand.Intn(16), rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
 		for p1 == p2 {
-			p2 = rand.Intn(16)
+			p2 = rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
 		}
 		cwErr2[p1] ^= 1
 		cwErr2[p2] ^= 1
@@ -69,17 +69,17 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		// QR(16,7,6) can detect up to 5 errors?
 		// The Decode function returns 'uncorrectable' if syndrome maps to 0xFFFF.
 		cwErr3 := cw
-		p1, p2, p3 := rand.Intn(16), rand.Intn(16), rand.Intn(16)
+		p1, p2, p3 := rand.Intn(16), rand.Intn(16), rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
 		for p1 == p2 {
-			p2 = rand.Intn(16)
+			p2 = rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
 		}
 		for p3 == p1 || p3 == p2 {
-			p3 = rand.Intn(16)
+			p3 = rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
 		}
 		cwErr3[p1] ^= 1
 		cwErr3[p2] ^= 1
 		cwErr3[p3] ^= 1
-		decoded, errs, unc = Decode(cwErr3)
+		decoded, _, unc = Decode(cwErr3)
 		// It SHOULD be uncorrectable or miscorrected.
 		// If it says uncorrectable, good. If it corrects to WRONG codeword, that's life.
 		// But it shouldn't say it corrected 3 errors to the RIGHT codeword.

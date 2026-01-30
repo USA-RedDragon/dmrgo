@@ -22,7 +22,7 @@ func SyncPatternFromBytes(syncOrEmbeddedSignalling [6]byte) SyncPattern {
 	// Convert 6 bytes into an int64
 	var syncOrEmbeddedSignallingInt64 int64
 	for i := 0; i < 6; i++ {
-		syncOrEmbeddedSignallingInt64 |= int64(syncOrEmbeddedSignalling[i]) << uint(40-(i*8))
+		syncOrEmbeddedSignallingInt64 |= int64(syncOrEmbeddedSignalling[i]) << (8 * (5 - i))
 	}
 
 	switch SyncPattern(syncOrEmbeddedSignallingInt64) {
@@ -44,6 +44,8 @@ func SyncPatternFromBytes(syncOrEmbeddedSignalling [6]byte) SyncPattern {
 		return Tdma2Voice
 	case Tdma2Data:
 		return Tdma2Data
+	case EmbeddedSignallingPattern:
+		return EmbeddedSignallingPattern
 	case Reserved:
 		return Reserved
 	default:
@@ -72,6 +74,8 @@ func SyncPatternToName(sync SyncPattern) string {
 		return "TDMA2 voice"
 	case Tdma2Data:
 		return "TDMA2 data"
+	case EmbeddedSignallingPattern:
+		return "Embedded Signalling"
 	case Reserved:
 		return "Reserved"
 	default:
