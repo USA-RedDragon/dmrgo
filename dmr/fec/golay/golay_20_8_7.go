@@ -522,8 +522,8 @@ var golay20_8_syndrome_table = [4096]uint32{
 
 // ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.1 Golay (20,8,7)
 // This code works on byte arrays where each byte is 0 or 1.
-func Golay_20_8_Parity(bits [8]byte) []byte {
-	var p = make([]byte, 12)
+func Golay_20_8_Parity(bits [8]byte) [12]byte {
+	var p [12]byte
 	p[0] = bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7]
 	p[1] = bits[1] ^ bits[2] ^ bits[4]
 	p[2] = bits[0] ^ bits[2] ^ bits[3] ^ bits[5]

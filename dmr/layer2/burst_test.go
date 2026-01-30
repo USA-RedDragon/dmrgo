@@ -81,9 +81,10 @@ func TestBurst_Encode(t *testing.T) {
 func benchmarkDecode(b *testing.B, file string) {
 	b.Helper()
 	bursts := loadBursts(b, file)
+	var burst layer2.Burst
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = layer2.NewBurstFromBytes(bursts[i%len(bursts)])
+		burst.DecodeFromBytes(bursts[i%len(bursts)])
 	}
 }
 

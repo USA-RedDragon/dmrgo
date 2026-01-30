@@ -107,7 +107,7 @@ var bTable = []int{25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65, 69,
 var cTable = []int{46, 50, 54, 58, 62, 66, 70, 3, 7, 11, 15, 19,
 	23, 27, 31, 35, 39, 43, 47, 51, 55, 59, 63, 67, 71}
 
-func NewVocoderFrameFromBits(bits [72]byte) *VocoderFrame {
+func NewVocoderFrameFromBits(bits [72]byte) VocoderFrame {
 	var ambe49 [49]byte
 	totalErrors := 0
 	uncorrectable := false
@@ -218,11 +218,9 @@ func NewVocoderFrameFromBits(bits [72]byte) *VocoderFrame {
 		}
 	}
 
-	vf := VocoderFrame{
+	return VocoderFrame{
 		DecodedBits:     ambe49,
 		CorrectedErrors: totalErrors,
 		Uncorrectable:   uncorrectable,
 	}
-
-	return &vf
 }

@@ -36,17 +36,18 @@ type FullLinkControl struct {
 	TalkerAliasDataFormat layer3Elements.TalkerAliasDataFormat
 	TalkerAliasDataLength int
 	TalkerAliasDataMSB    bool
-	// without msb talker alias header data are 48bits (6bytes)
-	TalkerAliasData []byte
+	// without msb talker alias header data are 48 bits (6 bytes)
+	TalkerAliasDataLen int
+	TalkerAliasData    [72]byte
 	// Table 7.5: Talker Alias block Info PDU content
 	// talker alias blocks 1,2,3 use "talker_alias_data" field, since data are 56bits (7bytes)
 }
 
-func (flc *FullLinkControl) GetDataType() layer2Elements.DataType {
+func (flc FullLinkControl) GetDataType() layer2Elements.DataType {
 	return flc.dataType
 }
 
-func (flc *FullLinkControl) ToString() string {
+func (flc FullLinkControl) ToString() string {
 	ret := "FullLinkControl{ "
 	ret += fmt.Sprintf("dataType: %s, ProtectFlag: %t, FLCO: %s, FeaturesetID: %s, ", layer2Elements.DataTypeToName(flc.dataType), flc.ProtectFlag, enums.FLCOToName(flc.FLCO), enums.FeatureSetIDToName(flc.FeatureSetID))
 
@@ -75,15 +76,15 @@ func (flc *FullLinkControl) ToString() string {
 	return ret
 }
 
-func NewFullLinkControlFromBits(infoBits []byte, dataType layer2Elements.DataType) *FullLinkControl {
+func (flc *FullLinkControl) DecodeFromBits(infoBits []byte, dataType layer2Elements.DataType) bool {
 	if len(infoBits) != 96 && len(infoBits) != 77 {
 		fmt.Println("FullLinkControl: invalid infoBits length: ", len(infoBits))
-		return nil
+		return false
 	}
 
 	if dataType != layer2Elements.DataTypeTerminatorWithLC && dataType != layer2Elements.DataTypeVoiceLCHeader {
 		fmt.Println("FullLinkControl: invalid dataType: ", dataType)
-		return nil
+		return false
 	}
 
 	var flco int
@@ -95,7 +96,7 @@ func NewFullLinkControlFromBits(infoBits []byte, dataType layer2Elements.DataTyp
 	FLCO, err := enums.FLCOFromInt(flco)
 	if err != nil {
 		fmt.Println("FullLinkControl: invalid FLCO: ", flco)
-		return nil
+		return false
 	}
 
 	var fsid int
@@ -106,17 +107,10 @@ func NewFullLinkControlFromBits(infoBits []byte, dataType layer2Elements.DataTyp
 	FSID, err := enums.FeatureSetIDFromInt(fsid)
 	if err != nil {
 		fmt.Println("FullLinkControl: invalid FeatureSetID: ", fsid)
-		return nil
+		return false
 	}
 
-	var crc []byte
-	if len(infoBits) >= 96 {
-		copy(crc, infoBits[72:96])
-	} else {
-		copy(crc, infoBits[72:77])
-	}
-
-	infoBytes := make([]byte, 12)
+	var infoBytes [12]byte
 	for i := 0; i < 96; i += 8 {
 		var b byte
 		for j := 0; j < 8; j++ {
@@ -127,26 +121,25 @@ func NewFullLinkControlFromBits(infoBits []byte, dataType layer2Elements.DataTyp
 	}
 
 	syndrome := &reedSolomon.ReedSolomon1294{}
-	if err := reedSolomon.ReedSolomon1294CalcSyndrome(infoBytes, syndrome); err != nil {
+	if err := reedSolomon.ReedSolomon1294CalcSyndrome(infoBytes[:], syndrome); err != nil {
 		fmt.Println("FullLinkControl: error calculating syndrome: ", err)
-		return nil
+		return false
 	}
 	if !reedSolomon.ReedSolomon1294CheckSyndrome(syndrome) {
 		fmt.Println("FullLinkControl: syndrome check failed")
-		if _, err := reedSolomon.ReedSolomon1294Correct(infoBytes, syndrome); err != nil {
+		if _, err := reedSolomon.ReedSolomon1294Correct(infoBytes[:], syndrome); err != nil {
 			fmt.Println("FullLinkControl: error correcting syndrome: ", err)
-			return nil
+			return false
 		}
 	}
 
-	flc := FullLinkControl{
-		dataType:     dataType,
-		FLCO:         FLCO,
-		ProtectFlag:  infoBits[0] == 1,
-		FeatureSetID: FSID,
-		crc:          crc,
-		ParityOK:     true,
-	}
+	// reset fields
+	*flc = FullLinkControl{}
+	flc.dataType = dataType
+	flc.FLCO = FLCO
+	flc.ProtectFlag = infoBits[0] == 1
+	flc.FeatureSetID = FSID
+	flc.ParityOK = true
 
 	switch FLCO {
 	case enums.FLCOUnitToUnitVoiceChannelUser:
@@ -211,17 +204,22 @@ func NewFullLinkControlFromBits(infoBits []byte, dataType layer2Elements.DataTyp
 
 		flc.TalkerAliasDataMSB = infoBits[23] == 1
 
-		flc.TalkerAliasData = make([]byte, taLen)
-		copy(flc.TalkerAliasData, infoBits[24:72])
+		// Header provides up to 48 bits of alias data
+		if taLen > 48 {
+			taLen = 48
+		}
+		flc.TalkerAliasDataLen = taLen
+		copy(flc.TalkerAliasData[:], infoBits[24:24+taLen])
 	case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
-		flc.TalkerAliasData = make([]byte, 56)
-		copy(flc.TalkerAliasData, infoBits[16:72])
+		const blockLen = 56
+		flc.TalkerAliasDataLen = blockLen
+		copy(flc.TalkerAliasData[:], infoBits[16:72])
 	case enums.FLCOTerminatorDataLinkControl:
 		// TODO: implement TLDC handling
-		return nil
+		return false
 	default:
-		return nil
+		return false
 	}
 
-	return &flc
+	return true
 }

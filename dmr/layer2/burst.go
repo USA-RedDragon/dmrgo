@@ -26,8 +26,10 @@ type Burst struct {
 
 	IsData                bool
 	Data                  elements.Data
+	fullLinkControl       pdu.FullLinkControl
 	bitData               [264]bool
-	deinterleavedInfoBits []byte
+	deinterleavedInfoBits [196]byte
+	deinterleavedInfoLen  int
 
 	PayloadCorrectedErrors int
 	PayloadUncorrectable   bool
@@ -36,31 +38,36 @@ type Burst struct {
 // NewBurstFromBytes creates a new Burst from the given bytes.
 func NewBurstFromBytes(data [33]byte) *Burst {
 	burst := &Burst{}
-	burst.bitData = bytesToBits(data)
-
-	burst.SyncPattern = extractSyncPattern(burst.bitData)
-	burst.IsData = isDataSync(burst.SyncPattern)
-	burst.VoiceBurst, burst.HasEmbeddedSignalling = classifyVoice(burst.SyncPattern)
-
-	if burst.HasEmbeddedSignalling {
-		burst.EmbeddedSignalling, burst.EmbeddedSignallingData = parseEmbedded(burst.bitData)
-	}
-
-	burst.HasSlotType = burst.IsData
-	if burst.HasSlotType {
-		burst.SlotType = parseSlotType(burst.bitData)
-	}
-
-	if !burst.IsData {
-		burst.VoiceData = parseVoiceBits(burst.bitData)
-		return burst
-	}
-
-	bBits := extractDataBits(burst.bitData)
-	burst.deinterleavedInfoBits, burst.PayloadCorrectedErrors, burst.PayloadUncorrectable = burst.deinterleave(bBits, burst.SlotType.DataType)
-	burst.Data = burst.extractData()
-
+	burst.DecodeFromBytes(data)
 	return burst
+}
+
+// DecodeFromBytes populates the burst in place, enabling zero-allocation decoding when reusing a Burst.
+func (b *Burst) DecodeFromBytes(data [33]byte) {
+	*b = Burst{}
+	b.bitData = bytesToBits(data)
+
+	b.SyncPattern = extractSyncPattern(b.bitData)
+	b.IsData = isDataSync(b.SyncPattern)
+	b.VoiceBurst, b.HasEmbeddedSignalling = classifyVoice(b.SyncPattern)
+
+	if b.HasEmbeddedSignalling {
+		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
+	}
+
+	b.HasSlotType = b.IsData
+	if b.HasSlotType {
+		b.SlotType = parseSlotType(b.bitData)
+	}
+
+	if !b.IsData {
+		b.VoiceData = parseVoiceBits(b.bitData)
+		return
+	}
+
+	bBits := extractDataBits(b.bitData)
+	b.deinterleavedInfoLen, b.PayloadCorrectedErrors, b.PayloadUncorrectable = b.deinterleave(bBits, b.SlotType.DataType)
+	b.Data = b.extractData()
 }
 
 func bytesToBits(data [33]byte) [264]bool {
@@ -162,23 +169,22 @@ func extractDataBits(bitData [264]bool) [196]byte {
 	return bits
 }
 
-func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) ([]byte, int, bool) {
+func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) (int, int, bool) {
 	switch dataType {
 	case elements.DataTypeRate34:
-		t := trellis34.New()
+		var t trellis34.Trellis34
 		decoded, errs := t.Decode(bits)
-		return decoded[:], errs, false
+		copy(b.deinterleavedInfoBits[:], decoded[:])
+		return len(decoded), errs, false
 	case elements.DataTypeRate1:
-		var deinterleaved = make([]byte, 196)
-
 		// Table B.10B: Transmit bit ordering for rate 1 coded data
 		for i := 0; i < 96; i++ {
-			deinterleaved[i] = bits[i]
+			b.deinterleavedInfoBits[i] = bits[i]
 		}
 		for i := 0; i < 96; i++ {
-			deinterleaved[96+i] = bits[100+i]
+			b.deinterleavedInfoBits[96+i] = bits[100+i]
 		}
-		return deinterleaved, 0, false
+		return 196, 0, false
 	case elements.DataTypePIHeader,
 		elements.DataTypeVoiceLCHeader,
 		elements.DataTypeTerminatorWithLC,
@@ -191,7 +197,8 @@ func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) ([]byte
 		elements.DataTypeUnifiedSingleBlock:
 		bptc19696 := bptc.BPTC19696{}
 		decoded, corrected, uncorrectable := bptc19696.DeinterleaveDataBits(bits)
-		return decoded[:], corrected, uncorrectable
+		copy(b.deinterleavedInfoBits[:], decoded[:])
+		return len(decoded), corrected, uncorrectable
 	case elements.DataTypeReserved:
 		panic(fmt.Sprintf("Unknown data type %v", dataType))
 	default:
@@ -228,12 +235,16 @@ func (b *Burst) extractData() elements.Data {
 	}
 
 	dt := b.SlotType.DataType
+	infoBits := b.deinterleavedInfoBits[:b.deinterleavedInfoLen]
 	switch dt {
 	case elements.DataTypeCSBK:
 		// TODO: implement CSBK parsing
 		return nil
 	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
-		return pdu.NewFullLinkControlFromBits(b.deinterleavedInfoBits, dt)
+		if b.fullLinkControl.DecodeFromBits(infoBits, dt) {
+			return &b.fullLinkControl
+		}
+		return nil
 	case elements.DataTypePIHeader:
 		// TODO: implement PI header parsing
 		return nil

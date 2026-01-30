@@ -36,7 +36,7 @@ func getFrames(bits [216]byte) [3]vocoder.VocoderFrame {
 	for i := 0; i < 3; i++ {
 		var frameBits [72]byte
 		copy(frameBits[:], bits[i*72:(i+1)*72])
-		frames[i] = *vocoder.NewVocoderFrameFromBits(frameBits)
+		frames[i] = vocoder.NewVocoderFrameFromBits(frameBits)
 	}
 
 	return frames
