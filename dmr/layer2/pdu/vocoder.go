@@ -41,3 +41,13 @@ func getFrames(bits [216]byte) [3]vocoder.VocoderFrame {
 
 	return frames
 }
+
+// Encode returns the 216 bits of the vocoder PDU.
+func (vc *Vocoder) Encode() [216]byte {
+	var bits [216]byte
+	for i := 0; i < 3; i++ {
+		frameBits := vc.Frames[i].Encode()
+		copy(bits[i*72:(i+1)*72], frameBits[:])
+	}
+	return bits
+}

@@ -31,7 +31,6 @@ func (vf *VocoderFrame) Encode() [72]byte {
 	var bOrig uint32 = 0
 	var cOrig uint32 = 0
 	var MASK uint32 = 0x000800
-	ambe49[9] = 0
 
 	for i := 0; i < 12; i, MASK = i+1, MASK>>1 {
 		n1 := uint32(i + 0)
@@ -107,7 +106,6 @@ func NewVocoderFrameFromBits(bits [72]byte) *VocoderFrame {
 
 	var a uint32 = 0
 	var MASK uint32 = 0x800000
-	ambe49[9] = 0
 
 	for i := 0; i < 24; i, MASK = i+1, MASK>>1 {
 		aPos := aTable[i]

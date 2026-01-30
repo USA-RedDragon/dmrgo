@@ -29,7 +29,7 @@ func NewEmbeddedSignallingFromBits(data [16]byte) EmbeddedSignalling {
 	var linkControlStartStop int
 	for i := 5; i < 7; i++ {
 		if data[i] == 1 {
-			linkControlStartStop |= 1 << uint(7-i)
+			linkControlStartStop |= 1 << uint(6-i)
 		}
 	}
 
@@ -68,6 +68,42 @@ func NewEmbeddedSignallingFromBits(data [16]byte) EmbeddedSignalling {
 	}
 
 	return es
+}
+
+func (es *EmbeddedSignalling) Encode() [16]byte {
+	var data [16]byte
+
+	// Color Code (4 bits)
+	for i := 0; i < 4; i++ {
+		if (es.ColorCode>>(3-i))&1 == 1 {
+			data[i] = 1
+		}
+	}
+
+	// Preemption and Power Control Indicator (1 bit)
+	if es.PreemptionAndPowerControlIndicator {
+		data[4] = 1
+	}
+
+	// LCSS (2 bits)
+	lcss := int(es.LCSS)
+	if (lcss>>1)&1 == 1 {
+		data[5] = 1
+	}
+	if (lcss & 1) == 1 {
+		data[6] = 1
+	}
+
+	// Parity (9 bits)
+	var shortData [7]byte
+	copy(shortData[:], data[:7])
+	parity := quadraticResidue.ParityBits(shortData)
+
+	for i := 0; i < 9; i++ {
+		data[7+i] = parity[i]
+	}
+
+	return data
 }
 
 // ToString returns a string representation of the EmbeddedSignalling

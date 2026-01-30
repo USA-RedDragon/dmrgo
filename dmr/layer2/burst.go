@@ -20,8 +20,9 @@ type Burst struct {
 	HasSlotType bool
 	SlotType    pdu.SlotType
 
-	HasEmbeddedSignalling bool
-	EmbeddedSignalling    pdu.EmbeddedSignalling
+	HasEmbeddedSignalling  bool
+	EmbeddedSignalling     pdu.EmbeddedSignalling
+	EmbeddedSignallingData [32]byte
 
 	IsData                bool
 	Data                  elements.Data
@@ -78,6 +79,14 @@ func NewBurstFromBytes(data [33]byte) *Burst {
 			}
 		}
 		burst.EmbeddedSignalling = pdu.NewEmbeddedSignallingFromBits(embeddedSignallingBits)
+
+		for i := 0; i < 32; i++ {
+			if burst.bitData[116+i] {
+				burst.EmbeddedSignallingData[i] = 1
+			} else {
+				burst.EmbeddedSignallingData[i] = 0
+			}
+		}
 	}
 
 	burst.HasSlotType = burst.IsData
@@ -227,4 +236,49 @@ func (b *Burst) extractData() elements.Data {
 	}
 
 	return nil
+}
+
+// Encode returns the encoded bytes of the burst.
+func (b *Burst) Encode() [33]byte {
+	var bitData [264]bool
+
+	// Voice Data
+	if b.VoiceBurst != enums.VoiceBurstUnknown || b.HasEmbeddedSignalling {
+		voiceBits := b.VoiceData.Encode()
+		for i := 0; i < 108; i++ {
+			bitData[i] = voiceBits[i] == 1
+		}
+		for i := 0; i < 108; i++ {
+			bitData[156+i] = voiceBits[108+i] == 1
+		}
+	}
+
+	// Sync or Embedded Signalling
+	if b.HasEmbeddedSignalling {
+		esBits := b.EmbeddedSignalling.Encode()
+		for i := 0; i < 8; i++ {
+			bitData[108+i] = esBits[i] == 1
+		}
+		for i := 0; i < 32; i++ {
+			bitData[116+i] = b.EmbeddedSignallingData[i] == 1
+		}
+		for i := 0; i < 8; i++ {
+			bitData[148+i] = esBits[8+i] == 1
+		}
+	} else {
+		// Encode Sync Pattern
+		syncVal := int64(b.SyncPattern)
+		for i := 0; i < 48; i++ {
+			bitData[108+i] = ((syncVal >> (47 - i)) & 1) == 1
+		}
+	}
+
+	// Helper to pack bits to bytes
+	var data [33]byte
+	for i := 0; i < 264; i++ {
+		if bitData[i] {
+			data[i/8] |= 1 << (7 - (i % 8))
+		}
+	}
+	return data
 }
