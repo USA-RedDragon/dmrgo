@@ -171,9 +171,14 @@ func BenchmarkReedSolomon1294Decode(b *testing.B) {
 		data[i] = byte(i)
 	}
 
+	var dst [RS_12_9_DATASIZE]byte
+	var ws DecodeWorkspace
+
+	b.ReportAllocs()
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Decode(data)
+		DecodeInto(data, dst[:], &ws)
 	}
 }
 
