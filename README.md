@@ -1,5 +1,7 @@
 # dmrgo
 
+[![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE.md) [![GoReportCard](https://goreportcard.com/badge/github.com/USA-RedDragon/dmrgo)](https://goreportcard.com/report/github.com/USA-RedDragon/dmrgo) [![codecov](https://codecov.io/gh/USA-RedDragon/dmrgo/graph/badge.svg?token=ON6XI1I21H)](https://codecov.io/gh/USA-RedDragon/dmrgo)
+
 This library decodes a raw 33-byte DMR packet into Golang-native structures.
 
 ## Usage
