@@ -14,6 +14,92 @@ const (
 
 type ReedSolomon1294 [RS_12_9_POLY_MAXDEG]uint8
 
+// DecodeResult contains the result of a Reed-Solomon decode operation
+type DecodeResult struct {
+	Data          []byte // Corrected data (9 bytes)
+	ErrorsFound   int    // Number of errors found and corrected
+	Uncorrectable bool   // True if errors could not be corrected
+}
+
+// Decode performs syndrome calculation, error correction, and returns comprehensive results.
+// It takes a 12-byte codeword (9 data + 3 checksum) and returns the corrected data along with error metrics.
+func Decode(data []byte) DecodeResult {
+	result := DecodeResult{
+		Data:          make([]byte, RS_12_9_DATASIZE),
+		ErrorsFound:   0,
+		Uncorrectable: false,
+	}
+
+	if len(data) != RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE {
+		result.Uncorrectable = true
+		return result
+	}
+
+	// Make a copy to work with
+	workData := make([]byte, len(data))
+	copy(workData, data)
+
+	// Calculate syndrome
+	var syndrome ReedSolomon1294
+	err := ReedSolomon1294CalcSyndrome(workData, &syndrome)
+	if err != nil {
+		result.Uncorrectable = true
+		return result
+	}
+
+	// Check if there are any errors
+	if !ReedSolomon1294CheckSyndrome(&syndrome) {
+		// No errors
+		copy(result.Data, workData[:RS_12_9_DATASIZE])
+		return result
+	}
+
+	// Attempt correction
+	errorsFound, err := ReedSolomon1294Correct(workData, &syndrome)
+	if err != nil {
+		result.Uncorrectable = true
+		result.ErrorsFound = errorsFound
+		copy(result.Data, workData[:RS_12_9_DATASIZE])
+		return result
+	}
+
+	result.ErrorsFound = errorsFound
+	copy(result.Data, workData[:RS_12_9_DATASIZE])
+	return result
+}
+
+// Encode generates a 12-byte codeword from 9 bytes of data.
+// Returns the original data with 3 checksum bytes appended.
+func Encode(data []byte) ([]byte, error) {
+	if len(data) != RS_12_9_DATASIZE {
+		return nil, fmt.Errorf("fec/rs_12_9: data must be %d bytes, got %d", RS_12_9_DATASIZE, len(data))
+	}
+
+	// Create codeword with space for checksum
+	codeword := make([]byte, RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
+	copy(codeword, data)
+
+	// Calculate checksum bytes using the generator polynomial
+	// RS(12,9) systematic encoding: divide by generator polynomial
+	for i := 0; i < RS_12_9_DATASIZE; i++ {
+		feedback := codeword[i] ^ codeword[RS_12_9_DATASIZE]
+		if feedback != 0 {
+			// Generator polynomial coefficients for RS(12,9,4) over GF(256)
+			// g(x) = (x - α)(x - α²)(x - α³) = x³ + g2·x² + g1·x + g0
+			// For DMR: α = 2, so roots are 2, 4, 8
+			codeword[RS_12_9_DATASIZE] ^= ReedSolomon1294GaloisMul(feedback, 0x40)   // g2
+			codeword[RS_12_9_DATASIZE+1] ^= ReedSolomon1294GaloisMul(feedback, 0x78) // g1
+			codeword[RS_12_9_DATASIZE+2] ^= ReedSolomon1294GaloisMul(feedback, 0x40) // g0 (shifted in next iteration)
+		}
+		// Shift
+		codeword[RS_12_9_DATASIZE] = codeword[RS_12_9_DATASIZE+1]
+		codeword[RS_12_9_DATASIZE+1] = codeword[RS_12_9_DATASIZE+2]
+		codeword[RS_12_9_DATASIZE+2] = feedback
+	}
+
+	return codeword, nil
+}
+
 var (
 	// DMR AI. spec. page 138.
 	rs_12_9_galois_exp_table = [256]uint8{

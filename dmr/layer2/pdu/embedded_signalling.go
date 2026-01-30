@@ -13,10 +13,22 @@ type EmbeddedSignalling struct {
 	PreemptionAndPowerControlIndicator bool
 	LCSS                               enums.LCSS
 	ParityOK                           bool
+	CorrectedErrors                    int
+	Uncorrectable                      bool
 }
 
 func NewEmbeddedSignallingFromBits(data [16]byte) EmbeddedSignalling {
 	es := EmbeddedSignalling{}
+
+	corrected, errs, uncorrectable := quadraticResidue.Decode(data)
+	es.CorrectedErrors = errs
+	es.Uncorrectable = uncorrectable
+
+	if !uncorrectable {
+		data = corrected
+	}
+	es.ParityOK = (errs == 0)
+
 	// Convert the first 4 bits of data into an int
 	for i := 0; i < 4; i++ {
 		if data[i] == 1 {
@@ -34,38 +46,6 @@ func NewEmbeddedSignallingFromBits(data [16]byte) EmbeddedSignalling {
 	}
 
 	es.LCSS = enums.LCSSFromInt(linkControlStartStop)
-
-	parity := 0
-	for i := 7; i < 16; i++ {
-		if data[i] == 1 {
-			parity |= 1 << uint(15-i)
-		}
-	}
-
-	// No parity found, so calculate it
-	if parity <= 0 {
-		parity = 0
-		shortData := [7]byte{}
-		copy(shortData[:], data[:7])
-		// Loop through the returned array of fec.ParityBits
-		// and convert them to an int
-		for i, v := range quadraticResidue.ParityBits(shortData) {
-			if v == 1 {
-				parity |= 1 << uint(15-i)
-			}
-		}
-	}
-
-	if !quadraticResidue.Check(data) {
-		fmt.Printf("Parity check failed\n")
-		fmt.Println("Expected: ", data[7:16])
-		bits := [7]byte{}
-		copy(bits[:], data[:7])
-		fmt.Println("Got:      ", quadraticResidue.ParityBits(bits))
-		es.ParityOK = false
-	} else {
-		es.ParityOK = true
-	}
 
 	return es
 }
@@ -108,5 +88,5 @@ func (es *EmbeddedSignalling) Encode() [16]byte {
 
 // ToString returns a string representation of the EmbeddedSignalling
 func (es EmbeddedSignalling) ToString() string {
-	return fmt.Sprintf("{ Color Code: %d, Preemption and Power Control Indicator: %t, LCSS: %s, Parity OK: %t }", es.ColorCode, es.PreemptionAndPowerControlIndicator, enums.LCSSToName(es.LCSS), es.ParityOK)
+	return fmt.Sprintf("{ Color Code: %d, Preemption and Power Control Indicator: %t, LCSS: %s, Parity OK: %t, Corrected: %d, Uncorrectable: %t }", es.ColorCode, es.PreemptionAndPowerControlIndicator, enums.LCSSToName(es.LCSS), es.ParityOK, es.CorrectedErrors, es.Uncorrectable)
 }

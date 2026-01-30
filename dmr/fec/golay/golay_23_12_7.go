@@ -1,4 +1,36 @@
-package fec
+package golay
+
+import "math/bits"
+
+// DecodeGolay23127 decodes a 23-bit word using the Golay (23,12,7) code.
+// It returns the corrected 12-bit data, the number of bit errors corrected, and whether the word was uncorrectable.
+func DecodeGolay23127(received uint32) (data uint16, errors int, uncorrectable bool) {
+	minDist := 23
+	bestData := uint16(0)
+
+	// Brute-force search
+	for d, codeword := range Golay_23_12_7_EncodingTable {
+		// The encoding table stores values shifted left by 1 (bit 0 is always 0),
+		// but the transmission discards bit 0 (>> 1).
+		// So we must compare the received value against the table value shifted right.
+		dist := bits.OnesCount32(received ^ (codeword >> 1))
+		if dist < minDist {
+			minDist = dist
+			bestData = uint16(d)
+
+			if dist == 0 {
+				return bestData, 0, false
+			}
+		}
+	}
+
+	// Golay (23,12,7) can correct up to 3 errors (d_min = 7, t = floor((7-1)/2) = 3)
+	if minDist <= 3 {
+		return bestData, minDist, false
+	}
+
+	return bestData, minDist, true
+}
 
 var Golay_23_12_7_EncodingTable = []uint32{
 	0x000000, 0x0018EA, 0x00293E, 0x0031D4, 0x004A96, 0x00527C, 0x0063A8, 0x007B42, 0x008DC6, 0x00952C,

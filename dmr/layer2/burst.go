@@ -28,6 +28,9 @@ type Burst struct {
 	Data                  elements.Data
 	bitData               [264]bool
 	deinterleavedInfoBits []byte
+
+	PayloadCorrectedErrors int
+	PayloadUncorrectable   bool
 }
 
 // NewBurstFromBytes creates a new Burst from the given bytes.
@@ -142,7 +145,7 @@ func NewBurstFromBytes(data [33]byte) *Burst {
 				bits[98+i] = 0
 			}
 		}
-		burst.deinterleavedInfoBits = burst.deinterleave(bits, burst.SlotType.DataType)
+		burst.deinterleavedInfoBits, burst.PayloadCorrectedErrors, burst.PayloadUncorrectable = burst.deinterleave(bits, burst.SlotType.DataType)
 		burst.Data = burst.extractData()
 	}
 
@@ -155,12 +158,12 @@ func NewBurstFromBytes(data [33]byte) *Burst {
 	return burst
 }
 
-func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) []byte {
+func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) ([]byte, int, bool) {
 	switch dataType {
 	case elements.DataTypeRate34:
 		t := trellis34.New()
-		decoded := t.Decode(bits)
-		return decoded[:]
+		decoded, errs := t.Decode(bits)
+		return decoded[:], errs, false
 	case elements.DataTypeRate1:
 		var deinterleaved []byte = make([]byte, 196)
 
@@ -171,7 +174,7 @@ func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) []byte 
 		for i := 0; i < 96; i++ {
 			deinterleaved[96+i] = bits[100+i]
 		}
-		return deinterleaved
+		return deinterleaved, 0, false
 	case elements.DataTypeReserved:
 		panic(fmt.Sprintf("Unknown data type %v", dataType))
 	default:
@@ -180,8 +183,8 @@ func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) []byte 
 		// unified single block data and more
 		// See section B.0 table B.1, FEC and CRC summary, ETSI TS 102 361-1 V2.5.1 (2017-10)
 		bptc19696 := bptc.BPTC19696{}
-		decoded := bptc19696.DeinterleaveDataBits(bits)
-		return decoded[:]
+		decoded, corrected, uncorrectable := bptc19696.DeinterleaveDataBits(bits)
+		return decoded[:], corrected, uncorrectable
 	}
 }
 
@@ -195,6 +198,7 @@ func (b *Burst) ToString() string {
 		ret += fmt.Sprintf("SlotType: %v, ", b.SlotType.ToString())
 	}
 	if b.IsData {
+		ret += fmt.Sprintf("PayloadCorrected: %d, PayloadUncorrectable: %t, ", b.PayloadCorrectedErrors, b.PayloadUncorrectable)
 		if b.Data != nil {
 			ret += fmt.Sprintf("Data: %v, ", b.Data.ToString())
 		}
@@ -212,26 +216,26 @@ func (b *Burst) extractData() elements.Data {
 		return nil
 	}
 	if b.SlotType.DataType == elements.DataTypeCSBK {
-		fmt.Println("CSBK")
+		// fmt.Println("CSBK")
 		// return pdu.NewCSBKFromBits(b.deinterleavedInfoBits)
 	} else if b.SlotType.DataType == elements.DataTypeVoiceLCHeader {
 		return pdu.NewFullLinkControlFromBits(b.deinterleavedInfoBits, b.SlotType.DataType)
 	} else if b.SlotType.DataType == elements.DataTypePIHeader {
-		fmt.Println("PI")
+		// fmt.Println("PI")
 		// return pdu.NewPIHeaderFromBits(b.deinterleavedInfoBits)
 	} else if b.SlotType.DataType == elements.DataTypeTerminatorWithLC {
 		return pdu.NewFullLinkControlFromBits(b.deinterleavedInfoBits, b.SlotType.DataType)
 	} else if b.SlotType.DataType == elements.DataTypeDataHeader {
-		fmt.Println("Data Header")
+		// fmt.Println("Data Header")
 		// return pdu.NewDataHeaderFromBits(b.deinterleavedInfoBits)
 	} else if b.SlotType.DataType == elements.DataTypeRate34 {
-		fmt.Println("Data Rate 3/4")
+		// fmt.Println("Data Rate 3/4")
 		// return pdu.NewRate34DataFromBits(b.deinterleavedInfoBits)
 	} else if b.SlotType.DataType == elements.DataTypeRate12 {
-		fmt.Println("Data Rate 1/2")
+		// fmt.Println("Data Rate 1/2")
 		// return pdu.NewRate12DataFromBits(b.deinterleavedInfoBits)
 	} else if b.SlotType.DataType == elements.DataTypeRate1 {
-		fmt.Println("Data Rate 1")
+		// fmt.Println("Data Rate 1")
 		// return pdu.NewRate1DataFromBits(b.deinterleavedInfoBits)
 	}
 

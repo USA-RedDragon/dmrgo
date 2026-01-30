@@ -51,3 +51,27 @@ func (vc *Vocoder) Encode() [216]byte {
 	}
 	return bits
 }
+
+// CorrectedErrors returns the total number of corrected bit errors in the vocoder frames.
+func (vc *Vocoder) CorrectedErrors() int {
+	var count int
+	for _, f := range vc.Frames {
+		count += f.CorrectedErrors
+	}
+	return count
+}
+
+// Uncorrectable returns true if any of the vocoder frames were uncorrectable.
+func (vc *Vocoder) Uncorrectable() bool {
+	for _, f := range vc.Frames {
+		if f.Uncorrectable {
+			return true
+		}
+	}
+	return false
+}
+
+// HasError returns true if any error correction was performed or if the data is uncorrectable.
+func (vc *Vocoder) HasError() bool {
+	return vc.CorrectedErrors() > 0 || vc.Uncorrectable()
+}

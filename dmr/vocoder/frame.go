@@ -4,11 +4,14 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/dmr/vocoder/fec"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec/prng"
 )
 
 type VocoderFrame struct {
-	DecodedBits [49]byte
+	DecodedBits     [49]byte
+	CorrectedErrors int
+	Uncorrectable   bool
 }
 
 func (vf *VocoderFrame) ToString() string {
@@ -51,12 +54,12 @@ func (vf *VocoderFrame) Encode() [72]byte {
 		}
 	}
 
-	a := fec.Golay_24_12_8_EncodingTable[aOrig]
+	a := golay.Golay_24_12_8_EncodingTable[aOrig]
 
 	// The PRNG
-	p := fec.PRNG_TABLE[aOrig] >> 1
+	p := prng.PRNG_TABLE[aOrig] >> 1
 
-	b := fec.Golay_23_12_7_EncodingTable[bOrig] >> 1
+	b := golay.Golay_23_12_7_EncodingTable[bOrig] >> 1
 	b ^= p
 
 	MASK = 0x800000
@@ -103,6 +106,8 @@ var cTable = []int{46, 50, 54, 58, 62, 66, 70, 3, 7, 11, 15, 19,
 
 func NewVocoderFrameFromBits(bits [72]byte) *VocoderFrame {
 	var ambe49 [49]byte
+	totalErrors := 0
+	uncorrectable := false
 
 	var a uint32 = 0
 	var MASK uint32 = 0x800000
@@ -114,6 +119,17 @@ func NewVocoderFrameFromBits(bits [72]byte) *VocoderFrame {
 		}
 	}
 
+	// shift right by 1 to make it 23 bits for PRNG? No, PRNG_TABLE index is 12 bits.
+	// Golay 24,12,8: 24 bits received. 12 data bits.
+	// Decode 'a'
+	dataA, errsA, failA := golay.DecodeGolay24128(a)
+	totalErrors += errsA
+	if failA {
+		uncorrectable = true
+	}
+	// Use corrected data for 'a'
+	a = uint32(dataA)
+
 	var b uint32 = 0
 	MASK = 0x400000
 	for i := 0; i < 23; i, MASK = i+1, MASK>>1 {
@@ -123,6 +139,36 @@ func NewVocoderFrameFromBits(bits [72]byte) *VocoderFrame {
 		}
 	}
 
+	// Decrypt 'b' using 'a' before decoding? Or decode then decrypt?
+	// The Encode function does:
+	// a = Table[aOrig]
+	// p = PRNG[aOrig] >> 1
+	// b = (Table[bOrig] >> 1) ^ p
+	// So b contains PRNG[aOrig].
+	// To decode b, we must first XOR with p.
+	// We need aOrig for that. We have 'a' (which is the corrected aOrig).
+
+	// The PRNG
+	// 'a' here is the 12-bit data (aOrig).
+	b ^= (prng.PRNG_TABLE[a] >> 1)
+
+	// Check/Decode 'b'
+	// 'b' is now (Table[bOrig] >> 1). It is 23 bits.
+	// Encode shifted right by 1.
+	// Golay_23 is 23 bits.
+	// DecodeGolay23127 expects 23 bits.
+	// Is the result of Encode() 23 bits in the lower part?
+	// In Encode(): b = ... >> 1. 23 bits.
+	// Stored in ambe72 using bTable which has 23 entries.
+	// So 'b' assembled here is exactly the 23 bits.
+
+	dataB, errsB, failB := golay.DecodeGolay23127(b)
+	totalErrors += errsB
+	if failB {
+		uncorrectable = true
+	}
+	b = uint32(dataB)
+
 	var c uint32 = 0
 	MASK = 0x1000000
 	for i := 0; i < 25; i, MASK = i+1, MASK>>1 {
@@ -131,22 +177,27 @@ func NewVocoderFrameFromBits(bits [72]byte) *VocoderFrame {
 			c |= MASK
 		}
 	}
+	// 'c' is 25 bits uncoded. No FEC.
+	// Just use it. But in correct format for loop below?
+	// Loop below expects 'c' to be shifted?
+	// In Encode: if (cOrig & MASK) != 0. MASK=0x1000000 (bit 24).
+	// cOrig is constructed from ambe49.
+	// Here 'c' is read from bits.
+	// We don't need to shift 'c', it should already be aligned if read correctly.
+	// Wait, loop below uses MASK=0x1000000 for c.
 
-	a >>= 12
-
-	// The PRNG
-	b ^= (fec.PRNG_TABLE[a] >> 1)
-	b >>= 11
-
+	// Reconstruct ambe49
 	MASK = 0x000800
 	for i := 0; i < 12; i, MASK = i+1, MASK>>1 {
 		apos := i
 		bpos := i + 12
+		// 'a' is 12 bits data. MASK scans 12 bits.
 		if (a & MASK) != 0 {
 			ambe49[apos] = 1
 		} else {
 			ambe49[apos] = 0
 		}
+		// 'b' is 12 bits data.
 		if (b & MASK) != 0 {
 			ambe49[bpos] = 1
 		} else {
@@ -165,7 +216,9 @@ func NewVocoderFrameFromBits(bits [72]byte) *VocoderFrame {
 	}
 
 	vf := VocoderFrame{
-		DecodedBits: ambe49,
+		DecodedBits:     ambe49,
+		CorrectedErrors: totalErrors,
+		Uncorrectable:   uncorrectable,
 	}
 
 	return &vf
