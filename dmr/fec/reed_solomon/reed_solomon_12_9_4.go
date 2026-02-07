@@ -219,7 +219,7 @@ func ReedSolomon1294CalcSyndrome(data []byte, syndrome *ReedSolomon1294) error {
 	}
 
 	for j = 0; j < 3; j++ {
-		for i = 0; i < uint8(len(data)); i++ { //nolint:gosec // len(data) max 12
+		for i = 0; i < uint8(len(data)); i++ {
 			syndrome[j] = data[i] ^ ReedSolomon1294GaloisMul(rs_12_9_galois_exp_table[j+1], syndrome[j])
 		}
 	}
@@ -402,7 +402,7 @@ func ReedSolomon1294FindRootsInto(locator *ReedSolomon1294, buf []uint8) []uint8
 		}
 
 		if sum == 0 {
-			roots = append(roots, uint8(255-r)) //nolint:gosec // r range 1..255
+			roots = append(roots, uint8(255-r))
 		}
 	}
 
@@ -446,8 +446,8 @@ func ReedSolomon1294CalcWithScratch(
 			}
 
 			if int(lCur) < int(n)-int(k) {
-				l2 = uint8(int(n) - int(k))  //nolint:gosec // bounds limited by RS degrees
-				k = int8(int(n) - int(lCur)) //nolint:gosec // small degree values only
+				l2 = uint8(int(n) - int(k))
+				k = int8(int(n) - int(lCur))
 				for i = 0; i < RS_12_9_POLY_MAXDEG; i++ {
 					D[i] = ReedSolomon1294GaloisMul(locator[i], ReedSolomon1294GaloisInv(d))
 				}
