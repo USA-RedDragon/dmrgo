@@ -422,4 +422,3 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 
 	return data
 }
-
