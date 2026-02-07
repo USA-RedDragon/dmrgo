@@ -223,3 +223,52 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []byte, dataType layer2Eleme
 
 	return true
 }
+
+// Encode serializes the FullLinkControl PDU into 12 bytes (9 data + 3 CRC).
+func (flc *FullLinkControl) Encode() ([]byte, error) {
+	data := make([]byte, 9)
+
+	// Byte 0: PF(bit 7) + R(bit 6) + FLCO(bits 5-0)
+	if flc.ProtectFlag {
+		data[0] |= 0x80
+	}
+	// R is assumed 0
+	data[0] |= byte(flc.FLCO) & 0x3F
+
+	// Byte 1: FID
+	data[1] = byte(flc.FeatureSetID)
+
+	switch flc.FLCO {
+	case enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser:
+		// Byte 2: Service Options
+		data[2] = flc.ServiceOptions.ToByte()
+
+		// Bytes 3-5: Destination
+		var dst int
+		if flc.FLCO == enums.FLCOGroupVoiceChannelUser {
+			dst = flc.GroupAddress
+		} else {
+			dst = flc.TargetAddress
+		}
+		data[3] = byte(dst >> 16)
+		data[4] = byte(dst >> 8)
+		data[5] = byte(dst)
+
+		// Bytes 6-8: Source Address
+		src := flc.SourceAddress
+		data[6] = byte(src >> 16)
+		data[7] = byte(src >> 8)
+		data[8] = byte(src)
+
+	default:
+		return nil, fmt.Errorf("FullLinkControl Encode: unsupported FLCO %s", enums.FLCOToName(flc.FLCO))
+	}
+
+	// Calculate CRC (Reed-Solomon 12,9)
+	encoded, err := reedSolomon.Encode(data)
+	if err != nil {
+		return nil, err
+	}
+	// encoded is 12 bytes (9 data + 3 parity)
+	return encoded, nil
+}

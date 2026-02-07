@@ -39,3 +39,40 @@ func NewServiceOptionsFromBits(infoBits [8]byte) *ServiceOptions {
 
 	return &so
 }
+
+func (so *ServiceOptions) ToByte() byte {
+	var b byte
+	if so.IsEmergency {
+		b |= 1 << 7
+	}
+	if so.IsPrivacy {
+		b |= 1 << 6
+	}
+	if so.Reserved[0] == 1 {
+		b |= 1 << 5
+	}
+	if so.Reserved[1] == 1 {
+		b |= 1 << 4
+	}
+	if so.IsBroadcast {
+		b |= 1 << 3
+	}
+	if so.IsOpenVoiceCallMode {
+		b |= 1 << 2
+	}
+
+	// Priority mapping from NewServiceOptionsFromBits:
+	// infoBits[6] (Bit 1) adds 1 -> Low bit
+	// infoBits[7] (Bit 0) adds 2 -> High bit
+
+	// Priority bit 0 (value 1) -> Bit 1 of byte
+	if so.PriorityLevel&1 != 0 {
+		b |= 1 << 1
+	}
+	// Priority bit 1 (value 2) -> Bit 0 of byte
+	if so.PriorityLevel&2 != 0 {
+		b |= 1
+	}
+
+	return b
+}
