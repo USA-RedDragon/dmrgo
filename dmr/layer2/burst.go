@@ -321,6 +321,37 @@ func (b *Burst) Encode() [33]byte {
 	return data
 }
 
+// PackEmbeddedSignallingData converts the 32-bit (unpacked) embedded signalling
+// data into a 4-byte packed array.
+func (b *Burst) PackEmbeddedSignallingData() [4]byte {
+	var data [4]byte
+	for i := 0; i < 32; i++ {
+		if b.EmbeddedSignallingData[i] == 1 {
+			data[i/8] |= 1 << (7 - (i % 8))
+		}
+	}
+	return data
+}
+
+// UnpackEmbeddedSignallingData populates the 32-bit (unpacked) embedded signalling
+// data from a byte slice. Only best-effort unpacking is performed up to 32 bits.
+func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
+	// Clear existing
+	b.EmbeddedSignallingData = [32]byte{}
+
+	if len(data) == 0 {
+		return
+	}
+
+	for i := 0; i < 32 && i < len(data)*8; i++ {
+		byteIdx := i / 8
+		bitIdx := 7 - (i % 8)
+		if byteIdx < len(data) && (data[byteIdx]>>bitIdx)&1 == 1 {
+			b.EmbeddedSignallingData[i] = 1
+		}
+	}
+}
+
 // BuildLCDataBurst builds a 33-byte LC data burst (e.g. for Voice Header or Terminator).
 func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8) [33]byte {
 	// Convert LC bytes to 96 info bits
