@@ -224,3 +224,75 @@ func NewVocoderFrameFromBits(bits [72]byte) VocoderFrame {
 		Uncorrectable:   uncorrectable,
 	}
 }
+
+// PackAMBEVoice packs 3 FEC-decoded VocoderFrames (each 49 bits) into
+// a 19-byte (152-bit) AMBE payload.
+//
+// Layout: frame0[49 bits] + 1 separator(0) + frame1[49 bits] + 1 separator(0) + frame2[49 bits] + 3 padding(0)
+func PackAMBEVoice(frames [3]VocoderFrame) [19]byte {
+	var bits [152]bool
+
+	// Frame 0: bits 0-48
+	for i := 0; i < 49; i++ {
+		bits[i] = frames[0].DecodedBits[i] == 1
+	}
+	// Bit 49: separator (0)
+
+	// Frame 1: bits 50-98
+	for i := 0; i < 49; i++ {
+		bits[50+i] = frames[1].DecodedBits[i] == 1
+	}
+	// Bit 99: separator (0)
+
+	// Frame 2: bits 100-148
+	for i := 0; i < 49; i++ {
+		bits[100+i] = frames[2].DecodedBits[i] == 1
+	}
+	// Bits 149-151: padding (0)
+
+	// Pack bits into bytes (MSB first)
+	var data [19]byte
+	for i := 0; i < 152; i++ {
+		if bits[i] {
+			data[i/8] |= 1 << (7 - (i % 8))
+		}
+	}
+
+	return data
+}
+
+// UnpackAMBEVoice unpacks 19 bytes of AMBE payload into 3 VocoderFrames (49 decoded bits each).
+// This is the reverse of PackAMBEVoice.
+func UnpackAMBEVoice(data [19]byte) [3]VocoderFrame {
+	// Unpack bytes to bits (MSB first)
+	var bits [152]bool
+	for i := 0; i < 152; i++ {
+		bits[i] = (data[i/8]>>(7-(i%8)))&1 == 1
+	}
+
+	var frames [3]VocoderFrame
+
+	// Frame 0: bits 0-48
+	for i := 0; i < 49; i++ {
+		if bits[i] {
+			frames[0].DecodedBits[i] = 1
+		}
+	}
+
+	// Frame 1: bits 50-98
+	for i := 0; i < 49; i++ {
+		if bits[50+i] {
+			frames[1].DecodedBits[i] = 1
+		}
+	}
+
+	// Frame 2: bits 100-148
+	for i := 0; i < 49; i++ {
+		if bits[100+i] {
+			frames[2].DecodedBits[i] = 1
+		}
+	}
+
+	return frames
+}
+

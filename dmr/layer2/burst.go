@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 	trellis34 "github.com/USA-RedDragon/dmrgo/dmr/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu"
@@ -319,3 +320,75 @@ func (b *Burst) Encode() [33]byte {
 	}
 	return data
 }
+
+// BuildLCDataBurst builds a 33-byte LC data burst (e.g. for Voice Header or Terminator).
+func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8) [33]byte {
+	// Convert LC bytes to 96 info bits
+	var infoBits [96]byte
+	for i := 0; i < 12; i++ {
+		for j := 0; j < 8; j++ {
+			if (lcBytes[i]>>(7-j))&1 == 1 {
+				infoBits[i*8+j] = 1
+			}
+		}
+	}
+
+	// BPTC(196,96) encode
+	encoded := bptc.Encode(infoBits)
+
+	// Build the 264-bit burst:
+	// bits[0:97]   — first 98 data bits
+	// bits[98:107]  — slot type (first 10 bits)
+	// bits[108:155] — SYNC pattern (48 bits)
+	// bits[156:165] — slot type (last 10 bits)
+	// bits[166:263] — last 98 data bits
+	var bitData [264]bool
+
+	// Data part 1: encoded[0:97] → bits[0:97]
+	for i := 0; i < 98; i++ {
+		bitData[i] = encoded[i] == 1
+	}
+
+	// Data part 2: encoded[98:195] → bits[166:263]
+	for i := 0; i < 98; i++ {
+		bitData[166+i] = encoded[98+i] == 1
+	}
+
+	// Slot Type: encode color code (0) + data type
+	inputByte := byte(colorCode&0xF)<<4 | byte(dataType&0xF)
+	slotTypeBits := golay.Encode(inputByte)
+
+	for i := 0; i < 10; i++ {
+		bitData[98+i] = slotTypeBits[i] == 1
+	}
+	for i := 0; i < 10; i++ {
+		bitData[156+i] = slotTypeBits[10+i] == 1
+	}
+
+	// SYNC pattern: use BS-sourced data or MS-sourced data
+	var syncPattern enums.SyncPattern
+	switch dataType {
+	case elements.DataTypeVoiceLCHeader:
+		syncPattern = enums.BsSourcedData
+	case elements.DataTypeTerminatorWithLC:
+		syncPattern = enums.BsSourcedData
+	default:
+		syncPattern = enums.BsSourcedData
+	}
+
+	syncVal := int64(syncPattern)
+	for i := 0; i < 48; i++ {
+		bitData[108+i] = ((syncVal >> (47 - i)) & 1) == 1
+	}
+
+	// Pack bits to bytes
+	var data [33]byte
+	for i := 0; i < 264; i++ {
+		if bitData[i] {
+			data[i/8] |= 1 << (7 - (i % 8))
+		}
+	}
+
+	return data
+}
+

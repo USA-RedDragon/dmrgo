@@ -590,3 +590,30 @@ func Golay_20_8_Check(bits [20]byte) bool {
 	}
 	return true
 }
+
+// Encode encodes an 8-bit input into a 20-bit Golay(20,8,7) codeword.
+// The input byte contains the 8 data bits.
+// The output array contains 20 bits (values 0 or 1).
+func Encode(data byte) [20]byte {
+	var bits [20]byte
+
+	// Extract data bits
+	for i := 0; i < 8; i++ {
+		if (data>>(7-i))&1 == 1 {
+			bits[i] = 1
+		}
+	}
+
+	// Calculate parity
+	// Note: Golay_20_8_Parity takes [8]byte where each byte is 0 or 1
+	var dataBits [8]byte
+	copy(dataBits[:], bits[:8])
+	parity := Golay_20_8_Parity(dataBits)
+
+	// Fill parity bits
+	for i := 0; i < 12; i++ {
+		bits[8+i] = parity[i]
+	}
+
+	return bits
+}

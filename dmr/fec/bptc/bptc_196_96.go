@@ -188,3 +188,78 @@ func hamming_correct(bits [196]byte) ([196]byte, int, bool) {
 
 	return corrected, totalErrors, uncorrectable
 }
+
+// Encode encodes 96 data bits using BPTC(196,96) interleaving with Hamming FEC.
+func Encode(data [96]byte) [196]byte {
+	var grid [196]byte
+
+	// Place data into the grid
+	dataIdx := 0
+
+	// Row 0: indices 3..10
+	for i := 3; i <= 10; i++ {
+		grid[0*15+i] = data[dataIdx]
+		dataIdx++
+	}
+
+	// Rows 1..8
+	for j := 1; j < 9; j++ {
+		for i := 0; i <= 10; i++ {
+			grid[j*15+i+1] = data[dataIdx]
+			dataIdx++
+		}
+	}
+
+	// Compute Row Parity (Hamming 15,11) for Rows 0..8
+	for r := 0; r < 9; r++ {
+		calculateRowParity(&grid, r)
+	}
+
+	// Compute Column Parity (Hamming 13,9) for Columns 0..14
+	for c := 0; c < 15; c++ {
+		calculateColParity(&grid, c)
+	}
+
+	// Interleave using the deinterleave matrix in reverse
+	var encoded [196]byte
+	for i := 1; i < 197; i++ {
+		encoded[dm[i]] = grid[i-1]
+	}
+
+	return encoded
+}
+
+func calculateRowParity(grid *[196]byte, r int) {
+	k := r*15 + 1
+	var bits [15]byte
+	for a := 0; a < 11; a++ {
+		bits[a] = grid[k+a]
+	}
+
+	bits[11] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8]
+	bits[12] = bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9]
+	bits[13] = bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[7] ^ bits[9] ^ bits[10]
+	bits[14] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7] ^ bits[10]
+
+	for a := 11; a < 15; a++ {
+		grid[k+a] = bits[a]
+	}
+}
+
+func calculateColParity(grid *[196]byte, c int) {
+	k := c + 1
+	var bits [13]byte
+
+	for a := 0; a < 9; a++ {
+		bits[a] = grid[k+a*15]
+	}
+
+	bits[9] = bits[0] ^ bits[1] ^ bits[3] ^ bits[5] ^ bits[6]
+	bits[10] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7]
+	bits[11] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8]
+	bits[12] = bits[0] ^ bits[2] ^ bits[4] ^ bits[5] ^ bits[8]
+
+	for a := 9; a < 13; a++ {
+		grid[k+a*15] = bits[a]
+	}
+}
