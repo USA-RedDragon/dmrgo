@@ -19,7 +19,6 @@ type FullLinkControl struct {
 	FLCO         enums.FLCO
 	FeatureSetID enums.FeatureSetID
 
-	crc      []byte
 	ParityOK bool
 
 	// Table 7.1: Grp_V_Ch_Usr PDU content
@@ -260,7 +259,12 @@ func (flc *FullLinkControl) Encode() ([]byte, error) {
 		data[7] = byte(src >> 8)
 		data[8] = byte(src)
 
-	default:
+	case enums.FLCOTalkerAliasHeader,
+		enums.FLCOTalkerAliasBlock1,
+		enums.FLCOTalkerAliasBlock2,
+		enums.FLCOTalkerAliasBlock3,
+		enums.FLCOGPSInfo,
+		enums.FLCOTerminatorDataLinkControl:
 		return nil, fmt.Errorf("FullLinkControl Encode: unsupported FLCO %s", enums.FLCOToName(flc.FLCO))
 	}
 

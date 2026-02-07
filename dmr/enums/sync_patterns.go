@@ -3,6 +3,8 @@ package enums
 // ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.1 Synchronization (SYNC) PDU - Table 9.2: SYNC patterns
 type SyncPattern int64
 
+const embeddedSignallingName = "Embedded Signalling"
+
 const (
 	BsSourcedVoice            SyncPattern = 0x755FD7DF75F7
 	BsSourcedData             SyncPattern = 0xDFF57D75DF5D
@@ -75,10 +77,10 @@ func SyncPatternToName(sync SyncPattern) string {
 	case Tdma2Data:
 		return "TDMA2 data"
 	case EmbeddedSignallingPattern:
-		return "Embedded Signalling"
+		return embeddedSignallingName
 	case Reserved:
 		return "Reserved"
 	default:
-		return "Embedded Signalling"
+		return embeddedSignallingName
 	}
 }

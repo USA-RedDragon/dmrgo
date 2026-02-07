@@ -386,7 +386,7 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 	}
 
 	// Slot Type: encode color code (0) + data type
-	inputByte := byte(colorCode&0xF)<<4 | byte(dataType&0xF)
+	inputByte := colorCode&0xF<<4 | byte(dataType&0xF)
 	slotTypeBits := golay.Encode(inputByte)
 
 	for i := 0; i < 10; i++ {
@@ -403,7 +403,17 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 		syncPattern = enums.BsSourcedData
 	case elements.DataTypeTerminatorWithLC:
 		syncPattern = enums.BsSourcedData
-	default:
+	case elements.DataTypePIHeader,
+		elements.DataTypeCSBK,
+		elements.DataTypeMBCHeader,
+		elements.DataTypeMBCContinuation,
+		elements.DataTypeDataHeader,
+		elements.DataTypeRate12,
+		elements.DataTypeRate34,
+		elements.DataTypeIdle,
+		elements.DataTypeRate1,
+		elements.DataTypeUnifiedSingleBlock,
+		elements.DataTypeReserved:
 		syncPattern = enums.BsSourcedData
 	}
 

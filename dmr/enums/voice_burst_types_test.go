@@ -7,7 +7,7 @@ func TestVoiceBurstTypeToName(t *testing.T) {
 		burstType VoiceBurstType
 		expected  string
 	}{
-		{VoiceBurstUnknown, "Unknown"},
+		{VoiceBurstUnknown, voiceBurstUnknownName},
 		{VoiceBurstA, "A"},
 		{VoiceBurstB, "B"},
 		{VoiceBurstC, "C"},
@@ -27,7 +27,7 @@ func TestVoiceBurstTypeToName(t *testing.T) {
 
 func TestVoiceBurstTypeToName_InvalidReturnsUnknown(t *testing.T) {
 	got := VoiceBurstTypeToName(VoiceBurstType(999))
-	if got != "Unknown" {
-		t.Errorf("VoiceBurstTypeToName(999) = %q, want %q", got, "Unknown")
+	if got != voiceBurstUnknownName {
+		t.Errorf("VoiceBurstTypeToName(999) = %q, want %q", got, voiceBurstUnknownName)
 	}
 }

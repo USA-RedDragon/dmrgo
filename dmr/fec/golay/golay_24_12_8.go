@@ -14,7 +14,7 @@ func DecodeGolay24128(received uint32) (data uint16, errors int, uncorrectable b
 		dist := bits.OnesCount32(received ^ codeword)
 		if dist < minDist {
 			minDist = dist
-			bestData = uint16(d)
+			bestData = uint16(d) //nolint:gosec // d is a table index (0-4095), fits in uint16
 
 			// If perfect match, we can stop early
 			if dist == 0 {
