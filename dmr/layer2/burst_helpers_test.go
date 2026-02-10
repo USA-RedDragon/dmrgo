@@ -128,7 +128,10 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 		t.Errorf("BuildLCDataBurst returned %d bytes, want 33", len(result))
 	}
 
-	burst := layer2.NewBurstFromBytes(result)
+	burst, err := layer2.NewBurstFromBytes(result)
+	if err != nil {
+		t.Fatalf("NewBurstFromBytes failed: %v", err)
+	}
 	if burst.SyncPattern != enums.BsSourcedData {
 		t.Errorf("SyncPattern = %v, want BsSourcedData", burst.SyncPattern)
 	}
@@ -151,7 +154,10 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	copy(lcBytes[:], encoded)
 
 	result := layer2.BuildLCDataBurst(lcBytes, elements.DataTypeTerminatorWithLC, 0)
-	burst := layer2.NewBurstFromBytes(result)
+	burst, err := layer2.NewBurstFromBytes(result)
+	if err != nil {
+		t.Fatalf("NewBurstFromBytes failed: %v", err)
+	}
 	if burst.SyncPattern != enums.BsSourcedData {
 		t.Errorf("SyncPattern = %v, want BsSourcedData", burst.SyncPattern)
 	}
@@ -175,7 +181,11 @@ func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 
 	for cc := uint8(0); cc < 16; cc++ {
 		result := layer2.BuildLCDataBurst(lcBytes, elements.DataTypeVoiceLCHeader, cc)
-		burst := layer2.NewBurstFromBytes(result)
+		burst, err := layer2.NewBurstFromBytes(result)
+		if err != nil {
+			t.Fatalf("NewBurstFromBytes failed for color code %d: %v", cc, err)
+			continue
+		}
 		if !burst.HasSlotType {
 			t.Errorf("cc=%d: burst has no slot type", cc)
 			continue

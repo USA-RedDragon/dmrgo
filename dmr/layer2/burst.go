@@ -37,14 +37,14 @@ type Burst struct {
 }
 
 // NewBurstFromBytes creates a new Burst from the given bytes.
-func NewBurstFromBytes(data [33]byte) *Burst {
+func NewBurstFromBytes(data [33]byte) (*Burst, error) {
 	burst := &Burst{}
-	burst.DecodeFromBytes(data)
-	return burst
+	err := burst.DecodeFromBytes(data)
+	return burst, err
 }
 
 // DecodeFromBytes populates the burst in place, enabling zero-allocation decoding when reusing a Burst.
-func (b *Burst) DecodeFromBytes(data [33]byte) {
+func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	*b = Burst{}
 	b.bitData = bytesToBits(data)
 
@@ -63,12 +63,14 @@ func (b *Burst) DecodeFromBytes(data [33]byte) {
 
 	if !b.IsData {
 		b.VoiceData = parseVoiceBits(b.bitData)
-		return
+		return nil
 	}
 
 	bBits := extractDataBits(b.bitData)
 	b.deinterleavedInfoLen, b.PayloadCorrectedErrors, b.PayloadUncorrectable = b.deinterleave(bBits, b.SlotType.DataType)
-	b.Data = b.extractData()
+	var err error
+	b.Data, err = b.extractData()
+	return err
 }
 
 func bytesToBits(data [33]byte) [264]bool {
@@ -230,9 +232,9 @@ func (b *Burst) ToString() string {
 	return ret
 }
 
-func (b *Burst) extractData() elements.Data {
+func (b *Burst) extractData() (elements.Data, error) {
 	if !b.HasSlotType || b.SlotType.DataType == elements.DataTypeReserved {
-		return nil
+		return nil, fmt.Errorf("burst does not have valid slot type for data extraction")
 	}
 
 	dt := b.SlotType.DataType
@@ -240,39 +242,39 @@ func (b *Burst) extractData() elements.Data {
 	switch dt {
 	case elements.DataTypeCSBK:
 		// TODO: implement CSBK parsing
-		return nil
+		return nil, fmt.Errorf("todo: CSBK parsing not implemented")
 	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
 		if b.fullLinkControl.DecodeFromBits(infoBits, dt) {
-			return &b.fullLinkControl
+			return &b.fullLinkControl, nil
 		}
-		return nil
+		return nil, fmt.Errorf("failed to decode full link control from bits")
 	case elements.DataTypePIHeader:
 		// TODO: implement PI header parsing
-		return nil
+		return nil, fmt.Errorf("todo: PI header not implemented")
 	case elements.DataTypeDataHeader:
 		// TODO: implement data header parsing
-		return nil
+		return nil, fmt.Errorf("todo: data header parsing not implemented")
 	case elements.DataTypeRate34:
 		// TODO: implement rate 3/4 data parsing
-		return nil
+		return nil, fmt.Errorf("todo: rate 3/4 data parsing not implemented")
 	case elements.DataTypeRate12:
 		// TODO: implement rate 1/2 data parsing
-		return nil
+		return nil, fmt.Errorf("todo: rate 1/2 data parsing not implemented")
 	case elements.DataTypeRate1:
 		// TODO: implement rate 1 data parsing
-		return nil
+		return nil, fmt.Errorf("todo: rate 1 data parsing not implemented")
 	case elements.DataTypeMBCHeader, elements.DataTypeMBCContinuation:
 		// TODO: implement MBC parsing
-		return nil
+		return nil, fmt.Errorf("todo: MBC parsing not implemented")
 	case elements.DataTypeIdle:
-		return nil
+		return nil, nil
 	case elements.DataTypeUnifiedSingleBlock:
 		// TODO: implement unified single block parsing
-		return nil
+		return nil, fmt.Errorf("todo: unified single block parsing not implemented")
 	case elements.DataTypeReserved:
-		return nil
+		return nil, fmt.Errorf("todo: reserved data type parsing not implemented")
 	default:
-		return nil
+		return nil, fmt.Errorf("todo: unhandled data type parsing not implemented")
 	}
 }
 

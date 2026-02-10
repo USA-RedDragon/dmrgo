@@ -32,7 +32,11 @@ var EXAMPLE_DMR_SMS_BURSTS = [DMR_SMS_BURST_COUNT][DMR_BURST_SIZE]byte{
 func main() {
     for _, rawBurst := range EXAMPLE_DMR_PARROT_KERCHUNK_BURSTS {
         timeStarted := time.Now()
-        burst := layer2.NewBurstFromBytes(rawBurst)
+        burst, err := layer2.NewBurstFromBytes(rawBurst)
+        if err != nil {
+            fmt.Printf("Error decoding burst: %v\n", err)
+            continue
+        }
         timeElapsed := time.Since(timeStarted)
         fmt.Printf("%s: %v\n", enums.SyncPatternToName(burst.SyncPattern), burst.ToString())
         fmt.Printf("Took %s to decode burst\n", timeElapsed)
@@ -42,7 +46,11 @@ func main() {
 
     for _, rawBurst := range EXAMPLE_DMR_SMS_BURSTS {
         timeStarted := time.Now()
-        burst := layer2.NewBurstFromBytes(rawBurst)
+        burst, err := layer2.NewBurstFromBytes(rawBurst)
+        if err != nil {
+            fmt.Printf("Error decoding burst: %v\n", err)
+            continue
+        }
         timeElapsed := time.Since(timeStarted)
         fmt.Printf("%s: %v\n", enums.SyncPatternToName(burst.SyncPattern), burst.ToString())
         fmt.Printf("Took %s to decode burst\n", timeElapsed)

@@ -41,7 +41,10 @@ func TestBurst_Encode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			bursts := loadBursts(t, tt.file)
 			for i, data := range bursts {
-				burst := layer2.NewBurstFromBytes(data)
+				burst, err := layer2.NewBurstFromBytes(data)
+				if err != nil {
+					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
+				}
 
 				// Skip Data bursts encoding test for now until data encoding is implemented
 				if burst.IsData {
@@ -54,7 +57,10 @@ func TestBurst_Encode(t *testing.T) {
 				// Verify stability: Encode(Decode(encoded)) == encoded
 				// This handles cases where the input file has invalid parity/FEC bits (captured data)
 				// which are "fixed" by the first Encode().
-				burst2 := layer2.NewBurstFromBytes(encoded)
+				burst2, err := layer2.NewBurstFromBytes(encoded)
+				if err != nil {
+					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
+				}
 				encoded2 := burst2.Encode()
 
 				if !bytes.Equal(encoded[:], encoded2[:]) {
@@ -84,7 +90,10 @@ func benchmarkDecode(b *testing.B, file string) {
 	var burst layer2.Burst
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		burst.DecodeFromBytes(bursts[i%len(bursts)])
+		err := burst.DecodeFromBytes(bursts[i%len(bursts)])
+		if err != nil {
+			b.Fatalf("DecodeFromBytes failed: %v", err)
+		}
 	}
 }
 
@@ -99,7 +108,11 @@ func benchmarkEncode(b *testing.B, file string) {
 	// Pre-decode bursts
 	decodedBursts := make([]*layer2.Burst, 0, len(bursts))
 	for _, d := range bursts {
-		decodedBursts = append(decodedBursts, layer2.NewBurstFromBytes(d))
+		burst, err := layer2.NewBurstFromBytes(d)
+		if err != nil {
+			b.Fatalf("NewBurstFromBytes failed: %v", err)
+		}
+		decodedBursts = append(decodedBursts, burst)
 	}
 
 	b.ResetTimer()
