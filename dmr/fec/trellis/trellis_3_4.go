@@ -192,3 +192,60 @@ func (t *Trellis34) tribitsToBits(tribits [49]byte) [144]byte {
 
 	return bits
 }
+
+// reverseConstellationPoints maps constellation point index to (dibit1, dibit2) pair.
+//
+//nolint:gochecknoglobals // static encoder lookup table
+var reverseConstellationPoints = [16][2]int8{
+	{1, -1},  // 0
+	{-1, -1}, // 1
+	{3, -3},  // 2
+	{-3, -3}, // 3
+	{-3, -1}, // 4
+	{3, -1},  // 5
+	{-1, -3}, // 6
+	{1, -3},  // 7
+	{-3, 3},  // 8
+	{3, 3},   // 9
+	{-1, 1},  // 10
+	{1, 1},   // 11
+	{1, 3},   // 12
+	{-1, 3},  // 13
+	{3, 1},   // 14
+	{-3, 1},  // 15
+}
+
+// Encode encodes 144 data bits using Trellis 3/4 rate coding, producing 196 interleaved bits.
+func (t *Trellis34) Encode(data [144]byte) [196]byte {
+	// Step 1: Data bits to tribits (48 data tribits + 1 tail)
+	var tribits [49]byte
+	for i := 0; i < 48; i++ {
+		o := i * 3
+		tribits[i] = (data[o] << 2) | (data[o+1] << 1) | data[o+2]
+	}
+	tribits[48] = 0 // tail tribit to flush encoder back to state 0
+
+	// Step 2: Tribits to constellation points via encoder state machine
+	var points [49]byte
+	state := byte(0)
+	for i := 0; i < 49; i++ {
+		points[i] = encoderStateTransition[state*8+tribits[i]]
+		state = tribits[i]
+	}
+
+	// Step 3: Constellation points to dibits
+	var dibits [98]int8
+	for i := 0; i < 49; i++ {
+		dibits[i*2] = reverseConstellationPoints[points[i]][0]
+		dibits[i*2+1] = reverseConstellationPoints[points[i]][1]
+	}
+
+	// Step 4: Interleave (reverse of deinterleave)
+	var interleavedDibits [98]int8
+	for i := 0; i < 98; i++ {
+		interleavedDibits[i] = dibits[interleaveMatrix[i]]
+	}
+
+	// Step 5: Dibits to bits
+	return t.dibitsToBits(interleavedDibits)
+}

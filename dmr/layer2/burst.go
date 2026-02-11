@@ -295,8 +295,28 @@ func (b *Burst) extractData() (elements.Data, error) {
 func (b *Burst) Encode() [33]byte {
 	var bitData [264]bool
 
-	// Voice Data
-	if b.VoiceBurst != enums.VoiceBurstUnknown || b.HasEmbeddedSignalling {
+	if b.IsData {
+		// Encode data payload
+		dataBits := b.encodeDataBits()
+		for i := 0; i < 98; i++ {
+			bitData[i] = dataBits[i] == 1
+		}
+		for i := 0; i < 98; i++ {
+			bitData[166+i] = dataBits[98+i] == 1
+		}
+
+		// Encode slot type
+		if b.HasSlotType {
+			slotBits := encodeSlotType(b.SlotType)
+			for i := 0; i < 10; i++ {
+				bitData[98+i] = slotBits[i] == 1
+			}
+			for i := 0; i < 10; i++ {
+				bitData[156+i] = slotBits[10+i] == 1
+			}
+		}
+	} else if b.VoiceBurst != enums.VoiceBurstUnknown || b.HasEmbeddedSignalling {
+		// Voice Data
 		voiceBits := b.VoiceData.Encode()
 		for i := 0; i < 108; i++ {
 			bitData[i] = voiceBits[i] == 1
@@ -334,6 +354,36 @@ func (b *Burst) Encode() [33]byte {
 		}
 	}
 	return data
+}
+
+func encodeSlotType(st pdu.SlotType) [20]byte {
+	inputByte := byte(st.ColorCode&0xF)<<4 | byte(st.DataType&0xF)
+	return golay.Encode(inputByte)
+}
+
+func (b *Burst) encodeDataBits() [196]byte {
+	switch b.SlotType.DataType {
+	case elements.DataTypeRate34:
+		var t trellis34.Trellis34
+		var data [144]byte
+		copy(data[:], b.deinterleavedInfoBits[:144])
+		return t.Encode(data)
+	case elements.DataTypeRate1:
+		var bits [196]byte
+		for i := 0; i < 96; i++ {
+			bits[i] = b.deinterleavedInfoBits[i]
+		}
+		// bits[96..99] are reserved (zero)
+		for i := 0; i < 96; i++ {
+			bits[100+i] = b.deinterleavedInfoBits[96+i]
+		}
+		return bits
+	default:
+		// BPTC(196,96) types
+		var infoBits [96]byte
+		copy(infoBits[:], b.deinterleavedInfoBits[:96])
+		return bptc.Encode(infoBits)
+	}
 }
 
 // PackEmbeddedSignallingData converts the 32-bit (unpacked) embedded signalling
