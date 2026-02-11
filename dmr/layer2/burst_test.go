@@ -49,12 +49,6 @@ func TestBurst_Encode(t *testing.T) {
 				}
 				t.Logf("burst: %v", burst.ToString())
 
-				// Skip Data bursts encoding test for now until data encoding is implemented
-				if burst.IsData {
-					// Optionally check if we can verify other properties
-					continue
-				}
-
 				encoded := burst.Encode()
 
 				// Verify stability: Encode(Decode(encoded)) == encoded
