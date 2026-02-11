@@ -99,8 +99,8 @@ func (b *BPTC19696) DeinterleaveDataBits(bits [196]byte) ([96]byte, int, bool) {
 
 	var i, j, k uint
 
-	for i = 1; i < 197; i++ {
-		deinterleavedBits[i-1] = bits[dm[i]]
+	for i = 0; i < 196; i++ {
+		deinterleavedBits[i] = bits[dm[i]]
 	}
 
 	correctedBits, errors, uncorrectable := hamming_correct(deinterleavedBits)
@@ -113,8 +113,8 @@ func (b *BPTC19696) DeinterleaveDataBits(bits [196]byte) ([96]byte, int, bool) {
 	}
 
 	// Extract data bits
-	for i, k = 3, 0; i < 11; i, k = i+1, k+1 {
-		temp[k] = deinterleavedBits[0*15+i]
+	for i, k = 4, 0; i <= 11; i, k = i+1, k+1 {
+		temp[k] = deinterleavedBits[i]
 	}
 	for j = 1; j < 9; j++ {
 		for i = 0; i < 11; i, k = i+1, k+1 {
@@ -132,57 +132,54 @@ func hamming_correct(bits [196]byte) ([196]byte, int, bool) {
 	uncorrectable := false
 	corrected := bits
 
-	// We run multiple passes? BPTC is iterative.
-	// For "Turbo" decoding we usually iterate.
-	// But the spec says: "The decoding process is performed by decoding the rows and columns iteratively."
-	// Let's do a few passes? Or just one pass of rows then cols?
-	// The problem mentions "brute force syndrome" previously which implies simple Hamming.
-	// Let's stick to Row then Column for now, as implemented before, but use the lookup table.
+	// columns first, then rows, up to 5 passes.
+	for pass := 0; pass < 5; pass++ {
+		fixing := false
 
-	// Run through each of the 9 rows containing data
-	for r := 0; r < 9; r++ {
-		k := r*15 + 1
-		for a := 0; a < 15; a++ {
-			row[a] = corrected[k+a]
-		}
+		// Run through each of the 15 columns (Hamming 13,9,3)
+		for c := 0; c < 15; c++ {
+			pos := c + 1
+			for a := 0; a < 13; a++ {
+				col[a] = corrected[pos]
+				pos += 15
+			}
 
-		s := calculate_syndrome_15_11(row)
-		if s != 0 {
-			pos := hamming15_11_syndrome_table[s]
-			if pos != -1 {
-				corrected[k+pos] ^= 1
-				totalErrors++
-			} else {
-				// Multiple errors in row, uncorrectable by simple Hamming
-				// In Turbo codes, this might be fixed by column pass later.
-				// But we flag it potentially.
-				// For now, let's mark uncorrectable only if we can't fix it after all passes?
-				// But strict Hamming 15,11 is single error correcting.
-				uncorrectable = true // Tentative
+			s := calculate_syndrome_13_9(col)
+			if s != 0 {
+				bitPos := hamming13_9_syndrome_table[s]
+				if bitPos != -1 {
+					idx := (c + 1) + (bitPos * 15)
+					corrected[idx] ^= 1
+					totalErrors++
+					fixing = true
+				} else {
+					uncorrectable = true
+				}
 			}
 		}
-	}
 
-	// Run through each of the 15 columns
-	for c := 0; c < 15; c++ {
-		k := c + 1
-		for a := 0; a < 13; a, k = a+1, k+15 {
-			col[a] = corrected[k]
+		// Run through each of the 9 rows containing data (Hamming 15,11,3)
+		for r := 0; r < 9; r++ {
+			k := r*15 + 1
+			for a := 0; a < 15; a++ {
+				row[a] = corrected[k+a]
+			}
+
+			s := calculate_syndrome_15_11(row)
+			if s != 0 {
+				bitPos := hamming15_11_syndrome_table[s]
+				if bitPos != -1 {
+					corrected[k+bitPos] ^= 1
+					totalErrors++
+					fixing = true
+				} else {
+					uncorrectable = true
+				}
+			}
 		}
 
-		s := calculate_syndrome_13_9(col)
-		if s != 0 {
-			pos := hamming13_9_syndrome_table[s]
-			if pos != -1 {
-				// Re-calculate index in 'corrected' array
-				// col[pos] corresponds to which index?
-				// Loop logic: a=pos, k started at c+1 and incremented by 15 'pos' times.
-				idx := (c + 1) + (pos * 15)
-				corrected[idx] ^= 1
-				totalErrors++
-			} else {
-				uncorrectable = true
-			}
+		if !fixing {
+			break
 		}
 	}
 
@@ -196,9 +193,9 @@ func Encode(data [96]byte) [196]byte {
 	// Place data into the grid
 	dataIdx := 0
 
-	// Row 0: indices 3..10
-	for i := 3; i <= 10; i++ {
-		grid[0*15+i] = data[dataIdx]
+	// Row 0: indices 4..11 (positions 1-3 are R(0), R(1), R(2))
+	for i := 4; i <= 11; i++ {
+		grid[i] = data[dataIdx]
 		dataIdx++
 	}
 
@@ -222,8 +219,8 @@ func Encode(data [96]byte) [196]byte {
 
 	// Interleave using the deinterleave matrix in reverse
 	var encoded [196]byte
-	for i := 1; i < 197; i++ {
-		encoded[dm[i]] = grid[i-1]
+	for i := 0; i < 196; i++ {
+		encoded[dm[i]] = grid[i]
 	}
 
 	return encoded
