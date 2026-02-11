@@ -27,9 +27,10 @@ type Burst struct {
 
 	IsData                bool
 	Data                  elements.Data
-	fullLinkControl       pdu.FullLinkControl
-	csbk                  pdu.CSBK
-	dataHeader            pdu.DataHeader
+	fullLinkControl       *pdu.FullLinkControl
+	csbk                  *pdu.CSBK
+	dataHeader            *pdu.DataHeader
+	halfRateData          *pdu.Rate12Data
 	bitData               [264]bool
 	deinterleavedInfoBits [196]byte
 	deinterleavedInfoLen  int
@@ -243,29 +244,35 @@ func (b *Burst) extractData() (elements.Data, error) {
 	infoBits := b.deinterleavedInfoBits[:b.deinterleavedInfoLen]
 	switch dt {
 	case elements.DataTypeCSBK:
+		b.csbk = &pdu.CSBK{}
 		if b.csbk.DecodeFromBits(infoBits, dt) {
-			return &b.csbk, nil
+			return b.csbk, nil
 		}
 		return nil, fmt.Errorf("failed to decode CSBK from bits")
 	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
+		b.fullLinkControl = &pdu.FullLinkControl{}
 		if b.fullLinkControl.DecodeFromBits(infoBits, dt) {
-			return &b.fullLinkControl, nil
+			return b.fullLinkControl, nil
 		}
 		return nil, fmt.Errorf("failed to decode full link control from bits")
 	case elements.DataTypePIHeader:
 		// TODO: implement PI header parsing
 		return nil, fmt.Errorf("todo: PI header not implemented")
 	case elements.DataTypeDataHeader:
+		b.dataHeader = &pdu.DataHeader{}
 		if b.dataHeader.DecodeFromBits(infoBits, dt) {
-			return &b.dataHeader, nil
+			return b.dataHeader, nil
 		}
 		return nil, fmt.Errorf("failed to decode data header from bits")
 	case elements.DataTypeRate34:
 		// TODO: implement rate 3/4 data parsing
 		return nil, fmt.Errorf("todo: rate 3/4 data parsing not implemented")
 	case elements.DataTypeRate12:
-		// TODO: implement rate 1/2 data parsing
-		return nil, fmt.Errorf("todo: rate 1/2 data parsing not implemented")
+		b.halfRateData = &pdu.Rate12Data{}
+		if b.halfRateData.DecodeFromBits(infoBits, dt) {
+			return b.halfRateData, nil
+		}
+		return nil, fmt.Errorf("failed to decode rate 1/2 data from bits")
 	case elements.DataTypeRate1:
 		// TODO: implement rate 1 data parsing
 		return nil, fmt.Errorf("todo: rate 1 data parsing not implemented")
