@@ -28,6 +28,7 @@ type Burst struct {
 	IsData                bool
 	Data                  elements.Data
 	fullLinkControl       pdu.FullLinkControl
+	csbk                  pdu.CSBK
 	bitData               [264]bool
 	deinterleavedInfoBits [196]byte
 	deinterleavedInfoLen  int
@@ -241,8 +242,10 @@ func (b *Burst) extractData() (elements.Data, error) {
 	infoBits := b.deinterleavedInfoBits[:b.deinterleavedInfoLen]
 	switch dt {
 	case elements.DataTypeCSBK:
-		// TODO: implement CSBK parsing
-		return nil, fmt.Errorf("todo: CSBK parsing not implemented")
+		if b.csbk.DecodeFromBits(infoBits, dt) {
+			return &b.csbk, nil
+		}
+		return nil, fmt.Errorf("failed to decode CSBK from bits")
 	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
 		if b.fullLinkControl.DecodeFromBits(infoBits, dt) {
 			return &b.fullLinkControl, nil

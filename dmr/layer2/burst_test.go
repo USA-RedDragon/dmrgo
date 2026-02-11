@@ -45,6 +45,7 @@ func TestBurst_Encode(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
 				}
+				t.Logf("burst: %v", burst.ToString())
 
 				// Skip Data bursts encoding test for now until data encoding is implemented
 				if burst.IsData {
