@@ -257,7 +257,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 		return nil, fmt.Errorf("failed to decode full link control from bits")
 	case elements.DataTypePIHeader:
 		// TODO: implement PI header parsing
-		return nil, fmt.Errorf("todo: PI header not implemented")
+		return nil, nil
 	case elements.DataTypeDataHeader:
 		b.dataHeader = &pdu.DataHeader{}
 		if b.dataHeader.DecodeFromBits(infoBits, dt) {
