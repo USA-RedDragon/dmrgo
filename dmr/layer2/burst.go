@@ -29,6 +29,7 @@ type Burst struct {
 	Data                  elements.Data
 	fullLinkControl       pdu.FullLinkControl
 	csbk                  pdu.CSBK
+	dataHeader            pdu.DataHeader
 	bitData               [264]bool
 	deinterleavedInfoBits [196]byte
 	deinterleavedInfoLen  int
@@ -255,8 +256,10 @@ func (b *Burst) extractData() (elements.Data, error) {
 		// TODO: implement PI header parsing
 		return nil, fmt.Errorf("todo: PI header not implemented")
 	case elements.DataTypeDataHeader:
-		// TODO: implement data header parsing
-		return nil, fmt.Errorf("todo: data header parsing not implemented")
+		if b.dataHeader.DecodeFromBits(infoBits, dt) {
+			return &b.dataHeader, nil
+		}
+		return nil, fmt.Errorf("failed to decode data header from bits")
 	case elements.DataTypeRate34:
 		// TODO: implement rate 3/4 data parsing
 		return nil, fmt.Errorf("todo: rate 3/4 data parsing not implemented")
