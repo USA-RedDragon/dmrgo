@@ -8,7 +8,7 @@ import (
 
 type CSBKOpcode byte
 
-var (
+const (
 	CSBKBSOutboundActivationPDU                 CSBKOpcode = 0b00111000
 	CSBKUnitToUnitVoiceServiceRequestPDU        CSBKOpcode = 0b00000100
 	CSBKUnitToUnitVoiceServiceAnswerResponsePDU CSBKOpcode = 0b00000101
