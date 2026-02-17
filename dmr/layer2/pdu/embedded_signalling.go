@@ -3,6 +3,7 @@ package pdu
 import (
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	quadraticResidue "github.com/USA-RedDragon/dmrgo/dmr/fec/quadratic_residue"
 )
@@ -17,7 +18,7 @@ type EmbeddedSignalling struct {
 	Uncorrectable                      bool
 }
 
-func NewEmbeddedSignallingFromBits(data [16]byte) EmbeddedSignalling {
+func NewEmbeddedSignallingFromBits(data [16]bit.Bit) EmbeddedSignalling {
 	es := EmbeddedSignalling{}
 
 	corrected, errs, uncorrectable := quadraticResidue.Decode(data)
@@ -50,8 +51,8 @@ func NewEmbeddedSignallingFromBits(data [16]byte) EmbeddedSignalling {
 	return es
 }
 
-func (es *EmbeddedSignalling) Encode() [16]byte {
-	var data [16]byte
+func (es *EmbeddedSignalling) Encode() [16]bit.Bit {
+	var data [16]bit.Bit
 
 	// Color Code (4 bits)
 	for i := 0; i < 4; i++ {
@@ -75,7 +76,7 @@ func (es *EmbeddedSignalling) Encode() [16]byte {
 	}
 
 	// Parity (9 bits)
-	var shortData [7]byte
+	var shortData [7]bit.Bit
 	copy(shortData[:], data[:7])
 	parity := quadraticResidue.ParityBits(shortData)
 

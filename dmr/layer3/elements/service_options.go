@@ -1,12 +1,16 @@
 package elements
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+)
 
 // ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.2.1  Service Options
 type ServiceOptions struct {
 	IsEmergency         bool
 	IsPrivacy           bool
-	Reserved            [2]byte
+	Reserved            [2]bit.Bit
 	IsBroadcast         bool
 	IsOpenVoiceCallMode bool
 	PriorityLevel       uint8
@@ -16,8 +20,8 @@ func (so *ServiceOptions) ToString() string {
 	return fmt.Sprintf("{ IsEmergency: %t, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d, IsPrivacy: %t }", so.IsEmergency, so.IsBroadcast, so.IsOpenVoiceCallMode, so.PriorityLevel, so.IsPrivacy)
 }
 
-func NewServiceOptionsFromBits(infoBits [8]byte) *ServiceOptions {
-	var reservedBits [2]byte
+func NewServiceOptionsFromBits(infoBits [8]bit.Bit) *ServiceOptions {
+	var reservedBits [2]bit.Bit
 
 	var priority uint8
 	if infoBits[6] == 1 {

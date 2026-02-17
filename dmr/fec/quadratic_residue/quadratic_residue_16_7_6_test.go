@@ -3,6 +3,8 @@ package quadratic_residue1676
 import (
 	"math/rand"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 )
 
 func TestQuadraticResidue1676Decode(t *testing.T) {
@@ -11,7 +13,7 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 
 	for i := 0; i < 1000; i++ {
 		// 1. Generate random data (7 bits)
-		var data [7]byte
+		var data [7]bit.Bit
 		for j := 0; j < 7; j++ {
 			if rand.Intn(2) == 1 { //nolint:gosec // pseudo-random adequate for fuzz-style test
 				data[j] = 1
@@ -20,7 +22,7 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 
 		// 2. Calculate Parity
 		parity := ParityBits(data)
-		var cw [16]byte
+		var cw [16]bit.Bit
 		copy(cw[:], data[:])
 		copy(cw[7:], parity[:])
 

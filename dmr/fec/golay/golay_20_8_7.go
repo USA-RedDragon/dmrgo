@@ -1,5 +1,7 @@
 package golay
 
+import "github.com/USA-RedDragon/dmrgo/dmr/bit"
+
 // Golay (20,8,7) Syndrome Table
 // Maps 12-bit syndrome to 20-bit error pattern.
 // 0xFFFFFFFF indicates uncorrectable.
@@ -521,9 +523,9 @@ var golay20_8_syndrome_table = [4096]uint32{
 }
 
 // ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.1 Golay (20,8,7)
-// This code works on byte arrays where each byte is 0 or 1.
-func Golay_20_8_Parity(bits [8]byte) [12]byte {
-	var p [12]byte
+// This code works on Bit arrays where each Bit is 0 or 1.
+func Golay_20_8_Parity(bits [8]bit.Bit) [12]bit.Bit {
+	var p [12]bit.Bit
 	p[0] = bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7]
 	p[1] = bits[1] ^ bits[2] ^ bits[4]
 	p[2] = bits[0] ^ bits[2] ^ bits[3] ^ bits[5]
@@ -539,10 +541,10 @@ func Golay_20_8_Parity(bits [8]byte) [12]byte {
 	return p
 }
 
-// DecodeGolay2087 decodes a 20-bit sequence (byte array of 0s and 1s)
+// DecodeGolay2087 decodes a 20-bit sequence (Bit array of 0s and 1s)
 // Returns corrected bits, error count, and uncorrectable flag.
-func DecodeGolay2087(bits [20]byte) ([20]byte, int, bool) {
-	var data [8]byte
+func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, int, bool) {
+	var data [8]bit.Bit
 	copy(data[:], bits[:8])
 
 	// Calculate syndrome
@@ -564,7 +566,7 @@ func DecodeGolay2087(bits [20]byte) ([20]byte, int, bool) {
 	}
 
 	// Apply correction
-	var corrected [20]byte
+	var corrected [20]bit.Bit
 	copy(corrected[:], bits[:])
 
 	errorsCorrected := 0
@@ -578,8 +580,8 @@ func DecodeGolay2087(bits [20]byte) ([20]byte, int, bool) {
 	return corrected, errorsCorrected, false
 }
 
-func Golay_20_8_Check(bits [20]byte) bool {
-	var dataBits [8]byte
+func Golay_20_8_Check(bits [20]bit.Bit) bool {
+	var dataBits [8]bit.Bit
 	copy(dataBits[:], bits[:8])
 
 	parity := Golay_20_8_Parity(dataBits)
@@ -594,8 +596,8 @@ func Golay_20_8_Check(bits [20]byte) bool {
 // Encode encodes an 8-bit input into a 20-bit Golay(20,8,7) codeword.
 // The input byte contains the 8 data bits.
 // The output array contains 20 bits (values 0 or 1).
-func Encode(data byte) [20]byte {
-	var bits [20]byte
+func Encode(data byte) [20]bit.Bit {
+	var bits [20]bit.Bit
 
 	// Extract data bits
 	for i := 0; i < 8; i++ {
@@ -605,8 +607,8 @@ func Encode(data byte) [20]byte {
 	}
 
 	// Calculate parity
-	// Note: Golay_20_8_Parity takes [8]byte where each byte is 0 or 1
-	var dataBits [8]byte
+	// Note: Golay_20_8_Parity takes [8]bit.Bit where each Bit is 0 or 1
+	var dataBits [8]bit.Bit
 	copy(dataBits[:], bits[:8])
 	parity := Golay_20_8_Parity(dataBits)
 

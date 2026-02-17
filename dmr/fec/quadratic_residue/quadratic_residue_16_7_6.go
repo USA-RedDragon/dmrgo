@@ -1,5 +1,7 @@
 package quadratic_residue1676
 
+import "github.com/USA-RedDragon/dmrgo/dmr/bit"
+
 // ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.2  Quadratic residue (16,7,6)
 
 // Quadratic Residue (16,7,6) Syndrome Table
@@ -75,11 +77,11 @@ var qr16_7_6_syndrome_table = [512]uint16{
 }
 
 type QuadraticResidue16_7_6 struct {
-	Data   [7]byte
-	Parity [9]byte
+	Data   [7]bit.Bit
+	Parity [9]bit.Bit
 }
 
-func NewQuadraticResidue16_7_6(bits [16]byte) *QuadraticResidue16_7_6 {
+func NewQuadraticResidue16_7_6(bits [16]bit.Bit) *QuadraticResidue16_7_6 {
 	qr := QuadraticResidue16_7_6{}
 	copy(qr.Data[:], bits[:7])
 	copy(qr.Parity[:], bits[7:16])
@@ -87,8 +89,8 @@ func NewQuadraticResidue16_7_6(bits [16]byte) *QuadraticResidue16_7_6 {
 	return &qr
 }
 
-func ParityBits(bits [7]byte) [9]byte {
-	parity := [9]byte{}
+func ParityBits(bits [7]bit.Bit) [9]bit.Bit {
+	parity := [9]bit.Bit{}
 
 	// Multiplying the generator matrix with the given data bits.
 	// See DMR AI spec. page 134.
@@ -105,8 +107,8 @@ func ParityBits(bits [7]byte) [9]byte {
 	return parity
 }
 
-func Check(bits [16]byte) bool {
-	var data [7]byte
+func Check(bits [16]bit.Bit) bool {
+	var data [7]bit.Bit
 	copy(data[:], bits[:7])
 
 	calcParity := ParityBits(data)
@@ -120,8 +122,8 @@ func Check(bits [16]byte) bool {
 
 // Decode corrects up to 2 bit errors in the 16-bit codeword.
 // Returns the corrected data words, number of errors corrected, and uncorrectable flag.
-func Decode(bits [16]byte) ([16]byte, int, bool) {
-	var data [7]byte
+func Decode(bits [16]bit.Bit) ([16]bit.Bit, int, bool) {
+	var data [7]bit.Bit
 	copy(data[:], bits[:7])
 
 	// Calculate syndrome
@@ -143,7 +145,7 @@ func Decode(bits [16]byte) ([16]byte, int, bool) {
 	}
 
 	// Apply correction (error pattern: 1 = flip)
-	var corrected [16]byte
+	var corrected [16]bit.Bit
 	copy(corrected[:], bits[:])
 
 	errorsCorrected := 0

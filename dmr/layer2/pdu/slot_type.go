@@ -3,6 +3,7 @@ package pdu
 import (
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
@@ -16,7 +17,7 @@ type SlotType struct {
 	Uncorrectable   bool
 }
 
-func NewSlotTypeFromBits(data [20]byte) SlotType {
+func NewSlotTypeFromBits(data [20]bit.Bit) SlotType {
 	st := SlotType{}
 
 	corrected, errs, uncorrectable := golay.DecodeGolay2087(data)

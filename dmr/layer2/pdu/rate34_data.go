@@ -3,6 +3,7 @@ package pdu
 import (
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
@@ -18,7 +19,7 @@ func (rtData *Rate34Data) ToString() string {
 	return fmt.Sprintf("Rate34Data{ dataType: %s }", elements.DataTypeToName(rtData.dataType))
 }
 
-func NewRate34DataFromBits(infoBits [96]byte) *Rate34Data {
+func NewRate34DataFromBits(infoBits [96]bit.Bit) *Rate34Data {
 	rtData := Rate34Data{}
 
 	return &rtData

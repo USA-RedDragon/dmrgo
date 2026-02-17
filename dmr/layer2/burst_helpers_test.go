@@ -3,6 +3,7 @@ package layer2_test
 import (
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
@@ -13,25 +14,25 @@ import (
 func TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip(t *testing.T) {
 	tests := []struct {
 		name string
-		data [32]byte
+		data [32]bit.Bit
 	}{
-		{"AllZeros", [32]byte{}},
-		{"AllOnes", func() [32]byte {
-			var d [32]byte
+		{"AllZeros", [32]bit.Bit{}},
+		{"AllOnes", func() [32]bit.Bit {
+			var d [32]bit.Bit
 			for i := range d {
 				d[i] = 1
 			}
 			return d
 		}()},
-		{"Alternating", func() [32]byte {
-			var d [32]byte
+		{"Alternating", func() [32]bit.Bit {
+			var d [32]bit.Bit
 			for i := range d {
-				d[i] = byte(i % 2)
+				d[i] = bit.Bit(i % 2)
 			}
 			return d
 		}()},
-		{"FirstHalfSet", func() [32]byte {
-			var d [32]byte
+		{"FirstHalfSet", func() [32]bit.Bit {
+			var d [32]bit.Bit
 			for i := 0; i < 16; i++ {
 				d[i] = 1
 			}
@@ -74,7 +75,7 @@ func TestBurst_UnpackEmbeddedSignallingData_SingleByte(t *testing.T) {
 	burst := &layer2.Burst{}
 	burst.UnpackEmbeddedSignallingData([]byte{0xA5}) // 10100101
 
-	expected := [8]byte{1, 0, 1, 0, 0, 1, 0, 1}
+	expected := [8]bit.Bit{1, 0, 1, 0, 0, 1, 0, 1}
 	for i := 0; i < 8; i++ {
 		if burst.EmbeddedSignallingData[i] != expected[i] {
 			t.Errorf("bit %d: got %d, want %d", i, burst.EmbeddedSignallingData[i], expected[i])

@@ -3,6 +3,7 @@ package pdu
 import (
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
@@ -19,7 +20,7 @@ func (rtData *Rate12Data) ToString() string {
 	return fmt.Sprintf("Rate12Data{ dataType: %s, Data: %v }", elements.DataTypeToName(rtData.dataType), rtData.Data)
 }
 
-func (rtData *Rate12Data) DecodeFromBits(infoBits []byte, dt elements.DataType) bool {
+func (rtData *Rate12Data) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool {
 	rtData.dataType = dt
 
 	if len(infoBits) != 96 {

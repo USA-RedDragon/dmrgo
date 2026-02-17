@@ -3,6 +3,7 @@ package layer2
 import (
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
@@ -23,7 +24,7 @@ type Burst struct {
 
 	HasEmbeddedSignalling  bool
 	EmbeddedSignalling     pdu.EmbeddedSignalling
-	EmbeddedSignallingData [32]byte
+	EmbeddedSignallingData [32]bit.Bit
 
 	IsData                bool
 	Data                  elements.Data
@@ -31,8 +32,8 @@ type Burst struct {
 	csbk                  *pdu.CSBK
 	dataHeader            *pdu.DataHeader
 	halfRateData          *pdu.Rate12Data
-	bitData               [264]bool
-	deinterleavedInfoBits [196]byte
+	bitData               [264]bit.Bit
+	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
 
 	PayloadCorrectedErrors int
@@ -49,7 +50,7 @@ func NewBurstFromBytes(data [33]byte) (*Burst, error) {
 // DecodeFromBytes populates the burst in place, enabling zero-allocation decoding when reusing a Burst.
 func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	*b = Burst{}
-	b.bitData = bytesToBits(data)
+	b.bitData = bit.UnpackBytesToBits264(data)
 
 	b.SyncPattern = extractSyncPattern(b.bitData)
 	b.IsData = isDataSync(b.SyncPattern)
@@ -76,21 +77,11 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	return err
 }
 
-func bytesToBits(data [33]byte) [264]bool {
-	var bits [264]bool
-	for i := 0; i < 264; i++ {
-		bits[i] = (data[i/8] & (1 << (7 - (i % 8)))) != 0
-	}
-	return bits
-}
-
-func extractSyncPattern(bitData [264]bool) enums.SyncPattern {
+func extractSyncPattern(bitData [264]bit.Bit) enums.SyncPattern {
 	syncBytes := [6]byte{}
 	for i := 0; i < 6; i++ {
 		for j := 0; j < 8; j++ {
-			if bitData[108+(i*8)+j] {
-				syncBytes[i] |= 1 << (7 - j)
-			}
+			syncBytes[i] |= byte(bitData[108+(i*8)+j]) << (7 - j)
 		}
 	}
 	return enums.SyncPatternFromBytes(syncBytes)
@@ -107,75 +98,39 @@ func classifyVoice(sync enums.SyncPattern) (enums.VoiceBurstType, bool) {
 	return enums.VoiceBurstUnknown, sync == enums.EmbeddedSignallingPattern
 }
 
-func parseEmbedded(bitData [264]bool) (pdu.EmbeddedSignalling, [32]byte) {
-	embeddedBits := [16]byte{}
-	for i := 0; i < 8; i++ {
-		if bitData[108+i] {
-			embeddedBits[i] = 1
-		}
-	}
-	for i := 0; i < 8; i++ {
-		if bitData[148+i] {
-			embeddedBits[8+i] = 1
-		}
-	}
+func parseEmbedded(bitData [264]bit.Bit) (pdu.EmbeddedSignalling, [32]bit.Bit) {
+	var embeddedBits [16]bit.Bit
+	copy(embeddedBits[:8], bitData[108:116])
+	copy(embeddedBits[8:], bitData[148:156])
 
 	embedded := pdu.NewEmbeddedSignallingFromBits(embeddedBits)
-	var embeddedData [32]byte
-	for i := 0; i < 32; i++ {
-		if bitData[116+i] {
-			embeddedData[i] = 1
-		}
-	}
+	var embeddedData [32]bit.Bit
+	copy(embeddedData[:], bitData[116:148])
 	return embedded, embeddedData
 }
 
-func parseSlotType(bitData [264]bool) pdu.SlotType {
-	slotBits := [20]byte{}
-	for i := 0; i < 10; i++ {
-		if bitData[98+i] {
-			slotBits[i] = 1
-		}
-	}
-	for i := 0; i < 10; i++ {
-		if bitData[156+i] {
-			slotBits[10+i] = 1
-		}
-	}
+func parseSlotType(bitData [264]bit.Bit) pdu.SlotType {
+	var slotBits [20]bit.Bit
+	copy(slotBits[:10], bitData[98:108])
+	copy(slotBits[10:], bitData[156:166])
 	return pdu.NewSlotTypeFromBits(slotBits)
 }
 
-func parseVoiceBits(bitData [264]bool) pdu.Vocoder {
-	var voiceBits [216]byte
-	for i := 0; i < 108; i++ {
-		if bitData[i] {
-			voiceBits[i] = 1
-		}
-	}
-	for i := 0; i < 108; i++ {
-		if bitData[156+i] {
-			voiceBits[108+i] = 1
-		}
-	}
+func parseVoiceBits(bitData [264]bit.Bit) pdu.Vocoder {
+	var voiceBits [216]bit.Bit
+	copy(voiceBits[:108], bitData[:108])
+	copy(voiceBits[108:], bitData[156:264])
 	return pdu.NewVocoderFromBits(voiceBits)
 }
 
-func extractDataBits(bitData [264]bool) [196]byte {
-	var bits [196]byte
-	for i := 0; i < 98; i++ {
-		if bitData[i] {
-			bits[i] = 1
-		}
-	}
-	for i := 0; i < 98; i++ {
-		if bitData[166+i] {
-			bits[98+i] = 1
-		}
-	}
+func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
+	var bits [196]bit.Bit
+	copy(bits[:98], bitData[:98])
+	copy(bits[98:], bitData[166:264])
 	return bits
 }
 
-func (b *Burst) deinterleave(bits [196]byte, dataType elements.DataType) (int, int, bool) {
+func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int, int, bool) {
 	switch dataType {
 	case elements.DataTypeRate34:
 		var t trellis34.Trellis34
@@ -263,7 +218,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 		if b.dataHeader.DecodeFromBits(infoBits, dt) {
 			return b.dataHeader, nil
 		}
-		return nil, fmt.Errorf("failed to decode data header from bits")
+		return nil, fmt.Errorf("failed to decode data header from bits: %v", b.dataHeader.ToString())
 	case elements.DataTypeRate34:
 		// TODO: implement rate 3/4 data parsing
 		return nil, fmt.Errorf("todo: rate 3/4 data parsing not implemented")
@@ -293,83 +248,58 @@ func (b *Burst) extractData() (elements.Data, error) {
 
 // Encode returns the encoded bytes of the burst.
 func (b *Burst) Encode() [33]byte {
-	var bitData [264]bool
+	var bitData [264]bit.Bit
 
 	if b.IsData {
 		// Encode data payload
 		dataBits := b.encodeDataBits()
-		for i := 0; i < 98; i++ {
-			bitData[i] = dataBits[i] == 1
-		}
-		for i := 0; i < 98; i++ {
-			bitData[166+i] = dataBits[98+i] == 1
-		}
+		copy(bitData[:98], dataBits[:98])
+		copy(bitData[166:264], dataBits[98:196])
 
 		// Encode slot type
 		if b.HasSlotType {
 			slotBits := encodeSlotType(b.SlotType)
-			for i := 0; i < 10; i++ {
-				bitData[98+i] = slotBits[i] == 1
-			}
-			for i := 0; i < 10; i++ {
-				bitData[156+i] = slotBits[10+i] == 1
-			}
+			copy(bitData[98:108], slotBits[:10])
+			copy(bitData[156:166], slotBits[10:20])
 		}
 	} else if b.VoiceBurst != enums.VoiceBurstUnknown || b.HasEmbeddedSignalling {
 		// Voice Data
 		voiceBits := b.VoiceData.Encode()
-		for i := 0; i < 108; i++ {
-			bitData[i] = voiceBits[i] == 1
-		}
-		for i := 0; i < 108; i++ {
-			bitData[156+i] = voiceBits[108+i] == 1
-		}
+		copy(bitData[:108], voiceBits[:108])
+		copy(bitData[156:264], voiceBits[108:216])
 	}
 
 	// Sync or Embedded Signalling
 	if b.HasEmbeddedSignalling {
 		esBits := b.EmbeddedSignalling.Encode()
-		for i := 0; i < 8; i++ {
-			bitData[108+i] = esBits[i] == 1
-		}
-		for i := 0; i < 32; i++ {
-			bitData[116+i] = b.EmbeddedSignallingData[i] == 1
-		}
-		for i := 0; i < 8; i++ {
-			bitData[148+i] = esBits[8+i] == 1
-		}
+		copy(bitData[108:116], esBits[:8])
+		copy(bitData[116:148], b.EmbeddedSignallingData[:])
+		copy(bitData[148:156], esBits[8:16])
 	} else {
 		// Encode Sync Pattern
 		syncVal := int64(b.SyncPattern)
 		for i := 0; i < 48; i++ {
-			bitData[108+i] = ((syncVal >> (47 - i)) & 1) == 1
+			bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 		}
 	}
 
-	// Helper to pack bits to bytes
-	var data [33]byte
-	for i := 0; i < 264; i++ {
-		if bitData[i] {
-			data[i/8] |= 1 << (7 - (i % 8))
-		}
-	}
-	return data
+	return bit.PackBits264(bitData)
 }
 
-func encodeSlotType(st pdu.SlotType) [20]byte {
+func encodeSlotType(st pdu.SlotType) [20]bit.Bit {
 	inputByte := byte(st.ColorCode&0xF)<<4 | byte(st.DataType&0xF)
 	return golay.Encode(inputByte)
 }
 
-func (b *Burst) encodeDataBits() [196]byte {
+func (b *Burst) encodeDataBits() [196]bit.Bit {
 	switch b.SlotType.DataType {
 	case elements.DataTypeRate34:
 		var t trellis34.Trellis34
-		var data [144]byte
+		var data [144]bit.Bit
 		copy(data[:], b.deinterleavedInfoBits[:144])
 		return t.Encode(data)
 	case elements.DataTypeRate1:
-		var bits [196]byte
+		var bits [196]bit.Bit
 		for i := 0; i < 96; i++ {
 			bits[i] = b.deinterleavedInfoBits[i]
 		}
@@ -380,7 +310,7 @@ func (b *Burst) encodeDataBits() [196]byte {
 		return bits
 	default:
 		// BPTC(196,96) types
-		var infoBits [96]byte
+		var infoBits [96]bit.Bit
 		copy(infoBits[:], b.deinterleavedInfoBits[:96])
 		return bptc.Encode(infoBits)
 	}
@@ -391,9 +321,7 @@ func (b *Burst) encodeDataBits() [196]byte {
 func (b *Burst) PackEmbeddedSignallingData() [4]byte {
 	var data [4]byte
 	for i := 0; i < 32; i++ {
-		if b.EmbeddedSignallingData[i] == 1 {
-			data[i/8] |= 1 << (7 - (i % 8))
-		}
+		data[i/8] |= byte(b.EmbeddedSignallingData[i]) << (7 - (i % 8))
 	}
 	return data
 }
@@ -402,7 +330,7 @@ func (b *Burst) PackEmbeddedSignallingData() [4]byte {
 // data from a byte slice. Only best-effort unpacking is performed up to 32 bits.
 func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
 	// Clear existing
-	b.EmbeddedSignallingData = [32]byte{}
+	b.EmbeddedSignallingData = [32]bit.Bit{}
 
 	if len(data) == 0 {
 		return
@@ -420,7 +348,7 @@ func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
 // BuildLCDataBurst builds a 33-byte LC data burst (e.g. for Voice Header or Terminator).
 func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8) [33]byte {
 	// Convert LC bytes to 96 info bits
-	var infoBits [96]byte
+	var infoBits [96]bit.Bit
 	for i := 0; i < 12; i++ {
 		for j := 0; j < 8; j++ {
 			if (lcBytes[i]>>(7-j))&1 == 1 {
@@ -438,28 +366,20 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 	// bits[108:155] — SYNC pattern (48 bits)
 	// bits[156:165] — slot type (last 10 bits)
 	// bits[166:263] — last 98 data bits
-	var bitData [264]bool
+	var bitData [264]bit.Bit
 
 	// Data part 1: encoded[0:97] → bits[0:97]
-	for i := 0; i < 98; i++ {
-		bitData[i] = encoded[i] == 1
-	}
+	copy(bitData[:98], encoded[:98])
 
 	// Data part 2: encoded[98:195] → bits[166:263]
-	for i := 0; i < 98; i++ {
-		bitData[166+i] = encoded[98+i] == 1
-	}
+	copy(bitData[166:264], encoded[98:196])
 
 	// Slot Type: encode color code (0) + data type
 	inputByte := colorCode&0xF<<4 | byte(dataType&0xF)
 	slotTypeBits := golay.Encode(inputByte)
 
-	for i := 0; i < 10; i++ {
-		bitData[98+i] = slotTypeBits[i] == 1
-	}
-	for i := 0; i < 10; i++ {
-		bitData[156+i] = slotTypeBits[10+i] == 1
-	}
+	copy(bitData[98:108], slotTypeBits[:10])
+	copy(bitData[156:166], slotTypeBits[10:20])
 
 	// SYNC pattern: use BS-sourced data or MS-sourced data
 	var syncPattern enums.SyncPattern
@@ -484,16 +404,8 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 
 	syncVal := int64(syncPattern)
 	for i := 0; i < 48; i++ {
-		bitData[108+i] = ((syncVal >> (47 - i)) & 1) == 1
+		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
 
-	// Pack bits to bytes
-	var data [33]byte
-	for i := 0; i < 264; i++ {
-		if bitData[i] {
-			data[i/8] |= 1 << (7 - (i % 8))
-		}
-	}
-
-	return data
+	return bit.PackBits264(bitData)
 }

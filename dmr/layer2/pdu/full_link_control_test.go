@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu"
@@ -11,8 +12,8 @@ import (
 )
 
 // buildInfoBits converts 12 packed bytes into 96 unpacked bits (one bit per byte).
-func buildInfoBits(packed [12]byte) []byte {
-	bits := make([]byte, 96)
+func buildInfoBits(packed [12]byte) []bit.Bit {
+	bits := make([]bit.Bit, 96)
 	for i := 0; i < 12; i++ {
 		for j := 0; j < 8; j++ {
 			if (packed[i]>>(7-j))&1 == 1 {
@@ -154,14 +155,14 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 
 func TestFullLinkControl_DecodeFromBits_InvalidLength(t *testing.T) {
 	var flc pdu.FullLinkControl
-	ok := flc.DecodeFromBits([]byte{0, 1, 2}, elements.DataTypeVoiceLCHeader)
+	ok := flc.DecodeFromBits([]bit.Bit{0, 1, 2}, elements.DataTypeVoiceLCHeader)
 	if ok {
 		t.Error("DecodeFromBits should return false for invalid length")
 	}
 }
 
 func TestFullLinkControl_DecodeFromBits_InvalidDataType(t *testing.T) {
-	infoBits := make([]byte, 96)
+	infoBits := make([]bit.Bit, 96)
 	var flc pdu.FullLinkControl
 	ok := flc.DecodeFromBits(infoBits, elements.DataTypeCSBK)
 	if ok {

@@ -1,11 +1,12 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/vocoder"
 )
 
 type Vocoder struct {
-	bits   [216]byte
+	bits   [216]bit.Bit
 	Frames [3]vocoder.VocoderFrame
 }
 
@@ -21,7 +22,7 @@ func (vc *Vocoder) ToString() string {
 	return ret
 }
 
-func NewVocoderFromBits(bits [216]byte) Vocoder {
+func NewVocoderFromBits(bits [216]bit.Bit) Vocoder {
 	vc := Vocoder{
 		Frames: getFrames(bits),
 		bits:   bits,
@@ -30,11 +31,11 @@ func NewVocoderFromBits(bits [216]byte) Vocoder {
 	return vc
 }
 
-func getFrames(bits [216]byte) [3]vocoder.VocoderFrame {
+func getFrames(bits [216]bit.Bit) [3]vocoder.VocoderFrame {
 	var frames [3]vocoder.VocoderFrame
 
 	for i := 0; i < 3; i++ {
-		var frameBits [72]byte
+		var frameBits [72]bit.Bit
 		copy(frameBits[:], bits[i*72:(i+1)*72])
 		frames[i] = vocoder.NewVocoderFrameFromBits(frameBits)
 	}
@@ -43,8 +44,8 @@ func getFrames(bits [216]byte) [3]vocoder.VocoderFrame {
 }
 
 // Encode returns the 216 bits of the vocoder PDU.
-func (vc *Vocoder) Encode() [216]byte {
-	var bits [216]byte
+func (vc *Vocoder) Encode() [216]bit.Bit {
+	var bits [216]bit.Bit
 	for i := 0; i < 3; i++ {
 		frameBits := vc.Frames[i].Encode()
 		copy(bits[i*72:(i+1)*72], frameBits[:])

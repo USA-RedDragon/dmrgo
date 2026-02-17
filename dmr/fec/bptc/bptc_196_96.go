@@ -1,6 +1,10 @@
 package bptc
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+)
 
 type BPTC19696 struct {
 }
@@ -73,8 +77,8 @@ var hamming13_9_syndrome_table = [16]int{
 	0,  // 1111
 }
 
-func calculate_syndrome_15_11(bits [15]byte) int {
-	var errs [4]byte
+func calculate_syndrome_15_11(bits [15]bit.Bit) int {
+	var errs [4]bit.Bit
 	errs[0] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
 	errs[1] = bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[12]
 	errs[2] = bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[7] ^ bits[9] ^ bits[10] ^ bits[13]
@@ -83,8 +87,8 @@ func calculate_syndrome_15_11(bits [15]byte) int {
 	return int(errs[0]) | int(errs[1])<<1 | int(errs[2])<<2 | int(errs[3])<<3
 }
 
-func calculate_syndrome_13_9(bits [13]byte) int {
-	var errs [4]byte
+func calculate_syndrome_13_9(bits [13]bit.Bit) int {
+	var errs [4]bit.Bit
 	errs[0] = bits[0] ^ bits[1] ^ bits[3] ^ bits[5] ^ bits[6] ^ bits[9]
 	errs[1] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7] ^ bits[10]
 	errs[2] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
@@ -93,9 +97,9 @@ func calculate_syndrome_13_9(bits [13]byte) int {
 }
 
 // DeinterleaveDataBits returns the deinterleaved data bits, error count, and uncorrectable flag
-func (b *BPTC19696) DeinterleaveDataBits(bits [196]byte) ([96]byte, int, bool) {
-	var deinterleavedBits [196]byte
-	var temp [96]byte
+func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, int, bool) {
+	var deinterleavedBits [196]bit.Bit
+	var temp [96]bit.Bit
 
 	var i, j, k uint
 
@@ -125,9 +129,9 @@ func (b *BPTC19696) DeinterleaveDataBits(bits [196]byte) ([96]byte, int, bool) {
 	return temp, errors, uncorrectable
 }
 
-func hamming_correct(bits [196]byte) ([196]byte, int, bool) {
-	var row [15]byte
-	var col [13]byte
+func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
+	var row [15]bit.Bit
+	var col [13]bit.Bit
 	totalErrors := 0
 	uncorrectable := false
 	corrected := bits
@@ -187,8 +191,8 @@ func hamming_correct(bits [196]byte) ([196]byte, int, bool) {
 }
 
 // Encode encodes 96 data bits using BPTC(196,96) interleaving with Hamming FEC.
-func Encode(data [96]byte) [196]byte {
-	var grid [196]byte
+func Encode(data [96]bit.Bit) [196]bit.Bit {
+	var grid [196]bit.Bit
 
 	// Place data into the grid
 	dataIdx := 0
@@ -218,7 +222,7 @@ func Encode(data [96]byte) [196]byte {
 	}
 
 	// Interleave using the deinterleave matrix in reverse
-	var encoded [196]byte
+	var encoded [196]bit.Bit
 	for i := 0; i < 196; i++ {
 		encoded[dm[i]] = grid[i]
 	}
@@ -226,9 +230,9 @@ func Encode(data [96]byte) [196]byte {
 	return encoded
 }
 
-func calculateRowParity(grid *[196]byte, r int) {
+func calculateRowParity(grid *[196]bit.Bit, r int) {
 	k := r*15 + 1
-	var bits [15]byte
+	var bits [15]bit.Bit
 	for a := 0; a < 11; a++ {
 		bits[a] = grid[k+a]
 	}
@@ -243,9 +247,9 @@ func calculateRowParity(grid *[196]byte, r int) {
 	}
 }
 
-func calculateColParity(grid *[196]byte, c int) {
+func calculateColParity(grid *[196]bit.Bit, c int) {
 	k := c + 1
-	var bits [13]byte
+	var bits [13]bit.Bit
 
 	for a := 0; a < 9; a++ {
 		bits[a] = grid[k+a*15]

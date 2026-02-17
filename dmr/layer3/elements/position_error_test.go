@@ -1,22 +1,26 @@
 package elements
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+)
 
 func TestNewPositionErrorFromBits_AllValues(t *testing.T) {
 	tests := []struct {
 		name     string
-		bits     [3]byte
+		bits     [3]bit.Bit
 		checkFn  func(pe *PositionError) bool
 		contains string
 	}{
-		{"LessThan2M", [3]byte{0, 0, 0}, func(pe *PositionError) bool { return pe.PositionLessThan2M }, "PositionLessThan2M"},
-		{"LessThan20M", [3]byte{0, 0, 1}, func(pe *PositionError) bool { return pe.PositionLessThan20M }, "PositionLessThan20M"},
-		{"LessThan200M", [3]byte{0, 1, 0}, func(pe *PositionError) bool { return pe.PositionLessThan200M }, "PositionLessThan200M"},
-		{"LessThan2KM", [3]byte{0, 1, 1}, func(pe *PositionError) bool { return pe.PositionLessThan2KM }, "PositionLessThan2KM"},
-		{"LessThan20KM", [3]byte{1, 0, 0}, func(pe *PositionError) bool { return pe.PositionLessThan20KM }, "PositionLessThan20KM"},
-		{"LessThan200KM", [3]byte{1, 0, 1}, func(pe *PositionError) bool { return pe.PositionLessThan200KM }, "PositionLessThan200KM"},
-		{"MoreThan200KM", [3]byte{1, 1, 0}, func(pe *PositionError) bool { return pe.PositionMoreThan200KM }, "PositionMoreThan200KM"},
-		{"Unknown", [3]byte{1, 1, 1}, func(pe *PositionError) bool { return pe.PositionErrorUnknown }, "PositionErrorUnknown"},
+		{"LessThan2M", [3]bit.Bit{0, 0, 0}, func(pe *PositionError) bool { return pe.PositionLessThan2M }, "PositionLessThan2M"},
+		{"LessThan20M", [3]bit.Bit{0, 0, 1}, func(pe *PositionError) bool { return pe.PositionLessThan20M }, "PositionLessThan20M"},
+		{"LessThan200M", [3]bit.Bit{0, 1, 0}, func(pe *PositionError) bool { return pe.PositionLessThan200M }, "PositionLessThan200M"},
+		{"LessThan2KM", [3]bit.Bit{0, 1, 1}, func(pe *PositionError) bool { return pe.PositionLessThan2KM }, "PositionLessThan2KM"},
+		{"LessThan20KM", [3]bit.Bit{1, 0, 0}, func(pe *PositionError) bool { return pe.PositionLessThan20KM }, "PositionLessThan20KM"},
+		{"LessThan200KM", [3]bit.Bit{1, 0, 1}, func(pe *PositionError) bool { return pe.PositionLessThan200KM }, "PositionLessThan200KM"},
+		{"MoreThan200KM", [3]bit.Bit{1, 1, 0}, func(pe *PositionError) bool { return pe.PositionMoreThan200KM }, "PositionMoreThan200KM"},
+		{"Unknown", [3]bit.Bit{1, 1, 1}, func(pe *PositionError) bool { return pe.PositionErrorUnknown }, "PositionErrorUnknown"},
 	}
 
 	for _, tt := range tests {
@@ -35,17 +39,17 @@ func TestNewPositionErrorFromBits_AllValues(t *testing.T) {
 func TestPositionError_ToString(t *testing.T) {
 	tests := []struct {
 		name     string
-		bits     [3]byte
+		bits     [3]bit.Bit
 		contains string
 	}{
-		{"LessThan2M", [3]byte{0, 0, 0}, "PositionLessThan2M"},
-		{"LessThan20M", [3]byte{0, 0, 1}, "PositionLessThan20M"},
-		{"LessThan200M", [3]byte{0, 1, 0}, "PositionLessThan200M"},
-		{"LessThan2KM", [3]byte{0, 1, 1}, "PositionLessThan2KM"},
-		{"LessThan20KM", [3]byte{1, 0, 0}, "PositionLessThan20KM"},
-		{"LessThan200KM", [3]byte{1, 0, 1}, "PositionLessThan200KM"},
-		{"MoreThan200KM", [3]byte{1, 1, 0}, "PositionMoreThan200KM"},
-		{"Unknown", [3]byte{1, 1, 1}, "PositionErrorUnknown"},
+		{"LessThan2M", [3]bit.Bit{0, 0, 0}, "PositionLessThan2M"},
+		{"LessThan20M", [3]bit.Bit{0, 0, 1}, "PositionLessThan20M"},
+		{"LessThan200M", [3]bit.Bit{0, 1, 0}, "PositionLessThan200M"},
+		{"LessThan2KM", [3]bit.Bit{0, 1, 1}, "PositionLessThan2KM"},
+		{"LessThan20KM", [3]bit.Bit{1, 0, 0}, "PositionLessThan20KM"},
+		{"LessThan200KM", [3]bit.Bit{1, 0, 1}, "PositionLessThan200KM"},
+		{"MoreThan200KM", [3]bit.Bit{1, 1, 0}, "PositionMoreThan200KM"},
+		{"Unknown", [3]bit.Bit{1, 1, 1}, "PositionErrorUnknown"},
 	}
 
 	for _, tt := range tests {
@@ -71,10 +75,10 @@ func TestPositionError_ToString(t *testing.T) {
 
 func TestPositionError_OnlyOneFlagSet(t *testing.T) {
 	for i := 0; i < 8; i++ {
-		bits := [3]byte{
-			byte((i >> 2) & 1),
-			byte((i >> 1) & 1),
-			byte(i & 1),
+		bits := [3]bit.Bit{
+			bit.Bit((i >> 2) & 1),
+			bit.Bit((i >> 1) & 1),
+			bit.Bit(i & 1),
 		}
 
 		pe := NewPositionErrorFromBits(bits)

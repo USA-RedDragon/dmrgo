@@ -3,6 +3,8 @@ package golay
 import (
 	"math/rand"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 )
 
 func TestGolay2087Decode(t *testing.T) {
@@ -15,7 +17,7 @@ func TestGolay2087Decode(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		// Generate random data
-		var data [8]byte
+		var data [8]bit.Bit
 		for j := 0; j < 8; j++ {
 			if rand.Intn(2) == 1 { //nolint:gosec // deterministic PRNG sufficient for tests
 				data[j] = 1
@@ -24,7 +26,7 @@ func TestGolay2087Decode(t *testing.T) {
 
 		// Calculate parity
 		parity := Golay_20_8_Parity(data)
-		var cw [20]byte
+		var cw [20]bit.Bit
 		copy(cw[:], data[:])
 		copy(cw[8:], parity[:])
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	reedSolomon "github.com/USA-RedDragon/dmrgo/dmr/fec/reed_solomon"
 	layer2Elements "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
@@ -37,7 +38,7 @@ type FullLinkControl struct {
 	TalkerAliasDataMSB    bool
 	// without msb talker alias header data are 48 bits (6 bytes)
 	TalkerAliasDataLen int
-	TalkerAliasData    [72]byte
+	TalkerAliasData    [72]bit.Bit
 	// Table 7.5: Talker Alias block Info PDU content
 	// talker alias blocks 1,2,3 use "talker_alias_data" field, since data are 56bits (7bytes)
 }
@@ -75,7 +76,7 @@ func (flc FullLinkControl) ToString() string {
 	return ret
 }
 
-func (flc *FullLinkControl) DecodeFromBits(infoBits []byte, dataType layer2Elements.DataType) bool {
+func (flc *FullLinkControl) DecodeFromBits(infoBits []bit.Bit, dataType layer2Elements.DataType) bool {
 	if len(infoBits) != 96 && len(infoBits) != 77 {
 		fmt.Println("FullLinkControl: invalid infoBits length: ", len(infoBits))
 		return false
@@ -114,7 +115,7 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []byte, dataType layer2Eleme
 		var b byte
 		for j := 0; j < 8; j++ {
 			b <<= 1
-			b |= infoBits[i+j]
+			b |= byte(infoBits[i+j])
 		}
 		infoBytes[i/8] = b
 	}
@@ -142,7 +143,7 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []byte, dataType layer2Eleme
 
 	switch FLCO {
 	case enums.FLCOUnitToUnitVoiceChannelUser:
-		var sizedBits [8]byte
+		var sizedBits [8]bit.Bit
 		copy(sizedBits[:], infoBits[16:24])
 		flc.ServiceOptions = *layer3Elements.NewServiceOptionsFromBits(sizedBits)
 		for i := 24; i < 48; i++ {
@@ -155,7 +156,7 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []byte, dataType layer2Eleme
 			flc.SourceAddress |= int(infoBits[i])
 		}
 	case enums.FLCOGroupVoiceChannelUser:
-		var sizedBits [8]byte
+		var sizedBits [8]bit.Bit
 		copy(sizedBits[:], infoBits[16:24])
 		flc.ServiceOptions = *layer3Elements.NewServiceOptionsFromBits(sizedBits)
 
@@ -170,7 +171,7 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []byte, dataType layer2Eleme
 		}
 
 	case enums.FLCOGPSInfo:
-		var sizedBits [3]byte
+		var sizedBits [3]bit.Bit
 		copy(sizedBits[:], infoBits[20:23])
 		flc.PositionError = *layer3Elements.NewPositionErrorFromBits(sizedBits)
 
@@ -190,7 +191,7 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []byte, dataType layer2Eleme
 		}
 		flc.Latitude *= float32(latInt)
 	case enums.FLCOTalkerAliasHeader:
-		var sizedBits [2]byte
+		var sizedBits [2]bit.Bit
 		copy(sizedBits[:], infoBits[16:18])
 		flc.TalkerAliasDataFormat = layer3Elements.NewTalkerAliasDataFormatFromBits(sizedBits)
 

@@ -1,5 +1,7 @@
 package trellis34
 
+import "github.com/USA-RedDragon/dmrgo/dmr/bit"
+
 // Trellis 3/4 State Transition Look-Up Table
 // Maps [CurrentState][ReceivedSymbol] -> Tribit (NextStateDiff).
 // 0xFF indicates an invalid transition (bit limit error).
@@ -63,8 +65,8 @@ func New() *Trellis34 {
 	return &Trellis34{}
 }
 
-func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]byte {
-	var bits [196]byte
+func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]bit.Bit {
+	var bits [196]bit.Bit
 
 	for i := 0; i < 98; i++ {
 		o := i * 2
@@ -87,7 +89,7 @@ func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]byte {
 	return bits
 }
 
-func (t *Trellis34) bitsToDibits(bits [196]byte) [98]int8 {
+func (t *Trellis34) bitsToDibits(bits [196]bit.Bit) [98]int8 {
 	var dibits [98]int8
 
 	for i := 0; i < 196; i += 2 {
@@ -107,7 +109,7 @@ func (t *Trellis34) bitsToDibits(bits [196]byte) [98]int8 {
 	return dibits
 }
 
-func (t *Trellis34) Decode(bits [196]byte) ([144]byte, int) {
+func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, int) {
 	dibits := t.bitsToDibits(bits)
 	deinterleavedDibits := t.deinterleave(dibits)
 	points := t.dibitsToPoints(deinterleavedDibits)
@@ -166,8 +168,8 @@ func (t *Trellis34) pointsToTribits(points [49]byte) ([49]byte, int) {
 	return tribits, errors
 }
 
-func (t *Trellis34) tribitsToBits(tribits [49]byte) [144]byte {
-	var bits [144]byte
+func (t *Trellis34) tribitsToBits(tribits [49]byte) [144]bit.Bit {
+	var bits [144]bit.Bit
 
 	for i := 0; i < 144; i += 3 {
 		o := i / 3
@@ -216,12 +218,12 @@ var reverseConstellationPoints = [16][2]int8{
 }
 
 // Encode encodes 144 data bits using Trellis 3/4 rate coding, producing 196 interleaved bits.
-func (t *Trellis34) Encode(data [144]byte) [196]byte {
+func (t *Trellis34) Encode(data [144]bit.Bit) [196]bit.Bit {
 	// Step 1: Data bits to tribits (48 data tribits + 1 tail)
 	var tribits [49]byte
 	for i := 0; i < 48; i++ {
 		o := i * 3
-		tribits[i] = (data[o] << 2) | (data[o+1] << 1) | data[o+2]
+		tribits[i] = (byte(data[o]) << 2) | (byte(data[o+1]) << 1) | byte(data[o+2])
 	}
 	tribits[48] = 0 // tail tribit to flush encoder back to state 0
 

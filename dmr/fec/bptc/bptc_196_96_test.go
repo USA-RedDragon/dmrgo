@@ -3,6 +3,8 @@ package bptc
 import (
 	"math/rand"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 )
 
 func TestBPTC19696Decode(t *testing.T) {
@@ -10,9 +12,9 @@ func TestBPTC19696Decode(t *testing.T) {
 
 	for run := 0; run < 100; run++ {
 		// 1. Generate Random Data
-		var data [96]byte
+		var data [96]bit.Bit
 		for i := 0; i < 96; i++ {
-			data[i] = byte(rand.Intn(2)) //nolint:gosec // deterministic PRNG fine for tests
+			data[i] = bit.Bit(rand.Intn(2)) //nolint:gosec // deterministic PRNG fine for tests
 		}
 
 		// 2. Encode

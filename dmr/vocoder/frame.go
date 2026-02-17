@@ -4,12 +4,13 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/prng"
 )
 
 type VocoderFrame struct {
-	DecodedBits     [49]byte
+	DecodedBits     [49]bit.Bit
 	CorrectedErrors int
 	Uncorrectable   bool
 }
@@ -18,15 +19,15 @@ func (vf *VocoderFrame) ToString() string {
 	// convert DecodedBits to a byte array
 	var data [7]byte
 	for i := 0; i < 6; i++ {
-		data[i] = (vf.DecodedBits[i*8] << 7) | (vf.DecodedBits[i*8+1] << 6) | (vf.DecodedBits[i*8+2] << 5) | (vf.DecodedBits[i*8+3] << 4) | (vf.DecodedBits[i*8+4] << 3) | (vf.DecodedBits[i*8+5] << 2) | (vf.DecodedBits[i*8+6] << 1) | (vf.DecodedBits[i*8+7] << 0)
+		data[i] = byte(vf.DecodedBits[i*8])<<7 | byte(vf.DecodedBits[i*8+1])<<6 | byte(vf.DecodedBits[i*8+2])<<5 | byte(vf.DecodedBits[i*8+3])<<4 | byte(vf.DecodedBits[i*8+4])<<3 | byte(vf.DecodedBits[i*8+5])<<2 | byte(vf.DecodedBits[i*8+6])<<1 | byte(vf.DecodedBits[i*8+7])
 	}
-	data[6] = vf.DecodedBits[48] << 7
+	data[6] = byte(vf.DecodedBits[48]) << 7
 	return fmt.Sprintf("{ DecodedFrame: %014s }", hex.EncodeToString(data[:]))
 }
 
 // Encode takes the decoded bits and encodes them into a 216 bit frame
-func (vf *VocoderFrame) Encode() [72]byte {
-	var ambe72 [72]byte
+func (vf *VocoderFrame) Encode() [72]bit.Bit {
+	var ambe72 [72]bit.Bit
 
 	var ambe49 = vf.DecodedBits
 
@@ -107,8 +108,8 @@ var bTable = []int{25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65, 69,
 var cTable = []int{46, 50, 54, 58, 62, 66, 70, 3, 7, 11, 15, 19,
 	23, 27, 31, 35, 39, 43, 47, 51, 55, 59, 63, 67, 71}
 
-func NewVocoderFrameFromBits(bits [72]byte) VocoderFrame {
-	var ambe49 [49]byte
+func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
+	var ambe49 [49]bit.Bit
 	totalErrors := 0
 	uncorrectable := false
 
@@ -230,30 +231,30 @@ func NewVocoderFrameFromBits(bits [72]byte) VocoderFrame {
 //
 // Layout: frame0[49 bits] + 1 separator(0) + frame1[49 bits] + 1 separator(0) + frame2[49 bits] + 3 padding(0)
 func PackAMBEVoice(frames [3]VocoderFrame) [19]byte {
-	var bits [152]bool
+	var bits [152]bit.Bit
 
 	// Frame 0: bits 0-48
 	for i := 0; i < 49; i++ {
-		bits[i] = frames[0].DecodedBits[i] == 1
+		bits[i] = frames[0].DecodedBits[i]
 	}
 	// Bit 49: separator (0)
 
 	// Frame 1: bits 50-98
 	for i := 0; i < 49; i++ {
-		bits[50+i] = frames[1].DecodedBits[i] == 1
+		bits[50+i] = frames[1].DecodedBits[i]
 	}
 	// Bit 99: separator (0)
 
 	// Frame 2: bits 100-148
 	for i := 0; i < 49; i++ {
-		bits[100+i] = frames[2].DecodedBits[i] == 1
+		bits[100+i] = frames[2].DecodedBits[i]
 	}
 	// Bits 149-151: padding (0)
 
 	// Pack bits into bytes (MSB first)
 	var data [19]byte
 	for i := 0; i < 152; i++ {
-		if bits[i] {
+		if bits[i] == 1 {
 			data[i/8] |= 1 << (7 - (i % 8))
 		}
 	}
@@ -265,32 +266,28 @@ func PackAMBEVoice(frames [3]VocoderFrame) [19]byte {
 // This is the reverse of PackAMBEVoice.
 func UnpackAMBEVoice(data [19]byte) [3]VocoderFrame {
 	// Unpack bytes to bits (MSB first)
-	var bits [152]bool
+	var bits [152]bit.Bit
 	for i := 0; i < 152; i++ {
-		bits[i] = (data[i/8]>>(7-(i%8)))&1 == 1
+		if (data[i/8]>>(7-(i%8)))&1 == 1 {
+			bits[i] = 1
+		}
 	}
 
 	var frames [3]VocoderFrame
 
 	// Frame 0: bits 0-48
 	for i := 0; i < 49; i++ {
-		if bits[i] {
-			frames[0].DecodedBits[i] = 1
-		}
+		frames[0].DecodedBits[i] = bits[i]
 	}
 
 	// Frame 1: bits 50-98
 	for i := 0; i < 49; i++ {
-		if bits[50+i] {
-			frames[1].DecodedBits[i] = 1
-		}
+		frames[1].DecodedBits[i] = bits[50+i]
 	}
 
 	// Frame 2: bits 100-148
 	for i := 0; i < 49; i++ {
-		if bits[100+i] {
-			frames[2].DecodedBits[i] = 1
-		}
+		frames[2].DecodedBits[i] = bits[100+i]
 	}
 
 	return frames

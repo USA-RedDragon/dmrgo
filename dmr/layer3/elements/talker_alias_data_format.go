@@ -1,5 +1,7 @@
 package elements
 
+import "github.com/USA-RedDragon/dmrgo/dmr/bit"
+
 // ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.2.18 Talker Alias Data Format
 type TalkerAliasDataFormat uint8
 
@@ -10,7 +12,7 @@ const (
 	UTF16Characters
 )
 
-func NewTalkerAliasDataFormatFromBits(infoBits [2]byte) TalkerAliasDataFormat {
+func NewTalkerAliasDataFormatFromBits(infoBits [2]bit.Bit) TalkerAliasDataFormat {
 	var ta TalkerAliasDataFormat
 	if infoBits[0] == 1 {
 		ta += 1

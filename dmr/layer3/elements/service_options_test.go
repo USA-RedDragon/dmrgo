@@ -2,12 +2,14 @@ package elements
 
 import (
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 )
 
 func TestNewServiceOptionsFromBits(t *testing.T) {
 	tests := []struct {
 		name                string
-		bits                [8]byte
+		bits                [8]bit.Bit
 		isEmergency         bool
 		isPrivacy           bool
 		isBroadcast         bool
@@ -16,7 +18,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 	}{
 		{
 			name:                "AllZeros",
-			bits:                [8]byte{0, 0, 0, 0, 0, 0, 0, 0},
+			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 0},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -25,7 +27,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 		},
 		{
 			name:                "Emergency",
-			bits:                [8]byte{1, 0, 0, 0, 0, 0, 0, 0},
+			bits:                [8]bit.Bit{1, 0, 0, 0, 0, 0, 0, 0},
 			isEmergency:         true,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -34,7 +36,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 		},
 		{
 			name:                "Privacy",
-			bits:                [8]byte{0, 1, 0, 0, 0, 0, 0, 0},
+			bits:                [8]bit.Bit{0, 1, 0, 0, 0, 0, 0, 0},
 			isEmergency:         false,
 			isPrivacy:           true,
 			isBroadcast:         false,
@@ -43,7 +45,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 		},
 		{
 			name:                "Broadcast",
-			bits:                [8]byte{0, 0, 0, 0, 1, 0, 0, 0},
+			bits:                [8]bit.Bit{0, 0, 0, 0, 1, 0, 0, 0},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         true,
@@ -52,7 +54,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 		},
 		{
 			name:                "OpenVoiceCallMode",
-			bits:                [8]byte{0, 0, 0, 0, 0, 1, 0, 0},
+			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 1, 0, 0},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -61,7 +63,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 		},
 		{
 			name:                "Priority1",
-			bits:                [8]byte{0, 0, 0, 0, 0, 0, 1, 0},
+			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 1, 0},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -70,7 +72,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 		},
 		{
 			name:                "Priority2",
-			bits:                [8]byte{0, 0, 0, 0, 0, 0, 0, 1},
+			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 1},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -79,7 +81,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 		},
 		{
 			name:                "Priority3",
-			bits:                [8]byte{0, 0, 0, 0, 0, 0, 1, 1},
+			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 1, 1},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -88,7 +90,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 		},
 		{
 			name:                "AllSet",
-			bits:                [8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			bits:                [8]bit.Bit{1, 1, 1, 1, 1, 1, 1, 1},
 			isEmergency:         true,
 			isPrivacy:           true,
 			isBroadcast:         true,
@@ -123,7 +125,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 }
 
 func TestServiceOptions_ReservedBits(t *testing.T) {
-	bits := [8]byte{0, 0, 1, 1, 0, 0, 0, 0}
+	bits := [8]bit.Bit{0, 0, 1, 1, 0, 0, 0, 0}
 	so := NewServiceOptionsFromBits(bits)
 	if so.Reserved[0] != 1 {
 		t.Errorf("Reserved[0] = %d, want 1", so.Reserved[0])
@@ -137,19 +139,19 @@ func TestServiceOptions_ToByte_RoundTrip(t *testing.T) {
 	// Test that NewServiceOptionsFromBits -> ToByte produces the correct packed byte
 	tests := []struct {
 		name         string
-		bits         [8]byte
+		bits         [8]bit.Bit
 		expectedByte byte
 	}{
-		{"AllZeros", [8]byte{0, 0, 0, 0, 0, 0, 0, 0}, 0x00},
-		{"Emergency", [8]byte{1, 0, 0, 0, 0, 0, 0, 0}, 0x80},
-		{"Privacy", [8]byte{0, 1, 0, 0, 0, 0, 0, 0}, 0x40},
-		{"Reserved0", [8]byte{0, 0, 1, 0, 0, 0, 0, 0}, 0x20},
-		{"Reserved1", [8]byte{0, 0, 0, 1, 0, 0, 0, 0}, 0x10},
-		{"Broadcast", [8]byte{0, 0, 0, 0, 1, 0, 0, 0}, 0x08},
-		{"OpenVoice", [8]byte{0, 0, 0, 0, 0, 1, 0, 0}, 0x04},
-		{"Priority1", [8]byte{0, 0, 0, 0, 0, 0, 1, 0}, 0x02},
-		{"Priority2", [8]byte{0, 0, 0, 0, 0, 0, 0, 1}, 0x01},
-		{"AllSet", [8]byte{1, 1, 1, 1, 1, 1, 1, 1}, 0xFF},
+		{"AllZeros", [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 0}, 0x00},
+		{"Emergency", [8]bit.Bit{1, 0, 0, 0, 0, 0, 0, 0}, 0x80},
+		{"Privacy", [8]bit.Bit{0, 1, 0, 0, 0, 0, 0, 0}, 0x40},
+		{"Reserved0", [8]bit.Bit{0, 0, 1, 0, 0, 0, 0, 0}, 0x20},
+		{"Reserved1", [8]bit.Bit{0, 0, 0, 1, 0, 0, 0, 0}, 0x10},
+		{"Broadcast", [8]bit.Bit{0, 0, 0, 0, 1, 0, 0, 0}, 0x08},
+		{"OpenVoice", [8]bit.Bit{0, 0, 0, 0, 0, 1, 0, 0}, 0x04},
+		{"Priority1", [8]bit.Bit{0, 0, 0, 0, 0, 0, 1, 0}, 0x02},
+		{"Priority2", [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 1}, 0x01},
+		{"AllSet", [8]bit.Bit{1, 1, 1, 1, 1, 1, 1, 1}, 0xFF},
 	}
 
 	for _, tt := range tests {
@@ -169,7 +171,7 @@ func TestServiceOptions_ToByte_FromByte_RoundTrip(t *testing.T) {
 		b := byte(i)
 
 		// Unpack byte to bits
-		var bits [8]byte
+		var bits [8]bit.Bit
 		for j := 0; j < 8; j++ {
 			if (b>>(7-j))&1 == 1 {
 				bits[j] = 1
@@ -185,7 +187,7 @@ func TestServiceOptions_ToByte_FromByte_RoundTrip(t *testing.T) {
 }
 
 func TestServiceOptions_ToString(t *testing.T) {
-	bits := [8]byte{1, 0, 0, 0, 1, 0, 1, 0}
+	bits := [8]bit.Bit{1, 0, 0, 0, 1, 0, 1, 0}
 	so := NewServiceOptionsFromBits(bits)
 	str := so.ToString()
 	if len(str) == 0 {

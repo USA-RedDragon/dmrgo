@@ -3,6 +3,7 @@ package pdu
 import (
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
@@ -18,7 +19,7 @@ func (ph *PIHeader) ToString() string {
 	return fmt.Sprintf("PIHeader{ dataType: %s }", elements.DataTypeToName(ph.dataType))
 }
 
-func NewPIHeaderFromBits(infoBits [96]byte) *PIHeader {
+func NewPIHeaderFromBits(infoBits [96]bit.Bit) *PIHeader {
 	ph := PIHeader{}
 
 	return &ph

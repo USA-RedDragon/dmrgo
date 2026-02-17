@@ -3,6 +3,7 @@ package pdu
 import (
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
@@ -38,11 +39,11 @@ func (opcode CSBKOpcode) ToString() string {
 
 type BSOutboundActivationPDU struct {
 	Reserved      uint16
-	BSAddress     [24]byte
-	SourceAddress [24]byte
+	BSAddress     [24]bit.Bit
+	SourceAddress [24]bit.Bit
 }
 
-func (pdu *BSOutboundActivationPDU) DecodeFromBits(bits [64]byte) bool {
+func (pdu *BSOutboundActivationPDU) DecodeFromBits(bits [64]bit.Bit) bool {
 	for i := range 16 {
 		pdu.Reserved <<= 1
 		pdu.Reserved |= uint16(bits[i])
@@ -66,19 +67,19 @@ func (pdu BSOutboundActivationPDU) ToString() string {
 type UnitToUnitVoiceServiceRequestPDU struct {
 	ServiceOptions byte
 	Reserved       byte
-	TargetAddress  [24]byte
-	SourceAddress  [24]byte
+	TargetAddress  [24]bit.Bit
+	SourceAddress  [24]bit.Bit
 }
 
-func (pdu *UnitToUnitVoiceServiceRequestPDU) DecodeFromBits(bits [64]byte) bool {
+func (pdu *UnitToUnitVoiceServiceRequestPDU) DecodeFromBits(bits [64]bit.Bit) bool {
 	for i := range 8 {
 		pdu.ServiceOptions <<= 1
-		pdu.ServiceOptions |= bits[8+i]
+		pdu.ServiceOptions |= byte(bits[8+i])
 	}
 
 	for i := range 8 {
 		pdu.Reserved <<= 1
-		pdu.Reserved |= bits[16+i]
+		pdu.Reserved |= byte(bits[16+i])
 	}
 
 	for i := range 24 {
@@ -99,23 +100,23 @@ func (pdu UnitToUnitVoiceServiceRequestPDU) ToString() string {
 type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 	ServiceOptions byte
 	AnswerResponse byte
-	TargetAddress  [24]byte
-	SourceAddress  [24]byte
+	TargetAddress  [24]bit.Bit
+	SourceAddress  [24]bit.Bit
 }
 
 func (pdu UnitToUnitVoiceServiceAnswerResponsePDU) ToString() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %d, AnswerResponse: %d, TargetAddress: %s, SourceAddress: %s }", pdu.ServiceOptions, pdu.AnswerResponse, string(pdu.TargetAddress[:]), string(pdu.SourceAddress[:]))
 }
 
-func (pdu *UnitToUnitVoiceServiceAnswerResponsePDU) DecodeFromBits(bits [64]byte) bool {
+func (pdu *UnitToUnitVoiceServiceAnswerResponsePDU) DecodeFromBits(bits [64]bit.Bit) bool {
 	for i := range 8 {
 		pdu.ServiceOptions <<= 1
-		pdu.ServiceOptions |= bits[8+i]
+		pdu.ServiceOptions |= byte(bits[8+i])
 	}
 
 	for i := range 8 {
 		pdu.AnswerResponse <<= 1
-		pdu.AnswerResponse |= bits[16+i]
+		pdu.AnswerResponse |= byte(bits[16+i])
 	}
 
 	for i := range 24 {
@@ -132,17 +133,17 @@ func (pdu *UnitToUnitVoiceServiceAnswerResponsePDU) DecodeFromBits(bits [64]byte
 type NegativeAcknowledgementPDU struct {
 	AdditionalInfo bool
 	SourceType     bool
-	ServiceType    [6]byte
+	ServiceType    [6]bit.Bit
 	ReasonCode     byte
-	SourceAddress  [24]byte
-	TargetAddress  [24]byte
+	SourceAddress  [24]bit.Bit
+	TargetAddress  [24]bit.Bit
 }
 
 func (pdu NegativeAcknowledgementPDU) ToString() string {
 	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %t, SourceType: %t, ServiceType: %08b, ReasonCode: %d, SourceAddress: %s, TargetAddress: %s }", pdu.AdditionalInfo, pdu.SourceType, pdu.ServiceType, pdu.ReasonCode, string(pdu.SourceAddress[:]), string(pdu.TargetAddress[:]))
 }
 
-func (pdu *NegativeAcknowledgementPDU) DecodeFromBits(bits [64]byte) bool {
+func (pdu *NegativeAcknowledgementPDU) DecodeFromBits(bits [64]bit.Bit) bool {
 	pdu.AdditionalInfo = bits[0] == 1
 	pdu.SourceType = bits[1] == 1
 
@@ -152,7 +153,7 @@ func (pdu *NegativeAcknowledgementPDU) DecodeFromBits(bits [64]byte) bool {
 
 	for i := range 8 {
 		pdu.ReasonCode <<= 1
-		pdu.ReasonCode |= bits[8+i]
+		pdu.ReasonCode |= byte(bits[8+i])
 	}
 
 	for i := range 24 {
@@ -171,17 +172,17 @@ type PreamblePDU struct {
 	Data bool
 	// 1 = target address is a group, 0 = individual
 	Group              bool
-	Reserved           [6]byte
+	Reserved           [6]bit.Bit
 	CSBKBlocksToFollow byte
-	TargetAddress      [24]byte
-	SourceAddress      [24]byte
+	TargetAddress      [24]bit.Bit
+	SourceAddress      [24]bit.Bit
 }
 
 func (pdu PreamblePDU) ToString() string {
 	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %08b, CSBKBlocksToFollow: %d, TargetAddress: %v, SourceAddress: %v }", pdu.Data, pdu.Group, pdu.Reserved, pdu.CSBKBlocksToFollow, pdu.TargetAddress[:], pdu.SourceAddress[:])
 }
 
-func (pdu *PreamblePDU) DecodeFromBits(bits [64]byte) bool {
+func (pdu *PreamblePDU) DecodeFromBits(bits [64]bit.Bit) bool {
 	pdu.Data = bits[0] == 1
 	pdu.Group = bits[1] == 1
 
@@ -191,7 +192,7 @@ func (pdu *PreamblePDU) DecodeFromBits(bits [64]byte) bool {
 
 	for i := range 8 {
 		pdu.CSBKBlocksToFollow <<= 1
-		pdu.CSBKBlocksToFollow |= bits[8+i]
+		pdu.CSBKBlocksToFollow |= byte(bits[8+i])
 	}
 
 	for i := range 24 {
@@ -206,22 +207,22 @@ func (pdu *PreamblePDU) DecodeFromBits(bits [64]byte) bool {
 }
 
 type ChannelTimingPDU struct {
-	SyncAge                 [11]byte
-	Generation              [5]byte
-	LeaderIdentifier        [20]byte
+	SyncAge                 [11]bit.Bit
+	Generation              [5]bit.Bit
+	LeaderIdentifier        [20]bit.Bit
 	NewLeader               bool
-	LeaderDynamicIdentifier [2]byte
+	LeaderDynamicIdentifier [2]bit.Bit
 	ChannelTimingOp         [2]bool
-	SourceIdentifier        [20]byte
+	SourceIdentifier        [20]bit.Bit
 	Reserved                bool
-	SourceDynamicIdentifier [2]byte
+	SourceDynamicIdentifier [2]bit.Bit
 }
 
 func (pdu ChannelTimingPDU) ToString() string {
 	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %011b, Generation: %05b, LeaderIdentifier: %s, NewLeader: %t, LeaderDynamicIdentifier: %02b, SourceIdentifier: %s, Reserved: %t, SourceDynamicIdentifier: %02b, ChannelTimingOp: %v }", pdu.SyncAge, pdu.Generation, string(pdu.LeaderIdentifier[:]), pdu.NewLeader, pdu.LeaderDynamicIdentifier, string(pdu.SourceIdentifier[:]), pdu.Reserved, pdu.SourceDynamicIdentifier, pdu.ChannelTimingOp)
 }
 
-func (pdu *ChannelTimingPDU) DecodeFromBits(bits [64]byte) bool {
+func (pdu *ChannelTimingPDU) DecodeFromBits(bits [64]bit.Bit) bool {
 	for i := range 11 {
 		pdu.SyncAge[i] = bits[i]
 	}
@@ -300,7 +301,7 @@ func (csbk *CSBK) GetDataType() elements.DataType {
 	return csbk.dataType
 }
 
-func (csbk *CSBK) DecodeFromBits(infoBits []byte, dt elements.DataType) bool {
+func (csbk *CSBK) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool {
 	if len(infoBits) != 96 {
 		fmt.Println("CSBK: invalid infoBits length: ", len(infoBits))
 		return false
@@ -313,7 +314,7 @@ func (csbk *CSBK) DecodeFromBits(infoBits []byte, dt elements.DataType) bool {
 	for i := range 12 {
 		for j := range 8 {
 			dataBytes[i] <<= 1
-			dataBytes[i] |= infoBits[i*8+j]
+			dataBytes[i] |= byte(infoBits[i*8+j])
 		}
 	}
 
@@ -344,10 +345,10 @@ func (csbk *CSBK) DecodeFromBits(infoBits []byte, dt elements.DataType) bool {
 	// FID is 8 bits, infoBits[8:16] as a byte
 	for i := range 8 {
 		csbk.FID <<= 1
-		csbk.FID |= infoBits[8+i]
+		csbk.FID |= byte(infoBits[8+i])
 	}
 
-	var pdu [64]byte
+	var pdu [64]bit.Bit
 	for i := range 64 {
 		pdu[i] = infoBits[16+i]
 	}

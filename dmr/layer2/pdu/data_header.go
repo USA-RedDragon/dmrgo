@@ -3,6 +3,7 @@ package pdu
 import (
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
@@ -12,11 +13,11 @@ type UnconfirmedDataHeader struct {
 	Reserved          bool
 	// 4th bit is MSB, 12-15th bits are LSBs
 	PadOctetCount          uint8
-	LLIDDestination        [24]byte
-	LLIDSource             [24]byte
+	LLIDDestination        [24]bit.Bit
+	LLIDSource             [24]bit.Bit
 	FullMessage            bool
 	BlocksToFollow         uint8
-	Reserved2              [4]byte
+	Reserved2              [4]bit.Bit
 	FragmentSequenceNumber uint8
 }
 
@@ -25,7 +26,7 @@ func (cdh *UnconfirmedDataHeader) ToString() string {
 		cdh.Group, cdh.ResponseRequested, cdh.Reserved, cdh.PadOctetCount, cdh.LLIDDestination, cdh.LLIDSource, cdh.FullMessage, cdh.BlocksToFollow, cdh.FragmentSequenceNumber)
 }
 
-func (cdh *UnconfirmedDataHeader) DecodeFromBits(infoBits []byte) bool {
+func (cdh *UnconfirmedDataHeader) DecodeFromBits(infoBits []bit.Bit) bool {
 	if len(infoBits) != 96 {
 		fmt.Println("UnconfirmedDataHeader: invalid infoBits length: ", len(infoBits))
 		return false
@@ -34,9 +35,9 @@ func (cdh *UnconfirmedDataHeader) DecodeFromBits(infoBits []byte) bool {
 	cdh.Group = infoBits[0] == 1
 	cdh.ResponseRequested = infoBits[1] == 1
 	cdh.Reserved = infoBits[2] == 1
-	cdh.PadOctetCount = infoBits[3]
+	cdh.PadOctetCount = byte(infoBits[3])
 	cdh.PadOctetCount <<= 4
-	cdh.PadOctetCount |= (infoBits[12] << 3) | (infoBits[13] << 2) | (infoBits[14] << 1) | infoBits[15]
+	cdh.PadOctetCount |= (byte(infoBits[12]) << 3) | (byte(infoBits[13]) << 2) | (byte(infoBits[14]) << 1) | byte(infoBits[15])
 
 	for i := range 24 {
 		cdh.LLIDDestination[i] = infoBits[16+i]
@@ -47,11 +48,11 @@ func (cdh *UnconfirmedDataHeader) DecodeFromBits(infoBits []byte) bool {
 	}
 
 	cdh.FullMessage = infoBits[64] == 1
-	cdh.BlocksToFollow = (infoBits[65] << 6) | (infoBits[66] << 5) | (infoBits[67] << 4) | (infoBits[68] << 3) | (infoBits[69] << 2) | (infoBits[70] << 1) | infoBits[71]
+	cdh.BlocksToFollow = (byte(infoBits[65]) << 6) | (byte(infoBits[66]) << 5) | (byte(infoBits[67]) << 4) | (byte(infoBits[68]) << 3) | (byte(infoBits[69]) << 2) | (byte(infoBits[70]) << 1) | byte(infoBits[71])
 	for i := range 4 {
 		cdh.Reserved2[i] = infoBits[72+i]
 	}
-	cdh.FragmentSequenceNumber = (infoBits[76] << 3) | (infoBits[77] << 2) | (infoBits[78] << 1) | infoBits[79]
+	cdh.FragmentSequenceNumber = (byte(infoBits[76]) << 3) | (byte(infoBits[77]) << 2) | (byte(infoBits[78]) << 1) | byte(infoBits[79])
 
 	return true
 }
@@ -142,7 +143,7 @@ func (dh *DataHeader) ToString() string {
 	return fmt.Sprintf("DataHeader{ dataType: %s, dataHeaderType: %s, extraData: %s }", elements.DataTypeToName(dh.dataType), dh.dataHeaderType.ToString(), extraData)
 }
 
-func (dh *DataHeader) DecodeFromBits(infoBits []byte, dt elements.DataType) bool {
+func (dh *DataHeader) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool {
 	dh.dataType = dt
 
 	if len(infoBits) != 96 {
@@ -152,7 +153,7 @@ func (dh *DataHeader) DecodeFromBits(infoBits []byte, dt elements.DataType) bool
 
 	// TODO: CRC
 
-	dh.Format = Format((infoBits[4] << 3) | (infoBits[5] << 2) | (infoBits[6] << 1) | infoBits[7])
+	dh.Format = Format((byte(infoBits[4]) << 3) | (byte(infoBits[5]) << 2) | (byte(infoBits[6]) << 1) | byte(infoBits[7]))
 	switch dh.Format {
 	case FormatUnifiedDataTransport:
 		dh.dataHeaderType = DataHeaderTypeUnifiedDataTransport

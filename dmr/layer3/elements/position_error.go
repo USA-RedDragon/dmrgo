@@ -1,5 +1,7 @@
 package elements
 
+import "github.com/USA-RedDragon/dmrgo/dmr/bit"
+
 // ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.2.15 Position Error
 type PositionError struct {
 	PositionLessThan2M    bool
@@ -39,7 +41,7 @@ func (pe *PositionError) ToString() string {
 	return ret
 }
 
-func NewPositionErrorFromBits(infoBits [3]byte) *PositionError {
+func NewPositionErrorFromBits(infoBits [3]bit.Bit) *PositionError {
 	intForm := 0
 	for i := 0; i < 3; i++ {
 		if infoBits[i] == 1 {
