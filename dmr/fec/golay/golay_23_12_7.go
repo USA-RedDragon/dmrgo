@@ -1,10 +1,15 @@
 package golay
 
-import "math/bits"
+import (
+	"math/bits"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
+)
 
 // DecodeGolay23127 decodes a 23-bit word using the Golay (23,12,7) code.
-// It returns the corrected 12-bit data, the number of bit errors corrected, and whether the word was uncorrectable.
-func DecodeGolay23127(received uint32) (data uint16, errors int, uncorrectable bool) {
+// It returns the corrected 12-bit data and FECResult.
+func DecodeGolay23127(received uint32) (data uint16, result fec.FECResult) {
+	result.BitsChecked = 23
 	minDist := 23
 	bestData := uint16(0)
 
@@ -19,17 +24,20 @@ func DecodeGolay23127(received uint32) (data uint16, errors int, uncorrectable b
 			bestData = uint16(d) //nolint:gosec // d is a table index (0-4095), fits in uint16
 
 			if dist == 0 {
-				return bestData, 0, false
+				return bestData, result
 			}
 		}
 	}
 
 	// Golay (23,12,7) can correct up to 3 errors (d_min = 7, t = floor((7-1)/2) = 3)
 	if minDist <= 3 {
-		return bestData, minDist, false
+		result.ErrorsCorrected = minDist
+		return bestData, result
 	}
 
-	return bestData, minDist, true
+	result.ErrorsCorrected = minDist
+	result.Uncorrectable = true
+	return bestData, result
 }
 
 //nolint:gochecknoglobals // static encoding lookup table

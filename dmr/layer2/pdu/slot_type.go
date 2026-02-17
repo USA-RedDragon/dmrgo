@@ -4,30 +4,27 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
 // ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.3 Slot Type (SLOT) PDU
 type SlotType struct {
-	ColorCode       int
-	DataType        elements.DataType
-	ParityOK        bool
-	CorrectedErrors int
-	Uncorrectable   bool
+	ColorCode int
+	DataType  elements.DataType
+	FEC       fec.FECResult
 }
 
 func NewSlotTypeFromBits(data [20]bit.Bit) SlotType {
 	st := SlotType{}
 
-	corrected, errs, uncorrectable := golay.DecodeGolay2087(data)
-	st.CorrectedErrors = errs
-	st.Uncorrectable = uncorrectable
+	corrected, result := golay.DecodeGolay2087(data)
+	st.FEC = result
 
-	if !uncorrectable {
+	if !result.Uncorrectable {
 		data = corrected // Use corrected data for fields
 	}
-	st.ParityOK = (errs == 0)
 
 	for i := 0; i < 4; i++ {
 		if data[i] == 1 {
@@ -49,5 +46,5 @@ func NewSlotTypeFromBits(data [20]bit.Bit) SlotType {
 
 // ToString returns a string representation of the SlotType
 func (st SlotType) ToString() string {
-	return fmt.Sprintf("{ ColorCode: %d, DataType: %s, ParityOK: %t, Corrected: %d, Uncorrectable: %t }", st.ColorCode, elements.DataTypeToName(st.DataType), st.ParityOK, st.CorrectedErrors, st.Uncorrectable)
+	return fmt.Sprintf("{ ColorCode: %d, DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", st.ColorCode, elements.DataTypeToName(st.DataType), st.FEC.BitsChecked, st.FEC.ErrorsCorrected, st.FEC.Uncorrectable)
 }

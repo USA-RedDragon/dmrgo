@@ -1,6 +1,9 @@
 package quadratic_residue1676
 
-import "github.com/USA-RedDragon/dmrgo/dmr/bit"
+import (
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
+)
 
 // ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.2  Quadratic residue (16,7,6)
 
@@ -121,8 +124,10 @@ func Check(bits [16]bit.Bit) bool {
 }
 
 // Decode corrects up to 2 bit errors in the 16-bit codeword.
-// Returns the corrected data words, number of errors corrected, and uncorrectable flag.
-func Decode(bits [16]bit.Bit) ([16]bit.Bit, int, bool) {
+// Returns the corrected data words and FECResult.
+func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.FECResult) {
+	result := fec.FECResult{BitsChecked: 16}
+
 	var data [7]bit.Bit
 	copy(data[:], bits[:7])
 
@@ -136,25 +141,25 @@ func Decode(bits [16]bit.Bit) ([16]bit.Bit, int, bool) {
 	}
 
 	if syndrome == 0 {
-		return bits, 0, false
+		return bits, result
 	}
 
 	errPattern := qr16_7_6_syndrome_table[syndrome]
 	if errPattern == 0xFFFF {
-		return bits, 0, true // Uncorrectable
+		result.Uncorrectable = true
+		return bits, result
 	}
 
 	// Apply correction (error pattern: 1 = flip)
 	var corrected [16]bit.Bit
 	copy(corrected[:], bits[:])
 
-	errorsCorrected := 0
 	for i := 0; i < 16; i++ {
 		if (errPattern & (1 << (15 - i))) != 0 {
 			corrected[i] ^= 1
-			errorsCorrected++
+			result.ErrorsCorrected++
 		}
 	}
 
-	return corrected, errorsCorrected, false
+	return corrected, result
 }

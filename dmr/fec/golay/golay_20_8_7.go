@@ -1,6 +1,9 @@
 package golay
 
-import "github.com/USA-RedDragon/dmrgo/dmr/bit"
+import (
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
+)
 
 // Golay (20,8,7) Syndrome Table
 // Maps 12-bit syndrome to 20-bit error pattern.
@@ -542,8 +545,10 @@ func Golay_20_8_Parity(bits [8]bit.Bit) [12]bit.Bit {
 }
 
 // DecodeGolay2087 decodes a 20-bit sequence (Bit array of 0s and 1s)
-// Returns corrected bits, error count, and uncorrectable flag.
-func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, int, bool) {
+// Returns corrected bits and FECResult.
+func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, fec.FECResult) {
+	result := fec.FECResult{BitsChecked: 20}
+
 	var data [8]bit.Bit
 	copy(data[:], bits[:8])
 
@@ -557,27 +562,27 @@ func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, int, bool) {
 	}
 
 	if syndrome == 0 {
-		return bits, 0, false
+		return bits, result
 	}
 
 	errPattern := golay20_8_syndrome_table[syndrome]
 	if errPattern == 0xFFFFFFFF {
-		return bits, 0, true // Uncorrectable
+		result.Uncorrectable = true
+		return bits, result
 	}
 
 	// Apply correction
 	var corrected [20]bit.Bit
 	copy(corrected[:], bits[:])
 
-	errorsCorrected := 0
 	for i := 0; i < 20; i++ {
 		if (errPattern & (1 << i)) != 0 {
 			corrected[i] ^= 1
-			errorsCorrected++
+			result.ErrorsCorrected++
 		}
 	}
 
-	return corrected, errorsCorrected, false
+	return corrected, result
 }
 
 func Golay_20_8_Check(bits [20]bit.Bit) bool {

@@ -2,6 +2,7 @@ package pdu
 
 import (
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/vocoder"
 )
 
@@ -57,7 +58,7 @@ func (vc *Vocoder) Encode() [216]bit.Bit {
 func (vc *Vocoder) CorrectedErrors() int {
 	var count int
 	for _, f := range vc.Frames {
-		count += f.CorrectedErrors
+		count += f.FEC.ErrorsCorrected
 	}
 	return count
 }
@@ -65,7 +66,7 @@ func (vc *Vocoder) CorrectedErrors() int {
 // Uncorrectable returns true if any of the vocoder frames were uncorrectable.
 func (vc *Vocoder) Uncorrectable() bool {
 	for _, f := range vc.Frames {
-		if f.Uncorrectable {
+		if f.FEC.Uncorrectable {
 			return true
 		}
 	}
@@ -75,4 +76,17 @@ func (vc *Vocoder) Uncorrectable() bool {
 // HasError returns true if any error correction was performed or if the data is uncorrectable.
 func (vc *Vocoder) HasError() bool {
 	return vc.CorrectedErrors() > 0 || vc.Uncorrectable()
+}
+
+// FECResult returns the aggregated FEC result across all 3 vocoder frames.
+func (vc *Vocoder) FECResult() fec.FECResult {
+	result := fec.FECResult{}
+	for _, f := range vc.Frames {
+		result.BitsChecked += f.FEC.BitsChecked
+		result.ErrorsCorrected += f.FEC.ErrorsCorrected
+		if f.FEC.Uncorrectable {
+			result.Uncorrectable = true
+		}
+	}
+	return result
 }

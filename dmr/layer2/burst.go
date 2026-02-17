@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 	trellis34 "github.com/USA-RedDragon/dmrgo/dmr/fec/trellis"
@@ -28,6 +29,7 @@ type Burst struct {
 
 	IsData                bool
 	Data                  elements.Data
+	FEC                   fec.BurstFECStats
 	fullLinkControl       *pdu.FullLinkControl
 	csbk                  *pdu.CSBK
 	dataHeader            *pdu.DataHeader
@@ -35,9 +37,6 @@ type Burst struct {
 	bitData               [264]bit.Bit
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
-
-	PayloadCorrectedErrors int
-	PayloadUncorrectable   bool
 }
 
 // NewBurstFromBytes creates a new Burst from the given bytes.
@@ -58,20 +57,23 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 
 	if b.HasEmbeddedSignalling {
 		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
+		b.FEC.EMB = b.EmbeddedSignalling.FEC
 	}
 
 	b.HasSlotType = b.IsData
 	if b.HasSlotType {
 		b.SlotType = parseSlotType(b.bitData)
+		b.FEC.SlotType = b.SlotType.FEC
 	}
 
 	if !b.IsData {
 		b.VoiceData = parseVoiceBits(b.bitData)
+		b.FEC.Voice = b.VoiceData.FECResult()
 		return nil
 	}
 
 	bBits := extractDataBits(b.bitData)
-	b.deinterleavedInfoLen, b.PayloadCorrectedErrors, b.PayloadUncorrectable = b.deinterleave(bBits, b.SlotType.DataType)
+	b.deinterleavedInfoLen, b.FEC.Payload = b.deinterleave(bBits, b.SlotType.DataType)
 	var err error
 	b.Data, err = b.extractData()
 	return err
@@ -130,13 +132,13 @@ func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
 	return bits
 }
 
-func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int, int, bool) {
+func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int, fec.FECResult) {
 	switch dataType {
 	case elements.DataTypeRate34:
 		var t trellis34.Trellis34
-		decoded, errs := t.Decode(bits)
+		decoded, result := t.Decode(bits)
 		copy(b.deinterleavedInfoBits[:], decoded[:])
-		return len(decoded), errs, false
+		return len(decoded), result
 	case elements.DataTypeRate1:
 		// Table B.10B: Transmit bit ordering for rate 1 coded data
 		for i := 0; i < 96; i++ {
@@ -145,7 +147,7 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 		for i := 0; i < 96; i++ {
 			b.deinterleavedInfoBits[96+i] = bits[100+i]
 		}
-		return 196, 0, false
+		return 196, fec.FECResult{}
 	case elements.DataTypePIHeader,
 		elements.DataTypeVoiceLCHeader,
 		elements.DataTypeTerminatorWithLC,
@@ -157,9 +159,9 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 		elements.DataTypeIdle,
 		elements.DataTypeUnifiedSingleBlock:
 		bptc19696 := bptc.BPTC19696{}
-		decoded, corrected, uncorrectable := bptc19696.DeinterleaveDataBits(bits)
+		decoded, result := bptc19696.DeinterleaveDataBits(bits)
 		copy(b.deinterleavedInfoBits[:], decoded[:])
-		return len(decoded), corrected, uncorrectable
+		return len(decoded), result
 	case elements.DataTypeReserved:
 		panic(fmt.Sprintf("Unknown data type %v", dataType))
 	default:
@@ -177,7 +179,8 @@ func (b *Burst) ToString() string {
 		ret += fmt.Sprintf("SlotType: %v, ", b.SlotType.ToString())
 	}
 	if b.IsData {
-		ret += fmt.Sprintf("PayloadCorrected: %d, PayloadUncorrectable: %t, ", b.PayloadCorrectedErrors, b.PayloadUncorrectable)
+		agg := b.FEC.Aggregate()
+		ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", agg.BitsChecked, agg.ErrorsCorrected, agg.Uncorrectable)
 		if b.Data != nil {
 			ret += fmt.Sprintf("Data: %v, ", b.Data.ToString())
 		}
@@ -201,14 +204,18 @@ func (b *Burst) extractData() (elements.Data, error) {
 	case elements.DataTypeCSBK:
 		b.csbk = &pdu.CSBK{}
 		if b.csbk.DecodeFromBits(infoBits, dt) {
+			b.FEC.PDU = b.csbk.FEC
 			return b.csbk, nil
 		}
+		b.FEC.PDU = b.csbk.FEC
 		return nil, fmt.Errorf("failed to decode CSBK from bits")
 	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
 		b.fullLinkControl = &pdu.FullLinkControl{}
 		if b.fullLinkControl.DecodeFromBits(infoBits, dt) {
+			b.FEC.PDU = b.fullLinkControl.FEC
 			return b.fullLinkControl, nil
 		}
+		b.FEC.PDU = b.fullLinkControl.FEC
 		return nil, fmt.Errorf("failed to decode full link control from bits")
 	case elements.DataTypePIHeader:
 		// TODO: implement PI header parsing

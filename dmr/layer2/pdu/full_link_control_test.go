@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu"
 	layer3Elements "github.com/USA-RedDragon/dmrgo/dmr/layer3/elements"
@@ -186,7 +187,7 @@ func TestFullLinkControl_ToString(t *testing.T) {
 		FeatureSetID:  enums.StandardizedFID,
 		GroupAddress:  9990,
 		SourceAddress: 3120101,
-		ParityOK:      true,
+		FEC:           fec.FECResult{BitsChecked: 96},
 	}
 	str := flc.ToString()
 	if len(str) == 0 {

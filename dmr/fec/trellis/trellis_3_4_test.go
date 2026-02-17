@@ -81,12 +81,12 @@ func TestTrellis34Decode(t *testing.T) {
 		encodedBits := tr.dibitsToBits(permutedDibits)
 
 		// 3. Decode
-		decodedBits, errs := tr.Decode(encodedBits)
+		decodedBits, result := tr.Decode(encodedBits)
 
 		// 4. Verify
 		// errors should be 0
-		if errs != 0 {
-			t.Errorf("Expected 0 errors, got %d", errs)
+		if result.ErrorsCorrected != 0 {
+			t.Errorf("Expected 0 errors, got %d", result.ErrorsCorrected)
 		}
 
 		// Check payload.
@@ -140,9 +140,9 @@ func TestTrellis34Decode(t *testing.T) {
 		}
 
 		corruptBits := tr.dibitsToBits(corruptPermutedDibits)
-		_, errCount := tr.Decode(corruptBits)
+		_, corruptResult := tr.Decode(corruptBits)
 
-		if errCount == 0 {
+		if corruptResult.ErrorsCorrected == 0 {
 			t.Errorf("Expected decoder to flag an error for invalid symbol at %d", corruptIndex)
 		}
 	}

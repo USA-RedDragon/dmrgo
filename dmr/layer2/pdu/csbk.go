@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
@@ -265,6 +266,7 @@ type CSBK struct {
 	ProtectFlag bool
 	CSBKOpcode  CSBKOpcode
 	FID         byte
+	FEC         fec.FECResult
 
 	BSOutboundActivationPDU                 *BSOutboundActivationPDU
 	UnitToUnitVoiceServiceRequestPDU        *UnitToUnitVoiceServiceRequestPDU
@@ -325,8 +327,11 @@ func (csbk *CSBK) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool 
 	// CRC check using table-based CCITT matching MMDVM
 	if !CheckCRCCCITT(dataBytes[:]) {
 		fmt.Println("CSBK: CRC check failed")
+		csbk.FEC = fec.FECResult{BitsChecked: 96, Uncorrectable: true}
 		return false
 	}
+
+	csbk.FEC = fec.FECResult{BitsChecked: 96}
 
 	// Extract the unmasked CRC for storage
 	csbk.crc = uint16(dataBytes[10])<<8 | uint16(dataBytes[11])

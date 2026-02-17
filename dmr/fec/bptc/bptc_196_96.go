@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 )
 
 type BPTC19696 struct {
@@ -96,8 +97,9 @@ func calculate_syndrome_13_9(bits [13]bit.Bit) int {
 	return int(errs[0]) | int(errs[1])<<1 | int(errs[2])<<2 | int(errs[3])<<3
 }
 
-// DeinterleaveDataBits returns the deinterleaved data bits, error count, and uncorrectable flag
-func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, int, bool) {
+// DeinterleaveDataBits returns the deinterleaved data bits and FECResult
+func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, fec.FECResult) {
+	result := fec.FECResult{BitsChecked: 196}
 	var deinterleavedBits [196]bit.Bit
 	var temp [96]bit.Bit
 
@@ -108,6 +110,8 @@ func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, int, b
 	}
 
 	correctedBits, errors, uncorrectable := hamming_correct(deinterleavedBits)
+	result.ErrorsCorrected = errors
+	result.Uncorrectable = uncorrectable
 	if errors > 0 && !uncorrectable {
 		deinterleavedBits = correctedBits
 	}
@@ -126,7 +130,7 @@ func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, int, b
 		}
 	}
 
-	return temp, errors, uncorrectable
+	return temp, result
 }
 
 func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {

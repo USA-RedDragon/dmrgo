@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	reedSolomon "github.com/USA-RedDragon/dmrgo/dmr/fec/reed_solomon"
 	layer2Elements "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 	layer3Elements "github.com/USA-RedDragon/dmrgo/dmr/layer3/elements"
@@ -20,7 +21,7 @@ type FullLinkControl struct {
 	FLCO         enums.FLCO
 	FeatureSetID enums.FeatureSetID
 
-	ParityOK bool
+	FEC fec.FECResult
 
 	// Table 7.1: Grp_V_Ch_Usr PDU content
 	ServiceOptions layer3Elements.ServiceOptions
@@ -71,7 +72,7 @@ func (flc FullLinkControl) ToString() string {
 		ret += fmt.Sprintf("TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasDataMSB: %t, ", layer3Elements.TalkerAliasDataFormatToName(flc.TalkerAliasDataFormat), flc.TalkerAliasDataLength, flc.TalkerAliasDataMSB)
 	}
 
-	ret += fmt.Sprintf("ParityOK: %t }", flc.ParityOK)
+	ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", flc.FEC.BitsChecked, flc.FEC.ErrorsCorrected, flc.FEC.Uncorrectable)
 
 	return ret
 }
@@ -139,7 +140,7 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []bit.Bit, dataType layer2El
 	flc.FLCO = FLCO
 	flc.ProtectFlag = infoBits[0] == 1
 	flc.FeatureSetID = FSID
-	flc.ParityOK = true
+	flc.FEC = fec.FECResult{BitsChecked: 96}
 
 	switch FLCO {
 	case enums.FLCOUnitToUnitVoiceChannelUser:

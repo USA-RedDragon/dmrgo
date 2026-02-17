@@ -1,6 +1,9 @@
 package trellis34
 
-import "github.com/USA-RedDragon/dmrgo/dmr/bit"
+import (
+	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
+)
 
 // Trellis 3/4 State Transition Look-Up Table
 // Maps [CurrentState][ReceivedSymbol] -> Tribit (NextStateDiff).
@@ -109,14 +112,16 @@ func (t *Trellis34) bitsToDibits(bits [196]bit.Bit) [98]int8 {
 	return dibits
 }
 
-func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, int) {
+func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.FECResult) {
+	result := fec.FECResult{BitsChecked: 196}
 	dibits := t.bitsToDibits(bits)
 	deinterleavedDibits := t.deinterleave(dibits)
 	points := t.dibitsToPoints(deinterleavedDibits)
 	tribits, errors := t.pointsToTribits(points)
+	result.ErrorsCorrected = errors
 	decoded := t.tribitsToBits(tribits)
 
-	return decoded, errors
+	return decoded, result
 }
 
 func (t *Trellis34) deinterleave(dibits [98]int8) [98]int8 {

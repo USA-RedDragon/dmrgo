@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	quadraticResidue "github.com/USA-RedDragon/dmrgo/dmr/fec/quadratic_residue"
 )
 
@@ -13,22 +14,18 @@ type EmbeddedSignalling struct {
 	ColorCode                          int
 	PreemptionAndPowerControlIndicator bool
 	LCSS                               enums.LCSS
-	ParityOK                           bool
-	CorrectedErrors                    int
-	Uncorrectable                      bool
+	FEC                                fec.FECResult
 }
 
 func NewEmbeddedSignallingFromBits(data [16]bit.Bit) EmbeddedSignalling {
 	es := EmbeddedSignalling{}
 
-	corrected, errs, uncorrectable := quadraticResidue.Decode(data)
-	es.CorrectedErrors = errs
-	es.Uncorrectable = uncorrectable
+	corrected, result := quadraticResidue.Decode(data)
+	es.FEC = result
 
-	if !uncorrectable {
+	if !result.Uncorrectable {
 		data = corrected
 	}
-	es.ParityOK = (errs == 0)
 
 	// Convert the first 4 bits of data into an int
 	for i := 0; i < 4; i++ {
@@ -89,5 +86,5 @@ func (es *EmbeddedSignalling) Encode() [16]bit.Bit {
 
 // ToString returns a string representation of the EmbeddedSignalling
 func (es EmbeddedSignalling) ToString() string {
-	return fmt.Sprintf("{ Color Code: %d, Preemption and Power Control Indicator: %t, LCSS: %s, Parity OK: %t, Corrected: %d, Uncorrectable: %t }", es.ColorCode, es.PreemptionAndPowerControlIndicator, enums.LCSSToName(es.LCSS), es.ParityOK, es.CorrectedErrors, es.Uncorrectable)
+	return fmt.Sprintf("{ Color Code: %d, Preemption and Power Control Indicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", es.ColorCode, es.PreemptionAndPowerControlIndicator, enums.LCSSToName(es.LCSS), es.FEC.BitsChecked, es.FEC.ErrorsCorrected, es.FEC.Uncorrectable)
 }

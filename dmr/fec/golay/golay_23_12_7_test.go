@@ -19,12 +19,12 @@ func TestGolay23127(t *testing.T) {
 		codeword23 := codeword24 >> 1
 
 		// Case 1: No Error
-		decoded, errs, unc := DecodeGolay23127(codeword23)
-		if unc {
+		decoded, result := DecodeGolay23127(codeword23)
+		if result.Uncorrectable {
 			t.Fatalf("Data 0x%03x: Clean codeword reported as uncorrectable", data)
 		}
-		if errs != 0 {
-			t.Fatalf("Data 0x%03x: Clean codeword reported %d errors", data, errs)
+		if result.ErrorsCorrected != 0 {
+			t.Fatalf("Data 0x%03x: Clean codeword reported %d errors", data, result.ErrorsCorrected)
 		}
 		if decoded != data {
 			t.Fatalf("Data 0x%03x: Clean codeword decoded as 0x%03x", data, decoded)
@@ -35,12 +35,12 @@ func TestGolay23127(t *testing.T) {
 			// Case 2: 1 Error
 			bit1 := uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			cwErr1 := codeword23 ^ (1 << bit1)
-			decoded, errs, unc = DecodeGolay23127(cwErr1)
+			decoded, result = DecodeGolay23127(cwErr1)
 			switch {
-			case unc:
+			case result.Uncorrectable:
 				t.Errorf("Data 0x%03x (1 error): Reported uncorrectable", data)
-			case errs != 1:
-				t.Errorf("Data 0x%03x (1 error): Reported %d errors", data, errs)
+			case result.ErrorsCorrected != 1:
+				t.Errorf("Data 0x%03x (1 error): Reported %d errors", data, result.ErrorsCorrected)
 			case decoded != data:
 				t.Errorf("Data 0x%03x (1 error): Decoded as 0x%03x", data, decoded)
 			}
@@ -51,12 +51,12 @@ func TestGolay23127(t *testing.T) {
 				bit2 = uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			}
 			cwErr2 := cwErr1 ^ (1 << bit2)
-			decoded, errs, unc = DecodeGolay23127(cwErr2)
+			decoded, result = DecodeGolay23127(cwErr2)
 			switch {
-			case unc:
+			case result.Uncorrectable:
 				t.Errorf("Data 0x%03x (2 errors): Reported uncorrectable", data)
-			case errs != 2:
-				t.Errorf("Data 0x%03x (2 errors): Reported %d errors", data, errs)
+			case result.ErrorsCorrected != 2:
+				t.Errorf("Data 0x%03x (2 errors): Reported %d errors", data, result.ErrorsCorrected)
 			case decoded != data:
 				t.Errorf("Data 0x%03x (2 errors): Decoded as 0x%03x", data, decoded)
 			}
@@ -67,12 +67,12 @@ func TestGolay23127(t *testing.T) {
 				bit3 = uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			}
 			cwErr3 := cwErr2 ^ (1 << bit3)
-			decoded, errs, unc = DecodeGolay23127(cwErr3)
+			decoded, result = DecodeGolay23127(cwErr3)
 			switch {
-			case unc:
+			case result.Uncorrectable:
 				t.Errorf("Data 0x%03x (3 errors): Reported uncorrectable", data)
-			case errs != 3:
-				t.Errorf("Data 0x%03x (3 errors): Reported %d errors", data, errs)
+			case result.ErrorsCorrected != 3:
+				t.Errorf("Data 0x%03x (3 errors): Reported %d errors", data, result.ErrorsCorrected)
 			case decoded != data:
 				t.Errorf("Data 0x%03x (3 errors): Decoded as 0x%03x", data, decoded)
 			}

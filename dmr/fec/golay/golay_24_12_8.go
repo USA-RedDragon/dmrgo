@@ -1,10 +1,15 @@
 package golay
 
-import "math/bits"
+import (
+	"math/bits"
+
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
+)
 
 // DecodeGolay24128 decodes a 24-bit word using the Golay (24,12,8) code.
-// It returns the corrected 12-bit data, the number of bit errors corrected, and whether the word was uncorrectable.
-func DecodeGolay24128(received uint32) (data uint16, errors int, uncorrectable bool) {
+// It returns the corrected 12-bit data and FECResult.
+func DecodeGolay24128(received uint32) (data uint16, result fec.FECResult) {
+	result.BitsChecked = 24
 	minDist := 24
 	bestData := uint16(0)
 
@@ -18,7 +23,7 @@ func DecodeGolay24128(received uint32) (data uint16, errors int, uncorrectable b
 
 			// If perfect match, we can stop early
 			if dist == 0 {
-				return bestData, 0, false
+				return bestData, result
 			}
 		}
 	}
@@ -26,12 +31,15 @@ func DecodeGolay24128(received uint32) (data uint16, errors int, uncorrectable b
 	// Golay (24,12,8) can correct up to 3 errors (d_min = 8, t = floor((8-1)/2) = 3)
 	// Some sources suggest it can correct 3 errors and detect 4.
 	if minDist <= 3 {
-		return bestData, minDist, false
+		result.ErrorsCorrected = minDist
+		return bestData, result
 	}
 
 	// If nearest neighbor is too far, it's uncorrectable (or we found a false positive, but we report fail)
 	// We return the best guess anyway, but flag it.
-	return bestData, minDist, true
+	result.ErrorsCorrected = minDist
+	result.Uncorrectable = true
+	return bestData, result
 }
 
 //nolint:gochecknoglobals // static encoding lookup table

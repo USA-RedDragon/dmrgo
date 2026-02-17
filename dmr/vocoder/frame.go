@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/prng"
 )
 
 type VocoderFrame struct {
-	DecodedBits     [49]bit.Bit
-	CorrectedErrors int
-	Uncorrectable   bool
+	DecodedBits [49]bit.Bit
+	FEC         fec.FECResult
 }
 
 func (vf *VocoderFrame) ToString() string {
@@ -110,8 +110,7 @@ var cTable = []int{46, 50, 54, 58, 62, 66, 70, 3, 7, 11, 15, 19,
 
 func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 	var ambe49 [49]bit.Bit
-	totalErrors := 0
-	uncorrectable := false
+	result := fec.FECResult{BitsChecked: 47} // 24 (Golay 24,12,8) + 23 (Golay 23,12,7)
 
 	var a uint32 = 0
 	var MASK uint32 = 0x800000
@@ -126,10 +125,10 @@ func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 	// shift right by 1 to make it 23 bits for PRNG? No, PRNG_TABLE index is 12 bits.
 	// Golay 24,12,8: 24 bits received. 12 data bits.
 	// Decode 'a'
-	dataA, errsA, failA := golay.DecodeGolay24128(a)
-	totalErrors += errsA
-	if failA {
-		uncorrectable = true
+	dataA, fecA := golay.DecodeGolay24128(a)
+	result.ErrorsCorrected += fecA.ErrorsCorrected
+	if fecA.Uncorrectable {
+		result.Uncorrectable = true
 	}
 	// Use corrected data for 'a'
 	a = uint32(dataA)
@@ -166,10 +165,10 @@ func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 	// Stored in ambe72 using bTable which has 23 entries.
 	// So 'b' assembled here is exactly the 23 bits.
 
-	dataB, errsB, failB := golay.DecodeGolay23127(b)
-	totalErrors += errsB
-	if failB {
-		uncorrectable = true
+	dataB, fecB := golay.DecodeGolay23127(b)
+	result.ErrorsCorrected += fecB.ErrorsCorrected
+	if fecB.Uncorrectable {
+		result.Uncorrectable = true
 	}
 	b = uint32(dataB)
 
@@ -220,9 +219,8 @@ func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 	}
 
 	return VocoderFrame{
-		DecodedBits:     ambe49,
-		CorrectedErrors: totalErrors,
-		Uncorrectable:   uncorrectable,
+		DecodedBits: ambe49,
+		FEC:         result,
 	}
 }
 

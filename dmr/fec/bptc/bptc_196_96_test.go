@@ -21,17 +21,17 @@ func TestBPTC19696Decode(t *testing.T) {
 		encoded := Encode(data)
 
 		// 3. Decode Clean
-		decoded, errs, unc := bptcDiff.DeinterleaveDataBits(encoded)
+		decoded, result := bptcDiff.DeinterleaveDataBits(encoded)
 
-		if unc {
+		if result.Uncorrectable {
 			t.Errorf("Failed to decode clean codeword: uncorrectable")
 		}
 		// BPTC decoder runs single pass in current impl?
 		// We expect 0 errors corrected if clean.
 		// Note: The loop count `errors` is incremented when bit flipped.
 		// If clean, 0.
-		if errs != 0 {
-			t.Errorf("Decoded clean codeword with %d errors", errs)
+		if result.ErrorsCorrected != 0 {
+			t.Errorf("Decoded clean codeword with %d errors", result.ErrorsCorrected)
 		}
 
 		if decoded != data {
@@ -49,16 +49,16 @@ func TestBPTC19696Decode(t *testing.T) {
 		}
 		encodedErr[pos] ^= 1
 
-		decoded, errs, unc = bptcDiff.DeinterleaveDataBits(encodedErr)
+		decoded, result = bptcDiff.DeinterleaveDataBits(encodedErr)
 
-		if unc {
+		if result.Uncorrectable {
 			t.Errorf("Failed to correct 1 error")
 		}
 
-		// Note: `errs` returned by DeinterleaveDataBits is "how many flips it performed".
+		// Note: `result.ErrorsCorrected` returned by DeinterleaveDataBits is "how many flips it performed".
 		// It should be 1.
-		if errs != 1 {
-			t.Errorf("Expected 1 error corrected, got %d", errs)
+		if result.ErrorsCorrected != 1 {
+			t.Errorf("Expected 1 error corrected, got %d", result.ErrorsCorrected)
 		}
 
 		if decoded != data {

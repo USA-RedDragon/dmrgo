@@ -27,8 +27,8 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		copy(cw[7:], parity[:])
 
 		// Case 1: No Error
-		decoded, errs, unc := Decode(cw)
-		if unc || errs != 0 {
+		decoded, result := Decode(cw)
+		if result.Uncorrectable || result.ErrorsCorrected != 0 {
 			t.Errorf("Failed to decode clean codeword")
 		}
 		if decoded != cw {
@@ -39,8 +39,8 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		cwErr1 := cw
 		pos := rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
 		cwErr1[pos] ^= 1
-		decoded, errs, unc = Decode(cwErr1)
-		if unc || errs != 1 {
+		decoded, result = Decode(cwErr1)
+		if result.Uncorrectable || result.ErrorsCorrected != 1 {
 			t.Errorf("Failed to correct 1 error")
 		}
 		correctedData := decoded
@@ -57,8 +57,8 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		}
 		cwErr2[p1] ^= 1
 		cwErr2[p2] ^= 1
-		decoded, errs, unc = Decode(cwErr2)
-		if unc || errs != 2 {
+		decoded, result = Decode(cwErr2)
+		if result.Uncorrectable || result.ErrorsCorrected != 2 {
 			t.Errorf("Failed to correct 2 errors")
 		}
 		if decoded != cw {
@@ -81,11 +81,11 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		cwErr3[p1] ^= 1
 		cwErr3[p2] ^= 1
 		cwErr3[p3] ^= 1
-		decoded, _, unc = Decode(cwErr3)
+		decoded, result = Decode(cwErr3)
 		// It SHOULD be uncorrectable or miscorrected.
 		// If it says uncorrectable, good. If it corrects to WRONG codeword, that's life.
 		// But it shouldn't say it corrected 3 errors to the RIGHT codeword.
-		if !unc && decoded == cw {
+		if !result.Uncorrectable && decoded == cw {
 			// This is theoretically impossible for d=6 code with minimum weight decoding
 			t.Errorf("Appeared to correct 3 errors (impossible d=6)")
 		}
