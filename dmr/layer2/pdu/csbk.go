@@ -17,7 +17,7 @@ const (
 	CSBKChannelTimingPDU                        CSBKOpcode = 0b00000111
 )
 
-func (opcode CSBKOpcode) String() string {
+func (opcode CSBKOpcode) ToString() string {
 	switch opcode {
 	case CSBKBSOutboundActivationPDU:
 		return "BS Outbound Activation PDU"
