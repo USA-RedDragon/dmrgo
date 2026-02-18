@@ -6,8 +6,8 @@ package compute
 // dm[i] = (i * 181) % 196
 func ComputeDM() [256]uint8 {
 	var dm [256]uint8
-	for i := 0; i < 256; i++ {
-		dm[i] = uint8((i * 181) % 196)
+	for i := range 256 {
+		dm[i] = uint8((i * 181) % 196) //nolint:gosec // result is always < 196, fits in uint8
 	}
 	return dm
 }
@@ -91,7 +91,7 @@ func ComputeHamming13_9Syndrome() [16]int {
 func ComputeCRCCCITT() [256]uint16 {
 	var table [256]uint16
 	for i := 0; i < 256; i++ {
-		crc := uint16(i) << 8
+		crc := uint16(i) << 8 //nolint:gosec // i is in [0,255], fits in uint16
 		for j := 0; j < 8; j++ {
 			if crc&0x8000 != 0 {
 				crc = (crc << 1) ^ 0x1021
@@ -190,10 +190,10 @@ func ComputeGaloisTables() (exp [256]uint8, log [256]uint8) {
 	// exp[i] = α^i in GF(2^8)
 	val := uint16(1)
 	for i := 0; i < 256; i++ {
-		exp[i] = uint8(val)
+		exp[i] = uint8(val) //nolint:gosec // val is always < 256 in GF(2^8)
 		// log is the inverse: log[α^i] = i
 		if i < 255 {
-			log[uint8(val)] = uint8(i)
+			log[uint8(val)] = uint8(i) //nolint:gosec // i is in [0,254], fits in uint8
 		}
 		val <<= 1
 		if val&0x100 != 0 {

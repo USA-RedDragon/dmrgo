@@ -18,15 +18,15 @@ func ComputeGolay23_12_7Encoding() []uint32 {
 
 	for d := 0; d < 4096; d++ {
 		// Compute d(x) * x^11 mod g(x) using polynomial long division
-		dividend := uint32(d) << 11 // 23-bit value: data in top 12 bits
+		dividend := uint32(d) << 11 //nolint:gosec // d is in [0,4095], fits in uint32
 		for i := 11; i >= 0; i-- {
 			if dividend&(1<<(i+11)) != 0 {
 				dividend ^= uint32(genPoly) << i
 			}
 		}
-		remainder := dividend & 0x7FF // bottom 11 bits
-		codeword := (uint32(d) << 11) | remainder
-		table[d] = codeword << 1 // stored shifted left by 1
+		remainder := dividend & 0x7FF             // bottom 11 bits
+		codeword := (uint32(d) << 11) | remainder //nolint:gosec // d is in [0,4095], fits in uint32
+		table[d] = codeword << 1                  // stored shifted left by 1
 	}
 
 	return table
@@ -39,15 +39,15 @@ func ComputeGolay24_12_8Encoding() []uint32 {
 	table := make([]uint32, 4096)
 
 	for d := 0; d < 4096; d++ {
-		dividend := uint32(d) << 11
+		dividend := uint32(d) << 11 //nolint:gosec // d is in [0,4095], fits in uint32
 		for i := 11; i >= 0; i-- {
 			if dividend&(1<<(i+11)) != 0 {
 				dividend ^= uint32(genPoly) << i
 			}
 		}
 		remainder := dividend & 0x7FF
-		codeword23 := (uint32(d) << 11) | remainder        // 23-bit codeword
-		parity := uint32(bits.OnesCount32(codeword23)) & 1 // overall parity
+		codeword23 := (uint32(d) << 11) | remainder        //nolint:gosec // d is in [0,4095], fits in uint32
+		parity := uint32(bits.OnesCount32(codeword23)) & 1 //nolint:gosec // OnesCount32 returns [0,32], fits in uint32
 		codeword24 := (codeword23 << 1) | parity           // 24-bit codeword
 		table[d] = codeword24
 	}
@@ -161,7 +161,7 @@ func ComputeQR16_7_6Encoding() []uint16 {
 		}
 		parity := qrParityBits(bits)
 
-		codeword := uint16(d) << 9
+		codeword := uint16(d) << 9 //nolint:gosec // d is in [0,127], fits in uint16
 		for i := 0; i < 9; i++ {
 			codeword |= uint16(parity[i]) << (8 - i)
 		}
@@ -185,7 +185,7 @@ func ComputeGolay20_8_7Encoding() []uint32 {
 			}
 		}
 		parity := golay20ParityBits(bits)
-		codeword := uint32(d)
+		codeword := uint32(d) //nolint:gosec // d is in [0,255], fits in uint32
 		for i := 0; i < 12; i++ {
 			codeword |= uint32(parity[i]) << (8 + i)
 		}
@@ -493,7 +493,7 @@ func ComputePRNGTable() []uint32 {
 		// Initialize LFSR: place the 12-bit seed into the lower 12 bits of
 		// the 23-bit register. Per the spec, bit 0 is forced to 1 to avoid
 		// the all-zero trap state.
-		lfsr := uint32(seed)<<11 | 1
+		lfsr := uint32(seed)<<11 | 1 //nolint:gosec // seed is in [0,4095], fits in uint32
 
 		// Clock the LFSR 23 times to fully mix, producing 23 output bits
 		var output uint32
