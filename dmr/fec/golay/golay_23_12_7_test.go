@@ -15,7 +15,7 @@ func TestGolay23127(t *testing.T) {
 
 		// Encode
 		// The decode function shifts encoding table value right by 1
-		codeword24 := Golay_23_12_7_EncodingTable[d]
+		codeword24 := Golay_23_12_7_table[d]
 		codeword23 := codeword24 >> 1
 
 		// Case 1: No Error

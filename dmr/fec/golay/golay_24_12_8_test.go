@@ -14,7 +14,7 @@ func TestGolay24128(t *testing.T) {
 		data := uint16(d) //nolint:gosec // d limited to 12-bit range
 
 		// Encode
-		codeword := Golay_24_12_8_EncodingTable[d]
+		codeword := Golay_24_12_8_table[d]
 
 		// Case 1: No Error
 		decoded, result := DecodeGolay24128(codeword)

@@ -55,12 +55,12 @@ func (vf *VocoderFrame) Encode() [72]bit.Bit {
 		}
 	}
 
-	a := golay.Golay_24_12_8_EncodingTable[aOrig]
+	a := golay.Golay_24_12_8_table[aOrig]
 
 	// The PRNG
 	p := prng.PRNG_TABLE[aOrig] >> 1
 
-	b := golay.Golay_23_12_7_EncodingTable[bOrig] >> 1
+	b := golay.Golay_23_12_7_table[bOrig] >> 1
 	b ^= p
 
 	MASK = 0x800000
@@ -95,18 +95,6 @@ func (vf *VocoderFrame) Encode() [72]bit.Bit {
 
 	return ambe72
 }
-
-//nolint:gochecknoglobals // static mapping tables
-var aTable = []int{0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44,
-	48, 52, 56, 60, 64, 68, 1, 5, 9, 13, 17, 21}
-
-//nolint:gochecknoglobals // static mapping tables
-var bTable = []int{25, 29, 33, 37, 41, 45, 49, 53, 57, 61, 65, 69,
-	2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42}
-
-//nolint:gochecknoglobals // static mapping tables
-var cTable = []int{46, 50, 54, 58, 62, 66, 70, 3, 7, 11, 15, 19,
-	23, 27, 31, 35, 39, 43, 47, 51, 55, 59, 63, 67, 71}
 
 func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 	var ambe49 [49]bit.Bit

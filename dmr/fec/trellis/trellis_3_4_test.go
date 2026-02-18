@@ -9,7 +9,7 @@ func TestTrellis34Decode(t *testing.T) {
 	tr := New()
 
 	symbolToDibits := make(map[byte][2]int8)
-	for pair, sym := range constellationPoints {
+	for pair, sym := range trellis34_constellation {
 		symbolToDibits[sym] = pair
 	}
 
@@ -31,7 +31,7 @@ func TestTrellis34Decode(t *testing.T) {
 		for i := 0; i < 49; i++ {
 			in := int(inputs[i])
 			// encoderStateTransition maps State(row) + Input(col) -> Symbol
-			symbol := encoderStateTransition[state*8+in]
+			symbol := encoder_state_transition_table[state*8+in]
 			symbols[i] = symbol
 
 			// Next state is the input tribit
@@ -55,7 +55,7 @@ func TestTrellis34Decode(t *testing.T) {
 		// permuted[i] = ordered[interleaveMatrix[i]]
 		var permutedDibits [98]int8
 		for i := 0; i < 98; i++ {
-			permutedDibits[i] = orderedDibits[interleaveMatrix[i]]
+			permutedDibits[i] = orderedDibits[interleave_matrix[i]]
 		}
 
 		// Dibits To Bits
@@ -136,7 +136,7 @@ func TestTrellis34Decode(t *testing.T) {
 
 		var corruptPermutedDibits [98]int8
 		for i := 0; i < 98; i++ {
-			corruptPermutedDibits[i] = corruptOrderedDibits[interleaveMatrix[i]]
+			corruptPermutedDibits[i] = corruptOrderedDibits[interleave_matrix[i]]
 		}
 
 		corruptBits := tr.dibitsToBits(corruptPermutedDibits)
