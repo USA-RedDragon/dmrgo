@@ -29,6 +29,9 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 	}
 
 	if err := writeFile(dmrRoot, "vocoder", "vocoder",
+		writeTable("AMBE_SCRAMBLE_TABLE", tables.AMBEScrambleTable[:]),
+		jen.Line(),
+		jen.Line(),
 		writeTable("aTable", tables.ATable),
 		jen.Line(),
 		jen.Line(),
@@ -75,12 +78,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		jen.Line(),
 		jen.Line(),
 		writeTable("qr16_7_6_syndrome_table", tables.QR16_7_6Syndrome[:]),
-	); err != nil {
-		return err
-	}
-
-	if err := writeFile(dmrRoot, "fec/prng", "prng",
-		writeTable("PRNG_TABLE", tables.PRNGTable),
 	); err != nil {
 		return err
 	}

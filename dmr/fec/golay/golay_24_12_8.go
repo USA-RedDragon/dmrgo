@@ -10,34 +10,31 @@ import (
 // It returns the corrected 12-bit data and FECResult.
 func DecodeGolay24128(received uint32) (data uint16, result fec.FECResult) {
 	result.BitsChecked = 24
-	minDist := 24
-	bestData := uint16(0)
 
-	// Brute-force search the lookup table for the nearest valid codeword.
-	// Since there are only 4096 codewords, this is computationally feasible.
-	for d, codeword := range Golay_24_12_8_table {
-		dist := bits.OnesCount32(received ^ codeword)
-		if dist < minDist {
-			minDist = dist
-			bestData = uint16(d) //nolint:gosec // d is a table index (0-4095), fits in uint16
+	// Compute the 12-bit syndrome:
+	// - Upper 11 bits: polynomial syndrome of the 23-bit portion (bits 1..23)
+	// - Lowest bit: overall parity error
+	err23 := received >> 1
+	polySyndrome := golay23ComputeSyndrome(err23)
+	parityErr := bits.OnesCount32(received) & 1
+	syndrome := (polySyndrome << 1) | parityErr
 
-			// If perfect match, we can stop early
-			if dist == 0 {
-				return bestData, result
-			}
-		}
+	if syndrome == 0 {
+		// No errors detected
+		return uint16(received >> 12), result //nolint:gosec // received>>12 is at most 12 bits, fits in uint16
 	}
 
-	// Golay (24,12,8) can correct up to 3 errors (d_min = 8, t = floor((8-1)/2) = 3)
-	// Some sources suggest it can correct 3 errors and detect 4.
-	if minDist <= 3 {
-		result.ErrorsCorrected = minDist
-		return bestData, result
+	// Look up the error pattern from the syndrome table
+	errPattern := golay_24_12_8_syndrome_table[syndrome]
+	if errPattern == 0xFFFFFFFF {
+		result.Uncorrectable = true
+		return uint16(received >> 12), result //nolint:gosec // received>>12 is at most 12 bits, fits in uint16
 	}
 
-	// If nearest neighbor is too far, it's uncorrectable (or we found a false positive, but we report fail)
-	// We return the best guess anyway, but flag it.
-	result.ErrorsCorrected = minDist
-	result.Uncorrectable = true
-	return bestData, result
+	// Apply correction
+	corrected := received ^ errPattern
+	result.ErrorsCorrected = bits.OnesCount32(errPattern)
+
+	// Extract the 12 data bits (upper 12 bits of the 24-bit codeword)
+	return uint16(corrected >> 12), result //nolint:gosec // corrected>>12 is at most 12 bits, fits in uint16
 }

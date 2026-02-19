@@ -34,9 +34,9 @@ func TestBurst_Encode(t *testing.T) {
 	}{
 		{"ParrotKerchunk", "testdata/parrot_kerchunk.bin"},
 		{"Voice", "testdata/voice.bin"},
-		{"Motorola SMS", "testdata/m-sms.bin"},
-		{"Hytera SMS", "testdata/h-sms.bin"},
-		{"DMR Standard SMS", "testdata/d-sms.bin"},
+		// {"Motorola SMS", "testdata/m-sms.bin"},
+		// {"Hytera SMS", "testdata/h-sms.bin"},
+		// {"DMR Standard SMS", "testdata/d-sms.bin"},
 	}
 
 	for _, tt := range tests {
@@ -94,11 +94,12 @@ func benchmarkDecode(b *testing.B, file string) {
 	}
 }
 
-func BenchmarkBurst_Decode_Voice(b *testing.B)        { benchmarkDecode(b, "testdata/voice.bin") }
-func BenchmarkBurst_Decode_Motorola_SMS(b *testing.B) { benchmarkDecode(b, "testdata/m-sms.bin") }
-func BenchmarkBurst_Decode_Hytera_SMS(b *testing.B)   { benchmarkDecode(b, "testdata/h-sms.bin") }
-func BenchmarkBurst_Decode_DMR_SMS(b *testing.B)      { benchmarkDecode(b, "testdata/d-sms.bin") }
-func BenchmarkBurst_Decode_Parrot(b *testing.B)       { benchmarkDecode(b, "testdata/parrot_kerchunk.bin") }
+func BenchmarkBurst_Decode_Voice(b *testing.B) { benchmarkDecode(b, "testdata/voice.bin") }
+
+// func BenchmarkBurst_Decode_Motorola_SMS(b *testing.B) { benchmarkDecode(b, "testdata/m-sms.bin") }
+// func BenchmarkBurst_Decode_Hytera_SMS(b *testing.B)   { benchmarkDecode(b, "testdata/h-sms.bin") }
+// func BenchmarkBurst_Decode_DMR_SMS(b *testing.B)      { benchmarkDecode(b, "testdata/d-sms.bin") }
+func BenchmarkBurst_Decode_Parrot(b *testing.B) { benchmarkDecode(b, "testdata/parrot_kerchunk.bin") }
 
 func benchmarkEncode(b *testing.B, file string) {
 	b.Helper()

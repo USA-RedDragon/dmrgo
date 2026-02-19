@@ -7,7 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
-	"github.com/USA-RedDragon/dmrgo/dmr/fec/prng"
 )
 
 type VocoderFrame struct {
@@ -57,8 +56,7 @@ func (vf *VocoderFrame) Encode() [72]bit.Bit {
 
 	a := golay.Golay_24_12_8_table[aOrig]
 
-	// The PRNG
-	p := prng.PRNG_TABLE[aOrig] >> 1
+	p := AMBE_SCRAMBLE_TABLE[aOrig] >> 1
 
 	b := golay.Golay_23_12_7_table[bOrig] >> 1
 	b ^= p
@@ -110,7 +108,6 @@ func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 		}
 	}
 
-	// shift right by 1 to make it 23 bits for PRNG? No, PRNG_TABLE index is 12 bits.
 	// Golay 24,12,8: 24 bits received. 12 data bits.
 	// Decode 'a'
 	dataA, fecA := golay.DecodeGolay24128(a)
@@ -130,28 +127,7 @@ func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 		}
 	}
 
-	// Decrypt 'b' using 'a' before decoding? Or decode then decrypt?
-	// The Encode function does:
-	// a = Table[aOrig]
-	// p = PRNG[aOrig] >> 1
-	// b = (Table[bOrig] >> 1) ^ p
-	// So b contains PRNG[aOrig].
-	// To decode b, we must first XOR with p.
-	// We need aOrig for that. We have 'a' (which is the corrected aOrig).
-
-	// The PRNG
-	// 'a' here is the 12-bit data (aOrig).
-	b ^= (prng.PRNG_TABLE[a] >> 1)
-
-	// Check/Decode 'b'
-	// 'b' is now (Table[bOrig] >> 1). It is 23 bits.
-	// Encode shifted right by 1.
-	// Golay_23 is 23 bits.
-	// DecodeGolay23127 expects 23 bits.
-	// Is the result of Encode() 23 bits in the lower part?
-	// In Encode(): b = ... >> 1. 23 bits.
-	// Stored in ambe72 using bTable which has 23 entries.
-	// So 'b' assembled here is exactly the 23 bits.
+	b ^= (AMBE_SCRAMBLE_TABLE[a] >> 1)
 
 	dataB, fecB := golay.DecodeGolay23127(b)
 	result.ErrorsCorrected += fecB.ErrorsCorrected
@@ -168,14 +144,6 @@ func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 			c |= MASK
 		}
 	}
-	// 'c' is 25 bits uncoded. No FEC.
-	// Just use it. But in correct format for loop below?
-	// Loop below expects 'c' to be shifted?
-	// In Encode: if (cOrig & MASK) != 0. MASK=0x1000000 (bit 24).
-	// cOrig is constructed from ambe49.
-	// Here 'c' is read from bits.
-	// We don't need to shift 'c', it should already be aligned if read correctly.
-	// Wait, loop below uses MASK=0x1000000 for c.
 
 	// Reconstruct ambe49
 	MASK = 0x000800

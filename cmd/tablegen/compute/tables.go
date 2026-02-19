@@ -18,6 +18,7 @@ type Tables struct {
 	CTable               []int
 	GaloisExp            [256]uint8
 	GaloisLog            [256]uint8
+	AMBEScrambleTable    [4096]uint32
 
 	// Tier 1
 	Golay20_8_7Encoding    []uint32
@@ -30,7 +31,6 @@ type Tables struct {
 	QR16_7_6Syndrome       [512]uint16
 	EncoderStateTransition []byte
 	InterleaveMatrix       []byte
-	PRNGTable              []uint32
 
 	// Tier 2
 	Trellis34Transition [][]byte
@@ -81,6 +81,11 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.GaloisExp, t.GaloisLog = ComputeGaloisTables()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.AMBEScrambleTable = ComputeAMBEScrambleTable()
 		wg.Done()
 	}()
 	wg.Wait()
@@ -134,11 +139,6 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.Golay24_12_8Syndrome = ComputeGolay24_12_8Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.PRNGTable = ComputePRNGTable()
 		wg.Done()
 	}()
 	wg.Wait()

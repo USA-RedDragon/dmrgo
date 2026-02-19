@@ -474,39 +474,3 @@ func golay24Syndrome(errPattern uint32) int {
 	parityErr := bits.OnesCount32(errPattern) & 1
 	return (polySyndrome << 1) | parityErr
 }
-
-// ComputePRNGTable computes the AMBE PRNG table used for voice frame scrambling.
-// This table is defined verbatim in ETSI TS 102 361-1 Annex B.1.2.
-//
-// The table contains 4096 entries of 24-bit pseudo-random values, indexed
-// by the 12-bit A-field data of the AMBE voice frame.
-//
-// Note: The generation algorithm is specified in the ETSI standard appendix.
-// This function reproduces the standard table values.
-func ComputePRNGTable() []uint32 {
-	// The PRNG uses a 23-bit LFSR with polynomial x^23 + x^5 + 1.
-	// For each 12-bit seed, the LFSR is initialized and clocked to produce
-	// a 23-bit scrambling value, stored left-shifted by 1 (24-bit).
-	table := make([]uint32, 4096)
-
-	for seed := 0; seed < 4096; seed++ {
-		// Initialize LFSR: place the 12-bit seed into the lower 12 bits of
-		// the 23-bit register. Per the spec, bit 0 is forced to 1 to avoid
-		// the all-zero trap state.
-		lfsr := uint32(seed)<<11 | 1 //nolint:gosec // seed is in [0,4095], fits in uint32
-
-		// Clock the LFSR 23 times to fully mix, producing 23 output bits
-		var output uint32
-		for i := 0; i < 23; i++ {
-			// Feedback: XOR of bit 22 (MSB) and bit 4
-			feedback := ((lfsr >> 22) ^ (lfsr >> 4)) & 1
-			lfsr = ((lfsr << 1) | feedback) & 0x7FFFFF // keep 23 bits
-			output = (output << 1) | ((lfsr >> 22) & 1)
-		}
-
-		// Store as 24-bit value (left-shifted by 1)
-		table[seed] = output << 1
-	}
-
-	return table
-}

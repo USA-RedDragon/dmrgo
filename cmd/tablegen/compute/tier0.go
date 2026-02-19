@@ -2,6 +2,43 @@ package compute
 
 // ---- Tier 0: No dependencies, foundational tables ----
 
+// ComputeAMBEScrambleTable generates the 4096-entry AMBE vocoder scramble table.
+//
+// Each 12-bit index i (the AMBE 'a' parameter) seeds a 16-bit Linear
+// Congruential Generator (LCG) which produces 24 pseudo-random bits.
+// These bits form a mask that is XORed with the Golay-encoded 'b' vector
+// during AMBE frame encode/decode (after shifting right by 1).
+//
+// The LCG follows the recurrence:
+//
+//	p[n] = (173 * p[n-1] + 13849) mod 65536
+//
+// with seed p[0] = 16 * i. Output bit k (1-indexed) is the MSB of p[k]:
+//
+//	bit_k = p[k] >> 15
+//
+// The 24 output bits are packed MSB-first into a uint32.
+func ComputeAMBEScrambleTable() [4096]uint32 {
+	const (
+		lcgMultiplier = 173
+		lcgIncrement  = 13849
+		lcgModulus    = 65536
+		numBits       = 24
+	)
+
+	var table [4096]uint32
+	for i := range 4096 {
+		p := uint32(16 * i) // seed = i << 4
+		var entry uint32
+		for k := 0; k < numBits; k++ {
+			p = (lcgMultiplier*p + lcgIncrement) & (lcgModulus - 1)
+			entry = (entry << 1) | (p >> 15) // collect MSB
+		}
+		table[i] = entry
+	}
+	return table
+}
+
 // ComputeDM computes the BPTC(196,96) deinterleave matrix.
 // dm[i] = (i * 181) % 196
 func ComputeDM() [256]uint8 {

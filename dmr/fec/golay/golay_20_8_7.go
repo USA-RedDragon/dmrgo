@@ -1,6 +1,8 @@
 package golay
 
 import (
+	"math/bits"
+
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 )
@@ -82,25 +84,26 @@ func Golay_20_8_Check(bits [20]bit.Bit) bool {
 // The input byte contains the 8 data bits.
 // The output array contains 20 bits (values 0 or 1).
 func Encode(data byte) [20]bit.Bit {
-	var bits [20]bit.Bit
+	var result [20]bit.Bit
 
-	// Extract data bits
+	// The encoding table uses LSB-first bit ordering (bits[i] = (d>>i)&1),
+	// but the codeword bit array uses MSB-first (bits[i] = (data>>(7-i))&1).
+	// Reverse the data byte to match the table's convention.
+	tableIdx := bits.Reverse8(data)
+	codeword := golay_20_8_7_table[tableIdx]
+
+	// Unpack data bits (MSB first)
 	for i := 0; i < 8; i++ {
 		if (data>>(7-i))&1 == 1 {
-			bits[i] = 1
+			result[i] = 1
+		}
+	}
+	// Unpack parity bits from table
+	for i := 0; i < 12; i++ {
+		if (codeword>>(8+i))&1 == 1 {
+			result[8+i] = 1
 		}
 	}
 
-	// Calculate parity
-	// Note: Golay_20_8_Parity takes [8]bit.Bit where each Bit is 0 or 1
-	var dataBits [8]bit.Bit
-	copy(dataBits[:], bits[:8])
-	parity := Golay_20_8_Parity(dataBits)
-
-	// Fill parity bits
-	for i := 0; i < 12; i++ {
-		bits[8+i] = parity[i]
-	}
-
-	return bits
+	return result
 }

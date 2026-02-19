@@ -91,3 +91,24 @@ func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.FECResult) {
 
 	return corrected, result
 }
+
+// Encode encodes a 7-bit input into a 16-bit QR(16,7,6) codeword.
+// The input byte contains the 7 data bits (0..127).
+// The output array contains 16 bits (values 0 or 1).
+// Bit layout: bits[0..6] = data, bits[7..15] = parity.
+func Encode(data byte) [16]bit.Bit {
+	var bits [16]bit.Bit
+
+	// Look up the packed 16-bit codeword from the encoding table.
+	// Table layout: bits 15..9 = data[0..6], bits 8..0 = parity[0..8].
+	codeword := qr16_7_6_encoding_table[data&0x7F]
+
+	// Unpack into bit array
+	for i := 0; i < 16; i++ {
+		if (codeword>>(15-i))&1 == 1 {
+			bits[i] = 1
+		}
+	}
+
+	return bits
+}

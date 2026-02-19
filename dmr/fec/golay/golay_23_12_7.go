@@ -6,36 +6,46 @@ import (
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 )
 
+// golay23GenPoly is the generator polynomial for Golay(23,12,7):
+// g(x) = x^11 + x^10 + x^6 + x^5 + x^4 + x^2 + 1
+const golay23GenPoly = 0xC75
+
+// golay23ComputeSyndrome computes the 11-bit syndrome for a 23-bit received word
+// by polynomial division: syndrome = received(x) mod g(x).
+func golay23ComputeSyndrome(received uint32) int {
+	dividend := received
+	for i := 11; i >= 0; i-- {
+		if dividend&(1<<(i+11)) != 0 {
+			dividend ^= golay23GenPoly << i
+		}
+	}
+	return int(dividend & 0x7FF)
+}
+
 // DecodeGolay23127 decodes a 23-bit word using the Golay (23,12,7) code.
 // It returns the corrected 12-bit data and FECResult.
 func DecodeGolay23127(received uint32) (data uint16, result fec.FECResult) {
 	result.BitsChecked = 23
-	minDist := 23
-	bestData := uint16(0)
 
-	// Brute-force search
-	for d, codeword := range Golay_23_12_7_table {
-		// The encoding table stores values shifted left by 1 (bit 0 is always 0),
-		// but the transmission discards bit 0 (>> 1).
-		// So we must compare the received value against the table value shifted right.
-		dist := bits.OnesCount32(received ^ (codeword >> 1))
-		if dist < minDist {
-			minDist = dist
-			bestData = uint16(d) //nolint:gosec // d is a table index (0-4095), fits in uint16
+	// Compute the 11-bit syndrome via polynomial division
+	syndrome := golay23ComputeSyndrome(received)
 
-			if dist == 0 {
-				return bestData, result
-			}
-		}
+	if syndrome == 0 {
+		// No errors detected
+		return uint16(received >> 11), result //nolint:gosec // received>>11 is at most 12 bits, fits in uint16
 	}
 
-	// Golay (23,12,7) can correct up to 3 errors (d_min = 7, t = floor((7-1)/2) = 3)
-	if minDist <= 3 {
-		result.ErrorsCorrected = minDist
-		return bestData, result
+	// Look up the error pattern from the syndrome table
+	errPattern := golay_23_12_7_syndrome_table[syndrome]
+	if errPattern == 0xFFFFFFFF {
+		result.Uncorrectable = true
+		return uint16(received >> 11), result //nolint:gosec // received>>11 is at most 12 bits, fits in uint16
 	}
 
-	result.ErrorsCorrected = minDist
-	result.Uncorrectable = true
-	return bestData, result
+	// Apply correction
+	corrected := received ^ errPattern
+	result.ErrorsCorrected = bits.OnesCount32(errPattern)
+
+	// Extract the 12 data bits (upper 12 bits of the 23-bit codeword)
+	return uint16(corrected >> 11), result //nolint:gosec // corrected>>11 is at most 12 bits, fits in uint16
 }
