@@ -39,7 +39,7 @@ jobs:
           env CGO_ENABLED=0 go test -C v2 -v ./... 2>&1 > out.txt || true
           env CGO_ENABLED=0 go test -C v2 -v ./... -json 2>&1 > json-out.txt || true
           cd v2
-          cat ../out.txt | go-junit-report -out report.xml -iocopy
+          cat ../out.txt | go-junit-report -out ../report.xml -iocopy
           cat ../json-out.txt | go-test-report -o ../report.html
 
       - name: Unit tests coverage
