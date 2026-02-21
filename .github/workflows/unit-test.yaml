@@ -45,7 +45,7 @@ jobs:
       - name: Unit tests coverage
         if: inputs.coverage
         run: |
-          env CGO_ENABLED=0 go test -C v2 -v ./... -coverprofile coverage.out -coverpkg=./... -covermode atomic
+          env CGO_ENABLED=0 go test -C v2 -v ./... -coverprofile ../coverage.out -coverpkg=./... -covermode atomic
 
       - uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         if: always() && inputs.coverage
