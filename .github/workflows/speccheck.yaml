@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  unit-tests:
+  spec-check:
     runs-on: ubuntu-24.04
 
     steps:
@@ -21,10 +21,10 @@ jobs:
 
       - run: go generate ./...
 
-      - name: Unit tests
+      - name: Spec check README
         run: |
           cd cmd/speccheck
-          env CGO_ENABLED=0 go run . -update-readme
+          env CGO_ENABLED=0 go run . -update-readme || true
 
       - uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
         with:
@@ -32,3 +32,8 @@ jobs:
           commit_user_name: "github-actions[bot]"
           commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
           commit_author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+
+      - name: Spec check validation
+        run: |
+          cd cmd/speccheck
+          env CGO_ENABLED=0 go run .
