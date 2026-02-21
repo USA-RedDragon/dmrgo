@@ -77,6 +77,8 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.FECResult) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
+	_packedBytes[10] ^= uint8(0xcc)
+	_packedBytes[11] ^= uint8(0xcc)
 	var fecResult fec.FECResult
 	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
@@ -114,6 +116,8 @@ func EncodeDataHeader(s *DataHeader) [96]bit.Bit {
 	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
+	_crcHigh ^= uint8(0xcc)
+	_crcLow ^= uint8(0xcc)
 	for j := range 8 {
 		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
 	}

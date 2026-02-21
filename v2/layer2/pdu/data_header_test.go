@@ -41,12 +41,10 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 			dataBytes[i] |= byte(infoBits[i*8+j])
 		}
 	}
-	crc := crc.CalculateCRCCCITT(dataBytes[:])
-	// CRC stored big-endian with MMDVM byte-swap: crc8[0] → last byte, crc8[1] → second-to-last
-	crcHigh := byte(crc >> 8)
-	crcLow := byte(crc)
-	// MMDVM check: byte(crc) == data[11] && byte(crc>>8) == data[10]
-	// So data[10] = crcHigh, data[11] = crcLow
+	crcVal := crc.CalculateCRCCCITT(dataBytes[:])
+	// Apply Data Header CRC mask per ETSI TS 102 361-1 Table B.3
+	crcHigh := byte(crcVal>>8) ^ 0xCC
+	crcLow := byte(crcVal) ^ 0xCC
 	for b := 7; b >= 0; b-- {
 		infoBits[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
 		infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
@@ -119,8 +117,9 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 				}
 			}
 			crcVal := crc.CalculateCRCCCITT(dataBytes[:])
-			crcHigh := byte(crcVal >> 8)
-			crcLow := byte(crcVal)
+			// Apply Data Header CRC mask per ETSI TS 102 361-1 Table B.3
+			crcHigh := byte(crcVal>>8) ^ 0xCC
+			crcLow := byte(crcVal) ^ 0xCC
 			for b := 7; b >= 0; b-- {
 				infoBits[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
 				infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)

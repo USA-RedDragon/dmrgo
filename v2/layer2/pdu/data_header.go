@@ -22,6 +22,7 @@ type UnconfirmedDataHeader struct {
 }
 
 // dmr:crc crc_ccitt
+// dmr:crc_mask 0xCCCC
 // dmr:input_size 96
 // ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Data Header PDU
 type DataHeader struct {
