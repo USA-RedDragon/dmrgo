@@ -229,13 +229,27 @@ documents:
         title: "Rate 3/4 Data PDU"
         source_files:
           - dmr/layer2/pdu/rate34_data.go
-        test_functions: []
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestRate34Data_DecodeFromBits
+              - TestRate34Data_GetDataType
+              - TestRate34Data_ToString
+              - TestRate34Data_AllOnes
+              - TestRate34Data_EncodeDecodeRoundTrip
 
       - section: "9.1.11"
         title: "Rate 1 Data PDU"
         source_files:
           - dmr/layer2/pdu/rate1_data.go
-        test_functions: []
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestRate1Data_DecodeFromBits
+              - TestRate1Data_GetDataType
+              - TestRate1Data_ToString
+              - TestRate1Data_AllOnes
+              - TestRate1Data_EncodeDecodeRoundTrip
 
       - section: "9.1.12"
         title: "PI Header PDU"
@@ -333,10 +347,9 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
             names:
-              - TestNewServiceOptionsFromBits
-              - TestServiceOptions_ReservedBits
-              - TestServiceOptions_ToByte_RoundTrip
-              - TestServiceOptions_ToByte_FromByte_RoundTrip
+              - TestDecodeServiceOptions
+              - TestDecodeServiceOptions_ReservedBits
+              - TestServiceOptions_EncodeDecodeRoundTrip
               - TestServiceOptions_ToString
 
       - section: "9.3.8"
@@ -552,10 +565,9 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
             names:
-              - TestNewServiceOptionsFromBits
-              - TestServiceOptions_ReservedBits
-              - TestServiceOptions_ToByte_RoundTrip
-              - TestServiceOptions_ToByte_FromByte_RoundTrip
+              - TestDecodeServiceOptions
+              - TestDecodeServiceOptions_ReservedBits
+              - TestServiceOptions_EncodeDecodeRoundTrip
               - TestServiceOptions_ToString
 
       - section: "7.2.2"
