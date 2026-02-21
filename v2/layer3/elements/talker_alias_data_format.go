@@ -1,6 +1,6 @@
 package elements
 
-// ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.2.18 Talker Alias Data Format
+// ETSI TS 102 361-2 - 7.2.18 Talker Alias Data Format
 type TalkerAliasDataFormat uint8
 
 const (

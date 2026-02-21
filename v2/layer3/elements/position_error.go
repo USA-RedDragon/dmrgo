@@ -1,6 +1,6 @@
 package elements
 
-// ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.2.15 Position Error
+// ETSI TS 102 361-2 - 7.2.15 Position Error
 type PositionError uint8
 
 const (

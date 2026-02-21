@@ -38,14 +38,14 @@ func (opcode CSBKOpcode) ToString() string {
 	}
 }
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
+// ETSI TS 102 361-1 - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
 type BSOutboundActivationPDU struct {
 	Reserved      uint16      `dmr:"bits:0-15"`
 	BSAddress     [24]bit.Bit `dmr:"bits:16-39,raw"`
 	SourceAddress [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.2 UU_V_Req PDU
+// ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
 type UnitToUnitVoiceServiceRequestPDU struct {
 	ServiceOptions byte        `dmr:"bits:0-7"`
 	Reserved       byte        `dmr:"bits:8-15"`
@@ -53,7 +53,7 @@ type UnitToUnitVoiceServiceRequestPDU struct {
 	SourceAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.3 UU_Ans_Rsp PDU
+// ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
 type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 	ServiceOptions byte        `dmr:"bits:0-7"`
 	AnswerResponse byte        `dmr:"bits:8-15"`
@@ -61,7 +61,7 @@ type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 	SourceAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5 NACK_Rsp PDU
+// ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
 type NegativeAcknowledgementPDU struct {
 	AdditionalInfo bool        `dmr:"bit:0"`
 	SourceType     bool        `dmr:"bit:1"`
@@ -71,7 +71,7 @@ type NegativeAcknowledgementPDU struct {
 	TargetAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.7 Pre PDU
+// ETSI TS 102 361-1 - 9.3.7 Pre PDU
 type PreamblePDU struct {
 	// 1 = data content follows, 0 = CSBK follows
 	Data bool `dmr:"bit:0"`
@@ -83,7 +83,7 @@ type PreamblePDU struct {
 	SourceAddress      [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
+// ETSI TS 102 361-1 - 9.3.8 Ch_Timing (Channel Timing) PDU
 type ChannelTimingPDU struct {
 	SyncAge                 [11]bit.Bit `dmr:"bits:0-10,raw"`
 	Generation              [5]bit.Bit  `dmr:"bits:11-15,raw"`
@@ -100,7 +100,7 @@ type ChannelTimingPDU struct {
 // dmr:crc crc_ccitt
 // dmr:crc_mask 0xA5A5
 // dmr:input_size 96
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.5 CSBK PDU
+// ETSI TS 102 361-1 - 9.1.5 CSBK PDU
 type CSBK struct {
 	DataType elements.DataType `dmr:"-"`
 

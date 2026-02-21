@@ -7,7 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.1 Golay (20,8,7)
+// ETSI TS 102 361-1 - B.3.1 Golay (20,8,7)
 // This code works on Bit arrays where each Bit is 0 or 1.
 func Golay_20_8_Parity(bits [8]bit.Bit) [12]bit.Bit {
 	var p [12]bit.Bit

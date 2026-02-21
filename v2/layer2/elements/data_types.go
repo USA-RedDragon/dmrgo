@@ -1,6 +1,6 @@
 package elements
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.6 Data Type
+// ETSI TS 102 361-1 - 9.3.6 Data Type
 type DataType uint8
 
 const (

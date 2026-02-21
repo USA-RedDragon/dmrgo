@@ -5,7 +5,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.2  Quadratic residue (16,7,6)
+// ETSI TS 102 361-1 - B.3.2  Quadratic residue (16,7,6)
 
 type QuadraticResidue16_7_6 struct {
 	Data   [7]bit.Bit

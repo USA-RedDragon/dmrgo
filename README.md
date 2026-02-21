@@ -67,7 +67,7 @@ func main() {
 
 **Overall: 59/90 verified (65.6%)**
 
-### ETSI TS 102 361-1 V2.5.1 (2017-10) — Air Interface Protocol
+### ETSI TS 102 361-1 — Air Interface Protocol
 
 **49** sections - ✅ 38  ❌ 0  🔶 0  ⬜ 11
 
@@ -125,7 +125,7 @@ func main() {
 | §D | PRNG | ⬜ unimplemented | - | - |
 | §E | Encryption (ARC4/AES) | ⬜ unimplemented | - | - |
 
-### ETSI TS 102 361-2 V2.4.1 (2017-10) — Voice and Generic Services
+### ETSI TS 102 361-2 — Voice and Generic Services
 
 **29** sections - ✅ 21  ❌ 0  🔶 0  ⬜ 8
 

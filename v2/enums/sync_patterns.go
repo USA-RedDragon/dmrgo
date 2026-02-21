@@ -1,6 +1,6 @@
 package enums
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.1 Synchronization (SYNC) PDU - Table 9.2: SYNC patterns
+// ETSI TS 102 361-1 - 9.1.1 Synchronization (SYNC) PDU - Table 9.2: SYNC patterns
 type SyncPattern int64
 
 const embeddedSignallingName = "Embedded Signalling"

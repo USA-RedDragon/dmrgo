@@ -4,7 +4,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
-// ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.2.1  Service Options
+// ETSI TS 102 361-2 - 7.2.1  Service Options
 type ServiceOptions struct {
 	IsEmergency         bool       `dmr:"bit:0"`
 	IsPrivacy           bool       `dmr:"bit:1"`

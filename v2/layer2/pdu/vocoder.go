@@ -5,7 +5,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 7.1 Voice channel coding
+// ETSI TS 102 361-1 - 7.1 Voice channel coding
 type Vocoder struct {
 	Frames [3]vocoder.VocoderFrame `dmr:"bits:0-215,delegate,noptr,stride:72"`
 }

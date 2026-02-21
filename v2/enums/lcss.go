@@ -1,6 +1,6 @@
 package enums
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.3 LC Start/Stop (LCSS)
+// ETSI TS 102 361-1 - 9.3.3 LC Start/Stop (LCSS)
 type LCSS int
 
 const (

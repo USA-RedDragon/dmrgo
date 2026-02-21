@@ -8,7 +8,7 @@
 
 documents:
   - id: "TS-102-361-1"
-    title: "ETSI TS 102 361-1 V2.5.1 (2017-10) — Air Interface Protocol"
+    title: "ETSI TS 102 361-1 — Air Interface Protocol"
     sections:
       # ── Burst format ──
       - section: "6.1"
@@ -526,7 +526,7 @@ documents:
         test_functions: []
 
   - id: "TS-102-361-2"
-    title: "ETSI TS 102 361-2 V2.4.1 (2017-10) — Voice and Generic Services"
+    title: "ETSI TS 102 361-2 — Voice and Generic Services"
     sections:
       - section: "7.1.1"
         title: "Full LC PDU opcodes"

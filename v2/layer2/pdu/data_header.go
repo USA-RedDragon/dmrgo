@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Unconfirmed Data Header
+// ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
 type UnconfirmedDataHeader struct {
 	Group             bool `dmr:"bit:0"`
 	ResponseRequested bool `dmr:"bit:1"`
@@ -24,7 +24,7 @@ type UnconfirmedDataHeader struct {
 // dmr:crc crc_ccitt
 // dmr:crc_mask 0xCCCC
 // dmr:input_size 96
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Data Header PDU
+// ETSI TS 102 361-1 - 9.1.8 Data Header PDU
 type DataHeader struct {
 	DataType elements.DataType `dmr:"-"`
 	crc      uint16            `dmr:"-"` //nolint:unused

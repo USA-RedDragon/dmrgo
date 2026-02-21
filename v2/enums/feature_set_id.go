@@ -2,7 +2,7 @@ package enums
 
 import "fmt"
 
-// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5  Feature set ID (FID)
+// ETSI TS 102 361-1 - 9.3.5  Feature set ID (FID)
 //
 // list of specific manufacturers: http://www.etsi.org/images/files/DMRcodes/dmrs-mfid.xls
 type FeatureSetID byte
