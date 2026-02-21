@@ -26,6 +26,7 @@ const (
 	FieldPacked                     // bits:S-E,packed → packed bytes
 	FieldLongitude                  // bits:S-E,type:longitude → float32
 	FieldLatitude                   // bits:S-E,type:latitude → float32
+	FieldDispatch                   // bits:S-E,dispatch:Field=Val1|Val2 → pointer to sub-PDU
 )
 
 // Field is a single tagged field within a PDU struct.
@@ -42,12 +43,20 @@ type Field struct {
 	TypeName    string // unqualified type name (e.g. "LCSS")
 	IsQualified bool   // true if GoType contains a package qualifier
 
+	// Pointer type information (for dispatch fields)
+	IsPointer   bool   // true if GoType starts with "*"
+	PointedType string // type without "*" prefix (e.g. "BSOutboundActivationPDU")
+
 	// Enum-specific
 	EnumFromInt    string // e.g. "enums.LCSSFromInt", "enums.FLCOFromInt"
 	EnumReturnsErr bool   // true if FromInt returns (T, error), false if just T
 
 	// Delegate-specific
 	DelegateNoPtr bool // true if the constructor returns a value (not a pointer)
+
+	// Dispatch-specific
+	DispatchFieldName string   // field name to switch on (e.g. "CSBKOpcode")
+	DispatchValues    []string // constant names (e.g. ["CSBKBSOutboundActivationPDU"])
 
 	// For non-contiguous fields: additional bit ranges
 	// e.g. "bits:3+12-15" → ExtraBitRanges = [{12,15}]
@@ -56,7 +65,14 @@ type Field struct {
 
 // FECDirective describes a struct-level FEC pre-processing step.
 type FECDirective struct {
-	Codec string // e.g. "golay_20_8_7", "quadratic_residue_16_7_6"
+	Codec string // e.g. "golay_20_8_7", "quadratic_residue_16_7_6", "reed_solomon_12_9_4"
+}
+
+// CRCDirective describes a struct-level CRC validation step.
+type CRCDirective struct {
+	Algorithm string // "crc_ccitt"
+	Mask      uint16 // XOR mask applied to last 2 bytes before check (0 = no mask)
+	HasMask   bool   // true if a mask was specified
 }
 
 // PDUStruct represents a tagged DMR PDU struct ready for code generation.
@@ -66,6 +82,7 @@ type PDUStruct struct {
 	InputSize  int           // total bit width (e.g. 20, 16, 96)
 	Fields     []Field       // tagged fields in declaration order
 	FEC        *FECDirective // optional FEC pre-processing
+	CRC        *CRCDirective // optional CRC validation
 	SpecRef    string        // ETSI spec section reference from comment
 	SourceFile string        // source file path
 }
@@ -146,7 +163,7 @@ func ParseFile(filePath string) ([]PDUStruct, error) {
 			}
 			pdu.InputSize = maxBit + 1
 
-			// Look for FEC directive and spec ref in preceding comments
+			// Look for FEC directive, CRC directive, input_size, and spec ref in preceding comments
 			if genDecl.Doc != nil {
 				for _, c := range genDecl.Doc.List {
 					text := strings.TrimPrefix(c.Text, "//")
@@ -154,6 +171,32 @@ func ParseFile(filePath string) ([]PDUStruct, error) {
 					if strings.HasPrefix(text, "dmr:fec ") {
 						codec := strings.TrimPrefix(text, "dmr:fec ")
 						pdu.FEC = &FECDirective{Codec: strings.TrimSpace(codec)}
+					}
+					if strings.HasPrefix(text, "dmr:crc ") {
+						algo := strings.TrimPrefix(text, "dmr:crc ")
+						if pdu.CRC == nil {
+							pdu.CRC = &CRCDirective{}
+						}
+						pdu.CRC.Algorithm = strings.TrimSpace(algo)
+					}
+					if strings.HasPrefix(text, "dmr:crc_mask ") {
+						maskStr := strings.TrimPrefix(text, "dmr:crc_mask ")
+						maskStr = strings.TrimSpace(maskStr)
+						mask, err := strconv.ParseUint(strings.TrimPrefix(maskStr, "0x"), 16, 16)
+						if err == nil {
+							if pdu.CRC == nil {
+								pdu.CRC = &CRCDirective{}
+							}
+							pdu.CRC.Mask = uint16(mask)
+							pdu.CRC.HasMask = true
+						}
+					}
+					if strings.HasPrefix(text, "dmr:input_size ") {
+						sizeStr := strings.TrimPrefix(text, "dmr:input_size ")
+						size, err := strconv.Atoi(strings.TrimSpace(sizeStr))
+						if err == nil {
+							pdu.InputSize = size
+						}
 					}
 					if strings.Contains(text, "ETSI TS") {
 						pdu.SpecRef = text
@@ -174,12 +217,24 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 
 	// Resolve Go type
 	f.GoType = typeString(fieldType)
-	if idx := strings.LastIndex(f.GoType, "."); idx >= 0 {
-		f.TypePkg = f.GoType[:idx]
-		f.TypeName = f.GoType[idx+1:]
+
+	// Detect pointer types (for dispatch fields)
+	if strings.HasPrefix(f.GoType, "*") {
+		f.IsPointer = true
+		f.PointedType = strings.TrimPrefix(f.GoType, "*")
+	}
+
+	// Resolve package qualifier from the base type (without pointer)
+	baseType := f.GoType
+	if f.IsPointer {
+		baseType = f.PointedType
+	}
+	if idx := strings.LastIndex(baseType, "."); idx >= 0 {
+		f.TypePkg = baseType[:idx]
+		f.TypeName = baseType[idx+1:]
 		f.IsQualified = true
 	} else {
-		f.TypeName = f.GoType
+		f.TypeName = baseType
 	}
 
 	parts := strings.Split(tag, ",")
@@ -255,6 +310,8 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 			f.Kind = FieldInt
 		case mod == "noptr":
 			f.DelegateNoPtr = true
+		case mod == "err":
+			f.EnumReturnsErr = true
 		case strings.HasPrefix(mod, "type:"):
 			semType := strings.TrimPrefix(mod, "type:")
 			switch semType {
@@ -268,6 +325,16 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 		case strings.HasPrefix(mod, "from:"):
 			// Explicit FromInt function: from:enums.LCSSFromInt
 			f.EnumFromInt = strings.TrimPrefix(mod, "from:")
+		case strings.HasPrefix(mod, "dispatch:"):
+			// Dispatch modifier: dispatch:FieldName=Value1|Value2
+			f.Kind = FieldDispatch
+			dispatchSpec := strings.TrimPrefix(mod, "dispatch:")
+			eqIdx := strings.Index(dispatchSpec, "=")
+			if eqIdx < 0 {
+				return f, fmt.Errorf("dispatch modifier missing '=': %q", mod)
+			}
+			f.DispatchFieldName = dispatchSpec[:eqIdx]
+			f.DispatchValues = strings.Split(dispatchSpec[eqIdx+1:], "|")
 		default:
 			return f, fmt.Errorf("unrecognized modifier: %q", mod)
 		}

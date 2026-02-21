@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
-	"github.com/USA-RedDragon/dmrgo/dmr/crc"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
@@ -122,23 +121,27 @@ func (pdu ChannelTimingPDU) ToString() string {
 	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %011b, Generation: %05b, LeaderIdentifier: %s, NewLeader: %t, LeaderDynamicIdentifier: %02b, SourceIdentifier: %s, Reserved: %t, SourceDynamicIdentifier: %02b, ChannelTimingOp: [%t %t] }", pdu.SyncAge, pdu.Generation, string(pdu.LeaderIdentifier[:]), pdu.NewLeader, pdu.LeaderDynamicIdentifier, string(pdu.SourceIdentifier[:]), pdu.Reserved, pdu.SourceDynamicIdentifier, pdu.ChannelTimingOp0, pdu.ChannelTimingOp1)
 }
 
+// dmr:crc crc_ccitt
+// dmr:crc_mask 0xA5A5
+// dmr:input_size 96
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.5 CSBK PDU
 type CSBK struct {
-	dataType elements.DataType
+	DataType elements.DataType `dmr:"-"`
 
-	LastBlock   bool
-	ProtectFlag bool
-	CSBKOpcode  CSBKOpcode
-	FID         byte
-	FEC         fec.FECResult
+	LastBlock   bool          `dmr:"bit:0"`
+	ProtectFlag bool          `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode    `dmr:"bits:2-7"`
+	FID         byte          `dmr:"bits:8-15"`
+	FEC         fec.FECResult `dmr:"-"`
 
-	BSOutboundActivationPDU                 *BSOutboundActivationPDU
-	UnitToUnitVoiceServiceRequestPDU        *UnitToUnitVoiceServiceRequestPDU
-	UnitToUnitVoiceServiceAnswerResponsePDU *UnitToUnitVoiceServiceAnswerResponsePDU
-	NegativeAcknowledgementPDU              *NegativeAcknowledgementPDU
-	PreamblePDU                             *PreamblePDU
-	ChannelTimingPDU                        *ChannelTimingPDU
+	BSOutboundActivationPDU                 *BSOutboundActivationPDU                 `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKBSOutboundActivationPDU"`
+	UnitToUnitVoiceServiceRequestPDU        *UnitToUnitVoiceServiceRequestPDU        `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKUnitToUnitVoiceServiceRequestPDU"`
+	UnitToUnitVoiceServiceAnswerResponsePDU *UnitToUnitVoiceServiceAnswerResponsePDU `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKUnitToUnitVoiceServiceAnswerResponsePDU"`
+	NegativeAcknowledgementPDU              *NegativeAcknowledgementPDU              `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKNegativeAcknowledgementPDU"`
+	PreamblePDU                             *PreamblePDU                             `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKPreamblePDU"`
+	ChannelTimingPDU                        *ChannelTimingPDU                        `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKChannelTimingPDU"`
 
-	crc uint16
+	crc uint16 `dmr:"-"` //nolint:unused
 }
 
 func (csbk *CSBK) ToString() string {
@@ -159,90 +162,9 @@ func (csbk *CSBK) ToString() string {
 	default:
 		extraData = "Unknown or unparsed opcode data"
 	}
-	return fmt.Sprintf("CSBK{ dataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %v, FID: %d, crc: %04x, extraData: %s }", elements.DataTypeToName(csbk.dataType), csbk.LastBlock, csbk.ProtectFlag, csbk.CSBKOpcode, csbk.FID, csbk.crc, extraData)
+	return fmt.Sprintf("CSBK{ dataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %v, FID: %d, crc: %04x, extraData: %s }", elements.DataTypeToName(csbk.DataType), csbk.LastBlock, csbk.ProtectFlag, csbk.CSBKOpcode, csbk.FID, csbk.crc, extraData)
 }
 
 func (csbk *CSBK) GetDataType() elements.DataType {
-	return csbk.dataType
-}
-
-func (csbk *CSBK) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool {
-	if len(infoBits) != 96 {
-		fmt.Println("CSBK: invalid infoBits length: ", len(infoBits))
-		return false
-	}
-
-	csbk.dataType = dt
-
-	// Pack 96 info bits into 12 bytes
-	var dataBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			dataBytes[i] <<= 1
-			dataBytes[i] |= byte(infoBits[i*8+j])
-		}
-	}
-
-	// Apply CRC mask (XOR last 2 bytes with 0xA5)
-	dataBytes[10] ^= 0xA5
-	dataBytes[11] ^= 0xA5
-
-	// CRC check using table-based CCITT matching MMDVM
-	if !crc.CheckCRCCCITT(dataBytes[:]) {
-		fmt.Println("CSBK: CRC check failed")
-		csbk.FEC = fec.FECResult{BitsChecked: 96, Uncorrectable: true}
-		return false
-	}
-
-	csbk.FEC = fec.FECResult{BitsChecked: 96}
-
-	// Extract the unmasked CRC for storage
-	csbk.crc = uint16(dataBytes[10])<<8 | uint16(dataBytes[11])
-
-	// lb is the first bit
-	csbk.LastBlock = infoBits[0] == 1
-	// pf is the second bit
-	csbk.ProtectFlag = infoBits[1] == 1
-
-	// csbko is the next 6 bits
-	for i := range 6 {
-		csbk.CSBKOpcode <<= 1
-		csbk.CSBKOpcode |= CSBKOpcode(infoBits[2+i])
-	}
-
-	// FID is 8 bits, infoBits[8:16] as a byte
-	for i := range 8 {
-		csbk.FID <<= 1
-		csbk.FID |= byte(infoBits[8+i])
-	}
-
-	var pduBits [64]bit.Bit
-	for i := range 64 {
-		pduBits[i] = infoBits[16+i]
-	}
-	switch csbk.CSBKOpcode {
-	case CSBKBSOutboundActivationPDU:
-		decoded, _ := DecodeBSOutboundActivationPDU(pduBits)
-		csbk.BSOutboundActivationPDU = &decoded
-	case CSBKUnitToUnitVoiceServiceRequestPDU:
-		decoded, _ := DecodeUnitToUnitVoiceServiceRequestPDU(pduBits)
-		csbk.UnitToUnitVoiceServiceRequestPDU = &decoded
-	case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
-		decoded, _ := DecodeUnitToUnitVoiceServiceAnswerResponsePDU(pduBits)
-		csbk.UnitToUnitVoiceServiceAnswerResponsePDU = &decoded
-	case CSBKNegativeAcknowledgementPDU:
-		decoded, _ := DecodeNegativeAcknowledgementPDU(pduBits)
-		csbk.NegativeAcknowledgementPDU = &decoded
-	case CSBKPreamblePDU:
-		decoded, _ := DecodePreamblePDU(pduBits)
-		csbk.PreamblePDU = &decoded
-	case CSBKChannelTimingPDU:
-		decoded, _ := DecodeChannelTimingPDU(pduBits)
-		csbk.ChannelTimingPDU = &decoded
-	default:
-		fmt.Printf("CSBK: unknown opcode: %08b\n", byte(csbk.CSBKOpcode))
-		return false
-	}
-
-	return true
+	return csbk.DataType
 }

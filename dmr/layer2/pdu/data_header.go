@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
-	"github.com/USA-RedDragon/dmrgo/dmr/crc"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
@@ -29,16 +28,16 @@ func (cdh *UnconfirmedDataHeader) ToString() string {
 		cdh.Group, cdh.ResponseRequested, cdh.Reserved, cdh.PadOctetCount, cdh.LLIDDestination, cdh.LLIDSource, cdh.FullMessage, cdh.BlocksToFollow, cdh.FragmentSequenceNumber)
 }
 
+// dmr:crc crc_ccitt
+// dmr:input_size 96
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Data Header PDU
 type DataHeader struct {
-	dataType       elements.DataType
-	dataHeaderType DataHeaderType
+	DataType elements.DataType `dmr:"-"`
+	crc      uint16            `dmr:"-"` //nolint:unused
+	FEC      fec.FECResult     `dmr:"-"`
+	Format   Format            `dmr:"bits:4-7"`
 
-	crc    uint16
-	FEC    fec.FECResult
-	Format Format
-	SAPID  ServiceAccessPointID
-
-	UnconfirmedDataHeader *UnconfirmedDataHeader
+	UnconfirmedDataHeader *UnconfirmedDataHeader `dmr:"bits:0-79,dispatch:Format=FormatUnconfirmed"`
 }
 
 type ServiceAccessPointID uint8
@@ -65,120 +64,39 @@ const (
 	FormatProprietary                  Format = 0b00001111
 )
 
-type DataHeaderType uint8
+func (dh *DataHeader) GetDataType() elements.DataType {
+	return dh.DataType
+}
 
-const (
-	DataHeaderTypeUnconfirmed DataHeaderType = iota
-	DataHeaderTypeConfirmed
-	DataHeaderTypeResponse
-	DataHeaderTypeProprietary
-	DataHeaderTypeStatusPrecodedShort
-	DataHeaderTypeRawShort
-	DataHeaderTypeDefinedShort
-	DataHeaderTypeUnifiedDataTransport
-)
-
-func (dht DataHeaderType) ToString() string {
-	switch dht {
-	case DataHeaderTypeUnconfirmed:
-		return "Unconfirmed"
-	case DataHeaderTypeConfirmed:
-		return "Confirmed"
-	case DataHeaderTypeResponse:
-		return "Response"
-	case DataHeaderTypeProprietary:
-		return "Proprietary"
-	case DataHeaderTypeStatusPrecodedShort:
-		return "Status/Precoded Short"
-	case DataHeaderTypeRawShort:
-		return "Raw Short"
-	case DataHeaderTypeDefinedShort:
-		return "Defined Short"
-	case DataHeaderTypeUnifiedDataTransport:
+// FormatToName returns a human-readable name for a DataHeader Format.
+func FormatToName(f Format) string {
+	switch f {
+	case FormatUnifiedDataTransport:
 		return "Unified Data Transport"
+	case FormatResponsePacket:
+		return "Response"
+	case FormatUnconfirmed:
+		return "Unconfirmed"
+	case FormatConfirmed:
+		return "Confirmed"
+	case FormatShortDataDefined:
+		return "Defined Short"
+	case FormatShortDataRawOrStatusPrecoded:
+		return "Raw/StatusPrecoded Short"
+	case FormatProprietary:
+		return "Proprietary"
 	default:
 		return "Unknown"
 	}
 }
 
-func (dh *DataHeader) GetDataType() elements.DataType {
-	return dh.dataType
-}
-
 func (dh *DataHeader) ToString() string {
 	var extraData string
-	switch dh.dataHeaderType {
-	case DataHeaderTypeUnconfirmed:
+	if dh.UnconfirmedDataHeader != nil {
 		extraData = dh.UnconfirmedDataHeader.ToString()
-	default:
+	} else {
 		extraData = "Unknown"
 	}
-	return fmt.Sprintf("DataHeader{ dataType: %s, dataHeaderType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, extraData: %s }",
-		elements.DataTypeToName(dh.dataType), dh.dataHeaderType.ToString(), dh.FEC.BitsChecked, dh.FEC.ErrorsCorrected, dh.FEC.Uncorrectable, extraData)
-}
-
-func (dh *DataHeader) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool {
-	dh.dataType = dt
-
-	if len(infoBits) != 96 {
-		fmt.Println("DataHeader: invalid infoBits length: ", len(infoBits))
-		return false
-	}
-
-	// Pack 96 info bits into 12 bytes for CRC check
-	// ETSI TS 102 361-1 §9.1.8: CRC-CCITT over the full 12 bytes (no XOR mask)
-	var dataBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			dataBytes[i] <<= 1
-			dataBytes[i] |= byte(infoBits[i*8+j])
-		}
-	}
-
-	if !crc.CheckCRCCCITT(dataBytes[:]) {
-		fmt.Println("DataHeader: CRC check failed")
-		dh.FEC = fec.FECResult{BitsChecked: 96, Uncorrectable: true}
-		return false
-	}
-
-	dh.FEC = fec.FECResult{BitsChecked: 96}
-	dh.crc = uint16(dataBytes[10])<<8 | uint16(dataBytes[11])
-
-	dh.Format = Format((byte(infoBits[4]) << 3) | (byte(infoBits[5]) << 2) | (byte(infoBits[6]) << 1) | byte(infoBits[7]))
-	switch dh.Format {
-	case FormatUnifiedDataTransport:
-		dh.dataHeaderType = DataHeaderTypeUnifiedDataTransport
-		return false
-	case FormatResponsePacket:
-		dh.dataHeaderType = DataHeaderTypeResponse
-		return false
-	case FormatUnconfirmed:
-		dh.dataHeaderType = DataHeaderTypeUnconfirmed
-		var uhBits [80]bit.Bit
-		copy(uhBits[:], infoBits[:80])
-		decoded, _ := DecodeUnconfirmedDataHeader(uhBits)
-		dh.UnconfirmedDataHeader = &decoded
-	case FormatConfirmed:
-		dh.dataHeaderType = DataHeaderTypeConfirmed
-		return false
-	case FormatShortDataDefined:
-		dh.dataHeaderType = DataHeaderTypeDefinedShort
-		return false
-	case FormatShortDataRawOrStatusPrecoded:
-		// For status/precoded short, AB (2:3, 12:16) is always zeroed out
-		if (infoBits[2] == 0) && (infoBits[3] == 0) && (infoBits[12] == 0) && (infoBits[13] == 0) && (infoBits[14] == 0) && (infoBits[15] == 0) {
-			dh.dataHeaderType = DataHeaderTypeStatusPrecodedShort
-		} else {
-			dh.dataHeaderType = DataHeaderTypeRawShort
-		}
-		return false
-	case FormatProprietary:
-		dh.dataHeaderType = DataHeaderTypeProprietary
-		return false
-	default:
-		fmt.Println("DataHeader: unknown format: ", dh.Format)
-		return false
-	}
-
-	return true
+	return fmt.Sprintf("DataHeader{ dataType: %s, format: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, extraData: %s }",
+		elements.DataTypeToName(dh.DataType), FormatToName(dh.Format), dh.FEC.BitsChecked, dh.FEC.ErrorsCorrected, dh.FEC.Uncorrectable, extraData)
 }

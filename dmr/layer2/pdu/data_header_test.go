@@ -52,11 +52,11 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 		infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
 	}
 
-	var dh pdu.DataHeader
-	ok := dh.DecodeFromBits(infoBits[:], elements.DataTypeDataHeader)
-	if !ok {
-		t.Fatal("DecodeFromBits failed for Unconfirmed DataHeader")
+	dh, fecResult := pdu.DecodeDataHeader(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
+	dh.DataType = elements.DataTypeDataHeader
 	if dh.GetDataType() != elements.DataTypeDataHeader {
 		t.Errorf("GetDataType() = %d, want DataTypeDataHeader", dh.GetDataType())
 	}
@@ -80,16 +80,17 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	}
 }
 
-func TestDataHeader_InvalidLength(t *testing.T) {
-	var dh pdu.DataHeader
-	ok := dh.DecodeFromBits(make([]bit.Bit, 10), elements.DataTypeDataHeader)
-	if ok {
-		t.Error("DecodeFromBits should return false for invalid length")
+func TestDataHeader_CRCFailure(t *testing.T) {
+	// All-zero bits will fail CRC check
+	var infoBits [96]bit.Bit
+	_, fecResult := pdu.DecodeDataHeader(infoBits)
+	if !fecResult.Uncorrectable {
+		t.Error("DecodeDataHeader should return uncorrectable for invalid CRC")
 	}
 }
 
 func TestDataHeader_FormatDispatch(t *testing.T) {
-	// Test that non-Unconfirmed formats return false (not yet implemented)
+	// Test that non-Unconfirmed formats decode without panic but have nil sub-PDUs
 	formats := []struct {
 		name string
 		bits [4]bit.Bit // bits at positions 4-7
@@ -109,10 +110,29 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 			infoBits[6] = tt.bits[2]
 			infoBits[7] = tt.bits[3]
 
-			var dh pdu.DataHeader
-			ok := dh.DecodeFromBits(infoBits[:], elements.DataTypeDataHeader)
-			if ok {
-				t.Errorf("format %s should return false (unimplemented)", tt.name)
+			// Add valid CRC so the decode proceeds past CRC check
+			var dataBytes [10]byte
+			for i := range 10 {
+				for j := range 8 {
+					dataBytes[i] <<= 1
+					dataBytes[i] |= byte(infoBits[i*8+j])
+				}
+			}
+			crcVal := crc.CalculateCRCCCITT(dataBytes[:])
+			crcHigh := byte(crcVal >> 8)
+			crcLow := byte(crcVal)
+			for b := 7; b >= 0; b-- {
+				infoBits[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
+				infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
+			}
+
+			dh, fecResult := pdu.DecodeDataHeader(infoBits)
+			if fecResult.Uncorrectable {
+				t.Fatalf("DecodeDataHeader returned uncorrectable FEC for format %s", tt.name)
+			}
+			// Non-Unconfirmed formats should have nil UnconfirmedDataHeader
+			if dh.UnconfirmedDataHeader != nil {
+				t.Errorf("format %s should have nil UnconfirmedDataHeader", tt.name)
 			}
 		})
 	}

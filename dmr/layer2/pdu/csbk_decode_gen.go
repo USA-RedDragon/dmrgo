@@ -7,6 +7,7 @@ ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.3 UU_Ans_Rsp PDU
 ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5 NACK_Rsp PDU
 ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.7 Pre PDU
 ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
+ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.5 CSBK PDU
 
 DO NOT EDIT.
 */
@@ -15,6 +16,7 @@ package pdu
 
 import (
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
+	crc "github.com/USA-RedDragon/dmrgo/dmr/crc"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
 )
 
@@ -174,6 +176,106 @@ func EncodeChannelTimingPDU(s *ChannelTimingPDU) [64]bit.Bit {
 	copy(data[61:63], s.SourceDynamicIdentifier[:])
 	if s.ChannelTimingOp1 {
 		data[63] = 1
+	}
+	return data
+}
+
+// DecodeCSBK decodes a CSBK per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.5 CSBK PDU
+func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.FECResult) {
+	var result CSBK
+	var _packedBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			_packedBytes[i] <<= 1
+			_packedBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	_packedBytes[10] ^= uint8(0xa5)
+	_packedBytes[11] ^= uint8(0xa5)
+	var fecResult fec.FECResult
+	fecResult.BitsChecked = 96
+	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+		fecResult.Uncorrectable = true
+	}
+	result.FEC = fecResult
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	result.LastBlock = bit.BitsToBool(data[:], 0)
+	result.ProtectFlag = bit.BitsToBool(data[:], 1)
+	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
+	result.FID = bit.BitsToUint8(data[:], 8, 8)
+	var _dispatchBits [64]bit.Bit
+	copy(_dispatchBits[:], data[16:80])
+	switch result.CSBKOpcode {
+	case CSBKBSOutboundActivationPDU:
+		_decoded, _ := DecodeBSOutboundActivationPDU(_dispatchBits)
+		result.BSOutboundActivationPDU = &_decoded
+	case CSBKUnitToUnitVoiceServiceRequestPDU:
+		_decoded, _ := DecodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
+		result.UnitToUnitVoiceServiceRequestPDU = &_decoded
+	case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
+		_decoded, _ := DecodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBits)
+		result.UnitToUnitVoiceServiceAnswerResponsePDU = &_decoded
+	case CSBKNegativeAcknowledgementPDU:
+		_decoded, _ := DecodeNegativeAcknowledgementPDU(_dispatchBits)
+		result.NegativeAcknowledgementPDU = &_decoded
+	case CSBKPreamblePDU:
+		_decoded, _ := DecodePreamblePDU(_dispatchBits)
+		result.PreamblePDU = &_decoded
+	case CSBKChannelTimingPDU:
+		_decoded, _ := DecodeChannelTimingPDU(_dispatchBits)
+		result.ChannelTimingPDU = &_decoded
+	}
+	return result, fecResult
+}
+
+// EncodeCSBK encodes a CSBK per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.5 CSBK PDU
+func EncodeCSBK(s *CSBK) [96]bit.Bit {
+	var data [96]bit.Bit
+	if s.LastBlock {
+		data[0] = 1
+	}
+	if s.ProtectFlag {
+		data[1] = 1
+	}
+	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
+	copy(data[8:16], bit.BitsFromUint8(uint8(s.FID), 8))
+	switch {
+	case s.BSOutboundActivationPDU != nil:
+		_pduBits := EncodeBSOutboundActivationPDU(s.BSOutboundActivationPDU)
+		copy(data[16:80], _pduBits[:])
+	case s.UnitToUnitVoiceServiceRequestPDU != nil:
+		_pduBits := EncodeUnitToUnitVoiceServiceRequestPDU(s.UnitToUnitVoiceServiceRequestPDU)
+		copy(data[16:80], _pduBits[:])
+	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
+		_pduBits := EncodeUnitToUnitVoiceServiceAnswerResponsePDU(s.UnitToUnitVoiceServiceAnswerResponsePDU)
+		copy(data[16:80], _pduBits[:])
+	case s.NegativeAcknowledgementPDU != nil:
+		_pduBits := EncodeNegativeAcknowledgementPDU(s.NegativeAcknowledgementPDU)
+		copy(data[16:80], _pduBits[:])
+	case s.PreamblePDU != nil:
+		_pduBits := EncodePreamblePDU(s.PreamblePDU)
+		copy(data[16:80], _pduBits[:])
+	case s.ChannelTimingPDU != nil:
+		_pduBits := EncodeChannelTimingPDU(s.ChannelTimingPDU)
+		copy(data[16:80], _pduBits[:])
+	}
+	var _encBytes [10]byte
+	for i := range 10 {
+		for j := range 8 {
+			_encBytes[i] <<= 1
+			_encBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcHigh := byte(_crcVal >> 8)
+	_crcLow := byte(_crcVal)
+	_crcHigh ^= uint8(0xa5)
+	_crcLow ^= uint8(0xa5)
+	for j := range 8 {
+		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
+	}
+	for j := range 8 {
+		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
 	return data
 }

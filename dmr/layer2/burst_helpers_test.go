@@ -109,17 +109,17 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
-		ServiceOptions: layer3Elements.ServiceOptions{
-			PriorityLevel: 0,
+		GroupVoice: &pdu.FLCGroupVoice{
+			ServiceOptions: layer3Elements.ServiceOptions{
+				PriorityLevel: 0,
+			},
+			GroupAddress:  9990,
+			SourceAddress: 3120101,
 		},
-		GroupAddress:  9990,
-		SourceAddress: 3120101,
 	}
 
-	encoded, err := flc.Encode()
-	if err != nil {
-		t.Fatalf("FLC Encode failed: %v", err)
-	}
+	encBits := pdu.EncodeFullLinkControl(flc)
+	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
@@ -140,16 +140,16 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 
 func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	flc := &pdu.FullLinkControl{
-		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.StandardizedFID,
-		GroupAddress:  1,
-		SourceAddress: 2,
+		FLCO:         enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID: enums.StandardizedFID,
+		GroupVoice: &pdu.FLCGroupVoice{
+			GroupAddress:  1,
+			SourceAddress: 2,
+		},
 	}
 
-	encoded, err := flc.Encode()
-	if err != nil {
-		t.Fatalf("FLC Encode failed: %v", err)
-	}
+	encBits := pdu.EncodeFullLinkControl(flc)
+	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
@@ -166,16 +166,16 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 
 func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 	flc := &pdu.FullLinkControl{
-		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.StandardizedFID,
-		GroupAddress:  100,
-		SourceAddress: 200,
+		FLCO:         enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID: enums.StandardizedFID,
+		GroupVoice: &pdu.FLCGroupVoice{
+			GroupAddress:  100,
+			SourceAddress: 200,
+		},
 	}
 
-	encoded, err := flc.Encode()
-	if err != nil {
-		t.Fatalf("FLC Encode failed: %v", err)
-	}
+	encBits := pdu.EncodeFullLinkControl(flc)
+	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)

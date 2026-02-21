@@ -171,7 +171,7 @@ documents:
               - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
               - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
               - TestFullLinkControl_EncodeStability
-              - TestFullLinkControl_DecodeFromBits_BothDataTypes
+              - TestFullLinkControl_Decode_BothDataTypes
 
       - section: "9.1.6"
         title: "Full Link Control PDU"
@@ -183,12 +183,9 @@ documents:
               - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
               - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
               - TestFullLinkControl_EncodeStability
-              - TestFullLinkControl_DecodeFromBits_InvalidLength
-              - TestFullLinkControl_DecodeFromBits_InvalidDataType
-              - TestFullLinkControl_Encode_UnsupportedFLCO
               - TestFullLinkControl_ToString
               - TestFullLinkControl_ServiceOptions_RoundTrip
-              - TestFullLinkControl_DecodeFromBits_BothDataTypes
+              - TestFullLinkControl_Decode_BothDataTypes
               - TestFullLinkControl_AddressRange
 
       - section: "9.1.7"
@@ -199,7 +196,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
             names:
               - TestCSBK_OpcodeToString
-              - TestCSBK_DecodeFromBits_InvalidLength
               - TestCSBK_PreamblePDU_Decode
               - TestCSBK_NegativeAck_Decode
               - TestCSBK_CRCValidation
@@ -212,7 +208,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
             names:
               - TestDataHeader_UnconfirmedDecode
-              - TestDataHeader_InvalidLength
+              - TestDataHeader_CRCFailure
               - TestDataHeader_FormatDispatch
 
       - section: "9.1.9"

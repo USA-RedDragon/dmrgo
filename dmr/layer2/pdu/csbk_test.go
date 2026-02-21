@@ -5,15 +5,14 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/crc"
-	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu"
 )
 
-// buildCSBKBits constructs 96 info bits for a CSBK PDU.
+// buildCSBKBits constructs a [96]bit.Bit array for a CSBK PDU.
 // opcode is 6 bits, fid is 8 bits, payload is 64 bits.
 // lb and pf flags default to true/false.
 // The CRC-CCITT is computed and XOR-masked per spec (§9.1.7).
-func buildCSBKBits(opcode byte, fid byte, payload [64]bit.Bit) []bit.Bit {
+func buildCSBKBits(opcode byte, fid byte, payload [64]bit.Bit) [96]bit.Bit {
 	var dataBytes [12]byte
 
 	// Byte 0: lb=1, pf=0, opcode(6 bits)
@@ -38,7 +37,7 @@ func buildCSBKBits(opcode byte, fid byte, payload [64]bit.Bit) []bit.Bit {
 	dataBytes[11] ^= 0xA5
 
 	// Unpack into 96 bits
-	bits := make([]bit.Bit, 96)
+	var bits [96]bit.Bit
 	for i := 0; i < 12; i++ {
 		for j := 0; j < 8; j++ {
 			if (dataBytes[i]>>(7-j))&1 == 1 {
@@ -75,14 +74,6 @@ func TestCSBK_OpcodeToString(t *testing.T) {
 	}
 }
 
-func TestCSBK_DecodeFromBits_InvalidLength(t *testing.T) {
-	var csbk pdu.CSBK
-	ok := csbk.DecodeFromBits(make([]bit.Bit, 10), elements.DataTypeCSBK)
-	if ok {
-		t.Error("DecodeFromBits should return false for invalid length")
-	}
-}
-
 func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 	// Preamble opcode = 0b00111101
 	var payload [64]bit.Bit
@@ -100,10 +91,9 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(0b00111101, 0x00, payload)
 
-	var csbk pdu.CSBK
-	ok := csbk.DecodeFromBits(infoBits, elements.DataTypeCSBK)
-	if !ok {
-		t.Fatal("DecodeFromBits failed for Preamble PDU")
+	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
 	if csbk.CSBKOpcode != pdu.CSBKPreamblePDU {
 		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKPreamblePDU))
@@ -148,10 +138,9 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(0b00100110, 0x00, payload)
 
-	var csbk pdu.CSBK
-	ok := csbk.DecodeFromBits(infoBits, elements.DataTypeCSBK)
-	if !ok {
-		t.Fatal("DecodeFromBits failed for NegativeAck PDU")
+	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
 	if csbk.CSBKOpcode != pdu.CSBKNegativeAcknowledgementPDU {
 		t.Errorf("CSBKOpcode = %08b, want NegativeAck", byte(csbk.CSBKOpcode))
@@ -174,20 +163,18 @@ func TestCSBK_CRCValidation(t *testing.T) {
 	infoBits := buildCSBKBits(0b00111101, 0x00, payload)
 
 	// First verify it decodes ok
-	var csbk pdu.CSBK
-	ok := csbk.DecodeFromBits(infoBits, elements.DataTypeCSBK)
-	if !ok {
+	_, fecResult := pdu.DecodeCSBK(infoBits)
+	if fecResult.Uncorrectable {
 		t.Fatal("valid CSBK should decode ok")
 	}
 
 	// Now corrupt a bit in the middle and verify CRC fails
-	corrupted := make([]bit.Bit, 96)
-	copy(corrupted, infoBits)
+	var corrupted [96]bit.Bit
+	copy(corrupted[:], infoBits[:])
 	corrupted[40] ^= 1 // flip a payload bit
 
-	var csbk2 pdu.CSBK
-	ok = csbk2.DecodeFromBits(corrupted, elements.DataTypeCSBK)
-	if ok {
+	_, fecResult2 := pdu.DecodeCSBK(corrupted)
+	if !fecResult2.Uncorrectable {
 		t.Error("corrupted CSBK should fail CRC check")
 	}
 }

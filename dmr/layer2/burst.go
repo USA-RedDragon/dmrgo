@@ -204,32 +204,41 @@ func (b *Burst) extractData() (elements.Data, error) {
 	infoBits := b.deinterleavedInfoBits[:b.deinterleavedInfoLen]
 	switch dt {
 	case elements.DataTypeCSBK:
-		b.csbk = &pdu.CSBK{}
-		if b.csbk.DecodeFromBits(infoBits, dt) {
-			b.FEC.PDU = b.csbk.FEC
-			return b.csbk, nil
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		decoded, fecResult := pdu.DecodeCSBK(sizedBits)
+		decoded.DataType = dt
+		b.csbk = &decoded
+		b.FEC.PDU = fecResult
+		if fecResult.Uncorrectable {
+			return nil, fmt.Errorf("failed to decode CSBK from bits")
 		}
-		b.FEC.PDU = b.csbk.FEC
-		return nil, fmt.Errorf("failed to decode CSBK from bits")
+		return b.csbk, nil
 	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
-		b.fullLinkControl = &pdu.FullLinkControl{}
-		if b.fullLinkControl.DecodeFromBits(infoBits, dt) {
-			b.FEC.PDU = b.fullLinkControl.FEC
-			return b.fullLinkControl, nil
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		decoded, fecResult := pdu.DecodeFullLinkControl(sizedBits)
+		decoded.DataType = dt
+		b.fullLinkControl = &decoded
+		b.FEC.PDU = fecResult
+		if fecResult.Uncorrectable {
+			return nil, fmt.Errorf("failed to decode full link control from bits")
 		}
-		b.FEC.PDU = b.fullLinkControl.FEC
-		return nil, fmt.Errorf("failed to decode full link control from bits")
+		return b.fullLinkControl, nil
 	case elements.DataTypePIHeader:
 		// TODO: implement PI header parsing
 		return nil, nil
 	case elements.DataTypeDataHeader:
-		b.dataHeader = &pdu.DataHeader{}
-		if b.dataHeader.DecodeFromBits(infoBits, dt) {
-			b.FEC.PDU = b.dataHeader.FEC
-			return b.dataHeader, nil
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		decoded, fecResult := pdu.DecodeDataHeader(sizedBits)
+		decoded.DataType = dt
+		b.dataHeader = &decoded
+		b.FEC.PDU = fecResult
+		if fecResult.Uncorrectable {
+			return nil, fmt.Errorf("failed to decode data header from bits: %v", b.dataHeader.ToString())
 		}
-		b.FEC.PDU = b.dataHeader.FEC
-		return nil, fmt.Errorf("failed to decode data header from bits: %v", b.dataHeader.ToString())
+		return b.dataHeader, nil
 	case elements.DataTypeRate34:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
