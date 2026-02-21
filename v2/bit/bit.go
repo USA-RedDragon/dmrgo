@@ -109,7 +109,7 @@ func BitsToValue(bits []Bit) byte {
 	n := len(bits)
 	for i, b := range bits {
 		if b == 1 {
-			v |= 1 << uint(n-1-i)
+			v |= 1 << uint(n-1-i) //nolint:gosec // n-1-i is always non-negative: i ranges [0, n-1]
 		}
 	}
 	return v
@@ -120,7 +120,7 @@ func BitsToValue(bits []Bit) byte {
 func UnpackBits(data []byte) []Bit {
 	bits := make([]Bit, len(data)*8)
 	for i := range bits {
-		if (data[i/8]>>(7-(i%8)))&1 == 1 {
+		if (data[i/8]>>(7-(i%8)))&1 == 1 { //nolint:gosec // i/8 bounded: i < len(data)*8, so i/8 < len(data)
 			bits[i] = 1
 		}
 	}
@@ -132,7 +132,7 @@ func UnpackBits(data []byte) []Bit {
 func UnpackBytesToBits264(data [33]byte) [264]Bit {
 	var bits [264]Bit
 	for i := 0; i < 264; i++ {
-		if (data[i/8]>>(7-(i%8)))&1 != 0 {
+		if (data[i/8]>>(7-(i%8)))&1 != 0 { //nolint:gosec // i/8 bounded: i < 264, so i/8 <= 32 < 33
 			bits[i] = 1
 		}
 	}

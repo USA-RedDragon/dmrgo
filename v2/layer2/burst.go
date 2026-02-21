@@ -84,7 +84,7 @@ func extractSyncPattern(bitData [264]bit.Bit) enums.SyncPattern {
 	syncBytes := [6]byte{}
 	for i := 0; i < 6; i++ {
 		for j := 0; j < 8; j++ {
-			syncBytes[i] |= byte(bitData[108+(i*8)+j]) << (7 - j)
+			syncBytes[i] |= byte(bitData[108+(i*8)+j]) << (7 - j) //nolint:gosec // max index: 108+5*8+7=155 < 264
 		}
 	}
 	return enums.SyncPatternFromBytes(syncBytes)
@@ -227,8 +227,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 		}
 		return b.fullLinkControl, nil
 	case elements.DataTypePIHeader:
-		// TODO: implement PI header parsing
-		return nil, nil
+		return nil, fmt.Errorf("PI header parsing not implemented")
 	case elements.DataTypeDataHeader:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
@@ -262,17 +261,15 @@ func (b *Burst) extractData() (elements.Data, error) {
 		b.fullRateData = &rt
 		return b.fullRateData, nil
 	case elements.DataTypeMBCHeader, elements.DataTypeMBCContinuation:
-		// TODO: implement MBC parsing
-		return nil, fmt.Errorf("todo: MBC parsing not implemented")
+		return nil, fmt.Errorf("MBC parsing not implemented")
 	case elements.DataTypeIdle:
-		return nil, nil
+		return nil, nil //nolint:nilnil // idle bursts have no data payload, nil is intentional
 	case elements.DataTypeUnifiedSingleBlock:
-		// TODO: implement unified single block parsing
-		return nil, fmt.Errorf("todo: unified single block parsing not implemented")
+		return nil, fmt.Errorf("unified single block parsing not implemented")
 	case elements.DataTypeReserved:
-		return nil, fmt.Errorf("todo: reserved data type parsing not implemented")
+		return nil, fmt.Errorf("reserved data type parsing not implemented")
 	default:
-		return nil, fmt.Errorf("todo: unhandled data type parsing not implemented")
+		return nil, fmt.Errorf("unhandled data type %v", b.SlotType.DataType)
 	}
 }
 
@@ -333,11 +330,24 @@ func (b *Burst) encodeDataBits() [196]bit.Bit {
 			bits[100+i] = b.deinterleavedInfoBits[96+i]
 		}
 		return bits
-	default:
+	case elements.DataTypePIHeader,
+		elements.DataTypeVoiceLCHeader,
+		elements.DataTypeTerminatorWithLC,
+		elements.DataTypeCSBK,
+		elements.DataTypeMBCHeader,
+		elements.DataTypeMBCContinuation,
+		elements.DataTypeDataHeader,
+		elements.DataTypeRate12,
+		elements.DataTypeIdle,
+		elements.DataTypeUnifiedSingleBlock:
 		// BPTC(196,96) types
 		var infoBits [96]bit.Bit
 		copy(infoBits[:], b.deinterleavedInfoBits[:96])
 		return bptc.Encode(infoBits)
+	case elements.DataTypeReserved:
+		panic(fmt.Sprintf("cannot encode reserved data type %v", b.SlotType.DataType))
+	default:
+		panic(fmt.Sprintf("unhandled data type %v", b.SlotType.DataType))
 	}
 }
 
@@ -346,7 +356,7 @@ func (b *Burst) encodeDataBits() [196]bit.Bit {
 func (b *Burst) PackEmbeddedSignallingData() [4]byte {
 	var data [4]byte
 	for i := 0; i < 32; i++ {
-		data[i/8] |= byte(b.EmbeddedSignallingData[i]) << (7 - (i % 8))
+		data[i/8] |= byte(b.EmbeddedSignallingData[i]) << (7 - (i % 8)) //nolint:gosec // i/8 bounded: i<32 so i/8<=3 <4
 	}
 	return data
 }

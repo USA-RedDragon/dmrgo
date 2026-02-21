@@ -24,7 +24,7 @@ func TestCRCCCITT_CheckValid(t *testing.T) {
 	// Append CRC in the order that CheckCRCCCITT expects (big-endian, swapped)
 	// CheckCRCCCITT: crc8[0] == in[length-1] && crc8[1] == in[length-2]
 	// So last byte = low byte of CRC, second-to-last = high byte of CRC
-	withCRC := append(data, byte(c_crc>>8), byte(c_crc))
+	withCRC := append(append([]byte{}, data...), byte(c_crc>>8), byte(c_crc))
 	if !crc.CheckCRCCCITT(withCRC) {
 		t.Error("CheckCRCCCITT should return true for valid data+CRC")
 	}
@@ -33,7 +33,7 @@ func TestCRCCCITT_CheckValid(t *testing.T) {
 func TestCRCCCITT_CheckInvalid(t *testing.T) {
 	data := []byte{0x01, 0x02, 0x03, 0x04, 0x05}
 	c_crc := crc.CalculateCRCCCITT(data)
-	withCRC := append(data, byte(c_crc>>8), byte(c_crc))
+	withCRC := append(append([]byte{}, data...), byte(c_crc>>8), byte(c_crc))
 
 	// Corrupt one byte
 	withCRC[2] ^= 0xFF

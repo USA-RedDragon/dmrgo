@@ -16,20 +16,20 @@ func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]bit.Bit {
 	var bits [196]bit.Bit
 
 	for i := 0; i < 98; i++ {
-		o := i * 2
+		o := i * 2 //nolint:gosec // o ranges [0,194], o+1 ranges [1,195], both < 196
 		switch dibits[i] {
 		case 3:
-			bits[o] = 0
-			bits[o+1] = 1
+			bits[o] = 0   //nolint:gosec // see above: o < 196
+			bits[o+1] = 1 //nolint:gosec // see above: o+1 < 196
 		case 1:
-			bits[o] = 0
-			bits[o+1] = 0
+			bits[o] = 0   //nolint:gosec // see above: o < 196
+			bits[o+1] = 0 //nolint:gosec // see above: o+1 < 196
 		case -1:
-			bits[o] = 1
-			bits[o+1] = 0
+			bits[o] = 1   //nolint:gosec // see above: o < 196
+			bits[o+1] = 0 //nolint:gosec // see above: o+1 < 196
 		case -3:
-			bits[o] = 1
-			bits[o+1] = 1
+			bits[o] = 1   //nolint:gosec // see above: o < 196
+			bits[o+1] = 1 //nolint:gosec // see above: o+1 < 196
 		}
 	}
 
@@ -83,7 +83,7 @@ func (t *Trellis34) dibitsToPoints(dibits [98]int8) [49]byte {
 
 	for i := 0; i < 98; i += 2 {
 		o := i / 2
-		points[o] = trellis34_constellation[[2]int8{dibits[i], dibits[i+1]}]
+		points[o] = trellis34_constellation[[2]int8{dibits[i], dibits[i+1]}] //nolint:gosec // o ranges [0,48]: i steps 0,2,...,96 so o=i/2 < 49
 	}
 
 	return points
@@ -101,7 +101,7 @@ func (t *Trellis34) pointsToTribits(points [49]byte) ([49]byte, int) {
 		tribit := trellis34_transition_table[last][points[i]]
 
 		if tribit != 0xFF {
-			tribits[i] = tribit
+			tribits[i] = tribit //nolint:gosec // i ranges [0,48], bounded by loop < 49
 			last = tribit
 		} else {
 			// fmt.Printf("Trellis data corrupted, index %d constellation point %v\n", i, points[i])
@@ -121,8 +121,8 @@ func (t *Trellis34) tribitsToBits(tribits [49]byte) [144]bit.Bit {
 	var bits [144]bit.Bit
 
 	for i := 0; i < 144; i += 3 {
-		o := i / 3
-		if (tribits[o] & 0x4) > 0 {
+		o := i / 3                  //nolint:gosec // o ranges [0,47]: i steps 0,3,...,141 so o=i/3 <= 47 < 49
+		if (tribits[o] & 0x4) > 0 { //nolint:gosec // o bounded above
 			bits[i] = 1
 		} else {
 			bits[i] = 0

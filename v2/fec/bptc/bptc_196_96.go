@@ -89,7 +89,7 @@ func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
 				bitPos := hamming13_9_syndrome_table[s]
 				if bitPos != -1 {
 					idx := (c + 1) + (bitPos * 15)
-					corrected[idx] ^= 1
+					corrected[idx] ^= 1 //nolint:gosec // idx bounded: c∈[0,14], bitPos∈[0,12], max idx=195 < 196
 					totalErrors++
 					fixing = true
 				} else {
@@ -109,7 +109,7 @@ func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
 			if s != 0 {
 				bitPos := hamming15_11_syndrome_table[s]
 				if bitPos != -1 {
-					corrected[k+bitPos] ^= 1
+					corrected[k+bitPos] ^= 1 //nolint:gosec // k+bitPos bounded: k=r*15+1 (r∈[0,8]), bitPos∈[0,14], max=135 < 196
 					totalErrors++
 					fixing = true
 				} else {
