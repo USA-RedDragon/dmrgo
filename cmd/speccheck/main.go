@@ -198,7 +198,7 @@ func main() {
 
 		fmt.Fprintf(os.Stderr, "Running tests for %s ...\n", pkg)
 		cmd := exec.Command("go", "test", "-v", "-json", "-count=1", "-run", regex, pkg)
-		cmd.Dir = repoRoot
+		cmd.Dir = filepath.Join(repoRoot, "v2")
 		cmd.Env = os.Environ()
 
 		stdout, err := cmd.StdoutPipe()
@@ -330,8 +330,8 @@ func main() {
 		}
 	}
 
-	dmrRoot := filepath.Join(repoRoot, "dmr")
-	_ = filepath.Walk(dmrRoot, func(path string, info os.FileInfo, err error) error {
+	codeRoot := filepath.Join(repoRoot, "v2")
+	_ = filepath.Walk(codeRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return err
 		}

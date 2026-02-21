@@ -1,0 +1,128 @@
+package layer2_test
+
+import (
+	"bytes"
+	"os"
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+)
+
+func loadBursts(t testing.TB, path string) [][33]byte {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read file %s: %v", path, err)
+	}
+
+	if len(data)%33 != 0 {
+		t.Fatalf("file size %d is not a multiple of 33", len(data))
+	}
+
+	count := len(data) / 33
+	bursts := make([][33]byte, count)
+	for i := 0; i < count; i++ {
+		copy(bursts[i][:], data[i*33:(i+1)*33])
+	}
+	return bursts
+}
+
+func TestBurst_Encode(t *testing.T) {
+	tests := []struct {
+		name string
+		file string
+	}{
+		{"ParrotKerchunk", "testdata/parrot_kerchunk.bin"},
+		{"Voice", "testdata/voice.bin"},
+		// {"Motorola SMS", "testdata/m-sms.bin"},
+		// {"Hytera SMS", "testdata/h-sms.bin"},
+		// {"DMR Standard SMS", "testdata/d-sms.bin"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bursts := loadBursts(t, tt.file)
+			for i, data := range bursts {
+				burst, err := layer2.NewBurstFromBytes(data)
+				if err != nil {
+					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
+				}
+				t.Logf("burst: %v", burst.ToString())
+
+				encoded := burst.Encode()
+
+				// Verify stability: Encode(Decode(encoded)) == encoded
+				// This handles cases where the input file has invalid parity/FEC bits (captured data)
+				// which are "fixed" by the first Encode().
+				burst2, err := layer2.NewBurstFromBytes(encoded)
+				if err != nil {
+					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
+				}
+				encoded2 := burst2.Encode()
+
+				if !bytes.Equal(encoded[:], encoded2[:]) {
+					t.Errorf("Burst %d stability mismatch:\nfirst  %x\nsecond %x\nSync: %v\nVoice: %v\nHasEmbSig: %v\nCorrected Errors: %d\nUncorrectable: %v",
+						i, encoded, encoded2,
+						burst.SyncPattern,
+						burst.VoiceBurst,
+						burst.HasEmbeddedSignalling,
+						burst.VoiceData.CorrectedErrors(),
+						burst.VoiceData.Uncorrectable())
+				} else if !bytes.Equal(data[:], encoded[:]) {
+					t.Logf("Burst %d input differed from stable encoding (expected for captured data)", i)
+					if !burst.IsData {
+						t.Logf("Corrected Errors: %d, Uncorrectable: %v", burst.VoiceData.CorrectedErrors(), burst.VoiceData.Uncorrectable())
+					}
+					t.Logf("Input:   %x", data)
+					t.Logf("Encoded: %x", encoded)
+				}
+			}
+		})
+	}
+}
+
+func benchmarkDecode(b *testing.B, file string) {
+	b.Helper()
+	bursts := loadBursts(b, file)
+	var burst layer2.Burst
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := burst.DecodeFromBytes(bursts[i%len(bursts)])
+		if err != nil {
+			b.Fatalf("DecodeFromBytes failed: %v", err)
+		}
+	}
+}
+
+func BenchmarkBurst_Decode_Voice(b *testing.B) { benchmarkDecode(b, "testdata/voice.bin") }
+
+// func BenchmarkBurst_Decode_Motorola_SMS(b *testing.B) { benchmarkDecode(b, "testdata/m-sms.bin") }
+// func BenchmarkBurst_Decode_Hytera_SMS(b *testing.B)   { benchmarkDecode(b, "testdata/h-sms.bin") }
+// func BenchmarkBurst_Decode_DMR_SMS(b *testing.B)      { benchmarkDecode(b, "testdata/d-sms.bin") }
+func BenchmarkBurst_Decode_Parrot(b *testing.B) { benchmarkDecode(b, "testdata/parrot_kerchunk.bin") }
+
+func benchmarkEncode(b *testing.B, file string) {
+	b.Helper()
+	bursts := loadBursts(b, file)
+
+	// Pre-decode bursts
+	decodedBursts := make([]*layer2.Burst, 0, len(bursts))
+	for _, d := range bursts {
+		burst, err := layer2.NewBurstFromBytes(d)
+		if err != nil {
+			b.Fatalf("NewBurstFromBytes failed: %v", err)
+		}
+		decodedBursts = append(decodedBursts, burst)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = decodedBursts[i%len(decodedBursts)].Encode()
+	}
+}
+
+func BenchmarkBurst_Encode_Voice(b *testing.B)        { benchmarkEncode(b, "testdata/voice.bin") }
+func BenchmarkBurst_Encode_Motorola_SMS(b *testing.B) { benchmarkEncode(b, "testdata/m-sms.bin") }
+func BenchmarkBurst_Encode_Hytera_SMS(b *testing.B)   { benchmarkEncode(b, "testdata/h-sms.bin") }
+func BenchmarkBurst_Encode_DMR_SMS(b *testing.B)      { benchmarkEncode(b, "testdata/d-sms.bin") }
+func BenchmarkBurst_Encode_Parrot(b *testing.B)       { benchmarkEncode(b, "testdata/parrot_kerchunk.bin") }

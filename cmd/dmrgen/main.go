@@ -18,16 +18,16 @@ import (
 )
 
 func main() {
-	// Resolve the dmr/ root from the location of this source file.
+	// Resolve the code root from the location of this source file.
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
 		fmt.Fprintln(os.Stderr, "dmrgen: could not determine source file location")
 		os.Exit(1)
 	}
 	repoRoot := filepath.Join(filepath.Dir(thisFile), "..", "..")
-	dmrRoot := filepath.Join(repoRoot, "dmr")
+	v2Root := filepath.Join(repoRoot, "v2")
 
-	err := filepath.Walk(dmrRoot, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(v2Root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

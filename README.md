@@ -83,53 +83,53 @@ func main() {
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| §6.1 | Burst format | ✅ verified | 2/2 passed | `dmr/layer2/burst.go`, `dmr/enums/burst_types.go` |
-| §6.2 | Burst classification (sync patterns) | ✅ verified | 5/5 passed | `dmr/layer2/burst.go`, `dmr/enums/sync_patterns.go`, `dmr/enums/voice_burst_types.go` |
-| §7.1 | Voice channel coding (AMBE+2 vocoder) | ✅ verified | 4/4 passed | `dmr/vocoder/frame.go`, `dmr/layer2/pdu/vocoder.go` |
-| §7.2 | Data channel coding Rate 1/2 (BPTC 196,96) | ✅ verified | 1/1 passed | `dmr/fec/bptc/bptc_196_96.go` |
-| §7.3 | Data channel coding Rate 3/4 (Trellis) | ✅ verified | 1/1 passed | `dmr/fec/trellis/trellis_3_4.go` |
-| §7.4 | Data channel coding Rate 1 (passthrough) | ✅ verified | 1/1 passed | `dmr/layer2/burst.go` |
-| §7.5 | Slot Type coding (Golay 20,8,7) | ✅ verified | 4/4 passed | `dmr/fec/golay/golay_20_8_7.go`, `dmr/layer2/pdu/slot_type.go` |
-| §7.6 | EMB coding (QR 16,7,6) | ✅ verified | 4/4 passed | `dmr/fec/quadratic_residue/quadratic_residue_16_7_6.go`, `dmr/layer2/pdu/embedded_signalling.go` |
+| §6.1 | Burst format | ✅ verified | 2/2 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go` |
+| §6.2 | Burst classification (sync patterns) | ✅ verified | 5/5 passed | `v2/layer2/burst.go`, `v2/enums/sync_patterns.go`, `v2/enums/voice_burst_types.go` |
+| §7.1 | Voice channel coding (AMBE+2 vocoder) | ✅ verified | 4/4 passed | `v2/vocoder/frame.go`, `v2/layer2/pdu/vocoder.go` |
+| §7.2 | Data channel coding Rate 1/2 (BPTC 196,96) | ✅ verified | 1/1 passed | `v2/fec/bptc/bptc_196_96.go` |
+| §7.3 | Data channel coding Rate 3/4 (Trellis) | ✅ verified | 1/1 passed | `v2/fec/trellis/trellis_3_4.go` |
+| §7.4 | Data channel coding Rate 1 (passthrough) | ✅ verified | 1/1 passed | `v2/layer2/burst.go` |
+| §7.5 | Slot Type coding (Golay 20,8,7) | ✅ verified | 4/4 passed | `v2/fec/golay/golay_20_8_7.go`, `v2/layer2/pdu/slot_type.go` |
+| §7.6 | EMB coding (QR 16,7,6) | ✅ verified | 4/4 passed | `v2/fec/quadratic_residue/quadratic_residue_16_7_6.go`, `v2/layer2/pdu/embedded_signalling.go` |
 | §7.7 | CACH coding (Hamming 7,4) | ⬜ unimplemented | - | - |
-| §9.1.1 | SYNC PDU | ✅ verified | 2/2 passed | `dmr/enums/sync_patterns.go`, `dmr/layer2/burst.go` |
-| §9.1.2 | EMB PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/embedded_signalling.go` |
-| §9.1.3 | Slot Type PDU | ✅ verified | 4/4 passed | `dmr/layer2/pdu/slot_type.go` |
+| §9.1.1 | SYNC PDU | ✅ verified | 2/2 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go` |
+| §9.1.2 | EMB PDU | ✅ verified | 5/5 passed | `v2/layer2/pdu/embedded_signalling.go` |
+| §9.1.3 | Slot Type PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/slot_type.go` |
 | §9.1.4 | CACH PDU | ⬜ unimplemented | - | - |
-| §9.1.5 | Voice LC Header/Terminator | ✅ verified | 4/4 passed | `dmr/layer2/burst.go`, `dmr/layer2/pdu/full_link_control.go` |
-| §9.1.6 | Full Link Control PDU | ✅ verified | 7/7 passed | `dmr/layer2/pdu/full_link_control.go` |
-| §9.1.7 | CSBK PDU | ✅ verified | 4/4 passed | `dmr/layer2/pdu/csbk.go` |
-| §9.1.8 | Data Header PDU | ✅ verified | 3/3 passed | `dmr/layer2/pdu/data_header.go` |
-| §9.1.9 | Rate 1/2 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate12_data.go` |
-| §9.1.10 | Rate 3/4 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate34_data.go` |
-| §9.1.11 | Rate 1 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate1_data.go` |
+| §9.1.5 | Voice LC Header/Terminator | ✅ verified | 4/4 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go` |
+| §9.1.6 | Full Link Control PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/full_link_control.go` |
+| §9.1.7 | CSBK PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
+| §9.1.8 | Data Header PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
+| §9.1.9 | Rate 1/2 Data PDU | ✅ verified | 5/5 passed | `v2/layer2/pdu/rate12_data.go` |
+| §9.1.10 | Rate 3/4 Data PDU | ✅ verified | 5/5 passed | `v2/layer2/pdu/rate34_data.go` |
+| §9.1.11 | Rate 1 Data PDU | ✅ verified | 5/5 passed | `v2/layer2/pdu/rate1_data.go` |
 | §9.1.12 | PI Header PDU | ⬜ unimplemented | - | - |
 | §9.1.13 | Unified Single Block PDU | ⬜ unimplemented | - | - |
 | §9.1.14 | MBC Header PDU | ⬜ unimplemented | - | - |
 | §9.1.15 | MBC Continuation PDU | ⬜ unimplemented | - | - |
-| §9.3.1 | Colour Code | ✅ verified | 3/3 passed | `dmr/layer2/pdu/embedded_signalling.go`, `dmr/layer2/pdu/slot_type.go` |
+| §9.3.1 | Colour Code | ✅ verified | 3/3 passed | `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/pdu/slot_type.go` |
 | §9.3.2 | PI (Privacy Indicator) | ⬜ unimplemented | - | - |
-| §9.3.3 | LCSS | ✅ verified | 4/4 passed | `dmr/enums/lcss.go` |
-| §9.3.4 | FLCO | ✅ verified | 3/3 passed | `dmr/enums/flco.go` |
-| §9.3.5 | Feature Set ID | ✅ verified | 5/5 passed | `dmr/enums/feature_set_id.go` |
-| §9.3.6 | Data Type | ✅ verified | 3/3 passed | `dmr/layer2/elements/data_types.go`, `dmr/layer2/elements/data.go` |
-| §9.3.7 | Service Options | ✅ verified | 4/4 passed | `dmr/layer3/elements/service_options.go` |
-| §9.3.8 | Source/Destination Address | ✅ verified | 3/3 passed | `dmr/layer2/pdu/full_link_control.go`, `dmr/layer2/pdu/csbk.go` |
-| §9.3.9 | CRC masks | ✅ verified | 3/3 passed | `dmr/crc/crc_ccitt.go` |
-| §B.1 | Hamming codes | ✅ verified | 1/1 passed | `dmr/fec/bptc/bptc_196_96.go` |
-| §B.2 | CRC polynomials | ✅ verified | 2/2 passed | `dmr/crc/crc_ccitt.go` |
-| §B.3.1 | Golay(20,8,7) | ✅ verified | 1/1 passed | `dmr/fec/golay/golay_20_8_7.go` |
-| §B.3.2 | Quadratic Residue(16,7,6) | ✅ verified | 1/1 passed | `dmr/fec/quadratic_residue/quadratic_residue_16_7_6.go` |
-| §B.3.3 | Golay(23,12,7) | ✅ verified | 1/1 passed | `dmr/fec/golay/golay_23_12_7.go` |
-| §B.3.4 | BPTC(196,96) | ✅ verified | 1/1 passed | `dmr/fec/bptc/bptc_196_96.go` |
-| §B.3.5 | Golay(24,12,8) | ✅ verified | 1/1 passed | `dmr/fec/golay/golay_24_12_8.go` |
+| §9.3.3 | LCSS | ✅ verified | 4/4 passed | `v2/enums/lcss.go` |
+| §9.3.4 | FLCO | ✅ verified | 3/3 passed | `v2/enums/flco.go` |
+| §9.3.5 | Feature Set ID | ✅ verified | 5/5 passed | `v2/enums/feature_set_id.go` |
+| §9.3.6 | Data Type | ✅ verified | 3/3 passed | `v2/layer2/elements/data_types.go`, `v2/layer2/elements/data.go` |
+| §9.3.7 | Service Options | ✅ verified | 4/4 passed | `v2/layer3/elements/service_options.go` |
+| §9.3.8 | Source/Destination Address | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
+| §9.3.9 | CRC masks | ✅ verified | 3/3 passed | `v2/crc/crc_ccitt.go` |
+| §B.1 | Hamming codes | ✅ verified | 1/1 passed | `v2/fec/bptc/bptc_196_96.go` |
+| §B.2 | CRC polynomials | ✅ verified | 2/2 passed | `v2/crc/crc_ccitt.go` |
+| §B.3.1 | Golay(20,8,7) | ✅ verified | 1/1 passed | `v2/fec/golay/golay_20_8_7.go` |
+| §B.3.2 | Quadratic Residue(16,7,6) | ✅ verified | 1/1 passed | `v2/fec/quadratic_residue/quadratic_residue_16_7_6.go` |
+| §B.3.3 | Golay(23,12,7) | ✅ verified | 1/1 passed | `v2/fec/golay/golay_23_12_7.go` |
+| §B.3.4 | BPTC(196,96) | ✅ verified | 1/1 passed | `v2/fec/bptc/bptc_196_96.go` |
+| §B.3.5 | Golay(24,12,8) | ✅ verified | 1/1 passed | `v2/fec/golay/golay_24_12_8.go` |
 | §B.3.6 | Variable-length BPTC | ⬜ unimplemented | - | - |
-| §B.3.7 | Convolutional/Trellis coding | ✅ verified | 1/1 passed | `dmr/fec/trellis/trellis_3_4.go` |
-| §B.3.8 | CRC-CCITT | ✅ verified | 3/3 passed | `dmr/crc/crc_ccitt.go` |
-| §B.3.9 | Reed-Solomon(12,9,4) | ✅ verified | 18/18 passed | `dmr/fec/reed_solomon/reed_solomon_12_9_4.go` |
+| §B.3.7 | Convolutional/Trellis coding | ✅ verified | 1/1 passed | `v2/fec/trellis/trellis_3_4.go` |
+| §B.3.8 | CRC-CCITT | ✅ verified | 3/3 passed | `v2/crc/crc_ccitt.go` |
+| §B.3.9 | Reed-Solomon(12,9,4) | ✅ verified | 18/18 passed | `v2/fec/reed_solomon/reed_solomon_12_9_4.go` |
 | §B.3.10 | Single-burst Trellis coded modulation | ⬜ unimplemented | - | - |
-| §B.3.11 | Rate 3/4 Trellis | ✅ verified | 1/1 passed | `dmr/fec/trellis/trellis_3_4.go` |
-| §C | AMBE+2 vocoder frame structure | ✅ verified | 3/3 passed | `dmr/vocoder/frame.go` |
+| §B.3.11 | Rate 3/4 Trellis | ✅ verified | 1/1 passed | `v2/fec/trellis/trellis_3_4.go` |
+| §C | AMBE+2 vocoder frame structure | ✅ verified | 3/3 passed | `v2/vocoder/frame.go` |
 | §D | PRNG | ⬜ unimplemented | - | - |
 | §E | Encryption (ARC4/AES) | ⬜ unimplemented | - | - |
 
@@ -141,35 +141,35 @@ func main() {
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| §7.1.1 | Full LC PDU opcodes | ✅ verified | 3/3 passed | `dmr/layer2/pdu/full_link_control.go` |
-| §7.1.2 | Embedded LC assembly | ✅ verified | 4/4 passed | `dmr/layer2/burst.go`, `dmr/layer2/pdu/embedded_signalling.go` |
+| §7.1.1 | Full LC PDU opcodes | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.1.2 | Embedded LC assembly | ✅ verified | 4/4 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go` |
 | §7.1.3 | Short LC (CACH) | ⬜ unimplemented | - | - |
-| §7.2.1 | Service Options | ✅ verified | 4/4 passed | `dmr/layer3/elements/service_options.go` |
-| §7.2.2 | Group Address | ✅ verified | 2/2 passed | `dmr/layer2/pdu/full_link_control.go` |
-| §7.2.3 | Source Address | ✅ verified | 3/3 passed | `dmr/layer2/pdu/full_link_control.go` |
-| §7.2.4 | Destination Address | ✅ verified | 2/2 passed | `dmr/layer2/pdu/full_link_control.go` |
+| §7.2.1 | Service Options | ✅ verified | 4/4 passed | `v2/layer3/elements/service_options.go` |
+| §7.2.2 | Group Address | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.2.3 | Source Address | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.2.4 | Destination Address | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.2.5 | Algorithm ID | ⬜ unimplemented | - | - |
 | §7.2.6 | Key ID | ⬜ unimplemented | - | - |
 | §7.2.7 | Message Indicator (MI) | ⬜ unimplemented | - | - |
-| §7.2.8 | Answer/Response | ✅ verified | 1/1 passed | `dmr/layer2/pdu/csbk.go` |
-| §7.2.9 | Reason Code | ✅ verified | 1/1 passed | `dmr/layer2/pdu/csbk.go` |
+| §7.2.8 | Answer/Response | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
+| §7.2.9 | Reason Code | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.2.10 | N(S)/N(R) sequence numbers | ⬜ unimplemented | - | - |
-| §7.2.11 | Data Packet Format | ✅ verified | 1/1 passed | `dmr/layer2/pdu/data_header.go` |
+| §7.2.11 | Data Packet Format | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | §7.2.12 | SAP Identifier | ⬜ unimplemented | - | - |
-| §7.2.13 | Full Message Flag | ✅ verified | 1/1 passed | `dmr/layer2/pdu/data_header.go` |
-| §7.2.14 | Blocks to Follow | ✅ verified | 1/1 passed | `dmr/layer2/pdu/data_header.go` |
-| §7.2.15 | Position Error | ✅ verified | 3/3 passed | `dmr/layer3/elements/position_error.go` |
-| §7.2.16 | Longitude | ✅ verified | 1/1 passed | `dmr/layer2/pdu/full_link_control.go` |
-| §7.2.17 | Latitude | ✅ verified | 1/1 passed | `dmr/layer2/pdu/full_link_control.go` |
-| §7.2.18 | Talker Alias Data Format | ✅ verified | 3/3 passed | `dmr/layer3/elements/talker_alias_data_format.go` |
-| §7.2.19 | Talker Alias Data | ✅ verified | 1/1 passed | `dmr/layer2/pdu/full_link_control.go`, `dmr/layer3/elements/talker_alias_data_format.go` |
-| §7.2.20 | CSBK Opcode definitions | ✅ verified | 3/3 passed | `dmr/layer2/pdu/csbk.go` |
-| §7.2.21 | Data Header sub-formats | ✅ verified | 2/2 passed | `dmr/layer2/pdu/data_header.go` |
+| §7.2.13 | Full Message Flag | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §7.2.14 | Blocks to Follow | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §7.2.15 | Position Error | ✅ verified | 3/3 passed | `v2/layer3/elements/position_error.go` |
+| §7.2.16 | Longitude | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.2.17 | Latitude | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.2.18 | Talker Alias Data Format | ✅ verified | 3/3 passed | `v2/layer3/elements/talker_alias_data_format.go` |
+| §7.2.19 | Talker Alias Data | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/elements/talker_alias_data_format.go` |
+| §7.2.20 | CSBK Opcode definitions | ✅ verified | 3/3 passed | `v2/layer2/pdu/csbk.go` |
+| §7.2.21 | Data Header sub-formats | ✅ verified | 2/2 passed | `v2/layer2/pdu/data_header.go` |
 | §6.1-6.5 | Short data services (Defined, Raw, SDD, UDT, IP) | ⬜ unimplemented | - | - |
 | §9 | Location services (LRRP) | ⬜ unimplemented | - | - |
-| §A | CSBK opcode table (complete) | ✅ verified | 1/1 passed | `dmr/layer2/pdu/csbk.go` |
-| §B | Data header format field tables | ✅ verified | 1/1 passed | `dmr/layer2/pdu/data_header.go` |
-| §C | Full LC opcode table (complete) | ✅ verified | 2/2 passed | `dmr/layer2/pdu/full_link_control.go` |
+| §A | CSBK opcode table (complete) | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
+| §B | Data header format field tables | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §C | Full LC opcode table (complete) | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
 
 ### ETSI TS 102 361-3 — Data Protocol / Trunking Type 1 (Tier III)
 

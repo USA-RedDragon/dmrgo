@@ -1,0 +1,168 @@
+package vocoder
+
+import (
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/golay"
+)
+
+// dmr:fec ambe_voice
+type VocoderFrame struct {
+	DecodedBits [49]bit.Bit   `dmr:"bits:0-48,raw"`
+	FEC         fec.FECResult `dmr:"-"`
+}
+
+// encodeAMBE takes the decoded 49 bits and encodes them into a 72 bit AMBE frame.
+func encodeAMBE(ambe49 [49]bit.Bit) [72]bit.Bit {
+	var ambe72 [72]bit.Bit
+
+	var aOrig uint32 = 0
+	var bOrig uint32 = 0
+	var cOrig uint32 = 0
+	var MASK uint32 = 0x000800
+
+	for i := 0; i < 12; i, MASK = i+1, MASK>>1 {
+		n1 := i
+		n2 := i + 12
+		if ambe49[n1] == 1 {
+			aOrig |= MASK
+		}
+		if ambe49[n2] == 1 {
+			bOrig |= MASK
+		}
+	}
+
+	MASK = 0x1000000
+	for i := 0; i < 25; i, MASK = i+1, MASK>>1 {
+		n := i + 24
+		if ambe49[n] == 1 {
+			cOrig |= MASK
+		}
+	}
+
+	a := golay.Golay_24_12_8_table[aOrig]
+
+	p := AMBE_SCRAMBLE_TABLE[aOrig] >> 1
+
+	b := golay.Golay_23_12_7_table[bOrig] >> 1
+	b ^= p
+
+	MASK = 0x800000
+	for i := 0; i < 24; i, MASK = i+1, MASK>>1 {
+		aPos := aTable[i]
+		if (a & MASK) != 0 {
+			ambe72[aPos] = 1
+		} else {
+			ambe72[aPos] = 0
+		}
+	}
+
+	MASK = 0x400000
+	for i := 0; i < 23; i, MASK = i+1, MASK>>1 {
+		bPos := bTable[i]
+		if (b & MASK) != 0 {
+			ambe72[bPos] = 1
+		} else {
+			ambe72[bPos] = 0
+		}
+	}
+
+	MASK = 0x1000000
+	for i := 0; i < 25; i, MASK = i+1, MASK>>1 {
+		cPos := cTable[i]
+		if (cOrig & MASK) != 0 {
+			ambe72[cPos] = 1
+		} else {
+			ambe72[cPos] = 0
+		}
+	}
+
+	return ambe72
+}
+
+// decodeAMBE decodes a 72-bit AMBE voice frame into 49 decoded bits with FEC.
+// Sections: A (24 scattered → Golay 24,12,8 → 12 bits),
+// B (23 scattered → descramble → Golay 23,12,7 → 12 bits),
+// C (25 scattered → 25 raw bits).
+func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.FECResult) {
+	var ambe49 [49]bit.Bit
+	result := fec.FECResult{BitsChecked: 47} // 24 (Golay 24,12,8) + 23 (Golay 23,12,7)
+
+	var a uint32 = 0
+	var MASK uint32 = 0x800000
+
+	for i := 0; i < 24; i, MASK = i+1, MASK>>1 {
+		aPos := aTable[i]
+		if bits[aPos] == 1 {
+			a |= MASK
+		}
+	}
+
+	// Golay 24,12,8: 24 bits received. 12 data bits.
+	// Decode 'a'
+	dataA, fecA := golay.DecodeGolay24128(a)
+	result.ErrorsCorrected += fecA.ErrorsCorrected
+	if fecA.Uncorrectable {
+		result.Uncorrectable = true
+	}
+	// Use corrected data for 'a'
+	a = uint32(dataA)
+
+	var b uint32 = 0
+	MASK = 0x400000
+	for i := 0; i < 23; i, MASK = i+1, MASK>>1 {
+		bPos := bTable[i]
+		if bits[bPos] == 1 {
+			b |= MASK
+		}
+	}
+
+	b ^= (AMBE_SCRAMBLE_TABLE[a] >> 1)
+
+	dataB, fecB := golay.DecodeGolay23127(b)
+	result.ErrorsCorrected += fecB.ErrorsCorrected
+	if fecB.Uncorrectable {
+		result.Uncorrectable = true
+	}
+	b = uint32(dataB)
+
+	var c uint32 = 0
+	MASK = 0x1000000
+	for i := 0; i < 25; i, MASK = i+1, MASK>>1 {
+		cPos := cTable[i]
+		if bits[cPos] == 1 {
+			c |= MASK
+		}
+	}
+
+	// Reconstruct ambe49
+	MASK = 0x000800
+	for i := 0; i < 12; i, MASK = i+1, MASK>>1 {
+		apos := i
+		bpos := i + 12
+		// 'a' is 12 bits data. MASK scans 12 bits.
+		if (a & MASK) != 0 {
+			ambe49[apos] = 1
+		} else {
+			ambe49[apos] = 0
+		}
+		// 'b' is 12 bits data.
+		if (b & MASK) != 0 {
+			ambe49[bpos] = 1
+		} else {
+			ambe49[bpos] = 0
+		}
+	}
+
+	MASK = 0x1000000
+	for i := 0; i < 25; i, MASK = i+1, MASK>>1 {
+		cPos := i + 24
+		if (c & MASK) != 0 {
+			ambe49[cPos] = 1
+		} else {
+			ambe49[cPos] = 0
+		}
+	}
+
+	return ambe49, result
+}

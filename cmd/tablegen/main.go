@@ -24,11 +24,11 @@ import (
 func main() {
 	tables := compute.All()
 
-	// Resolve the dmr/ directory relative to this source file's location.
+	// Resolve the v2/ directory relative to this source file's location.
 	_, thisFile, _, _ := runtime.Caller(0) //nolint:dogsled
-	dmrRoot := filepath.Join(filepath.Dir(thisFile), "..", "..", "dmr")
+	v2Root := filepath.Join(filepath.Dir(thisFile), "..", "..", "v2")
 
-	if err := generate.WriteAll(tables, dmrRoot); err != nil {
+	if err := generate.WriteAll(tables, v2Root); err != nil {
 		fmt.Fprintf(os.Stderr, "generate failed: %v\n", err)
 		os.Exit(1)
 	}

@@ -12,15 +12,15 @@ import (
 )
 
 const (
-	bitPkg = "github.com/USA-RedDragon/dmrgo/dmr/bit"
-	fecPkg = "github.com/USA-RedDragon/dmrgo/dmr/fec"
-	crcPkg = "github.com/USA-RedDragon/dmrgo/dmr/crc"
-	rsPkg  = "github.com/USA-RedDragon/dmrgo/dmr/fec/reed_solomon"
+	bitPkg = "github.com/USA-RedDragon/dmrgo/v2/bit"
+	fecPkg = "github.com/USA-RedDragon/dmrgo/v2/fec"
+	crcPkg = "github.com/USA-RedDragon/dmrgo/v2/crc"
+	rsPkg  = "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon"
 )
 
 // FECCodecInfo maps FEC directive names to their decode function and import path.
 type FECCodecInfo struct {
-	ImportPath  string // e.g. "github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
+	ImportPath  string // e.g. "github.com/USA-RedDragon/dmrgo/v2/fec/golay"
 	GoPkgName   string // actual Go package name (may differ from directory)
 	DecodeFn    string // e.g. "DecodeGolay2087"
 	EncodeFn    string // e.g. "Encode" — func(byte) [N]bit.Bit
@@ -34,7 +34,7 @@ type FECCodecInfo struct {
 //nolint:gochecknoglobals
 var fecCodecs = map[string]FECCodecInfo{
 	"golay_20_8_7": {
-		ImportPath: "github.com/USA-RedDragon/dmrgo/dmr/fec/golay",
+		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
 		GoPkgName:  "golay",
 		DecodeFn:   "DecodeGolay2087",
 		EncodeFn:   "Encode",
@@ -42,7 +42,7 @@ var fecCodecs = map[string]FECCodecInfo{
 		DataBits:   8,
 	},
 	"quadratic_residue_16_7_6": {
-		ImportPath: "github.com/USA-RedDragon/dmrgo/dmr/fec/quadratic_residue",
+		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue",
 		GoPkgName:  "quadratic_residue",
 		DecodeFn:   "Decode",
 		EncodeFn:   "Encode",
@@ -74,35 +74,35 @@ var fecCodecs = map[string]FECCodecInfo{
 //
 //nolint:gochecknoglobals
 var pkgNameOverrides = map[string]string{
-	"github.com/USA-RedDragon/dmrgo/dmr/fec/quadratic_residue": "quadratic_residue",
-	"github.com/USA-RedDragon/dmrgo/dmr/fec/reed_solomon":      "reedsolomon",
-	"github.com/USA-RedDragon/dmrgo/dmr/fec/trellis":           "trellis34",
+	"github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue": "quadratic_residue",
+	"github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon":      "reedsolomon",
+	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis":           "trellis34",
 }
 
 // pkgAliasOverrides forces specific import aliases to disambiguate packages with the same name.
 //
 //nolint:gochecknoglobals
 var pkgAliasOverrides = map[string]string{
-	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements": "layer2Elements",
-	"github.com/USA-RedDragon/dmrgo/dmr/layer3/elements": "layer3Elements",
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements": "layer2Elements",
+	"github.com/USA-RedDragon/dmrgo/v2/layer3/elements": "layer3Elements",
 }
 
 // resolveImportPath converts a short package name (e.g. "enums") to a full import path.
 func resolveImportPath(pkgName, sourceFile string) string {
 	// Map well-known package names to full import paths
 	knownPkgs := map[string]string{
-		"enums":            "github.com/USA-RedDragon/dmrgo/dmr/enums",
-		"elements":         "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements",
-		"layer2Elements":   "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements",
-		"bit":              "github.com/USA-RedDragon/dmrgo/dmr/bit",
-		"fec":              "github.com/USA-RedDragon/dmrgo/dmr/fec",
-		"layer3Elements":   "github.com/USA-RedDragon/dmrgo/dmr/layer3/elements",
-		"golay":            "github.com/USA-RedDragon/dmrgo/dmr/fec/golay",
-		"quadraticResidue": "github.com/USA-RedDragon/dmrgo/dmr/fec/quadratic_residue",
-		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/dmr/fec/reed_solomon",
-		"bptc":             "github.com/USA-RedDragon/dmrgo/dmr/fec/bptc",
-		"trellis":          "github.com/USA-RedDragon/dmrgo/dmr/fec/trellis",
-		"vocoder":          "github.com/USA-RedDragon/dmrgo/dmr/vocoder",
+		"enums":            "github.com/USA-RedDragon/dmrgo/v2/enums",
+		"elements":         "github.com/USA-RedDragon/dmrgo/v2/layer2/elements",
+		"layer2Elements":   "github.com/USA-RedDragon/dmrgo/v2/layer2/elements",
+		"bit":              "github.com/USA-RedDragon/dmrgo/v2/bit",
+		"fec":              "github.com/USA-RedDragon/dmrgo/v2/fec",
+		"layer3Elements":   "github.com/USA-RedDragon/dmrgo/v2/layer3/elements",
+		"golay":            "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
+		"quadraticResidue": "github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue",
+		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon",
+		"bptc":             "github.com/USA-RedDragon/dmrgo/v2/fec/bptc",
+		"trellis":          "github.com/USA-RedDragon/dmrgo/v2/fec/trellis",
+		"vocoder":          "github.com/USA-RedDragon/dmrgo/v2/vocoder",
 	}
 	if p, ok := knownPkgs[pkgName]; ok {
 		return p
