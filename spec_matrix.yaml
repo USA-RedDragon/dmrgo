@@ -1,16 +1,8 @@
 # ETSI TS 102 361 Specification Coverage Matrix
 # Validated by cmd/speccheck — run: go run -C cmd/speccheck .
 #
-# Status values:
-#   implemented   — Fully coded and tested
-#   partial       — Some sub-features coded; see notes
-#   stub          — Struct/function exists but body is TODO
-#   unimplemented — Not started
-#
 # test_functions maps spec sections to Go test functions.
 # speccheck runs `go test -v -run <regex>` for each package and verifies pass.
-# Sections with status "implemented" or "partial" MUST have test_functions.
-# Sections with status "stub" or "unimplemented" may omit test_functions.
 #
 # Out of scope: state machines, procedures, RF/physical layer, conformance testing.
 
