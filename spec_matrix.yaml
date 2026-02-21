@@ -17,6 +17,9 @@ documents:
           - v2/layer2/burst.go
           - v2/vocoder/frame.go
           - v2/layer2/pdu/vocoder.go
+          - v2/fec/golay/golay_23_12_7.go
+          - v2/fec/golay/golay_24_12_8.go
+          - v2/enums/voice_burst_types.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/vocoder
             names:
@@ -30,6 +33,10 @@ documents:
             names:
               - TestGolay23127
               - TestGolay24128
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestVoiceBurstTypeToName
+              - TestVoiceBurstTypeToName_InvalidReturnsUnknown
 
       - section: "6.2"
         title: "Data and control"
@@ -67,6 +74,9 @@ documents:
               - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
               - TestFullLinkControl_EncodeStability
               - TestFullLinkControl_Decode_BothDataTypes
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestBuildLCDataBurst_ProducesCorrectSize
 
       - section: "7.1.2"
         title: "Terminator with LC"
@@ -80,6 +90,9 @@ documents:
               - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
               - TestFullLinkControl_EncodeStability
               - TestFullLinkControl_Decode_BothDataTypes
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestBuildLCDataBurst_Terminator
 
       - section: "7.1.3"
         title: "Embedded signalling"
@@ -164,6 +177,8 @@ documents:
               - TestEmbeddedSignalling_AllColorCodes
               - TestEmbeddedSignalling_AllLCSS
               - TestEmbeddedSignalling_ToString
+              - TestEmbeddedSignalling_PPCI
+              - TestEncodeEmbeddedSignalling_FullRoundTrip
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip
@@ -179,6 +194,8 @@ documents:
               - TestSlotType_AllColorCodes
               - TestSlotType_AllDataTypes
               - TestSlotType_ToString
+              - TestSlotType_SingleBitError
+              - TestEncodeSlotType_RoundTrip
 
       - section: "9.1.4"
         title: "TACT PDU"
@@ -295,8 +312,12 @@ documents:
 
       - section: "9.3.2"
         title: "Pre-emption and power control Indicator (PI)"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/embedded_signalling.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestEmbeddedSignalling_PPCI
 
       - section: "9.3.3"
         title: "LC Start/Stop (LCSS)"
@@ -312,8 +333,17 @@ documents:
 
       - section: "9.3.4"
         title: "EMB parity"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/fec/quadratic_residue/quadratic_residue_16_7_6.go
+          - v2/layer2/pdu/embedded_signalling.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue
+            names:
+              - TestQuadraticResidue1676Decode
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestEmbeddedSignalling_EncodeDecodeRoundTrip
+              - TestEncodeEmbeddedSignalling_FullRoundTrip
 
       - section: "9.3.5"
         title: "Feature set ID (FID)"
@@ -342,8 +372,14 @@ documents:
 
       - section: "9.3.10"
         title: "Protect Flag (PF)"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/full_link_control.go
+          - v2/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestCSBK_PreamblePDU_Decode
 
       - section: "9.3.11"
         title: "Full Link Control Opcode (FLCO)"
@@ -364,6 +400,15 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestDataHeader_FormatDispatch
+
+      - section: "9.3.18"
+        title: "SAP identifier (SAP)"
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_UnconfirmedDecode
 
       - section: "9.3.19"
         title: "Logical Link ID (LLID)"
@@ -437,6 +482,9 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/fec/golay
             names:
               - TestGolay2087Decode
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestSlotType_SingleBitError
 
       - section: "B.3.2"
         title: "Quadratic residue (16,7,6)"
@@ -511,6 +559,8 @@ documents:
               - TestCRCCCITT_KnownValues
               - TestCRCCCITT_CheckValid
               - TestCRCCCITT_CheckInvalid
+              - TestCRCCCITT_CheckTooShort
+              - TestCRCCCITT_EmptyInput
 
       - section: "B.3.9"
         title: "32-bit CRC calculation"
@@ -663,6 +713,24 @@ documents:
               - TestCSBK_NegativeAck_Decode
               - TestCSBK_CRCValidation
 
+      - section: "7.1.2.1"
+        title: "BS Outbound Activation CSBK PDU"
+        source_files:
+          - v2/layer2/pdu/csbk.go
+        test_functions: []
+
+      - section: "7.1.2.2"
+        title: "Unit to Unit Voice Service Request CSBK PDU"
+        source_files:
+          - v2/layer2/pdu/csbk.go
+        test_functions: []
+
+      - section: "7.1.2.3"
+        title: "Unit to Unit Voice Service Answer Response CSBK PDU"
+        source_files:
+          - v2/layer2/pdu/csbk.go
+        test_functions: []
+
       - section: "7.1.2.4"
         title: "Negative Acknowledge Response CSBK PDU"
         source_files:
@@ -680,6 +748,12 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_PreamblePDU_Decode
+
+      - section: "7.1.2.6"
+        title: "Channel Timing CSBK PDU"
+        source_files:
+          - v2/layer2/pdu/csbk.go
+        test_functions: []
 
       - section: "7.1.3"
         title: "Short Link Control PDUs"
