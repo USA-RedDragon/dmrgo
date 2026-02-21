@@ -21,7 +21,7 @@ func DecodeVocoder(data [216]bit.Bit) (Vocoder, fec.FECResult) {
 	for _i := 0; _i < 3; _i++ {
 		var _elemBits [72]bit.Bit
 		copy(_elemBits[:], data[0+_i*72:0+_i*72+72])
-		result.Frames[_i] = vocoder.NewVocoderFrameFromBits(_elemBits)
+		result.Frames[_i], _ = vocoder.DecodeVocoderFrame(_elemBits)
 	}
 	return result, fecResult
 }
@@ -30,7 +30,7 @@ func DecodeVocoder(data [216]bit.Bit) (Vocoder, fec.FECResult) {
 func EncodeVocoder(s *Vocoder) [216]bit.Bit {
 	var data [216]bit.Bit
 	for _i := 0; _i < 3; _i++ {
-		_elemBits := s.Frames[_i].Encode()
+		_elemBits := vocoder.EncodeVocoderFrame(&s.Frames[_i])
 		copy(data[0+_i*72:0+_i*72+72], _elemBits[:])
 	}
 	return data

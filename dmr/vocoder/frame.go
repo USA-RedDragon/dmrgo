@@ -9,9 +9,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 )
 
+// dmr:fec ambe_voice
 type VocoderFrame struct {
-	DecodedBits [49]bit.Bit
-	FEC         fec.FECResult
+	DecodedBits [49]bit.Bit   `dmr:"bits:0-48,raw"`
+	FEC         fec.FECResult `dmr:"-"`
 }
 
 func (vf *VocoderFrame) ToString() string {
@@ -24,11 +25,9 @@ func (vf *VocoderFrame) ToString() string {
 	return fmt.Sprintf("{ DecodedFrame: %014s }", hex.EncodeToString(data[:]))
 }
 
-// Encode takes the decoded bits and encodes them into a 216 bit frame
-func (vf *VocoderFrame) Encode() [72]bit.Bit {
+// encodeAMBE takes the decoded 49 bits and encodes them into a 72 bit AMBE frame.
+func encodeAMBE(ambe49 [49]bit.Bit) [72]bit.Bit {
 	var ambe72 [72]bit.Bit
-
-	var ambe49 = vf.DecodedBits
 
 	var aOrig uint32 = 0
 	var bOrig uint32 = 0
@@ -94,7 +93,11 @@ func (vf *VocoderFrame) Encode() [72]bit.Bit {
 	return ambe72
 }
 
-func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
+// decodeAMBE decodes a 72-bit AMBE voice frame into 49 decoded bits with FEC.
+// Sections: A (24 scattered → Golay 24,12,8 → 12 bits),
+// B (23 scattered → descramble → Golay 23,12,7 → 12 bits),
+// C (25 scattered → 25 raw bits).
+func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.FECResult) {
 	var ambe49 [49]bit.Bit
 	result := fec.FECResult{BitsChecked: 47} // 24 (Golay 24,12,8) + 23 (Golay 23,12,7)
 
@@ -174,8 +177,5 @@ func NewVocoderFrameFromBits(bits [72]bit.Bit) VocoderFrame {
 		}
 	}
 
-	return VocoderFrame{
-		DecodedBits: ambe49,
-		FEC:         result,
-	}
+	return ambe49, result
 }

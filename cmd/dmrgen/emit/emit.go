@@ -59,6 +59,14 @@ var fecCodecs = map[string]FECCodecInfo{
 		TotalBytes:  12,
 		DataBytes:   9,
 	},
+	"ambe_voice": {
+		// AMBE voice codec: 72 scattered input bits → 49 decoded bits
+		// Handled as a special case in emitDecode/emitEncode.
+		// The actual algorithm lives in private helpers (decodeAMBE/encodeAMBE)
+		// within the vocoder package.
+		InputSize: 72,
+		DataBits:  49,
+	},
 }
 
 // pkgNameOverrides maps import paths to actual Go package names where they differ
@@ -168,6 +176,13 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		hasCRC := pdu.CRC != nil
 		hasPackedFEC := codec != nil && codec.PackedBytes
 		hasBitFEC := codec != nil && !codec.PackedBytes
+		isAMBE := codec != nil && pdu.FEC.Codec == "ambe_voice"
+
+		if isAMBE {
+			// AMBE voice codec: delegate to private decodeAMBE helper
+			emitAMBEVoiceDecode(g, pdu)
+			return
+		}
 
 		if hasCRC || hasPackedFEC {
 			// Both CRC and packed-bytes FEC need bit packing first
@@ -339,6 +354,40 @@ func emitDispatchConstant(val string, pdu parse.PDUStruct) Code {
 	return Id(val)
 }
 
+// emitAMBEVoiceDecode generates the decode body for the AMBE voice codec.
+// It delegates to the private decodeAMBE helper in the vocoder package
+// and assigns the decoded bits and FEC result to the struct fields.
+func emitAMBEVoiceDecode(g *Group, pdu parse.PDUStruct) {
+	// Find the data field (the non-FEC, non-skip field)
+	var dataFieldName string
+	for _, f := range pdu.Fields {
+		if f.Name != "FEC" {
+			dataFieldName = f.Name
+			break
+		}
+	}
+
+	g.List(Id("_decoded"), Id("fecResult")).Op(":=").Id("decodeAMBE").Call(Id("data"))
+	g.Id("result").Dot(dataFieldName).Op("=").Id("_decoded")
+	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
+	g.Return(Id("result"), Id("fecResult"))
+}
+
+// emitAMBEVoiceEncode generates the encode body for the AMBE voice codec.
+// It delegates to the private encodeAMBE helper in the vocoder package.
+func emitAMBEVoiceEncode(g *Group, pdu parse.PDUStruct) {
+	// Find the data field (the non-FEC, non-skip field)
+	var dataFieldName string
+	for _, f := range pdu.Fields {
+		if f.Name != "FEC" {
+			dataFieldName = f.Name
+			break
+		}
+	}
+
+	g.Return(Id("encodeAMBE").Call(Id("s").Dot(dataFieldName)))
+}
+
 // emitFieldDecode generates the decode logic for a single field.
 func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	target := Id("result").Dot(field.Name)
@@ -421,15 +470,14 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		}
 
 	case parse.FieldDelegate:
-		// Delegate to a sub-struct's constructor: NewXxxFromBits([N]bit.Bit)
-		constructorName := "New" + field.TypeName + "FromBits"
 		var importPath string
 		if field.IsQualified {
 			importPath = resolveImportPath(field.TypePkg, pdu.SourceFile)
 		}
 
 		if field.Stride > 0 && field.ArrayLen > 0 {
-			// Array delegate with stride: generate a loop
+			// Array delegate with stride: generate a loop calling DecodeXxx
+			decodeFn := "Decode" + field.TypeName
 			tmpVar := "_elemBits"
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 				Var().Id(tmpVar).Index(Lit(field.Stride)).Qual(bitPkg, "Bit"),
@@ -440,11 +488,11 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 				func() Code {
 					var call Code
 					if field.IsQualified {
-						call = Qual(importPath, constructorName).Call(Id(tmpVar))
+						call = Qual(importPath, decodeFn).Call(Id(tmpVar))
 					} else {
-						call = Id(constructorName).Call(Id(tmpVar))
+						call = Id(decodeFn).Call(Id(tmpVar))
 					}
-					return target.Clone().Index(Id("_i")).Op("=").Add(call)
+					return List(target.Clone().Index(Id("_i")), Id("_")).Op("=").Add(call)
 				}(),
 			)
 		} else if field.DelegateNoPtr {
@@ -532,6 +580,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) {
 	hasCRC := pdu.CRC != nil
 	hasPackedFEC := codec != nil && codec.PackedBytes
 	hasBitFEC := codec != nil && !codec.PackedBytes
+	isAMBE := codec != nil && pdu.FEC != nil && pdu.FEC.Codec == "ambe_voice"
 
 	// Output is the full codeword size
 	outputSize := pdu.InputSize
@@ -542,7 +591,10 @@ func emitEncode(f *File, pdu parse.PDUStruct) {
 	f.Func().Id(funcName).Params(
 		Id("s").Op("*").Id(pdu.Name),
 	).Index(Lit(outputSize)).Qual(bitPkg, "Bit").BlockFunc(func(g *Group) {
-		if hasBitFEC {
+		if isAMBE {
+			// AMBE voice codec: delegate to private encodeAMBE helper
+			emitAMBEVoiceEncode(g, pdu)
+		} else if hasBitFEC {
 			// Bit-level FEC (Golay, QR): build data bits, then FEC-encode
 			dataBits := codec.DataBits
 			g.Var().Id("data").Index(Lit(dataBits)).Qual(bitPkg, "Bit")
@@ -768,9 +820,22 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	case parse.FieldDelegate:
 		arraySize := field.BitEnd - field.BitStart + 1
 		if field.Stride > 0 && field.ArrayLen > 0 {
-			// Array delegate with stride: call Encode() on each element
+			// Array delegate with stride: call EncodeXxx on each element
+			encodeFn := "Encode" + field.TypeName
+			var importPath string
+			if field.IsQualified {
+				importPath = resolveImportPath(field.TypePkg, pdu.SourceFile)
+			}
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
-				Id("_elemBits").Op(":=").Add(source.Clone().Index(Id("_i"))).Dot("Encode").Call(),
+				func() Code {
+					var call Code
+					if field.IsQualified {
+						call = Qual(importPath, encodeFn).Call(Op("&").Add(source.Clone().Index(Id("_i"))))
+					} else {
+						call = Id(encodeFn).Call(Op("&").Add(source.Clone().Index(Id("_i"))))
+					}
+					return Id("_elemBits").Op(":=").Add(call)
+				}(),
 				Copy(
 					Id("data").Index(
 						Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
