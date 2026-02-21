@@ -166,18 +166,23 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		)
 
 	case parse.FieldUint:
-		// Choose the right bit extraction function based on width
-		fn, castType := bitExtractFunc(field.BitWidth, field.GoType)
-		call := Qual(bitPkg, fn).Call(
-			Id("data").Index(Empty(), Empty()),
-			Lit(field.BitStart),
-			Lit(field.BitWidth),
-		)
-		if needsCast(fn, field.GoType) {
-			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(call)
+		if len(field.ExtraBitRanges) > 0 {
+			// Non-contiguous bits: accumulate segments MSB-first using a temp variable
+			emitNonContiguousDecode(g, field, pdu)
 		} else {
-			_ = castType
-			g.Add(target).Op("=").Add(call)
+			// Choose the right bit extraction function based on width
+			fn, castType := bitExtractFunc(field.BitWidth, field.GoType)
+			call := Qual(bitPkg, fn).Call(
+				Id("data").Index(Empty(), Empty()),
+				Lit(field.BitStart),
+				Lit(field.BitEnd-field.BitStart+1),
+			)
+			if needsCast(fn, field.GoType) {
+				g.Add(target).Op("=").Add(qualType(field, pdu)).Call(call)
+			} else {
+				_ = castType
+				g.Add(target).Op("=").Add(call)
+			}
 		}
 
 	case parse.FieldInt:
@@ -215,9 +220,15 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	case parse.FieldPacked:
 		// Pack bits into bytes using bit.PackBits
-		g.Add(target).Op("=").Qual(bitPkg, "PackBits").Call(
+		packed := Qual(bitPkg, "PackBits").Call(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
 		)
+		if isFixedArray(field.GoType) {
+			// Fixed-size array: must use copy
+			g.Copy(target.Clone().Index(Empty(), Empty()), packed)
+		} else {
+			g.Add(target).Op("=").Add(packed)
+		}
 
 	case parse.FieldDelegate, parse.FieldLongitude, parse.FieldLatitude:
 		// These field kinds are not yet implemented in the code generator.
@@ -290,15 +301,20 @@ func emitFieldEncode(g *Group, field parse.Field, _ parse.PDUStruct) {
 		)
 
 	case parse.FieldUint:
-		fn := bitStoreFunc(field.BitWidth, field.GoType)
-		bits := Qual(bitPkg, fn).Call(
-			castToStoreFuncType(source.Clone(), field.GoType, fn),
-			Lit(field.BitWidth),
-		)
-		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			bits,
-		)
+		if len(field.ExtraBitRanges) > 0 {
+			// Non-contiguous bits: decompose value into segments
+			emitNonContiguousEncode(g, field)
+		} else {
+			fn := bitStoreFunc(field.BitWidth, field.GoType)
+			bits := Qual(bitPkg, fn).Call(
+				castToStoreFuncType(source.Clone(), field.GoType, fn),
+				Lit(field.BitWidth),
+			)
+			g.Copy(
+				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+				bits,
+			)
+		}
 
 	case parse.FieldInt:
 		// BitsFromUint32 handles it, just needs a cast
@@ -330,9 +346,114 @@ func emitFieldEncode(g *Group, field parse.Field, _ parse.PDUStruct) {
 			source.Clone().Index(Empty(), Empty()),
 		)
 
-	case parse.FieldDelegate, parse.FieldPacked, parse.FieldLongitude, parse.FieldLatitude:
+	case parse.FieldPacked:
+		// Unpack bytes back to individual bits
+		var src *Statement
+		if isFixedArray(field.GoType) {
+			src = source.Clone().Index(Empty(), Empty()) // s.Data[:]
+		} else {
+			src = source.Clone()
+		}
+		g.Copy(
+			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+			Qual(bitPkg, "UnpackBits").Call(src),
+		)
+
+	case parse.FieldDelegate, parse.FieldLongitude, parse.FieldLatitude:
 		// These field kinds are not yet implemented in the encoder.
 		panic(fmt.Sprintf("emitFieldEncode: unsupported field kind %d for %s", field.Kind, field.Name))
+	}
+}
+
+// emitNonContiguousDecode generates decode logic for a non-contiguous uint field.
+// For example, bits:3+12-15 means bit 3 is the MSB and bits 12-15 are the lower nibble.
+// It accumulates segments in a temp variable: extract first range, shift left, OR next range, etc.
+func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
+	tmpName := "_tmp" + field.Name
+	fn, _ := bitExtractFunc(field.BitWidth, field.GoType)
+	firstWidth := field.BitEnd - field.BitStart + 1
+
+	// var _tmpField uint8 (using the extract function's natural type)
+	switch fn {
+	case "BitsToUint8":
+		g.Var().Id(tmpName).Uint8()
+	case "BitsToUint16":
+		g.Var().Id(tmpName).Uint16()
+	default:
+		g.Var().Id(tmpName).Uint32()
+	}
+
+	// _tmpField = BitsToUintN(data[:], firstStart, firstWidth)
+	g.Id(tmpName).Op("=").Qual(bitPkg, fn).Call(
+		Id("data").Index(Empty(), Empty()),
+		Lit(field.BitStart),
+		Lit(firstWidth),
+	)
+
+	// For each extra range: shift left by extra width, then OR the extracted bits
+	for _, r := range field.ExtraBitRanges {
+		extraWidth := r[1] - r[0] + 1
+		g.Id(tmpName).Op("<<=").Lit(extraWidth)
+		g.Id(tmpName).Op("|=").Qual(bitPkg, fn).Call(
+			Id("data").Index(Empty(), Empty()),
+			Lit(r[0]),
+			Lit(extraWidth),
+		)
+	}
+
+	// result.Field = cast(_tmpField)
+	target := Id("result").Dot(field.Name)
+	if needsCast(fn, field.GoType) {
+		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(Id(tmpName))
+	} else {
+		g.Add(target).Op("=").Id(tmpName)
+	}
+}
+
+// emitNonContiguousEncode generates encode logic for a non-contiguous uint field.
+// Decomposes the value into segments (MSB-first) and stores each in its bit range.
+func emitNonContiguousEncode(g *Group, field parse.Field) {
+	source := Id("s").Dot(field.Name)
+	fn := bitStoreFunc(field.BitWidth, field.GoType)
+	firstWidth := field.BitEnd - field.BitStart + 1
+
+	// Calculate remaining bits after the first range
+	remaining := 0
+	for _, r := range field.ExtraBitRanges {
+		remaining += r[1] - r[0] + 1
+	}
+
+	// First range: extract MSB portion by shifting right past remaining bits
+	firstVal := castToStoreFuncType(source.Clone(), field.GoType, fn)
+	if remaining > 0 {
+		firstVal = castToStoreFuncType(
+			Parens(Add(storeParamType(fn)).Call(source.Clone())).Op(">>").Lit(remaining),
+			storeParamGoType(fn), fn,
+		)
+	}
+	g.Copy(
+		Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+		Qual(bitPkg, fn).Call(firstVal, Lit(firstWidth)),
+	)
+
+	// Each extra range: extract the corresponding portion
+	for _, r := range field.ExtraBitRanges {
+		extraWidth := r[1] - r[0] + 1
+		remaining -= extraWidth
+
+		var segVal *Statement
+		if remaining > 0 {
+			segVal = castToStoreFuncType(
+				Parens(Add(storeParamType(fn)).Call(source.Clone())).Op(">>").Lit(remaining),
+				storeParamGoType(fn), fn,
+			)
+		} else {
+			segVal = castToStoreFuncType(source.Clone(), field.GoType, fn)
+		}
+		g.Copy(
+			Id("data").Index(Lit(r[0]), Lit(r[1]+1)),
+			Qual(bitPkg, fn).Call(segVal, Lit(extraWidth)),
+		)
 	}
 }
 
@@ -368,6 +489,18 @@ func storeParamType(fn string) *Statement {
 		return Uint16()
 	default:
 		return Uint32()
+	}
+}
+
+// storeParamGoType returns the Go type string corresponding to a BitsFromUintN function.
+func storeParamGoType(fn string) string {
+	switch fn {
+	case "BitsFromUint8":
+		return "uint8"
+	case "BitsFromUint16":
+		return "uint16"
+	default:
+		return "uint32"
 	}
 }
 
@@ -410,4 +543,10 @@ func splitQualified(s string) (string, string) {
 		return s[:idx], s[idx+1:]
 	}
 	return "", s
+}
+
+// isFixedArray returns true if the Go type is a fixed-size array (e.g. "[12]byte")
+// as opposed to a slice (e.g. "[]byte").
+func isFixedArray(goType string) bool {
+	return strings.HasPrefix(goType, "[") && !strings.HasPrefix(goType, "[]")
 }

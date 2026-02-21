@@ -40,26 +40,9 @@ func (opcode CSBKOpcode) ToString() string {
 }
 
 type BSOutboundActivationPDU struct {
-	Reserved      uint16
-	BSAddress     [24]bit.Bit
-	SourceAddress [24]bit.Bit
-}
-
-func (pdu *BSOutboundActivationPDU) DecodeFromBits(bits [64]bit.Bit) bool {
-	for i := range 16 {
-		pdu.Reserved <<= 1
-		pdu.Reserved |= uint16(bits[i])
-	}
-
-	for i := range 24 {
-		pdu.BSAddress[i] = bits[16+i]
-	}
-
-	for i := range 24 {
-		pdu.SourceAddress[i] = bits[40+i]
-	}
-
-	return true
+	Reserved      uint16      `dmr:"bits:0-15"`
+	BSAddress     [24]bit.Bit `dmr:"bits:16-39,raw"`
+	SourceAddress [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
 func (pdu BSOutboundActivationPDU) ToString() string {
@@ -67,32 +50,10 @@ func (pdu BSOutboundActivationPDU) ToString() string {
 }
 
 type UnitToUnitVoiceServiceRequestPDU struct {
-	ServiceOptions byte
-	Reserved       byte
-	TargetAddress  [24]bit.Bit
-	SourceAddress  [24]bit.Bit
-}
-
-func (pdu *UnitToUnitVoiceServiceRequestPDU) DecodeFromBits(bits [64]bit.Bit) bool {
-	for i := range 8 {
-		pdu.ServiceOptions <<= 1
-		pdu.ServiceOptions |= byte(bits[8+i])
-	}
-
-	for i := range 8 {
-		pdu.Reserved <<= 1
-		pdu.Reserved |= byte(bits[16+i])
-	}
-
-	for i := range 24 {
-		pdu.TargetAddress[i] = bits[24+i]
-	}
-
-	for i := range 24 {
-		pdu.SourceAddress[i] = bits[48+i]
-	}
-
-	return true
+	ServiceOptions byte        `dmr:"bits:0-7"`
+	Reserved       byte        `dmr:"bits:8-15"`
+	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
+	SourceAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
 func (pdu UnitToUnitVoiceServiceRequestPDU) ToString() string {
@@ -100,112 +61,42 @@ func (pdu UnitToUnitVoiceServiceRequestPDU) ToString() string {
 }
 
 type UnitToUnitVoiceServiceAnswerResponsePDU struct {
-	ServiceOptions byte
-	AnswerResponse byte
-	TargetAddress  [24]bit.Bit
-	SourceAddress  [24]bit.Bit
+	ServiceOptions byte        `dmr:"bits:0-7"`
+	AnswerResponse byte        `dmr:"bits:8-15"`
+	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
+	SourceAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
 func (pdu UnitToUnitVoiceServiceAnswerResponsePDU) ToString() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %d, AnswerResponse: %d, TargetAddress: %s, SourceAddress: %s }", pdu.ServiceOptions, pdu.AnswerResponse, string(pdu.TargetAddress[:]), string(pdu.SourceAddress[:]))
 }
 
-func (pdu *UnitToUnitVoiceServiceAnswerResponsePDU) DecodeFromBits(bits [64]bit.Bit) bool {
-	for i := range 8 {
-		pdu.ServiceOptions <<= 1
-		pdu.ServiceOptions |= byte(bits[8+i])
-	}
-
-	for i := range 8 {
-		pdu.AnswerResponse <<= 1
-		pdu.AnswerResponse |= byte(bits[16+i])
-	}
-
-	for i := range 24 {
-		pdu.TargetAddress[i] = bits[24+i]
-	}
-
-	for i := range 24 {
-		pdu.SourceAddress[i] = bits[48+i]
-	}
-
-	return true
-}
-
 type NegativeAcknowledgementPDU struct {
-	AdditionalInfo bool
-	SourceType     bool
-	ServiceType    [6]bit.Bit
-	ReasonCode     byte
-	SourceAddress  [24]bit.Bit
-	TargetAddress  [24]bit.Bit
+	AdditionalInfo bool        `dmr:"bit:0"`
+	SourceType     bool        `dmr:"bit:1"`
+	ServiceType    [6]bit.Bit  `dmr:"bits:2-7,raw"`
+	ReasonCode     byte        `dmr:"bits:8-15"`
+	SourceAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
+	TargetAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
 func (pdu NegativeAcknowledgementPDU) ToString() string {
 	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %t, SourceType: %t, ServiceType: %08b, ReasonCode: %d, SourceAddress: %s, TargetAddress: %s }", pdu.AdditionalInfo, pdu.SourceType, pdu.ServiceType, pdu.ReasonCode, string(pdu.SourceAddress[:]), string(pdu.TargetAddress[:]))
 }
 
-func (pdu *NegativeAcknowledgementPDU) DecodeFromBits(bits [64]bit.Bit) bool {
-	pdu.AdditionalInfo = bits[0] == 1
-	pdu.SourceType = bits[1] == 1
-
-	for i := range 6 {
-		pdu.ServiceType[i] = bits[2+i]
-	}
-
-	for i := range 8 {
-		pdu.ReasonCode <<= 1
-		pdu.ReasonCode |= byte(bits[8+i])
-	}
-
-	for i := range 24 {
-		pdu.SourceAddress[i] = bits[16+i]
-	}
-
-	for i := range 24 {
-		pdu.TargetAddress[i] = bits[40+i]
-	}
-
-	return true
-}
-
 type PreamblePDU struct {
 	// 1 = data content follows, 0 = CSBK follows
-	Data bool
+	Data bool `dmr:"bit:0"`
 	// 1 = target address is a group, 0 = individual
-	Group              bool
-	Reserved           [6]bit.Bit
-	CSBKBlocksToFollow byte
-	TargetAddress      [24]bit.Bit
-	SourceAddress      [24]bit.Bit
+	Group              bool        `dmr:"bit:1"`
+	Reserved           [6]bit.Bit  `dmr:"bits:2-7,raw"`
+	CSBKBlocksToFollow byte        `dmr:"bits:8-15"`
+	TargetAddress      [24]bit.Bit `dmr:"bits:16-39,raw"`
+	SourceAddress      [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
 func (pdu PreamblePDU) ToString() string {
 	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %08b, CSBKBlocksToFollow: %d, TargetAddress: %v, SourceAddress: %v }", pdu.Data, pdu.Group, pdu.Reserved, pdu.CSBKBlocksToFollow, pdu.TargetAddress[:], pdu.SourceAddress[:])
-}
-
-func (pdu *PreamblePDU) DecodeFromBits(bits [64]bit.Bit) bool {
-	pdu.Data = bits[0] == 1
-	pdu.Group = bits[1] == 1
-
-	for i := range 6 {
-		pdu.Reserved[i] = bits[2+i]
-	}
-
-	for i := range 8 {
-		pdu.CSBKBlocksToFollow <<= 1
-		pdu.CSBKBlocksToFollow |= byte(bits[8+i])
-	}
-
-	for i := range 24 {
-		pdu.TargetAddress[i] = bits[16+i]
-	}
-
-	for i := range 24 {
-		pdu.SourceAddress[i] = bits[40+i]
-	}
-
-	return true
 }
 
 type ChannelTimingPDU struct {
@@ -354,39 +245,29 @@ func (csbk *CSBK) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool 
 		csbk.FID |= byte(infoBits[8+i])
 	}
 
-	var pdu [64]bit.Bit
+	var pduBits [64]bit.Bit
 	for i := range 64 {
-		pdu[i] = infoBits[16+i]
+		pduBits[i] = infoBits[16+i]
 	}
 	switch csbk.CSBKOpcode {
 	case CSBKBSOutboundActivationPDU:
-		csbk.BSOutboundActivationPDU = &BSOutboundActivationPDU{}
-		if !csbk.BSOutboundActivationPDU.DecodeFromBits(pdu) {
-			return false
-		}
+		decoded, _ := DecodeBSOutboundActivationPDU(pduBits)
+		csbk.BSOutboundActivationPDU = &decoded
 	case CSBKUnitToUnitVoiceServiceRequestPDU:
-		csbk.UnitToUnitVoiceServiceRequestPDU = &UnitToUnitVoiceServiceRequestPDU{}
-		if !csbk.UnitToUnitVoiceServiceRequestPDU.DecodeFromBits(pdu) {
-			return false
-		}
+		decoded, _ := DecodeUnitToUnitVoiceServiceRequestPDU(pduBits)
+		csbk.UnitToUnitVoiceServiceRequestPDU = &decoded
 	case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
-		csbk.UnitToUnitVoiceServiceAnswerResponsePDU = &UnitToUnitVoiceServiceAnswerResponsePDU{}
-		if !csbk.UnitToUnitVoiceServiceAnswerResponsePDU.DecodeFromBits(pdu) {
-			return false
-		}
+		decoded, _ := DecodeUnitToUnitVoiceServiceAnswerResponsePDU(pduBits)
+		csbk.UnitToUnitVoiceServiceAnswerResponsePDU = &decoded
 	case CSBKNegativeAcknowledgementPDU:
-		csbk.NegativeAcknowledgementPDU = &NegativeAcknowledgementPDU{}
-		if !csbk.NegativeAcknowledgementPDU.DecodeFromBits(pdu) {
-			return false
-		}
+		decoded, _ := DecodeNegativeAcknowledgementPDU(pduBits)
+		csbk.NegativeAcknowledgementPDU = &decoded
 	case CSBKPreamblePDU:
-		csbk.PreamblePDU = &PreamblePDU{}
-		if !csbk.PreamblePDU.DecodeFromBits(pdu) {
-			return false
-		}
+		decoded, _ := DecodePreamblePDU(pduBits)
+		csbk.PreamblePDU = &decoded
 	case CSBKChannelTimingPDU:
 		csbk.ChannelTimingPDU = &ChannelTimingPDU{}
-		if !csbk.ChannelTimingPDU.DecodeFromBits(pdu) {
+		if !csbk.ChannelTimingPDU.DecodeFromBits(pduBits) {
 			return false
 		}
 	default:

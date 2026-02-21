@@ -33,6 +33,8 @@ type Burst struct {
 	csbk                  *pdu.CSBK
 	dataHeader            *pdu.DataHeader
 	halfRateData          *pdu.Rate12Data
+	threeQuarterRateData  *pdu.Rate34Data
+	fullRateData          *pdu.Rate1Data
 	bitData               [264]bit.Bit
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
@@ -229,17 +231,26 @@ func (b *Burst) extractData() (elements.Data, error) {
 		b.FEC.PDU = b.dataHeader.FEC
 		return nil, fmt.Errorf("failed to decode data header from bits: %v", b.dataHeader.ToString())
 	case elements.DataTypeRate34:
-		// TODO: implement rate 3/4 data parsing
-		return nil, fmt.Errorf("todo: rate 3/4 data parsing not implemented")
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		rt, _ := pdu.DecodeRate34Data(sizedBits)
+		rt.DataType = dt
+		b.threeQuarterRateData = &rt
+		return b.threeQuarterRateData, nil
 	case elements.DataTypeRate12:
-		b.halfRateData = &pdu.Rate12Data{}
-		if b.halfRateData.DecodeFromBits(infoBits, dt) {
-			return b.halfRateData, nil
-		}
-		return nil, fmt.Errorf("failed to decode rate 1/2 data from bits")
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		rt, _ := pdu.DecodeRate12Data(sizedBits)
+		rt.DataType = dt
+		b.halfRateData = &rt
+		return b.halfRateData, nil
 	case elements.DataTypeRate1:
-		// TODO: implement rate 1 data parsing
-		return nil, fmt.Errorf("todo: rate 1 data parsing not implemented")
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		rt, _ := pdu.DecodeRate1Data(sizedBits)
+		rt.DataType = dt
+		b.fullRateData = &rt
+		return b.fullRateData, nil
 	case elements.DataTypeMBCHeader, elements.DataTypeMBCContinuation:
 		// TODO: implement MBC parsing
 		return nil, fmt.Errorf("todo: MBC parsing not implemented")

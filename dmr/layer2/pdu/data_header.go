@@ -10,53 +10,22 @@ import (
 )
 
 type UnconfirmedDataHeader struct {
-	Group             bool
-	ResponseRequested bool
-	Reserved          bool
+	Group             bool `dmr:"bit:0"`
+	ResponseRequested bool `dmr:"bit:1"`
+	Reserved          bool `dmr:"bit:2"`
 	// 4th bit is MSB, 12-15th bits are LSBs
-	PadOctetCount          uint8
-	LLIDDestination        [24]bit.Bit
-	LLIDSource             [24]bit.Bit
-	FullMessage            bool
-	BlocksToFollow         uint8
-	Reserved2              [4]bit.Bit
-	FragmentSequenceNumber uint8
+	PadOctetCount          uint8       `dmr:"bits:3+12-15"`
+	LLIDDestination        [24]bit.Bit `dmr:"bits:16-39,raw"`
+	LLIDSource             [24]bit.Bit `dmr:"bits:40-63,raw"`
+	FullMessage            bool        `dmr:"bit:64"`
+	BlocksToFollow         uint8       `dmr:"bits:65-71"`
+	Reserved2              [4]bit.Bit  `dmr:"bits:72-75,raw"`
+	FragmentSequenceNumber uint8       `dmr:"bits:76-79"`
 }
 
 func (cdh *UnconfirmedDataHeader) ToString() string {
 	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, LLIDDestination: %08b, LLIDSource: %08b, FullMessage: %t, BlocksToFollow: %d, FragmentSequenceNumber: %d }",
 		cdh.Group, cdh.ResponseRequested, cdh.Reserved, cdh.PadOctetCount, cdh.LLIDDestination, cdh.LLIDSource, cdh.FullMessage, cdh.BlocksToFollow, cdh.FragmentSequenceNumber)
-}
-
-func (cdh *UnconfirmedDataHeader) DecodeFromBits(infoBits []bit.Bit) bool {
-	if len(infoBits) != 96 {
-		fmt.Println("UnconfirmedDataHeader: invalid infoBits length: ", len(infoBits))
-		return false
-	}
-
-	cdh.Group = infoBits[0] == 1
-	cdh.ResponseRequested = infoBits[1] == 1
-	cdh.Reserved = infoBits[2] == 1
-	cdh.PadOctetCount = byte(infoBits[3])
-	cdh.PadOctetCount <<= 4
-	cdh.PadOctetCount |= (byte(infoBits[12]) << 3) | (byte(infoBits[13]) << 2) | (byte(infoBits[14]) << 1) | byte(infoBits[15])
-
-	for i := range 24 {
-		cdh.LLIDDestination[i] = infoBits[16+i]
-	}
-
-	for i := range 24 {
-		cdh.LLIDSource[i] = infoBits[40+i]
-	}
-
-	cdh.FullMessage = infoBits[64] == 1
-	cdh.BlocksToFollow = (byte(infoBits[65]) << 6) | (byte(infoBits[66]) << 5) | (byte(infoBits[67]) << 4) | (byte(infoBits[68]) << 3) | (byte(infoBits[69]) << 2) | (byte(infoBits[70]) << 1) | byte(infoBits[71])
-	for i := range 4 {
-		cdh.Reserved2[i] = infoBits[72+i]
-	}
-	cdh.FragmentSequenceNumber = (byte(infoBits[76]) << 3) | (byte(infoBits[77]) << 2) | (byte(infoBits[78]) << 1) | byte(infoBits[79])
-
-	return true
 }
 
 type DataHeader struct {
@@ -184,10 +153,10 @@ func (dh *DataHeader) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) b
 		return false
 	case FormatUnconfirmed:
 		dh.dataHeaderType = DataHeaderTypeUnconfirmed
-		dh.UnconfirmedDataHeader = &UnconfirmedDataHeader{}
-		if !dh.UnconfirmedDataHeader.DecodeFromBits(infoBits) {
-			return false
-		}
+		var uhBits [80]bit.Bit
+		copy(uhBits[:], infoBits[:80])
+		decoded, _ := DecodeUnconfirmedDataHeader(uhBits)
+		dh.UnconfirmedDataHeader = &decoded
 	case FormatConfirmed:
 		dh.dataHeaderType = DataHeaderTypeConfirmed
 		return false

@@ -26,11 +26,7 @@ func TestRate12Data_DecodeFromBits(t *testing.T) {
 	infoBits[13] = 1
 	infoBits[15] = 1
 
-	var rt pdu.Rate12Data
-	ok := rt.DecodeFromBits(infoBits[:], elements.DataTypeRate12)
-	if !ok {
-		t.Fatal("DecodeFromBits failed")
-	}
+	rt, _ := pdu.DecodeRate12Data(infoBits)
 	if rt.Data[0] != 0xAB {
 		t.Errorf("Data[0] = 0x%02X, want 0xAB", rt.Data[0])
 	}
@@ -45,25 +41,16 @@ func TestRate12Data_DecodeFromBits(t *testing.T) {
 	}
 }
 
-func TestRate12Data_InvalidLength(t *testing.T) {
-	var rt pdu.Rate12Data
-	ok := rt.DecodeFromBits(make([]bit.Bit, 50), elements.DataTypeRate12)
-	if ok {
-		t.Error("DecodeFromBits should return false for invalid length")
-	}
-}
-
 func TestRate12Data_GetDataType(t *testing.T) {
-	var rt pdu.Rate12Data
-	rt.DecodeFromBits(make([]bit.Bit, 96), elements.DataTypeRate12)
+	rt, _ := pdu.DecodeRate12Data([96]bit.Bit{})
+	rt.DataType = elements.DataTypeRate12
 	if rt.GetDataType() != elements.DataTypeRate12 {
 		t.Errorf("GetDataType() = %d, want DataTypeRate12", rt.GetDataType())
 	}
 }
 
 func TestRate12Data_ToString(t *testing.T) {
-	var rt pdu.Rate12Data
-	rt.DecodeFromBits(make([]bit.Bit, 96), elements.DataTypeRate12)
+	rt, _ := pdu.DecodeRate12Data([96]bit.Bit{})
 	s := rt.ToString()
 	if s == "" {
 		t.Error("ToString() should not be empty")
@@ -75,14 +62,21 @@ func TestRate12Data_AllOnes(t *testing.T) {
 	for i := range infoBits {
 		infoBits[i] = 1
 	}
-	var rt pdu.Rate12Data
-	ok := rt.DecodeFromBits(infoBits[:], elements.DataTypeRate12)
-	if !ok {
-		t.Fatal("DecodeFromBits failed for all-ones")
-	}
+	rt, _ := pdu.DecodeRate12Data(infoBits)
 	for i := 0; i < 12; i++ {
 		if rt.Data[i] != 0xFF {
 			t.Errorf("Data[%d] = 0x%02X, want 0xFF", i, rt.Data[i])
 		}
+	}
+}
+
+func TestRate12Data_EncodeDecodeRoundTrip(t *testing.T) {
+	original := pdu.Rate12Data{
+		Data: [12]byte{0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01},
+	}
+	encoded := pdu.EncodeRate12Data(&original)
+	decoded, _ := pdu.DecodeRate12Data(encoded)
+	if decoded.Data != original.Data {
+		t.Errorf("round-trip failed: got %v, want %v", decoded.Data, original.Data)
 	}
 }
