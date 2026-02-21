@@ -315,7 +315,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) {
 
 	// Add spec reference comment above the function if available.
 	if pdu.SpecRef != "" {
-		f.Comment(funcName + " decodes a " + pdu.Name + " per " + pdu.SpecRef)
+		f.Comment(funcName + " encodes a " + pdu.Name + " per " + pdu.SpecRef)
 	}
 
 	var codec *FECCodecInfo

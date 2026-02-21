@@ -29,7 +29,7 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.FECResu
 	return result, fecResult
 }
 
-// EncodeEmbeddedSignalling decodes a EmbeddedSignalling per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.2 Embedded signalling (EMB) PDU
+// EncodeEmbeddedSignalling encodes a EmbeddedSignalling per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.2 Embedded signalling (EMB) PDU
 func EncodeEmbeddedSignalling(s *EmbeddedSignalling) [16]bit.Bit {
 	var data [7]bit.Bit
 	copy(data[0:4], bit.BitsFromUint32(uint32(s.ColorCode), 4))

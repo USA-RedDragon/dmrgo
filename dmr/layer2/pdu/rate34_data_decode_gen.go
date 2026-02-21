@@ -21,7 +21,7 @@ func DecodeRate34Data(data [96]bit.Bit) (Rate34Data, fec.FECResult) {
 	return result, fecResult
 }
 
-// EncodeRate34Data decodes a Rate34Data per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.7 Rate 3/4 data
+// EncodeRate34Data encodes a Rate34Data per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.7 Rate 3/4 data
 func EncodeRate34Data(s *Rate34Data) [96]bit.Bit {
 	var data [96]bit.Bit
 	copy(data[0:96], bit.UnpackBits(s.Data[:]))

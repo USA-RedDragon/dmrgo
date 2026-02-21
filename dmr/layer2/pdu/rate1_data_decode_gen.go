@@ -21,7 +21,7 @@ func DecodeRate1Data(data [96]bit.Bit) (Rate1Data, fec.FECResult) {
 	return result, fecResult
 }
 
-// EncodeRate1Data decodes a Rate1Data per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.7 Rate 1 data
+// EncodeRate1Data encodes a Rate1Data per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.7 Rate 1 data
 func EncodeRate1Data(s *Rate1Data) [96]bit.Bit {
 	var data [96]bit.Bit
 	copy(data[0:96], bit.UnpackBits(s.Data[:]))

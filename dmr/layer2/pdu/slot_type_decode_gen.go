@@ -28,7 +28,7 @@ func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.FECResult) {
 	return result, fecResult
 }
 
-// EncodeSlotType decodes a SlotType per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.3 Slot Type (SLOT) PDU
+// EncodeSlotType encodes a SlotType per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.3 Slot Type (SLOT) PDU
 func EncodeSlotType(s *SlotType) [20]bit.Bit {
 	var data [8]bit.Bit
 	copy(data[0:4], bit.BitsFromUint32(uint32(s.ColorCode), 4))

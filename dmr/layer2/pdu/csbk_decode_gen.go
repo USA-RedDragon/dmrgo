@@ -28,7 +28,7 @@ func DecodeBSOutboundActivationPDU(data [64]bit.Bit) (BSOutboundActivationPDU, f
 	return result, fecResult
 }
 
-// EncodeBSOutboundActivationPDU decodes a BSOutboundActivationPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
+// EncodeBSOutboundActivationPDU encodes a BSOutboundActivationPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
 func EncodeBSOutboundActivationPDU(s *BSOutboundActivationPDU) [64]bit.Bit {
 	var data [64]bit.Bit
 	copy(data[0:16], bit.BitsFromUint16(s.Reserved, 16))
@@ -48,7 +48,7 @@ func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) (UnitToUnitVoiceSe
 	return result, fecResult
 }
 
-// EncodeUnitToUnitVoiceServiceRequestPDU decodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.2 UU_V_Req PDU
+// EncodeUnitToUnitVoiceServiceRequestPDU encodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.2 UU_V_Req PDU
 func EncodeUnitToUnitVoiceServiceRequestPDU(s *UnitToUnitVoiceServiceRequestPDU) [64]bit.Bit {
 	var data [64]bit.Bit
 	copy(data[0:8], bit.BitsFromUint8(uint8(s.ServiceOptions), 8))
@@ -69,7 +69,7 @@ func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnit
 	return result, fecResult
 }
 
-// EncodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.3 UU_Ans_Rsp PDU
+// EncodeUnitToUnitVoiceServiceAnswerResponsePDU encodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.3 UU_Ans_Rsp PDU
 func EncodeUnitToUnitVoiceServiceAnswerResponsePDU(s *UnitToUnitVoiceServiceAnswerResponsePDU) [64]bit.Bit {
 	var data [64]bit.Bit
 	copy(data[0:8], bit.BitsFromUint8(uint8(s.ServiceOptions), 8))
@@ -92,7 +92,7 @@ func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgement
 	return result, fecResult
 }
 
-// EncodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5 NACK_Rsp PDU
+// EncodeNegativeAcknowledgementPDU encodes a NegativeAcknowledgementPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5 NACK_Rsp PDU
 func EncodeNegativeAcknowledgementPDU(s *NegativeAcknowledgementPDU) [64]bit.Bit {
 	var data [64]bit.Bit
 	if s.AdditionalInfo {
@@ -121,7 +121,7 @@ func DecodePreamblePDU(data [64]bit.Bit) (PreamblePDU, fec.FECResult) {
 	return result, fecResult
 }
 
-// EncodePreamblePDU decodes a PreamblePDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.7 Pre PDU
+// EncodePreamblePDU encodes a PreamblePDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.7 Pre PDU
 func EncodePreamblePDU(s *PreamblePDU) [64]bit.Bit {
 	var data [64]bit.Bit
 	if s.Data {
@@ -154,7 +154,7 @@ func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.FECResult) 
 	return result, fecResult
 }
 
-// EncodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
+// EncodeChannelTimingPDU encodes a ChannelTimingPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
 func EncodeChannelTimingPDU(s *ChannelTimingPDU) [64]bit.Bit {
 	var data [64]bit.Bit
 	copy(data[0:11], s.SyncAge[:])

@@ -34,7 +34,7 @@ func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.F
 	return result, fecResult
 }
 
-// EncodeUnconfirmedDataHeader decodes a UnconfirmedDataHeader per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Unconfirmed Data Header
+// EncodeUnconfirmedDataHeader encodes a UnconfirmedDataHeader per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Unconfirmed Data Header
 func EncodeUnconfirmedDataHeader(s *UnconfirmedDataHeader) [80]bit.Bit {
 	var data [80]bit.Bit
 	if s.Group {
