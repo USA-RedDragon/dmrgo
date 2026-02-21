@@ -124,7 +124,8 @@ func parseVoiceBits(bitData [264]bit.Bit) pdu.Vocoder {
 	var voiceBits [216]bit.Bit
 	copy(voiceBits[:108], bitData[:108])
 	copy(voiceBits[108:], bitData[156:264])
-	return pdu.NewVocoderFromBits(voiceBits)
+	decoded, _ := pdu.DecodeVocoder(voiceBits)
+	return decoded
 }
 
 func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
@@ -293,7 +294,7 @@ func (b *Burst) Encode() [33]byte {
 		}
 	} else if b.VoiceBurst != enums.VoiceBurstUnknown || b.HasEmbeddedSignalling {
 		// Voice Data
-		voiceBits := b.VoiceData.Encode()
+		voiceBits := pdu.EncodeVocoder(&b.VoiceData)
 		copy(bitData[:108], voiceBits[:108])
 		copy(bitData[156:264], voiceBits[108:216])
 	}

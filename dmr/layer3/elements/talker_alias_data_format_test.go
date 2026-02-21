@@ -2,31 +2,7 @@ package elements
 
 import (
 	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 )
-
-func TestNewTalkerAliasDataFormatFromBits(t *testing.T) {
-	tests := []struct {
-		name     string
-		bits     [2]bit.Bit
-		expected TalkerAliasDataFormat
-	}{
-		{"SevenBit_00", [2]bit.Bit{0, 0}, SevenBitCharacters},
-		{"ISO_10", [2]bit.Bit{1, 0}, ISOEightBitCharacters},
-		{"UTF8_01", [2]bit.Bit{0, 1}, UTF8Characters},
-		{"UTF16_11", [2]bit.Bit{1, 1}, UTF16Characters},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := NewTalkerAliasDataFormatFromBits(tt.bits)
-			if got != tt.expected {
-				t.Errorf("NewTalkerAliasDataFormatFromBits(%v) = %d, want %d", tt.bits, got, tt.expected)
-			}
-		})
-	}
-}
 
 func TestTalkerAliasDataFormatToName(t *testing.T) {
 	tests := []struct {

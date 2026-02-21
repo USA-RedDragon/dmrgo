@@ -1,14 +1,13 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/vocoder"
 )
 
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 7.1 Voice channel coding
 type Vocoder struct {
-	bits   [216]bit.Bit
-	Frames [3]vocoder.VocoderFrame
+	Frames [3]vocoder.VocoderFrame `dmr:"bits:0-215,delegate,noptr,stride:72"`
 }
 
 func (vc *Vocoder) ToString() string {
@@ -21,37 +20,6 @@ func (vc *Vocoder) ToString() string {
 	}
 	ret += "] }"
 	return ret
-}
-
-func NewVocoderFromBits(bits [216]bit.Bit) Vocoder {
-	vc := Vocoder{
-		Frames: getFrames(bits),
-		bits:   bits,
-	}
-
-	return vc
-}
-
-func getFrames(bits [216]bit.Bit) [3]vocoder.VocoderFrame {
-	var frames [3]vocoder.VocoderFrame
-
-	for i := 0; i < 3; i++ {
-		var frameBits [72]bit.Bit
-		copy(frameBits[:], bits[i*72:(i+1)*72])
-		frames[i] = vocoder.NewVocoderFrameFromBits(frameBits)
-	}
-
-	return frames
-}
-
-// Encode returns the 216 bits of the vocoder PDU.
-func (vc *Vocoder) Encode() [216]bit.Bit {
-	var bits [216]bit.Bit
-	for i := 0; i < 3; i++ {
-		frameBits := vc.Frames[i].Encode()
-		copy(bits[i*72:(i+1)*72], frameBits[:])
-	}
-	return bits
 }
 
 // CorrectedErrors returns the total number of corrected bit errors in the vocoder frames.

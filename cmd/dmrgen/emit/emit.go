@@ -85,6 +85,7 @@ func resolveImportPath(pkgName, sourceFile string) string {
 		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/dmr/fec/reed_solomon",
 		"bptc":             "github.com/USA-RedDragon/dmrgo/dmr/fec/bptc",
 		"trellis":          "github.com/USA-RedDragon/dmrgo/dmr/fec/trellis",
+		"vocoder":          "github.com/USA-RedDragon/dmrgo/dmr/vocoder",
 	}
 	if p, ok := knownPkgs[pkgName]; ok {
 		return p
@@ -421,30 +422,62 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	case parse.FieldDelegate:
 		// Delegate to a sub-struct's constructor: NewXxxFromBits([N]bit.Bit)
-		// Extract the bit range into a sized array, then call the constructor.
-		arraySize := field.BitEnd - field.BitStart + 1
-		tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
-
-		g.Var().Id(tmpVar).Index(Lit(arraySize)).Qual(bitPkg, "Bit")
-		g.Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)))
-
-		// Resolve the constructor: "New" + TypeName + "FromBits"
 		constructorName := "New" + field.TypeName + "FromBits"
+		var importPath string
 		if field.IsQualified {
-			importPath := resolveImportPath(field.TypePkg, pdu.SourceFile)
-			constructorCall := Qual(importPath, constructorName).Call(Id(tmpVar))
-			if field.DelegateNoPtr {
-				g.Add(target).Op("=").Add(constructorCall)
+			importPath = resolveImportPath(field.TypePkg, pdu.SourceFile)
+		}
+
+		if field.Stride > 0 && field.ArrayLen > 0 {
+			// Array delegate with stride: generate a loop
+			tmpVar := "_elemBits"
+			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
+				Var().Id(tmpVar).Index(Lit(field.Stride)).Qual(bitPkg, "Bit"),
+				Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(
+					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
+					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride).Op("+").Lit(field.Stride),
+				)),
+				func() Code {
+					var call Code
+					if field.IsQualified {
+						call = Qual(importPath, constructorName).Call(Id(tmpVar))
+					} else {
+						call = Id(constructorName).Call(Id(tmpVar))
+					}
+					return target.Clone().Index(Id("_i")).Op("=").Add(call)
+				}(),
+			)
+		} else if field.DelegateNoPtr {
+			// noptr delegates are uint typedefs — inline BitsToUint8 cast
+			arraySize := field.BitEnd - field.BitStart + 1
+			var typeQual Code
+			if field.IsQualified {
+				typeQual = Qual(importPath, field.TypeName)
 			} else {
-				g.Add(target).Op("=").Op("*").Add(constructorCall)
+				typeQual = Id(field.TypeName)
 			}
+			g.Add(target).Op("=").Add(typeQual).Call(
+				Qual(bitPkg, "BitsToUint8").Call(
+					Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+					Lit(0),
+					Lit(arraySize),
+				),
+			)
 		} else {
-			constructorCall := Id(constructorName).Call(Id(tmpVar))
-			if field.DelegateNoPtr {
-				g.Add(target).Op("=").Add(constructorCall)
+			// Struct delegate with pointer constructor
+			arraySize := field.BitEnd - field.BitStart + 1
+			tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
+
+			g.Var().Id(tmpVar).Index(Lit(arraySize)).Qual(bitPkg, "Bit")
+			g.Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)))
+
+			var constructorCall Code
+			if field.IsQualified {
+				constructorCall = Qual(importPath, constructorName).Call(Id(tmpVar))
 			} else {
-				g.Add(target).Op("=").Op("*").Add(constructorCall)
+				constructorCall = Id(constructorName).Call(Id(tmpVar))
 			}
+			g.Add(target).Op("=").Op("*").Add(constructorCall)
 		}
 
 	case parse.FieldLongitude:
@@ -732,15 +765,20 @@ func emitFieldEncode(g *Group, field parse.Field, _ parse.PDUStruct) {
 		)
 
 	case parse.FieldDelegate:
-		// Delegate to the sub-struct's ToByte() or Encode() method.
-		// For now, we re-construct the bits by calling NewXxxFromBits on the current value's bits.
-		// The delegate's constructor expects a fixed-size array. We use a simple approach:
-		// Extract the delegate's encoded form (its individual bits).
 		arraySize := field.BitEnd - field.BitStart + 1
-		tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
-
-		// First check if the type has a ToByte method (8-bit delegates)
-		if arraySize == 8 {
+		if field.Stride > 0 && field.ArrayLen > 0 {
+			// Array delegate with stride: call Encode() on each element
+			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
+				Id("_elemBits").Op(":=").Add(source.Clone().Index(Id("_i"))).Dot("Encode").Call(),
+				Copy(
+					Id("data").Index(
+						Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
+						Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride).Op("+").Lit(field.Stride),
+					),
+					Id("_elemBits").Index(Empty(), Empty()),
+				),
+			)
+		} else if arraySize == 8 {
 			// Assume ToByte() exists for 8-bit delegates
 			g.Copy(
 				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
@@ -749,12 +787,23 @@ func emitFieldEncode(g *Group, field parse.Field, _ parse.PDUStruct) {
 					Lit(8),
 				),
 			)
+		} else if field.DelegateNoPtr {
+			// noptr delegates are uint typedefs — cast to uint8 and pack bits
+			g.Copy(
+				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+				Qual(bitPkg, "BitsFromUint8").Call(
+					Uint8().Call(source.Clone()),
+					Lit(arraySize),
+				),
+			)
 		} else {
-			// For other sizes, re-construct via NewXxxFromBits round-trip (copy raw bits)
-			_ = tmpVar
-			// Encode by copying the struct's raw bit representation
-			// This requires the delegate to have been decoded in the current bits
-			// For now, skip (leave as zeros in output)
+			// For other sizes, call Encode() which returns [N]bit.Bit
+			tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
+			g.Id(tmpVar).Op(":=").Add(source.Clone()).Dot("Encode").Call()
+			g.Copy(
+				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+				Id(tmpVar).Index(Empty(), Empty()),
+			)
 		}
 
 	case parse.FieldLongitude:

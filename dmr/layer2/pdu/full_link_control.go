@@ -45,7 +45,7 @@ type FLCUnitToUnit struct {
 
 // ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.3: GPS Info PDU content
 type FLCGPSInfo struct {
-	PositionError layer3Elements.PositionError `dmr:"bits:4-6,delegate"`
+	PositionError layer3Elements.PositionError `dmr:"bits:4-6,delegate,noptr"`
 	Longitude     float32                      `dmr:"bits:7-31,type:longitude"`
 	Latitude      float32                      `dmr:"bits:32-55,type:latitude"`
 }
@@ -87,7 +87,7 @@ func (flc FullLinkControl) ToString() string {
 
 	if flc.GPSInfo != nil {
 		ret += fmt.Sprintf("PositionError: %s, Longitude: %f, Latitude: %f, ",
-			flc.GPSInfo.PositionError.ToString(),
+			layer3Elements.PositionErrorToName(flc.GPSInfo.PositionError),
 			flc.GPSInfo.Longitude,
 			flc.GPSInfo.Latitude)
 	}

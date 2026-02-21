@@ -53,6 +53,8 @@ type Field struct {
 
 	// Delegate-specific
 	DelegateNoPtr bool // true if the constructor returns a value (not a pointer)
+	Stride        int  // for array delegates: each element spans Stride bits
+	ArrayLen      int  // for array delegates: number of elements (e.g. 3)
 
 	// Dispatch-specific
 	DispatchFieldName string   // field name to switch on (e.g. "CSBKOpcode")
@@ -224,10 +226,14 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 		f.PointedType = strings.TrimPrefix(f.GoType, "*")
 	}
 
-	// Resolve package qualifier from the base type (without pointer)
+	// Resolve package qualifier from the base type (without pointer or array prefix)
 	baseType := f.GoType
 	if f.IsPointer {
 		baseType = f.PointedType
+	}
+	// Strip array prefix like "[3]" or "[56]" to get the element type
+	if i := strings.Index(baseType, "]"); i >= 0 && strings.HasPrefix(baseType, "[") {
+		baseType = baseType[i+1:]
 	}
 	if idx := strings.LastIndex(baseType, "."); idx >= 0 {
 		f.TypePkg = baseType[:idx]
@@ -325,6 +331,17 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 		case strings.HasPrefix(mod, "from:"):
 			// Explicit FromInt function: from:enums.LCSSFromInt
 			f.EnumFromInt = strings.TrimPrefix(mod, "from:")
+		case strings.HasPrefix(mod, "stride:"):
+			// stride:N for array delegates
+			strideStr := strings.TrimPrefix(mod, "stride:")
+			stride, err := strconv.Atoi(strideStr)
+			if err != nil {
+				return f, fmt.Errorf("invalid stride: %w", err)
+			}
+			f.Stride = stride
+			if stride > 0 {
+				f.ArrayLen = f.BitWidth / stride
+			}
 		case strings.HasPrefix(mod, "dispatch:"):
 			// Dispatch modifier: dispatch:FieldName=Value1|Value2
 			f.Kind = FieldDispatch

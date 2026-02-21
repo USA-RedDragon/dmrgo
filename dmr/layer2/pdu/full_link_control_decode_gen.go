@@ -164,9 +164,7 @@ func EncodeFLCUnitToUnit(s *FLCUnitToUnit) [56]bit.Bit {
 func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
 	var result FLCGPSInfo
 	var fecResult fec.FECResult
-	var _positionErrorBits [3]bit.Bit
-	copy(_positionErrorBits[:], data[4:7])
-	result.PositionError = *elements.NewPositionErrorFromBits(_positionErrorBits)
+	result.PositionError = elements.PositionError(bit.BitsToUint8(data[4:7], 0, 3))
 	result.Longitude = float32(bit.BitsToInt(data[:], 7, 25)) * float32(360.0/math.Pow(2.0, 25.0))
 	result.Latitude = float32(bit.BitsToInt(data[:], 32, 24)) * float32(180.0/math.Pow(2.0, 24.0))
 	return result, fecResult
@@ -175,6 +173,7 @@ func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
 // EncodeFLCGPSInfo encodes a FLCGPSInfo per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.3: GPS Info PDU content
 func EncodeFLCGPSInfo(s *FLCGPSInfo) [56]bit.Bit {
 	var data [56]bit.Bit
+	copy(data[4:7], bit.BitsFromUint8(uint8(s.PositionError), 3))
 	copy(data[7:32], bit.BitsFromUint32(uint32(s.Longitude/float32(360.0/math.Pow(2.0, 25.0))), 25))
 	copy(data[32:56], bit.BitsFromUint32(uint32(s.Latitude/float32(180.0/math.Pow(2.0, 24.0))), 24))
 	return data
@@ -184,9 +183,7 @@ func EncodeFLCGPSInfo(s *FLCGPSInfo) [56]bit.Bit {
 func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.FECResult) {
 	var result FLCTalkerAliasHeader
 	var fecResult fec.FECResult
-	var _talkerAliasDataFormatBits [2]bit.Bit
-	copy(_talkerAliasDataFormatBits[:], data[0:2])
-	result.TalkerAliasDataFormat = elements.NewTalkerAliasDataFormatFromBits(_talkerAliasDataFormatBits)
+	result.TalkerAliasDataFormat = elements.TalkerAliasDataFormat(bit.BitsToUint8(data[0:2], 0, 2))
 	result.TalkerAliasDataLength = bit.BitsToInt(data[:], 2, 6)
 	result.TalkerAliasDataMSB = bit.BitsToBool(data[:], 7)
 	copy(result.TalkerAliasData[:], data[8:56])
@@ -196,6 +193,7 @@ func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.FEC
 // EncodeFLCTalkerAliasHeader encodes a FLCTalkerAliasHeader per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.4: Talker Alias Header Info PDU content
 func EncodeFLCTalkerAliasHeader(s *FLCTalkerAliasHeader) [56]bit.Bit {
 	var data [56]bit.Bit
+	copy(data[0:2], bit.BitsFromUint8(uint8(s.TalkerAliasDataFormat), 2))
 	copy(data[2:8], bit.BitsFromUint32(uint32(s.TalkerAliasDataLength), 6))
 	if s.TalkerAliasDataMSB {
 		data[7] = 1
