@@ -22,7 +22,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "layer2/pdu", "pdu",
+	if err := writeFile(dmrRoot, "crc", "crc",
 		writeTable("ccitt16_0x1021", tables.CRCCCITT[:]),
 	); err != nil {
 		return err

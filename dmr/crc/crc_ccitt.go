@@ -1,4 +1,4 @@
-package pdu
+package crc
 
 // TS 102 361-1 V1.2.1 B.3.8 - CRC-CCITT calculation
 

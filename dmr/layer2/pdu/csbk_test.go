@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/crc"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu"
 )
@@ -28,7 +29,7 @@ func buildCSBKBits(opcode byte, fid byte, payload [64]bit.Bit) []bit.Bit {
 	}
 
 	// Compute CRC over bytes 0..9
-	crc := pdu.CalculateCRCCCITT(dataBytes[:10])
+	crc := crc.CalculateCRCCCITT(dataBytes[:10])
 	dataBytes[10] = byte(crc >> 8)
 	dataBytes[11] = byte(crc)
 

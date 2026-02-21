@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/crc"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu"
 )
@@ -40,7 +41,7 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 			dataBytes[i] |= byte(infoBits[i*8+j])
 		}
 	}
-	crc := pdu.CalculateCRCCCITT(dataBytes[:])
+	crc := crc.CalculateCRCCCITT(dataBytes[:])
 	// CRC stored big-endian with MMDVM byte-swap: crc8[0] → last byte, crc8[1] → second-to-last
 	crcHigh := byte(crc >> 8)
 	crcLow := byte(crc)

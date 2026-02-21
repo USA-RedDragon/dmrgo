@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/crc"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
@@ -164,7 +165,7 @@ func (dh *DataHeader) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) b
 		}
 	}
 
-	if !CheckCRCCCITT(dataBytes[:]) {
+	if !crc.CheckCRCCCITT(dataBytes[:]) {
 		fmt.Println("DataHeader: CRC check failed")
 		dh.FEC = fec.FECResult{BitsChecked: 96, Uncorrectable: true}
 		return false

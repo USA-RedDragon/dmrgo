@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/crc"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
@@ -325,7 +326,7 @@ func (csbk *CSBK) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool 
 	dataBytes[11] ^= 0xA5
 
 	// CRC check using table-based CCITT matching MMDVM
-	if !CheckCRCCCITT(dataBytes[:]) {
+	if !crc.CheckCRCCCITT(dataBytes[:]) {
 		fmt.Println("CSBK: CRC check failed")
 		csbk.FEC = fec.FECResult{BitsChecked: 96, Uncorrectable: true}
 		return false
