@@ -253,8 +253,7 @@ documents:
 
       - section: "9.1.12"
         title: "PI Header PDU"
-        source_files:
-          - dmr/layer2/pdu/pi_header.go
+        source_files: []
         test_functions: []
 
       - section: "9.1.13"

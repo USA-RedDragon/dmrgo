@@ -70,14 +70,14 @@ func main() {
 | Total sections | 90 |
 | ✅ Verified (tests pass) | 59 |
 | ❌ Failing (tests fail) | 0 |
-| 🔶 Untested (has source, no tests) | 1 |
-| ⬜ Unimplemented | 30 |
+| 🔶 Untested (has source, no tests) | 0 |
+| ⬜ Unimplemented | 31 |
 
 **Overall: 59/90 verified (65.6%)**
 
 ### ETSI TS 102 361-1 V2.5.1 (2017-10) — Air Interface Protocol
 
-**49** sections - ✅ 38  ❌ 0  🔶 1  ⬜ 10
+**49** sections - ✅ 38  ❌ 0  🔶 0  ⬜ 11
 
 `[███████████████████████░░░░░░░] 77.6%`
 
@@ -103,7 +103,7 @@ func main() {
 | §9.1.9 | Rate 1/2 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate12_data.go` |
 | §9.1.10 | Rate 3/4 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate34_data.go` |
 | §9.1.11 | Rate 1 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate1_data.go` |
-| §9.1.12 | PI Header PDU | 🔶 untested | - | `dmr/layer2/pdu/pi_header.go` |
+| §9.1.12 | PI Header PDU | ⬜ unimplemented | - | - |
 | §9.1.13 | Unified Single Block PDU | ⬜ unimplemented | - | - |
 | §9.1.14 | MBC Header PDU | ⬜ unimplemented | - | - |
 | §9.1.15 | MBC Continuation PDU | ⬜ unimplemented | - | - |
