@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
+	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
@@ -62,6 +63,7 @@ type DataHeader struct {
 	dataHeaderType DataHeaderType
 
 	crc    uint16
+	FEC    fec.FECResult
 	Format Format
 	SAPID  ServiceAccessPointID
 
@@ -140,7 +142,8 @@ func (dh *DataHeader) ToString() string {
 	default:
 		extraData = "Unknown"
 	}
-	return fmt.Sprintf("DataHeader{ dataType: %s, dataHeaderType: %s, extraData: %s }", elements.DataTypeToName(dh.dataType), dh.dataHeaderType.ToString(), extraData)
+	return fmt.Sprintf("DataHeader{ dataType: %s, dataHeaderType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, extraData: %s }",
+		elements.DataTypeToName(dh.dataType), dh.dataHeaderType.ToString(), dh.FEC.BitsChecked, dh.FEC.ErrorsCorrected, dh.FEC.Uncorrectable, extraData)
 }
 
 func (dh *DataHeader) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool {
@@ -151,7 +154,24 @@ func (dh *DataHeader) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) b
 		return false
 	}
 
-	// TODO: CRC
+	// Pack 96 info bits into 12 bytes for CRC check
+	// ETSI TS 102 361-1 §9.1.8: CRC-CCITT over the full 12 bytes (no XOR mask)
+	var dataBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			dataBytes[i] <<= 1
+			dataBytes[i] |= byte(infoBits[i*8+j])
+		}
+	}
+
+	if !CheckCRCCCITT(dataBytes[:]) {
+		fmt.Println("DataHeader: CRC check failed")
+		dh.FEC = fec.FECResult{BitsChecked: 96, Uncorrectable: true}
+		return false
+	}
+
+	dh.FEC = fec.FECResult{BitsChecked: 96}
+	dh.crc = uint16(dataBytes[10])<<8 | uint16(dataBytes[11])
 
 	dh.Format = Format((byte(infoBits[4]) << 3) | (byte(infoBits[5]) << 2) | (byte(infoBits[6]) << 1) | byte(infoBits[7]))
 	switch dh.Format {

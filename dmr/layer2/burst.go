@@ -223,8 +223,10 @@ func (b *Burst) extractData() (elements.Data, error) {
 	case elements.DataTypeDataHeader:
 		b.dataHeader = &pdu.DataHeader{}
 		if b.dataHeader.DecodeFromBits(infoBits, dt) {
+			b.FEC.PDU = b.dataHeader.FEC
 			return b.dataHeader, nil
 		}
+		b.FEC.PDU = b.dataHeader.FEC
 		return nil, fmt.Errorf("failed to decode data header from bits: %v", b.dataHeader.ToString())
 	case elements.DataTypeRate34:
 		// TODO: implement rate 3/4 data parsing

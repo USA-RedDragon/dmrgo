@@ -126,12 +126,15 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []bit.Bit, dataType layer2El
 		fmt.Println("FullLinkControl: error calculating syndrome: ", err)
 		return false
 	}
+	var rsCorrected int
 	if !reedSolomon.ReedSolomon1294CheckSyndrome(syndrome) {
 		fmt.Println("FullLinkControl: syndrome check failed")
-		if _, err := reedSolomon.ReedSolomon1294Correct(infoBytes[:], syndrome); err != nil {
+		corrected, err := reedSolomon.ReedSolomon1294Correct(infoBytes[:], syndrome)
+		if err != nil {
 			fmt.Println("FullLinkControl: error correcting syndrome: ", err)
 			return false
 		}
+		rsCorrected = corrected
 	}
 
 	// reset fields
@@ -140,7 +143,7 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []bit.Bit, dataType layer2El
 	flc.FLCO = FLCO
 	flc.ProtectFlag = infoBits[0] == 1
 	flc.FeatureSetID = FSID
-	flc.FEC = fec.FECResult{BitsChecked: 96}
+	flc.FEC = fec.FECResult{BitsChecked: 96, ErrorsCorrected: rsCorrected}
 
 	switch FLCO {
 	case enums.FLCOUnitToUnitVoiceChannelUser:

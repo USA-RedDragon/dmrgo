@@ -32,6 +32,25 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 
 	// FragmentSequenceNumber = 0 (bits 76-79)
 
+	// Compute CRC-CCITT over the first 10 bytes and place it in bits 80-95
+	var dataBytes [10]byte
+	for i := range 10 {
+		for j := range 8 {
+			dataBytes[i] <<= 1
+			dataBytes[i] |= byte(infoBits[i*8+j])
+		}
+	}
+	crc := pdu.CalculateCRCCCITT(dataBytes[:])
+	// CRC stored big-endian with MMDVM byte-swap: crc8[0] → last byte, crc8[1] → second-to-last
+	crcHigh := byte(crc >> 8)
+	crcLow := byte(crc)
+	// MMDVM check: byte(crc) == data[11] && byte(crc>>8) == data[10]
+	// So data[10] = crcHigh, data[11] = crcLow
+	for b := 7; b >= 0; b-- {
+		infoBits[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
+		infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
+	}
+
 	var dh pdu.DataHeader
 	ok := dh.DecodeFromBits(infoBits[:], elements.DataTypeDataHeader)
 	if !ok {
