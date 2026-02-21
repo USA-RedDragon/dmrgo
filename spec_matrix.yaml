@@ -126,8 +126,16 @@ documents:
 
       - section: "7.3"
         title: "Idle message"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/idle.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestIdleMessageInfoBits_Length
+              - TestIdleMessageInfoBits_PackedHex
+              - TestIdleMessageInfoBits_BitsAreOnlyZeroOrOne
+              - TestIsIdleMessage_Match
+              - TestIsIdleMessage_NoMatch
 
       - section: "7.4.1"
         title: "Multi Block Control (MBC)"
@@ -515,8 +523,19 @@ documents:
 
       - section: "B.3.5"
         title: "Hamming (7,4,3)"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/fec/hamming/hamming_7_4_3.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/fec/hamming
+            names:
+              - TestHamming743_Parity
+              - TestHamming743_Check
+              - TestHamming743_Encode
+              - TestHamming743_DecodeNoError
+              - TestHamming743_DecodeSingleError
+              - TestHamming743_DecodeRandom
+              - TestHamming743_EncodeDecode_AllCodewords
+              - TestHamming743_BitsChecked
 
       - section: "B.3.6"
         title: "Reed-Solomon (12,9)"
@@ -546,8 +565,18 @@ documents:
 
       - section: "B.3.7"
         title: "8-bit CRC calculation"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/crc/crc8.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+            names:
+              - TestCRC8_ZeroInput
+              - TestCRC8_SingleBit
+              - TestCRC8_CheckValid
+              - TestCRC8_CheckInvalid
+              - TestCRC8_CheckTooShort
+              - TestCRC8_Deterministic
+              - TestCRC8_DifferentDataDifferentCRC
 
       - section: "B.3.8"
         title: "CRC-CCITT calculation"
@@ -564,18 +593,53 @@ documents:
 
       - section: "B.3.9"
         title: "32-bit CRC calculation"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/crc/crc32.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+            names:
+              - TestCRC32_ZeroInput
+              - TestCRC32_AllZeros
+              - TestCRC32_NonZero
+              - TestCRC32_Deterministic
+              - TestCRC32_ByteSwap
+              - TestCRC32_OddLength
+              - TestCRC32_CheckValid
+              - TestCRC32_CheckInvalid
+              - TestCRC32_DifferentDataDifferentCRC
 
       - section: "B.3.10"
         title: "CRC-9 calculation"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/crc/crc9.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+            names:
+              - TestCRC9_ZeroInput
+              - TestCRC9_SingleBit
+              - TestCRC9_CheckValid_NoMask
+              - TestCRC9_CheckValid_WithMask
+              - TestCRC9_CheckInvalid
+              - TestCRC9_CheckTooShort
+              - TestCRC9_Deterministic
+              - TestCRC9_ValueRange
+              - TestCRC9_Rate12_DataSize
 
       - section: "B.3.11"
         title: "5-bit Checksum (CS) calculation"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/crc/checksum5.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+            names:
+              - TestChecksum5_AllZeros
+              - TestChecksum5_SingleByte
+              - TestChecksum5_SimpleSum
+              - TestChecksum5_MaxValues
+              - TestChecksum5_Range
+              - TestChecksum5_CheckValid
+              - TestChecksum5_CheckInvalid
+              - TestChecksum5_Deterministic
 
       - section: "B.3.12"
         title: "Data Type CRC Mask"
@@ -590,8 +654,18 @@ documents:
 
       - section: "B.3.13"
         title: "7-bit CRC calculation"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/crc/crc7.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+            names:
+              - TestCRC7_ZeroInput
+              - TestCRC7_SingleBit
+              - TestCRC7_CheckValid_NoMask
+              - TestCRC7_CheckValid_WithMask
+              - TestCRC7_CheckInvalid
+              - TestCRC7_CheckTooShort
+              - TestCRC7_ValueRange
 
       - section: "B.4"
         title: "Interleaving"
@@ -600,8 +674,23 @@ documents:
 
       - section: "D"
         title: "Idle and Null message bit definition"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/idle.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestIdleMessageInfoBits_Length
+              - TestIdleMessageInfoBits_PackedHex
+              - TestIdleMessageInfoBits_BitsAreOnlyZeroOrOne
+              - TestNullEmbeddedLCBits_AllZeros
+              - TestNullEmbeddedLCBits_Length
+              - TestIdleMessageFECMatrix_Dimensions
+              - TestIdleMessageFECMatrix_TotalBits
+              - TestIsIdleMessage_Match
+              - TestIsIdleMessage_NoMatch
+              - TestIsNullEmbeddedLC_Match
+              - TestIsNullEmbeddedLC_NoMatch
+              - TestIdleMessageFECMatrix_BitsAreOnlyZeroOrOne
 
       - section: "E"
         title: "Transmit bit order"

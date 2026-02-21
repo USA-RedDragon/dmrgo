@@ -221,6 +221,64 @@ func ComputeVocoderTables() (aTable, bTable, cTable []int) {
 	return aTable, bTable, cTable
 }
 
+// ComputeCRC32Table computes the 256-entry CRC-32 lookup table for
+// byte-at-a-time processing with polynomial 0x04C11DB7.
+//
+// For each byte value i, the table entry is the CRC remainder of i
+// processed through the 32-bit shift register. This is the standard
+// CRC-32 table construction used for DMR 32-bit CRC (ETSI TS 102 361-1, B.3.9).
+func ComputeCRC32Table() [256]uint32 {
+	const poly = uint32(0x04C11DB7)
+	var table [256]uint32
+	for i := 0; i < 256; i++ {
+		crc := uint32(i) << 24
+		for j := 0; j < 8; j++ {
+			if crc&0x80000000 != 0 {
+				crc = (crc << 1) ^ poly
+			} else {
+				crc <<= 1
+			}
+		}
+		table[i] = crc
+	}
+	return table
+}
+
+// ComputeHamming743Syndrome computes the syndrome-to-bit-position table
+// for Hamming(7,4,3).
+//
+// The parity check matrix H has 3 rows and 7 columns. Each column is a
+// 3-bit value. For syndrome s (1..7), the table entry is the column index
+// whose H-column equals s. Syndrome 0 = no error → entry -1.
+//
+// The syndrome equations from the spec (ETSI TS 102 361-1, B.3.5):
+//
+//	s₀ = r₀ ⊕ r₁ ⊕ r₂ ⊕ r₄
+//	s₁ = r₁ ⊕ r₂ ⊕ r₃ ⊕ r₅
+//	s₂ = r₀ ⊕ r₁ ⊕ r₃ ⊕ r₆
+//
+// The 3-bit syndrome is s₀<<2 | s₁<<1 | s₂.
+func ComputeHamming743Syndrome() [8]int {
+	var hCols [7]int
+	for p := 0; p < 7; p++ {
+		var b [7]int
+		b[p] = 1
+		s0 := b[0] ^ b[1] ^ b[2] ^ b[4]
+		s1 := b[1] ^ b[2] ^ b[3] ^ b[5]
+		s2 := b[0] ^ b[1] ^ b[3] ^ b[6]
+		hCols[p] = s0<<2 | s1<<1 | s2
+	}
+
+	var table [8]int
+	for i := range table {
+		table[i] = -1
+	}
+	for p := 0; p < 7; p++ {
+		table[hCols[p]] = p
+	}
+	return table
+}
+
 // ComputeGaloisTables computes the GF(2^8) exp and log tables
 // for Reed-Solomon(12,9,4) with primitive polynomial 0x11D (x^8 + x^4 + x^3 + x^2 + 1).
 func ComputeGaloisTables() (exp [256]uint8, log [256]uint8) {

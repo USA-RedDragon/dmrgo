@@ -10,7 +10,9 @@ type Tables struct {
 	DM                   [256]uint8
 	Hamming15_11Syndrome [16]int
 	Hamming13_9Syndrome  [16]int
+	Hamming743Syndrome   [8]int
 	CRCCCITT             [256]uint16
+	CRC32                [256]uint32
 	ConstellationPoints  map[[2]int8]byte
 	ReverseConstellation [][]int8
 	ATable               []int
@@ -60,7 +62,17 @@ func All() *Tables {
 	}()
 	wg.Add(1)
 	go func() {
+		t.Hamming743Syndrome = ComputeHamming743Syndrome()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
 		t.CRCCCITT = ComputeCRCCCITT()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.CRC32 = ComputeCRC32Table()
 		wg.Done()
 	}()
 	wg.Add(1)

@@ -60,18 +60,18 @@ func main() {
 | Metric | Count |
 | --- | --- |
 | Total sections | 123 |
-| ✅ Verified (tests pass) | 65 |
+| ✅ Verified (tests pass) | 73 |
 | ❌ Failing (tests fail) | 0 |
 | 🔶 Untested (has source, no tests) | 0 |
-| ⬜ Unimplemented | 58 |
+| ⬜ Unimplemented | 50 |
 
-**Overall: 65/123 verified (52.8%)**
+**Overall: 73/123 verified (59.3%)**
 
 ### ETSI TS 102 361-1 — Air Interface Protocol
 
-**60** sections - ✅ 38  ❌ 0  🔶 0  ⬜ 22
+**60** sections - ✅ 46  ❌ 0  🔶 0  ⬜ 14
 
-`[███████████████████░░░░░░░░░░░] 63.3%`
+`[███████████████████████░░░░░░░] 76.7%`
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -84,7 +84,7 @@ func main() {
 | §7.1.3 | Embedded signalling | ✅ verified | 4/4 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go` |
 | §7.1.4 | Short Link Control in CACH | ⬜ unimplemented | - | - |
 | §7.2.1 | Control Signalling BlocK (CSBK) | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
-| §7.3 | Idle message | ⬜ unimplemented | - | - |
+| §7.3 | Idle message | ✅ verified | 5/5 passed | `v2/layer2/idle.go` |
 | §7.4.1 | Multi Block Control (MBC) | ⬜ unimplemented | - | - |
 | §8.2.1 | Header block structure | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §8.2.3.1 | Unified Single Block Data block structure | ⬜ unimplemented | - | - |
@@ -123,17 +123,17 @@ func main() {
 | §B.3.2 | Quadratic residue (16,7,6) | ✅ verified | 1/1 passed | `v2/fec/quadratic_residue/quadratic_residue_16_7_6.go` |
 | §B.3.3 | Hamming (17,12,3) | ✅ verified | 1/1 passed | `v2/fec/bptc/bptc_196_96.go` |
 | §B.3.4 | Hamming (13,9,3), Hamming (15,11,3), and Hamming (16,11,4) | ✅ verified | 1/1 passed | `v2/fec/bptc/bptc_196_96.go` |
-| §B.3.5 | Hamming (7,4,3) | ⬜ unimplemented | - | - |
+| §B.3.5 | Hamming (7,4,3) | ✅ verified | 8/8 passed | `v2/fec/hamming/hamming_7_4_3.go` |
 | §B.3.6 | Reed-Solomon (12,9) | ✅ verified | 18/18 passed | `v2/fec/reed_solomon/reed_solomon_12_9_4.go` |
-| §B.3.7 | 8-bit CRC calculation | ⬜ unimplemented | - | - |
+| §B.3.7 | 8-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc8.go` |
 | §B.3.8 | CRC-CCITT calculation | ✅ verified | 5/5 passed | `v2/crc/crc_ccitt.go` |
-| §B.3.9 | 32-bit CRC calculation | ⬜ unimplemented | - | - |
-| §B.3.10 | CRC-9 calculation | ⬜ unimplemented | - | - |
-| §B.3.11 | 5-bit Checksum (CS) calculation | ⬜ unimplemented | - | - |
+| §B.3.9 | 32-bit CRC calculation | ✅ verified | 9/9 passed | `v2/crc/crc32.go` |
+| §B.3.10 | CRC-9 calculation | ✅ verified | 9/9 passed | `v2/crc/crc9.go` |
+| §B.3.11 | 5-bit Checksum (CS) calculation | ✅ verified | 8/8 passed | `v2/crc/checksum5.go` |
 | §B.3.12 | Data Type CRC Mask | ✅ verified | 3/3 passed | `v2/crc/crc_ccitt.go` |
-| §B.3.13 | 7-bit CRC calculation | ⬜ unimplemented | - | - |
+| §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
 | §B.4 | Interleaving | ⬜ unimplemented | - | - |
-| §D | Idle and Null message bit definition | ⬜ unimplemented | - | - |
+| §D | Idle and Null message bit definition | ✅ verified | 12/12 passed | `v2/layer2/idle.go` |
 | §E | Transmit bit order | ⬜ unimplemented | - | - |
 
 ### ETSI TS 102 361-2 — DMR Voice and Generic Services and Facilities
