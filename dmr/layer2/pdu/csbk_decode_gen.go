@@ -6,6 +6,7 @@ ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.2 UU_V_Req PDU
 ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.3 UU_Ans_Rsp PDU
 ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5 NACK_Rsp PDU
 ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.7 Pre PDU
+ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
 
 DO NOT EDIT.
 */
@@ -133,5 +134,46 @@ func EncodePreamblePDU(s *PreamblePDU) [64]bit.Bit {
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.CSBKBlocksToFollow), 8))
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
+	return data
+}
+
+// DecodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
+func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.FECResult) {
+	var result ChannelTimingPDU
+	var fecResult fec.FECResult
+	copy(result.SyncAge[:], data[0:11])
+	copy(result.Generation[:], data[11:16])
+	copy(result.LeaderIdentifier[:], data[16:36])
+	result.NewLeader = bit.BitsToBool(data[:], 36)
+	copy(result.LeaderDynamicIdentifier[:], data[37:39])
+	result.ChannelTimingOp0 = bit.BitsToBool(data[:], 39)
+	copy(result.SourceIdentifier[:], data[40:60])
+	result.Reserved = bit.BitsToBool(data[:], 60)
+	copy(result.SourceDynamicIdentifier[:], data[61:63])
+	result.ChannelTimingOp1 = bit.BitsToBool(data[:], 63)
+	return result, fecResult
+}
+
+// EncodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
+func EncodeChannelTimingPDU(s *ChannelTimingPDU) [64]bit.Bit {
+	var data [64]bit.Bit
+	copy(data[0:11], s.SyncAge[:])
+	copy(data[11:16], s.Generation[:])
+	copy(data[16:36], s.LeaderIdentifier[:])
+	if s.NewLeader {
+		data[36] = 1
+	}
+	copy(data[37:39], s.LeaderDynamicIdentifier[:])
+	if s.ChannelTimingOp0 {
+		data[39] = 1
+	}
+	copy(data[40:60], s.SourceIdentifier[:])
+	if s.Reserved {
+		data[60] = 1
+	}
+	copy(data[61:63], s.SourceDynamicIdentifier[:])
+	if s.ChannelTimingOp1 {
+		data[63] = 1
+	}
 	return data
 }

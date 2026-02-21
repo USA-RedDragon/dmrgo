@@ -104,56 +104,22 @@ func (pdu PreamblePDU) ToString() string {
 	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %08b, CSBKBlocksToFollow: %d, TargetAddress: %v, SourceAddress: %v }", pdu.Data, pdu.Group, pdu.Reserved, pdu.CSBKBlocksToFollow, pdu.TargetAddress[:], pdu.SourceAddress[:])
 }
 
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
 type ChannelTimingPDU struct {
-	SyncAge                 [11]bit.Bit
-	Generation              [5]bit.Bit
-	LeaderIdentifier        [20]bit.Bit
-	NewLeader               bool
-	LeaderDynamicIdentifier [2]bit.Bit
-	ChannelTimingOp         [2]bool
-	SourceIdentifier        [20]bit.Bit
-	Reserved                bool
-	SourceDynamicIdentifier [2]bit.Bit
+	SyncAge                 [11]bit.Bit `dmr:"bits:0-10,raw"`
+	Generation              [5]bit.Bit  `dmr:"bits:11-15,raw"`
+	LeaderIdentifier        [20]bit.Bit `dmr:"bits:16-35,raw"`
+	NewLeader               bool        `dmr:"bit:36"`
+	LeaderDynamicIdentifier [2]bit.Bit  `dmr:"bits:37-38,raw"`
+	ChannelTimingOp0        bool        `dmr:"bit:39"`
+	SourceIdentifier        [20]bit.Bit `dmr:"bits:40-59,raw"`
+	Reserved                bool        `dmr:"bit:60"`
+	SourceDynamicIdentifier [2]bit.Bit  `dmr:"bits:61-62,raw"`
+	ChannelTimingOp1        bool        `dmr:"bit:63"`
 }
 
 func (pdu ChannelTimingPDU) ToString() string {
-	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %011b, Generation: %05b, LeaderIdentifier: %s, NewLeader: %t, LeaderDynamicIdentifier: %02b, SourceIdentifier: %s, Reserved: %t, SourceDynamicIdentifier: %02b, ChannelTimingOp: %v }", pdu.SyncAge, pdu.Generation, string(pdu.LeaderIdentifier[:]), pdu.NewLeader, pdu.LeaderDynamicIdentifier, string(pdu.SourceIdentifier[:]), pdu.Reserved, pdu.SourceDynamicIdentifier, pdu.ChannelTimingOp)
-}
-
-func (pdu *ChannelTimingPDU) DecodeFromBits(bits [64]bit.Bit) bool {
-	for i := range 11 {
-		pdu.SyncAge[i] = bits[i]
-	}
-
-	for i := range 5 {
-		pdu.Generation[i] = bits[11+i]
-	}
-
-	for i := range 20 {
-		pdu.LeaderIdentifier[i] = bits[16+i]
-	}
-
-	pdu.NewLeader = bits[36] == 1
-
-	for i := range 2 {
-		pdu.LeaderDynamicIdentifier[i] = bits[37+i]
-	}
-
-	pdu.ChannelTimingOp[0] = bits[39] == 1
-
-	for i := range 20 {
-		pdu.SourceIdentifier[i] = bits[40+i]
-	}
-
-	pdu.Reserved = bits[60] == 1
-
-	for i := range 2 {
-		pdu.SourceDynamicIdentifier[i] = bits[61+i]
-	}
-
-	pdu.ChannelTimingOp[1] = bits[63] == 1
-
-	return true
+	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %011b, Generation: %05b, LeaderIdentifier: %s, NewLeader: %t, LeaderDynamicIdentifier: %02b, SourceIdentifier: %s, Reserved: %t, SourceDynamicIdentifier: %02b, ChannelTimingOp: [%t %t] }", pdu.SyncAge, pdu.Generation, string(pdu.LeaderIdentifier[:]), pdu.NewLeader, pdu.LeaderDynamicIdentifier, string(pdu.SourceIdentifier[:]), pdu.Reserved, pdu.SourceDynamicIdentifier, pdu.ChannelTimingOp0, pdu.ChannelTimingOp1)
 }
 
 type CSBK struct {
@@ -271,10 +237,8 @@ func (csbk *CSBK) DecodeFromBits(infoBits []bit.Bit, dt elements.DataType) bool 
 		decoded, _ := DecodePreamblePDU(pduBits)
 		csbk.PreamblePDU = &decoded
 	case CSBKChannelTimingPDU:
-		csbk.ChannelTimingPDU = &ChannelTimingPDU{}
-		if !csbk.ChannelTimingPDU.DecodeFromBits(pduBits) {
-			return false
-		}
+		decoded, _ := DecodeChannelTimingPDU(pduBits)
+		csbk.ChannelTimingPDU = &decoded
 	default:
 		fmt.Printf("CSBK: unknown opcode: %08b\n", byte(csbk.CSBKOpcode))
 		return false
