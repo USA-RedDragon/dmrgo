@@ -221,6 +221,56 @@ func ComputeVocoderTables() (aTable, bTable, cTable []int) {
 	return aTable, bTable, cTable
 }
 
+// ComputeHamming16_11Syndrome computes the syndrome-to-bit-position table
+// for the Hamming(16,11,4) code used in embedded signalling BPTC (§B.2.1, §B.2.2).
+//
+// The (16,11,4) code is derived from the (15,11,3) Hamming code with an extra
+// overall parity bit. It has 5 syndrome bits → 32-entry table.
+//
+// Syndrome equations from the parity check matrix H (§B.3.4, Table B.16):
+//
+//	s₀ = r₀⊕r₁⊕r₂⊕r₃⊕r₅⊕r₇⊕r₈⊕r₁₁
+//	s₁ = r₁⊕r₂⊕r₃⊕r₄⊕r₆⊕r₈⊕r₉⊕r₁₂
+//	s₂ = r₂⊕r₃⊕r₄⊕r₅⊕r₇⊕r₉⊕r₁₀⊕r₁₃
+//	s₃ = r₀⊕r₁⊕r₂⊕r₄⊕r₅⊕r₆⊕r₇⊕r₁₄
+//	s₄ = r₀⊕r₂⊕r₄⊕r₅⊕r₆⊕r₈⊕r₉⊕r₁₀⊕r₁₅
+func ComputeHamming16_11Syndrome() [32]int {
+	var hCols [16]int
+	for p := 0; p < 16; p++ {
+		var b [16]int
+		b[p] = 1
+		s0 := b[0] ^ b[1] ^ b[2] ^ b[3] ^ b[5] ^ b[7] ^ b[8] ^ b[11]
+		s1 := b[1] ^ b[2] ^ b[3] ^ b[4] ^ b[6] ^ b[8] ^ b[9] ^ b[12]
+		s2 := b[2] ^ b[3] ^ b[4] ^ b[5] ^ b[7] ^ b[9] ^ b[10] ^ b[13]
+		s3 := b[0] ^ b[1] ^ b[2] ^ b[4] ^ b[5] ^ b[6] ^ b[7] ^ b[14]
+		s4 := b[0] ^ b[2] ^ b[4] ^ b[5] ^ b[6] ^ b[8] ^ b[9] ^ b[10] ^ b[15]
+		hCols[p] = s0 | s1<<1 | s2<<2 | s3<<3 | s4<<4
+	}
+
+	var table [32]int
+	for i := range table {
+		table[i] = -1
+	}
+	for p := 0; p < 16; p++ {
+		table[hCols[p]] = p
+	}
+	return table
+}
+
+// ComputeSingleBurstBPTCInterleave computes the deinterleave matrix for the
+// single-burst variable-length BPTC (§B.2.2).
+//
+// The interleaving formula is: Interleave Index = Index × 17 mod 32 (B.2)
+//
+// The returned array maps transmit index → encode matrix index.
+func ComputeSingleBurstBPTCInterleave() [32]uint8 {
+	var table [32]uint8
+	for i := 0; i < 32; i++ {
+		table[(i*17)%32] = uint8(i) //nolint:gosec // i is always < 32, fits in uint8
+	}
+	return table
+}
+
 // ComputeCRC32Table computes the 256-entry CRC-32 lookup table for
 // byte-at-a-time processing with polynomial 0x04C11DB7.
 //

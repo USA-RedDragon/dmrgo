@@ -7,20 +7,22 @@ import "sync"
 // Tables holds every computed FEC lookup table.
 type Tables struct {
 	// Tier 0
-	DM                   [256]uint8
-	Hamming15_11Syndrome [16]int
-	Hamming13_9Syndrome  [16]int
-	Hamming743Syndrome   [8]int
-	CRCCCITT             [256]uint16
-	CRC32                [256]uint32
-	ConstellationPoints  map[[2]int8]byte
-	ReverseConstellation [][]int8
-	ATable               []int
-	BTable               []int
-	CTable               []int
-	GaloisExp            [256]uint8
-	GaloisLog            [256]uint8
-	AMBEScrambleTable    [4096]uint32
+	DM                        [256]uint8
+	Hamming15_11Syndrome      [16]int
+	Hamming13_9Syndrome       [16]int
+	Hamming743Syndrome        [8]int
+	Hamming16_11Syndrome      [32]int
+	CRCCCITT                  [256]uint16
+	CRC32                     [256]uint32
+	SingleBurstBPTCInterleave [32]uint8
+	ConstellationPoints       map[[2]int8]byte
+	ReverseConstellation      [][]int8
+	ATable                    []int
+	BTable                    []int
+	CTable                    []int
+	GaloisExp                 [256]uint8
+	GaloisLog                 [256]uint8
+	AMBEScrambleTable         [4096]uint32
 
 	// Tier 1
 	Golay20_8_7Encoding    []uint32
@@ -67,12 +69,22 @@ func All() *Tables {
 	}()
 	wg.Add(1)
 	go func() {
+		t.Hamming16_11Syndrome = ComputeHamming16_11Syndrome()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
 		t.CRCCCITT = ComputeCRCCCITT()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
 		t.CRC32 = ComputeCRC32Table()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.SingleBurstBPTCInterleave = ComputeSingleBurstBPTCInterleave()
 		wg.Done()
 	}()
 	wg.Add(1)

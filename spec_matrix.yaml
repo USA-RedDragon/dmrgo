@@ -128,6 +128,8 @@ documents:
         title: "Idle message"
         source_files:
           - v2/layer2/idle.go
+          - v2/layer2/pdu/pr_fill.go
+          - v2/layer2/burst.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
@@ -136,6 +138,10 @@ documents:
               - TestIdleMessageInfoBits_BitsAreOnlyZeroOrOne
               - TestIsIdleMessage_Match
               - TestIsIdleMessage_NoMatch
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestPRFill_Length
+              - TestPRFill_IsPRFill_Match
 
       - section: "7.4.1"
         title: "Multi Block Control (MBC)"
@@ -249,8 +255,19 @@ documents:
 
       - section: "9.1.9"
         title: "Pseudo Random Fill Bit (PR FILL) PDU"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/pr_fill.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestPRFill_Length
+              - TestPRFill_BitsAreOnlyZeroOrOne
+              - TestPRFill_PackedHex
+              - TestPRFill_IsPRFill_Match
+              - TestPRFill_IsPRFill_NoMatch
+              - TestPRFill_IsPRFill_SingleBitDifference
+              - TestPRFill_GetDataType
+              - TestPRFill_ToString
 
       # ── Section 9.2: Data related PDU description ──
       - section: "9.2.2"
@@ -451,13 +468,40 @@ documents:
 
       - section: "B.2.1"
         title: "Variable length BPTC for embedded signalling"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/fec/bptc/bptc_embedded_lc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+            names:
+              - TestEmbeddedLC_EncodeDecodeRoundTrip
+              - TestEmbeddedLC_BitsChecked
+              - TestEmbeddedLC_AllZero
+              - TestEmbeddedLC_AllOnes
+              - TestEmbeddedLC_SingleBitErrorCorrection
+              - TestEmbeddedLC_FragmentCount
+              - TestEmbeddedLC_FragmentBitsAreValid
+              - TestEmbeddedLC_StabilityEncodeDecode
+              - TestEmbeddedLC_ColumnParityErrorDetection
+              - TestEmbeddedLC_DifferentPatterns
 
       - section: "B.2.2"
         title: "Single Burst Variable length BPTC"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/fec/bptc/bptc_single_burst.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+            names:
+              - TestSingleBurstBPTC_EncodeDecodeRoundTrip
+              - TestSingleBurstBPTC_RC_EncodeDecodeRoundTrip
+              - TestSingleBurstBPTC_BitsChecked
+              - TestSingleBurstBPTC_AllZero
+              - TestSingleBurstBPTC_AllOnes
+              - TestSingleBurstBPTC_SingleBitErrorCorrection
+              - TestSingleBurstBPTC_OutputSize
+              - TestSingleBurstBPTC_OutputBitsValid
+              - TestSingleBurstBPTC_RC_DifferentFromNonRC
+              - TestSingleBurstBPTC_Stability
+              - TestSingleBurstBPTC_DifferentData
 
       - section: "B.2.3"
         title: "Variable length BPTC for CACH signalling"
@@ -694,8 +738,21 @@ documents:
 
       - section: "E"
         title: "Transmit bit order"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/transmit_order.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestTransmitOrder_BurstBitsConstant
+              - TestTransmitOrder_BurstSymbolsConstant
+              - TestTransmitOrder_FieldBoundaries
+              - TestTransmitOrder_FieldWidths
+              - TestTransmitOrder_EMBFieldWidths
+              - TestTransmitOrder_BurstToDibits
+              - TestTransmitOrder_DibitsToBurst_Roundtrip
+              - TestTransmitOrder_ValidateBurstStructure_Valid
+              - TestTransmitOrder_ValidateBurstStructure_Invalid
+              - TestTransmitOrder_DibitLabels_Symmetry
 
   - id: "TS-102-361-2"
     title: "ETSI TS 102 361-2 — DMR Voice and Generic Services and Facilities"

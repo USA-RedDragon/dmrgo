@@ -263,7 +263,8 @@ func (b *Burst) extractData() (elements.Data, error) {
 	case elements.DataTypeMBCHeader, elements.DataTypeMBCContinuation:
 		return nil, fmt.Errorf("MBC parsing not implemented")
 	case elements.DataTypeIdle:
-		return nil, nil //nolint:nilnil // idle bursts have no data payload, nil is intentional
+		prFill := &pdu.PRFill{DataType: dt}
+		return prFill, nil
 	case elements.DataTypeUnifiedSingleBlock:
 		return nil, fmt.Errorf("unified single block parsing not implemented")
 	case elements.DataTypeReserved:

@@ -18,6 +18,12 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		jen.Line(),
 		jen.Line(),
 		writeTable("hamming13_9_syndrome_table", tables.Hamming13_9Syndrome[:]),
+		jen.Line(),
+		jen.Line(),
+		writeTable("hamming16_11_syndrome_table", tables.Hamming16_11Syndrome[:]),
+		jen.Line(),
+		jen.Line(),
+		writeTable("single_burst_bptc_interleave", tables.SingleBurstBPTCInterleave[:]),
 	); err != nil {
 		return err
 	}

@@ -60,18 +60,18 @@ func main() {
 | Metric | Count |
 | --- | --- |
 | Total sections | 123 |
-| ✅ Verified (tests pass) | 73 |
+| ✅ Verified (tests pass) | 77 |
 | ❌ Failing (tests fail) | 0 |
 | 🔶 Untested (has source, no tests) | 0 |
-| ⬜ Unimplemented | 50 |
+| ⬜ Unimplemented | 46 |
 
-**Overall: 73/123 verified (59.3%)**
+**Overall: 77/123 verified (62.6%)**
 
 ### ETSI TS 102 361-1 — Air Interface Protocol
 
-**60** sections - ✅ 46  ❌ 0  🔶 0  ⬜ 14
+**60** sections - ✅ 50  ❌ 0  🔶 0  ⬜ 10
 
-`[███████████████████████░░░░░░░] 76.7%`
+`[█████████████████████████░░░░░] 83.3%`
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -84,7 +84,7 @@ func main() {
 | §7.1.3 | Embedded signalling | ✅ verified | 4/4 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go` |
 | §7.1.4 | Short Link Control in CACH | ⬜ unimplemented | - | - |
 | §7.2.1 | Control Signalling BlocK (CSBK) | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
-| §7.3 | Idle message | ✅ verified | 5/5 passed | `v2/layer2/idle.go` |
+| §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
 | §7.4.1 | Multi Block Control (MBC) | ⬜ unimplemented | - | - |
 | §8.2.1 | Header block structure | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §8.2.3.1 | Unified Single Block Data block structure | ⬜ unimplemented | - | - |
@@ -96,7 +96,7 @@ func main() {
 | §9.1.6 | Full Link Control (FULL LC) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/full_link_control.go` |
 | §9.1.7 | Short Link Control (SHORT LC) PDU | ⬜ unimplemented | - | - |
 | §9.1.8 | Control Signalling Block (CSBK) PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
-| §9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | ⬜ unimplemented | - | - |
+| §9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | ✅ verified | 8/8 passed | `v2/layer2/pdu/pr_fill.go` |
 | §9.2.2 | Rate ¾ coded packet Data (R_3_4_DATA) PDU | ✅ verified | 5/5 passed | `v2/layer2/pdu/rate34_data.go` |
 | §9.2.6 | Unconfirmed data packet Header (U_HEAD) PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §9.2.7 | Rate ½ coded packet Data (R_1_2_DATA) PDU | ✅ verified | 5/5 passed | `v2/layer2/pdu/rate12_data.go` |
@@ -114,8 +114,8 @@ func main() {
 | §9.3.19 | Logical Link ID (LLID) | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §9.3.32 | Control Signalling BlocK Opcode (CSBKO) | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §B.1.1 | BPTC (196,96) | ✅ verified | 1/1 passed | `v2/fec/bptc/bptc_196_96.go` |
-| §B.2.1 | Variable length BPTC for embedded signalling | ⬜ unimplemented | - | - |
-| §B.2.2 | Single Burst Variable length BPTC | ⬜ unimplemented | - | - |
+| §B.2.1 | Variable length BPTC for embedded signalling | ✅ verified | 10/10 passed | `v2/fec/bptc/bptc_embedded_lc.go` |
+| §B.2.2 | Single Burst Variable length BPTC | ✅ verified | 11/11 passed | `v2/fec/bptc/bptc_single_burst.go` |
 | §B.2.3 | Variable length BPTC for CACH signalling | ⬜ unimplemented | - | - |
 | §B.2.4 | Rate ¾ Trellis code | ✅ verified | 1/1 passed | `v2/fec/trellis/trellis_3_4.go` |
 | §B.2.5 | Rate 1 coded data | ✅ verified | 1/1 passed | `v2/layer2/burst.go` |
@@ -134,7 +134,7 @@ func main() {
 | §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
 | §B.4 | Interleaving | ⬜ unimplemented | - | - |
 | §D | Idle and Null message bit definition | ✅ verified | 12/12 passed | `v2/layer2/idle.go` |
-| §E | Transmit bit order | ⬜ unimplemented | - | - |
+| §E | Transmit bit order | ✅ verified | 10/10 passed | `v2/layer2/transmit_order.go` |
 
 ### ETSI TS 102 361-2 — DMR Voice and Generic Services and Facilities
 
