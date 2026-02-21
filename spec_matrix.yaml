@@ -1,0 +1,845 @@
+# ETSI TS 102 361 Specification Coverage Matrix
+# Validated by cmd/speccheck — run: go run -C cmd/speccheck .
+#
+# Status values:
+#   implemented   — Fully coded and tested
+#   partial       — Some sub-features coded; see notes
+#   stub          — Struct/function exists but body is TODO
+#   unimplemented — Not started
+#
+# test_functions maps spec sections to Go test functions.
+# speccheck runs `go test -v -run <regex>` for each package and verifies pass.
+# Sections with status "implemented" or "partial" MUST have test_functions.
+# Sections with status "stub" or "unimplemented" may omit test_functions.
+#
+# Out of scope: state machines, procedures, RF/physical layer, conformance testing.
+
+documents:
+  - id: "TS-102-361-1"
+    title: "ETSI TS 102 361-1 V2.5.1 (2017-10) — Air Interface Protocol"
+    sections:
+      # ── Burst format ──
+      - section: "6.1"
+        title: "Burst format"
+        source_files:
+          - dmr/layer2/burst.go
+          - dmr/enums/burst_types.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2
+            names:
+              - TestBurst_Encode
+          - package: github.com/USA-RedDragon/dmrgo/dmr/enums
+            names:
+              - TestBurstTypeConstants
+
+      - section: "6.2"
+        title: "Burst classification (sync patterns)"
+        source_files:
+          - dmr/layer2/burst.go
+          - dmr/enums/sync_patterns.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/enums
+            names:
+              - TestSyncPatternFromBytes_AllKnownPatterns
+              - TestSyncPatternFromBytes_UnknownReturnsEmbeddedSignalling
+              - TestSyncPatternToName_AllPatterns
+              - TestSyncPatternToName_UnknownReturnsEmbeddedSignalling
+              - TestSyncPatternFromBytes_RoundTrip
+
+      # ── Channel coding ──
+      - section: "7.1"
+        title: "Voice channel coding (AMBE+2 vocoder)"
+        source_files:
+          - dmr/vocoder/frame.go
+          - dmr/layer2/pdu/vocoder.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/vocoder
+            names:
+              - TestAMBEScrambleTableValues
+              - TestScrambleTableBitWidth
+              - TestScrambleTableDistribution
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2
+            names:
+              - TestBurst_Encode
+
+      - section: "7.2"
+        title: "Data channel coding Rate 1/2 (BPTC 196,96)"
+        source_files:
+          - dmr/fec/bptc/bptc_196_96.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/bptc
+            names:
+              - TestBPTC19696Decode
+
+      - section: "7.3"
+        title: "Data channel coding Rate 3/4 (Trellis)"
+        source_files:
+          - dmr/fec/trellis/trellis_3_4.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/trellis
+            names:
+              - TestTrellis34Decode
+
+      - section: "7.4"
+        title: "Data channel coding Rate 1 (passthrough)"
+        source_files:
+          - dmr/layer2/burst.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2
+            names:
+              - TestBurst_Encode
+
+      - section: "7.5"
+        title: "Slot Type coding (Golay 20,8,7)"
+        source_files:
+          - dmr/fec/golay/golay_20_8_7.go
+          - dmr/layer2/pdu/slot_type.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/golay
+            names:
+              - TestGolay2087Decode
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestSlotType_DecodeEncodeRoundTrip
+              - TestSlotType_AllColorCodes
+              - TestSlotType_AllDataTypes
+
+      - section: "7.6"
+        title: "EMB coding (QR 16,7,6)"
+        source_files:
+          - dmr/fec/quadratic_residue/quadratic_residue_16_7_6.go
+          - dmr/layer2/pdu/embedded_signalling.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/quadratic_residue
+            names:
+              - TestQuadraticResidue1676Decode
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestEmbeddedSignalling_EncodeDecodeRoundTrip
+              - TestEmbeddedSignalling_AllColorCodes
+              - TestEmbeddedSignalling_AllLCSS
+
+      - section: "7.7"
+        title: "CACH coding (Hamming 7,4)"
+        source_files: []
+        test_functions: []
+
+      # ── PDU formats ──
+      - section: "9.1.1"
+        title: "SYNC PDU"
+        source_files:
+          - dmr/enums/sync_patterns.go
+          - dmr/layer2/burst.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/enums
+            names:
+              - TestSyncPatternFromBytes_AllKnownPatterns
+              - TestSyncPatternFromBytes_RoundTrip
+
+      - section: "9.1.2"
+        title: "EMB PDU"
+        source_files:
+          - dmr/layer2/pdu/embedded_signalling.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestEmbeddedSignalling_EncodeDecodeRoundTrip
+              - TestEmbeddedSignalling_AllColorCodes
+              - TestEmbeddedSignalling_AllLCSS
+              - TestEmbeddedSignalling_ToString
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2
+            names:
+              - TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip
+
+      - section: "9.1.3"
+        title: "Slot Type PDU"
+        source_files:
+          - dmr/layer2/pdu/slot_type.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestSlotType_DecodeEncodeRoundTrip
+              - TestSlotType_AllColorCodes
+              - TestSlotType_AllDataTypes
+              - TestSlotType_ToString
+
+      - section: "9.1.4"
+        title: "CACH PDU"
+        source_files: []
+        test_functions: []
+
+      - section: "9.1.5"
+        title: "Voice LC Header/Terminator"
+        source_files:
+          - dmr/layer2/burst.go
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
+              - TestFullLinkControl_EncodeStability
+              - TestFullLinkControl_DecodeFromBits_BothDataTypes
+
+      - section: "9.1.6"
+        title: "Full Link Control PDU"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
+              - TestFullLinkControl_EncodeStability
+              - TestFullLinkControl_DecodeFromBits_InvalidLength
+              - TestFullLinkControl_DecodeFromBits_InvalidDataType
+              - TestFullLinkControl_Encode_UnsupportedFLCO
+              - TestFullLinkControl_ToString
+              - TestFullLinkControl_ServiceOptions_RoundTrip
+              - TestFullLinkControl_DecodeFromBits_BothDataTypes
+              - TestFullLinkControl_AddressRange
+
+      - section: "9.1.7"
+        title: "CSBK PDU"
+        source_files:
+          - dmr/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestCSBK_OpcodeToString
+              - TestCSBK_DecodeFromBits_InvalidLength
+              - TestCSBK_PreamblePDU_Decode
+              - TestCSBK_NegativeAck_Decode
+              - TestCSBK_CRCValidation
+
+      - section: "9.1.8"
+        title: "Data Header PDU"
+        source_files:
+          - dmr/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestDataHeader_UnconfirmedDecode
+              - TestDataHeader_InvalidLength
+              - TestDataHeader_FormatDispatch
+
+      - section: "9.1.9"
+        title: "Rate 1/2 Data PDU"
+        source_files:
+          - dmr/layer2/pdu/rate12_data.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestRate12Data_DecodeFromBits
+              - TestRate12Data_InvalidLength
+              - TestRate12Data_GetDataType
+
+      - section: "9.1.10"
+        title: "Rate 3/4 Data PDU"
+        source_files:
+          - dmr/layer2/pdu/rate34_data.go
+        test_functions: []
+
+      - section: "9.1.11"
+        title: "Rate 1 Data PDU"
+        source_files:
+          - dmr/layer2/pdu/rate1_data.go
+        test_functions: []
+
+      - section: "9.1.12"
+        title: "PI Header PDU"
+        source_files:
+          - dmr/layer2/pdu/pi_header.go
+        test_functions: []
+
+      - section: "9.1.13"
+        title: "Unified Single Block PDU"
+        source_files: []
+        test_functions: []
+
+      - section: "9.1.14"
+        title: "MBC Header PDU"
+        source_files: []
+        test_functions: []
+
+      - section: "9.1.15"
+        title: "MBC Continuation PDU"
+        source_files: []
+        test_functions: []
+
+      # ── Information elements ──
+      - section: "9.3.1"
+        title: "Colour Code"
+        source_files:
+          - dmr/layer2/pdu/embedded_signalling.go
+          - dmr/layer2/pdu/slot_type.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestSlotType_AllColorCodes
+              - TestEmbeddedSignalling_AllColorCodes
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2
+            names:
+              - TestBuildLCDataBurst_ColorCodeRange
+
+      - section: "9.3.2"
+        title: "PI (Privacy Indicator)"
+        source_files: []
+        test_functions: []
+
+      - section: "9.3.3"
+        title: "LCSS"
+        source_files:
+          - dmr/enums/lcss.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/enums
+            names:
+              - TestLCSSToName
+              - TestLCSSToName_Unknown
+              - TestLCSSFromInt
+              - TestLCSSFromInt_InvalidDefaultsToSingle
+
+      - section: "9.3.4"
+        title: "FLCO"
+        source_files:
+          - dmr/enums/flco.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/enums
+            names:
+              - TestFLCOToName
+              - TestFLCOFromInt_ValidValues
+              - TestFLCOFromInt_InvalidValue
+
+      - section: "9.3.5"
+        title: "Feature Set ID"
+        source_files:
+          - dmr/enums/feature_set_id.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/enums
+            names:
+              - TestFeatureSetIDToName_KnownIDs
+              - TestFeatureSetIDToName_UnknownID
+              - TestFeatureSetIDFromInt_ValidValues
+              - TestFeatureSetIDFromInt_InvalidValue
+              - TestFeatureSetIDFromInt_RoundTrip
+
+      - section: "9.3.6"
+        title: "Data Type"
+        source_files:
+          - dmr/layer2/elements/data_types.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/elements
+            names:
+              - TestDataTypeToName_AllTypes
+              - TestDataTypeToName_Unknown
+              - TestDataType_Constants
+
+      - section: "9.3.7"
+        title: "Service Options"
+        source_files:
+          - dmr/layer3/elements/service_options.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
+            names:
+              - TestNewServiceOptionsFromBits
+              - TestServiceOptions_ReservedBits
+              - TestServiceOptions_ToByte_RoundTrip
+              - TestServiceOptions_ToByte_FromByte_RoundTrip
+              - TestServiceOptions_ToString
+
+      - section: "9.3.8"
+        title: "Source/Destination Address"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+          - dmr/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_AddressRange
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
+
+      - section: "9.3.9"
+        title: "CRC masks"
+        source_files:
+          - dmr/layer2/pdu/crc_ccitt.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestCRCCCITT_KnownValues
+              - TestCRCCCITT_CheckValid
+              - TestCRCCCITT_CheckInvalid
+
+      # ── Annex B: FEC algorithms ──
+      - section: "B.1"
+        title: "Hamming codes"
+        source_files:
+          - dmr/fec/bptc/bptc_196_96.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/bptc
+            names:
+              - TestBPTC19696Decode
+
+      - section: "B.2"
+        title: "CRC polynomials"
+        source_files:
+          - dmr/layer2/pdu/crc_ccitt.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestCRCCCITT_KnownValues
+              - TestCRCCCITT_CheckValid
+
+      - section: "B.3.1"
+        title: "Golay(20,8,7)"
+        source_files:
+          - dmr/fec/golay/golay_20_8_7.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/golay
+            names:
+              - TestGolay2087Decode
+
+      - section: "B.3.2"
+        title: "Quadratic Residue(16,7,6)"
+        source_files:
+          - dmr/fec/quadratic_residue/quadratic_residue_16_7_6.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/quadratic_residue
+            names:
+              - TestQuadraticResidue1676Decode
+
+      - section: "B.3.3"
+        title: "Golay(23,12,7)"
+        source_files:
+          - dmr/fec/golay/golay_23_12_7.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/golay
+            names:
+              - TestGolay23127
+
+      - section: "B.3.4"
+        title: "BPTC(196,96)"
+        source_files:
+          - dmr/fec/bptc/bptc_196_96.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/bptc
+            names:
+              - TestBPTC19696Decode
+
+      - section: "B.3.5"
+        title: "Golay(24,12,8)"
+        source_files:
+          - dmr/fec/golay/golay_24_12_8.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/golay
+            names:
+              - TestGolay24128
+
+      - section: "B.3.6"
+        title: "Variable-length BPTC"
+        source_files: []
+        test_functions: []
+
+      - section: "B.3.7"
+        title: "Convolutional/Trellis coding"
+        source_files:
+          - dmr/fec/trellis/trellis_3_4.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/trellis
+            names:
+              - TestTrellis34Decode
+
+      - section: "B.3.8"
+        title: "CRC-CCITT"
+        source_files:
+          - dmr/layer2/pdu/crc_ccitt.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestCRCCCITT_KnownValues
+              - TestCRCCCITT_CheckValid
+              - TestCRCCCITT_CheckInvalid
+
+      - section: "B.3.9"
+        title: "Reed-Solomon(12,9,4)"
+        source_files:
+          - dmr/fec/reed_solomon/reed_solomon_12_9_4.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/reed_solomon
+            names:
+              - TestReedSolomon1294SyndromeNoError
+              - TestReedSolomon1294DecodeClean
+              - TestReedSolomon1294SyndromeWithError
+              - TestReedSolomon1294GaloisMul
+              - TestReedSolomon1294GaloisMulAssociativity
+              - TestReedSolomon1294FindRootsEmpty
+              - TestReedSolomon1294DecodeInvalidLength
+              - TestReedSolomon1294CalcSyndromeError
+              - TestReedSolomon1294CorrectError
+              - TestReedSolomon1294DecodeResultFields
+              - TestReedSolomon1294CheckSyndromeWithErrors
+              - TestEncodeDecodeRoundTrip
+              - TestSyndromeDetectsCorruption
+              - TestDecodeChecksumByteErrorCorrection
+              - TestEncodeInvalidLength
+              - TestDecodeIntoRoundTrip
+              - TestSyndromeCleanForValidCodeword
+              - TestEncodePreservesData
+
+      - section: "B.3.10"
+        title: "Single-burst Trellis coded modulation"
+        source_files: []
+        test_functions: []
+
+      - section: "B.3.11"
+        title: "Rate 3/4 Trellis"
+        source_files:
+          - dmr/fec/trellis/trellis_3_4.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/fec/trellis
+            names:
+              - TestTrellis34Decode
+
+      - section: "C"
+        title: "AMBE+2 vocoder frame structure"
+        source_files:
+          - dmr/vocoder/frame.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/vocoder
+            names:
+              - TestAMBEScrambleTableValues
+              - TestScrambleTableBitWidth
+              - TestScrambleTableDistribution
+
+      - section: "D"
+        title: "PRNG"
+        source_files: []
+        test_functions: []
+
+      - section: "E"
+        title: "Encryption (ARC4/AES)"
+        source_files: []
+        test_functions: []
+
+  - id: "TS-102-361-2"
+    title: "ETSI TS 102 361-2 V2.4.1 (2017-10) — Voice and Generic Services"
+    sections:
+      - section: "7.1.1"
+        title: "Full LC PDU opcodes"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
+              - TestFullLinkControl_EncodeStability
+
+      - section: "7.1.2"
+        title: "Embedded LC assembly"
+        source_files:
+          - dmr/layer2/burst.go
+          - dmr/layer2/pdu/embedded_signalling.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2
+            names:
+              - TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip
+              - TestBurst_UnpackEmbeddedSignallingData_EmptySlice
+              - TestBurst_UnpackEmbeddedSignallingData_SingleByte
+              - TestBurst_PackEmbeddedSignallingData_KnownValue
+
+      - section: "7.1.3"
+        title: "Short LC (CACH)"
+        source_files: []
+        test_functions: []
+
+      - section: "7.2.1"
+        title: "Service Options"
+        source_files:
+          - dmr/layer3/elements/service_options.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
+            names:
+              - TestNewServiceOptionsFromBits
+              - TestServiceOptions_ReservedBits
+              - TestServiceOptions_ToByte_RoundTrip
+              - TestServiceOptions_ToByte_FromByte_RoundTrip
+              - TestServiceOptions_ToString
+
+      - section: "7.2.2"
+        title: "Group Address"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFullLinkControl_AddressRange
+
+      - section: "7.2.3"
+        title: "Source Address"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
+              - TestFullLinkControl_AddressRange
+
+      - section: "7.2.4"
+        title: "Destination Address"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
+              - TestFullLinkControl_AddressRange
+
+      - section: "7.2.5"
+        title: "Algorithm ID"
+        source_files: []
+        test_functions: []
+
+      - section: "7.2.6"
+        title: "Key ID"
+        source_files: []
+        test_functions: []
+
+      - section: "7.2.7"
+        title: "Message Indicator (MI)"
+        source_files: []
+        test_functions: []
+
+      - section: "7.2.8"
+        title: "Answer/Response"
+        source_files:
+          - dmr/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestCSBK_NegativeAck_Decode
+
+      - section: "7.2.9"
+        title: "Reason Code"
+        source_files:
+          - dmr/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestCSBK_NegativeAck_Decode
+
+      - section: "7.2.10"
+        title: "N(S)/N(R) sequence numbers"
+        source_files: []
+        test_functions: []
+
+      - section: "7.2.11"
+        title: "Data Packet Format"
+        source_files:
+          - dmr/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestDataHeader_FormatDispatch
+
+      - section: "7.2.12"
+        title: "SAP Identifier"
+        source_files: []
+        test_functions: []
+
+      - section: "7.2.13"
+        title: "Full Message Flag"
+        source_files:
+          - dmr/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestDataHeader_UnconfirmedDecode
+
+      - section: "7.2.14"
+        title: "Blocks to Follow"
+        source_files:
+          - dmr/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestDataHeader_UnconfirmedDecode
+
+      - section: "7.2.15"
+        title: "Position Error"
+        source_files:
+          - dmr/layer3/elements/position_error.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
+            names:
+              - TestNewPositionErrorFromBits_AllValues
+              - TestPositionError_ToString
+              - TestPositionError_OnlyOneFlagSet
+
+      - section: "7.2.16"
+        title: "Longitude"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+
+      - section: "7.2.17"
+        title: "Latitude"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+
+      - section: "7.2.18"
+        title: "Talker Alias Data Format"
+        source_files:
+          - dmr/layer3/elements/talker_alias_data_format.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
+            names:
+              - TestNewTalkerAliasDataFormatFromBits
+              - TestTalkerAliasDataFormatToName
+              - TestTalkerAliasDataFormatToName_Unknown
+              - TestTalkerAliasDataFormat_Constants
+
+      - section: "7.2.19"
+        title: "Talker Alias Data"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+          - dmr/layer3/elements/talker_alias_data_format.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
+            names:
+              - TestNewTalkerAliasDataFormatFromBits
+              - TestTalkerAliasDataFormatToName
+
+      - section: "7.2.20"
+        title: "CSBK Opcode definitions"
+        source_files:
+          - dmr/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestCSBK_OpcodeToString
+              - TestCSBK_PreamblePDU_Decode
+              - TestCSBK_NegativeAck_Decode
+
+      - section: "7.2.21"
+        title: "Data Header sub-formats"
+        source_files:
+          - dmr/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestDataHeader_UnconfirmedDecode
+              - TestDataHeader_FormatDispatch
+
+      - section: "6.1-6.5"
+        title: "Short data services (Defined, Raw, SDD, UDT, IP)"
+        source_files: []
+        test_functions: []
+
+      - section: "9"
+        title: "Location services (LRRP)"
+        source_files: []
+        test_functions: []
+
+      - section: "A"
+        title: "CSBK opcode table (complete)"
+        source_files:
+          - dmr/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestCSBK_OpcodeToString
+
+      - section: "B"
+        title: "Data header format field tables"
+        source_files:
+          - dmr/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestDataHeader_FormatDispatch
+
+      - section: "C"
+        title: "Full LC opcode table (complete)"
+        source_files:
+          - dmr/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+            names:
+              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
+
+  - id: "TS-102-361-3"
+    title: "ETSI TS 102 361-3 — Data Protocol / Trunking Type 1 (Tier III)"
+    sections:
+      - section: "6.1"
+        title: "Channel Grant CSBK"
+        source_files: []
+        test_functions: []
+
+      - section: "6.2"
+        title: "Move CSBK"
+        source_files: []
+        test_functions: []
+
+      - section: "6.3"
+        title: "Aloha CSBK (trunking variant)"
+        source_files: []
+        test_functions: []
+
+      - section: "6.4"
+        title: "C_BCAST / Site/Neighbour CSBK"
+        source_files: []
+        test_functions: []
+
+      - section: "8"
+        title: "MBC Header + Continuation formats"
+        source_files: []
+        test_functions: []
+
+      - section: "9"
+        title: "Trunking information elements"
+        source_files: []
+        test_functions: []
+
+      - section: "A"
+        title: "CSBK opcode table (Tier III)"
+        source_files: []
+        test_functions: []
+
+  - id: "TS-102-361-4"
+    title: "ETSI TS 102 361-4 — Trunking Protocol Type 2 (Capacity Plus / Connect Plus)"
+    sections:
+      - section: "5.1"
+        title: "Rest channel burst format"
+        source_files: []
+        test_functions: []
+
+      - section: "5.2"
+        title: "CSBK opcodes (Type 2)"
+        source_files: []
+        test_functions: []
+
+      - section: "6.1"
+        title: "C_SYS_PARM"
+        source_files: []
+        test_functions: []
+
+      - section: "6.2"
+        title: "ADJ_STS_BCAST"
+        source_files: []
+        test_functions: []
+
+      - section: "A"
+        title: "Control PDU opcodes for Type 2"
+        source_files: []
+        test_functions: []
