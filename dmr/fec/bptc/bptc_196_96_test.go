@@ -44,7 +44,7 @@ func TestBPTC19696Decode(t *testing.T) {
 		// Note: If we flip a bit, DeinterleaveDataBits returns correct data.
 		encodedErr := encoded
 		pos := rand.Intn(196)   //nolint:gosec // deterministic PRNG fine for tests
-		for pos == int(dm[1]) { // dm[1] maps to the unused grid slot; flipping it is unobservable
+		for pos == int(dm[0]) { // dm[0] maps to grid position 0 (unused corner); flipping it is unobservable
 			pos = rand.Intn(196) //nolint:gosec // deterministic PRNG fine for tests
 		}
 		encodedErr[pos] ^= 1
