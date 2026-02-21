@@ -178,3 +178,347 @@ func TestCSBK_CRCValidation(t *testing.T) {
 		t.Error("corrupted CSBK should fail CRC check")
 	}
 }
+
+func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
+	var payload [64]bit.Bit
+	// Reserved (bits 0-15) = 0
+	// BSAddress (bits 16-39) = set last bit for address 1
+	payload[39] = 1
+	// SourceAddress (bits 40-63) = set last two bits for address 3
+	payload[62] = 1
+	payload[63] = 1
+
+	infoBits := buildCSBKBits(byte(pdu.CSBKBSOutboundActivationPDU), 0x00, payload)
+
+	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
+	}
+	if csbk.CSBKOpcode != pdu.CSBKBSOutboundActivationPDU {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKBSOutboundActivationPDU))
+	}
+	if csbk.BSOutboundActivationPDU == nil {
+		t.Fatal("BSOutboundActivationPDU should not be nil")
+	}
+	if csbk.BSOutboundActivationPDU.BSAddress[23] != 1 {
+		t.Error("BSAddress last bit should be 1")
+	}
+	if csbk.BSOutboundActivationPDU.SourceAddress[22] != 1 || csbk.BSOutboundActivationPDU.SourceAddress[23] != 1 {
+		t.Error("SourceAddress last two bits should be 1")
+	}
+
+	// Verify ToString doesn't panic
+	str := csbk.ToString()
+	if str == "" {
+		t.Error("ToString should not be empty")
+	}
+}
+
+func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
+	var bsAddr [24]bit.Bit
+	bsAddr[0] = 1
+	bsAddr[23] = 1
+	var srcAddr [24]bit.Bit
+	srcAddr[12] = 1
+
+	original := &pdu.CSBK{
+		LastBlock:   true,
+		ProtectFlag: false,
+		CSBKOpcode:  pdu.CSBKBSOutboundActivationPDU,
+		FID:         0x00,
+		BSOutboundActivationPDU: &pdu.BSOutboundActivationPDU{
+			Reserved:      0,
+			BSAddress:     bsAddr,
+			SourceAddress: srcAddr,
+		},
+	}
+
+	encoded := pdu.EncodeCSBK(original)
+	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
+	}
+	if decoded.BSOutboundActivationPDU == nil {
+		t.Fatal("BSOutboundActivationPDU should not be nil")
+	}
+	if decoded.BSOutboundActivationPDU.BSAddress != bsAddr {
+		t.Error("BSAddress mismatch after encode-decode cycle")
+	}
+	if decoded.BSOutboundActivationPDU.SourceAddress != srcAddr {
+		t.Error("SourceAddress mismatch after encode-decode cycle")
+	}
+}
+
+func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
+	var payload [64]bit.Bit
+	// ServiceOptions (bits 0-7) = 0x80 (emergency)
+	payload[0] = 1
+	// Reserved (bits 8-15) = 0
+	// TargetAddress (bits 16-39) = address with bit 39 set
+	payload[39] = 1
+	// SourceAddress (bits 40-63) = address with bit 63 set
+	payload[63] = 1
+
+	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceRequestPDU), 0x00, payload)
+
+	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
+	}
+	if csbk.CSBKOpcode != pdu.CSBKUnitToUnitVoiceServiceRequestPDU {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKUnitToUnitVoiceServiceRequestPDU))
+	}
+	if csbk.UnitToUnitVoiceServiceRequestPDU == nil {
+		t.Fatal("UnitToUnitVoiceServiceRequestPDU should not be nil")
+	}
+	if csbk.UnitToUnitVoiceServiceRequestPDU.ServiceOptions != 0x80 {
+		t.Errorf("ServiceOptions = 0x%02X, want 0x80", csbk.UnitToUnitVoiceServiceRequestPDU.ServiceOptions)
+	}
+
+	str := csbk.ToString()
+	if str == "" {
+		t.Error("ToString should not be empty")
+	}
+}
+
+func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
+	var targetAddr [24]bit.Bit
+	targetAddr[0] = 1
+	targetAddr[23] = 1
+	var sourceAddr [24]bit.Bit
+	sourceAddr[12] = 1
+
+	original := &pdu.CSBK{
+		LastBlock:  true,
+		CSBKOpcode: pdu.CSBKUnitToUnitVoiceServiceRequestPDU,
+		FID:        0x00,
+		UnitToUnitVoiceServiceRequestPDU: &pdu.UnitToUnitVoiceServiceRequestPDU{
+			ServiceOptions: 0x42,
+			Reserved:       0,
+			TargetAddress:  targetAddr,
+			SourceAddress:  sourceAddr,
+		},
+	}
+
+	encoded := pdu.EncodeCSBK(original)
+	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
+	}
+	if decoded.UnitToUnitVoiceServiceRequestPDU == nil {
+		t.Fatal("UnitToUnitVoiceServiceRequestPDU should not be nil")
+	}
+	if decoded.UnitToUnitVoiceServiceRequestPDU.ServiceOptions != 0x42 {
+		t.Errorf("ServiceOptions = 0x%02X, want 0x42", decoded.UnitToUnitVoiceServiceRequestPDU.ServiceOptions)
+	}
+	if decoded.UnitToUnitVoiceServiceRequestPDU.TargetAddress != targetAddr {
+		t.Error("TargetAddress mismatch after encode-decode cycle")
+	}
+	if decoded.UnitToUnitVoiceServiceRequestPDU.SourceAddress != sourceAddr {
+		t.Error("SourceAddress mismatch after encode-decode cycle")
+	}
+}
+
+func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
+	var payload [64]bit.Bit
+	// ServiceOptions (bits 0-7) = 0x40
+	payload[1] = 1
+	// AnswerResponse (bits 8-15) = 0x20
+	payload[10] = 1
+	// TargetAddress (bits 16-39) — bit 39 set
+	payload[39] = 1
+	// SourceAddress (bits 40-63) — bit 63 set
+	payload[63] = 1
+
+	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU), 0x00, payload)
+
+	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
+	}
+	if csbk.CSBKOpcode != pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU))
+	}
+	if csbk.UnitToUnitVoiceServiceAnswerResponsePDU == nil {
+		t.Fatal("UnitToUnitVoiceServiceAnswerResponsePDU should not be nil")
+	}
+	if csbk.UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions != 0x40 {
+		t.Errorf("ServiceOptions = 0x%02X, want 0x40", csbk.UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions)
+	}
+	if csbk.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse != 0x20 {
+		t.Errorf("AnswerResponse = 0x%02X, want 0x20", csbk.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse)
+	}
+
+	str := csbk.ToString()
+	if str == "" {
+		t.Error("ToString should not be empty")
+	}
+}
+
+func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.T) {
+	var targetAddr [24]bit.Bit
+	targetAddr[5] = 1
+	targetAddr[10] = 1
+	var sourceAddr [24]bit.Bit
+	sourceAddr[0] = 1
+	sourceAddr[23] = 1
+
+	original := &pdu.CSBK{
+		LastBlock:  true,
+		CSBKOpcode: pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU,
+		FID:        0x00,
+		UnitToUnitVoiceServiceAnswerResponsePDU: &pdu.UnitToUnitVoiceServiceAnswerResponsePDU{
+			ServiceOptions: 0x81,
+			AnswerResponse: 0x03,
+			TargetAddress:  targetAddr,
+			SourceAddress:  sourceAddr,
+		},
+	}
+
+	encoded := pdu.EncodeCSBK(original)
+	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
+	}
+	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU == nil {
+		t.Fatal("UnitToUnitVoiceServiceAnswerResponsePDU should not be nil")
+	}
+	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions != 0x81 {
+		t.Errorf("ServiceOptions = 0x%02X, want 0x81", decoded.UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions)
+	}
+	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse != 0x03 {
+		t.Errorf("AnswerResponse = 0x%02X, want 0x03", decoded.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse)
+	}
+	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU.TargetAddress != targetAddr {
+		t.Error("TargetAddress mismatch after encode-decode cycle")
+	}
+	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU.SourceAddress != sourceAddr {
+		t.Error("SourceAddress mismatch after encode-decode cycle")
+	}
+}
+
+func TestCSBK_ChannelTiming_Decode(t *testing.T) {
+	var payload [64]bit.Bit
+	// SyncAge (bits 0-10) = set bit 10 for value 1
+	payload[10] = 1
+	// Generation (bits 11-15) = set bit 15 for value 1
+	payload[15] = 1
+	// LeaderIdentifier (bits 16-35) = set bit 35
+	payload[35] = 1
+	// NewLeader (bit 36) = true
+	payload[36] = 1
+	// LeaderDynamicIdentifier (bits 37-38) = 0b11
+	payload[37] = 1
+	payload[38] = 1
+	// ChannelTimingOp0 (bit 39) = true
+	payload[39] = 1
+	// SourceIdentifier (bits 40-59) = set bit 59
+	payload[59] = 1
+	// Reserved (bit 60) = false
+	// SourceDynamicIdentifier (bits 61-62) = 0b10
+	payload[61] = 1
+	// ChannelTimingOp1 (bit 63) = true
+	payload[63] = 1
+
+	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTimingPDU), 0x00, payload)
+
+	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
+	}
+	if csbk.CSBKOpcode != pdu.CSBKChannelTimingPDU {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKChannelTimingPDU))
+	}
+	if csbk.ChannelTimingPDU == nil {
+		t.Fatal("ChannelTimingPDU should not be nil")
+	}
+	if !csbk.ChannelTimingPDU.NewLeader {
+		t.Error("NewLeader should be true")
+	}
+	if !csbk.ChannelTimingPDU.ChannelTimingOp0 {
+		t.Error("ChannelTimingOp0 should be true")
+	}
+	if !csbk.ChannelTimingPDU.ChannelTimingOp1 {
+		t.Error("ChannelTimingOp1 should be true")
+	}
+	if csbk.ChannelTimingPDU.LeaderDynamicIdentifier[0] != 1 || csbk.ChannelTimingPDU.LeaderDynamicIdentifier[1] != 1 {
+		t.Error("LeaderDynamicIdentifier should be 0b11")
+	}
+	if csbk.ChannelTimingPDU.SourceDynamicIdentifier[0] != 1 || csbk.ChannelTimingPDU.SourceDynamicIdentifier[1] != 0 {
+		t.Error("SourceDynamicIdentifier should be 0b10")
+	}
+
+	str := csbk.ToString()
+	if str == "" {
+		t.Error("ToString should not be empty")
+	}
+}
+
+func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
+	var syncAge [11]bit.Bit
+	syncAge[0] = 1
+	syncAge[5] = 1
+	var generation [5]bit.Bit
+	generation[0] = 1
+	generation[4] = 1
+	var leaderID [20]bit.Bit
+	leaderID[0] = 1
+	leaderID[19] = 1
+	var leaderDynID [2]bit.Bit
+	leaderDynID[0] = 1
+	var sourceID [20]bit.Bit
+	sourceID[10] = 1
+	var sourceDynID [2]bit.Bit
+	sourceDynID[1] = 1
+
+	original := &pdu.CSBK{
+		LastBlock:  true,
+		CSBKOpcode: pdu.CSBKChannelTimingPDU,
+		FID:        0x00,
+		ChannelTimingPDU: &pdu.ChannelTimingPDU{
+			SyncAge:                 syncAge,
+			Generation:              generation,
+			LeaderIdentifier:        leaderID,
+			NewLeader:               true,
+			LeaderDynamicIdentifier: leaderDynID,
+			ChannelTimingOp0:        false,
+			SourceIdentifier:        sourceID,
+			Reserved:                false,
+			SourceDynamicIdentifier: sourceDynID,
+			ChannelTimingOp1:        true,
+		},
+	}
+
+	encoded := pdu.EncodeCSBK(original)
+	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeCSBK returned uncorrectable FEC")
+	}
+	if decoded.ChannelTimingPDU == nil {
+		t.Fatal("ChannelTimingPDU should not be nil")
+	}
+	if decoded.ChannelTimingPDU.SyncAge != syncAge {
+		t.Error("SyncAge mismatch after encode-decode cycle")
+	}
+	if decoded.ChannelTimingPDU.Generation != generation {
+		t.Error("Generation mismatch after encode-decode cycle")
+	}
+	if decoded.ChannelTimingPDU.LeaderIdentifier != leaderID {
+		t.Error("LeaderIdentifier mismatch after encode-decode cycle")
+	}
+	if decoded.ChannelTimingPDU.NewLeader != true {
+		t.Error("NewLeader should be true after encode-decode cycle")
+	}
+	if decoded.ChannelTimingPDU.LeaderDynamicIdentifier != leaderDynID {
+		t.Error("LeaderDynamicIdentifier mismatch after encode-decode cycle")
+	}
+	if decoded.ChannelTimingPDU.ChannelTimingOp1 != true {
+		t.Error("ChannelTimingOp1 should be true after encode-decode cycle")
+	}
+	if decoded.ChannelTimingPDU.SourceIdentifier != sourceID {
+		t.Error("SourceIdentifier mismatch after encode-decode cycle")
+	}
+	if decoded.ChannelTimingPDU.SourceDynamicIdentifier != sourceDynID {
+		t.Error("SourceDynamicIdentifier mismatch after encode-decode cycle")
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -246,6 +247,122 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 			}
 			if decoded.GroupVoice.SourceAddress != tt.sourceAddr {
 				t.Errorf("SourceAddress = %d, want %d", decoded.GroupVoice.SourceAddress, tt.sourceAddr)
+			}
+		})
+	}
+}
+
+func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
+	// Test all three Talker Alias Block FLCO variants
+	flcoVariants := []enums.FLCO{
+		enums.FLCOTalkerAliasBlock1,
+		enums.FLCOTalkerAliasBlock2,
+		enums.FLCOTalkerAliasBlock3,
+	}
+
+	for _, flco := range flcoVariants {
+		t.Run(enums.FLCOToName(flco), func(t *testing.T) {
+			var aliasData [56]bit.Bit
+			// Set some recognizable pattern in the alias data
+			for i := 0; i < 56; i++ {
+				if i%3 == 0 {
+					aliasData[i] = 1
+				}
+			}
+
+			original := &pdu.FullLinkControl{
+				ProtectFlag:  false,
+				FLCO:         flco,
+				FeatureSetID: enums.StandardizedFID,
+				TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
+					TalkerAliasData: aliasData,
+				},
+			}
+
+			infoBits := pdu.EncodeFullLinkControl(original)
+			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits)
+			if fecResult.Uncorrectable {
+				t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
+			}
+			if decoded.FLCO != flco {
+				t.Errorf("FLCO = %v, want %v", decoded.FLCO, flco)
+			}
+			if decoded.TalkerAliasBlock == nil {
+				t.Fatal("TalkerAliasBlock is nil")
+			}
+			if decoded.TalkerAliasBlock.TalkerAliasData != aliasData {
+				t.Error("TalkerAliasData mismatch after encode-decode cycle")
+			}
+		})
+	}
+}
+
+func TestFullLinkControl_TalkerAliasBlock_ToString(t *testing.T) {
+	var aliasData [56]bit.Bit
+	aliasData[0] = 1
+	aliasData[7] = 1
+
+	flc := &pdu.FullLinkControl{
+		FLCO:         enums.FLCOTalkerAliasBlock1,
+		FeatureSetID: enums.StandardizedFID,
+		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
+			TalkerAliasData: aliasData,
+		},
+		FEC: fec.FECResult{BitsChecked: 96},
+	}
+	str := flc.ToString()
+	if len(str) == 0 {
+		t.Error("ToString returned empty string")
+	}
+	if !strings.Contains(str, "Talker Alias Block") {
+		t.Errorf("ToString missing FLCO name, got: %s", str)
+	}
+}
+
+func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
+	// Verify that TalkerAliasDataLength survives the encode-decode cycle
+	// with various lengths (0 to 63 fits in 6-bit field, bits:2-7)
+	tests := []struct {
+		name       string
+		dataLength int
+	}{
+		{"Zero", 0},
+		{"Small", 7},
+		{"Medium", 31},
+		{"Max", 63},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var aliasData [48]bit.Bit
+			// Set a pattern
+			aliasData[0] = 1
+			aliasData[47] = 1
+
+			original := &pdu.FullLinkControl{
+				ProtectFlag:  false,
+				FLCO:         enums.FLCOTalkerAliasHeader,
+				FeatureSetID: enums.StandardizedFID,
+				TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
+					TalkerAliasDataLength: tt.dataLength,
+					TalkerAliasData:       aliasData,
+				},
+			}
+
+			infoBits := pdu.EncodeFullLinkControl(original)
+			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits)
+			if fecResult.Uncorrectable {
+				t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
+			}
+			if decoded.TalkerAliasHeader == nil {
+				t.Fatal("TalkerAliasHeader is nil")
+			}
+			if decoded.TalkerAliasHeader.TalkerAliasDataLength != tt.dataLength {
+				t.Errorf("TalkerAliasDataLength = %d, want %d",
+					decoded.TalkerAliasHeader.TalkerAliasDataLength, tt.dataLength)
+			}
+			if decoded.TalkerAliasHeader.TalkerAliasData != aliasData {
+				t.Error("TalkerAliasData mismatch after encode-decode cycle")
 			}
 		})
 	}
