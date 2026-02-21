@@ -2,59 +2,51 @@
 
 [![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE.md) [![GoReportCard](https://goreportcard.com/badge/github.com/USA-RedDragon/dmrgo)](https://goreportcard.com/report/github.com/USA-RedDragon/dmrgo) [![codecov](https://codecov.io/gh/USA-RedDragon/dmrgo/graph/badge.svg?token=ON6XI1I21H)](https://codecov.io/gh/USA-RedDragon/dmrgo)
 
-This library decodes a raw 33-byte DMR packet into Golang-native structures.
+This library decodes and encodes raw 33-byte DMR packets per the ETSI TS 102 361 specification into Golang-native structures.
 
 ## Usage
 
-A complete example can be found at `examples/benchmark.go`
-
-The full definitions of `EXAMPLE_DMR_PARROT_KERCHUNK_BURSTS`
-and `EXAMPLE_DMR_SMS_BURSTS` are excluded for brevity.
-
 ```go
-const (
-    DMR_BURST_SIZE = 33
+package main
 
-    DMR_PARROT_KERCHUNK_BURST_COUNT = 15
-    DMR_SMS_BURST_COUNT             = 8
+import (
+	"fmt"
+
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-var EXAMPLE_DMR_PARROT_KERCHUNK_BURSTS = [DMR_PARROT_KERCHUNK_BURST_COUNT][DMR_BURST_SIZE]byte{
-    {68, 75, 3, 135, 36, 66, 12, 240, 21, 240, 12, 161, 196, 109, 255, 87, 215, 93, 245, 222, 49, 168, 53, 24, 63, 48, 61, 97, 56, 82, 151, 134, 91},           // First, burst
-    ...
-}
-
-var EXAMPLE_DMR_SMS_BURSTS = [DMR_SMS_BURST_COUNT][DMR_BURST_SIZE]byte{
-    {66, 74, 30, 185, 189, 0, 34, 4, 51, 201, 3, 83, 4, 205, 255, 87, 215, 93, 245, 218, 200, 246, 69, 24, 215, 120, 191, 128, 181, 29, 41, 17, 231},
-    ...
-}
-
 func main() {
-    for _, rawBurst := range EXAMPLE_DMR_PARROT_KERCHUNK_BURSTS {
-        timeStarted := time.Now()
-        burst, err := layer2.NewBurstFromBytes(rawBurst)
-        if err != nil {
-            fmt.Printf("Error decoding burst: %v\n", err)
-            continue
-        }
-        timeElapsed := time.Since(timeStarted)
-        fmt.Printf("%s: %v\n", enums.SyncPatternToName(burst.SyncPattern), burst.ToString())
-        fmt.Printf("Took %s to decode burst\n", timeElapsed)
-    }
+	// A single 33-byte DMR burst (voice LC header)
+	raw := [33]byte{
+		68, 75, 3, 135, 36, 66, 12, 240, 21, 240,
+		12, 161, 196, 109, 255, 87, 215, 93, 245, 222,
+		49, 168, 53, 24, 63, 48, 61, 97, 56, 82,
+		151, 134, 91,
+	}
 
-    fmt.Println("---------------------------------")
+	burst, err := layer2.NewBurstFromBytes(raw)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 
-    for _, rawBurst := range EXAMPLE_DMR_SMS_BURSTS {
-        timeStarted := time.Now()
-        burst, err := layer2.NewBurstFromBytes(rawBurst)
-        if err != nil {
-            fmt.Printf("Error decoding burst: %v\n", err)
-            continue
-        }
-        timeElapsed := time.Since(timeStarted)
-        fmt.Printf("%s: %v\n", enums.SyncPatternToName(burst.SyncPattern), burst.ToString())
-        fmt.Printf("Took %s to decode burst\n", timeElapsed)
-    }
+	fmt.Printf("Sync: %s\n", enums.SyncPatternToName(burst.SyncPattern))
+	fmt.Printf("Burst: %s\n", burst.ToString())
+
+	// Re-encode back to 33 bytes
+	encoded := burst.Encode()
+	fmt.Printf("Encoded %d bytes\n", len(encoded))
+
+	// Zero-allocation path: reuse a Burst across calls
+	var reusable layer2.Burst
+	for _, raw := range [][33]byte{raw} {
+		if err := reusable.DecodeFromBytes(raw); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			continue
+		}
+		fmt.Println(reusable.ToString())
+	}
 }
 ```
 
