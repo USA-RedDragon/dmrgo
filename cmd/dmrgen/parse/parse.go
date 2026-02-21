@@ -46,6 +46,9 @@ type Field struct {
 	EnumFromInt    string // e.g. "enums.LCSSFromInt", "enums.FLCOFromInt"
 	EnumReturnsErr bool   // true if FromInt returns (T, error), false if just T
 
+	// Delegate-specific
+	DelegateNoPtr bool // true if the constructor returns a value (not a pointer)
+
 	// For non-contiguous fields: additional bit ranges
 	// e.g. "bits:3+12-15" → ExtraBitRanges = [{12,15}]
 	ExtraBitRanges [][2]int
@@ -250,6 +253,8 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 			f.Kind = FieldPacked
 		case mod == "signed":
 			f.Kind = FieldInt
+		case mod == "noptr":
+			f.DelegateNoPtr = true
 		case strings.HasPrefix(mod, "type:"):
 			semType := strings.TrimPrefix(mod, "type:")
 			switch semType {

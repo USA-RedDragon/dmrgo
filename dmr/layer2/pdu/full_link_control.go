@@ -2,7 +2,6 @@ package pdu
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
@@ -42,6 +41,43 @@ type FullLinkControl struct {
 	TalkerAliasData    [72]bit.Bit
 	// Table 7.5: Talker Alias block Info PDU content
 	// talker alias blocks 1,2,3 use "talker_alias_data" field, since data are 56bits (7bytes)
+}
+
+// FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])
+// decoded per-FLCO type. Each struct uses 0-based bit offsets within the 56-bit window.
+
+// FLCGroupVoice is the payload of FLCO Group Voice Channel User (Table 7.1).
+type FLCGroupVoice struct {
+	ServiceOptions layer3Elements.ServiceOptions `dmr:"bits:0-7,delegate"`
+	GroupAddress   int                           `dmr:"bits:8-31"`
+	SourceAddress  int                           `dmr:"bits:32-55"`
+}
+
+// FLCUnitToUnit is the payload of FLCO Unit to Unit Voice Channel User (Table 7.2).
+type FLCUnitToUnit struct {
+	ServiceOptions layer3Elements.ServiceOptions `dmr:"bits:0-7,delegate"`
+	TargetAddress  int                           `dmr:"bits:8-31"`
+	SourceAddress  int                           `dmr:"bits:32-55"`
+}
+
+// FLCGPSInfo is the payload of FLCO GPS Info (Table 7.3).
+type FLCGPSInfo struct {
+	PositionError layer3Elements.PositionError `dmr:"bits:4-6,delegate"`
+	Longitude     float32                      `dmr:"bits:7-31,type:longitude"`
+	Latitude      float32                      `dmr:"bits:32-55,type:latitude"`
+}
+
+// FLCTalkerAliasHeader is the payload of FLCO Talker Alias Header (Table 7.4).
+type FLCTalkerAliasHeader struct {
+	TalkerAliasDataFormat layer3Elements.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"`
+	TalkerAliasDataLength int                                  `dmr:"bits:2-7"`
+	TalkerAliasDataMSB    bool                                 `dmr:"bit:7"`
+	TalkerAliasData       [48]bit.Bit                          `dmr:"bits:8-55,raw"`
+}
+
+// FLCTalkerAliasBlock is the payload of FLCO Talker Alias Block 1/2/3 (Table 7.5).
+type FLCTalkerAliasBlock struct {
+	TalkerAliasData [56]bit.Bit `dmr:"bits:0-55,raw"`
 }
 
 func (flc FullLinkControl) GetDataType() layer2Elements.DataType {
@@ -147,77 +183,52 @@ func (flc *FullLinkControl) DecodeFromBits(infoBits []bit.Bit, dataType layer2El
 
 	switch FLCO {
 	case enums.FLCOUnitToUnitVoiceChannelUser:
-		var sizedBits [8]bit.Bit
-		copy(sizedBits[:], infoBits[16:24])
-		flc.ServiceOptions = *layer3Elements.NewServiceOptionsFromBits(sizedBits)
-		for i := 24; i < 48; i++ {
-			flc.TargetAddress <<= 1
-			flc.TargetAddress |= int(infoBits[i])
-		}
+		var payloadBits [56]bit.Bit
+		copy(payloadBits[:], infoBits[16:72])
+		uu, _ := DecodeFLCUnitToUnit(payloadBits)
+		flc.ServiceOptions = uu.ServiceOptions
+		flc.TargetAddress = uu.TargetAddress
+		flc.SourceAddress = uu.SourceAddress
 
-		for i := 48; i < 72; i++ {
-			flc.SourceAddress <<= 1
-			flc.SourceAddress |= int(infoBits[i])
-		}
 	case enums.FLCOGroupVoiceChannelUser:
-		var sizedBits [8]bit.Bit
-		copy(sizedBits[:], infoBits[16:24])
-		flc.ServiceOptions = *layer3Elements.NewServiceOptionsFromBits(sizedBits)
-
-		for i := 24; i < 48; i++ {
-			flc.GroupAddress <<= 1
-			flc.GroupAddress |= int(infoBits[i])
-		}
-
-		for i := 48; i < 72; i++ {
-			flc.SourceAddress <<= 1
-			flc.SourceAddress |= int(infoBits[i])
-		}
+		var payloadBits [56]bit.Bit
+		copy(payloadBits[:], infoBits[16:72])
+		gv, _ := DecodeFLCGroupVoice(payloadBits)
+		flc.ServiceOptions = gv.ServiceOptions
+		flc.GroupAddress = gv.GroupAddress
+		flc.SourceAddress = gv.SourceAddress
 
 	case enums.FLCOGPSInfo:
-		var sizedBits [3]bit.Bit
-		copy(sizedBits[:], infoBits[20:23])
-		flc.PositionError = *layer3Elements.NewPositionErrorFromBits(sizedBits)
+		var payloadBits [56]bit.Bit
+		copy(payloadBits[:], infoBits[16:72])
+		gps, _ := DecodeFLCGPSInfo(payloadBits)
+		flc.PositionError = gps.PositionError
+		flc.Longitude = gps.Longitude
+		flc.Latitude = gps.Latitude
 
-		flc.Longitude = float32(360 / math.Pow(2, 25))
-		longInt := 0
-		for i := 23; i < 48; i++ {
-			longInt <<= 1
-			longInt |= int(infoBits[i])
-		}
-		flc.Longitude *= float32(longInt)
-
-		flc.Latitude = float32(180 / math.Pow(2, 24))
-		latInt := 0
-		for i := 48; i < 72; i++ {
-			latInt <<= 1
-			latInt |= int(infoBits[i])
-		}
-		flc.Latitude *= float32(latInt)
 	case enums.FLCOTalkerAliasHeader:
-		var sizedBits [2]bit.Bit
-		copy(sizedBits[:], infoBits[16:18])
-		flc.TalkerAliasDataFormat = layer3Elements.NewTalkerAliasDataFormatFromBits(sizedBits)
+		var payloadBits [56]bit.Bit
+		copy(payloadBits[:], infoBits[16:72])
+		tah, _ := DecodeFLCTalkerAliasHeader(payloadBits)
+		flc.TalkerAliasDataFormat = tah.TalkerAliasDataFormat
+		flc.TalkerAliasDataLength = tah.TalkerAliasDataLength
+		flc.TalkerAliasDataMSB = tah.TalkerAliasDataMSB
 
-		taLen := 0
-		for i := 18; i < 24; i++ {
-			taLen <<= 1
-			taLen |= int(infoBits[i])
-		}
-		flc.TalkerAliasDataLength = taLen
-
-		flc.TalkerAliasDataMSB = infoBits[23] == 1
-
-		// Header provides up to 48 bits of alias data
+		// Dynamic clipping: only copy up to TalkerAliasDataLength bits (max 48)
+		taLen := tah.TalkerAliasDataLength
 		if taLen > 48 {
 			taLen = 48
 		}
 		flc.TalkerAliasDataLen = taLen
-		copy(flc.TalkerAliasData[:], infoBits[24:24+taLen])
+		copy(flc.TalkerAliasData[:], tah.TalkerAliasData[:taLen])
+
 	case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
+		var payloadBits [56]bit.Bit
+		copy(payloadBits[:], infoBits[16:72])
+		tab, _ := DecodeFLCTalkerAliasBlock(payloadBits)
 		const blockLen = 56
 		flc.TalkerAliasDataLen = blockLen
-		copy(flc.TalkerAliasData[:], infoBits[16:72])
+		copy(flc.TalkerAliasData[:], tab.TalkerAliasData[:])
 	case enums.FLCOTerminatorDataLinkControl:
 		// TODO: implement TLDC handling
 		return false
@@ -243,26 +254,23 @@ func (flc *FullLinkControl) Encode() ([]byte, error) {
 	data[1] = byte(flc.FeatureSetID)
 
 	switch flc.FLCO {
-	case enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser:
-		// Byte 2: Service Options
-		data[2] = flc.ServiceOptions.ToByte()
-
-		// Bytes 3-5: Destination
-		var dst int
-		if flc.FLCO == enums.FLCOGroupVoiceChannelUser {
-			dst = flc.GroupAddress
-		} else {
-			dst = flc.TargetAddress
+	case enums.FLCOGroupVoiceChannelUser:
+		gv := FLCGroupVoice{
+			ServiceOptions: flc.ServiceOptions,
+			GroupAddress:   flc.GroupAddress,
+			SourceAddress:  flc.SourceAddress,
 		}
-		data[3] = byte(dst >> 16)
-		data[4] = byte(dst >> 8)
-		data[5] = byte(dst)
+		payloadBits := EncodeFLCGroupVoice(&gv)
+		copy(data[2:9], bit.PackBits(payloadBits[:]))
 
-		// Bytes 6-8: Source Address
-		src := flc.SourceAddress
-		data[6] = byte(src >> 16)
-		data[7] = byte(src >> 8)
-		data[8] = byte(src)
+	case enums.FLCOUnitToUnitVoiceChannelUser:
+		uu := FLCUnitToUnit{
+			ServiceOptions: flc.ServiceOptions,
+			TargetAddress:  flc.TargetAddress,
+			SourceAddress:  flc.SourceAddress,
+		}
+		payloadBits := EncodeFLCUnitToUnit(&uu)
+		copy(data[2:9], bit.PackBits(payloadBits[:]))
 
 	case enums.FLCOTalkerAliasHeader,
 		enums.FLCOTalkerAliasBlock1,
