@@ -1,7 +1,7 @@
 MIT
 ==================
 
-Copyright 2023 Jacob McSwain
+Copyright 2023-2026 Jacob McSwain
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 and associated documentation files (the “Software”), to deal in the Software without
