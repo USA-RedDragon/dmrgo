@@ -151,10 +151,8 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 		}
 		f.Line()
 		emitEncode(f, pdu)
-		if !pdu.NoToString {
-			f.Line()
-			emitToString(f, pdu)
-		}
+		f.Line()
+		emitToString(f, pdu)
 	}
 
 	return f, nil

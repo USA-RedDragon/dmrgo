@@ -90,7 +90,6 @@ type PDUStruct struct {
 	CRC        *CRCDirective // optional CRC validation
 	SpecRef    string        // ETSI spec section reference from comment
 	SourceFile string        // source file path
-	NoToString bool          // true if // dmr:no_tostring is present
 }
 
 // ParseFile parses a Go source file and returns all PDU structs with dmr tags.
@@ -227,9 +226,6 @@ func ParseFile(filePath string) ([]PDUStruct, error) {
 					}
 					if strings.Contains(text, "ETSI TS") {
 						pdu.SpecRef = text
-					}
-					if text == "dmr:no_tostring" {
-						pdu.NoToString = true
 					}
 				}
 			}
