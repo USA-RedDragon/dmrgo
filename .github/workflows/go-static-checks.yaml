@@ -25,3 +25,4 @@ jobs:
           version: latest
           skip-cache: true
           only-new-issues: true
+          working-directory: v2
