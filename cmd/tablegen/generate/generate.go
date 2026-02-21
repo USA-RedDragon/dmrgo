@@ -73,7 +73,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/quadratic_residue", "quadratic_residue1676",
+	if err := writeFile(dmrRoot, "fec/quadratic_residue", "quadratic_residue",
 		writeTable("qr16_7_6_encoding_table", tables.QR16_7_6Encoding),
 		jen.Line(),
 		jen.Line(),

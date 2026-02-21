@@ -101,6 +101,20 @@ func PackBits(bits []Bit) []byte {
 	return data
 }
 
+// BitsToValue converts up to 8 individual Bit values into a single byte.
+// The first element is the most-significant bit. For example,
+// BitsToValue([]{1,0,1}) returns 5.
+func BitsToValue(bits []Bit) byte {
+	var v byte
+	n := len(bits)
+	for i, b := range bits {
+		if b == 1 {
+			v |= 1 << uint(n-1-i)
+		}
+	}
+	return v
+}
+
 // UnpackBits unpacks packed bytes into individual Bit values (MSB-first).
 // Returns a slice of len(data)*8 Bit values.
 func UnpackBits(data []byte) []Bit {

@@ -7,7 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/bptc"
-	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 	trellis34 "github.com/USA-RedDragon/dmrgo/dmr/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu"
@@ -105,7 +104,7 @@ func parseEmbedded(bitData [264]bit.Bit) (pdu.EmbeddedSignalling, [32]bit.Bit) {
 	copy(embeddedBits[:8], bitData[108:116])
 	copy(embeddedBits[8:], bitData[148:156])
 
-	embedded := pdu.NewEmbeddedSignallingFromBits(embeddedBits)
+	embedded, _ := pdu.DecodeEmbeddedSignalling(embeddedBits)
 	var embeddedData [32]bit.Bit
 	copy(embeddedData[:], bitData[116:148])
 	return embedded, embeddedData
@@ -115,7 +114,8 @@ func parseSlotType(bitData [264]bit.Bit) pdu.SlotType {
 	var slotBits [20]bit.Bit
 	copy(slotBits[:10], bitData[98:108])
 	copy(slotBits[10:], bitData[156:166])
-	return pdu.NewSlotTypeFromBits(slotBits)
+	st, _ := pdu.DecodeSlotType(slotBits)
+	return st
 }
 
 func parseVoiceBits(bitData [264]bit.Bit) pdu.Vocoder {
@@ -267,7 +267,7 @@ func (b *Burst) Encode() [33]byte {
 
 		// Encode slot type
 		if b.HasSlotType {
-			slotBits := encodeSlotType(b.SlotType)
+			slotBits := pdu.EncodeSlotType(&b.SlotType)
 			copy(bitData[98:108], slotBits[:10])
 			copy(bitData[156:166], slotBits[10:20])
 		}
@@ -280,8 +280,8 @@ func (b *Burst) Encode() [33]byte {
 
 	// Sync or Embedded Signalling
 	if b.HasEmbeddedSignalling {
-		esBits := b.EmbeddedSignalling.Encode()
-		copy(bitData[108:116], esBits[:8])
+		esBits := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
+		copy(bitData[108:116], esBits[0:8])
 		copy(bitData[116:148], b.EmbeddedSignallingData[:])
 		copy(bitData[148:156], esBits[8:16])
 	} else {
@@ -293,11 +293,6 @@ func (b *Burst) Encode() [33]byte {
 	}
 
 	return bit.PackBits264(bitData)
-}
-
-func encodeSlotType(st pdu.SlotType) [20]bit.Bit {
-	inputByte := byte(st.ColorCode&0xF)<<4 | byte(st.DataType&0xF)
-	return golay.Encode(inputByte)
 }
 
 func (b *Burst) encodeDataBits() [196]bit.Bit {
@@ -383,9 +378,11 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 	// Data part 2: encoded[98:195] → bits[166:263]
 	copy(bitData[166:264], encoded[98:196])
 
-	// Slot Type: encode color code (0) + data type
-	inputByte := colorCode&0xF<<4 | byte(dataType&0xF)
-	slotTypeBits := golay.Encode(inputByte)
+	// Slot Type: encode color code + data type with Golay FEC
+	slotTypeBits := pdu.EncodeSlotType(&pdu.SlotType{
+		ColorCode: int(colorCode & 0xF),
+		DataType:  dataType,
+	})
 
 	copy(bitData[98:108], slotTypeBits[:10])
 	copy(bitData[156:166], slotTypeBits[10:20])

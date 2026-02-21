@@ -15,8 +15,8 @@ func TestEmbeddedSignalling_EncodeDecodeRoundTrip(t *testing.T) {
 		LCSS:                               enums.FirstFragmentLC,
 	}
 
-	encoded := original.Encode()
-	decoded := pdu.NewEmbeddedSignallingFromBits(encoded)
+	encoded := pdu.EncodeEmbeddedSignalling(original)
+	decoded, fecResult := pdu.DecodeEmbeddedSignalling(encoded)
 
 	if decoded.ColorCode != original.ColorCode {
 		t.Errorf("ColorCode = %d, want %d", decoded.ColorCode, original.ColorCode)
@@ -27,7 +27,7 @@ func TestEmbeddedSignalling_EncodeDecodeRoundTrip(t *testing.T) {
 	if decoded.LCSS != original.LCSS {
 		t.Errorf("LCSS = %v, want %v", decoded.LCSS, original.LCSS)
 	}
-	if decoded.FEC.Uncorrectable {
+	if fecResult.Uncorrectable {
 		t.Error("FEC should not be uncorrectable for clean encoded data")
 	}
 }
@@ -38,12 +38,12 @@ func TestEmbeddedSignalling_AllColorCodes(t *testing.T) {
 			ColorCode: cc,
 			LCSS:      enums.SingleFragmentLCorCSBK,
 		}
-		encoded := es.Encode()
-		decoded := pdu.NewEmbeddedSignallingFromBits(encoded)
+		encoded := pdu.EncodeEmbeddedSignalling(es)
+		decoded, fecResult := pdu.DecodeEmbeddedSignalling(encoded)
 		if decoded.ColorCode != cc {
 			t.Errorf("cc=%d: got ColorCode=%d", cc, decoded.ColorCode)
 		}
-		if decoded.FEC.Uncorrectable {
+		if fecResult.Uncorrectable {
 			t.Errorf("cc=%d: FEC uncorrectable", cc)
 		}
 	}
@@ -62,8 +62,8 @@ func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
 			ColorCode: 1,
 			LCSS:      lcss,
 		}
-		encoded := es.Encode()
-		decoded := pdu.NewEmbeddedSignallingFromBits(encoded)
+		encoded := pdu.EncodeEmbeddedSignalling(es)
+		decoded, _ := pdu.DecodeEmbeddedSignalling(encoded)
 		if decoded.LCSS != lcss {
 			t.Errorf("lcss=%d: got LCSS=%d", lcss, decoded.LCSS)
 		}
@@ -71,7 +71,7 @@ func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
 }
 
 func TestEmbeddedSignalling_ToString(t *testing.T) {
-	es := pdu.NewEmbeddedSignallingFromBits([16]bit.Bit{})
+	es, _ := pdu.DecodeEmbeddedSignalling([16]bit.Bit{})
 	s := es.ToString()
 	if s == "" {
 		t.Error("ToString() should not be empty")
@@ -85,10 +85,33 @@ func TestEmbeddedSignalling_PPCI(t *testing.T) {
 			PreemptionAndPowerControlIndicator: ppci,
 			LCSS:                               enums.SingleFragmentLCorCSBK,
 		}
-		encoded := es.Encode()
-		decoded := pdu.NewEmbeddedSignallingFromBits(encoded)
+		encoded := pdu.EncodeEmbeddedSignalling(es)
+		decoded, _ := pdu.DecodeEmbeddedSignalling(encoded)
 		if decoded.PreemptionAndPowerControlIndicator != ppci {
 			t.Errorf("ppci=%v: got %v", ppci, decoded.PreemptionAndPowerControlIndicator)
 		}
+	}
+}
+
+func TestEncodeEmbeddedSignalling_FullRoundTrip(t *testing.T) {
+	es := pdu.EmbeddedSignalling{
+		ColorCode:                          9,
+		PreemptionAndPowerControlIndicator: true,
+		LCSS:                               enums.FirstFragmentLC,
+	}
+	encoded := pdu.EncodeEmbeddedSignalling(&es)
+	// Verify full [16]bit.Bit round-trip through decode
+	decoded, fecResult := pdu.DecodeEmbeddedSignalling(encoded)
+	if fecResult.Uncorrectable {
+		t.Error("FEC should not be uncorrectable for clean encoded data")
+	}
+	if decoded.ColorCode != es.ColorCode {
+		t.Errorf("ColorCode = %d, want %d", decoded.ColorCode, es.ColorCode)
+	}
+	if decoded.PreemptionAndPowerControlIndicator != es.PreemptionAndPowerControlIndicator {
+		t.Errorf("PPCI = %v, want %v", decoded.PreemptionAndPowerControlIndicator, es.PreemptionAndPowerControlIndicator)
+	}
+	if decoded.LCSS != es.LCSS {
+		t.Errorf("LCSS = %v, want %v", decoded.LCSS, es.LCSS)
 	}
 }

@@ -1,4 +1,4 @@
-package quadratic_residue1676
+package quadratic_residue
 
 import (
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"

@@ -3,45 +3,17 @@ package pdu
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
-	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
 // ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.3 Slot Type (SLOT) PDU
+//
+//dmr:fec golay_20_8_7
 type SlotType struct {
-	ColorCode int
-	DataType  elements.DataType
-	FEC       fec.FECResult
-}
-
-func NewSlotTypeFromBits(data [20]bit.Bit) SlotType {
-	st := SlotType{}
-
-	corrected, result := golay.DecodeGolay2087(data)
-	st.FEC = result
-
-	if !result.Uncorrectable {
-		data = corrected // Use corrected data for fields
-	}
-
-	for i := 0; i < 4; i++ {
-		if data[i] == 1 {
-			st.ColorCode |= 1 << (3 - i)
-		}
-	}
-
-	var dt elements.DataType
-	for i := 4; i < 8; i++ {
-		if data[i] == 1 {
-			dt |= elements.DataType(1) << (7 - i)
-		}
-	}
-
-	st.DataType = dt
-
-	return st
+	ColorCode int               `dmr:"bits:0-3"`
+	DataType  elements.DataType `dmr:"bits:4-7"`
+	FEC       fec.FECResult     `dmr:"-"`
 }
 
 // ToString returns a string representation of the SlotType
