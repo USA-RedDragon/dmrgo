@@ -9,6 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Unconfirmed Data Header
 type UnconfirmedDataHeader struct {
 	Group             bool `dmr:"bit:0"`
 	ResponseRequested bool `dmr:"bit:1"`

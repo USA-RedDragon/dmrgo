@@ -46,28 +46,28 @@ type FullLinkControl struct {
 // FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])
 // decoded per-FLCO type. Each struct uses 0-based bit offsets within the 56-bit window.
 
-// FLCGroupVoice is the payload of FLCO Group Voice Channel User (Table 7.1).
+// ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.1: Grp_V_Ch_Usr PDU content
 type FLCGroupVoice struct {
 	ServiceOptions layer3Elements.ServiceOptions `dmr:"bits:0-7,delegate"`
 	GroupAddress   int                           `dmr:"bits:8-31"`
 	SourceAddress  int                           `dmr:"bits:32-55"`
 }
 
-// FLCUnitToUnit is the payload of FLCO Unit to Unit Voice Channel User (Table 7.2).
+// ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.2: UU_V_Ch_Usr PDU content
 type FLCUnitToUnit struct {
 	ServiceOptions layer3Elements.ServiceOptions `dmr:"bits:0-7,delegate"`
 	TargetAddress  int                           `dmr:"bits:8-31"`
 	SourceAddress  int                           `dmr:"bits:32-55"`
 }
 
-// FLCGPSInfo is the payload of FLCO GPS Info (Table 7.3).
+// ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.3: GPS Info PDU content
 type FLCGPSInfo struct {
 	PositionError layer3Elements.PositionError `dmr:"bits:4-6,delegate"`
 	Longitude     float32                      `dmr:"bits:7-31,type:longitude"`
 	Latitude      float32                      `dmr:"bits:32-55,type:latitude"`
 }
 
-// FLCTalkerAliasHeader is the payload of FLCO Talker Alias Header (Table 7.4).
+// ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.4: Talker Alias Header Info PDU content
 type FLCTalkerAliasHeader struct {
 	TalkerAliasDataFormat layer3Elements.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"`
 	TalkerAliasDataLength int                                  `dmr:"bits:2-7"`
@@ -75,7 +75,7 @@ type FLCTalkerAliasHeader struct {
 	TalkerAliasData       [48]bit.Bit                          `dmr:"bits:8-55,raw"`
 }
 
-// FLCTalkerAliasBlock is the payload of FLCO Talker Alias Block 1/2/3 (Table 7.5).
+// ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.5: Talker Alias Blk PDU content
 type FLCTalkerAliasBlock struct {
 	TalkerAliasData [56]bit.Bit `dmr:"bits:0-55,raw"`
 }

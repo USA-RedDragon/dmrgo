@@ -39,6 +39,7 @@ func (opcode CSBKOpcode) ToString() string {
 	}
 }
 
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
 type BSOutboundActivationPDU struct {
 	Reserved      uint16      `dmr:"bits:0-15"`
 	BSAddress     [24]bit.Bit `dmr:"bits:16-39,raw"`
@@ -49,6 +50,7 @@ func (pdu BSOutboundActivationPDU) ToString() string {
 	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %s, SourceAddress: %s }", pdu.Reserved, string(pdu.BSAddress[:]), string(pdu.SourceAddress[:]))
 }
 
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.2 UU_V_Req PDU
 type UnitToUnitVoiceServiceRequestPDU struct {
 	ServiceOptions byte        `dmr:"bits:0-7"`
 	Reserved       byte        `dmr:"bits:8-15"`
@@ -60,6 +62,7 @@ func (pdu UnitToUnitVoiceServiceRequestPDU) ToString() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %d, Reserved: %d, TargetAddress: %s, SourceAddress: %s }", pdu.ServiceOptions, pdu.Reserved, string(pdu.TargetAddress[:]), string(pdu.SourceAddress[:]))
 }
 
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.3 UU_Ans_Rsp PDU
 type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 	ServiceOptions byte        `dmr:"bits:0-7"`
 	AnswerResponse byte        `dmr:"bits:8-15"`
@@ -71,6 +74,7 @@ func (pdu UnitToUnitVoiceServiceAnswerResponsePDU) ToString() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %d, AnswerResponse: %d, TargetAddress: %s, SourceAddress: %s }", pdu.ServiceOptions, pdu.AnswerResponse, string(pdu.TargetAddress[:]), string(pdu.SourceAddress[:]))
 }
 
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5 NACK_Rsp PDU
 type NegativeAcknowledgementPDU struct {
 	AdditionalInfo bool        `dmr:"bit:0"`
 	SourceType     bool        `dmr:"bit:1"`
@@ -84,6 +88,7 @@ func (pdu NegativeAcknowledgementPDU) ToString() string {
 	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %t, SourceType: %t, ServiceType: %08b, ReasonCode: %d, SourceAddress: %s, TargetAddress: %s }", pdu.AdditionalInfo, pdu.SourceType, pdu.ServiceType, pdu.ReasonCode, string(pdu.SourceAddress[:]), string(pdu.TargetAddress[:]))
 }
 
+// ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.7 Pre PDU
 type PreamblePDU struct {
 	// 1 = data content follows, 0 = CSBK follows
 	Data bool `dmr:"bit:0"`
