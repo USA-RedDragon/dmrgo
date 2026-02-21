@@ -29,6 +29,7 @@ documents:
         source_files:
           - dmr/layer2/burst.go
           - dmr/enums/sync_patterns.go
+          - dmr/enums/voice_burst_types.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/dmr/enums
             names:
@@ -219,8 +220,10 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
             names:
               - TestRate12Data_DecodeFromBits
-              - TestRate12Data_InvalidLength
               - TestRate12Data_GetDataType
+              - TestRate12Data_ToString
+              - TestRate12Data_AllOnes
+              - TestRate12Data_EncodeDecodeRoundTrip
 
       - section: "9.1.10"
         title: "Rate 3/4 Data PDU"
@@ -315,6 +318,7 @@ documents:
         title: "Data Type"
         source_files:
           - dmr/layer2/elements/data_types.go
+          - dmr/layer2/elements/data.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/elements
             names:
@@ -350,9 +354,9 @@ documents:
       - section: "9.3.9"
         title: "CRC masks"
         source_files:
-          - dmr/layer2/pdu/crc_ccitt.go
+          - dmr/crc/crc_ccitt.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+          - package: github.com/USA-RedDragon/dmrgo/dmr/crc
             names:
               - TestCRCCCITT_KnownValues
               - TestCRCCCITT_CheckValid
@@ -371,9 +375,9 @@ documents:
       - section: "B.2"
         title: "CRC polynomials"
         source_files:
-          - dmr/layer2/pdu/crc_ccitt.go
+          - dmr/crc/crc_ccitt.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+          - package: github.com/USA-RedDragon/dmrgo/dmr/crc
             names:
               - TestCRCCCITT_KnownValues
               - TestCRCCCITT_CheckValid
@@ -440,9 +444,9 @@ documents:
       - section: "B.3.8"
         title: "CRC-CCITT"
         source_files:
-          - dmr/layer2/pdu/crc_ccitt.go
+          - dmr/crc/crc_ccitt.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/dmr/layer2/pdu
+          - package: github.com/USA-RedDragon/dmrgo/dmr/crc
             names:
               - TestCRCCCITT_KnownValues
               - TestCRCCCITT_CheckValid
@@ -662,9 +666,9 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
             names:
-              - TestNewPositionErrorFromBits_AllValues
+              - TestPositionError_Constants
               - TestPositionError_ToString
-              - TestPositionError_OnlyOneFlagSet
+              - TestPositionErrorToName
 
       - section: "7.2.16"
         title: "Longitude"
@@ -691,7 +695,6 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
             names:
-              - TestNewTalkerAliasDataFormatFromBits
               - TestTalkerAliasDataFormatToName
               - TestTalkerAliasDataFormatToName_Unknown
               - TestTalkerAliasDataFormat_Constants
@@ -704,7 +707,6 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/dmr/layer3/elements
             names:
-              - TestNewTalkerAliasDataFormatFromBits
               - TestTalkerAliasDataFormatToName
 
       - section: "7.2.20"
