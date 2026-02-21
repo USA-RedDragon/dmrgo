@@ -68,18 +68,18 @@ func main() {
 | Metric | Count |
 | --- | --- |
 | Total sections | 90 |
-| ✅ Verified (tests pass) | 57 |
+| ✅ Verified (tests pass) | 59 |
 | ❌ Failing (tests fail) | 0 |
-| 🔶 Untested (has source, no tests) | 3 |
+| 🔶 Untested (has source, no tests) | 1 |
 | ⬜ Unimplemented | 30 |
 
-**Overall: 57/90 verified (63.3%)**
+**Overall: 59/90 verified (65.6%)**
 
 ### ETSI TS 102 361-1 V2.5.1 (2017-10) — Air Interface Protocol
 
-**49** sections - ✅ 36  ❌ 0  🔶 3  ⬜ 10
+**49** sections - ✅ 38  ❌ 0  🔶 1  ⬜ 10
 
-`[██████████████████████░░░░░░░░] 73.5%`
+`[███████████████████████░░░░░░░] 77.6%`
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -101,8 +101,8 @@ func main() {
 | §9.1.7 | CSBK PDU | ✅ verified | 4/4 passed | `dmr/layer2/pdu/csbk.go` |
 | §9.1.8 | Data Header PDU | ✅ verified | 3/3 passed | `dmr/layer2/pdu/data_header.go` |
 | §9.1.9 | Rate 1/2 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate12_data.go` |
-| §9.1.10 | Rate 3/4 Data PDU | 🔶 untested | - | `dmr/layer2/pdu/rate34_data.go` |
-| §9.1.11 | Rate 1 Data PDU | 🔶 untested | - | `dmr/layer2/pdu/rate1_data.go` |
+| §9.1.10 | Rate 3/4 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate34_data.go` |
+| §9.1.11 | Rate 1 Data PDU | ✅ verified | 5/5 passed | `dmr/layer2/pdu/rate1_data.go` |
 | §9.1.12 | PI Header PDU | 🔶 untested | - | `dmr/layer2/pdu/pi_header.go` |
 | §9.1.13 | Unified Single Block PDU | ⬜ unimplemented | - | - |
 | §9.1.14 | MBC Header PDU | ⬜ unimplemented | - | - |
@@ -113,7 +113,7 @@ func main() {
 | §9.3.4 | FLCO | ✅ verified | 3/3 passed | `dmr/enums/flco.go` |
 | §9.3.5 | Feature Set ID | ✅ verified | 5/5 passed | `dmr/enums/feature_set_id.go` |
 | §9.3.6 | Data Type | ✅ verified | 3/3 passed | `dmr/layer2/elements/data_types.go`, `dmr/layer2/elements/data.go` |
-| §9.3.7 | Service Options | ✅ verified | 5/5 passed | `dmr/layer3/elements/service_options.go` |
+| §9.3.7 | Service Options | ✅ verified | 4/4 passed | `dmr/layer3/elements/service_options.go` |
 | §9.3.8 | Source/Destination Address | ✅ verified | 3/3 passed | `dmr/layer2/pdu/full_link_control.go`, `dmr/layer2/pdu/csbk.go` |
 | §9.3.9 | CRC masks | ✅ verified | 3/3 passed | `dmr/crc/crc_ccitt.go` |
 | §B.1 | Hamming codes | ✅ verified | 1/1 passed | `dmr/fec/bptc/bptc_196_96.go` |
@@ -144,7 +144,7 @@ func main() {
 | §7.1.1 | Full LC PDU opcodes | ✅ verified | 3/3 passed | `dmr/layer2/pdu/full_link_control.go` |
 | §7.1.2 | Embedded LC assembly | ✅ verified | 4/4 passed | `dmr/layer2/burst.go`, `dmr/layer2/pdu/embedded_signalling.go` |
 | §7.1.3 | Short LC (CACH) | ⬜ unimplemented | - | - |
-| §7.2.1 | Service Options | ✅ verified | 5/5 passed | `dmr/layer3/elements/service_options.go` |
+| §7.2.1 | Service Options | ✅ verified | 4/4 passed | `dmr/layer3/elements/service_options.go` |
 | §7.2.2 | Group Address | ✅ verified | 2/2 passed | `dmr/layer2/pdu/full_link_control.go` |
 | §7.2.3 | Source Address | ✅ verified | 3/3 passed | `dmr/layer2/pdu/full_link_control.go` |
 | §7.2.4 | Destination Address | ✅ verified | 2/2 passed | `dmr/layer2/pdu/full_link_control.go` |

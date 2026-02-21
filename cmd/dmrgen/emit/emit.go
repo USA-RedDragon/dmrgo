@@ -464,20 +464,21 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 				),
 			)
 		} else {
-			// Struct delegate with pointer constructor
+			// Struct delegate: call generated DecodeXxx function
+			decodeFnName := "Decode" + field.TypeName
 			arraySize := field.BitEnd - field.BitStart + 1
 			tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
 
 			g.Var().Id(tmpVar).Index(Lit(arraySize)).Qual(bitPkg, "Bit")
 			g.Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)))
 
-			var constructorCall Code
+			var decodeFnCall Code
 			if field.IsQualified {
-				constructorCall = Qual(importPath, constructorName).Call(Id(tmpVar))
+				decodeFnCall = Qual(importPath, decodeFnName).Call(Id(tmpVar))
 			} else {
-				constructorCall = Id(constructorName).Call(Id(tmpVar))
+				decodeFnCall = Id(decodeFnName).Call(Id(tmpVar))
 			}
-			g.Add(target).Op("=").Op("*").Add(constructorCall)
+			g.List(target, Id("_")).Op("=").Add(decodeFnCall)
 		}
 
 	case parse.FieldLongitude:
@@ -695,7 +696,7 @@ func emitPackedFECEncode(g *Group, codec *FECCodecInfo, outputSize int) {
 }
 
 // emitFieldEncode generates the encode logic for a single field.
-func emitFieldEncode(g *Group, field parse.Field, _ parse.PDUStruct) {
+func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	source := Id("s").Dot(field.Name)
 
 	switch field.Kind {
@@ -778,15 +779,6 @@ func emitFieldEncode(g *Group, field parse.Field, _ parse.PDUStruct) {
 					Id("_elemBits").Index(Empty(), Empty()),
 				),
 			)
-		} else if arraySize == 8 {
-			// Assume ToByte() exists for 8-bit delegates
-			g.Copy(
-				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-				Qual(bitPkg, "BitsFromUint8").Call(
-					source.Clone().Dot("ToByte").Call(),
-					Lit(8),
-				),
-			)
 		} else if field.DelegateNoPtr {
 			// noptr delegates are uint typedefs — cast to uint8 and pack bits
 			g.Copy(
@@ -797,9 +789,20 @@ func emitFieldEncode(g *Group, field parse.Field, _ parse.PDUStruct) {
 				),
 			)
 		} else {
-			// For other sizes, call Encode() which returns [N]bit.Bit
+			// Struct delegate: call generated EncodeXxx function
+			encodeFnName := "Encode" + field.TypeName
+			var importPath string
+			if field.IsQualified {
+				importPath = resolveImportPath(field.TypePkg, pdu.SourceFile)
+			}
 			tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
-			g.Id(tmpVar).Op(":=").Add(source.Clone()).Dot("Encode").Call()
+			var encodeFnCall Code
+			if field.IsQualified {
+				encodeFnCall = Qual(importPath, encodeFnName).Call(Op("&").Add(source.Clone()))
+			} else {
+				encodeFnCall = Id(encodeFnName).Call(Op("&").Add(source.Clone()))
+			}
+			g.Id(tmpVar).Op(":=").Add(encodeFnCall)
 			g.Copy(
 				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
 				Id(tmpVar).Index(Empty(), Empty()),

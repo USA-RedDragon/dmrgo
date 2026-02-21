@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 )
 
-func TestNewServiceOptionsFromBits(t *testing.T) {
+func TestDecodeServiceOptions(t *testing.T) {
 	tests := []struct {
 		name                string
 		bits                [8]bit.Bit
@@ -62,22 +62,22 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 			priorityLevel:       0,
 		},
 		{
-			name:                "Priority1",
+			name:                "Priority2",
 			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 1, 0},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
 			isOpenVoiceCallMode: false,
-			priorityLevel:       1,
+			priorityLevel:       2,
 		},
 		{
-			name:                "Priority2",
+			name:                "Priority1",
 			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 1},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
 			isOpenVoiceCallMode: false,
-			priorityLevel:       2,
+			priorityLevel:       1,
 		},
 		{
 			name:                "Priority3",
@@ -101,10 +101,7 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			so := NewServiceOptionsFromBits(tt.bits)
-			if so == nil {
-				t.Fatal("NewServiceOptionsFromBits returned nil")
-			}
+			so, _ := DecodeServiceOptions(tt.bits)
 			if so.IsEmergency != tt.isEmergency {
 				t.Errorf("IsEmergency = %v, want %v", so.IsEmergency, tt.isEmergency)
 			}
@@ -124,9 +121,9 @@ func TestNewServiceOptionsFromBits(t *testing.T) {
 	}
 }
 
-func TestServiceOptions_ReservedBits(t *testing.T) {
+func TestDecodeServiceOptions_ReservedBits(t *testing.T) {
 	bits := [8]bit.Bit{0, 0, 1, 1, 0, 0, 0, 0}
-	so := NewServiceOptionsFromBits(bits)
+	so, _ := DecodeServiceOptions(bits)
 	if so.Reserved[0] != 1 {
 		t.Errorf("Reserved[0] = %d, want 1", so.Reserved[0])
 	}
@@ -135,42 +132,12 @@ func TestServiceOptions_ReservedBits(t *testing.T) {
 	}
 }
 
-func TestServiceOptions_ToByte_RoundTrip(t *testing.T) {
-	// Test that NewServiceOptionsFromBits -> ToByte produces the correct packed byte
-	tests := []struct {
-		name         string
-		bits         [8]bit.Bit
-		expectedByte byte
-	}{
-		{"AllZeros", [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 0}, 0x00},
-		{"Emergency", [8]bit.Bit{1, 0, 0, 0, 0, 0, 0, 0}, 0x80},
-		{"Privacy", [8]bit.Bit{0, 1, 0, 0, 0, 0, 0, 0}, 0x40},
-		{"Reserved0", [8]bit.Bit{0, 0, 1, 0, 0, 0, 0, 0}, 0x20},
-		{"Reserved1", [8]bit.Bit{0, 0, 0, 1, 0, 0, 0, 0}, 0x10},
-		{"Broadcast", [8]bit.Bit{0, 0, 0, 0, 1, 0, 0, 0}, 0x08},
-		{"OpenVoice", [8]bit.Bit{0, 0, 0, 0, 0, 1, 0, 0}, 0x04},
-		{"Priority1", [8]bit.Bit{0, 0, 0, 0, 0, 0, 1, 0}, 0x02},
-		{"Priority2", [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 1}, 0x01},
-		{"AllSet", [8]bit.Bit{1, 1, 1, 1, 1, 1, 1, 1}, 0xFF},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			so := NewServiceOptionsFromBits(tt.bits)
-			b := so.ToByte()
-			if b != tt.expectedByte {
-				t.Errorf("ToByte() = 0x%02X, want 0x%02X", b, tt.expectedByte)
-			}
-		})
-	}
-}
-
-func TestServiceOptions_ToByte_FromByte_RoundTrip(t *testing.T) {
-	// Test all 256 possible byte values
+func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
+	// Test all 256 possible bit patterns for encode→decode stability
 	for i := 0; i < 256; i++ {
 		b := byte(i)
 
-		// Unpack byte to bits
+		// Unpack byte to bits (MSB-first)
 		var bits [8]bit.Bit
 		for j := 0; j < 8; j++ {
 			if (b>>(7-j))&1 == 1 {
@@ -178,22 +145,21 @@ func TestServiceOptions_ToByte_FromByte_RoundTrip(t *testing.T) {
 			}
 		}
 
-		so := NewServiceOptionsFromBits(bits)
-		result := so.ToByte()
-		if result != b {
-			t.Errorf("byte 0x%02X: ToByte() = 0x%02X, want 0x%02X", b, result, b)
+		so, _ := DecodeServiceOptions(bits)
+		encoded := EncodeServiceOptions(&so)
+		if encoded != bits {
+			t.Errorf("byte 0x%02X: encode→decode→encode mismatch: got %v, want %v", b, encoded, bits)
 		}
 	}
 }
 
 func TestServiceOptions_ToString(t *testing.T) {
 	bits := [8]bit.Bit{1, 0, 0, 0, 1, 0, 1, 0}
-	so := NewServiceOptionsFromBits(bits)
+	so, _ := DecodeServiceOptions(bits)
 	str := so.ToString()
 	if len(str) == 0 {
 		t.Error("ToString returned empty string")
 	}
-	// Should contain "IsEmergency: true"
 	if !containsStr(str, "IsEmergency: true") {
 		t.Errorf("ToString() missing IsEmergency: true, got %q", str)
 	}

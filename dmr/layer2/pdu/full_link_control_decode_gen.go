@@ -124,7 +124,7 @@ func DecodeFLCGroupVoice(data [56]bit.Bit) (FLCGroupVoice, fec.FECResult) {
 	var fecResult fec.FECResult
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
-	result.ServiceOptions = *elements.NewServiceOptionsFromBits(_serviceOptionsBits)
+	result.ServiceOptions, _ = elements.DecodeServiceOptions(_serviceOptionsBits)
 	result.GroupAddress = bit.BitsToInt(data[:], 8, 24)
 	result.SourceAddress = bit.BitsToInt(data[:], 32, 24)
 	return result, fecResult
@@ -133,7 +133,8 @@ func DecodeFLCGroupVoice(data [56]bit.Bit) (FLCGroupVoice, fec.FECResult) {
 // EncodeFLCGroupVoice encodes a FLCGroupVoice per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.1: Grp_V_Ch_Usr PDU content
 func EncodeFLCGroupVoice(s *FLCGroupVoice) [56]bit.Bit {
 	var data [56]bit.Bit
-	copy(data[0:8], bit.BitsFromUint8(s.ServiceOptions.ToByte(), 8))
+	_serviceOptionsBits := elements.EncodeServiceOptions(&s.ServiceOptions)
+	copy(data[0:8], _serviceOptionsBits[:])
 	copy(data[8:32], bit.BitsFromUint32(uint32(s.GroupAddress), 24))
 	copy(data[32:56], bit.BitsFromUint32(uint32(s.SourceAddress), 24))
 	return data
@@ -145,7 +146,7 @@ func DecodeFLCUnitToUnit(data [56]bit.Bit) (FLCUnitToUnit, fec.FECResult) {
 	var fecResult fec.FECResult
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
-	result.ServiceOptions = *elements.NewServiceOptionsFromBits(_serviceOptionsBits)
+	result.ServiceOptions, _ = elements.DecodeServiceOptions(_serviceOptionsBits)
 	result.TargetAddress = bit.BitsToInt(data[:], 8, 24)
 	result.SourceAddress = bit.BitsToInt(data[:], 32, 24)
 	return result, fecResult
@@ -154,7 +155,8 @@ func DecodeFLCUnitToUnit(data [56]bit.Bit) (FLCUnitToUnit, fec.FECResult) {
 // EncodeFLCUnitToUnit encodes a FLCUnitToUnit per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.2: UU_V_Ch_Usr PDU content
 func EncodeFLCUnitToUnit(s *FLCUnitToUnit) [56]bit.Bit {
 	var data [56]bit.Bit
-	copy(data[0:8], bit.BitsFromUint8(s.ServiceOptions.ToByte(), 8))
+	_serviceOptionsBits := elements.EncodeServiceOptions(&s.ServiceOptions)
+	copy(data[0:8], _serviceOptionsBits[:])
 	copy(data[8:32], bit.BitsFromUint32(uint32(s.TargetAddress), 24))
 	copy(data[32:56], bit.BitsFromUint32(uint32(s.SourceAddress), 24))
 	return data
