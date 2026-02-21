@@ -10,9 +10,11 @@ DO NOT EDIT.
 package pdu
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
 	crc "github.com/USA-RedDragon/dmrgo/dmr/crc"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
+	layer2Elements "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
 // DecodeUnconfirmedDataHeader decodes a UnconfirmedDataHeader per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Unconfirmed Data Header
@@ -59,6 +61,10 @@ func EncodeUnconfirmedDataHeader(s *UnconfirmedDataHeader) [80]bit.Bit {
 	copy(data[72:76], s.Reserved2[:])
 	copy(data[76:80], bit.BitsFromUint8(s.FragmentSequenceNumber, 4))
 	return data
+}
+
+func (s *UnconfirmedDataHeader) ToString() string {
+	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, LLIDDestination: %v, LLIDSource: %v, FullMessage: %t, BlocksToFollow: %d, Reserved2: %v, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.LLIDDestination, s.LLIDSource, s.FullMessage, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
 
 // DecodeDataHeader decodes a DataHeader per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.8 Data Header PDU
@@ -115,4 +121,15 @@ func EncodeDataHeader(s *DataHeader) [96]bit.Bit {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
 	return data
+}
+
+func (s *DataHeader) ToString() string {
+	_ret := "DataHeader{ "
+	_ret += fmt.Sprintf("DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, ", layer2Elements.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format)
+	switch {
+	case s.UnconfirmedDataHeader != nil:
+		_ret += s.UnconfirmedDataHeader.ToString()
+	}
+	_ret += " }"
+	return _ret
 }

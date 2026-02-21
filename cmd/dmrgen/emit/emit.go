@@ -79,12 +79,21 @@ var pkgNameOverrides = map[string]string{
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/trellis":           "trellis34",
 }
 
+// pkgAliasOverrides forces specific import aliases to disambiguate packages with the same name.
+//
+//nolint:gochecknoglobals
+var pkgAliasOverrides = map[string]string{
+	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements": "layer2Elements",
+	"github.com/USA-RedDragon/dmrgo/dmr/layer3/elements": "layer3Elements",
+}
+
 // resolveImportPath converts a short package name (e.g. "enums") to a full import path.
 func resolveImportPath(pkgName, sourceFile string) string {
 	// Map well-known package names to full import paths
 	knownPkgs := map[string]string{
 		"enums":            "github.com/USA-RedDragon/dmrgo/dmr/enums",
 		"elements":         "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements",
+		"layer2Elements":   "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements",
 		"bit":              "github.com/USA-RedDragon/dmrgo/dmr/bit",
 		"fec":              "github.com/USA-RedDragon/dmrgo/dmr/fec",
 		"layer3Elements":   "github.com/USA-RedDragon/dmrgo/dmr/layer3/elements",
@@ -131,6 +140,10 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 	for importPath, pkgName := range pkgNameOverrides {
 		f.ImportName(importPath, pkgName)
 	}
+	// Register import aliases to disambiguate packages with the same base name
+	for importPath, alias := range pkgAliasOverrides {
+		f.ImportAlias(importPath, alias)
+	}
 
 	for _, pdu := range pdus {
 		if err := emitDecode(f, pdu); err != nil {
@@ -138,6 +151,10 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 		}
 		f.Line()
 		emitEncode(f, pdu)
+		if !pdu.NoToString {
+			f.Line()
+			emitToString(f, pdu)
+		}
 	}
 
 	return f, nil
@@ -208,8 +225,8 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		// Emit field extractions (regular fields first, then dispatch)
 		var dispatchFields []parse.Field
 		for _, field := range pdu.Fields {
-			if field.Name == "FEC" {
-				continue // skip the FEC field itself
+			if field.Skip {
+				continue // skip dmr:"-" fields (DataType, FEC, crc, etc.)
 			}
 			if field.Kind == parse.FieldDispatch {
 				dispatchFields = append(dispatchFields, field)
@@ -386,6 +403,207 @@ func emitAMBEVoiceEncode(g *Group, pdu parse.PDUStruct) {
 	}
 
 	g.Return(Id("encodeAMBE").Call(Id("s").Dot(dataFieldName)))
+}
+
+// emitToString generates a ToString() method for a PDU struct.
+// Simple structs (no dispatch/stride) use a single fmt.Sprintf.
+// Structs with dispatch or stride fields use string concatenation.
+func emitToString(f *File, pdu parse.PDUStruct) {
+	// Determine if we need concatenation mode
+	hasDispatch := false
+	hasStride := false
+	for _, field := range pdu.Fields {
+		if field.Skip {
+			continue
+		}
+		if field.Kind == parse.FieldDispatch {
+			hasDispatch = true
+		}
+		if field.Stride > 0 && field.ArrayLen > 0 {
+			hasStride = true
+		}
+	}
+
+	if hasDispatch || hasStride {
+		emitToStringConcat(f, pdu)
+	} else {
+		emitToStringSprintf(f, pdu)
+	}
+}
+
+// emitToStringSprintf generates a ToString using a single fmt.Sprintf call.
+func emitToStringSprintf(f *File, pdu parse.PDUStruct) {
+	var formatParts []string
+	var args []Code
+
+	for _, field := range pdu.Fields {
+		fmtToken, fmtArgs := toStringFieldFormat(field, pdu)
+		if fmtToken == "" {
+			continue
+		}
+		formatParts = append(formatParts, field.Name+": "+fmtToken)
+		args = append(args, fmtArgs...)
+	}
+
+	formatStr := pdu.Name + "{ " + strings.Join(formatParts, ", ") + " }"
+	allArgs := append([]Code{Lit(formatStr)}, args...)
+
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("ToString").Params().String().Block(
+		Return(Qual("fmt", "Sprintf").Call(allArgs...)),
+	)
+}
+
+// emitToStringConcat generates a ToString using string concatenation for dispatch/stride fields.
+func emitToStringConcat(f *File, pdu parse.PDUStruct) {
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("ToString").Params().String().BlockFunc(func(g *Group) {
+		g.Id("_ret").Op(":=").Lit(pdu.Name + "{ ")
+
+		// Collect dispatch fields for later, emit regular fields inline
+		var dispatchFields []parse.Field
+		regularParts := []string{}
+		regularArgs := []Code{}
+
+		for _, field := range pdu.Fields {
+			if field.Skip {
+				fmtToken, fmtArgs := toStringFieldFormat(field, pdu)
+				if fmtToken == "" {
+					continue
+				}
+				regularParts = append(regularParts, field.Name+": "+fmtToken)
+				regularArgs = append(regularArgs, fmtArgs...)
+				continue
+			}
+			if field.Kind == parse.FieldDispatch {
+				dispatchFields = append(dispatchFields, field)
+				continue
+			}
+			if field.Stride > 0 && field.ArrayLen > 0 {
+				// Emit the regular fields collected so far
+				if len(regularParts) > 0 {
+					fmtStr := strings.Join(regularParts, ", ") + ", "
+					allArgs := append([]Code{Lit(fmtStr)}, regularArgs...)
+					g.Id("_ret").Op("+=").Qual("fmt", "Sprintf").Call(allArgs...)
+					regularParts = nil
+					regularArgs = nil
+				}
+				// Emit stride array iteration
+				g.Id("_ret").Op("+=").Lit(field.Name + ": [")
+				g.For(Id("_i").Op(":=").Range().Id("s").Dot(field.Name)).Block(
+					If(Id("_i").Op(">").Lit(0)).Block(
+						Id("_ret").Op("+=").Lit(", "),
+					),
+					Id("_ret").Op("+=").Id("s").Dot(field.Name).Index(Id("_i")).Dot("ToString").Call(),
+				)
+				g.Id("_ret").Op("+=").Lit("]")
+				continue
+			}
+			fmtToken, fmtArgs := toStringFieldFormat(field, pdu)
+			if fmtToken == "" {
+				continue
+			}
+			regularParts = append(regularParts, field.Name+": "+fmtToken)
+			regularArgs = append(regularArgs, fmtArgs...)
+		}
+
+		// Emit any remaining regular fields before dispatch
+		if len(regularParts) > 0 && len(dispatchFields) > 0 {
+			fmtStr := strings.Join(regularParts, ", ") + ", "
+			allArgs := append([]Code{Lit(fmtStr)}, regularArgs...)
+			g.Id("_ret").Op("+=").Qual("fmt", "Sprintf").Call(allArgs...)
+			regularParts = nil
+			regularArgs = nil
+		}
+
+		// Emit dispatch nil-check chain
+		if len(dispatchFields) > 0 {
+			g.Switch().BlockFunc(func(sw *Group) {
+				for _, field := range dispatchFields {
+					sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(
+						Id("_ret").Op("+=").Id("s").Dot(field.Name).Dot("ToString").Call(),
+					)
+				}
+			})
+		}
+
+		// Emit any remaining regular fields after dispatch (like FEC)
+		if len(regularParts) > 0 {
+			fmtStr := ", " + strings.Join(regularParts, ", ")
+			allArgs := append([]Code{Lit(fmtStr)}, regularArgs...)
+			g.Id("_ret").Op("+=").Qual("fmt", "Sprintf").Call(allArgs...)
+		}
+
+		g.Id("_ret").Op("+=").Lit(" }")
+		g.Return(Id("_ret"))
+	})
+}
+
+// toStringFieldFormat returns the fmt format token and arguments for a field in ToString.
+// Returns empty string if the field should be skipped.
+func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code) {
+	src := Id("s").Dot(field.Name)
+
+	if field.Skip {
+		// Handle dmr:"-" fields
+		switch {
+		case field.Name == "FEC":
+			return "{BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}", []Code{
+				src.Clone().Dot("BitsChecked"),
+				src.Clone().Dot("ErrorsCorrected"),
+				src.Clone().Dot("Uncorrectable"),
+			}
+		case field.Name == "DataType":
+			// Use TypeNameToName convention
+			importPath := resolveImportPath(field.TypePkg, pdu.SourceFile)
+			toNameFn := field.TypeName + "ToName"
+			return "%s", []Code{
+				Qual(importPath, toNameFn).Call(src.Clone()),
+			}
+		default:
+			// Skip unexported and other skip fields
+			return "", nil
+		}
+	}
+
+	switch field.Kind {
+	case parse.FieldBool:
+		return "%t", []Code{src}
+	case parse.FieldUint:
+		return "%d", []Code{src}
+	case parse.FieldInt:
+		return "%d", []Code{src}
+	case parse.FieldEnum:
+		// Derive ToName from EnumFromInt: replace "FromInt" with "ToName"
+		toNameRef := strings.Replace(field.EnumFromInt, "FromInt", "ToName", 1)
+		pkg, fn := splitQualified(toNameRef)
+		if pkg != "" {
+			importPath := resolveImportPath(pkg, pdu.SourceFile)
+			return "%s", []Code{Qual(importPath, fn).Call(src)}
+		}
+		return "%s", []Code{Id(fn).Call(src)}
+	case parse.FieldRaw:
+		return "%v", []Code{src}
+	case parse.FieldPacked:
+		return "%v", []Code{src}
+	case parse.FieldDelegate:
+		if field.DelegateNoPtr {
+			// noptr delegates: use TypeNameToName convention
+			if field.IsQualified {
+				importPath := resolveImportPath(field.TypePkg, pdu.SourceFile)
+				toNameFn := field.TypeName + "ToName"
+				return "%s", []Code{Qual(importPath, toNameFn).Call(src)}
+			}
+			return "%s", []Code{Id(field.TypeName + "ToName").Call(src)}
+		}
+		// Struct delegate: call ToString()
+		return "%s", []Code{src.Clone().Dot("ToString").Call()}
+	case parse.FieldLongitude, parse.FieldLatitude:
+		return "%f", []Code{src}
+	case parse.FieldDispatch:
+		// Handled separately in concat mode
+		return "", nil
+	default:
+		return "%v", []Code{src}
+	}
 }
 
 // emitFieldDecode generates the decode logic for a single field.
@@ -625,8 +843,8 @@ func emitEncode(f *File, pdu parse.PDUStruct) {
 func emitEncodeFields(g *Group, pdu parse.PDUStruct) {
 	var dispatchFields []parse.Field
 	for _, field := range pdu.Fields {
-		if field.Name == "FEC" {
-			continue
+		if field.Skip {
+			continue // skip dmr:"-" fields
 		}
 		if field.Kind == parse.FieldDispatch {
 			dispatchFields = append(dispatchFields, field)

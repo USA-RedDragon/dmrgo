@@ -1,8 +1,6 @@
 package pdu
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
@@ -65,41 +63,4 @@ type FLCTalkerAliasBlock struct {
 
 func (flc FullLinkControl) GetDataType() layer2Elements.DataType {
 	return flc.DataType
-}
-
-func (flc FullLinkControl) ToString() string {
-	ret := "FullLinkControl{ "
-	ret += fmt.Sprintf("dataType: %s, ProtectFlag: %t, FLCO: %s, FeaturesetID: %s, ", layer2Elements.DataTypeToName(flc.DataType), flc.ProtectFlag, enums.FLCOToName(flc.FLCO), enums.FeatureSetIDToName(flc.FeatureSetID))
-
-	if flc.GroupVoice != nil {
-		ret += fmt.Sprintf("ServiceOptions: %s, GroupAddress: %d, SourceAddress: %d, ",
-			flc.GroupVoice.ServiceOptions.ToString(),
-			flc.GroupVoice.GroupAddress,
-			flc.GroupVoice.SourceAddress)
-	}
-
-	if flc.UnitToUnit != nil {
-		ret += fmt.Sprintf("ServiceOptions: %s, TargetAddress: %d, SourceAddress: %d, ",
-			flc.UnitToUnit.ServiceOptions.ToString(),
-			flc.UnitToUnit.TargetAddress,
-			flc.UnitToUnit.SourceAddress)
-	}
-
-	if flc.GPSInfo != nil {
-		ret += fmt.Sprintf("PositionError: %s, Longitude: %f, Latitude: %f, ",
-			layer3Elements.PositionErrorToName(flc.GPSInfo.PositionError),
-			flc.GPSInfo.Longitude,
-			flc.GPSInfo.Latitude)
-	}
-
-	if flc.TalkerAliasHeader != nil {
-		ret += fmt.Sprintf("TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasDataMSB: %t, ",
-			layer3Elements.TalkerAliasDataFormatToName(flc.TalkerAliasHeader.TalkerAliasDataFormat),
-			flc.TalkerAliasHeader.TalkerAliasDataLength,
-			flc.TalkerAliasHeader.TalkerAliasDataMSB)
-	}
-
-	ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", flc.FEC.BitsChecked, flc.FEC.ErrorsCorrected, flc.FEC.Uncorrectable)
-
-	return ret
 }

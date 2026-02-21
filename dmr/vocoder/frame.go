@@ -1,9 +1,6 @@
 package vocoder
 
 import (
-	"encoding/hex"
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
@@ -13,16 +10,6 @@ import (
 type VocoderFrame struct {
 	DecodedBits [49]bit.Bit   `dmr:"bits:0-48,raw"`
 	FEC         fec.FECResult `dmr:"-"`
-}
-
-func (vf *VocoderFrame) ToString() string {
-	// convert DecodedBits to a byte array
-	var data [7]byte
-	for i := 0; i < 6; i++ {
-		data[i] = byte(vf.DecodedBits[i*8])<<7 | byte(vf.DecodedBits[i*8+1])<<6 | byte(vf.DecodedBits[i*8+2])<<5 | byte(vf.DecodedBits[i*8+3])<<4 | byte(vf.DecodedBits[i*8+4])<<3 | byte(vf.DecodedBits[i*8+5])<<2 | byte(vf.DecodedBits[i*8+6])<<1 | byte(vf.DecodedBits[i*8+7])
-	}
-	data[6] = byte(vf.DecodedBits[48]) << 7
-	return fmt.Sprintf("{ DecodedFrame: %014s }", hex.EncodeToString(data[:]))
 }
 
 // encodeAMBE takes the decoded 49 bits and encodes them into a 72 bit AMBE frame.

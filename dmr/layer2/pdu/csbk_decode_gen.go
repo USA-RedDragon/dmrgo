@@ -15,9 +15,11 @@ DO NOT EDIT.
 package pdu
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
 	crc "github.com/USA-RedDragon/dmrgo/dmr/crc"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
+	layer2Elements "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
 // DecodeBSOutboundActivationPDU decodes a BSOutboundActivationPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
@@ -37,6 +39,10 @@ func EncodeBSOutboundActivationPDU(s *BSOutboundActivationPDU) [64]bit.Bit {
 	copy(data[16:40], s.BSAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data
+}
+
+func (s *BSOutboundActivationPDU) ToString() string {
+	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %v, SourceAddress: %v }", s.Reserved, s.BSAddress, s.SourceAddress)
 }
 
 // DecodeUnitToUnitVoiceServiceRequestPDU decodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.2 UU_V_Req PDU
@@ -60,6 +66,10 @@ func EncodeUnitToUnitVoiceServiceRequestPDU(s *UnitToUnitVoiceServiceRequestPDU)
 	return data
 }
 
+func (s *UnitToUnitVoiceServiceRequestPDU) ToString() string {
+	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %d, Reserved: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptions, s.Reserved, s.TargetAddress, s.SourceAddress)
+}
+
 // DecodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.3 UU_Ans_Rsp PDU
 func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnitVoiceServiceAnswerResponsePDU, fec.FECResult) {
 	var result UnitToUnitVoiceServiceAnswerResponsePDU
@@ -79,6 +89,10 @@ func EncodeUnitToUnitVoiceServiceAnswerResponsePDU(s *UnitToUnitVoiceServiceAnsw
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data
+}
+
+func (s *UnitToUnitVoiceServiceAnswerResponsePDU) ToString() string {
+	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %d, AnswerResponse: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptions, s.AnswerResponse, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5 NACK_Rsp PDU
@@ -110,6 +124,10 @@ func EncodeNegativeAcknowledgementPDU(s *NegativeAcknowledgementPDU) [64]bit.Bit
 	return data
 }
 
+func (s *NegativeAcknowledgementPDU) ToString() string {
+	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %t, SourceType: %t, ServiceType: %v, ReasonCode: %d, SourceAddress: %v, TargetAddress: %v }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
+}
+
 // DecodePreamblePDU decodes a PreamblePDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.7 Pre PDU
 func DecodePreamblePDU(data [64]bit.Bit) (PreamblePDU, fec.FECResult) {
 	var result PreamblePDU
@@ -137,6 +155,10 @@ func EncodePreamblePDU(s *PreamblePDU) [64]bit.Bit {
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data
+}
+
+func (s *PreamblePDU) ToString() string {
+	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %v, CSBKBlocksToFollow: %d, TargetAddress: %v, SourceAddress: %v }", s.Data, s.Group, s.Reserved, s.CSBKBlocksToFollow, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.8 Ch_Timing (Channel Timing) PDU
@@ -178,6 +200,10 @@ func EncodeChannelTimingPDU(s *ChannelTimingPDU) [64]bit.Bit {
 		data[63] = 1
 	}
 	return data
+}
+
+func (s *ChannelTimingPDU) ToString() string {
+	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %v, Generation: %v, LeaderIdentifier: %v, NewLeader: %t, LeaderDynamicIdentifier: %v, ChannelTimingOp0: %t, SourceIdentifier: %v, Reserved: %t, SourceDynamicIdentifier: %v, ChannelTimingOp1: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp0, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp1)
 }
 
 // DecodeCSBK decodes a CSBK per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.5 CSBK PDU
@@ -278,4 +304,25 @@ func EncodeCSBK(s *CSBK) [96]bit.Bit {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
 	return data
+}
+
+func (s *CSBK) ToString() string {
+	_ret := "CSBK{ "
+	_ret += fmt.Sprintf("DataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", layer2Elements.DataTypeToName(s.DataType), s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	switch {
+	case s.BSOutboundActivationPDU != nil:
+		_ret += s.BSOutboundActivationPDU.ToString()
+	case s.UnitToUnitVoiceServiceRequestPDU != nil:
+		_ret += s.UnitToUnitVoiceServiceRequestPDU.ToString()
+	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
+		_ret += s.UnitToUnitVoiceServiceAnswerResponsePDU.ToString()
+	case s.NegativeAcknowledgementPDU != nil:
+		_ret += s.NegativeAcknowledgementPDU.ToString()
+	case s.PreamblePDU != nil:
+		_ret += s.PreamblePDU.ToString()
+	case s.ChannelTimingPDU != nil:
+		_ret += s.ChannelTimingPDU.ToString()
+	}
+	_ret += " }"
+	return _ret
 }

@@ -1,8 +1,6 @@
 package pdu
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/dmr/enums"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 )
@@ -15,9 +13,4 @@ type EmbeddedSignalling struct {
 	PreemptionAndPowerControlIndicator bool          `dmr:"bit:4"`
 	LCSS                               enums.LCSS    `dmr:"bits:5-6,enum"`
 	FEC                                fec.FECResult `dmr:"-"`
-}
-
-// ToString returns a string representation of the EmbeddedSignalling
-func (es EmbeddedSignalling) ToString() string {
-	return fmt.Sprintf("{ Color Code: %d, Preemption and Power Control Indicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", es.ColorCode, es.PreemptionAndPowerControlIndicator, enums.LCSSToName(es.LCSS), es.FEC.BitsChecked, es.FEC.ErrorsCorrected, es.FEC.Uncorrectable)
 }

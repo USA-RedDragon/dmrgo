@@ -10,18 +10,6 @@ type Vocoder struct {
 	Frames [3]vocoder.VocoderFrame `dmr:"bits:0-215,delegate,noptr,stride:72"`
 }
 
-func (vc *Vocoder) ToString() string {
-	ret := "{ Frames: ["
-	for i, frame := range vc.Frames {
-		ret += frame.ToString()
-		if i < 2 {
-			ret += ", "
-		}
-	}
-	ret += "] }"
-	return ret
-}
-
 // CorrectedErrors returns the total number of corrected bit errors in the vocoder frames.
 func (vc *Vocoder) CorrectedErrors() int {
 	var count int

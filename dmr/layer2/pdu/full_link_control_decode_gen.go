@@ -14,11 +14,13 @@ DO NOT EDIT.
 package pdu
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
 	enums "github.com/USA-RedDragon/dmrgo/dmr/enums"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec/reed_solomon"
-	elements "github.com/USA-RedDragon/dmrgo/dmr/layer3/elements"
+	layer2Elements "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
+	layer3Elements "github.com/USA-RedDragon/dmrgo/dmr/layer3/elements"
 	"math"
 )
 
@@ -118,13 +120,32 @@ func EncodeFullLinkControl(s *FullLinkControl) [96]bit.Bit {
 	return data
 }
 
+func (s *FullLinkControl) ToString() string {
+	_ret := "FullLinkControl{ "
+	_ret += fmt.Sprintf("DataType: %s, ProtectFlag: %t, FLCO: %s, FeatureSetID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", layer2Elements.DataTypeToName(s.DataType), s.ProtectFlag, enums.FLCOToName(s.FLCO), enums.FeatureSetIDToName(s.FeatureSetID), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	switch {
+	case s.GroupVoice != nil:
+		_ret += s.GroupVoice.ToString()
+	case s.UnitToUnit != nil:
+		_ret += s.UnitToUnit.ToString()
+	case s.GPSInfo != nil:
+		_ret += s.GPSInfo.ToString()
+	case s.TalkerAliasHeader != nil:
+		_ret += s.TalkerAliasHeader.ToString()
+	case s.TalkerAliasBlock != nil:
+		_ret += s.TalkerAliasBlock.ToString()
+	}
+	_ret += " }"
+	return _ret
+}
+
 // DecodeFLCGroupVoice decodes a FLCGroupVoice per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.1: Grp_V_Ch_Usr PDU content
 func DecodeFLCGroupVoice(data [56]bit.Bit) (FLCGroupVoice, fec.FECResult) {
 	var result FLCGroupVoice
 	var fecResult fec.FECResult
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
-	result.ServiceOptions, _ = elements.DecodeServiceOptions(_serviceOptionsBits)
+	result.ServiceOptions, _ = layer3Elements.DecodeServiceOptions(_serviceOptionsBits)
 	result.GroupAddress = bit.BitsToInt(data[:], 8, 24)
 	result.SourceAddress = bit.BitsToInt(data[:], 32, 24)
 	return result, fecResult
@@ -133,11 +154,15 @@ func DecodeFLCGroupVoice(data [56]bit.Bit) (FLCGroupVoice, fec.FECResult) {
 // EncodeFLCGroupVoice encodes a FLCGroupVoice per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.1: Grp_V_Ch_Usr PDU content
 func EncodeFLCGroupVoice(s *FLCGroupVoice) [56]bit.Bit {
 	var data [56]bit.Bit
-	_serviceOptionsBits := elements.EncodeServiceOptions(&s.ServiceOptions)
+	_serviceOptionsBits := layer3Elements.EncodeServiceOptions(&s.ServiceOptions)
 	copy(data[0:8], _serviceOptionsBits[:])
 	copy(data[8:32], bit.BitsFromUint32(uint32(s.GroupAddress), 24))
 	copy(data[32:56], bit.BitsFromUint32(uint32(s.SourceAddress), 24))
 	return data
+}
+
+func (s *FLCGroupVoice) ToString() string {
+	return fmt.Sprintf("FLCGroupVoice{ ServiceOptions: %s, GroupAddress: %d, SourceAddress: %d }", s.ServiceOptions.ToString(), s.GroupAddress, s.SourceAddress)
 }
 
 // DecodeFLCUnitToUnit decodes a FLCUnitToUnit per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.2: UU_V_Ch_Usr PDU content
@@ -146,7 +171,7 @@ func DecodeFLCUnitToUnit(data [56]bit.Bit) (FLCUnitToUnit, fec.FECResult) {
 	var fecResult fec.FECResult
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
-	result.ServiceOptions, _ = elements.DecodeServiceOptions(_serviceOptionsBits)
+	result.ServiceOptions, _ = layer3Elements.DecodeServiceOptions(_serviceOptionsBits)
 	result.TargetAddress = bit.BitsToInt(data[:], 8, 24)
 	result.SourceAddress = bit.BitsToInt(data[:], 32, 24)
 	return result, fecResult
@@ -155,18 +180,22 @@ func DecodeFLCUnitToUnit(data [56]bit.Bit) (FLCUnitToUnit, fec.FECResult) {
 // EncodeFLCUnitToUnit encodes a FLCUnitToUnit per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.2: UU_V_Ch_Usr PDU content
 func EncodeFLCUnitToUnit(s *FLCUnitToUnit) [56]bit.Bit {
 	var data [56]bit.Bit
-	_serviceOptionsBits := elements.EncodeServiceOptions(&s.ServiceOptions)
+	_serviceOptionsBits := layer3Elements.EncodeServiceOptions(&s.ServiceOptions)
 	copy(data[0:8], _serviceOptionsBits[:])
 	copy(data[8:32], bit.BitsFromUint32(uint32(s.TargetAddress), 24))
 	copy(data[32:56], bit.BitsFromUint32(uint32(s.SourceAddress), 24))
 	return data
 }
 
+func (s *FLCUnitToUnit) ToString() string {
+	return fmt.Sprintf("FLCUnitToUnit{ ServiceOptions: %s, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.ToString(), s.TargetAddress, s.SourceAddress)
+}
+
 // DecodeFLCGPSInfo decodes a FLCGPSInfo per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.3: GPS Info PDU content
 func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
 	var result FLCGPSInfo
 	var fecResult fec.FECResult
-	result.PositionError = elements.PositionError(bit.BitsToUint8(data[4:7], 0, 3))
+	result.PositionError = layer3Elements.PositionError(bit.BitsToUint8(data[4:7], 0, 3))
 	result.Longitude = float32(bit.BitsToInt(data[:], 7, 25)) * float32(360.0/math.Pow(2.0, 25.0))
 	result.Latitude = float32(bit.BitsToInt(data[:], 32, 24)) * float32(180.0/math.Pow(2.0, 24.0))
 	return result, fecResult
@@ -181,11 +210,15 @@ func EncodeFLCGPSInfo(s *FLCGPSInfo) [56]bit.Bit {
 	return data
 }
 
+func (s *FLCGPSInfo) ToString() string {
+	return fmt.Sprintf("FLCGPSInfo{ PositionError: %s, Longitude: %f, Latitude: %f }", layer3Elements.PositionErrorToName(s.PositionError), s.Longitude, s.Latitude)
+}
+
 // DecodeFLCTalkerAliasHeader decodes a FLCTalkerAliasHeader per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.4: Talker Alias Header Info PDU content
 func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.FECResult) {
 	var result FLCTalkerAliasHeader
 	var fecResult fec.FECResult
-	result.TalkerAliasDataFormat = elements.TalkerAliasDataFormat(bit.BitsToUint8(data[0:2], 0, 2))
+	result.TalkerAliasDataFormat = layer3Elements.TalkerAliasDataFormat(bit.BitsToUint8(data[0:2], 0, 2))
 	result.TalkerAliasDataLength = bit.BitsToInt(data[:], 2, 6)
 	result.TalkerAliasDataMSB = bit.BitsToBool(data[:], 7)
 	copy(result.TalkerAliasData[:], data[8:56])
@@ -204,6 +237,10 @@ func EncodeFLCTalkerAliasHeader(s *FLCTalkerAliasHeader) [56]bit.Bit {
 	return data
 }
 
+func (s *FLCTalkerAliasHeader) ToString() string {
+	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasDataMSB: %t, TalkerAliasData: %v }", layer3Elements.TalkerAliasDataFormatToName(s.TalkerAliasDataFormat), s.TalkerAliasDataLength, s.TalkerAliasDataMSB, s.TalkerAliasData)
+}
+
 // DecodeFLCTalkerAliasBlock decodes a FLCTalkerAliasBlock per ETSI TS 102 361-2 V2.4.1 (2017-10) - Table 7.5: Talker Alias Blk PDU content
 func DecodeFLCTalkerAliasBlock(data [56]bit.Bit) (FLCTalkerAliasBlock, fec.FECResult) {
 	var result FLCTalkerAliasBlock
@@ -217,4 +254,8 @@ func EncodeFLCTalkerAliasBlock(s *FLCTalkerAliasBlock) [56]bit.Bit {
 	var data [56]bit.Bit
 	copy(data[0:56], s.TalkerAliasData[:])
 	return data
+}
+
+func (s *FLCTalkerAliasBlock) ToString() string {
+	return fmt.Sprintf("FLCTalkerAliasBlock{ TalkerAliasData: %v }", s.TalkerAliasData)
 }

@@ -9,8 +9,10 @@ DO NOT EDIT.
 package pdu
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
+	layer2Elements "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
 // DecodeRate12Data decodes a Rate12Data per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.7 Rate 1/2 data
@@ -26,4 +28,8 @@ func EncodeRate12Data(s *Rate12Data) [96]bit.Bit {
 	var data [96]bit.Bit
 	copy(data[0:96], bit.UnpackBits(s.Data[:]))
 	return data
+}
+
+func (s *Rate12Data) ToString() string {
+	return fmt.Sprintf("Rate12Data{ DataType: %s, Data: %v }", layer2Elements.DataTypeToName(s.DataType), s.Data)
 }

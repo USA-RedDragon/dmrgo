@@ -9,6 +9,7 @@ DO NOT EDIT.
 package pdu
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
 	enums "github.com/USA-RedDragon/dmrgo/dmr/enums"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
@@ -38,4 +39,8 @@ func EncodeEmbeddedSignalling(s *EmbeddedSignalling) [16]bit.Bit {
 	}
 	copy(data[5:7], bit.BitsFromUint8(uint8(s.LCSS), 2))
 	return quadratic_residue.Encode(bit.BitsToValue(data[:]))
+}
+
+func (s *EmbeddedSignalling) ToString() string {
+	return fmt.Sprintf("EmbeddedSignalling{ ColorCode: %d, PreemptionAndPowerControlIndicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.PreemptionAndPowerControlIndicator, enums.LCSSToName(s.LCSS), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

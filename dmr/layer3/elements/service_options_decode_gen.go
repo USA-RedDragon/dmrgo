@@ -9,6 +9,7 @@ DO NOT EDIT.
 package elements
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
 )
@@ -44,4 +45,8 @@ func EncodeServiceOptions(s *ServiceOptions) [8]bit.Bit {
 	}
 	copy(data[6:8], bit.BitsFromUint8(s.PriorityLevel, 2))
 	return data
+}
+
+func (s *ServiceOptions) ToString() string {
+	return fmt.Sprintf("ServiceOptions{ IsEmergency: %t, IsPrivacy: %t, Reserved: %v, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.Reserved, s.IsBroadcast, s.IsOpenVoiceCallMode, s.PriorityLevel)
 }

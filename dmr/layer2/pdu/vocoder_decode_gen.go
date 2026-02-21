@@ -35,3 +35,17 @@ func EncodeVocoder(s *Vocoder) [216]bit.Bit {
 	}
 	return data
 }
+
+func (s *Vocoder) ToString() string {
+	_ret := "Vocoder{ "
+	_ret += "Frames: ["
+	for _i := range s.Frames {
+		if _i > 0 {
+			_ret += ", "
+		}
+		_ret += s.Frames[_i].ToString()
+	}
+	_ret += "]"
+	_ret += " }"
+	return _ret
+}

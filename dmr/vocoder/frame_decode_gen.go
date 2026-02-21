@@ -6,6 +6,7 @@ DO NOT EDIT.
 package vocoder
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
 )
@@ -20,4 +21,8 @@ func DecodeVocoderFrame(data [72]bit.Bit) (VocoderFrame, fec.FECResult) {
 
 func EncodeVocoderFrame(s *VocoderFrame) [72]bit.Bit {
 	return encodeAMBE(s.DecodedBits)
+}
+
+func (s *VocoderFrame) ToString() string {
+	return fmt.Sprintf("VocoderFrame{ DecodedBits: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.DecodedBits, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

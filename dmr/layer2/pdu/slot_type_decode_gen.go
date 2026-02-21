@@ -9,10 +9,11 @@ DO NOT EDIT.
 package pdu
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/dmr/bit"
 	fec "github.com/USA-RedDragon/dmrgo/dmr/fec"
 	golay "github.com/USA-RedDragon/dmrgo/dmr/fec/golay"
-	elements "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
+	layer2Elements "github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
 )
 
 // DecodeSlotType decodes a SlotType per ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.3 Slot Type (SLOT) PDU
@@ -24,7 +25,7 @@ func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.FECResult) {
 		data = corrected
 	}
 	result.ColorCode = bit.BitsToInt(data[:], 0, 4)
-	result.DataType = elements.DataType(bit.BitsToUint8(data[:], 4, 4))
+	result.DataType = layer2Elements.DataType(bit.BitsToUint8(data[:], 4, 4))
 	return result, fecResult
 }
 
@@ -34,4 +35,8 @@ func EncodeSlotType(s *SlotType) [20]bit.Bit {
 	copy(data[0:4], bit.BitsFromUint32(uint32(s.ColorCode), 4))
 	copy(data[4:8], bit.BitsFromUint8(uint8(s.DataType), 4))
 	return golay.Encode(bit.BitsToValue(data[:]))
+}
+
+func (s *SlotType) ToString() string {
+	return fmt.Sprintf("SlotType{ ColorCode: %d, DataType: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

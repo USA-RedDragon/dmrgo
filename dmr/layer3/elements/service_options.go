@@ -1,8 +1,6 @@
 package elements
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 )
 
@@ -14,8 +12,4 @@ type ServiceOptions struct {
 	IsBroadcast         bool       `dmr:"bit:4"`
 	IsOpenVoiceCallMode bool       `dmr:"bit:5"`
 	PriorityLevel       uint8      `dmr:"bits:6-7"`
-}
-
-func (so *ServiceOptions) ToString() string {
-	return fmt.Sprintf("{ IsEmergency: %t, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d, IsPrivacy: %t }", so.IsEmergency, so.IsBroadcast, so.IsOpenVoiceCallMode, so.PriorityLevel, so.IsPrivacy)
 }

@@ -1,8 +1,6 @@
 package pdu
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/dmr/bit"
 	"github.com/USA-RedDragon/dmrgo/dmr/fec"
 	"github.com/USA-RedDragon/dmrgo/dmr/layer2/elements"
@@ -21,11 +19,6 @@ type UnconfirmedDataHeader struct {
 	BlocksToFollow         uint8       `dmr:"bits:65-71"`
 	Reserved2              [4]bit.Bit  `dmr:"bits:72-75,raw"`
 	FragmentSequenceNumber uint8       `dmr:"bits:76-79"`
-}
-
-func (cdh *UnconfirmedDataHeader) ToString() string {
-	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, LLIDDestination: %08b, LLIDSource: %08b, FullMessage: %t, BlocksToFollow: %d, FragmentSequenceNumber: %d }",
-		cdh.Group, cdh.ResponseRequested, cdh.Reserved, cdh.PadOctetCount, cdh.LLIDDestination, cdh.LLIDSource, cdh.FullMessage, cdh.BlocksToFollow, cdh.FragmentSequenceNumber)
 }
 
 // dmr:crc crc_ccitt
@@ -88,15 +81,4 @@ func FormatToName(f Format) string {
 	default:
 		return "Unknown"
 	}
-}
-
-func (dh *DataHeader) ToString() string {
-	var extraData string
-	if dh.UnconfirmedDataHeader != nil {
-		extraData = dh.UnconfirmedDataHeader.ToString()
-	} else {
-		extraData = "Unknown"
-	}
-	return fmt.Sprintf("DataHeader{ dataType: %s, format: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, extraData: %s }",
-		elements.DataTypeToName(dh.DataType), FormatToName(dh.Format), dh.FEC.BitsChecked, dh.FEC.ErrorsCorrected, dh.FEC.Uncorrectable, extraData)
 }

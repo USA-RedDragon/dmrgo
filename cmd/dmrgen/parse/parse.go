@@ -63,6 +63,9 @@ type Field struct {
 	// For non-contiguous fields: additional bit ranges
 	// e.g. "bits:3+12-15" → ExtraBitRanges = [{12,15}]
 	ExtraBitRanges [][2]int
+
+	// Skip fields (dmr:"-") are included for ToString generation but excluded from decode/encode.
+	Skip bool
 }
 
 // FECDirective describes a struct-level FEC pre-processing step.
@@ -87,6 +90,7 @@ type PDUStruct struct {
 	CRC        *CRCDirective // optional CRC validation
 	SpecRef    string        // ETSI spec section reference from comment
 	SourceFile string        // source file path
+	NoToString bool          // true if // dmr:no_tostring is present
 }
 
 // ParseFile parses a Go source file and returns all PDU structs with dmr tags.
@@ -124,7 +128,28 @@ func ParseFile(filePath string) ([]PDUStruct, error) {
 				}
 				tag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
 				dmrTag := tag.Get("dmr")
-				if dmrTag == "" || dmrTag == "-" {
+				if dmrTag == "" {
+					continue
+				}
+				if dmrTag == "-" {
+					// Skip field for decode/encode but capture for ToString generation
+					if len(field.Names) > 0 {
+						hasDMRTags = true
+						f := Field{
+							Name:   field.Names[0].Name,
+							GoType: typeString(field.Type),
+							Skip:   true,
+						}
+						baseType := f.GoType
+						if idx := strings.LastIndex(baseType, "."); idx >= 0 {
+							f.TypePkg = baseType[:idx]
+							f.TypeName = baseType[idx+1:]
+							f.IsQualified = true
+						} else {
+							f.TypeName = baseType
+						}
+						fields = append(fields, f)
+					}
 					continue
 				}
 				hasDMRTags = true
@@ -202,6 +227,9 @@ func ParseFile(filePath string) ([]PDUStruct, error) {
 					}
 					if strings.Contains(text, "ETSI TS") {
 						pdu.SpecRef = text
+					}
+					if text == "dmr:no_tostring" {
+						pdu.NoToString = true
 					}
 				}
 			}
