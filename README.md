@@ -60,12 +60,12 @@ func main() {
 | Metric | Count |
 | --- | --- |
 | Total sections | 123 |
-| ✅ Verified (tests pass) | 87 |
+| ✅ Verified (tests pass) | 96 |
 | ❌ Failing (tests fail) | 0 |
 | 🔶 Untested (has source, no tests) | 0 |
-| ⬜ Unimplemented | 36 |
+| ⬜ Unimplemented | 27 |
 
-**Overall: 87/123 verified (70.7%)**
+**Overall: 96/123 verified (78.0%)**
 
 ### ETSI TS 102 361-1 — Air Interface Protocol
 
@@ -138,16 +138,16 @@ func main() {
 
 ### ETSI TS 102 361-2 — DMR Voice and Generic Services and Facilities
 
-**36** sections - ✅ 27  ❌ 0  🔶 0  ⬜ 9
+**36** sections - ✅ 36  ❌ 0  🔶 0  ⬜ 0
 
-`[██████████████████████░░░░░░░░] 75.0%`
+`[██████████████████████████████] 100.0%`
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
 | §5.4.2 | Inband positioning data service | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | §5.4.3 | Inband talker alias data service | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/elements/talker_alias_data_format.go` |
-| §6.1 | Transmit timeout | ⬜ unimplemented | - | - |
-| §6.3 | Reverse Channel Transmitter Interrupt | ⬜ unimplemented | - | - |
+| §6.1 | Transmit timeout | ✅ verified | 2/2 passed | `v2/constants/constants.go` |
+| §6.3 | Reverse Channel Transmitter Interrupt | ✅ verified | 10/10 passed | `v2/layer2/pdu/reverse_channel.go`, `v2/enums/rc_command.go`, `v2/constants/constants.go` |
 | §7.1.1 | Full Link Control PDUs | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.1.1.1 | Group Voice Channel User LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.1.1.2 | Unit to Unit Voice Channel User LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
@@ -161,13 +161,13 @@ func main() {
 | §7.1.2.4 | Negative Acknowledge Response CSBK PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.2.5 | Preamble CSBK PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.2.6 | Channel Timing CSBK PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
-| §7.1.3 | Short Link Control PDUs | ⬜ unimplemented | - | - |
+| §7.1.3 | Short Link Control PDUs | ✅ verified | 16/16 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/enums/activity_id.go` |
 | §7.2.1 | Service Options | ✅ verified | 4/4 passed | `v2/layer3/elements/service_options.go` |
 | §7.2.2 | Answer Response | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.2.3 | Reason Code | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
-| §7.2.4 | Service Type | ⬜ unimplemented | - | - |
-| §7.2.5 | Source Type | ⬜ unimplemented | - | - |
-| §7.2.6 | Additional Information Field | ⬜ unimplemented | - | - |
+| §7.2.4 | Service Type | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
+| §7.2.5 | Source Type | ✅ verified | 5/5 passed | `v2/layer3/elements/source_type.go`, `v2/layer2/pdu/csbk.go` |
+| §7.2.6 | Additional Information Field | ✅ verified | 5/5 passed | `v2/layer3/elements/additional_information_field.go`, `v2/layer2/pdu/csbk.go` |
 | §7.2.7 | CSBK Blocks to Follow (CBF) | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.2.8 | Identifier (ID) | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §7.2.15 | Position Error | ✅ verified | 3/3 passed | `v2/layer3/elements/position_error.go` |
@@ -175,11 +175,11 @@ func main() {
 | §7.2.17 | Latitude | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.2.18 | Talker Alias Data Format | ✅ verified | 3/3 passed | `v2/layer3/elements/talker_alias_data_format.go` |
 | §7.2.19 | Talker Alias Data Length | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
-| §7.2.20 | Tier 2 Reverse Channel (RC) Command | ⬜ unimplemented | - | - |
-| §A | Timers and constants in DMR | ⬜ unimplemented | - | - |
+| §7.2.20 | Tier 2 Reverse Channel (RC) Command | ✅ verified | 9/9 passed | `v2/enums/rc_command.go`, `v2/layer2/pdu/reverse_channel.go` |
+| §A | Timers and constants in DMR | ✅ verified | 4/4 passed | `v2/constants/constants.go` |
 | §B.1 | Full Link Control Opcode List | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
 | §B.2 | CSBK Opcode List | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
-| §B.3 | Short Link Control Opcode List | ⬜ unimplemented | - | - |
+| §B.3 | Short Link Control Opcode List | ✅ verified | 8/8 passed | `v2/enums/slco.go`, `v2/enums/activity_id.go`, `v2/layer2/pdu/short_link_control.go` |
 
 ### ETSI TS 102 361-3 — DMR Data Protocol
 

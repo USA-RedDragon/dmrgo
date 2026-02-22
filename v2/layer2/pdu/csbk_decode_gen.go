@@ -20,6 +20,7 @@ import (
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
 )
 
 // DecodeBSOutboundActivationPDU decodes a BSOutboundActivationPDU per ETSI TS 102 361-1 - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
@@ -99,9 +100,9 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) ToString() string {
 func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgementPDU, fec.FECResult) {
 	var result NegativeAcknowledgementPDU
 	var fecResult fec.FECResult
-	result.AdditionalInfo = bit.BitsToBool(data[:], 0)
-	result.SourceType = bit.BitsToBool(data[:], 1)
-	copy(result.ServiceType[:], data[2:8])
+	result.AdditionalInfo = layer3Elements.AdditionalInformationField(bit.BitsToUint8(data[0:1], 0, 1))
+	result.SourceType = layer3Elements.SourceType(bit.BitsToUint8(data[1:2], 0, 1))
+	result.ServiceType = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
 	result.ReasonCode = bit.BitsToUint8(data[:], 8, 8)
 	copy(result.SourceAddress[:], data[16:40])
 	copy(result.TargetAddress[:], data[40:64])
@@ -111,13 +112,9 @@ func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgement
 // EncodeNegativeAcknowledgementPDU encodes a NegativeAcknowledgementPDU per ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
 func EncodeNegativeAcknowledgementPDU(s *NegativeAcknowledgementPDU) [64]bit.Bit {
 	var data [64]bit.Bit
-	if s.AdditionalInfo {
-		data[0] = 1
-	}
-	if s.SourceType {
-		data[1] = 1
-	}
-	copy(data[2:8], s.ServiceType[:])
+	copy(data[0:1], bit.BitsFromUint8(uint8(s.AdditionalInfo), 1))
+	copy(data[1:2], bit.BitsFromUint8(uint8(s.SourceType), 1))
+	copy(data[2:8], bit.BitsFromUint8(uint8(s.ServiceType), 6))
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.ReasonCode), 8))
 	copy(data[16:40], s.SourceAddress[:])
 	copy(data[40:64], s.TargetAddress[:])
@@ -125,7 +122,7 @@ func EncodeNegativeAcknowledgementPDU(s *NegativeAcknowledgementPDU) [64]bit.Bit
 }
 
 func (s *NegativeAcknowledgementPDU) ToString() string {
-	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %t, SourceType: %t, ServiceType: %v, ReasonCode: %d, SourceAddress: %v, TargetAddress: %v }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
+	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %v, TargetAddress: %v }", layer3Elements.AdditionalInformationFieldToName(s.AdditionalInfo), layer3Elements.SourceTypeToName(s.SourceType), s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
 }
 
 // DecodePreamblePDU decodes a PreamblePDU per ETSI TS 102 361-1 - 9.3.7 Pre PDU

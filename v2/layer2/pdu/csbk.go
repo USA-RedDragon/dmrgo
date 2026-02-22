@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
 )
 
 type CSBKOpcode byte
@@ -63,12 +64,12 @@ type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 
 // ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
 type NegativeAcknowledgementPDU struct {
-	AdditionalInfo bool        `dmr:"bit:0"`
-	SourceType     bool        `dmr:"bit:1"`
-	ServiceType    [6]bit.Bit  `dmr:"bits:2-7,raw"`
-	ReasonCode     byte        `dmr:"bits:8-15"`
-	SourceAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
-	TargetAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
+	AdditionalInfo layer3Elements.AdditionalInformationField `dmr:"bits:0-0,delegate,noptr"`
+	SourceType     layer3Elements.SourceType                 `dmr:"bits:1-1,delegate,noptr"`
+	ServiceType    CSBKOpcode                                `dmr:"bits:2-7"`
+	ReasonCode     byte                                      `dmr:"bits:8-15"`
+	SourceAddress  [24]bit.Bit                               `dmr:"bits:16-39,raw"`
+	TargetAddress  [24]bit.Bit                               `dmr:"bits:40-63,raw"`
 }
 
 // ETSI TS 102 361-1 - 9.3.7 Pre PDU

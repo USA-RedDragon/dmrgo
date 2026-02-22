@@ -32,23 +32,23 @@ func TestRC_DecodeFromEmbeddedData_RoundTrip(t *testing.T) {
 			t.Errorf("payload=%d: unexpected uncorrectable error", payload)
 			continue
 		}
-		if rc.RCPayload != payload {
-			t.Errorf("payload=%d: got %d", payload, rc.RCPayload)
+		if byte(rc.RCCommand) != payload {
+			t.Errorf("payload=%d: got %d", payload, rc.RCCommand)
 		}
 	}
 }
 
 func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
 	t.Parallel()
-	rc := pdu.ReverseChannel{RCPayload: 10}
+	rc := pdu.ReverseChannel{RCCommand: enums.RCCommandFromInt(10)}
 	embData := layer2.EncodeRCToEmbeddedData(&rc)
 
 	decoded, fecResult := layer2.DecodeRCFromEmbeddedData(embData)
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip failed: uncorrectable")
 	}
-	if decoded.RCPayload != 10 {
-		t.Errorf("expected payload=10, got %d", decoded.RCPayload)
+	if int(decoded.RCCommand) != 10 {
+		t.Errorf("expected command=10, got %d", decoded.RCCommand)
 	}
 }
 
@@ -97,8 +97,8 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 	if burst.ReverseChannel == nil {
 		t.Fatal("ReverseChannel should not be nil")
 	}
-	if burst.ReverseChannel.RCPayload != 9 {
-		t.Errorf("expected RCPayload=9, got %d", burst.ReverseChannel.RCPayload)
+	if int(burst.ReverseChannel.RCCommand) != 9 {
+		t.Errorf("expected RCCommand=9, got %d", burst.ReverseChannel.RCCommand)
 	}
 }
 

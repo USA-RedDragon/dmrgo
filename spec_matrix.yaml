@@ -908,13 +908,37 @@ documents:
       # ── Section 6: DMR facilities ──
       - section: "6.1"
         title: "Transmit timeout"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/constants/constants.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/constants
+            names:
+              - TestTimers_AnnexA1
+              - TestConstants_AnnexA2
 
       - section: "6.3"
         title: "Reverse Channel Transmitter Interrupt"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/reverse_channel.go
+          - v2/enums/rc_command.go
+          - v2/constants/constants.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestReverseChannel_DecodeEncode_RoundTrip
+              - TestReverseChannel_ToString
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestRCCommand_ToName_CeaseTransmissionCommand
+              - TestRCCommand_ToName_CeaseTransmissionRequest
+              - TestRCCommand_ToName_Reserved
+              - TestRCCommand_FromInt_CeaseCommand
+              - TestRCCommand_FromInt_CeaseRequest
+              - TestRCCommand_FromInt_Reserved
+              - TestRCCommand_Values
+          - package: github.com/USA-RedDragon/dmrgo/v2/constants
+            names:
+              - TestTimers_AnnexA1
 
       # ── Section 7.1: Layer 3 PDUs ──
       - section: "7.1.1"
@@ -1051,8 +1075,31 @@ documents:
 
       - section: "7.1.3"
         title: "Short Link Control PDUs"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/short_link_control.go
+          - v2/enums/slco.go
+          - v2/enums/activity_id.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestShortLC_NullMessage_Decode
+              - TestShortLC_ActivityUpdate_Decode
+              - TestShortLC_EncodeDecodeRoundTrip
+              - TestShortLC_ToString
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestSLCO_ToName_NullMessage
+              - TestSLCO_ToName_ActivityUpdate
+              - TestSLCO_Values
+              - TestActivityID_ToName_NoActivity
+              - TestActivityID_ToName_GroupVoice
+              - TestActivityID_ToName_IndividualVoice
+              - TestActivityID_ToName_AllEmergency
+              - TestActivityID_ToName_Reserved
+              - TestActivityID_FromInt_NoActivity
+              - TestActivityID_FromInt_GroupVoice
+              - TestActivityID_FromInt_Reserved
+              - TestActivityID_Values
 
       # ── Section 7.2: Layer 3 information element coding ──
       - section: "7.2.1"
@@ -1087,18 +1134,45 @@ documents:
 
       - section: "7.2.4"
         title: "Service Type"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_NegativeAck_Decode
+              - TestCSBK_OpcodeToString
 
       - section: "7.2.5"
         title: "Source Type"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer3/elements/source_type.go
+          - v2/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+            names:
+              - TestSourceType_Constants
+              - TestSourceTypeToName
+              - TestSourceTypeToName_Unknown
+              - TestSourceType_ToString
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_NegativeAck_Decode
 
       - section: "7.2.6"
         title: "Additional Information Field"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer3/elements/additional_information_field.go
+          - v2/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+            names:
+              - TestAdditionalInformationField_Constants
+              - TestAdditionalInformationFieldToName
+              - TestAdditionalInformationFieldToName_Unknown
+              - TestAdditionalInformationField_ToString
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_NegativeAck_Decode
 
       - section: "7.2.7"
         title: "CSBK Blocks to Follow (CBF)"
@@ -1172,14 +1246,36 @@ documents:
 
       - section: "7.2.20"
         title: "Tier 2 Reverse Channel (RC) Command"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/enums/rc_command.go
+          - v2/layer2/pdu/reverse_channel.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestRCCommand_ToName_CeaseTransmissionCommand
+              - TestRCCommand_ToName_CeaseTransmissionRequest
+              - TestRCCommand_ToName_Reserved
+              - TestRCCommand_FromInt_CeaseCommand
+              - TestRCCommand_FromInt_CeaseRequest
+              - TestRCCommand_FromInt_Reserved
+              - TestRCCommand_Values
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestReverseChannel_DecodeEncode_RoundTrip
+              - TestReverseChannel_ToString
 
       # ── Annex A: Timers and constants ──
       - section: "A"
         title: "Timers and constants in DMR"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/constants/constants.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/constants
+            names:
+              - TestTimers_AnnexA1
+              - TestConstants_AnnexA2
+              - TestNoLeader_Equals_BeaconInterval
+              - TestSyncAgeWarning_Equals_TwoBeaconIntervals
 
       # ── Annex B: Opcode Reference Lists ──
       - section: "B.1"
@@ -1203,8 +1299,23 @@ documents:
 
       - section: "B.3"
         title: "Short Link Control Opcode List"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/enums/slco.go
+          - v2/enums/activity_id.go
+          - v2/layer2/pdu/short_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestSLCO_ToName_NullMessage
+              - TestSLCO_ToName_ActivityUpdate
+              - TestSLCO_Values
+              - TestActivityID_Values
+              - TestActivityID_ToName_NoActivity
+              - TestActivityID_ToName_GroupVoice
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestShortLC_NullMessage_Decode
+              - TestShortLC_ActivityUpdate_Decode
 
   - id: "TS-102-361-3"
     title: "ETSI TS 102 361-3 — DMR Data Protocol"

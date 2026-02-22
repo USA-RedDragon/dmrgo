@@ -42,8 +42,8 @@ func (s *ShortLCNullMessage) ToString() string {
 func DecodeShortLCActivityUpdate(data [24]bit.Bit) (ShortLCActivityUpdate, fec.FECResult) {
 	var result ShortLCActivityUpdate
 	var fecResult fec.FECResult
-	result.TS1ActivityID = bit.BitsToUint8(data[:], 0, 4)
-	result.TS2ActivityID = bit.BitsToUint8(data[:], 4, 4)
+	result.TS1ActivityID = enums.ActivityIDFromInt(bit.BitsToInt(data[:], 0, 4))
+	result.TS2ActivityID = enums.ActivityIDFromInt(bit.BitsToInt(data[:], 4, 4))
 	result.HashTS1 = bit.BitsToUint8(data[:], 8, 8)
 	result.HashTS2 = bit.BitsToUint8(data[:], 16, 8)
 	return result, fecResult
@@ -60,7 +60,7 @@ func EncodeShortLCActivityUpdate(s *ShortLCActivityUpdate) [24]bit.Bit {
 }
 
 func (s *ShortLCActivityUpdate) ToString() string {
-	return fmt.Sprintf("ShortLCActivityUpdate{ TS1ActivityID: %d, TS2ActivityID: %d, HashTS1: %d, HashTS2: %d }", s.TS1ActivityID, s.TS2ActivityID, s.HashTS1, s.HashTS2)
+	return fmt.Sprintf("ShortLCActivityUpdate{ TS1ActivityID: %s, TS2ActivityID: %s, HashTS1: %d, HashTS2: %d }", enums.ActivityIDToName(s.TS1ActivityID), enums.ActivityIDToName(s.TS2ActivityID), s.HashTS1, s.HashTS2)
 }
 
 // DecodeShortLC decodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU

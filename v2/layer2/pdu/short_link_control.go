@@ -14,10 +14,10 @@ type ShortLCNullMessage struct {
 
 // ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
 type ShortLCActivityUpdate struct {
-	TS1ActivityID byte `dmr:"bits:0-3"`
-	TS2ActivityID byte `dmr:"bits:4-7"`
-	HashTS1       byte `dmr:"bits:8-15"`
-	HashTS2       byte `dmr:"bits:16-23"`
+	TS1ActivityID enums.ActivityID `dmr:"bits:0-3,enum"`
+	TS2ActivityID enums.ActivityID `dmr:"bits:4-7,enum"`
+	HashTS1       byte             `dmr:"bits:8-15"`
+	HashTS2       byte             `dmr:"bits:16-23"`
 }
 
 // dmr:crc crc_8

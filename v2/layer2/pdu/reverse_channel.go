@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -26,9 +27,9 @@ const CRC7MaskRC uint8 = 0x7A
 
 // ReverseChannel represents a decoded Reverse Channel PDU.
 type ReverseChannel struct {
-	// RCPayload is the 4-bit RC information field.
-	// The meaning of this field is defined in TS 102 361-4.
-	RCPayload byte
+	// RCCommand is the 4-bit RC information field.
+	// Per TS 102 361-2 §7.2.20, this carries an RC command.
+	RCCommand enums.RCCommand
 
 	// FEC holds the combined FEC result from BPTC + CRC verification.
 	FEC fec.FECResult
@@ -41,8 +42,8 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.FECResult) 
 	var fecResult fec.FECResult
 	fecResult.BitsChecked = 11
 
-	// Extract RC payload (bits 0-3)
-	result.RCPayload = bit.BitsToUint8(infoBits[:], 0, 4)
+	// Extract RC command (bits 0-3)
+	result.RCCommand = enums.RCCommandFromInt(int(bit.BitsToUint8(infoBits[:], 0, 4)))
 
 	// CRC-7 verification with mask 0x7A (Table B.21)
 	if !crc.CheckCRC7(infoBits[:], CRC7MaskRC) {
@@ -58,8 +59,8 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.FECResult) 
 func EncodeReverseChannel(rc *ReverseChannel) [11]bit.Bit {
 	var bits [11]bit.Bit
 
-	// RC payload (bits 0-3, MSB-first)
-	copy(bits[0:4], bit.BitsFromUint8(rc.RCPayload&0x0F, 4))
+	// RC command (bits 0-3, MSB-first)
+	copy(bits[0:4], bit.BitsFromUint8(byte(rc.RCCommand)&0x0F, 4))
 
 	// CRC-7 with mask 0x7A
 	crcVal := crc.CalculateCRC7(bits[:4]) ^ CRC7MaskRC
@@ -72,6 +73,6 @@ func EncodeReverseChannel(rc *ReverseChannel) [11]bit.Bit {
 
 // ToString returns a human-readable string representation of the RC PDU.
 func (rc *ReverseChannel) ToString() string {
-	return fmt.Sprintf("ReverseChannel{ RCPayload: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }",
-		rc.RCPayload, rc.FEC.BitsChecked, rc.FEC.ErrorsCorrected, rc.FEC.Uncorrectable)
+	return fmt.Sprintf("ReverseChannel{ RCCommand: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }",
+		enums.RCCommandToName(rc.RCCommand), rc.FEC.BitsChecked, rc.FEC.ErrorsCorrected, rc.FEC.Uncorrectable)
 }

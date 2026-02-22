@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -30,8 +31,8 @@ func TestReverseChannel_DecodeEncode_RoundTrip(t *testing.T) {
 			t.Errorf("payload=%d: unexpected uncorrectable error", payload)
 			continue
 		}
-		if rc.RCPayload != payload {
-			t.Errorf("payload=%d: got %d", payload, rc.RCPayload)
+		if byte(rc.RCCommand) != payload {
+			t.Errorf("payload=%d: got %d", payload, rc.RCCommand)
 			continue
 		}
 
@@ -68,14 +69,14 @@ func TestReverseChannel_BitsChecked(t *testing.T) {
 func TestReverseChannel_PayloadMasked(t *testing.T) {
 	t.Parallel()
 	// Verify only lower 4 bits are used
-	rc := pdu.ReverseChannel{RCPayload: 0xFF}
+	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(0xFF)}
 	encoded := pdu.EncodeReverseChannel(&rc)
 	decoded, fecResult := pdu.DecodeReverseChannel(encoded)
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
-	if decoded.RCPayload != 0x0F {
-		t.Errorf("expected payload=0x0F (masked), got 0x%02X", decoded.RCPayload)
+	if byte(decoded.RCCommand) != 0x0F {
+		t.Errorf("expected command=0x0F (masked), got 0x%02X", byte(decoded.RCCommand))
 	}
 }
 

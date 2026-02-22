@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
 )
 
 // buildCSBKBits constructs a [96]bit.Bit array for a CSBK PDU.
@@ -148,8 +149,11 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 	if csbk.NegativeAcknowledgementPDU == nil {
 		t.Fatal("NegativeAcknowledgementPDU should not be nil")
 	}
-	if !csbk.NegativeAcknowledgementPDU.AdditionalInfo {
-		t.Error("AdditionalInfo should be true")
+	if csbk.NegativeAcknowledgementPDU.AdditionalInfo != elements.AdditionalInfoValid {
+		t.Error("AdditionalInfo should be Valid")
+	}
+	if csbk.NegativeAcknowledgementPDU.ServiceType != pdu.CSBKOpcode(3) {
+		t.Errorf("ServiceType = %d, want 3", csbk.NegativeAcknowledgementPDU.ServiceType)
 	}
 	if csbk.NegativeAcknowledgementPDU.ReasonCode != 0x42 {
 		t.Errorf("ReasonCode = 0x%02X, want 0x42", csbk.NegativeAcknowledgementPDU.ReasonCode)
