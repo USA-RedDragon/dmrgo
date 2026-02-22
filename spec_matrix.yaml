@@ -1323,72 +1323,141 @@ documents:
       # ── Section 5: Internet Protocol (IP) bearer service ──
       - section: "5.3"
         title: "Unconfirmed data DLL bearer service"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_UnconfirmedDecode
 
       - section: "5.4"
         title: "Confirmed data DLL bearer service"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_Confirmed_RoundTrip
+              - TestDataHeader_ResponsePacket_RoundTrip
 
       - section: "5.5"
         title: "UDP/IPv4 data"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/udp_ipv4_compressed.go
+          - v2/enums/said.go
+          - v2/enums/daid.go
+          - v2/enums/spid.go
+          - v2/enums/dpid.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestSAIDToName
+              - TestDAIDToName
+              - TestSPIDToName
+              - TestSPIDToPort
+              - TestDPIDToName
+              - TestDPIDToPort
 
       - section: "5.6"
         title: "UDP/IPv4 header compression"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/udp_ipv4_compressed.go
+          - v2/enums/said.go
+          - v2/enums/daid.go
+          - v2/enums/spid.go
+          - v2/enums/dpid.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestUDPIPv4CompressedHeader_RoundTrip
 
       # ── Section 6: Short data bearer service ──
       - section: "6.1"
         title: "Defined Data"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_DefinedData_RoundTrip
 
       - section: "6.2"
         title: "Raw data"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_RawData_RoundTrip
 
       - section: "6.3"
         title: "Status/precoded data"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_StatusPrecoded_RoundTrip
 
       - section: "6.4"
         title: "Short data confirmed response"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_ResponsePacket_RoundTrip
 
       # ── Section 7: PDU description ──
       - section: "7.1.1"
         title: "Full Link Control (FULL LC) PDUs"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestFLC_TerminatorDataLinkControl_RoundTrip
 
       - section: "7.1.1.1"
         title: "Terminator Data Link Control PDU"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/full_link_control.go
+          - v2/enums/flco.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestFLC_TerminatorDataLinkControl_RoundTrip
 
       - section: "7.2"
         title: "UDP/IPv4 Compressed Header"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/udp_ipv4_compressed.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestUDPIPv4CompressedHeader_RoundTrip
 
       # ── Annex A: PDP timers and constants ──
       - section: "A"
         title: "PDP timers and constants in DMR"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/constants/constants.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/constants
+            names:
+              - TestPDPTimers_AnnexA1
+              - TestPDPConstants_AnnexA2
 
       # ── Annex B: Opcode reference lists ──
       - section: "B.1"
         title: "PDP Full Link Control Opcode list"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/enums/flco.go
+          - v2/layer2/pdu/full_link_control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestFLC_TerminatorDataLinkControl_RoundTrip
 
   - id: "TS-102-361-4"
     title: "ETSI TS 102 361-4 — DMR Trunking Protocol"

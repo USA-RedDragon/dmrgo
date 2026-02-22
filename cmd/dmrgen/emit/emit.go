@@ -5,6 +5,7 @@ package emit
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/USA-RedDragon/dmrgo/cmd/dmrgen/parse"
@@ -384,6 +385,8 @@ func emitPackedFECDecode(g *Group, codec *FECCodecInfo, inputSize int) {
 
 // emitDispatchSwitch generates a switch statement that dispatches on a field value
 // and decodes the appropriate sub-PDU into a pointer field.
+// When multiple fields share the same dispatch value, a secondary guard condition
+// (parsed from the `when:` modifier) is used to disambiguate them via if/else.
 func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) {
 	if len(fields) == 0 {
 		return
@@ -400,28 +403,145 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) {
 	g.Var().Id(tmpVar).Index(Lit(arraySize)).Qual(bitPkg, "Bit")
 	g.Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Lit(bitStart), Lit(bitEnd+1)))
 
+	// Group fields by their dispatch values to detect shared-value cases.
+	// Key: sorted dispatch values joined by "|", Value: list of fields sharing those values.
+	type dispatchGroup struct {
+		values []string
+		fields []parse.Field
+	}
+	var groups []dispatchGroup
+	groupIndex := map[string]int{} // key → index in groups
+	for _, field := range fields {
+		key := strings.Join(field.DispatchValues, "|")
+		if idx, ok := groupIndex[key]; ok {
+			groups[idx].fields = append(groups[idx].fields, field)
+		} else {
+			groupIndex[key] = len(groups)
+			groups = append(groups, dispatchGroup{values: field.DispatchValues, fields: []parse.Field{field}})
+		}
+	}
+
 	// Build the switch statement
 	g.Switch(Id("result").Dot(dispatchFieldName)).BlockFunc(func(sw *Group) {
-		for _, field := range fields {
+		for _, grp := range groups {
 			// Build case values
-			caseValues := make([]Code, len(field.DispatchValues))
-			for i, val := range field.DispatchValues {
+			caseValues := make([]Code, len(grp.values))
+			for i, val := range grp.values {
 				caseValues[i] = emitDispatchConstant(val, pdu)
 			}
 
-			// Determine the decode function name from the pointed type
-			typeName := field.TypeName
-			if field.IsPointer && field.PointedType != "" {
-				typeName = field.PointedType
-			}
-			decodeFn := "Decode" + typeName
+			if len(grp.fields) == 1 {
+				// Simple case: one field per dispatch value
+				field := grp.fields[0]
+				typeName := field.TypeName
+				if field.IsPointer && field.PointedType != "" {
+					typeName = field.PointedType
+				}
+				decodeFn := "Decode" + typeName
 
-			sw.Case(caseValues...).Block(
-				List(Id("_decoded"), Id("_")).Op(":=").Id(decodeFn).Call(Id(tmpVar)),
-				Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
-			)
+				sw.Case(caseValues...).Block(
+					List(Id("_decoded"), Id("_")).Op(":=").Id(decodeFn).Call(Id(tmpVar)),
+					Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
+				)
+			} else {
+				// Multiple fields share the same dispatch value: use when: guards
+				sw.Case(caseValues...).BlockFunc(func(caseBody *Group) {
+					emitGuardedDispatch(caseBody, grp.fields, tmpVar, pdu)
+				})
+			}
 		}
 	})
+}
+
+// emitGuardedDispatch emits an if/else chain for dispatch fields that share the
+// same primary dispatch value. Fields with a `when:` guard are emitted as `if`
+// conditions; the unguarded field (if any) becomes the final `else` fallback.
+func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string, pdu parse.PDUStruct) {
+	// Separate guarded and unguarded fields
+	var guarded []parse.Field
+	var fallback *parse.Field
+	for i := range fields {
+		if fields[i].SecondaryField != "" {
+			guarded = append(guarded, fields[i])
+		} else {
+			fb := fields[i]
+			fallback = &fb
+		}
+	}
+
+	// Build the if/else if/else chain as a single jennifer *Statement so that
+	// Go's "} else {" is on one line (separate g.If / g.Else calls would put
+	// them on different lines, producing invalid Go).
+	var chain *Statement
+	for i, field := range guarded {
+		typeName := field.TypeName
+		if field.IsPointer && field.PointedType != "" {
+			typeName = field.PointedType
+		}
+		decodeFn := "Decode" + typeName
+
+		// Build the guard condition: result.SecondaryField <op> <value>
+		guardCond := emitGuardCondition(field)
+
+		decodeBlock := []Code{
+			List(Id("_decoded"), Id("_")).Op(":=").Id(decodeFn).Call(Id(tmpVar)),
+			Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
+		}
+
+		if i == 0 {
+			chain = If(guardCond).Block(decodeBlock...)
+		} else {
+			chain.Else().If(guardCond).Block(decodeBlock...)
+		}
+	}
+
+	if fallback != nil {
+		typeName := fallback.TypeName
+		if fallback.IsPointer && fallback.PointedType != "" {
+			typeName = fallback.PointedType
+		}
+		decodeFn := "Decode" + typeName
+
+		fallbackBlock := []Code{
+			List(Id("_decoded"), Id("_")).Op(":=").Id(decodeFn).Call(Id(tmpVar)),
+			Id("result").Dot(fallback.Name).Op("=").Op("&").Id("_decoded"),
+		}
+
+		if chain != nil {
+			chain.Else().Block(fallbackBlock...)
+		} else {
+			// No guards at all — shouldn't happen, but handle gracefully
+			for _, stmt := range fallbackBlock {
+				g.Add(stmt)
+			}
+			return
+		}
+	}
+
+	if chain != nil {
+		g.Add(chain)
+	}
+}
+
+// emitGuardCondition generates the Code for a when: guard condition.
+// e.g. result.AppendedBlocks == 0
+func emitGuardCondition(field parse.Field) *Statement {
+	lhs := Id("result").Dot(field.SecondaryField)
+	val := Lit(mustAtoi(field.SecondaryValue))
+	switch field.SecondaryOp {
+	case "==":
+		return lhs.Op("==").Add(val)
+	case "!=":
+		return lhs.Op("!=").Add(val)
+	default:
+		return lhs.Op("==").Add(val) // fallback
+	}
+}
+
+// mustAtoi converts a string to int, returning 0 on error.
+func mustAtoi(s string) int {
+	n, _ := strconv.Atoi(s)
+	return n
 }
 
 // emitDispatchConstant generates the jennifer Code for a dispatch constant reference.
@@ -906,7 +1026,11 @@ func emitEncode(f *File, pdu parse.PDUStruct) {
 }
 
 // emitEncodeFields emits encoding for all fields (regular + dispatch).
+// Dispatch fields are encoded FIRST so their wide copy (e.g. data[0:80])
+// doesn't overwrite the outer struct's non-dispatch fields (e.g. Format,
+// AppendedBlocks) that may share the same bit range.
 func emitEncodeFields(g *Group, pdu parse.PDUStruct) {
+	var regularFields []parse.Field
 	var dispatchFields []parse.Field
 	for _, field := range pdu.Fields {
 		if field.Skip {
@@ -914,12 +1038,20 @@ func emitEncodeFields(g *Group, pdu parse.PDUStruct) {
 		}
 		if field.Kind == parse.FieldDispatch {
 			dispatchFields = append(dispatchFields, field)
-			continue
+		} else {
+			regularFields = append(regularFields, field)
 		}
-		emitFieldEncode(g, field, pdu)
 	}
+	// Dispatch first — sub-PDU copies the full payload range.
 	if len(dispatchFields) > 0 {
 		emitDispatchEncode(g, dispatchFields, pdu)
+	}
+	// Then non-dispatch fields overwrite their specific bit positions.
+	for _, field := range regularFields {
+		if field.NoEncode {
+			continue // decoded for guard conditions but not encoded (sub-PDU handles these bits)
+		}
+		emitFieldEncode(g, field, pdu)
 	}
 }
 

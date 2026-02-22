@@ -17,11 +17,12 @@ type FullLinkControl struct {
 	FeatureSetID enums.FeatureSetID      `dmr:"bits:8-15,enum,err,from:enums.FeatureSetIDFromInt"`
 	FEC          fec.FECResult           `dmr:"-"`
 
-	GroupVoice        *FLCGroupVoice        `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`
-	UnitToUnit        *FLCUnitToUnit        `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`
-	GPSInfo           *FLCGPSInfo           `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGPSInfo"`
-	TalkerAliasHeader *FLCTalkerAliasHeader `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasHeader"`
-	TalkerAliasBlock  *FLCTalkerAliasBlock  `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasBlock1|enums.FLCOTalkerAliasBlock2|enums.FLCOTalkerAliasBlock3"`
+	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`
+	UnitToUnit                *FLCUnitToUnit                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`
+	GPSInfo                   *FLCGPSInfo                   `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGPSInfo"`
+	TalkerAliasHeader         *FLCTalkerAliasHeader         `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasHeader"`
+	TalkerAliasBlock          *FLCTalkerAliasBlock          `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasBlock1|enums.FLCOTalkerAliasBlock2|enums.FLCOTalkerAliasBlock3"`
+	TerminatorDataLinkControl *FLCTerminatorDataLinkControl `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTerminatorDataLinkControl"`
 }
 
 // FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])
@@ -59,6 +60,17 @@ type FLCTalkerAliasHeader struct {
 // ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
 type FLCTalkerAliasBlock struct {
 	TalkerAliasData [56]bit.Bit `dmr:"bits:0-55,raw"`
+}
+
+// ETSI TS 102 361-3 - Table 7.1: Terminator Data Link Control PDU content
+type FLCTerminatorDataLinkControl struct {
+	LLIDDestination    int   `dmr:"bits:0-23"`
+	LLIDSource         int   `dmr:"bits:24-47"`
+	GroupOrIndividual  bool  `dmr:"bit:48"`
+	ResponseRequested  bool  `dmr:"bit:49"`
+	FullMessageFlag    bool  `dmr:"bit:50"`
+	ReSynchronizeFlag  bool  `dmr:"bit:52"`
+	SendSequenceNumber uint8 `dmr:"bits:53-55"`
 }
 
 func (flc FullLinkControl) GetDataType() layer2Elements.DataType {

@@ -367,3 +367,60 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 		})
 	}
 }
+
+func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
+	original := &pdu.FullLinkControl{
+		ProtectFlag:  false,
+		FLCO:         enums.FLCOTerminatorDataLinkControl,
+		FeatureSetID: enums.StandardizedFID,
+		TerminatorDataLinkControl: &pdu.FLCTerminatorDataLinkControl{
+			LLIDDestination:    1234567,
+			LLIDSource:         7654321,
+			GroupOrIndividual:  true,
+			ResponseRequested:  true,
+			FullMessageFlag:    true,
+			ReSynchronizeFlag:  false,
+			SendSequenceNumber: 5,
+		},
+	}
+
+	infoBits := pdu.EncodeFullLinkControl(original)
+	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
+	}
+	if decoded.FLCO != enums.FLCOTerminatorDataLinkControl {
+		t.Errorf("FLCO = %v, want FLCOTerminatorDataLinkControl", decoded.FLCO)
+	}
+	if decoded.TerminatorDataLinkControl == nil {
+		t.Fatal("TerminatorDataLinkControl is nil")
+	}
+	tdlc := decoded.TerminatorDataLinkControl
+	if tdlc.LLIDDestination != 1234567 {
+		t.Errorf("LLIDDestination = %d, want 1234567", tdlc.LLIDDestination)
+	}
+	if tdlc.LLIDSource != 7654321 {
+		t.Errorf("LLIDSource = %d, want 7654321", tdlc.LLIDSource)
+	}
+	if !tdlc.GroupOrIndividual {
+		t.Error("GroupOrIndividual should be true")
+	}
+	if !tdlc.ResponseRequested {
+		t.Error("ResponseRequested should be true")
+	}
+	if !tdlc.FullMessageFlag {
+		t.Error("FullMessageFlag should be true")
+	}
+	if tdlc.ReSynchronizeFlag {
+		t.Error("ReSynchronizeFlag should be false")
+	}
+	if tdlc.SendSequenceNumber != 5 {
+		t.Errorf("SendSequenceNumber = %d, want 5", tdlc.SendSequenceNumber)
+	}
+
+	// ToString should contain the FLCO name
+	str := decoded.ToString()
+	if !strings.Contains(str, "Terminator Data Link Control") {
+		t.Errorf("ToString missing FLCO name, got: %s", str)
+	}
+}

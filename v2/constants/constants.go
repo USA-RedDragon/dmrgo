@@ -100,6 +100,45 @@ const BeaconDuration = 600 * time.Millisecond
 // ETSI TS 102 361-2 — Table A.2
 const BeaconInterval = 4*time.Minute + 30*time.Second
 
-// CTDuration is the minimum duration of a CT_CSBK_Req or CT_CSBK_Resp transmission.
+// CTDuration is the minimum duration of a CT_CSBK transmission.
 // ETSI TS 102 361-2 — Table A.2
 const CTDuration = 180 * time.Millisecond
+
+// ── ETSI TS 102 361-3 Annex A: PDP (Packet Data Protocol) Timers and Constants ──
+
+// ── A.1 Layer 2 Timers ──
+
+// TDataTxLmt is the data transmission limit timer.
+// Time duration an MS will attempt to transmit unconfirmed data
+// or transmit confirmed data and receive a reply.
+// ETSI TS 102 361-3 — Table A.1
+const TDataTxLmt = 60 * time.Second
+
+// TRspnsWait is the confirmed data response wait limit timer.
+// Time duration an MS will wait for a confirmed header packet data response.
+// ETSI TS 102 361-3 — Table A.1
+const TRspnsWait = 180 * time.Millisecond
+
+// TRspnsWaitSimulcast is the recommended minimum response wait timer for simulcast systems.
+// ETSI TS 102 361-3 — Table A.1
+const TRspnsWaitSimulcast = 2 * time.Second
+
+// THoldoffMax is the maximum random holdoff time.
+// MS randomly generates a holdoff timer in [0, THoldoffMax] to minimise
+// collisions when data messages are queued and the channel becomes idle.
+// ETSI TS 102 361-3 — Table A.1
+const THoldoffMax = 2 * time.Second
+
+// TDataHngtime is the data hangtime timer.
+// Time that BS transmits TD_LC PDUs to reserve the channel for
+// a confirmed data response. Recommended value is 3 traffic bursts.
+// ETSI TS 102 361-3 — Table A.1
+const TDataHngtime = 180 * time.Millisecond
+
+// ── A.2 Layer 2 Constants ──
+
+// NRtryLmt is the data air interface retry limit.
+// Number of times the DLL will transmit and attempt to receive
+// the confirmed data response.
+// ETSI TS 102 361-3 — Table A.2
+const NRtryLmt = 8

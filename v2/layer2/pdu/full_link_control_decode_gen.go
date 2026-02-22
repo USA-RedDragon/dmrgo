@@ -7,6 +7,7 @@ ETSI TS 102 361-2 - Table 7.2: UU_V_Ch_Usr PDU content
 ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
 ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
 ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
+ETSI TS 102 361-3 - Table 7.1: Terminator Data Link Control PDU content
 
 DO NOT EDIT.
 */
@@ -75,6 +76,9 @@ func DecodeFullLinkControl(data [96]bit.Bit) (FullLinkControl, fec.FECResult) {
 	case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
 		_decoded, _ := DecodeFLCTalkerAliasBlock(_dispatchBits)
 		result.TalkerAliasBlock = &_decoded
+	case enums.FLCOTerminatorDataLinkControl:
+		_decoded, _ := DecodeFLCTerminatorDataLinkControl(_dispatchBits)
+		result.TerminatorDataLinkControl = &_decoded
 	}
 	return result, fecResult
 }
@@ -82,11 +86,6 @@ func DecodeFullLinkControl(data [96]bit.Bit) (FullLinkControl, fec.FECResult) {
 // EncodeFullLinkControl encodes a FullLinkControl per ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
 func EncodeFullLinkControl(s *FullLinkControl) [96]bit.Bit {
 	var data [96]bit.Bit
-	if s.ProtectFlag {
-		data[0] = 1
-	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.FLCO), 6))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.FeatureSetID), 8))
 	switch {
 	case s.GroupVoice != nil:
 		_pduBits := EncodeFLCGroupVoice(s.GroupVoice)
@@ -103,7 +102,15 @@ func EncodeFullLinkControl(s *FullLinkControl) [96]bit.Bit {
 	case s.TalkerAliasBlock != nil:
 		_pduBits := EncodeFLCTalkerAliasBlock(s.TalkerAliasBlock)
 		copy(data[16:72], _pduBits[:])
+	case s.TerminatorDataLinkControl != nil:
+		_pduBits := EncodeFLCTerminatorDataLinkControl(s.TerminatorDataLinkControl)
+		copy(data[16:72], _pduBits[:])
 	}
+	if s.ProtectFlag {
+		data[0] = 1
+	}
+	copy(data[2:8], bit.BitsFromUint8(uint8(s.FLCO), 6))
+	copy(data[8:16], bit.BitsFromUint8(uint8(s.FeatureSetID), 8))
 	var _encData [9]byte
 	for i := range 9 {
 		for j := range 8 {
@@ -134,6 +141,8 @@ func (s *FullLinkControl) ToString() string {
 		_ret += s.TalkerAliasHeader.ToString()
 	case s.TalkerAliasBlock != nil:
 		_ret += s.TalkerAliasBlock.ToString()
+	case s.TerminatorDataLinkControl != nil:
+		_ret += s.TerminatorDataLinkControl.ToString()
 	}
 	_ret += " }"
 	return _ret
@@ -258,4 +267,43 @@ func EncodeFLCTalkerAliasBlock(s *FLCTalkerAliasBlock) [56]bit.Bit {
 
 func (s *FLCTalkerAliasBlock) ToString() string {
 	return fmt.Sprintf("FLCTalkerAliasBlock{ TalkerAliasData: %v }", s.TalkerAliasData)
+}
+
+// DecodeFLCTerminatorDataLinkControl decodes a FLCTerminatorDataLinkControl per ETSI TS 102 361-3 - Table 7.1: Terminator Data Link Control PDU content
+func DecodeFLCTerminatorDataLinkControl(data [56]bit.Bit) (FLCTerminatorDataLinkControl, fec.FECResult) {
+	var result FLCTerminatorDataLinkControl
+	var fecResult fec.FECResult
+	result.LLIDDestination = bit.BitsToInt(data[:], 0, 24)
+	result.LLIDSource = bit.BitsToInt(data[:], 24, 24)
+	result.GroupOrIndividual = bit.BitsToBool(data[:], 48)
+	result.ResponseRequested = bit.BitsToBool(data[:], 49)
+	result.FullMessageFlag = bit.BitsToBool(data[:], 50)
+	result.ReSynchronizeFlag = bit.BitsToBool(data[:], 52)
+	result.SendSequenceNumber = bit.BitsToUint8(data[:], 53, 3)
+	return result, fecResult
+}
+
+// EncodeFLCTerminatorDataLinkControl encodes a FLCTerminatorDataLinkControl per ETSI TS 102 361-3 - Table 7.1: Terminator Data Link Control PDU content
+func EncodeFLCTerminatorDataLinkControl(s *FLCTerminatorDataLinkControl) [56]bit.Bit {
+	var data [56]bit.Bit
+	copy(data[0:24], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	copy(data[24:48], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	if s.GroupOrIndividual {
+		data[48] = 1
+	}
+	if s.ResponseRequested {
+		data[49] = 1
+	}
+	if s.FullMessageFlag {
+		data[50] = 1
+	}
+	if s.ReSynchronizeFlag {
+		data[52] = 1
+	}
+	copy(data[53:56], bit.BitsFromUint8(s.SendSequenceNumber, 3))
+	return data
+}
+
+func (s *FLCTerminatorDataLinkControl) ToString() string {
+	return fmt.Sprintf("FLCTerminatorDataLinkControl{ LLIDDestination: %d, LLIDSource: %d, GroupOrIndividual: %t, ResponseRequested: %t, FullMessageFlag: %t, ReSynchronizeFlag: %t, SendSequenceNumber: %d }", s.LLIDDestination, s.LLIDSource, s.GroupOrIndividual, s.ResponseRequested, s.FullMessageFlag, s.ReSynchronizeFlag, s.SendSequenceNumber)
 }

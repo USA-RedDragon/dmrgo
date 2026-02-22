@@ -60,12 +60,22 @@ type Field struct {
 	DispatchFieldName string   // field name to switch on (e.g. "CSBKOpcode")
 	DispatchValues    []string // constant names (e.g. ["CSBKBSOutboundActivationPDU"])
 
+	// Secondary dispatch guard (optional): when:<Field><Op><Value>
+	// Used to disambiguate dispatch fields that share the same primary dispatch value.
+	SecondaryField string // field name for guard condition (e.g. "AppendedBlocks")
+	SecondaryOp    string // comparison operator (e.g. "==", "!=")
+	SecondaryValue string // literal value (e.g. "0")
+
 	// For non-contiguous fields: additional bit ranges
 	// e.g. "bits:3+12-15" → ExtraBitRanges = [{12,15}]
 	ExtraBitRanges [][2]int
 
 	// Skip fields (dmr:"-") are included for ToString generation but excluded from decode/encode.
 	Skip bool
+
+	// NoEncode fields are decoded (e.g. for when: guard conditions) but skipped during encode
+	// because the sub-PDU's encode already writes the overlapping bits.
+	NoEncode bool
 }
 
 // FECDirective describes a struct-level FEC pre-processing step.
@@ -340,6 +350,8 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 			f.Kind = FieldInt
 		case mod == "noptr":
 			f.DelegateNoPtr = true
+		case mod == "no_encode":
+			f.NoEncode = true
 		case mod == "err":
 			f.EnumReturnsErr = true
 		case strings.HasPrefix(mod, "type:"):
@@ -376,6 +388,20 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 			}
 			f.DispatchFieldName = dispatchSpec[:eqIdx]
 			f.DispatchValues = strings.Split(dispatchSpec[eqIdx+1:], "|")
+		case strings.HasPrefix(mod, "when:"):
+			// Secondary dispatch guard: when:Field==Value or when:Field!=Value
+			guardSpec := strings.TrimPrefix(mod, "when:")
+			if idx := strings.Index(guardSpec, "=="); idx >= 0 {
+				f.SecondaryField = guardSpec[:idx]
+				f.SecondaryOp = "=="
+				f.SecondaryValue = guardSpec[idx+2:]
+			} else if idx := strings.Index(guardSpec, "!="); idx >= 0 {
+				f.SecondaryField = guardSpec[:idx]
+				f.SecondaryOp = "!="
+				f.SecondaryValue = guardSpec[idx+2:]
+			} else {
+				return f, fmt.Errorf("when modifier missing operator (== or !=): %q", mod)
+			}
 		default:
 			return f, fmt.Errorf("unrecognized modifier: %q", mod)
 		}

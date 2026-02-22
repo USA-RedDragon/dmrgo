@@ -60,12 +60,12 @@ func main() {
 | Metric | Count |
 | --- | --- |
 | Total sections | 123 |
-| ✅ Verified (tests pass) | 96 |
+| ✅ Verified (tests pass) | 109 |
 | ❌ Failing (tests fail) | 0 |
 | 🔶 Untested (has source, no tests) | 0 |
-| ⬜ Unimplemented | 27 |
+| ⬜ Unimplemented | 14 |
 
-**Overall: 96/123 verified (78.0%)**
+**Overall: 109/123 verified (88.6%)**
 
 ### ETSI TS 102 361-1 — Air Interface Protocol
 
@@ -183,25 +183,25 @@ func main() {
 
 ### ETSI TS 102 361-3 — DMR Data Protocol
 
-**13** sections - ✅ 0  ❌ 0  🔶 0  ⬜ 13
+**13** sections - ✅ 13  ❌ 0  🔶 0  ⬜ 0
 
-`[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%`
+`[██████████████████████████████] 100.0%`
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| §5.3 | Unconfirmed data DLL bearer service | ⬜ unimplemented | - | - |
-| §5.4 | Confirmed data DLL bearer service | ⬜ unimplemented | - | - |
-| §5.5 | UDP/IPv4 data | ⬜ unimplemented | - | - |
-| §5.6 | UDP/IPv4 header compression | ⬜ unimplemented | - | - |
-| §6.1 | Defined Data | ⬜ unimplemented | - | - |
-| §6.2 | Raw data | ⬜ unimplemented | - | - |
-| §6.3 | Status/precoded data | ⬜ unimplemented | - | - |
-| §6.4 | Short data confirmed response | ⬜ unimplemented | - | - |
-| §7.1.1 | Full Link Control (FULL LC) PDUs | ⬜ unimplemented | - | - |
-| §7.1.1.1 | Terminator Data Link Control PDU | ⬜ unimplemented | - | - |
-| §7.2 | UDP/IPv4 Compressed Header | ⬜ unimplemented | - | - |
-| §A | PDP timers and constants in DMR | ⬜ unimplemented | - | - |
-| §B.1 | PDP Full Link Control Opcode list | ⬜ unimplemented | - | - |
+| §5.3 | Unconfirmed data DLL bearer service | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §5.4 | Confirmed data DLL bearer service | ✅ verified | 2/2 passed | `v2/layer2/pdu/data_header.go` |
+| §5.5 | UDP/IPv4 data | ✅ verified | 6/6 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
+| §5.6 | UDP/IPv4 header compression | ✅ verified | 1/1 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
+| §6.1 | Defined Data | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §6.2 | Raw data | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §6.3 | Status/precoded data | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §6.4 | Short data confirmed response | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §7.1.1 | Full Link Control (FULL LC) PDUs | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.1.1.1 | Terminator Data Link Control PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go`, `v2/enums/flco.go` |
+| §7.2 | UDP/IPv4 Compressed Header | ✅ verified | 1/1 passed | `v2/layer2/pdu/udp_ipv4_compressed.go` |
+| §A | PDP timers and constants in DMR | ✅ verified | 2/2 passed | `v2/constants/constants.go` |
+| §B.1 | PDP Full Link Control Opcode list | ✅ verified | 1/1 passed | `v2/enums/flco.go`, `v2/layer2/pdu/full_link_control.go` |
 
 ### ETSI TS 102 361-4 — DMR Trunking Protocol
 

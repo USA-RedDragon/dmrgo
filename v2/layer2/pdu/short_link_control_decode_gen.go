@@ -95,7 +95,6 @@ func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.FECResult) {
 // EncodeShortLC encodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
 func EncodeShortLC(s *ShortLC) [36]bit.Bit {
 	var data [36]bit.Bit
-	copy(data[0:4], bit.BitsFromUint8(uint8(s.SLCO), 4))
 	switch {
 	case s.NullMessage != nil:
 		_pduBits := EncodeShortLCNullMessage(s.NullMessage)
@@ -104,6 +103,7 @@ func EncodeShortLC(s *ShortLC) [36]bit.Bit {
 		_pduBits := EncodeShortLCActivityUpdate(s.ActivityUpdate)
 		copy(data[4:28], _pduBits[:])
 	}
+	copy(data[0:4], bit.BitsFromUint8(uint8(s.SLCO), 4))
 	_crcVal := crc.CalculateCRC8(data[:28])
 	for j := range 8 {
 		data[28+j] = bit.Bit((_crcVal >> (7 - j)) & 1)

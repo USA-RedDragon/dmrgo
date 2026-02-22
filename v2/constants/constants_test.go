@@ -73,3 +73,35 @@ func TestSyncAgeWarning_Equals_TwoBeaconIntervals(t *testing.T) {
 		t.Errorf("SyncAgeWarning (%v) should equal 2*BeaconInterval (%v)", constants.SyncAgeWarning, 2*constants.BeaconInterval)
 	}
 }
+
+// ── ETSI TS 102 361-3 Annex A: PDP Timers and Constants ──
+
+func TestPDPTimers_AnnexA1(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		got      time.Duration
+		expected time.Duration
+	}{
+		{"TDataTxLmt", constants.TDataTxLmt, 60 * time.Second},
+		{"TRspnsWait", constants.TRspnsWait, 180 * time.Millisecond},
+		{"TRspnsWaitSimulcast", constants.TRspnsWaitSimulcast, 2 * time.Second},
+		{"THoldoffMax", constants.THoldoffMax, 2 * time.Second},
+		{"TDataHngtime", constants.TDataHngtime, 180 * time.Millisecond},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if tt.got != tt.expected {
+				t.Errorf("%s = %v, want %v", tt.name, tt.got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestPDPConstants_AnnexA2(t *testing.T) {
+	t.Parallel()
+	if constants.NRtryLmt != 8 {
+		t.Errorf("NRtryLmt = %d, want 8", constants.NRtryLmt)
+	}
+}

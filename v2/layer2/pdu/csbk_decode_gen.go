@@ -254,14 +254,6 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.FECResult) {
 // EncodeCSBK encodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU
 func EncodeCSBK(s *CSBK) [96]bit.Bit {
 	var data [96]bit.Bit
-	if s.LastBlock {
-		data[0] = 1
-	}
-	if s.ProtectFlag {
-		data[1] = 1
-	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.FID), 8))
 	switch {
 	case s.BSOutboundActivationPDU != nil:
 		_pduBits := EncodeBSOutboundActivationPDU(s.BSOutboundActivationPDU)
@@ -282,6 +274,14 @@ func EncodeCSBK(s *CSBK) [96]bit.Bit {
 		_pduBits := EncodeChannelTimingPDU(s.ChannelTimingPDU)
 		copy(data[16:80], _pduBits[:])
 	}
+	if s.LastBlock {
+		data[0] = 1
+	}
+	if s.ProtectFlag {
+		data[1] = 1
+	}
+	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
+	copy(data[8:16], bit.BitsFromUint8(uint8(s.FID), 8))
 	var _encBytes [10]byte
 	for i := range 10 {
 		for j := range 8 {
