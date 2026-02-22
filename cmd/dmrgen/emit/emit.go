@@ -524,10 +524,21 @@ func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string, pdu pars
 }
 
 // emitGuardCondition generates the Code for a when: guard condition.
-// e.g. result.AppendedBlocks == 0
+// e.g. result.AppendedBlocks == 0 or result.TrunkingMode == true
 func emitGuardCondition(field parse.Field) *Statement {
 	lhs := Id("result").Dot(field.SecondaryField)
-	val := Lit(mustAtoi(field.SecondaryValue))
+
+	// Support boolean literal values (true/false) in addition to integers
+	var val *Statement
+	switch field.SecondaryValue {
+	case "true":
+		val = True()
+	case "false":
+		val = False()
+	default:
+		val = Lit(mustAtoi(field.SecondaryValue))
+	}
+
 	switch field.SecondaryOp {
 	case "==":
 		return lhs.Op("==").Add(val)

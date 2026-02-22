@@ -1465,74 +1465,179 @@ documents:
       # ── Section 5: Trunking Control Channel Formats ──
       - section: "5.1"
         title: "The Use of the CACH"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/short_link_control.go
+          - v2/layer2/cach.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestShortLC_CSysParms_NetSite_Models
+              - TestShortLC_PSysParms_NetSite_Models
+              - TestSLCO_TierIII_Values
 
       - section: "5.2"
         title: "Tier III Signalling"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/csbk.go
+          - v2/layer2/burst.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_TierIII_OpcodeToString
+              - TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound
+              - TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI
 
       - section: "5.3"
         title: "Modes of Control Channel"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/burst.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound
+              - TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI
 
       - section: "5.4"
         title: "CSBK/MBC/UDT/USBD Block Structure"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/csbk.go
+          - v2/layer2/pdu/mbc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_Aloha_Decode
+              - TestCGAPContinuation_Decode
+              - TestCSBK_UDTOutboundHeader_Decode
 
       # ── Section 6: Trunking Procedures ──
-      - section: "6.1"
-        title: "Basic Structure"
-        source_files: []
-        test_functions: []
-
       - section: "6.2"
         title: "Random Access Procedures"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/csbk.go
+          - v2/constants/constants.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_RandomAccess_Decode
+          - package: github.com/USA-RedDragon/dmrgo/v2/constants
+            names:
+              - TestTrunkingTimers_AnnexA1
 
       - section: "6.6"
         title: "Call Procedures"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_PrivateVoiceGrant_Decode
+              - TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle
+              - TestCSBK_Clear_Decode
 
       # ── Section 7: PDU description ──
       - section: "7.1.1"
         title: "Control Signalling Block (CSBK/MBC/UDT) PDUs"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/csbk.go
+          - v2/layer2/pdu/mbc.go
+          - v2/enums/announcement_type.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_Aloha_Decode
+              - TestCSBK_CBroadcast_Decode
+              - TestCSBK_Clear_Decode
+              - TestCSBK_Ahoy_Decode
+              - TestCSBK_AckOutbound_Decode
+              - TestCSBK_Move_Decode
+              - TestCSBK_Maintenance_Decode
+              - TestCSBK_Ackvitation_Decode
+              - TestCSBK_Protect_Decode
+              - TestCSBK_UDTOutboundHeader_Decode
+              - TestCGAPContinuation_Decode
+              - TestMVAPContinuation_Decode
+              - TestBCAPContinuation_Decode
+              - TestVNAPContinuation_Decode
+              - TestAnnouncementType_ToName
+              - TestAnnouncementType_FromInt
 
       - section: "7.1.1.1"
         title: "TSCC Outbound channel CSBK/MBC/UDT"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/csbk.go
+          - v2/layer2/pdu/mbc.go
+          - v2/layer3/elements/cdef_parms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_PrivateVoiceGrant_Decode
+              - TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle
+              - TestCSBK_PrivateDataGrant_EncodeDecodeCycle
+              - TestCGAPContinuation_Decode
+              - TestCGAPContinuation_EncodeDecodeCycle
+              - TestMVAPContinuation_Decode
+              - TestMVAPContinuation_EncodeDecodeCycle
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+            names:
+              - TestCdefParms_NewFromBits
+              - TestCdefParms_FrequencyCalculation
 
       - section: "7.1.2"
         title: "Short Link Control PDUs"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/short_link_control.go
+          - v2/enums/slco.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestShortLC_CSysParms_NetSite_Models
+              - TestShortLC_PSysParms_NetSite_Models
+              - TestSLCO_TierIII_Values
 
       - section: "7.2"
         title: "Layer 3 Information Element Coding"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer3/elements/cdef_parms.go
+          - v2/enums/announcement_type.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+            names:
+              - TestCdefParms_NewFromBits
+              - TestCdefParms_FrequencyCalculation
+              - TestCdefParms_ToString
+              - TestCdefParms_ZeroValues
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestAnnouncementType_ToName
+              - TestAnnouncementType_FromInt
 
       # ── Annex A: Timers, constants levels and addresses ──
       - section: "A"
         title: "Timers, constants levels and addresses"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/constants/constants.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/constants
+            names:
+              - TestTrunkingTimers_AnnexA1
+              - TestTrunkingConstants_AnnexA6
+              - TestTrunkingGatewayAddresses_AnnexA8
 
       # ── Annex B: Opcode Reference Lists ──
       - section: "B.1"
         title: "CSBK/MBC/UDT Opcode List"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/csbk.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_TierIII_OpcodeToString
 
       - section: "B.2"
         title: "Short Link Control Opcode List"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/enums/slco.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestSLCO_TierIII_Values

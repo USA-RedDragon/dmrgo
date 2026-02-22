@@ -59,13 +59,13 @@ func main() {
 
 | Metric | Count |
 | --- | --- |
-| Total sections | 123 |
-| ✅ Verified (tests pass) | 109 |
+| Total sections | 122 |
+| ✅ Verified (tests pass) | 122 |
 | ❌ Failing (tests fail) | 0 |
 | 🔶 Untested (has source, no tests) | 0 |
-| ⬜ Unimplemented | 14 |
+| ⬜ Unimplemented | 0 |
 
-**Overall: 109/123 verified (88.6%)**
+**Overall: 122/122 verified (100.0%)**
 
 ### ETSI TS 102 361-1 — Air Interface Protocol
 
@@ -205,25 +205,24 @@ func main() {
 
 ### ETSI TS 102 361-4 — DMR Trunking Protocol
 
-**14** sections - ✅ 0  ❌ 0  🔶 0  ⬜ 14
+**13** sections - ✅ 13  ❌ 0  🔶 0  ⬜ 0
 
-`[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0.0%`
+`[██████████████████████████████] 100.0%`
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| §5.1 | The Use of the CACH | ⬜ unimplemented | - | - |
-| §5.2 | Tier III Signalling | ⬜ unimplemented | - | - |
-| §5.3 | Modes of Control Channel | ⬜ unimplemented | - | - |
-| §5.4 | CSBK/MBC/UDT/USBD Block Structure | ⬜ unimplemented | - | - |
-| §6.1 | Basic Structure | ⬜ unimplemented | - | - |
-| §6.2 | Random Access Procedures | ⬜ unimplemented | - | - |
-| §6.6 | Call Procedures | ⬜ unimplemented | - | - |
-| §7.1.1 | Control Signalling Block (CSBK/MBC/UDT) PDUs | ⬜ unimplemented | - | - |
-| §7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | ⬜ unimplemented | - | - |
-| §7.1.2 | Short Link Control PDUs | ⬜ unimplemented | - | - |
-| §7.2 | Layer 3 Information Element Coding | ⬜ unimplemented | - | - |
-| §A | Timers, constants levels and addresses | ⬜ unimplemented | - | - |
-| §B.1 | CSBK/MBC/UDT Opcode List | ⬜ unimplemented | - | - |
-| §B.2 | Short Link Control Opcode List | ⬜ unimplemented | - | - |
+| §5.1 | The Use of the CACH | ✅ verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/layer2/cach.go` |
+| §5.2 | Tier III Signalling | ✅ verified | 3/3 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/burst.go` |
+| §5.3 | Modes of Control Channel | ✅ verified | 2/2 passed | `v2/layer2/burst.go` |
+| §5.4 | CSBK/MBC/UDT/USBD Block Structure | ✅ verified | 3/3 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go` |
+| §6.2 | Random Access Procedures | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go`, `v2/constants/constants.go` |
+| §6.6 | Call Procedures | ✅ verified | 3/3 passed | `v2/layer2/pdu/csbk.go` |
+| §7.1.1 | Control Signalling Block (CSBK/MBC/UDT) PDUs | ✅ verified | 16/16 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/enums/announcement_type.go` |
+| §7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | ✅ verified | 9/9 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/elements/cdef_parms.go` |
+| §7.1.2 | Short Link Control PDUs | ✅ verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go` |
+| §7.2 | Layer 3 Information Element Coding | ✅ verified | 6/6 passed | `v2/layer3/elements/cdef_parms.go`, `v2/enums/announcement_type.go` |
+| §A | Timers, constants levels and addresses | ✅ verified | 3/3 passed | `v2/constants/constants.go` |
+| §B.1 | CSBK/MBC/UDT Opcode List | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
+| §B.2 | Short Link Control Opcode List | ✅ verified | 1/1 passed | `v2/enums/slco.go` |
 
 <!-- END ETSI COVERAGE -->

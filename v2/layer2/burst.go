@@ -32,6 +32,7 @@ type Burst struct {
 	IsData                bool
 	Data                  elements.Data
 	FEC                   fec.BurstFECStats
+	TrunkingMode          bool
 	fullLinkControl       *pdu.FullLinkControl
 	csbk                  *pdu.CSBK
 	dataHeader            *pdu.DataHeader
@@ -46,6 +47,12 @@ type Burst struct {
 	deinterleavedInfoLen  int
 }
 
+// SetTrunkingMode sets whether the burst should be decoded as Tier III trunking.
+// This affects disambiguation of CSBK opcode 0x38 (BS_Dwn_Act vs TD_GRANT_MI).
+func (b *Burst) SetTrunkingMode(mode bool) {
+	b.TrunkingMode = mode
+}
+
 // NewBurstFromBytes creates a new Burst from the given bytes.
 func NewBurstFromBytes(data [33]byte) (*Burst, error) {
 	burst := &Burst{}
@@ -55,7 +62,9 @@ func NewBurstFromBytes(data [33]byte) (*Burst, error) {
 
 // DecodeFromBytes populates the burst in place, enabling zero-allocation decoding when reusing a Burst.
 func (b *Burst) DecodeFromBytes(data [33]byte) error {
+	trunkingMode := b.TrunkingMode
 	*b = Burst{}
+	b.TrunkingMode = trunkingMode
 	b.bitData = bit.UnpackBytesToBits264(data)
 
 	b.SyncPattern = extractSyncPattern(b.bitData)
@@ -230,6 +239,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeCSBK(sizedBits)
 		decoded.DataType = dt
+		decoded.TrunkingMode = b.TrunkingMode
 		b.csbk = &decoded
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {

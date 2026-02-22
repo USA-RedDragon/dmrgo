@@ -105,3 +105,105 @@ func TestPDPConstants_AnnexA2(t *testing.T) {
 		t.Errorf("NRtryLmt = %d, want 8", constants.NRtryLmt)
 	}
 }
+
+// ── ETSI TS 102 361-4 Annex A: Trunking Timers and Constants ──
+
+func TestTrunkingTimers_AnnexA1(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		got      time.Duration
+		expected time.Duration
+	}{
+		{"TRandTCDefault", constants.TRandTCDefault, 10 * time.Second},
+		{"TNosigDefault", constants.TNosigDefault, 5 * time.Second},
+		{"TEmergTimerDefault", constants.TEmergTimerDefault, 120 * time.Second},
+		{"TPacketTimerDefault", constants.TPacketTimerDefault, 10 * time.Second},
+		{"TPTimerDefault", constants.TPTimerDefault, 10 * time.Second},
+		{"TNPTimerDefault", constants.TNPTimerDefault, 5 * time.Second},
+		{"TAwakeDefault", constants.TAwakeDefault, 1 * time.Second},
+		{"TVHangtimeDefault", constants.TVHangtimeDefault, 4 * time.Second},
+		{"TVItemDefault", constants.TVItemDefault, 30 * time.Second},
+		{"TVInactiveDefault", constants.TVInactiveDefault, 5 * time.Second},
+		{"TDInactiveDefault", constants.TDInactiveDefault, 5 * time.Second},
+		{"TDItemDefault", constants.TDItemDefault, 30 * time.Second},
+		{"TDHangtimeDefault", constants.TDHangtimeDefault, 4 * time.Second},
+		{"TAnswerCallDefault", constants.TAnswerCallDefault, 15 * time.Second},
+		{"TPendingDefault", constants.TPendingDefault, 5 * time.Second},
+		{"TDeregDefault", constants.TDeregDefault, 500 * time.Millisecond},
+		{"TBSInactiveDefault", constants.TBSInactiveDefault, 60 * time.Second},
+		{"TDENREGDefault", constants.TDENREGDefault, 60 * time.Second},
+		{"TALSDefault", constants.TALSDefault, 60 * time.Second},
+		{"TALSEDefault", constants.TALSEDefault, 300 * time.Second},
+		{"TALSRequestLifeSpanDefault", constants.TALSRequestLifeSpanDefault, 5 * time.Second},
+		{"TALSRetransmitDelayDefault", constants.TALSRetransmitDelayDefault, 1 * time.Second},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if tt.got != tt.expected {
+				t.Errorf("%s = %v, want %v", tt.name, tt.got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestTrunkingConstants_AnnexA6(t *testing.T) {
+	t.Parallel()
+	if constants.NDefaultNW != 5 {
+		t.Errorf("NDefaultNW = %d, want 5", constants.NDefaultNW)
+	}
+	if constants.NRandNR != 6 {
+		t.Errorf("NRandNR = %d, want 6", constants.NRandNR)
+	}
+	if constants.NRandNE != 10 {
+		t.Errorf("NRandNE = %d, want 10", constants.NRandNE)
+	}
+	if constants.NMaint != 4 {
+		t.Errorf("NMaint = %d, want 4", constants.NMaint)
+	}
+	if constants.NmaxCh != 50 {
+		t.Errorf("NmaxCh = %d, want 50", constants.NmaxCh)
+	}
+	if constants.ChPref != 50 {
+		t.Errorf("ChPref = %d, want 50", constants.ChPref)
+	}
+	if constants.NSYSerrDefault != 2 {
+		t.Errorf("NSYSerrDefault = %d, want 2", constants.NSYSerrDefault)
+	}
+	if constants.DMRLADefault != 1 {
+		t.Errorf("DMRLADefault = %d, want 1", constants.DMRLADefault)
+	}
+	if constants.VoteBlkDefault != 3 {
+		t.Errorf("VoteBlkDefault = %d, want 3", constants.VoteBlkDefault)
+	}
+}
+
+func TestTrunkingGatewayAddresses_AnnexA8(t *testing.T) {
+	t.Parallel()
+	// Verify key gateway addresses are correctly defined
+	if constants.GatewayPSTNI != 0xFFFEC0 {
+		t.Errorf("GatewayPSTNI = 0x%06X, want 0xFFFEC0", constants.GatewayPSTNI)
+	}
+	if constants.GatewayREGI != 0xFFFEC6 {
+		t.Errorf("GatewayREGI = 0x%06X, want 0xFFFEC6", constants.GatewayREGI)
+	}
+	if constants.GatewayKILLI != 0xFFFECF {
+		t.Errorf("GatewayKILLI = 0x%06X, want 0xFFFECF", constants.GatewayKILLI)
+	}
+	if constants.GatewayDGNAI != 0xFFFED6 {
+		t.Errorf("GatewayDGNAI = 0x%06X, want 0xFFFED6", constants.GatewayDGNAI)
+	}
+	if constants.AllMSID != 0xFFFFFF {
+		t.Errorf("AllMSID = 0x%06X, want 0xFFFFFF", constants.AllMSID)
+	}
+	if constants.AllMSIDLocal != 0xFFFFFD {
+		t.Errorf("AllMSIDLocal = 0x%06X, want 0xFFFFFD", constants.AllMSIDLocal)
+	}
+	if constants.AllMSIDZone != 0xFFFFFE {
+		t.Errorf("AllMSIDZone = 0x%06X, want 0xFFFFFE", constants.AllMSIDZone)
+	}
+	if constants.AddressNull != 0x000000 {
+		t.Errorf("AddressNull = 0x%06X, want 0x000000", constants.AddressNull)
+	}
+}
