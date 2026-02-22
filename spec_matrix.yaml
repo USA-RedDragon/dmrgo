@@ -53,8 +53,17 @@ documents:
 
       - section: "6.3"
         title: "Common Announcement Channel burst"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/cach.go
+          - v2/layer2/pdu/tact.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestCACH_DecodeTACT
+              - TestCACH_PayloadExtraction
+              - TestCACH_EncodeDecodeRoundTrip
+              - TestCACH_Constants
+              - TestCACH_TACTErrorCorrection
 
       - section: "6.4"
         title: "Reverse Channel"
@@ -109,8 +118,19 @@ documents:
 
       - section: "7.1.4"
         title: "Short Link Control in CACH"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/short_lc_assembler.go
+          - v2/fec/bptc/bptc_cach.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestShortLCAssembler_Lifecycle
+              - TestShortLCAssembler_Complete_NullMessage
+              - TestShortLCAssembler_Complete_ActivityUpdate
+              - TestShortLCAssembler_DecodeShortLCFromFragments
+              - TestShortLCAssembler_RoundTrip_EncodeShortLC
+              - TestShortLCAssembler_CombinedFEC
+              - TestShortLCAssembler_AddFragment_OverflowReturnsReady
 
       - section: "7.2.1"
         title: "Control Signalling BlocK (CSBK)"
@@ -213,8 +233,18 @@ documents:
 
       - section: "9.1.4"
         title: "TACT PDU"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/tact.go
+          - v2/fec/hamming/hamming_7_4_3.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestTACT_DecodeEncode_RoundTrip
+              - TestTACT_DecodeEncode_AllCombinations
+              - TestTACT_SingleBitError
+              - TestTACT_BitsChecked
+              - TestTACT_LCSS_Values
+              - TestTACT_ToString
 
       - section: "9.1.5"
         title: "Reverse Channel (RC) PDU"
@@ -238,8 +268,28 @@ documents:
 
       - section: "9.1.7"
         title: "Short Link Control (SHORT LC) PDU"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/short_link_control.go
+          - v2/enums/slco.go
+          - v2/crc/crc8.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestShortLC_NullMessage_Decode
+              - TestShortLC_ActivityUpdate_Decode
+              - TestShortLC_EncodeDecodeRoundTrip
+              - TestShortLC_CRCFailure
+              - TestShortLC_BitsChecked
+              - TestShortLC_ToString
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestSLCO_ToName_NullMessage
+              - TestSLCO_ToName_ActivityUpdate
+              - TestSLCO_ToName_Reserved
+              - TestSLCO_FromInt_NullMessage
+              - TestSLCO_FromInt_ActivityUpdate
+              - TestSLCO_FromInt_Reserved
+              - TestSLCO_Values
 
       - section: "9.1.8"
         title: "Control Signalling Block (CSBK) PDU"
@@ -505,8 +555,21 @@ documents:
 
       - section: "B.2.3"
         title: "Variable length BPTC for CACH signalling"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/fec/bptc/bptc_cach.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+            names:
+              - TestCACHBPTC_EncodeDecodeRoundTrip
+              - TestCACHBPTC_BitsChecked
+              - TestCACHBPTC_AllZero
+              - TestCACHBPTC_AllOnes
+              - TestCACHBPTC_FragmentSize
+              - TestCACHBPTC_FragmentBitsValid
+              - TestCACHBPTC_SingleBitErrorCorrection
+              - TestCACHBPTC_StabilityEncodeDecode
+              - TestCACHBPTC_DifferentPatterns
+              - TestCACHBPTC_ColumnParityError
 
       - section: "B.2.4"
         title: "Rate ¾ Trellis code"

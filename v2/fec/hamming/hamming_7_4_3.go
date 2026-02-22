@@ -87,3 +87,14 @@ func Encode743(data [4]bit.Bit) [7]bit.Bit {
 		parity[0], parity[1], parity[2],
 	}
 }
+
+// Encode encodes a byte value (4 LSBs used) into a 7-bit Hamming(7,4,3) codeword.
+// This is the byte-oriented entry point used by code generation.
+func Encode(data byte) [7]bit.Bit {
+	var bits [4]bit.Bit
+	bits[0] = bit.Bit((data >> 3) & 1)
+	bits[1] = bit.Bit((data >> 2) & 1)
+	bits[2] = bit.Bit((data >> 1) & 1)
+	bits[3] = bit.Bit(data & 1)
+	return Encode743(bits)
+}

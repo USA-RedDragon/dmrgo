@@ -60,29 +60,29 @@ func main() {
 | Metric | Count |
 | --- | --- |
 | Total sections | 123 |
-| ✅ Verified (tests pass) | 77 |
+| ✅ Verified (tests pass) | 82 |
 | ❌ Failing (tests fail) | 0 |
 | 🔶 Untested (has source, no tests) | 0 |
-| ⬜ Unimplemented | 46 |
+| ⬜ Unimplemented | 41 |
 
-**Overall: 77/123 verified (62.6%)**
+**Overall: 82/123 verified (66.7%)**
 
 ### ETSI TS 102 361-1 — Air Interface Protocol
 
-**60** sections - ✅ 50  ❌ 0  🔶 0  ⬜ 10
+**60** sections - ✅ 55  ❌ 0  🔶 0  ⬜ 5
 
-`[█████████████████████████░░░░░] 83.3%`
+`[███████████████████████████░░░] 91.7%`
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
 | §6.1 | Vocoder socket | ✅ verified | 8/8 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/layer2/pdu/vocoder.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
 | §6.2 | Data and control | ✅ verified | 2/2 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go` |
-| §6.3 | Common Announcement Channel burst | ⬜ unimplemented | - | - |
+| §6.3 | Common Announcement Channel burst | ✅ verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
 | §6.4 | Reverse Channel | ⬜ unimplemented | - | - |
 | §7.1.1 | Voice LC header | ✅ verified | 5/5 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go` |
 | §7.1.2 | Terminator with LC | ✅ verified | 5/5 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go` |
 | §7.1.3 | Embedded signalling | ✅ verified | 4/4 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go` |
-| §7.1.4 | Short Link Control in CACH | ⬜ unimplemented | - | - |
+| §7.1.4 | Short Link Control in CACH | ✅ verified | 7/7 passed | `v2/layer2/short_lc_assembler.go`, `v2/fec/bptc/bptc_cach.go` |
 | §7.2.1 | Control Signalling BlocK (CSBK) | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
 | §7.4.1 | Multi Block Control (MBC) | ⬜ unimplemented | - | - |
@@ -91,10 +91,10 @@ func main() {
 | §9.1.1 | Synchronization (SYNC) PDU | ✅ verified | 5/5 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go` |
 | §9.1.2 | Embedded signalling (EMB) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/embedded_signalling.go` |
 | §9.1.3 | Slot Type (SLOT) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/slot_type.go` |
-| §9.1.4 | TACT PDU | ⬜ unimplemented | - | - |
+| §9.1.4 | TACT PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/tact.go`, `v2/fec/hamming/hamming_7_4_3.go` |
 | §9.1.5 | Reverse Channel (RC) PDU | ⬜ unimplemented | - | - |
 | §9.1.6 | Full Link Control (FULL LC) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/full_link_control.go` |
-| §9.1.7 | Short Link Control (SHORT LC) PDU | ⬜ unimplemented | - | - |
+| §9.1.7 | Short Link Control (SHORT LC) PDU | ✅ verified | 13/13 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/crc/crc8.go` |
 | §9.1.8 | Control Signalling Block (CSBK) PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | ✅ verified | 8/8 passed | `v2/layer2/pdu/pr_fill.go` |
 | §9.2.2 | Rate ¾ coded packet Data (R_3_4_DATA) PDU | ✅ verified | 5/5 passed | `v2/layer2/pdu/rate34_data.go` |
@@ -116,7 +116,7 @@ func main() {
 | §B.1.1 | BPTC (196,96) | ✅ verified | 1/1 passed | `v2/fec/bptc/bptc_196_96.go` |
 | §B.2.1 | Variable length BPTC for embedded signalling | ✅ verified | 10/10 passed | `v2/fec/bptc/bptc_embedded_lc.go` |
 | §B.2.2 | Single Burst Variable length BPTC | ✅ verified | 11/11 passed | `v2/fec/bptc/bptc_single_burst.go` |
-| §B.2.3 | Variable length BPTC for CACH signalling | ⬜ unimplemented | - | - |
+| §B.2.3 | Variable length BPTC for CACH signalling | ✅ verified | 10/10 passed | `v2/fec/bptc/bptc_cach.go` |
 | §B.2.4 | Rate ¾ Trellis code | ✅ verified | 1/1 passed | `v2/fec/trellis/trellis_3_4.go` |
 | §B.2.5 | Rate 1 coded data | ✅ verified | 1/1 passed | `v2/layer2/burst.go` |
 | §B.3.1 | Golay (20,8) | ✅ verified | 2/2 passed | `v2/fec/golay/golay_20_8_7.go` |

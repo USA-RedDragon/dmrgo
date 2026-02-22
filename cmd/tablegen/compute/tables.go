@@ -12,6 +12,7 @@ type Tables struct {
 	Hamming13_9Syndrome       [16]int
 	Hamming743Syndrome        [8]int
 	Hamming16_11Syndrome      [32]int
+	Hamming17_12Syndrome      [32]int
 	CRCCCITT                  [256]uint16
 	CRC32                     [256]uint32
 	SingleBurstBPTCInterleave [32]uint8
@@ -70,6 +71,11 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.Hamming16_11Syndrome = ComputeHamming16_11Syndrome()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.Hamming17_12Syndrome = ComputeHamming17_12Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)

@@ -18,6 +18,30 @@ const (
 	rsPkg  = "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon"
 )
 
+// CRCAlgorithmInfo describes a CRC algorithm for code generation.
+type CRCAlgorithmInfo struct {
+	BitLevel bool   // true = operates on []bit.Bit, false = operates on []byte
+	CRCBits  int    // number of CRC bits (8 for CRC-8, 16 for CRC-CCITT)
+	CheckFn  string // e.g. "CheckCRC8", "CheckCRCCCITT"
+	CalcFn   string // e.g. "CalculateCRC8", "CalculateCRCCCITT"
+}
+
+//nolint:gochecknoglobals
+var crcAlgorithms = map[string]CRCAlgorithmInfo{
+	"crc_ccitt": {
+		BitLevel: false,
+		CRCBits:  16,
+		CheckFn:  "CheckCRCCCITT",
+		CalcFn:   "CalculateCRCCCITT",
+	},
+	"crc_8": {
+		BitLevel: true,
+		CRCBits:  8,
+		CheckFn:  "CheckCRC8",
+		CalcFn:   "CalculateCRC8",
+	},
+}
+
 // FECCodecInfo maps FEC directive names to their decode function and import path.
 type FECCodecInfo struct {
 	ImportPath  string // e.g. "github.com/USA-RedDragon/dmrgo/v2/fec/golay"
@@ -67,6 +91,14 @@ var fecCodecs = map[string]FECCodecInfo{
 		InputSize: 72,
 		DataBits:  49,
 	},
+	"hamming_7_4_3": {
+		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
+		GoPkgName:  "hamming",
+		DecodeFn:   "Decode743",
+		EncodeFn:   "Encode",
+		InputSize:  7,
+		DataBits:   4,
+	},
 }
 
 // pkgNameOverrides maps import paths to actual Go package names where they differ
@@ -102,6 +134,7 @@ func resolveImportPath(pkgName, sourceFile string) string {
 		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon",
 		"bptc":             "github.com/USA-RedDragon/dmrgo/v2/fec/bptc",
 		"trellis":          "github.com/USA-RedDragon/dmrgo/v2/fec/trellis",
+		"hamming":          "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
 		"vocoder":          "github.com/USA-RedDragon/dmrgo/v2/vocoder",
 	}
 	if p, ok := knownPkgs[pkgName]; ok {
@@ -200,9 +233,18 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		}
 
 		if hasCRC || hasPackedFEC {
-			// Both CRC and packed-bytes FEC need bit packing first
-			totalBytes := inputSize / 8
-			emitBitPacking(g, totalBytes)
+			// Check if the CRC is byte-level (needs packing) or bit-level
+			isBitCRC := false
+			if hasCRC {
+				if algo, ok := crcAlgorithms[pdu.CRC.Algorithm]; ok {
+					isBitCRC = algo.BitLevel
+				}
+			}
+			if !isBitCRC {
+				// Byte-level CRC and packed-bytes FEC need bit packing first
+				totalBytes := inputSize / 8
+				emitBitPacking(g, totalBytes)
+			}
 		}
 
 		if hasCRC {
@@ -259,10 +301,32 @@ func emitBitPacking(g *Group, totalBytes int) {
 	)
 }
 
-// emitCRCCheck generates CRC-CCITT validation code.
+// emitCRCCheck generates CRC validation code for both byte-level (CRC-CCITT) and bit-level (CRC-8) CRCs.
 func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) {
 	crcDir := pdu.CRC
 
+	algo, algoKnown := crcAlgorithms[crcDir.Algorithm]
+	if algoKnown && algo.BitLevel {
+		// Bit-level CRC (e.g. CRC-8): operates on data[:] directly, no byte packing
+		g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
+		g.Id("fecResult").Dot("BitsChecked").Op("=").Lit(inputSize)
+		g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Empty()))).Block(
+			Id("fecResult").Dot("Uncorrectable").Op("=").True(),
+		)
+		g.Id("result").Dot("FEC").Op("=").Id("fecResult")
+
+		// Store CRC value from trailing CRC bits
+		dataBits := inputSize - algo.CRCBits
+		g.Var().Id("_crcVal").Uint8()
+		g.For(Id("i").Op(":=").Range().Lit(algo.CRCBits)).Block(
+			Id("_crcVal").Op("<<=").Lit(1),
+			Id("_crcVal").Op("|=").Uint8().Call(Id("data").Index(Lit(dataBits).Op("+").Id("i"))),
+		)
+		g.Id("result").Dot("crc").Op("=").Id("_crcVal")
+		return
+	}
+
+	// Byte-level CRC (CRC-CCITT): operates on packed bytes
 	// Apply XOR mask if specified
 	if crcDir.HasMask {
 		highByte := byte(crcDir.Mask >> 8)
@@ -275,7 +339,11 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) {
 	// CRC check
 	g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
 	g.Id("fecResult").Dot("BitsChecked").Op("=").Lit(inputSize)
-	g.If(Op("!").Qual(crcPkg, "CheckCRCCCITT").Call(Id("_packedBytes").Index(Empty(), Empty()))).Block(
+	checkFn := "CheckCRCCCITT"
+	if algoKnown {
+		checkFn = algo.CheckFn
+	}
+	g.If(Op("!").Qual(crcPkg, checkFn).Call(Id("_packedBytes").Index(Empty(), Empty()))).Block(
 		Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 	)
 	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
@@ -885,8 +953,25 @@ func emitDispatchEncode(g *Group, fields []parse.Field, pdu parse.PDUStruct) {
 	})
 }
 
-// emitCRCEncode generates CRC-CCITT calculation and embedding for encoding.
+// emitCRCEncode generates CRC calculation and embedding for encoding.
+// Supports both byte-level CRC (CRC-CCITT) and bit-level CRC (CRC-8).
 func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
+	algo, algoKnown := crcAlgorithms[pdu.CRC.Algorithm]
+	if algoKnown && algo.BitLevel {
+		// Bit-level CRC (e.g. CRC-8): compute over data bits directly
+		dataBits := outputSize - algo.CRCBits
+		g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("data").Index(Empty(), Lit(dataBits)))
+		// Unpack CRC bits (MSB-first)
+		g.For(Id("j").Op(":=").Range().Lit(algo.CRCBits)).Block(
+			Id("data").Index(Lit(dataBits).Op("+").Id("j")).Op("=").
+				Qual(bitPkg, "Bit").Call(
+				Parens(Id("_crcVal").Op(">>").Parens(Lit(algo.CRCBits - 1).Op("-").Id("j"))).Op("&").Lit(1),
+			),
+		)
+		return
+	}
+
+	// Byte-level CRC (CRC-CCITT)
 	totalBytes := outputSize / 8
 	dataBytes := totalBytes - 2 // CRC is last 2 bytes
 
@@ -902,7 +987,11 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 	)
 
 	// Calculate CRC
-	g.Id("_crcVal").Op(":=").Qual(crcPkg, "CalculateCRCCCITT").Call(Id("_encBytes").Index(Empty(), Empty()))
+	calcFn := "CalculateCRCCCITT"
+	if algoKnown {
+		calcFn = algo.CalcFn
+	}
+	g.Id("_crcVal").Op(":=").Qual(crcPkg, calcFn).Call(Id("_encBytes").Index(Empty(), Empty()))
 
 	// CRC bytes (big-endian, swapped like MMDVM: crc8[0]=low, crc8[1]=high)
 	g.Id("_crcHigh").Op(":=").Byte().Call(Id("_crcVal").Op(">>").Lit(8))

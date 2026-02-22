@@ -23,6 +23,9 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		writeTable("hamming16_11_syndrome_table", tables.Hamming16_11Syndrome[:]),
 		jen.Line(),
 		jen.Line(),
+		writeTable("hamming17_12_syndrome_table", tables.Hamming17_12Syndrome[:]),
+		jen.Line(),
+		jen.Line(),
 		writeTable("single_burst_bptc_interleave", tables.SingleBurstBPTCInterleave[:]),
 	); err != nil {
 		return err

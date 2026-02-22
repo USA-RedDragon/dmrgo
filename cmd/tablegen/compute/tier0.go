@@ -329,6 +329,55 @@ func ComputeHamming743Syndrome() [8]int {
 	return table
 }
 
+// ComputeHamming17_12Syndrome computes the syndrome-to-bit-position table
+// for Hamming(17,12,3) per ETSI TS 102 361-1, §B.3.3.
+//
+// Generator polynomial: g(x) = x⁵ + x² + 1
+//
+// The parity check matrix H = [Pᵀ | I₅] has 5 rows and 17 columns.
+// Each column is a 5-bit syndrome value. For syndrome s (1..31), the table
+// entry is the column index whose H-column equals s. Syndrome 0 = no error.
+//
+// Parity equations (from the generator matrix in Table B.13):
+//
+//	p₀ = d₀⊕d₁⊕d₂⊕d₃⊕d₆⊕d₇⊕d₉
+//	p₁ = d₀⊕d₁⊕d₂⊕d₃⊕d₄⊕d₇⊕d₈⊕d₁₀
+//	p₂ = d₁⊕d₂⊕d₃⊕d₄⊕d₅⊕d₈⊕d₉⊕d₁₁
+//	p₃ = d₀⊕d₁⊕d₄⊕d₅⊕d₇⊕d₁₀
+//	p₄ = d₀⊕d₁⊕d₂⊕d₅⊕d₆⊕d₈⊕d₁₁
+//
+// Syndrome equations are s = H · rᵀ:
+//
+//	s₀ = r₀⊕r₁⊕r₂⊕r₃⊕r₆⊕r₇⊕r₉⊕r₁₂
+//	s₁ = r₀⊕r₁⊕r₂⊕r₃⊕r₄⊕r₇⊕r₈⊕r₁₀⊕r₁₃
+//	s₂ = r₁⊕r₂⊕r₃⊕r₄⊕r₅⊕r₈⊕r₉⊕r₁₁⊕r₁₄
+//	s₃ = r₀⊕r₁⊕r₄⊕r₅⊕r₇⊕r₁₀⊕r₁₅
+//	s₄ = r₀⊕r₁⊕r₂⊕r₅⊕r₆⊕r₈⊕r₁₁⊕r₁₆
+//
+// The 5-bit syndrome is s₀ | s₁<<1 | s₂<<2 | s₃<<3 | s₄<<4.
+func ComputeHamming17_12Syndrome() [32]int {
+	var hCols [17]int
+	for p := 0; p < 17; p++ {
+		var b [17]int
+		b[p] = 1
+		s0 := b[0] ^ b[1] ^ b[2] ^ b[3] ^ b[6] ^ b[7] ^ b[9] ^ b[12]
+		s1 := b[0] ^ b[1] ^ b[2] ^ b[3] ^ b[4] ^ b[7] ^ b[8] ^ b[10] ^ b[13]
+		s2 := b[1] ^ b[2] ^ b[3] ^ b[4] ^ b[5] ^ b[8] ^ b[9] ^ b[11] ^ b[14]
+		s3 := b[0] ^ b[1] ^ b[4] ^ b[5] ^ b[7] ^ b[10] ^ b[15]
+		s4 := b[0] ^ b[1] ^ b[2] ^ b[5] ^ b[6] ^ b[8] ^ b[11] ^ b[16]
+		hCols[p] = s0 | s1<<1 | s2<<2 | s3<<3 | s4<<4
+	}
+
+	var table [32]int
+	for i := range table {
+		table[i] = -1
+	}
+	for p := 0; p < 17; p++ {
+		table[hCols[p]] = p
+	}
+	return table
+}
+
 // ComputeGaloisTables computes the GF(2^8) exp and log tables
 // for Reed-Solomon(12,9,4) with primitive polynomial 0x11D (x^8 + x^4 + x^3 + x^2 + 1).
 func ComputeGaloisTables() (exp [256]uint8, log [256]uint8) {
