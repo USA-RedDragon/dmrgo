@@ -67,8 +67,21 @@ documents:
 
       - section: "6.4"
         title: "Reverse Channel"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/reverse_channel.go
+          - v2/layer2/burst.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestRC_DecodeFromEmbeddedData_RoundTrip
+              - TestRC_EncodeRCToEmbeddedData_RoundTrip
+              - TestRC_CombinedFEC
+              - TestRC_BurstDetection_PI1_LCSS0
+              - TestRC_BurstDetection_PI0_NoRC
+              - TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC
+              - TestRC_MsSourcedRcSync_HasEmbeddedSignalling
+              - TestRC_BurstFECStats_RC
+              - TestRC_ToString
 
       # ── Section 7: DMR signalling ──
       - section: "7.1.1"
@@ -165,8 +178,27 @@ documents:
 
       - section: "7.4.1"
         title: "Multi Block Control (MBC)"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/mbc.go
+          - v2/layer2/burst.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestMBCHeader_Decode
+              - TestMBCHeader_DecodeLastBlock
+              - TestMBCHeader_EncodeDecodeRoundTrip
+              - TestMBCHeader_EncodeStability
+              - TestMBCHeader_CRCFailure
+              - TestMBCHeader_CRCBitFlip
+              - TestMBCHeader_GetDataType
+              - TestMBCHeader_ToString
+              - TestMBCContinuation_DecodeIntermediate
+              - TestMBCContinuation_DecodeLastBlock
+              - TestMBCContinuation_EncodeDecodeRoundTrip
+              - TestMBCContinuation_EncodeStability
+              - TestMBCContinuation_GetDataType
+              - TestMBCContinuation_ToString
+              - TestMBCContinuation_NoCRCCheck
 
       # ── Section 8: DMR Packet Data Protocol ──
       - section: "8.2.1"
@@ -182,8 +214,22 @@ documents:
 
       - section: "8.2.3.1"
         title: "Unified Single Block Data block structure"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/usbd.go
+          - v2/layer2/burst.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestUSBD_DecodeLIP
+              - TestUSBD_DecodeManufacturerSpecific
+              - TestUSBD_EncodeDecodeRoundTrip
+              - TestUSBD_EncodeStability
+              - TestUSBD_CRCFailure
+              - TestUSBD_CRCBitFlip
+              - TestUSBD_GetDataType
+              - TestUSBD_ToString
+              - TestServiceTypeToName
+              - TestUSBD_AllServiceTypes
 
       # ── Section 9.1: PDUs for voice bursts, general data bursts and the CACH ──
       - section: "9.1.1"
@@ -248,8 +294,17 @@ documents:
 
       - section: "9.1.5"
         title: "Reverse Channel (RC) PDU"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/pdu/reverse_channel.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestReverseChannel_DecodeEncode_RoundTrip
+              - TestReverseChannel_CRCFailure
+              - TestReverseChannel_BitsChecked
+              - TestReverseChannel_PayloadMasked
+              - TestReverseChannel_ToString
+              - TestReverseChannel_CRC7Mask
 
       - section: "9.1.6"
         title: "Full Link Control (FULL LC) PDU"
@@ -776,8 +831,18 @@ documents:
 
       - section: "B.4"
         title: "Interleaving"
-        source_files: []
-        test_functions: []
+        source_files:
+          - v2/layer2/cach_interleave.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestCACHInterleave_RoundTrip
+              - TestCACHDeinterleave_RoundTrip
+              - TestCACHInterleave_TACTSpread
+              - TestCACHInterleave_ATPosition
+              - TestCACHDeinterleave_PreservesData
+              - TestCACHDeinterleave_WithDecodeCACH
+              - TestCACHInterleave_InverseConsistency
 
       - section: "D"
         title: "Idle and Null message bit definition"

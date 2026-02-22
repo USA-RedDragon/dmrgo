@@ -26,12 +26,18 @@ type Burst struct {
 	EmbeddedSignalling     pdu.EmbeddedSignalling
 	EmbeddedSignallingData [32]bit.Bit
 
+	HasReverseChannel bool
+	ReverseChannel    *pdu.ReverseChannel
+
 	IsData                bool
 	Data                  elements.Data
 	FEC                   fec.BurstFECStats
 	fullLinkControl       *pdu.FullLinkControl
 	csbk                  *pdu.CSBK
 	dataHeader            *pdu.DataHeader
+	mbcHeader             *pdu.MBCHeader
+	mbcContinuation       *pdu.MBCContinuation
+	usbd                  *pdu.UnifiedSingleBlockData
 	halfRateData          *pdu.Rate12Data
 	threeQuarterRateData  *pdu.Rate34Data
 	fullRateData          *pdu.Rate1Data
@@ -59,6 +65,16 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	if b.HasEmbeddedSignalling {
 		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
 		b.FEC.EMB = b.EmbeddedSignalling.FEC
+
+		// §6.4: Reverse Channel detection — PI=1 and LCSS=SingleFragment
+		// means the 32-bit embedded data carries an RC PDU, not an LC fragment.
+		if b.EmbeddedSignalling.PreemptionAndPowerControlIndicator &&
+			b.EmbeddedSignalling.LCSS == enums.SingleFragmentLCorCSBK {
+			rc, rcFEC := DecodeRCFromEmbeddedData(b.EmbeddedSignallingData)
+			b.HasReverseChannel = true
+			b.ReverseChannel = &rc
+			b.FEC.RC = rcFEC
+		}
 	}
 
 	b.HasSlotType = b.IsData
@@ -98,7 +114,9 @@ func classifyVoice(sync enums.SyncPattern) (enums.VoiceBurstType, bool) {
 	if sync == enums.Tdma2Voice || sync == enums.Tdma1Voice || sync == enums.MsSourcedVoice || sync == enums.BsSourcedVoice {
 		return enums.VoiceBurstA, false
 	}
-	return enums.VoiceBurstUnknown, sync == enums.EmbeddedSignallingPattern
+	// MsSourcedRcSync (§6.4.1) uses the same burst layout as embedded
+	// signalling voice bursts — EMB(16) + RC data(32) in the center.
+	return enums.VoiceBurstUnknown, sync == enums.EmbeddedSignallingPattern || sync == enums.MsSourcedRcSync
 }
 
 func parseEmbedded(bitData [264]bit.Bit) (pdu.EmbeddedSignalling, [32]bit.Bit) {
@@ -177,6 +195,9 @@ func (b *Burst) ToString() string {
 	ret := fmt.Sprintf("{ SyncPattern: %s", enums.SyncPatternToName(b.SyncPattern))
 	if b.HasEmbeddedSignalling {
 		ret += fmt.Sprintf("EmbeddedSignalling: %v, ", b.EmbeddedSignalling.ToString())
+		if b.HasReverseChannel && b.ReverseChannel != nil {
+			ret += fmt.Sprintf("ReverseChannel: %v, ", b.ReverseChannel.ToString())
+		}
 	}
 	if b.HasSlotType {
 		ret += fmt.Sprintf("SlotType: %v, ", b.SlotType.ToString())
@@ -260,13 +281,39 @@ func (b *Burst) extractData() (elements.Data, error) {
 		rt.DataType = dt
 		b.fullRateData = &rt
 		return b.fullRateData, nil
-	case elements.DataTypeMBCHeader, elements.DataTypeMBCContinuation:
-		return nil, fmt.Errorf("MBC parsing not implemented")
+	case elements.DataTypeMBCHeader:
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		decoded, fecResult := pdu.DecodeMBCHeader(sizedBits)
+		decoded.DataType = dt
+		b.mbcHeader = &decoded
+		b.FEC.PDU = fecResult
+		if fecResult.Uncorrectable {
+			return nil, fmt.Errorf("failed to decode MBC header from bits")
+		}
+		return b.mbcHeader, nil
+	case elements.DataTypeMBCContinuation:
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		decoded, fecResult := pdu.DecodeMBCContinuation(sizedBits)
+		decoded.DataType = dt
+		b.mbcContinuation = &decoded
+		b.FEC.PDU = fecResult
+		return b.mbcContinuation, nil
 	case elements.DataTypeIdle:
 		prFill := &pdu.PRFill{DataType: dt}
 		return prFill, nil
 	case elements.DataTypeUnifiedSingleBlock:
-		return nil, fmt.Errorf("unified single block parsing not implemented")
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(sizedBits)
+		decoded.DataType = dt
+		b.usbd = &decoded
+		b.FEC.PDU = fecResult
+		if fecResult.Uncorrectable {
+			return nil, fmt.Errorf("failed to decode USBD from bits")
+		}
+		return b.usbd, nil
 	case elements.DataTypeReserved:
 		return nil, fmt.Errorf("reserved data type parsing not implemented")
 	default:
@@ -299,6 +346,10 @@ func (b *Burst) Encode() [33]byte {
 
 	// Sync or Embedded Signalling
 	if b.HasEmbeddedSignalling {
+		// If RC is present, encode it into the embedded data field
+		if b.HasReverseChannel && b.ReverseChannel != nil {
+			b.EmbeddedSignallingData = EncodeRCToEmbeddedData(b.ReverseChannel)
+		}
 		esBits := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
 		copy(bitData[108:116], esBits[0:8])
 		copy(bitData[116:148], b.EmbeddedSignallingData[:])

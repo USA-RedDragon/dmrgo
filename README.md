@@ -60,39 +60,39 @@ func main() {
 | Metric | Count |
 | --- | --- |
 | Total sections | 123 |
-| ✅ Verified (tests pass) | 82 |
+| ✅ Verified (tests pass) | 87 |
 | ❌ Failing (tests fail) | 0 |
 | 🔶 Untested (has source, no tests) | 0 |
-| ⬜ Unimplemented | 41 |
+| ⬜ Unimplemented | 36 |
 
-**Overall: 82/123 verified (66.7%)**
+**Overall: 87/123 verified (70.7%)**
 
 ### ETSI TS 102 361-1 — Air Interface Protocol
 
-**60** sections - ✅ 55  ❌ 0  🔶 0  ⬜ 5
+**60** sections - ✅ 60  ❌ 0  🔶 0  ⬜ 0
 
-`[███████████████████████████░░░] 91.7%`
+`[██████████████████████████████] 100.0%`
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
 | §6.1 | Vocoder socket | ✅ verified | 8/8 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/layer2/pdu/vocoder.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
 | §6.2 | Data and control | ✅ verified | 2/2 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go` |
 | §6.3 | Common Announcement Channel burst | ✅ verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
-| §6.4 | Reverse Channel | ⬜ unimplemented | - | - |
+| §6.4 | Reverse Channel | ✅ verified | 9/9 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
 | §7.1.1 | Voice LC header | ✅ verified | 5/5 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go` |
 | §7.1.2 | Terminator with LC | ✅ verified | 5/5 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go` |
 | §7.1.3 | Embedded signalling | ✅ verified | 4/4 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go` |
 | §7.1.4 | Short Link Control in CACH | ✅ verified | 7/7 passed | `v2/layer2/short_lc_assembler.go`, `v2/fec/bptc/bptc_cach.go` |
 | §7.2.1 | Control Signalling BlocK (CSBK) | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
-| §7.4.1 | Multi Block Control (MBC) | ⬜ unimplemented | - | - |
+| §7.4.1 | Multi Block Control (MBC) | ✅ verified | 15/15 passed | `v2/layer2/pdu/mbc.go`, `v2/layer2/burst.go` |
 | §8.2.1 | Header block structure | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
-| §8.2.3.1 | Unified Single Block Data block structure | ⬜ unimplemented | - | - |
+| §8.2.3.1 | Unified Single Block Data block structure | ✅ verified | 10/10 passed | `v2/layer2/pdu/usbd.go`, `v2/layer2/burst.go` |
 | §9.1.1 | Synchronization (SYNC) PDU | ✅ verified | 5/5 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go` |
 | §9.1.2 | Embedded signalling (EMB) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/embedded_signalling.go` |
 | §9.1.3 | Slot Type (SLOT) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/slot_type.go` |
 | §9.1.4 | TACT PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/tact.go`, `v2/fec/hamming/hamming_7_4_3.go` |
-| §9.1.5 | Reverse Channel (RC) PDU | ⬜ unimplemented | - | - |
+| §9.1.5 | Reverse Channel (RC) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/reverse_channel.go` |
 | §9.1.6 | Full Link Control (FULL LC) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/full_link_control.go` |
 | §9.1.7 | Short Link Control (SHORT LC) PDU | ✅ verified | 13/13 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/crc/crc8.go` |
 | §9.1.8 | Control Signalling Block (CSBK) PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
@@ -132,7 +132,7 @@ func main() {
 | §B.3.11 | 5-bit Checksum (CS) calculation | ✅ verified | 8/8 passed | `v2/crc/checksum5.go` |
 | §B.3.12 | Data Type CRC Mask | ✅ verified | 3/3 passed | `v2/crc/crc_ccitt.go` |
 | §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
-| §B.4 | Interleaving | ⬜ unimplemented | - | - |
+| §B.4 | Interleaving | ✅ verified | 7/7 passed | `v2/layer2/cach_interleave.go` |
 | §D | Idle and Null message bit definition | ✅ verified | 12/12 passed | `v2/layer2/idle.go` |
 | §E | Transmit bit order | ✅ verified | 10/10 passed | `v2/layer2/transmit_order.go` |
 

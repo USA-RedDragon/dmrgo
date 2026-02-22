@@ -72,13 +72,14 @@ type BurstFECStats struct {
 	Payload  FECResult // BPTC/Trellis/Rate1 — 196/196/0 bits
 	Voice    FECResult // Golay(24,12,8)+Golay(23,12,7) summed across 3 frames (voice only)
 	PDU      FECResult // RS/CRC on the decoded PDU (FLC/CSBK/DataHeader)
+	RC       FECResult // Single Burst BPTC + CRC-7 (Reverse Channel, voice bursts only)
 }
 
 // Aggregate returns combined stats across all FEC layers in this burst.
 func (s BurstFECStats) Aggregate() FECResult {
 	return FECResult{
-		BitsChecked:     s.SlotType.BitsChecked + s.EMB.BitsChecked + s.Payload.BitsChecked + s.Voice.BitsChecked + s.PDU.BitsChecked,
-		ErrorsCorrected: s.SlotType.ErrorsCorrected + s.EMB.ErrorsCorrected + s.Payload.ErrorsCorrected + s.Voice.ErrorsCorrected + s.PDU.ErrorsCorrected,
-		Uncorrectable:   s.SlotType.Uncorrectable || s.EMB.Uncorrectable || s.Payload.Uncorrectable || s.Voice.Uncorrectable || s.PDU.Uncorrectable,
+		BitsChecked:     s.SlotType.BitsChecked + s.EMB.BitsChecked + s.Payload.BitsChecked + s.Voice.BitsChecked + s.PDU.BitsChecked + s.RC.BitsChecked,
+		ErrorsCorrected: s.SlotType.ErrorsCorrected + s.EMB.ErrorsCorrected + s.Payload.ErrorsCorrected + s.Voice.ErrorsCorrected + s.PDU.ErrorsCorrected + s.RC.ErrorsCorrected,
+		Uncorrectable:   s.SlotType.Uncorrectable || s.EMB.Uncorrectable || s.Payload.Uncorrectable || s.Voice.Uncorrectable || s.PDU.Uncorrectable || s.RC.Uncorrectable,
 	}
 }
