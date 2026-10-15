@@ -49,20 +49,17 @@ func b01(v bool) int {
 
 func lcFields(lc *pdu.FullLinkControl) string {
 	s := fmt.Sprintf("flco=%d fid=0x%02x", lc.FLCO, uint8(lc.FeatureSetID))
-	var so *struct{ privacy, emergency bool }
 	switch {
 	case lc.GroupVoice != nil:
-		so = &struct{ privacy, emergency bool }{lc.GroupVoice.ServiceOptions.IsPrivacy, lc.GroupVoice.ServiceOptions.IsEmergency}
 		s += " group"
 	case lc.UnitToUnit != nil:
-		so = &struct{ privacy, emergency bool }{lc.UnitToUnit.ServiceOptions.IsPrivacy, lc.UnitToUnit.ServiceOptions.IsEmergency}
 		s += " private"
 	}
 	if dst, src, ok := lc.Addresses(); ok {
 		s += fmt.Sprintf(" src=%d dst=%d", src, dst)
 	}
-	if so != nil {
-		s += fmt.Sprintf(" privacy=%d emergency=%d", b01(so.privacy), b01(so.emergency))
+	if so, ok := lc.ServiceOptions(); ok && (lc.GroupVoice != nil || lc.UnitToUnit != nil) {
+		s += fmt.Sprintf(" privacy=%d emergency=%d", b01(so.IsPrivacy), b01(so.IsEmergency))
 	}
 	return s
 }
