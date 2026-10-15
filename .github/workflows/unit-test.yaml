@@ -9,8 +9,8 @@ on:
         required: false
         default: false
     secrets:
-      codecov_token:
-        description: 'Codecov token'
+      app_key:
+        description: 'Private key of the auto-commit GitHub App, which commits the coverage badge'
         required: false
       token:
         description: 'GitHub token'
@@ -21,8 +21,18 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        if: inputs.coverage
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.AUTO_COMMIT_APP_ID }}
+          private-key: ${{ secrets.app_key }}
+
       - name: Checkout repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
       - name: Set up Go
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
@@ -56,11 +66,17 @@ jobs:
         run: |
           env CGO_ENABLED=0 go test -C v2 -v ./... -coverprofile ../coverage.out -coverpkg=./... -covermode atomic
 
-      - uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5.5.5
+      - uses: USA-RedDragon/reusable-actions/coverage@c5ee15922a0ff4229b0f06a8d0551541b5cabfdc # v2.0.34
         if: always() && inputs.coverage
         with:
-          token: ${{ secrets.codecov_token }}
-          fail_ci_if_error: true
+          file: coverage.out
+          badge: .github/badges/coverage-v2.svg
+          baseline: .github/coverage-baseline-v2.tsv
+          label: v2 coverage
+          marker: coverage-v2
+          token: ${{ steps.app-token.outputs.token }}
+          git-user-name: usa-reddragon-auto-commit-bot[bot]
+          git-user-email: usa-reddragon-auto-commit-bot[bot]@users.noreply.github.com
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: always() && inputs.coverage
