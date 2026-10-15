@@ -5,7 +5,10 @@
 // it reads or writes.
 package bit
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // Bit is one bit stored in a byte, 0 or 1. The functions of this module that
 // read a Bit use only its low bit, so a Bit of 2 reads as 0 and a Bit of 0xFF
@@ -62,24 +65,39 @@ func PutUint(dst []Bit, v uint64) {
 // Pack packs bits into bytes, the first bit in the most significant bit of
 // the first byte. The last byte is padded with 0 bits.
 func Pack(bits []Bit) []byte {
-	data := make([]byte, (len(bits)+7)/8)
+	return AppendPack(make([]byte, 0, (len(bits)+7)/8), bits)
+}
+
+// AppendPack appends the bytes that Pack returns for bits to dst and
+// returns the extended slice. It allocates only when dst lacks the capacity.
+func AppendPack(dst []byte, bits []Bit) []byte {
+	n, size := len(dst), (len(bits)+7)/8
+	dst = slices.Grow(dst, size)[:n+size]
+	data := dst[n:]
+	clear(data)
 	for i, b := range bits {
 		if b&1 == 1 {
 			data[i/8] |= 1 << (7 - (i % 8))
 		}
 	}
-	return data
+	return dst
 }
 
 // Unpack is the reverse of Pack: it returns the len(data)*8 bits of data.
 func Unpack(data []byte) []Bit {
-	bits := make([]Bit, len(data)*8)
+	return AppendUnpack(make([]Bit, 0, len(data)*8), data)
+}
+
+// AppendUnpack appends the bits that Unpack returns for data to dst and
+// returns the extended slice. It allocates only when dst lacks the capacity.
+func AppendUnpack(dst []Bit, data []byte) []Bit {
+	n, size := len(dst), len(data)*8
+	dst = slices.Grow(dst, size)[:n+size]
+	bits := dst[n:]
 	for i := range bits {
-		if (data[i/8]>>(7-(i%8)))&1 == 1 {
-			bits[i] = 1
-		}
+		bits[i] = Bit(data[i/8]>>(7-(i%8))) & 1
 	}
-	return bits
+	return dst
 }
 
 // Unpack32 returns the 32 bits of 4 bytes, such as an embedded signalling
