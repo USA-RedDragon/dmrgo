@@ -109,13 +109,13 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| §6.1 | Vocoder socket | ✅ verified | 16/16 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/pdu/vocoder.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
+| §6.1 | Vocoder socket | ✅ verified | 19/19 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/pdu/vocoder.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
 | §6.2 | Data and control | ✅ verified | 6/6 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go`, `v2/layer2/pdu/pi_header.go` |
 | §6.3 | Common Announcement Channel burst | ✅ verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
 | §6.4 | Reverse Channel | ✅ verified | 12/12 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
 | §7.1.1 | Voice LC header | ✅ verified | 7/7 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go` |
 | §7.1.2 | Terminator with LC | ✅ verified | 7/7 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go` |
-| §7.1.3 | Embedded signalling | ✅ verified | 22/22 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go` |
+| §7.1.3 | Embedded signalling | ✅ verified | 25/25 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go` |
 | §7.1.4 | Short Link Control in CACH | ✅ verified | 9/9 passed | `v2/layer2/short_lc_assembler.go`, `v2/fec/bptc/bptc_cach.go` |
 | §7.2.1 | Control Signalling BlocK (CSBK) | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
@@ -149,8 +149,8 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §9.3.18 | SAP identifier (SAP) | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | §9.3.19 | Logical Link ID (LLID) | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §9.3.32 | Control Signalling BlocK Opcode (CSBKO) | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
-| §B.1.1 | BPTC (196,96) | ✅ verified | 4/4 passed | `v2/fec/bptc/bptc_196_96.go` |
-| §B.2.1 | Variable length BPTC for embedded signalling | ✅ verified | 13/13 passed | `v2/fec/bptc/bptc_embedded_lc.go` |
+| §B.1.1 | BPTC (196,96) | ✅ verified | 6/6 passed | `v2/fec/bptc/bptc_196_96.go` |
+| §B.2.1 | Variable length BPTC for embedded signalling | ✅ verified | 16/16 passed | `v2/fec/bptc/bptc_embedded_lc.go` |
 | §B.2.2 | Single Burst Variable length BPTC | ✅ verified | 14/14 passed | `v2/fec/bptc/bptc_single_burst.go` |
 | §B.2.3 | Variable length BPTC for CACH signalling | ✅ verified | 13/13 passed | `v2/fec/bptc/bptc_cach.go` |
 | §B.2.4 | Rate ¾ Trellis code | ✅ verified | 6/6 passed | `v2/fec/trellis/trellis_3_4.go` |
@@ -166,7 +166,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §B.3.9 | 32-bit CRC calculation | ✅ verified | 9/9 passed | `v2/crc/crc32.go` |
 | §B.3.10 | CRC-9 calculation | ✅ verified | 9/9 passed | `v2/crc/crc9.go` |
 | §B.3.11 | 5-bit Checksum (CS) calculation | ✅ verified | 9/9 passed | `v2/crc/checksum5.go`, `v2/layer2/embedded_lc.go` |
-| §B.3.12 | Data Type CRC Mask | ✅ verified | 13/13 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go` |
+| §B.3.12 | Data Type CRC Mask | ✅ verified | 16/16 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/mmdvmhost.go` |
 | §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
 | §B.4 | Interleaving | ✅ verified | 8/8 passed | `v2/layer2/cach_interleave.go` |
 | §D | Idle and Null message bit definition | ✅ verified | 14/14 passed | `v2/layer2/idle.go` |
