@@ -198,6 +198,81 @@ func DecodeDataHeader(data [96]bit.Bit) DataHeader {
 	return result
 }
 
+// DataHeaderPayloads holds one payload struct of each type that
+// a DataHeader dispatch field points to, for DecodeDataHeaderInto.
+// The zero value is ready to use.
+type DataHeaderPayloads struct {
+	unconfirmedDataHeader UnconfirmedDataHeader
+	confirmedDataHeader   ConfirmedDataHeader
+	responsePacketHeader  ResponsePacketHeader
+	definedDataHeader     DefinedDataHeader
+	statusPrecodedHeader  StatusPrecodedHeader
+	rawDataHeader         RawDataHeader
+	udtHeader             UDTHeader
+	proprietaryHeader     ProprietaryHeader
+}
+
+// DecodeDataHeaderInto decodes data into dst as DecodeDataHeader does,
+// but points the dispatch field of dst into p, so it does not allocate.
+// The payload stays valid until the next decode into p. dst and p must
+// not be nil.
+func DecodeDataHeaderInto(dst *DataHeader, p *DataHeaderPayloads, data [96]bit.Bit) {
+	*dst = DataHeader{}
+	result := dst
+	lowbit.Mask(data[:])
+	var _packedBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			_packedBytes[i] <<= 1
+			_packedBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	_packedBytes[10] ^= uint8(0xcc)
+	_packedBytes[11] ^= uint8(0xcc)
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
+	result.Format = Format(bit.Uint(data[4:8]))
+	var _tmpAppendedBlocks uint64
+	_tmpAppendedBlocks = bit.Uint(data[2:4])
+	_tmpAppendedBlocks <<= 4
+	_tmpAppendedBlocks |= bit.Uint(data[12:16])
+	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
+	var _dispatchBits [80]bit.Bit
+	copy(_dispatchBits[:], data[0:80])
+	switch result.Format {
+	case FormatUnconfirmed:
+		p.unconfirmedDataHeader = decodeUnconfirmedDataHeader(_dispatchBits)
+		result.UnconfirmedDataHeader = &p.unconfirmedDataHeader
+	case FormatConfirmed:
+		p.confirmedDataHeader = decodeConfirmedDataHeader(_dispatchBits)
+		result.ConfirmedDataHeader = &p.confirmedDataHeader
+	case FormatResponsePacket:
+		p.responsePacketHeader = decodeResponsePacketHeader(_dispatchBits)
+		result.ResponsePacketHeader = &p.responsePacketHeader
+	case FormatShortDataDefined:
+		p.definedDataHeader = decodeDefinedDataHeader(_dispatchBits)
+		result.DefinedDataHeader = &p.definedDataHeader
+	case FormatShortDataRawOrStatusPrecoded:
+		if result.AppendedBlocks == 0 {
+			p.statusPrecodedHeader = decodeStatusPrecodedHeader(_dispatchBits)
+			result.StatusPrecodedHeader = &p.statusPrecodedHeader
+		} else {
+			p.rawDataHeader = decodeRawDataHeader(_dispatchBits)
+			result.RawDataHeader = &p.rawDataHeader
+		}
+	case FormatUnifiedDataTransport:
+		p.udtHeader = decodeUDTHeader(_dispatchBits)
+		result.UDTHeader = &p.udtHeader
+	case FormatProprietary:
+		p.proprietaryHeader = decodeProprietaryHeader(_dispatchBits)
+		result.ProprietaryHeader = &p.proprietaryHeader
+	default:
+		for _i := range 80 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
+	}
+}
+
 // Encode encodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
 func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit

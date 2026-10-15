@@ -256,6 +256,49 @@ func DecodeShortLC(data [36]bit.Bit) ShortLC {
 	return result
 }
 
+// ShortLCPayloads holds one payload struct of each type that
+// a ShortLC dispatch field points to, for DecodeShortLCInto.
+// The zero value is ready to use.
+type ShortLCPayloads struct {
+	shortLCNullMessage    ShortLCNullMessage
+	shortLCActivityUpdate ShortLCActivityUpdate
+	shortLCCSysParms      ShortLCCSysParms
+	shortLCPSysParms      ShortLCPSysParms
+}
+
+// DecodeShortLCInto decodes data into dst as DecodeShortLC does,
+// but points the dispatch field of dst into p, so it does not allocate.
+// The payload stays valid until the next decode into p. dst and p must
+// not be nil.
+func DecodeShortLCInto(dst *ShortLC, p *ShortLCPayloads, data [36]bit.Bit) {
+	*dst = ShortLC{}
+	result := dst
+	lowbit.Mask(data[:])
+	_crc := uint8(bit.Uint(data[28:]))
+	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:28], _crc)
+	result.SLCO = enums.SLCO(bit.Uint(data[0:4]))
+	var _dispatchBits [24]bit.Bit
+	copy(_dispatchBits[:], data[4:28])
+	switch result.SLCO {
+	case enums.SLCONullMessage:
+		p.shortLCNullMessage = decodeShortLCNullMessage(_dispatchBits)
+		result.NullMessage = &p.shortLCNullMessage
+	case enums.SLCOActivityUpdate:
+		p.shortLCActivityUpdate = decodeShortLCActivityUpdate(_dispatchBits)
+		result.ActivityUpdate = &p.shortLCActivityUpdate
+	case enums.SLCOCSysParms:
+		p.shortLCCSysParms = decodeShortLCCSysParms(_dispatchBits)
+		result.CSysParms = &p.shortLCCSysParms
+	case enums.SLCOPSysParms:
+		p.shortLCPSysParms = decodeShortLCPSysParms(_dispatchBits)
+		result.PSysParms = &p.shortLCPSysParms
+	default:
+		for _i := range 24 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
+	}
+}
+
 // Encode encodes a ShortLC (ETSI TS 102 361-1 clause 9.1.7).
 func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 	var data [36]bit.Bit

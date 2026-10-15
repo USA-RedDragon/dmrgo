@@ -90,6 +90,91 @@ func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) FullL
 	return result
 }
 
+// FullLinkControlPayloads holds one payload struct of each type that
+// a FullLinkControl dispatch field points to, for DecodeFullLinkControlInto.
+// The zero value is ready to use.
+type FullLinkControlPayloads struct {
+	flcGroupVoice                FLCGroupVoice
+	flcUnitToUnit                FLCUnitToUnit
+	flcgpsInfo                   FLCGPSInfo
+	flcTalkerAliasHeader         FLCTalkerAliasHeader
+	flcTalkerAliasBlock          FLCTalkerAliasBlock
+	flcTerminatorDataLinkControl FLCTerminatorDataLinkControl
+}
+
+// DecodeFullLinkControlInto decodes data into dst as DecodeFullLinkControl does,
+// but points the dispatch field of dst into p, so it does not allocate.
+// The payload stays valid until the next decode into p. dst and p must
+// not be nil.
+func DecodeFullLinkControlInto(dst *FullLinkControl, p *FullLinkControlPayloads, data [96]bit.Bit, burstDataType enums.DataType) {
+	*dst = FullLinkControl{}
+	result := dst
+	result.BurstDataType = burstDataType
+	lowbit.Mask(data[:])
+	var _packedBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			_packedBytes[i] <<= 1
+			_packedBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	switch result.BurstDataType {
+	case enums.DataTypeVoiceLCHeader:
+		_packedBytes[9] ^= 0x96
+		_packedBytes[10] ^= 0x96
+		_packedBytes[11] ^= 0x96
+	case enums.DataTypeTerminatorWithLC:
+		_packedBytes[9] ^= 0x99
+		_packedBytes[10] ^= 0x99
+		_packedBytes[11] ^= 0x99
+	}
+	var _fecData [9]byte
+	_fecData, result.FEC = reedsolomon.Decode(_packedBytes)
+	if !result.FEC.Uncorrectable {
+		for i := range 9 {
+			for j := range 8 {
+				data[i*8+j] = bit.Bit((_fecData[i] >> (7 - j)) & 1)
+			}
+		}
+	}
+	result.ProtectFlag = data[0] == 1
+	result.Reserved = data[1] == 1
+	result.FLCO = enums.FLCO(bit.Uint(data[2:8]))
+	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
+	var _dispatchBits [56]bit.Bit
+	copy(_dispatchBits[:], data[16:72])
+	if result.FID == 0 {
+		switch result.FLCO {
+		case enums.FLCOGroupVoiceChannelUser:
+			p.flcGroupVoice = decodeFLCGroupVoice(_dispatchBits)
+			result.GroupVoice = &p.flcGroupVoice
+		case enums.FLCOUnitToUnitVoiceChannelUser:
+			p.flcUnitToUnit = decodeFLCUnitToUnit(_dispatchBits)
+			result.UnitToUnit = &p.flcUnitToUnit
+		case enums.FLCOGPSInfo:
+			p.flcgpsInfo = decodeFLCGPSInfo(_dispatchBits)
+			result.GPSInfo = &p.flcgpsInfo
+		case enums.FLCOTalkerAliasHeader:
+			p.flcTalkerAliasHeader = decodeFLCTalkerAliasHeader(_dispatchBits)
+			result.TalkerAliasHeader = &p.flcTalkerAliasHeader
+		case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
+			p.flcTalkerAliasBlock = decodeFLCTalkerAliasBlock(_dispatchBits)
+			result.TalkerAliasBlock = &p.flcTalkerAliasBlock
+		case enums.FLCOTerminatorDataLinkControl:
+			p.flcTerminatorDataLinkControl = decodeFLCTerminatorDataLinkControl(_dispatchBits)
+			result.TerminatorDataLinkControl = &p.flcTerminatorDataLinkControl
+		default:
+			for _i := range 56 {
+				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+			}
+		}
+	} else {
+		for _i := range 56 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
+	}
+}
+
 // Encode encodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
 func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
