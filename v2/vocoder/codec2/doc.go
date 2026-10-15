@@ -7,7 +7,7 @@
 // (pkg-config name codec2), for example the libcodec2-dev package on Debian.
 // Without them the build fails with "Package 'codec2' not found". Build with
 // -tags nocodec2 or CGO_ENABLED=0 to remove the dependency; New then returns
-// ErrUnavailable.
+// ErrUnavailable. TinyGo builds always use this path.
 //
 // Each 20 ms Codec2 frame (160 samples at 8 kHz) fills one 72-bit DMR
 // vocoder frame, so a 60 ms voice burst carries three. The Codec2 bytes go
