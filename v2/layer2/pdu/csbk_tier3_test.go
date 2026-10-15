@@ -66,7 +66,7 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -183,7 +183,7 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 	// MSAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKAloha), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKAloha), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -258,7 +258,7 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	// BroadcastParms2 (bits 40-63) — set bit 40
 	payload[40] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKBroadcast), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKBroadcast), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -300,7 +300,7 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKClear), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKClear), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -340,7 +340,7 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKAhoy), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKAhoy), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -387,7 +387,7 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKRandomAccess), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKRandomAccess), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -416,7 +416,7 @@ func TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound(t *testing.T) {
 	payload[39] = 1 // BSAddress last bit
 	payload[63] = 1 // SourceAddress last bit
 
-	infoBits := buildCSBKBits(0b00111000, 0x00, payload)
+	infoBits := buildCSBKBits(0b00111000, payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -445,7 +445,7 @@ func TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI(t *testing.T) {
 	// SourceAddress (bits 40-63) = last bit
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(0b00111000, 0x00, payload)
+	infoBits := buildCSBKBits(0b00111000, payload)
 
 	// Create a CSBK with TrunkingMode=true and re-decode manually
 	// We need to set TrunkingMode before decode. Since DecodeCSBK returns a value,
@@ -482,7 +482,7 @@ func TestCSBK_AckOutbound_Decode(t *testing.T) {
 	// AdditionalInfo (bits 40-63)
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKAckOutbound), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKAckOutbound), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -515,7 +515,7 @@ func TestCSBK_Move_Decode(t *testing.T) {
 	// MSAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKMove), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKMove), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -551,7 +551,7 @@ func TestCSBK_Maintenance_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63)
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKMaintenance), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKMaintenance), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -583,7 +583,7 @@ func TestCSBK_Ackvitation_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63)
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKAckvitation), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKAckvitation), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -862,7 +862,7 @@ func TestCSBK_UDTOutboundHeader_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63)
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKUDTOutboundHeader), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKUDTOutboundHeader), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -906,7 +906,7 @@ func TestCSBK_Protect_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63)
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKProtect), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKProtect), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {

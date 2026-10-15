@@ -10,15 +10,14 @@ import (
 )
 
 // buildCSBKBits constructs a [96]bit.Bit array for a CSBK PDU.
-// opcode is 6 bits, fid is 8 bits, payload is 64 bits.
+// opcode is 6 bits, FID is 0, payload is 64 bits.
 // lb and pf flags default to true/false.
 // The CRC-CCITT is computed and XOR-masked per spec (§9.1.7).
-func buildCSBKBits(opcode byte, fid byte, payload [64]bit.Bit) [96]bit.Bit {
+func buildCSBKBits(opcode byte, payload [64]bit.Bit) [96]bit.Bit {
 	var dataBytes [12]byte
 
 	// Byte 0: lb=1, pf=0, opcode(6 bits)
 	dataBytes[0] = 0x80 | (opcode & 0x3F) // lb=1, pf=0, 6-bit opcode
-	dataBytes[1] = fid
 
 	// Pack 64 payload bits into bytes 2..9
 	for i := 0; i < 8; i++ {
@@ -90,7 +89,7 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) = 0x000002 → second to last bit set
 	payload[62] = 1
 
-	infoBits := buildCSBKBits(0b00111101, 0x00, payload)
+	infoBits := buildCSBKBits(0b00111101, payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -137,7 +136,7 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 	// SourceAddress (bits 16-39) — leave zero
 	// TargetAddress (bits 40-63) — leave zero
 
-	infoBits := buildCSBKBits(0b00100110, 0x00, payload)
+	infoBits := buildCSBKBits(0b00100110, payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -164,7 +163,7 @@ func TestCSBK_CRCValidation(t *testing.T) {
 	// Build valid CSBK bits, then corrupt them to verify CRC catches it
 	var payload [64]bit.Bit
 	payload[0] = 1
-	infoBits := buildCSBKBits(0b00111101, 0x00, payload)
+	infoBits := buildCSBKBits(0b00111101, payload)
 
 	// First verify it decodes ok
 	_, fecResult := pdu.DecodeCSBK(infoBits)
@@ -192,7 +191,7 @@ func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 	payload[62] = 1
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKBSOutboundActivationPDU), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKBSOutboundActivationPDU), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -263,7 +262,7 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) = address with bit 63 set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceRequestPDU), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceRequestPDU), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -334,7 +333,7 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) — bit 63 set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
@@ -423,7 +422,7 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 	payload[61] = 1
 	// ChannelTimingOp0 (bit 63, opcode LSB) = false
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTimingPDU), 0x00, payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTimingPDU), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
