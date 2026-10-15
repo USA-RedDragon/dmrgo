@@ -112,6 +112,11 @@ linters:
         linters:
           - gosec
         text: G204
+      # testing.AllocsPerRun panics in a parallel test.
+      - path: _alloc_test\.go$
+        linters:
+          - paralleltest
+        text: ^Function TestAllocs\w* missing the call to method parallel
       # jennifer's DSL is written with a dot import.
       - path: cmd/dmrgen/emit/
         linters:
