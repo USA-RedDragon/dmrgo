@@ -199,7 +199,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §7.1.2.4 | Negative Acknowledge Response CSBK PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.2.5 | Preamble CSBK PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.2.6 | Channel Timing CSBK PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
-| §7.1.3 | Short Link Control PDUs | ✅ verified | 17/17 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/enums/activity_id.go` |
+| §7.1.3 | Short Link Control PDUs | ✅ verified | 18/18 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/enums/activity_id.go`, `v2/layer2/pdu/address_hash.go` |
 | §7.2.1 | Service Options | ✅ verified | 4/4 passed | `v2/layer3/elements/service_options.go` |
 | §7.2.2 | Answer Response | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.2.3 | Reason Code | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |

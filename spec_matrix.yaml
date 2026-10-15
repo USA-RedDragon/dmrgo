@@ -1343,6 +1343,7 @@ documents:
           - v2/layer2/pdu/short_link_control.go
           - v2/enums/slco.go
           - v2/enums/activity_id.go
+          - v2/layer2/pdu/address_hash.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -1350,6 +1351,7 @@ documents:
               - TestShortLC_ActivityUpdate_Decode
               - TestShortLC_EncodeDecodeRoundTrip
               - TestShortLC_ToString
+              - TestAddressHash
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestSLCO_ToName_NullMessage
