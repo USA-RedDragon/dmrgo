@@ -241,10 +241,9 @@ func bridgeSMS(w io.Writer, path string) error {
 		}
 		switch d := b.Data.(type) {
 		case *pdu.CSBK:
-			if d.PreamblePDU == nil {
+			if d.PreamblePDU == nil || !d.SetAddresses(newTarget, newSource) {
 				continue
 			}
-			d.PreamblePDU.TargetAddress, d.PreamblePDU.SourceAddress = newTarget, newSource
 			preambles++
 		case *pdu.DataHeader:
 			if !d.SetAddresses(newTarget, newSource) {
@@ -280,13 +279,14 @@ func checkSMSBurst(p [33]byte) error {
 		return fmt.Errorf("rewritten %s does not check", b.SlotType.DataType)
 	}
 	var dst, src uint32
+	var ok bool
 	switch d := b.Data.(type) {
 	case *pdu.CSBK:
-		dst, src = d.PreamblePDU.TargetAddress, d.PreamblePDU.SourceAddress
+		dst, src, ok = d.Addresses()
 	case *pdu.DataHeader:
-		dst, src, _ = d.Addresses()
+		dst, src, ok = d.Addresses()
 	}
-	if dst != newTarget || src != newSource {
+	if !ok || dst != newTarget || src != newSource {
 		return fmt.Errorf("rewritten %s carries %d -> %d", b.SlotType.DataType, src, dst)
 	}
 	return nil
