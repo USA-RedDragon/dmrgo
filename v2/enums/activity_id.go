@@ -2,19 +2,21 @@ package enums
 
 import "fmt"
 
-// ETSI TS 102 361-2 - 7.1.3.2 / Table 7.10 Activity ID
+// ActivityID is the 4-bit activity of one BS time slot in an Activity Update
+// short LC. Values that have no constant are reserved (ETSI TS 102 361-2
+// clause 7.1.3.2, Table 7.10).
 type ActivityID uint8
 
 const (
-	ActivityNoActivity               ActivityID = 0b0000
-	ActivityGroupCSBK                ActivityID = 0b0010
-	ActivityIndividualCSBK           ActivityID = 0b0011
-	ActivityGroupVoice               ActivityID = 0b1000
-	ActivityIndividualVoice          ActivityID = 0b1001
-	ActivityIndividualData           ActivityID = 0b1010
-	ActivityGroupData                ActivityID = 0b1011
-	ActivityEmergencyGroupVoice      ActivityID = 0b1100
-	ActivityEmergencyIndividualVoice ActivityID = 0b1101
+	ActivityNoActivity               ActivityID = 0b0000 // no activity
+	ActivityGroupCSBK                ActivityID = 0b0010 // group CSBK activity
+	ActivityIndividualCSBK           ActivityID = 0b0011 // individual CSBK activity
+	ActivityGroupVoice               ActivityID = 0b1000 // group voice activity
+	ActivityIndividualVoice          ActivityID = 0b1001 // individual voice activity
+	ActivityIndividualData           ActivityID = 0b1010 // individual data activity
+	ActivityGroupData                ActivityID = 0b1011 // group data activity
+	ActivityEmergencyGroupVoice      ActivityID = 0b1100 // emergency group voice activity
+	ActivityEmergencyIndividualVoice ActivityID = 0b1101 // emergency individual voice activity
 )
 
 func (a ActivityID) String() string {

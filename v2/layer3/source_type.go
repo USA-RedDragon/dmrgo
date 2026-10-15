@@ -2,12 +2,13 @@ package layer3
 
 const unknownName = "Unknown"
 
-// ETSI TS 102 361-2 - 7.2.5 Source Type
+// SourceType is the 1-bit Source Type: it tells whether a BS or an MS sent
+// the PDU (ETSI TS 102 361-2 clause 7.2.5, Table 7.14).
 type SourceType uint8
 
 const (
-	SourceTypeBS SourceType = 0 // Base Station
-	SourceTypeMS SourceType = 1 // Mobile Station
+	SourceTypeBS SourceType = 0 // BS sourced
+	SourceTypeMS SourceType = 1 // MS sourced
 )
 
 func (st SourceType) String() string {

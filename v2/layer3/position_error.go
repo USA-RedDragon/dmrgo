@@ -1,17 +1,18 @@
 package layer3
 
-// ETSI TS 102 361-2 - 7.2.15 Position Error
+// PositionError is the 3-bit accuracy of a GPS position (ETSI TS 102 361-2
+// clause 7.2.15).
 type PositionError uint8
 
 const (
-	PositionLessThan2M    PositionError = iota // 0b000
-	PositionLessThan20M                        // 0b001
-	PositionLessThan200M                       // 0b010
-	PositionLessThan2KM                        // 0b011
-	PositionLessThan20KM                       // 0b100
-	PositionLessThan200KM                      // 0b101
-	PositionMoreThan200KM                      // 0b110
-	PositionErrorUnknown                       // 0b111
+	PositionLessThan2M    PositionError = iota // less than 2 m
+	PositionLessThan20M                        // less than 20 m
+	PositionLessThan200M                       // less than 200 m
+	PositionLessThan2KM                        // less than 2 km
+	PositionLessThan20KM                       // less than 20 km
+	PositionLessThan200KM                      // less than or equal to 200 km
+	PositionMoreThan200KM                      // more than 200 km
+	PositionErrorUnknown                       // position error not known
 )
 
 func (pe PositionError) String() string {

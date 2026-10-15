@@ -27,9 +27,9 @@ type FieldRangeError struct {
 	Type, Field string
 	// Value is the field value.
 	Value any
-	// Bits is the width of the field and Signed is set for a two's
-	// complement field.
-	Bits   int
+	// Bits is the width of the field in bits.
+	Bits int
+	// Signed is true for a two's complement field.
 	Signed bool
 	// Min and Max are the range of a coordinate field; both are 0 for an
 	// integer field.

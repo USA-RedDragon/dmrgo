@@ -1,14 +1,14 @@
 package enums
 
-// SAID (Source IP Address Identifier) identifies the source IP address type
-// in a UDP/IPv4 compressed header.
-// ETSI TS 102 361-3 — Table 7.15
+// SAID is the 4-bit Source IP Address Identifier of a UDP/IPv4 compressed
+// header. Values 2 to 11 are reserved and 12 to 15 are manufacturer specific
+// (ETSI TS 102 361-3 Table 7.15).
 type SAID uint8
 
 const (
-	SAIDRadioNetwork         SAID = 0
-	SAIDUSBEthernetNetwork   SAID = 1
-	SAIDManufacturerSpecific SAID = 12
+	SAIDRadioNetwork         SAID = 0  // radio network
+	SAIDUSBEthernetNetwork   SAID = 1  // USB or Ethernet network
+	SAIDManufacturerSpecific SAID = 12 // first manufacturer specific value
 )
 
 func (said SAID) String() string {

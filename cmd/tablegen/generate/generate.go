@@ -9,6 +9,9 @@ import (
 	"github.com/dave/jennifer/jen"
 )
 
+// WriteAll writes a tables_gen.go file with the tables into each table
+// package under dmrRoot, the v2 directory. It stops at the first write error
+// and returns it.
 func WriteAll(tables *compute.Tables, dmrRoot string) error {
 	if err := writeFile(dmrRoot, "internal/fec/bptc", "bptc",
 		writeTable("dm", tables.DM[:]),

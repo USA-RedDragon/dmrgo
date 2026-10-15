@@ -5,12 +5,12 @@ import "github.com/USA-RedDragon/dmrgo/v2/bit"
 // ServiceOptions is the Service Options information element (ETSI TS 102 361-2
 // clause 7.2.1).
 type ServiceOptions struct {
-	IsEmergency         bool  `dmr:"bit:0"`
-	IsPrivacy           bool  `dmr:"bit:1"`
-	Reserved            uint8 `dmr:"bits:2-3"`
-	IsBroadcast         bool  `dmr:"bit:4"`
-	IsOpenVoiceCallMode bool  `dmr:"bit:5"`
-	PriorityLevel       uint8 `dmr:"bits:6-7"`
+	IsEmergency         bool  `dmr:"bit:0"`    // emergency service
+	IsPrivacy           bool  `dmr:"bit:1"`    // privacy, which ETSI TS 102 361-2 does not define
+	Reserved            uint8 `dmr:"bits:2-3"` // reserved bits
+	IsBroadcast         bool  `dmr:"bit:4"`    // broadcast service, for group calls only
+	IsOpenVoiceCallMode bool  `dmr:"bit:5"`    // Open Voice Call Mode (OVCM) call
+	PriorityLevel       uint8 `dmr:"bits:6-7"` // 0 is no priority, 1 to 3 are priorities 1 to 3 (3 is highest)
 }
 
 // DefaultServiceOptions returns the Service Options octet 0x20 seen in

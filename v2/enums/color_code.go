@@ -2,10 +2,10 @@ package enums
 
 import "fmt"
 
-// ColorCode is the 4-bit Colour Code of a slot type or EMB (ETSI TS 102
-// 361-1 §9.3.1). NewColorCode checks the range, so a ColorCode from it is 0
-// to 15. The setters and builders that take a ColorCode write its low 4
-// bits and do not return an error for it.
+// ColorCode is the 4-bit color code of a slot type or EMB (ETSI TS 102 361-1
+// clause 9.3.1). A ColorCode from NewColorCode is 0 to 15. The setters and
+// builders that take a ColorCode write its low 4 bits and do not return an
+// error for it.
 type ColorCode uint8
 
 // NewColorCode returns v as a ColorCode. It returns a *ColorCodeError when v

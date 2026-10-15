@@ -44,8 +44,8 @@ type Mode int
 
 // The Codec2 modes that fit in a 72-bit DMR vocoder frame.
 const (
-	Mode2400 Mode = 2400
-	Mode3200 Mode = 3200
+	Mode2400 Mode = 2400 // 2400 bit/s, 6 bytes per frame
+	Mode3200 Mode = 3200 // 3200 bit/s, 8 bytes per frame
 )
 
 // Config selects how a Codec encodes and decodes.
