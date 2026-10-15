@@ -163,6 +163,18 @@ func Modulate(bursts [][33]byte, sched Schedule) (freq, env []float64) {
 	return convolve(impulses, rrcTaps()), env
 }
 
+// padToFrames extends the deviation and envelope with silence to a whole
+// number of 60 ms TDMA frames, so a repeated sequence keeps its slot.
+func padToFrames(freq, env []float64) ([]float64, []float64) {
+	frame := int(2 * slotSeconds * basebandRate)
+	n := (len(freq) + frame - 1) / frame * frame
+	for len(freq) < n {
+		freq = append(freq, 0)
+		env = append(env, 0)
+	}
+	return freq, env
+}
+
 // ToIQ FM-modulates the deviation signal onto a carrier at offsetHz from the
 // tuned frequency and returns signed 8-bit interleaved I/Q at rate, the format
 // hackrf_transfer -t reads.
