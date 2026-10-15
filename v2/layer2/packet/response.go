@@ -3,7 +3,6 @@ package packet
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -126,20 +125,23 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 // On a CRC failure it returns the decoded flags with an error that wraps
 // ErrResponseData and fec.ErrUncorrectable.
 func DecodeResponseData(blocks ...*pdu.Rate12Data) (ResponseData, error) {
+	var r ResponseData
 	if len(blocks) != 1 && len(blocks) != 2 {
-		return ResponseData{}, fmt.Errorf("%w: %d blocks", ErrResponseData, len(blocks))
+		return r, fmt.Errorf("%w: %d blocks", ErrResponseData, len(blocks))
 	}
-	buf := make([]byte, 0, len(blocks)*12)
-	for _, b := range blocks {
-		buf = append(buf, b.Data[:]...)
+	var buf [2 * 12]byte
+	for i, b := range blocks {
+		copy(buf[i*12:], b.Data[:])
 	}
-	return decodeResponseData(buf)
+	err := decodeResponseData(&r, buf[:len(blocks)*12])
+	return r, err
 }
 
-func decodeResponseData(buf []byte) (ResponseData, error) {
-	var r ResponseData
+// decodeResponseData decodes the C_RDATA octets buf into r.
+func decodeResponseData(r *ResponseData, buf []byte) error {
+	clear(r.Retry[:])
 	if len(buf) != 12 && len(buf) != 24 {
-		return r, fmt.Errorf("%w: %d octets", ErrResponseData, len(buf))
+		return errResponseLength
 	}
 	flags := 64
 	if len(buf) == 24 {
@@ -149,9 +151,9 @@ func decodeResponseData(buf []byte) (ResponseData, error) {
 		r.Retry[i] = buf[i/8]&(0x80>>(i%8)) == 0
 	}
 	if !checkMessageCRC(buf) {
-		return r, fmt.Errorf("%w: %w", ErrResponseData, fec.ErrUncorrectable)
+		return errResponseCRC
 	}
-	return r, nil
+	return nil
 }
 
 // NewResponse builds the response packet a recipient sends for the

@@ -105,9 +105,9 @@ func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet
 }
 
 func setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
-	confirmed, err := isConfirmed(h)
-	if err != nil {
-		return false, err
+	confirmed, ok := isConfirmed(h)
+	if !ok {
+		return false, fmt.Errorf("%w: %s", ErrFormat, h.Format.String())
 	}
 	per, err := blockOctets(rate, confirmed)
 	if err != nil {
@@ -145,18 +145,20 @@ func setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	return confirmed, nil
 }
 
-func isConfirmed(h *pdu.DataHeader) (bool, error) {
+// isConfirmed reports whether h is a confirmed or SARQ header. ok is false
+// for a header that does not carry segmented data.
+func isConfirmed(h *pdu.DataHeader) (confirmed, ok bool) {
 	switch {
 	case h.Format == pdu.FormatUnconfirmed && h.UnconfirmedDataHeader != nil:
-		return false, nil
+		return false, true
 	case h.Format == pdu.FormatConfirmed && h.ConfirmedDataHeader != nil:
-		return true, nil
+		return true, true
 	case h.Format == pdu.FormatShortDataDefined && h.DefinedDataHeader != nil:
-		return h.DefinedDataHeader.SARQ, nil
+		return h.DefinedDataHeader.SARQ, true
 	case h.Format == pdu.FormatShortDataRawOrStatusPrecoded && h.RawDataHeader != nil:
-		return h.RawDataHeader.SARQ, nil
+		return h.RawDataHeader.SARQ, true
 	}
-	return false, fmt.Errorf("%w: %s", ErrFormat, h.Format.String())
+	return false, false
 }
 
 func blocksOf(h *pdu.DataHeader) int {
