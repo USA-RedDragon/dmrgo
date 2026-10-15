@@ -104,14 +104,14 @@ type VoiceTransmitter struct {
 	colorCode  enums.ColorCode
 	voiceSync  enums.SyncPattern
 	outbound   bool
-	header     [33]byte
-	terminator [33]byte
+	header     RawBurst
+	terminator RawBurst
 	embedded   [4][32]bit.Bit
 	callLC     [4][32]bit.Bit
 	nextLC     *[4][32]bit.Bit
 	lcHook     func(superframe int) *pdu.FullLinkControl
 	superframe int
-	piHeader   [33]byte
+	piHeader   RawBurst
 	hasPI      bool
 	silence    [72]bit.Bit
 	slots      [VoiceSlotsPerBurst][72]bit.Bit
@@ -138,18 +138,18 @@ func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode enums.ColorCode, sour
 	})
 }
 
-func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) ([33]byte, error) {
+func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
 	lc.BurstDataType = dataType
 	bits, err := lc.Encode()
 	if err != nil {
-		return [33]byte{}, fmt.Errorf("cannot encode full link control: %w", err)
+		return RawBurst{}, fmt.Errorf("cannot encode full link control: %w", err)
 	}
 	return BuildDataBurst(bit.Pack96(bits), dataType, colorCode, src)
 }
 
 // Header returns the Voice LC Header burst, sent before the first voice
 // burst.
-func (t *VoiceTransmitter) Header() [33]byte {
+func (t *VoiceTransmitter) Header() RawBurst {
 	return t.header
 }
 
@@ -174,11 +174,11 @@ func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 
 // AddSlots adds 72-bit vocoder slots in transmit order and returns the
 // voice bursts they complete.
-func (t *VoiceTransmitter) AddSlots(slots ...[72]bit.Bit) ([][33]byte, error) {
+func (t *VoiceTransmitter) AddSlots(slots ...[72]bit.Bit) ([]RawBurst, error) {
 	if t.terminated {
 		return nil, ErrVoiceTerminated
 	}
-	var out [][33]byte
+	var out []RawBurst
 	for _, slot := range slots {
 		t.slots[t.pending] = slot
 		t.pending++
@@ -195,7 +195,7 @@ func (t *VoiceTransmitter) AddSlots(slots ...[72]bit.Bit) ([][33]byte, error) {
 
 // AddFrames adds AMBE+2 frames in transmit order, each as the slot
 // vocoder.EncodeAMBE72 returns, and returns the voice bursts they complete.
-func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([][33]byte, error) {
+func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([]RawBurst, error) {
 	slots := make([][72]bit.Bit, len(frames))
 	for i, frame := range frames {
 		slots[i] = vocoder.EncodeAMBE72(frame)
@@ -207,11 +207,11 @@ func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([][33]byte, e
 // superframe with the silence slot and returns those bursts followed by the
 // Terminator with LC. A transmission without voice bursts ends with the
 // terminator alone. Later calls return ErrVoiceTerminated.
-func (t *VoiceTransmitter) Terminate() ([][33]byte, error) {
+func (t *VoiceTransmitter) Terminate() ([]RawBurst, error) {
 	if t.terminated {
 		return nil, ErrVoiceTerminated
 	}
-	var out [][33]byte
+	var out []RawBurst
 	for t.pending > 0 || t.position != 0 {
 		for t.pending < VoiceSlotsPerBurst {
 			t.slots[t.pending] = t.silence
@@ -227,7 +227,7 @@ func (t *VoiceTransmitter) Terminate() ([][33]byte, error) {
 	return append(out, t.terminator), nil
 }
 
-func (t *VoiceTransmitter) flush() ([33]byte, error) {
+func (t *VoiceTransmitter) flush() (RawBurst, error) {
 	var bits [264]bit.Bit
 	var voice [216]bit.Bit
 	for i, slot := range t.slots {
@@ -239,7 +239,7 @@ func (t *VoiceTransmitter) flush() ([33]byte, error) {
 	if t.position == 0 {
 		if err := t.startSuperframe(); err != nil {
 			t.pending = 0
-			return [33]byte{}, err
+			return RawBurst{}, err
 		}
 		writeSync(&bits, t.voiceSync)
 	} else {
@@ -261,7 +261,7 @@ func (t *VoiceTransmitter) flush() ([33]byte, error) {
 		}
 		embBits, err := emb.Encode()
 		if err != nil {
-			return [33]byte{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
+			return RawBurst{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
 		}
 		copy(bits[embFirstStart:embFirstEnd], embBits[:8])
 		copy(bits[embeddedDataStart:embeddedDataEnd], data[:])

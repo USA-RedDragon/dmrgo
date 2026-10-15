@@ -58,7 +58,7 @@ func TestMMDVMHostSeal_PairsWithAccepts(t *testing.T) {
 func TestMMDVMHostSeal_IdentityOnAcceptedCaptures(t *testing.T) {
 	n := 0
 	for _, frame := range captureFrames(t) {
-		r := layer2.RawBurst(frame)
+		r := frame
 		st := r.SlotType()
 		res := st.FEC
 		if res.HasErrors() || st.DataType == enums.DataTypeRate34 || st.DataType == enums.DataTypeRate1 || st.DataType.IsReserved() {

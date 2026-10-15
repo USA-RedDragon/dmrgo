@@ -199,7 +199,7 @@ func TestBurstEncode_IdleKeepsDecodedPayload(t *testing.T) {
 		t.Errorf("decoded idle burst: got %x, want %x", got, frame)
 	}
 	fresh := layer2.Burst{Kind: layer2.KindData, SyncPattern: b.SyncPattern, SlotType: b.SlotType, Data: &pdu.PRFill{}}
-	raw := layer2.RawBurst(must(fresh.Encode()))
+	raw := must(fresh.Encode())
 	if p, _ := raw.BPTCPayload(); !pdu.IsPRFill(bitsOf(p)) {
 		t.Errorf("new PR FILL encoded %x, want Table D.2", p)
 	}

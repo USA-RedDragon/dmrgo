@@ -45,7 +45,7 @@ func run(w io.Writer, dataDir string) error {
 	return bridgeSMS(w, filepath.Join(dataDir, "d-sms.bin"))
 }
 
-func loadBursts(path string) ([][33]byte, error) {
+func loadBursts(path string) ([]layer2.RawBurst, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func loadBursts(path string) ([][33]byte, error) {
 	if len(raw)%33 != 0 {
 		return nil, fmt.Errorf("%s: %d bytes is not a whole number of bursts", path, len(raw))
 	}
-	out := make([][33]byte, 0, len(raw)/33)
+	out := make([]layer2.RawBurst, 0, len(raw)/33)
 	for i := 0; i < len(raw); i += 33 {
 		out = append(out, [33]byte(raw[i:i+33]))
 	}
@@ -67,7 +67,7 @@ type inbound struct {
 	slots     [][72]bit.Bit
 }
 
-func receive(bursts [][33]byte) (inbound, error) {
+func receive(bursts []layer2.RawBurst) (inbound, error) {
 	var in inbound
 	var rx layer2.VoiceReceiver
 	haveLC := false
@@ -96,7 +96,7 @@ func receive(bursts [][33]byte) (inbound, error) {
 	return in, nil
 }
 
-func transmit(in inbound) ([][33]byte, error) {
+func transmit(in inbound) ([]layer2.RawBurst, error) {
 	silence := vocoder.EncodeAMBE72(vocoder.AMBESilence())
 	tx, err := layer2.NewVoiceTransmitter(in.lc, in.colorCode, layer2.SyncSourceBS, silence)
 	if err != nil {
@@ -123,7 +123,7 @@ type verified struct {
 	ambeUncorrectable     int
 }
 
-func verify(bursts [][33]byte) (verified, error) {
+func verify(bursts []layer2.RawBurst) (verified, error) {
 	var v verified
 	rx := layer2.VoiceReceiver{Strict: true}
 	for i, p := range bursts {
@@ -153,7 +153,7 @@ func verify(bursts [][33]byte) (verified, error) {
 			continue
 		}
 		v.lcBursts++
-		raw := layer2.RawBurst(p)
+		raw := p
 		payload, _ := raw.BPTCPayload()
 		t, s, _ := flc.Addresses()
 		if flc.FLCO == enums.FLCOGroupVoiceChannelUser && t == newTarget && s == newSource && !b.FEC.PDU.HasErrors() && layer2.MMDVMHostAccepts(b.SlotType.DataType, payload) {

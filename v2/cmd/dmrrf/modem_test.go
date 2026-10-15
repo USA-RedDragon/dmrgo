@@ -177,7 +177,7 @@ func TestSteadySymbolsHoldSpecDeviation(t *testing.T) {
 		for i := range b {
 			b[i] = tc.fill
 		}
-		fm, _ := Modulate([][33]byte{b}, Schedule{Slot: 0})
+		fm, _ := Modulate([]layer2.RawBurst{b}, Schedule{Slot: 0})
 		mid := int((slotSeconds/2 - 0.005) * basebandRate)
 		for i := mid; i < mid+int(0.01*basebandRate); i++ {
 			if math.Abs(fm[i]-tc.want) > 0.01*math.Abs(tc.want) {

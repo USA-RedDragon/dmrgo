@@ -14,7 +14,7 @@ import (
 // layer2.Data whose DataType is one of these rates, coded from its
 // EncodeBits. It returns an error when the header or a block does not
 // encode, a block has another data type or src is unknown.
-func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([][33]byte, error) {
+func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
 	hdr, err := p.Header.Encode()
 	if err != nil {
 		return nil, fmt.Errorf("header: %w", err)
@@ -23,7 +23,7 @@ func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([][33]b
 	if err != nil {
 		return nil, fmt.Errorf("header: %w", err)
 	}
-	out := make([][33]byte, 0, 1+len(p.Blocks))
+	out := make([]layer2.RawBurst, 0, 1+len(p.Blocks))
 	out = append(out, raw)
 	for i, d := range p.Blocks {
 		raw, err = blockBurst(d, colorCode, src)
@@ -35,18 +35,18 @@ func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([][33]b
 	return out, nil
 }
 
-func blockBurst(d layer2.Data, colorCode enums.ColorCode, src layer2.SyncSource) ([33]byte, error) {
+func blockBurst(d layer2.Data, colorCode enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, error) {
 	dt := d.DataType()
 	want := map[enums.DataType]int{enums.DataTypeRate12: 96, enums.DataTypeRate34: 144, enums.DataTypeRate1: 192}[dt]
 	if want == 0 {
-		return [33]byte{}, fmt.Errorf("%w: %T with data type %s", ErrRate, d, dt.String())
+		return layer2.RawBurst{}, fmt.Errorf("%w: %T with data type %s", ErrRate, d, dt.String())
 	}
 	bits, err := d.EncodeBits()
 	if err != nil {
-		return [33]byte{}, err
+		return layer2.RawBurst{}, err
 	}
 	if len(bits) != want {
-		return [33]byte{}, fmt.Errorf("%T encodes %d bits, data type %s carries %d", d, len(bits), dt.String(), want)
+		return layer2.RawBurst{}, fmt.Errorf("%T encodes %d bits, data type %s carries %d", d, len(bits), dt.String(), want)
 	}
 	packed := bit.Pack(bits)
 	if dt == enums.DataTypeRate34 {

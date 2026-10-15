@@ -11,13 +11,13 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func captureFrames(t *testing.T) [][33]byte {
+func captureFrames(t *testing.T) []layer2.RawBurst {
 	t.Helper()
 	files, err := filepath.Glob("testdata/*.bin")
 	if err != nil || len(files) == 0 {
 		t.Fatalf("no captures: %v", err)
 	}
-	frames := make([][33]byte, 0, 64)
+	frames := make([]layer2.RawBurst, 0, 64)
 	for _, f := range files {
 		frames = append(frames, loadBursts(t, f)...)
 	}
@@ -58,7 +58,7 @@ outer:
 func TestRawBurst_GettersMatchBurst(t *testing.T) {
 	counts := map[string]int{}
 	for _, frame := range captureFrames(t) {
-		r := layer2.RawBurst(frame)
+		r := frame
 		b, _ := layer2.NewBurstFromBytes(frame)
 
 		p, d := r.Sync()
@@ -123,23 +123,23 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 
 func TestRawBurst_GettersOnValue(t *testing.T) {
 	for _, frame := range captureFrames(t) {
-		r := layer2.RawBurst(frame)
-		p1, d1 := layer2.RawBurst(frame).Sync()
+		r := frame
+		p1, d1 := frame.Sync()
 		p2, d2 := r.Sync()
-		st1 := layer2.RawBurst(frame).SlotType()
+		st1 := frame.SlotType()
 		st2 := r.SlotType()
-		bp1, _ := layer2.RawBurst(frame).BPTCPayload()
+		bp1, _ := frame.BPTCPayload()
 		bp2, _ := r.BPTCPayload()
-		e1 := layer2.RawBurst(frame).EMB()
+		e1 := frame.EMB()
 		e2 := r.EMB()
 		if p1 != p2 || d1 != d2 || st1 != st2 || bp1 != bp2 || e1 != e2 ||
-			layer2.RawBurst(frame).EmbeddedData() != r.EmbeddedData() ||
-			layer2.RawBurst(frame).VoiceSlots() != r.VoiceSlots() ||
-			layer2.RawBurst(frame).Rate1Payload() != r.Rate1Payload() ||
-			layer2.RawBurst(frame).StandaloneRCData() != r.StandaloneRCData() {
+			frame.EmbeddedData() != r.EmbeddedData() ||
+			frame.VoiceSlots() != r.VoiceSlots() ||
+			frame.Rate1Payload() != r.Rate1Payload() ||
+			frame.StandaloneRCData() != r.StandaloneRCData() {
 			t.Errorf("%x: getters on a value differ from getters on a variable", frame)
 		}
-		if r != layer2.RawBurst(frame) {
+		if r != frame {
 			t.Errorf("%x: getters changed the burst", frame)
 		}
 	}
@@ -147,7 +147,7 @@ func TestRawBurst_GettersOnValue(t *testing.T) {
 
 func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 	for _, frame := range captureFrames(t) {
-		r := layer2.RawBurst(frame)
+		r := frame
 		w := r
 		if p, d := r.Sync(); d == 0 {
 			if err := w.SetSync(p); err != nil {
@@ -192,7 +192,7 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 	rng := rand.New(rand.NewSource(3))
 	info := [][2]int{{layer2.InfoFirstStart, layer2.InfoFirstEnd}, {layer2.InfoSecondStart, layer2.InfoSecondEnd}}
 	for _, frame := range captureFrames(t) {
-		r := layer2.RawBurst(frame)
+		r := frame
 		b, _ := layer2.NewBurstFromBytes(frame)
 		if (b.Kind == layer2.KindData) && isBPTC(b.SlotType.DataType) {
 			var p [12]byte
@@ -302,7 +302,7 @@ func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
 	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
 		tx := must(layer2.NewVoiceTransmitter(capturedLC(), 3, src, silenceSlot()))
 		got := must(layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, 3, src))
-		if got != layer2.RawBurst(tx.Header()) {
+		if got != tx.Header() {
 			t.Errorf("source %d: BuildDataBurst differs from the VoiceTransmitter header", src)
 		}
 	}
@@ -311,7 +311,7 @@ func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
 func TestBuildDataBurst_ReproducesCaptures(t *testing.T) {
 	n := 0
 	for _, frame := range captureFrames(t) {
-		r := layer2.RawBurst(frame)
+		r := frame
 		st := r.SlotType()
 		stRes := st.FEC
 		sync, d := r.Sync()

@@ -43,7 +43,7 @@ type SeqConfig struct {
 // Built is a transmission: Bursts for an MS-sourced one, Slots for a
 // BS-sourced stream, and Info lines that describe the content.
 type Built struct {
-	Bursts [][33]byte
+	Bursts []layer2.RawBurst
 	Slots  []BSSlot
 	Info   []string
 }
@@ -91,14 +91,14 @@ func putAddr(b []byte, a uint32) {
 
 // WakeupBurst returns an MS-sourced BS_Dwn_Act CSBK burst (ETSI TS 102 361-2
 // clause 7.1.2.1, Table 7.5a) that activates a BS outbound.
-func WakeupBurst(cfg SeqConfig) ([33]byte, error) {
+func WakeupBurst(cfg SeqConfig) (layer2.RawBurst, error) {
 	var c pdu.CSBKBytes
 	c[0] = 0x80 | 0x38
 	putAddr(c[4:7], cfg.BS)
 	putAddr(c[7:10], cfg.Source)
 	c.Reseal()
 	r, err := layer2.BuildDataBurst([12]byte(c), enums.DataTypeCSBK, cfg.ColorCode, layer2.SyncSourceMS)
-	return [33]byte(r), err
+	return r, err
 }
 
 func rateOf(name string) (enums.DataType, bool, error) {
@@ -155,7 +155,7 @@ func (cfg SeqConfig) source() layer2.SyncSource {
 	return layer2.SyncSourceMS
 }
 
-func dataBursts(name string, cfg SeqConfig) ([][33]byte, error) {
+func dataBursts(name string, cfg SeqConfig) ([]layer2.RawBurst, error) {
 	p, err := DataPacket(name, cfg)
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func dataBursts(name string, cfg SeqConfig) ([][33]byte, error) {
 // responseBursts builds the response that -src sends to -dst for a
 // confirmed rate 1/2 packet of srBlocks blocks with N(S) 0: an ACK, or for
 // sack a selective retry of the srRetry blocks.
-func responseBursts(sack bool, cfg SeqConfig) ([][33]byte, []string, error) {
+func responseBursts(sack bool, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	to := &pdu.ConfirmedDataHeader{
 		SAP:             enums.SAPShortData,
 		LLIDDestination: cfg.Source,
@@ -199,19 +199,19 @@ func responseBursts(sack bool, cfg SeqConfig) ([][33]byte, []string, error) {
 	return b, info, err
 }
 
-func csbkBurst(c *pdu.CSBK, cfg SeqConfig) ([33]byte, error) {
+func csbkBurst(c *pdu.CSBK, cfg SeqConfig) (layer2.RawBurst, error) {
 	bits, err := c.Encode()
 	if err != nil {
-		return [33]byte{}, err
+		return layer2.RawBurst{}, err
 	}
 	r, err := layer2.BuildDataBurst(bit.Pack96(bits), enums.DataTypeCSBK, cfg.ColorCode, cfg.source())
-	return [33]byte(r), err
+	return r, err
 }
 
 // preambleBursts returns Preambles Pre_CSBKs (ETSI TS 102 361-2 clause
 // 7.1.2.5) followed by a confirmed rate 1/2 packet. The CSBK Blocks to
 // Follow counts the preambles still to come and the bursts of the packet.
-func preambleBursts(cfg SeqConfig) ([][33]byte, error) {
+func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	data, err := dataBursts("data12", cfg)
 	if err != nil {
 		return nil, err
@@ -219,7 +219,7 @@ func preambleBursts(cfg SeqConfig) ([][33]byte, error) {
 	if cfg.Preambles-1+len(data) > 0xFF {
 		return nil, fmt.Errorf("%d preambles and %d data bursts do not fit in CSBK Blocks to Follow", cfg.Preambles, len(data))
 	}
-	var out [][33]byte
+	var out []layer2.RawBurst
 	for i := range cfg.Preambles {
 		c := &pdu.CSBK{
 			LastBlock: true,
@@ -271,7 +271,7 @@ func callLC(cfg SeqConfig, privacy bool) pdu.FullLinkControl {
 // voiceBursts builds a voice call: the voice LC header, the PI header for
 // privacy, Superframes superframes of the AMBE test pattern and the
 // terminator with LC.
-func voiceBursts(cfg SeqConfig, privacy bool) ([][33]byte, []string, error) {
+func voiceBursts(cfg SeqConfig, privacy bool) ([]layer2.RawBurst, []string, error) {
 	opts := layer2.VoiceTransmitterOptions{
 		LC:        callLC(cfg, privacy),
 		ColorCode: cfg.ColorCode,
@@ -319,7 +319,7 @@ func voiceBursts(cfg SeqConfig, privacy bool) ([][33]byte, []string, error) {
 
 // rcBurst returns a standalone MS-sourced reverse channel burst (ETSI TS 102
 // 361-1 clause 6.4.1) with the cease transmission command.
-func rcBurst(cfg SeqConfig) ([33]byte, error) {
+func rcBurst(cfg SeqConfig) (layer2.RawBurst, error) {
 	b := layer2.Burst{
 		Kind:               layer2.KindReverseChannel,
 		SyncPattern:        enums.SyncMSSourcedRC,
@@ -340,7 +340,7 @@ const (
 // mbcBursts returns a TV_GRANT with absolute channel parameters (ETSI TS 102
 // 361-4 clause 7.1.1.1.1): an MBC header whose physical channel is 0xFFF and
 // a CG_AP continuation with the channel frequencies.
-func mbcBursts(cfg SeqConfig) ([][33]byte, []string, error) {
+func mbcBursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	g := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}
 	gb, err := g.Encode()
 	if err != nil {
@@ -370,17 +370,17 @@ func mbcBursts(cfg SeqConfig) ([][33]byte, []string, error) {
 		return nil, nil, err
 	}
 	info := []string{fmt.Sprintf("mbc TV_GRANT %d -> %d channel 0xFFF, CG_AP channel %d tx/rx %d MHz + %d x 125 Hz", cfg.Source, cfg.Dest, tier3Channel, tier3MHz, tier3Steps)}
-	return [][33]byte{[33]byte(r1), [33]byte(r2)}, info, nil
+	return []layer2.RawBurst{r1, r2}, info, nil
 }
 
 // tier3Bursts returns C_ALOHA, TV_GRANT and C_MOVE CSBKs and the MBC grant.
-func tier3Bursts(cfg SeqConfig) ([][33]byte, []string, error) {
+func tier3Bursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	csbks := []*pdu.CSBK{
 		{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{SiteTSSync: true, NRandWait: 4, Backoff: 1, SysIdentCode: tier3SysCode, MSAddress: cfg.Dest}},
 		{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: tier3Channel, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}},
 		{LastBlock: true, Opcode: pdu.CSBKMove, MovePDU: &pdu.MovePDU{PhysicalChannel: tier3Channel, MSAddress: cfg.Dest}},
 	}
-	var out [][33]byte
+	var out []layer2.RawBurst
 	for _, c := range csbks {
 		b, err := csbkBurst(c, cfg)
 		if err != nil {
@@ -397,7 +397,7 @@ func tier3Bursts(cfg SeqConfig) ([][33]byte, []string, error) {
 	return append(out, mbc...), info, nil
 }
 
-func payload(name string, cfg SeqConfig) ([][33]byte, []string, error) {
+func payload(name string, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	switch name {
 	case seqWakeup:
 		return nil, nil, nil
@@ -419,7 +419,7 @@ func payload(name string, cfg SeqConfig) ([][33]byte, []string, error) {
 			return nil, nil, fmt.Errorf("a standalone RC burst is MS-sourced")
 		}
 		b, err := rcBurst(cfg)
-		return [][33]byte{b}, []string{"rc command=" + enums.RCCeaseTransmissionCommand.String()}, err
+		return []layer2.RawBurst{b}, []string{"rc command=" + enums.RCCeaseTransmissionCommand.String()}, err
 	case seqMBC, seqTier3:
 		if !cfg.BSSourced {
 			return nil, nil, fmt.Errorf("%s sends outbound Tier III PDUs and needs -bs-sourced", name)
@@ -452,7 +452,7 @@ func Sequence(name string, cfg SeqConfig) (Built, error) {
 	if err != nil {
 		return Built{}, err
 	}
-	out := make([][33]byte, 0, cfg.Wakeups+len(p))
+	out := make([]layer2.RawBurst, 0, cfg.Wakeups+len(p))
 	for range cfg.Wakeups {
 		out = append(out, wake)
 	}
@@ -479,9 +479,9 @@ func activityOf(name string, group bool) enums.ActivityID {
 
 // IdleBurst returns a BS-sourced idle burst (ETSI TS 102 361-1 clause
 // 7.3.2).
-func IdleBurst(cc enums.ColorCode) ([33]byte, error) {
+func IdleBurst(cc enums.ColorCode) (layer2.RawBurst, error) {
 	r, err := layer2.BuildDataBurst(bit.Pack96(layer2.IdleMessageInfo()), enums.DataTypeIdle, cc, layer2.SyncSourceBS)
-	return [33]byte(r), err
+	return r, err
 }
 
 // BSStream lays bursts out as a BS outbound stream: Wakeups idle frames,
@@ -492,7 +492,7 @@ func IdleBurst(cc enums.ColorCode) ([33]byte, error) {
 // row of an Activity Update Short LC, which spans four CACHs. The Short LC
 // announces the activity on cfg.Slot while any of its four slots carries
 // the sequence, and no activity otherwise.
-func BSStream(bursts [][33]byte, cfg SeqConfig, activity enums.ActivityID) ([]BSSlot, error) {
+func BSStream(bursts []layer2.RawBurst, cfg SeqConfig, activity enums.ActivityID) ([]BSSlot, error) {
 	if cfg.Slot != 0 && cfg.Slot != 1 {
 		return nil, fmt.Errorf("a BS-sourced stream needs -slot 0 or 1, not %d", cfg.Slot)
 	}

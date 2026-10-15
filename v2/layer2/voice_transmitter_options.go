@@ -76,11 +76,11 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 
 // Headers returns the bursts sent before the first voice burst: the Voice
 // LC Header, then the PI Header when the options set one.
-func (t *VoiceTransmitter) Headers() [][33]byte {
+func (t *VoiceTransmitter) Headers() []RawBurst {
 	if t.hasPI {
-		return [][33]byte{t.header, t.piHeader}
+		return []RawBurst{t.header, t.piHeader}
 	}
-	return [][33]byte{t.header}
+	return []RawBurst{t.header}
 }
 
 // SetEmbeddedLC sets the embedded LC of the next superframe that starts. It

@@ -201,7 +201,7 @@ func confirmed(w io.Writer) error {
 		return fmt.Errorf("retry %v, want [1]", retry)
 	}
 
-	m, err := receive(&rx, [][33]byte{bursts[0], good})
+	m, err := receive(&rx, []layer2.RawBurst{bursts[0], good})
 	if err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func confirmed(w io.Writer) error {
 
 // receive decodes bursts and adds them to a until it returns a message or an
 // error.
-func receive(a *packet.Assembler, bursts [][33]byte) (packet.Message, error) {
+func receive(a *packet.Assembler, bursts []layer2.RawBurst) (packet.Message, error) {
 	for i, raw := range bursts {
 		var b layer2.Burst
 		if err := b.DecodeFromBytes(raw); err != nil {

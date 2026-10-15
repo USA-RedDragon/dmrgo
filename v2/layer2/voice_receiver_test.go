@@ -14,10 +14,10 @@ import (
 
 // transmission returns the header, n voice bursts and the terminator of a
 // transmission of lc.
-func transmission(t *testing.T, lc pdu.FullLinkControl, n int) [][33]byte {
+func transmission(t *testing.T, lc pdu.FullLinkControl, n int) []layer2.RawBurst {
 	t.Helper()
 	tx := must(layer2.NewVoiceTransmitter(lc, 3, layer2.SyncSourceMS, silenceSlot()))
-	out := [][33]byte{tx.Header()}
+	out := []layer2.RawBurst{tx.Header()}
 	for i := 0; i < 3*n; i++ {
 		out = append(out, must(tx.AddSlots(testSlot(i)))...)
 	}
@@ -31,7 +31,7 @@ type received struct {
 	badLCs    map[int]pdu.FullLinkControl
 }
 
-func receiveAll(t *testing.T, raws [][33]byte) received {
+func receiveAll(t *testing.T, raws []layer2.RawBurst) received {
 	t.Helper()
 	var r layer2.VoiceReceiver
 	got := received{lcs: map[int]pdu.FullLinkControl{}, errs: map[int]error{}, badLCs: map[int]pdu.FullLinkControl{}}
@@ -171,7 +171,7 @@ func TestVoiceReceiver_Strict(t *testing.T) {
 
 func TestVoiceReceiver_DataBurstResets(t *testing.T) {
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
-	seq := [][33]byte{raws[1], raws[2], raws[7], raws[3], raws[6]}
+	seq := []layer2.RawBurst{raws[1], raws[2], raws[7], raws[3], raws[6]}
 	got := receiveAll(t, seq)
 	checkPositions(t, got.positions, "AB---")
 	if !errors.Is(got.errs[2], layer2.ErrEmbeddedLCSequence) || len(got.errs) != 1 {
@@ -242,7 +242,7 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 func TestVoiceReceiver_IgnoresStandaloneRC(t *testing.T) {
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
 	rc := buildStandaloneRCBurst(3, enums.RCCeaseTransmissionCommand)
-	seq := [][33]byte{raws[1], raws[2], rc, raws[3], raws[4], raws[5]}
+	seq := []layer2.RawBurst{raws[1], raws[2], rc, raws[3], raws[4], raws[5]}
 	got := receiveAll(t, seq)
 	checkPositions(t, got.positions, "AB-CDE")
 	if len(got.lcs) != 1 || len(got.errs) != 0 {
