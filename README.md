@@ -122,7 +122,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §7.4.1 | Multi Block Control (MBC) | ✅ verified | 17/17 passed | `v2/layer2/pdu/mbc.go`, `v2/layer2/burst.go` |
 | §8.2.1 | Header block structure | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §8.2.3.1 | Unified Single Block Data block structure | ✅ verified | 10/10 passed | `v2/layer2/pdu/usbd.go`, `v2/layer2/burst.go` |
-| §9.1.1 | Synchronization (SYNC) PDU | ✅ verified | 11/11 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go` |
+| §9.1.1 | Synchronization (SYNC) PDU | ✅ verified | 18/18 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go`, `v2/layer2/decode_options.go` |
 | §9.1.2 | Embedded signalling (EMB) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/embedded_signalling.go` |
 | §9.1.3 | Slot Type (SLOT) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/slot_type.go` |
 | §9.1.4 | TACT PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/tact.go`, `v2/fec/hamming/hamming_7_4_3.go` |
