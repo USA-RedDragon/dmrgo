@@ -6,8 +6,12 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   spec-check:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
 
     steps:
@@ -21,10 +25,28 @@ jobs:
 
       - run: go generate ./...
 
-      - name: Spec check README
-        run: |
-          cd cmd/speccheck
-          env CGO_ENABLED=0 go run . -update-readme || true
+      - name: Spec check validation
+        run: env CGO_ENABLED=0 go run -C cmd/speccheck . -check-readme
+
+  update-readme:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - run: go generate ./...
+
+      - name: Spec check and update README
+        run: env CGO_ENABLED=0 go run -C cmd/speccheck . -update-readme
 
       - uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
         with:
@@ -32,8 +54,4 @@ jobs:
           commit_user_name: "github-actions[bot]"
           commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
           commit_author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-
-      - name: Spec check validation
-        run: |
-          cd cmd/speccheck
-          env CGO_ENABLED=0 go run .
+          file_pattern: README.md
