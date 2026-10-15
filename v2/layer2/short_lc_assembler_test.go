@@ -84,6 +84,9 @@ func TestShortLCAssembler_AddUncorrectableTACT(t *testing.T) {
 	if _, done, err := a.Add(layer2.CACH{TACT: pdu.TACT{FEC: fec.Result{Uncorrectable: true}}}); done || !errors.Is(err, layer2.ErrShortLCSequence) || a.Count() != 0 {
 		t.Fatalf("uncorrectable TACT after a fragment: done %t err %v count %d", done, err, a.Count())
 	}
+	if _, _, err := a.Add(layer2.CACH{TACT: pdu.TACT{LCSS: enums.LCSSSingleFragment}}); err != nil {
+		t.Fatalf("Single fragment without a partial Short LC: %v", err)
+	}
 }
 
 func TestShortLCAssembler_Lifecycle(t *testing.T) {
