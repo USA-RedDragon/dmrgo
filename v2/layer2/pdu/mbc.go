@@ -57,9 +57,8 @@ func (s *MBCHeader) DataType() enums.DataType {
 //
 // The last-block CRC-CCITT covers every MBC block except the header (§7.4.0),
 // so a single block can only be checked when it is the only continuation
-// block. Use mbcLastBlockCRC, CheckMBCLastBlockCRC and SetMBCLastBlockCRC with
-// all continuation blocks in order. It has no Data Type mask (Table B.21
-// NOTE 1).
+// block. Use SetMBCLastBlockCRC and MBCLastBlockCRCOK with all continuation
+// blocks in order. It has no Data Type mask (Table B.21 NOTE 1).
 type MBCContinuation struct {
 	// LastBlock indicates whether this is the final continuation block.
 	// LB=1 means last block (has CRC), LB=0 means intermediate (no CRC).
@@ -147,7 +146,8 @@ func MBCLastBlockCRCOK(blocks ...[96]bit.Bit) bool {
 // §7.4.0) into bits 80 to 95 of the last of blocks. The CRC covers all 96
 // bits of each block before it and bits 0 to 79 of the last block, so
 // blocks holds every continuation block of the MBC in order, last block
-// last. It does nothing for no blocks.
+// last. It takes a slice, not variadic blocks, because it writes into the
+// last element. It does nothing for no blocks.
 func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 	if len(blocks) == 0 {
 		return
