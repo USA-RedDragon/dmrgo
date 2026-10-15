@@ -121,6 +121,7 @@ type Burst struct {
 
 	bitData               [264]bit.Bit
 	decodedDataType       enums.DataType
+	decodedEMB            bool
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
 }
@@ -272,6 +273,7 @@ func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 		emb, data := parseEmbedded(b.bitData)
 		if !emb.FEC.Uncorrectable && emb.ColorCode == b.SlotType.ColorCode {
 			b.SyncPattern = enums.SyncNone
+			b.decodedEMB = true
 			b.setEmbedded(emb, data)
 		}
 	}
@@ -598,8 +600,13 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 // Encode returns the encoded bytes of the burst. Kind selects the payload.
 // A voice burst carries a voice SYNC pattern, enums.SyncReserved, or, with
 // SyncPattern enums.SyncNone, embedded signalling. A data burst carries the
-// slot type and a data SYNC pattern or, with SyncPattern enums.SyncNone,
-// embedded signalling. A standalone RC burst carries the RC SYNC pattern.
+// slot type and a data SYNC pattern. Only a data burst that DecodeFromBytes
+// decoded with an EMB in place of the SYNC (§6.4.2) has SyncPattern
+// enums.SyncNone, and Encode writes its EMB and embedded signalling back;
+// for any other data burst SyncNone is an error, so a data burst built by
+// hand without a SyncPattern does not go out with an EMB. To build a data
+// burst with an EMB, use BuildBurst and RawBurst.SetEMB and SetEmbeddedData.
+// A standalone RC burst carries the RC SYNC pattern.
 // VoiceBurst has no effect. When HasReverseChannel reports true, the
 // embedded signalling data field carries the coded ReverseChannel instead
 // of EmbeddedSignallingData. Otherwise the field carries
@@ -693,6 +700,9 @@ func (b *Burst) checkCentre() error {
 			return nil
 		}
 	case KindData:
+		if b.SyncPattern == enums.SyncNone && !b.decodedEMB {
+			return errors.New("a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
+		}
 		if b.SyncPattern == enums.SyncNone || isDataSync(b.SyncPattern) {
 			return nil
 		}
