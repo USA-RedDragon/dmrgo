@@ -11,6 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 func captureFrames(t *testing.T) []layer2.RawBurst {
@@ -474,4 +475,48 @@ func TestBuildBurst_MatchesBurstEncode(t *testing.T) {
 	if _, err := layer2.BuildBurst(&bad, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Full LC with a CSBK data type accepted")
 	}
+}
+
+func TestBuildVoiceBurst_MatchesVoiceTransmitter(t *testing.T) {
+	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.DefaultServiceOptions()))
+	frags := must(layer2.EncodeEmbeddedFullLinkControl(&lc))
+	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS} {
+		tx := must(layer2.NewVoiceTransmitter(lc, 5, src, silenceSlot()))
+		var frames [18]vocoder.AMBEFrame
+		for i := range frames {
+			bit.PutUint(frames[i][:], uint64(i)*0x1F2E3D4C5B)
+		}
+		sent := must(tx.AddFrames(frames[:]...))
+		if len(sent) != 6 {
+			t.Fatalf("%d bursts", len(sent))
+		}
+		for i, want := range sent {
+			pos := must2(enums.VoiceBurstAt(i))
+			var embedded [4]byte
+			if i >= 1 && i <= 4 {
+				embedded = frags[i-1]
+			}
+			got := must(layer2.BuildVoiceBurst([3]vocoder.AMBEFrame(frames[i*3:]), pos, pdu.EmbeddedSignalling{ColorCode: 5}, embedded, src))
+			if got != want {
+				t.Errorf("source %d burst %s:\ngot  %x\nwant %x", src, pos, got, want)
+			}
+			back, res := got.AMBEFrames()
+			if back != [3]vocoder.AMBEFrame(frames[i*3:]) || res.HasErrors() {
+				t.Errorf("source %d burst %s: AMBEFrames %v %+v", src, pos, back, res)
+			}
+		}
+	}
+	if _, err := layer2.BuildVoiceBurst([3]vocoder.AMBEFrame{}, enums.VoiceBurstUnknown, pdu.EmbeddedSignalling{}, [4]byte{}, layer2.SyncSourceBS); err == nil {
+		t.Error("unknown position accepted")
+	}
+	if _, err := layer2.BuildVoiceBurst([3]vocoder.AMBEFrame{}, enums.VoiceBurstA, pdu.EmbeddedSignalling{}, [4]byte{}, layer2.SyncSource(9)); err == nil {
+		t.Error("unknown source accepted")
+	}
+}
+
+func must2[T any](v T, ok bool) T {
+	if !ok {
+		panic("not ok")
+	}
+	return v
 }
