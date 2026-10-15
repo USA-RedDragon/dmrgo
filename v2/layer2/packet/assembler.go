@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -17,12 +18,13 @@ var (
 	// (§8.2.2.1). The partial packet is discarded.
 	ErrRateChange = errors.New("data type changed within a packet")
 	// ErrMessageCRC is returned with the Message whose message CRC failed.
-	ErrMessageCRC = errors.New("message CRC-32 does not match")
+	// It wraps fec.ErrUncorrectable.
+	ErrMessageCRC = fmt.Errorf("message CRC-32 does not match: %w", fec.ErrUncorrectable)
 	// ErrBlocksMissing is returned when the blocks of a confirmed packet
 	// have all arrived but some failed their CRC-9. Missing lists them and
 	// Response builds the SACK. The Assembler keeps the good blocks for the
-	// retry.
-	ErrBlocksMissing = errors.New("confirmed blocks failed CRC-9")
+	// retry. It wraps fec.ErrUncorrectable.
+	ErrBlocksMissing = fmt.Errorf("confirmed blocks failed CRC-9: %w", fec.ErrUncorrectable)
 )
 
 // Message is a reassembled packet.
@@ -257,12 +259,12 @@ func (a *Assembler) finish() (Message, bool, error) {
 	a.Reset()
 	if m.Header.Format == pdu.FormatResponsePacket {
 		rd, err := decodeResponseData(buf)
-		if err != nil {
+		if err != nil && !errors.Is(err, fec.ErrUncorrectable) {
 			return m, true, err
 		}
 		m.Response = &rd
 		m.Data = buf[:len(buf)-CRCOctets]
-		return m, true, nil
+		return m, true, err
 	}
 	if len(buf) < CRCOctets {
 		return m, true, ErrMessageCRC

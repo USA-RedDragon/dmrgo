@@ -2,6 +2,7 @@ package layer2
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -14,8 +15,9 @@ var (
 	// burst does not continue the partial embedded LC, which is discarded.
 	ErrEmbeddedLCSequence = errors.New("embedded LC fragment out of sequence")
 	// ErrEmbeddedLCUncorrectable is returned by VoiceReceiver.Receive when
-	// the embedded LC of bursts B to E fails its FEC or its checksum.
-	ErrEmbeddedLCUncorrectable = errors.New("embedded LC uncorrectable")
+	// the embedded LC of bursts B to E fails its FEC or its checksum. It
+	// wraps fec.ErrUncorrectable.
+	ErrEmbeddedLCUncorrectable = fmt.Errorf("embedded LC: %w", fec.ErrUncorrectable)
 )
 
 // VoiceReceiver tracks the superframe position of the voice bursts of one
@@ -55,7 +57,7 @@ func (r *VoiceReceiver) Reset() {
 //
 // When burst E completes the fragments of bursts B to E, Receive returns
 // the embedded LC as DecodeEmbeddedFullLinkControl decodes it with ok set,
-// or ErrEmbeddedLCUncorrectable. It returns ErrEmbeddedLCSequence when a burst
+// or that LC with ErrEmbeddedLCUncorrectable. It returns ErrEmbeddedLCSequence when a burst
 // discards a partial embedded LC. A burst with an uncorrectable EMB takes
 // the position after the previous burst and keeps its fragment for the BPTC
 // and checksum to check. Receive expects every burst of the logical channel
@@ -109,7 +111,7 @@ func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err 
 	}
 	lc, result := decode(r.fragments)
 	if result.Uncorrectable {
-		return pdu.FullLinkControl{}, false, ErrEmbeddedLCUncorrectable
+		return lc, false, ErrEmbeddedLCUncorrectable
 	}
 	return lc, true, nil
 }

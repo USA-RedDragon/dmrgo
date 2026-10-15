@@ -1,5 +1,25 @@
 // Package fec provides shared types for Forward Error Correction across all FEC codecs.
+//
+// Error rule: a decoder of one codeword, PDU or burst never returns an
+// error for bits that its FEC or CRC cannot correct or check. It returns
+// the decoded value with a Result, whose Uncorrectable field reports the
+// failure, so the caller keeps the decoded fields. An error from such a
+// decoder means that the input cannot be decoded at all, such as a
+// reserved data type. A caller that wants an error for an uncorrectable
+// result calls Result.Err, which returns ErrUncorrectable.
+//
+// Functions that reassemble or check a message over several bursts, such
+// as the packet Assembler and layer2.VoiceReceiver, report a failed check
+// as an error. Such errors wrap ErrUncorrectable, and the functions still
+// return what they decoded.
 package fec
+
+import "errors"
+
+// ErrUncorrectable is the error that Result.Err returns for a Result with
+// Uncorrectable set. Errors of this module that report an uncorrectable
+// FEC or CRC result wrap it, so errors.Is(err, ErrUncorrectable) finds them.
+var ErrUncorrectable = errors.New("fec: uncorrectable")
 
 // Result tracks the outcome of a single FEC decode/check operation.
 //
@@ -28,6 +48,15 @@ func (r Result) Combine(o Result) Result {
 		ErrorsCorrected: r.ErrorsCorrected + o.ErrorsCorrected,
 		Uncorrectable:   r.Uncorrectable || o.Uncorrectable,
 	}
+}
+
+// Err returns ErrUncorrectable when Uncorrectable is set, and nil
+// otherwise. Corrected errors are not an error.
+func (r Result) Err() error {
+	if r.Uncorrectable {
+		return ErrUncorrectable
+	}
+	return nil
 }
 
 // HasErrors returns true if any errors were corrected or if the data is uncorrectable.

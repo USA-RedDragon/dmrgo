@@ -8,6 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -92,7 +93,7 @@ func TestAssembler_CaptureCRCFailure(t *testing.T) {
 			msg, got = m, err
 		}
 	}
-	if !errors.Is(got, packet.ErrMessageCRC) || msg == nil || msg.CRC != 0x0b8c211b {
+	if !errors.Is(got, packet.ErrMessageCRC) || !errors.Is(got, fec.ErrUncorrectable) || msg == nil || msg.CRC != 0x0b8c211b {
 		t.Fatalf("err %v msg %+v", got, msg)
 	}
 }
@@ -352,7 +353,7 @@ func TestAssembler_SelectiveRetry(t *testing.T) {
 		}
 		_, err2 = add(&rx, blk)
 	}
-	if !errors.Is(err2, packet.ErrBlocksMissing) {
+	if !errors.Is(err2, packet.ErrBlocksMissing) || !errors.Is(err2, fec.ErrUncorrectable) {
 		t.Fatalf("err %v", err2)
 	}
 	if got := rx.Missing(); len(got) != 2 || got[0] != 1 || got[1] != 3 {
@@ -488,9 +489,10 @@ func TestResponseData(t *testing.T) {
 	if err != nil || got != rd || len(got.RetryBlocks()) != 4 {
 		t.Fatalf("two blocks: %v %v", err, got.RetryBlocks())
 	}
-	two[1].Data[0] ^= 1
-	if _, err := packet.DecodeResponseData(two...); !errors.Is(err, packet.ErrResponseData) {
-		t.Errorf("bad CRC: %v", err)
+	two[0].Data[0] ^= 0x80
+	bad, err := packet.DecodeResponseData(two...)
+	if !errors.Is(err, packet.ErrResponseData) || !errors.Is(err, fec.ErrUncorrectable) || bad.Retry[0] == rd.Retry[0] || bad.Retry[126] != rd.Retry[126] {
+		t.Errorf("bad CRC: %v, flags %v; want the decoded flags and an uncorrectable error", err, bad.RetryBlocks())
 	}
 	if _, err := packet.DecodeResponseData(); !errors.Is(err, packet.ErrResponseData) {
 		t.Errorf("no blocks: %v", err)
