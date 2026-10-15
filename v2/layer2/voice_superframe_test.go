@@ -207,6 +207,49 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 	}
 }
 
+// TestVoiceTransmitter_Append shows that the Append forms append to dst the
+// bursts that the convenience forms return.
+func TestVoiceTransmitter_Append(t *testing.T) {
+	t.Parallel()
+
+	opts := &layer2.VoiceTransmitterOptions{
+		LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot(),
+		PIHeader: &pdu.PIHeader{AlgorithmID: 1, KeyID: 7, Destination: 91},
+	}
+	a := must(layer2.NewVoiceTransmitter(opts))
+	b := must(layer2.NewVoiceTransmitter(opts))
+	frames := make([]vocoder.AMBEFrame, 4)
+	slots := make([][72]bit.Bit, 4)
+	for i := range slots {
+		slots[i] = testSlot(i)
+		frames[i][i] = 1
+	}
+	want := a.Headers()
+	want = append(want, must(a.AddSlots(slots...))...)
+	want = append(want, must(a.AddFrames(frames...))...)
+	want = append(want, must(a.Terminate())...)
+
+	prefix := layer2.RawBurst{0xAA}
+	got := b.AppendHeaders([]layer2.RawBurst{prefix})
+	got = must(b.AppendSlots(got, slots...))
+	got = must(b.AppendFrames(got, frames...))
+	got = must(b.AppendTerminate(got))
+	if len(got) != len(want)+1 || got[0] != prefix {
+		t.Fatalf("got %d bursts after the prefix %x, want %d", len(got)-1, got[0], len(want))
+	}
+	for i := range want {
+		if got[i+1] != want[i] {
+			t.Errorf("burst %d: %x, want %x", i, got[i+1], want[i])
+		}
+	}
+	if out, err := b.AppendSlots(got[:1], slots...); !errors.Is(err, layer2.ErrVoiceTerminated) || len(out) != 1 {
+		t.Errorf("AppendSlots after Terminate: %d bursts, %v", len(out), err)
+	}
+	if out, err := b.AppendTerminate(nil); !errors.Is(err, layer2.ErrVoiceTerminated) || out != nil {
+		t.Errorf("AppendTerminate after Terminate: %d bursts, %v", len(out), err)
+	}
+}
+
 func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 	t.Parallel()
 

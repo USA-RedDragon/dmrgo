@@ -90,7 +90,8 @@ type VoiceTransmitter struct {
 	terminator RawBurst
 	embedded   [4][32]bit.Bit
 	callLC     [4][32]bit.Bit
-	nextLC     *[4][32]bit.Bit
+	nextLC     [4][32]bit.Bit
+	hasNextLC  bool
 	lcHook     func(superframe int) *pdu.FullLinkControl
 	superframe int
 	piHeader   RawBurst
@@ -139,34 +140,64 @@ func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 }
 
 // AddSlots adds 72-bit vocoder slots in transmit order and returns the
-// voice bursts they complete.
+// voice bursts they complete, as AppendSlots does with a nil dst.
 func (t *VoiceTransmitter) AddSlots(slots ...[72]bit.Bit) ([]RawBurst, error) {
+	return t.AppendSlots(nil, slots...)
+}
+
+// AppendSlots adds 72-bit vocoder slots in transmit order, appends the voice
+// bursts they complete to dst and returns the extended slice. On an error it
+// returns dst with the bursts completed before the error. It does not
+// allocate when dst has room for the bursts.
+func (t *VoiceTransmitter) AppendSlots(dst []RawBurst, slots ...[72]bit.Bit) ([]RawBurst, error) {
 	if t.terminated {
-		return nil, ErrVoiceTerminated
+		return dst, ErrVoiceTerminated
 	}
-	var out []RawBurst
-	for _, slot := range slots {
-		t.slots[t.pending] = slot
-		t.pending++
-		if t.pending == VoiceSlotsPerBurst {
-			burst, err := t.flush()
-			if err != nil {
-				return out, err
-			}
-			out = append(out, burst)
+	var err error
+	for i := range slots {
+		if dst, err = t.addSlot(dst, &slots[i]); err != nil {
+			return dst, err
 		}
 	}
-	return out, nil
+	return dst, nil
 }
 
 // AddFrames adds AMBE+2 frames in transmit order, each as the slot
-// vocoder.EncodeAMBE72 returns, and returns the voice bursts they complete.
+// vocoder.EncodeAMBE72 returns, and returns the voice bursts they complete,
+// as AppendFrames does with a nil dst.
 func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([]RawBurst, error) {
-	slots := make([][72]bit.Bit, len(frames))
-	for i, frame := range frames {
-		slots[i] = vocoder.EncodeAMBE72(frame)
+	return t.AppendFrames(nil, frames...)
+}
+
+// AppendFrames adds AMBE+2 frames in transmit order, each as the slot
+// vocoder.EncodeAMBE72 returns, appends the voice bursts they complete to dst
+// and returns the extended slice, as AppendSlots does.
+func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFrame) ([]RawBurst, error) {
+	if t.terminated {
+		return dst, ErrVoiceTerminated
 	}
-	return t.AddSlots(slots...)
+	var err error
+	for _, frame := range frames {
+		slot := vocoder.EncodeAMBE72(frame)
+		if dst, err = t.addSlot(dst, &slot); err != nil {
+			return dst, err
+		}
+	}
+	return dst, nil
+}
+
+// addSlot adds one slot and appends the burst that it completes to dst.
+func (t *VoiceTransmitter) addSlot(dst []RawBurst, slot *[72]bit.Bit) ([]RawBurst, error) {
+	t.slots[t.pending] = *slot
+	t.pending++
+	if t.pending < VoiceSlotsPerBurst {
+		return dst, nil
+	}
+	burst, err := t.flush()
+	if err != nil {
+		return dst, err
+	}
+	return append(dst, burst), nil
 }
 
 // Terminate ends the transmission. It fills the last burst and then the last
@@ -177,7 +208,17 @@ func (t *VoiceTransmitter) Terminate() ([]RawBurst, error) {
 	if t.terminated {
 		return nil, ErrVoiceTerminated
 	}
-	var out []RawBurst
+	return t.AppendTerminate(make([]RawBurst, 0, VoiceBurstsPerSuperframe+1))
+}
+
+// AppendTerminate ends the transmission as Terminate does, appends the
+// bursts to dst and returns the extended slice. On an error it returns dst
+// with the bursts completed before the error. It does not allocate when dst
+// has room for VoiceBurstsPerSuperframe+1 bursts.
+func (t *VoiceTransmitter) AppendTerminate(dst []RawBurst) ([]RawBurst, error) {
+	if t.terminated {
+		return dst, ErrVoiceTerminated
+	}
 	for t.pending > 0 || t.position != 0 {
 		for t.pending < VoiceSlotsPerBurst {
 			t.slots[t.pending] = t.silence
@@ -185,12 +226,12 @@ func (t *VoiceTransmitter) Terminate() ([]RawBurst, error) {
 		}
 		burst, err := t.flush()
 		if err != nil {
-			return out, err
+			return dst, err
 		}
-		out = append(out, burst)
+		dst = append(dst, burst)
 	}
 	t.terminated = true
-	return append(out, t.terminator), nil
+	return append(dst, t.terminator), nil
 }
 
 func (t *VoiceTransmitter) flush() (RawBurst, error) {
