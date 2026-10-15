@@ -93,8 +93,6 @@ func decode(data []byte) decodeResult {
 	return result
 }
 
-// Encode generates a 12-byte codeword from 9 bytes of data.
-// Returns the original data with 3 checksum bytes appended.
 // Encode returns the 12-byte codeword of 9 data bytes: the data followed by
 // 3 parity bytes (ETSI TS 102 361-1 B.3.6).
 func Encode(data [9]byte) [12]byte {

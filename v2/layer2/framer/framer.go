@@ -118,7 +118,9 @@ type Burst struct {
 	// HasCACH is set when CACH holds the 24 bits before the burst, in
 	// logical order (see layer2.CACHDeinterleave).
 	HasCACH bool
-	CACH    layer2.CACH
+	// CACH is the CACH decoded from the 24 bits before the burst when
+	// HasCACH is set.
+	CACH layer2.CACH
 	// Channel is the TDMA channel, 1 or 2, or 0 when unknown. It comes
 	// from the TC bit of the CACH, from a direct mode TDMA SYNC pattern,
 	// or from the channel of the previous burst.

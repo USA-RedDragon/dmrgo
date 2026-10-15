@@ -39,8 +39,8 @@ func ComputeAMBEScrambleTable() [4096]uint32 {
 	return table
 }
 
-// ComputeDM computes the BPTC(196,96) deinterleave matrix.
-// dm[i] = (i * 181) % 196
+// ComputeDM computes the BPTC(196,96) deinterleave matrix. Entry i is
+// (i * 181) mod 196.
 func ComputeDM() [256]uint8 {
 	var dm [256]uint8
 	for i := range 256 {
@@ -90,15 +90,9 @@ func ComputeHamming15_11Syndrome() [16]int {
 	return table
 }
 
-// ComputeHamming13_9Syndrome computes the syndrome-to-bit-position table
-// for the shortened Hamming(13,9,3) code used in BPTC column correction.
-//
-// Syndrome equations from bptc_196_96.go:
-//
-//	S0 = b0^b1^b3^b5^b6^b9
-//	S1 = b0^b1^b2^b4^b6^b7^b10
-//	S2 = b0^b1^b2^b3^b5^b7^b8^b11
-//	S3 = b0^b2^b4^b5^b8^b12
+// ComputeHamming13_9Syndrome computes the bit position of a single-bit
+// error for each 4-bit syndrome of the shortened Hamming(13,9,3) code that
+// corrects the BPTC(196,96) columns. A syndrome that matches no bit maps to -1.
 func ComputeHamming13_9Syndrome() [16]int {
 	var hCols [13]int
 	for p := 0; p < 13; p++ {
@@ -221,19 +215,10 @@ func ComputeVocoderTables() (aTable, bTable, cTable []int) {
 	return aTable, bTable, cTable
 }
 
-// ComputeHamming16_11Syndrome computes the syndrome-to-bit-position table
-// for the Hamming(16,11,4) code used in embedded signalling BPTC (§B.2.1, §B.2.2).
-//
-// The (16,11,4) code is derived from the (15,11,3) Hamming code with an extra
-// overall parity bit. It has 5 syndrome bits → 32-entry table.
-//
-// Syndrome equations from the parity check matrix H (§B.3.4, Table B.16):
-//
-//	s₀ = r₀⊕r₁⊕r₂⊕r₃⊕r₅⊕r₇⊕r₈⊕r₁₁
-//	s₁ = r₁⊕r₂⊕r₃⊕r₄⊕r₆⊕r₈⊕r₉⊕r₁₂
-//	s₂ = r₂⊕r₃⊕r₄⊕r₅⊕r₇⊕r₉⊕r₁₀⊕r₁₃
-//	s₃ = r₀⊕r₁⊕r₂⊕r₄⊕r₆⊕r₇⊕r₁₀⊕r₁₄
-//	s₄ = r₀⊕r₂⊕r₅⊕r₆⊕r₈⊕r₉⊕r₁₀⊕r₁₅
+// ComputeHamming16_11Syndrome computes the bit position of a single-bit
+// error for each 5-bit syndrome of the Hamming(16,11,4) code of the embedded
+// signalling BPTC. A syndrome that matches no bit maps to -1 (ETSI TS 102
+// 361-1 clause B.3.4, Table B.16).
 func ComputeHamming16_11Syndrome() [32]int {
 	var hCols [16]int
 	for p := 0; p < 16; p++ {

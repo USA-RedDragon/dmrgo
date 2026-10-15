@@ -4,35 +4,35 @@
 // from its on-air value with a plain cast and prints with String.
 package enums
 
-// ETSI TS 102 361-1 - 9.3.6 Data Type
+// DataType is the 4-bit Data Type of a slot type: the content of a general
+// data burst (ETSI TS 102 361-1 clause 9.3.6, Table 9.22).
 type DataType uint8
 
 const (
-	DataTypePIHeader DataType = iota
-	DataTypeVoiceLCHeader
-	DataTypeTerminatorWithLC
-	DataTypeCSBK
-	DataTypeMBCHeader
-	DataTypeMBCContinuation
-	DataTypeDataHeader
-	DataTypeRate12
-	DataTypeRate34
-	DataTypeIdle
-	DataTypeRate1
-	DataTypeUnifiedSingleBlock
-	DataTypeReserved
+	DataTypePIHeader           DataType = iota // PI Header
+	DataTypeVoiceLCHeader                      // Voice LC Header
+	DataTypeTerminatorWithLC                   // Terminator with LC
+	DataTypeCSBK                               // CSBK
+	DataTypeMBCHeader                          // MBC Header
+	DataTypeMBCContinuation                    // MBC Continuation
+	DataTypeDataHeader                         // Data Header
+	DataTypeRate12                             // Rate 1/2 Data
+	DataTypeRate34                             // Rate 3/4 Data
+	DataTypeIdle                               // Idle
+	DataTypeRate1                              // Rate 1 Data
+	DataTypeUnifiedSingleBlock                 // Unified Single Block Data
+	DataTypeReserved                           // first reserved value, 1100
 )
 
-// IsReserved reports whether dt is one of the reserved Data Type values
-// 1100 to 1111 (Table 9.22). The 4-bit Data Type field is kept raw, so
-// values 13 to 15 are reserved as well as DataTypeReserved.
+// IsReserved reports whether dt is one of the reserved values 12 to 15
+// (DataTypeReserved and above) (ETSI TS 102 361-1 Table 9.22).
 func (dt DataType) IsReserved() bool {
 	return dt >= DataTypeReserved && dt <= 0xF
 }
 
 // IsBPTC reports whether a burst of data type dt carries 96 information
-// bits coded with BPTC(196,96) (ETSI TS 102 361-1 B.1.1): every data type
-// except Rate 3/4, Rate 1 and the reserved values.
+// bits coded with BPTC(196,96): every data type except Rate 3/4, Rate 1 and
+// the reserved values (ETSI TS 102 361-1 clause B.1.1).
 func (dt DataType) IsBPTC() bool {
 	switch dt {
 	case DataTypePIHeader, DataTypeVoiceLCHeader, DataTypeTerminatorWithLC, DataTypeCSBK,

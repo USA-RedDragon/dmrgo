@@ -1,11 +1,13 @@
 package layer3
 
-// ETSI TS 102 361-2 - 7.2.6 Additional Information Field
+// AdditionalInformationField is the 1-bit Additional Information Field: it
+// tells whether the additional information of a PDU is valid (ETSI TS 102
+// 361-2 clause 7.2.6, Table 7.15).
 type AdditionalInformationField uint8
 
 const (
-	AdditionalInfoIgnore AdditionalInformationField = 0 // Additional Information shall be ignored
-	AdditionalInfoValid  AdditionalInformationField = 1 // Additional Information field is valid
+	AdditionalInfoIgnore AdditionalInformationField = 0 // ignore the additional information
+	AdditionalInfoValid  AdditionalInformationField = 1 // the additional information is valid
 )
 
 func (ai AdditionalInformationField) String() string {

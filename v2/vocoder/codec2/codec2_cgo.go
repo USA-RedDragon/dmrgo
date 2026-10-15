@@ -54,7 +54,9 @@ func (s states) destroy() {
 	}
 }
 
-// New creates a Codec2 codec with the given configuration.
+// New creates a Codec2 codec with the given configuration. It returns
+// ErrUnsupportedMode for a Mode other than zero, Mode2400 or Mode3200, and an
+// error when libcodec2 cannot create a codec state.
 func New(cfg Config) (*Codec, error) {
 	cfg, err := cfg.withDefaults()
 	if err != nil {

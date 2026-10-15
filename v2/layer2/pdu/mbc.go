@@ -23,22 +23,22 @@ import (
 //dmr:input_size 96
 //dmr:dispatch_if FID==0
 type MBCHeader struct {
-	FEC         fec.Result         `dmr:"-"`
-	LastBlock   bool               `dmr:"bit:0"`
-	ProtectFlag bool               `dmr:"bit:1"`
-	Opcode      CSBKOpcode         `dmr:"bits:2-7"`
-	FID         enums.FeatureSetID `dmr:"bits:8-15"`
+	FEC         fec.Result         `dmr:"-"`         // result of the CRC check
+	LastBlock   bool               `dmr:"bit:0"`     // LB bit, false in an MBC header
+	ProtectFlag bool               `dmr:"bit:1"`     // PF bit
+	Opcode      CSBKOpcode         `dmr:"bits:2-7"`  // CSBKO, selects the payload field
+	FID         enums.FeatureSetID `dmr:"bits:8-15"` // feature set ID, only the standard FID has payload fields
 
-	PrivateVoiceGrantPDU            *PrivateVoiceGrantPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateVoiceGrant"`
-	TalkgroupVoiceGrantPDU          *TalkgroupVoiceGrantPDU          `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupVoiceGrant"`
-	BroadcastTalkgroupVoiceGrantPDU *BroadcastTalkgroupVoiceGrantPDU `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcastTalkgroupVoiceGrant"`
-	PrivateDataGrantPDU             *PrivateDataGrantPDU             `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrant"`
-	TalkgroupDataGrantPDU           *TalkgroupDataGrantPDU           `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupDataGrant"`
-	DuplexPrivateVoiceGrantPDU      *DuplexPrivateVoiceGrantPDU      `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateVoiceGrant"`
-	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateDataGrant"`
-	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrantMultiItem"`
-	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`
-	BroadcastPDU                    *BroadcastPDU                    `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`
+	PrivateVoiceGrantPDU            *PrivateVoiceGrantPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateVoiceGrant"`            // PV_GRANT payload, or nil
+	TalkgroupVoiceGrantPDU          *TalkgroupVoiceGrantPDU          `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupVoiceGrant"`          // TV_GRANT payload, or nil
+	BroadcastTalkgroupVoiceGrantPDU *BroadcastTalkgroupVoiceGrantPDU `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcastTalkgroupVoiceGrant"` // BTV_GRANT payload, or nil
+	PrivateDataGrantPDU             *PrivateDataGrantPDU             `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrant"`             // PD_GRANT payload, or nil
+	TalkgroupDataGrantPDU           *TalkgroupDataGrantPDU           `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupDataGrant"`           // TD_GRANT payload, or nil
+	DuplexPrivateVoiceGrantPDU      *DuplexPrivateVoiceGrantPDU      `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateVoiceGrant"`      // PV_GRANT_DX payload, or nil
+	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateDataGrant"`       // PD_GRANT_DX payload, or nil
+	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrantMultiItem"`    // PD_GRANT_MI payload, or nil
+	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`                         // C_MOVE payload, or nil
+	BroadcastPDU                    *BroadcastPDU                    `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`                    // C_BCAST payload, or nil
 
 	// RawPayload holds header bits 16 to 79 when no payload field is set,
 	// packed most significant bit first, as CSBK.RawPayload does.
@@ -181,15 +181,15 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 //dmr:input_size 96
 //dmr:subpdu
 type CGAPContinuation struct {
-	FEC         fec.Result       `dmr:"-"`
-	LastBlock   bool             `dmr:"bit:0"`
-	ProtectFlag bool             `dmr:"bit:1"`
-	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
-	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`
-	Cdeftype    uint8            `dmr:"bits:16-19"`
-	Reserved2   uint8            `dmr:"bits:20-21"`
-	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
+	FEC         fec.Result       `dmr:"-"`                   // result of the last-block CRC check
+	LastBlock   bool             `dmr:"bit:0"`               // LB bit, true for the last block
+	ProtectFlag bool             `dmr:"bit:1"`               // PF bit
+	Opcode      CSBKOpcode       `dmr:"bits:2-7"`            // CSBKO of the MBC header
+	Reserved1   uint8            `dmr:"bits:8-11"`           // reserved, 0
+	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`          // color code of the destination channel
+	Cdeftype    uint8            `dmr:"bits:16-19"`          // type of CdefParms, 0 for absolute frequencies
+	Reserved2   uint8            `dmr:"bits:20-21"`          // reserved, 0
+	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"` // channel number and its TX and RX frequencies
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
@@ -205,15 +205,15 @@ func (s *CGAPContinuation) DataType() enums.DataType {
 //dmr:input_size 96
 //dmr:subpdu
 type MVAPContinuation struct {
-	FEC         fec.Result       `dmr:"-"`
-	LastBlock   bool             `dmr:"bit:0"`
-	ProtectFlag bool             `dmr:"bit:1"`
-	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
-	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`
-	Cdeftype    uint8            `dmr:"bits:16-19"`
-	Reserved2   uint8            `dmr:"bits:20-21"`
-	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
+	FEC         fec.Result       `dmr:"-"`                   // result of the last-block CRC check
+	LastBlock   bool             `dmr:"bit:0"`               // LB bit, true for the last block
+	ProtectFlag bool             `dmr:"bit:1"`               // PF bit
+	Opcode      CSBKOpcode       `dmr:"bits:2-7"`            // CSBKO of the MBC header
+	Reserved1   uint8            `dmr:"bits:8-11"`           // reserved, 0
+	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`          // color code of the destination channel
+	Cdeftype    uint8            `dmr:"bits:16-19"`          // type of CdefParms, 0 for absolute frequencies
+	Reserved2   uint8            `dmr:"bits:20-21"`          // reserved, 0
+	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"` // channel number and its TX and RX frequencies
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
@@ -229,14 +229,14 @@ func (s *MVAPContinuation) DataType() enums.DataType {
 //dmr:input_size 96
 //dmr:subpdu
 type BCAPContinuation struct {
-	FEC         fec.Result       `dmr:"-"`
-	LastBlock   bool             `dmr:"bit:0"`
-	ProtectFlag bool             `dmr:"bit:1"`
-	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
-	Reserved1   byte             `dmr:"bits:8-15"`
-	Cdeftype    uint8            `dmr:"bits:16-19"`
-	Reserved2   uint8            `dmr:"bits:20-21"`
-	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
+	FEC         fec.Result       `dmr:"-"`                   // result of the last-block CRC check
+	LastBlock   bool             `dmr:"bit:0"`               // LB bit, true for the last block
+	ProtectFlag bool             `dmr:"bit:1"`               // PF bit
+	Opcode      CSBKOpcode       `dmr:"bits:2-7"`            // CSBKO of the MBC header
+	Reserved1   byte             `dmr:"bits:8-15"`           // reserved, 0
+	Cdeftype    uint8            `dmr:"bits:16-19"`          // type of CdefParms, 0 for absolute frequencies
+	Reserved2   uint8            `dmr:"bits:20-21"`          // reserved, 0
+	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"` // channel number and its TX and RX frequencies
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
@@ -252,15 +252,15 @@ func (s *BCAPContinuation) DataType() enums.DataType {
 //dmr:input_size 96
 //dmr:subpdu
 type VNAPContinuation struct {
-	FEC         fec.Result       `dmr:"-"`
-	LastBlock   bool             `dmr:"bit:0"`
-	ProtectFlag bool             `dmr:"bit:1"`
-	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
-	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`
-	Cdeftype    uint8            `dmr:"bits:16-19"`
-	Reserved2   uint8            `dmr:"bits:20-21"`
-	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
+	FEC         fec.Result       `dmr:"-"`                   // result of the last-block CRC check
+	LastBlock   bool             `dmr:"bit:0"`               // LB bit, true for the last block
+	ProtectFlag bool             `dmr:"bit:1"`               // PF bit
+	Opcode      CSBKOpcode       `dmr:"bits:2-7"`            // CSBKO of the MBC header
+	Reserved1   uint8            `dmr:"bits:8-11"`           // reserved, 0
+	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`          // color code of the destination channel
+	Cdeftype    uint8            `dmr:"bits:16-19"`          // type of CdefParms, 0 for absolute frequencies
+	Reserved2   uint8            `dmr:"bits:20-21"`          // reserved, 0
+	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"` // channel number and its TX and RX frequencies
 }
 
 // DataType returns enums.DataTypeMBCContinuation.

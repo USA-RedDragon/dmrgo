@@ -83,8 +83,8 @@ func Check743(bits [7]bit.Bit) bool {
 	return parity[0] == bits[4] && parity[1] == bits[5] && parity[2] == bits[6]
 }
 
-// Encode743 encodes 4 data bits into a 7-bit Hamming(7,4,3) codeword.
-// Layout: [d₀ d₁ d₂ d₃ p₀ p₁ p₂]
+// Encode743 encodes 4 data bits into a 7-bit Hamming(7,4,3) codeword: the
+// data bits followed by the 3 parity bits.
 func Encode743(data [4]bit.Bit) [7]bit.Bit {
 	lowbit.Mask(data[:])
 	parity := parity743(data)

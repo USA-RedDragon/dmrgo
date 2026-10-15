@@ -35,19 +35,19 @@ import (
 //dmr:fec_mask BurstDataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
 //dmr:dispatch_if FID==0
 type FullLinkControl struct {
-	BurstDataType enums.DataType     `dmr:"-"`
-	ProtectFlag   bool               `dmr:"bit:0"`
-	Reserved      bool               `dmr:"bit:1"`
-	FLCO          enums.FLCO         `dmr:"bits:2-7,enum"`
-	FID           enums.FeatureSetID `dmr:"bits:8-15,enum"`
-	FEC           fec.Result         `dmr:"-"`
+	BurstDataType enums.DataType     `dmr:"-"`              // data type of the burst that carries the LC
+	ProtectFlag   bool               `dmr:"bit:0"`          // Protect Flag (PF)
+	Reserved      bool               `dmr:"bit:1"`          // reserved
+	FLCO          enums.FLCO         `dmr:"bits:2-7,enum"`  // Full Link Control Opcode (FLCO)
+	FID           enums.FeatureSetID `dmr:"bits:8-15,enum"` // Feature set ID (FID)
+	FEC           fec.Result         `dmr:"-"`              // RS(12,9) result
 
-	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`
-	UnitToUnit                *FLCUnitToUnit                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`
-	GPSInfo                   *FLCGPSInfo                   `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGPSInfo"`
-	TalkerAliasHeader         *FLCTalkerAliasHeader         `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasHeader"`
-	TalkerAliasBlock          *FLCTalkerAliasBlock          `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasBlock1|enums.FLCOTalkerAliasBlock2|enums.FLCOTalkerAliasBlock3"`
-	TerminatorDataLinkControl *FLCTerminatorDataLinkControl `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTerminatorDataLinkControl"`
+	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`                                                     // Grp_V_Ch_Usr payload
+	UnitToUnit                *FLCUnitToUnit                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`                                                // UU_V_Ch_Usr payload
+	GPSInfo                   *FLCGPSInfo                   `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGPSInfo"`                                                                   // GPS_Info payload
+	TalkerAliasHeader         *FLCTalkerAliasHeader         `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasHeader"`                                                         // Talker_Alias_HDR payload
+	TalkerAliasBlock          *FLCTalkerAliasBlock          `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasBlock1|enums.FLCOTalkerAliasBlock2|enums.FLCOTalkerAliasBlock3"` // Talker_Alias_BLK1 to BLK3 payload
+	TerminatorDataLinkControl *FLCTerminatorDataLinkControl `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTerminatorDataLinkControl"`                                                 // terminator data link control payload
 
 	// RawPayload holds LC bits 16 to 71 when no payload field is set, as
 	// for a manufacturer FLCO, packed most significant bit first: bit 16
@@ -147,35 +147,35 @@ func (s *FullLinkControl) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
 // decoded per-FLCO type. Each struct uses 0-based bit offsets within the 56-bit window.
 
 // FLCGroupVoice is the group voice channel user (Grp_V_Ch_Usr) Full LC payload
-// (ETSI TS 102 361-2 Table 7.1).
+// (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1).
 type FLCGroupVoice struct {
-	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
-	GroupAddress   uint32                `dmr:"bits:8-31"`
-	SourceAddress  uint32                `dmr:"bits:32-55"`
+	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"` // Service Options
+	GroupAddress   uint32                `dmr:"bits:8-31"`         // 24-bit group address
+	SourceAddress  uint32                `dmr:"bits:32-55"`        // 24-bit source address
 }
 
 // FLCUnitToUnit is the unit to unit voice channel user (UU_V_Ch_Usr) Full LC
-// payload (ETSI TS 102 361-2 Table 7.2).
+// payload (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2).
 type FLCUnitToUnit struct {
-	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
-	TargetAddress  uint32                `dmr:"bits:8-31"`
-	SourceAddress  uint32                `dmr:"bits:32-55"`
+	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"` // Service Options
+	TargetAddress  uint32                `dmr:"bits:8-31"`         // 24-bit target address
+	SourceAddress  uint32                `dmr:"bits:32-55"`        // 24-bit source address
 }
 
 // FLCGPSInfo is the GPS information (GPS_Info) Full LC payload (ETSI TS 102
-// 361-2 Table 7.3).
+// 361-2 clause 7.1.1.3, Table 7.3).
 type FLCGPSInfo struct {
-	Reserved      uint8                `dmr:"bits:0-3"`
-	PositionError layer3.PositionError `dmr:"bits:4-6,delegate,noptr"`
-	Longitude     float64              `dmr:"bits:7-31,type:longitude"`
-	Latitude      float64              `dmr:"bits:32-55,type:latitude"`
+	Reserved      uint8                `dmr:"bits:0-3"`                 // reserved
+	PositionError layer3.PositionError `dmr:"bits:4-6,delegate,noptr"`  // Position Error
+	Longitude     float64              `dmr:"bits:7-31,type:longitude"` // degrees, -180 to 180
+	Latitude      float64              `dmr:"bits:32-55,type:latitude"` // degrees, -90 to 90
 }
 
 // FLCTalkerAliasHeader is the talker alias header information
-// (Talker_Alias_HDR) Full LC payload (ETSI TS 102 361-2 Table 7.4).
+// (Talker_Alias_HDR) Full LC payload (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4).
 type FLCTalkerAliasHeader struct {
-	TalkerAliasDataFormat layer3.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"`
-	TalkerAliasDataLength int                          `dmr:"bits:2-6"`
+	TalkerAliasDataFormat layer3.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"` // Talker alias data format
+	TalkerAliasDataLength int                          `dmr:"bits:2-6"`                // number of characters in the alias
 	// TalkerAliasData is the 49-bit Talker alias data IE. The 7-bit format
 	// uses all 49 bits; the other formats leave the most significant bit
 	// unused.
@@ -183,22 +183,22 @@ type FLCTalkerAliasHeader struct {
 }
 
 // FLCTalkerAliasBlock is a talker alias block (Talker_Alias_BLK) Full LC
-// payload (ETSI TS 102 361-2 Table 7.5).
+// payload (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5).
 type FLCTalkerAliasBlock struct {
-	TalkerAliasData [7]byte `dmr:"bits:0-55,packed"`
+	TalkerAliasData [7]byte `dmr:"bits:0-55,packed"` // 56 bits of Talker alias data
 }
 
 // FLCTerminatorDataLinkControl is the terminator data link control Full LC
-// payload (ETSI TS 102 361-3 Table 7.1).
+// payload (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1).
 type FLCTerminatorDataLinkControl struct {
-	LLIDDestination    uint32 `dmr:"bits:0-23"`
-	LLIDSource         uint32 `dmr:"bits:24-47"`
-	GroupOrIndividual  bool   `dmr:"bit:48"`
-	ResponseRequested  bool   `dmr:"bit:49"`
-	FullMessageFlag    bool   `dmr:"bit:50"`
-	Reserved           bool   `dmr:"bit:51"`
-	ReSynchronizeFlag  bool   `dmr:"bit:52"`
-	SendSequenceNumber uint8  `dmr:"bits:53-55"`
+	LLIDDestination    uint32 `dmr:"bits:0-23"`  // destination LLID
+	LLIDSource         uint32 `dmr:"bits:24-47"` // source LLID
+	GroupOrIndividual  bool   `dmr:"bit:48"`     // true when LLIDDestination is a group
+	ResponseRequested  bool   `dmr:"bit:49"`     // Response Requested (A)
+	FullMessageFlag    bool   `dmr:"bit:50"`     // Full Message Flag (F)
+	Reserved           bool   `dmr:"bit:51"`     // reserved
+	ReSynchronizeFlag  bool   `dmr:"bit:52"`     // Re-Synchronize Flag (S)
+	SendSequenceNumber uint8  `dmr:"bits:53-55"` // send sequence number N(S)
 }
 
 // DataType returns BurstDataType.
