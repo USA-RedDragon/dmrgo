@@ -12,7 +12,7 @@ func TestTalkerAliasDataFormatToName(t *testing.T) {
 		{SevenBitCharacters, "646 (7-bit)"},
 		{ISOEightBitCharacters, "ISO (Latin)"},
 		{UTF8Characters, "UTF-8"},
-		{UTF16Characters, "UTF-16 LE"},
+		{UTF16Characters, "UTF-16 BE"},
 	}
 
 	for _, tt := range tests {
