@@ -639,6 +639,9 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
             names:
               - TestBPTC19696Decode
+              - TestBPTC19696_EncodedGridIsProductCodeword
+              - TestBPTC19696_AllDoubleErrorsCorrected
+              - TestBPTC19696_AcceptedOutputIsCodeword
 
       - section: "B.2.1"
         title: "Variable length BPTC for embedded signalling"
@@ -657,6 +660,10 @@ documents:
               - TestEmbeddedLC_StabilityEncodeDecode
               - TestEmbeddedLC_ColumnParityErrorDetection
               - TestEmbeddedLC_DifferentPatterns
+              - TestEmbeddedLC_CapturedSuperframe
+              - TestEmbeddedLC_AllSingleAndDoubleErrorsCorrected
+              - TestEmbeddedLC_TripleErrorsNeverSilent
+              - TestEmbeddedLC_ParityRowErrorCorrected
 
       - section: "B.2.2"
         title: "Single Burst Variable length BPTC"
@@ -676,6 +683,9 @@ documents:
               - TestSingleBurstBPTC_RC_DifferentFromNonRC
               - TestSingleBurstBPTC_Stability
               - TestSingleBurstBPTC_DifferentData
+              - TestSingleBurstBPTC_UpToThreeErrorsCorrected
+              - TestSingleBurstBPTC_FourErrorsDetected
+              - TestSingleBurstBPTC_ParityRowErrorCorrected
 
       - section: "B.2.3"
         title: "Variable length BPTC for CACH signalling"
@@ -694,6 +704,9 @@ documents:
               - TestCACHBPTC_StabilityEncodeDecode
               - TestCACHBPTC_DifferentPatterns
               - TestCACHBPTC_ColumnParityError
+              - TestCACHBPTC_AllSingleAndDoubleErrorsCorrected
+              - TestCACHBPTC_ParityRowErrorCorrected
+              - TestCACHBPTC_TripleErrorsNeverSilent
 
       - section: "B.2.4"
         title: "Rate ¾ Trellis code"
@@ -703,6 +716,11 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/fec/trellis
             names:
               - TestTrellis34Decode
+              - TestTrellis34_EncoderTablesMatchSpec
+              - TestTrellis34_CleanDecode
+              - TestTrellis34_SingleBitErrorsCorrected
+              - TestTrellis34_SeparatedDoubleBitErrorsCorrected
+              - TestTrellis34_NonzeroFinalStateFlagged
 
       - section: "B.2.5"
         title: "Rate 1 coded data"
@@ -747,10 +765,14 @@ documents:
         title: "Hamming (13,9,3), Hamming (15,11,3), and Hamming (16,11,4)"
         source_files:
           - v2/fec/bptc/bptc_196_96.go
+          - v2/fec/bptc/bptc_embedded_lc.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
             names:
               - TestBPTC19696Decode
+              - TestHamming16_11_GeneratorMatchesTableB16
+              - TestHamming16_11_MinimumDistance
+              - TestHamming16_11_SyndromeTableLocatesSingleErrors
 
       - section: "B.3.5"
         title: "Hamming (7,4,3)"
@@ -789,6 +811,11 @@ documents:
               - TestEncodeDecodeRoundTrip
               - TestSyndromeDetectsCorruption
               - TestDecodeChecksumByteErrorCorrection
+              - TestEncodeTableB18Rows
+              - TestEncodeMatchesGeneratorMatrix
+              - TestEncodeKnownVector
+              - TestReedSolomon1294GaloisMulExhaustive
+              - TestReedSolomon1294GaloisInv
               - TestEncodeInvalidLength
               - TestDecodeIntoRoundTrip
               - TestSyndromeCleanForValidCodeword
