@@ -8,6 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
@@ -90,6 +91,47 @@ func TestEmbeddedLC_RoundTrip(t *testing.T) {
 		got, res := layer2.DecodeEmbeddedLC(layer2.EncodeEmbeddedLC(lc))
 		if res.HasErrors() || got != lc {
 			t.Fatalf("seed %d: got %v (%+v), want %v", seed, got, res, lc)
+		}
+	}
+}
+
+// The Full LC decode of an embedded LC reports the embedded LC FEC result,
+// with nothing added by the Full LC decode, and keeps every LC bit.
+func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
+	rng := rand.New(rand.NewSource(5))
+	for range 2000 {
+		var fr [4][32]bit.Bit
+		for i := range fr {
+			for j := range fr[i] {
+				fr[i][j] = bit.Bit(rng.Intn(2))
+			}
+		}
+		if rng.Intn(2) == 0 {
+			var lc [72]bit.Bit
+			for i := range lc {
+				lc[i] = bit.Bit(rng.Intn(2))
+			}
+			fr = layer2.EncodeEmbeddedLC(lc)
+			fr[rng.Intn(4)][rng.Intn(32)] ^= 1
+		}
+		for _, d := range []struct {
+			lc  func([4][32]bit.Bit) ([72]bit.Bit, fec.FECResult)
+			flc func([4][32]bit.Bit) (pdu.FullLinkControl, fec.FECResult)
+		}{
+			{layer2.DecodeEmbeddedLC, layer2.DecodeEmbeddedFullLinkControl},
+			{layer2.DecodeEmbeddedLCStrict, layer2.DecodeEmbeddedFullLinkControlStrict},
+		} {
+			lc, want := d.lc(fr)
+			flc, got := d.flc(fr)
+			if got != want || flc.FEC != want {
+				t.Fatalf("FEC = %+v (LC %+v), want %+v", got, flc.FEC, want)
+			}
+			if want.Uncorrectable {
+				continue
+			}
+			if enc := must(layer2.EncodeEmbeddedFullLinkControl(&flc)); enc != layer2.EncodeEmbeddedLC(lc) {
+				t.Fatalf("Full LC %v does not encode back to LC %v", flc.ToString(), lc)
+			}
 		}
 	}
 }

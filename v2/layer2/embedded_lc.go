@@ -121,7 +121,9 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.FECResult) (pdu.FullLink
 	}
 	var data [96]bit.Bit
 	copy(data[:], bit.UnpackBits(codeword))
-	flc, _ := pdu.DecodeFullLinkControl(data, elements.DataTypeVoiceLCHeader)
+	flc, rs := pdu.DecodeFullLinkControl(data, elements.DataTypeVoiceLCHeader)
+	result.ErrorsCorrected += rs.ErrorsCorrected
+	result.Uncorrectable = result.Uncorrectable || rs.Uncorrectable
 	flc.FEC = result
 	return flc, result
 }
