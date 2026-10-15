@@ -207,3 +207,50 @@ func TestTrunkingGatewayAddresses_AnnexA8(t *testing.T) {
 		t.Errorf("AddressNull = 0x%06X, want 0x000000", constants.AddressNull)
 	}
 }
+
+// Every DMR ID and value of TS 102 361-4 Table A.8. CHNULL is "000 16, a
+// logical physical channel that is not assigned"; channel 1 is a real
+// channel (Table A.6: Low_Comp_Ch 1 to 4 095).
+func TestTrunkingIdentifiers_AnnexA8(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		got  int
+		want int
+	}{
+		{"PSTNI", constants.GatewayPSTNI, 0xFFFEC0},
+		{"PABXI", constants.GatewayPABXI, 0xFFFEC1},
+		{"LINEI", constants.GatewayLINEI, 0xFFFEC2},
+		{"IPI", constants.GatewayIPI, 0xFFFEC3},
+		{"SUPLI", constants.GatewaySUPLI, 0xFFFEC4},
+		{"SDMI", constants.GatewaySDMI, 0xFFFEC5},
+		{"REGI", constants.GatewayREGI, 0xFFFEC6},
+		{"MSI", constants.GatewayMSI, 0xFFFEC7},
+		{"DIVERTI", constants.GatewayDIVERTI, 0xFFFEC9},
+		{"TSI", constants.GatewayTSI, 0xFFFECA},
+		{"DISPATI", constants.GatewayDISPATI, 0xFFFECB},
+		{"STUNI", constants.GatewaySTUNI, 0xFFFECC},
+		{"AUTHI", constants.GatewayAUTHI, 0xFFFECD},
+		{"GPI", constants.GatewayGPI, 0xFFFECE},
+		{"KILLI", constants.GatewayKILLI, 0xFFFECF},
+		{"PSTNDI", constants.GatewayPSTNDI, 0xFFFED0},
+		{"PABXDI", constants.GatewayPABXDI, 0xFFFED1},
+		{"LINEDI", constants.GatewayLINEDI, 0xFFFED2},
+		{"DISPATDI", constants.GatewayDISPATDI, 0xFFFED3},
+		{"ALLMSI", constants.GatewayALLMSI, 0xFFFED4},
+		{"IPDI", constants.GatewayIPDI, 0xFFFED5},
+		{"DGNAI", constants.GatewayDGNAI, 0xFFFED6},
+		{"TATTSI", constants.GatewayTATTSI, 0xFFFED7},
+		{"ALLMSIDL", constants.AllMSIDLocal, 0xFFFFFD},
+		{"ALLMSIDZ", constants.AllMSIDZone, 0xFFFFFE},
+		{"ALLMSID", constants.AllMSID, 0xFFFFFF},
+		{"ADRNULL", constants.AddressNull, 0x000000},
+		{"CHNULL", constants.ChannelNull, 0x000},
+		{"DigitNULL", constants.DigitNull, 0b1111},
+	}
+	for _, tt := range tests {
+		if tt.got != tt.want {
+			t.Errorf("%s = 0x%X, want 0x%X", tt.name, tt.got, tt.want)
+		}
+	}
+}

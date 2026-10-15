@@ -1835,6 +1835,7 @@ documents:
               - TestTrunkingTimers_AnnexA1
               - TestTrunkingConstants_AnnexA6
               - TestTrunkingGatewayAddresses_AnnexA8
+              - TestTrunkingIdentifiers_AnnexA8
 
       # ── Annex B: Opcode Reference Lists ──
       - section: "B.1"

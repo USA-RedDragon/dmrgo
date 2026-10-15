@@ -341,8 +341,10 @@ const (
 	AllMSID = 0xFFFFFF
 	// AddressNull is the null address.
 	AddressNull = 0x000000
-	// ChannelNull is the null channel number.
-	ChannelNull = 0x001
+	// ChannelNull (CHNULL) is the null logical physical channel number:
+	// a channel that is not assigned. Logical channels in use are 1 to 4095
+	// (Table A.6 Low_Comp_Ch, High_Comp_Ch).
+	ChannelNull = 0x000
 	// DigitNull is the null BCD digit.
 	DigitNull = 0b1111
 )
