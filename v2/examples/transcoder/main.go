@@ -204,12 +204,10 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	}
 
 	dst, src, _ := captured.Addresses()
-	gv := pdu.FLCGroupVoice{GroupAddress: dst, SourceAddress: src}
-	payload, err := gv.Encode()
-	if err != nil {
-		return err
+	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FeatureSetID: enc.FID()}
+	if !lc.SetAddresses(dst, src) {
+		return fmt.Errorf("cannot set addresses %d -> %d", src, dst)
 	}
-	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FeatureSetID: enc.FID(), RawPayload: payload}
 	bursts, err := transmit(lc, 1, layer2.SyncSourceMS, enc.Silence(),
 		func(tx *layer2.VoiceTransmitter) ([][burstSize]byte, error) { return tx.AddSlots(slots...) })
 	if err != nil {

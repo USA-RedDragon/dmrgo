@@ -74,29 +74,34 @@ func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 }
 
 // SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr
-// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC with the standard FID, creating its
-// payload when it is nil. It returns false for other FLCOs and FIDs.
+// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. With the standard FID it sets
+// GroupVoice or UnitToUnit, creating the payload when it is nil. With any
+// other FID it writes RawPayload bits 8-31 and 32-55, the layout Addresses
+// reads. It returns false, and changes nothing, for other FLCOs or when an
+// address does not fit in 24 bits.
 func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
-	if s.FeatureSetID != enums.FIDStandardized {
+	if target>>24 != 0 || source>>24 != 0 {
 		return false
 	}
-	switch s.FLCO {
-	case enums.FLCOGroupVoiceChannelUser:
+	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
+		return false
+	}
+	if s.FeatureSetID != enums.FIDStandardized {
+		bit.PutUint(s.RawPayload[8:32], uint64(target))
+		bit.PutUint(s.RawPayload[32:56], uint64(source))
+		return true
+	}
+	if s.FLCO == enums.FLCOGroupVoiceChannelUser {
 		if s.GroupVoice == nil {
 			s.GroupVoice = &FLCGroupVoice{}
 		}
 		s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress = target, source
-	case enums.FLCOUnitToUnitVoiceChannelUser:
-		if s.UnitToUnit == nil {
-			s.UnitToUnit = &FLCUnitToUnit{}
-		}
-		s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress = target, source
-	case enums.FLCOTalkerAliasHeader, enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3,
-		enums.FLCOGPSInfo, enums.FLCOTerminatorDataLinkControl:
-		return false
-	default:
-		return false
+		return true
 	}
+	if s.UnitToUnit == nil {
+		s.UnitToUnit = &FLCUnitToUnit{}
+	}
+	s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress = target, source
 	return true
 }
 
