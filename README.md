@@ -50,6 +50,40 @@ func main() {
 }
 ```
 
+## Vocoders
+
+A DMR voice burst carries three 72-bit vocoder frames of 20 ms each. The `vocoder.Codec` interface converts one frame of 8 kHz 16-bit PCM to and from those 72 on-air bits:
+
+```go
+type Codec interface {
+	FrameSamples() int
+	Encode(pcm []int16) ([72]bit.Bit, error)
+	Decode(slot [72]bit.Bit) ([]int16, error)
+	Silence() [72]bit.Bit
+	FID() uint8
+}
+```
+
+Codec packages register themselves with `vocoder.Register`, like `database/sql` drivers. Use `vocoder.New(name)` and `vocoder.Names()` to find them. Codecs are not safe for concurrent use unless their documentation says so.
+
+AMBE+2 is not included. An external AMBE package can use `vocoder.EncodeAMBE72` and `vocoder.DecodeAMBE72` to apply the DMR Golay and PN FEC to its 49 information bits.
+
+### Codec2
+
+The `vocoder/codec2` package is a Codec2 codec that is compatible with QRadioLink:
+
+```go
+import "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
+
+c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID})
+```
+
+- Each 72-bit frame holds one 20 ms Codec2 frame (`Mode2400` or `Mode3200`), MSB first, with zero padding. There is no FEC.
+- Calls use Feature set ID `0xC2` in the Full LC. This FID is self-assigned, not allocated by ETSI. It does not identify the mode, so both ends must agree on the mode out of band.
+- `Silence()` is 20 ms of digital silence encoded in the selected mode, for padding the last burst of a call.
+
+The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To build it, install libcodec2 and pkg-config (for example `apt-get install libcodec2-dev pkg-config`). Only programs that import `vocoder/codec2` need libcodec2. To build without it, use `-tags nocodec2` or `CGO_ENABLED=0`. `codec2.New` then returns `codec2.ErrUnavailable`.
+
 ## ETSI TS 102 361 Specification Coverage
 <!-- BEGIN ETSI COVERAGE -->
 
