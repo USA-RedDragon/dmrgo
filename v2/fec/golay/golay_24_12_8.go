@@ -16,8 +16,8 @@ func EncodeGolay24128(data uint16) uint32 {
 // DecodeGolay24128 decodes a 24-bit word using the Golay (24,12,8) code.
 // It returns the corrected 12-bit data and FECResult. When the overall parity
 // shows an uncorrectable error, it still returns the nearest Golay (23,12)
-// codeword's data and sets Uncorrectable, as MMDVMHost and mbelib do for the
-// AMBE voice FEC.
+// codeword's data, as MMDVMHost and mbelib do for the AMBE voice FEC, and
+// sets Uncorrectable. mbelib has no such flag: it ignores the parity bit.
 func DecodeGolay24128(received uint32) (data uint16, result fec.FECResult) {
 	result.BitsChecked = 24
 

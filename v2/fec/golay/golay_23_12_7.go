@@ -30,6 +30,12 @@ func EncodeGolay23127(data uint16) uint32 {
 
 // DecodeGolay23127 decodes a 23-bit word using the Golay (23,12,7) code.
 // It returns the corrected 12-bit data and FECResult.
+//
+// Golay (23,12,7) is a perfect code: every 23-bit word is within 3 bits of
+// exactly one codeword. DecodeGolay23127 therefore never sets Uncorrectable.
+// A word with 4 or more bit errors decodes to the wrong data and reports
+// ErrorsCorrected of at most 3, so a caller that must detect such words
+// needs ErrorsCorrected or a check outside this code.
 func DecodeGolay23127(received uint32) (data uint16, result fec.FECResult) {
 	result.BitsChecked = 23
 

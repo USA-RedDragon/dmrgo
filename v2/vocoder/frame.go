@@ -6,6 +6,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec/golay"
 )
 
+// VocoderFrame is one decoded AMBE+2 vocoder frame: the 49 information bits
+// and the FEC result of the frame FEC. FEC.Uncorrectable reflects only
+// section A; see DecodeAMBE72.
+//
 // dmr:fec ambe_voice
 type VocoderFrame struct {
 	DecodedBits [49]bit.Bit   `dmr:"bits:0-48,raw"`
@@ -22,6 +26,16 @@ func EncodeAMBE72(info [49]bit.Bit) [72]bit.Bit {
 
 // DecodeAMBE72 reverses EncodeAMBE72, correcting bit errors where the Golay
 // codes allow.
+//
+// Golay (23,12) is a perfect code: every 23-bit word is within 3 bits of
+// exactly one codeword, so section B never reports Uncorrectable, and 4 or
+// more bit errors there decode to wrong bits without a flag. The result's
+// Uncorrectable therefore reflects only the overall parity check of section
+// A's Golay (24,12). A caller that mutes or repeats frames on Uncorrectable
+// should also test ErrorsCorrected, the number of corrected bits in sections
+// A and B, parity bits included. mbelib, for example, repeats the last frame
+// when errs2 is above 3; errs2 counts only the corrected data bits of
+// sections A and B, and mbelib does not check the section A parity bit.
 func DecodeAMBE72(slot [72]bit.Bit) ([49]bit.Bit, fec.FECResult) {
 	return decodeAMBE(slot)
 }
