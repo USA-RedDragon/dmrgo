@@ -142,18 +142,18 @@ func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, err
 // DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded
 // signalling fields f of bursts B to E. The returned LC has BurstDataType
 // DataTypeVoiceLCHeader, so it encodes as a Voice LC Header as is, and its
-// FEC is the DecodeEmbeddedLC result, which is also returned.
-func DecodeEmbeddedFullLinkControl(f [4][4]byte) (pdu.FullLinkControl, fec.Result) {
+// FEC field is the DecodeEmbeddedLC result.
+func DecodeEmbeddedFullLinkControl(f [4][4]byte) pdu.FullLinkControl {
 	return embeddedFullLinkControl(decodeEmbeddedLC(fragmentBits(f)))
 }
 
 // DecodeEmbeddedFullLinkControlStrict is DecodeEmbeddedFullLinkControl with
 // the LC decoded by DecodeEmbeddedLCStrict.
-func DecodeEmbeddedFullLinkControlStrict(f [4][4]byte) (pdu.FullLinkControl, fec.Result) {
+func DecodeEmbeddedFullLinkControlStrict(f [4][4]byte) pdu.FullLinkControl {
 	return embeddedFullLinkControl(decodeEmbeddedLCStrict(fragmentBits(f)))
 }
 
-func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkControl, fec.Result) {
+func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) pdu.FullLinkControl {
 	octets := lcOctets(lc)
 	codeword := reedsolomon.Encode(octets)
 	for i := 9; i < 12; i++ {
@@ -161,11 +161,11 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkCon
 	}
 	var data [96]bit.Bit
 	copy(data[:], bit.Unpack(codeword[:]))
-	flc, rs := pdu.DecodeFullLinkControl(data, enums.DataTypeVoiceLCHeader)
-	result.ErrorsCorrected += rs.ErrorsCorrected
-	result.Uncorrectable = result.Uncorrectable || rs.Uncorrectable
+	flc := pdu.DecodeFullLinkControl(data, enums.DataTypeVoiceLCHeader)
+	result.ErrorsCorrected += flc.FEC.ErrorsCorrected
+	result.Uncorrectable = result.Uncorrectable || flc.FEC.Uncorrectable
 	flc.FEC = result
-	return flc, result
+	return flc
 }
 
 // fullLCBits returns the 72 LC bits of lc, without RS(12,9) parity.

@@ -109,8 +109,8 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestRC_DecodeFromEmbeddedData_RoundTrip
-              - TestRC_EncodeRCToEmbeddedData_RoundTrip
-              - TestRC_EncodeRCToEmbeddedData_OutOfRange
+              - TestRC_EncodeEmbeddedRC_RoundTrip
+              - TestRC_EncodeEmbeddedRC_OutOfRange
               - TestRC_CombinedFEC
               - TestRC_BurstDetection_PI1_LCSS0
               - TestRC_BurstDetection_PI0_NoRC

@@ -25,8 +25,8 @@ func TestEncodeShortLCToCACH_RoundTrip(t *testing.T) {
 	var a layer2.ShortLCAssembler
 	for i, field := range fields {
 		c := layer2.DecodeCACH(layer2.CACHDeinterleave(field))
-		if c.FEC.Uncorrectable || c.FEC.ErrorsCorrected != 0 {
-			t.Fatalf("field %d: TACT FEC %+v", i, c.FEC)
+		if c.TACT.FEC.Uncorrectable || c.TACT.FEC.ErrorsCorrected != 0 {
+			t.Fatalf("field %d: TACT FEC %+v", i, c.TACT.FEC)
 		}
 		if !c.TACT.AccessType || !c.TACT.TDMAChannel {
 			t.Errorf("field %d: TACT %+v", i, c.TACT)

@@ -133,7 +133,7 @@ func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 		Opcode:                 pdu.CSBKTalkgroupVoiceGrant,
 		TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
 	}
-	got, _ := pdu.DecodeCSBK(must(csbk.Encode()))
+	got := pdu.DecodeCSBK(must(csbk.Encode()))
 	if got.TalkgroupVoiceGrantPDU == nil {
 		t.Error("TV_GRANT did not decode as TalkgroupVoiceGrantPDU")
 	}
@@ -142,7 +142,7 @@ func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 		Format:        pdu.FormatShortDataRawOrStatusPrecoded,
 		RawDataHeader: &pdu.RawDataHeader{AppendedBlocks: 3},
 	}
-	gotDH, _ := pdu.DecodeDataHeader(must(dh.Encode()))
+	gotDH := pdu.DecodeDataHeader(must(dh.Encode()))
 	if gotDH.RawDataHeader == nil || gotDH.RawDataHeader.AppendedBlocks != 3 {
 		t.Errorf("R_HEAD round trip = %+v", gotDH.RawDataHeader)
 	}

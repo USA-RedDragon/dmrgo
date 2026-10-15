@@ -36,21 +36,14 @@ type ReverseChannel struct {
 }
 
 // DecodeReverseChannel decodes an 11-bit RC PDU (after Single Burst BPTC decode).
-// The input is the 11 information bits: 4-bit payload + 7-bit CRC-7.
-func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.Result) {
+// The input is the 11 information bits: 4-bit payload + 7-bit CRC-7. The
+// FEC field reports the CRC-7 check.
+func DecodeReverseChannel(infoBits [11]bit.Bit) ReverseChannel {
 	var result ReverseChannel
-	var fecResult fec.Result
-
-	// Extract RC command (bits 0-3)
-	result.RCCommand = enums.RCCommand(bit.Uint(infoBits[:4])) //nolint:gosec // 4-bit field
-
-	// CRC-7 verification with mask 0x7A (Table B.21)
-	if !crc.CheckCRC7(infoBits[:4], uint8(bit.Uint(infoBits[4:]))^CRC7MaskRC) { //nolint:gosec // 7-bit field
-		fecResult.Uncorrectable = true
-	}
-
-	result.FEC = fecResult
-	return result, fecResult
+	bit.Mask(infoBits[:])
+	result.RCCommand = enums.RCCommand(bit.Uint(infoBits[:4]))                                        //nolint:gosec // 4-bit field
+	result.FEC.Uncorrectable = !crc.CheckCRC7(infoBits[:4], uint8(bit.Uint(infoBits[4:]))^CRC7MaskRC) //nolint:gosec // 7-bit field
+	return result
 }
 
 // Encode encodes an RC PDU into 11 information bits.
@@ -60,7 +53,7 @@ func (rc *ReverseChannel) Encode() ([11]bit.Bit, error) {
 	var bits [11]bit.Bit
 
 	if rc.RCCommand > 0x0F {
-		return bits, fmt.Errorf("RC command %d out of range 0-15", int(rc.RCCommand))
+		return bits, &bit.FieldRangeError{Type: "ReverseChannel", Field: "RCCommand", Value: uint8(rc.RCCommand), Bits: 4}
 	}
 
 	// RC command (bits 0-3, MSB-first)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -102,19 +101,19 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, error) {
 	// Decode the Short LC PDU (CRC-8 check + SLCO dispatch)
 	var slcBits [36]bit.Bit
 	copy(slcBits[:], info[:])
-	slc, crcResult := pdu.DecodeShortLC(slcBits)
-
-	slc.FEC = bptcResult.Combine(crcResult)
+	slc := pdu.DecodeShortLC(slcBits)
+	slc.FEC = bptcResult.Combine(slc.FEC)
 	return slc, nil
 }
 
 // DecodeShortLCFromFragments is a convenience function that decodes a
 // Short LC PDU directly from 4 × 17-bit CACH signalling payloads, given in
-// the order First, two Continuations, Last.
-func DecodeShortLCFromFragments(fragments [4][CACHPayloadBits]bit.Bit) (pdu.ShortLC, fec.Result) {
+// the order First, two Continuations, Last. The FEC field is set as
+// Complete sets it.
+func DecodeShortLCFromFragments(fragments [4][CACHPayloadBits]bit.Bit) pdu.ShortLC {
 	var a ShortLCAssembler
 	a.fragments = fragments
 	a.count = len(fragments)
 	slc, _ := a.Complete()
-	return slc, slc.FEC
+	return slc
 }

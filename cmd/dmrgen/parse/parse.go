@@ -799,6 +799,9 @@ func validateStruct(pdu *PDUStruct, maxBit int) error {
 	if err := checkCoverage(pdu); err != nil {
 		return err
 	}
+	if err := checkFECField(pdu); err != nil {
+		return err
+	}
 	if pdu.FECMask != nil {
 		if !pdu.IsInput(pdu.FECMask.Field) {
 			return fmt.Errorf("dmr:fec_mask field %q must be a dmr:input, since FEC runs before field decode", pdu.FECMask.Field)
@@ -951,6 +954,22 @@ func checkCoverage(pdu *PDUStruct) error {
 	}
 	if len(gaps) > 0 {
 		return fmt.Errorf("uncovered bits %s: add a field, the CRC or a dmr:const", strings.Join(gaps, ","))
+	}
+	return nil
+}
+
+// checkFECField verifies that a PDU has a FEC fec.Result field exactly
+// when a dmr:fec or dmr:crc directive gives its decoder a result to report.
+func checkFECField(pdu *PDUStruct) error {
+	f := pdu.FieldByName("FEC")
+	hasField := f != nil && f.Skip && f.GoType == "fec.Result"
+	switch {
+	case f != nil && !hasField:
+		return fmt.Errorf("field FEC must be a dmr:\"-\" fec.Result, got %s", f.GoType)
+	case (pdu.FEC != nil || pdu.CRC != nil) && !hasField:
+		return errors.New("dmr:fec and dmr:crc need a dmr:\"-\" FEC fec.Result field for the decode result")
+	case pdu.FEC == nil && pdu.CRC == nil && hasField:
+		return errors.New("field FEC needs dmr:fec or dmr:crc: a PDU without either has no result to report")
 	}
 	return nil
 }

@@ -32,7 +32,8 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 			t.Fatalf("%s: SetAddresses refused", dh.Format)
 		}
 		h.Reseal()
-		got, res := pdu.DecodeDataHeader(bit.Unpack96(h))
+		got := pdu.DecodeDataHeader(bit.Unpack96(h))
+		res := got.FEC
 		if res.HasErrors() {
 			t.Fatalf("%s: edited header %+v", dh.Format, res)
 		}

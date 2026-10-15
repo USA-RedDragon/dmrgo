@@ -18,7 +18,8 @@ func piHeaderVector() [96]bit.Bit {
 
 func TestPIHeader_DecodeVector(t *testing.T) {
 	t.Parallel()
-	pi, fecResult := pdu.DecodePIHeader(piHeaderVector())
+	pi := pdu.DecodePIHeader(piHeaderVector())
+	fecResult := pi.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("valid PI header reported uncorrectable")
 	}
@@ -49,7 +50,7 @@ func TestPIHeader_CRCMask(t *testing.T) {
 	for i, m := range bit.Unpack([]byte{0x69, 0x69}) {
 		bits[80+i] ^= m
 	}
-	if _, fecResult := pdu.DecodePIHeader(bits); !fecResult.Uncorrectable {
+	if fecResult := pdu.DecodePIHeader(bits).FEC; !fecResult.Uncorrectable {
 		t.Error("PI header CRC without the 0x6969 mask should fail")
 	}
 }
@@ -57,7 +58,8 @@ func TestPIHeader_CRCMask(t *testing.T) {
 func TestPIHeader_RoundTrip(t *testing.T) {
 	t.Parallel()
 	original := pdu.PIHeader{AlgorithmID: 0x25, MFID: 0x10, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 0xFFFFFE}
-	decoded, fecResult := pdu.DecodePIHeader(must(original.Encode()))
+	decoded := pdu.DecodePIHeader(must(original.Encode()))
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
@@ -73,7 +75,7 @@ func TestPIHeader_RoundTrip(t *testing.T) {
 func TestPIHeader_Raw(t *testing.T) {
 	t.Parallel()
 	vector := piHeaderVector()
-	pi, _ := pdu.DecodePIHeader(vector)
+	pi := pdu.DecodePIHeader(vector)
 	if [80]bit.Bit(vector[:80]) != pi.Raw {
 		t.Errorf("Raw = %x, want %x", bit.Pack(pi.Raw[:]), bit.Pack(vector[:80]))
 	}

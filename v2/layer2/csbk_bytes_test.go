@@ -26,7 +26,7 @@ func TestCSBKBytes_SMSCaptures(t *testing.T) {
 			if !c.CRCOK() || c.Opcode() != pdu.CSBKPreamble || c.Opcode() != dc.Opcode || c.FID() != dc.FID {
 				t.Fatalf("%s burst %d: CRC %t, opcode %s", name, i, c.CRCOK(), c.Opcode())
 			}
-			if d, _ := pdu.DecodeCSBKBytes(c); d.PreamblePDU == nil || *d.PreamblePDU != *dc.PreamblePDU {
+			if d := pdu.DecodeCSBKBytes(c); d.PreamblePDU == nil || *d.PreamblePDU != *dc.PreamblePDU {
 				t.Fatalf("%s burst %d: DecodeCSBKBytes differs from the burst decode", name, i)
 			}
 			if must(dc.Bytes()) != p {

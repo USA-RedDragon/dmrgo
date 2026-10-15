@@ -13,11 +13,10 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 // DecodePIHeader decodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
-func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
+func DecodePIHeader(data [96]bit.Bit) PIHeader {
 	var result PIHeader
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -30,18 +29,14 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
 	_packedBytes[10] ^= uint8(0x69)
 	_packedBytes[11] ^= uint8(0x69)
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.AlgorithmID = uint8(bit.Uint(data[0:8]))
 	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	result.KeyID = uint8(bit.Uint(data[16:24]))
 	result.MessageIndicator = uint32(bit.Uint(data[24:56]))
 	result.Destination = uint32(bit.Uint(data[56:80]))
 	copy(result.Raw[:], data[0:80])
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)

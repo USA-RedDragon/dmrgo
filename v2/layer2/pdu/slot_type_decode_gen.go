@@ -12,22 +12,21 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	golay "github.com/USA-RedDragon/dmrgo/v2/fec/golay"
 )
 
 // DecodeSlotType decodes a SlotType per ETSI TS 102 361-1 - 9.1.3 Slot Type (SLOT) PDU
-func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.Result) {
+func DecodeSlotType(data [20]bit.Bit) SlotType {
 	var result SlotType
 	bit.Mask(data[:])
-	corrected, fecResult := golay.Decode2087(data)
-	result.FEC = fecResult
-	if !fecResult.Uncorrectable {
+	var corrected [20]bit.Bit
+	corrected, result.FEC = golay.Decode2087(data)
+	if !result.FEC.Uncorrectable {
 		data = corrected
 	}
 	result.ColorCode = uint8(bit.Uint(data[0:4]))
 	result.DataType = enums.DataType(bit.Uint(data[4:8]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a SlotType per ETSI TS 102 361-1 - 9.1.3 Slot Type (SLOT) PDU

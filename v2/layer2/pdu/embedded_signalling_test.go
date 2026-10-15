@@ -16,7 +16,8 @@ func TestEmbeddedSignalling_EncodeDecodeRoundTrip(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, fecResult := pdu.DecodeEmbeddedSignalling(encoded)
+	decoded := pdu.DecodeEmbeddedSignalling(encoded)
+	fecResult := decoded.FEC
 
 	if decoded.ColorCode != original.ColorCode {
 		t.Errorf("ColorCode = %d, want %d", decoded.ColorCode, original.ColorCode)
@@ -39,7 +40,8 @@ func TestEmbeddedSignalling_AllColorCodes(t *testing.T) {
 			LCSS:      enums.LCSSSingleFragment,
 		}
 		encoded := must(es.Encode())
-		decoded, fecResult := pdu.DecodeEmbeddedSignalling(encoded)
+		decoded := pdu.DecodeEmbeddedSignalling(encoded)
+		fecResult := decoded.FEC
 		if decoded.ColorCode != uint8(cc) {
 			t.Errorf("cc=%d: got ColorCode=%d", cc, decoded.ColorCode)
 		}
@@ -63,7 +65,7 @@ func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
 			LCSS:      lcss,
 		}
 		encoded := must(es.Encode())
-		decoded, _ := pdu.DecodeEmbeddedSignalling(encoded)
+		decoded := pdu.DecodeEmbeddedSignalling(encoded)
 		if decoded.LCSS != lcss {
 			t.Errorf("lcss=%d: got LCSS=%d", lcss, decoded.LCSS)
 		}
@@ -71,7 +73,7 @@ func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
 }
 
 func TestEmbeddedSignalling_String(t *testing.T) {
-	es, _ := pdu.DecodeEmbeddedSignalling([16]bit.Bit{})
+	es := pdu.DecodeEmbeddedSignalling([16]bit.Bit{})
 	s := es.String()
 	if s == "" {
 		t.Error("String() should not be empty")
@@ -86,7 +88,7 @@ func TestEmbeddedSignalling_PPCI(t *testing.T) {
 			LCSS:                               enums.LCSSSingleFragment,
 		}
 		encoded := must(es.Encode())
-		decoded, _ := pdu.DecodeEmbeddedSignalling(encoded)
+		decoded := pdu.DecodeEmbeddedSignalling(encoded)
 		if decoded.PreemptionAndPowerControlIndicator != ppci {
 			t.Errorf("ppci=%v: got %v", ppci, decoded.PreemptionAndPowerControlIndicator)
 		}
@@ -101,7 +103,8 @@ func TestEncodeEmbeddedSignalling_FullRoundTrip(t *testing.T) {
 	}
 	encoded := must(es.Encode())
 	// Verify full [16]bit.Bit round-trip through decode
-	decoded, fecResult := pdu.DecodeEmbeddedSignalling(encoded)
+	decoded := pdu.DecodeEmbeddedSignalling(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Error("FEC should not be uncorrectable for clean encoded data")
 	}

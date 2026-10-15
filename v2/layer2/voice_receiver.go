@@ -101,16 +101,16 @@ func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err 
 		return lc, false, nil
 	}
 	r.count = 0
-	decode := func(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
+	decode := func(f [4][32]bit.Bit) pdu.FullLinkControl {
 		return embeddedFullLinkControl(decodeEmbeddedLC(f))
 	}
 	if r.Strict {
-		decode = func(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
+		decode = func(f [4][32]bit.Bit) pdu.FullLinkControl {
 			return embeddedFullLinkControl(decodeEmbeddedLCStrict(f))
 		}
 	}
-	lc, result := decode(r.fragments)
-	if result.Uncorrectable {
+	lc = decode(r.fragments)
+	if lc.FEC.Uncorrectable {
 		return lc, false, ErrEmbeddedLCUncorrectable
 	}
 	return lc, true, nil

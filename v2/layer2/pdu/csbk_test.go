@@ -91,7 +91,8 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(0b00111101, payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -138,7 +139,8 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(0b00100110, payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -166,7 +168,7 @@ func TestCSBK_CRCValidation(t *testing.T) {
 	infoBits := buildCSBKBits(0b00111101, payload)
 
 	// First verify it decodes ok
-	_, fecResult := pdu.DecodeCSBK(infoBits)
+	fecResult := pdu.DecodeCSBK(infoBits).FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("valid CSBK should decode ok")
 	}
@@ -176,7 +178,7 @@ func TestCSBK_CRCValidation(t *testing.T) {
 	copy(corrupted[:], infoBits[:])
 	corrupted[40] ^= 1 // flip a payload bit
 
-	_, fecResult2 := pdu.DecodeCSBK(corrupted)
+	fecResult2 := pdu.DecodeCSBK(corrupted).FEC
 	if !fecResult2.Uncorrectable {
 		t.Error("corrupted CSBK should fail CRC check")
 	}
@@ -193,7 +195,8 @@ func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKBSOutboundActivation), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -238,7 +241,8 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded := pdu.DecodeCSBK(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -266,7 +270,8 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceRequest), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -306,7 +311,8 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded := pdu.DecodeCSBK(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -337,7 +343,8 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponse), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -381,7 +388,8 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.
 	}
 
 	encoded := must(original.Encode())
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded := pdu.DecodeCSBK(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -426,7 +434,8 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTiming), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -500,7 +509,8 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 	if encoded[16+63] != 0 {
 		t.Error("ChannelTimingOp0 should be encoded at payload bit 63")
 	}
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded := pdu.DecodeCSBK(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -539,6 +549,6 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 func serviceOptions(b byte) layer3.ServiceOptions {
 	var bits [8]bit.Bit
 	bit.PutUint(bits[:], uint64(b))
-	so, _ := layer3.DecodeServiceOptions(bits)
+	so := layer3.DecodeServiceOptions(bits)
 	return so
 }

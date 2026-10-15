@@ -67,7 +67,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 		}
 		if b.Kind == layer2.KindData {
 			counts["slot type"]++
-			if st, res := r.SlotType(); st != b.SlotType || res != b.FEC.SlotType {
+			if st := r.SlotType(); st != b.SlotType || st.FEC != b.FEC.SlotType {
 				t.Errorf("%x: SlotType %+v, Burst %+v", frame, st, b.SlotType)
 			}
 		}
@@ -94,10 +94,12 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 		}
 		if b.HasEmbeddedSignalling() {
 			counts["EMB"]++
-			emb, res := r.EMB()
+			emb := r.EMB()
+			res := emb.FEC
 			data := r.EmbeddedData()
 			if b.SyncPattern == enums.SyncMSSourcedRC {
-				emb, res = r.StandaloneRCEMB()
+				emb = r.StandaloneRCEMB()
+				res = emb.FEC
 				data = r.StandaloneRCData()
 			}
 			if want := [4]byte(bit.Pack(b.EmbeddedSignallingData[:])); emb != b.EmbeddedSignalling || res != b.FEC.EMB || data != want {
@@ -124,12 +126,12 @@ func TestRawBurst_GettersOnValue(t *testing.T) {
 		r := layer2.RawBurst(frame)
 		p1, d1 := layer2.RawBurst(frame).Sync()
 		p2, d2 := r.Sync()
-		st1, _ := layer2.RawBurst(frame).SlotType()
-		st2, _ := r.SlotType()
+		st1 := layer2.RawBurst(frame).SlotType()
+		st2 := r.SlotType()
 		bp1, _ := layer2.RawBurst(frame).BPTCPayload()
 		bp2, _ := r.BPTCPayload()
-		e1, _ := layer2.RawBurst(frame).EMB()
-		e2, _ := r.EMB()
+		e1 := layer2.RawBurst(frame).EMB()
+		e2 := r.EMB()
 		if p1 != p2 || d1 != d2 || st1 != st2 || bp1 != bp2 || e1 != e2 ||
 			layer2.RawBurst(frame).EmbeddedData() != r.EmbeddedData() ||
 			layer2.RawBurst(frame).VoiceSlots() != r.VoiceSlots() ||
@@ -152,7 +154,8 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		st, stRes := r.SlotType()
+		st := r.SlotType()
+		stRes := st.FEC
 		b, _ := layer2.NewBurstFromBytes(frame)
 		if b.Kind == layer2.KindData {
 			if !stRes.HasErrors() {
@@ -175,7 +178,7 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 		} else {
 			w.SetVoiceSlots(r.VoiceSlots())
 			if b.HasEmbeddedSignalling() && b.SyncPattern != enums.SyncMSSourcedRC {
-				if e, res := r.EMB(); !res.HasErrors() {
+				if e := r.EMB(); !e.FEC.HasErrors() {
 					if err := w.SetEMB(e); err != nil {
 						t.Fatal(err)
 					}
@@ -240,8 +243,8 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 		if err := w.SetEMB(e); err != nil {
 			t.Fatal(err)
 		}
-		if got, res := w.EMB(); got.ColorCode != e.ColorCode || got.LCSS != e.LCSS || res.HasErrors() || !sameBits(w, r, [2]int{108, 116}, [2]int{148, 156}) {
-			t.Fatalf("SetEMB: %+v %+v", got, res)
+		if got := w.EMB(); got.ColorCode != e.ColorCode || got.LCSS != e.LCSS || got.FEC.HasErrors() || !sameBits(w, r, [2]int{108, 116}, [2]int{148, 156}) {
+			t.Fatalf("SetEMB: %+v", got)
 		}
 	}
 }
@@ -267,7 +270,8 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 	frame := buildStandaloneRCBurst(7, enums.RCCeaseTransmissionRequest)
 	r := layer2.RawBurst(frame)
 	b := must(layer2.NewBurstFromBytes(frame))
-	emb, res := r.StandaloneRCEMB()
+	emb := r.StandaloneRCEMB()
+	res := emb.FEC
 	if emb != b.EmbeddedSignalling || res.HasErrors() || emb.ColorCode != 7 {
 		t.Fatalf("StandaloneRCEMB %+v %+v", emb, res)
 	}
@@ -277,7 +281,7 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 	}
 	var bits [32]bit.Bit
 	copy(bits[:], bit.Unpack(data[:]))
-	if rc, _ := layer2.DecodeEmbeddedRC(bits); rc.RCCommand != enums.RCCeaseTransmissionRequest {
+	if rc := layer2.DecodeEmbeddedRC(bits); rc.RCCommand != enums.RCCeaseTransmissionRequest {
 		t.Fatalf("RC %+v", rc)
 	}
 
@@ -316,7 +320,8 @@ func TestBuildDataBurst_ReproducesCaptures(t *testing.T) {
 	n := 0
 	for _, frame := range captureFrames(t) {
 		r := layer2.RawBurst(frame)
-		st, stRes := r.SlotType()
+		st := r.SlotType()
+		stRes := st.FEC
 		sync, d := r.Sync()
 		if stRes.HasErrors() || d != 0 || !isBPTC(st.DataType) {
 			continue

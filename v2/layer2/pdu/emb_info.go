@@ -94,7 +94,7 @@ func (e EMBInfo) Codeword() uint16 {
 func DecodeEMBCodeword(cw uint16) (EMBInfo, fec.Result) {
 	var bits [16]bit.Bit
 	bit.PutUint(bits[:], uint64(cw))
-	s, res := DecodeEmbeddedSignalling(bits)
+	s := DecodeEmbeddedSignalling(bits)
 	e, _ := s.Info()
-	return e, res
+	return e, s.FEC
 }

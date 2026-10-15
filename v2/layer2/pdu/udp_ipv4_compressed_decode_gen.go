@@ -12,14 +12,12 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 // DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader per ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header
-func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) (UDPIPv4CompressedHeader, fec.Result) {
+func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) UDPIPv4CompressedHeader {
 	var result UDPIPv4CompressedHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.IPv4Identification = uint16(bit.Uint(data[0:16]))
 	result.SAID = enums.SAID(bit.Uint(data[16:20]))
 	result.DAID = enums.DAID(bit.Uint(data[20:24]))
@@ -32,7 +30,7 @@ func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) (UDPIPv4CompressedHeader, f
 	result.DPID = enums.DPID(bit.Uint(data[33:40]))
 	result.ExtendedHeader1 = uint16(bit.Uint(data[40:56]))
 	result.ExtendedHeader2 = uint16(bit.Uint(data[56:72]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a UDPIPv4CompressedHeader per ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header

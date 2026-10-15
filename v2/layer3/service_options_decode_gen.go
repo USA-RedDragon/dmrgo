@@ -11,21 +11,19 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 // DecodeServiceOptions decodes a ServiceOptions per ETSI TS 102 361-2 - 7.2.1  Service Options
-func DecodeServiceOptions(data [8]bit.Bit) (ServiceOptions, fec.Result) {
+func DecodeServiceOptions(data [8]bit.Bit) ServiceOptions {
 	var result ServiceOptions
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.IsEmergency = data[0] == 1
 	result.IsPrivacy = data[1] == 1
 	result.Reserved = uint8(bit.Uint(data[2:4]))
 	result.IsBroadcast = data[4] == 1
 	result.IsOpenVoiceCallMode = data[5] == 1
 	result.PriorityLevel = uint8(bit.Uint(data[6:8]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ServiceOptions per ETSI TS 102 361-2 - 7.2.1  Service Options

@@ -80,7 +80,8 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 }
 
 func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
-	flc, fecResult := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), enums.DataTypeVoiceLCHeader)
+	flc := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), enums.DataTypeVoiceLCHeader)
+	fecResult := flc.FEC
 	if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
 		t.Fatalf("FEC = %+v, want a clean codeword", fecResult)
 	}
@@ -99,7 +100,7 @@ func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
 // parity bytes, which RS(12,9) cannot correct.
 func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 	for _, dt := range []enums.DataType{enums.DataTypeTerminatorWithLC, enums.DataTypePIHeader} {
-		_, fecResult := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), dt)
+		fecResult := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), dt).FEC
 		if !fecResult.Uncorrectable && fecResult.ErrorsCorrected == 0 {
 			t.Errorf("%s: FEC = %+v, want an RS failure", dt.String(), fecResult)
 		}
@@ -109,7 +110,7 @@ func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 // Depends on a correct RS(12,9) encoder.
 func TestFLC_EncodeRealVoiceLCHeader(t *testing.T) {
 	want := hexBits96(t, realVoiceLCHeader)
-	flc, _ := pdu.DecodeFullLinkControl(want, enums.DataTypeVoiceLCHeader)
+	flc := pdu.DecodeFullLinkControl(want, enums.DataTypeVoiceLCHeader)
 	if got := must(flc.Encode()); got != want {
 		t.Errorf("FullLinkControl.Encode = %x, want %s", bit.Pack(got[:]), realVoiceLCHeader)
 	}

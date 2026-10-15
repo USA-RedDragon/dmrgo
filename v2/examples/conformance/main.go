@@ -89,7 +89,7 @@ func syncSource(p enums.SyncPattern) (layer2.SyncSource, bool) {
 }
 
 func checkData(t *tally, i int, b *layer2.Burst, rb layer2.RawBurst) {
-	st, _ := rb.SlotType()
+	st := rb.SlotType()
 	if st != b.SlotType {
 		t.failf(i, "RawBurst slot type %v, Burst %v", st, b.SlotType)
 	}
@@ -161,7 +161,7 @@ func checkSeal(t *tally, i int, dt enums.DataType, p [12]byte) {
 
 func checkVoice(t *tally, i int, b *layer2.Burst, rb layer2.RawBurst, rx *layer2.VoiceReceiver, frags *[4][4]byte) {
 	if b.HasEmbeddedSignalling() {
-		if emb, _ := rb.EMB(); emb != b.EmbeddedSignalling {
+		if emb := rb.EMB(); emb != b.EmbeddedSignalling {
 			t.failf(i, "RawBurst EMB %v, Burst %v", emb, b.EmbeddedSignalling)
 		}
 	}

@@ -27,7 +27,8 @@ func TestRC_DecodeFromEmbeddedData_RoundTrip(t *testing.T) {
 	t.Parallel()
 	for payload := byte(0); payload < 16; payload++ {
 		embData := buildRCEmbeddedData(payload)
-		rc, fecResult := layer2.DecodeEmbeddedRC(embData)
+		rc := layer2.DecodeEmbeddedRC(embData)
+		fecResult := rc.FEC
 		if fecResult.Uncorrectable {
 			t.Errorf("payload=%d: unexpected uncorrectable error", payload)
 			continue
@@ -38,7 +39,7 @@ func TestRC_DecodeFromEmbeddedData_RoundTrip(t *testing.T) {
 	}
 }
 
-func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
+func TestRC_EncodeEmbeddedRC_RoundTrip(t *testing.T) {
 	t.Parallel()
 	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(10)}
 	embData, err := layer2.EncodeEmbeddedRC(&rc)
@@ -46,7 +47,8 @@ func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	decoded, fecResult := layer2.DecodeEmbeddedRC(embData)
+	decoded := layer2.DecodeEmbeddedRC(embData)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip failed: uncorrectable")
 	}
@@ -55,7 +57,7 @@ func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
 	}
 }
 
-func TestRC_EncodeRCToEmbeddedData_OutOfRange(t *testing.T) {
+func TestRC_EncodeEmbeddedRC_OutOfRange(t *testing.T) {
 	t.Parallel()
 	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(0x14)}
 	if _, err := layer2.EncodeEmbeddedRC(&rc); err == nil {
@@ -66,7 +68,7 @@ func TestRC_EncodeRCToEmbeddedData_OutOfRange(t *testing.T) {
 func TestRC_CombinedFEC(t *testing.T) {
 	t.Parallel()
 	embData := buildRCEmbeddedData(3)
-	_, fecResult := layer2.DecodeEmbeddedRC(embData)
+	fecResult := layer2.DecodeEmbeddedRC(embData).FEC
 
 	// The CRC-7 only detects errors, so BitsChecked is the BPTC's 32.
 	expectedBitsChecked := 32

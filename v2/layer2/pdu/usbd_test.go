@@ -50,7 +50,8 @@ func TestUSBD_DecodeLIP(t *testing.T) {
 
 	infoBits := buildUSBDBits(0b0000, payload) // LIP service type
 
-	usbd, fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits)
+	usbd := pdu.DecodeUnifiedSingleBlockData(infoBits)
+	fecResult := usbd.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeUnifiedSingleBlockData returned uncorrectable FEC")
 	}
@@ -80,7 +81,8 @@ func TestUSBD_DecodeManufacturerSpecific(t *testing.T) {
 
 	infoBits := buildUSBDBits(0b1000, payload) // ManufacturerSpecific1
 
-	usbd, fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits)
+	usbd := pdu.DecodeUnifiedSingleBlockData(infoBits)
+	fecResult := usbd.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeUnifiedSingleBlockData returned uncorrectable FEC")
 	}
@@ -112,7 +114,8 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 
 			encoded := must(orig.Encode())
-			decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(encoded)
+			decoded := pdu.DecodeUnifiedSingleBlockData(encoded)
+			fecResult := decoded.FEC
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeUnifiedSingleBlockData round-trip returned uncorrectable FEC")
 			}
@@ -138,7 +141,7 @@ func TestUSBD_EncodeStability(t *testing.T) {
 	}
 
 	enc1 := must(orig.Encode())
-	dec1, _ := pdu.DecodeUnifiedSingleBlockData(enc1)
+	dec1 := pdu.DecodeUnifiedSingleBlockData(enc1)
 	enc2 := must(dec1.Encode())
 
 	for i := 0; i < 96; i++ {
@@ -151,7 +154,7 @@ func TestUSBD_EncodeStability(t *testing.T) {
 func TestUSBD_CRCFailure(t *testing.T) {
 	var infoBits [96]bit.Bit
 	// All zeros will fail CRC check
-	_, fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits)
+	fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeUnifiedSingleBlockData should return uncorrectable for invalid CRC")
 	}
@@ -165,7 +168,7 @@ func TestUSBD_CRCBitFlip(t *testing.T) {
 	// Flip a data bit to corrupt CRC
 	infoBits[5] ^= 1
 
-	_, fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits)
+	fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeUnifiedSingleBlockData should return uncorrectable after bit flip")
 	}
@@ -184,7 +187,7 @@ func TestUSBD_String(t *testing.T) {
 
 	infoBits := buildUSBDBits(0b0000, payload)
 
-	usbd, _ := pdu.DecodeUnifiedSingleBlockData(infoBits)
+	usbd := pdu.DecodeUnifiedSingleBlockData(infoBits)
 
 	str := usbd.String()
 	if str == "" {
@@ -227,7 +230,8 @@ func TestUSBD_AllServiceTypes(t *testing.T) {
 	for st := 0; st < 16; st++ {
 		var payload [76]bit.Bit
 		infoBits := buildUSBDBits(byte(st), payload)
-		usbd, fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits)
+		usbd := pdu.DecodeUnifiedSingleBlockData(infoBits)
+		fecResult := usbd.FEC
 		if fecResult.Uncorrectable {
 			t.Errorf("ServiceType %d: decode returned uncorrectable", st)
 		}

@@ -85,6 +85,7 @@ func TestUnknownCRCAlgorithmIsRejected(t *testing.T) {
 func TestUnknownFECCodecIsRejected(t *testing.T) {
 	_, err := generate(t, `// dmr:fec golay_99
 type T struct {
+	FEC fec.Result `+"`dmr:\"-\"`"+`
 	A uint8 `+"`dmr:\"bits:0-7\"`"+`
 }`)
 	if err == nil || !strings.Contains(err.Error(), "unknown FEC codec") {
@@ -95,6 +96,7 @@ type T struct {
 func TestFieldsBeyondFECDataBitsAreRejected(t *testing.T) {
 	_, err := generate(t, `// dmr:fec golay_20_8_7
 type T struct {
+	FEC fec.Result `+"`dmr:\"-\"`"+`
 	A uint16 `+"`dmr:\"bits:0-8\"`"+`
 }`)
 	if err == nil || !strings.Contains(err.Error(), "carries 8 data bits") {
@@ -314,9 +316,39 @@ type T struct {
 	B    *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`"+`
 }`)
 	assertContains(t, out,
-		"func DecodeT(data [16]bit.Bit, mode bool) (T, fec.Result) {",
+		"func DecodeT(data [16]bit.Bit, mode bool) T {",
+		"_decoded := DecodeSub(_dispatchBits)",
 		"result.Mode = mode",
 		"if !result.Mode {",
 		"} else if result.Mode {",
 	)
+}
+
+func TestDecodeReportsFECInTheFECField(t *testing.T) {
+	out := mustGenerate(t, `// dmr:fec golay_20_8_7
+type G struct {
+	FEC fec.Result `+"`dmr:\"-\"`"+`
+	A   uint8      `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:crc crc_8
+// dmr:input_size 16
+type C struct {
+	FEC fec.Result `+"`dmr:\"-\"`"+`
+	A   uint8      `+"`dmr:\"bits:0-7\"`"+`
+}
+
+type P struct {
+	A uint8 `+"`dmr:\"bits:0-7\"`"+`
+}`)
+	assertContains(t, out,
+		"func DecodeG(data [20]bit.Bit) G {",
+		"corrected, result.FEC = golay.Decode2087(data)",
+		"func DecodeC(data [16]bit.Bit) C {",
+		"result.FEC.Uncorrectable = !crc.CheckCRC8(data[:8], _crc)",
+		"func DecodeP(data [8]bit.Bit) P {",
+	)
+	if strings.Contains(out, "fecResult") {
+		t.Errorf("generated code has a separate FEC result:\n%s", out)
+	}
 }

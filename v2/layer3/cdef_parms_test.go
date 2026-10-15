@@ -28,7 +28,7 @@ func TestCdefParms_NewFromBits(t *testing.T) {
 	// RXKHz = 0
 	// (already zero)
 
-	parmsValue, _ := layer3.DecodeCdefParms(bits)
+	parmsValue := layer3.DecodeCdefParms(bits)
 	parms := &parmsValue
 
 	if parms.Channel != 291 {
@@ -91,7 +91,7 @@ func TestCdefParms_String(t *testing.T) {
 
 func TestCdefParms_ZeroValues(t *testing.T) {
 	var bits [58]bit.Bit
-	parmsValue, _ := layer3.DecodeCdefParms(bits)
+	parmsValue := layer3.DecodeCdefParms(bits)
 	parms := &parmsValue
 
 	if parms.Channel != 0 {

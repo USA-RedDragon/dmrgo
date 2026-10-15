@@ -38,7 +38,7 @@ func TestBadCRCFails(t *testing.T) {
 	}
 	for i := 0; i+burstSize <= len(raw); i += burstSize {
 		rb := layer2.RawBurst(raw[i : i+burstSize])
-		if st, _ := rb.SlotType(); st.DataType != enums.DataTypeDataHeader {
+		if st := rb.SlotType(); st.DataType != enums.DataTypeDataHeader {
 			continue
 		}
 		p, _ := rb.BPTCPayload()

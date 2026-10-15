@@ -2,7 +2,6 @@ package layer2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -33,9 +32,6 @@ type CACH struct {
 	// Payload contains the 17-bit CACH signalling payload, which is one row
 	// of the Short LC BPTC transmit matrix.
 	Payload [CACHPayloadBits]bit.Bit
-
-	// FEC accumulates the total FEC result from TACT decoding.
-	FEC fec.Result
 }
 
 // DecodeCACH decodes a 24-bit CACH field into its TACT and signalling payload.
@@ -47,7 +43,7 @@ func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
 	// Extract TACT (bits 0..6) and decode with Hamming(7,4,3) FEC
 	var tactBits [TACTBits]bit.Bit
 	copy(tactBits[:], bits[:TACTBits])
-	result.TACT, result.FEC = pdu.DecodeTACT(tactBits)
+	result.TACT = pdu.DecodeTACT(tactBits)
 
 	// Extract signalling payload (bits 7..23)
 	copy(result.Payload[:], bits[TACTBits:CACHBits])

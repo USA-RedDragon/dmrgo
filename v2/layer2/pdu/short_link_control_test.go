@@ -34,7 +34,8 @@ func TestShortLC_NullMessage_Decode(t *testing.T) {
 	var data [24]bit.Bit
 	bits := buildShortLCBits(byte(enums.SLCONullMessage), data)
 
-	slc, fecResult := pdu.DecodeShortLC(bits)
+	slc := pdu.DecodeShortLC(bits)
+	fecResult := slc.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
@@ -66,7 +67,8 @@ func TestShortLC_ActivityUpdate_Decode(t *testing.T) {
 
 	bits := buildShortLCBits(byte(enums.SLCOActivityUpdate), data)
 
-	slc, fecResult := pdu.DecodeShortLC(bits)
+	slc := pdu.DecodeShortLC(bits)
+	fecResult := slc.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
@@ -104,7 +106,8 @@ func TestShortLC_EncodeDecodeRoundTrip(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, fecResult := pdu.DecodeShortLC(encoded)
+	decoded := pdu.DecodeShortLC(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip CRC failed")
 	}
@@ -136,7 +139,7 @@ func TestShortLC_CRCFailure(t *testing.T) {
 	// Corrupt a CRC bit
 	bits[30] ^= 1
 
-	_, fecResult := pdu.DecodeShortLC(bits)
+	fecResult := pdu.DecodeShortLC(bits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("expected uncorrectable after CRC corruption")
 	}
@@ -147,7 +150,7 @@ func TestShortLC_BitsChecked(t *testing.T) {
 	var data [24]bit.Bit
 	bits := buildShortLCBits(byte(enums.SLCONullMessage), data)
 
-	_, fecResult := pdu.DecodeShortLC(bits)
+	fecResult := pdu.DecodeShortLC(bits).FEC
 	if fecResult != (fec.Result{}) {
 		t.Errorf("CRC-8 only PDU: got %+v, want a zero result", fecResult)
 	}
@@ -158,7 +161,7 @@ func TestShortLC_String(t *testing.T) {
 	var data [24]bit.Bit
 	bits := buildShortLCBits(byte(enums.SLCOActivityUpdate), data)
 
-	slc, _ := pdu.DecodeShortLC(bits)
+	slc := pdu.DecodeShortLC(bits)
 	s := slc.String()
 	if s == "" {
 		t.Error("String should not be empty")
@@ -172,7 +175,8 @@ func TestShortLC_UnknownSLCO_RoundTrip(t *testing.T) {
 	}
 	for _, slco := range []byte{0b0101, 0b1111} {
 		in := buildShortLCBits(slco, payload)
-		slc, fecResult := pdu.DecodeShortLC(in)
+		slc := pdu.DecodeShortLC(in)
+		fecResult := slc.FEC
 		if fecResult.Uncorrectable {
 			t.Fatalf("SLCO %04b: CRC failed", slco)
 		}

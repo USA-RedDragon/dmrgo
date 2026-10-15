@@ -27,7 +27,7 @@ func TestRate34Data_DecodeFromBits(t *testing.T) {
 	infoBits[13] = 1
 	infoBits[15] = 1
 
-	rt, _ := pdu.DecodeRate34Data(infoBits)
+	rt := pdu.DecodeRate34Data(infoBits)
 	if rt.Data[0] != 0xAB {
 		t.Errorf("Data[0] = 0x%02X, want 0xAB", rt.Data[0])
 	}
@@ -43,14 +43,14 @@ func TestRate34Data_DecodeFromBits(t *testing.T) {
 }
 
 func TestRate34Data_DataType(t *testing.T) {
-	rt, _ := pdu.DecodeRate34Data([144]bit.Bit{})
+	rt := pdu.DecodeRate34Data([144]bit.Bit{})
 	if rt.DataType() != enums.DataTypeRate34 {
 		t.Errorf("DataType() = %d, want DataTypeRate34", rt.DataType())
 	}
 }
 
 func TestRate34Data_String(t *testing.T) {
-	rt, _ := pdu.DecodeRate34Data([144]bit.Bit{})
+	rt := pdu.DecodeRate34Data([144]bit.Bit{})
 	s := rt.String()
 	if s == "" {
 		t.Error("String() should not be empty")
@@ -62,7 +62,7 @@ func TestRate34Data_AllOnes(t *testing.T) {
 	for i := range infoBits {
 		infoBits[i] = 1
 	}
-	rt, _ := pdu.DecodeRate34Data(infoBits)
+	rt := pdu.DecodeRate34Data(infoBits)
 	for i := 0; i < 18; i++ {
 		if rt.Data[i] != 0xFF {
 			t.Errorf("Data[%d] = 0x%02X, want 0xFF", i, rt.Data[i])
@@ -75,7 +75,7 @@ func TestRate34Data_EncodeDecodeRoundTrip(t *testing.T) {
 		Data: [18]byte{0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
 	}
 	encoded := must(original.Encode())
-	decoded, _ := pdu.DecodeRate34Data(encoded)
+	decoded := pdu.DecodeRate34Data(encoded)
 	if decoded.Data != original.Data {
 		t.Errorf("round-trip failed: got %v, want %v", decoded.Data, original.Data)
 	}
@@ -84,7 +84,7 @@ func TestRate34Data_EncodeDecodeRoundTrip(t *testing.T) {
 func TestRate34Data_FullLengthLastByte(t *testing.T) {
 	var infoBits [144]bit.Bit
 	infoBits[143] = 1
-	rt, _ := pdu.DecodeRate34Data(infoBits)
+	rt := pdu.DecodeRate34Data(infoBits)
 	if rt.Data[17] != 0x01 {
 		t.Errorf("Data[17] = 0x%02X, want 0x01", rt.Data[17])
 	}
@@ -106,7 +106,7 @@ func TestRate34Data_Confirmed_RoundTrip(t *testing.T) {
 	if !rt.CheckConfirmedCRC9() {
 		t.Fatal("CheckConfirmedCRC9() = false after SetConfirmed")
 	}
-	decoded, _ := pdu.DecodeRate34Data(must(rt.Encode()))
+	decoded := pdu.DecodeRate34Data(must(rt.Encode()))
 	if !decoded.CheckConfirmedCRC9() {
 		t.Error("CheckConfirmedCRC9() = false after encode/decode")
 	}

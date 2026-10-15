@@ -13,7 +13,7 @@ func TestFLC_SetAddresses(t *testing.T) {
 		if !lc.SetAddresses(91, 3191868) {
 			t.Fatalf("FLCO %s: SetAddresses failed", flco)
 		}
-		decoded, _ := pdu.DecodeFullLinkControl(must(lc.Encode()), enums.DataTypeVoiceLCHeader)
+		decoded := pdu.DecodeFullLinkControl(must(lc.Encode()), enums.DataTypeVoiceLCHeader)
 		if target, source, ok := decoded.Addresses(); !ok || target != 91 || source != 3191868 {
 			t.Errorf("FLCO %s: Addresses = %d %d %v", flco, target, source, ok)
 		}
@@ -35,7 +35,8 @@ func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
 		if !lc.SetAddresses(3120101, 3120001) {
 			t.Fatalf("FLCO %s: SetAddresses failed", flco)
 		}
-		decoded, res := pdu.DecodeFullLinkControl(must(lc.Encode()), enums.DataTypeTerminatorWithLC)
+		decoded := pdu.DecodeFullLinkControl(must(lc.Encode()), enums.DataTypeTerminatorWithLC)
+		res := decoded.FEC
 		if res.Uncorrectable || res.ErrorsCorrected != 0 {
 			t.Fatalf("FLCO %s: FEC %+v", flco, res)
 		}
@@ -57,7 +58,7 @@ func TestDataHeader_Addresses(t *testing.T) {
 	if !dh.SetAddresses(3120002, 3120001) {
 		t.Fatal("SetAddresses failed")
 	}
-	decoded, _ := pdu.DecodeDataHeader(must(dh.Encode()))
+	decoded := pdu.DecodeDataHeader(must(dh.Encode()))
 	if dst, src, ok := decoded.Addresses(); !ok || dst != 3120002 || src != 3120001 {
 		t.Errorf("Addresses = %d %d %v", dst, src, ok)
 	}

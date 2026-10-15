@@ -69,7 +69,8 @@ func TestMBCHeader_Decode(t *testing.T) {
 
 	infoBits := buildMBCHeaderBits(false, true, 0b00111101, 0x00, data)
 
-	hdr, fecResult := pdu.DecodeMBCHeader(infoBits)
+	hdr := pdu.DecodeMBCHeader(infoBits)
+	fecResult := hdr.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeMBCHeader returned uncorrectable FEC")
 	}
@@ -107,7 +108,8 @@ func TestMBCHeader_DecodeLastBlock(t *testing.T) {
 	var data [64]bit.Bit
 	infoBits := buildMBCHeaderBits(true, false, 0b00000001, 0x10, data)
 
-	hdr, fecResult := pdu.DecodeMBCHeader(infoBits)
+	hdr := pdu.DecodeMBCHeader(infoBits)
+	fecResult := hdr.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeMBCHeader returned uncorrectable FEC")
 	}
@@ -157,7 +159,8 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 
 			encoded := must(orig.Encode())
-			decoded, fecResult := pdu.DecodeMBCHeader(encoded)
+			decoded := pdu.DecodeMBCHeader(encoded)
+			fecResult := decoded.FEC
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeMBCHeader round-trip returned uncorrectable FEC")
 			}
@@ -191,7 +194,7 @@ func TestMBCHeader_EncodeStability(t *testing.T) {
 	orig.Data = [8]byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}
 
 	enc1 := must(orig.Encode())
-	dec1, _ := pdu.DecodeMBCHeader(enc1)
+	dec1 := pdu.DecodeMBCHeader(enc1)
 	enc2 := must(dec1.Encode())
 
 	for i := 0; i < 96; i++ {
@@ -203,7 +206,7 @@ func TestMBCHeader_EncodeStability(t *testing.T) {
 
 func TestMBCHeader_CRCFailure(t *testing.T) {
 	var infoBits [96]bit.Bit
-	_, fecResult := pdu.DecodeMBCHeader(infoBits)
+	fecResult := pdu.DecodeMBCHeader(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeMBCHeader should return uncorrectable for invalid CRC")
 	}
@@ -217,7 +220,7 @@ func TestMBCHeader_CRCBitFlip(t *testing.T) {
 	// Flip a data bit
 	infoBits[20] ^= 1
 
-	_, fecResult := pdu.DecodeMBCHeader(infoBits)
+	fecResult := pdu.DecodeMBCHeader(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeMBCHeader should return uncorrectable after bit flip")
 	}
@@ -233,7 +236,7 @@ func TestMBCHeader_DataType(t *testing.T) {
 func TestMBCHeader_String(t *testing.T) {
 	var data [64]bit.Bit
 	infoBits := buildMBCHeaderBits(true, false, 0b00111101, 0x00, data)
-	hdr, _ := pdu.DecodeMBCHeader(infoBits)
+	hdr := pdu.DecodeMBCHeader(infoBits)
 
 	str := hdr.String()
 	if str == "" {
@@ -249,7 +252,7 @@ func TestMBCContinuation_DecodeIntermediate(t *testing.T) {
 
 	infoBits := buildMBCContinuationBits(false, data) // LB=0 → intermediate
 
-	cont, _ := pdu.DecodeMBCContinuation(infoBits)
+	cont := pdu.DecodeMBCContinuation(infoBits)
 
 	if cont.LastBlock {
 		t.Error("LastBlock should be false for intermediate block")
@@ -275,7 +278,7 @@ func TestMBCContinuation_DecodeLastBlock(t *testing.T) {
 
 	infoBits := buildMBCContinuationBits(true, data) // LB=1 → last block
 
-	cont, _ := pdu.DecodeMBCContinuation(infoBits)
+	cont := pdu.DecodeMBCContinuation(infoBits)
 
 	if !cont.LastBlock {
 		t.Error("LastBlock should be true for last block")
@@ -310,7 +313,7 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 
 			encoded := must(orig.Encode())
-			decoded, _ := pdu.DecodeMBCContinuation(encoded)
+			decoded := pdu.DecodeMBCContinuation(encoded)
 
 			if decoded.LastBlock != orig.LastBlock {
 				t.Errorf("LastBlock = %v, want %v", decoded.LastBlock, orig.LastBlock)
@@ -333,7 +336,7 @@ func TestMBCContinuation_EncodeStability(t *testing.T) {
 	}
 
 	enc1 := must(orig.Encode())
-	dec1, _ := pdu.DecodeMBCContinuation(enc1)
+	dec1 := pdu.DecodeMBCContinuation(enc1)
 	enc2 := must(dec1.Encode())
 
 	for i := 0; i < 96; i++ {
@@ -355,7 +358,7 @@ func TestMBCContinuation_String(t *testing.T) {
 	data[0] = 1
 
 	infoBits := buildMBCContinuationBits(false, data)
-	cont, _ := pdu.DecodeMBCContinuation(infoBits)
+	cont := pdu.DecodeMBCContinuation(infoBits)
 
 	str := cont.String()
 	if str == "" {
@@ -364,19 +367,13 @@ func TestMBCContinuation_String(t *testing.T) {
 }
 
 func TestMBCContinuation_NoCRCCheck(t *testing.T) {
-	// MBC Continuation has no CRC at single-burst level, so any bit pattern should decode
 	var infoBits [96]bit.Bit
-	// Random-ish bit pattern
 	for i := 0; i < 96; i += 3 {
 		infoBits[i] = 1
 	}
 
-	cont, fecResult := pdu.DecodeMBCContinuation(infoBits)
-	if fecResult.Uncorrectable {
-		t.Error("MBCContinuation should never return uncorrectable (no single-burst CRC)")
-	}
+	cont := pdu.DecodeMBCContinuation(infoBits)
 
-	// LB should be bit 0
 	if !cont.LastBlock {
 		t.Error("LastBlock should be true (bit 0 = 1)")
 	}

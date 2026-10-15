@@ -140,7 +140,7 @@ func unconfirmed(w io.Writer) error {
 	if !bytes.Equal(m.Data, payload) {
 		return fmt.Errorf("payload %x, want %x", m.Data, payload)
 	}
-	got, _ := pdu.DecodeUDPIPv4CompressedHeader([72]bit.Bit(bit.Unpack(m.Data[:9])))
+	got := pdu.DecodeUDPIPv4CompressedHeader([72]bit.Bit(bit.Unpack(m.Data[:9])))
 	u := m.Header.UnconfirmedDataHeader
 	fmt.Fprintf(w, "unconfirmed: %d bursts, BF=%d POC=%d, port %d, text %q: ok\n",
 		len(bursts), u.BlocksToFollow, u.PadOctetCount, enums.DPIDToPort(got.DPID), m.Data[9:])

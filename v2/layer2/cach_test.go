@@ -19,7 +19,7 @@ func TestCACH_DecodeTACT(t *testing.T) {
 	copy(cachBits[:layer2.TACTBits], tactCodeword[:])
 
 	cach := layer2.DecodeCACH(cachBits)
-	if cach.FEC.Uncorrectable {
+	if cach.TACT.FEC.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
 	if !cach.TACT.AccessType {
@@ -98,11 +98,11 @@ func TestCACH_TACTErrorCorrection(t *testing.T) {
 	cachBits[2] ^= 1
 
 	cach := layer2.DecodeCACH(cachBits)
-	if cach.FEC.Uncorrectable {
+	if cach.TACT.FEC.Uncorrectable {
 		t.Fatal("single bit error should be correctable")
 	}
-	if cach.FEC.ErrorsCorrected != 1 {
-		t.Errorf("expected 1 error corrected, got %d", cach.FEC.ErrorsCorrected)
+	if cach.TACT.FEC.ErrorsCorrected != 1 {
+		t.Errorf("expected 1 error corrected, got %d", cach.TACT.FEC.ErrorsCorrected)
 	}
 	if !cach.TACT.AccessType || !cach.TACT.TDMAChannel {
 		t.Error("corrected TACT should have AT=1, TC=1")

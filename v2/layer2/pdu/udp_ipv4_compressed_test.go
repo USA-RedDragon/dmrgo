@@ -21,7 +21,7 @@ func TestUDPIPv4CompressedHeader_RoundTrip(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, _ := pdu.DecodeUDPIPv4CompressedHeader(encoded)
+	decoded := pdu.DecodeUDPIPv4CompressedHeader(encoded)
 
 	if decoded.IPv4Identification != original.IPv4Identification {
 		t.Errorf("IPv4Identification = 0x%04X, want 0x%04X",
@@ -64,7 +64,7 @@ func TestUDPIPv4CompressedHeader_NonContiguousHCOpcode(t *testing.T) {
 			DPID:                    17,
 		}
 		encoded := must(original.Encode())
-		decoded, _ := pdu.DecodeUDPIPv4CompressedHeader(encoded)
+		decoded := pdu.DecodeUDPIPv4CompressedHeader(encoded)
 		if decoded.HeaderCompressionOpcode != opcode {
 			t.Errorf("opcode %d: HeaderCompressionOpcode = %d", opcode, decoded.HeaderCompressionOpcode)
 		}

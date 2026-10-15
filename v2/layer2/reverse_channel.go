@@ -2,7 +2,6 @@ package layer2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -31,19 +30,12 @@ import (
 // embedded signalling data field. It applies Single Burst Variable Length
 // BPTC with odd parity (§B.2.2) followed by CRC-7 verification (§B.3.13).
 //
-// Returns the decoded RC PDU and a combined FEC result covering both the
-// BPTC and CRC layers.
-func DecodeEmbeddedRC(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec.Result) {
-	// Single Burst BPTC decode with odd parity (RC mode)
+// The FEC field of the RC PDU combines the BPTC and CRC results.
+func DecodeEmbeddedRC(embeddedData [32]bit.Bit) pdu.ReverseChannel {
 	infoBits, bptcResult := bptc.DecodeSingleBurst(embeddedData, true)
-
-	// Decode RC PDU (CRC-7 check)
-	rc, crcResult := pdu.DecodeReverseChannel(infoBits)
-
-	combined := bptcResult.Combine(crcResult)
-	rc.FEC = combined
-
-	return rc, combined
+	rc := pdu.DecodeReverseChannel(infoBits)
+	rc.FEC = bptcResult.Combine(rc.FEC)
+	return rc
 }
 
 // EncodeEmbeddedRC encodes a Reverse Channel PDU into 32 transmit

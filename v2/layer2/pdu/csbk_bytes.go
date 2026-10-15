@@ -3,7 +3,6 @@ package pdu
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 // CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst (ETSI TS
@@ -148,8 +147,8 @@ func (c *CSBKBytes) Reseal() {
 }
 
 // DecodeCSBKBytes decodes the 12-octet payload b of a CSBK burst as
-// DecodeCSBK does.
-func DecodeCSBKBytes(b [12]byte) (CSBK, fec.Result) {
+// DecodeCSBK does. The FEC field reports the CRC check.
+func DecodeCSBKBytes(b [12]byte) CSBK {
 	return DecodeCSBK(bit.Unpack96(b))
 }
 
