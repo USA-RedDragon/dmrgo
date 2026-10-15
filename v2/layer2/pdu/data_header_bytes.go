@@ -38,36 +38,49 @@ func (h DataHeaderBytes) hasLLIDs() bool {
 	return h.hasGroupFlag() || h.Format() == FormatResponsePacket
 }
 
-// Addresses returns the destination and source LLIDs and the Group or
-// Individual flag of the header. For a C_RHEAD group is false. ok is false
-// for a P_HEAD and for the reserved formats.
-func (h DataHeaderBytes) Addresses() (target, source uint32, group, ok bool) {
+// Addresses returns the destination LLID as target and the source LLID of
+// the header. ok is false for a P_HEAD and for the reserved formats.
+func (h DataHeaderBytes) Addresses() (target, source uint32, ok bool) {
 	if !h.hasLLIDs() {
-		return 0, 0, false, false
+		return 0, 0, false
 	}
-	target = uint32(h[2])<<16 | uint32(h[3])<<8 | uint32(h[4])
-	source = uint32(h[5])<<16 | uint32(h[6])<<8 | uint32(h[7])
-	return target, source, h.hasGroupFlag() && h[0]&0x80 != 0, true
+	return uint24(h[2:5]), uint24(h[5:8]), true
 }
 
-// SetAddresses writes the destination and source LLIDs and the Group or
-// Individual flag. It does not update the CRC; call Reseal. It returns
-// false, and changes nothing, for a P_HEAD or a reserved format, for a
-// C_RHEAD when group is true, and when an LLID does not fit in 24 bits. A
-// C_RHEAD keeps its reserved bit 7 of octet 0.
-func (h *DataHeaderBytes) SetAddresses(target, source uint32, group bool) bool {
-	if !h.hasLLIDs() || target>>24 != 0 || source>>24 != 0 || group && !h.hasGroupFlag() {
+// SetAddresses writes the destination and source LLIDs. It does not update
+// the CRC; call Reseal. It returns false, and changes nothing, for a P_HEAD
+// or a reserved format and when an LLID does not fit in 24 bits.
+func (h *DataHeaderBytes) SetAddresses(target, source uint32) bool {
+	if !h.hasLLIDs() || target>>24 != 0 || source>>24 != 0 {
 		return false
 	}
-	switch {
-	case !h.hasGroupFlag():
-	case group:
+	putUint24(h[2:5], target)
+	putUint24(h[5:8], source)
+	return true
+}
+
+// Group returns the Group or Individual flag, bit 7 of octet 0: true for a
+// group destination. ok is false for a C_RHEAD, whose bit 7 is reserved, a
+// P_HEAD and the reserved formats.
+func (h DataHeaderBytes) Group() (group, ok bool) {
+	if !h.hasGroupFlag() {
+		return false, false
+	}
+	return h[0]&0x80 != 0, true
+}
+
+// SetGroup writes the flag that Group returns. It does not update the CRC;
+// call Reseal. It returns false, and changes nothing, for a header for
+// which Group returns no flag.
+func (h *DataHeaderBytes) SetGroup(group bool) bool {
+	if !h.hasGroupFlag() {
+		return false
+	}
+	if group {
 		h[0] |= 0x80
-	default:
+	} else {
 		h[0] &^= 0x80
 	}
-	h[2], h[3], h[4] = byte(target>>16), byte(target>>8), byte(target) //nolint:gosec // 24-bit LLID split into octets
-	h[5], h[6], h[7] = byte(source>>16), byte(source>>8), byte(source) //nolint:gosec // 24-bit LLID split into octets
 	return true
 }
 
