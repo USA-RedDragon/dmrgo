@@ -8,11 +8,6 @@ import (
 func TestTrellis34Decode(t *testing.T) {
 	t.Parallel()
 
-	symbolToDibits := make(map[byte][2]int8)
-	for pair, sym := range trellis34_constellation {
-		symbolToDibits[sym] = pair
-	}
-
 	for run := 0; run < 100; run++ {
 		// 48 random data tribits and the 000 tail tribit (ETSI TS 102 361-1
 		// clause B.2.4).
@@ -33,10 +28,7 @@ func TestTrellis34Decode(t *testing.T) {
 
 		var orderedDibits [98]int8
 		for i := 0; i < 49; i++ {
-			pair, ok := symbolToDibits[symbols[i]]
-			if !ok {
-				t.Fatalf("Symbol %d not found in constellation", symbols[i])
-			}
+			pair := trellis34_reverse_constellation[symbols[i]]
 			orderedDibits[i*2] = pair[0]
 			orderedDibits[i*2+1] = pair[1]
 		}
@@ -83,10 +75,7 @@ func TestTrellis34Decode(t *testing.T) {
 
 		var corruptOrderedDibits [98]int8
 		for i := 0; i < 49; i++ {
-			pair, ok := symbolToDibits[corruptSymbols[i]]
-			if !ok {
-				t.Fatalf("Symbol %d not found in constellation (corrupt path)", corruptSymbols[i])
-			}
+			pair := trellis34_reverse_constellation[corruptSymbols[i]]
 			corruptOrderedDibits[i*2] = pair[0]
 			corruptOrderedDibits[i*2+1] = pair[1]
 		}

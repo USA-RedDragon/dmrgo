@@ -6,23 +6,22 @@ import "sync"
 
 // Tables holds every computed FEC lookup table.
 type Tables struct {
-	DM                        [256]uint8       // BPTC(196,96) deinterleave index, (i*181) mod 196
-	Hamming15_11Syndrome      [16]int          // Hamming(15,11,3) bit position per syndrome, -1 for none
-	Hamming13_9Syndrome       [16]int          // Hamming(13,9,3) bit position per syndrome, -1 for none
-	Hamming743Syndrome        [8]int           // Hamming(7,4,3) bit position per syndrome, -1 for none
-	Hamming16_11Syndrome      [32]int          // Hamming(16,11,4) bit position per syndrome, -1 for none
-	Hamming17_12Syndrome      [32]int          // Hamming(17,12,3) bit position per syndrome, -1 for none
-	CRCCCITT                  [256]uint16      // CRC-CCITT byte table, polynomial 0x1021
-	CRC32                     [256]uint32      // CRC-32 byte table, polynomial 0x04C11DB7
-	SingleBurstBPTCInterleave [32]uint8        // single-burst BPTC encode matrix index per transmit index
-	ConstellationPoints       map[[2]int8]byte // trellis 3/4 symbol index per dibit pair
-	ReverseConstellation      [][]int8         // trellis 3/4 dibit pair per symbol index
-	ATable                    []int            // AMBE frame position of each bit of the A codeword
-	BTable                    []int            // AMBE frame position of each bit of the B codeword
-	CTable                    []int            // AMBE frame position of each bit of the C codeword
-	GaloisExp                 [256]uint8       // GF(2^8) exponent table, polynomial 0x11D
-	GaloisLog                 [256]uint8       // GF(2^8) logarithm table, polynomial 0x11D
-	AMBEScrambleTable         [4096]uint32     // AMBE 24-bit scramble mask per 12-bit A value
+	DM                        [256]uint8   // BPTC(196,96) deinterleave index, (i*181) mod 196
+	Hamming15_11Syndrome      [16]int      // Hamming(15,11,3) bit position per syndrome, -1 for none
+	Hamming13_9Syndrome       [16]int      // Hamming(13,9,3) bit position per syndrome, -1 for none
+	Hamming743Syndrome        [8]int       // Hamming(7,4,3) bit position per syndrome, -1 for none
+	Hamming16_11Syndrome      [32]int      // Hamming(16,11,4) bit position per syndrome, -1 for none
+	Hamming17_12Syndrome      [32]int      // Hamming(17,12,3) bit position per syndrome, -1 for none
+	CRCCCITT                  [256]uint16  // CRC-CCITT byte table, polynomial 0x1021
+	CRC32                     [256]uint32  // CRC-32 byte table, polynomial 0x04C11DB7
+	SingleBurstBPTCInterleave [32]uint8    // single-burst BPTC encode matrix index per transmit index
+	ReverseConstellation      [][]int8     // trellis 3/4 dibit pair per symbol index
+	ATable                    []int        // AMBE frame position of each bit of the A codeword
+	BTable                    []int        // AMBE frame position of each bit of the B codeword
+	CTable                    []int        // AMBE frame position of each bit of the C codeword
+	GaloisExp                 [256]uint8   // GF(2^8) exponent table, polynomial 0x11D
+	GaloisLog                 [256]uint8   // GF(2^8) logarithm table, polynomial 0x11D
+	AMBEScrambleTable         [4096]uint32 // AMBE 24-bit scramble mask per 12-bit A value
 
 	Golay20_8_7Encoding    []uint32     // Golay(20,8,7) codeword per 8-bit data value
 	Golay20_8_7Syndrome    [4096]uint32 // Golay(20,8,7) error pattern per syndrome, 0xFFFFFFFF if uncorrectable
@@ -92,11 +91,6 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.SingleBurstBPTCInterleave = SingleBurstBPTCInterleave()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.ConstellationPoints = ConstellationPoints()
 		wg.Done()
 	}()
 	wg.Add(1)
