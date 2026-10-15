@@ -14,8 +14,7 @@ func TestGolay24128(t *testing.T) {
 	for d := 0; d < 4096; d++ {
 		data := uint16(d) //nolint:gosec // d limited to 12-bit range
 
-		// Encode
-		codeword := Golay_24_12_8_table[d]
+		codeword := EncodeGolay24128(data)
 
 		// Case 1: No Error
 		decoded, result := DecodeGolay24128(codeword)
@@ -111,5 +110,26 @@ func TestDecodeGolay24128UncorrectableReturnsNearest23127(t *testing.T) {
 	}
 	if checked == 0 {
 		t.Fatal("no uncorrectable words generated")
+	}
+}
+
+// The Golay (23,12,7) codeword is divisible by g(x) = 0xC75, and the
+// Golay (24,12,8) codeword appends an even overall parity bit to it.
+func TestEncodeGolay24128ExtendsGolay23127(t *testing.T) {
+	if got := EncodeGolay23127(1); got != golay23GenPoly {
+		t.Fatalf("EncodeGolay23127(1) = %#x, want g(x) %#x", got, golay23GenPoly)
+	}
+	for d := range uint16(4096) {
+		cw23 := EncodeGolay23127(d)
+		if cw23>>11 != uint32(d) || golay23ComputeSyndrome(cw23) != 0 {
+			t.Fatalf("EncodeGolay23127(%#x) = %#x is not a systematic codeword", d, cw23)
+		}
+		cw24 := EncodeGolay24128(d)
+		if cw24>>1 != cw23 || bits.OnesCount32(cw24)%2 != 0 {
+			t.Fatalf("EncodeGolay24128(%#x) = %#x, want %#x with even parity", d, cw24, cw23)
+		}
+		if EncodeGolay24128(d|0xF000) != cw24 || EncodeGolay23127(d|0xF000) != cw23 {
+			t.Fatalf("encoders must ignore bits above 12 for %#x", d)
+		}
 	}
 }

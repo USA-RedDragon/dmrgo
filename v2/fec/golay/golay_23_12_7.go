@@ -22,6 +22,12 @@ func golay23ComputeSyndrome(received uint32) int {
 	return int(dividend & 0x7FF)
 }
 
+// EncodeGolay23127 returns the 23-bit Golay (23,12,7) codeword of the low
+// 12 bits of data: the data bits in bits 22 to 11, the parity in bits 10 to 0.
+func EncodeGolay23127(data uint16) uint32 {
+	return golay_23_12_7_table[data&0xFFF] >> 1
+}
+
 // DecodeGolay23127 decodes a 23-bit word using the Golay (23,12,7) code.
 // It returns the corrected 12-bit data and FECResult.
 func DecodeGolay23127(received uint32) (data uint16, result fec.FECResult) {

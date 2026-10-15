@@ -47,7 +47,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 	}
 
 	if err := writeFile(dmrRoot, "vocoder", "vocoder",
-		writeTable("AMBE_SCRAMBLE_TABLE", tables.AMBEScrambleTable[:]),
+		writeTable("ambeScrambleTable", tables.AMBEScrambleTable[:]),
 		jen.Line(),
 		jen.Line(),
 		writeTable("aTable", tables.ATable),
@@ -74,10 +74,10 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		writeTable("golay_20_8_7_table", tables.Golay20_8_7Encoding),
 		jen.Line(),
 		jen.Line(),
-		writeTable("Golay_23_12_7_table", tables.Golay23_12_7Encoding),
+		writeTable("golay_23_12_7_table", tables.Golay23_12_7Encoding),
 		jen.Line(),
 		jen.Line(),
-		writeTable("Golay_24_12_8_table", tables.Golay24_12_8Encoding),
+		writeTable("golay_24_12_8_table", tables.Golay24_12_8Encoding),
 		jen.Line(),
 		jen.Line(),
 		writeTable("golay_20_8_7_syndrome_table", tables.Golay20_8_7Syndrome[:]),

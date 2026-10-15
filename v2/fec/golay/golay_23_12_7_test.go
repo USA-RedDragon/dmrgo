@@ -13,10 +13,7 @@ func TestGolay23127(t *testing.T) {
 	for d := 0; d < 4096; d++ {
 		data := uint16(d) //nolint:gosec // d limited to 12-bit range
 
-		// Encode
-		// The decode function shifts encoding table value right by 1
-		codeword24 := Golay_23_12_7_table[d]
-		codeword23 := codeword24 >> 1
+		codeword23 := EncodeGolay23127(data)
 
 		// Case 1: No Error
 		decoded, result := DecodeGolay23127(codeword23)

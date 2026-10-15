@@ -20,12 +20,12 @@ func TestAMBEScrambleTableValues(t *testing.T) {
 	}
 
 	for _, tc := range expectedValues {
-		if tc.index >= len(AMBE_SCRAMBLE_TABLE) {
+		if tc.index >= len(ambeScrambleTable) {
 			t.Errorf("Test index %d out of range", tc.index)
 			continue
 		}
-		if AMBE_SCRAMBLE_TABLE[tc.index] != tc.expected {
-			t.Errorf("AMBE_SCRAMBLE_TABLE[%d] = 0x%06X, expected 0x%06X", tc.index, AMBE_SCRAMBLE_TABLE[tc.index], tc.expected)
+		if ambeScrambleTable[tc.index] != tc.expected {
+			t.Errorf("ambeScrambleTable[%d] = 0x%06X, expected 0x%06X", tc.index, ambeScrambleTable[tc.index], tc.expected)
 		}
 	}
 }
@@ -33,9 +33,9 @@ func TestAMBEScrambleTableValues(t *testing.T) {
 // TestScrambleTableBitWidth verifies all values fit within 24 bits (DMR constraint)
 func TestScrambleTableBitWidth(t *testing.T) {
 	maxValue := uint32(0xFFFFFF) // 24-bit max value
-	for i, v := range AMBE_SCRAMBLE_TABLE {
+	for i, v := range ambeScrambleTable {
 		if v > maxValue {
-			t.Errorf("AMBE_SCRAMBLE_TABLE[%d] = 0x%08X exceeds 24-bit max (0x%06X)", i, v, maxValue)
+			t.Errorf("ambeScrambleTable[%d] = 0x%08X exceeds 24-bit max (0x%06X)", i, v, maxValue)
 		}
 	}
 }
@@ -45,7 +45,7 @@ func TestScrambleTableDistribution(t *testing.T) {
 	// Check that bit distribution is roughly uniform (each bit set ~50% of the time)
 	bitCounts := make([]int, 24)
 
-	for _, v := range AMBE_SCRAMBLE_TABLE {
+	for _, v := range ambeScrambleTable {
 		for bit := 0; bit < 24; bit++ {
 			if v&(1<<bit) != 0 {
 				bitCounts[bit]++
@@ -53,7 +53,7 @@ func TestScrambleTableDistribution(t *testing.T) {
 		}
 	}
 
-	tableLen := len(AMBE_SCRAMBLE_TABLE)
+	tableLen := len(ambeScrambleTable)
 	expectedCount := tableLen / 2
 	tolerance := tableLen / 10 // Allow 10% deviation
 
@@ -67,9 +67,9 @@ func TestScrambleTableDistribution(t *testing.T) {
 
 // BenchmarkScrambleTableAccess measures random access performance
 func BenchmarkScrambleTableAccess(b *testing.B) {
-	tableLen := len(AMBE_SCRAMBLE_TABLE)
+	tableLen := len(ambeScrambleTable)
 	for i := 0; i < b.N; i++ {
-		_ = AMBE_SCRAMBLE_TABLE[i%tableLen]
+		_ = ambeScrambleTable[i%tableLen]
 	}
 }
 
@@ -83,7 +83,7 @@ func BenchmarkScrambleXOR(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for j := 0; j < len(data); j++ {
-			scrambleVal := AMBE_SCRAMBLE_TABLE[j%len(AMBE_SCRAMBLE_TABLE)]
+			scrambleVal := ambeScrambleTable[j%len(ambeScrambleTable)]
 			data[j] ^= byte(scrambleVal)
 		}
 	}
