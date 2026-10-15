@@ -89,6 +89,30 @@ func Unpack(data []byte) []Bit {
 	return bits
 }
 
+// Unpack32 returns the 32 bits of 4 bytes, such as an embedded signalling
+// field, as Unpack does.
+func Unpack32(data [4]byte) [32]Bit {
+	var bits [32]Bit
+	for i := range 32 {
+		if (data[i/8]>>(7-(i%8)))&1 != 0 {
+			bits[i] = 1
+		}
+	}
+	return bits
+}
+
+// Pack32 packs 32 bits, such as an embedded signalling field, into 4 bytes,
+// as Pack does.
+func Pack32(bits [32]Bit) [4]byte {
+	var data [4]byte
+	for i := range 32 {
+		if bits[i]&1 == 1 {
+			data[i/8] |= 1 << (7 - (i % 8))
+		}
+	}
+	return data
+}
+
 // Unpack96 returns the 96 bits of a 12-byte BPTC(196,96) payload, as Unpack
 // does.
 func Unpack96(data [12]byte) [96]Bit {

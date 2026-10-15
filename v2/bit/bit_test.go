@@ -88,6 +88,24 @@ func TestPack264Unpack264(t *testing.T) {
 	}
 }
 
+func TestPack32Unpack32(t *testing.T) {
+	data := [4]byte{0xA5, 0x3C, 0x01, 0xFE}
+	bits := Unpack32(data)
+	if !slices.Equal(bits[:], Unpack(data[:])) {
+		t.Error("Unpack32 differs from Unpack")
+	}
+	if got := Pack32(bits); got != data {
+		t.Errorf("Pack32(Unpack32) = %x, want %x", got, data)
+	}
+	var raw [32]Bit
+	for i := range raw {
+		raw[i] = bits[i] | 0x30
+	}
+	if Pack32(raw) != data {
+		t.Error("Pack32 used more than the low bit")
+	}
+}
+
 func TestPack96Unpack96(t *testing.T) {
 	var data [12]byte
 	for i := range data {
