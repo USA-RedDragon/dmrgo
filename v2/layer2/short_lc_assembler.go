@@ -3,6 +3,7 @@ package layer2
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -86,13 +87,51 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, error) {
 	if a.count != 4 {
 		return pdu.ShortLC{}, ErrShortLCIncomplete
 	}
-	defer a.Reset()
-
-	info, bptcResult := bptc.DecodeCACH(a.fragments)
-
-	var slcBits [36]bit.Bit
-	copy(slcBits[:], info[:])
-	slc := pdu.DecodeShortLC(slcBits)
+	bits, bptcResult := a.decode()
+	slc := pdu.DecodeShortLC(bits)
 	slc.FEC = bptcResult.Combine(slc.FEC)
 	return slc, nil
+}
+
+// CompleteInto decodes the Short LC into dst as Complete does, with the
+// payload struct of dst in p as pdu.DecodeShortLCInto places it. It returns
+// ErrShortLCIncomplete, and leaves dst as it is, if the assembler does not
+// hold a full sequence. It does not allocate.
+func (a *ShortLCAssembler) CompleteInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads) error {
+	if a.count != 4 {
+		return ErrShortLCIncomplete
+	}
+	bits, bptcResult := a.decode()
+	pdu.DecodeShortLCInto(dst, p, bits)
+	dst.FEC = bptcResult.Combine(dst.FEC)
+	return nil
+}
+
+// AddInto adds a decoded CACH as Add does, and decodes a completed Short LC
+// into dst, with its payload struct in p, as CompleteInto does. It does not
+// allocate.
+func (a *ShortLCAssembler) AddInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads, c CACH) (done bool, err error) {
+	if c.TACT.FEC.Uncorrectable || c.TACT.LCSS == enums.LCSSSingleFragment {
+		n := a.count
+		a.Reset()
+		if n > 0 {
+			return false, ErrShortLCSequence
+		}
+		return false, nil
+	}
+	if done, err = a.AddFragment(c.TACT.LCSS, c.Payload); err != nil || !done {
+		return false, err
+	}
+	err = a.CompleteInto(dst, p)
+	return err == nil, err
+}
+
+// decode returns the 36 Short LC bits of the 4 fragments and the BPTC
+// result, and resets the assembler.
+func (a *ShortLCAssembler) decode() ([36]bit.Bit, fec.Result) {
+	defer a.Reset()
+	info, res := bptc.DecodeCACH(a.fragments)
+	var bits [36]bit.Bit
+	copy(bits[:], info[:])
+	return bits, res
 }

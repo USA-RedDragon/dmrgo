@@ -504,6 +504,19 @@ func signallingEntries(t testing.TB) []entry {
 			slcOut, done, err = s.Add(c)
 		}
 	}
+	var (
+		flcDst  pdu.FullLinkControl
+		flcP    pdu.FullLinkControlPayloads
+		slcDst  pdu.ShortLC
+		slcP    pdu.ShortLCPayloads
+		sInto   layer2.ShortLCAssembler
+		sEmpty  layer2.ShortLCAssembler
+		intoCAC = func(cs *[4]layer2.CACH) {
+			for _, c := range cs {
+				done, err = sInto.AddInto(&slcDst, &slcP, c)
+			}
+		}
+	)
 	return []entry{
 		{"layer2.EncodeEmbeddedLC", "parrot capture", 0, func() { frags = layer2.EncodeEmbeddedLC(lc9) }},
 		{"layer2.DecodeEmbeddedLC", "parrot capture", 0, func() { lcOut, res = layer2.DecodeEmbeddedLC(frags, false) }},
@@ -516,6 +529,7 @@ func signallingEntries(t testing.TB) []entry {
 		{"layer2.EmbeddedLCAssembler.Reset", "strict", 0, func() { a.Strict = true; a.Reset() }},
 		{"layer2.EncodeEmbeddedFullLinkControl", "parrot capture", 0, func() { fragOut, err = layer2.EncodeEmbeddedFullLinkControl(&flc) }},
 		{"layer2.DecodeEmbeddedFullLinkControl", "parrot capture", 1, func() { flcOut = layer2.DecodeEmbeddedFullLinkControl(frags, false) }},
+		{"layer2.DecodeEmbeddedFullLinkControlInto", "parrot capture", 0, func() { layer2.DecodeEmbeddedFullLinkControlInto(&flcDst, &flcP, frags, false) }},
 		{"layer2.DecodeEmbeddedRC", "built", 0, func() { rcOut = layer2.DecodeEmbeddedRC(rcBits) }},
 		{"layer2.EncodeEmbeddedRC", "built", 0, func() { rc32, err = layer2.EncodeEmbeddedRC(&rc) }},
 		{"layer2.IdleMessageInfo", "table", 0, func() { info = layer2.IdleMessageInfo() }},
@@ -531,6 +545,8 @@ func signallingEntries(t testing.TB) []entry {
 		{"layer2.ShortLCAssembler.Add", "raw SLCO", 0, func() { addCACHs(&rawCACHs) }},
 		{"layer2.ShortLCAssembler.AddFragment", "first", 0, func() { done, err = s.AddFragment(enums.LCSSFirstFragment, cach.Payload) }},
 		{"layer2.ShortLCAssembler.Complete", "incomplete", 0, func() { slcOut, err = s.Complete() }},
+		{"layer2.ShortLCAssembler.AddInto", "activity update", 0, func() { intoCAC(&cachs) }},
+		{"layer2.ShortLCAssembler.CompleteInto", "incomplete", 0, func() { err = sEmpty.CompleteInto(&slcDst, &slcP) }},
 		{"layer2.ShortLCAssembler.Count", "after first", 0, func() { n = s.Count() }},
 		{"layer2.ShortLCAssembler.Reset", "after first", 0, func() { s.Reset() }},
 		{"layer2.SyncSource.SyncPatterns", "MS", 0, func() { _, _, ok = layer2.SyncSourceMS.SyncPatterns() }},
@@ -562,14 +578,17 @@ func voiceEntries(t testing.TB) []entry {
 	buf := make([]layer2.RawBurst, 0, layer2.VoiceBurstsPerSuperframe+1)
 
 	var (
-		rx    layer2.VoiceReceiver
-		vt    *layer2.VoiceTransmitter
-		out   []layer2.RawBurst
-		raw   layer2.RawBurst
-		err   error
-		flc   pdu.FullLinkControl
-		ok    bool
-		rcErr error
+		rx     layer2.VoiceReceiver
+		rxInto layer2.VoiceReceiver
+		flcDst pdu.FullLinkControl
+		flcP   pdu.FullLinkControlPayloads
+		vt     *layer2.VoiceTransmitter
+		out    []layer2.RawBurst
+		raw    layer2.RawBurst
+		err    error
+		flc    pdu.FullLinkControl
+		ok     bool
+		rcErr  error
 	)
 	_, _, _, _, _, _, _ = vt, out, raw, err, flc, ok, rcErr
 	return []entry{
@@ -591,6 +610,11 @@ func voiceEntries(t testing.TB) []entry {
 		{"layer2.VoiceReceiver.Receive", "parrot capture superframe", 1, func() {
 			for i := range voice {
 				flc, ok, err = rx.Receive(&voice[i])
+			}
+		}},
+		{"layer2.VoiceReceiver.ReceiveInto", "parrot capture superframe", 0, func() {
+			for i := range voice {
+				ok, err = rxInto.ReceiveInto(&flcDst, &flcP, &voice[i])
 			}
 		}},
 		{"layer2.VoiceReceiver.Reset", "strict", 0, func() { rx.Strict = true; rx.Reset() }},

@@ -193,10 +193,24 @@ func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, err
 // The LC has BurstDataType DataTypeVoiceLCHeader, and its FEC field combines
 // the DecodeEmbeddedLC result and the field decode.
 func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkControl {
-	return embeddedFullLinkControl(decodeEmbeddedLCBits(fragmentBits(f), strict))
+	bits, result := decodeEmbeddedLCBits(fragmentBits(f), strict)
+	flc := pdu.DecodeFullLinkControl(embeddedFullLCCodeword(bits), enums.DataTypeVoiceLCHeader)
+	flc.FEC = combineEmbeddedFEC(result, flc.FEC)
+	return flc
 }
 
-func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) pdu.FullLinkControl {
+// DecodeEmbeddedFullLinkControlInto decodes into dst as
+// DecodeEmbeddedFullLinkControl does, with the payload struct of dst in p as
+// pdu.DecodeFullLinkControlInto places it. It does not allocate.
+func DecodeEmbeddedFullLinkControlInto(dst *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, f [4][4]byte, strict bool) {
+	bits, result := decodeEmbeddedLCBits(fragmentBits(f), strict)
+	pdu.DecodeFullLinkControlInto(dst, p, embeddedFullLCCodeword(bits), enums.DataTypeVoiceLCHeader)
+	dst.FEC = combineEmbeddedFEC(result, dst.FEC)
+}
+
+// embeddedFullLCCodeword returns the 96 bits of the masked RS(12,9) voice LC
+// header codeword of the 72 LC bits lc.
+func embeddedFullLCCodeword(lc [72]bit.Bit) [96]bit.Bit {
 	octets := lcOctets(lc)
 	codeword := reedsolomon.Encode(octets)
 	for i := 9; i < 12; i++ {
@@ -204,11 +218,15 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) pdu.FullLinkCont
 	}
 	var data [96]bit.Bit
 	unpackBits(data[:], codeword[:])
-	flc := pdu.DecodeFullLinkControl(data, enums.DataTypeVoiceLCHeader)
-	result.ErrorsCorrected += flc.FEC.ErrorsCorrected
-	result.Uncorrectable = result.Uncorrectable || flc.FEC.Uncorrectable
-	flc.FEC = result
-	return flc
+	return data
+}
+
+// combineEmbeddedFEC returns the embedded LC result with the corrections and
+// failure of the Full LC field decode added.
+func combineEmbeddedFEC(result, field fec.Result) fec.Result {
+	result.ErrorsCorrected += field.ErrorsCorrected
+	result.Uncorrectable = result.Uncorrectable || field.Uncorrectable
+	return result
 }
 
 // fullLCBits returns the 72 LC bits of lc, without RS(12,9) parity.

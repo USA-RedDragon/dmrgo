@@ -1,7 +1,9 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -29,37 +31,62 @@ func (r *VoiceReceiver) Reset() {
 // with ErrEmbeddedLCUncorrectable. It returns ErrEmbeddedLCSequence when the
 // burst discards a partial embedded LC.
 func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err error) {
+	bits, res, done, err := r.receive(b)
+	if !done {
+		return lc, false, err
+	}
+	lc = pdu.DecodeFullLinkControl(embeddedFullLCCodeword(bits), enums.DataTypeVoiceLCHeader)
+	lc.FEC = combineEmbeddedFEC(res, lc.FEC)
+	if lc.FEC.Uncorrectable {
+		return lc, false, ErrEmbeddedLCUncorrectable
+	}
+	return lc, true, nil
+}
+
+// ReceiveInto takes the next burst as Receive does. When burst E completes
+// an embedded LC, ReceiveInto decodes it into dst, with the payload struct
+// of dst in p as pdu.DecodeFullLinkControlInto places it, and returns ok or
+// ErrEmbeddedLCUncorrectable as Receive does. Otherwise it leaves dst as it
+// is. It does not allocate.
+func (r *VoiceReceiver) ReceiveInto(dst *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, b *Burst) (ok bool, err error) {
+	bits, res, done, err := r.receive(b)
+	if !done {
+		return false, err
+	}
+	pdu.DecodeFullLinkControlInto(dst, p, embeddedFullLCCodeword(bits), enums.DataTypeVoiceLCHeader)
+	dst.FEC = combineEmbeddedFEC(res, dst.FEC)
+	if dst.FEC.Uncorrectable {
+		return false, ErrEmbeddedLCUncorrectable
+	}
+	return true, nil
+}
+
+// receive places b in the superframe and returns the 72 LC bits and the
+// embedded LC result when b completes an embedded LC, with done set.
+func (r *VoiceReceiver) receive(b *Burst) (lc [72]bit.Bit, res fec.Result, done bool, err error) {
 	switch {
 	case b.Kind == KindReverseChannel:
 		b.VoiceBurst = enums.VoiceBurstUnknown
-		return lc, false, nil
+		return lc, res, false, nil
 	case b.Kind != KindVoice || !b.HasEmbeddedSignalling() && !isVoiceSync(b.SyncPattern):
 		b.VoiceBurst = enums.VoiceBurstUnknown
 		err = r.lc.discard()
 		r.Reset()
-		return lc, false, err
+		return lc, res, false, err
 	case !b.HasEmbeddedSignalling():
 		b.VoiceBurst = enums.VoiceBurstA
 		r.position = enums.VoiceBurstA
-		return lc, false, r.lc.discard()
+		return lc, res, false, r.lc.discard()
 	}
 
 	r.position = r.embeddedPosition(b)
 	b.VoiceBurst = r.position
 	lcss, ok := r.position.LCSS()
 	if !ok || r.position == enums.VoiceBurstF {
-		return lc, false, r.lc.discard()
+		return lc, res, false, r.lc.discard()
 	}
 	r.lc.Strict = r.Strict
-	bits, res, done, err := r.lc.add(b.EmbeddedSignallingData, lcss)
-	if !done {
-		return lc, false, err
-	}
-	lc = embeddedFullLinkControl(bits, res)
-	if lc.FEC.Uncorrectable {
-		return lc, false, ErrEmbeddedLCUncorrectable
-	}
-	return lc, true, nil
+	return r.lc.add(b.EmbeddedSignallingData, lcss)
 }
 
 func (r *VoiceReceiver) embeddedPosition(b *Burst) enums.VoiceBurstType {
