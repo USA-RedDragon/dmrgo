@@ -30,6 +30,7 @@ func entries(t testing.TB) []entry {
 		enumsEntries(t),
 		fecEntries(t),
 		layer3Entries(t),
+		pduEntries(t),
 	)
 }
 
