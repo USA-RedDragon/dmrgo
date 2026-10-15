@@ -1,16 +1,11 @@
 package layer2
 
 import (
-	"errors"
 	"fmt"
 	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
-
-// ErrColorCodeMismatch is returned, wrapped, by DecodeFromBytesWith when the
-// burst's color code differs from DecodeOptions.ColorCode.
-var ErrColorCodeMismatch = errors.New("color code mismatch")
 
 // DefaultSyncThreshold is the largest Hamming distance, in bits, at which a
 // received 48-bit SYNC field still matches a SYNC pattern. The patterns are

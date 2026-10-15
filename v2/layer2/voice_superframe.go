@@ -16,10 +16,6 @@ const VoiceSlotsPerBurst = 3
 // VoiceBurstsPerSuperframe is the number of voice bursts in a superframe.
 const VoiceBurstsPerSuperframe = 6
 
-// ErrVoiceTerminated is returned by VoiceTransmitter methods called after
-// Terminate.
-var ErrVoiceTerminated = errors.New("voice transmission already terminated")
-
 // SyncSource selects the SYNC patterns of a voice transmission (ETSI TS 102
 // 361-1 Table 9.2).
 type SyncSource int

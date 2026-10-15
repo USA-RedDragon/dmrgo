@@ -1,23 +1,8 @@
 package layer2
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-)
-
-var (
-	// ErrEmbeddedLCSequence is returned by VoiceReceiver.Receive and
-	// EmbeddedLCAssembler.Add when a burst does not continue the partial
-	// embedded LC, which is discarded.
-	ErrEmbeddedLCSequence = errors.New("embedded LC fragment out of sequence")
-	// ErrEmbeddedLCUncorrectable is returned by VoiceReceiver.Receive and
-	// EmbeddedLCAssembler.Add when the embedded LC of bursts B to E fails
-	// its FEC or its checksum. It wraps fec.ErrUncorrectable.
-	ErrEmbeddedLCUncorrectable = fmt.Errorf("embedded LC: %w", fec.ErrUncorrectable)
 )
 
 // VoiceReceiver tracks the superframe position of the voice bursts of one
