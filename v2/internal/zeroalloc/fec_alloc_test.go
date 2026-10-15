@@ -88,7 +88,9 @@ func embeddedLC(info [77]bit.Bit) ([9]byte, uint8) {
 		n += copy(lc[n:], r[:10])
 		cs[row-2] = r[10]
 	}
-	return [9]byte(bit.Pack(lc[:])), uint8(bit.Uint(cs[:]))
+	var out [9]byte
+	bit.AppendPack(out[:0], lc[:])
+	return out, uint8(bit.Uint(cs[:]))
 }
 
 func embeddedLCValid(info [77]bit.Bit) bool {
