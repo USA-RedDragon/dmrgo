@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -49,6 +50,39 @@ func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4]
 		if ready != (i == 3) {
 			t.Fatalf("fragment %d: ready=%v", i, ready)
 		}
+	}
+}
+
+// decodeShortLCFragments adds fragments to a new ShortLCAssembler as the
+// CACHs First, Continuation, Continuation and Last with Add.
+func decodeShortLCFragments(t *testing.T, fragments [4][17]bit.Bit) pdu.ShortLC {
+	t.Helper()
+	var a layer2.ShortLCAssembler
+	for i, f := range fragments {
+		slc, done, err := a.Add(layer2.CACH{TACT: pdu.TACT{LCSS: shortLCSequence[i]}, Payload: f})
+		if err != nil || done != (i == 3) {
+			t.Fatalf("fragment %d: done %t err %v", i, done, err)
+		}
+		if done {
+			return slc
+		}
+	}
+	return pdu.ShortLC{}
+}
+
+func TestShortLCAssembler_AddUncorrectableTACT(t *testing.T) {
+	t.Parallel()
+	var data [24]bit.Bit
+	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
+	var a layer2.ShortLCAssembler
+	if _, _, err := a.Add(layer2.CACH{TACT: pdu.TACT{FEC: fec.Result{Uncorrectable: true}}}); err != nil {
+		t.Fatalf("uncorrectable TACT without a partial Short LC: %v", err)
+	}
+	if _, _, err := a.Add(layer2.CACH{TACT: pdu.TACT{LCSS: enums.LCSSFirstFragment}, Payload: fragments[0]}); err != nil {
+		t.Fatal(err)
+	}
+	if _, done, err := a.Add(layer2.CACH{TACT: pdu.TACT{FEC: fec.Result{Uncorrectable: true}}}); done || !errors.Is(err, layer2.ErrShortLCSequence) || a.Count() != 0 {
+		t.Fatalf("uncorrectable TACT after a fragment: done %t err %v count %d", done, err, a.Count())
 	}
 }
 
@@ -250,12 +284,12 @@ func TestShortLCAssembler_Complete_ActivityUpdate(t *testing.T) {
 	}
 }
 
-func TestShortLCAssembler_DecodeShortLCFromFragments(t *testing.T) {
+func TestShortLCAssembler_Add(t *testing.T) {
 	t.Parallel()
 	var data [24]bit.Bit
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
-	slc := layer2.DecodeShortLCFromFragments(fragments)
+	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -280,7 +314,7 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 	encoded := must(original.Encode())
 	fragments := bptc.EncodeCACH(encoded)
 
-	slc := layer2.DecodeShortLCFromFragments(fragments)
+	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip failed: uncorrectable")
@@ -307,7 +341,7 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	var data [24]bit.Bit
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
-	slc := layer2.DecodeShortLCFromFragments(fragments)
+	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC
 	// The CRC-8 only detects errors, so BitsChecked is the BPTC's 68.
 	expectedBitsChecked := 68

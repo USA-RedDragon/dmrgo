@@ -51,6 +51,26 @@ func (a *ShortLCAssembler) Count() int {
 	return a.count
 }
 
+// Add adds a decoded CACH and returns the Short LC when the CACH completes
+// it, with done set, as AddFragment and Complete do. A CACH whose TACT is
+// uncorrectable has no LCSS, so it discards the partial Short LC; Add then
+// returns ErrShortLCSequence when fragments were discarded.
+func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
+	if c.TACT.FEC.Uncorrectable {
+		n := a.count
+		a.Reset()
+		if n > 0 {
+			return slc, false, ErrShortLCSequence
+		}
+		return slc, false, nil
+	}
+	if done, err = a.AddFragment(c.TACT.LCSS, c.Payload); err != nil || !done {
+		return slc, false, err
+	}
+	slc, err = a.Complete()
+	return slc, err == nil, err
+}
+
 // AddFragment adds a 17-bit CACH signalling payload with the LCSS from the
 // same CACH burst's TACT. A First fragment always starts a new Short LC.
 // Continuation fragments must follow the First or the first Continuation,
@@ -104,16 +124,4 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, error) {
 	slc := pdu.DecodeShortLC(slcBits)
 	slc.FEC = bptcResult.Combine(slc.FEC)
 	return slc, nil
-}
-
-// DecodeShortLCFromFragments is a convenience function that decodes a
-// Short LC PDU directly from 4 × 17-bit CACH signalling payloads, given in
-// the order First, two Continuations, Last. The FEC field is set as
-// Complete sets it.
-func DecodeShortLCFromFragments(fragments [4][CACHPayloadBits]bit.Bit) pdu.ShortLC {
-	var a ShortLCAssembler
-	a.fragments = fragments
-	a.count = len(fragments)
-	slc, _ := a.Complete()
-	return slc
 }

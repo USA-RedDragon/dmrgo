@@ -234,22 +234,19 @@ func cachRoundTrip(asm *layer2.ShortLCAssembler, slc *pdu.ShortLC) (pdu.ShortLC,
 	if err != nil {
 		return pdu.ShortLC{}, err
 	}
+	var got pdu.ShortLC
 	done := false
 	for i, f := range fields {
-		c := layer2.DecodeCACH(layer2.CACHDeinterleave(f))
+		c := layer2.DecodeCACHField(f)
 		if err := c.TACT.FEC.Err(); err != nil {
 			return pdu.ShortLC{}, fmt.Errorf("CACH %d TACT: %w", i, err)
 		}
-		if done, err = asm.AddFragment(c.TACT.LCSS, c.Payload); err != nil {
+		if got, done, err = asm.Add(c); err != nil {
 			return pdu.ShortLC{}, err
 		}
 	}
 	if !done {
 		return pdu.ShortLC{}, errors.New("short LC incomplete after 4 CACH fields")
-	}
-	got, err := asm.Complete()
-	if err != nil {
-		return got, err
 	}
 	if err := got.FEC.Err(); err != nil {
 		return got, fmt.Errorf("short LC %s: %w", got.SLCO, err)

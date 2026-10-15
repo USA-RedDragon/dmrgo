@@ -52,6 +52,13 @@ func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
 	return result
 }
 
+// DecodeCACHField decodes a 24-bit CACH field in transmit order, as it is
+// received, into its TACT and signalling payload: it is DecodeCACH of
+// CACHDeinterleave(onAir).
+func DecodeCACHField(onAir [CACHBits]bit.Bit) CACH {
+	return DecodeCACH(CACHDeinterleave(onAir))
+}
+
 // Encode encodes a CACH struct into a 24-bit field in logical order.
 // Use CACHInterleave to get the bits in transmit order.
 func (c *CACH) Encode() ([CACHBits]bit.Bit, error) {
