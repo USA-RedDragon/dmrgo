@@ -443,6 +443,7 @@ documents:
         title: "Full Link Control (FULL LC) PDU"
         source_files:
           - v2/layer2/pdu/full_link_control.go
+          - v2/layer2/pdu/full_link_control_bytes.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -453,6 +454,9 @@ documents:
               - TestFullLinkControl_ServiceOptions_RoundTrip
               - TestFullLinkControl_Decode_BothDataTypes
               - TestFullLinkControl_AddressRange
+              - TestFullLinkControlFromBytes_Capture
+              - TestFullLinkControlFromBytes_RoundTripsRandom
+              - TestFullLinkControlBytes_IgnoresBurstDataType
 
       - section: "9.1.7"
         title: "Short Link Control (SHORT LC) PDU"
