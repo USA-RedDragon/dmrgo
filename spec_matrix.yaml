@@ -1092,13 +1092,13 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCRCMask_TableB21
-              - TestFullLCCodeword_MatchesTableB18
-              - TestFullLCCodeword_RealCapture
-              - TestTypedLCCodewords
-              - TestFullLCCodeword_RejectsOtherDataTypes
+              - TestLCBytesCodeword_MatchesTableB18
+              - TestLCBytesCodeword_RealCapture
+              - TestFullLinkControlCodeword
+              - TestLCBytesCodeword_RejectsOtherDataTypes
               - TestDecodeFullLCCodeword_CorrectsAndStrictRejects
-              - TestSealBlock_MatchesGeneratedEncoders
-              - TestSealBlock_RoundTripAndRejects
+              - TestSeal_MatchesGeneratedEncoders
+              - TestSeal_RoundTripAndRejects
               - TestPIHeader_CRCMask
               - TestRate34Data_Confirmed_CRC9Layout
               - TestRate1Data_Confirmed_CRC9Layout

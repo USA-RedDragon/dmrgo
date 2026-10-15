@@ -120,9 +120,8 @@ func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 
 // SetBPTCPayload BPTC(196,96) encodes p into the 196 information bits. The
 // slot type and the SYNC stay as they are. p must already carry its CRC or
-// RS(12,9) parity with the Data Type CRC Mask (see pdu.SealBlock and
-// pdu.FullLCCodeword). The reserved bits R(0) to R(3) are zero; see
-// SetBPTCReserved.
+// RS(12,9) parity with the Data Type CRC Mask (see pdu.Seal). The reserved
+// bits R(0) to R(3) are zero; see SetBPTCReserved.
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 	r.setInfo(bptc.Encode196(bit.Unpack96(p)))
 }
@@ -298,10 +297,9 @@ func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 // BuildDataBurst returns a data burst that carries the BPTC(196,96) payload
 // p with a slot type of color code cc and data type dt and the data SYNC
 // pattern of src. p must already carry its CRC or RS(12,9) parity with the
-// Data Type CRC Mask of dt (see pdu.SealBlock and pdu.FullLCCodeword). It
-// returns an error when dt is not BPTC coded (Rate 3/4, Rate 1 and the
-// reserved data types; see BuildRate34DataBurst and BuildRate1DataBurst) or
-// src is unknown.
+// Data Type CRC Mask of dt (see pdu.Seal). It returns an error when dt is
+// not BPTC coded (Rate 3/4, Rate 1 and the reserved data types; see
+// BuildRate34DataBurst and BuildRate1DataBurst) or src is unknown.
 func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if !dt.IsBPTC() {
 		return RawBurst{}, fmt.Errorf("data type %s is not BPTC(196,96) coded", dt.String())

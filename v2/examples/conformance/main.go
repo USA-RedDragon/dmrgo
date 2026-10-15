@@ -139,14 +139,14 @@ func checkSeal(t *tally, i int, dt enums.DataType, p [12]byte) {
 			t.failf(i, "%v RS(12,9) parity fails", dt)
 			return
 		}
-		want, err = pdu.FullLCCodeword([9]byte(p[:9]), dt)
+		want, err = pdu.LCBytes(p[:9]).Codeword(dt)
 	case 16:
 		if !pdu.BlockCRCOK(p, dt) {
 			t.failf(i, "%v CRC-CCITT fails", dt)
 			return
 		}
 		want = p
-		err = pdu.SealBlock(&want, dt)
+		err = pdu.Seal(&want, dt)
 	default:
 		return
 	}

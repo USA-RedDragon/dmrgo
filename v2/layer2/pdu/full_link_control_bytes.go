@@ -13,7 +13,8 @@ import (
 // zero values; set BurstDataType before Encode. It returns an error when
 // the decoded LC does not encode back to lc, so that no bit of lc is lost.
 func FullLinkControlFromBytes(lc [9]byte) (FullLinkControl, error) {
-	f := DecodeFullLinkControl(bit.Unpack96(VoiceLCHeaderCodeword(lc)), enums.DataTypeVoiceLCHeader)
+	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
+	f := DecodeFullLinkControl(bit.Unpack96(cw), enums.DataTypeVoiceLCHeader)
 	f.BurstDataType = 0
 	f.FEC = fec.Result{}
 	got, err := f.Bytes()
@@ -24,6 +25,18 @@ func FullLinkControlFromBytes(lc [9]byte) (FullLinkControl, error) {
 		return FullLinkControl{}, fmt.Errorf("full LC %x encodes back as %x", lc, got)
 	}
 	return f, nil
+}
+
+// Codeword returns the 12-octet on-air codeword of f in a burst of
+// f.BurstDataType, as LCBytes.Codeword gives it. It returns the errors that
+// Encode returns for the fields, and an error unless BurstDataType is
+// DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
+func (f *FullLinkControl) Codeword() ([12]byte, error) {
+	lc, err := f.Bytes()
+	if err != nil {
+		return [12]byte{}, err
+	}
+	return LCBytes(lc).Codeword(f.BurstDataType)
 }
 
 // Bytes returns the 72 LC bits of f packed most significant bit first,

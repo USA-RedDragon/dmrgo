@@ -32,7 +32,7 @@ func TestLCBytes_Capture(t *testing.T) {
 	if tgt, src, _ := f.Addresses(); f.GroupVoice == nil || tgt != 91 || src != 3100999 {
 		t.Fatalf("decoded %s", f.String())
 	}
-	cw := pdu.VoiceLCHeaderCodeword(l)
+	cw := must(l.Codeword(enums.DataTypeVoiceLCHeader))
 	if !pdu.FullLCParityOK(cw, enums.DataTypeVoiceLCHeader) {
 		t.Fatal("codeword of the edited LC fails its parity")
 	}
@@ -41,7 +41,7 @@ func TestLCBytes_Capture(t *testing.T) {
 	if back := pdu.LCBytes([9]byte(cw[:9])); !back.SetGroup(false) || !back.SetAddresses(9990, 3191868) || back != orig {
 		t.Fatalf("edit back gives %x", back)
 	}
-	vlc, tlc := pdu.VoiceLCHeaderCodeword(orig), pdu.TerminatorLCCodeword(orig)
+	vlc, tlc := must(orig.Codeword(enums.DataTypeVoiceLCHeader)), must(orig.Codeword(enums.DataTypeTerminatorWithLC))
 	if hex.EncodeToString(vlc[9:]) != "5dcfc1" || hex.EncodeToString(tlc[9:]) != "52c0ce" {
 		t.Fatalf("parity %x %x", vlc[9:], tlc[9:])
 	}
