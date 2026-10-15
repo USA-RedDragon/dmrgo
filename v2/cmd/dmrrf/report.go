@@ -109,7 +109,7 @@ func (p *Reporter) Burst(r Received) {
 	ts := "-"
 	key := 0
 	if r.BS && r.HasCACH {
-		c := layer2.DecodeCACH(layer2.CACHDeinterleave(r.CACH))
+		c := layer2.DecodeCACHField(r.CACH)
 		if !p.ref {
 			p.t0, p.ref = r.Seconds, true
 		}
@@ -123,12 +123,8 @@ func (p *Reporter) Burst(r Received) {
 		ts = fmt.Sprint(key)
 		p.printf("cach %s at=%d tc=%d lcss=%s fec=%s payload=%s", t, b01(c.TACT.AccessType), b01(c.TACT.TDMAChannel),
 			lcssString(c.TACT.LCSS), fecString(c.TACT.FEC), bitString(c.Payload[:]))
-		if c.TACT.FEC.Uncorrectable {
-			p.slc.Reset()
-		} else if done, err := p.slc.AddFragment(c.TACT.LCSS, c.Payload); err == nil && done {
-			if s, err := p.slc.Complete(); err == nil {
-				p.printf("slc %s %s fec=%s", t, slcFields(&s), fecString(s.FEC))
-			}
+		if s, done, _ := p.slc.Add(c); done {
+			p.printf("slc %s %s fec=%s", t, slcFields(&s), fecString(s.FEC))
 		}
 	}
 	t += " ts=" + ts
