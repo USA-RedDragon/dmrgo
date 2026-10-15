@@ -86,6 +86,29 @@ func TestPackUnpack(t *testing.T) {
 	}
 }
 
+func TestAppendPackAppendUnpack(t *testing.T) {
+	t.Parallel()
+
+	dst := make([]byte, 1, 4)
+	dst[0] = 0x77
+	spare := dst[:cap(dst)]
+	spare[1], spare[2] = 0xFF, 0xFF
+	got := AppendPack(dst, []Bit{1, 0, 1, 0, 0, 1, 0, 1, 1})
+	if want := []byte{0x77, 0xA5, 0x80}; !slices.Equal(got, want) {
+		t.Errorf("AppendPack = %x, want %x", got, want)
+	}
+	if &got[0] != &dst[0] {
+		t.Error("AppendPack allocated with spare capacity")
+	}
+	bits := AppendUnpack([]Bit{1}, []byte{0x81})
+	if want := []Bit{1, 1, 0, 0, 0, 0, 0, 0, 1}; !slices.Equal(bits, want) {
+		t.Errorf("AppendUnpack = %v, want %v", bits, want)
+	}
+	if got := AppendPack(nil, nil); len(got) != 0 {
+		t.Errorf("AppendPack(nil, nil) = %x", got)
+	}
+}
+
 func TestPack264Unpack264(t *testing.T) {
 	t.Parallel()
 
