@@ -111,10 +111,8 @@ func receive(captured []layer2.RawBurst) (rxStats, error) {
 		switch b.Kind {
 		case layer2.KindData:
 			s.data++
-			raw := p
-			payload, _ := raw.BPTCPayload()
 			s.checked++
-			if layer2.MMDVMHostAccepts(b.SlotType.DataType, payload) {
+			if _, ok := p.MMDVMHostPayload(b.SlotType.DataType); ok {
 				s.accepted++
 			}
 			if f, ok := b.Data.(*pdu.FullLinkControl); ok && b.SlotType.DataType == enums.DataTypeVoiceLCHeader {
