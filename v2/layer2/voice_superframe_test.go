@@ -33,7 +33,7 @@ func silenceSlot() [72]bit.Bit {
 func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 	gv := &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868}
 	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FeatureSetID: fid}
-	if fid == enums.StandardizedFID {
+	if fid == enums.FIDStandardized {
 		lc.GroupVoice = gv
 	} else {
 		lc.RawPayload = must(pdu.EncodeFLCGroupVoice(gv))
@@ -99,8 +99,8 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 	if !b.HasEmbeddedSignalling || emb.FEC.HasErrors() || emb.ColorCode != cc || emb.PreemptionAndPowerControlIndicator {
 		t.Fatalf("burst %d: %s", i, b.String())
 	}
-	wantLCSS := []enums.LCSS{0, enums.FirstFragmentLC, enums.ContinuationFragmentLCorCSBK,
-		enums.ContinuationFragmentLCorCSBK, enums.LastFragmentLCorCSBK, enums.SingleFragmentLCorCSBK}[pos]
+	wantLCSS := []enums.LCSS{0, enums.LCSSFirstFragment, enums.LCSSContinuationFragment,
+		enums.LCSSContinuationFragment, enums.LCSSLastFragment, enums.LCSSSingleFragment}[pos]
 	if emb.LCSS != wantLCSS {
 		t.Errorf("burst %d: LCSS %s, want %s", i, emb.LCSS.String(), wantLCSS.String())
 	}
@@ -116,7 +116,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 	const cc = 5
 	sources := []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2}
 	for _, source := range sources {
-		for _, fid := range []enums.FeatureSetID{enums.StandardizedFID, enums.FeatureSetID(0xC2)} {
+		for _, fid := range []enums.FeatureSetID{enums.FIDStandardized, enums.FeatureSetID(0xC2)} {
 			t.Run(fmt.Sprintf("source%d/FID%#x", source, int(fid)), func(t *testing.T) {
 				voiceSync, dataSync, ok := source.SyncPatterns()
 				if !ok {
@@ -172,7 +172,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 }
 
 func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
-	lc := groupLC(enums.StandardizedFID)
+	lc := groupLC(enums.FIDStandardized)
 	frames := make([][49]bit.Bit, 3)
 	slots := make([][72]bit.Bit, 3)
 	for i := range frames {
@@ -197,7 +197,7 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 }
 
 func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
-	lc := groupLC(enums.StandardizedFID)
+	lc := groupLC(enums.FIDStandardized)
 	tx := must(layer2.NewVoiceTransmitter(lc, 2, layer2.SyncSourceBS, silenceSlot()))
 	if err := tx.SetReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}); err != nil {
 		t.Fatal(err)
@@ -208,7 +208,7 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 	}
 	f := must(layer2.NewBurstFromBytes(bursts[5]))
 	emb := f.EmbeddedSignalling
-	if !f.HasReverseChannel || !emb.PreemptionAndPowerControlIndicator || emb.LCSS != enums.SingleFragmentLCorCSBK || emb.ColorCode != 2 {
+	if !f.HasReverseChannel || !emb.PreemptionAndPowerControlIndicator || emb.LCSS != enums.LCSSSingleFragment || emb.ColorCode != 2 {
 		t.Fatalf("first burst F: %s", f.String())
 	}
 	if f.ReverseChannel.RCCommand != enums.RCCeaseTransmissionCommand || f.FEC.RC.HasErrors() {
@@ -231,14 +231,14 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 }
 
 func TestVoiceTransmitter_Terminate(t *testing.T) {
-	lc := groupLC(enums.StandardizedFID)
+	lc := groupLC(enums.FIDStandardized)
 
 	tx := must(layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceMS, silenceSlot()))
 	tail := must(tx.Terminate())
 	if len(tail) != 1 {
 		t.Fatalf("empty transmission: %d bursts, want the terminator alone", len(tail))
 	}
-	checkLCBurst(t, tail[0], lc, enums.DataTypeTerminatorWithLC, 1, enums.MsSourcedData)
+	checkLCBurst(t, tail[0], lc, enums.DataTypeTerminatorWithLC, 1, enums.SyncMSSourcedData)
 	if _, err := tx.Terminate(); !errors.Is(err, layer2.ErrVoiceTerminated) {
 		t.Errorf("second Terminate: %v", err)
 	}
@@ -260,7 +260,7 @@ func TestVoiceTransmitter_Terminate(t *testing.T) {
 }
 
 func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
-	lc := groupLC(enums.StandardizedFID)
+	lc := groupLC(enums.FIDStandardized)
 	if _, err := layer2.NewVoiceTransmitter(lc, 16, layer2.SyncSourceBS, silenceSlot()); err == nil {
 		t.Error("color code 16 accepted")
 	}

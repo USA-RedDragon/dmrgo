@@ -29,7 +29,7 @@ func TestCSBK_TierIII_OpcodeString(t *testing.T) {
 		{pdu.CSBKMove, "C_MOVE PDU"},
 		{pdu.CSBKClear, "P_CLEAR PDU"},
 		{pdu.CSBKProtect, "P_PROTECT PDU"},
-		{pdu.CSBKAhoy, "C_AHOY PDU"},
+		{pdu.CSBKAhoy, "C_AHOY/P_AHOY PDU"},
 		{pdu.CSBKAckOutbound, "C_ACKD PDU"},
 		{pdu.CSBKAckInbound, "C_ACKU PDU"},
 		{pdu.CSBKAckOutboundPayload, "P_ACKD PDU"},

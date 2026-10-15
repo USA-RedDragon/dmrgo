@@ -16,7 +16,7 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 		DataType:     enums.DataTypeVoiceLCHeader,
 		ProtectFlag:  false,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:         false,
@@ -61,7 +61,7 @@ func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 		DataType:     enums.DataTypeVoiceLCHeader,
 		ProtectFlag:  true,
 		FLCO:         enums.FLCOUnitToUnitVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		UnitToUnit: &pdu.FLCUnitToUnit{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:         true,
@@ -110,7 +110,7 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 		DataType:     enums.DataTypeVoiceLCHeader,
 		ProtectFlag:  false,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:   false,
@@ -133,7 +133,7 @@ func TestFullLinkControl_String(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  9990,
 			SourceAddress: 3120101,
@@ -162,7 +162,7 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: so,
 			GroupAddress:   1,
@@ -200,7 +200,7 @@ func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  100,
 			SourceAddress: 200,
@@ -234,7 +234,7 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 			flc := &pdu.FullLinkControl{
 				DataType:     enums.DataTypeVoiceLCHeader,
 				FLCO:         enums.FLCOGroupVoiceChannelUser,
-				FeatureSetID: enums.StandardizedFID,
+				FeatureSetID: enums.FIDStandardized,
 				GroupVoice: &pdu.FLCGroupVoice{
 					GroupAddress:  tt.groupAddr,
 					SourceAddress: tt.sourceAddr,
@@ -281,7 +281,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 				DataType:     enums.DataTypeVoiceLCHeader,
 				ProtectFlag:  false,
 				FLCO:         flco,
-				FeatureSetID: enums.StandardizedFID,
+				FeatureSetID: enums.FIDStandardized,
 				TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
 					TalkerAliasData: aliasData,
 				},
@@ -313,7 +313,7 @@ func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOTalkerAliasBlock1,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
 			TalkerAliasData: aliasData,
 		},
@@ -355,7 +355,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				DataType:     enums.DataTypeVoiceLCHeader,
 				ProtectFlag:  false,
 				FLCO:         enums.FLCOTalkerAliasHeader,
-				FeatureSetID: enums.StandardizedFID,
+				FeatureSetID: enums.FIDStandardized,
 				TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 					TalkerAliasDataLength: tt.dataLength,
 					TalkerAliasDataMSB:    tt.msb,
@@ -390,7 +390,7 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 		DataType:     enums.DataTypeVoiceLCHeader,
 		ProtectFlag:  false,
 		FLCO:         enums.FLCOTerminatorDataLinkControl,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		TerminatorDataLinkControl: &pdu.FLCTerminatorDataLinkControl{
 			LLIDDestination:    1234567,
 			LLIDSource:         7654321,

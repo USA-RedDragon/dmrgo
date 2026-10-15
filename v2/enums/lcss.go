@@ -4,21 +4,21 @@ package enums
 type LCSS uint8
 
 const (
-	SingleFragmentLCorCSBK LCSS = iota
-	FirstFragmentLC
-	LastFragmentLCorCSBK
-	ContinuationFragmentLCorCSBK
+	LCSSSingleFragment LCSS = iota
+	LCSSFirstFragment
+	LCSSLastFragment
+	LCSSContinuationFragment
 )
 
 func (lcss LCSS) String() string {
 	switch lcss {
-	case SingleFragmentLCorCSBK:
-		return "Single fragment LC or CSBK"
-	case FirstFragmentLC:
+	case LCSSSingleFragment:
+		return "Single fragment LC or first fragment CSBK"
+	case LCSSFirstFragment:
 		return "First fragment LC"
-	case LastFragmentLCorCSBK:
+	case LCSSLastFragment:
 		return "Last fragment LC or CSBK"
-	case ContinuationFragmentLCorCSBK:
+	case LCSSContinuationFragment:
 		return "Continuation fragment LC or CSBK"
 	}
 	return unknownName

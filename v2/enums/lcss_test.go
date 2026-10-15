@@ -7,10 +7,10 @@ func TestLCSSString(t *testing.T) {
 		lcss     LCSS
 		expected string
 	}{
-		{SingleFragmentLCorCSBK, "Single fragment LC or CSBK"},
-		{FirstFragmentLC, "First fragment LC"},
-		{LastFragmentLCorCSBK, "Last fragment LC or CSBK"},
-		{ContinuationFragmentLCorCSBK, "Continuation fragment LC or CSBK"},
+		{LCSSSingleFragment, "Single fragment LC or first fragment CSBK"},
+		{LCSSFirstFragment, "First fragment LC"},
+		{LCSSLastFragment, "Last fragment LC or CSBK"},
+		{LCSSContinuationFragment, "Continuation fragment LC or CSBK"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
@@ -34,10 +34,10 @@ func TestLCSS_Cast(t *testing.T) {
 		input    int
 		expected LCSS
 	}{
-		{0, SingleFragmentLCorCSBK},
-		{1, FirstFragmentLC},
-		{2, LastFragmentLCorCSBK},
-		{3, ContinuationFragmentLCorCSBK},
+		{0, LCSSSingleFragment},
+		{1, LCSSFirstFragment},
+		{2, LCSSLastFragment},
+		{3, LCSSContinuationFragment},
 	}
 	for _, tt := range tests {
 		got := LCSS(tt.input)

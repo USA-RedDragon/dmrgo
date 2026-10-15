@@ -12,7 +12,7 @@ import (
 
 func dataBurst(dt enums.DataType, d layer2.Data) layer2.Burst {
 	return layer2.Burst{
-		SyncPattern: enums.BsSourcedData,
+		SyncPattern: enums.SyncBSSourcedData,
 		IsData:      true,
 		HasSlotType: true,
 		SlotType:    pdu.SlotType{ColorCode: 1, DataType: dt},
@@ -32,7 +32,7 @@ func reencode(t *testing.T, b *layer2.Burst) *layer2.Burst {
 func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
 		t.Run(dt.String(), func(t *testing.T) {
-			lc := groupLC(enums.StandardizedFID)
+			lc := groupLC(enums.FIDStandardized)
 			lc.DataType = dt
 			lcBits := must(pdu.EncodeFullLinkControl(&lc))
 			var lcBytes [12]byte
@@ -60,7 +60,7 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 }
 
 func TestBurstEncode_HandBuiltData(t *testing.T) {
-	lc := groupLC(enums.StandardizedFID)
+	lc := groupLC(enums.FIDStandardized)
 	csbk := &pdu.CSBK{
 		CSBKOpcode:  pdu.CSBKPreamblePDU,
 		PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2},

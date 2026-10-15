@@ -65,7 +65,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 	frame := [33]byte(raw)
 
 	def := must(layer2.NewBurstFromBytes(frame))
-	if def.SyncPattern != enums.MsSourcedRcSync || def.FEC.Voice.BitsChecked != 0 {
+	if def.SyncPattern != enums.SyncMSSourcedRC || def.FEC.Voice.BitsChecked != 0 {
 		t.Fatalf("DecodeFromBytes no longer takes this burst as RC: %s", def.String())
 	}
 
@@ -74,7 +74,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 	if err := b.DecodeFromBytesWith(frame, opts); err != nil {
 		t.Fatal(err)
 	}
-	if b.IsData || b.VoiceBurst != enums.VoiceBurstD || !b.HasEmbeddedSignalling || b.SyncPattern != enums.EmbeddedSignallingPattern {
+	if b.IsData || b.VoiceBurst != enums.VoiceBurstD || !b.HasEmbeddedSignalling || b.SyncPattern != enums.SyncEmbeddedSignalling {
 		t.Fatalf("not decoded as voice burst D: %s", b.String())
 	}
 	if b.FEC.Voice.BitsChecked == 0 || b.FEC.Voice.ErrorsCorrected != 0 || b.FEC.Voice.Uncorrectable {
@@ -114,7 +114,7 @@ func TestDecodeFromBytesWith_SyncThreshold(t *testing.T) {
 		if err := b.DecodeFromBytesWith(one, layer2.DecodeOptions{SyncThreshold: -1}); err != nil {
 			t.Fatal(err)
 		}
-		if b.IsData || b.SyncPattern != enums.EmbeddedSignallingPattern || b.SyncDistance != 1 {
+		if b.IsData || b.SyncPattern != enums.SyncEmbeddedSignalling || b.SyncDistance != 1 {
 			t.Fatalf("exact match accepted a SYNC 1 bit off: %s", b.String())
 		}
 	}
@@ -192,14 +192,14 @@ func TestDecodeFromBytesWith_KnownVoiceA(t *testing.T) {
 
 func TestDecodeFromBytesWith_KnownReverseChannel(t *testing.T) {
 	frame := flipSync(buildStandaloneRCBurst(7, enums.RCCeaseTransmissionRequest), 6)
-	if b, _ := layer2.NewBurstFromBytes(frame); b.SyncPattern == enums.MsSourcedRcSync {
+	if b, _ := layer2.NewBurstFromBytes(frame); b.SyncPattern == enums.SyncMSSourcedRC {
 		t.Fatal("default decode matched a SYNC 6 bits off")
 	}
 	var b layer2.Burst
 	if err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{Frame: layer2.FrameType{Kind: layer2.FrameKindReverseChannel}}); err != nil {
 		t.Fatal(err)
 	}
-	if b.SyncPattern != enums.MsSourcedRcSync || b.SyncDistance != 6 || !b.HasReverseChannel || b.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest {
+	if b.SyncPattern != enums.SyncMSSourcedRC || b.SyncDistance != 6 || !b.HasReverseChannel || b.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest {
 		t.Fatalf("RC: %s", b.String())
 	}
 }

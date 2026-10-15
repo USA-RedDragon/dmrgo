@@ -36,14 +36,14 @@ func testPayload64() [64]bit.Bit {
 // manufacturer FID must not be decoded with the standard layouts.
 func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	payload := testPayload64()
-	infoBits := buildCSBKBitsFID(byte(pdu.CSBKPrivateVoiceGrant), byte(enums.MotorolaLtd), payload)
+	infoBits := buildCSBKBitsFID(byte(pdu.CSBKPrivateVoiceGrant), byte(enums.FIDMotorola), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.FID != byte(enums.MotorolaLtd) {
-		t.Errorf("FID = %#x, want %#x", csbk.FID, byte(enums.MotorolaLtd))
+	if csbk.FID != byte(enums.FIDMotorola) {
+		t.Errorf("FID = %#x, want %#x", csbk.FID, byte(enums.FIDMotorola))
 	}
 	if csbk.PrivateVoiceGrantPDU != nil {
 		t.Error("PrivateVoiceGrantPDU should be nil for a manufacturer FID")
@@ -93,7 +93,7 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	original := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.MotorolaLtd,
+		FeatureSetID: enums.FIDMotorola,
 		RawPayload:   payload,
 	}
 	infoBits := must(pdu.EncodeFullLinkControl(original))
@@ -102,8 +102,8 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
-	if decoded.FeatureSetID != enums.MotorolaLtd {
-		t.Errorf("FeatureSetID = %#x, want %#x", decoded.FeatureSetID, enums.MotorolaLtd)
+	if decoded.FeatureSetID != enums.FIDMotorola {
+		t.Errorf("FeatureSetID = %#x, want %#x", decoded.FeatureSetID, enums.FIDMotorola)
 	}
 	if decoded.GroupVoice != nil {
 		t.Error("GroupVoice should be nil for a manufacturer FID")
@@ -139,7 +139,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 		t.Error("RawPayload does not hold the payload")
 	}
 
-	original.FeatureSetID = enums.StandardizedFID
+	original.FeatureSetID = enums.FIDStandardized
 	decoded, _ = pdu.DecodeFullLinkControl(must(pdu.EncodeFullLinkControl(original)), original.DataType)
 	if decoded.FLCO != 0b111111 || decoded.RawPayload != payload {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
@@ -147,7 +147,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 }
 
 func TestFLC_AddressesIgnoreFID(t *testing.T) {
-	for _, fid := range []enums.FeatureSetID{enums.StandardizedFID, enums.MotorolaLtd} {
+	for _, fid := range []enums.FeatureSetID{enums.FIDStandardized, enums.FIDMotorola} {
 		for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
 			lc := reedsolomon.Encode([9]byte{byte(flco), byte(fid), 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C})
 			for i := 9; i < 12; i++ {
@@ -164,13 +164,13 @@ func TestFLC_AddressesIgnoreFID(t *testing.T) {
 			if !ok || target != 9990 || source != 3191868 {
 				t.Errorf("FID %#x FLCO %d: Addresses() = %d, %d, %v, want 9990, 3191868, true", fid, flco, target, source, ok)
 			}
-			if fid == enums.MotorolaLtd && (flc.GroupVoice != nil || flc.UnitToUnit != nil) {
+			if fid == enums.FIDMotorola && (flc.GroupVoice != nil || flc.UnitToUnit != nil) {
 				t.Errorf("FID %#x FLCO %d: variant decoded for a manufacturer FID", fid, flco)
 			}
 		}
 	}
 
-	flc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, FeatureSetID: enums.MotorolaLtd}
+	flc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, FeatureSetID: enums.FIDMotorola}
 	if _, _, ok := flc.Addresses(); ok {
 		t.Error("Addresses() ok for GPS Info")
 	}

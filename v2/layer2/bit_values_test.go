@@ -43,7 +43,7 @@ var bitFuncs = map[string]any{
 	},
 	"layer2.ShortLCAssembler.AddFragment": func(payload [layer2.CACHPayloadBits]bit.Bit) (bool, error) {
 		var a layer2.ShortLCAssembler
-		return a.AddFragment(enums.FirstFragmentLC, payload)
+		return a.AddFragment(enums.LCSSFirstFragment, payload)
 	},
 	"layer2.VoiceTransmitter.AddSlots": func(slots ...[72]bit.Bit) ([][33]byte, error) {
 		return voiceTransmitter().AddSlots(slots...)
@@ -170,7 +170,7 @@ var bitFuncs = map[string]any{
 }
 
 func voiceTransmitter() *layer2.VoiceTransmitter {
-	return must(layer2.NewVoiceTransmitter(groupLC(enums.StandardizedFID), 1, layer2.SyncSourceMS, [72]bit.Bit{}))
+	return must(layer2.NewVoiceTransmitter(groupLC(enums.FIDStandardized), 1, layer2.SyncSourceMS, [72]bit.Bit{}))
 }
 
 // bitFuncNames lists the exported functions and methods of the v2 module

@@ -24,5 +24,8 @@ func (slco SLCO) String() string {
 	case SLCOPSysParms:
 		return "P_SYS_Parms"
 	}
+	if slco >= 0b1100 && slco <= 0b1111 {
+		return fmt.Sprintf("Manufacturer Selectable SLCO(%d)", int(slco))
+	}
 	return fmt.Sprintf("Reserved SLCO(%d)", int(slco))
 }

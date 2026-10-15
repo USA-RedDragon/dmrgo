@@ -28,7 +28,7 @@ func TestCACH_DecodeTACT(t *testing.T) {
 	if cach.TACT.TDMAChannel {
 		t.Error("expected TDMAChannel=false")
 	}
-	if cach.TACT.LCSS != enums.FirstFragmentLC {
+	if cach.TACT.LCSS != enums.LCSSFirstFragment {
 		t.Errorf("expected LCSS=FirstFragmentLC, got %d", cach.TACT.LCSS)
 	}
 }

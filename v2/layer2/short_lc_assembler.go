@@ -62,19 +62,19 @@ func (a *ShortLCAssembler) Count() int {
 // assembler is ready for Complete().
 func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [CACHPayloadBits]bit.Bit) (bool, error) {
 	switch lcss {
-	case enums.FirstFragmentLC:
+	case enums.LCSSFirstFragment:
 		a.Reset()
-	case enums.ContinuationFragmentLCorCSBK:
+	case enums.LCSSContinuationFragment:
 		if a.count != 1 && a.count != 2 {
 			a.Reset()
 			return false, ErrShortLCSequence
 		}
-	case enums.LastFragmentLCorCSBK:
+	case enums.LCSSLastFragment:
 		if a.count != 3 {
 			a.Reset()
 			return false, ErrShortLCSequence
 		}
-	case enums.SingleFragmentLCorCSBK:
+	case enums.LCSSSingleFragment:
 		a.Reset()
 		return false, ErrShortLCSequence
 	default:

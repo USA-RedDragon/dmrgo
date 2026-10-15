@@ -60,7 +60,7 @@ func TestSearch(t *testing.T) {
 	burst := flip(loadVoice(t)[1], 110, 130, 150)
 	stream := append(noise(r, 1001), burstBits(burst)...)
 	m, ok := framer.Search(stream, 0, -1)
-	if !ok || m.Offset != 1001+framer.SyncOffset || m.Pattern != enums.BsSourcedVoice || m.Distance != 3 {
+	if !ok || m.Offset != 1001+framer.SyncOffset || m.Pattern != enums.SyncBSSourcedVoice || m.Distance != 3 {
 		t.Fatalf("got %+v %v", m, ok)
 	}
 	if _, ok := framer.Search(stream, 0, 2); ok {
@@ -107,11 +107,11 @@ func TestFramer_SlotPeriod(t *testing.T) {
 		if err != nil {
 			t.Fatalf("burst %d: %v", i, err)
 		}
-		if (got[i].Sync == enums.EmbeddedSignallingPattern) != dec.HasEmbeddedSignalling {
+		if (got[i].Sync == enums.SyncEmbeddedSignalling) != dec.HasEmbeddedSignalling {
 			t.Errorf("burst %d sync %x", i, got[i].Sync)
 		}
 	}
-	if got[7].Distance != 4 || got[7].Sync != enums.BsSourcedVoice {
+	if got[7].Distance != 4 || got[7].Sync != enums.SyncBSSourcedVoice {
 		t.Errorf("burst 7: %+v", got[7])
 	}
 	more := f.Write(noise(r, 20*framer.SlotPeriod)...)
@@ -177,7 +177,7 @@ func TestFramer_DirectChannel(t *testing.T) {
 	var bits [264]bit.Bit
 	copy(bits[:], bit.UnpackBits(ts2[:]))
 	for i := range framer.SyncBits {
-		bits[framer.SyncOffset+i] = bit.Bit(uint64(enums.Tdma2Data) >> (framer.SyncBits - 1 - i) & 1)
+		bits[framer.SyncOffset+i] = bit.Bit(uint64(enums.SyncTDMA2Data) >> (framer.SyncBits - 1 - i) & 1)
 	}
 	ts2 = bit.PackBits264(bits)
 	stream = append(stream, noise(r, 500)...)
@@ -190,7 +190,7 @@ func TestFramer_DirectChannel(t *testing.T) {
 		t.Fatalf("%d bursts", len(got))
 	}
 	for i, g := range got {
-		if g.Channel != 2 || g.Sync != enums.Tdma2Data {
+		if g.Channel != 2 || g.Sync != enums.SyncTDMA2Data {
 			t.Errorf("burst %d: %+v", i, g)
 		}
 	}

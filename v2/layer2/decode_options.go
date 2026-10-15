@@ -65,12 +65,12 @@ type DecodeOptions struct {
 //nolint:gochecknoglobals
 var (
 	allSyncPatterns = []enums.SyncPattern{
-		enums.BsSourcedVoice, enums.BsSourcedData, enums.MsSourcedVoice, enums.MsSourcedData,
-		enums.MsSourcedRcSync, enums.Tdma1Voice, enums.Tdma1Data, enums.Tdma2Voice, enums.Tdma2Data,
-		enums.Reserved,
+		enums.SyncBSSourcedVoice, enums.SyncBSSourcedData, enums.SyncMSSourcedVoice, enums.SyncMSSourcedData,
+		enums.SyncMSSourcedRC, enums.SyncTDMA1Voice, enums.SyncTDMA1Data, enums.SyncTDMA2Voice, enums.SyncTDMA2Data,
+		enums.SyncReserved,
 	}
-	voiceSyncPatterns = []enums.SyncPattern{enums.BsSourcedVoice, enums.MsSourcedVoice, enums.Tdma1Voice, enums.Tdma2Voice}
-	dataSyncPatterns  = []enums.SyncPattern{enums.BsSourcedData, enums.MsSourcedData, enums.Tdma1Data, enums.Tdma2Data}
+	voiceSyncPatterns = []enums.SyncPattern{enums.SyncBSSourcedVoice, enums.SyncMSSourcedVoice, enums.SyncTDMA1Voice, enums.SyncTDMA2Voice}
+	dataSyncPatterns  = []enums.SyncPattern{enums.SyncBSSourcedData, enums.SyncMSSourcedData, enums.SyncTDMA1Data, enums.SyncTDMA2Data}
 )
 
 // DecodeFromBytesWith is DecodeFromBytes with receive-side options. With the
@@ -109,8 +109,8 @@ func (b *Burst) decodeWith(data [33]byte, opts DecodeOptions) error {
 	case FrameKindData:
 		return b.decodeDataFrame(opts.Frame.DataType)
 	case FrameKindReverseChannel:
-		b.SyncPattern = enums.MsSourcedRcSync
-		b.SyncDistance = b.syncDistance(enums.MsSourcedRcSync)
+		b.SyncPattern = enums.SyncMSSourcedRC
+		b.SyncDistance = b.syncDistance(enums.SyncMSSourcedRC)
 		b.HasEmbeddedSignalling = true
 		b.decodeStandaloneRC()
 		return nil
@@ -120,7 +120,7 @@ func (b *Burst) decodeWith(data [33]byte, opts DecodeOptions) error {
 	}
 
 	if distance > threshold {
-		b.decodeVoiceAt(enums.VoiceBurstUnknown, enums.EmbeddedSignallingPattern, distance)
+		b.decodeVoiceAt(enums.VoiceBurstUnknown, enums.SyncEmbeddedSignalling, distance)
 		return nil
 	}
 	switch {
@@ -128,7 +128,7 @@ func (b *Burst) decodeWith(data [33]byte, opts DecodeOptions) error {
 		return b.decodeDataFrame(nil)
 	case isVoiceSync(nearest):
 		b.decodeVoiceAt(enums.VoiceBurstA, nearest, distance)
-	case nearest == enums.MsSourcedRcSync:
+	case nearest == enums.SyncMSSourcedRC:
 		b.SyncPattern, b.SyncDistance = nearest, distance
 		b.HasEmbeddedSignalling = true
 		b.decodeStandaloneRC()
@@ -144,12 +144,12 @@ func (b *Burst) decodeVoiceFrame(pos enums.VoiceBurstType, nearest enums.SyncPat
 		p, d := b.nearestSync(voiceSyncPatterns)
 		b.decodeVoiceAt(pos, p, d)
 	case enums.VoiceBurstB, enums.VoiceBurstC, enums.VoiceBurstD, enums.VoiceBurstE, enums.VoiceBurstF:
-		b.decodeVoiceAt(pos, enums.EmbeddedSignallingPattern, distance)
+		b.decodeVoiceAt(pos, enums.SyncEmbeddedSignalling, distance)
 	case enums.VoiceBurstUnknown:
 		if distance <= threshold && isVoiceSync(nearest) {
 			b.decodeVoiceAt(enums.VoiceBurstA, nearest, distance)
 		} else {
-			b.decodeVoiceAt(pos, enums.EmbeddedSignallingPattern, distance)
+			b.decodeVoiceAt(pos, enums.SyncEmbeddedSignalling, distance)
 		}
 	default:
 		return fmt.Errorf("voice burst position %d out of range", pos)
@@ -159,12 +159,12 @@ func (b *Burst) decodeVoiceFrame(pos enums.VoiceBurstType, nearest enums.SyncPat
 
 func (b *Burst) decodeVoiceAt(pos enums.VoiceBurstType, sync enums.SyncPattern, distance int) {
 	b.SyncPattern, b.SyncDistance, b.VoiceBurst = sync, distance, pos
-	if sync == enums.EmbeddedSignallingPattern {
+	if sync == enums.SyncEmbeddedSignalling {
 		b.HasEmbeddedSignalling = true
 		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
 		b.FEC.EMB = b.EmbeddedSignalling.FEC
 		if b.EmbeddedSignalling.PreemptionAndPowerControlIndicator &&
-			b.EmbeddedSignalling.LCSS == enums.SingleFragmentLCorCSBK {
+			b.EmbeddedSignalling.LCSS == enums.LCSSSingleFragment {
 			rc, rcFEC := DecodeRCFromEmbeddedData(b.EmbeddedSignallingData)
 			b.HasReverseChannel = true
 			b.ReverseChannel = &rc

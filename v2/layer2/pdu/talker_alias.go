@@ -35,18 +35,18 @@ var (
 
 func talkerAliasUnitBits(format layer3.TalkerAliasDataFormat) int {
 	switch format {
-	case layer3.SevenBitCharacters:
+	case layer3.TalkerAliasSevenBit:
 		return 7
-	case layer3.UTF16Characters:
+	case layer3.TalkerAliasUTF16:
 		return 16
-	case layer3.ISOEightBitCharacters, layer3.UTF8Characters:
+	case layer3.TalkerAliasISOEightBit, layer3.TalkerAliasUTF8:
 		return 8
 	}
 	return 8
 }
 
 func talkerAliasHeaderBits(format layer3.TalkerAliasDataFormat) int {
-	if format == layer3.SevenBitCharacters {
+	if format == layer3.TalkerAliasSevenBit {
 		return 49
 	}
 	return 48
@@ -75,7 +75,7 @@ func DecodeTalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBl
 		return "", ErrTalkerAliasIncomplete
 	}
 	stream := make([]bit.Bit, 0, 49+n*talkerAliasBlockBits)
-	if format == layer3.SevenBitCharacters {
+	if format == layer3.TalkerAliasSevenBit {
 		stream = append(stream, bit.Bit(0))
 		if header.TalkerAliasDataMSB {
 			stream[0] = 1
@@ -99,7 +99,7 @@ func DecodeTalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBl
 
 func talkerAliasString(format layer3.TalkerAliasDataFormat, units []uint16) (string, error) {
 	switch format {
-	case layer3.UTF8Characters:
+	case layer3.TalkerAliasUTF8:
 		b := make([]byte, len(units))
 		for i, u := range units {
 			b[i] = byte(u & 0xFF)
@@ -108,9 +108,9 @@ func talkerAliasString(format layer3.TalkerAliasDataFormat, units []uint16) (str
 			return string(b), errors.New("talker alias is not valid UTF-8")
 		}
 		return string(b), nil
-	case layer3.UTF16Characters:
+	case layer3.TalkerAliasUTF16:
 		return string(utf16.Decode(units)), nil
-	case layer3.SevenBitCharacters, layer3.ISOEightBitCharacters:
+	case layer3.TalkerAliasSevenBit, layer3.TalkerAliasISOEightBit:
 	}
 	var sb strings.Builder
 	for _, u := range units {
@@ -121,17 +121,17 @@ func talkerAliasString(format layer3.TalkerAliasDataFormat, units []uint16) (str
 
 func talkerAliasUnits(alias string, format layer3.TalkerAliasDataFormat) ([]uint16, error) {
 	switch format {
-	case layer3.UTF8Characters:
+	case layer3.TalkerAliasUTF8:
 		units := make([]uint16, len(alias))
 		for i := 0; i < len(alias); i++ {
 			units[i] = uint16(alias[i])
 		}
 		return units, nil
-	case layer3.UTF16Characters:
+	case layer3.TalkerAliasUTF16:
 		return utf16.Encode([]rune(alias)), nil
-	case layer3.SevenBitCharacters, layer3.ISOEightBitCharacters:
+	case layer3.TalkerAliasSevenBit, layer3.TalkerAliasISOEightBit:
 		limit := rune(0xFF)
-		if format == layer3.SevenBitCharacters {
+		if format == layer3.TalkerAliasSevenBit {
 			limit = 0x7F
 		}
 		units := make([]uint16, 0, len(alias))
@@ -167,17 +167,17 @@ func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]Ful
 		copy(stream[i*unit:], bit.BitsFromUint16(u, unit))
 	}
 	header := &FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: len(units)}
-	if format == layer3.SevenBitCharacters {
+	if format == layer3.TalkerAliasSevenBit {
 		header.TalkerAliasDataMSB = stream[0] == 1
 		stream = stream[1:]
 	}
 	copy(header.TalkerAliasData[:], stream)
-	out := []FullLinkControl{{FLCO: enums.FLCOTalkerAliasHeader, FeatureSetID: enums.StandardizedFID, TalkerAliasHeader: header}}
+	out := []FullLinkControl{{FLCO: enums.FLCOTalkerAliasHeader, FeatureSetID: enums.FIDStandardized, TalkerAliasHeader: header}}
 	opcodes := [talkerAliasMaxBlocks]enums.FLCO{enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3}
 	for i := range n {
 		block := &FLCTalkerAliasBlock{}
 		copy(block.TalkerAliasData[:], stream[48+i*talkerAliasBlockBits:])
-		out = append(out, FullLinkControl{FLCO: opcodes[i], FeatureSetID: enums.StandardizedFID, TalkerAliasBlock: block})
+		out = append(out, FullLinkControl{FLCO: opcodes[i], FeatureSetID: enums.FIDStandardized, TalkerAliasBlock: block})
 	}
 	return out, nil
 }

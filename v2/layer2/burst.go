@@ -83,7 +83,7 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	b.IsData = isDataSync(b.SyncPattern)
 	b.VoiceBurst, b.HasEmbeddedSignalling = classifyVoice(b.SyncPattern)
 
-	if b.SyncPattern == enums.MsSourcedRcSync {
+	if b.SyncPattern == enums.SyncMSSourcedRC {
 		b.decodeStandaloneRC()
 		return nil
 	}
@@ -95,7 +95,7 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 		// §6.4: Reverse Channel detection — PI=1 and LCSS=SingleFragment
 		// means the 32-bit embedded data carries an RC PDU, not an LC fragment.
 		if b.EmbeddedSignalling.PreemptionAndPowerControlIndicator &&
-			b.EmbeddedSignalling.LCSS == enums.SingleFragmentLCorCSBK {
+			b.EmbeddedSignalling.LCSS == enums.LCSSSingleFragment {
 			rc, rcFEC := DecodeRCFromEmbeddedData(b.EmbeddedSignallingData)
 			b.HasReverseChannel = true
 			b.ReverseChannel = &rc
@@ -139,22 +139,22 @@ func extractSyncPattern(bitData [264]bit.Bit) (enums.SyncPattern, int) {
 }
 
 func isDataSync(sync enums.SyncPattern) bool {
-	return sync == enums.Tdma1Data || sync == enums.Tdma2Data || sync == enums.MsSourcedData || sync == enums.BsSourcedData
+	return sync == enums.SyncTDMA1Data || sync == enums.SyncTDMA2Data || sync == enums.SyncMSSourcedData || sync == enums.SyncBSSourcedData
 }
 
 func isVoiceSync(sync enums.SyncPattern) bool {
-	return sync == enums.Tdma1Voice || sync == enums.Tdma2Voice || sync == enums.MsSourcedVoice || sync == enums.BsSourcedVoice
+	return sync == enums.SyncTDMA1Voice || sync == enums.SyncTDMA2Voice || sync == enums.SyncMSSourcedVoice || sync == enums.SyncBSSourcedVoice
 }
 
 func isSyncPattern(sync enums.SyncPattern) bool {
-	return isDataSync(sync) || isVoiceSync(sync) || sync == enums.MsSourcedRcSync || sync == enums.Reserved
+	return isDataSync(sync) || isVoiceSync(sync) || sync == enums.SyncMSSourcedRC || sync == enums.SyncReserved
 }
 
 func classifyVoice(sync enums.SyncPattern) (enums.VoiceBurstType, bool) {
 	if isVoiceSync(sync) {
 		return enums.VoiceBurstA, false
 	}
-	return enums.VoiceBurstUnknown, sync == enums.EmbeddedSignallingPattern || sync == enums.MsSourcedRcSync
+	return enums.VoiceBurstUnknown, sync == enums.SyncEmbeddedSignalling || sync == enums.SyncMSSourcedRC
 }
 
 // decodeStandaloneRC decodes a §6.4.1 standalone inbound RC burst (Figure
@@ -187,7 +187,7 @@ func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
 	}
 	copy(bitData[RCEMBFirstStart:RCEMBFirstEnd], embBits[:8])
 	copy(bitData[RCDataFirstStart:RCDataFirstEnd], data[:16])
-	writeSync(&bitData, enums.MsSourcedRcSync)
+	writeSync(&bitData, enums.SyncMSSourcedRC)
 	copy(bitData[RCDataSecondStart:RCDataSecondEnd], data[16:])
 	copy(bitData[RCEMBSecondStart:RCEMBSecondEnd], embBits[8:])
 	return bitData, nil
@@ -342,7 +342,7 @@ func (b *Burst) String() string {
 		if b.Data != nil {
 			ret += fmt.Sprintf("Data: %v, ", b.Data.String())
 		}
-	} else if b.SyncPattern != enums.MsSourcedRcSync {
+	} else if b.SyncPattern != enums.SyncMSSourcedRC {
 		ret += fmt.Sprintf("VoiceBurst: %v, Voice Data: %v, ", b.VoiceBurst.String(), b.VoiceData.String())
 	}
 
@@ -494,7 +494,7 @@ func (b *Burst) extractData() (Data, error) {
 // gives a frame that the decoder corrected clean FEC bits. To regenerate
 // every frame of a decoded burst, copy its VoiceData into a new Burst.
 func (b *Burst) Encode() ([33]byte, error) {
-	if b.SyncPattern == enums.MsSourcedRcSync {
+	if b.SyncPattern == enums.SyncMSSourcedRC {
 		bitData, err := b.encodeStandaloneRC()
 		if err != nil {
 			return [33]byte{}, err
@@ -763,7 +763,7 @@ func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
 // applied, as returned by pdu.EncodeFullLinkControl with DataType set to dataType.
 // It returns an error if colorCode or dataType does not fit in the slot type.
 func BuildLCDataBurst(lcBytes [12]byte, dataType enums.DataType, colorCode uint8) ([33]byte, error) {
-	return buildLCDataBurst(lcBytes, dataType, colorCode, enums.BsSourcedData)
+	return buildLCDataBurst(lcBytes, dataType, colorCode, enums.SyncBSSourcedData)
 }
 
 func buildLCDataBurst(lcBytes [12]byte, dataType enums.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {

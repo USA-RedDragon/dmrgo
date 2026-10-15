@@ -83,7 +83,7 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
 		PreemptionAndPowerControlIndicator: true,
-		LCSS:                               enums.SingleFragmentLCorCSBK,
+		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
@@ -120,7 +120,7 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
 		PreemptionAndPowerControlIndicator: false,
-		LCSS:                               enums.SingleFragmentLCorCSBK,
+		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
@@ -145,7 +145,7 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
 		PreemptionAndPowerControlIndicator: true,
-		LCSS:                               enums.FirstFragmentLC,
+		LCSS:                               enums.LCSSFirstFragment,
 	}
 	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
@@ -167,7 +167,7 @@ func TestRC_MsSourcedRcSync_HasEmbeddedSignalling(t *testing.T) {
 	t.Parallel()
 	var bitData [264]bit.Bit
 
-	syncVal := int64(enums.MsSourcedRcSync)
+	syncVal := int64(enums.SyncMSSourcedRC)
 	for i := 0; i < 48; i++ {
 		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
@@ -179,7 +179,7 @@ func TestRC_MsSourcedRcSync_HasEmbeddedSignalling(t *testing.T) {
 		_ = err
 	}
 
-	if burst.SyncPattern != enums.MsSourcedRcSync {
+	if burst.SyncPattern != enums.SyncMSSourcedRC {
 		t.Errorf("expected SyncPattern=MsSourcedRcSync, got %v", burst.SyncPattern)
 	}
 }
@@ -191,7 +191,7 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
 		PreemptionAndPowerControlIndicator: true,
-		LCSS:                               enums.SingleFragmentLCorCSBK,
+		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
@@ -219,7 +219,7 @@ func TestRC_String(t *testing.T) {
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
 		PreemptionAndPowerControlIndicator: true,
-		LCSS:                               enums.SingleFragmentLCorCSBK,
+		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
@@ -244,7 +244,7 @@ func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	var bitData [264]bit.Bit
 	embBits := must(pdu.EncodeEmbeddedSignalling(&pdu.EmbeddedSignalling{
 		ColorCode: cc,
-		LCSS:      enums.SingleFragmentLCorCSBK,
+		LCSS:      enums.LCSSSingleFragment,
 	}))
 	rcData, err := layer2.EncodeRCToEmbeddedData(&pdu.ReverseChannel{RCCommand: cmd})
 	if err != nil {
@@ -252,7 +252,7 @@ func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	}
 	copy(bitData[84:92], embBits[:8])
 	copy(bitData[92:108], rcData[:16])
-	syncVal := int64(enums.MsSourcedRcSync)
+	syncVal := int64(enums.SyncMSSourcedRC)
 	for i := 0; i < 48; i++ {
 		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
@@ -269,13 +269,13 @@ func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if burst.SyncPattern != enums.MsSourcedRcSync || burst.IsData {
+	if burst.SyncPattern != enums.SyncMSSourcedRC || burst.IsData {
 		t.Fatalf("SyncPattern=%s IsData=%v", burst.SyncPattern.String(), burst.IsData)
 	}
 	if !burst.HasEmbeddedSignalling || burst.EmbeddedSignalling.ColorCode != 7 || burst.FEC.EMB.Uncorrectable {
 		t.Errorf("EMB: %s", burst.EmbeddedSignalling.String())
 	}
-	if burst.EmbeddedSignalling.LCSS != enums.SingleFragmentLCorCSBK {
+	if burst.EmbeddedSignalling.LCSS != enums.LCSSSingleFragment {
 		t.Errorf("LCSS = %s", burst.EmbeddedSignalling.LCSS.String())
 	}
 	if !burst.HasReverseChannel || burst.ReverseChannel == nil {
@@ -296,7 +296,7 @@ func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
 func TestRC_StandaloneBurst_EncodeFromFields(t *testing.T) {
 	t.Parallel()
 	burst := layer2.Burst{
-		SyncPattern:           enums.MsSourcedRcSync,
+		SyncPattern:           enums.SyncMSSourcedRC,
 		HasEmbeddedSignalling: true,
 		EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 7},
 		HasReverseChannel:     true,

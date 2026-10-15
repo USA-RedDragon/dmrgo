@@ -8,63 +8,63 @@ import "fmt"
 type FeatureSetID byte
 
 const (
-	StandardizedFID             FeatureSetID = 0x0
-	FlydeMicroLtd               FeatureSetID = 0x4
-	ProdElSpa                   FeatureSetID = 0x5
-	TridentMicroSystems         FeatureSetID = 0x6
-	RadiodataGmbh               FeatureSetID = 0x7
-	HytScienceTech              FeatureSetID = 0x8
-	AselsanElektronik           FeatureSetID = 0x9
-	KirisunCommunications       FeatureSetID = 0xA
-	DmrAssociationLtd           FeatureSetID = 0xB
-	MotorolaLtd                 FeatureSetID = 0x10
-	ElectronicMarketingCompany  FeatureSetID = 0x13
-	ElectronicMarketingCompany2 FeatureSetID = 0x1C
-	JvcKenwood                  FeatureSetID = 0x20
-	RadioActivity               FeatureSetID = 0x33
-	RadioActivity2              FeatureSetID = 0x3C
-	TaitElectronicsLtd          FeatureSetID = 0x58
-	HytScienceTech2             FeatureSetID = 0x68
-	VertexStandard              FeatureSetID = 0x77
+	FIDStandardized        FeatureSetID = 0x0
+	FIDFlydeMicro          FeatureSetID = 0x4
+	FIDProdEl              FeatureSetID = 0x5
+	FIDTridentMicroSystems FeatureSetID = 0x6
+	FIDRadiodata           FeatureSetID = 0x7
+	FIDHYTScienceTech      FeatureSetID = 0x8
+	FIDAselsan             FeatureSetID = 0x9
+	FIDKirisun             FeatureSetID = 0xA
+	FIDDMRAssociation      FeatureSetID = 0xB
+	FIDMotorola            FeatureSetID = 0x10
+	FIDEMC                 FeatureSetID = 0x13
+	FIDEMC2                FeatureSetID = 0x1C
+	FIDJVCKenwood          FeatureSetID = 0x20
+	FIDRadioActivity       FeatureSetID = 0x33
+	FIDRadioActivity2      FeatureSetID = 0x3C
+	FIDTait                FeatureSetID = 0x58
+	FIDHYTScienceTech2     FeatureSetID = 0x68
+	FIDVertexStandard      FeatureSetID = 0x77
 )
 
 func (fsid FeatureSetID) String() string {
 	switch fsid {
-	case StandardizedFID:
+	case FIDStandardized:
 		return "Standardized FID"
-	case FlydeMicroLtd:
+	case FIDFlydeMicro:
 		return "Flyde Micro Ltd. UK"
-	case ProdElSpa:
+	case FIDProdEl:
 		return "PROD-EL Spa. Italy"
-	case TridentMicroSystems:
+	case FIDTridentMicroSystems:
 		return "Trident Datacom DBA Trident Micro Systems USA"
-	case RadiodataGmbh:
+	case FIDRadiodata:
 		return "RADIODATA GmbH Germany"
-	case HytScienceTech:
+	case FIDHYTScienceTech:
 		return "HYT Science Tech China"
-	case AselsanElektronik:
-		return "ASELSAN Elektronik Sanayi ve Ticaret A.S. Turket"
-	case KirisunCommunications:
+	case FIDAselsan:
+		return "ASELSAN Elektronik Sanayi ve Ticaret A.S. Turkey"
+	case FIDKirisun:
 		return "Kirisun Communications Co. Ltd. China"
-	case DmrAssociationLtd:
+	case FIDDMRAssociation:
 		return "DMR Association Ltd. UK"
-	case MotorolaLtd:
+	case FIDMotorola:
 		return "Motorola Ltd. UK"
-	case ElectronicMarketingCompany:
+	case FIDEMC:
 		return "EMC S.p.A. (Electronic Marketing Company) Italy"
-	case ElectronicMarketingCompany2:
+	case FIDEMC2:
 		return "EMC S.p.A. (Electronic Marketing Company) Italy"
-	case JvcKenwood:
+	case FIDJVCKenwood:
 		return "JVC Kenwood Corporation Japan"
-	case RadioActivity:
+	case FIDRadioActivity:
 		return "Radio Activity Srl. Italy"
-	case RadioActivity2:
+	case FIDRadioActivity2:
 		return "Radio Activity Srl. Italy"
-	case TaitElectronicsLtd:
+	case FIDTait:
 		return "Tait Electronics Ltd. New Zealand"
-	case HytScienceTech2:
-		return "Hyt Science & Tech China"
-	case VertexStandard:
+	case FIDHYTScienceTech2:
+		return "HYT Science Tech China"
+	case FIDVertexStandard:
 		return "Vertex Standard UK"
 	}
 
@@ -74,24 +74,24 @@ func (fsid FeatureSetID) String() string {
 // Valid reports whether f is a value that ETSI TS 102 361 defines.
 func (f FeatureSetID) Valid() bool {
 	switch f {
-	case StandardizedFID,
-		FlydeMicroLtd,
-		ProdElSpa,
-		TridentMicroSystems,
-		RadiodataGmbh,
-		HytScienceTech,
-		AselsanElektronik,
-		KirisunCommunications,
-		DmrAssociationLtd,
-		MotorolaLtd,
-		ElectronicMarketingCompany,
-		ElectronicMarketingCompany2,
-		JvcKenwood,
-		RadioActivity,
-		RadioActivity2,
-		TaitElectronicsLtd,
-		HytScienceTech2,
-		VertexStandard:
+	case FIDStandardized,
+		FIDFlydeMicro,
+		FIDProdEl,
+		FIDTridentMicroSystems,
+		FIDRadiodata,
+		FIDHYTScienceTech,
+		FIDAselsan,
+		FIDKirisun,
+		FIDDMRAssociation,
+		FIDMotorola,
+		FIDEMC,
+		FIDEMC2,
+		FIDJVCKenwood,
+		FIDRadioActivity,
+		FIDRadioActivity2,
+		FIDTait,
+		FIDHYTScienceTech2,
+		FIDVertexStandard:
 		return true
 	}
 	return false

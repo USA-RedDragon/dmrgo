@@ -54,13 +54,13 @@ const (
 func (s SyncSource) SyncPatterns() (voice, data enums.SyncPattern, ok bool) {
 	switch s {
 	case SyncSourceBS:
-		return enums.BsSourcedVoice, enums.BsSourcedData, true
+		return enums.SyncBSSourcedVoice, enums.SyncBSSourcedData, true
 	case SyncSourceMS:
-		return enums.MsSourcedVoice, enums.MsSourcedData, true
+		return enums.SyncMSSourcedVoice, enums.SyncMSSourcedData, true
 	case SyncSourceDirectTS1:
-		return enums.Tdma1Voice, enums.Tdma1Data, true
+		return enums.SyncTDMA1Voice, enums.SyncTDMA1Data, true
 	case SyncSourceDirectTS2:
-		return enums.Tdma2Voice, enums.Tdma2Data, true
+		return enums.SyncTDMA2Voice, enums.SyncTDMA2Data, true
 	}
 	return 0, 0, false
 }
@@ -238,13 +238,13 @@ func (t *VoiceTransmitter) flush() ([33]byte, error) {
 		var data [32]bit.Bit
 		switch t.position {
 		case 1:
-			emb.LCSS, data = enums.FirstFragmentLC, t.embedded[0]
+			emb.LCSS, data = enums.LCSSFirstFragment, t.embedded[0]
 		case 2, 3:
-			emb.LCSS, data = enums.ContinuationFragmentLCorCSBK, t.embedded[t.position-1]
+			emb.LCSS, data = enums.LCSSContinuationFragment, t.embedded[t.position-1]
 		case 4:
-			emb.LCSS, data = enums.LastFragmentLCorCSBK, t.embedded[3]
+			emb.LCSS, data = enums.LCSSLastFragment, t.embedded[3]
 		default:
-			emb.LCSS = enums.SingleFragmentLCorCSBK
+			emb.LCSS = enums.LCSSSingleFragment
 			if t.hasRC {
 				emb.PreemptionAndPowerControlIndicator, data = true, t.rc
 				t.hasRC = false

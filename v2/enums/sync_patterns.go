@@ -8,17 +8,17 @@ type SyncPattern int64
 const embeddedSignallingName = "Embedded Signalling"
 
 const (
-	BsSourcedVoice            SyncPattern = 0x755FD7DF75F7
-	BsSourcedData             SyncPattern = 0xDFF57D75DF5D
-	MsSourcedVoice            SyncPattern = 0x7F7D5DD57DFD
-	MsSourcedData             SyncPattern = 0xD5D7F77FD757
-	MsSourcedRcSync           SyncPattern = 0x77D55F7DFD77
-	Tdma1Voice                SyncPattern = 0x5D577F7757FF
-	Tdma1Data                 SyncPattern = 0xF7FDD5DDFD55
-	Tdma2Voice                SyncPattern = 0x7DFFD5F55D5F
-	Tdma2Data                 SyncPattern = 0xD7557F5FF7F5
-	Reserved                  SyncPattern = 0xDD7FF5D757DD
-	EmbeddedSignallingPattern SyncPattern = -1
+	SyncBSSourcedVoice     SyncPattern = 0x755FD7DF75F7
+	SyncBSSourcedData      SyncPattern = 0xDFF57D75DF5D
+	SyncMSSourcedVoice     SyncPattern = 0x7F7D5DD57DFD
+	SyncMSSourcedData      SyncPattern = 0xD5D7F77FD757
+	SyncMSSourcedRC        SyncPattern = 0x77D55F7DFD77
+	SyncTDMA1Voice         SyncPattern = 0x5D577F7757FF
+	SyncTDMA1Data          SyncPattern = 0xF7FDD5DDFD55
+	SyncTDMA2Voice         SyncPattern = 0x7DFFD5F55D5F
+	SyncTDMA2Data          SyncPattern = 0xD7557F5FF7F5
+	SyncReserved           SyncPattern = 0xDD7FF5D757DD
+	SyncEmbeddedSignalling SyncPattern = -1
 )
 
 // SyncMatchThreshold is the largest Hamming distance, in bits, at which a
@@ -29,16 +29,16 @@ const SyncMatchThreshold = 4
 
 //nolint:gochecknoglobals
 var syncPatterns = [...]SyncPattern{
-	BsSourcedVoice,
-	BsSourcedData,
-	MsSourcedVoice,
-	MsSourcedData,
-	MsSourcedRcSync,
-	Tdma1Voice,
-	Tdma1Data,
-	Tdma2Voice,
-	Tdma2Data,
-	Reserved,
+	SyncBSSourcedVoice,
+	SyncBSSourcedData,
+	SyncMSSourcedVoice,
+	SyncMSSourcedData,
+	SyncMSSourcedRC,
+	SyncTDMA1Voice,
+	SyncTDMA1Data,
+	SyncTDMA2Voice,
+	SyncTDMA2Data,
+	SyncReserved,
 }
 
 // SyncPatternFromBytes returns the SyncPattern that matches the given 48-bit
@@ -51,7 +51,7 @@ func SyncPatternFromBytes(syncOrEmbeddedSignalling [6]byte) SyncPattern {
 // SyncPatternFromBytesWithDistance returns the Table 9.2 pattern nearest to
 // the given 48-bit SYNC field and its Hamming distance from that pattern.
 // If the distance is more than SyncMatchThreshold, the field is taken as
-// embedded signalling and the pattern is EmbeddedSignallingPattern. The
+// embedded signalling and the pattern is SyncEmbeddedSignalling. The
 // distance is always to the nearest Table 9.2 pattern.
 func SyncPatternFromBytesWithDistance(syncOrEmbeddedSignalling [6]byte) (SyncPattern, int) {
 	var value uint64
@@ -59,7 +59,7 @@ func SyncPatternFromBytesWithDistance(syncOrEmbeddedSignalling [6]byte) (SyncPat
 		value = value<<8 | uint64(syncOrEmbeddedSignalling[i])
 	}
 
-	best := EmbeddedSignallingPattern
+	best := SyncEmbeddedSignalling
 	bestDistance := 49
 	for _, pattern := range syncPatterns {
 		distance := bits.OnesCount64(value ^ uint64(pattern)) //nolint:gosec // patterns are 48-bit positive constants
@@ -69,7 +69,7 @@ func SyncPatternFromBytesWithDistance(syncOrEmbeddedSignalling [6]byte) (SyncPat
 		}
 	}
 	if bestDistance > SyncMatchThreshold {
-		return EmbeddedSignallingPattern, bestDistance
+		return SyncEmbeddedSignalling, bestDistance
 	}
 	return best, bestDistance
 }
@@ -77,27 +77,27 @@ func SyncPatternFromBytesWithDistance(syncOrEmbeddedSignalling [6]byte) (SyncPat
 // String returns the name of the SyncPattern that matches the given burst.
 func (sync SyncPattern) String() string {
 	switch sync {
-	case BsSourcedVoice:
+	case SyncBSSourcedVoice:
 		return "BS-sourced voice"
-	case BsSourcedData:
+	case SyncBSSourcedData:
 		return "BS-sourced data"
-	case MsSourcedVoice:
+	case SyncMSSourcedVoice:
 		return "MS-sourced voice"
-	case MsSourcedData:
+	case SyncMSSourcedData:
 		return "MS-sourced data"
-	case MsSourcedRcSync:
+	case SyncMSSourcedRC:
 		return "MS-sourced RC sync"
-	case Tdma1Voice:
+	case SyncTDMA1Voice:
 		return "TDMA1 voice"
-	case Tdma1Data:
+	case SyncTDMA1Data:
 		return "TDMA1 data"
-	case Tdma2Voice:
+	case SyncTDMA2Voice:
 		return "TDMA2 voice"
-	case Tdma2Data:
+	case SyncTDMA2Data:
 		return "TDMA2 data"
-	case EmbeddedSignallingPattern:
+	case SyncEmbeddedSignalling:
 		return embeddedSignallingName
-	case Reserved:
+	case SyncReserved:
 		return reservedName
 	default:
 		return embeddedSignallingName

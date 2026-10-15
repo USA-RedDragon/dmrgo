@@ -9,10 +9,10 @@ func TestTalkerAliasDataFormatString(t *testing.T) {
 		format   TalkerAliasDataFormat
 		expected string
 	}{
-		{SevenBitCharacters, "646 (7-bit)"},
-		{ISOEightBitCharacters, "ISO (Latin)"},
-		{UTF8Characters, "UTF-8"},
-		{UTF16Characters, "UTF-16 BE"},
+		{TalkerAliasSevenBit, "646 (7-bit)"},
+		{TalkerAliasISOEightBit, "ISO (Latin)"},
+		{TalkerAliasUTF8, "UTF-8"},
+		{TalkerAliasUTF16, "UTF-16 BE"},
 	}
 
 	for _, tt := range tests {
@@ -34,16 +34,16 @@ func TestTalkerAliasDataFormatString_Unknown(t *testing.T) {
 
 func TestTalkerAliasDataFormat_Constants(t *testing.T) {
 	// Verify iota ordering
-	if SevenBitCharacters != 0 {
-		t.Errorf("SevenBitCharacters = %d, want 0", SevenBitCharacters)
+	if TalkerAliasSevenBit != 0 {
+		t.Errorf("SevenBitCharacters = %d, want 0", TalkerAliasSevenBit)
 	}
-	if ISOEightBitCharacters != 1 {
-		t.Errorf("ISOEightBitCharacters = %d, want 1", ISOEightBitCharacters)
+	if TalkerAliasISOEightBit != 1 {
+		t.Errorf("ISOEightBitCharacters = %d, want 1", TalkerAliasISOEightBit)
 	}
-	if UTF8Characters != 2 {
-		t.Errorf("UTF8Characters = %d, want 2", UTF8Characters)
+	if TalkerAliasUTF8 != 2 {
+		t.Errorf("UTF8Characters = %d, want 2", TalkerAliasUTF8)
 	}
-	if UTF16Characters != 3 {
-		t.Errorf("UTF16Characters = %d, want 3", UTF16Characters)
+	if TalkerAliasUTF16 != 3 {
+		t.Errorf("UTF16Characters = %d, want 3", TalkerAliasUTF16)
 	}
 }

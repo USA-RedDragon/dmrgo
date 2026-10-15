@@ -62,7 +62,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 		b, _ := layer2.NewBurstFromBytes(frame)
 
 		p, d := r.Sync()
-		if d != b.SyncDistance || (b.SyncPattern != enums.EmbeddedSignallingPattern && p != b.SyncPattern) {
+		if d != b.SyncDistance || (b.SyncPattern != enums.SyncEmbeddedSignalling && p != b.SyncPattern) {
 			t.Errorf("%x: Sync %x/%d, Burst %x/%d", frame, int64(p), d, int64(b.SyncPattern), b.SyncDistance)
 		}
 		if b.HasSlotType {
@@ -96,7 +96,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 			counts["EMB"]++
 			emb, res := r.EMB()
 			data := r.EmbeddedData()
-			if b.SyncPattern == enums.MsSourcedRcSync {
+			if b.SyncPattern == enums.SyncMSSourcedRC {
 				emb, res = r.StandaloneRCEMB()
 				data = r.StandaloneRCData()
 			}
@@ -104,7 +104,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 				t.Errorf("%x: EMB %+v %x, Burst %+v %x", frame, emb, data, b.EmbeddedSignalling, b.PackEmbeddedSignallingData())
 			}
 		}
-		if b.SyncPattern != enums.MsSourcedRcSync {
+		if b.SyncPattern != enums.SyncMSSourcedRC {
 			counts["voice"]++
 			if got := r.VoiceSlots(); got != packSlots(b.VoiceSlots()) {
 				t.Errorf("%x: VoiceSlots %x", frame, got)
@@ -150,7 +150,7 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 			}
 		} else {
 			w.SetVoiceSlots(r.VoiceSlots())
-			if b.HasEmbeddedSignalling && b.SyncPattern != enums.MsSourcedRcSync {
+			if b.HasEmbeddedSignalling && b.SyncPattern != enums.SyncMSSourcedRC {
 				if e, res := r.EMB(); !res.HasErrors() {
 					if err := w.SetEMB(e); err != nil {
 						t.Fatal(err)
@@ -189,7 +189,7 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 			}
 			continue
 		}
-		if b.IsData || b.SyncPattern == enums.MsSourcedRcSync {
+		if b.IsData || b.SyncPattern == enums.SyncMSSourcedRC {
 			continue
 		}
 		var slots [3][9]byte
@@ -228,13 +228,13 @@ func TestRawBurst_SetSync(t *testing.T) {
 		r[i] = 0xA5
 	}
 	before := r
-	if err := r.SetSync(enums.EmbeddedSignallingPattern); err == nil || r != before {
+	if err := r.SetSync(enums.SyncEmbeddedSignalling); err == nil || r != before {
 		t.Fatal("SetSync accepted a non-pattern")
 	}
-	if err := r.SetSync(enums.MsSourcedVoice); err != nil {
+	if err := r.SetSync(enums.SyncMSSourcedVoice); err != nil {
 		t.Fatal(err)
 	}
-	if p, d := r.Sync(); p != enums.MsSourcedVoice || d != 0 || !sameBits(r, before, [2]int{108, 156}) {
+	if p, d := r.Sync(); p != enums.SyncMSSourcedVoice || d != 0 || !sameBits(r, before, [2]int{108, 156}) {
 		t.Fatalf("Sync %x/%d", int64(p), d)
 	}
 }
@@ -258,7 +258,7 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 	}
 
 	var w layer2.RawBurst
-	if err := w.SetSync(enums.MsSourcedRcSync); err != nil {
+	if err := w.SetSync(enums.SyncMSSourcedRC); err != nil {
 		t.Fatal(err)
 	}
 	if err := w.SetStandaloneRCEMB(emb); err != nil {
@@ -339,7 +339,7 @@ func TestBuildRateDataBursts_DecodeAsBurst(t *testing.T) {
 		r := must(layer2.BuildRate34DataBurst(p34, 5, layer2.SyncSourceMS))
 		b := must(layer2.NewBurstFromBytes(r))
 		d, ok := b.Data.(*pdu.Rate34Data)
-		if !ok || d.Data != p34 || b.FEC.Payload.HasErrors() || b.SlotType.ColorCode != 5 || b.SyncPattern != enums.MsSourcedData {
+		if !ok || d.Data != p34 || b.FEC.Payload.HasErrors() || b.SlotType.ColorCode != 5 || b.SyncPattern != enums.SyncMSSourcedData {
 			t.Fatalf("Rate 3/4 burst decodes as %+v", b.Data)
 		}
 		if got, _ := r.Rate34Payload(); got != p34 {

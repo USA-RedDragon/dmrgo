@@ -108,7 +108,7 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: layer3.ServiceOptions{
 				PriorityLevel: 0,
@@ -133,7 +133,7 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewBurstFromBytes failed: %v", err)
 	}
-	if burst.SyncPattern != enums.BsSourcedData {
+	if burst.SyncPattern != enums.SyncBSSourcedData {
 		t.Errorf("SyncPattern = %v, want BsSourcedData", burst.SyncPattern)
 	}
 }
@@ -142,7 +142,7 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeTerminatorWithLC,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  1,
 			SourceAddress: 2,
@@ -160,7 +160,7 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewBurstFromBytes failed: %v", err)
 	}
-	if burst.SyncPattern != enums.BsSourcedData {
+	if burst.SyncPattern != enums.SyncBSSourcedData {
 		t.Errorf("SyncPattern = %v, want BsSourcedData", burst.SyncPattern)
 	}
 }
@@ -169,7 +169,7 @@ func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  100,
 			SourceAddress: 200,

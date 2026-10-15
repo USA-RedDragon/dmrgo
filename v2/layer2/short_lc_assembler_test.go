@@ -33,10 +33,10 @@ func buildValidShortLCFragments(slco byte, data [24]bit.Bit) [4][17]bit.Bit {
 
 //nolint:gochecknoglobals
 var shortLCSequence = [4]enums.LCSS{
-	enums.FirstFragmentLC,
-	enums.ContinuationFragmentLCorCSBK,
-	enums.ContinuationFragmentLCorCSBK,
-	enums.LastFragmentLCorCSBK,
+	enums.LCSSFirstFragment,
+	enums.LCSSContinuationFragment,
+	enums.LCSSContinuationFragment,
+	enums.LCSSLastFragment,
 }
 
 func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4][17]bit.Bit) {
@@ -74,7 +74,7 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 		}
 	}
 
-	ready, err := a.AddFragment(enums.LastFragmentLCorCSBK, payload)
+	ready, err := a.AddFragment(enums.LCSSLastFragment, payload)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,10 +96,10 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 
 func TestShortLCAssembler_RejectsBadSequence(t *testing.T) {
 	t.Parallel()
-	first := enums.FirstFragmentLC
-	cont := enums.ContinuationFragmentLCorCSBK
-	last := enums.LastFragmentLCorCSBK
-	single := enums.SingleFragmentLCorCSBK
+	first := enums.LCSSFirstFragment
+	cont := enums.LCSSContinuationFragment
+	last := enums.LCSSLastFragment
+	single := enums.LCSSSingleFragment
 
 	tests := []struct {
 		name string
@@ -147,10 +147,10 @@ func TestShortLCAssembler_FirstRestartsSequence(t *testing.T) {
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
 	var a layer2.ShortLCAssembler
-	if _, err := a.AddFragment(enums.FirstFragmentLC, garbage); err != nil {
+	if _, err := a.AddFragment(enums.LCSSFirstFragment, garbage); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := a.AddFragment(enums.ContinuationFragmentLCorCSBK, garbage); err != nil {
+	if _, err := a.AddFragment(enums.LCSSContinuationFragment, garbage); err != nil {
 		t.Fatal(err)
 	}
 	addShortLCFragments(t, &a, fragments)

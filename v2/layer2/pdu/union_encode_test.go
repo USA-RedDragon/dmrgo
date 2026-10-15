@@ -33,7 +33,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
 					DataType:     enums.DataTypeVoiceLCHeader,
 					FLCO:         enums.FLCOGroupVoiceChannelUser,
-					FeatureSetID: enums.MotorolaLtd,
+					FeatureSetID: enums.FIDMotorola,
 					GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
 				})
 				return err

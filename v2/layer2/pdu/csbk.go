@@ -65,7 +65,7 @@ func (opcode CSBKOpcode) String() string {
 	case CSBKAloha:
 		return "C_ALOHA PDU"
 	case CSBKAhoy:
-		return "C_AHOY PDU"
+		return "C_AHOY/P_AHOY PDU"
 	case CSBKAckvitation:
 		return "C_ACKVIT PDU"
 	case CSBKRandomAccess:

@@ -37,7 +37,7 @@ func packedFLC(t *testing.T, flc *pdu.FullLinkControl) []byte {
 func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	base := pdu.FullLinkControl{
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
 	}
 
@@ -70,7 +70,7 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 		flc := pdu.FullLinkControl{
 			DataType:     dt,
 			FLCO:         enums.FLCOGroupVoiceChannelUser,
-			FeatureSetID: enums.StandardizedFID,
+			FeatureSetID: enums.FIDStandardized,
 			GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
 		}
 		if _, err := pdu.EncodeFullLinkControl(&flc); err == nil {

@@ -4,21 +4,21 @@ package layer3
 type TalkerAliasDataFormat uint8
 
 const (
-	SevenBitCharacters TalkerAliasDataFormat = iota
-	ISOEightBitCharacters
-	UTF8Characters
-	UTF16Characters
+	TalkerAliasSevenBit TalkerAliasDataFormat = iota
+	TalkerAliasISOEightBit
+	TalkerAliasUTF8
+	TalkerAliasUTF16
 )
 
 func (ta TalkerAliasDataFormat) String() string {
 	switch ta {
-	case SevenBitCharacters:
+	case TalkerAliasSevenBit:
 		return "646 (7-bit)"
-	case ISOEightBitCharacters:
+	case TalkerAliasISOEightBit:
 		return "ISO (Latin)"
-	case UTF8Characters:
+	case TalkerAliasUTF8:
 		return "UTF-8"
-	case UTF16Characters:
+	case TalkerAliasUTF16:
 		return "UTF-16 BE"
 	default:
 		return unknownName

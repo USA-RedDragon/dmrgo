@@ -25,7 +25,7 @@ func TestTACT_DecodeEncode_RoundTrip(t *testing.T) {
 	if tact.TDMAChannel {
 		t.Error("expected TDMAChannel=false")
 	}
-	if tact.LCSS != enums.FirstFragmentLC {
+	if tact.LCSS != enums.LCSSFirstFragment {
 		t.Errorf("expected LCSS=FirstFragmentLC, got %d", tact.LCSS)
 	}
 
@@ -101,10 +101,10 @@ func TestTACT_LCSS_Values(t *testing.T) {
 		lcss enums.LCSS
 		bits [4]bit.Bit
 	}{
-		{enums.SingleFragmentLCorCSBK, [4]bit.Bit{0, 0, 0, 0}},
-		{enums.FirstFragmentLC, [4]bit.Bit{0, 0, 0, 1}},
-		{enums.LastFragmentLCorCSBK, [4]bit.Bit{0, 0, 1, 0}},
-		{enums.ContinuationFragmentLCorCSBK, [4]bit.Bit{0, 0, 1, 1}},
+		{enums.LCSSSingleFragment, [4]bit.Bit{0, 0, 0, 0}},
+		{enums.LCSSFirstFragment, [4]bit.Bit{0, 0, 0, 1}},
+		{enums.LCSSLastFragment, [4]bit.Bit{0, 0, 1, 0}},
+		{enums.LCSSContinuationFragment, [4]bit.Bit{0, 0, 1, 1}},
 	}
 
 	for _, tt := range tests {

@@ -177,7 +177,7 @@ func TestBurst_BPTCPayload(t *testing.T) {
 			t.Errorf("%s: ok", dt.String())
 		}
 	}
-	voice, _ := layer2.NewBurstFromBytes(transmission(t, groupLC(enums.StandardizedFID), 1)[1])
+	voice, _ := layer2.NewBurstFromBytes(transmission(t, groupLC(enums.FIDStandardized), 1)[1])
 	if _, _, ok := voice.BPTCPayload(); ok || voice.IsData {
 		t.Error("voice burst: ok")
 	}
@@ -197,7 +197,7 @@ func TestBurst_SyncTolerance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !burst.IsData || burst.SyncPattern != enums.BsSourcedData || burst.SyncDistance != 4 {
+	if !burst.IsData || burst.SyncPattern != enums.SyncBSSourcedData || burst.SyncDistance != 4 {
 		t.Fatalf("4 sync bit errors: IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, burst.SyncPattern.String(), burst.SyncDistance)
 	}
 	if got := must(burst.Encode()); got != frame {
@@ -206,7 +206,7 @@ func TestBurst_SyncTolerance(t *testing.T) {
 
 	noisy = flipBurstBits(noisy, layer2.SyncStart+20)
 	burst, _ = layer2.NewBurstFromBytes(noisy)
-	if burst.IsData || burst.SyncPattern != enums.EmbeddedSignallingPattern || !burst.HasEmbeddedSignalling {
+	if burst.IsData || burst.SyncPattern != enums.SyncEmbeddedSignalling || !burst.HasEmbeddedSignalling {
 		t.Errorf("5 sync bit errors: IsData=%v SyncPattern=%s", burst.IsData, burst.SyncPattern.String())
 	}
 }
@@ -217,7 +217,7 @@ func TestBurst_SyncTolerance(t *testing.T) {
 // codeword, at bits 115 and 155.
 func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 	frame := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
-	diff := uint64(enums.BsSourcedData ^ enums.MsSourcedData)
+	diff := uint64(enums.SyncBSSourcedData ^ enums.SyncMSSourcedData)
 	for i := 0; i < 48; i++ {
 		if (diff>>(47-i))&1 == 1 {
 			frame = flipBurstBits(frame, layer2.SyncStart+i)
@@ -228,7 +228,7 @@ func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !burst.IsData || burst.SyncPattern != enums.MsSourcedData || burst.SyncDistance != 2 {
+	if !burst.IsData || burst.SyncPattern != enums.SyncMSSourcedData || burst.SyncDistance != 2 {
 		t.Fatalf("IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, burst.SyncPattern.String(), burst.SyncDistance)
 	}
 	if burst.SlotType.DataType != enums.DataTypeIdle {

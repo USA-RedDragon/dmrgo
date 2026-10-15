@@ -12,7 +12,7 @@ func TestEmbeddedSignalling_EncodeDecodeRoundTrip(t *testing.T) {
 	original := &pdu.EmbeddedSignalling{
 		ColorCode:                          9,
 		PreemptionAndPowerControlIndicator: true,
-		LCSS:                               enums.FirstFragmentLC,
+		LCSS:                               enums.LCSSFirstFragment,
 	}
 
 	encoded := must(pdu.EncodeEmbeddedSignalling(original))
@@ -36,7 +36,7 @@ func TestEmbeddedSignalling_AllColorCodes(t *testing.T) {
 	for cc := 0; cc < 16; cc++ {
 		es := &pdu.EmbeddedSignalling{
 			ColorCode: cc,
-			LCSS:      enums.SingleFragmentLCorCSBK,
+			LCSS:      enums.LCSSSingleFragment,
 		}
 		encoded := must(pdu.EncodeEmbeddedSignalling(es))
 		decoded, fecResult := pdu.DecodeEmbeddedSignalling(encoded)
@@ -51,10 +51,10 @@ func TestEmbeddedSignalling_AllColorCodes(t *testing.T) {
 
 func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
 	lcssValues := []enums.LCSS{
-		enums.SingleFragmentLCorCSBK,
-		enums.FirstFragmentLC,
-		enums.LastFragmentLCorCSBK,
-		enums.ContinuationFragmentLCorCSBK,
+		enums.LCSSSingleFragment,
+		enums.LCSSFirstFragment,
+		enums.LCSSLastFragment,
+		enums.LCSSContinuationFragment,
 	}
 
 	for _, lcss := range lcssValues {
@@ -83,7 +83,7 @@ func TestEmbeddedSignalling_PPCI(t *testing.T) {
 		es := &pdu.EmbeddedSignalling{
 			ColorCode:                          3,
 			PreemptionAndPowerControlIndicator: ppci,
-			LCSS:                               enums.SingleFragmentLCorCSBK,
+			LCSS:                               enums.LCSSSingleFragment,
 		}
 		encoded := must(pdu.EncodeEmbeddedSignalling(es))
 		decoded, _ := pdu.DecodeEmbeddedSignalling(encoded)
@@ -97,7 +97,7 @@ func TestEncodeEmbeddedSignalling_FullRoundTrip(t *testing.T) {
 	es := pdu.EmbeddedSignalling{
 		ColorCode:                          9,
 		PreemptionAndPowerControlIndicator: true,
-		LCSS:                               enums.FirstFragmentLC,
+		LCSS:                               enums.LCSSFirstFragment,
 	}
 	encoded := must(pdu.EncodeEmbeddedSignalling(&es))
 	// Verify full [16]bit.Bit round-trip through decode

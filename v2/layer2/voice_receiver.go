@@ -66,7 +66,7 @@ func (r *VoiceReceiver) Reset() {
 // MMDVMHost.
 func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err error) {
 	switch {
-	case b.SyncPattern == enums.MsSourcedRcSync:
+	case b.SyncPattern == enums.SyncMSSourcedRC:
 		b.VoiceBurst = enums.VoiceBurstUnknown
 		return lc, false, nil
 	case b.IsData || !b.HasEmbeddedSignalling && !isVoiceSync(b.SyncPattern):
@@ -118,15 +118,15 @@ func (r *VoiceReceiver) embeddedPosition(b *Burst) enums.VoiceBurstType {
 		return next
 	}
 	switch b.EmbeddedSignalling.LCSS {
-	case enums.FirstFragmentLC:
+	case enums.LCSSFirstFragment:
 		return enums.VoiceBurstB
-	case enums.LastFragmentLCorCSBK:
+	case enums.LCSSLastFragment:
 		return enums.VoiceBurstE
-	case enums.ContinuationFragmentLCorCSBK:
+	case enums.LCSSContinuationFragment:
 		if next == enums.VoiceBurstC || next == enums.VoiceBurstD {
 			return next
 		}
-	case enums.SingleFragmentLCorCSBK:
+	case enums.LCSSSingleFragment:
 		if next == enums.VoiceBurstF {
 			return next
 		}

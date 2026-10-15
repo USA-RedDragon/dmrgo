@@ -11,16 +11,16 @@ func TestSyncPatternFromBytes_AllKnownPatterns(t *testing.T) {
 		pattern  SyncPattern
 		expected SyncPattern
 	}{
-		{"BsSourcedVoice", BsSourcedVoice, BsSourcedVoice},
-		{"BsSourcedData", BsSourcedData, BsSourcedData},
-		{"MsSourcedVoice", MsSourcedVoice, MsSourcedVoice},
-		{"MsSourcedData", MsSourcedData, MsSourcedData},
-		{"MsSourcedRcSync", MsSourcedRcSync, MsSourcedRcSync},
-		{"Tdma1Voice", Tdma1Voice, Tdma1Voice},
-		{"Tdma1Data", Tdma1Data, Tdma1Data},
-		{"Tdma2Voice", Tdma2Voice, Tdma2Voice},
-		{"Tdma2Data", Tdma2Data, Tdma2Data},
-		{"Reserved", Reserved, Reserved},
+		{"BsSourcedVoice", SyncBSSourcedVoice, SyncBSSourcedVoice},
+		{"BsSourcedData", SyncBSSourcedData, SyncBSSourcedData},
+		{"MsSourcedVoice", SyncMSSourcedVoice, SyncMSSourcedVoice},
+		{"MsSourcedData", SyncMSSourcedData, SyncMSSourcedData},
+		{"MsSourcedRcSync", SyncMSSourcedRC, SyncMSSourcedRC},
+		{"Tdma1Voice", SyncTDMA1Voice, SyncTDMA1Voice},
+		{"Tdma1Data", SyncTDMA1Data, SyncTDMA1Data},
+		{"Tdma2Voice", SyncTDMA2Voice, SyncTDMA2Voice},
+		{"Tdma2Data", SyncTDMA2Data, SyncTDMA2Data},
+		{"Reserved", SyncReserved, SyncReserved},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -39,11 +39,11 @@ func TestSyncPatternFromBytes_AllKnownPatterns(t *testing.T) {
 }
 
 func TestSyncPatternFromBytes_UnknownReturnsEmbeddedSignalling(t *testing.T) {
-	// An unrecognized byte pattern should return EmbeddedSignallingPattern
+	// An unrecognized byte pattern should return SyncEmbeddedSignalling
 	var syncBytes [6]byte // all zeros, not a valid sync pattern
 	got := SyncPatternFromBytes(syncBytes)
-	if got != EmbeddedSignallingPattern {
-		t.Errorf("SyncPatternFromBytes(all zeros) = %v, want EmbeddedSignallingPattern", got)
+	if got != SyncEmbeddedSignalling {
+		t.Errorf("SyncPatternFromBytes(all zeros) = %v, want SyncEmbeddedSignalling", got)
 	}
 }
 
@@ -52,17 +52,17 @@ func TestSyncPatternString_AllPatterns(t *testing.T) {
 		pattern  SyncPattern
 		expected string
 	}{
-		{BsSourcedVoice, "BS-sourced voice"},
-		{BsSourcedData, "BS-sourced data"},
-		{MsSourcedVoice, "MS-sourced voice"},
-		{MsSourcedData, "MS-sourced data"},
-		{MsSourcedRcSync, "MS-sourced RC sync"},
-		{Tdma1Voice, "TDMA1 voice"},
-		{Tdma1Data, "TDMA1 data"},
-		{Tdma2Voice, "TDMA2 voice"},
-		{Tdma2Data, "TDMA2 data"},
-		{EmbeddedSignallingPattern, "Embedded Signalling"},
-		{Reserved, "Reserved"},
+		{SyncBSSourcedVoice, "BS-sourced voice"},
+		{SyncBSSourcedData, "BS-sourced data"},
+		{SyncMSSourcedVoice, "MS-sourced voice"},
+		{SyncMSSourcedData, "MS-sourced data"},
+		{SyncMSSourcedRC, "MS-sourced RC sync"},
+		{SyncTDMA1Voice, "TDMA1 voice"},
+		{SyncTDMA1Data, "TDMA1 data"},
+		{SyncTDMA2Voice, "TDMA2 voice"},
+		{SyncTDMA2Data, "TDMA2 data"},
+		{SyncEmbeddedSignalling, "Embedded Signalling"},
+		{SyncReserved, "Reserved"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
@@ -83,8 +83,8 @@ func TestSyncPatternString_UnknownReturnsEmbeddedSignalling(t *testing.T) {
 
 func TestSyncPatternFromBytes_RoundTrip(t *testing.T) {
 	patterns := []SyncPattern{
-		BsSourcedVoice, BsSourcedData, MsSourcedVoice, MsSourcedData,
-		MsSourcedRcSync, Tdma1Voice, Tdma1Data, Tdma2Voice, Tdma2Data, Reserved,
+		SyncBSSourcedVoice, SyncBSSourcedData, SyncMSSourcedVoice, SyncMSSourcedData,
+		SyncMSSourcedRC, SyncTDMA1Voice, SyncTDMA1Data, SyncTDMA2Voice, SyncTDMA2Data, SyncReserved,
 	}
 	for _, p := range patterns {
 		var syncBytes [6]byte
@@ -138,7 +138,7 @@ func TestSyncPatternFromBytesWithDistance_BeyondThreshold(t *testing.T) {
 	for _, p := range syncPatterns {
 		in := flipSyncBits(syncPatternBytes(p), 0, 9, 18, 27, 36)
 		got, dist := SyncPatternFromBytesWithDistance(in)
-		if got != EmbeddedSignallingPattern {
+		if got != SyncEmbeddedSignalling {
 			t.Errorf("%s with 5 flipped bits: got %s, want embedded signalling", p.String(), got.String())
 		}
 		if dist != SyncMatchThreshold+1 {

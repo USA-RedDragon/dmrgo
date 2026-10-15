@@ -35,16 +35,16 @@ const (
 
 //nolint:gochecknoglobals
 var syncPatterns = [...]enums.SyncPattern{
-	enums.BsSourcedVoice,
-	enums.BsSourcedData,
-	enums.MsSourcedVoice,
-	enums.MsSourcedData,
-	enums.MsSourcedRcSync,
-	enums.Tdma1Voice,
-	enums.Tdma1Data,
-	enums.Tdma2Voice,
-	enums.Tdma2Data,
-	enums.Reserved,
+	enums.SyncBSSourcedVoice,
+	enums.SyncBSSourcedData,
+	enums.SyncMSSourcedVoice,
+	enums.SyncMSSourcedData,
+	enums.SyncMSSourcedRC,
+	enums.SyncTDMA1Voice,
+	enums.SyncTDMA1Data,
+	enums.SyncTDMA2Voice,
+	enums.SyncTDMA2Data,
+	enums.SyncReserved,
 }
 
 // Match is a SYNC field found in a bit stream.
@@ -58,7 +58,7 @@ type Match struct {
 }
 
 func nearest(window uint64) (enums.SyncPattern, int) {
-	best, bestDistance := enums.EmbeddedSignallingPattern, SyncBits+1
+	best, bestDistance := enums.SyncEmbeddedSignalling, SyncBits+1
 	for _, p := range syncPatterns {
 		if d := bits.OnesCount64(window ^ uint64(p)); d < bestDistance { //nolint:gosec // patterns are 48-bit positive constants
 			best, bestDistance = p, d
@@ -105,7 +105,7 @@ type Burst struct {
 	// bit written to the Framer.
 	Offset int64
 	// Sync is the Table 9.2 pattern of the SYNC field, or
-	// enums.EmbeddedSignallingPattern when the field is not within the
+	// enums.SyncEmbeddedSignalling when the field is not within the
 	// threshold of one, as in voice bursts B to F.
 	Sync enums.SyncPattern
 	// Distance is the Hamming distance of the field from the nearest
@@ -212,7 +212,7 @@ func (f *Framer) cut() Burst {
 	b := Burst{Offset: f.base + int64(start), Data: bit.PackBits264(raw)}
 	b.Sync, b.Distance = nearest(window(f.buf, start+SyncOffset))
 	if b.Distance > f.cfg.Threshold {
-		b.Sync = enums.EmbeddedSignallingPattern
+		b.Sync = enums.SyncEmbeddedSignalling
 		f.misses++
 	} else {
 		f.misses = 0
@@ -224,12 +224,12 @@ func (f *Framer) cut() Burst {
 		f.channel = 3 - f.channel
 	}
 	switch b.Sync {
-	case enums.Tdma1Voice, enums.Tdma1Data:
+	case enums.SyncTDMA1Voice, enums.SyncTDMA1Data:
 		f.channel = 1
-	case enums.Tdma2Voice, enums.Tdma2Data:
+	case enums.SyncTDMA2Voice, enums.SyncTDMA2Data:
 		f.channel = 2
-	case enums.BsSourcedVoice, enums.BsSourcedData, enums.MsSourcedVoice, enums.MsSourcedData,
-		enums.MsSourcedRcSync, enums.Reserved, enums.EmbeddedSignallingPattern:
+	case enums.SyncBSSourcedVoice, enums.SyncBSSourcedData, enums.SyncMSSourcedVoice, enums.SyncMSSourcedData,
+		enums.SyncMSSourcedRC, enums.SyncReserved, enums.SyncEmbeddedSignalling:
 	}
 	if f.cfg.CACH && start >= layer2.CACHBits {
 		var c [layer2.CACHBits]bit.Bit

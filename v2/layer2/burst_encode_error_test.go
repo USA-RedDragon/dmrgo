@@ -19,7 +19,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 		{
 			name: "SlotTypeColorCode",
 			burst: layer2.Burst{
-				SyncPattern: enums.BsSourcedData,
+				SyncPattern: enums.SyncBSSourcedData,
 				IsData:      true,
 				HasSlotType: true,
 				SlotType:    pdu.SlotType{ColorCode: 16, DataType: enums.DataTypeIdle},
@@ -29,7 +29,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 		{
 			name: "EmbeddedColorCode",
 			burst: layer2.Burst{
-				SyncPattern:           enums.EmbeddedSignallingPattern,
+				SyncPattern:           enums.SyncEmbeddedSignalling,
 				HasEmbeddedSignalling: true,
 				EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 16},
 			},
@@ -38,7 +38,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 		{
 			name: "EmbeddedReverseChannel",
 			burst: layer2.Burst{
-				SyncPattern:           enums.EmbeddedSignallingPattern,
+				SyncPattern:           enums.SyncEmbeddedSignalling,
 				HasEmbeddedSignalling: true,
 				HasReverseChannel:     true,
 				ReverseChannel:        &pdu.ReverseChannel{RCCommand: enums.RCCommand(16)},
@@ -48,7 +48,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 		{
 			name: "StandaloneReverseChannel",
 			burst: layer2.Burst{
-				SyncPattern:           enums.MsSourcedRcSync,
+				SyncPattern:           enums.SyncMSSourcedRC,
 				HasEmbeddedSignalling: true,
 				HasReverseChannel:     true,
 				ReverseChannel:        &pdu.ReverseChannel{RCCommand: enums.RCCommand(16)},
@@ -58,7 +58,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 		{
 			name: "EmbeddedNilReverseChannel",
 			burst: layer2.Burst{
-				SyncPattern:           enums.EmbeddedSignallingPattern,
+				SyncPattern:           enums.SyncEmbeddedSignalling,
 				HasEmbeddedSignalling: true,
 				HasReverseChannel:     true,
 			},
@@ -67,7 +67,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 		{
 			name: "StandaloneNilReverseChannel",
 			burst: layer2.Burst{
-				SyncPattern:           enums.MsSourcedRcSync,
+				SyncPattern:           enums.SyncMSSourcedRC,
 				HasEmbeddedSignalling: true,
 				HasReverseChannel:     true,
 			},
@@ -76,7 +76,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 		{
 			name: "DataWithoutSlotType",
 			burst: layer2.Burst{
-				SyncPattern: enums.BsSourcedData,
+				SyncPattern: enums.SyncBSSourcedData,
 				IsData:      true,
 				SlotType:    pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeIdle},
 				Data:        &pdu.PRFill{DataType: enums.DataTypeIdle},
@@ -97,7 +97,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 	var stale [32]bit.Bit
 	stale[3] = 1
-	for _, sync := range []enums.SyncPattern{enums.EmbeddedSignallingPattern, enums.MsSourcedRcSync} {
+	for _, sync := range []enums.SyncPattern{enums.SyncEmbeddedSignalling, enums.SyncMSSourcedRC} {
 		t.Run(sync.String(), func(t *testing.T) {
 			b := layer2.Burst{
 				SyncPattern:            sync,
@@ -139,9 +139,9 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 		burst layer2.Burst
 	}{
 		{"ZeroValue", layer2.Burst{}},
-		{"VoiceWithDataSync", layer2.Burst{SyncPattern: enums.BsSourcedData}},
-		{"DataWithVoiceSync", layer2.Burst{SyncPattern: enums.MsSourcedVoice, IsData: true}},
-		{"EmbeddedPatternWithoutEMB", layer2.Burst{SyncPattern: enums.EmbeddedSignallingPattern}},
+		{"VoiceWithDataSync", layer2.Burst{SyncPattern: enums.SyncBSSourcedData}},
+		{"DataWithVoiceSync", layer2.Burst{SyncPattern: enums.SyncMSSourcedVoice, IsData: true}},
+		{"EmbeddedPatternWithoutEMB", layer2.Burst{SyncPattern: enums.SyncEmbeddedSignalling}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -161,12 +161,12 @@ func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 			voice.Frames[i].DecodedBits[j] = bit.Bit((i + j) & 1)
 		}
 	}
-	for _, sync := range []enums.SyncPattern{enums.BsSourcedVoice, enums.Reserved, enums.EmbeddedSignallingPattern} {
+	for _, sync := range []enums.SyncPattern{enums.SyncBSSourcedVoice, enums.SyncReserved, enums.SyncEmbeddedSignalling} {
 		t.Run(sync.String(), func(t *testing.T) {
 			b := layer2.Burst{
 				SyncPattern:           sync,
-				HasEmbeddedSignalling: sync == enums.EmbeddedSignallingPattern,
-				EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 3, LCSS: enums.FirstFragmentLC},
+				HasEmbeddedSignalling: sync == enums.SyncEmbeddedSignalling,
+				EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 3, LCSS: enums.LCSSFirstFragment},
 				VoiceData:             voice,
 			}
 			got, err := layer2.NewBurstFromBytes(must(b.Encode()))

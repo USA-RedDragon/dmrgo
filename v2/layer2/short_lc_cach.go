@@ -11,10 +11,10 @@ import (
 
 //nolint:gochecknoglobals
 var shortLCFragmentLCSS = [4]enums.LCSS{
-	enums.FirstFragmentLC,
-	enums.ContinuationFragmentLCorCSBK,
-	enums.ContinuationFragmentLCorCSBK,
-	enums.LastFragmentLCorCSBK,
+	enums.LCSSFirstFragment,
+	enums.LCSSContinuationFragment,
+	enums.LCSSContinuationFragment,
+	enums.LCSSLastFragment,
 }
 
 // EncodeShortLCToCACH encodes a Short LC PDU into the 4 CACH fields that

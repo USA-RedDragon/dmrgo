@@ -15,9 +15,9 @@ func talkerAliasLC() pdu.FullLinkControl {
 	copy(data[:], bit.UnpackBits([]byte("KI5VMF")))
 	return pdu.FullLinkControl{
 		FLCO:         enums.FLCOTalkerAliasHeader,
-		FeatureSetID: enums.StandardizedFID,
+		FeatureSetID: enums.FIDStandardized,
 		TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
-			TalkerAliasDataFormat: layer3.ISOEightBitCharacters,
+			TalkerAliasDataFormat: layer3.TalkerAliasISOEightBit,
 			TalkerAliasDataLength: 6,
 			TalkerAliasData:       data,
 		},
@@ -35,7 +35,7 @@ func superframeLC(t *testing.T, bursts [][33]byte, sf int) [4][32]bit.Bit {
 }
 
 func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
-	call := groupLC(enums.StandardizedFID)
+	call := groupLC(enums.FIDStandardized)
 	alias := talkerAliasLC()
 	var calls []int
 	tx := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
@@ -92,11 +92,11 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 }
 
 func TestVoiceTransmitter_EmbeddedLCHookError(t *testing.T) {
-	bad := groupLC(enums.StandardizedFID)
+	bad := groupLC(enums.FIDStandardized)
 	bad.FLCO = enums.FLCO(64)
 	fail := true
 	tx := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
-		LC: groupLC(enums.StandardizedFID), ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot(),
+		LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot(),
 		EmbeddedLC: func(int) *pdu.FullLinkControl {
 			if fail {
 				return &bad
@@ -118,13 +118,13 @@ func TestVoiceTransmitter_EmbeddedLCHookError(t *testing.T) {
 }
 
 func TestVoiceTransmitter_PIHeader(t *testing.T) {
-	lc := groupLC(enums.StandardizedFID)
+	lc := groupLC(enums.FIDStandardized)
 	pi := pdu.PIHeader{AlgorithmID: 1, MFID: 0x10, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 91}
 	sources := map[layer2.SyncSource]enums.SyncPattern{
-		layer2.SyncSourceBS:        enums.BsSourcedData,
-		layer2.SyncSourceMS:        enums.MsSourcedData,
-		layer2.SyncSourceDirectTS1: enums.Tdma1Data,
-		layer2.SyncSourceDirectTS2: enums.Tdma2Data,
+		layer2.SyncSourceBS:        enums.SyncBSSourcedData,
+		layer2.SyncSourceMS:        enums.SyncMSSourcedData,
+		layer2.SyncSourceDirectTS1: enums.SyncTDMA1Data,
+		layer2.SyncSourceDirectTS2: enums.SyncTDMA2Data,
 	}
 	for source, sync := range sources {
 		tx := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
@@ -155,7 +155,7 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 }
 
 func TestVoiceTransmitter_OptionsMatchPositional(t *testing.T) {
-	lc := groupLC(enums.StandardizedFID)
+	lc := groupLC(enums.FIDStandardized)
 	for _, source := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
 		a := must(layer2.NewVoiceTransmitter(lc, 3, source, silenceSlot()))
 		b := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
