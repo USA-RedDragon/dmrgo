@@ -9,28 +9,21 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildMBCHeaderBits constructs a [96]bit.Bit array for an MBC Header PDU.
-// lb is LastBlock, pf is ProtectFlag, opcode is 6-bit CSBK opcode, fid is 8-bit FID.
-// CRC-CCITT is computed and XOR-masked per §B.3.12 (mask 0xAAAA).
+// buildMBCHeaderBits returns the 96 information bits of an MBC header with
+// the CRC-CCITT and the MBC header mask 0xAAAA (ETSI TS 102 361-1 Table B.21).
 func buildMBCHeaderBits(lb bool, pf bool, opcode byte, fid byte, data [64]bit.Bit) [96]bit.Bit {
 	var bits [96]bit.Bit
 
-	// Bit 0: LastBlock
 	if lb {
 		bits[0] = 1
 	}
-	// Bit 1: ProtectFlag
 	if pf {
 		bits[1] = 1
 	}
-	// Bits 2-7: CSBKOpcode
 	bit.PutUint(bits[2:8], uint64(opcode))
-	// Bits 8-15: FID
 	bit.PutUint(bits[8:16], uint64(fid))
-	// Bits 16-79: Data
 	copy(bits[16:80], data[:])
 
-	// Pack first 10 bytes to compute CRC
 	var dataBytes [10]byte
 	for i := range 10 {
 		for j := range 8 {
@@ -50,8 +43,8 @@ func buildMBCHeaderBits(lb bool, pf bool, opcode byte, fid byte, data [64]bit.Bi
 	return bits
 }
 
-// buildMBCContinuationBits constructs a [96]bit.Bit array for an MBC Continuation PDU.
-// No CRC is applied at the single-burst level.
+// buildMBCContinuationBits returns the 96 information bits of an MBC
+// continuation block, without a CRC.
 func buildMBCContinuationBits(lb bool, data [95]bit.Bit) [96]bit.Bit {
 	var bits [96]bit.Bit
 	if lb {
@@ -88,7 +81,6 @@ func TestMBCHeader_Decode(t *testing.T) {
 		t.Errorf("FID = %d, want 0", hdr.FID)
 	}
 
-	// Verify data bits
 	dataBits := bit.Unpack(hdr.RawPayload[:])
 	if dataBits[0] != 1 {
 		t.Error("Data[0] should be 1")
@@ -217,7 +209,6 @@ func TestMBCHeader_CRCBitFlip(t *testing.T) {
 	data[0] = 1
 	infoBits := buildMBCHeaderBits(true, true, 0b00111101, 0x00, data)
 
-	// Flip a data bit
 	infoBits[20] ^= 1
 
 	fecResult := pdu.DecodeMBCHeader(infoBits).FEC
@@ -250,7 +241,7 @@ func TestMBCContinuation_DecodeIntermediate(t *testing.T) {
 	data[50] = 1
 	data[94] = 1
 
-	infoBits := buildMBCContinuationBits(false, data) // LB=0: intermediate
+	infoBits := buildMBCContinuationBits(false, data)
 
 	cont := pdu.DecodeMBCContinuation(infoBits)
 
@@ -276,7 +267,7 @@ func TestMBCContinuation_DecodeLastBlock(t *testing.T) {
 	data[0] = 1
 	data[78] = 1
 
-	infoBits := buildMBCContinuationBits(true, data) // LB=1: last block
+	infoBits := buildMBCContinuationBits(true, data)
 
 	cont := pdu.DecodeMBCContinuation(infoBits)
 

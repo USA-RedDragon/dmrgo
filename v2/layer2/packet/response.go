@@ -9,8 +9,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// Response is the Class and Type of a response packet (ETSI TS 102 361-1
-// Table 8.3), as Class<<3 | Type.
+// Response is the Class and Type of a response packet, as Class<<3 | Type
+// (ETSI TS 102 361-1 Table 8.3).
 type Response uint8
 
 const (
@@ -80,11 +80,10 @@ func (r Response) String() string {
 	return fmt.Sprintf("Unknown Response (class %d, type %d)", r.Class(), r.Type())
 }
 
-// ResponseData is the selective retry bitmap of the C_RDATA PDU (Table
-// 9.14, §8.2.2.3). Retry[i] asks for the block with DBSN i again. On air a
-// flag is 1 for a received block, so the zero value retries nothing. Flag
-// i is octet i/8, bit 7-i%8; the spec does not state the bit order, this
-// follows the MSB-first order of every other DMR PDU.
+// ResponseData is the selective retry bitmap of the C_RDATA PDU (ETSI TS
+// 102 361-1 clause 8.2.2.3, Table 9.14). The zero value retries nothing. On
+// air flag i is octet i/8, bit 7-i%8, and is 1 for a received block; the
+// spec does not state this bit order, so it follows the other DMR PDUs.
 type ResponseData struct {
 	Retry [127]bool // Retry[i] is set to ask for the block with DBSN i again
 }

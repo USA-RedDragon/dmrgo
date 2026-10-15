@@ -28,17 +28,10 @@ func Encode23127(data uint16) uint32 {
 	return golay_23_12_7_table[data&0xFFF] >> 1
 }
 
-// Decode23127 decodes a 23-bit word using the Golay (23,12,7) code.
-// It returns the corrected 12-bit data and a fec.Result.
-//
-// Golay (23,12,7) is a perfect code: every 23-bit word is within 3 bits of
-// exactly one codeword. Decode23127 therefore never sets Uncorrectable.
-// A word with 4 or more bit errors decodes to the wrong data and reports
-// ErrorsCorrected of at most 3, so a caller that must detect such words
-// needs ErrorsCorrected or a check outside this code.
-//
-// A received word with bits set above bit 22 is not a 23-bit word: the
-// decoder ignores those bits and sets Uncorrectable.
+// Decode23127 decodes a 23-bit Golay (23,12,7) word into 12 data bits. The
+// code is perfect, so it does not set Uncorrectable for a 23-bit word, and a
+// word with 4 or more errors decodes to wrong data with ErrorsCorrected at
+// most 3. It ignores bits above bit 22 and sets Uncorrectable if any is set.
 func Decode23127(received uint32) (data uint16, result fec.Result) {
 	result.BitsChecked = 23
 	if received>>23 != 0 {
@@ -48,25 +41,20 @@ func Decode23127(received uint32) (data uint16, result fec.Result) {
 		return data, result
 	}
 
-	// Compute the 11-bit syndrome via polynomial division
 	syndrome := golay23ComputeSyndrome(received)
 
 	if syndrome == 0 {
-		// No errors detected
 		return uint16(received >> 11), result //nolint:gosec // received>>11 is at most 12 bits, fits in uint16
 	}
 
-	// Look up the error pattern from the syndrome table
 	errPattern := golay_23_12_7_syndrome_table[syndrome]
 	if errPattern == 0xFFFFFFFF {
 		result.Uncorrectable = true
 		return uint16(received >> 11), result //nolint:gosec // received>>11 is at most 12 bits, fits in uint16
 	}
 
-	// Apply correction
 	corrected := received ^ errPattern
 	result.ErrorsCorrected = bits.OnesCount32(errPattern)
 
-	// Extract the 12 data bits (upper 12 bits of the 23-bit codeword)
 	return uint16(corrected >> 11), result //nolint:gosec // corrected>>11 is at most 12 bits, fits in uint16
 }

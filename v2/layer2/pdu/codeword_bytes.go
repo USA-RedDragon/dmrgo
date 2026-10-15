@@ -9,18 +9,10 @@ import (
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 )
 
-// ETSI TS 102 361-1 §B.3.12: Data Type CRC Mask, applied to the 96-bit
-// BPTC(196,96) payload of a data burst as 12 octets, most significant bit
-// first.
-
-// CRCMask returns the Data Type CRC Mask of Table B.21 for dt and its width
-// in bits: 24 for the RS(12,9) parity of a Voice LC Header or Terminator
-// with LC, 16 for the CRC-CCITT of a PI Header, CSBK, MBC Header, Data
-// Header or Unified Single Block Data, and 9 for the CRC-9 of a confirmed
-// Rate 1/2, Rate 3/4 or Rate 1 data block. ok is false for MBC Continuation
-// and Idle, which have no mask (Table B.21 note 1), and for reserved data
-// types. The Reverse Channel mask 0x7A applies to a CRC-7 outside any data
-// burst, so it has no data type here.
+// CRCMask returns the Data Type CRC Mask for dt and its width in bits: 24
+// for an RS(12,9) parity, 16 for a CRC-CCITT and 9 for a CRC-9 (ETSI TS 102
+// 361-1 clause B.3.12, Table B.21). ok is false for MBC Continuation, Idle
+// and reserved data types, which have no mask.
 func CRCMask(dt enums.DataType) (mask uint32, width int, ok bool) {
 	switch dt {
 	case enums.DataTypeVoiceLCHeader:
@@ -50,10 +42,10 @@ func CRCMask(dt enums.DataType) (mask uint32, width int, ok bool) {
 	}
 }
 
-// Codeword returns the 12-octet on-air codeword of l in a burst of dt
-// (§9.1.6, §B.3.6): l followed by its RS(12,9) parity XORed with the Table
-// B.21 mask of dt. It returns an error unless dt.CarriesFullLC reports
-// true.
+// Codeword returns the 12-octet on-air codeword of l in a burst of dt: l
+// followed by its RS(12,9) parity XORed with the mask of dt (ETSI TS 102
+// 361-1 clause 9.1.6, clause B.3.6). It returns an error unless
+// dt.CarriesFullLC reports true.
 func (l LCBytes) Codeword(dt enums.DataType) ([12]byte, error) {
 	mask, err := fullLCMask(dt)
 	if err != nil {
@@ -101,16 +93,11 @@ func fullLCMask(dt enums.DataType) ([3]byte, error) {
 	return [3]byte{byte(mask >> 16), byte(mask >> 8), byte(mask)}, nil //nolint:gosec // 24-bit mask split into octets
 }
 
-// Seal rewrites the parity or CRC of the 12-octet BPTC(196,96) payload p of
-// a burst of dt after the caller edited p. For a Voice LC Header or
-// Terminator with LC, octets 9 to 11 become the masked RS(12,9) parity of
-// octets 0 to 8, as LCBytes.Codeword gives it. For a PI Header, CSBK, MBC
-// Header, Data Header or Unified Single Block Data, octets 10 and 11 become
-// the CRC-CCITT of octets 0 to 9 XORed with the Table B.21 mask of dt
-// (§B.3.8). For any other data type Seal returns an error and leaves p as
-// it is: the MBC Continuation CRC covers all continuation blocks
-// (SetMBCLastBlockCRC), and the CRC-9 of a confirmed data block covers its
-// DBSN (Rate12Data.SetConfirmed and its Rate 3/4 and Rate 1 forms).
+// Seal rewrites the check bits of the BPTC(196,96) payload p of a burst of
+// dt: the masked RS(12,9) parity in octets 9 to 11 for a Voice LC Header or
+// Terminator with LC, and the masked CRC-CCITT of octets 0 to 9 in octets 10
+// and 11 for a PI Header, CSBK, MBC Header, Data Header or USBD. For other
+// data types it returns an error and leaves p unchanged.
 func Seal(p *[12]byte, dt enums.DataType) error {
 	if dt.CarriesFullLC() {
 		cw, err := LCBytes(p[:9]).Codeword(dt)

@@ -1,25 +1,5 @@
 package layer2
 
-// ETSI TS 102 361-1 Annex E: Transmit Bit Order
-//
-// A DMR burst consists of 132 dibit symbols transmitted serially:
-//
-//	L66, L65, ..., L1, R1, R2, ..., R66
-//
-// Each symbol carries 2 bits (Bit 1 = MSB, Bit 0 = LSB), giving 264 bits total.
-// The 33-byte input to NewBurstFromBytes is already in transmit bit order.
-//
-// The standard burst layout for data bursts is (Annex E, Table E.1):
-//
-//	Bits 0 to 97:    Info(0..97) (first data half, 98 bits)
-//	Bits 98 to 107:  SlotType first half (10 bits: Golay(20,8) encoded CC+DT)
-//	Bits 108 to 155: SYNC pattern or EMB+ES (48 bits)
-//	Bits 156 to 165: SlotType second half (10 bits)
-//	Bits 166 to 263: Info(98..195) (second data half, 98 bits)
-//
-// The constants give the field bounds in transmit bit order; RawBurst reads
-// and writes the fields.
-
 const (
 	// BurstBits is the total number of bits in a DMR burst.
 	BurstBits = 264
@@ -71,9 +51,6 @@ const (
 
 	// embSecondEnd is the exclusive end of the second EMB half.
 	embSecondEnd = 156
-
-	// The standalone inbound RC burst (§6.4.1, Figure 6.7, Table E.12)
-	// places EMB(8) RC(16) SYNC(48) RC(16) EMB(8) around the burst centre.
 
 	// rcembFirstStart is the start of the first EMB half in a standalone RC burst.
 	rcembFirstStart = 84

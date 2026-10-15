@@ -130,11 +130,9 @@ func TestDecodeServiceOptions_ReservedBits(t *testing.T) {
 }
 
 func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
-	// Test all 256 possible bit patterns for decode and encode stability
 	for i := 0; i < 256; i++ {
 		b := byte(i)
 
-		// Unpack byte to bits (MSB-first)
 		var bits [8]bit.Bit
 		for j := 0; j < 8; j++ {
 			if (b>>(7-j))&1 == 1 {

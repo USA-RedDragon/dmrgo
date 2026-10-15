@@ -25,25 +25,21 @@ type UnconfirmedDataHeader struct {
 
 // DataHeader is the data header PDU (ETSI TS 102 361-1 clause 9.2).
 //
-// DataHeader.Encode returns an error if more than one header field is set, or
-// if Format and the encoded Appended Blocks do not select the header field
-// that is set. An R_HEAD needs a non-zero AppendedBlocks; with zero appended
-// blocks, use StatusPrecodedHeader.
-//
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xCCCC
 //dmr:input_size 96
 type DataHeader struct {
-	FEC            fec.Result `dmr:"-"`                        // result of the header CRC check
-	Format         Format     `dmr:"bits:4-7"`                 // Data Packet Format (DPF)
-	AppendedBlocks uint8      `dmr:"bits:2-3+12-15,no_encode"` // decoded Appended Blocks (AB); Encode ignores it
+	FEC fec.Result `dmr:"-"` // result of the header CRC check
+	// Format is the Data Packet Format; Encode returns an error unless Format and the encoded AB select the one header field that is set.
+	Format         Format `dmr:"bits:4-7"`
+	AppendedBlocks uint8  `dmr:"bits:2-3+12-15,no_encode"` // decoded Appended Blocks (AB); Encode ignores it
 
 	UnconfirmedDataHeader *UnconfirmedDataHeader `dmr:"bits:0-79,dispatch:Format=FormatUnconfirmed"`                                         // U_HEAD
 	ConfirmedDataHeader   *ConfirmedDataHeader   `dmr:"bits:0-79,dispatch:Format=FormatConfirmed"`                                           // C_HEAD
 	ResponsePacketHeader  *ResponsePacketHeader  `dmr:"bits:0-79,dispatch:Format=FormatResponsePacket"`                                      // C_RHEAD
 	DefinedDataHeader     *DefinedDataHeader     `dmr:"bits:0-79,dispatch:Format=FormatShortDataDefined"`                                    // DD_HEAD
-	StatusPrecodedHeader  *StatusPrecodedHeader  `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded,when:AppendedBlocks==0"` // SP_HEAD, when AppendedBlocks is 0
-	RawDataHeader         *RawDataHeader         `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded"`                        // R_HEAD, when AppendedBlocks is not 0
+	StatusPrecodedHeader  *StatusPrecodedHeader  `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded,when:AppendedBlocks==0"` // SP_HEAD, for a header with no appended blocks
+	RawDataHeader         *RawDataHeader         `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded"`                        // R_HEAD; its AppendedBlocks must not be 0
 	UDTHeader             *UDTHeader             `dmr:"bits:0-79,dispatch:Format=FormatUnifiedDataTransport"`                                // UDT_HEAD
 	ProprietaryHeader     *ProprietaryHeader     `dmr:"bits:0-79,dispatch:Format=FormatProprietary"`                                         // P_HEAD
 

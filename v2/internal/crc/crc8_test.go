@@ -8,7 +8,6 @@ import (
 )
 
 func TestCRC8_ZeroInput(t *testing.T) {
-	// All-zero input should produce zero CRC (no feedback ever triggers)
 	bits := make([]bit.Bit, 28)
 	result := crc.CRC8(bits)
 	if result != 0x00 {
@@ -17,7 +16,6 @@ func TestCRC8_ZeroInput(t *testing.T) {
 }
 
 func TestCRC8_SingleBit(t *testing.T) {
-	// A single 1-bit should produce a non-zero CRC
 	bits := []bit.Bit{1}
 	result := crc.CRC8(bits)
 	if result == 0x00 {
@@ -26,9 +24,7 @@ func TestCRC8_SingleBit(t *testing.T) {
 }
 
 func TestCRC8_CheckValid(t *testing.T) {
-	// Build data + CRC, then verify CheckCRC8 succeeds
 	data := make([]bit.Bit, 28)
-	// Set some bits to create a non-trivial pattern
 	data[0] = 1
 	data[3] = 1
 	data[7] = 1
@@ -37,7 +33,6 @@ func TestCRC8_CheckValid(t *testing.T) {
 
 	c := crc.CRC8(data)
 
-	// Append CRC as 8 bits MSB-first
 	withCRC := make([]bit.Bit, 36)
 	copy(withCRC, data)
 	for i := 0; i < 8; i++ {
@@ -62,7 +57,6 @@ func TestCRC8_CheckInvalid(t *testing.T) {
 		withCRC[28+i] = bit.Bit((c >> (7 - i)) & 1)
 	}
 
-	// Corrupt one data bit
 	withCRC[5] ^= 1
 	if checkCRC8Codeword(withCRC) {
 		t.Error("CheckCRC8 should return false for corrupted data")
@@ -70,14 +64,12 @@ func TestCRC8_CheckInvalid(t *testing.T) {
 }
 
 func TestCRC8_CheckTooShort(t *testing.T) {
-	// Fewer than 9 bits should return false
 	if checkCRC8Codeword(make([]bit.Bit, 8)) {
 		t.Error("CheckCRC8 should return false for data shorter than 9 bits")
 	}
 }
 
 func TestCRC8_Deterministic(t *testing.T) {
-	// Same input produces same CRC
 	data := []bit.Bit{1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0}
 	crc1 := crc.CRC8(data)
 	crc2 := crc.CRC8(data)

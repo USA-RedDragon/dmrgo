@@ -9,17 +9,13 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// buildCSBKBits constructs a [96]bit.Bit array for a CSBK PDU.
-// opcode is 6 bits, FID is 0, payload is 64 bits.
-// lb and pf flags default to true/false.
-// The CRC-CCITT is computed and XOR-masked per spec (§9.1.7).
+// buildCSBKBits returns the 96 information bits of a standard FID CSBK with
+// LB set, the given opcode and payload, and the CRC-CCITT with the CSBK mask.
 func buildCSBKBits(opcode byte, payload [64]bit.Bit) [96]bit.Bit {
 	var dataBytes [12]byte
 
-	// Byte 0: lb=1, pf=0, opcode(6 bits)
-	dataBytes[0] = 0x80 | (opcode & 0x3F) // lb=1, pf=0, 6-bit opcode
+	dataBytes[0] = 0x80 | (opcode & 0x3F)
 
-	// Pack 64 payload bits into bytes 2..9
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {
 			dataBytes[2+i] <<= 1
@@ -27,16 +23,13 @@ func buildCSBKBits(opcode byte, payload [64]bit.Bit) [96]bit.Bit {
 		}
 	}
 
-	// Compute CRC over bytes 0..9
 	crc := crc.CCITT(dataBytes[:10])
 	dataBytes[10] = byte(crc >> 8)
 	dataBytes[11] = byte(crc)
 
-	// Apply XOR mask
 	dataBytes[10] ^= 0xA5
 	dataBytes[11] ^= 0xA5
 
-	// Unpack into 96 bits
 	var bits [96]bit.Bit
 	for i := 0; i < 12; i++ {
 		for j := 0; j < 8; j++ {
@@ -67,7 +60,6 @@ func TestCSBK_OpcodeString(t *testing.T) {
 		}
 	}
 
-	// Unknown opcode should contain "Unknown"
 	unknown := pdu.CSBKOpcode(0xFF)
 	if s := unknown.String(); s == "" {
 		t.Error("unknown opcode String() should not be empty")
@@ -75,18 +67,12 @@ func TestCSBK_OpcodeString(t *testing.T) {
 }
 
 func TestCSBK_PreamblePDU_Decode(t *testing.T) {
-	// Preamble opcode = 0b00111101
 	var payload [64]bit.Bit
-	// Data=1, Group=0 (bits 0,1)
 	payload[0] = 1
 	payload[1] = 0
-	// Reserved (bits 2-7) = 0
-	// CSBKBlocksToFollow = 5 (bits 8-15)
-	payload[8+5] = 1 // bit 13: value 4
-	payload[8+7] = 1 // bit 15: value 1: total = 5
-	// TargetAddress (bits 16-39) = 0x000001: last bit set
+	payload[8+5] = 1
+	payload[8+7] = 1
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = 0x000002: second to last bit set
 	payload[62] = 1
 
 	infoBits := buildCSBKBits(0b00111101, payload)
@@ -115,7 +101,6 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 		t.Error("LastBlock should be true")
 	}
 
-	// Verify String doesn't panic
 	str := csbk.String()
 	if str == "" {
 		t.Error("String should not be empty")
@@ -123,19 +108,12 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 }
 
 func TestCSBK_NegativeAck_Decode(t *testing.T) {
-	// NegativeAck opcode = 0b00100110
 	var payload [64]bit.Bit
-	// AdditionalInfo=1 (bit 0)
 	payload[0] = 1
-	// SourceType=0 (bit 1)
-	// ServiceType (bits 2-7) = 0b000011 = 3
 	payload[6] = 1
 	payload[7] = 1
-	// ReasonCode (bits 8-15) = 0x42
-	payload[9] = 1 // 0b01000010
+	payload[9] = 1
 	payload[14] = 1
-	// SourceAddress (bits 16-39): leave zero
-	// TargetAddress (bits 40-63): leave zero
 
 	infoBits := buildCSBKBits(0b00100110, payload)
 
@@ -162,21 +140,18 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 }
 
 func TestCSBK_CRCValidation(t *testing.T) {
-	// Build valid CSBK bits, then corrupt them to verify CRC catches it
 	var payload [64]bit.Bit
 	payload[0] = 1
 	infoBits := buildCSBKBits(0b00111101, payload)
 
-	// First verify it decodes ok
 	fecResult := pdu.DecodeCSBK(infoBits).FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("valid CSBK should decode ok")
 	}
 
-	// Now corrupt a bit in the middle and verify CRC fails
 	var corrupted [96]bit.Bit
 	copy(corrupted[:], infoBits[:])
-	corrupted[40] ^= 1 // flip a payload bit
+	corrupted[40] ^= 1
 
 	fecResult2 := pdu.DecodeCSBK(corrupted).FEC
 	if !fecResult2.Uncorrectable {
@@ -186,10 +161,7 @@ func TestCSBK_CRCValidation(t *testing.T) {
 
 func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// Reserved (bits 0-15) = 0
-	// BSAddress (bits 16-39) = set last bit for address 1
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = set last two bits for address 3
 	payload[62] = 1
 	payload[63] = 1
 
@@ -214,7 +186,6 @@ func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 		t.Error("SourceAddress last two bits should be 1")
 	}
 
-	// Verify String doesn't panic
 	str := csbk.String()
 	if str == "" {
 		t.Error("String should not be empty")
@@ -263,12 +234,8 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 
 func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ServiceOptions (bits 0-7) = 0x80 (emergency)
 	payload[0] = 1
-	// Reserved (bits 8-15) = 0
-	// TargetAddress (bits 16-39) = address with bit 39 set
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = address with bit 63 set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceRequest), payload)
@@ -335,13 +302,9 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 
 func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ServiceOptions (bits 0-7) = 0x40
 	payload[1] = 1
-	// AnswerResponse (bits 8-15) = 0x20
 	payload[10] = 1
-	// TargetAddress (bits 16-39): bit 39 set
 	payload[39] = 1
-	// SourceAddress (bits 40-63): bit 63 set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponse), payload)
@@ -415,25 +378,15 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.
 
 func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// SyncAge (bits 0-10) = set bit 10 for value 1
 	payload[10] = 1
-	// Generation (bits 11-15) = set bit 15 for value 1
 	payload[15] = 1
-	// LeaderIdentifier (bits 16-35) = set bit 35
 	payload[35] = 1
-	// NewLeader (bit 36) = true
 	payload[36] = 1
-	// LeaderDynamicIdentifier (bits 37-38) = 0b11
 	payload[37] = 1
 	payload[38] = 1
-	// ChannelTimingOp1 (bit 39, opcode MSB) = true
 	payload[39] = 1
-	// SourceIdentifier (bits 40-59) = set bit 59
 	payload[59] = 1
-	// Reserved (bit 60) = false
-	// SourceDynamicIdentifier (bits 61-62) = 0b10
 	payload[61] = 1
-	// ChannelTimingOp0 (bit 63, opcode LSB) = false
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTiming), payload)
 

@@ -1,7 +1,3 @@
-// Package packet segments and reassembles DMR data packets (ETSI TS 102
-// 361-1 §8.2): the header block, the rate 1/2, 3/4 or 1 data blocks, the
-// pad octets and the 32-bit message CRC (§B.3.9), confirmed delivery with
-// per-block DBSN and CRC-9, and the response packets of §8.2.2.3.
 package packet
 
 import (
@@ -43,7 +39,7 @@ type Packet struct {
 
 // blockOctets returns the user data octets of one block: 12, 18 or 24 for
 // rate 1/2, 3/4 and 1, and 2 less for a confirmed block, which starts with
-// the DBSN and CRC-9 (§8.2.2.1, §8.2.2.2).
+// the DBSN and CRC-9 (ETSI TS 102 361-1 clause 8.2.2.1, clause 8.2.2.2).
 func blockOctets(rate enums.DataType, confirmed bool) (int, error) {
 	var n int
 	switch rate {
@@ -67,8 +63,9 @@ func blockOctets(rate enums.DataType, confirmed bool) (int, error) {
 	return n, nil
 }
 
-// appendMessageCRC appends the 32-bit message CRC of §B.3.9 over data, the
-// user data and pad octets, least significant octet first (Figure B.8C).
+// appendMessageCRC appends the 32-bit message CRC over data, the user data
+// and pad octets, least significant octet first (ETSI TS 102 361-1 clause
+// B.3.9, Figure B.8C).
 func appendMessageCRC(data []byte) []byte {
 	return binary.LittleEndian.AppendUint32(data, crc.CRC32(data))
 }
@@ -85,18 +82,17 @@ func checkMessageCRC(data []byte) bool {
 
 // layout returns the number of blocks and pad octets for a payload of n
 // octets in blocks of per octets: the payload, the pad and the 4-octet
-// message CRC exactly fill the blocks (§8.2.2.1 equation 7).
+// message CRC exactly fill the blocks (ETSI TS 102 361-1 clause 8.2.2.1).
 func layout(n, per int) (blocks, pad int) {
 	blocks = (n + crcOctets + per - 1) / per
 	return blocks, blocks*per - crcOctets - n
 }
 
 // Segment splits payload into the data blocks of one packet at the given
-// rate and returns them with a copy of header. Segment sets Blocks To Follow
-// and Pad Octet Count in a U_HEAD or C_HEAD, and Appended Blocks in a DD_HEAD
-// or R_HEAD (whose pad is the caller's Bit Padding). Confirmed blocks, for a
-// C_HEAD or a short data header with SARQ set, get DBSN 0, 1, 2 and so on.
-// The other header fields are kept. Pad octets are zero.
+// rate and returns them with a copy of header. It sets the block count and
+// pad fields of the header, gives confirmed blocks DBSN 0, 1, 2 and so on,
+// and keeps the other header fields. It returns an error that wraps
+// ErrRate, ErrFormat or ErrTooLong.
 func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
 	confirmed, err := setLayout(&header, len(payload), rate)
 	if err != nil {

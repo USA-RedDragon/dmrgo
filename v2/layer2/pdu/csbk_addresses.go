@@ -71,19 +71,10 @@ func (s *CSBK) is0x38() bool {
 }
 
 // Addresses returns the 24-bit target and source addresses of a CSBK whose
-// payload carries both: UU_V_Req, UU_Ans_Rsp, NACK_Rsp and Pre (ETSI TS 102
-// 361-2 7.1.2), the grants PV_GRANT, TV_GRANT, BTV_GRANT, PD_GRANT,
-// TD_GRANT, PV_GRANT_DX, PD_GRANT_DX and PD_GRANT_MI, and P_CLEAR,
-// P_PROTECT, C_AHOY/P_AHOY, C_RAND, C_ACKVIT and P_MAINT (ETSI TS 102 361-4
-// 7.1.1). They are the TargetAddress and SourceAddress fields of the payload.
-//
-// For opcode 0x38 they are the BS address and source of a BS_Dwn_Act (ETSI
-// TS 102 361-2 7.1.2.1) or the target and source of a TD_GRANT_MI, which
-// sit at the same bits of RawPayload.
-//
-// ok is false for every other CSBK: payloads with one address or none
-// (C_MOVE, C_ALOHA, C_BCAST, C_ACKD, C_ACKU, P_ACKD, P_ACKU, CT_CSBK), and
-// a manufacturer FID payload in RawPayload.
+// payload carries both: the TargetAddress and SourceAddress fields of the
+// payload, or the same bits of RawPayload for opcode 0x38. ok is false for a
+// payload with one address or none (C_MOVE, C_ALOHA, C_BCAST, C_ACKD, C_ACKU,
+// P_ACKD, P_ACKU and CT_CSBK) and for the RawPayload of another FID.
 func (s *CSBK) Addresses() (target, source uint32, ok bool) {
 	if s.is0x38() {
 		return uint24(s.RawPayload[2:5]), uint24(s.RawPayload[5:8]), true

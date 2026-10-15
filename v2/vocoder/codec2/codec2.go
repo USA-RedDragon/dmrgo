@@ -1,23 +1,3 @@
-// Package codec2 implements vocoder.Codec with the Codec2 speech codec,
-// in the DMR framing that QRadioLink uses.
-//
-// Build requirement: by default the package binds the system libcodec2
-// through cgo, so a build that imports it needs a C compiler and libcodec2
-// with its pkg-config file (pkg-config name codec2), for example the
-// libcodec2-dev package on Debian. Without them the build fails with
-// "Package 'codec2' not found". Build with -tags nocodec2 or CGO_ENABLED=0
-// to remove the dependency; New then returns ErrUnavailable.
-//
-// Each 20 ms Codec2 frame (160 samples at 8 kHz) fills one 72-bit DMR
-// vocoder frame, so a 60 ms voice burst carries three. The Codec2 bytes go
-// MSB first at the start of the 9-byte frame and the remaining bits are zero.
-// There is no FEC, scrambling or interleaving. Calls are marked with the
-// Feature set ID 0xC2 in the Full LC. The FID does not identify the Codec2
-// mode, so both ends must agree on it out of band.
-//
-// libcodec2 is licensed under the GNU LGPL 2.1. This package links it
-// dynamically and contains none of its source. A program that links
-// libcodec2 statically must meet the LGPL terms for that copy.
 package codec2
 
 import (
@@ -32,8 +12,8 @@ import (
 const Name = "codec2"
 
 // DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2
-// calls. It is in the range ETSI TS 102 361-1 Table 9.21 reserves for future
-// MFID allocation (1xxxxxxx), so it is self-assigned, not allocated by ETSI.
+// calls. It is in the range that is reserved for future MFID allocation
+// (1xxxxxxx), and QRadioLink assigned it itself (ETSI TS 102 361-1 Table 9.21).
 const DefaultFID enums.FeatureSetID = 0xC2
 
 // FrameSamples is the number of 8 kHz PCM samples in one Codec2 frame.

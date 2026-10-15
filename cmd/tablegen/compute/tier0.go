@@ -1,21 +1,8 @@
 package compute
 
-// ComputeAMBEScrambleTable generates the 4096-entry AMBE vocoder scramble table.
-//
-// Each 12-bit index i (the AMBE 'a' parameter) seeds a 16-bit Linear
-// Congruential Generator (LCG) which produces 24 pseudo-random bits.
-// These bits form a mask that is XORed with the Golay-encoded 'b' vector
-// during AMBE frame encode/decode (after shifting right by 1).
-//
-// The LCG follows the recurrence:
-//
-//	p[n] = (173 * p[n-1] + 13849) mod 65536
-//
-// with seed p[0] = 16 * i. Output bit k (1-indexed) is the MSB of p[k]:
-//
-//	bit_k = p[k] >> 15
-//
-// The 24 output bits are packed MSB-first into a uint32.
+// ComputeAMBEScrambleTable computes the 24-bit AMBE scramble mask for each
+// 12-bit A value i. The LCG p[n] = (173*p[n-1] + 13849) mod 65536 with seed
+// p[0] = 16*i gives the mask, MSB first: bit k is the MSB of p[k].
 func ComputeAMBEScrambleTable() [4096]uint32 {
 	const (
 		lcgMultiplier = 173
@@ -26,11 +13,11 @@ func ComputeAMBEScrambleTable() [4096]uint32 {
 
 	var table [4096]uint32
 	for i := range 4096 {
-		p := uint32(16 * i) // seed = i << 4
+		p := uint32(16 * i)
 		var entry uint32
 		for k := 0; k < numBits; k++ {
 			p = (lcgMultiplier*p + lcgIncrement) & (lcgModulus - 1)
-			entry = (entry << 1) | (p >> 15) // collect MSB
+			entry = (entry << 1) | (p >> 15)
 		}
 		table[i] = entry
 	}
@@ -47,26 +34,10 @@ func ComputeDM() [256]uint8 {
 	return dm
 }
 
-// ComputeHamming15_11Syndrome computes the syndrome-to-bit-position table
-// for Hamming(15,11,3).
-//
-// The parity check matrix H has 4 rows and 15 columns. Each column is a
-// 4-bit value. For syndrome s (1..15), the table entry is the column index
-// whose H-column equals s. If no column matches (syndrome 0 = no error),
-// the entry is -1.
-//
-// The syndrome equations from bptc_196_96.go are:
-//
-//	S0 = b0^b1^b2^b3^b5^b7^b8^b11
-//	S1 = b1^b2^b3^b4^b6^b8^b9^b12
-//	S2 = b2^b3^b4^b5^b7^b9^b10^b13
-//	S3 = b0^b1^b2^b4^b6^b7^b10^b14
-//
-// The 4-bit syndrome is S0 | S1<<1 | S2<<2 | S3<<3.
-// For a single-bit error at position p, the syndrome equals column p of H.
+// ComputeHamming15_11Syndrome computes the bit position of a single-bit
+// error for each 4-bit syndrome of the Hamming(15,11,3) code. A syndrome that
+// matches no bit maps to -1 (ETSI TS 102 361-1 clause B.3.4).
 func ComputeHamming15_11Syndrome() [16]int {
-	// H-matrix columns: for each bit position 0..14, set that bit to 1
-	// and compute the syndrome.
 	var hCols [15]int
 	for p := 0; p < 15; p++ {
 		var b [15]int
@@ -90,7 +61,8 @@ func ComputeHamming15_11Syndrome() [16]int {
 
 // ComputeHamming13_9Syndrome computes the bit position of a single-bit
 // error for each 4-bit syndrome of the shortened Hamming(13,9,3) code that
-// corrects the BPTC(196,96) columns. A syndrome that matches no bit maps to -1.
+// corrects the BPTC(196,96) columns. A syndrome that matches no bit maps to -1
+// (ETSI TS 102 361-1 clause B.3.4).
 func ComputeHamming13_9Syndrome() [16]int {
 	var hCols [13]int
 	for p := 0; p < 13; p++ {
@@ -116,7 +88,8 @@ func ComputeHamming13_9Syndrome() [16]int {
 	return table
 }
 
-// ComputeCRCCCITT computes the CRC-CCITT lookup table with polynomial 0x1021.
+// ComputeCRCCCITT computes the byte-at-a-time CRC-CCITT lookup table for
+// polynomial 0x1021 (ETSI TS 102 361-1 clause B.3.8).
 func ComputeCRCCCITT() [256]uint16 {
 	var table [256]uint16
 	for i := 0; i < 256; i++ {
@@ -133,10 +106,9 @@ func ComputeCRCCCITT() [256]uint16 {
 	return table
 }
 
-// ComputeConstellationPoints computes the QPSK-like constellation mapping
-// from dibit pairs to 4-bit symbol indices, per ETSI TS 102 361-1.
+// ComputeConstellationPoints computes the 4-bit rate 3/4 trellis symbol
+// index of each pair of dibit symbol values (ETSI TS 102 361-1 clause B.2.4).
 func ComputeConstellationPoints() map[[2]int8]byte {
-	// The constellation is defined by the spec. These are the 16 points.
 	return map[[2]int8]byte{
 		{1, -1}:  0,
 		{-1, -1}: 1,
@@ -167,16 +139,10 @@ func ComputeReverseConstellation() [][]int8 {
 	return rev
 }
 
-// ComputeVocoderTables computes the AMBE vocoder frame interleaving tables.
-// The pattern is stride-4 across 72 bit positions, split into 3 groups (A, B, C).
-//
-// A: 24 positions starting at offset 0, stride 4, wrapping at 72
-// B: 23 positions starting at offset 1 (relative to A's end wrap), stride 4
-// C: 25 positions (remaining)
+// ComputeVocoderTables computes the positions in the 72-bit AMBE frame of the
+// 24 A, 23 B and 25 C codeword bits. The positions step by 4 and wrap at 72 to
+// the next start column, from A through B to C.
 func ComputeVocoderTables() (aTable, bTable, cTable []int) {
-	// A-table: start at 0, increment by 4, wrap mod 72
-	// Positions: 0, 4, 8, ..., 68, then 1, 5, 9, ..., 21
-	// That's 18 positions (0..68 step 4) plus 6 more (1,5,9,13,17,21) = 24 total
 	aTable = make([]int, 24)
 	pos := 0
 	for i := 0; i < 24; i++ {
@@ -184,11 +150,10 @@ func ComputeVocoderTables() (aTable, bTable, cTable []int) {
 		pos += 4
 		if pos >= 72 {
 			pos -= 72
-			pos++ // shift to next starting column
+			pos++
 		}
 	}
 
-	// B-table: continues from where A left off
 	bTable = make([]int, 23)
 	for i := 0; i < 23; i++ {
 		bTable[i] = pos
@@ -199,7 +164,6 @@ func ComputeVocoderTables() (aTable, bTable, cTable []int) {
 		}
 	}
 
-	// C-table: continues from where B left off
 	cTable = make([]int, 25)
 	for i := 0; i < 25; i++ {
 		cTable[i] = pos
@@ -240,12 +204,9 @@ func ComputeHamming16_11Syndrome() [32]int {
 	return table
 }
 
-// ComputeSingleBurstBPTCInterleave computes the deinterleave matrix for the
-// single-burst variable-length BPTC (§B.2.2).
-//
-// The interleaving formula is: Interleave Index = Index × 17 mod 32 (B.2)
-//
-// The returned array maps a transmit index to an encode matrix index.
+// ComputeSingleBurstBPTCInterleave computes the encode matrix index of each
+// transmit index of the single burst BPTC, where the transmit index is the
+// matrix index times 17 mod 32 (ETSI TS 102 361-1 clause B.2.2).
 func ComputeSingleBurstBPTCInterleave() [32]uint8 {
 	var table [32]uint8
 	for i := 0; i < 32; i++ {
@@ -254,12 +215,8 @@ func ComputeSingleBurstBPTCInterleave() [32]uint8 {
 	return table
 }
 
-// ComputeCRC32Table computes the 256-entry CRC-32 lookup table for
-// byte-at-a-time processing with polynomial 0x04C11DB7.
-//
-// For each byte value i, the table entry is the CRC remainder of i
-// processed through the 32-bit shift register. This is the standard
-// CRC-32 table construction used for DMR 32-bit CRC (ETSI TS 102 361-1, B.3.9).
+// ComputeCRC32Table computes the byte-at-a-time CRC-32 lookup table for
+// polynomial 0x04C11DB7 (ETSI TS 102 361-1 clause B.3.9).
 func ComputeCRC32Table() [256]uint32 {
 	const poly = uint32(0x04C11DB7)
 	var table [256]uint32
@@ -277,20 +234,9 @@ func ComputeCRC32Table() [256]uint32 {
 	return table
 }
 
-// ComputeHamming743Syndrome computes the syndrome-to-bit-position table
-// for Hamming(7,4,3).
-//
-// The parity check matrix H has 3 rows and 7 columns. Each column is a
-// 3-bit value. For syndrome s (1..7), the table entry is the column index
-// whose H-column equals s. Syndrome 0 (no error) maps to -1.
-//
-// The syndrome equations from the spec (ETSI TS 102 361-1, B.3.5):
-//
-//	s₀ = r₀ ⊕ r₁ ⊕ r₂ ⊕ r₄
-//	s₁ = r₁ ⊕ r₂ ⊕ r₃ ⊕ r₅
-//	s₂ = r₀ ⊕ r₁ ⊕ r₃ ⊕ r₆
-//
-// The 3-bit syndrome is s₀<<2 | s₁<<1 | s₂.
+// ComputeHamming743Syndrome computes the bit position of a single-bit error
+// for each 3-bit syndrome s0<<2 | s1<<1 | s2 of the Hamming(7,4,3) code. A
+// syndrome that matches no bit maps to -1 (ETSI TS 102 361-1 clause B.3.5).
 func ComputeHamming743Syndrome() [8]int {
 	var hCols [7]int
 	for p := 0; p < 7; p++ {
@@ -312,32 +258,10 @@ func ComputeHamming743Syndrome() [8]int {
 	return table
 }
 
-// ComputeHamming17_12Syndrome computes the syndrome-to-bit-position table
-// for Hamming(17,12,3) per ETSI TS 102 361-1, §B.3.3.
-//
-// Generator polynomial: g(x) = x⁵ + x² + 1
-//
-// The parity check matrix H = [Pᵀ | I₅] has 5 rows and 17 columns.
-// Each column is a 5-bit syndrome value. For syndrome s (1..31), the table
-// entry is the column index whose H-column equals s. Syndrome 0 = no error.
-//
-// Parity equations (from the generator matrix in Table B.13):
-//
-//	p₀ = d₀⊕d₁⊕d₂⊕d₃⊕d₆⊕d₇⊕d₉
-//	p₁ = d₀⊕d₁⊕d₂⊕d₃⊕d₄⊕d₇⊕d₈⊕d₁₀
-//	p₂ = d₁⊕d₂⊕d₃⊕d₄⊕d₅⊕d₈⊕d₉⊕d₁₁
-//	p₃ = d₀⊕d₁⊕d₄⊕d₅⊕d₇⊕d₁₀
-//	p₄ = d₀⊕d₁⊕d₂⊕d₅⊕d₆⊕d₈⊕d₁₁
-//
-// Syndrome equations are s = H · rᵀ:
-//
-//	s₀ = r₀⊕r₁⊕r₂⊕r₃⊕r₆⊕r₇⊕r₉⊕r₁₂
-//	s₁ = r₀⊕r₁⊕r₂⊕r₃⊕r₄⊕r₇⊕r₈⊕r₁₀⊕r₁₃
-//	s₂ = r₁⊕r₂⊕r₃⊕r₄⊕r₅⊕r₈⊕r₉⊕r₁₁⊕r₁₄
-//	s₃ = r₀⊕r₁⊕r₄⊕r₅⊕r₇⊕r₁₀⊕r₁₅
-//	s₄ = r₀⊕r₁⊕r₂⊕r₅⊕r₆⊕r₈⊕r₁₁⊕r₁₆
-//
-// The 5-bit syndrome is s₀ | s₁<<1 | s₂<<2 | s₃<<3 | s₄<<4.
+// ComputeHamming17_12Syndrome computes the bit position of a single-bit
+// error for each 5-bit syndrome of the Hamming(17,12,3) code with generator
+// x^5 + x^2 + 1. A syndrome that matches no bit maps to -1 (ETSI TS 102
+// 361-1 clause B.3.3, Table B.13).
 func ComputeHamming17_12Syndrome() [32]int {
 	var hCols [17]int
 	for p := 0; p < 17; p++ {
@@ -361,14 +285,13 @@ func ComputeHamming17_12Syndrome() [32]int {
 	return table
 }
 
-// ComputeGaloisTables computes the GF(2^8) exp and log tables
-// for Reed-Solomon(12,9,4) with primitive polynomial 0x11D (x^8 + x^4 + x^3 + x^2 + 1).
+// ComputeGaloisTables computes the GF(2^8) exponent and logarithm tables for
+// Reed-Solomon(12,9,4) with primitive polynomial 0x11D (ETSI TS 102 361-1
+// clause B.3.6).
 func ComputeGaloisTables() (exp [256]uint8, log [256]uint8) {
-	// exp[i] = α^i in GF(2^8)
 	val := uint16(1)
 	for i := 0; i < 256; i++ {
 		exp[i] = uint8(val) //nolint:gosec // val is always < 256 in GF(2^8)
-		// log is the inverse: log[α^i] = i
 		if i < 255 {
 			log[uint8(val)] = uint8(i) //nolint:gosec // i is in [0,254], fits in uint8
 		}
@@ -377,7 +300,6 @@ func ComputeGaloisTables() (exp [256]uint8, log [256]uint8) {
 			val ^= 0x11D
 		}
 	}
-	// log[0] is undefined but left as 0
-	// exp[255] should wrap back to exp[0] = 1
+	// log[0] has no defined value and stays 0.
 	return exp, log
 }

@@ -1,11 +1,3 @@
-// Package framer finds DMR bursts in a demodulated bit stream.
-//
-// A burst is 264 bits with the 48-bit SYNC or embedded signalling field at
-// burst bits 108 to 155 (ETSI TS 102 361-1 §6.1, §9.1.1). In a BS outbound
-// stream each burst follows a 24-bit CACH, so the bursts repeat every 288
-// bits and the TC bit of the CACH numbers the TDMA channel of the burst
-// that follows it (§6.3, Table 9.24). Search finds a SYNC at any bit
-// offset; Framer locks on one and then cuts bursts at a fixed period.
 package framer
 
 import (
@@ -55,7 +47,7 @@ var syncPatterns = [...]enums.SyncPattern{
 type Match struct {
 	// Offset is the index of the first SYNC bit.
 	Offset int
-	// Pattern is the matched Table 9.2 pattern.
+	// Pattern is the matched SYNC pattern.
 	Pattern enums.SyncPattern
 	// Distance is the Hamming distance from Pattern.
 	Distance int
@@ -80,7 +72,7 @@ func window(stream []bit.Bit, offset int) uint64 {
 }
 
 // Search returns the first SYNC field in stream that starts at or after
-// start and is within threshold bits of a Table 9.2 pattern. A negative
+// start and is within threshold bits of a SYNC pattern. A negative
 // threshold means layer2.DefaultSyncThreshold. ok is false when there is none.
 func Search(stream []bit.Bit, start, threshold int) (m Match, ok bool) {
 	if threshold < 0 {
@@ -108,9 +100,8 @@ type Burst struct {
 	// Offset is the stream index of burst bit 0, counted from the first
 	// bit written to the Framer.
 	Offset int64
-	// Sync is the Table 9.2 pattern of the SYNC field, or
-	// enums.SyncNone when the field is not within the
-	// threshold of one, as in voice bursts B to F.
+	// Sync is the SYNC pattern of the SYNC field, or enums.SyncNone when the
+	// field is not within the threshold of one, as in voice bursts B to F.
 	Sync enums.SyncPattern
 	// Distance is the Hamming distance of the field from the nearest
 	// pattern.
@@ -145,12 +136,8 @@ type Config struct {
 }
 
 // Framer cuts bursts out of a bit stream written to it in pieces of any
-// size. It searches for a SYNC, emits the burst around it, and then emits
-// a burst every Period bits whether or not it carries a SYNC (a flywheel),
-// so that voice bursts B to F are emitted too. A SYNC found at its expected
-// place restarts the miss count. After MaxMisses bursts without one the
-// Framer searches again, from the bit after the last expected SYNC. A
-// Framer is not safe for concurrent use.
+// size, as the package doc describes. A Framer is not safe for concurrent
+// use.
 type Framer struct {
 	cfg     Config
 	pre     int

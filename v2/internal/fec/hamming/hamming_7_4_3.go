@@ -1,5 +1,5 @@
-// Package hamming implements the Hamming (7,4,3) code of ETSI TS 102 361-1
-// B.3.5, which protects the TACT of the CACH.
+// Package hamming encodes and decodes the Hamming (7,4,3) code that protects
+// the TACT of the CACH (ETSI TS 102 361-1 clause B.3.5).
 package hamming
 
 import (
@@ -8,46 +8,23 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 - B.3.5 Hamming (7,4,3)
-//
-// Generator polynomial: G(x) = x³ + x + 1
-//
-// Generator matrix (systematic form [I₄ | P]):
-//
-//	1 0 0 0 | 1 0 1
-//	0 1 0 0 | 1 1 1
-//	0 0 1 0 | 1 1 0
-//	0 0 0 1 | 0 1 1
-//
-// Codeword: [d₀ d₁ d₂ d₃ p₀ p₁ p₂]
-//
-// Parity check matrix H = [Pᵀ | I₃]:
-//
-//	1 1 1 0 | 1 0 0
-//	0 1 1 1 | 0 1 0
-//	1 1 0 1 | 0 0 1
-
-// parity743 computes the 3 parity bits for 4 data bits using Hamming(7,4,3).
+// parity743 returns the 3 Hamming(7,4,3) parity bits of 4 data bits, from
+// the generator matrix [I₄ | P] of ETSI TS 102 361-1 clause B.3.5.
 func parity743(data [4]bit.Bit) [3]bit.Bit {
 	lowbit.Mask(data[:])
 	return [3]bit.Bit{
-		data[0] ^ data[1] ^ data[2], // p₀
-		data[1] ^ data[2] ^ data[3], // p₁
-		data[0] ^ data[1] ^ data[3], // p₂
+		data[0] ^ data[1] ^ data[2],
+		data[1] ^ data[2] ^ data[3],
+		data[0] ^ data[1] ^ data[3],
 	}
 }
 
-// Decode743 decodes a 7-bit Hamming(7,4,3) codeword, correcting up to 1 bit error.
-// Returns the corrected codeword and a fec.Result.
-// Uses the generated hamming743_syndrome_table for syndrome to error position lookup.
+// Decode743 corrects up to 1 bit error in a 7-bit Hamming(7,4,3) codeword
+// and returns the corrected codeword and a fec.Result.
 func Decode743(bits [7]bit.Bit) ([7]bit.Bit, fec.Result) {
 	lowbit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 7}
 
-	// Calculate syndrome: s = H · rᵀ
-	// s₀ = r₀ ⊕ r₁ ⊕ r₂ ⊕ r₄
-	// s₁ = r₁ ⊕ r₂ ⊕ r₃ ⊕ r₅
-	// s₂ = r₀ ⊕ r₁ ⊕ r₃ ⊕ r₆
 	s0 := bits[0] ^ bits[1] ^ bits[2] ^ bits[4]
 	s1 := bits[1] ^ bits[2] ^ bits[3] ^ bits[5]
 	s2 := bits[0] ^ bits[1] ^ bits[3] ^ bits[6]
@@ -65,7 +42,6 @@ func Decode743(bits [7]bit.Bit) ([7]bit.Bit, fec.Result) {
 		return bits, result
 	}
 
-	// Apply correction
 	corrected := bits
 	corrected[errPos] ^= 1
 	result.ErrorsCorrected = 1
@@ -73,7 +49,7 @@ func Decode743(bits [7]bit.Bit) ([7]bit.Bit, fec.Result) {
 	return corrected, result
 }
 
-// Check743 returns true if the 7-bit codeword has valid parity.
+// Check743 reports whether bits is a Hamming(7,4,3) codeword.
 func Check743(bits [7]bit.Bit) bool {
 	lowbit.Mask(bits[:])
 	var data [4]bit.Bit

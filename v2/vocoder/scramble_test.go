@@ -4,7 +4,6 @@ import "testing"
 
 // TestAMBEScrambleTableValues verifies specific known values in the AMBE scramble table
 func TestAMBEScrambleTableValues(t *testing.T) {
-	// Test first few known values from the table
 	expectedValues := []struct {
 		index    int
 		expected uint32
@@ -32,7 +31,7 @@ func TestAMBEScrambleTableValues(t *testing.T) {
 
 // TestScrambleTableBitWidth verifies all values fit within 24 bits (DMR constraint)
 func TestScrambleTableBitWidth(t *testing.T) {
-	maxValue := uint32(0xFFFFFF) // 24-bit max value
+	maxValue := uint32(0xFFFFFF)
 	for i, v := range ambeScrambleTable {
 		if v > maxValue {
 			t.Errorf("ambeScrambleTable[%d] = 0x%08X exceeds 24-bit max (0x%06X)", i, v, maxValue)
@@ -42,7 +41,6 @@ func TestScrambleTableBitWidth(t *testing.T) {
 
 // TestScrambleTableDistribution verifies statistical properties of the table
 func TestScrambleTableDistribution(t *testing.T) {
-	// Check that bit distribution is roughly uniform (each bit set ~50% of the time)
 	bitCounts := make([]int, 24)
 
 	for _, v := range ambeScrambleTable {
@@ -55,7 +53,7 @@ func TestScrambleTableDistribution(t *testing.T) {
 
 	tableLen := len(ambeScrambleTable)
 	expectedCount := tableLen / 2
-	tolerance := tableLen / 10 // Allow 10% deviation
+	tolerance := tableLen / 10
 
 	for bit, count := range bitCounts {
 		if count < expectedCount-tolerance || count > expectedCount+tolerance {
@@ -75,7 +73,7 @@ func BenchmarkScrambleTableAccess(b *testing.B) {
 
 // BenchmarkScrambleXOR simulates typical DMR whitening operation
 func BenchmarkScrambleXOR(b *testing.B) {
-	data := make([]byte, 196) // Typical DMR burst size
+	data := make([]byte, 196)
 	for i := range data {
 		data[i] = byte(i)
 	}

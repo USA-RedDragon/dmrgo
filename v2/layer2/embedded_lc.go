@@ -12,16 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ETSI TS 102 361-1 §7.1.3: Embedded signalling
-//
-// Voice bursts B to E of a superframe carry one 72-bit Full LC in four
-// 32-bit embedded signalling fragments with LCSS First, Continuation,
-// Continuation and Last. The LC and its 5-bit checksum (§B.3.11) fill the
-// 77 information bits of the variable length BPTC (§B.2.1): per Figure B.3
-// rows 0 and 1 hold 11 LC bits and rows 2 to 6 hold 10 LC bits followed by
-// one checksum bit, most significant checksum bit first. The embedded LC has
-// no RS(12,9) parity.
-
 // LCSSForPosition returns pos.LCSS().
 //
 // Deprecated: use enums.VoiceBurstType.LCSS.
@@ -29,8 +19,8 @@ func LCSSForPosition(pos enums.VoiceBurstType) (lcss enums.LCSS, ok bool) {
 	return pos.LCSS()
 }
 
-// voiceLCHeaderMask is the Voice LC Header Data Type CRC Mask octet (Table
-// B.21).
+// voiceLCHeaderMask is the Voice LC Header Data Type CRC Mask octet (ETSI
+// TS 102 361-1 Table B.21).
 const voiceLCHeaderMask = 0x96
 
 // EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in
@@ -43,13 +33,10 @@ func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
 }
 
 // DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling
-// fields f of bursts B to E, as RawBurst.EmbeddedData returns them. It
-// decodes the BPTC to the nearest codewords and keeps the one whose 5-bit
-// checksum matches its LC. The FEC result covers the BPTC; Uncorrectable is
-// set when no nearest codeword or more than one has a matching checksum.
-// With strict set, it corrects the BPTC rows and columns as MMDVMHost does
-// (CDMREmbeddedData::decodeEmbeddedData), so it accepts and returns the same
-// LCs as MMDVMHost.
+// fields f of bursts B to E, as RawBurst.EmbeddedData returns them. The FEC
+// result sets Uncorrectable when no nearest BPTC codeword, or more than one,
+// has a 5-bit checksum that matches its LC. With strict set, it corrects the
+// BPTC as MMDVMHost does (CDMREmbeddedData::decodeEmbeddedData).
 func DecodeEmbeddedLC(f [4][4]byte, strict bool) ([9]byte, fec.Result) {
 	lc, res := decodeEmbeddedLCBits(fragmentBits(f), strict)
 	return lcOctets(lc), res
@@ -81,12 +68,10 @@ func (a *EmbeddedLCAssembler) Reset() {
 }
 
 // Add adds the embedded signalling field frag of a burst whose EMB carries
-// lcss. A First fragment starts a new LC, and a Last fragment that follows
-// a First and two Continuations completes it: Add then returns the LC with
-// its FEC result and done set, and ErrEmbeddedLCUncorrectable when the
-// result is uncorrectable. Any other order, and a Single fragment, discard
-// the partial LC; Add returns ErrEmbeddedLCSequence when a partial LC is
-// discarded.
+// lcss. When a Last fragment follows a First and two Continuation
+// fragments, Add returns the LC with done set, and ErrEmbeddedLCUncorrectable when its
+// FEC result is uncorrectable. Add returns ErrEmbeddedLCSequence when a
+// fragment out of that order discards a partial LC.
 func (a *EmbeddedLCAssembler) Add(frag [4]byte, lcss enums.LCSS) (lc [9]byte, res fec.Result, done bool, err error) {
 	bits, res, done, err := a.add(bit.Unpack32(frag), lcss)
 	if !done {
@@ -204,11 +189,9 @@ func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, err
 }
 
 // DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded
-// signalling fields f of bursts B to E, with the LC octets decoded as
-// DecodeEmbeddedLC(f, strict) decodes them. The returned LC has
-// BurstDataType DataTypeVoiceLCHeader, so it encodes as a Voice LC Header as
-// is, and its FEC field combines the DecodeEmbeddedLC result and the field
-// decode.
+// signalling fields f of bursts B to E, as DecodeEmbeddedLC(f, strict) does.
+// The LC has BurstDataType DataTypeVoiceLCHeader, and its FEC field combines
+// the DecodeEmbeddedLC result and the field decode.
 func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkControl {
 	return embeddedFullLinkControl(decodeEmbeddedLCBits(fragmentBits(f), strict))
 }

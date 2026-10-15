@@ -236,9 +236,9 @@ func TestRC_String(t *testing.T) {
 	}
 }
 
-// buildStandaloneRCBurst lays out a §6.4.1 standalone RC burst by hand per
-// Table E.12: EMB at bits 84-91 and 172-179, RC at 92-107 and 156-171, and
-// the RC SYNC at 108-155.
+// buildStandaloneRCBurst lays out a standalone RC burst by hand: EMB at bits
+// 84 to 91 and 172 to 179, RC at 92 to 107 and 156 to 171, and the RC SYNC
+// at 108 to 155 (ETSI TS 102 361-1 clause 6.4.1, Table E.12).
 func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	var bitData [264]bit.Bit
 	embBits := must((&pdu.EmbeddedSignalling{

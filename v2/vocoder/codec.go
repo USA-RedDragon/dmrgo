@@ -1,7 +1,3 @@
-// Package vocoder converts between PCM and the 72-bit vocoder slots of a DMR
-// voice burst. It defines the Codec interface and a name-based codec
-// registry, the AMBE+2 frame FEC (EncodeAMBE72, DecodeAMBE72) and the IPSC
-// AMBE payload packing. It contains no AMBE+2 codec.
 package vocoder
 
 import (
@@ -18,21 +14,11 @@ import (
 // ErrUnknownCodec is returned by New when no codec is registered under the name.
 var ErrUnknownCodec = errors.New("vocoder: unknown codec")
 
-// Codec converts between 8 kHz 16-bit mono PCM and the 72 on-air bits of one
-// vocoder frame in a DMR voice burst (ETSI TS 102 361-1 clause 6.1). A voice
-// burst carries three such frames.
-//
-// The 72 bits are the raw on-air bits: any FEC, scrambling or interleaving the
-// vocoder needs is the implementation's job.
-//
-// Implementations are not safe for concurrent use unless their documentation
-// says otherwise. Close releases the resources of the codec; a codec that
-// holds none returns nil.
-//
-// The method set is frozen for v2: a later feature is an optional interface
-// that a caller detects with a type assertion, so existing codecs keep
-// compiling. A decoder that can report frame quality, for example, would
-// implement an additional QualityDecoder interface.
+// Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of
+// one of the three vocoder frames of a DMR voice burst (ETSI TS 102 361-1
+// clause 6.1). The implementation applies any FEC, scrambling or interleaving
+// that the vocoder needs. A Codec is not safe for concurrent use unless its
+// documentation says so. Close releases its resources.
 type Codec interface {
 	io.Closer
 
@@ -46,9 +32,9 @@ type Codec interface {
 	// burst of a call.
 	Silence() [72]bit.Bit
 	// FID returns the Feature set ID to send in the Full LC of calls that use
-	// this codec. It is advisory: the FID does not identify the vocoder
-	// (ETSI TS 102 361-1 Table 9.21 NOTE), so a receiver selects the codec by
-	// name, agreed out of band, not by FID.
+	// this codec. The FID does not identify the vocoder, so a receiver selects
+	// the codec by a name that both ends agree on out of band (ETSI TS 102
+	// 361-1 Table 9.21 NOTE).
 	FID() enums.FeatureSetID
 }
 

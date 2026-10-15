@@ -7,8 +7,8 @@ on:
       - main
 
 permissions:
-  contents: read       # Required for actions/checkout
-  checks:   write      # Required for GitHub Checks API
+  contents: read
+  checks:   write
 
 jobs:
   benchmark-tests:

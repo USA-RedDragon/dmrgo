@@ -9,11 +9,9 @@ import (
 const crc9MaskRate1 uint16 = 0x10F
 
 // Rate1Data is a rate 1 coded packet data block (R_1_DATA) (ETSI TS 102 361-1
-// clause 9.2.15).
-//
-// Data holds all 192 bits. Unconfirmed data (Table 9.18A) uses all of them
-// as user data. Confirmed data (Table 9.18) carries a 7-bit DBSN, a 9-bit
-// CRC-9 and 176 bits of user data; use the Confirmed* methods for it.
+// clause 9.2.15). Unconfirmed data uses all 192 bits as user data. The
+// Confirmed methods read the 7-bit DBSN, the 9-bit CRC-9 and the 176 user
+// data bits of a confirmed block (Table 9.18), and SetConfirmed writes them.
 type Rate1Data struct {
 	Data [24]byte `dmr:"bits:0-191,packed"` // the 192 block bits, most significant bit first
 }

@@ -1,6 +1,6 @@
-// Package golay implements the Golay (20,8,7) code of ETSI TS 102 361-1
-// B.3.1, which protects the slot type, and the Golay (23,12,7) and (24,12,8)
-// codes of the AMBE+2 vocoder frame FEC.
+// Package golay encodes and decodes the Golay (20,8,7) code that protects
+// the slot type (ETSI TS 102 361-1 clause B.3.1), and the Golay (23,12,7) and
+// (24,12,8) codes of the AMBE+2 vocoder frame FEC.
 package golay
 
 import (
@@ -11,8 +11,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// parity2087 returns the 12 parity bits of 8 data bits in the Golay (20,8,7)
-// code of ETSI TS 102 361-1 B.3.1.
+// parity2087 returns the 12 Golay (20,8,7) parity bits of 8 data bits
+// (ETSI TS 102 361-1 clause B.3.1).
 func parity2087(bits [8]bit.Bit) [12]bit.Bit {
 	lowbit.Mask(bits[:])
 	var p [12]bit.Bit
@@ -40,7 +40,6 @@ func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 	var data [8]bit.Bit
 	copy(data[:], bits[:8])
 
-	// Calculate syndrome
 	calcParity := parity2087(data)
 	syndrome := 0
 	for i := 0; i < 12; i++ {
@@ -59,7 +58,6 @@ func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 		return bits, result
 	}
 
-	// Apply correction
 	var corrected [20]bit.Bit
 	copy(corrected[:], bits[:])
 
@@ -100,13 +98,11 @@ func Encode2087(dataBits [8]bit.Bit) [20]bit.Bit {
 	tableIdx := bits.Reverse8(data)
 	codeword := golay_20_8_7_table[tableIdx]
 
-	// Unpack data bits (MSB first)
 	for i := 0; i < 8; i++ {
 		if (data>>(7-i))&1 == 1 {
 			result[i] = 1
 		}
 	}
-	// Unpack parity bits from table
 	for i := 0; i < 12; i++ {
 		if (codeword>>(8+i))&1 == 1 {
 			result[8+i] = 1

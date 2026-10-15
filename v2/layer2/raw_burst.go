@@ -12,29 +12,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// RawBurst is a 33-octet burst in transmit bit order (ETSI TS 102 361-1
-// Annex E), the form NewBurstFromBytes takes. Its methods read or write one
-// field in place and leave every other bit as it is. They do not classify
-// the burst: the caller knows, or decides, which fields the burst carries.
-// The getters have value receivers, so they work on a conversion such as
-// RawBurst(p).EmbeddedData(); the setters have pointer receivers.
-//
-// A data burst carries the slot type and one of the BPTCPayload,
-// Rate34Payload or Rate1Payload forms around a SYNC pattern or around EMB
-// and EmbeddedData (§5.1.5.1, §6.4.2); its slot type
-// names the form, but a caller that knows the data type from elsewhere (a
-// network header, for example) can use it instead. A voice burst carries
-// VoiceSlots around a SYNC pattern (burst A) or around EMB and
-// EmbeddedData (bursts B to F). A standalone inbound RC burst (§6.4.1)
-// carries the RC SYNC with StandaloneRCEMB and StandaloneRCData around it,
-// at offsets that differ from EMB and EmbeddedData.
-//
-// FEC results follow the rule of package fec. A getter that decodes a PDU,
-// such as SlotType and EMB, reports the result in the FEC field of the PDU.
-// A getter that decodes a bare value, such as BPTCPayload, Rate34Payload,
-// Rate1Payload and AMBEFrames, returns a fec.Result with it. Rate 1 has no
-// FEC, so its Result is zero. A getter of uncoded bits, such as
-// EmbeddedData and VoiceSlots, returns the bits only.
+// RawBurst is a 33-octet burst in transmit bit order, the form
+// NewBurstFromBytes takes (ETSI TS 102 361-1 Annex E). Its methods read or
+// write one field and leave every other bit as it is; they do not classify
+// the burst. The getters have value receivers and the setters have pointer
+// receivers.
 type RawBurst [33]byte
 
 func (r RawBurst) readBits(dst []bit.Bit, start int) {
@@ -56,8 +38,8 @@ func (r *RawBurst) writeBits(src []bit.Bit, start int) {
 	}
 }
 
-// Sync returns the Table 9.2 SYNC pattern nearest to burst bits 108 to 155
-// and its Hamming distance, as enums.NearestSyncPattern does.
+// Sync returns the SYNC pattern nearest to burst bits 108 to 155 and its
+// Hamming distance, as enums.NearestSyncPattern does.
 func (r RawBurst) Sync() (enums.SyncPattern, int) {
 	var bits [48]bit.Bit
 	r.readBits(bits[:], syncStart)
@@ -67,7 +49,7 @@ func (r RawBurst) Sync() (enums.SyncPattern, int) {
 }
 
 // SetSync writes the SYNC pattern p into burst bits 108 to 155. It returns
-// an error unless p is a Table 9.2 pattern.
+// an error unless p is a SYNC pattern (ETSI TS 102 361-1 Table 9.2).
 func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 	if !isSyncPattern(p) {
 		return fmt.Errorf("%#x is not a Table 9.2 SYNC pattern", uint64(p))
@@ -110,10 +92,8 @@ func (r *RawBurst) setInfo(bits [196]bit.Bit) {
 
 // BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns
 // the 96 data bits packed most significant bit first, before any CRC or
-// RS(12,9) check (see pdu.BlockCRCOK and pdu.FullLCParityOK). The BPTC code
-// is the same for every data type that uses it, so the result does not
-// depend on the slot type, but it is meaningful only for those data types:
-// a Rate 3/4 or Rate 1 burst needs Rate34Payload or Rate1Payload.
+// RS(12,9) check. It is meaningful only for the BPTC data types; a Rate 3/4
+// or Rate 1 burst needs Rate34Payload or Rate1Payload.
 func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 	bits, res := bptc.Decode196(r.info())
 	return bit.Pack96(bits), res
@@ -129,9 +109,8 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 
 // BPTCReserved decodes the 196 information bits as BPTC(196,96) and returns
 // the reserved bits R(0) to R(2), R(i) at index i, after FEC correction, with
-// the BPTC result. ETSI TS 102 361-1 B.1.1 sets them to zero. Motorola
-// Capacity Max sets R(2) to flag RAS (Restricted Access System), which
-// replaces the CRC with a keyed check.
+// the BPTC result. Motorola Capacity Max sets R(2) to flag RAS (ETSI TS 102
+// 361-1 clause B.1.1).
 func (r RawBurst) BPTCReserved() ([3]bit.Bit, fec.Result) {
 	_, res, result := bptc.Decode196WithReserved(r.info())
 	return res, result
@@ -155,8 +134,8 @@ func (r *RawBurst) SetBPTCReserved(res [3]bit.Bit) {
 }
 
 // Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis
-// code (§B.1.1) and returns the 144 data bits packed most significant bit
-// first.
+// code and returns the 144 data bits packed most significant bit first
+// (ETSI TS 102 361-1 clause B.1.1).
 func (r RawBurst) Rate34Payload() ([18]byte, fec.Result) {
 	bits, res := trellis.Decode(r.info())
 	var p [18]byte
@@ -171,9 +150,9 @@ func (r *RawBurst) SetRate34Payload(p [18]byte) {
 	r.setInfo(trellis.Encode(bits))
 }
 
-// Rate1Payload returns the 192 uncoded data bits of a Rate 1 burst (Table
-// B.10B) packed most significant bit first: information bits 0 to 95 and
-// 100 to 195. Rate 1 has no FEC, so the fec.Result is zero.
+// Rate1Payload returns the 192 uncoded data bits of a Rate 1 burst packed
+// most significant bit first: information bits 0 to 95 and 100 to 195. The
+// fec.Result is zero (ETSI TS 102 361-1 Table B.10B).
 func (r RawBurst) Rate1Payload() ([24]byte, fec.Result) {
 	info := r.info()
 	var bits [192]bit.Bit
@@ -219,8 +198,8 @@ func (r *RawBurst) SetEmbeddedData(d [4]byte) {
 	r.setWord32(d, embeddedDataStart, embeddedDataStart+16)
 }
 
-// StandaloneRCEMB decodes the EMB of a standalone inbound RC burst (§6.4.1,
-// Figure 6.7), burst bits 84 to 91 and 172 to 179.
+// StandaloneRCEMB decodes the EMB of a standalone inbound RC burst, burst
+// bits 84 to 91 and 172 to 179 (ETSI TS 102 361-1 clause 6.4.1, Figure 6.7).
 func (r RawBurst) StandaloneRCEMB() pdu.EmbeddedSignalling {
 	return r.emb(rcembFirstStart, rcembSecondStart)
 }
@@ -271,9 +250,9 @@ func (r *RawBurst) setWord32(d [4]byte, first, second int) {
 }
 
 // VoiceSlots returns the three 72-bit vocoder slots of a voice burst as
-// they are on air, before any FEC, as Burst.VoiceSlots does: slot i is
-// voice bits 72i to 72i+71, where voice bits 0 to 107 are burst bits 0 to
-// 107 and voice bits 108 to 215 are burst bits 156 to 263.
+// they are on air, before any FEC. Slot i is voice bits 72i to 72i+71, where
+// voice bits 0 to 107 are burst bits 0 to 107 and voice bits 108 to 215 are
+// burst bits 156 to 263.
 func (r RawBurst) VoiceSlots() [VoiceSlotsPerBurst][9]byte {
 	var voice [216]bit.Bit
 	r.readBits(voice[:108], 0)
@@ -325,12 +304,9 @@ func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
 }
 
 // BuildVoiceBurst returns voice burst pos of a superframe that carries the
-// AMBE+2 frames. Burst A carries the voice SYNC pattern of src. Bursts B to
-// F carry emb, with its LCSS replaced by pos.LCSS(), and the embedded
-// signalling field embedded, as RawBurst.EmbeddedData returns it: an
-// embedded LC fragment from EncodeEmbeddedLC, a Null embedded message (all
-// zero) or a coded Reverse Channel. It returns an error when pos is not A to
-// F or src is unknown.
+// AMBE+2 frames. Burst A carries the voice SYNC pattern of src; bursts B to
+// F carry emb, with its LCSS set from pos, and the embedded signalling field
+// embedded. It returns an error when pos is not A to F or src is unknown.
 func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.VoiceBurstType, emb pdu.EmbeddedSignalling,
 	embedded [4]byte, src SyncSource,
 ) (RawBurst, error) {
@@ -354,11 +330,9 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 }
 
 // BuildBurst returns the data burst that carries d, with a slot type of
-// color code cc and data type d.DataType() and the data SYNC pattern of
-// src. It codes d.EncodeBits(), which carries the CRC or RS(12,9) parity of
-// d, with BPTC(196,96), the Rate 3/4 trellis or Rate 1 as the data type
-// selects. The BPTC reserved bits are zero. It returns an error when d is
-// nil or does not encode, or src is unknown.
+// color code cc and data type d.DataType() and the data SYNC pattern of src.
+// The BPTC reserved bits are zero. It returns an error when d is nil or does
+// not encode, or src is unknown.
 func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if d == nil {
 		return RawBurst{}, fmt.Errorf("cannot build a burst from nil Data")
@@ -391,11 +365,9 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 }
 
 // BuildDataBurst returns a data burst that carries the BPTC(196,96) payload
-// p with a slot type of color code cc and data type dt and the data SYNC
-// pattern of src. p must already carry its CRC or RS(12,9) parity with the
-// Data Type CRC Mask of dt (see pdu.Seal). It returns an error when dt is
-// not BPTC coded (Rate 3/4, Rate 1 and the reserved data types; see
-// BuildRate34DataBurst and BuildRate1DataBurst) or src is unknown.
+// p, which must already carry its CRC or parity (see pdu.Seal), with a slot
+// type of color code cc and data type dt and the data SYNC pattern of src.
+// It returns an error when dt is not BPTC coded or src is unknown.
 func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if !dt.IsBPTC() {
 		return RawBurst{}, fmt.Errorf("data type %s is not BPTC(196,96) coded", dt.String())

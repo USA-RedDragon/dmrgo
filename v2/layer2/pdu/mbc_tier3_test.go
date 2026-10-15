@@ -9,36 +9,32 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// buildContinuationBits96 constructs a [96]bit.Bit array for an MBC continuation block.
-// It sets LB, PF, CSBKO, and writes the given CdefParms bits at bits 22-79.
+// buildContinuationBits96 returns the 96 information bits of a last MBC
+// continuation block with the given PF, CSBKO, color code and CdefParms bits.
 func buildContinuationBits96(pf bool, csbko byte, colourCode byte, cdefParms [58]bit.Bit) [96]bit.Bit {
 	var bits [96]bit.Bit
 
-	bits[0] = 1 // LB: these are always last blocks
+	bits[0] = 1
 	if pf {
 		bits[1] = 1
 	}
 
-	// CSBKO (bits 2-7)
 	for i := 0; i < 6; i++ {
 		if (csbko>>(5-i))&1 == 1 {
 			bits[2+i] = 1
 		}
 	}
 
-	// ColorCode (bits 12-15): for CG_AP, MV_AP, VN_AP
 	for i := 0; i < 4; i++ {
 		if (colourCode>>(3-i))&1 == 1 {
 			bits[12+i] = 1
 		}
 	}
 
-	// Cdeftype (bits 16-19) = 0
-
-	// CdefParms (bits 22-79)
 	copy(bits[22:80], cdefParms[:])
 
-	// Last-block CRC-CCITT over bits 0-79, no mask (TS 102 361-1 §7.4.0, Table B.21)
+	// The last-block CRC-CCITT covers bits 0 to 79 and has no mask
+	// (ETSI TS 102 361-1 clause 7.4.0, Table B.21).
 	c := crc.CCITT(bit.Pack(bits[:80]))
 	bit.PutUint(bits[80:96], uint64(c))
 
@@ -47,12 +43,10 @@ func buildContinuationBits96(pf bool, csbko byte, colourCode byte, cdefParms [58
 
 func TestCGAPContinuation_Decode(t *testing.T) {
 	var cdefParms [58]bit.Bit
-	// Channel (bits 0-11) = 291 = 0b000100100011
 	cdefParms[3] = 1
 	cdefParms[6] = 1
 	cdefParms[10] = 1
 	cdefParms[11] = 1
-	// TXMHz (bits 12-21) = 440 = 0b0110111000
 	cdefParms[13] = 1
 	cdefParms[14] = 1
 	cdefParms[16] = 1
@@ -79,7 +73,6 @@ func TestCGAPContinuation_Decode(t *testing.T) {
 		t.Errorf("Cdeftype = %d, want 0", decoded.Cdeftype)
 	}
 
-	// Verify CdefParms can be parsed
 	parms := &decoded.CdefParms
 	if parms.Channel != 291 {
 		t.Errorf("Channel = %d, want 291", parms.Channel)
@@ -144,18 +137,13 @@ func TestBCAPContinuation_Decode(t *testing.T) {
 	var cdefParms [58]bit.Bit
 	cdefParms[5] = 1
 
-	// BC_AP has 8-bit Reserved1 (bits 8-15) instead of 4-bit Reserved + 4-bit CC
 	var bits [96]bit.Bit
-	bits[0] = 1 // LB
-	// CSBKO = C_BCAST = 0b101000
+	bits[0] = 1
 	bits[2] = 1
 	bits[4] = 1
-	// Reserved1 (bits 8-15) = 0xFF: all 1s
 	for i := 8; i <= 15; i++ {
 		bits[i] = 1
 	}
-	// Cdeftype (bits 16-19) = 0
-	// CdefParms (bits 22-79)
 	copy(bits[22:80], cdefParms[:])
 
 	decoded := pdu.DecodeBCAPContinuation(bits)
@@ -240,7 +228,6 @@ func TestMVAPContinuation_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestBit_ContinuationTypes_AllDecode(t *testing.T) {
-	// Verify all four continuation types can decode a zero-filled 96-bit array without panic
 	var zeroBits [96]bit.Bit
 
 	pdu.DecodeCGAPContinuation(zeroBits)

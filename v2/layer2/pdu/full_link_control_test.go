@@ -107,7 +107,6 @@ func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestFullLinkControl_EncodeStability(t *testing.T) {
-	// Encoding the same FLC twice should produce identical bytes
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   false,
@@ -146,14 +145,12 @@ func TestFullLinkControl_String(t *testing.T) {
 	if len(str) == 0 {
 		t.Error("ToString returned empty string")
 	}
-	// Should contain key information
 	if !strings.Contains(str, "Group Voice Channel User") {
 		t.Errorf("ToString missing FLCO name, got: %s", str)
 	}
 }
 
 func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
-	// Verify that service options survive the encode-decode cycle
 	so := layer3.ServiceOptions{
 		IsEmergency:         true,
 		IsPrivacy:           true,
@@ -199,7 +196,6 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 }
 
 func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
-	// Same valid data should decode correctly regardless, because the caller sets DataType
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -222,7 +218,6 @@ func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
 }
 
 func TestFullLinkControl_AddressRange(t *testing.T) {
-	// Test with maximum 24-bit addresses (16777215)
 	tests := []struct {
 		name       string
 		groupAddr  uint32
@@ -265,7 +260,6 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 }
 
 func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
-	// Test all three Talker Alias Block FLCO variants
 	flcoVariants := []enums.FLCO{
 		enums.FLCOTalkerAliasBlock1,
 		enums.FLCOTalkerAliasBlock2,
@@ -275,7 +269,6 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 	for _, flco := range flcoVariants {
 		t.Run(flco.String(), func(t *testing.T) {
 			var aliasData [56]bit.Bit
-			// Set some recognizable pattern in the alias data
 			for i := 0; i < 56; i++ {
 				if i%3 == 0 {
 					aliasData[i] = 1
@@ -353,7 +346,6 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var aliasData [48]bit.Bit
-			// Set a pattern
 			aliasData[0] = 1
 			aliasData[47] = 1
 
@@ -447,7 +439,6 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 		t.Errorf("SendSequenceNumber = %d, want 5", tdlc.SendSequenceNumber)
 	}
 
-	// String should contain the FLCO name
 	str := decoded.String()
 	if !strings.Contains(str, "Terminator Data Link Control") {
 		t.Errorf("ToString missing FLCO name, got: %s", str)

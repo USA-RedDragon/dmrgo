@@ -9,24 +9,12 @@ import (
 )
 
 func TestCdefParms_NewFromBits(t *testing.T) {
-	// Construct a 58-bit array with known values:
-	// Channel (12 bits) = 0x123 = 291
-	// TXMHz (10 bits) = 440 = 0b0110111000
-	// TXKHz (13 bits) = 4000 steps of 125 Hz, a 0.5 MHz offset = 0b0111110100000
-	// RXMHz (10 bits) = 445 = 0b0110111101
-	// RXKHz (13 bits) = 0 = 0b0000000000000
 	var bits [58]bit.Bit
 
-	// Channel = 291 = 0b000100100011
 	setBitsFromUint16(bits[:], 0, 12, 291)
-	// TXMHz = 440 = 0b0110111000
 	setBitsFromUint16(bits[:], 12, 10, 440)
-	// TXKHz = 4000 = 0b0111110100000
 	setBitsFromUint16(bits[:], 22, 13, 4000)
-	// RXMHz = 445
 	setBitsFromUint16(bits[:], 35, 10, 445)
-	// RXKHz = 0
-	// (already zero)
 
 	parmsValue := layer3.DecodeCdefParms(bits)
 	parms := &parmsValue
@@ -52,9 +40,9 @@ func TestCdefParms_FrequencyCalculation(t *testing.T) {
 	parms := &layer3.CdefParms{
 		Channel: 1,
 		TXMHz:   440,
-		TXKHz:   4000, // 4000 × 0.000125 = 0.5 MHz
+		TXKHz:   4000, // 4000 steps of 125 Hz is 0.5 MHz
 		RXMHz:   445,
-		RXKHz:   4000, // 4000 × 0.000125 = 0.5 MHz
+		RXKHz:   4000,
 	}
 
 	txFreq := parms.TXFrequencyMHz()

@@ -5,16 +5,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst (ETSI TS
-// 102 361-1 §9.1.8), as layer2.RawBurst.BPTCPayload returns it: 80 CSBK
-// bits followed by the CRC-CCITT XORed with the CSBK mask 0xA5A5. Its
-// methods read or write one field in place and leave every other bit as it
-// is. The setters do not update the CRC: call Reseal after the last edit,
-// or the CSBK fails its CRC check.
-//
-// Octet 0 holds the LB and PF bits and the 6-bit CSBKO, octet 1 the FID
-// and octets 2 to 9 the CSBK data. Address fields follow the payload
-// layouts that DecodeCSBK applies, so they apply only to the standard FID.
+// CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst, as
+// layer2.RawBurst.BPTCPayload returns it: 80 CSBK bits and the CRC-CCITT
+// XORed with the CSBK mask 0xA5A5 (ETSI TS 102 361-1 clause 9.1.8). Its
+// methods read or write one field in place. The setters do not update the
+// CRC: call Reseal after the last edit.
 type CSBKBytes [12]byte
 
 // Opcode returns the 6-bit CSBKO, the low 6 bits of octet 0.
@@ -50,13 +45,10 @@ func (c CSBKBytes) addressOffsets() (target, source int, ok bool) {
 	}
 }
 
-// Addresses returns the 24-bit target and source addresses of the CSBKs
-// for which CSBK.Addresses returns them, with the standard FID: octets 4 to
-// 6 hold the target and octets 7 to 9 the source, except in NACK_Rsp (ETSI
-// TS 102 361-2 Table 7.6), where octets 4 to 6 hold the source and octets 7
-// to 9 the target. For opcode 0x38 the target is the BS address of a
-// BS_Dwn_Act or the target of a TD_GRANT_MI, which are at the same octets.
-// ok is false for every other CSBK, as for CSBK.Addresses.
+// Addresses returns the 24-bit target and source addresses of the CSBKs for
+// which CSBK.Addresses returns them, and ok false for every other CSBK.
+// Octets 4 to 6 hold the target and octets 7 to 9 the source, except in
+// NACK_Rsp, where they are the other way around (ETSI TS 102 361-2 Table 7.6).
 func (c CSBKBytes) Addresses() (target, source uint32, ok bool) {
 	t, s, ok := c.addressOffsets()
 	if !ok {
@@ -104,14 +96,10 @@ func (c CSBKBytes) groupBit() (octet int, mask byte, ok bool) {
 	}
 }
 
-// Group returns the flag that says the target address is a talkgroup, for
-// the standard FID CSBKs that carry one: the Group bit of Pre (ETSI TS 102
-// 361-2 Table 7.7, octet 2 bit 6) and the G/I bit of P_CLEAR and P_PROTECT
-// (octet 3 bit 0) and of C_AHOY/P_AHOY (octet 3 bit 6), ETSI TS 102 361-4
-// §7.1.1. Bits count from 0 at the least significant. 1 means a talkgroup
-// and 0 an individual address. ok is false for every other CSBK: in the
-// grants the opcode tells group from individual, and the others have no
-// such flag.
+// Group reports whether the target address is a talkgroup, from the Group
+// bit of Pre_CSBK or the G/I bit of P_CLEAR, P_PROTECT, C_AHOY and P_AHOY
+// (ETSI TS 102 361-2 Table 7.7 and ETSI TS 102 361-4 clause 7.1.1). ok is
+// false for every other CSBK and for any FID other than the standard FID.
 func (c CSBKBytes) Group() (group, ok bool) {
 	o, m, ok := c.groupBit()
 	if !ok {

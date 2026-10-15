@@ -8,7 +8,6 @@ import (
 )
 
 func TestCRC9_ZeroInput(t *testing.T) {
-	// All-zero input: polynomial division yields 0, then XOR with 0x1FF
 	bits := make([]bit.Bit, 87)
 	result := crc.CRC9(bits)
 	if result != 0x1FF {
@@ -19,11 +18,9 @@ func TestCRC9_ZeroInput(t *testing.T) {
 func TestCRC9_SingleBit(t *testing.T) {
 	bits := []bit.Bit{1}
 	result := crc.CRC9(bits)
-	// With inversion, should not be 0x1FF
 	if result == 0x1FF {
 		t.Error("CRC9 of single 1-bit should differ from all-zero CRC")
 	}
-	// Must be in 9-bit range
 	if result > 0x1FF {
 		t.Errorf("CRC9 = 0x%03X, exceeds 9-bit range", result)
 	}
@@ -38,7 +35,6 @@ func TestCRC9_CheckValid_NoMask(t *testing.T) {
 
 	c := crc.CRC9(data)
 
-	// Append CRC as 9 bits MSB-first
 	withCRC := make([]bit.Bit, 96)
 	copy(withCRC, data)
 	for i := 0; i < 9; i++ {
@@ -51,13 +47,14 @@ func TestCRC9_CheckValid_NoMask(t *testing.T) {
 }
 
 func TestCRC9_CheckValid_WithMask(t *testing.T) {
-	// Rate 3/4 data continuation mask: 0x1FF (per B.3.12)
 	data := make([]bit.Bit, 135)
 	data[0] = 1
 	data[50] = 1
 	data[100] = 1
 
-	c := crc.CRC9(data) ^ 0x1FF // apply mask
+	// 0x1FF is the rate 3/4 data continuation mask (ETSI TS 102 361-1 clause
+	// B.3.12).
+	c := crc.CRC9(data) ^ 0x1FF
 
 	withCRC := make([]bit.Bit, 144)
 	copy(withCRC, data)
@@ -82,7 +79,6 @@ func TestCRC9_CheckInvalid(t *testing.T) {
 		withCRC[87+i] = bit.Bit((c >> (8 - i)) & 1)
 	}
 
-	// Corrupt data
 	withCRC[0] ^= 1
 	if checkCRC9Codeword(withCRC, 0x000) {
 		t.Error("CheckCRC9 should return false for corrupted data")
@@ -108,7 +104,6 @@ func TestCRC9_Deterministic(t *testing.T) {
 }
 
 func TestCRC9_ValueRange(t *testing.T) {
-	// CRC-9 should always be in range [0, 0x1FF]
 	data := make([]bit.Bit, 183)
 	for i := range data {
 		data[i] = bit.Bit(i % 3)
@@ -120,7 +115,6 @@ func TestCRC9_ValueRange(t *testing.T) {
 }
 
 func TestCRC9_Rate12_DataSize(t *testing.T) {
-	// Rate 1/2 confirmed: 80 data + 7 serial = 87 bits
 	data := make([]bit.Bit, 87)
 	data[0] = 1
 	data[86] = 1

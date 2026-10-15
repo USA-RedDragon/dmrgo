@@ -1,19 +1,3 @@
-// Package pdu defines the layer 2 PDUs of ETSI TS 102 361 with their
-// decoders and encoders: CSBK, Full LC, Short LC, data headers, MBC, PI
-// header, slot type, EMB and the data blocks. DecodeX decodes a PDU from its
-// information bits and X.Encode encodes it; most of these functions are
-// generated from the dmr struct tags by cmd/dmrgen. The payloads of a CSBK,
-// MBC, Full LC, Short LC or data header decode with their parent, which sets
-// the payload field of its opcode, so they have no DecodeX of their own.
-//
-// DecodeX returns only the PDU. A PDU whose decode corrects or checks
-// errors, with FEC such as Golay, QR, Hamming or RS(12,9) or with a CRC,
-// has a FEC field that reports the result; a PDU without such a code, such
-// as a CSBK payload or a data block, has no FEC field. Decoding never fails
-// on an uncorrectable result: the fields are set from the received bits and
-// FEC.Uncorrectable is set. FEC.Err returns fec.ErrUncorrectable for a
-// caller that wants an error. Functions that decode a bare value, such as
-// DecodeEMBCodeword, return the fec.Result with it.
 package pdu
 
 import (
@@ -176,7 +160,6 @@ type PreamblePDU struct {
 
 // ChannelTimingPDU is the channel timing (CT_CSBK) CSBK payload (ETSI TS 102
 // 361-2 clause 7.1.2.6, Table 7.8).
-// ChannelTimingOp1 is the opcode MSB and ChannelTimingOp0 the LSB.
 type ChannelTimingPDU struct {
 	SyncAge                 uint16 `dmr:"bits:0-10"`  // time since the last beacon in 500 ms steps
 	Generation              uint8  `dmr:"bits:11-15"` // number of timing hops from the leader, 0 at the leader
@@ -287,9 +270,8 @@ type PrivateDataGrantMultiItemPDU struct {
 }
 
 // TalkgroupDataGrantMultiItemPDU is the multi-item talkgroup data channel grant
-// (TD_GRANT_MI) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
-// It shares opcode 0x38 with BSOutboundActivationPDU, so DecodeCSBK keeps it
-// in RawPayload; see CSBK.Hint0x38 and CSBK.AsTalkgroupDataGrantMultiItem.
+// (TD_GRANT_MI) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1). DecodeCSBK
+// keeps it in RawPayload (opcode 0x38): use CSBK.AsTalkgroupDataGrantMultiItem.
 //
 //dmr:subpdu
 type TalkgroupDataGrantMultiItemPDU struct {
@@ -334,9 +316,8 @@ type AlohaPDU struct {
 }
 
 // BroadcastPDU is the announcement (C_BCAST) CSBK payload (ETSI TS 102 361-4
-// clause 7.1.1.1.5, Table 7.20).
-// BroadcastParms1 and BroadcastParms2 are not decoded further; their layout
-// depends on AnnouncementType (TS 102 361-4 §7.2.19, Tables 7.69 onward).
+// clause 7.1.1.1.5, Table 7.20). The layout of BroadcastParms1 and
+// BroadcastParms2 depends on AnnouncementType (ETSI TS 102 361-4 clause 7.2.19).
 type BroadcastPDU struct {
 	AnnouncementType enums.AnnouncementType `dmr:"bits:0-4,enum"` // which system parameters are broadcast
 	BroadcastParms1  uint16                 `dmr:"bits:5-18"`     // 14 bits whose layout depends on AnnouncementType
@@ -461,28 +442,14 @@ const (
 	// Opcode0x38Unknown gives no hint.
 	Opcode0x38Unknown Opcode0x38Hint = iota
 	// Opcode0x38BSOutboundActivation hints at BS_Dwn_Act, which an MS sends
-	// (ETSI TS 102 361-2 5.1.1.1).
+	// (ETSI TS 102 361-2 clause 5.1.1.1).
 	Opcode0x38BSOutboundActivation
 	// Opcode0x38TalkgroupDataGrantMultiItem hints at TD_GRANT_MI, which a
-	// TSCC sends (ETSI TS 102 361-4).
+	// TSCC sends (ETSI TS 102 361-4 clause 7.1.1.1.1).
 	Opcode0x38TalkgroupDataGrantMultiItem
 )
 
-// CSBK is the Control Signalling Block (CSBK) PDU (ETSI TS 102 361-1 clause
-// 9.1.5).
-//
-// The FID redefines the CSBKO (ETSI TS 102 361-1 Table 9.21), so the standard
-// payload layouts apply only to the SFID. Payloads of other FIDs and of
-// opcodes without a layout are kept in RawPayload.
-//
-// Opcode 0x38 is BS_Dwn_Act in Tier II and TD_GRANT_MI in Tier III, and the
-// CSBK does not say which, so its payload stays in RawPayload; see
-// AsBSOutboundActivation and AsTalkgroupDataGrantMultiItem.
-//
-// CSBK.Encode returns an error if more than one payload field is set, or if
-// CSBKOpcode and FID do not select the payload field that is set. Put the
-// payload of a manufacturer FID in RawPayload, and set the payload of opcode
-// 0x38 with SetBSOutboundActivation or SetTalkgroupDataGrantMultiItem.
+// CSBK is the Control Signalling Block (CSBK) PDU (ETSI TS 102 361-1 clause 9.1.8).
 //
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xA5A5
@@ -495,8 +462,8 @@ type CSBK struct {
 	FID         enums.FeatureSetID `dmr:"bits:8-15"` // feature set ID, only the standard FID has payload fields
 	FEC         fec.Result         `dmr:"-"`         // result of the CRC check
 	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
-	// Opcode0x38Unknown; layer2.Burst sets it from the SYNC pattern of the
-	// burst. It is a hint only: a network relay can rewrite the SYNC.
+	// Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst,
+	// which a network relay can rewrite.
 	Hint0x38 Opcode0x38Hint `dmr:"-"`
 
 	UnitToUnitVoiceServiceRequestPDU        *UnitToUnitVoiceServiceRequestPDU        `dmr:"bits:16-79,dispatch:Opcode=CSBKUnitToUnitVoiceServiceRequest"`        // UU_V_Req payload, or nil
@@ -527,10 +494,8 @@ type CSBK struct {
 	AckvitationPDU                  *AckvitationPDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKAckvitation"`                  // C_ACKVIT payload, or nil
 	MaintenancePDU                  *MaintenancePDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKMaintenance"`                  // P_MAINT payload, or nil
 
-	// RawPayload holds CSBK bits 16 to 79 when no payload field is set, as
-	// for opcode 0x38 or a manufacturer FID, packed most significant bit
-	// first: bit 16 is the top bit of byte 0, so the bytes are CSBK octets
-	// 2 to 9.
+	// RawPayload holds CSBK octets 2 to 9 (bits 16 to 79) when no payload
+	// field is set, as for opcode 0x38 or a manufacturer FID.
 	RawPayload [8]byte `dmr:"bits:16-79,raw,fallback"`
 }
 
@@ -590,10 +555,10 @@ func (s *CSBK) setOpcode0x38(bits [64]bit.Bit, hint Opcode0x38Hint) {
 	}
 }
 
-// NewBSOutboundActivation returns the BS_Dwn_Act CSBK that an MS sends to
-// wake up the BS with address bs (ETSI TS 102 361-2 §7.1.2.1), with
-// LastBlock set. It returns a *bit.FieldRangeError when an address does not
-// fit in 24 bits.
+// NewBSOutboundActivation returns the BS_Dwn_Act CSBK, with LastBlock set,
+// that an MS sends to wake up the BS with address bs (ETSI TS 102 361-2
+// clause 7.1.2.1). It returns a *bit.FieldRangeError when an address does
+// not fit in 24 bits.
 func NewBSOutboundActivation(bs, source uint32) (CSBK, error) {
 	s := CSBK{LastBlock: true}
 	err := s.SetBSOutboundActivation(BSOutboundActivationPDU{BSAddress: bs, SourceAddress: source})

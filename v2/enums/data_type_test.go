@@ -39,7 +39,6 @@ func TestDataTypeString_Unknown(t *testing.T) {
 }
 
 func TestDataType_Constants(t *testing.T) {
-	// Verify iota-based ordering matches DMR spec nibble values
 	if DataTypePIHeader != 0 {
 		t.Errorf("DataTypePIHeader = %d, want 0", DataTypePIHeader)
 	}

@@ -44,7 +44,6 @@ func All() *Tables {
 
 	wg := sync.WaitGroup{}
 
-	// Tier 0
 	wg.Add(1)
 	go func() {
 		t.DM = ComputeDM()
@@ -117,7 +116,6 @@ func All() *Tables {
 	}()
 	wg.Wait()
 
-	// Tier 1
 	wg.Add(1)
 	go func() {
 		t.Golay23_12_7Encoding = ComputeGolay23_12_7Encoding()
@@ -170,7 +168,6 @@ func All() *Tables {
 	}()
 	wg.Wait()
 
-	// Tier 2
 	wg.Add(1)
 	go func() {
 		t.Trellis34Transition = ComputeTrellis34Transition(t.EncoderStateTransition)

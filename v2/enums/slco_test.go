@@ -49,7 +49,6 @@ func TestSLCO_Cast_ActivityUpdate(t *testing.T) {
 func TestSLCO_Cast_Reserved(t *testing.T) {
 	t.Parallel()
 	slco := enums.SLCO(5)
-	// Reserved values are returned as-is
 	if int(slco) != 5 {
 		t.Errorf("expected 5, got %d", slco)
 	}
