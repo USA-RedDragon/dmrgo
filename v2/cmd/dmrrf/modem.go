@@ -254,9 +254,16 @@ func ToIQ(freq, env []float64, rate, offsetHz, level float64) []byte {
 	return out
 }
 
+// s8 returns f, clamped to [-127, 127], as a two's complement octet.
 func s8(f float64) byte {
 	v := int(math.Round(math.Max(-127, math.Min(127, f))))
-	return byte(v & 0xFF) //nolint:gosec // v is in [-127, 127]
+	if v < 0 {
+		v += 256
+	}
+	if v < 0 || v > 0xFF {
+		return 0
+	}
+	return byte(v)
 }
 
 func fromS8(b byte) float64 {

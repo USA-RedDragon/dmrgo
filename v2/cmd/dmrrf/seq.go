@@ -198,18 +198,20 @@ func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cfg.Preambles-1+len(data) > 0xFF {
+	toFollow := cfg.Preambles - 1 + len(data)
+	if toFollow < 0 || toFollow > 0xFF {
 		return nil, fmt.Errorf("%d preambles and %d data bursts do not fit in CSBK Blocks to Follow", cfg.Preambles, len(data))
 	}
+	blocks := byte(toFollow)
 	var out []layer2.RawBurst
-	for i := range cfg.Preambles {
+	for range cfg.Preambles {
 		c := &pdu.CSBK{
 			LastBlock: true,
 			Opcode:    pdu.CSBKPreamble,
 			PreamblePDU: &pdu.PreamblePDU{
 				Data:               true,
 				Group:              cfg.Group,
-				CSBKBlocksToFollow: byte(cfg.Preambles - 1 - i + len(data)), //nolint:gosec // checked above
+				CSBKBlocksToFollow: blocks,
 				TargetAddress:      cfg.Dest,
 				SourceAddress:      cfg.Source,
 			},
@@ -219,6 +221,7 @@ func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 			return nil, err
 		}
 		out = append(out, b)
+		blocks--
 	}
 	return append(out, data...), nil
 }
@@ -227,7 +230,10 @@ func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 // known 49-bit value per frame, so the relayed frames can be compared bit
 // for bit.
 func TestAMBEFrame(i int) vocoder.AMBEFrame {
-	z := uint64(i+1) * 0x9E3779B97F4A7C15 //nolint:gosec // i is small and positive
+	if i < 0 {
+		i = 0
+	}
+	z := (uint64(i) + 1) * 0x9E3779B97F4A7C15
 	z = (z ^ z>>30) * 0xBF58476D1CE4E5B9
 	z = (z ^ z>>27) * 0x94D049BB133111EB
 	z ^= z >> 31
@@ -248,7 +254,7 @@ func voiceBursts(cfg SeqConfig, privacy bool) ([]layer2.RawBurst, []string, erro
 		LC:        lc,
 		ColorCode: cfg.ColorCode,
 		Source:    cfg.source(),
-		Silence:   vocoder.EncodeAMBE72(vocoder.AMBESilence()),
+		Silence:   vocoder.AMBESilenceSlot(),
 	}
 	var info []string
 	if privacy {

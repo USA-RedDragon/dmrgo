@@ -142,8 +142,10 @@ func TestLoopbackVoice(t *testing.T) {
 		l.expect(t, "lc", "terminator "+fields, 1)
 		l.expect(t, "elc", fields+" emergency=0 checksum=ok fec=ok", 3)
 		l.expect(t, "emb", "cc=1 pi=0", 15)
-		for pos, lcss := range map[string]string{"B": "first", "C": "cont", "D": "cont", "E": "last", "F": "single"} {
-			l.expect(t, "emb", "pos="+pos+" cc=1 pi=0 lcss="+lcss+" fec=ok", 3)
+		for i := 1; i < 6; i++ {
+			pos, _ := enums.VoiceBurstAt(i)
+			lcss, _ := pos.LCSS()
+			l.expect(t, "emb", fmt.Sprintf("pos=%s cc=1 pi=0 lcss=%q fec=ok", pos, lcss.String()), 3)
 		}
 		checkAMBE(t, l, 3*18, false)
 	}
@@ -333,7 +335,7 @@ func TestLoopbackBSSourced(t *testing.T) {
 		l := runLoop(t, "voice", cfg)
 		ts := fmt.Sprintf("ts=%d", slot+1)
 		l.expect(t, "elc", ts+" flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0 emergency=0 checksum=ok", 2)
-		l.expect(t, "emb", ts+" pos=B cc=1 pi=0 lcss=first fec=ok", 2)
+		l.expect(t, "emb", fmt.Sprintf("%s pos=B cc=1 pi=0 lcss=%q fec=ok", ts, enums.LCSSFirstFragment.String()), 2)
 		l.expect(t, "lc", ts+" header", 1)
 		l.expect(t, "lc", ts+" terminator", 1)
 		checkAMBE(t, l, 2*18, false)
@@ -345,10 +347,10 @@ func TestLoopbackBSSourced(t *testing.T) {
 		l.expect(t, "cach", "tc=0", n/2)
 		l.expect(t, "cach", fmt.Sprintf("at=1 tc=%d", slot), len(l.built.Bursts))
 		l.expect(t, "cach", fmt.Sprintf("at=1 tc=%d", 1-slot), 0)
-		for _, lcss := range []string{"first", "last"} {
-			l.expect(t, "cach", "lcss="+lcss, n/4)
+		for _, lcss := range []enums.LCSS{enums.LCSSFirstFragment, enums.LCSSLastFragment} {
+			l.expect(t, "cach", fmt.Sprintf("lcss=%q", lcss.String()), n/4)
 		}
-		l.expect(t, "cach", "lcss=cont", n/2)
+		l.expect(t, "cach", fmt.Sprintf("lcss=%q", enums.LCSSContinuationFragment.String()), n/2)
 		hash := pdu.AddressHash(cfg.Dest)
 		au := fmt.Sprintf("slco=1 activity ts1=0x0 hash1=0x00 ts2=0x8 hash2=0x%02x fec=ok", hash)
 		if slot == 0 {
