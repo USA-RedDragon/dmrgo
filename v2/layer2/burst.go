@@ -179,7 +179,14 @@ func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
 	b.bitData = bit.Unpack264(data)
 	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
 	err := b.decode(opts)
-	return errors.Join(err, b.checkColorCode(opts.ColorCode))
+	ccErr := b.checkColorCode(opts.ColorCode)
+	switch {
+	case err == nil:
+		return ccErr
+	case ccErr == nil:
+		return err
+	}
+	return errors.Join(err, ccErr)
 }
 
 func (b *Burst) decode(opts *DecodeOptions) error {
@@ -545,7 +552,7 @@ func (b *Burst) String() string {
 // whose only code is the payload code.
 func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern) (Data, fec.Result, error) {
 	if dt.IsReserved() {
-		return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
+		return nil, fec.Result{}, reservedDataTypeError{dt}
 	}
 	var bits96 [96]bit.Bit
 	copy(bits96[:], infoBits)
@@ -599,7 +606,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync 
 		return d, d.FEC, nil
 	case enums.DataTypeReserved:
 	}
-	return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
+	return nil, fec.Result{}, reservedDataTypeError{dt}
 }
 
 // Encode returns the burst in transmit bit order, as the package doc

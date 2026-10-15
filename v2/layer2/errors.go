@@ -3,7 +3,9 @@ package layer2
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -35,3 +37,41 @@ var (
 	// Terminate.
 	ErrVoiceTerminated = errors.New("voice transmission already terminated")
 )
+
+// reservedDataTypeError is ErrReservedDataType for a burst of data type dt.
+// It is one byte, so it converts to an error without allocating.
+type reservedDataTypeError struct {
+	dt enums.DataType
+}
+
+func (e reservedDataTypeError) Error() string {
+	return ErrReservedDataType.Error() + " " + strconv.Itoa(int(e.dt))
+}
+
+func (e reservedDataTypeError) Unwrap() error {
+	return ErrReservedDataType
+}
+
+// colorCodeMismatchError is ErrColorCodeMismatch for a burst of color code
+// got, in the high 4 bits, and the expected color code, in the low 4 bits.
+// It is one byte, so it converts to an error without allocating.
+type colorCodeMismatchError struct {
+	gotWant uint8
+}
+
+// colorCodeMismatch returns ErrColorCodeMismatch with got and want.
+func colorCodeMismatch(got, want enums.ColorCode) error {
+	if got > 0x0F || want > 0x0F {
+		return fmt.Errorf("%w: burst has %d, want %d", ErrColorCodeMismatch, got, want)
+	}
+	return colorCodeMismatchError{gotWant: uint8(got)<<4 | uint8(want)}
+}
+
+func (e colorCodeMismatchError) Error() string {
+	return ErrColorCodeMismatch.Error() + ": burst has " + strconv.Itoa(int(e.gotWant>>4)) +
+		", want " + strconv.Itoa(int(e.gotWant&0x0F))
+}
+
+func (e colorCodeMismatchError) Unwrap() error {
+	return ErrColorCodeMismatch
+}
