@@ -19,8 +19,8 @@ func DecodeVocoderFrame(data [72]bit.Bit) (VocoderFrame, fec.FECResult) {
 	return result, fecResult
 }
 
-func EncodeVocoderFrame(s *VocoderFrame) [72]bit.Bit {
-	return encodeAMBE(s.DecodedBits)
+func EncodeVocoderFrame(s *VocoderFrame) ([72]bit.Bit, error) {
+	return encodeAMBE(s.DecodedBits), nil
 }
 
 func (s *VocoderFrame) ToString() string {

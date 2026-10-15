@@ -74,7 +74,7 @@ func TestRate12Data_EncodeDecodeRoundTrip(t *testing.T) {
 	original := pdu.Rate12Data{
 		Data: [12]byte{0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01},
 	}
-	encoded := pdu.EncodeRate12Data(&original)
+	encoded := must(pdu.EncodeRate12Data(&original))
 	decoded, _ := pdu.DecodeRate12Data(encoded)
 	if decoded.Data != original.Data {
 		t.Errorf("round-trip failed: got %v, want %v", decoded.Data, original.Data)

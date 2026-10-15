@@ -49,13 +49,16 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.FECResult) {
 }
 
 // EncodeMBCHeader encodes a MBCHeader per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
-func EncodeMBCHeader(s *MBCHeader) [96]bit.Bit {
+func EncodeMBCHeader(s *MBCHeader) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
 	}
 	if s.ProtectFlag {
 		data[1] = 1
+	}
+	if uint64(s.CSBKOpcode)>>6 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("MBCHeader.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
 	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.FID), 8))
@@ -78,7 +81,7 @@ func EncodeMBCHeader(s *MBCHeader) [96]bit.Bit {
 	for j := range 8 {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
-	return data
+	return data, nil
 }
 
 func (s *MBCHeader) ToString() string {
@@ -95,13 +98,13 @@ func DecodeMBCContinuation(data [96]bit.Bit) (MBCContinuation, fec.FECResult) {
 }
 
 // EncodeMBCContinuation encodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
-func EncodeMBCContinuation(s *MBCContinuation) [96]bit.Bit {
+func EncodeMBCContinuation(s *MBCContinuation) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
 	}
 	copy(data[1:96], s.Data[:])
-	return data
+	return data, nil
 }
 
 func (s *MBCContinuation) ToString() string {
@@ -137,7 +140,7 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.FECResult) 
 }
 
 // EncodeCGAPContinuation encodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
-func EncodeCGAPContinuation(s *CGAPContinuation) [96]bit.Bit {
+func EncodeCGAPContinuation(s *CGAPContinuation) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -145,10 +148,25 @@ func EncodeCGAPContinuation(s *CGAPContinuation) [96]bit.Bit {
 	if s.ProtectFlag {
 		data[1] = 1
 	}
+	if uint64(s.CSBKOpcode)>>6 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
+	}
 	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
+	if uint64(s.Reserved1)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.Reserved1, 4))
+	if uint64(s.ColourCode)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
+	}
 	copy(data[12:16], bit.BitsFromUint8(s.ColourCode, 4))
+	if uint64(s.Cdeftype)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
+	}
 	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
+	if uint64(s.Reserved2)>>2 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+	}
 	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
 	copy(data[22:80], s.CdefParms[:])
 	var _encBytes [10]byte
@@ -167,7 +185,7 @@ func EncodeCGAPContinuation(s *CGAPContinuation) [96]bit.Bit {
 	for j := range 8 {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
-	return data
+	return data, nil
 }
 
 func (s *CGAPContinuation) ToString() string {
@@ -203,7 +221,7 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.FECResult) 
 }
 
 // EncodeMVAPContinuation encodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
-func EncodeMVAPContinuation(s *MVAPContinuation) [96]bit.Bit {
+func EncodeMVAPContinuation(s *MVAPContinuation) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -211,10 +229,25 @@ func EncodeMVAPContinuation(s *MVAPContinuation) [96]bit.Bit {
 	if s.ProtectFlag {
 		data[1] = 1
 	}
+	if uint64(s.CSBKOpcode)>>6 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
+	}
 	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
+	if uint64(s.Reserved1)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.Reserved1, 4))
+	if uint64(s.ColourCode)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
+	}
 	copy(data[12:16], bit.BitsFromUint8(s.ColourCode, 4))
+	if uint64(s.Cdeftype)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
+	}
 	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
+	if uint64(s.Reserved2)>>2 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+	}
 	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
 	copy(data[22:80], s.CdefParms[:])
 	var _encBytes [10]byte
@@ -233,7 +266,7 @@ func EncodeMVAPContinuation(s *MVAPContinuation) [96]bit.Bit {
 	for j := range 8 {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
-	return data
+	return data, nil
 }
 
 func (s *MVAPContinuation) ToString() string {
@@ -268,7 +301,7 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.FECResult) 
 }
 
 // EncodeBCAPContinuation encodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
-func EncodeBCAPContinuation(s *BCAPContinuation) [96]bit.Bit {
+func EncodeBCAPContinuation(s *BCAPContinuation) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -276,9 +309,18 @@ func EncodeBCAPContinuation(s *BCAPContinuation) [96]bit.Bit {
 	if s.ProtectFlag {
 		data[1] = 1
 	}
+	if uint64(s.CSBKOpcode)>>6 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
+	}
 	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.Reserved1), 8))
+	if uint64(s.Cdeftype)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
+	}
 	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
+	if uint64(s.Reserved2)>>2 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+	}
 	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
 	copy(data[22:80], s.CdefParms[:])
 	var _encBytes [10]byte
@@ -297,7 +339,7 @@ func EncodeBCAPContinuation(s *BCAPContinuation) [96]bit.Bit {
 	for j := range 8 {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
-	return data
+	return data, nil
 }
 
 func (s *BCAPContinuation) ToString() string {
@@ -333,7 +375,7 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.FECResult) 
 }
 
 // EncodeVNAPContinuation encodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
-func EncodeVNAPContinuation(s *VNAPContinuation) [96]bit.Bit {
+func EncodeVNAPContinuation(s *VNAPContinuation) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -341,10 +383,25 @@ func EncodeVNAPContinuation(s *VNAPContinuation) [96]bit.Bit {
 	if s.ProtectFlag {
 		data[1] = 1
 	}
+	if uint64(s.CSBKOpcode)>>6 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
+	}
 	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
+	if uint64(s.Reserved1)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.Reserved1, 4))
+	if uint64(s.ColourCode)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
+	}
 	copy(data[12:16], bit.BitsFromUint8(s.ColourCode, 4))
+	if uint64(s.Cdeftype)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
+	}
 	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
+	if uint64(s.Reserved2)>>2 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+	}
 	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
 	copy(data[22:80], s.CdefParms[:])
 	var _encBytes [10]byte
@@ -363,7 +420,7 @@ func EncodeVNAPContinuation(s *VNAPContinuation) [96]bit.Bit {
 	for j := range 8 {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
-	return data
+	return data, nil
 }
 
 func (s *VNAPContinuation) ToString() string {

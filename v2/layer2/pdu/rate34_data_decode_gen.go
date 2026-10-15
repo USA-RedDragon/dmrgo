@@ -24,10 +24,10 @@ func DecodeRate34Data(data [144]bit.Bit) (Rate34Data, fec.FECResult) {
 }
 
 // EncodeRate34Data encodes a Rate34Data per ETSI TS 102 361-1 - 9.2.2 Rate 3/4 coded packet Data (R_3_4_DATA) PDU
-func EncodeRate34Data(s *Rate34Data) [144]bit.Bit {
+func EncodeRate34Data(s *Rate34Data) ([144]bit.Bit, error) {
 	var data [144]bit.Bit
 	copy(data[0:144], bit.UnpackBits(s.Data[:]))
-	return data
+	return data, nil
 }
 
 func (s *Rate34Data) ToString() string {

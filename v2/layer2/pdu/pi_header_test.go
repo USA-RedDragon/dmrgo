@@ -31,7 +31,7 @@ func TestPIHeader_DecodeVector(t *testing.T) {
 	if pi.Destination != 9 {
 		t.Errorf("Destination = %d, want 9", pi.Destination)
 	}
-	if pdu.EncodePIHeader(&pi) != piHeaderVector() {
+	if must(pdu.EncodePIHeader(&pi)) != piHeaderVector() {
 		t.Error("re-encode does not match the vector")
 	}
 	pi.DataType = elements.DataTypePIHeader
@@ -58,7 +58,7 @@ func TestPIHeader_CRCMask(t *testing.T) {
 func TestPIHeader_RoundTrip(t *testing.T) {
 	t.Parallel()
 	original := pdu.PIHeader{AlgorithmID: 0x25, MFID: 0x10, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 0xFFFFFE}
-	decoded, fecResult := pdu.DecodePIHeader(pdu.EncodePIHeader(&original))
+	decoded, fecResult := pdu.DecodePIHeader(must(pdu.EncodePIHeader(&original)))
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}

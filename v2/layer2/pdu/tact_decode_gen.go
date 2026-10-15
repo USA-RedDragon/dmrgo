@@ -31,7 +31,7 @@ func DecodeTACT(data [7]bit.Bit) (TACT, fec.FECResult) {
 }
 
 // EncodeTACT encodes a TACT per ETSI TS 102 361-1 - 9.1.4 TACT PDU
-func EncodeTACT(s *TACT) [7]bit.Bit {
+func EncodeTACT(s *TACT) ([7]bit.Bit, error) {
 	var data [4]bit.Bit
 	if s.AccessType {
 		data[0] = 1
@@ -39,8 +39,11 @@ func EncodeTACT(s *TACT) [7]bit.Bit {
 	if s.TDMAChannel {
 		data[1] = 1
 	}
+	if uint64(s.LCSS)>>2 != 0 {
+		return [7]bit.Bit{}, fmt.Errorf("TACT.LCSS: value %d does not fit in 2 bits", s.LCSS)
+	}
 	copy(data[2:4], bit.BitsFromUint8(uint8(s.LCSS), 2))
-	return hamming.Encode(bit.BitsToValue(data[:]))
+	return hamming.Encode(bit.BitsToValue(data[:])), nil
 }
 
 func (s *TACT) ToString() string {

@@ -47,7 +47,7 @@ func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.F
 }
 
 // EncodeUnconfirmedDataHeader encodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
-func EncodeUnconfirmedDataHeader(s *UnconfirmedDataHeader) [80]bit.Bit {
+func EncodeUnconfirmedDataHeader(s *UnconfirmedDataHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -58,18 +58,31 @@ func EncodeUnconfirmedDataHeader(s *UnconfirmedDataHeader) [80]bit.Bit {
 	if s.Reserved {
 		data[2] = 1
 	}
-	copy(data[3:4], bit.BitsFromUint8((uint8(s.PadOctetCount))>>4, 1))
-	copy(data[12:16], bit.BitsFromUint8(s.PadOctetCount, 4))
+	if uint64(s.PadOctetCount)>>5 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.PadOctetCount: value %d does not fit in 5 bits", s.PadOctetCount)
+	}
+	_valPadOctetCount := s.PadOctetCount
+	copy(data[3:4], bit.BitsFromUint8(_valPadOctetCount>>4, 1))
+	copy(data[12:16], bit.BitsFromUint8(_valPadOctetCount, 4))
+	if uint64(s.SAP)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
 	copy(data[16:40], s.LLIDDestination[:])
 	copy(data[40:64], s.LLIDSource[:])
 	if s.FullMessage {
 		data[64] = 1
 	}
+	if uint64(s.BlocksToFollow)>>7 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.BlocksToFollow: value %d does not fit in 7 bits", s.BlocksToFollow)
+	}
 	copy(data[65:72], bit.BitsFromUint8(s.BlocksToFollow, 7))
 	copy(data[72:76], s.Reserved2[:])
+	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.FragmentSequenceNumber: value %d does not fit in 4 bits", s.FragmentSequenceNumber)
+	}
 	copy(data[76:80], bit.BitsFromUint8(s.FragmentSequenceNumber, 4))
-	return data
+	return data, nil
 }
 
 func (s *UnconfirmedDataHeader) ToString() string {
@@ -135,33 +148,60 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.FECResult) {
 }
 
 // EncodeDataHeader encodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
-func EncodeDataHeader(s *DataHeader) [96]bit.Bit {
+func EncodeDataHeader(s *DataHeader) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	switch {
 	case s.UnconfirmedDataHeader != nil:
-		_pduBits := EncodeUnconfirmedDataHeader(s.UnconfirmedDataHeader)
+		_pduBits, err := EncodeUnconfirmedDataHeader(s.UnconfirmedDataHeader)
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.UnconfirmedDataHeader: %w", err)
+		}
 		copy(data[0:80], _pduBits[:])
 	case s.ConfirmedDataHeader != nil:
-		_pduBits := EncodeConfirmedDataHeader(s.ConfirmedDataHeader)
+		_pduBits, err := EncodeConfirmedDataHeader(s.ConfirmedDataHeader)
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ConfirmedDataHeader: %w", err)
+		}
 		copy(data[0:80], _pduBits[:])
 	case s.ResponsePacketHeader != nil:
-		_pduBits := EncodeResponsePacketHeader(s.ResponsePacketHeader)
+		_pduBits, err := EncodeResponsePacketHeader(s.ResponsePacketHeader)
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ResponsePacketHeader: %w", err)
+		}
 		copy(data[0:80], _pduBits[:])
 	case s.DefinedDataHeader != nil:
-		_pduBits := EncodeDefinedDataHeader(s.DefinedDataHeader)
+		_pduBits, err := EncodeDefinedDataHeader(s.DefinedDataHeader)
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.DefinedDataHeader: %w", err)
+		}
 		copy(data[0:80], _pduBits[:])
 	case s.StatusPrecodedHeader != nil:
-		_pduBits := EncodeStatusPrecodedHeader(s.StatusPrecodedHeader)
+		_pduBits, err := EncodeStatusPrecodedHeader(s.StatusPrecodedHeader)
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.StatusPrecodedHeader: %w", err)
+		}
 		copy(data[0:80], _pduBits[:])
 	case s.RawDataHeader != nil:
-		_pduBits := EncodeRawDataHeader(s.RawDataHeader)
+		_pduBits, err := EncodeRawDataHeader(s.RawDataHeader)
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.RawDataHeader: %w", err)
+		}
 		copy(data[0:80], _pduBits[:])
 	case s.UDTHeader != nil:
-		_pduBits := EncodeUDTHeader(s.UDTHeader)
+		_pduBits, err := EncodeUDTHeader(s.UDTHeader)
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.UDTHeader: %w", err)
+		}
 		copy(data[0:80], _pduBits[:])
 	case s.ProprietaryHeader != nil:
-		_pduBits := EncodeProprietaryHeader(s.ProprietaryHeader)
+		_pduBits, err := EncodeProprietaryHeader(s.ProprietaryHeader)
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ProprietaryHeader: %w", err)
+		}
 		copy(data[0:80], _pduBits[:])
+	}
+	if uint64(s.Format)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("DataHeader.Format: value %d does not fit in 4 bits", s.Format)
 	}
 	copy(data[4:8], bit.BitsFromUint8(uint8(s.Format), 4))
 	var _encBytes [10]byte
@@ -182,7 +222,7 @@ func EncodeDataHeader(s *DataHeader) [96]bit.Bit {
 	for j := range 8 {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
-	return data
+	return data, nil
 }
 
 func (s *DataHeader) ToString() string {
@@ -233,7 +273,7 @@ func DecodeConfirmedDataHeader(data [80]bit.Bit) (ConfirmedDataHeader, fec.FECRe
 }
 
 // EncodeConfirmedDataHeader encodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
-func EncodeConfirmedDataHeader(s *ConfirmedDataHeader) [80]bit.Bit {
+func EncodeConfirmedDataHeader(s *ConfirmedDataHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -241,21 +281,43 @@ func EncodeConfirmedDataHeader(s *ConfirmedDataHeader) [80]bit.Bit {
 	if s.ResponseRequested {
 		data[1] = 1
 	}
-	copy(data[3:4], bit.BitsFromUint8((uint8(s.PadOctetCount))>>4, 1))
-	copy(data[12:16], bit.BitsFromUint8(s.PadOctetCount, 4))
+	if uint64(s.PadOctetCount)>>5 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.PadOctetCount: value %d does not fit in 5 bits", s.PadOctetCount)
+	}
+	_valPadOctetCount := s.PadOctetCount
+	copy(data[3:4], bit.BitsFromUint8(_valPadOctetCount>>4, 1))
+	copy(data[12:16], bit.BitsFromUint8(_valPadOctetCount, 4))
+	if uint64(s.SAP)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
+	if uint64(s.LLIDDestination)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+	}
 	copy(data[16:40], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	if uint64(s.LLIDSource)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+	}
 	copy(data[40:64], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
 	if s.FullMessageFlag {
 		data[64] = 1
+	}
+	if uint64(s.BlocksToFollow)>>7 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.BlocksToFollow: value %d does not fit in 7 bits", s.BlocksToFollow)
 	}
 	copy(data[65:72], bit.BitsFromUint8(s.BlocksToFollow, 7))
 	if s.ReSynchronizeFlag {
 		data[72] = 1
 	}
+	if uint64(s.SendSequenceNumber)>>3 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.SendSequenceNumber: value %d does not fit in 3 bits", s.SendSequenceNumber)
+	}
 	copy(data[73:76], bit.BitsFromUint8(s.SendSequenceNumber, 3))
+	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.FragmentSequenceNumber: value %d does not fit in 4 bits", s.FragmentSequenceNumber)
+	}
 	copy(data[76:80], bit.BitsFromUint8(s.FragmentSequenceNumber, 4))
-	return data
+	return data, nil
 }
 
 func (s *ConfirmedDataHeader) ToString() string {
@@ -277,16 +339,37 @@ func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.FEC
 }
 
 // EncodeResponsePacketHeader encodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
-func EncodeResponsePacketHeader(s *ResponsePacketHeader) [80]bit.Bit {
+func EncodeResponsePacketHeader(s *ResponsePacketHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
+	if uint64(s.SAP)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
+	if uint64(s.LLIDDestination)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+	}
 	copy(data[16:40], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	if uint64(s.LLIDSource)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+	}
 	copy(data[40:64], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	if uint64(s.BlocksToFollow)>>7 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.BlocksToFollow: value %d does not fit in 7 bits", s.BlocksToFollow)
+	}
 	copy(data[65:72], bit.BitsFromUint8(s.BlocksToFollow, 7))
+	if uint64(s.ResponseClass)>>2 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.ResponseClass: value %d does not fit in 2 bits", s.ResponseClass)
+	}
 	copy(data[72:74], bit.BitsFromUint8(s.ResponseClass, 2))
+	if uint64(s.ResponseType)>>3 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.ResponseType: value %d does not fit in 3 bits", s.ResponseType)
+	}
 	copy(data[74:77], bit.BitsFromUint8(s.ResponseType, 3))
+	if uint64(s.ResponseStatus)>>3 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.ResponseStatus: value %d does not fit in 3 bits", s.ResponseStatus)
+	}
 	copy(data[77:80], bit.BitsFromUint8(s.ResponseStatus, 3))
-	return data
+	return data, nil
 }
 
 func (s *ResponsePacketHeader) ToString() string {
@@ -315,7 +398,7 @@ func DecodeDefinedDataHeader(data [80]bit.Bit) (DefinedDataHeader, fec.FECResult
 }
 
 // EncodeDefinedDataHeader encodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
-func EncodeDefinedDataHeader(s *DefinedDataHeader) [80]bit.Bit {
+func EncodeDefinedDataHeader(s *DefinedDataHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -323,11 +406,27 @@ func EncodeDefinedDataHeader(s *DefinedDataHeader) [80]bit.Bit {
 	if s.ResponseRequested {
 		data[1] = 1
 	}
-	copy(data[2:4], bit.BitsFromUint8((uint8(s.AppendedBlocks))>>4, 2))
-	copy(data[12:16], bit.BitsFromUint8(s.AppendedBlocks, 4))
+	if uint64(s.AppendedBlocks)>>6 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.AppendedBlocks: value %d does not fit in 6 bits", s.AppendedBlocks)
+	}
+	_valAppendedBlocks := s.AppendedBlocks
+	copy(data[2:4], bit.BitsFromUint8(_valAppendedBlocks>>4, 2))
+	copy(data[12:16], bit.BitsFromUint8(_valAppendedBlocks, 4))
+	if uint64(s.SAP)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
+	if uint64(s.LLIDDestination)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+	}
 	copy(data[16:40], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	if uint64(s.LLIDSource)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+	}
 	copy(data[40:64], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	if uint64(s.DefinedData)>>6 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.DefinedData: value %d does not fit in 6 bits", s.DefinedData)
+	}
 	copy(data[64:70], bit.BitsFromUint8(s.DefinedData, 6))
 	if s.SARQ {
 		data[70] = 1
@@ -336,7 +435,7 @@ func EncodeDefinedDataHeader(s *DefinedDataHeader) [80]bit.Bit {
 		data[71] = 1
 	}
 	copy(data[72:80], bit.BitsFromUint8(s.BitPadding, 8))
-	return data
+	return data, nil
 }
 
 func (s *DefinedDataHeader) ToString() string {
@@ -366,7 +465,7 @@ func DecodeRawDataHeader(data [80]bit.Bit) (RawDataHeader, fec.FECResult) {
 }
 
 // EncodeRawDataHeader encodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
-func EncodeRawDataHeader(s *RawDataHeader) [80]bit.Bit {
+func EncodeRawDataHeader(s *RawDataHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -374,12 +473,31 @@ func EncodeRawDataHeader(s *RawDataHeader) [80]bit.Bit {
 	if s.ResponseRequested {
 		data[1] = 1
 	}
-	copy(data[2:4], bit.BitsFromUint8((uint8(s.AppendedBlocks))>>4, 2))
-	copy(data[12:16], bit.BitsFromUint8(s.AppendedBlocks, 4))
+	if uint64(s.AppendedBlocks)>>6 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.AppendedBlocks: value %d does not fit in 6 bits", s.AppendedBlocks)
+	}
+	_valAppendedBlocks := s.AppendedBlocks
+	copy(data[2:4], bit.BitsFromUint8(_valAppendedBlocks>>4, 2))
+	copy(data[12:16], bit.BitsFromUint8(_valAppendedBlocks, 4))
+	if uint64(s.SAP)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
+	if uint64(s.LLIDDestination)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+	}
 	copy(data[16:40], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	if uint64(s.LLIDSource)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+	}
 	copy(data[40:64], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	if uint64(s.SourcePort)>>3 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.SourcePort: value %d does not fit in 3 bits", s.SourcePort)
+	}
 	copy(data[64:67], bit.BitsFromUint8(s.SourcePort, 3))
+	if uint64(s.DestinationPort)>>3 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.DestinationPort: value %d does not fit in 3 bits", s.DestinationPort)
+	}
 	copy(data[67:70], bit.BitsFromUint8(s.DestinationPort, 3))
 	if s.SARQ {
 		data[70] = 1
@@ -388,7 +506,7 @@ func EncodeRawDataHeader(s *RawDataHeader) [80]bit.Bit {
 		data[71] = 1
 	}
 	copy(data[72:80], bit.BitsFromUint8(s.BitPadding, 8))
-	return data
+	return data, nil
 }
 
 func (s *RawDataHeader) ToString() string {
@@ -411,7 +529,7 @@ func DecodeStatusPrecodedHeader(data [80]bit.Bit) (StatusPrecodedHeader, fec.FEC
 }
 
 // EncodeStatusPrecodedHeader encodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
-func EncodeStatusPrecodedHeader(s *StatusPrecodedHeader) [80]bit.Bit {
+func EncodeStatusPrecodedHeader(s *StatusPrecodedHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -419,13 +537,31 @@ func EncodeStatusPrecodedHeader(s *StatusPrecodedHeader) [80]bit.Bit {
 	if s.ResponseRequested {
 		data[1] = 1
 	}
+	if uint64(s.SAP)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
+	if uint64(s.LLIDDestination)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+	}
 	copy(data[16:40], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	if uint64(s.LLIDSource)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+	}
 	copy(data[40:64], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	if uint64(s.SourcePort)>>3 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.SourcePort: value %d does not fit in 3 bits", s.SourcePort)
+	}
 	copy(data[64:67], bit.BitsFromUint8(s.SourcePort, 3))
+	if uint64(s.DestinationPort)>>3 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.DestinationPort: value %d does not fit in 3 bits", s.DestinationPort)
+	}
 	copy(data[67:70], bit.BitsFromUint8(s.DestinationPort, 3))
+	if uint64(s.StatusPrecoded)>>10 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.StatusPrecoded: value %d does not fit in 10 bits", s.StatusPrecoded)
+	}
 	copy(data[70:80], bit.BitsFromUint16(s.StatusPrecoded, 10))
-	return data
+	return data, nil
 }
 
 func (s *StatusPrecodedHeader) ToString() string {
@@ -454,7 +590,7 @@ func DecodeUDTHeader(data [80]bit.Bit) (UDTHeader, fec.FECResult) {
 }
 
 // EncodeUDTHeader encodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
-func EncodeUDTHeader(s *UDTHeader) [80]bit.Bit {
+func EncodeUDTHeader(s *UDTHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -468,13 +604,31 @@ func EncodeUDTHeader(s *UDTHeader) [80]bit.Bit {
 	if s.OptionFlag {
 		data[3] = 1
 	}
+	if uint64(s.SAP)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+	}
 	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
+	if uint64(s.UDTFormat)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.UDTFormat: value %d does not fit in 4 bits", s.UDTFormat)
+	}
 	copy(data[12:16], bit.BitsFromUint8(s.UDTFormat, 4))
+	if uint64(s.LLIDDestination)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+	}
 	copy(data[16:40], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	if uint64(s.LLIDSource)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+	}
 	copy(data[40:64], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	if uint64(s.PadNibble)>>5 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.PadNibble: value %d does not fit in 5 bits", s.PadNibble)
+	}
 	copy(data[64:69], bit.BitsFromUint8(s.PadNibble, 5))
 	if s.Reserved {
 		data[69] = 1
+	}
+	if uint64(s.AppendedBlocks)>>2 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.AppendedBlocks: value %d does not fit in 2 bits", s.AppendedBlocks)
 	}
 	copy(data[70:72], bit.BitsFromUint8(s.AppendedBlocks, 2))
 	if s.SupplementaryFlag {
@@ -483,8 +637,11 @@ func EncodeUDTHeader(s *UDTHeader) [80]bit.Bit {
 	if s.ProtectFlag {
 		data[73] = 1
 	}
+	if uint64(s.Opcode)>>6 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.Opcode: value %d does not fit in 6 bits", s.Opcode)
+	}
 	copy(data[74:80], bit.BitsFromUint8(uint8(s.Opcode), 6))
-	return data
+	return data, nil
 }
 
 func (s *UDTHeader) ToString() string {
@@ -502,12 +659,15 @@ func DecodeProprietaryHeader(data [80]bit.Bit) (ProprietaryHeader, fec.FECResult
 }
 
 // EncodeProprietaryHeader encodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
-func EncodeProprietaryHeader(s *ProprietaryHeader) [80]bit.Bit {
+func EncodeProprietaryHeader(s *ProprietaryHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
+	if uint64(s.SAP)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ProprietaryHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+	}
 	copy(data[0:4], bit.BitsFromUint8(s.SAP, 4))
 	copy(data[8:16], bit.BitsFromUint8(s.MFID, 8))
 	copy(data[16:80], s.ManufacturerData[:])
-	return data
+	return data, nil
 }
 
 func (s *ProprietaryHeader) ToString() string {

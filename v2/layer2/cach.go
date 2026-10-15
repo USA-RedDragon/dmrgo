@@ -56,15 +56,18 @@ func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
 
 // EncodeCACH encodes a CACH struct into a 24-bit field in logical order.
 // Use CACHInterleave to get the bits in transmit order.
-func EncodeCACH(c *CACH) [CACHBits]bit.Bit {
+func EncodeCACH(c *CACH) ([CACHBits]bit.Bit, error) {
 	var bits [CACHBits]bit.Bit
 
 	// Encode TACT into bits 0..6
-	tactBits := pdu.EncodeTACT(&c.TACT)
+	tactBits, err := pdu.EncodeTACT(&c.TACT)
+	if err != nil {
+		return bits, err
+	}
 	copy(bits[:TACTBits], tactBits[:])
 
 	// Copy signalling payload into bits 7..23
 	copy(bits[TACTBits:CACHBits], c.Payload[:])
 
-	return bits
+	return bits, nil
 }

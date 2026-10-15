@@ -85,7 +85,7 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 		PreemptionAndPowerControlIndicator: true,
 		LCSS:                               enums.SingleFragmentLCorCSBK,
 	}
-	embBits := pdu.EncodeEmbeddedSignalling(&embSig)
+	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -122,7 +122,7 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 		PreemptionAndPowerControlIndicator: false,
 		LCSS:                               enums.SingleFragmentLCorCSBK,
 	}
-	embBits := pdu.EncodeEmbeddedSignalling(&embSig)
+	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -147,7 +147,7 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 		PreemptionAndPowerControlIndicator: true,
 		LCSS:                               enums.FirstFragmentLC,
 	}
-	embBits := pdu.EncodeEmbeddedSignalling(&embSig)
+	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -193,7 +193,7 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 		PreemptionAndPowerControlIndicator: true,
 		LCSS:                               enums.SingleFragmentLCorCSBK,
 	}
-	embBits := pdu.EncodeEmbeddedSignalling(&embSig)
+	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -221,7 +221,7 @@ func TestRC_ToString(t *testing.T) {
 		PreemptionAndPowerControlIndicator: true,
 		LCSS:                               enums.SingleFragmentLCorCSBK,
 	}
-	embBits := pdu.EncodeEmbeddedSignalling(&embSig)
+	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -242,10 +242,10 @@ func TestRC_ToString(t *testing.T) {
 // the RC SYNC at 108-155.
 func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	var bitData [264]bit.Bit
-	embBits := pdu.EncodeEmbeddedSignalling(&pdu.EmbeddedSignalling{
+	embBits := must(pdu.EncodeEmbeddedSignalling(&pdu.EmbeddedSignalling{
 		ColorCode: cc,
 		LCSS:      enums.SingleFragmentLCorCSBK,
-	})
+	}))
 	rcData, err := layer2.EncodeRCToEmbeddedData(&pdu.ReverseChannel{RCCommand: cmd})
 	if err != nil {
 		panic(err)
@@ -288,7 +288,7 @@ func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
 		t.Errorf("standalone RC burst should not parse voice, Voice FEC %+v", burst.FEC.Voice)
 	}
 
-	if got := burst.Encode(); got != frame {
+	if got := must(burst.Encode()); got != frame {
 		t.Errorf("encode mismatch\ngot  %x\nwant %x", got, frame)
 	}
 }
@@ -303,7 +303,7 @@ func TestRC_StandaloneBurst_EncodeFromFields(t *testing.T) {
 		ReverseChannel:        &pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand},
 	}
 	want := buildStandaloneRCBurst(7, enums.RCCeaseTransmissionCommand)
-	if got := burst.Encode(); got != want {
+	if got := must(burst.Encode()); got != want {
 		t.Errorf("encode mismatch\ngot  %x\nwant %x", got, want)
 	}
 }

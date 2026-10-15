@@ -31,14 +31,20 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.FECResu
 }
 
 // EncodeEmbeddedSignalling encodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
-func EncodeEmbeddedSignalling(s *EmbeddedSignalling) [16]bit.Bit {
+func EncodeEmbeddedSignalling(s *EmbeddedSignalling) ([16]bit.Bit, error) {
 	var data [7]bit.Bit
-	copy(data[0:4], bit.BitsFromUint32(uint32(s.ColorCode), 4))
+	if uint64(s.ColorCode)>>4 != 0 {
+		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
+	}
+	copy(data[0:4], bit.BitsFromUint8(uint8(s.ColorCode), 4))
 	if s.PreemptionAndPowerControlIndicator {
 		data[4] = 1
 	}
+	if uint64(s.LCSS)>>2 != 0 {
+		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.LCSS: value %d does not fit in 2 bits", s.LCSS)
+	}
 	copy(data[5:7], bit.BitsFromUint8(uint8(s.LCSS), 2))
-	return quadratic_residue.Encode(bit.BitsToValue(data[:]))
+	return quadratic_residue.Encode(bit.BitsToValue(data[:])), nil
 }
 
 func (s *EmbeddedSignalling) ToString() string {

@@ -19,10 +19,10 @@ func buildOpcode0x38Burst(t *testing.T) [33]byte {
 			SourceAddress: [24]bit.Bit{22: 1},
 		},
 	}
-	encBits := pdu.EncodeCSBK(csbk)
+	encBits := must(pdu.EncodeCSBK(csbk))
 	var lcBytes [12]byte
 	copy(lcBytes[:], bit.PackBits(encBits[:]))
-	return layer2.BuildLCDataBurst(lcBytes, elements.DataTypeCSBK, 1)
+	return must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeCSBK, 1))
 }
 
 func TestBurst_TrunkingModeSelectsOpcode0x38Variant(t *testing.T) {

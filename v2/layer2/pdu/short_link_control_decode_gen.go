@@ -30,10 +30,10 @@ func DecodeShortLCNullMessage(data [24]bit.Bit) (ShortLCNullMessage, fec.FECResu
 }
 
 // EncodeShortLCNullMessage encodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
-func EncodeShortLCNullMessage(s *ShortLCNullMessage) [24]bit.Bit {
+func EncodeShortLCNullMessage(s *ShortLCNullMessage) ([24]bit.Bit, error) {
 	var data [24]bit.Bit
 	copy(data[0:24], s.Reserved[:])
-	return data
+	return data, nil
 }
 
 func (s *ShortLCNullMessage) ToString() string {
@@ -52,13 +52,19 @@ func DecodeShortLCActivityUpdate(data [24]bit.Bit) (ShortLCActivityUpdate, fec.F
 }
 
 // EncodeShortLCActivityUpdate encodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
-func EncodeShortLCActivityUpdate(s *ShortLCActivityUpdate) [24]bit.Bit {
+func EncodeShortLCActivityUpdate(s *ShortLCActivityUpdate) ([24]bit.Bit, error) {
 	var data [24]bit.Bit
+	if uint64(s.TS1ActivityID)>>4 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCActivityUpdate.TS1ActivityID: value %d does not fit in 4 bits", s.TS1ActivityID)
+	}
 	copy(data[0:4], bit.BitsFromUint8(uint8(s.TS1ActivityID), 4))
+	if uint64(s.TS2ActivityID)>>4 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCActivityUpdate.TS2ActivityID: value %d does not fit in 4 bits", s.TS2ActivityID)
+	}
 	copy(data[4:8], bit.BitsFromUint8(uint8(s.TS2ActivityID), 4))
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.HashTS1), 8))
 	copy(data[16:24], bit.BitsFromUint8(uint8(s.HashTS2), 8))
-	return data
+	return data, nil
 }
 
 func (s *ShortLCActivityUpdate) ToString() string {
@@ -77,15 +83,21 @@ func DecodeShortLCCSysParms(data [24]bit.Bit) (ShortLCCSysParms, fec.FECResult) 
 }
 
 // EncodeShortLCCSysParms encodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
-func EncodeShortLCCSysParms(s *ShortLCCSysParms) [24]bit.Bit {
+func EncodeShortLCCSysParms(s *ShortLCCSysParms) ([24]bit.Bit, error) {
 	var data [24]bit.Bit
+	if uint64(s.MODEL)>>2 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCCSysParms.MODEL: value %d does not fit in 2 bits", s.MODEL)
+	}
 	copy(data[0:2], bit.BitsFromUint8(s.MODEL, 2))
 	copy(data[2:14], s.NetSiteRaw[:])
 	if s.Reg {
 		data[14] = 1
 	}
+	if uint64(s.CommonSlotCounter)>>9 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCCSysParms.CommonSlotCounter: value %d does not fit in 9 bits", s.CommonSlotCounter)
+	}
 	copy(data[15:24], bit.BitsFromUint16(s.CommonSlotCounter, 9))
-	return data
+	return data, nil
 }
 
 func (s *ShortLCCSysParms) ToString() string {
@@ -104,15 +116,21 @@ func DecodeShortLCPSysParms(data [24]bit.Bit) (ShortLCPSysParms, fec.FECResult) 
 }
 
 // EncodeShortLCPSysParms encodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
-func EncodeShortLCPSysParms(s *ShortLCPSysParms) [24]bit.Bit {
+func EncodeShortLCPSysParms(s *ShortLCPSysParms) ([24]bit.Bit, error) {
 	var data [24]bit.Bit
+	if uint64(s.MODEL)>>2 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCPSysParms.MODEL: value %d does not fit in 2 bits", s.MODEL)
+	}
 	copy(data[0:2], bit.BitsFromUint8(s.MODEL, 2))
 	copy(data[2:14], s.NetSiteRaw[:])
 	if s.PayloadChannelType {
 		data[14] = 1
 	}
+	if uint64(s.CommonSlotCounter)>>9 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCPSysParms.CommonSlotCounter: value %d does not fit in 9 bits", s.CommonSlotCounter)
+	}
 	copy(data[15:24], bit.BitsFromUint16(s.CommonSlotCounter, 9))
-	return data
+	return data, nil
 }
 
 func (s *ShortLCPSysParms) ToString() string {
@@ -155,28 +173,43 @@ func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.FECResult) {
 }
 
 // EncodeShortLC encodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
-func EncodeShortLC(s *ShortLC) [36]bit.Bit {
+func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
 	var data [36]bit.Bit
 	switch {
 	case s.NullMessage != nil:
-		_pduBits := EncodeShortLCNullMessage(s.NullMessage)
+		_pduBits, err := EncodeShortLCNullMessage(s.NullMessage)
+		if err != nil {
+			return [36]bit.Bit{}, fmt.Errorf("ShortLC.NullMessage: %w", err)
+		}
 		copy(data[4:28], _pduBits[:])
 	case s.ActivityUpdate != nil:
-		_pduBits := EncodeShortLCActivityUpdate(s.ActivityUpdate)
+		_pduBits, err := EncodeShortLCActivityUpdate(s.ActivityUpdate)
+		if err != nil {
+			return [36]bit.Bit{}, fmt.Errorf("ShortLC.ActivityUpdate: %w", err)
+		}
 		copy(data[4:28], _pduBits[:])
 	case s.CSysParms != nil:
-		_pduBits := EncodeShortLCCSysParms(s.CSysParms)
+		_pduBits, err := EncodeShortLCCSysParms(s.CSysParms)
+		if err != nil {
+			return [36]bit.Bit{}, fmt.Errorf("ShortLC.CSysParms: %w", err)
+		}
 		copy(data[4:28], _pduBits[:])
 	case s.PSysParms != nil:
-		_pduBits := EncodeShortLCPSysParms(s.PSysParms)
+		_pduBits, err := EncodeShortLCPSysParms(s.PSysParms)
+		if err != nil {
+			return [36]bit.Bit{}, fmt.Errorf("ShortLC.PSysParms: %w", err)
+		}
 		copy(data[4:28], _pduBits[:])
+	}
+	if uint64(s.SLCO)>>4 != 0 {
+		return [36]bit.Bit{}, fmt.Errorf("ShortLC.SLCO: value %d does not fit in 4 bits", s.SLCO)
 	}
 	copy(data[0:4], bit.BitsFromUint8(uint8(s.SLCO), 4))
 	_crcVal := crc.CalculateCRC8(data[:28])
 	for j := range 8 {
 		data[28+j] = bit.Bit((_crcVal >> (7 - j)) & 1)
 	}
-	return data
+	return data, nil
 }
 
 func (s *ShortLC) ToString() string {

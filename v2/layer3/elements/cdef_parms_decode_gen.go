@@ -27,14 +27,29 @@ func DecodeCdefParms(data [58]bit.Bit) (CdefParms, fec.FECResult) {
 }
 
 // EncodeCdefParms encodes a CdefParms per ETSI TS 102 361-4 — §7.2.42, Table 7.103
-func EncodeCdefParms(s *CdefParms) [58]bit.Bit {
+func EncodeCdefParms(s *CdefParms) ([58]bit.Bit, error) {
 	var data [58]bit.Bit
+	if uint64(s.Channel)>>12 != 0 {
+		return [58]bit.Bit{}, fmt.Errorf("CdefParms.Channel: value %d does not fit in 12 bits", s.Channel)
+	}
 	copy(data[0:12], bit.BitsFromUint16(s.Channel, 12))
+	if uint64(s.TXMHz)>>10 != 0 {
+		return [58]bit.Bit{}, fmt.Errorf("CdefParms.TXMHz: value %d does not fit in 10 bits", s.TXMHz)
+	}
 	copy(data[12:22], bit.BitsFromUint16(s.TXMHz, 10))
+	if uint64(s.TXKHz)>>13 != 0 {
+		return [58]bit.Bit{}, fmt.Errorf("CdefParms.TXKHz: value %d does not fit in 13 bits", s.TXKHz)
+	}
 	copy(data[22:35], bit.BitsFromUint16(s.TXKHz, 13))
+	if uint64(s.RXMHz)>>10 != 0 {
+		return [58]bit.Bit{}, fmt.Errorf("CdefParms.RXMHz: value %d does not fit in 10 bits", s.RXMHz)
+	}
 	copy(data[35:45], bit.BitsFromUint16(s.RXMHz, 10))
+	if uint64(s.RXKHz)>>13 != 0 {
+		return [58]bit.Bit{}, fmt.Errorf("CdefParms.RXKHz: value %d does not fit in 13 bits", s.RXKHz)
+	}
 	copy(data[45:58], bit.BitsFromUint16(s.RXKHz, 13))
-	return data
+	return data, nil
 }
 
 func (s *CdefParms) ToString() string {

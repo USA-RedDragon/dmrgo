@@ -112,7 +112,7 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 				orig.Payload[i] = 1
 			}
 
-			encoded := pdu.EncodeUnifiedSingleBlockData(&orig)
+			encoded := must(pdu.EncodeUnifiedSingleBlockData(&orig))
 			decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(encoded)
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeUnifiedSingleBlockData round-trip returned uncorrectable FEC")
@@ -138,9 +138,9 @@ func TestUSBD_EncodeStability(t *testing.T) {
 		orig.Payload[i] = 1
 	}
 
-	enc1 := pdu.EncodeUnifiedSingleBlockData(&orig)
+	enc1 := must(pdu.EncodeUnifiedSingleBlockData(&orig))
 	dec1, _ := pdu.DecodeUnifiedSingleBlockData(enc1)
-	enc2 := pdu.EncodeUnifiedSingleBlockData(&dec1)
+	enc2 := must(pdu.EncodeUnifiedSingleBlockData(&dec1))
 
 	for i := 0; i < 96; i++ {
 		if enc1[i] != enc2[i] {

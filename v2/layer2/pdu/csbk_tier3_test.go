@@ -122,7 +122,7 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 		},
 	}
 
-	encoded := pdu.EncodeCSBK(original)
+	encoded := must(pdu.EncodeCSBK(original))
 	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
@@ -480,9 +480,9 @@ func TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI(t *testing.T) {
 		t.Error("TargetAddress/SourceAddress last bit should be set")
 	}
 
-	encoded := pdu.EncodeCSBK(&csbk)
+	encoded := must(pdu.EncodeCSBK(&csbk))
 	if encoded != infoBits {
-		t.Error("EncodeCSBK(DecodeCSBK(x, true)) != x")
+		t.Error("must(EncodeCSBK(DecodeCSBK(x, true))) != x")
 	}
 }
 
@@ -650,7 +650,7 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 		},
 	}
 
-	encoded := pdu.EncodeCSBK(original)
+	encoded := must(pdu.EncodeCSBK(original))
 	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
@@ -708,7 +708,7 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 		},
 	}
 
-	encoded := pdu.EncodeCSBK(original)
+	encoded := must(pdu.EncodeCSBK(original))
 	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")

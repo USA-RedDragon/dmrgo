@@ -28,7 +28,7 @@ func DecodeServiceOptions(data [8]bit.Bit) (ServiceOptions, fec.FECResult) {
 }
 
 // EncodeServiceOptions encodes a ServiceOptions per ETSI TS 102 361-2 - 7.2.1  Service Options
-func EncodeServiceOptions(s *ServiceOptions) [8]bit.Bit {
+func EncodeServiceOptions(s *ServiceOptions) ([8]bit.Bit, error) {
 	var data [8]bit.Bit
 	if s.IsEmergency {
 		data[0] = 1
@@ -43,8 +43,11 @@ func EncodeServiceOptions(s *ServiceOptions) [8]bit.Bit {
 	if s.IsOpenVoiceCallMode {
 		data[5] = 1
 	}
+	if uint64(s.PriorityLevel)>>2 != 0 {
+		return [8]bit.Bit{}, fmt.Errorf("ServiceOptions.PriorityLevel: value %d does not fit in 2 bits", s.PriorityLevel)
+	}
 	copy(data[6:8], bit.BitsFromUint8(s.PriorityLevel, 2))
-	return data
+	return data, nil
 }
 
 func (s *ServiceOptions) ToString() string {

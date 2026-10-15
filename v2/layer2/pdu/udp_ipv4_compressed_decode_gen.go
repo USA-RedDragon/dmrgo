@@ -34,18 +34,34 @@ func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) (UDPIPv4CompressedHeader, f
 }
 
 // EncodeUDPIPv4CompressedHeader encodes a UDPIPv4CompressedHeader per ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header
-func EncodeUDPIPv4CompressedHeader(s *UDPIPv4CompressedHeader) [72]bit.Bit {
+func EncodeUDPIPv4CompressedHeader(s *UDPIPv4CompressedHeader) ([72]bit.Bit, error) {
 	var data [72]bit.Bit
 	copy(data[0:16], bit.BitsFromUint16(s.IPv4Identification, 16))
+	if uint64(s.SAID)>>4 != 0 {
+		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.SAID: value %d does not fit in 4 bits", s.SAID)
+	}
 	copy(data[16:20], bit.BitsFromUint8(s.SAID, 4))
+	if uint64(s.DAID)>>4 != 0 {
+		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.DAID: value %d does not fit in 4 bits", s.DAID)
+	}
 	copy(data[20:24], bit.BitsFromUint8(s.DAID, 4))
-	copy(data[24:25], bit.BitsFromUint8((uint8(s.HeaderCompressionOpcode))>>1, 1))
-	copy(data[32:33], bit.BitsFromUint8(s.HeaderCompressionOpcode, 1))
+	if uint64(s.HeaderCompressionOpcode)>>2 != 0 {
+		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.HeaderCompressionOpcode: value %d does not fit in 2 bits", s.HeaderCompressionOpcode)
+	}
+	_valHeaderCompressionOpcode := s.HeaderCompressionOpcode
+	copy(data[24:25], bit.BitsFromUint8(_valHeaderCompressionOpcode>>1, 1))
+	copy(data[32:33], bit.BitsFromUint8(_valHeaderCompressionOpcode, 1))
+	if uint64(s.SPID)>>7 != 0 {
+		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.SPID: value %d does not fit in 7 bits", s.SPID)
+	}
 	copy(data[25:32], bit.BitsFromUint8(s.SPID, 7))
+	if uint64(s.DPID)>>7 != 0 {
+		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.DPID: value %d does not fit in 7 bits", s.DPID)
+	}
 	copy(data[33:40], bit.BitsFromUint8(s.DPID, 7))
 	copy(data[40:56], bit.BitsFromUint16(s.ExtendedHeader1, 16))
 	copy(data[56:72], bit.BitsFromUint16(s.ExtendedHeader2, 16))
-	return data
+	return data, nil
 }
 
 func (s *UDPIPv4CompressedHeader) ToString() string {

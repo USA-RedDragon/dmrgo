@@ -151,8 +151,10 @@ func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
 	assertContains(t, out,
 		"result.Lon = float64(int32(bit.BitsToUint32(data[:], 0, 25)<<7)>>7) * 360.0 / (1 << 25)",
 		"result.Lat = float64(int32(bit.BitsToUint32(data[:], 25, 24)<<8)>>8) * 180.0 / (1 << 24)",
-		"math.Round(s.Lon*(1<<25)/360.0)",
-		"math.Round(s.Lat*(1<<24)/180.0)",
+		"_rawLon := math.Round(s.Lon * (1 << 25) / 360.0)",
+		"if !(_rawLon >= -16777216 && _rawLon <= 16777215) {",
+		"_rawLat := math.Round(s.Lat * (1 << 24) / 180.0)",
+		"if !(_rawLat >= -8388608 && _rawLat <= 8388607) {",
 	)
 }
 
@@ -176,10 +178,12 @@ type T struct {
 		"result.S = int(int32(uint32(_tmpS)<<28) >> 28)",
 		"result.E = KindFromInt(int(_tmpE))",
 		"result.D = Wrapped(_tmpD)",
-		"copy(data[1:2], bit.BitsFromUint8((uint8(s.I))>>3, 1))",
-		"copy(data[10:13], bit.BitsFromUint8(uint8(s.S), 3))",
-		"copy(data[3:4], bit.BitsFromUint8((uint8(s.E))>>3, 1))",
-		"copy(data[16:24], bit.BitsFromUint16((uint16(s.D))>>4, 8))",
+		"_valI := uint8(s.I)",
+		"copy(data[1:2], bit.BitsFromUint8(_valI>>3, 1))",
+		"copy(data[10:13], bit.BitsFromUint8(_valS, 3))",
+		"copy(data[3:4], bit.BitsFromUint8(_valE>>3, 1))",
+		"_valD := uint16(s.D)",
+		"copy(data[16:24], bit.BitsFromUint16(_valD>>4, 8))",
 	)
 }
 
@@ -221,6 +225,32 @@ type T struct {
 	Raw  [8]bit.Bit `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
 }`)
 	assertContains(t, out, "if result.K == 2 {", "} else {\n\t\t\tcopy(result.Raw[:], _dispatchBits[:])")
+}
+
+func TestEncodeReportsOutOfRangeValues(t *testing.T) {
+	out := mustGenerate(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+type T struct {
+	Full uint8  `+"`dmr:\"bits:0-7\"`"+`
+	Part uint16 `+"`dmr:\"bits:8-19\"`"+`
+	Addr int    `+"`dmr:\"bits:20-43\"`"+`
+	Off  int    `+"`dmr:\"bits:44-51,signed\"`"+`
+	Sub  Sub    `+"`dmr:\"bits:52-59,delegate\"`"+`
+}`)
+	assertContains(t, out,
+		"func EncodeT(s *T) ([60]bit.Bit, error) {",
+		"if uint64(s.Part)>>12 != 0 {",
+		`return [60]bit.Bit{}, fmt.Errorf("T.Part: value %d does not fit in 12 bits", s.Part)`,
+		"if uint64(s.Addr)>>24 != 0 {",
+		"if int64(s.Off) < -128 || int64(s.Off) > 127 {",
+		"_subBits, err := EncodeSub(&s.Sub)",
+		`return [60]bit.Bit{}, fmt.Errorf("T.Sub: %w", err)`,
+		"return data, nil",
+	)
+	if strings.Contains(out, "uint64(s.Full)") {
+		t.Error("a uint8 in an 8-bit field cannot overflow and needs no check")
+	}
 }
 
 func TestInputsBecomeDecodeParameters(t *testing.T) {

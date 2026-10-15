@@ -50,8 +50,8 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if csbk.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
-	if got := pdu.EncodeCSBK(&csbk); got != infoBits {
-		t.Error("EncodeCSBK(DecodeCSBK(x)) != x")
+	if got := must(pdu.EncodeCSBK(&csbk)); got != infoBits {
+		t.Error("must(EncodeCSBK(DecodeCSBK(x))) != x")
 	}
 }
 
@@ -66,8 +66,8 @@ func TestCSBK_UnknownOpcodeKeepsRawPayload(t *testing.T) {
 	if csbk.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
-	if got := pdu.EncodeCSBK(&csbk); got != infoBits {
-		t.Error("EncodeCSBK(DecodeCSBK(x)) != x")
+	if got := must(pdu.EncodeCSBK(&csbk)); got != infoBits {
+		t.Error("must(EncodeCSBK(DecodeCSBK(x))) != x")
 	}
 }
 
@@ -94,7 +94,7 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 		FeatureSetID: enums.MotorolaLtd,
 		RawPayload:   payload,
 	}
-	infoBits := pdu.EncodeFullLinkControl(original)
+	infoBits := must(pdu.EncodeFullLinkControl(original))
 
 	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if fecResult.Uncorrectable {
@@ -109,8 +109,8 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if decoded.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
-	if got := pdu.EncodeFullLinkControl(&decoded); got != infoBits {
-		t.Error("EncodeFullLinkControl(DecodeFullLinkControl(x)) != x")
+	if got := must(pdu.EncodeFullLinkControl(&decoded)); got != infoBits {
+		t.Error("must(EncodeFullLinkControl(DecodeFullLinkControl(x))) != x")
 	}
 }
 
@@ -123,7 +123,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 		FeatureSetID: enums.FeatureSetID(0x7F),
 		RawPayload:   payload,
 	}
-	infoBits := pdu.EncodeFullLinkControl(original)
+	infoBits := must(pdu.EncodeFullLinkControl(original))
 
 	decoded, _ := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if decoded.FLCO != 0b111111 {
@@ -137,7 +137,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	}
 
 	original.FeatureSetID = enums.StandardizedFID
-	decoded, _ = pdu.DecodeFullLinkControl(pdu.EncodeFullLinkControl(original), original.DataType)
+	decoded, _ = pdu.DecodeFullLinkControl(must(pdu.EncodeFullLinkControl(original)), original.DataType)
 	if decoded.FLCO != 0b111111 || decoded.RawPayload != payload {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
 	}

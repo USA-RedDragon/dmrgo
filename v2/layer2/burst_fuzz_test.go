@@ -34,15 +34,18 @@ func FuzzBurstDecode(f *testing.F) {
 			var b layer2.Burst
 			b.SetTrunkingMode(trunking)
 			err := b.DecodeFromBytes(frame)
-			first := b.Encode()
-			if err != nil {
+			first, encErr := b.Encode()
+			if err != nil || encErr != nil {
 				continue
 			}
 
 			var b2 layer2.Burst
 			b2.SetTrunkingMode(trunking)
 			_ = b2.DecodeFromBytes(first)
-			second := b2.Encode()
+			second, err := b2.Encode()
+			if err != nil {
+				t.Fatalf("trunking=%v: re-encode failed: %v", trunking, err)
+			}
 			if first != second {
 				t.Fatalf("trunking=%v: encode not stable\ninput  %x\nfirst  %x\nsecond %x", trunking, frame, first, second)
 			}

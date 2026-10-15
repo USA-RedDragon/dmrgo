@@ -9,6 +9,7 @@ DO NOT EDIT.
 package pdu
 
 import (
+	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -27,13 +28,16 @@ func DecodeVocoder(data [216]bit.Bit) (Vocoder, fec.FECResult) {
 }
 
 // EncodeVocoder encodes a Vocoder per ETSI TS 102 361-1 - 7.1 Voice channel coding
-func EncodeVocoder(s *Vocoder) [216]bit.Bit {
+func EncodeVocoder(s *Vocoder) ([216]bit.Bit, error) {
 	var data [216]bit.Bit
 	for _i := 0; _i < 3; _i++ {
-		_elemBits := vocoder.EncodeVocoderFrame(&s.Frames[_i])
+		_elemBits, err := vocoder.EncodeVocoderFrame(&s.Frames[_i])
+		if err != nil {
+			return [216]bit.Bit{}, fmt.Errorf("Vocoder.Frames[%d]: %w", _i, err)
+		}
 		copy(data[0+_i*72:0+_i*72+72], _elemBits[:])
 	}
-	return data
+	return data, nil
 }
 
 func (s *Vocoder) ToString() string {

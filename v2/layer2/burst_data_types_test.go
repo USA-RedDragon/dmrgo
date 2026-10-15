@@ -16,7 +16,7 @@ func buildDataBurst(dataType elements.DataType, payload [196]bit.Bit) [33]byte {
 	var bits [264]bit.Bit
 	copy(bits[:98], payload[:98])
 	copy(bits[166:], payload[98:])
-	slot := pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 1, DataType: dataType})
+	slot := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 1, DataType: dataType}))
 	copy(bits[98:108], slot[:10])
 	copy(bits[156:166], slot[10:])
 	syncVal := int64(enums.BsSourcedData)
@@ -46,7 +46,7 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	if rt.Data != want {
 		t.Errorf("Data = %X, want %X", rt.Data, want)
 	}
-	if b.Encode() != raw {
+	if must(b.Encode()) != raw {
 		t.Error("Encode() does not reproduce the original burst")
 	}
 }
@@ -70,7 +70,7 @@ func TestBurst_PIHeader_Decode(t *testing.T) {
 	if pi.GetDataType() != elements.DataTypePIHeader {
 		t.Errorf("DataType = %v, want PI header", pi.GetDataType())
 	}
-	if b.Encode() != raw {
+	if must(b.Encode()) != raw {
 		t.Error("Encode() does not reproduce the original burst")
 	}
 }
@@ -97,7 +97,7 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 	if rt.Data != want {
 		t.Errorf("Data = %X, want %X", rt.Data, want)
 	}
-	if b.Encode() != raw {
+	if must(b.Encode()) != raw {
 		t.Error("Encode() does not reproduce the original burst")
 	}
 }

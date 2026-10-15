@@ -119,13 +119,13 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 		},
 	}
 
-	encBits := pdu.EncodeFullLinkControl(flc)
+	encBits := must(pdu.EncodeFullLinkControl(flc))
 	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
 
-	result := layer2.BuildLCDataBurst(lcBytes, elements.DataTypeVoiceLCHeader, 1)
+	result := must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeVoiceLCHeader, 1))
 	if len(result) != 33 {
 		t.Errorf("BuildLCDataBurst returned %d bytes, want 33", len(result))
 	}
@@ -150,13 +150,13 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 		},
 	}
 
-	encBits := pdu.EncodeFullLinkControl(flc)
+	encBits := must(pdu.EncodeFullLinkControl(flc))
 	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
 
-	result := layer2.BuildLCDataBurst(lcBytes, elements.DataTypeTerminatorWithLC, 0)
+	result := must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeTerminatorWithLC, 0))
 	burst, err := layer2.NewBurstFromBytes(result)
 	if err != nil {
 		t.Fatalf("NewBurstFromBytes failed: %v", err)
@@ -177,14 +177,14 @@ func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 		},
 	}
 
-	encBits := pdu.EncodeFullLinkControl(flc)
+	encBits := must(pdu.EncodeFullLinkControl(flc))
 	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
 
 	for cc := uint8(0); cc < 16; cc++ {
-		result := layer2.BuildLCDataBurst(lcBytes, elements.DataTypeVoiceLCHeader, cc)
+		result := must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeVoiceLCHeader, cc))
 		burst, err := layer2.NewBurstFromBytes(result)
 		if err != nil {
 			t.Fatalf("NewBurstFromBytes failed for color code %d: %v", cc, err)

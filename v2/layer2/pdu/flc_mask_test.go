@@ -28,7 +28,7 @@ func hexBits96(t *testing.T, s string) [96]bit.Bit {
 
 func packedFLC(t *testing.T, flc *pdu.FullLinkControl) []byte {
 	t.Helper()
-	bits := pdu.EncodeFullLinkControl(flc)
+	bits := must(pdu.EncodeFullLinkControl(flc))
 	return bit.PackBits(bits[:])
 }
 
@@ -101,7 +101,7 @@ func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 func TestFLC_EncodeRealVoiceLCHeader(t *testing.T) {
 	want := hexBits96(t, realVoiceLCHeader)
 	flc, _ := pdu.DecodeFullLinkControl(want, elements.DataTypeVoiceLCHeader)
-	if got := pdu.EncodeFullLinkControl(&flc); got != want {
+	if got := must(pdu.EncodeFullLinkControl(&flc)); got != want {
 		t.Errorf("EncodeFullLinkControl = %x, want %s", bit.PackBits(got[:]), realVoiceLCHeader)
 	}
 }

@@ -63,7 +63,7 @@ func TestCACH_EncodeDecodeRoundTrip(t *testing.T) {
 	}
 
 	cach := layer2.DecodeCACH(cachBits)
-	encoded := layer2.EncodeCACH(&cach)
+	encoded := must(layer2.EncodeCACH(&cach))
 
 	if encoded != cachBits {
 		t.Error("encode/decode round-trip failed")

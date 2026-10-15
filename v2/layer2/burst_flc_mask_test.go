@@ -48,7 +48,7 @@ func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 					file, i, elements.DataTypeToName(dt), b.FEC.PDU)
 			}
 			info := burstInfoBits(raw)
-			if got := pdu.EncodeFullLinkControl(flc); got != info {
+			if got := must(pdu.EncodeFullLinkControl(flc)); got != info {
 				t.Errorf("%s burst %d (%s): re-encoded LC %x, captured %x",
 					file, i, elements.DataTypeToName(dt), bit.PackBits(got[:]), bit.PackBits(info[:]))
 			}

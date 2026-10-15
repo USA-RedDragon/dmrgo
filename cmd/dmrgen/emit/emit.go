@@ -680,7 +680,7 @@ func emitAMBEVoiceEncode(g *Group, pdu parse.PDUStruct) {
 		}
 	}
 
-	g.Return(Id("encodeAMBE").Call(Id("s").Dot(dataFieldName)))
+	g.Return(Id("encodeAMBE").Call(Id("s").Dot(dataFieldName)), Nil())
 }
 
 // emitToString generates a ToString() method for a PDU struct.
@@ -1048,6 +1048,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 // emitEncode generates an EncodeXxx function for a PDU struct.
 // For FEC-protected PDUs, the output includes FEC parity (full codeword).
+// The function returns an error when a field value does not fit its bits.
 func emitEncode(f *File, pdu parse.PDUStruct) error {
 	funcName := "Encode" + pdu.Name
 
@@ -1071,53 +1072,75 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 	if codec != nil {
 		outputSize = codec.InputSize
 	}
+	enc := encoder{pdu: pdu, size: outputSize}
 
 	var genErr error
 	f.Func().Id(funcName).Params(
 		Id("s").Op("*").Id(pdu.Name),
-	).Index(Lit(outputSize)).Qual(bitPkg, "Bit").BlockFunc(func(g *Group) {
-		if isAMBE {
+	).Params(
+		Index(Lit(outputSize)).Qual(bitPkg, "Bit"),
+		Error(),
+	).BlockFunc(func(g *Group) {
+		switch {
+		case isAMBE:
 			// AMBE voice codec: delegate to private encodeAMBE helper
 			emitAMBEVoiceEncode(g, pdu)
-		} else if hasBitFEC {
+		case hasBitFEC:
 			// Bit-level FEC (Golay, QR): build data bits, then FEC-encode
-			dataBits := codec.DataBits
-			g.Var().Id("data").Index(Lit(dataBits)).Qual(bitPkg, "Bit")
-			emitEncodeFields(g, pdu)
+			g.Var().Id("data").Index(Lit(codec.DataBits)).Qual(bitPkg, "Bit")
+			enc.fields(g)
 			g.Return(Qual(codec.ImportPath, codec.EncodeFn).Call(
 				Qual(bitPkg, "BitsToValue").Call(Id("data").Index(Empty(), Empty())),
-			))
-		} else if hasCRC || hasPackedFEC {
+			), Nil())
+		case hasCRC || hasPackedFEC:
 			// CRC or packed FEC: build data bits, then pack+CRC/RS-encode
 			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
-			emitEncodeFields(g, pdu)
+			enc.fields(g)
 			if hasCRC {
 				emitCRCEncode(g, pdu, outputSize)
 			}
 			if hasPackedFEC {
-				if err := emitPackedFECEncode(g, pdu, codec, outputSize); err != nil {
+				if err := emitPackedFECEncode(g, enc, codec); err != nil {
 					genErr = err
 					return
 				}
 			}
-			g.Return(Id("data"))
-		} else {
+			g.Return(Id("data"), Nil())
+		default:
 			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
-			emitEncodeFields(g, pdu)
-			g.Return(Id("data"))
+			enc.fields(g)
+			g.Return(Id("data"), Nil())
 		}
 	})
 	return genErr
 }
 
-// emitEncodeFields emits encoding for all fields (regular + dispatch).
+// encoder carries the PDU and output size while emitting an Encode body.
+type encoder struct {
+	pdu  parse.PDUStruct
+	size int
+}
+
+// fail returns a statement that returns a zero codeword and the given error.
+func (e encoder) fail(err Code) *Statement {
+	return Return(Index(Lit(e.size)).Qual(bitPkg, "Bit").Values(), err)
+}
+
+// failf returns a statement that returns a zero codeword and a formatted error
+// prefixed with the struct and field name.
+func (e encoder) failf(field parse.Field, format string, args ...Code) *Statement {
+	all := append([]Code{Lit(e.pdu.Name + "." + field.Name + ": " + format)}, args...)
+	return e.fail(Qual("fmt", "Errorf").Call(all...))
+}
+
+// fields emits encoding for all fields (regular + dispatch).
 // Dispatch fields are encoded FIRST so their wide copy (e.g. data[0:80])
 // doesn't overwrite the outer struct's non-dispatch fields (e.g. Format,
 // AppendedBlocks) that may share the same bit range.
-func emitEncodeFields(g *Group, pdu parse.PDUStruct) {
+func (e encoder) fields(g *Group) {
 	var regularFields []parse.Field
 	var dispatchFields []parse.Field
-	for _, field := range pdu.Fields {
+	for _, field := range e.pdu.Fields {
 		if field.Skip {
 			continue // skip dmr:"-" fields
 		}
@@ -1131,45 +1154,33 @@ func emitEncodeFields(g *Group, pdu parse.PDUStruct) {
 	}
 	// Dispatch first — sub-PDU copies the full payload range.
 	if len(dispatchFields) > 0 {
-		emitDispatchEncode(g, dispatchFields, pdu)
+		e.dispatch(g, dispatchFields)
 	}
 	// Then non-dispatch fields overwrite their specific bit positions.
 	for _, field := range regularFields {
 		if field.NoEncode {
 			continue // decoded for guard conditions but not encoded (sub-PDU handles these bits)
 		}
-		emitFieldEncode(g, field, pdu)
+		e.field(g, field)
 	}
 }
 
-// emitDispatchEncode generates a switch that encodes the active dispatch field.
-func emitDispatchEncode(g *Group, fields []parse.Field, pdu parse.PDUStruct) {
-	if len(fields) == 0 {
-		return
-	}
-
+// dispatch generates a switch that encodes the active dispatch field.
+func (e encoder) dispatch(g *Group, fields []parse.Field) {
 	bitStart := fields[0].BitStart
 	bitEnd := fields[0].BitEnd
 
-	// switch {
-	// case s.BSOutboundActivationPDU != nil:
-	//     pduBits := EncodeBSOutboundActivationPDU(s.BSOutboundActivationPDU)
-	//     copy(data[16:80], pduBits[:])
-	// ...
-	// }
 	g.Switch().BlockFunc(func(sw *Group) {
 		for _, field := range fields {
-			typeName := field.TypeName
-			if field.IsPointer && field.PointedType != "" {
-				typeName = field.PointedType
-			}
-			encodeFn := "Encode" + typeName
 			sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(
-				Id("_pduBits").Op(":=").Id(encodeFn).Call(Id("s").Dot(field.Name)),
+				List(Id("_pduBits"), Err()).Op(":=").Id("Encode"+dispatchTypeName(field)).Call(Id("s").Dot(field.Name)),
+				If(Err().Op("!=").Nil()).Block(
+					e.fail(Qual("fmt", "Errorf").Call(Lit(e.pdu.Name+"."+field.Name+": %w"), Err())),
+				),
 				Copy(Id("data").Index(Lit(bitStart), Lit(bitEnd+1)), Id("_pduBits").Index(Empty(), Empty())),
 			)
 		}
-		if fb := fallbackField(pdu); fb != nil {
+		if fb := fallbackField(e.pdu); fb != nil {
 			sw.Default().Block(
 				Copy(Id("data").Index(Lit(bitStart), Lit(bitEnd+1)), Id("s").Dot(fb.Name).Index(Empty(), Empty())),
 			)
@@ -1242,7 +1253,8 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 }
 
 // emitPackedFECEncode generates Reed-Solomon encoding for the encode path.
-func emitPackedFECEncode(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, outputSize int) error {
+func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
+	pdu := enc.pdu
 	// Pack data bytes (first N data bytes)
 	g.Var().Id("_encData").Index(Lit(codec.DataBytes)).Byte()
 	g.For(Id("i").Op(":=").Range().Lit(codec.DataBytes)).Block(
@@ -1254,17 +1266,17 @@ func emitPackedFECEncode(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, out
 		),
 	)
 
-	// RS encode: returns ([]byte, error)
-	g.List(Id("_encoded"), Id("_")).Op(":=").Qual(codec.ImportPath, "Encode").Call(
+	g.List(Id("_encoded"), Err()).Op(":=").Qual(codec.ImportPath, "Encode").Call(
 		Id("_encData").Index(Empty(), Empty()),
 	)
+	g.If(Err().Op("!=").Nil()).Block(enc.fail(Err()))
 
 	if err := emitFECMask(g, pdu, codec, Id("s"), "_encoded"); err != nil {
 		return err
 	}
 
 	// Unpack all encoded bytes (data + parity) back into data bits
-	totalBytes := outputSize / 8
+	totalBytes := enc.size / 8
 	g.For(Id("i").Op(":=").Range().Lit(totalBytes)).Block(
 		For(Id("j").Op(":=").Range().Lit(8)).Block(
 			Id("data").Index(Id("i").Op("*").Lit(8).Op("+").Id("j")).Op("=").
@@ -1277,13 +1289,20 @@ func emitPackedFECEncode(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, out
 	return nil
 }
 
-// emitFieldEncode generates the encode logic for a single field.
-func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
+// field generates the encode logic for a single field.
+func (e encoder) field(g *Group, field parse.Field) {
+	pdu := e.pdu
 	source := Id("s").Dot(field.Name)
 
-	if len(field.ExtraBitRanges) > 0 {
-		emitNonContiguousEncode(g, field)
+	switch field.Kind {
+	case parse.FieldUint, parse.FieldInt, parse.FieldEnum:
+		e.integer(g, field)
 		return
+	case parse.FieldDelegate:
+		if field.DelegateNoPtr && field.Stride == 0 {
+			e.integer(g, field)
+			return
+		}
 	}
 
 	switch field.Kind {
@@ -1293,41 +1312,6 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			Id("data").Index(Lit(field.BitStart)).Op("=").Lit(1),
 		)
 
-	case parse.FieldUint:
-		fn := bitStoreFunc(field.BitWidth)
-		bits := Qual(bitPkg, fn).Call(
-			castToStoreFuncType(source.Clone(), field.GoType, fn),
-			Lit(field.BitWidth),
-		)
-		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			bits,
-		)
-
-	case parse.FieldInt:
-		// BitsFromUint32 handles it, just needs a cast
-		bits := Qual(bitPkg, "BitsFromUint32").Call(
-			Uint32().Call(source.Clone()),
-			Lit(field.BitWidth),
-		)
-		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			bits,
-		)
-
-	case parse.FieldEnum:
-		// Cast enum to int, then to uint for BitsFromUint
-		fn := bitStoreFunc(field.BitWidth)
-		storeType := storeParamType(fn)
-		bits := Qual(bitPkg, fn).Call(
-			Add(storeType).Call(source.Clone()),
-			Lit(field.BitWidth),
-		)
-		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			bits,
-		)
-
 	case parse.FieldRaw:
 		g.Copy(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
@@ -1335,37 +1319,23 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		)
 
 	case parse.FieldPacked:
-		// Unpack bytes back to individual bits
-		var src *Statement
-		if isFixedArray(field.GoType) {
-			src = source.Clone().Index(Empty(), Empty()) // s.Data[:]
-		} else {
-			src = source.Clone()
-		}
 		g.Copy(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			Qual(bitPkg, "UnpackBits").Call(src),
+			Qual(bitPkg, "UnpackBits").Call(source.Clone().Index(Empty(), Empty())),
 		)
 
 	case parse.FieldDelegate:
-		arraySize := field.BitEnd - field.BitStart + 1
-		if field.Stride > 0 && field.ArrayLen > 0 {
+		encodeFn := Id("Encode" + field.TypeName)
+		if field.IsQualified {
+			encodeFn = Qual(resolveImportPath(field.TypePkg, pdu.SourceFile), "Encode"+field.TypeName)
+		}
+		if field.Stride > 0 {
 			// Array delegate with stride: call EncodeXxx on each element
-			encodeFn := "Encode" + field.TypeName
-			var importPath string
-			if field.IsQualified {
-				importPath = resolveImportPath(field.TypePkg, pdu.SourceFile)
-			}
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
-				func() Code {
-					var call Code
-					if field.IsQualified {
-						call = Qual(importPath, encodeFn).Call(Op("&").Add(source.Clone().Index(Id("_i"))))
-					} else {
-						call = Id(encodeFn).Call(Op("&").Add(source.Clone().Index(Id("_i"))))
-					}
-					return Id("_elemBits").Op(":=").Add(call)
-				}(),
+				List(Id("_elemBits"), Err()).Op(":=").Add(encodeFn).Call(Op("&").Add(source.Clone().Index(Id("_i")))),
+				If(Err().Op("!=").Nil()).Block(
+					e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+"[%d]: %w"), Id("_i"), Err())),
+				),
 				Copy(
 					Id("data").Index(
 						Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
@@ -1374,50 +1344,97 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 					Id("_elemBits").Index(Empty(), Empty()),
 				),
 			)
-		} else if field.DelegateNoPtr {
-			// noptr delegates are integer typedefs: convert and store
-			fn := bitStoreFunc(field.BitWidth)
-			g.Copy(
-				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-				Qual(bitPkg, fn).Call(
-					Add(storeParamType(fn)).Call(source.Clone()),
-					Lit(arraySize),
-				),
-			)
-		} else {
-			// Struct delegate: call generated EncodeXxx function
-			encodeFnName := "Encode" + field.TypeName
-			var importPath string
-			if field.IsQualified {
-				importPath = resolveImportPath(field.TypePkg, pdu.SourceFile)
-			}
-			tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
-			var encodeFnCall Code
-			if field.IsQualified {
-				encodeFnCall = Qual(importPath, encodeFnName).Call(Op("&").Add(source.Clone()))
-			} else {
-				encodeFnCall = Id(encodeFnName).Call(Op("&").Add(source.Clone()))
-			}
-			g.Id(tmpVar).Op(":=").Add(encodeFnCall)
-			g.Copy(
-				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-				Id(tmpVar).Index(Empty(), Empty()),
-			)
+			return
 		}
+		// Struct delegate: call generated EncodeXxx function
+		tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
+		g.List(Id(tmpVar), Err()).Op(":=").Add(encodeFn).Call(Op("&").Add(source.Clone()))
+		g.If(Err().Op("!=").Nil()).Block(
+			e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+": %w"), Err())),
+		)
+		g.Copy(
+			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+			Id(tmpVar).Index(Empty(), Empty()),
+		)
 
 	case parse.FieldLongitude, parse.FieldLatitude:
+		raw := "_raw" + field.Name
+		half := 1 << (field.BitWidth - 1)
+		g.Id(raw).Op(":=").Add(coordRaw(field, source.Clone()))
+		// Negated form also rejects NaN.
+		g.If(Op("!").Parens(Id(raw).Op(">=").Lit(-half).Op("&&").Id(raw).Op("<=").Lit(half - 1))).Block(
+			e.failf(field, fmt.Sprintf("%%v degrees is outside [%v, %v)", -coordSpan(field)/2, coordSpan(field)/2), source.Clone()),
+		)
 		g.Copy(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
 			Qual(bitPkg, "BitsFromUint32").Call(
-				Uint32().Call(Int32().Call(coordRaw(field, source.Clone()))),
+				Uint32().Call(Int32().Call(Id(raw))),
 				Lit(field.BitWidth),
 			),
 		)
 
 	case parse.FieldDispatch:
-		// Dispatch fields are handled separately in emitDispatchEncode
-		// (no-op here)
+		// Dispatch fields are handled separately in dispatch
 	}
+}
+
+// integer encodes an unsigned, signed, enum or noptr delegate field after
+// checking that its value fits the field width.
+func (e encoder) integer(g *Group, field parse.Field) {
+	source := Id("s").Dot(field.Name)
+	w := field.BitWidth
+	switch {
+	case field.Signed:
+		lo, hi := -(1 << (w - 1)), (1<<(w-1))-1
+		g.If(Int64().Call(source.Clone()).Op("<").Lit(lo).Op("||").Int64().Call(source.Clone()).Op(">").Lit(hi)).Block(
+			e.failf(field, fmt.Sprintf("value %%d does not fit in %d signed bits", w), source.Clone()),
+		)
+	case needsRangeCheck(field):
+		g.If(Uint64().Call(source.Clone()).Op(">>").Lit(w).Op("!=").Lit(0)).Block(
+			e.failf(field, fmt.Sprintf("value %%d does not fit in %d bits", w), source.Clone()),
+		)
+	}
+
+	fn := bitStoreFunc(w)
+	value := castToStoreFuncType(source.Clone(), field.GoType, fn)
+	if len(field.ExtraBitRanges) == 0 {
+		g.Copy(
+			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+			Qual(bitPkg, fn).Call(value, Lit(w)),
+		)
+		return
+	}
+
+	// Non-contiguous: store each segment MSB-first.
+	tmp := "_val" + field.Name
+	g.Id(tmp).Op(":=").Add(value)
+	remaining := w
+	for _, r := range field.Ranges() {
+		segWidth := r[1] - r[0] + 1
+		remaining -= segWidth
+		seg := Id(tmp)
+		if remaining > 0 {
+			seg = Id(tmp).Op(">>").Lit(remaining)
+		}
+		g.Copy(
+			Id("data").Index(Lit(r[0]), Lit(r[1]+1)),
+			Qual(bitPkg, fn).Call(seg, Lit(segWidth)),
+		)
+	}
+}
+
+// needsRangeCheck reports whether an unsigned field's Go type can hold values
+// wider than the field.
+func needsRangeCheck(field parse.Field) bool {
+	switch field.BaseType {
+	case "uint8", "byte":
+		return field.BitWidth < 8
+	case "uint16":
+		return field.BitWidth < 16
+	case "uint32":
+		return field.BitWidth < 32
+	}
+	return true
 }
 
 // emitNonContiguousDecode generates decode logic for a non-contiguous uint field.
@@ -1479,53 +1496,6 @@ func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(tmp)
 	default:
 		g.Add(target).Op("=").Add(tmp)
-	}
-}
-
-// emitNonContiguousEncode generates encode logic for a non-contiguous uint field.
-// Decomposes the value into segments (MSB-first) and stores each in its bit range.
-func emitNonContiguousEncode(g *Group, field parse.Field) {
-	source := Id("s").Dot(field.Name)
-	fn := bitStoreFunc(field.BitWidth)
-	firstWidth := field.BitEnd - field.BitStart + 1
-
-	// Calculate remaining bits after the first range
-	remaining := 0
-	for _, r := range field.ExtraBitRanges {
-		remaining += r[1] - r[0] + 1
-	}
-
-	// First range: extract MSB portion by shifting right past remaining bits
-	firstVal := castToStoreFuncType(source.Clone(), field.GoType, fn)
-	if remaining > 0 {
-		firstVal = castToStoreFuncType(
-			Parens(Add(storeParamType(fn)).Call(source.Clone())).Op(">>").Lit(remaining),
-			storeParamGoType(fn), fn,
-		)
-	}
-	g.Copy(
-		Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-		Qual(bitPkg, fn).Call(firstVal, Lit(firstWidth)),
-	)
-
-	// Each extra range: extract the corresponding portion
-	for _, r := range field.ExtraBitRanges {
-		extraWidth := r[1] - r[0] + 1
-		remaining -= extraWidth
-
-		var segVal *Statement
-		if remaining > 0 {
-			segVal = castToStoreFuncType(
-				Parens(Add(storeParamType(fn)).Call(source.Clone())).Op(">>").Lit(remaining),
-				storeParamGoType(fn), fn,
-			)
-		} else {
-			segVal = castToStoreFuncType(source.Clone(), field.GoType, fn)
-		}
-		g.Copy(
-			Id("data").Index(Lit(r[0]), Lit(r[1]+1)),
-			Qual(bitPkg, fn).Call(segVal, Lit(extraWidth)),
-		)
 	}
 }
 

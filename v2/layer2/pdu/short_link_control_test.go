@@ -102,7 +102,7 @@ func TestShortLC_EncodeDecodeRoundTrip(t *testing.T) {
 		},
 	}
 
-	encoded := pdu.EncodeShortLC(&original)
+	encoded := must(pdu.EncodeShortLC(&original))
 	decoded, fecResult := pdu.DecodeShortLC(encoded)
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip CRC failed")

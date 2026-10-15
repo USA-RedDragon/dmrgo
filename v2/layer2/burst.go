@@ -170,22 +170,25 @@ func (b *Burst) decodeStandaloneRC() {
 	b.FEC.RC = rcFEC
 }
 
-func (b *Burst) encodeStandaloneRC() [264]bit.Bit {
+func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
 	var bitData [264]bit.Bit
 	if b.HasReverseChannel && b.ReverseChannel != nil {
 		rcBits, err := EncodeRCToEmbeddedData(b.ReverseChannel)
 		if err != nil {
-			panic(fmt.Sprintf("cannot encode reverse channel: %v", err))
+			return bitData, fmt.Errorf("cannot encode reverse channel: %w", err)
 		}
 		b.EmbeddedSignallingData = rcBits
 	}
-	embBits := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
+	embBits, err := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
+	if err != nil {
+		return bitData, fmt.Errorf("cannot encode embedded signalling: %w", err)
+	}
 	copy(bitData[RCEMBFirstStart:RCEMBFirstEnd], embBits[:8])
 	copy(bitData[RCDataFirstStart:RCDataFirstEnd], b.EmbeddedSignallingData[:16])
 	writeSync(&bitData, enums.MsSourcedRcSync)
 	copy(bitData[RCDataSecondStart:RCDataSecondEnd], b.EmbeddedSignallingData[16:])
 	copy(bitData[RCEMBSecondStart:RCEMBSecondEnd], embBits[8:])
-	return bitData
+	return bitData, nil
 }
 
 func writeSync(bitData *[264]bit.Bit, sync enums.SyncPattern) {
@@ -409,10 +412,15 @@ func (b *Burst) extractData() (elements.Data, error) {
 	}
 }
 
-// Encode returns the encoded bytes of the burst.
-func (b *Burst) Encode() [33]byte {
+// Encode returns the encoded bytes of the burst. It returns an error when a
+// field value does not fit in its on-air bits.
+func (b *Burst) Encode() ([33]byte, error) {
 	if b.SyncPattern == enums.MsSourcedRcSync {
-		return bit.PackBits264(b.encodeStandaloneRC())
+		bitData, err := b.encodeStandaloneRC()
+		if err != nil {
+			return [33]byte{}, err
+		}
+		return bit.PackBits264(bitData), nil
 	}
 
 	var bitData [264]bit.Bit
@@ -425,13 +433,19 @@ func (b *Burst) Encode() [33]byte {
 
 		// Encode slot type
 		if b.HasSlotType {
-			slotBits := pdu.EncodeSlotType(&b.SlotType)
+			slotBits, err := pdu.EncodeSlotType(&b.SlotType)
+			if err != nil {
+				return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
+			}
 			copy(bitData[98:108], slotBits[:10])
 			copy(bitData[156:166], slotBits[10:20])
 		}
 	} else if b.VoiceBurst != enums.VoiceBurstUnknown || b.HasEmbeddedSignalling {
 		// Voice Data
-		voiceBits := pdu.EncodeVocoder(&b.VoiceData)
+		voiceBits, err := pdu.EncodeVocoder(&b.VoiceData)
+		if err != nil {
+			return [33]byte{}, fmt.Errorf("cannot encode voice: %w", err)
+		}
 		copy(bitData[:108], voiceBits[:108])
 		copy(bitData[156:264], voiceBits[108:216])
 	}
@@ -442,11 +456,14 @@ func (b *Burst) Encode() [33]byte {
 		if b.HasReverseChannel && b.ReverseChannel != nil {
 			rcBits, err := EncodeRCToEmbeddedData(b.ReverseChannel)
 			if err != nil {
-				panic(fmt.Sprintf("cannot encode reverse channel: %v", err))
+				return [33]byte{}, fmt.Errorf("cannot encode reverse channel: %w", err)
 			}
 			b.EmbeddedSignallingData = rcBits
 		}
-		esBits := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
+		esBits, err := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
+		if err != nil {
+			return [33]byte{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
+		}
 		copy(bitData[108:116], esBits[0:8])
 		copy(bitData[116:148], b.EmbeddedSignallingData[:])
 		copy(bitData[148:156], esBits[8:16])
@@ -454,7 +471,7 @@ func (b *Burst) Encode() [33]byte {
 		writeSync(&bitData, b.SyncPattern)
 	}
 
-	return bit.PackBits264(bitData)
+	return bit.PackBits264(bitData), nil
 }
 
 func (b *Burst) encodeDataBits() [196]bit.Bit {
@@ -527,7 +544,8 @@ func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
 // BuildLCDataBurst builds a 33-byte LC data burst (e.g. for Voice Header or Terminator).
 // lcBytes is the 12-byte on-air codeword with the Data Type CRC Mask already
 // applied, as returned by pdu.EncodeFullLinkControl with DataType set to dataType.
-func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8) [33]byte {
+// It returns an error if colorCode or dataType does not fit in the slot type.
+func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8) ([33]byte, error) {
 	// Convert LC bytes to 96 info bits
 	var infoBits [96]bit.Bit
 	for i := 0; i < 12; i++ {
@@ -556,15 +574,18 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 	copy(bitData[166:264], encoded[98:196])
 
 	// Slot Type: encode color code + data type with Golay FEC
-	slotTypeBits := pdu.EncodeSlotType(&pdu.SlotType{
-		ColorCode: int(colorCode & 0xF),
+	slotTypeBits, err := pdu.EncodeSlotType(&pdu.SlotType{
+		ColorCode: int(colorCode),
 		DataType:  dataType,
 	})
+	if err != nil {
+		return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
+	}
 
 	copy(bitData[98:108], slotTypeBits[:10])
 	copy(bitData[156:166], slotTypeBits[10:20])
 
 	writeSync(&bitData, enums.BsSourcedData)
 
-	return bit.PackBits264(bitData)
+	return bit.PackBits264(bitData), nil
 }

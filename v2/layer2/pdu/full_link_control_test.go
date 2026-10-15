@@ -29,7 +29,7 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 		},
 	}
 
-	infoBits := pdu.EncodeFullLinkControl(original)
+	infoBits := must(pdu.EncodeFullLinkControl(original))
 
 	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if fecResult.Uncorrectable {
@@ -73,7 +73,7 @@ func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 		},
 	}
 
-	infoBits := pdu.EncodeFullLinkControl(original)
+	infoBits := must(pdu.EncodeFullLinkControl(original))
 
 	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if fecResult.Uncorrectable {
@@ -117,8 +117,8 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 			SourceAddress: 100,
 		},
 	}
-	enc1 := pdu.EncodeFullLinkControl(flc)
-	enc2 := pdu.EncodeFullLinkControl(flc)
+	enc1 := must(pdu.EncodeFullLinkControl(flc))
+	enc2 := must(pdu.EncodeFullLinkControl(flc))
 	for i := range enc1 {
 		if enc1[i] != enc2[i] {
 			t.Errorf("bit %d: first=%d, second=%d", i, enc1[i], enc2[i])
@@ -164,7 +164,7 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 			SourceAddress:  2,
 		},
 	}
-	infoBits := pdu.EncodeFullLinkControl(flc)
+	infoBits := must(pdu.EncodeFullLinkControl(flc))
 
 	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType)
 	if fecResult.Uncorrectable {
@@ -200,7 +200,7 @@ func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
 			SourceAddress: 200,
 		},
 	}
-	infoBits := pdu.EncodeFullLinkControl(flc)
+	infoBits := must(pdu.EncodeFullLinkControl(flc))
 
 	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType)
 	if fecResult.Uncorrectable {
@@ -233,7 +233,7 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 					SourceAddress: tt.sourceAddr,
 				},
 			}
-			infoBits := pdu.EncodeFullLinkControl(flc)
+			infoBits := must(pdu.EncodeFullLinkControl(flc))
 
 			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType)
 			if fecResult.Uncorrectable {
@@ -279,7 +279,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 				},
 			}
 
-			infoBits := pdu.EncodeFullLinkControl(original)
+			infoBits := must(pdu.EncodeFullLinkControl(original))
 			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
@@ -353,7 +353,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				},
 			}
 
-			infoBits := pdu.EncodeFullLinkControl(original)
+			infoBits := must(pdu.EncodeFullLinkControl(original))
 			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
@@ -391,7 +391,7 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 		},
 	}
 
-	infoBits := pdu.EncodeFullLinkControl(original)
+	infoBits := must(pdu.EncodeFullLinkControl(original))
 	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")

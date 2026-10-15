@@ -273,7 +273,7 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 			HashTS2:       0x34,
 		},
 	}
-	encoded := pdu.EncodeShortLC(&original)
+	encoded := must(pdu.EncodeShortLC(&original))
 	fragments := bptc.EncodeCACHBPTC(encoded)
 
 	slc, fecResult := layer2.DecodeShortLCFromFragments(fragments)

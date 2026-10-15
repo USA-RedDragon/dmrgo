@@ -16,7 +16,7 @@ import (
 func TestBurst_ReservedDataTypes(t *testing.T) {
 	for dt := elements.DataTypeReserved; dt <= 0xF; dt++ {
 		t.Run(fmt.Sprintf("DataType%d", dt), func(t *testing.T) {
-			frame := layer2.BuildLCDataBurst([12]byte{}, dt, 1)
+			frame := must(layer2.BuildLCDataBurst([12]byte{}, dt, 1))
 			for _, trunking := range []bool{false, true} {
 				var burst layer2.Burst
 				burst.SetTrunkingMode(trunking)
@@ -29,7 +29,7 @@ func TestBurst_ReservedDataTypes(t *testing.T) {
 				if burst.Data != nil {
 					t.Errorf("data type %d: expected nil Data", dt)
 				}
-				if got := burst.Encode(); got != frame {
+				if got := must(burst.Encode()); got != frame {
 					t.Errorf("data type %d: encode mismatch\ngot  %x\nwant %x", dt, got, frame)
 				}
 			}
@@ -78,7 +78,7 @@ func TestBurst_Encode(t *testing.T) {
 				}
 				t.Logf("burst: %v", burst.ToString())
 
-				encoded := burst.Encode()
+				encoded := must(burst.Encode())
 
 				// Verify stability: Encode(Decode(encoded)) == encoded
 				// This handles cases where the input file has invalid parity/FEC bits (captured data)
@@ -87,7 +87,7 @@ func TestBurst_Encode(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
 				}
-				encoded2 := burst2.Encode()
+				encoded2 := must(burst2.Encode())
 
 				if !bytes.Equal(encoded[:], encoded2[:]) {
 					t.Errorf("Burst %d stability mismatch:\nfirst  %x\nsecond %x\nSync: %v\nVoice: %v\nHasEmbSig: %v\nCorrected Errors: %d\nUncorrectable: %v",
@@ -146,7 +146,7 @@ func benchmarkEncode(b *testing.B, file string) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = decodedBursts[i%len(decodedBursts)].Encode()
+		_, _ = decodedBursts[i%len(decodedBursts)].Encode()
 	}
 }
 
@@ -164,7 +164,7 @@ func flipBurstBits(frame [33]byte, positions ...int) [33]byte {
 }
 
 func TestBurst_SyncTolerance(t *testing.T) {
-	frame := layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeIdle, 1)
+	frame := must(layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeIdle, 1))
 
 	noisy := flipBurstBits(frame, layer2.SyncStart, layer2.SyncStart+11, layer2.SyncStart+30, layer2.SyncEnd-1)
 	burst, err := layer2.NewBurstFromBytes(noisy)
@@ -174,7 +174,7 @@ func TestBurst_SyncTolerance(t *testing.T) {
 	if !burst.IsData || burst.SyncPattern != enums.BsSourcedData || burst.SyncDistance != 4 {
 		t.Fatalf("4 sync bit errors: IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, enums.SyncPatternToName(burst.SyncPattern), burst.SyncDistance)
 	}
-	if got := burst.Encode(); got != frame {
+	if got := must(burst.Encode()); got != frame {
 		t.Errorf("encode did not restore clean sync\ngot  %x\nwant %x", got, frame)
 	}
 
@@ -206,7 +206,7 @@ func TestBurst_SyncTolerance_ValidEMB(t *testing.T) {
 	if burst.SyncDistance != 4 || burst.FEC.EMB.ErrorsCorrected != 0 {
 		t.Errorf("SyncDistance=%d EMB FEC %+v", burst.SyncDistance, burst.FEC.EMB)
 	}
-	if got := burst.Encode(); got != frame {
+	if got := must(burst.Encode()); got != frame {
 		t.Errorf("encode mismatch\ngot  %x\nwant %x", got, frame)
 	}
 }

@@ -44,12 +44,15 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.FECResult) {
 }
 
 // EncodePIHeader encodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
-func EncodePIHeader(s *PIHeader) [96]bit.Bit {
+func EncodePIHeader(s *PIHeader) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	copy(data[0:8], bit.BitsFromUint8(s.AlgorithmID, 8))
 	copy(data[8:16], bit.BitsFromUint8(s.MFID, 8))
 	copy(data[16:24], bit.BitsFromUint8(s.KeyID, 8))
 	copy(data[24:56], bit.BitsFromUint32(s.MessageIndicator, 32))
+	if uint64(s.Destination)>>24 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("PIHeader.Destination: value %d does not fit in 24 bits", s.Destination)
+	}
 	copy(data[56:80], bit.BitsFromUint32(uint32(s.Destination), 24))
 	var _encBytes [10]byte
 	for i := range 10 {
@@ -69,7 +72,7 @@ func EncodePIHeader(s *PIHeader) [96]bit.Bit {
 	for j := range 8 {
 		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
 	}
-	return data
+	return data, nil
 }
 
 func (s *PIHeader) ToString() string {

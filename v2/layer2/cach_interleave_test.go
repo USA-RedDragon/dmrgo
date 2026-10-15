@@ -158,7 +158,7 @@ func TestCACHDeinterleave_WithDecodeCACH(t *testing.T) {
 		cach.Payload[i] = bit.Bit(i % 2)
 	}
 
-	logical := layer2.EncodeCACH(&cach)
+	logical := must(layer2.EncodeCACH(&cach))
 	tx := layer2.CACHInterleave(logical)
 	deinterleaved := layer2.CACHDeinterleave(tx)
 	decoded := layer2.DecodeCACH(deinterleaved)

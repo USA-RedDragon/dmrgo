@@ -32,7 +32,7 @@ func TestFLCGPSInfo_CoordinatesRoundTrip(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			in := pdu.FLCGPSInfo{Longitude: tt.lon, Latitude: tt.lat}
-			bits := pdu.EncodeFLCGPSInfo(&in)
+			bits := must(pdu.EncodeFLCGPSInfo(&in))
 			out, _ := pdu.DecodeFLCGPSInfo(bits)
 			if math.Abs(out.Longitude-tt.lon) > lonStep/2 {
 				t.Errorf("Longitude = %v, want %v", out.Longitude, tt.lon)
@@ -40,7 +40,7 @@ func TestFLCGPSInfo_CoordinatesRoundTrip(t *testing.T) {
 			if math.Abs(out.Latitude-tt.lat) > latStep/2 {
 				t.Errorf("Latitude = %v, want %v", out.Latitude, tt.lat)
 			}
-			if again := pdu.EncodeFLCGPSInfo(&out); again != bits {
+			if again := must(pdu.EncodeFLCGPSInfo(&out)); again != bits {
 				t.Error("re-encoding the decoded value changed the bits")
 			}
 		})
@@ -66,7 +66,7 @@ func TestFLCGPSInfo_DecodeTwosComplement(t *testing.T) {
 
 func TestFLCGPSInfo_EncodeTwosComplement(t *testing.T) {
 	in := pdu.FLCGPSInfo{Longitude: -lonStep, Latitude: -90}
-	bits := pdu.EncodeFLCGPSInfo(&in)
+	bits := must(pdu.EncodeFLCGPSInfo(&in))
 	for i := 7; i < 32; i++ {
 		if bits[i] != 1 {
 			t.Fatalf("longitude bit %d = %d, want all ones for -1 step", i, bits[i])

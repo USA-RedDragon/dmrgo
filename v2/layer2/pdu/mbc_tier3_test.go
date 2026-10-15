@@ -101,7 +101,7 @@ func TestCGAPContinuation_EncodeDecodeCycle(t *testing.T) {
 		CdefParms:   cdefParms,
 	}
 
-	encoded := pdu.EncodeCGAPContinuation(&original)
+	encoded := must(pdu.EncodeCGAPContinuation(&original))
 	decoded, _ := pdu.DecodeCGAPContinuation(encoded)
 
 	if decoded.LastBlock != original.LastBlock {
@@ -228,7 +228,7 @@ func TestMVAPContinuation_EncodeDecodeCycle(t *testing.T) {
 		CdefParms:   cdefParms,
 	}
 
-	encoded := pdu.EncodeMVAPContinuation(&original)
+	encoded := must(pdu.EncodeMVAPContinuation(&original))
 	decoded, _ := pdu.DecodeMVAPContinuation(encoded)
 
 	if decoded.ColourCode != original.ColourCode {
@@ -277,7 +277,7 @@ func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
 	}
 
 	cg, _ := pdu.DecodeCGAPContinuation(bits)
-	if pdu.EncodeCGAPContinuation(&cg) != bits {
+	if must(pdu.EncodeCGAPContinuation(&cg)) != bits {
 		t.Error("EncodeCGAPContinuation should reproduce the CRC")
 	}
 }
