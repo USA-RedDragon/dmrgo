@@ -700,55 +700,120 @@ func (b *Burst) checkCentre() error {
 	return fmt.Errorf("a %s burst cannot carry SYNC pattern %s", b.Kind, b.SyncPattern)
 }
 
-// dataInfoBits returns Data coded for the slot type data type or, when Data
-// is nil or codes to the same bits, the payload that DecodeFromBytes decoded.
-func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
+// dataInfoBits writes into info Data coded for the slot type data type or,
+// when Data is nil or codes to the same bits as the PDU that DecodeFromBytes
+// decoded, the payload that DecodeFromBytes decoded.
+func (b *Burst) dataInfoBits(info *[196]bit.Bit) error {
 	dt := b.SlotType.DataType
 	decoded := b.deinterleavedInfoLen > 0 && dt == b.decodedDataType
 	switch {
 	case b.Data != nil:
-		info, err := encodeData(b.Data, dt)
-		if err != nil || !decoded {
-			return info, err
+		if err := encodeData(info, b.Data, dt); err != nil {
+			return err
 		}
-		var st decodeStore
-		orig, _, decodeErr := decodePayload(&st, dt, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
-		if decodeErr == nil {
-			if origInfo, err := encodeData(orig, dt); err == nil && origInfo == info {
-				return b.deinterleavedInfoBits, nil
-			}
+		if decoded && *info != b.deinterleavedInfoBits && b.decodedCodesTo(info) {
+			*info = b.deinterleavedInfoBits
 		}
-		return info, nil
+		return nil
 	case b.deinterleavedInfoLen == 0:
-		return [196]bit.Bit{}, fmt.Errorf("data burst has no Data")
+		return fmt.Errorf("data burst has no Data")
 	case !decoded:
-		return [196]bit.Bit{}, fmt.Errorf("decoded payload is a %s but the slot type data type is %s; set Data",
+		return fmt.Errorf("decoded payload is a %s but the slot type data type is %s; set Data",
 			b.decodedDataType.String(), dt.String())
 	default:
-		return b.deinterleavedInfoBits, nil
+		*info = b.deinterleavedInfoBits
+		return nil
 	}
 }
 
-// encodeData returns the information bits of d in a data burst of dataType.
-func encodeData(d Data, dataType enums.DataType) ([196]bit.Bit, error) {
-	var info [196]bit.Bit
+// decodedCodesTo reports whether the PDU that DecodeFromBytes decoded from
+// the payload codes to the 96 information bits info. It decodes the PDU
+// again into a local value. A Rate 1/2, Rate 3/4 or Rate 1 PDU keeps every
+// information bit, so it codes to the payload, which the caller compares.
+func (b *Burst) decodedCodesTo(info *[196]bit.Bit) bool {
+	var payload, coded [96]bit.Bit
+	copy(payload[:], b.deinterleavedInfoBits[:])
+	var err error
+	switch dt := b.decodedDataType; dt {
+	case enums.DataTypeCSBK:
+		d := pdu.DecodeCSBK(payload)
+		coded, err = d.Encode()
+	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
+		d := pdu.DecodeFullLinkControl(payload, dt)
+		coded, err = d.Encode()
+	case enums.DataTypePIHeader:
+		d := pdu.DecodePIHeader(payload)
+		coded, err = d.Encode()
+	case enums.DataTypeDataHeader:
+		d := pdu.DecodeDataHeader(payload)
+		coded, err = d.Encode()
+	case enums.DataTypeMBCHeader:
+		d := pdu.DecodeMBCHeader(payload)
+		coded, err = d.Encode()
+	case enums.DataTypeMBCContinuation:
+		d := pdu.DecodeMBCContinuation(payload)
+		coded, err = d.Encode()
+	case enums.DataTypeUnifiedSingleBlock:
+		d := pdu.DecodeUnifiedSingleBlockData(payload)
+		coded, err = d.Encode()
+	case enums.DataTypeIdle:
+		coded = pdu.PRFillBits()
+	default:
+		return false
+	}
+	return err == nil && [96]bit.Bit(info[:96]) == coded
+}
+
+// encoder96, encoder144 and encoder192 are the PDUs whose Encode returns
+// their information bits as an array, which does not allocate.
+type (
+	encoder96  interface{ Encode() ([96]bit.Bit, error) }
+	encoder144 interface{ Encode() ([144]bit.Bit, error) }
+	encoder192 interface{ Encode() ([192]bit.Bit, error) }
+)
+
+// encodeData writes the information bits of d in a data burst of dataType
+// into info, which must be zero.
+func encodeData(info *[196]bit.Bit, d Data, dataType enums.DataType) error {
 	if rv := reflect.ValueOf(d); rv.Kind() == reflect.Pointer && rv.IsNil() {
-		return info, fmt.Errorf("data type %s cannot carry a nil %T", dataType.String(), d)
+		return fmt.Errorf("data type %s cannot carry a nil %T", dataType.String(), d)
 	}
 	if d.DataType() != dataType {
-		return info, fmt.Errorf("data type %s cannot carry Data of type %T with data type %s",
+		return fmt.Errorf("data type %s cannot carry Data of type %T with data type %s",
 			dataType.String(), d, d.DataType().String())
 	}
-	bits, err := d.EncodeBits()
+	var n int
+	var err error
+	switch e := d.(type) {
+	case encoder96:
+		var bits [96]bit.Bit
+		bits, err = e.Encode()
+		n = copy(info[:], bits[:])
+	case encoder144:
+		var bits [144]bit.Bit
+		bits, err = e.Encode()
+		n = copy(info[:], bits[:])
+	case encoder192:
+		var bits [192]bit.Bit
+		bits, err = e.Encode()
+		n = copy(info[:], bits[:])
+	case *pdu.PRFill:
+		bits := pdu.PRFillBits()
+		n = copy(info[:], bits[:])
+	default:
+		var bits []bit.Bit
+		bits, err = d.EncodeBits()
+		n = len(bits)
+		copy(info[:], bits)
+	}
 	if err != nil {
-		return info, fmt.Errorf("cannot encode data: %w", err)
+		return fmt.Errorf("cannot encode data: %w", err)
 	}
-	if want := infoBitsLen(dataType); len(bits) != want {
-		return info, fmt.Errorf("data type %s carries %d information bits, but %T encodes %d",
-			dataType.String(), want, d, len(bits))
+	if want := infoBitsLen(dataType); n != want {
+		return fmt.Errorf("data type %s carries %d information bits, but %T encodes %d",
+			dataType.String(), want, d, n)
 	}
-	copy(info[:], bits)
-	return info, nil
+	return nil
 }
 
 // infoBitsLen returns the number of information bits that a data burst of
@@ -770,8 +835,8 @@ func infoBitsLen(dataType enums.DataType) int {
 // BPTC(196,96), the Rate 3/4 trellis or Rate 1 as the slot type data type
 // selects. R(3) and the Rate 1 pad bits are zero.
 func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
-	info, err := b.dataInfoBits()
-	if err != nil {
+	var info [196]bit.Bit
+	if err := b.dataInfoBits(&info); err != nil {
 		return [196]bit.Bit{}, err
 	}
 	dt := b.SlotType.DataType
