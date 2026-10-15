@@ -56,6 +56,9 @@ func TestMMDVMHostAccepts_Vectors(t *testing.T) {
 		if layer2.MMDVMHostAccepts(v.dt, got) != v.accept {
 			t.Errorf("%s %s: accepted %v, MMDVMHost %v", v.dt.String(), v.payload, !v.accept, v.accept)
 		}
+		if p, ok := raw.MMDVMHostPayload(v.dt); p != payload || ok != v.accept {
+			t.Errorf("%s %s: MMDVMHostPayload %x %v", v.dt.String(), v.payload, p, ok)
+		}
 	}
 }
 
