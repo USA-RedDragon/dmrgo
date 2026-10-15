@@ -47,6 +47,43 @@ func TestLCBytes_Capture(t *testing.T) {
 	}
 }
 
+func TestLCBytes_FlagBits(t *testing.T) {
+	rng := rand.New(rand.NewSource(13))
+	for range 1000 {
+		var raw [9]byte
+		rng.Read(raw[:])
+		orig := pdu.LCBytes(raw)
+		for _, v := range []bool{false, true} {
+			l := orig
+			l.SetProtectFlag(v)
+			if l.ProtectFlag() != v || l.Reserved() != orig.Reserved() || !within(diffMask(l, orig), [9]byte{0x80}) {
+				t.Fatalf("%x: SetProtectFlag(%t) gives %x", orig, v, l)
+			}
+			l = orig
+			l.SetReserved(v)
+			if l.Reserved() != v || l.ProtectFlag() != orig.ProtectFlag() || !within(diffMask(l, orig), [9]byte{0x40}) {
+				t.Fatalf("%x: SetReserved(%t) gives %x", orig, v, l)
+			}
+		}
+	}
+}
+
+func TestLCBytes_ClearReservedOnFLCOChange(t *testing.T) {
+	l := pdu.LCBytes{0xC0, 0, 0x20, 0, 0, 9, 0, 0, 1}
+	l.SetFLCO(enums.FLCOUnitToUnitVoiceChannelUser)
+	if l[0] != 0xC3 || !l.Reserved() || !l.ProtectFlag() {
+		t.Fatalf("SetFLCO gives octet 0 %#02x", l[0])
+	}
+	l.SetReserved(false)
+	if l[0] != 0x83 || l.Reserved() {
+		t.Fatalf("SetReserved(false) gives octet 0 %#02x", l[0])
+	}
+	l.SetProtectFlag(false)
+	if l[0] != 0x03 || l.ProtectFlag() || l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser {
+		t.Fatalf("SetProtectFlag(false) gives octet 0 %#02x", l[0])
+	}
+}
+
 // diffMask returns the bits that differ between a and b.
 func diffMask(a, b [9]byte) [9]byte {
 	var d [9]byte

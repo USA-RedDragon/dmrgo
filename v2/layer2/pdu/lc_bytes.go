@@ -20,7 +20,8 @@ func (l LCBytes) FLCO() enums.FLCO {
 }
 
 // SetFLCO writes the low 6 bits of f into the FLCO and keeps the PF and
-// Reserved bits.
+// Reserved bits. DMRGateway clears the Reserved bit when it rewrites the
+// FLCO; to do the same, call SetReserved(false) as well.
 func (l *LCBytes) SetFLCO(f enums.FLCO) {
 	l[0] = l[0]&0xC0 | byte(f)&0x3F
 }
@@ -28,6 +29,30 @@ func (l *LCBytes) SetFLCO(f enums.FLCO) {
 // ProtectFlag returns the PF bit, bit 0 of octet 0.
 func (l LCBytes) ProtectFlag() bool {
 	return l[0]&0x80 != 0
+}
+
+// SetProtectFlag writes the PF bit, bit 0 of octet 0.
+func (l *LCBytes) SetProtectFlag(pf bool) {
+	if pf {
+		l[0] |= 0x80
+	} else {
+		l[0] &^= 0x80
+	}
+}
+
+// Reserved returns the Reserved bit, bit 1 of octet 0, which ETSI TS 102
+// 361-1 §9.1.6 Table 9.6 does not define.
+func (l LCBytes) Reserved() bool {
+	return l[0]&0x40 != 0
+}
+
+// SetReserved writes the Reserved bit, bit 1 of octet 0.
+func (l *LCBytes) SetReserved(r bool) {
+	if r {
+		l[0] |= 0x40
+	} else {
+		l[0] &^= 0x40
+	}
 }
 
 // FID returns the Feature set ID, octet 1.
