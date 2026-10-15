@@ -93,17 +93,17 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 
 | Metric | Count |
 | --- | --- |
-| Total sections | 124 |
-| ✅ Verified (tests pass) | 124 |
+| Total sections | 126 |
+| ✅ Verified (tests pass) | 126 |
 | ❌ Failing (tests fail) | 0 |
 | 🔶 Untested (has source, no tests) | 0 |
 | ⬜ Unimplemented | 0 |
 
-**Overall: 124/124 verified (100.0%)**
+**Overall: 126/126 verified (100.0%)**
 
 ### ETSI TS 102 361-1 — Air Interface Protocol
 
-**62** sections - ✅ 62  ❌ 0  🔶 0  ⬜ 0
+**64** sections - ✅ 64  ❌ 0  🔶 0  ⬜ 0
 
 `[██████████████████████████████] 100.0%`
 
@@ -121,6 +121,8 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
 | §7.4.1 | Multi Block Control (MBC) | ✅ verified | 17/17 passed | `v2/layer2/pdu/mbc.go`, `v2/layer2/burst.go` |
 | §8.2.1 | Header block structure | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
+| §8.2.2 | Data block structure | ✅ verified | 10/10 passed | `v2/layer2/packet/packet.go`, `v2/layer2/packet/assembler.go` |
+| §8.2.2.3 | Response packet format | ✅ verified | 3/3 passed | `v2/layer2/packet/response.go` |
 | §8.2.3.1 | Unified Single Block Data block structure | ✅ verified | 10/10 passed | `v2/layer2/pdu/usbd.go`, `v2/layer2/burst.go` |
 | §9.1.1 | Synchronization (SYNC) PDU | ✅ verified | 18/18 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go`, `v2/layer2/decode_options.go` |
 | §9.1.2 | Embedded signalling (EMB) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/embedded_signalling.go` |

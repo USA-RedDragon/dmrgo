@@ -282,6 +282,36 @@ documents:
               - TestDataHeader_CRCFailure
               - TestDataHeader_FormatDispatch
 
+      - section: "8.2.2"
+        title: "Data block structure"
+        source_files:
+          - v2/layer2/packet/packet.go
+          - v2/layer2/packet/assembler.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/packet
+            names:
+              - TestAssembler_Captures
+              - TestAssembler_CaptureCRCFailure
+              - TestSegment_RoundTrip
+              - TestSegment_HeaderFields
+              - TestSegment_Errors
+              - TestSegment_ShortData
+              - TestAssembler_Bursts
+              - TestAssembler_Errors
+              - TestAssembler_ProprietaryHeader
+              - TestMessageCRC
+
+      - section: "8.2.2.3"
+        title: "Response packet format"
+        source_files:
+          - v2/layer2/packet/response.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/packet
+            names:
+              - TestAssembler_SelectiveRetry
+              - TestResponseData
+              - TestResponseCodes
+
       - section: "8.2.3.1"
         title: "Unified Single Block Data block structure"
         source_files:
