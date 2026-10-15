@@ -6,9 +6,9 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -69,14 +69,14 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 	rng := rand.New(rand.NewPCG(1, 2))
 	var cases []roundTrip
 	for _, lc := range []struct {
-		dt   elements.DataType
+		dt   enums.DataType
 		mask uint32
 	}{
-		{elements.DataTypeVoiceLCHeader, 0x969696},
-		{elements.DataTypeTerminatorWithLC, 0x999999},
+		{enums.DataTypeVoiceLCHeader, 0x969696},
+		{enums.DataTypeTerminatorWithLC, 0x999999},
 	} {
 		cases = append(cases, roundTrip{
-			name:   "FullLinkControl " + elements.DataTypeToName(lc.dt),
+			name:   "FullLinkControl " + enums.DataTypeToName(lc.dt),
 			values: 64 * 2,
 			build: func(v int) [96]bit.Bit {
 				b := randomPayload(rng, 9)

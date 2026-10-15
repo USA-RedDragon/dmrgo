@@ -4,13 +4,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
-	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // dmr:fec reed_solomon_12_9_4
 // dmr:input DataType
-// dmr:fec_mask DataType layer2Elements.DataTypeVoiceLCHeader=0x969696 layer2Elements.DataTypeTerminatorWithLC=0x999999
+// dmr:fec_mask DataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
 // dmr:dispatch_if FeatureSetID==0
 // ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
 //
@@ -34,12 +33,12 @@ import (
 // without correction; a caller that must match it rejects an LC with
 // FEC.ErrorsCorrected > 0 (see layer2.MMDVMHostAccepts).
 type FullLinkControl struct {
-	DataType     layer2Elements.DataType `dmr:"-"`
-	ProtectFlag  bool                    `dmr:"bit:0"`
-	Reserved     bool                    `dmr:"bit:1"`
-	FLCO         enums.FLCO              `dmr:"bits:2-7,enum,err,from:enums.FLCOFromInt"`
-	FeatureSetID enums.FeatureSetID      `dmr:"bits:8-15,enum,err,from:enums.FeatureSetIDFromInt"`
-	FEC          fec.Result              `dmr:"-"`
+	DataType     enums.DataType     `dmr:"-"`
+	ProtectFlag  bool               `dmr:"bit:0"`
+	Reserved     bool               `dmr:"bit:1"`
+	FLCO         enums.FLCO         `dmr:"bits:2-7,enum,err,from:enums.FLCOFromInt"`
+	FeatureSetID enums.FeatureSetID `dmr:"bits:8-15,enum,err,from:enums.FeatureSetIDFromInt"`
+	FEC          fec.Result         `dmr:"-"`
 
 	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`
 	UnitToUnit                *FLCUnitToUnit                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`
@@ -77,32 +76,32 @@ func (f *FullLinkControl) Addresses() (target, source int, ok bool) {
 
 // ETSI TS 102 361-2 - Table 7.1: Grp_V_Ch_Usr PDU content
 type FLCGroupVoice struct {
-	ServiceOptions layer3Elements.ServiceOptions `dmr:"bits:0-7,delegate"`
-	GroupAddress   int                           `dmr:"bits:8-31"`
-	SourceAddress  int                           `dmr:"bits:32-55"`
+	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
+	GroupAddress   int                   `dmr:"bits:8-31"`
+	SourceAddress  int                   `dmr:"bits:32-55"`
 }
 
 // ETSI TS 102 361-2 - Table 7.2: UU_V_Ch_Usr PDU content
 type FLCUnitToUnit struct {
-	ServiceOptions layer3Elements.ServiceOptions `dmr:"bits:0-7,delegate"`
-	TargetAddress  int                           `dmr:"bits:8-31"`
-	SourceAddress  int                           `dmr:"bits:32-55"`
+	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
+	TargetAddress  int                   `dmr:"bits:8-31"`
+	SourceAddress  int                   `dmr:"bits:32-55"`
 }
 
 // ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
 type FLCGPSInfo struct {
-	Reserved      [4]bit.Bit                   `dmr:"bits:0-3,raw"`
-	PositionError layer3Elements.PositionError `dmr:"bits:4-6,delegate,noptr"`
-	Longitude     float64                      `dmr:"bits:7-31,type:longitude"`
-	Latitude      float64                      `dmr:"bits:32-55,type:latitude"`
+	Reserved      [4]bit.Bit           `dmr:"bits:0-3,raw"`
+	PositionError layer3.PositionError `dmr:"bits:4-6,delegate,noptr"`
+	Longitude     float64              `dmr:"bits:7-31,type:longitude"`
+	Latitude      float64              `dmr:"bits:32-55,type:latitude"`
 }
 
 // ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
 type FLCTalkerAliasHeader struct {
-	TalkerAliasDataFormat layer3Elements.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"`
-	TalkerAliasDataLength int                                  `dmr:"bits:2-6"`
-	TalkerAliasDataMSB    bool                                 `dmr:"bit:7"`
-	TalkerAliasData       [48]bit.Bit                          `dmr:"bits:8-55,raw"`
+	TalkerAliasDataFormat layer3.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"`
+	TalkerAliasDataLength int                          `dmr:"bits:2-6"`
+	TalkerAliasDataMSB    bool                         `dmr:"bit:7"`
+	TalkerAliasData       [48]bit.Bit                  `dmr:"bits:8-55,raw"`
 }
 
 // ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
@@ -122,6 +121,6 @@ type FLCTerminatorDataLinkControl struct {
 	SendSequenceNumber uint8 `dmr:"bits:53-55"`
 }
 
-func (flc FullLinkControl) GetDataType() layer2Elements.DataType {
+func (flc FullLinkControl) GetDataType() enums.DataType {
 	return flc.DataType
 }

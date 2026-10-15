@@ -2,8 +2,8 @@ package pdu
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // dmr:const 4-7=FormatUnconfirmed
@@ -33,11 +33,11 @@ type UnconfirmedDataHeader struct {
 // that is set. An R_HEAD needs a non-zero AppendedBlocks; with zero appended
 // blocks, use StatusPrecodedHeader.
 type DataHeader struct {
-	DataType       elements.DataType `dmr:"-"`
-	crc            uint16            `dmr:"-"` //nolint:unused
-	FEC            fec.Result        `dmr:"-"`
-	Format         Format            `dmr:"bits:4-7"`
-	AppendedBlocks uint8             `dmr:"bits:2-3+12-15,no_encode"`
+	DataType       enums.DataType `dmr:"-"`
+	crc            uint16         `dmr:"-"` //nolint:unused
+	FEC            fec.Result     `dmr:"-"`
+	Format         Format         `dmr:"bits:4-7"`
+	AppendedBlocks uint8          `dmr:"bits:2-3+12-15,no_encode"`
 
 	UnconfirmedDataHeader *UnconfirmedDataHeader `dmr:"bits:0-79,dispatch:Format=FormatUnconfirmed"`
 	ConfirmedDataHeader   *ConfirmedDataHeader   `dmr:"bits:0-79,dispatch:Format=FormatConfirmed"`
@@ -75,7 +75,7 @@ const (
 	FormatProprietary                  Format = 0b00001111
 )
 
-func (dh *DataHeader) GetDataType() elements.DataType {
+func (dh *DataHeader) GetDataType() enums.DataType {
 	return dh.DataType
 }
 

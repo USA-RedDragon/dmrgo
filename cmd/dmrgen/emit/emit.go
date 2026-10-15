@@ -15,11 +15,10 @@ import (
 )
 
 const (
-	fecFieldName  = "FEC"
-	ambeCodec     = "ambe_voice"
-	qrPkg         = "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
-	l2ElementsPkg = "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
-	encodeFnName  = "Encode"
+	fecFieldName = "FEC"
+	ambeCodec    = "ambe_voice"
+	qrPkg        = "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
+	encodeFnName = "Encode"
 
 	typUint8     = "uint8"
 	typUint16    = "uint16"
@@ -115,24 +114,14 @@ var fecCodecs = map[string]FECCodecInfo{
 	},
 }
 
-// pkgAliasOverrides forces specific import aliases to disambiguate packages with the same name.
-//
-//nolint:gochecknoglobals
-var pkgAliasOverrides = map[string]string{
-	l2ElementsPkg: "layer2Elements",
-	"github.com/USA-RedDragon/dmrgo/v2/layer3/elements": "layer3Elements",
-}
-
 // resolveImportPath converts a short package name (e.g. "enums") to a full import path.
 func resolveImportPath(pkgName, sourceFile string) string {
 	// Map well-known package names to full import paths
 	knownPkgs := map[string]string{
 		"enums":            "github.com/USA-RedDragon/dmrgo/v2/enums",
-		"elements":         l2ElementsPkg,
-		"layer2Elements":   l2ElementsPkg,
 		"bit":              "github.com/USA-RedDragon/dmrgo/v2/bit",
 		"fec":              "github.com/USA-RedDragon/dmrgo/v2/fec",
-		"layer3Elements":   "github.com/USA-RedDragon/dmrgo/v2/layer3/elements",
+		"layer3":           "github.com/USA-RedDragon/dmrgo/v2/layer3",
 		"golay":            "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
 		"quadraticResidue": qrPkg,
 		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon",
@@ -172,11 +161,6 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 	}
 	header += "\nDO NOT EDIT."
 	f.HeaderComment(header)
-
-	// Register import aliases to disambiguate packages with the same base name
-	for importPath, alias := range pkgAliasOverrides {
-		f.ImportAlias(importPath, alias)
-	}
 
 	for _, pdu := range pdus {
 		if err := emitDecode(f, pdu); err != nil {

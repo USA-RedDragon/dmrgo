@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -86,7 +85,7 @@ func TestVoiceReceiver_Transmission(t *testing.T) {
 	}
 	for i, l := range got.lcs {
 		if (i-5)%6 != 0 || l.FEC.HasErrors() || l.FeatureSetID != 0xC2 ||
-			lcBits(t, l, elements.DataTypeVoiceLCHeader) != lcBits(t, lc, elements.DataTypeVoiceLCHeader) {
+			lcBits(t, l, enums.DataTypeVoiceLCHeader) != lcBits(t, lc, enums.DataTypeVoiceLCHeader) {
 			t.Errorf("burst %d: LC %s", i, l.ToString())
 		}
 	}
@@ -219,7 +218,7 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 				if got.positions[i] != enums.VoiceBurstE || lc.FEC.HasErrors() {
 					t.Errorf("burst %d: LC at %s, FEC %+v", i, enums.VoiceBurstTypeToName(got.positions[i]), lc.FEC)
 				}
-				bits := lcBits(t, lc, elements.DataTypeVoiceLCHeader)
+				bits := lcBits(t, lc, enums.DataTypeVoiceLCHeader)
 				if packed := bit.PackBits(bits[:72]); !bytes.Equal(packed, capturedEmbeddedLC) {
 					t.Errorf("burst %d: LC % X, want % X", i, packed, capturedEmbeddedLC)
 				}

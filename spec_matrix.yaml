@@ -677,10 +677,10 @@ documents:
       - section: "9.3.6"
         title: "Data Type"
         source_files:
-          - v2/layer2/elements/data_types.go
-          - v2/layer2/elements/data.go
+          - v2/enums/data_type.go
+          - v2/layer2/data.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestDataTypeToName_AllTypes
               - TestDataTypeToName_Unknown
@@ -1170,10 +1170,10 @@ documents:
         title: "Inband talker alias data service"
         source_files:
           - v2/layer2/pdu/full_link_control.go
-          - v2/layer3/elements/talker_alias_data_format.go
+          - v2/layer3/talker_alias_data_format.go
           - v2/layer2/pdu/talker_alias.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestTalkerAliasDataFormatToName
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
@@ -1263,9 +1263,9 @@ documents:
         title: "Talker Alias header LC PDU"
         source_files:
           - v2/layer2/pdu/full_link_control.go
-          - v2/layer3/elements/talker_alias_data_format.go
+          - v2/layer3/talker_alias_data_format.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestTalkerAliasDataFormatToName
               - TestTalkerAliasDataFormatToName_Unknown
@@ -1386,9 +1386,9 @@ documents:
       - section: "7.2.1"
         title: "Service Options"
         source_files:
-          - v2/layer3/elements/service_options.go
+          - v2/layer3/service_options.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestDecodeServiceOptions
               - TestDecodeServiceOptions_ReservedBits
@@ -1426,10 +1426,10 @@ documents:
       - section: "7.2.5"
         title: "Source Type"
         source_files:
-          - v2/layer3/elements/source_type.go
+          - v2/layer3/source_type.go
           - v2/layer2/pdu/csbk.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestSourceType_Constants
               - TestSourceTypeToName
@@ -1442,10 +1442,10 @@ documents:
       - section: "7.2.6"
         title: "Additional Information Field"
         source_files:
-          - v2/layer3/elements/additional_information_field.go
+          - v2/layer3/additional_information_field.go
           - v2/layer2/pdu/csbk.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestAdditionalInformationField_Constants
               - TestAdditionalInformationFieldToName
@@ -1479,9 +1479,9 @@ documents:
       - section: "7.2.15"
         title: "Position Error"
         source_files:
-          - v2/layer3/elements/position_error.go
+          - v2/layer3/position_error.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestPositionError_Constants
               - TestPositionError_ToString
@@ -1516,9 +1516,9 @@ documents:
       - section: "7.2.18"
         title: "Talker Alias Data Format"
         source_files:
-          - v2/layer3/elements/talker_alias_data_format.go
+          - v2/layer3/talker_alias_data_format.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestTalkerAliasDataFormatToName
               - TestTalkerAliasDataFormatToName_Unknown
@@ -1868,7 +1868,7 @@ documents:
         source_files:
           - v2/layer2/pdu/csbk.go
           - v2/layer2/pdu/mbc.go
-          - v2/layer3/elements/cdef_parms.go
+          - v2/layer3/cdef_parms.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -1880,7 +1880,7 @@ documents:
               - TestMVAPContinuation_Decode
               - TestMVAPContinuation_EncodeDecodeCycle
               - TestMBCAbsoluteParms_LastBlockCRC
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestCdefParms_NewFromBits
               - TestCdefParms_FrequencyCalculation
@@ -1900,10 +1900,10 @@ documents:
       - section: "7.2"
         title: "Layer 3 Information Element Coding"
         source_files:
-          - v2/layer3/elements/cdef_parms.go
+          - v2/layer3/cdef_parms.go
           - v2/enums/announcement_type.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestCdefParms_NewFromBits
               - TestCdefParms_FrequencyCalculation

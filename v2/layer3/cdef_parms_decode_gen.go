@@ -6,7 +6,7 @@ ETSI TS 102 361-4 — §7.2.42, Table 7.103
 DO NOT EDIT.
 */
 
-package elements
+package layer3
 
 import (
 	"fmt"

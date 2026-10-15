@@ -2,8 +2,8 @@ package layer2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // MMDVMHostAccepts reports whether the 96-bit BPTC(196,96) payload of a
@@ -46,26 +46,26 @@ import (
 //
 // MMDVMHost also discards some bursts by call state, for example data
 // blocks outside a data call. MMDVMHostAccepts does not check call state.
-func MMDVMHostAccepts(dataType elements.DataType, payload [12]byte) bool {
+func MMDVMHostAccepts(dataType enums.DataType, payload [12]byte) bool {
 	switch dataType {
-	case elements.DataTypeVoiceLCHeader:
+	case enums.DataTypeVoiceLCHeader:
 		return rs129Matches(payload, 0x96)
-	case elements.DataTypeTerminatorWithLC:
+	case enums.DataTypeTerminatorWithLC:
 		return rs129Matches(payload, 0x99)
-	case elements.DataTypeCSBK:
+	case enums.DataTypeCSBK:
 		return crcCCITTMatches(payload, 0xA5)
-	case elements.DataTypeMBCHeader:
+	case enums.DataTypeMBCHeader:
 		return crcCCITTMatches(payload, 0xAA)
-	case elements.DataTypeDataHeader:
+	case enums.DataTypeDataHeader:
 		return crcCCITTMatches(payload, 0xCC)
-	case elements.DataTypeMBCContinuation:
+	case enums.DataTypeMBCContinuation:
 		return crcCCITTMatches(payload, 0x00)
-	case elements.DataTypePIHeader,
-		elements.DataTypeRate12,
-		elements.DataTypeRate34,
-		elements.DataTypeRate1:
+	case enums.DataTypePIHeader,
+		enums.DataTypeRate12,
+		enums.DataTypeRate34,
+		enums.DataTypeRate1:
 		return true
-	case elements.DataTypeIdle, elements.DataTypeUnifiedSingleBlock, elements.DataTypeReserved:
+	case enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
 		return false
 	default:
 		return false

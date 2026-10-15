@@ -9,11 +9,10 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 func TestBurst_ReservedDataTypes(t *testing.T) {
-	for dt := elements.DataTypeReserved; dt <= 0xF; dt++ {
+	for dt := enums.DataTypeReserved; dt <= 0xF; dt++ {
 		t.Run(fmt.Sprintf("DataType%d", dt), func(t *testing.T) {
 			frame := must(layer2.BuildLCDataBurst([12]byte{}, dt, 1))
 			for _, trunking := range []bool{false, true} {
@@ -164,18 +163,18 @@ func flipBurstBits(frame [33]byte, positions ...int) [33]byte {
 
 func TestBurst_BPTCPayload(t *testing.T) {
 	payload := [12]byte{0x03, 0x10, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C, 0x01, 0x02, 0x03}
-	for _, dt := range []elements.DataType{elements.DataTypeCSBK, elements.DataTypeVoiceLCHeader, elements.DataTypeIdle, elements.DataTypeUnifiedSingleBlock} {
+	for _, dt := range []enums.DataType{enums.DataTypeCSBK, enums.DataTypeVoiceLCHeader, enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock} {
 		frame := flipBurstBits(must(layer2.BuildLCDataBurst(payload, dt, 1)), 5)
 		burst, _ := layer2.NewBurstFromBytes(frame)
 		got, res, ok := burst.BPTCPayload()
 		if !ok || got != payload || res.ErrorsCorrected != 1 || res.Uncorrectable || res != burst.FEC.Payload {
-			t.Errorf("%s: payload %x ok=%v result=%+v", elements.DataTypeToName(dt), got, ok, res)
+			t.Errorf("%s: payload %x ok=%v result=%+v", enums.DataTypeToName(dt), got, ok, res)
 		}
 	}
-	for _, dt := range []elements.DataType{elements.DataTypeRate34, elements.DataTypeRate1, elements.DataTypeReserved} {
+	for _, dt := range []enums.DataType{enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeReserved} {
 		burst, _ := layer2.NewBurstFromBytes(must(layer2.BuildLCDataBurst(payload, dt, 1)))
 		if _, _, ok := burst.BPTCPayload(); ok {
-			t.Errorf("%s: ok", elements.DataTypeToName(dt))
+			t.Errorf("%s: ok", enums.DataTypeToName(dt))
 		}
 	}
 	voice, _ := layer2.NewBurstFromBytes(transmission(t, groupLC(enums.StandardizedFID), 1)[1])
@@ -184,14 +183,14 @@ func TestBurst_BPTCPayload(t *testing.T) {
 	}
 	var empty layer2.Burst
 	empty.IsData = true
-	empty.SlotType.DataType = elements.DataTypeCSBK
+	empty.SlotType.DataType = enums.DataTypeCSBK
 	if _, _, ok := empty.BPTCPayload(); ok {
 		t.Error("burst not decoded: ok")
 	}
 }
 
 func TestBurst_SyncTolerance(t *testing.T) {
-	frame := must(layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeIdle, 1))
+	frame := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
 
 	noisy := flipBurstBits(frame, layer2.SyncStart, layer2.SyncStart+11, layer2.SyncStart+30, layer2.SyncEnd-1)
 	burst, err := layer2.NewBurstFromBytes(noisy)
@@ -217,7 +216,7 @@ func TestBurst_SyncTolerance(t *testing.T) {
 // codeword. The EMB positions of MS-sourced data SYNC are 2 bits from a
 // codeword, at bits 115 and 155.
 func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
-	frame := must(layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeIdle, 1))
+	frame := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
 	diff := uint64(enums.BsSourcedData ^ enums.MsSourcedData)
 	for i := 0; i < 48; i++ {
 		if (diff>>(47-i))&1 == 1 {
@@ -232,7 +231,7 @@ func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 	if !burst.IsData || burst.SyncPattern != enums.MsSourcedData || burst.SyncDistance != 2 {
 		t.Fatalf("IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, enums.SyncPatternToName(burst.SyncPattern), burst.SyncDistance)
 	}
-	if burst.SlotType.DataType != elements.DataTypeIdle {
+	if burst.SlotType.DataType != enums.DataTypeIdle {
 		t.Errorf("DataType=%v", burst.SlotType.DataType)
 	}
 	if got := must(burst.Encode()); got != frame {

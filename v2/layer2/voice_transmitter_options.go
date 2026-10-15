@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -51,10 +51,10 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 		lcHook:    opts.EmbeddedLC,
 	}
 	var err error
-	if t.header, err = lcDataBurst(opts.LC, elements.DataTypeVoiceLCHeader, opts.ColorCode, dataSync); err != nil {
+	if t.header, err = lcDataBurst(opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, dataSync); err != nil {
 		return nil, err
 	}
-	if t.terminator, err = lcDataBurst(opts.LC, elements.DataTypeTerminatorWithLC, opts.ColorCode, dataSync); err != nil {
+	if t.terminator, err = lcDataBurst(opts.LC, enums.DataTypeTerminatorWithLC, opts.ColorCode, dataSync); err != nil {
 		return nil, err
 	}
 	if t.callLC, err = EncodeEmbeddedFullLinkControl(&opts.LC); err != nil {
@@ -63,14 +63,14 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 	t.embedded = t.callLC
 	if opts.PIHeader != nil {
 		pi := *opts.PIHeader
-		pi.DataType = elements.DataTypePIHeader
+		pi.DataType = enums.DataTypePIHeader
 		bits, err := pdu.EncodePIHeader(&pi)
 		if err != nil {
 			return nil, fmt.Errorf("cannot encode PI header: %w", err)
 		}
 		var piBytes [12]byte
 		copy(piBytes[:], bit.PackBits(bits[:]))
-		if t.piHeader, err = buildLCDataBurst(piBytes, elements.DataTypePIHeader, opts.ColorCode, dataSync); err != nil {
+		if t.piHeader, err = buildLCDataBurst(piBytes, enums.DataTypePIHeader, opts.ColorCode, dataSync); err != nil {
 			return nil, err
 		}
 		t.hasPI = true

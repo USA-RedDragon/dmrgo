@@ -11,8 +11,8 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
-	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // DecodeRate34Data decodes a Rate34Data per ETSI TS 102 361-1 - 9.2.2 Rate 3/4 coded packet Data (R_3_4_DATA) PDU
@@ -32,5 +32,5 @@ func EncodeRate34Data(s *Rate34Data) ([144]bit.Bit, error) {
 }
 
 func (s *Rate34Data) ToString() string {
-	return fmt.Sprintf("Rate34Data{ DataType: %s, Data: %v }", layer2Elements.DataTypeToName(s.DataType), s.Data)
+	return fmt.Sprintf("Rate34Data{ DataType: %s, Data: %v }", enums.DataTypeToName(s.DataType), s.Data)
 }

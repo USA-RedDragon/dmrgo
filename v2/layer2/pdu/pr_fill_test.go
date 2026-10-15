@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -76,8 +76,8 @@ func TestPRFill_PRFillBits_ReturnsCopy(t *testing.T) {
 
 func TestPRFill_GetDataType(t *testing.T) {
 	t.Parallel()
-	p := &pdu.PRFill{DataType: elements.DataTypeIdle}
-	if p.GetDataType() != elements.DataTypeIdle {
+	p := &pdu.PRFill{DataType: enums.DataTypeIdle}
+	if p.GetDataType() != enums.DataTypeIdle {
 		t.Fatalf("GetDataType() = %v, expected DataTypeIdle", p.GetDataType())
 	}
 }

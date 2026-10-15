@@ -63,7 +63,7 @@ type Field struct {
 	BitWidth int       // total width across all ranges
 
 	// Type information
-	GoType      string // e.g. "int", "uint8", "enums.LCSS", "elements.DataType"
+	GoType      string // e.g. "int", "uint8", "enums.LCSS", "enums.DataType"
 	TypePkg     string // package path for qualified types (e.g. "enums")
 	TypeName    string // unqualified type name (e.g. "LCSS")
 	IsQualified bool   // true if GoType contains a package qualifier

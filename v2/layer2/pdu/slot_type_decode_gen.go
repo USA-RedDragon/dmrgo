@@ -11,9 +11,9 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	golay "github.com/USA-RedDragon/dmrgo/v2/fec/golay"
-	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // DecodeSlotType decodes a SlotType per ETSI TS 102 361-1 - 9.1.3 Slot Type (SLOT) PDU
@@ -26,7 +26,7 @@ func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.Result) {
 		data = corrected
 	}
 	result.ColorCode = bit.BitsToInt(data[:], 0, 4)
-	result.DataType = layer2Elements.DataType(bit.BitsToUint8(data[:], 4, 4))
+	result.DataType = enums.DataType(bit.BitsToUint8(data[:], 4, 4))
 	return result, fecResult
 }
 

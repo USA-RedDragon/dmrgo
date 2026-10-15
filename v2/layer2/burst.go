@@ -9,7 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -48,12 +47,12 @@ type Burst struct {
 	// Data is the decoded PDU of a data burst, nil when its decode failed.
 	// Encode codes Data when it is set, except the PR FILL that
 	// DecodeFromBytes returns for an idle burst; see Encode.
-	Data                  elements.Data
+	Data                  Data
 	FEC                   fec.BurstFECStats
 	TrunkingMode          bool
 	bitData               [264]bit.Bit
-	decodedData           elements.Data
-	decodedDataType       elements.DataType
+	decodedData           Data
+	decodedDataType       enums.DataType
 	decodedVoice          pdu.Vocoder
 	hasVoiceSlots         bool
 	deinterleavedInfoBits [196]bit.Bit
@@ -252,13 +251,13 @@ func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
 	return bits
 }
 
-func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int, fec.Result) {
+func (b *Burst) deinterleave(bits [196]bit.Bit, dataType enums.DataType) (int, fec.Result) {
 	switch dataType {
-	case elements.DataTypeRate34:
+	case enums.DataTypeRate34:
 		decoded, result := trellis.Decode(bits)
 		copy(b.deinterleavedInfoBits[:], decoded[:])
 		return len(decoded), result
-	case elements.DataTypeRate1:
+	case enums.DataTypeRate1:
 		// Table B.10B: Transmit bit ordering for rate 1 coded data
 		for i := 0; i < 96; i++ {
 			b.deinterleavedInfoBits[i] = bits[i]
@@ -267,20 +266,20 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 			b.deinterleavedInfoBits[96+i] = bits[100+i]
 		}
 		return 192, fec.Result{}
-	case elements.DataTypePIHeader,
-		elements.DataTypeVoiceLCHeader,
-		elements.DataTypeTerminatorWithLC,
-		elements.DataTypeCSBK,
-		elements.DataTypeMBCHeader,
-		elements.DataTypeMBCContinuation,
-		elements.DataTypeDataHeader,
-		elements.DataTypeRate12,
-		elements.DataTypeIdle,
-		elements.DataTypeUnifiedSingleBlock:
+	case enums.DataTypePIHeader,
+		enums.DataTypeVoiceLCHeader,
+		enums.DataTypeTerminatorWithLC,
+		enums.DataTypeCSBK,
+		enums.DataTypeMBCHeader,
+		enums.DataTypeMBCContinuation,
+		enums.DataTypeDataHeader,
+		enums.DataTypeRate12,
+		enums.DataTypeIdle,
+		enums.DataTypeUnifiedSingleBlock:
 		decoded, result := bptc.Decode196(bits)
 		copy(b.deinterleavedInfoBits[:], decoded[:])
 		return len(decoded), result
-	case elements.DataTypeReserved:
+	case enums.DataTypeReserved:
 		copy(b.deinterleavedInfoBits[:], bits[:])
 		return len(bits), fec.Result{}
 	default:
@@ -291,20 +290,20 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 
 // isBPTCDataType reports whether bursts of dataType carry 96 information
 // bits coded with BPTC(196,96).
-func isBPTCDataType(dataType elements.DataType) bool {
+func isBPTCDataType(dataType enums.DataType) bool {
 	switch dataType {
-	case elements.DataTypePIHeader,
-		elements.DataTypeVoiceLCHeader,
-		elements.DataTypeTerminatorWithLC,
-		elements.DataTypeCSBK,
-		elements.DataTypeMBCHeader,
-		elements.DataTypeMBCContinuation,
-		elements.DataTypeDataHeader,
-		elements.DataTypeRate12,
-		elements.DataTypeIdle,
-		elements.DataTypeUnifiedSingleBlock:
+	case enums.DataTypePIHeader,
+		enums.DataTypeVoiceLCHeader,
+		enums.DataTypeTerminatorWithLC,
+		enums.DataTypeCSBK,
+		enums.DataTypeMBCHeader,
+		enums.DataTypeMBCContinuation,
+		enums.DataTypeDataHeader,
+		enums.DataTypeRate12,
+		enums.DataTypeIdle,
+		enums.DataTypeUnifiedSingleBlock:
 		return true
-	case elements.DataTypeRate34, elements.DataTypeRate1, elements.DataTypeReserved:
+	case enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeReserved:
 		return false
 	default:
 		return false
@@ -352,7 +351,7 @@ func (b *Burst) ToString() string {
 	return ret
 }
 
-func (b *Burst) extractData() (elements.Data, error) {
+func (b *Burst) extractData() (Data, error) {
 	if !b.HasSlotType {
 		return nil, fmt.Errorf("burst does not have valid slot type for data extraction")
 	}
@@ -363,7 +362,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 	dt := b.SlotType.DataType
 	infoBits := b.deinterleavedInfoBits[:b.deinterleavedInfoLen]
 	switch dt {
-	case elements.DataTypeCSBK:
+	case enums.DataTypeCSBK:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeCSBK(sizedBits, b.TrunkingMode)
@@ -373,7 +372,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 			return nil, fmt.Errorf("failed to decode CSBK from bits")
 		}
 		return &decoded, nil
-	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
+	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeFullLinkControl(sizedBits, dt)
@@ -382,7 +381,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 			return nil, fmt.Errorf("failed to decode full link control from bits")
 		}
 		return &decoded, nil
-	case elements.DataTypePIHeader:
+	case enums.DataTypePIHeader:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodePIHeader(sizedBits)
@@ -392,7 +391,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 			return nil, fmt.Errorf("failed to decode PI header from bits")
 		}
 		return &decoded, nil
-	case elements.DataTypeDataHeader:
+	case enums.DataTypeDataHeader:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeDataHeader(sizedBits)
@@ -402,28 +401,28 @@ func (b *Burst) extractData() (elements.Data, error) {
 			return nil, fmt.Errorf("failed to decode data header from bits: %v", decoded.ToString())
 		}
 		return &decoded, nil
-	case elements.DataTypeRate34:
+	case enums.DataTypeRate34:
 		var sizedBits [144]bit.Bit
 		copy(sizedBits[:], infoBits[:144])
 		rt, fecResult := pdu.DecodeRate34Data(sizedBits)
 		rt.DataType = dt
 		b.FEC.PDU = fecResult
 		return &rt, nil
-	case elements.DataTypeRate12:
+	case enums.DataTypeRate12:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		rt, fecResult := pdu.DecodeRate12Data(sizedBits)
 		rt.DataType = dt
 		b.FEC.PDU = fecResult
 		return &rt, nil
-	case elements.DataTypeRate1:
+	case enums.DataTypeRate1:
 		var sizedBits [192]bit.Bit
 		copy(sizedBits[:], infoBits[:192])
 		rt, fecResult := pdu.DecodeRate1Data(sizedBits)
 		rt.DataType = dt
 		b.FEC.PDU = fecResult
 		return &rt, nil
-	case elements.DataTypeMBCHeader:
+	case enums.DataTypeMBCHeader:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeMBCHeader(sizedBits)
@@ -433,17 +432,17 @@ func (b *Burst) extractData() (elements.Data, error) {
 			return nil, fmt.Errorf("failed to decode MBC header from bits")
 		}
 		return &decoded, nil
-	case elements.DataTypeMBCContinuation:
+	case enums.DataTypeMBCContinuation:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeMBCContinuation(sizedBits)
 		decoded.DataType = dt
 		b.FEC.PDU = fecResult
 		return &decoded, nil
-	case elements.DataTypeIdle:
+	case enums.DataTypeIdle:
 		prFill := &pdu.PRFill{DataType: dt}
 		return prFill, nil
-	case elements.DataTypeUnifiedSingleBlock:
+	case enums.DataTypeUnifiedSingleBlock:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(sizedBits)
@@ -453,7 +452,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 			return nil, fmt.Errorf("failed to decode USBD from bits")
 		}
 		return &decoded, nil
-	case elements.DataTypeReserved:
+	case enums.DataTypeReserved:
 		return nil, fmt.Errorf("reserved data type parsing not implemented")
 	default:
 		return nil, fmt.Errorf("unhandled data type %v", b.SlotType.DataType)
@@ -600,17 +599,17 @@ func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
 		return [196]bit.Bit{}, fmt.Errorf("data burst has no Data")
 	case dt != b.decodedDataType:
 		return [196]bit.Bit{}, fmt.Errorf("decoded payload is a %s but the slot type data type is %s; set Data",
-			elements.DataTypeToName(b.decodedDataType), elements.DataTypeToName(dt))
+			enums.DataTypeToName(b.decodedDataType), enums.DataTypeToName(dt))
 	default:
 		return b.deinterleavedInfoBits, nil
 	}
 }
 
 // encodeData returns the information bits of d in a data burst of dataType.
-func encodeData(d elements.Data, dataType elements.DataType) ([196]bit.Bit, error) {
+func encodeData(d Data, dataType enums.DataType) ([196]bit.Bit, error) {
 	var info [196]bit.Bit
 	if rv := reflect.ValueOf(d); rv.Kind() == reflect.Pointer && rv.IsNil() || !dataTypeCarries(dataType, d) {
-		return info, fmt.Errorf("data type %s cannot carry Data of type %T", elements.DataTypeToName(dataType), d)
+		return info, fmt.Errorf("data type %s cannot carry Data of type %T", enums.DataTypeToName(dataType), d)
 	}
 	bits, err := encodePDU(d, dataType)
 	if err != nil {
@@ -621,30 +620,30 @@ func encodeData(d elements.Data, dataType elements.DataType) ([196]bit.Bit, erro
 }
 
 // dataTypeCarries reports whether a data burst of dataType carries d.
-func dataTypeCarries(dataType elements.DataType, d elements.Data) bool {
+func dataTypeCarries(dataType enums.DataType, d Data) bool {
 	switch d.(type) {
 	case *pdu.FullLinkControl:
-		return dataType == elements.DataTypeVoiceLCHeader || dataType == elements.DataTypeTerminatorWithLC
+		return dataType == enums.DataTypeVoiceLCHeader || dataType == enums.DataTypeTerminatorWithLC
 	case *pdu.CSBK:
-		return dataType == elements.DataTypeCSBK
+		return dataType == enums.DataTypeCSBK
 	case *pdu.PIHeader:
-		return dataType == elements.DataTypePIHeader
+		return dataType == enums.DataTypePIHeader
 	case *pdu.DataHeader:
-		return dataType == elements.DataTypeDataHeader
+		return dataType == enums.DataTypeDataHeader
 	case *pdu.MBCHeader:
-		return dataType == elements.DataTypeMBCHeader
+		return dataType == enums.DataTypeMBCHeader
 	case *pdu.MBCContinuation, *pdu.CGAPContinuation, *pdu.MVAPContinuation, *pdu.BCAPContinuation, *pdu.VNAPContinuation:
-		return dataType == elements.DataTypeMBCContinuation
+		return dataType == enums.DataTypeMBCContinuation
 	case *pdu.UnifiedSingleBlockData:
-		return dataType == elements.DataTypeUnifiedSingleBlock
+		return dataType == enums.DataTypeUnifiedSingleBlock
 	case *pdu.Rate12Data:
-		return dataType == elements.DataTypeRate12
+		return dataType == enums.DataTypeRate12
 	case *pdu.Rate34Data:
-		return dataType == elements.DataTypeRate34
+		return dataType == enums.DataTypeRate34
 	case *pdu.Rate1Data:
-		return dataType == elements.DataTypeRate1
+		return dataType == enums.DataTypeRate1
 	case *pdu.PRFill:
-		return dataType == elements.DataTypeIdle
+		return dataType == enums.DataTypeIdle
 	default:
 		return false
 	}
@@ -653,7 +652,7 @@ func dataTypeCarries(dataType elements.DataType, d elements.Data) bool {
 // encodePDU returns the information bits of d, a type that dataTypeCarries
 // accepts. The data type of a Full LC selects its RS(12,9) mask, so
 // dataType replaces lc.DataType.
-func encodePDU(d elements.Data, dataType elements.DataType) ([]bit.Bit, error) {
+func encodePDU(d Data, dataType enums.DataType) ([]bit.Bit, error) {
 	switch v := d.(type) {
 	case *pdu.FullLinkControl:
 		lc := *v
@@ -709,11 +708,11 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	}
 	dt := b.SlotType.DataType
 	switch {
-	case dt == elements.DataTypeRate34:
+	case dt == enums.DataTypeRate34:
 		var data [144]bit.Bit
 		copy(data[:], info[:144])
 		return trellis.Encode(data), nil
-	case dt == elements.DataTypeRate1:
+	case dt == enums.DataTypeRate1:
 		// Table B.10B: Transmit bit ordering for rate 1 coded data
 		var bits [196]bit.Bit
 		copy(bits[:96], info[:96])
@@ -763,11 +762,11 @@ func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
 // lcBytes is the 12-byte on-air codeword with the Data Type CRC Mask already
 // applied, as returned by pdu.EncodeFullLinkControl with DataType set to dataType.
 // It returns an error if colorCode or dataType does not fit in the slot type.
-func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8) ([33]byte, error) {
+func BuildLCDataBurst(lcBytes [12]byte, dataType enums.DataType, colorCode uint8) ([33]byte, error) {
 	return buildLCDataBurst(lcBytes, dataType, colorCode, enums.BsSourcedData)
 }
 
-func buildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
+func buildLCDataBurst(lcBytes [12]byte, dataType enums.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
 	// Convert LC bytes to 96 info bits
 	var infoBits [96]bit.Bit
 	for i := 0; i < 12; i++ {

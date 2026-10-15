@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // ETSI TS 102 361-1 §B.3.12 — Data Type CRC Mask, applied to the 96-bit
@@ -21,29 +21,29 @@ import (
 // and Idle, which have no mask (Table B.21 note 1), and for reserved data
 // types. The Reverse Channel mask 0x7A applies to a CRC-7 outside any data
 // burst, so it has no data type here.
-func CRCMask(dt elements.DataType) (mask uint32, width int, ok bool) {
+func CRCMask(dt enums.DataType) (mask uint32, width int, ok bool) {
 	switch dt {
-	case elements.DataTypeVoiceLCHeader:
+	case enums.DataTypeVoiceLCHeader:
 		return 0x969696, 24, true
-	case elements.DataTypeTerminatorWithLC:
+	case enums.DataTypeTerminatorWithLC:
 		return 0x999999, 24, true
-	case elements.DataTypePIHeader:
+	case enums.DataTypePIHeader:
 		return 0x6969, 16, true
-	case elements.DataTypeCSBK:
+	case enums.DataTypeCSBK:
 		return 0xA5A5, 16, true
-	case elements.DataTypeMBCHeader:
+	case enums.DataTypeMBCHeader:
 		return 0xAAAA, 16, true
-	case elements.DataTypeDataHeader:
+	case enums.DataTypeDataHeader:
 		return 0xCCCC, 16, true
-	case elements.DataTypeUnifiedSingleBlock:
+	case enums.DataTypeUnifiedSingleBlock:
 		return 0x3333, 16, true
-	case elements.DataTypeRate12:
+	case enums.DataTypeRate12:
 		return 0x0F0, 9, true
-	case elements.DataTypeRate34:
+	case enums.DataTypeRate34:
 		return 0x1FF, 9, true
-	case elements.DataTypeRate1:
+	case enums.DataTypeRate1:
 		return 0x10F, 9, true
-	case elements.DataTypeMBCContinuation, elements.DataTypeIdle, elements.DataTypeReserved:
+	case enums.DataTypeMBCContinuation, enums.DataTypeIdle, enums.DataTypeReserved:
 		return 0, 0, false
 	default:
 		return 0, 0, false
@@ -54,7 +54,7 @@ func CRCMask(dt elements.DataType) (mask uint32, width int, ok bool) {
 // in a burst of dt (§9.1.6, §B.3.6): lc followed by its RS(12,9) parity
 // XORed with the Table B.21 mask of dt. It returns an error unless dt is
 // DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
-func FullLCCodeword(lc [9]byte, dt elements.DataType) ([12]byte, error) {
+func FullLCCodeword(lc [9]byte, dt enums.DataType) ([12]byte, error) {
 	mask, err := fullLCMask(dt)
 	if err != nil {
 		return [12]byte{}, err
@@ -71,7 +71,7 @@ func FullLCCodeword(lc [9]byte, dt elements.DataType) ([12]byte, error) {
 // no error, so it accepts exactly the codewords that MMDVMHost accepts
 // (CRS129::check). It returns false unless dt is DataTypeVoiceLCHeader or
 // DataTypeTerminatorWithLC.
-func FullLCParityOK(cw [12]byte, dt elements.DataType) bool {
+func FullLCParityOK(cw [12]byte, dt enums.DataType) bool {
 	var lc [9]byte
 	copy(lc[:], cw[:9])
 	want, err := FullLCCodeword(lc, dt)
@@ -83,7 +83,7 @@ func FullLCParityOK(cw [12]byte, dt elements.DataType) bool {
 // the result is not Uncorrectable, and the FEC result, as
 // DecodeFullLinkControl does. It returns an error unless dt is
 // DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
-func DecodeFullLCCodeword(cw [12]byte, dt elements.DataType) ([9]byte, fec.Result, error) {
+func DecodeFullLCCodeword(cw [12]byte, dt enums.DataType) ([9]byte, fec.Result, error) {
 	mask, err := fullLCMask(dt)
 	if err != nil {
 		return [9]byte{}, fec.Result{}, err
@@ -95,10 +95,10 @@ func DecodeFullLCCodeword(cw [12]byte, dt elements.DataType) ([9]byte, fec.Resul
 	return lc, res, nil
 }
 
-func fullLCMask(dt elements.DataType) ([3]byte, error) {
+func fullLCMask(dt enums.DataType) ([3]byte, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 24 {
-		return [3]byte{}, fmt.Errorf("data type %s carries no RS(12,9) Full LC", elements.DataTypeToName(dt))
+		return [3]byte{}, fmt.Errorf("data type %s carries no RS(12,9) Full LC", enums.DataTypeToName(dt))
 	}
 	return [3]byte{byte(mask >> 16), byte(mask >> 8), byte(mask)}, nil //nolint:gosec // 24-bit mask split into octets
 }
@@ -115,7 +115,7 @@ func fullLCMask(dt elements.DataType) ([3]byte, error) {
 // Rate 1/2, Rate 3/4 and Rate 1 blocks, which covers the DBSN
 // (Rate12Data.SetConfirmed and its Rate 3/4 and Rate 1 forms), and the
 // CRC-32 of a data continuation last block.
-func SealBlock(b *[12]byte, dt elements.DataType) error {
+func SealBlock(b *[12]byte, dt enums.DataType) error {
 	mask, err := blockMask(dt)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func SealBlock(b *[12]byte, dt elements.DataType) error {
 // BlockCRCOK reports whether octets 10 and 11 of the single-block payload b
 // hold the CRC that SealBlock writes for dt. It returns false for the data
 // types that SealBlock rejects.
-func BlockCRCOK(b [12]byte, dt elements.DataType) bool {
+func BlockCRCOK(b [12]byte, dt enums.DataType) bool {
 	want := b
 	if SealBlock(&want, dt) != nil {
 		return false
@@ -137,10 +137,10 @@ func BlockCRCOK(b [12]byte, dt elements.DataType) bool {
 	return want == b
 }
 
-func blockMask(dt elements.DataType) (uint16, error) {
+func blockMask(dt enums.DataType) (uint16, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 16 {
-		return 0, fmt.Errorf("data type %s has no single-block CRC-CCITT", elements.DataTypeToName(dt))
+		return 0, fmt.Errorf("data type %s has no single-block CRC-CCITT", enums.DataTypeToName(dt))
 	}
 	return uint16(mask), nil //nolint:gosec // width 16 masks fit in uint16
 }

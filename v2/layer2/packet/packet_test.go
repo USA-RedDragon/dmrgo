@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -66,7 +66,7 @@ func TestAssembler_Captures(t *testing.T) {
 				t.Fatalf("got %d messages", len(msgs))
 			}
 			m := msgs[0]
-			if m.Header.Format != tt.format || m.DataType != elements.DataTypeRate12 || len(m.Data) != tt.size {
+			if m.Header.Format != tt.format || m.DataType != enums.DataTypeRate12 || len(m.Data) != tt.size {
 				t.Fatalf("format %d type %d len %d", m.Header.Format, m.DataType, len(m.Data))
 			}
 			if !bytes.Contains(m.Data, tt.want) {
@@ -97,7 +97,7 @@ func TestAssembler_CaptureCRCFailure(t *testing.T) {
 	}
 }
 
-func encodeBlock(t *testing.T, d elements.Data) elements.Data {
+func encodeBlock(t *testing.T, d layer2.Data) layer2.Data {
 	t.Helper()
 	switch b := d.(type) {
 	case *pdu.Rate12Data:
@@ -178,7 +178,7 @@ func payload(n int) []byte {
 }
 
 func TestSegment_RoundTrip(t *testing.T) {
-	rates := []elements.DataType{elements.DataTypeRate12, elements.DataTypeRate34, elements.DataTypeRate1}
+	rates := []enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1}
 	for _, h := range []pdu.DataHeader{unconfirmed(), confirmed()} {
 		for _, rate := range rates {
 			for _, n := range []int{0, 1, 7, 8, 9, 20, 100, 300} {
@@ -205,15 +205,15 @@ func TestSegment_RoundTrip(t *testing.T) {
 }
 
 func TestSegment_HeaderFields(t *testing.T) {
-	p, err := packet.Segment(unconfirmed(), payload(38+9), elements.DataTypeRate12)
+	p, err := packet.Segment(unconfirmed(), payload(38+9), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
 	u := p.Header.UnconfirmedDataHeader
-	if u.BlocksToFollow != 5 || u.PadOctetCount != 9 || p.Header.DataType != elements.DataTypeDataHeader {
+	if u.BlocksToFollow != 5 || u.PadOctetCount != 9 || p.Header.DataType != enums.DataTypeDataHeader {
 		t.Fatalf("BF %d POC %d", u.BlocksToFollow, u.PadOctetCount)
 	}
-	p, err = packet.Segment(confirmed(), payload(41), elements.DataTypeRate34)
+	p, err = packet.Segment(confirmed(), payload(41), enums.DataTypeRate34)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,23 +238,23 @@ func TestSegment_HeaderFields(t *testing.T) {
 }
 
 func TestSegment_Errors(t *testing.T) {
-	if _, err := packet.Segment(unconfirmed(), nil, elements.DataTypeCSBK); !errors.Is(err, packet.ErrRate) {
+	if _, err := packet.Segment(unconfirmed(), nil, enums.DataTypeCSBK); !errors.Is(err, packet.ErrRate) {
 		t.Errorf("rate: %v", err)
 	}
-	if _, err := packet.Segment(pdu.DataHeader{Format: pdu.FormatUnconfirmed}, nil, elements.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
+	if _, err := packet.Segment(pdu.DataHeader{Format: pdu.FormatUnconfirmed}, nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
 		t.Errorf("nil sub-header: %v", err)
 	}
-	if _, err := packet.Segment(pdu.DataHeader{Format: pdu.FormatProprietary, ProprietaryHeader: &pdu.ProprietaryHeader{}}, nil, elements.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
+	if _, err := packet.Segment(pdu.DataHeader{Format: pdu.FormatProprietary, ProprietaryHeader: &pdu.ProprietaryHeader{}}, nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
 		t.Errorf("proprietary: %v", err)
 	}
-	if _, err := packet.Segment(unconfirmed(), payload(127*12-3), elements.DataTypeRate12); !errors.Is(err, packet.ErrTooLong) {
+	if _, err := packet.Segment(unconfirmed(), payload(127*12-3), enums.DataTypeRate12); !errors.Is(err, packet.ErrTooLong) {
 		t.Errorf("too long: %v", err)
 	}
-	if _, err := packet.Segment(unconfirmed(), payload(127*12-4), elements.DataTypeRate12); err != nil {
+	if _, err := packet.Segment(unconfirmed(), payload(127*12-4), enums.DataTypeRate12); err != nil {
 		t.Errorf("127 blocks: %v", err)
 	}
 	dd := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{}}
-	if _, err := packet.Segment(dd, payload(64*12), elements.DataTypeRate12); !errors.Is(err, packet.ErrTooLong) {
+	if _, err := packet.Segment(dd, payload(64*12), enums.DataTypeRate12); !errors.Is(err, packet.ErrTooLong) {
 		t.Errorf("short data too long: %v", err)
 	}
 }
@@ -263,7 +263,7 @@ func TestSegment_ShortData(t *testing.T) {
 	for _, sarq := range []bool{false, true} {
 		h := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{
 			SAP: uint8(pdu.ServiceAccessPointIDShortData), LLIDDestination: 1, LLIDSource: 2, DefinedData: 2, SARQ: sarq, FullMessageFlag: true}}
-		p, err := packet.Segment(h, utf16le("hello"), elements.DataTypeRate12)
+		p, err := packet.Segment(h, utf16le("hello"), enums.DataTypeRate12)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -274,7 +274,7 @@ func TestSegment_ShortData(t *testing.T) {
 		}
 	}
 	h := pdu.DataHeader{Format: pdu.FormatShortDataRawOrStatusPrecoded, RawDataHeader: &pdu.RawDataHeader{SAP: 10, SourcePort: 1, DestinationPort: 2, FullMessageFlag: true}}
-	p, err := packet.Segment(h, payload(30), elements.DataTypeRate34)
+	p, err := packet.Segment(h, payload(30), enums.DataTypeRate34)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,11 +285,11 @@ func TestSegment_ShortData(t *testing.T) {
 }
 
 func TestAssembler_Bursts(t *testing.T) {
-	p, err := packet.Segment(unconfirmed(), []byte("Hello from dmrgo"), elements.DataTypeRate12)
+	p, err := packet.Segment(unconfirmed(), []byte("Hello from dmrgo"), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	pack := func(bits [96]bit.Bit, dt elements.DataType) *layer2.Burst {
+	pack := func(bits [96]bit.Bit, dt enums.DataType) *layer2.Burst {
 		raw, err := layer2.BuildLCDataBurst([12]byte(bit.PackBits(bits[:])), dt, 1)
 		if err != nil {
 			t.Fatal(err)
@@ -302,11 +302,11 @@ func TestAssembler_Bursts(t *testing.T) {
 	}
 	hb, _ := pdu.EncodeDataHeader(&p.Header)
 	bursts := make([]*layer2.Burst, 0, 1+len(p.Blocks))
-	bursts = append(bursts, pack(hb, elements.DataTypeDataHeader))
+	bursts = append(bursts, pack(hb, enums.DataTypeDataHeader))
 	for _, blk := range p.Blocks {
 		r, _ := blk.(*pdu.Rate12Data)
 		bits, _ := pdu.EncodeRate12Data(r)
-		bursts = append(bursts, pack(bits, elements.DataTypeRate12))
+		bursts = append(bursts, pack(bits, enums.DataTypeRate12))
 	}
 	var a packet.Assembler
 	var got *packet.Message
@@ -339,7 +339,7 @@ func TestAssembler_Bursts(t *testing.T) {
 
 func TestAssembler_SelectiveRetry(t *testing.T) {
 	data := []byte("LIP: 41.878,-87.629,hdg=90,v=12 and some more text")
-	p, err := packet.Segment(confirmed(), data, elements.DataTypeRate34)
+	p, err := packet.Segment(confirmed(), data, enums.DataTypeRate34)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -421,7 +421,7 @@ func TestAssembler_Errors(t *testing.T) {
 	if m, err := add(&a, &pdu.CSBK{}); m != nil || err != nil {
 		t.Errorf("CSBK: %v", err)
 	}
-	p, _ := packet.Segment(unconfirmed(), payload(30), elements.DataTypeRate12)
+	p, _ := packet.Segment(unconfirmed(), payload(30), enums.DataTypeRate12)
 	if _, err := add(&a, encodeHeader(t, &p.Header)); err != nil {
 		t.Fatal(err)
 	}
@@ -440,7 +440,7 @@ func TestAssembler_Errors(t *testing.T) {
 func TestAssembler_ProprietaryHeader(t *testing.T) {
 	h := unconfirmed()
 	h.UnconfirmedDataHeader.SAP = uint8(pdu.ServiceAccessPointIDProprietaryPacketData)
-	p, err := packet.Segment(h, payload(20), elements.DataTypeRate12)
+	p, err := packet.Segment(h, payload(20), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -565,7 +565,7 @@ func TestMessageCRC(t *testing.T) {
 	}
 }
 
-func add(a *packet.Assembler, d elements.Data) (*packet.Message, error) {
+func add(a *packet.Assembler, d layer2.Data) (*packet.Message, error) {
 	m, done, err := a.Add(d)
 	if !done {
 		return nil, err

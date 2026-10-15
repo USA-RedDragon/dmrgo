@@ -5,10 +5,10 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -118,7 +118,7 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkCon
 	}
 	var data [96]bit.Bit
 	copy(data[:], bit.UnpackBits(codeword[:]))
-	flc, rs := pdu.DecodeFullLinkControl(data, elements.DataTypeVoiceLCHeader)
+	flc, rs := pdu.DecodeFullLinkControl(data, enums.DataTypeVoiceLCHeader)
 	result.ErrorsCorrected += rs.ErrorsCorrected
 	result.Uncorrectable = result.Uncorrectable || rs.Uncorrectable
 	flc.FEC = result
@@ -128,7 +128,7 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkCon
 // fullLCBits returns the 72 LC bits of lc, without RS(12,9) parity.
 func fullLCBits(lc *pdu.FullLinkControl) ([72]bit.Bit, error) {
 	header := *lc
-	header.DataType = elements.DataTypeVoiceLCHeader
+	header.DataType = enums.DataTypeVoiceLCHeader
 	data, err := pdu.EncodeFullLinkControl(&header)
 	if err != nil {
 		return [72]bit.Bit{}, fmt.Errorf("cannot encode full link control: %w", err)

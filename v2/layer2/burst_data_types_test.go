@@ -9,11 +9,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func buildDataBurst(dataType elements.DataType, payload [196]bit.Bit) [33]byte {
+func buildDataBurst(dataType enums.DataType, payload [196]bit.Bit) [33]byte {
 	var bits [264]bit.Bit
 	copy(bits[:98], payload[:98])
 	copy(bits[166:], payload[98:])
@@ -34,7 +33,7 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	}
 	var info [144]bit.Bit
 	copy(info[:], bit.UnpackBits(want[:]))
-	raw := buildDataBurst(elements.DataTypeRate34, trellis.Encode(info))
+	raw := buildDataBurst(enums.DataTypeRate34, trellis.Encode(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
@@ -60,7 +59,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 	for i := range info {
 		info[i] = bit.Bit(i % 3 % 2)
 	}
-	raw := buildDataBurst(elements.DataTypeRate34, trellis.Encode(info))
+	raw := buildDataBurst(enums.DataTypeRate34, trellis.Encode(info))
 	raw[2] ^= 0x10
 
 	b, err := layer2.NewBurstFromBytes(raw)
@@ -84,7 +83,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 func TestBurst_PIHeader_Decode(t *testing.T) {
 	var info [96]bit.Bit
 	copy(info[:], bit.UnpackBits([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
-	raw := buildDataBurst(elements.DataTypePIHeader, bptc.Encode196(info))
+	raw := buildDataBurst(enums.DataTypePIHeader, bptc.Encode196(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
@@ -97,7 +96,7 @@ func TestBurst_PIHeader_Decode(t *testing.T) {
 	if pi.AlgorithmID != 0x21 || pi.KeyID != 0x02 || pi.MessageIndicator != 0x177AFC73 || pi.Destination != 9 {
 		t.Errorf("PI header = %+v", pi)
 	}
-	if pi.GetDataType() != elements.DataTypePIHeader {
+	if pi.GetDataType() != enums.DataTypePIHeader {
 		t.Errorf("DataType = %v, want PI header", pi.GetDataType())
 	}
 	if must(b.Encode()) != raw {
@@ -114,7 +113,7 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 	var payload [196]bit.Bit
 	copy(payload[:96], info[:96])
 	copy(payload[100:], info[96:])
-	raw := buildDataBurst(elements.DataTypeRate1, payload)
+	raw := buildDataBurst(enums.DataTypeRate1, payload)
 
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {

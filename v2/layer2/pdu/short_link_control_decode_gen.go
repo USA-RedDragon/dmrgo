@@ -18,7 +18,6 @@ import (
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
-	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // DecodeShortLCNullMessage decodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
@@ -258,7 +257,7 @@ func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
 
 func (s *ShortLC) ToString() string {
 	_ret := "ShortLC{ "
-	_ret += fmt.Sprintf("DataType: %s, SLCO: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", layer2Elements.DataTypeToName(s.DataType), enums.SLCOToName(s.SLCO), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("DataType: %s, SLCO: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", enums.DataTypeToName(s.DataType), enums.SLCOToName(s.SLCO), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.NullMessage != nil:
 		_ret += s.NullMessage.ToString()

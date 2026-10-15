@@ -1,7 +1,7 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
 // CRC9MaskRate12 is the CRC-9 mask for Rate 1/2 Data Continuation
@@ -14,11 +14,11 @@ const CRC9MaskRate12 uint16 = 0x0F0
 // as user data. Confirmed data (Table 9.15A) carries a 7-bit DBSN, a 9-bit
 // CRC-9 and 80 bits of user data; use the Confirmed* methods for it.
 type Rate12Data struct {
-	DataType elements.DataType `dmr:"-"`
-	Data     [12]byte          `dmr:"bits:0-95,packed"`
+	DataType enums.DataType `dmr:"-"`
+	Data     [12]byte       `dmr:"bits:0-95,packed"`
 }
 
-func (rtData *Rate12Data) GetDataType() elements.DataType {
+func (rtData *Rate12Data) GetDataType() enums.DataType {
 	return rtData.DataType
 }
 

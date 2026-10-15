@@ -1,4 +1,4 @@
-package elements
+package enums
 
 import "testing"
 

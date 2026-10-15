@@ -6,7 +6,7 @@ ETSI TS 102 361-2 - 7.2.1  Service Options
 DO NOT EDIT.
 */
 
-package elements
+package layer3
 
 import (
 	"fmt"

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
-	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // DecodeUnconfirmedDataHeader decodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
@@ -288,7 +288,7 @@ func EncodeDataHeader(s *DataHeader) ([96]bit.Bit, error) {
 
 func (s *DataHeader) ToString() string {
 	_ret := "DataHeader{ "
-	_ret += fmt.Sprintf("DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", layer2Elements.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
+	_ret += fmt.Sprintf("DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", enums.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
 	switch {
 	case s.UnconfirmedDataHeader != nil:
 		_ret += s.UnconfirmedDataHeader.ToString()

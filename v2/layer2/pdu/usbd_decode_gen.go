@@ -12,8 +12,8 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
-	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData per ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
@@ -70,5 +70,5 @@ func EncodeUnifiedSingleBlockData(s *UnifiedSingleBlockData) ([96]bit.Bit, error
 }
 
 func (s *UnifiedSingleBlockData) ToString() string {
-	return fmt.Sprintf("UnifiedSingleBlockData{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %v }", layer2Elements.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
+	return fmt.Sprintf("UnifiedSingleBlockData{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %v }", enums.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
 }

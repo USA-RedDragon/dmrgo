@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -23,7 +23,7 @@ func burstInfoBits(raw [33]byte) [96]bit.Bit {
 // RS(12,9) parity (ETSI TS 102 361-1 B.3.12). The RS checks depend on a
 // correct RS(12,9) codec.
 func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
-	seen := map[elements.DataType]int{}
+	seen := map[enums.DataType]int{}
 	for _, file := range []string{"testdata/parrot_kerchunk.bin", "testdata/voice.bin"} {
 		for i, raw := range loadBursts(t, file) {
 			b, err := layer2.NewBurstFromBytes(raw)
@@ -31,7 +31,7 @@ func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 				continue
 			}
 			dt := b.SlotType.DataType
-			if dt != elements.DataTypeVoiceLCHeader && dt != elements.DataTypeTerminatorWithLC {
+			if dt != enums.DataTypeVoiceLCHeader && dt != enums.DataTypeTerminatorWithLC {
 				continue
 			}
 			seen[dt]++
@@ -44,16 +44,16 @@ func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 			}
 			if b.FEC.PDU.Uncorrectable || b.FEC.PDU.ErrorsCorrected != 0 {
 				t.Errorf("%s burst %d (%s): RS = %+v, want a clean codeword",
-					file, i, elements.DataTypeToName(dt), b.FEC.PDU)
+					file, i, enums.DataTypeToName(dt), b.FEC.PDU)
 			}
 			info := burstInfoBits(raw)
 			if got := must(pdu.EncodeFullLinkControl(flc)); got != info {
 				t.Errorf("%s burst %d (%s): re-encoded LC %x, captured %x",
-					file, i, elements.DataTypeToName(dt), bit.PackBits(got[:]), bit.PackBits(info[:]))
+					file, i, enums.DataTypeToName(dt), bit.PackBits(got[:]), bit.PackBits(info[:]))
 			}
 		}
 	}
-	if seen[elements.DataTypeVoiceLCHeader] == 0 || seen[elements.DataTypeTerminatorWithLC] == 0 {
+	if seen[enums.DataTypeVoiceLCHeader] == 0 || seen[enums.DataTypeTerminatorWithLC] == 0 {
 		t.Fatalf("captures did not contain both LC types: %v", seen)
 	}
 }

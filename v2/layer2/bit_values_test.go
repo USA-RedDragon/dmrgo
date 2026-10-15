@@ -22,7 +22,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
@@ -161,9 +161,9 @@ var bitFuncs = map[string]any{
 	"layer2/pdu.IsPRFill":                                      pdu.IsPRFill,
 	"layer2/pdu.MBCLastBlockCRC":                               pdu.MBCLastBlockCRC,
 	"layer2/pdu.SetMBCLastBlockCRC":                            pdu.SetMBCLastBlockCRC,
-	"layer3/elements.DecodeCdefParms":                          layer3Elements.DecodeCdefParms,
-	"layer3/elements.DecodeServiceOptions":                     layer3Elements.DecodeServiceOptions,
-	"layer3/elements.NewCdefParmsFromBits":                     layer3Elements.NewCdefParmsFromBits,
+	"layer3.DecodeCdefParms":                          layer3.DecodeCdefParms,
+	"layer3.DecodeServiceOptions":                     layer3.DecodeServiceOptions,
+	"layer3.NewCdefParmsFromBits":                     layer3.NewCdefParmsFromBits,
 	"vocoder.DecodeAMBE72":                                     vocoder.DecodeAMBE72,
 	"vocoder.DecodeVocoderFrame":                               vocoder.DecodeVocoderFrame,
 	"vocoder.EncodeAMBE72":                                     vocoder.EncodeAMBE72,

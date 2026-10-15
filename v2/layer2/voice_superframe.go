@@ -6,7 +6,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -128,7 +127,7 @@ func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode uint8, source SyncSou
 	})
 }
 
-func lcDataBurst(lc pdu.FullLinkControl, dataType elements.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
+func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
 	lc.DataType = dataType
 	bits, err := pdu.EncodeFullLinkControl(&lc)
 	if err != nil {

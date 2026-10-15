@@ -2,7 +2,7 @@ package pdu
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
 // ETSI TS 102 361-1 - 9.1.9 Pseudo Random Fill Bit (PR FILL) PDU
@@ -36,11 +36,11 @@ func PRFillBits() [96]bit.Bit {
 
 // PRFill represents the PR FILL PDU (§9.1.9).
 type PRFill struct {
-	DataType elements.DataType
+	DataType enums.DataType
 }
 
 // GetDataType returns the data type of the PDU.
-func (p *PRFill) GetDataType() elements.DataType {
+func (p *PRFill) GetDataType() enums.DataType {
 	return p.DataType
 }
 

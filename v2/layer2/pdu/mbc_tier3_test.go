@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	"github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // buildContinuationBits96 constructs a [96]bit.Bit array for an MBC continuation block.
@@ -80,7 +80,7 @@ func TestCGAPContinuation_Decode(t *testing.T) {
 	}
 
 	// Verify CdefParms can be parsed
-	parms := elements.NewCdefParmsFromBits(decoded.CdefParms)
+	parms := layer3.NewCdefParmsFromBits(decoded.CdefParms)
 	if parms.Channel != 291 {
 		t.Errorf("Channel = %d, want 291", parms.Channel)
 	}

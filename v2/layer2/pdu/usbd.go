@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // ServiceType represents the higher layer service supported by a USBD.
@@ -55,13 +55,13 @@ func ServiceTypeToName(st ServiceType) string {
 // dmr:input_size 96
 // ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
 type UnifiedSingleBlockData struct {
-	DataType    elements.DataType `dmr:"-"`
-	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.Result        `dmr:"-"`
-	ServiceType ServiceType       `dmr:"bits:0-3"`
-	Payload     [76]bit.Bit       `dmr:"bits:4-79,raw"`
+	DataType    enums.DataType `dmr:"-"`
+	crc         uint16         `dmr:"-"` //nolint:unused
+	FEC         fec.Result     `dmr:"-"`
+	ServiceType ServiceType    `dmr:"bits:0-3"`
+	Payload     [76]bit.Bit    `dmr:"bits:4-79,raw"`
 }
 
-func (u *UnifiedSingleBlockData) GetDataType() elements.DataType {
+func (u *UnifiedSingleBlockData) GetDataType() enums.DataType {
 	return u.DataType
 }

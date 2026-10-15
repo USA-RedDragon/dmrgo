@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -22,7 +22,7 @@ func buildOpcode0x38Burst(t *testing.T) [33]byte {
 	encBits := must(pdu.EncodeCSBK(csbk))
 	var lcBytes [12]byte
 	copy(lcBytes[:], bit.PackBits(encBits[:]))
-	return must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeCSBK, 1))
+	return must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeCSBK, 1))
 }
 
 func TestBurst_TrunkingModeSelectsOpcode0x38Variant(t *testing.T) {

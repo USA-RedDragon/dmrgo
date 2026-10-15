@@ -6,9 +6,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 func TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip(t *testing.T) {
@@ -107,11 +106,11 @@ func TestBurst_PackEmbeddedSignallingData_KnownValue(t *testing.T) {
 
 func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 	flc := &pdu.FullLinkControl{
-		DataType:     elements.DataTypeVoiceLCHeader,
+		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{
-			ServiceOptions: layer3Elements.ServiceOptions{
+			ServiceOptions: layer3.ServiceOptions{
 				PriorityLevel: 0,
 			},
 			GroupAddress:  9990,
@@ -125,7 +124,7 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
 
-	result := must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeVoiceLCHeader, 1))
+	result := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1))
 	if len(result) != 33 {
 		t.Errorf("BuildLCDataBurst returned %d bytes, want 33", len(result))
 	}
@@ -141,7 +140,7 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 
 func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	flc := &pdu.FullLinkControl{
-		DataType:     elements.DataTypeTerminatorWithLC,
+		DataType:     enums.DataTypeTerminatorWithLC,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{
@@ -156,7 +155,7 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
 
-	result := must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeTerminatorWithLC, 0))
+	result := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeTerminatorWithLC, 0))
 	burst, err := layer2.NewBurstFromBytes(result)
 	if err != nil {
 		t.Fatalf("NewBurstFromBytes failed: %v", err)
@@ -168,7 +167,7 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 
 func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 	flc := &pdu.FullLinkControl{
-		DataType:     elements.DataTypeVoiceLCHeader,
+		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{
@@ -184,7 +183,7 @@ func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 	copy(lcBytes[:], encoded)
 
 	for cc := uint8(0); cc < 16; cc++ {
-		result := must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeVoiceLCHeader, cc))
+		result := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, cc))
 		burst, err := layer2.NewBurstFromBytes(result)
 		if err != nil {
 			t.Fatalf("NewBurstFromBytes failed for color code %d: %v", cc, err)

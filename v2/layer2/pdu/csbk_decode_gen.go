@@ -42,8 +42,7 @@ import (
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
-	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
-	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // DecodeBSOutboundActivationPDU decodes a BSOutboundActivationPDU per ETSI TS 102 361-1 - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
@@ -127,8 +126,8 @@ func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgement
 	var result NegativeAcknowledgementPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.AdditionalInfo = layer3Elements.AdditionalInformationField(bit.BitsToUint8(data[:], 0, 1))
-	result.SourceType = layer3Elements.SourceType(bit.BitsToUint8(data[:], 1, 1))
+	result.AdditionalInfo = layer3.AdditionalInformationField(bit.BitsToUint8(data[:], 0, 1))
+	result.SourceType = layer3.SourceType(bit.BitsToUint8(data[:], 1, 1))
 	result.ServiceType = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
 	result.ReasonCode = bit.BitsToUint8(data[:], 8, 8)
 	copy(result.SourceAddress[:], data[16:40])
@@ -158,7 +157,7 @@ func EncodeNegativeAcknowledgementPDU(s *NegativeAcknowledgementPDU) ([64]bit.Bi
 }
 
 func (s *NegativeAcknowledgementPDU) ToString() string {
-	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %v, TargetAddress: %v }", layer3Elements.AdditionalInformationFieldToName(s.AdditionalInfo), layer3Elements.SourceTypeToName(s.SourceType), s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
+	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %v, TargetAddress: %v }", layer3.AdditionalInformationFieldToName(s.AdditionalInfo), layer3.SourceTypeToName(s.SourceType), s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
 }
 
 // DecodePreamblePDU decodes a PreamblePDU per ETSI TS 102 361-1 - 9.3.7 Pre PDU
@@ -1604,7 +1603,7 @@ func EncodeCSBK(s *CSBK) ([96]bit.Bit, error) {
 
 func (s *CSBK) ToString() string {
 	_ret := "CSBK{ "
-	_ret += fmt.Sprintf("DataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", layer2Elements.DataTypeToName(s.DataType), s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("DataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", enums.DataTypeToName(s.DataType), s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.BSOutboundActivationPDU != nil:
 		_ret += s.BSOutboundActivationPDU.ToString()

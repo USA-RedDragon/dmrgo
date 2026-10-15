@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -30,7 +29,7 @@ func TestEncode_RejectsValuesWiderThanField(t *testing.T) {
 	_, err = pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 16})
 	expectEncodeError(t, err, "SlotType.ColorCode")
 
-	_, err = pdu.EncodeSlotType(&pdu.SlotType{DataType: elements.DataType(16)})
+	_, err = pdu.EncodeSlotType(&pdu.SlotType{DataType: enums.DataType(16)})
 	expectEncodeError(t, err, "SlotType.DataType")
 
 	_, err = pdu.EncodeUnconfirmedDataHeader(&pdu.UnconfirmedDataHeader{PadOctetCount: 32})
@@ -44,7 +43,7 @@ func TestEncode_AcceptsMaximumFieldValues(t *testing.T) {
 	if _, err := pdu.EncodeFLCGroupVoice(&pdu.FLCGroupVoice{GroupAddress: 1<<24 - 1, SourceAddress: 1<<24 - 1}); err != nil {
 		t.Fatalf("max addresses rejected: %v", err)
 	}
-	if _, err := pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 15, DataType: elements.DataTypeReserved}); err != nil {
+	if _, err := pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 15, DataType: enums.DataTypeReserved}); err != nil {
 		t.Fatalf("max slot type rejected: %v", err)
 	}
 	if _, err := pdu.EncodeUnconfirmedDataHeader(&pdu.UnconfirmedDataHeader{PadOctetCount: 31}); err != nil {
@@ -54,7 +53,7 @@ func TestEncode_AcceptsMaximumFieldValues(t *testing.T) {
 
 func TestEncode_PropagatesNestedErrors(t *testing.T) {
 	_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
-		DataType:   elements.DataTypeVoiceLCHeader,
+		DataType:   enums.DataTypeVoiceLCHeader,
 		FLCO:       enums.FLCOGroupVoiceChannelUser,
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 1 << 24},
 	})

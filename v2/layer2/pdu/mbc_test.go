@@ -5,7 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -148,7 +148,7 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 
 			orig := pdu.MBCHeader{
-				DataType:    elements.DataTypeMBCHeader,
+				DataType:    enums.DataTypeMBCHeader,
 				LastBlock:   tt.lb,
 				ProtectFlag: tt.pf,
 				CSBKOpcode:  pdu.CSBKOpcode(tt.opcode),
@@ -229,9 +229,9 @@ func TestMBCHeader_CRCBitFlip(t *testing.T) {
 
 func TestMBCHeader_GetDataType(t *testing.T) {
 	hdr := &pdu.MBCHeader{
-		DataType: elements.DataTypeMBCHeader,
+		DataType: enums.DataTypeMBCHeader,
 	}
-	if hdr.GetDataType() != elements.DataTypeMBCHeader {
+	if hdr.GetDataType() != enums.DataTypeMBCHeader {
 		t.Errorf("GetDataType() = %d, want DataTypeMBCHeader", hdr.GetDataType())
 	}
 }
@@ -240,7 +240,7 @@ func TestMBCHeader_ToString(t *testing.T) {
 	var data [64]bit.Bit
 	infoBits := buildMBCHeaderBits(true, false, 0b00111101, 0x00, data)
 	hdr, _ := pdu.DecodeMBCHeader(infoBits)
-	hdr.DataType = elements.DataTypeMBCHeader
+	hdr.DataType = enums.DataTypeMBCHeader
 
 	str := hdr.ToString()
 	if str == "" {
@@ -312,7 +312,7 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 
 			orig := pdu.MBCContinuation{
-				DataType:  elements.DataTypeMBCContinuation,
+				DataType:  enums.DataTypeMBCContinuation,
 				LastBlock: tt.lb,
 				Data:      data,
 			}
@@ -353,9 +353,9 @@ func TestMBCContinuation_EncodeStability(t *testing.T) {
 
 func TestMBCContinuation_GetDataType(t *testing.T) {
 	cont := &pdu.MBCContinuation{
-		DataType: elements.DataTypeMBCContinuation,
+		DataType: enums.DataTypeMBCContinuation,
 	}
-	if cont.GetDataType() != elements.DataTypeMBCContinuation {
+	if cont.GetDataType() != enums.DataTypeMBCContinuation {
 		t.Errorf("GetDataType() = %d, want DataTypeMBCContinuation", cont.GetDataType())
 	}
 }
@@ -366,7 +366,7 @@ func TestMBCContinuation_ToString(t *testing.T) {
 
 	infoBits := buildMBCContinuationBits(false, data)
 	cont, _ := pdu.DecodeMBCContinuation(infoBits)
-	cont.DataType = elements.DataTypeMBCContinuation
+	cont.DataType = enums.DataTypeMBCContinuation
 
 	str := cont.ToString()
 	if str == "" {

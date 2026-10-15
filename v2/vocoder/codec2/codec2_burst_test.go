@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -24,7 +23,7 @@ func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
 		t.Fatal(err)
 	}
 	lc := pdu.FullLinkControl{
-		DataType:     elements.DataTypeVoiceLCHeader,
+		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.FeatureSetID(c.FID()),
 		RawPayload:   payload,
@@ -82,9 +81,9 @@ func TestBurstRoundTrip(t *testing.T) {
 				if !ok || lc.FEC.Uncorrectable {
 					t.Fatalf("mode %d burst %d: data burst is not a clean Full LC", mode, i)
 				}
-				if dt := b.SlotType.DataType; dt == elements.DataTypeVoiceLCHeader {
+				if dt := b.SlotType.DataType; dt == enums.DataTypeVoiceLCHeader {
 					headers++
-				} else if dt == elements.DataTypeTerminatorWithLC {
+				} else if dt == enums.DataTypeTerminatorWithLC {
 					terminators++
 				} else {
 					t.Fatalf("mode %d burst %d: data type %v", mode, i, dt)

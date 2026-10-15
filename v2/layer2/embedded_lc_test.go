@@ -11,7 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -35,7 +34,7 @@ func capturedFragments() [4][32]bit.Bit {
 
 func capturedLC() pdu.FullLinkControl {
 	return pdu.FullLinkControl{
-		DataType: elements.DataTypeVoiceLCHeader,
+		DataType: enums.DataTypeVoiceLCHeader,
 		FLCO:     enums.FLCOUnitToUnitVoiceChannelUser,
 		UnitToUnit: &pdu.FLCUnitToUnit{
 			TargetAddress: 9990,
@@ -61,7 +60,7 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 	if !ok || flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || target != 9990 || source != 3191868 {
 		t.Errorf("decoded %s", flc.ToString())
 	}
-	if flc.DataType != elements.DataTypeVoiceLCHeader {
+	if flc.DataType != enums.DataTypeVoiceLCHeader {
 		t.Errorf("DataType = %v", flc.DataType)
 	}
 }

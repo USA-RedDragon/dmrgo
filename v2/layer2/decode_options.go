@@ -7,7 +7,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // ErrColorCodeMismatch is returned, wrapped, by DecodeFromBytesWith when the
@@ -44,7 +43,7 @@ type FrameType struct {
 	// replaces the data type of the decoded slot type in Burst.SlotType
 	// and selects the payload decode; SlotType.ColorCode and FEC.SlotType
 	// still come from the slot type bits. When nil, the slot type decides.
-	DataType *elements.DataType
+	DataType *enums.DataType
 }
 
 // DecodeOptions are receive-side settings for DecodeFromBytesWith.
@@ -178,7 +177,7 @@ func (b *Burst) decodeVoiceAt(pos enums.VoiceBurstType, sync enums.SyncPattern, 
 	b.hasVoiceSlots = true
 }
 
-func (b *Burst) decodeDataFrame(dataType *elements.DataType) error {
+func (b *Burst) decodeDataFrame(dataType *enums.DataType) error {
 	b.SyncPattern, b.SyncDistance = b.nearestSync(dataSyncPatterns)
 	b.IsData = true
 	b.HasSlotType = true

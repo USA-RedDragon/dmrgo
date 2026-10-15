@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -28,27 +28,27 @@ import (
 //   - Idle, Unified Single Block Data and reserved data types: MMDVMHost
 //     discards these bursts, so MMDVMHostSeal returns an error and leaves p
 //     as it is.
-func MMDVMHostSeal(dataType elements.DataType, p *[12]byte) error {
+func MMDVMHostSeal(dataType enums.DataType, p *[12]byte) error {
 	switch dataType {
-	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
+	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
 		cw, err := pdu.FullLCCodeword([9]byte(p[:9]), dataType)
 		if err != nil {
 			return err
 		}
 		*p = cw
 		return nil
-	case elements.DataTypePIHeader, elements.DataTypeCSBK, elements.DataTypeMBCHeader, elements.DataTypeDataHeader:
+	case enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader:
 		return pdu.SealBlock(p, dataType)
-	case elements.DataTypeMBCContinuation:
+	case enums.DataTypeMBCContinuation:
 		c := crc.CalculateCRCCCITT(p[:10])
 		p[10] = byte(c >> 8)
 		p[11] = byte(c) //nolint:gosec // low octet of the CRC
 		return nil
-	case elements.DataTypeRate12, elements.DataTypeRate34, elements.DataTypeRate1:
+	case enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1:
 		return nil
-	case elements.DataTypeIdle, elements.DataTypeUnifiedSingleBlock, elements.DataTypeReserved:
-		return fmt.Errorf("MMDVMHost discards %s bursts", elements.DataTypeToName(dataType))
+	case enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
+		return fmt.Errorf("MMDVMHost discards %s bursts", enums.DataTypeToName(dataType))
 	default:
-		return fmt.Errorf("MMDVMHost discards %s bursts", elements.DataTypeToName(dataType))
+		return fmt.Errorf("MMDVMHost discards %s bursts", enums.DataTypeToName(dataType))
 	}
 }

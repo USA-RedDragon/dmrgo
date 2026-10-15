@@ -4,7 +4,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
@@ -90,7 +89,7 @@ func (s *ShortLCPSysParms) SiteID() uint16 {
 // EncodeShortLC returns an error if more than one payload field is set, or
 // if SLCO does not select the payload field that is set.
 type ShortLC struct {
-	DataType elements.DataType `dmr:"-"`
+	DataType enums.DataType `dmr:"-"`
 
 	SLCO enums.SLCO `dmr:"bits:0-3,enum"`
 	FEC  fec.Result `dmr:"-"`
@@ -105,6 +104,6 @@ type ShortLC struct {
 	crc uint8 `dmr:"-"` //nolint:unused
 }
 
-func (slc *ShortLC) GetDataType() elements.DataType {
+func (slc *ShortLC) GetDataType() enums.DataType {
 	return slc.DataType
 }

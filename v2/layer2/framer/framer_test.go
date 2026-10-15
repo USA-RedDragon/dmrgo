@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -129,7 +128,7 @@ func TestFramer_OutboundCACH(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(3))
 	voice := loadVoice(t)
-	idle := must(layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeIdle, 1))
+	idle := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
 	type sent struct {
 		data    [33]byte
 		channel int
@@ -174,7 +173,7 @@ func TestFramer_DirectChannel(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(4))
 	stream := make([]bit.Bit, 0, 500+3*framer.SlotPeriod)
-	ts2 := must(layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeIdle, 1))
+	ts2 := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
 	var bits [264]bit.Bit
 	copy(bits[:], bit.UnpackBits(ts2[:]))
 	for i := range framer.SyncBits {

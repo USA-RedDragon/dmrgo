@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -62,25 +62,25 @@ func hex9(t *testing.T, s string) [9]byte {
 
 func TestCRCMask_TableB21(t *testing.T) {
 	tests := []struct {
-		dt    elements.DataType
+		dt    enums.DataType
 		mask  uint32
 		width int
 		ok    bool
 	}{
-		{elements.DataTypePIHeader, 0x6969, 16, true},
-		{elements.DataTypeVoiceLCHeader, 0x969696, 24, true},
-		{elements.DataTypeTerminatorWithLC, 0x999999, 24, true},
-		{elements.DataTypeCSBK, 0xA5A5, 16, true},
-		{elements.DataTypeMBCHeader, 0xAAAA, 16, true},
-		{elements.DataTypeMBCContinuation, 0, 0, false},
-		{elements.DataTypeDataHeader, 0xCCCC, 16, true},
-		{elements.DataTypeRate12, uint32(pdu.CRC9MaskRate12), 9, true},
-		{elements.DataTypeRate34, uint32(pdu.CRC9MaskRate34), 9, true},
-		{elements.DataTypeIdle, 0, 0, false},
-		{elements.DataTypeRate1, uint32(pdu.CRC9MaskRate1), 9, true},
-		{elements.DataTypeUnifiedSingleBlock, 0x3333, 16, true},
-		{elements.DataTypeReserved, 0, 0, false},
-		{elements.DataType(15), 0, 0, false},
+		{enums.DataTypePIHeader, 0x6969, 16, true},
+		{enums.DataTypeVoiceLCHeader, 0x969696, 24, true},
+		{enums.DataTypeTerminatorWithLC, 0x999999, 24, true},
+		{enums.DataTypeCSBK, 0xA5A5, 16, true},
+		{enums.DataTypeMBCHeader, 0xAAAA, 16, true},
+		{enums.DataTypeMBCContinuation, 0, 0, false},
+		{enums.DataTypeDataHeader, 0xCCCC, 16, true},
+		{enums.DataTypeRate12, uint32(pdu.CRC9MaskRate12), 9, true},
+		{enums.DataTypeRate34, uint32(pdu.CRC9MaskRate34), 9, true},
+		{enums.DataTypeIdle, 0, 0, false},
+		{enums.DataTypeRate1, uint32(pdu.CRC9MaskRate1), 9, true},
+		{enums.DataTypeUnifiedSingleBlock, 0x3333, 16, true},
+		{enums.DataTypeReserved, 0, 0, false},
+		{enums.DataType(15), 0, 0, false},
 	}
 	for _, tt := range tests {
 		mask, width, ok := pdu.CRCMask(tt.dt)
@@ -96,7 +96,7 @@ func TestFullLCCodeword_MatchesTableB18(t *testing.T) {
 		var lc [9]byte
 		rng.Read(lc[:])
 		p := matrixParity(lc)
-		for _, dt := range []elements.DataType{elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC} {
+		for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
 			mask, _, _ := pdu.CRCMask(dt)
 			cw, err := pdu.FullLCCodeword(lc, dt)
 			if err != nil {
@@ -119,11 +119,11 @@ func TestFullLCCodeword_MatchesTableB18(t *testing.T) {
 func TestFullLCCodeword_RealCapture(t *testing.T) {
 	lc := hex9(t, "03000000270630b43c")
 	tests := []struct {
-		dt   elements.DataType
+		dt   enums.DataType
 		want string
 	}{
-		{elements.DataTypeVoiceLCHeader, "03000000270630b43c5dcfc1"},
-		{elements.DataTypeTerminatorWithLC, "03000000270630b43c52c0ce"},
+		{enums.DataTypeVoiceLCHeader, "03000000270630b43c5dcfc1"},
+		{enums.DataTypeTerminatorWithLC, "03000000270630b43c52c0ce"},
 	}
 	for _, tt := range tests {
 		cw, err := pdu.FullLCCodeword(lc, tt.dt)
@@ -142,9 +142,9 @@ func TestFullLCCodeword_RealCapture(t *testing.T) {
 		if hex.EncodeToString(bit.PackBits(enc[:])) != tt.want {
 			t.Errorf("dt %d: generated encoder disagrees", tt.dt)
 		}
-		other := elements.DataTypeVoiceLCHeader
+		other := enums.DataTypeVoiceLCHeader
 		if tt.dt == other {
-			other = elements.DataTypeTerminatorWithLC
+			other = enums.DataTypeTerminatorWithLC
 		}
 		if pdu.FullLCParityOK(cw, other) {
 			t.Errorf("dt %d: codeword passes with the other mask", tt.dt)
@@ -153,8 +153,8 @@ func TestFullLCCodeword_RealCapture(t *testing.T) {
 }
 
 func TestFullLCCodeword_RejectsOtherDataTypes(t *testing.T) {
-	for dt := elements.DataType(0); dt <= 15; dt++ {
-		if dt == elements.DataTypeVoiceLCHeader || dt == elements.DataTypeTerminatorWithLC {
+	for dt := enums.DataType(0); dt <= 15; dt++ {
+		if dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypeTerminatorWithLC {
 			continue
 		}
 		if _, err := pdu.FullLCCodeword([9]byte{}, dt); err == nil {
@@ -171,16 +171,16 @@ func TestFullLCCodeword_RejectsOtherDataTypes(t *testing.T) {
 
 func TestDecodeFullLCCodeword_CorrectsAndStrictRejects(t *testing.T) {
 	lc := hex9(t, "03000000270630b43c")
-	cw := must(pdu.FullLCCodeword(lc, elements.DataTypeVoiceLCHeader))
-	got, res, err := pdu.DecodeFullLCCodeword(cw, elements.DataTypeVoiceLCHeader)
+	cw := must(pdu.FullLCCodeword(lc, enums.DataTypeVoiceLCHeader))
+	got, res, err := pdu.DecodeFullLCCodeword(cw, enums.DataTypeVoiceLCHeader)
 	if err != nil || got != lc || res.HasErrors() {
 		t.Fatalf("clean: %x %+v %v", got, res, err)
 	}
 	cw[4] ^= 0x5A
-	if pdu.FullLCParityOK(cw, elements.DataTypeVoiceLCHeader) {
+	if pdu.FullLCParityOK(cw, enums.DataTypeVoiceLCHeader) {
 		t.Fatal("strict check accepts a corrupted codeword")
 	}
-	got, res, err = pdu.DecodeFullLCCodeword(cw, elements.DataTypeVoiceLCHeader)
+	got, res, err = pdu.DecodeFullLCCodeword(cw, enums.DataTypeVoiceLCHeader)
 	if err != nil || got != lc || res.ErrorsCorrected == 0 || res.Uncorrectable {
 		t.Fatalf("corrupted: %x %+v %v", got, res, err)
 	}
@@ -192,13 +192,13 @@ func TestSealBlock_MatchesGeneratedEncoders(t *testing.T) {
 	pi := must(pdu.EncodePIHeader(&pdu.PIHeader{AlgorithmID: 1, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 9990}))
 	usbd := must(pdu.EncodeUnifiedSingleBlockData(&pdu.UnifiedSingleBlockData{}))
 	tests := []struct {
-		dt   elements.DataType
+		dt   enums.DataType
 		bits [96]bit.Bit
 	}{
-		{elements.DataTypeCSBK, csbk},
-		{elements.DataTypeMBCHeader, mbc},
-		{elements.DataTypePIHeader, pi},
-		{elements.DataTypeUnifiedSingleBlock, usbd},
+		{enums.DataTypeCSBK, csbk},
+		{enums.DataTypeMBCHeader, mbc},
+		{enums.DataTypePIHeader, pi},
+		{enums.DataTypeUnifiedSingleBlock, usbd},
 	}
 	for _, tt := range tests {
 		var b [12]byte
@@ -215,9 +215,9 @@ func TestSealBlock_MatchesGeneratedEncoders(t *testing.T) {
 }
 
 func TestSealBlock_RoundTripAndRejects(t *testing.T) {
-	singles := []elements.DataType{
-		elements.DataTypePIHeader, elements.DataTypeCSBK, elements.DataTypeMBCHeader,
-		elements.DataTypeDataHeader, elements.DataTypeUnifiedSingleBlock,
+	singles := []enums.DataType{
+		enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader,
+		enums.DataTypeDataHeader, enums.DataTypeUnifiedSingleBlock,
 	}
 	rng := rand.New(rand.NewSource(2))
 	for _, dt := range singles {
@@ -241,10 +241,10 @@ func TestSealBlock_RoundTripAndRejects(t *testing.T) {
 			}
 		}
 	}
-	for _, dt := range []elements.DataType{
-		elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC, elements.DataTypeMBCContinuation,
-		elements.DataTypeRate12, elements.DataTypeRate34, elements.DataTypeRate1, elements.DataTypeIdle,
-		elements.DataTypeReserved,
+	for _, dt := range []enums.DataType{
+		enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeMBCContinuation,
+		enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeIdle,
+		enums.DataTypeReserved,
 	} {
 		b := [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 		before := b

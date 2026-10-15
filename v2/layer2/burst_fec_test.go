@@ -7,21 +7,20 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func lcHeaderFrame(t *testing.T) [33]byte {
 	t.Helper()
 	lc := pdu.FullLinkControl{
-		DataType:   elements.DataTypeVoiceLCHeader,
+		DataType:   enums.DataTypeVoiceLCHeader,
 		FLCO:       enums.FLCOGroupVoiceChannelUser,
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101},
 	}
 	var lcBytes [12]byte
 	lcBits := must(pdu.EncodeFullLinkControl(&lc))
 	copy(lcBytes[:], bit.PackBits(lcBits[:]))
-	return must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeVoiceLCHeader, 1))
+	return must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1))
 }
 
 func TestBurstFEC_LCHeaderCountsPayloadBitsOnce(t *testing.T) {
@@ -46,7 +45,7 @@ func TestBurstFEC_CSBKCountsNoCRCBits(t *testing.T) {
 	var lcBytes [12]byte
 	csbkBits := must(pdu.EncodeCSBK(&csbk))
 	copy(lcBytes[:], bit.PackBits(csbkBits[:]))
-	frame := must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeCSBK, 1))
+	frame := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeCSBK, 1))
 
 	b := must(layer2.NewBurstFromBytes(frame))
 	want := fec.Result{BitsChecked: 20 + 196}

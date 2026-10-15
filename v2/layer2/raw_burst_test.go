@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -33,8 +32,8 @@ func packSlots(s [layer2.VoiceSlotsPerBurst][72]bit.Bit) [layer2.VoiceSlotsPerBu
 	return out
 }
 
-func isBPTC(dt elements.DataType) bool {
-	return dt != elements.DataTypeRate34 && dt != elements.DataTypeRate1 && !dt.IsReserved()
+func isBPTC(dt enums.DataType) bool {
+	return dt != enums.DataTypeRate34 && dt != enums.DataTypeRate1 && !dt.IsReserved()
 }
 
 // sameBits reports whether a and b agree outside the burst bit ranges in
@@ -138,11 +137,11 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 				}
 			}
 			switch dt := b.SlotType.DataType; {
-			case dt == elements.DataTypeRate34:
+			case dt == enums.DataTypeRate34:
 				if p, res := r.Rate34Payload(); !res.HasErrors() {
 					w.SetRate34Payload(p)
 				}
-			case dt == elements.DataTypeRate1:
+			case dt == enums.DataTypeRate1:
 				w.SetRate1Payload(r.Rate1Payload())
 			case isBPTC(dt):
 				if p, res := r.BPTCPayload(); !res.HasErrors() {
@@ -272,17 +271,17 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 }
 
 func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
-	cw := must(pdu.FullLCCodeword([9]byte(capturedEmbeddedLC), elements.DataTypeVoiceLCHeader))
+	cw := must(pdu.FullLCCodeword([9]byte(capturedEmbeddedLC), enums.DataTypeVoiceLCHeader))
 	for cc := uint8(0); cc < 16; cc++ {
-		got := must(layer2.BuildDataBurst(cw, elements.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS))
-		want := must(layer2.BuildLCDataBurst(cw, elements.DataTypeVoiceLCHeader, cc))
+		got := must(layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS))
+		want := must(layer2.BuildLCDataBurst(cw, enums.DataTypeVoiceLCHeader, cc))
 		if got != layer2.RawBurst(want) {
 			t.Fatalf("cc %d: BuildDataBurst differs from BuildLCDataBurst", cc)
 		}
 	}
 	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
 		tx := must(layer2.NewVoiceTransmitter(capturedLC(), 3, src, silenceSlot()))
-		got := must(layer2.BuildDataBurst(cw, elements.DataTypeVoiceLCHeader, 3, src))
+		got := must(layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, 3, src))
 		if got != layer2.RawBurst(tx.Header()) {
 			t.Errorf("source %d: BuildDataBurst differs from the VoiceTransmitter header", src)
 		}
@@ -318,16 +317,16 @@ func TestBuildDataBurst_ReproducesCaptures(t *testing.T) {
 }
 
 func TestBuildDataBurst_Rejects(t *testing.T) {
-	if _, err := layer2.BuildDataBurst([12]byte{}, elements.DataTypeRate34, 1, layer2.SyncSourceBS); err == nil {
+	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeRate34, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Rate 3/4 accepted")
 	}
-	if _, err := layer2.BuildDataBurst([12]byte{}, elements.DataTypeRate1, 1, layer2.SyncSourceBS); err == nil {
+	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeRate1, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Rate 1 accepted")
 	}
-	if _, err := layer2.BuildDataBurst([12]byte{}, elements.DataTypeCSBK, 16, layer2.SyncSourceBS); err == nil {
+	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 16, layer2.SyncSourceBS); err == nil {
 		t.Error("color code 16 accepted")
 	}
-	if _, err := layer2.BuildDataBurst([12]byte{}, elements.DataTypeCSBK, 1, layer2.SyncSource(9)); err == nil {
+	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 1, layer2.SyncSource(9)); err == nil {
 		t.Error("unknown source accepted")
 	}
 }

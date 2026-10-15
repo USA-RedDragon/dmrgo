@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -34,8 +34,8 @@ func TestPIHeader_DecodeVector(t *testing.T) {
 	if must(pdu.EncodePIHeader(&pi)) != piHeaderVector() {
 		t.Error("re-encode does not match the vector")
 	}
-	pi.DataType = elements.DataTypePIHeader
-	if pi.GetDataType() != elements.DataTypePIHeader {
+	pi.DataType = enums.DataTypePIHeader
+	if pi.GetDataType() != enums.DataTypePIHeader {
 		t.Error("GetDataType mismatch")
 	}
 	if pi.ToString() == "" {

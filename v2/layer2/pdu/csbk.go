@@ -6,8 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
-	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 type CSBKOpcode byte
@@ -135,12 +134,12 @@ type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 
 // ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
 type NegativeAcknowledgementPDU struct {
-	AdditionalInfo layer3Elements.AdditionalInformationField `dmr:"bits:0-0,delegate,noptr"`
-	SourceType     layer3Elements.SourceType                 `dmr:"bits:1-1,delegate,noptr"`
-	ServiceType    CSBKOpcode                                `dmr:"bits:2-7"`
-	ReasonCode     byte                                      `dmr:"bits:8-15"`
-	SourceAddress  [24]bit.Bit                               `dmr:"bits:16-39,raw"`
-	TargetAddress  [24]bit.Bit                               `dmr:"bits:40-63,raw"`
+	AdditionalInfo layer3.AdditionalInformationField `dmr:"bits:0-0,delegate,noptr"`
+	SourceType     layer3.SourceType                 `dmr:"bits:1-1,delegate,noptr"`
+	ServiceType    CSBKOpcode                        `dmr:"bits:2-7"`
+	ReasonCode     byte                              `dmr:"bits:8-15"`
+	SourceAddress  [24]bit.Bit                       `dmr:"bits:16-39,raw"`
+	TargetAddress  [24]bit.Bit                       `dmr:"bits:40-63,raw"`
 }
 
 // ETSI TS 102 361-1 - 9.3.7 Pre PDU
@@ -432,7 +431,7 @@ func (csbk *CSBK) SetTrunkingMode(mode bool) {
 // CSBKOpcode, FID and TrunkingMode do not select the payload field that is
 // set. Put the payload of a manufacturer FID in RawPayload.
 type CSBK struct {
-	DataType elements.DataType `dmr:"-"`
+	DataType enums.DataType `dmr:"-"`
 
 	LastBlock    bool       `dmr:"bit:0"`
 	ProtectFlag  bool       `dmr:"bit:1"`
@@ -478,6 +477,6 @@ type CSBK struct {
 	crc uint16 `dmr:"-"` //nolint:unused
 }
 
-func (csbk *CSBK) GetDataType() elements.DataType {
+func (csbk *CSBK) GetDataType() enums.DataType {
 	return csbk.DataType
 }

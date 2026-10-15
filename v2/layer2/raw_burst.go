@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -274,9 +273,9 @@ func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 // returns an error when dt is not BPTC coded (Rate 3/4, Rate 1 and the
 // reserved data types; see BuildRate34DataBurst and BuildRate1DataBurst),
 // cc does not fit in 4 bits or src is unknown.
-func BuildDataBurst(p [12]byte, dt elements.DataType, cc uint8, src SyncSource) (RawBurst, error) {
+func BuildDataBurst(p [12]byte, dt enums.DataType, cc uint8, src SyncSource) (RawBurst, error) {
 	if !isBPTCDataType(dt) {
-		return RawBurst{}, fmt.Errorf("data type %s is not BPTC(196,96) coded", elements.DataTypeToName(dt))
+		return RawBurst{}, fmt.Errorf("data type %s is not BPTC(196,96) coded", enums.DataTypeToName(dt))
 	}
 	r, err := dataBurstFrame(dt, cc, src)
 	if err != nil {
@@ -289,7 +288,7 @@ func BuildDataBurst(p [12]byte, dt elements.DataType, cc uint8, src SyncSource) 
 // BuildRate34DataBurst returns a Rate 3/4 data burst that carries p, with
 // a slot type of color code cc and the data SYNC pattern of src.
 func BuildRate34DataBurst(p [18]byte, cc uint8, src SyncSource) (RawBurst, error) {
-	r, err := dataBurstFrame(elements.DataTypeRate34, cc, src)
+	r, err := dataBurstFrame(enums.DataTypeRate34, cc, src)
 	if err != nil {
 		return RawBurst{}, err
 	}
@@ -301,7 +300,7 @@ func BuildRate34DataBurst(p [18]byte, cc uint8, src SyncSource) (RawBurst, error
 // slot type of color code cc and the data SYNC pattern of src. Information
 // bits 96 to 99 are zero.
 func BuildRate1DataBurst(p [24]byte, cc uint8, src SyncSource) (RawBurst, error) {
-	r, err := dataBurstFrame(elements.DataTypeRate1, cc, src)
+	r, err := dataBurstFrame(enums.DataTypeRate1, cc, src)
 	if err != nil {
 		return RawBurst{}, err
 	}
@@ -309,7 +308,7 @@ func BuildRate1DataBurst(p [24]byte, cc uint8, src SyncSource) (RawBurst, error)
 	return r, nil
 }
 
-func dataBurstFrame(dt elements.DataType, cc uint8, src SyncSource) (RawBurst, error) {
+func dataBurstFrame(dt enums.DataType, cc uint8, src SyncSource) (RawBurst, error) {
 	var r RawBurst
 	_, sync, ok := src.SyncPatterns()
 	if !ok {

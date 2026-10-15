@@ -11,8 +11,8 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
-	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // DecodeRate1Data decodes a Rate1Data per ETSI TS 102 361-1 - 9.2.15 Rate 1 coded packet Data (R_1_DATA) PDU
@@ -32,5 +32,5 @@ func EncodeRate1Data(s *Rate1Data) ([192]bit.Bit, error) {
 }
 
 func (s *Rate1Data) ToString() string {
-	return fmt.Sprintf("Rate1Data{ DataType: %s, Data: %v }", layer2Elements.DataTypeToName(s.DataType), s.Data)
+	return fmt.Sprintf("Rate1Data{ DataType: %s, Data: %v }", enums.DataTypeToName(s.DataType), s.Data)
 }

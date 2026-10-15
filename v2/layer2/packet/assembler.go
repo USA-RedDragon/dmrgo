@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -32,7 +32,7 @@ type Message struct {
 	// Proprietary is the P_HEAD sent as the second header, or nil.
 	Proprietary *pdu.ProprietaryHeader
 	// DataType is the rate of the data blocks, or 0 without blocks.
-	DataType elements.DataType
+	DataType enums.DataType
 	// Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are
 	// removed. A short data packet keeps all octets before the CRC; its Bit
 	// Padding is in the header.
@@ -87,7 +87,7 @@ func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 // starts the retry of those blocks. A header with no blocks to follow, such
 // as an ACK, returns its Message at once. UDT and status precoded headers
 // are ignored.
-func (a *Assembler) Add(d elements.Data) (Message, bool, error) {
+func (a *Assembler) Add(d layer2.Data) (Message, bool, error) {
 	switch v := d.(type) {
 	case *pdu.DataHeader:
 		return a.addHeader(v)

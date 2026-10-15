@@ -5,7 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -44,8 +44,8 @@ func TestRate12Data_DecodeFromBits(t *testing.T) {
 
 func TestRate12Data_GetDataType(t *testing.T) {
 	rt, _ := pdu.DecodeRate12Data([96]bit.Bit{})
-	rt.DataType = elements.DataTypeRate12
-	if rt.GetDataType() != elements.DataTypeRate12 {
+	rt.DataType = enums.DataTypeRate12
+	if rt.GetDataType() != enums.DataTypeRate12 {
 		t.Errorf("GetDataType() = %d, want DataTypeRate12", rt.GetDataType())
 	}
 }

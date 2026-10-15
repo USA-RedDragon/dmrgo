@@ -10,7 +10,8 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -37,28 +38,28 @@ var (
 // for the matching pdu Encode function.
 type Packet struct {
 	Header pdu.DataHeader
-	Blocks []elements.Data
+	Blocks []layer2.Data
 }
 
 // BlockOctets returns the user data octets of one block: 12, 18 or 24 for
 // rate 1/2, 3/4 and 1, and 2 less for a confirmed block, which starts with
 // the DBSN and CRC-9 (§8.2.2.1, §8.2.2.2).
-func BlockOctets(rate elements.DataType, confirmed bool) (int, error) {
+func BlockOctets(rate enums.DataType, confirmed bool) (int, error) {
 	var n int
 	switch rate {
-	case elements.DataTypeRate12:
+	case enums.DataTypeRate12:
 		n = 12
-	case elements.DataTypeRate34:
+	case enums.DataTypeRate34:
 		n = 18
-	case elements.DataTypeRate1:
+	case enums.DataTypeRate1:
 		n = 24
-	case elements.DataTypePIHeader, elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC,
-		elements.DataTypeCSBK, elements.DataTypeMBCHeader, elements.DataTypeMBCContinuation,
-		elements.DataTypeDataHeader, elements.DataTypeIdle, elements.DataTypeUnifiedSingleBlock,
-		elements.DataTypeReserved:
-		return 0, fmt.Errorf("%w: %s", ErrRate, elements.DataTypeToName(rate))
+	case enums.DataTypePIHeader, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC,
+		enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation,
+		enums.DataTypeDataHeader, enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock,
+		enums.DataTypeReserved:
+		return 0, fmt.Errorf("%w: %s", ErrRate, enums.DataTypeToName(rate))
 	default:
-		return 0, fmt.Errorf("%w: %s", ErrRate, elements.DataTypeToName(rate))
+		return 0, fmt.Errorf("%w: %s", ErrRate, enums.DataTypeToName(rate))
 	}
 	if confirmed {
 		n -= 2
@@ -102,7 +103,7 @@ func Layout(n, per int) (blocks, pad int) {
 // or R_HEAD (whose pad is the caller's Bit Padding). Confirmed blocks, for a
 // C_HEAD or a short data header with SARQ set, get DBSN 0, 1, 2 and so on.
 // The other header fields are kept. Pad octets are zero.
-func Segment(header pdu.DataHeader, payload []byte, rate elements.DataType) (Packet, error) {
+func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
 	confirmed, err := setLayout(&header, len(payload), rate)
 	if err != nil {
 		return Packet{}, err
@@ -113,8 +114,8 @@ func Segment(header pdu.DataHeader, payload []byte, rate elements.DataType) (Pac
 	copy(buf, payload)
 	buf = AppendMessageCRC(buf)
 
-	header.DataType = elements.DataTypeDataHeader
-	p := Packet{Header: header, Blocks: make([]elements.Data, n)}
+	header.DataType = enums.DataTypeDataHeader
+	p := Packet{Header: header, Blocks: make([]layer2.Data, n)}
 	for i := range p.Blocks {
 		chunk := buf[i*per : (i+1)*per]
 		if confirmed {
@@ -126,7 +127,7 @@ func Segment(header pdu.DataHeader, payload []byte, rate elements.DataType) (Pac
 	return p, nil
 }
 
-func setLayout(h *pdu.DataHeader, n int, rate elements.DataType) (bool, error) {
+func setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	confirmed, err := isConfirmed(h)
 	if err != nil {
 		return false, err
@@ -207,7 +208,7 @@ func padOf(h *pdu.DataHeader) int {
 	return 0
 }
 
-func unconfirmedBlock(rate elements.DataType, chunk []byte) elements.Data {
+func unconfirmedBlock(rate enums.DataType, chunk []byte) layer2.Data {
 	switch len(chunk) {
 	case 18:
 		b := &pdu.Rate34Data{DataType: rate}
@@ -224,7 +225,7 @@ func unconfirmedBlock(rate elements.DataType, chunk []byte) elements.Data {
 	}
 }
 
-func confirmedBlock(rate elements.DataType, dbsn uint8, chunk []byte) elements.Data {
+func confirmedBlock(rate enums.DataType, dbsn uint8, chunk []byte) layer2.Data {
 	switch len(chunk) {
 	case 16:
 		b := &pdu.Rate34Data{DataType: rate}
@@ -242,18 +243,18 @@ func confirmedBlock(rate elements.DataType, dbsn uint8, chunk []byte) elements.D
 }
 
 type block struct {
-	dataType elements.DataType
+	dataType enums.DataType
 	raw      []byte
 }
 
-func blockOf(d elements.Data) (block, bool) {
+func blockOf(d layer2.Data) (block, bool) {
 	switch b := d.(type) {
 	case *pdu.Rate12Data:
-		return block{elements.DataTypeRate12, b.Data[:]}, true
+		return block{enums.DataTypeRate12, b.Data[:]}, true
 	case *pdu.Rate34Data:
-		return block{elements.DataTypeRate34, b.Data[:]}, true
+		return block{enums.DataTypeRate34, b.Data[:]}, true
 	case *pdu.Rate1Data:
-		return block{elements.DataTypeRate1, b.Data[:]}, true
+		return block{enums.DataTypeRate1, b.Data[:]}, true
 	}
 	return block{}, false
 }

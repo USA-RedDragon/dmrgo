@@ -6,19 +6,18 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	l3 "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 func airRoundTrip(t *testing.T, lc pdu.FullLinkControl) pdu.FullLinkControl {
 	t.Helper()
-	lc.DataType = elements.DataTypeVoiceLCHeader
+	lc.DataType = enums.DataTypeVoiceLCHeader
 	bits, err := pdu.EncodeFullLinkControl(&lc)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, res := pdu.DecodeFullLinkControl(bits, elements.DataTypeVoiceLCHeader)
+	got, res := pdu.DecodeFullLinkControl(bits, enums.DataTypeVoiceLCHeader)
 	if res.Uncorrectable {
 		t.Fatal("uncorrectable")
 	}
@@ -29,20 +28,20 @@ func TestTalkerAlias_RoundTrip(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		alias  string
-		format l3.TalkerAliasDataFormat
+		format layer3.TalkerAliasDataFormat
 		blocks int
 	}{
-		{"", l3.SevenBitCharacters, 0},
-		{"DL1ABC", l3.SevenBitCharacters, 0},
-		{"KI5VMF J", l3.SevenBitCharacters, 1},
-		{"0123456789ABCDEFGHIJKLMNOPQRSTU", l3.SevenBitCharacters, 3},
-		{"Müller", l3.ISOEightBitCharacters, 0},
-		{"N0CALL Jürgen Brück Ñ", l3.ISOEightBitCharacters, 3},
-		{"日本語", l3.UTF8Characters, 1},
-		{"ABCDEFGHIJKLMNOPQRSTUVWXYZ0", l3.UTF8Characters, 3},
-		{"АБВ", l3.UTF16Characters, 0},
-		{"Ω KI5VMF 日本語", l3.UTF16Characters, 3},
-		{"a😀", l3.UTF16Characters, 0},
+		{"", layer3.SevenBitCharacters, 0},
+		{"DL1ABC", layer3.SevenBitCharacters, 0},
+		{"KI5VMF J", layer3.SevenBitCharacters, 1},
+		{"0123456789ABCDEFGHIJKLMNOPQRSTU", layer3.SevenBitCharacters, 3},
+		{"Müller", layer3.ISOEightBitCharacters, 0},
+		{"N0CALL Jürgen Brück Ñ", layer3.ISOEightBitCharacters, 3},
+		{"日本語", layer3.UTF8Characters, 1},
+		{"ABCDEFGHIJKLMNOPQRSTUVWXYZ0", layer3.UTF8Characters, 3},
+		{"АБВ", layer3.UTF16Characters, 0},
+		{"Ω KI5VMF 日本語", layer3.UTF16Characters, 3},
+		{"a😀", layer3.UTF16Characters, 0},
 	}
 	for _, tt := range tests {
 		lcs, err := pdu.EncodeTalkerAlias(tt.alias, tt.format)
@@ -76,7 +75,7 @@ func TestTalkerAlias_RoundTrip(t *testing.T) {
 
 func TestTalkerAlias_HeaderBits7Bit(t *testing.T) {
 	t.Parallel()
-	lcs, err := pdu.EncodeTalkerAlias("D", l3.SevenBitCharacters)
+	lcs, err := pdu.EncodeTalkerAlias("D", layer3.SevenBitCharacters)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +86,7 @@ func TestTalkerAlias_HeaderBits7Bit(t *testing.T) {
 	if !h.TalkerAliasDataMSB || bit.BitsToUint8(h.TalkerAliasData[:], 0, 6) != 0b000100 || h.TalkerAliasDataLength != 1 {
 		t.Errorf("header %+v", h)
 	}
-	lcs, _ = pdu.EncodeTalkerAlias("D", l3.UTF8Characters)
+	lcs, _ = pdu.EncodeTalkerAlias("D", layer3.UTF8Characters)
 	h = lcs[0].TalkerAliasHeader
 	if h.TalkerAliasDataMSB || bit.BitsToUint8(h.TalkerAliasData[:], 0, 8) != 'D' {
 		t.Errorf("UTF-8 header %+v", h)
@@ -97,13 +96,13 @@ func TestTalkerAlias_HeaderBits7Bit(t *testing.T) {
 func TestTalkerAliasBlocks_Table(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		format l3.TalkerAliasDataFormat
+		format layer3.TalkerAliasDataFormat
 		bounds [4]int
 	}{
-		{l3.SevenBitCharacters, [4]int{7, 15, 23, 31}},
-		{l3.ISOEightBitCharacters, [4]int{6, 13, 20, 27}},
-		{l3.UTF8Characters, [4]int{6, 13, 20, 27}},
-		{l3.UTF16Characters, [4]int{3, 6, 10, 13}},
+		{layer3.SevenBitCharacters, [4]int{7, 15, 23, 31}},
+		{layer3.ISOEightBitCharacters, [4]int{6, 13, 20, 27}},
+		{layer3.UTF8Characters, [4]int{6, 13, 20, 27}},
+		{layer3.UTF16Characters, [4]int{3, 6, 10, 13}},
 	}
 	for _, tt := range tests {
 		for n, max := range tt.bounds {
@@ -123,27 +122,27 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
 		alias  string
-		format l3.TalkerAliasDataFormat
+		format layer3.TalkerAliasDataFormat
 	}{
-		{"0123456789ABCDEFGHIJKLMNOPQRSTUV", l3.SevenBitCharacters},
-		{"0123456789ABCDEFGHIJKLMNOPQR", l3.ISOEightBitCharacters},
-		{"0123456789ABCDEFGHIJKLMNOPQR", l3.UTF8Characters},
-		{"0123456789ABCD", l3.UTF16Characters},
+		{"0123456789ABCDEFGHIJKLMNOPQRSTUV", layer3.SevenBitCharacters},
+		{"0123456789ABCDEFGHIJKLMNOPQR", layer3.ISOEightBitCharacters},
+		{"0123456789ABCDEFGHIJKLMNOPQR", layer3.UTF8Characters},
+		{"0123456789ABCD", layer3.UTF16Characters},
 	} {
 		if _, err := pdu.EncodeTalkerAlias(tc.alias, tc.format); !errors.Is(err, pdu.ErrTalkerAliasLength) {
 			t.Errorf("%q: err %v", tc.alias, err)
 		}
 	}
-	if _, err := pdu.EncodeTalkerAlias("é", l3.SevenBitCharacters); err == nil {
+	if _, err := pdu.EncodeTalkerAlias("é", layer3.SevenBitCharacters); err == nil {
 		t.Error("7-bit accepted é")
 	}
-	if _, err := pdu.EncodeTalkerAlias("Ā", l3.ISOEightBitCharacters); err == nil {
+	if _, err := pdu.EncodeTalkerAlias("Ā", layer3.ISOEightBitCharacters); err == nil {
 		t.Error("ISO accepted Ā")
 	}
-	if _, err := pdu.EncodeTalkerAlias("x", l3.TalkerAliasDataFormat(4)); err == nil {
+	if _, err := pdu.EncodeTalkerAlias("x", layer3.TalkerAliasDataFormat(4)); err == nil {
 		t.Error("unknown format accepted")
 	}
-	lcs, _ := pdu.EncodeTalkerAlias("KI5VMF Jacob", l3.UTF8Characters)
+	lcs, _ := pdu.EncodeTalkerAlias("KI5VMF Jacob", layer3.UTF8Characters)
 	if _, err := pdu.DecodeTalkerAlias(lcs[0].TalkerAliasHeader); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
 		t.Errorf("missing block: %v", err)
 	}
@@ -163,7 +162,7 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	if _, ok, err := a.Add(&lcs[1]); ok || err != nil {
 		t.Error("block without header completed")
 	}
-	other, _ := pdu.EncodeTalkerAlias("Other", l3.UTF8Characters)
+	other, _ := pdu.EncodeTalkerAlias("Other", layer3.UTF8Characters)
 	if alias, ok, err := a.Add(&other[0]); !ok || err != nil || alias != "Other" {
 		t.Errorf("got %q %v %v", alias, ok, err)
 	}

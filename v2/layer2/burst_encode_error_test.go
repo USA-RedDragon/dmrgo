@@ -7,7 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -23,7 +22,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 				SyncPattern: enums.BsSourcedData,
 				IsData:      true,
 				HasSlotType: true,
-				SlotType:    pdu.SlotType{ColorCode: 16, DataType: elements.DataTypeIdle},
+				SlotType:    pdu.SlotType{ColorCode: 16, DataType: enums.DataTypeIdle},
 			},
 			want: "SlotType.ColorCode",
 		},
@@ -79,8 +78,8 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 			burst: layer2.Burst{
 				SyncPattern: enums.BsSourcedData,
 				IsData:      true,
-				SlotType:    pdu.SlotType{ColorCode: 1, DataType: elements.DataTypeIdle},
-				Data:        &pdu.PRFill{DataType: elements.DataTypeIdle},
+				SlotType:    pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeIdle},
+				Data:        &pdu.PRFill{DataType: enums.DataTypeIdle},
 			},
 			want: "no slot type",
 		},
@@ -126,10 +125,10 @@ func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 }
 
 func TestBuildLCDataBurst_RejectsOutOfRangeColorCode(t *testing.T) {
-	if _, err := layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeVoiceLCHeader, 16); err == nil {
+	if _, err := layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeVoiceLCHeader, 16); err == nil {
 		t.Fatal("color code 16 should be rejected")
 	}
-	if _, err := layer2.BuildLCDataBurst([12]byte{}, elements.DataType(16), 1); err == nil {
+	if _, err := layer2.BuildLCDataBurst([12]byte{}, enums.DataType(16), 1); err == nil {
 		t.Fatal("data type 16 should be rejected")
 	}
 }

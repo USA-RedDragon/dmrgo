@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -45,13 +44,13 @@ func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 // lcBits returns the 96 on-air bits of lc as a burst of dataType carries
 // them, so LCs decoded with RawPayload compare equal to the variant they
 // were built from.
-func lcBits(t *testing.T, lc pdu.FullLinkControl, dataType elements.DataType) [96]bit.Bit {
+func lcBits(t *testing.T, lc pdu.FullLinkControl, dataType enums.DataType) [96]bit.Bit {
 	t.Helper()
 	lc.DataType = dataType
 	return must(pdu.EncodeFullLinkControl(&lc))
 }
 
-func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType elements.DataType, cc int, sync enums.SyncPattern) {
+func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType enums.DataType, cc int, sync enums.SyncPattern) {
 	t.Helper()
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
@@ -144,8 +143,8 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 					slots = append(slots, silenceSlot())
 				}
 
-				checkLCBurst(t, tx.Header(), lc, elements.DataTypeVoiceLCHeader, cc, dataSync)
-				checkLCBurst(t, tail[5], lc, elements.DataTypeTerminatorWithLC, cc, dataSync)
+				checkLCBurst(t, tx.Header(), lc, enums.DataTypeVoiceLCHeader, cc, dataSync)
+				checkLCBurst(t, tail[5], lc, enums.DataTypeTerminatorWithLC, cc, dataSync)
 
 				var fragments [4][32]bit.Bit
 				for i, raw := range bursts {
@@ -159,7 +158,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 					}
 					got, res := layer2.DecodeEmbeddedFullLinkControl(fragments)
 					if res.HasErrors() || got.FeatureSetID != fid ||
-						lcBits(t, got, elements.DataTypeVoiceLCHeader) != lcBits(t, lc, elements.DataTypeVoiceLCHeader) {
+						lcBits(t, got, enums.DataTypeVoiceLCHeader) != lcBits(t, lc, enums.DataTypeVoiceLCHeader) {
 						t.Errorf("burst %d: embedded LC %s (%+v)", i, got.ToString(), res)
 					}
 					target, source, ok := got.Addresses()
@@ -239,7 +238,7 @@ func TestVoiceTransmitter_Terminate(t *testing.T) {
 	if len(tail) != 1 {
 		t.Fatalf("empty transmission: %d bursts, want the terminator alone", len(tail))
 	}
-	checkLCBurst(t, tail[0], lc, elements.DataTypeTerminatorWithLC, 1, enums.MsSourcedData)
+	checkLCBurst(t, tail[0], lc, enums.DataTypeTerminatorWithLC, 1, enums.MsSourcedData)
 	if _, err := tx.Terminate(); !errors.Is(err, layer2.ErrVoiceTerminated) {
 		t.Errorf("second Terminate: %v", err)
 	}
@@ -327,7 +326,7 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 				bursts[i] = must(layer2.NewBurstFromBytes(raw))
 			}
 			last := len(raws) - 1
-			if bursts[0].SlotType.DataType != elements.DataTypeVoiceLCHeader || bursts[last].SlotType.DataType != elements.DataTypeTerminatorWithLC {
+			if bursts[0].SlotType.DataType != enums.DataTypeVoiceLCHeader || bursts[last].SlotType.DataType != enums.DataTypeTerminatorWithLC {
 				t.Fatal("capture does not start with a header and end with a terminator")
 			}
 			kept, skipped := captureSuperframes(t, bursts[1:last])

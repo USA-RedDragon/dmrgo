@@ -1,4 +1,4 @@
-package elements
+package enums
 
 // ETSI TS 102 361-1 - 9.3.6 Data Type
 type DataType uint8

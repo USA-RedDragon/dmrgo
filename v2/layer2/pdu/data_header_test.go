@@ -5,7 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -54,8 +54,8 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
-	dh.DataType = elements.DataTypeDataHeader
-	if dh.GetDataType() != elements.DataTypeDataHeader {
+	dh.DataType = enums.DataTypeDataHeader
+	if dh.GetDataType() != enums.DataTypeDataHeader {
 		t.Errorf("GetDataType() = %d, want DataTypeDataHeader", dh.GetDataType())
 	}
 	if dh.UnconfirmedDataHeader == nil {

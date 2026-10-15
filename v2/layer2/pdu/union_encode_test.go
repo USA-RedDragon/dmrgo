@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -20,7 +19,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 			name: "FLCO",
 			encode: func() error {
 				_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
-					DataType:   elements.DataTypeVoiceLCHeader,
+					DataType:   enums.DataTypeVoiceLCHeader,
 					FLCO:       enums.FLCOUnitToUnitVoiceChannelUser,
 					GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
 				})
@@ -32,7 +31,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 			name: "FLC manufacturer FID",
 			encode: func() error {
 				_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
-					DataType:     elements.DataTypeVoiceLCHeader,
+					DataType:     enums.DataTypeVoiceLCHeader,
 					FLCO:         enums.FLCOGroupVoiceChannelUser,
 					FeatureSetID: enums.MotorolaLtd,
 					GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
@@ -45,7 +44,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 			name: "two FLC payloads",
 			encode: func() error {
 				_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
-					DataType:   elements.DataTypeVoiceLCHeader,
+					DataType:   enums.DataTypeVoiceLCHeader,
 					FLCO:       enums.FLCOUnitToUnitVoiceChannelUser,
 					GroupVoice: &pdu.FLCGroupVoice{},
 					UnitToUnit: &pdu.FLCUnitToUnit{},
@@ -150,7 +149,7 @@ func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 	}
 
 	lc := pdu.FullLinkControl{
-		DataType:         elements.DataTypeTerminatorWithLC,
+		DataType:         enums.DataTypeTerminatorWithLC,
 		FLCO:             enums.FLCOTalkerAliasBlock2,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{},
 	}

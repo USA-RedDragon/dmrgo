@@ -1,4 +1,4 @@
-package elements
+package layer3
 
 // ETSI TS 102 361-2 - 7.2.6 Additional Information Field
 type AdditionalInformationField uint8

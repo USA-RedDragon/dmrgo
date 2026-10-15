@@ -4,17 +4,17 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func TestMMDVMHostSeal_PairsWithAccepts(t *testing.T) {
 	rng := rand.New(rand.NewSource(6))
-	sealed := []elements.DataType{
-		elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC, elements.DataTypePIHeader,
-		elements.DataTypeCSBK, elements.DataTypeMBCHeader, elements.DataTypeDataHeader, elements.DataTypeMBCContinuation,
-		elements.DataTypeRate12, elements.DataTypeRate34, elements.DataTypeRate1,
+	sealed := []enums.DataType{
+		enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypePIHeader,
+		enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader, enums.DataTypeMBCContinuation,
+		enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1,
 	}
 	for _, dt := range sealed {
 		for n := 0; n < 200; n++ {
@@ -31,23 +31,23 @@ func TestMMDVMHostSeal_PairsWithAccepts(t *testing.T) {
 				t.Fatalf("dt %d: seal changed the data octets", dt)
 			}
 			switch dt {
-			case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
+			case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
 				if !pdu.FullLCParityOK(p, dt) {
 					t.Fatalf("dt %d: not a Full LC codeword", dt)
 				}
-			case elements.DataTypePIHeader, elements.DataTypeCSBK, elements.DataTypeMBCHeader, elements.DataTypeDataHeader:
+			case enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader:
 				if !pdu.BlockCRCOK(p, dt) {
 					t.Fatalf("dt %d: block CRC fails", dt)
 				}
-			case elements.DataTypeRate12, elements.DataTypeRate34, elements.DataTypeRate1:
+			case enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1:
 				if p != before {
 					t.Fatalf("dt %d: payload changed", dt)
 				}
-			case elements.DataTypeMBCContinuation, elements.DataTypeIdle, elements.DataTypeUnifiedSingleBlock, elements.DataTypeReserved:
+			case enums.DataTypeMBCContinuation, enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
 			}
 		}
 	}
-	for _, dt := range []elements.DataType{elements.DataTypeIdle, elements.DataTypeUnifiedSingleBlock, elements.DataTypeReserved, 15} {
+	for _, dt := range []enums.DataType{enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved, 15} {
 		p := [12]byte{1, 2, 3}
 		if err := layer2.MMDVMHostSeal(dt, &p); err == nil || p != [12]byte{1, 2, 3} {
 			t.Errorf("dt %d: sealed", dt)
@@ -60,7 +60,7 @@ func TestMMDVMHostSeal_IdentityOnAcceptedCaptures(t *testing.T) {
 	for _, frame := range captureFrames(t) {
 		r := layer2.RawBurst(frame)
 		st, res := r.SlotType()
-		if res.HasErrors() || st.DataType == elements.DataTypeRate34 || st.DataType == elements.DataTypeRate1 || st.DataType.IsReserved() {
+		if res.HasErrors() || st.DataType == enums.DataTypeRate34 || st.DataType == enums.DataTypeRate1 || st.DataType.IsReserved() {
 			continue
 		}
 		if b, _ := layer2.NewBurstFromBytes(frame); !b.IsData {

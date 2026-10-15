@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -17,7 +17,7 @@ import (
 // and a random payload.
 func TestMMDVMHostAccepts_Vectors(t *testing.T) {
 	for _, v := range []struct {
-		dt      elements.DataType
+		dt      enums.DataType
 		payload string
 		accept  bool
 	}{
@@ -51,24 +51,24 @@ func TestMMDVMHostAccepts_Vectors(t *testing.T) {
 		burst, _ := layer2.NewBurstFromBytes(must(layer2.BuildLCDataBurst(payload, v.dt, 1)))
 		got, _, ok := burst.BPTCPayload()
 		if !ok || got != payload {
-			t.Fatalf("%s %s: BPTCPayload %x ok=%v", elements.DataTypeToName(v.dt), v.payload, got, ok)
+			t.Fatalf("%s %s: BPTCPayload %x ok=%v", enums.DataTypeToName(v.dt), v.payload, got, ok)
 		}
 		if layer2.MMDVMHostAccepts(v.dt, got) != v.accept {
-			t.Errorf("%s %s: accepted %v, MMDVMHost %v", elements.DataTypeToName(v.dt), v.payload, !v.accept, v.accept)
+			t.Errorf("%s %s: accepted %v, MMDVMHost %v", enums.DataTypeToName(v.dt), v.payload, !v.accept, v.accept)
 		}
 	}
 }
 
 func TestMMDVMHostAccepts_UncheckedDataTypes(t *testing.T) {
 	var payload [12]byte
-	for _, dt := range []elements.DataType{elements.DataTypePIHeader, elements.DataTypeRate12, elements.DataTypeRate34, elements.DataTypeRate1} {
+	for _, dt := range []enums.DataType{enums.DataTypePIHeader, enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1} {
 		if !layer2.MMDVMHostAccepts(dt, payload) {
-			t.Errorf("%s rejected", elements.DataTypeToName(dt))
+			t.Errorf("%s rejected", enums.DataTypeToName(dt))
 		}
 	}
-	for dt := elements.DataTypeIdle; dt <= 0xF; dt++ {
-		if dt != elements.DataTypeRate1 && layer2.MMDVMHostAccepts(dt, payload) {
-			t.Errorf("%s accepted", elements.DataTypeToName(dt))
+	for dt := enums.DataTypeIdle; dt <= 0xF; dt++ {
+		if dt != enums.DataTypeRate1 && layer2.MMDVMHostAccepts(dt, payload) {
+			t.Errorf("%s accepted", enums.DataTypeToName(dt))
 		}
 	}
 }
@@ -87,13 +87,13 @@ func TestMMDVMHostAccepts_MBCContinuation(t *testing.T) {
 	pdu.SetMBCLastBlockCRC(blocks)
 	var payload [12]byte
 	copy(payload[:], bit.PackBits(blocks[0][:]))
-	if !layer2.MMDVMHostAccepts(elements.DataTypeMBCContinuation, payload) {
+	if !layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, payload) {
 		t.Error("single continuation block rejected")
 	}
 	blocks = [][96]bit.Bit{first, last}
 	pdu.SetMBCLastBlockCRC(blocks)
 	copy(payload[:], bit.PackBits(blocks[1][:]))
-	if !pdu.CheckMBCLastBlockCRC(blocks...) || layer2.MMDVMHostAccepts(elements.DataTypeMBCContinuation, payload) {
+	if !pdu.CheckMBCLastBlockCRC(blocks...) || layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, payload) {
 		t.Error("last of two continuation blocks accepted")
 	}
 }

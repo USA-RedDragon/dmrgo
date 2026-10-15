@@ -3,13 +3,13 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func TestSlotType_DecodeEncodeRoundTrip(t *testing.T) {
 	cc := 5
-	dt := elements.DataTypeVoiceLCHeader
+	dt := enums.DataTypeVoiceLCHeader
 
 	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: cc, DataType: dt}))
 	st, fecResult := pdu.DecodeSlotType(encoded)
@@ -29,7 +29,7 @@ func TestSlotType_DecodeEncodeRoundTrip(t *testing.T) {
 }
 
 func TestSlotType_AllColorCodes(t *testing.T) {
-	dt := elements.DataTypeVoiceLCHeader
+	dt := enums.DataTypeVoiceLCHeader
 	for cc := 0; cc < 16; cc++ {
 		encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: cc, DataType: dt}))
 		st, fecResult := pdu.DecodeSlotType(encoded)
@@ -43,19 +43,19 @@ func TestSlotType_AllColorCodes(t *testing.T) {
 }
 
 func TestSlotType_AllDataTypes(t *testing.T) {
-	dataTypes := []elements.DataType{
-		elements.DataTypePIHeader,
-		elements.DataTypeVoiceLCHeader,
-		elements.DataTypeTerminatorWithLC,
-		elements.DataTypeCSBK,
-		elements.DataTypeMBCHeader,
-		elements.DataTypeMBCContinuation,
-		elements.DataTypeDataHeader,
-		elements.DataTypeRate12,
-		elements.DataTypeRate34,
-		elements.DataTypeIdle,
-		elements.DataTypeRate1,
-		elements.DataTypeUnifiedSingleBlock,
+	dataTypes := []enums.DataType{
+		enums.DataTypePIHeader,
+		enums.DataTypeVoiceLCHeader,
+		enums.DataTypeTerminatorWithLC,
+		enums.DataTypeCSBK,
+		enums.DataTypeMBCHeader,
+		enums.DataTypeMBCContinuation,
+		enums.DataTypeDataHeader,
+		enums.DataTypeRate12,
+		enums.DataTypeRate34,
+		enums.DataTypeIdle,
+		enums.DataTypeRate1,
+		enums.DataTypeUnifiedSingleBlock,
 	}
 
 	for _, dt := range dataTypes {
@@ -71,7 +71,7 @@ func TestSlotType_AllDataTypes(t *testing.T) {
 }
 
 func TestSlotType_ToString(t *testing.T) {
-	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 3, DataType: elements.DataTypeCSBK}))
+	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 3, DataType: enums.DataTypeCSBK}))
 	st, _ := pdu.DecodeSlotType(encoded)
 	s := st.ToString()
 	if s == "" {
@@ -80,7 +80,7 @@ func TestSlotType_ToString(t *testing.T) {
 }
 
 func TestSlotType_SingleBitError(t *testing.T) {
-	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 7, DataType: elements.DataTypeVoiceLCHeader}))
+	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 7, DataType: enums.DataTypeVoiceLCHeader}))
 	// Flip one bit - Golay should correct it
 	encoded[10] ^= 1
 	st, fecResult := pdu.DecodeSlotType(encoded)
@@ -95,7 +95,7 @@ func TestSlotType_SingleBitError(t *testing.T) {
 func TestEncodeSlotType_RoundTrip(t *testing.T) {
 	st := pdu.SlotType{
 		ColorCode: 5,
-		DataType:  elements.DataTypeCSBK,
+		DataType:  enums.DataTypeCSBK,
 	}
 	encoded := must(pdu.EncodeSlotType(&st))
 	// Full round-trip: encode produces [20]bit.Bit with Golay parity

@@ -5,7 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -104,7 +104,7 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			orig := pdu.UnifiedSingleBlockData{
-				DataType:    elements.DataTypeUnifiedSingleBlock,
+				DataType:    enums.DataTypeUnifiedSingleBlock,
 				ServiceType: tt.serviceType,
 			}
 			// Set some payload bits
@@ -174,9 +174,9 @@ func TestUSBD_CRCBitFlip(t *testing.T) {
 
 func TestUSBD_GetDataType(t *testing.T) {
 	usbd := &pdu.UnifiedSingleBlockData{
-		DataType: elements.DataTypeUnifiedSingleBlock,
+		DataType: enums.DataTypeUnifiedSingleBlock,
 	}
-	if usbd.GetDataType() != elements.DataTypeUnifiedSingleBlock {
+	if usbd.GetDataType() != enums.DataTypeUnifiedSingleBlock {
 		t.Errorf("GetDataType() = %d, want DataTypeUnifiedSingleBlock", usbd.GetDataType())
 	}
 }
@@ -188,7 +188,7 @@ func TestUSBD_ToString(t *testing.T) {
 	infoBits := buildUSBDBits(0b0000, payload)
 
 	usbd, _ := pdu.DecodeUnifiedSingleBlockData(infoBits)
-	usbd.DataType = elements.DataTypeUnifiedSingleBlock
+	usbd.DataType = enums.DataTypeUnifiedSingleBlock
 
 	str := usbd.ToString()
 	if str == "" {

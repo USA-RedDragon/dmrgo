@@ -9,7 +9,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // ETSI TS 102 361-2 §5.4.3, §7.1.1.4, §7.1.1.5, §7.2.18 and §7.2.19 —
@@ -33,20 +33,20 @@ var (
 	ErrTalkerAliasLength = errors.New("talker alias too long")
 )
 
-func talkerAliasUnitBits(format layer3Elements.TalkerAliasDataFormat) int {
+func talkerAliasUnitBits(format layer3.TalkerAliasDataFormat) int {
 	switch format {
-	case layer3Elements.SevenBitCharacters:
+	case layer3.SevenBitCharacters:
 		return 7
-	case layer3Elements.UTF16Characters:
+	case layer3.UTF16Characters:
 		return 16
-	case layer3Elements.ISOEightBitCharacters, layer3Elements.UTF8Characters:
+	case layer3.ISOEightBitCharacters, layer3.UTF8Characters:
 		return 8
 	}
 	return 8
 }
 
-func talkerAliasHeaderBits(format layer3Elements.TalkerAliasDataFormat) int {
-	if format == layer3Elements.SevenBitCharacters {
+func talkerAliasHeaderBits(format layer3.TalkerAliasDataFormat) int {
+	if format == layer3.SevenBitCharacters {
 		return 49
 	}
 	return 48
@@ -55,7 +55,7 @@ func talkerAliasHeaderBits(format layer3Elements.TalkerAliasDataFormat) int {
 // TalkerAliasBlocks returns the number of Talker Alias block LCs (0 to 3)
 // that follow a header with the given format and length in Code Units
 // (ETSI TS 102 361-2 §5.4.3).
-func TalkerAliasBlocks(format layer3Elements.TalkerAliasDataFormat, length int) int {
+func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
 	need := length*talkerAliasUnitBits(format) - talkerAliasHeaderBits(format)
 	if need <= 0 {
 		return 0
@@ -75,7 +75,7 @@ func DecodeTalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBl
 		return "", ErrTalkerAliasIncomplete
 	}
 	stream := make([]bit.Bit, 0, 49+n*talkerAliasBlockBits)
-	if format == layer3Elements.SevenBitCharacters {
+	if format == layer3.SevenBitCharacters {
 		stream = append(stream, bit.Bit(0))
 		if header.TalkerAliasDataMSB {
 			stream[0] = 1
@@ -97,9 +97,9 @@ func DecodeTalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBl
 	return talkerAliasString(format, units)
 }
 
-func talkerAliasString(format layer3Elements.TalkerAliasDataFormat, units []uint16) (string, error) {
+func talkerAliasString(format layer3.TalkerAliasDataFormat, units []uint16) (string, error) {
 	switch format {
-	case layer3Elements.UTF8Characters:
+	case layer3.UTF8Characters:
 		b := make([]byte, len(units))
 		for i, u := range units {
 			b[i] = byte(u & 0xFF)
@@ -108,9 +108,9 @@ func talkerAliasString(format layer3Elements.TalkerAliasDataFormat, units []uint
 			return string(b), errors.New("talker alias is not valid UTF-8")
 		}
 		return string(b), nil
-	case layer3Elements.UTF16Characters:
+	case layer3.UTF16Characters:
 		return string(utf16.Decode(units)), nil
-	case layer3Elements.SevenBitCharacters, layer3Elements.ISOEightBitCharacters:
+	case layer3.SevenBitCharacters, layer3.ISOEightBitCharacters:
 	}
 	var sb strings.Builder
 	for _, u := range units {
@@ -119,25 +119,25 @@ func talkerAliasString(format layer3Elements.TalkerAliasDataFormat, units []uint
 	return sb.String(), nil
 }
 
-func talkerAliasUnits(alias string, format layer3Elements.TalkerAliasDataFormat) ([]uint16, error) {
+func talkerAliasUnits(alias string, format layer3.TalkerAliasDataFormat) ([]uint16, error) {
 	switch format {
-	case layer3Elements.UTF8Characters:
+	case layer3.UTF8Characters:
 		units := make([]uint16, len(alias))
 		for i := 0; i < len(alias); i++ {
 			units[i] = uint16(alias[i])
 		}
 		return units, nil
-	case layer3Elements.UTF16Characters:
+	case layer3.UTF16Characters:
 		return utf16.Encode([]rune(alias)), nil
-	case layer3Elements.SevenBitCharacters, layer3Elements.ISOEightBitCharacters:
+	case layer3.SevenBitCharacters, layer3.ISOEightBitCharacters:
 		limit := rune(0xFF)
-		if format == layer3Elements.SevenBitCharacters {
+		if format == layer3.SevenBitCharacters {
 			limit = 0x7F
 		}
 		units := make([]uint16, 0, len(alias))
 		for _, r := range alias {
 			if r > limit {
-				return nil, fmt.Errorf("character %q is not in the %s format", r, layer3Elements.TalkerAliasDataFormatToName(format))
+				return nil, fmt.Errorf("character %q is not in the %s format", r, layer3.TalkerAliasDataFormatToName(format))
 			}
 			units = append(units, uint16(r)) //nolint:gosec // r <= limit <= 0xFF
 		}
@@ -151,7 +151,7 @@ func talkerAliasUnits(alias string, format layer3Elements.TalkerAliasDataFormat)
 // It returns ErrTalkerAliasLength when the alias needs more than 31 Code
 // Units or more than three blocks, and an error when a character is not in
 // the format.
-func EncodeTalkerAlias(alias string, format layer3Elements.TalkerAliasDataFormat) ([]FullLinkControl, error) {
+func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]FullLinkControl, error) {
 	units, err := talkerAliasUnits(alias, format)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func EncodeTalkerAlias(alias string, format layer3Elements.TalkerAliasDataFormat
 		copy(stream[i*unit:], bit.BitsFromUint16(u, unit))
 	}
 	header := &FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: len(units)}
-	if format == layer3Elements.SevenBitCharacters {
+	if format == layer3.SevenBitCharacters {
 		header.TalkerAliasDataMSB = stream[0] == 1
 		stream = stream[1:]
 	}

@@ -3,8 +3,8 @@ package pdu
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
 // dmr:crc crc_ccitt
@@ -12,17 +12,17 @@ import (
 // dmr:input_size 96
 // ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
 type MBCHeader struct {
-	DataType    elements.DataType `dmr:"-"`
-	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.Result        `dmr:"-"`
-	LastBlock   bool              `dmr:"bit:0"`
-	ProtectFlag bool              `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
-	FID         byte              `dmr:"bits:8-15"`
-	Data        [64]bit.Bit       `dmr:"bits:16-79,raw"`
+	DataType    enums.DataType `dmr:"-"`
+	crc         uint16         `dmr:"-"` //nolint:unused
+	FEC         fec.Result     `dmr:"-"`
+	LastBlock   bool           `dmr:"bit:0"`
+	ProtectFlag bool           `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode     `dmr:"bits:2-7"`
+	FID         byte           `dmr:"bits:8-15"`
+	Data        [64]bit.Bit    `dmr:"bits:16-79,raw"`
 }
 
-func (m *MBCHeader) GetDataType() elements.DataType {
+func (m *MBCHeader) GetDataType() enums.DataType {
 	return m.DataType
 }
 
@@ -38,8 +38,8 @@ func (m *MBCHeader) GetDataType() elements.DataType {
 // all continuation blocks in order. It has no Data Type mask (Table B.21
 // NOTE 1).
 type MBCContinuation struct {
-	DataType elements.DataType `dmr:"-"`
-	FEC      fec.Result        `dmr:"-"`
+	DataType enums.DataType `dmr:"-"`
+	FEC      fec.Result     `dmr:"-"`
 
 	// LastBlock indicates whether this is the final continuation block.
 	// LB=1 means last block (has CRC), LB=0 means intermediate (no CRC).
@@ -52,7 +52,7 @@ type MBCContinuation struct {
 	Data [95]bit.Bit `dmr:"bits:1-95,raw"`
 }
 
-func (m *MBCContinuation) GetDataType() elements.DataType {
+func (m *MBCContinuation) GetDataType() enums.DataType {
 	return m.DataType
 }
 
@@ -116,20 +116,20 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 // TD_GRANT_MI) when PhysicalChannel=0xFFF.
 // ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
 type CGAPContinuation struct {
-	DataType    elements.DataType `dmr:"-"`
-	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.Result        `dmr:"-"`
-	LastBlock   bool              `dmr:"bit:0"`
-	ProtectFlag bool              `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
-	Reserved1   uint8             `dmr:"bits:8-11"`
-	ColourCode  uint8             `dmr:"bits:12-15"`
-	Cdeftype    uint8             `dmr:"bits:16-19"`
-	Reserved2   uint8             `dmr:"bits:20-21"`
-	CdefParms   [58]bit.Bit       `dmr:"bits:22-79,raw"`
+	DataType    enums.DataType `dmr:"-"`
+	crc         uint16         `dmr:"-"` //nolint:unused
+	FEC         fec.Result     `dmr:"-"`
+	LastBlock   bool           `dmr:"bit:0"`
+	ProtectFlag bool           `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode     `dmr:"bits:2-7"`
+	Reserved1   uint8          `dmr:"bits:8-11"`
+	ColourCode  uint8          `dmr:"bits:12-15"`
+	Cdeftype    uint8          `dmr:"bits:16-19"`
+	Reserved2   uint8          `dmr:"bits:20-21"`
+	CdefParms   [58]bit.Bit    `dmr:"bits:22-79,raw"`
 }
 
-func (c *CGAPContinuation) GetDataType() elements.DataType {
+func (c *CGAPContinuation) GetDataType() enums.DataType {
 	return c.DataType
 }
 
@@ -139,20 +139,20 @@ func (c *CGAPContinuation) GetDataType() elements.DataType {
 // Used with C_MOVE (opcode 0x39) when PhysicalChannel=0xFFF.
 // ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
 type MVAPContinuation struct {
-	DataType    elements.DataType `dmr:"-"`
-	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.Result        `dmr:"-"`
-	LastBlock   bool              `dmr:"bit:0"`
-	ProtectFlag bool              `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
-	Reserved1   uint8             `dmr:"bits:8-11"`
-	ColourCode  uint8             `dmr:"bits:12-15"`
-	Cdeftype    uint8             `dmr:"bits:16-19"`
-	Reserved2   uint8             `dmr:"bits:20-21"`
-	CdefParms   [58]bit.Bit       `dmr:"bits:22-79,raw"`
+	DataType    enums.DataType `dmr:"-"`
+	crc         uint16         `dmr:"-"` //nolint:unused
+	FEC         fec.Result     `dmr:"-"`
+	LastBlock   bool           `dmr:"bit:0"`
+	ProtectFlag bool           `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode     `dmr:"bits:2-7"`
+	Reserved1   uint8          `dmr:"bits:8-11"`
+	ColourCode  uint8          `dmr:"bits:12-15"`
+	Cdeftype    uint8          `dmr:"bits:16-19"`
+	Reserved2   uint8          `dmr:"bits:20-21"`
+	CdefParms   [58]bit.Bit    `dmr:"bits:22-79,raw"`
 }
 
-func (c *MVAPContinuation) GetDataType() elements.DataType {
+func (c *MVAPContinuation) GetDataType() enums.DataType {
 	return c.DataType
 }
 
@@ -162,19 +162,19 @@ func (c *MVAPContinuation) GetDataType() elements.DataType {
 // Used with C_BCAST (opcode 0x28) for Ann_WD_TSCC and Chan_Freq.
 // ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
 type BCAPContinuation struct {
-	DataType    elements.DataType `dmr:"-"`
-	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.Result        `dmr:"-"`
-	LastBlock   bool              `dmr:"bit:0"`
-	ProtectFlag bool              `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
-	Reserved1   byte              `dmr:"bits:8-15"`
-	Cdeftype    uint8             `dmr:"bits:16-19"`
-	Reserved2   uint8             `dmr:"bits:20-21"`
-	CdefParms   [58]bit.Bit       `dmr:"bits:22-79,raw"`
+	DataType    enums.DataType `dmr:"-"`
+	crc         uint16         `dmr:"-"` //nolint:unused
+	FEC         fec.Result     `dmr:"-"`
+	LastBlock   bool           `dmr:"bit:0"`
+	ProtectFlag bool           `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode     `dmr:"bits:2-7"`
+	Reserved1   byte           `dmr:"bits:8-15"`
+	Cdeftype    uint8          `dmr:"bits:16-19"`
+	Reserved2   uint8          `dmr:"bits:20-21"`
+	CdefParms   [58]bit.Bit    `dmr:"bits:22-79,raw"`
 }
 
-func (c *BCAPContinuation) GetDataType() elements.DataType {
+func (c *BCAPContinuation) GetDataType() enums.DataType {
 	return c.DataType
 }
 
@@ -184,19 +184,19 @@ func (c *BCAPContinuation) GetDataType() elements.DataType {
 // Used with C_BCAST (opcode 0x28) Vote_Now when CH_VOTE=0xFFF.
 // ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
 type VNAPContinuation struct {
-	DataType    elements.DataType `dmr:"-"`
-	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.Result        `dmr:"-"`
-	LastBlock   bool              `dmr:"bit:0"`
-	ProtectFlag bool              `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
-	Reserved1   uint8             `dmr:"bits:8-11"`
-	ColourCode  uint8             `dmr:"bits:12-15"`
-	Cdeftype    uint8             `dmr:"bits:16-19"`
-	Reserved2   uint8             `dmr:"bits:20-21"`
-	CdefParms   [58]bit.Bit       `dmr:"bits:22-79,raw"`
+	DataType    enums.DataType `dmr:"-"`
+	crc         uint16         `dmr:"-"` //nolint:unused
+	FEC         fec.Result     `dmr:"-"`
+	LastBlock   bool           `dmr:"bit:0"`
+	ProtectFlag bool           `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode     `dmr:"bits:2-7"`
+	Reserved1   uint8          `dmr:"bits:8-11"`
+	ColourCode  uint8          `dmr:"bits:12-15"`
+	Cdeftype    uint8          `dmr:"bits:16-19"`
+	Reserved2   uint8          `dmr:"bits:20-21"`
+	CdefParms   [58]bit.Bit    `dmr:"bits:22-79,raw"`
 }
 
-func (c *VNAPContinuation) GetDataType() elements.DataType {
+func (c *VNAPContinuation) GetDataType() enums.DataType {
 	return c.DataType
 }

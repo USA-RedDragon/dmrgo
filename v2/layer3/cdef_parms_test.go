@@ -1,11 +1,11 @@
-package elements_test
+package layer3_test
 
 import (
 	"math"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 func TestCdefParms_NewFromBits(t *testing.T) {
@@ -28,7 +28,7 @@ func TestCdefParms_NewFromBits(t *testing.T) {
 	// RXKHz = 0
 	// (already zero)
 
-	parms := elements.NewCdefParmsFromBits(bits)
+	parms := layer3.NewCdefParmsFromBits(bits)
 
 	if parms.Channel != 291 {
 		t.Errorf("Channel = %d, want 291", parms.Channel)
@@ -48,7 +48,7 @@ func TestCdefParms_NewFromBits(t *testing.T) {
 }
 
 func TestCdefParms_FrequencyCalculation(t *testing.T) {
-	parms := &elements.CdefParms{
+	parms := &layer3.CdefParms{
 		Channel: 1,
 		TXMHz:   440,
 		TXKHz:   4000, // 4000 × 0.000125 = 0.5 MHz
@@ -68,7 +68,7 @@ func TestCdefParms_FrequencyCalculation(t *testing.T) {
 }
 
 func TestCdefParms_ToString(t *testing.T) {
-	parms := &elements.CdefParms{
+	parms := &layer3.CdefParms{
 		Channel: 1,
 		TXMHz:   440,
 		TXKHz:   0,
@@ -84,7 +84,7 @@ func TestCdefParms_ToString(t *testing.T) {
 
 func TestCdefParms_ZeroValues(t *testing.T) {
 	var bits [58]bit.Bit
-	parms := elements.NewCdefParmsFromBits(bits)
+	parms := layer3.NewCdefParmsFromBits(bits)
 
 	if parms.Channel != 0 {
 		t.Errorf("Channel = %d, want 0", parms.Channel)
