@@ -467,7 +467,7 @@ func emitPackedFECDecode(g *Group, codec *FECCodecInfo, inputSize int) {
 	)
 	g.Id("fecResult").Op(":=").Qual(fecPkg, "FECResult").Values(Dict{
 		Id("BitsChecked"):     Lit(inputSize),
-		Id("ErrorsCorrected"): Id("_rsResult").Dot("ErrorsFound"),
+		Id("ErrorsCorrected"): Id("_rsResult").Dot("BitsCorrected"),
 		Id("Uncorrectable"):   Id("_rsResult").Dot("Uncorrectable"),
 	})
 	g.Id("result").Dot("FEC").Op("=").Id("fecResult")

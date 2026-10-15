@@ -443,3 +443,26 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 		t.Errorf("ToString missing FLCO name, got: %s", str)
 	}
 }
+
+func TestFullLinkControl_RSErrorsCountBits(t *testing.T) {
+	lc := &pdu.FullLinkControl{
+		DataType:   elements.DataTypeTerminatorWithLC,
+		FLCO:       enums.FLCOGroupVoiceChannelUser,
+		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101},
+	}
+	clean := must(pdu.EncodeFullLinkControl(lc))
+	for _, flips := range []int{1, 3, 8} {
+		rx := clean
+		for i := range flips {
+			rx[40+i] ^= 1
+		}
+		got, res := pdu.DecodeFullLinkControl(rx, lc.DataType)
+		want := fec.FECResult{BitsChecked: 96, ErrorsCorrected: flips}
+		if res != want || got.FEC != want {
+			t.Errorf("%d bit errors in one octet: result %+v, want %+v", flips, res, want)
+		}
+		if got.GroupVoice == nil || got.GroupVoice.GroupAddress != 91 {
+			t.Errorf("%d bit errors in one octet: LC not corrected", flips)
+		}
+	}
+}

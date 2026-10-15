@@ -1,6 +1,7 @@
 package reedsolomon
 
 import (
+	"math/bits"
 	"math/rand"
 	"testing"
 )
@@ -100,9 +101,9 @@ func TestDecodeSingleSymbolErrorAllPositions(t *testing.T) {
 				rx := append([]byte(nil), cw...)
 				rx[pos] ^= byte(e)
 				for _, result := range []DecodeResult{Decode(rx), DecodeInto(rx, dst[:], &ws)} {
-					if result.Uncorrectable || result.ErrorsFound != 1 || string(result.Data) != string(data) {
-						t.Fatalf("pos %d err 0x%02X: Uncorrectable=%v ErrorsFound=%d data % X, want % X",
-							pos, e, result.Uncorrectable, result.ErrorsFound, result.Data, data)
+					if result.Uncorrectable || result.ErrorsFound != 1 || result.BitsCorrected != bits.OnesCount8(uint8(e)) || string(result.Data) != string(data) {
+						t.Fatalf("pos %d err 0x%02X: Uncorrectable=%v ErrorsFound=%d BitsCorrected=%d data % X, want % X",
+							pos, e, result.Uncorrectable, result.ErrorsFound, result.BitsCorrected, result.Data, data)
 					}
 				}
 			}

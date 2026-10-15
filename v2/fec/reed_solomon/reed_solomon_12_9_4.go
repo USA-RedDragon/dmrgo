@@ -3,6 +3,7 @@ package reedsolomon
 import (
 	"errors"
 	"fmt"
+	"math/bits"
 )
 
 const (
@@ -17,8 +18,17 @@ type ReedSolomon1294 [RS_12_9_POLY_MAXDEG]uint8
 // DecodeResult contains the result of a Reed-Solomon decode operation
 type DecodeResult struct {
 	Data          []byte // Corrected data (9 bytes)
-	ErrorsFound   int    // Number of errors found and corrected
+	ErrorsFound   int    // Number of symbol (byte) errors found and corrected
+	BitsCorrected int    // Number of bits the correction flipped
 	Uncorrectable bool   // True if errors could not be corrected
+}
+
+func bitDistance(a, b []byte) int {
+	n := 0
+	for i := range a {
+		n += bits.OnesCount8(a[i] ^ b[i])
+	}
+	return n
 }
 
 // DecodeWorkspace holds reusable scratch buffers for zero-allocation decode paths.
@@ -77,6 +87,7 @@ func Decode(data []byte) DecodeResult {
 	}
 
 	result.ErrorsFound = errorsFound
+	result.BitsCorrected = bitDistance(data, workData)
 	copy(result.Data, workData[:RS_12_9_DATASIZE])
 	return result
 }
@@ -123,6 +134,8 @@ func DecodeInto(data []byte, dst []byte, workspace *DecodeWorkspace) DecodeResul
 	errorsFound, err := ReedSolomon1294CorrectWithWorkspace(ws.workData[:], &ws.syndrome, ws)
 	if err != nil {
 		result.Uncorrectable = true
+	} else {
+		result.BitsCorrected = bitDistance(data, ws.workData[:])
 	}
 	result.ErrorsFound = errorsFound
 	copy(result.Data, ws.workData[:RS_12_9_DATASIZE])

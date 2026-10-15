@@ -50,7 +50,7 @@ func DecodeFullLinkControl(data [96]bit.Bit, dataType layer2Elements.DataType) (
 	_rsResult := reedsolomon.Decode(_packedBytes[:])
 	fecResult := fec.FECResult{
 		BitsChecked:     96,
-		ErrorsCorrected: _rsResult.ErrorsFound,
+		ErrorsCorrected: _rsResult.BitsCorrected,
 		Uncorrectable:   _rsResult.Uncorrectable,
 	}
 	result.FEC = fecResult
