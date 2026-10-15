@@ -286,6 +286,7 @@ documents:
         title: "Header block structure"
         source_files:
           - v2/layer2/pdu/data_header.go
+          - v2/layer2/pdu/data_header_bytes.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -293,6 +294,11 @@ documents:
               - TestDataHeader_Addresses
               - TestDataHeader_CRCFailure
               - TestDataHeader_FormatDispatch
+              - TestDataHeaderBytes_MatchesGeneratedCodec
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestDataHeaderBytes_SMSCaptures
+              - TestDataHeaderBytes_Formats
 
       - section: "8.2.2"
         title: "Data block structure"
