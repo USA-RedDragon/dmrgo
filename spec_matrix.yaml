@@ -349,6 +349,7 @@ documents:
           - v2/enums/sync_patterns.go
           - v2/layer2/burst.go
           - v2/layer2/decode_options.go
+          - v2/layer2/framer/framer.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
@@ -372,6 +373,12 @@ documents:
               - TestDecodeFromBytesWith_KnownVoiceA
               - TestDecodeFromBytesWith_KnownReverseChannel
               - TestDecodeFromBytesWith_ColorCode
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/framer
+            names:
+              - TestSearch
+              - TestFramer_SlotPeriod
+              - TestFramer_OutboundCACH
+              - TestFramer_DirectChannel
 
       - section: "9.1.2"
         title: "Embedded signalling (EMB) PDU"
