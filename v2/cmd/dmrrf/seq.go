@@ -89,11 +89,7 @@ func WakeupBurst(cfg SeqConfig) (layer2.RawBurst, error) {
 	if err != nil {
 		return layer2.RawBurst{}, err
 	}
-	b, err := c.Bytes()
-	if err != nil {
-		return layer2.RawBurst{}, err
-	}
-	return layer2.BuildDataBurst(b, enums.DataTypeCSBK, cfg.ColorCode, layer2.SyncSourceMS)
+	return layer2.BuildBurst(&c, cfg.ColorCode, layer2.SyncSourceMS)
 }
 
 func rateOf(name string) (enums.DataType, bool, error) {
@@ -194,15 +190,6 @@ func responseBursts(sack bool, cfg SeqConfig) ([]layer2.RawBurst, []string, erro
 	return b, info, err
 }
 
-func csbkBurst(c *pdu.CSBK, cfg SeqConfig) (layer2.RawBurst, error) {
-	bits, err := c.Encode()
-	if err != nil {
-		return layer2.RawBurst{}, err
-	}
-	r, err := layer2.BuildDataBurst(bit.Pack96(bits), enums.DataTypeCSBK, cfg.ColorCode, cfg.source())
-	return r, err
-}
-
 // preambleBursts returns Preambles Pre_CSBKs (ETSI TS 102 361-2 clause
 // 7.1.2.5) followed by a confirmed rate 1/2 packet. The CSBK Blocks to
 // Follow counts the preambles still to come and the bursts of the packet.
@@ -227,7 +214,7 @@ func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 				SourceAddress:      cfg.Source,
 			},
 		}
-		b, err := csbkBurst(c, cfg)
+		b, err := layer2.BuildBurst(c, cfg.ColorCode, cfg.source())
 		if err != nil {
 			return nil, err
 		}
@@ -328,25 +315,17 @@ const (
 func mbcBursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	h := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
 		PhysicalChannel: 0xFFF, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}}
-	hb, err := h.Encode()
-	if err != nil {
-		return nil, nil, err
-	}
 	c := pdu.CGAPContinuation{
 		LastBlock: true,
 		Opcode:    pdu.CSBKTalkgroupVoiceGrant,
 		ColorCode: cfg.ColorCode,
 		CdefParms: layer3.CdefParms{Channel: tier3Channel, TXMHz: tier3MHz, TXKHz: tier3Steps, RXMHz: tier3MHz, RXKHz: tier3Steps},
 	}
-	cb, err := c.Encode()
+	r1, err := layer2.BuildBurst(&h, cfg.ColorCode, cfg.source())
 	if err != nil {
 		return nil, nil, err
 	}
-	r1, err := layer2.BuildDataBurst(bit.Pack96(hb), enums.DataTypeMBCHeader, cfg.ColorCode, cfg.source())
-	if err != nil {
-		return nil, nil, err
-	}
-	r2, err := layer2.BuildDataBurst(bit.Pack96(cb), enums.DataTypeMBCContinuation, cfg.ColorCode, cfg.source())
+	r2, err := layer2.BuildBurst(&c, cfg.ColorCode, cfg.source())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -363,7 +342,7 @@ func tier3Bursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	}
 	var out []layer2.RawBurst
 	for _, c := range csbks {
-		b, err := csbkBurst(c, cfg)
+		b, err := layer2.BuildBurst(c, cfg.ColorCode, cfg.source())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -461,8 +440,7 @@ func activityOf(name string, group bool) enums.ActivityID {
 // IdleBurst returns a BS-sourced idle burst (ETSI TS 102 361-1 clause
 // 7.3.2).
 func IdleBurst(cc enums.ColorCode) (layer2.RawBurst, error) {
-	r, err := layer2.BuildDataBurst(bit.Pack96(layer2.IdleMessageInfo()), enums.DataTypeIdle, cc, layer2.SyncSourceBS)
-	return r, err
+	return layer2.BuildBurst(&pdu.PRFill{}, cc, layer2.SyncSourceBS)
 }
 
 // BSStream lays bursts out as a BS outbound stream: Wakeups idle frames,

@@ -156,7 +156,7 @@ func generatedCall() ([]layer2.RawBurst, error) {
 // burst, fills the shorter one with idle bursts, prepends junk bits and
 // flips bits at random.
 func buildStream(ts1, ts2 []layer2.RawBurst) ([]bit.Bit, int, error) {
-	idle, err := layer2.BuildDataBurst(bit.Pack96(layer2.IdleMessageInfo()), enums.DataTypeIdle, colorCode, layer2.SyncSourceBS)
+	idle, err := layer2.BuildBurst(&pdu.PRFill{}, colorCode, layer2.SyncSourceBS)
 	if err != nil {
 		return nil, 0, err
 	}

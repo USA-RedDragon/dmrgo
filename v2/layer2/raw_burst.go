@@ -294,6 +294,43 @@ func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 	r.writeBits(voice[108:], syncEnd)
 }
 
+// BuildBurst returns the data burst that carries d, with a slot type of
+// color code cc and data type d.DataType() and the data SYNC pattern of
+// src. It codes d.EncodeBits(), which carries the CRC or RS(12,9) parity of
+// d, with BPTC(196,96), the Rate 3/4 trellis or Rate 1 as the data type
+// selects. The BPTC reserved bits are zero. It returns an error when d is
+// nil or does not encode, or src is unknown.
+func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
+	if d == nil {
+		return RawBurst{}, fmt.Errorf("cannot build a burst from nil Data")
+	}
+	dt := d.DataType()
+	info, err := encodeData(d, dt)
+	if err != nil {
+		return RawBurst{}, err
+	}
+	r, err := dataBurstFrame(dt, cc, src)
+	if err != nil {
+		return RawBurst{}, err
+	}
+	switch dt {
+	case enums.DataTypeRate34:
+		var bits [144]bit.Bit
+		copy(bits[:], info[:])
+		r.setInfo(trellis.Encode(bits))
+	case enums.DataTypeRate1:
+		var bits [196]bit.Bit
+		copy(bits[:96], info[:96])
+		copy(bits[100:], info[96:192])
+		r.setInfo(bits)
+	case enums.DataTypePIHeader, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeCSBK,
+		enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation, enums.DataTypeDataHeader, enums.DataTypeRate12,
+		enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
+		r.setInfo(bptc.Encode196([96]bit.Bit(info[:96])))
+	}
+	return r, nil
+}
+
 // BuildDataBurst returns a data burst that carries the BPTC(196,96) payload
 // p with a slot type of color code cc and data type dt and the data SYNC
 // pattern of src. p must already carry its CRC or RS(12,9) parity with the
