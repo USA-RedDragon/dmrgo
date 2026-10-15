@@ -95,6 +95,12 @@ func TestDataBurstWithEMB_SameDataAsWithSync(t *testing.T) {
 		t.Errorf("a data burst decoded with a SYNC encodes with SyncNone as %x", got)
 	}
 
+	rewritten := *withEMB
+	rewritten.SlotType.ColorCode = aselsanColorCode + 1
+	if got, err := rewritten.Encode(); err == nil {
+		t.Errorf("a slot type color code that differs from the EMB encodes as %x", got)
+	}
+
 	r := must(layer2.BuildBurst(withSync.Data, aselsanColorCode, layer2.SyncSourceBS))
 	r.SetEMB(b.EmbeddedSignalling)
 	r.SetEmbeddedData([4]byte{})
