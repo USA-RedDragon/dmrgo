@@ -1,6 +1,9 @@
 package pdu
 
-import "github.com/USA-RedDragon/dmrgo/v2/enums"
+import (
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
+)
 
 // LCBytes is the 72 LC bits of a Full LC (ETSI TS 102 361-1 §9.1.6),
 // without RS(12,9) parity, as FullLinkControl.Bytes returns them. Its
@@ -13,6 +16,23 @@ import "github.com/USA-RedDragon/dmrgo/v2/enums"
 // 361-2 Tables 7.1 and 7.2), octet 2 holds the Service Options, octets 3
 // to 5 the group or target address and octets 6 to 8 the source address.
 type LCBytes [9]byte
+
+// NewVoiceLCBytes returns the LC octets of the voice call LC that NewVoiceLC
+// returns: octet 0 holds the FLCO with PF and Reserved clear, octet 1 the
+// standard FID, octet 2 so.Byte() and octets 3 to 8 the addresses. It
+// returns a *bit.FieldRangeError when an address does not fit in 24 bits.
+func NewVoiceLCBytes(group bool, target, source uint32, so layer3.ServiceOptions) (LCBytes, error) {
+	if err := checkAddresses("LCBytes", target, source); err != nil {
+		return LCBytes{}, err
+	}
+	l := LCBytes{byte(enums.FLCOUnitToUnitVoiceChannelUser), byte(enums.FIDStandardized), so.Byte()}
+	if group {
+		l[0] = byte(enums.FLCOGroupVoiceChannelUser)
+	}
+	putUint24(l[3:], target)
+	putUint24(l[6:], source)
+	return l, nil
+}
 
 // FLCO returns the 6-bit FLCO, bits 2 to 7 of octet 0.
 func (l LCBytes) FLCO() enums.FLCO {

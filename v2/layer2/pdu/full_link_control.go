@@ -107,6 +107,42 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 	return true
 }
 
+// NewVoiceLC returns the standard FID Full LC of a voice call: a
+// Grp_V_Ch_Usr LC with GroupVoice set when group is true, and a UU_V_Ch_Usr
+// LC with UnitToUnit set otherwise (ETSI TS 102 361-2 Tables 7.1 and 7.2).
+// BurstDataType is DataTypeVoiceLCHeader. layer3.DefaultServiceOptions
+// gives the Service Options that most radios send. It returns a
+// *bit.FieldRangeError when an address does not fit in 24 bits.
+func NewVoiceLC(group bool, target, source uint32, so layer3.ServiceOptions) (FullLinkControl, error) {
+	if err := checkAddresses("FullLinkControl", target, source); err != nil {
+		return FullLinkControl{}, err
+	}
+	s := FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: enums.FLCOUnitToUnitVoiceChannelUser}
+	if group {
+		s.FLCO = enums.FLCOGroupVoiceChannelUser
+		s.GroupVoice = &FLCGroupVoice{ServiceOptions: so, GroupAddress: target, SourceAddress: source}
+	} else {
+		s.UnitToUnit = &FLCUnitToUnit{ServiceOptions: so, TargetAddress: target, SourceAddress: source}
+	}
+	return s, nil
+}
+
+// ServiceOptions returns the Service Options of a Grp_V_Ch_Usr (FLCO 0) or
+// UU_V_Ch_Usr (FLCO 3) LC. Like Addresses, it reads RawPayload when no
+// payload field is set, so it also reads a manufacturer FID LC with these
+// FLCOs. ok is false for other FLCOs.
+func (s *FullLinkControl) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
+	switch {
+	case s.FLCO == enums.FLCOGroupVoiceChannelUser && s.GroupVoice != nil:
+		return s.GroupVoice.ServiceOptions, true
+	case s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser && s.UnitToUnit != nil:
+		return s.UnitToUnit.ServiceOptions, true
+	case s.FLCO == enums.FLCOGroupVoiceChannelUser, s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser:
+		return layer3.ServiceOptionsFromByte(s.RawPayload[0]), true
+	}
+	return so, false
+}
+
 // FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])
 // decoded per-FLCO type. Each struct uses 0-based bit offsets within the 56-bit window.
 

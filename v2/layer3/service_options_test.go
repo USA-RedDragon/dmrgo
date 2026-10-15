@@ -173,3 +173,22 @@ func containsStr(s, substr string) bool {
 	}
 	return false
 }
+
+func TestServiceOptionsByte(t *testing.T) {
+	for v := range 256 {
+		so := ServiceOptionsFromByte(byte(v))
+		if got := so.Byte(); got != byte(v) {
+			t.Errorf("ServiceOptionsFromByte(%#02x).Byte() = %#02x", v, got)
+		}
+		bits := must(so.Encode())
+		if got := byte(bit.Uint(bits[:])); got != byte(v) {
+			t.Errorf("%#02x: Encode gives %#02x", v, got)
+		}
+	}
+	if got := DefaultServiceOptions().Byte(); got != 0x20 {
+		t.Errorf("DefaultServiceOptions().Byte() = %#02x, want 0x20", got)
+	}
+	if got := (ServiceOptions{Reserved: 7, PriorityLevel: 6}).Byte(); got != 0x32 {
+		t.Errorf("out of range fields give %#02x, want their low bits 0x32", got)
+	}
+}
