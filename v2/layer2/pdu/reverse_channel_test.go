@@ -37,7 +37,10 @@ func TestReverseChannel_DecodeEncode_RoundTrip(t *testing.T) {
 		}
 
 		// Re-encode and verify round-trip
-		encoded := pdu.EncodeReverseChannel(&rc)
+		encoded, err := pdu.EncodeReverseChannel(&rc)
+		if err != nil {
+			t.Fatalf("payload=%d: unexpected error: %v", payload, err)
+		}
 		if encoded != bits {
 			t.Errorf("payload=%d: round-trip failed: encoded %v != original %v", payload, encoded, bits)
 		}
@@ -66,17 +69,13 @@ func TestReverseChannel_BitsChecked(t *testing.T) {
 	}
 }
 
-func TestReverseChannel_PayloadMasked(t *testing.T) {
+func TestReverseChannel_OutOfRangeRejected(t *testing.T) {
 	t.Parallel()
-	// Verify only lower 4 bits are used
-	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(0xFF)}
-	encoded := pdu.EncodeReverseChannel(&rc)
-	decoded, fecResult := pdu.DecodeReverseChannel(encoded)
-	if fecResult.Uncorrectable {
-		t.Fatal("unexpected uncorrectable error")
-	}
-	if byte(decoded.RCCommand) != 0x0F {
-		t.Errorf("expected command=0x0F (masked), got 0x%02X", byte(decoded.RCCommand))
+	for _, cmd := range []enums.RCCommand{-1, 0x10, 0x14, 0xFF} {
+		rc := pdu.ReverseChannel{RCCommand: cmd}
+		if _, err := pdu.EncodeReverseChannel(&rc); err == nil {
+			t.Errorf("RCCommand 0x%X: expected error, got nil", int(cmd))
+		}
 	}
 }
 

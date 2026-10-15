@@ -52,8 +52,12 @@ func DecodeRCFromEmbeddedData(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec
 }
 
 // EncodeRCToEmbeddedData encodes a Reverse Channel PDU into 32 transmit
-// bits suitable for the embedded signalling data field.
-func EncodeRCToEmbeddedData(rc *pdu.ReverseChannel) [32]bit.Bit {
-	infoBits := pdu.EncodeReverseChannel(rc)
-	return bptc.EncodeSingleBurstBPTC(infoBits, true)
+// bits suitable for the embedded signalling data field. It returns an
+// error if the RC command does not fit in 4 bits.
+func EncodeRCToEmbeddedData(rc *pdu.ReverseChannel) ([32]bit.Bit, error) {
+	infoBits, err := pdu.EncodeReverseChannel(rc)
+	if err != nil {
+		return [32]bit.Bit{}, err
+	}
+	return bptc.EncodeSingleBurstBPTC(infoBits, true), nil
 }

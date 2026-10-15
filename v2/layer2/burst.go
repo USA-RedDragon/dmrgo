@@ -173,7 +173,11 @@ func (b *Burst) decodeStandaloneRC() {
 func (b *Burst) encodeStandaloneRC() [264]bit.Bit {
 	var bitData [264]bit.Bit
 	if b.HasReverseChannel && b.ReverseChannel != nil {
-		b.EmbeddedSignallingData = EncodeRCToEmbeddedData(b.ReverseChannel)
+		rcBits, err := EncodeRCToEmbeddedData(b.ReverseChannel)
+		if err != nil {
+			panic(fmt.Sprintf("cannot encode reverse channel: %v", err))
+		}
+		b.EmbeddedSignallingData = rcBits
 	}
 	embBits := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
 	copy(bitData[RCEMBFirstStart:RCEMBFirstEnd], embBits[:8])
@@ -430,7 +434,11 @@ func (b *Burst) Encode() [33]byte {
 	if b.HasEmbeddedSignalling {
 		// If RC is present, encode it into the embedded data field
 		if b.HasReverseChannel && b.ReverseChannel != nil {
-			b.EmbeddedSignallingData = EncodeRCToEmbeddedData(b.ReverseChannel)
+			rcBits, err := EncodeRCToEmbeddedData(b.ReverseChannel)
+			if err != nil {
+				panic(fmt.Sprintf("cannot encode reverse channel: %v", err))
+			}
+			b.EmbeddedSignallingData = rcBits
 		}
 		esBits := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
 		copy(bitData[108:116], esBits[0:8])

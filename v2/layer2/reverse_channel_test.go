@@ -41,7 +41,10 @@ func TestRC_DecodeFromEmbeddedData_RoundTrip(t *testing.T) {
 func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
 	t.Parallel()
 	rc := pdu.ReverseChannel{RCCommand: enums.RCCommandFromInt(10)}
-	embData := layer2.EncodeRCToEmbeddedData(&rc)
+	embData, err := layer2.EncodeRCToEmbeddedData(&rc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	decoded, fecResult := layer2.DecodeRCFromEmbeddedData(embData)
 	if fecResult.Uncorrectable {
@@ -49,6 +52,14 @@ func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
 	}
 	if int(decoded.RCCommand) != 10 {
 		t.Errorf("expected command=10, got %d", decoded.RCCommand)
+	}
+}
+
+func TestRC_EncodeRCToEmbeddedData_OutOfRange(t *testing.T) {
+	t.Parallel()
+	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(0x14)}
+	if _, err := layer2.EncodeRCToEmbeddedData(&rc); err == nil {
+		t.Error("expected error for out-of-range RC command")
 	}
 }
 
@@ -235,7 +246,10 @@ func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 		ColorCode: cc,
 		LCSS:      enums.SingleFragmentLCorCSBK,
 	})
-	rcData := layer2.EncodeRCToEmbeddedData(&pdu.ReverseChannel{RCCommand: cmd})
+	rcData, err := layer2.EncodeRCToEmbeddedData(&pdu.ReverseChannel{RCCommand: cmd})
+	if err != nil {
+		panic(err)
+	}
 	copy(bitData[84:92], embBits[:8])
 	copy(bitData[92:108], rcData[:16])
 	syncVal := int64(enums.MsSourcedRcSync)

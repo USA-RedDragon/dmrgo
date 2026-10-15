@@ -82,6 +82,7 @@ documents:
             names:
               - TestRC_DecodeFromEmbeddedData_RoundTrip
               - TestRC_EncodeRCToEmbeddedData_RoundTrip
+              - TestRC_EncodeRCToEmbeddedData_OutOfRange
               - TestRC_CombinedFEC
               - TestRC_BurstDetection_PI1_LCSS0
               - TestRC_BurstDetection_PI0_NoRC
@@ -321,7 +322,7 @@ documents:
               - TestReverseChannel_DecodeEncode_RoundTrip
               - TestReverseChannel_CRCFailure
               - TestReverseChannel_BitsChecked
-              - TestReverseChannel_PayloadMasked
+              - TestReverseChannel_OutOfRangeRejected
               - TestReverseChannel_ToString
               - TestReverseChannel_CRC7Mask
 

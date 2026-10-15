@@ -56,11 +56,16 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.FECResult) 
 
 // EncodeReverseChannel encodes an RC PDU into 11 information bits.
 // The output contains the 4-bit payload followed by 7-bit CRC-7 (masked).
-func EncodeReverseChannel(rc *ReverseChannel) [11]bit.Bit {
+// It returns an error if RCCommand does not fit in 4 bits.
+func EncodeReverseChannel(rc *ReverseChannel) ([11]bit.Bit, error) {
 	var bits [11]bit.Bit
 
+	if rc.RCCommand < 0 || rc.RCCommand > 0x0F {
+		return bits, fmt.Errorf("RC command %d out of range 0-15", int(rc.RCCommand))
+	}
+
 	// RC command (bits 0-3, MSB-first)
-	copy(bits[0:4], bit.BitsFromUint8(byte(rc.RCCommand)&0x0F, 4))
+	copy(bits[0:4], bit.BitsFromUint8(uint8(rc.RCCommand), 4))
 
 	// CRC-7 with mask 0x7A
 	crcVal := crc.CalculateCRC7(bits[:4]) ^ CRC7MaskRC
@@ -68,7 +73,7 @@ func EncodeReverseChannel(rc *ReverseChannel) [11]bit.Bit {
 		bits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)
 	}
 
-	return bits
+	return bits, nil
 }
 
 // ToString returns a human-readable string representation of the RC PDU.
