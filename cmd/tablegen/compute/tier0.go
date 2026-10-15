@@ -225,7 +225,7 @@ func ComputeVocoderTables() (aTable, bTable, cTable []int) {
 // for the Hamming(16,11,4) code used in embedded signalling BPTC (§B.2.1, §B.2.2).
 //
 // The (16,11,4) code is derived from the (15,11,3) Hamming code with an extra
-// parity bit. It has 5 syndrome bits → 32-entry table.
+// overall parity bit. It has 5 syndrome bits → 32-entry table.
 //
 // Syndrome equations from the parity check matrix H (§B.3.4, Table B.16):
 //
