@@ -377,7 +377,7 @@ func payload(name string, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 		return b, nil, err
 	case seqVoice, seqPI:
 		if cfg.Slot < 0 {
-			return nil, nil, fmt.Errorf("voice needs -slot 0 or 1: bursts B to F are found 60 ms after burst A")
+			return nil, nil, fmt.Errorf("voice needs -slot 0 or 1: bursts B to F are found on the 60 ms slot timing")
 		}
 		return voiceBursts(cfg, name == seqPI)
 	case seqRC:

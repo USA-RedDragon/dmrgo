@@ -120,12 +120,21 @@ func (p *Reporter) Burst(r Received) {
 		p.chans[key] = ch
 	}
 
-	b, err := layer2.NewBurstFromBytes(r.Data)
-	if err != nil {
+	var opts layer2.DecodeOptions
+	if r.Voice != enums.VoiceBurstUnknown {
+		opts.Kind, opts.VoiceBurst = layer2.KindVoice, r.Voice
+	} else if r.Distance > layer2.DefaultSyncThreshold {
+		opts.SyncThreshold = r.Distance
+	}
+	b := &layer2.Burst{}
+	if err := b.DecodeFromBytesWith(r.Data, &opts); err != nil {
 		p.printf("           decode error: %v", err)
 		return
 	}
 	lc, lcDone, lcErr := ch.voice.Receive(b)
+	if r.Voice != enums.VoiceBurstUnknown {
+		b.VoiceBurst = r.Voice
+	}
 	p.printf("           %s", b.String())
 	if b.HasEmbeddedSignalling() {
 		e := b.EmbeddedSignalling

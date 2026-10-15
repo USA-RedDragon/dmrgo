@@ -3,7 +3,7 @@
 `dmrrf` turns DMR bursts built with dmrgo into I/Q for a HackRF, and decodes DMR from `rtl_sdr` captures. It only reads and writes files. Transmitting is a separate, manual `hackrf_transfer` step for a licensed operator.
 
 - `dmrrf tx`: writes signed 8-bit I/Q (the `hackrf_transfer -t` format). DMR 4FSK at 4800 symbols/s, ±648/±1944 Hz deviation, RRC alpha 0.2 (ETSI TS 102 361-1 clause 10.2), one TDMA slot per 60 ms frame by default.
-- `dmrrf rx`: reads `rtl_sdr` unsigned 8-bit I/Q, decodes every burst, reassembles data packets and voice superframes, and reports the carrier offset and deviation.
+- `dmrrf rx`: reads `rtl_sdr` unsigned 8-bit I/Q, decodes every burst, reassembles data packets and voice superframes, and reports the carrier offset and deviation. It finds the bursts with a SYNC first, then cuts the slots between them on their slot timing. A voice superframe starts at a burst A, at a slot near the voice SYNC where the call timing expects a burst A, or before a burst B or E with a clean EMB, when the SYNC of its burst A is within 16 bits of the voice SYNC.
 - `dmrrf cal`: reports the frequency offset of a carrier in an `rtl_sdr` capture.
 
 Sequences for `tx -seq`. An MS-sourced sequence starts with `-wakeups` BS_Dwn_Act CSBKs. The data packets carry `-msg` from `-src` to `-dst` (`-group` for a talkgroup).
@@ -26,7 +26,7 @@ Sequences for `tx -seq`. An MS-sourced sequence starts with `-wakeups` BS_Dwn_Ac
 
 Voice flags:
 - The voice carries a test pattern: AMBE+2 frame `n` is a distinct, known 49-bit value. `tx` prints each frame it sends as `ambe tx seq=<n> 0x<13 hex digits>`, and `rx` prints each frame it receives with the same `seq` (counted from the voice LC header), so a relayed call can be compared bit for bit. `-ambe-silence` sends AMBE+2 silence instead.
-- Voice needs `-slot 0` or `-slot 1`: bursts B to F have no SYNC, so `rx` cuts them 60 ms apart after burst A.
+- Voice needs `-slot 0` or `-slot 1`: bursts B to F have no SYNC, so `rx` finds them on the slot timing, 60 ms apart on one channel.
 
 `-bs-sourced` sends a continuous outbound stream like a repeater instead: BS-sourced SYNC, every 30 ms slot is a CACH (24 bits) and a burst (264 bits), 144 symbols with the carrier on throughout. The sequence goes on `-slot` (0 or 1) and idle bursts fill the other slot. `-wakeups` sets the number of idle frames before the sequence, and two idle frames follow it. Each CACH carries a TACT with TC set to the channel of the burst that follows, AT set while that channel carries the sequence, and one quarter of an Activity Update Short LC (SLCO 1). The Short LC announces the activity on the active slot while any of its four slots carries the sequence, and no activity otherwise. `wakeup` and `rc` are MS-sourced only. With `-repeat`, the stream is repeated without a gap.
 

@@ -6,8 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -31,6 +33,12 @@ func runLoopStretch(t *testing.T, seq string, cfg SeqConfig, ppm float64) loop {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return runBuilt(t, seq, built, cfg, ppm)
+}
+
+// runBuilt is runLoopStretch for a built sequence.
+func runBuilt(t *testing.T, seq string, built Built, cfg SeqConfig, ppm float64) loop {
+	t.Helper()
 	var fm, env []float64
 	want := built.Bursts
 	if cfg.BSSourced {
@@ -159,6 +167,85 @@ func TestLoopbackVoiceSlowClock(t *testing.T) {
 		l.expect(t, "elc", "checksum=ok fec=ok", 4)
 		checkAMBE(t, l, 4*18, false)
 	}
+}
+
+// flipSync inverts the first n bits of the SYNC field of b.
+func flipSync(b layer2.RawBurst, n int) layer2.RawBurst {
+	bits := bit.Unpack264(b)
+	for k := framer.SyncOffset; k < framer.SyncOffset+n; k++ {
+		bits[k] ^= 1
+	}
+	return bit.Pack264(bits)
+}
+
+// TestLoopbackVoiceDamagedSync damages the SYNC of every burst A of a
+// BS-sourced call, and the EMB of one burst B, and checks that the slot
+// timing still finds every superframe.
+func TestLoopbackVoiceDamagedSync(t *testing.T) {
+	cfg := testConfig()
+	cfg.BSSourced, cfg.Superframes = true, 4
+	built, err := Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var a []int
+	for i, s := range built.Slots {
+		if b, err := layer2.NewBurstFromBytes(s.Burst); err == nil && b.Kind == layer2.KindVoice && b.SyncPattern == enums.SyncBSSourcedVoice {
+			a = append(a, i)
+		}
+	}
+	if len(a) != 4 {
+		t.Fatalf("%d bursts A, want 4", len(a))
+	}
+
+	for i, n := range []int{14, 6, 14, 12} {
+		built.Slots[a[i]].Burst = flipSync(built.Slots[a[i]].Burst, n)
+	}
+	built.Slots[a[2]+2].Burst = flipSync(built.Slots[a[2]+2].Burst, 4)
+	l := runBuilt(t, "voice", built, cfg, 0)
+	checkAMBE(t, l, 4*18, false)
+	for _, pos := range []string{"A", "B", "C", "D", "E", "F"} {
+		l.expect(t, "ambe", " pos="+pos+" ", 4*3)
+	}
+	l.expect(t, "emb", "fec=ok", 4*5-1)
+	l.expect(t, "elc", "checksum=ok fec=ok", 4)
+}
+
+// TestLoopbackMSVoiceDamagedSync damages the SYNC of every burst A of an
+// MS-sourced call, and checks that the slot timing from the voice LC header
+// to the terminator finds every superframe. Then it ends a call after burst
+// C with a damaged terminator SYNC, which must not decode as burst D.
+func TestLoopbackMSVoiceDamagedSync(t *testing.T) {
+	cfg := testConfig()
+	cfg.Superframes = 3
+	built, err := Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const header = 2
+	for sf := range 3 {
+		i := header + 1 + sf*layer2.VoiceBurstsPerSuperframe
+		if b, err := layer2.NewBurstFromBytes(built.Bursts[i]); err != nil || b.SyncPattern != enums.SyncMSSourcedVoice {
+			t.Fatalf("burst %d is not a burst A", i)
+		}
+		built.Bursts[i] = flipSync(built.Bursts[i], 10)
+	}
+	l := runBuilt(t, "voice", built, cfg, 0)
+	checkAMBE(t, l, 3*18, false)
+	l.expect(t, "elc", "checksum=ok fec=ok", 3)
+	l.expect(t, "lc", "terminator", 1)
+
+	built, err = Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := len(built.Bursts)
+	term := flipSync(built.Bursts[n-1], 6)
+	built.Bursts = append(built.Bursts[:n-4], term)
+	built.Info = built.Info[:len(built.Info)-9]
+	l = runBuilt(t, "voice", built, cfg, 0)
+	checkAMBE(t, l, 2*18+9, false)
+	l.expect(t, "lc", "terminator", 1)
 }
 
 func TestLoopbackVoiceLateEntry(t *testing.T) {
