@@ -86,7 +86,7 @@ func (r Response) String() string {
 // i is octet i/8, bit 7-i%8; the spec does not state the bit order, this
 // follows the MSB-first order of every other DMR PDU.
 type ResponseData struct {
-	Retry [maxBlocks]bool
+	Retry [127]bool
 }
 
 // RetryBlocks returns the DBSNs flagged for retry in ascending order.
