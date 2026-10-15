@@ -47,7 +47,8 @@ func TestDataHeaderBytes_SMSCaptures(t *testing.T) {
 			}
 			formats[h.Format()]++
 			wantT, wantS, wantOK := dh.Addresses()
-			gotT, gotS, gotG, gotOK := h.Addresses()
+			gotT, gotS, gotOK := h.Addresses()
+			gotG, _ := h.Group()
 			if gotT != wantT || gotS != wantS || gotOK != wantOK || gotG != headerGroup(t, dh) {
 				t.Fatalf("%s burst %d: Addresses %d %d %t %t, DataHeader %d %d %t %t", name, i, gotT, gotS, gotG, gotOK, wantT, wantS, headerGroup(t, dh), wantOK)
 			}
@@ -55,8 +56,12 @@ func TestDataHeaderBytes_SMSCaptures(t *testing.T) {
 			newT, newS := uint32(rng.Intn(1<<24)), uint32(rng.Intn(1<<24))
 			newG := !gotG
 			e := h
-			if !e.SetAddresses(newT, newS, newG) {
-				t.Fatalf("%s burst %d: SetAddresses refused for %s", name, i, h.Format())
+			_, hasGroup := h.Group()
+			if !e.SetAddresses(newT, newS) || e.SetGroup(newG) != hasGroup {
+				t.Fatalf("%s burst %d: SetAddresses or SetGroup refused for %s", name, i, h.Format())
+			}
+			if !hasGroup {
+				newG = false
 			}
 			if e.CRCOK() {
 				t.Fatalf("%s burst %d: CRC still passes before Reseal", name, i)
@@ -111,22 +116,20 @@ func TestDataHeaderBytes_Formats(t *testing.T) {
 		h[2], h[7] = 0x12, 0x34
 		h.Reseal()
 		orig := h
-		tgt, src, group, ok := h.Addresses()
-		if ok != tt.llids || group != tt.gi || (ok && (tgt != 0x120000 || src != 0x34)) {
-			t.Errorf("format %d: Addresses %x %x %t %t", tt.format, tgt, src, group, ok)
+		tgt, src, ok := h.Addresses()
+		group, gok := h.Group()
+		if ok != tt.llids || gok != tt.gi || group != tt.gi || (ok && (tgt != 0x120000 || src != 0x34)) {
+			t.Errorf("format %d: Addresses %x %x %t, Group %t %t", tt.format, tgt, src, ok, group, gok)
 		}
-		if h.SetAddresses(1, 2, true) != tt.gi || (!tt.gi && h != orig) {
-			t.Errorf("format %d: SetAddresses group", tt.format)
-		}
-		h = orig
-		if h.SetAddresses(1, 2, false) != tt.llids {
-			t.Errorf("format %d: SetAddresses individual", tt.format)
-		}
-		if tt.llids && !tt.gi && h[0]&0x80 == 0 {
-			t.Errorf("format %d: SetAddresses cleared the reserved bit", tt.format)
+		if h.SetGroup(false) != tt.gi || (!tt.gi && h != orig) {
+			t.Errorf("format %d: SetGroup", tt.format)
 		}
 		h = orig
-		if h.SetAddresses(1<<24, 0, false) || h.SetAddresses(0, 1<<24, false) || h != orig {
+		if h.SetAddresses(1, 2) != tt.llids || h[0] != orig[0] {
+			t.Errorf("format %d: SetAddresses", tt.format)
+		}
+		h = orig
+		if h.SetAddresses(1<<24, 0) || h.SetAddresses(0, 1<<24) || h != orig {
 			t.Errorf("format %d: SetAddresses accepts 25 bits", tt.format)
 		}
 	}

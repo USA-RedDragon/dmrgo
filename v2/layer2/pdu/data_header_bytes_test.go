@@ -24,12 +24,12 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 			t.Fatalf("%s: CRC %t format %s", dh.Format, h.CRCOK(), h.Format())
 		}
 		wantT, wantS, _ := dh.Addresses()
-		if gotT, gotS, _, ok := h.Addresses(); !ok || gotT != wantT || gotS != wantS {
+		if gotT, gotS, ok := h.Addresses(); !ok || gotT != wantT || gotS != wantS {
 			t.Fatalf("%s: Addresses %d %d %t", dh.Format, gotT, gotS, ok)
 		}
 		group := dh.Format != pdu.FormatResponsePacket
-		if !h.SetAddresses(0xABCDEF, 0x123456, group) {
-			t.Fatalf("%s: SetAddresses refused", dh.Format)
+		if !h.SetAddresses(0xABCDEF, 0x123456) || h.SetGroup(true) != group {
+			t.Fatalf("%s: SetAddresses or SetGroup refused", dh.Format)
 		}
 		h.Reseal()
 		got := pdu.DecodeDataHeader(bit.Unpack96(h))

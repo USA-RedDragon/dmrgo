@@ -14,7 +14,7 @@ import (
 
 func TestLCBytes_Capture(t *testing.T) {
 	l := pdu.LCBytes(hex9(t, "03000000270630b43c"))
-	if l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser || l.FID() != enums.FIDStandardized || l.ServiceOptions() != 0 || l.Group() || l.ProtectFlag() {
+	if g, ok := l.Group(); l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser || l.FID() != enums.FIDStandardized || l.ServiceOptions() != 0 || g || !ok || l.ProtectFlag() {
 		t.Fatalf("fields of %x", l)
 	}
 	tgt, src, ok := l.Addresses()
@@ -174,7 +174,8 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 
 		l = orig
 		g := rng.Intn(2) == 0
-		if !l.SetGroup(g) || l.Group() != g || !within(diffMask(l, orig), flcoBits) {
+		set := l.SetGroup(g)
+		if got, ok := l.Group(); !set || !ok || got != g || !within(diffMask(l, orig), flcoBits) {
 			t.Fatalf("%x: SetGroup(%t) gives %x", orig, g, l)
 		}
 	}
@@ -197,7 +198,7 @@ func TestNewVoiceLC(t *testing.T) {
 		if b := must(f.Bytes()); b != [9]byte(l) {
 			t.Errorf("group %t: NewVoiceLCBytes %x, NewVoiceLC.Bytes %x", group, l, b)
 		}
-		if l.Group() != group || l.ServiceOptions() != so.Byte() {
+		if g, ok := l.Group(); !ok || g != group || l.ServiceOptions() != so.Byte() {
 			t.Errorf("group %t: LCBytes %x", group, l)
 		}
 	}
@@ -215,5 +216,12 @@ func TestNewVoiceLC(t *testing.T) {
 	raw.FLCO = enums.FLCOGPSInfo
 	if _, ok := raw.ServiceOptions(); ok {
 		t.Error("GPS LC has Service Options")
+	}
+}
+
+func TestLCBytes_GroupOtherFLCO(t *testing.T) {
+	l := pdu.LCBytes{byte(enums.FLCOGPSInfo)}
+	if g, ok := l.Group(); g || ok {
+		t.Errorf("GPS LC: Group %t %t", g, ok)
 	}
 }
