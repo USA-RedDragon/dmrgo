@@ -1892,9 +1892,9 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
 	}
 	_packedBytes[10] ^= uint8(0xa5)
 	_packedBytes[11] ^= uint8(0xa5)
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
+	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult

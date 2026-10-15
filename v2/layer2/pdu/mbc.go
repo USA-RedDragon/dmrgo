@@ -14,7 +14,6 @@ import (
 //dmr:crc_mask 0xAAAA
 //dmr:input_size 96
 type MBCHeader struct {
-	crc         uint16             `dmr:"-"` //nolint:unused
 	FEC         fec.Result         `dmr:"-"`
 	LastBlock   bool               `dmr:"bit:0"`
 	ProtectFlag bool               `dmr:"bit:1"`
@@ -119,7 +118,6 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 //dmr:crc crc_ccitt
 //dmr:input_size 96
 type CGAPContinuation struct {
-	crc         uint16           `dmr:"-"` //nolint:unused
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
 	ProtectFlag bool             `dmr:"bit:1"`
@@ -143,7 +141,6 @@ func (s *CGAPContinuation) DataType() enums.DataType {
 //dmr:crc crc_ccitt
 //dmr:input_size 96
 type MVAPContinuation struct {
-	crc         uint16           `dmr:"-"` //nolint:unused
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
 	ProtectFlag bool             `dmr:"bit:1"`
@@ -167,7 +164,6 @@ func (s *MVAPContinuation) DataType() enums.DataType {
 //dmr:crc crc_ccitt
 //dmr:input_size 96
 type BCAPContinuation struct {
-	crc         uint16           `dmr:"-"` //nolint:unused
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
 	ProtectFlag bool             `dmr:"bit:1"`
@@ -190,7 +186,6 @@ func (s *BCAPContinuation) DataType() enums.DataType {
 //dmr:crc crc_ccitt
 //dmr:input_size 96
 type VNAPContinuation struct {
-	crc         uint16           `dmr:"-"` //nolint:unused
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
 	ProtectFlag bool             `dmr:"bit:1"`

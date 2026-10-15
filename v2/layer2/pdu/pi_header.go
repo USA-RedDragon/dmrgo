@@ -21,7 +21,6 @@ import (
 //dmr:crc_mask 0x6969
 //dmr:input_size 96
 type PIHeader struct {
-	crc              uint16             `dmr:"-"` //nolint:unused
 	FEC              fec.Result         `dmr:"-"`
 	AlgorithmID      uint8              `dmr:"bits:0-7"`
 	MFID             enums.FeatureSetID `dmr:"bits:8-15"`

@@ -56,7 +56,6 @@ func (st ServiceType) String() string {
 //dmr:crc_mask 0x3333
 //dmr:input_size 96
 type UnifiedSingleBlockData struct {
-	crc         uint16      `dmr:"-"` //nolint:unused
 	FEC         fec.Result  `dmr:"-"`
 	ServiceType ServiceType `dmr:"bits:0-3"`
 	Payload     [76]bit.Bit `dmr:"bits:4-79,raw"`
