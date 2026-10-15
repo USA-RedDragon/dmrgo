@@ -160,6 +160,16 @@ func TestLoopbackVoiceSlowClock(t *testing.T) {
 	}
 }
 
+func TestLoopbackVoiceLateEntry(t *testing.T) {
+	cfg := testConfig()
+	cfg.Group, cfg.Superframes, cfg.LateEntry = true, 2, true
+	l := runLoop(t, "voice", cfg)
+	fields := "flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0"
+	l.expect(t, "lc", "header", 0)
+	l.expect(t, "lc", "terminator "+fields, 1)
+	l.expect(t, "elc", fields+" emergency=0 checksum=ok fec=ok", 2)
+}
+
 func TestLoopbackVoiceSilence(t *testing.T) {
 	cfg := testConfig()
 	cfg.Superframes, cfg.AMBESilence = 1, true
