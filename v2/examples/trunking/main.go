@@ -132,11 +132,10 @@ func encodeMatchesBuild(w io.Writer, c *pdu.CSBK) error {
 
 func opcode0x38(w io.Writer) error {
 	mi := pdu.TalkgroupDataGrantMultiItemPDU{PhysicalChannel: 77, TargetAddress: 9, SourceAddress: 3120001}
-	payload, err := mi.Encode()
-	if err != nil {
+	c := &pdu.CSBK{LastBlock: true}
+	if err := c.SetTalkgroupDataGrantMultiItem(mi); err != nil {
 		return err
 	}
-	c := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupDataGrantMultiItem, RawPayload: [8]byte(bit.Pack(payload[:]))}
 	got, _, err := roundTripCSBK(c, layer2.SyncSourceBS)
 	if err != nil {
 		return err
@@ -168,12 +167,7 @@ func randomAccess(w io.Writer) error {
 
 func mbcGrant(w io.Writer) error {
 	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
-	gbits, err := grant.Encode()
-	if err != nil {
-		return err
-	}
-	hdr := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant}
-	copy(hdr.Data[:], bit.Pack(gbits[:]))
+	hdr := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &grant}
 	hbits, err := hdr.Encode()
 	if err != nil {
 		return err
@@ -200,11 +194,8 @@ func mbcGrant(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	var hdata [64]bit.Bit
-	copy(hdata[:], bit.Unpack(gotHdr.Data[:]))
-	gotGrant := pdu.DecodeTalkgroupVoiceGrantPDU(hdata)
-	if gotHdr.FEC.Uncorrectable || gotGrant != grant {
-		return fmt.Errorf("MBC header grant %+v, want %+v", gotGrant, grant)
+	if gotHdr.FEC.Uncorrectable || gotHdr.TalkgroupVoiceGrantPDU == nil || *gotHdr.TalkgroupVoiceGrantPDU != grant {
+		return fmt.Errorf("MBC header grant %+v, want %+v", gotHdr.TalkgroupVoiceGrantPDU, grant)
 	}
 
 	gotCont, _, err := decodeAs[*pdu.MBCContinuation](craw)
@@ -218,8 +209,8 @@ func mbcGrant(w io.Writer) error {
 	if gotCGAP.CdefParms != cgap.CdefParms {
 		return fmt.Errorf("CGAP %+v, want %+v", gotCGAP.CdefParms, cgap.CdefParms)
 	}
-	fmt.Fprintf(w, "MBC %s ch 0x%X tg %d: TX %.4f MHz RX %.4f MHz\n", gotHdr.Opcode, gotGrant.PhysicalChannel,
-		gotGrant.TargetAddress, gotCGAP.CdefParms.TXFrequencyMHz(), gotCGAP.CdefParms.RXFrequencyMHz())
+	fmt.Fprintf(w, "MBC %s ch 0x%X tg %d: TX %.4f MHz RX %.4f MHz\n", gotHdr.Opcode, gotHdr.TalkgroupVoiceGrantPDU.PhysicalChannel,
+		gotHdr.TalkgroupVoiceGrantPDU.TargetAddress, gotCGAP.CdefParms.TXFrequencyMHz(), gotCGAP.CdefParms.RXFrequencyMHz())
 	return nil
 }
 

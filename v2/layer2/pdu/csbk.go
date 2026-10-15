@@ -453,7 +453,8 @@ const (
 //
 // CSBK.Encode returns an error if more than one payload field is set, or if
 // CSBKOpcode and FID do not select the payload field that is set. Put the
-// payload of a manufacturer FID or of opcode 0x38 in RawPayload.
+// payload of a manufacturer FID in RawPayload, and set the payload of opcode
+// 0x38 with SetBSOutboundActivation or SetTalkgroupDataGrantMultiItem.
 //
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xA5A5
@@ -526,6 +527,51 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 	}
 	p = DecodeTalkgroupDataGrantMultiItemPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
 	return p, true
+}
+
+// SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that
+// carries p: it sets Opcode, FID, Hint0x38 and RawPayload, clears the
+// payload fields and keeps LastBlock and ProtectFlag. It returns the error
+// of p.Encode and leaves s as it is on an error.
+func (s *CSBK) SetBSOutboundActivation(p BSOutboundActivationPDU) error {
+	bits, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.setOpcode0x38(bits, Opcode0x38BSOutboundActivation)
+	return nil
+}
+
+// SetTalkgroupDataGrantMultiItem makes s a standard FID TD_GRANT_MI CSBK
+// that carries p, as SetBSOutboundActivation does.
+func (s *CSBK) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) error {
+	bits, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.setOpcode0x38(bits, Opcode0x38TalkgroupDataGrantMultiItem)
+	return nil
+}
+
+func (s *CSBK) setOpcode0x38(bits [64]bit.Bit, hint Opcode0x38Hint) {
+	*s = CSBK{
+		LastBlock:   s.LastBlock,
+		ProtectFlag: s.ProtectFlag,
+		Opcode:      CSBKBSOutboundActivation,
+		FID:         enums.FIDStandardized,
+		Hint0x38:    hint,
+		RawPayload:  [8]byte(bit.Pack(bits[:])),
+	}
+}
+
+// NewBSOutboundActivation returns the BS_Dwn_Act CSBK that an MS sends to
+// wake up the BS with address bs (ETSI TS 102 361-2 §7.1.2.1), with
+// LastBlock set. It returns a *bit.FieldRangeError when an address does not
+// fit in 24 bits.
+func NewBSOutboundActivation(bs, source uint32) (CSBK, error) {
+	s := CSBK{LastBlock: true}
+	err := s.SetBSOutboundActivation(BSOutboundActivationPDU{BSAddress: bs, SourceAddress: source})
+	return s, err
 }
 
 // DataType returns enums.DataTypeCSBK.

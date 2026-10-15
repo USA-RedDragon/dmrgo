@@ -126,7 +126,7 @@ func TestCSBKBytes_MatchesCSBK(t *testing.T) {
 			t.Fatalf("%x: CSBKBytes edit %x, CSBK edit %x", orig, c, b)
 		}
 	}
-	if len(addressed) != 18 || len(grouped) != 4 {
+	if len(addressed) != 19 || len(grouped) != 4 {
 		t.Fatalf("covered %d addressed and %d grouped opcodes", len(addressed), len(grouped))
 	}
 }

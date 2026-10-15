@@ -39,9 +39,9 @@ func (c CSBKBytes) addressOffsets() (target, source int, ok bool) {
 		CSBKBroadcastTalkgroupVoiceGrant, CSBKPrivateDataGrant, CSBKTalkgroupDataGrant,
 		CSBKDuplexPrivateVoiceGrant, CSBKDuplexPrivateDataGrant,
 		CSBKPrivateDataGrantMultiItem, CSBKClear, CSBKProtect, CSBKAhoy,
-		CSBKRandomAccess, CSBKAckvitation, CSBKMaintenance:
+		CSBKRandomAccess, CSBKAckvitation, CSBKMaintenance, CSBKBSOutboundActivation:
 		return 4, 7, true
-	case CSBKChannelTiming, CSBKBSOutboundActivation, CSBKAloha, CSBKAckOutbound,
+	case CSBKChannelTiming, CSBKAloha, CSBKAckOutbound,
 		CSBKAckInbound, CSBKAckOutboundPayload, CSBKAckInboundPayload,
 		CSBKBroadcast, CSBKMove:
 		return 0, 0, false
@@ -54,7 +54,9 @@ func (c CSBKBytes) addressOffsets() (target, source int, ok bool) {
 // for which CSBK.Addresses returns them, with the standard FID: octets 4 to
 // 6 hold the target and octets 7 to 9 the source, except in NACK_Rsp (ETSI
 // TS 102 361-2 Table 7.6), where octets 4 to 6 hold the source and octets 7
-// to 9 the target. ok is false for every other CSBK, as for CSBK.Addresses.
+// to 9 the target. For opcode 0x38 the target is the BS address of a
+// BS_Dwn_Act or the target of a TD_GRANT_MI, which are at the same octets.
+// ok is false for every other CSBK, as for CSBK.Addresses.
 func (c CSBKBytes) Addresses() (target, source uint32, ok bool) {
 	t, s, ok := c.addressOffsets()
 	if !ok {
