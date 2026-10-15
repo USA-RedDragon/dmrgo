@@ -51,6 +51,16 @@ func (s *TACT) Encode() ([7]bit.Bit, error) {
 	return hamming.Encode743(data), nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *TACT) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *TACT) String() string {
 	return fmt.Sprintf("TACT{ AccessType: %t, TDMAChannel: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.AccessType, s.TDMAChannel, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

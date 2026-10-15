@@ -129,6 +129,16 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *UnconfirmedDataHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *UnconfirmedDataHeader) String() string {
 	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
@@ -333,6 +343,16 @@ func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *DataHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *DataHeader) String() string {
 	_ret := "DataHeader{ "
 	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
@@ -470,6 +490,16 @@ func (s *ConfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *ConfirmedDataHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *ConfirmedDataHeader) String() string {
 	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
 }
@@ -590,6 +620,16 @@ func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *ResponsePacketHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *ResponsePacketHeader) String() string {
 	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %d, SAP: %d, Reserved3: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
 }
@@ -680,6 +720,16 @@ func (s *DefinedDataHeader) Encode() ([80]bit.Bit, error) {
 	bit.PutUint(data[72:80], uint64(s.BitPadding))
 	bit.PutUint(data[4:8], uint64(FormatShortDataDefined))
 	return data, nil
+}
+
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *DefinedDataHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
 }
 
 func (s *DefinedDataHeader) String() string {
@@ -784,6 +834,16 @@ func (s *RawDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *RawDataHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *RawDataHeader) String() string {
 	return fmt.Sprintf("RawDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
@@ -871,6 +931,16 @@ func (s *StatusPrecodedHeader) Encode() ([80]bit.Bit, error) {
 	bit.PutUint(data[12:16], _const0)
 	bit.PutUint(data[4:8], uint64(FormatShortDataRawOrStatusPrecoded))
 	return data, nil
+}
+
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *StatusPrecodedHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
 }
 
 func (s *StatusPrecodedHeader) String() string {
@@ -989,6 +1059,16 @@ func (s *UDTHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *UDTHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *UDTHeader) String() string {
 	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
 }
@@ -1027,6 +1107,16 @@ func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 	copy(data[16:80], bit.Unpack(s.ManufacturerData[:]))
 	bit.PutUint(data[4:8], uint64(FormatProprietary))
 	return data, nil
+}
+
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *ProprietaryHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
 }
 
 func (s *ProprietaryHeader) String() string {

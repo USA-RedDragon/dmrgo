@@ -89,6 +89,16 @@ func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *UDPIPv4CompressedHeader) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *UDPIPv4CompressedHeader) String() string {
 	return fmt.Sprintf("UDPIPv4CompressedHeader{ IPv4Identification: %d, SAID: %d, DAID: %d, HeaderCompressionOpcode: %d, SPID: %d, DPID: %d, ExtendedHeader1: %d, ExtendedHeader2: %d }", s.IPv4Identification, s.SAID, s.DAID, s.HeaderCompressionOpcode, s.SPID, s.DPID, s.ExtendedHeader1, s.ExtendedHeader2)
 }

@@ -366,3 +366,12 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 		`fmt.Sprintf("T{ A: %d, R: %x }", s.A, s.R)`,
 	)
 }
+
+func TestEncodeBitsWrapsEncode(t *testing.T) {
+	out := mustGenerate(t, `type T struct {
+	A uint8 `+"`dmr:\"bits:0-7\"`"+`
+}`)
+	assertContains(t, out,
+		"func (s *T) EncodeBits() ([]bit.Bit, error) {\n\tbits, err := s.Encode()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn bits[:], nil\n}",
+	)
+}

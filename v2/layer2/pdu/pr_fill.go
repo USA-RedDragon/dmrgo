@@ -42,6 +42,12 @@ func (p *PRFill) DataType() enums.DataType {
 	return enums.DataTypeIdle
 }
 
+// EncodeBits returns PRFillBits as a slice.
+func (p *PRFill) EncodeBits() ([]bit.Bit, error) {
+	bits := prFillBits
+	return bits[:], nil
+}
+
 // String returns a string representation of the PR FILL PDU.
 func (p *PRFill) String() string {
 	return "PR FILL (Idle)"

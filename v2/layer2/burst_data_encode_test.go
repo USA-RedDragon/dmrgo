@@ -60,6 +60,9 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 
 func TestBurstEncode_HandBuiltData(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
+	header0, term := lc, lc
+	header0.BurstDataType = enums.DataTypeVoiceLCHeader
+	term.BurstDataType = enums.DataTypeTerminatorWithLC
 	csbk := &pdu.CSBK{
 		Opcode:      pdu.CSBKPreamble,
 		PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2},
@@ -84,13 +87,13 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 		data  layer2.Data
 		check func(t *testing.T, got layer2.Data)
 	}{
-		{enums.DataTypeVoiceLCHeader, &lc, func(t *testing.T, got layer2.Data) {
+		{enums.DataTypeVoiceLCHeader, &header0, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.FullLinkControl)
 			if !ok || g.GroupVoice == nil || *g.GroupVoice != *lc.GroupVoice || g.DataType() != enums.DataTypeVoiceLCHeader {
 				t.Errorf("got %+v", got)
 			}
 		}},
-		{enums.DataTypeTerminatorWithLC, &lc, func(t *testing.T, got layer2.Data) {
+		{enums.DataTypeTerminatorWithLC, &term, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.FullLinkControl)
 			if !ok || g.GroupVoice == nil || *g.GroupVoice != *lc.GroupVoice || g.DataType() != enums.DataTypeTerminatorWithLC {
 				t.Errorf("got %+v", got)
@@ -145,8 +148,46 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 			}
 		})
 	}
-	if lc.DataType() != 0 {
-		t.Error("Encode changed the DataType of the caller's LC")
+}
+
+// The BurstDataType of a Full LC selects its RS(12,9) mask, so it must
+// match the slot type of the burst.
+func TestBurstEncode_FullLCDataTypeMustMatchSlotType(t *testing.T) {
+	lc := groupLC(enums.FIDStandardized)
+	lc.BurstDataType = enums.DataTypeVoiceLCHeader
+	b := dataBurst(enums.DataTypeTerminatorWithLC, &lc)
+	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "with data type Voice LC Header") {
+		t.Errorf("Encode of a Voice LC Header LC in a terminator burst: %v, want a data type error", err)
+	}
+}
+
+//nolint:gochecknoglobals // compile-time interface checks
+var _ = []layer2.Data{
+	(*pdu.FullLinkControl)(nil), (*pdu.CSBK)(nil), (*pdu.PIHeader)(nil), (*pdu.DataHeader)(nil),
+	(*pdu.MBCHeader)(nil), (*pdu.MBCContinuation)(nil), (*pdu.CGAPContinuation)(nil),
+	(*pdu.MVAPContinuation)(nil), (*pdu.BCAPContinuation)(nil), (*pdu.VNAPContinuation)(nil),
+	(*pdu.UnifiedSingleBlockData)(nil), (*pdu.Rate12Data)(nil), (*pdu.Rate34Data)(nil),
+	(*pdu.Rate1Data)(nil), (*pdu.PRFill)(nil),
+}
+
+type customData struct{ bits []bit.Bit }
+
+func (c *customData) String() string                 { return "custom" }
+func (c *customData) DataType() enums.DataType       { return enums.DataTypeRate12 }
+func (c *customData) EncodeBits() ([]bit.Bit, error) { return c.bits, nil }
+
+// Burst.Encode takes any Data, not only the pdu types, and checks the
+// number of bits it encodes.
+func TestBurstEncode_CustomData(t *testing.T) {
+	want := [12]byte{0xDE, 0xAD, 0xBE, 0xEF}
+	b := dataBurst(enums.DataTypeRate12, &customData{bits: bit.Unpack(want[:])})
+	got := reencode(t, &b)
+	if r, ok := got.Data.(*pdu.Rate12Data); !ok || r.Data != want {
+		t.Errorf("custom Rate 1/2 Data decoded as %+v, want %x", got.Data, want)
+	}
+	b.Data = &customData{bits: make([]bit.Bit, 95)}
+	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "carries 96 information bits") {
+		t.Errorf("Encode of 95 bits: %v, want a length error", err)
 	}
 }
 

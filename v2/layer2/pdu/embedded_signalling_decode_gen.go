@@ -57,6 +57,16 @@ func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
 	return quadraticresidue.Encode(data), nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *EmbeddedSignalling) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *EmbeddedSignalling) String() string {
 	return fmt.Sprintf("EmbeddedSignalling{ ColorCode: %d, PreemptionAndPowerControlIndicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.PreemptionAndPowerControlIndicator, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }
