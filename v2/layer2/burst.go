@@ -330,7 +330,15 @@ func (b *Burst) extractData() (elements.Data, error) {
 		}
 		return b.fullLinkControl, nil
 	case elements.DataTypePIHeader:
-		return nil, fmt.Errorf("PI header parsing not implemented")
+		var sizedBits [96]bit.Bit
+		copy(sizedBits[:], infoBits[:96])
+		decoded, fecResult := pdu.DecodePIHeader(sizedBits)
+		decoded.DataType = dt
+		b.FEC.PDU = fecResult
+		if fecResult.Uncorrectable {
+			return nil, fmt.Errorf("failed to decode PI header from bits")
+		}
+		return &decoded, nil
 	case elements.DataTypeDataHeader:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])

@@ -50,10 +50,16 @@ documents:
         source_files:
           - v2/layer2/burst.go
           - v2/enums/burst_types.go
+          - v2/layer2/pdu/pi_header.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBurst_Encode
+              - TestBurst_PIHeader_Decode
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestPIHeader_DecodeVector
+              - TestPIHeader_RoundTrip
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestBurstTypeConstants
@@ -876,6 +882,11 @@ documents:
               - TestCRCCCITT_KnownValues
               - TestCRCCCITT_CheckValid
               - TestCRCCCITT_CheckInvalid
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestPIHeader_CRCMask
+              - TestRate34Data_Confirmed_CRC9Layout
+              - TestRate1Data_Confirmed_CRC9Layout
 
       - section: "B.3.13"
         title: "7-bit CRC calculation"

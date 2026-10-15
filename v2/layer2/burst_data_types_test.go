@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
@@ -44,6 +45,30 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	}
 	if rt.Data != want {
 		t.Errorf("Data = %X, want %X", rt.Data, want)
+	}
+	if b.Encode() != raw {
+		t.Error("Encode() does not reproduce the original burst")
+	}
+}
+
+func TestBurst_PIHeader_Decode(t *testing.T) {
+	var info [96]bit.Bit
+	copy(info[:], bit.UnpackBits([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
+	raw := buildDataBurst(elements.DataTypePIHeader, bptc.Encode(info))
+
+	b, err := layer2.NewBurstFromBytes(raw)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	pi, ok := b.Data.(*pdu.PIHeader)
+	if !ok {
+		t.Fatalf("Data is %T, want *pdu.PIHeader", b.Data)
+	}
+	if pi.AlgorithmID != 0x21 || pi.KeyID != 0x02 || pi.MessageIndicator != 0x177AFC73 || pi.Destination != 9 {
+		t.Errorf("PI header = %+v", pi)
+	}
+	if pi.GetDataType() != elements.DataTypePIHeader {
+		t.Errorf("DataType = %v, want PI header", pi.GetDataType())
 	}
 	if b.Encode() != raw {
 		t.Error("Encode() does not reproduce the original burst")
