@@ -3,7 +3,6 @@ package packet
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -98,8 +97,8 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 		return Message{}, false, nil
 	}
 	a.Reset()
-	confirmed, err := isConfirmed(h)
-	if err != nil && (h.Format != pdu.FormatResponsePacket || h.ResponsePacketHeader == nil) {
+	confirmed, ok := isConfirmed(h)
+	if !ok && (h.Format != pdu.FormatResponsePacket || h.ResponsePacketHeader == nil) {
 		return Message{}, false, nil
 	}
 	a.active, a.confirmed = true, confirmed
@@ -216,7 +215,7 @@ func (a *Assembler) Missing() []int {
 func (a *Assembler) Response() (Packet, error) {
 	h := a.msg.Header.ConfirmedDataHeader
 	if !a.active || h == nil {
-		return Packet{}, fmt.Errorf("%w: no confirmed packet in progress", ErrFormat)
+		return Packet{}, errNoConfirmed
 	}
 	var rd ResponseData
 	for _, i := range a.Missing() {
@@ -238,11 +237,12 @@ func (a *Assembler) finish() (Message, bool, error) {
 	}
 	a.Reset()
 	if m.Header.Format == pdu.FormatResponsePacket {
-		rd, err := decodeResponseData(buf)
+		rd := new(ResponseData)
+		err := decodeResponseData(rd, buf)
 		if err != nil && !errors.Is(err, fec.ErrUncorrectable) {
 			return m, true, err
 		}
-		m.Response = &rd
+		m.Response = rd
 		m.Data = buf[:len(buf)-crcOctets]
 		return m, true, err
 	}
