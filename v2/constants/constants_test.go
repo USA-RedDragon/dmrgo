@@ -254,3 +254,28 @@ func TestTrunkingIdentifiers_AnnexA8(t *testing.T) {
 		}
 	}
 }
+
+// Tables A.2 to A.5 of TS 102 361-4 give the call timers as tokens:
+// "510 = 2 315 minutes", "30 = 35 minutes", "4 094 = 3 976 minutes".
+// Table A.2 "21 = 75 s to 28 = 180 s" in 15 s steps puts 120 s at token 24;
+// Table A.3 "6 = 10 s" is the packet default.
+func TestCallTimerTokens_AnnexA2toA5(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		got      time.Duration
+		expected time.Duration
+	}{
+		{"TEmergTimerMax", constants.TEmergTimerMax, 2315 * time.Minute},
+		{"TPacketTimerMax", constants.TPacketTimerMax, 35 * time.Minute},
+		{"TMSMSTimerMax", constants.TMSMSTimerMax, 3976 * time.Minute},
+		{"TMSLineTimerMax", constants.TMSLineTimerMax, 3976 * time.Minute},
+		{"TEmergTimerDefault", constants.TEmergTimerDefault, 75*time.Second + (24-21)*15*time.Second},
+		{"TPacketTimerDefault", constants.TPacketTimerDefault, 10 * time.Second},
+	}
+	for _, tt := range tests {
+		if tt.got != tt.expected {
+			t.Errorf("%s = %v, want %v", tt.name, tt.got, tt.expected)
+		}
+	}
+}
