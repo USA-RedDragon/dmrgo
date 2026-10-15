@@ -3,9 +3,9 @@
 // options, source type and channel definitions.
 package layer3
 
-// CdefParms represents the Channel Definition Parameters (Cdeftype=0).
-// This carries absolute TX/RX frequency information in 58 bits.
-// ETSI TS 102 361-4 — §7.2.42, Table 7.103
+// CdefParms is the Channel Definition Parameters (Cdeftype 0) information
+// element, which carries the absolute TX and RX frequencies in 58 bits (ETSI TS
+// 102 361-4 clause 7.2.42, Table 7.103).
 //
 // The field names are the IE names of the spec. TXKHz and RXKHz are not in
 // kHz: they count 125 Hz steps above TXMHz and RXMHz.

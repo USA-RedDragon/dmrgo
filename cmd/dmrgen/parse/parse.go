@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -46,6 +47,9 @@ var CRCWidths = map[string]int{
 	"crc_ccitt": 16,
 	"crc_8":     8,
 }
+
+// specRefRe matches the first parenthesized ETSI citation of a doc comment.
+var specRefRe = regexp.MustCompile(`\((ETSI TS [^()]*)\)`)
 
 // Guard is a comparison of a struct field against a literal value.
 type Guard struct {
@@ -157,7 +161,7 @@ type PDUStruct struct {
 	Consts       []ConstDirective  // bits with a fixed value
 	Inputs       []string          // dmr:"-" fields passed to Decode as parameters
 	DispatchIf   *Guard            // optional guard required before dispatching
-	SpecRef      string            // ETSI spec section reference from comment
+	SpecRef      string            // first parenthesized ETSI citation of the doc comment
 	SourceFile   string            // source file path
 	HasInputSize bool              // true if dmr:input_size was given
 	SubPDU       bool              // true if dmr:subpdu was given
@@ -321,6 +325,7 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 	pdu.InputSize = maxBit + 1
 
 	if doc != nil {
+		var prose []string
 		for _, c := range doc.List {
 			text := strings.TrimSpace(strings.TrimPrefix(c.Text, "//"))
 			if text == "dmr:subpdu" {
@@ -333,9 +338,10 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 				}
 				continue
 			}
-			if pdu.SpecRef == "" && strings.Contains(text, "ETSI TS") {
-				pdu.SpecRef = text
-			}
+			prose = append(prose, text)
+		}
+		if m := specRefRe.FindStringSubmatch(strings.Join(prose, " ")); m != nil {
+			pdu.SpecRef = m[1]
 		}
 	}
 

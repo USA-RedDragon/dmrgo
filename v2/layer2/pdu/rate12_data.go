@@ -8,7 +8,8 @@ import (
 // per ETSI TS 102 361-1 Table B.21.
 const crc9MaskRate12 uint16 = 0x0F0
 
-// ETSI TS 102 361-1 - 9.2.7 Rate 1/2 coded packet Data (R_1_2_DATA) PDU
+// Rate12Data is a rate 1/2 coded packet data block (R_1_2_DATA) (ETSI TS 102
+// 361-1 clause 9.2.7).
 //
 // Data holds all 96 bits. Unconfirmed data (Table 9.15AA) uses all of them
 // as user data. Confirmed data (Table 9.15A) carries a 7-bit DBSN, a 9-bit

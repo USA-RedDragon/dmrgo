@@ -5,7 +5,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
+// PIHeader is the Privacy Indicator (PI) header (ETSI TS 102 361-1 clause 6.2).
 //
 // ETSI TS 102 361-1 leaves the PI header content undefined (Table 6.1
 // NOTE). Only the BPTC(196,96) coding and the CRC-CCITT with mask 0x6969

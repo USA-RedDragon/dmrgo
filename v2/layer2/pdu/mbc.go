@@ -8,7 +8,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
+// MBCHeader is the header block of a Multi Block Control (MBC) PDU (ETSI TS 102
+// 361-1 clause 7.4.1).
 //
 // The header of a Tier III grant, C_MOVE or C_BCAST MBC carries the CSBK
 // payload of its opcode (ETSI TS 102 361-4 §7.1.1.1), so with the standard
@@ -49,7 +50,8 @@ func (s *MBCHeader) DataType() enums.DataType {
 	return enums.DataTypeMBCHeader
 }
 
-// ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
+// MBCContinuation is a continuation block of a Multi Block Control (MBC) PDU
+// (ETSI TS 102 361-1 clause 7.4.1).
 //
 // The continuation block carries either intermediate or last-block data.
 // LB=0: intermediate block (95 data bits, no CRC)
@@ -169,11 +171,11 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 // determines the type from the preceding MBCHeader.Opcode and
 // calls the appropriate Decode function on the full 96-bit block.
 
-// CGAPContinuation represents Channel Grant Absolute Parameters.
-// Used with all grant opcodes (PV_GRANT, TV_GRANT, BTV_GRANT,
-// PD_GRANT, TD_GRANT, PV_GRANT_DX, PD_GRANT_DX, PD_GRANT_MI,
-// TD_GRANT_MI) when PhysicalChannel=0xFFF.
-// ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
+// CGAPContinuation is the Channel Grant Absolute Parameters (CGAP) continuation
+// block of a grant MBC, used when PhysicalChannel is 0xFFF (ETSI TS 102 361-4
+// clause 7.1.1.1.2, Table 7.16). The grant opcodes are PV_GRANT, TV_GRANT,
+// BTV_GRANT, PD_GRANT, TD_GRANT, PV_GRANT_DX, PD_GRANT_DX, PD_GRANT_MI and
+// TD_GRANT_MI.
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
@@ -195,9 +197,9 @@ func (s *CGAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// MVAPContinuation represents Move Absolute Parameters.
-// Used with C_MOVE (opcode 0x39) when PhysicalChannel=0xFFF.
-// ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
+// MVAPContinuation is the Move Absolute Parameters (MVAP) continuation block of
+// a C_MOVE (opcode 0x39) MBC, used when PhysicalChannel is 0xFFF (ETSI TS 102
+// 361-4 clause 7.1.1.1.3.1, Table 7.18).
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
@@ -219,9 +221,9 @@ func (s *MVAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// BCAPContinuation represents Broadcast Absolute Parameters.
-// Used with C_BCAST (opcode 0x28) for Ann_WD_TSCC and Chan_Freq.
-// ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
+// BCAPContinuation is the Broadcast Absolute Parameters (BCAP) continuation
+// block of a C_BCAST (opcode 0x28) MBC for Ann_WD_TSCC and Chan_Freq (ETSI TS
+// 102 361-4 clause 7.1.1.1.5.1, Table 7.21).
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
@@ -242,9 +244,9 @@ func (s *BCAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// VNAPContinuation represents Vote Now Absolute Parameters.
-// Used with C_BCAST (opcode 0x28) Vote_Now when CH_VOTE=0xFFF.
-// ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
+// VNAPContinuation is the Vote Now Absolute Parameters (VNAP) continuation
+// block of a C_BCAST Vote_Now MBC, used when CH_VOTE is 0xFFF (ETSI TS 102
+// 361-4 clause 7.2.19.3.1, Table 7.72).
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96

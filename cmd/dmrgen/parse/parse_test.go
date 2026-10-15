@@ -548,7 +548,7 @@ func TestParseValidStruct(t *testing.T) {
 // dmr:crc crc_ccitt
 // dmr:crc_mask 0xA5A5
 // dmr:input_size 96
-// ETSI TS 102 361-1 - test
+// T is a test PDU (ETSI TS 102 361-1 clause 1).
 type T struct {
 	FEC      fec.Result `+"`dmr:\"-\"`"+`
 	DataType uint8  `+"`dmr:\"-\"`"+`
@@ -568,7 +568,7 @@ type T struct {
 	if p.CRC == nil || p.CRC.Algorithm != "crc_ccitt" || p.CRC.Mask != 0xA5A5 || !p.CRC.HasMask {
 		t.Errorf("CRC = %+v", p.CRC)
 	}
-	if p.SpecRef != "ETSI TS 102 361-1 - test" {
+	if p.SpecRef != "ETSI TS 102 361-1 clause 1" {
 		t.Errorf("SpecRef = %q", p.SpecRef)
 	}
 	op := p.FieldByName("Op")
@@ -782,13 +782,13 @@ type T struct {
 	}
 }
 
-func TestParseSpecRefUsesFirstETSILine(t *testing.T) {
-	pdus := mustParse(t, `// ETSI TS 102 361-1 - 9.1.6 first
-// See also ETSI TS 102 361-1 Table 9.21.
+func TestParseSpecRefUsesFirstCitation(t *testing.T) {
+	pdus := mustParse(t, `// T is the first PDU (ETSI TS 102 361-1
+// clause 9.1.6). It uses the FLCO (ETSI TS 102 361-1 Table 9.21).
 type T struct {
 	A uint8 `+"`dmr:\"bits:0-7\"`"+`
 }`)
-	if pdus[0].SpecRef != "ETSI TS 102 361-1 - 9.1.6 first" {
+	if pdus[0].SpecRef != "ETSI TS 102 361-1 clause 9.1.6" {
 		t.Errorf("SpecRef = %q", pdus[0].SpecRef)
 	}
 }

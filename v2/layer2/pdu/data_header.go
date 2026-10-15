@@ -5,7 +5,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
+// UnconfirmedDataHeader is the unconfirmed data header (U_HEAD) (ETSI TS 102
+// 361-1 clause 9.1.8).
 //
 //dmr:const 4-7=FormatUnconfirmed
 type UnconfirmedDataHeader struct {
@@ -23,7 +24,7 @@ type UnconfirmedDataHeader struct {
 	FragmentSequenceNumber uint8                      `dmr:"bits:76-79"`
 }
 
-// ETSI TS 102 361-1 - 9.1.8 Data Header PDU
+// DataHeader is the data header PDU (ETSI TS 102 361-1 clause 9.1.8).
 //
 // DataHeader.Encode returns an error if more than one header field is set, or
 // if Format and the encoded Appended Blocks do not select the header field
@@ -138,7 +139,8 @@ func (f Format) String() string {
 	}
 }
 
-// ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
+// ConfirmedDataHeader is the confirmed data header (C_HEAD) (ETSI TS 102 361-1
+// Table 9.10).
 //
 //dmr:const 4-7=FormatConfirmed
 type ConfirmedDataHeader struct {
@@ -156,7 +158,8 @@ type ConfirmedDataHeader struct {
 	FragmentSequenceNumber uint8                      `dmr:"bits:76-79"`
 }
 
-// ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
+// ResponsePacketHeader is the response packet header (C_RHEAD) (ETSI TS 102
+// 361-1 Table 9.13).
 //
 //dmr:const 4-7=FormatResponsePacket
 type ResponsePacketHeader struct {
@@ -174,7 +177,8 @@ type ResponsePacketHeader struct {
 	ResponseStatus    uint8                      `dmr:"bits:77-79"`
 }
 
-// ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
+// DefinedDataHeader is the defined data header (DD_HEAD) (ETSI TS 102 361-1
+// Table 9.17C).
 //
 //dmr:const 4-7=FormatShortDataDefined
 type DefinedDataHeader struct {
@@ -190,8 +194,8 @@ type DefinedDataHeader struct {
 	BitPadding        uint8                      `dmr:"bits:72-79"`
 }
 
-// ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
-// Used when AppendedBlocks != 0 (short data with appended data blocks).
+// RawDataHeader is the raw data header (R_HEAD), used when AppendedBlocks is
+// not 0 (ETSI TS 102 361-1 Table 9.17B).
 //
 //dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
 type RawDataHeader struct {
@@ -208,8 +212,9 @@ type RawDataHeader struct {
 	BitPadding        uint8                      `dmr:"bits:72-79"`
 }
 
-// ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
-// Used when AppendedBlocks == 0 (status/precoded message carried entirely in header).
+// StatusPrecodedHeader is the status or precoded data header (SP_HEAD), used
+// when AppendedBlocks is 0 and the header carries the whole message (ETSI TS
+// 102 361-1 Table 9.17A).
 //
 //dmr:const 2-3+12-15=0
 //dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
@@ -251,9 +256,9 @@ func (op UDTOpcode) String() string {
 	}
 }
 
-// UDTHeader takes octet 0 bits 5-4 from TS 102 361-4 Tables 7.24 (C_UDTHD)
-// and 7.28 (C_UDTHU).
-// ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
+// UDTHeader is the UDT data header (UDT_HEAD) (ETSI TS 102 361-1 Table 9.17D).
+// Octet 0 bits 5 to 4 come from ETSI TS 102 361-4 Tables 7.24 (C_UDTHD) and
+// 7.28 (C_UDTHU).
 //
 //dmr:const 4-7=FormatUnifiedDataTransport
 type UDTHeader struct {
@@ -276,7 +281,8 @@ type UDTHeader struct {
 	Opcode            UDTOpcode `dmr:"bits:74-79"`
 }
 
-// ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
+// ProprietaryHeader is the proprietary data header (P_HEAD) (ETSI TS 102 361-1
+// Table 9.17).
 //
 //dmr:const 4-7=FormatProprietary
 type ProprietaryHeader struct {

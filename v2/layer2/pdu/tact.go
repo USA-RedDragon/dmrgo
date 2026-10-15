@@ -5,7 +5,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-1 - 9.1.4 TACT PDU
+// TACT is the TACT PDU (ETSI TS 102 361-1 clause 9.1.4).
 //
 // The TACT (Timing, Activity, Channel, Type) PDU is a 7-bit field
 // at the start of each CACH burst. It carries 4 information bits

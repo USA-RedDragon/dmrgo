@@ -5,12 +5,14 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
+// ShortLCNullMessage is the Null Message Short LC payload (ETSI TS 102 361-2
+// clause 7.1.1).
 type ShortLCNullMessage struct {
 	Reserved uint32 `dmr:"bits:0-23"`
 }
 
-// ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
+// ShortLCActivityUpdate is the Activity Update Short LC payload (ETSI TS 102
+// 361-2 clause 7.1.2).
 type ShortLCActivityUpdate struct {
 	TS1ActivityID enums.ActivityID `dmr:"bits:0-3,enum"`
 	TS2ActivityID enums.ActivityID `dmr:"bits:4-7,enum"`
@@ -18,7 +20,8 @@ type ShortLCActivityUpdate struct {
 	HashTS2       byte             `dmr:"bits:16-23"`
 }
 
-// ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
+// ShortLCCSysParms is the C_SYS_Parms Short LC payload (ETSI TS 102 361-4
+// clause 7.1.2).
 // MODEL-dependent NET/SITE split: use NetID()/SiteID() helpers to interpret.
 type ShortLCCSysParms struct {
 	MODEL             uint8  `dmr:"bits:0-1"`
@@ -66,7 +69,8 @@ func siteID(model uint8, netSite uint16) uint16 {
 	return netSite & (1<<(netSiteLen-netSiteBits(model)) - 1)
 }
 
-// ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
+// ShortLCPSysParms is the P_SYS_Parms Short LC payload (ETSI TS 102 361-4
+// clause 7.1.2).
 // MODEL-dependent NET/SITE split: use NetID()/SiteID() helpers to interpret.
 type ShortLCPSysParms struct {
 	MODEL              uint8  `dmr:"bits:0-1"`
@@ -87,7 +91,8 @@ func (s *ShortLCPSysParms) SiteID() uint16 {
 	return siteID(s.MODEL, s.NetSiteRaw)
 }
 
-// ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
+// ShortLC is the Short Link Control (Short LC) PDU (ETSI TS 102 361-1 clause
+// 9.1.7).
 //
 // ShortLC.Encode returns an error if more than one payload field is set, or
 // if SLCO does not select the payload field that is set.
