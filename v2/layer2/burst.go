@@ -91,12 +91,10 @@ type Burst struct {
 	// ReverseChannel is the RC PDU of a burst with HasReverseChannel.
 	ReverseChannel pdu.ReverseChannel
 
-	// Data is the decoded PDU of a data burst. DecodeFromBytes sets it also
-	// when the PDU CRC or FEC fails, and leaves it nil only for a reserved
-	// data type. The decoded PDU, and the payload struct that its dispatch
-	// field points to, are values that the Burst reuses: the next decode into
-	// the Burst, or into a copy of it, overwrites them. Copy them to keep
-	// them. A Burst and its copies must not decode concurrently.
+	// Data is the decoded PDU of a data burst, nil only for a reserved data
+	// type. The Burst reuses the PDU and its payload struct: the next decode
+	// into the Burst or a copy of it overwrites them, so copy them to keep
+	// them, and do not decode a Burst and its copies concurrently.
 	Data Data
 	// FEC reports the FEC and CRC results of the decode.
 	FEC fec.BurstFECStats

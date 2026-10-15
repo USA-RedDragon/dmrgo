@@ -151,10 +151,8 @@ func decodeCases(t testing.TB) []decodeCase {
 }
 
 // layer2Entries returns the entries of package layer2, on captured bursts
-// where the captures have one. An allocation that is not 0 comes from a PDU
-// decode that allocates a dispatch payload, from the Encode of a Rate 1/2,
-// Rate 3/4 or Rate 1 block, from the RS(12,9) encode of a Full LC, from a
-// constructor, from a form that returns a new slice by contract, or from
+// where the captures have one. An allocation that is not 0 comes from a
+// form that returns a new value or slice by contract, a constructor, or
 // errors.Join of two decode errors.
 func layer2Entries(t testing.TB) []entry {
 	t.Helper()
@@ -177,8 +175,6 @@ func burstDecodeEntries(t testing.TB) []entry {
 		}
 		out = append(out, entry{"layer2.Burst.DecodeFromBytes", c.name, c.allocs, func() { _ = b.DecodeFromBytes(c.burst) }})
 	}
-	// A decode of a capture allocates the dispatch payloads of its CSBKs,
-	// data header and Full LCs.
 	for _, c := range []struct {
 		name   string
 		allocs float64
@@ -248,8 +244,6 @@ func burstEncodeEntries(t testing.TB) []entry {
 		}
 		out = append(out, entry{"layer2.Burst.Encode", "decoded " + c.name, c.encode, func() { raw, err = b.Encode() }})
 	}
-	// An Encode of a capture allocates in the Encode of its Rate 1/2 blocks
-	// and Full LCs.
 	for _, c := range []struct {
 		name   string
 		allocs float64
