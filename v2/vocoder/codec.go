@@ -38,6 +38,17 @@ type Codec interface {
 	FID() enums.FeatureSetID
 }
 
+// AppendDecoder is a Codec that can decode into a buffer of the caller.
+// Match it with a type assertion on a Codec.
+type AppendDecoder interface {
+	Codec
+
+	// AppendDecode decodes one 72-bit frame as Decode does, appends the
+	// FrameSamples samples to dst and returns the extended slice. On error
+	// it returns dst unchanged.
+	AppendDecode(dst []int16, slot [72]bit.Bit) ([]int16, error)
+}
+
 var (
 	registryMu sync.RWMutex
 	registry   = map[string]func() (Codec, error){}

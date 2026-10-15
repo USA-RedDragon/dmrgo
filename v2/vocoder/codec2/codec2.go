@@ -36,7 +36,7 @@ type Config struct {
 	FID enums.FeatureSetID
 }
 
-var _ vocoder.Codec = (*Codec)(nil)
+var _ vocoder.AppendDecoder = (*Codec)(nil)
 
 func init() {
 	vocoder.Register(Name, func() (vocoder.Codec, error) {
@@ -75,10 +75,10 @@ func packSlot(frame []byte) [72]bit.Bit {
 	return slot
 }
 
-func unpackSlot(slot [72]bit.Bit, n int) []byte {
-	frame := make([]byte, n)
-	for i := 0; i < n*8; i++ {
+// unpackSlot fills frame with the first len(frame)*8 bits of slot.
+func unpackSlot(frame []byte, slot [72]bit.Bit) {
+	clear(frame)
+	for i := 0; i < len(frame)*8; i++ {
 		frame[i/8] |= byte(slot[i]&1) << (7 - i%8)
 	}
-	return frame
 }
