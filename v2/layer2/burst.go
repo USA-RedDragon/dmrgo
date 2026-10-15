@@ -14,11 +14,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// ErrReservedDataType is returned, wrapped, by DecodeFromBytes for a data
-// burst whose slot type carries a reserved data type. The burst has no Data
-// (ETSI TS 102 361-1 Table 9.22).
-var ErrReservedDataType = errors.New("reserved data type")
-
 // Kind is the kind of a burst.
 type Kind uint8
 

@@ -1,22 +1,10 @@
 package layer2
 
 import (
-	"errors"
-
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-)
-
-var (
-	// ErrShortLCSequence is returned by ShortLCAssembler.AddFragment when a
-	// CACH fragment arrives out of sequence or has an LCSS that is not valid
-	// for Short LC. The partial Short LC is discarded.
-	ErrShortLCSequence = errors.New("short LC fragment out of sequence")
-	// ErrShortLCIncomplete is returned by ShortLCAssembler.Complete when the
-	// assembler does not hold 4 fragments in sequence.
-	ErrShortLCIncomplete = errors.New("short LC needs 4 fragments in sequence")
 )
 
 // ShortLCAssembler collects the signalling payloads of 4 CACHs and decodes

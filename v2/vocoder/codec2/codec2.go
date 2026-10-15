@@ -1,8 +1,6 @@
 package codec2
 
 import (
-	"errors"
-
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -37,18 +35,6 @@ type Config struct {
 	// AMBE, so it cannot be selected.
 	FID enums.FeatureSetID
 }
-
-var (
-	// ErrUnavailable is returned when the package was built without
-	// libcodec2 (CGO_ENABLED=0 or -tags nocodec2).
-	ErrUnavailable = errors.New("codec2: built without libcodec2")
-	// ErrUnsupportedMode is returned for a Mode other than Mode2400 or Mode3200.
-	ErrUnsupportedMode = errors.New("codec2: unsupported mode")
-	// ErrFrameLength is returned when Encode gets other than FrameSamples samples.
-	ErrFrameLength = errors.New("codec2: wrong number of samples")
-	// ErrClosed is returned when a closed Codec is used.
-	ErrClosed = errors.New("codec2: codec is closed")
-)
 
 var _ vocoder.Codec = (*Codec)(nil)
 

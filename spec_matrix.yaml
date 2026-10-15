@@ -31,6 +31,11 @@ ignore_files:
   - v2/layer2/framer/doc.go
   - v2/layer2/packet/doc.go
   - v2/layer2/pdu/doc.go
+  - v2/doc.go
+  - v2/layer2/errors.go
+  - v2/layer2/packet/errors.go
+  - v2/layer2/pdu/errors.go
+  - v2/vocoder/codec2/errors.go
   - v2/vocoder/doc.go
   - v2/vocoder/codec2/doc.go
 

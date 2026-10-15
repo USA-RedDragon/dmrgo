@@ -11,22 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-var (
-	// ErrNoHeader is returned for a data block that no header announced.
-	ErrNoHeader = errors.New("data block without a header")
-	// ErrRateChange is returned when the data type changes within a packet
-	// (ETSI TS 102 361-1 clause 8.2.2.1). The partial packet is discarded.
-	ErrRateChange = errors.New("data type changed within a packet")
-	// ErrMessageCRC is returned with the Message whose message CRC failed.
-	// It wraps fec.ErrUncorrectable.
-	ErrMessageCRC = fmt.Errorf("message CRC-32 does not match: %w", fec.ErrUncorrectable)
-	// ErrBlocksMissing is returned when the blocks of a confirmed packet
-	// have all arrived but some failed their CRC-9. Missing lists them and
-	// Response builds the SACK. The Assembler keeps the good blocks for the
-	// retry. It wraps fec.ErrUncorrectable.
-	ErrBlocksMissing = fmt.Errorf("confirmed blocks failed CRC-9: %w", fec.ErrUncorrectable)
-)
-
 // Message is a reassembled packet.
 type Message struct {
 	// Header is the first header block.

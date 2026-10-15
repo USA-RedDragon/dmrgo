@@ -2,7 +2,6 @@ package packet
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -17,17 +16,6 @@ const maxBlocks = 127
 
 // crcOctets is the length of the message CRC at the end of the last block.
 const crcOctets = 4
-
-var (
-	// ErrRate is returned for a data type other than rate 1/2, 3/4 or 1.
-	ErrRate = errors.New("data type is not rate 1/2, 3/4 or 1 coded")
-	// ErrFormat is returned by Segment for a header that is not U_HEAD,
-	// C_HEAD, DD_HEAD or R_HEAD, or whose matching sub-header is nil.
-	ErrFormat = errors.New("header format does not carry segmented data")
-	// ErrTooLong is returned when the payload needs more than 127 blocks,
-	// or more than the header can count.
-	ErrTooLong = errors.New("payload needs too many blocks")
-)
 
 // Packet is a header and the data blocks that follow it. Each block is a
 // *pdu.Rate12Data, *pdu.Rate34Data or *pdu.Rate1Data with DataType set, ready
