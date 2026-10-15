@@ -19,7 +19,8 @@ import (
 // RawBurst(p).EmbeddedData(); the setters have pointer receivers.
 //
 // A data burst carries the slot type and one of the BPTCPayload,
-// Rate34Payload or Rate1Payload forms around a SYNC pattern; its slot type
+// Rate34Payload or Rate1Payload forms around a SYNC pattern or around EMB
+// and EmbeddedData (§5.1.5.1, §6.4.2); its slot type
 // names the form, but a caller that knows the data type from elsewhere (a
 // network header, for example) can use it instead. A voice burst carries
 // VoiceSlots around a SYNC pattern (burst A) or around EMB and
@@ -188,20 +189,23 @@ func (r *RawBurst) SetRate1Payload(p [24]byte) {
 }
 
 // EMB decodes the QR(16,7) embedded signalling in burst bits 108 to 115 and
-// 148 to 155 of a voice burst B to F. Its FEC field reports the QR result.
+// 148 to 155 of a voice burst B to F or a data burst without a SYNC
+// pattern. Its FEC field reports the QR result.
 func (r RawBurst) EMB() pdu.EmbeddedSignalling {
 	return r.emb(embFirstStart, embSecondStart)
 }
 
-// SetEMB encodes e into the EMB bits of a voice burst B to F. It returns an
-// error, and writes nothing, when a field does not fit.
+// SetEMB encodes e into the EMB bits of a voice burst B to F or a data
+// burst without a SYNC pattern. It returns an error, and writes nothing,
+// when a field does not fit.
 func (r *RawBurst) SetEMB(e pdu.EmbeddedSignalling) error {
 	return r.setEMB(e, embFirstStart, embSecondStart)
 }
 
 // EmbeddedData returns the 32-bit embedded signalling field, burst bits 116
-// to 147, of a voice burst B to F: an embedded LC fragment, a Null
-// embedded message or an outbound RC, still FEC coded.
+// to 147, of a voice burst B to F or a data burst without a SYNC pattern:
+// an embedded LC fragment, a Null embedded message or an outbound RC, still
+// FEC coded.
 func (r RawBurst) EmbeddedData() [4]byte {
 	return r.word32(embeddedDataStart, embeddedDataStart+16)
 }
