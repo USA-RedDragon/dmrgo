@@ -4,7 +4,6 @@
 package reedsolomon
 
 import (
-	"fmt"
 	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -26,7 +25,7 @@ type decodeResult struct {
 	Uncorrectable bool           // True if errors could not be corrected
 }
 
-func bitDistance(a, b []byte) int {
+func bitDistance(a, b *[dataSize + checksumSize]byte) int {
 	n := 0
 	for i := range a {
 		n += bits.OnesCount8(a[i] ^ b[i])
@@ -42,35 +41,23 @@ type workspace struct {
 	product   [polyMaxDeg * 2]uint8
 	tmp       [polyMaxDeg * 2]uint8
 	psi2      [polyMaxDeg]uint8
-	roots     [dataSize + checksumSize]uint8
 }
 
 // decode corrects a 12-byte codeword (9 data bytes and 3 parity bytes) and
 // returns the data bytes and the error counts.
-func decode(data []byte) decodeResult {
+func decode(data [dataSize + checksumSize]byte) decodeResult {
 	var result decodeResult
 
-	if len(data) != dataSize+checksumSize {
-		result.Uncorrectable = true
-		return result
-	}
-
-	workData := make([]byte, len(data))
-	copy(workData, data)
-
+	workData := data
 	var syndrome poly
-	err := calcSyndrome(workData, &syndrome)
-	if err != nil {
-		result.Uncorrectable = true
-		return result
-	}
+	calcSyndrome(&workData, &syndrome)
 
 	if !syndromeHasErrors(&syndrome) {
 		copy(result.Data[:], workData[:dataSize])
 		return result
 	}
 
-	errorsFound, err := correct(workData, &syndrome)
+	errorsFound, err := correct(&workData, &syndrome)
 	if err != nil {
 		result.Uncorrectable = true
 		result.ErrorsFound = errorsFound
@@ -79,7 +66,7 @@ func decode(data []byte) decodeResult {
 	}
 
 	result.ErrorsFound = errorsFound
-	result.BitsCorrected = bitDistance(data, workData)
+	result.BitsCorrected = bitDistance(&data, &workData)
 	copy(result.Data[:], workData[:dataSize])
 	return result
 }
@@ -87,37 +74,8 @@ func decode(data []byte) decodeResult {
 // Encode returns the 12-byte codeword of 9 data bytes: the data followed by
 // 3 parity bytes (ETSI TS 102 361-1 clause B.3.6).
 func Encode(data [9]byte) [12]byte {
-	cw, _ := encode(data[:])
-	return [12]byte(cw)
-}
-
-// Decode corrects up to one symbol error in a 12-byte codeword and returns
-// the 9 data bytes. ErrorsCorrected counts corrected bits. When the codeword
-// is uncorrectable, Decode returns the received data bytes and sets
-// Uncorrectable.
-func Decode(cw [12]byte) ([9]byte, fec.Result) {
-	r := decode(cw[:])
-	return r.Data, fec.Result{
-		BitsChecked:     96,
-		ErrorsCorrected: r.BitsCorrected,
-		Uncorrectable:   r.Uncorrectable,
-	}
-}
-
-// Check reports whether cw is a codeword.
-func Check(cw [12]byte) bool {
-	var syndrome poly
-	_ = calcSyndrome(cw[:], &syndrome)
-	return !syndromeHasErrors(&syndrome)
-}
-
-func encode(data []byte) ([]byte, error) {
-	if len(data) != dataSize {
-		return nil, fmt.Errorf("fec/rs_12_9: data must be %d bytes, got %d", dataSize, len(data))
-	}
-
-	codeword := make([]byte, dataSize+checksumSize)
-	copy(codeword, data)
+	var codeword [12]byte
+	copy(codeword[:], data[:])
 
 	// Systematic encoding by division by g(x) = x^3 + 0x0E x^2 + 0x38 x + 0x40
 	// (ETSI TS 102 361-1 equation B.10).
@@ -132,16 +90,31 @@ func encode(data []byte) ([]byte, error) {
 	codeword[dataSize+1] = r1
 	codeword[dataSize+2] = r2
 
-	return codeword, nil
+	return codeword
+}
+
+// Decode corrects up to one symbol error in a 12-byte codeword and returns
+// the 9 data bytes. ErrorsCorrected counts corrected bits. When the codeword
+// is uncorrectable, Decode returns the received data bytes and sets
+// Uncorrectable.
+func Decode(cw [12]byte) ([9]byte, fec.Result) {
+	r := decode(cw)
+	return r.Data, fec.Result{
+		BitsChecked:     96,
+		ErrorsCorrected: r.BitsCorrected,
+		Uncorrectable:   r.Uncorrectable,
+	}
+}
+
+// Check reports whether cw is a codeword.
+func Check(cw [12]byte) bool {
+	var syndrome poly
+	calcSyndrome(&cw, &syndrome)
+	return !syndromeHasErrors(&syndrome)
 }
 
 // calcSyndrome computes the 3 syndromes of a 12-byte codeword.
-func calcSyndrome(data []byte, syndrome *poly) error {
-	if len(data) != dataSize+checksumSize {
-		return fmt.Errorf("fec/rs_12_9: unexpected size %d, expected %d bytes",
-			len(data), dataSize+checksumSize)
-	}
-
+func calcSyndrome(data *[dataSize + checksumSize]byte, syndrome *poly) {
 	var i, j uint8
 	for i = 0; i < 3; i++ {
 		syndrome[i] = 0
@@ -152,8 +125,6 @@ func calcSyndrome(data []byte, syndrome *poly) error {
 			syndrome[j] = data[i] ^ galoisMul(galois_exp_table[j+1], syndrome[j])
 		}
 	}
-
-	return nil
 }
 
 // syndromeHasErrors reports whether any syndrome value is nonzero.
@@ -241,12 +212,7 @@ func calcDiscrepancy(locator, syndrome *poly, lVal, n uint8) uint8 {
 	return sum
 }
 
-func correct(data []byte, syndrome *poly) (int, error) {
-	if len(data) != dataSize+checksumSize {
-		return -1, fmt.Errorf("fec/rs_12_9: unexpected size %d, expected %d bytes",
-			len(data), dataSize+checksumSize)
-	}
-
+func correct(data *[dataSize + checksumSize]byte, syndrome *poly) (int, error) {
 	var ws workspace
 	if !syndromeHasErrors(syndrome) {
 		return 0, nil
@@ -264,11 +230,10 @@ func correct(data []byte, syndrome *poly) (int, error) {
 			return 0, fec.ErrUncorrectable
 		}
 	}
-	roots := findRootsInto(&ws.locator, ws.roots[:0])
-	if len(roots) != 1 || roots[0] >= dataSize+checksumSize {
+	i, n := findRoots(&ws.locator)
+	if n != 1 || i >= dataSize+checksumSize {
 		return 0, fec.ErrUncorrectable
 	}
-	i := roots[0]
 
 	// Forney: the error value is the evaluator over the locator derivative,
 	// both evaluated at alpha^(-i).
@@ -291,7 +256,8 @@ func correct(data []byte, syndrome *poly) (int, error) {
 	data[pos] ^= value
 
 	var check poly
-	if err := calcSyndrome(data, &check); err != nil || syndromeHasErrors(&check) {
+	calcSyndrome(data, &check)
+	if syndromeHasErrors(&check) {
 		data[pos] ^= value
 		return 0, fec.ErrUncorrectable
 	}
@@ -299,16 +265,10 @@ func correct(data []byte, syndrome *poly) (int, error) {
 	return 1, nil
 }
 
-// findRoots returns the roots of the error locator polynomial, found with a
-// Chien search over the powers of alpha.
-func findRoots(locator *poly) []uint8 {
-	var rootsBuf [dataSize + checksumSize]uint8
-	return findRootsInto(locator, rootsBuf[:0])
-}
-
-func findRootsInto(locator *poly, buf []uint8) []uint8 {
+// findRoots returns the first root of the error locator polynomial and the
+// number of roots, found with a Chien search over the powers of alpha.
+func findRoots(locator *poly) (first uint8, n int) {
 	var k, r uint16
-	roots := buf[:0]
 	for r = 1; r < 256; r++ {
 		var sum uint8
 		for k = 0; k < checksumSize+1; k++ {
@@ -316,11 +276,14 @@ func findRootsInto(locator *poly, buf []uint8) []uint8 {
 		}
 
 		if sum == 0 {
-			roots = append(roots, uint8(255-r))
+			if n == 0 {
+				first = uint8(255 - r)
+			}
+			n++
 		}
 	}
 
-	return roots
+	return first, n
 }
 
 // calcWithScratch finds the error locator polynomial with the

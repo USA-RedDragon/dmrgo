@@ -978,9 +978,6 @@ documents:
               - TestReedSolomon1294GaloisMul
               - TestReedSolomon1294GaloisMulAssociativity
               - TestReedSolomon1294FindRootsEmpty
-              - TestReedSolomon1294DecodeInvalidLength
-              - TestReedSolomon1294CalcSyndromeError
-              - TestReedSolomon1294CorrectError
               - TestReedSolomon1294DecodeResultFields
               - TestReedSolomon1294SyndromeHasErrors
               - TestEncodeDecodeRoundTrip
@@ -994,7 +991,6 @@ documents:
               - TestEncodeKnownVector
               - TestReedSolomon1294GaloisMulExhaustive
               - TestReedSolomon1294GaloisInv
-              - TestEncodeInvalidLength
               - TestPublicEncodeDecodeRoundTrip
               - TestSyndromeCleanForValidCodeword
               - TestEncodePreservesData
