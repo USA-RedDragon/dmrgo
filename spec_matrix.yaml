@@ -27,6 +27,7 @@ documents:
           - v2/layer2/burst.go
           - v2/vocoder/frame.go
           - v2/vocoder/codec.go
+          - v2/layer2/voice_superframe.go
           - v2/layer2/pdu/vocoder.go
           - v2/fec/golay/golay_23_12_7.go
           - v2/fec/golay/golay_24_12_8.go
@@ -47,6 +48,7 @@ documents:
               - TestBurst_Encode
               - TestBurstEncode_VoiceIgnoresVoiceBurst
               - TestBurstEncode_RejectsBurstWithoutSync
+              - TestVoiceTransmitter_AddFramesUsesAMBE72
           - package: github.com/USA-RedDragon/dmrgo/v2/fec/golay
             names:
               - TestGolay23127
@@ -117,6 +119,7 @@ documents:
         source_files:
           - v2/layer2/burst.go
           - v2/layer2/pdu/full_link_control.go
+          - v2/layer2/voice_superframe.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -127,12 +130,15 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBuildLCDataBurst_ProducesCorrectSize
+              - TestVoiceTransmitter_Transmission
+              - TestVoiceTransmitter_ReproducesCaptures
 
       - section: "7.1.2"
         title: "Terminator with LC"
         source_files:
           - v2/layer2/burst.go
           - v2/layer2/pdu/full_link_control.go
+          - v2/layer2/voice_superframe.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -143,6 +149,8 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBuildLCDataBurst_Terminator
+              - TestVoiceTransmitter_Terminate
+              - TestVoiceTransmitter_ReproducesCaptures
 
       - section: "7.1.3"
         title: "Embedded signalling"
@@ -150,6 +158,7 @@ documents:
           - v2/layer2/burst.go
           - v2/layer2/pdu/embedded_signalling.go
           - v2/layer2/embedded_lc.go
+          - v2/layer2/voice_superframe.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
@@ -162,6 +171,11 @@ documents:
               - TestEmbeddedLC_RoundTrip
               - TestEmbeddedLC_ChecksumMismatch
               - TestEmbeddedLC_EncodeRejectsBadLC
+              - TestVoiceTransmitter_Transmission
+              - TestVoiceTransmitter_ReverseChannel
+              - TestVoiceTransmitter_Terminate
+              - TestVoiceTransmitter_RejectsBadInput
+              - TestVoiceTransmitter_ReproducesCaptures
 
       - section: "7.1.4"
         title: "Short Link Control in CACH"

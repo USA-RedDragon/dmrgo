@@ -562,11 +562,17 @@ func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
 	}
 }
 
-// BuildLCDataBurst builds a 33-byte LC data burst (e.g. for Voice Header or Terminator).
+// BuildLCDataBurst builds a 33-byte LC data burst (e.g. for Voice Header or
+// Terminator) with the BS-sourced data SYNC pattern. VoiceTransmitter builds
+// these bursts for the other SYNC sources.
 // lcBytes is the 12-byte on-air codeword with the Data Type CRC Mask already
 // applied, as returned by pdu.EncodeFullLinkControl with DataType set to dataType.
 // It returns an error if colorCode or dataType does not fit in the slot type.
 func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8) ([33]byte, error) {
+	return buildLCDataBurst(lcBytes, dataType, colorCode, enums.BsSourcedData)
+}
+
+func buildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
 	// Convert LC bytes to 96 info bits
 	var infoBits [96]bit.Bit
 	for i := 0; i < 12; i++ {
@@ -606,7 +612,7 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 	copy(bitData[98:108], slotTypeBits[:10])
 	copy(bitData[156:166], slotTypeBits[10:20])
 
-	writeSync(&bitData, enums.BsSourcedData)
+	writeSync(&bitData, sync)
 
 	return bit.PackBits264(bitData), nil
 }
