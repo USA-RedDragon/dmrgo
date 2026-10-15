@@ -35,7 +35,7 @@ type UnconfirmedDataHeader struct {
 type DataHeader struct {
 	DataType       elements.DataType `dmr:"-"`
 	crc            uint16            `dmr:"-"` //nolint:unused
-	FEC            fec.FECResult     `dmr:"-"`
+	FEC            fec.Result        `dmr:"-"`
 	Format         Format            `dmr:"bits:4-7"`
 	AppendedBlocks uint8             `dmr:"bits:2-3+12-15,no_encode"`
 

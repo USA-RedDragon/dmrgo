@@ -28,10 +28,10 @@ func Golay_20_8_Parity(bits [8]bit.Bit) [12]bit.Bit {
 }
 
 // DecodeGolay2087 decodes a 20-bit sequence (Bit array of 0s and 1s)
-// Returns corrected bits and FECResult.
-func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, fec.FECResult) {
+// Returns corrected bits and a fec.Result.
+func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 	bit.Mask(bits[:])
-	result := fec.FECResult{BitsChecked: 20}
+	result := fec.Result{BitsChecked: 20}
 
 	var data [8]bit.Bit
 	copy(data[:], bits[:8])

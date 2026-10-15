@@ -30,7 +30,7 @@ func TestBurstFEC_LCHeaderCountsPayloadBitsOnce(t *testing.T) {
 	frame[30] ^= 0x01
 
 	b := must(layer2.NewBurstFromBytes(frame))
-	want := fec.FECResult{BitsChecked: 20 + 196, ErrorsCorrected: 2}
+	want := fec.Result{BitsChecked: 20 + 196, ErrorsCorrected: 2}
 	if got := b.FEC.Aggregate(); got != want {
 		t.Errorf("Aggregate %+v, want %+v (FEC %+v)", got, want, b.FEC)
 	}
@@ -49,7 +49,7 @@ func TestBurstFEC_CSBKCountsNoCRCBits(t *testing.T) {
 	frame := must(layer2.BuildLCDataBurst(lcBytes, elements.DataTypeCSBK, 1))
 
 	b := must(layer2.NewBurstFromBytes(frame))
-	want := fec.FECResult{BitsChecked: 20 + 196}
+	want := fec.Result{BitsChecked: 20 + 196}
 	if got := b.FEC.Aggregate(); got != want {
 		t.Errorf("Aggregate %+v, want %+v (FEC %+v)", got, want, b.FEC)
 	}

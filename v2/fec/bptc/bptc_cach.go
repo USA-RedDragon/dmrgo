@@ -64,11 +64,11 @@ func parityHamming17_12(data [12]bit.Bit) [5]bit.Bit {
 //
 // The fragments should be in order (CACH burst 0 through CACH burst 3).
 // Returns the 36 information bits (28 data + 8 CRC-8) and FEC result.
-func DecodeCACHBPTC(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.FECResult) {
+func DecodeCACHBPTC(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
 	for i := range fragments {
 		bit.Mask(fragments[i][:])
 	}
-	result := fec.FECResult{BitsChecked: 68}
+	result := fec.Result{BitsChecked: 68}
 
 	// Concatenate into 68-bit transmit stream
 	var stream [68]bit.Bit

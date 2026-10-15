@@ -62,7 +62,7 @@ type roundTrip struct {
 	// value samplesPerValue times.
 	values int
 	build  func(value int) [96]bit.Bit
-	trip   func([96]bit.Bit) ([96]bit.Bit, fec.FECResult, error)
+	trip   func([96]bit.Bit) ([96]bit.Bit, fec.Result, error)
 }
 
 // TestPDURoundTripKeepsEveryBit forces every discriminator value (FLCO and
@@ -90,7 +90,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 				forceOpcode(b, v/2, fid)
 				return withRS(t, b, lc.mask)
 			},
-			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.FECResult, error) {
+			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodeFullLinkControl(in, lc.dt)
 				out, err := pdu.EncodeFullLinkControl(&d)
 				return out, r, err
@@ -114,7 +114,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 				forceOpcode(b, v/2, fid)
 				return withCRC(b, 0xA5A5)
 			},
-			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.FECResult, error) {
+			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodeCSBK(in, trunking)
 				out, err := pdu.EncodeCSBK(&d)
 				return out, r, err
@@ -136,7 +136,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 				}
 				return withCRC(b, 0xCCCC)
 			},
-			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.FECResult, error) {
+			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodeDataHeader(in)
 				out, err := pdu.EncodeDataHeader(&d)
 				return out, r, err
@@ -146,7 +146,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			name:   "MBCHeader",
 			values: 1,
 			build:  func(int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0xAAAA) },
-			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.FECResult, error) {
+			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodeMBCHeader(in)
 				out, err := pdu.EncodeMBCHeader(&d)
 				return out, r, err
@@ -156,7 +156,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			name:   "PIHeader",
 			values: 1,
 			build:  func(int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0x6969) },
-			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.FECResult, error) {
+			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodePIHeader(in)
 				out, err := pdu.EncodePIHeader(&d)
 				return out, r, err

@@ -50,23 +50,23 @@ func EncodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
 // with bptc.DecodeEmbeddedLCWithCheck and keeps the one whose 5-bit checksum
 // matches its LC. The FEC result covers the BPTC; Uncorrectable is set when
 // no nearest codeword or more than one has a matching checksum.
-func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.FECResult) {
+func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
 	return embeddedLCChecksum(bptc.DecodeEmbeddedLCWithCheck(fragments, embeddedLCChecksumValid))
 }
 
 func embeddedLCChecksumValid(info [77]bit.Bit) bool {
-	_, result := embeddedLCChecksum(info, fec.FECResult{})
+	_, result := embeddedLCChecksum(info, fec.Result{})
 	return !result.Uncorrectable
 }
 
 // DecodeEmbeddedLCStrict is DecodeEmbeddedLC with the BPTC decoded by
 // bptc.DecodeEmbeddedLCStrict, so it accepts and returns the same LCs as
 // MMDVMHost (CDMREmbeddedData::decodeEmbeddedData).
-func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.FECResult) {
+func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
 	return embeddedLCChecksum(bptc.DecodeEmbeddedLCStrict(fragments))
 }
 
-func embeddedLCChecksum(info [77]bit.Bit, result fec.FECResult) ([72]bit.Bit, fec.FECResult) {
+func embeddedLCChecksum(info [77]bit.Bit, result fec.Result) ([72]bit.Bit, fec.Result) {
 	var lc [72]bit.Bit
 	var cs uint8
 	n := 0
@@ -100,17 +100,17 @@ func EncodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, err
 // signalling fragments of bursts B to E. The returned LC has DataType
 // DataTypeVoiceLCHeader, so it encodes as a Voice LC Header as is, and its
 // FEC is the DecodeEmbeddedLC result, which is also returned.
-func DecodeEmbeddedFullLinkControl(fragments [4][32]bit.Bit) (pdu.FullLinkControl, fec.FECResult) {
+func DecodeEmbeddedFullLinkControl(fragments [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
 	return embeddedFullLinkControl(DecodeEmbeddedLC(fragments))
 }
 
 // DecodeEmbeddedFullLinkControlStrict is DecodeEmbeddedFullLinkControl with
 // the LC decoded by DecodeEmbeddedLCStrict.
-func DecodeEmbeddedFullLinkControlStrict(fragments [4][32]bit.Bit) (pdu.FullLinkControl, fec.FECResult) {
+func DecodeEmbeddedFullLinkControlStrict(fragments [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
 	return embeddedFullLinkControl(DecodeEmbeddedLCStrict(fragments))
 }
 
-func embeddedFullLinkControl(lc [72]bit.Bit, result fec.FECResult) (pdu.FullLinkControl, fec.FECResult) {
+func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkControl, fec.Result) {
 	octets := lcOctets(lc)
 	codeword, err := reedsolomon.Encode(octets[:])
 	if err != nil {

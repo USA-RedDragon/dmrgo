@@ -11,5 +11,5 @@ import (
 type SlotType struct {
 	ColorCode int               `dmr:"bits:0-3"`
 	DataType  elements.DataType `dmr:"bits:4-7"`
-	FEC       fec.FECResult     `dmr:"-"`
+	FEC       fec.Result        `dmr:"-"`
 }

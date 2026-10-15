@@ -34,7 +34,7 @@ import (
 // so per Figure B.3 the checksum bits are the last bit of rows 2..6. It is
 // DecodeEmbeddedLCWithCheck with no check, so a received word at equal
 // distance from two codewords is uncorrectable.
-func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
+func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
 	return DecodeEmbeddedLCWithCheck(fragments, nil)
 }
 
@@ -51,7 +51,7 @@ const EmbeddedLCMaxErrors = 8
 // product code has minimum distance 8, so up to 3 errors always give one
 // nearest codeword. With 4 or more errors two codewords can be equally near,
 // and check, for example the 5-bit LC checksum, picks between them.
-func DecodeEmbeddedLCWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.FECResult) {
+func DecodeEmbeddedLCWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.Result) {
 	for i := range fragments {
 		bit.Mask(fragments[i][:])
 	}
@@ -70,7 +70,7 @@ func DecodeEmbeddedLCWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit
 	}
 	s.search(patterns, 0, 0, 0)
 
-	result := fec.FECResult{BitsChecked: 128}
+	result := fec.Result{BitsChecked: 128}
 	if !s.found || s.ambiguous {
 		result.Uncorrectable = true
 		return embeddedLCInfo(&matrix), result
@@ -187,7 +187,7 @@ var embeddedLCPatterns = sync.OnceValue(func() *embeddedLCPatternTable { //nolin
 // detected double error makes the LC uncorrectable. Row 7 is not corrected:
 // the LC is uncorrectable when any column parity over all 8 rows fails. It
 // accepts far fewer LCs with bit errors than DecodeEmbeddedLC.
-func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
+func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
 	for i := range fragments {
 		bit.Mask(fragments[i][:])
 	}
@@ -226,8 +226,8 @@ func embeddedLCMatrix(fragments [4][32]bit.Bit) [8][16]bit.Bit {
 	return matrix
 }
 
-func embeddedLCResult(matrix, received *[8][16]bit.Bit) fec.FECResult {
-	result := fec.FECResult{BitsChecked: 128}
+func embeddedLCResult(matrix, received *[8][16]bit.Bit) fec.Result {
+	result := fec.Result{BitsChecked: 128}
 	for row := range matrix {
 		for col := range matrix[row] {
 			result.ErrorsCorrected += int(matrix[row][col] ^ received[row][col])

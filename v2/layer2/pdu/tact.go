@@ -15,8 +15,8 @@ import (
 //
 //dmr:fec hamming_7_4_3
 type TACT struct {
-	AccessType  bool          `dmr:"bit:0"`
-	TDMAChannel bool          `dmr:"bit:1"`
-	LCSS        enums.LCSS    `dmr:"bits:2-3,enum"`
-	FEC         fec.FECResult `dmr:"-"`
+	AccessType  bool       `dmr:"bit:0"`
+	TDMAChannel bool       `dmr:"bit:1"`
+	LCSS        enums.LCSS `dmr:"bits:2-3,enum"`
+	FEC         fec.Result `dmr:"-"`
 }

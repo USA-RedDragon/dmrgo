@@ -16,10 +16,10 @@ import (
 )
 
 // DecodeRate34Data decodes a Rate34Data per ETSI TS 102 361-1 - 9.2.2 Rate 3/4 coded packet Data (R_3_4_DATA) PDU
-func DecodeRate34Data(data [144]bit.Bit) (Rate34Data, fec.FECResult) {
+func DecodeRate34Data(data [144]bit.Bit) (Rate34Data, fec.Result) {
 	var result Rate34Data
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	copy(result.Data[:], bit.PackBits(data[0:144]))
 	return result, fecResult
 }

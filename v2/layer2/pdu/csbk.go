@@ -434,12 +434,12 @@ func (csbk *CSBK) SetTrunkingMode(mode bool) {
 type CSBK struct {
 	DataType elements.DataType `dmr:"-"`
 
-	LastBlock    bool          `dmr:"bit:0"`
-	ProtectFlag  bool          `dmr:"bit:1"`
-	CSBKOpcode   CSBKOpcode    `dmr:"bits:2-7"`
-	FID          byte          `dmr:"bits:8-15"`
-	FEC          fec.FECResult `dmr:"-"`
-	TrunkingMode bool          `dmr:"-"`
+	LastBlock    bool       `dmr:"bit:0"`
+	ProtectFlag  bool       `dmr:"bit:1"`
+	CSBKOpcode   CSBKOpcode `dmr:"bits:2-7"`
+	FID          byte       `dmr:"bits:8-15"`
+	FEC          fec.Result `dmr:"-"`
+	TrunkingMode bool       `dmr:"-"`
 
 	// Tier II CSBK PDUs (ETSI TS 102 361-1 / TS 102 361-2)
 	BSOutboundActivationPDU                 *BSOutboundActivationPDU                 `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKBSOutboundActivationPDU,when:TrunkingMode==false"`

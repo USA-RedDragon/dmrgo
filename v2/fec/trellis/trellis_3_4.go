@@ -52,9 +52,9 @@ func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]bit.Bit {
 // to detect a miscorrection, so a false Uncorrectable does not mean the data
 // is right. Callers must check the block CRC (the CRC-9 of a confirmed block
 // or the message CRC-32) to detect a miscorrected block.
-func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.FECResult) {
+func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
 	bit.Mask(bits[:])
-	result := fec.FECResult{BitsChecked: 196}
+	result := fec.Result{BitsChecked: 196}
 
 	var rxDibits [98]byte
 	for i, j := range interleave_matrix {

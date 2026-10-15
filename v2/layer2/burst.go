@@ -252,7 +252,7 @@ func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
 	return bits
 }
 
-func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int, fec.FECResult) {
+func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int, fec.Result) {
 	switch dataType {
 	case elements.DataTypeRate34:
 		var t trellis.Trellis34
@@ -267,7 +267,7 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 		for i := 0; i < 96; i++ {
 			b.deinterleavedInfoBits[96+i] = bits[100+i]
 		}
-		return 192, fec.FECResult{}
+		return 192, fec.Result{}
 	case elements.DataTypePIHeader,
 		elements.DataTypeVoiceLCHeader,
 		elements.DataTypeTerminatorWithLC,
@@ -284,10 +284,10 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 		return len(decoded), result
 	case elements.DataTypeReserved:
 		copy(b.deinterleavedInfoBits[:], bits[:])
-		return len(bits), fec.FECResult{}
+		return len(bits), fec.Result{}
 	default:
 		copy(b.deinterleavedInfoBits[:], bits[:])
-		return len(bits), fec.FECResult{}
+		return len(bits), fec.Result{}
 	}
 }
 
@@ -319,7 +319,7 @@ func isBPTCDataType(dataType elements.DataType) bool {
 // which is also FEC.Payload. ok is false for a voice burst, for the Rate 3/4,
 // Rate 1 and reserved data types, which are not BPTC coded, and for a burst
 // that DecodeFromBytes did not decode.
-func (b *Burst) BPTCPayload() (payload [12]byte, result fec.FECResult, ok bool) {
+func (b *Burst) BPTCPayload() (payload [12]byte, result fec.Result, ok bool) {
 	if !b.IsData || !isBPTCDataType(b.SlotType.DataType) || b.deinterleavedInfoLen != 96 {
 		return payload, result, false
 	}

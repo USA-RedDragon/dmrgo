@@ -22,7 +22,7 @@ import (
 )
 
 // DecodeMBCHeader decodes a MBCHeader per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
-func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.FECResult) {
+func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.Result) {
 	var result MBCHeader
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -34,7 +34,7 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.FECResult) {
 	}
 	_packedBytes[10] ^= uint8(0xaa)
 	_packedBytes[11] ^= uint8(0xaa)
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}
@@ -89,10 +89,10 @@ func (s *MBCHeader) ToString() string {
 }
 
 // DecodeMBCContinuation decodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
-func DecodeMBCContinuation(data [96]bit.Bit) (MBCContinuation, fec.FECResult) {
+func DecodeMBCContinuation(data [96]bit.Bit) (MBCContinuation, fec.Result) {
 	var result MBCContinuation
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	result.LastBlock = bit.BitsToBool(data[:], 0)
 	copy(result.Data[:], data[1:96])
 	return result, fecResult
@@ -113,7 +113,7 @@ func (s *MBCContinuation) ToString() string {
 }
 
 // DecodeCGAPContinuation decodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
-func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.FECResult) {
+func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
 	var result CGAPContinuation
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -123,7 +123,7 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.FECResult) 
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}
@@ -194,7 +194,7 @@ func (s *CGAPContinuation) ToString() string {
 }
 
 // DecodeMVAPContinuation decodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
-func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.FECResult) {
+func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
 	var result MVAPContinuation
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -204,7 +204,7 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.FECResult) 
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}
@@ -275,7 +275,7 @@ func (s *MVAPContinuation) ToString() string {
 }
 
 // DecodeBCAPContinuation decodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
-func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.FECResult) {
+func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.Result) {
 	var result BCAPContinuation
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -285,7 +285,7 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.FECResult) 
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}
@@ -348,7 +348,7 @@ func (s *BCAPContinuation) ToString() string {
 }
 
 // DecodeVNAPContinuation decodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
-func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.FECResult) {
+func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
 	var result VNAPContinuation
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -358,7 +358,7 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.FECResult) 
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}

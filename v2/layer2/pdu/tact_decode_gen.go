@@ -17,7 +17,7 @@ import (
 )
 
 // DecodeTACT decodes a TACT per ETSI TS 102 361-1 - 9.1.4 TACT PDU
-func DecodeTACT(data [7]bit.Bit) (TACT, fec.FECResult) {
+func DecodeTACT(data [7]bit.Bit) (TACT, fec.Result) {
 	var result TACT
 	bit.Mask(data[:])
 	corrected, fecResult := hamming.Decode743(data)

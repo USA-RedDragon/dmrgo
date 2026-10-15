@@ -212,7 +212,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 	}
 
 	var genErr error
-	// func DecodeXxx(data [N]bit.Bit) (Xxx, fec.FECResult) {
+	// func DecodeXxx(data [N]bit.Bit) (Xxx, fec.Result) {
 	params := []Code{Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit")}
 	for _, in := range pdu.Inputs {
 		field := pdu.FieldByName(in)
@@ -224,7 +224,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 
 	f.Func().Id(funcName).Params(params...).Params(
 		Id(pdu.Name),
-		Qual(fecPkg, "FECResult"),
+		Qual(fecPkg, "Result"),
 	).BlockFunc(func(g *Group) {
 		g.Var().Id("result").Id(pdu.Name)
 		for _, in := range pdu.Inputs {
@@ -278,7 +278,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 				Id("data").Op("=").Id("corrected"),
 			)
 		default:
-			g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
+			g.Var().Id("fecResult").Qual(fecPkg, "Result")
 		}
 
 		// Emit field extractions (regular fields first, then dispatch)
@@ -365,7 +365,7 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	}
 	if algo.BitLevel {
 		// Bit-level CRC (e.g. CRC-8): operates on data[:] directly, no byte packing
-		g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
+		g.Var().Id("fecResult").Qual(fecPkg, "Result")
 		g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Empty()))).Block(
 			Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 		)
@@ -392,7 +392,7 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	}
 
 	// CRC check
-	g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
+	g.Var().Id("fecResult").Qual(fecPkg, "Result")
 	g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Empty()))).Block(
 		Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 	)
@@ -444,7 +444,7 @@ func emitPackedFECDecode(g *Group, codec *FECCodecInfo, inputSize int) {
 	g.Id("_rsResult").Op(":=").Qual(codec.ImportPath, codec.DecodeFn).Call(
 		Id("_packedBytes").Index(Empty(), Empty()),
 	)
-	g.Id("fecResult").Op(":=").Qual(fecPkg, "FECResult").Values(Dict{
+	g.Id("fecResult").Op(":=").Qual(fecPkg, "Result").Values(Dict{
 		Id("BitsChecked"):     Lit(inputSize),
 		Id("ErrorsCorrected"): Id("_rsResult").Dot("BitsCorrected"),
 		Id("Uncorrectable"):   Id("_rsResult").Dot("Uncorrectable"),
@@ -1006,7 +1006,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			tmpVar := "_elemBits"
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 				Var().Id(tmpVar).Index(Lit(field.Stride)).Qual(bitPkg, "Bit"),
-				Var().Id("_elemFEC").Qual(fecPkg, "FECResult"),
+				Var().Id("_elemFEC").Qual(fecPkg, "Result"),
 				Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(
 					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
 					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride).Op("+").Lit(field.Stride),

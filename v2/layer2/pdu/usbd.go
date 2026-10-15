@@ -57,7 +57,7 @@ func ServiceTypeToName(st ServiceType) string {
 type UnifiedSingleBlockData struct {
 	DataType    elements.DataType `dmr:"-"`
 	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.FECResult     `dmr:"-"`
+	FEC         fec.Result        `dmr:"-"`
 	ServiceType ServiceType       `dmr:"bits:0-3"`
 	Payload     [76]bit.Bit       `dmr:"bits:4-79,raw"`
 }

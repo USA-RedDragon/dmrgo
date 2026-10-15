@@ -32,14 +32,14 @@ type ReverseChannel struct {
 	RCCommand enums.RCCommand
 
 	// FEC holds the combined FEC result from BPTC + CRC verification.
-	FEC fec.FECResult
+	FEC fec.Result
 }
 
 // DecodeReverseChannel decodes an 11-bit RC PDU (after Single Burst BPTC decode).
 // The input is the 11 information bits: 4-bit payload + 7-bit CRC-7.
-func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.FECResult) {
+func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.Result) {
 	var result ReverseChannel
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 
 	// Extract RC command (bits 0-3)
 	result.RCCommand = enums.RCCommandFromInt(int(bit.BitsToUint8(infoBits[:], 0, 4)))

@@ -22,7 +22,7 @@ import (
 type PIHeader struct {
 	DataType         elements.DataType `dmr:"-"`
 	crc              uint16            `dmr:"-"` //nolint:unused
-	FEC              fec.FECResult     `dmr:"-"`
+	FEC              fec.Result        `dmr:"-"`
 	AlgorithmID      uint8             `dmr:"bits:0-7"`
 	MFID             uint8             `dmr:"bits:8-15"`
 	KeyID            uint8             `dmr:"bits:16-23"`

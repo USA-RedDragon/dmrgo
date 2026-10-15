@@ -35,8 +35,8 @@ func (vc *Vocoder) HasError() bool {
 }
 
 // FECResult returns the aggregated FEC result across all 3 vocoder frames.
-func (vc *Vocoder) FECResult() fec.FECResult {
-	result := fec.FECResult{}
+func (vc *Vocoder) FECResult() fec.Result {
+	result := fec.Result{}
 	for _, f := range vc.Frames {
 		result = result.Combine(f.FEC)
 	}

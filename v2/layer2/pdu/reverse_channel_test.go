@@ -65,7 +65,7 @@ func TestReverseChannel_BitsChecked(t *testing.T) {
 	t.Parallel()
 	bits := buildRCInfoBits(0)
 	_, fecResult := pdu.DecodeReverseChannel(bits)
-	if fecResult != (fec.FECResult{}) {
+	if fecResult != (fec.Result{}) {
 		t.Errorf("CRC-7 only PDU: got %+v, want a zero result", fecResult)
 	}
 }

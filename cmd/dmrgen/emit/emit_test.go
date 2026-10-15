@@ -315,7 +315,7 @@ type T struct {
 	B    *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`"+`
 }`)
 	assertContains(t, out,
-		"func DecodeT(data [16]bit.Bit, mode bool) (T, fec.FECResult) {",
+		"func DecodeT(data [16]bit.Bit, mode bool) (T, fec.Result) {",
 		"result.Mode = mode",
 		"if !result.Mode {",
 		"} else if result.Mode {",

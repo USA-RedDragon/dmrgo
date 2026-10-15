@@ -55,10 +55,10 @@ func Check(bits [16]bit.Bit) bool {
 }
 
 // Decode corrects up to 2 bit errors in the 16-bit codeword.
-// Returns the corrected data words and FECResult.
-func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.FECResult) {
+// Returns the corrected data words and a fec.Result.
+func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
 	bit.Mask(bits[:])
-	result := fec.FECResult{BitsChecked: 16}
+	result := fec.Result{BitsChecked: 16}
 
 	var data [7]bit.Bit
 	copy(data[:], bits[:7])

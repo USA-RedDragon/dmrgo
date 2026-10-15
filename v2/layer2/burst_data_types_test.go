@@ -70,7 +70,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 	if b.FEC.Payload.BitsChecked != 196 || b.FEC.Payload.ErrorsCorrected != 1 || b.FEC.Payload.Uncorrectable {
 		t.Errorf("FEC.Payload = %+v, want 196 bits checked, 1 error corrected", b.FEC.Payload)
 	}
-	if b.FEC.PDU != (fec.FECResult{}) {
+	if b.FEC.PDU != (fec.Result{}) {
 		t.Errorf("FEC.PDU = %+v, want empty", b.FEC.PDU)
 	}
 	if got := b.FEC.Aggregate().ErrorsCorrected; got != 1 {

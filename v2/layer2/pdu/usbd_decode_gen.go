@@ -17,7 +17,7 @@ import (
 )
 
 // DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData per ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
-func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec.FECResult) {
+func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec.Result) {
 	var result UnifiedSingleBlockData
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -29,7 +29,7 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec
 	}
 	_packedBytes[10] ^= uint8(0x33)
 	_packedBytes[11] ^= uint8(0x33)
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}

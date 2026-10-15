@@ -33,10 +33,10 @@ import (
 //
 //nolint:gochecknoglobals
 var bitFuncs = map[string]any{
-	"fec/bptc.BPTC19696.DeinterleaveDataBits": func(bits [196]bit.Bit) ([96]bit.Bit, fec.FECResult) {
+	"fec/bptc.BPTC19696.DeinterleaveDataBits": func(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
 		return (&bptc.BPTC19696{}).DeinterleaveDataBits(bits)
 	},
-	"fec/trellis.Trellis34.Decode": func(bits [196]bit.Bit) ([144]bit.Bit, fec.FECResult) {
+	"fec/trellis.Trellis34.Decode": func(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
 		return trellis.New().Decode(bits)
 	},
 	"fec/trellis.Trellis34.Encode": func(data [144]bit.Bit) [196]bit.Bit {
@@ -80,10 +80,10 @@ var bitFuncs = map[string]any{
 	"fec/hamming.Decode743":                                    hamming.Decode743,
 	"fec/hamming.Encode743":                                    hamming.Encode743,
 	"fec/hamming.Parity743":                                    hamming.Parity743,
-	"fec/quadraticresidue.Check":                              quadraticresidue.Check,
-	"fec/quadraticresidue.Decode":                             quadraticresidue.Decode,
-	"fec/quadraticresidue.NewQuadraticResidue16_7_6":          quadraticresidue.NewQuadraticResidue16_7_6,
-	"fec/quadraticresidue.ParityBits":                         quadraticresidue.ParityBits,
+	"fec/quadraticresidue.Check":                               quadraticresidue.Check,
+	"fec/quadraticresidue.Decode":                              quadraticresidue.Decode,
+	"fec/quadraticresidue.NewQuadraticResidue16_7_6":           quadraticresidue.NewQuadraticResidue16_7_6,
+	"fec/quadraticresidue.ParityBits":                          quadraticresidue.ParityBits,
 	"layer2.BurstToDibits":                                     layer2.BurstToDibits,
 	"layer2.CACHDeinterleave":                                  layer2.CACHDeinterleave,
 	"layer2.CACHInterleave":                                    layer2.CACHInterleave,

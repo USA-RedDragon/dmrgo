@@ -88,11 +88,11 @@ func FullLCParityOK(cw [12]byte, dt elements.DataType) bool {
 // the result is not Uncorrectable, and the FEC result, as
 // DecodeFullLinkControl does. It returns an error unless dt is
 // DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
-func DecodeFullLCCodeword(cw [12]byte, dt elements.DataType) ([9]byte, fec.FECResult, error) {
+func DecodeFullLCCodeword(cw [12]byte, dt elements.DataType) ([9]byte, fec.Result, error) {
 	var lc [9]byte
 	mask, err := fullLCMask(dt)
 	if err != nil {
-		return lc, fec.FECResult{}, err
+		return lc, fec.Result{}, err
 	}
 	for i := 9; i < 12; i++ {
 		cw[i] ^= mask[i-9]
@@ -102,7 +102,7 @@ func DecodeFullLCCodeword(cw [12]byte, dt elements.DataType) ([9]byte, fec.FECRe
 	if !res.Uncorrectable {
 		copy(lc[:], res.Data)
 	}
-	return lc, fec.FECResult{BitsChecked: 96, ErrorsCorrected: res.ErrorsFound, Uncorrectable: res.Uncorrectable}, nil
+	return lc, fec.Result{BitsChecked: 96, ErrorsCorrected: res.ErrorsFound, Uncorrectable: res.Uncorrectable}, nil
 }
 
 func fullLCMask(dt elements.DataType) ([3]byte, error) {

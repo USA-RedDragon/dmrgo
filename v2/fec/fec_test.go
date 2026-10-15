@@ -8,12 +8,12 @@ import (
 
 func TestBERCalculator_AddBurstMatchesAggregate(t *testing.T) {
 	stats := fec.BurstFECStats{
-		SlotType: fec.FECResult{BitsChecked: 20, ErrorsCorrected: 1},
-		EMB:      fec.FECResult{BitsChecked: 16, ErrorsCorrected: 2},
-		Payload:  fec.FECResult{BitsChecked: 196, ErrorsCorrected: 3},
-		Voice:    fec.FECResult{BitsChecked: 144, ErrorsCorrected: 4},
-		PDU:      fec.FECResult{BitsChecked: 96, ErrorsCorrected: 5},
-		RC:       fec.FECResult{BitsChecked: 32, ErrorsCorrected: 6},
+		SlotType: fec.Result{BitsChecked: 20, ErrorsCorrected: 1},
+		EMB:      fec.Result{BitsChecked: 16, ErrorsCorrected: 2},
+		Payload:  fec.Result{BitsChecked: 196, ErrorsCorrected: 3},
+		Voice:    fec.Result{BitsChecked: 144, ErrorsCorrected: 4},
+		PDU:      fec.Result{BitsChecked: 96, ErrorsCorrected: 5},
+		RC:       fec.Result{BitsChecked: 32, ErrorsCorrected: 6},
 	}
 	var b fec.BERCalculator
 	b.AddBurst(stats)
@@ -33,7 +33,7 @@ func TestBERCalculator_BER(t *testing.T) {
 	if b.BER() != 0 {
 		t.Errorf("empty BER = %v, want 0", b.BER())
 	}
-	b.Add(fec.FECResult{BitsChecked: 200, ErrorsCorrected: 5})
+	b.Add(fec.Result{BitsChecked: 200, ErrorsCorrected: 5})
 	if got := b.BER(); got != 2.5 {
 		t.Errorf("BER = %v, want 2.5", got)
 	}
@@ -43,23 +43,23 @@ func TestBERCalculator_BER(t *testing.T) {
 	}
 }
 
-func TestFECResult_HasErrors(t *testing.T) {
-	if (fec.FECResult{BitsChecked: 10}).HasErrors() {
+func TestResult_HasErrors(t *testing.T) {
+	if (fec.Result{BitsChecked: 10}).HasErrors() {
 		t.Error("clean result reports errors")
 	}
-	if !(fec.FECResult{ErrorsCorrected: 1}).HasErrors() {
+	if !(fec.Result{ErrorsCorrected: 1}).HasErrors() {
 		t.Error("corrected result reports no errors")
 	}
-	if !(fec.FECResult{Uncorrectable: true}).HasErrors() {
+	if !(fec.Result{Uncorrectable: true}).HasErrors() {
 		t.Error("uncorrectable result reports no errors")
 	}
 }
 
 func TestBERCalculator_Uncorrectable(t *testing.T) {
 	var b fec.BERCalculator
-	b.Add(fec.FECResult{BitsChecked: 24, ErrorsCorrected: 1})
-	b.Add(fec.FECResult{BitsChecked: 24, Uncorrectable: true})
-	b.AddBurst(fec.BurstFECStats{PDU: fec.FECResult{Uncorrectable: true}})
+	b.Add(fec.Result{BitsChecked: 24, ErrorsCorrected: 1})
+	b.Add(fec.Result{BitsChecked: 24, Uncorrectable: true})
+	b.AddBurst(fec.BurstFECStats{PDU: fec.Result{Uncorrectable: true}})
 	if got := b.Uncorrectable(); got != 2 {
 		t.Errorf("Uncorrectable() = %d, want 2", got)
 	}
@@ -69,9 +69,9 @@ func TestBERCalculator_Uncorrectable(t *testing.T) {
 	}
 }
 
-func TestFECResult_Combine(t *testing.T) {
-	got := fec.FECResult{BitsChecked: 32, ErrorsCorrected: 1}.Combine(fec.FECResult{Uncorrectable: true})
-	want := fec.FECResult{BitsChecked: 32, ErrorsCorrected: 1, Uncorrectable: true}
+func TestResult_Combine(t *testing.T) {
+	got := fec.Result{BitsChecked: 32, ErrorsCorrected: 1}.Combine(fec.Result{Uncorrectable: true})
+	want := fec.Result{BitsChecked: 32, ErrorsCorrected: 1, Uncorrectable: true}
 	if got != want {
 		t.Errorf("Combine = %+v, want %+v", got, want)
 	}

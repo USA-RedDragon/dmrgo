@@ -17,7 +17,7 @@ import (
 )
 
 // DecodeSlotType decodes a SlotType per ETSI TS 102 361-1 - 9.1.3 Slot Type (SLOT) PDU
-func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.FECResult) {
+func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.Result) {
 	var result SlotType
 	bit.Mask(data[:])
 	corrected, fecResult := golay.DecodeGolay2087(data)

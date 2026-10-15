@@ -16,13 +16,13 @@ import (
 )
 
 // DecodeVocoder decodes a Vocoder per ETSI TS 102 361-1 - 7.1 Voice channel coding
-func DecodeVocoder(data [216]bit.Bit) (Vocoder, fec.FECResult) {
+func DecodeVocoder(data [216]bit.Bit) (Vocoder, fec.Result) {
 	var result Vocoder
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	for _i := 0; _i < 3; _i++ {
 		var _elemBits [72]bit.Bit
-		var _elemFEC fec.FECResult
+		var _elemFEC fec.Result
 		copy(_elemBits[:], data[0+_i*72:0+_i*72+72])
 		result.Frames[_i], _elemFEC = vocoder.DecodeVocoderFrame(_elemBits)
 		fecResult = fecResult.Combine(_elemFEC)

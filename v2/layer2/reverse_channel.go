@@ -33,7 +33,7 @@ import (
 //
 // Returns the decoded RC PDU and a combined FEC result covering both the
 // BPTC and CRC layers.
-func DecodeRCFromEmbeddedData(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec.FECResult) {
+func DecodeRCFromEmbeddedData(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec.Result) {
 	// Single Burst BPTC decode with odd parity (RC mode)
 	infoBits, bptcResult := bptc.DecodeSingleBurstBPTC(embeddedData, true)
 

@@ -92,9 +92,9 @@ func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [CACHPayloadBits
 // ErrShortLCIncomplete if the assembler does not hold a full sequence.
 //
 // The assembler is NOT automatically reset — call Reset() to reuse.
-func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.FECResult, error) {
+func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.Result, error) {
 	if a.count != 4 {
-		return pdu.ShortLC{}, fec.FECResult{}, ErrShortLCIncomplete
+		return pdu.ShortLC{}, fec.Result{}, ErrShortLCIncomplete
 	}
 
 	// Decode BPTC to recover the 36-bit Short LC PDU
@@ -114,7 +114,7 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.FECResult, error) {
 // DecodeShortLCFromFragments is a convenience function that decodes a
 // Short LC PDU directly from 4 × 17-bit CACH signalling payloads, given in
 // the order First, two Continuations, Last.
-func DecodeShortLCFromFragments(fragments [4][CACHPayloadBits]bit.Bit) (pdu.ShortLC, fec.FECResult) {
+func DecodeShortLCFromFragments(fragments [4][CACHPayloadBits]bit.Bit) (pdu.ShortLC, fec.Result) {
 	var a ShortLCAssembler
 	a.fragments = fragments
 	a.count = len(fragments)

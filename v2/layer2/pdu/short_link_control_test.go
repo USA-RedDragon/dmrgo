@@ -148,7 +148,7 @@ func TestShortLC_BitsChecked(t *testing.T) {
 	bits := buildShortLCBits(byte(enums.SLCONullMessage), data)
 
 	_, fecResult := pdu.DecodeShortLC(bits)
-	if fecResult != (fec.FECResult{}) {
+	if fecResult != (fec.Result{}) {
 		t.Errorf("CRC-8 only PDU: got %+v, want a zero result", fecResult)
 	}
 }

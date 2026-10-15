@@ -39,7 +39,7 @@ type FullLinkControl struct {
 	Reserved     bool                    `dmr:"bit:1"`
 	FLCO         enums.FLCO              `dmr:"bits:2-7,enum,err,from:enums.FLCOFromInt"`
 	FeatureSetID enums.FeatureSetID      `dmr:"bits:8-15,enum,err,from:enums.FeatureSetIDFromInt"`
-	FEC          fec.FECResult           `dmr:"-"`
+	FEC          fec.Result              `dmr:"-"`
 
 	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`
 	UnitToUnit                *FLCUnitToUnit                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`

@@ -16,10 +16,10 @@ import (
 )
 
 // DecodeRate1Data decodes a Rate1Data per ETSI TS 102 361-1 - 9.2.15 Rate 1 coded packet Data (R_1_DATA) PDU
-func DecodeRate1Data(data [192]bit.Bit) (Rate1Data, fec.FECResult) {
+func DecodeRate1Data(data [192]bit.Bit) (Rate1Data, fec.Result) {
 	var result Rate1Data
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	copy(result.Data[:], bit.PackBits(data[0:192]))
 	return result, fecResult
 }

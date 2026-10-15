@@ -88,7 +88,7 @@ func TestBurstEncode_AMBEWithCorrectedErrors(t *testing.T) {
 		t.Error("VoiceSlots of a hand-built burst are not the slots Encode writes")
 	}
 
-	b.VoiceData.Frames[1].FEC = fec.FECResult{}
+	b.VoiceData.Frames[1].FEC = fec.Result{}
 	if got := must(b.Encode()); got != noisy {
 		t.Error("a frame whose FEC changed but whose bits did not is re-coded")
 	}

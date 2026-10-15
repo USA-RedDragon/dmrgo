@@ -17,7 +17,7 @@ import (
 )
 
 // DecodeEmbeddedSignalling decodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
-func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.FECResult) {
+func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.Result) {
 	var result EmbeddedSignalling
 	bit.Mask(data[:])
 	corrected, fecResult := quadraticresidue.Decode(data)

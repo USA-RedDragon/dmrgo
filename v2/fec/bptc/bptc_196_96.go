@@ -27,10 +27,10 @@ func calculate_syndrome_13_9(bits [13]bit.Bit) int {
 	return int(errs[0]) | int(errs[1])<<1 | int(errs[2])<<2 | int(errs[3])<<3
 }
 
-// DeinterleaveDataBits returns the deinterleaved data bits and FECResult
-func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, fec.FECResult) {
+// DeinterleaveDataBits returns the deinterleaved data bits and a fec.Result
+func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
 	bit.Mask(bits[:])
-	result := fec.FECResult{BitsChecked: 196}
+	result := fec.Result{BitsChecked: 196}
 	var deinterleavedBits [196]bit.Bit
 	var temp [96]bit.Bit
 

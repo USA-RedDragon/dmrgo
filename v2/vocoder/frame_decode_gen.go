@@ -11,7 +11,7 @@ import (
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-func DecodeVocoderFrame(data [72]bit.Bit) (VocoderFrame, fec.FECResult) {
+func DecodeVocoderFrame(data [72]bit.Bit) (VocoderFrame, fec.Result) {
 	var result VocoderFrame
 	bit.Mask(data[:])
 	_decoded, fecResult := decodeAMBE(data)

@@ -35,7 +35,7 @@ type CACH struct {
 	Payload [CACHPayloadBits]bit.Bit
 
 	// FEC accumulates the total FEC result from TACT decoding.
-	FEC fec.FECResult
+	FEC fec.Result
 }
 
 // DecodeCACH decodes a 24-bit CACH field into its TACT and signalling payload.

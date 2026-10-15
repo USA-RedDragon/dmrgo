@@ -115,8 +115,8 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 			fr[rng.Intn(4)][rng.Intn(32)] ^= 1
 		}
 		for _, d := range []struct {
-			lc  func([4][32]bit.Bit) ([72]bit.Bit, fec.FECResult)
-			flc func([4][32]bit.Bit) (pdu.FullLinkControl, fec.FECResult)
+			lc  func([4][32]bit.Bit) ([72]bit.Bit, fec.Result)
+			flc func([4][32]bit.Bit) (pdu.FullLinkControl, fec.Result)
 		}{
 			{layer2.DecodeEmbeddedLC, layer2.DecodeEmbeddedFullLinkControl},
 			{layer2.DecodeEmbeddedLCStrict, layer2.DecodeEmbeddedFullLinkControlStrict},

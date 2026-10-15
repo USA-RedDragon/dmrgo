@@ -26,7 +26,7 @@ import (
 )
 
 // DecodeFullLinkControl decodes a FullLinkControl per ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
-func DecodeFullLinkControl(data [96]bit.Bit, dataType layer2Elements.DataType) (FullLinkControl, fec.FECResult) {
+func DecodeFullLinkControl(data [96]bit.Bit, dataType layer2Elements.DataType) (FullLinkControl, fec.Result) {
 	var result FullLinkControl
 	result.DataType = dataType
 	bit.Mask(data[:])
@@ -48,7 +48,7 @@ func DecodeFullLinkControl(data [96]bit.Bit, dataType layer2Elements.DataType) (
 		_packedBytes[11] ^= 0x99
 	}
 	_rsResult := reedsolomon.Decode(_packedBytes[:])
-	fecResult := fec.FECResult{
+	fecResult := fec.Result{
 		BitsChecked:     96,
 		ErrorsCorrected: _rsResult.BitsCorrected,
 		Uncorrectable:   _rsResult.Uncorrectable,
@@ -265,10 +265,10 @@ func (s *FullLinkControl) ToString() string {
 }
 
 // DecodeFLCGroupVoice decodes a FLCGroupVoice per ETSI TS 102 361-2 - Table 7.1: Grp_V_Ch_Usr PDU content
-func DecodeFLCGroupVoice(data [56]bit.Bit) (FLCGroupVoice, fec.FECResult) {
+func DecodeFLCGroupVoice(data [56]bit.Bit) (FLCGroupVoice, fec.Result) {
 	var result FLCGroupVoice
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions, _ = layer3Elements.DecodeServiceOptions(_serviceOptionsBits)
@@ -301,10 +301,10 @@ func (s *FLCGroupVoice) ToString() string {
 }
 
 // DecodeFLCUnitToUnit decodes a FLCUnitToUnit per ETSI TS 102 361-2 - Table 7.2: UU_V_Ch_Usr PDU content
-func DecodeFLCUnitToUnit(data [56]bit.Bit) (FLCUnitToUnit, fec.FECResult) {
+func DecodeFLCUnitToUnit(data [56]bit.Bit) (FLCUnitToUnit, fec.Result) {
 	var result FLCUnitToUnit
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions, _ = layer3Elements.DecodeServiceOptions(_serviceOptionsBits)
@@ -337,10 +337,10 @@ func (s *FLCUnitToUnit) ToString() string {
 }
 
 // DecodeFLCGPSInfo decodes a FLCGPSInfo per ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
-func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
+func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.Result) {
 	var result FLCGPSInfo
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	copy(result.Reserved[:], data[0:4])
 	result.PositionError = layer3Elements.PositionError(bit.BitsToUint8(data[:], 4, 3))
 	result.Longitude = float64(int32(bit.BitsToUint32(data[:], 7, 25)<<7)>>7) * 360.0 / (1 << 25)
@@ -375,10 +375,10 @@ func (s *FLCGPSInfo) ToString() string {
 }
 
 // DecodeFLCTalkerAliasHeader decodes a FLCTalkerAliasHeader per ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
-func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.FECResult) {
+func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.Result) {
 	var result FLCTalkerAliasHeader
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	result.TalkerAliasDataFormat = layer3Elements.TalkerAliasDataFormat(bit.BitsToUint8(data[:], 0, 2))
 	result.TalkerAliasDataLength = bit.BitsToInt(data[:], 2, 5)
 	result.TalkerAliasDataMSB = bit.BitsToBool(data[:], 7)
@@ -409,10 +409,10 @@ func (s *FLCTalkerAliasHeader) ToString() string {
 }
 
 // DecodeFLCTalkerAliasBlock decodes a FLCTalkerAliasBlock per ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
-func DecodeFLCTalkerAliasBlock(data [56]bit.Bit) (FLCTalkerAliasBlock, fec.FECResult) {
+func DecodeFLCTalkerAliasBlock(data [56]bit.Bit) (FLCTalkerAliasBlock, fec.Result) {
 	var result FLCTalkerAliasBlock
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	copy(result.TalkerAliasData[:], data[0:56])
 	return result, fecResult
 }
@@ -429,10 +429,10 @@ func (s *FLCTalkerAliasBlock) ToString() string {
 }
 
 // DecodeFLCTerminatorDataLinkControl decodes a FLCTerminatorDataLinkControl per ETSI TS 102 361-3 - Table 7.1: Terminator Data Link Control PDU content
-func DecodeFLCTerminatorDataLinkControl(data [56]bit.Bit) (FLCTerminatorDataLinkControl, fec.FECResult) {
+func DecodeFLCTerminatorDataLinkControl(data [56]bit.Bit) (FLCTerminatorDataLinkControl, fec.Result) {
 	var result FLCTerminatorDataLinkControl
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	result.LLIDDestination = bit.BitsToInt(data[:], 0, 24)
 	result.LLIDSource = bit.BitsToInt(data[:], 24, 24)
 	result.GroupOrIndividual = bit.BitsToBool(data[:], 48)

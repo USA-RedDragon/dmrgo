@@ -25,9 +25,9 @@ import (
 // Up to 3 bit errors in the 32 bits are corrected; ErrorsCorrected is the
 // number of corrected bits. Four bit errors are always detected and set
 // Uncorrectable.
-func DecodeSingleBurstBPTC(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.FECResult) {
+func DecodeSingleBurstBPTC(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Result) {
 	bit.Mask(txBits[:])
-	result := fec.FECResult{BitsChecked: 32}
+	result := fec.Result{BitsChecked: 32}
 
 	// Deinterleave: transmit order → encode matrix order
 	var deinterleaved [32]bit.Bit

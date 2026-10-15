@@ -12,8 +12,8 @@ import (
 //
 // dmr:fec ambe_voice
 type VocoderFrame struct {
-	DecodedBits [49]bit.Bit   `dmr:"bits:0-48,raw"`
-	FEC         fec.FECResult `dmr:"-"`
+	DecodedBits [49]bit.Bit `dmr:"bits:0-48,raw"`
+	FEC         fec.Result  `dmr:"-"`
 }
 
 // EncodeAMBE72 applies the AMBE+2 frame FEC to 49 vocoder information bits
@@ -37,7 +37,7 @@ func EncodeAMBE72(info [49]bit.Bit) [72]bit.Bit {
 // A and B, parity bits included. mbelib, for example, repeats the last frame
 // when errs2 is above 3; errs2 counts only the corrected data bits of
 // sections A and B, and mbelib does not check the section A parity bit.
-func DecodeAMBE72(slot [72]bit.Bit) ([49]bit.Bit, fec.FECResult) {
+func DecodeAMBE72(slot [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 	bit.Mask(slot[:])
 	return decodeAMBE(slot)
 }
@@ -114,9 +114,9 @@ func encodeAMBE(ambe49 [49]bit.Bit) [72]bit.Bit {
 // Sections: A (24 scattered → Golay 24,12,8 → 12 bits),
 // B (23 scattered → descramble → Golay 23,12,7 → 12 bits),
 // C (25 scattered → 25 raw bits).
-func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.FECResult) {
+func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 	var ambe49 [49]bit.Bit
-	result := fec.FECResult{BitsChecked: 47} // 24 (Golay 24,12,8) + 23 (Golay 23,12,7)
+	result := fec.Result{BitsChecked: 47} // 24 (Golay 24,12,8) + 23 (Golay 23,12,7)
 
 	var a uint32 = 0
 	var MASK uint32 = 0x800000

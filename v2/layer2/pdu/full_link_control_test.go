@@ -139,7 +139,7 @@ func TestFullLinkControl_ToString(t *testing.T) {
 			GroupAddress:  9990,
 			SourceAddress: 3120101,
 		},
-		FEC: fec.FECResult{BitsChecked: 96},
+		FEC: fec.Result{BitsChecked: 96},
 	}
 	str := flc.ToString()
 	if len(str) == 0 {
@@ -318,7 +318,7 @@ func TestFullLinkControl_TalkerAliasBlock_ToString(t *testing.T) {
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
 			TalkerAliasData: aliasData,
 		},
-		FEC: fec.FECResult{BitsChecked: 96},
+		FEC: fec.Result{BitsChecked: 96},
 	}
 	str := flc.ToString()
 	if len(str) == 0 {
@@ -457,7 +457,7 @@ func TestFullLinkControl_RSErrorsCountBits(t *testing.T) {
 			rx[40+i] ^= 1
 		}
 		got, res := pdu.DecodeFullLinkControl(rx, lc.DataType)
-		want := fec.FECResult{BitsChecked: 96, ErrorsCorrected: flips}
+		want := fec.Result{BitsChecked: 96, ErrorsCorrected: flips}
 		if res != want || got.FEC != want {
 			t.Errorf("%d bit errors in one octet: result %+v, want %+v", flips, res, want)
 		}

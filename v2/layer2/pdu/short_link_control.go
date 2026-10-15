@@ -92,8 +92,8 @@ func (s *ShortLCPSysParms) SiteID() uint16 {
 type ShortLC struct {
 	DataType elements.DataType `dmr:"-"`
 
-	SLCO enums.SLCO    `dmr:"bits:0-3,enum"`
-	FEC  fec.FECResult `dmr:"-"`
+	SLCO enums.SLCO `dmr:"bits:0-3,enum"`
+	FEC  fec.Result `dmr:"-"`
 
 	NullMessage    *ShortLCNullMessage    `dmr:"bits:4-27,dispatch:SLCO=enums.SLCONullMessage"`
 	ActivityUpdate *ShortLCActivityUpdate `dmr:"bits:4-27,dispatch:SLCO=enums.SLCOActivityUpdate"`

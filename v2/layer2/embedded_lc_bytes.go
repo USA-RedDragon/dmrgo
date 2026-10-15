@@ -17,13 +17,13 @@ func EmbeddedLCFragments(lc [9]byte) [4][4]byte {
 // DecodeEmbeddedLCFragments is DecodeEmbeddedLC on octets: f holds the
 // embedded signalling fields of bursts B to E as RawBurst.EmbeddedData
 // returns them.
-func DecodeEmbeddedLCFragments(f [4][4]byte) ([9]byte, fec.FECResult) {
+func DecodeEmbeddedLCFragments(f [4][4]byte) ([9]byte, fec.Result) {
 	lc, res := DecodeEmbeddedLC(fragmentBits(f))
 	return lcOctets(lc), res
 }
 
 // DecodeEmbeddedLCFragmentsStrict is DecodeEmbeddedLCStrict on octets.
-func DecodeEmbeddedLCFragmentsStrict(f [4][4]byte) ([9]byte, fec.FECResult) {
+func DecodeEmbeddedLCFragmentsStrict(f [4][4]byte) ([9]byte, fec.Result) {
 	lc, res := DecodeEmbeddedLCStrict(fragmentBits(f))
 	return lcOctets(lc), res
 }

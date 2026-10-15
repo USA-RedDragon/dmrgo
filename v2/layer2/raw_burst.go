@@ -71,7 +71,7 @@ func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 
 // SlotType decodes the Golay(20,8) slot type in burst bits 98 to 107 and
 // 156 to 165.
-func (r *RawBurst) SlotType() (pdu.SlotType, fec.FECResult) {
+func (r *RawBurst) SlotType() (pdu.SlotType, fec.Result) {
 	var bits [20]bit.Bit
 	r.readBits(bits[:10], SlotTypeFirstStart)
 	r.readBits(bits[10:], SlotTypeSecondStart)
@@ -108,7 +108,7 @@ func (r *RawBurst) setInfo(bits [196]bit.Bit) {
 // is the same for every data type that uses it, so the result does not
 // depend on the slot type, but it is meaningful only for those data types:
 // a Rate 3/4 or Rate 1 burst needs Rate34Payload or Rate1Payload.
-func (r *RawBurst) BPTCPayload() ([12]byte, fec.FECResult) {
+func (r *RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 	var d bptc.BPTC19696
 	bits, res := d.DeinterleaveDataBits(r.info())
 	var p [12]byte
@@ -129,7 +129,7 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 // Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis
 // code (§B.1.1) and returns the 144 data bits packed most significant bit
 // first.
-func (r *RawBurst) Rate34Payload() ([18]byte, fec.FECResult) {
+func (r *RawBurst) Rate34Payload() ([18]byte, fec.Result) {
 	var t trellis.Trellis34
 	bits, res := t.Decode(r.info())
 	var p [18]byte
@@ -168,7 +168,7 @@ func (r *RawBurst) SetRate1Payload(p [24]byte) {
 
 // EMB decodes the QR(16,7) embedded signalling in burst bits 108 to 115 and
 // 148 to 155 of a voice burst B to F.
-func (r *RawBurst) EMB() (pdu.EmbeddedSignalling, fec.FECResult) {
+func (r *RawBurst) EMB() (pdu.EmbeddedSignalling, fec.Result) {
 	return r.emb(EMBFirstStart, EMBSecondStart)
 }
 
@@ -192,7 +192,7 @@ func (r *RawBurst) SetEmbeddedData(d [4]byte) {
 
 // StandaloneRCEMB decodes the EMB of a standalone inbound RC burst (§6.4.1,
 // Figure 6.7), burst bits 84 to 91 and 172 to 179.
-func (r *RawBurst) StandaloneRCEMB() (pdu.EmbeddedSignalling, fec.FECResult) {
+func (r *RawBurst) StandaloneRCEMB() (pdu.EmbeddedSignalling, fec.Result) {
 	return r.emb(RCEMBFirstStart, RCEMBSecondStart)
 }
 
@@ -213,7 +213,7 @@ func (r *RawBurst) SetStandaloneRCData(d [4]byte) {
 	r.setWord32(d, RCDataFirstStart, RCDataSecondStart)
 }
 
-func (r *RawBurst) emb(first, second int) (pdu.EmbeddedSignalling, fec.FECResult) {
+func (r *RawBurst) emb(first, second int) (pdu.EmbeddedSignalling, fec.Result) {
 	var bits [16]bit.Bit
 	r.readBits(bits[:8], first)
 	r.readBits(bits[8:], second)

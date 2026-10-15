@@ -15,10 +15,10 @@ import (
 )
 
 // DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader per ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header
-func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) (UDPIPv4CompressedHeader, fec.FECResult) {
+func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) (UDPIPv4CompressedHeader, fec.Result) {
 	var result UDPIPv4CompressedHeader
 	bit.Mask(data[:])
-	var fecResult fec.FECResult
+	var fecResult fec.Result
 	result.IPv4Identification = bit.BitsToUint16(data[:], 0, 16)
 	result.SAID = bit.BitsToUint8(data[:], 16, 4)
 	result.DAID = bit.BitsToUint8(data[:], 20, 4)

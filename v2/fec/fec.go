@@ -1,14 +1,14 @@
 // Package fec provides shared types for Forward Error Correction across all FEC codecs.
 package fec
 
-// FECResult tracks the outcome of a single FEC decode/check operation.
+// Result tracks the outcome of a single FEC decode/check operation.
 //
 // BitsChecked and ErrorsCorrected count bits of an error correcting code
 // at this step, so ErrorsCorrected over BitsChecked is a bit error rate. A
 // step that only detects errors, such as a CRC or checksum, reports
 // BitsChecked 0 and ErrorsCorrected 0, and sets Uncorrectable when its
 // check fails.
-type FECResult struct {
+type Result struct {
 	// BitsChecked is the number of coded bits that an error correcting code
 	// covers in this decode step.
 	BitsChecked int
@@ -22,8 +22,8 @@ type FECResult struct {
 // Combine returns the result of two decode steps over disjoint bits, or of
 // a correcting step and a detecting step on its output: the bit counts add
 // and Uncorrectable is set if either step set it.
-func (r FECResult) Combine(o FECResult) FECResult {
-	return FECResult{
+func (r Result) Combine(o Result) Result {
+	return Result{
 		BitsChecked:     r.BitsChecked + o.BitsChecked,
 		ErrorsCorrected: r.ErrorsCorrected + o.ErrorsCorrected,
 		Uncorrectable:   r.Uncorrectable || o.Uncorrectable,
@@ -31,7 +31,7 @@ func (r FECResult) Combine(o FECResult) FECResult {
 }
 
 // HasErrors returns true if any errors were corrected or if the data is uncorrectable.
-func (r FECResult) HasErrors() bool {
+func (r Result) HasErrors() bool {
 	return r.ErrorsCorrected > 0 || r.Uncorrectable
 }
 
@@ -45,8 +45,8 @@ type BERCalculator struct {
 	uncorrectable    int
 }
 
-// Add incorporates a single FECResult into the running BER calculation.
-func (b *BERCalculator) Add(result FECResult) {
+// Add incorporates a single Result into the running BER calculation.
+func (b *BERCalculator) Add(result Result) {
 	b.totalBitsChecked += result.BitsChecked
 	b.totalErrors += result.ErrorsCorrected
 	if result.Uncorrectable {
@@ -93,20 +93,20 @@ func (b *BERCalculator) Reset() {
 
 // BurstFECStats holds per-layer FEC results for a single DMR burst.
 type BurstFECStats struct {
-	SlotType FECResult // Golay(20,8,7) — 20 bits
-	EMB      FECResult // QR(16,7,6) — 16 bits (voice bursts only)
-	Payload  FECResult // BPTC/Trellis/Rate1 — 196/196/0 bits
-	Voice    FECResult // Golay(24,12,8)+Golay(23,12,7) summed across 3 frames, 141 bits (voice only)
+	SlotType Result // Golay(20,8,7) — 20 bits
+	EMB      Result // QR(16,7,6) — 16 bits (voice bursts only)
+	Payload  Result // BPTC/Trellis/Rate1 — 196/196/0 bits
+	Voice    Result // Golay(24,12,8)+Golay(23,12,7) summed across 3 frames, 141 bits (voice only)
 	// PDU is the RS(12,9) correction (96 bits) or the CRC check (0 bits) of
 	// the information bits that the Payload code returned (FLC/CSBK/DataHeader).
-	PDU FECResult
-	RC  FECResult // Single Burst BPTC, 32 bits, + CRC-7 check (Reverse Channel, voice bursts only)
+	PDU Result
+	RC  Result // Single Burst BPTC, 32 bits, + CRC-7 check (Reverse Channel, voice bursts only)
 }
 
 // Aggregate returns combined stats across all FEC layers in this burst. The
 // PDU bits are a subset of the Payload bits, so Aggregate counts the errors
 // that the PDU layer corrected but not its BitsChecked.
-func (s BurstFECStats) Aggregate() FECResult {
+func (s BurstFECStats) Aggregate() Result {
 	agg := s.SlotType.Combine(s.EMB).Combine(s.Payload).Combine(s.Voice).Combine(s.RC)
 	agg.ErrorsCorrected += s.PDU.ErrorsCorrected
 	agg.Uncorrectable = agg.Uncorrectable || s.PDU.Uncorrectable

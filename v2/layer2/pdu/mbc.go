@@ -14,7 +14,7 @@ import (
 type MBCHeader struct {
 	DataType    elements.DataType `dmr:"-"`
 	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.FECResult     `dmr:"-"`
+	FEC         fec.Result        `dmr:"-"`
 	LastBlock   bool              `dmr:"bit:0"`
 	ProtectFlag bool              `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
@@ -39,7 +39,7 @@ func (m *MBCHeader) GetDataType() elements.DataType {
 // NOTE 1).
 type MBCContinuation struct {
 	DataType elements.DataType `dmr:"-"`
-	FEC      fec.FECResult     `dmr:"-"`
+	FEC      fec.Result        `dmr:"-"`
 
 	// LastBlock indicates whether this is the final continuation block.
 	// LB=1 means last block (has CRC), LB=0 means intermediate (no CRC).
@@ -118,7 +118,7 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 type CGAPContinuation struct {
 	DataType    elements.DataType `dmr:"-"`
 	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.FECResult     `dmr:"-"`
+	FEC         fec.Result        `dmr:"-"`
 	LastBlock   bool              `dmr:"bit:0"`
 	ProtectFlag bool              `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
@@ -141,7 +141,7 @@ func (c *CGAPContinuation) GetDataType() elements.DataType {
 type MVAPContinuation struct {
 	DataType    elements.DataType `dmr:"-"`
 	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.FECResult     `dmr:"-"`
+	FEC         fec.Result        `dmr:"-"`
 	LastBlock   bool              `dmr:"bit:0"`
 	ProtectFlag bool              `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
@@ -164,7 +164,7 @@ func (c *MVAPContinuation) GetDataType() elements.DataType {
 type BCAPContinuation struct {
 	DataType    elements.DataType `dmr:"-"`
 	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.FECResult     `dmr:"-"`
+	FEC         fec.Result        `dmr:"-"`
 	LastBlock   bool              `dmr:"bit:0"`
 	ProtectFlag bool              `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
@@ -186,7 +186,7 @@ func (c *BCAPContinuation) GetDataType() elements.DataType {
 type VNAPContinuation struct {
 	DataType    elements.DataType `dmr:"-"`
 	crc         uint16            `dmr:"-"` //nolint:unused
-	FEC         fec.FECResult     `dmr:"-"`
+	FEC         fec.Result        `dmr:"-"`
 	LastBlock   bool              `dmr:"bit:0"`
 	ProtectFlag bool              `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode        `dmr:"bits:2-7"`
