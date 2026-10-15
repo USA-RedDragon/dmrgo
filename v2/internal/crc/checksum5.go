@@ -9,7 +9,7 @@ package crc
 // The result is in the range [0, 30].
 
 // Checksum5 computes the 5-bit checksum over 9 bytes of LC data.
-// The result is the sum of all 9 bytes modulo 31 (range 0–30).
+// The result is the sum of all 9 bytes modulo 31 (range 0 to 30).
 func Checksum5(data [9]byte) uint8 {
 	var sum uint16
 	for _, b := range data {

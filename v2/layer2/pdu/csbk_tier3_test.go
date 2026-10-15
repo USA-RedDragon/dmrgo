@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ── Tier III CSBK Opcode ToString Tests ──
-
 func TestCSBK_TierIII_OpcodeString(t *testing.T) {
 	tests := []struct {
 		opcode pdu.CSBKOpcode
@@ -44,8 +42,6 @@ func TestCSBK_TierIII_OpcodeString(t *testing.T) {
 		}
 	}
 }
-
-// ── Grant PDU Decode Tests ──
 
 func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 	var payload [64]bit.Bit
@@ -150,8 +146,6 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	}
 }
 
-// ── C_ALOHA Decode Test ──
-
 func TestCSBK_Aloha_Decode(t *testing.T) {
 	var payload [64]bit.Bit
 	// Reserved1 (bit 0) = 0
@@ -159,7 +153,7 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 	payload[1] = 1
 	// SiteTSSync (bit 2) = true
 	payload[2] = 1
-	// Version (bits 3-5) = 3 → 0b011
+	// Version (bits 3-5) = 3: 0b011
 	payload[4] = 1
 	payload[5] = 1
 	// Offset (bit 6) = true
@@ -171,12 +165,12 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 	payload[12] = 1
 	// ServiceFunc (bits 13-14) = 0b10 = 2
 	payload[13] = 1
-	// NRandWait (bits 15-18) = 5 → 0b0101
+	// NRandWait (bits 15-18) = 5: 0b0101
 	payload[16] = 1
 	payload[18] = 1
 	// Reg (bit 19) = true
 	payload[19] = 1
-	// Backoff (bits 20-23) = 3 → 0b0011
+	// Backoff (bits 20-23) = 3: 0b0011
 	payload[22] = 1
 	payload[23] = 1
 	// SysIdentCode (bits 24-39) = last bit set
@@ -235,18 +229,16 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 	}
 }
 
-// ── C_BCAST Decode Test ──
-
 func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	var payload [64]bit.Bit
 	// AnnouncementType (bits 0-4) = 0b00101 = AnnouncementChanFreq (5)
 	payload[2] = 1
 	payload[4] = 1
-	// BroadcastParms1 (bits 5-18) — set bit 5
+	// BroadcastParms1 (bits 5-18): set bit 5
 	payload[5] = 1
 	// Reg (bit 19) = true
 	payload[19] = 1
-	// Backoff (bits 20-23) = 7 → 0b0111
+	// Backoff (bits 20-23) = 7: 0b0111
 	payload[21] = 1
 	payload[22] = 1
 	payload[23] = 1
@@ -257,7 +249,7 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	payload[33] = 1 // bit 9
 	payload[34] = 1 // bit 10
 	payload[37] = 1 // bit 13
-	// BroadcastParms2 (bits 40-63) — set bit 40
+	// BroadcastParms2 (bits 40-63): set bit 40
 	payload[40] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKBroadcast), payload)
@@ -290,11 +282,9 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	}
 }
 
-// ── P_CLEAR Decode Test ──
-
 func TestCSBK_Clear_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// PhysicalChannel (bits 0-11) = 0x100 → 0b000100000000
+	// PhysicalChannel (bits 0-11) = 0x100: 0b000100000000
 	payload[3] = 1
 	// GroupIndividual (bit 15) = true
 	payload[15] = 1
@@ -321,11 +311,9 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 	}
 }
 
-// ── C_AHOY Decode Test ──
-
 func TestCSBK_Ahoy_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ServiceOptsMirror (bits 0-6) = 0x42 → 0b1000010
+	// ServiceOptsMirror (bits 0-6) = 0x42: 0b1000010
 	payload[0] = 1
 	payload[5] = 1
 	// ServiceKindFlag (bit 7) = true
@@ -334,9 +322,9 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 	payload[8] = 1
 	// GroupIndividual (bit 9) = true
 	payload[9] = 1
-	// AppendedBlocks (bits 10-11) = 2 → 0b10
+	// AppendedBlocks (bits 10-11) = 2: 0b10
 	payload[10] = 1
-	// ServiceKind (bits 12-15) = 5 → 0b0101
+	// ServiceKind (bits 12-15) = 5: 0b0101
 	payload[13] = 1
 	payload[15] = 1
 	// TargetAddress (bits 16-39) = last bit set
@@ -375,8 +363,6 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 	}
 }
 
-// ── C_RAND Decode Test ──
-
 func TestCSBK_RandomAccess_Decode(t *testing.T) {
 	var payload [64]bit.Bit
 	// ServiceOptions (bits 0-6) = 0x01
@@ -384,7 +370,7 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 	// ProxyFlag (bit 7) = true
 	payload[7] = 1
 	// Reserved (bits 8-11) = 0
-	// ServiceKind (bits 12-15) = 3 → 0b0011
+	// ServiceKind (bits 12-15) = 3: 0b0011
 	payload[14] = 1
 	payload[15] = 1
 	// TargetAddress (bits 16-39) = last bit set
@@ -413,8 +399,6 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 		t.Errorf("ServiceKind = %d, want 3", rand.ServiceKind)
 	}
 }
-
-// ── Opcode 0x38 ──
 
 func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 	var payload [64]bit.Bit
@@ -497,13 +481,11 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 	}
 }
 
-// ── C_ACKD Decode Test ──
-
 func TestCSBK_AckOutbound_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ResponseInfo (bits 0-6) = 0x10 → 0b0010000
+	// ResponseInfo (bits 0-6) = 0x10: 0b0010000
 	payload[2] = 1
-	// ReasonCode (bits 7-14) = 0x42 → 0b01000010
+	// ReasonCode (bits 7-14) = 0x42: 0b01000010
 	payload[8] = 1
 	payload[13] = 1
 	// Reserved (bit 15) = false
@@ -524,8 +506,6 @@ func TestCSBK_AckOutbound_Decode(t *testing.T) {
 	}
 }
 
-// ── C_MOVE Decode Test ──
-
 func TestCSBK_Move_Decode(t *testing.T) {
 	var payload [64]bit.Bit
 	// Mask (bits 9-13) = 0b11111 = 31
@@ -536,10 +516,10 @@ func TestCSBK_Move_Decode(t *testing.T) {
 	payload[13] = 1
 	// Reg (bit 19) = true
 	payload[19] = 1
-	// Backoff (bits 20-23) = 5 → 0b0101
+	// Backoff (bits 20-23) = 5: 0b0101
 	payload[21] = 1
 	payload[23] = 1
-	// PhysicalChannel (bits 28-39) = 0xFFF → all 1s
+	// PhysicalChannel (bits 28-39) = 0xFFF: all 1s
 	for i := 28; i <= 39; i++ {
 		payload[i] = 1
 	}
@@ -571,11 +551,9 @@ func TestCSBK_Move_Decode(t *testing.T) {
 	}
 }
 
-// ── P_MAINT Decode Test ──
-
 func TestCSBK_Maintenance_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// MaintKind (bits 12-14) = 3 → 0b011
+	// MaintKind (bits 12-14) = 3: 0b011
 	payload[13] = 1
 	payload[14] = 1
 	// TargetAddress (bits 16-39)
@@ -598,8 +576,6 @@ func TestCSBK_Maintenance_Decode(t *testing.T) {
 	}
 }
 
-// ── C_ACKVIT Decode Test ──
-
 func TestCSBK_Ackvitation_Decode(t *testing.T) {
 	var payload [64]bit.Bit
 	// ServiceOptsMirror (bits 0-6) = 0x01
@@ -609,7 +585,7 @@ func TestCSBK_Ackvitation_Decode(t *testing.T) {
 	// UAB (bits 10-11) = 0b11 = 3
 	payload[10] = 1
 	payload[11] = 1
-	// ServiceKind (bits 12-15) = 2 → 0b0010
+	// ServiceKind (bits 12-15) = 2: 0b0010
 	payload[14] = 1
 	// TargetAddress (bits 16-39)
 	payload[39] = 1
@@ -640,8 +616,6 @@ func TestCSBK_Ackvitation_Decode(t *testing.T) {
 		t.Errorf("ServiceKind = %d, want 2", ackvit.ServiceKind)
 	}
 }
-
-// ── Grant Encode-Decode Cycle Tests ──
 
 func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	var targetAddr [24]bit.Bit
@@ -763,8 +737,6 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	}
 }
 
-// ── AnnouncementType Tests ──
-
 func TestAnnouncementType_String(t *testing.T) {
 	tests := []struct {
 		at   enums.AnnouncementType
@@ -803,8 +775,6 @@ func TestAnnouncementType_Cast(t *testing.T) {
 	}
 }
 
-// ── SLCO Tests ──
-
 func TestSLCO_TierIII_Values(t *testing.T) {
 	csys := enums.SLCO(0b0010)
 	if csys != enums.SLCOCSysParms {
@@ -822,8 +792,6 @@ func TestSLCO_TierIII_Values(t *testing.T) {
 		t.Errorf("SLCOPSysParms.ToName() = %q, want %q", name, "P_SYS_Parms")
 	}
 }
-
-// ── ShortLC CSysParms Tests ──
 
 type netSiteModelCase struct {
 	name      string
@@ -875,8 +843,6 @@ func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
 	}
 }
 
-// ── UDT Header opcodes are not CSBK opcodes ──
-
 // TS 102 361-4 Table 7.2 carries C_UDTHD/C_UDTHU in a Data Header burst,
 // so opcodes 0x1A/0x1B must not decode as a CSBK variant.
 func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
@@ -894,11 +860,9 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 	}
 }
 
-// ── P_PROTECT Decode Test ──
-
 func TestCSBK_Protect_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ProtectKind (bits 12-14) = 5 → 0b101
+	// ProtectKind (bits 12-14) = 5: 0b101
 	payload[12] = 1
 	payload[14] = 1
 	// GroupIndividual (bit 15) = true

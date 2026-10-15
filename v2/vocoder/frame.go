@@ -127,9 +127,9 @@ func encodeAMBE(ambe49 [49]bit.Bit) [72]bit.Bit {
 }
 
 // decodeAMBE decodes a 72-bit AMBE voice frame into 49 decoded bits with FEC.
-// Sections: A (24 scattered → Golay 24,12,8 → 12 bits),
-// B (23 scattered → descramble → Golay 23,12,7 → 12 bits),
-// C (25 scattered → 25 raw bits).
+// Sections: A (24 scattered bits, Golay 24,12,8, 12 bits),
+// B (23 scattered bits, descramble, Golay 23,12,7, 12 bits),
+// C (25 scattered bits to 25 raw bits).
 func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 	var ambe49 [49]bit.Bit
 	result := fec.Result{BitsChecked: 47} // 24 (Golay 24,12,8) + 23 (Golay 23,12,7)

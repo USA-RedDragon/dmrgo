@@ -1,6 +1,6 @@
 package layer2
 
-// ETSI TS 102 361-1 Annex E — Transmit Bit Order
+// ETSI TS 102 361-1 Annex E: Transmit Bit Order
 //
 // A DMR burst consists of 132 dibit symbols transmitted serially:
 //
@@ -11,11 +11,11 @@ package layer2
 //
 // The standard burst layout for data bursts is (Annex E, Table E.1):
 //
-//	Bits [0..97]   — Info(0..97)   (first data half, 98 bits)
-//	Bits [98..107]  — SlotType first half (10 bits: Golay(20,8) encoded CC+DT)
-//	Bits [108..155] — SYNC pattern or EMB+ES (48 bits)
-//	Bits [156..165] — SlotType second half (10 bits)
-//	Bits [166..263] — Info(98..195) (second data half, 98 bits)
+//	Bits 0 to 97:    Info(0..97) (first data half, 98 bits)
+//	Bits 98 to 107:  SlotType first half (10 bits: Golay(20,8) encoded CC+DT)
+//	Bits 108 to 155: SYNC pattern or EMB+ES (48 bits)
+//	Bits 156 to 165: SlotType second half (10 bits)
+//	Bits 166 to 263: Info(98..195) (second data half, 98 bits)
 //
 // The constants give the field bounds in transmit bit order; RawBurst reads
 // and writes the fields.

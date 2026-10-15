@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ETSI TS 102 361-1 §6.4 — Reverse Channel
+// ETSI TS 102 361-1 §6.4: Reverse Channel
 //
 // The Reverse Channel (RC) provides inbound signalling from an MS to a BS
 // during an active voice call. RC data is carried in the 32-bit embedded
@@ -21,10 +21,10 @@ import (
 //
 // Detection of §6.4.2: a voice burst's embedded signalling has
 // PreemptionAndPowerControlIndicator=true (PI=1) AND
-// LCSS=SingleFragmentLCorCSBK (0) → the 32-bit data is RC, not LC.
+// LCSS=SingleFragmentLCorCSBK (0), the 32-bit data is RC.
 //
-// Processing: 32 transmit bits → Single Burst BPTC (oddParity=true) →
-// 11 info bits → RC PDU decode (4 payload + 7 CRC-7 with mask 0x7A).
+// Processing: 32 transmit bits to Single Burst BPTC (oddParity=true) to
+// 11 info bits to RC PDU decode (4 payload + 7 CRC-7 with mask 0x7A).
 
 // DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit
 // embedded signalling data field. It applies Single Burst Variable Length

@@ -250,7 +250,7 @@ func TestMBCContinuation_DecodeIntermediate(t *testing.T) {
 	data[50] = 1
 	data[94] = 1
 
-	infoBits := buildMBCContinuationBits(false, data) // LB=0 → intermediate
+	infoBits := buildMBCContinuationBits(false, data) // LB=0: intermediate
 
 	cont := pdu.DecodeMBCContinuation(infoBits)
 
@@ -276,7 +276,7 @@ func TestMBCContinuation_DecodeLastBlock(t *testing.T) {
 	data[0] = 1
 	data[78] = 1
 
-	infoBits := buildMBCContinuationBits(true, data) // LB=1 → last block
+	infoBits := buildMBCContinuationBits(true, data) // LB=1: last block
 
 	cont := pdu.DecodeMBCContinuation(infoBits)
 

@@ -910,7 +910,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	case parse.FieldDispatch:
 		// Dispatch fields are handled separately in emitDispatchSwitch
-		// (no-op here — they are emitted after all regular fields)
+		// (no-op here: they are emitted after all regular fields)
 	}
 }
 
@@ -1043,7 +1043,7 @@ func (e encoder) fields(g *Group) error {
 			regularFields = append(regularFields, field)
 		}
 	}
-	// Dispatch first — sub-PDU copies the full payload range.
+	// Dispatch first: sub-PDU copies the full payload range.
 	if len(dispatchFields) > 0 {
 		e.payload(g, dispatchFields)
 		e.dispatch(g, dispatchFields)

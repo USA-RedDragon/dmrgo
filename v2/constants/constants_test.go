@@ -74,8 +74,6 @@ func TestSyncAgeWarning_Equals_TwoBeaconIntervals(t *testing.T) {
 	}
 }
 
-// ── ETSI TS 102 361-3 Annex A: PDP Timers and Constants ──
-
 func TestPDPTimers_AnnexA1(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -105,8 +103,6 @@ func TestPDPConstants_AnnexA2(t *testing.T) {
 		t.Errorf("NRtryLmt = %d, want 8", constants.NRetryLimit)
 	}
 }
-
-// ── ETSI TS 102 361-4 Annex A: Trunking Timers and Constants ──
 
 func TestTrunkingTimers_AnnexA1(t *testing.T) {
 	t.Parallel()

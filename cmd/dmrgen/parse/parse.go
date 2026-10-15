@@ -21,16 +21,16 @@ import (
 type FieldKind int
 
 const (
-	FieldBool      FieldKind = iota // bit:N → bool
-	FieldUint                       // bits:S-E → uint8/uint16/uint32
-	FieldInt                        // bits:S-E → int (unsigned unless Signed)
-	FieldEnum                       // bits:S-E,enum → named integer type with a String method
-	FieldRaw                        // bits:S-E,raw → [N]byte, MSB-first, zero padding bits at the end
-	FieldDelegate                   // bits:S-E,delegate → sub-struct with DecodeFromBits
-	FieldPacked                     // bits:S-E,packed → packed bytes
-	FieldLongitude                  // bits:S-E,type:longitude → float64
-	FieldLatitude                   // bits:S-E,type:latitude → float64
-	FieldDispatch                   // bits:S-E,dispatch:Field=Val1|Val2 → pointer to sub-PDU
+	FieldBool      FieldKind = iota // bit:N to bool
+	FieldUint                       // bits:S-E to uint8/uint16/uint32
+	FieldInt                        // bits:S-E to int (unsigned unless Signed)
+	FieldEnum                       // bits:S-E,enum to named integer type with a String method
+	FieldRaw                        // bits:S-E,raw to [N]byte, MSB-first, zero padding bits at the end
+	FieldDelegate                   // bits:S-E,delegate to sub-struct with DecodeFromBits
+	FieldPacked                     // bits:S-E,packed to packed bytes
+	FieldLongitude                  // bits:S-E,type:longitude to float64
+	FieldLatitude                   // bits:S-E,type:latitude to float64
+	FieldDispatch                   // bits:S-E,dispatch:Field=Val1|Val2 to a sub-PDU pointer
 )
 
 const (

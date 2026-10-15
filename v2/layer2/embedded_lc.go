@@ -12,7 +12,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ETSI TS 102 361-1 §7.1.3 — Embedded signalling
+// ETSI TS 102 361-1 §7.1.3: Embedded signalling
 //
 // Voice bursts B to E of a superframe carry one 72-bit Full LC in four
 // 32-bit embedded signalling fragments with LCSS First, Continuation,

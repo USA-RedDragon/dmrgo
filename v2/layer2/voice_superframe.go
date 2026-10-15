@@ -10,7 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// ETSI TS 102 361-1 §5.1.2 — Voice superframe, initiation and termination
+// ETSI TS 102 361-1 §5.1.2: Voice superframe, initiation and termination
 //
 // A voice transmission is a Voice LC Header, then complete superframes of
 // six voice bursts A to F, then a Terminator with LC in the burst after the

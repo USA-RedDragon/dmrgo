@@ -143,7 +143,7 @@ func (s *FullLinkControl) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
 	return so, false
 }
 
-// FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])
+// FLC FLCO payload variants. These are the 56-bit payloads (infoBits[16:72])
 // decoded per-FLCO type. Each struct uses 0-based bit offsets within the 56-bit window.
 
 // FLCGroupVoice is the group voice channel user (Grp_V_Ch_Usr) Full LC payload

@@ -235,3 +235,35 @@ func TestPass(t *testing.T) { undefinedFunc() }
 		}
 	})
 }
+
+func TestGenerateMarkdown(t *testing.T) {
+	docs := []document{{
+		ID:    "D",
+		Title: "ETSI TS 102 361-1: Air Interface Protocol",
+		Sections: []section{
+			{Section: "6.1", Title: "Vocoder socket", SourceFiles: []string{"v2/a.go"}, TestFunctions: []testFuncGroup{{Package: "./a", Names: []string{"TestA"}}}},
+			{Section: "6.2", Title: "Untested", SourceFiles: []string{"v2/b.go"}},
+		},
+	}}
+	results := map[sectionKey]*sectionVerification{
+		{"D", "6.1"}: {total: 1, passed: 1},
+	}
+	got := generateMarkdown(docs, results)
+	for _, want := range []string{
+		"| Verified (tests pass) | 1 |\n",
+		"| Untested (has source, no tests) | 1 |\n",
+		"**Overall: 1/2 verified (50.0%)**\n",
+		"### ETSI TS 102 361-1: Air Interface Protocol\n\n2 sections: 1 verified, 0 failing, 1 untested, 0 unimplemented.\n",
+		"| 6.1 | Vocoder socket | verified | 1/1 passed | `v2/a.go` |\n",
+		"| 6.2 | Untested | untested | - | `v2/b.go` |\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("markdown does not contain %q:\n%s", want, got)
+		}
+	}
+	for _, bad := range []string{"\u00a7", "\u2014", "\u2705", "\u2588"} {
+		if strings.Contains(got, bad) {
+			t.Errorf("markdown contains %q", bad)
+		}
+	}
+}

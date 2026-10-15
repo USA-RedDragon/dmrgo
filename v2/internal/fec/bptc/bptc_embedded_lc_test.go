@@ -132,7 +132,7 @@ func TestEmbeddedLC_FragmentBitsAreValid(t *testing.T) {
 
 func TestEmbeddedLC_StabilityEncodeDecode(t *testing.T) {
 	t.Parallel()
-	// Encode→Decode→Encode should produce identical fragments
+	// Encode, Decode and Encode again should produce identical fragments
 	var info [77]bit.Bit
 	for i := range info {
 		info[i] = bit.Bit((i*3 + 1) % 2)

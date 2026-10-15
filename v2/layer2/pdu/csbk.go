@@ -190,8 +190,6 @@ type ChannelTimingPDU struct {
 	ChannelTimingOp0        bool   `dmr:"bit:63"`     // least significant bit of the channel timing opcode
 }
 
-// ── Tier III CSBK sub-PDU structs (ETSI TS 102 361-4 §7.1.1) ──
-
 // PrivateVoiceGrantPDU is the private voice channel grant (PV_GRANT) CSBK
 // payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type PrivateVoiceGrantPDU struct {

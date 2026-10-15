@@ -199,7 +199,7 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 }
 
 func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
-	// Same valid data should decode correctly regardless — DataType is set by caller
+	// Same valid data should decode correctly regardless, because the caller sets DataType
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,

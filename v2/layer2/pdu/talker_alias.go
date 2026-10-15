@@ -12,7 +12,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// ETSI TS 102 361-2 §5.4.3, §7.1.1.4, §7.1.1.5, §7.2.18 and §7.2.19 —
+// ETSI TS 102 361-2 §5.4.3, §7.1.1.4, §7.1.1.5, §7.2.18 and §7.2.19:
 // Inband talker alias.
 //
 // The alias is a bit stream of Code Units: the header carries 49 bits for
