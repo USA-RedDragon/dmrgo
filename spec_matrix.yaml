@@ -661,8 +661,7 @@ documents:
               - TestEmbeddedLC_ColumnParityErrorDetection
               - TestEmbeddedLC_DifferentPatterns
               - TestEmbeddedLC_CapturedSuperframe
-              - TestEmbeddedLC_AllSingleAndDoubleErrorsCorrected
-              - TestEmbeddedLC_TripleErrorsNeverSilent
+              - TestEmbeddedLC_UpToThreeErrorsCorrected
               - TestEmbeddedLC_ParityRowErrorCorrected
 
       - section: "B.2.2"

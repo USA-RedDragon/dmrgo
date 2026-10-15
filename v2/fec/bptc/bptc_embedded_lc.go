@@ -73,32 +73,39 @@ func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
 
 // correctEmbeddedLCMatrix corrects the 8×16 product code in place. Row 7 is
 // the even column parity of rows 0..6, so it is also a Hamming(16,11,4)
-// codeword and all 8 rows are row-decoded. Hamming(16,11,4) detects double
-// errors, so when exactly one row is left with a detected error, the failing
-// column parities locate the bits to flip in that row.
+// codeword and all 8 rows are row-decoded. When only one row has a nonzero
+// syndrome, the failing column parities give the exact error positions in
+// that row. This runs before single-error row decoding, which would turn a
+// row with 3 errors into a wrong codeword. Otherwise each row is corrected
+// for a single error.
 func correctEmbeddedLCMatrix(matrix *[8][16]bit.Bit) {
 	for pass := 0; pass < 3; pass++ {
-		fixing := false
+		var syndromes [8]int
 		badRow, badRows := 0, 0
-
 		for row := range matrix {
-			s := calculateSyndrome16_11(matrix[row])
-			if s == 0 {
-				continue
-			}
-			if errPos := hamming16_11_syndrome_table[s]; errPos >= 0 {
-				matrix[row][errPos] ^= 1
-				fixing = true
-			} else {
+			syndromes[row] = calculateSyndrome16_11(matrix[row])
+			if syndromes[row] != 0 {
 				badRow = row
 				badRows++
 			}
 		}
 
+		fixing := false
 		if badRows == 1 {
 			for col := 0; col < 16; col++ {
 				if columnParity(matrix, col) != 0 {
 					matrix[badRow][col] ^= 1
+					fixing = true
+				}
+			}
+		}
+		if !fixing {
+			for row := range matrix {
+				if syndromes[row] == 0 {
+					continue
+				}
+				if errPos := hamming16_11_syndrome_table[syndromes[row]]; errPos >= 0 {
+					matrix[row][errPos] ^= 1
 					fixing = true
 				}
 			}

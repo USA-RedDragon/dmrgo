@@ -71,11 +71,11 @@ func flipEmbedded(fr [4][32]bit.Bit, pos ...int) [4][32]bit.Bit {
 	return fr
 }
 
-func TestEmbeddedLC_AllSingleAndDoubleErrorsCorrected(t *testing.T) {
+func TestEmbeddedLC_UpToThreeErrorsCorrected(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()
 	fr := bptc.EncodeEmbeddedLC(info)
-	for k := 1; k <= 2; k++ {
+	for k := 1; k <= 3; k++ {
 		forEachErrorPattern(128, k, func(pos []int) {
 			got, res := bptc.DecodeEmbeddedLC(flipEmbedded(fr, pos...))
 			if got != info || res.Uncorrectable || res.ErrorsCorrected != k {
@@ -83,18 +83,6 @@ func TestEmbeddedLC_AllSingleAndDoubleErrorsCorrected(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestEmbeddedLC_TripleErrorsNeverSilent(t *testing.T) {
-	t.Parallel()
-	info := embeddedLCInfo()
-	fr := bptc.EncodeEmbeddedLC(info)
-	forEachErrorPattern(128, 3, func(pos []int) {
-		got, res := bptc.DecodeEmbeddedLC(flipEmbedded(fr, pos...))
-		if !res.Uncorrectable && (got != info || res.ErrorsCorrected != 3) {
-			t.Fatalf("errors at %v: accepted wrong result, data match=%v result=%+v", pos, got == info, res)
-		}
-	})
 }
 
 func TestEmbeddedLC_ParityRowErrorCorrected(t *testing.T) {
