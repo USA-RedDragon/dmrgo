@@ -6,7 +6,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"errors"
 	"flag"
 	"fmt"
@@ -189,24 +188,23 @@ func checkRegenerated(bursts [][33]byte, captured [][33]byte, frames []vocoder.A
 	return clean, framesOK, identical
 }
 
-// rewriteTarget sets the target address in octets 3 to 5 of a Voice LC Header
-// payload and reseals it, as a hotspot does when it maps a talkgroup.
+// rewriteTarget sets the target address of a Voice LC Header payload in
+// place and reseals it, as a hotspot does when it maps a talkgroup.
 func rewriteTarget(header [33]byte, target uint32) (before, after, sameAsCodeword bool, decoded uint32, err error) {
-	raw := layer2.RawBurst(header)
-	p, _ := raw.BPTCPayload()
-	var t [4]byte
-	binary.BigEndian.PutUint32(t[:], target)
-	copy(p[3:6], t[1:])
+	p, _ := layer2.RawBurst(header).BPTCPayload()
+	lc := pdu.LCBytes(p[:9])
+	_, source, _ := lc.Addresses()
+	if !lc.SetAddresses(target, source) {
+		err = fmt.Errorf("cannot set the target of a %s LC", lc.FLCO())
+		return
+	}
+	copy(p[:9], lc[:])
 	before = layer2.MMDVMHostAccepts(enums.DataTypeVoiceLCHeader, p)
 	if err = layer2.MMDVMHostSeal(enums.DataTypeVoiceLCHeader, &p); err != nil {
 		return
 	}
 	after = layer2.MMDVMHostAccepts(enums.DataTypeVoiceLCHeader, p)
-	cw, err := pdu.FullLCCodeword([9]byte(p[:9]), enums.DataTypeVoiceLCHeader)
-	if err != nil {
-		return
-	}
-	sameAsCodeword = cw == p
+	sameAsCodeword = pdu.VoiceLCHeaderCodeword(lc) == p
 	out, err := layer2.BuildDataBurst(p, enums.DataTypeVoiceLCHeader, colorCode, layer2.SyncSourceBS)
 	if err != nil {
 		return
@@ -215,12 +213,12 @@ func rewriteTarget(header [33]byte, target uint32) (before, after, sameAsCodewor
 	if err != nil {
 		return
 	}
-	lc, ok := b.Data.(*pdu.FullLinkControl)
-	if !ok || lc.FEC.HasErrors() {
+	flc, ok := b.Data.(*pdu.FullLinkControl)
+	if !ok || flc.FEC.HasErrors() {
 		err = errors.New("rewritten header does not decode cleanly")
 		return
 	}
-	decoded, _, _ = lc.Addresses()
+	decoded, _, _ = flc.Addresses()
 	return
 }
 
@@ -258,7 +256,7 @@ func run(w io.Writer, dataDir string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "rewrite target %d -> %d: accepted before seal %t, after seal %t, equals FullLCCodeword %t\n",
+	fmt.Fprintf(w, "rewrite target %d -> %d: accepted before seal %t, after seal %t, equals VoiceLCHeaderCodeword %t\n",
 		target, decoded, before, after, sameCW)
 	return nil
 }

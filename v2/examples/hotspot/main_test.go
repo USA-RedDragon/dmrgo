@@ -21,7 +21,7 @@ func TestRun(t *testing.T) {
 		"mmdvmhost accepts: 2/2 data bursts",
 		"embedded LC: 13/13 match the header",
 		"regenerated: 80 bursts from 231 AMBE frames, clean true, frames match true, 48 identical to capture",
-		"rewrite target 9990 -> 91: accepted before seal false, after seal true, equals FullLCCodeword true",
+		"rewrite target 9990 -> 91: accepted before seal false, after seal true, equals VoiceLCHeaderCodeword true",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q:\n%s", want, out)
