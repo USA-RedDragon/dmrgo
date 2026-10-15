@@ -69,3 +69,35 @@ func TestBPTC19696Decode(t *testing.T) {
 		// Let's not stress test uncorrectable here, just basic functionality.
 	}
 }
+
+func TestBPTC19696Reserved(t *testing.T) {
+	r := rand.New(rand.NewSource(7))
+	for run := 0; run < 100; run++ {
+		var data [96]bit.Bit
+		for i := range data {
+			data[i] = bit.Bit(r.Intn(2))
+		}
+		res := [3]bit.Bit{bit.Bit(run & 1), bit.Bit(run >> 1 & 1), bit.Bit(run >> 2 & 1)}
+		encoded := Encode196WithReserved(data, res)
+		if res == ([3]bit.Bit{}) && encoded != Encode196(data) {
+			t.Fatalf("Encode196WithReserved with zero R differs from Encode196")
+		}
+		pos := r.Intn(196)
+		encoded[pos] ^= 1
+		gotData, gotRes, result := Decode196WithReserved(encoded)
+		if gotData != data || gotRes != res || result.Uncorrectable {
+			t.Errorf("R %v, error at %d: decoded R %v, data ok %t, %+v", res, pos, gotRes, gotData == data, result)
+		}
+	}
+}
+
+func TestBPTC19696ReservedPositions(t *testing.T) {
+	for i, txBit := range []int{151, 166, 181} {
+		var res [3]bit.Bit
+		res[i] = 1
+		encoded := Encode196WithReserved([96]bit.Bit{}, res)
+		if encoded[txBit] != 1 {
+			t.Errorf("R(%d) is not at transmit bit %d (ETSI TS 102 361-1 Table B.1)", i, txBit)
+		}
+	}
+}
