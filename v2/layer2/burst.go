@@ -10,7 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // Burst represents a DMR burst.
@@ -96,7 +95,7 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 		// means the 32-bit embedded data carries an RC PDU, not an LC fragment.
 		if b.EmbeddedSignalling.PreemptionAndPowerControlIndicator &&
 			b.EmbeddedSignalling.LCSS == enums.LCSSSingleFragment {
-			rc, rcFEC := DecodeRCFromEmbeddedData(b.EmbeddedSignallingData)
+			rc, rcFEC := DecodeEmbeddedRC(b.EmbeddedSignallingData)
 			b.HasReverseChannel = true
 			b.ReverseChannel = &rc
 			b.FEC.RC = rcFEC
@@ -169,7 +168,7 @@ func (b *Burst) decodeStandaloneRC() {
 
 	copy(b.EmbeddedSignallingData[:16], b.bitData[RCDataFirstStart:RCDataFirstEnd])
 	copy(b.EmbeddedSignallingData[16:], b.bitData[RCDataSecondStart:RCDataSecondEnd])
-	rc, rcFEC := DecodeRCFromEmbeddedData(b.EmbeddedSignallingData)
+	rc, rcFEC := DecodeEmbeddedRC(b.EmbeddedSignallingData)
 	b.HasReverseChannel = true
 	b.ReverseChannel = &rc
 	b.FEC.RC = rcFEC
@@ -181,7 +180,7 @@ func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
 	if err != nil {
 		return bitData, err
 	}
-	embBits, err := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
+	embBits, err := b.EmbeddedSignalling.Encode()
 	if err != nil {
 		return bitData, fmt.Errorf("cannot encode embedded signalling: %w", err)
 	}
@@ -203,7 +202,7 @@ func (b *Burst) embeddedData() ([32]bit.Bit, error) {
 	if b.ReverseChannel == nil {
 		return [32]bit.Bit{}, fmt.Errorf("HasReverseChannel is set but ReverseChannel is nil")
 	}
-	rcBits, err := EncodeRCToEmbeddedData(b.ReverseChannel)
+	rcBits, err := EncodeEmbeddedRC(b.ReverseChannel)
 	if err != nil {
 		return [32]bit.Bit{}, fmt.Errorf("cannot encode reverse channel: %w", err)
 	}
@@ -511,7 +510,7 @@ func (b *Burst) Encode() ([33]byte, error) {
 	var bitData [264]bit.Bit
 
 	if b.IsData {
-		slotBits, err := pdu.EncodeSlotType(&b.SlotType)
+		slotBits, err := b.SlotType.Encode()
 		if err != nil {
 			return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
 		}
@@ -539,7 +538,7 @@ func (b *Burst) Encode() ([33]byte, error) {
 		if err != nil {
 			return [33]byte{}, err
 		}
-		esBits, err := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
+		esBits, err := b.EmbeddedSignalling.Encode()
 		if err != nil {
 			return [33]byte{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
 		}
@@ -563,7 +562,7 @@ func (b *Burst) voiceBits() ([216]bit.Bit, error) {
 		if b.hasVoiceSlots && b.VoiceData.Frames[i].DecodedBits == b.decodedVoice.Frames[i].DecodedBits {
 			continue
 		}
-		slot, err := vocoder.EncodeVocoderFrame(&b.VoiceData.Frames[i])
+		slot, err := b.VoiceData.Frames[i].Encode()
 		if err != nil {
 			return voice, fmt.Errorf("cannot encode voice: VoiceData.Frames[%d]: %w", i, err)
 		}
@@ -657,34 +656,34 @@ func encodePDU(d Data, dataType enums.DataType) ([]bit.Bit, error) {
 	case *pdu.FullLinkControl:
 		lc := *v
 		lc.DataType = dataType
-		return bits96(pdu.EncodeFullLinkControl(&lc))
+		return bits96(lc.Encode())
 	case *pdu.CSBK:
-		return bits96(pdu.EncodeCSBK(v))
+		return bits96(v.Encode())
 	case *pdu.PIHeader:
-		return bits96(pdu.EncodePIHeader(v))
+		return bits96(v.Encode())
 	case *pdu.DataHeader:
-		return bits96(pdu.EncodeDataHeader(v))
+		return bits96(v.Encode())
 	case *pdu.MBCHeader:
-		return bits96(pdu.EncodeMBCHeader(v))
+		return bits96(v.Encode())
 	case *pdu.MBCContinuation:
-		return bits96(pdu.EncodeMBCContinuation(v))
+		return bits96(v.Encode())
 	case *pdu.CGAPContinuation:
-		return bits96(pdu.EncodeCGAPContinuation(v))
+		return bits96(v.Encode())
 	case *pdu.MVAPContinuation:
-		return bits96(pdu.EncodeMVAPContinuation(v))
+		return bits96(v.Encode())
 	case *pdu.BCAPContinuation:
-		return bits96(pdu.EncodeBCAPContinuation(v))
+		return bits96(v.Encode())
 	case *pdu.VNAPContinuation:
-		return bits96(pdu.EncodeVNAPContinuation(v))
+		return bits96(v.Encode())
 	case *pdu.UnifiedSingleBlockData:
-		return bits96(pdu.EncodeUnifiedSingleBlockData(v))
+		return bits96(v.Encode())
 	case *pdu.Rate12Data:
-		return bits96(pdu.EncodeRate12Data(v))
+		return bits96(v.Encode())
 	case *pdu.Rate34Data:
-		bits, err := pdu.EncodeRate34Data(v)
+		bits, err := v.Encode()
 		return bits[:], err
 	case *pdu.Rate1Data:
-		bits, err := pdu.EncodeRate1Data(v)
+		bits, err := v.Encode()
 		return bits[:], err
 	case *pdu.PRFill:
 		bits := pdu.PRFillBits()
@@ -760,7 +759,7 @@ func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
 // Terminator) with the BS-sourced data SYNC pattern. VoiceTransmitter builds
 // these bursts for the other SYNC sources.
 // lcBytes is the 12-byte on-air codeword with the Data Type CRC Mask already
-// applied, as returned by pdu.EncodeFullLinkControl with DataType set to dataType.
+// applied, as returned by FullLinkControl.Encode with DataType set to dataType.
 // It returns an error if colorCode or dataType does not fit in the slot type.
 func BuildLCDataBurst(lcBytes [12]byte, dataType enums.DataType, colorCode uint8) ([33]byte, error) {
 	return buildLCDataBurst(lcBytes, dataType, colorCode, enums.SyncBSSourcedData)
@@ -795,10 +794,10 @@ func buildLCDataBurst(lcBytes [12]byte, dataType enums.DataType, colorCode uint8
 	copy(bitData[166:264], encoded[98:196])
 
 	// Slot Type: encode color code + data type with Golay FEC
-	slotTypeBits, err := pdu.EncodeSlotType(&pdu.SlotType{
+	slotTypeBits, err := (&pdu.SlotType{
 		ColorCode: int(colorCode),
 		DataType:  dataType,
-	})
+	}).Encode()
 	if err != nil {
 		return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
 	}

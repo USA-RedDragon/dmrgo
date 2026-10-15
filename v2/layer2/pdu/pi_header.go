@@ -18,7 +18,7 @@ import (
 // ID, MFID, key ID, a 32-bit message indicator and the 24-bit destination.
 // Other vendors, such as Hytera (MFID 0x68), use other layouts, so Raw
 // holds all 80 bits before the CRC for callers to decode themselves.
-// EncodePIHeader writes the named fields and ignores Raw.
+// PIHeader.Encode writes the named fields and ignores Raw.
 type PIHeader struct {
 	DataType         enums.DataType `dmr:"-"`
 	crc              uint16         `dmr:"-"` //nolint:unused

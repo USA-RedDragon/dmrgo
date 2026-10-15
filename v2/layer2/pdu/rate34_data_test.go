@@ -75,7 +75,7 @@ func TestRate34Data_EncodeDecodeRoundTrip(t *testing.T) {
 	original := pdu.Rate34Data{
 		Data: [18]byte{0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15},
 	}
-	encoded := must(pdu.EncodeRate34Data(&original))
+	encoded := must(original.Encode())
 	decoded, _ := pdu.DecodeRate34Data(encoded)
 	if decoded.Data != original.Data {
 		t.Errorf("round-trip failed: got %v, want %v", decoded.Data, original.Data)
@@ -107,7 +107,7 @@ func TestRate34Data_Confirmed_RoundTrip(t *testing.T) {
 	if !rt.CheckConfirmedCRC9() {
 		t.Fatal("CheckConfirmedCRC9() = false after SetConfirmed")
 	}
-	decoded, _ := pdu.DecodeRate34Data(must(pdu.EncodeRate34Data(&rt)))
+	decoded, _ := pdu.DecodeRate34Data(must(rt.Encode()))
 	if !decoded.CheckConfirmedCRC9() {
 		t.Error("CheckConfirmedCRC9() = false after encode/decode")
 	}

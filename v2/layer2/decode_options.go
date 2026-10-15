@@ -165,7 +165,7 @@ func (b *Burst) decodeVoiceAt(pos enums.VoiceBurstType, sync enums.SyncPattern, 
 		b.FEC.EMB = b.EmbeddedSignalling.FEC
 		if b.EmbeddedSignalling.PreemptionAndPowerControlIndicator &&
 			b.EmbeddedSignalling.LCSS == enums.LCSSSingleFragment {
-			rc, rcFEC := DecodeRCFromEmbeddedData(b.EmbeddedSignallingData)
+			rc, rcFEC := DecodeEmbeddedRC(b.EmbeddedSignallingData)
 			b.HasReverseChannel = true
 			b.ReverseChannel = &rc
 			b.FEC.RC = rcFEC

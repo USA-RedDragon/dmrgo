@@ -53,10 +53,10 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeReverseChannel encodes an RC PDU into 11 information bits.
+// Encode encodes an RC PDU into 11 information bits.
 // The output contains the 4-bit payload followed by 7-bit CRC-7 (masked).
 // It returns an error if RCCommand does not fit in 4 bits.
-func EncodeReverseChannel(rc *ReverseChannel) ([11]bit.Bit, error) {
+func (rc *ReverseChannel) Encode() ([11]bit.Bit, error) {
 	var bits [11]bit.Bit
 
 	if rc.RCCommand < 0 || rc.RCCommand > 0x0F {

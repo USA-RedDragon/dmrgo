@@ -47,8 +47,8 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeMBCHeader encodes a MBCHeader per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
-func EncodeMBCHeader(s *MBCHeader) ([96]bit.Bit, error) {
+// Encode encodes a MBCHeader per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
+func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -97,8 +97,8 @@ func DecodeMBCContinuation(data [96]bit.Bit) (MBCContinuation, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeMBCContinuation encodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
-func EncodeMBCContinuation(s *MBCContinuation) ([96]bit.Bit, error) {
+// Encode encodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
+func (s *MBCContinuation) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -139,8 +139,8 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeCGAPContinuation encodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
-func EncodeCGAPContinuation(s *CGAPContinuation) ([96]bit.Bit, error) {
+// Encode encodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
+func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -220,8 +220,8 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeMVAPContinuation encodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
-func EncodeMVAPContinuation(s *MVAPContinuation) ([96]bit.Bit, error) {
+// Encode encodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
+func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -300,8 +300,8 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeBCAPContinuation encodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
-func EncodeBCAPContinuation(s *BCAPContinuation) ([96]bit.Bit, error) {
+// Encode encodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
+func (s *BCAPContinuation) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1
@@ -374,8 +374,8 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeVNAPContinuation encodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
-func EncodeVNAPContinuation(s *VNAPContinuation) ([96]bit.Bit, error) {
+// Encode encodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
+func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if s.LastBlock {
 		data[0] = 1

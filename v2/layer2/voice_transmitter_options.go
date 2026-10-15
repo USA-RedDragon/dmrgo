@@ -64,7 +64,7 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 	if opts.PIHeader != nil {
 		pi := *opts.PIHeader
 		pi.DataType = enums.DataTypePIHeader
-		bits, err := pdu.EncodePIHeader(&pi)
+		bits, err := pi.Encode()
 		if err != nil {
 			return nil, fmt.Errorf("cannot encode PI header: %w", err)
 		}

@@ -46,8 +46,8 @@ func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.R
 	return result, fecResult
 }
 
-// EncodeUnconfirmedDataHeader encodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
-func EncodeUnconfirmedDataHeader(s *UnconfirmedDataHeader) ([80]bit.Bit, error) {
+// Encode encodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
+func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -150,8 +150,8 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeDataHeader encodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
-func EncodeDataHeader(s *DataHeader) ([96]bit.Bit, error) {
+// Encode encodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
+func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	_payload := ""
 	for _, _p := range [...]struct {
@@ -177,49 +177,49 @@ func EncodeDataHeader(s *DataHeader) ([96]bit.Bit, error) {
 	}
 	switch {
 	case s.UnconfirmedDataHeader != nil:
-		_pduBits, err := EncodeUnconfirmedDataHeader(s.UnconfirmedDataHeader)
+		_pduBits, err := s.UnconfirmedDataHeader.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.UnconfirmedDataHeader: %w", err)
 		}
 		copy(data[0:80], _pduBits[:])
 	case s.ConfirmedDataHeader != nil:
-		_pduBits, err := EncodeConfirmedDataHeader(s.ConfirmedDataHeader)
+		_pduBits, err := s.ConfirmedDataHeader.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ConfirmedDataHeader: %w", err)
 		}
 		copy(data[0:80], _pduBits[:])
 	case s.ResponsePacketHeader != nil:
-		_pduBits, err := EncodeResponsePacketHeader(s.ResponsePacketHeader)
+		_pduBits, err := s.ResponsePacketHeader.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ResponsePacketHeader: %w", err)
 		}
 		copy(data[0:80], _pduBits[:])
 	case s.DefinedDataHeader != nil:
-		_pduBits, err := EncodeDefinedDataHeader(s.DefinedDataHeader)
+		_pduBits, err := s.DefinedDataHeader.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.DefinedDataHeader: %w", err)
 		}
 		copy(data[0:80], _pduBits[:])
 	case s.StatusPrecodedHeader != nil:
-		_pduBits, err := EncodeStatusPrecodedHeader(s.StatusPrecodedHeader)
+		_pduBits, err := s.StatusPrecodedHeader.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.StatusPrecodedHeader: %w", err)
 		}
 		copy(data[0:80], _pduBits[:])
 	case s.RawDataHeader != nil:
-		_pduBits, err := EncodeRawDataHeader(s.RawDataHeader)
+		_pduBits, err := s.RawDataHeader.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.RawDataHeader: %w", err)
 		}
 		copy(data[0:80], _pduBits[:])
 	case s.UDTHeader != nil:
-		_pduBits, err := EncodeUDTHeader(s.UDTHeader)
+		_pduBits, err := s.UDTHeader.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.UDTHeader: %w", err)
 		}
 		copy(data[0:80], _pduBits[:])
 	case s.ProprietaryHeader != nil:
-		_pduBits, err := EncodeProprietaryHeader(s.ProprietaryHeader)
+		_pduBits, err := s.ProprietaryHeader.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ProprietaryHeader: %w", err)
 		}
@@ -336,8 +336,8 @@ func DecodeConfirmedDataHeader(data [80]bit.Bit) (ConfirmedDataHeader, fec.Resul
 	return result, fecResult
 }
 
-// EncodeConfirmedDataHeader encodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
-func EncodeConfirmedDataHeader(s *ConfirmedDataHeader) ([80]bit.Bit, error) {
+// Encode encodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
+func (s *ConfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -412,8 +412,8 @@ func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.Res
 	return result, fecResult
 }
 
-// EncodeResponsePacketHeader encodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
-func EncodeResponsePacketHeader(s *ResponsePacketHeader) ([80]bit.Bit, error) {
+// Encode encodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
+func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Reserved {
 		data[0] = 1
@@ -484,8 +484,8 @@ func DecodeDefinedDataHeader(data [80]bit.Bit) (DefinedDataHeader, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeDefinedDataHeader encodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
-func EncodeDefinedDataHeader(s *DefinedDataHeader) ([80]bit.Bit, error) {
+// Encode encodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
+func (s *DefinedDataHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -553,8 +553,8 @@ func DecodeRawDataHeader(data [80]bit.Bit) (RawDataHeader, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeRawDataHeader encodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
-func EncodeRawDataHeader(s *RawDataHeader) ([80]bit.Bit, error) {
+// Encode encodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
+func (s *RawDataHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -619,8 +619,8 @@ func DecodeStatusPrecodedHeader(data [80]bit.Bit) (StatusPrecodedHeader, fec.Res
 	return result, fecResult
 }
 
-// EncodeStatusPrecodedHeader encodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
-func EncodeStatusPrecodedHeader(s *StatusPrecodedHeader) ([80]bit.Bit, error) {
+// Encode encodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
+func (s *StatusPrecodedHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -685,8 +685,8 @@ func DecodeUDTHeader(data [80]bit.Bit) (UDTHeader, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeUDTHeader encodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
-func EncodeUDTHeader(s *UDTHeader) ([80]bit.Bit, error) {
+// Encode encodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
+func (s *UDTHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if s.Group {
 		data[0] = 1
@@ -756,8 +756,8 @@ func DecodeProprietaryHeader(data [80]bit.Bit) (ProprietaryHeader, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeProprietaryHeader encodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
-func EncodeProprietaryHeader(s *ProprietaryHeader) ([80]bit.Bit, error) {
+// Encode encodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
+func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if uint64(s.SAP)>>4 != 0 {
 		return [80]bit.Bit{}, fmt.Errorf("ProprietaryHeader.SAP: value %d does not fit in 4 bits", s.SAP)

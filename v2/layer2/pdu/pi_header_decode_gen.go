@@ -43,8 +43,8 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
 	return result, fecResult
 }
 
-// EncodePIHeader encodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
-func EncodePIHeader(s *PIHeader) ([96]bit.Bit, error) {
+// Encode encodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
+func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	copy(data[0:8], bit.BitsFromUint8(s.AlgorithmID, 8))
 	copy(data[8:16], bit.BitsFromUint8(s.MFID, 8))

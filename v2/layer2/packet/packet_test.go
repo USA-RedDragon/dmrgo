@@ -101,21 +101,21 @@ func encodeBlock(t *testing.T, d layer2.Data) layer2.Data {
 	t.Helper()
 	switch b := d.(type) {
 	case *pdu.Rate12Data:
-		bits, err := pdu.EncodeRate12Data(b)
+		bits, err := b.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
 		out, _ := pdu.DecodeRate12Data(bits)
 		return &out
 	case *pdu.Rate34Data:
-		bits, err := pdu.EncodeRate34Data(b)
+		bits, err := b.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
 		out, _ := pdu.DecodeRate34Data(bits)
 		return &out
 	case *pdu.Rate1Data:
-		bits, err := pdu.EncodeRate1Data(b)
+		bits, err := b.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,7 +128,7 @@ func encodeBlock(t *testing.T, d layer2.Data) layer2.Data {
 
 func encodeHeader(t *testing.T, h *pdu.DataHeader) *pdu.DataHeader {
 	t.Helper()
-	bits, err := pdu.EncodeDataHeader(h)
+	bits, err := h.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -300,12 +300,12 @@ func TestAssembler_Bursts(t *testing.T) {
 		}
 		return b
 	}
-	hb, _ := pdu.EncodeDataHeader(&p.Header)
+	hb, _ := p.Header.Encode()
 	bursts := make([]*layer2.Burst, 0, 1+len(p.Blocks))
 	bursts = append(bursts, pack(hb, enums.DataTypeDataHeader))
 	for _, blk := range p.Blocks {
 		r, _ := blk.(*pdu.Rate12Data)
-		bits, _ := pdu.EncodeRate12Data(r)
+		bits, _ := r.Encode()
 		bursts = append(bursts, pack(bits, enums.DataTypeRate12))
 	}
 	var a packet.Assembler

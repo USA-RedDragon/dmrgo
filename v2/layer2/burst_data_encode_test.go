@@ -34,7 +34,7 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 		t.Run(dt.String(), func(t *testing.T) {
 			lc := groupLC(enums.FIDStandardized)
 			lc.DataType = dt
-			lcBits := must(pdu.EncodeFullLinkControl(&lc))
+			lcBits := must(lc.Encode())
 			var lcBytes [12]byte
 			copy(lcBytes[:], bit.PackBits(lcBits[:]))
 			frame := must(layer2.BuildLCDataBurst(lcBytes, dt, 1))

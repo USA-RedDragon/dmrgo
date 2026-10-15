@@ -16,7 +16,7 @@ func buildDataBurst(dataType enums.DataType, payload [196]bit.Bit) [33]byte {
 	var bits [264]bit.Bit
 	copy(bits[:98], payload[:98])
 	copy(bits[166:], payload[98:])
-	slot := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 1, DataType: dataType}))
+	slot := must((&pdu.SlotType{ColorCode: 1, DataType: dataType}).Encode())
 	copy(bits[98:108], slot[:10])
 	copy(bits[156:166], slot[10:])
 	syncVal := int64(enums.SyncBSSourcedData)

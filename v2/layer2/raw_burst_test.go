@@ -253,7 +253,7 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 	}
 	var bits [32]bit.Bit
 	copy(bits[:], bit.UnpackBits(data[:]))
-	if rc, _ := layer2.DecodeRCFromEmbeddedData(bits); rc.RCCommand != enums.RCCeaseTransmissionRequest {
+	if rc, _ := layer2.DecodeEmbeddedRC(bits); rc.RCCommand != enums.RCCeaseTransmissionRequest {
 		t.Fatalf("RC %+v", rc)
 	}
 

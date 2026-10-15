@@ -138,7 +138,7 @@ func TestFullLCCodeword_RealCapture(t *testing.T) {
 		if res.HasErrors() {
 			t.Errorf("dt %d: generated decoder reports %+v", tt.dt, res)
 		}
-		enc := must(pdu.EncodeFullLinkControl(&flc))
+		enc := must(flc.Encode())
 		if hex.EncodeToString(bit.PackBits(enc[:])) != tt.want {
 			t.Errorf("dt %d: generated encoder disagrees", tt.dt)
 		}
@@ -187,10 +187,10 @@ func TestDecodeFullLCCodeword_CorrectsAndStrictRejects(t *testing.T) {
 }
 
 func TestSealBlock_MatchesGeneratedEncoders(t *testing.T) {
-	csbk := must(pdu.EncodeCSBK(&pdu.CSBK{}))
-	mbc := must(pdu.EncodeMBCHeader(&pdu.MBCHeader{}))
-	pi := must(pdu.EncodePIHeader(&pdu.PIHeader{AlgorithmID: 1, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 9990}))
-	usbd := must(pdu.EncodeUnifiedSingleBlockData(&pdu.UnifiedSingleBlockData{}))
+	csbk := must((&pdu.CSBK{}).Encode())
+	mbc := must((&pdu.MBCHeader{}).Encode())
+	pi := must((&pdu.PIHeader{AlgorithmID: 1, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 9990}).Encode())
+	usbd := must((&pdu.UnifiedSingleBlockData{}).Encode())
 	tests := []struct {
 		dt   enums.DataType
 		bits [96]bit.Bit

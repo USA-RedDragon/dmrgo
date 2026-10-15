@@ -31,8 +31,8 @@ func DecodeTACT(data [7]bit.Bit) (TACT, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeTACT encodes a TACT per ETSI TS 102 361-1 - 9.1.4 TACT PDU
-func EncodeTACT(s *TACT) ([7]bit.Bit, error) {
+// Encode encodes a TACT per ETSI TS 102 361-1 - 9.1.4 TACT PDU
+func (s *TACT) Encode() ([7]bit.Bit, error) {
 	var data [4]bit.Bit
 	if s.AccessType {
 		data[0] = 1

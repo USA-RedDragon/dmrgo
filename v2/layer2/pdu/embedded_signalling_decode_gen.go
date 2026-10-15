@@ -31,8 +31,8 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.Result)
 	return result, fecResult
 }
 
-// EncodeEmbeddedSignalling encodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
-func EncodeEmbeddedSignalling(s *EmbeddedSignalling) ([16]bit.Bit, error) {
+// Encode encodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
+func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
 	var data [7]bit.Bit
 	if uint64(s.ColorCode)>>4 != 0 {
 		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.ColorCode: value %d does not fit in 4 bits", s.ColorCode)

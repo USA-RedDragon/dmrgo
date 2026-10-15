@@ -19,7 +19,7 @@ func buildOpcode0x38Burst(t *testing.T) [33]byte {
 			SourceAddress: [24]bit.Bit{22: 1},
 		},
 	}
-	encBits := must(pdu.EncodeCSBK(csbk))
+	encBits := must(csbk.Encode())
 	var lcBytes [12]byte
 	copy(lcBytes[:], bit.PackBits(encBits[:]))
 	return must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeCSBK, 1))

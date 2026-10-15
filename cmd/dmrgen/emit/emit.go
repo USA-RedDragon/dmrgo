@@ -1000,15 +1000,13 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	}
 }
 
-// emitEncode generates an EncodeXxx function for a PDU struct.
+// emitEncode generates the Encode method of a PDU struct.
 // For FEC-protected PDUs, the output includes FEC parity (full codeword).
-// The function returns an error when a field value does not fit its bits.
+// The method returns an error when a field value does not fit its bits.
 func emitEncode(f *File, pdu parse.PDUStruct) error {
-	funcName := "Encode" + pdu.Name
-
-	// Add spec reference comment above the function if available.
+	// Add spec reference comment above the method if available.
 	if pdu.SpecRef != "" {
-		f.Comment(funcName + " encodes a " + pdu.Name + " per " + pdu.SpecRef)
+		f.Comment("Encode encodes a " + pdu.Name + " per " + pdu.SpecRef)
 	}
 
 	codec, err := resolveCodec(pdu)
@@ -1029,9 +1027,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 	enc := encoder{pdu: pdu, size: outputSize}
 
 	var genErr error
-	f.Func().Id(funcName).Params(
-		Id("s").Op("*").Id(pdu.Name),
-	).Params(
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("Encode").Params().Params(
 		Index(Lit(outputSize)).Qual(bitPkg, "Bit"),
 		Error(),
 	).BlockFunc(func(g *Group) {
@@ -1234,7 +1230,7 @@ func (e encoder) dispatch(g *Group, fields []parse.Field) {
 	g.Switch().BlockFunc(func(sw *Group) {
 		for _, field := range fields {
 			sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(
-				List(Id("_pduBits"), Err()).Op(":=").Id("Encode"+dispatchTypeName(field)).Call(Id("s").Dot(field.Name)),
+				List(Id("_pduBits"), Err()).Op(":=").Id("s").Dot(field.Name).Dot("Encode").Call(),
 				If(Err().Op("!=").Nil()).Block(
 					e.fail(Qual("fmt", "Errorf").Call(Lit(e.pdu.Name+"."+field.Name+": %w"), Err())),
 				),
@@ -1383,14 +1379,10 @@ func (e encoder) field(g *Group, field parse.Field) {
 		)
 
 	case parse.FieldDelegate:
-		encodeFn := Id("Encode" + field.TypeName)
-		if field.IsQualified {
-			encodeFn = Qual(resolveImportPath(field.TypePkg, pdu.SourceFile), "Encode"+field.TypeName)
-		}
 		if field.Stride > 0 {
-			// Array delegate with stride: call EncodeXxx on each element
+			// Array delegate with stride: call Encode on each element
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
-				List(Id("_elemBits"), Err()).Op(":=").Add(encodeFn).Call(Op("&").Add(source.Clone().Index(Id("_i")))),
+				List(Id("_elemBits"), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot("Encode").Call(),
 				If(Err().Op("!=").Nil()).Block(
 					e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+"[%d]: %w"), Id("_i"), Err())),
 				),
@@ -1404,9 +1396,9 @@ func (e encoder) field(g *Group, field parse.Field) {
 			)
 			return
 		}
-		// Struct delegate: call generated EncodeXxx function
+		// Struct delegate: call the generated Encode method
 		tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
-		g.List(Id(tmpVar), Err()).Op(":=").Add(encodeFn).Call(Op("&").Add(source.Clone()))
+		g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot("Encode").Call()
 		g.If(Err().Op("!=").Nil()).Block(
 			e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+": %w"), Err())),
 		)

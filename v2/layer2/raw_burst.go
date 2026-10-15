@@ -80,7 +80,7 @@ func (r *RawBurst) SlotType() (pdu.SlotType, fec.Result) {
 // SetSlotType encodes st into the slot type bits. It returns an error, and
 // writes nothing, when the color code or data type does not fit in 4 bits.
 func (r *RawBurst) SetSlotType(st pdu.SlotType) error {
-	bits, err := pdu.EncodeSlotType(&st)
+	bits, err := st.Encode()
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func (r *RawBurst) SetStandaloneRCEMB(e pdu.EmbeddedSignalling) error {
 
 // StandaloneRCData returns the 32 FEC coded RC bits of a standalone RC
 // burst, burst bits 92 to 107 and 156 to 171, in the order that
-// DecodeRCFromEmbeddedData takes.
+// DecodeEmbeddedRC takes.
 func (r *RawBurst) StandaloneRCData() [4]byte {
 	return r.word32(RCDataFirstStart, RCDataSecondStart)
 }
@@ -217,7 +217,7 @@ func (r *RawBurst) emb(first, second int) (pdu.EmbeddedSignalling, fec.Result) {
 }
 
 func (r *RawBurst) setEMB(e pdu.EmbeddedSignalling, first, second int) error {
-	bits, err := pdu.EncodeEmbeddedSignalling(&e)
+	bits, err := e.Encode()
 	if err != nil {
 		return err
 	}

@@ -41,7 +41,7 @@ func TestCRCOnlyPDUReportsDetectionOnly(t *testing.T) {
 	}
 
 	csbk := pdu.CSBK{CSBKOpcode: 0x3F, RawPayload: [64]bit.Bit{1, 0, 1}}
-	bits := must(pdu.EncodeCSBK(&csbk))
+	bits := must(csbk.Encode())
 	if _, res := pdu.DecodeCSBK(bits, false); res != (fec.Result{}) {
 		t.Errorf("CSBK with a good CRC: %+v, want a zero result", res)
 	}

@@ -20,7 +20,7 @@ func DecodeVocoderFrame(data [72]bit.Bit) (VocoderFrame, fec.Result) {
 	return result, fecResult
 }
 
-func EncodeVocoderFrame(s *VocoderFrame) ([72]bit.Bit, error) {
+func (s *VocoderFrame) Encode() ([72]bit.Bit, error) {
 	return encodeAMBE(s.DecodedBits), nil
 }
 

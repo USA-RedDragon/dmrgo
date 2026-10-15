@@ -11,7 +11,7 @@ func TestSlotType_DecodeEncodeRoundTrip(t *testing.T) {
 	cc := 5
 	dt := enums.DataTypeVoiceLCHeader
 
-	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: cc, DataType: dt}))
+	encoded := must((&pdu.SlotType{ColorCode: cc, DataType: dt}).Encode())
 	st, fecResult := pdu.DecodeSlotType(encoded)
 
 	if st.ColorCode != cc {
@@ -31,7 +31,7 @@ func TestSlotType_DecodeEncodeRoundTrip(t *testing.T) {
 func TestSlotType_AllColorCodes(t *testing.T) {
 	dt := enums.DataTypeVoiceLCHeader
 	for cc := 0; cc < 16; cc++ {
-		encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: cc, DataType: dt}))
+		encoded := must((&pdu.SlotType{ColorCode: cc, DataType: dt}).Encode())
 		st, fecResult := pdu.DecodeSlotType(encoded)
 		if st.ColorCode != cc {
 			t.Errorf("cc=%d: got ColorCode=%d", cc, st.ColorCode)
@@ -59,7 +59,7 @@ func TestSlotType_AllDataTypes(t *testing.T) {
 	}
 
 	for _, dt := range dataTypes {
-		encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 1, DataType: dt}))
+		encoded := must((&pdu.SlotType{ColorCode: 1, DataType: dt}).Encode())
 		st, fecResult := pdu.DecodeSlotType(encoded)
 		if st.DataType != dt {
 			t.Errorf("dt=%d: got DataType=%d", dt, st.DataType)
@@ -71,7 +71,7 @@ func TestSlotType_AllDataTypes(t *testing.T) {
 }
 
 func TestSlotType_String(t *testing.T) {
-	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 3, DataType: enums.DataTypeCSBK}))
+	encoded := must((&pdu.SlotType{ColorCode: 3, DataType: enums.DataTypeCSBK}).Encode())
 	st, _ := pdu.DecodeSlotType(encoded)
 	s := st.String()
 	if s == "" {
@@ -80,7 +80,7 @@ func TestSlotType_String(t *testing.T) {
 }
 
 func TestSlotType_SingleBitError(t *testing.T) {
-	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 7, DataType: enums.DataTypeVoiceLCHeader}))
+	encoded := must((&pdu.SlotType{ColorCode: 7, DataType: enums.DataTypeVoiceLCHeader}).Encode())
 	// Flip one bit - Golay should correct it
 	encoded[10] ^= 1
 	st, fecResult := pdu.DecodeSlotType(encoded)
@@ -97,7 +97,7 @@ func TestEncodeSlotType_RoundTrip(t *testing.T) {
 		ColorCode: 5,
 		DataType:  enums.DataTypeCSBK,
 	}
-	encoded := must(pdu.EncodeSlotType(&st))
+	encoded := must(st.Encode())
 	// Full round-trip: encode produces [20]bit.Bit with Golay parity
 	decoded, fecResult := pdu.DecodeSlotType(encoded)
 	if fecResult.Uncorrectable {

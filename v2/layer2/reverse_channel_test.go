@@ -27,7 +27,7 @@ func TestRC_DecodeFromEmbeddedData_RoundTrip(t *testing.T) {
 	t.Parallel()
 	for payload := byte(0); payload < 16; payload++ {
 		embData := buildRCEmbeddedData(payload)
-		rc, fecResult := layer2.DecodeRCFromEmbeddedData(embData)
+		rc, fecResult := layer2.DecodeEmbeddedRC(embData)
 		if fecResult.Uncorrectable {
 			t.Errorf("payload=%d: unexpected uncorrectable error", payload)
 			continue
@@ -41,12 +41,12 @@ func TestRC_DecodeFromEmbeddedData_RoundTrip(t *testing.T) {
 func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
 	t.Parallel()
 	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(10)}
-	embData, err := layer2.EncodeRCToEmbeddedData(&rc)
+	embData, err := layer2.EncodeEmbeddedRC(&rc)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	decoded, fecResult := layer2.DecodeRCFromEmbeddedData(embData)
+	decoded, fecResult := layer2.DecodeEmbeddedRC(embData)
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip failed: uncorrectable")
 	}
@@ -58,7 +58,7 @@ func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
 func TestRC_EncodeRCToEmbeddedData_OutOfRange(t *testing.T) {
 	t.Parallel()
 	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(0x14)}
-	if _, err := layer2.EncodeRCToEmbeddedData(&rc); err == nil {
+	if _, err := layer2.EncodeEmbeddedRC(&rc); err == nil {
 		t.Error("expected error for out-of-range RC command")
 	}
 }
@@ -66,7 +66,7 @@ func TestRC_EncodeRCToEmbeddedData_OutOfRange(t *testing.T) {
 func TestRC_CombinedFEC(t *testing.T) {
 	t.Parallel()
 	embData := buildRCEmbeddedData(3)
-	_, fecResult := layer2.DecodeRCFromEmbeddedData(embData)
+	_, fecResult := layer2.DecodeEmbeddedRC(embData)
 
 	// The CRC-7 only detects errors, so BitsChecked is the BPTC's 32.
 	expectedBitsChecked := 32
@@ -85,7 +85,7 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 		PreemptionAndPowerControlIndicator: true,
 		LCSS:                               enums.LCSSSingleFragment,
 	}
-	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
+	embBits := must(embSig.Encode())
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -122,7 +122,7 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 		PreemptionAndPowerControlIndicator: false,
 		LCSS:                               enums.LCSSSingleFragment,
 	}
-	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
+	embBits := must(embSig.Encode())
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -147,7 +147,7 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 		PreemptionAndPowerControlIndicator: true,
 		LCSS:                               enums.LCSSFirstFragment,
 	}
-	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
+	embBits := must(embSig.Encode())
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -193,7 +193,7 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 		PreemptionAndPowerControlIndicator: true,
 		LCSS:                               enums.LCSSSingleFragment,
 	}
-	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
+	embBits := must(embSig.Encode())
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -221,7 +221,7 @@ func TestRC_String(t *testing.T) {
 		PreemptionAndPowerControlIndicator: true,
 		LCSS:                               enums.LCSSSingleFragment,
 	}
-	embBits := must(pdu.EncodeEmbeddedSignalling(&embSig))
+	embBits := must(embSig.Encode())
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
@@ -242,11 +242,11 @@ func TestRC_String(t *testing.T) {
 // the RC SYNC at 108-155.
 func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	var bitData [264]bit.Bit
-	embBits := must(pdu.EncodeEmbeddedSignalling(&pdu.EmbeddedSignalling{
+	embBits := must((&pdu.EmbeddedSignalling{
 		ColorCode: cc,
 		LCSS:      enums.LCSSSingleFragment,
-	}))
-	rcData, err := layer2.EncodeRCToEmbeddedData(&pdu.ReverseChannel{RCCommand: cmd})
+	}).Encode())
+	rcData, err := layer2.EncodeEmbeddedRC(&pdu.ReverseChannel{RCCommand: cmd})
 	if err != nil {
 		panic(err)
 	}

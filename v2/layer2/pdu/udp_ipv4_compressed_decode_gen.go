@@ -34,8 +34,8 @@ func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) (UDPIPv4CompressedHeader, f
 	return result, fecResult
 }
 
-// EncodeUDPIPv4CompressedHeader encodes a UDPIPv4CompressedHeader per ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header
-func EncodeUDPIPv4CompressedHeader(s *UDPIPv4CompressedHeader) ([72]bit.Bit, error) {
+// Encode encodes a UDPIPv4CompressedHeader per ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header
+func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
 	var data [72]bit.Bit
 	copy(data[0:16], bit.BitsFromUint16(s.IPv4Identification, 16))
 	if uint64(s.SAID)>>4 != 0 {

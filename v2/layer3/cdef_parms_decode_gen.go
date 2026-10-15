@@ -27,8 +27,8 @@ func DecodeCdefParms(data [58]bit.Bit) (CdefParms, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeCdefParms encodes a CdefParms per ETSI TS 102 361-4 — §7.2.42, Table 7.103
-func EncodeCdefParms(s *CdefParms) ([58]bit.Bit, error) {
+// Encode encodes a CdefParms per ETSI TS 102 361-4 — §7.2.42, Table 7.103
+func (s *CdefParms) Encode() ([58]bit.Bit, error) {
 	var data [58]bit.Bit
 	if uint64(s.Channel)>>12 != 0 {
 		return [58]bit.Bit{}, fmt.Errorf("CdefParms.Channel: value %d does not fit in 12 bits", s.Channel)

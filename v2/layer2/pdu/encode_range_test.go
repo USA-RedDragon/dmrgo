@@ -20,49 +20,49 @@ func expectEncodeError(t *testing.T, err error, want string) {
 }
 
 func TestEncode_RejectsValuesWiderThanField(t *testing.T) {
-	_, err := pdu.EncodeFLCGroupVoice(&pdu.FLCGroupVoice{GroupAddress: 1 << 24})
+	_, err := (&pdu.FLCGroupVoice{GroupAddress: 1 << 24}).Encode()
 	expectEncodeError(t, err, "FLCGroupVoice.GroupAddress: value 16777216 does not fit in 24 bits")
 
-	_, err = pdu.EncodeFLCGroupVoice(&pdu.FLCGroupVoice{SourceAddress: -1})
+	_, err = (&pdu.FLCGroupVoice{SourceAddress: -1}).Encode()
 	expectEncodeError(t, err, "FLCGroupVoice.SourceAddress: value -1 does not fit in 24 bits")
 
-	_, err = pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 16})
+	_, err = (&pdu.SlotType{ColorCode: 16}).Encode()
 	expectEncodeError(t, err, "SlotType.ColorCode")
 
-	_, err = pdu.EncodeSlotType(&pdu.SlotType{DataType: enums.DataType(16)})
+	_, err = (&pdu.SlotType{DataType: enums.DataType(16)}).Encode()
 	expectEncodeError(t, err, "SlotType.DataType")
 
-	_, err = pdu.EncodeUnconfirmedDataHeader(&pdu.UnconfirmedDataHeader{PadOctetCount: 32})
+	_, err = (&pdu.UnconfirmedDataHeader{PadOctetCount: 32}).Encode()
 	expectEncodeError(t, err, "UnconfirmedDataHeader.PadOctetCount: value 32 does not fit in 5 bits")
 
-	_, err = pdu.EncodeFLCTalkerAliasHeader(&pdu.FLCTalkerAliasHeader{TalkerAliasDataLength: 32})
+	_, err = (&pdu.FLCTalkerAliasHeader{TalkerAliasDataLength: 32}).Encode()
 	expectEncodeError(t, err, "TalkerAliasDataLength: value 32 does not fit in 5 bits")
 }
 
 func TestEncode_AcceptsMaximumFieldValues(t *testing.T) {
-	if _, err := pdu.EncodeFLCGroupVoice(&pdu.FLCGroupVoice{GroupAddress: 1<<24 - 1, SourceAddress: 1<<24 - 1}); err != nil {
+	if _, err := (&pdu.FLCGroupVoice{GroupAddress: 1<<24 - 1, SourceAddress: 1<<24 - 1}).Encode(); err != nil {
 		t.Fatalf("max addresses rejected: %v", err)
 	}
-	if _, err := pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 15, DataType: enums.DataTypeReserved}); err != nil {
+	if _, err := (&pdu.SlotType{ColorCode: 15, DataType: enums.DataTypeReserved}).Encode(); err != nil {
 		t.Fatalf("max slot type rejected: %v", err)
 	}
-	if _, err := pdu.EncodeUnconfirmedDataHeader(&pdu.UnconfirmedDataHeader{PadOctetCount: 31}); err != nil {
+	if _, err := (&pdu.UnconfirmedDataHeader{PadOctetCount: 31}).Encode(); err != nil {
 		t.Fatalf("max pad octet count rejected: %v", err)
 	}
 }
 
 func TestEncode_PropagatesNestedErrors(t *testing.T) {
-	_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
+	_, err := (&pdu.FullLinkControl{
 		DataType:   enums.DataTypeVoiceLCHeader,
 		FLCO:       enums.FLCOGroupVoiceChannelUser,
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 1 << 24},
-	})
+	}).Encode()
 	expectEncodeError(t, err, "FullLinkControl.GroupVoice: FLCGroupVoice.GroupAddress")
 
-	_, err = pdu.EncodeFullLinkControl(&pdu.FullLinkControl{FLCO: enums.FLCO(64)})
+	_, err = (&pdu.FullLinkControl{FLCO: enums.FLCO(64)}).Encode()
 	expectEncodeError(t, err, "FullLinkControl.FLCO: value 64 does not fit in 6 bits")
 
-	_, err = pdu.EncodeCSBK(&pdu.CSBK{CSBKOpcode: 64})
+	_, err = (&pdu.CSBK{CSBKOpcode: 64}).Encode()
 	expectEncodeError(t, err, "CSBK.CSBKOpcode: value 64 does not fit in 6 bits")
 }
 
@@ -81,7 +81,7 @@ func TestEncode_RejectsCoordinatesOutOfRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := pdu.EncodeFLCGPSInfo(&pdu.FLCGPSInfo{Longitude: tt.lon, Latitude: tt.lat})
+			_, err := (&pdu.FLCGPSInfo{Longitude: tt.lon, Latitude: tt.lat}).Encode()
 			expectEncodeError(t, err, tt.want)
 		})
 	}

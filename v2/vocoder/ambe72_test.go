@@ -50,7 +50,7 @@ func TestAMBE72MatchesVocoderFrame(t *testing.T) {
 		if info != frame.DecodedBits || res != frameRes {
 			t.Fatalf("slot %d: DecodeAMBE72 differs from DecodeVocoderFrame", i)
 		}
-		want, err := vocoder.EncodeVocoderFrame(&frame)
+		want, err := frame.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -31,7 +31,7 @@ func TestPIHeader_DecodeVector(t *testing.T) {
 	if pi.Destination != 9 {
 		t.Errorf("Destination = %d, want 9", pi.Destination)
 	}
-	if must(pdu.EncodePIHeader(&pi)) != piHeaderVector() {
+	if must(pi.Encode()) != piHeaderVector() {
 		t.Error("re-encode does not match the vector")
 	}
 	pi.DataType = enums.DataTypePIHeader
@@ -58,7 +58,7 @@ func TestPIHeader_CRCMask(t *testing.T) {
 func TestPIHeader_RoundTrip(t *testing.T) {
 	t.Parallel()
 	original := pdu.PIHeader{AlgorithmID: 0x25, MFID: 0x10, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 0xFFFFFE}
-	decoded, fecResult := pdu.DecodePIHeader(must(pdu.EncodePIHeader(&original)))
+	decoded, fecResult := pdu.DecodePIHeader(must(original.Encode()))
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
@@ -79,7 +79,7 @@ func TestPIHeader_Raw(t *testing.T) {
 		t.Errorf("Raw = %x, want %x", bit.PackBits(pi.Raw[:]), bit.PackBits(vector[:80]))
 	}
 	pi.Raw = [80]bit.Bit{}
-	if must(pdu.EncodePIHeader(&pi)) != vector {
-		t.Error("EncodePIHeader should ignore Raw")
+	if must(pi.Encode()) != vector {
+		t.Error("PIHeader.Encode should ignore Raw")
 	}
 }

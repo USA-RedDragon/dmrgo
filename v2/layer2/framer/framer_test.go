@@ -143,7 +143,7 @@ func TestFramer_OutboundCACH(t *testing.T) {
 			}
 			c := layer2.CACH{TACT: pdu.TACT{AccessType: true, TDMAChannel: ch == 2}}
 			c.Payload[i%17] = 1
-			logical := must(layer2.EncodeCACH(&c))
+			logical := must(c.Encode())
 			tx := layer2.CACHInterleave(logical)
 			stream = append(stream, tx[:]...)
 			stream = append(stream, burstBits(data)...)

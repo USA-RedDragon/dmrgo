@@ -30,7 +30,7 @@ func TestTACT_DecodeEncode_RoundTrip(t *testing.T) {
 	}
 
 	// Re-encode and verify round-trip
-	encoded := must(pdu.EncodeTACT(&tact))
+	encoded := must(tact.Encode())
 	if encoded != codeword {
 		t.Errorf("round-trip failed: encoded %v != original %v", encoded, codeword)
 	}
@@ -54,7 +54,7 @@ func TestTACT_DecodeEncode_AllCombinations(t *testing.T) {
 			continue
 		}
 
-		encoded := must(pdu.EncodeTACT(&tact))
+		encoded := must(tact.Encode())
 		if encoded != codeword {
 			t.Errorf("data=%d: round-trip failed", i)
 		}

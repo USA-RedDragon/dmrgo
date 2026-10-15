@@ -80,7 +80,8 @@ func TestCGAPContinuation_Decode(t *testing.T) {
 	}
 
 	// Verify CdefParms can be parsed
-	parms := layer3.NewCdefParmsFromBits(decoded.CdefParms)
+	parmsValue, _ := layer3.DecodeCdefParms(decoded.CdefParms)
+	parms := &parmsValue
 	if parms.Channel != 291 {
 		t.Errorf("Channel = %d, want 291", parms.Channel)
 	}
@@ -101,7 +102,7 @@ func TestCGAPContinuation_EncodeDecodeCycle(t *testing.T) {
 		CdefParms:   cdefParms,
 	}
 
-	encoded := must(pdu.EncodeCGAPContinuation(&original))
+	encoded := must(original.Encode())
 	decoded, _ := pdu.DecodeCGAPContinuation(encoded)
 
 	if decoded.LastBlock != original.LastBlock {
@@ -228,7 +229,7 @@ func TestMVAPContinuation_EncodeDecodeCycle(t *testing.T) {
 		CdefParms:   cdefParms,
 	}
 
-	encoded := must(pdu.EncodeMVAPContinuation(&original))
+	encoded := must(original.Encode())
 	decoded, _ := pdu.DecodeMVAPContinuation(encoded)
 
 	if decoded.ColourCode != original.ColourCode {
@@ -277,8 +278,8 @@ func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
 	}
 
 	cg, _ := pdu.DecodeCGAPContinuation(bits)
-	if must(pdu.EncodeCGAPContinuation(&cg)) != bits {
-		t.Error("EncodeCGAPContinuation should reproduce the CRC")
+	if must(cg.Encode()) != bits {
+		t.Error("CGAPContinuation.Encode should reproduce the CRC")
 	}
 }
 

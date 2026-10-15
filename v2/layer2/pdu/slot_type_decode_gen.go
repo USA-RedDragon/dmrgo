@@ -30,8 +30,8 @@ func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeSlotType encodes a SlotType per ETSI TS 102 361-1 - 9.1.3 Slot Type (SLOT) PDU
-func EncodeSlotType(s *SlotType) ([20]bit.Bit, error) {
+// Encode encodes a SlotType per ETSI TS 102 361-1 - 9.1.3 Slot Type (SLOT) PDU
+func (s *SlotType) Encode() ([20]bit.Bit, error) {
 	var data [8]bit.Bit
 	if uint64(s.ColorCode)>>4 != 0 {
 		return [20]bit.Bit{}, fmt.Errorf("SlotType.ColorCode: value %d does not fit in 4 bits", s.ColorCode)

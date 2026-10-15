@@ -268,12 +268,12 @@ type T struct {
 	Kid  Sub    `+"`dmr:\"bits:52-59,delegate\"`"+`
 }`)
 	assertContains(t, out,
-		"func EncodeT(s *T) ([60]bit.Bit, error) {",
+		"func (s *T) Encode() ([60]bit.Bit, error) {",
 		"if uint64(s.Part)>>12 != 0 {",
 		`return [60]bit.Bit{}, fmt.Errorf("T.Part: value %d does not fit in 12 bits", s.Part)`,
 		"if uint64(s.Addr)>>24 != 0 {",
 		"if int64(s.Off) < -128 || int64(s.Off) > 127 {",
-		"_kidBits, err := EncodeSub(&s.Kid)",
+		"_kidBits, err := s.Kid.Encode()",
 		`return [60]bit.Bit{}, fmt.Errorf("T.Kid: %w", err)`,
 		"return data, nil",
 	)

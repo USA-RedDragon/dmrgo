@@ -36,7 +36,7 @@ func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 	if fid == enums.FIDStandardized {
 		lc.GroupVoice = gv
 	} else {
-		lc.RawPayload = must(pdu.EncodeFLCGroupVoice(gv))
+		lc.RawPayload = must(gv.Encode())
 	}
 	return lc
 }
@@ -47,7 +47,7 @@ func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 func lcBits(t *testing.T, lc pdu.FullLinkControl, dataType enums.DataType) [96]bit.Bit {
 	t.Helper()
 	lc.DataType = dataType
-	return must(pdu.EncodeFullLinkControl(&lc))
+	return must(lc.Encode())
 }
 
 func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType enums.DataType, cc int, sync enums.SyncPattern) {

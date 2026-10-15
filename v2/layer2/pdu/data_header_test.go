@@ -183,7 +183,7 @@ func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 		},
 	}
 
-	infoBits := must(pdu.EncodeDataHeader(original))
+	infoBits := must(original.Encode())
 	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
@@ -242,7 +242,7 @@ func TestDataHeader_ResponsePacket_RoundTrip(t *testing.T) {
 		},
 	}
 
-	infoBits := must(pdu.EncodeDataHeader(original))
+	infoBits := must(original.Encode())
 	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
@@ -296,7 +296,7 @@ func TestDataHeader_DefinedData_RoundTrip(t *testing.T) {
 		},
 	}
 
-	infoBits := must(pdu.EncodeDataHeader(original))
+	infoBits := must(original.Encode())
 	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
@@ -354,7 +354,7 @@ func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 		},
 	}
 
-	infoBits := must(pdu.EncodeDataHeader(original))
+	infoBits := must(original.Encode())
 	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
@@ -406,7 +406,7 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 		},
 	}
 
-	infoBits := must(pdu.EncodeDataHeader(original))
+	infoBits := must(original.Encode())
 	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
@@ -493,7 +493,7 @@ func TestDataHeader_UDT_Decode(t *testing.T) {
 	if u.Opcode.String() != "C_UDTHD" {
 		t.Errorf("Opcode.String() = %q, want C_UDTHD", u.Opcode.String())
 	}
-	if got := must(pdu.EncodeDataHeader(&dh)); got != infoBits {
+	if got := must(dh.Encode()); got != infoBits {
 		t.Error("re-encode does not match original bits")
 	}
 }
@@ -514,7 +514,7 @@ func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 			Opcode:            pdu.UDTOpcodeInboundHeader,
 		},
 	}
-	decoded, fecResult := pdu.DecodeDataHeader(must(pdu.EncodeDataHeader(original)))
+	decoded, fecResult := pdu.DecodeDataHeader(must(original.Encode()))
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
@@ -547,7 +547,7 @@ func TestDataHeader_Proprietary_Decode(t *testing.T) {
 	if p.ManufacturerData[0] != 1 || p.ManufacturerData[63] != 1 {
 		t.Error("ManufacturerData should span bits 16-79")
 	}
-	if got := must(pdu.EncodeDataHeader(&dh)); got != infoBits {
+	if got := must(dh.Encode()); got != infoBits {
 		t.Error("re-encode does not match original bits")
 	}
 }
@@ -561,7 +561,7 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 		Format:            pdu.FormatProprietary,
 		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: mfData},
 	}
-	decoded, fecResult := pdu.DecodeDataHeader(must(pdu.EncodeDataHeader(original)))
+	decoded, fecResult := pdu.DecodeDataHeader(must(original.Encode()))
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
@@ -584,7 +584,7 @@ func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 	if dh.Format != 0b0100 {
 		t.Fatalf("Format = %04b, want 0100", dh.Format)
 	}
-	if got := must(pdu.EncodeDataHeader(&dh)); got != in {
+	if got := must(dh.Encode()); got != in {
 		t.Errorf("Encode(Decode(x)) = %v, want %v", got, in)
 	}
 }
@@ -592,25 +592,25 @@ func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 	encode := map[pdu.Format]func() ([80]bit.Bit, error){
 		pdu.FormatUnconfirmed: func() ([80]bit.Bit, error) {
-			return pdu.EncodeUnconfirmedDataHeader(&pdu.UnconfirmedDataHeader{})
+			return (&pdu.UnconfirmedDataHeader{}).Encode()
 		},
 		pdu.FormatConfirmed: func() ([80]bit.Bit, error) {
-			return pdu.EncodeConfirmedDataHeader(&pdu.ConfirmedDataHeader{})
+			return (&pdu.ConfirmedDataHeader{}).Encode()
 		},
 		pdu.FormatResponsePacket: func() ([80]bit.Bit, error) {
-			return pdu.EncodeResponsePacketHeader(&pdu.ResponsePacketHeader{})
+			return (&pdu.ResponsePacketHeader{}).Encode()
 		},
 		pdu.FormatShortDataDefined: func() ([80]bit.Bit, error) {
-			return pdu.EncodeDefinedDataHeader(&pdu.DefinedDataHeader{})
+			return (&pdu.DefinedDataHeader{}).Encode()
 		},
 		pdu.FormatShortDataRawOrStatusPrecoded: func() ([80]bit.Bit, error) {
-			return pdu.EncodeRawDataHeader(&pdu.RawDataHeader{AppendedBlocks: 1})
+			return (&pdu.RawDataHeader{AppendedBlocks: 1}).Encode()
 		},
 		pdu.FormatUnifiedDataTransport: func() ([80]bit.Bit, error) {
-			return pdu.EncodeUDTHeader(&pdu.UDTHeader{})
+			return (&pdu.UDTHeader{}).Encode()
 		},
 		pdu.FormatProprietary: func() ([80]bit.Bit, error) {
-			return pdu.EncodeProprietaryHeader(&pdu.ProprietaryHeader{})
+			return (&pdu.ProprietaryHeader{}).Encode()
 		},
 	}
 	for format, enc := range encode {
@@ -625,7 +625,7 @@ func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 }
 
 func TestStatusPrecodedEncoderClearsAppendedBlocks(t *testing.T) {
-	bits := must(pdu.EncodeStatusPrecodedHeader(&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}))
+	bits := must((&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}).Encode())
 	if got := pdu.Format(bit.BitsToUint8(bits[:], 4, 4)); got != pdu.FormatShortDataRawOrStatusPrecoded {
 		t.Errorf("Format bits = %d, want %d", got, pdu.FormatShortDataRawOrStatusPrecoded)
 	}

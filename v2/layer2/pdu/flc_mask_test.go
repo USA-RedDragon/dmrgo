@@ -28,7 +28,7 @@ func hexBits96(t *testing.T, s string) [96]bit.Bit {
 
 func packedFLC(t *testing.T, flc *pdu.FullLinkControl) []byte {
 	t.Helper()
-	bits := must(pdu.EncodeFullLinkControl(flc))
+	bits := must(flc.Encode())
 	return bit.PackBits(bits[:])
 }
 
@@ -73,8 +73,8 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 			FeatureSetID: enums.FIDStandardized,
 			GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
 		}
-		if _, err := pdu.EncodeFullLinkControl(&flc); err == nil {
-			t.Errorf("%s: EncodeFullLinkControl returned no error", dt.String())
+		if _, err := flc.Encode(); err == nil {
+			t.Errorf("%s: FullLinkControl.Encode returned no error", dt.String())
 		}
 	}
 }
@@ -110,7 +110,7 @@ func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 func TestFLC_EncodeRealVoiceLCHeader(t *testing.T) {
 	want := hexBits96(t, realVoiceLCHeader)
 	flc, _ := pdu.DecodeFullLinkControl(want, enums.DataTypeVoiceLCHeader)
-	if got := must(pdu.EncodeFullLinkControl(&flc)); got != want {
-		t.Errorf("EncodeFullLinkControl = %x, want %s", bit.PackBits(got[:]), realVoiceLCHeader)
+	if got := must(flc.Encode()); got != want {
+		t.Errorf("FullLinkControl.Encode = %x, want %s", bit.PackBits(got[:]), realVoiceLCHeader)
 	}
 }

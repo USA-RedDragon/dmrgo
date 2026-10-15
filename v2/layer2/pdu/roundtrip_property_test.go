@@ -89,7 +89,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			},
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodeFullLinkControl(in, lc.dt)
-				out, err := pdu.EncodeFullLinkControl(&d)
+				out, err := d.Encode()
 				return out, r, err
 			},
 		})
@@ -113,7 +113,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			},
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodeCSBK(in, trunking)
-				out, err := pdu.EncodeCSBK(&d)
+				out, err := d.Encode()
 				return out, r, err
 			},
 		})
@@ -135,7 +135,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			},
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodeDataHeader(in)
-				out, err := pdu.EncodeDataHeader(&d)
+				out, err := d.Encode()
 				return out, r, err
 			},
 		},
@@ -145,7 +145,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			build:  func(int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0xAAAA) },
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodeMBCHeader(in)
-				out, err := pdu.EncodeMBCHeader(&d)
+				out, err := d.Encode()
 				return out, r, err
 			},
 		},
@@ -155,7 +155,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			build:  func(int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0x6969) },
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d, r := pdu.DecodePIHeader(in)
-				out, err := pdu.EncodePIHeader(&d)
+				out, err := d.Encode()
 				return out, r, err
 			},
 		},
@@ -209,7 +209,7 @@ func TestShortLCRoundTripKeepsEveryBit(t *testing.T) {
 			if r.Uncorrectable {
 				t.Fatal("valid Short LC decoded as uncorrectable")
 			}
-			if out := must(pdu.EncodeShortLC(&d)); out != in {
+			if out := must(d.Encode()); out != in {
 				t.Fatalf("Encode(Decode(x)) changed bits: SLCO %d\nin  %v\nout %v", d.SLCO, in, out)
 			}
 		}

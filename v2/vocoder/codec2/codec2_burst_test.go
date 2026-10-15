@@ -18,7 +18,7 @@ const (
 
 func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
 	t.Helper()
-	payload, err := pdu.EncodeFLCGroupVoice(&pdu.FLCGroupVoice{GroupAddress: burstTestGroup, SourceAddress: burstTestSource})
+	payload, err := (&pdu.FLCGroupVoice{GroupAddress: burstTestGroup, SourceAddress: burstTestSource}).Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

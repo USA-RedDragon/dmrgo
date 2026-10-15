@@ -129,7 +129,7 @@ func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode uint8, source SyncSou
 
 func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
 	lc.DataType = dataType
-	bits, err := pdu.EncodeFullLinkControl(&lc)
+	bits, err := lc.Encode()
 	if err != nil {
 		return [33]byte{}, fmt.Errorf("cannot encode full link control: %w", err)
 	}
@@ -155,7 +155,7 @@ func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 	if !t.outbound {
 		return errors.New("only a BS-sourced voice burst F carries a reverse channel")
 	}
-	bits, err := EncodeRCToEmbeddedData(&rc)
+	bits, err := EncodeEmbeddedRC(&rc)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func (t *VoiceTransmitter) flush() ([33]byte, error) {
 				t.hasRC = false
 			}
 		}
-		embBits, err := pdu.EncodeEmbeddedSignalling(&emb)
+		embBits, err := emb.Encode()
 		if err != nil {
 			return [33]byte{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
 		}

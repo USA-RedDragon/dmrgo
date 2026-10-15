@@ -29,8 +29,8 @@ func DecodeShortLCNullMessage(data [24]bit.Bit) (ShortLCNullMessage, fec.Result)
 	return result, fecResult
 }
 
-// EncodeShortLCNullMessage encodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
-func EncodeShortLCNullMessage(s *ShortLCNullMessage) ([24]bit.Bit, error) {
+// Encode encodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
+func (s *ShortLCNullMessage) Encode() ([24]bit.Bit, error) {
 	var data [24]bit.Bit
 	copy(data[0:24], s.Reserved[:])
 	return data, nil
@@ -52,8 +52,8 @@ func DecodeShortLCActivityUpdate(data [24]bit.Bit) (ShortLCActivityUpdate, fec.R
 	return result, fecResult
 }
 
-// EncodeShortLCActivityUpdate encodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
-func EncodeShortLCActivityUpdate(s *ShortLCActivityUpdate) ([24]bit.Bit, error) {
+// Encode encodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
+func (s *ShortLCActivityUpdate) Encode() ([24]bit.Bit, error) {
 	var data [24]bit.Bit
 	if uint64(s.TS1ActivityID)>>4 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCActivityUpdate.TS1ActivityID: value %d does not fit in 4 bits", s.TS1ActivityID)
@@ -84,8 +84,8 @@ func DecodeShortLCCSysParms(data [24]bit.Bit) (ShortLCCSysParms, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeShortLCCSysParms encodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
-func EncodeShortLCCSysParms(s *ShortLCCSysParms) ([24]bit.Bit, error) {
+// Encode encodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
+func (s *ShortLCCSysParms) Encode() ([24]bit.Bit, error) {
 	var data [24]bit.Bit
 	if uint64(s.MODEL)>>2 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCCSysParms.MODEL: value %d does not fit in 2 bits", s.MODEL)
@@ -118,8 +118,8 @@ func DecodeShortLCPSysParms(data [24]bit.Bit) (ShortLCPSysParms, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeShortLCPSysParms encodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
-func EncodeShortLCPSysParms(s *ShortLCPSysParms) ([24]bit.Bit, error) {
+// Encode encodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
+func (s *ShortLCPSysParms) Encode() ([24]bit.Bit, error) {
 	var data [24]bit.Bit
 	if uint64(s.MODEL)>>2 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCPSysParms.MODEL: value %d does not fit in 2 bits", s.MODEL)
@@ -177,8 +177,8 @@ func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeShortLC encodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
-func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
+// Encode encodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
+func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 	var data [36]bit.Bit
 	_payload := ""
 	for _, _p := range [...]struct {
@@ -200,25 +200,25 @@ func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
 	}
 	switch {
 	case s.NullMessage != nil:
-		_pduBits, err := EncodeShortLCNullMessage(s.NullMessage)
+		_pduBits, err := s.NullMessage.Encode()
 		if err != nil {
 			return [36]bit.Bit{}, fmt.Errorf("ShortLC.NullMessage: %w", err)
 		}
 		copy(data[4:28], _pduBits[:])
 	case s.ActivityUpdate != nil:
-		_pduBits, err := EncodeShortLCActivityUpdate(s.ActivityUpdate)
+		_pduBits, err := s.ActivityUpdate.Encode()
 		if err != nil {
 			return [36]bit.Bit{}, fmt.Errorf("ShortLC.ActivityUpdate: %w", err)
 		}
 		copy(data[4:28], _pduBits[:])
 	case s.CSysParms != nil:
-		_pduBits, err := EncodeShortLCCSysParms(s.CSysParms)
+		_pduBits, err := s.CSysParms.Encode()
 		if err != nil {
 			return [36]bit.Bit{}, fmt.Errorf("ShortLC.CSysParms: %w", err)
 		}
 		copy(data[4:28], _pduBits[:])
 	case s.PSysParms != nil:
-		_pduBits, err := EncodeShortLCPSysParms(s.PSysParms)
+		_pduBits, err := s.PSysParms.Encode()
 		if err != nil {
 			return [36]bit.Bit{}, fmt.Errorf("ShortLC.PSysParms: %w", err)
 		}

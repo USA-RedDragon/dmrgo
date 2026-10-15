@@ -156,7 +156,7 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 				Data:        data,
 			}
 
-			encoded := must(pdu.EncodeMBCHeader(&orig))
+			encoded := must(orig.Encode())
 			decoded, fecResult := pdu.DecodeMBCHeader(encoded)
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeMBCHeader round-trip returned uncorrectable FEC")
@@ -194,9 +194,9 @@ func TestMBCHeader_EncodeStability(t *testing.T) {
 		orig.Data[i] = 1
 	}
 
-	enc1 := must(pdu.EncodeMBCHeader(&orig))
+	enc1 := must(orig.Encode())
 	dec1, _ := pdu.DecodeMBCHeader(enc1)
-	enc2 := must(pdu.EncodeMBCHeader(&dec1))
+	enc2 := must(dec1.Encode())
 
 	for i := 0; i < 96; i++ {
 		if enc1[i] != enc2[i] {
@@ -317,7 +317,7 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 				Data:      data,
 			}
 
-			encoded := must(pdu.EncodeMBCContinuation(&orig))
+			encoded := must(orig.Encode())
 			decoded, _ := pdu.DecodeMBCContinuation(encoded)
 
 			if decoded.LastBlock != orig.LastBlock {
@@ -340,9 +340,9 @@ func TestMBCContinuation_EncodeStability(t *testing.T) {
 		orig.Data[i] = 1
 	}
 
-	enc1 := must(pdu.EncodeMBCContinuation(&orig))
+	enc1 := must(orig.Encode())
 	dec1, _ := pdu.DecodeMBCContinuation(enc1)
-	enc2 := must(pdu.EncodeMBCContinuation(&dec1))
+	enc2 := must(dec1.Encode())
 
 	for i := 0; i < 96; i++ {
 		if enc1[i] != enc2[i] {

@@ -118,7 +118,7 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 		},
 	}
 
-	encBits := must(pdu.EncodeFullLinkControl(flc))
+	encBits := must(flc.Encode())
 	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte
@@ -149,7 +149,7 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 		},
 	}
 
-	encBits := must(pdu.EncodeFullLinkControl(flc))
+	encBits := must(flc.Encode())
 	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte
@@ -176,7 +176,7 @@ func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 		},
 	}
 
-	encBits := must(pdu.EncodeFullLinkControl(flc))
+	encBits := must(flc.Encode())
 	encoded := bit.PackBits(encBits[:])
 
 	var lcBytes [12]byte

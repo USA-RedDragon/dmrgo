@@ -18,7 +18,7 @@ func lcHeaderFrame(t *testing.T) [33]byte {
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101},
 	}
 	var lcBytes [12]byte
-	lcBits := must(pdu.EncodeFullLinkControl(&lc))
+	lcBits := must(lc.Encode())
 	copy(lcBytes[:], bit.PackBits(lcBits[:]))
 	return must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1))
 }
@@ -43,7 +43,7 @@ func TestBurstFEC_LCHeaderCountsPayloadBitsOnce(t *testing.T) {
 func TestBurstFEC_CSBKCountsNoCRCBits(t *testing.T) {
 	csbk := pdu.CSBK{CSBKOpcode: 0x3F}
 	var lcBytes [12]byte
-	csbkBits := must(pdu.EncodeCSBK(&csbk))
+	csbkBits := must(csbk.Encode())
 	copy(lcBytes[:], bit.PackBits(csbkBits[:]))
 	frame := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeCSBK, 1))
 

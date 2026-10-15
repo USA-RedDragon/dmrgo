@@ -129,7 +129,7 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkCon
 func fullLCBits(lc *pdu.FullLinkControl) ([72]bit.Bit, error) {
 	header := *lc
 	header.DataType = enums.DataTypeVoiceLCHeader
-	data, err := pdu.EncodeFullLinkControl(&header)
+	data, err := header.Encode()
 	if err != nil {
 		return [72]bit.Bit{}, fmt.Errorf("cannot encode full link control: %w", err)
 	}

@@ -18,11 +18,11 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "FLCO",
 			encode: func() error {
-				_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
+				_, err := (&pdu.FullLinkControl{
 					DataType:   enums.DataTypeVoiceLCHeader,
 					FLCO:       enums.FLCOUnitToUnitVoiceChannelUser,
 					GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
-				})
+				}).Encode()
 				return err
 			},
 			want: "FullLinkControl.GroupVoice is set, but FLCO and FeatureSetID select UnitToUnit",
@@ -30,12 +30,12 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "FLC manufacturer FID",
 			encode: func() error {
-				_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
+				_, err := (&pdu.FullLinkControl{
 					DataType:     enums.DataTypeVoiceLCHeader,
 					FLCO:         enums.FLCOGroupVoiceChannelUser,
 					FeatureSetID: enums.FIDMotorola,
 					GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
-				})
+				}).Encode()
 				return err
 			},
 			want: "FullLinkControl.GroupVoice is set, but FLCO and FeatureSetID select RawPayload",
@@ -43,12 +43,12 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "two FLC payloads",
 			encode: func() error {
-				_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
+				_, err := (&pdu.FullLinkControl{
 					DataType:   enums.DataTypeVoiceLCHeader,
 					FLCO:       enums.FLCOUnitToUnitVoiceChannelUser,
 					GroupVoice: &pdu.FLCGroupVoice{},
 					UnitToUnit: &pdu.FLCUnitToUnit{},
-				})
+				}).Encode()
 				return err
 			},
 			want: "FullLinkControl: GroupVoice and UnitToUnit are both set",
@@ -56,10 +56,10 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "CSBKO",
 			encode: func() error {
-				_, err := pdu.EncodeCSBK(&pdu.CSBK{
+				_, err := (&pdu.CSBK{
 					CSBKOpcode:             pdu.CSBKAloha,
 					TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
-				})
+				}).Encode()
 				return err
 			},
 			want: "CSBK.TalkgroupVoiceGrantPDU is set, but CSBKOpcode, FID and TrunkingMode select AlohaPDU",
@@ -67,11 +67,11 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "CSBK manufacturer FID",
 			encode: func() error {
-				_, err := pdu.EncodeCSBK(&pdu.CSBK{
+				_, err := (&pdu.CSBK{
 					CSBKOpcode:             pdu.CSBKTalkgroupVoiceGrant,
 					FID:                    0x10,
 					TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
-				})
+				}).Encode()
 				return err
 			},
 			want: "CSBK.TalkgroupVoiceGrantPDU is set, but CSBKOpcode, FID and TrunkingMode select RawPayload",
@@ -79,10 +79,10 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "CSBK opcode 0x38 outside trunking",
 			encode: func() error {
-				_, err := pdu.EncodeCSBK(&pdu.CSBK{
+				_, err := (&pdu.CSBK{
 					CSBKOpcode:                     pdu.CSBKBSOutboundActivationPDU,
 					TalkgroupDataGrantMultiItemPDU: &pdu.TalkgroupDataGrantMultiItemPDU{},
-				})
+				}).Encode()
 				return err
 			},
 			want: "select BSOutboundActivationPDU",
@@ -90,10 +90,10 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "Format",
 			encode: func() error {
-				_, err := pdu.EncodeDataHeader(&pdu.DataHeader{
+				_, err := (&pdu.DataHeader{
 					Format:                pdu.FormatConfirmed,
 					UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{},
-				})
+				}).Encode()
 				return err
 			},
 			want: "DataHeader.UnconfirmedDataHeader is set, but Format and AppendedBlocks select ConfirmedDataHeader",
@@ -101,10 +101,10 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "R_HEAD without appended blocks",
 			encode: func() error {
-				_, err := pdu.EncodeDataHeader(&pdu.DataHeader{
+				_, err := (&pdu.DataHeader{
 					Format:        pdu.FormatShortDataRawOrStatusPrecoded,
 					RawDataHeader: &pdu.RawDataHeader{},
-				})
+				}).Encode()
 				return err
 			},
 			want: "select StatusPrecodedHeader",
@@ -112,10 +112,10 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 		{
 			name: "SLCO",
 			encode: func() error {
-				_, err := pdu.EncodeShortLC(&pdu.ShortLC{
+				_, err := (&pdu.ShortLC{
 					SLCO:           enums.SLCONullMessage,
 					ActivityUpdate: &pdu.ShortLCActivityUpdate{HashTS1: 0xAB},
-				})
+				}).Encode()
 				return err
 			},
 			want: "ShortLC.ActivityUpdate is set, but SLCO selects NullMessage",
@@ -134,7 +134,7 @@ func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 		TrunkingMode:                   true,
 		TalkgroupDataGrantMultiItemPDU: &pdu.TalkgroupDataGrantMultiItemPDU{},
 	}
-	got, _ := pdu.DecodeCSBK(must(pdu.EncodeCSBK(&csbk)), true)
+	got, _ := pdu.DecodeCSBK(must(csbk.Encode()), true)
 	if got.TalkgroupDataGrantMultiItemPDU == nil {
 		t.Error("opcode 0x38 in trunking mode did not decode as TalkgroupDataGrantMultiItemPDU")
 	}
@@ -143,7 +143,7 @@ func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 		Format:        pdu.FormatShortDataRawOrStatusPrecoded,
 		RawDataHeader: &pdu.RawDataHeader{AppendedBlocks: 3},
 	}
-	gotDH, _ := pdu.DecodeDataHeader(must(pdu.EncodeDataHeader(&dh)))
+	gotDH, _ := pdu.DecodeDataHeader(must(dh.Encode()))
 	if gotDH.RawDataHeader == nil || gotDH.RawDataHeader.AppendedBlocks != 3 {
 		t.Errorf("R_HEAD round trip = %+v", gotDH.RawDataHeader)
 	}
@@ -153,7 +153,7 @@ func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 		FLCO:             enums.FLCOTalkerAliasBlock2,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{},
 	}
-	if _, err := pdu.EncodeFullLinkControl(&lc); err != nil {
+	if _, err := lc.Encode(); err != nil {
 		t.Errorf("Talker Alias block 2: %v", err)
 	}
 }

@@ -30,11 +30,11 @@ func DecodeVocoder(data [216]bit.Bit) (Vocoder, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeVocoder encodes a Vocoder per ETSI TS 102 361-1 - 7.1 Voice channel coding
-func EncodeVocoder(s *Vocoder) ([216]bit.Bit, error) {
+// Encode encodes a Vocoder per ETSI TS 102 361-1 - 7.1 Voice channel coding
+func (s *Vocoder) Encode() ([216]bit.Bit, error) {
 	var data [216]bit.Bit
 	for _i := 0; _i < 3; _i++ {
-		_elemBits, err := vocoder.EncodeVocoderFrame(&s.Frames[_i])
+		_elemBits, err := s.Frames[_i].Encode()
 		if err != nil {
 			return [216]bit.Bit{}, fmt.Errorf("Vocoder.Frames[%d]: %w", _i, err)
 		}

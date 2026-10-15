@@ -23,8 +23,8 @@ func DecodeRate12Data(data [96]bit.Bit) (Rate12Data, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeRate12Data encodes a Rate12Data per ETSI TS 102 361-1 - 9.2.7 Rate 1/2 coded packet Data (R_1_2_DATA) PDU
-func EncodeRate12Data(s *Rate12Data) ([96]bit.Bit, error) {
+// Encode encodes a Rate12Data per ETSI TS 102 361-1 - 9.2.7 Rate 1/2 coded packet Data (R_1_2_DATA) PDU
+func (s *Rate12Data) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	copy(data[0:96], bit.UnpackBits(s.Data[:]))
 	return data, nil

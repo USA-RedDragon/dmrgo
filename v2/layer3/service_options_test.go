@@ -146,7 +146,7 @@ func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
 		}
 
 		so, _ := DecodeServiceOptions(bits)
-		encoded := must(EncodeServiceOptions(&so))
+		encoded := must(so.Encode())
 		if encoded != bits {
 			t.Errorf("byte 0x%02X: encode→decode→encode mismatch: got %v, want %v", b, encoded, bits)
 		}

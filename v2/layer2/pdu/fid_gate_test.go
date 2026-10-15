@@ -51,8 +51,8 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if csbk.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
-	if got := must(pdu.EncodeCSBK(&csbk)); got != infoBits {
-		t.Error("must(EncodeCSBK(DecodeCSBK(x))) != x")
+	if got := must(csbk.Encode()); got != infoBits {
+		t.Error("DecodeCSBK(x).Encode() != x")
 	}
 }
 
@@ -67,8 +67,8 @@ func TestCSBK_UnknownOpcodeKeepsRawPayload(t *testing.T) {
 	if csbk.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
-	if got := must(pdu.EncodeCSBK(&csbk)); got != infoBits {
-		t.Error("must(EncodeCSBK(DecodeCSBK(x))) != x")
+	if got := must(csbk.Encode()); got != infoBits {
+		t.Error("DecodeCSBK(x).Encode() != x")
 	}
 }
 
@@ -96,7 +96,7 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 		FeatureSetID: enums.FIDMotorola,
 		RawPayload:   payload,
 	}
-	infoBits := must(pdu.EncodeFullLinkControl(original))
+	infoBits := must(original.Encode())
 
 	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if fecResult.Uncorrectable {
@@ -111,8 +111,8 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if decoded.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
-	if got := must(pdu.EncodeFullLinkControl(&decoded)); got != infoBits {
-		t.Error("must(EncodeFullLinkControl(DecodeFullLinkControl(x))) != x")
+	if got := must(decoded.Encode()); got != infoBits {
+		t.Error("DecodeFullLinkControl(x).Encode() != x")
 	}
 }
 
@@ -126,7 +126,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 		FeatureSetID: enums.FeatureSetID(0x7F),
 		RawPayload:   payload,
 	}
-	infoBits := must(pdu.EncodeFullLinkControl(original))
+	infoBits := must(original.Encode())
 
 	decoded, _ := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if decoded.FLCO != 0b111111 {
@@ -140,7 +140,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	}
 
 	original.FeatureSetID = enums.FIDStandardized
-	decoded, _ = pdu.DecodeFullLinkControl(must(pdu.EncodeFullLinkControl(original)), original.DataType)
+	decoded, _ = pdu.DecodeFullLinkControl(must(original.Encode()), original.DataType)
 	if decoded.FLCO != 0b111111 || decoded.RawPayload != payload {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
 	}

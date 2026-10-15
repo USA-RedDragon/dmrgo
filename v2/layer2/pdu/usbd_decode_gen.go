@@ -39,8 +39,8 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec
 	return result, fecResult
 }
 
-// EncodeUnifiedSingleBlockData encodes a UnifiedSingleBlockData per ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
-func EncodeUnifiedSingleBlockData(s *UnifiedSingleBlockData) ([96]bit.Bit, error) {
+// Encode encodes a UnifiedSingleBlockData per ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
+func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if uint64(s.ServiceType)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("UnifiedSingleBlockData.ServiceType: value %d does not fit in 4 bits", s.ServiceType)

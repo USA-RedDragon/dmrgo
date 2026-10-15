@@ -116,7 +116,7 @@ func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 			if !got.HasReverseChannel || got.ReverseChannel.RCCommand != 5 {
 				t.Fatalf("decoded RC %+v, want command 5", got.ReverseChannel)
 			}
-			want := must(layer2.EncodeRCToEmbeddedData(b.ReverseChannel))
+			want := must(layer2.EncodeEmbeddedRC(b.ReverseChannel))
 			if got.EmbeddedSignallingData != want {
 				t.Fatal("embedded data is not the coded reverse channel")
 			}

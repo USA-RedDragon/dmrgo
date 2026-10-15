@@ -38,7 +38,7 @@ func TestReverseChannel_DecodeEncode_RoundTrip(t *testing.T) {
 		}
 
 		// Re-encode and verify round-trip
-		encoded, err := pdu.EncodeReverseChannel(&rc)
+		encoded, err := rc.Encode()
 		if err != nil {
 			t.Fatalf("payload=%d: unexpected error: %v", payload, err)
 		}
@@ -74,7 +74,7 @@ func TestReverseChannel_OutOfRangeRejected(t *testing.T) {
 	t.Parallel()
 	for _, cmd := range []enums.RCCommand{0x10, 0x14, 0xFF} {
 		rc := pdu.ReverseChannel{RCCommand: cmd}
-		if _, err := pdu.EncodeReverseChannel(&rc); err == nil {
+		if _, err := rc.Encode(); err == nil {
 			t.Errorf("RCCommand 0x%X: expected error, got nil", int(cmd))
 		}
 	}

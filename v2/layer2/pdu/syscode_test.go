@@ -67,7 +67,7 @@ func TestSysCode_ShortLCSysParms(t *testing.T) {
 		t.Errorf("C_SYS_Parms: net %d site %d code %+v", c.NetID(), c.SiteID(), c.SysCode())
 	}
 	slc := pdu.ShortLC{SLCO: enums.SLCOCSysParms, CSysParms: &c}
-	bits, err := pdu.EncodeShortLC(&slc)
+	bits, err := slc.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}

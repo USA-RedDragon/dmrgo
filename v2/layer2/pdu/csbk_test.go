@@ -236,7 +236,7 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 		},
 	}
 
-	encoded := must(pdu.EncodeCSBK(original))
+	encoded := must(original.Encode())
 	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
@@ -303,7 +303,7 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 		},
 	}
 
-	encoded := must(pdu.EncodeCSBK(original))
+	encoded := must(original.Encode())
 	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
@@ -378,7 +378,7 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.
 		},
 	}
 
-	encoded := must(pdu.EncodeCSBK(original))
+	encoded := must(original.Encode())
 	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
@@ -491,7 +491,7 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 		},
 	}
 
-	encoded := must(pdu.EncodeCSBK(original))
+	encoded := must(original.Encode())
 	if encoded[16+39] != 1 {
 		t.Error("ChannelTimingOp1 should be encoded at payload bit 39")
 	}

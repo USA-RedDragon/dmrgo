@@ -28,8 +28,8 @@ func DecodeServiceOptions(data [8]bit.Bit) (ServiceOptions, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeServiceOptions encodes a ServiceOptions per ETSI TS 102 361-2 - 7.2.1  Service Options
-func EncodeServiceOptions(s *ServiceOptions) ([8]bit.Bit, error) {
+// Encode encodes a ServiceOptions per ETSI TS 102 361-2 - 7.2.1  Service Options
+func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 	var data [8]bit.Bit
 	if s.IsEmergency {
 		data[0] = 1

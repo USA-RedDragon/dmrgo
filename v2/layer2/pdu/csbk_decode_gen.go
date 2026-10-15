@@ -56,8 +56,8 @@ func DecodeBSOutboundActivationPDU(data [64]bit.Bit) (BSOutboundActivationPDU, f
 	return result, fecResult
 }
 
-// EncodeBSOutboundActivationPDU encodes a BSOutboundActivationPDU per ETSI TS 102 361-1 - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
-func EncodeBSOutboundActivationPDU(s *BSOutboundActivationPDU) ([64]bit.Bit, error) {
+// Encode encodes a BSOutboundActivationPDU per ETSI TS 102 361-1 - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
+func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	copy(data[0:16], bit.BitsFromUint16(s.Reserved, 16))
 	copy(data[16:40], s.BSAddress[:])
@@ -81,8 +81,8 @@ func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) (UnitToUnitVoiceSe
 	return result, fecResult
 }
 
-// EncodeUnitToUnitVoiceServiceRequestPDU encodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
-func EncodeUnitToUnitVoiceServiceRequestPDU(s *UnitToUnitVoiceServiceRequestPDU) ([64]bit.Bit, error) {
+// Encode encodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
+func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	copy(data[0:8], bit.BitsFromUint8(uint8(s.ServiceOptions), 8))
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.Reserved), 8))
@@ -107,8 +107,8 @@ func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnit
 	return result, fecResult
 }
 
-// EncodeUnitToUnitVoiceServiceAnswerResponsePDU encodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
-func EncodeUnitToUnitVoiceServiceAnswerResponsePDU(s *UnitToUnitVoiceServiceAnswerResponsePDU) ([64]bit.Bit, error) {
+// Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
+func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	copy(data[0:8], bit.BitsFromUint8(uint8(s.ServiceOptions), 8))
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.AnswerResponse), 8))
@@ -135,8 +135,8 @@ func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgement
 	return result, fecResult
 }
 
-// EncodeNegativeAcknowledgementPDU encodes a NegativeAcknowledgementPDU per ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
-func EncodeNegativeAcknowledgementPDU(s *NegativeAcknowledgementPDU) ([64]bit.Bit, error) {
+// Encode encodes a NegativeAcknowledgementPDU per ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
+func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.AdditionalInfo)>>1 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.AdditionalInfo: value %d does not fit in 1 bits", s.AdditionalInfo)
@@ -174,8 +174,8 @@ func DecodePreamblePDU(data [64]bit.Bit) (PreamblePDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodePreamblePDU encodes a PreamblePDU per ETSI TS 102 361-1 - 9.3.7 Pre PDU
-func EncodePreamblePDU(s *PreamblePDU) ([64]bit.Bit, error) {
+// Encode encodes a PreamblePDU per ETSI TS 102 361-1 - 9.3.7 Pre PDU
+func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if s.Data {
 		data[0] = 1
@@ -212,8 +212,8 @@ func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeChannelTimingPDU encodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
-func EncodeChannelTimingPDU(s *ChannelTimingPDU) ([64]bit.Bit, error) {
+// Encode encodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
+func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	copy(data[0:11], s.SyncAge[:])
 	copy(data[11:16], s.Generation[:])
@@ -255,8 +255,8 @@ func DecodePrivateVoiceGrantPDU(data [64]bit.Bit) (PrivateVoiceGrantPDU, fec.Res
 	return result, fecResult
 }
 
-// EncodePrivateVoiceGrantPDU encodes a PrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
-func EncodePrivateVoiceGrantPDU(s *PrivateVoiceGrantPDU) ([64]bit.Bit, error) {
+// Encode encodes a PrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
+func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("PrivateVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -298,8 +298,8 @@ func DecodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) (TalkgroupVoiceGrantPDU, fec
 	return result, fecResult
 }
 
-// EncodeTalkgroupVoiceGrantPDU encodes a TalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
-func EncodeTalkgroupVoiceGrantPDU(s *TalkgroupVoiceGrantPDU) ([64]bit.Bit, error) {
+// Encode encodes a TalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
+func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("TalkgroupVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -341,8 +341,8 @@ func DecodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) (BroadcastTalkgroup
 	return result, fecResult
 }
 
-// EncodeBroadcastTalkgroupVoiceGrantPDU encodes a BroadcastTalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
-func EncodeBroadcastTalkgroupVoiceGrantPDU(s *BroadcastTalkgroupVoiceGrantPDU) ([64]bit.Bit, error) {
+// Encode encodes a BroadcastTalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
+func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("BroadcastTalkgroupVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -384,8 +384,8 @@ func DecodePrivateDataGrantPDU(data [64]bit.Bit) (PrivateDataGrantPDU, fec.Resul
 	return result, fecResult
 }
 
-// EncodePrivateDataGrantPDU encodes a PrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT PDU
-func EncodePrivateDataGrantPDU(s *PrivateDataGrantPDU) ([64]bit.Bit, error) {
+// Encode encodes a PrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT PDU
+func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -427,8 +427,8 @@ func DecodeTalkgroupDataGrantPDU(data [64]bit.Bit) (TalkgroupDataGrantPDU, fec.R
 	return result, fecResult
 }
 
-// EncodeTalkgroupDataGrantPDU encodes a TalkgroupDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT PDU
-func EncodeTalkgroupDataGrantPDU(s *TalkgroupDataGrantPDU) ([64]bit.Bit, error) {
+// Encode encodes a TalkgroupDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT PDU
+func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -470,8 +470,8 @@ func DecodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) (DuplexPrivateVoiceGrant
 	return result, fecResult
 }
 
-// EncodeDuplexPrivateVoiceGrantPDU encodes a DuplexPrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT_DX PDU
-func EncodeDuplexPrivateVoiceGrantPDU(s *DuplexPrivateVoiceGrantPDU) ([64]bit.Bit, error) {
+// Encode encodes a DuplexPrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT_DX PDU
+func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -513,8 +513,8 @@ func DecodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) (DuplexPrivateDataGrantPD
 	return result, fecResult
 }
 
-// EncodeDuplexPrivateDataGrantPDU encodes a DuplexPrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_DX PDU
-func EncodeDuplexPrivateDataGrantPDU(s *DuplexPrivateDataGrantPDU) ([64]bit.Bit, error) {
+// Encode encodes a DuplexPrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_DX PDU
+func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -556,8 +556,8 @@ func DecodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) (PrivateDataGrantMulti
 	return result, fecResult
 }
 
-// EncodePrivateDataGrantMultiItemPDU encodes a PrivateDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
-func EncodePrivateDataGrantMultiItemPDU(s *PrivateDataGrantMultiItemPDU) ([64]bit.Bit, error) {
+// Encode encodes a PrivateDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
+func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantMultiItemPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -599,8 +599,8 @@ func DecodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) (TalkgroupDataGrantM
 	return result, fecResult
 }
 
-// EncodeTalkgroupDataGrantMultiItemPDU encodes a TalkgroupDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
-func EncodeTalkgroupDataGrantMultiItemPDU(s *TalkgroupDataGrantMultiItemPDU) ([64]bit.Bit, error) {
+// Encode encodes a TalkgroupDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
+func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantMultiItemPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -643,8 +643,8 @@ func DecodeMovePDU(data [64]bit.Bit) (MovePDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeMovePDU encodes a MovePDU per ETSI TS 102 361-4 §7.1.1.1.2 C_MOVE PDU
-func EncodeMovePDU(s *MovePDU) ([64]bit.Bit, error) {
+// Encode encodes a MovePDU per ETSI TS 102 361-4 §7.1.1.1.2 C_MOVE PDU
+func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	copy(data[0:9], s.Reserved1[:])
 	if uint64(s.Mask)>>5 != 0 {
@@ -693,8 +693,8 @@ func DecodeAlohaPDU(data [64]bit.Bit) (AlohaPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeAlohaPDU encodes a AlohaPDU per ETSI TS 102 361-4 §7.1.1.1.3 C_ALOHA PDU
-func EncodeAlohaPDU(s *AlohaPDU) ([64]bit.Bit, error) {
+// Encode encodes a AlohaPDU per ETSI TS 102 361-4 §7.1.1.1.3 C_ALOHA PDU
+func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if s.Reserved1 {
 		data[0] = 1
@@ -757,8 +757,8 @@ func DecodeCBroadcastPDU(data [64]bit.Bit) (CBroadcastPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeCBroadcastPDU encodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
-func EncodeCBroadcastPDU(s *CBroadcastPDU) ([64]bit.Bit, error) {
+// Encode encodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
+func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.AnnouncementType: value %d does not fit in 5 bits", s.AnnouncementType)
@@ -795,8 +795,8 @@ func DecodeClearPDU(data [64]bit.Bit) (ClearPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeClearPDU encodes a ClearPDU per ETSI TS 102 361-4 §7.1.1.1.5 P_CLEAR PDU
-func EncodeClearPDU(s *ClearPDU) ([64]bit.Bit, error) {
+// Encode encodes a ClearPDU per ETSI TS 102 361-4 §7.1.1.1.5 P_CLEAR PDU
+func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
@@ -834,8 +834,8 @@ func DecodeProtectPDU(data [64]bit.Bit) (ProtectPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeProtectPDU encodes a ProtectPDU per ETSI TS 102 361-4 §7.1.1.1.5 P_PROTECT PDU
-func EncodeProtectPDU(s *ProtectPDU) ([64]bit.Bit, error) {
+// Encode encodes a ProtectPDU per ETSI TS 102 361-4 §7.1.1.1.5 P_PROTECT PDU
+func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	copy(data[0:12], s.Reserved[:])
 	if uint64(s.ProtectKind)>>3 != 0 {
@@ -870,8 +870,8 @@ func DecodeAhoyPDU(data [64]bit.Bit) (AhoyPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeAhoyPDU encodes a AhoyPDU per ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / P_AHOY PDU
-func EncodeAhoyPDU(s *AhoyPDU) ([64]bit.Bit, error) {
+// Encode encodes a AhoyPDU per ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / P_AHOY PDU
+func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.ServiceOptsMirror: value %d does not fit in 7 bits", s.ServiceOptsMirror)
@@ -916,8 +916,8 @@ func DecodeAckOutboundPDU(data [64]bit.Bit) (AckOutboundPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeAckOutboundPDU encodes a AckOutboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
-func EncodeAckOutboundPDU(s *AckOutboundPDU) ([64]bit.Bit, error) {
+// Encode encodes a AckOutboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
+func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
@@ -949,8 +949,8 @@ func DecodeAckInboundPDU(data [64]bit.Bit) (AckInboundPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeAckInboundPDU encodes a AckInboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKU PDU
-func EncodeAckInboundPDU(s *AckInboundPDU) ([64]bit.Bit, error) {
+// Encode encodes a AckInboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKU PDU
+func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckInboundPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
@@ -982,8 +982,8 @@ func DecodeAckOutboundPayloadPDU(data [64]bit.Bit) (AckOutboundPayloadPDU, fec.R
 	return result, fecResult
 }
 
-// EncodeAckOutboundPayloadPDU encodes a AckOutboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.1.7 P_ACKD PDU
-func EncodeAckOutboundPayloadPDU(s *AckOutboundPayloadPDU) ([64]bit.Bit, error) {
+// Encode encodes a AckOutboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.1.7 P_ACKD PDU
+func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPayloadPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
@@ -1015,8 +1015,8 @@ func DecodeAckInboundPayloadPDU(data [64]bit.Bit) (AckInboundPayloadPDU, fec.Res
 	return result, fecResult
 }
 
-// EncodeAckInboundPayloadPDU encodes a AckInboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.1.7 P_ACKU PDU
-func EncodeAckInboundPayloadPDU(s *AckInboundPayloadPDU) ([64]bit.Bit, error) {
+// Encode encodes a AckInboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.1.7 P_ACKU PDU
+func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckInboundPayloadPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
@@ -1049,8 +1049,8 @@ func DecodeRandomAccessPDU(data [64]bit.Bit) (RandomAccessPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeRandomAccessPDU encodes a RandomAccessPDU per ETSI TS 102 361-4 §7.1.1.1.9 C_RAND PDU
-func EncodeRandomAccessPDU(s *RandomAccessPDU) ([64]bit.Bit, error) {
+// Encode encodes a RandomAccessPDU per ETSI TS 102 361-4 §7.1.1.1.9 C_RAND PDU
+func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ServiceOptions)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.ServiceOptions: value %d does not fit in 7 bits", s.ServiceOptions)
@@ -1091,8 +1091,8 @@ func DecodeAckvitationPDU(data [64]bit.Bit) (AckvitationPDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeAckvitationPDU encodes a AckvitationPDU per ETSI TS 102 361-4 §7.1.1.1.10 C_ACKVIT PDU
-func EncodeAckvitationPDU(s *AckvitationPDU) ([64]bit.Bit, error) {
+// Encode encodes a AckvitationPDU per ETSI TS 102 361-4 §7.1.1.1.10 C_ACKVIT PDU
+func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.ServiceOptsMirror: value %d does not fit in 7 bits", s.ServiceOptsMirror)
@@ -1135,8 +1135,8 @@ func DecodeMaintenancePDU(data [64]bit.Bit) (MaintenancePDU, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeMaintenancePDU encodes a MaintenancePDU per ETSI TS 102 361-4 §7.1.1.1.11 P_MAINT PDU
-func EncodeMaintenancePDU(s *MaintenancePDU) ([64]bit.Bit, error) {
+// Encode encodes a MaintenancePDU per ETSI TS 102 361-4 §7.1.1.1.11 P_MAINT PDU
+func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	copy(data[0:12], s.Reserved[:])
 	if uint64(s.MaintKind)>>3 != 0 {
@@ -1280,8 +1280,8 @@ func DecodeCSBK(data [96]bit.Bit, trunkingMode bool) (CSBK, fec.Result) {
 	return result, fecResult
 }
 
-// EncodeCSBK encodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU
-func EncodeCSBK(s *CSBK) ([96]bit.Bit, error) {
+// Encode encodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU
+func (s *CSBK) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	_payload := ""
 	for _, _p := range [...]struct {
@@ -1327,169 +1327,169 @@ func EncodeCSBK(s *CSBK) ([96]bit.Bit, error) {
 	}
 	switch {
 	case s.BSOutboundActivationPDU != nil:
-		_pduBits, err := EncodeBSOutboundActivationPDU(s.BSOutboundActivationPDU)
+		_pduBits, err := s.BSOutboundActivationPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.BSOutboundActivationPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
-		_pduBits, err := EncodeUnitToUnitVoiceServiceRequestPDU(s.UnitToUnitVoiceServiceRequestPDU)
+		_pduBits, err := s.UnitToUnitVoiceServiceRequestPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.UnitToUnitVoiceServiceRequestPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
-		_pduBits, err := EncodeUnitToUnitVoiceServiceAnswerResponsePDU(s.UnitToUnitVoiceServiceAnswerResponsePDU)
+		_pduBits, err := s.UnitToUnitVoiceServiceAnswerResponsePDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.UnitToUnitVoiceServiceAnswerResponsePDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.NegativeAcknowledgementPDU != nil:
-		_pduBits, err := EncodeNegativeAcknowledgementPDU(s.NegativeAcknowledgementPDU)
+		_pduBits, err := s.NegativeAcknowledgementPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.NegativeAcknowledgementPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.PreamblePDU != nil:
-		_pduBits, err := EncodePreamblePDU(s.PreamblePDU)
+		_pduBits, err := s.PreamblePDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.PreamblePDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.ChannelTimingPDU != nil:
-		_pduBits, err := EncodeChannelTimingPDU(s.ChannelTimingPDU)
+		_pduBits, err := s.ChannelTimingPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.ChannelTimingPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.PrivateVoiceGrantPDU != nil:
-		_pduBits, err := EncodePrivateVoiceGrantPDU(s.PrivateVoiceGrantPDU)
+		_pduBits, err := s.PrivateVoiceGrantPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.PrivateVoiceGrantPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.TalkgroupVoiceGrantPDU != nil:
-		_pduBits, err := EncodeTalkgroupVoiceGrantPDU(s.TalkgroupVoiceGrantPDU)
+		_pduBits, err := s.TalkgroupVoiceGrantPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.TalkgroupVoiceGrantPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_pduBits, err := EncodeBroadcastTalkgroupVoiceGrantPDU(s.BroadcastTalkgroupVoiceGrantPDU)
+		_pduBits, err := s.BroadcastTalkgroupVoiceGrantPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.BroadcastTalkgroupVoiceGrantPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.PrivateDataGrantPDU != nil:
-		_pduBits, err := EncodePrivateDataGrantPDU(s.PrivateDataGrantPDU)
+		_pduBits, err := s.PrivateDataGrantPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.PrivateDataGrantPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.TalkgroupDataGrantPDU != nil:
-		_pduBits, err := EncodeTalkgroupDataGrantPDU(s.TalkgroupDataGrantPDU)
+		_pduBits, err := s.TalkgroupDataGrantPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.TalkgroupDataGrantPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_pduBits, err := EncodeDuplexPrivateVoiceGrantPDU(s.DuplexPrivateVoiceGrantPDU)
+		_pduBits, err := s.DuplexPrivateVoiceGrantPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.DuplexPrivateVoiceGrantPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.DuplexPrivateDataGrantPDU != nil:
-		_pduBits, err := EncodeDuplexPrivateDataGrantPDU(s.DuplexPrivateDataGrantPDU)
+		_pduBits, err := s.DuplexPrivateDataGrantPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.DuplexPrivateDataGrantPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.PrivateDataGrantMultiItemPDU != nil:
-		_pduBits, err := EncodePrivateDataGrantMultiItemPDU(s.PrivateDataGrantMultiItemPDU)
+		_pduBits, err := s.PrivateDataGrantMultiItemPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.PrivateDataGrantMultiItemPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.TalkgroupDataGrantMultiItemPDU != nil:
-		_pduBits, err := EncodeTalkgroupDataGrantMultiItemPDU(s.TalkgroupDataGrantMultiItemPDU)
+		_pduBits, err := s.TalkgroupDataGrantMultiItemPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.TalkgroupDataGrantMultiItemPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.MovePDU != nil:
-		_pduBits, err := EncodeMovePDU(s.MovePDU)
+		_pduBits, err := s.MovePDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.MovePDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.AlohaPDU != nil:
-		_pduBits, err := EncodeAlohaPDU(s.AlohaPDU)
+		_pduBits, err := s.AlohaPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.AlohaPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.CBroadcastPDU != nil:
-		_pduBits, err := EncodeCBroadcastPDU(s.CBroadcastPDU)
+		_pduBits, err := s.CBroadcastPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.CBroadcastPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.ClearPDU != nil:
-		_pduBits, err := EncodeClearPDU(s.ClearPDU)
+		_pduBits, err := s.ClearPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.ClearPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.ProtectPDU != nil:
-		_pduBits, err := EncodeProtectPDU(s.ProtectPDU)
+		_pduBits, err := s.ProtectPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.ProtectPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.AhoyPDU != nil:
-		_pduBits, err := EncodeAhoyPDU(s.AhoyPDU)
+		_pduBits, err := s.AhoyPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.AhoyPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.AckOutboundPDU != nil:
-		_pduBits, err := EncodeAckOutboundPDU(s.AckOutboundPDU)
+		_pduBits, err := s.AckOutboundPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckOutboundPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.AckInboundPDU != nil:
-		_pduBits, err := EncodeAckInboundPDU(s.AckInboundPDU)
+		_pduBits, err := s.AckInboundPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckInboundPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.AckOutboundPayloadPDU != nil:
-		_pduBits, err := EncodeAckOutboundPayloadPDU(s.AckOutboundPayloadPDU)
+		_pduBits, err := s.AckOutboundPayloadPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckOutboundPayloadPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.AckInboundPayloadPDU != nil:
-		_pduBits, err := EncodeAckInboundPayloadPDU(s.AckInboundPayloadPDU)
+		_pduBits, err := s.AckInboundPayloadPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckInboundPayloadPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.RandomAccessPDU != nil:
-		_pduBits, err := EncodeRandomAccessPDU(s.RandomAccessPDU)
+		_pduBits, err := s.RandomAccessPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.RandomAccessPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.AckvitationPDU != nil:
-		_pduBits, err := EncodeAckvitationPDU(s.AckvitationPDU)
+		_pduBits, err := s.AckvitationPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckvitationPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.MaintenancePDU != nil:
-		_pduBits, err := EncodeMaintenancePDU(s.MaintenancePDU)
+		_pduBits, err := s.MaintenancePDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.MaintenancePDU: %w", err)
 		}

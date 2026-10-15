@@ -24,7 +24,7 @@ var shortLCFragmentLCSS = [4]enums.LCSS{
 // CACHDeinterleave, DecodeCACH and ShortLCAssembler.
 func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][CACHBits]bit.Bit, error) {
 	var out [4][CACHBits]bit.Bit
-	info, err := pdu.EncodeShortLC(slc)
+	info, err := slc.Encode()
 	if err != nil {
 		return out, fmt.Errorf("cannot encode short LC: %w", err)
 	}
@@ -32,7 +32,7 @@ func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][CACHBits]bit.Bit,
 	for i, fragment := range fragments {
 		c := CACH{TACT: tact, Payload: fragment}
 		c.TACT.LCSS = shortLCFragmentLCSS[i]
-		logical, err := EncodeCACH(&c)
+		logical, err := c.Encode()
 		if err != nil {
 			return out, err
 		}

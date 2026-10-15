@@ -103,7 +103,7 @@ func TestShortLC_EncodeDecodeRoundTrip(t *testing.T) {
 		},
 	}
 
-	encoded := must(pdu.EncodeShortLC(&original))
+	encoded := must(original.Encode())
 	decoded, fecResult := pdu.DecodeShortLC(encoded)
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip CRC failed")
@@ -179,7 +179,7 @@ func TestShortLC_UnknownSLCO_RoundTrip(t *testing.T) {
 		if slc.RawPayload != payload {
 			t.Errorf("SLCO %04b: RawPayload = %v, want %v", slco, slc.RawPayload, payload)
 		}
-		if got := must(pdu.EncodeShortLC(&slc)); got != in {
+		if got := must(slc.Encode()); got != in {
 			t.Errorf("SLCO %04b: Encode(Decode(x)) = %v, want %v", slco, got, in)
 		}
 	}

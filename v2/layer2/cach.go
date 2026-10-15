@@ -55,13 +55,13 @@ func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
 	return result
 }
 
-// EncodeCACH encodes a CACH struct into a 24-bit field in logical order.
+// Encode encodes a CACH struct into a 24-bit field in logical order.
 // Use CACHInterleave to get the bits in transmit order.
-func EncodeCACH(c *CACH) ([CACHBits]bit.Bit, error) {
+func (c *CACH) Encode() ([CACHBits]bit.Bit, error) {
 	var bits [CACHBits]bit.Bit
 
 	// Encode TACT into bits 0..6
-	tactBits, err := pdu.EncodeTACT(&c.TACT)
+	tactBits, err := c.TACT.Encode()
 	if err != nil {
 		return bits, err
 	}

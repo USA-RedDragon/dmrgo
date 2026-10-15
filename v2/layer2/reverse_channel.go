@@ -27,13 +27,13 @@ import (
 // Processing: 32 transmit bits → Single Burst BPTC (oddParity=true) →
 // 11 info bits → RC PDU decode (4 payload + 7 CRC-7 with mask 0x7A).
 
-// DecodeRCFromEmbeddedData decodes a Reverse Channel PDU from the 32-bit
+// DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit
 // embedded signalling data field. It applies Single Burst Variable Length
 // BPTC with odd parity (§B.2.2) followed by CRC-7 verification (§B.3.13).
 //
 // Returns the decoded RC PDU and a combined FEC result covering both the
 // BPTC and CRC layers.
-func DecodeRCFromEmbeddedData(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec.Result) {
+func DecodeEmbeddedRC(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec.Result) {
 	// Single Burst BPTC decode with odd parity (RC mode)
 	infoBits, bptcResult := bptc.DecodeSingleBurst(embeddedData, true)
 
@@ -46,11 +46,11 @@ func DecodeRCFromEmbeddedData(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec
 	return rc, combined
 }
 
-// EncodeRCToEmbeddedData encodes a Reverse Channel PDU into 32 transmit
+// EncodeEmbeddedRC encodes a Reverse Channel PDU into 32 transmit
 // bits suitable for the embedded signalling data field. It returns an
 // error if the RC command does not fit in 4 bits.
-func EncodeRCToEmbeddedData(rc *pdu.ReverseChannel) ([32]bit.Bit, error) {
-	infoBits, err := pdu.EncodeReverseChannel(rc)
+func EncodeEmbeddedRC(rc *pdu.ReverseChannel) ([32]bit.Bit, error) {
+	infoBits, err := rc.Encode()
 	if err != nil {
 		return [32]bit.Bit{}, err
 	}
