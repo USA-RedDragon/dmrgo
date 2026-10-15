@@ -3,7 +3,7 @@ package crc_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
 func TestChecksum5_AllZeros(t *testing.T) {

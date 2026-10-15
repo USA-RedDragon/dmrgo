@@ -11,7 +11,7 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
+	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
 // DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData per ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 )
 
 // forEachErrorPattern calls fn with every set of k distinct positions in [0, n).

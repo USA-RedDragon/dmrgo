@@ -11,8 +11,8 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
 // DecodePIHeader decodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)

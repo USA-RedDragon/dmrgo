@@ -12,7 +12,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	hamming "github.com/USA-RedDragon/dmrgo/v2/fec/hamming"
+	hamming "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 )
 
 // DecodeTACT decodes a TACT per ETSI TS 102 361-1 - 9.1.4 TACT PDU

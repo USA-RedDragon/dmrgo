@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
 // ETSI TS 102 361-1 — 9.1.5 Reverse Channel (RC) PDU

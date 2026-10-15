@@ -12,13 +12,13 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/golay"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/hamming"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -32,9 +32,9 @@ import (
 //
 //nolint:gochecknoglobals
 var bitFuncs = map[string]any{
-	"fec/bptc.Decode196": bptc.Decode196,
-	"fec/trellis.Decode": trellis.Decode,
-	"fec/trellis.Encode": trellis.Encode,
+	"internal/fec/bptc.Decode196": bptc.Decode196,
+	"internal/fec/trellis.Decode": trellis.Decode,
+	"internal/fec/trellis.Encode": trellis.Encode,
 	"layer2/framer.Search": func(stream [600]bit.Bit) (framer.Match, bool) {
 		return framer.Search(stream[:], 0, -1)
 	},
@@ -61,32 +61,32 @@ var bitFuncs = map[string]any{
 	"layer2.VoiceTransmitter.AddFrames": func(frames ...vocoder.AMBEFrame) ([][33]byte, error) {
 		return voiceTransmitter().AddFrames(frames...)
 	},
-	"crc.CRC7":                                                 crc.CRC7,
-	"crc.CRC8":                                                 crc.CRC8,
-	"crc.CRC9":                                                 crc.CRC9,
-	"crc.CheckCRC7":                                            crc.CheckCRC7,
-	"crc.CheckCRC8":                                            crc.CheckCRC8,
-	"crc.CheckCRC9":                                            crc.CheckCRC9,
-	"fec/bptc.Decode196WithReserved":                           bptc.Decode196WithReserved,
-	"fec/bptc.DecodeCACH":                                      bptc.DecodeCACH,
-	"fec/bptc.DecodeEmbedded":                                  bptc.DecodeEmbedded,
-	"fec/bptc.DecodeEmbeddedStrict":                            bptc.DecodeEmbeddedStrict,
-	"fec/bptc.DecodeEmbeddedWithCheck":                         bptc.DecodeEmbeddedWithCheck,
-	"fec/bptc.DecodeSingleBurst":                               bptc.DecodeSingleBurst,
-	"fec/bptc.Encode196":                                       bptc.Encode196,
-	"fec/bptc.Encode196WithReserved":                           bptc.Encode196WithReserved,
-	"fec/bptc.EncodeCACH":                                      bptc.EncodeCACH,
-	"fec/bptc.EncodeEmbedded":                                  bptc.EncodeEmbedded,
-	"fec/bptc.EncodeSingleBurst":                               bptc.EncodeSingleBurst,
-	"fec/golay.Decode2087":                                     golay.Decode2087,
-	"fec/golay.Encode2087":                                     golay.Encode2087,
-	"fec/golay.Check2087":                                      golay.Check2087,
-	"fec/hamming.Check743":                                     hamming.Check743,
-	"fec/hamming.Decode743":                                    hamming.Decode743,
-	"fec/hamming.Encode743":                                    hamming.Encode743,
-	"fec/quadraticresidue.Check":                               quadraticresidue.Check,
-	"fec/quadraticresidue.Decode":                              quadraticresidue.Decode,
-	"fec/quadraticresidue.Encode":                              quadraticresidue.Encode,
+	"internal/crc.CRC7":                                        crc.CRC7,
+	"internal/crc.CRC8":                                        crc.CRC8,
+	"internal/crc.CRC9":                                        crc.CRC9,
+	"internal/crc.CheckCRC7":                                   crc.CheckCRC7,
+	"internal/crc.CheckCRC8":                                   crc.CheckCRC8,
+	"internal/crc.CheckCRC9":                                   crc.CheckCRC9,
+	"internal/fec/bptc.Decode196WithReserved":                  bptc.Decode196WithReserved,
+	"internal/fec/bptc.DecodeCACH":                             bptc.DecodeCACH,
+	"internal/fec/bptc.DecodeEmbedded":                         bptc.DecodeEmbedded,
+	"internal/fec/bptc.DecodeEmbeddedStrict":                   bptc.DecodeEmbeddedStrict,
+	"internal/fec/bptc.DecodeEmbeddedWithCheck":                bptc.DecodeEmbeddedWithCheck,
+	"internal/fec/bptc.DecodeSingleBurst":                      bptc.DecodeSingleBurst,
+	"internal/fec/bptc.Encode196":                              bptc.Encode196,
+	"internal/fec/bptc.Encode196WithReserved":                  bptc.Encode196WithReserved,
+	"internal/fec/bptc.EncodeCACH":                             bptc.EncodeCACH,
+	"internal/fec/bptc.EncodeEmbedded":                         bptc.EncodeEmbedded,
+	"internal/fec/bptc.EncodeSingleBurst":                      bptc.EncodeSingleBurst,
+	"internal/fec/golay.Decode2087":                            golay.Decode2087,
+	"internal/fec/golay.Encode2087":                            golay.Encode2087,
+	"internal/fec/golay.Check2087":                             golay.Check2087,
+	"internal/fec/hamming.Check743":                            hamming.Check743,
+	"internal/fec/hamming.Decode743":                           hamming.Decode743,
+	"internal/fec/hamming.Encode743":                           hamming.Encode743,
+	"internal/fec/quadraticresidue.Check":                      quadraticresidue.Check,
+	"internal/fec/quadraticresidue.Decode":                     quadraticresidue.Decode,
+	"internal/fec/quadraticresidue.Encode":                     quadraticresidue.Encode,
 	"layer2.CACHDeinterleave":                                  layer2.CACHDeinterleave,
 	"layer2.CACHInterleave":                                    layer2.CACHInterleave,
 	"layer2.DecodeCACH":                                        layer2.DecodeCACH,
