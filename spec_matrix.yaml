@@ -159,6 +159,7 @@ documents:
           - v2/layer2/pdu/embedded_signalling.go
           - v2/layer2/embedded_lc.go
           - v2/layer2/voice_superframe.go
+          - v2/layer2/voice_receiver.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
@@ -176,6 +177,14 @@ documents:
               - TestVoiceTransmitter_Terminate
               - TestVoiceTransmitter_RejectsBadInput
               - TestVoiceTransmitter_ReproducesCaptures
+              - TestVoiceReceiver_Transmission
+              - TestVoiceReceiver_LateEntry
+              - TestVoiceReceiver_LostBurst
+              - TestVoiceReceiver_UncorrectableLC
+              - TestVoiceReceiver_DataBurstResets
+              - TestVoiceReceiver_UncorrectableEMB
+              - TestVoiceReceiver_Captures
+              - TestVoiceReceiver_IgnoresStandaloneRC
 
       - section: "7.1.4"
         title: "Short Link Control in CACH"
