@@ -44,21 +44,98 @@ func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
 
 // DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling
 // fields f of bursts B to E, as RawBurst.EmbeddedData returns them. It
-// decodes the BPTC to the nearest codewords with
-// bptc.DecodeEmbeddedWithCheck and keeps the one whose 5-bit checksum
-// matches its LC. The FEC result covers the BPTC; Uncorrectable is set when
-// no nearest codeword or more than one has a matching checksum.
-func DecodeEmbeddedLC(f [4][4]byte) ([9]byte, fec.Result) {
-	lc, res := decodeEmbeddedLC(fragmentBits(f))
+// decodes the BPTC to the nearest codewords and keeps the one whose 5-bit
+// checksum matches its LC. The FEC result covers the BPTC; Uncorrectable is
+// set when no nearest codeword or more than one has a matching checksum.
+// With strict set, it corrects the BPTC rows and columns as MMDVMHost does
+// (CDMREmbeddedData::decodeEmbeddedData), so it accepts and returns the same
+// LCs as MMDVMHost.
+func DecodeEmbeddedLC(f [4][4]byte, strict bool) ([9]byte, fec.Result) {
+	lc, res := decodeEmbeddedLCBits(fragmentBits(f), strict)
 	return lcOctets(lc), res
 }
 
-// DecodeEmbeddedLCStrict is DecodeEmbeddedLC with the BPTC decoded by
-// bptc.DecodeEmbeddedStrict, so it accepts and returns the same LCs as
-// MMDVMHost (CDMREmbeddedData::decodeEmbeddedData).
-func DecodeEmbeddedLCStrict(f [4][4]byte) ([9]byte, fec.Result) {
-	lc, res := decodeEmbeddedLCStrict(fragmentBits(f))
-	return lcOctets(lc), res
+func decodeEmbeddedLCBits(fragments [4][32]bit.Bit, strict bool) ([72]bit.Bit, fec.Result) {
+	if strict {
+		return decodeEmbeddedLCStrict(fragments)
+	}
+	return decodeEmbeddedLC(fragments)
+}
+
+// EmbeddedLCAssembler collects the four embedded LC fragments of voice
+// bursts B to E in the order of their LCSS, First, Continuation,
+// Continuation and Last, and decodes the LC as DecodeEmbeddedLC does. The
+// zero EmbeddedLCAssembler is ready to use. It is not safe for concurrent
+// use.
+type EmbeddedLCAssembler struct {
+	// Strict selects the strict decode of DecodeEmbeddedLC. Reset keeps it.
+	Strict bool
+
+	fragments [4][32]bit.Bit
+	count     int
+}
+
+// Reset discards any partial LC.
+func (a *EmbeddedLCAssembler) Reset() {
+	*a = EmbeddedLCAssembler{Strict: a.Strict}
+}
+
+// Add adds the embedded signalling field frag of a burst whose EMB carries
+// lcss. A First fragment starts a new LC, and a Last fragment that follows
+// a First and two Continuations completes it: Add then returns the LC with
+// its FEC result and done set, and ErrEmbeddedLCUncorrectable when the
+// result is uncorrectable. Any other order, and a Single fragment, discard
+// the partial LC; Add returns ErrEmbeddedLCSequence when a partial LC is
+// discarded.
+func (a *EmbeddedLCAssembler) Add(frag [4]byte, lcss enums.LCSS) (lc [9]byte, res fec.Result, done bool, err error) {
+	bits, res, done, err := a.add(bit.Unpack32(frag), lcss)
+	if !done {
+		return lc, res, false, err
+	}
+	return lcOctets(bits), res, true, err
+}
+
+func (a *EmbeddedLCAssembler) add(frag [32]bit.Bit, lcss enums.LCSS) ([72]bit.Bit, fec.Result, bool, error) {
+	var want int
+	switch lcss {
+	case enums.LCSSFirstFragment:
+		err := a.discard()
+		a.fragments[0], a.count = frag, 1
+		return [72]bit.Bit{}, fec.Result{}, false, err
+	case enums.LCSSContinuationFragment:
+		want = a.count
+		if want != 1 && want != 2 {
+			return [72]bit.Bit{}, fec.Result{}, false, a.discard()
+		}
+	case enums.LCSSLastFragment:
+		want = 3
+	case enums.LCSSSingleFragment:
+		return [72]bit.Bit{}, fec.Result{}, false, a.discard()
+	default:
+		return [72]bit.Bit{}, fec.Result{}, false, a.discard()
+	}
+	if a.count != want {
+		return [72]bit.Bit{}, fec.Result{}, false, a.discard()
+	}
+	a.fragments[a.count] = frag
+	a.count++
+	if a.count < 4 {
+		return [72]bit.Bit{}, fec.Result{}, false, nil
+	}
+	a.count = 0
+	lc, res := decodeEmbeddedLCBits(a.fragments, a.Strict)
+	if res.Uncorrectable {
+		return lc, res, true, ErrEmbeddedLCUncorrectable
+	}
+	return lc, res, true, nil
+}
+
+func (a *EmbeddedLCAssembler) discard() error {
+	if a.count == 0 {
+		return nil
+	}
+	a.count = 0
+	return ErrEmbeddedLCSequence
 }
 
 func encodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
@@ -127,17 +204,13 @@ func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, err
 }
 
 // DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded
-// signalling fields f of bursts B to E. The returned LC has BurstDataType
-// DataTypeVoiceLCHeader, so it encodes as a Voice LC Header as is, and its
-// FEC field is the DecodeEmbeddedLC result.
-func DecodeEmbeddedFullLinkControl(f [4][4]byte) pdu.FullLinkControl {
-	return embeddedFullLinkControl(decodeEmbeddedLC(fragmentBits(f)))
-}
-
-// DecodeEmbeddedFullLinkControlStrict is DecodeEmbeddedFullLinkControl with
-// the LC decoded by DecodeEmbeddedLCStrict.
-func DecodeEmbeddedFullLinkControlStrict(f [4][4]byte) pdu.FullLinkControl {
-	return embeddedFullLinkControl(decodeEmbeddedLCStrict(fragmentBits(f)))
+// signalling fields f of bursts B to E, with the LC octets decoded as
+// DecodeEmbeddedLC(f, strict) decodes them. The returned LC has
+// BurstDataType DataTypeVoiceLCHeader, so it encodes as a Voice LC Header as
+// is, and its FEC field combines the DecodeEmbeddedLC result and the field
+// decode.
+func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkControl {
+	return embeddedFullLinkControl(decodeEmbeddedLCBits(fragmentBits(f), strict))
 }
 
 func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) pdu.FullLinkControl {

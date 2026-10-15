@@ -3,6 +3,7 @@ package layer2_test
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"math/rand"
 	"testing"
 
@@ -147,7 +148,7 @@ func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 	}
 }
 
-// TestEmbeddedLCStrict_MMDVMHostVectors checks DecodeEmbeddedLCStrict
+// TestEmbeddedLCStrict_MMDVMHostVectors checks the strict DecodeEmbeddedLC
 // against CDMREmbeddedData::decodeEmbeddedData of MMDVMHost 0acb758. Each
 // vector is an LC, its 128 transmitted bits with 1 to 6 bit errors, and
 // whether MMDVMHost accepts it. MMDVMHost returns the original LC for every
@@ -244,12 +245,12 @@ func encodeLCBits(lc [72]bit.Bit) [4][32]bit.Bit {
 }
 
 func decodeLCBits(f [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
-	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f))
+	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f), false)
 	return [72]bit.Bit(bit.Unpack(lc[:])), res
 }
 
 func decodeLCBitsStrict(f [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
-	lc, res := layer2.DecodeEmbeddedLCStrict(fragOctets(f))
+	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f), true)
 	return [72]bit.Bit(bit.Unpack(lc[:])), res
 }
 
@@ -259,12 +260,12 @@ func encodeFLCBits(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
 }
 
 func decodeFLCBits(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
-	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f))
+	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f), false)
 	return lc, lc.FEC
 }
 
 func decodeFLCBitsStrict(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
-	lc := layer2.DecodeEmbeddedFullLinkControlStrict(fragOctets(f))
+	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f), true)
 	return lc, lc.FEC
 }
 
@@ -282,4 +283,53 @@ func fragOctets(f [4][32]bit.Bit) [4][4]byte {
 		copy(out[i][:], bit.Pack(f[i][:]))
 	}
 	return out
+}
+
+func TestEmbeddedLCAssembler(t *testing.T) {
+	lc := [9]byte{0x00, 0x00, 0x20, 0x00, 0x00, 0x5b, 0x30, 0xb4, 0x3c}
+	frags := layer2.EncodeEmbeddedLC(lc)
+	order := [4]enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}
+	for _, strict := range []bool{false, true} {
+		a := layer2.EmbeddedLCAssembler{Strict: strict}
+		for round := range 2 {
+			for i, f := range frags {
+				got, res, done, err := a.Add(f, order[i])
+				if err != nil || done != (i == 3) {
+					t.Fatalf("strict %t round %d fragment %d: done %t err %v", strict, round, i, done, err)
+				}
+				if done && (got != lc || res.HasErrors()) {
+					t.Fatalf("strict %t: LC %x %+v", strict, got, res)
+				}
+			}
+		}
+		if a.Reset(); a.Strict != strict {
+			t.Fatal("Reset changed Strict")
+		}
+	}
+
+	var a layer2.EmbeddedLCAssembler
+	if _, _, _, err := a.Add(frags[1], enums.LCSSContinuationFragment); err != nil {
+		t.Errorf("late entry Continuation: %v", err)
+	}
+	for _, bad := range []enums.LCSS{enums.LCSSLastFragment, enums.LCSSSingleFragment, enums.LCSS(7)} {
+		_, _, _, _ = a.Add(frags[0], enums.LCSSFirstFragment)
+		_, _, _, _ = a.Add(frags[1], enums.LCSSContinuationFragment)
+		if _, _, done, err := a.Add(frags[2], bad); done || !errors.Is(err, layer2.ErrEmbeddedLCSequence) {
+			t.Errorf("LCSS %d after two fragments: done %t err %v", bad, done, err)
+		}
+	}
+	_, _, _, _ = a.Add(frags[0], enums.LCSSFirstFragment)
+	if _, _, _, err := a.Add(frags[0], enums.LCSSFirstFragment); !errors.Is(err, layer2.ErrEmbeddedLCSequence) {
+		t.Errorf("second First: %v", err)
+	}
+	a.Reset()
+	for i := range 3 {
+		_, _, _, _ = a.Add(frags[i], order[i])
+	}
+	bad := frags[3]
+	bad[0] ^= 0xFF
+	bad[1] ^= 0xFF
+	if _, res, done, err := a.Add(bad, enums.LCSSLastFragment); !done || !res.Uncorrectable || !errors.Is(err, layer2.ErrEmbeddedLCUncorrectable) {
+		t.Errorf("damaged LC: done %t %+v %v", done, res, err)
+	}
 }
