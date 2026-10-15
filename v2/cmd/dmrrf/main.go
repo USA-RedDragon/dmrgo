@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -54,6 +55,8 @@ func runTX(args []string, w io.Writer) error {
 	group := fs.Bool("group", false, "send to a talkgroup instead of a radio")
 	wakeups := fs.Int("wakeups", 3, "wakeup CSBKs before the data")
 	msg := fs.String("msg", "DMRGO TEST", "message text")
+	repeat := fs.Float64("repeat", 0, "repeat the sequence, padded to whole 60 ms frames, for this many seconds")
+	stretch := fs.Float64("stretch", 0, "slow the symbol clock by this many ppm so repeats sweep across the repeater's slot timing")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -72,9 +75,17 @@ func runTX(args []string, w io.Writer) error {
 			return err
 		}
 		fm, env := Modulate(bursts, Schedule{Slot: *slot})
-		iq = ToIQ(fm, env, *rate, corr, *level)
+		if *repeat > 0 {
+			fm, env = padToFrames(fm, env)
+		}
+		iq = ToIQ(fm, env, *rate*(1+*stretch*1e-6), corr, *level)
 		fmt.Fprintf(w, "sequence %s: %d bursts, %.2f s, slot %d, cc %d, %d -> %d, offset %+.0f Hz\n",
 			*seq, len(bursts), float64(len(fm))/basebandRate, *slot, *cc, *src, *dst, corr)
+		if *repeat > 0 {
+			n := max(1, int(*repeat**rate*2/float64(len(iq))))
+			iq = bytes.Repeat(iq, n)
+			fmt.Fprintf(w, "repeated %d times (%.1f s), stretch %.0f ppm\n", n, float64(len(iq))/2 / *rate, *stretch)
+		}
 	}
 	if err := os.WriteFile(*out, iq, 0o600); err != nil {
 		return err

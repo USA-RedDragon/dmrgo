@@ -32,12 +32,25 @@ Build once: `go build -o dmrrf ./cmd/dmrrf` from the `v2` directory.
 5. On the DMRHub host, capture IPSC: `sudo tcpdump -i any -w ipsc.pcap udp port <IPSC port>`.
 6. Start a monitor of the repeater output: `rtl_sdr -f <TXF> -s 2048000 rep-out.cu8` (stop it with Ctrl-C afterwards).
 7. Transmit to the repeater input, rate 1/2 first because its IPSC layout is known and proves the path:
-   `./dmrrf tx -seq data12 -freq <RXF> -ppm <P> -cc <CC> -bs <RID> -src <ID> -dst <ID> -o d12.iq`
+   `./dmrrf tx -seq data12 -slot 0 -wakeups 1 -repeat 270 -stretch 120 -freq <RXF> -ppm <P> -cc <CC> -bs <RID> -src <ID> -dst <ID> -o d12.iq`
    `hackrf_transfer -t d12.iq -f <RXF> -s 2000000 -a 0 -x <gain>`
-   Raise `<gain>` from 0 in small steps until `./dmrrf rx -i rep-out.cu8 -freq <TXF>` shows the repeater repeating the bursts.
-8. Repeat with `-seq data34` and `-seq data1`. If the repeater does not respond, try `-slot 1`, more `-wakeups`, or `-group -dst <talkgroup>`.
+   Raise `<gain>` from 0 in small steps until the repeater keys up (it sends IPSC opcode 0x85 when an over-the-air wakeup wakes it).
+8. Repeat with `-seq data34` and `-seq data1`.
 9. Keep `ipsc.pcap`, the `rx` outputs and the exact `tx` command lines; they are what the IPSC layout gets derived from.
 
 Notes:
-- Inbound TDMA timing: an idle repeater should accept the first wakeup and data bursts without alignment, but this is not verified. If it ignores them, the `rx` timing of its outbound bursts is the starting point for aligning.
+- Inbound TDMA timing: an idle repeater accepts an unaligned wakeup, but after it wakes it only decodes bursts that line up with its own slot timing. A half-duplex HackRF cannot follow that timing, so `-repeat` with `-stretch` sends the sequence again and again while the slow symbol clock moves the bursts across the slot. At 120 ppm, each 0.18 s repetition moves about 0.1 symbol, and 270 s cover a whole 30 ms slot. Repetitions that land far from the slot centre still pass the sync but arrive with bit errors.
+- `-slot 0` keeps every burst of a repetition in one timeslot. With `-slot -1` the header and its blocks alternate timeslots and the repeater does not join them.
+- Step 2 matters: an RTL-SDR Blog V3 measured 3 ppm high here, and calibrating the HackRF against it alone put the signal 1.4 kHz low.
+
+What a MOTOTRBO XPR 8400 sends on IPSC for confirmed MS data (opcode 0x84, captured 2026-10-15):
+
+| Block | Burst type (byte 30) | Bit count (bytes 36-37) | Payload from byte 38 |
+|-------|----------------------|-------------------------|----------------------|
+| Data header | 0x06 | 0x0060 | the 12 decoded octets |
+| Rate 1/2 block | 0x07 | 0x0060 | the 12 decoded octets, as on air |
+| Rate 3/4 block | 0x08 | 0x0090 | the 18 decoded octets with the 2 DBSN and CRC-9 octets moved from the start to the end |
+| Undecodable block | 0x1F | 0x00C4 | the raw 196 information bits (burst bits 0 to 97, then 166 to 263) |
+
+This repeater does not handle rate 1: a clean rate 1 block goes out as a 0x06 packet with a meaningless 96-bit BPTC decode, and a marginal one as 0x1F raw bits.
 - Operate within your license, on frequencies you are authorized to use, and identify your station as your rules require; the DMR bursts carry only your radio ID.
