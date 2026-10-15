@@ -67,9 +67,17 @@ func TestFeatureSetIDFromInt_ValidValues(t *testing.T) {
 }
 
 func TestFeatureSetIDFromInt_InvalidValue(t *testing.T) {
-	_, err := FeatureSetIDFromInt(0xFF)
+	fsid, err := FeatureSetIDFromInt(0xFF)
 	if err == nil {
 		t.Error("FeatureSetIDFromInt(0xFF) should return error")
+	}
+	if fsid != 0xFF {
+		t.Errorf("FeatureSetIDFromInt(0xFF) = %d, want the raw value", fsid)
+	}
+	for _, v := range []int{-1, 256} {
+		if _, err := FeatureSetIDFromInt(v); err == nil {
+			t.Errorf("FeatureSetIDFromInt(%d) should return error", v)
+		}
 	}
 }
 

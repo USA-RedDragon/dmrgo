@@ -1,6 +1,9 @@
 package enums
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 // ETSI TS 102 361-1 - 9.3.5  Feature set ID (FID)
 //
@@ -71,44 +74,33 @@ func FeatureSetIDToName(fsid FeatureSetID) string {
 	return fmt.Sprintf("Unknown FeatureSetID: %d", fsid)
 }
 
+// FeatureSetIDFromInt converts i to a FeatureSetID. Unknown values in 0-255 are returned
+// as-is with a non-nil error so callers can keep the raw value.
 func FeatureSetIDFromInt(i int) (FeatureSetID, error) {
-	switch FeatureSetID(i) {
-	case StandardizedFID:
-		return StandardizedFID, nil
-	case FlydeMicroLtd:
-		return FlydeMicroLtd, nil
-	case ProdElSpa:
-		return ProdElSpa, nil
-	case TridentMicroSystems:
-		return TridentMicroSystems, nil
-	case RadiodataGmbh:
-		return RadiodataGmbh, nil
-	case HytScienceTech:
-		return HytScienceTech, nil
-	case AselsanElektronik:
-		return AselsanElektronik, nil
-	case KirisunCommunications:
-		return KirisunCommunications, nil
-	case DmrAssociationLtd:
-		return DmrAssociationLtd, nil
-	case MotorolaLtd:
-		return MotorolaLtd, nil
-	case ElectronicMarketingCompany:
-		return ElectronicMarketingCompany, nil
-	case ElectronicMarketingCompany2:
-		return ElectronicMarketingCompany2, nil
-	case JvcKenwood:
-		return JvcKenwood, nil
-	case RadioActivity:
-		return RadioActivity, nil
-	case RadioActivity2:
-		return RadioActivity2, nil
-	case TaitElectronicsLtd:
-		return TaitElectronicsLtd, nil
-	case HytScienceTech2:
-		return HytScienceTech2, nil
-	case VertexStandard:
-		return VertexStandard, nil
+	if i < 0 || i > math.MaxUint8 {
+		return 0, fmt.Errorf("feature set id out of range: %d", i)
 	}
-	return StandardizedFID, fmt.Errorf("unknown feature set id: %d", i)
+	v := FeatureSetID(i)
+	switch v {
+	case StandardizedFID,
+		FlydeMicroLtd,
+		ProdElSpa,
+		TridentMicroSystems,
+		RadiodataGmbh,
+		HytScienceTech,
+		AselsanElektronik,
+		KirisunCommunications,
+		DmrAssociationLtd,
+		MotorolaLtd,
+		ElectronicMarketingCompany,
+		ElectronicMarketingCompany2,
+		JvcKenwood,
+		RadioActivity,
+		RadioActivity2,
+		TaitElectronicsLtd,
+		HytScienceTech2,
+		VertexStandard:
+		return v, nil
+	}
+	return v, fmt.Errorf("unknown feature set id: %d", i)
 }

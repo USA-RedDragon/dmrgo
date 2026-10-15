@@ -1,6 +1,9 @@
 package enums
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 type FLCO byte
 
@@ -37,24 +40,23 @@ func FLCOToName(flco FLCO) string {
 	return "Unknown"
 }
 
+// FLCOFromInt converts i to a FLCO. Unknown values in 0-255 are returned
+// as-is with a non-nil error so callers can keep the raw value.
 func FLCOFromInt(i int) (FLCO, error) {
-	switch FLCO(i) {
-	case FLCOGroupVoiceChannelUser:
-		return FLCOGroupVoiceChannelUser, nil
-	case FLCOUnitToUnitVoiceChannelUser:
-		return FLCOUnitToUnitVoiceChannelUser, nil
-	case FLCOTalkerAliasHeader:
-		return FLCOTalkerAliasHeader, nil
-	case FLCOTalkerAliasBlock1:
-		return FLCOTalkerAliasBlock1, nil
-	case FLCOTalkerAliasBlock2:
-		return FLCOTalkerAliasBlock2, nil
-	case FLCOTalkerAliasBlock3:
-		return FLCOTalkerAliasBlock3, nil
-	case FLCOGPSInfo:
-		return FLCOGPSInfo, nil
-	case FLCOTerminatorDataLinkControl:
-		return FLCOTerminatorDataLinkControl, nil
+	if i < 0 || i > math.MaxUint8 {
+		return 0, fmt.Errorf("FLCO value out of range: %d", i)
 	}
-	return 0, fmt.Errorf("invalid FLCO value: %d", i)
+	v := FLCO(i)
+	switch v {
+	case FLCOGroupVoiceChannelUser,
+		FLCOUnitToUnitVoiceChannelUser,
+		FLCOTalkerAliasHeader,
+		FLCOTalkerAliasBlock1,
+		FLCOTalkerAliasBlock2,
+		FLCOTalkerAliasBlock3,
+		FLCOGPSInfo,
+		FLCOTerminatorDataLinkControl:
+		return v, nil
+	}
+	return v, fmt.Errorf("invalid FLCO value: %d", i)
 }

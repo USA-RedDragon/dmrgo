@@ -57,8 +57,19 @@ func TestFLCOFromInt_ValidValues(t *testing.T) {
 func TestFLCOFromInt_InvalidValue(t *testing.T) {
 	invalidValues := []int{1, 2, 9, 100, 255}
 	for _, v := range invalidValues {
-		_, err := FLCOFromInt(v)
+		flco, err := FLCOFromInt(v)
 		if err == nil {
+			t.Errorf("FLCOFromInt(%d) should have returned error", v)
+		}
+		if int(flco) != v {
+			t.Errorf("FLCOFromInt(%d) = %d, want the raw value", v, flco)
+		}
+	}
+}
+
+func TestFLCOFromInt_OutOfRange(t *testing.T) {
+	for _, v := range []int{-1, 256} {
+		if _, err := FLCOFromInt(v); err == nil {
 			t.Errorf("FLCOFromInt(%d) should have returned error", v)
 		}
 	}
