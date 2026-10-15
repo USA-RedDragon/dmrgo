@@ -64,7 +64,7 @@ func run(w io.Writer, dataDir string) error {
 	r := xorshift(2)
 	f := framer.New(framer.Config{Threshold: -1, CACH: true})
 	chans := [2]*channel{{name: "TS1"}, {name: "TS2"}}
-	cc := uint8(colorCode)
+	cc := enums.ColorCode(colorCode)
 	opts := layer2.DecodeOptions{ColorCode: &cc}
 	var b layer2.Burst
 	n, first := 0, int64(-1)

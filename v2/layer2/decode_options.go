@@ -36,7 +36,7 @@ type DecodeOptions struct {
 	// returns ErrColorCodeMismatch when the slot type or EMB of the burst
 	// carries another one. A voice burst A carries no color code and is not
 	// checked.
-	ColorCode *uint8
+	ColorCode *enums.ColorCode
 	// Kind is the burst kind, when the caller knows it from outside the
 	// burst, for example from TDMA timing or a network header. A known kind
 	// overrides the classification by the SYNC field. KindData takes the
@@ -91,11 +91,11 @@ func (b *Burst) nearestSync(candidates []enums.SyncPattern) (enums.SyncPattern, 
 	return best, bestDistance
 }
 
-func (b *Burst) checkColorCode(want *uint8) error {
+func (b *Burst) checkColorCode(want *enums.ColorCode) error {
 	if want == nil {
 		return nil
 	}
-	var got uint8
+	var got enums.ColorCode
 	switch {
 	case b.Kind == KindData:
 		got = b.SlotType.ColorCode

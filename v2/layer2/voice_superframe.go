@@ -101,7 +101,7 @@ func SyncSourceOf(p enums.SyncPattern) (src SyncSource, k Kind, ok bool) {
 // 60 ms gets one burst to send in each of its time slots. A
 // VoiceTransmitter is not safe for concurrent use.
 type VoiceTransmitter struct {
-	colorCode  uint8
+	colorCode  enums.ColorCode
 	voiceSync  enums.SyncPattern
 	outbound   bool
 	header     [33]byte
@@ -127,9 +127,9 @@ type VoiceTransmitter struct {
 // with its FID, and lc.BurstDataType is ignored. silence is the 72-bit slot that
 // pads the last superframe; it is codec specific, for AMBE the
 // vocoder.EncodeAMBE72 of a silence frame. NewVoiceTransmitter returns an
-// error when colorCode does not fit in 4 bits, source is unknown or lc does
-// not encode. It is NewVoiceTransmitterWithOptions with only these options.
-func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode uint8, source SyncSource, silence [72]bit.Bit) (*VoiceTransmitter, error) {
+// error when source is unknown or lc does not encode. It is
+// NewVoiceTransmitterWithOptions with only these options.
+func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode enums.ColorCode, source SyncSource, silence [72]bit.Bit) (*VoiceTransmitter, error) {
 	return NewVoiceTransmitterWithOptions(VoiceTransmitterOptions{
 		LC:        lc,
 		ColorCode: colorCode,
@@ -138,7 +138,7 @@ func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode uint8, source SyncSou
 	})
 }
 
-func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode uint8, src SyncSource) ([33]byte, error) {
+func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) ([33]byte, error) {
 	lc.BurstDataType = dataType
 	bits, err := lc.Encode()
 	if err != nil {

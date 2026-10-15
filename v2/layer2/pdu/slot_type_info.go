@@ -14,18 +14,13 @@ import (
 type SlotTypeInfo byte
 
 // ColorCode returns the 4-bit Colour Code, the high 4 bits.
-func (s SlotTypeInfo) ColorCode() uint8 {
-	return uint8(s >> 4)
+func (s SlotTypeInfo) ColorCode() enums.ColorCode {
+	return enums.ColorCode(s >> 4)
 }
 
-// SetColorCode writes cc into the high 4 bits. It returns false, and
-// changes nothing, when cc does not fit in 4 bits.
-func (s *SlotTypeInfo) SetColorCode(cc uint8) bool {
-	if cc>>4 != 0 {
-		return false
-	}
+// SetColorCode writes the low 4 bits of cc into the high 4 bits.
+func (s *SlotTypeInfo) SetColorCode(cc enums.ColorCode) {
 	*s = *s&0x0F | SlotTypeInfo(cc<<4)
-	return true
 }
 
 // DataType returns the Data Type, the low 4 bits.
@@ -48,14 +43,13 @@ func (s SlotTypeInfo) SlotType() SlotType {
 	return SlotType{ColorCode: s.ColorCode(), DataType: s.DataType()}
 }
 
-// Info returns the information bits of s as a SlotTypeInfo. It returns the
-// errors that Encode returns for the fields.
-func (s *SlotType) Info() (SlotTypeInfo, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return 0, err
-	}
-	return SlotTypeInfo(bit.Uint(bits[:8])), nil //nolint:gosec // 8 bits
+// Info returns the information bits of s as a SlotTypeInfo: the low 4 bits
+// of the color code and of the data type.
+func (s *SlotType) Info() SlotTypeInfo {
+	var i SlotTypeInfo
+	i.SetColorCode(s.ColorCode)
+	i.SetDataType(s.DataType & 0x0F)
+	return i
 }
 
 // Codeword returns the 20-bit Golay(20,8) codeword of s (§B.3.1) in the low
@@ -75,6 +69,5 @@ func DecodeSlotTypeCodeword(cw uint32) (SlotTypeInfo, fec.Result) {
 	var bits [20]bit.Bit
 	bit.PutUint(bits[:], uint64(cw))
 	st := DecodeSlotType(bits)
-	s, _ := st.Info()
-	return s, st.FEC
+	return st.Info(), st.FEC
 }

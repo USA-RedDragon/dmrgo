@@ -39,7 +39,7 @@ func ExampleNewBurstFromBytes() {
 }
 
 func ExampleBurst_DecodeFromBytesWith() {
-	cc := uint8(7)
+	cc := enums.ColorCode(7)
 	var b layer2.Burst
 	err := b.DecodeFromBytesWith(voiceLCHeader(), layer2.DecodeOptions{ColorCode: &cc})
 	fmt.Println(errors.Is(err, layer2.ErrColorCodeMismatch), err)

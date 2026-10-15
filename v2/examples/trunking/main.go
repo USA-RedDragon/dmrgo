@@ -31,7 +31,7 @@ func buildBurst(bits [96]bit.Bit, dt enums.DataType, src layer2.SyncSource) (lay
 
 func decodeAs[T layer2.Data](raw layer2.RawBurst) (T, *layer2.Burst, error) {
 	var zero T
-	cc := uint8(colorCode)
+	cc := enums.ColorCode(colorCode)
 	var b layer2.Burst
 	if err := b.DecodeFromBytesWith(raw, layer2.DecodeOptions{ColorCode: &cc}); err != nil {
 		return zero, nil, err

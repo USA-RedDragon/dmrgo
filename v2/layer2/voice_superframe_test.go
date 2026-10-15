@@ -60,7 +60,7 @@ func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType e
 	if b.Kind != layer2.KindData || b.SyncPattern != sync || b.SyncDistance != 0 {
 		t.Fatalf("IsData=%v SyncPattern=%s", (b.Kind == layer2.KindData), b.SyncPattern.String())
 	}
-	if b.SlotType.DataType != dataType || b.SlotType.ColorCode != uint8(cc) || b.SlotType.FEC.HasErrors() {
+	if b.SlotType.DataType != dataType || b.SlotType.ColorCode != enums.ColorCode(cc) || b.SlotType.FEC.HasErrors() {
 		t.Fatalf("slot type %s", b.SlotType.String())
 	}
 	got, ok := b.Data.(*pdu.FullLinkControl)
@@ -97,7 +97,7 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 		return b
 	}
 	emb := b.EmbeddedSignalling
-	if !b.HasEmbeddedSignalling() || emb.FEC.HasErrors() || emb.ColorCode != uint8(cc) || emb.PreemptionAndPowerControlIndicator {
+	if !b.HasEmbeddedSignalling() || emb.FEC.HasErrors() || emb.ColorCode != enums.ColorCode(cc) || emb.PreemptionAndPowerControlIndicator {
 		t.Fatalf("burst %d: %s", i, b.String())
 	}
 	wantLCSS := []enums.LCSS{0, enums.LCSSFirstFragment, enums.LCSSContinuationFragment,
@@ -266,8 +266,13 @@ func TestVoiceTransmitter_Terminate(t *testing.T) {
 
 func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
-	if _, err := layer2.NewVoiceTransmitter(lc, 16, layer2.SyncSourceBS, silenceSlot()); err == nil {
-		t.Error("color code 16 accepted")
+	tx := must(layer2.NewVoiceTransmitter(lc, 0x17, layer2.SyncSourceBS, silenceSlot()))
+	bursts := append([][33]byte{tx.Header()}, must(tx.AddSlots(make([][72]bit.Bit, 6)...))...)
+	if st := layer2.RawBurst(bursts[0]).SlotType(); st.ColorCode != 7 {
+		t.Errorf("color code 0x17: header carries %d, want the low 4 bits 7", st.ColorCode)
+	}
+	if emb := layer2.RawBurst(bursts[2]).EMB(); emb.ColorCode != 7 {
+		t.Errorf("color code 0x17: burst B carries %d, want the low 4 bits 7", emb.ColorCode)
 	}
 	if _, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSource(4), silenceSlot()); err == nil {
 		t.Error("sync source 4 accepted")

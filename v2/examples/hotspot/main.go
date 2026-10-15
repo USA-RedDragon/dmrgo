@@ -87,7 +87,7 @@ type rxStats struct {
 func receive(captured [][33]byte) (rxStats, error) {
 	var s rxStats
 	var rx layer2.VoiceReceiver
-	cc := uint8(colorCode)
+	cc := enums.ColorCode(colorCode)
 	for _, clean := range captured {
 		p := clean
 		f, a := addRFErrors(&p)
