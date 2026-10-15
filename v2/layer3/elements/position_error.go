@@ -33,7 +33,7 @@ func PositionErrorToName(pe PositionError) string {
 	case PositionErrorUnknown:
 		return "PositionErrorUnknown"
 	default:
-		return "Unknown"
+		return unknownName
 	}
 }
 

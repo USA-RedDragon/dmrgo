@@ -1,5 +1,7 @@
 package elements
 
+const unknownName = "Unknown"
+
 // ETSI TS 102 361-2 - 7.2.5 Source Type
 type SourceType uint8
 
@@ -15,7 +17,7 @@ func SourceTypeToName(st SourceType) string {
 	case SourceTypeMS:
 		return "MS"
 	default:
-		return "Unknown"
+		return unknownName
 	}
 }
 

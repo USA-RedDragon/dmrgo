@@ -15,7 +15,7 @@ func AdditionalInformationFieldToName(ai AdditionalInformationField) string {
 	case AdditionalInfoValid:
 		return "Valid"
 	default:
-		return "Unknown"
+		return unknownName
 	}
 }
 

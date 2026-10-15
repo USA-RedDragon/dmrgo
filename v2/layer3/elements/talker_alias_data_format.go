@@ -21,6 +21,6 @@ func TalkerAliasDataFormatToName(ta TalkerAliasDataFormat) string {
 	case UTF16Characters:
 		return "UTF-16 BE"
 	default:
-		return "Unknown"
+		return unknownName
 	}
 }
