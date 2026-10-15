@@ -64,8 +64,8 @@ type T struct {
 }`)
 	assertContains(t, out,
 		"bit.Mask(data[:])",
-		"result.A = Wide(bit.BitsToUint16(data[:], 2, 12))",
-		"bit.BitsFromUint16(uint16(s.A), 12)",
+		"result.A = Wide(bit.Uint(data[2:14]))",
+		"bit.PutUint(data[2:14], uint64(s.A))",
 	)
 }
 
@@ -138,10 +138,10 @@ type T struct {
 	D int    `+"`dmr:\"bits:52-59\"`"+`
 }`)
 	assertContains(t, out,
-		"result.A = int(int32(bit.BitsToUint32(data[:], 0, 12)<<20) >> 20)",
-		"result.B = Offset(int32(bit.BitsToUint32(data[:], 12, 8)<<24) >> 24)",
-		"result.C = int32(int32(bit.BitsToUint32(data[:], 20, 32)))",
-		"result.D = bit.BitsToInt(data[:], 52, 8)",
+		"result.A = int(int32(uint32(bit.Uint(data[0:12]))<<20) >> 20)",
+		"result.B = Offset(int32(uint32(bit.Uint(data[12:20]))<<24) >> 24)",
+		"result.C = int32(int32(uint32(bit.Uint(data[20:52]))))",
+		"result.D = int(bit.Uint(data[52:60]))",
 	)
 }
 
@@ -151,11 +151,11 @@ func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
 	Lat float64 `+"`dmr:\"bits:25-48,type:latitude\"`"+`
 }`)
 	assertContains(t, out,
-		"result.Lon = float64(int32(bit.BitsToUint32(data[:], 0, 25)<<7)>>7) * 360.0 / (1 << 25)",
-		"result.Lat = float64(int32(bit.BitsToUint32(data[:], 25, 24)<<8)>>8) * 180.0 / (1 << 24)",
+		"result.Lon = float64(int32(uint32(bit.Uint(data[0:25]))<<7)>>7) * 360.0 / (1 << 25)",
+		"result.Lat = float64(int32(uint32(bit.Uint(data[25:49]))<<8)>>8) * 180.0 / (1 << 24)",
 		"if !(s.Lon >= -180.0 && s.Lon <= 180.0) {",
 		"_rawLon := math.Round(s.Lon * (1 << 25) / 360.0)",
-		"copy(data[0:25], bit.BitsFromUint32(uint32(int32(_rawLon)), 25))",
+		"bit.PutUint(data[0:25], uint64(int64(_rawLon)))",
 		"if !(s.Lat >= -90.0 && s.Lat <= 90.0) {",
 		"_rawLat := math.Round(s.Lat * (1 << 24) / 180.0)",
 		"_rawLat = min(_rawLat, 8388607)",
@@ -176,17 +176,17 @@ type T struct {
 }`)
 	assertContains(t, out,
 		"_tmpU <<= 3",
-		"result.U = _tmpU",
+		"result.U = uint8(_tmpU)",
 		"result.I = int(_tmpI)",
 		"result.S = int(int32(uint32(_tmpS)<<28) >> 28)",
 		"result.E = Kind(_tmpE)",
 		"result.D = Wrapped(_tmpD)",
-		"_valI := uint8(s.I)",
-		"copy(data[1:2], bit.BitsFromUint8(_valI>>3, 1))",
-		"copy(data[10:13], bit.BitsFromUint8(_valS, 3))",
-		"copy(data[3:4], bit.BitsFromUint8(_valE>>3, 1))",
-		"_valD := uint16(s.D)",
-		"copy(data[16:24], bit.BitsFromUint16(_valD>>4, 8))",
+		"_valI := uint64(s.I)",
+		"bit.PutUint(data[1:2], _valI>>3)",
+		"bit.PutUint(data[10:13], _valS)",
+		"bit.PutUint(data[3:4], _valE>>3)",
+		"_valD := uint64(s.D)",
+		"bit.PutUint(data[16:24], _valD>>4)",
 	)
 }
 
@@ -233,7 +233,7 @@ type T struct {
 		`{"A", s.A != nil}`,
 		`{"B", s.B != nil}`,
 		`return [24]bit.Bit{}, fmt.Errorf("T: %s and %s are both set", _payload, _p.name)`,
-		"\tif _payload != \"\" {\n\t\tvar result T\n\t\tresult.Op = bit.BitsToUint8(data[:], 0, 8)\n\t\tresult.FID = bit.BitsToUint8(data[:], 8, 8)\n\t\tresult.Mode = s.Mode\n\t\t_want := \"Raw\"",
+		"\tif _payload != \"\" {\n\t\tvar result T\n\t\tresult.Op = uint8(bit.Uint(data[0:8]))\n\t\tresult.FID = uint8(bit.Uint(data[8:16]))\n\t\tresult.Mode = s.Mode\n\t\t_want := \"Raw\"",
 		"\t\t\t\tif result.Mode {\n\t\t\t\t\t_want = \"A\"\n\t\t\t\t}",
 		"\t\t\tcase 2:\n\t\t\t\t_want = \"B\"",
 		`return [24]bit.Bit{}, fmt.Errorf("T.%s is set, but Op, FID and Mode select %s", _payload, _want)`,
@@ -277,7 +277,7 @@ type T struct {
 		`return [60]bit.Bit{}, fmt.Errorf("T.Kid: %w", err)`,
 		"return data, nil",
 	)
-	if strings.Contains(out, "uint64(s.Full)") {
+	if strings.Contains(out, "uint64(s.Full)>>") {
 		t.Error("a uint8 in an 8-bit field cannot overflow and needs no check")
 	}
 }
@@ -294,10 +294,10 @@ type T struct {
 	B uint8 `+"`dmr:\"bits:12-15\"`"+`
 }`)
 	assertContains(t, out,
-		"copy(data[0:4], bit.BitsFromUint8(uint8(FormatX), 4))",
-		"_const1 := uint8(9)",
-		"copy(data[4:6], bit.BitsFromUint8(_const1>>2, 2))",
-		"copy(data[10:12], bit.BitsFromUint8(_const1, 2))",
+		"bit.PutUint(data[0:4], uint64(FormatX))",
+		"_const1 := uint64(9)",
+		"bit.PutUint(data[4:6], _const1>>2)",
+		"bit.PutUint(data[10:12], _const1)",
 	)
 }
 

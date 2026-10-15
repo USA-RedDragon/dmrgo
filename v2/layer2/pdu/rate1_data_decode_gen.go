@@ -19,14 +19,14 @@ func DecodeRate1Data(data [192]bit.Bit) (Rate1Data, fec.Result) {
 	var result Rate1Data
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	copy(result.Data[:], bit.PackBits(data[0:192]))
+	copy(result.Data[:], bit.Pack(data[0:192]))
 	return result, fecResult
 }
 
 // Encode encodes a Rate1Data per ETSI TS 102 361-1 - 9.2.15 Rate 1 coded packet Data (R_1_DATA) PDU
 func (s *Rate1Data) Encode() ([192]bit.Bit, error) {
 	var data [192]bit.Bit
-	copy(data[0:192], bit.UnpackBits(s.Data[:]))
+	copy(data[0:192], bit.Unpack(s.Data[:]))
 	return data, nil
 }
 

@@ -39,10 +39,10 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.Result) {
 	}
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.LastBlock = bit.BitsToBool(data[:], 0)
-	result.ProtectFlag = bit.BitsToBool(data[:], 1)
-	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
-	result.FID = bit.BitsToUint8(data[:], 8, 8)
+	result.LastBlock = data[0] == 1
+	result.ProtectFlag = data[1] == 1
+	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+	result.FID = byte(bit.Uint(data[8:16]))
 	copy(result.Data[:], data[16:80])
 	return result, fecResult
 }
@@ -59,8 +59,8 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 	if uint64(s.CSBKOpcode)>>6 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("MBCHeader.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.FID), 8))
+	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
+	bit.PutUint(data[8:16], uint64(s.FID))
 	copy(data[16:80], s.Data[:])
 	var _encBytes [10]byte
 	for i := range 10 {
@@ -92,7 +92,7 @@ func DecodeMBCContinuation(data [96]bit.Bit) (MBCContinuation, fec.Result) {
 	var result MBCContinuation
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.LastBlock = bit.BitsToBool(data[:], 0)
+	result.LastBlock = data[0] == 1
 	copy(result.Data[:], data[1:96])
 	return result, fecResult
 }
@@ -128,13 +128,13 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
 	}
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.LastBlock = bit.BitsToBool(data[:], 0)
-	result.ProtectFlag = bit.BitsToBool(data[:], 1)
-	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
-	result.Reserved1 = bit.BitsToUint8(data[:], 8, 4)
-	result.ColourCode = bit.BitsToUint8(data[:], 12, 4)
-	result.Cdeftype = bit.BitsToUint8(data[:], 16, 4)
-	result.Reserved2 = bit.BitsToUint8(data[:], 20, 2)
+	result.LastBlock = data[0] == 1
+	result.ProtectFlag = data[1] == 1
+	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+	result.Reserved1 = uint8(bit.Uint(data[8:12]))
+	result.ColourCode = uint8(bit.Uint(data[12:16]))
+	result.Cdeftype = uint8(bit.Uint(data[16:20]))
+	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	copy(result.CdefParms[:], data[22:80])
 	return result, fecResult
 }
@@ -151,23 +151,23 @@ func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
 	if uint64(s.CSBKOpcode)>>6 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
+	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
 	if uint64(s.Reserved1)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
 	}
-	copy(data[8:12], bit.BitsFromUint8(s.Reserved1, 4))
+	bit.PutUint(data[8:12], uint64(s.Reserved1))
 	if uint64(s.ColourCode)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
 	}
-	copy(data[12:16], bit.BitsFromUint8(s.ColourCode, 4))
+	bit.PutUint(data[12:16], uint64(s.ColourCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
 	}
-	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
+	bit.PutUint(data[16:20], uint64(s.Cdeftype))
 	if uint64(s.Reserved2)>>2 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
 	}
-	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
+	bit.PutUint(data[20:22], uint64(s.Reserved2))
 	copy(data[22:80], s.CdefParms[:])
 	var _encBytes [10]byte
 	for i := range 10 {
@@ -209,13 +209,13 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
 	}
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.LastBlock = bit.BitsToBool(data[:], 0)
-	result.ProtectFlag = bit.BitsToBool(data[:], 1)
-	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
-	result.Reserved1 = bit.BitsToUint8(data[:], 8, 4)
-	result.ColourCode = bit.BitsToUint8(data[:], 12, 4)
-	result.Cdeftype = bit.BitsToUint8(data[:], 16, 4)
-	result.Reserved2 = bit.BitsToUint8(data[:], 20, 2)
+	result.LastBlock = data[0] == 1
+	result.ProtectFlag = data[1] == 1
+	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+	result.Reserved1 = uint8(bit.Uint(data[8:12]))
+	result.ColourCode = uint8(bit.Uint(data[12:16]))
+	result.Cdeftype = uint8(bit.Uint(data[16:20]))
+	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	copy(result.CdefParms[:], data[22:80])
 	return result, fecResult
 }
@@ -232,23 +232,23 @@ func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
 	if uint64(s.CSBKOpcode)>>6 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
+	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
 	if uint64(s.Reserved1)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
 	}
-	copy(data[8:12], bit.BitsFromUint8(s.Reserved1, 4))
+	bit.PutUint(data[8:12], uint64(s.Reserved1))
 	if uint64(s.ColourCode)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
 	}
-	copy(data[12:16], bit.BitsFromUint8(s.ColourCode, 4))
+	bit.PutUint(data[12:16], uint64(s.ColourCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
 	}
-	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
+	bit.PutUint(data[16:20], uint64(s.Cdeftype))
 	if uint64(s.Reserved2)>>2 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
 	}
-	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
+	bit.PutUint(data[20:22], uint64(s.Reserved2))
 	copy(data[22:80], s.CdefParms[:])
 	var _encBytes [10]byte
 	for i := range 10 {
@@ -290,12 +290,12 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.Result) {
 	}
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.LastBlock = bit.BitsToBool(data[:], 0)
-	result.ProtectFlag = bit.BitsToBool(data[:], 1)
-	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
-	result.Reserved1 = bit.BitsToUint8(data[:], 8, 8)
-	result.Cdeftype = bit.BitsToUint8(data[:], 16, 4)
-	result.Reserved2 = bit.BitsToUint8(data[:], 20, 2)
+	result.LastBlock = data[0] == 1
+	result.ProtectFlag = data[1] == 1
+	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+	result.Reserved1 = byte(bit.Uint(data[8:16]))
+	result.Cdeftype = uint8(bit.Uint(data[16:20]))
+	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	copy(result.CdefParms[:], data[22:80])
 	return result, fecResult
 }
@@ -312,16 +312,16 @@ func (s *BCAPContinuation) Encode() ([96]bit.Bit, error) {
 	if uint64(s.CSBKOpcode)>>6 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.Reserved1), 8))
+	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
+	bit.PutUint(data[8:16], uint64(s.Reserved1))
 	if uint64(s.Cdeftype)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
 	}
-	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
+	bit.PutUint(data[16:20], uint64(s.Cdeftype))
 	if uint64(s.Reserved2)>>2 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
 	}
-	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
+	bit.PutUint(data[20:22], uint64(s.Reserved2))
 	copy(data[22:80], s.CdefParms[:])
 	var _encBytes [10]byte
 	for i := range 10 {
@@ -363,13 +363,13 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
 	}
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.LastBlock = bit.BitsToBool(data[:], 0)
-	result.ProtectFlag = bit.BitsToBool(data[:], 1)
-	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
-	result.Reserved1 = bit.BitsToUint8(data[:], 8, 4)
-	result.ColourCode = bit.BitsToUint8(data[:], 12, 4)
-	result.Cdeftype = bit.BitsToUint8(data[:], 16, 4)
-	result.Reserved2 = bit.BitsToUint8(data[:], 20, 2)
+	result.LastBlock = data[0] == 1
+	result.ProtectFlag = data[1] == 1
+	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+	result.Reserved1 = uint8(bit.Uint(data[8:12]))
+	result.ColourCode = uint8(bit.Uint(data[12:16]))
+	result.Cdeftype = uint8(bit.Uint(data[16:20]))
+	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	copy(result.CdefParms[:], data[22:80])
 	return result, fecResult
 }
@@ -386,23 +386,23 @@ func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
 	if uint64(s.CSBKOpcode)>>6 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
+	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
 	if uint64(s.Reserved1)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
 	}
-	copy(data[8:12], bit.BitsFromUint8(s.Reserved1, 4))
+	bit.PutUint(data[8:12], uint64(s.Reserved1))
 	if uint64(s.ColourCode)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
 	}
-	copy(data[12:16], bit.BitsFromUint8(s.ColourCode, 4))
+	bit.PutUint(data[12:16], uint64(s.ColourCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
 	}
-	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
+	bit.PutUint(data[16:20], uint64(s.Cdeftype))
 	if uint64(s.Reserved2)>>2 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
 	}
-	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
+	bit.PutUint(data[20:22], uint64(s.Reserved2))
 	copy(data[22:80], s.CdefParms[:])
 	var _encBytes [10]byte
 	for i := range 10 {

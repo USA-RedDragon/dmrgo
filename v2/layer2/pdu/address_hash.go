@@ -11,5 +11,7 @@ import (
 // Table 6.79. It is the CRC-8 of ETSI TS 102 361-1 §B.3.7 over the 24
 // address bits, MSB first. Bits above bit 23 of id are ignored.
 func AddressHash(id uint32) uint8 {
-	return crc.CalculateCRC8(bit.BitsFromUint32(id&0xFFFFFF, 24))
+	var bits [24]bit.Bit
+	bit.PutUint(bits[:], uint64(id))
+	return crc.CalculateCRC8(bits[:])
 }

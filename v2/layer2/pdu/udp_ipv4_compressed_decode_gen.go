@@ -19,49 +19,49 @@ func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) (UDPIPv4CompressedHeader, f
 	var result UDPIPv4CompressedHeader
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.IPv4Identification = bit.BitsToUint16(data[:], 0, 16)
-	result.SAID = bit.BitsToUint8(data[:], 16, 4)
-	result.DAID = bit.BitsToUint8(data[:], 20, 4)
-	var _tmpHeaderCompressionOpcode uint8
-	_tmpHeaderCompressionOpcode = bit.BitsToUint8(data[:], 24, 1)
+	result.IPv4Identification = uint16(bit.Uint(data[0:16]))
+	result.SAID = uint8(bit.Uint(data[16:20]))
+	result.DAID = uint8(bit.Uint(data[20:24]))
+	var _tmpHeaderCompressionOpcode uint64
+	_tmpHeaderCompressionOpcode = bit.Uint(data[24:25])
 	_tmpHeaderCompressionOpcode <<= 1
-	_tmpHeaderCompressionOpcode |= bit.BitsToUint8(data[:], 32, 1)
-	result.HeaderCompressionOpcode = _tmpHeaderCompressionOpcode
-	result.SPID = bit.BitsToUint8(data[:], 25, 7)
-	result.DPID = bit.BitsToUint8(data[:], 33, 7)
-	result.ExtendedHeader1 = bit.BitsToUint16(data[:], 40, 16)
-	result.ExtendedHeader2 = bit.BitsToUint16(data[:], 56, 16)
+	_tmpHeaderCompressionOpcode |= bit.Uint(data[32:33])
+	result.HeaderCompressionOpcode = uint8(_tmpHeaderCompressionOpcode)
+	result.SPID = uint8(bit.Uint(data[25:32]))
+	result.DPID = uint8(bit.Uint(data[33:40]))
+	result.ExtendedHeader1 = uint16(bit.Uint(data[40:56]))
+	result.ExtendedHeader2 = uint16(bit.Uint(data[56:72]))
 	return result, fecResult
 }
 
 // Encode encodes a UDPIPv4CompressedHeader per ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header
 func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
 	var data [72]bit.Bit
-	copy(data[0:16], bit.BitsFromUint16(s.IPv4Identification, 16))
+	bit.PutUint(data[0:16], uint64(s.IPv4Identification))
 	if uint64(s.SAID)>>4 != 0 {
 		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.SAID: value %d does not fit in 4 bits", s.SAID)
 	}
-	copy(data[16:20], bit.BitsFromUint8(s.SAID, 4))
+	bit.PutUint(data[16:20], uint64(s.SAID))
 	if uint64(s.DAID)>>4 != 0 {
 		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.DAID: value %d does not fit in 4 bits", s.DAID)
 	}
-	copy(data[20:24], bit.BitsFromUint8(s.DAID, 4))
+	bit.PutUint(data[20:24], uint64(s.DAID))
 	if uint64(s.HeaderCompressionOpcode)>>2 != 0 {
 		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.HeaderCompressionOpcode: value %d does not fit in 2 bits", s.HeaderCompressionOpcode)
 	}
-	_valHeaderCompressionOpcode := s.HeaderCompressionOpcode
-	copy(data[24:25], bit.BitsFromUint8(_valHeaderCompressionOpcode>>1, 1))
-	copy(data[32:33], bit.BitsFromUint8(_valHeaderCompressionOpcode, 1))
+	_valHeaderCompressionOpcode := uint64(s.HeaderCompressionOpcode)
+	bit.PutUint(data[24:25], _valHeaderCompressionOpcode>>1)
+	bit.PutUint(data[32:33], _valHeaderCompressionOpcode)
 	if uint64(s.SPID)>>7 != 0 {
 		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.SPID: value %d does not fit in 7 bits", s.SPID)
 	}
-	copy(data[25:32], bit.BitsFromUint8(s.SPID, 7))
+	bit.PutUint(data[25:32], uint64(s.SPID))
 	if uint64(s.DPID)>>7 != 0 {
 		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.DPID: value %d does not fit in 7 bits", s.DPID)
 	}
-	copy(data[33:40], bit.BitsFromUint8(s.DPID, 7))
-	copy(data[40:56], bit.BitsFromUint16(s.ExtendedHeader1, 16))
-	copy(data[56:72], bit.BitsFromUint16(s.ExtendedHeader2, 16))
+	bit.PutUint(data[33:40], uint64(s.DPID))
+	bit.PutUint(data[40:56], uint64(s.ExtendedHeader1))
+	bit.PutUint(data[56:72], uint64(s.ExtendedHeader2))
 	return data, nil
 }
 

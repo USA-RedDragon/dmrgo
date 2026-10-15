@@ -12,7 +12,7 @@ import (
 
 func talkerAliasLC() pdu.FullLinkControl {
 	var data [48]bit.Bit
-	copy(data[:], bit.UnpackBits([]byte("KI5VMF")))
+	copy(data[:], bit.Unpack([]byte("KI5VMF")))
 	return pdu.FullLinkControl{
 		FLCO:         enums.FLCOTalkerAliasHeader,
 		FeatureSetID: enums.FIDStandardized,

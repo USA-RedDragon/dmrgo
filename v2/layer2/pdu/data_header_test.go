@@ -574,7 +574,7 @@ func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 		for i := range 80 {
 			bits[i] = bit.Bit((i*5 + 1) / 3 % 2)
 		}
-		copy(bits[4:8], bit.BitsFromUint8(0b0100, 4))
+		bit.PutUint(bits[4:8], uint64(0b0100))
 	})
 	dh, fecResult := pdu.DecodeDataHeader(in)
 	if fecResult.Uncorrectable {
@@ -617,7 +617,7 @@ func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", format.String(), err)
 		}
-		if got := pdu.Format(bit.BitsToUint8(bits[:], 4, 4)); got != format {
+		if got := pdu.Format(uint8(bit.Uint(bits[4 : 4+4]))); got != format {
 			t.Errorf("%s: Format bits = %d, want %d", format.String(), got, format)
 		}
 	}
@@ -625,10 +625,10 @@ func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 
 func TestStatusPrecodedEncoderClearsAppendedBlocks(t *testing.T) {
 	bits := must((&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}).Encode())
-	if got := pdu.Format(bit.BitsToUint8(bits[:], 4, 4)); got != pdu.FormatShortDataRawOrStatusPrecoded {
+	if got := pdu.Format(uint8(bit.Uint(bits[4 : 4+4]))); got != pdu.FormatShortDataRawOrStatusPrecoded {
 		t.Errorf("Format bits = %d, want %d", got, pdu.FormatShortDataRawOrStatusPrecoded)
 	}
-	if ab := bit.BitsToUint8(bits[:], 2, 2)<<4 | bit.BitsToUint8(bits[:], 12, 4); ab != 0 {
+	if ab := uint8(bit.Uint(bits[2:2+2]))<<4 | uint8(bit.Uint(bits[12:12+4])); ab != 0 {
 		t.Errorf("Appended Blocks = %d, want 0 (ETSI TS 102 361-1 Table 9.17A)", ab)
 	}
 }

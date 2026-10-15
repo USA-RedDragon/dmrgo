@@ -80,7 +80,7 @@ func (s SysCode) NetSite() ([12]bit.Bit, error) {
 	if err != nil {
 		return out, err
 	}
-	copy(out[:], bit.BitsFromUint16(v&0xFFF, 12))
+	bit.PutUint(out[:], uint64(v&0xFFF))
 	return out, nil
 }
 
@@ -102,7 +102,7 @@ func UnpackSysCode14(v uint16) SysCode {
 }
 
 func sysCodeFromShortLC(model uint8, netSite [12]bit.Bit) SysCode {
-	return UnpackSysCode14(uint16(model&3)<<12 | bit.BitsToUint16(netSite[:], 0, 12))
+	return UnpackSysCode14(uint16(model&3)<<12 | uint16(bit.Uint(netSite[:12])))
 }
 
 // SysCode returns the MODEL, NET and SITE carried in the C_SYS_Parms.

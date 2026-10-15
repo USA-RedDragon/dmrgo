@@ -19,12 +19,12 @@ func DecodeServiceOptions(data [8]bit.Bit) (ServiceOptions, fec.Result) {
 	var result ServiceOptions
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.IsEmergency = bit.BitsToBool(data[:], 0)
-	result.IsPrivacy = bit.BitsToBool(data[:], 1)
+	result.IsEmergency = data[0] == 1
+	result.IsPrivacy = data[1] == 1
 	copy(result.Reserved[:], data[2:4])
-	result.IsBroadcast = bit.BitsToBool(data[:], 4)
-	result.IsOpenVoiceCallMode = bit.BitsToBool(data[:], 5)
-	result.PriorityLevel = bit.BitsToUint8(data[:], 6, 2)
+	result.IsBroadcast = data[4] == 1
+	result.IsOpenVoiceCallMode = data[5] == 1
+	result.PriorityLevel = uint8(bit.Uint(data[6:8]))
 	return result, fecResult
 }
 
@@ -47,7 +47,7 @@ func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 	if uint64(s.PriorityLevel)>>2 != 0 {
 		return [8]bit.Bit{}, fmt.Errorf("ServiceOptions.PriorityLevel: value %d does not fit in 2 bits", s.PriorityLevel)
 	}
-	copy(data[6:8], bit.BitsFromUint8(s.PriorityLevel, 2))
+	bit.PutUint(data[6:8], uint64(s.PriorityLevel))
 	return data, nil
 }
 

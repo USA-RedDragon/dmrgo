@@ -42,7 +42,7 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.Result) {
 	var fecResult fec.Result
 
 	// Extract RC command (bits 0-3)
-	result.RCCommand = enums.RCCommand(bit.BitsToUint8(infoBits[:], 0, 4))
+	result.RCCommand = enums.RCCommand(uint8(bit.Uint(infoBits[:4])))
 
 	// CRC-7 verification with mask 0x7A (Table B.21)
 	if !crc.CheckCRC7(infoBits[:], CRC7MaskRC) {
@@ -64,7 +64,7 @@ func (rc *ReverseChannel) Encode() ([11]bit.Bit, error) {
 	}
 
 	// RC command (bits 0-3, MSB-first)
-	copy(bits[0:4], bit.BitsFromUint8(uint8(rc.RCCommand), 4))
+	bit.PutUint(bits[0:4], uint64(uint8(rc.RCCommand)))
 
 	// CRC-7 with mask 0x7A
 	crcVal := crc.CalculateCRC7(bits[:4]) ^ CRC7MaskRC

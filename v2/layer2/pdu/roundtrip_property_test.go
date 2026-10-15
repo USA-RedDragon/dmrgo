@@ -27,7 +27,7 @@ func randomPayload(rng *rand.Rand, n int) []byte {
 func withCRC(data []byte, mask uint16) [96]bit.Bit {
 	c := crc.CalculateCRCCCITT(data) ^ mask
 	var out [96]bit.Bit
-	copy(out[:], bit.UnpackBits(append(append([]byte{}, data...), byte(c>>8), byte(c))))
+	copy(out[:], bit.Unpack(append(append([]byte{}, data...), byte(c>>8), byte(c))))
 	return out
 }
 
@@ -38,7 +38,7 @@ func withRS(t *testing.T, data []byte, mask uint32) [96]bit.Bit {
 	cw[10] ^= byte(mask >> 8)
 	cw[11] ^= byte(mask)
 	var out [96]bit.Bit
-	copy(out[:], bit.UnpackBits(cw[:]))
+	copy(out[:], bit.Unpack(cw[:]))
 	return out
 }
 

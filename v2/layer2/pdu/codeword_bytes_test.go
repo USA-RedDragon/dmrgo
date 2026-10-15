@@ -139,7 +139,7 @@ func TestFullLCCodeword_RealCapture(t *testing.T) {
 			t.Errorf("dt %d: generated decoder reports %+v", tt.dt, res)
 		}
 		enc := must(flc.Encode())
-		if hex.EncodeToString(bit.PackBits(enc[:])) != tt.want {
+		if hex.EncodeToString(bit.Pack(enc[:])) != tt.want {
 			t.Errorf("dt %d: generated encoder disagrees", tt.dt)
 		}
 		other := enums.DataTypeVoiceLCHeader
@@ -202,7 +202,7 @@ func TestSealBlock_MatchesGeneratedEncoders(t *testing.T) {
 	}
 	for _, tt := range tests {
 		var b [12]byte
-		copy(b[:], bit.PackBits(tt.bits[:]))
+		copy(b[:], bit.Pack(tt.bits[:]))
 		if !pdu.BlockCRCOK(b, tt.dt) {
 			t.Errorf("dt %d: BlockCRCOK rejects generated block %x", tt.dt, b)
 		}

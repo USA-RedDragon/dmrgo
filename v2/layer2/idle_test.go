@@ -35,7 +35,7 @@ func TestIdleMessageInfo_PackedHex(t *testing.T) {
 		0x4E, 0xD1, 0xE7, 0xCD, 0x8A, 0x91,
 	}
 	info := layer2.IdleMessageInfo()
-	packed := bit.PackBits(info[:])
+	packed := bit.Pack(info[:])
 	if len(packed) != 12 {
 		t.Fatalf("Packed length = %d, want 12", len(packed))
 	}
@@ -89,7 +89,7 @@ func TestIdleMessageFECMatrix_MatchesInfoBits(t *testing.T) {
 	}
 	want := layer2.IdleMessageInfo()
 	if info != want {
-		t.Errorf("FEC matrix info bits = %X, want %X", bit.PackBits(info[:]), bit.PackBits(want[:]))
+		t.Errorf("FEC matrix info bits = %X, want %X", bit.Pack(info[:]), bit.Pack(want[:]))
 	}
 }
 

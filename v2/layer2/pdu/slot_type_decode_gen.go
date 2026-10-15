@@ -25,8 +25,8 @@ func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.Result) {
 	if !fecResult.Uncorrectable {
 		data = corrected
 	}
-	result.ColorCode = bit.BitsToInt(data[:], 0, 4)
-	result.DataType = enums.DataType(bit.BitsToUint8(data[:], 4, 4))
+	result.ColorCode = int(bit.Uint(data[0:4]))
+	result.DataType = enums.DataType(bit.Uint(data[4:8]))
 	return result, fecResult
 }
 
@@ -36,11 +36,11 @@ func (s *SlotType) Encode() ([20]bit.Bit, error) {
 	if uint64(s.ColorCode)>>4 != 0 {
 		return [20]bit.Bit{}, fmt.Errorf("SlotType.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
 	}
-	copy(data[0:4], bit.BitsFromUint8(uint8(s.ColorCode), 4))
+	bit.PutUint(data[0:4], uint64(s.ColorCode))
 	if uint64(s.DataType)>>4 != 0 {
 		return [20]bit.Bit{}, fmt.Errorf("SlotType.DataType: value %d does not fit in 4 bits", s.DataType)
 	}
-	copy(data[4:8], bit.BitsFromUint8(uint8(s.DataType), 4))
+	bit.PutUint(data[4:8], uint64(s.DataType))
 	return golay.Encode2087(data), nil
 }
 

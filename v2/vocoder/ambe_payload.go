@@ -16,14 +16,14 @@ func PackAMBEVoice(frames [3]AMBEFrame) [19]byte {
 		copy(bits[k*50:k*50+49], f[:])
 	}
 	var data [19]byte
-	copy(data[:], bit.PackBits(bits[:]))
+	copy(data[:], bit.Pack(bits[:]))
 	return data
 }
 
 // UnpackAMBEVoice is the reverse of PackAMBEVoice. It ignores the bits that
 // carry no frame bits.
 func UnpackAMBEVoice(data [19]byte) [3]AMBEFrame {
-	bits := bit.UnpackBits(data[:])
+	bits := bit.Unpack(data[:])
 	var frames [3]AMBEFrame
 	for k := range frames {
 		copy(frames[k][:], bits[k*50:k*50+49])

@@ -40,7 +40,7 @@ func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
 	}
 
 	encBits := must(flc.Encode())
-	encoded := bit.PackBits(encBits[:])
+	encoded := bit.Pack(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
@@ -71,7 +71,7 @@ func TestBuildDataBurst_Terminator(t *testing.T) {
 	}
 
 	encBits := must(flc.Encode())
-	encoded := bit.PackBits(encBits[:])
+	encoded := bit.Pack(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
@@ -98,7 +98,7 @@ func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
 	}
 
 	encBits := must(flc.Encode())
-	encoded := bit.PackBits(encBits[:])
+	encoded := bit.Pack(encBits[:])
 
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)

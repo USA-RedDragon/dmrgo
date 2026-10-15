@@ -19,15 +19,10 @@ const (
 	qrPkg        = "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
 	encodeFnName = "Encode"
 
-	typUint8     = "uint8"
-	typUint16    = "uint16"
-	typUint32    = "uint32"
-	fnToUint8    = "BitsToUint8"
-	fnToUint16   = "BitsToUint16"
-	fnToUint32   = "BitsToUint32"
-	fnFromUint8  = "BitsFromUint8"
-	fnFromUint16 = "BitsFromUint16"
-	fnFromUint32 = "BitsFromUint32"
+	typUint8  = "uint8"
+	typUint16 = "uint16"
+	typUint32 = "uint32"
+	typUint64 = "uint64"
 
 	bitPkg = "github.com/USA-RedDragon/dmrgo/v2/bit"
 	fecPkg = "github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -823,56 +818,25 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	switch field.Kind {
 	case parse.FieldBool:
-		// result.FieldName = bit.BitsToBool(data[:], bitStart)
-		g.Add(target).Op("=").Qual(bitPkg, "BitsToBool").Call(
-			Id("data").Index(Empty(), Empty()),
-			Lit(field.BitStart),
-		)
+		g.Add(target).Op("=").Id("data").Index(Lit(field.BitStart)).Op("==").Lit(1)
 
-	case parse.FieldUint:
-		// Choose the right bit extraction function based on width
-		fn := bitExtractFunc(field.BitWidth)
-		call := Qual(bitPkg, fn).Call(
-			Id("data").Index(Empty(), Empty()),
-			Lit(field.BitStart),
-			Lit(field.BitEnd-field.BitStart+1),
-		)
-		if needsCast(fn, field.GoType) {
-			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(call)
-		} else {
-			g.Add(target).Op("=").Add(call)
-		}
+	case parse.FieldUint, parse.FieldEnum:
+		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
 
 	case parse.FieldInt:
 		if field.Signed {
-			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(signExtend(field, contiguousUint32(field)))
+			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(signExtend(field, Uint32().Call(readUint(field))))
 			break
 		}
-		call := Qual(bitPkg, "BitsToInt").Call(
-			Id("data").Index(Empty(), Empty()),
-			Lit(field.BitStart),
-			Lit(field.BitWidth),
-		)
-		if field.GoType == "int" {
-			g.Add(target).Op("=").Add(call)
-		} else {
-			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(call)
-		}
-
-	case parse.FieldEnum:
-		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(Qual(bitPkg, bitExtractFunc(field.BitWidth)).Call(
-			Id("data").Index(Empty(), Empty()),
-			Lit(field.BitStart),
-			Lit(field.BitWidth),
-		))
+		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
 
 	case parse.FieldRaw:
 		// Copy bits into a fixed-size array
 		g.Copy(target.Clone().Index(Empty(), Empty()), Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)))
 
 	case parse.FieldPacked:
-		// Pack bits into bytes using bit.PackBits
-		packed := Qual(bitPkg, "PackBits").Call(
+		// Pack bits into bytes using bit.Pack
+		packed := Qual(bitPkg, "Pack").Call(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
 		)
 		if isFixedArray(field.GoType) {
@@ -913,14 +877,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			)
 		case field.DelegateNoPtr:
 			// noptr delegates are integer typedefs: extract and convert
-			fn := bitExtractFunc(field.BitWidth)
-			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(
-				Qual(bitPkg, fn).Call(
-					Id("data").Index(Empty(), Empty()),
-					Lit(field.BitStart),
-					Lit(field.BitWidth),
-				),
-			)
+			g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
 		default:
 			// Struct delegate: call generated DecodeXxx function
 			decodeFnName := "Decode" + field.TypeName
@@ -941,7 +898,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	case parse.FieldLongitude, parse.FieldLatitude:
 		// Two's complement value scaled by span/2^width (ETSI TS 102 361-2 7.2.16/7.2.17)
-		g.Add(target).Op("=").Float64().Call(signExtend(field, contiguousUint32(field))).
+		g.Add(target).Op("=").Float64().Call(signExtend(field, Uint32().Call(readUint(field)))).
 			Op("*").Lit(coordSpan(field)).Op("/").Parens(Lit(1).Op("<<").Lit(field.BitWidth))
 
 	case parse.FieldDispatch:
@@ -1321,7 +1278,7 @@ func (e encoder) field(g *Group, field parse.Field) {
 	case parse.FieldPacked:
 		g.Copy(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			Qual(bitPkg, "UnpackBits").Call(source.Clone().Index(Empty(), Empty())),
+			Qual(bitPkg, "Unpack").Call(source.Clone().Index(Empty(), Empty())),
 		)
 
 	case parse.FieldDelegate:
@@ -1368,12 +1325,9 @@ func (e encoder) field(g *Group, field parse.Field) {
 		if field.Kind == parse.FieldLatitude {
 			g.Id(raw).Op("=").Min(Id(raw), Lit(half-1))
 		}
-		g.Copy(
+		g.Qual(bitPkg, "PutUint").Call(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			Qual(bitPkg, fnFromUint32).Call(
-				Uint32().Call(Int32().Call(Id(raw))),
-				Lit(field.BitWidth),
-			),
+			Uint64().Call(Int64().Call(Id(raw))),
 		)
 
 	case parse.FieldDispatch:
@@ -1398,47 +1352,44 @@ func (e encoder) integer(g *Group, field parse.Field) {
 		)
 	}
 
-	fn := bitStoreFunc(w)
-	storeBits(g, field.Ranges(), w, castToStoreFuncType(source.Clone(), field.GoType, fn), "_val"+field.Name)
+	value := source.Clone()
+	if field.GoType != typUint64 {
+		value = Uint64().Call(value)
+	}
+	storeBits(g, field.Ranges(), value, "_val"+field.Name)
 }
 
 // constant encodes a dmr:const directive.
 func (e encoder) constant(g *Group, c parse.ConstDirective, idx int) {
-	fn := bitStoreFunc(c.Width)
 	var value *Statement
 	if n, err := strconv.ParseUint(c.Value, 0, 64); err == nil {
-		value = Add(storeParamType(fn)).Call(Id(strconv.FormatUint(n, 10)))
+		value = Uint64().Call(Id(strconv.FormatUint(n, 10)))
 	} else {
-		value = Add(storeParamType(fn)).Call(emitDispatchConstant(c.Value, e.pdu))
+		value = Uint64().Call(emitDispatchConstant(c.Value, e.pdu))
 	}
-	storeBits(g, c.Ranges, c.Width, value, fmt.Sprintf("_const%d", idx))
+	storeBits(g, c.Ranges, value, fmt.Sprintf("_const%d", idx))
 }
 
-// storeBits stores a width-bit value MSB-first across ranges. A
+// storeBits stores the uint64 value MSB-first across ranges. A
 // non-contiguous value goes through the temporary variable tmp.
-func storeBits(g *Group, ranges [][2]int, w int, value *Statement, tmp string) {
-	fn := bitStoreFunc(w)
+func storeBits(g *Group, ranges [][2]int, value *Statement, tmp string) {
 	if len(ranges) == 1 {
-		g.Copy(
-			Id("data").Index(Lit(ranges[0][0]), Lit(ranges[0][1]+1)),
-			Qual(bitPkg, fn).Call(value, Lit(w)),
-		)
+		g.Qual(bitPkg, "PutUint").Call(Id("data").Index(Lit(ranges[0][0]), Lit(ranges[0][1]+1)), value)
 		return
 	}
 
 	g.Id(tmp).Op(":=").Add(value)
-	remaining := w
+	remaining := 0
 	for _, r := range ranges {
-		segWidth := r[1] - r[0] + 1
-		remaining -= segWidth
+		remaining += r[1] - r[0] + 1
+	}
+	for _, r := range ranges {
+		remaining -= r[1] - r[0] + 1
 		seg := Id(tmp)
 		if remaining > 0 {
 			seg = Id(tmp).Op(">>").Lit(remaining)
 		}
-		g.Copy(
-			Id("data").Index(Lit(r[0]), Lit(r[1]+1)),
-			Qual(bitPkg, fn).Call(seg, Lit(segWidth)),
-		)
+		g.Qual(bitPkg, "PutUint").Call(Id("data").Index(Lit(r[0]), Lit(r[1]+1)), seg)
 	}
 }
 
@@ -1473,49 +1424,24 @@ func needsRangeCheck(field parse.Field) bool {
 // It accumulates segments in a temp variable: extract first range, shift left, OR next range, etc.
 func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	tmpName := "_tmp" + field.Name
-	fn := bitExtractFunc(field.BitWidth)
-	firstWidth := field.BitEnd - field.BitStart + 1
-
-	// var _tmpField uint8 (using the extract function's natural type)
-	switch fn {
-	case fnToUint8:
-		g.Var().Id(tmpName).Uint8()
-	case fnToUint16:
-		g.Var().Id(tmpName).Uint16()
-	default:
-		g.Var().Id(tmpName).Uint32()
-	}
-
-	// _tmpField = BitsToUintN(data[:], firstStart, firstWidth)
-	g.Id(tmpName).Op("=").Qual(bitPkg, fn).Call(
-		Id("data").Index(Empty(), Empty()),
-		Lit(field.BitStart),
-		Lit(firstWidth),
-	)
-
-	// For each extra range: shift left by extra width, then OR the extracted bits
-	for _, r := range field.ExtraBitRanges {
-		extraWidth := r[1] - r[0] + 1
-		g.Id(tmpName).Op("<<=").Lit(extraWidth)
-		g.Id(tmpName).Op("|=").Qual(bitPkg, fn).Call(
-			Id("data").Index(Empty(), Empty()),
-			Lit(r[0]),
-			Lit(extraWidth),
-		)
+	g.Var().Id(tmpName).Uint64()
+	for i, r := range field.Ranges() {
+		read := Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(r[0]), Lit(r[1]+1)))
+		if i == 0 {
+			g.Id(tmpName).Op("=").Add(read)
+			continue
+		}
+		g.Id(tmpName).Op("<<=").Lit(r[1] - r[0] + 1)
+		g.Id(tmpName).Op("|=").Add(read)
 	}
 
 	target := Id("result").Dot(field.Name)
 	tmp := Id(tmpName)
-	switch {
-	case field.Kind == parse.FieldEnum:
-		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(tmp)
-	case field.Signed:
+	if field.Signed {
 		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(signExtend(field, Uint32().Call(tmp)))
-	case needsCast(fn, field.GoType):
-		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(tmp)
-	default:
-		g.Add(target).Op("=").Add(tmp)
+		return
 	}
+	g.Add(target).Op("=").Add(castUint(field, pdu, tmp))
 }
 
 // Helper functions
@@ -1527,13 +1453,17 @@ func maskBytes(mask uint16) (byte, byte) {
 	return b[0], b[1]
 }
 
-// contiguousUint32 reads a contiguous field as a uint32.
-func contiguousUint32(field parse.Field) *Statement {
-	return Qual(bitPkg, fnToUint32).Call(
-		Id("data").Index(Empty(), Empty()),
-		Lit(field.BitStart),
-		Lit(field.BitWidth),
-	)
+// readUint reads a contiguous field as a uint64.
+func readUint(field parse.Field) *Statement {
+	return Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)))
+}
+
+// castUint converts the uint64 expression v to the type of field.
+func castUint(field parse.Field, pdu parse.PDUStruct, v *Statement) *Statement {
+	if field.GoType == typUint64 {
+		return v
+	}
+	return qualType(field, pdu).Call(v)
 }
 
 // signExtend converts a width-bit two's complement value held in a uint32
@@ -1559,65 +1489,6 @@ func coordRaw(field parse.Field, value *Statement) *Statement {
 	return Qual("math", "Round").Call(
 		value.Op("*").Parens(Lit(1).Op("<<").Lit(field.BitWidth)).Op("/").Lit(coordSpan(field)),
 	)
-}
-
-func bitExtractFunc(width int) string {
-	switch {
-	case width <= 8:
-		return fnToUint8
-	case width <= 16:
-		return fnToUint16
-	default:
-		return fnToUint32
-	}
-}
-
-func bitStoreFunc(width int) string {
-	switch {
-	case width <= 8:
-		return fnFromUint8
-	case width <= 16:
-		return fnFromUint16
-	default:
-		return fnFromUint32
-	}
-}
-
-func storeParamType(fn string) *Statement {
-	switch fn {
-	case fnFromUint8:
-		return Uint8()
-	case fnFromUint16:
-		return Uint16()
-	default:
-		return Uint32()
-	}
-}
-
-func castToStoreFuncType(expr *Statement, goType, fn string) *Statement {
-	expected := map[string]string{
-		fnFromUint8:  typUint8,
-		fnFromUint16: typUint16,
-		fnFromUint32: typUint32,
-	}
-	if goType == expected[fn] {
-		return expr
-	}
-	return Add(storeParamType(fn)).Call(expr)
-}
-
-func needsCast(extractFn, goType string) bool {
-	switch extractFn {
-	case fnToUint8:
-		return goType != typUint8 && goType != "byte"
-	case fnToUint16:
-		return goType != typUint16
-	case fnToUint32:
-		return goType != typUint32
-	case "BitsToInt":
-		return goType != "int"
-	}
-	return false
 }
 
 // inputParamName converts a dmr:input field name to its Decode parameter name.

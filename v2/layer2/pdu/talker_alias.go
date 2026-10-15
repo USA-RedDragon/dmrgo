@@ -92,7 +92,7 @@ func DecodeTalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBl
 	length := min(header.TalkerAliasDataLength, len(stream)/unit)
 	units := make([]uint16, length)
 	for i := range units {
-		units[i] = bit.BitsToUint16(stream, i*unit, unit)
+		units[i] = uint16(bit.Uint(stream[i*unit : (i*unit)+unit]))
 	}
 	return talkerAliasString(format, units)
 }
@@ -164,7 +164,7 @@ func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]Ful
 	n := TalkerAliasBlocks(format, len(units))
 	stream := make([]bit.Bit, headerBits+n*talkerAliasBlockBits)
 	for i, u := range units {
-		copy(stream[i*unit:], bit.BitsFromUint16(u, unit))
+		bit.PutUint(stream[i*unit:(i+1)*unit], uint64(u))
 	}
 	header := &FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: len(units)}
 	if format == layer3.TalkerAliasSevenBit {

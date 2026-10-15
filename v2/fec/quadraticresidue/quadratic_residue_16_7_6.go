@@ -87,7 +87,7 @@ func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
 // followed by 9 parity bits.
 func Encode(dataBits [7]bit.Bit) [16]bit.Bit {
 	var bits [16]bit.Bit
-	data := bit.BitsToUint8(dataBits[:], 0, 7)
+	data := uint8(bit.Uint(dataBits[:7]))
 
 	// Look up the packed 16-bit codeword from the encoding table.
 	// Table layout: bits 15..9 = data[0..6], bits 8..0 = parity[0..8].

@@ -11,7 +11,7 @@ import (
 func fragmentsFromBytes(b [4][4]byte) [4][32]bit.Bit {
 	var fr [4][32]bit.Bit
 	for i := range b {
-		copy(fr[i][:], bit.UnpackBits(b[i][:]))
+		copy(fr[i][:], bit.Unpack(b[i][:]))
 	}
 	return fr
 }
@@ -44,7 +44,7 @@ func TestEmbeddedLC_CapturedSuperframe(t *testing.T) {
 		cs = append(cs, r[10])
 	}
 	want := []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
-	got := bit.PackBits(lc)
+	got := bit.Pack(lc)
 	if string(got) != string(want) {
 		t.Errorf("LC % X, want % X", got, want)
 	}
@@ -52,7 +52,7 @@ func TestEmbeddedLC_CapturedSuperframe(t *testing.T) {
 	for _, b := range got {
 		sum += int(b)
 	}
-	if c := bit.BitsToInt(cs, 0, 5); c != sum%31 {
+	if c := int(bit.Uint(cs[:5])); c != sum%31 {
 		t.Errorf("checksum %d, want %d", c, sum%31)
 	}
 }

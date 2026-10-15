@@ -12,153 +12,76 @@ func TestReadersUseOnlyTheLowBit(t *testing.T) {
 	if want := []Bit{1, 0, 1, 0, 1, 0, 1, 0}; !slices.Equal(low, want) {
 		t.Fatalf("Mask = %v, want %v", low, want)
 	}
-	if BitsToUint8(raw, 0, 8) != BitsToUint8(low, 0, 8) ||
-		BitsToUint16(raw, 0, 8) != BitsToUint16(low, 0, 8) ||
-		BitsToUint32(raw, 0, 8) != BitsToUint32(low, 0, 8) ||
-		BitsToInt(raw, 0, 8) != BitsToInt(low, 0, 8) ||
-		BitsToValue(raw) != BitsToValue(low) ||
-		PackBits(raw)[0] != PackBits(low)[0] {
+	if Uint(raw) != Uint(low) || Pack(raw)[0] != Pack(low)[0] {
 		t.Error("a reader used more than the low bit")
-	}
-	for i := range raw {
-		if BitsToBool(raw, i) != BitsToBool(low, i) {
-			t.Errorf("BitsToBool(%#x) differs from its low bit", raw[i])
-		}
 	}
 	var raw264, low264 [264]Bit
 	copy(raw264[:], raw)
 	copy(low264[:], low)
-	if PackBits264(raw264) != PackBits264(low264) {
-		t.Error("PackBits264 used more than the low bit")
+	if Pack264(raw264) != Pack264(low264) {
+		t.Error("Pack264 used more than the low bit")
 	}
 }
 
-func TestBitsToUint8(t *testing.T) {
+func TestUint(t *testing.T) {
 	bits := []Bit{1, 0, 1, 1, 0, 0, 1, 0}
-	got := BitsToUint8(bits, 0, 8)
-	want := uint8(0b10110010)
-	if got != want {
-		t.Errorf("BitsToUint8 = %d, want %d", got, want)
+	if got := Uint(bits); got != 0b10110010 {
+		t.Errorf("Uint = %#b, want 0b10110010", got)
 	}
-
-	// Partial extraction
-	got = BitsToUint8(bits, 2, 4)
-	want = uint8(0b1100)
-	if got != want {
-		t.Errorf("BitsToUint8(partial) = %d, want %d", got, want)
+	if got := Uint(bits[2:6]); got != 0b1100 {
+		t.Errorf("Uint(partial) = %#b, want 0b1100", got)
 	}
-}
-
-func TestBitsToUint16(t *testing.T) {
-	// 0xABCD = 1010 1011 1100 1101
-	bits := make([]Bit, 16)
-	val := uint16(0xABCD)
-	for i := 0; i < 16; i++ {
-		bits[i] = Bit((val >> (15 - i)) & 1)
+	if got := Uint(nil); got != 0 {
+		t.Errorf("Uint(nil) = %d", got)
 	}
-	got := BitsToUint16(bits, 0, 16)
-	if got != val {
-		t.Errorf("BitsToUint16 = %04x, want %04x", got, val)
+	all := make([]Bit, 64)
+	for i := range all {
+		all[i] = 1
+	}
+	if got := Uint(all); got != ^uint64(0) {
+		t.Errorf("Uint(64 ones) = %#x", got)
 	}
 }
 
-func TestBitsToUint32(t *testing.T) {
-	bits := make([]Bit, 24)
-	val := uint32(0x123456)
-	for i := 0; i < 24; i++ {
-		bits[i] = Bit((val >> (23 - i)) & 1)
+func TestPutUint(t *testing.T) {
+	dst := make([]Bit, 10)
+	PutUint(dst[2:8], 0b101101)
+	if want := []Bit{0, 0, 1, 0, 1, 1, 0, 1, 0, 0}; !slices.Equal(dst, want) {
+		t.Errorf("PutUint = %v, want %v", dst, want)
 	}
-	got := BitsToUint32(bits, 0, 24)
-	if got != val {
-		t.Errorf("BitsToUint32 = %06x, want %06x", got, val)
+	PutUint(dst[:4], 0xFFF5)
+	if want := []Bit{0, 1, 0, 1}; !slices.Equal(dst[:4], want) {
+		t.Errorf("PutUint truncation = %v, want %v", dst[:4], want)
 	}
-}
-
-func TestBitsToInt(t *testing.T) {
-	bits := []Bit{1, 1, 0, 1}
-	got := BitsToInt(bits, 0, 4)
-	want := 0b1101
-	if got != want {
-		t.Errorf("BitsToInt = %d, want %d", got, want)
-	}
-}
-
-func TestBitsToBool(t *testing.T) {
-	bits := []Bit{0, 1, 0}
-	if BitsToBool(bits, 0) {
-		t.Error("expected false for bit 0")
-	}
-	if !BitsToBool(bits, 1) {
-		t.Error("expected true for bit 1")
-	}
-}
-
-func TestBitsFromUint8(t *testing.T) {
-	bits := BitsFromUint8(0b10110010, 8)
-	expected := []Bit{1, 0, 1, 1, 0, 0, 1, 0}
-	for i := range expected {
-		if bits[i] != expected[i] {
-			t.Errorf("BitsFromUint8[%d] = %d, want %d", i, bits[i], expected[i])
+	for _, v := range []uint64{0, 1, 0xDEADBEEF, ^uint64(0)} {
+		b := make([]Bit, 64)
+		PutUint(b, v)
+		if Uint(b) != v {
+			t.Errorf("Uint(PutUint(%#x)) = %#x", v, Uint(b))
 		}
 	}
 }
 
-func TestBitsFromUint16(t *testing.T) {
-	bits := BitsFromUint16(0xABCD, 16)
-	got := BitsToUint16(bits, 0, 16)
-	if got != 0xABCD {
-		t.Errorf("roundtrip failed: got %04x", got)
+func TestPackUnpack(t *testing.T) {
+	data := []byte{0xA5, 0x3C, 0x01}
+	bits := Unpack(data)
+	if len(bits) != 24 {
+		t.Fatalf("Unpack length %d", len(bits))
+	}
+	if got := Pack(bits); !slices.Equal(got, data) {
+		t.Errorf("Pack(Unpack) = %x, want %x", got, data)
+	}
+	if got := Pack([]Bit{1, 0, 1}); !slices.Equal(got, []byte{0xA0}) {
+		t.Errorf("Pack of a partial byte = %x, want a0", got)
 	}
 }
 
-func TestBitsFromUint32(t *testing.T) {
-	bits := BitsFromUint32(0x123456, 24)
-	got := BitsToUint32(bits, 0, 24)
-	if got != 0x123456 {
-		t.Errorf("roundtrip failed: got %06x", got)
-	}
-}
-
-func TestPackUnpackBits(t *testing.T) {
-	original := []Bit{1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1}
-	packed := PackBits(original)
-	if len(packed) != 2 {
-		t.Fatalf("expected 2 packed bytes, got %d", len(packed))
-	}
-	if packed[0] != 0xB2 || packed[1] != 0xC3 {
-		t.Errorf("packed = %02x %02x, want B2 C3", packed[0], packed[1])
-	}
-	unpacked := UnpackBits(packed)
-	if len(unpacked) != 16 {
-		t.Fatalf("expected 16 unpacked bits, got %d", len(unpacked))
-	}
-	for i := range original {
-		if unpacked[i] != original[i] {
-			t.Errorf("unpacked[%d] = %d, want %d", i, unpacked[i], original[i])
-		}
-	}
-}
-
-func TestUnpackBytesToBits264_PackBits264_Roundtrip(t *testing.T) {
+func TestPack264Unpack264(t *testing.T) {
 	var data [33]byte
-	data[0] = 0xAB
-	data[1] = 0xCD
-	data[32] = 0x12
-	bits := UnpackBytesToBits264(data)
-	packed := PackBits264(bits)
-	if packed != data {
-		t.Errorf("264-bit roundtrip failed")
+	for i := range data {
+		data[i] = byte(i * 7)
 	}
-}
-
-func TestPackBitsPartialByte(t *testing.T) {
-	bits := []Bit{1, 0, 1}
-	packed := PackBits(bits)
-	if len(packed) != 1 {
-		t.Fatalf("expected 1 byte, got %d", len(packed))
-	}
-	// 1 0 1 _ _ _ _ _ = 0xA0
-	if packed[0] != 0xA0 {
-		t.Errorf("packed = %02x, want A0", packed[0])
+	if got := Pack264(Unpack264(data)); got != data {
+		t.Errorf("Pack264(Unpack264) = %x, want %x", got, data)
 	}
 }

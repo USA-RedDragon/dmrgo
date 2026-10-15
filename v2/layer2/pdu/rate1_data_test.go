@@ -124,7 +124,8 @@ func TestRate1Data_Confirmed_CRC9Layout(t *testing.T) {
 	var rt pdu.Rate1Data
 	rt.SetConfirmed(3, user)
 
-	bits := append(bit.UnpackBits(user[:]), bit.BitsFromUint8(3, 7)...)
+	bits := append(bit.Unpack(user[:]), make([]bit.Bit, 7)...)
+	bit.PutUint(bits[len(bits)-7:], 3)
 	want := (crc.CalculateCRC9(bits) ^ 0x10F) & 0x1FF
 	if got := rt.ConfirmedCRC9(); got != want {
 		t.Errorf("ConfirmedCRC9() = 0x%03X, want 0x%03X", got, want)

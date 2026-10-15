@@ -22,14 +22,14 @@ func hexBits96(t *testing.T, s string) [96]bit.Bit {
 		t.Fatalf("bad hex %q", s)
 	}
 	var bits [96]bit.Bit
-	copy(bits[:], bit.UnpackBits(raw))
+	copy(bits[:], bit.Unpack(raw))
 	return bits
 }
 
 func packedFLC(t *testing.T, flc *pdu.FullLinkControl) []byte {
 	t.Helper()
 	bits := must(flc.Encode())
-	return bit.PackBits(bits[:])
+	return bit.Pack(bits[:])
 }
 
 // ETSI TS 102 361-1 B.3.12, Table B.21: the mask is XORed into the parity
@@ -111,6 +111,6 @@ func TestFLC_EncodeRealVoiceLCHeader(t *testing.T) {
 	want := hexBits96(t, realVoiceLCHeader)
 	flc, _ := pdu.DecodeFullLinkControl(want, enums.DataTypeVoiceLCHeader)
 	if got := must(flc.Encode()); got != want {
-		t.Errorf("FullLinkControl.Encode = %x, want %s", bit.PackBits(got[:]), realVoiceLCHeader)
+		t.Errorf("FullLinkControl.Encode = %x, want %s", bit.Pack(got[:]), realVoiceLCHeader)
 	}
 }

@@ -19,11 +19,11 @@ func DecodeCdefParms(data [58]bit.Bit) (CdefParms, fec.Result) {
 	var result CdefParms
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.Channel = bit.BitsToUint16(data[:], 0, 12)
-	result.TXMHz = bit.BitsToUint16(data[:], 12, 10)
-	result.TXKHz = bit.BitsToUint16(data[:], 22, 13)
-	result.RXMHz = bit.BitsToUint16(data[:], 35, 10)
-	result.RXKHz = bit.BitsToUint16(data[:], 45, 13)
+	result.Channel = uint16(bit.Uint(data[0:12]))
+	result.TXMHz = uint16(bit.Uint(data[12:22]))
+	result.TXKHz = uint16(bit.Uint(data[22:35]))
+	result.RXMHz = uint16(bit.Uint(data[35:45]))
+	result.RXKHz = uint16(bit.Uint(data[45:58]))
 	return result, fecResult
 }
 
@@ -33,23 +33,23 @@ func (s *CdefParms) Encode() ([58]bit.Bit, error) {
 	if uint64(s.Channel)>>12 != 0 {
 		return [58]bit.Bit{}, fmt.Errorf("CdefParms.Channel: value %d does not fit in 12 bits", s.Channel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.Channel, 12))
+	bit.PutUint(data[0:12], uint64(s.Channel))
 	if uint64(s.TXMHz)>>10 != 0 {
 		return [58]bit.Bit{}, fmt.Errorf("CdefParms.TXMHz: value %d does not fit in 10 bits", s.TXMHz)
 	}
-	copy(data[12:22], bit.BitsFromUint16(s.TXMHz, 10))
+	bit.PutUint(data[12:22], uint64(s.TXMHz))
 	if uint64(s.TXKHz)>>13 != 0 {
 		return [58]bit.Bit{}, fmt.Errorf("CdefParms.TXKHz: value %d does not fit in 13 bits", s.TXKHz)
 	}
-	copy(data[22:35], bit.BitsFromUint16(s.TXKHz, 13))
+	bit.PutUint(data[22:35], uint64(s.TXKHz))
 	if uint64(s.RXMHz)>>10 != 0 {
 		return [58]bit.Bit{}, fmt.Errorf("CdefParms.RXMHz: value %d does not fit in 10 bits", s.RXMHz)
 	}
-	copy(data[35:45], bit.BitsFromUint16(s.RXMHz, 10))
+	bit.PutUint(data[35:45], uint64(s.RXMHz))
 	if uint64(s.RXKHz)>>13 != 0 {
 		return [58]bit.Bit{}, fmt.Errorf("CdefParms.RXKHz: value %d does not fit in 13 bits", s.RXKHz)
 	}
-	copy(data[45:58], bit.BitsFromUint16(s.RXKHz, 13))
+	bit.PutUint(data[45:58], uint64(s.RXKHz))
 	return data, nil
 }
 

@@ -86,13 +86,13 @@ func TestMMDVMHostAccepts_MBCContinuation(t *testing.T) {
 	blocks := [][96]bit.Bit{last}
 	pdu.SetMBCLastBlockCRC(blocks)
 	var payload [12]byte
-	copy(payload[:], bit.PackBits(blocks[0][:]))
+	copy(payload[:], bit.Pack(blocks[0][:]))
 	if !layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, payload) {
 		t.Error("single continuation block rejected")
 	}
 	blocks = [][96]bit.Bit{first, last}
 	pdu.SetMBCLastBlockCRC(blocks)
-	copy(payload[:], bit.PackBits(blocks[1][:]))
+	copy(payload[:], bit.Pack(blocks[1][:]))
 	if !pdu.CheckMBCLastBlockCRC(blocks...) || layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, payload) {
 		t.Error("last of two continuation blocks accepted")
 	}

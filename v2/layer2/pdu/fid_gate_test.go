@@ -15,12 +15,12 @@ func buildCSBKBitsFID(opcode, fid byte, payload [64]bit.Bit) [96]bit.Bit {
 	var b [12]byte
 	b[0] = 0x80 | (opcode & 0x3F)
 	b[1] = fid
-	copy(b[2:10], bit.PackBits(payload[:]))
+	copy(b[2:10], bit.Pack(payload[:]))
 	c := crc.CalculateCRCCCITT(b[:10]) ^ 0xA5A5
 	b[10] = byte(c >> 8)
 	b[11] = byte(c & 0xFF)
 	var bits [96]bit.Bit
-	copy(bits[:], bit.UnpackBits(b[:]))
+	copy(bits[:], bit.Unpack(b[:]))
 	return bits
 }
 
@@ -154,7 +154,7 @@ func TestFLC_AddressesIgnoreFID(t *testing.T) {
 				lc[i] ^= 0x96
 			}
 			var infoBits [96]bit.Bit
-			copy(infoBits[:], bit.UnpackBits(lc[:]))
+			copy(infoBits[:], bit.Unpack(lc[:]))
 			flc, fecResult := pdu.DecodeFullLinkControl(infoBits, enums.DataTypeVoiceLCHeader)
 			if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
 				t.Fatalf("FEC = %+v", fecResult)

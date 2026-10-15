@@ -45,10 +45,10 @@ func DecodeShortLCActivityUpdate(data [24]bit.Bit) (ShortLCActivityUpdate, fec.R
 	var result ShortLCActivityUpdate
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.TS1ActivityID = enums.ActivityID(bit.BitsToUint8(data[:], 0, 4))
-	result.TS2ActivityID = enums.ActivityID(bit.BitsToUint8(data[:], 4, 4))
-	result.HashTS1 = bit.BitsToUint8(data[:], 8, 8)
-	result.HashTS2 = bit.BitsToUint8(data[:], 16, 8)
+	result.TS1ActivityID = enums.ActivityID(bit.Uint(data[0:4]))
+	result.TS2ActivityID = enums.ActivityID(bit.Uint(data[4:8]))
+	result.HashTS1 = byte(bit.Uint(data[8:16]))
+	result.HashTS2 = byte(bit.Uint(data[16:24]))
 	return result, fecResult
 }
 
@@ -58,13 +58,13 @@ func (s *ShortLCActivityUpdate) Encode() ([24]bit.Bit, error) {
 	if uint64(s.TS1ActivityID)>>4 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCActivityUpdate.TS1ActivityID: value %d does not fit in 4 bits", s.TS1ActivityID)
 	}
-	copy(data[0:4], bit.BitsFromUint8(uint8(s.TS1ActivityID), 4))
+	bit.PutUint(data[0:4], uint64(s.TS1ActivityID))
 	if uint64(s.TS2ActivityID)>>4 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCActivityUpdate.TS2ActivityID: value %d does not fit in 4 bits", s.TS2ActivityID)
 	}
-	copy(data[4:8], bit.BitsFromUint8(uint8(s.TS2ActivityID), 4))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.HashTS1), 8))
-	copy(data[16:24], bit.BitsFromUint8(uint8(s.HashTS2), 8))
+	bit.PutUint(data[4:8], uint64(s.TS2ActivityID))
+	bit.PutUint(data[8:16], uint64(s.HashTS1))
+	bit.PutUint(data[16:24], uint64(s.HashTS2))
 	return data, nil
 }
 
@@ -77,10 +77,10 @@ func DecodeShortLCCSysParms(data [24]bit.Bit) (ShortLCCSysParms, fec.Result) {
 	var result ShortLCCSysParms
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.MODEL = bit.BitsToUint8(data[:], 0, 2)
+	result.MODEL = uint8(bit.Uint(data[0:2]))
 	copy(result.NetSiteRaw[:], data[2:14])
-	result.Reg = bit.BitsToBool(data[:], 14)
-	result.CommonSlotCounter = bit.BitsToUint16(data[:], 15, 9)
+	result.Reg = data[14] == 1
+	result.CommonSlotCounter = uint16(bit.Uint(data[15:24]))
 	return result, fecResult
 }
 
@@ -90,7 +90,7 @@ func (s *ShortLCCSysParms) Encode() ([24]bit.Bit, error) {
 	if uint64(s.MODEL)>>2 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCCSysParms.MODEL: value %d does not fit in 2 bits", s.MODEL)
 	}
-	copy(data[0:2], bit.BitsFromUint8(s.MODEL, 2))
+	bit.PutUint(data[0:2], uint64(s.MODEL))
 	copy(data[2:14], s.NetSiteRaw[:])
 	if s.Reg {
 		data[14] = 1
@@ -98,7 +98,7 @@ func (s *ShortLCCSysParms) Encode() ([24]bit.Bit, error) {
 	if uint64(s.CommonSlotCounter)>>9 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCCSysParms.CommonSlotCounter: value %d does not fit in 9 bits", s.CommonSlotCounter)
 	}
-	copy(data[15:24], bit.BitsFromUint16(s.CommonSlotCounter, 9))
+	bit.PutUint(data[15:24], uint64(s.CommonSlotCounter))
 	return data, nil
 }
 
@@ -111,10 +111,10 @@ func DecodeShortLCPSysParms(data [24]bit.Bit) (ShortLCPSysParms, fec.Result) {
 	var result ShortLCPSysParms
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.MODEL = bit.BitsToUint8(data[:], 0, 2)
+	result.MODEL = uint8(bit.Uint(data[0:2]))
 	copy(result.NetSiteRaw[:], data[2:14])
-	result.PayloadChannelType = bit.BitsToBool(data[:], 14)
-	result.CommonSlotCounter = bit.BitsToUint16(data[:], 15, 9)
+	result.PayloadChannelType = data[14] == 1
+	result.CommonSlotCounter = uint16(bit.Uint(data[15:24]))
 	return result, fecResult
 }
 
@@ -124,7 +124,7 @@ func (s *ShortLCPSysParms) Encode() ([24]bit.Bit, error) {
 	if uint64(s.MODEL)>>2 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCPSysParms.MODEL: value %d does not fit in 2 bits", s.MODEL)
 	}
-	copy(data[0:2], bit.BitsFromUint8(s.MODEL, 2))
+	bit.PutUint(data[0:2], uint64(s.MODEL))
 	copy(data[2:14], s.NetSiteRaw[:])
 	if s.PayloadChannelType {
 		data[14] = 1
@@ -132,7 +132,7 @@ func (s *ShortLCPSysParms) Encode() ([24]bit.Bit, error) {
 	if uint64(s.CommonSlotCounter)>>9 != 0 {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCPSysParms.CommonSlotCounter: value %d does not fit in 9 bits", s.CommonSlotCounter)
 	}
-	copy(data[15:24], bit.BitsFromUint16(s.CommonSlotCounter, 9))
+	bit.PutUint(data[15:24], uint64(s.CommonSlotCounter))
 	return data, nil
 }
 
@@ -155,7 +155,7 @@ func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.Result) {
 		_crcVal |= uint8(data[28+i])
 	}
 	result.crc = _crcVal
-	result.SLCO = enums.SLCO(bit.BitsToUint8(data[:], 0, 4))
+	result.SLCO = enums.SLCO(bit.Uint(data[0:4]))
 	var _dispatchBits [24]bit.Bit
 	copy(_dispatchBits[:], data[4:28])
 	switch result.SLCO {
@@ -229,10 +229,10 @@ func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 	if uint64(s.SLCO)>>4 != 0 {
 		return [36]bit.Bit{}, fmt.Errorf("ShortLC.SLCO: value %d does not fit in 4 bits", s.SLCO)
 	}
-	copy(data[0:4], bit.BitsFromUint8(uint8(s.SLCO), 4))
+	bit.PutUint(data[0:4], uint64(s.SLCO))
 	if _payload != "" {
 		var result ShortLC
-		result.SLCO = enums.SLCO(bit.BitsToUint8(data[:], 0, 4))
+		result.SLCO = enums.SLCO(bit.Uint(data[0:4]))
 		_want := "RawPayload"
 		switch result.SLCO {
 		case enums.SLCONullMessage:

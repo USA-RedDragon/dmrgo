@@ -23,7 +23,7 @@ func buildDataBurst(dataType enums.DataType, payload [196]bit.Bit) [33]byte {
 	for i := 0; i < 48; i++ {
 		bits[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
-	return bit.PackBits264(bits)
+	return bit.Pack264(bits)
 }
 
 func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
@@ -32,7 +32,7 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 		want[i] = byte(0xA0 + i)
 	}
 	var info [144]bit.Bit
-	copy(info[:], bit.UnpackBits(want[:]))
+	copy(info[:], bit.Unpack(want[:]))
 	raw := buildDataBurst(enums.DataTypeRate34, trellis.Encode(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
@@ -75,14 +75,14 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 	if got := b.FEC.Aggregate().ErrorsCorrected; got != 1 {
 		t.Errorf("Aggregate().ErrorsCorrected = %d, want 1", got)
 	}
-	if rt, ok := b.Data.(*pdu.Rate34Data); !ok || string(rt.Data[:]) != string(bit.PackBits(info[:])) {
+	if rt, ok := b.Data.(*pdu.Rate34Data); !ok || string(rt.Data[:]) != string(bit.Pack(info[:])) {
 		t.Error("data not corrected")
 	}
 }
 
 func TestBurst_PIHeader_Decode(t *testing.T) {
 	var info [96]bit.Bit
-	copy(info[:], bit.UnpackBits([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
+	copy(info[:], bit.Unpack([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
 	raw := buildDataBurst(enums.DataTypePIHeader, bptc.Encode196(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
@@ -109,7 +109,7 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 	for i := range want {
 		want[i] = byte(0x30 + i)
 	}
-	info := bit.UnpackBits(want[:])
+	info := bit.Unpack(want[:])
 	var payload [196]bit.Bit
 	copy(payload[:96], info[:96])
 	copy(payload[100:], info[96:])

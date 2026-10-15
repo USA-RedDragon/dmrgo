@@ -83,12 +83,12 @@ func TestTalkerAlias_HeaderBits7Bit(t *testing.T) {
 	if lcs[0].FLCO != enums.FLCOTalkerAliasHeader || lcs[0].FeatureSetID != enums.FIDStandardized {
 		t.Errorf("FLCO %v FID %v", lcs[0].FLCO, lcs[0].FeatureSetID)
 	}
-	if !h.TalkerAliasDataMSB || bit.BitsToUint8(h.TalkerAliasData[:], 0, 6) != 0b000100 || h.TalkerAliasDataLength != 1 {
+	if !h.TalkerAliasDataMSB || uint8(bit.Uint(h.TalkerAliasData[:6])) != 0b000100 || h.TalkerAliasDataLength != 1 {
 		t.Errorf("header %+v", h)
 	}
 	lcs, _ = pdu.EncodeTalkerAlias("D", layer3.TalkerAliasUTF8)
 	h = lcs[0].TalkerAliasHeader
-	if h.TalkerAliasDataMSB || bit.BitsToUint8(h.TalkerAliasData[:], 0, 8) != 'D' {
+	if h.TalkerAliasDataMSB || uint8(bit.Uint(h.TalkerAliasData[:8])) != 'D' {
 		t.Errorf("UTF-8 header %+v", h)
 	}
 }
@@ -151,7 +151,7 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	}
 	bad := *lcs[0].TalkerAliasHeader
 	bad.TalkerAliasDataLength = 1
-	copy(bad.TalkerAliasData[:8], bit.BitsFromUint8(0xC3, 8))
+	bit.PutUint(bad.TalkerAliasData[:8], uint64(0xC3))
 	if _, err := pdu.DecodeTalkerAlias(&bad); err == nil {
 		t.Error("invalid UTF-8 accepted")
 	}

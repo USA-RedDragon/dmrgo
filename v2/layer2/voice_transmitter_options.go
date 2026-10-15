@@ -68,7 +68,7 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 			return nil, fmt.Errorf("cannot encode PI header: %w", err)
 		}
 		var piBytes [12]byte
-		copy(piBytes[:], bit.PackBits(bits[:]))
+		copy(piBytes[:], bit.Pack(bits[:]))
 		if t.piHeader, err = BuildDataBurst(piBytes, enums.DataTypePIHeader, opts.ColorCode, opts.Source); err != nil {
 			return nil, err
 		}

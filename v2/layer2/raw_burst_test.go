@@ -27,7 +27,7 @@ func captureFrames(t *testing.T) [][33]byte {
 func packSlots(s [layer2.VoiceSlotsPerBurst][72]bit.Bit) [layer2.VoiceSlotsPerBurst][9]byte {
 	var out [layer2.VoiceSlotsPerBurst][9]byte
 	for i := range s {
-		copy(out[i][:], bit.PackBits(s[i][:]))
+		copy(out[i][:], bit.Pack(s[i][:]))
 	}
 	return out
 }
@@ -39,8 +39,8 @@ func isBPTC(dt enums.DataType) bool {
 // sameBits reports whether a and b agree outside the burst bit ranges in
 // skip, each given as [start, end).
 func sameBits(a, b layer2.RawBurst, skip ...[2]int) bool {
-	x := bit.UnpackBytesToBits264(a)
-	y := bit.UnpackBytesToBits264(b)
+	x := bit.Unpack264(a)
+	y := bit.Unpack264(b)
 outer:
 	for i := range x {
 		for _, s := range skip {
@@ -100,7 +100,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 				emb, res = r.StandaloneRCEMB()
 				data = r.StandaloneRCData()
 			}
-			if want := [4]byte(bit.PackBits(b.EmbeddedSignallingData[:])); emb != b.EmbeddedSignalling || res != b.FEC.EMB || data != want {
+			if want := [4]byte(bit.Pack(b.EmbeddedSignallingData[:])); emb != b.EmbeddedSignalling || res != b.FEC.EMB || data != want {
 				t.Errorf("%x: EMB %+v %x, Burst %+v %x", frame, emb, data, b.EmbeddedSignalling, want)
 			}
 		}
@@ -248,11 +248,11 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 		t.Fatalf("StandaloneRCEMB %+v %+v", emb, res)
 	}
 	data := r.StandaloneRCData()
-	if data != [4]byte(bit.PackBits(b.EmbeddedSignallingData[:])) {
+	if data != [4]byte(bit.Pack(b.EmbeddedSignallingData[:])) {
 		t.Fatalf("StandaloneRCData %x", data)
 	}
 	var bits [32]bit.Bit
-	copy(bits[:], bit.UnpackBits(data[:]))
+	copy(bits[:], bit.Unpack(data[:]))
 	if rc, _ := layer2.DecodeEmbeddedRC(bits); rc.RCCommand != enums.RCCeaseTransmissionRequest {
 		t.Fatalf("RC %+v", rc)
 	}
@@ -390,7 +390,7 @@ func TestEmbeddedLCFragments_Capture(t *testing.T) {
 func fragmentWords(fr [4][32]bit.Bit) [4][4]byte {
 	var out [4][4]byte
 	for i := range fr {
-		copy(out[i][:], bit.PackBits(fr[i][:]))
+		copy(out[i][:], bit.Pack(fr[i][:]))
 	}
 	return out
 }

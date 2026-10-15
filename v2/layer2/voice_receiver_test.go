@@ -120,11 +120,11 @@ func TestVoiceReceiver_LostBurst(t *testing.T) {
 
 func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
-	all := bit.UnpackBytesToBits264(raws[3])
+	all := bit.Unpack264(raws[3])
 	for i := layer2.EmbeddedDataStart; i < layer2.EmbeddedDataStart+12; i++ {
 		all[i] ^= 1
 	}
-	raws[3] = bit.PackBits264(all)
+	raws[3] = bit.Pack264(all)
 	got := receiveAll(t, raws)
 	checkPositions(t, got.positions, "-ABCDEF-")
 	if !errors.Is(got.errs[5], layer2.ErrEmbeddedLCUncorrectable) || len(got.lcs) != 0 {
@@ -138,9 +138,9 @@ func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 func TestVoiceReceiver_Strict(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
 	raws := transmission(t, lc, 6)
-	all := bit.UnpackBytesToBits264(raws[2])
+	all := bit.Unpack264(raws[2])
 	all[layer2.EmbeddedDataStart+7] ^= 1
-	raws[2] = bit.PackBits264(all)
+	raws[2] = bit.Pack264(all)
 	for _, strict := range []bool{false, true} {
 		r := layer2.VoiceReceiver{Strict: strict}
 		r.Reset()
@@ -175,11 +175,11 @@ func TestVoiceReceiver_DataBurstResets(t *testing.T) {
 // which the BPTC and checksum check.
 func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
-	all := bit.UnpackBytesToBits264(raws[5])
+	all := bit.Unpack264(raws[5])
 	for i := layer2.EMBFirstStart; i < layer2.EMBFirstStart+3; i++ {
 		all[i] ^= 1
 	}
-	raws[5] = bit.PackBits264(all)
+	raws[5] = bit.Pack264(all)
 	if b := must(layer2.NewBurstFromBytes(raws[5])); !b.HasEmbeddedSignalling() || !b.EmbeddedSignalling.FEC.Uncorrectable {
 		t.Fatalf("corrupted EMB decodes as %s", b.String())
 	}
@@ -219,7 +219,7 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 					t.Errorf("burst %d: LC at %s, FEC %+v", i, got.positions[i].String(), lc.FEC)
 				}
 				bits := lcBits(t, lc, enums.DataTypeVoiceLCHeader)
-				if packed := bit.PackBits(bits[:72]); !bytes.Equal(packed, capturedEmbeddedLC) {
+				if packed := bit.Pack(bits[:72]); !bytes.Equal(packed, capturedEmbeddedLC) {
 					t.Errorf("burst %d: LC % X, want % X", i, packed, capturedEmbeddedLC)
 				}
 				target, source, ok := lc.Addresses()

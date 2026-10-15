@@ -34,11 +34,11 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
 	}
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.AlgorithmID = bit.BitsToUint8(data[:], 0, 8)
-	result.MFID = bit.BitsToUint8(data[:], 8, 8)
-	result.KeyID = bit.BitsToUint8(data[:], 16, 8)
-	result.MessageIndicator = bit.BitsToUint32(data[:], 24, 32)
-	result.Destination = bit.BitsToInt(data[:], 56, 24)
+	result.AlgorithmID = uint8(bit.Uint(data[0:8]))
+	result.MFID = uint8(bit.Uint(data[8:16]))
+	result.KeyID = uint8(bit.Uint(data[16:24]))
+	result.MessageIndicator = uint32(bit.Uint(data[24:56]))
+	result.Destination = int(bit.Uint(data[56:80]))
 	copy(result.Raw[:], data[0:80])
 	return result, fecResult
 }
@@ -46,14 +46,14 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
 // Encode encodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
 func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
-	copy(data[0:8], bit.BitsFromUint8(s.AlgorithmID, 8))
-	copy(data[8:16], bit.BitsFromUint8(s.MFID, 8))
-	copy(data[16:24], bit.BitsFromUint8(s.KeyID, 8))
-	copy(data[24:56], bit.BitsFromUint32(s.MessageIndicator, 32))
+	bit.PutUint(data[0:8], uint64(s.AlgorithmID))
+	bit.PutUint(data[8:16], uint64(s.MFID))
+	bit.PutUint(data[16:24], uint64(s.KeyID))
+	bit.PutUint(data[24:56], uint64(s.MessageIndicator))
 	if uint64(s.Destination)>>24 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("PIHeader.Destination: value %d does not fit in 24 bits", s.Destination)
 	}
-	copy(data[56:80], bit.BitsFromUint32(uint32(s.Destination), 24))
+	bit.PutUint(data[56:80], uint64(s.Destination))
 	var _encBytes [10]byte
 	for i := range 10 {
 		for j := range 8 {

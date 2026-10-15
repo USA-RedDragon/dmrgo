@@ -12,7 +12,7 @@ import (
 // valid CRC-CCITT under mask 0x6969.
 func piHeaderVector() [96]bit.Bit {
 	var bits [96]bit.Bit
-	copy(bits[:], bit.UnpackBits([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
+	copy(bits[:], bit.Unpack([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
 	return bits
 }
 
@@ -46,7 +46,7 @@ func TestPIHeader_CRCMask(t *testing.T) {
 	t.Parallel()
 	bits := piHeaderVector()
 	// Removing the 0x6969 mask must make the CRC fail.
-	for i, m := range bit.UnpackBits([]byte{0x69, 0x69}) {
+	for i, m := range bit.Unpack([]byte{0x69, 0x69}) {
 		bits[80+i] ^= m
 	}
 	if _, fecResult := pdu.DecodePIHeader(bits); !fecResult.Uncorrectable {
@@ -75,7 +75,7 @@ func TestPIHeader_Raw(t *testing.T) {
 	vector := piHeaderVector()
 	pi, _ := pdu.DecodePIHeader(vector)
 	if [80]bit.Bit(vector[:80]) != pi.Raw {
-		t.Errorf("Raw = %x, want %x", bit.PackBits(pi.Raw[:]), bit.PackBits(vector[:80]))
+		t.Errorf("Raw = %x, want %x", bit.Pack(pi.Raw[:]), bit.Pack(vector[:80]))
 	}
 	pi.Raw = [80]bit.Bit{}
 	if must(pi.Encode()) != vector {

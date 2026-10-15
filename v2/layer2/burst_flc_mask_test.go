@@ -11,7 +11,7 @@ import (
 )
 
 func burstInfoBits(raw [33]byte) [96]bit.Bit {
-	all := bit.UnpackBytesToBits264(raw)
+	all := bit.Unpack264(raw)
 	var dataBits [196]bit.Bit
 	copy(dataBits[:98], all[:98])
 	copy(dataBits[98:], all[166:])
@@ -49,7 +49,7 @@ func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 			info := burstInfoBits(raw)
 			if got := must(flc.Encode()); got != info {
 				t.Errorf("%s burst %d (%s): re-encoded LC %x, captured %x",
-					file, i, dt.String(), bit.PackBits(got[:]), bit.PackBits(info[:]))
+					file, i, dt.String(), bit.Pack(got[:]), bit.Pack(info[:]))
 			}
 		}
 	}

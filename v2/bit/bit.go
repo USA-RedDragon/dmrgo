@@ -4,6 +4,9 @@
 // Throughout the dmrgo codebase, individual bits are stored as Bit values (0 or 1)
 // in arrays/slices, NOT as packed bitfields. For example, [96]Bit holds 96 individual
 // bits. Packed bytes are only used at I/O boundaries (the 33-byte input and encoded output).
+//
+// The functions index their arguments directly, so a slice shorter than the
+// bits they read or write panics, as an out of range index does.
 package bit
 
 // Bit represents a single bit as a byte value (0 or 1).
@@ -21,88 +24,29 @@ func Mask(bits []Bit) {
 	}
 }
 
-// BitsToUint8 extracts a uint8 value from a contiguous run of bits.
-// Bits are read MSB-first from bits[start] through bits[start+length-1].
-func BitsToUint8(bits []Bit, start, length int) uint8 {
-	var val uint8
-	for i := 0; i < length; i++ {
-		val <<= 1
-		val |= uint8(bits[start+i] & 1)
+// Uint returns bits as an unsigned integer, the first bit most significant.
+// It reads at most the last 64 bits of a longer slice.
+func Uint(bits []Bit) uint64 {
+	var v uint64
+	for _, b := range bits {
+		v = v<<1 | uint64(b&1)
 	}
-	return val
+	return v
 }
 
-// BitsToUint16 extracts a uint16 value from a contiguous run of bits.
-// Bits are read MSB-first from bits[start] through bits[start+length-1].
-func BitsToUint16(bits []Bit, start, length int) uint16 {
-	var val uint16
-	for i := 0; i < length; i++ {
-		val <<= 1
-		val |= uint16(bits[start+i] & 1)
+// PutUint writes the low len(dst) bits of v into dst, the most significant
+// of them first. Bits of dst beyond the 64th from the end are set to 0.
+func PutUint(dst []Bit, v uint64) {
+	for i := len(dst) - 1; i >= 0; i-- {
+		dst[i] = Bit(v & 1)
+		v >>= 1
 	}
-	return val
 }
 
-// BitsToUint32 extracts a uint32 value from a contiguous run of bits.
-// Bits are read MSB-first from bits[start] through bits[start+length-1].
-func BitsToUint32(bits []Bit, start, length int) uint32 {
-	var val uint32
-	for i := 0; i < length; i++ {
-		val <<= 1
-		val |= uint32(bits[start+i] & 1)
-	}
-	return val
-}
-
-// BitsToInt extracts a signed int value from a contiguous run of bits.
-// Bits are read MSB-first from bits[start] through bits[start+length-1].
-func BitsToInt(bits []Bit, start, length int) int {
-	var val int
-	for i := 0; i < length; i++ {
-		val <<= 1
-		val |= int(bits[start+i] & 1)
-	}
-	return val
-}
-
-// BitsToBool returns true if the bit at the given index is 1.
-func BitsToBool(bits []Bit, index int) bool {
-	return bits[index]&1 == 1
-}
-
-// BitsFromUint8 converts a uint8 value into a slice of Bit of the given length.
-// The MSB of the value maps to the first element of the returned slice.
-func BitsFromUint8(val uint8, length int) []Bit {
-	bits := make([]Bit, length)
-	for i := 0; i < length; i++ {
-		bits[i] = Bit((val >> (length - 1 - i)) & 1)
-	}
-	return bits
-}
-
-// BitsFromUint16 converts a uint16 value into a slice of Bit of the given length.
-func BitsFromUint16(val uint16, length int) []Bit {
-	bits := make([]Bit, length)
-	for i := 0; i < length; i++ {
-		bits[i] = Bit((val >> (length - 1 - i)) & 1)
-	}
-	return bits
-}
-
-// BitsFromUint32 converts a uint32 value into a slice of Bit of the given length.
-func BitsFromUint32(val uint32, length int) []Bit {
-	bits := make([]Bit, length)
-	for i := 0; i < length; i++ {
-		bits[i] = Bit((val >> (length - 1 - i)) & 1)
-	}
-	return bits
-}
-
-// PackBits packs a slice of individual Bit values into packed bytes (MSB-first).
-// The number of output bytes is ceil(len(bits)/8).
-func PackBits(bits []Bit) []byte {
-	n := (len(bits) + 7) / 8
-	data := make([]byte, n)
+// Pack packs bits into bytes, the first bit in the most significant bit of
+// the first byte. The last byte is padded with 0 bits.
+func Pack(bits []Bit) []byte {
+	data := make([]byte, (len(bits)+7)/8)
 	for i, b := range bits {
 		if b&1 == 1 {
 			data[i/8] |= 1 << (7 - (i % 8))
@@ -111,23 +55,8 @@ func PackBits(bits []Bit) []byte {
 	return data
 }
 
-// BitsToValue converts up to 8 individual Bit values into a single byte.
-// The first element is the most-significant bit. For example,
-// BitsToValue([]{1,0,1}) returns 5.
-func BitsToValue(bits []Bit) byte {
-	var v byte
-	n := len(bits)
-	for i, b := range bits {
-		if b&1 == 1 {
-			v |= 1 << uint(n-1-i) //nolint:gosec // n-1-i is always non-negative: i ranges [0, n-1]
-		}
-	}
-	return v
-}
-
-// UnpackBits unpacks packed bytes into individual Bit values (MSB-first).
-// Returns a slice of len(data)*8 Bit values.
-func UnpackBits(data []byte) []Bit {
+// Unpack is the reverse of Pack: it returns the len(data)*8 bits of data.
+func Unpack(data []byte) []Bit {
 	bits := make([]Bit, len(data)*8)
 	for i := range bits {
 		if (data[i/8]>>(7-(i%8)))&1 == 1 { //nolint:gosec // i/8 bounded: i < len(data)*8, so i/8 < len(data)
@@ -137,9 +66,8 @@ func UnpackBits(data []byte) []Bit {
 	return bits
 }
 
-// UnpackBytesToBits264 converts a [33]byte packed array into a [264]Bit unpacked array.
-// This replaces the bytesToBits function in burst.go.
-func UnpackBytesToBits264(data [33]byte) [264]Bit {
+// Unpack264 returns the 264 bits of a 33-byte burst, as Unpack does.
+func Unpack264(data [33]byte) [264]Bit {
 	var bits [264]Bit
 	for i := 0; i < 264; i++ {
 		if (data[i/8]>>(7-(i%8)))&1 != 0 { //nolint:gosec // i/8 bounded: i < 264, so i/8 <= 32 < 33
@@ -149,8 +77,8 @@ func UnpackBytesToBits264(data [33]byte) [264]Bit {
 	return bits
 }
 
-// PackBits264 converts a [264]Bit unpacked array into a [33]byte packed array.
-func PackBits264(bits [264]Bit) [33]byte {
+// Pack264 packs the 264 bits of a burst into 33 bytes, as Pack does.
+func Pack264(bits [264]Bit) [33]byte {
 	var data [33]byte
 	for i := 0; i < 264; i++ {
 		if bits[i]&1 == 1 {

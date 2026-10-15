@@ -22,10 +22,10 @@ func TestAMBEVoice_IPSCCapture(t *testing.T) {
 	var data [19]byte
 	copy(data[:], raw)
 	frames := vocoder.UnpackAMBEVoice(data)
-	silence := bit.UnpackBits([]byte{0xF8, 0x01, 0xA9, 0x9F, 0x8C, 0xE0, 0x80})[:49]
+	silence := bit.Unpack([]byte{0xF8, 0x01, 0xA9, 0x9F, 0x8C, 0xE0, 0x80})[:49]
 	for k, f := range frames {
-		if string(bit.PackBits(f[:])) != string(bit.PackBits(silence)) {
-			t.Errorf("frame %d: % X, want the AMBE+2 silence frame", k, bit.PackBits(f[:]))
+		if string(bit.Pack(f[:])) != string(bit.Pack(silence)) {
+			t.Errorf("frame %d: % X, want the AMBE+2 silence frame", k, bit.Pack(f[:]))
 		}
 	}
 	if got := vocoder.PackAMBEVoice(frames); got != data {
@@ -43,7 +43,7 @@ func TestAMBEVoice_RoundTrip(t *testing.T) {
 			}
 		}
 		data := vocoder.PackAMBEVoice(frames)
-		bits := bit.UnpackBits(data[:])
+		bits := bit.Unpack(data[:])
 		for _, i := range []int{49, 99, 149, 150, 151} {
 			if bits[i] != 0 {
 				t.Fatalf("bit %d is set", i)

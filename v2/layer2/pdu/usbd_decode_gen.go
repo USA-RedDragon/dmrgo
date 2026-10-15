@@ -34,7 +34,7 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec
 	}
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.ServiceType = ServiceType(bit.BitsToUint8(data[:], 0, 4))
+	result.ServiceType = ServiceType(bit.Uint(data[0:4]))
 	copy(result.Payload[:], data[4:80])
 	return result, fecResult
 }
@@ -45,7 +45,7 @@ func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 	if uint64(s.ServiceType)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("UnifiedSingleBlockData.ServiceType: value %d does not fit in 4 bits", s.ServiceType)
 	}
-	copy(data[0:4], bit.BitsFromUint8(uint8(s.ServiceType), 4))
+	bit.PutUint(data[0:4], uint64(s.ServiceType))
 	copy(data[4:80], s.Payload[:])
 	var _encBytes [10]byte
 	for i := range 10 {

@@ -105,7 +105,7 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 		t.Errorf("burst %d: LCSS %s, want %s", i, emb.LCSS.String(), wantLCSS.String())
 	}
 	if pos == 5 && (!layer2.IsNullEmbeddedLC(b.EmbeddedSignallingData) || b.HasReverseChannel()) {
-		t.Errorf("burst %d: burst F carries %x, want the Null embedded message", i, bit.PackBits(b.EmbeddedSignallingData[:]))
+		t.Errorf("burst %d: burst F carries %x, want the Null embedded message", i, bit.Pack(b.EmbeddedSignallingData[:]))
 	}
 	return b
 }

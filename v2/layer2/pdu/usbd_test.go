@@ -16,7 +16,7 @@ func buildUSBDBits(serviceType byte, payload [76]bit.Bit) [96]bit.Bit {
 	var data [96]bit.Bit
 
 	// ServiceType: bits 0-3
-	copy(data[0:4], bit.BitsFromUint8(serviceType, 4))
+	bit.PutUint(data[0:4], uint64(serviceType))
 
 	// Payload: bits 4-79
 	copy(data[4:80], payload[:])

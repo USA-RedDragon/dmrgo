@@ -142,7 +142,7 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 // color code mismatch is joined with any decode error.
 func (b *Burst) DecodeFromBytesWith(data [33]byte, opts DecodeOptions) error {
 	*b = Burst{}
-	b.bitData = bit.UnpackBytesToBits264(data)
+	b.bitData = bit.Unpack264(data)
 	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
 	err := b.decode(opts)
 	return errors.Join(err, b.checkColorCode(opts.ColorCode))
@@ -540,7 +540,7 @@ func (b *Burst) Encode() ([33]byte, error) {
 		if err != nil {
 			return [33]byte{}, err
 		}
-		return bit.PackBits264(bitData), nil
+		return bit.Pack264(bitData), nil
 	}
 	if err := b.checkCentre(); err != nil {
 		return [33]byte{}, err
@@ -584,7 +584,7 @@ func (b *Burst) Encode() ([33]byte, error) {
 		writeSync(&bitData, b.SyncPattern)
 	}
 
-	return bit.PackBits264(bitData), nil
+	return bit.Pack264(bitData), nil
 }
 
 // voiceBits returns the 216 voice bits of VoiceSlots.

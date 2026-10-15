@@ -24,9 +24,9 @@ func buildMBCHeaderBits(lb bool, pf bool, opcode byte, fid byte, data [64]bit.Bi
 		bits[1] = 1
 	}
 	// Bits 2-7: CSBKOpcode
-	copy(bits[2:8], bit.BitsFromUint8(opcode, 6))
+	bit.PutUint(bits[2:8], uint64(opcode))
 	// Bits 8-15: FID
-	copy(bits[8:16], bit.BitsFromUint8(fid, 8))
+	bit.PutUint(bits[8:16], uint64(fid))
 	// Bits 16-79: Data
 	copy(bits[16:80], data[:])
 

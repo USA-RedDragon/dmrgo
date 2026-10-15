@@ -35,7 +35,7 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 			lc.BurstDataType = dt
 			lcBits := must(lc.Encode())
 			var lcBytes [12]byte
-			copy(lcBytes[:], bit.PackBits(lcBits[:]))
+			copy(lcBytes[:], bit.Pack(lcBits[:]))
 			frame := must(lcBurst(lcBytes, dt, 1))
 
 			b := must(layer2.NewBurstFromBytes(frame))
@@ -166,7 +166,7 @@ func TestBurstEncode_IdleKeepsDecodedPayload(t *testing.T) {
 
 func bitsOf(p [12]byte) [96]bit.Bit {
 	var bits [96]bit.Bit
-	copy(bits[:], bit.UnpackBits(p[:]))
+	copy(bits[:], bit.Unpack(p[:]))
 	return bits
 }
 

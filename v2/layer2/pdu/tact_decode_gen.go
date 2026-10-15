@@ -25,9 +25,9 @@ func DecodeTACT(data [7]bit.Bit) (TACT, fec.Result) {
 	if !fecResult.Uncorrectable {
 		data = corrected
 	}
-	result.AccessType = bit.BitsToBool(data[:], 0)
-	result.TDMAChannel = bit.BitsToBool(data[:], 1)
-	result.LCSS = enums.LCSS(bit.BitsToUint8(data[:], 2, 2))
+	result.AccessType = data[0] == 1
+	result.TDMAChannel = data[1] == 1
+	result.LCSS = enums.LCSS(bit.Uint(data[2:4]))
 	return result, fecResult
 }
 
@@ -43,7 +43,7 @@ func (s *TACT) Encode() ([7]bit.Bit, error) {
 	if uint64(s.LCSS)>>2 != 0 {
 		return [7]bit.Bit{}, fmt.Errorf("TACT.LCSS: value %d does not fit in 2 bits", s.LCSS)
 	}
-	copy(data[2:4], bit.BitsFromUint8(uint8(s.LCSS), 2))
+	bit.PutUint(data[2:4], uint64(s.LCSS))
 	return hamming.Encode743(data), nil
 }
 

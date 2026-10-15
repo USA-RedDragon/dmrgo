@@ -69,7 +69,7 @@ func (f *FullLinkControl) Addresses() (target, source int, ok bool) {
 	if f.FLCO != enums.FLCOGroupVoiceChannelUser && f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
 		return 0, 0, false
 	}
-	return bit.BitsToInt(f.RawPayload[:], 8, 24), bit.BitsToInt(f.RawPayload[:], 32, 24), true
+	return int(bit.Uint(f.RawPayload[8 : 8+24])), int(bit.Uint(f.RawPayload[32 : 32+24])), true
 }
 
 // FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])

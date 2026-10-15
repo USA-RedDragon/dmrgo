@@ -19,7 +19,7 @@ func lcHeaderFrame(t *testing.T) [33]byte {
 	}
 	var lcBytes [12]byte
 	lcBits := must(lc.Encode())
-	copy(lcBytes[:], bit.PackBits(lcBits[:]))
+	copy(lcBytes[:], bit.Pack(lcBits[:]))
 	return must(lcBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1))
 }
 
@@ -44,7 +44,7 @@ func TestBurstFEC_CSBKCountsNoCRCBits(t *testing.T) {
 	csbk := pdu.CSBK{CSBKOpcode: 0x3F}
 	var lcBytes [12]byte
 	csbkBits := must(csbk.Encode())
-	copy(lcBytes[:], bit.PackBits(csbkBits[:]))
+	copy(lcBytes[:], bit.Pack(csbkBits[:]))
 	frame := must(lcBurst(lcBytes, enums.DataTypeCSBK, 1))
 
 	b := must(layer2.NewBurstFromBytes(frame))

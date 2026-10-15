@@ -15,7 +15,7 @@ import (
 // a given 4-bit payload, encoded through Single Burst BPTC with odd parity.
 func buildRCEmbeddedData(payload byte) [32]bit.Bit {
 	var infoBits [11]bit.Bit
-	copy(infoBits[0:4], bit.BitsFromUint8(payload&0x0F, 4))
+	bit.PutUint(infoBits[0:4], uint64(payload&0x0F))
 	crcVal := crc.CalculateCRC7(infoBits[:4]) ^ pdu.CRC7MaskRC
 	for i := 0; i < 7; i++ {
 		infoBits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)
@@ -92,7 +92,7 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 	rcData := buildRCEmbeddedData(9)
 	copy(bitData[116:148], rcData[:])
 
-	packed := bit.PackBits264(bitData)
+	packed := bit.Pack264(bitData)
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -123,7 +123,7 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
-	packed := bit.PackBits264(bitData)
+	packed := bit.Pack264(bitData)
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -148,7 +148,7 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
-	packed := bit.PackBits264(bitData)
+	packed := bit.Pack264(bitData)
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -169,7 +169,7 @@ func TestRC_MsSourcedRcSync_HasEmbeddedSignalling(t *testing.T) {
 		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
 
-	packed := bit.PackBits264(bitData)
+	packed := bit.Pack264(bitData)
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -197,7 +197,7 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 	rcData := buildRCEmbeddedData(0)
 	copy(bitData[116:148], rcData[:])
 
-	packed := bit.PackBits264(bitData)
+	packed := bit.Pack264(bitData)
 	burst, _ := layer2.NewBurstFromBytes(packed)
 
 	if burst.FEC.RC.BitsChecked == 0 {
@@ -225,7 +225,7 @@ func TestRC_String(t *testing.T) {
 	rcData := buildRCEmbeddedData(5)
 	copy(bitData[116:148], rcData[:])
 
-	packed := bit.PackBits264(bitData)
+	packed := bit.Pack264(bitData)
 	burst, _ := layer2.NewBurstFromBytes(packed)
 
 	s := burst.String()
@@ -255,7 +255,7 @@ func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	}
 	copy(bitData[156:172], rcData[16:])
 	copy(bitData[172:180], embBits[8:])
-	return bit.PackBits264(bitData)
+	return bit.Pack264(bitData)
 }
 
 func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {

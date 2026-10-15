@@ -51,7 +51,7 @@ func (r *RawBurst) Sync() (enums.SyncPattern, int) {
 	var bits [48]bit.Bit
 	r.readBits(bits[:], SyncStart)
 	var s [6]byte
-	copy(s[:], bit.PackBits(bits[:]))
+	copy(s[:], bit.Pack(bits[:]))
 	return enums.NearestSyncPattern(s)
 }
 
@@ -109,7 +109,7 @@ func (r *RawBurst) setInfo(bits [196]bit.Bit) {
 func (r *RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 	bits, res := bptc.Decode196(r.info())
 	var p [12]byte
-	copy(p[:], bit.PackBits(bits[:]))
+	copy(p[:], bit.Pack(bits[:]))
 	return p, res
 }
 
@@ -119,7 +119,7 @@ func (r *RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 // pdu.FullLCCodeword).
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 	var bits [96]bit.Bit
-	copy(bits[:], bit.UnpackBits(p[:]))
+	copy(bits[:], bit.Unpack(p[:]))
 	r.setInfo(bptc.Encode196(bits))
 }
 
@@ -129,14 +129,14 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 func (r *RawBurst) Rate34Payload() ([18]byte, fec.Result) {
 	bits, res := trellis.Decode(r.info())
 	var p [18]byte
-	copy(p[:], bit.PackBits(bits[:]))
+	copy(p[:], bit.Pack(bits[:]))
 	return p, res
 }
 
 // SetRate34Payload trellis encodes p into the 196 information bits.
 func (r *RawBurst) SetRate34Payload(p [18]byte) {
 	var bits [144]bit.Bit
-	copy(bits[:], bit.UnpackBits(p[:]))
+	copy(bits[:], bit.Unpack(p[:]))
 	r.setInfo(trellis.Encode(bits))
 }
 
@@ -149,14 +149,14 @@ func (r *RawBurst) Rate1Payload() [24]byte {
 	copy(bits[:96], info[:96])
 	copy(bits[96:], info[100:])
 	var p [24]byte
-	copy(p[:], bit.PackBits(bits[:]))
+	copy(p[:], bit.Pack(bits[:]))
 	return p
 }
 
 // SetRate1Payload writes p into the 192 data bits of a Rate 1 burst.
 // Information bits 96 to 99, between the two halves, stay as they are.
 func (r *RawBurst) SetRate1Payload(p [24]byte) {
-	bits := bit.UnpackBits(p[:])
+	bits := bit.Unpack(p[:])
 	r.writeBits(bits[:96], InfoFirstStart)
 	r.writeBits(bits[96:], InfoSecondStart+2)
 }
@@ -230,12 +230,12 @@ func (r *RawBurst) word32(first, second int) [4]byte {
 	r.readBits(bits[:16], first)
 	r.readBits(bits[16:], second)
 	var d [4]byte
-	copy(d[:], bit.PackBits(bits[:]))
+	copy(d[:], bit.Pack(bits[:]))
 	return d
 }
 
 func (r *RawBurst) setWord32(d [4]byte, first, second int) {
-	bits := bit.UnpackBits(d[:])
+	bits := bit.Unpack(d[:])
 	r.writeBits(bits[:16], first)
 	r.writeBits(bits[16:], second)
 }
@@ -250,7 +250,7 @@ func (r *RawBurst) VoiceSlots() [VoiceSlotsPerBurst][9]byte {
 	r.readBits(voice[108:], SyncEnd)
 	var s [VoiceSlotsPerBurst][9]byte
 	for i := range s {
-		copy(s[i][:], bit.PackBits(voice[i*72:(i+1)*72]))
+		copy(s[i][:], bit.Pack(voice[i*72:(i+1)*72]))
 	}
 	return s
 }
@@ -259,7 +259,7 @@ func (r *RawBurst) VoiceSlots() [VoiceSlotsPerBurst][9]byte {
 func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 	var voice [216]bit.Bit
 	for i := range s {
-		copy(voice[i*72:(i+1)*72], bit.UnpackBits(s[i][:]))
+		copy(voice[i*72:(i+1)*72], bit.Unpack(s[i][:]))
 	}
 	r.writeBits(voice[:108], 0)
 	r.writeBits(voice[108:], SyncEnd)

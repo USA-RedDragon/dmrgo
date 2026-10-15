@@ -115,7 +115,7 @@ func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode uint
 		return [33]byte{}, fmt.Errorf("cannot encode full link control: %w", err)
 	}
 	var lcBytes [12]byte
-	copy(lcBytes[:], bit.PackBits(bits[:]))
+	copy(lcBytes[:], bit.Pack(bits[:]))
 	r, err := BuildDataBurst(lcBytes, dataType, colorCode, src)
 	return r, err
 }
@@ -243,5 +243,5 @@ func (t *VoiceTransmitter) flush() ([33]byte, error) {
 
 	t.pending = 0
 	t.position = (t.position + 1) % VoiceBurstsPerSuperframe
-	return bit.PackBits264(bits), nil
+	return bit.Pack264(bits), nil
 }

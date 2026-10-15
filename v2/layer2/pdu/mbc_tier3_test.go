@@ -39,8 +39,8 @@ func buildContinuationBits96(pf bool, csbko byte, colourCode byte, cdefParms [58
 	copy(bits[22:80], cdefParms[:])
 
 	// Last-block CRC-CCITT over bits 0-79, no mask (TS 102 361-1 §7.4.0, Table B.21)
-	c := crc.CalculateCRCCCITT(bit.PackBits(bits[:80]))
-	copy(bits[80:96], bit.BitsFromUint16(c, 16))
+	c := crc.CalculateCRCCCITT(bit.Pack(bits[:80]))
+	bit.PutUint(bits[80:96], uint64(c))
 
 	return bits
 }
@@ -293,10 +293,10 @@ func TestMBCLastBlockCRC_MultiBlock(t *testing.T) {
 	pdu.SetMBCLastBlockCRC(blocks)
 
 	want := make([]byte, 0, 22)
-	want = append(want, bit.PackBits(inter[:])...)
-	want = append(want, bit.PackBits(last[:80])...)
+	want = append(want, bit.Pack(inter[:])...)
+	want = append(want, bit.Pack(last[:80])...)
 	c := crc.CalculateCRCCCITT(want)
-	if got := bit.BitsToUint16(blocks[1][:], 80, 16); got != c {
+	if got := uint16(bit.Uint(blocks[1][80 : 80+16])); got != c {
 		t.Errorf("last-block CRC = 0x%04X, want 0x%04X", got, c)
 	}
 	if !pdu.CheckMBCLastBlockCRC(blocks...) {

@@ -117,7 +117,7 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkCon
 		codeword[i] ^= voiceLCHeaderMask
 	}
 	var data [96]bit.Bit
-	copy(data[:], bit.UnpackBits(codeword[:]))
+	copy(data[:], bit.Unpack(codeword[:]))
 	flc, rs := pdu.DecodeFullLinkControl(data, enums.DataTypeVoiceLCHeader)
 	result.ErrorsCorrected += rs.ErrorsCorrected
 	result.Uncorrectable = result.Uncorrectable || rs.Uncorrectable
@@ -140,6 +140,6 @@ func fullLCBits(lc *pdu.FullLinkControl) ([72]bit.Bit, error) {
 
 func lcOctets(lc [72]bit.Bit) [9]byte {
 	var octets [9]byte
-	copy(octets[:], bit.PackBits(lc[:]))
+	copy(octets[:], bit.Pack(lc[:]))
 	return octets
 }

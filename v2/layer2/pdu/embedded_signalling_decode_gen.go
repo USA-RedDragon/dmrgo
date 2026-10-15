@@ -25,9 +25,9 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.Result)
 	if !fecResult.Uncorrectable {
 		data = corrected
 	}
-	result.ColorCode = bit.BitsToInt(data[:], 0, 4)
-	result.PreemptionAndPowerControlIndicator = bit.BitsToBool(data[:], 4)
-	result.LCSS = enums.LCSS(bit.BitsToUint8(data[:], 5, 2))
+	result.ColorCode = int(bit.Uint(data[0:4]))
+	result.PreemptionAndPowerControlIndicator = data[4] == 1
+	result.LCSS = enums.LCSS(bit.Uint(data[5:7]))
 	return result, fecResult
 }
 
@@ -37,14 +37,14 @@ func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
 	if uint64(s.ColorCode)>>4 != 0 {
 		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
 	}
-	copy(data[0:4], bit.BitsFromUint8(uint8(s.ColorCode), 4))
+	bit.PutUint(data[0:4], uint64(s.ColorCode))
 	if s.PreemptionAndPowerControlIndicator {
 		data[4] = 1
 	}
 	if uint64(s.LCSS)>>2 != 0 {
 		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.LCSS: value %d does not fit in 2 bits", s.LCSS)
 	}
-	copy(data[5:7], bit.BitsFromUint8(uint8(s.LCSS), 2))
+	bit.PutUint(data[5:7], uint64(s.LCSS))
 	return quadraticresidue.Encode(data), nil
 }
 

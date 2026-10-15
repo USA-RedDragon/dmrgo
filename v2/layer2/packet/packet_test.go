@@ -155,7 +155,9 @@ func feed(t *testing.T, a *packet.Assembler, p packet.Packet) (*packet.Message, 
 }
 
 func llid(v uint32) [24]bit.Bit {
-	return [24]bit.Bit(bit.BitsFromUint32(v, 24))
+	var b [24]bit.Bit
+	bit.PutUint(b[:], uint64(v))
+	return b
 }
 
 func unconfirmed() pdu.DataHeader {
@@ -290,7 +292,7 @@ func TestAssembler_Bursts(t *testing.T) {
 		t.Fatal(err)
 	}
 	pack := func(bits [96]bit.Bit, dt enums.DataType) *layer2.Burst {
-		raw, err := layer2.BuildDataBurst([12]byte(bit.PackBits(bits[:])), dt, 1, layer2.SyncSourceBS)
+		raw, err := layer2.BuildDataBurst([12]byte(bit.Pack(bits[:])), dt, 1, layer2.SyncSourceBS)
 		if err != nil {
 			t.Fatal(err)
 		}

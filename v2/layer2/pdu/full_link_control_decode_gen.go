@@ -55,10 +55,10 @@ func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) (Full
 			}
 		}
 	}
-	result.ProtectFlag = bit.BitsToBool(data[:], 0)
-	result.Reserved = bit.BitsToBool(data[:], 1)
-	result.FLCO = enums.FLCO(bit.BitsToUint8(data[:], 2, 6))
-	result.FeatureSetID = enums.FeatureSetID(bit.BitsToUint8(data[:], 8, 8))
+	result.ProtectFlag = data[0] == 1
+	result.Reserved = data[1] == 1
+	result.FLCO = enums.FLCO(bit.Uint(data[2:8]))
+	result.FeatureSetID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	var _dispatchBits [56]bit.Bit
 	copy(_dispatchBits[:], data[16:72])
 	if result.FeatureSetID == 0 {
@@ -162,15 +162,15 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 	if uint64(s.FLCO)>>6 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.FLCO: value %d does not fit in 6 bits", s.FLCO)
 	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.FLCO), 6))
+	bit.PutUint(data[2:8], uint64(s.FLCO))
 	if uint64(s.FeatureSetID)>>8 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.FeatureSetID: value %d does not fit in 8 bits", s.FeatureSetID)
 	}
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.FeatureSetID), 8))
+	bit.PutUint(data[8:16], uint64(s.FeatureSetID))
 	if _payload != "" {
 		var result FullLinkControl
-		result.FLCO = enums.FLCO(bit.BitsToUint8(data[:], 2, 6))
-		result.FeatureSetID = enums.FeatureSetID(bit.BitsToUint8(data[:], 8, 8))
+		result.FLCO = enums.FLCO(bit.Uint(data[2:8]))
+		result.FeatureSetID = enums.FeatureSetID(bit.Uint(data[8:16]))
 		_want := "RawPayload"
 		if result.FeatureSetID == 0 {
 			switch result.FLCO {
@@ -251,8 +251,8 @@ func DecodeFLCGroupVoice(data [56]bit.Bit) (FLCGroupVoice, fec.Result) {
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions, _ = layer3.DecodeServiceOptions(_serviceOptionsBits)
-	result.GroupAddress = bit.BitsToInt(data[:], 8, 24)
-	result.SourceAddress = bit.BitsToInt(data[:], 32, 24)
+	result.GroupAddress = int(bit.Uint(data[8:32]))
+	result.SourceAddress = int(bit.Uint(data[32:56]))
 	return result, fecResult
 }
 
@@ -267,11 +267,11 @@ func (s *FLCGroupVoice) Encode() ([56]bit.Bit, error) {
 	if uint64(s.GroupAddress)>>24 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCGroupVoice.GroupAddress: value %d does not fit in 24 bits", s.GroupAddress)
 	}
-	copy(data[8:32], bit.BitsFromUint32(uint32(s.GroupAddress), 24))
+	bit.PutUint(data[8:32], uint64(s.GroupAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCGroupVoice.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
 	}
-	copy(data[32:56], bit.BitsFromUint32(uint32(s.SourceAddress), 24))
+	bit.PutUint(data[32:56], uint64(s.SourceAddress))
 	return data, nil
 }
 
@@ -287,8 +287,8 @@ func DecodeFLCUnitToUnit(data [56]bit.Bit) (FLCUnitToUnit, fec.Result) {
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions, _ = layer3.DecodeServiceOptions(_serviceOptionsBits)
-	result.TargetAddress = bit.BitsToInt(data[:], 8, 24)
-	result.SourceAddress = bit.BitsToInt(data[:], 32, 24)
+	result.TargetAddress = int(bit.Uint(data[8:32]))
+	result.SourceAddress = int(bit.Uint(data[32:56]))
 	return result, fecResult
 }
 
@@ -303,11 +303,11 @@ func (s *FLCUnitToUnit) Encode() ([56]bit.Bit, error) {
 	if uint64(s.TargetAddress)>>24 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCUnitToUnit.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
 	}
-	copy(data[8:32], bit.BitsFromUint32(uint32(s.TargetAddress), 24))
+	bit.PutUint(data[8:32], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCUnitToUnit.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
 	}
-	copy(data[32:56], bit.BitsFromUint32(uint32(s.SourceAddress), 24))
+	bit.PutUint(data[32:56], uint64(s.SourceAddress))
 	return data, nil
 }
 
@@ -321,9 +321,9 @@ func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.Result) {
 	bit.Mask(data[:])
 	var fecResult fec.Result
 	copy(result.Reserved[:], data[0:4])
-	result.PositionError = layer3.PositionError(bit.BitsToUint8(data[:], 4, 3))
-	result.Longitude = float64(int32(bit.BitsToUint32(data[:], 7, 25)<<7)>>7) * 360.0 / (1 << 25)
-	result.Latitude = float64(int32(bit.BitsToUint32(data[:], 32, 24)<<8)>>8) * 180.0 / (1 << 24)
+	result.PositionError = layer3.PositionError(bit.Uint(data[4:7]))
+	result.Longitude = float64(int32(uint32(bit.Uint(data[7:32]))<<7)>>7) * 360.0 / (1 << 25)
+	result.Latitude = float64(int32(uint32(bit.Uint(data[32:56]))<<8)>>8) * 180.0 / (1 << 24)
 	return result, fecResult
 }
 
@@ -334,18 +334,18 @@ func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
 	if uint64(s.PositionError)>>3 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.PositionError: value %d does not fit in 3 bits", s.PositionError)
 	}
-	copy(data[4:7], bit.BitsFromUint8(uint8(s.PositionError), 3))
+	bit.PutUint(data[4:7], uint64(s.PositionError))
 	if !(s.Longitude >= -180.0 && s.Longitude <= 180.0) {
 		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Longitude: %v degrees is outside [-180, 180]", s.Longitude)
 	}
 	_rawLongitude := math.Round(s.Longitude * (1 << 25) / 360.0)
-	copy(data[7:32], bit.BitsFromUint32(uint32(int32(_rawLongitude)), 25))
+	bit.PutUint(data[7:32], uint64(int64(_rawLongitude)))
 	if !(s.Latitude >= -90.0 && s.Latitude <= 90.0) {
 		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Latitude: %v degrees is outside [-90, 90]", s.Latitude)
 	}
 	_rawLatitude := math.Round(s.Latitude * (1 << 24) / 180.0)
 	_rawLatitude = min(_rawLatitude, 8388607)
-	copy(data[32:56], bit.BitsFromUint32(uint32(int32(_rawLatitude)), 24))
+	bit.PutUint(data[32:56], uint64(int64(_rawLatitude)))
 	return data, nil
 }
 
@@ -358,9 +358,9 @@ func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.Res
 	var result FLCTalkerAliasHeader
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(bit.BitsToUint8(data[:], 0, 2))
-	result.TalkerAliasDataLength = bit.BitsToInt(data[:], 2, 5)
-	result.TalkerAliasDataMSB = bit.BitsToBool(data[:], 7)
+	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(bit.Uint(data[0:2]))
+	result.TalkerAliasDataLength = int(bit.Uint(data[2:7]))
+	result.TalkerAliasDataMSB = data[7] == 1
 	copy(result.TalkerAliasData[:], data[8:56])
 	return result, fecResult
 }
@@ -371,11 +371,11 @@ func (s *FLCTalkerAliasHeader) Encode() ([56]bit.Bit, error) {
 	if uint64(s.TalkerAliasDataFormat)>>2 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCTalkerAliasHeader.TalkerAliasDataFormat: value %d does not fit in 2 bits", s.TalkerAliasDataFormat)
 	}
-	copy(data[0:2], bit.BitsFromUint8(uint8(s.TalkerAliasDataFormat), 2))
+	bit.PutUint(data[0:2], uint64(s.TalkerAliasDataFormat))
 	if uint64(s.TalkerAliasDataLength)>>5 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCTalkerAliasHeader.TalkerAliasDataLength: value %d does not fit in 5 bits", s.TalkerAliasDataLength)
 	}
-	copy(data[2:7], bit.BitsFromUint8(uint8(s.TalkerAliasDataLength), 5))
+	bit.PutUint(data[2:7], uint64(s.TalkerAliasDataLength))
 	if s.TalkerAliasDataMSB {
 		data[7] = 1
 	}
@@ -412,14 +412,14 @@ func DecodeFLCTerminatorDataLinkControl(data [56]bit.Bit) (FLCTerminatorDataLink
 	var result FLCTerminatorDataLinkControl
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.LLIDDestination = bit.BitsToInt(data[:], 0, 24)
-	result.LLIDSource = bit.BitsToInt(data[:], 24, 24)
-	result.GroupOrIndividual = bit.BitsToBool(data[:], 48)
-	result.ResponseRequested = bit.BitsToBool(data[:], 49)
-	result.FullMessageFlag = bit.BitsToBool(data[:], 50)
-	result.Reserved = bit.BitsToBool(data[:], 51)
-	result.ReSynchronizeFlag = bit.BitsToBool(data[:], 52)
-	result.SendSequenceNumber = bit.BitsToUint8(data[:], 53, 3)
+	result.LLIDDestination = int(bit.Uint(data[0:24]))
+	result.LLIDSource = int(bit.Uint(data[24:48]))
+	result.GroupOrIndividual = data[48] == 1
+	result.ResponseRequested = data[49] == 1
+	result.FullMessageFlag = data[50] == 1
+	result.Reserved = data[51] == 1
+	result.ReSynchronizeFlag = data[52] == 1
+	result.SendSequenceNumber = uint8(bit.Uint(data[53:56]))
 	return result, fecResult
 }
 
@@ -429,11 +429,11 @@ func (s *FLCTerminatorDataLinkControl) Encode() ([56]bit.Bit, error) {
 	if uint64(s.LLIDDestination)>>24 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCTerminatorDataLinkControl.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
 	}
-	copy(data[0:24], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	bit.PutUint(data[0:24], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCTerminatorDataLinkControl.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
 	}
-	copy(data[24:48], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	bit.PutUint(data[24:48], uint64(s.LLIDSource))
 	if s.GroupOrIndividual {
 		data[48] = 1
 	}
@@ -452,7 +452,7 @@ func (s *FLCTerminatorDataLinkControl) Encode() ([56]bit.Bit, error) {
 	if uint64(s.SendSequenceNumber)>>3 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCTerminatorDataLinkControl.SendSequenceNumber: value %d does not fit in 3 bits", s.SendSequenceNumber)
 	}
-	copy(data[53:56], bit.BitsFromUint8(s.SendSequenceNumber, 3))
+	bit.PutUint(data[53:56], uint64(s.SendSequenceNumber))
 	return data, nil
 }
 

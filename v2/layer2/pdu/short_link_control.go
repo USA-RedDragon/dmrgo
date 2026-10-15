@@ -49,7 +49,7 @@ const netSiteLen = 12
 // (ETSI TS 102 361-4 Table 6.5): Tiny 9 bits, Small 7 bits,
 // Large 4 bits, Huge 2 bits.
 func (s *ShortLCCSysParms) NetID() uint16 {
-	return bit.BitsToUint16(s.NetSiteRaw[:], 0, netSiteBits(s.MODEL))
+	return uint16(bit.Uint(s.NetSiteRaw[:netSiteBits(s.MODEL)]))
 }
 
 // SiteID returns the site ID based on the MODEL field
@@ -57,7 +57,7 @@ func (s *ShortLCCSysParms) NetID() uint16 {
 // Large 8 bits, Huge 10 bits.
 func (s *ShortLCCSysParms) SiteID() uint16 {
 	n := netSiteBits(s.MODEL)
-	return bit.BitsToUint16(s.NetSiteRaw[:], n, netSiteLen-n)
+	return uint16(bit.Uint(s.NetSiteRaw[n : n+(netSiteLen-n)]))
 }
 
 // ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
@@ -72,14 +72,14 @@ type ShortLCPSysParms struct {
 // NetID returns the network ID based on the MODEL field
 // (ETSI TS 102 361-4 Table 6.5).
 func (s *ShortLCPSysParms) NetID() uint16 {
-	return bit.BitsToUint16(s.NetSiteRaw[:], 0, netSiteBits(s.MODEL))
+	return uint16(bit.Uint(s.NetSiteRaw[:netSiteBits(s.MODEL)]))
 }
 
 // SiteID returns the site ID based on the MODEL field
 // (ETSI TS 102 361-4 Table 6.5).
 func (s *ShortLCPSysParms) SiteID() uint16 {
 	n := netSiteBits(s.MODEL)
-	return bit.BitsToUint16(s.NetSiteRaw[:], n, netSiteLen-n)
+	return uint16(bit.Uint(s.NetSiteRaw[n : n+(netSiteLen-n)]))
 }
 
 // dmr:crc crc_8

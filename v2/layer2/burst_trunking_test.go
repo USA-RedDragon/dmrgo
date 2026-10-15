@@ -17,7 +17,7 @@ func TestBurst_Opcode0x38HintFromSync(t *testing.T) {
 	csbk := &pdu.CSBK{LastBlock: true, CSBKOpcode: pdu.CSBKBSOutboundActivationPDU, RawPayload: must(act.Encode())}
 	encBits := must(csbk.Encode())
 	var payload [12]byte
-	copy(payload[:], bit.PackBits(encBits[:]))
+	copy(payload[:], bit.Pack(encBits[:]))
 
 	tests := []struct {
 		src  layer2.SyncSource

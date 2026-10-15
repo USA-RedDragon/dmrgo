@@ -34,7 +34,7 @@ func noise(r *rand.Rand, n int) []bit.Bit {
 }
 
 func burstBits(b [33]byte) []bit.Bit {
-	return bit.UnpackBits(b[:])
+	return bit.Unpack(b[:])
 }
 
 func flip(b [33]byte, positions ...int) [33]byte {
@@ -175,11 +175,11 @@ func TestFramer_DirectChannel(t *testing.T) {
 	stream := make([]bit.Bit, 0, 500+3*framer.SlotPeriod)
 	ts2 := [33]byte(must(layer2.BuildDataBurst([12]byte{}, enums.DataTypeIdle, 1, layer2.SyncSourceBS)))
 	var bits [264]bit.Bit
-	copy(bits[:], bit.UnpackBits(ts2[:]))
+	copy(bits[:], bit.Unpack(ts2[:]))
 	for i := range framer.SyncBits {
 		bits[framer.SyncOffset+i] = bit.Bit(uint64(enums.SyncTDMA2Data) >> (framer.SyncBits - 1 - i) & 1)
 	}
-	ts2 = bit.PackBits264(bits)
+	ts2 = bit.Pack264(bits)
 	stream = append(stream, noise(r, 500)...)
 	for range 3 {
 		stream = append(stream, burstBits(ts2)...)

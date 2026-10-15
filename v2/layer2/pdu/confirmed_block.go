@@ -20,9 +20,9 @@ func confirmedCRC9(block []byte) uint16 {
 // computeConfirmedCRC9 computes the masked CRC-9 over the user data followed
 // by the 7 DBSN bits, which is the M(x) order given in clause B.3.10.
 func computeConfirmedCRC9(dbsn uint8, userData []byte, mask uint16) uint16 {
-	bits := make([]bit.Bit, 0, len(userData)*8+7)
-	bits = append(bits, bit.UnpackBits(userData)...)
-	bits = append(bits, bit.BitsFromUint8(dbsn&0x7F, 7)...)
+	bits := make([]bit.Bit, len(userData)*8+7)
+	copy(bits, bit.Unpack(userData))
+	bit.PutUint(bits[len(bits)-7:], uint64(dbsn))
 	return (crc.CalculateCRC9(bits) ^ mask) & 0x1FF
 }
 

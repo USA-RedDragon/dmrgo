@@ -14,7 +14,7 @@ import (
 func buildRCInfoBits(payload byte) [11]bit.Bit {
 	var bits [11]bit.Bit
 	// Payload: bits 0-3 (MSB-first)
-	copy(bits[0:4], bit.BitsFromUint8(payload&0x0F, 4))
+	bit.PutUint(bits[0:4], uint64(payload&0x0F))
 	// CRC-7 with mask 0x7A
 	crcVal := crc.CalculateCRC7(bits[:4]) ^ pdu.CRC7MaskRC
 	for i := 0; i < 7; i++ {

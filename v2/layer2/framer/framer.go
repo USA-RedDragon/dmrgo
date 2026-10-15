@@ -209,7 +209,7 @@ func (f *Framer) cut() Burst {
 	start := f.next
 	var raw [BurstBits]bit.Bit
 	copy(raw[:], f.buf[start:start+BurstBits])
-	b := Burst{Offset: f.base + int64(start), Data: bit.PackBits264(raw)}
+	b := Burst{Offset: f.base + int64(start), Data: bit.Pack264(raw)}
 	b.Sync, b.Distance = nearest(window(f.buf, start+SyncOffset))
 	if b.Distance > f.cfg.Threshold {
 		b.Sync = enums.SyncNone

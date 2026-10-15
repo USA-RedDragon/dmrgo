@@ -50,7 +50,7 @@ func DecodeBSOutboundActivationPDU(data [64]bit.Bit) (BSOutboundActivationPDU, f
 	var result BSOutboundActivationPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.Reserved = bit.BitsToUint16(data[:], 0, 16)
+	result.Reserved = uint16(bit.Uint(data[0:16]))
 	copy(result.BSAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -59,7 +59,7 @@ func DecodeBSOutboundActivationPDU(data [64]bit.Bit) (BSOutboundActivationPDU, f
 // Encode encodes a BSOutboundActivationPDU per ETSI TS 102 361-1 - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
 func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	copy(data[0:16], bit.BitsFromUint16(s.Reserved, 16))
+	bit.PutUint(data[0:16], uint64(s.Reserved))
 	copy(data[16:40], s.BSAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data, nil
@@ -74,8 +74,8 @@ func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) (UnitToUnitVoiceSe
 	var result UnitToUnitVoiceServiceRequestPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ServiceOptions = bit.BitsToUint8(data[:], 0, 8)
-	result.Reserved = bit.BitsToUint8(data[:], 8, 8)
+	result.ServiceOptions = byte(bit.Uint(data[0:8]))
+	result.Reserved = byte(bit.Uint(data[8:16]))
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -84,8 +84,8 @@ func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) (UnitToUnitVoiceSe
 // Encode encodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
 func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	copy(data[0:8], bit.BitsFromUint8(uint8(s.ServiceOptions), 8))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.Reserved), 8))
+	bit.PutUint(data[0:8], uint64(s.ServiceOptions))
+	bit.PutUint(data[8:16], uint64(s.Reserved))
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data, nil
@@ -100,8 +100,8 @@ func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnit
 	var result UnitToUnitVoiceServiceAnswerResponsePDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ServiceOptions = bit.BitsToUint8(data[:], 0, 8)
-	result.AnswerResponse = bit.BitsToUint8(data[:], 8, 8)
+	result.ServiceOptions = byte(bit.Uint(data[0:8]))
+	result.AnswerResponse = byte(bit.Uint(data[8:16]))
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -110,8 +110,8 @@ func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnit
 // Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	copy(data[0:8], bit.BitsFromUint8(uint8(s.ServiceOptions), 8))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.AnswerResponse), 8))
+	bit.PutUint(data[0:8], uint64(s.ServiceOptions))
+	bit.PutUint(data[8:16], uint64(s.AnswerResponse))
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data, nil
@@ -126,10 +126,10 @@ func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgement
 	var result NegativeAcknowledgementPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.AdditionalInfo = layer3.AdditionalInformationField(bit.BitsToUint8(data[:], 0, 1))
-	result.SourceType = layer3.SourceType(bit.BitsToUint8(data[:], 1, 1))
-	result.ServiceType = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
-	result.ReasonCode = bit.BitsToUint8(data[:], 8, 8)
+	result.AdditionalInfo = layer3.AdditionalInformationField(bit.Uint(data[0:1]))
+	result.SourceType = layer3.SourceType(bit.Uint(data[1:2]))
+	result.ServiceType = CSBKOpcode(bit.Uint(data[2:8]))
+	result.ReasonCode = byte(bit.Uint(data[8:16]))
 	copy(result.SourceAddress[:], data[16:40])
 	copy(result.TargetAddress[:], data[40:64])
 	return result, fecResult
@@ -141,16 +141,16 @@ func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.AdditionalInfo)>>1 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.AdditionalInfo: value %d does not fit in 1 bits", s.AdditionalInfo)
 	}
-	copy(data[0:1], bit.BitsFromUint8(uint8(s.AdditionalInfo), 1))
+	bit.PutUint(data[0:1], uint64(s.AdditionalInfo))
 	if uint64(s.SourceType)>>1 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.SourceType: value %d does not fit in 1 bits", s.SourceType)
 	}
-	copy(data[1:2], bit.BitsFromUint8(uint8(s.SourceType), 1))
+	bit.PutUint(data[1:2], uint64(s.SourceType))
 	if uint64(s.ServiceType)>>6 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.ServiceType: value %d does not fit in 6 bits", s.ServiceType)
 	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.ServiceType), 6))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.ReasonCode), 8))
+	bit.PutUint(data[2:8], uint64(s.ServiceType))
+	bit.PutUint(data[8:16], uint64(s.ReasonCode))
 	copy(data[16:40], s.SourceAddress[:])
 	copy(data[40:64], s.TargetAddress[:])
 	return data, nil
@@ -165,10 +165,10 @@ func DecodePreamblePDU(data [64]bit.Bit) (PreamblePDU, fec.Result) {
 	var result PreamblePDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.Data = bit.BitsToBool(data[:], 0)
-	result.Group = bit.BitsToBool(data[:], 1)
+	result.Data = data[0] == 1
+	result.Group = data[1] == 1
 	copy(result.Reserved[:], data[2:8])
-	result.CSBKBlocksToFollow = bit.BitsToUint8(data[:], 8, 8)
+	result.CSBKBlocksToFollow = byte(bit.Uint(data[8:16]))
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -184,7 +184,7 @@ func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
 		data[1] = 1
 	}
 	copy(data[2:8], s.Reserved[:])
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.CSBKBlocksToFollow), 8))
+	bit.PutUint(data[8:16], uint64(s.CSBKBlocksToFollow))
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data, nil
@@ -202,13 +202,13 @@ func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.Result) {
 	copy(result.SyncAge[:], data[0:11])
 	copy(result.Generation[:], data[11:16])
 	copy(result.LeaderIdentifier[:], data[16:36])
-	result.NewLeader = bit.BitsToBool(data[:], 36)
+	result.NewLeader = data[36] == 1
 	copy(result.LeaderDynamicIdentifier[:], data[37:39])
-	result.ChannelTimingOp1 = bit.BitsToBool(data[:], 39)
+	result.ChannelTimingOp1 = data[39] == 1
 	copy(result.SourceIdentifier[:], data[40:60])
-	result.Reserved = bit.BitsToBool(data[:], 60)
+	result.Reserved = data[60] == 1
 	copy(result.SourceDynamicIdentifier[:], data[61:63])
-	result.ChannelTimingOp0 = bit.BitsToBool(data[:], 63)
+	result.ChannelTimingOp0 = data[63] == 1
 	return result, fecResult
 }
 
@@ -245,11 +245,11 @@ func DecodePrivateVoiceGrantPDU(data [64]bit.Bit) (PrivateVoiceGrantPDU, fec.Res
 	var result PrivateVoiceGrantPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.Reserved = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.Offset = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.Reserved = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.Offset = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -261,7 +261,7 @@ func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("PrivateVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -288,11 +288,11 @@ func DecodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) (TalkgroupVoiceGrantPDU, fec
 	var result TalkgroupVoiceGrantPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.LateEntry = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.Offset = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.LateEntry = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.Offset = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -304,7 +304,7 @@ func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("TalkgroupVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -331,11 +331,11 @@ func DecodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) (BroadcastTalkgroup
 	var result BroadcastTalkgroupVoiceGrantPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.LateEntry = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.Offset = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.LateEntry = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.Offset = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -347,7 +347,7 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("BroadcastTalkgroupVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -374,11 +374,11 @@ func DecodePrivateDataGrantPDU(data [64]bit.Bit) (PrivateDataGrantPDU, fec.Resul
 	var result PrivateDataGrantPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.HiRate = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.Offset = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.HiRate = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.Offset = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -390,7 +390,7 @@ func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -417,11 +417,11 @@ func DecodeTalkgroupDataGrantPDU(data [64]bit.Bit) (TalkgroupDataGrantPDU, fec.R
 	var result TalkgroupDataGrantPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.HiRate = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.Offset = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.HiRate = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.Offset = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -433,7 +433,7 @@ func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -460,11 +460,11 @@ func DecodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) (DuplexPrivateVoiceGrant
 	var result DuplexPrivateVoiceGrantPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.Reserved = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.CallDirection = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.Reserved = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.CallDirection = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -476,7 +476,7 @@ func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -503,11 +503,11 @@ func DecodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) (DuplexPrivateDataGrantPD
 	var result DuplexPrivateDataGrantPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.HiRate = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.CallDirection = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.HiRate = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.CallDirection = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -519,7 +519,7 @@ func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -546,11 +546,11 @@ func DecodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) (PrivateDataGrantMulti
 	var result PrivateDataGrantMultiItemPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.HiRate = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.Offset = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.HiRate = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.Offset = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -562,7 +562,7 @@ func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantMultiItemPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -589,11 +589,11 @@ func DecodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) (TalkgroupDataGrantM
 	var result TalkgroupDataGrantMultiItemPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.LogicalChannel = bit.BitsToBool(data[:], 12)
-	result.HiRate = bit.BitsToBool(data[:], 13)
-	result.Emergency = bit.BitsToBool(data[:], 14)
-	result.Offset = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.LogicalChannel = data[12] == 1
+	result.HiRate = data[13] == 1
+	result.Emergency = data[14] == 1
+	result.Offset = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -605,7 +605,7 @@ func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantMultiItemPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
 		data[12] = 1
 	}
@@ -633,12 +633,12 @@ func DecodeMovePDU(data [64]bit.Bit) (MovePDU, fec.Result) {
 	bit.Mask(data[:])
 	var fecResult fec.Result
 	copy(result.Reserved1[:], data[0:9])
-	result.Mask = bit.BitsToUint8(data[:], 9, 5)
+	result.Mask = uint8(bit.Uint(data[9:14]))
 	copy(result.Reserved2[:], data[14:19])
-	result.Reg = bit.BitsToBool(data[:], 19)
-	result.Backoff = bit.BitsToUint8(data[:], 20, 4)
+	result.Reg = data[19] == 1
+	result.Backoff = uint8(bit.Uint(data[20:24]))
 	copy(result.Reserved3[:], data[24:28])
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 28, 12)
+	result.PhysicalChannel = uint16(bit.Uint(data[28:40]))
 	copy(result.MSAddress[:], data[40:64])
 	return result, fecResult
 }
@@ -650,7 +650,7 @@ func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.Mask)>>5 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Mask: value %d does not fit in 5 bits", s.Mask)
 	}
-	copy(data[9:14], bit.BitsFromUint8(s.Mask, 5))
+	bit.PutUint(data[9:14], uint64(s.Mask))
 	copy(data[14:19], s.Reserved2[:])
 	if s.Reg {
 		data[19] = 1
@@ -658,12 +658,12 @@ func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.Backoff)>>4 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Backoff: value %d does not fit in 4 bits", s.Backoff)
 	}
-	copy(data[20:24], bit.BitsFromUint8(s.Backoff, 4))
+	bit.PutUint(data[20:24], uint64(s.Backoff))
 	copy(data[24:28], s.Reserved3[:])
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("MovePDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[28:40], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[28:40], uint64(s.PhysicalChannel))
 	copy(data[40:64], s.MSAddress[:])
 	return data, nil
 }
@@ -677,18 +677,18 @@ func DecodeAlohaPDU(data [64]bit.Bit) (AlohaPDU, fec.Result) {
 	var result AlohaPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.Reserved1 = bit.BitsToBool(data[:], 0)
-	result.TSCCAS = bit.BitsToBool(data[:], 1)
-	result.SiteTSSync = bit.BitsToBool(data[:], 2)
-	result.Version = bit.BitsToUint8(data[:], 3, 3)
-	result.Offset = bit.BitsToBool(data[:], 6)
-	result.ActiveConn = bit.BitsToBool(data[:], 7)
-	result.Mask = bit.BitsToUint8(data[:], 8, 5)
-	result.ServiceFunc = bit.BitsToUint8(data[:], 13, 2)
-	result.NRandWait = bit.BitsToUint8(data[:], 15, 4)
-	result.Reg = bit.BitsToBool(data[:], 19)
-	result.Backoff = bit.BitsToUint8(data[:], 20, 4)
-	result.SysIdentCode = bit.BitsToUint16(data[:], 24, 16)
+	result.Reserved1 = data[0] == 1
+	result.TSCCAS = data[1] == 1
+	result.SiteTSSync = data[2] == 1
+	result.Version = uint8(bit.Uint(data[3:6]))
+	result.Offset = data[6] == 1
+	result.ActiveConn = data[7] == 1
+	result.Mask = uint8(bit.Uint(data[8:13]))
+	result.ServiceFunc = uint8(bit.Uint(data[13:15]))
+	result.NRandWait = uint8(bit.Uint(data[15:19]))
+	result.Reg = data[19] == 1
+	result.Backoff = uint8(bit.Uint(data[20:24]))
+	result.SysIdentCode = uint16(bit.Uint(data[24:40]))
 	copy(result.MSAddress[:], data[40:64])
 	return result, fecResult
 }
@@ -708,7 +708,7 @@ func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.Version)>>3 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.Version: value %d does not fit in 3 bits", s.Version)
 	}
-	copy(data[3:6], bit.BitsFromUint8(s.Version, 3))
+	bit.PutUint(data[3:6], uint64(s.Version))
 	if s.Offset {
 		data[6] = 1
 	}
@@ -718,23 +718,23 @@ func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.Mask)>>5 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.Mask: value %d does not fit in 5 bits", s.Mask)
 	}
-	copy(data[8:13], bit.BitsFromUint8(s.Mask, 5))
+	bit.PutUint(data[8:13], uint64(s.Mask))
 	if uint64(s.ServiceFunc)>>2 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.ServiceFunc: value %d does not fit in 2 bits", s.ServiceFunc)
 	}
-	copy(data[13:15], bit.BitsFromUint8(s.ServiceFunc, 2))
+	bit.PutUint(data[13:15], uint64(s.ServiceFunc))
 	if uint64(s.NRandWait)>>4 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.NRandWait: value %d does not fit in 4 bits", s.NRandWait)
 	}
-	copy(data[15:19], bit.BitsFromUint8(s.NRandWait, 4))
+	bit.PutUint(data[15:19], uint64(s.NRandWait))
 	if s.Reg {
 		data[19] = 1
 	}
 	if uint64(s.Backoff)>>4 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.Backoff: value %d does not fit in 4 bits", s.Backoff)
 	}
-	copy(data[20:24], bit.BitsFromUint8(s.Backoff, 4))
-	copy(data[24:40], bit.BitsFromUint16(s.SysIdentCode, 16))
+	bit.PutUint(data[20:24], uint64(s.Backoff))
+	bit.PutUint(data[24:40], uint64(s.SysIdentCode))
 	copy(data[40:64], s.MSAddress[:])
 	return data, nil
 }
@@ -748,11 +748,11 @@ func DecodeCBroadcastPDU(data [64]bit.Bit) (CBroadcastPDU, fec.Result) {
 	var result CBroadcastPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.AnnouncementType = enums.AnnouncementType(bit.BitsToUint8(data[:], 0, 5))
+	result.AnnouncementType = enums.AnnouncementType(bit.Uint(data[0:5]))
 	copy(result.BroadcastParms1[:], data[5:19])
-	result.Reg = bit.BitsToBool(data[:], 19)
-	result.Backoff = bit.BitsToUint8(data[:], 20, 4)
-	result.SysIdentCode = bit.BitsToUint16(data[:], 24, 16)
+	result.Reg = data[19] == 1
+	result.Backoff = uint8(bit.Uint(data[20:24]))
+	result.SysIdentCode = uint16(bit.Uint(data[24:40]))
 	copy(result.BroadcastParms2[:], data[40:64])
 	return result, fecResult
 }
@@ -763,7 +763,7 @@ func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.AnnouncementType: value %d does not fit in 5 bits", s.AnnouncementType)
 	}
-	copy(data[0:5], bit.BitsFromUint8(uint8(s.AnnouncementType), 5))
+	bit.PutUint(data[0:5], uint64(s.AnnouncementType))
 	copy(data[5:19], s.BroadcastParms1[:])
 	if s.Reg {
 		data[19] = 1
@@ -771,8 +771,8 @@ func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.Backoff)>>4 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.Backoff: value %d does not fit in 4 bits", s.Backoff)
 	}
-	copy(data[20:24], bit.BitsFromUint8(s.Backoff, 4))
-	copy(data[24:40], bit.BitsFromUint16(s.SysIdentCode, 16))
+	bit.PutUint(data[20:24], uint64(s.Backoff))
+	bit.PutUint(data[24:40], uint64(s.SysIdentCode))
 	copy(data[40:64], s.BroadcastParms2[:])
 	return data, nil
 }
@@ -786,10 +786,10 @@ func DecodeClearPDU(data [64]bit.Bit) (ClearPDU, fec.Result) {
 	var result ClearPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.PhysicalChannel = bit.BitsToUint16(data[:], 0, 12)
-	result.Reserved1 = bit.BitsToBool(data[:], 12)
-	result.Reserved2 = bit.BitsToUint8(data[:], 13, 2)
-	result.GroupIndividual = bit.BitsToBool(data[:], 15)
+	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
+	result.Reserved1 = data[12] == 1
+	result.Reserved2 = uint8(bit.Uint(data[13:15]))
+	result.GroupIndividual = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -801,14 +801,14 @@ func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
-	copy(data[0:12], bit.BitsFromUint16(s.PhysicalChannel, 12))
+	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.Reserved1 {
 		data[12] = 1
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
 	}
-	copy(data[13:15], bit.BitsFromUint8(s.Reserved2, 2))
+	bit.PutUint(data[13:15], uint64(s.Reserved2))
 	if s.GroupIndividual {
 		data[15] = 1
 	}
@@ -827,8 +827,8 @@ func DecodeProtectPDU(data [64]bit.Bit) (ProtectPDU, fec.Result) {
 	bit.Mask(data[:])
 	var fecResult fec.Result
 	copy(result.Reserved[:], data[0:12])
-	result.ProtectKind = bit.BitsToUint8(data[:], 12, 3)
-	result.GroupIndividual = bit.BitsToBool(data[:], 15)
+	result.ProtectKind = uint8(bit.Uint(data[12:15]))
+	result.GroupIndividual = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -841,7 +841,7 @@ func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.ProtectKind)>>3 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.ProtectKind: value %d does not fit in 3 bits", s.ProtectKind)
 	}
-	copy(data[12:15], bit.BitsFromUint8(s.ProtectKind, 3))
+	bit.PutUint(data[12:15], uint64(s.ProtectKind))
 	if s.GroupIndividual {
 		data[15] = 1
 	}
@@ -859,12 +859,12 @@ func DecodeAhoyPDU(data [64]bit.Bit) (AhoyPDU, fec.Result) {
 	var result AhoyPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ServiceOptsMirror = bit.BitsToUint8(data[:], 0, 7)
-	result.ServiceKindFlag = bit.BitsToBool(data[:], 7)
-	result.ALS = bit.BitsToBool(data[:], 8)
-	result.GroupIndividual = bit.BitsToBool(data[:], 9)
-	result.AppendedBlocks = bit.BitsToUint8(data[:], 10, 2)
-	result.ServiceKind = bit.BitsToUint8(data[:], 12, 4)
+	result.ServiceOptsMirror = uint8(bit.Uint(data[0:7]))
+	result.ServiceKindFlag = data[7] == 1
+	result.ALS = data[8] == 1
+	result.GroupIndividual = data[9] == 1
+	result.AppendedBlocks = uint8(bit.Uint(data[10:12]))
+	result.ServiceKind = uint8(bit.Uint(data[12:16]))
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -876,7 +876,7 @@ func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.ServiceOptsMirror: value %d does not fit in 7 bits", s.ServiceOptsMirror)
 	}
-	copy(data[0:7], bit.BitsFromUint8(s.ServiceOptsMirror, 7))
+	bit.PutUint(data[0:7], uint64(s.ServiceOptsMirror))
 	if s.ServiceKindFlag {
 		data[7] = 1
 	}
@@ -889,11 +889,11 @@ func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.AppendedBlocks)>>2 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.AppendedBlocks: value %d does not fit in 2 bits", s.AppendedBlocks)
 	}
-	copy(data[10:12], bit.BitsFromUint8(s.AppendedBlocks, 2))
+	bit.PutUint(data[10:12], uint64(s.AppendedBlocks))
 	if uint64(s.ServiceKind)>>4 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
 	}
-	copy(data[12:16], bit.BitsFromUint8(s.ServiceKind, 4))
+	bit.PutUint(data[12:16], uint64(s.ServiceKind))
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data, nil
@@ -908,9 +908,9 @@ func DecodeAckOutboundPDU(data [64]bit.Bit) (AckOutboundPDU, fec.Result) {
 	var result AckOutboundPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ResponseInfo = bit.BitsToUint8(data[:], 0, 7)
-	result.ReasonCode = bit.BitsToUint8(data[:], 7, 8)
-	result.Reserved = bit.BitsToBool(data[:], 15)
+	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
+	result.ReasonCode = byte(bit.Uint(data[7:15]))
+	result.Reserved = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.AdditionalInfo[:], data[40:64])
 	return result, fecResult
@@ -922,8 +922,8 @@ func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
 	}
-	copy(data[0:7], bit.BitsFromUint8(s.ResponseInfo, 7))
-	copy(data[7:15], bit.BitsFromUint8(uint8(s.ReasonCode), 8))
+	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
+	bit.PutUint(data[7:15], uint64(s.ReasonCode))
 	if s.Reserved {
 		data[15] = 1
 	}
@@ -941,9 +941,9 @@ func DecodeAckInboundPDU(data [64]bit.Bit) (AckInboundPDU, fec.Result) {
 	var result AckInboundPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ResponseInfo = bit.BitsToUint8(data[:], 0, 7)
-	result.ReasonCode = bit.BitsToUint8(data[:], 7, 8)
-	result.Reserved = bit.BitsToBool(data[:], 15)
+	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
+	result.ReasonCode = byte(bit.Uint(data[7:15]))
+	result.Reserved = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.AdditionalInfo[:], data[40:64])
 	return result, fecResult
@@ -955,8 +955,8 @@ func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckInboundPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
 	}
-	copy(data[0:7], bit.BitsFromUint8(s.ResponseInfo, 7))
-	copy(data[7:15], bit.BitsFromUint8(uint8(s.ReasonCode), 8))
+	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
+	bit.PutUint(data[7:15], uint64(s.ReasonCode))
 	if s.Reserved {
 		data[15] = 1
 	}
@@ -974,9 +974,9 @@ func DecodeAckOutboundPayloadPDU(data [64]bit.Bit) (AckOutboundPayloadPDU, fec.R
 	var result AckOutboundPayloadPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ResponseInfo = bit.BitsToUint8(data[:], 0, 7)
-	result.ReasonCode = bit.BitsToUint8(data[:], 7, 8)
-	result.Reserved = bit.BitsToBool(data[:], 15)
+	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
+	result.ReasonCode = byte(bit.Uint(data[7:15]))
+	result.Reserved = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.AdditionalInfo[:], data[40:64])
 	return result, fecResult
@@ -988,8 +988,8 @@ func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPayloadPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
 	}
-	copy(data[0:7], bit.BitsFromUint8(s.ResponseInfo, 7))
-	copy(data[7:15], bit.BitsFromUint8(uint8(s.ReasonCode), 8))
+	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
+	bit.PutUint(data[7:15], uint64(s.ReasonCode))
 	if s.Reserved {
 		data[15] = 1
 	}
@@ -1007,9 +1007,9 @@ func DecodeAckInboundPayloadPDU(data [64]bit.Bit) (AckInboundPayloadPDU, fec.Res
 	var result AckInboundPayloadPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ResponseInfo = bit.BitsToUint8(data[:], 0, 7)
-	result.ReasonCode = bit.BitsToUint8(data[:], 7, 8)
-	result.Reserved = bit.BitsToBool(data[:], 15)
+	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
+	result.ReasonCode = byte(bit.Uint(data[7:15]))
+	result.Reserved = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.AdditionalInfo[:], data[40:64])
 	return result, fecResult
@@ -1021,8 +1021,8 @@ func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckInboundPayloadPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
 	}
-	copy(data[0:7], bit.BitsFromUint8(s.ResponseInfo, 7))
-	copy(data[7:15], bit.BitsFromUint8(uint8(s.ReasonCode), 8))
+	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
+	bit.PutUint(data[7:15], uint64(s.ReasonCode))
 	if s.Reserved {
 		data[15] = 1
 	}
@@ -1040,10 +1040,10 @@ func DecodeRandomAccessPDU(data [64]bit.Bit) (RandomAccessPDU, fec.Result) {
 	var result RandomAccessPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ServiceOptions = bit.BitsToUint8(data[:], 0, 7)
-	result.ProxyFlag = bit.BitsToBool(data[:], 7)
-	result.Reserved = bit.BitsToUint8(data[:], 8, 4)
-	result.ServiceKind = bit.BitsToUint8(data[:], 12, 4)
+	result.ServiceOptions = uint8(bit.Uint(data[0:7]))
+	result.ProxyFlag = data[7] == 1
+	result.Reserved = uint8(bit.Uint(data[8:12]))
+	result.ServiceKind = uint8(bit.Uint(data[12:16]))
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -1055,18 +1055,18 @@ func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.ServiceOptions)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.ServiceOptions: value %d does not fit in 7 bits", s.ServiceOptions)
 	}
-	copy(data[0:7], bit.BitsFromUint8(s.ServiceOptions, 7))
+	bit.PutUint(data[0:7], uint64(s.ServiceOptions))
 	if s.ProxyFlag {
 		data[7] = 1
 	}
 	if uint64(s.Reserved)>>4 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.Reserved: value %d does not fit in 4 bits", s.Reserved)
 	}
-	copy(data[8:12], bit.BitsFromUint8(s.Reserved, 4))
+	bit.PutUint(data[8:12], uint64(s.Reserved))
 	if uint64(s.ServiceKind)>>4 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
 	}
-	copy(data[12:16], bit.BitsFromUint8(s.ServiceKind, 4))
+	bit.PutUint(data[12:16], uint64(s.ServiceKind))
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data, nil
@@ -1081,11 +1081,11 @@ func DecodeAckvitationPDU(data [64]bit.Bit) (AckvitationPDU, fec.Result) {
 	var result AckvitationPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ServiceOptsMirror = bit.BitsToUint8(data[:], 0, 7)
-	result.ServiceKindFlag = bit.BitsToBool(data[:], 7)
-	result.Reserved = bit.BitsToUint8(data[:], 8, 2)
-	result.UAB = bit.BitsToUint8(data[:], 10, 2)
-	result.ServiceKind = bit.BitsToUint8(data[:], 12, 4)
+	result.ServiceOptsMirror = uint8(bit.Uint(data[0:7]))
+	result.ServiceKindFlag = data[7] == 1
+	result.Reserved = uint8(bit.Uint(data[8:10]))
+	result.UAB = uint8(bit.Uint(data[10:12]))
+	result.ServiceKind = uint8(bit.Uint(data[12:16]))
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -1097,22 +1097,22 @@ func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.ServiceOptsMirror: value %d does not fit in 7 bits", s.ServiceOptsMirror)
 	}
-	copy(data[0:7], bit.BitsFromUint8(s.ServiceOptsMirror, 7))
+	bit.PutUint(data[0:7], uint64(s.ServiceOptsMirror))
 	if s.ServiceKindFlag {
 		data[7] = 1
 	}
 	if uint64(s.Reserved)>>2 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.Reserved: value %d does not fit in 2 bits", s.Reserved)
 	}
-	copy(data[8:10], bit.BitsFromUint8(s.Reserved, 2))
+	bit.PutUint(data[8:10], uint64(s.Reserved))
 	if uint64(s.UAB)>>2 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.UAB: value %d does not fit in 2 bits", s.UAB)
 	}
-	copy(data[10:12], bit.BitsFromUint8(s.UAB, 2))
+	bit.PutUint(data[10:12], uint64(s.UAB))
 	if uint64(s.ServiceKind)>>4 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
 	}
-	copy(data[12:16], bit.BitsFromUint8(s.ServiceKind, 4))
+	bit.PutUint(data[12:16], uint64(s.ServiceKind))
 	copy(data[16:40], s.TargetAddress[:])
 	copy(data[40:64], s.SourceAddress[:])
 	return data, nil
@@ -1128,8 +1128,8 @@ func DecodeMaintenancePDU(data [64]bit.Bit) (MaintenancePDU, fec.Result) {
 	bit.Mask(data[:])
 	var fecResult fec.Result
 	copy(result.Reserved[:], data[0:12])
-	result.MaintKind = bit.BitsToUint8(data[:], 12, 3)
-	result.Reserved2 = bit.BitsToBool(data[:], 15)
+	result.MaintKind = uint8(bit.Uint(data[12:15]))
+	result.Reserved2 = data[15] == 1
 	copy(result.TargetAddress[:], data[16:40])
 	copy(result.SourceAddress[:], data[40:64])
 	return result, fecResult
@@ -1142,7 +1142,7 @@ func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
 	if uint64(s.MaintKind)>>3 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.MaintKind: value %d does not fit in 3 bits", s.MaintKind)
 	}
-	copy(data[12:15], bit.BitsFromUint8(s.MaintKind, 3))
+	bit.PutUint(data[12:15], uint64(s.MaintKind))
 	if s.Reserved2 {
 		data[15] = 1
 	}
@@ -1174,10 +1174,10 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
 	}
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.LastBlock = bit.BitsToBool(data[:], 0)
-	result.ProtectFlag = bit.BitsToBool(data[:], 1)
-	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
-	result.FID = bit.BitsToUint8(data[:], 8, 8)
+	result.LastBlock = data[0] == 1
+	result.ProtectFlag = data[1] == 1
+	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+	result.FID = byte(bit.Uint(data[8:16]))
 	var _dispatchBits [64]bit.Bit
 	copy(_dispatchBits[:], data[16:80])
 	if result.FID == 0 {
@@ -1481,12 +1481,12 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 	if uint64(s.CSBKOpcode)>>6 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("CSBK.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
-	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
-	copy(data[8:16], bit.BitsFromUint8(uint8(s.FID), 8))
+	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
+	bit.PutUint(data[8:16], uint64(s.FID))
 	if _payload != "" {
 		var result CSBK
-		result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
-		result.FID = bit.BitsToUint8(data[:], 8, 8)
+		result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+		result.FID = byte(bit.Uint(data[8:16]))
 		_want := "RawPayload"
 		if result.FID == 0 {
 			switch result.CSBKOpcode {

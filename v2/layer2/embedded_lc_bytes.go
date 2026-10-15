@@ -10,7 +10,7 @@ import (
 // LC lc, in the form RawBurst.SetEmbeddedData takes.
 func EmbeddedLCFragments(lc [9]byte) [4][4]byte {
 	var bits [72]bit.Bit
-	copy(bits[:], bit.UnpackBits(lc[:]))
+	copy(bits[:], bit.Unpack(lc[:]))
 	return fragmentOctets(EncodeEmbeddedLC(bits))
 }
 
@@ -31,7 +31,7 @@ func DecodeEmbeddedLCFragmentsStrict(f [4][4]byte) ([9]byte, fec.Result) {
 func fragmentOctets(fr [4][32]bit.Bit) [4][4]byte {
 	var out [4][4]byte
 	for i := range fr {
-		copy(out[i][:], bit.PackBits(fr[i][:]))
+		copy(out[i][:], bit.Pack(fr[i][:]))
 	}
 	return out
 }
@@ -39,7 +39,7 @@ func fragmentOctets(fr [4][32]bit.Bit) [4][4]byte {
 func fragmentBits(f [4][4]byte) [4][32]bit.Bit {
 	var fr [4][32]bit.Bit
 	for i := range f {
-		copy(fr[i][:], bit.UnpackBits(f[i][:]))
+		copy(fr[i][:], bit.Unpack(f[i][:]))
 	}
 	return fr
 }

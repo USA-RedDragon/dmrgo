@@ -27,7 +27,7 @@ func capturedFragments() [4][32]bit.Bit {
 		{0x09, 0x0C, 0x35, 0x95},
 		{0x84, 0xAA, 0x2B, 0xA5},
 	} {
-		copy(fr[i][:], bit.UnpackBits(word[:]))
+		copy(fr[i][:], bit.Unpack(word[:]))
 	}
 	return fr
 }
@@ -48,7 +48,7 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 	if res.Uncorrectable || res.ErrorsCorrected != 0 || res.BitsChecked != 128 {
 		t.Fatalf("FEC = %+v, want a clean 128-bit check", res)
 	}
-	if got := bit.PackBits(lc[:]); !bytes.Equal(got, capturedEmbeddedLC) {
+	if got := bit.Pack(lc[:]); !bytes.Equal(got, capturedEmbeddedLC) {
 		t.Errorf("LC % X, want % X", got, capturedEmbeddedLC)
 	}
 
@@ -75,7 +75,7 @@ func TestEmbeddedLC_EncodeCapture(t *testing.T) {
 		t.Errorf("fragments differ from the capture")
 	}
 	var bits [72]bit.Bit
-	copy(bits[:], bit.UnpackBits(capturedEmbeddedLC))
+	copy(bits[:], bit.Unpack(capturedEmbeddedLC))
 	if layer2.EncodeEmbeddedLC(bits) != capturedFragments() {
 		t.Errorf("EncodeEmbeddedLC differs from the capture")
 	}
@@ -185,14 +185,14 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 		raw := must(hex.DecodeString(v.raw))
 		var fr [4][32]bit.Bit
 		for i := range fr {
-			copy(fr[i][:], bit.UnpackBits(raw[i*4:i*4+4]))
+			copy(fr[i][:], bit.Unpack(raw[i*4:i*4+4]))
 		}
 		lc, res := layer2.DecodeEmbeddedLCStrict(fr)
 		if res.Uncorrectable == v.accept {
 			t.Errorf("%s: accepted %v, MMDVMHost %v", v.raw, !res.Uncorrectable, v.accept)
 			continue
 		}
-		if got := hex.EncodeToString(bit.PackBits(lc[:])); v.accept && got != v.lc {
+		if got := hex.EncodeToString(bit.Pack(lc[:])); v.accept && got != v.lc {
 			t.Errorf("%s: LC %s, want %s", v.raw, got, v.lc)
 		}
 		flc, flcRes := layer2.DecodeEmbeddedFullLinkControlStrict(fr)
