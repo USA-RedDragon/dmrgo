@@ -106,7 +106,12 @@ type Burst struct {
 	decodedEMB            bool
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
-	store                 decodeStore
+	// decodedCoded is the coding of the decoded CSBK, Full LC, data header or
+	// MBC header, for Encode, which must not decode these again: their
+	// payload structs would allocate.
+	decodedCoded    [96]bit.Bit
+	hasDecodedCoded bool
+	store           decodeStore
 }
 
 // decodeStore holds the PDUs that a Burst decodes into, and the payload
@@ -297,6 +302,16 @@ func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	var err error
 	b.Data, b.FEC.PDU, err = decodePayload(&b.store, b.SlotType.DataType, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
 	b.decodedDataType = b.SlotType.DataType
+	switch b.decodedDataType {
+	case enums.DataTypeCSBK, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeDataHeader,
+		enums.DataTypeMBCHeader:
+		if enc, ok := b.Data.(encoder96); ok {
+			var encErr error
+			b.decodedCoded, encErr = enc.Encode()
+			b.hasDecodedCoded = encErr == nil
+		}
+	default:
+	}
 	return err
 }
 
@@ -732,28 +747,19 @@ func (b *Burst) dataInfoBits(info *[196]bit.Bit) error {
 }
 
 // decodedCodesTo reports whether the PDU that DecodeFromBytes decoded from
-// the payload codes to the 96 information bits info. It decodes the PDU
-// again into a local value. A Rate 1/2, Rate 3/4 or Rate 1 PDU keeps every
-// information bit, so it codes to the payload, which the caller compares.
+// the payload codes to the 96 information bits info. A Rate 1/2, Rate 3/4 or
+// Rate 1 PDU keeps every information bit, so it codes to the payload, which
+// the caller compares.
 func (b *Burst) decodedCodesTo(info *[196]bit.Bit) bool {
 	var payload, coded [96]bit.Bit
 	copy(payload[:], b.deinterleavedInfoBits[:])
 	var err error
 	switch dt := b.decodedDataType; dt {
-	case enums.DataTypeCSBK:
-		d := pdu.DecodeCSBK(payload)
-		coded, err = d.Encode()
-	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
-		d := pdu.DecodeFullLinkControl(payload, dt)
-		coded, err = d.Encode()
+	case enums.DataTypeCSBK, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeDataHeader,
+		enums.DataTypeMBCHeader:
+		return b.hasDecodedCoded && [96]bit.Bit(info[:96]) == b.decodedCoded
 	case enums.DataTypePIHeader:
 		d := pdu.DecodePIHeader(payload)
-		coded, err = d.Encode()
-	case enums.DataTypeDataHeader:
-		d := pdu.DecodeDataHeader(payload)
-		coded, err = d.Encode()
-	case enums.DataTypeMBCHeader:
-		d := pdu.DecodeMBCHeader(payload)
 		coded, err = d.Encode()
 	case enums.DataTypeMBCContinuation:
 		d := pdu.DecodeMBCContinuation(payload)
