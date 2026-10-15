@@ -105,7 +105,6 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.FECResult) {
 	_packedBytes[10] ^= uint8(0xcc)
 	_packedBytes[11] ^= uint8(0xcc)
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}

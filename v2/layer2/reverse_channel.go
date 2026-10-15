@@ -40,12 +40,7 @@ func DecodeRCFromEmbeddedData(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec
 	// Decode RC PDU (CRC-7 check)
 	rc, crcResult := pdu.DecodeReverseChannel(infoBits)
 
-	// Combine FEC results
-	combined := fec.FECResult{
-		BitsChecked:     bptcResult.BitsChecked + crcResult.BitsChecked,
-		ErrorsCorrected: bptcResult.ErrorsCorrected + crcResult.ErrorsCorrected,
-		Uncorrectable:   bptcResult.Uncorrectable || crcResult.Uncorrectable,
-	}
+	combined := bptcResult.Combine(crcResult)
 	rc.FEC = combined
 
 	return rc, combined

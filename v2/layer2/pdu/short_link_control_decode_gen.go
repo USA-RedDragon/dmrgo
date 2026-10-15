@@ -146,7 +146,6 @@ func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.FECResult) {
 	var result ShortLC
 	bit.Mask(data[:])
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 36
 	if !crc.CheckCRC8(data[:]) {
 		fecResult.Uncorrectable = true
 	}

@@ -68,8 +68,8 @@ func TestRC_CombinedFEC(t *testing.T) {
 	embData := buildRCEmbeddedData(3)
 	_, fecResult := layer2.DecodeRCFromEmbeddedData(embData)
 
-	// BitsChecked should include BPTC (32) + CRC (11)
-	expectedBitsChecked := 32 + 11
+	// The CRC-7 only detects errors, so BitsChecked is the BPTC's 32.
+	expectedBitsChecked := 32
 	if fecResult.BitsChecked != expectedBitsChecked {
 		t.Errorf("BitsChecked: got %d, want %d", fecResult.BitsChecked, expectedBitsChecked)
 	}

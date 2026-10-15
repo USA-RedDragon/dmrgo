@@ -105,12 +105,7 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.FECResult, error) {
 	copy(slcBits[:], info[:])
 	slc, crcResult := pdu.DecodeShortLC(slcBits)
 
-	// Combine FEC results
-	combined := fec.FECResult{
-		BitsChecked:     bptcResult.BitsChecked + crcResult.BitsChecked,
-		ErrorsCorrected: bptcResult.ErrorsCorrected + crcResult.ErrorsCorrected,
-		Uncorrectable:   bptcResult.Uncorrectable || crcResult.Uncorrectable,
-	}
+	combined := bptcResult.Combine(crcResult)
 	slc.FEC = combined
 
 	return slc, combined, nil

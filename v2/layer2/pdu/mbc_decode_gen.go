@@ -35,7 +35,6 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.FECResult) {
 	_packedBytes[10] ^= uint8(0xaa)
 	_packedBytes[11] ^= uint8(0xaa)
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}
@@ -125,7 +124,6 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.FECResult) 
 		}
 	}
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}
@@ -207,7 +205,6 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.FECResult) 
 		}
 	}
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}
@@ -289,7 +286,6 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.FECResult) 
 		}
 	}
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}
@@ -363,7 +359,6 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.FECResult) 
 		}
 	}
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}

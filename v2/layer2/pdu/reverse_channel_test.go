@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -64,8 +65,8 @@ func TestReverseChannel_BitsChecked(t *testing.T) {
 	t.Parallel()
 	bits := buildRCInfoBits(0)
 	_, fecResult := pdu.DecodeReverseChannel(bits)
-	if fecResult.BitsChecked != 11 {
-		t.Errorf("expected BitsChecked=11, got %d", fecResult.BitsChecked)
+	if fecResult != (fec.FECResult{}) {
+		t.Errorf("CRC-7 only PDU: got %+v, want a zero result", fecResult)
 	}
 }
 

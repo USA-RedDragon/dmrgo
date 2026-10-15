@@ -22,8 +22,10 @@ func DecodeVocoder(data [216]bit.Bit) (Vocoder, fec.FECResult) {
 	var fecResult fec.FECResult
 	for _i := 0; _i < 3; _i++ {
 		var _elemBits [72]bit.Bit
+		var _elemFEC fec.FECResult
 		copy(_elemBits[:], data[0+_i*72:0+_i*72+72])
-		result.Frames[_i], _ = vocoder.DecodeVocoderFrame(_elemBits)
+		result.Frames[_i], _elemFEC = vocoder.DecodeVocoderFrame(_elemBits)
+		fecResult = fecResult.Combine(_elemFEC)
 	}
 	return result, fecResult
 }

@@ -1171,7 +1171,6 @@ func DecodeCSBK(data [96]bit.Bit, trunkingMode bool) (CSBK, fec.FECResult) {
 	_packedBytes[10] ^= uint8(0xa5)
 	_packedBytes[11] ^= uint8(0xa5)
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}

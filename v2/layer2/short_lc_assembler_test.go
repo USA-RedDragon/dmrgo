@@ -303,8 +303,8 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
 	slc, fecResult := layer2.DecodeShortLCFromFragments(fragments)
-	// BitsChecked should include both BPTC (68) and CRC (36)
-	expectedBitsChecked := 68 + 36
+	// The CRC-8 only detects errors, so BitsChecked is the BPTC's 68.
+	expectedBitsChecked := 68
 	if fecResult.BitsChecked != expectedBitsChecked {
 		t.Errorf("BitsChecked: got %d, want %d", fecResult.BitsChecked, expectedBitsChecked)
 	}

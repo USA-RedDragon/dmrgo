@@ -38,11 +38,7 @@ func (vc *Vocoder) HasError() bool {
 func (vc *Vocoder) FECResult() fec.FECResult {
 	result := fec.FECResult{}
 	for _, f := range vc.Frames {
-		result.BitsChecked += f.FEC.BitsChecked
-		result.ErrorsCorrected += f.FEC.ErrorsCorrected
-		if f.FEC.Uncorrectable {
-			result.Uncorrectable = true
-		}
+		result = result.Combine(f.FEC)
 	}
 	return result
 }

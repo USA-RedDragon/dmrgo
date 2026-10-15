@@ -40,7 +40,6 @@ type ReverseChannel struct {
 func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.FECResult) {
 	var result ReverseChannel
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 11
 
 	// Extract RC command (bits 0-3)
 	result.RCCommand = enums.RCCommandFromInt(int(bit.BitsToUint8(infoBits[:], 0, 4)))

@@ -30,7 +30,6 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.FECResult) {
 	_packedBytes[10] ^= uint8(0x69)
 	_packedBytes[11] ^= uint8(0x69)
 	var fecResult fec.FECResult
-	fecResult.BitsChecked = 96
 	if !crc.CheckCRCCCITT(_packedBytes[:]) {
 		fecResult.Uncorrectable = true
 	}

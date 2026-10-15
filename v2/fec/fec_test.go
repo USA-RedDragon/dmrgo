@@ -23,8 +23,8 @@ func TestBERCalculator_AddBurstMatchesAggregate(t *testing.T) {
 		t.Errorf("AddBurst totals %d/%d, Aggregate %d/%d",
 			b.TotalErrors(), b.TotalBitsChecked(), agg.ErrorsCorrected, agg.BitsChecked)
 	}
-	if b.TotalBitsChecked() != 504 || b.TotalErrors() != 21 {
-		t.Errorf("totals %d errors / %d bits, want 21 / 504", b.TotalErrors(), b.TotalBitsChecked())
+	if b.TotalBitsChecked() != 408 || b.TotalErrors() != 21 {
+		t.Errorf("totals %d errors / %d bits, want 21 / 408", b.TotalErrors(), b.TotalBitsChecked())
 	}
 }
 
@@ -52,5 +52,27 @@ func TestFECResult_HasErrors(t *testing.T) {
 	}
 	if !(fec.FECResult{Uncorrectable: true}).HasErrors() {
 		t.Error("uncorrectable result reports no errors")
+	}
+}
+
+func TestBERCalculator_Uncorrectable(t *testing.T) {
+	var b fec.BERCalculator
+	b.Add(fec.FECResult{BitsChecked: 24, ErrorsCorrected: 1})
+	b.Add(fec.FECResult{BitsChecked: 24, Uncorrectable: true})
+	b.AddBurst(fec.BurstFECStats{PDU: fec.FECResult{Uncorrectable: true}})
+	if got := b.Uncorrectable(); got != 2 {
+		t.Errorf("Uncorrectable() = %d, want 2", got)
+	}
+	b.Reset()
+	if b.Uncorrectable() != 0 {
+		t.Error("Reset did not clear Uncorrectable")
+	}
+}
+
+func TestFECResult_Combine(t *testing.T) {
+	got := fec.FECResult{BitsChecked: 32, ErrorsCorrected: 1}.Combine(fec.FECResult{Uncorrectable: true})
+	want := fec.FECResult{BitsChecked: 32, ErrorsCorrected: 1, Uncorrectable: true}
+	if got != want {
+		t.Errorf("Combine = %+v, want %+v", got, want)
 	}
 }

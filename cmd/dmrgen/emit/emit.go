@@ -385,7 +385,6 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	if algo.BitLevel {
 		// Bit-level CRC (e.g. CRC-8): operates on data[:] directly, no byte packing
 		g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
-		g.Id("fecResult").Dot("BitsChecked").Op("=").Lit(inputSize)
 		g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Empty()))).Block(
 			Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 		)
@@ -413,7 +412,6 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 
 	// CRC check
 	g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
-	g.Id("fecResult").Dot("BitsChecked").Op("=").Lit(inputSize)
 	g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Empty()))).Block(
 		Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 	)
@@ -1027,6 +1025,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			tmpVar := "_elemBits"
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 				Var().Id(tmpVar).Index(Lit(field.Stride)).Qual(bitPkg, "Bit"),
+				Var().Id("_elemFEC").Qual(fecPkg, "FECResult"),
 				Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(
 					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
 					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride).Op("+").Lit(field.Stride),
@@ -1038,8 +1037,9 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 					} else {
 						call = Id(decodeFn).Call(Id(tmpVar))
 					}
-					return List(target.Clone().Index(Id("_i")), Id("_")).Op("=").Add(call)
+					return List(target.Clone().Index(Id("_i")), Id("_elemFEC")).Op("=").Add(call)
 				}(),
+				Id("fecResult").Op("=").Id("fecResult").Dot("Combine").Call(Id("_elemFEC")),
 			)
 		case field.DelegateNoPtr:
 			// noptr delegates are integer typedefs: extract and convert

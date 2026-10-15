@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -147,8 +148,8 @@ func TestShortLC_BitsChecked(t *testing.T) {
 	bits := buildShortLCBits(byte(enums.SLCONullMessage), data)
 
 	_, fecResult := pdu.DecodeShortLC(bits)
-	if fecResult.BitsChecked != 36 {
-		t.Errorf("expected BitsChecked=36, got %d", fecResult.BitsChecked)
+	if fecResult != (fec.FECResult{}) {
+		t.Errorf("CRC-8 only PDU: got %+v, want a zero result", fecResult)
 	}
 }
 
