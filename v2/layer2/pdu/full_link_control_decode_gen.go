@@ -58,10 +58,10 @@ func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) FullL
 	result.ProtectFlag = data[0] == 1
 	result.Reserved = data[1] == 1
 	result.FLCO = enums.FLCO(bit.Uint(data[2:8]))
-	result.FeatureSetID = enums.FeatureSetID(bit.Uint(data[8:16]))
+	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	var _dispatchBits [56]bit.Bit
 	copy(_dispatchBits[:], data[16:72])
-	if result.FeatureSetID == 0 {
+	if result.FID == 0 {
 		switch result.FLCO {
 		case enums.FLCOGroupVoiceChannelUser:
 			_decoded := DecodeFLCGroupVoice(_dispatchBits)
@@ -174,21 +174,21 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 		}
 	}
 	bit.PutUint(data[2:8], uint64(s.FLCO))
-	if uint64(s.FeatureSetID)>>8 != 0 {
+	if uint64(s.FID)>>8 != 0 {
 		return [96]bit.Bit{}, &bit.FieldRangeError{
 			Bits:  8,
-			Field: "FeatureSetID",
+			Field: "FID",
 			Type:  "FullLinkControl",
-			Value: s.FeatureSetID,
+			Value: s.FID,
 		}
 	}
-	bit.PutUint(data[8:16], uint64(s.FeatureSetID))
+	bit.PutUint(data[8:16], uint64(s.FID))
 	if _payload != "" {
 		var result FullLinkControl
 		result.FLCO = enums.FLCO(bit.Uint(data[2:8]))
-		result.FeatureSetID = enums.FeatureSetID(bit.Uint(data[8:16]))
+		result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
 		_want := "RawPayload"
-		if result.FeatureSetID == 0 {
+		if result.FID == 0 {
 			switch result.FLCO {
 			case enums.FLCOGroupVoiceChannelUser:
 				_want = "GroupVoice"
@@ -205,7 +205,7 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 			}
 		}
 		if _payload != _want {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.%s is set, but FLCO and FeatureSetID select %s", _payload, _want)
+			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.%s is set, but FLCO and FID select %s", _payload, _want)
 		}
 	}
 	var _encData [9]byte
@@ -248,7 +248,7 @@ func (s *FullLinkControl) EncodeBits() ([]bit.Bit, error) {
 
 func (s *FullLinkControl) String() string {
 	_ret := "FullLinkControl{ "
-	_ret += fmt.Sprintf("BurstDataType: %v, ProtectFlag: %t, Reserved: %t, FLCO: %s, FeatureSetID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.BurstDataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FeatureSetID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("BurstDataType: %v, ProtectFlag: %t, Reserved: %t, FLCO: %s, FID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.BurstDataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.GroupVoice != nil:
 		_ret += s.GroupVoice.String()

@@ -95,7 +95,7 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	original := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDMotorola,
+		FID:           enums.FIDMotorola,
 		RawPayload:    [7]byte(bit.Pack(payload[:])),
 	}
 	infoBits := must(original.Encode())
@@ -105,8 +105,8 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
-	if decoded.FeatureSetID != enums.FIDMotorola {
-		t.Errorf("FeatureSetID = %#x, want %#x", decoded.FeatureSetID, enums.FIDMotorola)
+	if decoded.FID != enums.FIDMotorola {
+		t.Errorf("FeatureSetID = %#x, want %#x", decoded.FID, enums.FIDMotorola)
 	}
 	if decoded.GroupVoice != nil {
 		t.Error("GroupVoice should be nil for a manufacturer FID")
@@ -126,7 +126,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	original := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCO(0b111111),
-		FeatureSetID:  enums.FeatureSetID(0x7F),
+		FID:           enums.FeatureSetID(0x7F),
 		RawPayload:    [7]byte(bit.Pack(payload[:])),
 	}
 	infoBits := must(original.Encode())
@@ -135,14 +135,14 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	if decoded.FLCO != 0b111111 {
 		t.Errorf("FLCO = %#x, want 0x3f", decoded.FLCO)
 	}
-	if decoded.FeatureSetID != 0x7F {
-		t.Errorf("FeatureSetID = %#x, want 0x7f", decoded.FeatureSetID)
+	if decoded.FID != 0x7F {
+		t.Errorf("FeatureSetID = %#x, want 0x7f", decoded.FID)
 	}
 	if decoded.RawPayload != [7]byte(bit.Pack(payload[:])) {
 		t.Error("RawPayload does not hold the payload")
 	}
 
-	original.FeatureSetID = enums.FIDStandardized
+	original.FID = enums.FIDStandardized
 	decoded = pdu.DecodeFullLinkControl(must(original.Encode()), original.DataType())
 	if decoded.FLCO != 0b111111 || decoded.RawPayload != [7]byte(bit.Pack(payload[:])) {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
@@ -174,7 +174,7 @@ func TestFLC_AddressesIgnoreFID(t *testing.T) {
 		}
 	}
 
-	flc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, FeatureSetID: enums.FIDMotorola}
+	flc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, FID: enums.FIDMotorola}
 	if _, _, ok := flc.Addresses(); ok {
 		t.Error("Addresses() ok for GPS Info")
 	}

@@ -11,7 +11,7 @@ import (
 // The FID redefines the FLCO (ETSI TS 102 361-1 Table 9.21), so the standard
 // payload layouts apply only to the SFID. Payloads of other FIDs and of
 // unknown FLCOs are kept in RawPayload. FullLinkControl.Encode returns an
-// error if more than one payload field is set, or if FLCO and FeatureSetID
+// error if more than one payload field is set, or if FLCO and FID
 // do not select the payload field that is set. Put the payload of a
 // manufacturer FID in RawPayload.
 //
@@ -32,13 +32,13 @@ import (
 //dmr:fec reed_solomon_12_9_4
 //dmr:input BurstDataType
 //dmr:fec_mask BurstDataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
-//dmr:dispatch_if FeatureSetID==0
+//dmr:dispatch_if FID==0
 type FullLinkControl struct {
 	BurstDataType enums.DataType     `dmr:"-"`
 	ProtectFlag   bool               `dmr:"bit:0"`
 	Reserved      bool               `dmr:"bit:1"`
 	FLCO          enums.FLCO         `dmr:"bits:2-7,enum"`
-	FeatureSetID  enums.FeatureSetID `dmr:"bits:8-15,enum"`
+	FID           enums.FeatureSetID `dmr:"bits:8-15,enum"`
 	FEC           fec.Result         `dmr:"-"`
 
 	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`
@@ -88,7 +88,7 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
 		return false
 	}
-	if s.FeatureSetID != enums.FIDStandardized {
+	if s.FID != enums.FIDStandardized {
 		putUint24(s.RawPayload[1:4], target)
 		putUint24(s.RawPayload[4:7], source)
 		return true

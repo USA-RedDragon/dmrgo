@@ -89,7 +89,7 @@ func TestVoiceReceiver_Transmission(t *testing.T) {
 		t.Fatalf("LCs at %v, want bursts 5, 11 and 17", got.lcs)
 	}
 	for i, l := range got.lcs {
-		if (i-5)%6 != 0 || l.FEC.HasErrors() || l.FeatureSetID != 0xC2 ||
+		if (i-5)%6 != 0 || l.FEC.HasErrors() || l.FID != 0xC2 ||
 			lcBits(t, l, enums.DataTypeVoiceLCHeader) != lcBits(t, lc, enums.DataTypeVoiceLCHeader) {
 			t.Errorf("burst %d: LC %s", i, l.String())
 		}

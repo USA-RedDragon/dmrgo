@@ -94,16 +94,16 @@ func TestRate12Data_Confirmed_RoundTrip(t *testing.T) {
 	if rt.ConfirmedUserData() != user {
 		t.Errorf("ConfirmedUserData() = %X, want %X", rt.ConfirmedUserData(), user)
 	}
-	if !rt.CheckConfirmedCRC9() {
-		t.Fatal("CheckConfirmedCRC9() = false after SetConfirmed")
+	if !rt.ConfirmedCRC9OK() {
+		t.Fatal("ConfirmedCRC9OK() = false after SetConfirmed")
 	}
 	decoded := pdu.DecodeRate12Data(must(rt.Encode()))
-	if !decoded.CheckConfirmedCRC9() {
-		t.Error("CheckConfirmedCRC9() = false after encode/decode")
+	if !decoded.ConfirmedCRC9OK() {
+		t.Error("ConfirmedCRC9OK() = false after encode/decode")
 	}
 	decoded.Data[5] ^= 0x10
-	if decoded.CheckConfirmedCRC9() {
-		t.Error("CheckConfirmedCRC9() = true after corrupting user data")
+	if decoded.ConfirmedCRC9OK() {
+		t.Error("ConfirmedCRC9OK() = true after corrupting user data")
 	}
 }
 

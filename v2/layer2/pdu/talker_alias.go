@@ -173,13 +173,13 @@ func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]Ful
 	} else {
 		header.TalkerAliasData = bit.Uint(stream[:48])
 	}
-	out := []FullLinkControl{{FLCO: enums.FLCOTalkerAliasHeader, FeatureSetID: enums.FIDStandardized, TalkerAliasHeader: header}}
+	out := []FullLinkControl{{FLCO: enums.FLCOTalkerAliasHeader, FID: enums.FIDStandardized, TalkerAliasHeader: header}}
 	opcodes := [talkerAliasMaxBlocks]enums.FLCO{enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3}
 	for i := range n {
 		block := &FLCTalkerAliasBlock{}
 		start := 48 + i*talkerAliasBlockBits
 		copy(block.TalkerAliasData[:], bit.Pack(stream[start:start+talkerAliasBlockBits]))
-		out = append(out, FullLinkControl{FLCO: opcodes[i], FeatureSetID: enums.FIDStandardized, TalkerAliasBlock: block})
+		out = append(out, FullLinkControl{FLCO: opcodes[i], FID: enums.FIDStandardized, TalkerAliasBlock: block})
 	}
 	return out, nil
 }

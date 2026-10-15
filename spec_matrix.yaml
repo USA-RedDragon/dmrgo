@@ -12,6 +12,7 @@
 ignore_files:
   - v2/bit/bit.go
   - v2/internal/lowbit/lowbit.go
+  - v2/layer2/pdu/deprecated.go
   - v2/examples/bridge/main.go
   - v2/examples/conformance/main.go
   - v2/examples/data/main.go
@@ -476,8 +477,8 @@ documents:
               - TestFullLinkControl_ServiceOptions_RoundTrip
               - TestFullLinkControl_Decode_BothDataTypes
               - TestFullLinkControl_AddressRange
-              - TestFullLinkControlFromBytes_Capture
-              - TestFullLinkControlFromBytes_RoundTripsRandom
+              - TestDecodeFullLinkControlBytes_Capture
+              - TestDecodeFullLinkControlBytes_RoundTripsRandom
               - TestFullLinkControlBytes_IgnoresBurstDataType
 
       - section: "9.1.7"

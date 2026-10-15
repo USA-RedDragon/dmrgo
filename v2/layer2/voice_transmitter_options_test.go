@@ -14,8 +14,8 @@ func talkerAliasLC() pdu.FullLinkControl {
 	var data [48]bit.Bit
 	copy(data[:], bit.Unpack([]byte("KI5VMF")))
 	return pdu.FullLinkControl{
-		FLCO:         enums.FLCOTalkerAliasHeader,
-		FeatureSetID: enums.FIDStandardized,
+		FLCO: enums.FLCOTalkerAliasHeader,
+		FID:  enums.FIDStandardized,
 		TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 			TalkerAliasDataFormat: layer3.TalkerAliasISOEightBit,
 			TalkerAliasDataLength: 6,

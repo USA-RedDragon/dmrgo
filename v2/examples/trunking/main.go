@@ -50,7 +50,7 @@ func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
 	csbks := []*pdu.CSBK{
 		{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{
 			TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}},
-		{LastBlock: true, Opcode: pdu.CSBKBroadcast, CBroadcastPDU: &pdu.CBroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}},
+		{LastBlock: true, Opcode: pdu.CSBKBroadcast, BroadcastPDU: &pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}},
 		{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
 			PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}},
 		{LastBlock: true, Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &pdu.PrivateVoiceGrantPDU{
@@ -82,8 +82,8 @@ func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
 	if err != nil {
 		return err
 	}
-	got := pdu.UnpackSysCode(aloha.AlohaPDU.SysIdentCode)
-	if got != sc {
+	var got pdu.SysCode
+	if got.Unpack(aloha.AlohaPDU.SysIdentCode); got != sc {
 		return fmt.Errorf("C_ALOHA SYScode %+v, want %+v", got, sc)
 	}
 	fmt.Fprintf(w, "C_ALOHA SYScode 0x%04x: model %d net %d site %d par %d\n", code, got.Model, got.Net, got.Site, got.Par)

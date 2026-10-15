@@ -41,8 +41,8 @@ func (s *Rate34Data) ConfirmedUserData() [16]byte {
 	return out
 }
 
-// CheckConfirmedCRC9 reports whether the CRC-9 of a confirmed block is valid.
-func (s *Rate34Data) CheckConfirmedCRC9() bool {
+// ConfirmedCRC9OK reports whether the CRC-9 of a confirmed block is valid.
+func (s *Rate34Data) ConfirmedCRC9OK() bool {
 	return checkConfirmedCRC9(s.Data[:], crc9MaskRate34)
 }
 

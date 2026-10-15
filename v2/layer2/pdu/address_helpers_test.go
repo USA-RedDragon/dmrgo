@@ -30,7 +30,7 @@ func TestFLC_SetAddresses(t *testing.T) {
 
 func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
 	for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
-		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeTerminatorWithLC, FLCO: flco, FeatureSetID: 0xC2}
+		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeTerminatorWithLC, FLCO: flco, FID: 0xC2}
 		lc.RawPayload[0] = 1
 		if !lc.SetAddresses(3120101, 3120001) {
 			t.Fatalf("FLCO %s: SetAddresses failed", flco)
@@ -47,7 +47,7 @@ func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
 			t.Errorf("FLCO %s: Addresses = %d %d %v", flco, target, source, ok)
 		}
 	}
-	lc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, FeatureSetID: 0xC2}
+	lc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, FID: 0xC2}
 	if lc.SetAddresses(1, 2) {
 		t.Error("SetAddresses of a manufacturer FLCO 8 LC succeeded")
 	}

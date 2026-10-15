@@ -16,7 +16,7 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   false,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:         false,
@@ -43,8 +43,8 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 	if decoded.ProtectFlag != original.ProtectFlag {
 		t.Errorf("ProtectFlag = %v, want %v", decoded.ProtectFlag, original.ProtectFlag)
 	}
-	if decoded.FeatureSetID != original.FeatureSetID {
-		t.Errorf("FeatureSetID = %v, want %v", decoded.FeatureSetID, original.FeatureSetID)
+	if decoded.FID != original.FID {
+		t.Errorf("FeatureSetID = %v, want %v", decoded.FID, original.FID)
 	}
 	if decoded.GroupVoice == nil {
 		t.Fatal("GroupVoice is nil")
@@ -62,7 +62,7 @@ func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   true,
 		FLCO:          enums.FLCOUnitToUnitVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		UnitToUnit: &pdu.FLCUnitToUnit{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:         true,
@@ -112,7 +112,7 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   false,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:   false,
@@ -135,7 +135,7 @@ func TestFullLinkControl_String(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  9990,
 			SourceAddress: 3120101,
@@ -164,7 +164,7 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: so,
 			GroupAddress:   1,
@@ -203,7 +203,7 @@ func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  100,
 			SourceAddress: 200,
@@ -238,7 +238,7 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 			flc := &pdu.FullLinkControl{
 				BurstDataType: enums.DataTypeVoiceLCHeader,
 				FLCO:          enums.FLCOGroupVoiceChannelUser,
-				FeatureSetID:  enums.FIDStandardized,
+				FID:           enums.FIDStandardized,
 				GroupVoice: &pdu.FLCGroupVoice{
 					GroupAddress:  tt.groupAddr,
 					SourceAddress: tt.sourceAddr,
@@ -286,7 +286,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 				BurstDataType: enums.DataTypeVoiceLCHeader,
 				ProtectFlag:   false,
 				FLCO:          flco,
-				FeatureSetID:  enums.FIDStandardized,
+				FID:           enums.FIDStandardized,
 				TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
 					TalkerAliasData: [7]byte(bit.Pack(aliasData[:])),
 				},
@@ -319,7 +319,7 @@ func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOTalkerAliasBlock1,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
 			TalkerAliasData: [7]byte(bit.Pack(aliasData[:])),
 		},
@@ -361,7 +361,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				BurstDataType: enums.DataTypeVoiceLCHeader,
 				ProtectFlag:   false,
 				FLCO:          enums.FLCOTalkerAliasHeader,
-				FeatureSetID:  enums.FIDStandardized,
+				FID:           enums.FIDStandardized,
 				TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 					TalkerAliasDataLength: tt.dataLength,
 					TalkerAliasData:       msbOf(tt.msb) | bit.Uint(aliasData[:]),
@@ -400,7 +400,7 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   false,
 		FLCO:          enums.FLCOTerminatorDataLinkControl,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		TerminatorDataLinkControl: &pdu.FLCTerminatorDataLinkControl{
 			LLIDDestination:    1234567,
 			LLIDSource:         7654321,

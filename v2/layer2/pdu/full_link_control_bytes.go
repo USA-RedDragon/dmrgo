@@ -8,11 +8,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// FullLinkControlFromBytes decodes the 72 LC bits lc, without RS(12,9)
+// DecodeFullLinkControlBytes decodes the 72 LC bits lc, without RS(12,9)
 // parity, as a FullLinkControl. FEC and BurstDataType are left at their
 // zero values; set BurstDataType before Encode. It returns an error when
 // the decoded LC does not encode back to lc, so that no bit of lc is lost.
-func FullLinkControlFromBytes(lc [9]byte) (FullLinkControl, error) {
+func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
 	f := DecodeFullLinkControl(bit.Unpack96(cw), enums.DataTypeVoiceLCHeader)
 	f.BurstDataType = 0
@@ -27,23 +27,23 @@ func FullLinkControlFromBytes(lc [9]byte) (FullLinkControl, error) {
 	return f, nil
 }
 
-// Codeword returns the 12-octet on-air codeword of f in a burst of
-// f.BurstDataType, as LCBytes.Codeword gives it. It returns the errors that
+// Codeword returns the 12-octet on-air codeword of s in a burst of
+// s.BurstDataType, as LCBytes.Codeword gives it. It returns the errors that
 // Encode returns for the fields, and an error unless BurstDataType is
 // DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
-func (f *FullLinkControl) Codeword() ([12]byte, error) {
-	lc, err := f.Bytes()
+func (s *FullLinkControl) Codeword() ([12]byte, error) {
+	lc, err := s.Bytes()
 	if err != nil {
 		return [12]byte{}, err
 	}
-	return LCBytes(lc).Codeword(f.BurstDataType)
+	return LCBytes(lc).Codeword(s.BurstDataType)
 }
 
-// Bytes returns the 72 LC bits of f packed most significant bit first,
+// Bytes returns the 72 LC bits of s packed most significant bit first,
 // without RS(12,9) parity. It ignores BurstDataType and returns the errors
 // that Encode returns for the fields.
-func (f *FullLinkControl) Bytes() ([9]byte, error) {
-	c := *f
+func (s *FullLinkControl) Bytes() ([9]byte, error) {
+	c := *s
 	c.BurstDataType = enums.DataTypeVoiceLCHeader
 	bits, err := c.Encode()
 	if err != nil {

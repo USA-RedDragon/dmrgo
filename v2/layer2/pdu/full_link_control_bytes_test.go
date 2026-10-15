@@ -8,13 +8,13 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func TestFullLinkControlFromBytes_Capture(t *testing.T) {
+func TestDecodeFullLinkControlBytes_Capture(t *testing.T) {
 	lc := hex9(t, "03000000270630b43c")
-	f, err := pdu.FullLinkControlFromBytes(lc)
+	f, err := pdu.DecodeFullLinkControlBytes(lc)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || f.FeatureSetID != enums.FIDStandardized || f.UnitToUnit == nil {
+	if f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || f.FID != enums.FIDStandardized || f.UnitToUnit == nil {
 		t.Fatalf("decoded %s", f.String())
 	}
 	if tgt, src, ok := f.Addresses(); !ok || tgt != 9990 || src != 3191868 {
@@ -26,11 +26,11 @@ func TestFullLinkControlFromBytes_Capture(t *testing.T) {
 	f.BurstDataType = enums.DataTypeTerminatorWithLC
 	enc := must(f.Encode())
 	if want := hexBits96(t, "03000000270630b43c52c0ce"); enc != want {
-		t.Fatal("Encode after FullLinkControlFromBytes does not give the terminator codeword")
+		t.Fatal("Encode after DecodeFullLinkControlBytes does not give the terminator codeword")
 	}
 }
 
-func TestFullLinkControlFromBytes_RoundTripsRandom(t *testing.T) {
+func TestDecodeFullLinkControlBytes_RoundTripsRandom(t *testing.T) {
 	rng := rand.New(rand.NewSource(7))
 	fails := 0
 	for range 20000 {
@@ -39,7 +39,7 @@ func TestFullLinkControlFromBytes_RoundTripsRandom(t *testing.T) {
 		if rng.Intn(2) == 0 {
 			lc[1] = 0
 		}
-		f, err := pdu.FullLinkControlFromBytes(lc)
+		f, err := pdu.DecodeFullLinkControlBytes(lc)
 		if err != nil {
 			fails++
 			continue

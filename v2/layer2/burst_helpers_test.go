@@ -27,7 +27,7 @@ func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: layer3.ServiceOptions{
 				PriorityLevel: 0,
@@ -61,7 +61,7 @@ func TestBuildDataBurst_Terminator(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeTerminatorWithLC,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  1,
 			SourceAddress: 2,
@@ -88,7 +88,7 @@ func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID:  enums.FIDStandardized,
+		FID:           enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  100,
 			SourceAddress: 200,
