@@ -3,10 +3,7 @@ package generate
 
 import (
 	"fmt"
-	"math"
 	"path/filepath"
-	"reflect"
-	"strconv"
 
 	"github.com/USA-RedDragon/dmrgo/cmd/tablegen/compute"
 	"github.com/dave/jennifer/jen"
@@ -131,9 +128,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		writeTable2D("trellis34_transition_table", tables.Trellis34Transition),
 		jen.Line(),
 		jen.Line(),
-		writeMap("trellis34_constellation", tables.ConstellationPoints),
-		jen.Line(),
-		jen.Line(),
 		writeTable2D("trellis34_reverse_constellation", tables.ReverseConstellation),
 	); err != nil {
 		return err
@@ -158,69 +152,6 @@ func writeFile(dmrRoot, dir, pkgName string, code ...jen.Code) error {
 	}
 	fmt.Println("wrote", outPath)
 	return nil
-}
-
-func writeMap[K comparable, V any](name string, data map[K]V) jen.Code {
-	var zeroK K
-	var zeroV V
-
-	keyType := typeToCode(reflect.TypeOf(zeroK))
-	valType := typeToCode(reflect.TypeOf(zeroV))
-
-	dict := jen.DictFunc(func(d jen.Dict) {
-		for k, v := range data {
-			d[valueToCode(reflect.ValueOf(k))] = valueToCode(reflect.ValueOf(v))
-		}
-	})
-
-	return jen.Var().Id(name).Op("=").Map(keyType).Add(valType).Values(dict)
-}
-
-func typeToCode(t reflect.Type) jen.Code {
-	switch t.Kind() {
-	case reflect.Int:
-		return jen.Int()
-	case reflect.Int8:
-		return jen.Int8()
-	case reflect.Int16:
-		return jen.Int16()
-	case reflect.Int32:
-		return jen.Int32()
-	case reflect.Int64:
-		return jen.Int64()
-	case reflect.Uint8:
-		return jen.Byte()
-	case reflect.Uint16:
-		return jen.Uint16()
-	case reflect.Uint32:
-		return jen.Uint32()
-	case reflect.Uint64:
-		return jen.Uint64()
-	case reflect.Array:
-		return jen.Index(jen.Lit(t.Len())).Add(typeToCode(t.Elem()))
-	default:
-		panic("unsupported type: " + t.String())
-	}
-}
-
-func valueToCode(v reflect.Value) jen.Code {
-	switch v.Kind() {
-	case reflect.Array, reflect.Slice:
-		elems := make([]jen.Code, v.Len())
-		for i := range v.Len() {
-			elems[i] = valueToCode(v.Index(i))
-		}
-		return jen.Values(elems...)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return jen.Lit(int(v.Int()))
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		if v.Uint() > math.MaxInt {
-			panic("value does not fit in an int: " + strconv.FormatUint(v.Uint(), 10))
-		}
-		return jen.Lit(int(v.Uint() & math.MaxInt))
-	default:
-		panic("unsupported value kind: " + v.Kind().String())
-	}
 }
 
 func writeTable[T ~byte | ~int | ~uint16 | ~uint32](name string, data []T) jen.Code {
