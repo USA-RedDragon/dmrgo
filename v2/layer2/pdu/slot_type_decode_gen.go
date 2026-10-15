@@ -25,7 +25,7 @@ func DecodeSlotType(data [20]bit.Bit) SlotType {
 	if !result.FEC.Uncorrectable {
 		data = corrected
 	}
-	result.ColorCode = uint8(bit.Uint(data[0:4]))
+	result.ColorCode = enums.ColorCode(bit.Uint(data[0:4]))
 	result.DataType = enums.DataType(bit.Uint(data[4:8]))
 	return result
 }

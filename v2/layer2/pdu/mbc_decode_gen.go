@@ -170,7 +170,7 @@ func DecodeCGAPContinuation(data [96]bit.Bit) CGAPContinuation {
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.Reserved1 = uint8(bit.Uint(data[8:12]))
-	result.ColorCode = uint8(bit.Uint(data[12:16]))
+	result.ColorCode = enums.ColorCode(bit.Uint(data[12:16]))
 	result.Cdeftype = uint8(bit.Uint(data[16:20]))
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
@@ -288,7 +288,7 @@ func DecodeMVAPContinuation(data [96]bit.Bit) MVAPContinuation {
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.Reserved1 = uint8(bit.Uint(data[8:12]))
-	result.ColorCode = uint8(bit.Uint(data[12:16]))
+	result.ColorCode = enums.ColorCode(bit.Uint(data[12:16]))
 	result.Cdeftype = uint8(bit.Uint(data[16:20]))
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
@@ -506,7 +506,7 @@ func DecodeVNAPContinuation(data [96]bit.Bit) VNAPContinuation {
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.Reserved1 = uint8(bit.Uint(data[8:12]))
-	result.ColorCode = uint8(bit.Uint(data[12:16]))
+	result.ColorCode = enums.ColorCode(bit.Uint(data[12:16]))
 	result.Cdeftype = uint8(bit.Uint(data[16:20]))
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit

@@ -12,9 +12,9 @@ import (
 
 func TestSlotTypeInfo_IPSCExample(t *testing.T) {
 	st := pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeCSBK}
-	s, err := st.Info()
-	if err != nil || s != 0x13 {
-		t.Fatalf("Info %#02x %v, want 0x13", byte(s), err)
+	s := st.Info()
+	if s != 0x13 {
+		t.Fatalf("Info %#02x, want 0x13", byte(s))
 	}
 	if cw := s.Codeword(); cw != 0x132b2 {
 		t.Fatalf("Codeword %#05x, want 0x132b2", cw)
@@ -40,11 +40,11 @@ func TestSlotTypeInfo_AllValues(t *testing.T) {
 			t.Fatalf("%#02x: Codeword %#05x, want %#05x", v, got, want)
 		}
 		st := s.SlotType()
-		if st.ColorCode != uint8(v>>4) || st.DataType != enums.DataType(v&0x0F) {
+		if st.ColorCode != enums.ColorCode(v>>4) || st.DataType != enums.DataType(v&0x0F) {
 			t.Fatalf("%#02x: SlotType %s", v, st.String())
 		}
-		if back, err := st.Info(); err != nil || back != s {
-			t.Fatalf("%#02x: Info %#02x %v", v, byte(back), err)
+		if back := st.Info(); back != s {
+			t.Fatalf("%#02x: Info %#02x", v, byte(back))
 		}
 		if d, res := pdu.DecodeSlotTypeCodeword(want); d != s || res.ErrorsCorrected != 0 || res.Uncorrectable {
 			t.Fatalf("%#05x: decodes as %#02x %+v", want, byte(d), res)
@@ -66,7 +66,7 @@ func TestSlotTypeInfo_Setters(t *testing.T) {
 		orig := pdu.SlotTypeInfo(v)
 		for x := range uint8(16) {
 			s := orig
-			if !s.SetColorCode(x) || s.ColorCode() != x || s.DataType() != orig.DataType() {
+			if s.SetColorCode(enums.ColorCode(x)); s.ColorCode() != enums.ColorCode(x) || s.DataType() != orig.DataType() {
 				t.Fatalf("%#02x: SetColorCode(%d) gives %#02x", v, x, byte(s))
 			}
 			s = orig
@@ -75,12 +75,15 @@ func TestSlotTypeInfo_Setters(t *testing.T) {
 			}
 		}
 		s := orig
-		if s.SetColorCode(16) || s.SetDataType(16) || s != orig {
-			t.Fatalf("%#02x: setters accept out of range values", v)
+		if s.SetDataType(16) || s != orig {
+			t.Fatalf("%#02x: SetDataType accepts an out of range value", v)
+		}
+		if s.SetColorCode(0x1F); s.ColorCode() != 0xF || s.DataType() != orig.DataType() {
+			t.Fatalf("%#02x: SetColorCode(0x1F) gives %#02x", v, byte(s))
 		}
 	}
-	st := pdu.SlotType{DataType: 16}
-	if _, err := st.Info(); err == nil {
-		t.Fatal("Info accepts data type 16")
+	st := pdu.SlotType{ColorCode: 0x12, DataType: 0x13}
+	if s := st.Info(); s != 0x23 {
+		t.Fatalf("Info %#02x, want the low bits 0x23", byte(s))
 	}
 }

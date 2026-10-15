@@ -15,18 +15,13 @@ import (
 type EMBInfo byte
 
 // ColorCode returns the 4-bit Colour Code, bits 7 to 4.
-func (e EMBInfo) ColorCode() uint8 {
-	return uint8(e >> 4)
+func (e EMBInfo) ColorCode() enums.ColorCode {
+	return enums.ColorCode(e >> 4)
 }
 
-// SetColorCode writes cc into bits 7 to 4. It returns false, and changes
-// nothing, when cc does not fit in 4 bits.
-func (e *EMBInfo) SetColorCode(cc uint8) bool {
-	if cc>>4 != 0 {
-		return false
-	}
+// SetColorCode writes the low 4 bits of cc into bits 7 to 4.
+func (e *EMBInfo) SetColorCode(cc enums.ColorCode) {
 	*e = *e&0x0F | EMBInfo(cc<<4)
-	return true
 }
 
 // PI returns the Pre-emption and power control Indicator, bit 3.
@@ -68,14 +63,14 @@ func (e EMBInfo) EmbeddedSignalling() EmbeddedSignalling {
 	}
 }
 
-// Info returns the information bits of s as an EMBInfo with bit 0 clear.
-// It returns the errors that Encode returns for the fields.
-func (s *EmbeddedSignalling) Info() (EMBInfo, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return 0, err
-	}
-	return EMBInfo(bit.Pack(bits[:7])[0]), nil
+// Info returns the information bits of s as an EMBInfo with bit 0 clear:
+// the low 4 bits of the color code, the PI and the low 2 bits of the LCSS.
+func (s *EmbeddedSignalling) Info() EMBInfo {
+	var e EMBInfo
+	e.SetColorCode(s.ColorCode)
+	e.SetPI(s.PreemptionAndPowerControlIndicator)
+	e.SetLCSS(s.LCSS & 0x03)
+	return e
 }
 
 // Codeword returns the 16-bit QR(16,7,6) codeword of e (§B.3.2), the 7
@@ -95,6 +90,5 @@ func DecodeEMBCodeword(cw uint16) (EMBInfo, fec.Result) {
 	var bits [16]bit.Bit
 	bit.PutUint(bits[:], uint64(cw))
 	s := DecodeEmbeddedSignalling(bits)
-	e, _ := s.Info()
-	return e, s.FEC
+	return s.Info(), s.FEC
 }

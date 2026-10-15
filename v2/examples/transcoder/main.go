@@ -25,7 +25,7 @@ const burstSize = 33
 
 type call struct {
 	lc     *pdu.FullLinkControl
-	cc     uint8
+	cc     enums.ColorCode
 	source layer2.SyncSource
 	slots  [][72]bit.Bit
 	frames []vocoder.AMBEFrame
@@ -96,7 +96,7 @@ func receive(bursts [][burstSize]byte) (call, error) {
 	return c, nil
 }
 
-func transmit(lc pdu.FullLinkControl, cc uint8, src layer2.SyncSource, silence [72]bit.Bit, add func(*layer2.VoiceTransmitter) ([][burstSize]byte, error)) ([][burstSize]byte, error) {
+func transmit(lc pdu.FullLinkControl, cc enums.ColorCode, src layer2.SyncSource, silence [72]bit.Bit, add func(*layer2.VoiceTransmitter) ([][burstSize]byte, error)) ([][burstSize]byte, error) {
 	tx, err := layer2.NewVoiceTransmitter(lc, cc, src, silence)
 	if err != nil {
 		return nil, err

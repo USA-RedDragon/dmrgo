@@ -54,8 +54,8 @@ func TestBursts(t *testing.T) {
 	}
 
 	p, _ := packet.Segment(unconfirmed(), payload(5), enums.DataTypeRate12)
-	if _, err := packet.Bursts(p, 16, layer2.SyncSourceBS); err == nil {
-		t.Error("Bursts accepted color code 16")
+	if _, err := packet.Bursts(p, 1, layer2.SyncSource(9)); err == nil {
+		t.Error("Bursts accepted sync source 9")
 	}
 	p.Blocks = append(p.Blocks, &pdu.CSBK{})
 	if _, err := packet.Bursts(p, 1, layer2.SyncSourceBS); !errors.Is(err, packet.ErrRate) {
