@@ -19,7 +19,7 @@ func testConfig() SeqConfig {
 func channel(iq []byte, txRate, rxRate, offsetHz, snrDB float64, seed uint64) []byte {
 	x := FromHackRF(iq)
 	n := int(float64(len(x)) * rxRate / txRate)
-	rng := rand.New(rand.NewPCG(seed, seed+1)) //nolint:gosec // deterministic test noise
+	rng := rand.New(rand.NewPCG(seed, seed+1))
 	sigma := math.Sqrt(0.81/math.Pow(10, snrDB/10)) / math.Sqrt2
 	out := make([]byte, 2*n)
 	for i := range n {
