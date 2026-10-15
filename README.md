@@ -107,6 +107,20 @@ c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID
 - Calls use Feature set ID `0xC2` in the Full LC. This FID is self-assigned, not allocated by ETSI. It does not identify the mode, so both ends must agree on the mode out of band.
 - `Silence()` is 20 ms of digital silence encoded in the selected mode, for padding the last burst of a call.
 
+## Examples
+
+Each program in [`v2/examples`](v2/examples) runs offline on the captures in `v2/layer2/testdata` or on generated input. Run one with `go run -C v2 ./examples/<name>`.
+
+- [`hotspot`](v2/examples/hotspot/main.go): decodes captured bursts with bit errors, applies the MMDVMHost acceptance check, regenerates clean bursts and reseals a rewritten Voice LC Header.
+- [`bridge`](v2/examples/bridge/main.go): receives a call with `VoiceReceiver`, rewrites its talkgroup and source ID, and sends it again with `VoiceTransmitter`.
+- [`scanner`](v2/examples/scanner/main.go): finds bursts in a noisy bit stream with the framer and follows the calls, talker alias and GPS on both time slots.
+- [`trunking`](v2/examples/trunking/main.go): builds and decodes Tier III CSBKs, an MBC grant and CACH Short LC system parameters.
+- [`data`](v2/examples/data/main.go): reassembles the SMS captures with `packet.Assembler`, and segments confirmed and unconfirmed packets with `packet.Segment`, including a selective retry.
+- [`transcoder`](v2/examples/transcoder/main.go): checks the AMBE+2 FEC of a captured call, rebuilds it, and sends generated audio through Codec2 (skipped without libcodec2).
+- [`conformance`](v2/examples/conformance/main.go): checks that every capture re-encodes byte for byte and that its FEC and CRCs verify with the byte-level functions.
+
+The packages also have short godoc examples, for example `layer2.ExampleNewBurstFromBytes` and `packet.ExampleSegment`.
+
 ## ETSI TS 102 361 Specification Coverage
 <!-- BEGIN ETSI COVERAGE -->
 
