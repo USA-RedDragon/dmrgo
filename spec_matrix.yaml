@@ -169,7 +169,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestEmbeddedLCFragments_Capture
+              - TestEmbeddedLCBytes_Capture
               - TestEmbeddedLC_DecodeCapture
               - TestEmbeddedLC_EncodeCapture
               - TestEmbeddedLC_RoundTrip

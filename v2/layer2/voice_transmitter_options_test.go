@@ -55,8 +55,8 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 	if len(calls) != 4 || calls[0] != 0 || calls[3] != 3 {
 		t.Fatalf("hook calls %v", calls)
 	}
-	callFrags := must(layer2.EncodeEmbeddedFullLinkControl(&call))
-	aliasFrags := must(layer2.EncodeEmbeddedFullLinkControl(&alias))
+	callFrags := must(encodeFLCBits(&call))
+	aliasFrags := must(encodeFLCBits(&alias))
 	for sf := 0; sf < 4; sf++ {
 		want := callFrags
 		if sf%2 == 1 {
@@ -66,7 +66,7 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 		if got != want {
 			t.Errorf("superframe %d: wrong embedded LC", sf)
 		}
-		lc, res := layer2.DecodeEmbeddedFullLinkControl(got)
+		lc, res := decodeFLCBits(got)
 		if res.Uncorrectable || (sf%2 == 1) != (lc.FLCO == enums.FLCOTalkerAliasHeader) {
 			t.Errorf("superframe %d: decoded %s", sf, lc.String())
 		}

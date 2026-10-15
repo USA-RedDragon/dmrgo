@@ -156,7 +156,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 					if i%6 != 4 {
 						continue
 					}
-					got, res := layer2.DecodeEmbeddedFullLinkControl(fragments)
+					got, res := decodeFLCBits(fragments)
 					if res.HasErrors() || got.FeatureSetID != fid ||
 						lcBits(t, got, enums.DataTypeVoiceLCHeader) != lcBits(t, lc, enums.DataTypeVoiceLCHeader) {
 						t.Errorf("burst %d: embedded LC %s (%+v)", i, got.String(), res)

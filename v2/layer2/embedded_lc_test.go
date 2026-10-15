@@ -44,7 +44,7 @@ func capturedLC() pdu.FullLinkControl {
 }
 
 func TestEmbeddedLC_DecodeCapture(t *testing.T) {
-	lc, res := layer2.DecodeEmbeddedLC(capturedFragments())
+	lc, res := decodeLCBits(capturedFragments())
 	if res.Uncorrectable || res.ErrorsCorrected != 0 || res.BitsChecked != 128 {
 		t.Fatalf("FEC = %+v, want a clean 128-bit check", res)
 	}
@@ -52,7 +52,7 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 		t.Errorf("LC % X, want % X", got, capturedEmbeddedLC)
 	}
 
-	flc, res := layer2.DecodeEmbeddedFullLinkControl(capturedFragments())
+	flc, res := decodeFLCBits(capturedFragments())
 	if res.Uncorrectable || flc.FEC != res {
 		t.Fatalf("FEC = %+v, LC FEC = %+v", res, flc.FEC)
 	}
@@ -67,7 +67,7 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 
 func TestEmbeddedLC_EncodeCapture(t *testing.T) {
 	lc := capturedLC()
-	got, err := layer2.EncodeEmbeddedFullLinkControl(&lc)
+	got, err := encodeFLCBits(&lc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestEmbeddedLC_EncodeCapture(t *testing.T) {
 	}
 	var bits [72]bit.Bit
 	copy(bits[:], bit.Unpack(capturedEmbeddedLC))
-	if layer2.EncodeEmbeddedLC(bits) != capturedFragments() {
+	if encodeLCBits(bits) != capturedFragments() {
 		t.Errorf("EncodeEmbeddedLC differs from the capture")
 	}
 }
@@ -87,7 +87,7 @@ func TestEmbeddedLC_RoundTrip(t *testing.T) {
 		for i := range lc {
 			lc[i] = bit.Bit(((i*31 + seed*17) >> 3 & 1) ^ (seed >> (i % 6) & 1))
 		}
-		got, res := layer2.DecodeEmbeddedLC(layer2.EncodeEmbeddedLC(lc))
+		got, res := decodeLCBits(encodeLCBits(lc))
 		if res.HasErrors() || got != lc {
 			t.Fatalf("seed %d: got %v (%+v), want %v", seed, got, res, lc)
 		}
@@ -110,15 +110,15 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 			for i := range lc {
 				lc[i] = bit.Bit(rng.Intn(2))
 			}
-			fr = layer2.EncodeEmbeddedLC(lc)
+			fr = encodeLCBits(lc)
 			fr[rng.Intn(4)][rng.Intn(32)] ^= 1
 		}
 		for _, d := range []struct {
 			lc  func([4][32]bit.Bit) ([72]bit.Bit, fec.Result)
 			flc func([4][32]bit.Bit) (pdu.FullLinkControl, fec.Result)
 		}{
-			{layer2.DecodeEmbeddedLC, layer2.DecodeEmbeddedFullLinkControl},
-			{layer2.DecodeEmbeddedLCStrict, layer2.DecodeEmbeddedFullLinkControlStrict},
+			{decodeLCBits, decodeFLCBits},
+			{decodeLCBitsStrict, decodeFLCBitsStrict},
 		} {
 			lc, want := d.lc(fr)
 			flc, got := d.flc(fr)
@@ -128,7 +128,7 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 			if want.Uncorrectable {
 				continue
 			}
-			if enc := must(layer2.EncodeEmbeddedFullLinkControl(&flc)); enc != layer2.EncodeEmbeddedLC(lc) {
+			if enc := must(encodeFLCBits(&flc)); enc != encodeLCBits(lc) {
 				t.Fatalf("Full LC %v does not encode back to LC %v", flc.String(), lc)
 			}
 		}
@@ -141,7 +141,7 @@ func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 	fr := capturedFragments()
 	info, _ := bptc.DecodeEmbedded(fr)
 	info[2*11+10] ^= 1
-	_, res := layer2.DecodeEmbeddedLC(bptc.EncodeEmbedded(info))
+	_, res := decodeLCBits(bptc.EncodeEmbedded(info))
 	if !res.Uncorrectable || res.ErrorsCorrected != 0 {
 		t.Errorf("FEC = %+v, want uncorrectable from the checksum alone", res)
 	}
@@ -187,7 +187,7 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 		for i := range fr {
 			copy(fr[i][:], bit.Unpack(raw[i*4:i*4+4]))
 		}
-		lc, res := layer2.DecodeEmbeddedLCStrict(fr)
+		lc, res := decodeLCBitsStrict(fr)
 		if res.Uncorrectable == v.accept {
 			t.Errorf("%s: accepted %v, MMDVMHost %v", v.raw, !res.Uncorrectable, v.accept)
 			continue
@@ -195,7 +195,7 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 		if got := hex.EncodeToString(bit.Pack(lc[:])); v.accept && got != v.lc {
 			t.Errorf("%s: LC %s, want %s", v.raw, got, v.lc)
 		}
-		flc, flcRes := layer2.DecodeEmbeddedFullLinkControlStrict(fr)
+		flc, flcRes := decodeFLCBitsStrict(fr)
 		if flcRes != res || flc.FEC != res {
 			t.Errorf("%s: Full LC FEC %+v, want %+v", v.raw, flcRes, res)
 		}
@@ -214,11 +214,11 @@ func TestEmbeddedLC_FiveErrors(t *testing.T) {
 		for j := range lc {
 			lc[j] = bit.Bit(r.Intn(2))
 		}
-		fr := layer2.EncodeEmbeddedLC(lc)
+		fr := encodeLCBits(lc)
 		for _, p := range r.Perm(128)[:5] {
 			fr[p/32][p%32] ^= 1
 		}
-		got, res := layer2.DecodeEmbeddedLC(fr)
+		got, res := decodeLCBits(fr)
 		switch {
 		case res.Uncorrectable:
 		case got == lc:
@@ -234,7 +234,50 @@ func TestEmbeddedLC_FiveErrors(t *testing.T) {
 
 func TestEmbeddedLC_EncodeRejectsBadLC(t *testing.T) {
 	lc := pdu.FullLinkControl{FLCO: enums.FLCO(64)}
-	if _, err := layer2.EncodeEmbeddedFullLinkControl(&lc); err == nil {
+	if _, err := encodeFLCBits(&lc); err == nil {
 		t.Fatal("FLCO 64 should be rejected")
 	}
+}
+
+func encodeLCBits(lc [72]bit.Bit) [4][32]bit.Bit {
+	return fragBits(layer2.EncodeEmbeddedLC([9]byte(bit.Pack(lc[:]))))
+}
+
+func decodeLCBits(f [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
+	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f))
+	return [72]bit.Bit(bit.Unpack(lc[:])), res
+}
+
+func decodeLCBitsStrict(f [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
+	lc, res := layer2.DecodeEmbeddedLCStrict(fragOctets(f))
+	return [72]bit.Bit(bit.Unpack(lc[:])), res
+}
+
+func encodeFLCBits(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
+	f, err := layer2.EncodeEmbeddedFullLinkControl(lc)
+	return fragBits(f), err
+}
+
+func decodeFLCBits(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
+	return layer2.DecodeEmbeddedFullLinkControl(fragOctets(f))
+}
+
+func decodeFLCBitsStrict(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
+	return layer2.DecodeEmbeddedFullLinkControlStrict(fragOctets(f))
+}
+
+func fragBits(f [4][4]byte) [4][32]bit.Bit {
+	var out [4][32]bit.Bit
+	for i := range f {
+		copy(out[i][:], bit.Unpack(f[i][:]))
+	}
+	return out
+}
+
+func fragOctets(f [4][32]bit.Bit) [4][4]byte {
+	var out [4][4]byte
+	for i := range f {
+		copy(out[i][:], bit.Pack(f[i][:]))
+	}
+	return out
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -98,9 +99,13 @@ func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err 
 		return lc, false, nil
 	}
 	r.count = 0
-	decode := DecodeEmbeddedFullLinkControl
+	decode := func(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
+		return embeddedFullLinkControl(decodeEmbeddedLC(f))
+	}
 	if r.Strict {
-		decode = DecodeEmbeddedFullLinkControlStrict
+		decode = func(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
+			return embeddedFullLinkControl(decodeEmbeddedLCStrict(f))
+		}
 	}
 	lc, result := decode(r.fragments)
 	if result.Uncorrectable {

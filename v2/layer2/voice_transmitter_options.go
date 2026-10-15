@@ -57,7 +57,7 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 	if t.terminator, err = lcDataBurst(opts.LC, enums.DataTypeTerminatorWithLC, opts.ColorCode, opts.Source); err != nil {
 		return nil, err
 	}
-	if t.callLC, err = EncodeEmbeddedFullLinkControl(&opts.LC); err != nil {
+	if t.callLC, err = encodeEmbeddedFullLinkControl(&opts.LC); err != nil {
 		return nil, err
 	}
 	t.embedded = t.callLC
@@ -92,7 +92,7 @@ func (t *VoiceTransmitter) SetEmbeddedLC(lc pdu.FullLinkControl) error {
 	if t.terminated {
 		return ErrVoiceTerminated
 	}
-	frags, err := EncodeEmbeddedFullLinkControl(&lc)
+	frags, err := encodeEmbeddedFullLinkControl(&lc)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (t *VoiceTransmitter) startSuperframe() error {
 	case t.lcHook != nil:
 		if lc := t.lcHook(n); lc != nil {
 			var err error
-			if frags, err = EncodeEmbeddedFullLinkControl(lc); err != nil {
+			if frags, err = encodeEmbeddedFullLinkControl(lc); err != nil {
 				return fmt.Errorf("superframe %d embedded LC: %w", n, err)
 			}
 		}

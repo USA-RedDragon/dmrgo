@@ -26,9 +26,35 @@ import (
 // B.21).
 const voiceLCHeaderMask = 0x96
 
-// EncodeEmbeddedLC returns the four 32-bit embedded signalling fragments, in
-// burst order B to E, that carry the 72 LC bits of a Full LC.
-func EncodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
+// EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in
+// burst order B to E, that carry the 9-octet LC lc, in the form
+// RawBurst.SetEmbeddedData takes.
+func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
+	var bits [72]bit.Bit
+	copy(bits[:], bit.Unpack(lc[:]))
+	return fragmentOctets(encodeEmbeddedLC(bits))
+}
+
+// DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling
+// fields f of bursts B to E, as RawBurst.EmbeddedData returns them. It
+// decodes the BPTC to the nearest codewords with
+// bptc.DecodeEmbeddedWithCheck and keeps the one whose 5-bit checksum
+// matches its LC. The FEC result covers the BPTC; Uncorrectable is set when
+// no nearest codeword or more than one has a matching checksum.
+func DecodeEmbeddedLC(f [4][4]byte) ([9]byte, fec.Result) {
+	lc, res := decodeEmbeddedLC(fragmentBits(f))
+	return lcOctets(lc), res
+}
+
+// DecodeEmbeddedLCStrict is DecodeEmbeddedLC with the BPTC decoded by
+// bptc.DecodeEmbeddedStrict, so it accepts and returns the same LCs as
+// MMDVMHost (CDMREmbeddedData::decodeEmbeddedData).
+func DecodeEmbeddedLCStrict(f [4][4]byte) ([9]byte, fec.Result) {
+	lc, res := decodeEmbeddedLCStrict(fragmentBits(f))
+	return lcOctets(lc), res
+}
+
+func encodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
 	cs := crc.Checksum5(lcOctets(lc))
 	var info [77]bit.Bit
 	n := 0
@@ -45,12 +71,7 @@ func EncodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
 	return bptc.EncodeEmbedded(info)
 }
 
-// DecodeEmbeddedLC decodes the 72 LC bits from the four embedded signalling
-// fragments of bursts B to E. It decodes the BPTC to the nearest codewords
-// with bptc.DecodeEmbeddedWithCheck and keeps the one whose 5-bit checksum
-// matches its LC. The FEC result covers the BPTC; Uncorrectable is set when
-// no nearest codeword or more than one has a matching checksum.
-func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
+func decodeEmbeddedLC(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
 	return embeddedLCChecksum(bptc.DecodeEmbeddedWithCheck(fragments, embeddedLCChecksumValid))
 }
 
@@ -59,10 +80,7 @@ func embeddedLCChecksumValid(info [77]bit.Bit) bool {
 	return !result.Uncorrectable
 }
 
-// DecodeEmbeddedLCStrict is DecodeEmbeddedLC with the BPTC decoded by
-// bptc.DecodeEmbeddedStrict, so it accepts and returns the same LCs as
-// MMDVMHost (CDMREmbeddedData::decodeEmbeddedData).
-func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
+func decodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
 	return embeddedLCChecksum(bptc.DecodeEmbeddedStrict(fragments))
 }
 
@@ -87,27 +105,32 @@ func embeddedLCChecksum(info [77]bit.Bit, result fec.Result) ([72]bit.Bit, fec.R
 }
 
 // EncodeEmbeddedFullLinkControl returns the four embedded signalling
-// fragments, in burst order B to E, that carry lc. lc.BurstDataType is ignored.
-func EncodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
+// fields, in burst order B to E, that carry lc. lc.BurstDataType is ignored.
+func EncodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][4]byte, error) {
+	frags, err := encodeEmbeddedFullLinkControl(lc)
+	return fragmentOctets(frags), err
+}
+
+func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
 	bits, err := fullLCBits(lc)
 	if err != nil {
 		return [4][32]bit.Bit{}, err
 	}
-	return EncodeEmbeddedLC(bits), nil
+	return encodeEmbeddedLC(bits), nil
 }
 
 // DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded
-// signalling fragments of bursts B to E. The returned LC has DataType
+// signalling fields f of bursts B to E. The returned LC has BurstDataType
 // DataTypeVoiceLCHeader, so it encodes as a Voice LC Header as is, and its
 // FEC is the DecodeEmbeddedLC result, which is also returned.
-func DecodeEmbeddedFullLinkControl(fragments [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
-	return embeddedFullLinkControl(DecodeEmbeddedLC(fragments))
+func DecodeEmbeddedFullLinkControl(f [4][4]byte) (pdu.FullLinkControl, fec.Result) {
+	return embeddedFullLinkControl(decodeEmbeddedLC(fragmentBits(f)))
 }
 
 // DecodeEmbeddedFullLinkControlStrict is DecodeEmbeddedFullLinkControl with
 // the LC decoded by DecodeEmbeddedLCStrict.
-func DecodeEmbeddedFullLinkControlStrict(fragments [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
-	return embeddedFullLinkControl(DecodeEmbeddedLCStrict(fragments))
+func DecodeEmbeddedFullLinkControlStrict(f [4][4]byte) (pdu.FullLinkControl, fec.Result) {
+	return embeddedFullLinkControl(decodeEmbeddedLCStrict(fragmentBits(f)))
 }
 
 func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkControl, fec.Result) {

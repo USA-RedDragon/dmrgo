@@ -368,21 +368,21 @@ func TestBuildRateDataBursts_DecodeAsBurst(t *testing.T) {
 	}
 }
 
-func TestEmbeddedLCFragments_Capture(t *testing.T) {
+func TestEmbeddedLCBytes_Capture(t *testing.T) {
 	lc := [9]byte(capturedEmbeddedLC)
 	want := fragmentWords(capturedFragments())
-	if got := layer2.EmbeddedLCFragments(lc); got != want {
+	if got := layer2.EncodeEmbeddedLC(lc); got != want {
 		t.Fatalf("fragments %x, want %x", got, want)
 	}
-	if got, res := layer2.DecodeEmbeddedLCFragments(want); got != lc || res.HasErrors() {
+	if got, res := layer2.DecodeEmbeddedLC(want); got != lc || res.HasErrors() {
 		t.Errorf("decode: %x %+v", got, res)
 	}
-	if got, res := layer2.DecodeEmbeddedLCFragmentsStrict(want); got != lc || res.HasErrors() {
+	if got, res := layer2.DecodeEmbeddedLCStrict(want); got != lc || res.HasErrors() {
 		t.Errorf("strict decode: %x %+v", got, res)
 	}
 	bad := want
 	bad[2][1] ^= 0x01
-	if got, res := layer2.DecodeEmbeddedLCFragments(bad); got != lc || !res.HasErrors() {
+	if got, res := layer2.DecodeEmbeddedLC(bad); got != lc || !res.HasErrors() {
 		t.Errorf("one bit error: %x %+v", got, res)
 	}
 }
