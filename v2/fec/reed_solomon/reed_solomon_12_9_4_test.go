@@ -204,3 +204,45 @@ func TestReedSolomon1294CheckSyndromeWithErrors(t *testing.T) {
 		t.Error("Corrupted codeword should have non-zero syndrome")
 	}
 }
+
+func refGaloisMul(a, b byte) byte {
+	var p uint16
+	x, y := uint16(a), uint16(b)
+	for y != 0 {
+		if y&1 != 0 {
+			p ^= x
+		}
+		y >>= 1
+		x <<= 1
+		if x&0x100 != 0 {
+			x ^= 0x11D
+		}
+	}
+	return byte(p)
+}
+
+func TestReedSolomon1294GaloisMulExhaustive(t *testing.T) {
+	for a := 0; a < 256; a++ {
+		for b := 0; b < 256; b++ {
+			got := ReedSolomon1294GaloisMul(byte(a), byte(b))
+			if want := refGaloisMul(byte(a), byte(b)); got != want {
+				t.Fatalf("GaloisMul(0x%02X, 0x%02X) = 0x%02X, want 0x%02X", a, b, got, want)
+			}
+		}
+	}
+}
+
+func TestReedSolomon1294GaloisInv(t *testing.T) {
+	if _, ok := ReedSolomon1294GaloisInv(0); ok {
+		t.Error("GaloisInv(0) should report failure")
+	}
+	for a := 1; a < 256; a++ {
+		inv, ok := ReedSolomon1294GaloisInv(byte(a))
+		if !ok {
+			t.Fatalf("GaloisInv(0x%02X) reported failure", a)
+		}
+		if p := refGaloisMul(byte(a), inv); p != 1 {
+			t.Fatalf("0x%02X * GaloisInv = 0x%02X, want 1", a, p)
+		}
+	}
+}

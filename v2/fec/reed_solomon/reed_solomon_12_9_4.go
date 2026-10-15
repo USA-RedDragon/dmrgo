@@ -251,15 +251,20 @@ func ReedSolomon1294MulPolysWithTmp(p1, p2 *ReedSolomon1294, dst, tmp []uint8) {
 	}
 }
 
-func ReedSolomon1294GaloisInv(elt uint8) uint8 {
-	return galois_exp_table[255-galois_log_table[elt]]
+// ReedSolomon1294GaloisInv returns the multiplicative inverse of elt in GF(2^8).
+// The second result is false when elt is zero, which has no inverse.
+func ReedSolomon1294GaloisInv(elt uint8) (uint8, bool) {
+	if elt == 0 {
+		return 0, false
+	}
+	return galois_exp_table[255-int(galois_log_table[elt])], true
 }
 
 func ReedSolomon1294GaloisMul(a, b uint8) uint8 {
 	if a == 0 || b == 0 {
 		return 0
 	}
-	return galois_exp_table[(galois_log_table[a]+galois_log_table[b])%255]
+	return galois_exp_table[(int(galois_log_table[a])+int(galois_log_table[b]))%255]
 }
 
 // Multiply by z (shift right by 1).
@@ -331,7 +336,11 @@ func ReedSolomon1294CorrectWithWorkspace(data []byte, syndrome *ReedSolomon1294,
 				denom ^= ReedSolomon1294GaloisMul(ws.locator[j], galois_exp_table[idx])
 			}
 
-			data[len(data)-int(i)-1] ^= ReedSolomon1294GaloisMul(num, ReedSolomon1294GaloisInv(denom))
+			inv, ok := ReedSolomon1294GaloisInv(denom)
+			if !ok {
+				return errorsFound, errors.New("fec/rs_12_9: errors can't be corrected")
+			}
+			data[len(data)-int(i)-1] ^= ReedSolomon1294GaloisMul(num, inv)
 		}
 
 		return errorsFound, nil
@@ -405,8 +414,9 @@ func ReedSolomon1294CalcWithScratch(
 			if int(lCur) < int(n)-int(k) {
 				l2 = uint8(int(n) - int(k))  //nolint:gosec // n < RS_12_9_CHECKSUMSIZE (3), result fits in uint8
 				k = int8(int(n) - int(lCur)) //nolint:gosec // n < RS_12_9_CHECKSUMSIZE (3), result fits in int8
+				dInv, _ := ReedSolomon1294GaloisInv(d)
 				for i = 0; i < RS_12_9_POLY_MAXDEG; i++ {
-					D[i] = ReedSolomon1294GaloisMul(locator[i], ReedSolomon1294GaloisInv(d))
+					D[i] = ReedSolomon1294GaloisMul(locator[i], dInv)
 				}
 				lCur = l2
 			}
