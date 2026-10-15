@@ -20,7 +20,7 @@ func TestCSBKBytes_SMSCaptures(t *testing.T) {
 			if !isCSBK || b.FEC.PDU.HasErrors() {
 				continue
 			}
-			r := layer2.RawBurst(frame)
+			r := frame
 			p, _ := r.BPTCPayload()
 			c := pdu.CSBKBytes(p)
 			if !c.CRCOK() || c.Opcode() != pdu.CSBKPreamble || c.Opcode() != dc.Opcode || c.FID() != dc.FID {

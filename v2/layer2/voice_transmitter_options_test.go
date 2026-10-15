@@ -24,7 +24,7 @@ func talkerAliasLC() pdu.FullLinkControl {
 	}
 }
 
-func superframeLC(t *testing.T, bursts [][33]byte, sf int) [4][32]bit.Bit {
+func superframeLC(t *testing.T, bursts []layer2.RawBurst, sf int) [4][32]bit.Bit {
 	t.Helper()
 	var frags [4][32]bit.Bit
 	for i := range frags {
@@ -48,7 +48,7 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 			return nil
 		},
 	}))
-	var bursts [][33]byte
+	var bursts []layer2.RawBurst
 	for n := 0; n < 4*18; n++ {
 		bursts = append(bursts, must(tx.AddSlots(testSlot(n)))...)
 	}
@@ -98,7 +98,7 @@ func TestVoiceTransmitter_SetEmbeddedFragments(t *testing.T) {
 	if err := tx.SetEmbeddedFragments(f); err != nil {
 		t.Fatal(err)
 	}
-	var bursts [][33]byte
+	var bursts []layer2.RawBurst
 	for n := 0; n < 2*18; n++ {
 		bursts = append(bursts, must(tx.AddSlots(testSlot(n)))...)
 	}
@@ -197,8 +197,8 @@ func TestVoiceTransmitter_OptionsMatchPositional(t *testing.T) {
 			LC: lc, ColorCode: 3, Source: source, Silence: silenceSlot(),
 			EmbeddedLC: func(int) *pdu.FullLinkControl { return nil },
 		}))
-		got := [][33]byte{a.Header()}
-		want := [][33]byte{b.Header()}
+		got := []layer2.RawBurst{a.Header()}
+		want := []layer2.RawBurst{b.Header()}
 		for n := 0; n < 40; n++ {
 			got = append(got, must(a.AddSlots(testSlot(n)))...)
 			want = append(want, must(b.AddSlots(testSlot(n)))...)

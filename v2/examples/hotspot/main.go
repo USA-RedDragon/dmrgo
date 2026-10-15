@@ -36,7 +36,7 @@ func main() {
 	}
 }
 
-func loadBursts(path string) ([][33]byte, error) {
+func loadBursts(path string) ([]layer2.RawBurst, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -44,19 +44,19 @@ func loadBursts(path string) ([][33]byte, error) {
 	if len(data)%33 != 0 {
 		return nil, fmt.Errorf("%s: %d bytes is not a whole number of bursts", path, len(data))
 	}
-	bursts := make([][33]byte, 0, len(data)/33)
+	bursts := make([]layer2.RawBurst, 0, len(data)/33)
 	for i := 0; i < len(data); i += 33 {
 		bursts = append(bursts, [33]byte(data[i:i+33]))
 	}
 	return bursts, nil
 }
 
-func flip(p *[33]byte, i int) { p[i/8] ^= 0x80 >> (i % 8) }
+func flip(p *layer2.RawBurst, i int) { p[i/8] ^= 0x80 >> (i % 8) }
 
 // addRFErrors flips one bit per FEC layer that the burst carries: a BPTC bit
 // of a data burst, the first bit of vocoder slot 0, which is Golay coded,
 // and an EMB bit of an embedded signalling burst.
-func addRFErrors(p *[33]byte) (burstFEC, ambe int) {
+func addRFErrors(p *layer2.RawBurst) (burstFEC, ambe int) {
 	var b layer2.Burst
 	_ = b.DecodeFromBytes(*p)
 	switch {
@@ -84,7 +84,7 @@ type rxStats struct {
 	frames            []vocoder.AMBEFrame
 }
 
-func receive(captured [][33]byte) (rxStats, error) {
+func receive(captured []layer2.RawBurst) (rxStats, error) {
 	var s rxStats
 	var rx layer2.VoiceReceiver
 	cc := enums.ColorCode(colorCode)
@@ -111,7 +111,7 @@ func receive(captured [][33]byte) (rxStats, error) {
 		switch b.Kind {
 		case layer2.KindData:
 			s.data++
-			raw := layer2.RawBurst(p)
+			raw := p
 			payload, _ := raw.BPTCPayload()
 			s.checked++
 			if layer2.MMDVMHostAccepts(b.SlotType.DataType, payload) {
@@ -140,7 +140,7 @@ func sameCall(a, b *pdu.FullLinkControl) bool {
 	return aok && bok && a.FLCO == b.FLCO && at == bt && as == bs
 }
 
-func regenerate(lc pdu.FullLinkControl, frames []vocoder.AMBEFrame) ([][33]byte, error) {
+func regenerate(lc pdu.FullLinkControl, frames []vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
 	tx, err := layer2.NewVoiceTransmitter(lc, colorCode, layer2.SyncSourceBS, vocoder.EncodeAMBE72(vocoder.AMBESilence()))
 	if err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ func regenerate(lc pdu.FullLinkControl, frames []vocoder.AMBEFrame) ([][33]byte,
 	return append(out, tail...), nil
 }
 
-func checkRegenerated(bursts [][33]byte, captured [][33]byte, frames []vocoder.AMBEFrame) (clean, framesOK bool, identical int) {
+func checkRegenerated(bursts []layer2.RawBurst, captured []layer2.RawBurst, frames []vocoder.AMBEFrame) (clean, framesOK bool, identical int) {
 	clean, framesOK = true, true
 	var got []vocoder.AMBEFrame
 	for i, p := range bursts {
