@@ -11,9 +11,9 @@ import (
 
 func TestEMBInfo_IPSCExample(t *testing.T) {
 	s := pdu.EmbeddedSignalling{ColorCode: 1, LCSS: enums.LCSSFirstFragment}
-	e, err := s.Info()
-	if err != nil || e != 0x12 {
-		t.Fatalf("Info %#02x %v, want 0x12", byte(e), err)
+	e := s.Info()
+	if e != 0x12 {
+		t.Fatalf("Info %#02x, want 0x12", byte(e))
 	}
 	if cw := e.Codeword(); cw != 0x1391 {
 		t.Fatalf("Codeword %#04x, want 0x1391", cw)
@@ -42,11 +42,11 @@ func TestEMBInfo_AllValues(t *testing.T) {
 			t.Fatalf("%#02x: bit 0 changes the codeword", byte(e))
 		}
 		s := e.EmbeddedSignalling()
-		if s.ColorCode != uint8(v>>3) || s.PreemptionAndPowerControlIndicator != (v&4 != 0) || s.LCSS != enums.LCSS(v&3) {
+		if s.ColorCode != enums.ColorCode(v>>3) || s.PreemptionAndPowerControlIndicator != (v&4 != 0) || s.LCSS != enums.LCSS(v&3) {
 			t.Fatalf("%#02x: EmbeddedSignalling %s", byte(e), s.String())
 		}
-		if back, err := s.Info(); err != nil || back != e {
-			t.Fatalf("%#02x: Info %#02x %v", byte(e), byte(back), err)
+		if back := s.Info(); back != e {
+			t.Fatalf("%#02x: Info %#02x", byte(e), byte(back))
 		}
 		if enc := must(s.Encode()); uint16(bit.Uint(enc[:])) != want {
 			t.Fatalf("%#02x: EmbeddedSignalling.Encode differs", byte(e))
@@ -66,11 +66,15 @@ func TestEMBInfo_AllValues(t *testing.T) {
 func TestEMBInfo_Setters(t *testing.T) {
 	for v := range 256 {
 		orig := pdu.EMBInfo(v)
-		for cc := range uint8(16) {
+		for cc := range enums.ColorCode(16) {
 			e := orig
-			if !e.SetColorCode(cc) || e.ColorCode() != cc || (e^orig)&^0xF0 != 0 {
+			if e.SetColorCode(cc); e.ColorCode() != cc || (e^orig)&^0xF0 != 0 {
 				t.Fatalf("%#02x: SetColorCode(%d) gives %#02x", v, cc, byte(e))
 			}
+		}
+		e := orig
+		if e.SetColorCode(0x1F); e.ColorCode() != 0xF || (e^orig)&^0xF0 != 0 {
+			t.Fatalf("%#02x: SetColorCode(0x1F) gives %#02x", v, byte(e))
 		}
 		for l := range enums.LCSS(4) {
 			e := orig
@@ -84,13 +88,13 @@ func TestEMBInfo_Setters(t *testing.T) {
 				t.Fatalf("%#02x: SetPI(%t) gives %#02x", v, pi, byte(e))
 			}
 		}
-		e := orig
-		if e.SetColorCode(16) || e.SetLCSS(4) || e != orig {
-			t.Fatalf("%#02x: setters accept out of range values", v)
+		e = orig
+		if e.SetLCSS(4) || e != orig {
+			t.Fatalf("%#02x: SetLCSS accepts an out of range value", v)
 		}
 	}
-	s := pdu.EmbeddedSignalling{ColorCode: 16}
-	if _, err := s.Info(); err == nil {
-		t.Fatal("Info accepts CC 16")
+	s := pdu.EmbeddedSignalling{ColorCode: 0x13, LCSS: 5}
+	if e := s.Info(); e.ColorCode() != 3 || e.LCSS() != 1 {
+		t.Fatalf("Info %#02x, want the low bits of CC 0x13 and LCSS 5", byte(e))
 	}
 }

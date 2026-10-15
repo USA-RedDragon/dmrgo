@@ -25,7 +25,7 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
 	if !result.FEC.Uncorrectable {
 		data = corrected
 	}
-	result.ColorCode = uint8(bit.Uint(data[0:4]))
+	result.ColorCode = enums.ColorCode(bit.Uint(data[0:4]))
 	result.PreemptionAndPowerControlIndicator = data[4] == 1
 	result.LCSS = enums.LCSS(bit.Uint(data[5:7]))
 	return result

@@ -242,7 +242,7 @@ func TestRC_String(t *testing.T) {
 func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	var bitData [264]bit.Bit
 	embBits := must((&pdu.EmbeddedSignalling{
-		ColorCode: uint8(cc),
+		ColorCode: enums.ColorCode(cc),
 		LCSS:      enums.LCSSSingleFragment,
 	}).Encode())
 	rcData, err := layer2.EncodeEmbeddedRC(&pdu.ReverseChannel{RCCommand: cmd})

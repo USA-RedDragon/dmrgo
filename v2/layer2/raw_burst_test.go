@@ -159,9 +159,7 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 		b, _ := layer2.NewBurstFromBytes(frame)
 		if b.Kind == layer2.KindData {
 			if !stRes.HasErrors() {
-				if err := w.SetSlotType(st); err != nil {
-					t.Fatal(err)
-				}
+				w.SetSlotType(st)
 			}
 			switch dt := b.SlotType.DataType; {
 			case dt == enums.DataTypeRate34:
@@ -179,9 +177,7 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 			w.SetVoiceSlots(r.VoiceSlots())
 			if b.HasEmbeddedSignalling() && b.SyncPattern != enums.SyncMSSourcedRC {
 				if e := r.EMB(); !e.FEC.HasErrors() {
-					if err := w.SetEMB(e); err != nil {
-						t.Fatal(err)
-					}
+					w.SetEMB(e)
 				}
 				w.SetEmbeddedData(r.EmbeddedData())
 			}
@@ -239,10 +235,8 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 			t.Fatal("SetEmbeddedData")
 		}
 		w = r
-		e := pdu.EmbeddedSignalling{ColorCode: uint8(rng.Intn(16)), LCSS: enums.LCSS(rng.Intn(4))}
-		if err := w.SetEMB(e); err != nil {
-			t.Fatal(err)
-		}
+		e := pdu.EmbeddedSignalling{ColorCode: enums.ColorCode(rng.Intn(16)), LCSS: enums.LCSS(rng.Intn(4))}
+		w.SetEMB(e)
 		if got := w.EMB(); got.ColorCode != e.ColorCode || got.LCSS != e.LCSS || got.FEC.HasErrors() || !sameBits(w, r, [2]int{108, 116}, [2]int{148, 156}) {
 			t.Fatalf("SetEMB: %+v", got)
 		}
@@ -289,9 +283,7 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 	if err := w.SetSync(enums.SyncMSSourcedRC); err != nil {
 		t.Fatal(err)
 	}
-	if err := w.SetStandaloneRCEMB(emb); err != nil {
-		t.Fatal(err)
-	}
+	w.SetStandaloneRCEMB(emb)
 	w.SetStandaloneRCData(data)
 	if w != r {
 		t.Fatalf("rebuilt RC burst\ngot  %x\nwant %x", w, r)
@@ -300,7 +292,7 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 
 func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
 	cw := must(pdu.FullLCCodeword([9]byte(capturedEmbeddedLC), enums.DataTypeVoiceLCHeader))
-	for cc := uint8(0); cc < 16; cc++ {
+	for cc := enums.ColorCode(0); cc < 16; cc++ {
 		got := must(layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS))
 		want := must(lcBurst(cw, enums.DataTypeVoiceLCHeader, cc))
 		if got != layer2.RawBurst(want) {
@@ -352,8 +344,8 @@ func TestBuildDataBurst_Rejects(t *testing.T) {
 	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeRate1, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Rate 1 accepted")
 	}
-	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 16, layer2.SyncSourceBS); err == nil {
-		t.Error("color code 16 accepted")
+	if r := must(layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 0x17, layer2.SyncSourceBS)); r.SlotType().ColorCode != 7 {
+		t.Errorf("color code 0x17 gives %d, want the low 4 bits 7", r.SlotType().ColorCode)
 	}
 	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 1, layer2.SyncSource(9)); err == nil {
 		t.Error("unknown source accepted")

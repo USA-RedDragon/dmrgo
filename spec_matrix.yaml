@@ -639,9 +639,13 @@ documents:
       - section: "9.3.1"
         title: "Colour Code (CC)"
         source_files:
+          - v2/enums/color_code.go
           - v2/layer2/pdu/embedded_signalling.go
           - v2/layer2/pdu/slot_type.go
         test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestNewColorCode
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestSlotType_AllColorCodes

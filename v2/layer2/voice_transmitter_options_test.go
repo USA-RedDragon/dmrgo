@@ -215,7 +215,6 @@ func TestVoiceTransmitter_OptionsMatchPositional(t *testing.T) {
 		}
 	}
 	for _, opts := range []layer2.VoiceTransmitterOptions{
-		{LC: lc, ColorCode: 16},
 		{LC: lc, Source: layer2.SyncSource(4)},
 	} {
 		if _, err := layer2.NewVoiceTransmitterWithOptions(opts); err == nil {

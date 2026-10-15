@@ -15,8 +15,8 @@ type VoiceTransmitterOptions struct {
 	// with LC carry it, and so does the embedded LC unless EmbeddedLC or
 	// SetEmbeddedLC replaces it. LC.BurstDataType is ignored.
 	LC pdu.FullLinkControl
-	// ColorCode is the 4-bit color code.
-	ColorCode uint8
+	// ColorCode is the color code of the slot types and EMBs.
+	ColorCode enums.ColorCode
 	// Source selects the SYNC patterns.
 	Source SyncSource
 	// Silence is the 72-bit slot that pads the last superframe.
@@ -33,19 +33,17 @@ type VoiceTransmitterOptions struct {
 }
 
 // NewVoiceTransmitterWithOptions returns a VoiceTransmitter for opts. It
-// returns an error when ColorCode does not fit in 4 bits, Source is unknown,
-// or LC or PIHeader does not encode.
+// returns an error when Source is unknown, or LC or PIHeader does not
+// encode.
 func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmitter, error) {
 	lowbit.Mask(opts.Silence[:])
 	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {
 		return nil, fmt.Errorf("unknown sync source %d", opts.Source)
 	}
-	if opts.ColorCode > 15 {
-		return nil, fmt.Errorf("color code %d does not fit in 4 bits", opts.ColorCode)
-	}
+
 	t := &VoiceTransmitter{
-		colorCode: opts.ColorCode,
+		colorCode: opts.ColorCode & 0x0F,
 		voiceSync: voiceSync,
 		outbound:  opts.Source == SyncSourceBS,
 		silence:   opts.Silence,

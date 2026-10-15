@@ -176,7 +176,7 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §9.2.9 | Proprietary Header (P_HEAD) PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §9.2.13 | Unified Data Transport Header (UDT_HEAD) PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §9.2.15 | Rate 1 coded packet Data (R_1_DATA) PDU | ✅ verified | 9/9 passed | `v2/layer2/pdu/rate1_data.go`, `v2/layer2/pdu/confirmed_block.go` |
-| §9.3.1 | Colour Code (CC) | ✅ verified | 3/3 passed | `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/pdu/slot_type.go` |
+| §9.3.1 | Colour Code (CC) | ✅ verified | 4/4 passed | `v2/enums/color_code.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/pdu/slot_type.go` |
 | §9.3.2 | Pre-emption and power control Indicator (PI) | ✅ verified | 1/1 passed | `v2/layer2/pdu/embedded_signalling.go` |
 | §9.3.3 | LC Start/Stop (LCSS) | ✅ verified | 3/3 passed | `v2/enums/lcss.go` |
 | §9.3.4 | EMB parity | ✅ verified | 3/3 passed | `v2/internal/fec/quadraticresidue/quadratic_residue_16_7_6.go`, `v2/layer2/pdu/embedded_signalling.go` |

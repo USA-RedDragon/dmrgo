@@ -13,14 +13,12 @@ import (
 // lcBurst builds a BS-sourced data burst that carries the BPTC(196,96)
 // payload p with a slot type of color code cc and data type dt, which may be
 // reserved.
-func lcBurst(p [12]byte, dt enums.DataType, cc uint8) ([33]byte, error) {
+func lcBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode) ([33]byte, error) {
 	var r layer2.RawBurst
 	if err := r.SetSync(enums.SyncBSSourcedData); err != nil {
 		return r, err
 	}
-	if err := r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt}); err != nil {
-		return r, err
-	}
+	r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt})
 	r.SetBPTCPayload(p)
 	return r, nil
 }
@@ -103,7 +101,7 @@ func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
 
-	for cc := uint8(0); cc < 16; cc++ {
+	for cc := enums.ColorCode(0); cc < 16; cc++ {
 		result := [33]byte(must(layer2.BuildDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS)))
 		burst, err := layer2.NewBurstFromBytes(result)
 		if err != nil {

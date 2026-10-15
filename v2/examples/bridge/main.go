@@ -63,7 +63,7 @@ func loadBursts(path string) ([][33]byte, error) {
 // inbound is what the bridge keeps of a received call.
 type inbound struct {
 	lc        pdu.FullLinkControl
-	colorCode uint8
+	colorCode enums.ColorCode
 	slots     [][72]bit.Bit
 }
 

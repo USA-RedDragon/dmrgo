@@ -16,7 +16,7 @@ import (
 
 // SeqConfig describes a transmission.
 type SeqConfig struct {
-	ColorCode uint8
+	ColorCode enums.ColorCode
 	Source    uint32
 	Dest      uint32
 	BS        uint32
@@ -479,7 +479,7 @@ func activityOf(name string, group bool) enums.ActivityID {
 
 // IdleBurst returns a BS-sourced idle burst (ETSI TS 102 361-1 clause
 // 7.3.2).
-func IdleBurst(cc uint8) ([33]byte, error) {
+func IdleBurst(cc enums.ColorCode) ([33]byte, error) {
 	r, err := layer2.BuildDataBurst(bit.Pack96(layer2.IdleMessageInfo()), enums.DataTypeIdle, cc, layer2.SyncSourceBS)
 	return [33]byte(r), err
 }

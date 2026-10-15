@@ -85,9 +85,7 @@ func TestBPTCReserved_CapacityMaxVoiceLCHeader(t *testing.T) {
 	}
 	got := layer2.RawBurst(must(b.Encode()))
 	want := layer2.RawBurst(frame)
-	if err := want.SetSlotType(pdu.SlotType{ColorCode: b.SlotType.ColorCode, DataType: b.SlotType.DataType}); err != nil {
-		t.Fatal(err)
-	}
+	want.SetSlotType(pdu.SlotType{ColorCode: b.SlotType.ColorCode, DataType: b.SlotType.DataType})
 	if got != want {
 		t.Errorf("Encode\ngot  %x\nwant %x", got, want)
 	}

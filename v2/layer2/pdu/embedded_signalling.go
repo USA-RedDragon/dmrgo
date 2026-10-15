@@ -9,8 +9,8 @@ import (
 //
 //dmr:fec quadratic_residue_16_7_6
 type EmbeddedSignalling struct {
-	ColorCode                          uint8      `dmr:"bits:0-3"`
-	PreemptionAndPowerControlIndicator bool       `dmr:"bit:4"`
-	LCSS                               enums.LCSS `dmr:"bits:5-6,enum"`
-	FEC                                fec.Result `dmr:"-"`
+	ColorCode                          enums.ColorCode `dmr:"bits:0-3"`
+	PreemptionAndPowerControlIndicator bool            `dmr:"bit:4"`
+	LCSS                               enums.LCSS      `dmr:"bits:5-6,enum"`
+	FEC                                fec.Result      `dmr:"-"`
 }

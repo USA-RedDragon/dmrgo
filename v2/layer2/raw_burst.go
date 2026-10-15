@@ -79,16 +79,13 @@ func (r RawBurst) SlotType() pdu.SlotType {
 	return pdu.DecodeSlotType(bits)
 }
 
-// SetSlotType encodes st into the slot type bits. It returns an error, and
-// writes nothing, when the color code or data type does not fit in 4 bits.
-func (r *RawBurst) SetSlotType(st pdu.SlotType) error {
-	bits, err := st.Encode()
-	if err != nil {
-		return err
-	}
+// SetSlotType encodes st into the slot type bits: the low 4 bits of its
+// color code and of its data type, as SlotType.Info returns them.
+func (r *RawBurst) SetSlotType(st pdu.SlotType) {
+	var bits [20]bit.Bit
+	bit.PutUint(bits[:], uint64(st.Info().Codeword()))
 	r.writeBits(bits[:10], slotTypeFirstStart)
 	r.writeBits(bits[10:], slotTypeSecondStart)
-	return nil
 }
 
 func (r RawBurst) info() [196]bit.Bit {
@@ -196,10 +193,10 @@ func (r RawBurst) EMB() pdu.EmbeddedSignalling {
 }
 
 // SetEMB encodes e into the EMB bits of a voice burst B to F or a data
-// burst without a SYNC pattern. It returns an error, and writes nothing,
-// when a field does not fit.
-func (r *RawBurst) SetEMB(e pdu.EmbeddedSignalling) error {
-	return r.setEMB(e, embFirstStart, embSecondStart)
+// burst without a SYNC pattern: the low 4 bits of the color code, the PI
+// and the low 2 bits of the LCSS, as EmbeddedSignalling.Info returns them.
+func (r *RawBurst) SetEMB(e pdu.EmbeddedSignalling) {
+	r.setEMB(e, embFirstStart, embSecondStart)
 }
 
 // EmbeddedData returns the 32-bit embedded signalling field, burst bits 116
@@ -221,9 +218,10 @@ func (r RawBurst) StandaloneRCEMB() pdu.EmbeddedSignalling {
 	return r.emb(rcembFirstStart, rcembSecondStart)
 }
 
-// SetStandaloneRCEMB encodes e into the EMB bits of a standalone RC burst.
-func (r *RawBurst) SetStandaloneRCEMB(e pdu.EmbeddedSignalling) error {
-	return r.setEMB(e, rcembFirstStart, rcembSecondStart)
+// SetStandaloneRCEMB encodes e into the EMB bits of a standalone RC burst,
+// as SetEMB does.
+func (r *RawBurst) SetStandaloneRCEMB(e pdu.EmbeddedSignalling) {
+	r.setEMB(e, rcembFirstStart, rcembSecondStart)
 }
 
 // StandaloneRCData returns the 32 FEC coded RC bits of a standalone RC
@@ -245,14 +243,11 @@ func (r RawBurst) emb(first, second int) pdu.EmbeddedSignalling {
 	return pdu.DecodeEmbeddedSignalling(bits)
 }
 
-func (r *RawBurst) setEMB(e pdu.EmbeddedSignalling, first, second int) error {
-	bits, err := e.Encode()
-	if err != nil {
-		return err
-	}
+func (r *RawBurst) setEMB(e pdu.EmbeddedSignalling, first, second int) {
+	var bits [16]bit.Bit
+	bit.PutUint(bits[:], uint64(e.Info().Codeword()))
 	r.writeBits(bits[:8], first)
 	r.writeBits(bits[8:], second)
-	return nil
 }
 
 func (r RawBurst) word32(first, second int) [4]byte {
@@ -298,9 +293,9 @@ func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 // pattern of src. p must already carry its CRC or RS(12,9) parity with the
 // Data Type CRC Mask of dt (see pdu.SealBlock and pdu.FullLCCodeword). It
 // returns an error when dt is not BPTC coded (Rate 3/4, Rate 1 and the
-// reserved data types; see BuildRate34DataBurst and BuildRate1DataBurst),
-// cc does not fit in 4 bits or src is unknown.
-func BuildDataBurst(p [12]byte, dt enums.DataType, cc uint8, src SyncSource) (RawBurst, error) {
+// reserved data types; see BuildRate34DataBurst and BuildRate1DataBurst) or
+// src is unknown.
+func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if !dt.IsBPTC() {
 		return RawBurst{}, fmt.Errorf("data type %s is not BPTC(196,96) coded", dt.String())
 	}
@@ -313,8 +308,9 @@ func BuildDataBurst(p [12]byte, dt enums.DataType, cc uint8, src SyncSource) (Ra
 }
 
 // BuildRate34DataBurst returns a Rate 3/4 data burst that carries p, with
-// a slot type of color code cc and the data SYNC pattern of src.
-func BuildRate34DataBurst(p [18]byte, cc uint8, src SyncSource) (RawBurst, error) {
+// a slot type of color code cc and the data SYNC pattern of src. It returns
+// an error when src is unknown.
+func BuildRate34DataBurst(p [18]byte, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	r, err := dataBurstFrame(enums.DataTypeRate34, cc, src)
 	if err != nil {
 		return RawBurst{}, err
@@ -325,8 +321,8 @@ func BuildRate34DataBurst(p [18]byte, cc uint8, src SyncSource) (RawBurst, error
 
 // BuildRate1DataBurst returns a Rate 1 data burst that carries p, with a
 // slot type of color code cc and the data SYNC pattern of src. Information
-// bits 96 to 99 are zero.
-func BuildRate1DataBurst(p [24]byte, cc uint8, src SyncSource) (RawBurst, error) {
+// bits 96 to 99 are zero. It returns an error when src is unknown.
+func BuildRate1DataBurst(p [24]byte, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	r, err := dataBurstFrame(enums.DataTypeRate1, cc, src)
 	if err != nil {
 		return RawBurst{}, err
@@ -335,20 +331,15 @@ func BuildRate1DataBurst(p [24]byte, cc uint8, src SyncSource) (RawBurst, error)
 	return r, nil
 }
 
-func dataBurstFrame(dt enums.DataType, cc uint8, src SyncSource) (RawBurst, error) {
+func dataBurstFrame(dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	var r RawBurst
 	_, sync, ok := src.SyncPatterns()
 	if !ok {
 		return r, fmt.Errorf("unknown sync source %d", src)
 	}
-	if cc > 15 {
-		return r, fmt.Errorf("color code %d does not fit in 4 bits", cc)
-	}
 	if err := r.SetSync(sync); err != nil {
 		return r, err
 	}
-	if err := r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt}); err != nil {
-		return r, err
-	}
+	r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt})
 	return r, nil
 }

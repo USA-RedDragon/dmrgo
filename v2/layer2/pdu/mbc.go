@@ -160,7 +160,7 @@ type CGAPContinuation struct {
 	ProtectFlag bool             `dmr:"bit:1"`
 	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColorCode   uint8            `dmr:"bits:12-15"`
+	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
 	Reserved2   uint8            `dmr:"bits:20-21"`
 	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
@@ -183,7 +183,7 @@ type MVAPContinuation struct {
 	ProtectFlag bool             `dmr:"bit:1"`
 	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColorCode   uint8            `dmr:"bits:12-15"`
+	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
 	Reserved2   uint8            `dmr:"bits:20-21"`
 	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
@@ -228,7 +228,7 @@ type VNAPContinuation struct {
 	ProtectFlag bool             `dmr:"bit:1"`
 	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColorCode   uint8            `dmr:"bits:12-15"`
+	ColorCode   enums.ColorCode  `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
 	Reserved2   uint8            `dmr:"bits:20-21"`
 	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
