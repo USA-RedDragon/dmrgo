@@ -29,12 +29,14 @@
 // without a full decode: the SYNC pattern, slot type, BPTC, rate 3/4 and rate
 // 1 payloads, EMB, embedded data and voice slots.
 //
-// After construction the library does not allocate on decode, encode,
-// build, check and assemble calls. A call that returns a fresh slice,
-// string or payload struct by contract has a form that does not allocate,
-// such as pdu.DecodeCSBKInto for pdu.DecodeCSBK, Encode for EncodeBits and
-// the Append forms. A reused layer2.Burst keeps its decoded Data until the
-// next decode into it.
+// After construction (NewBurstFromBytes, NewVoiceTransmitter, framer.New and
+// the like) decode, encode, build, check and assemble calls do not allocate,
+// except a decode that returns two joined errors and errors for programmer
+// mistakes. A call that returns a fresh slice, string or payload struct by
+// contract has a form that does not allocate, such as pdu.DecodeCSBKInto for
+// pdu.DecodeCSBK, Encode for EncodeBits and the Append forms. A reused
+// layer2.Burst, or a copy of it, keeps its decoded Data and the payload
+// structs that Data points to until the next decode into it.
 //
 // The PDUs of package pdu decode with pdu.DecodeX and encode with the Encode
 // method of the PDU. A PDU with its own FEC or CRC, such as a CSBK, Full LC,
