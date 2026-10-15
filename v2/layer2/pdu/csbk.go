@@ -267,8 +267,8 @@ type PrivateDataGrantMultiItemPDU struct {
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
-// NOTE: Shares opcode 0x38 with BSOutboundActivationPDU; disambiguated via the
-// trunkingMode argument of DecodeCSBK.
+// NOTE: Shares opcode 0x38 with BSOutboundActivationPDU. DecodeCSBK keeps it in
+// RawPayload; see CSBK.Hint0x38 and CSBK.AsTalkgroupDataGrantMultiItem.
 type TalkgroupDataGrantMultiItemPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
