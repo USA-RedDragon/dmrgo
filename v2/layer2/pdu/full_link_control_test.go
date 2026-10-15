@@ -7,12 +7,14 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
 )
 
 func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 	original := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		ProtectFlag:  false,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
@@ -57,6 +59,7 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 
 func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 	original := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		ProtectFlag:  true,
 		FLCO:         enums.FLCOUnitToUnitVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
@@ -105,6 +108,7 @@ func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 func TestFullLinkControl_EncodeStability(t *testing.T) {
 	// Encoding the same FLC twice should produce identical bytes
 	flc := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		ProtectFlag:  false,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
@@ -128,6 +132,7 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 
 func TestFullLinkControl_ToString(t *testing.T) {
 	flc := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{
@@ -156,6 +161,7 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 		PriorityLevel:       3,
 	}
 	flc := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{
@@ -193,6 +199,7 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
 	// Same valid data should decode correctly regardless — DataType is set by caller
 	flc := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{
@@ -226,6 +233,7 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			flc := &pdu.FullLinkControl{
+				DataType:     elements.DataTypeVoiceLCHeader,
 				FLCO:         enums.FLCOGroupVoiceChannelUser,
 				FeatureSetID: enums.StandardizedFID,
 				GroupVoice: &pdu.FLCGroupVoice{
@@ -271,6 +279,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 			}
 
 			original := &pdu.FullLinkControl{
+				DataType:     elements.DataTypeVoiceLCHeader,
 				ProtectFlag:  false,
 				FLCO:         flco,
 				FeatureSetID: enums.StandardizedFID,
@@ -303,6 +312,7 @@ func TestFullLinkControl_TalkerAliasBlock_ToString(t *testing.T) {
 	aliasData[7] = 1
 
 	flc := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOTalkerAliasBlock1,
 		FeatureSetID: enums.StandardizedFID,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
@@ -343,6 +353,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 			aliasData[47] = 1
 
 			original := &pdu.FullLinkControl{
+				DataType:     elements.DataTypeVoiceLCHeader,
 				ProtectFlag:  false,
 				FLCO:         enums.FLCOTalkerAliasHeader,
 				FeatureSetID: enums.StandardizedFID,
@@ -377,6 +388,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 
 func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 	original := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		ProtectFlag:  false,
 		FLCO:         enums.FLCOTerminatorDataLinkControl,
 		FeatureSetID: enums.StandardizedFID,

@@ -928,6 +928,7 @@ documents:
               - TestRate34Data_Confirmed_CRC9Layout
               - TestRate1Data_Confirmed_CRC9Layout
               - TestFLC_DataTypeMaskAppliedToParity
+              - TestFLC_EncodeRejectsUnmaskedDataType
               - TestFLC_DecodeRealVoiceLCHeader
               - TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails
               - TestFLC_EncodeRealVoiceLCHeader

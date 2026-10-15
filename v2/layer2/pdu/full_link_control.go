@@ -20,9 +20,11 @@ import (
 //
 // DataType selects the Data Type CRC Mask XORed into the RS(12,9) parity
 // (ETSI TS 102 361-1 B.3.12, Table B.21). Pass the burst's data type to
-// DecodeFullLinkControl and set it before EncodeFullLinkControl. Other data
-// types, such as an Embedded LC (protected by a 5-bit checksum, not RS),
-// apply no mask.
+// DecodeFullLinkControl and set it before EncodeFullLinkControl.
+// EncodeFullLinkControl returns an error unless DataType is
+// DataTypeVoiceLCHeader or DataTypeTerminatorWithLC, the only data types
+// that carry an RS-protected Full LC. DecodeFullLinkControl applies no mask
+// for other data types.
 type FullLinkControl struct {
 	DataType     layer2Elements.DataType `dmr:"-"`
 	ProtectFlag  bool                    `dmr:"bit:0"`

@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -40,7 +41,6 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
 	}
-	unmasked := packedFLC(t, &base)
 
 	tests := []struct {
 		dataType elements.DataType
@@ -48,25 +48,35 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	}{
 		{elements.DataTypeVoiceLCHeader, [3]byte{0x96, 0x96, 0x96}},
 		{elements.DataTypeTerminatorWithLC, [3]byte{0x99, 0x99, 0x99}},
-		{elements.DataTypeCSBK, [3]byte{}},
-		{elements.DataTypePIHeader, [3]byte{}},
 	}
 	for _, tt := range tests {
 		t.Run(elements.DataTypeToName(tt.dataType), func(t *testing.T) {
 			flc := base
 			flc.DataType = tt.dataType
 			masked := packedFLC(t, &flc)
-			for i := 0; i < 9; i++ {
-				if masked[i] != unmasked[i] {
-					t.Fatalf("data byte %d changed: %#x != %#x", i, masked[i], unmasked[i])
-				}
-			}
+			unmasked := must(reedsolomon.Encode(masked[:9]))
 			for i := 0; i < 3; i++ {
 				if got := masked[9+i] ^ unmasked[9+i]; got != tt.mask[i] {
 					t.Errorf("parity byte %d XOR = %#x, want %#x", 9+i, got, tt.mask[i])
 				}
 			}
 		})
+	}
+}
+
+// RS-protected Full LC is sent only in a Voice LC Header or a Terminator
+// with LC, so encoding with any other data type is an error.
+func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
+	for _, dt := range []elements.DataType{elements.DataTypePIHeader, elements.DataTypeCSBK, elements.DataTypeIdle} {
+		flc := pdu.FullLinkControl{
+			DataType:     dt,
+			FLCO:         enums.FLCOGroupVoiceChannelUser,
+			FeatureSetID: enums.StandardizedFID,
+			GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
+		}
+		if _, err := pdu.EncodeFullLinkControl(&flc); err == nil {
+			t.Errorf("%s: EncodeFullLinkControl returned no error", elements.DataTypeToName(dt))
+		}
 	}
 }
 

@@ -174,6 +174,8 @@ func EncodeFullLinkControl(s *FullLinkControl) ([96]bit.Bit, error) {
 		_encoded[9] ^= 0x99
 		_encoded[10] ^= 0x99
 		_encoded[11] ^= 0x99
+	default:
+		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.DataType: no FEC mask for value %d", s.DataType)
 	}
 	for i := range 12 {
 		for j := range 8 {

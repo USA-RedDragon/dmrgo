@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -90,6 +91,7 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 		payload[i] = bit.Bit(i % 3 % 2)
 	}
 	original := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.MotorolaLtd,
 		RawPayload:   payload,
@@ -119,6 +121,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	payload[0] = 1
 	payload[55] = 1
 	original := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCO(0b111111),
 		FeatureSetID: enums.FeatureSetID(0x7F),
 		RawPayload:   payload,

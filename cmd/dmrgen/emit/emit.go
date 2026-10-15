@@ -283,7 +283,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 				return
 			}
 		case hasPackedFEC:
-			if err := emitFECMask(g, pdu, codec, Id("result"), "_packedBytes"); err != nil {
+			if err := emitFECMask(g, pdu, codec, Id("result"), "_packedBytes", nil); err != nil {
 				genErr = err
 				return
 			}
@@ -427,8 +427,9 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 }
 
 // emitFECMask XORs the FEC parity bytes of buf with the mask selected by the
-// dmr:fec_mask field of src (ETSI TS 102 361-1 B.3.12, Table B.21).
-func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statement, buf string) error {
+// dmr:fec_mask field of src (ETSI TS 102 361-1 B.3.12, Table B.21). If
+// noMask is not nil, it is emitted for a field value with no mask.
+func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statement, buf string, noMask Code) error {
 	if pdu.FECMask == nil {
 		return nil
 	}
@@ -449,6 +450,9 @@ func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statem
 				stmts = append(stmts, Id(buf).Index(Lit(codec.DataBytes+k)).Op("^=").Id(fmt.Sprintf("0x%02X", b)))
 			}
 			sw.Case(emitDispatchConstant(m.Value, pdu)).Block(stmts...)
+		}
+		if noMask != nil {
+			sw.Default().Block(noMask)
 		}
 	})
 	return genErr
@@ -1289,7 +1293,12 @@ func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 	)
 	g.If(Err().Op("!=").Nil()).Block(enc.fail(Err()))
 
-	if err := emitFECMask(g, pdu, codec, Id("s"), "_encoded"); err != nil {
+	var noMask Code
+	if pdu.FECMask != nil {
+		noMask = enc.fail(Qual("fmt", "Errorf").Call(
+			Lit(pdu.Name+"."+pdu.FECMask.Field+": no FEC mask for value %d"), Id("s").Dot(pdu.FECMask.Field)))
+	}
+	if err := emitFECMask(g, pdu, codec, Id("s"), "_encoded", noMask); err != nil {
 		return err
 	}
 

@@ -54,6 +54,7 @@ func TestEncode_AcceptsMaximumFieldValues(t *testing.T) {
 
 func TestEncode_PropagatesNestedErrors(t *testing.T) {
 	_, err := pdu.EncodeFullLinkControl(&pdu.FullLinkControl{
+		DataType:   elements.DataTypeVoiceLCHeader,
 		FLCO:       enums.FLCOGroupVoiceChannelUser,
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 1 << 24},
 	})
