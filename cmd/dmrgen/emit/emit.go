@@ -814,6 +814,11 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	target := Id("result").Dot(field.Name)
 
+	if len(field.ExtraBitRanges) > 0 {
+		emitNonContiguousDecode(g, field, pdu)
+		return
+	}
+
 	switch field.Kind {
 	case parse.FieldBool:
 		// result.FieldName = bit.BitsToBool(data[:], bitStart)
@@ -823,22 +828,17 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		)
 
 	case parse.FieldUint:
-		if len(field.ExtraBitRanges) > 0 {
-			// Non-contiguous bits: accumulate segments MSB-first using a temp variable
-			emitNonContiguousDecode(g, field, pdu)
+		// Choose the right bit extraction function based on width
+		fn := bitExtractFunc(field.BitWidth)
+		call := Qual(bitPkg, fn).Call(
+			Id("data").Index(Empty(), Empty()),
+			Lit(field.BitStart),
+			Lit(field.BitEnd-field.BitStart+1),
+		)
+		if needsCast(fn, field.GoType) {
+			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(call)
 		} else {
-			// Choose the right bit extraction function based on width
-			fn := bitExtractFunc(field.BitWidth)
-			call := Qual(bitPkg, fn).Call(
-				Id("data").Index(Empty(), Empty()),
-				Lit(field.BitStart),
-				Lit(field.BitEnd-field.BitStart+1),
-			)
-			if needsCast(fn, field.GoType) {
-				g.Add(target).Op("=").Add(qualType(field, pdu)).Call(call)
-			} else {
-				g.Add(target).Op("=").Add(call)
-			}
+			g.Add(target).Op("=").Add(call)
 		}
 
 	case parse.FieldInt:
@@ -1183,6 +1183,11 @@ func emitPackedFECEncode(g *Group, codec *FECCodecInfo, outputSize int) {
 func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	source := Id("s").Dot(field.Name)
 
+	if len(field.ExtraBitRanges) > 0 {
+		emitNonContiguousEncode(g, field)
+		return
+	}
+
 	switch field.Kind {
 	case parse.FieldBool:
 		// if s.FieldName { data[bit] = 1 }
@@ -1191,20 +1196,15 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		)
 
 	case parse.FieldUint:
-		if len(field.ExtraBitRanges) > 0 {
-			// Non-contiguous bits: decompose value into segments
-			emitNonContiguousEncode(g, field)
-		} else {
-			fn := bitStoreFunc(field.BitWidth)
-			bits := Qual(bitPkg, fn).Call(
-				castToStoreFuncType(source.Clone(), field.GoType, fn),
-				Lit(field.BitWidth),
-			)
-			g.Copy(
-				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-				bits,
-			)
-		}
+		fn := bitStoreFunc(field.BitWidth)
+		bits := Qual(bitPkg, fn).Call(
+			castToStoreFuncType(source.Clone(), field.GoType, fn),
+			Lit(field.BitWidth),
+		)
+		g.Copy(
+			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+			bits,
+		)
 
 	case parse.FieldInt:
 		// BitsFromUint32 handles it, just needs a cast
@@ -1358,12 +1358,29 @@ func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		)
 	}
 
-	// result.Field = cast(_tmpField)
 	target := Id("result").Dot(field.Name)
-	if needsCast(fn, field.GoType) {
-		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(Id(tmpName))
-	} else {
-		g.Add(target).Op("=").Id(tmpName)
+	tmp := Id(tmpName)
+	switch {
+	case field.Kind == parse.FieldEnum:
+		fromPkg, fromFn := splitQualified(field.EnumFromInt)
+		var fromInt *Statement
+		if fromPkg != "" {
+			fromInt = Qual(resolveImportPath(fromPkg, pdu.SourceFile), fromFn)
+		} else {
+			fromInt = Id(fromFn)
+		}
+		call := fromInt.Call(Int().Call(tmp))
+		if field.EnumReturnsErr {
+			g.List(target, Id("_")).Op("=").Add(call)
+		} else {
+			g.Add(target).Op("=").Add(call)
+		}
+	case field.Signed:
+		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(signExtend(field, Uint32().Call(tmp)))
+	case needsCast(fn, field.GoType):
+		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(tmp)
+	default:
+		g.Add(target).Op("=").Add(tmp)
 	}
 }
 

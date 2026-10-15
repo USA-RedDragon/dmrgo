@@ -156,6 +156,33 @@ func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
 	)
 }
 
+func TestNonContiguousRangesForAllIntegerKinds(t *testing.T) {
+	out := mustGenerate(t, `type Kind uint8
+func KindFromInt(i int) Kind { return Kind(i) }
+func KindToName(k Kind) string { return "" }
+type Wrapped uint16
+func WrappedToName(w Wrapped) string { return "" }
+type T struct {
+	U uint8   `+"`dmr:\"bits:0+4-6\"`"+`
+	I int     `+"`dmr:\"bits:1+7-9\"`"+`
+	S int     `+"`dmr:\"bits:2+10-12,signed\"`"+`
+	E Kind    `+"`dmr:\"bits:3+13-15,enum\"`"+`
+	D Wrapped `+"`dmr:\"bits:16-23+24-27,delegate,noptr\"`"+`
+}`)
+	assertContains(t, out,
+		"_tmpU <<= 3",
+		"result.U = _tmpU",
+		"result.I = int(_tmpI)",
+		"result.S = int(int32(uint32(_tmpS)<<28) >> 28)",
+		"result.E = KindFromInt(int(_tmpE))",
+		"result.D = Wrapped(_tmpD)",
+		"copy(data[1:2], bit.BitsFromUint8((uint8(s.I))>>3, 1))",
+		"copy(data[10:13], bit.BitsFromUint8(uint8(s.S), 3))",
+		"copy(data[3:4], bit.BitsFromUint8((uint8(s.E))>>3, 1))",
+		"copy(data[16:24], bit.BitsFromUint16((uint16(s.D))>>4, 8))",
+	)
+}
+
 func TestInputsBecomeDecodeParameters(t *testing.T) {
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
