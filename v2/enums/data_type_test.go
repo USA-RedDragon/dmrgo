@@ -60,6 +60,19 @@ func TestDataType_Constants(t *testing.T) {
 	}
 }
 
+func TestDataType_IsBPTC(t *testing.T) {
+	for dt := DataType(0); dt < 0x20; dt++ {
+		want := dt <= DataTypeUnifiedSingleBlock && dt != DataTypeRate34 && dt != DataTypeRate1
+		if got := dt.IsBPTC(); got != want {
+			t.Errorf("DataType(%d).IsBPTC() = %v, want %v", dt, got, want)
+		}
+		wantLC := dt == DataTypeVoiceLCHeader || dt == DataTypeTerminatorWithLC
+		if got := dt.CarriesFullLC(); got != wantLC {
+			t.Errorf("DataType(%d).CarriesFullLC() = %v, want %v", dt, got, wantLC)
+		}
+	}
+}
+
 func TestDataType_IsReserved(t *testing.T) {
 	for dt := DataType(0); dt < 0x20; dt++ {
 		want := dt >= 12 && dt <= 15
