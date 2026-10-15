@@ -34,6 +34,8 @@ func (lsbCodec) Decode(slot [72]bit.Bit) ([]int16, error) {
 func (lsbCodec) Silence() [72]bit.Bit    { return [72]bit.Bit{} }
 func (lsbCodec) FID() enums.FeatureSetID { return enums.FIDStandardized }
 
+// ExampleNew registers a toy codec, opens it by name, and shows the error
+// for an unknown name.
 func ExampleNew() {
 	if !slices.Contains(vocoder.Names(), "example-lsb") {
 		vocoder.Register("example-lsb", func() (vocoder.Codec, error) { return lsbCodec{}, nil })
@@ -59,6 +61,7 @@ func ExampleNew() {
 	// vocoder: unknown codec: "no-such-codec"
 }
 
+// ExampleDecodeAMBE72 corrects a bit error in an AMBE+2 silence slot.
 func ExampleDecodeAMBE72() {
 	slot := vocoder.EncodeAMBE72(vocoder.AMBESilence())
 	slot[5] ^= 1

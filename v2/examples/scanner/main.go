@@ -1,10 +1,4 @@
-// Command scanner is a receive-only DMR monitor: it finds bursts in a raw
-// BS outbound bit stream with the framer, follows the calls on both time
-// slots, and prints their addresses, talker alias and GPS position.
-//
-// The stream carries voice.bin on time slot 1, joined late, and a generated
-// call with a talker alias and GPS on time slot 2, after junk bits and with
-// random bit errors.
+// Command scanner finds bursts in a noisy BS outbound bit stream and follows the calls on both time slots.
 package main
 
 import (

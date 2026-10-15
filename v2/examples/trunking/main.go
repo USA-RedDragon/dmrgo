@@ -1,6 +1,4 @@
-// Command trunking builds a Tier III control channel (CSBKs, an MBC channel
-// grant and the CACH Short LC system parameters) from generated PDUs, puts it
-// on air as bursts and decodes it back.
+// Command trunking builds and decodes Tier III CSBKs, an MBC channel grant and the CACH Short LC system parameters.
 package main
 
 import (
