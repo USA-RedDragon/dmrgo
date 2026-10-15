@@ -162,11 +162,13 @@ documents:
           - v2/layer2/burst.go
           - v2/layer2/pdu/embedded_signalling.go
           - v2/layer2/embedded_lc.go
+          - v2/layer2/embedded_lc_bytes.go
           - v2/layer2/voice_superframe.go
           - v2/layer2/voice_receiver.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
+              - TestEmbeddedLCFragments_Capture
               - TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip
               - TestBurst_UnpackEmbeddedSignallingData_EmptySlice
               - TestBurst_UnpackEmbeddedSignallingData_SingleByte
@@ -1067,9 +1069,19 @@ documents:
         title: "Transmit bit order"
         source_files:
           - v2/layer2/transmit_order.go
+          - v2/layer2/raw_burst.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
+              - TestRawBurst_GettersMatchBurst
+              - TestRawBurst_SettersRoundTripCaptures
+              - TestRawBurst_SettersTouchOnlyTheirField
+              - TestRawBurst_SetSync
+              - TestRawBurst_StandaloneRC
+              - TestBuildDataBurst_MatchesExistingBuilders
+              - TestBuildDataBurst_ReproducesCaptures
+              - TestBuildDataBurst_Rejects
+              - TestBuildRateDataBursts_DecodeAsBurst
               - TestTransmitOrder_BurstBitsConstant
               - TestTransmitOrder_BurstSymbolsConstant
               - TestTransmitOrder_FieldBoundaries
