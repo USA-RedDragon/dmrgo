@@ -17,7 +17,7 @@ func PackAMBEVoice(frames [3]AMBEFrame) [19]byte {
 		copy(bits[k*50:k*50+49], f[:])
 	}
 	var data [19]byte
-	copy(data[:], bit.Pack(bits[:]))
+	bit.AppendPack(data[:0], bits[:])
 	return data
 }
 
