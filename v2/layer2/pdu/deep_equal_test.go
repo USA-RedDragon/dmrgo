@@ -27,7 +27,7 @@ func TestDecodedEqualsBuilt(t *testing.T) {
 		t.Errorf("ShortLC: got %v, want %v", gotSLC, slc)
 	}
 
-	mbc := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, Data: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}}
+	mbc := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}}
 	gotMBC := pdu.DecodeMBCHeader(must(mbc.Encode()))
 	gotMBC.FEC = fec.Result{}
 	if !reflect.DeepEqual(gotMBC, mbc) {

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -311,7 +310,7 @@ func TestLoopbackTier3(t *testing.T) {
 		case *pdu.CSBK:
 			got = append(got, fmt.Sprintf("csbk %d", d.Opcode))
 		case *pdu.MBCHeader:
-			g := pdu.DecodeTalkgroupVoiceGrantPDU([64]bit.Bit(bit.Unpack(d.Data[:])))
+			g := d.TalkgroupVoiceGrantPDU
 			got = append(got, fmt.Sprintf("mbc %d %d->%d ch 0x%x", d.Opcode, g.SourceAddress, g.TargetAddress, g.PhysicalChannel))
 		case *pdu.MBCContinuation:
 			c := d.AsCGAP()
