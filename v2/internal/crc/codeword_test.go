@@ -2,7 +2,7 @@ package crc_test
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
 // The helpers check a codeword whose last bits hold the CRC XORed with mask.

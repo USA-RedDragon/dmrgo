@@ -6,8 +6,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )

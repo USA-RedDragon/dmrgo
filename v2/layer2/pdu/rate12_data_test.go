@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )

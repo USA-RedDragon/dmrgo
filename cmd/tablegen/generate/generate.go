@@ -10,7 +10,7 @@ import (
 )
 
 func WriteAll(tables *compute.Tables, dmrRoot string) error {
-	if err := writeFile(dmrRoot, "fec/bptc", "bptc",
+	if err := writeFile(dmrRoot, "internal/fec/bptc", "bptc",
 		writeTable("dm", tables.DM[:]),
 		jen.Line(),
 		jen.Line(),
@@ -31,13 +31,13 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/hamming", "hamming",
+	if err := writeFile(dmrRoot, "internal/fec/hamming", "hamming",
 		writeTable("hamming743_syndrome_table", tables.Hamming743Syndrome[:]),
 	); err != nil {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "crc", "crc",
+	if err := writeFile(dmrRoot, "internal/crc", "crc",
 		writeTable("ccitt16_0x1021", tables.CRCCCITT[:]),
 		jen.Line(),
 		jen.Line(),
@@ -61,7 +61,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/reedsolomon", "reedsolomon",
+	if err := writeFile(dmrRoot, "internal/fec/reedsolomon", "reedsolomon",
 		writeTable("galois_exp_table", tables.GaloisExp[:]),
 		jen.Line(),
 		jen.Line(),
@@ -70,7 +70,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/golay", "golay",
+	if err := writeFile(dmrRoot, "internal/fec/golay", "golay",
 		writeTable("golay_20_8_7_table", tables.Golay20_8_7Encoding),
 		jen.Line(),
 		jen.Line(),
@@ -91,7 +91,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/quadraticresidue", "quadraticresidue",
+	if err := writeFile(dmrRoot, "internal/fec/quadraticresidue", "quadraticresidue",
 		writeTable("qr16_7_6_encoding_table", tables.QR16_7_6Encoding),
 		jen.Line(),
 		jen.Line(),
@@ -100,7 +100,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/trellis", "trellis",
+	if err := writeFile(dmrRoot, "internal/fec/trellis", "trellis",
 		writeTable("encoder_state_transition_table", tables.EncoderStateTransition),
 		jen.Line(),
 		jen.Line(),

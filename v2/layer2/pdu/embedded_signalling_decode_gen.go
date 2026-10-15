@@ -12,7 +12,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
+	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 )
 
 // DecodeEmbeddedSignalling decodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
