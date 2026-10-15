@@ -80,6 +80,16 @@ func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *UnifiedSingleBlockData) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *UnifiedSingleBlockData) String() string {
 	return fmt.Sprintf("UnifiedSingleBlockData{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
 }

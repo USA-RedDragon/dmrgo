@@ -42,6 +42,16 @@ func (s *ShortLCNullMessage) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *ShortLCNullMessage) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *ShortLCNullMessage) String() string {
 	return fmt.Sprintf("ShortLCNullMessage{ Reserved: %d }", s.Reserved)
 }
@@ -81,6 +91,16 @@ func (s *ShortLCActivityUpdate) Encode() ([24]bit.Bit, error) {
 	bit.PutUint(data[8:16], uint64(s.HashTS1))
 	bit.PutUint(data[16:24], uint64(s.HashTS2))
 	return data, nil
+}
+
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *ShortLCActivityUpdate) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
 }
 
 func (s *ShortLCActivityUpdate) String() string {
@@ -134,6 +154,16 @@ func (s *ShortLCCSysParms) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *ShortLCCSysParms) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *ShortLCCSysParms) String() string {
 	return fmt.Sprintf("ShortLCCSysParms{ MODEL: %d, NetSiteRaw: %d, Reg: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
 }
@@ -183,6 +213,16 @@ func (s *ShortLCPSysParms) Encode() ([24]bit.Bit, error) {
 	}
 	bit.PutUint(data[15:24], uint64(s.CommonSlotCounter))
 	return data, nil
+}
+
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *ShortLCPSysParms) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
 }
 
 func (s *ShortLCPSysParms) String() string {
@@ -302,6 +342,16 @@ func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 		data[28+j] = bit.Bit((_crcVal >> (7 - j)) & 1)
 	}
 	return data, nil
+}
+
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *ShortLC) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
 }
 
 func (s *ShortLC) String() string {

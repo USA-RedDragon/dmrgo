@@ -156,6 +156,8 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 			return nil, fmt.Errorf("generating encode for %s: %w", pdu.Name, err)
 		}
 		f.Line()
+		emitEncodeBits(f, pdu)
+		f.Line()
 		emitString(f, pdu)
 	}
 
@@ -949,6 +951,22 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 		}
 	})
 	return genErr
+}
+
+// emitEncodeBits generates the EncodeBits method, which returns the
+// codeword of Encode as a slice, so that PDUs of different sizes share an
+// interface such as layer2.Data.
+func emitEncodeBits(f *File, pdu parse.PDUStruct) {
+	f.Comment("EncodeBits returns the bits that Encode returns as a slice, or nil and")
+	f.Comment("the error of Encode.")
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("EncodeBits").Params().Params(
+		Index().Qual(bitPkg, "Bit"),
+		Error(),
+	).Block(
+		List(Id("bits"), Err()).Op(":=").Id("s").Dot("Encode").Call(),
+		If(Err().Op("!=").Nil()).Block(Return(Nil(), Err())),
+		Return(Id("bits").Index(Empty(), Empty()), Nil()),
+	)
 }
 
 // encoder carries the PDU and output size while emitting an Encode body.

@@ -28,6 +28,16 @@ func (s *Rate1Data) Encode() ([192]bit.Bit, error) {
 	return data, nil
 }
 
+// EncodeBits returns the bits that Encode returns as a slice, or nil and
+// the error of Encode.
+func (s *Rate1Data) EncodeBits() ([]bit.Bit, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return nil, err
+	}
+	return bits[:], nil
+}
+
 func (s *Rate1Data) String() string {
 	return fmt.Sprintf("Rate1Data{ Data: %v }", s.Data)
 }

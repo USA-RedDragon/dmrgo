@@ -538,11 +538,11 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 // burst that breaks these rules and when a field value does not fit in its
 // on-air bits. Encode does not modify the burst.
 //
-// A data burst carries Data coded for SlotType.DataType: BPTC(196,96) for
-// the BPTC types, the Rate 3/4 trellis or Rate 1. The slot type data type
-// also selects the RS(12,9) mask of a Full LC and replaces its BurstDataType.
-// Data must be the pdu type that DecodeFromBytes returns for the data type,
-// or for an MBC continuation one of its CGAP, MVAP, BCAP and VNAP forms. A
+// A data burst carries the EncodeBits of Data coded for SlotType.DataType:
+// BPTC(196,96) for the BPTC types, the Rate 3/4 trellis or Rate 1.
+// Data.DataType must be SlotType.DataType, so the BurstDataType of a Full
+// LC, which selects its RS(12,9) mask, must match the slot type. For an MBC
+// continuation, Data can be one of its CGAP, MVAP, BCAP and VNAP forms. A
 // burst from DecodeFromBytes whose Data codes to the same bits as the
 // decoded payload, or whose Data is nil, carries the payload as it was
 // decoded, after FEC correction, so a burst whose CRC failed can still be
@@ -668,94 +668,38 @@ func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
 // encodeData returns the information bits of d in a data burst of dataType.
 func encodeData(d Data, dataType enums.DataType) ([196]bit.Bit, error) {
 	var info [196]bit.Bit
-	if rv := reflect.ValueOf(d); rv.Kind() == reflect.Pointer && rv.IsNil() || !dataTypeCarries(dataType, d) {
-		return info, fmt.Errorf("data type %s cannot carry Data of type %T", dataType.String(), d)
+	if rv := reflect.ValueOf(d); rv.Kind() == reflect.Pointer && rv.IsNil() {
+		return info, fmt.Errorf("data type %s cannot carry a nil %T", dataType.String(), d)
 	}
-	bits, err := encodePDU(d, dataType)
+	if d.DataType() != dataType {
+		return info, fmt.Errorf("data type %s cannot carry Data of type %T with data type %s",
+			dataType.String(), d, d.DataType().String())
+	}
+	bits, err := d.EncodeBits()
 	if err != nil {
 		return info, fmt.Errorf("cannot encode data: %w", err)
+	}
+	if want := infoBitsLen(dataType); len(bits) != want {
+		return info, fmt.Errorf("data type %s carries %d information bits, but %T encodes %d",
+			dataType.String(), want, d, len(bits))
 	}
 	copy(info[:], bits)
 	return info, nil
 }
 
-// dataTypeCarries reports whether a data burst of dataType carries d.
-func dataTypeCarries(dataType enums.DataType, d Data) bool {
-	switch d.(type) {
-	case *pdu.FullLinkControl:
-		return dataType == enums.DataTypeVoiceLCHeader || dataType == enums.DataTypeTerminatorWithLC
-	case *pdu.CSBK:
-		return dataType == enums.DataTypeCSBK
-	case *pdu.PIHeader:
-		return dataType == enums.DataTypePIHeader
-	case *pdu.DataHeader:
-		return dataType == enums.DataTypeDataHeader
-	case *pdu.MBCHeader:
-		return dataType == enums.DataTypeMBCHeader
-	case *pdu.MBCContinuation, *pdu.CGAPContinuation, *pdu.MVAPContinuation, *pdu.BCAPContinuation, *pdu.VNAPContinuation:
-		return dataType == enums.DataTypeMBCContinuation
-	case *pdu.UnifiedSingleBlockData:
-		return dataType == enums.DataTypeUnifiedSingleBlock
-	case *pdu.Rate12Data:
-		return dataType == enums.DataTypeRate12
-	case *pdu.Rate34Data:
-		return dataType == enums.DataTypeRate34
-	case *pdu.Rate1Data:
-		return dataType == enums.DataTypeRate1
-	case *pdu.PRFill:
-		return dataType == enums.DataTypeIdle
+// infoBitsLen returns the number of information bits that a data burst of
+// dataType carries.
+func infoBitsLen(dataType enums.DataType) int {
+	switch {
+	case dataType == enums.DataTypeRate34:
+		return 144
+	case dataType == enums.DataTypeRate1:
+		return 192
+	case isBPTCDataType(dataType):
+		return 96
 	default:
-		return false
+		return 0
 	}
-}
-
-// encodePDU returns the information bits of d, a type that dataTypeCarries
-// accepts. The data type of a Full LC selects its RS(12,9) mask, so
-// dataType replaces lc.BurstDataType.
-func encodePDU(d Data, dataType enums.DataType) ([]bit.Bit, error) {
-	switch v := d.(type) {
-	case *pdu.FullLinkControl:
-		lc := *v
-		lc.BurstDataType = dataType
-		return bits96(lc.Encode())
-	case *pdu.CSBK:
-		return bits96(v.Encode())
-	case *pdu.PIHeader:
-		return bits96(v.Encode())
-	case *pdu.DataHeader:
-		return bits96(v.Encode())
-	case *pdu.MBCHeader:
-		return bits96(v.Encode())
-	case *pdu.MBCContinuation:
-		return bits96(v.Encode())
-	case *pdu.CGAPContinuation:
-		return bits96(v.Encode())
-	case *pdu.MVAPContinuation:
-		return bits96(v.Encode())
-	case *pdu.BCAPContinuation:
-		return bits96(v.Encode())
-	case *pdu.VNAPContinuation:
-		return bits96(v.Encode())
-	case *pdu.UnifiedSingleBlockData:
-		return bits96(v.Encode())
-	case *pdu.Rate12Data:
-		return bits96(v.Encode())
-	case *pdu.Rate34Data:
-		bits, err := v.Encode()
-		return bits[:], err
-	case *pdu.Rate1Data:
-		bits, err := v.Encode()
-		return bits[:], err
-	case *pdu.PRFill:
-		bits := pdu.PRFillBits()
-		return bits[:], nil
-	default:
-		return nil, fmt.Errorf("unsupported Data type %T", d)
-	}
-}
-
-func bits96(bits [96]bit.Bit, err error) ([]bit.Bit, error) {
-	return bits[:], err
 }
 
 // encodeDataBits codes the information bits of a data burst for the
