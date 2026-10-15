@@ -1,7 +1,4 @@
-// Command bridge shows a network bridge: it receives a voice call, rewrites
-// its talkgroup and source ID, transmits it again with a new header, embedded
-// LC and terminator, and checks that the rewritten stream decodes. It also
-// rewrites the addresses of the CSBK preambles and data headers of an SMS.
+// Command bridge receives a voice call, rewrites its talkgroup and source ID, and sends it again.
 package main
 
 import (

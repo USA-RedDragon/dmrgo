@@ -1,6 +1,4 @@
-// Command data reassembles the SMS captures with packet.Assembler and
-// round-trips generated packets through packet.Segment, including a confirmed
-// packet that recovers a corrupted block with a selective retry.
+// Command data reassembles the SMS captures and segments confirmed and unconfirmed packets, with a selective retry.
 package main
 
 import (

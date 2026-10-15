@@ -1,6 +1,4 @@
-// Command conformance decodes every burst of the layer2 test captures,
-// re-encodes it, and checks it byte for byte and against the CRC and parity
-// of the codeword byte functions.
+// Command conformance checks that every capture re-encodes byte for byte and that its FEC and CRCs verify.
 package main
 
 import (

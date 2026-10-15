@@ -1,6 +1,4 @@
-// Command transcoder shows the vocoder layer: the AMBE+2 frame FEC on a
-// captured call, the rebuild of that call from its AMBE frames, and a Codec2
-// round trip from generated PCM through voice bursts and back to PCM.
+// Command transcoder checks the AMBE+2 FEC of a captured call, rebuilds it, and runs a Codec2 round trip.
 package main
 
 import (
