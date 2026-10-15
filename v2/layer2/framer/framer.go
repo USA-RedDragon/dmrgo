@@ -189,9 +189,9 @@ func (f *Framer) Write(stream ...bit.Bit) []Burst {
 // earlier stream.
 func (f *Framer) AppendBursts(dst []Burst, stream ...bit.Bit) []Burst {
 	n := len(f.buf)
-	if cap(f.buf)-n < len(stream) {
+	if need := f.pre + layer2.BurstBits + len(stream); cap(f.buf) < need {
 		// Fewer than f.pre+layer2.BurstBits bits stay in f.buf between calls.
-		f.buf = slices.Grow(f.buf, f.pre+layer2.BurstBits+len(stream))
+		f.buf = slices.Grow(f.buf, need-n)
 	}
 	f.buf = append(f.buf, stream...)
 	lowbit.Mask(f.buf[n:])
