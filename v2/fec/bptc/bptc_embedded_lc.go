@@ -26,7 +26,9 @@ import (
 // The fragments should be in order (fragment 0 from voice burst B, through
 // fragment 3 from voice burst E of a superframe).
 //
-// Returns the 77 information bits (72 LC + 5 checksum) and FEC result.
+// Returns the 77 information bits (72 LC + 5 checksum) and FEC result. The
+// bits are rows 0..6, columns 0..10 of the encode matrix in row-major order,
+// so per Figure B.3 the checksum bits are the last bit of rows 2..6.
 func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
 	result := fec.FECResult{BitsChecked: 128}
 
@@ -46,56 +48,15 @@ func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
 		}
 	}
 
-	// Error correction: Hamming(16,11,4) on rows, then column parity check
-	// Iterate up to 5 passes for convergence
-	for pass := 0; pass < 5; pass++ {
-		fixing := false
+	received := matrix
+	correctEmbeddedLCMatrix(&matrix)
 
-		// Column parity check (even parity, simple detection)
-		for col := 0; col < 16; col++ {
-			var parity bit.Bit
-			for row := 0; row < 8; row++ {
-				parity ^= matrix[row][col]
-			}
-			if parity != 0 {
-				// Column parity error detected; row Hamming should fix it
-				fixing = true
-			}
-		}
-
-		// Row Hamming(16,11,4) correction
-		for row := 0; row < 7; row++ {
-			s := calculateSyndrome16_11(matrix[row])
-			if s != 0 {
-				errPos := hamming16_11_syndrome_table[s]
-				if errPos >= 0 && errPos < 16 {
-					matrix[row][errPos] ^= 1
-					result.ErrorsCorrected++
-					fixing = true
-				} else {
-					result.Uncorrectable = true
-				}
-			}
-		}
-
-		if !fixing {
-			break
+	for row := range matrix {
+		for col := range matrix[row] {
+			result.ErrorsCorrected += int(matrix[row][col] ^ received[row][col])
 		}
 	}
-
-	// Verify column parity after correction
-	if !result.Uncorrectable {
-		for col := 0; col < 16; col++ {
-			var parity bit.Bit
-			for row := 0; row < 8; row++ {
-				parity ^= matrix[row][col]
-			}
-			if parity != 0 {
-				result.Uncorrectable = true
-				break
-			}
-		}
-	}
+	result.Uncorrectable = !embeddedLCMatrixValid(&matrix)
 
 	// Extract 77 info bits from rows 0..6, columns 0..10
 	var info [77]bit.Bit
@@ -108,6 +69,67 @@ func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
 	}
 
 	return info, result
+}
+
+// correctEmbeddedLCMatrix corrects the 8×16 product code in place. Row 7 is
+// the even column parity of rows 0..6, so it is also a Hamming(16,11,4)
+// codeword and all 8 rows are row-decoded. Hamming(16,11,4) detects double
+// errors, so when exactly one row is left with a detected error, the failing
+// column parities locate the bits to flip in that row.
+func correctEmbeddedLCMatrix(matrix *[8][16]bit.Bit) {
+	for pass := 0; pass < 3; pass++ {
+		fixing := false
+		badRow, badRows := 0, 0
+
+		for row := range matrix {
+			s := calculateSyndrome16_11(matrix[row])
+			if s == 0 {
+				continue
+			}
+			if errPos := hamming16_11_syndrome_table[s]; errPos >= 0 {
+				matrix[row][errPos] ^= 1
+				fixing = true
+			} else {
+				badRow = row
+				badRows++
+			}
+		}
+
+		if badRows == 1 {
+			for col := 0; col < 16; col++ {
+				if columnParity(matrix, col) != 0 {
+					matrix[badRow][col] ^= 1
+					fixing = true
+				}
+			}
+		}
+
+		if !fixing {
+			return
+		}
+	}
+}
+
+func columnParity(matrix *[8][16]bit.Bit, col int) bit.Bit {
+	var parity bit.Bit
+	for row := range matrix {
+		parity ^= matrix[row][col]
+	}
+	return parity
+}
+
+func embeddedLCMatrixValid(matrix *[8][16]bit.Bit) bool {
+	for row := range matrix {
+		if calculateSyndrome16_11(matrix[row]) != 0 {
+			return false
+		}
+	}
+	for col := 0; col < 16; col++ {
+		if columnParity(matrix, col) != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // EncodeEmbeddedLC encodes 77 information bits (72 LC + 5 checksum) into
