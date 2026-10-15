@@ -106,7 +106,8 @@ func checkData(t *tally, i int, b *layer2.Burst, rb layer2.RawBurst) {
 		p, _ := rb.Rate34Payload()
 		rebuilt, err = layer2.BuildRate34DataBurst(p, st.ColorCode, src)
 	case enums.DataTypeRate1:
-		rebuilt, err = layer2.BuildRate1DataBurst(rb.Rate1Payload(), st.ColorCode, src)
+		p, _ := rb.Rate1Payload()
+		rebuilt, err = layer2.BuildRate1DataBurst(p, st.ColorCode, src)
 	case enums.DataTypeReserved:
 		t.failf(i, "reserved data type")
 		return

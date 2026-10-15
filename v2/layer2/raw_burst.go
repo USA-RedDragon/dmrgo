@@ -27,6 +27,13 @@ import (
 // EmbeddedData (bursts B to F). A standalone inbound RC burst (§6.4.1)
 // carries the RC SYNC with StandaloneRCEMB and StandaloneRCData around it,
 // at offsets that differ from EMB and EmbeddedData.
+//
+// FEC results follow the rule of package fec. A getter that decodes a PDU,
+// such as SlotType and EMB, reports the result in the FEC field of the PDU.
+// A getter that decodes a bare value, such as BPTCPayload, Rate34Payload,
+// Rate1Payload and AMBEFrames, returns a fec.Result with it. Rate 1 has no
+// FEC, so its Result is zero. A getter of uncoded bits, such as
+// EmbeddedData and VoiceSlots, returns the bits only.
 type RawBurst [33]byte
 
 func (r RawBurst) readBits(dst []bit.Bit, start int) {
@@ -166,15 +173,15 @@ func (r *RawBurst) SetRate34Payload(p [18]byte) {
 
 // Rate1Payload returns the 192 uncoded data bits of a Rate 1 burst (Table
 // B.10B) packed most significant bit first: information bits 0 to 95 and
-// 100 to 195. Rate 1 has no FEC.
-func (r RawBurst) Rate1Payload() [24]byte {
+// 100 to 195. Rate 1 has no FEC, so the fec.Result is zero.
+func (r RawBurst) Rate1Payload() ([24]byte, fec.Result) {
 	info := r.info()
 	var bits [192]bit.Bit
 	copy(bits[:96], info[:96])
 	copy(bits[96:], info[100:])
 	var p [24]byte
 	copy(p[:], bit.Pack(bits[:]))
-	return p
+	return p, fec.Result{}
 }
 
 // SetRate1Payload writes p into the 192 data bits of a Rate 1 burst.
