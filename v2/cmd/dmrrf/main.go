@@ -10,7 +10,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
+
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
 func main() {
@@ -46,7 +49,15 @@ func runTX(args []string, w io.Writer) error {
 	offset := fs.Float64("offset-hz", 0, "extra frequency offset in Hz to add")
 	level := fs.Float64("level", 0.9, "peak amplitude, 0 to 1")
 	slot := fs.Int("slot", 0, "TDMA slot 0 or 1, or -1 for back-to-back bursts")
-	cc := fs.Uint("cc", 1, "color code")
+	cc := enums.ColorCode(1)
+	fs.Func("cc", "color code, 0 to 15 (default 1)", func(s string) error {
+		v, err := strconv.ParseUint(s, 10, 8)
+		if err != nil {
+			return err
+		}
+		cc, err = enums.NewColorCode(uint8(v))
+		return err
+	})
 	src := fs.Uint("src", 0, "source radio ID")
 	dst := fs.Uint("dst", 0, "destination radio or talkgroup ID")
 	bs := fs.Uint("bs", 0, "BS (repeater) address for the wakeup CSBK")
@@ -72,7 +83,7 @@ func runTX(args []string, w io.Writer) error {
 		iq = CW(*cw, *rate, corr, *level)
 		fmt.Fprintf(w, "carrier: %.1f s, offset %+.0f Hz\n", *cw, corr)
 	} else {
-		cfg := SeqConfig{ColorCode: uint8(*cc), Source: uint32(*src), Dest: uint32(*dst), BS: uint32(*bs), Group: *group, Wakeups: *wakeups, Message: *msg, //nolint:gosec // flag ranges are checked by the encoders
+		cfg := SeqConfig{ColorCode: cc, Source: uint32(*src), Dest: uint32(*dst), BS: uint32(*bs), Group: *group, Wakeups: *wakeups, Message: *msg, //nolint:gosec // flag ranges are checked by the encoders
 			Superframes: *superframes, AMBESilence: *silence, LateEntry: *lateEntry, Preambles: *preambles, BSSourced: *bsSourced, Slot: *slot}
 		built, err := Sequence(*seq, cfg)
 		if err != nil {
@@ -93,14 +104,14 @@ func runTX(args []string, w io.Writer) error {
 			}
 			fm, env = ModulateBS(slots)
 			fmt.Fprintf(w, "sequence %s (BS-sourced): %d bursts on slot %d in %d slots, %.2f s, cc %d, %d -> %d, offset %+.0f Hz\n",
-				*seq, len(built.Bursts), *slot, len(slots), float64(len(fm))/basebandRate, *cc, *src, *dst, corr)
+				*seq, len(built.Bursts), *slot, len(slots), float64(len(fm))/basebandRate, cc, *src, *dst, corr)
 		} else {
 			fm, env = Modulate(built.Bursts, Schedule{Slot: *slot})
 			if *repeat > 0 {
 				fm, env = padToFrames(fm, env)
 			}
 			fmt.Fprintf(w, "sequence %s: %d bursts, %.2f s, slot %d, cc %d, %d -> %d, offset %+.0f Hz\n",
-				*seq, len(built.Bursts), float64(len(fm))/basebandRate, *slot, *cc, *src, *dst, corr)
+				*seq, len(built.Bursts), float64(len(fm))/basebandRate, *slot, cc, *src, *dst, corr)
 		}
 		iq = ToIQ(fm, env, *rate*(1+*stretch*1e-6), corr, *level)
 		if *repeat > 0 && !*bsSourced {
