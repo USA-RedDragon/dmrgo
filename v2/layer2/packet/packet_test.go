@@ -221,7 +221,7 @@ func TestSegment_HeaderFields(t *testing.T) {
 	}
 	for i, b := range p.Blocks {
 		r, ok := b.(*pdu.Rate34Data)
-		if !ok || int(r.ConfirmedDBSN()) != i || !r.CheckConfirmedCRC9() {
+		if !ok || int(r.ConfirmedDBSN()) != i || !r.ConfirmedCRC9OK() {
 			t.Errorf("block %d DBSN or CRC-9", i)
 		}
 	}

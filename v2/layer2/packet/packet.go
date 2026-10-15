@@ -256,12 +256,12 @@ func (b block) confirmedOK() bool {
 	switch len(b.raw) {
 	case 18:
 		r := pdu.Rate34Data{Data: [18]byte(b.raw)}
-		return r.CheckConfirmedCRC9()
+		return r.ConfirmedCRC9OK()
 	case 24:
 		r := pdu.Rate1Data{Data: [24]byte(b.raw)}
-		return r.CheckConfirmedCRC9()
+		return r.ConfirmedCRC9OK()
 	default:
 		r := pdu.Rate12Data{Data: [12]byte(b.raw)}
-		return r.CheckConfirmedCRC9()
+		return r.ConfirmedCRC9OK()
 	}
 }

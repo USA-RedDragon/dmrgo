@@ -155,7 +155,7 @@ func TestLCBytesCodeword_RealCapture(t *testing.T) {
 
 func TestFullLinkControlCodeword(t *testing.T) {
 	lc := hex9(t, "03000000270630b43c")
-	f := must(pdu.FullLinkControlFromBytes(lc))
+	f := must(pdu.DecodeFullLinkControlBytes(lc))
 	for dt, want := range map[enums.DataType]string{
 		enums.DataTypeVoiceLCHeader:    "03000000270630b43c5dcfc1",
 		enums.DataTypeTerminatorWithLC: "03000000270630b43c52c0ce",

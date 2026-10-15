@@ -272,8 +272,8 @@ func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
 		}
 	}
 
-	if !pdu.CheckMBCLastBlockCRC(bits) {
-		t.Error("CheckMBCLastBlockCRC should accept a single valid last block")
+	if !pdu.MBCLastBlockCRCOK(bits) {
+		t.Error("MBCLastBlockCRCOK should accept a single valid last block")
 	}
 
 	cg := pdu.DecodeCGAPContinuation(bits)
@@ -298,15 +298,15 @@ func TestMBCLastBlockCRC_MultiBlock(t *testing.T) {
 	if got := uint16(bit.Uint(blocks[1][80 : 80+16])); got != c {
 		t.Errorf("last-block CRC = 0x%04X, want 0x%04X", got, c)
 	}
-	if !pdu.CheckMBCLastBlockCRC(blocks...) {
-		t.Error("CheckMBCLastBlockCRC should accept valid blocks")
+	if !pdu.MBCLastBlockCRCOK(blocks...) {
+		t.Error("MBCLastBlockCRCOK should accept valid blocks")
 	}
 	blocks[0][50] ^= 1
-	if pdu.CheckMBCLastBlockCRC(blocks...) {
-		t.Error("CheckMBCLastBlockCRC should reject a corrupted intermediate block")
+	if pdu.MBCLastBlockCRCOK(blocks...) {
+		t.Error("MBCLastBlockCRCOK should reject a corrupted intermediate block")
 	}
-	if pdu.CheckMBCLastBlockCRC() {
-		t.Error("CheckMBCLastBlockCRC with no blocks should be false")
+	if pdu.MBCLastBlockCRCOK() {
+		t.Error("MBCLastBlockCRCOK with no blocks should be false")
 	}
 }
 

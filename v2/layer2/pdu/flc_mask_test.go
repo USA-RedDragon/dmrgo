@@ -36,9 +36,9 @@ func packedFLC(t *testing.T, flc *pdu.FullLinkControl) []byte {
 // only, and only for Voice LC Header and Terminator with LC.
 func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	base := pdu.FullLinkControl{
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.FIDStandardized,
-		GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
+		FLCO:       enums.FLCOGroupVoiceChannelUser,
+		FID:        enums.FIDStandardized,
+		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
 	}
 
 	tests := []struct {
@@ -70,7 +70,7 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 		flc := pdu.FullLinkControl{
 			BurstDataType: dt,
 			FLCO:          enums.FLCOGroupVoiceChannelUser,
-			FeatureSetID:  enums.FIDStandardized,
+			FID:           enums.FIDStandardized,
 			GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
 		}
 		if _, err := flc.Encode(); err == nil {

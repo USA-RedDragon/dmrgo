@@ -48,7 +48,7 @@ func b01(v bool) int {
 }
 
 func lcFields(lc *pdu.FullLinkControl) string {
-	s := fmt.Sprintf("flco=%d fid=0x%02x", lc.FLCO, uint8(lc.FeatureSetID))
+	s := fmt.Sprintf("flco=%d fid=0x%02x", lc.FLCO, uint8(lc.FID))
 	switch {
 	case lc.GroupVoice != nil:
 		s += " group"

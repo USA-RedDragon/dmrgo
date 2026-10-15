@@ -25,7 +25,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "FullLinkControl.GroupVoice is set, but FLCO and FeatureSetID select UnitToUnit",
+			want: "FullLinkControl.GroupVoice is set, but FLCO and FID select UnitToUnit",
 		},
 		{
 			name: "FLC manufacturer FID",
@@ -33,12 +33,12 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				_, err := (&pdu.FullLinkControl{
 					BurstDataType: enums.DataTypeVoiceLCHeader,
 					FLCO:          enums.FLCOGroupVoiceChannelUser,
-					FeatureSetID:  enums.FIDMotorola,
+					FID:           enums.FIDMotorola,
 					GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
 				}).Encode()
 				return err
 			},
-			want: "FullLinkControl.GroupVoice is set, but FLCO and FeatureSetID select RawPayload",
+			want: "FullLinkControl.GroupVoice is set, but FLCO and FID select RawPayload",
 		},
 		{
 			name: "two FLC payloads",

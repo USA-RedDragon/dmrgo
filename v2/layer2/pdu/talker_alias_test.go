@@ -80,8 +80,8 @@ func TestTalkerAlias_HeaderBits7Bit(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := lcs[0].TalkerAliasHeader
-	if lcs[0].FLCO != enums.FLCOTalkerAliasHeader || lcs[0].FeatureSetID != enums.FIDStandardized {
-		t.Errorf("FLCO %v FID %v", lcs[0].FLCO, lcs[0].FeatureSetID)
+	if lcs[0].FLCO != enums.FLCOTalkerAliasHeader || lcs[0].FID != enums.FIDStandardized {
+		t.Errorf("FLCO %v FID %v", lcs[0].FLCO, lcs[0].FID)
 	}
 	if h.TalkerAliasData>>42 != 0b1000100 || h.TalkerAliasDataLength != 1 {
 		t.Errorf("header %+v", h)

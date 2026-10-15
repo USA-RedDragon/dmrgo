@@ -28,7 +28,7 @@ func TestLCBytes_Capture(t *testing.T) {
 	if got := hex.EncodeToString(l[:]); got != "00000000005b2f5147" {
 		t.Fatalf("edited LC %s", got)
 	}
-	f, err := pdu.FullLinkControlFromBytes(l)
+	f, err := pdu.DecodeFullLinkControlBytes(l)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 			t.Fatalf("%x: SetAddresses accepts 25 bits", orig)
 		}
 
-		want, err := pdu.FullLinkControlFromBytes(orig)
+		want, err := pdu.DecodeFullLinkControlBytes(orig)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -184,7 +184,7 @@ func TestNewVoiceLC(t *testing.T) {
 	for _, group := range []bool{true, false} {
 		so := layer3.ServiceOptions{IsPrivacy: true, PriorityLevel: 2}
 		f := must(pdu.NewVoiceLC(group, 91, 3191868, so))
-		if f.FeatureSetID != enums.FIDStandardized || f.BurstDataType != enums.DataTypeVoiceLCHeader || (f.GroupVoice != nil) != group || (f.UnitToUnit != nil) == group {
+		if f.FID != enums.FIDStandardized || f.BurstDataType != enums.DataTypeVoiceLCHeader || (f.GroupVoice != nil) != group || (f.UnitToUnit != nil) == group {
 			t.Fatalf("group %t: %s", group, f.String())
 		}
 		if tgt, src, ok := f.Addresses(); !ok || tgt != 91 || src != 3191868 {
@@ -208,7 +208,7 @@ func TestNewVoiceLC(t *testing.T) {
 	if _, err := pdu.NewVoiceLCBytes(false, 1, 1<<24, layer3.ServiceOptions{}); !errors.As(err, &rangeErr) {
 		t.Errorf("source 1<<24: %v", err)
 	}
-	raw := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FeatureSetID: 0x10, RawPayload: [7]byte{0x20}}
+	raw := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: 0x10, RawPayload: [7]byte{0x20}}
 	if so, ok := raw.ServiceOptions(); !ok || so != layer3.DefaultServiceOptions() {
 		t.Errorf("manufacturer FID: ServiceOptions %s %t", so.String(), ok)
 	}

@@ -40,7 +40,7 @@ func (r RawBurst) MMDVMHostPayload(dt enums.DataType) ([12]byte, bool) {
 //     as a CRC-CCITT of its first 80 bits, without a mask (DMRCSBK.cpp:78-79,
 //     86), and MMDVMHost discards a block that fails (DMRSlot.cpp:1898-1902).
 //     ETSI TS 102 361-1 §7.4.0 instead puts one CRC, over all continuation
-//     blocks, in the last block only; pdu.CheckMBCLastBlockCRC checks that
+//     blocks, in the last block only; pdu.MBCLastBlockCRCOK checks that
 //     CRC. MMDVMHost thus discards the intermediate blocks of a standard MBC,
 //     and its last block unless it is the only continuation block.
 //   - PI Header, Rate 1/2, Rate 3/4 and Rate 1 Data: MMDVMHost checks no CRC

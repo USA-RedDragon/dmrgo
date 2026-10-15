@@ -23,8 +23,12 @@ func TestSysCode_PackUnpack(t *testing.T) {
 		if err != nil || got != tt.want {
 			t.Errorf("%+v: Pack = %016b, %v; want %016b", tt.code, got, err, tt.want)
 		}
-		if back := pdu.UnpackSysCode(got); back != tt.code {
-			t.Errorf("UnpackSysCode(%016b) = %+v", got, back)
+		var back pdu.SysCode
+		if back.Unpack(got); back != tt.code {
+			t.Errorf("Unpack(%016b) = %+v", got, back)
+		}
+		if pdu.UnpackSysCode(got) != back {
+			t.Errorf("UnpackSysCode(%016b) differs from Unpack", got)
 		}
 		got14, err := tt.code.Pack14()
 		if err != nil || got14 != tt.want>>2 {
@@ -32,8 +36,11 @@ func TestSysCode_PackUnpack(t *testing.T) {
 		}
 		noPar := tt.code
 		noPar.Par = 0
-		if back := pdu.UnpackSysCode14(got14); back != noPar {
-			t.Errorf("UnpackSysCode14(%014b) = %+v", got14, back)
+		if back.Unpack14(got14); back != noPar {
+			t.Errorf("Unpack14(%014b) = %+v", got14, back)
+		}
+		if pdu.UnpackSysCode14(got14) != back {
+			t.Errorf("UnpackSysCode14(%014b) differs from Unpack14", got14)
 		}
 	}
 }
@@ -99,8 +106,9 @@ func TestSysCode_AlohaField(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := pdu.AlohaPDU{SysIdentCode: v}
-	if pdu.UnpackSysCode(a.SysIdentCode) != code {
-		t.Errorf("got %+v", pdu.UnpackSysCode(a.SysIdentCode))
+	var got pdu.SysCode
+	if got.Unpack(a.SysIdentCode); got != code {
+		t.Errorf("got %+v", got)
 	}
 	if pdu.NetworkModelTiny.NetBits() != 9 || pdu.NetworkModelHuge.SiteBits() != 10 {
 		t.Error("model widths")

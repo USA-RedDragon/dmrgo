@@ -320,7 +320,7 @@ type AlohaPDU struct {
 // ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
 // BroadcastParms1 and BroadcastParms2 are not decoded further; their layout
 // depends on AnnouncementType (TS 102 361-4 §7.2.19, Tables 7.69 onward).
-type CBroadcastPDU struct {
+type BroadcastPDU struct {
 	AnnouncementType enums.AnnouncementType `dmr:"bits:0-4,enum"`
 	BroadcastParms1  uint16                 `dmr:"bits:5-18"`
 	Reg              bool                   `dmr:"bit:19"`
@@ -489,7 +489,7 @@ type CSBK struct {
 	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrantMultiItem"`
 	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`
 	AlohaPDU                        *AlohaPDU                        `dmr:"bits:16-79,dispatch:Opcode=CSBKAloha"`
-	CBroadcastPDU                   *CBroadcastPDU                   `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`
+	BroadcastPDU                    *BroadcastPDU                    `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`
 	ClearPDU                        *ClearPDU                        `dmr:"bits:16-79,dispatch:Opcode=CSBKClear"`
 	ProtectPDU                      *ProtectPDU                      `dmr:"bits:16-79,dispatch:Opcode=CSBKProtect"`
 	AhoyPDU                         *AhoyPDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKAhoy"`
