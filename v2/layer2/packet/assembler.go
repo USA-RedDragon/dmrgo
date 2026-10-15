@@ -160,7 +160,7 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 	}
 	if usable {
 		if a.blocks == nil {
-			per, err := BlockOctets(b.dataType, a.confirmed)
+			per, err := blockOctets(b.dataType, a.confirmed)
 			if err != nil {
 				return Message{}, false, err
 			}
@@ -263,20 +263,20 @@ func (a *Assembler) finish() (Message, bool, error) {
 			return m, true, err
 		}
 		m.Response = &rd
-		m.Data = buf[:len(buf)-CRCOctets]
+		m.Data = buf[:len(buf)-crcOctets]
 		return m, true, err
 	}
-	if len(buf) < CRCOctets {
+	if len(buf) < crcOctets {
 		return m, true, ErrMessageCRC
 	}
-	n := len(buf) - CRCOctets
+	n := len(buf) - crcOctets
 	m.CRC = binary.LittleEndian.Uint32(buf[n:])
 	end := n - padOf(&m.Header)
 	if end < 0 {
 		end = 0
 	}
 	m.Data = buf[:end]
-	if !complete || !CheckMessageCRC(buf) {
+	if !complete || !checkMessageCRC(buf) {
 		return m, true, ErrMessageCRC
 	}
 	return m, true, nil

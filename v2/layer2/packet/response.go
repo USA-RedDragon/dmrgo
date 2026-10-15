@@ -86,7 +86,7 @@ func (r Response) String() string {
 // i is octet i/8, bit 7-i%8; the spec does not state the bit order, this
 // follows the MSB-first order of every other DMR PDU.
 type ResponseData struct {
-	Retry [MaxBlocks]bool
+	Retry [maxBlocks]bool
 }
 
 // RetryBlocks returns the DBSNs flagged for retry in ascending order.
@@ -104,14 +104,14 @@ func (r *ResponseData) RetryBlocks() []int {
 // number of blocks: one block with 64 flags, or two blocks with 127 flags
 // when blocks is over 64. Flags for blocks past the packet are 1.
 func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
-	if blocks < 0 || blocks > MaxBlocks {
+	if blocks < 0 || blocks > maxBlocks {
 		return nil, fmt.Errorf("%w: %d blocks", ErrTooLong, blocks)
 	}
 	n, flags := 1, 64
 	if blocks > 64 {
-		n, flags = 2, MaxBlocks
+		n, flags = 2, maxBlocks
 	}
-	buf := make([]byte, n*12-CRCOctets)
+	buf := make([]byte, n*12-crcOctets)
 	for i := range buf {
 		buf[i] = 0xFF
 	}
@@ -120,7 +120,7 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 			buf[i/8] &^= 0x80 >> (i % 8)
 		}
 	}
-	buf = AppendMessageCRC(buf)
+	buf = appendMessageCRC(buf)
 	out := make([]*pdu.Rate12Data, n)
 	for i := range out {
 		out[i] = &pdu.Rate12Data{Data: [12]byte(buf[i*12:])}
@@ -149,12 +149,12 @@ func decodeResponseData(buf []byte) (ResponseData, error) {
 	}
 	flags := 64
 	if len(buf) == 24 {
-		flags = MaxBlocks
+		flags = maxBlocks
 	}
 	for i := 0; i < flags; i++ {
 		r.Retry[i] = buf[i/8]&(0x80>>(i%8)) == 0
 	}
-	if !CheckMessageCRC(buf) {
+	if !checkMessageCRC(buf) {
 		return r, fmt.Errorf("%w: %w", ErrResponseData, fec.ErrUncorrectable)
 	}
 	return r, nil
