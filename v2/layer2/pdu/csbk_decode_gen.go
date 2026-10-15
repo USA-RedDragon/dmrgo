@@ -61,11 +61,21 @@ func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	bit.PutUint(data[0:16], uint64(s.Reserved))
 	if uint64(s.BSAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("BSOutboundActivationPDU.BSAddress: value %d does not fit in 24 bits", s.BSAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "BSAddress",
+			Type:  "BSOutboundActivationPDU",
+			Value: s.BSAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.BSAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("BSOutboundActivationPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "BSOutboundActivationPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -99,11 +109,21 @@ func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 	copy(data[0:8], _serviceOptionsBits[:])
 	bit.PutUint(data[8:16], uint64(s.Reserved))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "UnitToUnitVoiceServiceRequestPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "UnitToUnitVoiceServiceRequestPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -137,11 +157,21 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) 
 	copy(data[0:8], _serviceOptionsBits[:])
 	bit.PutUint(data[8:16], uint64(s.AnswerResponse))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -169,24 +199,49 @@ func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgement
 func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.AdditionalInfo)>>1 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.AdditionalInfo: value %d does not fit in 1 bits", s.AdditionalInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  1,
+			Field: "AdditionalInfo",
+			Type:  "NegativeAcknowledgementPDU",
+			Value: s.AdditionalInfo,
+		}
 	}
 	bit.PutUint(data[0:1], uint64(s.AdditionalInfo))
 	if uint64(s.SourceType)>>1 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.SourceType: value %d does not fit in 1 bits", s.SourceType)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  1,
+			Field: "SourceType",
+			Type:  "NegativeAcknowledgementPDU",
+			Value: s.SourceType,
+		}
 	}
 	bit.PutUint(data[1:2], uint64(s.SourceType))
 	if uint64(s.ServiceType)>>6 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.ServiceType: value %d does not fit in 6 bits", s.ServiceType)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "ServiceType",
+			Type:  "NegativeAcknowledgementPDU",
+			Value: s.ServiceType,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.ServiceType))
 	bit.PutUint(data[8:16], uint64(s.ReasonCode))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "NegativeAcknowledgementPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.SourceAddress))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "NegativeAcknowledgementPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.TargetAddress))
 	return data, nil
@@ -220,16 +275,31 @@ func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Reserved)>>6 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PreamblePDU.Reserved: value %d does not fit in 6 bits", s.Reserved)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "Reserved",
+			Type:  "PreamblePDU",
+			Value: s.Reserved,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.Reserved))
 	bit.PutUint(data[8:16], uint64(s.CSBKBlocksToFollow))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PreamblePDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "PreamblePDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PreamblePDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "PreamblePDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -261,36 +331,66 @@ func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.Result) {
 func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.SyncAge)>>11 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.SyncAge: value %d does not fit in 11 bits", s.SyncAge)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  11,
+			Field: "SyncAge",
+			Type:  "ChannelTimingPDU",
+			Value: s.SyncAge,
+		}
 	}
 	bit.PutUint(data[0:11], uint64(s.SyncAge))
 	if uint64(s.Generation)>>5 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.Generation: value %d does not fit in 5 bits", s.Generation)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "Generation",
+			Type:  "ChannelTimingPDU",
+			Value: s.Generation,
+		}
 	}
 	bit.PutUint(data[11:16], uint64(s.Generation))
 	if uint64(s.LeaderIdentifier)>>20 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.LeaderIdentifier: value %d does not fit in 20 bits", s.LeaderIdentifier)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  20,
+			Field: "LeaderIdentifier",
+			Type:  "ChannelTimingPDU",
+			Value: s.LeaderIdentifier,
+		}
 	}
 	bit.PutUint(data[16:36], uint64(s.LeaderIdentifier))
 	if s.NewLeader {
 		data[36] = 1
 	}
 	if uint64(s.LeaderDynamicIdentifier)>>2 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.LeaderDynamicIdentifier: value %d does not fit in 2 bits", s.LeaderDynamicIdentifier)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "LeaderDynamicIdentifier",
+			Type:  "ChannelTimingPDU",
+			Value: s.LeaderDynamicIdentifier,
+		}
 	}
 	bit.PutUint(data[37:39], uint64(s.LeaderDynamicIdentifier))
 	if s.ChannelTimingOp1 {
 		data[39] = 1
 	}
 	if uint64(s.SourceIdentifier)>>20 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.SourceIdentifier: value %d does not fit in 20 bits", s.SourceIdentifier)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  20,
+			Field: "SourceIdentifier",
+			Type:  "ChannelTimingPDU",
+			Value: s.SourceIdentifier,
+		}
 	}
 	bit.PutUint(data[40:60], uint64(s.SourceIdentifier))
 	if s.Reserved {
 		data[60] = 1
 	}
 	if uint64(s.SourceDynamicIdentifier)>>2 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.SourceDynamicIdentifier: value %d does not fit in 2 bits", s.SourceDynamicIdentifier)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "SourceDynamicIdentifier",
+			Type:  "ChannelTimingPDU",
+			Value: s.SourceDynamicIdentifier,
+		}
 	}
 	bit.PutUint(data[61:63], uint64(s.SourceDynamicIdentifier))
 	if s.ChannelTimingOp0 {
@@ -322,7 +422,12 @@ func DecodePrivateVoiceGrantPDU(data [64]bit.Bit) (PrivateVoiceGrantPDU, fec.Res
 func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "PrivateVoiceGrantPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -338,11 +443,21 @@ func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateVoiceGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "PrivateVoiceGrantPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateVoiceGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "PrivateVoiceGrantPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -371,7 +486,12 @@ func DecodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) (TalkgroupVoiceGrantPDU, fec
 func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "TalkgroupVoiceGrantPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -387,11 +507,21 @@ func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupVoiceGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "TalkgroupVoiceGrantPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupVoiceGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "TalkgroupVoiceGrantPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -420,7 +550,12 @@ func DecodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) (BroadcastTalkgroup
 func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("BroadcastTalkgroupVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "BroadcastTalkgroupVoiceGrantPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -436,11 +571,21 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("BroadcastTalkgroupVoiceGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "BroadcastTalkgroupVoiceGrantPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("BroadcastTalkgroupVoiceGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "BroadcastTalkgroupVoiceGrantPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -469,7 +614,12 @@ func DecodePrivateDataGrantPDU(data [64]bit.Bit) (PrivateDataGrantPDU, fec.Resul
 func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "PrivateDataGrantPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -485,11 +635,21 @@ func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "PrivateDataGrantPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "PrivateDataGrantPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -518,7 +678,12 @@ func DecodeTalkgroupDataGrantPDU(data [64]bit.Bit) (TalkgroupDataGrantPDU, fec.R
 func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "TalkgroupDataGrantPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -534,11 +699,21 @@ func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "TalkgroupDataGrantPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "TalkgroupDataGrantPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -567,7 +742,12 @@ func DecodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) (DuplexPrivateVoiceGrant
 func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateVoiceGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "DuplexPrivateVoiceGrantPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -583,11 +763,21 @@ func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateVoiceGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "DuplexPrivateVoiceGrantPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateVoiceGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "DuplexPrivateVoiceGrantPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -616,7 +806,12 @@ func DecodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) (DuplexPrivateDataGrantPD
 func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateDataGrantPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "DuplexPrivateDataGrantPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -632,11 +827,21 @@ func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateDataGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "DuplexPrivateDataGrantPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateDataGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "DuplexPrivateDataGrantPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -665,7 +870,12 @@ func DecodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) (PrivateDataGrantMulti
 func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantMultiItemPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "PrivateDataGrantMultiItemPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -681,11 +891,21 @@ func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantMultiItemPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "PrivateDataGrantMultiItemPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantMultiItemPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "PrivateDataGrantMultiItemPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -714,7 +934,12 @@ func DecodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) (TalkgroupDataGrantM
 func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantMultiItemPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "TalkgroupDataGrantMultiItemPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.LogicalChannel {
@@ -730,11 +955,21 @@ func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantMultiItemPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "TalkgroupDataGrantMultiItemPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantMultiItemPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "TalkgroupDataGrantMultiItemPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -764,34 +999,69 @@ func DecodeMovePDU(data [64]bit.Bit) (MovePDU, fec.Result) {
 func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.Reserved1)>>9 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Reserved1: value %d does not fit in 9 bits", s.Reserved1)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  9,
+			Field: "Reserved1",
+			Type:  "MovePDU",
+			Value: s.Reserved1,
+		}
 	}
 	bit.PutUint(data[0:9], uint64(s.Reserved1))
 	if uint64(s.Mask)>>5 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Mask: value %d does not fit in 5 bits", s.Mask)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "Mask",
+			Type:  "MovePDU",
+			Value: s.Mask,
+		}
 	}
 	bit.PutUint(data[9:14], uint64(s.Mask))
 	if uint64(s.Reserved2)>>5 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Reserved2: value %d does not fit in 5 bits", s.Reserved2)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "Reserved2",
+			Type:  "MovePDU",
+			Value: s.Reserved2,
+		}
 	}
 	bit.PutUint(data[14:19], uint64(s.Reserved2))
 	if s.Reg {
 		data[19] = 1
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Backoff: value %d does not fit in 4 bits", s.Backoff)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Backoff",
+			Type:  "MovePDU",
+			Value: s.Backoff,
+		}
 	}
 	bit.PutUint(data[20:24], uint64(s.Backoff))
 	if uint64(s.Reserved3)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Reserved3: value %d does not fit in 4 bits", s.Reserved3)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Reserved3",
+			Type:  "MovePDU",
+			Value: s.Reserved3,
+		}
 	}
 	bit.PutUint(data[24:28], uint64(s.Reserved3))
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MovePDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "MovePDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[28:40], uint64(s.PhysicalChannel))
 	if uint64(s.MSAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MovePDU.MSAddress: value %d does not fit in 24 bits", s.MSAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "MSAddress",
+			Type:  "MovePDU",
+			Value: s.MSAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.MSAddress))
 	return data, nil
@@ -835,7 +1105,12 @@ func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 		data[2] = 1
 	}
 	if uint64(s.Version)>>3 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.Version: value %d does not fit in 3 bits", s.Version)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "Version",
+			Type:  "AlohaPDU",
+			Value: s.Version,
+		}
 	}
 	bit.PutUint(data[3:6], uint64(s.Version))
 	if s.Offset {
@@ -845,27 +1120,52 @@ func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 		data[7] = 1
 	}
 	if uint64(s.Mask)>>5 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.Mask: value %d does not fit in 5 bits", s.Mask)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "Mask",
+			Type:  "AlohaPDU",
+			Value: s.Mask,
+		}
 	}
 	bit.PutUint(data[8:13], uint64(s.Mask))
 	if uint64(s.ServiceFunc)>>2 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.ServiceFunc: value %d does not fit in 2 bits", s.ServiceFunc)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "ServiceFunc",
+			Type:  "AlohaPDU",
+			Value: s.ServiceFunc,
+		}
 	}
 	bit.PutUint(data[13:15], uint64(s.ServiceFunc))
 	if uint64(s.NRandWait)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.NRandWait: value %d does not fit in 4 bits", s.NRandWait)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "NRandWait",
+			Type:  "AlohaPDU",
+			Value: s.NRandWait,
+		}
 	}
 	bit.PutUint(data[15:19], uint64(s.NRandWait))
 	if s.Reg {
 		data[19] = 1
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.Backoff: value %d does not fit in 4 bits", s.Backoff)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Backoff",
+			Type:  "AlohaPDU",
+			Value: s.Backoff,
+		}
 	}
 	bit.PutUint(data[20:24], uint64(s.Backoff))
 	bit.PutUint(data[24:40], uint64(s.SysIdentCode))
 	if uint64(s.MSAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.MSAddress: value %d does not fit in 24 bits", s.MSAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "MSAddress",
+			Type:  "AlohaPDU",
+			Value: s.MSAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.MSAddress))
 	return data, nil
@@ -893,23 +1193,43 @@ func DecodeCBroadcastPDU(data [64]bit.Bit) (CBroadcastPDU, fec.Result) {
 func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.AnnouncementType)>>5 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.AnnouncementType: value %d does not fit in 5 bits", s.AnnouncementType)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "AnnouncementType",
+			Type:  "CBroadcastPDU",
+			Value: s.AnnouncementType,
+		}
 	}
 	bit.PutUint(data[0:5], uint64(s.AnnouncementType))
 	if uint64(s.BroadcastParms1)>>14 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.BroadcastParms1: value %d does not fit in 14 bits", s.BroadcastParms1)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  14,
+			Field: "BroadcastParms1",
+			Type:  "CBroadcastPDU",
+			Value: s.BroadcastParms1,
+		}
 	}
 	bit.PutUint(data[5:19], uint64(s.BroadcastParms1))
 	if s.Reg {
 		data[19] = 1
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.Backoff: value %d does not fit in 4 bits", s.Backoff)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Backoff",
+			Type:  "CBroadcastPDU",
+			Value: s.Backoff,
+		}
 	}
 	bit.PutUint(data[20:24], uint64(s.Backoff))
 	bit.PutUint(data[24:40], uint64(s.SysIdentCode))
 	if uint64(s.BroadcastParms2)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.BroadcastParms2: value %d does not fit in 24 bits", s.BroadcastParms2)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "BroadcastParms2",
+			Type:  "CBroadcastPDU",
+			Value: s.BroadcastParms2,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.BroadcastParms2))
 	return data, nil
@@ -937,25 +1257,45 @@ func DecodeClearPDU(data [64]bit.Bit) (ClearPDU, fec.Result) {
 func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "PhysicalChannel",
+			Type:  "ClearPDU",
+			Value: s.PhysicalChannel,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
 	if s.Reserved1 {
 		data[12] = 1
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "Reserved2",
+			Type:  "ClearPDU",
+			Value: s.Reserved2,
+		}
 	}
 	bit.PutUint(data[13:15], uint64(s.Reserved2))
 	if s.GroupIndividual {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "ClearPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "ClearPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -982,22 +1322,42 @@ func DecodeProtectPDU(data [64]bit.Bit) (ProtectPDU, fec.Result) {
 func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.Reserved)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.Reserved: value %d does not fit in 12 bits", s.Reserved)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "Reserved",
+			Type:  "ProtectPDU",
+			Value: s.Reserved,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.Reserved))
 	if uint64(s.ProtectKind)>>3 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.ProtectKind: value %d does not fit in 3 bits", s.ProtectKind)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "ProtectKind",
+			Type:  "ProtectPDU",
+			Value: s.ProtectKind,
+		}
 	}
 	bit.PutUint(data[12:15], uint64(s.ProtectKind))
 	if s.GroupIndividual {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "ProtectPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "ProtectPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -1027,7 +1387,12 @@ func DecodeAhoyPDU(data [64]bit.Bit) (AhoyPDU, fec.Result) {
 func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.ServiceOptsMirror: value %d does not fit in 7 bits", s.ServiceOptsMirror)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "ServiceOptsMirror",
+			Type:  "AhoyPDU",
+			Value: s.ServiceOptsMirror,
+		}
 	}
 	bit.PutUint(data[0:7], uint64(s.ServiceOptsMirror))
 	if s.ServiceKindFlag {
@@ -1040,19 +1405,39 @@ func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 		data[9] = 1
 	}
 	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.AppendedBlocks: value %d does not fit in 2 bits", s.AppendedBlocks)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "AppendedBlocks",
+			Type:  "AhoyPDU",
+			Value: s.AppendedBlocks,
+		}
 	}
 	bit.PutUint(data[10:12], uint64(s.AppendedBlocks))
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "ServiceKind",
+			Type:  "AhoyPDU",
+			Value: s.ServiceKind,
+		}
 	}
 	bit.PutUint(data[12:16], uint64(s.ServiceKind))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "AhoyPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "AhoyPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -1079,7 +1464,12 @@ func DecodeAckOutboundPDU(data [64]bit.Bit) (AckOutboundPDU, fec.Result) {
 func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "ResponseInfo",
+			Type:  "AckOutboundPDU",
+			Value: s.ResponseInfo,
+		}
 	}
 	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
 	bit.PutUint(data[7:15], uint64(s.ReasonCode))
@@ -1087,11 +1477,21 @@ func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "AckOutboundPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPDU.AdditionalInfo: value %d does not fit in 24 bits", s.AdditionalInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "AdditionalInfo",
+			Type:  "AckOutboundPDU",
+			Value: s.AdditionalInfo,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
 	return data, nil
@@ -1118,7 +1518,12 @@ func DecodeAckInboundPDU(data [64]bit.Bit) (AckInboundPDU, fec.Result) {
 func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckInboundPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "ResponseInfo",
+			Type:  "AckInboundPDU",
+			Value: s.ResponseInfo,
+		}
 	}
 	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
 	bit.PutUint(data[7:15], uint64(s.ReasonCode))
@@ -1126,11 +1531,21 @@ func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckInboundPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "AckInboundPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckInboundPDU.AdditionalInfo: value %d does not fit in 24 bits", s.AdditionalInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "AdditionalInfo",
+			Type:  "AckInboundPDU",
+			Value: s.AdditionalInfo,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
 	return data, nil
@@ -1157,7 +1572,12 @@ func DecodeAckOutboundPayloadPDU(data [64]bit.Bit) (AckOutboundPayloadPDU, fec.R
 func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPayloadPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "ResponseInfo",
+			Type:  "AckOutboundPayloadPDU",
+			Value: s.ResponseInfo,
+		}
 	}
 	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
 	bit.PutUint(data[7:15], uint64(s.ReasonCode))
@@ -1165,11 +1585,21 @@ func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPayloadPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "AckOutboundPayloadPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPayloadPDU.AdditionalInfo: value %d does not fit in 24 bits", s.AdditionalInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "AdditionalInfo",
+			Type:  "AckOutboundPayloadPDU",
+			Value: s.AdditionalInfo,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
 	return data, nil
@@ -1196,7 +1626,12 @@ func DecodeAckInboundPayloadPDU(data [64]bit.Bit) (AckInboundPayloadPDU, fec.Res
 func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckInboundPayloadPDU.ResponseInfo: value %d does not fit in 7 bits", s.ResponseInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "ResponseInfo",
+			Type:  "AckInboundPayloadPDU",
+			Value: s.ResponseInfo,
+		}
 	}
 	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
 	bit.PutUint(data[7:15], uint64(s.ReasonCode))
@@ -1204,11 +1639,21 @@ func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckInboundPayloadPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "AckInboundPayloadPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckInboundPayloadPDU.AdditionalInfo: value %d does not fit in 24 bits", s.AdditionalInfo)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "AdditionalInfo",
+			Type:  "AckInboundPayloadPDU",
+			Value: s.AdditionalInfo,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
 	return data, nil
@@ -1236,26 +1681,51 @@ func DecodeRandomAccessPDU(data [64]bit.Bit) (RandomAccessPDU, fec.Result) {
 func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ServiceOptions)>>7 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.ServiceOptions: value %d does not fit in 7 bits", s.ServiceOptions)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "ServiceOptions",
+			Type:  "RandomAccessPDU",
+			Value: s.ServiceOptions,
+		}
 	}
 	bit.PutUint(data[0:7], uint64(s.ServiceOptions))
 	if s.ProxyFlag {
 		data[7] = 1
 	}
 	if uint64(s.Reserved)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.Reserved: value %d does not fit in 4 bits", s.Reserved)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Reserved",
+			Type:  "RandomAccessPDU",
+			Value: s.Reserved,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.Reserved))
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "ServiceKind",
+			Type:  "RandomAccessPDU",
+			Value: s.ServiceKind,
+		}
 	}
 	bit.PutUint(data[12:16], uint64(s.ServiceKind))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "RandomAccessPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "RandomAccessPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -1284,30 +1754,60 @@ func DecodeAckvitationPDU(data [64]bit.Bit) (AckvitationPDU, fec.Result) {
 func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.ServiceOptsMirror: value %d does not fit in 7 bits", s.ServiceOptsMirror)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "ServiceOptsMirror",
+			Type:  "AckvitationPDU",
+			Value: s.ServiceOptsMirror,
+		}
 	}
 	bit.PutUint(data[0:7], uint64(s.ServiceOptsMirror))
 	if s.ServiceKindFlag {
 		data[7] = 1
 	}
 	if uint64(s.Reserved)>>2 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.Reserved: value %d does not fit in 2 bits", s.Reserved)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "Reserved",
+			Type:  "AckvitationPDU",
+			Value: s.Reserved,
+		}
 	}
 	bit.PutUint(data[8:10], uint64(s.Reserved))
 	if uint64(s.UAB)>>2 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.UAB: value %d does not fit in 2 bits", s.UAB)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "UAB",
+			Type:  "AckvitationPDU",
+			Value: s.UAB,
+		}
 	}
 	bit.PutUint(data[10:12], uint64(s.UAB))
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "ServiceKind",
+			Type:  "AckvitationPDU",
+			Value: s.ServiceKind,
+		}
 	}
 	bit.PutUint(data[12:16], uint64(s.ServiceKind))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "AckvitationPDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "AckvitationPDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -1334,22 +1834,42 @@ func DecodeMaintenancePDU(data [64]bit.Bit) (MaintenancePDU, fec.Result) {
 func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.Reserved)>>12 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.Reserved: value %d does not fit in 12 bits", s.Reserved)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  12,
+			Field: "Reserved",
+			Type:  "MaintenancePDU",
+			Value: s.Reserved,
+		}
 	}
 	bit.PutUint(data[0:12], uint64(s.Reserved))
 	if uint64(s.MaintKind)>>3 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.MaintKind: value %d does not fit in 3 bits", s.MaintKind)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "MaintKind",
+			Type:  "MaintenancePDU",
+			Value: s.MaintKind,
+		}
 	}
 	bit.PutUint(data[12:15], uint64(s.MaintKind))
 	if s.Reserved2 {
 		data[15] = 1
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "MaintenancePDU",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [64]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "MaintenancePDU",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
@@ -1683,11 +2203,21 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CSBK.Opcode: value %d does not fit in 6 bits", s.Opcode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "Opcode",
+			Type:  "CSBK",
+			Value: s.Opcode,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.Opcode))
 	if uint64(s.FID)>>8 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CSBK.FID: value %d does not fit in 8 bits", s.FID)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  8,
+			Field: "FID",
+			Type:  "CSBK",
+			Value: s.FID,
+		}
 	}
 	bit.PutUint(data[8:16], uint64(s.FID))
 	if _payload != "" {

@@ -270,7 +270,7 @@ type T struct {
 	assertContains(t, out,
 		"func (s *T) Encode() ([60]bit.Bit, error) {",
 		"if uint64(s.Part)>>12 != 0 {",
-		`return [60]bit.Bit{}, fmt.Errorf("T.Part: value %d does not fit in 12 bits", s.Part)`,
+		`return [60]bit.Bit{}, &bit.FieldRangeError{`,
 		"if uint64(s.Addr)>>24 != 0 {",
 		"if int64(s.Off) < -128 || int64(s.Off) > 127 {",
 		"_kidBits, err := s.Kid.Encode()",

@@ -977,11 +977,22 @@ func (e encoder) fail(err Code) *Statement {
 	return Return(Index(Lit(e.size)).Qual(bitPkg, "Bit").Values(), err)
 }
 
-// failf returns a statement that returns a zero codeword and a formatted error
-// prefixed with the struct and field name.
-func (e encoder) failf(field parse.Field, format string, args ...Code) *Statement {
-	all := append([]Code{Lit(e.pdu.Name + "." + field.Name + ": " + format)}, args...)
-	return e.fail(Qual("fmt", "Errorf").Call(all...))
+// failRange returns a statement that returns a zero codeword and a
+// *bit.FieldRangeError for field. extra adds Min and Max for a range check.
+func (e encoder) failRange(field parse.Field, extra Dict) *Statement {
+	d := Dict{
+		Id("Type"):  Lit(e.pdu.Name),
+		Id("Field"): Lit(field.Name),
+		Id("Value"): Id("s").Dot(field.Name),
+		Id("Bits"):  Lit(field.BitWidth),
+	}
+	if field.Signed || field.Kind == parse.FieldLongitude || field.Kind == parse.FieldLatitude {
+		d[Id("Signed")] = True()
+	}
+	for k, v := range extra {
+		d[k] = v
+	}
+	return e.fail(Op("&").Qual(bitPkg, "FieldRangeError").Values(d))
 }
 
 // fields emits encoding for all fields (regular + dispatch).
@@ -1307,7 +1318,7 @@ func (e encoder) field(g *Group, field parse.Field) {
 		limit := coordSpan(field) / 2
 		// Negated form also rejects NaN.
 		g.If(Op("!").Parens(source.Clone().Op(">=").Lit(-limit).Op("&&").Add(source.Clone()).Op("<=").Lit(limit))).Block(
-			e.failf(field, fmt.Sprintf("%%v degrees is outside [%v, %v]", -limit, limit), source.Clone()),
+			e.failRange(field, Dict{Id("Min"): Lit(-limit), Id("Max"): Lit(limit)}),
 		)
 		g.Id(raw).Op(":=").Add(coordRaw(field, source.Clone()))
 		// +180 degrees longitude rounds to 2^(width-1), which the two's
@@ -1335,11 +1346,11 @@ func (e encoder) integer(g *Group, field parse.Field) {
 	case field.Signed:
 		lo, hi := -(1 << (w - 1)), (1<<(w-1))-1
 		g.If(Int64().Call(source.Clone()).Op("<").Lit(lo).Op("||").Int64().Call(source.Clone()).Op(">").Lit(hi)).Block(
-			e.failf(field, fmt.Sprintf("value %%d does not fit in %d signed bits", w), source.Clone()),
+			e.failRange(field, nil),
 		)
 	case needsRangeCheck(field):
 		g.If(Uint64().Call(source.Clone()).Op(">>").Lit(w).Op("!=").Lit(0)).Block(
-			e.failf(field, fmt.Sprintf("value %%d does not fit in %d bits", w), source.Clone()),
+			e.failRange(field, nil),
 		)
 	}
 

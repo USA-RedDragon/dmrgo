@@ -49,13 +49,23 @@ func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	bit.PutUint(data[0:8], uint64(s.AlgorithmID))
 	if uint64(s.MFID)>>8 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("PIHeader.MFID: value %d does not fit in 8 bits", s.MFID)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  8,
+			Field: "MFID",
+			Type:  "PIHeader",
+			Value: s.MFID,
+		}
 	}
 	bit.PutUint(data[8:16], uint64(s.MFID))
 	bit.PutUint(data[16:24], uint64(s.KeyID))
 	bit.PutUint(data[24:56], uint64(s.MessageIndicator))
 	if uint64(s.Destination)>>24 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("PIHeader.Destination: value %d does not fit in 24 bits", s.Destination)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "Destination",
+			Type:  "PIHeader",
+			Value: s.Destination,
+		}
 	}
 	bit.PutUint(data[56:80], uint64(s.Destination))
 	var _encBytes [10]byte

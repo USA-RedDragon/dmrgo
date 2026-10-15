@@ -41,7 +41,12 @@ func (s *TACT) Encode() ([7]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.LCSS)>>2 != 0 {
-		return [7]bit.Bit{}, fmt.Errorf("TACT.LCSS: value %d does not fit in 2 bits", s.LCSS)
+		return [7]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "LCSS",
+			Type:  "TACT",
+			Value: s.LCSS,
+		}
 	}
 	bit.PutUint(data[2:4], uint64(s.LCSS))
 	return hamming.Encode743(data), nil

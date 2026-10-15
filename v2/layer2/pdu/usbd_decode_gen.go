@@ -43,7 +43,12 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec
 func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	if uint64(s.ServiceType)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("UnifiedSingleBlockData.ServiceType: value %d does not fit in 4 bits", s.ServiceType)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "ServiceType",
+			Type:  "UnifiedSingleBlockData",
+			Value: s.ServiceType,
+		}
 	}
 	bit.PutUint(data[0:4], uint64(s.ServiceType))
 	copy(data[4:80], s.Payload[:])

@@ -9,6 +9,8 @@
 // bits they read or write panics, as an out of range index does.
 package bit
 
+import "fmt"
+
 // Bit represents a single bit as a byte value (0 or 1).
 // This type replaces the ambiguous use of byte for unpacked bit arrays throughout
 // the codebase, providing compile-time type safety at zero runtime cost.
@@ -16,6 +18,34 @@ package bit
 // Functions of this module that read a Bit use only its low bit, so a Bit
 // of 2 reads as 0 and a Bit of 0xFF reads as 1.
 type Bit byte
+
+// FieldRangeError is the error of a PDU Encode method when a field value
+// does not fit in its on-air bits, or for a coordinate when it is outside
+// [Min, Max].
+type FieldRangeError struct {
+	// Type and Field name the PDU type and its field.
+	Type, Field string
+	// Value is the field value.
+	Value any
+	// Bits is the width of the field and Signed is set for a two's
+	// complement field.
+	Bits   int
+	Signed bool
+	// Min and Max are the range of a coordinate field; both are 0 for an
+	// integer field.
+	Min, Max float64
+}
+
+func (e *FieldRangeError) Error() string {
+	if e.Min != e.Max {
+		return fmt.Sprintf("%s.%s: value %v is outside [%v, %v]", e.Type, e.Field, e.Value, e.Min, e.Max)
+	}
+	signed := ""
+	if e.Signed {
+		signed = "signed "
+	}
+	return fmt.Sprintf("%s.%s: value %d does not fit in %d %sbits", e.Type, e.Field, e.Value, e.Bits, signed)
+}
 
 // Mask clears all but the low bit of each element of bits in place.
 func Mask(bits []Bit) {

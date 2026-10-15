@@ -60,36 +60,71 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 		data[2] = 1
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.PadOctetCount: value %d does not fit in 5 bits", s.PadOctetCount)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "PadOctetCount",
+			Type:  "UnconfirmedDataHeader",
+			Value: s.PadOctetCount,
+		}
 	}
 	_valPadOctetCount := uint64(s.PadOctetCount)
 	bit.PutUint(data[3:4], _valPadOctetCount>>4)
 	bit.PutUint(data[12:16], _valPadOctetCount)
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAP",
+			Type:  "UnconfirmedDataHeader",
+			Value: s.SAP,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDDestination",
+			Type:  "UnconfirmedDataHeader",
+			Value: s.LLIDDestination,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDSource",
+			Type:  "UnconfirmedDataHeader",
+			Value: s.LLIDSource,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.LLIDSource))
 	if s.FullMessageFlag {
 		data[64] = 1
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.BlocksToFollow: value %d does not fit in 7 bits", s.BlocksToFollow)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "BlocksToFollow",
+			Type:  "UnconfirmedDataHeader",
+			Value: s.BlocksToFollow,
+		}
 	}
 	bit.PutUint(data[65:72], uint64(s.BlocksToFollow))
 	if uint64(s.Reserved2)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.Reserved2: value %d does not fit in 4 bits", s.Reserved2)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Reserved2",
+			Type:  "UnconfirmedDataHeader",
+			Value: s.Reserved2,
+		}
 	}
 	bit.PutUint(data[72:76], uint64(s.Reserved2))
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.FragmentSequenceNumber: value %d does not fit in 4 bits", s.FragmentSequenceNumber)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "FragmentSequenceNumber",
+			Type:  "UnconfirmedDataHeader",
+			Value: s.FragmentSequenceNumber,
+		}
 	}
 	bit.PutUint(data[76:80], uint64(s.FragmentSequenceNumber))
 	bit.PutUint(data[4:8], uint64(FormatUnconfirmed))
@@ -238,7 +273,12 @@ func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 		copy(data[0:80], s.RawPayload[:])
 	}
 	if uint64(s.Format)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("DataHeader.Format: value %d does not fit in 4 bits", s.Format)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Format",
+			Type:  "DataHeader",
+			Value: s.Format,
+		}
 	}
 	bit.PutUint(data[4:8], uint64(s.Format))
 	if _payload != "" {
@@ -359,39 +399,74 @@ func (s *ConfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 		data[2] = 1
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.PadOctetCount: value %d does not fit in 5 bits", s.PadOctetCount)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "PadOctetCount",
+			Type:  "ConfirmedDataHeader",
+			Value: s.PadOctetCount,
+		}
 	}
 	_valPadOctetCount := uint64(s.PadOctetCount)
 	bit.PutUint(data[3:4], _valPadOctetCount>>4)
 	bit.PutUint(data[12:16], _valPadOctetCount)
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAP",
+			Type:  "ConfirmedDataHeader",
+			Value: s.SAP,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDDestination",
+			Type:  "ConfirmedDataHeader",
+			Value: s.LLIDDestination,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDSource",
+			Type:  "ConfirmedDataHeader",
+			Value: s.LLIDSource,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.LLIDSource))
 	if s.FullMessageFlag {
 		data[64] = 1
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.BlocksToFollow: value %d does not fit in 7 bits", s.BlocksToFollow)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "BlocksToFollow",
+			Type:  "ConfirmedDataHeader",
+			Value: s.BlocksToFollow,
+		}
 	}
 	bit.PutUint(data[65:72], uint64(s.BlocksToFollow))
 	if s.ReSynchronizeFlag {
 		data[72] = 1
 	}
 	if uint64(s.SendSequenceNumber)>>3 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.SendSequenceNumber: value %d does not fit in 3 bits", s.SendSequenceNumber)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "SendSequenceNumber",
+			Type:  "ConfirmedDataHeader",
+			Value: s.SendSequenceNumber,
+		}
 	}
 	bit.PutUint(data[73:76], uint64(s.SendSequenceNumber))
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.FragmentSequenceNumber: value %d does not fit in 4 bits", s.FragmentSequenceNumber)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "FragmentSequenceNumber",
+			Type:  "ConfirmedDataHeader",
+			Value: s.FragmentSequenceNumber,
+		}
 	}
 	bit.PutUint(data[76:80], uint64(s.FragmentSequenceNumber))
 	bit.PutUint(data[4:8], uint64(FormatConfirmed))
@@ -432,42 +507,87 @@ func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "Reserved2",
+			Type:  "ResponsePacketHeader",
+			Value: s.Reserved2,
+		}
 	}
 	bit.PutUint(data[2:4], uint64(s.Reserved2))
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAP",
+			Type:  "ResponsePacketHeader",
+			Value: s.SAP,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
 	if uint64(s.Reserved3)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.Reserved3: value %d does not fit in 4 bits", s.Reserved3)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Reserved3",
+			Type:  "ResponsePacketHeader",
+			Value: s.Reserved3,
+		}
 	}
 	bit.PutUint(data[12:16], uint64(s.Reserved3))
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDDestination",
+			Type:  "ResponsePacketHeader",
+			Value: s.LLIDDestination,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDSource",
+			Type:  "ResponsePacketHeader",
+			Value: s.LLIDSource,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.LLIDSource))
 	if s.FullMessageFlag {
 		data[64] = 1
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.BlocksToFollow: value %d does not fit in 7 bits", s.BlocksToFollow)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "BlocksToFollow",
+			Type:  "ResponsePacketHeader",
+			Value: s.BlocksToFollow,
+		}
 	}
 	bit.PutUint(data[65:72], uint64(s.BlocksToFollow))
 	if uint64(s.ResponseClass)>>2 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.ResponseClass: value %d does not fit in 2 bits", s.ResponseClass)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "ResponseClass",
+			Type:  "ResponsePacketHeader",
+			Value: s.ResponseClass,
+		}
 	}
 	bit.PutUint(data[72:74], uint64(s.ResponseClass))
 	if uint64(s.ResponseType)>>3 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.ResponseType: value %d does not fit in 3 bits", s.ResponseType)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "ResponseType",
+			Type:  "ResponsePacketHeader",
+			Value: s.ResponseType,
+		}
 	}
 	bit.PutUint(data[74:77], uint64(s.ResponseType))
 	if uint64(s.ResponseStatus)>>3 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.ResponseStatus: value %d does not fit in 3 bits", s.ResponseStatus)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "ResponseStatus",
+			Type:  "ResponsePacketHeader",
+			Value: s.ResponseStatus,
+		}
 	}
 	bit.PutUint(data[77:80], uint64(s.ResponseStatus))
 	bit.PutUint(data[4:8], uint64(FormatResponsePacket))
@@ -510,25 +630,50 @@ func (s *DefinedDataHeader) Encode() ([80]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.AppendedBlocks)>>6 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.AppendedBlocks: value %d does not fit in 6 bits", s.AppendedBlocks)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "AppendedBlocks",
+			Type:  "DefinedDataHeader",
+			Value: s.AppendedBlocks,
+		}
 	}
 	_valAppendedBlocks := uint64(s.AppendedBlocks)
 	bit.PutUint(data[2:4], _valAppendedBlocks>>4)
 	bit.PutUint(data[12:16], _valAppendedBlocks)
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAP",
+			Type:  "DefinedDataHeader",
+			Value: s.SAP,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDDestination",
+			Type:  "DefinedDataHeader",
+			Value: s.LLIDDestination,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDSource",
+			Type:  "DefinedDataHeader",
+			Value: s.LLIDSource,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.LLIDSource))
 	if uint64(s.DefinedData)>>6 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("DefinedDataHeader.DefinedData: value %d does not fit in 6 bits", s.DefinedData)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "DefinedData",
+			Type:  "DefinedDataHeader",
+			Value: s.DefinedData,
+		}
 	}
 	bit.PutUint(data[64:70], uint64(s.DefinedData))
 	if s.SARQ {
@@ -579,29 +724,59 @@ func (s *RawDataHeader) Encode() ([80]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.AppendedBlocks)>>6 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.AppendedBlocks: value %d does not fit in 6 bits", s.AppendedBlocks)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "AppendedBlocks",
+			Type:  "RawDataHeader",
+			Value: s.AppendedBlocks,
+		}
 	}
 	_valAppendedBlocks := uint64(s.AppendedBlocks)
 	bit.PutUint(data[2:4], _valAppendedBlocks>>4)
 	bit.PutUint(data[12:16], _valAppendedBlocks)
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAP",
+			Type:  "RawDataHeader",
+			Value: s.SAP,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDDestination",
+			Type:  "RawDataHeader",
+			Value: s.LLIDDestination,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDSource",
+			Type:  "RawDataHeader",
+			Value: s.LLIDSource,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.LLIDSource))
 	if uint64(s.SourcePort)>>3 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.SourcePort: value %d does not fit in 3 bits", s.SourcePort)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "SourcePort",
+			Type:  "RawDataHeader",
+			Value: s.SourcePort,
+		}
 	}
 	bit.PutUint(data[64:67], uint64(s.SourcePort))
 	if uint64(s.DestinationPort)>>3 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("RawDataHeader.DestinationPort: value %d does not fit in 3 bits", s.DestinationPort)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "DestinationPort",
+			Type:  "RawDataHeader",
+			Value: s.DestinationPort,
+		}
 	}
 	bit.PutUint(data[67:70], uint64(s.DestinationPort))
 	if s.SARQ {
@@ -645,27 +820,57 @@ func (s *StatusPrecodedHeader) Encode() ([80]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAP",
+			Type:  "StatusPrecodedHeader",
+			Value: s.SAP,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDDestination",
+			Type:  "StatusPrecodedHeader",
+			Value: s.LLIDDestination,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDSource",
+			Type:  "StatusPrecodedHeader",
+			Value: s.LLIDSource,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.LLIDSource))
 	if uint64(s.SourcePort)>>3 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.SourcePort: value %d does not fit in 3 bits", s.SourcePort)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "SourcePort",
+			Type:  "StatusPrecodedHeader",
+			Value: s.SourcePort,
+		}
 	}
 	bit.PutUint(data[64:67], uint64(s.SourcePort))
 	if uint64(s.DestinationPort)>>3 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.DestinationPort: value %d does not fit in 3 bits", s.DestinationPort)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "DestinationPort",
+			Type:  "StatusPrecodedHeader",
+			Value: s.DestinationPort,
+		}
 	}
 	bit.PutUint(data[67:70], uint64(s.DestinationPort))
 	if uint64(s.StatusPrecoded)>>10 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.StatusPrecoded: value %d does not fit in 10 bits", s.StatusPrecoded)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  10,
+			Field: "StatusPrecoded",
+			Type:  "StatusPrecodedHeader",
+			Value: s.StatusPrecoded,
+		}
 	}
 	bit.PutUint(data[70:80], uint64(s.StatusPrecoded))
 	_const0 := uint64(0)
@@ -717,30 +922,60 @@ func (s *UDTHeader) Encode() ([80]bit.Bit, error) {
 		data[3] = 1
 	}
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAP",
+			Type:  "UDTHeader",
+			Value: s.SAP,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
 	if uint64(s.UDTFormat)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.UDTFormat: value %d does not fit in 4 bits", s.UDTFormat)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "UDTFormat",
+			Type:  "UDTHeader",
+			Value: s.UDTFormat,
+		}
 	}
 	bit.PutUint(data[12:16], uint64(s.UDTFormat))
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDDestination",
+			Type:  "UDTHeader",
+			Value: s.LLIDDestination,
+		}
 	}
 	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDSource",
+			Type:  "UDTHeader",
+			Value: s.LLIDSource,
+		}
 	}
 	bit.PutUint(data[40:64], uint64(s.LLIDSource))
 	if uint64(s.PadNibble)>>5 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.PadNibble: value %d does not fit in 5 bits", s.PadNibble)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "PadNibble",
+			Type:  "UDTHeader",
+			Value: s.PadNibble,
+		}
 	}
 	bit.PutUint(data[64:69], uint64(s.PadNibble))
 	if s.Reserved {
 		data[69] = 1
 	}
 	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.AppendedBlocks: value %d does not fit in 2 bits", s.AppendedBlocks)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "AppendedBlocks",
+			Type:  "UDTHeader",
+			Value: s.AppendedBlocks,
+		}
 	}
 	bit.PutUint(data[70:72], uint64(s.AppendedBlocks))
 	if s.SupplementaryFlag {
@@ -750,7 +985,12 @@ func (s *UDTHeader) Encode() ([80]bit.Bit, error) {
 		data[73] = 1
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.Opcode: value %d does not fit in 6 bits", s.Opcode)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "Opcode",
+			Type:  "UDTHeader",
+			Value: s.Opcode,
+		}
 	}
 	bit.PutUint(data[74:80], uint64(s.Opcode))
 	bit.PutUint(data[4:8], uint64(FormatUnifiedDataTransport))
@@ -776,11 +1016,21 @@ func DecodeProprietaryHeader(data [80]bit.Bit) (ProprietaryHeader, fec.Result) {
 func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 	var data [80]bit.Bit
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ProprietaryHeader.SAP: value %d does not fit in 4 bits", s.SAP)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAP",
+			Type:  "ProprietaryHeader",
+			Value: s.SAP,
+		}
 	}
 	bit.PutUint(data[0:4], uint64(s.SAP))
 	if uint64(s.MFID)>>8 != 0 {
-		return [80]bit.Bit{}, fmt.Errorf("ProprietaryHeader.MFID: value %d does not fit in 8 bits", s.MFID)
+		return [80]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  8,
+			Field: "MFID",
+			Type:  "ProprietaryHeader",
+			Value: s.MFID,
+		}
 	}
 	bit.PutUint(data[8:16], uint64(s.MFID))
 	copy(data[16:80], bit.Unpack(s.ManufacturerData[:]))

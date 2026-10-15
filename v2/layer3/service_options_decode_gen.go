@@ -38,7 +38,12 @@ func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Reserved)>>2 != 0 {
-		return [8]bit.Bit{}, fmt.Errorf("ServiceOptions.Reserved: value %d does not fit in 2 bits", s.Reserved)
+		return [8]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "Reserved",
+			Type:  "ServiceOptions",
+			Value: s.Reserved,
+		}
 	}
 	bit.PutUint(data[2:4], uint64(s.Reserved))
 	if s.IsBroadcast {
@@ -48,7 +53,12 @@ func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 		data[5] = 1
 	}
 	if uint64(s.PriorityLevel)>>2 != 0 {
-		return [8]bit.Bit{}, fmt.Errorf("ServiceOptions.PriorityLevel: value %d does not fit in 2 bits", s.PriorityLevel)
+		return [8]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "PriorityLevel",
+			Type:  "ServiceOptions",
+			Value: s.PriorityLevel,
+		}
 	}
 	bit.PutUint(data[6:8], uint64(s.PriorityLevel))
 	return data, nil

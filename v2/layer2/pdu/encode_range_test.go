@@ -1,10 +1,12 @@
 package pdu_test
 
 import (
+	"errors"
 	"math"
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -22,6 +24,11 @@ func expectEncodeError(t *testing.T, err error, want string) {
 func TestEncode_RejectsValuesWiderThanField(t *testing.T) {
 	_, err := (&pdu.FLCGroupVoice{GroupAddress: 1 << 24}).Encode()
 	expectEncodeError(t, err, "FLCGroupVoice.GroupAddress: value 16777216 does not fit in 24 bits")
+
+	var rangeErr *bit.FieldRangeError
+	if !errors.As(err, &rangeErr) || rangeErr.Type != "FLCGroupVoice" || rangeErr.Field != "GroupAddress" || rangeErr.Bits != 24 || rangeErr.Value != uint32(1<<24) {
+		t.Fatalf("error %#v is not the FieldRangeError of GroupAddress", err)
+	}
 
 	_, err = (&pdu.FLCGroupVoice{SourceAddress: 0xFFFFFFFF}).Encode()
 	expectEncodeError(t, err, "FLCGroupVoice.SourceAddress: value 4294967295 does not fit in 24 bits")
@@ -72,9 +79,9 @@ func TestEncode_RejectsCoordinatesOutOfRange(t *testing.T) {
 		lon, lat float64
 		want     string
 	}{
-		{"LatitudeAbove", 0, 90.0001, "Latitude: 90.0001 degrees is outside [-90, 90]"},
+		{"LatitudeAbove", 0, 90.0001, "Latitude: value 90.0001 is outside [-90, 90]"},
 		{"LatitudeBelow", 0, -90.0001, "Latitude"},
-		{"LongitudeAbove", 180.0001, 0, "Longitude: 180.0001 degrees is outside [-180, 180]"},
+		{"LongitudeAbove", 180.0001, 0, "Longitude: value 180.0001 is outside [-180, 180]"},
 		{"LongitudeBelow", -180.0001, 0, "Longitude"},
 		{"NaN", math.NaN(), 0, "Longitude"},
 		{"Inf", 0, math.Inf(1), "Latitude"},

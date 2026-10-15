@@ -160,11 +160,21 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.FLCO)>>6 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.FLCO: value %d does not fit in 6 bits", s.FLCO)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "FLCO",
+			Type:  "FullLinkControl",
+			Value: s.FLCO,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.FLCO))
 	if uint64(s.FeatureSetID)>>8 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.FeatureSetID: value %d does not fit in 8 bits", s.FeatureSetID)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  8,
+			Field: "FeatureSetID",
+			Type:  "FullLinkControl",
+			Value: s.FeatureSetID,
+		}
 	}
 	bit.PutUint(data[8:16], uint64(s.FeatureSetID))
 	if _payload != "" {
@@ -265,11 +275,21 @@ func (s *FLCGroupVoice) Encode() ([56]bit.Bit, error) {
 	}
 	copy(data[0:8], _serviceOptionsBits[:])
 	if uint64(s.GroupAddress)>>24 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGroupVoice.GroupAddress: value %d does not fit in 24 bits", s.GroupAddress)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "GroupAddress",
+			Type:  "FLCGroupVoice",
+			Value: s.GroupAddress,
+		}
 	}
 	bit.PutUint(data[8:32], uint64(s.GroupAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGroupVoice.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "FLCGroupVoice",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[32:56], uint64(s.SourceAddress))
 	return data, nil
@@ -301,11 +321,21 @@ func (s *FLCUnitToUnit) Encode() ([56]bit.Bit, error) {
 	}
 	copy(data[0:8], _serviceOptionsBits[:])
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCUnitToUnit.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "TargetAddress",
+			Type:  "FLCUnitToUnit",
+			Value: s.TargetAddress,
+		}
 	}
 	bit.PutUint(data[8:32], uint64(s.TargetAddress))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCUnitToUnit.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "SourceAddress",
+			Type:  "FLCUnitToUnit",
+			Value: s.SourceAddress,
+		}
 	}
 	bit.PutUint(data[32:56], uint64(s.SourceAddress))
 	return data, nil
@@ -331,20 +361,46 @@ func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.Result) {
 func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
 	var data [56]bit.Bit
 	if uint64(s.Reserved)>>4 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Reserved: value %d does not fit in 4 bits", s.Reserved)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Reserved",
+			Type:  "FLCGPSInfo",
+			Value: s.Reserved,
+		}
 	}
 	bit.PutUint(data[0:4], uint64(s.Reserved))
 	if uint64(s.PositionError)>>3 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.PositionError: value %d does not fit in 3 bits", s.PositionError)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "PositionError",
+			Type:  "FLCGPSInfo",
+			Value: s.PositionError,
+		}
 	}
 	bit.PutUint(data[4:7], uint64(s.PositionError))
 	if !(s.Longitude >= -180.0 && s.Longitude <= 180.0) {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Longitude: %v degrees is outside [-180, 180]", s.Longitude)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:   25,
+			Field:  "Longitude",
+			Max:    180.0,
+			Min:    -180.0,
+			Signed: true,
+			Type:   "FLCGPSInfo",
+			Value:  s.Longitude,
+		}
 	}
 	_rawLongitude := math.Round(s.Longitude * (1 << 25) / 360.0)
 	bit.PutUint(data[7:32], uint64(int64(_rawLongitude)))
 	if !(s.Latitude >= -90.0 && s.Latitude <= 90.0) {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Latitude: %v degrees is outside [-90, 90]", s.Latitude)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:   24,
+			Field:  "Latitude",
+			Max:    90.0,
+			Min:    -90.0,
+			Signed: true,
+			Type:   "FLCGPSInfo",
+			Value:  s.Latitude,
+		}
 	}
 	_rawLatitude := math.Round(s.Latitude * (1 << 24) / 180.0)
 	_rawLatitude = min(_rawLatitude, 8388607)
@@ -371,15 +427,30 @@ func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.Res
 func (s *FLCTalkerAliasHeader) Encode() ([56]bit.Bit, error) {
 	var data [56]bit.Bit
 	if uint64(s.TalkerAliasDataFormat)>>2 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCTalkerAliasHeader.TalkerAliasDataFormat: value %d does not fit in 2 bits", s.TalkerAliasDataFormat)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "TalkerAliasDataFormat",
+			Type:  "FLCTalkerAliasHeader",
+			Value: s.TalkerAliasDataFormat,
+		}
 	}
 	bit.PutUint(data[0:2], uint64(s.TalkerAliasDataFormat))
 	if uint64(s.TalkerAliasDataLength)>>5 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCTalkerAliasHeader.TalkerAliasDataLength: value %d does not fit in 5 bits", s.TalkerAliasDataLength)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  5,
+			Field: "TalkerAliasDataLength",
+			Type:  "FLCTalkerAliasHeader",
+			Value: s.TalkerAliasDataLength,
+		}
 	}
 	bit.PutUint(data[2:7], uint64(s.TalkerAliasDataLength))
 	if uint64(s.TalkerAliasData)>>49 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCTalkerAliasHeader.TalkerAliasData: value %d does not fit in 49 bits", s.TalkerAliasData)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  49,
+			Field: "TalkerAliasData",
+			Type:  "FLCTalkerAliasHeader",
+			Value: s.TalkerAliasData,
+		}
 	}
 	bit.PutUint(data[7:56], s.TalkerAliasData)
 	return data, nil
@@ -429,11 +500,21 @@ func DecodeFLCTerminatorDataLinkControl(data [56]bit.Bit) (FLCTerminatorDataLink
 func (s *FLCTerminatorDataLinkControl) Encode() ([56]bit.Bit, error) {
 	var data [56]bit.Bit
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCTerminatorDataLinkControl.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDDestination",
+			Type:  "FLCTerminatorDataLinkControl",
+			Value: s.LLIDDestination,
+		}
 	}
 	bit.PutUint(data[0:24], uint64(s.LLIDDestination))
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCTerminatorDataLinkControl.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  24,
+			Field: "LLIDSource",
+			Type:  "FLCTerminatorDataLinkControl",
+			Value: s.LLIDSource,
+		}
 	}
 	bit.PutUint(data[24:48], uint64(s.LLIDSource))
 	if s.GroupOrIndividual {
@@ -452,7 +533,12 @@ func (s *FLCTerminatorDataLinkControl) Encode() ([56]bit.Bit, error) {
 		data[52] = 1
 	}
 	if uint64(s.SendSequenceNumber)>>3 != 0 {
-		return [56]bit.Bit{}, fmt.Errorf("FLCTerminatorDataLinkControl.SendSequenceNumber: value %d does not fit in 3 bits", s.SendSequenceNumber)
+		return [56]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  3,
+			Field: "SendSequenceNumber",
+			Type:  "FLCTerminatorDataLinkControl",
+			Value: s.SendSequenceNumber,
+		}
 	}
 	bit.PutUint(data[53:56], uint64(s.SendSequenceNumber))
 	return data, nil

@@ -35,14 +35,24 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.Result)
 func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
 	var data [7]bit.Bit
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
+		return [16]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "ColorCode",
+			Type:  "EmbeddedSignalling",
+			Value: s.ColorCode,
+		}
 	}
 	bit.PutUint(data[0:4], uint64(s.ColorCode))
 	if s.PreemptionAndPowerControlIndicator {
 		data[4] = 1
 	}
 	if uint64(s.LCSS)>>2 != 0 {
-		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.LCSS: value %d does not fit in 2 bits", s.LCSS)
+		return [16]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "LCSS",
+			Type:  "EmbeddedSignalling",
+			Value: s.LCSS,
+		}
 	}
 	bit.PutUint(data[5:7], uint64(s.LCSS))
 	return quadraticresidue.Encode(data), nil

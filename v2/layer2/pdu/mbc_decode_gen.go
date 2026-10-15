@@ -59,11 +59,21 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("MBCHeader.Opcode: value %d does not fit in 6 bits", s.Opcode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "Opcode",
+			Type:  "MBCHeader",
+			Value: s.Opcode,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.Opcode))
 	if uint64(s.FID)>>8 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("MBCHeader.FID: value %d does not fit in 8 bits", s.FID)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  8,
+			Field: "FID",
+			Type:  "MBCHeader",
+			Value: s.FID,
+		}
 	}
 	bit.PutUint(data[8:16], uint64(s.FID))
 	copy(data[16:80], bit.Unpack(s.Data[:]))
@@ -156,23 +166,48 @@ func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Opcode: value %d does not fit in 6 bits", s.Opcode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "Opcode",
+			Type:  "CGAPContinuation",
+			Value: s.Opcode,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.Opcode))
 	if uint64(s.Reserved1)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Reserved1",
+			Type:  "CGAPContinuation",
+			Value: s.Reserved1,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.Reserved1))
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "ColorCode",
+			Type:  "CGAPContinuation",
+			Value: s.ColorCode,
+		}
 	}
 	bit.PutUint(data[12:16], uint64(s.ColorCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Cdeftype",
+			Type:  "CGAPContinuation",
+			Value: s.Cdeftype,
+		}
 	}
 	bit.PutUint(data[16:20], uint64(s.Cdeftype))
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "Reserved2",
+			Type:  "CGAPContinuation",
+			Value: s.Reserved2,
+		}
 	}
 	bit.PutUint(data[20:22], uint64(s.Reserved2))
 	_cdefParmsBits, err := s.CdefParms.Encode()
@@ -243,23 +278,48 @@ func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Opcode: value %d does not fit in 6 bits", s.Opcode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "Opcode",
+			Type:  "MVAPContinuation",
+			Value: s.Opcode,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.Opcode))
 	if uint64(s.Reserved1)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Reserved1",
+			Type:  "MVAPContinuation",
+			Value: s.Reserved1,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.Reserved1))
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "ColorCode",
+			Type:  "MVAPContinuation",
+			Value: s.ColorCode,
+		}
 	}
 	bit.PutUint(data[12:16], uint64(s.ColorCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Cdeftype",
+			Type:  "MVAPContinuation",
+			Value: s.Cdeftype,
+		}
 	}
 	bit.PutUint(data[16:20], uint64(s.Cdeftype))
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "Reserved2",
+			Type:  "MVAPContinuation",
+			Value: s.Reserved2,
+		}
 	}
 	bit.PutUint(data[20:22], uint64(s.Reserved2))
 	_cdefParmsBits, err := s.CdefParms.Encode()
@@ -329,16 +389,31 @@ func (s *BCAPContinuation) Encode() ([96]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.Opcode: value %d does not fit in 6 bits", s.Opcode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "Opcode",
+			Type:  "BCAPContinuation",
+			Value: s.Opcode,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.Opcode))
 	bit.PutUint(data[8:16], uint64(s.Reserved1))
 	if uint64(s.Cdeftype)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Cdeftype",
+			Type:  "BCAPContinuation",
+			Value: s.Cdeftype,
+		}
 	}
 	bit.PutUint(data[16:20], uint64(s.Cdeftype))
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("BCAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "Reserved2",
+			Type:  "BCAPContinuation",
+			Value: s.Reserved2,
+		}
 	}
 	bit.PutUint(data[20:22], uint64(s.Reserved2))
 	_cdefParmsBits, err := s.CdefParms.Encode()
@@ -409,23 +484,48 @@ func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
 		data[1] = 1
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Opcode: value %d does not fit in 6 bits", s.Opcode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  6,
+			Field: "Opcode",
+			Type:  "VNAPContinuation",
+			Value: s.Opcode,
+		}
 	}
 	bit.PutUint(data[2:8], uint64(s.Opcode))
 	if uint64(s.Reserved1)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Reserved1",
+			Type:  "VNAPContinuation",
+			Value: s.Reserved1,
+		}
 	}
 	bit.PutUint(data[8:12], uint64(s.Reserved1))
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "ColorCode",
+			Type:  "VNAPContinuation",
+			Value: s.ColorCode,
+		}
 	}
 	bit.PutUint(data[12:16], uint64(s.ColorCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "Cdeftype",
+			Type:  "VNAPContinuation",
+			Value: s.Cdeftype,
+		}
 	}
 	bit.PutUint(data[16:20], uint64(s.Cdeftype))
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "Reserved2",
+			Type:  "VNAPContinuation",
+			Value: s.Reserved2,
+		}
 	}
 	bit.PutUint(data[20:22], uint64(s.Reserved2))
 	_cdefParmsBits, err := s.CdefParms.Encode()

@@ -40,25 +40,50 @@ func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
 	var data [72]bit.Bit
 	bit.PutUint(data[0:16], uint64(s.IPv4Identification))
 	if uint64(s.SAID)>>4 != 0 {
-		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.SAID: value %d does not fit in 4 bits", s.SAID)
+		return [72]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "SAID",
+			Type:  "UDPIPv4CompressedHeader",
+			Value: s.SAID,
+		}
 	}
 	bit.PutUint(data[16:20], uint64(s.SAID))
 	if uint64(s.DAID)>>4 != 0 {
-		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.DAID: value %d does not fit in 4 bits", s.DAID)
+		return [72]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  4,
+			Field: "DAID",
+			Type:  "UDPIPv4CompressedHeader",
+			Value: s.DAID,
+		}
 	}
 	bit.PutUint(data[20:24], uint64(s.DAID))
 	if uint64(s.HeaderCompressionOpcode)>>2 != 0 {
-		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.HeaderCompressionOpcode: value %d does not fit in 2 bits", s.HeaderCompressionOpcode)
+		return [72]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  2,
+			Field: "HeaderCompressionOpcode",
+			Type:  "UDPIPv4CompressedHeader",
+			Value: s.HeaderCompressionOpcode,
+		}
 	}
 	_valHeaderCompressionOpcode := uint64(s.HeaderCompressionOpcode)
 	bit.PutUint(data[24:25], _valHeaderCompressionOpcode>>1)
 	bit.PutUint(data[32:33], _valHeaderCompressionOpcode)
 	if uint64(s.SPID)>>7 != 0 {
-		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.SPID: value %d does not fit in 7 bits", s.SPID)
+		return [72]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "SPID",
+			Type:  "UDPIPv4CompressedHeader",
+			Value: s.SPID,
+		}
 	}
 	bit.PutUint(data[25:32], uint64(s.SPID))
 	if uint64(s.DPID)>>7 != 0 {
-		return [72]bit.Bit{}, fmt.Errorf("UDPIPv4CompressedHeader.DPID: value %d does not fit in 7 bits", s.DPID)
+		return [72]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  7,
+			Field: "DPID",
+			Type:  "UDPIPv4CompressedHeader",
+			Value: s.DPID,
+		}
 	}
 	bit.PutUint(data[33:40], uint64(s.DPID))
 	bit.PutUint(data[40:56], uint64(s.ExtendedHeader1))
