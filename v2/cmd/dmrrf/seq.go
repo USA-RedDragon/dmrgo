@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
 	"strings"
 
@@ -83,22 +82,18 @@ const srBlocks = 8
 
 func srRetry() []int { return []int{1, 4, 6} }
 
-func putAddr(b []byte, a uint32) {
-	var t [4]byte
-	binary.BigEndian.PutUint32(t[:], a)
-	copy(b, t[1:])
-}
-
 // WakeupBurst returns an MS-sourced BS_Dwn_Act CSBK burst (ETSI TS 102 361-2
 // clause 7.1.2.1, Table 7.5a) that activates a BS outbound.
 func WakeupBurst(cfg SeqConfig) (layer2.RawBurst, error) {
-	var c pdu.CSBKBytes
-	c[0] = 0x80 | 0x38
-	putAddr(c[4:7], cfg.BS)
-	putAddr(c[7:10], cfg.Source)
-	c.Reseal()
-	r, err := layer2.BuildDataBurst([12]byte(c), enums.DataTypeCSBK, cfg.ColorCode, layer2.SyncSourceMS)
-	return r, err
+	c, err := pdu.NewBSOutboundActivation(cfg.BS, cfg.Source)
+	if err != nil {
+		return layer2.RawBurst{}, err
+	}
+	b, err := c.Bytes()
+	if err != nil {
+		return layer2.RawBurst{}, err
+	}
+	return layer2.BuildDataBurst(b, enums.DataTypeCSBK, cfg.ColorCode, layer2.SyncSourceMS)
 }
 
 func rateOf(name string) (enums.DataType, bool, error) {
@@ -331,12 +326,8 @@ const (
 // 361-4 clause 7.1.1.1.1): an MBC header whose physical channel is 0xFFF and
 // a CG_AP continuation with the channel frequencies.
 func mbcBursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
-	g := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}
-	gb, err := g.Encode()
-	if err != nil {
-		return nil, nil, err
-	}
-	h := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, Data: [8]byte(bit.Pack(gb[:]))}
+	h := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
+		PhysicalChannel: 0xFFF, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}}
 	hb, err := h.Encode()
 	if err != nil {
 		return nil, nil, err
