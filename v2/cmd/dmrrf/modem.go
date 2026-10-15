@@ -22,8 +22,8 @@ const (
 )
 
 // rrcTaps returns a root-raised-cosine filter with alpha 0.2 (ETSI TS 102 361-1
-// clause 10.2.2.2), scaled so that two filters in cascade have unit gain at the
-// symbol instant.
+// clause 10.2.2.2) with unity DC gain, so a steady frequency passes unchanged
+// and a receiver measures the true deviation.
 func rrcTaps() []float64 {
 	n := 2*rrcSpan*samplesPerSy + 1
 	h := make([]float64, n)
@@ -41,11 +41,10 @@ func rrcTaps() []float64 {
 	}
 	var c float64
 	for i := range h {
-		c += h[i] * h[i]
+		c += h[i]
 	}
-	s := 1 / math.Sqrt(c)
 	for i := range h {
-		h[i] *= s
+		h[i] /= c
 	}
 	return h
 }
@@ -146,7 +145,7 @@ func Modulate(bursts [][33]byte, sched Schedule) (freq, env []float64) {
 		syms := symbolsFromBurst(b)
 		for k, s := range syms {
 			idx := int(math.Round((t0 + float64(k)/symbolRate) * basebandRate))
-			impulses[idx] = float64(s) * deviationHz
+			impulses[idx] = float64(s) * deviationHz * samplesPerSy
 		}
 		on := int(math.Round((t0 - ramp) * basebandRate))
 		off := int(math.Round((t0 + burstSeconds + ramp) * basebandRate))
@@ -436,13 +435,9 @@ func Demodulate(x []complex128, rate float64) Demodulated {
 			}
 		}
 	}
-	var dcGain float64
-	for _, v := range rrcTaps() {
-		dcGain += v
-	}
 	res.OffsetHz = coarse
 	if nr > 0 {
-		res.OffsetHz += resid / float64(nr) / dcGain
+		res.OffsetHz += resid / float64(nr)
 	}
 	if no > 0 {
 		res.DeviationHz = outer / float64(no)
