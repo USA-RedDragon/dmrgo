@@ -27,6 +27,11 @@ type UnconfirmedDataHeader struct {
 // dmr:crc_mask 0xCCCC
 // dmr:input_size 96
 // ETSI TS 102 361-1 - 9.1.8 Data Header PDU
+//
+// EncodeDataHeader returns an error if more than one header field is set, or
+// if Format and the encoded Appended Blocks do not select the header field
+// that is set. An R_HEAD needs a non-zero AppendedBlocks; with zero appended
+// blocks, use StatusPrecodedHeader.
 type DataHeader struct {
 	DataType       elements.DataType `dmr:"-"`
 	crc            uint16            `dmr:"-"` //nolint:unused

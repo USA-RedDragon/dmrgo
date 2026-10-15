@@ -104,6 +104,26 @@ func DecodeFullLinkControl(data [96]bit.Bit, dataType layer2Elements.DataType) (
 // EncodeFullLinkControl encodes a FullLinkControl per ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
 func EncodeFullLinkControl(s *FullLinkControl) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
+	_payload := ""
+	for _, _p := range [...]struct {
+		name string
+		set  bool
+	}{
+		{"GroupVoice", s.GroupVoice != nil},
+		{"UnitToUnit", s.UnitToUnit != nil},
+		{"GPSInfo", s.GPSInfo != nil},
+		{"TalkerAliasHeader", s.TalkerAliasHeader != nil},
+		{"TalkerAliasBlock", s.TalkerAliasBlock != nil},
+		{"TerminatorDataLinkControl", s.TerminatorDataLinkControl != nil},
+	} {
+		if !_p.set {
+			continue
+		}
+		if _payload != "" {
+			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, _p.name)
+		}
+		_payload = _p.name
+	}
 	switch {
 	case s.GroupVoice != nil:
 		_pduBits, err := EncodeFLCGroupVoice(s.GroupVoice)
@@ -158,6 +178,37 @@ func EncodeFullLinkControl(s *FullLinkControl) ([96]bit.Bit, error) {
 		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.FeatureSetID: value %d does not fit in 8 bits", s.FeatureSetID)
 	}
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.FeatureSetID), 8))
+	if _payload != "" {
+		var result FullLinkControl
+		{
+			_enumVal, _ := enums.FLCOFromInt(bit.BitsToInt(data[:], 2, 6))
+			result.FLCO = _enumVal
+		}
+		{
+			_enumVal, _ := enums.FeatureSetIDFromInt(bit.BitsToInt(data[:], 8, 8))
+			result.FeatureSetID = _enumVal
+		}
+		_want := "RawPayload"
+		if result.FeatureSetID == 0 {
+			switch result.FLCO {
+			case enums.FLCOGroupVoiceChannelUser:
+				_want = "GroupVoice"
+			case enums.FLCOUnitToUnitVoiceChannelUser:
+				_want = "UnitToUnit"
+			case enums.FLCOGPSInfo:
+				_want = "GPSInfo"
+			case enums.FLCOTalkerAliasHeader:
+				_want = "TalkerAliasHeader"
+			case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
+				_want = "TalkerAliasBlock"
+			case enums.FLCOTerminatorDataLinkControl:
+				_want = "TerminatorDataLinkControl"
+			}
+		}
+		if _payload != _want {
+			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.%s is set, but FLCO and FeatureSetID select %s", _payload, _want)
+		}
+	}
 	var _encData [9]byte
 	for i := range 9 {
 		for j := range 8 {

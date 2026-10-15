@@ -490,7 +490,6 @@ func emitPackedFECDecode(g *Group, codec *FECCodecInfo, inputSize int) {
 // When multiple fields share the same dispatch value, a secondary guard condition
 // (parsed from the `when:` modifier) is used to disambiguate them via if/else.
 func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) error {
-	dispatchFieldName := fields[0].DispatchFieldName
 	bitStart := fields[0].BitStart
 	bitEnd := fields[0].BitEnd
 	arraySize := bitEnd - bitStart + 1
@@ -499,6 +498,24 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 	g.Var().Id(tmpVar).Index(Lit(arraySize)).Qual(bitPkg, "Bit")
 	g.Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Lit(bitStart), Lit(bitEnd+1)))
 
+	var raw []Code
+	if fb := fallbackField(pdu); fb != nil {
+		raw = []Code{Copy(Id("result").Dot(fb.Name).Index(Empty(), Empty()), Id(tmpVar).Index(Empty(), Empty()))}
+	}
+	stmt, err := dispatchSelect(fields, pdu, func(field parse.Field) []Code {
+		return dispatchDecodeBlock(field, tmpVar)
+	}, raw)
+	if err != nil {
+		return err
+	}
+	g.Add(stmt)
+	return nil
+}
+
+// dispatchSelect builds the statement that selects a dispatch field from the
+// decoded fields of result. It emits pick for the selected field and raw
+// (if not nil) when no field is selected.
+func dispatchSelect(fields []parse.Field, pdu parse.PDUStruct, pick func(parse.Field) []Code, raw []Code) (*Statement, error) {
 	// Group fields by their dispatch values to detect shared-value cases.
 	type dispatchGroup struct {
 		values []string
@@ -516,13 +533,8 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 		}
 	}
 
-	var raw []Code
-	if fb := fallbackField(pdu); fb != nil {
-		raw = []Code{Copy(Id("result").Dot(fb.Name).Index(Empty(), Empty()), Id(tmpVar).Index(Empty(), Empty()))}
-	}
-
 	var genErr error
-	sw := Switch(Id("result").Dot(dispatchFieldName)).BlockFunc(func(sw *Group) {
+	sw := Switch(Id("result").Dot(fields[0].DispatchFieldName)).BlockFunc(func(sw *Group) {
 		for _, grp := range groups {
 			caseValues := make([]Code, len(grp.values))
 			for i, val := range grp.values {
@@ -530,11 +542,11 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 			}
 
 			if len(grp.fields) == 1 && grp.fields[0].When == nil {
-				sw.Case(caseValues...).Block(dispatchDecodeBlock(grp.fields[0], tmpVar)...)
+				sw.Case(caseValues...).Block(pick(grp.fields[0])...)
 				continue
 			}
 			sw.Case(caseValues...).BlockFunc(func(caseBody *Group) {
-				if err := emitGuardedDispatch(caseBody, grp.fields, tmpVar, raw); err != nil && genErr == nil {
+				if err := emitGuardedDispatch(caseBody, grp.fields, pick, raw); err != nil && genErr == nil {
 					genErr = err
 				}
 			})
@@ -544,23 +556,21 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 		}
 	})
 	if genErr != nil {
-		return genErr
+		return nil, genErr
 	}
 
 	if pdu.DispatchIf == nil {
-		g.Add(sw)
-		return nil
+		return sw, nil
 	}
 	cond, err := emitGuardCondition(pdu.DispatchIf)
 	if err != nil {
-		return fmt.Errorf("dmr:dispatch_if: %w", err)
+		return nil, fmt.Errorf("dmr:dispatch_if: %w", err)
 	}
 	stmt := If(cond).Block(sw)
 	if raw != nil {
 		stmt.Else().Block(raw...)
 	}
-	g.Add(stmt)
-	return nil
+	return stmt, nil
 }
 
 // fallbackField returns the raw field that holds undispatched payloads, or nil.
@@ -590,8 +600,8 @@ func dispatchTypeName(field parse.Field) string {
 // emitGuardedDispatch emits an if/else chain for dispatch fields that share the
 // same primary dispatch value. Fields with a `when:` guard are emitted as `if`
 // conditions; the unguarded field (if any) becomes the final `else` branch,
-// otherwise raw (the fallback copy, if any) does.
-func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string, raw []Code) error {
+// otherwise raw (if not nil) does.
+func emitGuardedDispatch(g *Group, fields []parse.Field, pick func(parse.Field) []Code, raw []Code) error {
 	var guarded []parse.Field
 	var fallback *parse.Field
 	for i := range fields {
@@ -615,14 +625,14 @@ func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string, raw []Co
 			return fmt.Errorf("field %s: %w", field.Name, err)
 		}
 		if i == 0 {
-			chain = If(guardCond).Block(dispatchDecodeBlock(field, tmpVar)...)
+			chain = If(guardCond).Block(pick(field)...)
 		} else {
-			chain.Else().If(guardCond).Block(dispatchDecodeBlock(field, tmpVar)...)
+			chain.Else().If(guardCond).Block(pick(field)...)
 		}
 	}
 	switch {
 	case fallback != nil:
-		chain.Else().Block(dispatchDecodeBlock(*fallback, tmpVar)...)
+		chain.Else().Block(pick(*fallback)...)
 	case raw != nil:
 		chain.Else().Block(raw...)
 	}
@@ -1111,14 +1121,20 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 		case hasBitFEC:
 			// Bit-level FEC (Golay, QR): build data bits, then FEC-encode
 			g.Var().Id("data").Index(Lit(codec.DataBits)).Qual(bitPkg, "Bit")
-			enc.fields(g)
+			if err := enc.fields(g); err != nil {
+				genErr = err
+				return
+			}
 			g.Return(Qual(codec.ImportPath, codec.EncodeFn).Call(
 				Qual(bitPkg, "BitsToValue").Call(Id("data").Index(Empty(), Empty())),
 			), Nil())
 		case hasCRC || hasPackedFEC:
 			// CRC or packed FEC: build data bits, then pack+CRC/RS-encode
 			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
-			enc.fields(g)
+			if err := enc.fields(g); err != nil {
+				genErr = err
+				return
+			}
 			if hasCRC {
 				emitCRCEncode(g, pdu, outputSize)
 			}
@@ -1131,7 +1147,10 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 			g.Return(Id("data"), Nil())
 		default:
 			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
-			enc.fields(g)
+			if err := enc.fields(g); err != nil {
+				genErr = err
+				return
+			}
 			g.Return(Id("data"), Nil())
 		}
 	})
@@ -1160,7 +1179,7 @@ func (e encoder) failf(field parse.Field, format string, args ...Code) *Statemen
 // Dispatch fields are encoded FIRST so their wide copy (e.g. data[0:80])
 // doesn't overwrite the outer struct's non-dispatch fields (e.g. Format,
 // AppendedBlocks) that may share the same bit range.
-func (e encoder) fields(g *Group) {
+func (e encoder) fields(g *Group) error {
 	var regularFields []parse.Field
 	var dispatchFields []parse.Field
 	for _, field := range e.pdu.Fields {
@@ -1177,6 +1196,7 @@ func (e encoder) fields(g *Group) {
 	}
 	// Dispatch first — sub-PDU copies the full payload range.
 	if len(dispatchFields) > 0 {
+		e.payload(g, dispatchFields)
 		e.dispatch(g, dispatchFields)
 	}
 	// Then non-dispatch fields overwrite their specific bit positions.
@@ -1189,6 +1209,102 @@ func (e encoder) fields(g *Group) {
 	for i, c := range e.pdu.Consts {
 		e.constant(g, c, i)
 	}
+	if len(dispatchFields) > 0 {
+		return e.checkPayload(g, dispatchFields)
+	}
+	return nil
+}
+
+// payload sets _payload to the name of the one dispatch field that is set,
+// or "" if none is, and fails if more than one is set.
+func (e encoder) payload(g *Group, fields []parse.Field) {
+	g.Id("_payload").Op(":=").Lit("")
+	g.For(List(Id("_"), Id("_p")).Op(":=").Range().Index(Op("...")).Struct(
+		Id("name").String(),
+		Id("set").Bool(),
+	).ValuesFunc(func(vals *Group) {
+		for _, field := range fields {
+			vals.Line().Values(Lit(field.Name), Id("s").Dot(field.Name).Op("!=").Nil())
+		}
+		vals.Line()
+	})).Block(
+		If(Op("!").Id("_p").Dot("set")).Block(Continue()),
+		If(Id("_payload").Op("!=").Lit("")).Block(
+			e.fail(Qual("fmt", "Errorf").Call(Lit(e.pdu.Name+": %s and %s are both set"), Id("_payload"), Id("_p").Dot("name"))),
+		),
+		Id("_payload").Op("=").Id("_p").Dot("name"),
+	)
+}
+
+// checkPayload fails if the encoded bits would decode into a different
+// dispatch field than the one set. It decodes the fields that select the
+// dispatch field from the encoded bits and repeats the decode selection.
+func (e encoder) checkPayload(g *Group, fields []parse.Field) error {
+	selectors := dispatchSelectors(e.pdu, fields)
+	none := "no payload"
+	if fb := fallbackField(e.pdu); fb != nil {
+		none = fb.Name
+	}
+	verb := " select "
+	if len(selectors) == 1 {
+		verb = " selects "
+	}
+	sel, err := dispatchSelect(fields, e.pdu, func(field parse.Field) []Code {
+		return []Code{Id("_want").Op("=").Lit(field.Name)}
+	}, nil)
+	if err != nil {
+		return err
+	}
+	g.If(Id("_payload").Op("!=").Lit("")).BlockFunc(func(b *Group) {
+		b.Var().Id("result").Id(e.pdu.Name)
+		for _, name := range selectors {
+			if e.pdu.IsInput(name) {
+				b.Id("result").Dot(name).Op("=").Id("s").Dot(name)
+				continue
+			}
+			emitFieldDecode(b, *e.pdu.FieldByName(name), e.pdu)
+		}
+		b.Id("_want").Op(":=").Lit(none)
+		b.Add(sel)
+		b.If(Id("_payload").Op("!=").Id("_want")).Block(
+			e.fail(Qual("fmt", "Errorf").Call(
+				Lit(e.pdu.Name+".%s is set, but "+joinNames(selectors)+verb+"%s"),
+				Id("_payload"), Id("_want"),
+			)),
+		)
+	})
+	return nil
+}
+
+// dispatchSelectors returns the fields that the decode selection of a
+// dispatch field reads, in order of first use.
+func dispatchSelectors(pdu parse.PDUStruct, fields []parse.Field) []string {
+	var names []string
+	add := func(name string) {
+		for _, n := range names {
+			if n == name {
+				return
+			}
+		}
+		names = append(names, name)
+	}
+	add(fields[0].DispatchFieldName)
+	if pdu.DispatchIf != nil {
+		add(pdu.DispatchIf.Field)
+	}
+	for _, f := range fields {
+		if f.When != nil {
+			add(f.When.Field)
+		}
+	}
+	return names
+}
+
+func joinNames(names []string) string {
+	if len(names) == 1 {
+		return names[0]
+	}
+	return strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
 }
 
 // dispatch generates a switch that encodes the active dispatch field.

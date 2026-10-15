@@ -177,6 +177,24 @@ func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.FECResult) {
 // EncodeShortLC encodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
 func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
 	var data [36]bit.Bit
+	_payload := ""
+	for _, _p := range [...]struct {
+		name string
+		set  bool
+	}{
+		{"NullMessage", s.NullMessage != nil},
+		{"ActivityUpdate", s.ActivityUpdate != nil},
+		{"CSysParms", s.CSysParms != nil},
+		{"PSysParms", s.PSysParms != nil},
+	} {
+		if !_p.set {
+			continue
+		}
+		if _payload != "" {
+			return [36]bit.Bit{}, fmt.Errorf("ShortLC: %s and %s are both set", _payload, _p.name)
+		}
+		_payload = _p.name
+	}
 	switch {
 	case s.NullMessage != nil:
 		_pduBits, err := EncodeShortLCNullMessage(s.NullMessage)
@@ -209,6 +227,24 @@ func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
 		return [36]bit.Bit{}, fmt.Errorf("ShortLC.SLCO: value %d does not fit in 4 bits", s.SLCO)
 	}
 	copy(data[0:4], bit.BitsFromUint8(uint8(s.SLCO), 4))
+	if _payload != "" {
+		var result ShortLC
+		result.SLCO = enums.SLCOFromInt(bit.BitsToInt(data[:], 0, 4))
+		_want := "RawPayload"
+		switch result.SLCO {
+		case enums.SLCONullMessage:
+			_want = "NullMessage"
+		case enums.SLCOActivityUpdate:
+			_want = "ActivityUpdate"
+		case enums.SLCOCSysParms:
+			_want = "CSysParms"
+		case enums.SLCOPSysParms:
+			_want = "PSysParms"
+		}
+		if _payload != _want {
+			return [36]bit.Bit{}, fmt.Errorf("ShortLC.%s is set, but SLCO selects %s", _payload, _want)
+		}
+	}
 	_crcVal := crc.CalculateCRC8(data[:28])
 	for j := range 8 {
 		data[28+j] = bit.Bit((_crcVal >> (7 - j)) & 1)

@@ -86,6 +86,9 @@ func (s *ShortLCPSysParms) SiteID() uint16 {
 // dmr:crc crc_8
 // dmr:input_size 36
 // ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
+//
+// EncodeShortLC returns an error if more than one payload field is set, or
+// if SLCO does not select the payload field that is set.
 type ShortLC struct {
 	DataType elements.DataType `dmr:"-"`
 

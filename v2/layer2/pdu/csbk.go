@@ -427,6 +427,10 @@ func (csbk *CSBK) SetTrunkingMode(mode bool) {
 // The FID redefines the CSBKO (ETSI TS 102 361-1 Table 9.21), so the standard
 // payload layouts apply only to the SFID. Payloads of other FIDs and of
 // opcodes without a layout are kept in RawPayload.
+//
+// EncodeCSBK returns an error if more than one payload field is set, or if
+// CSBKOpcode, FID and TrunkingMode do not select the payload field that is
+// set. Put the payload of a manufacturer FID in RawPayload.
 type CSBK struct {
 	DataType elements.DataType `dmr:"-"`
 

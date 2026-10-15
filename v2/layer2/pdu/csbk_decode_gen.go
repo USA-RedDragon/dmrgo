@@ -1256,6 +1256,48 @@ func DecodeCSBK(data [96]bit.Bit, trunkingMode bool) (CSBK, fec.FECResult) {
 // EncodeCSBK encodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU
 func EncodeCSBK(s *CSBK) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
+	_payload := ""
+	for _, _p := range [...]struct {
+		name string
+		set  bool
+	}{
+		{"BSOutboundActivationPDU", s.BSOutboundActivationPDU != nil},
+		{"UnitToUnitVoiceServiceRequestPDU", s.UnitToUnitVoiceServiceRequestPDU != nil},
+		{"UnitToUnitVoiceServiceAnswerResponsePDU", s.UnitToUnitVoiceServiceAnswerResponsePDU != nil},
+		{"NegativeAcknowledgementPDU", s.NegativeAcknowledgementPDU != nil},
+		{"PreamblePDU", s.PreamblePDU != nil},
+		{"ChannelTimingPDU", s.ChannelTimingPDU != nil},
+		{"PrivateVoiceGrantPDU", s.PrivateVoiceGrantPDU != nil},
+		{"TalkgroupVoiceGrantPDU", s.TalkgroupVoiceGrantPDU != nil},
+		{"BroadcastTalkgroupVoiceGrantPDU", s.BroadcastTalkgroupVoiceGrantPDU != nil},
+		{"PrivateDataGrantPDU", s.PrivateDataGrantPDU != nil},
+		{"TalkgroupDataGrantPDU", s.TalkgroupDataGrantPDU != nil},
+		{"DuplexPrivateVoiceGrantPDU", s.DuplexPrivateVoiceGrantPDU != nil},
+		{"DuplexPrivateDataGrantPDU", s.DuplexPrivateDataGrantPDU != nil},
+		{"PrivateDataGrantMultiItemPDU", s.PrivateDataGrantMultiItemPDU != nil},
+		{"TalkgroupDataGrantMultiItemPDU", s.TalkgroupDataGrantMultiItemPDU != nil},
+		{"MovePDU", s.MovePDU != nil},
+		{"AlohaPDU", s.AlohaPDU != nil},
+		{"CBroadcastPDU", s.CBroadcastPDU != nil},
+		{"ClearPDU", s.ClearPDU != nil},
+		{"ProtectPDU", s.ProtectPDU != nil},
+		{"AhoyPDU", s.AhoyPDU != nil},
+		{"AckOutboundPDU", s.AckOutboundPDU != nil},
+		{"AckInboundPDU", s.AckInboundPDU != nil},
+		{"AckOutboundPayloadPDU", s.AckOutboundPayloadPDU != nil},
+		{"AckInboundPayloadPDU", s.AckInboundPayloadPDU != nil},
+		{"RandomAccessPDU", s.RandomAccessPDU != nil},
+		{"AckvitationPDU", s.AckvitationPDU != nil},
+		{"MaintenancePDU", s.MaintenancePDU != nil},
+	} {
+		if !_p.set {
+			continue
+		}
+		if _payload != "" {
+			return [96]bit.Bit{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, _p.name)
+		}
+		_payload = _p.name
+	}
 	switch {
 	case s.BSOutboundActivationPDU != nil:
 		_pduBits, err := EncodeBSOutboundActivationPDU(s.BSOutboundActivationPDU)
@@ -1439,6 +1481,78 @@ func EncodeCSBK(s *CSBK) ([96]bit.Bit, error) {
 	}
 	copy(data[2:8], bit.BitsFromUint8(uint8(s.CSBKOpcode), 6))
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.FID), 8))
+	if _payload != "" {
+		var result CSBK
+		result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
+		result.FID = bit.BitsToUint8(data[:], 8, 8)
+		result.TrunkingMode = s.TrunkingMode
+		_want := "RawPayload"
+		if result.FID == 0 {
+			switch result.CSBKOpcode {
+			case CSBKBSOutboundActivationPDU:
+				if !result.TrunkingMode {
+					_want = "BSOutboundActivationPDU"
+				} else if result.TrunkingMode {
+					_want = "TalkgroupDataGrantMultiItemPDU"
+				}
+			case CSBKUnitToUnitVoiceServiceRequestPDU:
+				_want = "UnitToUnitVoiceServiceRequestPDU"
+			case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
+				_want = "UnitToUnitVoiceServiceAnswerResponsePDU"
+			case CSBKNegativeAcknowledgementPDU:
+				_want = "NegativeAcknowledgementPDU"
+			case CSBKPreamblePDU:
+				_want = "PreamblePDU"
+			case CSBKChannelTimingPDU:
+				_want = "ChannelTimingPDU"
+			case CSBKPrivateVoiceGrant:
+				_want = "PrivateVoiceGrantPDU"
+			case CSBKTalkgroupVoiceGrant:
+				_want = "TalkgroupVoiceGrantPDU"
+			case CSBKBroadcastTalkgroupVoiceGrant:
+				_want = "BroadcastTalkgroupVoiceGrantPDU"
+			case CSBKPrivateDataGrant:
+				_want = "PrivateDataGrantPDU"
+			case CSBKTalkgroupDataGrant:
+				_want = "TalkgroupDataGrantPDU"
+			case CSBKDuplexPrivateVoiceGrant:
+				_want = "DuplexPrivateVoiceGrantPDU"
+			case CSBKDuplexPrivateDataGrant:
+				_want = "DuplexPrivateDataGrantPDU"
+			case CSBKPrivateDataGrantMultiItem:
+				_want = "PrivateDataGrantMultiItemPDU"
+			case CSBKMove:
+				_want = "MovePDU"
+			case CSBKAloha:
+				_want = "AlohaPDU"
+			case CSBKBroadcast:
+				_want = "CBroadcastPDU"
+			case CSBKClear:
+				_want = "ClearPDU"
+			case CSBKProtect:
+				_want = "ProtectPDU"
+			case CSBKAhoy:
+				_want = "AhoyPDU"
+			case CSBKAckOutbound:
+				_want = "AckOutboundPDU"
+			case CSBKAckInbound:
+				_want = "AckInboundPDU"
+			case CSBKAckOutboundPayload:
+				_want = "AckOutboundPayloadPDU"
+			case CSBKAckInboundPayload:
+				_want = "AckInboundPayloadPDU"
+			case CSBKRandomAccess:
+				_want = "RandomAccessPDU"
+			case CSBKAckvitation:
+				_want = "AckvitationPDU"
+			case CSBKMaintenance:
+				_want = "MaintenancePDU"
+			}
+		}
+		if _payload != _want {
+			return [96]bit.Bit{}, fmt.Errorf("CSBK.%s is set, but CSBKOpcode, FID and TrunkingMode select %s", _payload, _want)
+		}
+	}
 	var _encBytes [10]byte
 	for i := range 10 {
 		for j := range 8 {

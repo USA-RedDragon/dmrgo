@@ -153,6 +153,28 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.FECResult) {
 // EncodeDataHeader encodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
 func EncodeDataHeader(s *DataHeader) ([96]bit.Bit, error) {
 	var data [96]bit.Bit
+	_payload := ""
+	for _, _p := range [...]struct {
+		name string
+		set  bool
+	}{
+		{"UnconfirmedDataHeader", s.UnconfirmedDataHeader != nil},
+		{"ConfirmedDataHeader", s.ConfirmedDataHeader != nil},
+		{"ResponsePacketHeader", s.ResponsePacketHeader != nil},
+		{"DefinedDataHeader", s.DefinedDataHeader != nil},
+		{"StatusPrecodedHeader", s.StatusPrecodedHeader != nil},
+		{"RawDataHeader", s.RawDataHeader != nil},
+		{"UDTHeader", s.UDTHeader != nil},
+		{"ProprietaryHeader", s.ProprietaryHeader != nil},
+	} {
+		if !_p.set {
+			continue
+		}
+		if _payload != "" {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, _p.name)
+		}
+		_payload = _p.name
+	}
 	switch {
 	case s.UnconfirmedDataHeader != nil:
 		_pduBits, err := EncodeUnconfirmedDataHeader(s.UnconfirmedDataHeader)
@@ -209,6 +231,39 @@ func EncodeDataHeader(s *DataHeader) ([96]bit.Bit, error) {
 		return [96]bit.Bit{}, fmt.Errorf("DataHeader.Format: value %d does not fit in 4 bits", s.Format)
 	}
 	copy(data[4:8], bit.BitsFromUint8(uint8(s.Format), 4))
+	if _payload != "" {
+		var result DataHeader
+		result.Format = Format(bit.BitsToUint8(data[:], 4, 4))
+		var _tmpAppendedBlocks uint8
+		_tmpAppendedBlocks = bit.BitsToUint8(data[:], 2, 2)
+		_tmpAppendedBlocks <<= 4
+		_tmpAppendedBlocks |= bit.BitsToUint8(data[:], 12, 4)
+		result.AppendedBlocks = _tmpAppendedBlocks
+		_want := "RawPayload"
+		switch result.Format {
+		case FormatUnconfirmed:
+			_want = "UnconfirmedDataHeader"
+		case FormatConfirmed:
+			_want = "ConfirmedDataHeader"
+		case FormatResponsePacket:
+			_want = "ResponsePacketHeader"
+		case FormatShortDataDefined:
+			_want = "DefinedDataHeader"
+		case FormatShortDataRawOrStatusPrecoded:
+			if result.AppendedBlocks == 0 {
+				_want = "StatusPrecodedHeader"
+			} else {
+				_want = "RawDataHeader"
+			}
+		case FormatUnifiedDataTransport:
+			_want = "UDTHeader"
+		case FormatProprietary:
+			_want = "ProprietaryHeader"
+		}
+		if _payload != _want {
+			return [96]bit.Bit{}, fmt.Errorf("DataHeader.%s is set, but Format and AppendedBlocks select %s", _payload, _want)
+		}
+	}
 	var _encBytes [10]byte
 	for i := range 10 {
 		for j := range 8 {

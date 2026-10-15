@@ -19,11 +19,15 @@ const (
 
 func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
 	t.Helper()
+	payload, err := pdu.EncodeFLCGroupVoice(&pdu.FLCGroupVoice{GroupAddress: burstTestGroup, SourceAddress: burstTestSource})
+	if err != nil {
+		t.Fatal(err)
+	}
 	lc := pdu.FullLinkControl{
 		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.FeatureSetID(c.FID()),
-		GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: burstTestGroup, SourceAddress: burstTestSource},
+		RawPayload:   payload,
 	}
 	tx, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, c.Silence())
 	if err != nil {

@@ -16,7 +16,10 @@ import (
 //
 // The FID redefines the FLCO (ETSI TS 102 361-1 Table 9.21), so the standard
 // payload layouts apply only to the SFID. Payloads of other FIDs and of
-// unknown FLCOs are kept in RawPayload.
+// unknown FLCOs are kept in RawPayload. EncodeFullLinkControl returns an
+// error if more than one payload field is set, or if FLCO and FeatureSetID
+// do not select the payload field that is set. Put the payload of a
+// manufacturer FID in RawPayload.
 //
 // DataType selects the Data Type CRC Mask XORed into the RS(12,9) parity
 // (ETSI TS 102 361-1 B.3.12, Table B.21). Pass the burst's data type to

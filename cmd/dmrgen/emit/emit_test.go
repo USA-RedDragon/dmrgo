@@ -214,6 +214,32 @@ type T struct {
 	}
 }
 
+func TestEncodeChecksDispatchField(t *testing.T) {
+	out := mustGenerate(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:input Mode
+// dmr:dispatch_if FID==0
+type T struct {
+	Mode bool       `+"`dmr:\"-\"`"+`
+	Op   uint8      `+"`dmr:\"bits:0-7\"`"+`
+	FID  uint8      `+"`dmr:\"bits:8-15\"`"+`
+	A    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=1,when:Mode==true\"`"+`
+	B    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=2\"`"+`
+	Raw  [8]bit.Bit `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
+}`)
+	assertContains(t, out,
+		`{"A", s.A != nil}`,
+		`{"B", s.B != nil}`,
+		`return [24]bit.Bit{}, fmt.Errorf("T: %s and %s are both set", _payload, _p.name)`,
+		"\tif _payload != \"\" {\n\t\tvar result T\n\t\tresult.Op = bit.BitsToUint8(data[:], 0, 8)\n\t\tresult.FID = bit.BitsToUint8(data[:], 8, 8)\n\t\tresult.Mode = s.Mode\n\t\t_want := \"Raw\"",
+		"\t\t\t\tif result.Mode {\n\t\t\t\t\t_want = \"A\"\n\t\t\t\t}",
+		"\t\t\tcase 2:\n\t\t\t\t_want = \"B\"",
+		`return [24]bit.Bit{}, fmt.Errorf("T.%s is set, but Op, FID and Mode select %s", _payload, _want)`,
+	)
+}
+
 func TestGuardedDispatchFallsBackToRaw(t *testing.T) {
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`

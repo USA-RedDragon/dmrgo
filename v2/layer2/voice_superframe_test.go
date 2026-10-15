@@ -29,12 +29,17 @@ func silenceSlot() [72]bit.Bit {
 	return slot
 }
 
+// groupLC returns a Grp_V_Ch_Usr LC. A manufacturer FID gets the same
+// payload bits in RawPayload, since only the SFID dispatches to GroupVoice.
 func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
-	return pdu.FullLinkControl{
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: fid,
-		GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868},
+	gv := &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868}
+	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FeatureSetID: fid}
+	if fid == enums.StandardizedFID {
+		lc.GroupVoice = gv
+	} else {
+		lc.RawPayload = must(pdu.EncodeFLCGroupVoice(gv))
 	}
+	return lc
 }
 
 // lcBits returns the 96 on-air bits of lc as a burst of dataType carries
