@@ -8,7 +8,8 @@ import (
 // per ETSI TS 102 361-1 Table B.21.
 const crc9MaskRate34 uint16 = 0x1FF
 
-// ETSI TS 102 361-1 - 9.2.2 Rate 3/4 coded packet Data (R_3_4_DATA) PDU
+// Rate34Data is a rate 3/4 coded packet data block (R_3_4_DATA) (ETSI TS 102
+// 361-1 clause 9.2.2).
 //
 // Data holds all 144 bits. Unconfirmed data (Table 9.11A) uses all of them
 // as user data. Confirmed data (Table 9.11) carries a 7-bit DBSN, a 9-bit

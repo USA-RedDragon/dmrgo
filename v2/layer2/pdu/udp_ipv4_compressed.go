@@ -2,7 +2,8 @@ package pdu
 
 import "github.com/USA-RedDragon/dmrgo/v2/enums"
 
-// ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header
+// UDPIPv4CompressedHeader is the compressed UDP/IPv4 header (ETSI TS 102 361-3
+// Table 7.14).
 // This structure lives in the first data continuation block when
 // the Data Header SAP = UDPIPHeaderCompression (0b0011).
 //

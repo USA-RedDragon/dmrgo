@@ -6,7 +6,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
+// FullLinkControl is the Full Link Control (Full LC) PDU (ETSI TS 102 361-1
+// clause 9.1.6).
 //
 // The FID redefines the FLCO (ETSI TS 102 361-1 Table 9.21), so the standard
 // payload layouts apply only to the SFID. Payloads of other FIDs and of
@@ -145,21 +146,24 @@ func (s *FullLinkControl) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
 // FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])
 // decoded per-FLCO type. Each struct uses 0-based bit offsets within the 56-bit window.
 
-// ETSI TS 102 361-2 - Table 7.1: Grp_V_Ch_Usr PDU content
+// FLCGroupVoice is the group voice channel user (Grp_V_Ch_Usr) Full LC payload
+// (ETSI TS 102 361-2 Table 7.1).
 type FLCGroupVoice struct {
 	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
 	GroupAddress   uint32                `dmr:"bits:8-31"`
 	SourceAddress  uint32                `dmr:"bits:32-55"`
 }
 
-// ETSI TS 102 361-2 - Table 7.2: UU_V_Ch_Usr PDU content
+// FLCUnitToUnit is the unit to unit voice channel user (UU_V_Ch_Usr) Full LC
+// payload (ETSI TS 102 361-2 Table 7.2).
 type FLCUnitToUnit struct {
 	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
 	TargetAddress  uint32                `dmr:"bits:8-31"`
 	SourceAddress  uint32                `dmr:"bits:32-55"`
 }
 
-// ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
+// FLCGPSInfo is the GPS information (GPS_Info) Full LC payload (ETSI TS 102
+// 361-2 Table 7.3).
 type FLCGPSInfo struct {
 	Reserved      uint8                `dmr:"bits:0-3"`
 	PositionError layer3.PositionError `dmr:"bits:4-6,delegate,noptr"`
@@ -167,7 +171,8 @@ type FLCGPSInfo struct {
 	Latitude      float64              `dmr:"bits:32-55,type:latitude"`
 }
 
-// ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
+// FLCTalkerAliasHeader is the talker alias header information
+// (Talker_Alias_HDR) Full LC payload (ETSI TS 102 361-2 Table 7.4).
 type FLCTalkerAliasHeader struct {
 	TalkerAliasDataFormat layer3.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"`
 	TalkerAliasDataLength int                          `dmr:"bits:2-6"`
@@ -177,12 +182,14 @@ type FLCTalkerAliasHeader struct {
 	TalkerAliasData uint64 `dmr:"bits:7-55"`
 }
 
-// ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
+// FLCTalkerAliasBlock is a talker alias block (Talker_Alias_BLK) Full LC
+// payload (ETSI TS 102 361-2 Table 7.5).
 type FLCTalkerAliasBlock struct {
 	TalkerAliasData [7]byte `dmr:"bits:0-55,packed"`
 }
 
-// ETSI TS 102 361-3 - Table 7.1: Terminator Data Link Control PDU content
+// FLCTerminatorDataLinkControl is the terminator data link control Full LC
+// payload (ETSI TS 102 361-3 Table 7.1).
 type FLCTerminatorDataLinkControl struct {
 	LLIDDestination    uint32 `dmr:"bits:0-23"`
 	LLIDSource         uint32 `dmr:"bits:24-47"`
