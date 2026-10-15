@@ -993,6 +993,7 @@ documents:
           - v2/layer2/pdu/full_link_control.go
           - v2/layer2/mmdvmhost.go
           - v2/layer2/pdu/codeword_bytes.go
+          - v2/layer2/mmdvmhost_seal.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/crc
             names:
@@ -1023,6 +1024,8 @@ documents:
               - TestMMDVMHostAccepts_Vectors
               - TestMMDVMHostAccepts_UncheckedDataTypes
               - TestMMDVMHostAccepts_MBCContinuation
+              - TestMMDVMHostSeal_PairsWithAccepts
+              - TestMMDVMHostSeal_IdentityOnAcceptedCaptures
 
       - section: "B.3.13"
         title: "7-bit CRC calculation"

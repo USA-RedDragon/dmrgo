@@ -166,7 +166,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §B.3.9 | 32-bit CRC calculation | ✅ verified | 9/9 passed | `v2/crc/crc32.go` |
 | §B.3.10 | CRC-9 calculation | ✅ verified | 9/9 passed | `v2/crc/crc9.go` |
 | §B.3.11 | 5-bit Checksum (CS) calculation | ✅ verified | 9/9 passed | `v2/crc/checksum5.go`, `v2/layer2/embedded_lc.go` |
-| §B.3.12 | Data Type CRC Mask | ✅ verified | 23/23 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/mmdvmhost.go`, `v2/layer2/pdu/codeword_bytes.go` |
+| §B.3.12 | Data Type CRC Mask | ✅ verified | 25/25 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/mmdvmhost.go`, `v2/layer2/pdu/codeword_bytes.go`, `v2/layer2/mmdvmhost_seal.go` |
 | §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
 | §B.4 | Interleaving | ✅ verified | 8/8 passed | `v2/layer2/cach_interleave.go` |
 | §D | Idle and Null message bit definition | ✅ verified | 10/10 passed | `v2/layer2/idle.go` |
