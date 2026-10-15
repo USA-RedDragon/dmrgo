@@ -30,13 +30,13 @@ func ExampleNewBurstFromBytes() {
 	fmt.Println(burst.Kind, burst.SlotType.DataType)
 	if lc, ok := burst.Data.(*pdu.FullLinkControl); ok {
 		target, source, _ := lc.Addresses()
-		fmt.Printf("%d -> %d\n", source, target)
+		fmt.Printf("call from %d to %d\n", source, target)
 	}
 	encoded, _ := burst.Encode()
 	fmt.Println("unchanged:", encoded == voiceLCHeader())
 	// Output:
 	// Data Voice LC Header
-	// 3191868 -> 9990
+	// call from 3191868 to 9990
 	// unchanged: true
 }
 

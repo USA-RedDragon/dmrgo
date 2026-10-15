@@ -11,14 +11,14 @@
 // SYNC pattern or an EMB and embedded data at bits 108 to 155. A voice burst
 // has its three 72-bit vocoder slots in bits 0 to 107 and 156 to 263. A
 // standalone inbound RC burst has EMB(8) RC(16) SYNC(48) RC(16) EMB(8)
-// around the burst centre (ETSI TS 102 361-1 clause 6.4.1, Figure 6.7). The
+// around the burst center (ETSI TS 102 361-1 clause 6.4.1, Figure 6.7). The
 // methods of RawBurst read or write one field and leave every other bit as
 // it is. They do not classify the burst.
 //
 // Burst.DecodeFromBytes classifies a burst by its SYNC field. A burst
 // without a SYNC pattern is a voice burst B to F, unless it is a data burst
 // with an EMB in place of the SYNC (ETSI TS 102 361-1 clause 6.4.2). Such a
-// data burst has a centre more than 12 bits from every data SYNC pattern, an
+// data burst has a center more than 12 bits from every data SYNC pattern, an
 // EMB that decodes, a slot type with at most 2 corrections and the color
 // code of the EMB, a BPTC coded data type, a BPTC with at most 8
 // corrections, and a CRC or RS(12,9) code that checks where the data type

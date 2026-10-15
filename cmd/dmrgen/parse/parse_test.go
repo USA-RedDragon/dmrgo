@@ -497,7 +497,7 @@ type T struct {
 			want: "A and dmr:const overlap at bit 4",
 		},
 		{
-			name: "fec without a FEC field",
+			name: "fec without an FEC field",
 			src: `// dmr:fec golay_20_8_7
 type T struct {
 	A uint8 ` + "`dmr:\"bits:0-7\"`" + `

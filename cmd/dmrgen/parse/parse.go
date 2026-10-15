@@ -1005,7 +1005,7 @@ func checkCoverage(pdu *PDUStruct) error {
 	return nil
 }
 
-// checkFECField verifies that a PDU has a FEC fec.Result field exactly
+// checkFECField verifies that a PDU has an FEC fec.Result field exactly
 // when a dmr:fec or dmr:crc directive gives its decoder a result to report.
 func checkFECField(pdu *PDUStruct) error {
 	f := pdu.FieldByName("FEC")

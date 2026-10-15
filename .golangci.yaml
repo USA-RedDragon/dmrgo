@@ -79,7 +79,9 @@ linters:
       - legacy
       - std-error-handling
     rules:
-      # Test fixtures are package variables that tests only read.
+      # Tests use math/rand, narrowing conversions of bounded loop values,
+      # repeated literal test vectors, and fixtures in package variables that
+      # they only read.
       - path: _test\.go
         linters:
           - dogsled

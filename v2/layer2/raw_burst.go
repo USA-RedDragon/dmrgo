@@ -99,10 +99,9 @@ func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 	return bit.Pack96(bits), res
 }
 
-// SetBPTCPayload BPTC(196,96) encodes p into the 196 information bits. The
-// slot type and the SYNC stay as they are. p must already carry its CRC or
-// RS(12,9) parity with the Data Type CRC Mask (see pdu.Seal). The reserved
-// bits R(0) to R(3) are zero; see SetBPTCReserved.
+// SetBPTCPayload encodes p with BPTC(196,96) into the 196 information bits,
+// with the reserved bits R(0) to R(3) zero, and keeps the slot type and
+// SYNC. p must already carry its CRC or RS(12,9) parity (see pdu.Seal).
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 	r.setInfo(bptc.Encode196(bit.Unpack96(p)))
 }

@@ -52,15 +52,15 @@ func (k Kind) String() string {
 type Burst struct {
 	// Kind is the kind of the burst.
 	Kind Kind
-	// SyncPattern is the SYNC pattern in the burst centre, or
-	// enums.SyncNone when the centre carries embedded signalling, as in
+	// SyncPattern is the SYNC pattern in the burst center, or
+	// enums.SyncNone when the center carries embedded signalling, as in
 	// voice bursts B to F and data bursts with an EMB.
 	SyncPattern enums.SyncPattern
-	// NearestSync is the SYNC pattern nearest to the received centre field,
+	// NearestSync is the SYNC pattern nearest to the received center field,
 	// whatever the classification. DecodeFromBytes sets it; Encode ignores
 	// it.
 	NearestSync enums.SyncPattern
-	// SyncDistance is the Hamming distance of the centre field from
+	// SyncDistance is the Hamming distance of the center field from
 	// NearestSync. DecodeFromBytes sets it; Encode ignores it.
 	SyncDistance int
 	// VoiceBurst is the superframe position of a voice burst. DecodeFromBytes
@@ -131,14 +131,14 @@ func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 	return burst, err
 }
 
-// DecodeFromBytes decodes data into the burst in place, so a reused Burst
-// decodes without allocation. It is DecodeFromBytesWith with nil options.
+// DecodeFromBytes decodes data into the burst in place. It is
+// DecodeFromBytesWith with nil options.
 func (b *Burst) DecodeFromBytes(data RawBurst) error {
 	return b.DecodeFromBytesWith(data, nil)
 }
 
 // DecodeFromBytesWith decodes data into the burst with receive-side options;
-// a nil opts means the zero DecodeOptions. A FEC or CRC failure is not an
+// a nil opts means the zero DecodeOptions. An FEC or CRC failure is not an
 // error, because FEC reports it. The error is ErrReservedDataType,
 // ErrColorCodeMismatch, an error for invalid options, or a join of these,
 // and the burst is populated also when an error is returned.
@@ -231,9 +231,9 @@ func (b *Burst) setEmbedded(emb pdu.EmbeddedSignalling, data [32]bit.Bit) {
 	}
 }
 
-// decodeData decodes a data burst. The centre is the nearest data SYNC
+// decodeData decodes a data burst. The center is the nearest data SYNC
 // pattern, unless that is more than threshold and damagedSyncDistance bits
-// off and the centre decodes as an EMB with the color code of the slot
+// off and the center decodes as an EMB with the color code of the slot
 // type: then the burst carries embedded signalling.
 func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	b.Kind = KindData
@@ -267,7 +267,7 @@ const (
 	embeddedDataMaxBPTCErrors     = 8
 )
 
-// damagedSyncDistance is the largest Hamming distance at which the centre of
+// damagedSyncDistance is the largest Hamming distance at which the center of
 // a data burst is taken as a data SYNC pattern with bit errors. The
 // MS-sourced data SYNC pattern is 2 bits from an EMB codeword, but an EMB
 // with random embedded data comes this close to a data SYNC pattern in only

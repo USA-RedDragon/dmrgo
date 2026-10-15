@@ -2,13 +2,13 @@
 
 [![go.mod version](https://img.shields.io/github/go-mod/go-version/USA-RedDragon/dmrgo.svg?filename=v2/go.mod)](https://github.com/USA-RedDragon/dmrgo) [![coverage](https://raw.githubusercontent.com/USA-RedDragon/dmrgo/main/.github/badges/coverage-v2.svg)](https://github.com/USA-RedDragon/dmrgo/actions/workflows/test.yaml) [![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE.md)
 
-Decode and encode DMR (Digital Mobile Radio) bursts and PDUs as defined in [ETSI TS 102 361](https://www.etsi.org/standards) parts 1 to 4, in pure Go.
+Decode and encode DMR (Digital Mobile Radio) bursts and PDUs as defined in [ETSI TS 102 361](https://www.etsi.org/standards) parts 1 to 4.
 
 [DMRHub](https://github.com/USA-RedDragon/DMRHub) and [ipsc2mmdvm](https://github.com/USA-RedDragon/ipsc2mmdvm) use it.
 
 ## Installation
 
-Requires Go 1.27 or later.
+Requires Go 1.27.2 or later.
 
 ```sh
 go get github.com/USA-RedDragon/dmrgo/v2
@@ -56,7 +56,7 @@ func main() {
 }
 ```
 
-The program prints `Voice LC Header: call from 3191868 to 9990`. A FEC or CRC error does not make `NewBurstFromBytes` fail: `burst.FEC` reports it and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match.
+The program prints `Voice LC Header: call from 3191868 to 9990` and `re-encoded unchanged: true`. An FEC or CRC error does not make `NewBurstFromBytes` fail: `burst.FEC` reports it and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match.
 
 More in [v2/examples](v2/examples), which run offline on the captures in `v2/layer2/testdata` (`go run -C v2 ./examples/<name>`): [hotspot](v2/examples/hotspot/main.go) (MMDVMHost check and regenerated bursts), [bridge](v2/examples/bridge/main.go) (rewrite a call's talkgroup and source), [scanner](v2/examples/scanner/main.go) (find bursts in a bit stream), [trunking](v2/examples/trunking/main.go) (Tier III CSBKs, MBC and CACH), [data](v2/examples/data/main.go) (packet data and selective retry), [transcoder](v2/examples/transcoder/main.go) (AMBE+2 FEC and Codec2) and [conformance](v2/examples/conformance/main.go) (byte-for-byte re-encode of every capture).
 
@@ -80,7 +80,7 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
 - Vocoders (`vocoder`):
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
   - A `Codec` interface with a registry, and a Codec2 codec (`vocoder/codec2`).
-- No cgo outside `vocoder/codec2`, and no allocation on the burst decode path when a `layer2.Burst` is reused.
+- No cgo outside `vocoder/codec2`.
 
 ## Codec2
 
@@ -93,6 +93,11 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
 | Silence | `Silence()` is 20 ms of silence in the selected mode |
 
 Both ends must agree on the mode, because the FID does not identify it.
+
+## Tooling
+
+- `go generate ./...` from the repository root runs `cmd/tablegen`, which writes the FEC and CRC lookup tables (`tables_gen.go`), and `cmd/dmrgen`, which writes the decoder and encoder of each struct with `dmr` field tags (`*_decode_gen.go`). Do not edit generated files.
+- `env CGO_ENABLED=0 go run -C cmd/speccheck . -update-readme` runs the tests that `spec_matrix.yaml` maps to each ETSI clause and writes the table below. `-check-readme` fails when the table is out of date.
 
 ## ETSI TS 102 361 Specification Coverage
 

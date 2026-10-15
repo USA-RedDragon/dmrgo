@@ -13,7 +13,7 @@ import (
 // is 0x12.
 type EMBInfo byte
 
-// ColorCode returns the 4-bit Colour Code, bits 7 to 4.
+// ColorCode returns the 4-bit color code, bits 7 to 4.
 func (e EMBInfo) ColorCode() enums.ColorCode {
 	return enums.ColorCode(e >> 4)
 }

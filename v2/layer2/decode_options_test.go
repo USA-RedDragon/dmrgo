@@ -13,7 +13,7 @@ import (
 )
 
 // dmrdVoiceBurstD is a DMRD voice frame (frame type 0, voice sequence 3,
-// burst D) whose centre carries the MS-sourced RC SYNC instead of an EMB.
+// burst D) whose center carries the MS-sourced RC SYNC instead of an EMB.
 const dmrdVoiceBurstD = "085dc11e5e1d328f0cae4bc91da77d55f7dfd77ab808e70a096ad32de1f56d0f9e"
 
 func flipSync(frame [33]byte, n int) [33]byte {

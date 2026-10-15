@@ -10,8 +10,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// CRC7MaskRC is the CRC-7 data type mask for Reverse Channel PDUs
-// per ETSI TS 102 361-1 Table B.21.
+// CRC7MaskRC is the CRC-7 data type mask for Reverse Channel PDUs (ETSI TS
+// 102 361-1 Table B.21).
 const CRC7MaskRC uint8 = 0x7A
 
 // ReverseChannel is the Reverse Channel (RC) PDU: 4 information bits and a

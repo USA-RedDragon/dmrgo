@@ -10,7 +10,7 @@ import (
 )
 
 // ambiguousSync reports a decode whose SYNC classification can change on
-// re-encode: the first centre matched a SYNC pattern with bit errors, a
+// re-encode: the first center matched a SYNC pattern with bit errors, a
 // voice burst B-F re-encoded with an embedded field within the SYNC match
 // threshold, or a burst without a SYNC pattern whose EMB Encode writes back
 // corrected, so that the EMB checks of a data burst with an EMB give another
