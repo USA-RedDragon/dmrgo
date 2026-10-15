@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 §B.2.2 — Single Burst Variable Length BPTC
+// ETSI TS 102 361-1 clause B.2.2: Single Burst Variable Length BPTC
 //
 // The single-burst FEC uses a 2×16 encode matrix:
 //   - Row 0: 11 info bits + 5 Hamming(16,11,4) parity bits
@@ -30,7 +30,7 @@ func DecodeSingleBurst(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Res
 	lowbit.Mask(txBits[:])
 	result := fec.Result{BitsChecked: 32}
 
-	// Deinterleave: transmit order → encode matrix order
+	// Deinterleave: transmit order to encode matrix order
 	var deinterleaved [32]bit.Bit
 	for i := 0; i < 32; i++ {
 		deinterleaved[single_burst_bptc_interleave[i]] = txBits[i]
@@ -118,7 +118,7 @@ func EncodeSingleBurst(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
 		stream[col*2+1] = matrix[1][col]
 	}
 
-	// Interleave: encode matrix order → transmit order
+	// Interleave: encode matrix order to transmit order
 	var txBits [32]bit.Bit
 	for i := 0; i < 32; i++ {
 		txBits[(i*17)%32] = stream[i]

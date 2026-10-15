@@ -1,7 +1,5 @@
 package compute
 
-// ---- Tier 0: No dependencies, foundational tables ----
-
 // ComputeAMBEScrambleTable generates the 4096-entry AMBE vocoder scramble table.
 //
 // Each 12-bit index i (the AMBE 'a' parameter) seeds a 16-bit Linear
@@ -159,7 +157,7 @@ func ComputeConstellationPoints() map[[2]int8]byte {
 	}
 }
 
-// ComputeReverseConstellation computes the reverse mapping: symbol index → dibit pair.
+// ComputeReverseConstellation computes the dibit pair of each symbol index.
 func ComputeReverseConstellation() [][]int8 {
 	fwd := ComputeConstellationPoints()
 	rev := make([][]int8, 16)
@@ -247,7 +245,7 @@ func ComputeHamming16_11Syndrome() [32]int {
 //
 // The interleaving formula is: Interleave Index = Index × 17 mod 32 (B.2)
 //
-// The returned array maps transmit index → encode matrix index.
+// The returned array maps a transmit index to an encode matrix index.
 func ComputeSingleBurstBPTCInterleave() [32]uint8 {
 	var table [32]uint8
 	for i := 0; i < 32; i++ {
@@ -284,7 +282,7 @@ func ComputeCRC32Table() [256]uint32 {
 //
 // The parity check matrix H has 3 rows and 7 columns. Each column is a
 // 3-bit value. For syndrome s (1..7), the table entry is the column index
-// whose H-column equals s. Syndrome 0 = no error → entry -1.
+// whose H-column equals s. Syndrome 0 (no error) maps to -1.
 //
 // The syndrome equations from the spec (ETSI TS 102 361-1, B.3.5):
 //

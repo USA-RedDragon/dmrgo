@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 §B.2.3 — Variable length BPTC for CACH Signalling
+// ETSI TS 102 361-1 clause B.2.3: Variable length BPTC for CACH Signalling
 //
 // The CACH BPTC encodes a 36-bit Short LC PDU into 68 bits spread across
 // 4 consecutive CACH burst signalling payloads (17 bits each).
@@ -77,7 +77,7 @@ func DecodeCACH(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
 		copy(stream[i*17:(i+1)*17], fragments[i][:])
 	}
 
-	// Deinterleave: transmit order → encode matrix
+	// Deinterleave: transmit order to encode matrix
 	// Transmit matrix is read rows left-to-right.
 	// Encode matrix is read columns top-to-bottom, left-to-right.
 	// For sequence index j (0..67):
@@ -199,8 +199,8 @@ func EncodeCACH(info [36]bit.Bit) [4][17]bit.Bit {
 		matrix[3][col] = matrix[0][col] ^ matrix[1][col] ^ matrix[2][col]
 	}
 
-	// Interleave: encode matrix → transmit stream
-	// Read encode matrix columns top-to-bottom, left-to-right → 68-bit stream
+	// Interleave: encode matrix to transmit stream
+	// Read encode matrix columns top-to-bottom, left-to-right, to a 68-bit stream
 	// Write into transmit matrix rows left-to-right
 	var stream [68]bit.Bit
 	for j := 0; j < 68; j++ {

@@ -5,7 +5,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 §B.4.1 — CACH Burst Interleaving
+// ETSI TS 102 361-1 §B.4.1: CACH Burst Interleaving
 //
 // The 24-bit CACH burst is transmitted with timing, activity, and Hamming
 // parity bits spread across the burst for fade resistance. The 7 TACT bits

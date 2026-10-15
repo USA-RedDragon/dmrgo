@@ -26,7 +26,7 @@ func buildContinuationBits96(pf bool, csbko byte, colourCode byte, cdefParms [58
 		}
 	}
 
-	// ColorCode (bits 12-15) — for CG_AP, MV_AP, VN_AP
+	// ColorCode (bits 12-15): for CG_AP, MV_AP, VN_AP
 	for i := 0; i < 4; i++ {
 		if (colourCode>>(3-i))&1 == 1 {
 			bits[12+i] = 1
@@ -150,7 +150,7 @@ func TestBCAPContinuation_Decode(t *testing.T) {
 	// CSBKO = C_BCAST = 0b101000
 	bits[2] = 1
 	bits[4] = 1
-	// Reserved1 (bits 8-15) = 0xFF → all 1s
+	// Reserved1 (bits 8-15) = 0xFF: all 1s
 	for i := 8; i <= 15; i++ {
 		bits[i] = 1
 	}

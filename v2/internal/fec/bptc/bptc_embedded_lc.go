@@ -9,7 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 §B.2.1 — Variable length BPTC for Embedded Signalling
+// ETSI TS 102 361-1 clause B.2.1: Variable length BPTC for Embedded Signalling
 //
 // The embedded signalling uses a BPTC with Hamming(16,11,4) row codes and
 // simple (even) parity column codes. For a full embedded LC:
@@ -291,7 +291,7 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 		matrix[7][col] = parity
 	}
 
-	// Interleave: read columns top-to-bottom, left-to-right → 128-bit stream
+	// Interleave: read columns top-to-bottom, left-to-right, to a 128-bit stream
 	var stream [128]bit.Bit
 	for col := 0; col < 16; col++ {
 		for row := 0; row < 8; row++ {

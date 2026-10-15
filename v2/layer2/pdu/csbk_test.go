@@ -82,11 +82,11 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 	payload[1] = 0
 	// Reserved (bits 2-7) = 0
 	// CSBKBlocksToFollow = 5 (bits 8-15)
-	payload[8+5] = 1 // bit 13 → value 4
-	payload[8+7] = 1 // bit 15 → value 1 → total = 5
-	// TargetAddress (bits 16-39) = 0x000001 → last bit set
+	payload[8+5] = 1 // bit 13: value 4
+	payload[8+7] = 1 // bit 15: value 1: total = 5
+	// TargetAddress (bits 16-39) = 0x000001: last bit set
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = 0x000002 → second to last bit set
+	// SourceAddress (bits 40-63) = 0x000002: second to last bit set
 	payload[62] = 1
 
 	infoBits := buildCSBKBits(0b00111101, payload)
@@ -134,8 +134,8 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 	// ReasonCode (bits 8-15) = 0x42
 	payload[9] = 1 // 0b01000010
 	payload[14] = 1
-	// SourceAddress (bits 16-39) — leave zero
-	// TargetAddress (bits 40-63) — leave zero
+	// SourceAddress (bits 16-39): leave zero
+	// TargetAddress (bits 40-63): leave zero
 
 	infoBits := buildCSBKBits(0b00100110, payload)
 
@@ -339,9 +339,9 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 	payload[1] = 1
 	// AnswerResponse (bits 8-15) = 0x20
 	payload[10] = 1
-	// TargetAddress (bits 16-39) — bit 39 set
+	// TargetAddress (bits 16-39): bit 39 set
 	payload[39] = 1
-	// SourceAddress (bits 40-63) — bit 63 set
+	// SourceAddress (bits 40-63): bit 63 set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponse), payload)

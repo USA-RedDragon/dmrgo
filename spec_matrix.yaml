@@ -1,5 +1,5 @@
 # ETSI TS 102 361 Specification Coverage Matrix
-# Validated by cmd/speccheck — run: go run -C cmd/speccheck .
+# cmd/speccheck checks this file. Run: go run -C cmd/speccheck .
 #
 # test_functions maps spec sections to Go test functions.
 # speccheck runs `go test -v -run <regex>` for each package and verifies pass.
@@ -33,9 +33,8 @@ ignore_files:
 
 documents:
   - id: "TS-102-361-1"
-    title: "ETSI TS 102 361-1 — Air Interface Protocol"
+    title: "ETSI TS 102 361-1: Air Interface Protocol"
     sections:
-      # ── Section 6: Layer 2 burst format ──
       - section: "6.1"
         title: "Vocoder socket"
         source_files:
@@ -133,7 +132,6 @@ documents:
               - TestDataBurstWithEMB_DamagedSyncStaysSync
               - TestDataBurstWithEMB_VoiceStaysVoice
 
-      # ── Section 7: DMR signalling ──
       - section: "7.1.1"
         title: "Voice LC header"
         source_files:
@@ -295,7 +293,6 @@ documents:
               - TestMBCLastBlockCRC_MultiBlock
               - TestMBCAbsoluteParms_LastBlockCRC
 
-      # ── Section 8: DMR Packet Data Protocol ──
       - section: "8.2.1"
         title: "Header block structure"
         source_files:
@@ -365,7 +362,6 @@ documents:
               - TestServiceTypeString
               - TestUSBD_AllServiceTypes
 
-      # ── Section 9.1: PDUs for voice bursts, general data bursts and the CACH ──
       - section: "9.1.1"
         title: "Synchronization (SYNC) PDU"
         source_files:
@@ -547,7 +543,6 @@ documents:
               - TestPRFill_DataType
               - TestPRFill_String
 
-      # ── Section 9.2: Data related PDU description ──
       - section: "9.2.2"
         title: "Rate ¾ coded packet Data (R_3_4_DATA) PDU"
         source_files:
@@ -638,7 +633,6 @@ documents:
             names:
               - TestBurst_Rate1Data_Full192Bits_RoundTrip
 
-      # ── Section 9.3: Layer 2 information element coding ──
       - section: "9.3.1"
         title: "Colour Code (CC)"
         source_files:
@@ -796,7 +790,6 @@ documents:
             names:
               - TestCSBK_OpcodeString
 
-      # ── Annex B: FEC and CRC codes ──
       - section: "B.1.1"
         title: "BPTC (196,96)"
         source_files:
@@ -1198,9 +1191,8 @@ documents:
               - TestTransmitOrder_StandaloneRCFields
 
   - id: "TS-102-361-2"
-    title: "ETSI TS 102 361-2 — DMR Voice and Generic Services and Facilities"
+    title: "ETSI TS 102 361-2: DMR Voice and Generic Services and Facilities"
     sections:
-      # ── Section 5: DMR services ──
       - section: "5.4.2"
         title: "Inband positioning data service"
         source_files:
@@ -1227,7 +1219,6 @@ documents:
               - TestTalkerAliasBlocks_Table
               - TestTalkerAlias_Errors
 
-      # ── Section 6: DMR facilities ──
       - section: "6.1"
         title: "Transmit timeout"
         source_files:
@@ -1262,7 +1253,6 @@ documents:
             names:
               - TestTimers_AnnexA1
 
-      # ── Section 7.1: Layer 3 PDUs ──
       - section: "7.1.1"
         title: "Full Link Control PDUs"
         source_files:
@@ -1440,7 +1430,6 @@ documents:
               - TestActivityID_Cast_Reserved
               - TestActivityID_Values
 
-      # ── Section 7.2: Layer 3 information element coding ──
       - section: "7.2.1"
         title: "Service Options"
         source_files:
@@ -1611,7 +1600,6 @@ documents:
               - TestReverseChannel_DecodeEncode_RoundTrip
               - TestReverseChannel_String
 
-      # ── Annex A: Timers and constants ──
       - section: "A"
         title: "Timers and constants in DMR"
         source_files:
@@ -1624,7 +1612,6 @@ documents:
               - TestNoLeader_Equals_BeaconInterval
               - TestSyncAgeWarning_Equals_TwoBeaconIntervals
 
-      # ── Annex B: Opcode Reference Lists ──
       - section: "B.1"
         title: "Full Link Control Opcode List"
         source_files:
@@ -1665,9 +1652,8 @@ documents:
               - TestShortLC_ActivityUpdate_Decode
 
   - id: "TS-102-361-3"
-    title: "ETSI TS 102 361-3 — DMR Data Protocol"
+    title: "ETSI TS 102 361-3: DMR Data Protocol"
     sections:
-      # ── Section 5: Internet Protocol (IP) bearer service ──
       - section: "5.3"
         title: "Unconfirmed data DLL bearer service"
         source_files:
@@ -1719,7 +1705,6 @@ documents:
             names:
               - TestUDPIPv4CompressedHeader_RoundTrip
 
-      # ── Section 6: Short data bearer service ──
       - section: "6.1"
         title: "Defined Data"
         source_files:
@@ -1756,7 +1741,6 @@ documents:
             names:
               - TestDataHeader_ResponsePacket_RoundTrip
 
-      # ── Section 7: PDU description ──
       - section: "7.1.1"
         title: "Full Link Control (FULL LC) PDUs"
         source_files:
@@ -1785,7 +1769,6 @@ documents:
             names:
               - TestUDPIPv4CompressedHeader_RoundTrip
 
-      # ── Annex A: PDP timers and constants ──
       - section: "A"
         title: "PDP timers and constants in DMR"
         source_files:
@@ -1796,7 +1779,6 @@ documents:
               - TestPDPTimers_AnnexA1
               - TestPDPConstants_AnnexA2
 
-      # ── Annex B: Opcode reference lists ──
       - section: "B.1"
         title: "PDP Full Link Control Opcode list"
         source_files:
@@ -1808,9 +1790,8 @@ documents:
               - TestFLC_TerminatorDataLinkControl_RoundTrip
 
   - id: "TS-102-361-4"
-    title: "ETSI TS 102 361-4 — DMR Trunking Protocol"
+    title: "ETSI TS 102 361-4: DMR Trunking Protocol"
     sections:
-      # ── Section 5: Trunking Control Channel Formats ──
       - section: "5.1"
         title: "The Use of the CACH"
         source_files:
@@ -1867,7 +1848,6 @@ documents:
               - TestCSBK_UDTHeaderOpcodes_NotCSBK
               - TestDataHeader_UDT_Decode
 
-      # ── Section 6: Trunking Procedures ──
       - section: "6.2"
         title: "Random Access Procedures"
         source_files:
@@ -1892,7 +1872,6 @@ documents:
               - TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle
               - TestCSBK_Clear_Decode
 
-      # ── Section 7: PDU description ──
       - section: "7.1.1"
         title: "Control Signalling Block (CSBK/MBC/UDT) PDUs"
         source_files:
@@ -1972,7 +1951,6 @@ documents:
               - TestAnnouncementType_String
               - TestAnnouncementType_Cast
 
-      # ── Annex A: Timers, constants levels and addresses ──
       - section: "A"
         title: "Timers, constants levels and addresses"
         source_files:
@@ -1986,7 +1964,6 @@ documents:
               - TestTrunkingIdentifiers_AnnexA8
               - TestCallTimerTokens_AnnexA2toA5
 
-      # ── Annex B: Opcode Reference Lists ──
       - section: "B.1"
         title: "CSBK/MBC/UDT Opcode List"
         source_files:

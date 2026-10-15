@@ -12,7 +12,7 @@ func TestCdefParms_NewFromBits(t *testing.T) {
 	// Construct a 58-bit array with known values:
 	// Channel (12 bits) = 0x123 = 291
 	// TXMHz (10 bits) = 440 = 0b0110111000
-	// TXKHz (13 bits) = 4000 = 500 MHz offset → 0.5 MHz = 0b0111110100000
+	// TXKHz (13 bits) = 4000 steps of 125 Hz, a 0.5 MHz offset = 0b0111110100000
 	// RXMHz (10 bits) = 445 = 0b0110111101
 	// RXKHz (13 bits) = 0 = 0b0000000000000
 	var bits [58]bit.Bit

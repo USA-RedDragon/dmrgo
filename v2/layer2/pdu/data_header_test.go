@@ -15,7 +15,7 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 
 	// Format = 0b0010 (Unconfirmed) at bits 4-7
 	// Format decoded as: (bit4<<3)|(bit5<<2)|(bit6<<1)|bit7 = 2
-	infoBits[6] = 1 // bit 6 = 1 → 0b0010 = FormatUnconfirmed
+	infoBits[6] = 1 // bit 6 = 1 gives 0b0010, FormatUnconfirmed
 
 	// Group = 1 (bit 0)
 	infoBits[0] = 1
@@ -29,7 +29,7 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	infoBits[64] = 1
 	// BlocksToFollow = 10 (bits 65-71)
 	infoBits[65+3] = 1 // 8
-	infoBits[65+5] = 1 // 2 → total 10
+	infoBits[65+5] = 1 // 2, total 10
 
 	// FragmentSequenceNumber = 0 (bits 76-79)
 
@@ -342,7 +342,7 @@ func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 	t.Parallel()
 	original := &pdu.DataHeader{
 		Format:         pdu.FormatShortDataRawOrStatusPrecoded,
-		AppendedBlocks: 2, // Non-zero → dispatches to RawDataHeader
+		AppendedBlocks: 2, // Non-zero dispatches to RawDataHeader
 		RawDataHeader: &pdu.RawDataHeader{
 			Group:             true,
 			ResponseRequested: true,
@@ -398,7 +398,7 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	t.Parallel()
 	original := &pdu.DataHeader{
 		Format:         pdu.FormatShortDataRawOrStatusPrecoded,
-		AppendedBlocks: 0, // Zero → dispatches to StatusPrecodedHeader
+		AppendedBlocks: 0, // Zero dispatches to StatusPrecodedHeader
 		StatusPrecodedHeader: &pdu.StatusPrecodedHeader{
 			Group:             false,
 			ResponseRequested: true,

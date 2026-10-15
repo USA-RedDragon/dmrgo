@@ -2,8 +2,6 @@ package compute
 
 import "math/bits"
 
-// ---- Tier 1: Depend on Tier 0 tables or standalone math ----
-
 // ComputeGolay23_12_7Encoding computes the Golay(23,12,7) systematic encoding table.
 //
 // Generator polynomial: g(x) = x^11 + x^10 + x^6 + x^5 + x^4 + x^2 + 1 = 0xC75
