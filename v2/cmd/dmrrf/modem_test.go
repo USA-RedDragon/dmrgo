@@ -38,12 +38,13 @@ func channel(iq []byte, txRate, rxRate, offsetHz, snrDB float64, seed uint64) []
 }
 
 func TestLoopbackDecodesEverySequence(t *testing.T) {
-	for _, seq := range []string{"data12", "data34", "data1"} {
+	for _, seq := range []string{"data12", "data34", "data1", "data12u", "data34u", "data1u"} {
 		cfg := testConfig()
-		bursts, err := Sequence(seq, cfg)
+		built, err := Sequence(seq, cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
+		bursts := built.Bursts
 		fm, env := Modulate(bursts, Schedule{Slot: 0})
 		iq := ToIQ(fm, env, 2e6, 0, 0.9)
 		rx := channel(iq, 2e6, 2.048e6, 3000, 25, 1)
@@ -82,10 +83,11 @@ func TestLoopbackDecodesEverySequence(t *testing.T) {
 func TestBitErrorRateBySNR(t *testing.T) {
 	cfg := testConfig()
 	cfg.Wakeups = 40
-	bursts, err := Sequence("wakeup", cfg)
+	built, err := Sequence("wakeup", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+	bursts := built.Bursts
 	fm, env := Modulate(bursts, Schedule{Slot: -1})
 	iq := ToIQ(fm, env, 2e6, 0, 0.9)
 	for _, snr := range []float64{30, 20, 15} {
@@ -115,10 +117,11 @@ func popcount(b byte) int {
 func TestOccupiedBandwidth(t *testing.T) {
 	cfg := testConfig()
 	cfg.Wakeups = 30
-	bursts, err := Sequence("wakeup", cfg)
+	built, err := Sequence("wakeup", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+	bursts := built.Bursts
 	fm, _ := Modulate(bursts, Schedule{Slot: -1})
 	env := make([]float64, len(fm))
 	for i := range env {

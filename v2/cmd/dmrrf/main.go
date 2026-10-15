@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -37,7 +38,7 @@ func run(args []string, w io.Writer) error {
 func runTX(args []string, w io.Writer) error {
 	fs := flag.NewFlagSet("tx", flag.ContinueOnError)
 	out := fs.String("o", "dmr.iq", "output file (signed 8-bit I/Q for hackrf_transfer -t)")
-	seq := fs.String("seq", "data12", "wakeup, data12, data34 or data1")
+	seq := fs.String("seq", "data12", strings.Join(Sequences(), ", "))
 	cw := fs.Float64("cw", 0, "write an unmodulated carrier of this many seconds instead")
 	freq := fs.Float64("freq", 0, "carrier frequency in Hz, printed in the hackrf_transfer command")
 	rate := fs.Float64("rate", 2e6, "sample rate in Hz (HackRF minimum is 2e6)")
@@ -50,10 +51,14 @@ func runTX(args []string, w io.Writer) error {
 	dst := fs.Uint("dst", 0, "destination radio or talkgroup ID")
 	bs := fs.Uint("bs", 0, "BS (repeater) address for the wakeup CSBK")
 	group := fs.Bool("group", false, "send to a talkgroup instead of a radio")
-	wakeups := fs.Int("wakeups", 3, "wakeup CSBKs before the data")
+	wakeups := fs.Int("wakeups", 3, "wakeup CSBKs before the sequence, or idle frames before a -bs-sourced stream")
 	msg := fs.String("msg", "DMRGO TEST", "message text")
 	repeat := fs.Float64("repeat", 0, "repeat the sequence, padded to whole 60 ms frames, for this many seconds")
 	stretch := fs.Float64("stretch", 0, "slow the symbol clock by this many ppm so repeats sweep across the repeater's slot timing")
+	superframes := fs.Int("superframes", 3, "voice superframes (bursts A to F) of the voice and pi sequences")
+	silence := fs.Bool("ambe-silence", false, "send AMBE+2 silence instead of the AMBE test pattern")
+	preambles := fs.Int("preambles", 4, "preamble CSBKs of the preamble sequence")
+	bsSourced := fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -66,19 +71,38 @@ func runTX(args []string, w io.Writer) error {
 		iq = CW(*cw, *rate, corr, *level)
 		fmt.Fprintf(w, "carrier: %.1f s, offset %+.0f Hz\n", *cw, corr)
 	} else {
-		cfg := SeqConfig{ColorCode: uint8(*cc), Source: uint32(*src), Dest: uint32(*dst), BS: uint32(*bs), Group: *group, Wakeups: *wakeups, Message: *msg} //nolint:gosec // flag ranges are checked by the encoders
-		bursts, err := Sequence(*seq, cfg)
+		cfg := SeqConfig{ColorCode: uint8(*cc), Source: uint32(*src), Dest: uint32(*dst), BS: uint32(*bs), Group: *group, Wakeups: *wakeups, Message: *msg, //nolint:gosec // flag ranges are checked by the encoders
+			Superframes: *superframes, AMBESilence: *silence, Preambles: *preambles, BSSourced: *bsSourced, Slot: *slot}
+		built, err := Sequence(*seq, cfg)
 		if err != nil {
 			return err
 		}
-		fm, env := Modulate(bursts, Schedule{Slot: *slot})
-		if *repeat > 0 {
-			fm, env = padToFrames(fm, env)
+		for _, l := range built.Info {
+			fmt.Fprintln(w, l)
+		}
+		var fm, env []float64
+		if *bsSourced {
+			slots := built.Slots
+			if *repeat > 0 {
+				n := max(1, int(*repeat/(float64(len(slots))*slotSeconds)))
+				for range n - 1 {
+					slots = append(slots, built.Slots...)
+				}
+				fmt.Fprintf(w, "repeated %d times in one continuous stream\n", n)
+			}
+			fm, env = ModulateBS(slots)
+			fmt.Fprintf(w, "sequence %s (BS-sourced): %d bursts on slot %d in %d slots, %.2f s, cc %d, %d -> %d, offset %+.0f Hz\n",
+				*seq, len(built.Bursts), *slot, len(slots), float64(len(fm))/basebandRate, *cc, *src, *dst, corr)
+		} else {
+			fm, env = Modulate(built.Bursts, Schedule{Slot: *slot})
+			if *repeat > 0 {
+				fm, env = padToFrames(fm, env)
+			}
+			fmt.Fprintf(w, "sequence %s: %d bursts, %.2f s, slot %d, cc %d, %d -> %d, offset %+.0f Hz\n",
+				*seq, len(built.Bursts), float64(len(fm))/basebandRate, *slot, *cc, *src, *dst, corr)
 		}
 		iq = ToIQ(fm, env, *rate*(1+*stretch*1e-6), corr, *level)
-		fmt.Fprintf(w, "sequence %s: %d bursts, %.2f s, slot %d, cc %d, %d -> %d, offset %+.0f Hz\n",
-			*seq, len(bursts), float64(len(fm))/basebandRate, *slot, *cc, *src, *dst, corr)
-		if *repeat > 0 {
+		if *repeat > 0 && !*bsSourced {
 			n := max(1, int(*repeat**rate*2/float64(len(iq))))
 			iq = bytes.Repeat(iq, n)
 			fmt.Fprintf(w, "repeated %d times (%.1f s), stretch %.0f ppm\n", n, float64(len(iq))/2 / *rate, *stretch)

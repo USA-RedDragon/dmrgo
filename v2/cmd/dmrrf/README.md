@@ -3,10 +3,10 @@
 `dmrrf` turns DMR bursts built with dmrgo into I/Q for a HackRF, and decodes DMR from `rtl_sdr` captures. It only reads and writes files. Transmitting is a separate, manual `hackrf_transfer` step for a licensed operator.
 
 - `dmrrf tx`: writes signed 8-bit I/Q (the `hackrf_transfer -t` format). DMR 4FSK at 4800 symbols/s, ±648/±1944 Hz deviation, RRC alpha 0.2 (ETSI TS 102 361-1 clause 10.2), one TDMA slot per 60 ms frame by default.
-- `dmrrf rx`: reads `rtl_sdr` unsigned 8-bit I/Q, decodes every burst, reassembles data packets, and reports the carrier offset and deviation.
+- `dmrrf rx`: reads `rtl_sdr` unsigned 8-bit I/Q, decodes every burst, reassembles data packets and voice superframes, and reports the carrier offset and deviation.
 - `dmrrf cal`: reports the frequency offset of a carrier in an `rtl_sdr` capture.
 
-Sequences for `tx -seq`:
+Sequences for `tx -seq`. An MS-sourced sequence starts with `-wakeups` BS_Dwn_Act CSBKs. The data packets carry `-msg` from `-src` to `-dst` (`-group` for a talkgroup).
 
 | Sequence | Bursts |
 |----------|--------|
@@ -14,6 +14,47 @@ Sequences for `tx -seq`:
 | `data12` | wakeups, then a confirmed data packet at rate 1/2 |
 | `data34` | wakeups, then a confirmed data packet at rate 3/4 |
 | `data1`  | wakeups, then a confirmed data packet at rate 1 |
+| `data12u`, `data34u`, `data1u` | wakeups, then the same message as an unconfirmed packet at rate 1/2, 3/4 or 1 |
+| `ack` | wakeups, then an ACK response packet from `-src` to `-dst` |
+| `sr` | wakeups, then a selective retry (SACK) response from `-src` to `-dst` for an 8-block packet, asking again for blocks 1, 4 and 6 (C_RDATA `b5ffffffffffffff` plus CRC) |
+| `preamble` | wakeups, `-preambles` Pre_CSBKs (opcode 0x3D, TS 102 361-2 clause 7.1.2.5, CSBK Blocks to Follow counting down to the data), then a confirmed rate 1/2 packet |
+| `voice` | wakeups, voice LC header, `-superframes` superframes of bursts A to F with EMB and embedded LC, terminator with LC |
+| `pi` | as `voice`, with a PI header after the voice LC header (ALGID 0x21, MFID 0x10, key ID 0x01, MI 0x12345678) and the privacy service option set; the voice is not encrypted |
+| `rc` | wakeups, then a standalone MS-sourced reverse channel burst with the Cease Transmission command |
+| `mbc` | `-bs-sourced` only: TV_GRANT as an MBC: header with physical channel 0xFFF, then a CG_AP continuation (channel 1, 446 MHz + 50 x 125 Hz) |
+| `tier3` | C_ALOHA (system code 0x1234), TV_GRANT and C_MOVE CSBKs, then the `mbc` grant; `-bs-sourced` only, for a Tier III decoder such as dsd-fme |
+
+Voice flags:
+- The voice carries a test pattern: AMBE+2 frame `n` is a distinct, known 49-bit value. `tx` prints each frame it sends as `ambe tx seq=<n> 0x<13 hex digits>`, and `rx` prints each frame it receives with the same `seq` (counted from the voice LC header), so a relayed call can be compared bit for bit. `-ambe-silence` sends AMBE+2 silence instead.
+- Voice needs `-slot 0` or `-slot 1`: bursts B to F have no SYNC, so `rx` cuts them 60 ms apart after burst A.
+
+`-bs-sourced` sends a continuous outbound stream like a repeater instead: BS-sourced SYNC, every 30 ms slot is a CACH (24 bits) and a burst (264 bits), 144 symbols with the carrier on throughout. The sequence goes on `-slot` (0 or 1) and idle bursts fill the other slot. `-wakeups` sets the number of idle frames before the sequence, and two idle frames follow it. Each CACH carries a TACT with TC set to the channel of the burst that follows, AT set while that channel carries the sequence, and one quarter of an Activity Update Short LC (SLCO 1). The Short LC announces the activity on the active slot while any of its four slots carries the sequence, and no activity otherwise. `wakeup` and `rc` are MS-sourced only. With `-repeat`, the stream is repeated without a gap.
+
+`rx` prints, besides each burst, one line per item with a fixed first word:
+
+| First word | Content |
+|------------|---------|
+| `cach` | CACH of a BS-sourced burst: AT, TC, LCSS, TACT FEC and the 17-bit payload |
+| `slc` | Short LC assembled from four CACHs |
+| `emb` | EMB of voice bursts B to F: superframe position, color code, PI, LCSS |
+| `ambe` | the three AMBE+2 frames of a voice burst as 49-bit hex, with their FEC result |
+| `elc` | Full LC assembled from the embedded LC of bursts B to E, with its checksum |
+| `lc` | voice LC header and terminator with LC |
+| `pi` | PI header fields |
+| `response` | a response packet: ACK, NACK or SACK with the blocks to retry |
+
+`ts=1` or `ts=2` is the TDMA channel of a BS-sourced burst, and `ts=-` when there is no CACH. It comes from the slot time, which alternates every 30 ms, aligned with the CACH TC bits by majority: the Hamming(7,4,3) code of the TACT corrects every pattern to some codeword, so a TACT with two bit errors decodes with a wrong TC and `fec=fixed:1`, never `fec=bad`. `fec=ok`, `fec=fixed:<n>` (n bits corrected) and `fec=bad` report the FEC. For example:
+
+```
+cach t=93.75ms at=0 tc=1 lcss=last fec=ok payload=11111011000110000
+slc t=93.75ms slco=1 activity ts1=0x9 hash1=0x5a ts2=0x0 hash2=0x00 fec=ok
+pi t=123.75ms ts=1 algid=0x21 mfid=0x10 keyid=0x01 mi=0x12345678 dst=314926 fec=ok
+emb t=301.25ms ts=- pos=B cc=7 pi=0 lcss=first fec=ok
+ambe t=301.25ms ts=- pos=B seq=3 n=0 0x1b8a8724c81ec fec=ok
+elc t=481.25ms ts=- flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0 emergency=0 checksum=ok fec=ok
+lc t=601.25ms ts=- terminator flco=0 fid=0x00 group src=3191868 dst=9990 privacy=0 emergency=0 fec=ok
+response t=61.25ms ts=- SACK class=2 type=0 status=0 3191868 -> 314926 retry=1,4,6
+```
 
 ## Capturing the IPSC layout of rate 3/4 and rate 1 data
 
