@@ -60,7 +60,7 @@ var (
 
 func (b *Burst) syncField() uint64 {
 	var v uint64
-	for _, x := range b.bitData[SyncStart:SyncEnd] {
+	for _, x := range b.bitData[syncStart:syncEnd] {
 		v = v<<1 | uint64(x&1)
 	}
 	return v

@@ -236,9 +236,9 @@ func (t *VoiceTransmitter) flush() ([33]byte, error) {
 		if err != nil {
 			return [33]byte{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
 		}
-		copy(bits[EMBFirstStart:EMBFirstEnd], embBits[:8])
-		copy(bits[EmbeddedDataStart:EmbeddedDataEnd], data[:])
-		copy(bits[EMBSecondStart:EMBSecondEnd], embBits[8:])
+		copy(bits[embFirstStart:embFirstEnd], embBits[:8])
+		copy(bits[embeddedDataStart:embeddedDataEnd], data[:])
+		copy(bits[embSecondStart:embSecondEnd], embBits[8:])
 	}
 
 	t.pending = 0

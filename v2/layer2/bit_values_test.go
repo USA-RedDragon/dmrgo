@@ -81,7 +81,6 @@ var bitFuncs = map[string]any{
 	"fec/quadraticresidue.Check":                               quadraticresidue.Check,
 	"fec/quadraticresidue.Decode":                              quadraticresidue.Decode,
 	"fec/quadraticresidue.Encode":                              quadraticresidue.Encode,
-	"layer2.BurstToDibits":                                     layer2.BurstToDibits,
 	"layer2.CACHDeinterleave":                                  layer2.CACHDeinterleave,
 	"layer2.CACHInterleave":                                    layer2.CACHInterleave,
 	"layer2.DecodeCACH":                                        layer2.DecodeCACH,
@@ -90,7 +89,6 @@ var bitFuncs = map[string]any{
 	"layer2.IsIdleMessage":                                     layer2.IsIdleMessage,
 	"layer2.IsNullEmbeddedLC":                                  layer2.IsNullEmbeddedLC,
 	"layer2.NewVoiceTransmitter":                               layer2.NewVoiceTransmitter,
-	"layer2.ValidateBurstStructure":                            layer2.ValidateBurstStructure,
 	"layer2/pdu.CheckMBCLastBlockCRC":                          pdu.CheckMBCLastBlockCRC,
 	"layer2/pdu.DecodeAckInboundPDU":                           pdu.DecodeAckInboundPDU,
 	"layer2/pdu.DecodeAckInboundPayloadPDU":                    pdu.DecodeAckInboundPayloadPDU,
@@ -350,9 +348,6 @@ func TestBitValuesOtherThanZeroOrOne(t *testing.T) {
 			raw := callWithBits(t, name, fn, p.gen(seed))
 			maskedGen := p.gen(seed)
 			masked := callWithBits(t, name, fn, func() bit.Bit { return maskedGen() & 1 })
-			if name == "layer2.ValidateBurstStructure" {
-				continue // it reports the values that are not 0 or 1
-			}
 			if raw != nil && masked != nil && !reflect.DeepEqual(raw, masked) {
 				t.Errorf("%s: %s values give %v, their low bits give %v", name, p.name, raw, masked)
 				break

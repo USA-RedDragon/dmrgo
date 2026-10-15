@@ -264,12 +264,12 @@ func isSyncPattern(sync enums.SyncPattern) bool {
 func (b *Burst) decodeStandaloneRC() {
 	b.Kind, b.SyncPattern = KindReverseChannel, enums.SyncMSSourcedRC
 	var embBits [16]bit.Bit
-	copy(embBits[:8], b.bitData[RCEMBFirstStart:RCEMBFirstEnd])
-	copy(embBits[8:], b.bitData[RCEMBSecondStart:RCEMBSecondEnd])
+	copy(embBits[:8], b.bitData[rcembFirstStart:rcembFirstEnd])
+	copy(embBits[8:], b.bitData[rcembSecondStart:rcembSecondEnd])
 	b.EmbeddedSignalling, b.FEC.EMB = pdu.DecodeEmbeddedSignalling(embBits)
 
-	copy(b.EmbeddedSignallingData[:16], b.bitData[RCDataFirstStart:RCDataFirstEnd])
-	copy(b.EmbeddedSignallingData[16:], b.bitData[RCDataSecondStart:RCDataSecondEnd])
+	copy(b.EmbeddedSignallingData[:16], b.bitData[rcDataFirstStart:rcDataFirstEnd])
+	copy(b.EmbeddedSignallingData[16:], b.bitData[rcDataSecondStart:rcDataSecondEnd])
 	b.ReverseChannel, b.FEC.RC = DecodeEmbeddedRC(b.EmbeddedSignallingData)
 }
 
@@ -283,11 +283,11 @@ func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
 	if err != nil {
 		return bitData, fmt.Errorf("cannot encode embedded signalling: %w", err)
 	}
-	copy(bitData[RCEMBFirstStart:RCEMBFirstEnd], embBits[:8])
-	copy(bitData[RCDataFirstStart:RCDataFirstEnd], data[:16])
+	copy(bitData[rcembFirstStart:rcembFirstEnd], embBits[:8])
+	copy(bitData[rcDataFirstStart:rcDataFirstEnd], data[:16])
 	writeSync(&bitData, enums.SyncMSSourcedRC)
-	copy(bitData[RCDataSecondStart:RCDataSecondEnd], data[16:])
-	copy(bitData[RCEMBSecondStart:RCEMBSecondEnd], embBits[8:])
+	copy(bitData[rcDataSecondStart:rcDataSecondEnd], data[16:])
+	copy(bitData[rcembSecondStart:rcembSecondEnd], embBits[8:])
 	return bitData, nil
 }
 
@@ -307,7 +307,7 @@ func (b *Burst) embeddedData() ([32]bit.Bit, error) {
 
 func writeSync(bitData *[264]bit.Bit, sync enums.SyncPattern) {
 	for i := 0; i < 48; i++ {
-		bitData[SyncStart+i] = bit.Bit((sync >> (47 - i)) & 1)
+		bitData[syncStart+i] = bit.Bit((sync >> (47 - i)) & 1)
 	}
 }
 

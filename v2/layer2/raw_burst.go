@@ -49,7 +49,7 @@ func (r *RawBurst) writeBits(src []bit.Bit, start int) {
 // and its Hamming distance, as enums.NearestSyncPattern does.
 func (r *RawBurst) Sync() (enums.SyncPattern, int) {
 	var bits [48]bit.Bit
-	r.readBits(bits[:], SyncStart)
+	r.readBits(bits[:], syncStart)
 	var s [6]byte
 	copy(s[:], bit.Pack(bits[:]))
 	return enums.NearestSyncPattern(s)
@@ -63,7 +63,7 @@ func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 	}
 	var bits [264]bit.Bit
 	writeSync(&bits, p)
-	r.writeBits(bits[SyncStart:SyncEnd], SyncStart)
+	r.writeBits(bits[syncStart:syncEnd], syncStart)
 	return nil
 }
 
@@ -71,8 +71,8 @@ func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 // 156 to 165.
 func (r *RawBurst) SlotType() (pdu.SlotType, fec.Result) {
 	var bits [20]bit.Bit
-	r.readBits(bits[:10], SlotTypeFirstStart)
-	r.readBits(bits[10:], SlotTypeSecondStart)
+	r.readBits(bits[:10], slotTypeFirstStart)
+	r.readBits(bits[10:], slotTypeSecondStart)
 	return pdu.DecodeSlotType(bits)
 }
 
@@ -83,21 +83,21 @@ func (r *RawBurst) SetSlotType(st pdu.SlotType) error {
 	if err != nil {
 		return err
 	}
-	r.writeBits(bits[:10], SlotTypeFirstStart)
-	r.writeBits(bits[10:], SlotTypeSecondStart)
+	r.writeBits(bits[:10], slotTypeFirstStart)
+	r.writeBits(bits[10:], slotTypeSecondStart)
 	return nil
 }
 
 func (r *RawBurst) info() [196]bit.Bit {
 	var bits [196]bit.Bit
-	r.readBits(bits[:98], InfoFirstStart)
-	r.readBits(bits[98:], InfoSecondStart)
+	r.readBits(bits[:98], infoFirstStart)
+	r.readBits(bits[98:], infoSecondStart)
 	return bits
 }
 
 func (r *RawBurst) setInfo(bits [196]bit.Bit) {
-	r.writeBits(bits[:98], InfoFirstStart)
-	r.writeBits(bits[98:], InfoSecondStart)
+	r.writeBits(bits[:98], infoFirstStart)
+	r.writeBits(bits[98:], infoSecondStart)
 }
 
 // BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns
@@ -157,55 +157,55 @@ func (r *RawBurst) Rate1Payload() [24]byte {
 // Information bits 96 to 99, between the two halves, stay as they are.
 func (r *RawBurst) SetRate1Payload(p [24]byte) {
 	bits := bit.Unpack(p[:])
-	r.writeBits(bits[:96], InfoFirstStart)
-	r.writeBits(bits[96:], InfoSecondStart+2)
+	r.writeBits(bits[:96], infoFirstStart)
+	r.writeBits(bits[96:], infoSecondStart+2)
 }
 
 // EMB decodes the QR(16,7) embedded signalling in burst bits 108 to 115 and
 // 148 to 155 of a voice burst B to F.
 func (r *RawBurst) EMB() (pdu.EmbeddedSignalling, fec.Result) {
-	return r.emb(EMBFirstStart, EMBSecondStart)
+	return r.emb(embFirstStart, embSecondStart)
 }
 
 // SetEMB encodes e into the EMB bits of a voice burst B to F. It returns an
 // error, and writes nothing, when a field does not fit.
 func (r *RawBurst) SetEMB(e pdu.EmbeddedSignalling) error {
-	return r.setEMB(e, EMBFirstStart, EMBSecondStart)
+	return r.setEMB(e, embFirstStart, embSecondStart)
 }
 
 // EmbeddedData returns the 32-bit embedded signalling field, burst bits 116
 // to 147, of a voice burst B to F: an embedded LC fragment, a Null
 // embedded message or an outbound RC, still FEC coded.
 func (r *RawBurst) EmbeddedData() [4]byte {
-	return r.word32(EmbeddedDataStart, EmbeddedDataStart+16)
+	return r.word32(embeddedDataStart, embeddedDataStart+16)
 }
 
 // SetEmbeddedData writes d into the embedded signalling field.
 func (r *RawBurst) SetEmbeddedData(d [4]byte) {
-	r.setWord32(d, EmbeddedDataStart, EmbeddedDataStart+16)
+	r.setWord32(d, embeddedDataStart, embeddedDataStart+16)
 }
 
 // StandaloneRCEMB decodes the EMB of a standalone inbound RC burst (§6.4.1,
 // Figure 6.7), burst bits 84 to 91 and 172 to 179.
 func (r *RawBurst) StandaloneRCEMB() (pdu.EmbeddedSignalling, fec.Result) {
-	return r.emb(RCEMBFirstStart, RCEMBSecondStart)
+	return r.emb(rcembFirstStart, rcembSecondStart)
 }
 
 // SetStandaloneRCEMB encodes e into the EMB bits of a standalone RC burst.
 func (r *RawBurst) SetStandaloneRCEMB(e pdu.EmbeddedSignalling) error {
-	return r.setEMB(e, RCEMBFirstStart, RCEMBSecondStart)
+	return r.setEMB(e, rcembFirstStart, rcembSecondStart)
 }
 
 // StandaloneRCData returns the 32 FEC coded RC bits of a standalone RC
 // burst, burst bits 92 to 107 and 156 to 171, in the order that
 // DecodeEmbeddedRC takes.
 func (r *RawBurst) StandaloneRCData() [4]byte {
-	return r.word32(RCDataFirstStart, RCDataSecondStart)
+	return r.word32(rcDataFirstStart, rcDataSecondStart)
 }
 
 // SetStandaloneRCData writes d into the RC bits of a standalone RC burst.
 func (r *RawBurst) SetStandaloneRCData(d [4]byte) {
-	r.setWord32(d, RCDataFirstStart, RCDataSecondStart)
+	r.setWord32(d, rcDataFirstStart, rcDataSecondStart)
 }
 
 func (r *RawBurst) emb(first, second int) (pdu.EmbeddedSignalling, fec.Result) {
@@ -247,7 +247,7 @@ func (r *RawBurst) setWord32(d [4]byte, first, second int) {
 func (r *RawBurst) VoiceSlots() [VoiceSlotsPerBurst][9]byte {
 	var voice [216]bit.Bit
 	r.readBits(voice[:108], 0)
-	r.readBits(voice[108:], SyncEnd)
+	r.readBits(voice[108:], syncEnd)
 	var s [VoiceSlotsPerBurst][9]byte
 	for i := range s {
 		copy(s[i][:], bit.Pack(voice[i*72:(i+1)*72]))
@@ -262,7 +262,7 @@ func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 		copy(voice[i*72:(i+1)*72], bit.Unpack(s[i][:]))
 	}
 	r.writeBits(voice[:108], 0)
-	r.writeBits(voice[108:], SyncEnd)
+	r.writeBits(voice[108:], syncEnd)
 }
 
 // BuildDataBurst returns a data burst that carries the BPTC(196,96) payload

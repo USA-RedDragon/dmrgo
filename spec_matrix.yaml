@@ -1132,16 +1132,10 @@ documents:
               - TestBuildDataBurst_Rejects
               - TestBuildRateDataBursts_DecodeAsBurst
               - TestTransmitOrder_BurstBitsConstant
-              - TestTransmitOrder_BurstSymbolsConstant
               - TestTransmitOrder_FieldBoundaries
               - TestTransmitOrder_FieldWidths
               - TestTransmitOrder_EMBFieldWidths
-              - TestTransmitOrder_BurstToDibits
-              - TestTransmitOrder_DibitsToBurst_Roundtrip
-              - TestTransmitOrder_ValidateBurstStructure_Valid
-              - TestTransmitOrder_ValidateBurstStructure_Invalid
               - TestTransmitOrder_StandaloneRCFields
-              - TestTransmitOrder_DibitLabels_Symmetry
 
   - id: "TS-102-361-2"
     title: "ETSI TS 102 361-2 — DMR Voice and Generic Services and Facilities"
