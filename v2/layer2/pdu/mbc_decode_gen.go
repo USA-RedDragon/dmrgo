@@ -83,6 +83,91 @@ func DecodeMBCHeader(data [96]bit.Bit) MBCHeader {
 	return result
 }
 
+// MBCHeaderPayloads holds one payload struct of each type that
+// an MBCHeader dispatch field points to, for DecodeMBCHeaderInto.
+// The zero value is ready to use.
+type MBCHeaderPayloads struct {
+	privateVoiceGrantPDU            PrivateVoiceGrantPDU
+	talkgroupVoiceGrantPDU          TalkgroupVoiceGrantPDU
+	broadcastTalkgroupVoiceGrantPDU BroadcastTalkgroupVoiceGrantPDU
+	privateDataGrantPDU             PrivateDataGrantPDU
+	talkgroupDataGrantPDU           TalkgroupDataGrantPDU
+	duplexPrivateVoiceGrantPDU      DuplexPrivateVoiceGrantPDU
+	duplexPrivateDataGrantPDU       DuplexPrivateDataGrantPDU
+	privateDataGrantMultiItemPDU    PrivateDataGrantMultiItemPDU
+	movePDU                         MovePDU
+	broadcastPDU                    BroadcastPDU
+}
+
+// DecodeMBCHeaderInto decodes data into dst as DecodeMBCHeader does,
+// but points the dispatch field of dst into p, so it does not allocate.
+// The payload stays valid until the next decode into p. dst and p must
+// not be nil.
+func DecodeMBCHeaderInto(dst *MBCHeader, p *MBCHeaderPayloads, data [96]bit.Bit) {
+	*dst = MBCHeader{}
+	result := dst
+	lowbit.Mask(data[:])
+	var _packedBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			_packedBytes[i] <<= 1
+			_packedBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	_packedBytes[10] ^= uint8(0xaa)
+	_packedBytes[11] ^= uint8(0xaa)
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
+	result.LastBlock = data[0] == 1
+	result.ProtectFlag = data[1] == 1
+	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
+	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
+	var _dispatchBits [64]bit.Bit
+	copy(_dispatchBits[:], data[16:80])
+	if result.FID == 0 {
+		switch result.Opcode {
+		case CSBKPrivateVoiceGrant:
+			p.privateVoiceGrantPDU = decodePrivateVoiceGrantPDU(_dispatchBits)
+			result.PrivateVoiceGrantPDU = &p.privateVoiceGrantPDU
+		case CSBKTalkgroupVoiceGrant:
+			p.talkgroupVoiceGrantPDU = decodeTalkgroupVoiceGrantPDU(_dispatchBits)
+			result.TalkgroupVoiceGrantPDU = &p.talkgroupVoiceGrantPDU
+		case CSBKBroadcastTalkgroupVoiceGrant:
+			p.broadcastTalkgroupVoiceGrantPDU = decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
+			result.BroadcastTalkgroupVoiceGrantPDU = &p.broadcastTalkgroupVoiceGrantPDU
+		case CSBKPrivateDataGrant:
+			p.privateDataGrantPDU = decodePrivateDataGrantPDU(_dispatchBits)
+			result.PrivateDataGrantPDU = &p.privateDataGrantPDU
+		case CSBKTalkgroupDataGrant:
+			p.talkgroupDataGrantPDU = decodeTalkgroupDataGrantPDU(_dispatchBits)
+			result.TalkgroupDataGrantPDU = &p.talkgroupDataGrantPDU
+		case CSBKDuplexPrivateVoiceGrant:
+			p.duplexPrivateVoiceGrantPDU = decodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
+			result.DuplexPrivateVoiceGrantPDU = &p.duplexPrivateVoiceGrantPDU
+		case CSBKDuplexPrivateDataGrant:
+			p.duplexPrivateDataGrantPDU = decodeDuplexPrivateDataGrantPDU(_dispatchBits)
+			result.DuplexPrivateDataGrantPDU = &p.duplexPrivateDataGrantPDU
+		case CSBKPrivateDataGrantMultiItem:
+			p.privateDataGrantMultiItemPDU = decodePrivateDataGrantMultiItemPDU(_dispatchBits)
+			result.PrivateDataGrantMultiItemPDU = &p.privateDataGrantMultiItemPDU
+		case CSBKMove:
+			p.movePDU = decodeMovePDU(_dispatchBits)
+			result.MovePDU = &p.movePDU
+		case CSBKBroadcast:
+			p.broadcastPDU = decodeBroadcastPDU(_dispatchBits)
+			result.BroadcastPDU = &p.broadcastPDU
+		default:
+			for _i := range 64 {
+				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+			}
+		}
+	} else {
+		for _i := range 64 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
+	}
+}
+
 // Encode encodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
 func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit

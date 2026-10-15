@@ -463,3 +463,67 @@ type EmbeddedSignalling struct {
 		"// ETSI TS 102 361-1 clause 9.1.2\n",
 	)
 }
+
+func TestDecodeIntoUsesPayloadStorage(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+type BSPDU struct {
+	Y uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:input Mode
+type T struct {
+	Mode bool   `+"`dmr:\"-\"`"+`
+	Op   uint8  `+"`dmr:\"bits:0-7\"`"+`
+	A    *Sub   `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==false\"`"+`
+	B    *Sub   `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`"+`
+	C    *BSPDU `+"`dmr:\"bits:8-15,dispatch:Op=2\"`"+`
+}`)
+	assertContains(t, out,
+		"// TPayloads holds one payload struct of each type that\n// a T dispatch field points to, for DecodeTInto.\n// The zero value is ready to use.\ntype TPayloads struct {\n\tsub   Sub\n\tbspdu BSPDU\n}",
+		"func DecodeTInto(dst *T, p *TPayloads, data [16]bit.Bit, mode bool) {\n\t*dst = T{}\n\tresult := dst\n\tresult.Mode = mode\n",
+		"p.sub = DecodeSub(_dispatchBits)\n\t\t\tresult.A = &p.sub",
+		"p.sub = DecodeSub(_dispatchBits)\n\t\t\tresult.B = &p.sub",
+		"p.bspdu = DecodeBSPDU(_dispatchBits)\n\t\tresult.C = &p.bspdu",
+		"_decoded := DecodeSub(_dispatchBits)\n\t\t\tresult.A = &_decoded",
+	)
+	_, into, _ := strings.Cut(out, "func DecodeTInto(")
+	into, _, _ = strings.Cut(into, "\n}\n")
+	if strings.Contains(into, "return") || strings.Contains(into, "_decoded") {
+		t.Errorf("DecodeTInto returns or allocates a payload:\n%s", into)
+	}
+}
+
+func TestNoPayloadsWithoutDispatch(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, `type T struct {
+	A uint8 `+"`dmr:\"bits:0-7\"`"+`
+}`)
+	if strings.Contains(out, "Payloads") || strings.Contains(out, "Into(") {
+		t.Errorf("PDU without dispatch fields has an Into decoder:\n%s", out)
+	}
+}
+
+func TestInputNamedLikeIntoParameterIsRenamed(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:input P
+type T struct {
+	P  bool  `+"`dmr:\"-\"`"+`
+	Op uint8 `+"`dmr:\"bits:0-7\"`"+`
+	A  *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1\"`"+`
+}`)
+	assertContains(t, out,
+		"func DecodeT(data [16]bit.Bit, _p bool) T {",
+		"func DecodeTInto(dst *T, p *TPayloads, data [16]bit.Bit, _p bool) {",
+		"result.P = _p",
+	)
+}
