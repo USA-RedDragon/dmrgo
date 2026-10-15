@@ -104,7 +104,7 @@ func Search(stream []bit.Bit, start, threshold int) (m Match, ok bool) {
 // Burst is a burst cut from the stream.
 type Burst struct {
 	// Data is the burst, ready for layer2.NewBurstFromBytes.
-	Data [33]byte
+	Data layer2.RawBurst
 	// Offset is the stream index of burst bit 0, counted from the first
 	// bit written to the Framer.
 	Offset int64
