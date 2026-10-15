@@ -125,9 +125,9 @@ func decodeCases(t testing.TB) []decodeCase {
 		{"CSBK BS_Dwn_Act", &csbk, 0, 0},
 		{"CSBK preamble", &preamble, 1, 0},
 		{"data header", &dataHeader, 1, 0},
-		{"rate 1/2", &pdu.Rate12Data{Data: [12]byte{1, 2, 3}}, 0, 1},
-		{"rate 3/4", &pdu.Rate34Data{Data: [18]byte{4, 5, 6}}, 0, 1},
-		{"rate 1", &pdu.Rate1Data{Data: [24]byte{7, 8, 9}}, 0, 1},
+		{"rate 1/2", &pdu.Rate12Data{Data: [12]byte{1, 2, 3}}, 0, 0},
+		{"rate 3/4", &pdu.Rate34Data{Data: [18]byte{4, 5, 6}}, 0, 0},
+		{"rate 1", &pdu.Rate1Data{Data: [24]byte{7, 8, 9}}, 0, 0},
 		{"voice LC header", &header, 1, 0},
 		{"terminator with LC", &term, 1, 0},
 		{"PI header", &pdu.PIHeader{AlgorithmID: 1, MFID: 0x10, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 91}, 0, 0},
@@ -143,7 +143,7 @@ func decodeCases(t testing.TB) []decodeCase {
 	var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	emb := pdu.EmbeddedSignalling{ColorCode: 1}
 	return append(out,
-		decodeCase{"rate 1/2 with EMB", hexBurst(t, aselsanRate12EMB), 0, 1},
+		decodeCase{"rate 1/2 with EMB", hexBurst(t, aselsanRate12EMB), 0, 0},
 		decodeCase{"idle with EMB", hexBurst(t, aselsanIdleEMB), 0, 0},
 		decodeCase{"voice A", must(layer2.BuildVoiceBurst(frames, enums.VoiceBurstA, emb, [4]byte{}, layer2.SyncSourceBS)), 0, 0},
 		decodeCase{"voice B", must(layer2.BuildVoiceBurst(frames, enums.VoiceBurstB, emb, [4]byte{1, 2, 3, 4}, layer2.SyncSourceBS)), 0, 0},
@@ -253,7 +253,7 @@ func burstEncodeEntries(t testing.TB) []entry {
 	for _, c := range []struct {
 		name   string
 		allocs float64
-	}{{"d-sms", 5}, {"h-sms", 3}, {"m-sms", 6}, {"parrot_kerchunk", 0}, {"voice", 0}} {
+	}{{"d-sms", 0}, {"h-sms", 0}, {"m-sms", 0}, {"parrot_kerchunk", 0}, {"voice", 0}} {
 		bursts := decodeAll(t, capture(t, c.name))
 		out = append(out, entry{"layer2.Burst.Encode", c.name + " capture", c.allocs, func() {
 			for i := range bursts {
@@ -302,7 +302,7 @@ func burstEncodeEntries(t testing.TB) []entry {
 			Kind: layer2.KindData, SyncPattern: enums.SyncBSSourcedData,
 			SlotType: pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeRate12},
 			Data:     &pdu.Rate12Data{Data: [12]byte{1, 2, 3}},
-		}, 1},
+		}, 0},
 		{"set CSBK BS_Dwn_Act", layer2.Burst{
 			Kind: layer2.KindData, SyncPattern: enums.SyncBSSourcedData,
 			SlotType: pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeCSBK}, Data: &csbk,
@@ -440,9 +440,9 @@ func rawBurstEntries(t testing.TB) []entry {
 		{"layer2.BuildBurst", "CSBK BS_Dwn_Act", 0, func() { r, err = layer2.BuildBurst(&csbk, 1, layer2.SyncSourceBS) }},
 		{"layer2.BuildBurst", "CSBK preamble", 0, func() { r, err = layer2.BuildBurst(&preamble, 1, layer2.SyncSourceBS) }},
 		{"layer2.BuildBurst", "voice LC header", 0, func() { r, err = layer2.BuildBurst(&lc, 1, layer2.SyncSourceBS) }},
-		{"layer2.BuildBurst", "rate 1/2", 1, func() { r, err = layer2.BuildBurst(rate12Data, 1, layer2.SyncSourceBS) }},
-		{"layer2.BuildBurst", "rate 3/4", 1, func() { r, err = layer2.BuildBurst(rate34Data, 1, layer2.SyncSourceBS) }},
-		{"layer2.BuildBurst", "rate 1", 1, func() { r, err = layer2.BuildBurst(rate1Data, 1, layer2.SyncSourceBS) }},
+		{"layer2.BuildBurst", "rate 1/2", 0, func() { r, err = layer2.BuildBurst(rate12Data, 1, layer2.SyncSourceBS) }},
+		{"layer2.BuildBurst", "rate 3/4", 0, func() { r, err = layer2.BuildBurst(rate34Data, 1, layer2.SyncSourceBS) }},
+		{"layer2.BuildBurst", "rate 1", 0, func() { r, err = layer2.BuildBurst(rate1Data, 1, layer2.SyncSourceBS) }},
 		{"layer2.BuildBurst", "idle", 0, func() { r, err = layer2.BuildBurst(idle, 1, layer2.SyncSourceBS) }},
 		{"layer2.BuildDataBurst", "data header", 0, func() {
 			r, err = layer2.BuildDataBurst(payload, enums.DataTypeDataHeader, 1, layer2.SyncSourceBS)

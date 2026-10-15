@@ -527,3 +527,19 @@ type T struct {
 		"result.P = _p",
 	)
 }
+
+func TestPackedFieldIsPackedWithoutAllocating(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, `type T struct {
+	A uint8   `+"`dmr:\"bits:0-7\"`"+`
+	D [2]byte `+"`dmr:\"bits:8-23,packed\"`"+`
+}`)
+	assertContains(t, out,
+		"for _i := range 16 {\n\t\tresult.D[_i/8] |= byte(data[8+_i]) << (7 - _i%8)",
+		"for _i := range 16 {\n\t\tdata[8+_i] = bit.Bit(s.D[_i/8] >> (7 - _i%8) & 1)",
+	)
+	if strings.Contains(out, "bit.Pack(") || strings.Contains(out, "bit.Unpack(") {
+		t.Errorf("packed field uses bit.Pack or bit.Unpack:\n%s", out)
+	}
+}
