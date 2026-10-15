@@ -127,7 +127,8 @@ func (opcode CSBKOpcode) String() string {
 	}
 }
 
-// ETSI TS 102 361-2 - 7.1.2.1 BS Outbound Activation (BS_Dwn_Act) PDU
+// BSOutboundActivationPDU is the BS outbound activation (BS_Dwn_Act) CSBK
+// payload (ETSI TS 102 361-2 clause 7.1.2.1).
 //
 //dmr:subpdu
 type BSOutboundActivationPDU struct {
@@ -136,7 +137,8 @@ type BSOutboundActivationPDU struct {
 	SourceAddress uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-2 - 7.1.2.2 UU_V_Req PDU
+// UnitToUnitVoiceServiceRequestPDU is the unit to unit voice service request
+// (UU_V_Req) CSBK payload (ETSI TS 102 361-2 clause 7.1.2.2).
 type UnitToUnitVoiceServiceRequestPDU struct {
 	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
 	Reserved       byte                  `dmr:"bits:8-15"`
@@ -144,7 +146,8 @@ type UnitToUnitVoiceServiceRequestPDU struct {
 	SourceAddress  uint32                `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-2 - 7.1.2.3 UU_Ans_Rsp PDU
+// UnitToUnitVoiceServiceAnswerResponsePDU is the unit to unit voice service
+// answer response (UU_Ans_Rsp) CSBK payload (ETSI TS 102 361-2 clause 7.1.2.3).
 type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
 	AnswerResponse byte                  `dmr:"bits:8-15"`
@@ -152,7 +155,8 @@ type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 	SourceAddress  uint32                `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-2 - 7.1.2.4 NACK_Rsp PDU
+// NegativeAcknowledgementPDU is the negative acknowledgement response
+// (NACK_Rsp) CSBK payload (ETSI TS 102 361-2 clause 7.1.2.4).
 type NegativeAcknowledgementPDU struct {
 	AdditionalInfo layer3.AdditionalInformationField `dmr:"bits:0-0,delegate,noptr"`
 	SourceType     layer3.SourceType                 `dmr:"bits:1-1,delegate,noptr"`
@@ -162,7 +166,8 @@ type NegativeAcknowledgementPDU struct {
 	TargetAddress  uint32                            `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-2 - 7.1.2.5 Pre PDU
+// PreamblePDU is the preamble (Pre) CSBK payload (ETSI TS 102 361-2 clause
+// 7.1.2.5).
 type PreamblePDU struct {
 	// 1 = data content follows, 0 = CSBK follows
 	Data bool `dmr:"bit:0"`
@@ -174,7 +179,8 @@ type PreamblePDU struct {
 	SourceAddress      uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
+// ChannelTimingPDU is the channel timing (CT_CSBK) CSBK payload (ETSI TS 102
+// 361-2 clause 7.1.2.6, Table 7.8).
 // ChannelTimingOp1 is the opcode MSB and ChannelTimingOp0 the LSB.
 type ChannelTimingPDU struct {
 	SyncAge                 uint16 `dmr:"bits:0-10"`
@@ -191,7 +197,8 @@ type ChannelTimingPDU struct {
 
 // ── Tier III CSBK sub-PDU structs (ETSI TS 102 361-4 §7.1.1) ──
 
-// ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
+// PrivateVoiceGrantPDU is the private voice channel grant (PV_GRANT) CSBK
+// payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type PrivateVoiceGrantPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -202,7 +209,8 @@ type PrivateVoiceGrantPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
+// TalkgroupVoiceGrantPDU is the talkgroup voice channel grant (TV_GRANT) CSBK
+// payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type TalkgroupVoiceGrantPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -213,7 +221,8 @@ type TalkgroupVoiceGrantPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
+// BroadcastTalkgroupVoiceGrantPDU is the broadcast talkgroup voice channel
+// grant (BTV_GRANT) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type BroadcastTalkgroupVoiceGrantPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -224,7 +233,8 @@ type BroadcastTalkgroupVoiceGrantPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT PDU
+// PrivateDataGrantPDU is the private data channel grant (PD_GRANT) CSBK payload
+// (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type PrivateDataGrantPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -235,7 +245,8 @@ type PrivateDataGrantPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT PDU
+// TalkgroupDataGrantPDU is the talkgroup data channel grant (TD_GRANT) CSBK
+// payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type TalkgroupDataGrantPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -246,7 +257,8 @@ type TalkgroupDataGrantPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT_DX PDU
+// DuplexPrivateVoiceGrantPDU is the duplex private voice channel grant
+// (PV_GRANT_DX) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type DuplexPrivateVoiceGrantPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -257,7 +269,8 @@ type DuplexPrivateVoiceGrantPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_DX PDU
+// DuplexPrivateDataGrantPDU is the duplex private data channel grant
+// (PD_GRANT_DX) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type DuplexPrivateDataGrantPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -268,7 +281,8 @@ type DuplexPrivateDataGrantPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
+// PrivateDataGrantMultiItemPDU is the multi-item private data channel grant
+// (PD_GRANT_MI) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 type PrivateDataGrantMultiItemPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -279,7 +293,8 @@ type PrivateDataGrantMultiItemPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
+// TalkgroupDataGrantMultiItemPDU is the multi-item talkgroup data channel grant
+// (TD_GRANT_MI) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1).
 // It shares opcode 0x38 with BSOutboundActivationPDU, so DecodeCSBK keeps it
 // in RawPayload; see CSBK.Hint0x38 and CSBK.AsTalkgroupDataGrantMultiItem.
 //
@@ -294,7 +309,8 @@ type TalkgroupDataGrantMultiItemPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.3 C_MOVE PDU
+// MovePDU is the move (C_MOVE) CSBK payload (ETSI TS 102 361-4 clause
+// 7.1.1.1.3).
 type MovePDU struct {
 	Reserved1       uint16 `dmr:"bits:0-8"`
 	Mask            uint8  `dmr:"bits:9-13"`
@@ -306,7 +322,8 @@ type MovePDU struct {
 	MSAddress       uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.4 C_ALOHA PDU
+// AlohaPDU is the Aloha (C_ALOHA) CSBK payload (ETSI TS 102 361-4 clause
+// 7.1.1.1.4).
 type AlohaPDU struct {
 	Reserved1    bool   `dmr:"bit:0"`
 	TSCCAS       bool   `dmr:"bit:1"`
@@ -323,7 +340,8 @@ type AlohaPDU struct {
 	MSAddress    uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
+// BroadcastPDU is the announcement (C_BCAST) CSBK payload (ETSI TS 102 361-4
+// clause 7.1.1.1.5, Table 7.20).
 // BroadcastParms1 and BroadcastParms2 are not decoded further; their layout
 // depends on AnnouncementType (TS 102 361-4 §7.2.19, Tables 7.69 onward).
 type BroadcastPDU struct {
@@ -335,7 +353,8 @@ type BroadcastPDU struct {
 	BroadcastParms2  uint32                 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.3.2 P_CLEAR PDU
+// ClearPDU is the clear (P_CLEAR) CSBK payload (ETSI TS 102 361-4 clause
+// 7.1.1.3.2).
 type ClearPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	Reserved1       bool   `dmr:"bit:12"`
@@ -345,7 +364,8 @@ type ClearPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.3.3 P_PROTECT PDU
+// ProtectPDU is the protect (P_PROTECT) CSBK payload (ETSI TS 102 361-4 clause
+// 7.1.1.3.3).
 type ProtectPDU struct {
 	Reserved        uint16 `dmr:"bits:0-11"`
 	ProtectKind     uint8  `dmr:"bits:12-14"`
@@ -354,7 +374,8 @@ type ProtectPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / §7.1.1.3.4 P_AHOY PDU
+// AhoyPDU is the ahoy (C_AHOY and P_AHOY) CSBK payload (ETSI TS 102 361-4
+// clauses 7.1.1.1.6 and 7.1.1.3.4).
 type AhoyPDU struct {
 	ServiceOptsMirror uint8  `dmr:"bits:0-6"`
 	ServiceKindFlag   bool   `dmr:"bit:7"`
@@ -366,7 +387,8 @@ type AhoyPDU struct {
 	SourceAddress     uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
+// AckOutboundPDU is the outbound acknowledgement (C_ACKD) CSBK payload (ETSI TS
+// 102 361-4 clause 7.1.1.1.7).
 type AckOutboundPDU struct {
 	ResponseInfo   uint8  `dmr:"bits:0-6"`
 	ReasonCode     byte   `dmr:"bits:7-14"`
@@ -375,7 +397,8 @@ type AckOutboundPDU struct {
 	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.2.3 C_ACKU PDU
+// AckInboundPDU is the inbound acknowledgement (C_ACKU) CSBK payload (ETSI TS
+// 102 361-4 clause 7.1.1.2.3).
 type AckInboundPDU struct {
 	ResponseInfo   uint8  `dmr:"bits:0-6"`
 	ReasonCode     byte   `dmr:"bits:7-14"`
@@ -384,7 +407,8 @@ type AckInboundPDU struct {
 	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.3.5 P_ACKD PDU
+// AckOutboundPayloadPDU is the outbound payload acknowledgement (P_ACKD) CSBK
+// payload (ETSI TS 102 361-4 clause 7.1.1.3.5).
 type AckOutboundPayloadPDU struct {
 	ResponseInfo   uint8  `dmr:"bits:0-6"`
 	ReasonCode     byte   `dmr:"bits:7-14"`
@@ -393,7 +417,8 @@ type AckOutboundPayloadPDU struct {
 	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.4.2 P_ACKU PDU
+// AckInboundPayloadPDU is the inbound payload acknowledgement (P_ACKU) CSBK
+// payload (ETSI TS 102 361-4 clause 7.1.1.4.2).
 type AckInboundPayloadPDU struct {
 	ResponseInfo   uint8  `dmr:"bits:0-6"`
 	ReasonCode     byte   `dmr:"bits:7-14"`
@@ -402,7 +427,8 @@ type AckInboundPayloadPDU struct {
 	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.2.1 C_RAND PDU
+// RandomAccessPDU is the random access (C_RAND) CSBK payload (ETSI TS 102 361-4
+// clause 7.1.1.2.1).
 type RandomAccessPDU struct {
 	ServiceOptions uint8  `dmr:"bits:0-6"`
 	ProxyFlag      bool   `dmr:"bit:7"`
@@ -412,7 +438,8 @@ type RandomAccessPDU struct {
 	SourceAddress  uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.2.2 C_ACKVIT PDU
+// AckvitationPDU is the ackvitation (C_ACKVIT) CSBK payload (ETSI TS 102 361-4
+// clause 7.1.1.2.2).
 type AckvitationPDU struct {
 	ServiceOptsMirror uint8  `dmr:"bits:0-6"`
 	ServiceKindFlag   bool   `dmr:"bit:7"`
@@ -423,7 +450,8 @@ type AckvitationPDU struct {
 	SourceAddress     uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.4.3 P_MAINT PDU
+// MaintenancePDU is the maintenance (P_MAINT) CSBK payload (ETSI TS 102 361-4
+// clause 7.1.1.4.3).
 type MaintenancePDU struct {
 	Reserved      uint16 `dmr:"bits:0-11"`
 	MaintKind     uint8  `dmr:"bits:12-14"`
@@ -447,7 +475,8 @@ const (
 	Opcode0x38TalkgroupDataGrantMultiItem
 )
 
-// ETSI TS 102 361-1 - 9.1.5 CSBK PDU
+// CSBK is the Control Signalling Block (CSBK) PDU (ETSI TS 102 361-1 clause
+// 9.1.5).
 //
 // The FID redefines the CSBKO (ETSI TS 102 361-1 Table 9.21), so the standard
 // payload layouts apply only to the SFID. Payloads of other FIDs and of

@@ -49,7 +49,8 @@ func (st ServiceType) String() string {
 	}
 }
 
-// ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
+// UnifiedSingleBlockData is a Unified Single Block Data (USBD) PDU (ETSI TS 102
+// 361-1 clause 8.2.3.1).
 //
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0x3333

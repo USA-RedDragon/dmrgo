@@ -2,7 +2,8 @@ package layer3
 
 import "github.com/USA-RedDragon/dmrgo/v2/bit"
 
-// ETSI TS 102 361-2 - 7.2.1  Service Options
+// ServiceOptions is the Service Options information element (ETSI TS 102 361-2
+// clause 7.2.1).
 type ServiceOptions struct {
 	IsEmergency         bool  `dmr:"bit:0"`
 	IsPrivacy           bool  `dmr:"bit:1"`

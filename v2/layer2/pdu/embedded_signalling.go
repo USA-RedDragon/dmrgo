@@ -5,7 +5,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
+// EmbeddedSignalling is the embedded signalling (EMB) PDU (ETSI TS 102 361-1
+// clause 9.1.2).
 //
 //dmr:fec quadratic_residue_16_7_6
 type EmbeddedSignalling struct {
