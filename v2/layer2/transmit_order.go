@@ -124,6 +124,7 @@ type DibitSymbol struct {
 // BurstToDibits converts a 264-bit burst into 132 dibit symbols in
 // transmission order (L66 through R66).
 func BurstToDibits(bits [264]bit.Bit) [132]DibitSymbol {
+	bit.Mask(bits[:])
 	var symbols [132]DibitSymbol
 	for i := 0; i < 132; i++ {
 		symbols[i] = DibitSymbol{

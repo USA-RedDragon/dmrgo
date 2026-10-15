@@ -10,6 +10,7 @@ import (
 // ETSI TS 102 361-1 - B.3.1 Golay (20,8,7)
 // This code works on Bit arrays where each Bit is 0 or 1.
 func Golay_20_8_Parity(bits [8]bit.Bit) [12]bit.Bit {
+	bit.Mask(bits[:])
 	var p [12]bit.Bit
 	p[0] = bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7]
 	p[1] = bits[1] ^ bits[2] ^ bits[4]
@@ -29,6 +30,7 @@ func Golay_20_8_Parity(bits [8]bit.Bit) [12]bit.Bit {
 // DecodeGolay2087 decodes a 20-bit sequence (Bit array of 0s and 1s)
 // Returns corrected bits and FECResult.
 func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, fec.FECResult) {
+	bit.Mask(bits[:])
 	result := fec.FECResult{BitsChecked: 20}
 
 	var data [8]bit.Bit
@@ -68,6 +70,7 @@ func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, fec.FECResult) {
 }
 
 func Golay_20_8_Check(bits [20]bit.Bit) bool {
+	bit.Mask(bits[:])
 	var dataBits [8]bit.Bit
 	copy(dataBits[:], bits[:8])
 

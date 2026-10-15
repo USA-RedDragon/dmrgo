@@ -19,6 +19,7 @@ import (
 // DecodePIHeader decodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
 func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.FECResult) {
 	var result PIHeader
+	bit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {

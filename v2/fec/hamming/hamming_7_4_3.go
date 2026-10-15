@@ -27,6 +27,7 @@ import (
 
 // Parity743 computes the 3 parity bits for 4 data bits using Hamming(7,4,3).
 func Parity743(data [4]bit.Bit) [3]bit.Bit {
+	bit.Mask(data[:])
 	return [3]bit.Bit{
 		data[0] ^ data[1] ^ data[2], // p₀
 		data[1] ^ data[2] ^ data[3], // p₁
@@ -38,6 +39,7 @@ func Parity743(data [4]bit.Bit) [3]bit.Bit {
 // Returns the corrected codeword and FECResult.
 // Uses the generated hamming743_syndrome_table for syndrome→error-position lookup.
 func Decode743(bits [7]bit.Bit) ([7]bit.Bit, fec.FECResult) {
+	bit.Mask(bits[:])
 	result := fec.FECResult{BitsChecked: 7}
 
 	// Calculate syndrome: s = H · rᵀ
@@ -71,6 +73,7 @@ func Decode743(bits [7]bit.Bit) ([7]bit.Bit, fec.FECResult) {
 
 // Check743 returns true if the 7-bit codeword has valid parity.
 func Check743(bits [7]bit.Bit) bool {
+	bit.Mask(bits[:])
 	var data [4]bit.Bit
 	copy(data[:], bits[:4])
 
@@ -81,6 +84,7 @@ func Check743(bits [7]bit.Bit) bool {
 // Encode743 encodes 4 data bits into a 7-bit Hamming(7,4,3) codeword.
 // Layout: [d₀ d₁ d₂ d₃ p₀ p₁ p₂]
 func Encode743(data [4]bit.Bit) [7]bit.Bit {
+	bit.Mask(data[:])
 	parity := Parity743(data)
 	return [7]bit.Bit{
 		data[0], data[1], data[2], data[3],

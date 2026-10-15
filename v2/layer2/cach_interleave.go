@@ -37,6 +37,7 @@ var cachInterleaveTable = [CACHBits]int{
 // Input:  txBits in transmit order (Figure B.9 bottom row)
 // Output: logical order (AT, TC, LCSS, Hamming parity, then 17 payload bits)
 func CACHDeinterleave(txBits [CACHBits]bit.Bit) [CACHBits]bit.Bit {
+	bit.Mask(txBits[:])
 	var logical [CACHBits]bit.Bit
 	for i := 0; i < CACHBits; i++ {
 		logical[cachDeinterleaveTable[i]] = txBits[i]
@@ -50,6 +51,7 @@ func CACHDeinterleave(txBits [CACHBits]bit.Bit) [CACHBits]bit.Bit {
 // Input:  logical order (AT, TC, LCSS, Hamming parity, then 17 payload bits)
 // Output: txBits in transmit order (Figure B.9 bottom row)
 func CACHInterleave(logical [CACHBits]bit.Bit) [CACHBits]bit.Bit {
+	bit.Mask(logical[:])
 	var txBits [CACHBits]bit.Bit
 	for i := 0; i < CACHBits; i++ {
 		txBits[cachInterleaveTable[i]] = logical[i]

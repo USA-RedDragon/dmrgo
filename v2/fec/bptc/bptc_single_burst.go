@@ -26,6 +26,7 @@ import (
 // number of corrected bits. Four bit errors are always detected and set
 // Uncorrectable.
 func DecodeSingleBurstBPTC(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.FECResult) {
+	bit.Mask(txBits[:])
 	result := fec.FECResult{BitsChecked: 32}
 
 	// Deinterleave: transmit order → encode matrix order
@@ -87,6 +88,7 @@ func DecodeSingleBurstBPTC(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec
 //
 // Set oddParity=true for Reverse Channel (RC) encoding.
 func EncodeSingleBurstBPTC(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
+	bit.Mask(info[:])
 	var matrix [2][16]bit.Bit
 
 	// Place info bits in row 0, columns 0..10

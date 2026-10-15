@@ -53,6 +53,7 @@ func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]bit.Bit {
 // is right. Callers must check the block CRC (the CRC-9 of a confirmed block
 // or the message CRC-32) to detect a miscorrected block.
 func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.FECResult) {
+	bit.Mask(bits[:])
 	result := fec.FECResult{BitsChecked: 196}
 
 	var rxDibits [98]byte
@@ -135,6 +136,7 @@ func (t *Trellis34) tribitsToBits(tribits [49]byte) [144]bit.Bit {
 
 // Encode encodes 144 data bits using Trellis 3/4 rate coding, producing 196 interleaved bits.
 func (t *Trellis34) Encode(data [144]bit.Bit) [196]bit.Bit {
+	bit.Mask(data[:])
 	// Step 1: Data bits to tribits (48 data tribits + 1 tail)
 	var tribits [49]byte
 	for i := 0; i < 48; i++ {

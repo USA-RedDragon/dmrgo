@@ -21,6 +21,7 @@ type VocoderFrame struct {
 // first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits
 // unprotected, interleaved into the slot.
 func EncodeAMBE72(info [49]bit.Bit) [72]bit.Bit {
+	bit.Mask(info[:])
 	return encodeAMBE(info)
 }
 
@@ -37,6 +38,7 @@ func EncodeAMBE72(info [49]bit.Bit) [72]bit.Bit {
 // when errs2 is above 3; errs2 counts only the corrected data bits of
 // sections A and B, and mbelib does not check the section A parity bit.
 func DecodeAMBE72(slot [72]bit.Bit) ([49]bit.Bit, fec.FECResult) {
+	bit.Mask(slot[:])
 	return decodeAMBE(slot)
 }
 

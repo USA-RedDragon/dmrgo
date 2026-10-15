@@ -17,6 +17,7 @@ import (
 // DecodeCdefParms decodes a CdefParms per ETSI TS 102 361-4 — §7.2.42, Table 7.103
 func DecodeCdefParms(data [58]bit.Bit) (CdefParms, fec.FECResult) {
 	var result CdefParms
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.Channel = bit.BitsToUint16(data[:], 0, 12)
 	result.TXMHz = bit.BitsToUint16(data[:], 12, 10)

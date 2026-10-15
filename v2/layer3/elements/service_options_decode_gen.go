@@ -17,6 +17,7 @@ import (
 // DecodeServiceOptions decodes a ServiceOptions per ETSI TS 102 361-2 - 7.2.1  Service Options
 func DecodeServiceOptions(data [8]bit.Bit) (ServiceOptions, fec.FECResult) {
 	var result ServiceOptions
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.IsEmergency = bit.BitsToBool(data[:], 0)
 	result.IsPrivacy = bit.BitsToBool(data[:], 1)

@@ -27,6 +27,7 @@ import (
 // DecodeUnconfirmedDataHeader decodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
 func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.FECResult) {
 	var result UnconfirmedDataHeader
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.Group = bit.BitsToBool(data[:], 0)
 	result.ResponseRequested = bit.BitsToBool(data[:], 1)
@@ -93,6 +94,7 @@ func (s *UnconfirmedDataHeader) ToString() string {
 // DecodeDataHeader decodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
 func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.FECResult) {
 	var result DataHeader
+	bit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
@@ -315,6 +317,7 @@ func (s *DataHeader) ToString() string {
 // DecodeConfirmedDataHeader decodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
 func DecodeConfirmedDataHeader(data [80]bit.Bit) (ConfirmedDataHeader, fec.FECResult) {
 	var result ConfirmedDataHeader
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.Group = bit.BitsToBool(data[:], 0)
 	result.ResponseRequested = bit.BitsToBool(data[:], 1)
@@ -394,6 +397,7 @@ func (s *ConfirmedDataHeader) ToString() string {
 // DecodeResponsePacketHeader decodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
 func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.FECResult) {
 	var result ResponsePacketHeader
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.Reserved = bit.BitsToBool(data[:], 0)
 	result.ResponseRequested = bit.BitsToBool(data[:], 1)
@@ -463,6 +467,7 @@ func (s *ResponsePacketHeader) ToString() string {
 // DecodeDefinedDataHeader decodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
 func DecodeDefinedDataHeader(data [80]bit.Bit) (DefinedDataHeader, fec.FECResult) {
 	var result DefinedDataHeader
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.Group = bit.BitsToBool(data[:], 0)
 	result.ResponseRequested = bit.BitsToBool(data[:], 1)
@@ -530,6 +535,7 @@ func (s *DefinedDataHeader) ToString() string {
 // DecodeRawDataHeader decodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
 func DecodeRawDataHeader(data [80]bit.Bit) (RawDataHeader, fec.FECResult) {
 	var result RawDataHeader
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.Group = bit.BitsToBool(data[:], 0)
 	result.ResponseRequested = bit.BitsToBool(data[:], 1)
@@ -602,6 +608,7 @@ func (s *RawDataHeader) ToString() string {
 // DecodeStatusPrecodedHeader decodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
 func DecodeStatusPrecodedHeader(data [80]bit.Bit) (StatusPrecodedHeader, fec.FECResult) {
 	var result StatusPrecodedHeader
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.Group = bit.BitsToBool(data[:], 0)
 	result.ResponseRequested = bit.BitsToBool(data[:], 1)
@@ -661,6 +668,7 @@ func (s *StatusPrecodedHeader) ToString() string {
 // DecodeUDTHeader decodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
 func DecodeUDTHeader(data [80]bit.Bit) (UDTHeader, fec.FECResult) {
 	var result UDTHeader
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.Group = bit.BitsToBool(data[:], 0)
 	result.ResponseRequested = bit.BitsToBool(data[:], 1)
@@ -742,6 +750,7 @@ func (s *UDTHeader) ToString() string {
 // DecodeProprietaryHeader decodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
 func DecodeProprietaryHeader(data [80]bit.Bit) (ProprietaryHeader, fec.FECResult) {
 	var result ProprietaryHeader
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	result.SAP = bit.BitsToUint8(data[:], 0, 4)
 	result.MFID = bit.BitsToUint8(data[:], 8, 8)

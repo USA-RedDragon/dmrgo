@@ -112,6 +112,7 @@ type VoiceTransmitter struct {
 // error when colorCode does not fit in 4 bits, source is unknown or lc does
 // not encode.
 func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode uint8, source SyncSource, silence [72]bit.Bit) (*VoiceTransmitter, error) {
+	bit.Mask(silence[:])
 	voiceSync, dataSync, ok := source.SyncPatterns()
 	if !ok {
 		return nil, fmt.Errorf("unknown sync source %d", source)

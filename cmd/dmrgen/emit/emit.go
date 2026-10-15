@@ -249,6 +249,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		for _, in := range pdu.Inputs {
 			g.Id("result").Dot(in).Op("=").Id(inputParamName(in))
 		}
+		g.Qual(bitPkg, "Mask").Call(Id("data").Index(Empty(), Empty()))
 
 		hasCRC := pdu.CRC != nil
 		hasPackedFEC := codec != nil && codec.PackedBytes

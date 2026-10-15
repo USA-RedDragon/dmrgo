@@ -13,6 +13,7 @@ import (
 
 func DecodeVocoderFrame(data [72]bit.Bit) (VocoderFrame, fec.FECResult) {
 	var result VocoderFrame
+	bit.Mask(data[:])
 	_decoded, fecResult := decodeAMBE(data)
 	result.DecodedBits = _decoded
 	result.FEC = fecResult

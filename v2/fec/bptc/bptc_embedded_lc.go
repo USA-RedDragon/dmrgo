@@ -52,6 +52,9 @@ const EmbeddedLCMaxErrors = 8
 // nearest codeword. With 4 or more errors two codewords can be equally near,
 // and check, for example the 5-bit LC checksum, picks between them.
 func DecodeEmbeddedLCWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.FECResult) {
+	for i := range fragments {
+		bit.Mask(fragments[i][:])
+	}
 	matrix := embeddedLCMatrix(fragments)
 	s := embeddedLCSearch{best: EmbeddedLCMaxErrors, check: check}
 	for row := range matrix {
@@ -185,6 +188,9 @@ var embeddedLCPatterns = sync.OnceValue(func() *embeddedLCPatternTable { //nolin
 // the LC is uncorrectable when any column parity over all 8 rows fails. It
 // accepts far fewer LCs with bit errors than DecodeEmbeddedLC.
 func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
+	for i := range fragments {
+		bit.Mask(fragments[i][:])
+	}
 	matrix := embeddedLCMatrix(fragments)
 	received := matrix
 	uncorrectable := false
@@ -251,6 +257,7 @@ func columnParity(matrix *[8][16]bit.Bit, col int) bit.Bit {
 // EncodeEmbeddedLC encodes 77 information bits (72 LC + 5 checksum) into
 // 4 × 32-bit fragments for transmission across 4 voice bursts.
 func EncodeEmbeddedLC(info [77]bit.Bit) [4][32]bit.Bit {
+	bit.Mask(info[:])
 	var matrix [8][16]bit.Bit
 
 	// Place 77 info bits into rows 0..6, columns 0..10

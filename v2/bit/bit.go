@@ -9,7 +9,17 @@ package bit
 // Bit represents a single bit as a byte value (0 or 1).
 // This type replaces the ambiguous use of byte for unpacked bit arrays throughout
 // the codebase, providing compile-time type safety at zero runtime cost.
+//
+// Functions of this module that read a Bit use only its low bit, so a Bit
+// of 2 reads as 0 and a Bit of 0xFF reads as 1.
 type Bit byte
+
+// Mask clears all but the low bit of each element of bits in place.
+func Mask(bits []Bit) {
+	for i := range bits {
+		bits[i] &= 1
+	}
+}
 
 // BitsToUint8 extracts a uint8 value from a contiguous run of bits.
 // Bits are read MSB-first from bits[start] through bits[start+length-1].
@@ -17,7 +27,7 @@ func BitsToUint8(bits []Bit, start, length int) uint8 {
 	var val uint8
 	for i := 0; i < length; i++ {
 		val <<= 1
-		val |= uint8(bits[start+i])
+		val |= uint8(bits[start+i] & 1)
 	}
 	return val
 }
@@ -28,7 +38,7 @@ func BitsToUint16(bits []Bit, start, length int) uint16 {
 	var val uint16
 	for i := 0; i < length; i++ {
 		val <<= 1
-		val |= uint16(bits[start+i])
+		val |= uint16(bits[start+i] & 1)
 	}
 	return val
 }
@@ -39,7 +49,7 @@ func BitsToUint32(bits []Bit, start, length int) uint32 {
 	var val uint32
 	for i := 0; i < length; i++ {
 		val <<= 1
-		val |= uint32(bits[start+i])
+		val |= uint32(bits[start+i] & 1)
 	}
 	return val
 }
@@ -50,14 +60,14 @@ func BitsToInt(bits []Bit, start, length int) int {
 	var val int
 	for i := 0; i < length; i++ {
 		val <<= 1
-		val |= int(bits[start+i])
+		val |= int(bits[start+i] & 1)
 	}
 	return val
 }
 
 // BitsToBool returns true if the bit at the given index is 1.
 func BitsToBool(bits []Bit, index int) bool {
-	return bits[index] == 1
+	return bits[index]&1 == 1
 }
 
 // BitsFromUint8 converts a uint8 value into a slice of Bit of the given length.
@@ -94,7 +104,7 @@ func PackBits(bits []Bit) []byte {
 	n := (len(bits) + 7) / 8
 	data := make([]byte, n)
 	for i, b := range bits {
-		if b == 1 {
+		if b&1 == 1 {
 			data[i/8] |= 1 << (7 - (i % 8))
 		}
 	}
@@ -108,7 +118,7 @@ func BitsToValue(bits []Bit) byte {
 	var v byte
 	n := len(bits)
 	for i, b := range bits {
-		if b == 1 {
+		if b&1 == 1 {
 			v |= 1 << uint(n-1-i) //nolint:gosec // n-1-i is always non-negative: i ranges [0, n-1]
 		}
 	}
@@ -143,7 +153,7 @@ func UnpackBytesToBits264(data [33]byte) [264]Bit {
 func PackBits264(bits [264]Bit) [33]byte {
 	var data [33]byte
 	for i := 0; i < 264; i++ {
-		if bits[i] == 1 {
+		if bits[i]&1 == 1 {
 			data[i/8] |= 1 << (7 - (i % 8))
 		}
 	}

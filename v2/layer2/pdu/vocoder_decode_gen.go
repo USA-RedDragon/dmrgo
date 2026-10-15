@@ -18,6 +18,7 @@ import (
 // DecodeVocoder decodes a Vocoder per ETSI TS 102 361-1 - 7.1 Voice channel coding
 func DecodeVocoder(data [216]bit.Bit) (Vocoder, fec.FECResult) {
 	var result Vocoder
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	for _i := 0; _i < 3; _i++ {
 		var _elemBits [72]bit.Bit

@@ -18,6 +18,7 @@ import (
 // DecodeRate12Data decodes a Rate12Data per ETSI TS 102 361-1 - 9.2.7 Rate 1/2 coded packet Data (R_1_2_DATA) PDU
 func DecodeRate12Data(data [96]bit.Bit) (Rate12Data, fec.FECResult) {
 	var result Rate12Data
+	bit.Mask(data[:])
 	var fecResult fec.FECResult
 	copy(result.Data[:], bit.PackBits(data[0:96]))
 	return result, fecResult

@@ -29,6 +29,7 @@ func calculate_syndrome_13_9(bits [13]bit.Bit) int {
 
 // DeinterleaveDataBits returns the deinterleaved data bits and FECResult
 func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, fec.FECResult) {
+	bit.Mask(bits[:])
 	result := fec.FECResult{BitsChecked: 196}
 	var deinterleavedBits [196]bit.Bit
 	var temp [96]bit.Bit
@@ -119,6 +120,7 @@ func rowSyndrome(grid *[196]bit.Bit, r int) int {
 
 // Encode encodes 96 data bits using BPTC(196,96) interleaving with Hamming FEC.
 func Encode(data [96]bit.Bit) [196]bit.Bit {
+	bit.Mask(data[:])
 	var grid [196]bit.Bit
 
 	// Place data into the grid

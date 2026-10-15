@@ -1,8 +1,37 @@
 package bit
 
 import (
+	"slices"
 	"testing"
 )
+
+func TestReadersUseOnlyTheLowBit(t *testing.T) {
+	raw := []Bit{0xFF, 2, 3, 0x30, 7, 0xFE, 1, 0}
+	low := slices.Clone(raw)
+	Mask(low)
+	if want := []Bit{1, 0, 1, 0, 1, 0, 1, 0}; !slices.Equal(low, want) {
+		t.Fatalf("Mask = %v, want %v", low, want)
+	}
+	if BitsToUint8(raw, 0, 8) != BitsToUint8(low, 0, 8) ||
+		BitsToUint16(raw, 0, 8) != BitsToUint16(low, 0, 8) ||
+		BitsToUint32(raw, 0, 8) != BitsToUint32(low, 0, 8) ||
+		BitsToInt(raw, 0, 8) != BitsToInt(low, 0, 8) ||
+		BitsToValue(raw) != BitsToValue(low) ||
+		PackBits(raw)[0] != PackBits(low)[0] {
+		t.Error("a reader used more than the low bit")
+	}
+	for i := range raw {
+		if BitsToBool(raw, i) != BitsToBool(low, i) {
+			t.Errorf("BitsToBool(%#x) differs from its low bit", raw[i])
+		}
+	}
+	var raw264, low264 [264]Bit
+	copy(raw264[:], raw)
+	copy(low264[:], low)
+	if PackBits264(raw264) != PackBits264(low264) {
+		t.Error("PackBits264 used more than the low bit")
+	}
+}
 
 func TestBitsToUint8(t *testing.T) {
 	bits := []Bit{1, 0, 1, 1, 0, 0, 1, 0}

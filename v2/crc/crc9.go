@@ -25,7 +25,7 @@ func CalculateCRC9(bits []bit.Bit) uint16 {
 	var crc uint16
 
 	for _, b := range bits {
-		feedback := ((crc >> 8) & 1) ^ uint16(b)
+		feedback := ((crc >> 8) & 1) ^ uint16(b&1)
 		crc = (crc << 1) & 0x1FF // keep only 9 bits
 		if feedback != 0 {
 			crc ^= crc9Poly
@@ -50,7 +50,7 @@ func CheckCRC9(bits []bit.Bit, mask uint16) bool {
 	var expected uint16
 	for i := 0; i < 9; i++ {
 		expected <<= 1
-		expected |= uint16(bits[len(bits)-9+i])
+		expected |= uint16(bits[len(bits)-9+i] & 1)
 	}
 
 	return crc == expected

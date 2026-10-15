@@ -20,7 +20,7 @@ func CalculateCRC8(bits []bit.Bit) uint8 {
 	var crc uint8
 
 	for _, b := range bits {
-		feedback := ((crc >> 7) & 1) ^ uint8(b)
+		feedback := ((crc >> 7) & 1) ^ uint8(b&1)
 		crc <<= 1
 		if feedback != 0 {
 			crc ^= crc8Poly
@@ -44,7 +44,7 @@ func CheckCRC8(bits []bit.Bit) bool {
 	var expected uint8
 	for i := 0; i < 8; i++ {
 		expected <<= 1
-		expected |= uint8(bits[len(bits)-8+i])
+		expected |= uint8(bits[len(bits)-8+i] & 1)
 	}
 
 	return crc == expected

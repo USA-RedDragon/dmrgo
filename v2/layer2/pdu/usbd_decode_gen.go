@@ -19,6 +19,7 @@ import (
 // DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData per ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
 func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec.FECResult) {
 	var result UnifiedSingleBlockData
+	bit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {

@@ -63,6 +63,7 @@ type T struct {
 	A Wide `+"`dmr:\"bits:2-13,delegate,noptr\"`"+`
 }`)
 	assertContains(t, out,
+		"bit.Mask(data[:])",
 		"result.A = Wide(bit.BitsToUint16(data[:], 2, 12))",
 		"bit.BitsFromUint16(uint16(s.A), 12)",
 	)

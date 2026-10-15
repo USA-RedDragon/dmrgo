@@ -13,6 +13,7 @@ type QuadraticResidue16_7_6 struct {
 }
 
 func NewQuadraticResidue16_7_6(bits [16]bit.Bit) *QuadraticResidue16_7_6 {
+	bit.Mask(bits[:])
 	qr := QuadraticResidue16_7_6{}
 	copy(qr.Data[:], bits[:7])
 	copy(qr.Parity[:], bits[7:16])
@@ -21,6 +22,7 @@ func NewQuadraticResidue16_7_6(bits [16]bit.Bit) *QuadraticResidue16_7_6 {
 }
 
 func ParityBits(bits [7]bit.Bit) [9]bit.Bit {
+	bit.Mask(bits[:])
 	parity := [9]bit.Bit{}
 
 	// Multiplying the generator matrix with the given data bits.
@@ -39,6 +41,7 @@ func ParityBits(bits [7]bit.Bit) [9]bit.Bit {
 }
 
 func Check(bits [16]bit.Bit) bool {
+	bit.Mask(bits[:])
 	var data [7]bit.Bit
 	copy(data[:], bits[:7])
 
@@ -54,6 +57,7 @@ func Check(bits [16]bit.Bit) bool {
 // Decode corrects up to 2 bit errors in the 16-bit codeword.
 // Returns the corrected data words and FECResult.
 func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.FECResult) {
+	bit.Mask(bits[:])
 	result := fec.FECResult{BitsChecked: 16}
 
 	var data [7]bit.Bit

@@ -21,7 +21,7 @@ func CalculateCRC7(bits []bit.Bit) uint8 {
 	var crc uint8
 
 	for _, b := range bits {
-		feedback := ((crc >> 6) & 1) ^ uint8(b)
+		feedback := ((crc >> 6) & 1) ^ uint8(b&1)
 		crc = (crc << 1) & 0x7F // keep only 7 bits
 		if feedback != 0 {
 			crc ^= crc7Poly
@@ -46,7 +46,7 @@ func CheckCRC7(bits []bit.Bit, mask uint8) bool {
 	var expected uint8
 	for i := 0; i < 7; i++ {
 		expected <<= 1
-		expected |= uint8(bits[len(bits)-7+i])
+		expected |= uint8(bits[len(bits)-7+i] & 1)
 	}
 
 	return crc == expected
