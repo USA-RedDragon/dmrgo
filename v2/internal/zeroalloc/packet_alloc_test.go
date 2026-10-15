@@ -90,7 +90,7 @@ func packetEntries(t testing.TB) []entry {
 	var b packet.Builder
 	segmentAllocs := map[string]float64{
 		"Unconfirmed Rate 1/2": 0, "Unconfirmed Rate 3/4": 0, "Unconfirmed Rate 1": 0,
-		"Confirmed Rate 1/2": 12, "Confirmed Rate 3/4": 8, "Confirmed Rate 1": 6,
+		"Confirmed Rate 1/2": 0, "Confirmed Rate 3/4": 0, "Confirmed Rate 1": 0,
 	}
 	for _, h := range []*pdu.DataHeader{&uh, &ch} {
 		for _, rate := range []enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1} {
@@ -105,7 +105,7 @@ func packetEntries(t testing.TB) []entry {
 		entry{"layer2/packet.Segment", "unconfirmed rate 1/2", 4, func() {
 			keep.pkt, _ = packet.Segment(uh, payload, enums.DataTypeRate12)
 		}},
-		entry{"layer2/packet.Segment", "confirmed rate 3/4", 12, func() {
+		entry{"layer2/packet.Segment", "confirmed rate 3/4", 4, func() {
 			keep.pkt, _ = packet.Segment(ch, payload, enums.DataTypeRate34)
 		}},
 	)
@@ -162,7 +162,7 @@ func assemblerEntries(t testing.TB) []entry {
 	udt := pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &pdu.UDTHeader{SAP: 1}}
 	var ign, single packet.Assembler
 	out = append(out,
-		entry{"layer2/packet.Assembler.Add", "confirmed rate 3/4 reuse", 8, addAll},
+		entry{"layer2/packet.Assembler.Add", "confirmed rate 3/4 reuse", 0, addAll},
 		entry{"layer2/packet.Assembler.Add", "UDT header (ignored)", 0, func() { _, _, _ = ign.Add(&udt) }},
 		entry{"layer2/packet.Assembler.Add", "C_HEAD", 0, func() { _, _, _ = single.Add(&hdr) }},
 		entry{"layer2/packet.Assembler.Reset", "reuse", 0, reuse.Reset},

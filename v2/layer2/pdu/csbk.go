@@ -505,8 +505,9 @@ func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
 		return p, false
 	}
-	p = decodeBSOutboundActivationPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
-	return p, true
+	var bits [64]bit.Bit
+	unpackBits(bits[:], s.RawPayload[:])
+	return decodeBSOutboundActivationPDU(bits), true
 }
 
 // AsTalkgroupDataGrantMultiItem decodes the RawPayload of a standard FID
@@ -516,8 +517,9 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
 		return p, false
 	}
-	p = decodeTalkgroupDataGrantMultiItemPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
-	return p, true
+	var bits [64]bit.Bit
+	unpackBits(bits[:], s.RawPayload[:])
+	return decodeTalkgroupDataGrantMultiItemPDU(bits), true
 }
 
 // SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that
@@ -545,13 +547,15 @@ func (s *CSBK) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) 
 }
 
 func (s *CSBK) setOpcode0x38(bits [64]bit.Bit, hint Opcode0x38Hint) {
+	var payload [8]byte
+	packBits(payload[:], bits[:])
 	*s = CSBK{
 		LastBlock:   s.LastBlock,
 		ProtectFlag: s.ProtectFlag,
 		Opcode:      CSBKBSOutboundActivation,
 		FID:         enums.FIDStandardized,
 		Hint0x38:    hint,
-		RawPayload:  [8]byte(bit.Pack(bits[:])),
+		RawPayload:  payload,
 	}
 }
 

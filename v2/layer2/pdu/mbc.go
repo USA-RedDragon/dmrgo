@@ -64,7 +64,7 @@ func (s *MBCContinuation) bits() [96]bit.Bit {
 	if s.LastBlock {
 		data[0] = 1
 	}
-	copy(data[1:], bit.Unpack(s.Data[:]))
+	unpackBits(data[1:], s.Data[:])
 	return data
 }
 
@@ -93,18 +93,25 @@ func (s *MBCContinuation) AsVNAP() VNAPContinuation {
 	return decodeVNAPContinuation(s.bits())
 }
 
+// mbcCRCBlocks is the number of blocks whose last-block CRC input
+// mbcLastBlockCRC holds on the stack. More blocks allocate.
+const mbcCRCBlocks = 4
+
 // mbcLastBlockCRC computes the last-block CRC-CCITT of blocks.
 func mbcLastBlockCRC(blocks ...[96]bit.Bit) uint16 {
 	if len(blocks) == 0 {
 		return 0
 	}
-	data := make([]byte, 0, len(blocks)*12)
-	for i, b := range blocks {
+	var buf [mbcCRCBlocks * 12]byte
+	data := buf[:0]
+	for i := range blocks {
 		n := 96
 		if i == len(blocks)-1 {
 			n = 80
 		}
-		data = append(data, bit.Pack(b[:n])...)
+		var octets [12]byte
+		packBits(octets[:], blocks[i][:n])
+		data = append(data, octets[:n/8]...)
 	}
 	return crc.CCITT(data)
 }
