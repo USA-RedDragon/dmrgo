@@ -212,7 +212,7 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 	}
 }
 
-func TestRC_ToString(t *testing.T) {
+func TestRC_String(t *testing.T) {
 	t.Parallel()
 	var bitData [264]bit.Bit
 
@@ -231,9 +231,9 @@ func TestRC_ToString(t *testing.T) {
 	packed := bit.PackBits264(bitData)
 	burst, _ := layer2.NewBurstFromBytes(packed)
 
-	s := burst.ToString()
+	s := burst.String()
 	if s == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 
@@ -270,19 +270,19 @@ func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	if burst.SyncPattern != enums.MsSourcedRcSync || burst.IsData {
-		t.Fatalf("SyncPattern=%s IsData=%v", enums.SyncPatternToName(burst.SyncPattern), burst.IsData)
+		t.Fatalf("SyncPattern=%s IsData=%v", burst.SyncPattern.String(), burst.IsData)
 	}
 	if !burst.HasEmbeddedSignalling || burst.EmbeddedSignalling.ColorCode != 7 || burst.FEC.EMB.Uncorrectable {
-		t.Errorf("EMB: %s", burst.EmbeddedSignalling.ToString())
+		t.Errorf("EMB: %s", burst.EmbeddedSignalling.String())
 	}
 	if burst.EmbeddedSignalling.LCSS != enums.SingleFragmentLCorCSBK {
-		t.Errorf("LCSS = %s", enums.LCSSToName(burst.EmbeddedSignalling.LCSS))
+		t.Errorf("LCSS = %s", burst.EmbeddedSignalling.LCSS.String())
 	}
 	if !burst.HasReverseChannel || burst.ReverseChannel == nil {
 		t.Fatal("standalone RC burst should carry an RC PDU")
 	}
 	if burst.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest || burst.FEC.RC.Uncorrectable {
-		t.Errorf("RC: %s", burst.ReverseChannel.ToString())
+		t.Errorf("RC: %s", burst.ReverseChannel.String())
 	}
 	if burst.FEC.Voice.BitsChecked != 0 {
 		t.Errorf("standalone RC burst should not parse voice, Voice FEC %+v", burst.FEC.Voice)

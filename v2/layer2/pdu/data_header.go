@@ -79,8 +79,8 @@ func (dh *DataHeader) GetDataType() enums.DataType {
 	return dh.DataType
 }
 
-// FormatToName returns a human-readable name for a DataHeader Format.
-func FormatToName(f Format) string {
+// String returns a human-readable name for a DataHeader Format.
+func (f Format) String() string {
 	switch f {
 	case FormatUnifiedDataTransport:
 		return "Unified Data Transport"
@@ -193,8 +193,8 @@ const (
 	UDTOpcodeDGNAInboundHeader  UDTOpcode = 0b100101 // C_DGNAHU
 )
 
-// UDTOpcodeToName returns the alias of a UDT opcode.
-func UDTOpcodeToName(op UDTOpcode) string {
+// String returns the alias of a UDT opcode.
+func (op UDTOpcode) String() string {
 	switch op {
 	case UDTOpcodeOutboundHeader:
 		return "C_UDTHD"

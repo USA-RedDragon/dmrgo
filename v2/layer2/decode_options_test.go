@@ -51,7 +51,7 @@ func TestDecodeFromBytesWith_DefaultMatchesDecodeFromBytes(t *testing.T) {
 			var got layer2.Burst
 			err := got.DecodeFromBytesWith(frame, opts)
 			if errString(err) != errString(wantErr) || !reflect.DeepEqual(got, want) {
-				t.Fatalf("%x opts %+v: got %s (%v), want %s (%v)", frame, opts, got.ToString(), err, want.ToString(), wantErr)
+				t.Fatalf("%x opts %+v: got %s (%v), want %s (%v)", frame, opts, got.String(), err, want.String(), wantErr)
 			}
 		}
 	}
@@ -66,7 +66,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 
 	def := must(layer2.NewBurstFromBytes(frame))
 	if def.SyncPattern != enums.MsSourcedRcSync || def.FEC.Voice.BitsChecked != 0 {
-		t.Fatalf("DecodeFromBytes no longer takes this burst as RC: %s", def.ToString())
+		t.Fatalf("DecodeFromBytes no longer takes this burst as RC: %s", def.String())
 	}
 
 	var b layer2.Burst
@@ -75,7 +75,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 		t.Fatal(err)
 	}
 	if b.IsData || b.VoiceBurst != enums.VoiceBurstD || !b.HasEmbeddedSignalling || b.SyncPattern != enums.EmbeddedSignallingPattern {
-		t.Fatalf("not decoded as voice burst D: %s", b.ToString())
+		t.Fatalf("not decoded as voice burst D: %s", b.String())
 	}
 	if b.FEC.Voice.BitsChecked == 0 || b.FEC.Voice.ErrorsCorrected != 0 || b.FEC.Voice.Uncorrectable {
 		t.Fatalf("AMBE not clean: %+v", b.FEC.Voice)
@@ -108,14 +108,14 @@ func TestDecodeFromBytesWith_SyncThreshold(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !b.IsData || b.SyncPattern != clean.SyncPattern || b.SyncDistance != 5 || !reflect.DeepEqual(b.Data, clean.Data) {
-			t.Fatalf("threshold 5: %s", b.ToString())
+			t.Fatalf("threshold 5: %s", b.String())
 		}
 		one := flipSync(frame, 1)
 		if err := b.DecodeFromBytesWith(one, layer2.DecodeOptions{SyncThreshold: -1}); err != nil {
 			t.Fatal(err)
 		}
 		if b.IsData || b.SyncPattern != enums.EmbeddedSignallingPattern || b.SyncDistance != 1 {
-			t.Fatalf("exact match accepted a SYNC 1 bit off: %s", b.ToString())
+			t.Fatalf("exact match accepted a SYNC 1 bit off: %s", b.String())
 		}
 	}
 	if n == 0 {
@@ -144,10 +144,10 @@ func TestDecodeFromBytesWith_KnownData(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !b.IsData || b.SlotType.DataType != dt || !reflect.DeepEqual(b.Data, clean.Data) {
-			t.Fatalf("known data type: %s, want %s", b.ToString(), clean.ToString())
+			t.Fatalf("known data type: %s, want %s", b.String(), clean.String())
 		}
 		if err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{Frame: layer2.FrameType{Kind: layer2.FrameKindData}}); err != nil || !reflect.DeepEqual(b.Data, clean.Data) {
-			t.Fatalf("data kind without data type: %s (%v)", b.ToString(), err)
+			t.Fatalf("data kind without data type: %s (%v)", b.String(), err)
 		}
 	}
 	if n == 0 {
@@ -169,13 +169,13 @@ func TestDecodeFromBytesWith_KnownVoiceA(t *testing.T) {
 			t.Fatal(err)
 		}
 		if b.VoiceBurst != enums.VoiceBurstA || b.SyncPattern != clean.SyncPattern || b.SyncDistance != 6 || b.HasEmbeddedSignalling || b.VoiceData != clean.VoiceData {
-			t.Fatalf("burst A: %s", b.ToString())
+			t.Fatalf("burst A: %s", b.String())
 		}
 		if err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{Frame: layer2.FrameType{Kind: layer2.FrameKindVoice}}); err != nil || b.VoiceBurst != enums.VoiceBurstA {
-			t.Fatalf("voice of unknown position: %s (%v)", b.ToString(), err)
+			t.Fatalf("voice of unknown position: %s (%v)", b.String(), err)
 		}
 		if err := b.DecodeFromBytesWith(six, layer2.DecodeOptions{Frame: layer2.FrameType{Kind: layer2.FrameKindVoice}}); err != nil || b.VoiceBurst != enums.VoiceBurstUnknown || !b.HasEmbeddedSignalling {
-			t.Fatalf("voice of unknown position, SYNC 6 bits off: %s (%v)", b.ToString(), err)
+			t.Fatalf("voice of unknown position, SYNC 6 bits off: %s (%v)", b.String(), err)
 		}
 	}
 	if n == 0 {
@@ -200,7 +200,7 @@ func TestDecodeFromBytesWith_KnownReverseChannel(t *testing.T) {
 		t.Fatal(err)
 	}
 	if b.SyncPattern != enums.MsSourcedRcSync || b.SyncDistance != 6 || !b.HasReverseChannel || b.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest {
-		t.Fatalf("RC: %s", b.ToString())
+		t.Fatalf("RC: %s", b.String())
 	}
 }
 
@@ -235,7 +235,7 @@ func TestDecodeFromBytesWith_ColorCode(t *testing.T) {
 		if !errors.Is(err, layer2.ErrColorCodeMismatch) {
 			t.Fatalf("%s: err %v", kind, err)
 		}
-		if b.ToString() != clean.ToString() {
+		if b.String() != clean.String() {
 			t.Fatalf("%s: burst not populated on mismatch", kind)
 		}
 	}

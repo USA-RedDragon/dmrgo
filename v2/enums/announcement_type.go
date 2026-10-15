@@ -20,7 +20,7 @@ const (
 	AnnouncementManufacturerSpecific2 AnnouncementType = 0b11111
 )
 
-func AnnouncementTypeToName(a AnnouncementType) string {
+func (a AnnouncementType) String() string {
 	switch a {
 	case AnnouncementAnnWDTSCC:
 		return "Ann_WD_TSCC"

@@ -6,81 +6,81 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-func TestActivityID_ToName_NoActivity(t *testing.T) {
+func TestActivityID_String_NoActivity(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityNoActivity)
+	name := enums.ActivityNoActivity.String()
 	if name != "No Activity" {
 		t.Errorf("expected 'No Activity', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_GroupCSBK(t *testing.T) {
+func TestActivityID_String_GroupCSBK(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityGroupCSBK)
+	name := enums.ActivityGroupCSBK.String()
 	if name != "Group CSBK" {
 		t.Errorf("expected 'Group CSBK', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_IndividualCSBK(t *testing.T) {
+func TestActivityID_String_IndividualCSBK(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityIndividualCSBK)
+	name := enums.ActivityIndividualCSBK.String()
 	if name != "Individual CSBK" {
 		t.Errorf("expected 'Individual CSBK', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_GroupVoice(t *testing.T) {
+func TestActivityID_String_GroupVoice(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityGroupVoice)
+	name := enums.ActivityGroupVoice.String()
 	if name != "Group Voice" {
 		t.Errorf("expected 'Group Voice', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_IndividualVoice(t *testing.T) {
+func TestActivityID_String_IndividualVoice(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityIndividualVoice)
+	name := enums.ActivityIndividualVoice.String()
 	if name != "Individual Voice" {
 		t.Errorf("expected 'Individual Voice', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_GroupData(t *testing.T) {
+func TestActivityID_String_GroupData(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityGroupData)
+	name := enums.ActivityGroupData.String()
 	if name != "Group Data" {
 		t.Errorf("expected 'Group Data', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_IndividualData(t *testing.T) {
+func TestActivityID_String_IndividualData(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityIndividualData)
+	name := enums.ActivityIndividualData.String()
 	if name != "Individual Data" {
 		t.Errorf("expected 'Individual Data', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_EmergencyGroupVoice(t *testing.T) {
+func TestActivityID_String_EmergencyGroupVoice(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityEmergencyGroupVoice)
+	name := enums.ActivityEmergencyGroupVoice.String()
 	if name != "Emergency Group Voice" {
 		t.Errorf("expected 'Emergency Group Voice', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_EmergencyIndividualVoice(t *testing.T) {
+func TestActivityID_String_EmergencyIndividualVoice(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityEmergencyIndividualVoice)
+	name := enums.ActivityEmergencyIndividualVoice.String()
 	if name != "Emergency Individual Voice" {
 		t.Errorf("expected 'Emergency Individual Voice', got %q", name)
 	}
 }
 
-func TestActivityID_ToName_Reserved(t *testing.T) {
+func TestActivityID_String_Reserved(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityID(0b0001))
+	name := (enums.ActivityID(0b0001)).String()
 	if name == "No Activity" || name == "Group Voice" {
 		t.Errorf("reserved value should not match known names, got %q", name)
 	}

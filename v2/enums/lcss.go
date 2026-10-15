@@ -10,7 +10,7 @@ const (
 	ContinuationFragmentLCorCSBK
 )
 
-func LCSSToName(lcss LCSS) string {
+func (lcss LCSS) String() string {
 	switch lcss {
 	case SingleFragmentLCorCSBK:
 		return "Single fragment LC or CSBK"

@@ -137,7 +137,7 @@ func talkerAliasUnits(alias string, format layer3.TalkerAliasDataFormat) ([]uint
 		units := make([]uint16, 0, len(alias))
 		for _, r := range alias {
 			if r > limit {
-				return nil, fmt.Errorf("character %q is not in the %s format", r, layer3.TalkerAliasDataFormatToName(format))
+				return nil, fmt.Errorf("character %q is not in the %s format", r, format.String())
 			}
 			units = append(units, uint16(r)) //nolint:gosec // r <= limit <= 0xFF
 		}

@@ -82,11 +82,11 @@ func TestPRFill_GetDataType(t *testing.T) {
 	}
 }
 
-func TestPRFill_ToString(t *testing.T) {
+func TestPRFill_String(t *testing.T) {
 	t.Parallel()
 	p := &pdu.PRFill{}
-	s := p.ToString()
+	s := p.String()
 	if s == "" {
-		t.Fatal("ToString() should not be empty")
+		t.Fatal("String() should not be empty")
 	}
 }

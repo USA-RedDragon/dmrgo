@@ -24,6 +24,6 @@ func EncodeVocoderFrame(s *VocoderFrame) ([72]bit.Bit, error) {
 	return encodeAMBE(s.DecodedBits), nil
 }
 
-func (s *VocoderFrame) ToString() string {
+func (s *VocoderFrame) String() string {
 	return fmt.Sprintf("VocoderFrame{ DecodedBits: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.DecodedBits, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

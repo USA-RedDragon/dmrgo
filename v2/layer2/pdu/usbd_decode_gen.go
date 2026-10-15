@@ -12,7 +12,6 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
-	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -69,6 +68,6 @@ func EncodeUnifiedSingleBlockData(s *UnifiedSingleBlockData) ([96]bit.Bit, error
 	return data, nil
 }
 
-func (s *UnifiedSingleBlockData) ToString() string {
-	return fmt.Sprintf("UnifiedSingleBlockData{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %v }", enums.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
+func (s *UnifiedSingleBlockData) String() string {
+	return fmt.Sprintf("UnifiedSingleBlockData{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
 }

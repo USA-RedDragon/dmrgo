@@ -13,7 +13,7 @@ const (
 	SLCOPSysParms      SLCO = 0b0011 // ETSI TS 102 361-4 §7.1.2
 )
 
-func SLCOToName(slco SLCO) string {
+func (slco SLCO) String() string {
 	switch slco {
 	case SLCONullMessage:
 		return "Null Message"

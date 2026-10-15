@@ -50,11 +50,11 @@ func TestRate12Data_GetDataType(t *testing.T) {
 	}
 }
 
-func TestRate12Data_ToString(t *testing.T) {
+func TestRate12Data_String(t *testing.T) {
 	rt, _ := pdu.DecodeRate12Data([96]bit.Bit{})
-	s := rt.ToString()
+	s := rt.String()
 	if s == "" {
-		t.Error("ToString() should not be empty")
+		t.Error("String() should not be empty")
 	}
 }
 

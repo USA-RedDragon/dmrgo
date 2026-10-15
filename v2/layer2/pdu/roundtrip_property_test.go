@@ -76,7 +76,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 		{enums.DataTypeTerminatorWithLC, 0x999999},
 	} {
 		cases = append(cases, roundTrip{
-			name:   "FullLinkControl " + enums.DataTypeToName(lc.dt),
+			name:   "FullLinkControl " + lc.dt.String(),
 			values: 64 * 2,
 			build: func(v int) [96]bit.Bit {
 				b := randomPayload(rng, 9)

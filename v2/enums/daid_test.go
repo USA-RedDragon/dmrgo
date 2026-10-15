@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-func TestDAIDToName(t *testing.T) {
+func TestDAIDString(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		daid     enums.DAID
@@ -20,8 +20,8 @@ func TestDAIDToName(t *testing.T) {
 		{enums.DAID(15), "Manufacturer Specific"},
 	}
 	for _, tt := range tests {
-		if got := enums.DAIDToName(tt.daid); got != tt.expected {
-			t.Errorf("DAIDToName(%d) = %q, want %q", tt.daid, got, tt.expected)
+		if got := tt.daid.String(); got != tt.expected {
+			t.Errorf("(%d).String() = %q, want %q", tt.daid, got, tt.expected)
 		}
 	}
 }

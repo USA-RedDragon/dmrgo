@@ -47,6 +47,6 @@ func EncodeTACT(s *TACT) ([7]bit.Bit, error) {
 	return hamming.Encode743(data), nil
 }
 
-func (s *TACT) ToString() string {
-	return fmt.Sprintf("TACT{ AccessType: %t, TDMAChannel: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.AccessType, s.TDMAChannel, enums.LCSSToName(s.LCSS), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+func (s *TACT) String() string {
+	return fmt.Sprintf("TACT{ AccessType: %t, TDMAChannel: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.AccessType, s.TDMAChannel, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

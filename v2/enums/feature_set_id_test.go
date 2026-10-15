@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFeatureSetIDToName_KnownIDs(t *testing.T) {
+func TestFeatureSetIDString_KnownIDs(t *testing.T) {
 	tests := []struct {
 		fsid     FeatureSetID
 		contains string // substring that should appear in the name
@@ -30,23 +30,23 @@ func TestFeatureSetIDToName_KnownIDs(t *testing.T) {
 		{VertexStandard, "Vertex"},
 	}
 	for _, tt := range tests {
-		name := FeatureSetIDToName(tt.fsid)
+		name := tt.fsid.String()
 		if len(name) == 0 {
-			t.Errorf("FeatureSetIDToName(%d) returned empty string", tt.fsid)
+			t.Errorf("(%d).String() returned empty string", tt.fsid)
 		}
 		if !strings.Contains(name, tt.contains) {
-			t.Errorf("FeatureSetIDToName(%d) = %q, want to contain %q", tt.fsid, name, tt.contains)
+			t.Errorf("(%d).String() = %q, want to contain %q", tt.fsid, name, tt.contains)
 		}
 	}
 }
 
-func TestFeatureSetIDToName_UnknownID(t *testing.T) {
-	name := FeatureSetIDToName(FeatureSetID(0xFF))
+func TestFeatureSetIDString_UnknownID(t *testing.T) {
+	name := (FeatureSetID(0xFF)).String()
 	if name == "" {
 		t.Error("FeatureSetIDToName for unknown ID should return non-empty string")
 	}
 	if !strings.Contains(name, "Unknown") {
-		t.Errorf("FeatureSetIDToName(0xFF) = %q, want to contain 'Unknown'", name)
+		t.Errorf("(0xFF).String() = %q, want to contain 'Unknown'", name)
 	}
 }
 
@@ -88,7 +88,7 @@ func TestFeatureSetIDFromInt_RoundTrip(t *testing.T) {
 		if err != nil {
 			t.Fatalf("FeatureSetIDFromInt(%d) failed: %v", id, err)
 		}
-		name := FeatureSetIDToName(fsid)
+		name := fsid.String()
 		if strings.Contains(name, "Unknown") {
 			t.Errorf("Valid FeatureSetID %d maps to 'Unknown' name", id)
 		}

@@ -197,7 +197,7 @@ func TestVNAPContinuation_Decode(t *testing.T) {
 	}
 }
 
-func TestCGAPContinuation_ToString(t *testing.T) {
+func TestCGAPContinuation_String(t *testing.T) {
 	var cdefParms [58]bit.Bit
 	cgap := &pdu.CGAPContinuation{
 		LastBlock:   true,
@@ -208,9 +208,9 @@ func TestCGAPContinuation_ToString(t *testing.T) {
 		CdefParms:   cdefParms,
 	}
 
-	str := cgap.ToString()
+	str := cgap.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 

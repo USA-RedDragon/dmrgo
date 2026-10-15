@@ -51,6 +51,6 @@ func EncodeServiceOptions(s *ServiceOptions) ([8]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ServiceOptions) ToString() string {
+func (s *ServiceOptions) String() string {
 	return fmt.Sprintf("ServiceOptions{ IsEmergency: %t, IsPrivacy: %t, Reserved: %v, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.Reserved, s.IsBroadcast, s.IsOpenVoiceCallMode, s.PriorityLevel)
 }

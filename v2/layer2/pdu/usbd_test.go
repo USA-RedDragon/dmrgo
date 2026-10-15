@@ -181,7 +181,7 @@ func TestUSBD_GetDataType(t *testing.T) {
 	}
 }
 
-func TestUSBD_ToString(t *testing.T) {
+func TestUSBD_String(t *testing.T) {
 	var payload [76]bit.Bit
 	payload[0] = 1
 
@@ -190,13 +190,13 @@ func TestUSBD_ToString(t *testing.T) {
 	usbd, _ := pdu.DecodeUnifiedSingleBlockData(infoBits)
 	usbd.DataType = enums.DataTypeUnifiedSingleBlock
 
-	str := usbd.ToString()
+	str := usbd.String()
 	if str == "" {
-		t.Error("ToString() should not be empty")
+		t.Error("String() should not be empty")
 	}
 }
 
-func TestServiceTypeToName(t *testing.T) {
+func TestServiceTypeString(t *testing.T) {
 	tests := []struct {
 		st   pdu.ServiceType
 		want string
@@ -213,14 +213,14 @@ func TestServiceTypeToName(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got := pdu.ServiceTypeToName(tt.st); got != tt.want {
-			t.Errorf("ServiceTypeToName(%d) = %q, want %q", tt.st, got, tt.want)
+		if got := tt.st.String(); got != tt.want {
+			t.Errorf("(%d).String() = %q, want %q", tt.st, got, tt.want)
 		}
 	}
 
 	// Reserved values should contain "Reserved"
 	reserved := pdu.ServiceType(0b0001)
-	name := pdu.ServiceTypeToName(reserved)
+	name := reserved.String()
 	if name == "" {
 		t.Error("ServiceTypeToName for reserved should not be empty")
 	}

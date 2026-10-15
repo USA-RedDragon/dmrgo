@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-func TestDPIDToName(t *testing.T) {
+func TestDPIDString(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		dpid     enums.DPID
@@ -20,8 +20,8 @@ func TestDPIDToName(t *testing.T) {
 		{enums.DPID(127), "Manufacturer Specific"},
 	}
 	for _, tt := range tests {
-		if got := enums.DPIDToName(tt.dpid); got != tt.expected {
-			t.Errorf("DPIDToName(%d) = %q, want %q", tt.dpid, got, tt.expected)
+		if got := tt.dpid.String(); got != tt.expected {
+			t.Errorf("(%d).String() = %q, want %q", tt.dpid, got, tt.expected)
 		}
 	}
 }

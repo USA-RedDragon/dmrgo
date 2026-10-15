@@ -12,7 +12,6 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
-	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -76,6 +75,6 @@ func EncodePIHeader(s *PIHeader) ([96]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *PIHeader) ToString() string {
-	return fmt.Sprintf("PIHeader{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %v }", enums.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
+func (s *PIHeader) String() string {
+	return fmt.Sprintf("PIHeader{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
 }

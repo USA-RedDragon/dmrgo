@@ -28,7 +28,7 @@ func SPIDToPort(spid SPID) uint16 {
 	}
 }
 
-func SPIDToName(spid SPID) string {
+func (spid SPID) String() string {
 	switch {
 	case spid == SPIDExtendedHeader:
 		return "Extended Header"

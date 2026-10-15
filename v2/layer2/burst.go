@@ -324,26 +324,26 @@ func (b *Burst) BPTCPayload() (payload [12]byte, result fec.Result, ok bool) {
 	return payload, b.FEC.Payload, true
 }
 
-// ToString returns a string representation of the burst.
-func (b *Burst) ToString() string {
-	ret := fmt.Sprintf("{ SyncPattern: %s", enums.SyncPatternToName(b.SyncPattern))
+// String returns a string representation of the burst.
+func (b *Burst) String() string {
+	ret := fmt.Sprintf("{ SyncPattern: %s, ", b.SyncPattern.String())
 	if b.HasEmbeddedSignalling {
-		ret += fmt.Sprintf("EmbeddedSignalling: %v, ", b.EmbeddedSignalling.ToString())
+		ret += fmt.Sprintf("EmbeddedSignalling: %v, ", b.EmbeddedSignalling.String())
 		if b.HasReverseChannel && b.ReverseChannel != nil {
-			ret += fmt.Sprintf("ReverseChannel: %v, ", b.ReverseChannel.ToString())
+			ret += fmt.Sprintf("ReverseChannel: %v, ", b.ReverseChannel.String())
 		}
 	}
 	if b.HasSlotType {
-		ret += fmt.Sprintf("SlotType: %v, ", b.SlotType.ToString())
+		ret += fmt.Sprintf("SlotType: %v, ", b.SlotType.String())
 	}
 	if b.IsData {
 		agg := b.FEC.Aggregate()
 		ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", agg.BitsChecked, agg.ErrorsCorrected, agg.Uncorrectable)
 		if b.Data != nil {
-			ret += fmt.Sprintf("Data: %v, ", b.Data.ToString())
+			ret += fmt.Sprintf("Data: %v, ", b.Data.String())
 		}
 	} else if b.SyncPattern != enums.MsSourcedRcSync {
-		ret += fmt.Sprintf("VoiceBurst: %v, Voice Data: %v, ", enums.VoiceBurstTypeToName(b.VoiceBurst), b.VoiceData.ToString())
+		ret += fmt.Sprintf("VoiceBurst: %v, Voice Data: %v, ", b.VoiceBurst.String(), b.VoiceData.String())
 	}
 
 	ret += fmt.Sprintf("IsData: %v }", b.IsData)
@@ -398,7 +398,7 @@ func (b *Burst) extractData() (Data, error) {
 		decoded.DataType = dt
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
-			return nil, fmt.Errorf("failed to decode data header from bits: %v", decoded.ToString())
+			return nil, fmt.Errorf("failed to decode data header from bits: %v", decoded.String())
 		}
 		return &decoded, nil
 	case enums.DataTypeRate34:
@@ -580,7 +580,7 @@ func (b *Burst) checkCentre() error {
 		return fmt.Errorf("SYNC pattern %#x is not a Table 9.2 pattern and the burst has no embedded signalling", int64(b.SyncPattern))
 	}
 	if b.IsData != isDataSync(b.SyncPattern) {
-		return fmt.Errorf("IsData is %t but the SYNC pattern is %s", b.IsData, enums.SyncPatternToName(b.SyncPattern))
+		return fmt.Errorf("IsData is %t but the SYNC pattern is %s", b.IsData, b.SyncPattern.String())
 	}
 	return nil
 }
@@ -599,7 +599,7 @@ func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
 		return [196]bit.Bit{}, fmt.Errorf("data burst has no Data")
 	case dt != b.decodedDataType:
 		return [196]bit.Bit{}, fmt.Errorf("decoded payload is a %s but the slot type data type is %s; set Data",
-			enums.DataTypeToName(b.decodedDataType), enums.DataTypeToName(dt))
+			b.decodedDataType.String(), dt.String())
 	default:
 		return b.deinterleavedInfoBits, nil
 	}
@@ -609,7 +609,7 @@ func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
 func encodeData(d Data, dataType enums.DataType) ([196]bit.Bit, error) {
 	var info [196]bit.Bit
 	if rv := reflect.ValueOf(d); rv.Kind() == reflect.Pointer && rv.IsNil() || !dataTypeCarries(dataType, d) {
-		return info, fmt.Errorf("data type %s cannot carry Data of type %T", enums.DataTypeToName(dataType), d)
+		return info, fmt.Errorf("data type %s cannot carry Data of type %T", dataType.String(), d)
 	}
 	bits, err := encodePDU(d, dataType)
 	if err != nil {

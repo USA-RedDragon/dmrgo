@@ -43,14 +43,14 @@ func EncodeVocoder(s *Vocoder) ([216]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *Vocoder) ToString() string {
+func (s *Vocoder) String() string {
 	_ret := "Vocoder{ "
 	_ret += "Frames: ["
 	for _i := range s.Frames {
 		if _i > 0 {
 			_ret += ", "
 		}
-		_ret += s.Frames[_i].ToString()
+		_ret += s.Frames[_i].String()
 	}
 	_ret += "]"
 	_ret += " }"

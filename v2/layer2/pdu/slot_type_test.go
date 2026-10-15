@@ -70,12 +70,12 @@ func TestSlotType_AllDataTypes(t *testing.T) {
 	}
 }
 
-func TestSlotType_ToString(t *testing.T) {
+func TestSlotType_String(t *testing.T) {
 	encoded := must(pdu.EncodeSlotType(&pdu.SlotType{ColorCode: 3, DataType: enums.DataTypeCSBK}))
 	st, _ := pdu.DecodeSlotType(encoded)
-	s := st.ToString()
+	s := st.String()
 	if s == "" {
-		t.Error("ToString() should not be empty")
+		t.Error("String() should not be empty")
 	}
 }
 

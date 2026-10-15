@@ -98,7 +98,7 @@ func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 	var stale [32]bit.Bit
 	stale[3] = 1
 	for _, sync := range []enums.SyncPattern{enums.EmbeddedSignallingPattern, enums.MsSourcedRcSync} {
-		t.Run(enums.SyncPatternToName(sync), func(t *testing.T) {
+		t.Run(sync.String(), func(t *testing.T) {
 			b := layer2.Burst{
 				SyncPattern:            sync,
 				HasEmbeddedSignalling:  true,
@@ -162,7 +162,7 @@ func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 		}
 	}
 	for _, sync := range []enums.SyncPattern{enums.BsSourcedVoice, enums.Reserved, enums.EmbeddedSignallingPattern} {
-		t.Run(enums.SyncPatternToName(sync), func(t *testing.T) {
+		t.Run(sync.String(), func(t *testing.T) {
 			b := layer2.Burst{
 				SyncPattern:           sync,
 				HasEmbeddedSignalling: sync == enums.EmbeddedSignallingPattern,
@@ -174,7 +174,7 @@ func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got.IsData || got.SyncPattern != sync {
-				t.Fatalf("decoded IsData=%v SyncPattern=%s", got.IsData, enums.SyncPatternToName(got.SyncPattern))
+				t.Fatalf("decoded IsData=%v SyncPattern=%s", got.IsData, got.SyncPattern.String())
 			}
 			for i := range voice.Frames {
 				if got.VoiceData.Frames[i].DecodedBits != voice.Frames[i].DecodedBits {

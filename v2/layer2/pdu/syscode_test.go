@@ -73,7 +73,7 @@ func TestSysCode_ShortLCSysParms(t *testing.T) {
 	}
 	got, _ := pdu.DecodeShortLC(bits)
 	if got.CSysParms == nil || got.CSysParms.SysCode() != code {
-		t.Errorf("decoded %s", got.ToString())
+		t.Errorf("decoded %s", got.String())
 	}
 
 	var p pdu.ShortLCPSysParms

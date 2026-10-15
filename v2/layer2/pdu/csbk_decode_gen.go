@@ -65,7 +65,7 @@ func EncodeBSOutboundActivationPDU(s *BSOutboundActivationPDU) ([64]bit.Bit, err
 	return data, nil
 }
 
-func (s *BSOutboundActivationPDU) ToString() string {
+func (s *BSOutboundActivationPDU) String() string {
 	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %v, SourceAddress: %v }", s.Reserved, s.BSAddress, s.SourceAddress)
 }
 
@@ -91,7 +91,7 @@ func EncodeUnitToUnitVoiceServiceRequestPDU(s *UnitToUnitVoiceServiceRequestPDU)
 	return data, nil
 }
 
-func (s *UnitToUnitVoiceServiceRequestPDU) ToString() string {
+func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %d, Reserved: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptions, s.Reserved, s.TargetAddress, s.SourceAddress)
 }
 
@@ -117,7 +117,7 @@ func EncodeUnitToUnitVoiceServiceAnswerResponsePDU(s *UnitToUnitVoiceServiceAnsw
 	return data, nil
 }
 
-func (s *UnitToUnitVoiceServiceAnswerResponsePDU) ToString() string {
+func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %d, AnswerResponse: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptions, s.AnswerResponse, s.TargetAddress, s.SourceAddress)
 }
 
@@ -156,8 +156,8 @@ func EncodeNegativeAcknowledgementPDU(s *NegativeAcknowledgementPDU) ([64]bit.Bi
 	return data, nil
 }
 
-func (s *NegativeAcknowledgementPDU) ToString() string {
-	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %v, TargetAddress: %v }", layer3.AdditionalInformationFieldToName(s.AdditionalInfo), layer3.SourceTypeToName(s.SourceType), s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
+func (s *NegativeAcknowledgementPDU) String() string {
+	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %v, TargetAddress: %v }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
 }
 
 // DecodePreamblePDU decodes a PreamblePDU per ETSI TS 102 361-1 - 9.3.7 Pre PDU
@@ -190,7 +190,7 @@ func EncodePreamblePDU(s *PreamblePDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *PreamblePDU) ToString() string {
+func (s *PreamblePDU) String() string {
 	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %v, CSBKBlocksToFollow: %d, TargetAddress: %v, SourceAddress: %v }", s.Data, s.Group, s.Reserved, s.CSBKBlocksToFollow, s.TargetAddress, s.SourceAddress)
 }
 
@@ -236,7 +236,7 @@ func EncodeChannelTimingPDU(s *ChannelTimingPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ChannelTimingPDU) ToString() string {
+func (s *ChannelTimingPDU) String() string {
 	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %v, Generation: %v, LeaderIdentifier: %v, NewLeader: %t, LeaderDynamicIdentifier: %v, ChannelTimingOp1: %t, SourceIdentifier: %v, Reserved: %t, SourceDynamicIdentifier: %v, ChannelTimingOp0: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp1, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp0)
 }
 
@@ -279,7 +279,7 @@ func EncodePrivateVoiceGrantPDU(s *PrivateVoiceGrantPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *PrivateVoiceGrantPDU) ToString() string {
+func (s *PrivateVoiceGrantPDU) String() string {
 	return fmt.Sprintf("PrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
@@ -322,7 +322,7 @@ func EncodeTalkgroupVoiceGrantPDU(s *TalkgroupVoiceGrantPDU) ([64]bit.Bit, error
 	return data, nil
 }
 
-func (s *TalkgroupVoiceGrantPDU) ToString() string {
+func (s *TalkgroupVoiceGrantPDU) String() string {
 	return fmt.Sprintf("TalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
@@ -365,7 +365,7 @@ func EncodeBroadcastTalkgroupVoiceGrantPDU(s *BroadcastTalkgroupVoiceGrantPDU) (
 	return data, nil
 }
 
-func (s *BroadcastTalkgroupVoiceGrantPDU) ToString() string {
+func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
 	return fmt.Sprintf("BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
@@ -408,7 +408,7 @@ func EncodePrivateDataGrantPDU(s *PrivateDataGrantPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *PrivateDataGrantPDU) ToString() string {
+func (s *PrivateDataGrantPDU) String() string {
 	return fmt.Sprintf("PrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
@@ -451,7 +451,7 @@ func EncodeTalkgroupDataGrantPDU(s *TalkgroupDataGrantPDU) ([64]bit.Bit, error) 
 	return data, nil
 }
 
-func (s *TalkgroupDataGrantPDU) ToString() string {
+func (s *TalkgroupDataGrantPDU) String() string {
 	return fmt.Sprintf("TalkgroupDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
@@ -494,7 +494,7 @@ func EncodeDuplexPrivateVoiceGrantPDU(s *DuplexPrivateVoiceGrantPDU) ([64]bit.Bi
 	return data, nil
 }
 
-func (s *DuplexPrivateVoiceGrantPDU) ToString() string {
+func (s *DuplexPrivateVoiceGrantPDU) String() string {
 	return fmt.Sprintf("DuplexPrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, CallDirection: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
 
@@ -537,7 +537,7 @@ func EncodeDuplexPrivateDataGrantPDU(s *DuplexPrivateDataGrantPDU) ([64]bit.Bit,
 	return data, nil
 }
 
-func (s *DuplexPrivateDataGrantPDU) ToString() string {
+func (s *DuplexPrivateDataGrantPDU) String() string {
 	return fmt.Sprintf("DuplexPrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, CallDirection: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
 
@@ -580,7 +580,7 @@ func EncodePrivateDataGrantMultiItemPDU(s *PrivateDataGrantMultiItemPDU) ([64]bi
 	return data, nil
 }
 
-func (s *PrivateDataGrantMultiItemPDU) ToString() string {
+func (s *PrivateDataGrantMultiItemPDU) String() string {
 	return fmt.Sprintf("PrivateDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
@@ -623,7 +623,7 @@ func EncodeTalkgroupDataGrantMultiItemPDU(s *TalkgroupDataGrantMultiItemPDU) ([6
 	return data, nil
 }
 
-func (s *TalkgroupDataGrantMultiItemPDU) ToString() string {
+func (s *TalkgroupDataGrantMultiItemPDU) String() string {
 	return fmt.Sprintf("TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
@@ -668,7 +668,7 @@ func EncodeMovePDU(s *MovePDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *MovePDU) ToString() string {
+func (s *MovePDU) String() string {
 	return fmt.Sprintf("MovePDU{ Reserved1: %v, Mask: %d, Reserved2: %v, Reg: %t, Backoff: %d, Reserved3: %v, PhysicalChannel: %d, MSAddress: %v }", s.Reserved1, s.Mask, s.Reserved2, s.Reg, s.Backoff, s.Reserved3, s.PhysicalChannel, s.MSAddress)
 }
 
@@ -739,7 +739,7 @@ func EncodeAlohaPDU(s *AlohaPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *AlohaPDU) ToString() string {
+func (s *AlohaPDU) String() string {
 	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %v }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
 }
 
@@ -777,8 +777,8 @@ func EncodeCBroadcastPDU(s *CBroadcastPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *CBroadcastPDU) ToString() string {
-	return fmt.Sprintf("CBroadcastPDU{ AnnouncementType: %s, BroadcastParms1: %v, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %v }", enums.AnnouncementTypeToName(s.AnnouncementType), s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
+func (s *CBroadcastPDU) String() string {
+	return fmt.Sprintf("CBroadcastPDU{ AnnouncementType: %s, BroadcastParms1: %v, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %v }", s.AnnouncementType, s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
 }
 
 // DecodeClearPDU decodes a ClearPDU per ETSI TS 102 361-4 §7.1.1.1.5 P_CLEAR PDU
@@ -817,7 +817,7 @@ func EncodeClearPDU(s *ClearPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ClearPDU) ToString() string {
+func (s *ClearPDU) String() string {
 	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, GroupIndividual: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
 
@@ -850,7 +850,7 @@ func EncodeProtectPDU(s *ProtectPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ProtectPDU) ToString() string {
+func (s *ProtectPDU) String() string {
 	return fmt.Sprintf("ProtectPDU{ Reserved: %v, ProtectKind: %d, GroupIndividual: %t, TargetAddress: %v, SourceAddress: %v }", s.Reserved, s.ProtectKind, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
 
@@ -899,7 +899,7 @@ func EncodeAhoyPDU(s *AhoyPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *AhoyPDU) ToString() string {
+func (s *AhoyPDU) String() string {
 	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, GroupIndividual: %t, AppendedBlocks: %d, ServiceKind: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.GroupIndividual, s.AppendedBlocks, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
@@ -932,7 +932,7 @@ func EncodeAckOutboundPDU(s *AckOutboundPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *AckOutboundPDU) ToString() string {
+func (s *AckOutboundPDU) String() string {
 	return fmt.Sprintf("AckOutboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
@@ -965,7 +965,7 @@ func EncodeAckInboundPDU(s *AckInboundPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *AckInboundPDU) ToString() string {
+func (s *AckInboundPDU) String() string {
 	return fmt.Sprintf("AckInboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
@@ -998,7 +998,7 @@ func EncodeAckOutboundPayloadPDU(s *AckOutboundPayloadPDU) ([64]bit.Bit, error) 
 	return data, nil
 }
 
-func (s *AckOutboundPayloadPDU) ToString() string {
+func (s *AckOutboundPayloadPDU) String() string {
 	return fmt.Sprintf("AckOutboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
@@ -1031,7 +1031,7 @@ func EncodeAckInboundPayloadPDU(s *AckInboundPayloadPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *AckInboundPayloadPDU) ToString() string {
+func (s *AckInboundPayloadPDU) String() string {
 	return fmt.Sprintf("AckInboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
@@ -1072,7 +1072,7 @@ func EncodeRandomAccessPDU(s *RandomAccessPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *RandomAccessPDU) ToString() string {
+func (s *RandomAccessPDU) String() string {
 	return fmt.Sprintf("RandomAccessPDU{ ServiceOptions: %d, ProxyFlag: %t, Reserved: %d, ServiceKind: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptions, s.ProxyFlag, s.Reserved, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
@@ -1118,7 +1118,7 @@ func EncodeAckvitationPDU(s *AckvitationPDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *AckvitationPDU) ToString() string {
+func (s *AckvitationPDU) String() string {
 	return fmt.Sprintf("AckvitationPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, Reserved: %d, UAB: %d, ServiceKind: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptsMirror, s.ServiceKindFlag, s.Reserved, s.UAB, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
@@ -1151,7 +1151,7 @@ func EncodeMaintenancePDU(s *MaintenancePDU) ([64]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *MaintenancePDU) ToString() string {
+func (s *MaintenancePDU) String() string {
 	return fmt.Sprintf("MaintenancePDU{ Reserved: %v, MaintKind: %d, Reserved2: %t, TargetAddress: %v, SourceAddress: %v }", s.Reserved, s.MaintKind, s.Reserved2, s.TargetAddress, s.SourceAddress)
 }
 
@@ -1601,66 +1601,66 @@ func EncodeCSBK(s *CSBK) ([96]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *CSBK) ToString() string {
+func (s *CSBK) String() string {
 	_ret := "CSBK{ "
-	_ret += fmt.Sprintf("DataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", enums.DataTypeToName(s.DataType), s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("DataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.DataType, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.BSOutboundActivationPDU != nil:
-		_ret += s.BSOutboundActivationPDU.ToString()
+		_ret += s.BSOutboundActivationPDU.String()
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
-		_ret += s.UnitToUnitVoiceServiceRequestPDU.ToString()
+		_ret += s.UnitToUnitVoiceServiceRequestPDU.String()
 	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
-		_ret += s.UnitToUnitVoiceServiceAnswerResponsePDU.ToString()
+		_ret += s.UnitToUnitVoiceServiceAnswerResponsePDU.String()
 	case s.NegativeAcknowledgementPDU != nil:
-		_ret += s.NegativeAcknowledgementPDU.ToString()
+		_ret += s.NegativeAcknowledgementPDU.String()
 	case s.PreamblePDU != nil:
-		_ret += s.PreamblePDU.ToString()
+		_ret += s.PreamblePDU.String()
 	case s.ChannelTimingPDU != nil:
-		_ret += s.ChannelTimingPDU.ToString()
+		_ret += s.ChannelTimingPDU.String()
 	case s.PrivateVoiceGrantPDU != nil:
-		_ret += s.PrivateVoiceGrantPDU.ToString()
+		_ret += s.PrivateVoiceGrantPDU.String()
 	case s.TalkgroupVoiceGrantPDU != nil:
-		_ret += s.TalkgroupVoiceGrantPDU.ToString()
+		_ret += s.TalkgroupVoiceGrantPDU.String()
 	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_ret += s.BroadcastTalkgroupVoiceGrantPDU.ToString()
+		_ret += s.BroadcastTalkgroupVoiceGrantPDU.String()
 	case s.PrivateDataGrantPDU != nil:
-		_ret += s.PrivateDataGrantPDU.ToString()
+		_ret += s.PrivateDataGrantPDU.String()
 	case s.TalkgroupDataGrantPDU != nil:
-		_ret += s.TalkgroupDataGrantPDU.ToString()
+		_ret += s.TalkgroupDataGrantPDU.String()
 	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_ret += s.DuplexPrivateVoiceGrantPDU.ToString()
+		_ret += s.DuplexPrivateVoiceGrantPDU.String()
 	case s.DuplexPrivateDataGrantPDU != nil:
-		_ret += s.DuplexPrivateDataGrantPDU.ToString()
+		_ret += s.DuplexPrivateDataGrantPDU.String()
 	case s.PrivateDataGrantMultiItemPDU != nil:
-		_ret += s.PrivateDataGrantMultiItemPDU.ToString()
+		_ret += s.PrivateDataGrantMultiItemPDU.String()
 	case s.TalkgroupDataGrantMultiItemPDU != nil:
-		_ret += s.TalkgroupDataGrantMultiItemPDU.ToString()
+		_ret += s.TalkgroupDataGrantMultiItemPDU.String()
 	case s.MovePDU != nil:
-		_ret += s.MovePDU.ToString()
+		_ret += s.MovePDU.String()
 	case s.AlohaPDU != nil:
-		_ret += s.AlohaPDU.ToString()
+		_ret += s.AlohaPDU.String()
 	case s.CBroadcastPDU != nil:
-		_ret += s.CBroadcastPDU.ToString()
+		_ret += s.CBroadcastPDU.String()
 	case s.ClearPDU != nil:
-		_ret += s.ClearPDU.ToString()
+		_ret += s.ClearPDU.String()
 	case s.ProtectPDU != nil:
-		_ret += s.ProtectPDU.ToString()
+		_ret += s.ProtectPDU.String()
 	case s.AhoyPDU != nil:
-		_ret += s.AhoyPDU.ToString()
+		_ret += s.AhoyPDU.String()
 	case s.AckOutboundPDU != nil:
-		_ret += s.AckOutboundPDU.ToString()
+		_ret += s.AckOutboundPDU.String()
 	case s.AckInboundPDU != nil:
-		_ret += s.AckInboundPDU.ToString()
+		_ret += s.AckInboundPDU.String()
 	case s.AckOutboundPayloadPDU != nil:
-		_ret += s.AckOutboundPayloadPDU.ToString()
+		_ret += s.AckOutboundPayloadPDU.String()
 	case s.AckInboundPayloadPDU != nil:
-		_ret += s.AckInboundPayloadPDU.ToString()
+		_ret += s.AckInboundPayloadPDU.String()
 	case s.RandomAccessPDU != nil:
-		_ret += s.RandomAccessPDU.ToString()
+		_ret += s.RandomAccessPDU.String()
 	case s.AckvitationPDU != nil:
-		_ret += s.AckvitationPDU.ToString()
+		_ret += s.AckvitationPDU.String()
 	case s.MaintenancePDU != nil:
-		_ret += s.MaintenancePDU.ToString()
+		_ret += s.MaintenancePDU.String()
 	default:
 		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
 	}

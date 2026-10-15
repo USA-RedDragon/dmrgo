@@ -98,7 +98,7 @@ func DecodeFullLCCodeword(cw [12]byte, dt enums.DataType) ([9]byte, fec.Result, 
 func fullLCMask(dt enums.DataType) ([3]byte, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 24 {
-		return [3]byte{}, fmt.Errorf("data type %s carries no RS(12,9) Full LC", enums.DataTypeToName(dt))
+		return [3]byte{}, fmt.Errorf("data type %s carries no RS(12,9) Full LC", dt.String())
 	}
 	return [3]byte{byte(mask >> 16), byte(mask >> 8), byte(mask)}, nil //nolint:gosec // 24-bit mask split into octets
 }
@@ -140,7 +140,7 @@ func BlockCRCOK(b [12]byte, dt enums.DataType) bool {
 func blockMask(dt enums.DataType) (uint16, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 16 {
-		return 0, fmt.Errorf("data type %s has no single-block CRC-CCITT", enums.DataTypeToName(dt))
+		return 0, fmt.Errorf("data type %s has no single-block CRC-CCITT", dt.String())
 	}
 	return uint16(mask), nil //nolint:gosec // width 16 masks fit in uint16
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-func TestSAIDToName(t *testing.T) {
+func TestSAIDString(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		said     enums.SAID
@@ -19,8 +19,8 @@ func TestSAIDToName(t *testing.T) {
 		{enums.SAID(15), "Manufacturer Specific"},
 	}
 	for _, tt := range tests {
-		if got := enums.SAIDToName(tt.said); got != tt.expected {
-			t.Errorf("SAIDToName(%d) = %q, want %q", tt.said, got, tt.expected)
+		if got := tt.said.String(); got != tt.expected {
+			t.Errorf("(%d).String() = %q, want %q", tt.said, got, tt.expected)
 		}
 	}
 }

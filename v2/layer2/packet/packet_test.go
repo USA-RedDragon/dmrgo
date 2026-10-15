@@ -194,7 +194,7 @@ func TestSegment_RoundTrip(t *testing.T) {
 				var a packet.Assembler
 				m, err := feed(t, &a, p)
 				if err != nil || m == nil || !bytes.Equal(m.Data, payload(n)) || m.DataType != rate {
-					t.Fatalf("%s n=%d rate %d: err %v msg %+v", pdu.FormatToName(h.Format), n, rate, err, m)
+					t.Fatalf("%s n=%d rate %d: err %v msg %+v", h.Format.String(), n, rate, err, m)
 				}
 			}
 		}
@@ -521,11 +521,11 @@ func TestResponseCodes(t *testing.T) {
 		{packet.ResponseSACK, 2, 0, "SACK"},
 	}
 	for _, tt := range tests {
-		if tt.r.Class() != tt.class || tt.r.Type() != tt.typ || packet.NewResponseCode(tt.class, tt.typ) != tt.r || packet.ResponseToName(tt.r) != tt.name {
+		if tt.r.Class() != tt.class || tt.r.Type() != tt.typ || packet.NewResponseCode(tt.class, tt.typ) != tt.r || tt.r.String() != tt.name {
 			t.Errorf("%s: class %d type %d", tt.name, tt.r.Class(), tt.r.Type())
 		}
 	}
-	if packet.ResponseToName(packet.NewResponseCode(3, 7)) != "Unknown Response (class 3, type 7)" {
+	if (packet.NewResponseCode(3, 7)).String() != "Unknown Response (class 3, type 7)" {
 		t.Error("unknown name")
 	}
 	h := confirmed()

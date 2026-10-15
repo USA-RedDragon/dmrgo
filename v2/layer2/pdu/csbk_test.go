@@ -49,7 +49,7 @@ func buildCSBKBits(opcode byte, payload [64]bit.Bit) [96]bit.Bit {
 	return bits
 }
 
-func TestCSBK_OpcodeToString(t *testing.T) {
+func TestCSBK_OpcodeString(t *testing.T) {
 	tests := []struct {
 		opcode pdu.CSBKOpcode
 		want   string
@@ -62,15 +62,15 @@ func TestCSBK_OpcodeToString(t *testing.T) {
 		{pdu.CSBKChannelTimingPDU, "Channel Timing PDU"},
 	}
 	for _, tt := range tests {
-		if got := tt.opcode.ToString(); got != tt.want {
-			t.Errorf("CSBKOpcode(%08b).ToString() = %q, want %q", byte(tt.opcode), got, tt.want)
+		if got := tt.opcode.String(); got != tt.want {
+			t.Errorf("CSBKOpcode(%08b).String() = %q, want %q", byte(tt.opcode), got, tt.want)
 		}
 	}
 
 	// Unknown opcode should contain "Unknown"
 	unknown := pdu.CSBKOpcode(0xFF)
-	if s := unknown.ToString(); s == "" {
-		t.Error("unknown opcode ToString() should not be empty")
+	if s := unknown.String(); s == "" {
+		t.Error("unknown opcode String() should not be empty")
 	}
 }
 
@@ -114,10 +114,10 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 		t.Error("LastBlock should be true")
 	}
 
-	// Verify ToString doesn't panic
-	str := csbk.ToString()
+	// Verify String doesn't panic
+	str := csbk.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 
@@ -210,10 +210,10 @@ func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 		t.Error("SourceAddress last two bits should be 1")
 	}
 
-	// Verify ToString doesn't panic
-	str := csbk.ToString()
+	// Verify String doesn't panic
+	str := csbk.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 
@@ -278,9 +278,9 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 		t.Errorf("ServiceOptions = 0x%02X, want 0x80", csbk.UnitToUnitVoiceServiceRequestPDU.ServiceOptions)
 	}
 
-	str := csbk.ToString()
+	str := csbk.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 
@@ -352,9 +352,9 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 		t.Errorf("AnswerResponse = 0x%02X, want 0x20", csbk.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse)
 	}
 
-	str := csbk.ToString()
+	str := csbk.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 
@@ -450,9 +450,9 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 		t.Error("SourceDynamicIdentifier should be 0b10")
 	}
 
-	str := csbk.ToString()
+	str := csbk.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 

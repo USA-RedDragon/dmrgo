@@ -275,7 +275,7 @@ func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 // cc does not fit in 4 bits or src is unknown.
 func BuildDataBurst(p [12]byte, dt enums.DataType, cc uint8, src SyncSource) (RawBurst, error) {
 	if !isBPTCDataType(dt) {
-		return RawBurst{}, fmt.Errorf("data type %s is not BPTC(196,96) coded", enums.DataTypeToName(dt))
+		return RawBurst{}, fmt.Errorf("data type %s is not BPTC(196,96) coded", dt.String())
 	}
 	r, err := dataBurstFrame(dt, cc, src)
 	if err != nil {

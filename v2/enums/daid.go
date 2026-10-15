@@ -20,7 +20,7 @@ const (
 	DAIDManufacturerSpecific DAID = 12
 )
 
-func DAIDToName(daid DAID) string {
+func (daid DAID) String() string {
 	switch {
 	case daid == DAIDRadioNetwork:
 		return "Radio Network"

@@ -18,7 +18,7 @@ const (
 	FLCOTerminatorDataLinkControl  FLCO = 0b110000
 )
 
-func FLCOToName(flco FLCO) string {
+func (flco FLCO) String() string {
 	switch flco {
 	case FLCOGroupVoiceChannelUser:
 		return "Group Voice Channel User"

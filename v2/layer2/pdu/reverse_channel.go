@@ -75,8 +75,8 @@ func EncodeReverseChannel(rc *ReverseChannel) ([11]bit.Bit, error) {
 	return bits, nil
 }
 
-// ToString returns a human-readable string representation of the RC PDU.
-func (rc *ReverseChannel) ToString() string {
+// String returns a human-readable string representation of the RC PDU.
+func (rc *ReverseChannel) String() string {
 	return fmt.Sprintf("ReverseChannel{ RCCommand: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }",
-		enums.RCCommandToName(rc.RCCommand), rc.FEC.BitsChecked, rc.FEC.ErrorsCorrected, rc.FEC.Uncorrectable)
+		rc.RCCommand.String(), rc.FEC.BitsChecked, rc.FEC.ErrorsCorrected, rc.FEC.Uncorrectable)
 }

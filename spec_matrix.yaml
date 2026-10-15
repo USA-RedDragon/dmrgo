@@ -59,8 +59,8 @@ documents:
               - TestGolay24128
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestVoiceBurstTypeToName
-              - TestVoiceBurstTypeToName_InvalidReturnsUnknown
+              - TestVoiceBurstTypeString
+              - TestVoiceBurstTypeString_InvalidReturnsUnknown
 
       - section: "6.2"
         title: "Data and control"
@@ -117,7 +117,7 @@ documents:
               - TestRC_StandaloneBurst_RoundTrip
               - TestRC_StandaloneBurst_EncodeFromFields
               - TestRC_BurstFECStats_RC
-              - TestRC_ToString
+              - TestRC_String
 
       # ── Section 7: DMR signalling ──
       - section: "7.1.1"
@@ -231,7 +231,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestCSBK_OpcodeToString
+              - TestCSBK_OpcodeString
               - TestCSBK_PreamblePDU_Decode
               - TestCSBK_NegativeAck_Decode
               - TestCSBK_CRCValidation
@@ -270,13 +270,13 @@ documents:
               - TestMBCHeader_CRCFailure
               - TestMBCHeader_CRCBitFlip
               - TestMBCHeader_GetDataType
-              - TestMBCHeader_ToString
+              - TestMBCHeader_String
               - TestMBCContinuation_DecodeIntermediate
               - TestMBCContinuation_DecodeLastBlock
               - TestMBCContinuation_EncodeDecodeRoundTrip
               - TestMBCContinuation_EncodeStability
               - TestMBCContinuation_GetDataType
-              - TestMBCContinuation_ToString
+              - TestMBCContinuation_String
               - TestMBCContinuation_NoCRCCheck
               - TestMBCLastBlockCRC_MultiBlock
               - TestMBCAbsoluteParms_LastBlockCRC
@@ -338,8 +338,8 @@ documents:
               - TestUSBD_CRCFailure
               - TestUSBD_CRCBitFlip
               - TestUSBD_GetDataType
-              - TestUSBD_ToString
-              - TestServiceTypeToName
+              - TestUSBD_String
+              - TestServiceTypeString
               - TestUSBD_AllServiceTypes
 
       # ── Section 9.1: PDUs for voice bursts, general data bursts and the CACH ──
@@ -355,8 +355,8 @@ documents:
             names:
               - TestSyncPatternFromBytes_AllKnownPatterns
               - TestSyncPatternFromBytes_UnknownReturnsEmbeddedSignalling
-              - TestSyncPatternToName_AllPatterns
-              - TestSyncPatternToName_UnknownReturnsEmbeddedSignalling
+              - TestSyncPatternString_AllPatterns
+              - TestSyncPatternString_UnknownReturnsEmbeddedSignalling
               - TestSyncPatternFromBytes_RoundTrip
               - TestSyncPatternFromBytesWithDistance_Tolerant
               - TestSyncPatternFromBytesWithDistance_BeyondThreshold
@@ -390,7 +390,7 @@ documents:
               - TestEmbeddedSignalling_EncodeDecodeRoundTrip
               - TestEmbeddedSignalling_AllColorCodes
               - TestEmbeddedSignalling_AllLCSS
-              - TestEmbeddedSignalling_ToString
+              - TestEmbeddedSignalling_String
               - TestEmbeddedSignalling_PPCI
               - TestEncodeEmbeddedSignalling_FullRoundTrip
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
@@ -407,7 +407,7 @@ documents:
               - TestSlotType_DecodeEncodeRoundTrip
               - TestSlotType_AllColorCodes
               - TestSlotType_AllDataTypes
-              - TestSlotType_ToString
+              - TestSlotType_String
               - TestSlotType_SingleBitError
               - TestEncodeSlotType_RoundTrip
 
@@ -424,7 +424,7 @@ documents:
               - TestTACT_SingleBitError
               - TestTACT_BitsChecked
               - TestTACT_LCSS_Values
-              - TestTACT_ToString
+              - TestTACT_String
 
       - section: "9.1.5"
         title: "Reverse Channel (RC) PDU"
@@ -437,7 +437,7 @@ documents:
               - TestReverseChannel_CRCFailure
               - TestReverseChannel_BitsChecked
               - TestReverseChannel_OutOfRangeRejected
-              - TestReverseChannel_ToString
+              - TestReverseChannel_String
               - TestReverseChannel_CRC7Mask
 
       - section: "9.1.6"
@@ -450,7 +450,7 @@ documents:
               - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
               - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
               - TestFullLinkControl_EncodeStability
-              - TestFullLinkControl_ToString
+              - TestFullLinkControl_String
               - TestFullLinkControl_ServiceOptions_RoundTrip
               - TestFullLinkControl_Decode_BothDataTypes
               - TestFullLinkControl_AddressRange
@@ -470,12 +470,12 @@ documents:
               - TestShortLC_UnknownSLCO_RoundTrip
               - TestShortLC_CRCFailure
               - TestShortLC_BitsChecked
-              - TestShortLC_ToString
+              - TestShortLC_String
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestSLCO_ToName_NullMessage
-              - TestSLCO_ToName_ActivityUpdate
-              - TestSLCO_ToName_Reserved
+              - TestSLCO_String_NullMessage
+              - TestSLCO_String_ActivityUpdate
+              - TestSLCO_String_Reserved
               - TestSLCO_FromInt_NullMessage
               - TestSLCO_FromInt_ActivityUpdate
               - TestSLCO_FromInt_Reserved
@@ -488,7 +488,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestCSBK_OpcodeToString
+              - TestCSBK_OpcodeString
               - TestCSBK_PreamblePDU_Decode
               - TestCSBK_NegativeAck_Decode
               - TestCSBK_CRCValidation
@@ -508,7 +508,7 @@ documents:
               - TestPRFill_IsPRFill_SingleBitDifference
               - TestPRFill_PRFillBits_ReturnsCopy
               - TestPRFill_GetDataType
-              - TestPRFill_ToString
+              - TestPRFill_String
 
       # ── Section 9.2: Data related PDU description ──
       - section: "9.2.2"
@@ -521,7 +521,7 @@ documents:
             names:
               - TestRate34Data_DecodeFromBits
               - TestRate34Data_GetDataType
-              - TestRate34Data_ToString
+              - TestRate34Data_String
               - TestRate34Data_AllOnes
               - TestRate34Data_EncodeDecodeRoundTrip
               - TestRate34Data_FullLengthLastByte
@@ -553,7 +553,7 @@ documents:
             names:
               - TestRate12Data_DecodeFromBits
               - TestRate12Data_GetDataType
-              - TestRate12Data_ToString
+              - TestRate12Data_String
               - TestRate12Data_AllOnes
               - TestRate12Data_EncodeDecodeRoundTrip
               - TestRate12Data_Confirmed_RoundTrip
@@ -591,7 +591,7 @@ documents:
             names:
               - TestRate1Data_DecodeFromBits
               - TestRate1Data_GetDataType
-              - TestRate1Data_ToString
+              - TestRate1Data_String
               - TestRate1Data_AllOnes
               - TestRate1Data_EncodeDecodeRoundTrip
               - TestRate1Data_FullLengthLastByte
@@ -632,8 +632,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestLCSSToName
-              - TestLCSSToName_Unknown
+              - TestLCSSString
+              - TestLCSSString_Unknown
               - TestLCSSFromInt
               - TestLCSSFromInt_InvalidDefaultsToSingle
 
@@ -660,8 +660,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestFeatureSetIDToName_KnownIDs
-              - TestFeatureSetIDToName_UnknownID
+              - TestFeatureSetIDString_KnownIDs
+              - TestFeatureSetIDString_UnknownID
               - TestFeatureSetIDFromInt_ValidValues
               - TestFeatureSetIDFromInt_InvalidValue
               - TestFeatureSetIDFromInt_RoundTrip
@@ -682,8 +682,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestDataTypeToName_AllTypes
-              - TestDataTypeToName_Unknown
+              - TestDataTypeString_AllTypes
+              - TestDataTypeString_Unknown
               - TestDataType_Constants
               - TestDataType_IsReserved
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
@@ -709,7 +709,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestFLCOToName
+              - TestFLCOString
               - TestFLCOFromInt_ValidValues
               - TestFLCOFromInt_InvalidValue
 
@@ -750,7 +750,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestCSBK_OpcodeToString
+              - TestCSBK_OpcodeString
 
       # ── Annex B: FEC and CRC codes ──
       - section: "B.1.1"
@@ -1175,7 +1175,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
-              - TestTalkerAliasDataFormatToName
+              - TestTalkerAliasDataFormatString
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestTalkerAlias_RoundTrip
@@ -1204,12 +1204,12 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestReverseChannel_DecodeEncode_RoundTrip
-              - TestReverseChannel_ToString
+              - TestReverseChannel_String
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestRCCommand_ToName_CeaseTransmissionCommand
-              - TestRCCommand_ToName_CeaseTransmissionRequest
-              - TestRCCommand_ToName_Reserved
+              - TestRCCommand_String_CeaseTransmissionCommand
+              - TestRCCommand_String_CeaseTransmissionRequest
+              - TestRCCommand_String_Reserved
               - TestRCCommand_FromInt_CeaseCommand
               - TestRCCommand_FromInt_CeaseRequest
               - TestRCCommand_FromInt_Reserved
@@ -1267,8 +1267,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
-              - TestTalkerAliasDataFormatToName
-              - TestTalkerAliasDataFormatToName_Unknown
+              - TestTalkerAliasDataFormatString
+              - TestTalkerAliasDataFormatString_Unknown
               - TestTalkerAliasDataFormat_Constants
 
       - section: "7.1.1.5"
@@ -1279,7 +1279,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle
-              - TestFullLinkControl_TalkerAliasBlock_ToString
+              - TestFullLinkControl_TalkerAliasBlock_String
 
       - section: "7.1.2"
         title: "Control Signalling BlocK (CSBK) PDUs"
@@ -1288,7 +1288,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestCSBK_OpcodeToString
+              - TestCSBK_OpcodeString
               - TestCSBK_PreamblePDU_Decode
               - TestCSBK_NegativeAck_Decode
               - TestCSBK_CRCValidation
@@ -1364,19 +1364,19 @@ documents:
               - TestShortLC_NullMessage_Decode
               - TestShortLC_ActivityUpdate_Decode
               - TestShortLC_EncodeDecodeRoundTrip
-              - TestShortLC_ToString
+              - TestShortLC_String
               - TestAddressHash
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestSLCO_ToName_NullMessage
-              - TestSLCO_ToName_ActivityUpdate
+              - TestSLCO_String_NullMessage
+              - TestSLCO_String_ActivityUpdate
               - TestSLCO_Values
-              - TestActivityID_ToName_NoActivity
-              - TestActivityID_ToName_GroupVoice
-              - TestActivityID_ToName_IndividualVoice
-              - TestActivityID_ToName_EmergencyGroupVoice
-              - TestActivityID_ToName_EmergencyIndividualVoice
-              - TestActivityID_ToName_Reserved
+              - TestActivityID_String_NoActivity
+              - TestActivityID_String_GroupVoice
+              - TestActivityID_String_IndividualVoice
+              - TestActivityID_String_EmergencyGroupVoice
+              - TestActivityID_String_EmergencyIndividualVoice
+              - TestActivityID_String_Reserved
               - TestActivityID_FromInt_NoActivity
               - TestActivityID_FromInt_GroupVoice
               - TestActivityID_FromInt_Reserved
@@ -1393,7 +1393,7 @@ documents:
               - TestDecodeServiceOptions
               - TestDecodeServiceOptions_ReservedBits
               - TestServiceOptions_EncodeDecodeRoundTrip
-              - TestServiceOptions_ToString
+              - TestServiceOptions_String
 
       - section: "7.2.2"
         title: "Answer Response"
@@ -1421,7 +1421,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_NegativeAck_Decode
-              - TestCSBK_OpcodeToString
+              - TestCSBK_OpcodeString
 
       - section: "7.2.5"
         title: "Source Type"
@@ -1432,9 +1432,9 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestSourceType_Constants
-              - TestSourceTypeToName
-              - TestSourceTypeToName_Unknown
-              - TestSourceType_ToString
+              - TestSourceTypeString
+              - TestSourceTypeString_Unknown
+              - TestSourceType_String
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_NegativeAck_Decode
@@ -1448,9 +1448,9 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestAdditionalInformationField_Constants
-              - TestAdditionalInformationFieldToName
-              - TestAdditionalInformationFieldToName_Unknown
-              - TestAdditionalInformationField_ToString
+              - TestAdditionalInformationFieldString
+              - TestAdditionalInformationFieldString_Unknown
+              - TestAdditionalInformationField_String
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_NegativeAck_Decode
@@ -1484,8 +1484,8 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestPositionError_Constants
-              - TestPositionError_ToString
-              - TestPositionErrorToName
+              - TestPositionError_String
+              - TestPositionErrorString
 
       - section: "7.2.16"
         title: "Longitude"
@@ -1520,8 +1520,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
-              - TestTalkerAliasDataFormatToName
-              - TestTalkerAliasDataFormatToName_Unknown
+              - TestTalkerAliasDataFormatString
+              - TestTalkerAliasDataFormatString_Unknown
               - TestTalkerAliasDataFormat_Constants
 
       - section: "7.2.19"
@@ -1541,9 +1541,9 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestRCCommand_ToName_CeaseTransmissionCommand
-              - TestRCCommand_ToName_CeaseTransmissionRequest
-              - TestRCCommand_ToName_Reserved
+              - TestRCCommand_String_CeaseTransmissionCommand
+              - TestRCCommand_String_CeaseTransmissionRequest
+              - TestRCCommand_String_Reserved
               - TestRCCommand_FromInt_CeaseCommand
               - TestRCCommand_FromInt_CeaseRequest
               - TestRCCommand_FromInt_Reserved
@@ -1551,7 +1551,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestReverseChannel_DecodeEncode_RoundTrip
-              - TestReverseChannel_ToString
+              - TestReverseChannel_String
 
       # ── Annex A: Timers and constants ──
       - section: "A"
@@ -1584,7 +1584,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestCSBK_OpcodeToString
+              - TestCSBK_OpcodeString
 
       - section: "B.3"
         title: "Short Link Control Opcode List"
@@ -1595,12 +1595,12 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestSLCO_ToName_NullMessage
-              - TestSLCO_ToName_ActivityUpdate
+              - TestSLCO_String_NullMessage
+              - TestSLCO_String_ActivityUpdate
               - TestSLCO_Values
               - TestActivityID_Values
-              - TestActivityID_ToName_NoActivity
-              - TestActivityID_ToName_GroupVoice
+              - TestActivityID_String_NoActivity
+              - TestActivityID_String_GroupVoice
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestShortLC_NullMessage_Decode
@@ -1641,11 +1641,11 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestSAIDToName
-              - TestDAIDToName
-              - TestSPIDToName
+              - TestSAIDString
+              - TestDAIDString
+              - TestSPIDString
               - TestSPIDToPort
-              - TestDPIDToName
+              - TestDPIDString
               - TestDPIDToPort
 
       - section: "5.6"
@@ -1778,7 +1778,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestCSBK_TierIII_OpcodeToString
+              - TestCSBK_TierIII_OpcodeString
               - TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound
               - TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
@@ -1860,7 +1860,7 @@ documents:
               - TestMVAPContinuation_Decode
               - TestBCAPContinuation_Decode
               - TestVNAPContinuation_Decode
-              - TestAnnouncementType_ToName
+              - TestAnnouncementType_String
               - TestAnnouncementType_FromInt
 
       - section: "7.1.1.1"
@@ -1907,11 +1907,11 @@ documents:
             names:
               - TestCdefParms_NewFromBits
               - TestCdefParms_FrequencyCalculation
-              - TestCdefParms_ToString
+              - TestCdefParms_String
               - TestCdefParms_ZeroValues
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestAnnouncementType_ToName
+              - TestAnnouncementType_String
               - TestAnnouncementType_FromInt
 
       # ── Annex A: Timers, constants levels and addresses ──
@@ -1936,7 +1936,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestCSBK_TierIII_OpcodeToString
+              - TestCSBK_TierIII_OpcodeString
 
       - section: "B.2"
         title: "Short Link Control Opcode List"

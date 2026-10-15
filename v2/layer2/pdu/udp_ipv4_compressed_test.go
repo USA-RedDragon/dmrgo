@@ -71,7 +71,7 @@ func TestUDPIPv4CompressedHeader_NonContiguousHCOpcode(t *testing.T) {
 	}
 }
 
-func TestUDPIPv4CompressedHeader_ToString(t *testing.T) {
+func TestUDPIPv4CompressedHeader_String(t *testing.T) {
 	t.Parallel()
 	h := pdu.UDPIPv4CompressedHeader{
 		IPv4Identification: 0x1234,
@@ -80,9 +80,9 @@ func TestUDPIPv4CompressedHeader_ToString(t *testing.T) {
 		SPID:               1,
 		DPID:               2,
 	}
-	s := h.ToString()
+	s := h.String()
 	if s == "" {
-		t.Error("ToString() should not be empty")
+		t.Error("String() should not be empty")
 	}
 }
 

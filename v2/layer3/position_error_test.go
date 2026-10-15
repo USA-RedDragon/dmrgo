@@ -30,7 +30,7 @@ func TestPositionError_Constants(t *testing.T) {
 	}
 }
 
-func TestPositionError_ToString(t *testing.T) {
+func TestPositionError_String(t *testing.T) {
 	tests := []struct {
 		value    PositionError
 		contains string
@@ -47,26 +47,26 @@ func TestPositionError_ToString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.contains, func(t *testing.T) {
-			str := tt.value.ToString()
+			str := tt.value.String()
 			if !strings.Contains(str, tt.contains) {
-				t.Errorf("ToString() = %q, want to contain %q", str, tt.contains)
+				t.Errorf("String() = %q, want to contain %q", str, tt.contains)
 			}
 		})
 	}
 }
 
-func TestPositionErrorToName(t *testing.T) {
+func TestPositionErrorString(t *testing.T) {
 	for i := uint8(0); i <= 7; i++ {
 		pe := PositionError(i)
-		name := PositionErrorToName(pe)
+		name := pe.String()
 		if name == "Unknown" {
-			t.Errorf("PositionErrorToName(%d) returned Unknown", i)
+			t.Errorf("(%d).String() returned Unknown", i)
 		}
 	}
 
 	// Out of range should return Unknown
-	name := PositionErrorToName(PositionError(99))
+	name := (PositionError(99)).String()
 	if name != "Unknown" {
-		t.Errorf("PositionErrorToName(99) = %q, want Unknown", name)
+		t.Errorf("(99).String() = %q, want Unknown", name)
 	}
 }

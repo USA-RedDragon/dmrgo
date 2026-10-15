@@ -16,32 +16,32 @@ func TestAdditionalInformationField_Constants(t *testing.T) {
 	}
 }
 
-func TestAdditionalInformationFieldToName(t *testing.T) {
+func TestAdditionalInformationFieldString(t *testing.T) {
 	t.Parallel()
-	if name := layer3.AdditionalInformationFieldToName(layer3.AdditionalInfoIgnore); name != "Ignore" {
+	if name := layer3.AdditionalInfoIgnore.String(); name != "Ignore" {
 		t.Errorf("expected 'Ignore', got %q", name)
 	}
-	if name := layer3.AdditionalInformationFieldToName(layer3.AdditionalInfoValid); name != "Valid" {
+	if name := layer3.AdditionalInfoValid.String(); name != "Valid" {
 		t.Errorf("expected 'Valid', got %q", name)
 	}
 }
 
-func TestAdditionalInformationFieldToName_Unknown(t *testing.T) {
+func TestAdditionalInformationFieldString_Unknown(t *testing.T) {
 	t.Parallel()
-	name := layer3.AdditionalInformationFieldToName(layer3.AdditionalInformationField(5))
+	name := (layer3.AdditionalInformationField(5)).String()
 	if name != "Unknown" {
 		t.Errorf("expected 'Unknown', got %q", name)
 	}
 }
 
-func TestAdditionalInformationField_ToString(t *testing.T) {
+func TestAdditionalInformationField_String(t *testing.T) {
 	t.Parallel()
-	s := layer3.AdditionalInfoIgnore.ToString()
-	if s != "AdditionalInformationField{ Ignore }" {
-		t.Errorf("unexpected ToString: %q", s)
+	s := layer3.AdditionalInfoIgnore.String()
+	if s != "Ignore" {
+		t.Errorf("unexpected String: %q", s)
 	}
-	s = layer3.AdditionalInfoValid.ToString()
-	if s != "AdditionalInformationField{ Valid }" {
-		t.Errorf("unexpected ToString: %q", s)
+	s = layer3.AdditionalInfoValid.String()
+	if s != "Valid" {
+		t.Errorf("unexpected String: %q", s)
 	}
 }

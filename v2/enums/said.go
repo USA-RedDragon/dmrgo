@@ -13,7 +13,7 @@ const (
 	SAIDManufacturerSpecific SAID = 12
 )
 
-func SAIDToName(said SAID) string {
+func (said SAID) String() string {
 	switch {
 	case said == SAIDRadioNetwork:
 		return "Radio Network"

@@ -48,7 +48,7 @@ const (
 	CSBKMove CSBKOpcode = 0b00111001
 )
 
-func (opcode CSBKOpcode) ToString() string {
+func (opcode CSBKOpcode) String() string {
 	switch opcode {
 	case CSBKBSOutboundActivationPDU:
 		return "BS Outbound Activation PDU"

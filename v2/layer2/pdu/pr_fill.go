@@ -44,8 +44,8 @@ func (p *PRFill) GetDataType() enums.DataType {
 	return p.DataType
 }
 
-// ToString returns a string representation of the PR FILL PDU.
-func (p *PRFill) ToString() string {
+// String returns a string representation of the PR FILL PDU.
+func (p *PRFill) String() string {
 	return "PR FILL (Idle)"
 }
 

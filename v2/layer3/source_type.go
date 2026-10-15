@@ -10,7 +10,7 @@ const (
 	SourceTypeMS SourceType = 1 // Mobile Station
 )
 
-func SourceTypeToName(st SourceType) string {
+func (st SourceType) String() string {
 	switch st {
 	case SourceTypeBS:
 		return "BS"
@@ -19,8 +19,4 @@ func SourceTypeToName(st SourceType) string {
 	default:
 		return unknownName
 	}
-}
-
-func (st SourceType) ToString() string {
-	return "SourceType{ " + SourceTypeToName(st) + " }"
 }

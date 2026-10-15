@@ -2,7 +2,7 @@ package enums
 
 import "testing"
 
-func TestDataTypeToName_AllTypes(t *testing.T) {
+func TestDataTypeString_AllTypes(t *testing.T) {
 	tests := []struct {
 		dt       DataType
 		expected string
@@ -23,18 +23,18 @@ func TestDataTypeToName_AllTypes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			got := DataTypeToName(tt.dt)
+			got := tt.dt.String()
 			if got != tt.expected {
-				t.Errorf("DataTypeToName(%d) = %q, want %q", tt.dt, got, tt.expected)
+				t.Errorf("(%d).String() = %q, want %q", tt.dt, got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestDataTypeToName_Unknown(t *testing.T) {
-	got := DataTypeToName(DataType(99))
+func TestDataTypeString_Unknown(t *testing.T) {
+	got := (DataType(99)).String()
 	if got != "Unknown" {
-		t.Errorf("DataTypeToName(99) = %q, want %q", got, "Unknown")
+		t.Errorf("(99).String() = %q, want %q", got, "Unknown")
 	}
 }
 
@@ -66,8 +66,8 @@ func TestDataType_IsReserved(t *testing.T) {
 		if got := dt.IsReserved(); got != want {
 			t.Errorf("DataType(%d).IsReserved() = %v, want %v", dt, got, want)
 		}
-		if want && DataTypeToName(dt) != "Reserved" {
-			t.Errorf("DataTypeToName(%d) = %q, want Reserved", dt, DataTypeToName(dt))
+		if want && dt.String() != "Reserved" {
+			t.Errorf("(%d).String() = %q, want Reserved", dt, dt.String())
 		}
 	}
 }

@@ -236,15 +236,15 @@ func TestMBCHeader_GetDataType(t *testing.T) {
 	}
 }
 
-func TestMBCHeader_ToString(t *testing.T) {
+func TestMBCHeader_String(t *testing.T) {
 	var data [64]bit.Bit
 	infoBits := buildMBCHeaderBits(true, false, 0b00111101, 0x00, data)
 	hdr, _ := pdu.DecodeMBCHeader(infoBits)
 	hdr.DataType = enums.DataTypeMBCHeader
 
-	str := hdr.ToString()
+	str := hdr.String()
 	if str == "" {
-		t.Error("MBCHeader.ToString() should not be empty")
+		t.Error("MBCHeader.String() should not be empty")
 	}
 }
 
@@ -360,7 +360,7 @@ func TestMBCContinuation_GetDataType(t *testing.T) {
 	}
 }
 
-func TestMBCContinuation_ToString(t *testing.T) {
+func TestMBCContinuation_String(t *testing.T) {
 	var data [95]bit.Bit
 	data[0] = 1
 
@@ -368,9 +368,9 @@ func TestMBCContinuation_ToString(t *testing.T) {
 	cont, _ := pdu.DecodeMBCContinuation(infoBits)
 	cont.DataType = enums.DataTypeMBCContinuation
 
-	str := cont.ToString()
+	str := cont.String()
 	if str == "" {
-		t.Error("MBCContinuation.ToString() should not be empty")
+		t.Error("MBCContinuation.String() should not be empty")
 	}
 }
 

@@ -74,8 +74,8 @@ func SyncPatternFromBytesWithDistance(syncOrEmbeddedSignalling [6]byte) (SyncPat
 	return best, bestDistance
 }
 
-// SyncPatternToName returns the name of the SyncPattern that matches the given burst.
-func SyncPatternToName(sync SyncPattern) string {
+// String returns the name of the SyncPattern that matches the given burst.
+func (sync SyncPattern) String() string {
 	switch sync {
 	case BsSourcedVoice:
 		return "BS-sourced voice"

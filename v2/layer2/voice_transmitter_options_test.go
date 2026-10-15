@@ -68,7 +68,7 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 		}
 		lc, res := layer2.DecodeEmbeddedFullLinkControl(got)
 		if res.Uncorrectable || (sf%2 == 1) != (lc.FLCO == enums.FLCOTalkerAliasHeader) {
-			t.Errorf("superframe %d: decoded %s", sf, lc.ToString())
+			t.Errorf("superframe %d: decoded %s", sf, lc.String())
 		}
 	}
 
@@ -113,7 +113,7 @@ func TestVoiceTransmitter_EmbeddedLCHookError(t *testing.T) {
 		t.Fatalf("%d bursts after the error", len(out))
 	}
 	if b := must(layer2.NewBurstFromBytes(out[0])); b.VoiceBurst != enums.VoiceBurstA {
-		t.Errorf("burst after the error is %s", enums.VoiceBurstTypeToName(b.VoiceBurst))
+		t.Errorf("burst after the error is %s", b.VoiceBurst.String())
 	}
 }
 
@@ -138,10 +138,10 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 		b := must(layer2.NewBurstFromBytes(headers[1]))
 		got, ok := b.Data.(*pdu.PIHeader)
 		if !ok || !b.IsData || b.SyncPattern != sync || b.SlotType.DataType != enums.DataTypePIHeader || b.SlotType.ColorCode != 5 {
-			t.Fatalf("source %d: PI burst %s", source, b.ToString())
+			t.Fatalf("source %d: PI burst %s", source, b.String())
 		}
 		if got.FEC.HasErrors() || got.AlgorithmID != 1 || got.MFID != 0x10 || got.KeyID != 7 || got.MessageIndicator != 0xDEADBEEF || got.Destination != 91 {
-			t.Errorf("source %d: PI header %s", source, got.ToString())
+			t.Errorf("source %d: PI header %s", source, got.String())
 		}
 	}
 	tx := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{LC: lc, Silence: silenceSlot()}))

@@ -31,7 +31,7 @@ func reencode(t *testing.T, b *layer2.Burst) *layer2.Burst {
 
 func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
-		t.Run(enums.DataTypeToName(dt), func(t *testing.T) {
+		t.Run(dt.String(), func(t *testing.T) {
 			lc := groupLC(enums.StandardizedFID)
 			lc.DataType = dt
 			lcBits := must(pdu.EncodeFullLinkControl(&lc))
@@ -53,7 +53,7 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 			}
 			gotLC, ok := got.Data.(*pdu.FullLinkControl)
 			if !ok || gotLC.GroupVoice == nil || gotLC.GroupVoice.GroupAddress != 9 || gotLC.GroupVoice.SourceAddress != 3191868 {
-				t.Fatalf("decoded LC %s, want group 9", gotLC.ToString())
+				t.Fatalf("decoded LC %s, want group 9", gotLC.String())
 			}
 		})
 	}
@@ -131,11 +131,11 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 		}},
 	}
 	for _, tt := range tests {
-		t.Run(enums.DataTypeToName(tt.dt), func(t *testing.T) {
+		t.Run(tt.dt.String(), func(t *testing.T) {
 			b := dataBurst(tt.dt, tt.data)
 			got := reencode(t, &b)
 			if got.SlotType.DataType != tt.dt || got.SlotType.ColorCode != 1 {
-				t.Fatalf("slot type %s", got.SlotType.ToString())
+				t.Fatalf("slot type %s", got.SlotType.String())
 			}
 			if got.FEC.PDU.Uncorrectable {
 				t.Fatalf("PDU check failed: %+v", got.FEC)
@@ -210,7 +210,7 @@ func TestBurstEncode_DecodedPayloadWithoutData(t *testing.T) {
 	for _, dt := range []enums.DataType{enums.DataTypeRate34, enums.DataTypeMBCHeader} {
 		b.SlotType.DataType = dt
 		if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "set Data") {
-			t.Errorf("CSBK payload as %s: err %v", enums.DataTypeToName(dt), err)
+			t.Errorf("CSBK payload as %s: err %v", dt.String(), err)
 		}
 	}
 

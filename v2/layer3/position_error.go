@@ -14,7 +14,7 @@ const (
 	PositionErrorUnknown                       // 0b111
 )
 
-func PositionErrorToName(pe PositionError) string {
+func (pe PositionError) String() string {
 	switch pe {
 	case PositionLessThan2M:
 		return "PositionLessThan2M"
@@ -35,8 +35,4 @@ func PositionErrorToName(pe PositionError) string {
 	default:
 		return unknownName
 	}
-}
-
-func (pe PositionError) ToString() string {
-	return "PositionError{ " + PositionErrorToName(pe) + " }"
 }

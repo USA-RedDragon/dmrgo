@@ -2,7 +2,7 @@ package enums
 
 import "testing"
 
-func TestLCSSToName(t *testing.T) {
+func TestLCSSString(t *testing.T) {
 	tests := []struct {
 		lcss     LCSS
 		expected string
@@ -14,18 +14,18 @@ func TestLCSSToName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			got := LCSSToName(tt.lcss)
+			got := tt.lcss.String()
 			if got != tt.expected {
-				t.Errorf("LCSSToName(%d) = %q, want %q", tt.lcss, got, tt.expected)
+				t.Errorf("(%d).String() = %q, want %q", tt.lcss, got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestLCSSToName_Unknown(t *testing.T) {
-	got := LCSSToName(LCSS(99))
+func TestLCSSString_Unknown(t *testing.T) {
+	got := (LCSS(99)).String()
 	if got != unknownName {
-		t.Errorf("LCSSToName(99) = %q, want %q", got, unknownName)
+		t.Errorf("(99).String() = %q, want %q", got, unknownName)
 	}
 }
 

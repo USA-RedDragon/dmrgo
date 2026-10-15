@@ -10,7 +10,7 @@ const (
 	RCCeaseTransmissionRequest RCCommand = 0b0101
 )
 
-func RCCommandToName(rc RCCommand) string {
+func (rc RCCommand) String() string {
 	switch rc {
 	case RCCeaseTransmissionCommand:
 		return "Cease Transmission Command"

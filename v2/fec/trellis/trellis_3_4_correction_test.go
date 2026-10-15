@@ -64,7 +64,7 @@ func TestTrellis34_CleanDecode(t *testing.T) {
 
 func TestTrellis34_SingleBitErrorsCorrected(t *testing.T) {
 	r := rand.New(rand.NewSource(2))
-		for n := 0; n < 20; n++ {
+	for n := 0; n < 20; n++ {
 		data, enc := randomTrellisBlock(r)
 		for pos := range enc {
 			rx := enc
@@ -87,7 +87,7 @@ func TestTrellis34_SeparatedDoubleBitErrorsCorrected(t *testing.T) {
 		pointOf[2*i+1] = int(j) / 2
 	}
 	r := rand.New(rand.NewSource(4))
-		for n := 0; n < 20000; n++ {
+	for n := 0; n < 20000; n++ {
 		data, enc := randomTrellisBlock(r)
 		a, b := r.Intn(196), r.Intn(196)
 		if d := pointOf[a] - pointOf[b]; d > -6 && d < 6 {
@@ -105,7 +105,7 @@ func TestTrellis34_SeparatedDoubleBitErrorsCorrected(t *testing.T) {
 
 func TestTrellis34_NonzeroFinalStateFlagged(t *testing.T) {
 	r := rand.New(rand.NewSource(5))
-		for n := 0; n < 200; n++ {
+	for n := 0; n < 200; n++ {
 		var tribits [49]byte
 		for i := range tribits {
 			tribits[i] = byte(r.Intn(8))

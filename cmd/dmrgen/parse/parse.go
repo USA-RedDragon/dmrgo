@@ -100,7 +100,7 @@ type Field struct {
 	// e.g. "bits:3+12-15" → ExtraBitRanges = [{12,15}]
 	ExtraBitRanges [][2]int
 
-	// Skip fields (dmr:"-") are included for ToString generation but excluded from decode/encode.
+	// Skip fields (dmr:"-") are included for String generation but excluded from decode/encode.
 	Skip bool
 
 	// NoEncode fields are decoded (e.g. for when: guard conditions) but skipped during encode

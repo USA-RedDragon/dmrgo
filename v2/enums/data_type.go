@@ -26,7 +26,7 @@ func (dt DataType) IsReserved() bool {
 	return dt >= DataTypeReserved && dt <= 0xF
 }
 
-func DataTypeToName(dt DataType) string {
+func (dt DataType) String() string {
 	switch dt {
 	case DataTypePIHeader:
 		return "PI Header"

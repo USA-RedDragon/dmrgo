@@ -16,8 +16,8 @@ const (
 	VoiceBurstF
 )
 
-// VoiceBurstTypeToName returns the name of a voice burst type.
-func VoiceBurstTypeToName(burstType VoiceBurstType) string {
+// String returns the name of a voice burst type.
+func (burstType VoiceBurstType) String() string {
 	switch burstType {
 	case VoiceBurstUnknown:
 		return unknownName

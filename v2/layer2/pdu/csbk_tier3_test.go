@@ -11,7 +11,7 @@ import (
 
 // ── Tier III CSBK Opcode ToString Tests ──
 
-func TestCSBK_TierIII_OpcodeToString(t *testing.T) {
+func TestCSBK_TierIII_OpcodeString(t *testing.T) {
 	tests := []struct {
 		opcode pdu.CSBKOpcode
 		want   string
@@ -39,8 +39,8 @@ func TestCSBK_TierIII_OpcodeToString(t *testing.T) {
 		{pdu.CSBKMaintenance, "P_MAINT PDU"},
 	}
 	for _, tt := range tests {
-		if got := tt.opcode.ToString(); got != tt.want {
-			t.Errorf("CSBKOpcode(%08b).ToString() = %q, want %q", byte(tt.opcode), got, tt.want)
+		if got := tt.opcode.String(); got != tt.want {
+			t.Errorf("CSBKOpcode(%08b).String() = %q, want %q", byte(tt.opcode), got, tt.want)
 		}
 	}
 }
@@ -94,9 +94,9 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 		t.Error("SourceAddress last bit should be 1")
 	}
 
-	str := csbk.ToString()
+	str := csbk.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 
@@ -226,9 +226,9 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 		t.Errorf("SysIdentCode = %d, want 1", aloha.SysIdentCode)
 	}
 
-	str := csbk.ToString()
+	str := csbk.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 
@@ -280,9 +280,9 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 		t.Errorf("Backoff = %d, want 7", bc.Backoff)
 	}
 
-	str := csbk.ToString()
+	str := csbk.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 
@@ -748,7 +748,7 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 
 // ── AnnouncementType Tests ──
 
-func TestAnnouncementType_ToName(t *testing.T) {
+func TestAnnouncementType_String(t *testing.T) {
 	tests := []struct {
 		at   enums.AnnouncementType
 		want string
@@ -765,13 +765,13 @@ func TestAnnouncementType_ToName(t *testing.T) {
 		{enums.AnnouncementManufacturerSpecific2, "Manufacturer Specific"},
 	}
 	for _, tt := range tests {
-		if got := enums.AnnouncementTypeToName(tt.at); got != tt.want {
-			t.Errorf("AnnouncementTypeToName(%d) = %q, want %q", int(tt.at), got, tt.want)
+		if got := tt.at.String(); got != tt.want {
+			t.Errorf("(%d).String() = %q, want %q", int(tt.at), got, tt.want)
 		}
 	}
 
 	// Reserved value
-	reserved := enums.AnnouncementTypeToName(enums.AnnouncementType(15))
+	reserved := (enums.AnnouncementType(15)).String()
 	if reserved == "" {
 		t.Error("reserved AnnouncementType ToName should not be empty")
 	}
@@ -798,10 +798,10 @@ func TestSLCO_TierIII_Values(t *testing.T) {
 		t.Errorf("SLCOFromInt(0b0011) = %d, want SLCOPSysParms(%d)", int(psys), int(enums.SLCOPSysParms))
 	}
 
-	if name := enums.SLCOToName(enums.SLCOCSysParms); name != "C_SYS_Parms" {
+	if name := enums.SLCOCSysParms.String(); name != "C_SYS_Parms" {
 		t.Errorf("SLCOCSysParms.ToName() = %q, want %q", name, "C_SYS_Parms")
 	}
-	if name := enums.SLCOToName(enums.SLCOPSysParms); name != "P_SYS_Parms" {
+	if name := enums.SLCOPSysParms.String(); name != "P_SYS_Parms" {
 		t.Errorf("SLCOPSysParms.ToName() = %q, want %q", name, "P_SYS_Parms")
 	}
 }
@@ -870,8 +870,8 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 		if fecResult.Uncorrectable {
 			t.Fatal("DecodeCSBK returned uncorrectable FEC")
 		}
-		if got := csbk.CSBKOpcode.ToString(); !strings.HasPrefix(got, "Unknown CSBKOpcode") {
-			t.Errorf("opcode %06b ToString() = %q, want Unknown CSBKOpcode", op, got)
+		if got := csbk.CSBKOpcode.String(); !strings.HasPrefix(got, "Unknown CSBKOpcode") {
+			t.Errorf("opcode %06b String() = %q, want Unknown CSBKOpcode", op, got)
 		}
 	}
 }

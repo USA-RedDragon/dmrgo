@@ -2,7 +2,7 @@ package enums
 
 import "testing"
 
-func TestFLCOToName(t *testing.T) {
+func TestFLCOString(t *testing.T) {
 	tests := []struct {
 		flco     FLCO
 		expected string
@@ -20,9 +20,9 @@ func TestFLCOToName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			got := FLCOToName(tt.flco)
+			got := tt.flco.String()
 			if got != tt.expected {
-				t.Errorf("FLCOToName(%d) = %q, want %q", tt.flco, got, tt.expected)
+				t.Errorf("(%d).String() = %q, want %q", tt.flco, got, tt.expected)
 			}
 		})
 	}

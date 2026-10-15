@@ -2,7 +2,7 @@ package enums
 
 import "testing"
 
-func TestVoiceBurstTypeToName(t *testing.T) {
+func TestVoiceBurstTypeString(t *testing.T) {
 	tests := []struct {
 		burstType VoiceBurstType
 		expected  string
@@ -17,17 +17,17 @@ func TestVoiceBurstTypeToName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			got := VoiceBurstTypeToName(tt.burstType)
+			got := tt.burstType.String()
 			if got != tt.expected {
-				t.Errorf("VoiceBurstTypeToName(%d) = %q, want %q", tt.burstType, got, tt.expected)
+				t.Errorf("(%d).String() = %q, want %q", tt.burstType, got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestVoiceBurstTypeToName_InvalidReturnsUnknown(t *testing.T) {
-	got := VoiceBurstTypeToName(VoiceBurstType(999))
+func TestVoiceBurstTypeString_InvalidReturnsUnknown(t *testing.T) {
+	got := (VoiceBurstType(999)).String()
 	if got != unknownName {
-		t.Errorf("VoiceBurstTypeToName(999) = %q, want %q", got, unknownName)
+		t.Errorf("(999).String() = %q, want %q", got, unknownName)
 	}
 }

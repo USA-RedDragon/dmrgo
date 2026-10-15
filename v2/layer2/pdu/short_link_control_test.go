@@ -153,15 +153,15 @@ func TestShortLC_BitsChecked(t *testing.T) {
 	}
 }
 
-func TestShortLC_ToString(t *testing.T) {
+func TestShortLC_String(t *testing.T) {
 	t.Parallel()
 	var data [24]bit.Bit
 	bits := buildShortLCBits(byte(enums.SLCOActivityUpdate), data)
 
 	slc, _ := pdu.DecodeShortLC(bits)
-	s := slc.ToString()
+	s := slc.String()
 	if s == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 

@@ -67,7 +67,7 @@ func TestCdefParms_FrequencyCalculation(t *testing.T) {
 	}
 }
 
-func TestCdefParms_ToString(t *testing.T) {
+func TestCdefParms_String(t *testing.T) {
 	parms := &layer3.CdefParms{
 		Channel: 1,
 		TXMHz:   440,
@@ -76,9 +76,9 @@ func TestCdefParms_ToString(t *testing.T) {
 		RXKHz:   0,
 	}
 
-	str := parms.ToString()
+	str := parms.String()
 	if str == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 

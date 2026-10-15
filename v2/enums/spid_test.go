@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-func TestSPIDToName(t *testing.T) {
+func TestSPIDString(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		spid     enums.SPID
@@ -20,8 +20,8 @@ func TestSPIDToName(t *testing.T) {
 		{enums.SPID(127), "Manufacturer Specific"},
 	}
 	for _, tt := range tests {
-		if got := enums.SPIDToName(tt.spid); got != tt.expected {
-			t.Errorf("SPIDToName(%d) = %q, want %q", tt.spid, got, tt.expected)
+		if got := tt.spid.String(); got != tt.expected {
+			t.Errorf("(%d).String() = %q, want %q", tt.spid, got, tt.expected)
 		}
 	}
 }

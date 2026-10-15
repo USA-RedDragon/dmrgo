@@ -20,7 +20,6 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
-	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -87,7 +86,7 @@ func EncodeUnconfirmedDataHeader(s *UnconfirmedDataHeader) ([80]bit.Bit, error) 
 	return data, nil
 }
 
-func (s *UnconfirmedDataHeader) ToString() string {
+func (s *UnconfirmedDataHeader) String() string {
 	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %v, LLIDSource: %v, FullMessage: %t, BlocksToFollow: %d, Reserved2: %v, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessage, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
 
@@ -286,26 +285,26 @@ func EncodeDataHeader(s *DataHeader) ([96]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *DataHeader) ToString() string {
+func (s *DataHeader) String() string {
 	_ret := "DataHeader{ "
-	_ret += fmt.Sprintf("DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", enums.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
+	_ret += fmt.Sprintf("DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
 	switch {
 	case s.UnconfirmedDataHeader != nil:
-		_ret += s.UnconfirmedDataHeader.ToString()
+		_ret += s.UnconfirmedDataHeader.String()
 	case s.ConfirmedDataHeader != nil:
-		_ret += s.ConfirmedDataHeader.ToString()
+		_ret += s.ConfirmedDataHeader.String()
 	case s.ResponsePacketHeader != nil:
-		_ret += s.ResponsePacketHeader.ToString()
+		_ret += s.ResponsePacketHeader.String()
 	case s.DefinedDataHeader != nil:
-		_ret += s.DefinedDataHeader.ToString()
+		_ret += s.DefinedDataHeader.String()
 	case s.StatusPrecodedHeader != nil:
-		_ret += s.StatusPrecodedHeader.ToString()
+		_ret += s.StatusPrecodedHeader.String()
 	case s.RawDataHeader != nil:
-		_ret += s.RawDataHeader.ToString()
+		_ret += s.RawDataHeader.String()
 	case s.UDTHeader != nil:
-		_ret += s.UDTHeader.ToString()
+		_ret += s.UDTHeader.String()
 	case s.ProprietaryHeader != nil:
-		_ret += s.ProprietaryHeader.ToString()
+		_ret += s.ProprietaryHeader.String()
 	default:
 		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
 	}
@@ -389,7 +388,7 @@ func EncodeConfirmedDataHeader(s *ConfirmedDataHeader) ([80]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ConfirmedDataHeader) ToString() string {
+func (s *ConfirmedDataHeader) String() string {
 	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
 }
 
@@ -459,7 +458,7 @@ func EncodeResponsePacketHeader(s *ResponsePacketHeader) ([80]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ResponsePacketHeader) ToString() string {
+func (s *ResponsePacketHeader) String() string {
 	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %v, SAP: %d, Reserved3: %v, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
 }
 
@@ -527,7 +526,7 @@ func EncodeDefinedDataHeader(s *DefinedDataHeader) ([80]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *DefinedDataHeader) ToString() string {
+func (s *DefinedDataHeader) String() string {
 	return fmt.Sprintf("DefinedDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, DefinedData: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.DefinedData, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
 
@@ -600,7 +599,7 @@ func EncodeRawDataHeader(s *RawDataHeader) ([80]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *RawDataHeader) ToString() string {
+func (s *RawDataHeader) String() string {
 	return fmt.Sprintf("RawDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
 
@@ -660,7 +659,7 @@ func EncodeStatusPrecodedHeader(s *StatusPrecodedHeader) ([80]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *StatusPrecodedHeader) ToString() string {
+func (s *StatusPrecodedHeader) String() string {
 	return fmt.Sprintf("StatusPrecodedHeader{ Group: %t, ResponseRequested: %t, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, StatusPrecoded: %d }", s.Group, s.ResponseRequested, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.StatusPrecoded)
 }
 
@@ -742,7 +741,7 @@ func EncodeUDTHeader(s *UDTHeader) ([80]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *UDTHeader) ToString() string {
+func (s *UDTHeader) String() string {
 	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
 }
 
@@ -770,6 +769,6 @@ func EncodeProprietaryHeader(s *ProprietaryHeader) ([80]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ProprietaryHeader) ToString() string {
+func (s *ProprietaryHeader) String() string {
 	return fmt.Sprintf("ProprietaryHeader{ SAP: %d, MFID: %d, ManufacturerData: %v }", s.SAP, s.MFID, s.ManufacturerData)
 }

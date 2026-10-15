@@ -51,10 +51,10 @@ func TestMMDVMHostAccepts_Vectors(t *testing.T) {
 		burst, _ := layer2.NewBurstFromBytes(must(layer2.BuildLCDataBurst(payload, v.dt, 1)))
 		got, _, ok := burst.BPTCPayload()
 		if !ok || got != payload {
-			t.Fatalf("%s %s: BPTCPayload %x ok=%v", enums.DataTypeToName(v.dt), v.payload, got, ok)
+			t.Fatalf("%s %s: BPTCPayload %x ok=%v", v.dt.String(), v.payload, got, ok)
 		}
 		if layer2.MMDVMHostAccepts(v.dt, got) != v.accept {
-			t.Errorf("%s %s: accepted %v, MMDVMHost %v", enums.DataTypeToName(v.dt), v.payload, !v.accept, v.accept)
+			t.Errorf("%s %s: accepted %v, MMDVMHost %v", v.dt.String(), v.payload, !v.accept, v.accept)
 		}
 	}
 }
@@ -63,12 +63,12 @@ func TestMMDVMHostAccepts_UncheckedDataTypes(t *testing.T) {
 	var payload [12]byte
 	for _, dt := range []enums.DataType{enums.DataTypePIHeader, enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1} {
 		if !layer2.MMDVMHostAccepts(dt, payload) {
-			t.Errorf("%s rejected", enums.DataTypeToName(dt))
+			t.Errorf("%s rejected", dt.String())
 		}
 	}
 	for dt := enums.DataTypeIdle; dt <= 0xF; dt++ {
 		if dt != enums.DataTypeRate1 && layer2.MMDVMHostAccepts(dt, payload) {
-			t.Errorf("%s accepted", enums.DataTypeToName(dt))
+			t.Errorf("%s accepted", dt.String())
 		}
 	}
 }

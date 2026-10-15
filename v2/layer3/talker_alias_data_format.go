@@ -10,7 +10,7 @@ const (
 	UTF16Characters
 )
 
-func TalkerAliasDataFormatToName(ta TalkerAliasDataFormat) string {
+func (ta TalkerAliasDataFormat) String() string {
 	switch ta {
 	case SevenBitCharacters:
 		return "646 (7-bit)"

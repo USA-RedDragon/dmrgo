@@ -171,7 +171,7 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 			return nil, fmt.Errorf("generating encode for %s: %w", pdu.Name, err)
 		}
 		f.Line()
-		emitToString(f, pdu)
+		emitString(f, pdu)
 	}
 
 	return f, nil
@@ -671,10 +671,10 @@ func emitAMBEVoiceEncode(g *Group, pdu parse.PDUStruct) {
 	g.Return(Id("encodeAMBE").Call(Id("s").Dot(dataFieldName)), Nil())
 }
 
-// emitToString generates a ToString() method for a PDU struct.
+// emitString generates a String() method for a PDU struct.
 // Simple structs (no dispatch/stride) use a single fmt.Sprintf.
 // Structs with dispatch or stride fields use string concatenation.
-func emitToString(f *File, pdu parse.PDUStruct) {
+func emitString(f *File, pdu parse.PDUStruct) {
 	// Determine if we need concatenation mode
 	hasDispatch := false
 	hasStride := false
@@ -691,14 +691,14 @@ func emitToString(f *File, pdu parse.PDUStruct) {
 	}
 
 	if hasDispatch || hasStride {
-		emitToStringConcat(f, pdu)
+		emitStringConcat(f, pdu)
 	} else {
-		emitToStringSprintf(f, pdu)
+		emitStringSprintf(f, pdu)
 	}
 }
 
-// emitToStringSprintf generates a ToString using a single fmt.Sprintf call.
-func emitToStringSprintf(f *File, pdu parse.PDUStruct) {
+// emitStringSprintf generates a String method using a single fmt.Sprintf call.
+func emitStringSprintf(f *File, pdu parse.PDUStruct) {
 	var formatParts []string
 	var args []Code
 
@@ -714,14 +714,14 @@ func emitToStringSprintf(f *File, pdu parse.PDUStruct) {
 	formatStr := pdu.Name + "{ " + strings.Join(formatParts, ", ") + " }"
 	allArgs := append([]Code{Lit(formatStr)}, args...)
 
-	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("ToString").Params().String().Block(
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("String").Params().String().Block(
 		Return(Qual("fmt", "Sprintf").Call(allArgs...)),
 	)
 }
 
-// emitToStringConcat generates a ToString using string concatenation for dispatch/stride fields.
-func emitToStringConcat(f *File, pdu parse.PDUStruct) {
-	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("ToString").Params().String().BlockFunc(func(g *Group) {
+// emitStringConcat generates a String method using string concatenation for dispatch/stride fields.
+func emitStringConcat(f *File, pdu parse.PDUStruct) {
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("String").Params().String().BlockFunc(func(g *Group) {
 		g.Id("_ret").Op(":=").Lit(pdu.Name + "{ ")
 
 		// Collect dispatch fields for later, emit regular fields inline
@@ -761,7 +761,7 @@ func emitToStringConcat(f *File, pdu parse.PDUStruct) {
 					If(Id("_i").Op(">").Lit(0)).Block(
 						Id("_ret").Op("+=").Lit(", "),
 					),
-					Id("_ret").Op("+=").Id("s").Dot(field.Name).Index(Id("_i")).Dot("ToString").Call(),
+					Id("_ret").Op("+=").Id("s").Dot(field.Name).Index(Id("_i")).Dot("String").Call(),
 				)
 				g.Id("_ret").Op("+=").Lit("]")
 				continue
@@ -788,7 +788,7 @@ func emitToStringConcat(f *File, pdu parse.PDUStruct) {
 			g.Switch().BlockFunc(func(sw *Group) {
 				for _, field := range dispatchFields {
 					sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(
-						Id("_ret").Op("+=").Id("s").Dot(field.Name).Dot("ToString").Call(),
+						Id("_ret").Op("+=").Id("s").Dot(field.Name).Dot("String").Call(),
 					)
 				}
 				if fb := fallbackField(pdu); fb != nil {
@@ -811,7 +811,7 @@ func emitToStringConcat(f *File, pdu parse.PDUStruct) {
 	})
 }
 
-// toStringFieldFormat returns the fmt format token and arguments for a field in ToString.
+// toStringFieldFormat returns the fmt format token and arguments for a field in String.
 // Returns empty string if the field should be skipped.
 func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code) {
 	src := Id("s").Dot(field.Name)
@@ -826,12 +826,7 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 				src.Clone().Dot("Uncorrectable"),
 			}
 		case "DataType":
-			// Use TypeNameToName convention
-			importPath := resolveImportPath(field.TypePkg, pdu.SourceFile)
-			toNameFn := field.TypeName + "ToName"
-			return "%s", []Code{
-				Qual(importPath, toNameFn).Call(src.Clone()),
-			}
+			return "%s", []Code{src.Clone()}
 		default:
 			// Skip unexported and other skip fields
 			return "", nil
@@ -846,30 +841,17 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 	case parse.FieldInt:
 		return "%d", []Code{src}
 	case parse.FieldEnum:
-		// Derive ToName from EnumFromInt: replace "FromInt" with "ToName"
-		toNameRef := strings.Replace(field.EnumFromInt, "FromInt", "ToName", 1)
-		pkg, fn := splitQualified(toNameRef)
-		if pkg != "" {
-			importPath := resolveImportPath(pkg, pdu.SourceFile)
-			return "%s", []Code{Qual(importPath, fn).Call(src)}
-		}
-		return "%s", []Code{Id(fn).Call(src)}
+		return "%s", []Code{src}
 	case parse.FieldRaw:
 		return "%v", []Code{src}
 	case parse.FieldPacked:
 		return "%v", []Code{src}
 	case parse.FieldDelegate:
 		if field.DelegateNoPtr {
-			// noptr delegates: use TypeNameToName convention
-			if field.IsQualified {
-				importPath := resolveImportPath(field.TypePkg, pdu.SourceFile)
-				toNameFn := field.TypeName + "ToName"
-				return "%s", []Code{Qual(importPath, toNameFn).Call(src)}
-			}
-			return "%s", []Code{Id(field.TypeName + "ToName").Call(src)}
+			return "%s", []Code{src}
 		}
-		// Struct delegate: call ToString()
-		return "%s", []Code{src.Clone().Dot("ToString").Call()}
+		// Struct delegate: call String()
+		return "%s", []Code{src.Clone().Dot("String").Call()}
 	case parse.FieldLongitude, parse.FieldLatitude:
 		return "%f", []Code{src}
 	case parse.FieldDispatch:

@@ -16,32 +16,32 @@ func TestSourceType_Constants(t *testing.T) {
 	}
 }
 
-func TestSourceTypeToName(t *testing.T) {
+func TestSourceTypeString(t *testing.T) {
 	t.Parallel()
-	if name := layer3.SourceTypeToName(layer3.SourceTypeBS); name != "BS" {
+	if name := layer3.SourceTypeBS.String(); name != "BS" {
 		t.Errorf("expected 'BS', got %q", name)
 	}
-	if name := layer3.SourceTypeToName(layer3.SourceTypeMS); name != "MS" {
+	if name := layer3.SourceTypeMS.String(); name != "MS" {
 		t.Errorf("expected 'MS', got %q", name)
 	}
 }
 
-func TestSourceTypeToName_Unknown(t *testing.T) {
+func TestSourceTypeString_Unknown(t *testing.T) {
 	t.Parallel()
-	name := layer3.SourceTypeToName(layer3.SourceType(5))
+	name := (layer3.SourceType(5)).String()
 	if name != "Unknown" {
 		t.Errorf("expected 'Unknown', got %q", name)
 	}
 }
 
-func TestSourceType_ToString(t *testing.T) {
+func TestSourceType_String(t *testing.T) {
 	t.Parallel()
-	s := layer3.SourceTypeBS.ToString()
-	if s != "SourceType{ BS }" {
-		t.Errorf("unexpected ToString: %q", s)
+	s := layer3.SourceTypeBS.String()
+	if s != "BS" {
+		t.Errorf("unexpected String: %q", s)
 	}
-	s = layer3.SourceTypeMS.ToString()
-	if s != "SourceType{ MS }" {
-		t.Errorf("unexpected ToString: %q", s)
+	s = layer3.SourceTypeMS.String()
+	if s != "MS" {
+		t.Errorf("unexpected String: %q", s)
 	}
 }

@@ -71,10 +71,10 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 		t.Errorf("BlocksToFollow = %d, want 10", dh.UnconfirmedDataHeader.BlocksToFollow)
 	}
 
-	// ToString should not panic
-	s := dh.ToString()
+	// String should not panic
+	s := dh.String()
 	if s == "" {
-		t.Error("ToString() should not be empty")
+		t.Error("String() should not be empty")
 	}
 }
 
@@ -490,8 +490,8 @@ func TestDataHeader_UDT_Decode(t *testing.T) {
 	if !u.SupplementaryFlag || u.ProtectFlag || u.Opcode != pdu.UDTOpcodeOutboundHeader {
 		t.Errorf("octet 9 = SF %t PF %t op %d, want true false C_UDTHD", u.SupplementaryFlag, u.ProtectFlag, u.Opcode)
 	}
-	if pdu.UDTOpcodeToName(u.Opcode) != "C_UDTHD" {
-		t.Errorf("UDTOpcodeToName = %q, want C_UDTHD", pdu.UDTOpcodeToName(u.Opcode))
+	if u.Opcode.String() != "C_UDTHD" {
+		t.Errorf("Opcode.String() = %q, want C_UDTHD", u.Opcode.String())
 	}
 	if got := must(pdu.EncodeDataHeader(&dh)); got != infoBits {
 		t.Error("re-encode does not match original bits")
@@ -616,10 +616,10 @@ func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 	for format, enc := range encode {
 		bits, err := enc()
 		if err != nil {
-			t.Fatalf("%s: %v", pdu.FormatToName(format), err)
+			t.Fatalf("%s: %v", format.String(), err)
 		}
 		if got := pdu.Format(bit.BitsToUint8(bits[:], 4, 4)); got != format {
-			t.Errorf("%s: Format bits = %d, want %d", pdu.FormatToName(format), got, format)
+			t.Errorf("%s: Format bits = %d, want %d", format.String(), got, format)
 		}
 	}
 }

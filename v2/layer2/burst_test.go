@@ -74,7 +74,7 @@ func TestBurst_Encode(t *testing.T) {
 				if err != nil {
 					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
 				}
-				t.Logf("burst: %v", burst.ToString())
+				t.Logf("burst: %v", burst.String())
 
 				encoded := must(burst.Encode())
 
@@ -168,13 +168,13 @@ func TestBurst_BPTCPayload(t *testing.T) {
 		burst, _ := layer2.NewBurstFromBytes(frame)
 		got, res, ok := burst.BPTCPayload()
 		if !ok || got != payload || res.ErrorsCorrected != 1 || res.Uncorrectable || res != burst.FEC.Payload {
-			t.Errorf("%s: payload %x ok=%v result=%+v", enums.DataTypeToName(dt), got, ok, res)
+			t.Errorf("%s: payload %x ok=%v result=%+v", dt.String(), got, ok, res)
 		}
 	}
 	for _, dt := range []enums.DataType{enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeReserved} {
 		burst, _ := layer2.NewBurstFromBytes(must(layer2.BuildLCDataBurst(payload, dt, 1)))
 		if _, _, ok := burst.BPTCPayload(); ok {
-			t.Errorf("%s: ok", enums.DataTypeToName(dt))
+			t.Errorf("%s: ok", dt.String())
 		}
 	}
 	voice, _ := layer2.NewBurstFromBytes(transmission(t, groupLC(enums.StandardizedFID), 1)[1])
@@ -198,7 +198,7 @@ func TestBurst_SyncTolerance(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !burst.IsData || burst.SyncPattern != enums.BsSourcedData || burst.SyncDistance != 4 {
-		t.Fatalf("4 sync bit errors: IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, enums.SyncPatternToName(burst.SyncPattern), burst.SyncDistance)
+		t.Fatalf("4 sync bit errors: IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, burst.SyncPattern.String(), burst.SyncDistance)
 	}
 	if got := must(burst.Encode()); got != frame {
 		t.Errorf("encode did not restore clean sync\ngot  %x\nwant %x", got, frame)
@@ -207,7 +207,7 @@ func TestBurst_SyncTolerance(t *testing.T) {
 	noisy = flipBurstBits(noisy, layer2.SyncStart+20)
 	burst, _ = layer2.NewBurstFromBytes(noisy)
 	if burst.IsData || burst.SyncPattern != enums.EmbeddedSignallingPattern || !burst.HasEmbeddedSignalling {
-		t.Errorf("5 sync bit errors: IsData=%v SyncPattern=%s", burst.IsData, enums.SyncPatternToName(burst.SyncPattern))
+		t.Errorf("5 sync bit errors: IsData=%v SyncPattern=%s", burst.IsData, burst.SyncPattern.String())
 	}
 }
 
@@ -229,7 +229,7 @@ func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !burst.IsData || burst.SyncPattern != enums.MsSourcedData || burst.SyncDistance != 2 {
-		t.Fatalf("IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, enums.SyncPatternToName(burst.SyncPattern), burst.SyncDistance)
+		t.Fatalf("IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, burst.SyncPattern.String(), burst.SyncDistance)
 	}
 	if burst.SlotType.DataType != enums.DataTypeIdle {
 		t.Errorf("DataType=%v", burst.SlotType.DataType)
@@ -258,7 +258,7 @@ func TestBurst_SyncTolerance_EmbeddedVoiceBursts(t *testing.T) {
 				embedded++
 				minDistance = min(minDistance, burst.SyncDistance)
 			} else if burst.SyncDistance != 0 {
-				t.Errorf("%s burst %d: %s matched at distance %d", file, i, enums.SyncPatternToName(burst.SyncPattern), burst.SyncDistance)
+				t.Errorf("%s burst %d: %s matched at distance %d", file, i, burst.SyncPattern.String(), burst.SyncDistance)
 			}
 		}
 	}

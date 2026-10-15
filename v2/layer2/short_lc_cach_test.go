@@ -44,7 +44,7 @@ func TestEncodeShortLCToCACH_RoundTrip(t *testing.T) {
 		t.Fatalf("complete: %v %+v", err, res)
 	}
 	if got.SLCO != slc.SLCO || got.ActivityUpdate == nil || *got.ActivityUpdate != *slc.ActivityUpdate {
-		t.Errorf("got %s", got.ToString())
+		t.Errorf("got %s", got.String())
 	}
 }
 

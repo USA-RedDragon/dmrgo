@@ -80,13 +80,13 @@ func TestReverseChannel_OutOfRangeRejected(t *testing.T) {
 	}
 }
 
-func TestReverseChannel_ToString(t *testing.T) {
+func TestReverseChannel_String(t *testing.T) {
 	t.Parallel()
 	bits := buildRCInfoBits(7)
 	rc, _ := pdu.DecodeReverseChannel(bits)
-	s := rc.ToString()
+	s := rc.String()
 	if s == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }
 

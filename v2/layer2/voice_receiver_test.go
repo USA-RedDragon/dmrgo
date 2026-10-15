@@ -67,7 +67,7 @@ func checkPositions(t *testing.T, got []enums.VoiceBurstType, want string) {
 	}
 	for i := range w {
 		if got[i] != w[i] {
-			t.Errorf("burst %d: position %s, want %s", i, enums.VoiceBurstTypeToName(got[i]), enums.VoiceBurstTypeToName(w[i]))
+			t.Errorf("burst %d: position %s, want %s", i, got[i].String(), w[i].String())
 		}
 	}
 }
@@ -86,7 +86,7 @@ func TestVoiceReceiver_Transmission(t *testing.T) {
 	for i, l := range got.lcs {
 		if (i-5)%6 != 0 || l.FEC.HasErrors() || l.FeatureSetID != 0xC2 ||
 			lcBits(t, l, enums.DataTypeVoiceLCHeader) != lcBits(t, lc, enums.DataTypeVoiceLCHeader) {
-			t.Errorf("burst %d: LC %s", i, l.ToString())
+			t.Errorf("burst %d: LC %s", i, l.String())
 		}
 	}
 }
@@ -181,7 +181,7 @@ func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
 	}
 	raws[5] = bit.PackBits264(all)
 	if b := must(layer2.NewBurstFromBytes(raws[5])); !b.HasEmbeddedSignalling || !b.EmbeddedSignalling.FEC.Uncorrectable {
-		t.Fatalf("corrupted EMB decodes as %s", b.ToString())
+		t.Fatalf("corrupted EMB decodes as %s", b.String())
 	}
 	got := receiveAll(t, raws)
 	checkPositions(t, got.positions, "-ABCDEF-")
@@ -216,7 +216,7 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 			}
 			for i, lc := range got.lcs {
 				if got.positions[i] != enums.VoiceBurstE || lc.FEC.HasErrors() {
-					t.Errorf("burst %d: LC at %s, FEC %+v", i, enums.VoiceBurstTypeToName(got.positions[i]), lc.FEC)
+					t.Errorf("burst %d: LC at %s, FEC %+v", i, got.positions[i].String(), lc.FEC)
 				}
 				bits := lcBits(t, lc, enums.DataTypeVoiceLCHeader)
 				if packed := bit.PackBits(bits[:72]); !bytes.Equal(packed, capturedEmbeddedLC) {
@@ -224,7 +224,7 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 				}
 				target, source, ok := lc.Addresses()
 				if !ok || target != 9990 || source != 3191868 {
-					t.Errorf("burst %d: %s", i, lc.ToString())
+					t.Errorf("burst %d: %s", i, lc.String())
 				}
 			}
 		})

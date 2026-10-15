@@ -232,22 +232,22 @@ func EncodeFullLinkControl(s *FullLinkControl) ([96]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *FullLinkControl) ToString() string {
+func (s *FullLinkControl) String() string {
 	_ret := "FullLinkControl{ "
-	_ret += fmt.Sprintf("DataType: %s, ProtectFlag: %t, Reserved: %t, FLCO: %s, FeatureSetID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", enums.DataTypeToName(s.DataType), s.ProtectFlag, s.Reserved, enums.FLCOToName(s.FLCO), enums.FeatureSetIDToName(s.FeatureSetID), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("DataType: %s, ProtectFlag: %t, Reserved: %t, FLCO: %s, FeatureSetID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.DataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FeatureSetID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.GroupVoice != nil:
-		_ret += s.GroupVoice.ToString()
+		_ret += s.GroupVoice.String()
 	case s.UnitToUnit != nil:
-		_ret += s.UnitToUnit.ToString()
+		_ret += s.UnitToUnit.String()
 	case s.GPSInfo != nil:
-		_ret += s.GPSInfo.ToString()
+		_ret += s.GPSInfo.String()
 	case s.TalkerAliasHeader != nil:
-		_ret += s.TalkerAliasHeader.ToString()
+		_ret += s.TalkerAliasHeader.String()
 	case s.TalkerAliasBlock != nil:
-		_ret += s.TalkerAliasBlock.ToString()
+		_ret += s.TalkerAliasBlock.String()
 	case s.TerminatorDataLinkControl != nil:
-		_ret += s.TerminatorDataLinkControl.ToString()
+		_ret += s.TerminatorDataLinkControl.String()
 	default:
 		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
 	}
@@ -287,8 +287,8 @@ func EncodeFLCGroupVoice(s *FLCGroupVoice) ([56]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *FLCGroupVoice) ToString() string {
-	return fmt.Sprintf("FLCGroupVoice{ ServiceOptions: %s, GroupAddress: %d, SourceAddress: %d }", s.ServiceOptions.ToString(), s.GroupAddress, s.SourceAddress)
+func (s *FLCGroupVoice) String() string {
+	return fmt.Sprintf("FLCGroupVoice{ ServiceOptions: %s, GroupAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.GroupAddress, s.SourceAddress)
 }
 
 // DecodeFLCUnitToUnit decodes a FLCUnitToUnit per ETSI TS 102 361-2 - Table 7.2: UU_V_Ch_Usr PDU content
@@ -323,8 +323,8 @@ func EncodeFLCUnitToUnit(s *FLCUnitToUnit) ([56]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *FLCUnitToUnit) ToString() string {
-	return fmt.Sprintf("FLCUnitToUnit{ ServiceOptions: %s, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.ToString(), s.TargetAddress, s.SourceAddress)
+func (s *FLCUnitToUnit) String() string {
+	return fmt.Sprintf("FLCUnitToUnit{ ServiceOptions: %s, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeFLCGPSInfo decodes a FLCGPSInfo per ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
@@ -361,8 +361,8 @@ func EncodeFLCGPSInfo(s *FLCGPSInfo) ([56]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *FLCGPSInfo) ToString() string {
-	return fmt.Sprintf("FLCGPSInfo{ Reserved: %v, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, layer3.PositionErrorToName(s.PositionError), s.Longitude, s.Latitude)
+func (s *FLCGPSInfo) String() string {
+	return fmt.Sprintf("FLCGPSInfo{ Reserved: %v, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, s.PositionError, s.Longitude, s.Latitude)
 }
 
 // DecodeFLCTalkerAliasHeader decodes a FLCTalkerAliasHeader per ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
@@ -395,8 +395,8 @@ func EncodeFLCTalkerAliasHeader(s *FLCTalkerAliasHeader) ([56]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *FLCTalkerAliasHeader) ToString() string {
-	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasDataMSB: %t, TalkerAliasData: %v }", layer3.TalkerAliasDataFormatToName(s.TalkerAliasDataFormat), s.TalkerAliasDataLength, s.TalkerAliasDataMSB, s.TalkerAliasData)
+func (s *FLCTalkerAliasHeader) String() string {
+	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasDataMSB: %t, TalkerAliasData: %v }", s.TalkerAliasDataFormat, s.TalkerAliasDataLength, s.TalkerAliasDataMSB, s.TalkerAliasData)
 }
 
 // DecodeFLCTalkerAliasBlock decodes a FLCTalkerAliasBlock per ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
@@ -415,7 +415,7 @@ func EncodeFLCTalkerAliasBlock(s *FLCTalkerAliasBlock) ([56]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *FLCTalkerAliasBlock) ToString() string {
+func (s *FLCTalkerAliasBlock) String() string {
 	return fmt.Sprintf("FLCTalkerAliasBlock{ TalkerAliasData: %v }", s.TalkerAliasData)
 }
 
@@ -468,6 +468,6 @@ func EncodeFLCTerminatorDataLinkControl(s *FLCTerminatorDataLinkControl) ([56]bi
 	return data, nil
 }
 
-func (s *FLCTerminatorDataLinkControl) ToString() string {
+func (s *FLCTerminatorDataLinkControl) String() string {
 	return fmt.Sprintf("FLCTerminatorDataLinkControl{ LLIDDestination: %d, LLIDSource: %d, GroupOrIndividual: %t, ResponseRequested: %t, FullMessageFlag: %t, Reserved: %t, ReSynchronizeFlag: %t, SendSequenceNumber: %d }", s.LLIDDestination, s.LLIDSource, s.GroupOrIndividual, s.ResponseRequested, s.FullMessageFlag, s.Reserved, s.ReSynchronizeFlag, s.SendSequenceNumber)
 }

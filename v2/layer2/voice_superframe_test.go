@@ -57,10 +57,10 @@ func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType e
 		t.Fatal(err)
 	}
 	if !b.IsData || b.SyncPattern != sync || b.SyncDistance != 0 {
-		t.Fatalf("IsData=%v SyncPattern=%s", b.IsData, enums.SyncPatternToName(b.SyncPattern))
+		t.Fatalf("IsData=%v SyncPattern=%s", b.IsData, b.SyncPattern.String())
 	}
 	if b.SlotType.DataType != dataType || b.SlotType.ColorCode != cc || b.SlotType.FEC.HasErrors() {
-		t.Fatalf("slot type %s", b.SlotType.ToString())
+		t.Fatalf("slot type %s", b.SlotType.String())
 	}
 	got, ok := b.Data.(*pdu.FullLinkControl)
 	if !ok {
@@ -70,7 +70,7 @@ func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType e
 		t.Fatalf("FEC %+v", b.FEC)
 	}
 	if got.FeatureSetID != lc.FeatureSetID || lcBits(t, *got, dataType) != lcBits(t, lc, dataType) {
-		t.Errorf("decoded %s, want %s", got.ToString(), lc.ToString())
+		t.Errorf("decoded %s, want %s", got.String(), lc.String())
 	}
 }
 
@@ -91,18 +91,18 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 	pos := i % 6
 	if pos == 0 {
 		if b.SyncPattern != voiceSync || b.HasEmbeddedSignalling || b.VoiceBurst != enums.VoiceBurstA {
-			t.Fatalf("burst %d: SyncPattern=%s", i, enums.SyncPatternToName(b.SyncPattern))
+			t.Fatalf("burst %d: SyncPattern=%s", i, b.SyncPattern.String())
 		}
 		return b
 	}
 	emb := b.EmbeddedSignalling
 	if !b.HasEmbeddedSignalling || emb.FEC.HasErrors() || emb.ColorCode != cc || emb.PreemptionAndPowerControlIndicator {
-		t.Fatalf("burst %d: %s", i, b.ToString())
+		t.Fatalf("burst %d: %s", i, b.String())
 	}
 	wantLCSS := []enums.LCSS{0, enums.FirstFragmentLC, enums.ContinuationFragmentLCorCSBK,
 		enums.ContinuationFragmentLCorCSBK, enums.LastFragmentLCorCSBK, enums.SingleFragmentLCorCSBK}[pos]
 	if emb.LCSS != wantLCSS {
-		t.Errorf("burst %d: LCSS %s, want %s", i, enums.LCSSToName(emb.LCSS), enums.LCSSToName(wantLCSS))
+		t.Errorf("burst %d: LCSS %s, want %s", i, emb.LCSS.String(), wantLCSS.String())
 	}
 	if pos == 5 && (!layer2.IsNullEmbeddedLC(b.EmbeddedSignallingData) || b.HasReverseChannel) {
 		t.Errorf("burst %d: burst F carries %x, want the Null embedded message", i, b.PackEmbeddedSignallingData())
@@ -159,7 +159,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 					got, res := layer2.DecodeEmbeddedFullLinkControl(fragments)
 					if res.HasErrors() || got.FeatureSetID != fid ||
 						lcBits(t, got, enums.DataTypeVoiceLCHeader) != lcBits(t, lc, enums.DataTypeVoiceLCHeader) {
-						t.Errorf("burst %d: embedded LC %s (%+v)", i, got.ToString(), res)
+						t.Errorf("burst %d: embedded LC %s (%+v)", i, got.String(), res)
 					}
 					target, source, ok := got.Addresses()
 					if !ok || target != 91 || source != 3191868 {
@@ -209,14 +209,14 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 	f := must(layer2.NewBurstFromBytes(bursts[5]))
 	emb := f.EmbeddedSignalling
 	if !f.HasReverseChannel || !emb.PreemptionAndPowerControlIndicator || emb.LCSS != enums.SingleFragmentLCorCSBK || emb.ColorCode != 2 {
-		t.Fatalf("first burst F: %s", f.ToString())
+		t.Fatalf("first burst F: %s", f.String())
 	}
 	if f.ReverseChannel.RCCommand != enums.RCCeaseTransmissionCommand || f.FEC.RC.HasErrors() {
-		t.Errorf("RC %s", f.ReverseChannel.ToString())
+		t.Errorf("RC %s", f.ReverseChannel.String())
 	}
 	next := must(layer2.NewBurstFromBytes(bursts[11]))
 	if next.HasReverseChannel || !layer2.IsNullEmbeddedLC(next.EmbeddedSignallingData) {
-		t.Errorf("second burst F: %s", next.ToString())
+		t.Errorf("second burst F: %s", next.String())
 	}
 
 	for _, source := range []layer2.SyncSource{layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {

@@ -36,7 +36,7 @@ func EncodeShortLCNullMessage(s *ShortLCNullMessage) ([24]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ShortLCNullMessage) ToString() string {
+func (s *ShortLCNullMessage) String() string {
 	return fmt.Sprintf("ShortLCNullMessage{ Reserved: %v }", s.Reserved)
 }
 
@@ -68,8 +68,8 @@ func EncodeShortLCActivityUpdate(s *ShortLCActivityUpdate) ([24]bit.Bit, error) 
 	return data, nil
 }
 
-func (s *ShortLCActivityUpdate) ToString() string {
-	return fmt.Sprintf("ShortLCActivityUpdate{ TS1ActivityID: %s, TS2ActivityID: %s, HashTS1: %d, HashTS2: %d }", enums.ActivityIDToName(s.TS1ActivityID), enums.ActivityIDToName(s.TS2ActivityID), s.HashTS1, s.HashTS2)
+func (s *ShortLCActivityUpdate) String() string {
+	return fmt.Sprintf("ShortLCActivityUpdate{ TS1ActivityID: %s, TS2ActivityID: %s, HashTS1: %d, HashTS2: %d }", s.TS1ActivityID, s.TS2ActivityID, s.HashTS1, s.HashTS2)
 }
 
 // DecodeShortLCCSysParms decodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
@@ -102,7 +102,7 @@ func EncodeShortLCCSysParms(s *ShortLCCSysParms) ([24]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ShortLCCSysParms) ToString() string {
+func (s *ShortLCCSysParms) String() string {
 	return fmt.Sprintf("ShortLCCSysParms{ MODEL: %d, NetSiteRaw: %v, Reg: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
 }
 
@@ -136,7 +136,7 @@ func EncodeShortLCPSysParms(s *ShortLCPSysParms) ([24]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ShortLCPSysParms) ToString() string {
+func (s *ShortLCPSysParms) String() string {
 	return fmt.Sprintf("ShortLCPSysParms{ MODEL: %d, NetSiteRaw: %v, PayloadChannelType: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.PayloadChannelType, s.CommonSlotCounter)
 }
 
@@ -255,18 +255,18 @@ func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *ShortLC) ToString() string {
+func (s *ShortLC) String() string {
 	_ret := "ShortLC{ "
-	_ret += fmt.Sprintf("DataType: %s, SLCO: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", enums.DataTypeToName(s.DataType), enums.SLCOToName(s.SLCO), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("DataType: %s, SLCO: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.DataType, s.SLCO, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.NullMessage != nil:
-		_ret += s.NullMessage.ToString()
+		_ret += s.NullMessage.String()
 	case s.ActivityUpdate != nil:
-		_ret += s.ActivityUpdate.ToString()
+		_ret += s.ActivityUpdate.String()
 	case s.CSysParms != nil:
-		_ret += s.CSysParms.ToString()
+		_ret += s.CSysParms.String()
 	case s.PSysParms != nil:
-		_ret += s.PSysParms.ToString()
+		_ret += s.PSysParms.String()
 	default:
 		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
 	}

@@ -70,11 +70,11 @@ func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
 	}
 }
 
-func TestEmbeddedSignalling_ToString(t *testing.T) {
+func TestEmbeddedSignalling_String(t *testing.T) {
 	es, _ := pdu.DecodeEmbeddedSignalling([16]bit.Bit{})
-	s := es.ToString()
+	s := es.String()
 	if s == "" {
-		t.Error("ToString() should not be empty")
+		t.Error("String() should not be empty")
 	}
 }
 

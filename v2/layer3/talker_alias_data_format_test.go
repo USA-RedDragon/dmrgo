@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestTalkerAliasDataFormatToName(t *testing.T) {
+func TestTalkerAliasDataFormatString(t *testing.T) {
 	tests := []struct {
 		format   TalkerAliasDataFormat
 		expected string
@@ -17,18 +17,18 @@ func TestTalkerAliasDataFormatToName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			got := TalkerAliasDataFormatToName(tt.format)
+			got := tt.format.String()
 			if got != tt.expected {
-				t.Errorf("TalkerAliasDataFormatToName(%d) = %q, want %q", tt.format, got, tt.expected)
+				t.Errorf("(%d).String() = %q, want %q", tt.format, got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestTalkerAliasDataFormatToName_Unknown(t *testing.T) {
-	got := TalkerAliasDataFormatToName(TalkerAliasDataFormat(99))
+func TestTalkerAliasDataFormatString_Unknown(t *testing.T) {
+	got := (TalkerAliasDataFormat(99)).String()
 	if got != "Unknown" {
-		t.Errorf("TalkerAliasDataFormatToName(99) = %q, want %q", got, "Unknown")
+		t.Errorf("(99).String() = %q, want %q", got, "Unknown")
 	}
 }
 

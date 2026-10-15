@@ -8,7 +8,7 @@ const (
 	AdditionalInfoValid  AdditionalInformationField = 1 // Additional Information field is valid
 )
 
-func AdditionalInformationFieldToName(ai AdditionalInformationField) string {
+func (ai AdditionalInformationField) String() string {
 	switch ai {
 	case AdditionalInfoIgnore:
 		return "Ignore"
@@ -17,8 +17,4 @@ func AdditionalInformationFieldToName(ai AdditionalInformationField) string {
 	default:
 		return unknownName
 	}
-}
-
-func (ai AdditionalInformationField) ToString() string {
-	return "AdditionalInformationField{ " + AdditionalInformationFieldToName(ai) + " }"
 }

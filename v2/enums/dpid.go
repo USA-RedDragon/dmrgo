@@ -28,7 +28,7 @@ func DPIDToPort(dpid DPID) uint16 {
 	}
 }
 
-func DPIDToName(dpid DPID) string {
+func (dpid DPID) String() string {
 	switch {
 	case dpid == DPIDExtendedHeader:
 		return "Extended Header"

@@ -31,7 +31,7 @@ const (
 	VertexStandard              FeatureSetID = 0x77
 )
 
-func FeatureSetIDToName(fsid FeatureSetID) string {
+func (fsid FeatureSetID) String() string {
 	switch fsid {
 	case StandardizedFID:
 		return "Standardized FID"

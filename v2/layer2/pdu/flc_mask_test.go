@@ -49,7 +49,7 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 		{enums.DataTypeTerminatorWithLC, [3]byte{0x99, 0x99, 0x99}},
 	}
 	for _, tt := range tests {
-		t.Run(enums.DataTypeToName(tt.dataType), func(t *testing.T) {
+		t.Run(tt.dataType.String(), func(t *testing.T) {
 			flc := base
 			flc.DataType = tt.dataType
 			masked := packedFLC(t, &flc)
@@ -74,7 +74,7 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 			GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
 		}
 		if _, err := pdu.EncodeFullLinkControl(&flc); err == nil {
-			t.Errorf("%s: EncodeFullLinkControl returned no error", enums.DataTypeToName(dt))
+			t.Errorf("%s: EncodeFullLinkControl returned no error", dt.String())
 		}
 	}
 }
@@ -101,7 +101,7 @@ func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 	for _, dt := range []enums.DataType{enums.DataTypeTerminatorWithLC, enums.DataTypePIHeader} {
 		_, fecResult := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), dt)
 		if !fecResult.Uncorrectable && fecResult.ErrorsCorrected == 0 {
-			t.Errorf("%s: FEC = %+v, want an RS failure", enums.DataTypeToName(dt), fecResult)
+			t.Errorf("%s: FEC = %+v, want an RS failure", dt.String(), fecResult)
 		}
 	}
 }

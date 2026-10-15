@@ -153,18 +153,18 @@ func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
 	}
 }
 
-func TestServiceOptions_ToString(t *testing.T) {
+func TestServiceOptions_String(t *testing.T) {
 	bits := [8]bit.Bit{1, 0, 0, 0, 1, 0, 1, 0}
 	so, _ := DecodeServiceOptions(bits)
-	str := so.ToString()
+	str := so.String()
 	if len(str) == 0 {
 		t.Error("ToString returned empty string")
 	}
 	if !containsStr(str, "IsEmergency: true") {
-		t.Errorf("ToString() missing IsEmergency: true, got %q", str)
+		t.Errorf("String() missing IsEmergency: true, got %q", str)
 	}
 	if !containsStr(str, "IsBroadcast: true") {
-		t.Errorf("ToString() missing IsBroadcast: true, got %q", str)
+		t.Errorf("String() missing IsBroadcast: true, got %q", str)
 	}
 }
 

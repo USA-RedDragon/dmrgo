@@ -6,25 +6,25 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-func TestRCCommand_ToName_CeaseTransmissionCommand(t *testing.T) {
+func TestRCCommand_String_CeaseTransmissionCommand(t *testing.T) {
 	t.Parallel()
-	name := enums.RCCommandToName(enums.RCCeaseTransmissionCommand)
+	name := enums.RCCeaseTransmissionCommand.String()
 	if name != "Cease Transmission Command" {
 		t.Errorf("expected 'Cease Transmission Command', got %q", name)
 	}
 }
 
-func TestRCCommand_ToName_CeaseTransmissionRequest(t *testing.T) {
+func TestRCCommand_String_CeaseTransmissionRequest(t *testing.T) {
 	t.Parallel()
-	name := enums.RCCommandToName(enums.RCCeaseTransmissionRequest)
+	name := enums.RCCeaseTransmissionRequest.String()
 	if name != "Cease Transmission Request" {
 		t.Errorf("expected 'Cease Transmission Request', got %q", name)
 	}
 }
 
-func TestRCCommand_ToName_Reserved(t *testing.T) {
+func TestRCCommand_String_Reserved(t *testing.T) {
 	t.Parallel()
-	name := enums.RCCommandToName(enums.RCCommand(0))
+	name := (enums.RCCommand(0)).String()
 	if name == "Cease Transmission Command" || name == "Cease Transmission Request" {
 		t.Errorf("reserved value should not match known names, got %q", name)
 	}

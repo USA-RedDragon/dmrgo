@@ -24,8 +24,8 @@ const (
 	ServiceTypeManufacturerSpecific8 ServiceType = 0b1111
 )
 
-// ServiceTypeToName returns a human-readable name for a ServiceType.
-func ServiceTypeToName(st ServiceType) string {
+// String returns a human-readable name for a ServiceType.
+func (st ServiceType) String() string {
 	switch st {
 	case ServiceTypeLIP:
 		return "Location Information Protocol"

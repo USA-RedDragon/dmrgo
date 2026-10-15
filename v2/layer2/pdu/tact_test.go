@@ -120,13 +120,13 @@ func TestTACT_LCSS_Values(t *testing.T) {
 	}
 }
 
-func TestTACT_ToString(t *testing.T) {
+func TestTACT_String(t *testing.T) {
 	t.Parallel()
 	data := [4]bit.Bit{1, 1, 0, 0}
 	codeword := hamming.Encode743(data)
 	tact, _ := pdu.DecodeTACT(codeword)
-	s := tact.ToString()
+	s := tact.String()
 	if s == "" {
-		t.Error("ToString should not be empty")
+		t.Error("String should not be empty")
 	}
 }

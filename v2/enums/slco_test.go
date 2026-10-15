@@ -6,25 +6,25 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-func TestSLCO_ToName_NullMessage(t *testing.T) {
+func TestSLCO_String_NullMessage(t *testing.T) {
 	t.Parallel()
-	name := enums.SLCOToName(enums.SLCONullMessage)
+	name := enums.SLCONullMessage.String()
 	if name != "Null Message" {
 		t.Errorf("expected 'Null Message', got %q", name)
 	}
 }
 
-func TestSLCO_ToName_ActivityUpdate(t *testing.T) {
+func TestSLCO_String_ActivityUpdate(t *testing.T) {
 	t.Parallel()
-	name := enums.SLCOToName(enums.SLCOActivityUpdate)
+	name := enums.SLCOActivityUpdate.String()
 	if name != "Activity Update" {
 		t.Errorf("expected 'Activity Update', got %q", name)
 	}
 }
 
-func TestSLCO_ToName_Reserved(t *testing.T) {
+func TestSLCO_String_Reserved(t *testing.T) {
 	t.Parallel()
-	name := enums.SLCOToName(enums.SLCO(15))
+	name := (enums.SLCO(15)).String()
 	if name == "Null Message" || name == "Activity Update" {
 		t.Errorf("reserved value should not match known names, got %q", name)
 	}

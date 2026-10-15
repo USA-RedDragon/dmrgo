@@ -47,8 +47,8 @@ func MMDVMHostSeal(dataType enums.DataType, p *[12]byte) error {
 	case enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1:
 		return nil
 	case enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
-		return fmt.Errorf("MMDVMHost discards %s bursts", enums.DataTypeToName(dataType))
+		return fmt.Errorf("MMDVMHost discards %s bursts", dataType.String())
 	default:
-		return fmt.Errorf("MMDVMHost discards %s bursts", enums.DataTypeToName(dataType))
+		return fmt.Errorf("MMDVMHost discards %s bursts", dataType.String())
 	}
 }

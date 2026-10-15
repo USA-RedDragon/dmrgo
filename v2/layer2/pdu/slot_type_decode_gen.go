@@ -44,6 +44,6 @@ func EncodeSlotType(s *SlotType) ([20]bit.Bit, error) {
 	return golay.Encode2087(data), nil
 }
 
-func (s *SlotType) ToString() string {
+func (s *SlotType) String() string {
 	return fmt.Sprintf("SlotType{ ColorCode: %d, DataType: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

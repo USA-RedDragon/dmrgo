@@ -57,9 +57,9 @@ func BlockOctets(rate enums.DataType, confirmed bool) (int, error) {
 		enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation,
 		enums.DataTypeDataHeader, enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock,
 		enums.DataTypeReserved:
-		return 0, fmt.Errorf("%w: %s", ErrRate, enums.DataTypeToName(rate))
+		return 0, fmt.Errorf("%w: %s", ErrRate, rate.String())
 	default:
-		return 0, fmt.Errorf("%w: %s", ErrRate, enums.DataTypeToName(rate))
+		return 0, fmt.Errorf("%w: %s", ErrRate, rate.String())
 	}
 	if confirmed {
 		n -= 2
@@ -179,7 +179,7 @@ func isConfirmed(h *pdu.DataHeader) (bool, error) {
 	case h.Format == pdu.FormatShortDataRawOrStatusPrecoded && h.RawDataHeader != nil:
 		return h.RawDataHeader.SARQ, nil
 	}
-	return false, fmt.Errorf("%w: %s", ErrFormat, pdu.FormatToName(h.Format))
+	return false, fmt.Errorf("%w: %s", ErrFormat, h.Format.String())
 }
 
 func blocksOf(h *pdu.DataHeader) int {

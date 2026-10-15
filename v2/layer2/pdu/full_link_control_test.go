@@ -129,7 +129,7 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 	}
 }
 
-func TestFullLinkControl_ToString(t *testing.T) {
+func TestFullLinkControl_String(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
@@ -140,7 +140,7 @@ func TestFullLinkControl_ToString(t *testing.T) {
 		},
 		FEC: fec.Result{BitsChecked: 96},
 	}
-	str := flc.ToString()
+	str := flc.String()
 	if len(str) == 0 {
 		t.Error("ToString returned empty string")
 	}
@@ -268,7 +268,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	for _, flco := range flcoVariants {
-		t.Run(enums.FLCOToName(flco), func(t *testing.T) {
+		t.Run(flco.String(), func(t *testing.T) {
 			var aliasData [56]bit.Bit
 			// Set some recognizable pattern in the alias data
 			for i := 0; i < 56; i++ {
@@ -305,7 +305,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 	}
 }
 
-func TestFullLinkControl_TalkerAliasBlock_ToString(t *testing.T) {
+func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
 	var aliasData [56]bit.Bit
 	aliasData[0] = 1
 	aliasData[7] = 1
@@ -319,7 +319,7 @@ func TestFullLinkControl_TalkerAliasBlock_ToString(t *testing.T) {
 		},
 		FEC: fec.Result{BitsChecked: 96},
 	}
-	str := flc.ToString()
+	str := flc.String()
 	if len(str) == 0 {
 		t.Error("ToString returned empty string")
 	}
@@ -436,8 +436,8 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 		t.Errorf("SendSequenceNumber = %d, want 5", tdlc.SendSequenceNumber)
 	}
 
-	// ToString should contain the FLCO name
-	str := decoded.ToString()
+	// String should contain the FLCO name
+	str := decoded.String()
 	if !strings.Contains(str, "Terminator Data Link Control") {
 		t.Errorf("ToString missing FLCO name, got: %s", str)
 	}

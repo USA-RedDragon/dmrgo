@@ -17,7 +17,7 @@ const (
 	ActivityEmergencyIndividualVoice ActivityID = 0b1101
 )
 
-func ActivityIDToName(a ActivityID) string {
+func (a ActivityID) String() string {
 	switch a {
 	case ActivityNoActivity:
 		return "No Activity"

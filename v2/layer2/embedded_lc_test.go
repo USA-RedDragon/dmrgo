@@ -58,7 +58,7 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 	}
 	target, source, ok := flc.Addresses()
 	if !ok || flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || target != 9990 || source != 3191868 {
-		t.Errorf("decoded %s", flc.ToString())
+		t.Errorf("decoded %s", flc.String())
 	}
 	if flc.DataType != enums.DataTypeVoiceLCHeader {
 		t.Errorf("DataType = %v", flc.DataType)
@@ -129,7 +129,7 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 				continue
 			}
 			if enc := must(layer2.EncodeEmbeddedFullLinkControl(&flc)); enc != layer2.EncodeEmbeddedLC(lc) {
-				t.Fatalf("Full LC %v does not encode back to LC %v", flc.ToString(), lc)
+				t.Fatalf("Full LC %v does not encode back to LC %v", flc.String(), lc)
 			}
 		}
 	}

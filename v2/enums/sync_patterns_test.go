@@ -47,7 +47,7 @@ func TestSyncPatternFromBytes_UnknownReturnsEmbeddedSignalling(t *testing.T) {
 	}
 }
 
-func TestSyncPatternToName_AllPatterns(t *testing.T) {
+func TestSyncPatternString_AllPatterns(t *testing.T) {
 	tests := []struct {
 		pattern  SyncPattern
 		expected string
@@ -66,18 +66,18 @@ func TestSyncPatternToName_AllPatterns(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			got := SyncPatternToName(tt.pattern)
+			got := tt.pattern.String()
 			if got != tt.expected {
-				t.Errorf("SyncPatternToName(%v) = %q, want %q", tt.pattern, got, tt.expected)
+				t.Errorf("(%v).String() = %q, want %q", tt.pattern, got, tt.expected)
 			}
 		})
 	}
 }
 
-func TestSyncPatternToName_UnknownReturnsEmbeddedSignalling(t *testing.T) {
-	got := SyncPatternToName(SyncPattern(0x123456789ABC))
+func TestSyncPatternString_UnknownReturnsEmbeddedSignalling(t *testing.T) {
+	got := (SyncPattern(0x123456789ABC)).String()
 	if got != "Embedded Signalling" {
-		t.Errorf("SyncPatternToName(unknown) = %q, want %q", got, "Embedded Signalling")
+		t.Errorf("unknown.String() = %q, want %q", got, "Embedded Signalling")
 	}
 }
 
@@ -94,7 +94,7 @@ func TestSyncPatternFromBytes_RoundTrip(t *testing.T) {
 		}
 		got := SyncPatternFromBytes(syncBytes)
 		if got != p {
-			t.Errorf("round-trip failed for %s: got %v", SyncPatternToName(p), got)
+			t.Errorf("round-trip failed for %s: got %v", p.String(), got)
 		}
 	}
 }
@@ -128,7 +128,7 @@ func TestSyncPatternFromBytesWithDistance_Tolerant(t *testing.T) {
 		for _, f := range flips {
 			got, dist := SyncPatternFromBytesWithDistance(flipSyncBits(syncPatternBytes(p), f...))
 			if got != p || dist != len(f) {
-				t.Errorf("%s with %d flipped bits: got %s distance %d", SyncPatternToName(p), len(f), SyncPatternToName(got), dist)
+				t.Errorf("%s with %d flipped bits: got %s distance %d", p.String(), len(f), got.String(), dist)
 			}
 		}
 	}
@@ -139,10 +139,10 @@ func TestSyncPatternFromBytesWithDistance_BeyondThreshold(t *testing.T) {
 		in := flipSyncBits(syncPatternBytes(p), 0, 9, 18, 27, 36)
 		got, dist := SyncPatternFromBytesWithDistance(in)
 		if got != EmbeddedSignallingPattern {
-			t.Errorf("%s with 5 flipped bits: got %s, want embedded signalling", SyncPatternToName(p), SyncPatternToName(got))
+			t.Errorf("%s with 5 flipped bits: got %s, want embedded signalling", p.String(), got.String())
 		}
 		if dist != SyncMatchThreshold+1 {
-			t.Errorf("%s with 5 flipped bits: distance %d, want %d", SyncPatternToName(p), dist, SyncMatchThreshold+1)
+			t.Errorf("%s with 5 flipped bits: distance %d, want %d", p.String(), dist, SyncMatchThreshold+1)
 		}
 	}
 }
@@ -152,7 +152,7 @@ func TestSyncPatterns_MinimumDistance(t *testing.T) {
 		for _, b := range syncPatterns[i+1:] {
 			n := bits.OnesCount64(uint64(a ^ b))
 			if n <= 2*SyncMatchThreshold {
-				t.Errorf("%s and %s are %d bits apart; threshold %d is ambiguous", SyncPatternToName(a), SyncPatternToName(b), n, SyncMatchThreshold)
+				t.Errorf("%s and %s are %d bits apart; threshold %d is ambiguous", a.String(), b.String(), n, SyncMatchThreshold)
 			}
 		}
 	}

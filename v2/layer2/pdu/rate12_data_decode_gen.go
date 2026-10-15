@@ -11,7 +11,6 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -31,6 +30,6 @@ func EncodeRate12Data(s *Rate12Data) ([96]bit.Bit, error) {
 	return data, nil
 }
 
-func (s *Rate12Data) ToString() string {
-	return fmt.Sprintf("Rate12Data{ DataType: %s, Data: %v }", enums.DataTypeToName(s.DataType), s.Data)
+func (s *Rate12Data) String() string {
+	return fmt.Sprintf("Rate12Data{ DataType: %s, Data: %v }", s.DataType, s.Data)
 }

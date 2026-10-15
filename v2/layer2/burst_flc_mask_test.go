@@ -44,12 +44,12 @@ func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 			}
 			if b.FEC.PDU.Uncorrectable || b.FEC.PDU.ErrorsCorrected != 0 {
 				t.Errorf("%s burst %d (%s): RS = %+v, want a clean codeword",
-					file, i, enums.DataTypeToName(dt), b.FEC.PDU)
+					file, i, dt.String(), b.FEC.PDU)
 			}
 			info := burstInfoBits(raw)
 			if got := must(pdu.EncodeFullLinkControl(flc)); got != info {
 				t.Errorf("%s burst %d (%s): re-encoded LC %x, captured %x",
-					file, i, enums.DataTypeToName(dt), bit.PackBits(got[:]), bit.PackBits(info[:]))
+					file, i, dt.String(), bit.PackBits(got[:]), bit.PackBits(info[:]))
 			}
 		}
 	}

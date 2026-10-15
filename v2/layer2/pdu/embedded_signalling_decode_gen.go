@@ -48,6 +48,6 @@ func EncodeEmbeddedSignalling(s *EmbeddedSignalling) ([16]bit.Bit, error) {
 	return quadraticresidue.Encode(data), nil
 }
 
-func (s *EmbeddedSignalling) ToString() string {
-	return fmt.Sprintf("EmbeddedSignalling{ ColorCode: %d, PreemptionAndPowerControlIndicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.PreemptionAndPowerControlIndicator, enums.LCSSToName(s.LCSS), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+func (s *EmbeddedSignalling) String() string {
+	return fmt.Sprintf("EmbeddedSignalling{ ColorCode: %d, PreemptionAndPowerControlIndicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.PreemptionAndPowerControlIndicator, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }
