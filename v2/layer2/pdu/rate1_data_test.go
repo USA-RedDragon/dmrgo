@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func TestRate1Data_DecodeFromBits(t *testing.T) {
 	// Build 96 info bits representing known packed data
-	var infoBits [96]bit.Bit
+	var infoBits [192]bit.Bit
 
 	// Set byte 0 = 0xAB: 10101011
 	infoBits[0] = 1
@@ -34,7 +35,7 @@ func TestRate1Data_DecodeFromBits(t *testing.T) {
 		t.Errorf("Data[1] = 0x%02X, want 0xCD", rt.Data[1])
 	}
 	// Remaining bytes should be zero
-	for i := 2; i < 12; i++ {
+	for i := 2; i < 24; i++ {
 		if rt.Data[i] != 0 {
 			t.Errorf("Data[%d] = 0x%02X, want 0x00", i, rt.Data[i])
 		}
@@ -42,7 +43,7 @@ func TestRate1Data_DecodeFromBits(t *testing.T) {
 }
 
 func TestRate1Data_GetDataType(t *testing.T) {
-	rt, _ := pdu.DecodeRate1Data([96]bit.Bit{})
+	rt, _ := pdu.DecodeRate1Data([192]bit.Bit{})
 	rt.DataType = elements.DataTypeRate1
 	if rt.GetDataType() != elements.DataTypeRate1 {
 		t.Errorf("GetDataType() = %d, want DataTypeRate1", rt.GetDataType())
@@ -50,7 +51,7 @@ func TestRate1Data_GetDataType(t *testing.T) {
 }
 
 func TestRate1Data_ToString(t *testing.T) {
-	rt, _ := pdu.DecodeRate1Data([96]bit.Bit{})
+	rt, _ := pdu.DecodeRate1Data([192]bit.Bit{})
 	s := rt.ToString()
 	if s == "" {
 		t.Error("ToString() should not be empty")
@@ -58,12 +59,12 @@ func TestRate1Data_ToString(t *testing.T) {
 }
 
 func TestRate1Data_AllOnes(t *testing.T) {
-	var infoBits [96]bit.Bit
+	var infoBits [192]bit.Bit
 	for i := range infoBits {
 		infoBits[i] = 1
 	}
 	rt, _ := pdu.DecodeRate1Data(infoBits)
-	for i := 0; i < 12; i++ {
+	for i := 0; i < 24; i++ {
 		if rt.Data[i] != 0xFF {
 			t.Errorf("Data[%d] = 0x%02X, want 0xFF", i, rt.Data[i])
 		}
@@ -72,11 +73,67 @@ func TestRate1Data_AllOnes(t *testing.T) {
 
 func TestRate1Data_EncodeDecodeRoundTrip(t *testing.T) {
 	original := pdu.Rate1Data{
-		Data: [12]byte{0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01},
+		Data: [24]byte{0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B},
 	}
 	encoded := pdu.EncodeRate1Data(&original)
 	decoded, _ := pdu.DecodeRate1Data(encoded)
 	if decoded.Data != original.Data {
 		t.Errorf("round-trip failed: got %v, want %v", decoded.Data, original.Data)
+	}
+}
+
+func TestRate1Data_FullLengthLastByte(t *testing.T) {
+	var infoBits [192]bit.Bit
+	infoBits[191] = 1
+	rt, _ := pdu.DecodeRate1Data(infoBits)
+	if rt.Data[23] != 0x01 {
+		t.Errorf("Data[23] = 0x%02X, want 0x01", rt.Data[23])
+	}
+}
+
+func TestRate1Data_Confirmed_RoundTrip(t *testing.T) {
+	var user [22]byte
+	for i := range user {
+		user[i] = byte(i*7 + 1)
+	}
+	var rt pdu.Rate1Data
+	rt.SetConfirmed(0x55, user)
+	if rt.ConfirmedDBSN() != 0x55 {
+		t.Errorf("ConfirmedDBSN() = %d, want %d", rt.ConfirmedDBSN(), 0x55)
+	}
+	if rt.ConfirmedUserData() != user {
+		t.Errorf("ConfirmedUserData() = %X, want %X", rt.ConfirmedUserData(), user)
+	}
+	if !rt.CheckConfirmedCRC9() {
+		t.Fatal("CheckConfirmedCRC9() = false after SetConfirmed")
+	}
+	decoded, _ := pdu.DecodeRate1Data(pdu.EncodeRate1Data(&rt))
+	if !decoded.CheckConfirmedCRC9() {
+		t.Error("CheckConfirmedCRC9() = false after encode/decode")
+	}
+	decoded.Data[5] ^= 0x10
+	if decoded.CheckConfirmedCRC9() {
+		t.Error("CheckConfirmedCRC9() = true after corrupting user data")
+	}
+}
+
+// The CRC-9 covers user data then DBSN (TS 102 361-1 B.3.10) with the
+// Table B.21 mask, placed MSB-first in octet 0 bit 0 and octet 1.
+func TestRate1Data_Confirmed_CRC9Layout(t *testing.T) {
+	var user [22]byte
+	user[0] = 0x80
+	var rt pdu.Rate1Data
+	rt.SetConfirmed(3, user)
+
+	bits := append(bit.UnpackBits(user[:]), bit.BitsFromUint8(3, 7)...)
+	want := (crc.CalculateCRC9(bits) ^ 0x10F) & 0x1FF
+	if got := rt.ConfirmedCRC9(); got != want {
+		t.Errorf("ConfirmedCRC9() = 0x%03X, want 0x%03X", got, want)
+	}
+	if rt.Data[0] != byte(3<<1)|byte(want>>8) || rt.Data[1] != byte(want) {
+		t.Errorf("header octets = %02X %02X, want DBSN<<1|CRC MSB, CRC low", rt.Data[0], rt.Data[1])
+	}
+	if pdu.CRC9MaskRate1 != 0x10F {
+		t.Errorf("CRC9MaskRate1 = 0x%03X, want 0x10F", pdu.CRC9MaskRate1)
 	}
 }
