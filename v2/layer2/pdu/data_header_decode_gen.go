@@ -1151,7 +1151,9 @@ func decodeProprietaryHeader(data [80]bit.Bit) ProprietaryHeader {
 	lowbit.Mask(data[:])
 	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[0:4]))
 	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
-	copy(result.ManufacturerData[:], bit.Pack(data[16:80]))
+	for _i := range 64 {
+		result.ManufacturerData[_i/8] |= byte(data[16+_i]) << (7 - _i%8)
+	}
 	return result
 }
 
@@ -1176,7 +1178,9 @@ func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 		}
 	}
 	bit.PutUint(data[8:16], uint64(s.MFID))
-	copy(data[16:80], bit.Unpack(s.ManufacturerData[:]))
+	for _i := range 64 {
+		data[16+_i] = bit.Bit(s.ManufacturerData[_i/8] >> (7 - _i%8) & 1)
+	}
 	bit.PutUint(data[4:8], uint64(FormatProprietary))
 	return data, nil
 }

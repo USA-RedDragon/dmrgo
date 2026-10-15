@@ -903,18 +903,8 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		}
 		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
 
-	case parse.FieldRaw:
+	case parse.FieldRaw, parse.FieldPacked:
 		g.Add(packRaw(target, Id("data"), field.BitStart, field.BitWidth))
-
-	case parse.FieldPacked:
-		packed := Qual(bitPkg, "Pack").Call(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-		)
-		if isFixedArray(field.GoType) {
-			g.Copy(target.Clone().Index(Empty(), Empty()), packed)
-		} else {
-			g.Add(target).Op("=").Add(packed)
-		}
 
 	case parse.FieldDelegate:
 		var importPath string
@@ -1344,14 +1334,8 @@ func (e encoder) field(g *Group, field parse.Field) {
 			Id("data").Index(Lit(field.BitStart)).Op("=").Lit(1),
 		)
 
-	case parse.FieldRaw:
+	case parse.FieldRaw, parse.FieldPacked:
 		e.raw(g, field)
-
-	case parse.FieldPacked:
-		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			Qual(bitPkg, "Unpack").Call(source.Clone().Index(Empty(), Empty())),
-		)
 
 	case parse.FieldDelegate:
 		if field.Stride > 0 {
@@ -1404,8 +1388,8 @@ func (e encoder) field(g *Group, field parse.Field) {
 	}
 }
 
-// raw encodes a raw byte-array field after checking that its padding bits
-// are zero.
+// raw encodes a raw or packed byte-array field after checking that its
+// padding bits are zero. A packed field has no padding bits.
 func (e encoder) raw(g *Group, field parse.Field) {
 	n := parse.RawBytes(field.BitWidth)
 	if pad := n*8 - field.BitWidth; pad > 0 {
@@ -1421,8 +1405,8 @@ func (e encoder) raw(g *Group, field parse.Field) {
 }
 
 // packRaw returns a loop that packs the width bits of src from start into
-// the byte array dst, most significant bit first. dst starts zero, so its
-// padding bits stay zero.
+// the byte array dst of a raw or packed field, most significant bit first.
+// dst starts zero, so its padding bits stay zero.
 func packRaw(dst, src *Statement, start, width int) *Statement {
 	idx := Id("_i")
 	if start > 0 {
@@ -1602,10 +1586,4 @@ func qualType(field parse.Field, pdu parse.PDUStruct) *Statement {
 		return Qual(importPath, field.TypeName)
 	}
 	return Id(field.GoType)
-}
-
-// isFixedArray returns true if the Go type is a fixed-size array (e.g. "[12]byte")
-// as opposed to a slice (e.g. "[]byte").
-func isFixedArray(goType string) bool {
-	return strings.HasPrefix(goType, "[") && !strings.HasPrefix(goType, "[]")
 }

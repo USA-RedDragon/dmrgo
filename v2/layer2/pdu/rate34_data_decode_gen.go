@@ -14,14 +14,18 @@ import (
 func DecodeRate34Data(data [144]bit.Bit) Rate34Data {
 	var result Rate34Data
 	lowbit.Mask(data[:])
-	copy(result.Data[:], bit.Pack(data[0:144]))
+	for _i := range 144 {
+		result.Data[_i/8] |= byte(data[_i]) << (7 - _i%8)
+	}
 	return result
 }
 
 // Encode encodes a Rate34Data (ETSI TS 102 361-1 clause 9.2.2).
 func (s *Rate34Data) Encode() ([144]bit.Bit, error) {
 	var data [144]bit.Bit
-	copy(data[0:144], bit.Unpack(s.Data[:]))
+	for _i := range 144 {
+		data[0+_i] = bit.Bit(s.Data[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
