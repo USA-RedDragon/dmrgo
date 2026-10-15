@@ -114,6 +114,7 @@ type FLCTerminatorDataLinkControl struct {
 	GroupOrIndividual  bool  `dmr:"bit:48"`
 	ResponseRequested  bool  `dmr:"bit:49"`
 	FullMessageFlag    bool  `dmr:"bit:50"`
+	Reserved           bool  `dmr:"bit:51"`
 	ReSynchronizeFlag  bool  `dmr:"bit:52"`
 	SendSequenceNumber uint8 `dmr:"bits:53-55"`
 }

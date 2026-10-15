@@ -380,6 +380,7 @@ func DecodeFLCTerminatorDataLinkControl(data [56]bit.Bit) (FLCTerminatorDataLink
 	result.GroupOrIndividual = bit.BitsToBool(data[:], 48)
 	result.ResponseRequested = bit.BitsToBool(data[:], 49)
 	result.FullMessageFlag = bit.BitsToBool(data[:], 50)
+	result.Reserved = bit.BitsToBool(data[:], 51)
 	result.ReSynchronizeFlag = bit.BitsToBool(data[:], 52)
 	result.SendSequenceNumber = bit.BitsToUint8(data[:], 53, 3)
 	return result, fecResult
@@ -405,6 +406,9 @@ func EncodeFLCTerminatorDataLinkControl(s *FLCTerminatorDataLinkControl) ([56]bi
 	if s.FullMessageFlag {
 		data[50] = 1
 	}
+	if s.Reserved {
+		data[51] = 1
+	}
 	if s.ReSynchronizeFlag {
 		data[52] = 1
 	}
@@ -416,5 +420,5 @@ func EncodeFLCTerminatorDataLinkControl(s *FLCTerminatorDataLinkControl) ([56]bi
 }
 
 func (s *FLCTerminatorDataLinkControl) ToString() string {
-	return fmt.Sprintf("FLCTerminatorDataLinkControl{ LLIDDestination: %d, LLIDSource: %d, GroupOrIndividual: %t, ResponseRequested: %t, FullMessageFlag: %t, ReSynchronizeFlag: %t, SendSequenceNumber: %d }", s.LLIDDestination, s.LLIDSource, s.GroupOrIndividual, s.ResponseRequested, s.FullMessageFlag, s.ReSynchronizeFlag, s.SendSequenceNumber)
+	return fmt.Sprintf("FLCTerminatorDataLinkControl{ LLIDDestination: %d, LLIDSource: %d, GroupOrIndividual: %t, ResponseRequested: %t, FullMessageFlag: %t, Reserved: %t, ReSynchronizeFlag: %t, SendSequenceNumber: %d }", s.LLIDDestination, s.LLIDSource, s.GroupOrIndividual, s.ResponseRequested, s.FullMessageFlag, s.Reserved, s.ReSynchronizeFlag, s.SendSequenceNumber)
 }
