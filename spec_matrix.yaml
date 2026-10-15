@@ -120,6 +120,11 @@ documents:
               - TestRC_StandaloneBurst_EncodeFromFields
               - TestRC_BurstFECStats_RC
               - TestRC_String
+              - TestDataBurstWithEMB_ASELSAN
+              - TestDataBurstWithEMB_SameDataAsWithSync
+              - TestDataBurstWithEMB_KnownVoice
+              - TestDataBurstWithEMB_DamagedSyncStaysSync
+              - TestDataBurstWithEMB_VoiceStaysVoice
 
       # ── Section 7: DMR signalling ──
       - section: "7.1.1"
@@ -791,8 +796,14 @@ documents:
               - TestBPTC19696_AllDoubleErrorsCorrected
               - TestBPTC19696_AcceptedOutputIsCodeword
               - TestBPTC19696_ColumnsFirstCorrection
+              - TestBPTC19696Reserved
+              - TestBPTC19696ReservedPositions
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
+              - TestBPTCReserved_CapacityMaxRoundTrip
+              - TestBPTCReserved_CapacityMaxVoiceLCHeader
+              - TestBPTCReserved_EncodeWritesField
+              - TestBPTCReserved_SetKeepsBitErrors
 
       - section: "B.2.1"
         title: "Variable length BPTC for embedded signalling"
