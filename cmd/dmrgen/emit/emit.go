@@ -6,7 +6,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go/token"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -137,10 +139,18 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 	}
 
 	for _, pdu := range pdus {
-		if err := emitDecode(f, pdu); err != nil {
+		if err := emitDecode(f, pdu, false); err != nil {
 			return nil, fmt.Errorf("generating decode for %s: %w", pdu.Name, err)
 		}
 		f.Line()
+		if payloads := dispatchPayloads(pdu); len(payloads) > 0 {
+			emitPayloads(f, pdu, payloads)
+			f.Line()
+			if err := emitDecode(f, pdu, true); err != nil {
+				return nil, fmt.Errorf("generating decode for %s: %w", pdu.Name, err)
+			}
+			f.Line()
+		}
 		if err := emitEncode(f, pdu); err != nil {
 			return nil, fmt.Errorf("generating encode for %s: %w", pdu.Name, err)
 		}
@@ -186,12 +196,21 @@ func article(name string) string {
 }
 
 // emitDecode generates a DecodeXxx function for a PDU struct, or decodeXxx
-// for a sub-PDU.
-func emitDecode(f *File, pdu parse.PDUStruct) error {
+// for a sub-PDU. With into, it generates DecodeXxxInto, which decodes into
+// a caller's struct and points the dispatch field into a caller's payloads
+// struct.
+func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 	funcName := pdu.DecodeFuncName(pdu.Name)
 	inputSize := pdu.InputSize
 
-	f.Comment(funcName + " decodes " + docObject(pdu))
+	if into {
+		f.Comment(funcName + "Into decodes data into dst as " + funcName + " does,")
+		f.Comment("but points the dispatch field of dst into p, so it does not allocate.")
+		f.Comment("The payload stays valid until the next decode into p. dst and p must")
+		f.Comment("not be nil.")
+	} else {
+		f.Comment(funcName + " decodes " + docObject(pdu))
+	}
 
 	codec, hasFEC, err := resolveCodec(pdu)
 	if err != nil {
@@ -202,7 +221,11 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 	}
 
 	var genErr error
-	params := []Code{Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit")}
+	var params []Code
+	if into {
+		params = append(params, Id("dst").Op("*").Id(pdu.Name), Id("p").Op("*").Id(payloadsTypeName(pdu)))
+	}
+	params = append(params, Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit"))
 	for _, in := range pdu.Inputs {
 		field := pdu.FieldByName(in)
 		if field == nil {
@@ -211,8 +234,19 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		params = append(params, Id(inputParamName(in)).Add(qualType(*field, pdu)))
 	}
 
-	f.Func().Id(funcName).Params(params...).Id(pdu.Name).BlockFunc(func(g *Group) {
-		g.Var().Id("result").Id(pdu.Name)
+	var fn *Statement
+	if into {
+		fn = f.Func().Id(funcName + "Into").Params(params...)
+	} else {
+		fn = f.Func().Id(funcName).Params(params...).Id(pdu.Name)
+	}
+	fn.BlockFunc(func(g *Group) {
+		if into {
+			g.Op("*").Id("dst").Op("=").Id(pdu.Name).Values()
+			g.Id("result").Op(":=").Id("dst")
+		} else {
+			g.Var().Id("result").Id(pdu.Name)
+		}
 		for _, in := range pdu.Inputs {
 			g.Id("result").Dot(in).Op("=").Id(inputParamName(in))
 		}
@@ -270,13 +304,15 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		}
 
 		if len(dispatchFields) > 0 {
-			if err := emitDispatchSwitch(g, dispatchFields, pdu); err != nil {
+			if err := emitDispatchSwitch(g, dispatchFields, pdu, into); err != nil {
 				genErr = err
 				return
 			}
 		}
 
-		g.Return(Id("result"))
+		if !into {
+			g.Return(Id("result"))
+		}
 	})
 
 	return genErr
@@ -408,8 +444,9 @@ func emitPackedFECDecode(g *Group, codec *FECCodecInfo) {
 
 // emitDispatchSwitch emits a switch on the dispatch field value that decodes
 // the selected sub-PDU into its pointer field. A when: guard picks between
-// fields that share a dispatch value.
-func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) error {
+// fields that share a dispatch value. With into, the sub-PDU is decoded into
+// its field of the payloads struct p.
+func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct, into bool) error {
 	bitStart := fields[0].BitStart
 	bitEnd := fields[0].BitEnd
 	arraySize := bitEnd - bitStart + 1
@@ -423,7 +460,7 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 		raw = []Code{packRaw(Id("result").Dot(fb.Name), Id(tmpVar), 0, fb.BitWidth)}
 	}
 	stmt, err := dispatchSelect(fields, pdu, func(field parse.Field) []Code {
-		return dispatchDecodeBlock(field, pdu, tmpVar)
+		return dispatchDecodeBlock(field, pdu, tmpVar, into)
 	}, raw)
 	if err != nil {
 		return err
@@ -502,11 +539,75 @@ func fallbackField(pdu parse.PDUStruct) *parse.Field {
 	return nil
 }
 
-func dispatchDecodeBlock(field parse.Field, pdu parse.PDUStruct, tmpVar string) []Code {
+// dispatchDecodeBlock decodes the sub-PDU of field from tmpVar and points
+// the field to it: to a new value, or with into to its field of p.
+func dispatchDecodeBlock(field parse.Field, pdu parse.PDUStruct, tmpVar string, into bool) []Code {
+	typ := dispatchTypeName(field)
+	decode := Id(pdu.DecodeFuncName(typ)).Call(Id(tmpVar))
+	if into {
+		slot := Id("p").Dot(payloadFieldName(typ))
+		return []Code{
+			slot.Clone().Op("=").Add(decode),
+			Id("result").Dot(field.Name).Op("=").Op("&").Add(slot.Clone()),
+		}
+	}
 	return []Code{
-		Id("_decoded").Op(":=").Id(pdu.DecodeFuncName(dispatchTypeName(field))).Call(Id(tmpVar)),
+		Id("_decoded").Op(":=").Add(decode),
 		Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
 	}
+}
+
+// dispatchPayloads returns the distinct types that the dispatch fields of
+// pdu point to, in field order.
+func dispatchPayloads(pdu parse.PDUStruct) []string {
+	var types []string
+	for _, field := range pdu.Fields {
+		if field.Skip || field.Kind != parse.FieldDispatch {
+			continue
+		}
+		if typ := dispatchTypeName(field); !slices.Contains(types, typ) {
+			types = append(types, typ)
+		}
+	}
+	return types
+}
+
+// payloadsTypeName returns the name of the payloads struct of pdu.
+func payloadsTypeName(pdu parse.PDUStruct) string {
+	return pdu.Name + "Payloads"
+}
+
+// payloadFieldName returns the unexported field name of the payloads struct
+// for the type typ: the leading capitals in lower case, except the capital
+// that starts the next word, as "BSOutboundActivationPDU" gives
+// "bsOutboundActivationPDU".
+func payloadFieldName(typ string) string {
+	n := 0
+	for n < len(typ) && typ[n] >= 'A' && typ[n] <= 'Z' {
+		n++
+	}
+	if n > 1 && n < len(typ) {
+		n--
+	}
+	name := strings.ToLower(typ[:n]) + typ[n:]
+	if token.IsKeyword(name) {
+		name += "_"
+	}
+	return name
+}
+
+// emitPayloads generates the payloads struct of pdu, with one field of each
+// type in types, for DecodeXxxInto.
+func emitPayloads(f *File, pdu parse.PDUStruct, types []string) {
+	name := payloadsTypeName(pdu)
+	f.Comment(name + " holds one payload struct of each type that")
+	f.Comment(article(pdu.Name) + " " + pdu.Name + " dispatch field points to, for Decode" + pdu.Name + "Into.")
+	f.Comment("The zero value is ready to use.")
+	f.Type().Id(name).StructFunc(func(g *Group) {
+		for _, typ := range types {
+			g.Id(payloadFieldName(typ)).Id(typ)
+		}
+	})
 }
 
 func dispatchTypeName(field parse.Field) string {
@@ -1489,7 +1590,7 @@ func coordRaw(field parse.Field, value *Statement) *Statement {
 func inputParamName(field string) string {
 	name := strings.ToLower(field[:1]) + field[1:]
 	switch name {
-	case "data", "result", "corrected":
+	case "data", "result", "corrected", "dst", "p":
 		return "_" + name
 	}
 	return name

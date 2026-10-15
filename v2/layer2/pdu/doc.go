@@ -7,6 +7,9 @@
 // these functions from the dmr struct tags. The payloads of a CSBK, MBC, Full
 // LC, Short LC or data header decode with their parent, which sets the
 // payload field of its opcode, so they have no DecodeX of their own.
+// DecodeX allocates the payload struct that the field points to.
+// DecodeXInto decodes into a caller's struct and points the field into a
+// caller's XPayloads, so that a reused pair decodes without allocating.
 //
 // # FEC results
 //
