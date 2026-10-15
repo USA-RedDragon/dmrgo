@@ -30,6 +30,26 @@ func (dt DataType) IsReserved() bool {
 	return dt >= DataTypeReserved && dt <= 0xF
 }
 
+// IsBPTC reports whether a burst of data type dt carries 96 information
+// bits coded with BPTC(196,96) (ETSI TS 102 361-1 B.1.1): every data type
+// except Rate 3/4, Rate 1 and the reserved values.
+func (dt DataType) IsBPTC() bool {
+	switch dt {
+	case DataTypePIHeader, DataTypeVoiceLCHeader, DataTypeTerminatorWithLC, DataTypeCSBK,
+		DataTypeMBCHeader, DataTypeMBCContinuation, DataTypeDataHeader, DataTypeRate12,
+		DataTypeIdle, DataTypeUnifiedSingleBlock:
+		return true
+	case DataTypeRate34, DataTypeRate1, DataTypeReserved:
+	}
+	return false
+}
+
+// CarriesFullLC reports whether a burst of data type dt carries a Full LC
+// with RS(12,9) parity: a Voice LC Header or a Terminator with LC.
+func (dt DataType) CarriesFullLC() bool {
+	return dt == DataTypeVoiceLCHeader || dt == DataTypeTerminatorWithLC
+}
+
 func (dt DataType) String() string {
 	switch dt {
 	case DataTypePIHeader:
