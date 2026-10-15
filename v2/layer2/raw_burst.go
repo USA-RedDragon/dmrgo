@@ -7,7 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
-	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -130,7 +130,7 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 // code (§B.1.1) and returns the 144 data bits packed most significant bit
 // first.
 func (r *RawBurst) Rate34Payload() ([18]byte, fec.FECResult) {
-	var t trellis34.Trellis34
+	var t trellis.Trellis34
 	bits, res := t.Decode(r.info())
 	var p [18]byte
 	copy(p[:], bit.PackBits(bits[:]))
@@ -141,7 +141,7 @@ func (r *RawBurst) Rate34Payload() ([18]byte, fec.FECResult) {
 func (r *RawBurst) SetRate34Payload(p [18]byte) {
 	var bits [144]bit.Bit
 	copy(bits[:], bit.UnpackBits(p[:]))
-	var t trellis34.Trellis34
+	var t trellis.Trellis34
 	r.setInfo(t.Encode(bits))
 }
 

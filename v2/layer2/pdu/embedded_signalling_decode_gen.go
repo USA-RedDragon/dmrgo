@@ -13,14 +13,14 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue"
+	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
 )
 
 // DecodeEmbeddedSignalling decodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
 func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.FECResult) {
 	var result EmbeddedSignalling
 	bit.Mask(data[:])
-	corrected, fecResult := quadratic_residue.Decode(data)
+	corrected, fecResult := quadraticresidue.Decode(data)
 	result.FEC = fecResult
 	if !fecResult.Uncorrectable {
 		data = corrected
@@ -45,7 +45,7 @@ func EncodeEmbeddedSignalling(s *EmbeddedSignalling) ([16]bit.Bit, error) {
 		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.LCSS: value %d does not fit in 2 bits", s.LCSS)
 	}
 	copy(data[5:7], bit.BitsFromUint8(uint8(s.LCSS), 2))
-	return quadratic_residue.Encode(bit.BitsToValue(data[:])), nil
+	return quadraticresidue.Encode(bit.BitsToValue(data[:])), nil
 }
 
 func (s *EmbeddedSignalling) ToString() string {

@@ -18,8 +18,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/hamming"
-	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue"
-	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
+	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -37,10 +37,10 @@ var bitFuncs = map[string]any{
 		return (&bptc.BPTC19696{}).DeinterleaveDataBits(bits)
 	},
 	"fec/trellis.Trellis34.Decode": func(bits [196]bit.Bit) ([144]bit.Bit, fec.FECResult) {
-		return trellis34.New().Decode(bits)
+		return trellis.New().Decode(bits)
 	},
 	"fec/trellis.Trellis34.Encode": func(data [144]bit.Bit) [196]bit.Bit {
-		return trellis34.New().Encode(data)
+		return trellis.New().Encode(data)
 	},
 	"layer2/framer.Search": func(stream [600]bit.Bit) (framer.Match, bool) {
 		return framer.Search(stream[:], 0, -1)
@@ -80,10 +80,10 @@ var bitFuncs = map[string]any{
 	"fec/hamming.Decode743":                                    hamming.Decode743,
 	"fec/hamming.Encode743":                                    hamming.Encode743,
 	"fec/hamming.Parity743":                                    hamming.Parity743,
-	"fec/quadratic_residue.Check":                              quadraticresidue.Check,
-	"fec/quadratic_residue.Decode":                             quadraticresidue.Decode,
-	"fec/quadratic_residue.NewQuadraticResidue16_7_6":          quadraticresidue.NewQuadraticResidue16_7_6,
-	"fec/quadratic_residue.ParityBits":                         quadraticresidue.ParityBits,
+	"fec/quadraticresidue.Check":                              quadraticresidue.Check,
+	"fec/quadraticresidue.Decode":                             quadraticresidue.Decode,
+	"fec/quadraticresidue.NewQuadraticResidue16_7_6":          quadraticresidue.NewQuadraticResidue16_7_6,
+	"fec/quadraticresidue.ParityBits":                         quadraticresidue.ParityBits,
 	"layer2.BurstToDibits":                                     layer2.BurstToDibits,
 	"layer2.CACHDeinterleave":                                  layer2.CACHDeinterleave,
 	"layer2.CACHInterleave":                                    layer2.CACHInterleave,

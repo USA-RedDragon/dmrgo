@@ -1,4 +1,4 @@
-package trellis34
+package trellis
 
 import (
 	"math"

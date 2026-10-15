@@ -8,7 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
-	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -255,7 +255,7 @@ func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
 func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int, fec.FECResult) {
 	switch dataType {
 	case elements.DataTypeRate34:
-		var t trellis34.Trellis34
+		var t trellis.Trellis34
 		decoded, result := t.Decode(bits)
 		copy(b.deinterleavedInfoBits[:], decoded[:])
 		return len(decoded), result
@@ -712,7 +712,7 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	dt := b.SlotType.DataType
 	switch {
 	case dt == elements.DataTypeRate34:
-		var t trellis34.Trellis34
+		var t trellis.Trellis34
 		var data [144]bit.Bit
 		copy(data[:], info[:144])
 		return t.Encode(data), nil

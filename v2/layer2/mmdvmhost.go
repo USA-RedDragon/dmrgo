@@ -2,7 +2,7 @@ package layer2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
-	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon"
+	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 

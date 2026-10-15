@@ -17,7 +17,7 @@ import (
 const (
 	fecFieldName  = "FEC"
 	ambeCodec     = "ambe_voice"
-	qrPkg         = "github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue"
+	qrPkg         = "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
 	l2ElementsPkg = "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	encodeFnName  = "Encode"
 
@@ -34,7 +34,7 @@ const (
 	bitPkg = "github.com/USA-RedDragon/dmrgo/v2/bit"
 	fecPkg = "github.com/USA-RedDragon/dmrgo/v2/fec"
 	crcPkg = "github.com/USA-RedDragon/dmrgo/v2/crc"
-	rsPkg  = "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon"
+	rsPkg  = "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
 )
 
 // CRCAlgorithmInfo describes a CRC algorithm for code generation.
@@ -64,7 +64,6 @@ var crcAlgorithms = map[string]CRCAlgorithmInfo{
 // FECCodecInfo maps FEC directive names to their decode function and import path.
 type FECCodecInfo struct {
 	ImportPath  string // e.g. "github.com/USA-RedDragon/dmrgo/v2/fec/golay"
-	GoPkgName   string // actual Go package name (may differ from directory)
 	DecodeFn    string // e.g. "DecodeGolay2087"
 	EncodeFn    string // e.g. "Encode" — func(byte) [N]bit.Bit
 	InputSize   int    // full FEC codeword size in bits, e.g. 20
@@ -78,7 +77,6 @@ type FECCodecInfo struct {
 var fecCodecs = map[string]FECCodecInfo{
 	"golay_20_8_7": {
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
-		GoPkgName:  "golay",
 		DecodeFn:   "DecodeGolay2087",
 		EncodeFn:   encodeFnName,
 		InputSize:  20,
@@ -86,7 +84,6 @@ var fecCodecs = map[string]FECCodecInfo{
 	},
 	"quadratic_residue_16_7_6": {
 		ImportPath: qrPkg,
-		GoPkgName:  "quadratic_residue",
 		DecodeFn:   "Decode",
 		EncodeFn:   encodeFnName,
 		InputSize:  16,
@@ -94,7 +91,6 @@ var fecCodecs = map[string]FECCodecInfo{
 	},
 	"reed_solomon_12_9_4": {
 		ImportPath:  rsPkg,
-		GoPkgName:   "reedsolomon",
 		DecodeFn:    "Decode",
 		InputSize:   96,
 		DataBits:    72,
@@ -112,22 +108,11 @@ var fecCodecs = map[string]FECCodecInfo{
 	},
 	"hamming_7_4_3": {
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
-		GoPkgName:  "hamming",
 		DecodeFn:   "Decode743",
 		EncodeFn:   encodeFnName,
 		InputSize:  7,
 		DataBits:   4,
 	},
-}
-
-// pkgNameOverrides maps import paths to actual Go package names where they differ
-// from the directory name. Jennifer uses the last path element by default.
-//
-//nolint:gochecknoglobals
-var pkgNameOverrides = map[string]string{
-	qrPkg: "quadratic_residue",
-	"github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon": "reedsolomon",
-	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis":      "trellis34",
 }
 
 // pkgAliasOverrides forces specific import aliases to disambiguate packages with the same name.
@@ -150,7 +135,7 @@ func resolveImportPath(pkgName, sourceFile string) string {
 		"layer3Elements":   "github.com/USA-RedDragon/dmrgo/v2/layer3/elements",
 		"golay":            "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
 		"quadraticResidue": qrPkg,
-		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon",
+		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon",
 		"bptc":             "github.com/USA-RedDragon/dmrgo/v2/fec/bptc",
 		"trellis":          "github.com/USA-RedDragon/dmrgo/v2/fec/trellis",
 		"hamming":          "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
@@ -188,10 +173,6 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 	header += "\nDO NOT EDIT."
 	f.HeaderComment(header)
 
-	// Register package name overrides so Jennifer uses the correct identifiers
-	for importPath, pkgName := range pkgNameOverrides {
-		f.ImportName(importPath, pkgName)
-	}
 	// Register import aliases to disambiguate packages with the same base name
 	for importPath, alias := range pkgAliasOverrides {
 		f.ImportAlias(importPath, alias)

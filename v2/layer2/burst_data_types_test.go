@@ -7,7 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
-	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -34,7 +34,7 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	}
 	var info [144]bit.Bit
 	copy(info[:], bit.UnpackBits(want[:]))
-	raw := buildDataBurst(elements.DataTypeRate34, trellis34.New().Encode(info))
+	raw := buildDataBurst(elements.DataTypeRate34, trellis.New().Encode(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
@@ -60,7 +60,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 	for i := range info {
 		info[i] = bit.Bit(i % 3 % 2)
 	}
-	raw := buildDataBurst(elements.DataTypeRate34, trellis34.New().Encode(info))
+	raw := buildDataBurst(elements.DataTypeRate34, trellis.New().Encode(info))
 	raw[2] ^= 0x10
 
 	b, err := layer2.NewBurstFromBytes(raw)

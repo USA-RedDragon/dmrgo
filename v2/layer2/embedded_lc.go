@@ -7,7 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
-	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon"
+	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )

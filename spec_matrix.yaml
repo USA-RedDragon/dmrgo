@@ -640,10 +640,10 @@ documents:
       - section: "9.3.4"
         title: "EMB parity"
         source_files:
-          - v2/fec/quadratic_residue/quadratic_residue_16_7_6.go
+          - v2/fec/quadraticresidue/quadratic_residue_16_7_6.go
           - v2/layer2/pdu/embedded_signalling.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue
+          - package: github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue
             names:
               - TestQuadraticResidue1676Decode
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
@@ -874,9 +874,9 @@ documents:
       - section: "B.3.2"
         title: "Quadratic residue (16,7,6)"
         source_files:
-          - v2/fec/quadratic_residue/quadratic_residue_16_7_6.go
+          - v2/fec/quadraticresidue/quadratic_residue_16_7_6.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue
+          - package: github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue
             names:
               - TestQuadraticResidue1676Decode
 
@@ -921,9 +921,9 @@ documents:
       - section: "B.3.6"
         title: "Reed-Solomon (12,9)"
         source_files:
-          - v2/fec/reed_solomon/reed_solomon_12_9_4.go
+          - v2/fec/reedsolomon/reed_solomon_12_9_4.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon
+          - package: github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon
             names:
               - TestReedSolomon1294SyndromeNoError
               - TestReedSolomon1294DecodeClean

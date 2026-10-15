@@ -61,7 +61,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/reed_solomon", "reedsolomon",
+	if err := writeFile(dmrRoot, "fec/reedsolomon", "reedsolomon",
 		writeTable("galois_exp_table", tables.GaloisExp[:]),
 		jen.Line(),
 		jen.Line(),
@@ -91,7 +91,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/quadratic_residue", "quadratic_residue",
+	if err := writeFile(dmrRoot, "fec/quadraticresidue", "quadraticresidue",
 		writeTable("qr16_7_6_encoding_table", tables.QR16_7_6Encoding),
 		jen.Line(),
 		jen.Line(),
@@ -100,7 +100,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "fec/trellis", "trellis34",
+	if err := writeFile(dmrRoot, "fec/trellis", "trellis",
 		writeTable("encoder_state_transition_table", tables.EncoderStateTransition),
 		jen.Line(),
 		jen.Line(),

@@ -1,4 +1,4 @@
-package quadratic_residue
+package quadraticresidue
 
 import (
 	"math/rand"

@@ -19,7 +19,7 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon"
+	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
 	layer2Elements "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
 	"math"
