@@ -190,7 +190,7 @@ The example prints its counts on the serial console once a second.
 | B.3.3 | Hamming (17,12,3) | verified | 1/1 passed | `v2/internal/fec/bptc/bptc_196_96.go` |
 | B.3.4 | Hamming (13,9,3), Hamming (15,11,3), and Hamming (16,11,4) | verified | 4/4 passed | `v2/internal/fec/bptc/bptc_196_96.go`, `v2/internal/fec/bptc/bptc_embedded_lc.go` |
 | B.3.5 | Hamming (7,4,3) | verified | 8/8 passed | `v2/internal/fec/hamming/hamming_7_4_3.go` |
-| B.3.6 | Reed-Solomon (12,9) | verified | 26/26 passed | `v2/internal/fec/reedsolomon/reed_solomon_12_9_4.go` |
+| B.3.6 | Reed-Solomon (12,9) | verified | 22/22 passed | `v2/internal/fec/reedsolomon/reed_solomon_12_9_4.go` |
 | B.3.7 | 8-bit CRC calculation | verified | 7/7 passed | `v2/internal/crc/crc8.go` |
 | B.3.8 | CRC-CCITT calculation | verified | 5/5 passed | `v2/internal/crc/crc_ccitt.go` |
 | B.3.9 | 32-bit CRC calculation | verified | 9/9 passed | `v2/internal/crc/crc32.go` |
