@@ -106,6 +106,37 @@ func TestBitErrorRateBySNR(t *testing.T) {
 	}
 }
 
+// TestBitErrorRateWeakBS decodes a BS outbound stream at the SNR of a weak
+// real capture, about 11 dB in the channel. There single noise samples are
+// several times the mean power, and noise pulls a mean of the discriminator
+// output toward 0 Hz.
+func TestBitErrorRateWeakBS(t *testing.T) {
+	cfg := testConfig()
+	cfg.BSSourced, cfg.Superframes = true, 2
+	built, err := Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := ModulateBS(built.Slots)
+	iq := ToIQ(fm, env, 2e6, 0, 0.9)
+	for seed := range uint64(3) {
+		d := Demodulate(FromRTL(channel(iq, 2e6, 2.4e6, 3000, -10, seed)), 2.4e6)
+		if len(d.Bursts) != len(built.Slots) {
+			t.Errorf("seed %d: %d bursts, want %d", seed, len(d.Bursts), len(built.Slots))
+			continue
+		}
+		var errs int
+		for i, r := range d.Bursts {
+			for k := range r.Data {
+				errs += popcount(r.Data[k] ^ built.Slots[i].Burst[k])
+			}
+		}
+		if total := len(built.Slots) * layer2.BurstBits; errs*1000 > total {
+			t.Errorf("seed %d: %d bit errors in %d bits", seed, errs, total)
+		}
+	}
+}
+
 func popcount(b byte) int {
 	n := 0
 	for ; b != 0; b &= b - 1 {

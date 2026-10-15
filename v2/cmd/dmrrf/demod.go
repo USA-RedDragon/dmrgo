@@ -38,10 +38,12 @@ type Demodulated struct {
 func sampleOf(r Received) int { return int(math.Round(r.Seconds * basebandRate)) }
 
 // Demodulate recovers DMR bursts from complex samples at rate. Bursts with a
-// SYNC pattern are found by search. Voice bursts B to F carry embedded
-// signalling instead, so they are cut at 60 ms steps after their burst A.
-// The step is measured from the next burst of the same channel when there is
-// one, so a slow or fast symbol clock is followed.
+// SYNC pattern are found by search, twice: the second search slices the
+// symbols after removing the carrier offset that the first one measured
+// over its SYNC fields. Voice bursts B to F carry embedded signalling
+// instead, so they are cut at 60 ms steps after their burst A. The step is
+// measured from the next burst of the same channel when there is one, so a
+// slow or fast symbol clock is followed.
 func Demodulate(x []complex128, rate float64) Demodulated {
 	bb := channelize(x, rate)
 	present := presence(power(bb))
@@ -50,51 +52,53 @@ func Demodulate(x []complex128, rate float64) Demodulated {
 	d := discriminate(bb)
 	sym := filter(d, rrcTaps())
 
-	phaseBits := make([][]bit.Bit, samplesPerSy)
-	for phase := range samplesPerSy {
-		for i := phase; i < len(sym); i += samplesPerSy {
-			b0, b1 := dibitFromSymbol(sym[i])
-			phaseBits[phase] = append(phaseBits[phase], b0, b1)
-		}
-	}
-	// cut returns the burst whose first symbol is at sample s.
-	cut := func(s int) (Received, bool) {
-		if s < 0 {
-			return Received{}, false
-		}
-		bits := phaseBits[s%samplesPerSy]
-		first := 2 * (s / samplesPerSy)
-		if first+layer2.BurstBits > len(bits) {
-			return Received{}, false
-		}
-		var b [264]bit.Bit
-		copy(b[:], bits[first:first+layer2.BurstBits])
-		r := Received{Data: bit.Pack264(b), Seconds: float64(s) / basebandRate}
-		if first >= layer2.CACHBits {
-			copy(r.CACH[:], bits[first-layer2.CACHBits:first])
-			r.HasCACH = true
-		}
-		return r, true
-	}
-
-	// eye returns the mean distance of the burst's symbols at sample s from
-	// the nearest decision threshold, which peaks at the best sampling time.
-	eye := func(s int) float64 {
-		var m float64
-		for k := range burstSymbols {
-			i := s + k*samplesPerSy
-			if i < 0 || i >= len(sym) {
-				return 0
+	res := Demodulated{OffsetHz: coarse}
+	var cut func(int) (Received, bool)
+	for pass := range 2 {
+		phaseBits := make([][]bit.Bit, samplesPerSy)
+		for phase := range samplesPerSy {
+			for i := phase; i < len(sym); i += samplesPerSy {
+				b0, b1 := dibitFromSymbol(sym[i])
+				phaseBits[phase] = append(phaseBits[phase], b0, b1)
 			}
-			v := math.Abs(sym[i])
-			m += math.Min(v, math.Abs(v-2*deviationHz))
 		}
-		return m / burstSymbols
+		cut = func(s int) (Received, bool) {
+			if s < 0 {
+				return Received{}, false
+			}
+			bits := phaseBits[s%samplesPerSy]
+			first := 2 * (s / samplesPerSy)
+			if first+layer2.BurstBits > len(bits) {
+				return Received{}, false
+			}
+			var b [264]bit.Bit
+			copy(b[:], bits[first:first+layer2.BurstBits])
+			r := Received{Data: bit.Pack264(b), Seconds: float64(s) / basebandRate}
+			if first >= layer2.CACHBits {
+				copy(r.CACH[:], bits[first-layer2.CACHBits:first])
+				r.HasCACH = true
+			}
+			return r, true
+		}
+		res.Bursts = pickBursts(searchSync(phaseBits, cut, present), func(s int) float64 { return eye(sym, s) })
+		var off float64
+		off, res.DeviationHz = measure(res.Bursts, sym)
+		res.OffsetHz += off
+		if pass == 0 {
+			for i := range sym {
+				sym[i] -= off
+			}
+		}
 	}
+	res.Bursts = append(res.Bursts, embeddedVoice(res.Bursts, cut, present, func(s int) float64 { return eye(sym, s) })...)
+	sort.Slice(res.Bursts, func(i, j int) bool { return res.Bursts[i].Seconds < res.Bursts[j].Seconds })
+	return res
+}
 
+// searchSync returns every burst with a SYNC pattern at any sampling phase.
+func searchSync(phaseBits [][]bit.Bit, cut func(int) (Received, bool), present func(float64) bool) []Received {
 	var all []Received
-	for phase := range samplesPerSy {
-		bits := phaseBits[phase]
+	for phase, bits := range phaseBits {
 		for start := 0; ; {
 			m, ok := framer.Search(bits, start, -1)
 			if !ok {
@@ -114,13 +118,22 @@ func Demodulate(x []complex128, rate float64) Demodulated {
 			all = append(all, r)
 		}
 	}
+	return all
+}
 
-	res := Demodulated{Bursts: pickBursts(all, eye)}
-	res.OffsetHz, res.DeviationHz = measure(res.Bursts, sym)
-	res.OffsetHz += coarse
-	res.Bursts = append(res.Bursts, embeddedVoice(res.Bursts, cut, present, eye)...)
-	sort.Slice(res.Bursts, func(i, j int) bool { return res.Bursts[i].Seconds < res.Bursts[j].Seconds })
-	return res
+// eye returns the mean distance of the symbols of the burst at sample s from
+// the nearest decision threshold, which peaks at the best sampling time.
+func eye(sym []float64, s int) float64 {
+	var m float64
+	for k := range burstSymbols {
+		i := s + k*samplesPerSy
+		if i < 0 || i >= len(sym) {
+			return 0
+		}
+		v := math.Abs(sym[i])
+		m += math.Min(v, math.Abs(v-2*deviationHz))
+	}
+	return m / burstSymbols
 }
 
 // presence returns a test for whether the carrier is on during the burst
@@ -165,14 +178,16 @@ func pickBursts(all []Received, eye func(int) float64) []Received {
 }
 
 // measure returns the residual carrier offset and the outer deviation over
-// the SYNC fields of bursts.
+// the SYNC fields of bursts, against the SYNC patterns they matched.
 func measure(bursts []Received, sym []float64) (offset, deviation float64) {
 	var resid, outer float64
 	var nr, no int
+	var pattern [framer.SyncBits]bit.Bit
 	for _, r := range bursts {
-		ideal := symbolsFromBurst(r.Data)
-		first := sampleOf(r)
-		for k := 54; k < 78; k++ {
+		bit.PutUint(pattern[:], uint64(r.Sync))
+		ideal := symbolsFromBits(pattern[:])
+		first := sampleOf(r) + framer.SyncOffset/2*samplesPerSy
+		for k := range ideal {
 			idx := first + k*samplesPerSy
 			if idx >= len(sym) {
 				break
