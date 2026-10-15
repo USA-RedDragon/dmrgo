@@ -23,6 +23,7 @@ documents:
         source_files:
           - v2/layer2/burst.go
           - v2/vocoder/frame.go
+          - v2/vocoder/codec.go
           - v2/layer2/pdu/vocoder.go
           - v2/fec/golay/golay_23_12_7.go
           - v2/fec/golay/golay_24_12_8.go
@@ -33,6 +34,8 @@ documents:
               - TestAMBEScrambleTableValues
               - TestScrambleTableBitWidth
               - TestScrambleTableDistribution
+              - TestCodecRegistry
+              - TestCodecRegistryFactoryError
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBurst_Encode
