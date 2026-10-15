@@ -80,7 +80,9 @@ func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) (UnitToUnitVoiceSe
 	var result UnitToUnitVoiceServiceRequestPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ServiceOptions = byte(bit.Uint(data[0:8]))
+	var _serviceOptionsBits [8]bit.Bit
+	copy(_serviceOptionsBits[:], data[0:8])
+	result.ServiceOptions, _ = layer3.DecodeServiceOptions(_serviceOptionsBits)
 	result.Reserved = byte(bit.Uint(data[8:16]))
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
@@ -90,7 +92,11 @@ func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) (UnitToUnitVoiceSe
 // Encode encodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
 func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	bit.PutUint(data[0:8], uint64(s.ServiceOptions))
+	_serviceOptionsBits, err := s.ServiceOptions.Encode()
+	if err != nil {
+		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.ServiceOptions: %w", err)
+	}
+	copy(data[0:8], _serviceOptionsBits[:])
 	bit.PutUint(data[8:16], uint64(s.Reserved))
 	if uint64(s.TargetAddress)>>24 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
@@ -104,7 +110,7 @@ func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 }
 
 func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
-	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %d, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions, s.Reserved, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %s, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.Reserved, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
@@ -112,7 +118,9 @@ func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnit
 	var result UnitToUnitVoiceServiceAnswerResponsePDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.ServiceOptions = byte(bit.Uint(data[0:8]))
+	var _serviceOptionsBits [8]bit.Bit
+	copy(_serviceOptionsBits[:], data[0:8])
+	result.ServiceOptions, _ = layer3.DecodeServiceOptions(_serviceOptionsBits)
 	result.AnswerResponse = byte(bit.Uint(data[8:16]))
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
@@ -122,7 +130,11 @@ func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnit
 // Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	bit.PutUint(data[0:8], uint64(s.ServiceOptions))
+	_serviceOptionsBits, err := s.ServiceOptions.Encode()
+	if err != nil {
+		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions: %w", err)
+	}
+	copy(data[0:8], _serviceOptionsBits[:])
 	bit.PutUint(data[8:16], uint64(s.AnswerResponse))
 	if uint64(s.TargetAddress)>>24 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
@@ -136,7 +148,7 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) 
 }
 
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
-	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %d, AnswerResponse: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions, s.AnswerResponse, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %s, AnswerResponse: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.AnswerResponse, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU per ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
@@ -1369,7 +1381,7 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
-	result.FID = byte(bit.Uint(data[8:16]))
+	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	var _dispatchBits [64]bit.Bit
 	copy(_dispatchBits[:], data[16:80])
 	if result.FID == 0 {
@@ -1674,11 +1686,14 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		return [96]bit.Bit{}, fmt.Errorf("CSBK.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
 	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
+	if uint64(s.FID)>>8 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("CSBK.FID: value %d does not fit in 8 bits", s.FID)
+	}
 	bit.PutUint(data[8:16], uint64(s.FID))
 	if _payload != "" {
 		var result CSBK
 		result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
-		result.FID = byte(bit.Uint(data[8:16]))
+		result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
 		_want := "RawPayload"
 		if result.FID == 0 {
 			switch result.CSBKOpcode {

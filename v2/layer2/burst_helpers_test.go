@@ -18,7 +18,7 @@ func lcBurst(p [12]byte, dt enums.DataType, cc uint8) ([33]byte, error) {
 	if err := r.SetSync(enums.SyncBSSourcedData); err != nil {
 		return r, err
 	}
-	if err := r.SetSlotType(pdu.SlotType{ColorCode: int(cc), DataType: dt}); err != nil {
+	if err := r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt}); err != nil {
 		return r, err
 	}
 	r.SetBPTCPayload(p)
@@ -114,7 +114,7 @@ func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
 			t.Errorf("cc=%d: burst has no slot type", cc)
 			continue
 		}
-		if burst.SlotType.ColorCode != int(cc) {
+		if burst.SlotType.ColorCode != cc {
 			t.Errorf("cc=%d: SlotType.ColorCode = %d", cc, burst.SlotType.ColorCode)
 		}
 	}

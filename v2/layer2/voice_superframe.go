@@ -71,7 +71,7 @@ func (s SyncSource) SyncPatterns() (voice, data enums.SyncPattern, ok bool) {
 // 60 ms gets one burst to send in each of its time slots. A
 // VoiceTransmitter is not safe for concurrent use.
 type VoiceTransmitter struct {
-	colorCode  int
+	colorCode  uint8
 	voiceSync  enums.SyncPattern
 	outbound   bool
 	header     [33]byte

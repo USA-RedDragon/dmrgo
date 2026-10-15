@@ -713,10 +713,14 @@ documents:
         title: "SAP identifier (SAP)"
         source_files:
           - v2/layer2/pdu/data_header.go
+          - v2/enums/sap.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestDataHeader_UnconfirmedDecode
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestServiceAccessPointID_String
 
       - section: "9.3.19"
         title: "Logical Link ID (LLID)"

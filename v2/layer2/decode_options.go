@@ -84,9 +84,9 @@ func (b *Burst) checkColorCode(want *uint8) error {
 	var got uint8
 	switch {
 	case b.Kind == KindData:
-		got = uint8(b.SlotType.ColorCode) //nolint:gosec // 4-bit field
+		got = b.SlotType.ColorCode
 	case b.HasEmbeddedSignalling():
-		got = uint8(b.EmbeddedSignalling.ColorCode) //nolint:gosec // 4-bit field
+		got = b.EmbeddedSignalling.ColorCode
 	default:
 		return nil
 	}

@@ -42,7 +42,7 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.FID != byte(enums.FIDMotorola) {
+	if csbk.FID != enums.FIDMotorola {
 		t.Errorf("FID = %#x, want %#x", csbk.FID, byte(enums.FIDMotorola))
 	}
 	if csbk.PrivateVoiceGrantPDU != nil {

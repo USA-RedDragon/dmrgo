@@ -17,6 +17,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
@@ -43,7 +44,7 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.Result) {
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
-	result.FID = byte(bit.Uint(data[8:16]))
+	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	copy(result.Data[:], bit.Pack(data[16:80]))
 	return result, fecResult
 }
@@ -61,6 +62,9 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 		return [96]bit.Bit{}, fmt.Errorf("MBCHeader.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
 	}
 	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
+	if uint64(s.FID)>>8 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("MBCHeader.FID: value %d does not fit in 8 bits", s.FID)
+	}
 	bit.PutUint(data[8:16], uint64(s.FID))
 	copy(data[16:80], bit.Unpack(s.Data[:]))
 	var _encBytes [10]byte
@@ -133,7 +137,7 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
 	result.ProtectFlag = data[1] == 1
 	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.Reserved1 = uint8(bit.Uint(data[8:12]))
-	result.ColourCode = uint8(bit.Uint(data[12:16]))
+	result.ColorCode = uint8(bit.Uint(data[12:16]))
 	result.Cdeftype = uint8(bit.Uint(data[16:20]))
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
@@ -159,10 +163,10 @@ func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
 		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
 	}
 	bit.PutUint(data[8:12], uint64(s.Reserved1))
-	if uint64(s.ColourCode)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
+	if uint64(s.ColorCode)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
 	}
-	bit.PutUint(data[12:16], uint64(s.ColourCode))
+	bit.PutUint(data[12:16], uint64(s.ColorCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("CGAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
 	}
@@ -196,7 +200,7 @@ func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *CGAPContinuation) String() string {
-	return fmt.Sprintf("CGAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
+	return fmt.Sprintf("CGAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
 
 // DecodeMVAPContinuation decodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
@@ -220,7 +224,7 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
 	result.ProtectFlag = data[1] == 1
 	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.Reserved1 = uint8(bit.Uint(data[8:12]))
-	result.ColourCode = uint8(bit.Uint(data[12:16]))
+	result.ColorCode = uint8(bit.Uint(data[12:16]))
 	result.Cdeftype = uint8(bit.Uint(data[16:20]))
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
@@ -246,10 +250,10 @@ func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
 		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
 	}
 	bit.PutUint(data[8:12], uint64(s.Reserved1))
-	if uint64(s.ColourCode)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
+	if uint64(s.ColorCode)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
 	}
-	bit.PutUint(data[12:16], uint64(s.ColourCode))
+	bit.PutUint(data[12:16], uint64(s.ColorCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("MVAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
 	}
@@ -283,7 +287,7 @@ func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *MVAPContinuation) String() string {
-	return fmt.Sprintf("MVAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
+	return fmt.Sprintf("MVAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
 
 // DecodeBCAPContinuation decodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
@@ -386,7 +390,7 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
 	result.ProtectFlag = data[1] == 1
 	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.Reserved1 = uint8(bit.Uint(data[8:12]))
-	result.ColourCode = uint8(bit.Uint(data[12:16]))
+	result.ColorCode = uint8(bit.Uint(data[12:16]))
 	result.Cdeftype = uint8(bit.Uint(data[16:20]))
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
@@ -412,10 +416,10 @@ func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
 		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Reserved1: value %d does not fit in 4 bits", s.Reserved1)
 	}
 	bit.PutUint(data[8:12], uint64(s.Reserved1))
-	if uint64(s.ColourCode)>>4 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.ColourCode: value %d does not fit in 4 bits", s.ColourCode)
+	if uint64(s.ColorCode)>>4 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.ColorCode: value %d does not fit in 4 bits", s.ColorCode)
 	}
-	bit.PutUint(data[12:16], uint64(s.ColourCode))
+	bit.PutUint(data[12:16], uint64(s.ColorCode))
 	if uint64(s.Cdeftype)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("VNAPContinuation.Cdeftype: value %d does not fit in 4 bits", s.Cdeftype)
 	}
@@ -449,5 +453,5 @@ func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *VNAPContinuation) String() string {
-	return fmt.Sprintf("VNAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
+	return fmt.Sprintf("VNAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }

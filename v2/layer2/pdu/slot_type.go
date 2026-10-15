@@ -9,7 +9,7 @@ import (
 //
 //dmr:fec golay_20_8_7
 type SlotType struct {
-	ColorCode int            `dmr:"bits:0-3"`
+	ColorCode uint8          `dmr:"bits:0-3"`
 	DataType  enums.DataType `dmr:"bits:4-7"`
 	FEC       fec.Result     `dmr:"-"`
 }

@@ -44,7 +44,7 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 		return nil, fmt.Errorf("color code %d does not fit in 4 bits", opts.ColorCode)
 	}
 	t := &VoiceTransmitter{
-		colorCode: int(opts.ColorCode),
+		colorCode: opts.ColorCode,
 		voiceSync: voiceSync,
 		outbound:  opts.Source == SyncSourceBS,
 		silence:   opts.Silence,

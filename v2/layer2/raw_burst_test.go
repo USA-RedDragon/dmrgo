@@ -212,7 +212,7 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 			t.Fatal("SetEmbeddedData")
 		}
 		w = r
-		e := pdu.EmbeddedSignalling{ColorCode: rng.Intn(16), LCSS: enums.LCSS(rng.Intn(4))}
+		e := pdu.EmbeddedSignalling{ColorCode: uint8(rng.Intn(16)), LCSS: enums.LCSS(rng.Intn(4))}
 		if err := w.SetEMB(e); err != nil {
 			t.Fatal(err)
 		}
@@ -305,7 +305,7 @@ func TestBuildDataBurst_ReproducesCaptures(t *testing.T) {
 		if res.HasErrors() {
 			continue
 		}
-		got := must(layer2.BuildDataBurst(p, st.DataType, uint8(st.ColorCode), src)) //nolint:gosec // 4-bit color code
+		got := must(layer2.BuildDataBurst(p, st.DataType, st.ColorCode, src))
 		if got != r {
 			t.Errorf("rebuilt %x\nwant    %x", got, r)
 		}

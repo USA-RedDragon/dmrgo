@@ -319,7 +319,7 @@ func dataBurstFrame(dt enums.DataType, cc uint8, src SyncSource) (RawBurst, erro
 	if err := r.SetSync(sync); err != nil {
 		return r, err
 	}
-	if err := r.SetSlotType(pdu.SlotType{ColorCode: int(cc), DataType: dt}); err != nil {
+	if err := r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt}); err != nil {
 		return r, err
 	}
 	return r, nil

@@ -35,12 +35,12 @@ func TestEmbeddedSignalling_EncodeDecodeRoundTrip(t *testing.T) {
 func TestEmbeddedSignalling_AllColorCodes(t *testing.T) {
 	for cc := 0; cc < 16; cc++ {
 		es := &pdu.EmbeddedSignalling{
-			ColorCode: cc,
+			ColorCode: uint8(cc),
 			LCSS:      enums.LCSSSingleFragment,
 		}
 		encoded := must(es.Encode())
 		decoded, fecResult := pdu.DecodeEmbeddedSignalling(encoded)
-		if decoded.ColorCode != cc {
+		if decoded.ColorCode != uint8(cc) {
 			t.Errorf("cc=%d: got ColorCode=%d", cc, decoded.ColorCode)
 		}
 		if fecResult.Uncorrectable {

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -35,7 +36,7 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
 	result.FEC = fecResult
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.AlgorithmID = uint8(bit.Uint(data[0:8]))
-	result.MFID = uint8(bit.Uint(data[8:16]))
+	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	result.KeyID = uint8(bit.Uint(data[16:24]))
 	result.MessageIndicator = uint32(bit.Uint(data[24:56]))
 	result.Destination = uint32(bit.Uint(data[56:80]))
@@ -47,6 +48,9 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
 func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	bit.PutUint(data[0:8], uint64(s.AlgorithmID))
+	if uint64(s.MFID)>>8 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("PIHeader.MFID: value %d does not fit in 8 bits", s.MFID)
+	}
 	bit.PutUint(data[8:16], uint64(s.MFID))
 	bit.PutUint(data[16:24], uint64(s.KeyID))
 	bit.PutUint(data[24:56], uint64(s.MessageIndicator))

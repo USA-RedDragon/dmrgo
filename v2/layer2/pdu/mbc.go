@@ -13,13 +13,13 @@ import (
 // dmr:input_size 96
 // ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
 type MBCHeader struct {
-	crc         uint16     `dmr:"-"` //nolint:unused
-	FEC         fec.Result `dmr:"-"`
-	LastBlock   bool       `dmr:"bit:0"`
-	ProtectFlag bool       `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode `dmr:"bits:2-7"`
-	FID         byte       `dmr:"bits:8-15"`
-	Data        [8]byte    `dmr:"bits:16-79,packed"`
+	crc         uint16             `dmr:"-"` //nolint:unused
+	FEC         fec.Result         `dmr:"-"`
+	LastBlock   bool               `dmr:"bit:0"`
+	ProtectFlag bool               `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode         `dmr:"bits:2-7"`
+	FID         enums.FeatureSetID `dmr:"bits:8-15"`
+	Data        [8]byte            `dmr:"bits:16-79,packed"`
 }
 
 // DataType returns enums.DataTypeMBCHeader.
@@ -123,7 +123,7 @@ type CGAPContinuation struct {
 	ProtectFlag bool             `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColourCode  uint8            `dmr:"bits:12-15"`
+	ColorCode   uint8            `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
 	Reserved2   uint8            `dmr:"bits:20-21"`
 	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
@@ -146,7 +146,7 @@ type MVAPContinuation struct {
 	ProtectFlag bool             `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColourCode  uint8            `dmr:"bits:12-15"`
+	ColorCode   uint8            `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
 	Reserved2   uint8            `dmr:"bits:20-21"`
 	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`
@@ -191,7 +191,7 @@ type VNAPContinuation struct {
 	ProtectFlag bool             `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
-	ColourCode  uint8            `dmr:"bits:12-15"`
+	ColorCode   uint8            `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
 	Reserved2   uint8            `dmr:"bits:20-21"`
 	CdefParms   layer3.CdefParms `dmr:"bits:22-79,delegate"`

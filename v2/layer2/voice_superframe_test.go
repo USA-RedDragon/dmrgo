@@ -59,7 +59,7 @@ func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType e
 	if b.Kind != layer2.KindData || b.SyncPattern != sync || b.SyncDistance != 0 {
 		t.Fatalf("IsData=%v SyncPattern=%s", (b.Kind == layer2.KindData), b.SyncPattern.String())
 	}
-	if b.SlotType.DataType != dataType || b.SlotType.ColorCode != cc || b.SlotType.FEC.HasErrors() {
+	if b.SlotType.DataType != dataType || b.SlotType.ColorCode != uint8(cc) || b.SlotType.FEC.HasErrors() {
 		t.Fatalf("slot type %s", b.SlotType.String())
 	}
 	got, ok := b.Data.(*pdu.FullLinkControl)
@@ -96,7 +96,7 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 		return b
 	}
 	emb := b.EmbeddedSignalling
-	if !b.HasEmbeddedSignalling() || emb.FEC.HasErrors() || emb.ColorCode != cc || emb.PreemptionAndPowerControlIndicator {
+	if !b.HasEmbeddedSignalling() || emb.FEC.HasErrors() || emb.ColorCode != uint8(cc) || emb.PreemptionAndPowerControlIndicator {
 		t.Fatalf("burst %d: %s", i, b.String())
 	}
 	wantLCSS := []enums.LCSS{0, enums.LCSSFirstFragment, enums.LCSSContinuationFragment,

@@ -11,10 +11,10 @@ func TestSlotType_DecodeEncodeRoundTrip(t *testing.T) {
 	cc := 5
 	dt := enums.DataTypeVoiceLCHeader
 
-	encoded := must((&pdu.SlotType{ColorCode: cc, DataType: dt}).Encode())
+	encoded := must((&pdu.SlotType{ColorCode: uint8(cc), DataType: dt}).Encode())
 	st, fecResult := pdu.DecodeSlotType(encoded)
 
-	if st.ColorCode != cc {
+	if st.ColorCode != uint8(cc) {
 		t.Errorf("ColorCode = %d, want %d", st.ColorCode, cc)
 	}
 	if st.DataType != dt {
@@ -31,9 +31,9 @@ func TestSlotType_DecodeEncodeRoundTrip(t *testing.T) {
 func TestSlotType_AllColorCodes(t *testing.T) {
 	dt := enums.DataTypeVoiceLCHeader
 	for cc := 0; cc < 16; cc++ {
-		encoded := must((&pdu.SlotType{ColorCode: cc, DataType: dt}).Encode())
+		encoded := must((&pdu.SlotType{ColorCode: uint8(cc), DataType: dt}).Encode())
 		st, fecResult := pdu.DecodeSlotType(encoded)
-		if st.ColorCode != cc {
+		if st.ColorCode != uint8(cc) {
 			t.Errorf("cc=%d: got ColorCode=%d", cc, st.ColorCode)
 		}
 		if fecResult.Uncorrectable {

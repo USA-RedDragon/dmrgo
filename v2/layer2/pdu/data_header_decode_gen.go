@@ -20,6 +20,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -36,7 +37,7 @@ func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.R
 	_tmpPadOctetCount <<= 4
 	_tmpPadOctetCount |= bit.Uint(data[12:16])
 	result.PadOctetCount = uint8(_tmpPadOctetCount)
-	result.SAP = uint8(bit.Uint(data[8:12]))
+	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
 	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
 	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.FullMessage = data[64] == 1
@@ -334,7 +335,7 @@ func DecodeConfirmedDataHeader(data [80]bit.Bit) (ConfirmedDataHeader, fec.Resul
 	_tmpPadOctetCount <<= 4
 	_tmpPadOctetCount |= bit.Uint(data[12:16])
 	result.PadOctetCount = uint8(_tmpPadOctetCount)
-	result.SAP = uint8(bit.Uint(data[8:12]))
+	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
 	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
 	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.FullMessageFlag = data[64] == 1
@@ -409,7 +410,7 @@ func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.Res
 	result.Reserved = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Reserved2 = uint8(bit.Uint(data[2:4]))
-	result.SAP = uint8(bit.Uint(data[8:12]))
+	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
 	result.Reserved3 = uint8(bit.Uint(data[12:16]))
 	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
 	result.LLIDSource = uint32(bit.Uint(data[40:64]))
@@ -489,7 +490,7 @@ func DecodeDefinedDataHeader(data [80]bit.Bit) (DefinedDataHeader, fec.Result) {
 	_tmpAppendedBlocks <<= 4
 	_tmpAppendedBlocks |= bit.Uint(data[12:16])
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	result.SAP = uint8(bit.Uint(data[8:12]))
+	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
 	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
 	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.DefinedData = uint8(bit.Uint(data[64:70]))
@@ -557,7 +558,7 @@ func DecodeRawDataHeader(data [80]bit.Bit) (RawDataHeader, fec.Result) {
 	_tmpAppendedBlocks <<= 4
 	_tmpAppendedBlocks |= bit.Uint(data[12:16])
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	result.SAP = uint8(bit.Uint(data[8:12]))
+	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
 	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
 	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.SourcePort = uint8(bit.Uint(data[64:67]))
@@ -625,7 +626,7 @@ func DecodeStatusPrecodedHeader(data [80]bit.Bit) (StatusPrecodedHeader, fec.Res
 	var fecResult fec.Result
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
-	result.SAP = uint8(bit.Uint(data[8:12]))
+	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
 	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
 	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.SourcePort = uint8(bit.Uint(data[64:67]))
@@ -687,7 +688,7 @@ func DecodeUDTHeader(data [80]bit.Bit) (UDTHeader, fec.Result) {
 	result.ResponseRequested = data[1] == 1
 	result.Emergency = data[2] == 1
 	result.OptionFlag = data[3] == 1
-	result.SAP = uint8(bit.Uint(data[8:12]))
+	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
 	result.UDTFormat = uint8(bit.Uint(data[12:16]))
 	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
 	result.LLIDSource = uint32(bit.Uint(data[40:64]))
@@ -765,8 +766,8 @@ func DecodeProprietaryHeader(data [80]bit.Bit) (ProprietaryHeader, fec.Result) {
 	var result ProprietaryHeader
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.SAP = uint8(bit.Uint(data[0:4]))
-	result.MFID = uint8(bit.Uint(data[8:16]))
+	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[0:4]))
+	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	copy(result.ManufacturerData[:], bit.Pack(data[16:80]))
 	return result, fecResult
 }
@@ -778,6 +779,9 @@ func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("ProprietaryHeader.SAP: value %d does not fit in 4 bits", s.SAP)
 	}
 	bit.PutUint(data[0:4], uint64(s.SAP))
+	if uint64(s.MFID)>>8 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ProprietaryHeader.MFID: value %d does not fit in 8 bits", s.MFID)
+	}
 	bit.PutUint(data[8:16], uint64(s.MFID))
 	copy(data[16:80], bit.Unpack(s.ManufacturerData[:]))
 	bit.PutUint(data[4:8], uint64(FormatProprietary))

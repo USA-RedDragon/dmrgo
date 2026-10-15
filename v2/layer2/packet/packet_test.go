@@ -162,12 +162,12 @@ func llid(v uint32) [24]bit.Bit {
 
 func unconfirmed() pdu.DataHeader {
 	return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		SAP: uint8(pdu.ServiceAccessPointIDIPBasedPacketData), LLIDDestination: 3120002, LLIDSource: 3120001, FullMessage: true}}
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001, FullMessage: true}}
 }
 
 func confirmed() pdu.DataHeader {
 	return pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-		ResponseRequested: true, SAP: uint8(pdu.ServiceAccessPointIDIPBasedPacketData), LLIDDestination: 3120002,
+		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002,
 		LLIDSource: 3120001, FullMessageFlag: true, SendSequenceNumber: 5, FragmentSequenceNumber: 8}}
 }
 
@@ -264,7 +264,7 @@ func TestSegment_Errors(t *testing.T) {
 func TestSegment_ShortData(t *testing.T) {
 	for _, sarq := range []bool{false, true} {
 		h := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{
-			SAP: uint8(pdu.ServiceAccessPointIDShortData), LLIDDestination: 1, LLIDSource: 2, DefinedData: 2, SARQ: sarq, FullMessageFlag: true}}
+			SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, DefinedData: 2, SARQ: sarq, FullMessageFlag: true}}
 		p, err := packet.Segment(h, utf16le("hello"), enums.DataTypeRate12)
 		if err != nil {
 			t.Fatal(err)
@@ -441,7 +441,7 @@ func TestAssembler_Errors(t *testing.T) {
 
 func TestAssembler_ProprietaryHeader(t *testing.T) {
 	h := unconfirmed()
-	h.UnconfirmedDataHeader.SAP = uint8(pdu.ServiceAccessPointIDProprietaryPacketData)
+	h.UnconfirmedDataHeader.SAP = enums.SAPProprietaryPacketData
 	p, err := packet.Segment(h, payload(20), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)

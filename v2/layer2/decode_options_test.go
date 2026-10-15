@@ -212,9 +212,9 @@ func TestDecodeFromBytesWith_ColorCode(t *testing.T) {
 		var kind string
 		switch {
 		case (clean.Kind == layer2.KindData):
-			cc, kind = clean.SlotType.ColorCode, "data"
+			cc, kind = int(clean.SlotType.ColorCode), "data"
 		case clean.HasEmbeddedSignalling():
-			cc, kind = clean.EmbeddedSignalling.ColorCode, "EMB"
+			cc, kind = int(clean.EmbeddedSignalling.ColorCode), "EMB"
 		default:
 			kind = "voice A"
 		}

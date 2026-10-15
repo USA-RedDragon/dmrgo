@@ -120,18 +120,18 @@ type BSOutboundActivationPDU struct {
 
 // ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
 type UnitToUnitVoiceServiceRequestPDU struct {
-	ServiceOptions byte   `dmr:"bits:0-7"`
-	Reserved       byte   `dmr:"bits:8-15"`
-	TargetAddress  uint32 `dmr:"bits:16-39"`
-	SourceAddress  uint32 `dmr:"bits:40-63"`
+	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
+	Reserved       byte                  `dmr:"bits:8-15"`
+	TargetAddress  uint32                `dmr:"bits:16-39"`
+	SourceAddress  uint32                `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
 type UnitToUnitVoiceServiceAnswerResponsePDU struct {
-	ServiceOptions byte   `dmr:"bits:0-7"`
-	AnswerResponse byte   `dmr:"bits:8-15"`
-	TargetAddress  uint32 `dmr:"bits:16-39"`
-	SourceAddress  uint32 `dmr:"bits:40-63"`
+	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
+	AnswerResponse byte                  `dmr:"bits:8-15"`
+	TargetAddress  uint32                `dmr:"bits:16-39"`
+	SourceAddress  uint32                `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
@@ -445,11 +445,11 @@ const (
 // CSBKOpcode and FID do not select the payload field that is set. Put the
 // payload of a manufacturer FID or of opcode 0x38 in RawPayload.
 type CSBK struct {
-	LastBlock   bool       `dmr:"bit:0"`
-	ProtectFlag bool       `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode `dmr:"bits:2-7"`
-	FID         byte       `dmr:"bits:8-15"`
-	FEC         fec.Result `dmr:"-"`
+	LastBlock   bool               `dmr:"bit:0"`
+	ProtectFlag bool               `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode         `dmr:"bits:2-7"`
+	FID         enums.FeatureSetID `dmr:"bits:8-15"`
+	FEC         fec.Result         `dmr:"-"`
 	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
 	// Opcode0x38Unknown; layer2.Burst sets it from the SYNC pattern of the
 	// burst. It is a hint only: a network relay can rewrite the SYNC.
