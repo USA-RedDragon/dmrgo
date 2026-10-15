@@ -9,7 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ETSI TS 102 361-1 §7.1.4 — Short Link Control in CACH
+// ETSI TS 102 361-1 §7.1.4: Short Link Control in CACH
 //
 // A Short LC PDU is assembled from 4 consecutive CACH signalling payloads.
 // The LCSS field in each CACH's TACT indicates the fragment sequence:

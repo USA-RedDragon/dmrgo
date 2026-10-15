@@ -10,10 +10,6 @@ package constants
 
 import "time"
 
-// ── ETSI TS 102 361-2 Annex A: Timers and constants in DMR ──
-
-// ── A.1 Layer 3 timers ──
-
 // TAckWait is the recommended ACKWait timer (T_AckWait) for UU_Ans_Rsp. An
 // MS that transmits a CSBK and waits for a response from the target
 // retransmits the CSBK when this timer expires, if N_CSBKRetry allows. The
@@ -94,8 +90,6 @@ const TBSChanAuthSel = 240 * time.Millisecond
 // need a larger value (ETSI TS 102 361-2 clause A.1, clause 6.3).
 const TRCTimer = 600 * time.Millisecond
 
-// ── A.2 Layer 3 constants ──
-
 // NCSBKRetry is the recommended CSBK retry limit (N_CSBKRetry) for UU_V_Req.
 // The value is chosen by the MS designer and is application specific (ETSI
 // TS 102 361-2 clause A.2).
@@ -113,10 +107,6 @@ const BeaconInterval = 4*time.Minute + 30*time.Second
 // CTDuration is the minimum duration of a CT_CSBK_Req and CT_CSBK_Resp
 // transmission (ETSI TS 102 361-2 clause A.2).
 const CTDuration = 180 * time.Millisecond
-
-// ── ETSI TS 102 361-3 Annex A: PDP timers and constants in DMR ──
-
-// ── A.1 Layer 2 timers ──
 
 // TDataTxLimit is the recommended maximum Data Transmission Limit
 // (T_DataTxLmt): the time an MS attempts to transmit an unconfirmed data
@@ -147,17 +137,11 @@ const THoldoffMax = 2 * time.Second
 // 102 361-3 clause A.1).
 const TDataHangtime = 180 * time.Millisecond
 
-// ── A.2 Layer 2 constants ──
-
 // NRetryLimit is the recommended maximum Data Air Interface Retry Limit
 // (N_RtryLmt): the number of times the DLL transmits and attempts to receive
 // the confirmed data response from the target MS. The value is chosen by the
 // MS designer (ETSI TS 102 361-3 clause A.2).
 const NRetryLimit = 8
-
-// ── ETSI TS 102 361-4 Annex A: Timers, constants levels and addresses ──
-
-// ── A.1 Layer 3 timers ──
 
 // TRandTCDefault is the default Trand_TC, the timeout for an MS attempting
 // random access. The spec range is 2 s to 60 s, and this value is a library
@@ -308,8 +292,6 @@ const TALSRequestLifeSpanDefault = 5 * time.Second
 // library choice (ETSI TS 102 361-4 Table A.1).
 const TALSRetransmitDelayDefault = 1 * time.Second
 
-// ── A.2 Layer 3 constants ──
-
 // NDefaultNW is NDefault_NW, the NRand_Wait value an MS uses at switch on
 // (ETSI TS 102 361-4 Table A.6).
 const NDefaultNW = 5
@@ -349,8 +331,6 @@ const DMRLADefault = 1
 // The spec range is 2 to 10, and this value is a library choice (ETSI TS 102
 // 361-4 Table A.6).
 const VoteBlockDefault = 3
-
-// ── A.4 Tier III Gateways/Identifiers ──
 
 // The Tier III gateway addresses and identifiers. Address 0xFFFEC8 is
 // reserved (ETSI TS 102 361-4 Table A.8).

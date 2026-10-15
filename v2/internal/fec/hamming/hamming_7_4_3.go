@@ -39,7 +39,7 @@ func parity743(data [4]bit.Bit) [3]bit.Bit {
 
 // Decode743 decodes a 7-bit Hamming(7,4,3) codeword, correcting up to 1 bit error.
 // Returns the corrected codeword and a fec.Result.
-// Uses the generated hamming743_syndrome_table for syndrome→error-position lookup.
+// Uses the generated hamming743_syndrome_table for syndrome to error position lookup.
 func Decode743(bits [7]bit.Bit) ([7]bit.Bit, fec.Result) {
 	lowbit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 7}

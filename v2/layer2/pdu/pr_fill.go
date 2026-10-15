@@ -9,7 +9,7 @@ import (
 //
 // The PR FILL PDU is 96 bits of pre-defined pseudo-random data used for
 // idle messages (see §7.3 and Annex D). The exact bit values are specified
-// in Table D.2 — there is no runtime LFSR calculation. Implementations
+// in Table D.2; there is no runtime LFSR calculation. Implementations
 // use the literal constant from the table.
 //
 // In packed hex, I(95) first: FF 83 DF 17 32 09 4E D1 E7 CD 8A 91

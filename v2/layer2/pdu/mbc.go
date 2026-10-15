@@ -161,7 +161,6 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 	}
 }
 
-// ── Tier III MBC Continuation Types ──
 // These structs parse the 96-bit BPTC output of a continuation block
 // based on the MBC header's CSBKO. They are always last-blocks (LB=1)
 // that directly follow the header, so the generated decoder checks the

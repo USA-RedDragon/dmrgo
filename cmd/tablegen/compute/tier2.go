@@ -1,7 +1,5 @@
 package compute
 
-// ---- Tier 2: Depend on Tier 1 tables ----
-
 // ComputeTrellis34Transition computes the Trellis 3/4 state transition
 // look-up table by inverting the encoder state transition table.
 //

@@ -10,15 +10,15 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 — 9.1.5 Reverse Channel (RC) PDU
+// ETSI TS 102 361-1 clause 9.1.5 Reverse Channel (RC) PDU
 //
 // The RC PDU carries 11 information bits recovered from Single Burst
 // Variable Length BPTC (§B.2.2) with odd column parity.
 //
 // Layout (Table 9.6):
 //
-//	Bits 0–3:   RC information payload (4 bits)
-//	Bits 4–10:  CRC-7 with mask 0x7A (7 bits, per §B.3.13 / Table B.21)
+//	Bits 0 to 3:  RC information payload (4 bits)
+//	Bits 4 to 10: CRC-7 with mask 0x7A (7 bits, per §B.3.13 / Table B.21)
 //
 // The 4-bit RC payload is defined in TS 102 361-4 (trunking protocol).
 

@@ -132,7 +132,7 @@ func TestCACHBPTC_SingleBitErrorCorrection(t *testing.T) {
 
 func TestCACHBPTC_StabilityEncodeDecode(t *testing.T) {
 	t.Parallel()
-	// Encode → decode → encode should produce identical fragments
+	// Encode, decode and encode again should produce identical fragments
 	var info [36]bit.Bit
 	for i := range info {
 		info[i] = bit.Bit((i * 7) % 2)
@@ -146,7 +146,7 @@ func TestCACHBPTC_StabilityEncodeDecode(t *testing.T) {
 	fragments2 := bptc.EncodeCACH(decoded)
 
 	if fragments1 != fragments2 {
-		t.Error("encode→decode→encode produced different fragments")
+		t.Error("encode, decode, encode produced different fragments")
 	}
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// TS 102 361-1 Annex D — Idle and Null message bit definitions
+// TS 102 361-1 Annex D: Idle and Null message bit definitions
 
 // IdleMessageInfo returns a copy of the 96 information bits of the idle
 // message from Table D.2 of ETSI TS 102 361-1. It is the same value as

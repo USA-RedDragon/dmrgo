@@ -130,7 +130,7 @@ func TestDecodeServiceOptions_ReservedBits(t *testing.T) {
 }
 
 func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
-	// Test all 256 possible bit patterns for encode→decode stability
+	// Test all 256 possible bit patterns for decode and encode stability
 	for i := 0; i < 256; i++ {
 		b := byte(i)
 
@@ -145,7 +145,7 @@ func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
 		so := DecodeServiceOptions(bits)
 		encoded := must(so.Encode())
 		if encoded != bits {
-			t.Errorf("byte 0x%02X: encode→decode→encode mismatch: got %v, want %v", b, encoded, bits)
+			t.Errorf("byte 0x%02X: decode then encode mismatch: got %v, want %v", b, encoded, bits)
 		}
 	}
 }

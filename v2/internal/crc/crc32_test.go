@@ -40,7 +40,7 @@ func TestCRC32_Deterministic(t *testing.T) {
 
 func TestCRC32_ByteSwap(t *testing.T) {
 	// Verify byte-swapping within 16-bit words:
-	// [0x01, 0x02] with swap → [0x02, 0x01]
+	// [0x01, 0x02] with swap gives [0x02, 0x01]
 	// [0x02, 0x01] without swap should equal [0x01, 0x02] with swap
 	result1 := crc.CRC32([]byte{0x01, 0x02})
 
