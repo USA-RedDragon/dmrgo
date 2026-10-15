@@ -85,3 +85,19 @@ func TestBPTC19696_AcceptedOutputIsCodeword(t *testing.T) {
 		}
 	}
 }
+
+// TestBPTC19696_ColumnsFirstCorrection checks a 4-error pattern that row
+// decoding first turns into a wrong codeword and column decoding first
+// corrects.
+func TestBPTC19696_ColumnsFirstCorrection(t *testing.T) {
+	r := rand.New(rand.NewSource(11))
+	data, enc := randomBPTC19696(r)
+	for _, p := range []int{124, 128, 172, 173} {
+		enc[dm[p]] ^= 1
+	}
+	var b BPTC19696
+	got, res := b.DeinterleaveDataBits(enc)
+	if got != data || res.Uncorrectable || res.ErrorsCorrected != 4 {
+		t.Fatalf("data match=%v result=%+v", got == data, res)
+	}
+}

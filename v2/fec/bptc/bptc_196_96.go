@@ -54,28 +54,30 @@ func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, fec.FE
 	return temp, result
 }
 
-// hamming_correct iteratively corrects the BPTC(196,96) grid with the row
-// Hamming(15,11,3) and column Hamming(13,9,3) codes. The four column parity
+// hamming_correct iteratively corrects the BPTC(196,96) grid with the column
+// Hamming(13,9,3) and row Hamming(15,11,3) codes. The four column parity
 // rows are also row codewords, because the column code is applied to all 15
-// columns, so all 13 rows are row-decoded. It returns the corrected grid, the
-// number of bits that differ from the input, and whether any row or column
-// syndrome is still nonzero after correction.
+// columns, so all 13 rows are row-decoded. Each pass corrects the columns
+// first, as MMDVMHost does: with random errors this corrects more grids than
+// rows first and does not miscorrect more often. It returns the corrected
+// grid, the number of bits that differ from the input, and whether any row or
+// column syndrome is still nonzero after correction.
 func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
 	corrected := bits
 
 	for pass := 0; pass < 5; pass++ {
 		fixing := false
 
-		for r := 0; r < 13; r++ {
-			if bitPos := hamming15_11_syndrome_table[rowSyndrome(&corrected, r)]; bitPos != -1 {
-				corrected[r*15+1+bitPos] ^= 1 //nolint:gosec // r∈[0,12], bitPos∈[0,14], max idx=195 < 196
+		for c := 0; c < 15; c++ {
+			if bitPos := hamming13_9_syndrome_table[columnSyndrome(&corrected, c)]; bitPos != -1 {
+				corrected[(c+1)+(bitPos*15)] ^= 1 //nolint:gosec // c∈[0,14], bitPos∈[0,12], max idx=195 < 196
 				fixing = true
 			}
 		}
 
-		for c := 0; c < 15; c++ {
-			if bitPos := hamming13_9_syndrome_table[columnSyndrome(&corrected, c)]; bitPos != -1 {
-				corrected[(c+1)+(bitPos*15)] ^= 1 //nolint:gosec // c∈[0,14], bitPos∈[0,12], max idx=195 < 196
+		for r := 0; r < 13; r++ {
+			if bitPos := hamming15_11_syndrome_table[rowSyndrome(&corrected, r)]; bitPos != -1 {
+				corrected[r*15+1+bitPos] ^= 1 //nolint:gosec // r∈[0,12], bitPos∈[0,14], max idx=195 < 196
 				fixing = true
 			}
 		}

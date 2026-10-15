@@ -698,6 +698,7 @@ documents:
               - TestBPTC19696_EncodedGridIsProductCodeword
               - TestBPTC19696_AllDoubleErrorsCorrected
               - TestBPTC19696_AcceptedOutputIsCodeword
+              - TestBPTC19696_ColumnsFirstCorrection
 
       - section: "B.2.1"
         title: "Variable length BPTC for embedded signalling"
