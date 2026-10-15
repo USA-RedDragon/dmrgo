@@ -1,6 +1,7 @@
 package layer2_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
@@ -30,6 +31,27 @@ func buildValidShortLCFragments(slco byte, data [24]bit.Bit) [4][17]bit.Bit {
 	return bptc.EncodeCACHBPTC(bits)
 }
 
+//nolint:gochecknoglobals
+var shortLCSequence = [4]enums.LCSS{
+	enums.FirstFragmentLC,
+	enums.ContinuationFragmentLCorCSBK,
+	enums.ContinuationFragmentLCorCSBK,
+	enums.LastFragmentLCorCSBK,
+}
+
+func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4][17]bit.Bit) {
+	t.Helper()
+	for i := range fragments {
+		ready, err := a.AddFragment(shortLCSequence[i], fragments[i])
+		if err != nil {
+			t.Fatalf("fragment %d: %v", i, err)
+		}
+		if ready != (i == 3) {
+			t.Fatalf("fragment %d: ready=%v", i, ready)
+		}
+	}
+}
+
 func TestShortLCAssembler_Lifecycle(t *testing.T) {
 	t.Parallel()
 	var a layer2.ShortLCAssembler
@@ -40,7 +62,10 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 
 	var payload [layer2.CACHPayloadBits]bit.Bit
 	for i := 0; i < 3; i++ {
-		ready := a.AddFragment(payload)
+		ready, err := a.AddFragment(shortLCSequence[i], payload)
+		if err != nil {
+			t.Fatalf("fragment %d: %v", i, err)
+		}
 		if ready {
 			t.Errorf("should not be ready after %d fragments", i+1)
 		}
@@ -49,7 +74,10 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 		}
 	}
 
-	ready := a.AddFragment(payload)
+	ready, err := a.AddFragment(enums.LastFragmentLCorCSBK, payload)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !ready {
 		t.Error("should be ready after 4 fragments")
 	}
@@ -61,6 +89,96 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 	if a.Count() != 0 {
 		t.Errorf("count should be 0 after reset, got %d", a.Count())
 	}
+	if _, _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
+		t.Errorf("Complete after Reset: got %v, want ErrShortLCIncomplete", err)
+	}
+}
+
+func TestShortLCAssembler_RejectsBadSequence(t *testing.T) {
+	t.Parallel()
+	first := enums.FirstFragmentLC
+	cont := enums.ContinuationFragmentLCorCSBK
+	last := enums.LastFragmentLCorCSBK
+	single := enums.SingleFragmentLCorCSBK
+
+	tests := []struct {
+		name string
+		seq  []enums.LCSS
+	}{
+		{"ContinuationWithoutFirst", []enums.LCSS{cont}},
+		{"LastWithoutFirst", []enums.LCSS{last}},
+		{"LastAfterFirst", []enums.LCSS{first, last}},
+		{"LastAfterOneContinuation", []enums.LCSS{first, cont, last}},
+		{"ThirdContinuation", []enums.LCSS{first, cont, cont, cont}},
+		{"SingleFragment", []enums.LCSS{single}},
+		{"SingleFragmentMidSequence", []enums.LCSS{first, cont, single}},
+		{"ContinuationAfterLast", []enums.LCSS{first, cont, cont, last, cont}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var a layer2.ShortLCAssembler
+			var payload [layer2.CACHPayloadBits]bit.Bit
+			var err error
+			for _, lcss := range tt.seq {
+				_, err = a.AddFragment(lcss, payload)
+			}
+			if !errors.Is(err, layer2.ErrShortLCSequence) {
+				t.Fatalf("last AddFragment: got %v, want ErrShortLCSequence", err)
+			}
+			if a.Count() != 0 {
+				t.Errorf("count after bad fragment: got %d, want 0", a.Count())
+			}
+			if _, _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
+				t.Errorf("Complete: got %v, want ErrShortLCIncomplete", err)
+			}
+		})
+	}
+}
+
+func TestShortLCAssembler_FirstRestartsSequence(t *testing.T) {
+	t.Parallel()
+	var garbage [layer2.CACHPayloadBits]bit.Bit
+	for i := range garbage {
+		garbage[i] = 1
+	}
+	var data [24]bit.Bit
+	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
+
+	var a layer2.ShortLCAssembler
+	if _, err := a.AddFragment(enums.FirstFragmentLC, garbage); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.AddFragment(enums.ContinuationFragmentLCorCSBK, garbage); err != nil {
+		t.Fatal(err)
+	}
+	addShortLCFragments(t, &a, fragments)
+
+	slc, fecResult, err := a.Complete()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
+		t.Fatalf("unexpected FEC result %+v", fecResult)
+	}
+	if slc.SLCO != enums.SLCONullMessage {
+		t.Errorf("expected SLCONullMessage, got %d", slc.SLCO)
+	}
+}
+
+func TestShortLCAssembler_CompleteIncomplete(t *testing.T) {
+	t.Parallel()
+	var a layer2.ShortLCAssembler
+	var payload [layer2.CACHPayloadBits]bit.Bit
+	for i := 0; i < 3; i++ {
+		if _, err := a.AddFragment(shortLCSequence[i], payload); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
+			t.Errorf("Complete with %d fragments: got %v, want ErrShortLCIncomplete", i+1, err)
+		}
+	}
 }
 
 func TestShortLCAssembler_Complete_NullMessage(t *testing.T) {
@@ -69,11 +187,12 @@ func TestShortLCAssembler_Complete_NullMessage(t *testing.T) {
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
 	var a layer2.ShortLCAssembler
-	for i := range fragments {
-		a.AddFragment(fragments[i])
-	}
+	addShortLCFragments(t, &a, fragments)
 
-	slc, fecResult := a.Complete()
+	slc, fecResult, err := a.Complete()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
@@ -99,11 +218,12 @@ func TestShortLCAssembler_Complete_ActivityUpdate(t *testing.T) {
 	fragments := buildValidShortLCFragments(byte(enums.SLCOActivityUpdate), data)
 
 	var a layer2.ShortLCAssembler
-	for i := range fragments {
-		a.AddFragment(fragments[i])
-	}
+	addShortLCFragments(t, &a, fragments)
 
-	slc, fecResult := a.Complete()
+	slc, fecResult, err := a.Complete()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
@@ -191,24 +311,5 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	// The FEC on the ShortLC struct should match the returned FEC
 	if slc.FEC.BitsChecked != fecResult.BitsChecked {
 		t.Errorf("ShortLC.FEC.BitsChecked mismatch: got %d, want %d", slc.FEC.BitsChecked, fecResult.BitsChecked)
-	}
-}
-
-func TestShortLCAssembler_AddFragment_OverflowReturnsReady(t *testing.T) {
-	t.Parallel()
-	var a layer2.ShortLCAssembler
-	var payload [layer2.CACHPayloadBits]bit.Bit
-
-	for i := 0; i < 4; i++ {
-		a.AddFragment(payload)
-	}
-
-	// A 5th add should still return true (already full)
-	if !a.AddFragment(payload) {
-		t.Error("5th AddFragment should return true (already full)")
-	}
-	// Count should stay at 4
-	if a.Count() != 4 {
-		t.Errorf("count should stay at 4, got %d", a.Count())
 	}
 }

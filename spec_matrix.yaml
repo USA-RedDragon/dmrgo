@@ -150,7 +150,9 @@ documents:
               - TestShortLCAssembler_DecodeShortLCFromFragments
               - TestShortLCAssembler_RoundTrip_EncodeShortLC
               - TestShortLCAssembler_CombinedFEC
-              - TestShortLCAssembler_AddFragment_OverflowReturnsReady
+              - TestShortLCAssembler_RejectsBadSequence
+              - TestShortLCAssembler_FirstRestartsSequence
+              - TestShortLCAssembler_CompleteIncomplete
 
       - section: "7.2.1"
         title: "Control Signalling BlocK (CSBK)"

@@ -1,7 +1,10 @@
 package layer2
 
 import (
+	"errors"
+
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -15,8 +18,21 @@ import (
 //   - LCSS=11: Continuation fragment (×2)
 //   - LCSS=10: Last fragment
 //
+// LCSS=00 is not used: there is no single fragment LC for CACH signalling
+// (Table 9.20 note).
+//
 // The 4 × 17-bit payloads form the BPTC transmit matrix, which is
 // deinterleaved and FEC-decoded to recover the 36-bit Short LC PDU.
+
+var (
+	// ErrShortLCSequence is returned by ShortLCAssembler.AddFragment when a
+	// CACH fragment arrives out of sequence or has an LCSS that is not valid
+	// for Short LC. The partial Short LC is discarded.
+	ErrShortLCSequence = errors.New("short LC fragment out of sequence")
+	// ErrShortLCIncomplete is returned by ShortLCAssembler.Complete when the
+	// assembler does not hold 4 fragments in sequence.
+	ErrShortLCIncomplete = errors.New("short LC needs 4 fragments in sequence")
+)
 
 // ShortLCAssembler accumulates 4 CACH signalling payloads and decodes
 // the assembled Short LC PDU.
@@ -27,6 +43,7 @@ type ShortLCAssembler struct {
 
 // Reset clears the assembler state for reuse.
 func (a *ShortLCAssembler) Reset() {
+	a.fragments = [4][CACHPayloadBits]bit.Bit{}
 	a.count = 0
 }
 
@@ -35,25 +52,51 @@ func (a *ShortLCAssembler) Count() int {
 	return a.count
 }
 
-// AddFragment appends a 17-bit CACH signalling payload to the assembler.
-// Returns true when 4 fragments have been collected and the assembler
-// is ready for Complete().
-func (a *ShortLCAssembler) AddFragment(payload [CACHPayloadBits]bit.Bit) bool {
-	if a.count >= 4 {
-		// Already full — caller should have called Complete() or Reset()
-		return true
+// AddFragment adds a 17-bit CACH signalling payload with the LCSS from the
+// same CACH burst's TACT. A First fragment always starts a new Short LC.
+// Continuation fragments must follow the First or the first Continuation,
+// and a Last fragment must follow two Continuations. Any other LCSS or order
+// discards the partial Short LC and returns ErrShortLCSequence.
+//
+// Returns true when the Last fragment completes the sequence and the
+// assembler is ready for Complete().
+func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [CACHPayloadBits]bit.Bit) (bool, error) {
+	switch lcss {
+	case enums.FirstFragmentLC:
+		a.Reset()
+	case enums.ContinuationFragmentLCorCSBK:
+		if a.count != 1 && a.count != 2 {
+			a.Reset()
+			return false, ErrShortLCSequence
+		}
+	case enums.LastFragmentLCorCSBK:
+		if a.count != 3 {
+			a.Reset()
+			return false, ErrShortLCSequence
+		}
+	case enums.SingleFragmentLCorCSBK:
+		a.Reset()
+		return false, ErrShortLCSequence
+	default:
+		a.Reset()
+		return false, ErrShortLCSequence
 	}
 	a.fragments[a.count] = payload
 	a.count++
-	return a.count >= 4
+	return a.count == 4, nil
 }
 
 // Complete decodes the assembled Short LC PDU from the 4 accumulated
 // fragments. Returns the decoded ShortLC and a combined FEC result
-// covering both BPTC FEC and CRC-8 verification.
+// covering both BPTC FEC and CRC-8 verification. Returns
+// ErrShortLCIncomplete if the assembler does not hold a full sequence.
 //
 // The assembler is NOT automatically reset — call Reset() to reuse.
-func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.FECResult) {
+func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.FECResult, error) {
+	if a.count != 4 {
+		return pdu.ShortLC{}, fec.FECResult{}, ErrShortLCIncomplete
+	}
+
 	// Decode BPTC to recover the 36-bit Short LC PDU
 	info, bptcResult := bptc.DecodeCACHBPTC(a.fragments)
 
@@ -70,15 +113,16 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.FECResult) {
 	}
 	slc.FEC = combined
 
-	return slc, combined
+	return slc, combined, nil
 }
 
 // DecodeShortLCFromFragments is a convenience function that decodes a
-// Short LC PDU directly from 4 × 17-bit CACH signalling payloads.
+// Short LC PDU directly from 4 × 17-bit CACH signalling payloads, given in
+// the order First, two Continuations, Last.
 func DecodeShortLCFromFragments(fragments [4][CACHPayloadBits]bit.Bit) (pdu.ShortLC, fec.FECResult) {
 	var a ShortLCAssembler
-	for i := range fragments {
-		a.AddFragment(fragments[i])
-	}
-	return a.Complete()
+	a.fragments = fragments
+	a.count = len(fragments)
+	slc, result, _ := a.Complete()
+	return slc, result
 }
