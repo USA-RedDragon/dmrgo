@@ -10,4 +10,7 @@ var (
 	// ErrTalkerAliasLength is returned when an alias does not fit in a
 	// header and three blocks.
 	ErrTalkerAliasLength = errors.New("talker alias too long")
+	// ErrTalkerAliasInvalidUTF8 is returned when the Code Units of a UTF-8
+	// talker alias are not valid UTF-8.
+	ErrTalkerAliasInvalidUTF8 = errors.New("talker alias is not valid UTF-8")
 )
