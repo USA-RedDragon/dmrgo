@@ -231,10 +231,40 @@ func FromHackRF(b []byte) []complex128 {
 	return out
 }
 
+// channelize removes the receiver's DC offset and resamples x from rate to the
+// baseband rate. A boxcar to four times the baseband rate folds only noise
+// from near its nulls into the channel; a FIR low-pass then removes the rest
+// of the out-of-channel noise before the final decimation.
+func channelize(x []complex128, rate float64) []complex128 {
+	var dc complex128
+	for _, v := range x {
+		dc += v
+	}
+	if len(x) > 0 {
+		dc /= complex(float64(len(x)), 0)
+	}
+	y := make([]complex128, len(x))
+	for i, v := range x {
+		y[i] = v - dc
+	}
+	const over = 4
+	mid := boxcar(y, rate, over*basebandRate)
+	f := firLowpass(mid, 8000.0/(over*basebandRate), 127)
+	out := make([]complex128, len(f)/over)
+	for i := range out {
+		out[i] = f[i*over]
+	}
+	return out
+}
+
 // decimate low-pass filters with a boxcar and resamples x from rate to the
 // baseband rate.
 func decimate(x []complex128, rate float64) []complex128 {
-	ratio := rate / basebandRate
+	return boxcar(x, rate, basebandRate)
+}
+
+func boxcar(x []complex128, rate, to float64) []complex128 {
+	ratio := rate / to
 	n := int(float64(len(x)) / ratio)
 	out := make([]complex128, n)
 	for i := range n {
@@ -250,13 +280,17 @@ func decimate(x []complex128, rate float64) []complex128 {
 }
 
 func lowpass(x []complex128, cutoff float64) []complex128 {
-	const taps = 63
+	return firLowpass(x, cutoff/basebandRate, 63)
+}
+
+// firLowpass applies a Hamming-windowed sinc low-pass with cutoff fc as a
+// fraction of the sample rate.
+func firLowpass(x []complex128, fc float64, taps int) []complex128 {
 	h := make([]float64, taps)
-	fc := cutoff / basebandRate
 	var sum float64
 	for i := range h {
 		m := float64(i - taps/2)
-		w := 0.54 - 0.46*math.Cos(2*math.Pi*float64(i)/(taps-1))
+		w := 0.54 - 0.46*math.Cos(2*math.Pi*float64(i)/float64(taps-1))
 		if m == 0 {
 			h[i] = 2 * fc
 		} else {
@@ -342,7 +376,7 @@ type Demodulated struct {
 
 // Demodulate recovers DMR bursts from complex samples at rate.
 func Demodulate(x []complex128, rate float64) Demodulated {
-	bb := decimate(x, rate)
+	bb := channelize(x, rate)
 	pw := power(bb)
 	var peak float64
 	for _, v := range pw {
