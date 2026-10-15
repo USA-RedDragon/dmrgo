@@ -130,7 +130,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §9.1.6 | Full Link Control (FULL LC) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/full_link_control.go` |
 | §9.1.7 | Short Link Control (SHORT LC) PDU | ✅ verified | 14/14 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/crc/crc8.go` |
 | §9.1.8 | Control Signalling Block (CSBK) PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
-| §9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | ✅ verified | 8/8 passed | `v2/layer2/pdu/pr_fill.go` |
+| §9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | ✅ verified | 9/9 passed | `v2/layer2/pdu/pr_fill.go` |
 | §9.2.2 | Rate ¾ coded packet Data (R_3_4_DATA) PDU | ✅ verified | 10/10 passed | `v2/layer2/pdu/rate34_data.go`, `v2/layer2/pdu/confirmed_block.go` |
 | §9.2.6 | Unconfirmed data packet Header (U_HEAD) PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §9.2.7 | Rate ½ coded packet Data (R_1_2_DATA) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/rate12_data.go`, `v2/layer2/pdu/confirmed_block.go` |
@@ -169,7 +169,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §B.3.12 | Data Type CRC Mask | ✅ verified | 16/16 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/mmdvmhost.go` |
 | §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
 | §B.4 | Interleaving | ✅ verified | 8/8 passed | `v2/layer2/cach_interleave.go` |
-| §D | Idle and Null message bit definition | ✅ verified | 14/14 passed | `v2/layer2/idle.go` |
+| §D | Idle and Null message bit definition | ✅ verified | 10/10 passed | `v2/layer2/idle.go` |
 | §E | Transmit bit order | ✅ verified | 11/11 passed | `v2/layer2/transmit_order.go` |
 
 ### ETSI TS 102 361-2 — DMR Voice and Generic Services and Facilities
@@ -257,7 +257,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | §7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | ✅ verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/elements/cdef_parms.go` |
 | §7.1.2 | Short Link Control PDUs | ✅ verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go` |
 | §7.2 | Layer 3 Information Element Coding | ✅ verified | 6/6 passed | `v2/layer3/elements/cdef_parms.go`, `v2/enums/announcement_type.go` |
-| §A | Timers, constants levels and addresses | ✅ verified | 3/3 passed | `v2/constants/constants.go` |
+| §A | Timers, constants levels and addresses | ✅ verified | 5/5 passed | `v2/constants/constants.go` |
 | §B.1 | CSBK/MBC/UDT Opcode List | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §B.2 | Short Link Control Opcode List | ✅ verified | 1/1 passed | `v2/enums/slco.go` |
 
