@@ -85,6 +85,18 @@ func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
 		t.Errorf("target/source = %d/%d, want 9990/3191868", flc.UnitToUnit.TargetAddress, flc.UnitToUnit.SourceAddress)
 	}
 }
+
+// Depends on a correct RS(12,9) decoder: a wrong mask leaves three bad
+// parity bytes, which RS(12,9) cannot correct.
+func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
+	for _, dt := range []elements.DataType{elements.DataTypeTerminatorWithLC, elements.DataTypePIHeader} {
+		_, fecResult := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), dt)
+		if !fecResult.Uncorrectable && fecResult.ErrorsCorrected == 0 {
+			t.Errorf("%s: FEC = %+v, want an RS failure", elements.DataTypeToName(dt), fecResult)
+		}
+	}
+}
+
 // Depends on a correct RS(12,9) encoder.
 func TestFLC_EncodeRealVoiceLCHeader(t *testing.T) {
 	want := hexBits96(t, realVoiceLCHeader)

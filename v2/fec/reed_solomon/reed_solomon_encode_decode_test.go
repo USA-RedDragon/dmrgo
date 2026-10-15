@@ -68,24 +68,99 @@ func TestSyndromeDetectsCorruption(t *testing.T) {
 	}
 }
 
-func TestDecodeChecksumByteErrorCorrection(t *testing.T) {
-	// All-zero codeword is valid
-	data := make([]byte, RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
-
-	// Corrupt one checksum byte
-	corrupted := make([]byte, len(data))
-	copy(corrupted, data)
-	corrupted[RS_12_9_DATASIZE] = 0xFF
-
-	result := Decode(corrupted)
-	if result.Uncorrectable {
-		t.Error("Single checksum byte error should be correctable")
+func TestDecodeTableB18Codewords(t *testing.T) {
+	table := tableB18Parity()
+	for row := 0; row < RS_12_9_DATASIZE; row++ {
+		cw := make([]byte, RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
+		cw[row] = 0x01
+		copy(cw[RS_12_9_DATASIZE:], table[row][:])
+		result := Decode(cw)
+		if result.Uncorrectable || result.ErrorsFound != 0 {
+			t.Errorf("row %d: Uncorrectable=%v ErrorsFound=%d, want clean", row, result.Uncorrectable, result.ErrorsFound)
+		}
+		if string(result.Data) != string(cw[:RS_12_9_DATASIZE]) {
+			t.Errorf("row %d: data % X, want % X", row, result.Data, cw[:RS_12_9_DATASIZE])
+		}
 	}
+}
 
-	// Verify data is still correct
-	for j := 0; j < RS_12_9_DATASIZE; j++ {
-		if result.Data[j] != 0 {
-			t.Errorf("corrected[%d] = 0x%02X, want 0x00", j, result.Data[j])
+func TestDecodeSingleSymbolErrorAllPositions(t *testing.T) {
+	r := rand.New(rand.NewSource(2))
+	var ws DecodeWorkspace
+	var dst [RS_12_9_DATASIZE]byte
+	for n := 0; n < 8; n++ {
+		data := make([]byte, RS_12_9_DATASIZE)
+		r.Read(data)
+		cw, err := Encode(data)
+		if err != nil {
+			t.Fatalf("Encode failed: %v", err)
+		}
+		for pos := 0; pos < len(cw); pos++ {
+			for e := 1; e < 256; e++ {
+				rx := append([]byte(nil), cw...)
+				rx[pos] ^= byte(e)
+				for _, result := range []DecodeResult{Decode(rx), DecodeInto(rx, dst[:], &ws)} {
+					if result.Uncorrectable || result.ErrorsFound != 1 || string(result.Data) != string(data) {
+						t.Fatalf("pos %d err 0x%02X: Uncorrectable=%v ErrorsFound=%d data % X, want % X",
+							pos, e, result.Uncorrectable, result.ErrorsFound, result.Data, data)
+					}
+				}
+			}
+		}
+	}
+}
+
+func TestDecodeDoubleSymbolErrorsDetected(t *testing.T) {
+	r := rand.New(rand.NewSource(3))
+	for n := 0; n < 50000; n++ {
+		data := make([]byte, RS_12_9_DATASIZE)
+		r.Read(data)
+		cw, err := Encode(data)
+		if err != nil {
+			t.Fatalf("Encode failed: %v", err)
+		}
+		rx := append([]byte(nil), cw...)
+		for _, p := range r.Perm(len(cw))[:2] {
+			rx[p] ^= byte(r.Intn(255) + 1)
+		}
+		if result := Decode(rx); !result.Uncorrectable {
+			t.Fatalf("rx % X (sent % X): two symbol errors not flagged, ErrorsFound=%d", rx, cw, result.ErrorsFound)
+		}
+	}
+}
+
+func TestDecodeTripleSymbolErrorsNeverInvalid(t *testing.T) {
+	r := rand.New(rand.NewSource(4))
+	for n := 0; n < 50000; n++ {
+		data := make([]byte, RS_12_9_DATASIZE)
+		r.Read(data)
+		cw, err := Encode(data)
+		if err != nil {
+			t.Fatalf("Encode failed: %v", err)
+		}
+		rx := append([]byte(nil), cw...)
+		for _, p := range r.Perm(len(cw))[:3] {
+			rx[p] ^= byte(r.Intn(255) + 1)
+		}
+		result := Decode(rx)
+		if result.Uncorrectable {
+			continue
+		}
+		if result.ErrorsFound != 1 {
+			t.Fatalf("rx % X: accepted with ErrorsFound=%d", rx, result.ErrorsFound)
+		}
+		reencoded, err := Encode(result.Data)
+		if err != nil {
+			t.Fatalf("Encode failed: %v", err)
+		}
+		diff := 0
+		for i := range rx {
+			if rx[i] != reencoded[i] {
+				diff++
+			}
+		}
+		if diff != 1 {
+			t.Fatalf("rx % X: accepted codeword at distance %d", rx, diff)
 		}
 	}
 }

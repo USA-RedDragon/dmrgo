@@ -809,7 +809,10 @@ documents:
               - TestReedSolomon1294CheckSyndromeWithErrors
               - TestEncodeDecodeRoundTrip
               - TestSyndromeDetectsCorruption
-              - TestDecodeChecksumByteErrorCorrection
+              - TestDecodeTableB18Codewords
+              - TestDecodeSingleSymbolErrorAllPositions
+              - TestDecodeDoubleSymbolErrorsDetected
+              - TestDecodeTripleSymbolErrorsNeverInvalid
               - TestEncodeTableB18Rows
               - TestEncodeMatchesGeneratorMatrix
               - TestEncodeKnownVector

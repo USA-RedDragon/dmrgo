@@ -273,7 +273,7 @@ func ReedSolomon1294MulPolyZ(poly *ReedSolomon1294) {
 func ReedSolomon1294CalcDiscrepancy(locator, syndrome *ReedSolomon1294, lVal, n uint8) uint8 {
 	var i, sum uint8
 
-	for i = 0; i < lVal; i++ {
+	for i = 0; i <= lVal && i <= n; i++ {
 		sum ^= ReedSolomon1294GaloisMul(locator[i], syndrome[n-i])
 	}
 
@@ -296,53 +296,58 @@ func ReedSolomon1294CorrectWithWorkspace(data []byte, syndrome *ReedSolomon1294,
 		ws = &DecodeWorkspace{}
 	}
 
-	ReedSolomon1294CalcWithScratch(syndrome, &ws.locator, &ws.evaluator, ws.psi2[:], ws.product[:], ws.tmp[:])
-	roots := ReedSolomon1294FindRootsInto(&ws.locator, ws.roots[:0])
-	errorsFound := len(roots)
-
-	if errorsFound == 0 {
+	if !ReedSolomon1294CheckSyndrome(syndrome) {
 		return 0, nil
 	}
 
-	// Error correction is done using the error-evaluator equation on pp 207.
-	if errorsFound > 0 && errorsFound < RS_12_9_CHECKSUMSIZE {
-		// First check for illegal error locations.
-		for r := 0; r < errorsFound; r++ {
-			if roots[r] >= RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE {
-				return errorsFound, errors.New("fec/rs_12_9: errors can't be corrected")
-			}
+	ReedSolomon1294CalcWithScratch(syndrome, &ws.locator, &ws.evaluator, ws.psi2[:], ws.product[:], ws.tmp[:])
+
+	// With d=4 the code corrects one symbol error, so only a degree-1 locator
+	// with one root inside the shortened codeword is acceptable.
+	if ws.locator[1] == 0 {
+		return 0, errUncorrectable
+	}
+	for j := 2; j < RS_12_9_POLY_MAXDEG; j++ {
+		if ws.locator[j] != 0 {
+			return 0, errUncorrectable
 		}
+	}
+	roots := ReedSolomon1294FindRootsInto(&ws.locator, ws.roots[:0])
+	if len(roots) != 1 || roots[0] >= RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE {
+		return 0, errUncorrectable
+	}
+	i := roots[0]
 
-		// Evaluates rs_12_9_error_evaluator_poly/rs_12_9_error_locator_poly' at the roots
-		// alpha^(-i) for error locs i.
-		for r := 0; r < errorsFound; r++ {
-			i := roots[r]
-
-			var num, denom uint8
-			// Evaluate rs_12_9_error_evaluator_poly at alpha^(-i)
-			for j := 0; j < RS_12_9_POLY_MAXDEG; j++ {
-				idx := (255 - int(i)) * j % 255
-				num ^= ReedSolomon1294GaloisMul(ws.evaluator[j], galois_exp_table[idx])
-			}
-
-			// Evaluate rs_12_9_error_evaluator_poly' (derivative) at alpha^(-i). All odd powers disappear.
-			for j := 1; j < RS_12_9_POLY_MAXDEG; j += 2 {
-				idx := (255 - int(i)) * (j - 1) % 255
-				denom ^= ReedSolomon1294GaloisMul(ws.locator[j], galois_exp_table[idx])
-			}
-
-			inv, ok := ReedSolomon1294GaloisInv(denom)
-			if !ok {
-				return errorsFound, errors.New("fec/rs_12_9: errors can't be corrected")
-			}
-			data[len(data)-int(i)-1] ^= ReedSolomon1294GaloisMul(num, inv)
-		}
-
-		return errorsFound, nil
+	// Forney: the error value is the evaluator over the locator derivative,
+	// both evaluated at alpha^(-i).
+	var num, denom uint8
+	for j := 0; j < RS_12_9_POLY_MAXDEG; j++ {
+		idx := (255 - int(i)) * j % 255
+		num ^= ReedSolomon1294GaloisMul(ws.evaluator[j], galois_exp_table[idx])
+	}
+	for j := 1; j < RS_12_9_POLY_MAXDEG; j += 2 {
+		idx := (255 - int(i)) * (j - 1) % 255
+		denom ^= ReedSolomon1294GaloisMul(ws.locator[j], galois_exp_table[idx])
+	}
+	inv, ok := ReedSolomon1294GaloisInv(denom)
+	if !ok || num == 0 {
+		return 0, errUncorrectable
 	}
 
-	return 0, nil
+	pos := len(data) - int(i) - 1
+	value := ReedSolomon1294GaloisMul(num, inv)
+	data[pos] ^= value
+
+	var check ReedSolomon1294
+	if err := ReedSolomon1294CalcSyndrome(data, &check); err != nil || ReedSolomon1294CheckSyndrome(&check) {
+		data[pos] ^= value
+		return 0, errUncorrectable
+	}
+
+	return 1, nil
 }
+
+var errUncorrectable = errors.New("fec/rs_12_9: errors can't be corrected")
 
 // The error-locator polynomial's roots are found by looking for the values of a^n where
 // evaluating the polynomial yields zero (evaluating rs_12_9_error_locator_poly at
