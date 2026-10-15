@@ -306,7 +306,7 @@ func (b *Burst) isEmbeddedDataBurst() bool {
 		return false
 	}
 	st := parseSlotType(b.bitData)
-	if st.FEC.Uncorrectable || st.FEC.ErrorsCorrected > embeddedDataMaxSlotTypeErrors || !isBPTCDataType(st.DataType) {
+	if st.FEC.Uncorrectable || st.FEC.ErrorsCorrected > embeddedDataMaxSlotTypeErrors || !st.DataType.IsBPTC() {
 		return false
 	}
 	if emb, _ := parseEmbedded(b.bitData); emb.FEC.Uncorrectable || emb.ColorCode != st.ColorCode {
@@ -508,28 +508,6 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType enums.DataType) (int, f
 	default:
 		copy(b.deinterleavedInfoBits[:], bits[:])
 		return len(bits), fec.Result{}
-	}
-}
-
-// isBPTCDataType reports whether bursts of dataType carry 96 information
-// bits coded with BPTC(196,96).
-func isBPTCDataType(dataType enums.DataType) bool {
-	switch dataType {
-	case enums.DataTypePIHeader,
-		enums.DataTypeVoiceLCHeader,
-		enums.DataTypeTerminatorWithLC,
-		enums.DataTypeCSBK,
-		enums.DataTypeMBCHeader,
-		enums.DataTypeMBCContinuation,
-		enums.DataTypeDataHeader,
-		enums.DataTypeRate12,
-		enums.DataTypeIdle,
-		enums.DataTypeUnifiedSingleBlock:
-		return true
-	case enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeReserved:
-		return false
-	default:
-		return false
 	}
 }
 
@@ -780,7 +758,7 @@ func infoBitsLen(dataType enums.DataType) int {
 		return 144
 	case dataType == enums.DataTypeRate1:
 		return 192
-	case isBPTCDataType(dataType):
+	case dataType.IsBPTC():
 		return 96
 	default:
 		return 0
@@ -808,7 +786,7 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 		copy(bits[:96], info[:96])
 		copy(bits[100:], info[96:192])
 		return bits, nil
-	case isBPTCDataType(dt):
+	case dt.IsBPTC():
 		var infoBits [96]bit.Bit
 		copy(infoBits[:], info[:96])
 		return bptc.Encode196WithReserved(infoBits, b.BPTCReserved), nil
