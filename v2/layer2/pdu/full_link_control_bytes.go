@@ -27,6 +27,26 @@ func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 	return f, nil
 }
 
+// DecodeFullLinkControlBytesInto decodes lc into dst as
+// DecodeFullLinkControlBytes does, with the payload in p as
+// DecodeFullLinkControlInto has it. It returns the errors of
+// DecodeFullLinkControlBytes and sets dst to the zero value on an error.
+func DecodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayloads, lc [9]byte) error {
+	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
+	DecodeFullLinkControlInto(dst, p, bit.Unpack96(cw), enums.DataTypeVoiceLCHeader)
+	dst.BurstDataType = 0
+	dst.FEC = fec.Result{}
+	got, err := dst.Bytes()
+	if err == nil && got != lc {
+		err = fmt.Errorf("full LC %x encodes back as %x", lc, got)
+	}
+	if err != nil {
+		*dst = FullLinkControl{}
+		return err
+	}
+	return nil
+}
+
 // Codeword returns the 12-octet on-air codeword of s in a burst of
 // s.BurstDataType, as LCBytes.Codeword gives it. It returns the errors that
 // Encode returns for the fields, and an error unless BurstDataType is
