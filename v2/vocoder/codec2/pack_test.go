@@ -57,7 +57,8 @@ func TestPackSlotLayout(t *testing.T) {
 			if got != want {
 				t.Fatalf("packSlot = %v, want %v", got, want)
 			}
-			back := unpackSlot(got, len(tt.frame))
+			back := make([]byte, len(tt.frame))
+			unpackSlot(back, got)
 			if string(back) != string(tt.frame) {
 				t.Fatalf("unpackSlot = %x, want %x", back, tt.frame)
 			}
@@ -73,7 +74,8 @@ func TestUnpackSlotIgnoresPadBits(t *testing.T) {
 	for i := 48; i < 72; i++ {
 		slot[i] = 1
 	}
-	if got := unpackSlot(slot, 6); string(got) != string(frame) {
+	got := make([]byte, 6)
+	if unpackSlot(got, slot); string(got) != string(frame) {
 		t.Fatalf("unpackSlot = %x, want %x", got, frame)
 	}
 }
@@ -109,7 +111,8 @@ func TestQRadioLinkBurstLayout(t *testing.T) {
 		if want := packSlot(f); got != want {
 			t.Errorf("frame %d: burst bits %v, want %v", i, got, want)
 		}
-		if back := unpackSlot(got, 6); string(back) != string(f) {
+		back := make([]byte, 6)
+		if unpackSlot(back, got); string(back) != string(f) {
 			t.Errorf("frame %d: unpacked %x, want %x", i, back, f)
 		}
 	}

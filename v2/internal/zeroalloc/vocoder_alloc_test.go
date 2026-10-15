@@ -2,11 +2,14 @@ package zeroalloc_test
 
 import (
 	"encoding/hex"
+	"errors"
+	"slices"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
 )
 
 // ipscSilence is the AMBE_DATA of voice burst A in DMRlink
@@ -40,7 +43,7 @@ func voiceSlots(t testing.TB) [][72]bit.Bit {
 	return slots
 }
 
-// vocoderEntries returns the entries of package vocoder.
+// vocoderEntries returns the entries of packages vocoder and vocoder/codec2.
 func vocoderEntries(t testing.TB) []entry {
 	t.Helper()
 	slots := voiceSlots(t)
@@ -58,16 +61,54 @@ func vocoderEntries(t testing.TB) []entry {
 	var payload [19]byte
 	var voice [3]vocoder.AMBEFrame
 	names := make([]string, 0, 8)
-	out := []entry{
+	out := slices.Concat([]entry{
 		{"vocoder.DecodeAMBE72", "voice.bin slots", 0, func() { frame, _ = vocoder.DecodeAMBE72(slots[i%len(slots)]); i++ }},
 		{"vocoder.EncodeAMBE72", "voice.bin frames", 0, func() { sink = vocoder.EncodeAMBE72(frames[i%len(frames)]); i++ }},
 		{"vocoder.PackAMBEVoice", "IPSC silence", 0, func() { payload = vocoder.PackAMBEVoice(vocoder.UnpackAMBEVoice(ipsc)) }},
 		{"vocoder.UnpackAMBEVoice", "IPSC silence", 0, func() { voice = vocoder.UnpackAMBEVoice(ipsc) }},
 		{"vocoder.AMBESilence", "", 0, func() { frame = vocoder.AMBESilence() }},
 		{"vocoder.AMBESilenceSlot", "", 0, func() { sink = vocoder.AMBESilenceSlot() }},
-		{"vocoder.Names", "empty registry", 0, func() { names = vocoder.Names() }},
-		{"vocoder.AppendNames", "empty registry", 0, func() { names = vocoder.AppendNames(names[:0]) }},
-	}
+		{"vocoder.Names", "codec2 registered", 1, func() { names = vocoder.Names() }},
+		{"vocoder.AppendNames", "codec2 registered", 0, func() { names = vocoder.AppendNames(names[:0]) }},
+	}, codec2Entries(t))
 	_, _, _, _, _ = sink, frame, payload, voice, names
+	return out
+}
+
+// codec2Entries returns the entries of package vocoder/codec2: the libcodec2
+// codec when the build has it, and the stub otherwise.
+func codec2Entries(t testing.TB) []entry {
+	t.Helper()
+	pcm := make([]int16, codec2.FrameSamples)
+	for i := range pcm {
+		pcm[i] = int16((i%40 - 20) * 800)
+	}
+	dst := make([]int16, 0, codec2.FrameSamples)
+	c, err := codec2.New(codec2.Config{})
+	name, decodeAllocs := "libcodec2", 1.0
+	if errors.Is(err, codec2.ErrUnavailable) {
+		name, decodeAllocs = "stub", 0
+		c = &codec2.Codec{}
+	} else if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = c.Close() })
+	slot := c.Silence()
+	if name == "libcodec2" {
+		slot = must(c.Encode(pcm))
+	}
+	var sink [72]bit.Bit
+	var samples []int16
+	var n int
+	out := []entry{
+		{"vocoder/codec2.Codec.FrameSamples", name, 0, func() { n = c.FrameSamples() }},
+		{"vocoder/codec2.Codec.Mode", name, 0, func() { n = int(c.Mode()) }},
+		{"vocoder/codec2.Codec.FID", name, 0, func() { n = int(c.FID()) }},
+		{"vocoder/codec2.Codec.Silence", name, 0, func() { sink = c.Silence() }},
+		{"vocoder/codec2.Codec.Encode", name, 0, func() { sink, _ = c.Encode(pcm) }},
+		{"vocoder/codec2.Codec.Decode", name, decodeAllocs, func() { samples, _ = c.Decode(slot) }},
+		{"vocoder/codec2.Codec.AppendDecode", name, 0, func() { samples, _ = c.AppendDecode(dst[:0], slot) }},
+	}
+	_, _, _ = sink, samples, n
 	return out
 }
