@@ -76,7 +76,7 @@ func main() {
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
 | §6.1 | Vocoder socket | ✅ verified | 8/8 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/layer2/pdu/vocoder.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
-| §6.2 | Data and control | ✅ verified | 5/5 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go`, `v2/layer2/pdu/pi_header.go` |
+| §6.2 | Data and control | ✅ verified | 6/6 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go`, `v2/layer2/pdu/pi_header.go` |
 | §6.3 | Common Announcement Channel burst | ✅ verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
 | §6.4 | Reverse Channel | ✅ verified | 12/12 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
 | §7.1.1 | Voice LC header | ✅ verified | 5/5 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go` |
@@ -97,9 +97,9 @@ func main() {
 | §9.1.7 | Short Link Control (SHORT LC) PDU | ✅ verified | 14/14 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/crc/crc8.go` |
 | §9.1.8 | Control Signalling Block (CSBK) PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | ✅ verified | 8/8 passed | `v2/layer2/pdu/pr_fill.go` |
-| §9.2.2 | Rate ¾ coded packet Data (R_3_4_DATA) PDU | ✅ verified | 9/9 passed | `v2/layer2/pdu/rate34_data.go`, `v2/layer2/pdu/confirmed_block.go` |
+| §9.2.2 | Rate ¾ coded packet Data (R_3_4_DATA) PDU | ✅ verified | 10/10 passed | `v2/layer2/pdu/rate34_data.go`, `v2/layer2/pdu/confirmed_block.go` |
 | §9.2.6 | Unconfirmed data packet Header (U_HEAD) PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
-| §9.2.7 | Rate ½ coded packet Data (R_1_2_DATA) PDU | ✅ verified | 5/5 passed | `v2/layer2/pdu/rate12_data.go` |
+| §9.2.7 | Rate ½ coded packet Data (R_1_2_DATA) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/rate12_data.go`, `v2/layer2/pdu/confirmed_block.go` |
 | §9.2.9 | Proprietary Header (P_HEAD) PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §9.2.13 | Unified Data Transport Header (UDT_HEAD) PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | §9.2.15 | Rate 1 coded packet Data (R_1_DATA) PDU | ✅ verified | 9/9 passed | `v2/layer2/pdu/rate1_data.go`, `v2/layer2/pdu/confirmed_block.go` |
@@ -107,7 +107,7 @@ func main() {
 | §9.3.2 | Pre-emption and power control Indicator (PI) | ✅ verified | 1/1 passed | `v2/layer2/pdu/embedded_signalling.go` |
 | §9.3.3 | LC Start/Stop (LCSS) | ✅ verified | 4/4 passed | `v2/enums/lcss.go` |
 | §9.3.4 | EMB parity | ✅ verified | 3/3 passed | `v2/fec/quadratic_residue/quadratic_residue_16_7_6.go`, `v2/layer2/pdu/embedded_signalling.go` |
-| §9.3.5 | Feature set ID (FID) | ✅ verified | 10/10 passed | `v2/enums/feature_set_id.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
+| §9.3.5 | Feature set ID (FID) | ✅ verified | 11/11 passed | `v2/enums/feature_set_id.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §9.3.6 | Data Type | ✅ verified | 6/6 passed | `v2/layer2/elements/data_types.go`, `v2/layer2/elements/data.go` |
 | §9.3.10 | Protect Flag (PF) | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §9.3.11 | Full Link Control Opcode (FLCO) | ✅ verified | 3/3 passed | `v2/enums/flco.go` |
@@ -132,7 +132,7 @@ func main() {
 | §B.3.9 | 32-bit CRC calculation | ✅ verified | 9/9 passed | `v2/crc/crc32.go` |
 | §B.3.10 | CRC-9 calculation | ✅ verified | 9/9 passed | `v2/crc/crc9.go` |
 | §B.3.11 | 5-bit Checksum (CS) calculation | ✅ verified | 8/8 passed | `v2/crc/checksum5.go` |
-| §B.3.12 | Data Type CRC Mask | ✅ verified | 11/11 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go` |
+| §B.3.12 | Data Type CRC Mask | ✅ verified | 13/13 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go` |
 | §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
 | §B.4 | Interleaving | ✅ verified | 8/8 passed | `v2/layer2/cach_interleave.go` |
 | §D | Idle and Null message bit definition | ✅ verified | 14/14 passed | `v2/layer2/idle.go` |
@@ -173,8 +173,8 @@ func main() {
 | §7.2.7 | CSBK Blocks to Follow (CBF) | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.2.8 | Identifier (ID) | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §7.2.15 | Position Error | ✅ verified | 3/3 passed | `v2/layer3/elements/position_error.go` |
-| §7.2.16 | Longitude | ✅ verified | 4/4 passed | `v2/layer2/pdu/full_link_control.go` |
-| §7.2.17 | Latitude | ✅ verified | 4/4 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.2.16 | Longitude | ✅ verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.2.17 | Latitude | ✅ verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.2.18 | Talker Alias Data Format | ✅ verified | 3/3 passed | `v2/layer3/elements/talker_alias_data_format.go` |
 | §7.2.19 | Talker Alias Data Length | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.2.20 | Tier 2 Reverse Channel (RC) Command | ✅ verified | 9/9 passed | `v2/enums/rc_command.go`, `v2/layer2/pdu/reverse_channel.go` |
