@@ -132,23 +132,23 @@ c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| §6.1 | Vocoder socket | ✅ verified | 19/19 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/pdu/vocoder.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
-| §6.2 | Data and control | ✅ verified | 7/7 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go`, `v2/layer2/pdu/pi_header.go`, `v2/layer2/voice_transmitter_options.go` |
+| §6.1 | Vocoder socket | ✅ verified | 19/19 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
+| §6.2 | Data and control | ✅ verified | 6/6 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/pi_header.go`, `v2/layer2/voice_transmitter_options.go` |
 | §6.3 | Common Announcement Channel burst | ✅ verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
 | §6.4 | Reverse Channel | ✅ verified | 12/12 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
-| §7.1.1 | Voice LC header | ✅ verified | 9/9 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_transmitter_options.go` |
+| §7.1.1 | Voice LC header | ✅ verified | 10/10 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_transmitter_options.go` |
 | §7.1.2 | Terminator with LC | ✅ verified | 7/7 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go` |
-| §7.1.3 | Embedded signalling | ✅ verified | 28/28 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go`, `v2/layer2/voice_transmitter_options.go` |
+| §7.1.3 | Embedded signalling | ✅ verified | 25/25 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go`, `v2/layer2/voice_transmitter_options.go` |
 | §7.1.4 | Short Link Control in CACH | ✅ verified | 11/11 passed | `v2/layer2/short_lc_assembler.go`, `v2/layer2/short_lc_cach.go`, `v2/fec/bptc/bptc_cach.go` |
 | §7.2.1 | Control Signalling BlocK (CSBK) | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
 | §7.4.1 | Multi Block Control (MBC) | ✅ verified | 17/17 passed | `v2/layer2/pdu/mbc.go`, `v2/layer2/burst.go` |
-| §8.2.1 | Header block structure | ✅ verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
+| §8.2.1 | Header block structure | ✅ verified | 4/4 passed | `v2/layer2/pdu/data_header.go` |
 | §8.2.2 | Data block structure | ✅ verified | 10/10 passed | `v2/layer2/packet/packet.go`, `v2/layer2/packet/assembler.go` |
 | §8.2.2.3 | Response packet format | ✅ verified | 3/3 passed | `v2/layer2/packet/response.go` |
 | §8.2.3.1 | Unified Single Block Data block structure | ✅ verified | 10/10 passed | `v2/layer2/pdu/usbd.go`, `v2/layer2/burst.go` |
-| §9.1.1 | Synchronization (SYNC) PDU | ✅ verified | 22/22 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go`, `v2/layer2/decode_options.go`, `v2/layer2/framer/framer.go` |
-| §9.1.2 | Embedded signalling (EMB) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/embedded_signalling.go` |
+| §9.1.1 | Synchronization (SYNC) PDU | ✅ verified | 19/19 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go`, `v2/layer2/decode_options.go`, `v2/layer2/framer/framer.go` |
+| §9.1.2 | Embedded signalling (EMB) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/embedded_signalling.go` |
 | §9.1.3 | Slot Type (SLOT) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/slot_type.go` |
 | §9.1.4 | TACT PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/tact.go`, `v2/fec/hamming/hamming_7_4_3.go` |
 | §9.1.5 | Reverse Channel (RC) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/reverse_channel.go` |
@@ -164,28 +164,28 @@ c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID
 | §9.2.15 | Rate 1 coded packet Data (R_1_DATA) PDU | ✅ verified | 9/9 passed | `v2/layer2/pdu/rate1_data.go`, `v2/layer2/pdu/confirmed_block.go` |
 | §9.3.1 | Colour Code (CC) | ✅ verified | 3/3 passed | `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/pdu/slot_type.go` |
 | §9.3.2 | Pre-emption and power control Indicator (PI) | ✅ verified | 1/1 passed | `v2/layer2/pdu/embedded_signalling.go` |
-| §9.3.3 | LC Start/Stop (LCSS) | ✅ verified | 4/4 passed | `v2/enums/lcss.go` |
-| §9.3.4 | EMB parity | ✅ verified | 3/3 passed | `v2/fec/quadratic_residue/quadratic_residue_16_7_6.go`, `v2/layer2/pdu/embedded_signalling.go` |
+| §9.3.3 | LC Start/Stop (LCSS) | ✅ verified | 3/3 passed | `v2/enums/lcss.go` |
+| §9.3.4 | EMB parity | ✅ verified | 3/3 passed | `v2/fec/quadraticresidue/quadratic_residue_16_7_6.go`, `v2/layer2/pdu/embedded_signalling.go` |
 | §9.3.5 | Feature set ID (FID) | ✅ verified | 11/11 passed | `v2/enums/feature_set_id.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
-| §9.3.6 | Data Type | ✅ verified | 6/6 passed | `v2/layer2/elements/data_types.go`, `v2/layer2/elements/data.go` |
+| §9.3.6 | Data Type | ✅ verified | 6/6 passed | `v2/enums/data_type.go`, `v2/layer2/data.go` |
 | §9.3.10 | Protect Flag (PF) | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §9.3.11 | Full Link Control Opcode (FLCO) | ✅ verified | 3/3 passed | `v2/enums/flco.go` |
 | §9.3.17 | Data Packet Format (DPF) | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
-| §9.3.18 | SAP identifier (SAP) | ✅ verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
+| §9.3.18 | SAP identifier (SAP) | ✅ verified | 2/2 passed | `v2/layer2/pdu/data_header.go`, `v2/enums/sap.go` |
 | §9.3.19 | Logical Link ID (LLID) | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §9.3.32 | Control Signalling BlocK Opcode (CSBKO) | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
-| §B.1.1 | BPTC (196,96) | ✅ verified | 6/6 passed | `v2/fec/bptc/bptc_196_96.go` |
+| §B.1.1 | BPTC (196,96) | ✅ verified | 5/5 passed | `v2/fec/bptc/bptc_196_96.go` |
 | §B.2.1 | Variable length BPTC for embedded signalling | ✅ verified | 16/16 passed | `v2/fec/bptc/bptc_embedded_lc.go` |
 | §B.2.2 | Single Burst Variable length BPTC | ✅ verified | 14/14 passed | `v2/fec/bptc/bptc_single_burst.go` |
 | §B.2.3 | Variable length BPTC for CACH signalling | ✅ verified | 13/13 passed | `v2/fec/bptc/bptc_cach.go` |
 | §B.2.4 | Rate ¾ Trellis code | ✅ verified | 6/6 passed | `v2/fec/trellis/trellis_3_4.go` |
 | §B.2.5 | Rate 1 coded data | ✅ verified | 1/1 passed | `v2/layer2/burst.go` |
 | §B.3.1 | Golay (20,8) | ✅ verified | 2/2 passed | `v2/fec/golay/golay_20_8_7.go` |
-| §B.3.2 | Quadratic residue (16,7,6) | ✅ verified | 1/1 passed | `v2/fec/quadratic_residue/quadratic_residue_16_7_6.go` |
+| §B.3.2 | Quadratic residue (16,7,6) | ✅ verified | 1/1 passed | `v2/fec/quadraticresidue/quadratic_residue_16_7_6.go` |
 | §B.3.3 | Hamming (17,12,3) | ✅ verified | 1/1 passed | `v2/fec/bptc/bptc_196_96.go` |
 | §B.3.4 | Hamming (13,9,3), Hamming (15,11,3), and Hamming (16,11,4) | ✅ verified | 4/4 passed | `v2/fec/bptc/bptc_196_96.go`, `v2/fec/bptc/bptc_embedded_lc.go` |
 | §B.3.5 | Hamming (7,4,3) | ✅ verified | 8/8 passed | `v2/fec/hamming/hamming_7_4_3.go` |
-| §B.3.6 | Reed-Solomon (12,9) | ✅ verified | 26/26 passed | `v2/fec/reed_solomon/reed_solomon_12_9_4.go` |
+| §B.3.6 | Reed-Solomon (12,9) | ✅ verified | 26/26 passed | `v2/fec/reedsolomon/reed_solomon_12_9_4.go` |
 | §B.3.7 | 8-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc8.go` |
 | §B.3.8 | CRC-CCITT calculation | ✅ verified | 5/5 passed | `v2/crc/crc_ccitt.go` |
 | §B.3.9 | 32-bit CRC calculation | ✅ verified | 9/9 passed | `v2/crc/crc32.go` |
@@ -195,7 +195,7 @@ c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID
 | §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
 | §B.4 | Interleaving | ✅ verified | 8/8 passed | `v2/layer2/cach_interleave.go` |
 | §D | Idle and Null message bit definition | ✅ verified | 10/10 passed | `v2/layer2/idle.go` |
-| §E | Transmit bit order | ✅ verified | 20/20 passed | `v2/layer2/transmit_order.go`, `v2/layer2/raw_burst.go` |
+| §E | Transmit bit order | ✅ verified | 14/14 passed | `v2/layer2/transmit_order.go`, `v2/layer2/raw_burst.go` |
 
 ### ETSI TS 102 361-2 — DMR Voice and Generic Services and Facilities
 
@@ -206,14 +206,14 @@ c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
 | §5.4.2 | Inband positioning data service | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
-| §5.4.3 | Inband talker alias data service | ✅ verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/elements/talker_alias_data_format.go`, `v2/layer2/pdu/talker_alias.go` |
+| §5.4.3 | Inband talker alias data service | ✅ verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/talker_alias_data_format.go`, `v2/layer2/pdu/talker_alias.go` |
 | §6.1 | Transmit timeout | ✅ verified | 2/2 passed | `v2/constants/constants.go` |
 | §6.3 | Reverse Channel Transmitter Interrupt | ✅ verified | 10/10 passed | `v2/layer2/pdu/reverse_channel.go`, `v2/enums/rc_command.go`, `v2/constants/constants.go` |
 | §7.1.1 | Full Link Control PDUs | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.1.1.1 | Group Voice Channel User LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.1.1.2 | Unit to Unit Voice Channel User LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.1.1.3 | GPS Info LC PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
-| §7.1.1.4 | Talker Alias header LC PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/elements/talker_alias_data_format.go` |
+| §7.1.1.4 | Talker Alias header LC PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/talker_alias_data_format.go` |
 | §7.1.1.5 | Talker Alias block LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.1.2 | Control Signalling BlocK (CSBK) PDUs | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.2.1 | BS Outbound Activation CSBK PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
@@ -223,18 +223,18 @@ c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID
 | §7.1.2.5 | Preamble CSBK PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.2.6 | Channel Timing CSBK PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.3 | Short Link Control PDUs | ✅ verified | 18/18 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/enums/activity_id.go`, `v2/layer2/pdu/address_hash.go` |
-| §7.2.1 | Service Options | ✅ verified | 4/4 passed | `v2/layer3/elements/service_options.go` |
+| §7.2.1 | Service Options | ✅ verified | 4/4 passed | `v2/layer3/service_options.go` |
 | §7.2.2 | Answer Response | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.2.3 | Reason Code | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.2.4 | Service Type | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
-| §7.2.5 | Source Type | ✅ verified | 5/5 passed | `v2/layer3/elements/source_type.go`, `v2/layer2/pdu/csbk.go` |
-| §7.2.6 | Additional Information Field | ✅ verified | 5/5 passed | `v2/layer3/elements/additional_information_field.go`, `v2/layer2/pdu/csbk.go` |
+| §7.2.5 | Source Type | ✅ verified | 5/5 passed | `v2/layer3/source_type.go`, `v2/layer2/pdu/csbk.go` |
+| §7.2.6 | Additional Information Field | ✅ verified | 5/5 passed | `v2/layer3/additional_information_field.go`, `v2/layer2/pdu/csbk.go` |
 | §7.2.7 | CSBK Blocks to Follow (CBF) | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §7.2.8 | Identifier (ID) | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
-| §7.2.15 | Position Error | ✅ verified | 3/3 passed | `v2/layer3/elements/position_error.go` |
+| §7.2.15 | Position Error | ✅ verified | 3/3 passed | `v2/layer3/position_error.go` |
 | §7.2.16 | Longitude | ✅ verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.2.17 | Latitude | ✅ verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go` |
-| §7.2.18 | Talker Alias Data Format | ✅ verified | 3/3 passed | `v2/layer3/elements/talker_alias_data_format.go` |
+| §7.2.18 | Talker Alias Data Format | ✅ verified | 3/3 passed | `v2/layer3/talker_alias_data_format.go` |
 | §7.2.19 | Talker Alias Data Length | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.2.20 | Tier 2 Reverse Channel (RC) Command | ✅ verified | 9/9 passed | `v2/enums/rc_command.go`, `v2/layer2/pdu/reverse_channel.go` |
 | §A | Timers and constants in DMR | ✅ verified | 4/4 passed | `v2/constants/constants.go` |
@@ -279,9 +279,9 @@ c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID
 | §6.2 | Random Access Procedures | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go`, `v2/constants/constants.go` |
 | §6.6 | Call Procedures | ✅ verified | 3/3 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.1 | Control Signalling Block (CSBK/MBC/UDT) PDUs | ✅ verified | 17/17 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go`, `v2/enums/announcement_type.go` |
-| §7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | ✅ verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/elements/cdef_parms.go` |
+| §7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | ✅ verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/cdef_parms.go` |
 | §7.1.2 | Short Link Control PDUs | ✅ verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go` |
-| §7.2 | Layer 3 Information Element Coding | ✅ verified | 6/6 passed | `v2/layer3/elements/cdef_parms.go`, `v2/enums/announcement_type.go` |
+| §7.2 | Layer 3 Information Element Coding | ✅ verified | 6/6 passed | `v2/layer3/cdef_parms.go`, `v2/enums/announcement_type.go` |
 | §A | Timers, constants levels and addresses | ✅ verified | 5/5 passed | `v2/constants/constants.go` |
 | §B.1 | CSBK/MBC/UDT Opcode List | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | §B.2 | Short Link Control Opcode List | ✅ verified | 1/1 passed | `v2/enums/slco.go` |
