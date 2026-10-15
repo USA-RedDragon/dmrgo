@@ -48,7 +48,11 @@ type DecodeOptions struct {
 	// VoiceBurstA takes the SYNC field as the nearest voice SYNC pattern and
 	// VoiceBurstB to VoiceBurstF take it as EMB and embedded data, whatever
 	// the field holds. VoiceBurstUnknown takes it as a voice SYNC pattern
-	// within the SYNC threshold and as EMB otherwise.
+	// within the SYNC threshold and as EMB otherwise. Set Kind and
+	// VoiceBurst when the stream gives the position, as a network voice
+	// frame does: the EMB and embedded data of a real voice burst can come
+	// within the SYNC threshold of a SYNC pattern, such as the MS-sourced
+	// RC SYNC, and then decode as that kind of burst.
 	VoiceBurst enums.VoiceBurstType
 	// DataType, when set, is the data type of a KindData burst. It replaces
 	// the data type of the decoded slot type in Burst.SlotType and selects
