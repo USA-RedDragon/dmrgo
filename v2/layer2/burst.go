@@ -93,9 +93,10 @@ type Burst struct {
 
 	// Data is the decoded PDU of a data burst. DecodeFromBytes sets it also
 	// when the PDU CRC or FEC fails, and leaves it nil only for a reserved
-	// data type. The decoded PDU is a value that the Burst reuses: the next
-	// decode into the Burst, or into a copy of it, overwrites it. Copy the
-	// PDU to keep it. A Burst and its copies must not decode concurrently.
+	// data type. The decoded PDU, and the payload struct that its dispatch
+	// field points to, are values that the Burst reuses: the next decode into
+	// the Burst, or into a copy of it, overwrites them. Copy them to keep
+	// them. A Burst and its copies must not decode concurrently.
 	Data Data
 	// FEC reports the FEC and CRC results of the decode.
 	FEC fec.BurstFECStats
@@ -108,20 +109,25 @@ type Burst struct {
 	store                 decodeStore
 }
 
-// decodeStore holds the PDUs that a Burst decodes into, so that a reused
-// Burst decodes without allocating. Each PDU is allocated on the first decode
-// of its data type.
+// decodeStore holds the PDUs that a Burst decodes into, and the payload
+// structs that their dispatch fields point to, so that a reused Burst
+// decodes without allocating. Each is allocated on the first decode of its
+// data type.
 type decodeStore struct {
-	csbk       *pdu.CSBK
-	lc         *pdu.FullLinkControl
-	piHeader   *pdu.PIHeader
-	dataHeader *pdu.DataHeader
-	rate12     *pdu.Rate12Data
-	rate34     *pdu.Rate34Data
-	rate1      *pdu.Rate1Data
-	mbcHeader  *pdu.MBCHeader
-	mbcCont    *pdu.MBCContinuation
-	usbd       *pdu.UnifiedSingleBlockData
+	csbk              *pdu.CSBK
+	csbkPayloads      *pdu.CSBKPayloads
+	lc                *pdu.FullLinkControl
+	lcPayloads        *pdu.FullLinkControlPayloads
+	dataHeaderPayload *pdu.DataHeaderPayloads
+	mbcHeaderPayloads *pdu.MBCHeaderPayloads
+	piHeader          *pdu.PIHeader
+	dataHeader        *pdu.DataHeader
+	rate12            *pdu.Rate12Data
+	rate34            *pdu.Rate34Data
+	rate1             *pdu.Rate1Data
+	mbcHeader         *pdu.MBCHeader
+	mbcCont           *pdu.MBCContinuation
+	usbd              *pdu.UnifiedSingleBlockData
 }
 
 // storeSlot returns *p, after it allocates *p when it is nil.
@@ -160,8 +166,7 @@ func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 
 // DecodeFromBytes decodes data into the burst in place. It is
 // DecodeFromBytesWith with nil options. When it returns no error, a decode
-// into a reused Burst does not allocate, except for a CSBK, Full LC, data
-// header or MBC header whose dispatch field points to a payload struct.
+// into a reused Burst does not allocate.
 func (b *Burst) DecodeFromBytes(data RawBurst) error {
 	return b.DecodeFromBytesWith(data, nil)
 }
@@ -559,12 +564,12 @@ func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync 
 	switch dt {
 	case enums.DataTypeCSBK:
 		d := storeSlot(&st.csbk)
-		*d = pdu.DecodeCSBK(bits96)
+		pdu.DecodeCSBKInto(d, storeSlot(&st.csbkPayloads), bits96)
 		d.Hint0x38 = opcode0x38Hint(sync)
 		return d, d.FEC, nil
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
 		d := storeSlot(&st.lc)
-		*d = pdu.DecodeFullLinkControl(bits96, dt)
+		pdu.DecodeFullLinkControlInto(d, storeSlot(&st.lcPayloads), bits96, dt)
 		return d, d.FEC, nil
 	case enums.DataTypePIHeader:
 		d := storeSlot(&st.piHeader)
@@ -572,7 +577,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync 
 		return d, d.FEC, nil
 	case enums.DataTypeDataHeader:
 		d := storeSlot(&st.dataHeader)
-		*d = pdu.DecodeDataHeader(bits96)
+		pdu.DecodeDataHeaderInto(d, storeSlot(&st.dataHeaderPayload), bits96)
 		return d, d.FEC, nil
 	case enums.DataTypeRate34:
 		var sizedBits [144]bit.Bit
@@ -592,7 +597,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync 
 		return d, fec.Result{}, nil
 	case enums.DataTypeMBCHeader:
 		d := storeSlot(&st.mbcHeader)
-		*d = pdu.DecodeMBCHeader(bits96)
+		pdu.DecodeMBCHeaderInto(d, storeSlot(&st.mbcHeaderPayloads), bits96)
 		return d, d.FEC, nil
 	case enums.DataTypeMBCContinuation:
 		d := storeSlot(&st.mbcCont)
