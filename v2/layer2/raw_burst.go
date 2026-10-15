@@ -316,7 +316,10 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 	}
 	r.SetAMBEFrames(frames)
 	if pos == enums.VoiceBurstA {
-		return r, r.SetSync(voice)
+		// Go does not specify whether "return r, r.SetSync(voice)" reads r
+		// before or after the call.
+		err := r.SetSync(voice)
+		return r, err
 	}
 	lcss, ok := pos.LCSS()
 	if !ok {
