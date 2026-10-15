@@ -157,7 +157,7 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §7.2.1 | Control Signalling BlocK (CSBK) | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
 | §7.4.1 | Multi Block Control (MBC) | ✅ verified | 17/17 passed | `v2/layer2/pdu/mbc.go`, `v2/layer2/burst.go` |
-| §8.2.1 | Header block structure | ✅ verified | 4/4 passed | `v2/layer2/pdu/data_header.go` |
+| §8.2.1 | Header block structure | ✅ verified | 7/7 passed | `v2/layer2/pdu/data_header.go`, `v2/layer2/pdu/data_header_bytes.go` |
 | §8.2.2 | Data block structure | ✅ verified | 11/11 passed | `v2/layer2/packet/packet.go`, `v2/layer2/packet/assembler.go`, `v2/layer2/packet/bursts.go` |
 | §8.2.2.3 | Response packet format | ✅ verified | 3/3 passed | `v2/layer2/packet/response.go` |
 | §8.2.3.1 | Unified Single Block Data block structure | ✅ verified | 10/10 passed | `v2/layer2/pdu/usbd.go`, `v2/layer2/burst.go` |
@@ -166,7 +166,7 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §9.1.3 | Slot Type (SLOT) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/slot_type.go` |
 | §9.1.4 | TACT PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/tact.go`, `v2/fec/hamming/hamming_7_4_3.go` |
 | §9.1.5 | Reverse Channel (RC) PDU | ✅ verified | 6/6 passed | `v2/layer2/pdu/reverse_channel.go` |
-| §9.1.6 | Full Link Control (FULL LC) PDU | ✅ verified | 7/7 passed | `v2/layer2/pdu/full_link_control.go` |
+| §9.1.6 | Full Link Control (FULL LC) PDU | ✅ verified | 10/10 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/full_link_control_bytes.go` |
 | §9.1.7 | Short Link Control (SHORT LC) PDU | ✅ verified | 14/14 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/crc/crc8.go` |
 | §9.1.8 | Control Signalling Block (CSBK) PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | ✅ verified | 9/9 passed | `v2/layer2/pdu/pr_fill.go` |
@@ -205,7 +205,7 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §B.3.9 | 32-bit CRC calculation | ✅ verified | 9/9 passed | `v2/crc/crc32.go` |
 | §B.3.10 | CRC-9 calculation | ✅ verified | 9/9 passed | `v2/crc/crc9.go` |
 | §B.3.11 | 5-bit Checksum (CS) calculation | ✅ verified | 9/9 passed | `v2/crc/checksum5.go`, `v2/layer2/embedded_lc.go` |
-| §B.3.12 | Data Type CRC Mask | ✅ verified | 25/25 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/mmdvmhost.go`, `v2/layer2/pdu/codeword_bytes.go`, `v2/layer2/mmdvmhost_seal.go` |
+| §B.3.12 | Data Type CRC Mask | ✅ verified | 26/26 passed | `v2/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/mmdvmhost.go`, `v2/layer2/pdu/codeword_bytes.go`, `v2/layer2/mmdvmhost_seal.go` |
 | §B.3.13 | 7-bit CRC calculation | ✅ verified | 7/7 passed | `v2/crc/crc7.go` |
 | §B.4 | Interleaving | ✅ verified | 8/8 passed | `v2/layer2/cach_interleave.go` |
 | §D | Idle and Null message bit definition | ✅ verified | 10/10 passed | `v2/layer2/idle.go` |
@@ -224,8 +224,8 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §6.1 | Transmit timeout | ✅ verified | 2/2 passed | `v2/constants/constants.go` |
 | §6.3 | Reverse Channel Transmitter Interrupt | ✅ verified | 10/10 passed | `v2/layer2/pdu/reverse_channel.go`, `v2/enums/rc_command.go`, `v2/constants/constants.go` |
 | §7.1.1 | Full Link Control PDUs | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go` |
-| §7.1.1.1 | Group Voice Channel User LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
-| §7.1.1.2 | Unit to Unit Voice Channel User LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
+| §7.1.1.1 | Group Voice Channel User LC PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/lc_bytes.go` |
+| §7.1.1.2 | Unit to Unit Voice Channel User LC PDU | ✅ verified | 4/4 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/lc_bytes.go` |
 | §7.1.1.3 | GPS Info LC PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.1.1.4 | Talker Alias header LC PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/talker_alias_data_format.go` |
 | §7.1.1.5 | Talker Alias block LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
