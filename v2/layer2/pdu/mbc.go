@@ -10,16 +10,38 @@ import (
 
 // ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
 //
+// The header of a Tier III grant, C_MOVE or C_BCAST MBC carries the CSBK
+// payload of its opcode (ETSI TS 102 361-4 §7.1.1.1), so with the standard
+// FID DecodeMBCHeader sets the payload field of the opcode, as DecodeCSBK
+// does. Payloads of other opcodes and FIDs, and of opcode 0x38, are kept in
+// RawPayload. Encode returns an error if more than one payload field is set,
+// or if Opcode and FID do not select the payload field that is set.
+//
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xAAAA
 //dmr:input_size 96
+//dmr:dispatch_if FID==0
 type MBCHeader struct {
 	FEC         fec.Result         `dmr:"-"`
 	LastBlock   bool               `dmr:"bit:0"`
 	ProtectFlag bool               `dmr:"bit:1"`
 	Opcode      CSBKOpcode         `dmr:"bits:2-7"`
 	FID         enums.FeatureSetID `dmr:"bits:8-15"`
-	Data        [8]byte            `dmr:"bits:16-79,packed"`
+
+	PrivateVoiceGrantPDU            *PrivateVoiceGrantPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateVoiceGrant"`
+	TalkgroupVoiceGrantPDU          *TalkgroupVoiceGrantPDU          `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupVoiceGrant"`
+	BroadcastTalkgroupVoiceGrantPDU *BroadcastTalkgroupVoiceGrantPDU `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcastTalkgroupVoiceGrant"`
+	PrivateDataGrantPDU             *PrivateDataGrantPDU             `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrant"`
+	TalkgroupDataGrantPDU           *TalkgroupDataGrantPDU           `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupDataGrant"`
+	DuplexPrivateVoiceGrantPDU      *DuplexPrivateVoiceGrantPDU      `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateVoiceGrant"`
+	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateDataGrant"`
+	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrantMultiItem"`
+	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`
+	CBroadcastPDU                   *CBroadcastPDU                   `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`
+
+	// RawPayload holds header bits 16 to 79 when no payload field is set,
+	// packed most significant bit first, as CSBK.RawPayload does.
+	RawPayload [8]byte `dmr:"bits:16-79,raw,fallback"`
 }
 
 // DataType returns enums.DataTypeMBCHeader.

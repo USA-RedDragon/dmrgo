@@ -41,13 +41,146 @@ func DecodeMBCHeader(data [96]bit.Bit) MBCHeader {
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
-	copy(result.Data[:], bit.Pack(data[16:80]))
+	var _dispatchBits [64]bit.Bit
+	copy(_dispatchBits[:], data[16:80])
+	if result.FID == 0 {
+		switch result.Opcode {
+		case CSBKPrivateVoiceGrant:
+			_decoded := DecodePrivateVoiceGrantPDU(_dispatchBits)
+			result.PrivateVoiceGrantPDU = &_decoded
+		case CSBKTalkgroupVoiceGrant:
+			_decoded := DecodeTalkgroupVoiceGrantPDU(_dispatchBits)
+			result.TalkgroupVoiceGrantPDU = &_decoded
+		case CSBKBroadcastTalkgroupVoiceGrant:
+			_decoded := DecodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
+			result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
+		case CSBKPrivateDataGrant:
+			_decoded := DecodePrivateDataGrantPDU(_dispatchBits)
+			result.PrivateDataGrantPDU = &_decoded
+		case CSBKTalkgroupDataGrant:
+			_decoded := DecodeTalkgroupDataGrantPDU(_dispatchBits)
+			result.TalkgroupDataGrantPDU = &_decoded
+		case CSBKDuplexPrivateVoiceGrant:
+			_decoded := DecodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
+			result.DuplexPrivateVoiceGrantPDU = &_decoded
+		case CSBKDuplexPrivateDataGrant:
+			_decoded := DecodeDuplexPrivateDataGrantPDU(_dispatchBits)
+			result.DuplexPrivateDataGrantPDU = &_decoded
+		case CSBKPrivateDataGrantMultiItem:
+			_decoded := DecodePrivateDataGrantMultiItemPDU(_dispatchBits)
+			result.PrivateDataGrantMultiItemPDU = &_decoded
+		case CSBKMove:
+			_decoded := DecodeMovePDU(_dispatchBits)
+			result.MovePDU = &_decoded
+		case CSBKBroadcast:
+			_decoded := DecodeCBroadcastPDU(_dispatchBits)
+			result.CBroadcastPDU = &_decoded
+		default:
+			for _i := range 64 {
+				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+			}
+		}
+	} else {
+		for _i := range 64 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
+	}
 	return result
 }
 
 // Encode encodes a MBCHeader per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
 func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
+	_payload := ""
+	for _, _p := range [...]struct {
+		name string
+		set  bool
+	}{
+		{"PrivateVoiceGrantPDU", s.PrivateVoiceGrantPDU != nil},
+		{"TalkgroupVoiceGrantPDU", s.TalkgroupVoiceGrantPDU != nil},
+		{"BroadcastTalkgroupVoiceGrantPDU", s.BroadcastTalkgroupVoiceGrantPDU != nil},
+		{"PrivateDataGrantPDU", s.PrivateDataGrantPDU != nil},
+		{"TalkgroupDataGrantPDU", s.TalkgroupDataGrantPDU != nil},
+		{"DuplexPrivateVoiceGrantPDU", s.DuplexPrivateVoiceGrantPDU != nil},
+		{"DuplexPrivateDataGrantPDU", s.DuplexPrivateDataGrantPDU != nil},
+		{"PrivateDataGrantMultiItemPDU", s.PrivateDataGrantMultiItemPDU != nil},
+		{"MovePDU", s.MovePDU != nil},
+		{"CBroadcastPDU", s.CBroadcastPDU != nil},
+	} {
+		if !_p.set {
+			continue
+		}
+		if _payload != "" {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, _p.name)
+		}
+		_payload = _p.name
+	}
+	switch {
+	case s.PrivateVoiceGrantPDU != nil:
+		_pduBits, err := s.PrivateVoiceGrantPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.PrivateVoiceGrantPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.TalkgroupVoiceGrantPDU != nil:
+		_pduBits, err := s.TalkgroupVoiceGrantPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.TalkgroupVoiceGrantPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
+		_pduBits, err := s.BroadcastTalkgroupVoiceGrantPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.BroadcastTalkgroupVoiceGrantPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.PrivateDataGrantPDU != nil:
+		_pduBits, err := s.PrivateDataGrantPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.PrivateDataGrantPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.TalkgroupDataGrantPDU != nil:
+		_pduBits, err := s.TalkgroupDataGrantPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.TalkgroupDataGrantPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.DuplexPrivateVoiceGrantPDU != nil:
+		_pduBits, err := s.DuplexPrivateVoiceGrantPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.DuplexPrivateVoiceGrantPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.DuplexPrivateDataGrantPDU != nil:
+		_pduBits, err := s.DuplexPrivateDataGrantPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.DuplexPrivateDataGrantPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.PrivateDataGrantMultiItemPDU != nil:
+		_pduBits, err := s.PrivateDataGrantMultiItemPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.PrivateDataGrantMultiItemPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.MovePDU != nil:
+		_pduBits, err := s.MovePDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.MovePDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	case s.CBroadcastPDU != nil:
+		_pduBits, err := s.CBroadcastPDU.Encode()
+		if err != nil {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.CBroadcastPDU: %w", err)
+		}
+		copy(data[16:80], _pduBits[:])
+	default:
+		for _i := range 64 {
+			data[16+_i] = bit.Bit(s.RawPayload[_i/8] >> (7 - _i%8) & 1)
+		}
+	}
 	if s.LastBlock {
 		data[0] = 1
 	}
@@ -72,7 +205,39 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 		}
 	}
 	bit.PutUint(data[8:16], uint64(s.FID))
-	copy(data[16:80], bit.Unpack(s.Data[:]))
+	if _payload != "" {
+		var result MBCHeader
+		result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
+		result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
+		_want := "RawPayload"
+		if result.FID == 0 {
+			switch result.Opcode {
+			case CSBKPrivateVoiceGrant:
+				_want = "PrivateVoiceGrantPDU"
+			case CSBKTalkgroupVoiceGrant:
+				_want = "TalkgroupVoiceGrantPDU"
+			case CSBKBroadcastTalkgroupVoiceGrant:
+				_want = "BroadcastTalkgroupVoiceGrantPDU"
+			case CSBKPrivateDataGrant:
+				_want = "PrivateDataGrantPDU"
+			case CSBKTalkgroupDataGrant:
+				_want = "TalkgroupDataGrantPDU"
+			case CSBKDuplexPrivateVoiceGrant:
+				_want = "DuplexPrivateVoiceGrantPDU"
+			case CSBKDuplexPrivateDataGrant:
+				_want = "DuplexPrivateDataGrantPDU"
+			case CSBKPrivateDataGrantMultiItem:
+				_want = "PrivateDataGrantMultiItemPDU"
+			case CSBKMove:
+				_want = "MovePDU"
+			case CSBKBroadcast:
+				_want = "CBroadcastPDU"
+			}
+		}
+		if _payload != _want {
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.%s is set, but Opcode and FID select %s", _payload, _want)
+		}
+	}
 	var _encBytes [10]byte
 	for i := range 10 {
 		for j := range 8 {
@@ -105,7 +270,34 @@ func (s *MBCHeader) EncodeBits() ([]bit.Bit, error) {
 }
 
 func (s *MBCHeader) String() string {
-	return fmt.Sprintf("MBCHeader{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, Data: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.FID, s.Data)
+	_ret := "MBCHeader{ "
+	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.FID)
+	switch {
+	case s.PrivateVoiceGrantPDU != nil:
+		_ret += s.PrivateVoiceGrantPDU.String()
+	case s.TalkgroupVoiceGrantPDU != nil:
+		_ret += s.TalkgroupVoiceGrantPDU.String()
+	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
+		_ret += s.BroadcastTalkgroupVoiceGrantPDU.String()
+	case s.PrivateDataGrantPDU != nil:
+		_ret += s.PrivateDataGrantPDU.String()
+	case s.TalkgroupDataGrantPDU != nil:
+		_ret += s.TalkgroupDataGrantPDU.String()
+	case s.DuplexPrivateVoiceGrantPDU != nil:
+		_ret += s.DuplexPrivateVoiceGrantPDU.String()
+	case s.DuplexPrivateDataGrantPDU != nil:
+		_ret += s.DuplexPrivateDataGrantPDU.String()
+	case s.PrivateDataGrantMultiItemPDU != nil:
+		_ret += s.PrivateDataGrantMultiItemPDU.String()
+	case s.MovePDU != nil:
+		_ret += s.MovePDU.String()
+	case s.CBroadcastPDU != nil:
+		_ret += s.CBroadcastPDU.String()
+	default:
+		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
+	}
+	_ret += " }"
+	return _ret
 }
 
 // DecodeMBCContinuation decodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation

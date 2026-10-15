@@ -89,7 +89,7 @@ func TestMBCHeader_Decode(t *testing.T) {
 	}
 
 	// Verify data bits
-	dataBits := bit.Unpack(hdr.Data[:])
+	dataBits := bit.Unpack(hdr.RawPayload[:])
 	if dataBits[0] != 1 {
 		t.Error("Data[0] should be 1")
 	}
@@ -155,7 +155,7 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 				ProtectFlag: tt.pf,
 				Opcode:      pdu.CSBKOpcode(tt.opcode),
 				FID:         enums.FeatureSetID(tt.fid),
-				Data:        [8]byte(bit.Pack(data[:])),
+				RawPayload:  [8]byte(bit.Pack(data[:])),
 			}
 
 			encoded := must(orig.Encode())
@@ -177,8 +177,8 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 			if decoded.FID != orig.FID {
 				t.Errorf("FID = 0x%02X, want 0x%02X", decoded.FID, orig.FID)
 			}
-			if decoded.Data != orig.Data {
-				t.Errorf("Data = %x, want %x", decoded.Data, orig.Data)
+			if decoded.RawPayload != orig.RawPayload {
+				t.Errorf("RawPayload = %x, want %x", decoded.RawPayload, orig.RawPayload)
 			}
 		})
 	}
@@ -191,7 +191,7 @@ func TestMBCHeader_EncodeStability(t *testing.T) {
 		Opcode:      pdu.CSBKPreamble,
 		FID:         0x68,
 	}
-	orig.Data = [8]byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}
+	orig.RawPayload = [8]byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}
 
 	enc1 := must(orig.Encode())
 	dec1 := pdu.DecodeMBCHeader(enc1)

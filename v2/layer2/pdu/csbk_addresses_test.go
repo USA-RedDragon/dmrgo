@@ -26,6 +26,7 @@ func TestCSBK_Addresses(t *testing.T) {
 		{Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &pdu.RandomAccessPDU{}},
 		{Opcode: pdu.CSBKAckvitation, AckvitationPDU: &pdu.AckvitationPDU{}},
 		{Opcode: pdu.CSBKMaintenance, MaintenancePDU: &pdu.MaintenancePDU{}},
+		{Opcode: pdu.CSBKBSOutboundActivation},
 	}
 	for _, c := range csbks {
 		c.LastBlock = true
@@ -51,7 +52,7 @@ func TestCSBK_Addresses(t *testing.T) {
 		{Opcode: pdu.CSBKMove, MovePDU: &pdu.MovePDU{MSAddress: 9}},
 		{Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &pdu.AckOutboundPDU{TargetAddress: 9}},
 		{Opcode: pdu.CSBKChannelTiming, ChannelTimingPDU: &pdu.ChannelTimingPDU{}},
-		{Opcode: pdu.CSBKTalkgroupDataGrantMultiItem},
+		{Opcode: pdu.CSBKTalkgroupDataGrantMultiItem, FID: 0x10},
 		{Opcode: pdu.CSBKPreamble, FID: 0x10},
 	}
 	for _, c := range none {
