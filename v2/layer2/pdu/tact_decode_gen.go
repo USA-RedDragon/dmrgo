@@ -44,7 +44,7 @@ func EncodeTACT(s *TACT) ([7]bit.Bit, error) {
 		return [7]bit.Bit{}, fmt.Errorf("TACT.LCSS: value %d does not fit in 2 bits", s.LCSS)
 	}
 	copy(data[2:4], bit.BitsFromUint8(uint8(s.LCSS), 2))
-	return hamming.Encode(bit.BitsToValue(data[:])), nil
+	return hamming.Encode743(data), nil
 }
 
 func (s *TACT) ToString() string {

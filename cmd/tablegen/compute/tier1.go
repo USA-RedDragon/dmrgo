@@ -131,7 +131,7 @@ func qrSyndrome(errPattern uint16) int {
 }
 
 // qrParityBits computes the QR(16,7,6) parity bits from 7 data bits.
-// Mirrors quadratic_residue_16_7_6.go ParityBits function.
+// Mirrors quadratic_residue_16_7_6.go parityBits function.
 func qrParityBits(bits [7]byte) [9]byte {
 	return [9]byte{
 		bits[1] ^ bits[2] ^ bits[3] ^ bits[4],
@@ -333,7 +333,7 @@ func golay20Syndrome(errPattern uint32) int {
 }
 
 // golay20ParityBits computes the 12 parity bits from 8 data bits.
-// Mirrors golay_20_8_7.go Golay_20_8_Parity function.
+// Mirrors golay_20_8_7.go parity2087 function.
 func golay20ParityBits(bits [8]byte) [12]byte {
 	return [12]byte{
 		bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7],

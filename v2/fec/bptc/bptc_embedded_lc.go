@@ -25,38 +25,38 @@ import (
 // Fragment assembly: columns are read top-to-bottom, left-to-right,
 // and split into 4 groups of 32 bits (columns 0-3, 4-7, 8-11, 12-15).
 
-// DecodeEmbeddedLC decodes a full embedded LC from 4 × 32-bit fragments.
+// DecodeEmbedded decodes a full embedded LC from 4 × 32-bit fragments.
 // The fragments should be in order (fragment 0 from voice burst B, through
 // fragment 3 from voice burst E of a superframe).
 //
 // Returns the 77 information bits (72 LC + 5 checksum) and FEC result. The
 // bits are rows 0..6, columns 0..10 of the encode matrix in row-major order,
 // so per Figure B.3 the checksum bits are the last bit of rows 2..6. It is
-// DecodeEmbeddedLCWithCheck with no check, so a received word at equal
+// DecodeEmbeddedWithCheck with no check, so a received word at equal
 // distance from two codewords is uncorrectable.
-func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
-	return DecodeEmbeddedLCWithCheck(fragments, nil)
+func DecodeEmbedded(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
+	return DecodeEmbeddedWithCheck(fragments, nil)
 }
 
-// EmbeddedLCMaxErrors is the largest number of bit errors that
-// DecodeEmbeddedLCWithCheck corrects.
-const EmbeddedLCMaxErrors = 8
+// EmbeddedMaxErrors is the largest number of bit errors that
+// DecodeEmbeddedWithCheck corrects.
+const EmbeddedMaxErrors = 8
 
-// DecodeEmbeddedLCWithCheck decodes a full embedded LC to the nearest
+// DecodeEmbeddedWithCheck decodes a full embedded LC to the nearest
 // codeword of the product code. It finds the codewords at the smallest
-// Hamming distance from the received bits, up to EmbeddedLCMaxErrors, and
+// Hamming distance from the received bits, up to EmbeddedMaxErrors, and
 // keeps those whose information bits check accepts; a nil check accepts all
 // of them. The LC is uncorrectable unless exactly one codeword remains. The
 // search covers error patterns of up to 4 bits in each of rows 0..6. The
 // product code has minimum distance 8, so up to 3 errors always give one
 // nearest codeword. With 4 or more errors two codewords can be equally near,
 // and check, for example the 5-bit LC checksum, picks between them.
-func DecodeEmbeddedLCWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.Result) {
+func DecodeEmbeddedWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.Result) {
 	for i := range fragments {
 		bit.Mask(fragments[i][:])
 	}
 	matrix := embeddedLCMatrix(fragments)
-	s := embeddedLCSearch{best: EmbeddedLCMaxErrors, check: check}
+	s := embeddedLCSearch{best: EmbeddedMaxErrors, check: check}
 	for row := range matrix {
 		for col := range matrix[row] {
 			s.rows[row] |= uint16(matrix[row][col]) << col
@@ -181,13 +181,13 @@ var embeddedLCPatterns = sync.OnceValue(func() *embeddedLCPatternTable { //nolin
 	return t
 })
 
-// DecodeEmbeddedLCStrict decodes a full embedded LC as MMDVMHost
+// DecodeEmbeddedStrict decodes a full embedded LC as MMDVMHost
 // (CDMREmbeddedData::decodeEmbeddedData) does. Each of rows 0..6 is
 // corrected for at most one error with Hamming(16,11,4), and a row with a
 // detected double error makes the LC uncorrectable. Row 7 is not corrected:
 // the LC is uncorrectable when any column parity over all 8 rows fails. It
-// accepts far fewer LCs with bit errors than DecodeEmbeddedLC.
-func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
+// accepts far fewer LCs with bit errors than DecodeEmbedded.
+func DecodeEmbeddedStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
 	for i := range fragments {
 		bit.Mask(fragments[i][:])
 	}
@@ -254,9 +254,9 @@ func columnParity(matrix *[8][16]bit.Bit, col int) bit.Bit {
 	return parity
 }
 
-// EncodeEmbeddedLC encodes 77 information bits (72 LC + 5 checksum) into
+// EncodeEmbedded encodes 77 information bits (72 LC + 5 checksum) into
 // 4 × 32-bit fragments for transmission across 4 voice bursts.
-func EncodeEmbeddedLC(info [77]bit.Bit) [4][32]bit.Bit {
+func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 	bit.Mask(info[:])
 	var matrix [8][16]bit.Bit
 

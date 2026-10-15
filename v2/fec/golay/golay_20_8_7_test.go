@@ -25,13 +25,13 @@ func TestGolay2087Decode(t *testing.T) {
 		}
 
 		// Calculate parity
-		parity := Golay_20_8_Parity(data)
+		parity := parity2087(data)
 		var cw [20]bit.Bit
 		copy(cw[:], data[:])
 		copy(cw[8:], parity[:])
 
 		// Case 1: No Error
-		decoded, result := DecodeGolay2087(cw)
+		decoded, result := Decode2087(cw)
 		if result.Uncorrectable || result.ErrorsCorrected != 0 {
 			t.Errorf("Failed to decode clean codeword")
 		}
@@ -43,7 +43,7 @@ func TestGolay2087Decode(t *testing.T) {
 		cwErr1 := cw
 		pos := rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
 		cwErr1[pos] ^= 1
-		decoded, result = DecodeGolay2087(cwErr1)
+		decoded, result = Decode2087(cwErr1)
 		if result.Uncorrectable || result.ErrorsCorrected != 1 {
 			t.Errorf("Failed to correct 1 error")
 		}
@@ -59,7 +59,7 @@ func TestGolay2087Decode(t *testing.T) {
 		}
 		cwErr2[p1] ^= 1
 		cwErr2[p2] ^= 1
-		decoded, result = DecodeGolay2087(cwErr2)
+		decoded, result = Decode2087(cwErr2)
 		if result.Uncorrectable || result.ErrorsCorrected != 2 {
 			t.Errorf("Failed to correct 2 errors")
 		}
@@ -79,7 +79,7 @@ func TestGolay2087Decode(t *testing.T) {
 		cwErr3[p1] ^= 1
 		cwErr3[p2] ^= 1
 		cwErr3[p3] ^= 1
-		decoded, result = DecodeGolay2087(cwErr3)
+		decoded, result = Decode2087(cwErr3)
 		if result.Uncorrectable || result.ErrorsCorrected != 3 {
 			t.Errorf("Failed to correct 3 errors")
 		}

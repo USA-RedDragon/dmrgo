@@ -22,28 +22,28 @@ func golay23ComputeSyndrome(received uint32) int {
 	return int(dividend & 0x7FF)
 }
 
-// EncodeGolay23127 returns the 23-bit Golay (23,12,7) codeword of the low
+// Encode23127 returns the 23-bit Golay (23,12,7) codeword of the low
 // 12 bits of data: the data bits in bits 22 to 11, the parity in bits 10 to 0.
-func EncodeGolay23127(data uint16) uint32 {
+func Encode23127(data uint16) uint32 {
 	return golay_23_12_7_table[data&0xFFF] >> 1
 }
 
-// DecodeGolay23127 decodes a 23-bit word using the Golay (23,12,7) code.
+// Decode23127 decodes a 23-bit word using the Golay (23,12,7) code.
 // It returns the corrected 12-bit data and a fec.Result.
 //
 // Golay (23,12,7) is a perfect code: every 23-bit word is within 3 bits of
-// exactly one codeword. DecodeGolay23127 therefore never sets Uncorrectable.
+// exactly one codeword. Decode23127 therefore never sets Uncorrectable.
 // A word with 4 or more bit errors decodes to the wrong data and reports
 // ErrorsCorrected of at most 3, so a caller that must detect such words
 // needs ErrorsCorrected or a check outside this code.
 //
 // A received word with bits set above bit 22 is not a 23-bit word: the
 // decoder ignores those bits and sets Uncorrectable.
-func DecodeGolay23127(received uint32) (data uint16, result fec.Result) {
+func Decode23127(received uint32) (data uint16, result fec.Result) {
 	result.BitsChecked = 23
 	if received>>23 != 0 {
 		received &= 1<<23 - 1
-		data, result = DecodeGolay23127(received)
+		data, result = Decode23127(received)
 		result.Uncorrectable = true
 		return data, result
 	}

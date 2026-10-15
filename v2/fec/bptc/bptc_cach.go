@@ -59,12 +59,12 @@ func parityHamming17_12(data [12]bit.Bit) [5]bit.Bit {
 	}
 }
 
-// DecodeCACHBPTC decodes a 36-bit Short LC PDU from 4 × 17-bit CACH
+// DecodeCACH decodes a 36-bit Short LC PDU from 4 × 17-bit CACH
 // signalling payloads.
 //
 // The fragments should be in order (CACH burst 0 through CACH burst 3).
 // Returns the 36 information bits (28 data + 8 CRC-8) and FEC result.
-func DecodeCACHBPTC(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
+func DecodeCACH(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
 	for i := range fragments {
 		bit.Mask(fragments[i][:])
 	}
@@ -170,9 +170,9 @@ func cachMatrixValid(matrix *[4][17]bit.Bit) bool {
 	return true
 }
 
-// EncodeCACHBPTC encodes a 36-bit Short LC PDU into 4 × 17-bit CACH
+// EncodeCACH encodes a 36-bit Short LC PDU into 4 × 17-bit CACH
 // signalling payloads.
-func EncodeCACHBPTC(info [36]bit.Bit) [4][17]bit.Bit {
+func EncodeCACH(info [36]bit.Bit) [4][17]bit.Bit {
 	bit.Mask(info[:])
 	var matrix [4][17]bit.Bit
 

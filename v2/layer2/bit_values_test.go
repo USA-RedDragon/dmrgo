@@ -14,11 +14,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/hamming"
-	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -33,15 +32,9 @@ import (
 //
 //nolint:gochecknoglobals
 var bitFuncs = map[string]any{
-	"fec/bptc.BPTC19696.DeinterleaveDataBits": func(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
-		return (&bptc.BPTC19696{}).DeinterleaveDataBits(bits)
-	},
-	"fec/trellis.Trellis34.Decode": func(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
-		return trellis.New().Decode(bits)
-	},
-	"fec/trellis.Trellis34.Encode": func(data [144]bit.Bit) [196]bit.Bit {
-		return trellis.New().Encode(data)
-	},
+	"fec/bptc.Decode196": bptc.Decode196,
+	"fec/trellis.Decode": trellis.Decode,
+	"fec/trellis.Encode": trellis.Encode,
 	"layer2/framer.Search": func(stream [600]bit.Bit) (framer.Match, bool) {
 		return framer.Search(stream[:], 0, -1)
 	},
@@ -64,26 +57,24 @@ var bitFuncs = map[string]any{
 	"crc.CheckCRC7":                                            crc.CheckCRC7,
 	"crc.CheckCRC8":                                            crc.CheckCRC8,
 	"crc.CheckCRC9":                                            crc.CheckCRC9,
-	"fec/bptc.DecodeCACHBPTC":                                  bptc.DecodeCACHBPTC,
-	"fec/bptc.DecodeEmbeddedLC":                                bptc.DecodeEmbeddedLC,
-	"fec/bptc.DecodeEmbeddedLCStrict":                          bptc.DecodeEmbeddedLCStrict,
-	"fec/bptc.DecodeEmbeddedLCWithCheck":                       bptc.DecodeEmbeddedLCWithCheck,
-	"fec/bptc.DecodeSingleBurstBPTC":                           bptc.DecodeSingleBurstBPTC,
-	"fec/bptc.Encode":                                          bptc.Encode,
-	"fec/bptc.EncodeCACHBPTC":                                  bptc.EncodeCACHBPTC,
-	"fec/bptc.EncodeEmbeddedLC":                                bptc.EncodeEmbeddedLC,
-	"fec/bptc.EncodeSingleBurstBPTC":                           bptc.EncodeSingleBurstBPTC,
-	"fec/golay.DecodeGolay2087":                                golay.DecodeGolay2087,
-	"fec/golay.Golay_20_8_Check":                               golay.Golay_20_8_Check,
-	"fec/golay.Golay_20_8_Parity":                              golay.Golay_20_8_Parity,
+	"fec/bptc.DecodeCACH":                                      bptc.DecodeCACH,
+	"fec/bptc.DecodeEmbedded":                                  bptc.DecodeEmbedded,
+	"fec/bptc.DecodeEmbeddedStrict":                            bptc.DecodeEmbeddedStrict,
+	"fec/bptc.DecodeEmbeddedWithCheck":                         bptc.DecodeEmbeddedWithCheck,
+	"fec/bptc.DecodeSingleBurst":                               bptc.DecodeSingleBurst,
+	"fec/bptc.Encode196":                                       bptc.Encode196,
+	"fec/bptc.EncodeCACH":                                      bptc.EncodeCACH,
+	"fec/bptc.EncodeEmbedded":                                  bptc.EncodeEmbedded,
+	"fec/bptc.EncodeSingleBurst":                               bptc.EncodeSingleBurst,
+	"fec/golay.Decode2087":                                     golay.Decode2087,
+	"fec/golay.Encode2087":                                     golay.Encode2087,
+	"fec/golay.Check2087":                                      golay.Check2087,
 	"fec/hamming.Check743":                                     hamming.Check743,
 	"fec/hamming.Decode743":                                    hamming.Decode743,
 	"fec/hamming.Encode743":                                    hamming.Encode743,
-	"fec/hamming.Parity743":                                    hamming.Parity743,
 	"fec/quadraticresidue.Check":                               quadraticresidue.Check,
 	"fec/quadraticresidue.Decode":                              quadraticresidue.Decode,
-	"fec/quadraticresidue.NewQuadraticResidue16_7_6":           quadraticresidue.NewQuadraticResidue16_7_6,
-	"fec/quadraticresidue.ParityBits":                          quadraticresidue.ParityBits,
+	"fec/quadraticresidue.Encode":                              quadraticresidue.Encode,
 	"layer2.BurstToDibits":                                     layer2.BurstToDibits,
 	"layer2.CACHDeinterleave":                                  layer2.CACHDeinterleave,
 	"layer2.CACHInterleave":                                    layer2.CACHInterleave,

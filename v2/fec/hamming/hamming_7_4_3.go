@@ -1,4 +1,5 @@
-// Package hamming provides Hamming FEC codec implementations.
+// Package hamming implements the Hamming (7,4,3) code of ETSI TS 102 361-1
+// B.3.5, which protects the Reverse Channel and the TACT.
 package hamming
 
 import (
@@ -25,8 +26,8 @@ import (
 //	0 1 1 1 | 0 1 0
 //	1 1 0 1 | 0 0 1
 
-// Parity743 computes the 3 parity bits for 4 data bits using Hamming(7,4,3).
-func Parity743(data [4]bit.Bit) [3]bit.Bit {
+// parity743 computes the 3 parity bits for 4 data bits using Hamming(7,4,3).
+func parity743(data [4]bit.Bit) [3]bit.Bit {
 	bit.Mask(data[:])
 	return [3]bit.Bit{
 		data[0] ^ data[1] ^ data[2], // p₀
@@ -77,7 +78,7 @@ func Check743(bits [7]bit.Bit) bool {
 	var data [4]bit.Bit
 	copy(data[:], bits[:4])
 
-	parity := Parity743(data)
+	parity := parity743(data)
 	return parity[0] == bits[4] && parity[1] == bits[5] && parity[2] == bits[6]
 }
 
@@ -85,20 +86,9 @@ func Check743(bits [7]bit.Bit) bool {
 // Layout: [d₀ d₁ d₂ d₃ p₀ p₁ p₂]
 func Encode743(data [4]bit.Bit) [7]bit.Bit {
 	bit.Mask(data[:])
-	parity := Parity743(data)
+	parity := parity743(data)
 	return [7]bit.Bit{
 		data[0], data[1], data[2], data[3],
 		parity[0], parity[1], parity[2],
 	}
-}
-
-// Encode encodes a byte value (4 LSBs used) into a 7-bit Hamming(7,4,3) codeword.
-// This is the byte-oriented entry point used by code generation.
-func Encode(data byte) [7]bit.Bit {
-	var bits [4]bit.Bit
-	bits[0] = bit.Bit((data >> 3) & 1)
-	bits[1] = bit.Bit((data >> 2) & 1)
-	bits[2] = bit.Bit((data >> 1) & 1)
-	bits[3] = bit.Bit(data & 1)
-	return Encode743(bits)
 }

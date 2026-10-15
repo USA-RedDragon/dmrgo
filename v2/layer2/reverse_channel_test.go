@@ -20,7 +20,7 @@ func buildRCEmbeddedData(payload byte) [32]bit.Bit {
 	for i := 0; i < 7; i++ {
 		infoBits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)
 	}
-	return bptc.EncodeSingleBurstBPTC(infoBits, true)
+	return bptc.EncodeSingleBurst(infoBits, true)
 }
 
 func TestRC_DecodeFromEmbeddedData_RoundTrip(t *testing.T) {

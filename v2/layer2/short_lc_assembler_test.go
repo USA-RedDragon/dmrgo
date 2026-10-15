@@ -28,7 +28,7 @@ func buildValidShortLCFragments(slco byte, data [24]bit.Bit) [4][17]bit.Bit {
 	for i := range 8 {
 		bits[28+i] = bit.Bit((crcVal >> (7 - i)) & 1)
 	}
-	return bptc.EncodeCACHBPTC(bits)
+	return bptc.EncodeCACH(bits)
 }
 
 //nolint:gochecknoglobals
@@ -274,7 +274,7 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 		},
 	}
 	encoded := must(pdu.EncodeShortLC(&original))
-	fragments := bptc.EncodeCACHBPTC(encoded)
+	fragments := bptc.EncodeCACH(encoded)
 
 	slc, fecResult := layer2.DecodeShortLCFromFragments(fragments)
 	if fecResult.Uncorrectable {

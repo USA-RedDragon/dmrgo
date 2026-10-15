@@ -16,7 +16,7 @@ import (
 // The interleaved 32-bit result is placed in the embedded signalling data
 // field of a single voice burst.
 
-// DecodeSingleBurstBPTC decodes 32 transmit bits from a single burst's
+// DecodeSingleBurst decodes 32 transmit bits from a single burst's
 // embedded data field. Returns the 11 information bits and FEC result.
 //
 // Set oddParity=true for Reverse Channel (RC) bursts, where the column
@@ -25,7 +25,7 @@ import (
 // Up to 3 bit errors in the 32 bits are corrected; ErrorsCorrected is the
 // number of corrected bits. Four bit errors are always detected and set
 // Uncorrectable.
-func DecodeSingleBurstBPTC(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Result) {
+func DecodeSingleBurst(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Result) {
 	bit.Mask(txBits[:])
 	result := fec.Result{BitsChecked: 32}
 
@@ -83,11 +83,11 @@ func DecodeSingleBurstBPTC(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec
 	return info, result
 }
 
-// EncodeSingleBurstBPTC encodes 11 information bits into 32 transmit bits
+// EncodeSingleBurst encodes 11 information bits into 32 transmit bits
 // for a single burst's embedded data field.
 //
 // Set oddParity=true for Reverse Channel (RC) encoding.
-func EncodeSingleBurstBPTC(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
+func EncodeSingleBurst(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
 	bit.Mask(info[:])
 	var matrix [2][16]bit.Bit
 

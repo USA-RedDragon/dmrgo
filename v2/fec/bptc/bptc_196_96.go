@@ -1,12 +1,12 @@
+// Package bptc implements the block product turbo codes of ETSI TS 102 361-1
+// B.1 and B.2: BPTC(196,96) for full bursts, the BPTC(128,77) matrix of the
+// embedded signalling, the CACH Short LC BPTC and the single burst BPTC.
 package bptc
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
-
-type BPTC19696 struct {
-}
 
 func calculate_syndrome_15_11(bits [15]bit.Bit) int {
 	var errs [4]bit.Bit
@@ -27,8 +27,10 @@ func calculate_syndrome_13_9(bits [13]bit.Bit) int {
 	return int(errs[0]) | int(errs[1])<<1 | int(errs[2])<<2 | int(errs[3])<<3
 }
 
-// DeinterleaveDataBits returns the deinterleaved data bits and a fec.Result
-func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
+// Decode196 deinterleaves a BPTC(196,96) block, corrects it with the row and
+// column Hamming codes and returns the 96 data bits and a fec.Result
+// (ETSI TS 102 361-1 B.1.1).
+func Decode196(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
 	bit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 196}
 	var deinterleavedBits [196]bit.Bit
@@ -119,7 +121,7 @@ func rowSyndrome(grid *[196]bit.Bit, r int) int {
 }
 
 // Encode encodes 96 data bits using BPTC(196,96) interleaving with Hamming FEC.
-func Encode(data [96]bit.Bit) [196]bit.Bit {
+func Encode196(data [96]bit.Bit) [196]bit.Bit {
 	bit.Mask(data[:])
 	var grid [196]bit.Bit
 

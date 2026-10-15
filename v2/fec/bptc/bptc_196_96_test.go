@@ -8,7 +8,6 @@ import (
 )
 
 func TestBPTC19696Decode(t *testing.T) {
-	bptcDiff := BPTC19696{}
 
 	for run := 0; run < 100; run++ {
 		// 1. Generate Random Data
@@ -18,10 +17,10 @@ func TestBPTC19696Decode(t *testing.T) {
 		}
 
 		// 2. Encode
-		encoded := Encode(data)
+		encoded := Encode196(data)
 
 		// 3. Decode Clean
-		decoded, result := bptcDiff.DeinterleaveDataBits(encoded)
+		decoded, result := Decode196(encoded)
 
 		if result.Uncorrectable {
 			t.Errorf("Failed to decode clean codeword: uncorrectable")
@@ -41,7 +40,7 @@ func TestBPTC19696Decode(t *testing.T) {
 		// 4. Test Single Error
 		// Flip a bit in the encoded stream
 		// We should pick a bit that maps to Data or Parity.
-		// Note: If we flip a bit, DeinterleaveDataBits returns correct data.
+		// Note: If we flip a bit, Decode196 returns correct data.
 		encodedErr := encoded
 		pos := rand.Intn(196)   //nolint:gosec // deterministic PRNG fine for tests
 		for pos == int(dm[0]) { // dm[0] maps to grid position 0 (unused corner); flipping it is unobservable
@@ -49,13 +48,13 @@ func TestBPTC19696Decode(t *testing.T) {
 		}
 		encodedErr[pos] ^= 1
 
-		decoded, result = bptcDiff.DeinterleaveDataBits(encodedErr)
+		decoded, result = Decode196(encodedErr)
 
 		if result.Uncorrectable {
 			t.Errorf("Failed to correct 1 error")
 		}
 
-		// Note: `result.ErrorsCorrected` returned by DeinterleaveDataBits is "how many flips it performed".
+		// Note: `result.ErrorsCorrected` returned by Decode196 is "how many flips it performed".
 		// It should be 1.
 		if result.ErrorsCorrected != 1 {
 			t.Errorf("Expected 1 error corrected, got %d", result.ErrorsCorrected)

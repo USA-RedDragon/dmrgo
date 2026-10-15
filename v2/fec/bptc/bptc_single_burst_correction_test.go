@@ -37,14 +37,14 @@ func TestSingleBurstBPTC_UpToThreeErrorsCorrected(t *testing.T) {
 	for _, rc := range []bool{false, true} {
 		for _, m := range []int{0, 0x7FF, 0x2A5, 0x15A} {
 			info := singleBurstInfo(m)
-			tx := bptc.EncodeSingleBurstBPTC(info, rc)
+			tx := bptc.EncodeSingleBurst(info, rc)
 			for k := 1; k <= 3; k++ {
 				forEachErrorPattern(32, k, func(pos []int) {
 					rx := tx
 					for _, p := range pos {
 						rx[p] ^= 1
 					}
-					got, res := bptc.DecodeSingleBurstBPTC(rx, rc)
+					got, res := bptc.DecodeSingleBurst(rx, rc)
 					if got != info || res.Uncorrectable || res.ErrorsCorrected != k {
 						t.Fatalf("rc=%v info=%03X errors at %v: data match=%v result=%+v", rc, m, pos, got == info, res)
 					}
@@ -58,13 +58,13 @@ func TestSingleBurstBPTC_FourErrorsDetected(t *testing.T) {
 	t.Parallel()
 	for _, rc := range []bool{false, true} {
 		info := singleBurstInfo(0x2A5)
-		tx := bptc.EncodeSingleBurstBPTC(info, rc)
+		tx := bptc.EncodeSingleBurst(info, rc)
 		forEachErrorPattern(32, 4, func(pos []int) {
 			rx := tx
 			for _, p := range pos {
 				rx[p] ^= 1
 			}
-			if _, res := bptc.DecodeSingleBurstBPTC(rx, rc); !res.Uncorrectable {
+			if _, res := bptc.DecodeSingleBurst(rx, rc); !res.Uncorrectable {
 				t.Fatalf("rc=%v errors at %v: not flagged, result=%+v", rc, pos, res)
 			}
 		})
@@ -75,10 +75,10 @@ func TestSingleBurstBPTC_ParityRowErrorCorrected(t *testing.T) {
 	t.Parallel()
 	for _, rc := range []bool{false, true} {
 		info := singleBurstInfo(0x021)
-		tx := bptc.EncodeSingleBurstBPTC(info, rc)
+		tx := bptc.EncodeSingleBurst(info, rc)
 		// Transmit bit 17 holds encode matrix index 1 (row 1, column 0).
 		tx[17] ^= 1
-		got, res := bptc.DecodeSingleBurstBPTC(tx, rc)
+		got, res := bptc.DecodeSingleBurst(tx, rc)
 		if got != info || res.Uncorrectable || res.ErrorsCorrected != 1 {
 			t.Errorf("rc=%v: data match=%v result=%+v", rc, got == info, res)
 		}

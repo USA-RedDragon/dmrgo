@@ -73,10 +73,7 @@ func MMDVMHostAccepts(dataType elements.DataType, payload [12]byte) bool {
 }
 
 func rs129Matches(payload [12]byte, mask byte) bool {
-	codeword, err := reedsolomon.Encode(payload[:9])
-	if err != nil {
-		return false
-	}
+	codeword := reedsolomon.Encode([9]byte(payload[:9]))
 	for i := 9; i < 12; i++ {
 		if codeword[i] != payload[i]^mask {
 			return false

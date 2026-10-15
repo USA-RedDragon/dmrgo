@@ -15,8 +15,7 @@ func burstInfoBits(raw [33]byte) [96]bit.Bit {
 	var dataBits [196]bit.Bit
 	copy(dataBits[:98], all[:98])
 	copy(dataBits[98:], all[166:])
-	var b bptc.BPTC19696
-	info, _ := b.DeinterleaveDataBits(dataBits)
+	info, _ := bptc.Decode196(dataBits)
 	return info
 }
 

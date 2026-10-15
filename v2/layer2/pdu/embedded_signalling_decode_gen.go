@@ -45,7 +45,7 @@ func EncodeEmbeddedSignalling(s *EmbeddedSignalling) ([16]bit.Bit, error) {
 		return [16]bit.Bit{}, fmt.Errorf("EmbeddedSignalling.LCSS: value %d does not fit in 2 bits", s.LCSS)
 	}
 	copy(data[5:7], bit.BitsFromUint8(uint8(s.LCSS), 2))
-	return quadraticresidue.Encode(bit.BitsToValue(data[:])), nil
+	return quadraticresidue.Encode(data), nil
 }
 
 func (s *EmbeddedSignalling) ToString() string {

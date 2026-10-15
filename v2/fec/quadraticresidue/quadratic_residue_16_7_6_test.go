@@ -21,7 +21,7 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		}
 
 		// 2. Calculate Parity
-		parity := ParityBits(data)
+		parity := parityBits(data)
 		var cw [16]bit.Bit
 		copy(cw[:], data[:])
 		copy(cw[7:], parity[:])

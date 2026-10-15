@@ -42,16 +42,16 @@ func EncodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
 		n += 10
 		info[row*11+10] = bit.Bit((cs >> (6 - row)) & 1)
 	}
-	return bptc.EncodeEmbeddedLC(info)
+	return bptc.EncodeEmbedded(info)
 }
 
 // DecodeEmbeddedLC decodes the 72 LC bits from the four embedded signalling
 // fragments of bursts B to E. It decodes the BPTC to the nearest codewords
-// with bptc.DecodeEmbeddedLCWithCheck and keeps the one whose 5-bit checksum
+// with bptc.DecodeEmbeddedWithCheck and keeps the one whose 5-bit checksum
 // matches its LC. The FEC result covers the BPTC; Uncorrectable is set when
 // no nearest codeword or more than one has a matching checksum.
 func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
-	return embeddedLCChecksum(bptc.DecodeEmbeddedLCWithCheck(fragments, embeddedLCChecksumValid))
+	return embeddedLCChecksum(bptc.DecodeEmbeddedWithCheck(fragments, embeddedLCChecksumValid))
 }
 
 func embeddedLCChecksumValid(info [77]bit.Bit) bool {
@@ -60,10 +60,10 @@ func embeddedLCChecksumValid(info [77]bit.Bit) bool {
 }
 
 // DecodeEmbeddedLCStrict is DecodeEmbeddedLC with the BPTC decoded by
-// bptc.DecodeEmbeddedLCStrict, so it accepts and returns the same LCs as
+// bptc.DecodeEmbeddedStrict, so it accepts and returns the same LCs as
 // MMDVMHost (CDMREmbeddedData::decodeEmbeddedData).
 func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
-	return embeddedLCChecksum(bptc.DecodeEmbeddedLCStrict(fragments))
+	return embeddedLCChecksum(bptc.DecodeEmbeddedStrict(fragments))
 }
 
 func embeddedLCChecksum(info [77]bit.Bit, result fec.Result) ([72]bit.Bit, fec.Result) {
@@ -112,15 +112,12 @@ func DecodeEmbeddedFullLinkControlStrict(fragments [4][32]bit.Bit) (pdu.FullLink
 
 func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkControl, fec.Result) {
 	octets := lcOctets(lc)
-	codeword, err := reedsolomon.Encode(octets[:])
-	if err != nil {
-		panic(err)
-	}
+	codeword := reedsolomon.Encode(octets)
 	for i := 9; i < 12; i++ {
 		codeword[i] ^= voiceLCHeaderMask
 	}
 	var data [96]bit.Bit
-	copy(data[:], bit.UnpackBits(codeword))
+	copy(data[:], bit.UnpackBits(codeword[:]))
 	flc, rs := pdu.DecodeFullLinkControl(data, elements.DataTypeVoiceLCHeader)
 	result.ErrorsCorrected += rs.ErrorsCorrected
 	result.Uncorrectable = result.Uncorrectable || rs.Uncorrectable

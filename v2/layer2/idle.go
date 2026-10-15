@@ -9,7 +9,7 @@ import (
 
 // IdleMessageInfo returns a copy of the 96 information bits of the idle
 // message from Table D.2 of ETSI TS 102 361-1. It is the same value as
-// pdu.PRFillBits. bptc.Encode of these bits gives the BPTC(196,96) idle
+// pdu.PRFillBits. bptc.Encode196 of these bits gives the BPTC(196,96) idle
 // message of Figure D.1.
 func IdleMessageInfo() [96]bit.Bit {
 	return pdu.PRFillBits()

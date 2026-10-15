@@ -64,8 +64,8 @@ var crcAlgorithms = map[string]CRCAlgorithmInfo{
 // FECCodecInfo maps FEC directive names to their decode function and import path.
 type FECCodecInfo struct {
 	ImportPath  string // e.g. "github.com/USA-RedDragon/dmrgo/v2/fec/golay"
-	DecodeFn    string // e.g. "DecodeGolay2087"
-	EncodeFn    string // e.g. "Encode" — func(byte) [N]bit.Bit
+	DecodeFn    string // e.g. "Decode2087"
+	EncodeFn    string // e.g. "Encode2087", func([DataBits]bit.Bit) [InputSize]bit.Bit
 	InputSize   int    // full FEC codeword size in bits, e.g. 20
 	DataBits    int    // data-only bits before FEC, e.g. 8
 	PackedBytes bool   // true if codec operates on packed bytes (e.g. RS)
@@ -77,8 +77,8 @@ type FECCodecInfo struct {
 var fecCodecs = map[string]FECCodecInfo{
 	"golay_20_8_7": {
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
-		DecodeFn:   "DecodeGolay2087",
-		EncodeFn:   encodeFnName,
+		DecodeFn:   "Decode2087",
+		EncodeFn:   "Encode2087",
 		InputSize:  20,
 		DataBits:   8,
 	},
@@ -109,7 +109,7 @@ var fecCodecs = map[string]FECCodecInfo{
 	"hamming_7_4_3": {
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
 		DecodeFn:   "Decode743",
-		EncodeFn:   encodeFnName,
+		EncodeFn:   "Encode743",
 		InputSize:  7,
 		DataBits:   4,
 	},
@@ -269,7 +269,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 				genErr = err
 				return
 			}
-			emitPackedFECDecode(g, codec, inputSize)
+			emitPackedFECDecode(g, codec)
 		case hasBitFEC:
 			// Bit-level FEC (Golay, QR): operates directly on bit arrays
 			g.List(Id("corrected"), Id("fecResult")).Op(":=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("data"))
@@ -439,25 +439,17 @@ func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statem
 }
 
 // emitPackedFECDecode generates packed-bytes FEC (e.g. Reed-Solomon) decode code.
-func emitPackedFECDecode(g *Group, codec *FECCodecInfo, inputSize int) {
-	// rsResult := reedsolomon.Decode(_packedBytes[:])
-	g.Id("_rsResult").Op(":=").Qual(codec.ImportPath, codec.DecodeFn).Call(
-		Id("_packedBytes").Index(Empty(), Empty()),
-	)
-	g.Id("fecResult").Op(":=").Qual(fecPkg, "Result").Values(Dict{
-		Id("BitsChecked"):     Lit(inputSize),
-		Id("ErrorsCorrected"): Id("_rsResult").Dot("BitsCorrected"),
-		Id("Uncorrectable"):   Id("_rsResult").Dot("Uncorrectable"),
-	})
+func emitPackedFECDecode(g *Group, codec *FECCodecInfo) {
+	g.List(Id("_fecData"), Id("fecResult")).Op(":=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("_packedBytes"))
 	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
 
 	// If corrected, unpack corrected data bytes back into the data bit array
-	g.If(Op("!").Id("_rsResult").Dot("Uncorrectable")).Block(
+	g.If(Op("!").Id("fecResult").Dot("Uncorrectable")).Block(
 		For(Id("i").Op(":=").Range().Lit(codec.DataBytes)).Block(
 			For(Id("j").Op(":=").Range().Lit(8)).Block(
 				Id("data").Index(Id("i").Op("*").Lit(8).Op("+").Id("j")).Op("=").
 					Qual(bitPkg, "Bit").Call(
-					Parens(Id("_rsResult").Dot("Data").Index(Id("i")).Op(">>").
+					Parens(Id("_fecData").Index(Id("i")).Op(">>").
 						Parens(Lit(7).Op("-").Id("j"))).Op("&").Lit(1),
 				),
 			),
@@ -1107,9 +1099,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 				genErr = err
 				return
 			}
-			g.Return(Qual(codec.ImportPath, codec.EncodeFn).Call(
-				Qual(bitPkg, "BitsToValue").Call(Id("data").Index(Empty(), Empty())),
-			), Nil())
+			g.Return(Qual(codec.ImportPath, codec.EncodeFn).Call(Id("data")), Nil())
 		case hasCRC || hasPackedFEC:
 			// CRC or packed FEC: build data bits, then pack+CRC/RS-encode
 			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
@@ -1389,10 +1379,7 @@ func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 		),
 	)
 
-	g.List(Id("_encoded"), Err()).Op(":=").Qual(codec.ImportPath, encodeFnName).Call(
-		Id("_encData").Index(Empty(), Empty()),
-	)
-	g.If(Err().Op("!=").Nil()).Block(enc.fail(Err()))
+	g.Id("_encoded").Op(":=").Qual(codec.ImportPath, encodeFnName).Call(Id("_encData"))
 
 	var noMask Code
 	if pdu.FECMask != nil {

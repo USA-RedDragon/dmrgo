@@ -6,8 +6,7 @@ import (
 )
 
 func TestTrellis34Decode(t *testing.T) {
-	tr := New()
-
+	
 	symbolToDibits := make(map[byte][2]int8)
 	for pair, sym := range trellis34_constellation {
 		symbolToDibits[sym] = pair
@@ -60,7 +59,7 @@ func TestTrellis34Decode(t *testing.T) {
 		// bitsToDibits groups 2 bits -> 1 dibit.
 		// We need to expand 1 dibit -> 2 bits.
 		// This is effectively dibitsToBits (which exists in the class).
-		// Wait, t.dibitsToBits(dibits) -> bits.
+		// Wait, dibitsToBits(dibits) -> bits.
 		// But verify if dibitsToBits matches bitsToDibits logic.
 		// dibitsToBits:
 		// 3 -> 0,1
@@ -74,10 +73,10 @@ func TestTrellis34Decode(t *testing.T) {
 		// 1,1 -> -3
 		// Matches. Use the helper.
 
-		encodedBits := tr.dibitsToBits(permutedDibits)
+		encodedBits := dibitsToBits(permutedDibits)
 
 		// 3. Decode
-		decodedBits, result := tr.Decode(encodedBits)
+		decodedBits, result := Decode(encodedBits)
 
 		// 4. Verify
 		// errors should be 0
@@ -92,7 +91,7 @@ func TestTrellis34Decode(t *testing.T) {
 		// tribitsToBits takes [49]byte tribits.
 		// We should match against what tribitsToBits(inputs) produces.
 
-		expectedBits := tr.tribitsToBits(inputs)
+		expectedBits := tribitsToBits(inputs)
 
 		if decodedBits != expectedBits {
 			t.Errorf("Decoded bits do not match expected bits")
@@ -135,8 +134,8 @@ func TestTrellis34Decode(t *testing.T) {
 			corruptPermutedDibits[i] = corruptOrderedDibits[interleave_matrix[i]]
 		}
 
-		corruptBits := tr.dibitsToBits(corruptPermutedDibits)
-		_, corruptResult := tr.Decode(corruptBits)
+		corruptBits := dibitsToBits(corruptPermutedDibits)
+		_, corruptResult := Decode(corruptBits)
 
 		if corruptResult.ErrorsCorrected == 0 {
 			t.Errorf("Expected decoder to flag an error for invalid symbol at %d", corruptIndex)

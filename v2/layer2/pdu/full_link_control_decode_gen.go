@@ -47,17 +47,12 @@ func DecodeFullLinkControl(data [96]bit.Bit, dataType layer2Elements.DataType) (
 		_packedBytes[10] ^= 0x99
 		_packedBytes[11] ^= 0x99
 	}
-	_rsResult := reedsolomon.Decode(_packedBytes[:])
-	fecResult := fec.Result{
-		BitsChecked:     96,
-		ErrorsCorrected: _rsResult.BitsCorrected,
-		Uncorrectable:   _rsResult.Uncorrectable,
-	}
+	_fecData, fecResult := reedsolomon.Decode(_packedBytes)
 	result.FEC = fecResult
-	if !_rsResult.Uncorrectable {
+	if !fecResult.Uncorrectable {
 		for i := range 9 {
 			for j := range 8 {
-				data[i*8+j] = bit.Bit((_rsResult.Data[i] >> (7 - j)) & 1)
+				data[i*8+j] = bit.Bit((_fecData[i] >> (7 - j)) & 1)
 			}
 		}
 	}
@@ -217,10 +212,7 @@ func EncodeFullLinkControl(s *FullLinkControl) ([96]bit.Bit, error) {
 			_encData[i] |= byte(data[i*8+j])
 		}
 	}
-	_encoded, err := reedsolomon.Encode(_encData[:])
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
+	_encoded := reedsolomon.Encode(_encData)
 	switch s.DataType {
 	case layer2Elements.DataTypeVoiceLCHeader:
 		_encoded[9] ^= 0x96

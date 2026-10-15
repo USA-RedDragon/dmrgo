@@ -1,3 +1,5 @@
+// Package quadraticresidue implements the quadratic residue (16,7,6) code
+// of ETSI TS 102 361-1 B.3.2, which protects the EMB.
 package quadraticresidue
 
 import (
@@ -5,23 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-1 - B.3.2  Quadratic residue (16,7,6)
-
-type QuadraticResidue16_7_6 struct {
-	Data   [7]bit.Bit
-	Parity [9]bit.Bit
-}
-
-func NewQuadraticResidue16_7_6(bits [16]bit.Bit) *QuadraticResidue16_7_6 {
-	bit.Mask(bits[:])
-	qr := QuadraticResidue16_7_6{}
-	copy(qr.Data[:], bits[:7])
-	copy(qr.Parity[:], bits[7:16])
-
-	return &qr
-}
-
-func ParityBits(bits [7]bit.Bit) [9]bit.Bit {
+func parityBits(bits [7]bit.Bit) [9]bit.Bit {
 	bit.Mask(bits[:])
 	parity := [9]bit.Bit{}
 
@@ -40,12 +26,13 @@ func ParityBits(bits [7]bit.Bit) [9]bit.Bit {
 	return parity
 }
 
+// Check reports whether bits is a QR (16,7,6) codeword.
 func Check(bits [16]bit.Bit) bool {
 	bit.Mask(bits[:])
 	var data [7]bit.Bit
 	copy(data[:], bits[:7])
 
-	calcParity := ParityBits(data)
+	calcParity := parityBits(data)
 	for i := 0; i < 9; i++ {
 		if calcParity[i] != bits[7+i] {
 			return false
@@ -64,7 +51,7 @@ func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
 	copy(data[:], bits[:7])
 
 	// Calculate syndrome
-	calcParity := ParityBits(data)
+	calcParity := parityBits(data)
 	syndrome := 0
 	for i := 0; i < 9; i++ {
 		if calcParity[i] != bits[7+i] {
@@ -96,12 +83,11 @@ func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
 	return corrected, result
 }
 
-// Encode encodes a 7-bit input into a 16-bit QR(16,7,6) codeword.
-// The input byte contains the 7 data bits (0..127).
-// The output array contains 16 bits (values 0 or 1).
-// Bit layout: bits[0..6] = data, bits[7..15] = parity.
-func Encode(data byte) [16]bit.Bit {
+// Encode returns the QR (16,7,6) codeword of 7 data bits: the data bits
+// followed by 9 parity bits.
+func Encode(dataBits [7]bit.Bit) [16]bit.Bit {
 	var bits [16]bit.Bit
+	data := bit.BitsToUint8(dataBits[:], 0, 7)
 
 	// Look up the packed 16-bit codeword from the encoding table.
 	// Table layout: bits 15..9 = data[0..6], bits 8..0 = parity[0..8].

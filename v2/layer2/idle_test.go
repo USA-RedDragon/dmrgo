@@ -93,16 +93,16 @@ func TestIdleMessageFECMatrix_MatchesInfoBits(t *testing.T) {
 	}
 }
 
-// bptc.Encode moves matrix bit i to transmit bit (i*181)%196 (ETSI TS
+// bptc.Encode196 moves matrix bit i to transmit bit (i*181)%196 (ETSI TS
 // 102 361-1 clause B.1.1, equation B.1). Bit 0 is the pad bit R(3), so
 // Figure D.1 starts at bit 1.
 func TestIdleMessageFECMatrix_MatchesBPTCEncode(t *testing.T) {
-	encoded := bptc.Encode(layer2.IdleMessageInfo())
+	encoded := bptc.Encode196(layer2.IdleMessageInfo())
 	for r := range idleMessageFECMatrix {
 		for c := range idleMessageFECMatrix[r] {
 			i := 1 + r*15 + c
 			if got := encoded[(i*181)%196]; got != idleMessageFECMatrix[r][c] {
-				t.Errorf("Figure D.1 [%d][%d] = %d, bptc.Encode gives %d", r, c, idleMessageFECMatrix[r][c], got)
+				t.Errorf("Figure D.1 [%d][%d] = %d, bptc.Encode196 gives %d", r, c, idleMessageFECMatrix[r][c], got)
 			}
 		}
 	}
@@ -124,7 +124,7 @@ func TestIsIdleMessage_NoMatch(t *testing.T) {
 // Table D.1: the 11 information bits are 0, so all 32 transmit bits of the
 // clause B.2.1 single burst BPTC are 0.
 func TestIsNullEmbeddedLC_Match(t *testing.T) {
-	null := bptc.EncodeSingleBurstBPTC([11]bit.Bit{}, false)
+	null := bptc.EncodeSingleBurst([11]bit.Bit{}, false)
 	if null != [32]bit.Bit{} {
 		t.Errorf("single burst BPTC of 11 zero bits = %v, want 32 zero bits", null)
 	}

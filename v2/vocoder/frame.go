@@ -70,11 +70,11 @@ func encodeAMBE(ambe49 [49]bit.Bit) [72]bit.Bit {
 		}
 	}
 
-	a := golay.EncodeGolay24128(uint16(aOrig))
+	a := golay.Encode24128(uint16(aOrig))
 
 	p := ambeScrambleTable[aOrig] >> 1
 
-	b := golay.EncodeGolay23127(uint16(bOrig))
+	b := golay.Encode23127(uint16(bOrig))
 	b ^= p
 
 	MASK = 0x800000
@@ -130,7 +130,7 @@ func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 
 	// Golay 24,12,8: 24 bits received. 12 data bits.
 	// Decode 'a'
-	dataA, fecA := golay.DecodeGolay24128(a)
+	dataA, fecA := golay.Decode24128(a)
 	result.ErrorsCorrected += fecA.ErrorsCorrected
 	if fecA.Uncorrectable {
 		result.Uncorrectable = true
@@ -149,7 +149,7 @@ func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 
 	b ^= (ambeScrambleTable[a] >> 1)
 
-	dataB, fecB := golay.DecodeGolay23127(b)
+	dataB, fecB := golay.Decode23127(b)
 	result.ErrorsCorrected += fecB.ErrorsCorrected
 	if fecB.Uncorrectable {
 		result.Uncorrectable = true

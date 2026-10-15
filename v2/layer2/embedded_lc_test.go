@@ -140,9 +140,9 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 // in the BPTC but must be reported as uncorrectable.
 func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 	fr := capturedFragments()
-	info, _ := bptc.DecodeEmbeddedLC(fr)
+	info, _ := bptc.DecodeEmbedded(fr)
 	info[2*11+10] ^= 1
-	_, res := layer2.DecodeEmbeddedLC(bptc.EncodeEmbeddedLC(info))
+	_, res := layer2.DecodeEmbeddedLC(bptc.EncodeEmbedded(info))
 	if !res.Uncorrectable || res.ErrorsCorrected != 0 {
 		t.Errorf("FEC = %+v, want uncorrectable from the checksum alone", res)
 	}

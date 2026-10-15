@@ -15,8 +15,8 @@ func TestCACHBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 		info[i] = bit.Bit(i % 2)
 	}
 
-	fragments := bptc.EncodeCACHBPTC(info)
-	decoded, fecResult := bptc.DecodeCACHBPTC(fragments)
+	fragments := bptc.EncodeCACH(info)
+	decoded, fecResult := bptc.DecodeCACH(fragments)
 
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -29,7 +29,7 @@ func TestCACHBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 func TestCACHBPTC_BitsChecked(t *testing.T) {
 	t.Parallel()
 	var fragments [4][17]bit.Bit
-	_, fecResult := bptc.DecodeCACHBPTC(fragments)
+	_, fecResult := bptc.DecodeCACH(fragments)
 	if fecResult.BitsChecked != 68 {
 		t.Errorf("expected BitsChecked=68, got %d", fecResult.BitsChecked)
 	}
@@ -38,8 +38,8 @@ func TestCACHBPTC_BitsChecked(t *testing.T) {
 func TestCACHBPTC_AllZero(t *testing.T) {
 	t.Parallel()
 	var info [36]bit.Bit
-	fragments := bptc.EncodeCACHBPTC(info)
-	decoded, fecResult := bptc.DecodeCACHBPTC(fragments)
+	fragments := bptc.EncodeCACH(info)
+	decoded, fecResult := bptc.DecodeCACH(fragments)
 
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -58,8 +58,8 @@ func TestCACHBPTC_AllOnes(t *testing.T) {
 		info[i] = 1
 	}
 
-	fragments := bptc.EncodeCACHBPTC(info)
-	decoded, fecResult := bptc.DecodeCACHBPTC(fragments)
+	fragments := bptc.EncodeCACH(info)
+	decoded, fecResult := bptc.DecodeCACH(fragments)
 
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -74,14 +74,14 @@ func TestCACHBPTC_AllOnes(t *testing.T) {
 func TestCACHBPTC_FragmentSize(t *testing.T) {
 	t.Parallel()
 	info := cachInfo()
-	fragments := bptc.EncodeCACHBPTC(info)
+	fragments := bptc.EncodeCACH(info)
 
 	// Every fragment carries part of the codeword: one flipped bit in any of
 	// them must be corrected.
 	for i := range fragments {
 		rx := fragments
 		rx[i][16] ^= 1
-		if got, res := bptc.DecodeCACHBPTC(rx); got != info || res.ErrorsCorrected != 1 {
+		if got, res := bptc.DecodeCACH(rx); got != info || res.ErrorsCorrected != 1 {
 			t.Errorf("fragment %d: data match=%v result=%+v", i, got == info, res)
 		}
 	}
@@ -94,7 +94,7 @@ func TestCACHBPTC_FragmentBitsValid(t *testing.T) {
 	info[15] = 1
 	info[35] = 1
 
-	fragments := bptc.EncodeCACHBPTC(info)
+	fragments := bptc.EncodeCACH(info)
 	for i, frag := range fragments {
 		for j, b := range frag {
 			if b != 0 && b != 1 {
@@ -113,12 +113,12 @@ func TestCACHBPTC_SingleBitErrorCorrection(t *testing.T) {
 	info[20] = 1
 	info[30] = 1
 
-	fragments := bptc.EncodeCACHBPTC(info)
+	fragments := bptc.EncodeCACH(info)
 
 	// Corrupt one bit in the first fragment (within a data row)
 	fragments[0][0] ^= 1
 
-	decoded, fecResult := bptc.DecodeCACHBPTC(fragments)
+	decoded, fecResult := bptc.DecodeCACH(fragments)
 	if fecResult.Uncorrectable {
 		t.Fatal("single bit error should be correctable")
 	}
@@ -138,12 +138,12 @@ func TestCACHBPTC_StabilityEncodeDecode(t *testing.T) {
 		info[i] = bit.Bit((i * 7) % 2)
 	}
 
-	fragments1 := bptc.EncodeCACHBPTC(info)
-	decoded, fecResult := bptc.DecodeCACHBPTC(fragments1)
+	fragments1 := bptc.EncodeCACH(info)
+	decoded, fecResult := bptc.DecodeCACH(fragments1)
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
-	fragments2 := bptc.EncodeCACHBPTC(decoded)
+	fragments2 := bptc.EncodeCACH(decoded)
 
 	if fragments1 != fragments2 {
 		t.Error("encode→decode→encode produced different fragments")
@@ -162,8 +162,8 @@ func TestCACHBPTC_DifferentPatterns(t *testing.T) {
 	}
 
 	for _, info := range patterns {
-		fragments := bptc.EncodeCACHBPTC(info)
-		decoded, fecResult := bptc.DecodeCACHBPTC(fragments)
+		fragments := bptc.EncodeCACH(info)
+		decoded, fecResult := bptc.DecodeCACH(fragments)
 		if fecResult.Uncorrectable {
 			t.Error("unexpected uncorrectable error")
 		}
@@ -176,14 +176,14 @@ func TestCACHBPTC_DifferentPatterns(t *testing.T) {
 func TestCACHBPTC_ColumnParityError(t *testing.T) {
 	t.Parallel()
 	var info [36]bit.Bit
-	fragments := bptc.EncodeCACHBPTC(info)
+	fragments := bptc.EncodeCACH(info)
 
 	// Corrupt two bits in the same column across different rows
 	// This creates an undetectable column error if both are in data rows
 	fragments[0][0] ^= 1
 	fragments[1][0] ^= 1
 
-	_, fecResult := bptc.DecodeCACHBPTC(fragments)
+	_, fecResult := bptc.DecodeCACH(fragments)
 	// With two errors, the result may or may not be correctable depending
 	// on the specific positions, but at minimum errors should be detected
 	if fecResult.ErrorsCorrected == 0 && !fecResult.Uncorrectable {

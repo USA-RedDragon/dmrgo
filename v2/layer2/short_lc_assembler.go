@@ -98,7 +98,7 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.Result, error) {
 	}
 
 	// Decode BPTC to recover the 36-bit Short LC PDU
-	info, bptcResult := bptc.DecodeCACHBPTC(a.fragments)
+	info, bptcResult := bptc.DecodeCACH(a.fragments)
 
 	// Decode the Short LC PDU (CRC-8 check + SLCO dispatch)
 	var slcBits [36]bit.Bit

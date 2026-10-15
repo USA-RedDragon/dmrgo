@@ -33,15 +33,12 @@ func withCRC(data []byte, mask uint16) [96]bit.Bit {
 
 func withRS(t *testing.T, data []byte, mask uint32) [96]bit.Bit {
 	t.Helper()
-	cw, err := reedsolomon.Encode(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cw := reedsolomon.Encode([9]byte(data))
 	cw[9] ^= byte(mask >> 16)
 	cw[10] ^= byte(mask >> 8)
 	cw[11] ^= byte(mask)
 	var out [96]bit.Bit
-	copy(out[:], bit.UnpackBits(cw))
+	copy(out[:], bit.UnpackBits(cw[:]))
 	return out
 }
 

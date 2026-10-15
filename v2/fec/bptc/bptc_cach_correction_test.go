@@ -25,10 +25,10 @@ func flipCACH(fr [4][17]bit.Bit, pos ...int) [4][17]bit.Bit {
 func TestCACHBPTC_AllSingleAndDoubleErrorsCorrected(t *testing.T) {
 	t.Parallel()
 	info := cachInfo()
-	fr := bptc.EncodeCACHBPTC(info)
+	fr := bptc.EncodeCACH(info)
 	for k := 1; k <= 2; k++ {
 		forEachErrorPattern(68, k, func(pos []int) {
-			got, res := bptc.DecodeCACHBPTC(flipCACH(fr, pos...))
+			got, res := bptc.DecodeCACH(flipCACH(fr, pos...))
 			if got != info || res.Uncorrectable || res.ErrorsCorrected != k {
 				t.Fatalf("errors at %v: data match=%v result=%+v", pos, got == info, res)
 			}
@@ -39,10 +39,10 @@ func TestCACHBPTC_AllSingleAndDoubleErrorsCorrected(t *testing.T) {
 func TestCACHBPTC_ParityRowErrorCorrected(t *testing.T) {
 	t.Parallel()
 	info := cachInfo()
-	fr := bptc.EncodeCACHBPTC(info)
+	fr := bptc.EncodeCACH(info)
 	for col := 0; col < 17; col++ {
 		// Stream index col*4+3 is row 3 (the column parity row) of that column.
-		got, res := bptc.DecodeCACHBPTC(flipCACH(fr, col*4+3))
+		got, res := bptc.DecodeCACH(flipCACH(fr, col*4+3))
 		if got != info || res.Uncorrectable || res.ErrorsCorrected != 1 {
 			t.Fatalf("PC row col %d: data match=%v result=%+v", col, got == info, res)
 		}
@@ -52,9 +52,9 @@ func TestCACHBPTC_ParityRowErrorCorrected(t *testing.T) {
 func TestCACHBPTC_TripleErrorsNeverSilent(t *testing.T) {
 	t.Parallel()
 	info := cachInfo()
-	fr := bptc.EncodeCACHBPTC(info)
+	fr := bptc.EncodeCACH(info)
 	forEachErrorPattern(68, 3, func(pos []int) {
-		got, res := bptc.DecodeCACHBPTC(flipCACH(fr, pos...))
+		got, res := bptc.DecodeCACH(flipCACH(fr, pos...))
 		if !res.Uncorrectable && (got != info || res.ErrorsCorrected != 3) {
 			t.Fatalf("errors at %v: accepted wrong result, data match=%v result=%+v", pos, got == info, res)
 		}

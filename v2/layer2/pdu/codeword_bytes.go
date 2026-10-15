@@ -55,16 +55,11 @@ func CRCMask(dt elements.DataType) (mask uint32, width int, ok bool) {
 // XORed with the Table B.21 mask of dt. It returns an error unless dt is
 // DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
 func FullLCCodeword(lc [9]byte, dt elements.DataType) ([12]byte, error) {
-	var cw [12]byte
 	mask, err := fullLCMask(dt)
 	if err != nil {
-		return cw, err
+		return [12]byte{}, err
 	}
-	parity, err := reedsolomon.Encode(lc[:])
-	if err != nil {
-		return cw, err
-	}
-	copy(cw[:], parity)
+	cw := reedsolomon.Encode(lc)
 	for i := 9; i < 12; i++ {
 		cw[i] ^= mask[i-9]
 	}
@@ -89,20 +84,15 @@ func FullLCParityOK(cw [12]byte, dt elements.DataType) bool {
 // DecodeFullLinkControl does. It returns an error unless dt is
 // DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
 func DecodeFullLCCodeword(cw [12]byte, dt elements.DataType) ([9]byte, fec.Result, error) {
-	var lc [9]byte
 	mask, err := fullLCMask(dt)
 	if err != nil {
-		return lc, fec.Result{}, err
+		return [9]byte{}, fec.Result{}, err
 	}
 	for i := 9; i < 12; i++ {
 		cw[i] ^= mask[i-9]
 	}
-	res := reedsolomon.Decode(cw[:])
-	copy(lc[:], cw[:9])
-	if !res.Uncorrectable {
-		copy(lc[:], res.Data)
-	}
-	return lc, fec.Result{BitsChecked: 96, ErrorsCorrected: res.ErrorsFound, Uncorrectable: res.Uncorrectable}, nil
+	lc, res := reedsolomon.Decode(cw)
+	return lc, res, nil
 }
 
 func fullLCMask(dt elements.DataType) ([3]byte, error) {

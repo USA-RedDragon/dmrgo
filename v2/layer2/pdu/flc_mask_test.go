@@ -54,7 +54,7 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 			flc := base
 			flc.DataType = tt.dataType
 			masked := packedFLC(t, &flc)
-			unmasked := must(reedsolomon.Encode(masked[:9]))
+			unmasked := reedsolomon.Encode([9]byte(masked[:9]))
 			for i := 0; i < 3; i++ {
 				if got := masked[9+i] ^ unmasked[9+i]; got != tt.mask[i] {
 					t.Errorf("parity byte %d XOR = %#x, want %#x", 9+i, got, tt.mask[i])

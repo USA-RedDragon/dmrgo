@@ -1,3 +1,5 @@
+// Package trellis implements the rate 3/4 trellis code of ETSI TS 102 361-1
+// B.2, which protects rate 3/4 data blocks.
 package trellis
 
 import (
@@ -8,14 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-type Trellis34 struct {
-}
-
-func New() *Trellis34 {
-	return &Trellis34{}
-}
-
-func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]bit.Bit {
+func dibitsToBits(dibits [98]int8) [196]bit.Bit {
 	var bits [196]bit.Bit
 
 	for i := 0; i < 98; i++ {
@@ -52,7 +47,7 @@ func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]bit.Bit {
 // to detect a miscorrection, so a false Uncorrectable does not mean the data
 // is right. Callers must check the block CRC (the CRC-9 of a confirmed block
 // or the message CRC-32) to detect a miscorrected block.
-func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
+func Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
 	bit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 196}
 
@@ -104,7 +99,7 @@ func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
 		state = prev[k][state]
 	}
 
-	return t.tribitsToBits(tribits), result
+	return tribitsToBits(tribits), result
 }
 
 // dibitBits maps a ±1/±3 dibit symbol to its two transmitted bits.
@@ -121,7 +116,7 @@ func dibitBits(d int8) byte {
 	}
 }
 
-func (t *Trellis34) tribitsToBits(tribits [49]byte) [144]bit.Bit {
+func tribitsToBits(tribits [49]byte) [144]bit.Bit {
 	var bits [144]bit.Bit
 
 	for o := range 48 {
@@ -135,7 +130,7 @@ func (t *Trellis34) tribitsToBits(tribits [49]byte) [144]bit.Bit {
 }
 
 // Encode encodes 144 data bits using Trellis 3/4 rate coding, producing 196 interleaved bits.
-func (t *Trellis34) Encode(data [144]bit.Bit) [196]bit.Bit {
+func Encode(data [144]bit.Bit) [196]bit.Bit {
 	bit.Mask(data[:])
 	// Step 1: Data bits to tribits (48 data tribits + 1 tail)
 	var tribits [49]byte
@@ -167,5 +162,5 @@ func (t *Trellis34) Encode(data [144]bit.Bit) [196]bit.Bit {
 	}
 
 	// Step 5: Dibits to bits
-	return t.dibitsToBits(interleavedDibits)
+	return dibitsToBits(interleavedDibits)
 }

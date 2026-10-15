@@ -26,7 +26,7 @@ func randomBPTC19696(r *rand.Rand) ([96]bit.Bit, [196]bit.Bit) {
 	for i := range data {
 		data[i] = bit.Bit(r.Intn(2))
 	}
-	return data, Encode(data)
+	return data, Encode196(data)
 }
 
 func TestBPTC19696_EncodedGridIsProductCodeword(t *testing.T) {
@@ -46,13 +46,12 @@ func TestBPTC19696_EncodedGridIsProductCodeword(t *testing.T) {
 func TestBPTC19696_AllDoubleErrorsCorrected(t *testing.T) {
 	r := rand.New(rand.NewSource(10))
 	data, enc := randomBPTC19696(r)
-	var b BPTC19696
 	for p := 1; p < 196; p++ {
 		for q := p + 1; q < 196; q++ {
 			rx := enc
 			rx[dm[p]] ^= 1
 			rx[dm[q]] ^= 1
-			got, res := b.DeinterleaveDataBits(rx)
+			got, res := Decode196(rx)
 			if got != data || res.Uncorrectable || res.ErrorsCorrected != 2 {
 				t.Fatalf("grid bits %d,%d: data match=%v result=%+v", p, q, got == data, res)
 			}
@@ -95,8 +94,7 @@ func TestBPTC19696_ColumnsFirstCorrection(t *testing.T) {
 	for _, p := range []int{124, 128, 172, 173} {
 		enc[dm[p]] ^= 1
 	}
-	var b BPTC19696
-	got, res := b.DeinterleaveDataBits(enc)
+	got, res := Decode196(enc)
 	if got != data || res.Uncorrectable || res.ErrorsCorrected != 4 {
 		t.Fatalf("data match=%v result=%+v", got == data, res)
 	}

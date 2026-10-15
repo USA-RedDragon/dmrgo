@@ -20,7 +20,7 @@ import (
 func DecodeSlotType(data [20]bit.Bit) (SlotType, fec.Result) {
 	var result SlotType
 	bit.Mask(data[:])
-	corrected, fecResult := golay.DecodeGolay2087(data)
+	corrected, fecResult := golay.Decode2087(data)
 	result.FEC = fecResult
 	if !fecResult.Uncorrectable {
 		data = corrected
@@ -41,7 +41,7 @@ func EncodeSlotType(s *SlotType) ([20]bit.Bit, error) {
 		return [20]bit.Bit{}, fmt.Errorf("SlotType.DataType: value %d does not fit in 4 bits", s.DataType)
 	}
 	copy(data[4:8], bit.BitsFromUint8(uint8(s.DataType), 4))
-	return golay.Encode(bit.BitsToValue(data[:])), nil
+	return golay.Encode2087(data), nil
 }
 
 func (s *SlotType) ToString() string {

@@ -11,35 +11,35 @@ func TestHamming743_Parity(t *testing.T) {
 	// Test parity equations against known generator matrix
 	// Data [1,0,0,0] → parity from first row of P: [1,0,1]
 	data := [4]bit.Bit{1, 0, 0, 0}
-	p := Parity743(data)
+	p := parity743(data)
 	if p != [3]bit.Bit{1, 0, 1} {
 		t.Errorf("Parity([1,0,0,0]) = %v, want [1,0,1]", p)
 	}
 
 	// Data [0,1,0,0] → [1,1,1]
 	data = [4]bit.Bit{0, 1, 0, 0}
-	p = Parity743(data)
+	p = parity743(data)
 	if p != [3]bit.Bit{1, 1, 1} {
 		t.Errorf("Parity([0,1,0,0]) = %v, want [1,1,1]", p)
 	}
 
 	// Data [0,0,1,0] → [1,1,0]
 	data = [4]bit.Bit{0, 0, 1, 0}
-	p = Parity743(data)
+	p = parity743(data)
 	if p != [3]bit.Bit{1, 1, 0} {
 		t.Errorf("Parity([0,0,1,0]) = %v, want [1,1,0]", p)
 	}
 
 	// Data [0,0,0,1] → [0,1,1]
 	data = [4]bit.Bit{0, 0, 0, 1}
-	p = Parity743(data)
+	p = parity743(data)
 	if p != [3]bit.Bit{0, 1, 1} {
 		t.Errorf("Parity([0,0,0,1]) = %v, want [0,1,1]", p)
 	}
 
 	// Data [0,0,0,0] → [0,0,0]
 	data = [4]bit.Bit{0, 0, 0, 0}
-	p = Parity743(data)
+	p = parity743(data)
 	if p != [3]bit.Bit{0, 0, 0} {
 		t.Errorf("Parity([0,0,0,0]) = %v, want [0,0,0]", p)
 	}

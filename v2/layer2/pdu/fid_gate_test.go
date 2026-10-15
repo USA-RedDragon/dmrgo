@@ -150,12 +150,12 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 func TestFLC_AddressesIgnoreFID(t *testing.T) {
 	for _, fid := range []enums.FeatureSetID{enums.StandardizedFID, enums.MotorolaLtd} {
 		for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
-			lc := must(reedsolomon.Encode([]byte{byte(flco), byte(fid), 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}))
+			lc := reedsolomon.Encode([9]byte{byte(flco), byte(fid), 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C})
 			for i := 9; i < 12; i++ {
 				lc[i] ^= 0x96
 			}
 			var infoBits [96]bit.Bit
-			copy(infoBits[:], bit.UnpackBits(lc))
+			copy(infoBits[:], bit.UnpackBits(lc[:]))
 			flc, fecResult := pdu.DecodeFullLinkControl(infoBits, elements.DataTypeVoiceLCHeader)
 			if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
 				t.Fatalf("FEC = %+v", fecResult)

@@ -35,7 +35,7 @@ import (
 // BPTC and CRC layers.
 func DecodeRCFromEmbeddedData(embeddedData [32]bit.Bit) (pdu.ReverseChannel, fec.Result) {
 	// Single Burst BPTC decode with odd parity (RC mode)
-	infoBits, bptcResult := bptc.DecodeSingleBurstBPTC(embeddedData, true)
+	infoBits, bptcResult := bptc.DecodeSingleBurst(embeddedData, true)
 
 	// Decode RC PDU (CRC-7 check)
 	rc, crcResult := pdu.DecodeReverseChannel(infoBits)
@@ -54,5 +54,5 @@ func EncodeRCToEmbeddedData(rc *pdu.ReverseChannel) ([32]bit.Bit, error) {
 	if err != nil {
 		return [32]bit.Bit{}, err
 	}
-	return bptc.EncodeSingleBurstBPTC(infoBits, true), nil
+	return bptc.EncodeSingleBurst(infoBits, true), nil
 }

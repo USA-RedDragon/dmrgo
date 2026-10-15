@@ -14,10 +14,10 @@ func TestGolay23127(t *testing.T) {
 	for d := 0; d < 4096; d++ {
 		data := uint16(d) //nolint:gosec // d limited to 12-bit range
 
-		codeword23 := EncodeGolay23127(data)
+		codeword23 := Encode23127(data)
 
 		// Case 1: No Error
-		decoded, result := DecodeGolay23127(codeword23)
+		decoded, result := Decode23127(codeword23)
 		if result.Uncorrectable {
 			t.Fatalf("Data 0x%03x: Clean codeword reported as uncorrectable", data)
 		}
@@ -33,7 +33,7 @@ func TestGolay23127(t *testing.T) {
 			// Case 2: 1 Error
 			bit1 := uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			cwErr1 := codeword23 ^ (1 << bit1)
-			decoded, result = DecodeGolay23127(cwErr1)
+			decoded, result = Decode23127(cwErr1)
 			switch {
 			case result.Uncorrectable:
 				t.Errorf("Data 0x%03x (1 error): Reported uncorrectable", data)
@@ -49,7 +49,7 @@ func TestGolay23127(t *testing.T) {
 				bit2 = uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			}
 			cwErr2 := cwErr1 ^ (1 << bit2)
-			decoded, result = DecodeGolay23127(cwErr2)
+			decoded, result = Decode23127(cwErr2)
 			switch {
 			case result.Uncorrectable:
 				t.Errorf("Data 0x%03x (2 errors): Reported uncorrectable", data)
@@ -65,7 +65,7 @@ func TestGolay23127(t *testing.T) {
 				bit3 = uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			}
 			cwErr3 := cwErr2 ^ (1 << bit3)
-			decoded, result = DecodeGolay23127(cwErr3)
+			decoded, result = Decode23127(cwErr3)
 			switch {
 			case result.Uncorrectable:
 				t.Errorf("Data 0x%03x (3 errors): Reported uncorrectable", data)

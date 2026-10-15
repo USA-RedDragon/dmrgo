@@ -1,6 +1,7 @@
 package reedsolomon
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"math/bits"
 	"math/rand"
 	"testing"
@@ -17,31 +18,31 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 	}
 
 	for i, data := range testData {
-		encoded, err := Encode(data)
+		encoded, err := encode(data)
 		if err != nil {
 			t.Fatalf("test %d: Encode failed: %v", i, err)
 		}
 
-		if len(encoded) != RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE {
-			t.Fatalf("test %d: Encode returned %d bytes, want %d", i, len(encoded), RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
+		if len(encoded) != dataSize+checksumSize {
+			t.Fatalf("test %d: Encode returned %d bytes, want %d", i, len(encoded), dataSize+checksumSize)
 		}
 
 		// Verify data portion is preserved
-		for j := 0; j < RS_12_9_DATASIZE; j++ {
+		for j := 0; j < dataSize; j++ {
 			if encoded[j] != data[j] {
 				t.Errorf("test %d: encoded[%d] = 0x%02X, want 0x%02X", i, j, encoded[j], data[j])
 			}
 		}
 
 		// Decode and verify
-		result := Decode(encoded)
+		result := decode(encoded)
 		if result.Uncorrectable {
 			t.Errorf("test %d: Decode reported uncorrectable", i)
 		}
 		if result.ErrorsFound != 0 {
 			t.Errorf("test %d: Decode found %d errors, want 0", i, result.ErrorsFound)
 		}
-		for j := 0; j < RS_12_9_DATASIZE; j++ {
+		for j := 0; j < dataSize; j++ {
 			if result.Data[j] != data[j] {
 				t.Errorf("test %d: decoded[%d] = 0x%02X, want 0x%02X", i, j, result.Data[j], data[j])
 			}
@@ -51,48 +52,46 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 
 func TestSyndromeDetectsCorruption(t *testing.T) {
 	// All-zero codeword is valid
-	data := make([]byte, RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
+	data := make([]byte, dataSize+checksumSize)
 
 	// Corrupt one byte
 	corrupted := make([]byte, len(data))
 	copy(corrupted, data)
 	corrupted[3] = 0xFF
 
-	var syndrome ReedSolomon1294
-	err := ReedSolomon1294CalcSyndrome(corrupted, &syndrome)
+	var syndrome poly
+	err := calcSyndrome(corrupted, &syndrome)
 	if err != nil {
 		t.Fatalf("CalcSyndrome failed: %v", err)
 	}
 
-	if !ReedSolomon1294SyndromeHasErrors(&syndrome) {
+	if !syndromeHasErrors(&syndrome) {
 		t.Error("Corrupted all-zero codeword should have non-zero syndrome")
 	}
 }
 
 func TestDecodeTableB18Codewords(t *testing.T) {
 	table := tableB18Parity()
-	for row := 0; row < RS_12_9_DATASIZE; row++ {
-		cw := make([]byte, RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
+	for row := 0; row < dataSize; row++ {
+		cw := make([]byte, dataSize+checksumSize)
 		cw[row] = 0x01
-		copy(cw[RS_12_9_DATASIZE:], table[row][:])
-		result := Decode(cw)
+		copy(cw[dataSize:], table[row][:])
+		result := decode(cw)
 		if result.Uncorrectable || result.ErrorsFound != 0 {
 			t.Errorf("row %d: Uncorrectable=%v ErrorsFound=%d, want clean", row, result.Uncorrectable, result.ErrorsFound)
 		}
-		if string(result.Data) != string(cw[:RS_12_9_DATASIZE]) {
-			t.Errorf("row %d: data % X, want % X", row, result.Data, cw[:RS_12_9_DATASIZE])
+		if string(result.Data) != string(cw[:dataSize]) {
+			t.Errorf("row %d: data % X, want % X", row, result.Data, cw[:dataSize])
 		}
 	}
 }
 
 func TestDecodeSingleSymbolErrorAllPositions(t *testing.T) {
 	r := rand.New(rand.NewSource(2))
-	var ws DecodeWorkspace
-	var dst [RS_12_9_DATASIZE]byte
 	for n := 0; n < 8; n++ {
-		data := make([]byte, RS_12_9_DATASIZE)
+		data := make([]byte, dataSize)
 		r.Read(data)
-		cw, err := Encode(data)
+		cw, err := encode(data)
 		if err != nil {
 			t.Fatalf("Encode failed: %v", err)
 		}
@@ -100,7 +99,7 @@ func TestDecodeSingleSymbolErrorAllPositions(t *testing.T) {
 			for e := 1; e < 256; e++ {
 				rx := append([]byte(nil), cw...)
 				rx[pos] ^= byte(e)
-				for _, result := range []DecodeResult{Decode(rx), DecodeInto(rx, dst[:], &ws)} {
+				for _, result := range []decodeResult{decode(rx)} {
 					if result.Uncorrectable || result.ErrorsFound != 1 || result.BitsCorrected != bits.OnesCount8(uint8(e)) || string(result.Data) != string(data) {
 						t.Fatalf("pos %d err 0x%02X: Uncorrectable=%v ErrorsFound=%d BitsCorrected=%d data % X, want % X",
 							pos, e, result.Uncorrectable, result.ErrorsFound, result.BitsCorrected, result.Data, data)
@@ -114,9 +113,9 @@ func TestDecodeSingleSymbolErrorAllPositions(t *testing.T) {
 func TestDecodeDoubleSymbolErrorsDetected(t *testing.T) {
 	r := rand.New(rand.NewSource(3))
 	for n := 0; n < 50000; n++ {
-		data := make([]byte, RS_12_9_DATASIZE)
+		data := make([]byte, dataSize)
 		r.Read(data)
-		cw, err := Encode(data)
+		cw, err := encode(data)
 		if err != nil {
 			t.Fatalf("Encode failed: %v", err)
 		}
@@ -124,7 +123,7 @@ func TestDecodeDoubleSymbolErrorsDetected(t *testing.T) {
 		for _, p := range r.Perm(len(cw))[:2] {
 			rx[p] ^= byte(r.Intn(255) + 1)
 		}
-		if result := Decode(rx); !result.Uncorrectable {
+		if result := decode(rx); !result.Uncorrectable {
 			t.Fatalf("rx % X (sent % X): two symbol errors not flagged, ErrorsFound=%d", rx, cw, result.ErrorsFound)
 		}
 	}
@@ -133,9 +132,9 @@ func TestDecodeDoubleSymbolErrorsDetected(t *testing.T) {
 func TestDecodeTripleSymbolErrorsNeverInvalid(t *testing.T) {
 	r := rand.New(rand.NewSource(4))
 	for n := 0; n < 50000; n++ {
-		data := make([]byte, RS_12_9_DATASIZE)
+		data := make([]byte, dataSize)
 		r.Read(data)
-		cw, err := Encode(data)
+		cw, err := encode(data)
 		if err != nil {
 			t.Fatalf("Encode failed: %v", err)
 		}
@@ -143,14 +142,14 @@ func TestDecodeTripleSymbolErrorsNeverInvalid(t *testing.T) {
 		for _, p := range r.Perm(len(cw))[:3] {
 			rx[p] ^= byte(r.Intn(255) + 1)
 		}
-		result := Decode(rx)
+		result := decode(rx)
 		if result.Uncorrectable {
 			continue
 		}
 		if result.ErrorsFound != 1 {
 			t.Fatalf("rx % X: accepted with ErrorsFound=%d", rx, result.ErrorsFound)
 		}
-		reencoded, err := Encode(result.Data)
+		reencoded, err := encode(result.Data)
 		if err != nil {
 			t.Fatalf("Encode failed: %v", err)
 		}
@@ -168,61 +167,51 @@ func TestDecodeTripleSymbolErrorsNeverInvalid(t *testing.T) {
 
 func TestEncodeInvalidLength(t *testing.T) {
 	short := make([]byte, 5)
-	_, err := Encode(short)
+	_, err := encode(short)
 	if err == nil {
 		t.Error("Encode should return error for wrong size input")
 	}
 
 	long := make([]byte, 15)
-	_, err = Encode(long)
+	_, err = encode(long)
 	if err == nil {
 		t.Error("Encode should return error for too-long input")
 	}
 }
 
-func TestDecodeIntoRoundTrip(t *testing.T) {
-	data := []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99}
-	encoded, err := Encode(data)
-	if err != nil {
-		t.Fatalf("Encode failed: %v", err)
+func TestPublicEncodeDecodeRoundTrip(t *testing.T) {
+	data := [9]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99}
+	cw := Encode(data)
+	if !Check(cw) {
+		t.Fatal("Check rejects an encoded codeword")
 	}
-
-	var dst [RS_12_9_DATASIZE]byte
-	var ws DecodeWorkspace
-
-	result := DecodeInto(encoded, dst[:], &ws)
-	if result.Uncorrectable {
-		t.Error("DecodeInto reported uncorrectable for valid codeword")
+	if got, res := Decode(cw); got != data || res != (fec.Result{BitsChecked: 96}) {
+		t.Fatalf("Decode = % X %+v, want % X clean", got, res, data)
 	}
-	if result.ErrorsFound != 0 {
-		t.Errorf("DecodeInto found %d errors, want 0", result.ErrorsFound)
+	cw[4] ^= 0x81
+	if Check(cw) {
+		t.Fatal("Check accepts a corrupted codeword")
 	}
-
-	for j := 0; j < RS_12_9_DATASIZE; j++ {
-		if dst[j] != data[j] {
-			t.Errorf("dst[%d] = 0x%02X, want 0x%02X", j, dst[j], data[j])
-		}
+	if got, res := Decode(cw); got != data || res.Uncorrectable || res.ErrorsCorrected != 2 {
+		t.Fatalf("Decode = % X %+v, want % X with 2 corrected bits", got, res, data)
 	}
 }
 
 func TestSyndromeCleanForValidCodeword(t *testing.T) {
 	// All-zero codeword should have zero syndrome
-	data := make([]byte, RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
+	data := make([]byte, dataSize+checksumSize)
 
-	var syndrome ReedSolomon1294
-	err := ReedSolomon1294CalcSyndrome(data, &syndrome)
+	var syndrome poly
+	err := calcSyndrome(data, &syndrome)
 	if err != nil {
 		t.Fatalf("CalcSyndrome failed: %v", err)
 	}
 
-	if ReedSolomon1294SyndromeHasErrors(&syndrome) {
+	if syndromeHasErrors(&syndrome) {
 		t.Error("Valid all-zero codeword should have zero syndrome")
 	}
 
-	// Verify DecodeInto also reports clean
-	var dst [RS_12_9_DATASIZE]byte
-	var ws DecodeWorkspace
-	result := DecodeInto(data, dst[:], &ws)
+	result := decode(data)
 	if result.Uncorrectable {
 		t.Error("Valid codeword should not be uncorrectable")
 	}
@@ -233,17 +222,17 @@ func TestSyndromeCleanForValidCodeword(t *testing.T) {
 
 func TestEncodePreservesData(t *testing.T) {
 	data := []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE, 0x00}
-	encoded, err := Encode(data)
+	encoded, err := encode(data)
 	if err != nil {
 		t.Fatalf("Encode failed: %v", err)
 	}
 
-	if len(encoded) != RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE {
-		t.Fatalf("Encode returned %d bytes, want %d", len(encoded), RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
+	if len(encoded) != dataSize+checksumSize {
+		t.Fatalf("Encode returned %d bytes, want %d", len(encoded), dataSize+checksumSize)
 	}
 
 	// Verify data portion is unchanged
-	for i := 0; i < RS_12_9_DATASIZE; i++ {
+	for i := 0; i < dataSize; i++ {
 		if encoded[i] != data[i] {
 			t.Errorf("encoded[%d] = 0x%02X, want 0x%02X", i, encoded[i], data[i])
 		}
@@ -251,7 +240,7 @@ func TestEncodePreservesData(t *testing.T) {
 
 	// Checksum bytes should not all be zero for non-zero data
 	allZero := true
-	for i := RS_12_9_DATASIZE; i < len(encoded); i++ {
+	for i := dataSize; i < len(encoded); i++ {
 		if encoded[i] != 0 {
 			allZero = false
 			break
@@ -263,8 +252,8 @@ func TestEncodePreservesData(t *testing.T) {
 }
 
 // tableB18Parity returns the parity columns of each row of ETSI TS 102 361-1 Table B.18.
-func tableB18Parity() [RS_12_9_DATASIZE][RS_12_9_CHECKSUMSIZE]byte {
-	return [RS_12_9_DATASIZE][RS_12_9_CHECKSUMSIZE]byte{
+func tableB18Parity() [dataSize][checksumSize]byte {
+	return [dataSize][checksumSize]byte{
 		{0x1C, 0xBC, 0xFD}, {0x89, 0x31, 0x08}, {0xAD, 0x41, 0x36},
 		{0x7D, 0x71, 0x16}, {0xF3, 0xA6, 0x3A}, {0x08, 0x83, 0x7B},
 		{0x3F, 0x6F, 0x02}, {0x6C, 0x0D, 0xA7}, {0x0E, 0x38, 0x40},
@@ -273,23 +262,23 @@ func tableB18Parity() [RS_12_9_DATASIZE][RS_12_9_CHECKSUMSIZE]byte {
 
 func TestEncodeTableB18Rows(t *testing.T) {
 	table := tableB18Parity()
-	for row := 0; row < RS_12_9_DATASIZE; row++ {
-		data := make([]byte, RS_12_9_DATASIZE)
+	for row := 0; row < dataSize; row++ {
+		data := make([]byte, dataSize)
 		data[row] = 0x01
-		encoded, err := Encode(data)
+		encoded, err := encode(data)
 		if err != nil {
 			t.Fatalf("row %d: Encode failed: %v", row, err)
 		}
-		got := [RS_12_9_CHECKSUMSIZE]byte(encoded[RS_12_9_DATASIZE:])
+		got := [checksumSize]byte(encoded[dataSize:])
 		if got != table[row] {
 			t.Errorf("row %d: parity % X, want % X", row, got, table[row])
 		}
 	}
 }
 
-func specParity(data []byte) [RS_12_9_CHECKSUMSIZE]byte {
+func specParity(data []byte) [checksumSize]byte {
 	table := tableB18Parity()
-	var p [RS_12_9_CHECKSUMSIZE]byte
+	var p [checksumSize]byte
 	for i := range data {
 		for j := range p {
 			p[j] ^= refGaloisMul(data[i], table[i][j])
@@ -301,13 +290,13 @@ func specParity(data []byte) [RS_12_9_CHECKSUMSIZE]byte {
 func TestEncodeMatchesGeneratorMatrix(t *testing.T) {
 	r := rand.New(rand.NewSource(1))
 	for n := 0; n < 2000; n++ {
-		data := make([]byte, RS_12_9_DATASIZE)
+		data := make([]byte, dataSize)
 		r.Read(data)
-		encoded, err := Encode(data)
+		encoded, err := encode(data)
 		if err != nil {
 			t.Fatalf("Encode failed: %v", err)
 		}
-		if got, want := [RS_12_9_CHECKSUMSIZE]byte(encoded[RS_12_9_DATASIZE:]), specParity(data); got != want {
+		if got, want := [checksumSize]byte(encoded[dataSize:]), specParity(data); got != want {
 			t.Fatalf("data % X: parity % X, want % X", data, got, want)
 		}
 	}
@@ -315,12 +304,12 @@ func TestEncodeMatchesGeneratorMatrix(t *testing.T) {
 
 func TestEncodeKnownVector(t *testing.T) {
 	data := []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
-	encoded, err := Encode(data)
+	encoded, err := encode(data)
 	if err != nil {
 		t.Fatalf("Encode failed: %v", err)
 	}
-	want := [RS_12_9_CHECKSUMSIZE]byte{0xCB, 0x59, 0x57}
-	if got := [RS_12_9_CHECKSUMSIZE]byte(encoded[RS_12_9_DATASIZE:]); got != want {
+	want := [checksumSize]byte{0xCB, 0x59, 0x57}
+	if got := [checksumSize]byte(encoded[dataSize:]); got != want {
 		t.Errorf("parity % X, want % X", got, want)
 	}
 }
@@ -330,6 +319,6 @@ func BenchmarkEncode(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = Encode(data)
+		_, _ = encode(data)
 	}
 }

@@ -948,7 +948,7 @@ documents:
               - TestReedSolomon1294GaloisMulExhaustive
               - TestReedSolomon1294GaloisInv
               - TestEncodeInvalidLength
-              - TestDecodeIntoRoundTrip
+              - TestPublicEncodeDecodeRoundTrip
               - TestSyndromeCleanForValidCodeword
               - TestEncodePreservesData
 

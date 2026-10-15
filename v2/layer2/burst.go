@@ -255,8 +255,7 @@ func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
 func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int, fec.Result) {
 	switch dataType {
 	case elements.DataTypeRate34:
-		var t trellis.Trellis34
-		decoded, result := t.Decode(bits)
+		decoded, result := trellis.Decode(bits)
 		copy(b.deinterleavedInfoBits[:], decoded[:])
 		return len(decoded), result
 	case elements.DataTypeRate1:
@@ -278,8 +277,7 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 		elements.DataTypeRate12,
 		elements.DataTypeIdle,
 		elements.DataTypeUnifiedSingleBlock:
-		bptc19696 := bptc.BPTC19696{}
-		decoded, result := bptc19696.DeinterleaveDataBits(bits)
+		decoded, result := bptc.Decode196(bits)
 		copy(b.deinterleavedInfoBits[:], decoded[:])
 		return len(decoded), result
 	case elements.DataTypeReserved:
@@ -712,10 +710,9 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	dt := b.SlotType.DataType
 	switch {
 	case dt == elements.DataTypeRate34:
-		var t trellis.Trellis34
 		var data [144]bit.Bit
 		copy(data[:], info[:144])
-		return t.Encode(data), nil
+		return trellis.Encode(data), nil
 	case dt == elements.DataTypeRate1:
 		// Table B.10B: Transmit bit ordering for rate 1 coded data
 		var bits [196]bit.Bit
@@ -725,7 +722,7 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	case isBPTCDataType(dt):
 		var infoBits [96]bit.Bit
 		copy(infoBits[:], info[:96])
-		return bptc.Encode(infoBits), nil
+		return bptc.Encode196(infoBits), nil
 	default:
 		return info, nil
 	}
@@ -782,7 +779,7 @@ func buildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 	}
 
 	// BPTC(196,96) encode
-	encoded := bptc.Encode(infoBits)
+	encoded := bptc.Encode196(infoBits)
 
 	// Build the 264-bit burst:
 	// bits[0:97]   — first 98 data bits

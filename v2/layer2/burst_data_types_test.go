@@ -34,7 +34,7 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	}
 	var info [144]bit.Bit
 	copy(info[:], bit.UnpackBits(want[:]))
-	raw := buildDataBurst(elements.DataTypeRate34, trellis.New().Encode(info))
+	raw := buildDataBurst(elements.DataTypeRate34, trellis.Encode(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
@@ -60,7 +60,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 	for i := range info {
 		info[i] = bit.Bit(i % 3 % 2)
 	}
-	raw := buildDataBurst(elements.DataTypeRate34, trellis.New().Encode(info))
+	raw := buildDataBurst(elements.DataTypeRate34, trellis.Encode(info))
 	raw[2] ^= 0x10
 
 	b, err := layer2.NewBurstFromBytes(raw)
@@ -84,7 +84,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 func TestBurst_PIHeader_Decode(t *testing.T) {
 	var info [96]bit.Bit
 	copy(info[:], bit.UnpackBits([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
-	raw := buildDataBurst(elements.DataTypePIHeader, bptc.Encode(info))
+	raw := buildDataBurst(elements.DataTypePIHeader, bptc.Encode196(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {

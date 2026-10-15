@@ -1,3 +1,5 @@
+// Package golay implements the Golay (20,8,7), (23,12,7) and (24,12,8) codes
+// of ETSI TS 102 361-1 B.3.1, B.3.3 and B.3.4.
 package golay
 
 import (
@@ -7,9 +9,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ETSI TS 102 361-1 - B.3.1 Golay (20,8,7)
-// This code works on Bit arrays where each Bit is 0 or 1.
-func Golay_20_8_Parity(bits [8]bit.Bit) [12]bit.Bit {
+// parity2087 returns the 12 parity bits of 8 data bits in the Golay (20,8,7)
+// code of ETSI TS 102 361-1 B.3.1.
+func parity2087(bits [8]bit.Bit) [12]bit.Bit {
 	bit.Mask(bits[:])
 	var p [12]bit.Bit
 	p[0] = bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7]
@@ -27,9 +29,9 @@ func Golay_20_8_Parity(bits [8]bit.Bit) [12]bit.Bit {
 	return p
 }
 
-// DecodeGolay2087 decodes a 20-bit sequence (Bit array of 0s and 1s)
-// Returns corrected bits and a fec.Result.
-func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
+// Decode2087 corrects up to 3 bit errors in a Golay (20,8,7) codeword and
+// returns the corrected codeword and a fec.Result.
+func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 	bit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 20}
 
@@ -37,7 +39,7 @@ func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 	copy(data[:], bits[:8])
 
 	// Calculate syndrome
-	calcParity := Golay_20_8_Parity(data)
+	calcParity := parity2087(data)
 	syndrome := 0
 	for i := 0; i < 12; i++ {
 		if calcParity[i] != bits[8+i] {
@@ -69,12 +71,13 @@ func DecodeGolay2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 	return corrected, result
 }
 
-func Golay_20_8_Check(bits [20]bit.Bit) bool {
+// Check2087 reports whether bits is a Golay (20,8,7) codeword.
+func Check2087(bits [20]bit.Bit) bool {
 	bit.Mask(bits[:])
 	var dataBits [8]bit.Bit
 	copy(dataBits[:], bits[:8])
 
-	parity := Golay_20_8_Parity(dataBits)
+	parity := parity2087(dataBits)
 	for i := 0; i < 12; i++ {
 		if parity[i] != bits[8+i] {
 			return false
@@ -83,11 +86,11 @@ func Golay_20_8_Check(bits [20]bit.Bit) bool {
 	return true
 }
 
-// Encode encodes an 8-bit input into a 20-bit Golay(20,8,7) codeword.
-// The input byte contains the 8 data bits.
-// The output array contains 20 bits (values 0 or 1).
-func Encode(data byte) [20]bit.Bit {
+// Encode2087 returns the Golay (20,8,7) codeword of 8 data bits: the data
+// bits followed by 12 parity bits.
+func Encode2087(dataBits [8]bit.Bit) [20]bit.Bit {
 	var result [20]bit.Bit
+	data := bit.BitsToUint8(dataBits[:], 0, 8)
 
 	// The encoding table uses LSB-first bit ordering (bits[i] = (d>>i)&1),
 	// but the codeword bit array uses MSB-first (bits[i] = (data>>(7-i))&1).

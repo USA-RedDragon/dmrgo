@@ -109,8 +109,7 @@ func (r *RawBurst) setInfo(bits [196]bit.Bit) {
 // depend on the slot type, but it is meaningful only for those data types:
 // a Rate 3/4 or Rate 1 burst needs Rate34Payload or Rate1Payload.
 func (r *RawBurst) BPTCPayload() ([12]byte, fec.Result) {
-	var d bptc.BPTC19696
-	bits, res := d.DeinterleaveDataBits(r.info())
+	bits, res := bptc.Decode196(r.info())
 	var p [12]byte
 	copy(p[:], bit.PackBits(bits[:]))
 	return p, res
@@ -123,15 +122,14 @@ func (r *RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 	var bits [96]bit.Bit
 	copy(bits[:], bit.UnpackBits(p[:]))
-	r.setInfo(bptc.Encode(bits))
+	r.setInfo(bptc.Encode196(bits))
 }
 
 // Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis
 // code (§B.1.1) and returns the 144 data bits packed most significant bit
 // first.
 func (r *RawBurst) Rate34Payload() ([18]byte, fec.Result) {
-	var t trellis.Trellis34
-	bits, res := t.Decode(r.info())
+	bits, res := trellis.Decode(r.info())
 	var p [18]byte
 	copy(p[:], bit.PackBits(bits[:]))
 	return p, res
@@ -141,8 +139,7 @@ func (r *RawBurst) Rate34Payload() ([18]byte, fec.Result) {
 func (r *RawBurst) SetRate34Payload(p [18]byte) {
 	var bits [144]bit.Bit
 	copy(bits[:], bit.UnpackBits(p[:]))
-	var t trellis.Trellis34
-	r.setInfo(t.Encode(bits))
+	r.setInfo(trellis.Encode(bits))
 }
 
 // Rate1Payload returns the 192 uncoded data bits of a Rate 1 burst (Table
