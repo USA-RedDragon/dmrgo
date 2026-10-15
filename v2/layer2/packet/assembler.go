@@ -32,7 +32,8 @@ type Message struct {
 // Assembler collects the header and data blocks of one packet at a time on
 // one channel and returns each packet with its message CRC checked. For a
 // confirmed packet it tracks blocks by DBSN, so a retry of the failed blocks
-// completes it. An Assembler is not safe for concurrent use.
+// completes it. The zero value is ready to use. An Assembler is not safe for
+// concurrent use.
 type Assembler struct {
 	msg       Message
 	active    bool

@@ -255,9 +255,9 @@ func (op UDTOpcode) String() string {
 	}
 }
 
-// UDTHeader is the UDT data header (UDT_HEAD) (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D).
-// Octet 0 bits 5 to 4 come from ETSI TS 102 361-4 Tables 7.24 (C_UDTHD) and
-// 7.28 (C_UDTHU).
+// UDTHeader is the UDT data header (UDT_HEAD) (ETSI TS 102 361-1 clause
+// 9.2.13, Table 9.17D). Octet 0 bits 5 to 4 are the C_UDTHD and C_UDTHU
+// fields (ETSI TS 102 361-4 Tables 7.24 and 7.28).
 //
 //dmr:const 4-7=FormatUnifiedDataTransport
 type UDTHeader struct {

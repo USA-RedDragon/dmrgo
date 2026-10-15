@@ -16,7 +16,7 @@
 //		fmt.Println(source, target)
 //	}
 //
-// A FEC or CRC failure is not an error. Burst.FEC reports it, and Burst.Data
+// An FEC or CRC failure is not an error. Burst.FEC reports it, and Burst.Data
 // still holds the decoded PDU. Call Err on a fec.Result, such as
 // burst.FEC.Aggregate().Err(), to get fec.ErrUncorrectable instead.
 //
@@ -27,8 +27,7 @@
 //
 // layer2.RawBurst reads and writes single fields of a 33-byte burst in place,
 // without a full decode: the SYNC pattern, slot type, BPTC, rate 3/4 and rate
-// 1 payloads, EMB, embedded data and voice slots. Reuse one layer2.Burst with
-// DecodeFromBytes to decode without allocation.
+// 1 payloads, EMB, embedded data and voice slots.
 //
 // The PDUs of package pdu decode with pdu.DecodeX and encode with the Encode
 // method of the PDU. A PDU with its own FEC or CRC, such as a CSBK, Full LC,
@@ -62,7 +61,7 @@
 //
 // These errors can be matched with errors.Is:
 //
-//   - fec.ErrUncorrectable: a FEC or CRC check failed. It is wrapped by
+//   - fec.ErrUncorrectable: an FEC or CRC check failed. It is wrapped by
 //     layer2.ErrEmbeddedLCUncorrectable, packet.ErrMessageCRC and
 //     packet.ErrBlocksMissing, which layer2.VoiceReceiver and
 //     packet.Assembler return together with what they decoded.

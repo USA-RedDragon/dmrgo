@@ -29,3 +29,22 @@ func ExampleLCBytes_Codeword() {
 	// false
 	// true 1
 }
+
+// ExampleDecodeCSBK encodes a preamble CSBK with its CRC, decodes it back,
+// and reads the payload field that its opcode selects.
+func ExampleDecodeCSBK() {
+	in := pdu.CSBK{
+		LastBlock:   true,
+		Opcode:      pdu.CSBKPreamble,
+		PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2, TargetAddress: 91, SourceAddress: 3120000},
+	}
+	bits, err := in.Encode()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	out := pdu.DecodeCSBK(bits)
+	fmt.Println(out.FEC.Uncorrectable, out.PreamblePDU.Group, out.PreamblePDU.TargetAddress, out.PreamblePDU.SourceAddress)
+	// Output:
+	// false true 91 3120000
+}

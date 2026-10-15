@@ -12,7 +12,7 @@
 //
 // DecodeX returns only the PDU. A PDU whose decode corrects or checks
 // errors, with FEC such as Golay, QR, Hamming or RS(12,9) or with a CRC,
-// has a FEC field that reports the result. A PDU without such a code, such
+// has an FEC field that reports the result. A PDU without such a code, such
 // as a CSBK payload or a data block, has no FEC field. Decoding never fails
 // on an uncorrectable result: the fields are set from the received bits and
 // FEC.Uncorrectable is set. FEC.Err returns fec.ErrUncorrectable for a

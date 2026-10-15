@@ -217,7 +217,7 @@ func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 
 // TestBurst_SyncTolerance_EmbeddedVoiceBursts checks that tolerant SYNC
 // matching does not take a voice burst B-F (EMB and embedded signalling in
-// the centre) as a SYNC burst. The captures have clean SYNC fields, so any
+// the center) as a SYNC burst. The captures have clean SYNC fields, so any
 // SYNC match at a non-zero distance would be a misclassified B-F burst.
 func TestBurst_SyncTolerance_EmbeddedVoiceBursts(t *testing.T) {
 	t.Parallel()
