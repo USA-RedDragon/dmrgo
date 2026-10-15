@@ -28,6 +28,9 @@ func rfRuns() []rfRun {
 		{"voice", "voice", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
 		{"voice-late", "voice", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes, c.LateEntry = 91, true, 2, true }},
 		{"pi", "pi", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
+		{"resp-data", "data12", func(c *SeqConfig) { c.Dest = 3140598 }},
+		{"ack", "ack", func(c *SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }},
+		{"sr", "sr", func(c *SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }},
 	}
 }
 
@@ -136,6 +139,10 @@ func TestRFRelayedPayloads(t *testing.T) {
 		{"pi LC header", bptc("pi", 1), "00004000000930b43ce175ec"},
 		{"pi header", bptc("pi", 2), "21100112345678000009246e"},
 		{"pi terminator", bptc("pi", len(got["pi"])-1), "00004000000930b43cee7ae3"},
+		{"data header answered by a response", bptc("resp-data", 1), "43a62febf630b43c8200a5eb"},
+		{"ACK response header", bptc("ack", 0), "01a030b43c2febf6800829e3"},
+		{"SACK response header", bptc("sr", 0), "01a030b43c2febf681800a52"},
+		{"SACK retry bitmap", bptc("sr", 1), "b5ffffffffffffff0f341fd7"},
 	} {
 		if c.got != c.want {
 			t.Errorf("%s: %s, repeater relayed %s", c.what, c.got, c.want)
