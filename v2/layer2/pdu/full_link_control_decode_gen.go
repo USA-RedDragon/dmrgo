@@ -597,14 +597,18 @@ func (s *FLCTalkerAliasHeader) String() string {
 func decodeFLCTalkerAliasBlock(data [56]bit.Bit) FLCTalkerAliasBlock {
 	var result FLCTalkerAliasBlock
 	lowbit.Mask(data[:])
-	copy(result.TalkerAliasData[:], bit.Pack(data[0:56]))
+	for _i := range 56 {
+		result.TalkerAliasData[_i/8] |= byte(data[_i]) << (7 - _i%8)
+	}
 	return result
 }
 
 // Encode encodes an FLCTalkerAliasBlock (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5).
 func (s *FLCTalkerAliasBlock) Encode() ([56]bit.Bit, error) {
 	var data [56]bit.Bit
-	copy(data[0:56], bit.Unpack(s.TalkerAliasData[:]))
+	for _i := range 56 {
+		data[0+_i] = bit.Bit(s.TalkerAliasData[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 

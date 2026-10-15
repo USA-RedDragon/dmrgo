@@ -113,10 +113,10 @@ func packetEntries(t testing.TB) []entry {
 	conf := must(packet.Segment(ch, octets(50), enums.DataTypeRate12))
 	dst := make([]layer2.RawBurst, 0, 1+len(conf.Blocks))
 	out = append(out,
-		entry{"layer2/packet.Bursts", "confirmed rate 1/2", 8, func() {
+		entry{"layer2/packet.Bursts", "confirmed rate 1/2", 2, func() {
 			keep.raws, _ = packet.Bursts(conf, 1, layer2.SyncSourceBS)
 		}},
-		entry{"layer2/packet.AppendBursts", "confirmed rate 1/2", 6, func() {
+		entry{"layer2/packet.AppendBursts", "confirmed rate 1/2", 0, func() {
 			keep.raws, _ = packet.AppendBursts(dst[:0], &conf, 1, layer2.SyncSourceBS)
 		}},
 	)

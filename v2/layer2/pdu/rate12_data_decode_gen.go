@@ -14,14 +14,18 @@ import (
 func DecodeRate12Data(data [96]bit.Bit) Rate12Data {
 	var result Rate12Data
 	lowbit.Mask(data[:])
-	copy(result.Data[:], bit.Pack(data[0:96]))
+	for _i := range 96 {
+		result.Data[_i/8] |= byte(data[_i]) << (7 - _i%8)
+	}
 	return result
 }
 
 // Encode encodes a Rate12Data (ETSI TS 102 361-1 clause 9.2.7).
 func (s *Rate12Data) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
-	copy(data[0:96], bit.Unpack(s.Data[:]))
+	for _i := range 96 {
+		data[0+_i] = bit.Bit(s.Data[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
