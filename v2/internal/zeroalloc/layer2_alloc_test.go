@@ -262,8 +262,8 @@ func burstEncodeEntries(t testing.TB) []entry {
 		}})
 	}
 
-	// An edited Data makes Encode decode the payload again to compare, and
-	// that decode allocates the dispatch payload of a CSBK preamble.
+	// An edited Data, or a received PDU whose CRC failed, codes to bits other
+	// than the payload, so Encode compares them with the decoded PDU.
 	sms := decodeAll(t, capture(t, "m-sms"))
 	for _, c := range []struct {
 		name   string
@@ -275,12 +275,12 @@ func burstEncodeEntries(t testing.TB) []entry {
 			if c, ok := b.Data.(*pdu.CSBK); ok && c.PreamblePDU != nil {
 				c.PreamblePDU.CSBKBlocksToFollow++
 			}
-		}, 1},
+		}, 0},
 		{"edited data header capture", sms[5], func(b *layer2.Burst) {
 			if h, ok := b.Data.(*pdu.DataHeader); ok && h.UnconfirmedDataHeader != nil {
 				h.UnconfirmedDataHeader.BlocksToFollow++
 			}
-		}, 1},
+		}, 0},
 	} {
 		b := c.b
 		before := must(b.Encode())
@@ -289,6 +289,22 @@ func burstEncodeEntries(t testing.TB) []entry {
 			t.Fatalf("%s: the edit does not change the burst", c.name)
 		}
 		out = append(out, entry{"layer2.Burst.Encode", c.name, c.allocs, func() { raw, err = b.Encode() }})
+	}
+	for _, c := range []struct {
+		name string
+		dt   enums.DataType
+	}{
+		{"CSBK with a bad CRC", enums.DataTypeCSBK},
+		{"data header with a bad CRC", enums.DataTypeDataHeader},
+		{"MBC header with a bad CRC", enums.DataTypeMBCHeader},
+		{"voice LC header with a bad RS codeword", enums.DataTypeVoiceLCHeader},
+	} {
+		payload := [12]byte{0x3D, 0x12, 0x80, 0x04, 0x30, 0xB4, 0x3C, 0x30, 0xB4, 0x3C, 0x5A, 0xA5}
+		var b layer2.Burst
+		if err := b.DecodeFromBytes(must(layer2.BuildDataBurst(payload, c.dt, 1, layer2.SyncSourceBS))); err != nil || !b.FEC.PDU.Uncorrectable {
+			t.Fatalf("%s: %v %+v", c.name, err, b.FEC.PDU)
+		}
+		out = append(out, entry{"layer2.Burst.Encode", c.name, 0, func() { raw, err = b.Encode() }})
 	}
 
 	header := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
