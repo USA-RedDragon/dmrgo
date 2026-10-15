@@ -1,8 +1,4 @@
-// Command hotspot shows the receive and retransmit path of a DMR hotspot or
-// repeater: it decodes captured bursts with injected bit errors, applies the
-// MMDVMHost acceptance check, reassembles the embedded LC, regenerates clean
-// bursts from the corrected LC and AMBE+2 frames, and rewrites the target of
-// a Voice LC Header with MMDVMHostSeal.
+// Command hotspot decodes captured bursts with bit errors, applies the MMDVMHost check and regenerates clean bursts.
 package main
 
 import (

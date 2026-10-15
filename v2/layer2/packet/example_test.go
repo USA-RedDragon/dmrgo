@@ -8,6 +8,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
+// ExampleSegment splits a payload into a header and data blocks and
+// reassembles them.
 func ExampleSegment() {
 	header := pdu.DataHeader{
 		Format: pdu.FormatUnconfirmed,
