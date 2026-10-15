@@ -320,8 +320,7 @@ func (b *Burst) extractData() (elements.Data, error) {
 	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeFullLinkControl(sizedBits)
-		decoded.DataType = dt
+		decoded, fecResult := pdu.DecodeFullLinkControl(sizedBits, dt)
 		b.fullLinkControl = &decoded
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
@@ -526,6 +525,8 @@ func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
 }
 
 // BuildLCDataBurst builds a 33-byte LC data burst (e.g. for Voice Header or Terminator).
+// lcBytes is the 12-byte on-air codeword with the Data Type CRC Mask already
+// applied, as returned by pdu.EncodeFullLinkControl with DataType set to dataType.
 func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode uint8) [33]byte {
 	// Convert LC bytes to 96 info bits
 	var infoBits [96]bit.Bit

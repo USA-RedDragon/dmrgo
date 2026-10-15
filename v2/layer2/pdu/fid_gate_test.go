@@ -96,7 +96,7 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	}
 	infoBits := pdu.EncodeFullLinkControl(original)
 
-	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits)
+	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
@@ -125,7 +125,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	}
 	infoBits := pdu.EncodeFullLinkControl(original)
 
-	decoded, _ := pdu.DecodeFullLinkControl(infoBits)
+	decoded, _ := pdu.DecodeFullLinkControl(infoBits, original.DataType)
 	if decoded.FLCO != 0b111111 {
 		t.Errorf("FLCO = %#x, want 0x3f", decoded.FLCO)
 	}
@@ -137,7 +137,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	}
 
 	original.FeatureSetID = enums.StandardizedFID
-	decoded, _ = pdu.DecodeFullLinkControl(pdu.EncodeFullLinkControl(original))
+	decoded, _ = pdu.DecodeFullLinkControl(pdu.EncodeFullLinkControl(original), original.DataType)
 	if decoded.FLCO != 0b111111 || decoded.RawPayload != payload {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
 	}

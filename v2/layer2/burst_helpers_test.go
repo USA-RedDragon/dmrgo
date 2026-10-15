@@ -107,6 +107,7 @@ func TestBurst_PackEmbeddedSignallingData_KnownValue(t *testing.T) {
 
 func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 	flc := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{
@@ -140,6 +141,7 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 
 func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	flc := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeTerminatorWithLC,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{
@@ -166,6 +168,7 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 
 func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 	flc := &pdu.FullLinkControl{
+		DataType:     elements.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID: enums.StandardizedFID,
 		GroupVoice: &pdu.FLCGroupVoice{

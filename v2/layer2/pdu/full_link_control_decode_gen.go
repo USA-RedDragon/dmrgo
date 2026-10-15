@@ -26,14 +26,25 @@ import (
 )
 
 // DecodeFullLinkControl decodes a FullLinkControl per ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
-func DecodeFullLinkControl(data [96]bit.Bit) (FullLinkControl, fec.FECResult) {
+func DecodeFullLinkControl(data [96]bit.Bit, dataType layer2Elements.DataType) (FullLinkControl, fec.FECResult) {
 	var result FullLinkControl
+	result.DataType = dataType
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
 			_packedBytes[i] <<= 1
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
+	}
+	switch result.DataType {
+	case layer2Elements.DataTypeVoiceLCHeader:
+		_packedBytes[9] ^= 0x96
+		_packedBytes[10] ^= 0x96
+		_packedBytes[11] ^= 0x96
+	case layer2Elements.DataTypeTerminatorWithLC:
+		_packedBytes[9] ^= 0x99
+		_packedBytes[10] ^= 0x99
+		_packedBytes[11] ^= 0x99
 	}
 	_rsResult := reedsolomon.Decode(_packedBytes[:])
 	fecResult := fec.FECResult{
@@ -127,6 +138,16 @@ func EncodeFullLinkControl(s *FullLinkControl) [96]bit.Bit {
 		}
 	}
 	_encoded, _ := reedsolomon.Encode(_encData[:])
+	switch s.DataType {
+	case layer2Elements.DataTypeVoiceLCHeader:
+		_encoded[9] ^= 0x96
+		_encoded[10] ^= 0x96
+		_encoded[11] ^= 0x96
+	case layer2Elements.DataTypeTerminatorWithLC:
+		_encoded[9] ^= 0x99
+		_encoded[10] ^= 0x99
+		_encoded[11] ^= 0x99
+	}
 	for i := range 12 {
 		for j := range 8 {
 			data[i*8+j] = bit.Bit((_encoded[i] >> (7 - j)) & 1)

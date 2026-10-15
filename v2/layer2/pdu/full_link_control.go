@@ -9,12 +9,20 @@ import (
 )
 
 // dmr:fec reed_solomon_12_9_4
+// dmr:input DataType
+// dmr:fec_mask DataType layer2Elements.DataTypeVoiceLCHeader=0x969696 layer2Elements.DataTypeTerminatorWithLC=0x999999
 // dmr:dispatch_if FeatureSetID==0
 // ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
 //
 // The FID redefines the FLCO (ETSI TS 102 361-1 Table 9.21), so the standard
 // payload layouts apply only to the SFID. Payloads of other FIDs and of
 // unknown FLCOs are kept in RawPayload.
+//
+// DataType selects the Data Type CRC Mask XORed into the RS(12,9) parity
+// (ETSI TS 102 361-1 B.3.12, Table B.21). Pass the burst's data type to
+// DecodeFullLinkControl and set it before EncodeFullLinkControl. Other data
+// types, such as an Embedded LC (protected by a 5-bit checksum, not RS),
+// apply no mask.
 type FullLinkControl struct {
 	DataType     layer2Elements.DataType `dmr:"-"`
 	ProtectFlag  bool                    `dmr:"bit:0"`

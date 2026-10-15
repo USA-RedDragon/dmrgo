@@ -265,6 +265,10 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 				return
 			}
 		} else if hasPackedFEC {
+			if err := emitFECMask(g, pdu, codec, Id("result"), "_packedBytes"); err != nil {
+				genErr = err
+				return
+			}
 			emitPackedFECDecode(g, codec, inputSize)
 		} else if hasBitFEC {
 			// Bit-level FEC (Golay, QR): operates directly on bit arrays
@@ -402,6 +406,34 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 		Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 2))).Op("<<").Lit(8).
 		Op("|").Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 1)))
 	return nil
+}
+
+// emitFECMask XORs the FEC parity bytes of buf with the mask selected by the
+// dmr:fec_mask field of src (ETSI TS 102 361-1 B.3.12, Table B.21).
+func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statement, buf string) error {
+	if pdu.FECMask == nil {
+		return nil
+	}
+	if !codec.PackedBytes {
+		return fmt.Errorf("dmr:fec_mask is only supported for packed-byte codecs, not %s", pdu.FEC.Codec)
+	}
+	parityBytes := codec.TotalBytes - codec.DataBytes
+	var genErr error
+	g.Switch(src.Clone().Dot(pdu.FECMask.Field)).BlockFunc(func(sw *Group) {
+		for _, m := range pdu.FECMask.Masks {
+			if m.Mask>>(8*parityBytes) != 0 {
+				genErr = fmt.Errorf("dmr:fec_mask %#x is wider than %d parity bytes", m.Mask, parityBytes)
+				return
+			}
+			var stmts []Code
+			for k := range parityBytes {
+				b := (m.Mask >> (8 * (parityBytes - 1 - k))) & 0xFF
+				stmts = append(stmts, Id(buf).Index(Lit(codec.DataBytes+k)).Op("^=").Id(fmt.Sprintf("0x%02X", b)))
+			}
+			sw.Case(emitDispatchConstant(m.Value, pdu)).Block(stmts...)
+		}
+	})
+	return genErr
 }
 
 // emitPackedFECDecode generates packed-bytes FEC (e.g. Reed-Solomon) decode code.
@@ -1040,6 +1072,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 		outputSize = codec.InputSize
 	}
 
+	var genErr error
 	f.Func().Id(funcName).Params(
 		Id("s").Op("*").Id(pdu.Name),
 	).Index(Lit(outputSize)).Qual(bitPkg, "Bit").BlockFunc(func(g *Group) {
@@ -1062,7 +1095,10 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 				emitCRCEncode(g, pdu, outputSize)
 			}
 			if hasPackedFEC {
-				emitPackedFECEncode(g, codec, outputSize)
+				if err := emitPackedFECEncode(g, pdu, codec, outputSize); err != nil {
+					genErr = err
+					return
+				}
 			}
 			g.Return(Id("data"))
 		} else {
@@ -1071,7 +1107,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 			g.Return(Id("data"))
 		}
 	})
-	return nil
+	return genErr
 }
 
 // emitEncodeFields emits encoding for all fields (regular + dispatch).
@@ -1206,7 +1242,7 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 }
 
 // emitPackedFECEncode generates Reed-Solomon encoding for the encode path.
-func emitPackedFECEncode(g *Group, codec *FECCodecInfo, outputSize int) {
+func emitPackedFECEncode(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, outputSize int) error {
 	// Pack data bytes (first N data bytes)
 	g.Var().Id("_encData").Index(Lit(codec.DataBytes)).Byte()
 	g.For(Id("i").Op(":=").Range().Lit(codec.DataBytes)).Block(
@@ -1223,6 +1259,10 @@ func emitPackedFECEncode(g *Group, codec *FECCodecInfo, outputSize int) {
 		Id("_encData").Index(Empty(), Empty()),
 	)
 
+	if err := emitFECMask(g, pdu, codec, Id("s"), "_encoded"); err != nil {
+		return err
+	}
+
 	// Unpack all encoded bytes (data + parity) back into data bits
 	totalBytes := outputSize / 8
 	g.For(Id("i").Op(":=").Range().Lit(totalBytes)).Block(
@@ -1234,6 +1274,7 @@ func emitPackedFECEncode(g *Group, codec *FECCodecInfo, outputSize int) {
 			),
 		),
 	)
+	return nil
 }
 
 // emitFieldEncode generates the encode logic for a single field.
