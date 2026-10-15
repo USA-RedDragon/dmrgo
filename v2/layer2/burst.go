@@ -93,7 +93,9 @@ type Burst struct {
 
 	// Data is the decoded PDU of a data burst. DecodeFromBytes sets it also
 	// when the PDU CRC or FEC fails, and leaves it nil only for a reserved
-	// data type.
+	// data type. The decoded PDU is a value that the Burst reuses: the next
+	// decode into the Burst, or into a copy of it, overwrites it. Copy the
+	// PDU to keep it. A Burst and its copies must not decode concurrently.
 	Data Data
 	// FEC reports the FEC and CRC results of the decode.
 	FEC fec.BurstFECStats
@@ -103,6 +105,31 @@ type Burst struct {
 	decodedEMB            bool
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
+	store                 decodeStore
+}
+
+// decodeStore holds the PDUs that a Burst decodes into, so that a reused
+// Burst decodes without allocating. Each PDU is allocated on the first decode
+// of its data type.
+type decodeStore struct {
+	csbk       *pdu.CSBK
+	lc         *pdu.FullLinkControl
+	piHeader   *pdu.PIHeader
+	dataHeader *pdu.DataHeader
+	rate12     *pdu.Rate12Data
+	rate34     *pdu.Rate34Data
+	rate1      *pdu.Rate1Data
+	mbcHeader  *pdu.MBCHeader
+	mbcCont    *pdu.MBCContinuation
+	usbd       *pdu.UnifiedSingleBlockData
+}
+
+// storeSlot returns *p, after it allocates *p when it is nil.
+func storeSlot[T any](p **T) *T {
+	if *p == nil {
+		*p = new(T)
+	}
+	return *p
 }
 
 // HasEmbeddedSignalling reports whether the burst carries an EMB and an
@@ -132,7 +159,9 @@ func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 }
 
 // DecodeFromBytes decodes data into the burst in place. It is
-// DecodeFromBytesWith with nil options.
+// DecodeFromBytesWith with nil options. When it returns no error, a decode
+// into a reused Burst does not allocate, except for a CSBK, Full LC, data
+// header or MBC header whose dispatch field points to a payload struct.
 func (b *Burst) DecodeFromBytes(data RawBurst) error {
 	return b.DecodeFromBytesWith(data, nil)
 }
@@ -146,7 +175,7 @@ func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
 	if opts == nil {
 		opts = &DecodeOptions{}
 	}
-	*b = Burst{}
+	*b = Burst{store: b.store}
 	b.bitData = bit.Unpack264(data)
 	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
 	err := b.decode(opts)
@@ -254,7 +283,7 @@ func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	}
 	b.deinterleavedInfoLen, b.FEC.Payload = b.deinterleave(extractDataBits(b.bitData), b.SlotType.DataType)
 	var err error
-	b.Data, b.FEC.PDU, err = decodePayload(b.SlotType.DataType, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
+	b.Data, b.FEC.PDU, err = decodePayload(&b.store, b.SlotType.DataType, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
 	b.decodedDataType = b.SlotType.DataType
 	return err
 }
@@ -512,9 +541,9 @@ func (b *Burst) String() string {
 }
 
 // decodePayload decodes the information bits of a data burst of data type dt
-// and SYNC pattern sync. The fec.Result is zero for the data blocks, whose
-// only code is the payload code.
-func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern) (Data, fec.Result, error) {
+// and SYNC pattern sync into st. The fec.Result is zero for the data blocks,
+// whose only code is the payload code.
+func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern) (Data, fec.Result, error) {
 	if dt.IsReserved() {
 		return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
 	}
@@ -522,42 +551,52 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 	copy(bits96[:], infoBits)
 	switch dt {
 	case enums.DataTypeCSBK:
-		decoded := pdu.DecodeCSBK(bits96)
-		decoded.Hint0x38 = opcode0x38Hint(sync)
-		return &decoded, decoded.FEC, nil
+		d := storeSlot(&st.csbk)
+		*d = pdu.DecodeCSBK(bits96)
+		d.Hint0x38 = opcode0x38Hint(sync)
+		return d, d.FEC, nil
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
-		decoded := pdu.DecodeFullLinkControl(bits96, dt)
-		return &decoded, decoded.FEC, nil
+		d := storeSlot(&st.lc)
+		*d = pdu.DecodeFullLinkControl(bits96, dt)
+		return d, d.FEC, nil
 	case enums.DataTypePIHeader:
-		decoded := pdu.DecodePIHeader(bits96)
-		return &decoded, decoded.FEC, nil
+		d := storeSlot(&st.piHeader)
+		*d = pdu.DecodePIHeader(bits96)
+		return d, d.FEC, nil
 	case enums.DataTypeDataHeader:
-		decoded := pdu.DecodeDataHeader(bits96)
-		return &decoded, decoded.FEC, nil
+		d := storeSlot(&st.dataHeader)
+		*d = pdu.DecodeDataHeader(bits96)
+		return d, d.FEC, nil
 	case enums.DataTypeRate34:
 		var sizedBits [144]bit.Bit
 		copy(sizedBits[:], infoBits)
-		rt := pdu.DecodeRate34Data(sizedBits)
-		return &rt, fec.Result{}, nil
+		d := storeSlot(&st.rate34)
+		*d = pdu.DecodeRate34Data(sizedBits)
+		return d, fec.Result{}, nil
 	case enums.DataTypeRate12:
-		rt := pdu.DecodeRate12Data(bits96)
-		return &rt, fec.Result{}, nil
+		d := storeSlot(&st.rate12)
+		*d = pdu.DecodeRate12Data(bits96)
+		return d, fec.Result{}, nil
 	case enums.DataTypeRate1:
 		var sizedBits [192]bit.Bit
 		copy(sizedBits[:], infoBits)
-		rt := pdu.DecodeRate1Data(sizedBits)
-		return &rt, fec.Result{}, nil
+		d := storeSlot(&st.rate1)
+		*d = pdu.DecodeRate1Data(sizedBits)
+		return d, fec.Result{}, nil
 	case enums.DataTypeMBCHeader:
-		decoded := pdu.DecodeMBCHeader(bits96)
-		return &decoded, decoded.FEC, nil
+		d := storeSlot(&st.mbcHeader)
+		*d = pdu.DecodeMBCHeader(bits96)
+		return d, d.FEC, nil
 	case enums.DataTypeMBCContinuation:
-		decoded := pdu.DecodeMBCContinuation(bits96)
-		return &decoded, fec.Result{}, nil
+		d := storeSlot(&st.mbcCont)
+		*d = pdu.DecodeMBCContinuation(bits96)
+		return d, fec.Result{}, nil
 	case enums.DataTypeIdle:
 		return &pdu.PRFill{}, fec.Result{}, nil
 	case enums.DataTypeUnifiedSingleBlock:
-		decoded := pdu.DecodeUnifiedSingleBlockData(bits96)
-		return &decoded, decoded.FEC, nil
+		d := storeSlot(&st.usbd)
+		*d = pdu.DecodeUnifiedSingleBlockData(bits96)
+		return d, d.FEC, nil
 	case enums.DataTypeReserved:
 	}
 	return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
@@ -665,7 +704,8 @@ func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
 		if err != nil || !decoded {
 			return info, err
 		}
-		orig, _, decodeErr := decodePayload(dt, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
+		var st decodeStore
+		orig, _, decodeErr := decodePayload(&st, dt, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
 		if decodeErr == nil {
 			if origInfo, err := encodeData(orig, dt); err == nil && origInfo == info {
 				return b.deinterleavedInfoBits, nil
