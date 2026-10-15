@@ -23,6 +23,8 @@ func voiceBurstBit(i, j int) int {
 // AMBE+2 decoder changes them, so decode then Encode must keep the slots as
 // received.
 func TestBurstEncode_KeepsNonAMBEVoiceSlots(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(1)) //nolint:gosec // pseudo-random adequate for tests
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	changed := 0
@@ -64,6 +66,8 @@ func noisyAMBEBurst(t *testing.T) (clean, noisy [33]byte, info [3]vocoder.AMBEFr
 }
 
 func TestBurstEncode_AMBEWithCorrectedErrors(t *testing.T) {
+	t.Parallel()
+
 	clean, noisy, info := noisyAMBEBurst(t)
 	b := must(layer2.NewBurstFromBytes(noisy))
 	frames, res := b.AMBEFrames()

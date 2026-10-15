@@ -43,6 +43,8 @@ func buildCSBKBits(opcode byte, payload [64]bit.Bit) [96]bit.Bit {
 }
 
 func TestCSBK_OpcodeString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		opcode pdu.CSBKOpcode
 		want   string
@@ -67,6 +69,8 @@ func TestCSBK_OpcodeString(t *testing.T) {
 }
 
 func TestCSBK_PreamblePDU_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[0] = 1
 	payload[1] = 0
@@ -108,6 +112,8 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 }
 
 func TestCSBK_NegativeAck_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[0] = 1
 	payload[6] = 1
@@ -140,6 +146,8 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 }
 
 func TestCSBK_CRCValidation(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[0] = 1
 	infoBits := buildCSBKBits(0b00111101, payload)
@@ -160,6 +168,8 @@ func TestCSBK_CRCValidation(t *testing.T) {
 }
 
 func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[39] = 1
 	payload[62] = 1
@@ -193,6 +203,8 @@ func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 }
 
 func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var bsAddr [24]bit.Bit
 	bsAddr[0] = 1
 	bsAddr[23] = 1
@@ -233,6 +245,8 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[0] = 1
 	payload[39] = 1
@@ -262,6 +276,8 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 }
 
 func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var targetAddr [24]bit.Bit
 	targetAddr[0] = 1
 	targetAddr[23] = 1
@@ -301,6 +317,8 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[1] = 1
 	payload[10] = 1
@@ -334,6 +352,8 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 }
 
 func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var targetAddr [24]bit.Bit
 	targetAddr[5] = 1
 	targetAddr[10] = 1
@@ -377,6 +397,8 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.
 }
 
 func TestCSBK_ChannelTiming_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[10] = 1
 	payload[15] = 1
@@ -424,6 +446,8 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 }
 
 func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var syncAge [11]bit.Bit
 	syncAge[0] = 1
 	syncAge[5] = 1

@@ -7,6 +7,7 @@ import "fmt"
 // Table 7.68).
 type AnnouncementType uint8
 
+// The AnnouncementType values.
 const (
 	AnnouncementAnnWDTSCC     AnnouncementType = 0b00000 // Ann_WD_TSCC, announce or withdraw a TSCC
 	AnnouncementCallTimer     AnnouncementType = 0b00001 // CallTimer_Parms, call timer parameters

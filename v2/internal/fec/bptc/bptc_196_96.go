@@ -10,7 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-func calculate_syndrome_15_11(bits [15]bit.Bit) int {
+func calculateSyndrome1511(bits [15]bit.Bit) int {
 	var errs [4]bit.Bit
 	errs[0] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
 	errs[1] = bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[12]
@@ -19,7 +19,7 @@ func calculate_syndrome_15_11(bits [15]bit.Bit) int {
 	return int(errs[0]) | int(errs[1])<<1 | int(errs[2])<<2 | int(errs[3])<<3
 }
 
-func calculate_syndrome_13_9(bits [13]bit.Bit) int {
+func calculateSyndrome139(bits [13]bit.Bit) int {
 	var errs [4]bit.Bit
 	errs[0] = bits[0] ^ bits[1] ^ bits[3] ^ bits[5] ^ bits[6] ^ bits[9]
 	errs[1] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7] ^ bits[10]
@@ -51,7 +51,7 @@ func Decode196WithReserved(bits [196]bit.Bit) ([96]bit.Bit, [3]bit.Bit, fec.Resu
 		deinterleavedBits[i] = bits[dm[i]]
 	}
 
-	deinterleavedBits, result.ErrorsCorrected, result.Uncorrectable = hamming_correct(deinterleavedBits)
+	deinterleavedBits, result.ErrorsCorrected, result.Uncorrectable = hammingCorrect(deinterleavedBits)
 
 	for i, k = 4, 0; i <= 11; i, k = i+1, k+1 {
 		temp[k] = deinterleavedBits[i]
@@ -66,12 +66,12 @@ func Decode196WithReserved(bits [196]bit.Bit) ([96]bit.Bit, [3]bit.Bit, fec.Resu
 	return temp, reserved, result
 }
 
-// hamming_correct corrects the BPTC(196,96) grid with the column
+// hammingCorrect corrects the BPTC(196,96) grid with the column
 // Hamming(13,9,3) and row Hamming(15,11,3) codes, columns first in each pass
 // as MMDVMHost does. The column parity rows are also row codewords, so all
 // 13 rows are row-decoded. It returns the corrected grid, the number of
 // flipped bits, and whether a row or column syndrome is still nonzero.
-func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
+func hammingCorrect(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
 	corrected := bits
 
 	for pass := 0; pass < 5; pass++ {
@@ -117,13 +117,13 @@ func columnSyndrome(grid *[196]bit.Bit, c int) int {
 	for a := range col {
 		col[a] = grid[c+1+a*15]
 	}
-	return calculate_syndrome_13_9(col)
+	return calculateSyndrome139(col)
 }
 
 func rowSyndrome(grid *[196]bit.Bit, r int) int {
 	var row [15]bit.Bit
 	copy(row[:], grid[r*15+1:r*15+16])
-	return calculate_syndrome_15_11(row)
+	return calculateSyndrome1511(row)
 }
 
 // Encode196 encodes 96 data bits using BPTC(196,96) interleaving with

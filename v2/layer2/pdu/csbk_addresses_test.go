@@ -7,6 +7,8 @@ import (
 )
 
 func TestCSBK_Addresses(t *testing.T) {
+	t.Parallel()
+
 	csbks := []pdu.CSBK{
 		{Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, UnitToUnitVoiceServiceRequestPDU: &pdu.UnitToUnitVoiceServiceRequestPDU{}},
 		{Opcode: pdu.CSBKUnitToUnitVoiceServiceAnswerResponse, UnitToUnitVoiceServiceAnswerResponsePDU: &pdu.UnitToUnitVoiceServiceAnswerResponsePDU{}},

@@ -45,6 +45,8 @@ func voiceSlots(t *testing.T) [][72]bit.Bit {
 }
 
 func TestAMBE72RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	clean := 0
 	for i, slot := range voiceSlots(t) {
 		info, res := vocoder.DecodeAMBE72(slot)
@@ -72,6 +74,8 @@ func TestAMBE72RoundTrip(t *testing.T) {
 }
 
 func TestAMBE72CorrectsErrors(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(1)) //nolint:gosec // deterministic PRNG fine for tests
 	aPos := []int{0, 4, 8}
 	bPos := []int{25, 29, 33}
@@ -92,6 +96,8 @@ func TestAMBE72CorrectsErrors(t *testing.T) {
 }
 
 func TestAMBESilence(t *testing.T) {
+	t.Parallel()
+
 	slot := vocoder.EncodeAMBE72(vocoder.AMBESilence())
 	if slot != vocoder.AMBESilenceSlot() {
 		t.Fatal("AMBESilenceSlot differs from EncodeAMBE72(AMBESilence())")

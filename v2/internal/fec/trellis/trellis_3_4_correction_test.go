@@ -30,6 +30,8 @@ func tableB8() [16][2]int8 {
 }
 
 func TestTrellis34_EncoderTablesMatchSpec(t *testing.T) {
+	t.Parallel()
+
 	b7 := tableB7()
 	for s := range b7 {
 		for in := range b7[s] {
@@ -52,6 +54,8 @@ func randomTrellisBlock(r *rand.Rand) ([144]bit.Bit, [196]bit.Bit) {
 }
 
 func TestTrellis34_CleanDecode(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(1))
 	for n := 0; n < 200; n++ {
 		data, enc := randomTrellisBlock(r)
@@ -63,6 +67,8 @@ func TestTrellis34_CleanDecode(t *testing.T) {
 }
 
 func TestTrellis34_SingleBitErrorsCorrected(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(2))
 	for n := 0; n < 20; n++ {
 		data, enc := randomTrellisBlock(r)
@@ -81,6 +87,8 @@ func TestTrellis34_SingleBitErrorsCorrected(t *testing.T) {
 // errors are only guaranteed to be corrected when they fall in constellation
 // points far enough apart (after deinterleaving) to be separate error events.
 func TestTrellis34_SeparatedDoubleBitErrorsCorrected(t *testing.T) {
+	t.Parallel()
+
 	var pointOf [196]int
 	for i, j := range interleave_matrix {
 		pointOf[2*i] = int(j) / 2
@@ -104,6 +112,8 @@ func TestTrellis34_SeparatedDoubleBitErrorsCorrected(t *testing.T) {
 }
 
 func TestTrellis34_NonzeroFinalStateFlagged(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(5))
 	for n := 0; n < 200; n++ {
 		var tribits [49]byte

@@ -3,6 +3,8 @@ package enums
 import "testing"
 
 func TestFLCOString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		flco     FLCO
 		expected string
@@ -20,6 +22,8 @@ func TestFLCOString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.flco.String()
 			if got != tt.expected {
 				t.Errorf("(%d).String() = %q, want %q", tt.flco, got, tt.expected)
@@ -29,6 +33,8 @@ func TestFLCOString(t *testing.T) {
 }
 
 func TestFLCO_ValidValues(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		input    int
 		expected FLCO
@@ -55,6 +61,8 @@ func TestFLCO_ValidValues(t *testing.T) {
 }
 
 func TestFLCO_InvalidValue(t *testing.T) {
+	t.Parallel()
+
 	invalidValues := []int{1, 2, 9, 100, 255}
 	for _, v := range invalidValues {
 		if FLCO(v).Valid() {

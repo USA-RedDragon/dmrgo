@@ -6,6 +6,8 @@ import (
 )
 
 func TestNewColorCode(t *testing.T) {
+	t.Parallel()
+
 	for v := range 256 {
 		cc, err := NewColorCode(uint8(v))
 		if v <= 15 {

@@ -22,6 +22,8 @@ func expectEncodeError(t *testing.T, err error, want string) {
 }
 
 func TestEncode_RejectsValuesWiderThanField(t *testing.T) {
+	t.Parallel()
+
 	_, err := (&pdu.FLCGroupVoice{GroupAddress: 1 << 24}).Encode()
 	expectEncodeError(t, err, "FLCGroupVoice.GroupAddress: value 16777216 does not fit in 24 bits")
 
@@ -47,6 +49,8 @@ func TestEncode_RejectsValuesWiderThanField(t *testing.T) {
 }
 
 func TestEncode_AcceptsMaximumFieldValues(t *testing.T) {
+	t.Parallel()
+
 	if _, err := (&pdu.FLCGroupVoice{GroupAddress: 1<<24 - 1, SourceAddress: 1<<24 - 1}).Encode(); err != nil {
 		t.Fatalf("max addresses rejected: %v", err)
 	}
@@ -59,6 +63,8 @@ func TestEncode_AcceptsMaximumFieldValues(t *testing.T) {
 }
 
 func TestEncode_PropagatesNestedErrors(t *testing.T) {
+	t.Parallel()
+
 	_, err := (&pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -74,6 +80,8 @@ func TestEncode_PropagatesNestedErrors(t *testing.T) {
 }
 
 func TestEncode_RejectsCoordinatesOutOfRange(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		lon, lat float64
@@ -88,6 +96,8 @@ func TestEncode_RejectsCoordinatesOutOfRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := (&pdu.FLCGPSInfo{Longitude: tt.lon, Latitude: tt.lat}).Encode()
 			expectEncodeError(t, err, tt.want)
 		})

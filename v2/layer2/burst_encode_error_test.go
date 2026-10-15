@@ -11,6 +11,8 @@ import (
 )
 
 func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name  string
 		burst layer2.Burst
@@ -56,6 +58,8 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := tt.burst.Encode()
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("Encode error = %v, want one containing %q", err, tt.want)
@@ -65,10 +69,14 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 }
 
 func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
+	t.Parallel()
+
 	var stale [32]bit.Bit
 	stale[3] = 1
 	for _, sync := range []enums.SyncPattern{enums.SyncNone, enums.SyncMSSourcedRC} {
 		t.Run(sync.String(), func(t *testing.T) {
+			t.Parallel()
+
 			kind := layer2.KindVoice
 			if sync == enums.SyncMSSourcedRC {
 				kind = layer2.KindReverseChannel
@@ -98,6 +106,8 @@ func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 }
 
 func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name  string
 		burst layer2.Burst
@@ -111,6 +121,8 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			if got, err := tt.burst.Encode(); err == nil {
 				t.Fatalf("Encode = %x, want an error", got)
 			}
@@ -121,6 +133,8 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 // A voice burst encodes its vocoder frames from the SYNC pattern and the
 // embedded signalling alone; VoiceBurst does not select the payload.
 func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
+	t.Parallel()
+
 	var voice [3][72]bit.Bit
 	for i := range voice {
 		for j := range voice[i] {
@@ -129,6 +143,8 @@ func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 	}
 	for _, sync := range []enums.SyncPattern{enums.SyncBSSourcedVoice, enums.SyncReserved, enums.SyncNone} {
 		t.Run(sync.String(), func(t *testing.T) {
+			t.Parallel()
+
 			b := layer2.Burst{
 				Kind:               layer2.KindVoice,
 				SyncPattern:        sync,

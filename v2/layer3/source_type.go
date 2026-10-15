@@ -6,6 +6,7 @@ const unknownName = "Unknown"
 // the PDU (ETSI TS 102 361-2 clause 7.2.5, Table 7.14).
 type SourceType uint8
 
+// The SourceType values.
 const (
 	SourceTypeBS SourceType = 0 // BS sourced
 	SourceTypeMS SourceType = 1 // MS sourced

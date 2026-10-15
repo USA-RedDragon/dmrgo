@@ -5,6 +5,8 @@ import (
 )
 
 func TestReedSolomon1294SyndromeNoError(t *testing.T) {
+	t.Parallel()
+
 	data := make([]byte, dataSize+checksumSize)
 	var syndrome poly
 
@@ -19,6 +21,8 @@ func TestReedSolomon1294SyndromeNoError(t *testing.T) {
 }
 
 func TestReedSolomon1294DecodeClean(t *testing.T) {
+	t.Parallel()
+
 	data := make([]byte, dataSize+checksumSize)
 
 	result := decode(data)
@@ -37,6 +41,8 @@ func TestReedSolomon1294DecodeClean(t *testing.T) {
 }
 
 func TestReedSolomon1294SyndromeWithError(t *testing.T) {
+	t.Parallel()
+
 	data := make([]byte, dataSize+checksumSize)
 	data[0] = 0x55
 
@@ -52,6 +58,8 @@ func TestReedSolomon1294SyndromeWithError(t *testing.T) {
 }
 
 func TestReedSolomon1294GaloisMul(t *testing.T) {
+	t.Parallel()
+
 	if galoisMul(0, 0x5A) != 0 {
 		t.Error("0 * x should be 0")
 	}
@@ -73,6 +81,8 @@ func TestReedSolomon1294GaloisMul(t *testing.T) {
 }
 
 func TestReedSolomon1294GaloisMulAssociativity(t *testing.T) {
+	t.Parallel()
+
 	a, b, c := byte(0x12), byte(0x34), byte(0x56)
 	left := galoisMul(galoisMul(a, b), c)
 	right := galoisMul(a, galoisMul(b, c))
@@ -83,6 +93,8 @@ func TestReedSolomon1294GaloisMulAssociativity(t *testing.T) {
 }
 
 func TestReedSolomon1294FindRootsEmpty(t *testing.T) {
+	t.Parallel()
+
 	locator := poly{1, 0, 0, 0, 0, 0}
 	roots := findRoots(&locator)
 	if len(roots) != 0 {
@@ -91,6 +103,8 @@ func TestReedSolomon1294FindRootsEmpty(t *testing.T) {
 }
 
 func TestReedSolomon1294DecodeInvalidLength(t *testing.T) {
+	t.Parallel()
+
 	shortData := make([]byte, dataSize)
 	result := decode(shortData)
 	if !result.Uncorrectable {
@@ -105,6 +119,8 @@ func TestReedSolomon1294DecodeInvalidLength(t *testing.T) {
 }
 
 func TestReedSolomon1294CalcSyndromeError(t *testing.T) {
+	t.Parallel()
+
 	shortData := make([]byte, 5)
 	var syndrome poly
 
@@ -115,6 +131,8 @@ func TestReedSolomon1294CalcSyndromeError(t *testing.T) {
 }
 
 func TestReedSolomon1294CorrectError(t *testing.T) {
+	t.Parallel()
+
 	shortData := make([]byte, 5)
 	var syndrome poly
 
@@ -125,6 +143,8 @@ func TestReedSolomon1294CorrectError(t *testing.T) {
 }
 
 func TestReedSolomon1294DecodeResultFields(t *testing.T) {
+	t.Parallel()
+
 	data := make([]byte, dataSize+checksumSize)
 
 	result := decode(data)
@@ -171,6 +191,8 @@ func BenchmarkReedSolomon1294GaloisMul(b *testing.B) {
 }
 
 func TestReedSolomon1294SyndromeHasErrors(t *testing.T) {
+	t.Parallel()
+
 	data := make([]byte, dataSize+checksumSize)
 	data[0] = 0x42
 
@@ -202,6 +224,8 @@ func refGaloisMul(a, b byte) byte {
 }
 
 func TestReedSolomon1294GaloisMulExhaustive(t *testing.T) {
+	t.Parallel()
+
 	for a := 0; a < 256; a++ {
 		for b := 0; b < 256; b++ {
 			got := galoisMul(byte(a), byte(b))
@@ -213,6 +237,8 @@ func TestReedSolomon1294GaloisMulExhaustive(t *testing.T) {
 }
 
 func TestReedSolomon1294GaloisInv(t *testing.T) {
+	t.Parallel()
+
 	if _, ok := galoisInv(0); ok {
 		t.Error("GaloisInv(0) should report failure")
 	}

@@ -10,6 +10,8 @@ import (
 )
 
 func TestEMBInfo_IPSCExample(t *testing.T) {
+	t.Parallel()
+
 	s := pdu.EmbeddedSignalling{ColorCode: 1, LCSS: enums.LCSSFirstFragment}
 	e := s.Info()
 	if e != 0x12 {
@@ -29,6 +31,8 @@ func TestEMBInfo_IPSCExample(t *testing.T) {
 }
 
 func TestEMBInfo_AllValues(t *testing.T) {
+	t.Parallel()
+
 	for v := range 128 {
 		e := pdu.EMBInfo(v << 1)
 		var data [7]bit.Bit
@@ -64,6 +68,8 @@ func TestEMBInfo_AllValues(t *testing.T) {
 }
 
 func TestEMBInfo_Setters(t *testing.T) {
+	t.Parallel()
+
 	for v := range 256 {
 		orig := pdu.EMBInfo(v)
 		for cc := range enums.ColorCode(16) {

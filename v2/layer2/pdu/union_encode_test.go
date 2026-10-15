@@ -10,6 +10,8 @@ import (
 // The receiver selects the payload variant from the discriminator, so Encode
 // must reject a payload pointer that the encoded header would not select.
 func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name   string
 		encode func() error
@@ -123,12 +125,16 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			expectEncodeError(t, tt.encode(), tt.want)
 		})
 	}
 }
 
 func TestEncodeAcceptsMatchingPayload(t *testing.T) {
+	t.Parallel()
+
 	csbk := pdu.CSBK{
 		Opcode:                 pdu.CSBKTalkgroupVoiceGrant,
 		TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},

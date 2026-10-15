@@ -36,6 +36,8 @@ func setCSBKGroup(c *pdu.CSBK, group bool) {
 }
 
 func TestCSBKBytes_ReproducerPreamble(t *testing.T) {
+	t.Parallel()
+
 	c := pdu.CSBKBytes{0xbd, 0x00, 0x80, 0x1d, 0x23, 0x38, 0x63, 0x23, 0x38, 0x3b, 0x58, 0x89}
 	if !c.CRCOK() || c.Opcode() != pdu.CSBKPreamble || c.FID() != enums.FIDStandardized {
 		t.Fatalf("%x: CRC %t opcode %s FID %d", c, c.CRCOK(), c.Opcode(), c.FID())
@@ -61,6 +63,8 @@ func TestCSBKBytes_ReproducerPreamble(t *testing.T) {
 }
 
 func TestCSBKBytes_MatchesCSBK(t *testing.T) {
+	t.Parallel()
+
 	addrBits := [12]byte{4: 0xFF, 5: 0xFF, 6: 0xFF, 7: 0xFF, 8: 0xFF, 9: 0xFF}
 	rng := rand.New(rand.NewSource(17))
 	addressed, grouped := map[pdu.CSBKOpcode]bool{}, map[pdu.CSBKOpcode]bool{}

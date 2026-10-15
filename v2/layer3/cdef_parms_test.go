@@ -9,6 +9,8 @@ import (
 )
 
 func TestCdefParms_NewFromBits(t *testing.T) {
+	t.Parallel()
+
 	var bits [58]bit.Bit
 
 	setBitsFromUint16(bits[:], 0, 12, 291)
@@ -37,6 +39,8 @@ func TestCdefParms_NewFromBits(t *testing.T) {
 }
 
 func TestCdefParms_FrequencyCalculation(t *testing.T) {
+	t.Parallel()
+
 	parms := &layer3.CdefParms{
 		Channel: 1,
 		TXMHz:   440,
@@ -63,6 +67,8 @@ func TestCdefParms_FrequencyCalculation(t *testing.T) {
 }
 
 func TestCdefParms_String(t *testing.T) {
+	t.Parallel()
+
 	parms := &layer3.CdefParms{
 		Channel: 1,
 		TXMHz:   440,
@@ -78,6 +84,8 @@ func TestCdefParms_String(t *testing.T) {
 }
 
 func TestCdefParms_ZeroValues(t *testing.T) {
+	t.Parallel()
+
 	var bits [58]bit.Bit
 	parmsValue := layer3.DecodeCdefParms(bits)
 	parms := &parmsValue

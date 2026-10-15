@@ -9,6 +9,8 @@ import (
 )
 
 func TestDecodeFullLinkControlBytes_Capture(t *testing.T) {
+	t.Parallel()
+
 	lc := hex9(t, "03000000270630b43c")
 	f, err := pdu.DecodeFullLinkControlBytes(lc)
 	if err != nil {
@@ -31,6 +33,8 @@ func TestDecodeFullLinkControlBytes_Capture(t *testing.T) {
 }
 
 func TestDecodeFullLinkControlBytes_RoundTripsRandom(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(7))
 	fails := 0
 	for range 20000 {
@@ -54,6 +58,8 @@ func TestDecodeFullLinkControlBytes_RoundTripsRandom(t *testing.T) {
 }
 
 func TestFullLinkControlBytes_IgnoresBurstDataType(t *testing.T) {
+	t.Parallel()
+
 	f := pdu.FullLinkControl{
 		FLCO:       enums.FLCOGroupVoiceChannelUser,
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3100999},

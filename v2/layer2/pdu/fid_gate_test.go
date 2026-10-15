@@ -35,6 +35,8 @@ func testPayload64() [64]bit.Bit {
 // ETSI TS 102 361-1 Table 9.21: the FID redefines the CSBKO, so a
 // manufacturer FID must not be decoded with the standard layouts.
 func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
+	t.Parallel()
+
 	payload := testPayload64()
 	infoBits := buildCSBKBitsFID(byte(pdu.CSBKPrivateVoiceGrant), byte(enums.FIDMotorola), payload)
 
@@ -58,6 +60,8 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 }
 
 func TestCSBK_UnknownOpcodeKeepsRawPayload(t *testing.T) {
+	t.Parallel()
+
 	payload := testPayload64()
 	infoBits := buildCSBKBits(0b111111, payload)
 
@@ -75,6 +79,8 @@ func TestCSBK_UnknownOpcodeKeepsRawPayload(t *testing.T) {
 }
 
 func TestCSBK_StandardFIDDoesNotFillRawPayload(t *testing.T) {
+	t.Parallel()
+
 	payload := testPayload64()
 	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
@@ -88,6 +94,8 @@ func TestCSBK_StandardFIDDoesNotFillRawPayload(t *testing.T) {
 }
 
 func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
+	t.Parallel()
+
 	var payload [56]bit.Bit
 	for i := range payload {
 		payload[i] = bit.Bit(i % 3 % 2)
@@ -120,6 +128,8 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 }
 
 func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
+	t.Parallel()
+
 	var payload [56]bit.Bit
 	payload[0] = 1
 	payload[55] = 1
@@ -150,6 +160,8 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 }
 
 func TestFLC_AddressesIgnoreFID(t *testing.T) {
+	t.Parallel()
+
 	for _, fid := range []enums.FeatureSetID{enums.FIDStandardized, enums.FIDMotorola} {
 		for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
 			lc := reedsolomon.Encode([9]byte{byte(flco), byte(fid), 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C})

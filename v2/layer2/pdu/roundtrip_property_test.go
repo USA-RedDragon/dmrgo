@@ -58,7 +58,7 @@ type roundTrip struct {
 	// values is the number of forced discriminator values; build gets each
 	// value samplesPerValue times.
 	values int
-	build  func(value int) [96]bit.Bit
+	build  func(rng *rand.Rand, value int) [96]bit.Bit
 	trip   func([96]bit.Bit) ([96]bit.Bit, fec.Result, error)
 }
 
@@ -66,7 +66,8 @@ type roundTrip struct {
 // CSBKO with the SFID and with a manufacturer FID, Format with and without
 // appended blocks) so that rare payload variants are reached.
 func TestPDURoundTripKeepsEveryBit(t *testing.T) {
-	rng := rand.New(rand.NewPCG(1, 2))
+	t.Parallel()
+
 	var cases []roundTrip
 	for _, lc := range []struct {
 		dt   enums.DataType
@@ -78,7 +79,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 		cases = append(cases, roundTrip{
 			name:   "FullLinkControl " + lc.dt.String(),
 			values: 64 * 2,
-			build: func(v int) [96]bit.Bit {
+			build: func(rng *rand.Rand, v int) [96]bit.Bit {
 				b := randomPayload(rng, 9)
 				fid := byte(0)
 				if v%2 == 1 {
@@ -98,7 +99,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 	cases = append(cases, roundTrip{
 		name:   "CSBK",
 		values: 64 * 2,
-		build: func(v int) [96]bit.Bit {
+		build: func(rng *rand.Rand, v int) [96]bit.Bit {
 			b := randomPayload(rng, 10)
 			fid := byte(0)
 			if v%2 == 1 {
@@ -118,7 +119,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 		roundTrip{
 			name:   "DataHeader",
 			values: 16 * 2,
-			build: func(v int) [96]bit.Bit {
+			build: func(rng *rand.Rand, v int) [96]bit.Bit {
 				b := randomPayload(rng, 10)
 				b[0] = b[0]&0xF0 | byte(v/2)
 				if v%2 == 0 {
@@ -139,7 +140,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 		roundTrip{
 			name:   "MBCHeader",
 			values: 1,
-			build:  func(int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0xAAAA) },
+			build:  func(rng *rand.Rand, _ int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0xAAAA) },
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d := pdu.DecodeMBCHeader(in)
 				r := d.FEC
@@ -150,7 +151,7 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 		roundTrip{
 			name:   "PIHeader",
 			values: 1,
-			build:  func(int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0x6969) },
+			build:  func(rng *rand.Rand, _ int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0x6969) },
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
 				d := pdu.DecodePIHeader(in)
 				r := d.FEC
@@ -159,14 +160,17 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			},
 		},
 	)
-	for _, c := range cases {
+	for i, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			rng := rand.New(rand.NewPCG(1, uint64(i)))
+
 			lost := map[int]int{}
 			var encodeErrs int
 			var firstErr error
 			for v := range c.values {
 				for range samplesPerValue {
-					in := c.build(v)
+					in := c.build(rng, v)
 					out, r, err := c.trip(in)
 					if r.Uncorrectable {
 						t.Fatalf("value %d: valid input decoded as uncorrectable", v)
@@ -196,6 +200,8 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 }
 
 func TestShortLCRoundTripKeepsEveryBit(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewPCG(3, 4))
 	for slco := range 16 {
 		for range samplesPerValue {

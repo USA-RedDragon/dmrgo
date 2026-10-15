@@ -269,6 +269,8 @@ func callWithBits(t *testing.T, name string, fn any, next func() bit.Bit) (out [
 // it must return the same as for the values masked to their low bit. A
 // soft-decision demodulator or a caller bug can pass such values.
 func TestBitValuesOtherThanZeroOrOne(t *testing.T) {
+	t.Parallel()
+
 	names := bitFuncNames(t)
 	if len(names) == 0 {
 		t.Fatal("found no functions that take bit.Bit")

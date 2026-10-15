@@ -7,6 +7,7 @@ import "fmt"
 // reserved (ETSI TS 102 361-2 Table B.3, ETSI TS 102 361-4 Table B.2).
 type SLCO uint8
 
+// The SLCO values.
 const (
 	SLCONullMessage    SLCO = 0b0000 // Nul_Msg, null message
 	SLCOActivityUpdate SLCO = 0b0001 // Act_Updt, activity update

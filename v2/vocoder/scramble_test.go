@@ -4,6 +4,8 @@ import "testing"
 
 // TestAMBEScrambleTableValues verifies specific known values in the AMBE scramble table
 func TestAMBEScrambleTableValues(t *testing.T) {
+	t.Parallel()
+
 	expectedValues := []struct {
 		index    int
 		expected uint32
@@ -31,6 +33,8 @@ func TestAMBEScrambleTableValues(t *testing.T) {
 
 // TestScrambleTableBitWidth verifies all values fit within 24 bits (DMR constraint)
 func TestScrambleTableBitWidth(t *testing.T) {
+	t.Parallel()
+
 	maxValue := uint32(0xFFFFFF)
 	for i, v := range ambeScrambleTable {
 		if v > maxValue {
@@ -41,6 +45,8 @@ func TestScrambleTableBitWidth(t *testing.T) {
 
 // TestScrambleTableDistribution verifies statistical properties of the table
 func TestScrambleTableDistribution(t *testing.T) {
+	t.Parallel()
+
 	bitCounts := make([]int, 24)
 
 	for _, v := range ambeScrambleTable {

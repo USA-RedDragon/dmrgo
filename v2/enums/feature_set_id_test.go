@@ -6,6 +6,8 @@ import (
 )
 
 func TestFeatureSetIDString_KnownIDs(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		fsid     FeatureSetID
 		contains string // substring that should appear in the name
@@ -41,6 +43,8 @@ func TestFeatureSetIDString_KnownIDs(t *testing.T) {
 }
 
 func TestFeatureSetIDString_UnknownID(t *testing.T) {
+	t.Parallel()
+
 	name := (FeatureSetID(0xFF)).String()
 	if name == "" {
 		t.Error("FeatureSetIDToName for unknown ID should return non-empty string")
@@ -51,6 +55,8 @@ func TestFeatureSetIDString_UnknownID(t *testing.T) {
 }
 
 func TestFeatureSetID_ValidValues(t *testing.T) {
+	t.Parallel()
+
 	validIDs := []int{
 		0x0, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB,
 		0x10, 0x13, 0x1C, 0x20, 0x33, 0x3C, 0x58, 0x68, 0x77,
@@ -63,12 +69,16 @@ func TestFeatureSetID_ValidValues(t *testing.T) {
 }
 
 func TestFeatureSetID_InvalidValue(t *testing.T) {
+	t.Parallel()
+
 	if FeatureSetID(0xFF).Valid() {
 		t.Error("FeatureSetID(0xFF) is valid")
 	}
 }
 
 func TestFeatureSetID_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	validIDs := []int{0x0, 0x10, 0x20, 0x58, 0x77}
 	for _, id := range validIDs {
 		fsid := FeatureSetID(id)

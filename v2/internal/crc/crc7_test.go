@@ -8,6 +8,8 @@ import (
 )
 
 func TestCRC7_ZeroInput(t *testing.T) {
+	t.Parallel()
+
 	bits := make([]bit.Bit, 4)
 	result := crc.CRC7(bits)
 	if result != 0x00 {
@@ -16,6 +18,8 @@ func TestCRC7_ZeroInput(t *testing.T) {
 }
 
 func TestCRC7_SingleBit(t *testing.T) {
+	t.Parallel()
+
 	bits := []bit.Bit{1}
 	result := crc.CRC7(bits)
 	if result == 0 {
@@ -24,6 +28,8 @@ func TestCRC7_SingleBit(t *testing.T) {
 }
 
 func TestCRC7_CheckValid_NoMask(t *testing.T) {
+	t.Parallel()
+
 	data := []bit.Bit{1, 0, 1, 1}
 	c := crc.CRC7(data)
 
@@ -39,6 +45,8 @@ func TestCRC7_CheckValid_NoMask(t *testing.T) {
 }
 
 func TestCRC7_CheckValid_WithMask(t *testing.T) {
+	t.Parallel()
+
 	data := []bit.Bit{1, 0, 1, 1}
 	// 0x7A is the Reverse Channel CRC mask (ETSI TS 102 361-1 clause B.3.12).
 	c := crc.CRC7(data) ^ 0x7A
@@ -55,6 +63,8 @@ func TestCRC7_CheckValid_WithMask(t *testing.T) {
 }
 
 func TestCRC7_CheckInvalid(t *testing.T) {
+	t.Parallel()
+
 	data := []bit.Bit{1, 0, 1, 1}
 	c := crc.CRC7(data)
 
@@ -71,12 +81,16 @@ func TestCRC7_CheckInvalid(t *testing.T) {
 }
 
 func TestCRC7_CheckTooShort(t *testing.T) {
+	t.Parallel()
+
 	if checkCRC7Codeword(make([]bit.Bit, 7), 0x00) {
 		t.Error("CheckCRC7 should return false for data shorter than 8 bits")
 	}
 }
 
 func TestCRC7_ValueRange(t *testing.T) {
+	t.Parallel()
+
 	for v := 0; v < 16; v++ {
 		data := []bit.Bit{
 			bit.Bit((v >> 3) & 1),

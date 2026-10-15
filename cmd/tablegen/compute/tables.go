@@ -46,131 +46,131 @@ func All() *Tables {
 
 	wg.Add(1)
 	go func() {
-		t.DM = ComputeDM()
+		t.DM = DM()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.Hamming15_11Syndrome = ComputeHamming15_11Syndrome()
+		t.Hamming15_11Syndrome = Hamming15_11Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.Hamming13_9Syndrome = ComputeHamming13_9Syndrome()
+		t.Hamming13_9Syndrome = Hamming13_9Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.Hamming743Syndrome = ComputeHamming743Syndrome()
+		t.Hamming743Syndrome = Hamming743Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.Hamming16_11Syndrome = ComputeHamming16_11Syndrome()
+		t.Hamming16_11Syndrome = Hamming16_11Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.Hamming17_12Syndrome = ComputeHamming17_12Syndrome()
+		t.Hamming17_12Syndrome = Hamming17_12Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.CRCCCITT = ComputeCRCCCITT()
+		t.CRCCCITT = CRCCCITT()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.CRC32 = ComputeCRC32Table()
+		t.CRC32 = CRC32Table()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.SingleBurstBPTCInterleave = ComputeSingleBurstBPTCInterleave()
+		t.SingleBurstBPTCInterleave = SingleBurstBPTCInterleave()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.ConstellationPoints = ComputeConstellationPoints()
+		t.ConstellationPoints = ConstellationPoints()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.ReverseConstellation = ComputeReverseConstellation()
+		t.ReverseConstellation = ReverseConstellation()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.ATable, t.BTable, t.CTable = ComputeVocoderTables()
+		t.ATable, t.BTable, t.CTable = VocoderTables()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.GaloisExp, t.GaloisLog = ComputeGaloisTables()
+		t.GaloisExp, t.GaloisLog = GaloisTables()
 		wg.Done()
 	}()
 	wg.Add(1)
 	go func() {
-		t.AMBEScrambleTable = ComputeAMBEScrambleTable()
-		wg.Done()
-	}()
-	wg.Wait()
-
-	wg.Add(1)
-	go func() {
-		t.Golay23_12_7Encoding = ComputeGolay23_12_7Encoding()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Golay24_12_8Encoding = ComputeGolay24_12_8Encoding()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.QR16_7_6Encoding = ComputeQR16_7_6Encoding()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.QR16_7_6Syndrome = ComputeQR16_7_6Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.EncoderStateTransition = ComputeEncoderStateTransition()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.InterleaveMatrix = ComputeInterleaveMatrix()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Golay20_8_7Encoding = ComputeGolay20_8_7Encoding()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Golay20_8_7Syndrome = ComputeGolay20_8_7Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Golay23_12_7Syndrome = ComputeGolay23_12_7Syndrome()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.Golay24_12_8Syndrome = ComputeGolay24_12_8Syndrome()
+		t.AMBEScrambleTable = AMBEScrambleTable()
 		wg.Done()
 	}()
 	wg.Wait()
 
 	wg.Add(1)
 	go func() {
-		t.Trellis34Transition = ComputeTrellis34Transition(t.EncoderStateTransition)
+		t.Golay23_12_7Encoding = Golay23_12_7Encoding()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.Golay24_12_8Encoding = Golay24_12_8Encoding()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.QR16_7_6Encoding = QR16_7_6Encoding()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.QR16_7_6Syndrome = QR16_7_6Syndrome()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.EncoderStateTransition = EncoderStateTransition()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.InterleaveMatrix = InterleaveMatrix()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.Golay20_8_7Encoding = Golay20_8_7Encoding()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.Golay20_8_7Syndrome = Golay20_8_7Syndrome()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.Golay23_12_7Syndrome = Golay23_12_7Syndrome()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.Golay24_12_8Syndrome = Golay24_12_8Syndrome()
+		wg.Done()
+	}()
+	wg.Wait()
+
+	wg.Add(1)
+	go func() {
+		t.Trellis34Transition = Trellis34Transition(t.EncoderStateTransition)
 		wg.Done()
 	}()
 

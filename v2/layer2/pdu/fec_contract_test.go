@@ -10,6 +10,8 @@ import (
 )
 
 func TestCRCOnlyPDUReportsDetectionOnly(t *testing.T) {
+	t.Parallel()
+
 	var zero [96]bit.Bit
 	if res := pdu.DecodeCSBK(zero).FEC; res != (fec.Result{Uncorrectable: true}) {
 		t.Errorf("CSBK with a bad CRC: %+v, want only Uncorrectable", res)
@@ -26,6 +28,8 @@ func TestCRCOnlyPDUReportsDetectionOnly(t *testing.T) {
 }
 
 func TestCorrectingPDUsReportCorrectionsInFEC(t *testing.T) {
+	t.Parallel()
+
 	st := pdu.SlotType{ColorCode: 3, DataType: enums.DataTypeCSBK}
 	stBits := must(st.Encode())
 	stBits[2] ^= 1

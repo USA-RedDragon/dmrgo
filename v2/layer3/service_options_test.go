@@ -7,6 +7,8 @@ import (
 )
 
 func TestDecodeServiceOptions(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name                string
 		bits                [8]bit.Bit
@@ -101,6 +103,8 @@ func TestDecodeServiceOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			so := DecodeServiceOptions(tt.bits)
 			if so.IsEmergency != tt.isEmergency {
 				t.Errorf("IsEmergency = %v, want %v", so.IsEmergency, tt.isEmergency)
@@ -122,6 +126,8 @@ func TestDecodeServiceOptions(t *testing.T) {
 }
 
 func TestDecodeServiceOptions_ReservedBits(t *testing.T) {
+	t.Parallel()
+
 	bits := [8]bit.Bit{0, 0, 1, 1, 0, 0, 0, 0}
 	so := DecodeServiceOptions(bits)
 	if so.Reserved != 0b11 {
@@ -130,6 +136,8 @@ func TestDecodeServiceOptions_ReservedBits(t *testing.T) {
 }
 
 func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	for i := 0; i < 256; i++ {
 		b := byte(i)
 
@@ -149,6 +157,8 @@ func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestServiceOptions_String(t *testing.T) {
+	t.Parallel()
+
 	bits := [8]bit.Bit{1, 0, 0, 0, 1, 0, 1, 0}
 	so := DecodeServiceOptions(bits)
 	str := so.String()
@@ -173,6 +183,8 @@ func containsStr(s, substr string) bool {
 }
 
 func TestServiceOptionsByte(t *testing.T) {
+	t.Parallel()
+
 	for v := range 256 {
 		so := ServiceOptionsFromByte(byte(v))
 		if got := so.Byte(); got != byte(v) {

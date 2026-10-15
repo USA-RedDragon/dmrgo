@@ -12,6 +12,8 @@ import (
 )
 
 func TestBursts(t *testing.T) {
+	t.Parallel()
+
 	for _, rate := range []enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1} {
 		for _, h := range []pdu.DataHeader{unconfirmed(), confirmed()} {
 			data := payload(53)

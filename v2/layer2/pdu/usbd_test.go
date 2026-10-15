@@ -40,6 +40,8 @@ func buildUSBDBits(serviceType byte, payload [76]bit.Bit) [96]bit.Bit {
 }
 
 func TestUSBD_DecodeLIP(t *testing.T) {
+	t.Parallel()
+
 	var payload [76]bit.Bit
 	payload[0] = 1
 	payload[10] = 1
@@ -72,6 +74,8 @@ func TestUSBD_DecodeLIP(t *testing.T) {
 }
 
 func TestUSBD_DecodeManufacturerSpecific(t *testing.T) {
+	t.Parallel()
+
 	var payload [76]bit.Bit
 	payload[0] = 1
 
@@ -89,6 +93,8 @@ func TestUSBD_DecodeManufacturerSpecific(t *testing.T) {
 }
 
 func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		serviceType pdu.ServiceType
@@ -101,6 +107,8 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			orig := pdu.UnifiedSingleBlockData{
 				ServiceType: tt.serviceType,
 			}
@@ -126,6 +134,8 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestUSBD_EncodeStability(t *testing.T) {
+	t.Parallel()
+
 	orig := pdu.UnifiedSingleBlockData{
 		ServiceType: pdu.ServiceTypeLIP,
 	}
@@ -145,6 +155,8 @@ func TestUSBD_EncodeStability(t *testing.T) {
 }
 
 func TestUSBD_CRCFailure(t *testing.T) {
+	t.Parallel()
+
 	var infoBits [96]bit.Bit
 	fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits).FEC
 	if !fecResult.Uncorrectable {
@@ -153,6 +165,8 @@ func TestUSBD_CRCFailure(t *testing.T) {
 }
 
 func TestUSBD_CRCBitFlip(t *testing.T) {
+	t.Parallel()
+
 	var payload [76]bit.Bit
 	payload[5] = 1
 	infoBits := buildUSBDBits(0b0000, payload)
@@ -166,6 +180,8 @@ func TestUSBD_CRCBitFlip(t *testing.T) {
 }
 
 func TestUSBD_DataType(t *testing.T) {
+	t.Parallel()
+
 	usbd := &pdu.UnifiedSingleBlockData{}
 	if usbd.DataType() != enums.DataTypeUnifiedSingleBlock {
 		t.Errorf("DataType() = %d, want DataTypeUnifiedSingleBlock", usbd.DataType())
@@ -173,6 +189,8 @@ func TestUSBD_DataType(t *testing.T) {
 }
 
 func TestUSBD_String(t *testing.T) {
+	t.Parallel()
+
 	var payload [76]bit.Bit
 	payload[0] = 1
 
@@ -187,6 +205,8 @@ func TestUSBD_String(t *testing.T) {
 }
 
 func TestServiceTypeString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		st   pdu.ServiceType
 		want string
@@ -216,6 +236,8 @@ func TestServiceTypeString(t *testing.T) {
 }
 
 func TestUSBD_AllServiceTypes(t *testing.T) {
+	t.Parallel()
+
 	for st := 0; st < 16; st++ {
 		var payload [76]bit.Bit
 		infoBits := buildUSBDBits(byte(st), payload)
@@ -231,6 +253,8 @@ func TestUSBD_AllServiceTypes(t *testing.T) {
 }
 
 func TestUSBD_PayloadLayout(t *testing.T) {
+	t.Parallel()
+
 	var payload [76]bit.Bit
 	payload[0], payload[75] = 1, 1
 	usbd := pdu.DecodeUnifiedSingleBlockData(buildUSBDBits(0, payload))

@@ -10,6 +10,8 @@ import (
 )
 
 func TestNewBSOutboundActivation(t *testing.T) {
+	t.Parallel()
+
 	c := must(pdu.NewBSOutboundActivation(310123, 3191868))
 	b := must(c.Bytes())
 	if b[0] != 0x80|0x38 || b[1] != 0 || b[2] != 0 || b[3] != 0 {
@@ -47,6 +49,8 @@ func TestNewBSOutboundActivation(t *testing.T) {
 }
 
 func TestCSBKSetTalkgroupDataGrantMultiItem(t *testing.T) {
+	t.Parallel()
+
 	c := pdu.CSBK{ProtectFlag: true, AlohaPDU: &pdu.AlohaPDU{}}
 	mi := pdu.TalkgroupDataGrantMultiItemPDU{PhysicalChannel: 77, HiRate: true, TargetAddress: 9, SourceAddress: 3120001}
 	if err := c.SetTalkgroupDataGrantMultiItem(mi); err != nil {
@@ -69,6 +73,8 @@ func TestCSBKSetTalkgroupDataGrantMultiItem(t *testing.T) {
 }
 
 func TestMBCHeaderDispatch(t *testing.T) {
+	t.Parallel()
+
 	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
 	h := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &grant}
 	got := pdu.DecodeMBCHeader(must(h.Encode()))

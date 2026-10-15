@@ -78,6 +78,8 @@ func checkPositions(t *testing.T, got []enums.VoiceBurstType, want string) {
 }
 
 func TestVoiceReceiver_Transmission(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FeatureSetID(0xC2))
 	raws := transmission(t, lc, 14)
 	got := receiveAll(t, raws)
@@ -97,6 +99,8 @@ func TestVoiceReceiver_Transmission(t *testing.T) {
 }
 
 func TestVoiceReceiver_LateEntry(t *testing.T) {
+	t.Parallel()
+
 	raws := transmission(t, groupLC(enums.FIDStandardized), 12)[3:]
 	got := receiveAll(t, raws)
 	checkPositions(t, got.positions, "--EFABCDEF-")
@@ -111,6 +115,8 @@ func TestVoiceReceiver_LateEntry(t *testing.T) {
 // A lost burst C shifts the position of burst D to C and discards the
 // embedded LC at burst E. Burst A of the next superframe resynchronizes.
 func TestVoiceReceiver_LostBurst(t *testing.T) {
+	t.Parallel()
+
 	raws := transmission(t, groupLC(enums.FIDStandardized), 12)
 	raws = append(raws[:3:3], raws[4:]...)
 	got := receiveAll(t, raws)
@@ -124,6 +130,8 @@ func TestVoiceReceiver_LostBurst(t *testing.T) {
 }
 
 func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
+	t.Parallel()
+
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
 	all := bit.Unpack264(raws[3])
 	for i := layer2.EmbeddedDataStart; i < layer2.EmbeddedDataStart+12; i++ {
@@ -144,6 +152,8 @@ func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 // the column parity row of the embedded LC, which the default corrects, and
 // that Reset keeps Strict.
 func TestVoiceReceiver_Strict(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 	raws := transmission(t, lc, 6)
 	all := bit.Unpack264(raws[2])
@@ -170,6 +180,8 @@ func TestVoiceReceiver_Strict(t *testing.T) {
 }
 
 func TestVoiceReceiver_DataBurstResets(t *testing.T) {
+	t.Parallel()
+
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
 	seq := []layer2.RawBurst{raws[1], raws[2], raws[7], raws[3], raws[6]}
 	got := receiveAll(t, seq)
@@ -182,6 +194,8 @@ func TestVoiceReceiver_DataBurstResets(t *testing.T) {
 // A burst E with an uncorrectable EMB still completes the embedded LC,
 // which the BPTC and checksum check.
 func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
+	t.Parallel()
+
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
 	all := bit.Unpack264(raws[5])
 	for i := layer2.EMBFirstStart; i < layer2.EMBFirstStart+3; i++ {
@@ -203,6 +217,8 @@ func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
 // resynchronizes on its LCSS First burst, and the lone burst A of
 // parrot_kerchunk.bin is followed by a complete superframe.
 func TestVoiceReceiver_Captures(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		file      string
 		positions string
@@ -214,6 +230,8 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.file, func(t *testing.T) {
+			t.Parallel()
+
 			got := receiveAll(t, loadBursts(t, tt.file))
 			checkPositions(t, got.positions, tt.positions)
 			if len(got.errs) != 0 {
@@ -240,6 +258,8 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 }
 
 func TestVoiceReceiver_IgnoresStandaloneRC(t *testing.T) {
+	t.Parallel()
+
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
 	rc := buildStandaloneRCBurst(3, enums.RCCeaseTransmissionCommand)
 	seq := []layer2.RawBurst{raws[1], raws[2], rc, raws[3], raws[4], raws[5]}

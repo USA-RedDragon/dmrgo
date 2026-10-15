@@ -90,6 +90,8 @@ func TestTransmitOrder_EMBFieldWidths(t *testing.T) {
 // TestTransmitOrder_StandaloneRCFields checks the standalone RC burst field
 // bounds against the symbol labels (ETSI TS 102 361-1 Table E.12).
 func TestTransmitOrder_StandaloneRCFields(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		bitIndex int
 		label    string

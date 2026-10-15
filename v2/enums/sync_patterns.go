@@ -12,6 +12,7 @@ type SyncPattern uint64
 
 const embeddedSignallingName = "Embedded Signalling"
 
+// The SyncPattern values.
 const (
 	SyncBSSourcedVoice SyncPattern = 0x755FD7DF75F7 // BS sourced voice
 	SyncBSSourcedData  SyncPattern = 0xDFF57D75DF5D // BS sourced data

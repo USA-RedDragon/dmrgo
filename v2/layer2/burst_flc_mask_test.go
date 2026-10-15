@@ -23,6 +23,8 @@ func burstInfoBits(raw [33]byte) [96]bit.Bit {
 // RS(12,9) parity (ETSI TS 102 361-1 B.3.12). The RS checks depend on a
 // correct RS(12,9) codec.
 func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
+	t.Parallel()
+
 	seen := map[enums.DataType]int{}
 	for _, file := range []string{"testdata/parrot_kerchunk.bin", "testdata/voice.bin"} {
 		for i, raw := range loadBursts(t, file) {

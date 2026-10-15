@@ -9,6 +9,8 @@ import (
 )
 
 func TestEmbeddedSignalling_EncodeDecodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	original := &pdu.EmbeddedSignalling{
 		ColorCode:                          9,
 		PreemptionAndPowerControlIndicator: true,
@@ -34,6 +36,8 @@ func TestEmbeddedSignalling_EncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestEmbeddedSignalling_AllColorCodes(t *testing.T) {
+	t.Parallel()
+
 	for cc := 0; cc < 16; cc++ {
 		es := &pdu.EmbeddedSignalling{
 			ColorCode: enums.ColorCode(cc),
@@ -52,6 +56,8 @@ func TestEmbeddedSignalling_AllColorCodes(t *testing.T) {
 }
 
 func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
+	t.Parallel()
+
 	lcssValues := []enums.LCSS{
 		enums.LCSSSingleFragment,
 		enums.LCSSFirstFragment,
@@ -73,6 +79,8 @@ func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
 }
 
 func TestEmbeddedSignalling_String(t *testing.T) {
+	t.Parallel()
+
 	es := pdu.DecodeEmbeddedSignalling([16]bit.Bit{})
 	s := es.String()
 	if s == "" {
@@ -81,6 +89,8 @@ func TestEmbeddedSignalling_String(t *testing.T) {
 }
 
 func TestEmbeddedSignalling_PPCI(t *testing.T) {
+	t.Parallel()
+
 	for _, ppci := range []bool{false, true} {
 		es := &pdu.EmbeddedSignalling{
 			ColorCode:                          3,
@@ -96,6 +106,8 @@ func TestEmbeddedSignalling_PPCI(t *testing.T) {
 }
 
 func TestEncodeEmbeddedSignalling_FullRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	es := pdu.EmbeddedSignalling{
 		ColorCode:                          9,
 		PreemptionAndPowerControlIndicator: true,

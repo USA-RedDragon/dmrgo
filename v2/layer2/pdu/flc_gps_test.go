@@ -14,6 +14,8 @@ const (
 )
 
 func TestFLCGPSInfo_CoordinatesRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		lon, lat float64
@@ -31,6 +33,8 @@ func TestFLCGPSInfo_CoordinatesRoundTrip(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			in := pdu.FLCGPSInfo{Longitude: tt.lon, Latitude: tt.lat}
 			bits := must(in.Encode())
 			out := pdu.DecodeFLCGPSInfo(bits)
@@ -48,6 +52,8 @@ func TestFLCGPSInfo_CoordinatesRoundTrip(t *testing.T) {
 }
 
 func TestFLCGPSInfo_DecodeTwosComplement(t *testing.T) {
+	t.Parallel()
+
 	var bits [56]bit.Bit
 	// Longitude bits 7-31: 1 followed by zeros = -2^24 steps = -180 degrees.
 	bits[7] = 1
@@ -65,6 +71,8 @@ func TestFLCGPSInfo_DecodeTwosComplement(t *testing.T) {
 }
 
 func TestFLCGPSInfo_EncodeTwosComplement(t *testing.T) {
+	t.Parallel()
+
 	in := pdu.FLCGPSInfo{Longitude: -lonStep, Latitude: -90}
 	bits := must(in.Encode())
 	for i := 7; i < 32; i++ {
@@ -85,6 +93,8 @@ func TestFLCGPSInfo_EncodeTwosComplement(t *testing.T) {
 // Values at the top of each range have no code of their own. Longitude
 // wraps to -180, the same meridian, and latitude takes the largest code.
 func TestFLCGPSInfo_EncodeRangeEdges(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		lon, lat         float64
@@ -98,6 +108,8 @@ func TestFLCGPSInfo_EncodeRangeEdges(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			out := pdu.DecodeFLCGPSInfo(must((&pdu.FLCGPSInfo{Longitude: tt.lon, Latitude: tt.lat}).Encode()))
 			if out.Longitude != tt.wantLon || out.Latitude != tt.wantLat {
 				t.Errorf("decoded %v, %v, want %v, %v", out.Longitude, out.Latitude, tt.wantLon, tt.wantLat)

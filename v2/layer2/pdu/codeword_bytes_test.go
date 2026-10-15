@@ -61,6 +61,8 @@ func hex9(t *testing.T, s string) [9]byte {
 }
 
 func TestCRCMask_TableB21(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		dt    enums.DataType
 		mask  uint32
@@ -91,6 +93,8 @@ func TestCRCMask_TableB21(t *testing.T) {
 }
 
 func TestLCBytesCodeword_MatchesTableB18(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(1))
 	for n := 0; n < 1000; n++ {
 		var lc [9]byte
@@ -117,6 +121,8 @@ func TestLCBytesCodeword_MatchesTableB18(t *testing.T) {
 }
 
 func TestLCBytesCodeword_RealCapture(t *testing.T) {
+	t.Parallel()
+
 	lc := hex9(t, "03000000270630b43c")
 	tests := []struct {
 		dt   enums.DataType
@@ -154,6 +160,8 @@ func TestLCBytesCodeword_RealCapture(t *testing.T) {
 }
 
 func TestFullLinkControlCodeword(t *testing.T) {
+	t.Parallel()
+
 	lc := hex9(t, "03000000270630b43c")
 	f := must(pdu.DecodeFullLinkControlBytes(lc))
 	for dt, want := range map[enums.DataType]string{
@@ -183,6 +191,8 @@ func TestFullLinkControlCodeword(t *testing.T) {
 }
 
 func TestLCBytesCodeword_RejectsOtherDataTypes(t *testing.T) {
+	t.Parallel()
+
 	for dt := enums.DataType(0); dt <= 15; dt++ {
 		if dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypeTerminatorWithLC {
 			continue
@@ -200,6 +210,8 @@ func TestLCBytesCodeword_RejectsOtherDataTypes(t *testing.T) {
 }
 
 func TestDecodeFullLCCodeword_CorrectsAndStrictRejects(t *testing.T) {
+	t.Parallel()
+
 	lc := hex9(t, "03000000270630b43c")
 	cw := must(pdu.LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader))
 	got, res, err := pdu.DecodeFullLCCodeword(cw, enums.DataTypeVoiceLCHeader)
@@ -217,6 +229,8 @@ func TestDecodeFullLCCodeword_CorrectsAndStrictRejects(t *testing.T) {
 }
 
 func TestSeal_MatchesGeneratedEncoders(t *testing.T) {
+	t.Parallel()
+
 	csbk := must((&pdu.CSBK{}).Encode())
 	mbc := must((&pdu.MBCHeader{}).Encode())
 	pi := must((&pdu.PIHeader{AlgorithmID: 1, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 9990}).Encode())
@@ -245,6 +259,8 @@ func TestSeal_MatchesGeneratedEncoders(t *testing.T) {
 }
 
 func TestSeal_RoundTripAndRejects(t *testing.T) {
+	t.Parallel()
+
 	singles := []enums.DataType{
 		enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader,
 		enums.DataTypeDataHeader, enums.DataTypeUnifiedSingleBlock,
