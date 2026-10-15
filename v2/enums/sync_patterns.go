@@ -1,5 +1,7 @@
 package enums
 
+import "math/bits"
+
 // ETSI TS 102 361-1 - 9.1.1 Synchronization (SYNC) PDU - Table 9.2: SYNC patterns
 type SyncPattern int64
 
@@ -19,40 +21,57 @@ const (
 	EmbeddedSignallingPattern SyncPattern = -1
 )
 
-// SyncPatternFromBytes returns the SyncPattern that matches the given burst.
+// SyncMatchThreshold is the largest Hamming distance, in bits, at which a
+// received 48-bit SYNC field still matches a Table 9.2 pattern. Common DMR
+// decoders accept up to 4 bit errors. The Table 9.2 patterns are at least
+// 10 bits apart, so a field can be within the threshold of one pattern only.
+const SyncMatchThreshold = 4
+
+//nolint:gochecknoglobals
+var syncPatterns = [...]SyncPattern{
+	BsSourcedVoice,
+	BsSourcedData,
+	MsSourcedVoice,
+	MsSourcedData,
+	MsSourcedRcSync,
+	Tdma1Voice,
+	Tdma1Data,
+	Tdma2Voice,
+	Tdma2Data,
+	Reserved,
+}
+
+// SyncPatternFromBytes returns the SyncPattern that matches the given 48-bit
+// SYNC field. See SyncPatternFromBytesWithDistance.
 func SyncPatternFromBytes(syncOrEmbeddedSignalling [6]byte) SyncPattern {
-	// Convert 6 bytes into an int64
-	var syncOrEmbeddedSignallingInt64 int64
+	pattern, _ := SyncPatternFromBytesWithDistance(syncOrEmbeddedSignalling)
+	return pattern
+}
+
+// SyncPatternFromBytesWithDistance returns the Table 9.2 pattern nearest to
+// the given 48-bit SYNC field and its Hamming distance from that pattern.
+// If the distance is more than SyncMatchThreshold, the field is taken as
+// embedded signalling and the pattern is EmbeddedSignallingPattern. The
+// distance is always to the nearest Table 9.2 pattern.
+func SyncPatternFromBytesWithDistance(syncOrEmbeddedSignalling [6]byte) (SyncPattern, int) {
+	var value uint64
 	for i := 0; i < 6; i++ {
-		syncOrEmbeddedSignallingInt64 |= int64(syncOrEmbeddedSignalling[i]) << (8 * (5 - i))
+		value = value<<8 | uint64(syncOrEmbeddedSignalling[i])
 	}
 
-	switch SyncPattern(syncOrEmbeddedSignallingInt64) {
-	case BsSourcedVoice:
-		return BsSourcedVoice
-	case BsSourcedData:
-		return BsSourcedData
-	case MsSourcedVoice:
-		return MsSourcedVoice
-	case MsSourcedData:
-		return MsSourcedData
-	case MsSourcedRcSync:
-		return MsSourcedRcSync
-	case Tdma1Voice:
-		return Tdma1Voice
-	case Tdma1Data:
-		return Tdma1Data
-	case Tdma2Voice:
-		return Tdma2Voice
-	case Tdma2Data:
-		return Tdma2Data
-	case EmbeddedSignallingPattern:
-		return EmbeddedSignallingPattern
-	case Reserved:
-		return Reserved
-	default:
-		return EmbeddedSignallingPattern
+	best := EmbeddedSignallingPattern
+	bestDistance := 49
+	for _, pattern := range syncPatterns {
+		distance := bits.OnesCount64(value ^ uint64(pattern)) //nolint:gosec // patterns are 48-bit positive constants
+		if distance < bestDistance {
+			best = pattern
+			bestDistance = distance
+		}
 	}
+	if bestDistance > SyncMatchThreshold {
+		return EmbeddedSignallingPattern, bestDistance
+	}
+	return best, bestDistance
 }
 
 // SyncPatternToName returns the name of the SyncPattern that matches the given burst.

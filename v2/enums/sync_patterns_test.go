@@ -1,6 +1,9 @@
 package enums
 
-import "testing"
+import (
+	"math/bits"
+	"testing"
+)
 
 func TestSyncPatternFromBytes_AllKnownPatterns(t *testing.T) {
 	tests := []struct {
@@ -92,6 +95,65 @@ func TestSyncPatternFromBytes_RoundTrip(t *testing.T) {
 		got := SyncPatternFromBytes(syncBytes)
 		if got != p {
 			t.Errorf("round-trip failed for %s: got %v", SyncPatternToName(p), got)
+		}
+	}
+}
+
+func syncPatternBytes(p SyncPattern) [6]byte {
+	var b [6]byte
+	for i := 0; i < 6; i++ {
+		b[i] = byte(int64(p) >> (8 * (5 - i)))
+	}
+	return b
+}
+
+func flipSyncBits(b [6]byte, positions ...int) [6]byte {
+	for _, pos := range positions {
+		b[pos/8] ^= 0x80 >> (pos % 8)
+	}
+	return b
+}
+
+func TestSyncPatternFromBytesWithDistance_Tolerant(t *testing.T) {
+	flips := [][]int{
+		{},
+		{0},
+		{47},
+		{0, 47},
+		{3, 17, 29},
+		{1, 12, 30, 46},
+		{44, 45, 46, 47},
+	}
+	for _, p := range syncPatterns {
+		for _, f := range flips {
+			got, dist := SyncPatternFromBytesWithDistance(flipSyncBits(syncPatternBytes(p), f...))
+			if got != p || dist != len(f) {
+				t.Errorf("%s with %d flipped bits: got %s distance %d", SyncPatternToName(p), len(f), SyncPatternToName(got), dist)
+			}
+		}
+	}
+}
+
+func TestSyncPatternFromBytesWithDistance_BeyondThreshold(t *testing.T) {
+	for _, p := range syncPatterns {
+		in := flipSyncBits(syncPatternBytes(p), 0, 9, 18, 27, 36)
+		got, dist := SyncPatternFromBytesWithDistance(in)
+		if got != EmbeddedSignallingPattern {
+			t.Errorf("%s with 5 flipped bits: got %s, want embedded signalling", SyncPatternToName(p), SyncPatternToName(got))
+		}
+		if dist != SyncMatchThreshold+1 {
+			t.Errorf("%s with 5 flipped bits: distance %d, want %d", SyncPatternToName(p), dist, SyncMatchThreshold+1)
+		}
+	}
+}
+
+func TestSyncPatterns_MinimumDistance(t *testing.T) {
+	for i, a := range syncPatterns {
+		for _, b := range syncPatterns[i+1:] {
+			n := bits.OnesCount64(uint64(a ^ b))
+			if n <= 2*SyncMatchThreshold {
+				t.Errorf("%s and %s are %d bits apart; threshold %d is ambiguous", SyncPatternToName(a), SyncPatternToName(b), n, SyncMatchThreshold)
+			}
 		}
 	}
 }

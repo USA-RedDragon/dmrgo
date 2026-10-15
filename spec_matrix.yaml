@@ -254,6 +254,14 @@ documents:
               - TestSyncPatternToName_AllPatterns
               - TestSyncPatternToName_UnknownReturnsEmbeddedSignalling
               - TestSyncPatternFromBytes_RoundTrip
+              - TestSyncPatternFromBytesWithDistance_Tolerant
+              - TestSyncPatternFromBytesWithDistance_BeyondThreshold
+              - TestSyncPatterns_MinimumDistance
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestBurst_SyncTolerance
+              - TestBurst_SyncTolerance_ValidEMB
+              - TestBurst_SyncTolerance_EmbeddedVoiceBursts
 
       - section: "9.1.2"
         title: "Embedded signalling (EMB) PDU"
