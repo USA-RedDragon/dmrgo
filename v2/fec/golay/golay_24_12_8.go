@@ -7,7 +7,10 @@ import (
 )
 
 // DecodeGolay24128 decodes a 24-bit word using the Golay (24,12,8) code.
-// It returns the corrected 12-bit data and FECResult.
+// It returns the corrected 12-bit data and FECResult. When the overall parity
+// shows an uncorrectable error, it still returns the nearest Golay (23,12)
+// codeword's data and sets Uncorrectable, as MMDVMHost and mbelib do for the
+// AMBE voice FEC.
 func DecodeGolay24128(received uint32) (data uint16, result fec.FECResult) {
 	result.BitsChecked = 24
 
@@ -27,8 +30,9 @@ func DecodeGolay24128(received uint32) (data uint16, result fec.FECResult) {
 	// Look up the error pattern from the syndrome table
 	errPattern := golay_24_12_8_syndrome_table[syndrome]
 	if errPattern == 0xFFFFFFFF {
+		data, _ = DecodeGolay23127(err23)
 		result.Uncorrectable = true
-		return uint16(received >> 12), result //nolint:gosec // received>>12 is at most 12 bits, fits in uint16
+		return data, result
 	}
 
 	// Apply correction

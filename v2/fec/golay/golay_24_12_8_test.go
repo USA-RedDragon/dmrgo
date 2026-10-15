@@ -1,6 +1,7 @@
 package golay
 
 import (
+	"math/bits"
 	"math/rand"
 	"testing"
 	"time"
@@ -86,5 +87,29 @@ func TestGolay24128(t *testing.T) {
 				t.Errorf("Data 0x%03x (4 errors): Expected uncorrectable, got corrected", data)
 			}
 		}
+	}
+}
+
+func TestDecodeGolay24128UncorrectableReturnsNearest23127(t *testing.T) {
+	rng := rand.New(rand.NewSource(5)) //nolint:gosec // pseudo-random adequate for tests
+	checked := 0
+	for range 20000 {
+		var err uint32
+		for bits.OnesCount32(err) < 4 {
+			err |= 1 << rng.Intn(24)
+		}
+		received := uint32(rng.Intn(1<<24)) ^ err //nolint:gosec // value fits in 24 bits
+		data, res := DecodeGolay24128(received)
+		if !res.Uncorrectable {
+			continue
+		}
+		checked++
+		want, _ := DecodeGolay23127(received >> 1)
+		if data != want {
+			t.Fatalf("received %06x: data %03x, want nearest Golay(23,12) data %03x", received, data, want)
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no uncorrectable words generated")
 	}
 }
