@@ -2,6 +2,7 @@ package vocoder_test
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 
@@ -19,6 +20,17 @@ func (fakeCodec) Silence() [72]bit.Bit                { return [72]bit.Bit{} }
 func (c fakeCodec) FID() enums.FeatureSetID           { return c.fid }
 func (fakeCodec) Close() error                        { return nil }
 
+// uniqueName returns a codec name not yet registered, so tests stay
+// repeatable under -count because the registry is process-global.
+func uniqueName(base string) string {
+	names := vocoder.Names()
+	for i := 0; ; i++ {
+		if name := fmt.Sprintf("%s-%d", base, i); !slices.Contains(names, name) {
+			return name
+		}
+	}
+}
+
 func mustPanic(t *testing.T, name string, f func()) {
 	t.Helper()
 	defer func() {
@@ -31,20 +43,21 @@ func mustPanic(t *testing.T, name string, f func()) {
 
 func TestCodecRegistry(t *testing.T) {
 	factory := func() (vocoder.Codec, error) { return fakeCodec{fid: 0x7F}, nil }
-	vocoder.Register("test-fake-b", factory)
-	vocoder.Register("test-fake-a", factory)
+	a, b := uniqueName("test-fake-a"), uniqueName("test-fake-b")
+	vocoder.Register(b, factory)
+	vocoder.Register(a, factory)
 
 	names := vocoder.Names()
 	if !slices.IsSorted(names) {
 		t.Errorf("Names not sorted: %v", names)
 	}
-	for _, want := range []string{"test-fake-a", "test-fake-b"} {
+	for _, want := range []string{a, b} {
 		if !slices.Contains(names, want) {
 			t.Errorf("Names missing %q: %v", want, names)
 		}
 	}
 
-	c, err := vocoder.New("test-fake-a")
+	c, err := vocoder.New(a)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -56,14 +69,15 @@ func TestCodecRegistry(t *testing.T) {
 		t.Errorf("New(missing) error = %v, want ErrUnknownCodec", err)
 	}
 
-	mustPanic(t, "duplicate", func() { vocoder.Register("test-fake-a", factory) })
+	mustPanic(t, "duplicate", func() { vocoder.Register(a, factory) })
 	mustPanic(t, "nil factory", func() { vocoder.Register("test-fake-nil", nil) })
 }
 
 func TestCodecRegistryFactoryError(t *testing.T) {
 	want := errors.New("factory failed")
-	vocoder.Register("test-fake-err", func() (vocoder.Codec, error) { return nil, want })
-	if _, err := vocoder.New("test-fake-err"); !errors.Is(err, want) {
+	name := uniqueName("test-fake-err")
+	vocoder.Register(name, func() (vocoder.Codec, error) { return nil, want })
+	if _, err := vocoder.New(name); !errors.Is(err, want) {
 		t.Errorf("New error = %v, want %v", err, want)
 	}
 }
