@@ -116,14 +116,14 @@ func (opcode CSBKOpcode) String() string {
 	}
 }
 
-// ETSI TS 102 361-1 - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
+// ETSI TS 102 361-2 - 7.1.2.1 BS Outbound Activation (BS_Dwn_Act) PDU
 type BSOutboundActivationPDU struct {
 	Reserved      uint16 `dmr:"bits:0-15"`
 	BSAddress     uint32 `dmr:"bits:16-39"`
 	SourceAddress uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
+// ETSI TS 102 361-2 - 7.1.2.2 UU_V_Req PDU
 type UnitToUnitVoiceServiceRequestPDU struct {
 	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
 	Reserved       byte                  `dmr:"bits:8-15"`
@@ -131,7 +131,7 @@ type UnitToUnitVoiceServiceRequestPDU struct {
 	SourceAddress  uint32                `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
+// ETSI TS 102 361-2 - 7.1.2.3 UU_Ans_Rsp PDU
 type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
 	AnswerResponse byte                  `dmr:"bits:8-15"`
@@ -139,7 +139,7 @@ type UnitToUnitVoiceServiceAnswerResponsePDU struct {
 	SourceAddress  uint32                `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
+// ETSI TS 102 361-2 - 7.1.2.4 NACK_Rsp PDU
 type NegativeAcknowledgementPDU struct {
 	AdditionalInfo layer3.AdditionalInformationField `dmr:"bits:0-0,delegate,noptr"`
 	SourceType     layer3.SourceType                 `dmr:"bits:1-1,delegate,noptr"`
@@ -149,7 +149,7 @@ type NegativeAcknowledgementPDU struct {
 	TargetAddress  uint32                            `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-1 - 9.3.7 Pre PDU
+// ETSI TS 102 361-2 - 7.1.2.5 Pre PDU
 type PreamblePDU struct {
 	// 1 = data content follows, 0 = CSBK follows
 	Data bool `dmr:"bit:0"`
@@ -279,7 +279,7 @@ type TalkgroupDataGrantMultiItemPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.2 C_MOVE PDU
+// ETSI TS 102 361-4 §7.1.1.1.3 C_MOVE PDU
 type MovePDU struct {
 	Reserved1       uint16 `dmr:"bits:0-8"`
 	Mask            uint8  `dmr:"bits:9-13"`
@@ -291,7 +291,7 @@ type MovePDU struct {
 	MSAddress       uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.3 C_ALOHA PDU
+// ETSI TS 102 361-4 §7.1.1.1.4 C_ALOHA PDU
 type AlohaPDU struct {
 	Reserved1    bool   `dmr:"bit:0"`
 	TSCCAS       bool   `dmr:"bit:1"`
@@ -320,7 +320,7 @@ type CBroadcastPDU struct {
 	BroadcastParms2  uint32                 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.5 P_CLEAR PDU
+// ETSI TS 102 361-4 §7.1.1.3.2 P_CLEAR PDU
 type ClearPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	Reserved1       bool   `dmr:"bit:12"`
@@ -330,7 +330,7 @@ type ClearPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.5 P_PROTECT PDU
+// ETSI TS 102 361-4 §7.1.1.3.3 P_PROTECT PDU
 type ProtectPDU struct {
 	Reserved        uint16 `dmr:"bits:0-11"`
 	ProtectKind     uint8  `dmr:"bits:12-14"`
@@ -339,7 +339,7 @@ type ProtectPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / P_AHOY PDU
+// ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / §7.1.1.3.4 P_AHOY PDU
 type AhoyPDU struct {
 	ServiceOptsMirror uint8  `dmr:"bits:0-6"`
 	ServiceKindFlag   bool   `dmr:"bit:7"`
@@ -360,7 +360,7 @@ type AckOutboundPDU struct {
 	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.7 C_ACKU PDU
+// ETSI TS 102 361-4 §7.1.1.2.3 C_ACKU PDU
 type AckInboundPDU struct {
 	ResponseInfo   uint8  `dmr:"bits:0-6"`
 	ReasonCode     byte   `dmr:"bits:7-14"`
@@ -369,7 +369,7 @@ type AckInboundPDU struct {
 	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.7 P_ACKD PDU
+// ETSI TS 102 361-4 §7.1.1.3.5 P_ACKD PDU
 type AckOutboundPayloadPDU struct {
 	ResponseInfo   uint8  `dmr:"bits:0-6"`
 	ReasonCode     byte   `dmr:"bits:7-14"`
@@ -378,7 +378,7 @@ type AckOutboundPayloadPDU struct {
 	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.7 P_ACKU PDU
+// ETSI TS 102 361-4 §7.1.1.4.2 P_ACKU PDU
 type AckInboundPayloadPDU struct {
 	ResponseInfo   uint8  `dmr:"bits:0-6"`
 	ReasonCode     byte   `dmr:"bits:7-14"`
@@ -387,7 +387,7 @@ type AckInboundPayloadPDU struct {
 	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.9 C_RAND PDU
+// ETSI TS 102 361-4 §7.1.1.2.1 C_RAND PDU
 type RandomAccessPDU struct {
 	ServiceOptions uint8  `dmr:"bits:0-6"`
 	ProxyFlag      bool   `dmr:"bit:7"`
@@ -397,7 +397,7 @@ type RandomAccessPDU struct {
 	SourceAddress  uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.10 C_ACKVIT PDU
+// ETSI TS 102 361-4 §7.1.1.2.2 C_ACKVIT PDU
 type AckvitationPDU struct {
 	ServiceOptsMirror uint8  `dmr:"bits:0-6"`
 	ServiceKindFlag   bool   `dmr:"bit:7"`
@@ -408,7 +408,7 @@ type AckvitationPDU struct {
 	SourceAddress     uint32 `dmr:"bits:40-63"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.11 P_MAINT PDU
+// ETSI TS 102 361-4 §7.1.1.4.3 P_MAINT PDU
 type MaintenancePDU struct {
 	Reserved      uint16 `dmr:"bits:0-11"`
 	MaintKind     uint8  `dmr:"bits:12-14"`
