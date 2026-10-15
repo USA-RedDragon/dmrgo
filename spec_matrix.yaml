@@ -1234,21 +1234,27 @@ documents:
         title: "Group Voice Channel User LC PDU"
         source_files:
           - v2/layer2/pdu/full_link_control.go
+          - v2/layer2/pdu/lc_bytes.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
               - TestFullLinkControl_AddressRange
+              - TestLCBytes_Capture
+              - TestLCBytes_EditsKeepOtherBits
 
       - section: "7.1.1.2"
         title: "Unit to Unit Voice Channel User LC PDU"
         source_files:
           - v2/layer2/pdu/full_link_control.go
+          - v2/layer2/pdu/lc_bytes.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
               - TestFullLinkControl_AddressRange
+              - TestLCBytes_Capture
+              - TestLCBytes_EditsKeepOtherBits
 
       - section: "7.1.1.3"
         title: "GPS Info LC PDU"
