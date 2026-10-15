@@ -29,6 +29,9 @@ type SeqConfig struct {
 	Superframes int
 	// AMBESilence sends AMBE+2 silence instead of the test pattern.
 	AMBESilence bool
+	// LateEntry leaves out the voice LC and PI headers, so a receiver learns
+	// the call only from the embedded LC.
+	LateEntry bool
 	// Preambles is the number of preamble CSBKs of the preamble sequence.
 	Preambles int
 	// BSSourced builds a continuous BS outbound stream with the sequence on
@@ -291,6 +294,9 @@ func voiceBursts(cfg SeqConfig, privacy bool) ([][33]byte, []string, error) {
 		return nil, nil, err
 	}
 	out := t.Headers()
+	if cfg.LateEntry {
+		out = nil
+	}
 	n := cfg.Superframes * layer2.VoiceBurstsPerSuperframe * layer2.VoiceSlotsPerBurst
 	for i := range n {
 		f := TestAMBEFrame(i)

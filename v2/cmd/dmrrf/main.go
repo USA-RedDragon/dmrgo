@@ -57,6 +57,7 @@ func runTX(args []string, w io.Writer) error {
 	stretch := fs.Float64("stretch", 0, "slow the symbol clock by this many ppm so repeats sweep across the repeater's slot timing")
 	superframes := fs.Int("superframes", 3, "voice superframes (bursts A to F) of the voice and pi sequences")
 	silence := fs.Bool("ambe-silence", false, "send AMBE+2 silence instead of the AMBE test pattern")
+	lateEntry := fs.Bool("late-entry", false, "leave out the voice LC and PI headers, so the call is known only from the embedded LC")
 	preambles := fs.Int("preambles", 4, "preamble CSBKs of the preamble sequence")
 	bsSourced := fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
 	if err := fs.Parse(args); err != nil {
@@ -72,7 +73,7 @@ func runTX(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "carrier: %.1f s, offset %+.0f Hz\n", *cw, corr)
 	} else {
 		cfg := SeqConfig{ColorCode: uint8(*cc), Source: uint32(*src), Dest: uint32(*dst), BS: uint32(*bs), Group: *group, Wakeups: *wakeups, Message: *msg, //nolint:gosec // flag ranges are checked by the encoders
-			Superframes: *superframes, AMBESilence: *silence, Preambles: *preambles, BSSourced: *bsSourced, Slot: *slot}
+			Superframes: *superframes, AMBESilence: *silence, LateEntry: *lateEntry, Preambles: *preambles, BSSourced: *bsSourced, Slot: *slot}
 		built, err := Sequence(*seq, cfg)
 		if err != nil {
 			return err
