@@ -173,7 +173,7 @@ func Modulate(bursts []layer2.RawBurst, sched Schedule) (freq, env []float64) {
 // order and the burst that follows it.
 type BSSlot struct {
 	CACH  [layer2.CACHBits]bit.Bit
-	Burst [33]byte
+	Burst layer2.RawBurst
 }
 
 // ModulateBS turns a BS outbound stream into deviation and envelope. The

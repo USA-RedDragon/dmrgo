@@ -12,7 +12,7 @@ import (
 
 // Received is one burst recovered from I/Q.
 type Received struct {
-	Data    [33]byte
+	Data    layer2.RawBurst
 	Seconds float64
 	// Distance is the Hamming distance of the SYNC field from Sync, or -1
 	// for a burst placed by timing without a SYNC (voice bursts B to F).
