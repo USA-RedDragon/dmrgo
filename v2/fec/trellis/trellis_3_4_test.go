@@ -14,13 +14,9 @@ func TestTrellis34Decode(t *testing.T) {
 	}
 
 	for run := 0; run < 100; run++ {
-		// 1. Generate random inputs (49 tribits)
-		// We use 49 because the trellis processes 49 steps/symbols to produce 144 bits?
-		// Actually, 48 input tribits generate 144 bits.
-		// The 49th symbol is just for termination or flushing properties?
-		// We'll generate 49 inputs.
+		// 48 random data tribits followed by the 000 flush tribit (B.2.4).
 		var inputs [49]byte
-		for i := 0; i < 49; i++ {
+		for i := 0; i < 48; i++ {
 			inputs[i] = byte(rand.Intn(8)) //nolint:gosec // pseudo-random adequate for tests
 		}
 
