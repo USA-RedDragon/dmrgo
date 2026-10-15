@@ -160,6 +160,42 @@ type PDUStruct struct {
 	SpecRef      string            // ETSI spec section reference from comment
 	SourceFile   string            // source file path
 	HasInputSize bool              // true if dmr:input_size was given
+	SubPDU       bool              // true if dmr:subpdu was given
+
+	// UnexportedDecode holds the names of the structs of the package whose
+	// Decode function is unexported: the dispatch field types and the
+	// dmr:subpdu structs. SetUnexportedDecode fills it.
+	UnexportedDecode map[string]bool
+}
+
+// DecodeFuncName returns the name of the Decode function of the struct
+// typeName of the package of p: decodeX for a sub-PDU, DecodeX otherwise.
+func (p *PDUStruct) DecodeFuncName(typeName string) string {
+	if p.UnexportedDecode[typeName] {
+		return "decode" + typeName
+	}
+	return "Decode" + typeName
+}
+
+// SetUnexportedDecode marks the Decode function of every sub-PDU of pdus,
+// the structs of one package, as unexported: the types of the dispatch
+// fields and the structs with a dmr:subpdu directive. Users reach a sub-PDU
+// through the dispatch field or method of its parent.
+func SetUnexportedDecode(pdus []PDUStruct) {
+	sub := map[string]bool{}
+	for _, p := range pdus {
+		if p.SubPDU {
+			sub[p.Name] = true
+		}
+		for _, f := range p.Fields {
+			if f.Kind == FieldDispatch && f.PointedType != "" {
+				sub[f.PointedType] = true
+			}
+		}
+	}
+	for i := range pdus {
+		pdus[i].UnexportedDecode = sub
+	}
 }
 
 // FieldByName returns the field with the given name, or nil.
@@ -287,6 +323,10 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 	if doc != nil {
 		for _, c := range doc.List {
 			text := strings.TrimSpace(strings.TrimPrefix(c.Text, "//"))
+			if text == "dmr:subpdu" {
+				pdu.SubPDU = true
+				continue
+			}
 			if strings.HasPrefix(text, "dmr:") {
 				if err := parseDirective(&pdu, text); err != nil {
 					return pdu, false, err
@@ -308,6 +348,7 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 func parseDirective(pdu *PDUStruct, text string) error {
 	name, arg, _ := strings.Cut(text, " ")
 	arg = strings.TrimSpace(arg)
+
 	if arg == "" {
 		return fmt.Errorf("directive %q missing argument", name)
 	}

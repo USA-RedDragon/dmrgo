@@ -95,25 +95,25 @@ func (s *MBCContinuation) bits() [96]bit.Bit {
 // reports the last-block CRC, which applies only when this is the one
 // continuation block of the MBC.
 func (s *MBCContinuation) AsCGAP() CGAPContinuation {
-	return DecodeCGAPContinuation(s.bits())
+	return decodeCGAPContinuation(s.bits())
 }
 
 // AsMVAP decodes the block as the MVAP continuation of a C_MOVE MBC (ETSI TS
 // 102 361-4 Table 7.18), as AsCGAP does.
 func (s *MBCContinuation) AsMVAP() MVAPContinuation {
-	return DecodeMVAPContinuation(s.bits())
+	return decodeMVAPContinuation(s.bits())
 }
 
 // AsBCAP decodes the block as the BCAP continuation of a C_BCAST MBC (ETSI
 // TS 102 361-4 Table 7.21), as AsCGAP does.
 func (s *MBCContinuation) AsBCAP() BCAPContinuation {
-	return DecodeBCAPContinuation(s.bits())
+	return decodeBCAPContinuation(s.bits())
 }
 
 // AsVNAP decodes the block as the VNAP continuation of a C_BCAST Vote_Now
 // MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does.
 func (s *MBCContinuation) AsVNAP() VNAPContinuation {
-	return DecodeVNAPContinuation(s.bits())
+	return decodeVNAPContinuation(s.bits())
 }
 
 // mbcLastBlockCRC computes the last-block CRC-CCITT of blocks.
@@ -177,6 +177,7 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
+//dmr:subpdu
 type CGAPContinuation struct {
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
@@ -200,6 +201,7 @@ func (s *CGAPContinuation) DataType() enums.DataType {
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
+//dmr:subpdu
 type MVAPContinuation struct {
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
@@ -223,6 +225,7 @@ func (s *MVAPContinuation) DataType() enums.DataType {
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
+//dmr:subpdu
 type BCAPContinuation struct {
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
@@ -245,6 +248,7 @@ func (s *BCAPContinuation) DataType() enums.DataType {
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
+//dmr:subpdu
 type VNAPContinuation struct {
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`

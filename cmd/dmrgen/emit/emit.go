@@ -165,9 +165,10 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 	return f, nil
 }
 
-// emitDecode generates a DecodeXxx function for a PDU struct.
+// emitDecode generates a DecodeXxx function for a PDU struct, or decodeXxx
+// for a sub-PDU.
 func emitDecode(f *File, pdu parse.PDUStruct) error {
-	funcName := "Decode" + pdu.Name
+	funcName := pdu.DecodeFuncName(pdu.Name)
 	inputSize := pdu.InputSize
 
 	// Add spec reference comment above the function if available.
@@ -419,7 +420,7 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 		raw = []Code{packRaw(Id("result").Dot(fb.Name), Id(tmpVar), 0, fb.BitWidth)}
 	}
 	stmt, err := dispatchSelect(fields, pdu, func(field parse.Field) []Code {
-		return dispatchDecodeBlock(field, tmpVar)
+		return dispatchDecodeBlock(field, pdu, tmpVar)
 	}, raw)
 	if err != nil {
 		return err
@@ -499,9 +500,9 @@ func fallbackField(pdu parse.PDUStruct) *parse.Field {
 	return nil
 }
 
-func dispatchDecodeBlock(field parse.Field, tmpVar string) []Code {
+func dispatchDecodeBlock(field parse.Field, pdu parse.PDUStruct, tmpVar string) []Code {
 	return []Code{
-		Id("_decoded").Op(":=").Id("Decode" + dispatchTypeName(field)).Call(Id(tmpVar)),
+		Id("_decoded").Op(":=").Id(pdu.DecodeFuncName(dispatchTypeName(field))).Call(Id(tmpVar)),
 		Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
 	}
 }
@@ -837,6 +838,9 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		case field.Stride > 0 && field.ArrayLen > 0:
 			// Array delegate with stride: generate a loop calling DecodeXxx
 			decodeFn := "Decode" + field.TypeName
+			if !field.IsQualified {
+				decodeFn = pdu.DecodeFuncName(field.TypeName)
+			}
 			tmpVar := "_elemBits"
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 				Var().Id(tmpVar).Index(Lit(field.Stride)).Qual(bitPkg, "Bit"),
@@ -860,6 +864,9 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		default:
 			// Struct delegate: call generated DecodeXxx function
 			decodeFnName := "Decode" + field.TypeName
+			if !field.IsQualified {
+				decodeFnName = pdu.DecodeFuncName(field.TypeName)
+			}
 			arraySize := field.BitEnd - field.BitStart + 1
 			tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
 

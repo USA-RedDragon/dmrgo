@@ -20,8 +20,8 @@ import (
 	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeShortLCNullMessage decodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
-func DecodeShortLCNullMessage(data [24]bit.Bit) ShortLCNullMessage {
+// decodeShortLCNullMessage decodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
+func decodeShortLCNullMessage(data [24]bit.Bit) ShortLCNullMessage {
 	var result ShortLCNullMessage
 	lowbit.Mask(data[:])
 	result.Reserved = uint32(bit.Uint(data[0:24]))
@@ -57,8 +57,8 @@ func (s *ShortLCNullMessage) String() string {
 	return fmt.Sprintf("ShortLCNullMessage{ Reserved: %d }", s.Reserved)
 }
 
-// DecodeShortLCActivityUpdate decodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
-func DecodeShortLCActivityUpdate(data [24]bit.Bit) ShortLCActivityUpdate {
+// decodeShortLCActivityUpdate decodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
+func decodeShortLCActivityUpdate(data [24]bit.Bit) ShortLCActivityUpdate {
 	var result ShortLCActivityUpdate
 	lowbit.Mask(data[:])
 	result.TS1ActivityID = enums.ActivityID(bit.Uint(data[0:4]))
@@ -108,8 +108,8 @@ func (s *ShortLCActivityUpdate) String() string {
 	return fmt.Sprintf("ShortLCActivityUpdate{ TS1ActivityID: %s, TS2ActivityID: %s, HashTS1: %d, HashTS2: %d }", s.TS1ActivityID, s.TS2ActivityID, s.HashTS1, s.HashTS2)
 }
 
-// DecodeShortLCCSysParms decodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
-func DecodeShortLCCSysParms(data [24]bit.Bit) ShortLCCSysParms {
+// decodeShortLCCSysParms decodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
+func decodeShortLCCSysParms(data [24]bit.Bit) ShortLCCSysParms {
 	var result ShortLCCSysParms
 	lowbit.Mask(data[:])
 	result.MODEL = uint8(bit.Uint(data[0:2]))
@@ -169,8 +169,8 @@ func (s *ShortLCCSysParms) String() string {
 	return fmt.Sprintf("ShortLCCSysParms{ MODEL: %d, NetSiteRaw: %d, Reg: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
 }
 
-// DecodeShortLCPSysParms decodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
-func DecodeShortLCPSysParms(data [24]bit.Bit) ShortLCPSysParms {
+// decodeShortLCPSysParms decodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
+func decodeShortLCPSysParms(data [24]bit.Bit) ShortLCPSysParms {
 	var result ShortLCPSysParms
 	lowbit.Mask(data[:])
 	result.MODEL = uint8(bit.Uint(data[0:2]))
@@ -241,16 +241,16 @@ func DecodeShortLC(data [36]bit.Bit) ShortLC {
 	copy(_dispatchBits[:], data[4:28])
 	switch result.SLCO {
 	case enums.SLCONullMessage:
-		_decoded := DecodeShortLCNullMessage(_dispatchBits)
+		_decoded := decodeShortLCNullMessage(_dispatchBits)
 		result.NullMessage = &_decoded
 	case enums.SLCOActivityUpdate:
-		_decoded := DecodeShortLCActivityUpdate(_dispatchBits)
+		_decoded := decodeShortLCActivityUpdate(_dispatchBits)
 		result.ActivityUpdate = &_decoded
 	case enums.SLCOCSysParms:
-		_decoded := DecodeShortLCCSysParms(_dispatchBits)
+		_decoded := decodeShortLCCSysParms(_dispatchBits)
 		result.CSysParms = &_decoded
 	case enums.SLCOPSysParms:
-		_decoded := DecodeShortLCPSysParms(_dispatchBits)
+		_decoded := decodeShortLCPSysParms(_dispatchBits)
 		result.PSysParms = &_decoded
 	default:
 		for _i := range 24 {

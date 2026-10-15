@@ -375,3 +375,31 @@ func TestEncodeBitsWrapsEncode(t *testing.T) {
 		"func (s *T) EncodeBits() ([]bit.Bit, error) {\n\tbits, err := s.Encode()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn bits[:], nil\n}",
 	)
 }
+
+func TestSubPDUDecodeIsUnexported(t *testing.T) {
+	pdus, err := parse.ParseSource("test.go", header+`type Kind uint8
+func (o Kind) String() string { return "" }
+type Sub struct {
+	A uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+//dmr:subpdu
+type Marked struct {
+	B uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+type Top struct {
+	Op  Kind `+"`dmr:\"bits:0-7,enum\"`"+`
+	Sub *Sub `+"`dmr:\"bits:8-15,dispatch:Op=1\"`"+`
+}`)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	parse.SetUnexportedDecode(pdus)
+	out, err := render(t, pdus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertContains(t, out, "func decodeSub(", "func decodeMarked(", "func DecodeTop(", ":= decodeSub(")
+	if strings.Contains(out, "func DecodeSub(") || strings.Contains(out, "func DecodeMarked(") {
+		t.Errorf("sub-PDU Decode is exported\n%s", out)
+	}
+}
