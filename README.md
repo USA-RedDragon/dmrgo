@@ -1,23 +1,34 @@
 # dmrgo
 
-[![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE.md) [![GoReportCard](https://goreportcard.com/badge/github.com/USA-RedDragon/dmrgo)](https://goreportcard.com/report/github.com/USA-RedDragon/dmrgo) [![codecov](https://codecov.io/gh/USA-RedDragon/dmrgo/graph/badge.svg?token=ON6XI1I21H)](https://codecov.io/gh/USA-RedDragon/dmrgo)
+[![go.mod version](https://img.shields.io/github/go-mod/go-version/USA-RedDragon/dmrgo.svg?filename=v2/go.mod)](https://github.com/USA-RedDragon/dmrgo) [![coverage](https://raw.githubusercontent.com/USA-RedDragon/dmrgo/main/.github/badges/coverage-v2.svg)](https://github.com/USA-RedDragon/dmrgo/actions/workflows/test.yaml) [![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE.md)
 
-This library decodes and encodes raw 33-byte DMR packets per the ETSI TS 102 361 specification into Golang-native structures.
+Decode and encode DMR (Digital Mobile Radio) bursts and PDUs as defined in [ETSI TS 102 361](https://www.etsi.org/standards) parts 1 to 4, in pure Go.
 
-## Usage
+[DMRHub](https://github.com/USA-RedDragon/DMRHub) and [ipsc2mmdvm](https://github.com/USA-RedDragon/ipsc2mmdvm) use it.
+
+## Installation
+
+Requires Go 1.27 or later.
+
+```sh
+go get github.com/USA-RedDragon/dmrgo/v2
+```
+
+## Getting started
 
 ```go
 package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func main() {
-	// A single 33-byte DMR burst (voice LC header)
+	// A Voice LC Header burst as received from a repeater.
 	raw := [33]byte{
 		68, 75, 3, 135, 36, 66, 12, 240, 21, 240,
 		12, 161, 196, 109, 255, 87, 215, 93, 245, 222,
@@ -25,103 +36,66 @@ func main() {
 		151, 134, 91,
 	}
 
-	// A FEC or CRC failure is not an error: it shows in burst.FEC, and
-	// burst.Data is still set.
 	burst, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
+		log.Fatal(err)
+	}
+	if err := burst.FEC.Aggregate().Err(); err != nil {
+		log.Fatal(err)
+	}
+	if lc, ok := burst.Data.(*pdu.FullLinkControl); ok {
+		target, source, _ := lc.Addresses()
+		fmt.Printf("%s: call from %d to %d\n", burst.SlotType.DataType, source, target)
 	}
 
-	fmt.Printf("Kind: %s, SYNC: %s\n", burst.Kind, burst.SyncPattern)
-	fmt.Println(burst)
-	if lc, ok := burst.Data.(*pdu.FullLinkControl); ok && !burst.FEC.PDU.Uncorrectable {
-		if target, source, ok := lc.Addresses(); ok {
-			fmt.Printf("Call from %d to %d\n", source, target)
-		}
-	}
-
-	// Re-encode back to 33 bytes
 	encoded, err := burst.Encode()
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
+		log.Fatal(err)
 	}
-	fmt.Printf("Encoded %d bytes, unchanged: %t\n", len(encoded), encoded == raw)
-
-	// Byte-level access to one field, without a full decode
-	r := layer2.RawBurst(raw)
-	payload, res := r.BPTCPayload()
-	fmt.Printf("BPTC payload %x, %d bits corrected\n", payload, res.ErrorsCorrected)
-
-	// Zero-allocation path: reuse a Burst across calls
-	var reusable layer2.Burst
-	for _, raw := range [][33]byte{raw} {
-		if err := reusable.DecodeFromBytes(raw); err != nil {
-			fmt.Printf("Error: %v\n", err)
-			continue
-		}
-		fmt.Println(reusable.String())
-	}
+	fmt.Println("re-encoded unchanged:", encoded == raw)
 }
 ```
 
-`layer2.Burst` is the decoded form of a burst. `Kind` says whether it is a voice, data or standalone Reverse Channel burst. A data burst can carry an EMB and embedded data in place of the SYNC (§6.4.2), as ASELSAN Tier III base stations send it; then `SyncPattern` is `enums.SyncNone` and `HasEmbeddedSignalling` reports true. `DecodeFromBytes` never fails on a FEC or CRC error: `burst.FEC` reports it and `burst.Data` still holds the decoded PDU. The error is `layer2.ErrReservedDataType` for a reserved data type, or `layer2.ErrColorCodeMismatch` when `DecodeFromBytesWith` checks the color code. For an error instead of the FEC report, call `Err` on a `fec.Result`, such as `burst.FEC.Aggregate().Err()`: it returns `fec.ErrUncorrectable` when the result is uncorrectable and nil otherwise. Functions that check a message over several bursts, such as `layer2.VoiceReceiver` and `packet.Assembler`, return an error for a failed check, such as `layer2.ErrEmbeddedLCUncorrectable` or `packet.ErrMessageCRC`, together with what they decoded; these errors wrap `fec.ErrUncorrectable`. `DecodeFromBytesWith` also takes the burst kind, the voice burst position or the data type when the caller knows them from outside the burst. `Encode` writes a decoded burst back unchanged until its fields change. `Burst.Data` is a `layer2.Data`: a PDU with `DataType` and `EncodeBits`, which returns its information bits. `Encode` codes `Data.EncodeBits()` for the slot type, so `Data.DataType()` must match `SlotType.DataType`; for a Full LC that is its `BurstDataType`, which selects the RS(12,9) mask.
+The program prints `Voice LC Header: call from 3191868 to 9990`. A FEC or CRC error does not make `NewBurstFromBytes` fail: `burst.FEC` reports it and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match.
 
-`layer2.RawBurst` reads and writes single fields of a 33-byte burst in place: the SYNC pattern, slot type, BPTC, Rate 3/4 and Rate 1 payloads, BPTC reserved bits, EMB, embedded data and voice slots. Motorola Capacity Max sets the BPTC reserved bit R(2) as a RAS flag; `Burst.BPTCReserved` and `RawBurst.BPTCReserved` read it, and `Encode` keeps it. `layer2.BuildBurst` builds a data burst from a PDU and `layer2.BuildDataBurst` from a 12-byte payload, `pdu.LCBytes.Codeword` and `pdu.FullLinkControl.Codeword` give a Full LC codeword, `pdu.Seal` rewrites the parity or CRC of an edited payload, and `pdu.FullLCParityOK` and `pdu.BlockCRCOK` check them. `pdu.LCBytes` edits the PF and Reserved bits, FLCO, FID, Service Options and addresses of the 9 raw LC octets in place, and `pdu.DataHeaderBytes` and `pdu.CSBKBytes` edit the addresses and Group flag of a raw data header or CSBK, which `Reseal` then gives a new CRC. `pdu.DecodeFullLinkControlBytes` and `FullLinkControl.Bytes` convert between the 9 LC octets and the decoded form. `pdu.EMBInfo` and `pdu.SlotTypeInfo` hold the EMB and slot type information bits in one octet without the QR(16,7,6) or Golay(20,8) parity, as IPSC carries them, and convert to and from the codewords.
+More in [v2/examples](v2/examples), which run offline on the captures in `v2/layer2/testdata` (`go run -C v2 ./examples/<name>`): [hotspot](v2/examples/hotspot/main.go) (MMDVMHost check and regenerated bursts), [bridge](v2/examples/bridge/main.go) (rewrite a call's talkgroup and source), [scanner](v2/examples/scanner/main.go) (find bursts in a bit stream), [trunking](v2/examples/trunking/main.go) (Tier III CSBKs, MBC and CACH), [data](v2/examples/data/main.go) (packet data and selective retry), [transcoder](v2/examples/transcoder/main.go) (AMBE+2 FEC and Codec2) and [conformance](v2/examples/conformance/main.go) (byte-for-byte re-encode of every capture).
 
-The PDUs in `layer2/pdu` decode with `pdu.DecodeX(bits)` and encode with `x.Encode()`; the payloads of a CSBK, MBC, Full LC, Short LC or data header decode with their parent, which sets the payload field of its opcode. `DecodeX` returns only the PDU: a PDU with its own FEC or CRC, such as a CSBK, Full LC, data header or slot type, reports the result in its `FEC` field, and a PDU without one, such as a CSBK payload or a data block, has no `FEC` field. Functions that decode a bare value, such as `layer2.DecodeEmbeddedLC` or `vocoder.DecodeAMBE72`, return a `fec.Result` with it. Raw and fallback fields, such as `CSBK.RawPayload`, `FullLinkControl.RawPayload` or `UnifiedSingleBlockData.Payload`, are byte arrays that hold their bits most significant bit first; when the field is not a whole number of bytes, the low bits of the last byte are padding and must be zero. An Encode error for a field value that does not fit its bits, padding bits included, is a `*bit.FieldRangeError`. Every type prints with `String`.
+## Features
 
-## Vocoders
+- Bursts (`layer2`):
+  - Decode and encode voice, data and standalone Reverse Channel bursts, including data bursts that carry an EMB in place of the SYNC.
+  - Read and write single fields of a 33-byte burst in place with `RawBurst`.
+  - Build data bursts from a PDU or a 12-byte payload, and voice superframes with `VoiceTransmitter`.
+  - Receive calls with `VoiceReceiver`, the embedded LC assembler and the CACH Short LC assembler.
+  - Check and reseal bursts the way MMDVMHost does.
+- PDUs (`layer2/pdu`), generated from struct tags by `dmrgen`:
+  - CSBK and MBC, with the Tier II and Tier III payloads.
+  - Full LC and Short LC, with their payloads.
+  - Data headers, data blocks at rate 1/2, 3/4 and 1, USBD and the compressed UDP/IPv4 header.
+  - Slot type, EMB, TACT, PI header, Reverse Channel and PR FILL.
+  - Byte-level editors for LC, CSBK and data header octets, and `Seal` to recompute parity or CRC.
+- Packet data (`layer2/packet`): segmentation and reassembly of confirmed and unconfirmed packets, with response packets and selective retry.
+- FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
+- Burst finding in a demodulated bit stream (`layer2/framer`).
+- Vocoders (`vocoder`):
+  - The AMBE+2 frame FEC. AMBE+2 itself is not included.
+  - A `Codec` interface with a registry, and a Codec2 codec (`vocoder/codec2`).
+- No cgo outside `vocoder/codec2`, and no allocation on the burst decode path when a `layer2.Burst` is reused.
 
-A DMR voice burst carries three 72-bit vocoder frames of 20 ms each. `Burst.VoiceSlots` holds them as received. The `vocoder.Codec` interface converts one frame of 8 kHz 16-bit PCM to and from those 72 on-air bits:
+## Codec2
 
-```go
-type Codec interface {
-	io.Closer
-	FrameSamples() int
-	Encode(pcm []int16) ([72]bit.Bit, error)
-	Decode(slot [72]bit.Bit) ([]int16, error)
-	Silence() [72]bit.Bit
-	FID() enums.FeatureSetID
-}
-```
+`vocoder/codec2` links the system libcodec2 (LGPL 2.1) with cgo. A program that imports it needs a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. Build with `-tags nocodec2` or `CGO_ENABLED=0` to leave it out: `codec2.New` then returns `codec2.ErrUnavailable`.
 
-Codec packages register themselves with `vocoder.Register`, like `database/sql` drivers. Use `vocoder.New(name)` and `vocoder.Names()` to find them. The FID is advisory: it does not identify the vocoder, so select the codec by name. Codecs are not safe for concurrent use unless their documentation says so. The interface does not change in v2; later features come as optional interfaces.
+| Item | Value |
+| --- | --- |
+| Modes | `Mode2400`, `Mode3200`, one 20 ms frame per 72-bit voice slot, MSB first, zero padded, no FEC |
+| Feature set ID | `0xC2` in the Full LC (self-assigned, compatible with QRadioLink) |
+| Silence | `Silence()` is 20 ms of silence in the selected mode |
 
-AMBE+2 is not included. `vocoder.EncodeAMBE72` and `vocoder.DecodeAMBE72` apply the DMR Golay and PN FEC to the 49 information bits of a `vocoder.AMBEFrame`, `Burst.AMBEFrames` and `Burst.SetAMBEFrames` decode and code the three frames of a burst, and `vocoder.AMBESilence` is the AMBE+2 silence frame and `vocoder.AMBESilenceSlot` its 72-bit slot.
-
-### Codec2
-
-**Build requirement:** the `vocoder/codec2` package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. A program that imports it needs a C compiler, libcodec2 and pkg-config (for example `apt-get install libcodec2-dev pkg-config`); without them the build fails with `Package 'codec2' not found`. Only programs that import `vocoder/codec2` need libcodec2. To build without it, use `-tags nocodec2` or `CGO_ENABLED=0`. `codec2.New` then returns `codec2.ErrUnavailable`.
-
-The package is a Codec2 codec that is compatible with QRadioLink:
-
-```go
-import "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
-
-c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID})
-```
-
-- Each 72-bit frame holds one 20 ms Codec2 frame (`Mode2400` or `Mode3200`), MSB first, with zero padding. There is no FEC.
-- Calls use Feature set ID `0xC2` in the Full LC. This FID is self-assigned, not allocated by ETSI. It does not identify the mode, so both ends must agree on the mode out of band.
-- `Silence()` is 20 ms of digital silence encoded in the selected mode, for padding the last burst of a call.
-
-## Examples
-
-Each program in [`v2/examples`](v2/examples) runs offline on the captures in `v2/layer2/testdata` or on generated input. Run one with `go run -C v2 ./examples/<name>`.
-
-- [`hotspot`](v2/examples/hotspot/main.go): decodes captured bursts with bit errors, applies the MMDVMHost acceptance check, regenerates clean bursts and reseals a rewritten Voice LC Header.
-- [`bridge`](v2/examples/bridge/main.go): receives a call with `VoiceReceiver`, rewrites its talkgroup and source ID, and sends it again with `VoiceTransmitter`.
-- [`scanner`](v2/examples/scanner/main.go): finds bursts in a noisy bit stream with the framer and follows the calls, talker alias and GPS on both time slots.
-- [`trunking`](v2/examples/trunking/main.go): builds and decodes Tier III CSBKs, an MBC grant and CACH Short LC system parameters.
-- [`data`](v2/examples/data/main.go): reassembles the SMS captures with `packet.Assembler`, and segments confirmed and unconfirmed packets with `packet.Segment`, including a selective retry.
-- [`transcoder`](v2/examples/transcoder/main.go): checks the AMBE+2 FEC of a captured call, rebuilds it, and sends generated audio through Codec2 (skipped without libcodec2).
-- [`conformance`](v2/examples/conformance/main.go): checks that every capture re-encodes byte for byte and that its FEC and CRCs verify with the byte-level functions.
-
-The packages also have short godoc examples, for example `layer2.ExampleNewBurstFromBytes` and `packet.ExampleSegment`.
+Both ends must agree on the mode, because the FID does not identify it.
 
 ## ETSI TS 102 361 Specification Coverage
+
 <!-- BEGIN ETSI COVERAGE -->
 
 *Generated by `cmd/speccheck -update-readme`. The status of each section comes from its tests.*
