@@ -33,14 +33,23 @@ jobs:
 
       - name: Unit tests
         if: '!inputs.coverage'
+        env:
+          # renovate: datasource=go depName=github.com/jstemmer/go-junit-report/v2
+          GO_JUNIT_REPORT_VERSION: v2.1.0
+          # renovate: datasource=go depName=github.com/vakenbolt/go-test-report
+          GO_TEST_REPORT_VERSION: v0.9.3
         run: |
-          go install github.com/jstemmer/go-junit-report/v2@latest
-          go install github.com/vakenbolt/go-test-report@latest
-          env CGO_ENABLED=0 go test -C v2 -v ./... 2>&1 > out.txt || true
-          env CGO_ENABLED=0 go test -C v2 -v ./... -json 2>&1 > json-out.txt || true
+          go install "github.com/jstemmer/go-junit-report/v2@${GO_JUNIT_REPORT_VERSION}"
+          go install "github.com/vakenbolt/go-test-report@${GO_TEST_REPORT_VERSION}"
+          env CGO_ENABLED=0 go test -C v2 -v ./... > out.txt 2>&1 && status=0 || status=$?
+          env CGO_ENABLED=0 go test -C v2 -v ./... -json > json-out.txt && json_status=0 || json_status=$?
           cd v2
-          cat ../out.txt | go-junit-report -out ../report.xml -iocopy
-          cat ../json-out.txt | go-test-report -o ../report.html
+          go-junit-report -in ../out.txt -out ../report.xml -iocopy
+          go-test-report -o ../report.html < ../json-out.txt
+          if [ "$status" -ne 0 ] || [ "$json_status" -ne 0 ]; then
+            echo "::error::go test failed (exit $status, json run exit $json_status)"
+            exit 1
+          fi
 
       - name: Unit tests coverage
         if: inputs.coverage
