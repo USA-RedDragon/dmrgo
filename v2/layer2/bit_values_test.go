@@ -53,6 +53,14 @@ var bitFuncs = map[string]any{
 		b.SetAMBEFrames(frames)
 		return b.VoiceSlots
 	},
+	"layer2.RawBurst.SetAMBEFrames": func(frames [3]vocoder.AMBEFrame) layer2.RawBurst {
+		var r layer2.RawBurst
+		r.SetAMBEFrames(frames)
+		return r
+	},
+	"layer2.BuildVoiceBurst": func(frames [3]vocoder.AMBEFrame) (layer2.RawBurst, error) {
+		return layer2.BuildVoiceBurst(frames, enums.VoiceBurstB, pdu.EmbeddedSignalling{ColorCode: 1}, [4]byte{1, 2, 3, 4}, layer2.SyncSourceBS)
+	},
 	"layer2.RawBurst.SetBPTCReserved": func(r layer2.RawBurst, res [3]bit.Bit) layer2.RawBurst {
 		r.SetBPTCReserved(res)
 		return r

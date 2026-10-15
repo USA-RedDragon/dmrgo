@@ -9,6 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // RawBurst is a 33-octet burst in transmit bit order (ETSI TS 102 361-1
@@ -292,6 +293,64 @@ func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 	}
 	r.writeBits(voice[:108], 0)
 	r.writeBits(voice[108:], syncEnd)
+}
+
+// AMBEFrames decodes the three voice slots as AMBE+2 frames with
+// vocoder.DecodeAMBE72, as Burst.AMBEFrames does, and returns them with the
+// combined FEC result. The result is meaningful only for a burst that
+// carries AMBE+2 voice.
+func (r RawBurst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result) {
+	var voice [216]bit.Bit
+	r.readBits(voice[:108], 0)
+	r.readBits(voice[108:], syncEnd)
+	var frames [VoiceSlotsPerBurst]vocoder.AMBEFrame
+	var result fec.Result
+	for i := range frames {
+		f, res := vocoder.DecodeAMBE72([72]bit.Bit(voice[i*72 : (i+1)*72]))
+		frames[i], result = f, result.Combine(res)
+	}
+	return frames, result
+}
+
+// SetAMBEFrames writes the AMBE+2 coding of frames (vocoder.EncodeAMBE72)
+// into the three voice slots.
+func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
+	var voice [216]bit.Bit
+	for i, f := range frames {
+		slot := vocoder.EncodeAMBE72(f)
+		copy(voice[i*72:(i+1)*72], slot[:])
+	}
+	r.writeBits(voice[:108], 0)
+	r.writeBits(voice[108:], syncEnd)
+}
+
+// BuildVoiceBurst returns voice burst pos of a superframe that carries the
+// AMBE+2 frames. Burst A carries the voice SYNC pattern of src. Bursts B to
+// F carry emb, with its LCSS replaced by pos.LCSS(), and the embedded
+// signalling field embedded, as RawBurst.EmbeddedData returns it: an
+// embedded LC fragment from EncodeEmbeddedLC, a Null embedded message (all
+// zero) or a coded Reverse Channel. It returns an error when pos is not A to
+// F or src is unknown.
+func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.VoiceBurstType, emb pdu.EmbeddedSignalling,
+	embedded [4]byte, src SyncSource,
+) (RawBurst, error) {
+	var r RawBurst
+	voice, _, ok := src.SyncPatterns()
+	if !ok {
+		return r, fmt.Errorf("unknown sync source %d", src)
+	}
+	r.SetAMBEFrames(frames)
+	if pos == enums.VoiceBurstA {
+		return r, r.SetSync(voice)
+	}
+	lcss, ok := pos.LCSS()
+	if !ok {
+		return RawBurst{}, fmt.Errorf("voice burst position %s is not A to F", pos.String())
+	}
+	emb.LCSS = lcss
+	r.SetEMB(emb)
+	r.SetEmbeddedData(embedded)
+	return r, nil
 }
 
 // BuildBurst returns the data burst that carries d, with a slot type of
