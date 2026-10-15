@@ -1,6 +1,7 @@
 package layer2_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
@@ -80,8 +81,33 @@ func TestCACHInterleave_ATPosition(t *testing.T) {
 	logical[0] = 1
 
 	tx := layer2.CACHInterleave(logical)
-	if tx[23] != 1 {
-		t.Errorf("AT should be at tx[23], but tx[23]=%d", tx[23])
+	if tx[0] != 1 {
+		t.Errorf("AT should be at tx[0] (TX(23), first sent), but tx[0]=%d", tx[0])
+	}
+}
+
+// TestCACHInterleave_FigureB9 checks every position against Figure B.9,
+// where the transmit row reads TX(23) (first sent) to TX(0).
+func TestCACHInterleave_FigureB9(t *testing.T) {
+	t.Parallel()
+	txRow := []string{
+		"AT", "P16", "P15", "P14", "TC", "P13", "P12", "P11", "LS1", "P10", "P9", "P8",
+		"LS0", "P7", "H2", "P6", "P5", "P4", "H1", "P3", "P2", "P1", "H0", "P0",
+	}
+	logicalRow := []string{"AT", "TC", "LS1", "LS0", "H2", "H1", "H0"}
+	for p := 16; p >= 0; p-- {
+		logicalRow = append(logicalRow, fmt.Sprintf("P%d", p))
+	}
+
+	for l := 0; l < layer2.CACHBits; l++ {
+		var logical [layer2.CACHBits]bit.Bit
+		logical[l] = 1
+		tx := layer2.CACHInterleave(logical)
+		for i := 0; i < layer2.CACHBits; i++ {
+			if tx[i] == 1 && txRow[i] != logicalRow[l] {
+				t.Errorf("logical %s landed at tx[%d] (%s)", logicalRow[l], i, txRow[i])
+			}
+		}
 	}
 }
 

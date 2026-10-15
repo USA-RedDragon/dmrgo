@@ -11,7 +11,7 @@ import (
 // The CACH is a 24-bit field on the outbound channel that carries timing
 // and activity information common to both TDMA channels.
 //
-// Layout (Figure 6.6):
+// Logical layout after CACHDeinterleave (Figure 6.6, Figure B.9):
 //
 //	Bits 0–6:   TACT (7 bits: AT + TC + LCSS + Hamming(7,4,3) parity)
 //	Bits 7–23:  CACH Signalling payload (17 bits: one row of Short LC BPTC)
@@ -39,6 +39,7 @@ type CACH struct {
 }
 
 // DecodeCACH decodes a 24-bit CACH field into its TACT and signalling payload.
+// The input is in logical order; use CACHDeinterleave on bits as received.
 func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
 	var result CACH
 
@@ -53,7 +54,8 @@ func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
 	return result
 }
 
-// EncodeCACH encodes a CACH struct into a 24-bit field.
+// EncodeCACH encodes a CACH struct into a 24-bit field in logical order.
+// Use CACHInterleave to get the bits in transmit order.
 func EncodeCACH(c *CACH) [CACHBits]bit.Bit {
 	var bits [CACHBits]bit.Bit
 

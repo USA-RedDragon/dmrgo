@@ -852,6 +852,7 @@ documents:
               - TestCACHDeinterleave_RoundTrip
               - TestCACHInterleave_TACTSpread
               - TestCACHInterleave_ATPosition
+              - TestCACHInterleave_FigureB9
               - TestCACHDeinterleave_PreservesData
               - TestCACHDeinterleave_WithDecodeCACH
               - TestCACHInterleave_InverseConsistency
