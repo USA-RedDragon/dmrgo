@@ -10,7 +10,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// Message is a reassembled packet.
+// Message is a reassembled packet. Without Assembler.Reuse it has its own
+// storage. With Reuse, Data, the sub-headers of Header, Proprietary and
+// Response point into the storage of the Assembler and are valid until its
+// next Add, AddBurst or Reset.
 type Message struct {
 	// Header is the first header block.
 	Header pdu.DataHeader
@@ -31,24 +34,95 @@ type Message struct {
 // Assembler collects the header and data blocks of one packet at a time on
 // one channel and returns each packet with its message CRC checked. For a
 // confirmed packet it tracks blocks by DBSN, so a retry of the failed blocks
-// completes it. The zero value is ready to use. An Assembler is not safe for
-// concurrent use.
+// completes it. The Assembler copies the headers and blocks it gets, so the
+// caller can reuse a layer2.Burst or PDU after Add or AddBurst returns. The
+// zero value is ready to use. An Assembler is not safe for concurrent use.
 type Assembler struct {
+	// Reuse makes the Assembler keep its storage from packet to packet, so
+	// that Add and AddBurst do not allocate once the storage has grown to
+	// the largest packet, and Response does not allocate. A Message then
+	// points into this storage, and a Packet from Response is valid until
+	// the next Response. False, the default, gives each Message and Packet
+	// its own storage. Reset keeps Reuse.
+	Reuse bool
+
 	msg       Message
 	active    bool
 	confirmed bool
+	hasBlocks bool
 	total     int
 	expect    int
 	count     int
 	per       int
-	blocks    [][]byte
-	valid     []bool
 	ns        uint8
+	valid     [maxBlocks]bool
+	blocks    []byte
+	store     store
+	builder   Builder
 }
 
-// Reset discards any partial packet.
+// store holds copies of the headers and the response data that a Message
+// points to.
+type store struct {
+	unconfirmed    pdu.UnconfirmedDataHeader
+	confirmed      pdu.ConfirmedDataHeader
+	response       pdu.ResponsePacketHeader
+	defined        pdu.DefinedDataHeader
+	statusPrecoded pdu.StatusPrecodedHeader
+	raw            pdu.RawDataHeader
+	udt            pdu.UDTHeader
+	proprietary    pdu.ProprietaryHeader
+	second         pdu.ProprietaryHeader
+	responseData   ResponseData
+}
+
+// copyHeader sets *dst to *src with each sub-header copied into s.
+func (s *store) copyHeader(dst, src *pdu.DataHeader) {
+	*dst = *src
+	if src.UnconfirmedDataHeader != nil {
+		s.unconfirmed = *src.UnconfirmedDataHeader
+		dst.UnconfirmedDataHeader = &s.unconfirmed
+	}
+	if src.ConfirmedDataHeader != nil {
+		s.confirmed = *src.ConfirmedDataHeader
+		dst.ConfirmedDataHeader = &s.confirmed
+	}
+	if src.ResponsePacketHeader != nil {
+		s.response = *src.ResponsePacketHeader
+		dst.ResponsePacketHeader = &s.response
+	}
+	if src.DefinedDataHeader != nil {
+		s.defined = *src.DefinedDataHeader
+		dst.DefinedDataHeader = &s.defined
+	}
+	if src.StatusPrecodedHeader != nil {
+		s.statusPrecoded = *src.StatusPrecodedHeader
+		dst.StatusPrecodedHeader = &s.statusPrecoded
+	}
+	if src.RawDataHeader != nil {
+		s.raw = *src.RawDataHeader
+		dst.RawDataHeader = &s.raw
+	}
+	if src.UDTHeader != nil {
+		s.udt = *src.UDTHeader
+		dst.UDTHeader = &s.udt
+	}
+	if src.ProprietaryHeader != nil {
+		s.proprietary = *src.ProprietaryHeader
+		dst.ProprietaryHeader = &s.proprietary
+	}
+}
+
+// Reset discards any partial packet. It keeps Reuse and, with Reuse, the
+// storage.
 func (a *Assembler) Reset() {
-	*a = Assembler{}
+	a.msg = Message{}
+	a.active, a.confirmed, a.hasBlocks = false, false, false
+	a.total, a.expect, a.count, a.per, a.ns = 0, 0, 0, 0, 0
+	clear(a.valid[:])
+	if !a.Reuse {
+		a.blocks = nil
+	}
 }
 
 // AddBurst adds a decoded burst. A burst that is not data, or whose data did
@@ -86,8 +160,8 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 		if !a.active || a.count != 0 || a.msg.Proprietary != nil || a.expect == 0 {
 			return Message{}, false, ErrNoHeader
 		}
-		p := *h.ProprietaryHeader
-		a.msg.Proprietary = &p
+		a.store.second = *h.ProprietaryHeader
+		a.msg.Proprietary = &a.store.second
 		a.expect--
 		a.total--
 		return a.finishIfEmpty()
@@ -102,7 +176,7 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 		return Message{}, false, nil
 	}
 	a.active, a.confirmed = true, confirmed
-	a.msg.Header = *h
+	a.store.copyHeader(&a.msg.Header, h)
 	a.total = blocksOf(h)
 	a.expect = a.total
 	if h.ConfirmedDataHeader != nil && h.Format == pdu.FormatConfirmed {
@@ -130,7 +204,26 @@ func (a *Assembler) finishIfEmpty() (Message, bool, error) {
 	}
 	m := a.msg
 	a.Reset()
+	a.own(&m)
 	return m, true, nil
+}
+
+// own gives m its own copies of the storage it points to, unless the
+// Assembler reuses its storage.
+func (a *Assembler) own(m *Message) {
+	if a.Reuse {
+		return
+	}
+	s := new(store)
+	s.copyHeader(&m.Header, &m.Header)
+	if m.Proprietary != nil {
+		s.second = *m.Proprietary
+		m.Proprietary = &s.second
+	}
+	if m.Response != nil {
+		s.responseData = *m.Response
+		m.Response = &s.responseData
+	}
 }
 
 func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
@@ -138,14 +231,13 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 		return Message{}, false, ErrNoHeader
 	}
 	if usable {
-		if a.blocks == nil {
+		if !a.hasBlocks {
 			per, err := blockOctets(b.dataType, a.confirmed)
 			if err != nil {
 				return Message{}, false, err
 			}
-			a.per, a.msg.DataType = per, b.dataType
-			a.blocks = make([][]byte, a.total)
-			a.valid = make([]bool, a.total)
+			a.per, a.msg.DataType, a.hasBlocks = per, b.dataType, true
+			a.blocks = resize(a.blocks, a.total*per)
 		} else if b.dataType != a.msg.DataType {
 			a.Reset()
 			return Message{}, false, ErrRateChange
@@ -154,9 +246,9 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 	idx := a.count
 	a.count++
 	if usable {
-		a.store(idx, b)
+		a.storeBlock(idx, b)
 	}
-	if a.confirmed && a.blocks != nil && a.allValid() {
+	if a.confirmed && a.hasBlocks && a.allValid() {
 		return a.finish()
 	}
 	if a.count < a.expect {
@@ -168,22 +260,27 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 	return Message{}, false, ErrBlocksMissing
 }
 
-func (a *Assembler) store(idx int, b block) {
+// storeBlock copies the octets of b to their place in the packet: arrival
+// index idx for an unconfirmed block, the DBSN for a confirmed block with a
+// good CRC-9.
+func (a *Assembler) storeBlock(idx int, b block) {
 	if !a.confirmed {
-		if idx < len(a.blocks) {
-			a.blocks[idx], a.valid[idx] = append([]byte(nil), b.raw...), true
+		if idx < a.total {
+			copy(a.blocks[idx*a.per:], b.raw)
+			a.valid[idx] = true
 		}
 		return
 	}
 	dbsn := int(b.raw[0] >> 1)
-	if dbsn >= len(a.blocks) || !b.confirmedOK() {
+	if dbsn >= a.total || !b.confirmedOK() {
 		return
 	}
-	a.blocks[dbsn], a.valid[dbsn] = append([]byte(nil), b.raw[2:]...), true
+	copy(a.blocks[dbsn*a.per:], b.raw[2:])
+	a.valid[dbsn] = true
 }
 
 func (a *Assembler) allValid() bool {
-	for _, ok := range a.valid {
+	for _, ok := range a.valid[:a.total] {
 		if !ok {
 			return false
 		}
@@ -194,18 +291,30 @@ func (a *Assembler) allValid() bool {
 // Missing returns the DBSNs of the current confirmed packet that have not
 // arrived with a good CRC-9.
 func (a *Assembler) Missing() []int {
-	var out []int
-	for i, ok := range a.valid {
-		if !ok {
-			out = append(out, i)
+	n := a.total
+	if a.hasBlocks {
+		n = 0
+		for _, ok := range a.valid[:a.total] {
+			if !ok {
+				n++
+			}
 		}
 	}
-	if a.blocks == nil {
-		for i := 0; i < a.total; i++ {
-			out = append(out, i)
+	if n == 0 {
+		return nil
+	}
+	return a.AppendMissing(make([]int, 0, n))
+}
+
+// AppendMissing appends the DBSNs that Missing returns to dst and returns
+// the extended slice. It does not allocate when dst has room.
+func (a *Assembler) AppendMissing(dst []int) []int {
+	for i, ok := range a.valid[:a.total] {
+		if !ok || !a.hasBlocks {
+			dst = append(dst, i)
 		}
 	}
-	return out
+	return dst
 }
 
 // Response builds the response packet for the current confirmed packet: a
@@ -218,46 +327,54 @@ func (a *Assembler) Response() (Packet, error) {
 		return Packet{}, errNoConfirmed
 	}
 	var rd ResponseData
-	for _, i := range a.Missing() {
-		rd.Retry[i] = true
+	for i, ok := range a.valid[:a.total] {
+		rd.Retry[i] = !ok || !a.hasBlocks
+	}
+	if a.Reuse {
+		return a.builder.NewResponse(h, ResponseSACK, &rd)
 	}
 	return NewResponse(h, ResponseSACK, &rd)
 }
 
 func (a *Assembler) finish() (Message, bool, error) {
 	m := a.msg
-	var buf []byte
+	buf := a.blocks[:0]
 	complete := true
-	for i, blk := range a.blocks {
-		if !a.valid[i] {
-			complete = false
-			blk = make([]byte, a.per)
+	if a.hasBlocks {
+		buf = a.blocks
+		for i, ok := range a.valid[:a.total] {
+			if !ok {
+				complete = false
+				clear(buf[i*a.per : (i+1)*a.per])
+			}
 		}
-		buf = append(buf, blk...)
 	}
 	a.Reset()
+	err := a.fill(&m, buf, complete)
+	a.own(&m)
+	return m, true, err
+}
+
+// fill sets the Data, CRC and Response of m from the block octets buf and
+// checks the message CRC, or the CRC of the response data.
+func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 	if m.Header.Format == pdu.FormatResponsePacket {
-		rd := new(ResponseData)
-		err := decodeResponseData(rd, buf)
+		err := decodeResponseData(&a.store.responseData, buf)
 		if err != nil && !errors.Is(err, fec.ErrUncorrectable) {
-			return m, true, err
+			return err
 		}
-		m.Response = rd
+		m.Response = &a.store.responseData
 		m.Data = buf[:len(buf)-crcOctets]
-		return m, true, err
+		return err
 	}
 	if len(buf) < crcOctets {
-		return m, true, ErrMessageCRC
+		return ErrMessageCRC
 	}
 	n := len(buf) - crcOctets
 	m.CRC = binary.LittleEndian.Uint32(buf[n:])
-	end := n - padOf(&m.Header)
-	if end < 0 {
-		end = 0
-	}
-	m.Data = buf[:end]
+	m.Data = buf[:max(n-padOf(&m.Header), 0)]
 	if !complete || !checkMessageCRC(buf) {
-		return m, true, ErrMessageCRC
+		return ErrMessageCRC
 	}
-	return m, true, nil
+	return nil
 }
