@@ -68,3 +68,18 @@ func TestPIHeader_RoundTrip(t *testing.T) {
 		t.Errorf("round trip = %+v, want %+v", decoded, original)
 	}
 }
+
+// Raw holds the 80 bits before the CRC for non-DMRA layouts, and encoding
+// uses the named fields only.
+func TestPIHeader_Raw(t *testing.T) {
+	t.Parallel()
+	vector := piHeaderVector()
+	pi, _ := pdu.DecodePIHeader(vector)
+	if [80]bit.Bit(vector[:80]) != pi.Raw {
+		t.Errorf("Raw = %x, want %x", bit.PackBits(pi.Raw[:]), bit.PackBits(vector[:80]))
+	}
+	pi.Raw = [80]bit.Bit{}
+	if must(pdu.EncodePIHeader(&pi)) != vector {
+		t.Error("EncodePIHeader should ignore Raw")
+	}
+}

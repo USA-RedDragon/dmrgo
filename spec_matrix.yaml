@@ -60,6 +60,7 @@ documents:
             names:
               - TestPIHeader_DecodeVector
               - TestPIHeader_RoundTrip
+              - TestPIHeader_Raw
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestBurstTypeConstants

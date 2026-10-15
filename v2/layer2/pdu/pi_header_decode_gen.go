@@ -40,6 +40,7 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.FECResult) {
 	result.KeyID = bit.BitsToUint8(data[:], 16, 8)
 	result.MessageIndicator = bit.BitsToUint32(data[:], 24, 32)
 	result.Destination = bit.BitsToInt(data[:], 56, 24)
+	copy(result.Raw[:], data[0:80])
 	return result, fecResult
 }
 
@@ -76,5 +77,5 @@ func EncodePIHeader(s *PIHeader) ([96]bit.Bit, error) {
 }
 
 func (s *PIHeader) ToString() string {
-	return fmt.Sprintf("PIHeader{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d }", layer2Elements.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination)
+	return fmt.Sprintf("PIHeader{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %v }", layer2Elements.DataTypeToName(s.DataType), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
 }
