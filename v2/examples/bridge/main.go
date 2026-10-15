@@ -1,0 +1,293 @@
+// Command bridge shows a network bridge: it receives a voice call, rewrites
+// its talkgroup and source ID, transmits it again with a new header, embedded
+// LC and terminator, and checks that the rewritten stream decodes. It also
+// rewrites the addresses of the CSBK preambles and data headers of an SMS.
+package main
+
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"runtime"
+
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
+)
+
+const (
+	newTarget = 91
+	newSource = 3100999
+)
+
+func main() {
+	defaultDir := filepath.Join("layer2", "testdata")
+	if _, file, _, ok := runtime.Caller(0); ok {
+		defaultDir = filepath.Join(filepath.Dir(file), "..", "..", "layer2", "testdata")
+	}
+	dataDir := flag.String("data", defaultDir, "directory with the burst captures")
+	flag.Parse()
+	if err := run(os.Stdout, *dataDir); err != nil {
+		fmt.Fprintln(os.Stderr, "bridge:", err)
+		os.Exit(1)
+	}
+}
+
+func run(w io.Writer, dataDir string) error {
+	if err := bridgeVoice(w, filepath.Join(dataDir, "voice.bin")); err != nil {
+		return err
+	}
+	return bridgeSMS(w, filepath.Join(dataDir, "d-sms.bin"))
+}
+
+func loadBursts(path string) ([][33]byte, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if len(raw)%33 != 0 {
+		return nil, fmt.Errorf("%s: %d bytes is not a whole number of bursts", path, len(raw))
+	}
+	out := make([][33]byte, 0, len(raw)/33)
+	for i := 0; i < len(raw); i += 33 {
+		out = append(out, [33]byte(raw[i:i+33]))
+	}
+	return out, nil
+}
+
+// inbound is what the bridge keeps of a received call.
+type inbound struct {
+	lc        pdu.FullLinkControl
+	colorCode uint8
+	slots     [][72]bit.Bit
+}
+
+func receive(bursts [][33]byte) (inbound, error) {
+	var in inbound
+	var rx layer2.VoiceReceiver
+	haveLC := false
+	for i, p := range bursts {
+		b, err := layer2.NewBurstFromBytes(p)
+		if err != nil {
+			return in, fmt.Errorf("burst %d: %w", i, err)
+		}
+		if _, _, err := rx.Receive(b); err != nil {
+			return in, fmt.Errorf("burst %d: %w", i, err)
+		}
+		switch b.Kind {
+		case layer2.KindVoice:
+			in.slots = append(in.slots, b.VoiceSlots[:]...)
+		case layer2.KindData:
+			lc, ok := b.Data.(*pdu.FullLinkControl)
+			if ok && !haveLC && b.SlotType.DataType == enums.DataTypeVoiceLCHeader && !b.FEC.PDU.Uncorrectable {
+				in.lc, in.colorCode, haveLC = *lc, b.SlotType.ColorCode, true
+			}
+		case layer2.KindUnknown, layer2.KindReverseChannel:
+		}
+	}
+	if !haveLC {
+		return in, errors.New("no usable Voice LC Header")
+	}
+	return in, nil
+}
+
+func transmit(in inbound) ([][33]byte, error) {
+	silence := vocoder.EncodeAMBE72(vocoder.AMBESilence())
+	tx, err := layer2.NewVoiceTransmitter(in.lc, in.colorCode, layer2.SyncSourceBS, silence)
+	if err != nil {
+		return nil, err
+	}
+	out := tx.Headers()
+	bursts, err := tx.AddSlots(in.slots...)
+	if err != nil {
+		return nil, err
+	}
+	out = append(out, bursts...)
+	tail, err := tx.Terminate()
+	if err != nil {
+		return nil, err
+	}
+	return append(out, tail...), nil
+}
+
+// verified summarizes the decode of the rewritten stream.
+type verified struct {
+	lcBursts, lcAccepted  int
+	embedded, embeddedNew int
+	slots                 [][72]bit.Bit
+	ambeUncorrectable     int
+}
+
+func verify(bursts [][33]byte) (verified, error) {
+	var v verified
+	rx := layer2.VoiceReceiver{Strict: true}
+	for i, p := range bursts {
+		b, err := layer2.NewBurstFromBytes(p)
+		if err != nil {
+			return v, fmt.Errorf("rewritten burst %d: %w", i, err)
+		}
+		lc, ok, err := rx.Receive(b)
+		if err != nil {
+			return v, fmt.Errorf("rewritten burst %d: %w", i, err)
+		}
+		if ok {
+			v.embedded++
+			if t, s, _ := lc.Addresses(); lc.FLCO == enums.FLCOGroupVoiceChannelUser && t == newTarget && s == newSource {
+				v.embeddedNew++
+			}
+		}
+		if b.Kind == layer2.KindVoice {
+			v.slots = append(v.slots, b.VoiceSlots[:]...)
+			if _, res := b.AMBEFrames(); res.Uncorrectable {
+				v.ambeUncorrectable++
+			}
+			continue
+		}
+		flc, isLC := b.Data.(*pdu.FullLinkControl)
+		if !isLC {
+			continue
+		}
+		v.lcBursts++
+		raw := layer2.RawBurst(p)
+		payload, _ := raw.BPTCPayload()
+		t, s, _ := flc.Addresses()
+		if flc.FLCO == enums.FLCOGroupVoiceChannelUser && t == newTarget && s == newSource && !b.FEC.PDU.HasErrors() && layer2.MMDVMHostAccepts(b.SlotType.DataType, payload) {
+			v.lcAccepted++
+		}
+	}
+	return v, nil
+}
+
+func bridgeVoice(w io.Writer, path string) error {
+	bursts, err := loadBursts(path)
+	if err != nil {
+		return err
+	}
+	in, err := receive(bursts)
+	if err != nil {
+		return err
+	}
+	oldTarget, oldSource, _ := in.lc.Addresses()
+	fmt.Fprintf(w, "voice in: %d bursts, %d slots, %s %d -> %d\n", len(bursts), len(in.slots), in.lc.FLCO, oldSource, oldTarget)
+
+	if err := toGroupCall(&in.lc); err != nil {
+		return err
+	}
+	out, err := transmit(in)
+	if err != nil {
+		return err
+	}
+	v, err := verify(out)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "voice out: %d bursts, %d slots, %s %d -> %d\n", len(out), len(v.slots), in.lc.FLCO, newSource, newTarget)
+
+	if v.lcBursts != 2 || v.lcAccepted != v.lcBursts {
+		return fmt.Errorf("header and terminator: %d of %d carry the new IDs and pass MMDVMHostAccepts", v.lcAccepted, v.lcBursts)
+	}
+	fmt.Fprintf(w, "ok header and terminator carry the new IDs and pass MMDVMHostAccepts\n")
+	if v.embedded == 0 || v.embeddedNew != v.embedded {
+		return fmt.Errorf("embedded LC: %d of %d superframes carry the new IDs", v.embeddedNew, v.embedded)
+	}
+	fmt.Fprintf(w, "ok embedded LC carries the new IDs in %d/%d superframes\n", v.embeddedNew, v.embedded)
+	if len(v.slots) < len(in.slots) || v.ambeUncorrectable != 0 {
+		return fmt.Errorf("voice: %d slots out for %d in, %d bursts with uncorrectable AMBE", len(v.slots), len(in.slots), v.ambeUncorrectable)
+	}
+	for i := range in.slots {
+		if v.slots[i] != in.slots[i] {
+			return fmt.Errorf("voice slot %d changed", i)
+		}
+	}
+	fmt.Fprintf(w, "ok %d voice slots forwarded unchanged, %d silence slots of padding\n", len(in.slots), len(v.slots)-len(in.slots))
+	return nil
+}
+
+// toGroupCall turns a group or private call LC into a group call to
+// talkgroup newTarget from newSource, keeping its service options.
+func toGroupCall(lc *pdu.FullLinkControl) error {
+	if lc.FeatureSetID != enums.FIDStandardized {
+		return fmt.Errorf("cannot rewrite an LC of FID %s", lc.FeatureSetID)
+	}
+	switch {
+	case lc.UnitToUnit != nil:
+		lc.GroupVoice = &pdu.FLCGroupVoice{ServiceOptions: lc.UnitToUnit.ServiceOptions}
+		lc.UnitToUnit = nil
+	case lc.GroupVoice == nil:
+		return fmt.Errorf("cannot rewrite a %s LC", lc.FLCO)
+	}
+	lc.FLCO = enums.FLCOGroupVoiceChannelUser
+	if !lc.SetAddresses(newTarget, newSource) {
+		return fmt.Errorf("cannot set addresses of a %s LC", lc.FLCO)
+	}
+	return nil
+}
+
+func bridgeSMS(w io.Writer, path string) error {
+	bursts, err := loadBursts(path)
+	if err != nil {
+		return err
+	}
+	var preambles, headers int
+	for i, p := range bursts {
+		b, err := layer2.NewBurstFromBytes(p)
+		if err != nil {
+			return fmt.Errorf("sms burst %d: %w", i, err)
+		}
+		switch d := b.Data.(type) {
+		case *pdu.CSBK:
+			if d.PreamblePDU == nil {
+				continue
+			}
+			d.PreamblePDU.TargetAddress, d.PreamblePDU.SourceAddress = newTarget, newSource
+			preambles++
+		case *pdu.DataHeader:
+			if !d.SetAddresses(newTarget, newSource) {
+				continue
+			}
+			headers++
+		default:
+			continue
+		}
+		enc, err := b.Encode()
+		if err != nil {
+			return fmt.Errorf("sms burst %d: %w", i, err)
+		}
+		if err := checkSMSBurst(enc); err != nil {
+			return fmt.Errorf("sms burst %d: %w", i, err)
+		}
+	}
+	if preambles == 0 || headers == 0 {
+		return fmt.Errorf("sms: %d CSBK preambles and %d data headers rewritten", preambles, headers)
+	}
+	fmt.Fprintf(w, "ok sms: %d CSBK preambles and %d data headers rewritten to %d -> %d\n", preambles, headers, newSource, newTarget)
+	return nil
+}
+
+func checkSMSBurst(p [33]byte) error {
+	b, err := layer2.NewBurstFromBytes(p)
+	if err != nil {
+		return err
+	}
+	raw := layer2.RawBurst(p)
+	payload, _ := raw.BPTCPayload()
+	if b.FEC.PDU.HasErrors() || !layer2.MMDVMHostAccepts(b.SlotType.DataType, payload) {
+		return fmt.Errorf("rewritten %s does not check", b.SlotType.DataType)
+	}
+	var dst, src uint32
+	switch d := b.Data.(type) {
+	case *pdu.CSBK:
+		dst, src = d.PreamblePDU.TargetAddress, d.PreamblePDU.SourceAddress
+	case *pdu.DataHeader:
+		dst, src, _ = d.Addresses()
+	}
+	if dst != newTarget || src != newSource {
+		return fmt.Errorf("rewritten %s carries %d -> %d", b.SlotType.DataType, src, dst)
+	}
+	return nil
+}
