@@ -10,9 +10,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
-	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 )
 
 func main() {
@@ -129,20 +126,9 @@ func runRX(args []string, w io.Writer) error {
 		ppm = fmt.Sprintf(" (%+.2f ppm)", d.OffsetHz / *freq * 1e6)
 	}
 	fmt.Fprintf(w, "carrier offset %+.0f Hz%s, outer deviation %.0f Hz, %d bursts\n", d.OffsetHz, ppm, d.DeviationHz, len(d.Bursts))
-	var asm packet.Assembler
+	rep := NewReporter(w)
 	for _, r := range d.Bursts {
-		b, err := layer2.NewBurstFromBytes(r.Data)
-		fmt.Fprintf(w, "%9.2f ms  sync distance %d  %x\n", r.Seconds*1000, r.Distance, r.Data)
-		if err != nil {
-			fmt.Fprintf(w, "           decode error: %v\n", err)
-			continue
-		}
-		fmt.Fprintf(w, "           %s\n", b.String())
-		if m, ok, err := asm.AddBurst(b); err != nil {
-			fmt.Fprintf(w, "           packet: %v\n", err)
-		} else if ok {
-			fmt.Fprintf(w, "           packet complete: %q (%s)\n", m.Data, m.DataType)
-		}
+		rep.Burst(r)
 	}
 	return nil
 }
