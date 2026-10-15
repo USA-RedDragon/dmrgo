@@ -16,6 +16,7 @@ ignore_files:
   - v2/cmd/dmrrf/report.go
   - v2/cmd/dmrrf/seq.go
   - v2/bit/bit.go
+  - v2/internal/lowbit/lowbit.go
   - v2/examples/bridge/main.go
   - v2/examples/conformance/main.go
   - v2/examples/data/main.go

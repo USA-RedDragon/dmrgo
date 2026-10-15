@@ -2,6 +2,7 @@ package layer2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -27,6 +28,6 @@ func IsIdleMessage(infoBits [96]bit.Bit) bool {
 // All 32 bits are zero: when the 11 information bits of the embedded message
 // are all 0, all FEC and parity check bits are also 0.
 func IsNullEmbeddedLC(bits [32]bit.Bit) bool {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	return bits == [32]bit.Bit{}
 }

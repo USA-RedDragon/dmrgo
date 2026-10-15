@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // ETSI TS 102 361-1 §B.2.1 — Variable length BPTC for Embedded Signalling
@@ -53,7 +54,7 @@ const EmbeddedMaxErrors = 8
 // and check, for example the 5-bit LC checksum, picks between them.
 func DecodeEmbeddedWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.Result) {
 	for i := range fragments {
-		bit.Mask(fragments[i][:])
+		lowbit.Mask(fragments[i][:])
 	}
 	matrix := embeddedLCMatrix(fragments)
 	s := embeddedLCSearch{best: EmbeddedMaxErrors, check: check}
@@ -189,7 +190,7 @@ var embeddedLCPatterns = sync.OnceValue(func() *embeddedLCPatternTable { //nolin
 // accepts far fewer LCs with bit errors than DecodeEmbedded.
 func DecodeEmbeddedStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
 	for i := range fragments {
-		bit.Mask(fragments[i][:])
+		lowbit.Mask(fragments[i][:])
 	}
 	matrix := embeddedLCMatrix(fragments)
 	received := matrix
@@ -257,7 +258,7 @@ func columnParity(matrix *[8][16]bit.Bit, col int) bit.Bit {
 // EncodeEmbedded encodes 77 information bits (72 LC + 5 checksum) into
 // 4 × 32-bit fragments for transmission across 4 voice bursts.
 func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
-	bit.Mask(info[:])
+	lowbit.Mask(info[:])
 	var matrix [8][16]bit.Bit
 
 	// Place 77 info bits into rows 0..6, columns 0..10

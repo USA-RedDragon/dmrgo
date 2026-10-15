@@ -4,6 +4,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame,
@@ -25,7 +26,7 @@ func AMBESilence() AMBEFrame {
 // first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits
 // unprotected, interleaved into the slot.
 func EncodeAMBE72(info AMBEFrame) [72]bit.Bit {
-	bit.Mask(info[:])
+	lowbit.Mask(info[:])
 	return encodeAMBE(info)
 }
 
@@ -42,7 +43,7 @@ func EncodeAMBE72(info AMBEFrame) [72]bit.Bit {
 // when errs2 is above 3; errs2 counts only the corrected data bits of
 // sections A and B, and mbelib does not check the section A parity bit.
 func DecodeAMBE72(slot [72]bit.Bit) (AMBEFrame, fec.Result) {
-	bit.Mask(slot[:])
+	lowbit.Mask(slot[:])
 	info, res := decodeAMBE(slot)
 	return AMBEFrame(info), res
 }

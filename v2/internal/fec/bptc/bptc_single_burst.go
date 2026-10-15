@@ -3,6 +3,7 @@ package bptc
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // ETSI TS 102 361-1 §B.2.2 — Single Burst Variable Length BPTC
@@ -26,7 +27,7 @@ import (
 // number of corrected bits. Four bit errors are always detected and set
 // Uncorrectable.
 func DecodeSingleBurst(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Result) {
-	bit.Mask(txBits[:])
+	lowbit.Mask(txBits[:])
 	result := fec.Result{BitsChecked: 32}
 
 	// Deinterleave: transmit order → encode matrix order
@@ -88,7 +89,7 @@ func DecodeSingleBurst(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Res
 //
 // Set oddParity=true for Reverse Channel (RC) encoding.
 func EncodeSingleBurst(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
-	bit.Mask(info[:])
+	lowbit.Mask(info[:])
 	var matrix [2][16]bit.Bit
 
 	// Place info bits in row 0, columns 0..10

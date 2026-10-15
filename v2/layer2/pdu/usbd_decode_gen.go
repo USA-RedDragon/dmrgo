@@ -12,12 +12,13 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData per ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
 func DecodeUnifiedSingleBlockData(data [96]bit.Bit) UnifiedSingleBlockData {
 	var result UnifiedSingleBlockData
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {

@@ -3,6 +3,7 @@ package bptc
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // ETSI TS 102 361-1 §B.2.3 — Variable length BPTC for CACH Signalling
@@ -66,7 +67,7 @@ func parityHamming17_12(data [12]bit.Bit) [5]bit.Bit {
 // Returns the 36 information bits (28 data + 8 CRC-8) and FEC result.
 func DecodeCACH(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
 	for i := range fragments {
-		bit.Mask(fragments[i][:])
+		lowbit.Mask(fragments[i][:])
 	}
 	result := fec.Result{BitsChecked: 68}
 
@@ -173,7 +174,7 @@ func cachMatrixValid(matrix *[4][17]bit.Bit) bool {
 // EncodeCACH encodes a 36-bit Short LC PDU into 4 × 17-bit CACH
 // signalling payloads.
 func EncodeCACH(info [36]bit.Bit) [4][17]bit.Bit {
-	bit.Mask(info[:])
+	lowbit.Mask(info[:])
 	var matrix [4][17]bit.Bit
 
 	// Place 36 info bits into rows 0..2, columns 0..11

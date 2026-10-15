@@ -21,12 +21,13 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeUnconfirmedDataHeader decodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
 func DecodeUnconfirmedDataHeader(data [80]bit.Bit) UnconfirmedDataHeader {
 	var result UnconfirmedDataHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Reserved = data[2] == 1
@@ -146,7 +147,7 @@ func (s *UnconfirmedDataHeader) String() string {
 // DecodeDataHeader decodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
 func DecodeDataHeader(data [96]bit.Bit) DataHeader {
 	var result DataHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
@@ -383,7 +384,7 @@ func (s *DataHeader) String() string {
 // DecodeConfirmedDataHeader decodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
 func DecodeConfirmedDataHeader(data [80]bit.Bit) ConfirmedDataHeader {
 	var result ConfirmedDataHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Reserved = data[2] == 1
@@ -507,7 +508,7 @@ func (s *ConfirmedDataHeader) String() string {
 // DecodeResponsePacketHeader decodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
 func DecodeResponsePacketHeader(data [80]bit.Bit) ResponsePacketHeader {
 	var result ResponsePacketHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Reserved = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Reserved2 = uint8(bit.Uint(data[2:4]))
@@ -637,7 +638,7 @@ func (s *ResponsePacketHeader) String() string {
 // DecodeDefinedDataHeader decodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
 func DecodeDefinedDataHeader(data [80]bit.Bit) DefinedDataHeader {
 	var result DefinedDataHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	var _tmpAppendedBlocks uint64
@@ -739,7 +740,7 @@ func (s *DefinedDataHeader) String() string {
 // DecodeRawDataHeader decodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
 func DecodeRawDataHeader(data [80]bit.Bit) RawDataHeader {
 	var result RawDataHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	var _tmpAppendedBlocks uint64
@@ -851,7 +852,7 @@ func (s *RawDataHeader) String() string {
 // DecodeStatusPrecodedHeader decodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
 func DecodeStatusPrecodedHeader(data [80]bit.Bit) StatusPrecodedHeader {
 	var result StatusPrecodedHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
@@ -950,7 +951,7 @@ func (s *StatusPrecodedHeader) String() string {
 // DecodeUDTHeader decodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
 func DecodeUDTHeader(data [80]bit.Bit) UDTHeader {
 	var result UDTHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Emergency = data[2] == 1
@@ -1076,7 +1077,7 @@ func (s *UDTHeader) String() string {
 // DecodeProprietaryHeader decodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
 func DecodeProprietaryHeader(data [80]bit.Bit) ProprietaryHeader {
 	var result ProprietaryHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[0:4]))
 	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	copy(result.ManufacturerData[:], bit.Pack(data[16:80]))

@@ -12,12 +12,13 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader per ETSI TS 102 361-3 - Table 7.14: UDP/IPv4 Compressed Header
 func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) UDPIPv4CompressedHeader {
 	var result UDPIPv4CompressedHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.IPv4Identification = uint16(bit.Uint(data[0:16]))
 	result.SAID = enums.SAID(bit.Uint(data[16:20]))
 	result.DAID = enums.DAID(bit.Uint(data[20:24]))

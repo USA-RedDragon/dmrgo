@@ -13,12 +13,13 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeEmbeddedSignalling decodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
 func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
 	var result EmbeddedSignalling
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var corrected [16]bit.Bit
 	corrected, result.FEC = quadraticresidue.Decode(data)
 	if !result.FEC.Uncorrectable {

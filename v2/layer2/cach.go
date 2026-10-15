@@ -2,6 +2,7 @@ package layer2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -37,7 +38,7 @@ type CACH struct {
 // DecodeCACH decodes a 24-bit CACH field into its TACT and signalling payload.
 // The input is in logical order; use CACHDeinterleave on bits as received.
 func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	var result CACH
 
 	// Extract TACT (bits 0..6) and decode with Hamming(7,4,3) FEC

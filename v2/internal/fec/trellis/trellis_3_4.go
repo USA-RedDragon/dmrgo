@@ -8,6 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 func dibitsToBits(dibits [98]int8) [196]bit.Bit {
@@ -48,7 +49,7 @@ func dibitsToBits(dibits [98]int8) [196]bit.Bit {
 // is right. Callers must check the block CRC (the CRC-9 of a confirmed block
 // or the message CRC-32) to detect a miscorrected block.
 func Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 196}
 
 	var rxDibits [98]byte
@@ -131,7 +132,7 @@ func tribitsToBits(tribits [49]byte) [144]bit.Bit {
 
 // Encode encodes 144 data bits using Trellis 3/4 rate coding, producing 196 interleaved bits.
 func Encode(data [144]bit.Bit) [196]bit.Bit {
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	// Step 1: Data bits to tribits (48 data tribits + 1 tail)
 	var tribits [49]byte
 	for i := 0; i < 48; i++ {
