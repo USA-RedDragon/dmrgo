@@ -149,6 +149,7 @@ documents:
         source_files:
           - v2/layer2/burst.go
           - v2/layer2/pdu/embedded_signalling.go
+          - v2/layer2/embedded_lc.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
@@ -156,6 +157,11 @@ documents:
               - TestBurst_UnpackEmbeddedSignallingData_EmptySlice
               - TestBurst_UnpackEmbeddedSignallingData_SingleByte
               - TestBurst_PackEmbeddedSignallingData_KnownValue
+              - TestEmbeddedLC_DecodeCapture
+              - TestEmbeddedLC_EncodeCapture
+              - TestEmbeddedLC_RoundTrip
+              - TestEmbeddedLC_ChecksumMismatch
+              - TestEmbeddedLC_EncodeRejectsBadLC
 
       - section: "7.1.4"
         title: "Short Link Control in CACH"
@@ -916,7 +922,11 @@ documents:
         title: "5-bit Checksum (CS) calculation"
         source_files:
           - v2/crc/checksum5.go
+          - v2/layer2/embedded_lc.go
         test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestEmbeddedLC_ChecksumMismatch
           - package: github.com/USA-RedDragon/dmrgo/v2/crc
             names:
               - TestChecksum5_AllZeros
