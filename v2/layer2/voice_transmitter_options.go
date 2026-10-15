@@ -100,6 +100,19 @@ func (t *VoiceTransmitter) SetEmbeddedLC(lc pdu.FullLinkControl) error {
 	return nil
 }
 
+// SetEmbeddedFragments sets the four embedded signalling fields of bursts B
+// to E of the next superframe that starts, as RawBurst.EmbeddedData returns
+// them, so a bridge can pass received fragments through unchanged. Like
+// SetEmbeddedLC, it applies to that superframe only.
+func (t *VoiceTransmitter) SetEmbeddedFragments(f [4][4]byte) error {
+	if t.terminated {
+		return ErrVoiceTerminated
+	}
+	frags := fragmentBits(f)
+	t.nextLC = &frags
+	return nil
+}
+
 func (t *VoiceTransmitter) startSuperframe() error {
 	n := t.superframe
 	frags := t.callLC

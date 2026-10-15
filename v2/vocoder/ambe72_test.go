@@ -1,6 +1,7 @@
 package vocoder_test
 
 import (
+	"encoding/hex"
 	"math/rand"
 	"os"
 	"testing"
@@ -87,5 +88,15 @@ func TestAMBE72CorrectsErrors(t *testing.T) {
 		if got != info || res.Uncorrectable || res.ErrorsCorrected != 6 {
 			t.Fatalf("decode with 3+3 errors: equal=%v result=%+v", got == info, res)
 		}
+	}
+}
+
+func TestAMBESilence(t *testing.T) {
+	slot := vocoder.EncodeAMBE72(vocoder.AMBESilence())
+	if got := hex.EncodeToString(bit.Pack(slot[:])); got != "b9e881526173002a6b" {
+		t.Fatalf("EncodeAMBE72(AMBESilence()) = %s, want b9e881526173002a6b", got)
+	}
+	if f, res := vocoder.DecodeAMBE72(slot); f != vocoder.AMBESilence() || res.HasErrors() {
+		t.Fatalf("DecodeAMBE72 = %v %+v", f, res)
 	}
 }

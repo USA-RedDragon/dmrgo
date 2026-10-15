@@ -91,6 +91,41 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 	}
 }
 
+func TestVoiceTransmitter_SetEmbeddedFragments(t *testing.T) {
+	call := groupLC(enums.FIDStandardized)
+	tx := must(layer2.NewVoiceTransmitter(call, 2, layer2.SyncSourceMS, silenceSlot()))
+	f := layer2.EncodeEmbeddedLC([9]byte{1, 2, 3, 4, 5, 6, 7, 8, 9})
+	if err := tx.SetEmbeddedFragments(f); err != nil {
+		t.Fatal(err)
+	}
+	var bursts [][33]byte
+	for n := 0; n < 2*18; n++ {
+		bursts = append(bursts, must(tx.AddSlots(testSlot(n)))...)
+	}
+	if superframeLC(t, bursts, 0) != fragBits(f) {
+		t.Error("the fragments were not passed through")
+	}
+	if superframeLC(t, bursts, 1) != must(encodeFLCBits(&call)) {
+		t.Error("the next superframe does not carry the call LC")
+	}
+	for i, raw := range bursts[1:6] {
+		pos := enums.VoiceBurstB + enums.VoiceBurstType(i)
+		want, ok := layer2.LCSSForPosition(pos)
+		if b := must(layer2.NewBurstFromBytes(raw)); !ok || b.EmbeddedSignalling.LCSS != want {
+			t.Errorf("burst %s: LCSS %s, LCSSForPosition %s", pos, b.EmbeddedSignalling.LCSS, want)
+		}
+	}
+	for _, pos := range []enums.VoiceBurstType{enums.VoiceBurstUnknown, enums.VoiceBurstA} {
+		if _, ok := layer2.LCSSForPosition(pos); ok {
+			t.Errorf("LCSSForPosition(%s) is ok", pos)
+		}
+	}
+	tail := must(tx.Terminate())
+	if len(tail) == 0 || tx.SetEmbeddedFragments(f) == nil {
+		t.Error("SetEmbeddedFragments after Terminate succeeded")
+	}
+}
+
 func TestVoiceTransmitter_EmbeddedLCHookError(t *testing.T) {
 	bad := groupLC(enums.FIDStandardized)
 	bad.FLCO = enums.FLCO(64)

@@ -10,6 +10,16 @@ import (
 // without the frame FEC.
 type AMBEFrame [49]bit.Bit
 
+// AMBESilence returns the AMBE+2 frame of silence that MMDVMHost sends to
+// fill a voice burst (DMR_SILENCE_DATA); EncodeAMBE72 of it is the slot
+// B9E881526173002A6B.
+func AMBESilence() AMBEFrame {
+	return AMBEFrame{
+		1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1,
+		0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1,
+	}
+}
+
 // EncodeAMBE72 applies the AMBE+2 frame FEC to 49 vocoder information bits
 // and returns the 72 on-air bits of one vocoder frame: Golay(24,12) on the
 // first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits

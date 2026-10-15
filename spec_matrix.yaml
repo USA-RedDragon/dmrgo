@@ -41,6 +41,7 @@ documents:
               - TestCodecRegistry
               - TestCodecRegistryFactoryError
               - TestAMBE72RoundTrip
+              - TestAMBESilence
               - TestAMBE72CorrectsErrors
               - TestAMBEVoice_IPSCCapture
               - TestAMBEVoice_RoundTrip
@@ -182,6 +183,7 @@ documents:
               - TestVoiceTransmitter_Terminate
               - TestVoiceTransmitter_RejectsBadInput
               - TestVoiceTransmitter_EmbeddedLCRotation
+              - TestVoiceTransmitter_SetEmbeddedFragments
               - TestVoiceTransmitter_EmbeddedLCHookError
               - TestVoiceTransmitter_ReproducesCaptures
               - TestVoiceReceiver_Transmission

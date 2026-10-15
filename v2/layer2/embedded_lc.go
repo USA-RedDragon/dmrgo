@@ -22,6 +22,26 @@ import (
 // one checksum bit, most significant checksum bit first. The embedded LC has
 // no RS(12,9) parity.
 
+// LCSSForPosition returns the LCSS that the EMB of voice burst pos carries
+// in a superframe with an embedded LC (§7.1.3): First for burst B,
+// Continuation for C and D, Last for E, and Single for F, which carries a
+// Null embedded message or a Reverse Channel. ok is false for burst A, which
+// has a SYNC pattern instead of an EMB, and for an unknown position.
+func LCSSForPosition(pos enums.VoiceBurstType) (lcss enums.LCSS, ok bool) {
+	switch pos {
+	case enums.VoiceBurstB:
+		return enums.LCSSFirstFragment, true
+	case enums.VoiceBurstC, enums.VoiceBurstD:
+		return enums.LCSSContinuationFragment, true
+	case enums.VoiceBurstE:
+		return enums.LCSSLastFragment, true
+	case enums.VoiceBurstF:
+		return enums.LCSSSingleFragment, true
+	case enums.VoiceBurstUnknown, enums.VoiceBurstA:
+	}
+	return 0, false
+}
+
 // voiceLCHeaderMask is the Voice LC Header Data Type CRC Mask octet (Table
 // B.21).
 const voiceLCHeaderMask = 0x96
