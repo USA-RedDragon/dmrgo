@@ -147,7 +147,7 @@ func ambe(w io.Writer, dataDir string) (*pdu.FullLinkControl, error) {
 	info, res := vocoder.DecodeAMBE72(slot)
 	_, _ = fmt.Fprintf(w, "AMBE72 with 3 flipped bits: %d corrected, frame restored %t\n", res.ErrorsCorrected, info == c.frames[0])
 
-	rebuilt, err := transmit(*c.lc, c.cc, c.source, vocoder.EncodeAMBE72(vocoder.AMBESilence()),
+	rebuilt, err := transmit(*c.lc, c.cc, c.source, vocoder.AMBESilenceSlot(),
 		func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddFrames(c.frames...) })
 	if err != nil {
 		return nil, err

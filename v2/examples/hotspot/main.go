@@ -139,7 +139,7 @@ func sameCall(a, b *pdu.FullLinkControl) bool {
 }
 
 func regenerate(lc pdu.FullLinkControl, frames []vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
-	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: colorCode, Source: layer2.SyncSourceBS, Silence: vocoder.EncodeAMBE72(vocoder.AMBESilence())})
+	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: colorCode, Source: layer2.SyncSourceBS, Silence: vocoder.AMBESilenceSlot()})
 	if err != nil {
 		return nil, err
 	}

@@ -97,7 +97,7 @@ func receive(bursts []layer2.RawBurst) (inbound, error) {
 }
 
 func transmit(in inbound) ([]layer2.RawBurst, error) {
-	silence := vocoder.EncodeAMBE72(vocoder.AMBESilence())
+	silence := vocoder.AMBESilenceSlot()
 	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: in.lc, ColorCode: in.colorCode, Source: layer2.SyncSourceBS, Silence: silence})
 	if err != nil {
 		return nil, err

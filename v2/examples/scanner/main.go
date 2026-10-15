@@ -125,7 +125,7 @@ func generatedCall() ([]layer2.RawBurst, error) {
 		}},
 		ColorCode: colorCode,
 		Source:    layer2.SyncSourceBS,
-		Silence:   vocoder.EncodeAMBE72(vocoder.AMBESilence()),
+		Silence:   vocoder.AMBESilenceSlot(),
 		EmbeddedLC: func(sf int) *pdu.FullLinkControl {
 			if i := sf % (len(rotation) + 1); i > 0 {
 				return &rotation[i-1]
