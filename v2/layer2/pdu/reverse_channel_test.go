@@ -72,7 +72,7 @@ func TestReverseChannel_BitsChecked(t *testing.T) {
 
 func TestReverseChannel_OutOfRangeRejected(t *testing.T) {
 	t.Parallel()
-	for _, cmd := range []enums.RCCommand{-1, 0x10, 0x14, 0xFF} {
+	for _, cmd := range []enums.RCCommand{0x10, 0x14, 0xFF} {
 		rc := pdu.ReverseChannel{RCCommand: cmd}
 		if _, err := pdu.EncodeReverseChannel(&rc); err == nil {
 			t.Errorf("RCCommand 0x%X: expected error, got nil", int(cmd))

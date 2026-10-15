@@ -3,7 +3,7 @@ package enums
 import "fmt"
 
 // ETSI TS 102 361-2 - 7.1.3.2 / Table 7.10 Activity ID
-type ActivityID int
+type ActivityID uint8
 
 const (
 	ActivityNoActivity               ActivityID = 0b0000
@@ -39,28 +39,4 @@ func (a ActivityID) String() string {
 		return "Emergency Individual Voice"
 	}
 	return fmt.Sprintf("Reserved ActivityID(%d)", int(a))
-}
-
-func ActivityIDFromInt(i int) ActivityID {
-	switch ActivityID(i) {
-	case ActivityNoActivity:
-		return ActivityNoActivity
-	case ActivityGroupCSBK:
-		return ActivityGroupCSBK
-	case ActivityIndividualCSBK:
-		return ActivityIndividualCSBK
-	case ActivityGroupVoice:
-		return ActivityGroupVoice
-	case ActivityIndividualVoice:
-		return ActivityIndividualVoice
-	case ActivityGroupData:
-		return ActivityGroupData
-	case ActivityIndividualData:
-		return ActivityIndividualData
-	case ActivityEmergencyGroupVoice:
-		return ActivityEmergencyGroupVoice
-	case ActivityEmergencyIndividualVoice:
-		return ActivityEmergencyIndividualVoice
-	}
-	return ActivityID(i)
 }

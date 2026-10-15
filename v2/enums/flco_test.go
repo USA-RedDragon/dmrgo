@@ -28,7 +28,7 @@ func TestFLCOString(t *testing.T) {
 	}
 }
 
-func TestFLCOFromInt_ValidValues(t *testing.T) {
+func TestFLCO_ValidValues(t *testing.T) {
 	tests := []struct {
 		input    int
 		expected FLCO
@@ -44,33 +44,21 @@ func TestFLCOFromInt_ValidValues(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		flco, err := FLCOFromInt(tt.input)
-		if err != nil {
-			t.Errorf("FLCOFromInt(%d) unexpected error: %v", tt.input, err)
+		flco := FLCO(tt.input)
+		if !flco.Valid() {
+			t.Errorf("FLCO(%d) is not valid", tt.input)
 		}
 		if flco != tt.expected {
-			t.Errorf("FLCOFromInt(%d) = %d, want %d", tt.input, flco, tt.expected)
+			t.Errorf("FLCO(%d) = %d, want %d", tt.input, flco, tt.expected)
 		}
 	}
 }
 
-func TestFLCOFromInt_InvalidValue(t *testing.T) {
+func TestFLCO_InvalidValue(t *testing.T) {
 	invalidValues := []int{1, 2, 9, 100, 255}
 	for _, v := range invalidValues {
-		flco, err := FLCOFromInt(v)
-		if err == nil {
-			t.Errorf("FLCOFromInt(%d) should have returned error", v)
-		}
-		if int(flco) != v {
-			t.Errorf("FLCOFromInt(%d) = %d, want the raw value", v, flco)
-		}
-	}
-}
-
-func TestFLCOFromInt_OutOfRange(t *testing.T) {
-	for _, v := range []int{-1, 256} {
-		if _, err := FLCOFromInt(v); err == nil {
-			t.Errorf("FLCOFromInt(%d) should have returned error", v)
+		if FLCO(v).Valid() {
+			t.Errorf("FLCO(%d) is valid", v)
 		}
 	}
 }

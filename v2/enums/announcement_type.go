@@ -4,7 +4,7 @@ import "fmt"
 
 // AnnouncementType represents the 5-bit announcement type in a C_BCAST PDU.
 // ETSI TS 102 361-4 — §7.2.19, Table 7.68
-type AnnouncementType int
+type AnnouncementType uint8
 
 const (
 	AnnouncementAnnWDTSCC     AnnouncementType = 0b00000
@@ -43,8 +43,4 @@ func (a AnnouncementType) String() string {
 	default:
 		return fmt.Sprintf("Reserved AnnouncementType(%d)", int(a))
 	}
-}
-
-func AnnouncementTypeFromInt(i int) AnnouncementType {
-	return AnnouncementType(i)
 }

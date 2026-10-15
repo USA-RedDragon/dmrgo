@@ -1,7 +1,5 @@
 package enums
 
-import "fmt"
-
 // SAID (Source IP Address Identifier) identifies the source IP address type
 // in a UDP/IPv4 compressed header.
 // ETSI TS 102 361-3 — Table 7.15
@@ -27,9 +25,7 @@ func (said SAID) String() string {
 	return unknownName
 }
 
-func SAIDFromInt(i int) (SAID, error) {
-	if i < 0 || i > 15 {
-		return 0, fmt.Errorf("invalid SAID value: %d", i)
-	}
-	return SAID(i), nil
+// Valid reports whether s fits the 4-bit SAID field.
+func (s SAID) Valid() bool {
+	return s <= 15
 }

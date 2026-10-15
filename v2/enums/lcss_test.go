@@ -29,7 +29,7 @@ func TestLCSSString_Unknown(t *testing.T) {
 	}
 }
 
-func TestLCSSFromInt(t *testing.T) {
+func TestLCSS_Cast(t *testing.T) {
 	tests := []struct {
 		input    int
 		expected LCSS
@@ -40,16 +40,9 @@ func TestLCSSFromInt(t *testing.T) {
 		{3, ContinuationFragmentLCorCSBK},
 	}
 	for _, tt := range tests {
-		got := LCSSFromInt(tt.input)
+		got := LCSS(tt.input)
 		if got != tt.expected {
-			t.Errorf("LCSSFromInt(%d) = %d, want %d", tt.input, got, tt.expected)
+			t.Errorf("LCSS(%d) = %d, want %d", tt.input, got, tt.expected)
 		}
-	}
-}
-
-func TestLCSSFromInt_InvalidDefaultsToSingle(t *testing.T) {
-	got := LCSSFromInt(99)
-	if got != SingleFragmentLCorCSBK {
-		t.Errorf("LCSSFromInt(99) = %d, want %d (SingleFragmentLCorCSBK)", got, SingleFragmentLCorCSBK)
 	}
 }

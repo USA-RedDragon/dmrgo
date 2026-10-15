@@ -1,7 +1,7 @@
 package enums
 
 // ETSI TS 102 361-1 - 9.3.3 LC Start/Stop (LCSS)
-type LCSS int
+type LCSS uint8
 
 const (
 	SingleFragmentLCorCSBK LCSS = iota
@@ -22,18 +22,4 @@ func (lcss LCSS) String() string {
 		return "Continuation fragment LC or CSBK"
 	}
 	return unknownName
-}
-
-func LCSSFromInt(i int) LCSS {
-	switch LCSS(i) {
-	case SingleFragmentLCorCSBK:
-		return SingleFragmentLCorCSBK
-	case FirstFragmentLC:
-		return FirstFragmentLC
-	case LastFragmentLCorCSBK:
-		return LastFragmentLCorCSBK
-	case ContinuationFragmentLCorCSBK:
-		return ContinuationFragmentLCorCSBK
-	}
-	return SingleFragmentLCorCSBK
 }

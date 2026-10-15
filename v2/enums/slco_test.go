@@ -30,25 +30,25 @@ func TestSLCO_String_Reserved(t *testing.T) {
 	}
 }
 
-func TestSLCO_FromInt_NullMessage(t *testing.T) {
+func TestSLCO_Cast_NullMessage(t *testing.T) {
 	t.Parallel()
-	slco := enums.SLCOFromInt(0)
+	slco := enums.SLCO(0)
 	if slco != enums.SLCONullMessage {
 		t.Errorf("expected SLCONullMessage, got %d", slco)
 	}
 }
 
-func TestSLCO_FromInt_ActivityUpdate(t *testing.T) {
+func TestSLCO_Cast_ActivityUpdate(t *testing.T) {
 	t.Parallel()
-	slco := enums.SLCOFromInt(1)
+	slco := enums.SLCO(1)
 	if slco != enums.SLCOActivityUpdate {
 		t.Errorf("expected SLCOActivityUpdate, got %d", slco)
 	}
 }
 
-func TestSLCO_FromInt_Reserved(t *testing.T) {
+func TestSLCO_Cast_Reserved(t *testing.T) {
 	t.Parallel()
-	slco := enums.SLCOFromInt(5)
+	slco := enums.SLCO(5)
 	// Reserved values are returned as-is
 	if int(slco) != 5 {
 		t.Errorf("expected 5, got %d", slco)

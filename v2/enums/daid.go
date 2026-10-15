@@ -1,7 +1,5 @@
 package enums
 
-import "fmt"
-
 const (
 	unknownName              = "Unknown"
 	reservedName             = "Reserved"
@@ -36,9 +34,7 @@ func (daid DAID) String() string {
 	return unknownName
 }
 
-func DAIDFromInt(i int) (DAID, error) {
-	if i < 0 || i > 15 {
-		return 0, fmt.Errorf("invalid DAID value: %d", i)
-	}
-	return DAID(i), nil
+// Valid reports whether d fits the 4-bit DAID field.
+func (d DAID) Valid() bool {
+	return d <= 15
 }

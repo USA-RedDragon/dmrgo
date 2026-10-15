@@ -1,10 +1,5 @@
 package enums
 
-import (
-	"fmt"
-	"math"
-)
-
 type FLCO byte
 
 const (
@@ -40,14 +35,9 @@ func (flco FLCO) String() string {
 	return "Unknown"
 }
 
-// FLCOFromInt converts i to a FLCO. Unknown values in 0-255 are returned
-// as-is with a non-nil error so callers can keep the raw value.
-func FLCOFromInt(i int) (FLCO, error) {
-	if i < 0 || i > math.MaxUint8 {
-		return 0, fmt.Errorf("FLCO value out of range: %d", i)
-	}
-	v := FLCO(i)
-	switch v {
+// Valid reports whether f is a value that ETSI TS 102 361 defines.
+func (f FLCO) Valid() bool {
+	switch f {
 	case FLCOGroupVoiceChannelUser,
 		FLCOUnitToUnitVoiceChannelUser,
 		FLCOTalkerAliasHeader,
@@ -56,7 +46,7 @@ func FLCOFromInt(i int) (FLCO, error) {
 		FLCOTalkerAliasBlock3,
 		FLCOGPSInfo,
 		FLCOTerminatorDataLinkControl:
-		return v, nil
+		return true
 	}
-	return v, fmt.Errorf("invalid FLCO value: %d", i)
+	return false
 }

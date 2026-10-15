@@ -30,25 +30,25 @@ func TestRCCommand_String_Reserved(t *testing.T) {
 	}
 }
 
-func TestRCCommand_FromInt_CeaseCommand(t *testing.T) {
+func TestRCCommand_Cast_CeaseCommand(t *testing.T) {
 	t.Parallel()
-	rc := enums.RCCommandFromInt(0b0100)
+	rc := enums.RCCommand(0b0100)
 	if rc != enums.RCCeaseTransmissionCommand {
 		t.Errorf("expected RCCeaseTransmissionCommand, got %d", rc)
 	}
 }
 
-func TestRCCommand_FromInt_CeaseRequest(t *testing.T) {
+func TestRCCommand_Cast_CeaseRequest(t *testing.T) {
 	t.Parallel()
-	rc := enums.RCCommandFromInt(0b0101)
+	rc := enums.RCCommand(0b0101)
 	if rc != enums.RCCeaseTransmissionRequest {
 		t.Errorf("expected RCCeaseTransmissionRequest, got %d", rc)
 	}
 }
 
-func TestRCCommand_FromInt_Reserved(t *testing.T) {
+func TestRCCommand_Cast_Reserved(t *testing.T) {
 	t.Parallel()
-	rc := enums.RCCommandFromInt(0)
+	rc := enums.RCCommand(0)
 	if int(rc) != 0 {
 		t.Errorf("expected 0, got %d", rc)
 	}

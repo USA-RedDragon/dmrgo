@@ -50,44 +50,28 @@ func TestFeatureSetIDString_UnknownID(t *testing.T) {
 	}
 }
 
-func TestFeatureSetIDFromInt_ValidValues(t *testing.T) {
+func TestFeatureSetID_ValidValues(t *testing.T) {
 	validIDs := []int{
 		0x0, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB,
 		0x10, 0x13, 0x1C, 0x20, 0x33, 0x3C, 0x58, 0x68, 0x77,
 	}
 	for _, id := range validIDs {
-		fsid, err := FeatureSetIDFromInt(id)
-		if err != nil {
-			t.Errorf("FeatureSetIDFromInt(%d) unexpected error: %v", id, err)
-		}
-		if int(fsid) != id {
-			t.Errorf("FeatureSetIDFromInt(%d) = %d, want %d", id, fsid, id)
+		if !FeatureSetID(id).Valid() {
+			t.Errorf("FeatureSetID(%d) is not valid", id)
 		}
 	}
 }
 
-func TestFeatureSetIDFromInt_InvalidValue(t *testing.T) {
-	fsid, err := FeatureSetIDFromInt(0xFF)
-	if err == nil {
-		t.Error("FeatureSetIDFromInt(0xFF) should return error")
-	}
-	if fsid != 0xFF {
-		t.Errorf("FeatureSetIDFromInt(0xFF) = %d, want the raw value", fsid)
-	}
-	for _, v := range []int{-1, 256} {
-		if _, err := FeatureSetIDFromInt(v); err == nil {
-			t.Errorf("FeatureSetIDFromInt(%d) should return error", v)
-		}
+func TestFeatureSetID_InvalidValue(t *testing.T) {
+	if FeatureSetID(0xFF).Valid() {
+		t.Error("FeatureSetID(0xFF) is valid")
 	}
 }
 
-func TestFeatureSetIDFromInt_RoundTrip(t *testing.T) {
+func TestFeatureSetID_RoundTrip(t *testing.T) {
 	validIDs := []int{0x0, 0x10, 0x20, 0x58, 0x77}
 	for _, id := range validIDs {
-		fsid, err := FeatureSetIDFromInt(id)
-		if err != nil {
-			t.Fatalf("FeatureSetIDFromInt(%d) failed: %v", id, err)
-		}
+		fsid := FeatureSetID(id)
 		name := fsid.String()
 		if strings.Contains(name, "Unknown") {
 			t.Errorf("Valid FeatureSetID %d maps to 'Unknown' name", id)

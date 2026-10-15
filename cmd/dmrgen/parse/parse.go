@@ -23,7 +23,7 @@ const (
 	FieldBool      FieldKind = iota // bit:N → bool
 	FieldUint                       // bits:S-E → uint8/uint16/uint32
 	FieldInt                        // bits:S-E → int (unsigned unless Signed)
-	FieldEnum                       // bits:S-E,enum → custom enum type with FromInt
+	FieldEnum                       // bits:S-E,enum → named integer type with a String method
 	FieldRaw                        // bits:S-E,raw → [N]bit.Bit sub-array
 	FieldDelegate                   // bits:S-E,delegate → sub-struct with DecodeFromBits
 	FieldPacked                     // bits:S-E,packed → packed bytes
@@ -75,10 +75,6 @@ type Field struct {
 
 	// Signed marks a two's complement integer field.
 	Signed bool
-
-	// Enum-specific
-	EnumFromInt    string // e.g. "enums.LCSSFromInt", "enums.FLCOFromInt"
-	EnumReturnsErr bool   // true if FromInt returns (T, error), false if just T
 
 	// Delegate-specific
 	DelegateNoPtr bool // true if the constructor returns a value (not a pointer)
@@ -503,16 +499,6 @@ func parseTag(fieldName, tag, goType string, baseTypes map[string]string) (Field
 		}
 	}
 
-	if (seen.from || seen.err) && f.Kind != FieldEnum {
-		return f, errors.New("from: and err modifiers require enum")
-	}
-	if f.Kind == FieldEnum && f.EnumFromInt == "" {
-		if f.IsQualified {
-			f.EnumFromInt = f.TypePkg + "." + f.TypeName + "FromInt"
-		} else {
-			f.EnumFromInt = f.TypeName + "FromInt"
-		}
-	}
 	if seen.semType && f.Signed {
 		return f, errors.New("type:latitude/longitude are already signed; drop the signed modifier")
 	}
@@ -521,7 +507,7 @@ func parseTag(fieldName, tag, goType string, baseTypes map[string]string) (Field
 
 // modifierSet records modifiers whose validity depends on the final kind.
 type modifierSet struct {
-	semType, from, err bool
+	semType bool
 }
 
 func applyModifier(f *Field, mod string, seen *modifierSet) error {
@@ -540,12 +526,6 @@ func applyModifier(f *Field, mod string, seen *modifierSet) error {
 		default:
 			return fmt.Errorf("unknown semantic type: %q", arg)
 		}
-	case "from":
-		seen.from = true
-		if arg == "" {
-			return errors.New("empty from: modifier")
-		}
-		f.EnumFromInt = arg
 	case "stride":
 		stride, err := strconv.Atoi(arg)
 		if err != nil || stride <= 0 {
@@ -595,9 +575,6 @@ func applyFlag(f *Field, mod string, seen *modifierSet) error {
 		f.NoEncode = true
 	case "fallback":
 		f.Fallback = true
-	case "err":
-		seen.err = true
-		f.EnumReturnsErr = true
 	default:
 		return fmt.Errorf("unrecognized modifier: %q", mod)
 	}

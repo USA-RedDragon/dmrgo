@@ -777,11 +777,11 @@ func TestAnnouncementType_String(t *testing.T) {
 	}
 }
 
-func TestAnnouncementType_FromInt(t *testing.T) {
+func TestAnnouncementType_Cast(t *testing.T) {
 	for i := 0; i <= 7; i++ {
-		at := enums.AnnouncementTypeFromInt(i)
+		at := enums.AnnouncementType(i)
 		if int(at) != i {
-			t.Errorf("AnnouncementTypeFromInt(%d) = %d", i, int(at))
+			t.Errorf("AnnouncementType(%d) = %d", i, int(at))
 		}
 	}
 }
@@ -789,13 +789,13 @@ func TestAnnouncementType_FromInt(t *testing.T) {
 // ── SLCO Tests ──
 
 func TestSLCO_TierIII_Values(t *testing.T) {
-	csys := enums.SLCOFromInt(0b0010)
+	csys := enums.SLCO(0b0010)
 	if csys != enums.SLCOCSysParms {
-		t.Errorf("SLCOFromInt(0b0010) = %d, want SLCOCSysParms(%d)", int(csys), int(enums.SLCOCSysParms))
+		t.Errorf("SLCO(0b0010) = %d, want SLCOCSysParms(%d)", int(csys), int(enums.SLCOCSysParms))
 	}
-	psys := enums.SLCOFromInt(0b0011)
+	psys := enums.SLCO(0b0011)
 	if psys != enums.SLCOPSysParms {
-		t.Errorf("SLCOFromInt(0b0011) = %d, want SLCOPSysParms(%d)", int(psys), int(enums.SLCOPSysParms))
+		t.Errorf("SLCO(0b0011) = %d, want SLCOPSysParms(%d)", int(psys), int(enums.SLCOPSysParms))
 	}
 
 	if name := enums.SLCOCSysParms.String(); name != "C_SYS_Parms" {

@@ -27,7 +27,7 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.Result)
 	}
 	result.ColorCode = bit.BitsToInt(data[:], 0, 4)
 	result.PreemptionAndPowerControlIndicator = bit.BitsToBool(data[:], 4)
-	result.LCSS = enums.LCSSFromInt(bit.BitsToInt(data[:], 5, 2))
+	result.LCSS = enums.LCSS(bit.BitsToUint8(data[:], 5, 2))
 	return result, fecResult
 }
 

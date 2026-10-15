@@ -748,7 +748,7 @@ func DecodeCBroadcastPDU(data [64]bit.Bit) (CBroadcastPDU, fec.Result) {
 	var result CBroadcastPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.AnnouncementType = enums.AnnouncementTypeFromInt(bit.BitsToInt(data[:], 0, 5))
+	result.AnnouncementType = enums.AnnouncementType(bit.BitsToUint8(data[:], 0, 5))
 	copy(result.BroadcastParms1[:], data[5:19])
 	result.Reg = bit.BitsToBool(data[:], 19)
 	result.Backoff = bit.BitsToUint8(data[:], 20, 4)

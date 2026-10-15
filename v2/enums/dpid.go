@@ -1,7 +1,5 @@
 package enums
 
-import "fmt"
-
 // DPID (UDP Destination Port Identifier) maps to well-known UDP destination ports
 // in a UDP/IPv4 compressed header.
 // ETSI TS 102 361-3 — Table 7.18
@@ -44,9 +42,7 @@ func (dpid DPID) String() string {
 	return unknownName
 }
 
-func DPIDFromInt(i int) (DPID, error) {
-	if i < 0 || i > 127 {
-		return 0, fmt.Errorf("invalid DPID value: %d", i)
-	}
-	return DPID(i), nil
+// Valid reports whether d fits the 7-bit DPID field.
+func (d DPID) Valid() bool {
+	return d <= 127
 }

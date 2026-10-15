@@ -40,7 +40,7 @@ func TestRC_DecodeFromEmbeddedData_RoundTrip(t *testing.T) {
 
 func TestRC_EncodeRCToEmbeddedData_RoundTrip(t *testing.T) {
 	t.Parallel()
-	rc := pdu.ReverseChannel{RCCommand: enums.RCCommandFromInt(10)}
+	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(10)}
 	embData, err := layer2.EncodeRCToEmbeddedData(&rc)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

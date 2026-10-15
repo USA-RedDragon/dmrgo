@@ -86,25 +86,25 @@ func TestActivityID_String_Reserved(t *testing.T) {
 	}
 }
 
-func TestActivityID_FromInt_NoActivity(t *testing.T) {
+func TestActivityID_Cast_NoActivity(t *testing.T) {
 	t.Parallel()
-	a := enums.ActivityIDFromInt(0)
+	a := enums.ActivityID(0)
 	if a != enums.ActivityNoActivity {
 		t.Errorf("expected ActivityNoActivity, got %d", a)
 	}
 }
 
-func TestActivityID_FromInt_GroupVoice(t *testing.T) {
+func TestActivityID_Cast_GroupVoice(t *testing.T) {
 	t.Parallel()
-	a := enums.ActivityIDFromInt(0b1000)
+	a := enums.ActivityID(0b1000)
 	if a != enums.ActivityGroupVoice {
 		t.Errorf("expected ActivityGroupVoice, got %d", a)
 	}
 }
 
-func TestActivityID_FromInt_Reserved(t *testing.T) {
+func TestActivityID_Cast_Reserved(t *testing.T) {
 	t.Parallel()
-	a := enums.ActivityIDFromInt(0b0001)
+	a := enums.ActivityID(0b0001)
 	if int(a) != 1 {
 		t.Errorf("expected 1, got %d", a)
 	}

@@ -26,8 +26,8 @@ func TestVoiceBurstTypeString(t *testing.T) {
 }
 
 func TestVoiceBurstTypeString_InvalidReturnsUnknown(t *testing.T) {
-	got := (VoiceBurstType(999)).String()
+	got := (VoiceBurstType(99)).String()
 	if got != unknownName {
-		t.Errorf("(999).String() = %q, want %q", got, unknownName)
+		t.Errorf("(99).String() = %q, want %q", got, unknownName)
 	}
 }

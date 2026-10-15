@@ -57,14 +57,8 @@ func DecodeFullLinkControl(data [96]bit.Bit, dataType enums.DataType) (FullLinkC
 	}
 	result.ProtectFlag = bit.BitsToBool(data[:], 0)
 	result.Reserved = bit.BitsToBool(data[:], 1)
-	{
-		_enumVal, _ := enums.FLCOFromInt(bit.BitsToInt(data[:], 2, 6))
-		result.FLCO = _enumVal
-	}
-	{
-		_enumVal, _ := enums.FeatureSetIDFromInt(bit.BitsToInt(data[:], 8, 8))
-		result.FeatureSetID = _enumVal
-	}
+	result.FLCO = enums.FLCO(bit.BitsToUint8(data[:], 2, 6))
+	result.FeatureSetID = enums.FeatureSetID(bit.BitsToUint8(data[:], 8, 8))
 	var _dispatchBits [56]bit.Bit
 	copy(_dispatchBits[:], data[16:72])
 	if result.FeatureSetID == 0 {
@@ -175,14 +169,8 @@ func EncodeFullLinkControl(s *FullLinkControl) ([96]bit.Bit, error) {
 	copy(data[8:16], bit.BitsFromUint8(uint8(s.FeatureSetID), 8))
 	if _payload != "" {
 		var result FullLinkControl
-		{
-			_enumVal, _ := enums.FLCOFromInt(bit.BitsToInt(data[:], 2, 6))
-			result.FLCO = _enumVal
-		}
-		{
-			_enumVal, _ := enums.FeatureSetIDFromInt(bit.BitsToInt(data[:], 8, 8))
-			result.FeatureSetID = _enumVal
-		}
+		result.FLCO = enums.FLCO(bit.BitsToUint8(data[:], 2, 6))
+		result.FeatureSetID = enums.FeatureSetID(bit.BitsToUint8(data[:], 8, 8))
 		_want := "RawPayload"
 		if result.FeatureSetID == 0 {
 			switch result.FLCO {

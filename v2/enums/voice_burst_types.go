@@ -2,7 +2,7 @@ package enums
 
 // VoiceBurstType is the position of a voice burst in a voice superframe
 // (ETSI TS 102 361-1 §5.1.2.1). The zero value is VoiceBurstUnknown.
-type VoiceBurstType int
+type VoiceBurstType uint8
 
 const (
 	// VoiceBurstUnknown is a burst whose superframe position is not known.

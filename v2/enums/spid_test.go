@@ -26,16 +26,6 @@ func TestSPIDString(t *testing.T) {
 	}
 }
 
-func TestSPIDFromInt(t *testing.T) {
-	t.Parallel()
-	if _, err := enums.SPIDFromInt(0); err != nil {
-		t.Errorf("SPIDFromInt(0) returned error: %v", err)
-	}
-	if _, err := enums.SPIDFromInt(128); err == nil {
-		t.Error("SPIDFromInt(128) should return error")
-	}
-}
-
 func TestSPIDToPort(t *testing.T) {
 	t.Parallel()
 	if p := enums.SPIDToPort(enums.SPIDTextMessage); p != 5016 {
@@ -46,5 +36,15 @@ func TestSPIDToPort(t *testing.T) {
 	}
 	if p := enums.SPIDToPort(enums.SPIDExtendedHeader); p != 0 {
 		t.Errorf("SPIDToPort(ExtendedHeader) = %d, want 0", p)
+	}
+}
+
+func TestSPID_Valid(t *testing.T) {
+	t.Parallel()
+	if !enums.SPID(0).Valid() {
+		t.Error("SPID(0) is not valid")
+	}
+	if enums.SPID(128).Valid() {
+		t.Error("SPID(128) is valid")
 	}
 }

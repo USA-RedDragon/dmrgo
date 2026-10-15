@@ -26,12 +26,12 @@ func TestDAIDString(t *testing.T) {
 	}
 }
 
-func TestDAIDFromInt(t *testing.T) {
+func TestDAID_Valid(t *testing.T) {
 	t.Parallel()
-	if _, err := enums.DAIDFromInt(0); err != nil {
-		t.Errorf("DAIDFromInt(0) returned error: %v", err)
+	if !enums.DAID(0).Valid() {
+		t.Error("DAID(0) is not valid")
 	}
-	if _, err := enums.DAIDFromInt(16); err == nil {
-		t.Error("DAIDFromInt(16) should return error")
+	if enums.DAID(16).Valid() {
+		t.Error("DAID(16) is valid")
 	}
 }

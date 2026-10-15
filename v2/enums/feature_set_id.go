@@ -1,9 +1,6 @@
 package enums
 
-import (
-	"fmt"
-	"math"
-)
+import "fmt"
 
 // ETSI TS 102 361-1 - 9.3.5  Feature set ID (FID)
 //
@@ -74,14 +71,9 @@ func (fsid FeatureSetID) String() string {
 	return fmt.Sprintf("Unknown FeatureSetID: %d", fsid)
 }
 
-// FeatureSetIDFromInt converts i to a FeatureSetID. Unknown values in 0-255 are returned
-// as-is with a non-nil error so callers can keep the raw value.
-func FeatureSetIDFromInt(i int) (FeatureSetID, error) {
-	if i < 0 || i > math.MaxUint8 {
-		return 0, fmt.Errorf("feature set id out of range: %d", i)
-	}
-	v := FeatureSetID(i)
-	switch v {
+// Valid reports whether f is a value that ETSI TS 102 361 defines.
+func (f FeatureSetID) Valid() bool {
+	switch f {
 	case StandardizedFID,
 		FlydeMicroLtd,
 		ProdElSpa,
@@ -100,7 +92,7 @@ func FeatureSetIDFromInt(i int) (FeatureSetID, error) {
 		TaitElectronicsLtd,
 		HytScienceTech2,
 		VertexStandard:
-		return v, nil
+		return true
 	}
-	return v, fmt.Errorf("unknown feature set id: %d", i)
+	return false
 }

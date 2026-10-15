@@ -25,12 +25,12 @@ func TestSAIDString(t *testing.T) {
 	}
 }
 
-func TestSAIDFromInt(t *testing.T) {
+func TestSAID_Valid(t *testing.T) {
 	t.Parallel()
-	if _, err := enums.SAIDFromInt(0); err != nil {
-		t.Errorf("SAIDFromInt(0) returned error: %v", err)
+	if !enums.SAID(0).Valid() {
+		t.Error("SAID(0) is not valid")
 	}
-	if _, err := enums.SAIDFromInt(16); err == nil {
-		t.Error("SAIDFromInt(16) should return error")
+	if enums.SAID(16).Valid() {
+		t.Error("SAID(16) is valid")
 	}
 }

@@ -910,30 +910,11 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		}
 
 	case parse.FieldEnum:
-		// Extract as int, then call FromInt
-		extractExpr := Qual(bitPkg, "BitsToInt").Call(
+		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(Qual(bitPkg, bitExtractFunc(field.BitWidth)).Call(
 			Id("data").Index(Empty(), Empty()),
 			Lit(field.BitStart),
 			Lit(field.BitWidth),
-		)
-
-		// Parse the FromInt function reference
-		fromPkg, fromFn := splitQualified(field.EnumFromInt)
-		importPath := resolveImportPath(fromPkg, pdu.SourceFile)
-
-		// Check if FromInt returns error (two returns) or just value (one return)
-		// We determine this from function name patterns:
-		// LCSSFromInt returns just LCSS, FLCOFromInt returns (FLCO, error)
-		if field.EnumReturnsErr {
-			// Wrap in block scope to avoid "no new variables" redeclaration errors
-			// when multiple enum-with-error fields appear in the same function.
-			g.Block(
-				List(Id("_enumVal"), Id("_")).Op(":=").Qual(importPath, fromFn).Call(extractExpr),
-				target.Clone().Op("=").Id("_enumVal"),
-			)
-		} else {
-			g.Add(target).Op("=").Qual(importPath, fromFn).Call(extractExpr)
-		}
+		))
 
 	case parse.FieldRaw:
 		// Copy bits into a fixed-size array
@@ -1589,19 +1570,7 @@ func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	tmp := Id(tmpName)
 	switch {
 	case field.Kind == parse.FieldEnum:
-		fromPkg, fromFn := splitQualified(field.EnumFromInt)
-		var fromInt *Statement
-		if fromPkg != "" {
-			fromInt = Qual(resolveImportPath(fromPkg, pdu.SourceFile), fromFn)
-		} else {
-			fromInt = Id(fromFn)
-		}
-		call := fromInt.Call(Int().Call(tmp))
-		if field.EnumReturnsErr {
-			g.List(target, Id("_")).Op("=").Add(call)
-		} else {
-			g.Add(target).Op("=").Add(call)
-		}
+		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(tmp)
 	case field.Signed:
 		g.Add(target).Op("=").Add(qualType(field, pdu)).Call(signExtend(field, Uint32().Call(tmp)))
 	case needsCast(fn, field.GoType):

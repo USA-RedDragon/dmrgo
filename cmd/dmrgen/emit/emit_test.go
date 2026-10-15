@@ -164,10 +164,9 @@ func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
 
 func TestNonContiguousRangesForAllIntegerKinds(t *testing.T) {
 	out := mustGenerate(t, `type Kind uint8
-func KindFromInt(i int) Kind { return Kind(i) }
-func KindToName(k Kind) string { return "" }
+func (k Kind) String() string { return "" }
 type Wrapped uint16
-func WrappedToName(w Wrapped) string { return "" }
+func (w Wrapped) String() string { return "" }
 type T struct {
 	U uint8   `+"`dmr:\"bits:0+4-6\"`"+`
 	I int     `+"`dmr:\"bits:1+7-9\"`"+`
@@ -180,7 +179,7 @@ type T struct {
 		"result.U = _tmpU",
 		"result.I = int(_tmpI)",
 		"result.S = int(int32(uint32(_tmpS)<<28) >> 28)",
-		"result.E = KindFromInt(int(_tmpE))",
+		"result.E = Kind(_tmpE)",
 		"result.D = Wrapped(_tmpD)",
 		"_valI := uint8(s.I)",
 		"copy(data[1:2], bit.BitsFromUint8(_valI>>3, 1))",

@@ -45,8 +45,8 @@ func DecodeShortLCActivityUpdate(data [24]bit.Bit) (ShortLCActivityUpdate, fec.R
 	var result ShortLCActivityUpdate
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.TS1ActivityID = enums.ActivityIDFromInt(bit.BitsToInt(data[:], 0, 4))
-	result.TS2ActivityID = enums.ActivityIDFromInt(bit.BitsToInt(data[:], 4, 4))
+	result.TS1ActivityID = enums.ActivityID(bit.BitsToUint8(data[:], 0, 4))
+	result.TS2ActivityID = enums.ActivityID(bit.BitsToUint8(data[:], 4, 4))
 	result.HashTS1 = bit.BitsToUint8(data[:], 8, 8)
 	result.HashTS2 = bit.BitsToUint8(data[:], 16, 8)
 	return result, fecResult
@@ -155,7 +155,7 @@ func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.Result) {
 		_crcVal |= uint8(data[28+i])
 	}
 	result.crc = _crcVal
-	result.SLCO = enums.SLCOFromInt(bit.BitsToInt(data[:], 0, 4))
+	result.SLCO = enums.SLCO(bit.BitsToUint8(data[:], 0, 4))
 	var _dispatchBits [24]bit.Bit
 	copy(_dispatchBits[:], data[4:28])
 	switch result.SLCO {
@@ -232,7 +232,7 @@ func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
 	copy(data[0:4], bit.BitsFromUint8(uint8(s.SLCO), 4))
 	if _payload != "" {
 		var result ShortLC
-		result.SLCO = enums.SLCOFromInt(bit.BitsToInt(data[:], 0, 4))
+		result.SLCO = enums.SLCO(bit.BitsToUint8(data[:], 0, 4))
 		_want := "RawPayload"
 		switch result.SLCO {
 		case enums.SLCONullMessage:

@@ -27,7 +27,7 @@ func DecodeTACT(data [7]bit.Bit) (TACT, fec.Result) {
 	}
 	result.AccessType = bit.BitsToBool(data[:], 0)
 	result.TDMAChannel = bit.BitsToBool(data[:], 1)
-	result.LCSS = enums.LCSSFromInt(bit.BitsToInt(data[:], 2, 2))
+	result.LCSS = enums.LCSS(bit.BitsToUint8(data[:], 2, 2))
 	return result, fecResult
 }
 

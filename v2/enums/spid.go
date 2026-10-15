@@ -1,7 +1,5 @@
 package enums
 
-import "fmt"
-
 // SPID (UDP Source Port Identifier) maps to well-known UDP source ports
 // in a UDP/IPv4 compressed header.
 // ETSI TS 102 361-3 — Table 7.17
@@ -44,9 +42,7 @@ func (spid SPID) String() string {
 	return unknownName
 }
 
-func SPIDFromInt(i int) (SPID, error) {
-	if i < 0 || i > 127 {
-		return 0, fmt.Errorf("invalid SPID value: %d", i)
-	}
-	return SPID(i), nil
+// Valid reports whether s fits the 7-bit SPID field.
+func (s SPID) Valid() bool {
+	return s <= 127
 }

@@ -26,16 +26,6 @@ func TestDPIDString(t *testing.T) {
 	}
 }
 
-func TestDPIDFromInt(t *testing.T) {
-	t.Parallel()
-	if _, err := enums.DPIDFromInt(0); err != nil {
-		t.Errorf("DPIDFromInt(0) returned error: %v", err)
-	}
-	if _, err := enums.DPIDFromInt(128); err == nil {
-		t.Error("DPIDFromInt(128) should return error")
-	}
-}
-
 func TestDPIDToPort(t *testing.T) {
 	t.Parallel()
 	if p := enums.DPIDToPort(enums.DPIDTextMessage); p != 5016 {
@@ -46,5 +36,15 @@ func TestDPIDToPort(t *testing.T) {
 	}
 	if p := enums.DPIDToPort(enums.DPIDExtendedHeader); p != 0 {
 		t.Errorf("DPIDToPort(ExtendedHeader) = %d, want 0", p)
+	}
+}
+
+func TestDPID_Valid(t *testing.T) {
+	t.Parallel()
+	if !enums.DPID(0).Valid() {
+		t.Error("DPID(0) is not valid")
+	}
+	if enums.DPID(128).Valid() {
+		t.Error("DPID(128) is valid")
 	}
 }

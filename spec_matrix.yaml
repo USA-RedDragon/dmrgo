@@ -66,7 +66,6 @@ documents:
         title: "Data and control"
         source_files:
           - v2/layer2/burst.go
-          - v2/enums/burst_types.go
           - v2/layer2/pdu/pi_header.go
           - v2/layer2/voice_transmitter_options.go
         test_functions:
@@ -80,9 +79,6 @@ documents:
               - TestPIHeader_DecodeVector
               - TestPIHeader_RoundTrip
               - TestPIHeader_Raw
-          - package: github.com/USA-RedDragon/dmrgo/v2/enums
-            names:
-              - TestBurstTypeConstants
 
       - section: "6.3"
         title: "Common Announcement Channel burst"
@@ -476,9 +472,9 @@ documents:
               - TestSLCO_String_NullMessage
               - TestSLCO_String_ActivityUpdate
               - TestSLCO_String_Reserved
-              - TestSLCO_FromInt_NullMessage
-              - TestSLCO_FromInt_ActivityUpdate
-              - TestSLCO_FromInt_Reserved
+              - TestSLCO_Cast_NullMessage
+              - TestSLCO_Cast_ActivityUpdate
+              - TestSLCO_Cast_Reserved
               - TestSLCO_Values
 
       - section: "9.1.8"
@@ -634,8 +630,7 @@ documents:
             names:
               - TestLCSSString
               - TestLCSSString_Unknown
-              - TestLCSSFromInt
-              - TestLCSSFromInt_InvalidDefaultsToSingle
+              - TestLCSS_Cast
 
       - section: "9.3.4"
         title: "EMB parity"
@@ -662,9 +657,9 @@ documents:
             names:
               - TestFeatureSetIDString_KnownIDs
               - TestFeatureSetIDString_UnknownID
-              - TestFeatureSetIDFromInt_ValidValues
-              - TestFeatureSetIDFromInt_InvalidValue
-              - TestFeatureSetIDFromInt_RoundTrip
+              - TestFeatureSetID_ValidValues
+              - TestFeatureSetID_InvalidValue
+              - TestFeatureSetID_RoundTrip
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_ManufacturerFIDKeepsRawPayload
@@ -710,8 +705,8 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestFLCOString
-              - TestFLCOFromInt_ValidValues
-              - TestFLCOFromInt_InvalidValue
+              - TestFLCO_ValidValues
+              - TestFLCO_InvalidValue
 
       - section: "9.3.17"
         title: "Data Packet Format (DPF)"
@@ -1210,9 +1205,9 @@ documents:
               - TestRCCommand_String_CeaseTransmissionCommand
               - TestRCCommand_String_CeaseTransmissionRequest
               - TestRCCommand_String_Reserved
-              - TestRCCommand_FromInt_CeaseCommand
-              - TestRCCommand_FromInt_CeaseRequest
-              - TestRCCommand_FromInt_Reserved
+              - TestRCCommand_Cast_CeaseCommand
+              - TestRCCommand_Cast_CeaseRequest
+              - TestRCCommand_Cast_Reserved
               - TestRCCommand_Values
           - package: github.com/USA-RedDragon/dmrgo/v2/constants
             names:
@@ -1377,9 +1372,9 @@ documents:
               - TestActivityID_String_EmergencyGroupVoice
               - TestActivityID_String_EmergencyIndividualVoice
               - TestActivityID_String_Reserved
-              - TestActivityID_FromInt_NoActivity
-              - TestActivityID_FromInt_GroupVoice
-              - TestActivityID_FromInt_Reserved
+              - TestActivityID_Cast_NoActivity
+              - TestActivityID_Cast_GroupVoice
+              - TestActivityID_Cast_Reserved
               - TestActivityID_Values
 
       # ── Section 7.2: Layer 3 information element coding ──
@@ -1544,9 +1539,9 @@ documents:
               - TestRCCommand_String_CeaseTransmissionCommand
               - TestRCCommand_String_CeaseTransmissionRequest
               - TestRCCommand_String_Reserved
-              - TestRCCommand_FromInt_CeaseCommand
-              - TestRCCommand_FromInt_CeaseRequest
-              - TestRCCommand_FromInt_Reserved
+              - TestRCCommand_Cast_CeaseCommand
+              - TestRCCommand_Cast_CeaseRequest
+              - TestRCCommand_Cast_Reserved
               - TestRCCommand_Values
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -1861,7 +1856,7 @@ documents:
               - TestBCAPContinuation_Decode
               - TestVNAPContinuation_Decode
               - TestAnnouncementType_String
-              - TestAnnouncementType_FromInt
+              - TestAnnouncementType_Cast
 
       - section: "7.1.1.1"
         title: "TSCC Outbound channel CSBK/MBC/UDT"
@@ -1912,7 +1907,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestAnnouncementType_String
-              - TestAnnouncementType_FromInt
+              - TestAnnouncementType_Cast
 
       # ── Annex A: Timers, constants levels and addresses ──
       - section: "A"

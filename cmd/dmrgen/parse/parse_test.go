@@ -200,18 +200,11 @@ type T struct {
 			want: "embedded field",
 		},
 		{
-			name: "from without enum",
+			name: "removed from: modifier",
 			src: `type T struct {
-	A uint8 ` + "`dmr:\"bits:0-7,from:enums.FLCOFromInt\"`" + `
+	A uint8 ` + "`dmr:\"bits:0-7,enum,from:enums.FLCOFromInt\"`" + `
 }`,
-			want: "require enum",
-		},
-		{
-			name: "err without enum",
-			src: `type T struct {
-	A uint8 ` + "`dmr:\"bits:0-7,err\"`" + `
-}`,
-			want: "require enum",
+			want: "unrecognized modifier",
 		},
 		{
 			name: "stride does not divide width",
