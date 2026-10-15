@@ -149,8 +149,8 @@ func TestReedSolomon1294DecodeResultFields(t *testing.T) {
 
 	result := decode(data)
 
-	if len(result.Data) != dataSize {
-		t.Errorf("decodeResult.Data length = %d, expected %d", len(result.Data), dataSize)
+	if result != (decodeResult{}) {
+		t.Errorf("decode of the zero codeword = %+v, want the zero decodeResult", result)
 	}
 }
 
