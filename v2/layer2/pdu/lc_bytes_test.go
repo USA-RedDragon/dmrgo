@@ -220,7 +220,7 @@ func TestNewVoiceLC(t *testing.T) {
 		t.Errorf("source 1<<24: %v", err)
 	}
 	raw := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: 0x10, RawPayload: [7]byte{0x20}}
-	if so, ok := raw.ServiceOptions(); !ok || so != layer3.DefaultServiceOptions() {
+	if so, ok := raw.ServiceOptions(); !ok || so != layer3.MotorolaServiceOptions() {
 		t.Errorf("manufacturer FID: ServiceOptions %s %t", so.String(), ok)
 	}
 	raw.FLCO = enums.FLCOGPSInfo
