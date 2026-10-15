@@ -24,6 +24,7 @@ ignore_files:
   - v2/examples/hotspot/main.go
   - v2/examples/scanner/main.go
   - v2/examples/transcoder/main.go
+  - v2/examples/tinygo/main.go
   - v2/examples/trunking/main.go
   - v2/fec/fec.go
   - v2/vocoder/ambe_payload.go

@@ -61,6 +61,32 @@ jobs:
       - name: Race tests
         run: go test -C v2 ./... -race
 
+  tinygo:
+    runs-on: ubuntu-24.04
+    container:
+      image: tinygo/tinygo:0.41.1@sha256:b216f534ddbf277444407b014a3328b5c1ade403cc397f3ab48a14789bf99d0e
+      options: --user root
+    defaults:
+      run:
+        working-directory: v2
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Build the example
+        run: |
+          tinygo build -target=pico -stack-size=16KB -size short -o tinygo-pico.uf2 ./examples/tinygo
+          for target in pico2 esp32c3-generic wasip1; do
+            tinygo build -target="$target" -stack-size=16KB -o "tinygo-$target.elf" ./examples/tinygo
+          done
+
+      - name: Test the library
+        run: tinygo test $(go list ./... | grep -v -e /cmd/ -e /examples/) ./examples/tinygo
+
+      - name: Test the example at the pico stack size
+        run: tinygo test -stack-size=8KB ./examples/tinygo
+
   unit-tests:
     uses: ./.github/workflows/unit-test.yaml
     secrets:
