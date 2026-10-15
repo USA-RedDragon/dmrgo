@@ -13,8 +13,7 @@ import (
 func dataBurst(dt enums.DataType, d layer2.Data) layer2.Burst {
 	return layer2.Burst{
 		SyncPattern: enums.SyncBSSourcedData,
-		IsData:      true,
-		HasSlotType: true,
+		Kind:        layer2.KindData,
 		SlotType:    pdu.SlotType{ColorCode: 1, DataType: dt},
 		Data:        d,
 	}
@@ -158,8 +157,8 @@ func TestBurstEncode_IdleKeepsDecodedPayload(t *testing.T) {
 	if got := must(b.Encode()); got != frame {
 		t.Errorf("decoded idle burst: got %x, want %x", got, frame)
 	}
-	b.Data = &pdu.PRFill{}
-	got := must(layer2.NewBurstFromBytes(must(b.Encode())))
+	fresh := layer2.Burst{Kind: layer2.KindData, SyncPattern: b.SyncPattern, SlotType: b.SlotType, Data: &pdu.PRFill{}}
+	got := must(layer2.NewBurstFromBytes(must(fresh.Encode())))
 	if p, _, _ := got.BPTCPayload(); !pdu.IsPRFill(bitsOf(p)) {
 		t.Errorf("new PR FILL encoded %x, want Table D.2", p)
 	}
@@ -195,17 +194,28 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 	}
 }
 
-// A decoded burst without Data, here a CSBK whose CRC failed, encodes the
-// decoded payload, so a bridge can still forward it; a data type that
-// carries a different number of information bits is an error.
+// A decoded burst, here a CSBK whose CRC failed, encodes the decoded
+// payload while its Data is unchanged or nil, so a bridge can still forward
+// it; a data type that carries a different number of information bits is an
+// error.
 func TestBurstEncode_DecodedPayloadWithoutData(t *testing.T) {
 	frame := must(layer2.BuildLCDataBurst([12]byte{0xDE, 0xAD}, enums.DataTypeCSBK, 1))
 	b, err := layer2.NewBurstFromBytes(frame)
-	if err == nil || b.Data != nil {
-		t.Fatalf("CSBK with a bad CRC: err %v, Data %v", err, b.Data)
+	if err != nil || b.Data == nil || !b.FEC.PDU.Uncorrectable {
+		t.Fatalf("CSBK with a bad CRC: err %v, Data %v, FEC %+v", err, b.Data, b.FEC.PDU)
 	}
 	if got := must(b.Encode()); got != frame {
-		t.Errorf("got %x, want %x", got, frame)
+		t.Errorf("unchanged Data: got %x, want %x", got, frame)
+	}
+	csbk := b.Data.(*pdu.CSBK) //nolint:forcetypeassert // checked by the decode above
+	csbk.LastBlock = !csbk.LastBlock
+	if again := must(layer2.NewBurstFromBytes(must(b.Encode()))); again.FEC.PDU.Uncorrectable {
+		t.Error("changed Data was not coded with a new CRC")
+	}
+	csbk.LastBlock = !csbk.LastBlock
+	b.Data = nil
+	if got := must(b.Encode()); got != frame {
+		t.Errorf("nil Data: got %x, want %x", got, frame)
 	}
 	for _, dt := range []enums.DataType{enums.DataTypeRate34, enums.DataTypeMBCHeader} {
 		b.SlotType.DataType = dt

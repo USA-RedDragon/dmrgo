@@ -58,7 +58,7 @@ type Match struct {
 }
 
 func nearest(window uint64) (enums.SyncPattern, int) {
-	best, bestDistance := enums.SyncEmbeddedSignalling, SyncBits+1
+	best, bestDistance := enums.SyncNone, SyncBits+1
 	for _, p := range syncPatterns {
 		if d := bits.OnesCount64(window ^ uint64(p)); d < bestDistance { //nolint:gosec // patterns are 48-bit positive constants
 			best, bestDistance = p, d
@@ -77,10 +77,10 @@ func window(stream []bit.Bit, offset int) uint64 {
 
 // Search returns the first SYNC field in stream that starts at or after
 // start and is within threshold bits of a Table 9.2 pattern. A negative
-// threshold means enums.SyncMatchThreshold. ok is false when there is none.
+// threshold means layer2.DefaultSyncThreshold. ok is false when there is none.
 func Search(stream []bit.Bit, start, threshold int) (m Match, ok bool) {
 	if threshold < 0 {
-		threshold = enums.SyncMatchThreshold
+		threshold = layer2.DefaultSyncThreshold
 	}
 	start = max(start, 0)
 	if start+SyncBits > len(stream) {
@@ -105,7 +105,7 @@ type Burst struct {
 	// bit written to the Framer.
 	Offset int64
 	// Sync is the Table 9.2 pattern of the SYNC field, or
-	// enums.SyncEmbeddedSignalling when the field is not within the
+	// enums.SyncNone when the field is not within the
 	// threshold of one, as in voice bursts B to F.
 	Sync enums.SyncPattern
 	// Distance is the Hamming distance of the field from the nearest
@@ -124,7 +124,7 @@ type Burst struct {
 // Config configures a Framer.
 type Config struct {
 	// Threshold is the largest SYNC distance accepted. A negative value
-	// means enums.SyncMatchThreshold.
+	// means layer2.DefaultSyncThreshold.
 	Threshold int
 	// Period is the number of bits from one burst to the next while
 	// locked. 0 means OutboundPeriod. Use SlotPeriod for the bursts of a
@@ -160,7 +160,7 @@ type Framer struct {
 // New returns a Framer with the given configuration.
 func New(cfg Config) *Framer {
 	if cfg.Threshold < 0 {
-		cfg.Threshold = enums.SyncMatchThreshold
+		cfg.Threshold = layer2.DefaultSyncThreshold
 	}
 	if cfg.Period <= 0 {
 		cfg.Period = OutboundPeriod
@@ -212,7 +212,7 @@ func (f *Framer) cut() Burst {
 	b := Burst{Offset: f.base + int64(start), Data: bit.PackBits264(raw)}
 	b.Sync, b.Distance = nearest(window(f.buf, start+SyncOffset))
 	if b.Distance > f.cfg.Threshold {
-		b.Sync = enums.SyncEmbeddedSignalling
+		b.Sync = enums.SyncNone
 		f.misses++
 	} else {
 		f.misses = 0
@@ -229,7 +229,7 @@ func (f *Framer) cut() Burst {
 	case enums.SyncTDMA2Voice, enums.SyncTDMA2Data:
 		f.channel = 2
 	case enums.SyncBSSourcedVoice, enums.SyncBSSourcedData, enums.SyncMSSourcedVoice, enums.SyncMSSourcedData,
-		enums.SyncMSSourcedRC, enums.SyncReserved, enums.SyncEmbeddedSignalling:
+		enums.SyncMSSourcedRC, enums.SyncReserved, enums.SyncNone:
 	}
 	if f.cfg.CACH && start >= layer2.CACHBits {
 		var c [layer2.CACHBits]bit.Bit

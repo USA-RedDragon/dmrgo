@@ -46,21 +46,20 @@ func (r *RawBurst) writeBits(src []bit.Bit, start int) {
 }
 
 // Sync returns the Table 9.2 SYNC pattern nearest to burst bits 108 to 155
-// and its Hamming distance, as enums.SyncPatternFromBytesWithDistance
-// does.
+// and its Hamming distance, as enums.NearestSyncPattern does.
 func (r *RawBurst) Sync() (enums.SyncPattern, int) {
 	var bits [48]bit.Bit
 	r.readBits(bits[:], SyncStart)
 	var s [6]byte
 	copy(s[:], bit.PackBits(bits[:]))
-	return enums.SyncPatternFromBytesWithDistance(s)
+	return enums.NearestSyncPattern(s)
 }
 
 // SetSync writes the SYNC pattern p into burst bits 108 to 155. It returns
 // an error unless p is a Table 9.2 pattern.
 func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 	if !isSyncPattern(p) {
-		return fmt.Errorf("%#x is not a Table 9.2 SYNC pattern", int64(p))
+		return fmt.Errorf("%#x is not a Table 9.2 SYNC pattern", uint64(p))
 	}
 	var bits [264]bit.Bit
 	writeSync(&bits, p)

@@ -180,7 +180,7 @@ func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
 		all[i] ^= 1
 	}
 	raws[5] = bit.PackBits264(all)
-	if b := must(layer2.NewBurstFromBytes(raws[5])); !b.HasEmbeddedSignalling || !b.EmbeddedSignalling.FEC.Uncorrectable {
+	if b := must(layer2.NewBurstFromBytes(raws[5])); !b.HasEmbeddedSignalling() || !b.EmbeddedSignalling.FEC.Uncorrectable {
 		t.Fatalf("corrupted EMB decodes as %s", b.String())
 	}
 	got := receiveAll(t, raws)

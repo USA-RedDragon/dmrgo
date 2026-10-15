@@ -20,8 +20,8 @@ func TestBurst_ReservedDataTypes(t *testing.T) {
 				if err := burst.DecodeFromBytes(frame); err == nil {
 					t.Fatalf("data type %d: expected error", dt)
 				}
-				if !burst.IsData || burst.SlotType.DataType != dt {
-					t.Fatalf("data type %d: got IsData=%v DataType=%d", dt, burst.IsData, burst.SlotType.DataType)
+				if burst.Kind != layer2.KindData || burst.SlotType.DataType != dt {
+					t.Fatalf("data type %d: got IsData=%v DataType=%d", dt, (burst.Kind == layer2.KindData), burst.SlotType.DataType)
 				}
 				if burst.Data != nil {
 					t.Errorf("data type %d: expected nil Data", dt)
@@ -91,7 +91,7 @@ func TestBurst_Encode(t *testing.T) {
 						i, encoded, encoded2,
 						burst.SyncPattern,
 						burst.VoiceBurst,
-						burst.HasEmbeddedSignalling)
+						burst.HasEmbeddedSignalling())
 				} else if !bytes.Equal(data[:], encoded[:]) {
 					t.Logf("Burst %d input differed from stable encoding (expected for captured data)", i)
 					t.Logf("Input:   %x", data)
@@ -172,11 +172,11 @@ func TestBurst_BPTCPayload(t *testing.T) {
 		}
 	}
 	voice, _ := layer2.NewBurstFromBytes(transmission(t, groupLC(enums.FIDStandardized), 1)[1])
-	if _, _, ok := voice.BPTCPayload(); ok || voice.IsData {
+	if _, _, ok := voice.BPTCPayload(); ok || (voice.Kind == layer2.KindData) {
 		t.Error("voice burst: ok")
 	}
 	var empty layer2.Burst
-	empty.IsData = true
+	empty.Kind = layer2.KindData
 	empty.SlotType.DataType = enums.DataTypeCSBK
 	if _, _, ok := empty.BPTCPayload(); ok {
 		t.Error("burst not decoded: ok")
@@ -191,8 +191,8 @@ func TestBurst_SyncTolerance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !burst.IsData || burst.SyncPattern != enums.SyncBSSourcedData || burst.SyncDistance != 4 {
-		t.Fatalf("4 sync bit errors: IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, burst.SyncPattern.String(), burst.SyncDistance)
+	if burst.Kind != layer2.KindData || burst.SyncPattern != enums.SyncBSSourcedData || burst.SyncDistance != 4 {
+		t.Fatalf("4 sync bit errors: IsData=%v SyncPattern=%s SyncDistance=%d", (burst.Kind == layer2.KindData), burst.SyncPattern.String(), burst.SyncDistance)
 	}
 	if got := must(burst.Encode()); got != frame {
 		t.Errorf("encode did not restore clean sync\ngot  %x\nwant %x", got, frame)
@@ -200,8 +200,8 @@ func TestBurst_SyncTolerance(t *testing.T) {
 
 	noisy = flipBurstBits(noisy, layer2.SyncStart+20)
 	burst, _ = layer2.NewBurstFromBytes(noisy)
-	if burst.IsData || burst.SyncPattern != enums.SyncEmbeddedSignalling || !burst.HasEmbeddedSignalling {
-		t.Errorf("5 sync bit errors: IsData=%v SyncPattern=%s", burst.IsData, burst.SyncPattern.String())
+	if (burst.Kind == layer2.KindData) || burst.SyncPattern != enums.SyncNone || !burst.HasEmbeddedSignalling() {
+		t.Errorf("5 sync bit errors: IsData=%v SyncPattern=%s", (burst.Kind == layer2.KindData), burst.SyncPattern.String())
 	}
 }
 
@@ -222,8 +222,8 @@ func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !burst.IsData || burst.SyncPattern != enums.SyncMSSourcedData || burst.SyncDistance != 2 {
-		t.Fatalf("IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, burst.SyncPattern.String(), burst.SyncDistance)
+	if burst.Kind != layer2.KindData || burst.SyncPattern != enums.SyncMSSourcedData || burst.SyncDistance != 2 {
+		t.Fatalf("IsData=%v SyncPattern=%s SyncDistance=%d", (burst.Kind == layer2.KindData), burst.SyncPattern.String(), burst.SyncDistance)
 	}
 	if burst.SlotType.DataType != enums.DataTypeIdle {
 		t.Errorf("DataType=%v", burst.SlotType.DataType)
@@ -248,7 +248,7 @@ func TestBurst_SyncTolerance_EmbeddedVoiceBursts(t *testing.T) {
 		for i, data := range loadBursts(t, file) {
 			var burst layer2.Burst
 			_ = burst.DecodeFromBytes(data)
-			if burst.HasEmbeddedSignalling {
+			if burst.HasEmbeddedSignalling() {
 				embedded++
 				minDistance = min(minDistance, burst.SyncDistance)
 			} else if burst.SyncDistance != 0 {

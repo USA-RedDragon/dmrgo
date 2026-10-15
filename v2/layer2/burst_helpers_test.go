@@ -189,7 +189,7 @@ func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 			t.Fatalf("NewBurstFromBytes failed for color code %d: %v", cc, err)
 			continue
 		}
-		if !burst.HasSlotType {
+		if burst.Kind != layer2.KindData {
 			t.Errorf("cc=%d: burst has no slot type", cc)
 			continue
 		}

@@ -20,8 +20,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 			name: "SlotTypeColorCode",
 			burst: layer2.Burst{
 				SyncPattern: enums.SyncBSSourcedData,
-				IsData:      true,
-				HasSlotType: true,
+				Kind:        layer2.KindData,
 				SlotType:    pdu.SlotType{ColorCode: 16, DataType: enums.DataTypeIdle},
 			},
 			want: "SlotType.ColorCode",
@@ -29,59 +28,30 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 		{
 			name: "EmbeddedColorCode",
 			burst: layer2.Burst{
-				SyncPattern:           enums.SyncEmbeddedSignalling,
-				HasEmbeddedSignalling: true,
-				EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 16},
+				Kind:               layer2.KindVoice,
+				SyncPattern:        enums.SyncNone,
+				EmbeddedSignalling: pdu.EmbeddedSignalling{ColorCode: 16},
 			},
 			want: "EmbeddedSignalling.ColorCode",
 		},
 		{
 			name: "EmbeddedReverseChannel",
 			burst: layer2.Burst{
-				SyncPattern:           enums.SyncEmbeddedSignalling,
-				HasEmbeddedSignalling: true,
-				HasReverseChannel:     true,
-				ReverseChannel:        &pdu.ReverseChannel{RCCommand: enums.RCCommand(16)},
+				Kind:               layer2.KindVoice,
+				SyncPattern:        enums.SyncNone,
+				EmbeddedSignalling: pdu.EmbeddedSignalling{PreemptionAndPowerControlIndicator: true},
+				ReverseChannel:     pdu.ReverseChannel{RCCommand: enums.RCCommand(16)},
 			},
 			want: "reverse channel",
 		},
 		{
 			name: "StandaloneReverseChannel",
 			burst: layer2.Burst{
-				SyncPattern:           enums.SyncMSSourcedRC,
-				HasEmbeddedSignalling: true,
-				HasReverseChannel:     true,
-				ReverseChannel:        &pdu.ReverseChannel{RCCommand: enums.RCCommand(16)},
+				Kind:           layer2.KindReverseChannel,
+				SyncPattern:    enums.SyncMSSourcedRC,
+				ReverseChannel: pdu.ReverseChannel{RCCommand: enums.RCCommand(16)},
 			},
 			want: "reverse channel",
-		},
-		{
-			name: "EmbeddedNilReverseChannel",
-			burst: layer2.Burst{
-				SyncPattern:           enums.SyncEmbeddedSignalling,
-				HasEmbeddedSignalling: true,
-				HasReverseChannel:     true,
-			},
-			want: "ReverseChannel is nil",
-		},
-		{
-			name: "StandaloneNilReverseChannel",
-			burst: layer2.Burst{
-				SyncPattern:           enums.SyncMSSourcedRC,
-				HasEmbeddedSignalling: true,
-				HasReverseChannel:     true,
-			},
-			want: "ReverseChannel is nil",
-		},
-		{
-			name: "DataWithoutSlotType",
-			burst: layer2.Burst{
-				SyncPattern: enums.SyncBSSourcedData,
-				IsData:      true,
-				SlotType:    pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeIdle},
-				Data:        &pdu.PRFill{},
-			},
-			want: "no slot type",
 		},
 	}
 	for _, tt := range tests {
@@ -97,15 +67,18 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 	var stale [32]bit.Bit
 	stale[3] = 1
-	for _, sync := range []enums.SyncPattern{enums.SyncEmbeddedSignalling, enums.SyncMSSourcedRC} {
+	for _, sync := range []enums.SyncPattern{enums.SyncNone, enums.SyncMSSourcedRC} {
 		t.Run(sync.String(), func(t *testing.T) {
+			kind := layer2.KindVoice
+			if sync == enums.SyncMSSourcedRC {
+				kind = layer2.KindReverseChannel
+			}
 			b := layer2.Burst{
+				Kind:                   kind,
 				SyncPattern:            sync,
-				HasEmbeddedSignalling:  true,
 				EmbeddedSignalling:     pdu.EmbeddedSignalling{ColorCode: 1, PreemptionAndPowerControlIndicator: true},
 				EmbeddedSignallingData: stale,
-				HasReverseChannel:      true,
-				ReverseChannel:         &pdu.ReverseChannel{RCCommand: enums.RCCommand(5)},
+				ReverseChannel:         pdu.ReverseChannel{RCCommand: enums.RCCommand(5)},
 			}
 			before := b
 			frame := must(b.Encode())
@@ -113,10 +86,10 @@ func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 				t.Fatal("Encode modified the burst")
 			}
 			got := must(layer2.NewBurstFromBytes(frame))
-			if !got.HasReverseChannel || got.ReverseChannel.RCCommand != 5 {
+			if !got.HasReverseChannel() || got.ReverseChannel.RCCommand != 5 {
 				t.Fatalf("decoded RC %+v, want command 5", got.ReverseChannel)
 			}
-			want := must(layer2.EncodeEmbeddedRC(b.ReverseChannel))
+			want := must(layer2.EncodeEmbeddedRC(&b.ReverseChannel))
 			if got.EmbeddedSignallingData != want {
 				t.Fatal("embedded data is not the coded reverse channel")
 			}
@@ -139,9 +112,10 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 		burst layer2.Burst
 	}{
 		{"ZeroValue", layer2.Burst{}},
-		{"VoiceWithDataSync", layer2.Burst{SyncPattern: enums.SyncBSSourcedData}},
-		{"DataWithVoiceSync", layer2.Burst{SyncPattern: enums.SyncMSSourcedVoice, IsData: true}},
-		{"EmbeddedPatternWithoutEMB", layer2.Burst{SyncPattern: enums.SyncEmbeddedSignalling}},
+		{"VoiceWithoutKind", layer2.Burst{SyncPattern: enums.SyncMSSourcedVoice}},
+		{"VoiceWithDataSync", layer2.Burst{Kind: layer2.KindVoice, SyncPattern: enums.SyncBSSourcedData}},
+		{"DataWithVoiceSync", layer2.Burst{Kind: layer2.KindData, SyncPattern: enums.SyncMSSourcedVoice}},
+		{"DataWithoutSync", layer2.Burst{Kind: layer2.KindData, SyncPattern: enums.SyncNone}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -161,20 +135,20 @@ func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 			voice[i][j] = bit.Bit((i + j) & 1)
 		}
 	}
-	for _, sync := range []enums.SyncPattern{enums.SyncBSSourcedVoice, enums.SyncReserved, enums.SyncEmbeddedSignalling} {
+	for _, sync := range []enums.SyncPattern{enums.SyncBSSourcedVoice, enums.SyncReserved, enums.SyncNone} {
 		t.Run(sync.String(), func(t *testing.T) {
 			b := layer2.Burst{
-				SyncPattern:           sync,
-				HasEmbeddedSignalling: sync == enums.SyncEmbeddedSignalling,
-				EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 3, LCSS: enums.LCSSFirstFragment},
-				VoiceSlots:            voice,
+				Kind:               layer2.KindVoice,
+				SyncPattern:        sync,
+				EmbeddedSignalling: pdu.EmbeddedSignalling{ColorCode: 3, LCSS: enums.LCSSFirstFragment},
+				VoiceSlots:         voice,
 			}
 			got, err := layer2.NewBurstFromBytes(must(b.Encode()))
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got.IsData || got.SyncPattern != sync {
-				t.Fatalf("decoded IsData=%v SyncPattern=%s", got.IsData, got.SyncPattern.String())
+			if got.Kind != layer2.KindVoice || got.SyncPattern != sync {
+				t.Fatalf("decoded Kind=%s SyncPattern=%s", got.Kind, got.SyncPattern.String())
 			}
 			if got.VoiceSlots != voice {
 				t.Errorf("voice slots: got %v, want %v", got.VoiceSlots, voice)

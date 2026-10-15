@@ -99,14 +99,11 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 		t.Fatalf("NewBurstFromBytes failed: %v", err)
 	}
 
-	if !burst.HasEmbeddedSignalling {
+	if !burst.HasEmbeddedSignalling() {
 		t.Fatal("expected HasEmbeddedSignalling=true")
 	}
-	if !burst.HasReverseChannel {
+	if !burst.HasReverseChannel() {
 		t.Fatal("expected HasReverseChannel=true")
-	}
-	if burst.ReverseChannel == nil {
-		t.Fatal("ReverseChannel should not be nil")
 	}
 	if int(burst.ReverseChannel.RCCommand) != 9 {
 		t.Errorf("expected RCCommand=9, got %d", burst.ReverseChannel.RCCommand)
@@ -133,7 +130,7 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 		t.Fatalf("NewBurstFromBytes failed: %v", err)
 	}
 
-	if burst.HasReverseChannel {
+	if burst.HasReverseChannel() {
 		t.Error("should NOT have HasReverseChannel when PI=0")
 	}
 }
@@ -158,7 +155,7 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 		t.Fatalf("NewBurstFromBytes failed: %v", err)
 	}
 
-	if burst.HasReverseChannel {
+	if burst.HasReverseChannel() {
 		t.Error("should NOT have HasReverseChannel when LCSS != SingleFragment")
 	}
 }
@@ -269,16 +266,16 @@ func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if burst.SyncPattern != enums.SyncMSSourcedRC || burst.IsData {
-		t.Fatalf("SyncPattern=%s IsData=%v", burst.SyncPattern.String(), burst.IsData)
+	if burst.SyncPattern != enums.SyncMSSourcedRC || (burst.Kind == layer2.KindData) {
+		t.Fatalf("SyncPattern=%s IsData=%v", burst.SyncPattern.String(), (burst.Kind == layer2.KindData))
 	}
-	if !burst.HasEmbeddedSignalling || burst.EmbeddedSignalling.ColorCode != 7 || burst.FEC.EMB.Uncorrectable {
+	if !burst.HasEmbeddedSignalling() || burst.EmbeddedSignalling.ColorCode != 7 || burst.FEC.EMB.Uncorrectable {
 		t.Errorf("EMB: %s", burst.EmbeddedSignalling.String())
 	}
 	if burst.EmbeddedSignalling.LCSS != enums.LCSSSingleFragment {
 		t.Errorf("LCSS = %s", burst.EmbeddedSignalling.LCSS.String())
 	}
-	if !burst.HasReverseChannel || burst.ReverseChannel == nil {
+	if !burst.HasReverseChannel() {
 		t.Fatal("standalone RC burst should carry an RC PDU")
 	}
 	if burst.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest || burst.FEC.RC.Uncorrectable {
@@ -296,11 +293,10 @@ func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
 func TestRC_StandaloneBurst_EncodeFromFields(t *testing.T) {
 	t.Parallel()
 	burst := layer2.Burst{
-		SyncPattern:           enums.SyncMSSourcedRC,
-		HasEmbeddedSignalling: true,
-		EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 7},
-		HasReverseChannel:     true,
-		ReverseChannel:        &pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand},
+		Kind:               layer2.KindReverseChannel,
+		SyncPattern:        enums.SyncMSSourcedRC,
+		EmbeddedSignalling: pdu.EmbeddedSignalling{ColorCode: 7},
+		ReverseChannel:     pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand},
 	}
 	want := buildStandaloneRCBurst(7, enums.RCCeaseTransmissionCommand)
 	if got := must(burst.Encode()); got != want {

@@ -347,13 +347,10 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestSyncPatternFromBytes_AllKnownPatterns
-              - TestSyncPatternFromBytes_UnknownReturnsEmbeddedSignalling
+              - TestNearestSyncPattern_AllKnownPatterns
+              - TestNearestSyncPattern_Tolerant
               - TestSyncPatternString_AllPatterns
-              - TestSyncPatternString_UnknownReturnsEmbeddedSignalling
-              - TestSyncPatternFromBytes_RoundTrip
-              - TestSyncPatternFromBytesWithDistance_Tolerant
-              - TestSyncPatternFromBytesWithDistance_BeyondThreshold
+              - TestSyncPatternString_Unknown
               - TestSyncPatterns_MinimumDistance
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:

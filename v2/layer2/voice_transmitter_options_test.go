@@ -137,7 +137,7 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 		checkLCBurst(t, headers[0], lc, enums.DataTypeVoiceLCHeader, 5, sync)
 		b := must(layer2.NewBurstFromBytes(headers[1]))
 		got, ok := b.Data.(*pdu.PIHeader)
-		if !ok || !b.IsData || b.SyncPattern != sync || b.SlotType.DataType != enums.DataTypePIHeader || b.SlotType.ColorCode != 5 {
+		if !ok || b.Kind != layer2.KindData || b.SyncPattern != sync || b.SlotType.DataType != enums.DataTypePIHeader || b.SlotType.ColorCode != 5 {
 			t.Fatalf("source %d: PI burst %s", source, b.String())
 		}
 		if got.FEC.HasErrors() || got.AlgorithmID != 1 || got.MFID != 0x10 || got.KeyID != 7 || got.MessageIndicator != 0xDEADBEEF || got.Destination != 91 {

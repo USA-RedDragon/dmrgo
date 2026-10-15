@@ -27,7 +27,7 @@ func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 	for _, file := range []string{"testdata/parrot_kerchunk.bin", "testdata/voice.bin"} {
 		for i, raw := range loadBursts(t, file) {
 			b, err := layer2.NewBurstFromBytes(raw)
-			if err != nil || !b.IsData {
+			if err != nil || b.Kind != layer2.KindData {
 				continue
 			}
 			dt := b.SlotType.DataType

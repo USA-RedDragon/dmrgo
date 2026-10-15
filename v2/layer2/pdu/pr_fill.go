@@ -35,9 +35,7 @@ func PRFillBits() [96]bit.Bit {
 }
 
 // PRFill represents the PR FILL PDU (§9.1.9).
-type PRFill struct {
-	_ byte // non-zero size, so that distinct PRFill values have distinct addresses
-}
+type PRFill struct{}
 
 // DataType returns enums.DataTypeIdle.
 func (p *PRFill) DataType() enums.DataType {

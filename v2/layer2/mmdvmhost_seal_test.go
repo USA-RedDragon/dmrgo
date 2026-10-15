@@ -63,7 +63,7 @@ func TestMMDVMHostSeal_IdentityOnAcceptedCaptures(t *testing.T) {
 		if res.HasErrors() || st.DataType == enums.DataTypeRate34 || st.DataType == enums.DataTypeRate1 || st.DataType.IsReserved() {
 			continue
 		}
-		if b, _ := layer2.NewBurstFromBytes(frame); !b.IsData {
+		if b, _ := layer2.NewBurstFromBytes(frame); b.Kind != layer2.KindData {
 			continue
 		}
 		p, _ := r.BPTCPayload()

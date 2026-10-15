@@ -24,7 +24,7 @@ func voiceSlots(t *testing.T) [][72]bit.Bit {
 		if err != nil {
 			t.Fatalf("burst at %d: %v", off, err)
 		}
-		if burst.IsData {
+		if burst.Kind == layer2.KindData {
 			continue
 		}
 		bits := bit.UnpackBytesToBits264(raw)

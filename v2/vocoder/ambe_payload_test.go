@@ -71,7 +71,7 @@ func TestAMBEVoice_VoiceBurst(t *testing.T) {
 	var frame [33]byte
 	copy(frame[:], raw)
 	burst, err := layer2.NewBurstFromBytes(frame)
-	if err != nil || burst.IsData {
+	if err != nil || (burst.Kind == layer2.KindData) {
 		t.Fatalf("voice burst: %v", err)
 	}
 	frames, _ := burst.AMBEFrames()

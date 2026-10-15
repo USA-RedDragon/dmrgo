@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -13,18 +14,61 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
+// ErrReservedDataType is returned, wrapped, by DecodeFromBytes for a data
+// burst whose slot type carries a reserved data type (Table 9.22). The burst
+// has no Data.
+var ErrReservedDataType = errors.New("reserved data type")
+
+// Kind is the kind of a burst.
+type Kind uint8
+
+const (
+	// KindUnknown is a burst of unknown kind. In DecodeOptions it lets the
+	// SYNC field classify the burst; Encode rejects it.
+	KindUnknown Kind = iota
+	// KindVoice is a voice burst: three vocoder slots around a voice SYNC
+	// pattern (burst A) or embedded signalling (bursts B to F).
+	KindVoice
+	// KindData is a data or control burst: a slot type and an information
+	// payload around a data SYNC pattern.
+	KindData
+	// KindReverseChannel is a standalone inbound RC burst (§6.4.1).
+	KindReverseChannel
+)
+
+// String returns the name of the kind.
+func (k Kind) String() string {
+	switch k {
+	case KindUnknown:
+		return "Unknown"
+	case KindVoice:
+		return "Voice"
+	case KindData:
+		return "Data"
+	case KindReverseChannel:
+		return "Reverse Channel"
+	}
+	return fmt.Sprintf("Kind(%d)", uint8(k))
+}
+
 // Burst represents a DMR burst.
 type Burst struct {
+	Kind Kind
+	// SyncPattern is the Table 9.2 pattern in the burst centre, or
+	// enums.SyncNone when the centre carries embedded signalling, as in
+	// voice bursts B to F. A standalone RC burst has enums.SyncMSSourcedRC.
 	SyncPattern enums.SyncPattern
-	// SyncDistance is the Hamming distance between the received SYNC field
-	// and the nearest Table 9.2 pattern. It is at most
-	// enums.SyncMatchThreshold when SyncPattern is a SYNC pattern.
+	// NearestSync is the Table 9.2 pattern nearest to the received centre
+	// field and SyncDistance its Hamming distance, whatever the
+	// classification. DecodeFromBytes sets them; Encode ignores them.
+	NearestSync  enums.SyncPattern
 	SyncDistance int
 	// VoiceBurst is the superframe position of a voice burst. Decoding is
 	// stateless per burst, so DecodeFromBytes sets VoiceBurstA for a burst
 	// with a voice SYNC pattern and VoiceBurstUnknown for every other burst,
-	// bursts B to F included. VoiceReceiver sets the position of bursts B to
-	// F from the superframe sequence. Encode ignores it.
+	// bursts B to F included, unless DecodeOptions gives the position.
+	// VoiceReceiver sets the position of bursts B to F from the superframe
+	// sequence. Encode ignores it.
 	VoiceBurst enums.VoiceBurstType
 
 	// VoiceSlots holds the three 72-bit vocoder slots of a voice burst as
@@ -34,95 +78,158 @@ type Burst struct {
 	// are codec specific; AMBEFrames decodes AMBE+2 slots.
 	VoiceSlots [VoiceSlotsPerBurst][72]bit.Bit
 
-	HasSlotType bool
-	SlotType    pdu.SlotType
+	// SlotType is the slot type of a data burst.
+	SlotType pdu.SlotType
 
-	HasEmbeddedSignalling  bool
+	// EmbeddedSignalling and EmbeddedSignallingData are the EMB and the
+	// 32-bit embedded data field of a burst with HasEmbeddedSignalling.
 	EmbeddedSignalling     pdu.EmbeddedSignalling
 	EmbeddedSignallingData [32]bit.Bit
 
-	HasReverseChannel bool
-	ReverseChannel    *pdu.ReverseChannel
+	// ReverseChannel is the RC PDU of a burst with HasReverseChannel.
+	ReverseChannel pdu.ReverseChannel
 
-	IsData bool
-	// Data is the decoded PDU of a data burst, nil when its decode failed.
-	// Encode codes Data when it is set, except the PR FILL that
-	// DecodeFromBytes returns for an idle burst; see Encode.
-	Data                  Data
-	FEC                   fec.BurstFECStats
+	// Data is the decoded PDU of a data burst. DecodeFromBytes sets it also
+	// when the PDU CRC or FEC fails, which FEC reports, and leaves it nil
+	// only for a reserved data type. See Encode.
+	Data Data
+	FEC  fec.BurstFECStats
+
 	bitData               [264]bit.Bit
-	decodedData           Data
 	decodedDataType       enums.DataType
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
 }
 
-// NewBurstFromBytes creates a new Burst from the given bytes.
+// HasEmbeddedSignalling reports whether the burst carries an EMB and an
+// embedded data field: a voice burst without a SYNC pattern, or a standalone
+// RC burst.
+func (b *Burst) HasEmbeddedSignalling() bool {
+	return b.Kind == KindReverseChannel || b.Kind == KindVoice && b.SyncPattern == enums.SyncNone
+}
+
+// HasReverseChannel reports whether the embedded data field carries an RC
+// PDU: in a standalone RC burst, and in a voice burst whose EMB has PI set
+// and LCSS single fragment (§6.4).
+func (b *Burst) HasReverseChannel() bool {
+	if b.Kind == KindReverseChannel {
+		return true
+	}
+	return b.HasEmbeddedSignalling() && b.EmbeddedSignalling.PreemptionAndPowerControlIndicator &&
+		b.EmbeddedSignalling.LCSS == enums.LCSSSingleFragment
+}
+
+// NewBurstFromBytes decodes data into a new Burst, as DecodeFromBytes does.
+// It returns the burst also with an error.
 func NewBurstFromBytes(data [33]byte) (*Burst, error) {
 	burst := &Burst{}
 	err := burst.DecodeFromBytes(data)
 	return burst, err
 }
 
-// DecodeFromBytes populates the burst in place, enabling zero-allocation decoding when reusing a Burst.
+// DecodeFromBytes populates the burst in place, enabling zero-allocation
+// decoding when reusing a Burst. It is DecodeFromBytesWith with the zero
+// DecodeOptions.
 func (b *Burst) DecodeFromBytes(data [33]byte) error {
-	*b = Burst{}
-	b.bitData = bit.UnpackBytesToBits264(data)
-
-	b.SyncPattern, b.SyncDistance = extractSyncPattern(b.bitData)
-	b.IsData = isDataSync(b.SyncPattern)
-	b.VoiceBurst, b.HasEmbeddedSignalling = classifyVoice(b.SyncPattern)
-
-	if b.SyncPattern == enums.SyncMSSourcedRC {
-		b.decodeStandaloneRC()
-		return nil
-	}
-
-	if b.HasEmbeddedSignalling {
-		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
-		b.FEC.EMB = b.EmbeddedSignalling.FEC
-
-		// §6.4: Reverse Channel detection — PI=1 and LCSS=SingleFragment
-		// means the 32-bit embedded data carries an RC PDU, not an LC fragment.
-		if b.EmbeddedSignalling.PreemptionAndPowerControlIndicator &&
-			b.EmbeddedSignalling.LCSS == enums.LCSSSingleFragment {
-			rc, rcFEC := DecodeEmbeddedRC(b.EmbeddedSignallingData)
-			b.HasReverseChannel = true
-			b.ReverseChannel = &rc
-			b.FEC.RC = rcFEC
-		}
-	}
-
-	b.HasSlotType = b.IsData
-	if b.HasSlotType {
-		b.SlotType = parseSlotType(b.bitData)
-		b.FEC.SlotType = b.SlotType.FEC
-	}
-
-	if !b.IsData {
-		b.VoiceSlots = parseVoiceSlots(b.bitData)
-		return nil
-	}
-
-	bBits := extractDataBits(b.bitData)
-	b.deinterleavedInfoLen, b.FEC.Payload = b.deinterleave(bBits, b.SlotType.DataType)
-	var err error
-	b.Data, err = b.extractData()
-	b.decodedData = b.Data
-	b.decodedDataType = b.SlotType.DataType
-	return err
+	return b.DecodeFromBytesWith(data, DecodeOptions{})
 }
 
-// extractSyncPattern classifies the 48-bit centre of the burst against the
-// Table 9.2 SYNC patterns.
-func extractSyncPattern(bitData [264]bit.Bit) (enums.SyncPattern, int) {
-	syncBytes := [6]byte{}
-	for i := 0; i < 6; i++ {
-		for j := 0; j < 8; j++ {
-			syncBytes[i] |= byte(bitData[108+(i*8)+j]) << (7 - j) //nolint:gosec // max index: 108+5*8+7=155 < 264
+// DecodeFromBytesWith decodes a burst with receive-side options. A FEC or
+// CRC failure is not an error: FEC reports it and Data is still set. The
+// error is ErrReservedDataType for a reserved data type, ErrColorCodeMismatch
+// for a color code other than DecodeOptions.ColorCode, or an error for
+// invalid options. The burst is populated even when an error is returned; a
+// color code mismatch is joined with any decode error.
+func (b *Burst) DecodeFromBytesWith(data [33]byte, opts DecodeOptions) error {
+	*b = Burst{}
+	b.bitData = bit.UnpackBytesToBits264(data)
+	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
+	err := b.decode(opts)
+	return errors.Join(err, b.checkColorCode(opts.ColorCode))
+}
+
+func (b *Burst) decode(opts DecodeOptions) error {
+	threshold := opts.SyncThreshold
+	switch {
+	case threshold == 0:
+		threshold = DefaultSyncThreshold
+	case threshold < 0:
+		threshold = 0
+	}
+	nearest, distance := b.NearestSync, b.SyncDistance
+
+	switch opts.Kind {
+	case KindVoice:
+		return b.decodeVoiceKind(opts.VoiceBurst, nearest, distance, threshold)
+	case KindData:
+		return b.decodeData(opts.DataType)
+	case KindReverseChannel:
+		b.decodeStandaloneRC()
+		return nil
+	case KindUnknown:
+	default:
+		return fmt.Errorf("unknown burst kind %d", opts.Kind)
+	}
+
+	switch {
+	case distance > threshold:
+		b.decodeVoice(enums.VoiceBurstUnknown, enums.SyncNone)
+	case isDataSync(nearest):
+		return b.decodeData(nil)
+	case isVoiceSync(nearest):
+		b.decodeVoice(enums.VoiceBurstA, nearest)
+	case nearest == enums.SyncMSSourcedRC:
+		b.decodeStandaloneRC()
+	default:
+		b.decodeVoice(enums.VoiceBurstUnknown, nearest)
+	}
+	return nil
+}
+
+func (b *Burst) decodeVoiceKind(pos enums.VoiceBurstType, nearest enums.SyncPattern, distance, threshold int) error {
+	switch pos {
+	case enums.VoiceBurstA:
+		p, _ := b.nearestSync(voiceSyncPatterns)
+		b.decodeVoice(pos, p)
+	case enums.VoiceBurstB, enums.VoiceBurstC, enums.VoiceBurstD, enums.VoiceBurstE, enums.VoiceBurstF:
+		b.decodeVoice(pos, enums.SyncNone)
+	case enums.VoiceBurstUnknown:
+		if distance <= threshold && isVoiceSync(nearest) {
+			b.decodeVoice(enums.VoiceBurstA, nearest)
+		} else {
+			b.decodeVoice(pos, enums.SyncNone)
+		}
+	default:
+		return fmt.Errorf("voice burst position %d out of range", pos)
+	}
+	return nil
+}
+
+func (b *Burst) decodeVoice(pos enums.VoiceBurstType, sync enums.SyncPattern) {
+	b.Kind, b.SyncPattern, b.VoiceBurst = KindVoice, sync, pos
+	if sync == enums.SyncNone {
+		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
+		b.FEC.EMB = b.EmbeddedSignalling.FEC
+		if b.HasReverseChannel() {
+			b.ReverseChannel, b.FEC.RC = DecodeEmbeddedRC(b.EmbeddedSignallingData)
 		}
 	}
-	return enums.SyncPatternFromBytesWithDistance(syncBytes)
+	b.VoiceSlots = parseVoiceSlots(b.bitData)
+}
+
+func (b *Burst) decodeData(dataType *enums.DataType) error {
+	b.Kind = KindData
+	b.SyncPattern, _ = b.nearestSync(dataSyncPatterns)
+	b.SlotType = parseSlotType(b.bitData)
+	b.FEC.SlotType = b.SlotType.FEC
+	if dataType != nil {
+		b.SlotType.DataType = *dataType
+	}
+	b.deinterleavedInfoLen, b.FEC.Payload = b.deinterleave(extractDataBits(b.bitData), b.SlotType.DataType)
+	var err error
+	b.Data, b.FEC.PDU, err = decodePayload(b.SlotType.DataType, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
+	b.decodedDataType = b.SlotType.DataType
+	return err
 }
 
 // opcode0x38Hint returns the likely meaning of CSBK opcode 0x38 in a burst
@@ -150,18 +257,12 @@ func isSyncPattern(sync enums.SyncPattern) bool {
 	return isDataSync(sync) || isVoiceSync(sync) || sync == enums.SyncMSSourcedRC || sync == enums.SyncReserved
 }
 
-func classifyVoice(sync enums.SyncPattern) (enums.VoiceBurstType, bool) {
-	if isVoiceSync(sync) {
-		return enums.VoiceBurstA, false
-	}
-	return enums.VoiceBurstUnknown, sync == enums.SyncEmbeddedSignalling || sync == enums.SyncMSSourcedRC
-}
-
 // decodeStandaloneRC decodes a §6.4.1 standalone inbound RC burst (Figure
 // 6.7, Table E.12): EMB(8) RC(16) SYNC(48) RC(16) EMB(8) around the burst
 // centre. The RC SYNC stays in place and the burst carries no voice.
 // An RC burst always carries an RC PDU, so PI does not gate RC decoding.
 func (b *Burst) decodeStandaloneRC() {
+	b.Kind, b.SyncPattern = KindReverseChannel, enums.SyncMSSourcedRC
 	var embBits [16]bit.Bit
 	copy(embBits[:8], b.bitData[RCEMBFirstStart:RCEMBFirstEnd])
 	copy(embBits[8:], b.bitData[RCEMBSecondStart:RCEMBSecondEnd])
@@ -169,10 +270,7 @@ func (b *Burst) decodeStandaloneRC() {
 
 	copy(b.EmbeddedSignallingData[:16], b.bitData[RCDataFirstStart:RCDataFirstEnd])
 	copy(b.EmbeddedSignallingData[16:], b.bitData[RCDataSecondStart:RCDataSecondEnd])
-	rc, rcFEC := DecodeEmbeddedRC(b.EmbeddedSignallingData)
-	b.HasReverseChannel = true
-	b.ReverseChannel = &rc
-	b.FEC.RC = rcFEC
+	b.ReverseChannel, b.FEC.RC = DecodeEmbeddedRC(b.EmbeddedSignallingData)
 }
 
 func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
@@ -194,16 +292,13 @@ func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
 }
 
 // embeddedData returns the 32 bits of the embedded signalling data field:
-// the coded ReverseChannel when HasReverseChannel is set, and
+// the coded ReverseChannel when HasReverseChannel reports true, and
 // EmbeddedSignallingData otherwise.
 func (b *Burst) embeddedData() ([32]bit.Bit, error) {
-	if !b.HasReverseChannel {
+	if !b.HasReverseChannel() {
 		return b.EmbeddedSignallingData, nil
 	}
-	if b.ReverseChannel == nil {
-		return [32]bit.Bit{}, fmt.Errorf("HasReverseChannel is set but ReverseChannel is nil")
-	}
-	rcBits, err := EncodeEmbeddedRC(b.ReverseChannel)
+	rcBits, err := EncodeEmbeddedRC(&b.ReverseChannel)
 	if err != nil {
 		return [32]bit.Bit{}, fmt.Errorf("cannot encode reverse channel: %w", err)
 	}
@@ -211,9 +306,8 @@ func (b *Burst) embeddedData() ([32]bit.Bit, error) {
 }
 
 func writeSync(bitData *[264]bit.Bit, sync enums.SyncPattern) {
-	syncVal := int64(sync)
 	for i := 0; i < 48; i++ {
-		bitData[SyncStart+i] = bit.Bit((syncVal >> (47 - i)) & 1)
+		bitData[SyncStart+i] = bit.Bit((sync >> (47 - i)) & 1)
 	}
 }
 
@@ -343,7 +437,7 @@ func isBPTCDataType(dataType enums.DataType) bool {
 // Rate 1 and reserved data types, which are not BPTC coded, and for a burst
 // that DecodeFromBytes did not decode.
 func (b *Burst) BPTCPayload() (payload [12]byte, result fec.Result, ok bool) {
-	if !b.IsData || !isBPTCDataType(b.SlotType.DataType) || b.deinterleavedInfoLen != 96 {
+	if b.Kind != KindData || !isBPTCDataType(b.SlotType.DataType) || b.deinterleavedInfoLen != 96 {
 		return payload, result, false
 	}
 	copy(payload[:], bit.PackBits(b.deinterleavedInfoBits[:96]))
@@ -352,154 +446,102 @@ func (b *Burst) BPTCPayload() (payload [12]byte, result fec.Result, ok bool) {
 
 // String returns a string representation of the burst.
 func (b *Burst) String() string {
-	ret := fmt.Sprintf("{ SyncPattern: %s, ", b.SyncPattern.String())
-	if b.HasEmbeddedSignalling {
-		ret += fmt.Sprintf("EmbeddedSignalling: %v, ", b.EmbeddedSignalling.String())
-		if b.HasReverseChannel && b.ReverseChannel != nil {
-			ret += fmt.Sprintf("ReverseChannel: %v, ", b.ReverseChannel.String())
+	ret := fmt.Sprintf("{ Kind: %s, SyncPattern: %s, ", b.Kind, b.SyncPattern)
+	if b.HasEmbeddedSignalling() {
+		ret += fmt.Sprintf("EmbeddedSignalling: %s, ", b.EmbeddedSignalling.String())
+		if b.HasReverseChannel() {
+			ret += fmt.Sprintf("ReverseChannel: %s, ", b.ReverseChannel.String())
 		}
 	}
-	if b.HasSlotType {
-		ret += fmt.Sprintf("SlotType: %v, ", b.SlotType.String())
-	}
-	if b.IsData {
+	switch b.Kind {
+	case KindData:
 		agg := b.FEC.Aggregate()
-		ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", agg.BitsChecked, agg.ErrorsCorrected, agg.Uncorrectable)
+		ret += fmt.Sprintf("SlotType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}",
+			b.SlotType.String(), agg.BitsChecked, agg.ErrorsCorrected, agg.Uncorrectable)
 		if b.Data != nil {
-			ret += fmt.Sprintf("Data: %v, ", b.Data.String())
+			ret += fmt.Sprintf(", Data: %s", b.Data.String())
 		}
-	} else if b.SyncPattern != enums.SyncMSSourcedRC {
-		ret += fmt.Sprintf("VoiceBurst: %v, ", b.VoiceBurst.String())
+	case KindVoice:
+		ret += fmt.Sprintf("VoiceBurst: %s", b.VoiceBurst.String())
+	case KindUnknown, KindReverseChannel:
+		ret += fmt.Sprintf("NearestSync: %s, SyncDistance: %d", b.NearestSync, b.SyncDistance)
 	}
-
-	ret += fmt.Sprintf("IsData: %v }", b.IsData)
-
-	return ret
+	return ret + " }"
 }
 
-func (b *Burst) extractData() (Data, error) {
-	if !b.HasSlotType {
-		return nil, fmt.Errorf("burst does not have valid slot type for data extraction")
+// decodePayload decodes the information bits of a data burst of data type dt
+// and SYNC pattern sync.
+func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern) (Data, fec.Result, error) {
+	if dt.IsReserved() {
+		return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
 	}
-	if b.SlotType.DataType.IsReserved() {
-		return nil, fmt.Errorf("reserved data type %d", b.SlotType.DataType)
-	}
-
-	dt := b.SlotType.DataType
-	infoBits := b.deinterleavedInfoBits[:b.deinterleavedInfoLen]
+	var bits96 [96]bit.Bit
+	copy(bits96[:], infoBits)
 	switch dt {
 	case enums.DataTypeCSBK:
-		var sizedBits [96]bit.Bit
-		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeCSBK(sizedBits)
-		decoded.Hint0x38 = opcode0x38Hint(b.SyncPattern)
-		b.FEC.PDU = fecResult
-		if fecResult.Uncorrectable {
-			return nil, fmt.Errorf("failed to decode CSBK from bits")
-		}
-		return &decoded, nil
+		decoded, fecResult := pdu.DecodeCSBK(bits96)
+		decoded.Hint0x38 = opcode0x38Hint(sync)
+		return &decoded, fecResult, nil
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
-		var sizedBits [96]bit.Bit
-		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeFullLinkControl(sizedBits, dt)
-		b.FEC.PDU = fecResult
-		if fecResult.Uncorrectable {
-			return nil, fmt.Errorf("failed to decode full link control from bits")
-		}
-		return &decoded, nil
+		decoded, fecResult := pdu.DecodeFullLinkControl(bits96, dt)
+		return &decoded, fecResult, nil
 	case enums.DataTypePIHeader:
-		var sizedBits [96]bit.Bit
-		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodePIHeader(sizedBits)
-		b.FEC.PDU = fecResult
-		if fecResult.Uncorrectable {
-			return nil, fmt.Errorf("failed to decode PI header from bits")
-		}
-		return &decoded, nil
+		decoded, fecResult := pdu.DecodePIHeader(bits96)
+		return &decoded, fecResult, nil
 	case enums.DataTypeDataHeader:
-		var sizedBits [96]bit.Bit
-		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeDataHeader(sizedBits)
-		b.FEC.PDU = fecResult
-		if fecResult.Uncorrectable {
-			return nil, fmt.Errorf("failed to decode data header from bits: %v", decoded.String())
-		}
-		return &decoded, nil
+		decoded, fecResult := pdu.DecodeDataHeader(bits96)
+		return &decoded, fecResult, nil
 	case enums.DataTypeRate34:
 		var sizedBits [144]bit.Bit
-		copy(sizedBits[:], infoBits[:144])
+		copy(sizedBits[:], infoBits)
 		rt, fecResult := pdu.DecodeRate34Data(sizedBits)
-		b.FEC.PDU = fecResult
-		return &rt, nil
+		return &rt, fecResult, nil
 	case enums.DataTypeRate12:
-		var sizedBits [96]bit.Bit
-		copy(sizedBits[:], infoBits[:96])
-		rt, fecResult := pdu.DecodeRate12Data(sizedBits)
-		b.FEC.PDU = fecResult
-		return &rt, nil
+		rt, fecResult := pdu.DecodeRate12Data(bits96)
+		return &rt, fecResult, nil
 	case enums.DataTypeRate1:
 		var sizedBits [192]bit.Bit
-		copy(sizedBits[:], infoBits[:192])
+		copy(sizedBits[:], infoBits)
 		rt, fecResult := pdu.DecodeRate1Data(sizedBits)
-		b.FEC.PDU = fecResult
-		return &rt, nil
+		return &rt, fecResult, nil
 	case enums.DataTypeMBCHeader:
-		var sizedBits [96]bit.Bit
-		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeMBCHeader(sizedBits)
-		b.FEC.PDU = fecResult
-		if fecResult.Uncorrectable {
-			return nil, fmt.Errorf("failed to decode MBC header from bits")
-		}
-		return &decoded, nil
+		decoded, fecResult := pdu.DecodeMBCHeader(bits96)
+		return &decoded, fecResult, nil
 	case enums.DataTypeMBCContinuation:
-		var sizedBits [96]bit.Bit
-		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeMBCContinuation(sizedBits)
-		b.FEC.PDU = fecResult
-		return &decoded, nil
+		decoded, fecResult := pdu.DecodeMBCContinuation(bits96)
+		return &decoded, fecResult, nil
 	case enums.DataTypeIdle:
-		prFill := &pdu.PRFill{}
-		return prFill, nil
+		return &pdu.PRFill{}, fec.Result{}, nil
 	case enums.DataTypeUnifiedSingleBlock:
-		var sizedBits [96]bit.Bit
-		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(sizedBits)
-		b.FEC.PDU = fecResult
-		if fecResult.Uncorrectable {
-			return nil, fmt.Errorf("failed to decode USBD from bits")
-		}
-		return &decoded, nil
+		decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(bits96)
+		return &decoded, fecResult, nil
 	case enums.DataTypeReserved:
-		return nil, fmt.Errorf("reserved data type parsing not implemented")
-	default:
-		return nil, fmt.Errorf("unhandled data type %v", b.SlotType.DataType)
 	}
+	return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
 }
 
-// Encode returns the encoded bytes of the burst. IsData selects the
-// payload as DecodeFromBytes sets it: a data burst carries the slot type and
-// data, and every other burst carries voice. VoiceBurst has no effect. A
-// burst without embedded signalling needs a Table 9.2 SYNC pattern, and the
-// pattern is a data SYNC pattern exactly when IsData is set. The zero Burst
-// has neither, so it does not encode. A data burst needs HasSlotType. With
-// HasReverseChannel set, the embedded signalling data field carries the
-// coded ReverseChannel instead of EmbeddedSignallingData. Without it the
-// field carries EmbeddedSignallingData as it is: the FEC of an embedded LC
-// spans bursts B to E, so a single burst does not correct it. Encode returns an
-// error for a burst that breaks these rules and when a field value does not
-// fit in its on-air bits. Encode does not modify the burst.
+// Encode returns the encoded bytes of the burst. Kind selects the payload.
+// A voice burst carries a voice SYNC pattern, enums.SyncReserved, or, with
+// SyncPattern enums.SyncNone, embedded signalling. A data burst carries a
+// data SYNC pattern and the slot type. A standalone RC burst carries the RC
+// SYNC pattern. VoiceBurst has no effect. When HasReverseChannel reports
+// true, the embedded signalling data field carries the coded ReverseChannel
+// instead of EmbeddedSignallingData. Otherwise the field carries
+// EmbeddedSignallingData as it is: the FEC of an embedded LC spans bursts B
+// to E, so a single burst does not correct it. Encode returns an error for a
+// burst that breaks these rules and when a field value does not fit in its
+// on-air bits. Encode does not modify the burst.
 //
 // A data burst carries Data coded for SlotType.DataType: BPTC(196,96) for
 // the BPTC types, the Rate 3/4 trellis or Rate 1. The slot type data type
-// also selects the RS(12,9) mask of a Full LC and replaces its DataType.
+// also selects the RS(12,9) mask of a Full LC and replaces its BurstDataType.
 // Data must be the pdu type that DecodeFromBytes returns for the data type,
-// or for an MBC continuation one of its CGAP, MVAP, BCAP and VNAP forms. With
-// Data nil, a burst from DecodeFromBytes carries the payload that it decoded,
-// after FEC correction, so a burst whose CRC failed can still be forwarded.
-// The PR FILL that DecodeFromBytes returns for an idle burst also stands
-// for the decoded payload. The decoded payload goes out only under the data
-// type it was decoded as. A data burst built by hand needs Data. The BPTC
+// or for an MBC continuation one of its CGAP, MVAP, BCAP and VNAP forms. A
+// burst from DecodeFromBytes whose Data codes to the same bits as the
+// decoded payload, or whose Data is nil, carries the payload as it was
+// decoded, after FEC correction, so a burst whose CRC failed can still be
+// forwarded. The decoded payload goes out only under the data type it was
+// decoded as. A data burst built by hand needs Data. The BPTC
 // R(3..0) bits and the Rate 1 pad bits are set to zero (ETSI TS 102 361-1
 // B.1.1, B.2.5), so Encode writes zero there.
 //
@@ -507,7 +549,7 @@ func (b *Burst) extractData() (Data, error) {
 // an AMBE+2 frame with bit errors, goes out unchanged. SetAMBEFrames codes
 // AMBE+2 frames into the slots.
 func (b *Burst) Encode() ([33]byte, error) {
-	if b.SyncPattern == enums.SyncMSSourcedRC {
+	if b.Kind == KindReverseChannel {
 		bitData, err := b.encodeStandaloneRC()
 		if err != nil {
 			return [33]byte{}, err
@@ -517,13 +559,10 @@ func (b *Burst) Encode() ([33]byte, error) {
 	if err := b.checkCentre(); err != nil {
 		return [33]byte{}, err
 	}
-	if b.IsData && !b.HasSlotType {
-		return [33]byte{}, fmt.Errorf("data burst has no slot type")
-	}
 
 	var bitData [264]bit.Bit
 
-	if b.IsData {
+	if b.Kind == KindData {
 		slotBits, err := b.SlotType.Encode()
 		if err != nil {
 			return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
@@ -543,8 +582,7 @@ func (b *Burst) Encode() ([33]byte, error) {
 		copy(bitData[156:264], voiceBits[108:216])
 	}
 
-	// Sync or Embedded Signalling
-	if b.HasEmbeddedSignalling {
+	if b.HasEmbeddedSignalling() {
 		data, err := b.embeddedData()
 		if err != nil {
 			return [33]byte{}, err
@@ -573,31 +611,48 @@ func (b *Burst) voiceBits() [216]bit.Bit {
 }
 
 func (b *Burst) checkCentre() error {
-	if b.HasEmbeddedSignalling {
-		return nil
+	switch b.Kind {
+	case KindVoice:
+		if b.SyncPattern == enums.SyncNone || b.SyncPattern == enums.SyncReserved || isVoiceSync(b.SyncPattern) {
+			return nil
+		}
+	case KindData:
+		if isDataSync(b.SyncPattern) {
+			return nil
+		}
+	case KindUnknown, KindReverseChannel:
+		return fmt.Errorf("burst kind %s does not encode", b.Kind)
+	default:
+		return fmt.Errorf("unknown burst kind %d", b.Kind)
 	}
-	if !isSyncPattern(b.SyncPattern) {
-		return fmt.Errorf("SYNC pattern %#x is not a Table 9.2 pattern and the burst has no embedded signalling", int64(b.SyncPattern))
-	}
-	if b.IsData != isDataSync(b.SyncPattern) {
-		return fmt.Errorf("IsData is %t but the SYNC pattern is %s", b.IsData, b.SyncPattern.String())
-	}
-	return nil
+	return fmt.Errorf("a %s burst cannot carry SYNC pattern %s", b.Kind, b.SyncPattern)
 }
 
 // dataInfoBits returns the information bits of the data payload: Data coded
 // for the slot type data type or, when Data is nil, the payload that
-// DecodeFromBytes decoded. The PR FILL that DecodeFromBytes returns for an
-// idle burst stands for the decoded payload, which need not be Table D.2.
+// DecodeFromBytes decoded. When Data codes to the same bits as the decoded
+// payload does, Data is unchanged from the decode, and the payload goes out
+// as received, so a burst whose CRC failed keeps its bits.
 func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
 	dt := b.SlotType.DataType
-	_, prFill := b.Data.(*pdu.PRFill)
+	decoded := b.deinterleavedInfoLen > 0 && dt == b.decodedDataType
 	switch {
-	case b.Data != nil && (!prFill || b.Data != b.decodedData):
-		return encodeData(b.Data, dt)
+	case b.Data != nil:
+		info, err := encodeData(b.Data, dt)
+		if err != nil || !decoded {
+			return info, err
+		}
+		orig, _, err := decodePayload(dt, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
+		if err != nil {
+			return info, nil
+		}
+		if origInfo, err := encodeData(orig, dt); err == nil && origInfo == info {
+			return b.deinterleavedInfoBits, nil
+		}
+		return info, nil
 	case b.deinterleavedInfoLen == 0:
 		return [196]bit.Bit{}, fmt.Errorf("data burst has no Data")
-	case dt != b.decodedDataType:
+	case !decoded:
 		return [196]bit.Bit{}, fmt.Errorf("decoded payload is a %s but the slot type data type is %s; set Data",
 			b.decodedDataType.String(), dt.String())
 	default:

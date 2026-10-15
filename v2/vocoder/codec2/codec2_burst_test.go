@@ -76,7 +76,7 @@ func TestBurstRoundTrip(t *testing.T) {
 			if got, err := b.Encode(); err != nil || got != raw {
 				t.Fatalf("mode %d burst %d: decode then Encode changed the burst (err %v)", mode, i, err)
 			}
-			if b.IsData {
+			if b.Kind == layer2.KindData {
 				lc, ok := b.Data.(*pdu.FullLinkControl)
 				if !ok || lc.FEC.Uncorrectable {
 					t.Fatalf("mode %d burst %d: data burst is not a clean Full LC", mode, i)

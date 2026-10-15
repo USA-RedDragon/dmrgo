@@ -14,10 +14,10 @@ import (
 // voice burst B-F re-encoded with an embedded field within the SYNC match
 // threshold. A damaged SYNC burst and such a voice burst look the same.
 func ambiguousSync(first, second *layer2.Burst) bool {
-	if first.SyncPattern != enums.SyncEmbeddedSignalling {
+	if first.SyncPattern != enums.SyncNone {
 		return first.SyncDistance > 0
 	}
-	return second.SyncPattern != enums.SyncEmbeddedSignalling
+	return second.SyncPattern != enums.SyncNone
 }
 
 func FuzzBurstDecode(f *testing.F) {

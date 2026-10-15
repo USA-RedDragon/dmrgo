@@ -69,7 +69,7 @@ func (a *Assembler) Reset() {
 // not decode, is ignored. A data block with an uncorrectable FEC result is
 // counted but not used, so the message CRC or CRC-9 catches it.
 func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
-	if !b.IsData || b.Data == nil {
+	if b.Kind != layer2.KindData || b.Data == nil {
 		return Message{}, false, nil
 	}
 	if _, ok := blockOf(b.Data); ok && b.FEC.PDU.Uncorrectable {

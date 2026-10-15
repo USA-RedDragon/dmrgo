@@ -56,8 +56,8 @@ func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType e
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !b.IsData || b.SyncPattern != sync || b.SyncDistance != 0 {
-		t.Fatalf("IsData=%v SyncPattern=%s", b.IsData, b.SyncPattern.String())
+	if b.Kind != layer2.KindData || b.SyncPattern != sync || b.SyncDistance != 0 {
+		t.Fatalf("IsData=%v SyncPattern=%s", (b.Kind == layer2.KindData), b.SyncPattern.String())
 	}
 	if b.SlotType.DataType != dataType || b.SlotType.ColorCode != cc || b.SlotType.FEC.HasErrors() {
 		t.Fatalf("slot type %s", b.SlotType.String())
@@ -82,7 +82,7 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 	if err != nil {
 		t.Fatal(err)
 	}
-	if b.IsData {
+	if b.Kind == layer2.KindData {
 		t.Fatalf("burst %d is data", i)
 	}
 	if b.VoiceSlots != slots {
@@ -90,13 +90,13 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 	}
 	pos := i % 6
 	if pos == 0 {
-		if b.SyncPattern != voiceSync || b.HasEmbeddedSignalling || b.VoiceBurst != enums.VoiceBurstA {
+		if b.SyncPattern != voiceSync || b.HasEmbeddedSignalling() || b.VoiceBurst != enums.VoiceBurstA {
 			t.Fatalf("burst %d: SyncPattern=%s", i, b.SyncPattern.String())
 		}
 		return b
 	}
 	emb := b.EmbeddedSignalling
-	if !b.HasEmbeddedSignalling || emb.FEC.HasErrors() || emb.ColorCode != cc || emb.PreemptionAndPowerControlIndicator {
+	if !b.HasEmbeddedSignalling() || emb.FEC.HasErrors() || emb.ColorCode != cc || emb.PreemptionAndPowerControlIndicator {
 		t.Fatalf("burst %d: %s", i, b.String())
 	}
 	wantLCSS := []enums.LCSS{0, enums.LCSSFirstFragment, enums.LCSSContinuationFragment,
@@ -104,7 +104,7 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 	if emb.LCSS != wantLCSS {
 		t.Errorf("burst %d: LCSS %s, want %s", i, emb.LCSS.String(), wantLCSS.String())
 	}
-	if pos == 5 && (!layer2.IsNullEmbeddedLC(b.EmbeddedSignallingData) || b.HasReverseChannel) {
+	if pos == 5 && (!layer2.IsNullEmbeddedLC(b.EmbeddedSignallingData) || b.HasReverseChannel()) {
 		t.Errorf("burst %d: burst F carries %x, want the Null embedded message", i, b.PackEmbeddedSignallingData())
 	}
 	return b
@@ -212,14 +212,14 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 	}
 	f := must(layer2.NewBurstFromBytes(bursts[5]))
 	emb := f.EmbeddedSignalling
-	if !f.HasReverseChannel || !emb.PreemptionAndPowerControlIndicator || emb.LCSS != enums.LCSSSingleFragment || emb.ColorCode != 2 {
+	if !f.HasReverseChannel() || !emb.PreemptionAndPowerControlIndicator || emb.LCSS != enums.LCSSSingleFragment || emb.ColorCode != 2 {
 		t.Fatalf("first burst F: %s", f.String())
 	}
 	if f.ReverseChannel.RCCommand != enums.RCCeaseTransmissionCommand || f.FEC.RC.HasErrors() {
 		t.Errorf("RC %s", f.ReverseChannel.String())
 	}
 	next := must(layer2.NewBurstFromBytes(bursts[11]))
-	if next.HasReverseChannel || !layer2.IsNullEmbeddedLC(next.EmbeddedSignallingData) {
+	if next.HasReverseChannel() || !layer2.IsNullEmbeddedLC(next.EmbeddedSignallingData) {
 		t.Errorf("second burst F: %s", next.String())
 	}
 
@@ -293,7 +293,7 @@ func captureSuperframes(t *testing.T, bursts []*layer2.Burst) (kept, skipped []i
 	}
 	for i, b := range bursts {
 		switch {
-		case b.IsData:
+		case (b.Kind == layer2.KindData):
 			end()
 		case b.VoiceBurst == enums.VoiceBurstA:
 			end()

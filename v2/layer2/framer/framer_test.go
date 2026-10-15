@@ -107,7 +107,7 @@ func TestFramer_SlotPeriod(t *testing.T) {
 		if err != nil {
 			t.Fatalf("burst %d: %v", i, err)
 		}
-		if (got[i].Sync == enums.SyncEmbeddedSignalling) != dec.HasEmbeddedSignalling {
+		if (got[i].Sync == enums.SyncNone) != dec.HasEmbeddedSignalling() {
 			t.Errorf("burst %d sync %x", i, got[i].Sync)
 		}
 	}

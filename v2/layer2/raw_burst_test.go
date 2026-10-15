@@ -62,16 +62,16 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 		b, _ := layer2.NewBurstFromBytes(frame)
 
 		p, d := r.Sync()
-		if d != b.SyncDistance || (b.SyncPattern != enums.SyncEmbeddedSignalling && p != b.SyncPattern) {
+		if d != b.SyncDistance || (b.SyncPattern != enums.SyncNone && p != b.SyncPattern) {
 			t.Errorf("%x: Sync %x/%d, Burst %x/%d", frame, int64(p), d, int64(b.SyncPattern), b.SyncDistance)
 		}
-		if b.HasSlotType {
+		if b.Kind == layer2.KindData {
 			counts["slot type"]++
 			if st, res := r.SlotType(); st != b.SlotType || res != b.FEC.SlotType {
 				t.Errorf("%x: SlotType %+v, Burst %+v", frame, st, b.SlotType)
 			}
 		}
-		if b.IsData {
+		if b.Kind == layer2.KindData {
 			if want, wantRes, ok := b.BPTCPayload(); ok {
 				counts["BPTC"]++
 				if got, res := r.BPTCPayload(); got != want || res != wantRes {
@@ -92,7 +92,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 			}
 			continue
 		}
-		if b.HasEmbeddedSignalling {
+		if b.HasEmbeddedSignalling() {
 			counts["EMB"]++
 			emb, res := r.EMB()
 			data := r.EmbeddedData()
@@ -130,7 +130,7 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 		}
 		st, stRes := r.SlotType()
 		b, _ := layer2.NewBurstFromBytes(frame)
-		if b.IsData {
+		if b.Kind == layer2.KindData {
 			if !stRes.HasErrors() {
 				if err := w.SetSlotType(st); err != nil {
 					t.Fatal(err)
@@ -150,7 +150,7 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 			}
 		} else {
 			w.SetVoiceSlots(r.VoiceSlots())
-			if b.HasEmbeddedSignalling && b.SyncPattern != enums.SyncMSSourcedRC {
+			if b.HasEmbeddedSignalling() && b.SyncPattern != enums.SyncMSSourcedRC {
 				if e, res := r.EMB(); !res.HasErrors() {
 					if err := w.SetEMB(e); err != nil {
 						t.Fatal(err)
@@ -171,7 +171,7 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 	for _, frame := range captureFrames(t) {
 		r := layer2.RawBurst(frame)
 		b, _ := layer2.NewBurstFromBytes(frame)
-		if b.IsData && isBPTC(b.SlotType.DataType) {
+		if (b.Kind == layer2.KindData) && isBPTC(b.SlotType.DataType) {
 			var p [12]byte
 			rng.Read(p[:])
 			w := r
@@ -189,7 +189,7 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 			}
 			continue
 		}
-		if b.IsData || b.SyncPattern == enums.SyncMSSourcedRC {
+		if (b.Kind == layer2.KindData) || b.SyncPattern == enums.SyncMSSourcedRC {
 			continue
 		}
 		var slots [3][9]byte
@@ -201,7 +201,7 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 		if w.VoiceSlots() != slots || !sameBits(w, r, [2]int{0, 108}, [2]int{156, 264}) {
 			t.Fatal("SetVoiceSlots")
 		}
-		if !b.HasEmbeddedSignalling {
+		if !b.HasEmbeddedSignalling() {
 			continue
 		}
 		var d [4]byte
@@ -228,7 +228,7 @@ func TestRawBurst_SetSync(t *testing.T) {
 		r[i] = 0xA5
 	}
 	before := r
-	if err := r.SetSync(enums.SyncEmbeddedSignalling); err == nil || r != before {
+	if err := r.SetSync(enums.SyncNone); err == nil || r != before {
 		t.Fatal("SetSync accepted a non-pattern")
 	}
 	if err := r.SetSync(enums.SyncMSSourcedVoice); err != nil {
