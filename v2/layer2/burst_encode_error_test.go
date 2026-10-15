@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
@@ -72,5 +73,57 @@ func TestBuildLCDataBurst_RejectsOutOfRangeColorCode(t *testing.T) {
 	}
 	if _, err := layer2.BuildLCDataBurst([12]byte{}, elements.DataType(16), 1); err == nil {
 		t.Fatal("data type 16 should be rejected")
+	}
+}
+
+func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
+	tests := []struct {
+		name  string
+		burst layer2.Burst
+	}{
+		{"ZeroValue", layer2.Burst{}},
+		{"VoiceWithDataSync", layer2.Burst{SyncPattern: enums.BsSourcedData}},
+		{"DataWithVoiceSync", layer2.Burst{SyncPattern: enums.MsSourcedVoice, IsData: true}},
+		{"EmbeddedPatternWithoutEMB", layer2.Burst{SyncPattern: enums.EmbeddedSignallingPattern}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got, err := tt.burst.Encode(); err == nil {
+				t.Fatalf("Encode = %x, want an error", got)
+			}
+		})
+	}
+}
+
+// A voice burst encodes its vocoder frames from the SYNC pattern and the
+// embedded signalling alone; VoiceBurst does not select the payload.
+func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
+	var voice pdu.Vocoder
+	for i := range voice.Frames {
+		for j := range voice.Frames[i].DecodedBits {
+			voice.Frames[i].DecodedBits[j] = bit.Bit((i + j) & 1)
+		}
+	}
+	for _, sync := range []enums.SyncPattern{enums.BsSourcedVoice, enums.Reserved, enums.EmbeddedSignallingPattern} {
+		t.Run(enums.SyncPatternToName(sync), func(t *testing.T) {
+			b := layer2.Burst{
+				SyncPattern:           sync,
+				HasEmbeddedSignalling: sync == enums.EmbeddedSignallingPattern,
+				EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 3, LCSS: enums.FirstFragmentLC},
+				VoiceData:             voice,
+			}
+			got, err := layer2.NewBurstFromBytes(must(b.Encode()))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.IsData || got.SyncPattern != sync {
+				t.Fatalf("decoded IsData=%v SyncPattern=%s", got.IsData, enums.SyncPatternToName(got.SyncPattern))
+			}
+			for i := range voice.Frames {
+				if got.VoiceData.Frames[i].DecodedBits != voice.Frames[i].DecodedBits {
+					t.Errorf("frame %d: got %v, want %v", i, got.VoiceData.Frames[i].DecodedBits, voice.Frames[i].DecodedBits)
+				}
+			}
+		})
 	}
 }

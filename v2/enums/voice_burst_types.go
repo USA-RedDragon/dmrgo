@@ -1,17 +1,19 @@
 package enums
 
-// VoiceBurstType is the type of a DMR voice burst.
+// VoiceBurstType is the position of a voice burst in a voice superframe
+// (ETSI TS 102 361-1 §5.1.2.1). The zero value is VoiceBurstUnknown.
 type VoiceBurstType int
 
 const (
-	VoiceBurstUnknown VoiceBurstType = 1
+	// VoiceBurstUnknown is a burst whose superframe position is not known.
+	VoiceBurstUnknown VoiceBurstType = iota
 
-	VoiceBurstA VoiceBurstType = 100
-	VoiceBurstB VoiceBurstType = 101
-	VoiceBurstC VoiceBurstType = 102
-	VoiceBurstD VoiceBurstType = 103
-	VoiceBurstE VoiceBurstType = 104
-	VoiceBurstF VoiceBurstType = 105
+	VoiceBurstA
+	VoiceBurstB
+	VoiceBurstC
+	VoiceBurstD
+	VoiceBurstE
+	VoiceBurstF
 )
 
 // VoiceBurstTypeToName returns the name of a voice burst type.

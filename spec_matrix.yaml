@@ -45,6 +45,8 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBurst_Encode
+              - TestBurstEncode_VoiceIgnoresVoiceBurst
+              - TestBurstEncode_RejectsBurstWithoutSync
           - package: github.com/USA-RedDragon/dmrgo/v2/fec/golay
             names:
               - TestGolay23127

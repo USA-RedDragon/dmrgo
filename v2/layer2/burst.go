@@ -17,11 +17,14 @@ type Burst struct {
 	SyncPattern enums.SyncPattern
 	// SyncDistance is the Hamming distance between the received SYNC field
 	// and the nearest Table 9.2 pattern. It is at most
-	// enums.SyncMatchThreshold when SyncPattern is a SYNC pattern. A field
-	// within the threshold is still embedded signalling when its EMB bits
-	// form a valid QR(16,7,6) codeword.
+	// enums.SyncMatchThreshold when SyncPattern is a SYNC pattern.
 	SyncDistance int
-	VoiceBurst   enums.VoiceBurstType
+	// VoiceBurst is the superframe position of a voice burst. Decoding is
+	// stateless per burst, so DecodeFromBytes sets VoiceBurstA for a burst
+	// with a voice SYNC pattern and VoiceBurstUnknown for every other burst,
+	// bursts B to F included. VoiceReceiver sets the position of bursts B to
+	// F from the superframe sequence. Encode ignores it.
+	VoiceBurst enums.VoiceBurstType
 
 	VoiceData pdu.Vocoder
 
@@ -132,8 +135,16 @@ func isDataSync(sync enums.SyncPattern) bool {
 	return sync == enums.Tdma1Data || sync == enums.Tdma2Data || sync == enums.MsSourcedData || sync == enums.BsSourcedData
 }
 
+func isVoiceSync(sync enums.SyncPattern) bool {
+	return sync == enums.Tdma1Voice || sync == enums.Tdma2Voice || sync == enums.MsSourcedVoice || sync == enums.BsSourcedVoice
+}
+
+func isSyncPattern(sync enums.SyncPattern) bool {
+	return isDataSync(sync) || isVoiceSync(sync) || sync == enums.MsSourcedRcSync || sync == enums.Reserved
+}
+
 func classifyVoice(sync enums.SyncPattern) (enums.VoiceBurstType, bool) {
-	if sync == enums.Tdma2Voice || sync == enums.Tdma1Voice || sync == enums.MsSourcedVoice || sync == enums.BsSourcedVoice {
+	if isVoiceSync(sync) {
 		return enums.VoiceBurstA, false
 	}
 	return enums.VoiceBurstUnknown, sync == enums.EmbeddedSignallingPattern || sync == enums.MsSourcedRcSync
@@ -402,8 +413,13 @@ func (b *Burst) extractData() (elements.Data, error) {
 	}
 }
 
-// Encode returns the encoded bytes of the burst. It returns an error when a
-// field value does not fit in its on-air bits.
+// Encode returns the encoded bytes of the burst. IsData selects the
+// payload as DecodeFromBytes sets it: a data burst carries the slot type and
+// data, and every other burst carries voice. VoiceBurst has no effect. A
+// burst without embedded signalling needs a Table 9.2 SYNC pattern, and the
+// pattern is a data SYNC pattern exactly when IsData is set. The zero Burst
+// has neither, so it does not encode. Encode returns an error for such a
+// burst and when a field value does not fit in its on-air bits.
 func (b *Burst) Encode() ([33]byte, error) {
 	if b.SyncPattern == enums.MsSourcedRcSync {
 		bitData, err := b.encodeStandaloneRC()
@@ -411,6 +427,9 @@ func (b *Burst) Encode() ([33]byte, error) {
 			return [33]byte{}, err
 		}
 		return bit.PackBits264(bitData), nil
+	}
+	if err := b.checkCentre(); err != nil {
+		return [33]byte{}, err
 	}
 
 	var bitData [264]bit.Bit
@@ -430,8 +449,7 @@ func (b *Burst) Encode() ([33]byte, error) {
 			copy(bitData[98:108], slotBits[:10])
 			copy(bitData[156:166], slotBits[10:20])
 		}
-	} else if b.VoiceBurst != enums.VoiceBurstUnknown || b.HasEmbeddedSignalling {
-		// Voice Data
+	} else {
 		voiceBits, err := pdu.EncodeVocoder(&b.VoiceData)
 		if err != nil {
 			return [33]byte{}, fmt.Errorf("cannot encode voice: %w", err)
@@ -462,6 +480,19 @@ func (b *Burst) Encode() ([33]byte, error) {
 	}
 
 	return bit.PackBits264(bitData), nil
+}
+
+func (b *Burst) checkCentre() error {
+	if b.HasEmbeddedSignalling {
+		return nil
+	}
+	if !isSyncPattern(b.SyncPattern) {
+		return fmt.Errorf("SYNC pattern %#x is not a Table 9.2 pattern and the burst has no embedded signalling", int64(b.SyncPattern))
+	}
+	if b.IsData != isDataSync(b.SyncPattern) {
+		return fmt.Errorf("IsData is %t but the SYNC pattern is %s", b.IsData, enums.SyncPatternToName(b.SyncPattern))
+	}
+	return nil
 }
 
 func (b *Burst) encodeDataBits() [196]bit.Bit {
