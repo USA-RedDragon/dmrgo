@@ -40,7 +40,7 @@ func TestDataBurstWithEMB_ASELSAN(t *testing.T) {
 		frame := hexBurst(t, v.raw)
 		for _, opts := range []layer2.DecodeOptions{{}, {Kind: layer2.KindData}} {
 			var b layer2.Burst
-			if err := b.DecodeFromBytesWith(frame, opts); err != nil {
+			if err := b.DecodeFromBytesWith(frame, &opts); err != nil {
 				t.Fatal(err)
 			}
 			if b.Kind != layer2.KindData || b.SyncPattern != enums.SyncNone || !b.HasEmbeddedSignalling() || b.HasReverseChannel() {
@@ -99,7 +99,7 @@ func TestDataBurstWithEMB_SameDataAsWithSync(t *testing.T) {
 func TestDataBurstWithEMB_KnownVoice(t *testing.T) {
 	t.Parallel()
 	var b layer2.Burst
-	if err := b.DecodeFromBytesWith(hexBurst(t, aselsanCSBKEMB), layer2.DecodeOptions{Kind: layer2.KindVoice}); err != nil {
+	if err := b.DecodeFromBytesWith(hexBurst(t, aselsanCSBKEMB), &layer2.DecodeOptions{Kind: layer2.KindVoice}); err != nil {
 		t.Fatal(err)
 	}
 	if b.Kind != layer2.KindVoice || !b.HasEmbeddedSignalling() {
@@ -122,7 +122,7 @@ func TestDataBurstWithEMB_DamagedSyncStaysSync(t *testing.T) {
 						f[pos/8] ^= 0x80 >> (pos % 8)
 					}
 					var b layer2.Burst
-					if err := b.DecodeFromBytesWith(f, layer2.DecodeOptions{Kind: layer2.KindData}); err != nil {
+					if err := b.DecodeFromBytesWith(f, &layer2.DecodeOptions{Kind: layer2.KindData}); err != nil {
 						t.Fatal(err)
 					}
 					if b.SyncPattern == enums.SyncNone || b.HasEmbeddedSignalling() {

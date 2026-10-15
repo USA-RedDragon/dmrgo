@@ -38,7 +38,7 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 	call := groupLC(enums.FIDStandardized)
 	alias := talkerAliasLC()
 	var calls []int
-	tx := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{
 		LC: call, ColorCode: 2, Source: layer2.SyncSourceMS, Silence: silenceSlot(),
 		EmbeddedLC: func(sf int) *pdu.FullLinkControl {
 			calls = append(calls, sf)
@@ -93,7 +93,7 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 
 func TestVoiceTransmitter_SetEmbeddedFragments(t *testing.T) {
 	call := groupLC(enums.FIDStandardized)
-	tx := must(layer2.NewVoiceTransmitter(call, 2, layer2.SyncSourceMS, silenceSlot()))
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: call, ColorCode: 2, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	f := layer2.EncodeEmbeddedLC([9]byte{1, 2, 3, 4, 5, 6, 7, 8, 9})
 	if err := tx.SetEmbeddedFragments(f); err != nil {
 		t.Fatal(err)
@@ -130,7 +130,7 @@ func TestVoiceTransmitter_EmbeddedLCHookError(t *testing.T) {
 	bad := groupLC(enums.FIDStandardized)
 	bad.FLCO = enums.FLCO(64)
 	fail := true
-	tx := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{
 		LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot(),
 		EmbeddedLC: func(int) *pdu.FullLinkControl {
 			if fail {
@@ -162,7 +162,7 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 		layer2.SyncSourceDirectTS2: enums.SyncTDMA2Data,
 	}
 	for source, sync := range sources {
-		tx := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
+		tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{
 			LC: lc, ColorCode: 5, Source: source, Silence: silenceSlot(), PIHeader: &pi,
 		}))
 		headers := tx.Headers()
@@ -179,12 +179,12 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 			t.Errorf("source %d: PI header %s", source, got.String())
 		}
 	}
-	tx := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{LC: lc, Silence: silenceSlot()}))
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, Silence: silenceSlot()}))
 	if h := tx.Headers(); len(h) != 1 || h[0] != tx.Header() {
 		t.Errorf("no PI header: %d headers", len(h))
 	}
 	pi.Destination = 1 << 24
-	if _, err := layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{LC: lc, PIHeader: &pi}); err == nil {
+	if _, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, PIHeader: &pi}); err == nil {
 		t.Error("PI header destination 1<<24 accepted")
 	}
 }
@@ -192,8 +192,8 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 func TestVoiceTransmitter_OptionsMatchPositional(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
 	for _, source := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
-		a := must(layer2.NewVoiceTransmitter(lc, 3, source, silenceSlot()))
-		b := must(layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
+		a := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 3, Source: source, Silence: silenceSlot()}))
+		b := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{
 			LC: lc, ColorCode: 3, Source: source, Silence: silenceSlot(),
 			EmbeddedLC: func(int) *pdu.FullLinkControl { return nil },
 		}))
@@ -214,11 +214,11 @@ func TestVoiceTransmitter_OptionsMatchPositional(t *testing.T) {
 			}
 		}
 	}
-	for _, opts := range []layer2.VoiceTransmitterOptions{
-		{LC: lc, Source: layer2.SyncSource(4)},
-	} {
-		if _, err := layer2.NewVoiceTransmitterWithOptions(opts); err == nil {
-			t.Errorf("options %+v accepted", opts)
-		}
+	if _, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, Source: layer2.SyncSource(4)}); err == nil {
+		t.Error("sync source 4 accepted")
+	}
+	zero := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{}))
+	if nilOpts := must(layer2.NewVoiceTransmitter(nil)); nilOpts.Header() != zero.Header() {
+		t.Error("nil options differ from the zero options")
 	}
 }

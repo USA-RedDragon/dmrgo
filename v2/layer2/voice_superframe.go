@@ -122,22 +122,6 @@ type VoiceTransmitter struct {
 	terminated bool
 }
 
-// NewVoiceTransmitter returns a VoiceTransmitter for a transmission with
-// Full LC lc. The header, the embedded LC and the terminator all carry lc,
-// with its FID, and lc.BurstDataType is ignored. silence is the 72-bit slot that
-// pads the last superframe; it is codec specific, for AMBE the
-// vocoder.EncodeAMBE72 of a silence frame. NewVoiceTransmitter returns an
-// error when source is unknown or lc does not encode. It is
-// NewVoiceTransmitterWithOptions with only these options.
-func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode enums.ColorCode, source SyncSource, silence [72]bit.Bit) (*VoiceTransmitter, error) {
-	return NewVoiceTransmitterWithOptions(VoiceTransmitterOptions{
-		LC:        lc,
-		ColorCode: colorCode,
-		Source:    source,
-		Silence:   silence,
-	})
-}
-
 func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
 	lc.BurstDataType = dataType
 	r, err := BuildBurst(&lc, colorCode, src)

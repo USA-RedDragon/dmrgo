@@ -124,7 +124,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 					t.Fatal("unknown source")
 				}
 				lc := groupLC(fid)
-				tx := must(layer2.NewVoiceTransmitter(lc, cc, source, silenceSlot()))
+				tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: cc, Source: source, Silence: silenceSlot()}))
 
 				var slots [][72]bit.Bit
 				var bursts []layer2.RawBurst
@@ -182,8 +182,8 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 		}
 		slots[i] = vocoder.EncodeAMBE72(frames[i])
 	}
-	a := must(layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, silenceSlot()))
-	b := must(layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, silenceSlot()))
+	a := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
+	b := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
 	got := must(a.AddFrames(frames...))
 	want := must(b.AddSlots(slots...))
 	if len(got) != 1 || len(want) != 1 || got[0] != want[0] {
@@ -203,7 +203,7 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 
 func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
-	tx := must(layer2.NewVoiceTransmitter(lc, 2, layer2.SyncSourceBS, silenceSlot()))
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 2, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
 	if err := tx.SetReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}); err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +225,7 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 	}
 
 	for _, source := range []layer2.SyncSource{layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
-		tx := must(layer2.NewVoiceTransmitter(lc, 2, source, silenceSlot()))
+		tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 2, Source: source, Silence: silenceSlot()}))
 		if err := tx.SetReverseChannel(pdu.ReverseChannel{}); err == nil {
 			t.Errorf("source %d: reverse channel accepted", source)
 		}
@@ -238,7 +238,7 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 func TestVoiceTransmitter_Terminate(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
 
-	tx := must(layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceMS, silenceSlot()))
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	tail := must(tx.Terminate())
 	if len(tail) != 1 {
 		t.Fatalf("empty transmission: %d bursts, want the terminator alone", len(tail))
@@ -254,7 +254,7 @@ func TestVoiceTransmitter_Terminate(t *testing.T) {
 		t.Errorf("SetReverseChannel after Terminate: %v", err)
 	}
 
-	tx = must(layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceMS, silenceSlot()))
+	tx = must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	slots := make([][72]bit.Bit, 18)
 	if n := len(must(tx.AddSlots(slots...))); n != 6 {
 		t.Fatalf("%d bursts from 18 slots", n)
@@ -266,7 +266,7 @@ func TestVoiceTransmitter_Terminate(t *testing.T) {
 
 func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
-	tx := must(layer2.NewVoiceTransmitter(lc, 0x17, layer2.SyncSourceBS, silenceSlot()))
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 0x17, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
 	bursts := append([]layer2.RawBurst{tx.Header()}, must(tx.AddSlots(make([][72]bit.Bit, 6)...))...)
 	if st := bursts[0].SlotType(); st.ColorCode != 7 {
 		t.Errorf("color code 0x17: header carries %d, want the low 4 bits 7", st.ColorCode)
@@ -274,11 +274,11 @@ func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
 	if emb := bursts[2].EMB(); emb.ColorCode != 7 {
 		t.Errorf("color code 0x17: burst B carries %d, want the low 4 bits 7", emb.ColorCode)
 	}
-	if _, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSource(4), silenceSlot()); err == nil {
+	if _, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSource(4), Silence: silenceSlot()}); err == nil {
 		t.Error("sync source 4 accepted")
 	}
 	lc.FLCO = enums.FLCO(64)
-	if _, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, silenceSlot()); err == nil {
+	if _, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot()}); err == nil {
 		t.Error("FLCO 64 accepted")
 	}
 }
@@ -355,8 +355,8 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 				t.Fatalf("header Data is %T", bursts[0].Data)
 			}
 			cc := bursts[0].SlotType.ColorCode
-			tx := must(layer2.NewVoiceTransmitter(*lc, cc, layer2.SyncSourceBS, silenceSlot()))
-			frames := must(layer2.NewVoiceTransmitter(*lc, cc, layer2.SyncSourceBS, silenceSlot()))
+			tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: *lc, ColorCode: cc, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
+			frames := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: *lc, ColorCode: cc, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
 			if tx.Header() != raws[0] {
 				t.Errorf("header\ngot  %x\nwant %x", tx.Header(), raws[0])
 			}

@@ -24,7 +24,7 @@ func voiceBurstBit(i, j int) int {
 // received.
 func TestBurstEncode_KeepsNonAMBEVoiceSlots(t *testing.T) {
 	rng := rand.New(rand.NewSource(1)) //nolint:gosec // pseudo-random adequate for tests
-	tx := must(layer2.NewVoiceTransmitter(groupLC(enums.FIDStandardized), 1, layer2.SyncSourceMS, silenceSlot()))
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	changed := 0
 	for n := range 600 {
 		var slot [72]bit.Bit
@@ -52,7 +52,7 @@ func TestBurstEncode_KeepsNonAMBEVoiceSlots(t *testing.T) {
 
 func noisyAMBEBurst(t *testing.T) (clean, noisy [33]byte, info [3]vocoder.AMBEFrame) {
 	t.Helper()
-	tx := must(layer2.NewVoiceTransmitter(groupLC(enums.FIDStandardized), 1, layer2.SyncSourceMS, silenceSlot()))
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	for i := range info {
 		for j := range info[i] {
 			info[i][j] = bit.Bit((i + j*5) >> 1 & 1)

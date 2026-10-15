@@ -86,7 +86,7 @@ func TestFramer_SlotPeriod(t *testing.T) {
 	stream := noise(r, 777)
 	for _, b := range bursts {
 		stream = append(stream, burstBits(b)...)
-		stream = append(stream, noise(r, framer.SlotPeriod-framer.BurstBits)...)
+		stream = append(stream, noise(r, framer.SlotPeriod-layer2.BurstBits)...)
 	}
 	f := framer.New(framer.Config{Threshold: -1, Period: framer.SlotPeriod})
 	got := writeChunks(r, f, stream)
@@ -183,7 +183,7 @@ func TestFramer_DirectChannel(t *testing.T) {
 	stream = append(stream, noise(r, 500)...)
 	for range 3 {
 		stream = append(stream, burstBits(ts2)...)
-		stream = append(stream, noise(r, framer.SlotPeriod-framer.BurstBits)...)
+		stream = append(stream, noise(r, framer.SlotPeriod-layer2.BurstBits)...)
 	}
 	got := framer.New(framer.Config{Threshold: -1, Period: framer.SlotPeriod}).Write(stream...)
 	if len(got) != 3 {
