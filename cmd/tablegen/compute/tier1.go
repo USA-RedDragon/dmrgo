@@ -10,14 +10,14 @@ func Golay23_12_7Encoding() []uint32 {
 	table := make([]uint32, 4096)
 
 	for d := 0; d < 4096; d++ {
-		dividend := uint32(d) << 11 //nolint:gosec // d is in [0,4095], fits in uint32
+		dividend := uint32(d) << 11
 		for i := 11; i >= 0; i-- {
 			if dividend&(1<<(i+11)) != 0 {
 				dividend ^= uint32(genPoly) << i
 			}
 		}
 		remainder := dividend & 0x7FF
-		codeword := (uint32(d) << 11) | remainder //nolint:gosec // d is in [0,4095], fits in uint32
+		codeword := (uint32(d) << 11) | remainder
 		table[d] = codeword << 1
 	}
 
@@ -32,15 +32,15 @@ func Golay24_12_8Encoding() []uint32 {
 	table := make([]uint32, 4096)
 
 	for d := 0; d < 4096; d++ {
-		dividend := uint32(d) << 11 //nolint:gosec // d is in [0,4095], fits in uint32
+		dividend := uint32(d) << 11
 		for i := 11; i >= 0; i-- {
 			if dividend&(1<<(i+11)) != 0 {
 				dividend ^= uint32(genPoly) << i
 			}
 		}
 		remainder := dividend & 0x7FF
-		codeword23 := (uint32(d) << 11) | remainder        //nolint:gosec // d is in [0,4095], fits in uint32
-		parity := uint32(bits.OnesCount32(codeword23)) & 1 //nolint:gosec // OnesCount32 returns [0,32], fits in uint32
+		codeword23 := (uint32(d) << 11) | remainder
+		parity := uint32(bits.OnesCount32(codeword23) & 1)
 		codeword24 := (codeword23 << 1) | parity
 		table[d] = codeword24
 	}
@@ -143,7 +143,7 @@ func QR16_7_6Encoding() []uint16 {
 		}
 		parity := qrParityBits(bits)
 
-		codeword := uint16(d) << 9 //nolint:gosec // d is in [0,127], fits in uint16
+		codeword := uint16(d) << 9
 		for i := 0; i < 9; i++ {
 			codeword |= uint16(parity[i]) << (8 - i)
 		}
@@ -167,7 +167,7 @@ func Golay20_8_7Encoding() []uint32 {
 			}
 		}
 		parity := golay20ParityBits(bits)
-		codeword := uint32(d) //nolint:gosec // d is in [0,255], fits in uint32
+		codeword := uint32(d)
 		for i := 0; i < 12; i++ {
 			codeword |= uint32(parity[i]) << (8 + i)
 		}

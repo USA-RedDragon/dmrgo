@@ -90,7 +90,7 @@ func Check2087(bits [20]bit.Bit) bool {
 // bits followed by 12 parity bits.
 func Encode2087(dataBits [8]bit.Bit) [20]bit.Bit {
 	var result [20]bit.Bit
-	data := uint8(bit.Uint(dataBits[:8])) //nolint:gosec // 8 bits
+	data := uint8(bit.Uint(dataBits[:8]) & 0xFF)
 
 	// The encoding table uses LSB-first bit ordering (bits[i] = (d>>i)&1),
 	// but the codeword bit array uses MSB-first (bits[i] = (data>>(7-i))&1).

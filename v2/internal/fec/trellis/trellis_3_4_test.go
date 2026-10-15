@@ -18,7 +18,7 @@ func TestTrellis34Decode(t *testing.T) {
 		// clause B.2.4).
 		var inputs [49]byte
 		for i := 0; i < 48; i++ {
-			inputs[i] = byte(rand.Intn(8)) //nolint:gosec // pseudo-random adequate for tests
+			inputs[i] = byte(rand.Intn(8))
 		}
 
 		var symbols [49]byte

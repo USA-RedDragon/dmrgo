@@ -20,8 +20,7 @@ import (
 
 // libMu serializes libcodec2 calls. The decoder draws from a process-wide
 // random number generator in libcodec2 that has no locking.
-//
-//nolint:gochecknoglobals // guards global state inside libcodec2
+
 var libMu sync.Mutex
 
 // Codec is a Codec2 vocoder.Codec with separate libcodec2 encoder and decoder

@@ -76,7 +76,7 @@ func TestAMBE72RoundTrip(t *testing.T) {
 func TestAMBE72CorrectsErrors(t *testing.T) {
 	t.Parallel()
 
-	rng := rand.New(rand.NewSource(1)) //nolint:gosec // deterministic PRNG fine for tests
+	rng := rand.New(rand.NewSource(1))
 	aPos := []int{0, 4, 8}
 	bPos := []int{25, 29, 33}
 	for range 200 {

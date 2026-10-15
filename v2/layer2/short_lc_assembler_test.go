@@ -29,7 +29,6 @@ func buildValidShortLCFragments(slco byte, data [24]bit.Bit) [4][17]bit.Bit {
 	return bptc.EncodeCACH(bits)
 }
 
-//nolint:gochecknoglobals
 var shortLCSequence = [4]enums.LCSS{
 	enums.LCSSFirstFragment,
 	enums.LCSSContinuationFragment,

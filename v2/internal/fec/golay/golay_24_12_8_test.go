@@ -10,10 +10,10 @@ import (
 func TestGolay24128(t *testing.T) {
 	t.Parallel()
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec // pseudo-random adequate for tests
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for d := 0; d < 4096; d++ {
-		data := uint16(d) //nolint:gosec // d limited to 12-bit range
+		data := uint16(d)
 
 		codeword := Encode24128(data)
 
@@ -29,7 +29,7 @@ func TestGolay24128(t *testing.T) {
 		}
 
 		for k := 0; k < 5; k++ {
-			bit1 := uint(rng.Intn(24)) //nolint:gosec // bounded Intn for test randomness
+			bit1 := uint(rng.Intn(24))
 			cwErr1 := codeword ^ (1 << bit1)
 			decoded, result = Decode24128(cwErr1)
 			switch {
@@ -41,9 +41,9 @@ func TestGolay24128(t *testing.T) {
 				t.Errorf("Data 0x%03x (1 error): Decoded as 0x%03x", data, decoded)
 			}
 
-			bit2 := uint(rng.Intn(24)) //nolint:gosec // bounded Intn for test randomness
+			bit2 := uint(rng.Intn(24))
 			for bit2 == bit1 {
-				bit2 = uint(rng.Intn(24)) //nolint:gosec // bounded Intn for test randomness
+				bit2 = uint(rng.Intn(24))
 			}
 			cwErr2 := cwErr1 ^ (1 << bit2)
 			decoded, result = Decode24128(cwErr2)
@@ -56,9 +56,9 @@ func TestGolay24128(t *testing.T) {
 				t.Errorf("Data 0x%03x (2 errors): Decoded as 0x%03x", data, decoded)
 			}
 
-			bit3 := uint(rng.Intn(24)) //nolint:gosec // bounded Intn for test randomness
+			bit3 := uint(rng.Intn(24))
 			for bit3 == bit1 || bit3 == bit2 {
-				bit3 = uint(rng.Intn(24)) //nolint:gosec // bounded Intn for test randomness
+				bit3 = uint(rng.Intn(24))
 			}
 			cwErr3 := cwErr2 ^ (1 << bit3)
 			decoded, result = Decode24128(cwErr3)
@@ -71,9 +71,9 @@ func TestGolay24128(t *testing.T) {
 				t.Errorf("Data 0x%03x (3 errors): Decoded as 0x%03x", data, decoded)
 			}
 
-			bit4 := uint(rng.Intn(24)) //nolint:gosec // bounded Intn for test randomness
+			bit4 := uint(rng.Intn(24))
 			for bit4 == bit1 || bit4 == bit2 || bit4 == bit3 {
-				bit4 = uint(rng.Intn(24)) //nolint:gosec // bounded Intn for test randomness
+				bit4 = uint(rng.Intn(24))
 			}
 			cwErr4 := cwErr3 ^ (1 << bit4)
 			_, result = Decode24128(cwErr4)
@@ -87,14 +87,14 @@ func TestGolay24128(t *testing.T) {
 func TestDecodeGolay24128UncorrectableReturnsNearest23127(t *testing.T) {
 	t.Parallel()
 
-	rng := rand.New(rand.NewSource(5)) //nolint:gosec // pseudo-random adequate for tests
+	rng := rand.New(rand.NewSource(5))
 	checked := 0
 	for range 20000 {
 		var err uint32
 		for bits.OnesCount32(err) < 4 {
 			err |= 1 << rng.Intn(24)
 		}
-		received := uint32(rng.Intn(1<<24)) ^ err //nolint:gosec // value fits in 24 bits
+		received := uint32(rng.Intn(1<<24)) ^ err
 		data, res := Decode24128(received)
 		if !res.Uncorrectable {
 			continue

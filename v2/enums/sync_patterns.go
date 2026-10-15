@@ -29,7 +29,6 @@ const (
 	SyncNone SyncPattern = 0
 )
 
-//nolint:gochecknoglobals
 var syncPatterns = [...]SyncPattern{
 	SyncBSSourcedVoice,
 	SyncBSSourcedData,

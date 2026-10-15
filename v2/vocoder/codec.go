@@ -38,7 +38,6 @@ type Codec interface {
 	FID() enums.FeatureSetID
 }
 
-//nolint:gochecknoglobals // codec registry, like database/sql drivers
 var (
 	registryMu sync.RWMutex
 	registry   = map[string]func() (Codec, error){}

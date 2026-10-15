@@ -79,14 +79,14 @@ func hammingCorrect(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
 
 		for c := 0; c < 15; c++ {
 			if bitPos := hamming13_9_syndrome_table[columnSyndrome(&corrected, c)]; bitPos != -1 {
-				corrected[(c+1)+(bitPos*15)] ^= 1 //nolint:gosec // c∈[0,14], bitPos∈[0,12], max idx=195 < 196
+				corrected[(c+1)+(bitPos*15)] ^= 1
 				fixing = true
 			}
 		}
 
 		for r := 0; r < 13; r++ {
 			if bitPos := hamming15_11_syndrome_table[rowSyndrome(&corrected, r)]; bitPos != -1 {
-				corrected[r*15+1+bitPos] ^= 1 //nolint:gosec // r∈[0,12], bitPos∈[0,14], max idx=195 < 196
+				corrected[r*15+1+bitPos] ^= 1
 				fixing = true
 			}
 		}

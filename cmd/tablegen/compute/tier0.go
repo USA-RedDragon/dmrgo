@@ -29,7 +29,7 @@ func AMBEScrambleTable() [4096]uint32 {
 func DM() [256]uint8 {
 	var dm [256]uint8
 	for i := range 256 {
-		dm[i] = uint8((i * 181) % 196) //nolint:gosec // result is always < 196, fits in uint8
+		dm[i] = uint8((i * 181) % 196)
 	}
 	return dm
 }
@@ -93,7 +93,7 @@ func Hamming13_9Syndrome() [16]int {
 func CRCCCITT() [256]uint16 {
 	var table [256]uint16
 	for i := 0; i < 256; i++ {
-		crc := uint16(i) << 8 //nolint:gosec // i is in [0,255], fits in uint16
+		crc := uint16(i) << 8
 		for j := 0; j < 8; j++ {
 			if crc&0x8000 != 0 {
 				crc = (crc << 1) ^ 0x1021
@@ -210,7 +210,7 @@ func Hamming16_11Syndrome() [32]int {
 func SingleBurstBPTCInterleave() [32]uint8 {
 	var table [32]uint8
 	for i := 0; i < 32; i++ {
-		table[(i*17)%32] = uint8(i) //nolint:gosec // i is always < 32, fits in uint8
+		table[(i*17)%32] = uint8(i)
 	}
 	return table
 }
@@ -291,9 +291,9 @@ func Hamming17_12Syndrome() [32]int {
 func GaloisTables() (exp [256]uint8, log [256]uint8) {
 	val := uint16(1)
 	for i := 0; i < 256; i++ {
-		exp[i] = uint8(val) //nolint:gosec // val is always < 256 in GF(2^8)
+		exp[i] = uint8(val)
 		if i < 255 {
-			log[uint8(val)] = uint8(i) //nolint:gosec // i is in [0,254], fits in uint8
+			log[uint8(val)] = uint8(i)
 		}
 		val <<= 1
 		if val&0x100 != 0 {

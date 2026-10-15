@@ -48,7 +48,6 @@ type DecodeOptions struct {
 	DataType *enums.DataType
 }
 
-//nolint:gochecknoglobals
 var (
 	allSyncPatterns = []enums.SyncPattern{
 		enums.SyncBSSourcedVoice, enums.SyncBSSourcedData, enums.SyncMSSourcedVoice, enums.SyncMSSourcedData,

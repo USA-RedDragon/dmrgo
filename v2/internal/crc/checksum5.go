@@ -7,7 +7,7 @@ func Checksum5(data [9]byte) uint8 {
 	for _, b := range data {
 		sum += uint16(b)
 	}
-	return uint8(sum % 31) //nolint:gosec // sum%31 always fits in uint8 (max 30)
+	return uint8(sum % 31)
 }
 
 // CheckChecksum5 reports whether want is the 5-bit checksum of data.

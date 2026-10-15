@@ -15,20 +15,20 @@ func dibitsToBits(dibits [98]int8) [196]bit.Bit {
 	var bits [196]bit.Bit
 
 	for i := 0; i < 98; i++ {
-		o := i * 2 //nolint:gosec // o ranges [0,194], o+1 ranges [1,195], both < 196
+		o := i * 2
 		switch dibits[i] {
 		case 3:
-			bits[o] = 0   //nolint:gosec // see above: o < 196
-			bits[o+1] = 1 //nolint:gosec // see above: o+1 < 196
+			bits[o] = 0
+			bits[o+1] = 1
 		case 1:
-			bits[o] = 0   //nolint:gosec // see above: o < 196
-			bits[o+1] = 0 //nolint:gosec // see above: o+1 < 196
+			bits[o] = 0
+			bits[o+1] = 0
 		case -1:
-			bits[o] = 1   //nolint:gosec // see above: o < 196
-			bits[o+1] = 0 //nolint:gosec // see above: o+1 < 196
+			bits[o] = 1
+			bits[o+1] = 0
 		case -3:
-			bits[o] = 1   //nolint:gosec // see above: o < 196
-			bits[o+1] = 1 //nolint:gosec // see above: o+1 < 196
+			bits[o] = 1
+			bits[o+1] = 1
 		}
 	}
 
@@ -70,7 +70,7 @@ func Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
 				m := metric[s] + mathbits.OnesCount8(rx^pointBits[point])
 				if m < next[in] {
 					next[in] = m
-					prev[k][in] = byte(s) //nolint:gosec // s < 8
+					prev[k][in] = byte(s)
 				}
 			}
 		}

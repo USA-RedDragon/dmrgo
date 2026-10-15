@@ -86,7 +86,7 @@ func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
 // followed by 9 parity bits.
 func Encode(dataBits [7]bit.Bit) [16]bit.Bit {
 	var bits [16]bit.Bit
-	data := uint8(bit.Uint(dataBits[:7])) //nolint:gosec // 7 bits
+	data := uint8(bit.Uint(dataBits[:7]) & 0xFF)
 
 	// Bits 15 to 9 of a table entry are data[0] to data[6], and bits 8 to 0
 	// are parity[0] to parity[8].

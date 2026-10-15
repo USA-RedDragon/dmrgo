@@ -18,7 +18,7 @@ import (
 // capturedEmbeddedLC is the embedded LC of every superframe in
 // testdata/voice.bin and testdata/parrot_kerchunk.bin: UU_V_Ch_Usr from
 // 3191868 to 9990.
-var capturedEmbeddedLC = []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C} //nolint:gochecknoglobals
+var capturedEmbeddedLC = []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
 
 func capturedFragments() [4][32]bit.Bit {
 	var fr [4][32]bit.Bit

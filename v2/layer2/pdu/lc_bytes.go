@@ -118,8 +118,8 @@ func (l *LCBytes) SetAddresses(target, source uint32) bool {
 	if !l.isVoiceChannelUser() || target>>24 != 0 || source>>24 != 0 {
 		return false
 	}
-	l[3], l[4], l[5] = byte(target>>16), byte(target>>8), byte(target) //nolint:gosec // 24-bit address split into octets
-	l[6], l[7], l[8] = byte(source>>16), byte(source>>8), byte(source) //nolint:gosec // 24-bit address split into octets
+	l[3], l[4], l[5] = byte(target>>16), byte(target>>8), byte(target)
+	l[6], l[7], l[8] = byte(source>>16), byte(source>>8), byte(source)
 	return true
 }
 
