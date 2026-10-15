@@ -204,16 +204,15 @@ func mbcGrant(w io.Writer) error {
 		return fmt.Errorf("MBC header grant %+v, want %+v", gotGrant, grant)
 	}
 
-	if _, _, err := decodeAs[*pdu.MBCContinuation](craw); err != nil {
+	gotCont, _, err := decodeAs[*pdu.MBCContinuation](craw)
+	if err != nil {
 		return err
 	}
-	p, res := craw.BPTCPayload()
-	rx := bit.Unpack96(p)
-	if res.Uncorrectable || !pdu.CheckMBCLastBlockCRC(rx) {
+	gotCGAP, res := gotCont.AsCGAP()
+	if res.Uncorrectable {
 		return errors.New("MBC last block CRC does not check")
 	}
-	gotCGAP, res := pdu.DecodeCGAPContinuation(rx)
-	if res.Uncorrectable || gotCGAP.CdefParms != cgap.CdefParms {
+	if gotCGAP.CdefParms != cgap.CdefParms {
 		return fmt.Errorf("CGAP %+v, want %+v", gotCGAP.CdefParms, cgap.CdefParms)
 	}
 	fmt.Fprintf(w, "MBC %s ch 0x%X tg %d: TX %.4f MHz RX %.4f MHz\n", gotHdr.Opcode, gotGrant.PhysicalChannel,

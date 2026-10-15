@@ -57,6 +57,43 @@ func (s *MBCContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
+func (s *MBCContinuation) bits() [96]bit.Bit {
+	var data [96]bit.Bit
+	if s.LastBlock {
+		data[0] = 1
+	}
+	copy(data[1:], s.Data[:])
+	return data
+}
+
+// AsCGAP decodes the block as the CGAP continuation of a grant MBC (ETSI TS
+// 102 361-4 Table 7.16). DecodeMBCContinuation decodes every continuation
+// block alike because its layout depends on the MBC header, so the caller
+// picks the layout from MBCHeader.Opcode. The fec.Result reports the
+// last-block CRC, which applies only when this is the one continuation
+// block of the MBC.
+func (s *MBCContinuation) AsCGAP() (CGAPContinuation, fec.Result) {
+	return DecodeCGAPContinuation(s.bits())
+}
+
+// AsMVAP decodes the block as the MVAP continuation of a C_MOVE MBC (ETSI TS
+// 102 361-4 Table 7.18), as AsCGAP does.
+func (s *MBCContinuation) AsMVAP() (MVAPContinuation, fec.Result) {
+	return DecodeMVAPContinuation(s.bits())
+}
+
+// AsBCAP decodes the block as the BCAP continuation of a C_BCAST MBC (ETSI
+// TS 102 361-4 Table 7.21), as AsCGAP does.
+func (s *MBCContinuation) AsBCAP() (BCAPContinuation, fec.Result) {
+	return DecodeBCAPContinuation(s.bits())
+}
+
+// AsVNAP decodes the block as the VNAP continuation of a C_BCAST Vote_Now
+// MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does.
+func (s *MBCContinuation) AsVNAP() (VNAPContinuation, fec.Result) {
+	return DecodeVNAPContinuation(s.bits())
+}
+
 // MBCLastBlockCRC computes the last-block CRC-CCITT (ETSI TS 102 361-1
 // §7.4.0) over all 96 bits of each intermediate block followed by bits 0-79
 // of the last block. blocks holds every continuation block in order, last
