@@ -26,6 +26,9 @@ jobs:
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version-file: go.mod
+      - name: Install libcodec2
+        if: matrix.module == 'v2'
+        run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config
       - run: go generate ./...
       - name: golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0

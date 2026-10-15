@@ -39,6 +39,9 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Install libcodec2
+        run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config codec2
+
       - run: go generate ./...
 
       - name: Race tests
