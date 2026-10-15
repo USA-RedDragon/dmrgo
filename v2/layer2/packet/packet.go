@@ -15,12 +15,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// MaxBlocks is the largest number of blocks that follow a header: the
+// maxBlocks is the largest number of blocks that follow a header: the
 // Blocks To Follow element has 7 bits.
-const MaxBlocks = 127
+const maxBlocks = 127
 
-// CRCOctets is the length of the message CRC at the end of the last block.
-const CRCOctets = 4
+// crcOctets is the length of the message CRC at the end of the last block.
+const crcOctets = 4
 
 var (
 	// ErrRate is returned for a data type other than rate 1/2, 3/4 or 1.
@@ -28,8 +28,8 @@ var (
 	// ErrFormat is returned by Segment for a header that is not U_HEAD,
 	// C_HEAD, DD_HEAD or R_HEAD, or whose matching sub-header is nil.
 	ErrFormat = errors.New("header format does not carry segmented data")
-	// ErrTooLong is returned when the payload needs more than MaxBlocks
-	// blocks, or more than the header can count.
+	// ErrTooLong is returned when the payload needs more than 127 blocks,
+	// or more than the header can count.
 	ErrTooLong = errors.New("payload needs too many blocks")
 )
 
@@ -41,10 +41,10 @@ type Packet struct {
 	Blocks []layer2.Data
 }
 
-// BlockOctets returns the user data octets of one block: 12, 18 or 24 for
+// blockOctets returns the user data octets of one block: 12, 18 or 24 for
 // rate 1/2, 3/4 and 1, and 2 less for a confirmed block, which starts with
 // the DBSN and CRC-9 (§8.2.2.1, §8.2.2.2).
-func BlockOctets(rate enums.DataType, confirmed bool) (int, error) {
+func blockOctets(rate enums.DataType, confirmed bool) (int, error) {
 	var n int
 	switch rate {
 	case enums.DataTypeRate12:
@@ -67,34 +67,28 @@ func BlockOctets(rate enums.DataType, confirmed bool) (int, error) {
 	return n, nil
 }
 
-// MessageCRC returns the 32-bit message CRC of §B.3.9 over the user data and
-// pad octets.
-func MessageCRC(data []byte) uint32 {
-	return crc.CRC32(data)
+// appendMessageCRC appends the 32-bit message CRC of §B.3.9 over data, the
+// user data and pad octets, least significant octet first (Figure B.8C).
+func appendMessageCRC(data []byte) []byte {
+	return binary.LittleEndian.AppendUint32(data, crc.CRC32(data))
 }
 
-// AppendMessageCRC appends the message CRC of data, least significant octet
-// first (§B.3.9 Figure B.8C).
-func AppendMessageCRC(data []byte) []byte {
-	return binary.LittleEndian.AppendUint32(data, MessageCRC(data))
-}
-
-// CheckMessageCRC reports whether the last 4 octets of data are the message
+// checkMessageCRC reports whether the last 4 octets of data are the message
 // CRC of the octets before them.
-func CheckMessageCRC(data []byte) bool {
-	if len(data) < CRCOctets {
+func checkMessageCRC(data []byte) bool {
+	if len(data) < crcOctets {
 		return false
 	}
-	n := len(data) - CRCOctets
-	return MessageCRC(data[:n]) == binary.LittleEndian.Uint32(data[n:])
+	n := len(data) - crcOctets
+	return crc.CRC32(data[:n]) == binary.LittleEndian.Uint32(data[n:])
 }
 
-// Layout returns the number of blocks and pad octets for a payload of n
+// layout returns the number of blocks and pad octets for a payload of n
 // octets in blocks of per octets: the payload, the pad and the 4-octet
 // message CRC exactly fill the blocks (§8.2.2.1 equation 7).
-func Layout(n, per int) (blocks, pad int) {
-	blocks = (n + CRCOctets + per - 1) / per
-	return blocks, blocks*per - CRCOctets - n
+func layout(n, per int) (blocks, pad int) {
+	blocks = (n + crcOctets + per - 1) / per
+	return blocks, blocks*per - crcOctets - n
 }
 
 // Segment splits payload into the data blocks of one packet at the given
@@ -108,17 +102,17 @@ func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet
 	if err != nil {
 		return Packet{}, err
 	}
-	per, _ := BlockOctets(rate, confirmed)
+	per, _ := blockOctets(rate, confirmed)
 	n := blocksOf(&header)
-	buf := make([]byte, n*per-CRCOctets)
+	buf := make([]byte, n*per-crcOctets)
 	copy(buf, payload)
-	buf = AppendMessageCRC(buf)
+	buf = appendMessageCRC(buf)
 
 	p := Packet{Header: header, Blocks: make([]layer2.Data, n)}
 	for i := range p.Blocks {
 		chunk := buf[i*per : (i+1)*per]
 		if confirmed {
-			p.Blocks[i] = confirmedBlock(uint8(i), chunk) //nolint:gosec // i < MaxBlocks
+			p.Blocks[i] = confirmedBlock(uint8(i), chunk) //nolint:gosec // i < maxBlocks
 		} else {
 			p.Blocks[i] = unconfirmedBlock(chunk)
 		}
@@ -131,11 +125,11 @@ func setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	per, err := BlockOctets(rate, confirmed)
+	per, err := blockOctets(rate, confirmed)
 	if err != nil {
 		return false, err
 	}
-	blocks, pad := Layout(n, per)
+	blocks, pad := layout(n, per)
 	switch h.Format {
 	case pdu.FormatUnconfirmed:
 		u := *h.UnconfirmedDataHeader
@@ -157,7 +151,7 @@ func setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 		h.AppendedBlocks = r.AppendedBlocks
 	case pdu.FormatUnifiedDataTransport, pdu.FormatResponsePacket, pdu.FormatProprietary:
 	}
-	limit := MaxBlocks
+	limit := maxBlocks
 	if h.Format == pdu.FormatShortDataDefined || h.Format == pdu.FormatShortDataRawOrStatusPrecoded {
 		limit = 63
 	}
