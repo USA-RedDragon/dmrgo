@@ -102,9 +102,7 @@ type decodeCase struct {
 }
 
 // decodeCases returns one burst of each data type, ASELSAN data bursts with
-// an EMB in place of the SYNC, and voice bursts A and B. A CSBK, Full LC,
-// data header or MBC header payload struct that a dispatch field points to
-// is allocated on each decode.
+// an EMB in place of the SYNC, and voice bursts A and B.
 func decodeCases(t testing.TB) []decodeCase {
 	t.Helper()
 	header := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
@@ -123,16 +121,16 @@ func decodeCases(t testing.TB) []decodeCase {
 		allocs, encode float64
 	}{
 		{"CSBK BS_Dwn_Act", &csbk, 0, 0},
-		{"CSBK preamble", &preamble, 1, 0},
-		{"data header", &dataHeader, 1, 0},
+		{"CSBK preamble", &preamble, 0, 0},
+		{"data header", &dataHeader, 0, 0},
 		{"rate 1/2", &pdu.Rate12Data{Data: [12]byte{1, 2, 3}}, 0, 0},
 		{"rate 3/4", &pdu.Rate34Data{Data: [18]byte{4, 5, 6}}, 0, 0},
 		{"rate 1", &pdu.Rate1Data{Data: [24]byte{7, 8, 9}}, 0, 0},
-		{"voice LC header", &header, 1, 0},
-		{"terminator with LC", &term, 1, 0},
+		{"voice LC header", &header, 0, 0},
+		{"terminator with LC", &term, 0, 0},
 		{"PI header", &pdu.PIHeader{AlgorithmID: 1, MFID: 0x10, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 91}, 0, 0},
 		{"idle", &pdu.PRFill{}, 0, 0},
-		{"MBC header", &mbc, 1, 0},
+		{"MBC header", &mbc, 0, 0},
 		{"MBC continuation", &pdu.MBCContinuation{LastBlock: true}, 0, 0},
 		{"USBD", &pdu.UnifiedSingleBlockData{ServiceType: 1}, 0, 0},
 	}
@@ -182,7 +180,7 @@ func burstDecodeEntries(t testing.TB) []entry {
 	for _, c := range []struct {
 		name   string
 		allocs float64
-	}{{"d-sms", 6}, {"h-sms", 6}, {"m-sms", 6}, {"parrot_kerchunk", 2}, {"voice", 2}} {
+	}{{"d-sms", 0}, {"h-sms", 0}, {"m-sms", 0}, {"parrot_kerchunk", 0}, {"voice", 0}} {
 		raw := capture(t, c.name)
 		var b layer2.Burst
 		decodeAll(t, raw)
