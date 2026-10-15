@@ -27,6 +27,24 @@ func main() {
 	repoRoot := filepath.Join(filepath.Dir(thisFile), "..", "..")
 	v2Root := filepath.Join(repoRoot, "v2")
 
+	if err := run(v2Root); err != nil {
+		fmt.Fprintf(os.Stderr, "dmrgen: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+type sourceFile struct {
+	path  string
+	start int
+	n     int
+}
+
+// run parses every source file under v2Root, marks the sub-PDUs of each
+// package, which needs all files of the package, and then writes the
+// generated file of each source file.
+func run(v2Root string) error {
+	var files []sourceFile
+	pkgs := map[string][]parse.PDUStruct{}
 	err := filepath.Walk(v2Root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -40,7 +58,6 @@ func main() {
 			strings.HasSuffix(path, "_gen.go") {
 			return nil
 		}
-
 		pdus, parseErr := parse.ParseFile(path)
 		if parseErr != nil {
 			return fmt.Errorf("parsing %s: %w", path, parseErr)
@@ -48,24 +65,29 @@ func main() {
 		if len(pdus) == 0 {
 			return nil
 		}
-
-		f, genErr := emit.GenerateFile(pdus, pdus[0].Package)
-		if genErr != nil {
-			return fmt.Errorf("generating for %s: %w", path, genErr)
-		}
-
-		base := strings.TrimSuffix(filepath.Base(path), ".go")
-		outPath := filepath.Join(filepath.Dir(path), base+"_decode_gen.go")
-
-		if saveErr := f.Save(outPath); saveErr != nil {
-			return fmt.Errorf("writing %s: %w", outPath, saveErr)
-		}
-
-		fmt.Printf("dmrgen: generated %s (%d structs)\n", filepath.Base(outPath), len(pdus))
+		dir := filepath.Dir(path)
+		files = append(files, sourceFile{path: path, start: len(pkgs[dir]), n: len(pdus)})
+		pkgs[dir] = append(pkgs[dir], pdus...)
 		return nil
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "dmrgen: %v\n", err)
-		os.Exit(1)
+		return err
 	}
+	for _, pdus := range pkgs {
+		parse.SetUnexportedDecode(pdus)
+	}
+	for _, sf := range files {
+		pdus := pkgs[filepath.Dir(sf.path)][sf.start : sf.start+sf.n]
+		f, genErr := emit.GenerateFile(pdus, pdus[0].Package)
+		if genErr != nil {
+			return fmt.Errorf("generating for %s: %w", sf.path, genErr)
+		}
+		base := strings.TrimSuffix(filepath.Base(sf.path), ".go")
+		outPath := filepath.Join(filepath.Dir(sf.path), base+"_decode_gen.go")
+		if saveErr := f.Save(outPath); saveErr != nil {
+			return fmt.Errorf("writing %s: %w", outPath, saveErr)
+		}
+		fmt.Printf("dmrgen: generated %s (%d structs)\n", filepath.Base(outPath), len(pdus))
+	}
+	return nil
 }

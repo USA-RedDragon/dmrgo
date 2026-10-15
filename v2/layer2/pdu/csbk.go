@@ -2,7 +2,9 @@
 // decoders and encoders: CSBK, Full LC, Short LC, data headers, MBC, PI
 // header, slot type, EMB and the data blocks. DecodeX decodes a PDU from its
 // information bits and X.Encode encodes it; most of these functions are
-// generated from the dmr struct tags by cmd/dmrgen.
+// generated from the dmr struct tags by cmd/dmrgen. The payloads of a CSBK,
+// MBC, Full LC, Short LC or data header decode with their parent, which sets
+// the payload field of its opcode, so they have no DecodeX of their own.
 //
 // DecodeX returns only the PDU. A PDU whose decode corrects or checks
 // errors, with FEC such as Golay, QR, Hamming or RS(12,9) or with a CRC,
@@ -126,6 +128,8 @@ func (opcode CSBKOpcode) String() string {
 }
 
 // ETSI TS 102 361-2 - 7.1.2.1 BS Outbound Activation (BS_Dwn_Act) PDU
+//
+//dmr:subpdu
 type BSOutboundActivationPDU struct {
 	Reserved      uint16 `dmr:"bits:0-15"`
 	BSAddress     uint32 `dmr:"bits:16-39"`
@@ -276,8 +280,10 @@ type PrivateDataGrantMultiItemPDU struct {
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
-// NOTE: Shares opcode 0x38 with BSOutboundActivationPDU. DecodeCSBK keeps it in
-// RawPayload; see CSBK.Hint0x38 and CSBK.AsTalkgroupDataGrantMultiItem.
+// It shares opcode 0x38 with BSOutboundActivationPDU, so DecodeCSBK keeps it
+// in RawPayload; see CSBK.Hint0x38 and CSBK.AsTalkgroupDataGrantMultiItem.
+//
+//dmr:subpdu
 type TalkgroupDataGrantMultiItemPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`
 	LogicalChannel  bool   `dmr:"bit:12"`
@@ -514,7 +520,7 @@ func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
 		return p, false
 	}
-	p = DecodeBSOutboundActivationPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
+	p = decodeBSOutboundActivationPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
 	return p, true
 }
 
@@ -525,7 +531,7 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
 		return p, false
 	}
-	p = DecodeTalkgroupDataGrantMultiItemPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
+	p = decodeTalkgroupDataGrantMultiItemPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
 	return p, true
 }
 

@@ -46,34 +46,34 @@ func DecodeMBCHeader(data [96]bit.Bit) MBCHeader {
 	if result.FID == 0 {
 		switch result.Opcode {
 		case CSBKPrivateVoiceGrant:
-			_decoded := DecodePrivateVoiceGrantPDU(_dispatchBits)
+			_decoded := decodePrivateVoiceGrantPDU(_dispatchBits)
 			result.PrivateVoiceGrantPDU = &_decoded
 		case CSBKTalkgroupVoiceGrant:
-			_decoded := DecodeTalkgroupVoiceGrantPDU(_dispatchBits)
+			_decoded := decodeTalkgroupVoiceGrantPDU(_dispatchBits)
 			result.TalkgroupVoiceGrantPDU = &_decoded
 		case CSBKBroadcastTalkgroupVoiceGrant:
-			_decoded := DecodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
+			_decoded := decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
 			result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
 		case CSBKPrivateDataGrant:
-			_decoded := DecodePrivateDataGrantPDU(_dispatchBits)
+			_decoded := decodePrivateDataGrantPDU(_dispatchBits)
 			result.PrivateDataGrantPDU = &_decoded
 		case CSBKTalkgroupDataGrant:
-			_decoded := DecodeTalkgroupDataGrantPDU(_dispatchBits)
+			_decoded := decodeTalkgroupDataGrantPDU(_dispatchBits)
 			result.TalkgroupDataGrantPDU = &_decoded
 		case CSBKDuplexPrivateVoiceGrant:
-			_decoded := DecodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
+			_decoded := decodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
 			result.DuplexPrivateVoiceGrantPDU = &_decoded
 		case CSBKDuplexPrivateDataGrant:
-			_decoded := DecodeDuplexPrivateDataGrantPDU(_dispatchBits)
+			_decoded := decodeDuplexPrivateDataGrantPDU(_dispatchBits)
 			result.DuplexPrivateDataGrantPDU = &_decoded
 		case CSBKPrivateDataGrantMultiItem:
-			_decoded := DecodePrivateDataGrantMultiItemPDU(_dispatchBits)
+			_decoded := decodePrivateDataGrantMultiItemPDU(_dispatchBits)
 			result.PrivateDataGrantMultiItemPDU = &_decoded
 		case CSBKMove:
-			_decoded := DecodeMovePDU(_dispatchBits)
+			_decoded := decodeMovePDU(_dispatchBits)
 			result.MovePDU = &_decoded
 		case CSBKBroadcast:
-			_decoded := DecodeBroadcastPDU(_dispatchBits)
+			_decoded := decodeBroadcastPDU(_dispatchBits)
 			result.BroadcastPDU = &_decoded
 		default:
 			for _i := range 64 {
@@ -345,8 +345,8 @@ func (s *MBCContinuation) String() string {
 	return fmt.Sprintf("MBCContinuation{ LastBlock: %t, Data: %x }", s.LastBlock, s.Data)
 }
 
-// DecodeCGAPContinuation decodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
-func DecodeCGAPContinuation(data [96]bit.Bit) CGAPContinuation {
+// decodeCGAPContinuation decodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
+func decodeCGAPContinuation(data [96]bit.Bit) CGAPContinuation {
 	var result CGAPContinuation
 	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -463,8 +463,8 @@ func (s *CGAPContinuation) String() string {
 	return fmt.Sprintf("CGAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
 
-// DecodeMVAPContinuation decodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
-func DecodeMVAPContinuation(data [96]bit.Bit) MVAPContinuation {
+// decodeMVAPContinuation decodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
+func decodeMVAPContinuation(data [96]bit.Bit) MVAPContinuation {
 	var result MVAPContinuation
 	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -581,8 +581,8 @@ func (s *MVAPContinuation) String() string {
 	return fmt.Sprintf("MVAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
 
-// DecodeBCAPContinuation decodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
-func DecodeBCAPContinuation(data [96]bit.Bit) BCAPContinuation {
+// decodeBCAPContinuation decodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
+func decodeBCAPContinuation(data [96]bit.Bit) BCAPContinuation {
 	var result BCAPContinuation
 	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -681,8 +681,8 @@ func (s *BCAPContinuation) String() string {
 	return fmt.Sprintf("BCAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
 
-// DecodeVNAPContinuation decodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
-func DecodeVNAPContinuation(data [96]bit.Bit) VNAPContinuation {
+// decodeVNAPContinuation decodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
+func decodeVNAPContinuation(data [96]bit.Bit) VNAPContinuation {
 	var result VNAPContinuation
 	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
