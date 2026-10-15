@@ -12,8 +12,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func main() {
@@ -25,18 +25,34 @@ func main() {
 		151, 134, 91,
 	}
 
+	// A FEC or CRC failure is not an error: it shows in burst.FEC, and
+	// burst.Data is still set.
 	burst, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Sync: %s\n", enums.SyncPatternToName(burst.SyncPattern))
-	fmt.Printf("Burst: %s\n", burst.ToString())
+	fmt.Printf("Kind: %s, SYNC: %s\n", burst.Kind, burst.SyncPattern)
+	fmt.Println(burst)
+	if lc, ok := burst.Data.(*pdu.FullLinkControl); ok && !burst.FEC.PDU.Uncorrectable {
+		if target, source, ok := lc.Addresses(); ok {
+			fmt.Printf("Call from %d to %d\n", source, target)
+		}
+	}
 
 	// Re-encode back to 33 bytes
-	encoded := burst.Encode()
-	fmt.Printf("Encoded %d bytes\n", len(encoded))
+	encoded, err := burst.Encode()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	fmt.Printf("Encoded %d bytes, unchanged: %t\n", len(encoded), encoded == raw)
+
+	// Byte-level access to one field, without a full decode
+	r := layer2.RawBurst(raw)
+	payload, res := r.BPTCPayload()
+	fmt.Printf("BPTC payload %x, %d bits corrected\n", payload, res.ErrorsCorrected)
 
 	// Zero-allocation path: reuse a Burst across calls
 	var reusable layer2.Burst
@@ -45,32 +61,41 @@ func main() {
 			fmt.Printf("Error: %v\n", err)
 			continue
 		}
-		fmt.Println(reusable.ToString())
+		fmt.Println(reusable.String())
 	}
 }
 ```
 
+`layer2.Burst` is the decoded form of a burst. `Kind` says whether it is a voice, data or standalone Reverse Channel burst. `DecodeFromBytes` never fails on a FEC or CRC error: `burst.FEC` reports it and `burst.Data` still holds the decoded PDU. The error is `layer2.ErrReservedDataType` for a reserved data type, or `layer2.ErrColorCodeMismatch` when `DecodeFromBytesWith` checks the color code. `DecodeFromBytesWith` also takes the burst kind, the voice burst position or the data type when the caller knows them from outside the burst. `Encode` writes a decoded burst back unchanged until its fields change.
+
+`layer2.RawBurst` reads and writes single fields of a 33-byte burst in place: the SYNC pattern, slot type, BPTC, Rate 3/4 and Rate 1 payloads, EMB, embedded data and voice slots. `layer2.BuildDataBurst` builds a data burst from a 12-byte payload, and `pdu.FullLCCodeword`, `pdu.SealBlock` and `pdu.BlockCRCOK` compute and check the payload parity and CRCs.
+
+The PDUs in `layer2/pdu` decode with `pdu.DecodeX(bits)` and encode with `x.Encode()`. An Encode error for a field value that does not fit its bits is a `*bit.FieldRangeError`. Every type prints with `String`.
+
 ## Vocoders
 
-A DMR voice burst carries three 72-bit vocoder frames of 20 ms each. The `vocoder.Codec` interface converts one frame of 8 kHz 16-bit PCM to and from those 72 on-air bits:
+A DMR voice burst carries three 72-bit vocoder frames of 20 ms each. `Burst.VoiceSlots` holds them as received. The `vocoder.Codec` interface converts one frame of 8 kHz 16-bit PCM to and from those 72 on-air bits:
 
 ```go
 type Codec interface {
+	io.Closer
 	FrameSamples() int
 	Encode(pcm []int16) ([72]bit.Bit, error)
 	Decode(slot [72]bit.Bit) ([]int16, error)
 	Silence() [72]bit.Bit
-	FID() uint8
+	FID() enums.FeatureSetID
 }
 ```
 
-Codec packages register themselves with `vocoder.Register`, like `database/sql` drivers. Use `vocoder.New(name)` and `vocoder.Names()` to find them. Codecs are not safe for concurrent use unless their documentation says so.
+Codec packages register themselves with `vocoder.Register`, like `database/sql` drivers. Use `vocoder.New(name)` and `vocoder.Names()` to find them. The FID is advisory: it does not identify the vocoder, so select the codec by name. Codecs are not safe for concurrent use unless their documentation says so. The interface does not change in v2; later features come as optional interfaces.
 
-AMBE+2 is not included. An external AMBE package can use `vocoder.EncodeAMBE72` and `vocoder.DecodeAMBE72` to apply the DMR Golay and PN FEC to its 49 information bits.
+AMBE+2 is not included. `vocoder.EncodeAMBE72` and `vocoder.DecodeAMBE72` apply the DMR Golay and PN FEC to the 49 information bits of a `vocoder.AMBEFrame`, `Burst.AMBEFrames` and `Burst.SetAMBEFrames` decode and code the three frames of a burst, and `vocoder.AMBESilence` is the AMBE+2 silence frame.
 
 ### Codec2
 
-The `vocoder/codec2` package is a Codec2 codec that is compatible with QRadioLink:
+**Build requirement:** the `vocoder/codec2` package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. A program that imports it needs a C compiler, libcodec2 and pkg-config (for example `apt-get install libcodec2-dev pkg-config`); without them the build fails with `Package 'codec2' not found`. Only programs that import `vocoder/codec2` need libcodec2. To build without it, use `-tags nocodec2` or `CGO_ENABLED=0`. `codec2.New` then returns `codec2.ErrUnavailable`.
+
+The package is a Codec2 codec that is compatible with QRadioLink:
 
 ```go
 import "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -81,8 +106,6 @@ c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400, FID: codec2.DefaultFID
 - Each 72-bit frame holds one 20 ms Codec2 frame (`Mode2400` or `Mode3200`), MSB first, with zero padding. There is no FEC.
 - Calls use Feature set ID `0xC2` in the Full LC. This FID is self-assigned, not allocated by ETSI. It does not identify the mode, so both ends must agree on the mode out of band.
 - `Silence()` is 20 ms of digital silence encoded in the selected mode, for padding the last burst of a call.
-
-The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To build it, install libcodec2 and pkg-config (for example `apt-get install libcodec2-dev pkg-config`). Only programs that import `vocoder/codec2` need libcodec2. To build without it, use `-tags nocodec2` or `CGO_ENABLED=0`. `codec2.New` then returns `codec2.ErrUnavailable`.
 
 ## ETSI TS 102 361 Specification Coverage
 <!-- BEGIN ETSI COVERAGE -->
