@@ -158,7 +158,7 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
 | §7.4.1 | Multi Block Control (MBC) | ✅ verified | 17/17 passed | `v2/layer2/pdu/mbc.go`, `v2/layer2/burst.go` |
 | §8.2.1 | Header block structure | ✅ verified | 4/4 passed | `v2/layer2/pdu/data_header.go` |
-| §8.2.2 | Data block structure | ✅ verified | 10/10 passed | `v2/layer2/packet/packet.go`, `v2/layer2/packet/assembler.go` |
+| §8.2.2 | Data block structure | ✅ verified | 11/11 passed | `v2/layer2/packet/packet.go`, `v2/layer2/packet/assembler.go`, `v2/layer2/packet/bursts.go` |
 | §8.2.2.3 | Response packet format | ✅ verified | 3/3 passed | `v2/layer2/packet/response.go` |
 | §8.2.3.1 | Unified Single Block Data block structure | ✅ verified | 10/10 passed | `v2/layer2/pdu/usbd.go`, `v2/layer2/burst.go` |
 | §9.1.1 | Synchronization (SYNC) PDU | ✅ verified | 19/19 passed | `v2/enums/sync_patterns.go`, `v2/layer2/burst.go`, `v2/layer2/decode_options.go`, `v2/layer2/framer/framer.go` |
@@ -229,7 +229,7 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §7.1.1.3 | GPS Info LC PDU | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | §7.1.1.4 | Talker Alias header LC PDU | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/talker_alias_data_format.go` |
 | §7.1.1.5 | Talker Alias block LC PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go` |
-| §7.1.2 | Control Signalling BlocK (CSBK) PDUs | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
+| §7.1.2 | Control Signalling BlocK (CSBK) PDUs | ✅ verified | 5/5 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/csbk_addresses.go` |
 | §7.1.2.1 | BS Outbound Activation CSBK PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.2.2 | Unit to Unit Voice Service Request CSBK PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
 | §7.1.2.3 | Unit to Unit Voice Service Answer Response CSBK PDU | ✅ verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
