@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -143,5 +144,35 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	decoded, _ = pdu.DecodeFullLinkControl(must(pdu.EncodeFullLinkControl(original)), original.DataType)
 	if decoded.FLCO != 0b111111 || decoded.RawPayload != payload {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
+	}
+}
+
+func TestFLC_AddressesIgnoreFID(t *testing.T) {
+	for _, fid := range []enums.FeatureSetID{enums.StandardizedFID, enums.MotorolaLtd} {
+		for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
+			lc := must(reedsolomon.Encode([]byte{byte(flco), byte(fid), 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}))
+			for i := 9; i < 12; i++ {
+				lc[i] ^= 0x96
+			}
+			var infoBits [96]bit.Bit
+			copy(infoBits[:], bit.UnpackBits(lc))
+			flc, fecResult := pdu.DecodeFullLinkControl(infoBits, elements.DataTypeVoiceLCHeader)
+			if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
+				t.Fatalf("FEC = %+v", fecResult)
+			}
+
+			target, source, ok := flc.Addresses()
+			if !ok || target != 9990 || source != 3191868 {
+				t.Errorf("FID %#x FLCO %d: Addresses() = %d, %d, %v, want 9990, 3191868, true", fid, flco, target, source, ok)
+			}
+			if fid == enums.MotorolaLtd && (flc.GroupVoice != nil || flc.UnitToUnit != nil) {
+				t.Errorf("FID %#x FLCO %d: variant decoded for a manufacturer FID", fid, flco)
+			}
+		}
+	}
+
+	flc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, FeatureSetID: enums.MotorolaLtd}
+	if _, _, ok := flc.Addresses(); ok {
+		t.Error("Addresses() ok for GPS Info")
 	}
 }

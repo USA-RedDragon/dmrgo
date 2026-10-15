@@ -42,6 +42,27 @@ type FullLinkControl struct {
 	RawPayload [56]bit.Bit `dmr:"bits:16-71,raw,fallback"`
 }
 
+// Addresses returns the 24-bit target and source addresses (LC bits 24-47
+// and 48-71) of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC (ETSI TS
+// 102 361-2 Tables 7.1 and 7.2). For a group call the target is the group
+// address. It ignores the FID and reads RawPayload when no variant was
+// decoded, so it also returns addresses from a manufacturer FID LC (such as
+// Motorola, 0x10) with these FLCOs, as MMDVMHost does. A manufacturer FID
+// may redefine the payload, so such addresses are a best effort. ok is false
+// for other FLCOs.
+func (f *FullLinkControl) Addresses() (target, source int, ok bool) {
+	if f.FLCO == enums.FLCOGroupVoiceChannelUser && f.GroupVoice != nil {
+		return f.GroupVoice.GroupAddress, f.GroupVoice.SourceAddress, true
+	}
+	if f.FLCO == enums.FLCOUnitToUnitVoiceChannelUser && f.UnitToUnit != nil {
+		return f.UnitToUnit.TargetAddress, f.UnitToUnit.SourceAddress, true
+	}
+	if f.FLCO != enums.FLCOGroupVoiceChannelUser && f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
+		return 0, 0, false
+	}
+	return bit.BitsToInt(f.RawPayload[:], 8, 24), bit.BitsToInt(f.RawPayload[:], 32, 24), true
+}
+
 // FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])
 // decoded per-FLCO type. Each struct uses 0-based bit offsets within the 56-bit window.
 

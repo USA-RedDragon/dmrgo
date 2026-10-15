@@ -560,6 +560,7 @@ documents:
               - TestCSBK_UnknownOpcodeKeepsRawPayload
               - TestCSBK_StandardFIDDoesNotFillRawPayload
               - TestFLC_ManufacturerFIDKeepsRawPayload
+              - TestFLC_AddressesIgnoreFID
               - TestFLC_UnknownFLCOKeepsRawValues
 
       - section: "9.3.6"
