@@ -152,7 +152,7 @@ func calcSyndrome(data []byte, syndrome *poly) error {
 	}
 
 	for j = 0; j < 3; j++ {
-		for i = 0; i < uint8(len(data)); i++ { //nolint:gosec // len(data) is always dataSize+checksumSize (12), fits in uint8
+		for i = 0; i < uint8(len(data)&0xFF); i++ {
 			syndrome[j] = data[i] ^ galoisMul(galois_exp_table[j+1], syndrome[j])
 		}
 	}
@@ -320,7 +320,7 @@ func findRootsInto(locator *poly, buf []uint8) []uint8 {
 		}
 
 		if sum == 0 {
-			roots = append(roots, uint8(255-r)) //nolint:gosec // r is 1..255, so 255-r is 0..254, fits in uint8
+			roots = append(roots, uint8(255-r))
 		}
 	}
 
@@ -356,8 +356,8 @@ func calcWithScratch(
 			}
 
 			if int(lCur) < int(n)-int(k) {
-				l2 = uint8(int(n) - int(k))  //nolint:gosec // n < checksumSize (3), result fits in uint8
-				k = int8(int(n) - int(lCur)) //nolint:gosec // n < checksumSize (3), result fits in int8
+				l2 = uint8(int(n) - int(k))
+				k = int8(int(n) - int(lCur))
 				dInv, _ := galoisInv(d)
 				for i = 0; i < polyMaxDeg; i++ {
 					D[i] = galoisMul(locator[i], dInv)

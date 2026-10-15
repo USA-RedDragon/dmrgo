@@ -116,7 +116,11 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	_, thisFile, _, _ := runtime.Caller(0) //nolint:dogsled
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "error: cannot find the speccheck source directory")
+		return 1
+	}
 	repoRoot := filepath.Join(filepath.Dir(thisFile), "..", "..")
 
 	data, err := os.ReadFile(filepath.Join(repoRoot, "spec_matrix.yaml"))
@@ -255,7 +259,7 @@ func testRegex(names map[string]bool) string {
 // when go test exits non-zero for a reason other than a reported test
 // failure, such as a build error.
 func runPackageTests(ctx context.Context, dir, pkg string, names map[string]bool) (*packageRun, error) {
-	cmd := exec.CommandContext(ctx, "go", "test", "-v", "-json", "-count=1", "-run", testRegex(names), pkg) //nolint:gosec // arguments come from spec_matrix.yaml
+	cmd := exec.CommandContext(ctx, "go", "test", "-v", "-json", "-count=1", "-run", testRegex(names), pkg)
 	cmd.Dir = dir
 	cmd.Env = os.Environ()
 	var stderr bytes.Buffer

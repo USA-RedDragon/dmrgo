@@ -75,7 +75,7 @@ func Pack(bits []Bit) []byte {
 func Unpack(data []byte) []Bit {
 	bits := make([]Bit, len(data)*8)
 	for i := range bits {
-		if (data[i/8]>>(7-(i%8)))&1 == 1 { //nolint:gosec // i/8 bounded: i < len(data)*8, so i/8 < len(data)
+		if (data[i/8]>>(7-(i%8)))&1 == 1 {
 			bits[i] = 1
 		}
 	}
@@ -134,7 +134,7 @@ func Pack96(bits [96]Bit) [12]byte {
 func Unpack264(data [33]byte) [264]Bit {
 	var bits [264]Bit
 	for i := 0; i < 264; i++ {
-		if (data[i/8]>>(7-(i%8)))&1 != 0 { //nolint:gosec // i/8 bounded: i < 264, so i/8 <= 32 < 33
+		if (data[i/8]>>(7-(i%8)))&1 != 0 {
 			bits[i] = 1
 		}
 	}

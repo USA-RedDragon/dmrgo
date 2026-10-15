@@ -171,7 +171,6 @@ func TestBurstEncode_FullLCDataTypeMustMatchSlotType(t *testing.T) {
 	}
 }
 
-//nolint:gochecknoglobals // compile-time interface checks
 var _ = []layer2.Data{
 	(*pdu.FullLinkControl)(nil), (*pdu.CSBK)(nil), (*pdu.PIHeader)(nil), (*pdu.DataHeader)(nil),
 	(*pdu.MBCHeader)(nil), (*pdu.MBCContinuation)(nil), (*pdu.CGAPContinuation)(nil),
@@ -268,7 +267,10 @@ func TestBurstEncode_DecodedPayloadWithoutData(t *testing.T) {
 	if got := must(b.Encode()); got != frame {
 		t.Errorf("unchanged Data: got %x, want %x", got, frame)
 	}
-	csbk := b.Data.(*pdu.CSBK) //nolint:forcetypeassert // checked by the decode above
+	csbk, ok := b.Data.(*pdu.CSBK)
+	if !ok {
+		t.Fatalf("Data is %T, want *pdu.CSBK", b.Data)
+	}
 	csbk.LastBlock = !csbk.LastBlock
 	if again := must(layer2.NewBurstFromBytes(must(b.Encode()))); again.FEC.PDU.Uncorrectable {
 		t.Error("changed Data was not coded with a new CRC")

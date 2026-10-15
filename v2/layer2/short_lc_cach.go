@@ -9,7 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-//nolint:gochecknoglobals
 var shortLCFragmentLCSS = [4]enums.LCSS{
 	enums.LCSSFirstFragment,
 	enums.LCSSContinuationFragment,

@@ -10,10 +10,10 @@ import (
 func TestGolay23127(t *testing.T) {
 	t.Parallel()
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec // pseudo-random adequate for tests
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for d := 0; d < 4096; d++ {
-		data := uint16(d) //nolint:gosec // d limited to 12-bit range
+		data := uint16(d)
 
 		codeword23 := Encode23127(data)
 
@@ -29,7 +29,7 @@ func TestGolay23127(t *testing.T) {
 		}
 
 		for k := 0; k < 5; k++ {
-			bit1 := uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
+			bit1 := uint(rng.Intn(23))
 			cwErr1 := codeword23 ^ (1 << bit1)
 			decoded, result = Decode23127(cwErr1)
 			switch {
@@ -41,9 +41,9 @@ func TestGolay23127(t *testing.T) {
 				t.Errorf("Data 0x%03x (1 error): Decoded as 0x%03x", data, decoded)
 			}
 
-			bit2 := uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
+			bit2 := uint(rng.Intn(23))
 			for bit2 == bit1 {
-				bit2 = uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
+				bit2 = uint(rng.Intn(23))
 			}
 			cwErr2 := cwErr1 ^ (1 << bit2)
 			decoded, result = Decode23127(cwErr2)
@@ -56,9 +56,9 @@ func TestGolay23127(t *testing.T) {
 				t.Errorf("Data 0x%03x (2 errors): Decoded as 0x%03x", data, decoded)
 			}
 
-			bit3 := uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
+			bit3 := uint(rng.Intn(23))
 			for bit3 == bit1 || bit3 == bit2 {
-				bit3 = uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
+				bit3 = uint(rng.Intn(23))
 			}
 			cwErr3 := cwErr2 ^ (1 << bit3)
 			decoded, result = Decode23127(cwErr3)

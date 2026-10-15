@@ -21,7 +21,7 @@ func MMDVMHostSeal(dataType enums.DataType, p *[12]byte) error {
 	case enums.DataTypeMBCContinuation:
 		c := crc.CCITT(p[:10])
 		p[10] = byte(c >> 8)
-		p[11] = byte(c) //nolint:gosec // low octet of the CRC
+		p[11] = byte(c & 0xFF)
 		return nil
 	case enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1:
 		return nil

@@ -118,7 +118,7 @@ func TestHamming743_DecodeRandom(t *testing.T) {
 	for i := 0; i < 200; i++ {
 		var data [4]bit.Bit
 		for j := 0; j < 4; j++ {
-			if rand.Intn(2) == 1 { //nolint:gosec // deterministic PRNG sufficient for tests
+			if rand.Intn(2) == 1 {
 				data[j] = 1
 			}
 		}
@@ -132,7 +132,7 @@ func TestHamming743_DecodeRandom(t *testing.T) {
 			t.Fatalf("iteration %d no-error: decoded mismatch", i)
 		}
 
-		errPos := rand.Intn(7) //nolint:gosec // deterministic PRNG sufficient for tests
+		errPos := rand.Intn(7)
 		corrupted := cw
 		corrupted[errPos] ^= 1
 		decoded, result = Decode743(corrupted)

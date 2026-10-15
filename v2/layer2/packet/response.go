@@ -190,7 +190,7 @@ func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (P
 		for _, b := range rd {
 			blocks = append(blocks, b)
 		}
-		h.BlocksToFollow = uint8(len(blocks)) //nolint:gosec // 1 or 2
+		h.BlocksToFollow = uint8(len(blocks) & 0xFF)
 	}
 	return Packet{
 		Header: pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: h},

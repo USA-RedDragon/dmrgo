@@ -31,8 +31,8 @@ type ReverseChannel struct {
 func DecodeReverseChannel(infoBits [11]bit.Bit) ReverseChannel {
 	var result ReverseChannel
 	lowbit.Mask(infoBits[:])
-	result.RCCommand = enums.RCCommand(bit.Uint(infoBits[:4]))                                        //nolint:gosec // 4-bit field
-	result.FEC.Uncorrectable = !crc.CheckCRC7(infoBits[:4], uint8(bit.Uint(infoBits[4:]))^CRC7MaskRC) //nolint:gosec // 7-bit field
+	result.RCCommand = enums.RCCommand(bit.Uint(infoBits[:4]) & 0xFF)
+	result.FEC.Uncorrectable = !crc.CheckCRC7(infoBits[:4], uint8(bit.Uint(infoBits[4:])&0xFF)^CRC7MaskRC)
 	return result
 }
 

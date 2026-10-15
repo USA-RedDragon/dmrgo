@@ -42,8 +42,6 @@ const (
 )
 
 // CRCWidths maps each supported CRC algorithm to its width in bits.
-//
-//nolint:gochecknoglobals
 var CRCWidths = map[string]int{
 	"crc_ccitt": 16,
 	"crc_8":     8,

@@ -90,7 +90,7 @@ func fullLCMask(dt enums.DataType) ([3]byte, error) {
 	if !ok || width != 24 {
 		return [3]byte{}, fmt.Errorf("data type %s carries no RS(12,9) Full LC", dt.String())
 	}
-	return [3]byte{byte(mask >> 16), byte(mask >> 8), byte(mask)}, nil //nolint:gosec // 24-bit mask split into octets
+	return [3]byte{byte(mask >> 16 & 0xFF), byte(mask >> 8 & 0xFF), byte(mask & 0xFF)}, nil
 }
 
 // Seal rewrites the check bits of the BPTC(196,96) payload p of a burst of
@@ -113,7 +113,7 @@ func Seal(p *[12]byte, dt enums.DataType) error {
 	}
 	c := crc.CCITT(p[:10]) ^ mask
 	p[10] = byte(c >> 8)
-	p[11] = byte(c) //nolint:gosec // low octet of the CRC
+	p[11] = byte(c & 0xFF)
 	return nil
 }
 
@@ -136,5 +136,5 @@ func blockMask(dt enums.DataType) (uint16, error) {
 	if !ok || width != 16 {
 		return 0, fmt.Errorf("data type %s has no single-block CRC-CCITT", dt.String())
 	}
-	return uint16(mask), nil //nolint:gosec // width 16 masks fit in uint16
+	return uint16(mask & 0xFFFF), nil
 }

@@ -288,7 +288,7 @@ func writeRaw(t *testing.T, path string, pcm []int16) {
 	t.Helper()
 	buf := make([]byte, 2*len(pcm))
 	for i, s := range pcm {
-		binary.LittleEndian.PutUint16(buf[2*i:], uint16(s)) //nolint:gosec // reinterpreting PCM sample bits
+		binary.LittleEndian.PutUint16(buf[2*i:], uint16(s))
 	}
 	if err := os.WriteFile(path, buf, 0o600); err != nil {
 		t.Fatal(err)
@@ -303,7 +303,7 @@ func readRaw(t *testing.T, path string) []int16 {
 	}
 	pcm := make([]int16, len(buf)/2)
 	for i := range pcm {
-		pcm[i] = int16(binary.LittleEndian.Uint16(buf[2*i:])) //nolint:gosec // reinterpreting PCM sample bits
+		pcm[i] = int16(binary.LittleEndian.Uint16(buf[2*i:]))
 	}
 	return pcm
 }
@@ -339,7 +339,7 @@ func TestMatchesC2Enc(t *testing.T) {
 	writeRaw(t, in, pcm)
 	for _, mode := range allModes() {
 		out := filepath.Join(dir, "out-"+strconv.Itoa(int(mode))+".bin")
-		if b, err := exec.CommandContext(t.Context(), "c2enc", strconv.Itoa(int(mode)), in, out).CombinedOutput(); err != nil { //nolint:gosec // fixed tool and test paths
+		if b, err := exec.CommandContext(t.Context(), "c2enc", strconv.Itoa(int(mode)), in, out).CombinedOutput(); err != nil {
 			t.Fatalf("c2enc: %v: %s", err, b)
 		}
 		want, err := os.ReadFile(out)
@@ -373,11 +373,11 @@ func TestMatchesC2Dec(t *testing.T) {
 			t.Fatal(err)
 		}
 		wantPath := filepath.Join(dir, "c2dec-"+strconv.Itoa(int(mode))+".raw")
-		if b, err := exec.CommandContext(t.Context(), "c2dec", strconv.Itoa(int(mode)), bits, wantPath).CombinedOutput(); err != nil { //nolint:gosec // fixed tool and test paths
+		if b, err := exec.CommandContext(t.Context(), "c2dec", strconv.Itoa(int(mode)), bits, wantPath).CombinedOutput(); err != nil {
 			t.Fatalf("c2dec: %v: %s", err, b)
 		}
 		gotPath := filepath.Join(dir, "go-"+strconv.Itoa(int(mode))+".raw")
-		cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestMatchesC2Dec$") //nolint:gosec // re-runs this test binary
+		cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestMatchesC2Dec$")
 		cmd.Env = append(os.Environ(),
 			"CODEC2_C2DEC_HELPER=1",
 			"CODEC2_C2DEC_MODE="+strconv.Itoa(int(mode)),

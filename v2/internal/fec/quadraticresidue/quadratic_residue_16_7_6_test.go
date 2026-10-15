@@ -13,7 +13,7 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		var data [7]bit.Bit
 		for j := 0; j < 7; j++ {
-			if rand.Intn(2) == 1 { //nolint:gosec // pseudo-random adequate for fuzz-style test
+			if rand.Intn(2) == 1 {
 				data[j] = 1
 			}
 		}
@@ -32,7 +32,7 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		}
 
 		cwErr1 := cw
-		pos := rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
+		pos := rand.Intn(16)
 		cwErr1[pos] ^= 1
 		decoded, result = Decode(cwErr1)
 		if result.Uncorrectable || result.ErrorsCorrected != 1 {
@@ -44,9 +44,9 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		}
 
 		cwErr2 := cw
-		p1, p2 := rand.Intn(16), rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
+		p1, p2 := rand.Intn(16), rand.Intn(16)
 		for p1 == p2 {
-			p2 = rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
+			p2 = rand.Intn(16)
 		}
 		cwErr2[p1] ^= 1
 		cwErr2[p2] ^= 1
@@ -59,12 +59,12 @@ func TestQuadraticResidue1676Decode(t *testing.T) {
 		}
 
 		cwErr3 := cw
-		p1, p2, p3 := rand.Intn(16), rand.Intn(16), rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
+		p1, p2, p3 := rand.Intn(16), rand.Intn(16), rand.Intn(16)
 		for p1 == p2 {
-			p2 = rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
+			p2 = rand.Intn(16)
 		}
 		for p3 == p1 || p3 == p2 {
-			p3 = rand.Intn(16) //nolint:gosec // pseudo-random adequate for fuzz-style test
+			p3 = rand.Intn(16)
 		}
 		cwErr3[p1] ^= 1
 		cwErr3[p2] ^= 1

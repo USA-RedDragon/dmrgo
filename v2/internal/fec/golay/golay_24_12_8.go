@@ -34,7 +34,7 @@ func Decode24128(received uint32) (data uint16, result fec.Result) {
 	syndrome := (polySyndrome << 1) | parityErr
 
 	if syndrome == 0 {
-		return uint16(received >> 12), result //nolint:gosec // received>>12 is at most 12 bits, fits in uint16
+		return uint16(received >> 12), result
 	}
 
 	errPattern := golay_24_12_8_syndrome_table[syndrome]
@@ -47,5 +47,5 @@ func Decode24128(received uint32) (data uint16, result fec.Result) {
 	corrected := received ^ errPattern
 	result.ErrorsCorrected = bits.OnesCount32(errPattern)
 
-	return uint16(corrected >> 12), result //nolint:gosec // corrected>>12 is at most 12 bits, fits in uint16
+	return uint16(corrected >> 12 & 0xFFFF), result
 }

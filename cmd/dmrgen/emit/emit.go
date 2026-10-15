@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/USA-RedDragon/dmrgo/cmd/dmrgen/parse"
-	. "github.com/dave/jennifer/jen" //nolint:revive,staticcheck // jennifer is designed for dot import
+	. "github.com/dave/jennifer/jen"
 )
 
 const (
@@ -38,7 +38,6 @@ type CRCAlgorithmInfo struct {
 	CalcFn   string // e.g. "CRC8", "CCITT"
 }
 
-//nolint:gochecknoglobals
 var crcAlgorithms = map[string]CRCAlgorithmInfo{
 	"crc_ccitt": {
 		BitLevel: false,
@@ -66,7 +65,6 @@ type FECCodecInfo struct {
 	DataBytes   int    // for PackedBytes: data byte count (e.g. 9)
 }
 
-//nolint:gochecknoglobals
 var fecCodecs = map[string]FECCodecInfo{
 	"golay_20_8_7": {
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay",
@@ -195,11 +193,11 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 
 	f.Comment(funcName + " decodes " + docObject(pdu))
 
-	codec, err := resolveCodec(pdu)
+	codec, hasFEC, err := resolveCodec(pdu)
 	if err != nil {
 		return err
 	}
-	if codec != nil {
+	if hasFEC {
 		inputSize = codec.InputSize
 	}
 
@@ -221,8 +219,8 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		g.Qual(lowbitPkg, "Mask").Call(Id("data").Index(Empty(), Empty()))
 
 		hasCRC := pdu.CRC != nil
-		hasPackedFEC := codec != nil && codec.PackedBytes
-		hasBitFEC := codec != nil && !codec.PackedBytes
+		hasPackedFEC := hasFEC && codec.PackedBytes
+		hasBitFEC := hasFEC && !codec.PackedBytes
 		if hasCRC || hasPackedFEC {
 			isBitCRC := false
 			if hasCRC {
@@ -285,32 +283,32 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 }
 
 // resolveCodec looks up the FEC codec and CRC algorithm of a PDU and checks
-// that its fields fit the codec's data bits. It returns a nil codec for PDUs
-// without a dmr:fec directive.
-func resolveCodec(pdu parse.PDUStruct) (*FECCodecInfo, error) {
+// that its fields fit the codec's data bits. ok is false for a PDU without a
+// dmr:fec directive.
+func resolveCodec(pdu parse.PDUStruct) (codec *FECCodecInfo, ok bool, err error) {
 	if pdu.CRC != nil {
-		if _, ok := crcAlgorithms[pdu.CRC.Algorithm]; !ok {
-			return nil, fmt.Errorf("unknown CRC algorithm: %q", pdu.CRC.Algorithm)
+		if _, found := crcAlgorithms[pdu.CRC.Algorithm]; !found {
+			return nil, false, fmt.Errorf("unknown CRC algorithm: %q", pdu.CRC.Algorithm)
 		}
 	}
 	if pdu.FEC == nil {
-		return nil, nil //nolint:nilnil // no codec is a valid result
+		return nil, false, nil
 	}
-	c, ok := fecCodecs[pdu.FEC.Codec]
-	if !ok {
-		return nil, fmt.Errorf("unknown FEC codec: %s", pdu.FEC.Codec)
+	c, found := fecCodecs[pdu.FEC.Codec]
+	if !found {
+		return nil, false, fmt.Errorf("unknown FEC codec: %s", pdu.FEC.Codec)
 	}
 	if pdu.CRC != nil {
-		return nil, errors.New("dmr:fec and dmr:crc cannot be combined")
+		return nil, false, errors.New("dmr:fec and dmr:crc cannot be combined")
 	}
 	dataBits := c.DataBits
 	if c.PackedBytes {
 		dataBits = c.DataBytes * 8
 	}
 	if pdu.InputSize > dataBits {
-		return nil, fmt.Errorf("fields span %d bits but %s carries %d data bits", pdu.InputSize, pdu.FEC.Codec, dataBits)
+		return nil, false, fmt.Errorf("fields span %d bits but %s carries %d data bits", pdu.InputSize, pdu.FEC.Codec, dataBits)
 	}
-	return &c, nil
+	return &c, true, nil
 }
 
 // emitBitPacking generates code to pack bit.Bit array into []byte.
@@ -883,17 +881,17 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 func emitEncode(f *File, pdu parse.PDUStruct) error {
 	f.Comment("Encode encodes " + docObject(pdu))
 
-	codec, err := resolveCodec(pdu)
+	codec, hasFEC, err := resolveCodec(pdu)
 	if err != nil {
 		return err
 	}
 
 	hasCRC := pdu.CRC != nil
-	hasPackedFEC := codec != nil && codec.PackedBytes
-	hasBitFEC := codec != nil && !codec.PackedBytes
+	hasPackedFEC := hasFEC && codec.PackedBytes
+	hasBitFEC := hasFEC && !codec.PackedBytes
 
 	outputSize := pdu.InputSize
-	if codec != nil {
+	if hasFEC {
 		outputSize = codec.InputSize
 	}
 	enc := encoder{pdu: pdu, size: outputSize}
