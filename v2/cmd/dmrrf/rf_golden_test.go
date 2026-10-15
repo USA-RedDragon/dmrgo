@@ -11,20 +11,24 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// rfRuns are the sequences a Motorola XPR 8400 (CC 7, ID 314926) received
-// over the air and relayed on IPSC on 2026-10-15.
-var rfRuns = []struct {
+type rfRun struct {
 	name, seq string
 	cfg       func(*SeqConfig)
-}{
-	{"wakeup", "wakeup", func(c *SeqConfig) { c.Wakeups = 1 }},
-	{"data12", "data12", func(c *SeqConfig) { c.Dest = 3191868 }},
-	{"data34", "data34", func(c *SeqConfig) { c.Dest = 3191868 }},
-	{"data34u", "data34u", func(c *SeqConfig) { c.Dest, c.Group = 9, true }},
-	{"preamble", "preamble", func(c *SeqConfig) { c.Dest, c.Preambles = 3191868, 2 }},
-	{"voice", "voice", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
-	{"voice-late", "voice", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes, c.LateEntry = 91, true, 2, true }},
-	{"pi", "pi", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
+}
+
+// rfRuns returns the sequences a Motorola XPR 8400 (CC 7, ID 314926)
+// received over the air and relayed on IPSC on 2026-10-15.
+func rfRuns() []rfRun {
+	return []rfRun{
+		{"wakeup", "wakeup", func(c *SeqConfig) { c.Wakeups = 1 }},
+		{"data12", "data12", func(c *SeqConfig) { c.Dest = 3191868 }},
+		{"data34", "data34", func(c *SeqConfig) { c.Dest = 3191868 }},
+		{"data34u", "data34u", func(c *SeqConfig) { c.Dest, c.Group = 9, true }},
+		{"preamble", "preamble", func(c *SeqConfig) { c.Dest, c.Preambles = 3191868, 2 }},
+		{"voice", "voice", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
+		{"voice-late", "voice", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes, c.LateEntry = 91, true, 2, true }},
+		{"pi", "pi", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
+	}
 }
 
 func rfConfig() SeqConfig {
@@ -34,7 +38,7 @@ func rfConfig() SeqConfig {
 func rfBursts(t *testing.T) map[string][]string {
 	t.Helper()
 	out := map[string][]string{}
-	for _, r := range rfRuns {
+	for _, r := range rfRuns() {
 		cfg := rfConfig()
 		r.cfg(&cfg)
 		built, err := Sequence(r.seq, cfg)
@@ -56,7 +60,7 @@ func TestRFGoldenBursts(t *testing.T) {
 	const path = "testdata/rf_golden.txt"
 	if os.Getenv("DMRRF_UPDATE_GOLDEN") == "1" {
 		var sb strings.Builder
-		for _, r := range rfRuns {
+		for _, r := range rfRuns() {
 			for i, h := range got[r.name] {
 				fmt.Fprintf(&sb, "%s %d %s\n", r.name, i, h)
 			}
@@ -83,7 +87,7 @@ func TestRFGoldenBursts(t *testing.T) {
 		}
 		want[name] = append(want[name], h)
 	}
-	for _, r := range rfRuns {
+	for _, r := range rfRuns() {
 		if len(got[r.name]) != len(want[r.name]) {
 			t.Errorf("%s: %d bursts, want %d", r.name, len(got[r.name]), len(want[r.name]))
 			continue
