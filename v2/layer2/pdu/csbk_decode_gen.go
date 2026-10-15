@@ -1034,93 +1034,101 @@ func DecodeCSBK(data [96]bit.Bit, trunkingMode bool) (CSBK, fec.FECResult) {
 	result.FID = bit.BitsToUint8(data[:], 8, 8)
 	var _dispatchBits [64]bit.Bit
 	copy(_dispatchBits[:], data[16:80])
-	switch result.CSBKOpcode {
-	case CSBKBSOutboundActivationPDU:
-		if !result.TrunkingMode {
-			_decoded, _ := DecodeBSOutboundActivationPDU(_dispatchBits)
-			result.BSOutboundActivationPDU = &_decoded
-		} else if result.TrunkingMode {
-			_decoded, _ := DecodeTalkgroupDataGrantMultiItemPDU(_dispatchBits)
-			result.TalkgroupDataGrantMultiItemPDU = &_decoded
+	if result.FID == 0 {
+		switch result.CSBKOpcode {
+		case CSBKBSOutboundActivationPDU:
+			if !result.TrunkingMode {
+				_decoded, _ := DecodeBSOutboundActivationPDU(_dispatchBits)
+				result.BSOutboundActivationPDU = &_decoded
+			} else if result.TrunkingMode {
+				_decoded, _ := DecodeTalkgroupDataGrantMultiItemPDU(_dispatchBits)
+				result.TalkgroupDataGrantMultiItemPDU = &_decoded
+			} else {
+				copy(result.RawPayload[:], _dispatchBits[:])
+			}
+		case CSBKUnitToUnitVoiceServiceRequestPDU:
+			_decoded, _ := DecodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
+			result.UnitToUnitVoiceServiceRequestPDU = &_decoded
+		case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
+			_decoded, _ := DecodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBits)
+			result.UnitToUnitVoiceServiceAnswerResponsePDU = &_decoded
+		case CSBKNegativeAcknowledgementPDU:
+			_decoded, _ := DecodeNegativeAcknowledgementPDU(_dispatchBits)
+			result.NegativeAcknowledgementPDU = &_decoded
+		case CSBKPreamblePDU:
+			_decoded, _ := DecodePreamblePDU(_dispatchBits)
+			result.PreamblePDU = &_decoded
+		case CSBKChannelTimingPDU:
+			_decoded, _ := DecodeChannelTimingPDU(_dispatchBits)
+			result.ChannelTimingPDU = &_decoded
+		case CSBKPrivateVoiceGrant:
+			_decoded, _ := DecodePrivateVoiceGrantPDU(_dispatchBits)
+			result.PrivateVoiceGrantPDU = &_decoded
+		case CSBKTalkgroupVoiceGrant:
+			_decoded, _ := DecodeTalkgroupVoiceGrantPDU(_dispatchBits)
+			result.TalkgroupVoiceGrantPDU = &_decoded
+		case CSBKBroadcastTalkgroupVoiceGrant:
+			_decoded, _ := DecodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
+			result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
+		case CSBKPrivateDataGrant:
+			_decoded, _ := DecodePrivateDataGrantPDU(_dispatchBits)
+			result.PrivateDataGrantPDU = &_decoded
+		case CSBKTalkgroupDataGrant:
+			_decoded, _ := DecodeTalkgroupDataGrantPDU(_dispatchBits)
+			result.TalkgroupDataGrantPDU = &_decoded
+		case CSBKDuplexPrivateVoiceGrant:
+			_decoded, _ := DecodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
+			result.DuplexPrivateVoiceGrantPDU = &_decoded
+		case CSBKDuplexPrivateDataGrant:
+			_decoded, _ := DecodeDuplexPrivateDataGrantPDU(_dispatchBits)
+			result.DuplexPrivateDataGrantPDU = &_decoded
+		case CSBKPrivateDataGrantMultiItem:
+			_decoded, _ := DecodePrivateDataGrantMultiItemPDU(_dispatchBits)
+			result.PrivateDataGrantMultiItemPDU = &_decoded
+		case CSBKMove:
+			_decoded, _ := DecodeMovePDU(_dispatchBits)
+			result.MovePDU = &_decoded
+		case CSBKAloha:
+			_decoded, _ := DecodeAlohaPDU(_dispatchBits)
+			result.AlohaPDU = &_decoded
+		case CSBKBroadcast:
+			_decoded, _ := DecodeCBroadcastPDU(_dispatchBits)
+			result.CBroadcastPDU = &_decoded
+		case CSBKClear:
+			_decoded, _ := DecodeClearPDU(_dispatchBits)
+			result.ClearPDU = &_decoded
+		case CSBKProtect:
+			_decoded, _ := DecodeProtectPDU(_dispatchBits)
+			result.ProtectPDU = &_decoded
+		case CSBKAhoy:
+			_decoded, _ := DecodeAhoyPDU(_dispatchBits)
+			result.AhoyPDU = &_decoded
+		case CSBKAckOutbound:
+			_decoded, _ := DecodeAckOutboundPDU(_dispatchBits)
+			result.AckOutboundPDU = &_decoded
+		case CSBKAckInbound:
+			_decoded, _ := DecodeAckInboundPDU(_dispatchBits)
+			result.AckInboundPDU = &_decoded
+		case CSBKAckOutboundPayload:
+			_decoded, _ := DecodeAckOutboundPayloadPDU(_dispatchBits)
+			result.AckOutboundPayloadPDU = &_decoded
+		case CSBKAckInboundPayload:
+			_decoded, _ := DecodeAckInboundPayloadPDU(_dispatchBits)
+			result.AckInboundPayloadPDU = &_decoded
+		case CSBKRandomAccess:
+			_decoded, _ := DecodeRandomAccessPDU(_dispatchBits)
+			result.RandomAccessPDU = &_decoded
+		case CSBKAckvitation:
+			_decoded, _ := DecodeAckvitationPDU(_dispatchBits)
+			result.AckvitationPDU = &_decoded
+		case CSBKMaintenance:
+			_decoded, _ := DecodeMaintenancePDU(_dispatchBits)
+			result.MaintenancePDU = &_decoded
+		default:
+			copy(result.RawPayload[:], _dispatchBits[:])
 		}
-	case CSBKUnitToUnitVoiceServiceRequestPDU:
-		_decoded, _ := DecodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
-		result.UnitToUnitVoiceServiceRequestPDU = &_decoded
-	case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
-		_decoded, _ := DecodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBits)
-		result.UnitToUnitVoiceServiceAnswerResponsePDU = &_decoded
-	case CSBKNegativeAcknowledgementPDU:
-		_decoded, _ := DecodeNegativeAcknowledgementPDU(_dispatchBits)
-		result.NegativeAcknowledgementPDU = &_decoded
-	case CSBKPreamblePDU:
-		_decoded, _ := DecodePreamblePDU(_dispatchBits)
-		result.PreamblePDU = &_decoded
-	case CSBKChannelTimingPDU:
-		_decoded, _ := DecodeChannelTimingPDU(_dispatchBits)
-		result.ChannelTimingPDU = &_decoded
-	case CSBKPrivateVoiceGrant:
-		_decoded, _ := DecodePrivateVoiceGrantPDU(_dispatchBits)
-		result.PrivateVoiceGrantPDU = &_decoded
-	case CSBKTalkgroupVoiceGrant:
-		_decoded, _ := DecodeTalkgroupVoiceGrantPDU(_dispatchBits)
-		result.TalkgroupVoiceGrantPDU = &_decoded
-	case CSBKBroadcastTalkgroupVoiceGrant:
-		_decoded, _ := DecodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
-		result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
-	case CSBKPrivateDataGrant:
-		_decoded, _ := DecodePrivateDataGrantPDU(_dispatchBits)
-		result.PrivateDataGrantPDU = &_decoded
-	case CSBKTalkgroupDataGrant:
-		_decoded, _ := DecodeTalkgroupDataGrantPDU(_dispatchBits)
-		result.TalkgroupDataGrantPDU = &_decoded
-	case CSBKDuplexPrivateVoiceGrant:
-		_decoded, _ := DecodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
-		result.DuplexPrivateVoiceGrantPDU = &_decoded
-	case CSBKDuplexPrivateDataGrant:
-		_decoded, _ := DecodeDuplexPrivateDataGrantPDU(_dispatchBits)
-		result.DuplexPrivateDataGrantPDU = &_decoded
-	case CSBKPrivateDataGrantMultiItem:
-		_decoded, _ := DecodePrivateDataGrantMultiItemPDU(_dispatchBits)
-		result.PrivateDataGrantMultiItemPDU = &_decoded
-	case CSBKMove:
-		_decoded, _ := DecodeMovePDU(_dispatchBits)
-		result.MovePDU = &_decoded
-	case CSBKAloha:
-		_decoded, _ := DecodeAlohaPDU(_dispatchBits)
-		result.AlohaPDU = &_decoded
-	case CSBKBroadcast:
-		_decoded, _ := DecodeCBroadcastPDU(_dispatchBits)
-		result.CBroadcastPDU = &_decoded
-	case CSBKClear:
-		_decoded, _ := DecodeClearPDU(_dispatchBits)
-		result.ClearPDU = &_decoded
-	case CSBKProtect:
-		_decoded, _ := DecodeProtectPDU(_dispatchBits)
-		result.ProtectPDU = &_decoded
-	case CSBKAhoy:
-		_decoded, _ := DecodeAhoyPDU(_dispatchBits)
-		result.AhoyPDU = &_decoded
-	case CSBKAckOutbound:
-		_decoded, _ := DecodeAckOutboundPDU(_dispatchBits)
-		result.AckOutboundPDU = &_decoded
-	case CSBKAckInbound:
-		_decoded, _ := DecodeAckInboundPDU(_dispatchBits)
-		result.AckInboundPDU = &_decoded
-	case CSBKAckOutboundPayload:
-		_decoded, _ := DecodeAckOutboundPayloadPDU(_dispatchBits)
-		result.AckOutboundPayloadPDU = &_decoded
-	case CSBKAckInboundPayload:
-		_decoded, _ := DecodeAckInboundPayloadPDU(_dispatchBits)
-		result.AckInboundPayloadPDU = &_decoded
-	case CSBKRandomAccess:
-		_decoded, _ := DecodeRandomAccessPDU(_dispatchBits)
-		result.RandomAccessPDU = &_decoded
-	case CSBKAckvitation:
-		_decoded, _ := DecodeAckvitationPDU(_dispatchBits)
-		result.AckvitationPDU = &_decoded
-	case CSBKMaintenance:
-		_decoded, _ := DecodeMaintenancePDU(_dispatchBits)
-		result.MaintenancePDU = &_decoded
+	} else {
+		copy(result.RawPayload[:], _dispatchBits[:])
 	}
 	return result, fecResult
 }
@@ -1213,6 +1221,8 @@ func EncodeCSBK(s *CSBK) [96]bit.Bit {
 	case s.MaintenancePDU != nil:
 		_pduBits := EncodeMaintenancePDU(s.MaintenancePDU)
 		copy(data[16:80], _pduBits[:])
+	default:
+		copy(data[16:80], s.RawPayload[:])
 	}
 	if s.LastBlock {
 		data[0] = 1
@@ -1303,6 +1313,8 @@ func (s *CSBK) ToString() string {
 		_ret += s.AckvitationPDU.ToString()
 	case s.MaintenancePDU != nil:
 		_ret += s.MaintenancePDU.ToString()
+	default:
+		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
 	}
 	_ret += " }"
 	return _ret

@@ -279,7 +279,7 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 				}
 				continue
 			}
-			if strings.Contains(text, "ETSI TS") {
+			if pdu.SpecRef == "" && strings.Contains(text, "ETSI TS") {
 				pdu.SpecRef = text
 			}
 		}

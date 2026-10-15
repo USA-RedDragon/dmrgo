@@ -287,6 +287,9 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 				dispatchFields = append(dispatchFields, field)
 				continue
 			}
+			if field.Fallback {
+				continue
+			}
 			emitFieldDecode(g, field, pdu)
 		}
 
@@ -459,8 +462,13 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 		}
 	}
 
+	var raw []Code
+	if fb := fallbackField(pdu); fb != nil {
+		raw = []Code{Copy(Id("result").Dot(fb.Name).Index(Empty(), Empty()), Id(tmpVar).Index(Empty(), Empty()))}
+	}
+
 	var genErr error
-	g.Switch(Id("result").Dot(dispatchFieldName)).BlockFunc(func(sw *Group) {
+	sw := Switch(Id("result").Dot(dispatchFieldName)).BlockFunc(func(sw *Group) {
 		for _, grp := range groups {
 			caseValues := make([]Code, len(grp.values))
 			for i, val := range grp.values {
@@ -472,13 +480,43 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 				continue
 			}
 			sw.Case(caseValues...).BlockFunc(func(caseBody *Group) {
-				if err := emitGuardedDispatch(caseBody, grp.fields, tmpVar); err != nil && genErr == nil {
+				if err := emitGuardedDispatch(caseBody, grp.fields, tmpVar, raw); err != nil && genErr == nil {
 					genErr = err
 				}
 			})
 		}
+		if raw != nil {
+			sw.Default().Block(raw...)
+		}
 	})
-	return genErr
+	if genErr != nil {
+		return genErr
+	}
+
+	if pdu.DispatchIf == nil {
+		g.Add(sw)
+		return nil
+	}
+	cond, err := emitGuardCondition(pdu.DispatchIf)
+	if err != nil {
+		return fmt.Errorf("dmr:dispatch_if: %w", err)
+	}
+	stmt := If(cond).Block(sw)
+	if raw != nil {
+		stmt.Else().Block(raw...)
+	}
+	g.Add(stmt)
+	return nil
+}
+
+// fallbackField returns the raw field that holds undispatched payloads, or nil.
+func fallbackField(pdu parse.PDUStruct) *parse.Field {
+	for i := range pdu.Fields {
+		if pdu.Fields[i].Fallback {
+			return &pdu.Fields[i]
+		}
+	}
+	return nil
 }
 
 func dispatchDecodeBlock(field parse.Field, tmpVar string) []Code {
@@ -497,8 +535,9 @@ func dispatchTypeName(field parse.Field) string {
 
 // emitGuardedDispatch emits an if/else chain for dispatch fields that share the
 // same primary dispatch value. Fields with a `when:` guard are emitted as `if`
-// conditions; the unguarded field (if any) becomes the final `else` fallback.
-func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string) error {
+// conditions; the unguarded field (if any) becomes the final `else` branch,
+// otherwise raw (the fallback copy, if any) does.
+func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string, raw []Code) error {
 	var guarded []parse.Field
 	var fallback *parse.Field
 	for i := range fields {
@@ -527,8 +566,11 @@ func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string) error {
 			chain.Else().If(guardCond).Block(dispatchDecodeBlock(field, tmpVar)...)
 		}
 	}
-	if fallback != nil {
+	switch {
+	case fallback != nil:
 		chain.Else().Block(dispatchDecodeBlock(*fallback, tmpVar)...)
+	case raw != nil:
+		chain.Else().Block(raw...)
 	}
 	g.Add(chain)
 	return nil
@@ -681,6 +723,9 @@ func emitToStringConcat(f *File, pdu parse.PDUStruct) {
 				dispatchFields = append(dispatchFields, field)
 				continue
 			}
+			if field.Fallback {
+				continue
+			}
 			if field.Stride > 0 && field.ArrayLen > 0 {
 				// Emit the regular fields collected so far
 				if len(regularParts) > 0 {
@@ -724,6 +769,11 @@ func emitToStringConcat(f *File, pdu parse.PDUStruct) {
 				for _, field := range dispatchFields {
 					sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(
 						Id("_ret").Op("+=").Id("s").Dot(field.Name).Dot("ToString").Call(),
+					)
+				}
+				if fb := fallbackField(pdu); fb != nil {
+					sw.Default().Block(
+						Id("_ret").Op("+=").Qual("fmt", "Sprintf").Call(Lit(fb.Name+": %v"), Id("s").Dot(fb.Name)),
 					)
 				}
 			})
@@ -1035,9 +1085,11 @@ func emitEncodeFields(g *Group, pdu parse.PDUStruct) {
 		if field.Skip {
 			continue // skip dmr:"-" fields
 		}
-		if field.Kind == parse.FieldDispatch {
+		switch {
+		case field.Kind == parse.FieldDispatch:
 			dispatchFields = append(dispatchFields, field)
-		} else {
+		case field.Fallback:
+		default:
 			regularFields = append(regularFields, field)
 		}
 	}
@@ -1079,6 +1131,11 @@ func emitDispatchEncode(g *Group, fields []parse.Field, pdu parse.PDUStruct) {
 			sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(
 				Id("_pduBits").Op(":=").Id(encodeFn).Call(Id("s").Dot(field.Name)),
 				Copy(Id("data").Index(Lit(bitStart), Lit(bitEnd+1)), Id("_pduBits").Index(Empty(), Empty())),
+			)
+		}
+		if fb := fallbackField(pdu); fb != nil {
+			sw.Default().Block(
+				Copy(Id("data").Index(Lit(bitStart), Lit(bitEnd+1)), Id("s").Dot(fb.Name).Index(Empty(), Empty())),
 			)
 		}
 	})

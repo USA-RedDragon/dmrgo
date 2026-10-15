@@ -183,6 +183,46 @@ type T struct {
 	)
 }
 
+func TestDispatchIfAndFallback(t *testing.T) {
+	out := mustGenerate(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:dispatch_if FID==0
+type T struct {
+	Op  uint8       `+"`dmr:\"bits:0-7\"`"+`
+	FID uint8       `+"`dmr:\"bits:8-15\"`"+`
+	A   *Sub        `+"`dmr:\"bits:16-23,dispatch:Op=1\"`"+`
+	Raw [8]bit.Bit  `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
+}`)
+	assertContains(t, out,
+		"if result.FID == 0 {",
+		"\tdefault:\n\t\t\tcopy(result.Raw[:], _dispatchBits[:])",
+		"} else {\n\t\tcopy(result.Raw[:], _dispatchBits[:])",
+		"\tdefault:\n\t\tcopy(data[16:24], s.Raw[:])",
+		`_ret += fmt.Sprintf("Raw: %v", s.Raw)`,
+	)
+	if strings.Count(out, "copy(data[16:24], s.Raw[:])") != 1 {
+		t.Error("fallback should only be encoded in the dispatch default branch")
+	}
+}
+
+func TestGuardedDispatchFallsBackToRaw(t *testing.T) {
+	out := mustGenerate(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:input Mode
+type T struct {
+	Mode bool       `+"`dmr:\"-\"`"+`
+	Op   uint8      `+"`dmr:\"bits:0-7\"`"+`
+	K    uint8      `+"`dmr:\"bits:8-15\"`"+`
+	A    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=1,when:K==2\"`"+`
+	Raw  [8]bit.Bit `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
+}`)
+	assertContains(t, out, "if result.K == 2 {", "} else {\n\t\t\tcopy(result.Raw[:], _dispatchBits[:])")
+}
+
 func TestInputsBecomeDecodeParameters(t *testing.T) {
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`

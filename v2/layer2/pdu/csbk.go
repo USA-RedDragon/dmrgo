@@ -421,7 +421,12 @@ func (csbk *CSBK) SetTrunkingMode(mode bool) {
 // dmr:crc_mask 0xA5A5
 // dmr:input_size 96
 // dmr:input TrunkingMode
+// dmr:dispatch_if FID==0
 // ETSI TS 102 361-1 - 9.1.5 CSBK PDU
+//
+// The FID redefines the CSBKO (ETSI TS 102 361-1 Table 9.21), so the standard
+// payload layouts apply only to the SFID. Payloads of other FIDs and of
+// opcodes without a layout are kept in RawPayload.
 type CSBK struct {
 	DataType elements.DataType `dmr:"-"`
 
@@ -463,6 +468,8 @@ type CSBK struct {
 	RandomAccessPDU                 *RandomAccessPDU                 `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKRandomAccess"`
 	AckvitationPDU                  *AckvitationPDU                  `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckvitation"`
 	MaintenancePDU                  *MaintenancePDU                  `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKMaintenance"`
+
+	RawPayload [64]bit.Bit `dmr:"bits:16-79,raw,fallback"`
 
 	crc uint16 `dmr:"-"` //nolint:unused
 }

@@ -9,7 +9,12 @@ import (
 )
 
 // dmr:fec reed_solomon_12_9_4
+// dmr:dispatch_if FeatureSetID==0
 // ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
+//
+// The FID redefines the FLCO (ETSI TS 102 361-1 Table 9.21), so the standard
+// payload layouts apply only to the SFID. Payloads of other FIDs and of
+// unknown FLCOs are kept in RawPayload.
 type FullLinkControl struct {
 	DataType     layer2Elements.DataType `dmr:"-"`
 	ProtectFlag  bool                    `dmr:"bit:0"`
@@ -23,6 +28,8 @@ type FullLinkControl struct {
 	TalkerAliasHeader         *FLCTalkerAliasHeader         `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasHeader"`
 	TalkerAliasBlock          *FLCTalkerAliasBlock          `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasBlock1|enums.FLCOTalkerAliasBlock2|enums.FLCOTalkerAliasBlock3"`
 	TerminatorDataLinkControl *FLCTerminatorDataLinkControl `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTerminatorDataLinkControl"`
+
+	RawPayload [56]bit.Bit `dmr:"bits:16-71,raw,fallback"`
 }
 
 // FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])

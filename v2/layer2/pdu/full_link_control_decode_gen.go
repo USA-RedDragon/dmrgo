@@ -60,25 +60,31 @@ func DecodeFullLinkControl(data [96]bit.Bit) (FullLinkControl, fec.FECResult) {
 	}
 	var _dispatchBits [56]bit.Bit
 	copy(_dispatchBits[:], data[16:72])
-	switch result.FLCO {
-	case enums.FLCOGroupVoiceChannelUser:
-		_decoded, _ := DecodeFLCGroupVoice(_dispatchBits)
-		result.GroupVoice = &_decoded
-	case enums.FLCOUnitToUnitVoiceChannelUser:
-		_decoded, _ := DecodeFLCUnitToUnit(_dispatchBits)
-		result.UnitToUnit = &_decoded
-	case enums.FLCOGPSInfo:
-		_decoded, _ := DecodeFLCGPSInfo(_dispatchBits)
-		result.GPSInfo = &_decoded
-	case enums.FLCOTalkerAliasHeader:
-		_decoded, _ := DecodeFLCTalkerAliasHeader(_dispatchBits)
-		result.TalkerAliasHeader = &_decoded
-	case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
-		_decoded, _ := DecodeFLCTalkerAliasBlock(_dispatchBits)
-		result.TalkerAliasBlock = &_decoded
-	case enums.FLCOTerminatorDataLinkControl:
-		_decoded, _ := DecodeFLCTerminatorDataLinkControl(_dispatchBits)
-		result.TerminatorDataLinkControl = &_decoded
+	if result.FeatureSetID == 0 {
+		switch result.FLCO {
+		case enums.FLCOGroupVoiceChannelUser:
+			_decoded, _ := DecodeFLCGroupVoice(_dispatchBits)
+			result.GroupVoice = &_decoded
+		case enums.FLCOUnitToUnitVoiceChannelUser:
+			_decoded, _ := DecodeFLCUnitToUnit(_dispatchBits)
+			result.UnitToUnit = &_decoded
+		case enums.FLCOGPSInfo:
+			_decoded, _ := DecodeFLCGPSInfo(_dispatchBits)
+			result.GPSInfo = &_decoded
+		case enums.FLCOTalkerAliasHeader:
+			_decoded, _ := DecodeFLCTalkerAliasHeader(_dispatchBits)
+			result.TalkerAliasHeader = &_decoded
+		case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
+			_decoded, _ := DecodeFLCTalkerAliasBlock(_dispatchBits)
+			result.TalkerAliasBlock = &_decoded
+		case enums.FLCOTerminatorDataLinkControl:
+			_decoded, _ := DecodeFLCTerminatorDataLinkControl(_dispatchBits)
+			result.TerminatorDataLinkControl = &_decoded
+		default:
+			copy(result.RawPayload[:], _dispatchBits[:])
+		}
+	} else {
+		copy(result.RawPayload[:], _dispatchBits[:])
 	}
 	return result, fecResult
 }
@@ -105,6 +111,8 @@ func EncodeFullLinkControl(s *FullLinkControl) [96]bit.Bit {
 	case s.TerminatorDataLinkControl != nil:
 		_pduBits := EncodeFLCTerminatorDataLinkControl(s.TerminatorDataLinkControl)
 		copy(data[16:72], _pduBits[:])
+	default:
+		copy(data[16:72], s.RawPayload[:])
 	}
 	if s.ProtectFlag {
 		data[0] = 1
@@ -143,6 +151,8 @@ func (s *FullLinkControl) ToString() string {
 		_ret += s.TalkerAliasBlock.ToString()
 	case s.TerminatorDataLinkControl != nil:
 		_ret += s.TerminatorDataLinkControl.ToString()
+	default:
+		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
 	}
 	_ret += " }"
 	return _ret

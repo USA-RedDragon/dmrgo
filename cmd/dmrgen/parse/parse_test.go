@@ -620,6 +620,96 @@ type T struct {
 	}
 }
 
+func TestParseRejectsBadFallbackAndDispatchIf(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "fallback not raw",
+			src: `type T struct {
+	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+	R  uint8 ` + "`dmr:\"bits:8-15,fallback\"`" + `
+}`,
+			want: "fallback requires raw",
+		},
+		{
+			name: "fallback without dispatch",
+			src: `type T struct {
+	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
+	R  [8]bit.Bit ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
+}`,
+			want: "without dispatch fields",
+		},
+		{
+			name: "fallback range differs",
+			src: `type T struct {
+	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
+	A  *Sub       ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
+	R  [4]bit.Bit ` + "`dmr:\"bits:8-11,raw,fallback\"`" + `
+}`,
+			want: "differs from dispatch range",
+		},
+		{
+			name: "two fallbacks",
+			src: `type T struct {
+	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
+	A  *Sub       ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
+	R  [8]bit.Bit ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
+	S  [8]bit.Bit ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
+}`,
+			want: "multiple fallback fields",
+		},
+		{
+			name: "dispatch_if without dispatch",
+			src: `// dmr:dispatch_if Op==0
+type T struct {
+	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "without dispatch fields",
+		},
+		{
+			name: "dispatch_if on unset field",
+			src: `// dmr:dispatch_if M==true
+type T struct {
+	M  bool  ` + "`dmr:\"-\"`" + `
+	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+	A  *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
+}`,
+			want: "not a dmr:input",
+		},
+		{
+			name: "dispatch_if bad value",
+			src: `// dmr:dispatch_if Op==x
+type T struct {
+	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+	A  *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
+}`,
+			want: "must be true, false, or a decimal integer",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseSrc(t, tt.src)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("expected error containing %q, got %v", tt.want, err)
+			}
+		})
+	}
+}
+
+func TestParseSpecRefUsesFirstETSILine(t *testing.T) {
+	pdus := mustParse(t, `// ETSI TS 102 361-1 - 9.1.6 first
+// See also ETSI TS 102 361-1 Table 9.21.
+type T struct {
+	A uint8 `+"`dmr:\"bits:0-7\"`"+`
+}`)
+	if pdus[0].SpecRef != "ETSI TS 102 361-1 - 9.1.6 first" {
+		t.Errorf("SpecRef = %q", pdus[0].SpecRef)
+	}
+}
+
 func TestParseIgnoresUntaggedStructs(t *testing.T) {
 	pdus := mustParse(t, `type T struct {
 	A uint8
