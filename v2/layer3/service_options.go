@@ -13,11 +13,11 @@ type ServiceOptions struct {
 	PriorityLevel       uint8 `dmr:"bits:6-7"` // 0 is no priority, 1 to 3 are priorities 1 to 3 (3 is highest)
 }
 
-// DefaultServiceOptions returns the Service Options octet 0x20 seen in
-// Motorola IPSC voice traffic and sent by IPSC bridges: no flag set and the
-// first Reserved bit set, so Reserved is 2. MMDVMHost sends 0x00, the zero
+// MotorolaServiceOptions returns the Service Options octet 0x20 seen in
+// Motorola IPSC voice traffic: no flag set and only the first Reserved bit
+// (0x20) set, so Reserved is 2. MMDVMHost sends 0x00, the zero
 // ServiceOptions.
-func DefaultServiceOptions() ServiceOptions {
+func MotorolaServiceOptions() ServiceOptions {
 	return ServiceOptions{Reserved: 2}
 }
 

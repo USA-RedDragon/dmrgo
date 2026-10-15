@@ -195,8 +195,8 @@ func TestServiceOptionsByte(t *testing.T) {
 			t.Errorf("%#02x: Encode gives %#02x", v, got)
 		}
 	}
-	if got := DefaultServiceOptions().Byte(); got != 0x20 {
-		t.Errorf("DefaultServiceOptions().Byte() = %#02x, want 0x20", got)
+	if got := MotorolaServiceOptions().Byte(); got != 0x20 {
+		t.Errorf("MotorolaServiceOptions().Byte() = %#02x, want 0x20", got)
 	}
 	if got := (ServiceOptions{Reserved: 7, PriorityLevel: 6}).Byte(); got != 0x32 {
 		t.Errorf("out of range fields give %#02x, want their low bits 0x32", got)
