@@ -4,18 +4,17 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
 )
 
 // buildContinuationBits96 constructs a [96]bit.Bit array for an MBC continuation block.
 // It sets LB, PF, CSBKO, and writes the given CdefParms bits at bits 22-79.
-func buildContinuationBits96(lb bool, pf bool, csbko byte, colourCode byte, cdeftype byte, cdefParms [58]bit.Bit) [96]bit.Bit {
+func buildContinuationBits96(pf bool, csbko byte, colourCode byte, cdefParms [58]bit.Bit) [96]bit.Bit {
 	var bits [96]bit.Bit
 
-	if lb {
-		bits[0] = 1
-	}
+	bits[0] = 1 // LB: these are always last blocks
 	if pf {
 		bits[1] = 1
 	}
@@ -34,15 +33,14 @@ func buildContinuationBits96(lb bool, pf bool, csbko byte, colourCode byte, cdef
 		}
 	}
 
-	// Cdeftype (bits 16-19)
-	for i := 0; i < 4; i++ {
-		if (cdeftype>>(3-i))&1 == 1 {
-			bits[16+i] = 1
-		}
-	}
+	// Cdeftype (bits 16-19) = 0
 
 	// CdefParms (bits 22-79)
 	copy(bits[22:80], cdefParms[:])
+
+	// Last-block CRC-CCITT over bits 0-79, no mask (TS 102 361-1 §7.4.0, Table B.21)
+	c := crc.CalculateCRCCCITT(bit.PackBits(bits[:80]))
+	copy(bits[80:96], bit.BitsFromUint16(c, 16))
 
 	return bits
 }
@@ -61,7 +59,7 @@ func TestCGAPContinuation_Decode(t *testing.T) {
 	cdefParms[17] = 1
 	cdefParms[18] = 1
 
-	bits := buildContinuationBits96(true, false, byte(pdu.CSBKPrivateVoiceGrant), 5, 0, cdefParms)
+	bits := buildContinuationBits96(false, byte(pdu.CSBKPrivateVoiceGrant), 5, cdefParms)
 
 	decoded, _ := pdu.DecodeCGAPContinuation(bits)
 
@@ -124,7 +122,7 @@ func TestMVAPContinuation_Decode(t *testing.T) {
 	var cdefParms [58]bit.Bit
 	cdefParms[0] = 1
 
-	bits := buildContinuationBits96(true, true, byte(pdu.CSBKMove), 3, 0, cdefParms)
+	bits := buildContinuationBits96(true, byte(pdu.CSBKMove), 3, cdefParms)
 
 	decoded, _ := pdu.DecodeMVAPContinuation(bits)
 
@@ -181,7 +179,7 @@ func TestVNAPContinuation_Decode(t *testing.T) {
 	cdefParms[0] = 1
 	cdefParms[57] = 1
 
-	bits := buildContinuationBits96(true, false, byte(pdu.CSBKBroadcast), 10, 0, cdefParms)
+	bits := buildContinuationBits96(false, byte(pdu.CSBKBroadcast), 10, cdefParms)
 
 	decoded, _ := pdu.DecodeVNAPContinuation(bits)
 
@@ -249,4 +247,65 @@ func TestBit_ContinuationTypes_AllDecode(t *testing.T) {
 	pdu.DecodeMVAPContinuation(zeroBits)
 	pdu.DecodeBCAPContinuation(zeroBits)
 	pdu.DecodeVNAPContinuation(zeroBits)
+}
+
+func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
+	var parms [58]bit.Bit
+	parms[0] = 1
+	parms[57] = 1
+	bits := buildContinuationBits96(false, 0x30, 5, parms)
+
+	decoders := map[string]func([96]bit.Bit) bool{
+		"CG_AP": func(b [96]bit.Bit) bool { _, r := pdu.DecodeCGAPContinuation(b); return r.Uncorrectable },
+		"MV_AP": func(b [96]bit.Bit) bool { _, r := pdu.DecodeMVAPContinuation(b); return r.Uncorrectable },
+		"BC_AP": func(b [96]bit.Bit) bool { _, r := pdu.DecodeBCAPContinuation(b); return r.Uncorrectable },
+		"VN_AP": func(b [96]bit.Bit) bool { _, r := pdu.DecodeVNAPContinuation(b); return r.Uncorrectable },
+	}
+	for name, dec := range decoders {
+		if dec(bits) {
+			t.Errorf("%s: valid CRC reported uncorrectable", name)
+		}
+		bad := bits
+		bad[40] ^= 1
+		if !dec(bad) {
+			t.Errorf("%s: corrupted block not detected", name)
+		}
+	}
+
+	if !pdu.CheckMBCLastBlockCRC(bits) {
+		t.Error("CheckMBCLastBlockCRC should accept a single valid last block")
+	}
+
+	cg, _ := pdu.DecodeCGAPContinuation(bits)
+	if pdu.EncodeCGAPContinuation(&cg) != bits {
+		t.Error("EncodeCGAPContinuation should reproduce the CRC")
+	}
+}
+
+func TestMBCLastBlockCRC_MultiBlock(t *testing.T) {
+	var inter, last [96]bit.Bit
+	inter[5] = 1
+	inter[95] = 1
+	last[0] = 1
+	last[10] = 1
+	blocks := [][96]bit.Bit{inter, last}
+	pdu.SetMBCLastBlockCRC(blocks)
+
+	want := make([]byte, 0, 22)
+	want = append(want, bit.PackBits(inter[:])...)
+	want = append(want, bit.PackBits(last[:80])...)
+	c := crc.CalculateCRCCCITT(want)
+	if got := bit.BitsToUint16(blocks[1][:], 80, 16); got != c {
+		t.Errorf("last-block CRC = 0x%04X, want 0x%04X", got, c)
+	}
+	if !pdu.CheckMBCLastBlockCRC(blocks...) {
+		t.Error("CheckMBCLastBlockCRC should accept valid blocks")
+	}
+	blocks[0][50] ^= 1
+	if pdu.CheckMBCLastBlockCRC(blocks...) {
+		t.Error("CheckMBCLastBlockCRC should reject a corrupted intermediate block")
+	}
+	if pdu.CheckMBCLastBlockCRC() {
+		t.Error("CheckMBCLastBlockCRC with no blocks should be false")
+	}
 }

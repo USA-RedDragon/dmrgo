@@ -111,7 +111,20 @@ func (s *MBCContinuation) ToString() string {
 // DecodeCGAPContinuation decodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
 func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.FECResult) {
 	var result CGAPContinuation
+	var _packedBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			_packedBytes[i] <<= 1
+			_packedBytes[i] |= byte(data[i*8+j])
+		}
+	}
 	var fecResult fec.FECResult
+	fecResult.BitsChecked = 96
+	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+		fecResult.Uncorrectable = true
+	}
+	result.FEC = fecResult
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = bit.BitsToBool(data[:], 0)
 	result.ProtectFlag = bit.BitsToBool(data[:], 1)
 	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
@@ -138,6 +151,22 @@ func EncodeCGAPContinuation(s *CGAPContinuation) [96]bit.Bit {
 	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
 	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
 	copy(data[22:80], s.CdefParms[:])
+	var _encBytes [10]byte
+	for i := range 10 {
+		for j := range 8 {
+			_encBytes[i] <<= 1
+			_encBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcHigh := byte(_crcVal >> 8)
+	_crcLow := byte(_crcVal)
+	for j := range 8 {
+		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
+	}
+	for j := range 8 {
+		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
+	}
 	return data
 }
 
@@ -148,7 +177,20 @@ func (s *CGAPContinuation) ToString() string {
 // DecodeMVAPContinuation decodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
 func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.FECResult) {
 	var result MVAPContinuation
+	var _packedBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			_packedBytes[i] <<= 1
+			_packedBytes[i] |= byte(data[i*8+j])
+		}
+	}
 	var fecResult fec.FECResult
+	fecResult.BitsChecked = 96
+	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+		fecResult.Uncorrectable = true
+	}
+	result.FEC = fecResult
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = bit.BitsToBool(data[:], 0)
 	result.ProtectFlag = bit.BitsToBool(data[:], 1)
 	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
@@ -175,6 +217,22 @@ func EncodeMVAPContinuation(s *MVAPContinuation) [96]bit.Bit {
 	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
 	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
 	copy(data[22:80], s.CdefParms[:])
+	var _encBytes [10]byte
+	for i := range 10 {
+		for j := range 8 {
+			_encBytes[i] <<= 1
+			_encBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcHigh := byte(_crcVal >> 8)
+	_crcLow := byte(_crcVal)
+	for j := range 8 {
+		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
+	}
+	for j := range 8 {
+		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
+	}
 	return data
 }
 
@@ -185,7 +243,20 @@ func (s *MVAPContinuation) ToString() string {
 // DecodeBCAPContinuation decodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
 func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.FECResult) {
 	var result BCAPContinuation
+	var _packedBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			_packedBytes[i] <<= 1
+			_packedBytes[i] |= byte(data[i*8+j])
+		}
+	}
 	var fecResult fec.FECResult
+	fecResult.BitsChecked = 96
+	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+		fecResult.Uncorrectable = true
+	}
+	result.FEC = fecResult
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = bit.BitsToBool(data[:], 0)
 	result.ProtectFlag = bit.BitsToBool(data[:], 1)
 	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
@@ -210,6 +281,22 @@ func EncodeBCAPContinuation(s *BCAPContinuation) [96]bit.Bit {
 	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
 	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
 	copy(data[22:80], s.CdefParms[:])
+	var _encBytes [10]byte
+	for i := range 10 {
+		for j := range 8 {
+			_encBytes[i] <<= 1
+			_encBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcHigh := byte(_crcVal >> 8)
+	_crcLow := byte(_crcVal)
+	for j := range 8 {
+		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
+	}
+	for j := range 8 {
+		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
+	}
 	return data
 }
 
@@ -220,7 +307,20 @@ func (s *BCAPContinuation) ToString() string {
 // DecodeVNAPContinuation decodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
 func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.FECResult) {
 	var result VNAPContinuation
+	var _packedBytes [12]byte
+	for i := range 12 {
+		for j := range 8 {
+			_packedBytes[i] <<= 1
+			_packedBytes[i] |= byte(data[i*8+j])
+		}
+	}
 	var fecResult fec.FECResult
+	fecResult.BitsChecked = 96
+	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+		fecResult.Uncorrectable = true
+	}
+	result.FEC = fecResult
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = bit.BitsToBool(data[:], 0)
 	result.ProtectFlag = bit.BitsToBool(data[:], 1)
 	result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
@@ -247,6 +347,22 @@ func EncodeVNAPContinuation(s *VNAPContinuation) [96]bit.Bit {
 	copy(data[16:20], bit.BitsFromUint8(s.Cdeftype, 4))
 	copy(data[20:22], bit.BitsFromUint8(s.Reserved2, 2))
 	copy(data[22:80], s.CdefParms[:])
+	var _encBytes [10]byte
+	for i := range 10 {
+		for j := range 8 {
+			_encBytes[i] <<= 1
+			_encBytes[i] |= byte(data[i*8+j])
+		}
+	}
+	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcHigh := byte(_crcVal >> 8)
+	_crcLow := byte(_crcVal)
+	for j := range 8 {
+		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
+	}
+	for j := range 8 {
+		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
+	}
 	return data
 }
 

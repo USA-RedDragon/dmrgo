@@ -211,6 +211,8 @@ documents:
               - TestMBCContinuation_GetDataType
               - TestMBCContinuation_ToString
               - TestMBCContinuation_NoCRCCheck
+              - TestMBCLastBlockCRC_MultiBlock
+              - TestMBCAbsoluteParms_LastBlockCRC
 
       # ── Section 8: DMR Packet Data Protocol ──
       - section: "8.2.1"
@@ -1647,6 +1649,7 @@ documents:
               - TestCGAPContinuation_EncodeDecodeCycle
               - TestMVAPContinuation_Decode
               - TestMVAPContinuation_EncodeDecodeCycle
+              - TestMBCAbsoluteParms_LastBlockCRC
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
             names:
               - TestCdefParms_NewFromBits
