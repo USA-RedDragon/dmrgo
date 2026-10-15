@@ -155,18 +155,19 @@ func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 
 // DecodeFromBytes populates the burst in place, enabling zero-allocation
 // decoding when reusing a Burst. It is DecodeFromBytesWith with nil
-// options.
+// options, so a voice burst B to F can decode as another kind of burst (see
+// DecodeOptions.VoiceBurst).
 func (b *Burst) DecodeFromBytes(data RawBurst) error {
 	return b.DecodeFromBytesWith(data, nil)
 }
 
 // DecodeFromBytesWith decodes a burst with receive-side options. A nil opts
-// means the zero DecodeOptions. A FEC or
-// CRC failure is not an error: FEC reports it and Data is still set. The
-// error is ErrReservedDataType for a reserved data type, ErrColorCodeMismatch
-// for a color code other than DecodeOptions.ColorCode, or an error for
-// invalid options. The burst is populated even when an error is returned; a
-// color code mismatch is joined with any decode error. Without
+// means the zero DecodeOptions. A FEC or CRC failure is not an error: FEC
+// reports it and Data is still set. The error is ErrReservedDataType for a
+// reserved data type, ErrColorCodeMismatch for a color code other than
+// DecodeOptions.ColorCode, or an error for invalid options. The burst is
+// populated even when an error is returned; a color code mismatch is joined
+// with any decode error. Without
 // DecodeOptions.Kind, a voice burst B to F whose EMB and embedded data come
 // within the SYNC threshold of a SYNC pattern decodes as that kind of burst,
 // for example as a standalone RC burst (see DecodeOptions.VoiceBurst).
@@ -602,7 +603,8 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 // SyncPattern enums.SyncNone, embedded signalling. A data burst carries the
 // slot type and a data SYNC pattern. Only a data burst that DecodeFromBytes
 // decoded with an EMB in place of the SYNC (§6.4.2) has SyncPattern
-// enums.SyncNone, and Encode writes its EMB and embedded signalling back;
+// enums.SyncNone, and Encode writes its EMB and embedded signalling back
+// when the EMB still has the color code of the slot type;
 // for any other data burst SyncNone is an error, so a data burst built by
 // hand without a SyncPattern does not go out with an EMB. To build a data
 // burst with an EMB, use BuildBurst and RawBurst.SetEMB and SetEmbeddedData.
@@ -702,6 +704,10 @@ func (b *Burst) checkCentre() error {
 	case KindData:
 		if b.SyncPattern == enums.SyncNone && !b.decodedEMB {
 			return errors.New("a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
+		}
+		if b.SyncPattern == enums.SyncNone && b.EmbeddedSignalling.ColorCode != b.SlotType.ColorCode {
+			return fmt.Errorf("a data burst with an EMB needs the color code of its slot type: EMB %d, slot type %d",
+				b.EmbeddedSignalling.ColorCode, b.SlotType.ColorCode)
 		}
 		if b.SyncPattern == enums.SyncNone || isDataSync(b.SyncPattern) {
 			return nil
