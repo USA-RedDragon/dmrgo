@@ -36,6 +36,9 @@ documents:
               - TestScrambleTableDistribution
               - TestCodecRegistry
               - TestCodecRegistryFactoryError
+              - TestAMBE72MatchesVocoderFrame
+              - TestAMBE72RoundTrip
+              - TestAMBE72CorrectsErrors
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBurst_Encode

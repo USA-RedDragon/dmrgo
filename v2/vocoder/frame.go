@@ -12,6 +12,20 @@ type VocoderFrame struct {
 	FEC         fec.FECResult `dmr:"-"`
 }
 
+// EncodeAMBE72 applies the AMBE+2 frame FEC to 49 vocoder information bits
+// and returns the 72 on-air bits of one vocoder frame: Golay(24,12) on the
+// first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits
+// unprotected, interleaved into the slot.
+func EncodeAMBE72(info [49]bit.Bit) [72]bit.Bit {
+	return encodeAMBE(info)
+}
+
+// DecodeAMBE72 reverses EncodeAMBE72, correcting bit errors where the Golay
+// codes allow.
+func DecodeAMBE72(slot [72]bit.Bit) ([49]bit.Bit, fec.FECResult) {
+	return decodeAMBE(slot)
+}
+
 // encodeAMBE takes the decoded 49 bits and encodes them into a 72 bit AMBE frame.
 func encodeAMBE(ambe49 [49]bit.Bit) [72]bit.Bit {
 	var ambe72 [72]bit.Bit
