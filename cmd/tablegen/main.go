@@ -1,14 +1,10 @@
-// Command tablegen computes all FEC lookup tables from their mathematical
-// definitions and writes Go source files.  It supports two modes:
-//
-//   - verify: compute tables and compare byte-for-byte against existing
-//     hardcoded values (imported at compile time).  Exit non-zero on mismatch.
-//   - generate: write *_tables_gen.go files with "// Code generated … DO NOT
-//     EDIT." headers, ready to replace the hardcoded originals.
+// Command tablegen computes the FEC and vocoder lookup tables from their
+// definitions and writes them to the tables_gen.go file of each table
+// package under v2.
 //
 // Usage:
 //
-//	go run ./cmd/tablegen
+//	go run -C cmd/tablegen .
 package main
 
 import (
@@ -24,7 +20,6 @@ import (
 func main() {
 	tables := compute.All()
 
-	// Resolve the v2/ directory relative to this source file's location.
 	_, thisFile, _, _ := runtime.Caller(0) //nolint:dogsled
 	v2Root := filepath.Join(filepath.Dir(thisFile), "..", "..", "v2")
 

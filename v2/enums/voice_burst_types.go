@@ -35,12 +35,10 @@ func (v VoiceBurstType) Index() (i int, ok bool) {
 	return int(v - VoiceBurstA), true
 }
 
-// LCSS returns the LCSS that the EMB of voice burst v carries in a
-// superframe with an embedded LC (ETSI TS 102 361-1 clause 7.1.3): First for
-// burst B, Continuation for C and D, Last for E, and Single for F, which
-// carries a Null embedded message or a Reverse Channel. ok is false for
-// burst A, which has a SYNC pattern instead of an EMB, and for an unknown
-// position.
+// LCSS returns the LCSS in the EMB of voice burst v in a superframe with an
+// embedded LC: First for B, Continuation for C and D, Last for E and Single
+// for F (ETSI TS 102 361-1 clause 7.1.3). ok is false for burst A, which has
+// a SYNC pattern instead of an EMB, and for an unknown position.
 func (v VoiceBurstType) LCSS() (lcss LCSS, ok bool) {
 	switch v {
 	case VoiceBurstB:

@@ -18,10 +18,9 @@ var shortLCFragmentLCSS = [4]enums.LCSS{
 }
 
 // EncodeShortLCToCACH encodes a Short LC PDU into the 4 CACH fields that
-// carry it (ETSI TS 102 361-1 §7.1.4), in transmit order as CACHInterleave
-// returns them. Each field carries tact with its LCSS set to First,
-// Continuation, Continuation and Last. It is the inverse of
-// CACHDeinterleave, DecodeCACH and ShortLCAssembler.
+// carry it, in transmit order. Each field carries tact with its LCSS set to
+// First, Continuation, Continuation and Last (ETSI TS 102 361-1 clause
+// 7.1.4).
 func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][CACHBits]bit.Bit, error) {
 	var out [4][CACHBits]bit.Bit
 	info, err := slc.Encode()

@@ -1,18 +1,3 @@
-// Package layer2 decodes and encodes DMR bursts (ETSI TS 102 361-1 clause
-// 6 and 9): the Burst model, the byte-level RawBurst, the embedded LC, the
-// CACH and Short LC, the Reverse Channel, and the voice superframe
-// transmitter and receiver. The PDUs that the bursts carry are in package
-// pdu.
-//
-// Errors follow the rule of package fec: decoding never fails because FEC
-// or a CRC cannot correct or check the bits. Burst.FEC and the FEC field of
-// each PDU report that, and the decoded fields are still set, so a caller
-// can inspect or forward them. An error means that the input cannot be
-// decoded, such as ErrReservedDataType, or breaks a caller-given rule, such
-// as ErrColorCodeMismatch. A caller that wants an error for an
-// uncorrectable burst uses b.FEC.Aggregate().Err(). The errors of this
-// package that report an uncorrectable result, such as
-// ErrEmbeddedLCUncorrectable, wrap fec.ErrUncorrectable.
 package layer2
 
 import (
@@ -30,8 +15,8 @@ import (
 )
 
 // ErrReservedDataType is returned, wrapped, by DecodeFromBytes for a data
-// burst whose slot type carries a reserved data type (Table 9.22). The burst
-// has no Data.
+// burst whose slot type carries a reserved data type. The burst has no Data
+// (ETSI TS 102 361-1 Table 9.22).
 var ErrReservedDataType = errors.New("reserved data type")
 
 // Kind is the kind of a burst.
@@ -46,9 +31,10 @@ const (
 	KindVoice
 	// KindData is a data or control burst: a slot type and an information
 	// payload around a data SYNC pattern or around embedded signalling
-	// (§5.1.5.1, §6.4.2).
+	// (ETSI TS 102 361-1 clause 5.1.5.1, clause 6.4.2).
 	KindData
-	// KindReverseChannel is a standalone inbound RC burst (§6.4.1).
+	// KindReverseChannel is a standalone inbound RC burst (ETSI TS 102
+	// 361-1 clause 6.4.1).
 	KindReverseChannel
 )
 
@@ -71,41 +57,34 @@ func (k Kind) String() string {
 type Burst struct {
 	// Kind is the kind of the burst.
 	Kind Kind
-	// SyncPattern is the Table 9.2 pattern in the burst centre, or
+	// SyncPattern is the SYNC pattern in the burst centre, or
 	// enums.SyncNone when the centre carries embedded signalling, as in
-	// voice bursts B to F and data bursts with an EMB. A standalone RC
-	// burst has enums.SyncMSSourcedRC.
+	// voice bursts B to F and data bursts with an EMB.
 	SyncPattern enums.SyncPattern
-	// NearestSync is the Table 9.2 pattern nearest to the received centre
-	// field, whatever the classification. DecodeFromBytes sets it; Encode
-	// ignores it.
+	// NearestSync is the SYNC pattern nearest to the received centre field,
+	// whatever the classification. DecodeFromBytes sets it; Encode ignores
+	// it.
 	NearestSync enums.SyncPattern
 	// SyncDistance is the Hamming distance of the centre field from
 	// NearestSync. DecodeFromBytes sets it; Encode ignores it.
 	SyncDistance int
-	// VoiceBurst is the superframe position of a voice burst. Decoding is
-	// stateless per burst, so DecodeFromBytes sets VoiceBurstA for a burst
-	// with a voice SYNC pattern and VoiceBurstUnknown for every other burst,
-	// bursts B to F included, unless DecodeOptions gives the position.
-	// VoiceReceiver sets the position of bursts B to F from the superframe
-	// sequence. Encode ignores it.
+	// VoiceBurst is the superframe position of a voice burst. DecodeFromBytes
+	// sets VoiceBurstA or, unless DecodeOptions gives the position,
+	// VoiceBurstUnknown; VoiceReceiver sets bursts B to F. Encode ignores it.
 	VoiceBurst enums.VoiceBurstType
 
 	// VoiceSlots holds the three 72-bit vocoder slots of a voice burst as
-	// received, before any FEC: slot i is voice bits 72i to 72i+71, where
-	// voice bits 0 to 107 are burst bits 0 to 107 and voice bits 108 to 215
-	// are burst bits 156 to 263. Encode writes them as they are. The slots
-	// are codec specific; AMBEFrames decodes AMBE+2 slots.
+	// received, before any FEC. Encode writes them as they are. AMBEFrames
+	// decodes AMBE+2 slots.
 	VoiceSlots [VoiceSlotsPerBurst][72]bit.Bit
 
 	// SlotType is the slot type of a data burst.
 	SlotType pdu.SlotType
 
 	// BPTCReserved holds the reserved bits R(0) to R(2) of the BPTC(196,96)
-	// payload of a data burst, R(i) at index i, after FEC correction. ETSI
-	// TS 102 361-1 B.1.1 sets them to zero. Motorola Capacity Max sets R(2)
-	// to flag RAS (Restricted Access System), which replaces the CRC with a
-	// keyed check. DecodeFromBytes sets them and Encode writes them.
+	// payload of a data burst, R(i) at index i, after FEC correction. The
+	// spec sets them to zero, and Motorola Capacity Max sets R(2) to flag
+	// RAS (ETSI TS 102 361-1 clause B.1.1).
 	BPTCReserved [3]bit.Bit
 
 	// EmbeddedSignalling is the EMB of a burst with HasEmbeddedSignalling.
@@ -118,8 +97,8 @@ type Burst struct {
 	ReverseChannel pdu.ReverseChannel
 
 	// Data is the decoded PDU of a data burst. DecodeFromBytes sets it also
-	// when the PDU CRC or FEC fails, which FEC reports, and leaves it nil
-	// only for a reserved data type. See Encode.
+	// when the PDU CRC or FEC fails, and leaves it nil only for a reserved
+	// data type.
 	Data Data
 	// FEC reports the FEC and CRC results of the decode.
 	FEC fec.BurstFECStats
@@ -140,7 +119,7 @@ func (b *Burst) HasEmbeddedSignalling() bool {
 
 // HasReverseChannel reports whether the embedded data field carries an RC
 // PDU: in a standalone RC burst, and in a voice or data burst whose EMB has
-// PI set and LCSS single fragment (§6.4).
+// PI set and LCSS single fragment (ETSI TS 102 361-1 clause 6.4).
 func (b *Burst) HasReverseChannel() bool {
 	if b.Kind == KindReverseChannel {
 		return true
@@ -150,32 +129,24 @@ func (b *Burst) HasReverseChannel() bool {
 }
 
 // NewBurstFromBytes decodes data into a new Burst, as DecodeFromBytes does.
-// It returns the burst also with an error, populated as DecodeFromBytes
-// leaves it.
+// It returns the burst also when it returns an error.
 func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 	burst := &Burst{}
 	err := burst.DecodeFromBytes(data)
 	return burst, err
 }
 
-// DecodeFromBytes populates the burst in place, enabling zero-allocation
-// decoding when reusing a Burst. It is DecodeFromBytesWith with nil
-// options, so a voice burst B to F can decode as another kind of burst (see
-// DecodeOptions.VoiceBurst).
+// DecodeFromBytes decodes data into the burst in place, so a reused Burst
+// decodes without allocation. It is DecodeFromBytesWith with nil options.
 func (b *Burst) DecodeFromBytes(data RawBurst) error {
 	return b.DecodeFromBytesWith(data, nil)
 }
 
-// DecodeFromBytesWith decodes a burst with receive-side options. A nil opts
-// means the zero DecodeOptions. A FEC or CRC failure is not an error: FEC
-// reports it and Data is still set. The error is ErrReservedDataType for a
-// reserved data type, ErrColorCodeMismatch for a color code other than
-// DecodeOptions.ColorCode, or an error for invalid options. The burst is
-// populated even when an error is returned; a color code mismatch is joined
-// with any decode error. Without
-// DecodeOptions.Kind, a voice burst B to F whose EMB and embedded data come
-// within the SYNC threshold of a SYNC pattern decodes as that kind of burst,
-// for example as a standalone RC burst (see DecodeOptions.VoiceBurst).
+// DecodeFromBytesWith decodes data into the burst with receive-side options;
+// a nil opts means the zero DecodeOptions. A FEC or CRC failure is not an
+// error, because FEC reports it. The error is ErrReservedDataType,
+// ErrColorCodeMismatch, an error for invalid options, or a join of these,
+// and the burst is populated also when an error is returned.
 func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
 	if opts == nil {
 		opts = &DecodeOptions{}
@@ -302,20 +273,15 @@ const (
 )
 
 // damagedSyncDistance is the largest Hamming distance at which the centre of
-// a data burst is a data SYNC pattern with bit errors, not an EMB and
-// embedded data. The MS-sourced data SYNC pattern is 2 bits from an EMB
-// codeword, but an EMB with random embedded data comes this close to a data
-// SYNC pattern in only about 0.14% of bursts.
+// a data burst is taken as a data SYNC pattern with bit errors. The
+// MS-sourced data SYNC pattern is 2 bits from an EMB codeword, but an EMB
+// with random embedded data comes this close to a data SYNC pattern in only
+// about 0.14% of bursts.
 const damagedSyncDistance = 12
 
 // isEmbeddedDataBurst reports whether a burst without a SYNC pattern is a
 // data burst that carries an EMB and embedded data in place of the SYNC
-// (§6.4.2): the centre is more than damagedSyncDistance bits from every data
-// SYNC pattern, the EMB decodes, the slot type decodes with at most
-// embeddedDataMaxSlotTypeErrors corrections, the color code of the slot
-// type and the EMB are the same, the data type is BPTC coded, the BPTC
-// decodes with at most embeddedDataMaxBPTCErrors corrections, and the CRC
-// or RS(12,9) code of the PDU checks where the data type has one.
+// (ETSI TS 102 361-1 clause 6.4.2).
 func (b *Burst) isEmbeddedDataBurst() bool {
 	if _, d := b.nearestSync(dataSyncPatterns); d <= damagedSyncDistance {
 		return false
@@ -348,7 +314,8 @@ func (b *Burst) isEmbeddedDataBurst() bool {
 
 // opcode0x38Hint returns the likely meaning of CSBK opcode 0x38 in a burst
 // with SYNC pattern sync: an MS sends BS_Dwn_Act and a TSCC sends TD_GRANT_MI.
-// Only a BS sends a data burst with an EMB in place of the SYNC (§6.4.2).
+// Only a BS sends a data burst with an EMB in place of the SYNC (ETSI TS 102
+// 361-1 clause 6.4.2).
 func opcode0x38Hint(sync enums.SyncPattern) pdu.Opcode0x38Hint {
 	switch sync {
 	case enums.SyncMSSourcedData:
@@ -373,10 +340,9 @@ func isSyncPattern(sync enums.SyncPattern) bool {
 	return isDataSync(sync) || isVoiceSync(sync) || sync == enums.SyncMSSourcedRC || sync == enums.SyncReserved
 }
 
-// decodeStandaloneRC decodes a §6.4.1 standalone inbound RC burst (Figure
-// 6.7, Table E.12): EMB(8) RC(16) SYNC(48) RC(16) EMB(8) around the burst
-// centre. The RC SYNC stays in place and the burst carries no voice.
-// An RC burst always carries an RC PDU, so PI does not gate RC decoding.
+// decodeStandaloneRC decodes a standalone inbound RC burst. An RC burst
+// always carries an RC PDU, so PI does not gate RC decoding (ETSI TS 102
+// 361-1 clause 6.4.1, Table E.12).
 func (b *Burst) decodeStandaloneRC() {
 	b.Kind, b.SyncPattern = KindReverseChannel, enums.SyncMSSourcedRC
 	var embBits [16]bit.Bit
@@ -458,10 +424,9 @@ func parseVoiceSlots(bitData [264]bit.Bit) [VoiceSlotsPerBurst][72]bit.Bit {
 	return slots
 }
 
-// AMBEFrames decodes the three voice slots as AMBE+2 frames and returns them
-// with the combined FEC result of the frame FEC (vocoder.DecodeAMBE72). The
-// result is meaningful only for a burst that carries AMBE+2 voice; the
-// slots of another codec decode to noise.
+// AMBEFrames decodes the three voice slots as AMBE+2 frames with
+// vocoder.DecodeAMBE72 and returns them with the combined FEC result. The
+// result is meaningful only for a burst that carries AMBE+2 voice.
 func (b *Burst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result) {
 	var frames [VoiceSlotsPerBurst]vocoder.AMBEFrame
 	var result fec.Result
@@ -495,7 +460,7 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType enums.DataType) (int, f
 		copy(b.deinterleavedInfoBits[:], decoded[:])
 		return len(decoded), result
 	case enums.DataTypeRate1:
-		// Table B.10B: Transmit bit ordering for rate 1 coded data
+		// Rate 1 transmit bit order (ETSI TS 102 361-1 Table B.10B).
 		for i := 0; i < 96; i++ {
 			b.deinterleavedInfoBits[i] = bits[i]
 		}
@@ -552,8 +517,8 @@ func (b *Burst) String() string {
 }
 
 // decodePayload decodes the information bits of a data burst of data type dt
-// and SYNC pattern sync. The fec.Result is the FEC field of a PDU that has
-// one, and zero for the data blocks, whose only code is the payload code.
+// and SYNC pattern sync. The fec.Result is zero for the data blocks, whose
+// only code is the payload code.
 func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern) (Data, fec.Result, error) {
 	if dt.IsReserved() {
 		return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
@@ -603,41 +568,10 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 	return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
 }
 
-// Encode returns the encoded bytes of the burst. Kind selects the payload.
-// A voice burst carries a voice SYNC pattern, enums.SyncReserved, or, with
-// SyncPattern enums.SyncNone, embedded signalling. A data burst carries the
-// slot type and a data SYNC pattern. Only a data burst that DecodeFromBytes
-// decoded with an EMB in place of the SYNC (§6.4.2) has SyncPattern
-// enums.SyncNone, and Encode writes its EMB and embedded signalling back
-// when the EMB still has the color code of the slot type;
-// for any other data burst SyncNone is an error, so a data burst built by
-// hand without a SyncPattern does not go out with an EMB. To build a data
-// burst with an EMB, use BuildBurst and RawBurst.SetEMB and SetEmbeddedData.
-// A standalone RC burst carries the RC SYNC pattern.
-// VoiceBurst has no effect. When HasReverseChannel reports true, the
-// embedded signalling data field carries the coded ReverseChannel instead
-// of EmbeddedSignallingData. Otherwise the field carries
-// EmbeddedSignallingData as it is: the FEC of an embedded LC spans bursts B
-// to E, so a single burst does not correct it. Encode returns an error for a
-// burst that breaks these rules and when a field value does not fit in its
-// on-air bits. Encode does not modify the burst.
-//
-// A data burst carries the EncodeBits of Data coded for SlotType.DataType:
-// BPTC(196,96) for the BPTC types, the Rate 3/4 trellis or Rate 1.
-// Data.DataType must be SlotType.DataType, so the BurstDataType of a Full
-// LC, which selects its RS(12,9) mask, must match the slot type. For an MBC
-// continuation, Data can be one of its CGAP, MVAP, BCAP and VNAP forms. A
-// burst from DecodeFromBytes whose Data codes to the same bits as the
-// decoded payload, or whose Data is nil, carries the payload as it was
-// decoded, after FEC correction, so a burst whose CRC failed can still be
-// forwarded. The decoded payload goes out only under the data type it was
-// decoded as. A data burst built by hand needs Data. The BPTC R(0) to R(2)
-// bits are BPTCReserved. R(3) and the Rate 1 pad bits are set to zero (ETSI
-// TS 102 361-1 B.1.1, B.2.5), so Encode writes zero there.
-//
-// A voice burst carries VoiceSlots as they are, so a slot of any codec, or
-// an AMBE+2 frame with bit errors, goes out unchanged. SetAMBEFrames codes
-// AMBE+2 frames into the slots.
+// Encode returns the burst in transmit bit order, as the package doc
+// describes. It returns an error for KindUnknown, a SyncPattern that does not
+// fit the kind, a missing Data, a Data whose data type is not
+// SlotType.DataType, or a field value that does not fit its bits.
 func (b *Burst) Encode() (RawBurst, error) {
 	if b.Kind == KindReverseChannel {
 		bitData, err := b.encodeStandaloneRC()
@@ -725,11 +659,8 @@ func (b *Burst) checkCentre() error {
 	return fmt.Errorf("a %s burst cannot carry SYNC pattern %s", b.Kind, b.SyncPattern)
 }
 
-// dataInfoBits returns the information bits of the data payload: Data coded
-// for the slot type data type or, when Data is nil, the payload that
-// DecodeFromBytes decoded. When Data codes to the same bits as the decoded
-// payload does, Data is unchanged from the decode, and the payload goes out
-// as received, so a burst whose CRC failed keeps its bits.
+// dataInfoBits returns Data coded for the slot type data type or, when Data
+// is nil or codes to the same bits, the payload that DecodeFromBytes decoded.
 func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
 	dt := b.SlotType.DataType
 	decoded := b.deinterleavedInfoLen > 0 && dt == b.decodedDataType
@@ -793,10 +724,9 @@ func infoBitsLen(dataType enums.DataType) int {
 	}
 }
 
-// encodeDataBits codes the information bits of a data burst for the
-// channel: BPTC(196,96), Rate 3/4 trellis or Rate 1 as the slot type data
-// type selects. The BPTC R(0) to R(2) bits are BPTCReserved; R(3) and the
-// Rate 1 pad bits are zero.
+// encodeDataBits codes the information bits of a data burst with
+// BPTC(196,96), the Rate 3/4 trellis or Rate 1 as the slot type data type
+// selects. R(3) and the Rate 1 pad bits are zero.
 func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	info, err := b.dataInfoBits()
 	if err != nil {
@@ -809,7 +739,7 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 		copy(data[:], info[:144])
 		return trellis.Encode(data), nil
 	case dt == enums.DataTypeRate1:
-		// Table B.10B: Transmit bit ordering for rate 1 coded data
+		// Rate 1 transmit bit order (ETSI TS 102 361-1 Table B.10B).
 		var bits [196]bit.Bit
 		copy(bits[:96], info[:96])
 		copy(bits[100:], info[96:192])

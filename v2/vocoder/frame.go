@@ -40,18 +40,11 @@ func EncodeAMBE72(info AMBEFrame) [72]bit.Bit {
 	return encodeAMBE(info)
 }
 
-// DecodeAMBE72 reverses EncodeAMBE72, correcting bit errors where the Golay
-// codes allow.
-//
-// Golay (23,12) is a perfect code: every 23-bit word is within 3 bits of
-// exactly one codeword, so section B never reports Uncorrectable, and 4 or
-// more bit errors there decode to wrong bits without a flag. The result's
-// Uncorrectable therefore reflects only the overall parity check of section
-// A's Golay (24,12). A caller that mutes or repeats frames on Uncorrectable
-// should also test ErrorsCorrected, the number of corrected bits in sections
-// A and B, parity bits included. mbelib, for example, repeats the last frame
-// when errs2 is above 3; errs2 counts only the corrected data bits of
-// sections A and B, and mbelib does not check the section A parity bit.
+// DecodeAMBE72 reverses EncodeAMBE72 and corrects the bit errors that the
+// Golay codes allow. Uncorrectable reflects only the overall parity check of
+// the Golay (24,12) section A: 4 or more errors in the perfect Golay (23,12)
+// section B decode to wrong bits without a flag. A caller that mutes or
+// repeats frames should also test ErrorsCorrected (sections A and B).
 func DecodeAMBE72(slot [72]bit.Bit) (AMBEFrame, fec.Result) {
 	lowbit.Mask(slot[:])
 	info, res := decodeAMBE(slot)
@@ -126,13 +119,12 @@ func encodeAMBE(ambe49 [49]bit.Bit) [72]bit.Bit {
 	return ambe72
 }
 
-// decodeAMBE decodes a 72-bit AMBE voice frame into 49 decoded bits with FEC.
-// Sections: A (24 scattered bits, Golay 24,12,8, 12 bits),
-// B (23 scattered bits, descramble, Golay 23,12,7, 12 bits),
-// C (25 scattered bits to 25 raw bits).
+// decodeAMBE decodes a 72-bit AMBE frame into its 49 information bits.
+// Section A is Golay (24,12,8), section B is scrambled Golay (23,12,7), and
+// section C has no FEC.
 func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 	var ambe49 [49]bit.Bit
-	result := fec.Result{BitsChecked: 47} // 24 (Golay 24,12,8) + 23 (Golay 23,12,7)
+	result := fec.Result{BitsChecked: 47}
 
 	var a uint32 = 0
 	var MASK uint32 = 0x800000
@@ -144,14 +136,11 @@ func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 		}
 	}
 
-	// Golay 24,12,8: 24 bits received. 12 data bits.
-	// Decode 'a'
 	dataA, fecA := golay.Decode24128(a)
 	result.ErrorsCorrected += fecA.ErrorsCorrected
 	if fecA.Uncorrectable {
 		result.Uncorrectable = true
 	}
-	// Use corrected data for 'a'
 	a = uint32(dataA)
 
 	var b uint32 = 0
@@ -163,6 +152,7 @@ func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 		}
 	}
 
+	// The section B scrambling sequence depends on the corrected section A data.
 	b ^= (ambeScrambleTable[a] >> 1)
 
 	dataB, fecB := golay.Decode23127(b)
@@ -181,18 +171,15 @@ func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 		}
 	}
 
-	// Reconstruct ambe49
 	MASK = 0x000800
 	for i := 0; i < 12; i, MASK = i+1, MASK>>1 {
 		apos := i
 		bpos := i + 12
-		// 'a' is 12 bits data. MASK scans 12 bits.
 		if (a & MASK) != 0 {
 			ambe49[apos] = 1
 		} else {
 			ambe49[apos] = 0
 		}
-		// 'b' is 12 bits data.
 		if (b & MASK) != 0 {
 			ambe49[bpos] = 1
 		} else {

@@ -6,12 +6,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// EMBInfo is the 7 information bits of an EMB PDU (ETSI TS 102 361-1
-// §9.1.2, Table 9.3) without the QR(16,7,6) parity of §B.3.2, in the top 7
-// bits of one octet, as IPSC carries them: bits 7 to 4 hold the Colour
-// Code, bit 3 the PI and bits 2 and 1 the LCSS. Bit 0 is not an EMB bit:
-// the getters and Codeword ignore it and the setters keep it. For example,
-// CC 1 with LCSS 1 (first fragment) is 0x12, whose codeword is 0x1391.
+// EMBInfo is the 7 information bits of an EMB PDU without the QR(16,7,6)
+// parity, in bits 7 to 1 of one octet as IPSC carries them (ETSI TS 102
+// 361-1 clause 9.1.2, Table 9.3). Bit 0 is not an EMB bit: the getters and
+// Codeword ignore it and the setters keep it. For example, CC 1 with LCSS 1
+// is 0x12.
 type EMBInfo byte
 
 // ColorCode returns the 4-bit Colour Code, bits 7 to 4.
@@ -73,9 +72,9 @@ func (s *EmbeddedSignalling) Info() EMBInfo {
 	return e
 }
 
-// Codeword returns the 16-bit QR(16,7,6) codeword of e (§B.3.2), the 7
-// information bits followed by the 9 parity bits, first bit most
-// significant.
+// Codeword returns the 16-bit QR(16,7,6) codeword of e, the 7 information
+// bits followed by the 9 parity bits, first bit most significant (ETSI TS
+// 102 361-1 clause B.3.2).
 func (e EMBInfo) Codeword() uint16 {
 	s := e.EmbeddedSignalling()
 	bits, _ := s.Encode()

@@ -9,7 +9,6 @@ import (
 
 func TestEmbeddedLC_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	// Create 77 info bits with a known pattern
 	var info [77]bit.Bit
 	for i := range info {
 		info[i] = bit.Bit(i % 2)
@@ -40,7 +39,7 @@ func TestEmbeddedLC_BitsChecked(t *testing.T) {
 
 func TestEmbeddedLC_AllZero(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit // all zeros
+	var info [77]bit.Bit
 
 	fragments := bptc.EncodeEmbedded(info)
 	decoded, result := bptc.DecodeEmbedded(fragments)
@@ -80,7 +79,6 @@ func TestEmbeddedLC_SingleBitErrorCorrection(t *testing.T) {
 
 	fragments := bptc.EncodeEmbedded(info)
 
-	// Introduce a single bit error in fragment 0
 	fragments[0][5] ^= 1
 
 	decoded, result := bptc.DecodeEmbedded(fragments)
@@ -101,8 +99,6 @@ func TestEmbeddedLC_FragmentCount(t *testing.T) {
 	info := embeddedLCInfo()
 	fragments := bptc.EncodeEmbedded(info)
 
-	// Every fragment carries part of the codeword: one flipped bit in any of
-	// them must be corrected.
 	for i := range fragments {
 		rx := fragments
 		rx[i][31] ^= 1
@@ -132,7 +128,6 @@ func TestEmbeddedLC_FragmentBitsAreValid(t *testing.T) {
 
 func TestEmbeddedLC_StabilityEncodeDecode(t *testing.T) {
 	t.Parallel()
-	// Encode, Decode and Encode again should produce identical fragments
 	var info [77]bit.Bit
 	for i := range info {
 		info[i] = bit.Bit((i*3 + 1) % 2)
@@ -155,15 +150,11 @@ func TestEmbeddedLC_ColumnParityErrorDetection(t *testing.T) {
 
 	fragments := bptc.EncodeEmbedded(info)
 
-	// Flip two bits in the same row to create an uncorrectable pattern
-	// (Hamming(16,11,4) can detect 2-bit errors but not correct them)
 	fragments[0][0] ^= 1
 	fragments[0][1] ^= 1
 
 	_, result := bptc.DecodeEmbedded(fragments)
 
-	// With 2-bit errors in same column pair, it should be detected
-	// (either uncorrectable or at least detected via column parity)
 	if result.ErrorsCorrected == 0 && !result.Uncorrectable {
 		t.Error("expected error detection for 2-bit error")
 	}
@@ -171,7 +162,6 @@ func TestEmbeddedLC_ColumnParityErrorDetection(t *testing.T) {
 
 func TestEmbeddedLC_DifferentPatterns(t *testing.T) {
 	t.Parallel()
-	// Two different info patterns should produce different fragments
 	var info1, info2 [77]bit.Bit
 	info1[0] = 1
 	info2[0] = 0

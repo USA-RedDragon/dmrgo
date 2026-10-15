@@ -5,15 +5,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// ETSI TS 102 361-1 - 9.1.9 Pseudo Random Fill Bit (PR FILL) PDU
-//
-// The PR FILL PDU is 96 bits of pre-defined pseudo-random data used for
-// idle messages (see §7.3 and Annex D). The exact bit values are specified
-// in Table D.2; there is no runtime LFSR calculation. Implementations
-// use the literal constant from the table.
-//
-// In packed hex, I(95) first: FF 83 DF 17 32 09 4E D1 E7 CD 8A 91
-
 //nolint:gochecknoglobals
 var prFillBits = func() [96]bit.Bit {
 	packed := [12]byte{
@@ -34,7 +25,8 @@ func PRFillBits() [96]bit.Bit {
 	return prFillBits
 }
 
-// PRFill represents the PR FILL PDU (§9.1.9).
+// PRFill is the Pseudo Random Fill Bit (PR FILL) PDU of an idle burst, the
+// 96 fixed bits of Table D.2 (ETSI TS 102 361-1 clause 9.1.9).
 type PRFill struct{}
 
 // DataType returns enums.DataTypeIdle.

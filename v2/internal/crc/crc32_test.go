@@ -14,7 +14,6 @@ func TestCRC32_ZeroInput(t *testing.T) {
 }
 
 func TestCRC32_AllZeros(t *testing.T) {
-	// All-zero input of even length should produce zero CRC
 	result := crc.CRC32(make([]byte, 10))
 	if result != 0 {
 		t.Errorf("CRC32 of 10 zero bytes = 0x%08X, want 0x00000000", result)
@@ -22,7 +21,6 @@ func TestCRC32_AllZeros(t *testing.T) {
 }
 
 func TestCRC32_NonZero(t *testing.T) {
-	// Non-zero input should produce non-zero CRC
 	result := crc.CRC32([]byte{0x01, 0x02})
 	if result == 0 {
 		t.Error("CRC32 of [0x01, 0x02] should be non-zero")
@@ -39,23 +37,16 @@ func TestCRC32_Deterministic(t *testing.T) {
 }
 
 func TestCRC32_ByteSwap(t *testing.T) {
-	// Verify byte-swapping within 16-bit words:
-	// [0x01, 0x02] with swap gives [0x02, 0x01]
-	// [0x02, 0x01] without swap should equal [0x01, 0x02] with swap
 	result1 := crc.CRC32([]byte{0x01, 0x02})
 
-	// Manually pre-swap and compute with identity swap
-	// This should differ from un-swapped since we're swapping twice
 	result2 := crc.CRC32([]byte{0x02, 0x01})
 
-	// They should be different because CRC32 always swaps internally
 	if result1 == result2 {
 		t.Error("CRC32 should produce different results for [0x01,0x02] vs [0x02,0x01] due to internal swap")
 	}
 }
 
 func TestCRC32_OddLength(t *testing.T) {
-	// Odd-length data: last byte is not swapped
 	result := crc.CRC32([]byte{0x01, 0x02, 0x03})
 	if result == 0 {
 		t.Error("CRC32 of 3 non-zero bytes should be non-zero")

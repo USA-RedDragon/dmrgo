@@ -55,8 +55,6 @@ func TestUDPIPv4CompressedHeader_RoundTrip(t *testing.T) {
 
 func TestUDPIPv4CompressedHeader_NonContiguousHCOpcode(t *testing.T) {
 	t.Parallel()
-	// Test that the 2-bit non-contiguous HeaderCompressionOpcode (bits 24 + 32)
-	// survives round-trip for all 4 possible values
 	for opcode := uint8(0); opcode <= 3; opcode++ {
 		original := pdu.UDPIPv4CompressedHeader{
 			HeaderCompressionOpcode: opcode,
@@ -106,7 +104,6 @@ func TestUDPIPv4CompressedHeader_EncodeStability(t *testing.T) {
 		}
 	}
 
-	// Verify bits are valid (all 0 or 1)
 	for i, b := range enc1 {
 		if b != bit.Bit(0) && b != bit.Bit(1) {
 			t.Errorf("bit %d: invalid value %d", i, b)

@@ -12,13 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// ETSI TS 102 361-2 §5.4.3, §7.1.1.4, §7.1.1.5, §7.2.18 and §7.2.19:
-// Inband talker alias.
-//
-// The alias is a bit stream of Code Units: the header carries 49 bits for
-// the 7-bit format and 48 bits for the other formats (the MSB is reserved),
-// and each of blocks 1 to 3 carries 56 bits.
-
 const (
 	talkerAliasBlockBits = 56
 	talkerAliasMaxBlocks = 3
@@ -54,7 +47,7 @@ func talkerAliasHeaderBits(format layer3.TalkerAliasDataFormat) int {
 
 // TalkerAliasBlocks returns the number of Talker Alias block LCs (0 to 3)
 // that follow a header with the given format and length in Code Units
-// (ETSI TS 102 361-2 §5.4.3).
+// (ETSI TS 102 361-2 clause 5.4.3).
 func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
 	need := length*talkerAliasUnitBits(format) - talkerAliasHeaderBits(format)
 	if need <= 0 {
@@ -184,12 +177,11 @@ func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]Ful
 	return out, nil
 }
 
-// TalkerAliasAssembler collects Talker Alias header and block LCs, as
-// received in any order in the embedded LC of a voice call, and decodes the
-// alias once the header and all the blocks it calls for are present. Blocks
-// received before the first header are kept; a later header that differs
-// from the stored one discards the stored blocks. The zero value is ready
-// to use.
+// TalkerAliasAssembler collects Talker Alias header and block LCs in any
+// order and decodes the alias once the header and all its blocks are present.
+// Blocks that arrive before the first header are kept; a header that differs
+// from the stored one discards the stored blocks. The zero value is ready to
+// use.
 type TalkerAliasAssembler struct {
 	header    *FLCTalkerAliasHeader
 	blocks    [talkerAliasMaxBlocks]*FLCTalkerAliasBlock

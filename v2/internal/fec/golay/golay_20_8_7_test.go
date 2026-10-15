@@ -8,15 +8,7 @@ import (
 )
 
 func TestGolay2087Decode(t *testing.T) {
-	// Test basic correction capabilities
-	// 1. No error
-	// 2. 1 bit error
-	// 3. 2 bit errors
-	// 4. 3 bit errors
-	// 5. Uncorrectable (4 errors)
-
 	for i := 0; i < 100; i++ {
-		// Generate random data
 		var data [8]bit.Bit
 		for j := 0; j < 8; j++ {
 			if rand.Intn(2) == 1 { //nolint:gosec // deterministic PRNG sufficient for tests
@@ -24,13 +16,11 @@ func TestGolay2087Decode(t *testing.T) {
 			}
 		}
 
-		// Calculate parity
 		parity := parity2087(data)
 		var cw [20]bit.Bit
 		copy(cw[:], data[:])
 		copy(cw[8:], parity[:])
 
-		// Case 1: No Error
 		decoded, result := Decode2087(cw)
 		if result.Uncorrectable || result.ErrorsCorrected != 0 {
 			t.Errorf("Failed to decode clean codeword")
@@ -39,7 +29,6 @@ func TestGolay2087Decode(t *testing.T) {
 			t.Errorf("Decoded clean codeword mismatch")
 		}
 
-		// Case 2: 1 Error
 		cwErr1 := cw
 		pos := rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
 		cwErr1[pos] ^= 1
@@ -51,7 +40,6 @@ func TestGolay2087Decode(t *testing.T) {
 			t.Errorf("Decoded 1-error codeword mismatch")
 		}
 
-		// Case 3: 2 Errors
 		cwErr2 := cw
 		p1, p2 := rand.Intn(20), rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
 		for p1 == p2 {
@@ -67,7 +55,6 @@ func TestGolay2087Decode(t *testing.T) {
 			t.Errorf("Decoded 2-error codeword mismatch")
 		}
 
-		// Case 4: 3 Errors
 		cwErr3 := cw
 		p1, p2, p3 := rand.Intn(20), rand.Intn(20), rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
 		for p1 == p2 {

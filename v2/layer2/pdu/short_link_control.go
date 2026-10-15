@@ -90,10 +90,7 @@ func (s *ShortLCPSysParms) SiteID() uint16 {
 }
 
 // ShortLC is the Short Link Control (Short LC) PDU (ETSI TS 102 361-1 clause
-// 9.1.7).
-//
-// ShortLC.Encode returns an error if more than one payload field is set, or
-// if SLCO does not select the payload field that is set.
+// 9.1.7). Encode returns an error unless SLCO selects the one payload field that is set.
 //
 //dmr:crc crc_8
 //dmr:input_size 36

@@ -2,36 +2,31 @@ package compute
 
 import "math/bits"
 
-// ComputeGolay23_12_7Encoding computes the Golay(23,12,7) systematic encoding table.
-//
-// Generator polynomial: g(x) = x^11 + x^10 + x^6 + x^5 + x^4 + x^2 + 1 = 0xC75
-// For each 12-bit data value d:
-//
-//	codeword = (d << 11) | (d*x^11 mod g(x))
-//
-// Stored as codeword << 1 (per existing convention in the codebase).
+// ComputeGolay23_12_7Encoding computes the systematic Golay(23,12,7)
+// codeword (d << 11) | (d*x^11 mod g(x)) of each 12-bit data value d, with
+// g(x) = 0xC75. Each entry is the codeword shifted left by 1.
 func ComputeGolay23_12_7Encoding() []uint32 {
-	const genPoly = 0xC75 // generator polynomial
+	const genPoly = 0xC75
 	table := make([]uint32, 4096)
 
 	for d := 0; d < 4096; d++ {
-		// Compute d(x) * x^11 mod g(x) using polynomial long division
 		dividend := uint32(d) << 11 //nolint:gosec // d is in [0,4095], fits in uint32
 		for i := 11; i >= 0; i-- {
 			if dividend&(1<<(i+11)) != 0 {
 				dividend ^= uint32(genPoly) << i
 			}
 		}
-		remainder := dividend & 0x7FF             // bottom 11 bits
+		remainder := dividend & 0x7FF
 		codeword := (uint32(d) << 11) | remainder //nolint:gosec // d is in [0,4095], fits in uint32
-		table[d] = codeword << 1                  // stored shifted left by 1
+		table[d] = codeword << 1
 	}
 
 	return table
 }
 
-// ComputeGolay24_12_8Encoding computes the Golay(24,12,8) systematic encoding table.
-// This extends the Golay(23,12,7) code by appending an overall parity bit.
+// ComputeGolay24_12_8Encoding computes the Golay(24,12,8) codeword of each
+// 12-bit data value: the Golay(23,12,7) codeword shifted left by 1, with an
+// even parity bit in bit 0.
 func ComputeGolay24_12_8Encoding() []uint32 {
 	const genPoly = 0xC75
 	table := make([]uint32, 4096)
@@ -46,26 +41,22 @@ func ComputeGolay24_12_8Encoding() []uint32 {
 		remainder := dividend & 0x7FF
 		codeword23 := (uint32(d) << 11) | remainder        //nolint:gosec // d is in [0,4095], fits in uint32
 		parity := uint32(bits.OnesCount32(codeword23)) & 1 //nolint:gosec // OnesCount32 returns [0,32], fits in uint32
-		codeword24 := (codeword23 << 1) | parity           // 24-bit codeword
+		codeword24 := (codeword23 << 1) | parity
 		table[d] = codeword24
 	}
 
 	return table
 }
 
-// ComputeQR16_7_6Syndrome computes the Quadratic Residue (16,7,6) syndrome table.
-// Maps 9-bit syndrome (0..511) to 16-bit error pattern.
-// 0xFFFF indicates uncorrectable.
-//
-// The code can correct all single-bit errors and all double-bit errors
-// (minimum distance 6, t = floor((6-1)/2) = 2).
+// ComputeQR16_7_6Syndrome computes the error pattern of weight 0 to 2 for each
+// 9-bit syndrome of the QR(16,7,6) code, or 0xFFFF when there is none (ETSI
+// TS 102 361-1 clause B.3.2).
 func ComputeQR16_7_6Syndrome() [512]uint16 {
 	var table [512]uint16
 	for i := range table {
 		table[i] = 0xFFFF
 	}
 
-	// Enumerate all error patterns with weight 0, 1, or 2
 	for weight := 0; weight <= 2; weight++ {
 		if weight == 0 {
 			table[0] = 0x0000
@@ -79,7 +70,6 @@ func ComputeQR16_7_6Syndrome() [512]uint16 {
 			}
 			continue
 		}
-		// weight == 2
 		for p1 := 0; p1 < 16; p1++ {
 			for p2 := p1 + 1; p2 < 16; p2++ {
 				errPattern := uint16(1)<<p1 | uint16(1)<<p2
@@ -94,11 +84,9 @@ func ComputeQR16_7_6Syndrome() [512]uint16 {
 	return table
 }
 
-// qrSyndrome computes the 9-bit syndrome for a QR(16,7,6) error pattern.
-// The error pattern has bits 15..9 as data and bits 8..0 as parity.
-// (bit 15 = data[0], bit 9 = data[6], bit 8 = parity[0], bit 0 = parity[8])
+// qrSyndrome computes the 9-bit syndrome of a QR(16,7,6) error pattern with
+// data in bits 15 to 9 and parity in bits 8 to 0.
 func qrSyndrome(errPattern uint16) int {
-	// Extract 7 data-error bits (bit positions 15..9 of the 16-bit pattern)
 	var dataErr [7]byte
 	for i := 0; i < 7; i++ {
 		if errPattern&(1<<(15-i)) != 0 {
@@ -106,10 +94,8 @@ func qrSyndrome(errPattern uint16) int {
 		}
 	}
 
-	// Compute parity from data-error using the generator matrix
 	calcParity := qrParityBits(dataErr)
 
-	// Extract 9 parity-error bits (bit positions 8..0)
 	var parityErr [9]byte
 	for i := 0; i < 9; i++ {
 		if errPattern&(1<<(8-i)) != 0 {
@@ -117,7 +103,6 @@ func qrSyndrome(errPattern uint16) int {
 		}
 	}
 
-	// Syndrome = calcParity XOR parityErr, packed into 9-bit integer
 	syndrome := 0
 	for i := 0; i < 9; i++ {
 		if calcParity[i] != parityErr[i] {
@@ -128,8 +113,7 @@ func qrSyndrome(errPattern uint16) int {
 	return syndrome
 }
 
-// qrParityBits computes the QR(16,7,6) parity bits from 7 data bits.
-// Mirrors quadratic_residue_16_7_6.go parityBits function.
+// qrParityBits computes the 9 QR(16,7,6) parity bits of 7 data bits.
 func qrParityBits(bits [7]byte) [9]byte {
 	return [9]byte{
 		bits[1] ^ bits[2] ^ bits[3] ^ bits[4],
@@ -144,9 +128,9 @@ func qrParityBits(bits [7]byte) [9]byte {
 	}
 }
 
-// ComputeQR16_7_6Encoding computes the Quadratic Residue (16,7,6) encoding table.
-// For each 7-bit data value (0..127), produces the 16-bit codeword.
-// Bit layout: bits 15..9 = data[0..6], bits 8..0 = parity[0..8].
+// ComputeQR16_7_6Encoding computes the QR(16,7,6) codeword of each 7-bit data
+// value, with data in bits 15 to 9 and parity in bits 8 to 0 (ETSI TS 102
+// 361-1 clause B.3.2).
 func ComputeQR16_7_6Encoding() []uint16 {
 	table := make([]uint16, 128)
 
@@ -169,9 +153,9 @@ func ComputeQR16_7_6Encoding() []uint16 {
 	return table
 }
 
-// ComputeGolay20_8_7Encoding computes the Golay(20,8,7) systematic encoding table.
-// For each 8-bit data value, produces the 20-bit codeword as uint32.
-// Bit layout: bits 0..7 = data, bits 8..19 = parity.
+// ComputeGolay20_8_7Encoding computes the Golay(20,8,7) codeword of each 8-bit
+// data value, with data in bits 0 to 7 and parity in bits 8 to 19 (ETSI TS
+// 102 361-1 clause B.3.1).
 func ComputeGolay20_8_7Encoding() []uint32 {
 	table := make([]uint32, 256)
 
@@ -193,17 +177,10 @@ func ComputeGolay20_8_7Encoding() []uint32 {
 	return table
 }
 
-// ComputeEncoderStateTransition computes the Trellis rate 3/4 encoder
-// state transition table.
-//
-// For each (state, tribit_input) pair, produces a 4-bit constellation symbol.
-//
-// The encoder is defined by ETSI TS 102 361-1 §B.2.1:
-//   - Upper 3 bits of output = reverseBits3((input + shift(state)) % 8)
-//   - LSB = ((state >> 1) ^ (state >> 2)) & 1
-//   - shift(state) = (state & 1) * 2 + (state & 4)
+// ComputeEncoderStateTransition computes the 4-bit symbol of the rate 3/4
+// trellis encoder at index state*8+tribit (ETSI TS 102 361-1 clause B.2.4).
 func ComputeEncoderStateTransition() []byte {
-	table := make([]byte, 64) // 8 states × 8 inputs
+	table := make([]byte, 64)
 
 	for state := 0; state < 8; state++ {
 		shift := (state&1)*2 + (state & 4)
@@ -224,22 +201,17 @@ func reverseBits3(b byte) byte {
 	return ((b & 1) << 2) | (b & 2) | ((b & 4) >> 2)
 }
 
-// ComputeInterleaveMatrix computes the Trellis 3/4 rate interleave matrix.
-// 98 entries organized into 4 rows of pairs with stride 8.
-//
-// Row r (0-3): starts at 2*r, groups of 2 consecutive values, stride 8.
-// Row 0 has 13 groups (26 entries, covering 0..97)
-// Rows 1-3 have 12 groups (24 entries each, covering 2..95)
+// ComputeInterleaveMatrix computes the rate 3/4 trellis interleave order of
+// the 98 dibits: pairs of consecutive indexes in steps of 8, in 4 rows that
+// start at 0, 2, 4 and 6 (ETSI TS 102 361-1 clause B.2.4).
 func ComputeInterleaveMatrix() []byte {
 	table := make([]byte, 0, 98)
 
-	// Row 0: base=0, 13 groups
 	for g := 0; g < 13; g++ {
 		base := g * 8
 		table = append(table, byte(base), byte(base+1))
 	}
 
-	// Rows 1-3: base=2*r, 12 groups each
 	for r := 1; r <= 3; r++ {
 		for g := 0; g < 12; g++ {
 			base := 2*r + g*8
@@ -250,29 +222,23 @@ func ComputeInterleaveMatrix() []byte {
 	return table
 }
 
-// ComputeGolay20_8_7Syndrome computes the Golay(20,8,7) syndrome table.
-// Maps 12-bit syndrome to 20-bit error pattern (uint32).
-// 0xFFFFFFFF indicates uncorrectable.
-//
-// The code can correct up to 3 errors (d_min = 7, t = 3).
+// ComputeGolay20_8_7Syndrome computes the error pattern of weight 0 to 3 for
+// each 12-bit syndrome of the Golay(20,8,7) code, or 0xFFFFFFFF when there is
+// none (ETSI TS 102 361-1 clause B.3.1).
 func ComputeGolay20_8_7Syndrome() [4096]uint32 {
 	var table [4096]uint32
 	for i := range table {
 		table[i] = 0xFFFFFFFF
 	}
 
-	// Enumerate all error patterns with weight 0, 1, 2, or 3 over 20 bits.
-	// Weight 0
 	table[0] = 0x00000000
 
-	// Weight 1: 20 patterns
 	for p := 0; p < 20; p++ {
 		errPattern := uint32(1) << p
 		syndrome := golay20Syndrome(errPattern)
 		table[syndrome] = errPattern
 	}
 
-	// Weight 2: C(20,2) = 190 patterns
 	for p1 := 0; p1 < 20; p1++ {
 		for p2 := p1 + 1; p2 < 20; p2++ {
 			errPattern := uint32(1)<<p1 | uint32(1)<<p2
@@ -283,7 +249,6 @@ func ComputeGolay20_8_7Syndrome() [4096]uint32 {
 		}
 	}
 
-	// Weight 3: C(20,3) = 1140 patterns
 	for p1 := 0; p1 < 20; p1++ {
 		for p2 := p1 + 1; p2 < 20; p2++ {
 			for p3 := p2 + 1; p3 < 20; p3++ {
@@ -299,12 +264,9 @@ func ComputeGolay20_8_7Syndrome() [4096]uint32 {
 	return table
 }
 
-// golay20Syndrome computes the 12-bit syndrome for a Golay(20,8,7) error pattern.
-// Bit layout: bits[0..7] are data, bits[8..19] are parity.
-// The syndrome is computed as: calcParity(data_err) XOR parity_err
-// with syndrome bit i stored at position i (LSB = parity position 0).
+// golay20Syndrome computes the 12-bit syndrome of a Golay(20,8,7) error
+// pattern with data in bits 0 to 7 and parity in bits 8 to 19.
 func golay20Syndrome(errPattern uint32) int {
-	// Extract 8 data-error bits (bit positions 0..7)
 	var dataErr [8]byte
 	for i := 0; i < 8; i++ {
 		if errPattern&(1<<i) != 0 {
@@ -312,10 +274,8 @@ func golay20Syndrome(errPattern uint32) int {
 		}
 	}
 
-	// Compute parity from data-error using the Golay(20,8) parity function
 	calcParity := golay20ParityBits(dataErr)
 
-	// Extract 12 parity-error bits (positions 8..19)
 	syndrome := 0
 	for i := 0; i < 12; i++ {
 		parityErr := byte(0)
@@ -330,8 +290,7 @@ func golay20Syndrome(errPattern uint32) int {
 	return syndrome
 }
 
-// golay20ParityBits computes the 12 parity bits from 8 data bits.
-// Mirrors golay_20_8_7.go parity2087 function.
+// golay20ParityBits computes the 12 Golay(20,8,7) parity bits of 8 data bits.
 func golay20ParityBits(bits [8]byte) [12]byte {
 	return [12]byte{
 		bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7],
@@ -349,28 +308,23 @@ func golay20ParityBits(bits [8]byte) [12]byte {
 	}
 }
 
-// ComputeGolay23_12_7Syndrome computes the Golay(23,12,7) syndrome table.
-// Maps 11-bit syndrome (stored in [4096]uint32 for alignment) to 23-bit error pattern.
-// 0xFFFFFFFF indicates uncorrectable.
-//
-// The code can correct up to 3 errors (d_min = 7, t = 3).
+// ComputeGolay23_12_7Syndrome computes the error pattern of weight 0 to 3
+// for each 11-bit syndrome of the Golay(23,12,7) code. Entries 2048 and up
+// are 0xFFFFFFFF.
 func ComputeGolay23_12_7Syndrome() [4096]uint32 {
 	var table [4096]uint32
 	for i := range table {
 		table[i] = 0xFFFFFFFF
 	}
 
-	// Weight 0
 	table[0] = 0x00000000
 
-	// Weight 1: 23 patterns
 	for p := 0; p < 23; p++ {
 		errPattern := uint32(1) << p
 		syndrome := golay23Syndrome(errPattern)
 		table[syndrome] = errPattern
 	}
 
-	// Weight 2: C(23,2) = 253 patterns
 	for p1 := 0; p1 < 23; p1++ {
 		for p2 := p1 + 1; p2 < 23; p2++ {
 			errPattern := uint32(1)<<p1 | uint32(1)<<p2
@@ -381,7 +335,6 @@ func ComputeGolay23_12_7Syndrome() [4096]uint32 {
 		}
 	}
 
-	// Weight 3: C(23,3) = 1771 patterns
 	for p1 := 0; p1 < 23; p1++ {
 		for p2 := p1 + 1; p2 < 23; p2++ {
 			for p3 := p2 + 1; p3 < 23; p3++ {
@@ -397,9 +350,8 @@ func ComputeGolay23_12_7Syndrome() [4096]uint32 {
 	return table
 }
 
-// golay23Syndrome computes the 11-bit syndrome for a Golay(23,12,7) error pattern.
-// The syndrome is the remainder of dividing the error pattern polynomial by
-// g(x) = x^11 + x^10 + x^6 + x^5 + x^4 + x^2 + 1 = 0xC75.
+// golay23Syndrome computes the 11-bit syndrome of a Golay(23,12,7) error
+// pattern: its remainder modulo g(x) = 0xC75.
 func golay23Syndrome(errPattern uint32) int {
 	dividend := errPattern
 	for i := 11; i >= 0; i-- {
@@ -410,29 +362,24 @@ func golay23Syndrome(errPattern uint32) int {
 	return int(dividend & 0x7FF)
 }
 
-// ComputeGolay24_12_8Syndrome computes the Golay(24,12,8) syndrome table.
-// Maps 12-bit syndrome to 24-bit error pattern.
-// 0xFFFFFFFF indicates uncorrectable.
-//
-// The code can correct up to 3 errors (d_min = 8, t = 3).
-// Syndrome = (polynomial_syndrome << 1) | overall_parity_error.
+// ComputeGolay24_12_8Syndrome computes the error pattern of weight 0 to 3
+// for each 12-bit syndrome of the Golay(24,12,8) code, or 0xFFFFFFFF when
+// there is none. The syndrome is the Golay(23,12,7) syndrome shifted left by
+// 1, with the overall parity error in bit 0.
 func ComputeGolay24_12_8Syndrome() [4096]uint32 {
 	var table [4096]uint32
 	for i := range table {
 		table[i] = 0xFFFFFFFF
 	}
 
-	// Weight 0
 	table[0] = 0x00000000
 
-	// Weight 1: 24 patterns
 	for p := 0; p < 24; p++ {
 		errPattern := uint32(1) << p
 		syndrome := golay24Syndrome(errPattern)
 		table[syndrome] = errPattern
 	}
 
-	// Weight 2: C(24,2) = 276 patterns
 	for p1 := 0; p1 < 24; p1++ {
 		for p2 := p1 + 1; p2 < 24; p2++ {
 			errPattern := uint32(1)<<p1 | uint32(1)<<p2
@@ -443,7 +390,6 @@ func ComputeGolay24_12_8Syndrome() [4096]uint32 {
 		}
 	}
 
-	// Weight 3: C(24,3) = 2024 patterns
 	for p1 := 0; p1 < 24; p1++ {
 		for p2 := p1 + 1; p2 < 24; p2++ {
 			for p3 := p2 + 1; p3 < 24; p3++ {
@@ -459,16 +405,12 @@ func ComputeGolay24_12_8Syndrome() [4096]uint32 {
 	return table
 }
 
-// golay24Syndrome computes the 12-bit syndrome for a Golay(24,12,8) error pattern.
-// The 24-bit codeword has the parity bit at position 0 and the 23-bit Golay(23,12,7)
-// codeword in bits 1..23.
-// Syndrome = (polynomial_remainder << 1) | parity_error.
+// golay24Syndrome computes the 12-bit syndrome of a Golay(24,12,8) error
+// pattern with the parity bit in bit 0 and the Golay(23,12,7) codeword in
+// bits 1 to 23.
 func golay24Syndrome(errPattern uint32) int {
-	// Extract the 23-bit portion (bits 1..23)
 	err23 := errPattern >> 1
-	// Compute polynomial syndrome (11 bits)
 	polySyndrome := golay23Syndrome(err23)
-	// Compute parity syndrome (1 bit): overall parity of the 24-bit error pattern
 	parityErr := bits.OnesCount32(errPattern) & 1
 	return (polySyndrome << 1) | parityErr
 }

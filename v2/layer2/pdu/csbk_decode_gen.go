@@ -20,7 +20,7 @@
 // ETSI TS 102 361-4 clause 7.1.1.2.1
 // ETSI TS 102 361-4 clause 7.1.1.2.2
 // ETSI TS 102 361-4 clause 7.1.1.4.3
-// ETSI TS 102 361-1 clause 9.1.5
+// ETSI TS 102 361-1 clause 9.1.8
 
 package pdu
 
@@ -2119,7 +2119,7 @@ func (s *MaintenancePDU) String() string {
 	return fmt.Sprintf("MaintenancePDU{ Reserved: %d, MaintKind: %d, Reserved2: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.MaintKind, s.Reserved2, s.TargetAddress, s.SourceAddress)
 }
 
-// DecodeCSBK decodes a CSBK (ETSI TS 102 361-1 clause 9.1.5).
+// DecodeCSBK decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
 func DecodeCSBK(data [96]bit.Bit) CSBK {
 	var result CSBK
 	lowbit.Mask(data[:])
@@ -2233,7 +2233,7 @@ func DecodeCSBK(data [96]bit.Bit) CSBK {
 	return result
 }
 
-// Encode encodes a CSBK (ETSI TS 102 361-1 clause 9.1.5).
+// Encode encodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
 func (s *CSBK) Encode() ([96]bit.Bit, error) {
 	var data [96]bit.Bit
 	_payload := ""

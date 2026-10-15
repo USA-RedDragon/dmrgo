@@ -1,5 +1,5 @@
-// Package trellis implements the rate 3/4 trellis code of ETSI TS 102 361-1
-// B.2.4, which protects rate 3/4 data blocks.
+// Package trellis encodes and decodes the rate 3/4 trellis code that
+// protects rate 3/4 data blocks (ETSI TS 102 361-1 clause B.2.4).
 package trellis
 
 import (
@@ -35,19 +35,11 @@ func dibitsToBits(dibits [98]int8) [196]bit.Bit {
 	return bits
 }
 
-// Decode runs a hard-decision Viterbi decoder over the 49 received
-// constellation points. The branch metric is the Hamming distance between the
-// four received bits of a point and the four bits of the expected point. The
-// path is forced to end in state 0 because the encoder appends a 000 tribit
-// (ETSI TS 102 361-1 B.2.4).
-//
-// ErrorsCorrected is the number of received bits that differ from the
-// re-encoded decoded path. Uncorrectable is set when a path ending in a
-// nonzero state has a strictly lower metric than the best path ending in
-// state 0. That is the only check: the trellis code has no other redundancy
-// to detect a miscorrection, so a false Uncorrectable does not mean the data
-// is right. Callers must check the block CRC (the CRC-9 of a confirmed block
-// or the message CRC-32) to detect a miscorrected block.
+// Decode decodes 196 received bits into 144 data bits with a hard-decision
+// Viterbi decoder whose path ends in state 0. ErrorsCorrected counts the
+// received bits that differ from the decoded path. Uncorrectable is set only
+// when a path that ends in another state has a lower metric, so callers check
+// the block CRC-9 or the message CRC-32 to detect a miscorrected block.
 func Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
 	lowbit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 196}
@@ -130,18 +122,17 @@ func tribitsToBits(tribits [49]byte) [144]bit.Bit {
 	return bits
 }
 
-// Encode encodes 144 data bits using Trellis 3/4 rate coding, producing 196 interleaved bits.
+// Encode encodes 144 data bits with the rate 3/4 trellis code and a tail
+// tribit of 0 into 196 interleaved bits.
 func Encode(data [144]bit.Bit) [196]bit.Bit {
 	lowbit.Mask(data[:])
-	// Step 1: Data bits to tribits (48 data tribits + 1 tail)
 	var tribits [49]byte
 	for i := 0; i < 48; i++ {
 		o := i * 3
 		tribits[i] = (byte(data[o]) << 2) | (byte(data[o+1]) << 1) | byte(data[o+2])
 	}
-	tribits[48] = 0 // tail tribit to flush encoder back to state 0
+	tribits[48] = 0
 
-	// Step 2: Tribits to constellation points via encoder state machine
 	var points [49]byte
 	state := byte(0)
 	for i := 0; i < 49; i++ {
@@ -149,19 +140,16 @@ func Encode(data [144]bit.Bit) [196]bit.Bit {
 		state = tribits[i]
 	}
 
-	// Step 3: Constellation points to dibits
 	var dibits [98]int8
 	for i := 0; i < 49; i++ {
 		dibits[i*2] = trellis34_reverse_constellation[points[i]][0]
 		dibits[i*2+1] = trellis34_reverse_constellation[points[i]][1]
 	}
 
-	// Step 4: Interleave (reverse of deinterleave)
 	var interleavedDibits [98]int8
 	for i := 0; i < 98; i++ {
 		interleavedDibits[i] = dibits[interleave_matrix[i]]
 	}
 
-	// Step 5: Dibits to bits
 	return dibitsToBits(interleavedDibits)
 }

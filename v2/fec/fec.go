@@ -1,19 +1,3 @@
-// Package fec provides shared types for Forward Error Correction across all FEC codecs.
-//
-// Error rule: a decoder of one codeword, PDU or burst never returns an
-// error for bits that its FEC or CRC cannot correct or check. It returns
-// the decoded value with a Result, whose Uncorrectable field reports the
-// failure, so the caller keeps the decoded fields. A function that returns
-// a bare value returns the Result with it; a PDU struct reports it in its
-// FEC field. An error from such a decoder means that the input cannot be
-// decoded at all, such as a reserved data type. A caller that wants an
-// error for an uncorrectable result calls Result.Err, which returns
-// ErrUncorrectable.
-//
-// Functions that reassemble or check a message over several bursts, such
-// as the packet Assembler and layer2.VoiceReceiver, report a failed check
-// as an error. Such errors wrap ErrUncorrectable, and the functions still
-// return what they decoded.
 package fec
 
 import "errors"
@@ -23,13 +7,10 @@ import "errors"
 // FEC or CRC result wrap it, so errors.Is(err, ErrUncorrectable) finds them.
 var ErrUncorrectable = errors.New("fec: uncorrectable")
 
-// Result tracks the outcome of a single FEC decode/check operation.
-//
-// BitsChecked and ErrorsCorrected count bits of an error correcting code
-// at this step, so ErrorsCorrected over BitsChecked is a bit error rate. A
-// step that only detects errors, such as a CRC or checksum, reports
-// BitsChecked 0 and ErrorsCorrected 0, and sets Uncorrectable when its
-// check fails.
+// Result is the outcome of one FEC decode or check step. ErrorsCorrected
+// over BitsChecked is a bit error rate. A step that only detects errors,
+// such as a CRC or checksum, reports 0 for both counts and sets
+// Uncorrectable when its check fails.
 type Result struct {
 	// BitsChecked is the number of coded bits that an error correcting code
 	// covers in this decode step.
@@ -66,10 +47,8 @@ func (r Result) HasErrors() bool {
 	return r.ErrorsCorrected > 0 || r.Uncorrectable
 }
 
-// BERCalculator accumulates FEC results to compute an overall Bit Error Rate.
-//
-// MMDVM computes BER as: BER% = (totalErrors * 100) / totalBitsChecked
-// Consumers can aggregate per-call, per-N-bursts, sliding window, etc.
+// BERCalculator accumulates Results into an overall bit error rate. The
+// zero value is an empty calculator.
 type BERCalculator struct {
 	totalBitsChecked int
 	totalErrors      int
@@ -91,8 +70,8 @@ func (b *BERCalculator) AddBurst(stats BurstFECStats) {
 	b.Add(stats.Aggregate())
 }
 
-// BER returns the current Bit Error Rate as a percentage (0.0-100.0).
-// Returns 0 if no bits have been checked.
+// BER returns the bit error rate as a percentage from 0 to 100, as MMDVM
+// computes it. It returns 0 when no bits have been checked.
 func (b *BERCalculator) BER() float64 {
 	if b.totalBitsChecked == 0 {
 		return 0
@@ -122,17 +101,17 @@ func (b *BERCalculator) Reset() {
 	*b = BERCalculator{}
 }
 
-// BurstFECStats holds per-layer FEC results for a single DMR burst. It has
-// no voice layer: the vocoder FEC is codec specific, and a caller that
+// BurstFECStats holds the FEC results of each layer of one DMR burst. It has
+// no voice layer, because the vocoder FEC is codec specific. A caller that
 // decodes AMBE+2 frames adds their result (layer2.Burst.AMBEFrames).
 type BurstFECStats struct {
-	SlotType Result // Golay(20,8,7), 20 bits
-	EMB      Result // QR(16,7,6), 16 bits (bursts with embedded signalling only)
-	Payload  Result // BPTC/Trellis/Rate1, 196/196/0 bits
+	SlotType Result // Golay (20,8,7), 20 bits
+	EMB      Result // QR (16,7,6), 16 bits, bursts with embedded signalling only
+	Payload  Result // BPTC (196 bits), trellis (196 bits) or rate 1 (0 bits)
 	// PDU is the RS(12,9) correction (96 bits) or the CRC check (0 bits) of
 	// the information bits that the Payload code returned (FLC/CSBK/DataHeader).
 	PDU Result
-	RC  Result // Single Burst BPTC, 32 bits, + CRC-7 check (Reverse Channel only)
+	RC  Result // single burst BPTC (32 bits) and CRC-7 check, Reverse Channel only
 }
 
 // Aggregate returns combined stats across all FEC layers in this burst. The

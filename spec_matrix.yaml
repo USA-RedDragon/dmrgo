@@ -30,6 +30,14 @@ ignore_files:
   - v2/vocoder/codec2/codec2.go
   - v2/vocoder/codec2/codec2_cgo.go
   - v2/vocoder/codec2/codec2_stub.go
+  - v2/constants/doc.go
+  - v2/fec/doc.go
+  - v2/layer2/doc.go
+  - v2/layer2/framer/doc.go
+  - v2/layer2/packet/doc.go
+  - v2/layer2/pdu/doc.go
+  - v2/vocoder/doc.go
+  - v2/vocoder/codec2/doc.go
 
 documents:
   - id: "TS-102-361-1"

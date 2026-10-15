@@ -5,16 +5,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// LCBytes is the 72 LC bits of a Full LC (ETSI TS 102 361-1 §9.1.6),
-// without RS(12,9) parity, as FullLinkControl.Bytes returns them. Its
+// LCBytes is the 72 LC bits of a Full LC without RS(12,9) parity, as
+// FullLinkControl.Bytes returns them (ETSI TS 102 361-1 clause 9.1.6). Its
 // methods read or write one field in place and leave every other bit as it
-// is. After an edit, Codeword gives the new codeword, and
+// is. After an edit, Codeword gives the new codeword and
 // layer2.EncodeEmbeddedLC the new embedded LC.
-//
-// Octet 0 holds the PF and Reserved bits and the 6-bit FLCO, octet 1 the
-// FID. In a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC (ETSI TS 102
-// 361-2 Tables 7.1 and 7.2), octet 2 holds the Service Options, octets 3
-// to 5 the group or target address and octets 6 to 8 the source address.
 type LCBytes [9]byte
 
 // NewVoiceLCBytes returns the LC octets of the voice call LC that NewVoiceLC
@@ -60,8 +55,8 @@ func (l *LCBytes) SetProtectFlag(pf bool) {
 	}
 }
 
-// Reserved returns the Reserved bit, bit 1 of octet 0, which ETSI TS 102
-// 361-1 §9.1.6 Table 9.6 does not define.
+// Reserved returns the Reserved bit, bit 1 of octet 0. The standard does not
+// define it (ETSI TS 102 361-1 clause 9.1.6, Table 9.6).
 func (l LCBytes) Reserved() bool {
 	return l[0]&0x40 != 0
 }
@@ -128,8 +123,8 @@ func (l *LCBytes) SetAddresses(target, source uint32) bool {
 	return true
 }
 
-// Group reports whether the FLCO is Grp_V_Ch_Usr (0) rather than
-// UU_V_Ch_Usr (3). ok is false for other FLCOs.
+// Group reports whether the FLCO is Grp_V_Ch_Usr (0). ok is false unless
+// the FLCO is Grp_V_Ch_Usr or UU_V_Ch_Usr (3).
 func (l LCBytes) Group() (group, ok bool) {
 	if !l.isVoiceChannelUser() {
 		return false, false

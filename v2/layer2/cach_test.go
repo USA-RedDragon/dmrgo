@@ -11,7 +11,6 @@ import (
 
 func TestCACH_DecodeTACT(t *testing.T) {
 	t.Parallel()
-	// Build valid CACH: TACT with AT=1, TC=0, LCSS=01, then 17 zero payload bits
 	tactData := [4]bit.Bit{1, 0, 0, 1}
 	tactCodeword := hamming.Encode743(tactData)
 
@@ -36,7 +35,6 @@ func TestCACH_DecodeTACT(t *testing.T) {
 func TestCACH_PayloadExtraction(t *testing.T) {
 	t.Parallel()
 	var cachBits [layer2.CACHBits]bit.Bit
-	// Set some known payload bits
 	for i := layer2.TACTBits; i < layer2.CACHBits; i++ {
 		cachBits[i] = bit.Bit((i - layer2.TACTBits) % 2)
 	}
@@ -52,7 +50,6 @@ func TestCACH_PayloadExtraction(t *testing.T) {
 
 func TestCACH_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	// Build a CACH with known values
 	tactData := [4]bit.Bit{0, 1, 1, 0}
 	tactCodeword := hamming.Encode743(tactData)
 
@@ -94,7 +91,6 @@ func TestCACH_TACTErrorCorrection(t *testing.T) {
 	var cachBits [layer2.CACHBits]bit.Bit
 	copy(cachBits[:layer2.TACTBits], tactCodeword[:])
 
-	// Flip one TACT bit
 	cachBits[2] ^= 1
 
 	cach := layer2.DecodeCACH(cachBits)

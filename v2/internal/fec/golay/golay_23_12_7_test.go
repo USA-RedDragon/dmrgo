@@ -10,13 +10,11 @@ import (
 func TestGolay23127(t *testing.T) {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec // pseudo-random adequate for tests
 
-	// Test all 4096 codewords
 	for d := 0; d < 4096; d++ {
 		data := uint16(d) //nolint:gosec // d limited to 12-bit range
 
 		codeword23 := Encode23127(data)
 
-		// Case 1: No Error
 		decoded, result := Decode23127(codeword23)
 		if result.Uncorrectable {
 			t.Fatalf("Data 0x%03x: Clean codeword reported as uncorrectable", data)
@@ -28,9 +26,7 @@ func TestGolay23127(t *testing.T) {
 			t.Fatalf("Data 0x%03x: Clean codeword decoded as 0x%03x", data, decoded)
 		}
 
-		// Test random errors
 		for k := 0; k < 5; k++ {
-			// Case 2: 1 Error
 			bit1 := uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			cwErr1 := codeword23 ^ (1 << bit1)
 			decoded, result = Decode23127(cwErr1)
@@ -43,7 +39,6 @@ func TestGolay23127(t *testing.T) {
 				t.Errorf("Data 0x%03x (1 error): Decoded as 0x%03x", data, decoded)
 			}
 
-			// Case 3: 2 Errors
 			bit2 := uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			for bit2 == bit1 {
 				bit2 = uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
@@ -59,7 +54,6 @@ func TestGolay23127(t *testing.T) {
 				t.Errorf("Data 0x%03x (2 errors): Decoded as 0x%03x", data, decoded)
 			}
 
-			// Case 4: 3 Errors
 			bit3 := uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use
 			for bit3 == bit1 || bit3 == bit2 {
 				bit3 = uint(rng.Intn(23)) //nolint:gosec // bounded conversion for test use

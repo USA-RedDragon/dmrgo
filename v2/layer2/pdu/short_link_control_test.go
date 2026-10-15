@@ -14,14 +14,11 @@ import (
 // slco is the 4-bit SLCO value, data is the 24-bit payload.
 func buildShortLCBits(slco byte, data [24]bit.Bit) [36]bit.Bit {
 	var bits [36]bit.Bit
-	// SLCO: bits 0-3
 	bits[0] = bit.Bit((slco >> 3) & 1)
 	bits[1] = bit.Bit((slco >> 2) & 1)
 	bits[2] = bit.Bit((slco >> 1) & 1)
 	bits[3] = bit.Bit(slco & 1)
-	// Data: bits 4-27
 	copy(bits[4:28], data[:])
-	// CRC-8: bits 28-35
 	crcVal := crc.CRC8(bits[:28])
 	for i := range 8 {
 		bits[28+i] = bit.Bit((crcVal >> (7 - i)) & 1)
@@ -54,14 +51,10 @@ func TestShortLC_ActivityUpdate_Decode(t *testing.T) {
 	t.Parallel()
 	// TS1ActivityID=5, TS2ActivityID=3, HashTS1=0xAB, HashTS2=0xCD
 	var data [24]bit.Bit
-	// TS1ActivityID: 0101
 	data[0], data[1], data[2], data[3] = 0, 1, 0, 1
-	// TS2ActivityID: 0011
 	data[4], data[5], data[6], data[7] = 0, 0, 1, 1
-	// HashTS1: 0xAB = 10101011
 	data[8], data[9], data[10], data[11] = 1, 0, 1, 0
 	data[12], data[13], data[14], data[15] = 1, 0, 1, 1
-	// HashTS2: 0xCD = 11001101
 	data[16], data[17], data[18], data[19] = 1, 1, 0, 0
 	data[20], data[21], data[22], data[23] = 1, 1, 0, 1
 
@@ -94,7 +87,6 @@ func TestShortLC_ActivityUpdate_Decode(t *testing.T) {
 
 func TestShortLC_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	// Build an Activity Update, encode it, decode it, verify match
 	original := pdu.ShortLC{
 		SLCO: enums.SLCOActivityUpdate,
 		ActivityUpdate: &pdu.ShortLCActivityUpdate{
@@ -136,7 +128,6 @@ func TestShortLC_CRCFailure(t *testing.T) {
 	var data [24]bit.Bit
 	bits := buildShortLCBits(byte(enums.SLCONullMessage), data)
 
-	// Corrupt a CRC bit
 	bits[30] ^= 1
 
 	fecResult := pdu.DecodeShortLC(bits).FEC

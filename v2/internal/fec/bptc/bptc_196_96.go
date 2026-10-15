@@ -1,6 +1,7 @@
-// Package bptc implements the block product turbo codes of ETSI TS 102 361-1
-// B.1 and B.2: BPTC(196,96) for full bursts, the BPTC(128,77) matrix of the
-// embedded signalling, the CACH Short LC BPTC and the single burst BPTC.
+// Package bptc encodes and decodes the block product turbo codes of DMR:
+// BPTC(196,96) for full bursts, the BPTC(128,77) of the embedded signalling,
+// the CACH Short LC BPTC and the single burst BPTC (ETSI TS 102 361-1 clauses
+// B.1 and B.2).
 package bptc
 
 import (
@@ -15,7 +16,6 @@ func calculate_syndrome_15_11(bits [15]bit.Bit) int {
 	errs[1] = bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[12]
 	errs[2] = bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[7] ^ bits[9] ^ bits[10] ^ bits[13]
 	errs[3] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7] ^ bits[10] ^ bits[14]
-	// Convert [S0, S1, S2, S3] to integer
 	return int(errs[0]) | int(errs[1])<<1 | int(errs[2])<<2 | int(errs[3])<<3
 }
 
@@ -30,7 +30,7 @@ func calculate_syndrome_13_9(bits [13]bit.Bit) int {
 
 // Decode196 deinterleaves a BPTC(196,96) block, corrects it with the row and
 // column Hamming codes and returns the 96 data bits and a fec.Result
-// (ETSI TS 102 361-1 B.1.1).
+// (ETSI TS 102 361-1 clause B.1.1).
 func Decode196(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
 	data, _, result := Decode196WithReserved(bits)
 	return data, result
@@ -53,7 +53,6 @@ func Decode196WithReserved(bits [196]bit.Bit) ([96]bit.Bit, [3]bit.Bit, fec.Resu
 
 	deinterleavedBits, result.ErrorsCorrected, result.Uncorrectable = hamming_correct(deinterleavedBits)
 
-	// Extract data bits
 	for i, k = 4, 0; i <= 11; i, k = i+1, k+1 {
 		temp[k] = deinterleavedBits[i]
 	}
@@ -67,14 +66,11 @@ func Decode196WithReserved(bits [196]bit.Bit) ([96]bit.Bit, [3]bit.Bit, fec.Resu
 	return temp, reserved, result
 }
 
-// hamming_correct iteratively corrects the BPTC(196,96) grid with the column
-// Hamming(13,9,3) and row Hamming(15,11,3) codes. The four column parity
-// rows are also row codewords, because the column code is applied to all 15
-// columns, so all 13 rows are row-decoded. Each pass corrects the columns
-// first, as MMDVMHost does: with random errors this corrects more grids than
-// rows first and does not miscorrect more often. It returns the corrected
-// grid, the number of bits that differ from the input, and whether any row or
-// column syndrome is still nonzero after correction.
+// hamming_correct corrects the BPTC(196,96) grid with the column
+// Hamming(13,9,3) and row Hamming(15,11,3) codes, columns first in each pass
+// as MMDVMHost does. The column parity rows are also row codewords, so all
+// 13 rows are row-decoded. It returns the corrected grid, the number of
+// flipped bits, and whether a row or column syndrome is still nonzero.
 func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
 	corrected := bits
 
@@ -143,16 +139,12 @@ func Encode196WithReserved(data [96]bit.Bit, reserved [3]bit.Bit) [196]bit.Bit {
 	lowbit.Mask(reserved[:])
 	grid := [196]bit.Bit{1: reserved[2], 2: reserved[1], 3: reserved[0]}
 
-	// Place data into the grid
 	dataIdx := 0
-
-	// Row 0: indices 4..11 (positions 1-3 are R(2), R(1), R(0))
 	for i := 4; i <= 11; i++ {
 		grid[i] = data[dataIdx]
 		dataIdx++
 	}
 
-	// Rows 1..8
 	for j := 1; j < 9; j++ {
 		for i := 0; i <= 10; i++ {
 			grid[j*15+i+1] = data[dataIdx]
@@ -160,17 +152,14 @@ func Encode196WithReserved(data [96]bit.Bit, reserved [3]bit.Bit) [196]bit.Bit {
 		}
 	}
 
-	// Compute Row Parity (Hamming 15,11) for Rows 0..8
 	for r := 0; r < 9; r++ {
 		calculateRowParity(&grid, r)
 	}
 
-	// Compute Column Parity (Hamming 13,9) for Columns 0..14
 	for c := 0; c < 15; c++ {
 		calculateColParity(&grid, c)
 	}
 
-	// Interleave using the deinterleave matrix in reverse
 	var encoded [196]bit.Bit
 	for i := 0; i < 196; i++ {
 		encoded[dm[i]] = grid[i]

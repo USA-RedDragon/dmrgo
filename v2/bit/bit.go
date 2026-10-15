@@ -1,22 +1,15 @@
-// Package bit provides the Bit type and utility functions for converting between
-// packed byte representations and unpacked bit arrays used throughout the DMR codec.
-//
-// Throughout the dmrgo codebase, individual bits are stored as Bit values (0 or 1)
-// in arrays/slices, NOT as packed bitfields. For example, [96]Bit holds 96 individual
-// bits. Packed bytes are only used at I/O boundaries (the 33-byte input and encoded output).
-//
-// The functions index their arguments directly, so a slice shorter than the
-// bits they read or write panics, as an out of range index does.
+// Package bit holds DMR bits unpacked, one Bit per bit, and converts Bit
+// slices and arrays to and from packed bytes and unsigned integers, the first
+// bit most significant. dmrgo uses packed bytes only at I/O boundaries, such
+// as a 33-byte burst. A function panics when a slice is shorter than the bits
+// it reads or writes.
 package bit
 
 import "fmt"
 
-// Bit represents a single bit as a byte value (0 or 1).
-// This type replaces the ambiguous use of byte for unpacked bit arrays throughout
-// the codebase, providing compile-time type safety at zero runtime cost.
-//
-// Functions of this module that read a Bit use only its low bit, so a Bit
-// of 2 reads as 0 and a Bit of 0xFF reads as 1.
+// Bit is one bit stored in a byte, 0 or 1. The functions of this module that
+// read a Bit use only its low bit, so a Bit of 2 reads as 0 and a Bit of 0xFF
+// reads as 1.
 type Bit byte
 
 // FieldRangeError is the error of a PDU Encode method when a field value

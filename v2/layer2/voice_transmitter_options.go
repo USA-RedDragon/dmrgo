@@ -23,7 +23,7 @@ type VoiceTransmitterOptions struct {
 	// specific: for AMBE+2 it is vocoder.AMBESilenceSlot().
 	Silence [72]bit.Bit
 	// PIHeader, when set, adds a PI Header burst after the Voice LC Header
-	// (ETSI TS 102 361-1 §5.1.2.2, §6.2).
+	// (ETSI TS 102 361-1 clause 5.1.2.2, clause 6.2).
 	PIHeader *pdu.PIHeader
 	// EmbeddedLC, when set, is called at the start of each superframe with
 	// its index, 0 for the first one. The Full LC it returns is the embedded

@@ -3,18 +3,10 @@ package pdu
 import "github.com/USA-RedDragon/dmrgo/v2/enums"
 
 // DataHeaderBytes is the 12-octet BPTC(196,96) payload of a data header
-// burst (ETSI TS 102 361-1 §9.2), as layer2.RawBurst.BPTCPayload returns
-// it: 80 header bits followed by the CRC-CCITT XORed with the Data Header
-// mask 0xCCCC. Its methods read or write one field in place and leave
-// every other bit as it is. The setters do not update the CRC: call Reseal
-// after the last edit, or the header fails its CRC check.
-//
-// In the C_HEAD, U_HEAD, SP_HEAD, R_HEAD, DD_HEAD and UDT_HEAD formats
-// (Tables 9.10, 9.15, 9.17A to 9.17D), bit 7 of octet 0 is the Group or
-// Individual flag, octets 2 to 4 the destination LLID and octets 5 to 7
-// the source LLID. The C_RHEAD format (Table 9.13) has the LLIDs at the
-// same octets, but bit 7 of octet 0 is reserved. The P_HEAD format (Table
-// 9.17) carries no LLIDs.
+// burst, as layer2.RawBurst.BPTCPayload returns it (ETSI TS 102 361-1 clause
+// 9.2). Its methods read or write one field in place and leave every other
+// bit as it is. The setters do not update the CRC: call Reseal after the
+// last edit, or the header fails its CRC check.
 type DataHeaderBytes [12]byte
 
 // Format returns the Format, the low 4 bits of octet 0.
@@ -38,8 +30,9 @@ func (h DataHeaderBytes) hasLLIDs() bool {
 	return h.hasGroupFlag() || h.Format() == FormatResponsePacket
 }
 
-// Addresses returns the destination LLID as target and the source LLID of
-// the header. ok is false for a P_HEAD and for the reserved formats.
+// Addresses returns the destination LLID (octets 2 to 4) as target and the
+// source LLID (octets 5 to 7) of the header. ok is false for a P_HEAD and
+// for the reserved formats.
 func (h DataHeaderBytes) Addresses() (target, source uint32, ok bool) {
 	if !h.hasLLIDs() {
 		return 0, 0, false

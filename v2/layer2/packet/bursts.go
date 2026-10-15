@@ -9,10 +9,9 @@ import (
 
 // Bursts returns the on-air data bursts of p: the Data Header burst, then
 // one Rate 1/2, Rate 3/4 or Rate 1 burst per block, each with a slot type of
-// color code colorCode and the data SYNC pattern of src. A block is any
-// layer2.Data whose DataType is one of these rates, coded from its
-// EncodeBits. It returns an error when the header or a block does not
-// encode, a block has another data type or src is unknown.
+// color code colorCode and the data SYNC pattern of src. It returns an error
+// when the header or a block does not encode, a block has another data type,
+// or src is unknown.
 func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
 	raw, err := layer2.BuildBurst(&p.Header, colorCode, src)
 	if err != nil {

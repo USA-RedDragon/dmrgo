@@ -96,7 +96,6 @@ func TestSingleBurstBPTC_SingleBitErrorCorrection(t *testing.T) {
 
 	txBits := bptc.EncodeSingleBurst(info, false)
 
-	// Flip a single bit
 	txBits[10] ^= 1
 
 	decoded, result := bptc.DecodeSingleBurst(txBits, false)

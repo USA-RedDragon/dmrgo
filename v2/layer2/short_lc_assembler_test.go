@@ -17,14 +17,11 @@ import (
 // a valid Short LC PDU with the given SLCO and 24-bit data payload.
 func buildValidShortLCFragments(slco byte, data [24]bit.Bit) [4][17]bit.Bit {
 	var bits [36]bit.Bit
-	// SLCO: bits 0-3 (MSB-first)
 	bits[0] = bit.Bit((slco >> 3) & 1)
 	bits[1] = bit.Bit((slco >> 2) & 1)
 	bits[2] = bit.Bit((slco >> 1) & 1)
 	bits[3] = bit.Bit(slco & 1)
-	// Data: bits 4-27
 	copy(bits[4:28], data[:])
-	// CRC-8: bits 28-35
 	crcVal := crc.CRC8(bits[:28])
 	for i := range 8 {
 		bits[28+i] = bit.Bit((crcVal >> (7 - i)) & 1)
@@ -245,7 +242,6 @@ func TestShortLCAssembler_Complete_NullMessage(t *testing.T) {
 
 func TestShortLCAssembler_Complete_ActivityUpdate(t *testing.T) {
 	t.Parallel()
-	// TS1ActivityID=5, TS2ActivityID=3, HashTS1=0xAB, HashTS2=0xCD
 	var data [24]bit.Bit
 	data[0], data[1], data[2], data[3] = 0, 1, 0, 1
 	data[4], data[5], data[6], data[7] = 0, 0, 1, 1
@@ -304,7 +300,6 @@ func TestShortLCAssembler_Add(t *testing.T) {
 
 func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 	t.Parallel()
-	// Build a ShortLC, encode it, run through BPTC, then decode via assembler
 	original := pdu.ShortLC{
 		SLCO: enums.SLCOActivityUpdate,
 		ActivityUpdate: &pdu.ShortLCActivityUpdate{
@@ -351,7 +346,6 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	if fecResult.BitsChecked != expectedBitsChecked {
 		t.Errorf("BitsChecked: got %d, want %d", fecResult.BitsChecked, expectedBitsChecked)
 	}
-	// The FEC on the ShortLC struct should match the returned FEC
 	if slc.FEC.BitsChecked != fecResult.BitsChecked {
 		t.Errorf("ShortLC.FEC.BitsChecked mismatch: got %d, want %d", slc.FEC.BitsChecked, fecResult.BitsChecked)
 	}

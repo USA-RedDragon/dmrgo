@@ -6,30 +6,14 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 clause B.2.3: Variable length BPTC for CACH Signalling
-//
-// The CACH BPTC encodes a 36-bit Short LC PDU into 68 bits spread across
-// 4 consecutive CACH burst signalling payloads (17 bits each).
-//
-// Encode matrix: 4 rows × 17 columns
-//   - Rows 0..2: 12 data bits + 5 Hamming(17,12,3) parity bits
-//   - Row 3: column parity (even parity per column across all 4 rows)
-//
-// Info bits: 3×12 = 36 bits (28 Short LC data + 8 CRC-8)
-//
-// Interleaving: columns top-to-bottom, left-to-right from the encode matrix
-// are written rows left-to-right into the transmit matrix.
+// The CACH BPTC spreads a 36-bit Short LC PDU over the 17-bit payloads of 4
+// CACH bursts (ETSI TS 102 361-1 clause B.2.3). Rows 0 to 2 of the 4×17
+// encode matrix hold 12 information bits and 5 Hamming(17,12,3) parity bits,
+// and row 3 holds the even parity of each column. The transmit stream reads
+// the encode matrix column by column, top to bottom.
 
-// calculateSyndrome17_12 computes the 5-bit Hamming(17,12,3) syndrome
-// for a 17-bit codeword [d₀..d₁₁, p₀..p₄].
-//
-// Syndrome equations (from the parity check matrix H = [Pᵀ | I₅]):
-//
-//	s₀ = r₀⊕r₁⊕r₂⊕r₃⊕r₆⊕r₇⊕r₉⊕r₁₂
-//	s₁ = r₀⊕r₁⊕r₂⊕r₃⊕r₄⊕r₇⊕r₈⊕r₁₀⊕r₁₃
-//	s₂ = r₁⊕r₂⊕r₃⊕r₄⊕r₅⊕r₈⊕r₉⊕r₁₁⊕r₁₄
-//	s₃ = r₀⊕r₁⊕r₄⊕r₅⊕r₇⊕r₁₀⊕r₁₅
-//	s₄ = r₀⊕r₁⊕r₂⊕r₅⊕r₆⊕r₈⊕r₁₁⊕r₁₆
+// calculateSyndrome17_12 returns the 5-bit Hamming(17,12,3) syndrome of a
+// 17-bit row, from the parity check matrix H = [Pᵀ | I₅].
 func calculateSyndrome17_12(bits [17]bit.Bit) int {
 	var s [5]bit.Bit
 	s[0] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[6] ^ bits[7] ^ bits[9] ^ bits[12]
@@ -40,49 +24,32 @@ func calculateSyndrome17_12(bits [17]bit.Bit) int {
 	return int(s[0]) | int(s[1])<<1 | int(s[2])<<2 | int(s[3])<<3 | int(s[4])<<4
 }
 
-// parityHamming17_12 computes the 5 parity bits for 12 data bits
-// using the Hamming(17,12,3) generator matrix (Table B.13).
-//
-// Parity equations:
-//
-//	p₀ = d₀⊕d₁⊕d₂⊕d₃⊕d₆⊕d₇⊕d₉
-//	p₁ = d₀⊕d₁⊕d₂⊕d₃⊕d₄⊕d₇⊕d₈⊕d₁₀
-//	p₂ = d₁⊕d₂⊕d₃⊕d₄⊕d₅⊕d₈⊕d₉⊕d₁₁
-//	p₃ = d₀⊕d₁⊕d₄⊕d₅⊕d₇⊕d₁₀
-//	p₄ = d₀⊕d₁⊕d₂⊕d₅⊕d₆⊕d₈⊕d₁₁
+// parityHamming17_12 returns the 5 Hamming(17,12,3) parity bits of 12 data
+// bits (ETSI TS 102 361-1 Table B.13).
 func parityHamming17_12(data [12]bit.Bit) [5]bit.Bit {
 	return [5]bit.Bit{
-		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[6] ^ data[7] ^ data[9],            // p₀
-		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[7] ^ data[8] ^ data[10], // p₁
-		data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[5] ^ data[8] ^ data[9] ^ data[11], // p₂
-		data[0] ^ data[1] ^ data[4] ^ data[5] ^ data[7] ^ data[10],                     // p₃
-		data[0] ^ data[1] ^ data[2] ^ data[5] ^ data[6] ^ data[8] ^ data[11],           // p₄
+		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[6] ^ data[7] ^ data[9],
+		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[7] ^ data[8] ^ data[10],
+		data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[5] ^ data[8] ^ data[9] ^ data[11],
+		data[0] ^ data[1] ^ data[4] ^ data[5] ^ data[7] ^ data[10],
+		data[0] ^ data[1] ^ data[2] ^ data[5] ^ data[6] ^ data[8] ^ data[11],
 	}
 }
 
-// DecodeCACH decodes a 36-bit Short LC PDU from 4 × 17-bit CACH
-// signalling payloads.
-//
-// The fragments should be in order (CACH burst 0 through CACH burst 3).
-// Returns the 36 information bits (28 data + 8 CRC-8) and FEC result.
+// DecodeCACH decodes a 36-bit Short LC PDU (28 data bits and a CRC-8) from
+// the 17-bit signalling payloads of CACH bursts 0 to 3, in that order, and
+// returns it with a fec.Result.
 func DecodeCACH(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
 	for i := range fragments {
 		lowbit.Mask(fragments[i][:])
 	}
 	result := fec.Result{BitsChecked: 68}
 
-	// Concatenate into 68-bit transmit stream
 	var stream [68]bit.Bit
 	for i := 0; i < 4; i++ {
 		copy(stream[i*17:(i+1)*17], fragments[i][:])
 	}
 
-	// Deinterleave: transmit order to encode matrix
-	// Transmit matrix is read rows left-to-right.
-	// Encode matrix is read columns top-to-bottom, left-to-right.
-	// For sequence index j (0..67):
-	//   transmit_row = j / 17, transmit_col = j % 17
-	//   encode_row = j % 4, encode_col = j / 4
 	var matrix [4][17]bit.Bit
 	for j := 0; j < 68; j++ {
 		encRow := j % 4
@@ -100,7 +67,6 @@ func DecodeCACH(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
 	}
 	result.Uncorrectable = !cachMatrixValid(&matrix)
 
-	// Extract 36 info bits from rows 0..2, columns 0..11
 	var info [36]bit.Bit
 	for row := 0; row < 3; row++ {
 		copy(info[row*12:(row+1)*12], matrix[row][:12])
@@ -109,11 +75,9 @@ func DecodeCACH(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
 	return info, result
 }
 
-// correctCACHMatrix corrects the 4×17 product code in place. Row 3 is the even
-// column parity of rows 0..2, so it is also a Hamming(17,12,3) codeword. When
-// only one row has a nonzero syndrome, the failing column parities give the
-// exact error positions in that row. Otherwise each row is corrected for a
-// single error.
+// correctCACHMatrix corrects the 4×17 product code in place. When only one
+// row has a nonzero syndrome, the failing column parities give the error
+// positions in that row; otherwise each row is corrected for one error.
 func correctCACHMatrix(matrix *[4][17]bit.Bit) {
 	for pass := 0; pass < 3; pass++ {
 		var syndromes [4]int
@@ -171,18 +135,16 @@ func cachMatrixValid(matrix *[4][17]bit.Bit) bool {
 	return true
 }
 
-// EncodeCACH encodes a 36-bit Short LC PDU into 4 × 17-bit CACH
-// signalling payloads.
+// EncodeCACH encodes a 36-bit Short LC PDU into the 17-bit signalling
+// payloads of 4 CACH bursts.
 func EncodeCACH(info [36]bit.Bit) [4][17]bit.Bit {
 	lowbit.Mask(info[:])
 	var matrix [4][17]bit.Bit
 
-	// Place 36 info bits into rows 0..2, columns 0..11
 	for row := 0; row < 3; row++ {
 		copy(matrix[row][:12], info[row*12:(row+1)*12])
 	}
 
-	// Compute Hamming(17,12,3) parity for rows 0..2
 	for row := 0; row < 3; row++ {
 		var data [12]bit.Bit
 		copy(data[:], matrix[row][:12])
@@ -194,14 +156,10 @@ func EncodeCACH(info [36]bit.Bit) [4][17]bit.Bit {
 		matrix[row][16] = parity[4]
 	}
 
-	// Compute column parity row (row 3)
 	for col := 0; col < 17; col++ {
 		matrix[3][col] = matrix[0][col] ^ matrix[1][col] ^ matrix[2][col]
 	}
 
-	// Interleave: encode matrix to transmit stream
-	// Read encode matrix columns top-to-bottom, left-to-right, to a 68-bit stream
-	// Write into transmit matrix rows left-to-right
 	var stream [68]bit.Bit
 	for j := 0; j < 68; j++ {
 		encRow := j % 4
@@ -209,7 +167,6 @@ func EncodeCACH(info [36]bit.Bit) [4][17]bit.Bit {
 		stream[j] = matrix[encRow][encCol]
 	}
 
-	// Split into 4 × 17-bit fragments
 	var fragments [4][17]bit.Bit
 	for i := 0; i < 4; i++ {
 		copy(fragments[i][:], stream[i*17:(i+1)*17])
