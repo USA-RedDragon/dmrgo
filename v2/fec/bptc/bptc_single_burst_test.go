@@ -101,18 +101,11 @@ func TestSingleBurstBPTC_SingleBitErrorCorrection(t *testing.T) {
 
 	decoded, result := bptc.DecodeSingleBurstBPTC(txBits, false)
 
-	if result.ErrorsCorrected < 1 {
-		// Single-burst BPTC may detect via column parity instead of Hamming correction
-		if !result.Uncorrectable {
-			t.Error("expected error detection or correction for single-bit error")
-		}
+	if result.Uncorrectable || result.ErrorsCorrected != 1 {
+		t.Errorf("single-bit error: result=%+v, want 1 correction", result)
 	}
-
-	// If corrected, verify data matches
-	if result.ErrorsCorrected > 0 && !result.Uncorrectable {
-		if decoded != info {
-			t.Error("decoded does not match after correction")
-		}
+	if decoded != info {
+		t.Error("decoded does not match after correction")
 	}
 }
 

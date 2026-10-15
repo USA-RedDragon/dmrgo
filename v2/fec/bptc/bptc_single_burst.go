@@ -21,6 +21,10 @@ import (
 //
 // Set oddParity=true for Reverse Channel (RC) bursts, where the column
 // parity is odd (complemented) instead of even.
+//
+// Up to 3 bit errors in the 32 bits are corrected; ErrorsCorrected is the
+// number of corrected bits. Four bit errors are always detected and set
+// Uncorrectable.
 func DecodeSingleBurstBPTC(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.FECResult) {
 	result := fec.FECResult{BitsChecked: 32}
 
@@ -41,48 +45,34 @@ func DecodeSingleBurstBPTC(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec
 		matrix[row][col] = deinterleaved[i]
 	}
 
-	// Column parity check
-	for col := 0; col < 16; col++ {
-		parity := matrix[0][col] ^ matrix[1][col]
-		if oddParity {
-			// RC: parity row is complement, so XOR should be 1
-			if parity != 1 {
-				// Column parity error — row Hamming should help
-			}
-		} else {
-			// Non-RC: even parity, XOR should be 0
-			if parity != 0 {
-				// Column parity error
-			}
+	// Row 1 is a copy of row 0 (B.2.2.1) or its complement (B.2.2.2), so the
+	// burst carries two copies of one Hamming(16,11,4) codeword and the pair
+	// has minimum distance 8. Any codeword within distance 3 of the pair is
+	// within distance 1 of one copy, so single-error decoding of each copy
+	// finds every candidate.
+	row1 := matrix[1]
+	if oddParity {
+		for col := range row1 {
+			row1[col] ^= 1
 		}
 	}
 
-	// Row Hamming(16,11,4) correction on row 0
-	s := calculateSyndrome16_11(matrix[0])
-	if s != 0 {
-		errPos := hamming16_11_syndrome_table[s]
-		if errPos >= 0 && errPos < 16 {
-			matrix[0][errPos] ^= 1
-			result.ErrorsCorrected++
-		} else {
-			result.Uncorrectable = true
+	best, bestDist := matrix[0], 33
+	for _, row := range [2][16]bit.Bit{matrix[0], row1} {
+		candidate, ok := correctHamming16_11(row)
+		if !ok {
+			continue
+		}
+		if d := hammingDistance16(candidate, matrix[0]) + hammingDistance16(candidate, row1); d < bestDist {
+			best, bestDist = candidate, d
 		}
 	}
 
-	// Recompute expected parity row from corrected row 0
-	if !result.Uncorrectable {
-		for col := 0; col < 16; col++ {
-			expected := matrix[0][col]
-			if oddParity {
-				expected ^= 1 // complement for RC
-			}
-			if matrix[1][col] != expected {
-				// Parity row has error — but we can't correct it independently.
-				// Since Hamming already corrected row 0, flag as detected.
-				result.Uncorrectable = true
-				break
-			}
-		}
+	if bestDist > 3 {
+		result.Uncorrectable = true
+	} else {
+		matrix[0] = best
+		result.ErrorsCorrected = bestDist
 	}
 
 	// Extract 11 info bits from row 0, columns 0..10
@@ -132,4 +122,27 @@ func EncodeSingleBurstBPTC(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
 	}
 
 	return txBits
+}
+
+// correctHamming16_11 corrects up to one bit error in a Hamming(16,11,4)
+// codeword. ok is false when the syndrome does not match a single-bit error.
+func correctHamming16_11(row [16]bit.Bit) ([16]bit.Bit, bool) {
+	s := calculateSyndrome16_11(row)
+	if s == 0 {
+		return row, true
+	}
+	errPos := hamming16_11_syndrome_table[s]
+	if errPos < 0 {
+		return row, false
+	}
+	row[errPos] ^= 1
+	return row, true
+}
+
+func hammingDistance16(a, b [16]bit.Bit) int {
+	d := 0
+	for i := range a {
+		d += int(a[i] ^ b[i])
+	}
+	return d
 }
