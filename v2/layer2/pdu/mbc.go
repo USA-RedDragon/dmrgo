@@ -17,7 +17,7 @@ type MBCHeader struct {
 	FEC         fec.Result         `dmr:"-"`
 	LastBlock   bool               `dmr:"bit:0"`
 	ProtectFlag bool               `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode         `dmr:"bits:2-7"`
+	Opcode      CSBKOpcode         `dmr:"bits:2-7"`
 	FID         enums.FeatureSetID `dmr:"bits:8-15"`
 	Data        [8]byte            `dmr:"bits:16-79,packed"`
 }
@@ -106,7 +106,7 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 // last-block CRC over bits 0-79 and the encoder computes it.
 //
 // Usage: after receiving an MBCContinuation with LB=1, the higher layer
-// determines the type from the preceding MBCHeader.CSBKOpcode and
+// determines the type from the preceding MBCHeader.Opcode and
 // calls the appropriate Decode function on the full 96-bit block.
 
 // dmr:crc crc_ccitt
@@ -121,7 +121,7 @@ type CGAPContinuation struct {
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
 	ProtectFlag bool             `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode       `dmr:"bits:2-7"`
+	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
 	ColorCode   uint8            `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
@@ -144,7 +144,7 @@ type MVAPContinuation struct {
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
 	ProtectFlag bool             `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode       `dmr:"bits:2-7"`
+	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
 	ColorCode   uint8            `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
@@ -167,7 +167,7 @@ type BCAPContinuation struct {
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
 	ProtectFlag bool             `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode       `dmr:"bits:2-7"`
+	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   byte             `dmr:"bits:8-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`
 	Reserved2   uint8            `dmr:"bits:20-21"`
@@ -189,7 +189,7 @@ type VNAPContinuation struct {
 	FEC         fec.Result       `dmr:"-"`
 	LastBlock   bool             `dmr:"bit:0"`
 	ProtectFlag bool             `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode       `dmr:"bits:2-7"`
+	Opcode      CSBKOpcode       `dmr:"bits:2-7"`
 	Reserved1   uint8            `dmr:"bits:8-11"`
 	ColorCode   uint8            `dmr:"bits:12-15"`
 	Cdeftype    uint8            `dmr:"bits:16-19"`

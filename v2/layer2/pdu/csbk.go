@@ -13,16 +13,16 @@ type CSBKOpcode byte
 
 const (
 	// Tier II opcodes (ETSI TS 102 361-1 / TS 102 361-2)
-	CSBKUnitToUnitVoiceServiceRequestPDU        CSBKOpcode = 0b00000100
-	CSBKUnitToUnitVoiceServiceAnswerResponsePDU CSBKOpcode = 0b00000101
-	CSBKChannelTimingPDU                        CSBKOpcode = 0b00000111
-	CSBKNegativeAcknowledgementPDU              CSBKOpcode = 0b00100110
-	CSBKBSOutboundActivationPDU                 CSBKOpcode = 0b00111000
+	CSBKUnitToUnitVoiceServiceRequest        CSBKOpcode = 0b00000100
+	CSBKUnitToUnitVoiceServiceAnswerResponse CSBKOpcode = 0b00000101
+	CSBKChannelTiming                        CSBKOpcode = 0b00000111
+	CSBKNegativeAcknowledgement              CSBKOpcode = 0b00100110
+	CSBKBSOutboundActivation                 CSBKOpcode = 0b00111000
 	// CSBKTalkgroupDataGrantMultiItem is the Tier III TD_GRANT_MI opcode
 	// (ETSI TS 102 361-4 Table B.1). It is the same value as
-	// CSBKBSOutboundActivationPDU; see CSBK.AsTalkgroupDataGrantMultiItem.
+	// CSBKBSOutboundActivation; see CSBK.AsTalkgroupDataGrantMultiItem.
 	CSBKTalkgroupDataGrantMultiItem CSBKOpcode = 0b00111000
-	CSBKPreamblePDU                 CSBKOpcode = 0b00111101
+	CSBKPreamble                    CSBKOpcode = 0b00111101
 
 	// Tier III opcodes (ETSI TS 102 361-4 — Table B.1). The "UDT Header"
 	// opcodes (C_UDTHD, C_UDTHU, ...) are not CSBKs: they travel in a Data
@@ -52,17 +52,17 @@ const (
 
 func (opcode CSBKOpcode) String() string {
 	switch opcode {
-	case CSBKBSOutboundActivationPDU:
+	case CSBKBSOutboundActivation:
 		return "BS Outbound Activation PDU or TD_GRANT_MI PDU"
-	case CSBKUnitToUnitVoiceServiceRequestPDU:
+	case CSBKUnitToUnitVoiceServiceRequest:
 		return "Unit-to-Unit Voice Service Request PDU"
-	case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
+	case CSBKUnitToUnitVoiceServiceAnswerResponse:
 		return "Unit-to-Unit Voice Service Answer/Response PDU"
-	case CSBKNegativeAcknowledgementPDU:
+	case CSBKNegativeAcknowledgement:
 		return "Negative Acknowledgement PDU"
-	case CSBKPreamblePDU:
+	case CSBKPreamble:
 		return "Preamble PDU"
-	case CSBKChannelTimingPDU:
+	case CSBKChannelTiming:
 		return "Channel Timing PDU"
 	case CSBKAloha:
 		return "C_ALOHA PDU"
@@ -447,7 +447,7 @@ const (
 type CSBK struct {
 	LastBlock   bool               `dmr:"bit:0"`
 	ProtectFlag bool               `dmr:"bit:1"`
-	CSBKOpcode  CSBKOpcode         `dmr:"bits:2-7"`
+	Opcode      CSBKOpcode         `dmr:"bits:2-7"`
 	FID         enums.FeatureSetID `dmr:"bits:8-15"`
 	FEC         fec.Result         `dmr:"-"`
 	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
@@ -456,34 +456,34 @@ type CSBK struct {
 	Hint0x38 Opcode0x38Hint `dmr:"-"`
 
 	// Tier II CSBK PDUs (ETSI TS 102 361-1 / TS 102 361-2)
-	UnitToUnitVoiceServiceRequestPDU        *UnitToUnitVoiceServiceRequestPDU        `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKUnitToUnitVoiceServiceRequestPDU"`
-	UnitToUnitVoiceServiceAnswerResponsePDU *UnitToUnitVoiceServiceAnswerResponsePDU `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKUnitToUnitVoiceServiceAnswerResponsePDU"`
-	NegativeAcknowledgementPDU              *NegativeAcknowledgementPDU              `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKNegativeAcknowledgementPDU"`
-	PreamblePDU                             *PreamblePDU                             `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKPreamblePDU"`
-	ChannelTimingPDU                        *ChannelTimingPDU                        `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKChannelTimingPDU"`
+	UnitToUnitVoiceServiceRequestPDU        *UnitToUnitVoiceServiceRequestPDU        `dmr:"bits:16-79,dispatch:Opcode=CSBKUnitToUnitVoiceServiceRequest"`
+	UnitToUnitVoiceServiceAnswerResponsePDU *UnitToUnitVoiceServiceAnswerResponsePDU `dmr:"bits:16-79,dispatch:Opcode=CSBKUnitToUnitVoiceServiceAnswerResponse"`
+	NegativeAcknowledgementPDU              *NegativeAcknowledgementPDU              `dmr:"bits:16-79,dispatch:Opcode=CSBKNegativeAcknowledgement"`
+	PreamblePDU                             *PreamblePDU                             `dmr:"bits:16-79,dispatch:Opcode=CSBKPreamble"`
+	ChannelTimingPDU                        *ChannelTimingPDU                        `dmr:"bits:16-79,dispatch:Opcode=CSBKChannelTiming"`
 
 	// Tier III CSBK PDUs (ETSI TS 102 361-4)
-	PrivateVoiceGrantPDU            *PrivateVoiceGrantPDU            `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKPrivateVoiceGrant"`
-	TalkgroupVoiceGrantPDU          *TalkgroupVoiceGrantPDU          `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKTalkgroupVoiceGrant"`
-	BroadcastTalkgroupVoiceGrantPDU *BroadcastTalkgroupVoiceGrantPDU `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKBroadcastTalkgroupVoiceGrant"`
-	PrivateDataGrantPDU             *PrivateDataGrantPDU             `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKPrivateDataGrant"`
-	TalkgroupDataGrantPDU           *TalkgroupDataGrantPDU           `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKTalkgroupDataGrant"`
-	DuplexPrivateVoiceGrantPDU      *DuplexPrivateVoiceGrantPDU      `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKDuplexPrivateVoiceGrant"`
-	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKDuplexPrivateDataGrant"`
-	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKPrivateDataGrantMultiItem"`
-	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKMove"`
-	AlohaPDU                        *AlohaPDU                        `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAloha"`
-	CBroadcastPDU                   *CBroadcastPDU                   `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKBroadcast"`
-	ClearPDU                        *ClearPDU                        `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKClear"`
-	ProtectPDU                      *ProtectPDU                      `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKProtect"`
-	AhoyPDU                         *AhoyPDU                         `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAhoy"`
-	AckOutboundPDU                  *AckOutboundPDU                  `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckOutbound"`
-	AckInboundPDU                   *AckInboundPDU                   `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckInbound"`
-	AckOutboundPayloadPDU           *AckOutboundPayloadPDU           `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckOutboundPayload"`
-	AckInboundPayloadPDU            *AckInboundPayloadPDU            `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckInboundPayload"`
-	RandomAccessPDU                 *RandomAccessPDU                 `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKRandomAccess"`
-	AckvitationPDU                  *AckvitationPDU                  `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckvitation"`
-	MaintenancePDU                  *MaintenancePDU                  `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKMaintenance"`
+	PrivateVoiceGrantPDU            *PrivateVoiceGrantPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateVoiceGrant"`
+	TalkgroupVoiceGrantPDU          *TalkgroupVoiceGrantPDU          `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupVoiceGrant"`
+	BroadcastTalkgroupVoiceGrantPDU *BroadcastTalkgroupVoiceGrantPDU `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcastTalkgroupVoiceGrant"`
+	PrivateDataGrantPDU             *PrivateDataGrantPDU             `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrant"`
+	TalkgroupDataGrantPDU           *TalkgroupDataGrantPDU           `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupDataGrant"`
+	DuplexPrivateVoiceGrantPDU      *DuplexPrivateVoiceGrantPDU      `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateVoiceGrant"`
+	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateDataGrant"`
+	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrantMultiItem"`
+	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`
+	AlohaPDU                        *AlohaPDU                        `dmr:"bits:16-79,dispatch:Opcode=CSBKAloha"`
+	CBroadcastPDU                   *CBroadcastPDU                   `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`
+	ClearPDU                        *ClearPDU                        `dmr:"bits:16-79,dispatch:Opcode=CSBKClear"`
+	ProtectPDU                      *ProtectPDU                      `dmr:"bits:16-79,dispatch:Opcode=CSBKProtect"`
+	AhoyPDU                         *AhoyPDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKAhoy"`
+	AckOutboundPDU                  *AckOutboundPDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKAckOutbound"`
+	AckInboundPDU                   *AckInboundPDU                   `dmr:"bits:16-79,dispatch:Opcode=CSBKAckInbound"`
+	AckOutboundPayloadPDU           *AckOutboundPayloadPDU           `dmr:"bits:16-79,dispatch:Opcode=CSBKAckOutboundPayload"`
+	AckInboundPayloadPDU            *AckInboundPayloadPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKAckInboundPayload"`
+	RandomAccessPDU                 *RandomAccessPDU                 `dmr:"bits:16-79,dispatch:Opcode=CSBKRandomAccess"`
+	AckvitationPDU                  *AckvitationPDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKAckvitation"`
+	MaintenancePDU                  *MaintenancePDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKMaintenance"`
 
 	RawPayload [64]bit.Bit `dmr:"bits:16-79,raw,fallback"`
 
@@ -493,7 +493,7 @@ type CSBK struct {
 // AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with
 // opcode 0x38 as a BS_Dwn_Act PDU. ok is false for another opcode or FID.
 func (csbk *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
-	if csbk.CSBKOpcode != CSBKBSOutboundActivationPDU || csbk.FID != 0 {
+	if csbk.Opcode != CSBKBSOutboundActivation || csbk.FID != 0 {
 		return p, false
 	}
 	p, _ = DecodeBSOutboundActivationPDU(csbk.RawPayload)
@@ -504,7 +504,7 @@ func (csbk *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) 
 // CSBK with opcode 0x38 as a TD_GRANT_MI PDU. ok is false for another opcode
 // or FID.
 func (csbk *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU, ok bool) {
-	if csbk.CSBKOpcode != CSBKTalkgroupDataGrantMultiItem || csbk.FID != 0 {
+	if csbk.Opcode != CSBKTalkgroupDataGrantMultiItem || csbk.FID != 0 {
 		return p, false
 	}
 	p, _ = DecodeTalkgroupDataGrantMultiItemPDU(csbk.RawPayload)

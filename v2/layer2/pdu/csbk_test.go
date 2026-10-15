@@ -54,12 +54,12 @@ func TestCSBK_OpcodeString(t *testing.T) {
 		opcode pdu.CSBKOpcode
 		want   string
 	}{
-		{pdu.CSBKBSOutboundActivationPDU, "BS Outbound Activation PDU or TD_GRANT_MI PDU"},
-		{pdu.CSBKUnitToUnitVoiceServiceRequestPDU, "Unit-to-Unit Voice Service Request PDU"},
-		{pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU, "Unit-to-Unit Voice Service Answer/Response PDU"},
-		{pdu.CSBKNegativeAcknowledgementPDU, "Negative Acknowledgement PDU"},
-		{pdu.CSBKPreamblePDU, "Preamble PDU"},
-		{pdu.CSBKChannelTimingPDU, "Channel Timing PDU"},
+		{pdu.CSBKBSOutboundActivation, "BS Outbound Activation PDU or TD_GRANT_MI PDU"},
+		{pdu.CSBKUnitToUnitVoiceServiceRequest, "Unit-to-Unit Voice Service Request PDU"},
+		{pdu.CSBKUnitToUnitVoiceServiceAnswerResponse, "Unit-to-Unit Voice Service Answer/Response PDU"},
+		{pdu.CSBKNegativeAcknowledgement, "Negative Acknowledgement PDU"},
+		{pdu.CSBKPreamble, "Preamble PDU"},
+		{pdu.CSBKChannelTiming, "Channel Timing PDU"},
 	}
 	for _, tt := range tests {
 		if got := tt.opcode.String(); got != tt.want {
@@ -95,8 +95,8 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKPreamblePDU {
-		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKPreamblePDU))
+	if csbk.Opcode != pdu.CSBKPreamble {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKPreamble))
 	}
 	if csbk.PreamblePDU == nil {
 		t.Fatal("PreamblePDU should not be nil")
@@ -142,8 +142,8 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKNegativeAcknowledgementPDU {
-		t.Errorf("CSBKOpcode = %08b, want NegativeAck", byte(csbk.CSBKOpcode))
+	if csbk.Opcode != pdu.CSBKNegativeAcknowledgement {
+		t.Errorf("CSBKOpcode = %08b, want NegativeAck", byte(csbk.Opcode))
 	}
 	if csbk.NegativeAcknowledgementPDU == nil {
 		t.Fatal("NegativeAcknowledgementPDU should not be nil")
@@ -191,14 +191,14 @@ func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 	payload[62] = 1
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKBSOutboundActivationPDU), payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKBSOutboundActivation), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKBSOutboundActivationPDU {
-		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKBSOutboundActivationPDU))
+	if csbk.Opcode != pdu.CSBKBSOutboundActivation {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKBSOutboundActivation))
 	}
 	csbkAct, ok := csbk.AsBSOutboundActivation()
 	if !ok {
@@ -228,7 +228,7 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 	original := &pdu.CSBK{
 		LastBlock:   true,
 		ProtectFlag: false,
-		CSBKOpcode:  pdu.CSBKBSOutboundActivationPDU,
+		Opcode:      pdu.CSBKBSOutboundActivation,
 		FID:         0x00,
 		RawPayload: must((&pdu.BSOutboundActivationPDU{
 			Reserved:      0,
@@ -264,14 +264,14 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) = address with bit 63 set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceRequestPDU), payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceRequest), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKUnitToUnitVoiceServiceRequestPDU {
-		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKUnitToUnitVoiceServiceRequestPDU))
+	if csbk.Opcode != pdu.CSBKUnitToUnitVoiceServiceRequest {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKUnitToUnitVoiceServiceRequest))
 	}
 	if csbk.UnitToUnitVoiceServiceRequestPDU == nil {
 		t.Fatal("UnitToUnitVoiceServiceRequestPDU should not be nil")
@@ -294,9 +294,9 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 	sourceAddr[12] = 1
 
 	original := &pdu.CSBK{
-		LastBlock:  true,
-		CSBKOpcode: pdu.CSBKUnitToUnitVoiceServiceRequestPDU,
-		FID:        0x00,
+		LastBlock: true,
+		Opcode:    pdu.CSBKUnitToUnitVoiceServiceRequest,
+		FID:       0x00,
 		UnitToUnitVoiceServiceRequestPDU: &pdu.UnitToUnitVoiceServiceRequestPDU{
 			ServiceOptions: serviceOptions(0x42),
 			Reserved:       0,
@@ -335,14 +335,14 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 	// SourceAddress (bits 40-63) — bit 63 set
 	payload[63] = 1
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU), payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponse), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU {
-		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU))
+	if csbk.Opcode != pdu.CSBKUnitToUnitVoiceServiceAnswerResponse {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponse))
 	}
 	if csbk.UnitToUnitVoiceServiceAnswerResponsePDU == nil {
 		t.Fatal("UnitToUnitVoiceServiceAnswerResponsePDU should not be nil")
@@ -369,9 +369,9 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.
 	sourceAddr[23] = 1
 
 	original := &pdu.CSBK{
-		LastBlock:  true,
-		CSBKOpcode: pdu.CSBKUnitToUnitVoiceServiceAnswerResponsePDU,
-		FID:        0x00,
+		LastBlock: true,
+		Opcode:    pdu.CSBKUnitToUnitVoiceServiceAnswerResponse,
+		FID:       0x00,
 		UnitToUnitVoiceServiceAnswerResponsePDU: &pdu.UnitToUnitVoiceServiceAnswerResponsePDU{
 			ServiceOptions: serviceOptions(0x81),
 			AnswerResponse: 0x03,
@@ -424,14 +424,14 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 	payload[61] = 1
 	// ChannelTimingOp0 (bit 63, opcode LSB) = false
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTimingPDU), payload)
+	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTiming), payload)
 
 	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKChannelTimingPDU {
-		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKChannelTimingPDU))
+	if csbk.Opcode != pdu.CSBKChannelTiming {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKChannelTiming))
 	}
 	if csbk.ChannelTimingPDU == nil {
 		t.Fatal("ChannelTimingPDU should not be nil")
@@ -476,9 +476,9 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 	sourceDynID[1] = 1
 
 	original := &pdu.CSBK{
-		LastBlock:  true,
-		CSBKOpcode: pdu.CSBKChannelTimingPDU,
-		FID:        0x00,
+		LastBlock: true,
+		Opcode:    pdu.CSBKChannelTiming,
+		FID:       0x00,
 		ChannelTimingPDU: &pdu.ChannelTimingPDU{
 			SyncAge:                 uint16(bit.Uint(syncAge[:])),
 			Generation:              uint8(bit.Uint(generation[:])),

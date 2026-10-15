@@ -57,35 +57,35 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 			name: "CSBKO",
 			encode: func() error {
 				_, err := (&pdu.CSBK{
-					CSBKOpcode:             pdu.CSBKAloha,
+					Opcode:                 pdu.CSBKAloha,
 					TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
 				}).Encode()
 				return err
 			},
-			want: "CSBK.TalkgroupVoiceGrantPDU is set, but CSBKOpcode and FID select AlohaPDU",
+			want: "CSBK.TalkgroupVoiceGrantPDU is set, but Opcode and FID select AlohaPDU",
 		},
 		{
 			name: "CSBK manufacturer FID",
 			encode: func() error {
 				_, err := (&pdu.CSBK{
-					CSBKOpcode:             pdu.CSBKTalkgroupVoiceGrant,
+					Opcode:                 pdu.CSBKTalkgroupVoiceGrant,
 					FID:                    0x10,
 					TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
 				}).Encode()
 				return err
 			},
-			want: "CSBK.TalkgroupVoiceGrantPDU is set, but CSBKOpcode and FID select RawPayload",
+			want: "CSBK.TalkgroupVoiceGrantPDU is set, but Opcode and FID select RawPayload",
 		},
 		{
 			name: "CSBK opcode 0x38",
 			encode: func() error {
 				_, err := (&pdu.CSBK{
-					CSBKOpcode:             pdu.CSBKTalkgroupDataGrantMultiItem,
+					Opcode:                 pdu.CSBKTalkgroupDataGrantMultiItem,
 					TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
 				}).Encode()
 				return err
 			},
-			want: "CSBKOpcode and FID select RawPayload",
+			want: "Opcode and FID select RawPayload",
 		},
 		{
 			name: "Format",
@@ -130,7 +130,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 
 func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 	csbk := pdu.CSBK{
-		CSBKOpcode:             pdu.CSBKTalkgroupVoiceGrant,
+		Opcode:                 pdu.CSBKTalkgroupVoiceGrant,
 		TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
 	}
 	got, _ := pdu.DecodeCSBK(must(csbk.Encode()))

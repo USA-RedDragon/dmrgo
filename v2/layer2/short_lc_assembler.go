@@ -87,15 +87,14 @@ func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [CACHPayloadBits
 }
 
 // Complete decodes the assembled Short LC PDU from the 4 accumulated
-// fragments. Returns the decoded ShortLC and a combined FEC result
-// covering both BPTC FEC and CRC-8 verification. Returns
+// fragments and resets the assembler. The FEC field of the ShortLC is the
+// combined result of the BPTC FEC and the CRC-8 check. Complete returns
 // ErrShortLCIncomplete if the assembler does not hold a full sequence.
-//
-// The assembler is NOT automatically reset — call Reset() to reuse.
-func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.Result, error) {
+func (a *ShortLCAssembler) Complete() (pdu.ShortLC, error) {
 	if a.count != 4 {
-		return pdu.ShortLC{}, fec.Result{}, ErrShortLCIncomplete
+		return pdu.ShortLC{}, ErrShortLCIncomplete
 	}
+	defer a.Reset()
 
 	// Decode BPTC to recover the 36-bit Short LC PDU
 	info, bptcResult := bptc.DecodeCACH(a.fragments)
@@ -105,10 +104,8 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, fec.Result, error) {
 	copy(slcBits[:], info[:])
 	slc, crcResult := pdu.DecodeShortLC(slcBits)
 
-	combined := bptcResult.Combine(crcResult)
-	slc.FEC = combined
-
-	return slc, combined, nil
+	slc.FEC = bptcResult.Combine(crcResult)
+	return slc, nil
 }
 
 // DecodeShortLCFromFragments is a convenience function that decodes a
@@ -118,6 +115,6 @@ func DecodeShortLCFromFragments(fragments [4][CACHPayloadBits]bit.Bit) (pdu.Shor
 	var a ShortLCAssembler
 	a.fragments = fragments
 	a.count = len(fragments)
-	slc, result, _ := a.Complete()
-	return slc, result
+	slc, _ := a.Complete()
+	return slc, slc.FEC
 }

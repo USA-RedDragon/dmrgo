@@ -1380,25 +1380,25 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
 	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
-	result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	var _dispatchBits [64]bit.Bit
 	copy(_dispatchBits[:], data[16:80])
 	if result.FID == 0 {
-		switch result.CSBKOpcode {
-		case CSBKUnitToUnitVoiceServiceRequestPDU:
+		switch result.Opcode {
+		case CSBKUnitToUnitVoiceServiceRequest:
 			_decoded, _ := DecodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
 			result.UnitToUnitVoiceServiceRequestPDU = &_decoded
-		case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
+		case CSBKUnitToUnitVoiceServiceAnswerResponse:
 			_decoded, _ := DecodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBits)
 			result.UnitToUnitVoiceServiceAnswerResponsePDU = &_decoded
-		case CSBKNegativeAcknowledgementPDU:
+		case CSBKNegativeAcknowledgement:
 			_decoded, _ := DecodeNegativeAcknowledgementPDU(_dispatchBits)
 			result.NegativeAcknowledgementPDU = &_decoded
-		case CSBKPreamblePDU:
+		case CSBKPreamble:
 			_decoded, _ := DecodePreamblePDU(_dispatchBits)
 			result.PreamblePDU = &_decoded
-		case CSBKChannelTimingPDU:
+		case CSBKChannelTiming:
 			_decoded, _ := DecodeChannelTimingPDU(_dispatchBits)
 			result.ChannelTimingPDU = &_decoded
 		case CSBKPrivateVoiceGrant:
@@ -1682,30 +1682,30 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 	if s.ProtectFlag {
 		data[1] = 1
 	}
-	if uint64(s.CSBKOpcode)>>6 != 0 {
-		return [96]bit.Bit{}, fmt.Errorf("CSBK.CSBKOpcode: value %d does not fit in 6 bits", s.CSBKOpcode)
+	if uint64(s.Opcode)>>6 != 0 {
+		return [96]bit.Bit{}, fmt.Errorf("CSBK.Opcode: value %d does not fit in 6 bits", s.Opcode)
 	}
-	bit.PutUint(data[2:8], uint64(s.CSBKOpcode))
+	bit.PutUint(data[2:8], uint64(s.Opcode))
 	if uint64(s.FID)>>8 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("CSBK.FID: value %d does not fit in 8 bits", s.FID)
 	}
 	bit.PutUint(data[8:16], uint64(s.FID))
 	if _payload != "" {
 		var result CSBK
-		result.CSBKOpcode = CSBKOpcode(bit.Uint(data[2:8]))
+		result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
 		result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
 		_want := "RawPayload"
 		if result.FID == 0 {
-			switch result.CSBKOpcode {
-			case CSBKUnitToUnitVoiceServiceRequestPDU:
+			switch result.Opcode {
+			case CSBKUnitToUnitVoiceServiceRequest:
 				_want = "UnitToUnitVoiceServiceRequestPDU"
-			case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
+			case CSBKUnitToUnitVoiceServiceAnswerResponse:
 				_want = "UnitToUnitVoiceServiceAnswerResponsePDU"
-			case CSBKNegativeAcknowledgementPDU:
+			case CSBKNegativeAcknowledgement:
 				_want = "NegativeAcknowledgementPDU"
-			case CSBKPreamblePDU:
+			case CSBKPreamble:
 				_want = "PreamblePDU"
-			case CSBKChannelTimingPDU:
+			case CSBKChannelTiming:
 				_want = "ChannelTimingPDU"
 			case CSBKPrivateVoiceGrant:
 				_want = "PrivateVoiceGrantPDU"
@@ -1752,7 +1752,7 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 			}
 		}
 		if _payload != _want {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.%s is set, but CSBKOpcode and FID select %s", _payload, _want)
+			return [96]bit.Bit{}, fmt.Errorf("CSBK.%s is set, but Opcode and FID select %s", _payload, _want)
 		}
 	}
 	var _encBytes [10]byte
@@ -1778,7 +1778,7 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 
 func (s *CSBK) String() string {
 	_ret := "CSBK{ "
-	_ret += fmt.Sprintf("LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.LastBlock, s.ProtectFlag, s.Opcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
 		_ret += s.UnitToUnitVoiceServiceRequestPDU.String()

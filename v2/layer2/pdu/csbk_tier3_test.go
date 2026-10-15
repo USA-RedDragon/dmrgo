@@ -71,8 +71,8 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKPrivateVoiceGrant {
-		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.CSBKOpcode), byte(pdu.CSBKPrivateVoiceGrant))
+	if csbk.Opcode != pdu.CSBKPrivateVoiceGrant {
+		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKPrivateVoiceGrant))
 	}
 	if csbk.PrivateVoiceGrantPDU == nil {
 		t.Fatal("PrivateVoiceGrantPDU should not be nil")
@@ -108,9 +108,9 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	sourceAddr[12] = 1
 
 	original := &pdu.CSBK{
-		LastBlock:  true,
-		CSBKOpcode: pdu.CSBKTalkgroupVoiceGrant,
-		FID:        0x00,
+		LastBlock: true,
+		Opcode:    pdu.CSBKTalkgroupVoiceGrant,
+		FID:       0x00,
 		TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
 			PhysicalChannel: 0x0FF,
 			LogicalChannel:  true,
@@ -188,8 +188,8 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKAloha {
-		t.Errorf("CSBKOpcode = %08b, want C_ALOHA", byte(csbk.CSBKOpcode))
+	if csbk.Opcode != pdu.CSBKAloha {
+		t.Errorf("CSBKOpcode = %08b, want C_ALOHA", byte(csbk.Opcode))
 	}
 	if csbk.AlohaPDU == nil {
 		t.Fatal("AlohaPDU should not be nil")
@@ -263,8 +263,8 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.CSBKOpcode != pdu.CSBKBroadcast {
-		t.Errorf("CSBKOpcode = %08b, want C_BCAST", byte(csbk.CSBKOpcode))
+	if csbk.Opcode != pdu.CSBKBroadcast {
+		t.Errorf("CSBKOpcode = %08b, want C_BCAST", byte(csbk.Opcode))
 	}
 	if csbk.CBroadcastPDU == nil {
 		t.Fatal("CBroadcastPDU should not be nil")
@@ -433,7 +433,7 @@ func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 	if must(csbk.Encode()) != infoBits {
 		t.Error("DecodeCSBK(x).Encode() != x")
 	}
-	other := pdu.CSBK{CSBKOpcode: pdu.CSBKAloha}
+	other := pdu.CSBK{Opcode: pdu.CSBKAloha}
 	if _, ok := other.AsBSOutboundActivation(); ok {
 		t.Error("AsBSOutboundActivation of C_ALOHA is ok")
 	}
@@ -637,9 +637,9 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	sourceAddr[12] = 1
 
 	original := &pdu.CSBK{
-		LastBlock:  true,
-		CSBKOpcode: pdu.CSBKPrivateDataGrant,
-		FID:        0x00,
+		LastBlock: true,
+		Opcode:    pdu.CSBKPrivateDataGrant,
+		FID:       0x00,
 		PrivateDataGrantPDU: &pdu.PrivateDataGrantPDU{
 			PhysicalChannel: 0x100,
 			LogicalChannel:  true,
@@ -690,9 +690,9 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	msAddr[23] = 1
 
 	original := &pdu.CSBK{
-		LastBlock:  true,
-		CSBKOpcode: pdu.CSBKAloha,
-		FID:        0x00,
+		LastBlock: true,
+		Opcode:    pdu.CSBKAloha,
+		FID:       0x00,
 		AlohaPDU: &pdu.AlohaPDU{
 			TSCCAS:       true,
 			SiteTSSync:   false,
@@ -871,7 +871,7 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 		if fecResult.Uncorrectable {
 			t.Fatal("DecodeCSBK returned uncorrectable FEC")
 		}
-		if got := csbk.CSBKOpcode.String(); !strings.HasPrefix(got, "Unknown CSBKOpcode") {
+		if got := csbk.Opcode.String(); !strings.HasPrefix(got, "Unknown CSBKOpcode") {
 			t.Errorf("opcode %06b String() = %q, want Unknown CSBKOpcode", op, got)
 		}
 	}

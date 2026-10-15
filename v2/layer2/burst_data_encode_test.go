@@ -61,16 +61,16 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 func TestBurstEncode_HandBuiltData(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
 	csbk := &pdu.CSBK{
-		CSBKOpcode:  pdu.CSBKPreamblePDU,
+		Opcode:      pdu.CSBKPreamble,
 		PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2},
 	}
 	header := &pdu.DataHeader{
 		Format: pdu.FormatUnconfirmed,
 		UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-			Group:          true,
-			SAP:            4,
-			FullMessage:    true,
-			BlocksToFollow: 3,
+			Group:           true,
+			SAP:             4,
+			FullMessageFlag: true,
+			BlocksToFollow:  3,
 		},
 	}
 	header.UnconfirmedDataHeader.LLIDDestination = 1 << 23
@@ -98,7 +98,7 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 		}},
 		{enums.DataTypeCSBK, csbk, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.CSBK)
-			if !ok || g.CSBKOpcode != pdu.CSBKPreamblePDU || g.PreamblePDU == nil || *g.PreamblePDU != *csbk.PreamblePDU {
+			if !ok || g.Opcode != pdu.CSBKPreamble || g.PreamblePDU == nil || *g.PreamblePDU != *csbk.PreamblePDU {
 				t.Errorf("got %+v", got)
 			}
 		}},
@@ -171,7 +171,7 @@ func bitsOf(p [12]byte) [96]bit.Bit {
 }
 
 func TestBurstEncode_DataErrors(t *testing.T) {
-	csbk := &pdu.CSBK{CSBKOpcode: 0x3F}
+	csbk := &pdu.CSBK{Opcode: 0x3F}
 	tests := []struct {
 		name  string
 		burst layer2.Burst
@@ -182,7 +182,7 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 		{"LCAsCSBK", dataBurst(enums.DataTypeCSBK, &pdu.FullLinkControl{}), "cannot carry"},
 		{"TypedNil", dataBurst(enums.DataTypeCSBK, (*pdu.CSBK)(nil)), "cannot carry"},
 		{"ReservedType", dataBurst(enums.DataTypeReserved, csbk), "cannot carry"},
-		{"BadField", dataBurst(enums.DataTypeCSBK, &pdu.CSBK{CSBKOpcode: 0x40}), "CSBKOpcode"},
+		{"BadField", dataBurst(enums.DataTypeCSBK, &pdu.CSBK{Opcode: 0x40}), "CSBK.Opcode"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

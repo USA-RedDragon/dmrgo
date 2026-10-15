@@ -69,8 +69,8 @@ func TestCGAPContinuation_Decode(t *testing.T) {
 	if decoded.ProtectFlag {
 		t.Error("ProtectFlag should be false")
 	}
-	if decoded.CSBKOpcode != pdu.CSBKPrivateVoiceGrant {
-		t.Errorf("CSBKOpcode = %d, want PV_GRANT(%d)", decoded.CSBKOpcode, pdu.CSBKPrivateVoiceGrant)
+	if decoded.Opcode != pdu.CSBKPrivateVoiceGrant {
+		t.Errorf("CSBKOpcode = %d, want PV_GRANT(%d)", decoded.Opcode, pdu.CSBKPrivateVoiceGrant)
 	}
 	if decoded.ColorCode != 5 {
 		t.Errorf("ColorCode = %d, want 5", decoded.ColorCode)
@@ -95,7 +95,7 @@ func TestCGAPContinuation_EncodeDecodeCycle(t *testing.T) {
 	original := pdu.CGAPContinuation{
 		LastBlock:   true,
 		ProtectFlag: false,
-		CSBKOpcode:  pdu.CSBKTalkgroupVoiceGrant,
+		Opcode:      pdu.CSBKTalkgroupVoiceGrant,
 		ColorCode:   7,
 		Cdeftype:    0,
 		CdefParms:   cdefOf(cdefParms),
@@ -107,7 +107,7 @@ func TestCGAPContinuation_EncodeDecodeCycle(t *testing.T) {
 	if decoded.LastBlock != original.LastBlock {
 		t.Error("LastBlock mismatch")
 	}
-	if decoded.CSBKOpcode != original.CSBKOpcode {
+	if decoded.Opcode != original.Opcode {
 		t.Error("CSBKOpcode mismatch")
 	}
 	if decoded.ColorCode != original.ColorCode {
@@ -132,8 +132,8 @@ func TestMVAPContinuation_Decode(t *testing.T) {
 	if !decoded.ProtectFlag {
 		t.Error("ProtectFlag should be true")
 	}
-	if decoded.CSBKOpcode != pdu.CSBKMove {
-		t.Errorf("CSBKOpcode = %d, want C_MOVE(%d)", decoded.CSBKOpcode, pdu.CSBKMove)
+	if decoded.Opcode != pdu.CSBKMove {
+		t.Errorf("CSBKOpcode = %d, want C_MOVE(%d)", decoded.Opcode, pdu.CSBKMove)
 	}
 	if decoded.ColorCode != 3 {
 		t.Errorf("ColorCode = %d, want 3", decoded.ColorCode)
@@ -163,8 +163,8 @@ func TestBCAPContinuation_Decode(t *testing.T) {
 	if !decoded.LastBlock {
 		t.Error("LastBlock should be true")
 	}
-	if decoded.CSBKOpcode != pdu.CSBKBroadcast {
-		t.Errorf("CSBKOpcode = %d, want C_BCAST(%d)", decoded.CSBKOpcode, pdu.CSBKBroadcast)
+	if decoded.Opcode != pdu.CSBKBroadcast {
+		t.Errorf("CSBKOpcode = %d, want C_BCAST(%d)", decoded.Opcode, pdu.CSBKBroadcast)
 	}
 	if decoded.Reserved1 != 0xFF {
 		t.Errorf("Reserved1 = 0x%02X, want 0xFF", decoded.Reserved1)
@@ -186,8 +186,8 @@ func TestVNAPContinuation_Decode(t *testing.T) {
 	if !decoded.LastBlock {
 		t.Error("LastBlock should be true")
 	}
-	if decoded.CSBKOpcode != pdu.CSBKBroadcast {
-		t.Errorf("CSBKOpcode = %d, want C_BCAST(%d)", decoded.CSBKOpcode, pdu.CSBKBroadcast)
+	if decoded.Opcode != pdu.CSBKBroadcast {
+		t.Errorf("CSBKOpcode = %d, want C_BCAST(%d)", decoded.Opcode, pdu.CSBKBroadcast)
 	}
 	if decoded.ColorCode != 10 {
 		t.Errorf("ColorCode = %d, want 10", decoded.ColorCode)
@@ -202,7 +202,7 @@ func TestCGAPContinuation_String(t *testing.T) {
 	cgap := &pdu.CGAPContinuation{
 		LastBlock:   true,
 		ProtectFlag: false,
-		CSBKOpcode:  pdu.CSBKPrivateVoiceGrant,
+		Opcode:      pdu.CSBKPrivateVoiceGrant,
 		ColorCode:   5,
 		Cdeftype:    0,
 		CdefParms:   cdefOf(cdefParms),
@@ -222,7 +222,7 @@ func TestMVAPContinuation_EncodeDecodeCycle(t *testing.T) {
 	original := pdu.MVAPContinuation{
 		LastBlock:   true,
 		ProtectFlag: true,
-		CSBKOpcode:  pdu.CSBKMove,
+		Opcode:      pdu.CSBKMove,
 		ColorCode:   15,
 		Cdeftype:    0,
 		CdefParms:   cdefOf(cdefParms),

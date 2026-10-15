@@ -162,7 +162,7 @@ func llid(v uint32) [24]bit.Bit {
 
 func unconfirmed() pdu.DataHeader {
 	return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001, FullMessage: true}}
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001, FullMessageFlag: true}}
 }
 
 func confirmed() pdu.DataHeader {

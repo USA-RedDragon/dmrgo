@@ -66,6 +66,12 @@ func TestCdefParms_FrequencyCalculation(t *testing.T) {
 	if math.Abs(rxFreq-445.5) > 0.001 {
 		t.Errorf("RXFrequencyMHz() = %f, want 445.5", rxFreq)
 	}
+	if got := parms.TXFrequencyHz(); got != 440_500_000 {
+		t.Errorf("TXFrequencyHz() = %d, want 440500000", got)
+	}
+	if got := parms.RXFrequencyHz(); got != 445_500_000 {
+		t.Errorf("RXFrequencyHz() = %d, want 445500000", got)
+	}
 }
 
 func TestCdefParms_String(t *testing.T) {

@@ -25,7 +25,7 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	infoBits[14] = 1
 	infoBits[15] = 1
 
-	// FullMessage = 1 (bit 64)
+	// FullMessageFlag = 1 (bit 64)
 	infoBits[64] = 1
 	// BlocksToFollow = 10 (bits 65-71)
 	infoBits[65+3] = 1 // 8
@@ -63,8 +63,8 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	if !dh.UnconfirmedDataHeader.Group {
 		t.Error("Group should be true")
 	}
-	if !dh.UnconfirmedDataHeader.FullMessage {
-		t.Error("FullMessage should be true")
+	if !dh.UnconfirmedDataHeader.FullMessageFlag {
+		t.Error("FullMessageFlag should be true")
 	}
 	if dh.UnconfirmedDataHeader.BlocksToFollow != 10 {
 		t.Errorf("BlocksToFollow = %d, want 10", dh.UnconfirmedDataHeader.BlocksToFollow)

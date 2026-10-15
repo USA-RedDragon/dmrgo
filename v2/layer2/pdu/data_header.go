@@ -17,7 +17,7 @@ type UnconfirmedDataHeader struct {
 	SAP                    enums.ServiceAccessPointID `dmr:"bits:8-11"`
 	LLIDDestination        uint32                     `dmr:"bits:16-39"`
 	LLIDSource             uint32                     `dmr:"bits:40-63"`
-	FullMessage            bool                       `dmr:"bit:64"`
+	FullMessageFlag        bool                       `dmr:"bit:64"`
 	BlocksToFollow         uint8                      `dmr:"bits:65-71"`
 	Reserved2              uint8                      `dmr:"bits:72-75"`
 	FragmentSequenceNumber uint8                      `dmr:"bits:76-79"`

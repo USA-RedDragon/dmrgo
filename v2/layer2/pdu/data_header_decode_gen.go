@@ -40,7 +40,7 @@ func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.R
 	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
 	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
 	result.LLIDSource = uint32(bit.Uint(data[40:64]))
-	result.FullMessage = data[64] == 1
+	result.FullMessageFlag = data[64] == 1
 	result.BlocksToFollow = uint8(bit.Uint(data[65:72]))
 	result.Reserved2 = uint8(bit.Uint(data[72:76]))
 	result.FragmentSequenceNumber = uint8(bit.Uint(data[76:80]))
@@ -77,7 +77,7 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
 	}
 	bit.PutUint(data[40:64], uint64(s.LLIDSource))
-	if s.FullMessage {
+	if s.FullMessageFlag {
 		data[64] = 1
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
@@ -97,7 +97,7 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 }
 
 func (s *UnconfirmedDataHeader) String() string {
-	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessage: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessage, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
+	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
 
 // DecodeDataHeader decodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU

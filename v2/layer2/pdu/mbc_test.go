@@ -80,8 +80,8 @@ func TestMBCHeader_Decode(t *testing.T) {
 	if !hdr.ProtectFlag {
 		t.Error("ProtectFlag should be true")
 	}
-	if hdr.CSBKOpcode != pdu.CSBKPreamblePDU {
-		t.Errorf("CSBKOpcode = %08b, want %08b (PreamblePDU)", byte(hdr.CSBKOpcode), byte(pdu.CSBKPreamblePDU))
+	if hdr.Opcode != pdu.CSBKPreamble {
+		t.Errorf("CSBKOpcode = %08b, want %08b (PreamblePDU)", byte(hdr.Opcode), byte(pdu.CSBKPreamble))
 	}
 	if hdr.FID != 0x00 {
 		t.Errorf("FID = %d, want 0", hdr.FID)
@@ -118,8 +118,8 @@ func TestMBCHeader_DecodeLastBlock(t *testing.T) {
 	if hdr.ProtectFlag {
 		t.Error("ProtectFlag should be false")
 	}
-	if byte(hdr.CSBKOpcode) != 0b00000001 {
-		t.Errorf("CSBKOpcode = %08b, want 00000001", byte(hdr.CSBKOpcode))
+	if byte(hdr.Opcode) != 0b00000001 {
+		t.Errorf("CSBKOpcode = %08b, want 00000001", byte(hdr.Opcode))
 	}
 	if hdr.FID != 0x10 {
 		t.Errorf("FID = 0x%02X, want 0x10", hdr.FID)
@@ -151,7 +151,7 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 			orig := pdu.MBCHeader{
 				LastBlock:   tt.lb,
 				ProtectFlag: tt.pf,
-				CSBKOpcode:  pdu.CSBKOpcode(tt.opcode),
+				Opcode:      pdu.CSBKOpcode(tt.opcode),
 				FID:         enums.FeatureSetID(tt.fid),
 				Data:        [8]byte(bit.Pack(data[:])),
 			}
@@ -168,8 +168,8 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 			if decoded.ProtectFlag != orig.ProtectFlag {
 				t.Errorf("ProtectFlag = %v, want %v", decoded.ProtectFlag, orig.ProtectFlag)
 			}
-			if decoded.CSBKOpcode != orig.CSBKOpcode {
-				t.Errorf("CSBKOpcode = %08b, want %08b", byte(decoded.CSBKOpcode), byte(orig.CSBKOpcode))
+			if decoded.Opcode != orig.Opcode {
+				t.Errorf("CSBKOpcode = %08b, want %08b", byte(decoded.Opcode), byte(orig.Opcode))
 			}
 			if decoded.FID != orig.FID {
 				t.Errorf("FID = 0x%02X, want 0x%02X", decoded.FID, orig.FID)
@@ -185,7 +185,7 @@ func TestMBCHeader_EncodeStability(t *testing.T) {
 	orig := pdu.MBCHeader{
 		LastBlock:   true,
 		ProtectFlag: false,
-		CSBKOpcode:  pdu.CSBKPreamblePDU,
+		Opcode:      pdu.CSBKPreamble,
 		FID:         0x68,
 	}
 	orig.Data = [8]byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}

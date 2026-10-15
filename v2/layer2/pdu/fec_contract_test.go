@@ -17,7 +17,7 @@ func TestCRCOnlyPDUReportsDetectionOnly(t *testing.T) {
 		t.Errorf("data header with a bad CRC: %+v, want only Uncorrectable", res)
 	}
 
-	csbk := pdu.CSBK{CSBKOpcode: 0x3F, RawPayload: [64]bit.Bit{1, 0, 1}}
+	csbk := pdu.CSBK{Opcode: 0x3F, RawPayload: [64]bit.Bit{1, 0, 1}}
 	bits := must(csbk.Encode())
 	if _, res := pdu.DecodeCSBK(bits); res != (fec.Result{}) {
 		t.Errorf("CSBK with a good CRC: %+v, want a zero result", res)

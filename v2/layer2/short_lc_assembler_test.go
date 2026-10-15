@@ -89,7 +89,7 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 	if a.Count() != 0 {
 		t.Errorf("count should be 0 after reset, got %d", a.Count())
 	}
-	if _, _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
+	if _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
 		t.Errorf("Complete after Reset: got %v, want ErrShortLCIncomplete", err)
 	}
 }
@@ -130,7 +130,7 @@ func TestShortLCAssembler_RejectsBadSequence(t *testing.T) {
 			if a.Count() != 0 {
 				t.Errorf("count after bad fragment: got %d, want 0", a.Count())
 			}
-			if _, _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
+			if _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
 				t.Errorf("Complete: got %v, want ErrShortLCIncomplete", err)
 			}
 		})
@@ -155,7 +155,8 @@ func TestShortLCAssembler_FirstRestartsSequence(t *testing.T) {
 	}
 	addShortLCFragments(t, &a, fragments)
 
-	slc, fecResult, err := a.Complete()
+	slc, err := a.Complete()
+	fecResult := slc.FEC
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +176,7 @@ func TestShortLCAssembler_CompleteIncomplete(t *testing.T) {
 		if _, err := a.AddFragment(shortLCSequence[i], payload); err != nil {
 			t.Fatal(err)
 		}
-		if _, _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
+		if _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
 			t.Errorf("Complete with %d fragments: got %v, want ErrShortLCIncomplete", i+1, err)
 		}
 	}
@@ -189,7 +190,8 @@ func TestShortLCAssembler_Complete_NullMessage(t *testing.T) {
 	var a layer2.ShortLCAssembler
 	addShortLCFragments(t, &a, fragments)
 
-	slc, fecResult, err := a.Complete()
+	slc, err := a.Complete()
+	fecResult := slc.FEC
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +222,8 @@ func TestShortLCAssembler_Complete_ActivityUpdate(t *testing.T) {
 	var a layer2.ShortLCAssembler
 	addShortLCFragments(t, &a, fragments)
 
-	slc, fecResult, err := a.Complete()
+	slc, err := a.Complete()
+	fecResult := slc.FEC
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -39,7 +39,8 @@ func TestEncodeShortLCToCACH_RoundTrip(t *testing.T) {
 			t.Fatalf("field %d: ready=%v", i, ready)
 		}
 	}
-	got, res, err := a.Complete()
+	got, err := a.Complete()
+	res := got.FEC
 	if err != nil || res.Uncorrectable || res.ErrorsCorrected != 0 {
 		t.Fatalf("complete: %v %+v", err, res)
 	}

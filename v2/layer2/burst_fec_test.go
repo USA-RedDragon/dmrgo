@@ -41,7 +41,7 @@ func TestBurstFEC_LCHeaderCountsPayloadBitsOnce(t *testing.T) {
 }
 
 func TestBurstFEC_CSBKCountsNoCRCBits(t *testing.T) {
-	csbk := pdu.CSBK{CSBKOpcode: 0x3F}
+	csbk := pdu.CSBK{Opcode: 0x3F}
 	var lcBytes [12]byte
 	csbkBits := must(csbk.Encode())
 	copy(lcBytes[:], bit.Pack(csbkBits[:]))

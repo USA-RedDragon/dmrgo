@@ -62,8 +62,8 @@ func TestEncode_PropagatesNestedErrors(t *testing.T) {
 	_, err = (&pdu.FullLinkControl{FLCO: enums.FLCO(64)}).Encode()
 	expectEncodeError(t, err, "FullLinkControl.FLCO: value 64 does not fit in 6 bits")
 
-	_, err = (&pdu.CSBK{CSBKOpcode: 64}).Encode()
-	expectEncodeError(t, err, "CSBK.CSBKOpcode: value 64 does not fit in 6 bits")
+	_, err = (&pdu.CSBK{Opcode: 64}).Encode()
+	expectEncodeError(t, err, "CSBK.Opcode: value 64 does not fit in 6 bits")
 }
 
 func TestEncode_RejectsCoordinatesOutOfRange(t *testing.T) {
