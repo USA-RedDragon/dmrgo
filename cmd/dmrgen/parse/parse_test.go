@@ -449,6 +449,46 @@ type T struct {
 }`,
 			want: "unrecognized bit specifier",
 		},
+		{
+			name: "const without value",
+			src: `// dmr:const 0-3
+type T struct {
+	A uint8 ` + "`dmr:\"bits:4-7\"`" + `
+}`,
+			want: "want S-E[+S-E]=Value",
+		},
+		{
+			name: "const value too wide",
+			src: `// dmr:const 0-3=16
+type T struct {
+	A uint8 ` + "`dmr:\"bits:4-7\"`" + `
+}`,
+			want: "value 16 does not fit in 4 bits",
+		},
+		{
+			name: "const value not a name",
+			src: `// dmr:const 0-3=a-b
+type T struct {
+	A uint8 ` + "`dmr:\"bits:4-7\"`" + `
+}`,
+			want: "is not an integer or a constant name",
+		},
+		{
+			name: "const overlaps field",
+			src: `// dmr:const 0-4=1
+type T struct {
+	A uint8 ` + "`dmr:\"bits:4-7\"`" + `
+}`,
+			want: "A and dmr:const overlap at bit 4",
+		},
+		{
+			name: "const beyond input size",
+			src: `// dmr:const 8-9=1
+type T struct {
+	A uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "dmr:const bits 8-9 extend beyond input size 8",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

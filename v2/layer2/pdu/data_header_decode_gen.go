@@ -82,6 +82,7 @@ func EncodeUnconfirmedDataHeader(s *UnconfirmedDataHeader) ([80]bit.Bit, error) 
 		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.FragmentSequenceNumber: value %d does not fit in 4 bits", s.FragmentSequenceNumber)
 	}
 	copy(data[76:80], bit.BitsFromUint8(s.FragmentSequenceNumber, 4))
+	copy(data[4:8], bit.BitsFromUint8(uint8(FormatUnconfirmed), 4))
 	return data, nil
 }
 
@@ -327,6 +328,7 @@ func EncodeConfirmedDataHeader(s *ConfirmedDataHeader) ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.FragmentSequenceNumber: value %d does not fit in 4 bits", s.FragmentSequenceNumber)
 	}
 	copy(data[76:80], bit.BitsFromUint8(s.FragmentSequenceNumber, 4))
+	copy(data[4:8], bit.BitsFromUint8(uint8(FormatConfirmed), 4))
 	return data, nil
 }
 
@@ -395,6 +397,7 @@ func EncodeResponsePacketHeader(s *ResponsePacketHeader) ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.ResponseStatus: value %d does not fit in 3 bits", s.ResponseStatus)
 	}
 	copy(data[77:80], bit.BitsFromUint8(s.ResponseStatus, 3))
+	copy(data[4:8], bit.BitsFromUint8(uint8(FormatResponsePacket), 4))
 	return data, nil
 }
 
@@ -461,6 +464,7 @@ func EncodeDefinedDataHeader(s *DefinedDataHeader) ([80]bit.Bit, error) {
 		data[71] = 1
 	}
 	copy(data[72:80], bit.BitsFromUint8(s.BitPadding, 8))
+	copy(data[4:8], bit.BitsFromUint8(uint8(FormatShortDataDefined), 4))
 	return data, nil
 }
 
@@ -532,6 +536,7 @@ func EncodeRawDataHeader(s *RawDataHeader) ([80]bit.Bit, error) {
 		data[71] = 1
 	}
 	copy(data[72:80], bit.BitsFromUint8(s.BitPadding, 8))
+	copy(data[4:8], bit.BitsFromUint8(uint8(FormatShortDataRawOrStatusPrecoded), 4))
 	return data, nil
 }
 
@@ -587,6 +592,10 @@ func EncodeStatusPrecodedHeader(s *StatusPrecodedHeader) ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("StatusPrecodedHeader.StatusPrecoded: value %d does not fit in 10 bits", s.StatusPrecoded)
 	}
 	copy(data[70:80], bit.BitsFromUint16(s.StatusPrecoded, 10))
+	_const0 := uint8(0)
+	copy(data[2:4], bit.BitsFromUint8(_const0>>4, 2))
+	copy(data[12:16], bit.BitsFromUint8(_const0, 4))
+	copy(data[4:8], bit.BitsFromUint8(uint8(FormatShortDataRawOrStatusPrecoded), 4))
 	return data, nil
 }
 
@@ -667,6 +676,7 @@ func EncodeUDTHeader(s *UDTHeader) ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("UDTHeader.Opcode: value %d does not fit in 6 bits", s.Opcode)
 	}
 	copy(data[74:80], bit.BitsFromUint8(uint8(s.Opcode), 6))
+	copy(data[4:8], bit.BitsFromUint8(uint8(FormatUnifiedDataTransport), 4))
 	return data, nil
 }
 
@@ -693,6 +703,7 @@ func EncodeProprietaryHeader(s *ProprietaryHeader) ([80]bit.Bit, error) {
 	copy(data[0:4], bit.BitsFromUint8(s.SAP, 4))
 	copy(data[8:16], bit.BitsFromUint8(s.MFID, 8))
 	copy(data[16:80], s.ManufacturerData[:])
+	copy(data[4:8], bit.BitsFromUint8(uint8(FormatProprietary), 4))
 	return data, nil
 }
 

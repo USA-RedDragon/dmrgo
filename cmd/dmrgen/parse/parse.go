@@ -140,6 +140,15 @@ type FECMaskDirective struct {
 	Masks []FECMask
 }
 
+// ConstDirective is a dmr:const directive: bits that Encode sets to a fixed
+// value and Decode ignores, such as the outer header's Format bits of a
+// data header sub-PDU.
+type ConstDirective struct {
+	Ranges [][2]int // bit ranges, MSB-first
+	Width  int      // total width across all ranges
+	Value  string   // integer literal or constant name
+}
+
 // PDUStruct represents a tagged DMR PDU struct ready for code generation.
 type PDUStruct struct {
 	Name         string            // struct name
@@ -149,6 +158,7 @@ type PDUStruct struct {
 	FEC          *FECDirective     // optional FEC pre-processing
 	CRC          *CRCDirective     // optional CRC validation
 	FECMask      *FECMaskDirective // optional per-value FEC parity mask
+	Consts       []ConstDirective  // bits with a fixed value
 	Inputs       []string          // dmr:"-" fields passed to Decode as parameters
 	DispatchIf   *Guard            // optional guard required before dispatching
 	SpecRef      string            // ETSI spec section reference from comment
@@ -362,6 +372,12 @@ func parseDirective(pdu *PDUStruct, text string) error {
 			return fmt.Errorf("dmr:dispatch_if: %w", err)
 		}
 		pdu.DispatchIf = g
+	case "dmr:const":
+		c, err := parseConst(arg)
+		if err != nil {
+			return fmt.Errorf("dmr:const: %w", err)
+		}
+		pdu.Consts = append(pdu.Consts, c)
 	case "dmr:fec_mask":
 		if pdu.FECMask != nil {
 			return errors.New("duplicate dmr:fec_mask directive")
@@ -375,6 +391,49 @@ func parseDirective(pdu *PDUStruct, text string) error {
 		return fmt.Errorf("unknown directive %q", name)
 	}
 	return nil
+}
+
+func parseConst(arg string) (ConstDirective, error) {
+	var c ConstDirective
+	spec, val, ok := strings.Cut(arg, "=")
+	if !ok || spec == "" || val == "" {
+		return c, fmt.Errorf("want S-E[+S-E]=Value, got %q", arg)
+	}
+	for _, seg := range strings.Split(spec, "+") {
+		s, e, err := parseBitRange(seg)
+		if err != nil {
+			return c, fmt.Errorf("invalid bit range %q: %w", seg, err)
+		}
+		c.Ranges = append(c.Ranges, [2]int{s, e})
+		c.Width += e - s + 1
+	}
+	if c.Width > 32 {
+		return c, fmt.Errorf("width %d is wider than 32 bits", c.Width)
+	}
+	c.Value = val
+	if n, err := strconv.ParseUint(val, 0, 64); err == nil {
+		if n>>c.Width != 0 {
+			return c, fmt.Errorf("value %s does not fit in %d bits", val, c.Width)
+		}
+		return c, nil
+	}
+	if !isQualifiedIdent(val) {
+		return c, fmt.Errorf("value %q is not an integer or a constant name", val)
+	}
+	return c, nil
+}
+
+func isQualifiedIdent(s string) bool {
+	parts := strings.Split(s, ".")
+	if len(parts) > 2 {
+		return false
+	}
+	for _, p := range parts {
+		if !token.IsIdentifier(p) {
+			return false
+		}
+	}
+	return true
 }
 
 func parseFECMask(arg string) (*FECMaskDirective, error) {
@@ -743,6 +802,13 @@ func validateStruct(pdu *PDUStruct, maxBit int) error {
 	if maxBit >= pdu.InputSize {
 		return fmt.Errorf("fields extend to bit %d beyond input size %d", maxBit, pdu.InputSize)
 	}
+	for _, c := range pdu.Consts {
+		for _, r := range c.Ranges {
+			if r[1] >= pdu.InputSize {
+				return fmt.Errorf("dmr:const bits %d-%d extend beyond input size %d", r[0], r[1], pdu.InputSize)
+			}
+		}
+	}
 
 	if err := checkDispatch(pdu, dispatch, fallback); err != nil {
 		return err
@@ -846,6 +912,16 @@ func checkOverlap(pdu *PDUStruct) error {
 					return fmt.Errorf("fields %s and %s overlap at bit %d", prev, f.Name, b)
 				}
 				owner[b] = f.Name
+			}
+		}
+	}
+	for _, c := range pdu.Consts {
+		for _, r := range c.Ranges {
+			for b := r[0]; b <= r[1]; b++ {
+				if prev, ok := owner[b]; ok {
+					return fmt.Errorf("%s and dmr:const overlap at bit %d", prev, b)
+				}
+				owner[b] = "dmr:const"
 			}
 		}
 	}

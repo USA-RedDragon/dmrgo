@@ -588,3 +588,48 @@ func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 		t.Errorf("Encode(Decode(x)) = %v, want %v", got, in)
 	}
 }
+
+func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
+	encode := map[pdu.Format]func() ([80]bit.Bit, error){
+		pdu.FormatUnconfirmed: func() ([80]bit.Bit, error) {
+			return pdu.EncodeUnconfirmedDataHeader(&pdu.UnconfirmedDataHeader{})
+		},
+		pdu.FormatConfirmed: func() ([80]bit.Bit, error) {
+			return pdu.EncodeConfirmedDataHeader(&pdu.ConfirmedDataHeader{})
+		},
+		pdu.FormatResponsePacket: func() ([80]bit.Bit, error) {
+			return pdu.EncodeResponsePacketHeader(&pdu.ResponsePacketHeader{})
+		},
+		pdu.FormatShortDataDefined: func() ([80]bit.Bit, error) {
+			return pdu.EncodeDefinedDataHeader(&pdu.DefinedDataHeader{})
+		},
+		pdu.FormatShortDataRawOrStatusPrecoded: func() ([80]bit.Bit, error) {
+			return pdu.EncodeRawDataHeader(&pdu.RawDataHeader{AppendedBlocks: 1})
+		},
+		pdu.FormatUnifiedDataTransport: func() ([80]bit.Bit, error) {
+			return pdu.EncodeUDTHeader(&pdu.UDTHeader{})
+		},
+		pdu.FormatProprietary: func() ([80]bit.Bit, error) {
+			return pdu.EncodeProprietaryHeader(&pdu.ProprietaryHeader{})
+		},
+	}
+	for format, enc := range encode {
+		bits, err := enc()
+		if err != nil {
+			t.Fatalf("%s: %v", pdu.FormatToName(format), err)
+		}
+		if got := pdu.Format(bit.BitsToUint8(bits[:], 4, 4)); got != format {
+			t.Errorf("%s: Format bits = %d, want %d", pdu.FormatToName(format), got, format)
+		}
+	}
+}
+
+func TestStatusPrecodedEncoderClearsAppendedBlocks(t *testing.T) {
+	bits := must(pdu.EncodeStatusPrecodedHeader(&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}))
+	if got := pdu.Format(bit.BitsToUint8(bits[:], 4, 4)); got != pdu.FormatShortDataRawOrStatusPrecoded {
+		t.Errorf("Format bits = %d, want %d", got, pdu.FormatShortDataRawOrStatusPrecoded)
+	}
+	if ab := bit.BitsToUint8(bits[:], 2, 2)<<4 | bit.BitsToUint8(bits[:], 12, 4); ab != 0 {
+		t.Errorf("Appended Blocks = %d, want 0 (ETSI TS 102 361-1 Table 9.17A)", ab)
+	}
+}

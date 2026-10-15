@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
 
+// dmr:const 4-7=FormatUnconfirmed
 // ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
 type UnconfirmedDataHeader struct {
 	Group             bool `dmr:"bit:0"`
@@ -95,6 +96,7 @@ func FormatToName(f Format) string {
 	}
 }
 
+// dmr:const 4-7=FormatConfirmed
 // ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
 type ConfirmedDataHeader struct {
 	Group                  bool  `dmr:"bit:0"`
@@ -111,6 +113,7 @@ type ConfirmedDataHeader struct {
 	FragmentSequenceNumber uint8 `dmr:"bits:76-79"`
 }
 
+// dmr:const 4-7=FormatResponsePacket
 // ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
 type ResponsePacketHeader struct {
 	Reserved          bool       `dmr:"bit:0"`
@@ -127,6 +130,7 @@ type ResponsePacketHeader struct {
 	ResponseStatus    uint8      `dmr:"bits:77-79"`
 }
 
+// dmr:const 4-7=FormatShortDataDefined
 // ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
 type DefinedDataHeader struct {
 	Group             bool  `dmr:"bit:0"`
@@ -141,6 +145,7 @@ type DefinedDataHeader struct {
 	BitPadding        uint8 `dmr:"bits:72-79"`
 }
 
+// dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
 // ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
 // Used when AppendedBlocks != 0 (short data with appended data blocks).
 type RawDataHeader struct {
@@ -157,6 +162,8 @@ type RawDataHeader struct {
 	BitPadding        uint8 `dmr:"bits:72-79"`
 }
 
+// dmr:const 2-3+12-15=0
+// dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
 // ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
 // Used when AppendedBlocks == 0 (status/precoded message carried entirely in header).
 type StatusPrecodedHeader struct {
@@ -197,6 +204,7 @@ func UDTOpcodeToName(op UDTOpcode) string {
 	}
 }
 
+// dmr:const 4-7=FormatUnifiedDataTransport
 // UDTHeader takes octet 0 bits 5-4 from TS 102 361-4 Tables 7.24 (C_UDTHD)
 // and 7.28 (C_UDTHU).
 // ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
@@ -220,6 +228,7 @@ type UDTHeader struct {
 	Opcode            UDTOpcode `dmr:"bits:74-79"`
 }
 
+// dmr:const 4-7=FormatProprietary
 // ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
 type ProprietaryHeader struct {
 	SAP              uint8       `dmr:"bits:0-3"`

@@ -255,6 +255,25 @@ type T struct {
 	}
 }
 
+func TestConstIsEncoded(t *testing.T) {
+	out := mustGenerate(t, `type Format uint8
+
+const FormatX Format = 5
+
+// dmr:const 0-3=FormatX
+// dmr:const 4-5+10-11=0x9
+type T struct {
+	A uint8 `+"`dmr:\"bits:6-9\"`"+`
+	B uint8 `+"`dmr:\"bits:12-15\"`"+`
+}`)
+	assertContains(t, out,
+		"copy(data[0:4], bit.BitsFromUint8(uint8(FormatX), 4))",
+		"_const1 := uint8(9)",
+		"copy(data[4:6], bit.BitsFromUint8(_const1>>2, 2))",
+		"copy(data[10:12], bit.BitsFromUint8(_const1, 2))",
+	)
+}
+
 func TestInputsBecomeDecodeParameters(t *testing.T) {
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`

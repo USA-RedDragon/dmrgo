@@ -1186,6 +1186,9 @@ func (e encoder) fields(g *Group) {
 		}
 		e.field(g, field)
 	}
+	for i, c := range e.pdu.Consts {
+		e.constant(g, c, i)
+	}
 }
 
 // dispatch generates a switch that encodes the active dispatch field.
@@ -1426,20 +1429,36 @@ func (e encoder) integer(g *Group, field parse.Field) {
 	}
 
 	fn := bitStoreFunc(w)
-	value := castToStoreFuncType(source.Clone(), field.GoType, fn)
-	if len(field.ExtraBitRanges) == 0 {
+	storeBits(g, field.Ranges(), w, castToStoreFuncType(source.Clone(), field.GoType, fn), "_val"+field.Name)
+}
+
+// constant encodes a dmr:const directive.
+func (e encoder) constant(g *Group, c parse.ConstDirective, idx int) {
+	fn := bitStoreFunc(c.Width)
+	var value *Statement
+	if n, err := strconv.ParseUint(c.Value, 0, 64); err == nil {
+		value = Add(storeParamType(fn)).Call(Id(strconv.FormatUint(n, 10)))
+	} else {
+		value = Add(storeParamType(fn)).Call(emitDispatchConstant(c.Value, e.pdu))
+	}
+	storeBits(g, c.Ranges, c.Width, value, fmt.Sprintf("_const%d", idx))
+}
+
+// storeBits stores a width-bit value MSB-first across ranges. A
+// non-contiguous value goes through the temporary variable tmp.
+func storeBits(g *Group, ranges [][2]int, w int, value *Statement, tmp string) {
+	fn := bitStoreFunc(w)
+	if len(ranges) == 1 {
 		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
+			Id("data").Index(Lit(ranges[0][0]), Lit(ranges[0][1]+1)),
 			Qual(bitPkg, fn).Call(value, Lit(w)),
 		)
 		return
 	}
 
-	// Non-contiguous: store each segment MSB-first.
-	tmp := "_val" + field.Name
 	g.Id(tmp).Op(":=").Add(value)
 	remaining := w
-	for _, r := range field.Ranges() {
+	for _, r := range ranges {
 		segWidth := r[1] - r[0] + 1
 		remaining -= segWidth
 		seg := Id(tmp)
