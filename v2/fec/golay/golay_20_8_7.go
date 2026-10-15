@@ -1,5 +1,6 @@
-// Package golay implements the Golay (20,8,7), (23,12,7) and (24,12,8) codes
-// of ETSI TS 102 361-1 B.3.1, B.3.3 and B.3.4.
+// Package golay implements the Golay (20,8,7) code of ETSI TS 102 361-1
+// B.3.1, which protects the slot type, and the Golay (23,12,7) and (24,12,8)
+// codes of the AMBE+2 vocoder frame FEC.
 package golay
 
 import (

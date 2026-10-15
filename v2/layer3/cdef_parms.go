@@ -1,3 +1,6 @@
+// Package layer3 defines the layer 3 information elements of ETSI TS 102
+// 361-2 and 361-4 that the PDUs of package pdu carry, such as service
+// options, source type and channel definitions.
 package layer3
 
 // CdefParms represents the Channel Definition Parameters (Cdeftype=0).

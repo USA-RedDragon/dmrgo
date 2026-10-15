@@ -7,10 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// dmr:fec reed_solomon_12_9_4
-// dmr:input BurstDataType
-// dmr:fec_mask BurstDataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
-// dmr:dispatch_if FeatureSetID==0
 // ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
 //
 // The FID redefines the FLCO (ETSI TS 102 361-1 Table 9.21), so the standard
@@ -33,6 +29,11 @@ import (
 // errors. MMDVMHost accepts a Full LC only when the RS(12,9) parity matches
 // without correction; a caller that must match it rejects an LC with
 // FEC.ErrorsCorrected > 0 (see layer2.MMDVMHostAccepts).
+//
+//dmr:fec reed_solomon_12_9_4
+//dmr:input BurstDataType
+//dmr:fec_mask BurstDataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
+//dmr:dispatch_if FeatureSetID==0
 type FullLinkControl struct {
 	BurstDataType enums.DataType     `dmr:"-"`
 	ProtectFlag   bool               `dmr:"bit:0"`

@@ -1,3 +1,7 @@
+// Package enums defines the enumerated information elements of ETSI TS 102
+// 361: data types, SYNC patterns, FLCO, SLCO, FID, LCSS, the address and
+// port identifiers of the compressed headers and others. Each type converts
+// from its on-air value with a plain cast and prints with String.
 package enums
 
 // ETSI TS 102 361-1 - 9.3.6 Data Type

@@ -88,12 +88,13 @@ func (s *ShortLCPSysParms) SiteID() uint16 {
 	return siteID(s.MODEL, s.NetSiteRaw)
 }
 
-// dmr:crc crc_8
-// dmr:input_size 36
 // ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
 //
 // ShortLC.Encode returns an error if more than one payload field is set, or
 // if SLCO does not select the payload field that is set.
+//
+//dmr:crc crc_8
+//dmr:input_size 36
 type ShortLC struct {
 	SLCO enums.SLCO `dmr:"bits:0-3,enum"`
 	FEC  fec.Result `dmr:"-"`

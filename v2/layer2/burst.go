@@ -1,3 +1,8 @@
+// Package layer2 decodes and encodes DMR bursts (ETSI TS 102 361-1 clause
+// 6 and 9): the Burst model, the byte-level RawBurst, the embedded LC, the
+// CACH and Short LC, the Reverse Channel, and the voice superframe
+// transmitter and receiver. The PDUs that the bursts carry are in package
+// pdu.
 package layer2
 
 import (

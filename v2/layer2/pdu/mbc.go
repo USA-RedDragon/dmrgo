@@ -8,10 +8,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// dmr:crc crc_ccitt
-// dmr:crc_mask 0xAAAA
-// dmr:input_size 96
 // ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
+//
+//dmr:crc crc_ccitt
+//dmr:crc_mask 0xAAAA
+//dmr:input_size 96
 type MBCHeader struct {
 	crc         uint16             `dmr:"-"` //nolint:unused
 	FEC         fec.Result         `dmr:"-"`
@@ -109,13 +110,14 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 // determines the type from the preceding MBCHeader.Opcode and
 // calls the appropriate Decode function on the full 96-bit block.
 
-// dmr:crc crc_ccitt
-// dmr:input_size 96
 // CGAPContinuation represents Channel Grant Absolute Parameters.
 // Used with all grant opcodes (PV_GRANT, TV_GRANT, BTV_GRANT,
 // PD_GRANT, TD_GRANT, PV_GRANT_DX, PD_GRANT_DX, PD_GRANT_MI,
 // TD_GRANT_MI) when PhysicalChannel=0xFFF.
 // ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
+//
+//dmr:crc crc_ccitt
+//dmr:input_size 96
 type CGAPContinuation struct {
 	crc         uint16           `dmr:"-"` //nolint:unused
 	FEC         fec.Result       `dmr:"-"`
@@ -134,11 +136,12 @@ func (c *CGAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// dmr:crc crc_ccitt
-// dmr:input_size 96
 // MVAPContinuation represents Move Absolute Parameters.
 // Used with C_MOVE (opcode 0x39) when PhysicalChannel=0xFFF.
 // ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
+//
+//dmr:crc crc_ccitt
+//dmr:input_size 96
 type MVAPContinuation struct {
 	crc         uint16           `dmr:"-"` //nolint:unused
 	FEC         fec.Result       `dmr:"-"`
@@ -157,11 +160,12 @@ func (c *MVAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// dmr:crc crc_ccitt
-// dmr:input_size 96
 // BCAPContinuation represents Broadcast Absolute Parameters.
 // Used with C_BCAST (opcode 0x28) for Ann_WD_TSCC and Chan_Freq.
 // ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
+//
+//dmr:crc crc_ccitt
+//dmr:input_size 96
 type BCAPContinuation struct {
 	crc         uint16           `dmr:"-"` //nolint:unused
 	FEC         fec.Result       `dmr:"-"`
@@ -179,11 +183,12 @@ func (c *BCAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// dmr:crc crc_ccitt
-// dmr:input_size 96
 // VNAPContinuation represents Vote Now Absolute Parameters.
 // Used with C_BCAST (opcode 0x28) Vote_Now when CH_VOTE=0xFFF.
 // ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
+//
+//dmr:crc crc_ccitt
+//dmr:input_size 96
 type VNAPContinuation struct {
 	crc         uint16           `dmr:"-"` //nolint:unused
 	FEC         fec.Result       `dmr:"-"`

@@ -1,5 +1,5 @@
 // Package trellis implements the rate 3/4 trellis code of ETSI TS 102 361-1
-// B.2, which protects rate 3/4 data blocks.
+// B.2.4, which protects rate 3/4 data blocks.
 package trellis
 
 import (

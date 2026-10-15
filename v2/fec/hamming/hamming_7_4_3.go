@@ -1,5 +1,5 @@
 // Package hamming implements the Hamming (7,4,3) code of ETSI TS 102 361-1
-// B.3.5, which protects the Reverse Channel and the TACT.
+// B.3.5, which protects the TACT of the CACH.
 package hamming
 
 import (

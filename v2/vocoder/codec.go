@@ -1,3 +1,7 @@
+// Package vocoder converts between PCM and the 72-bit vocoder slots of a DMR
+// voice burst. It defines the Codec interface and a name-based codec
+// registry, the AMBE+2 frame FEC (EncodeAMBE72, DecodeAMBE72) and the IPSC
+// AMBE payload packing. It contains no AMBE+2 codec.
 package vocoder
 
 import (

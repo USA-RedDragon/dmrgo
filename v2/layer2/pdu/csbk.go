@@ -1,3 +1,8 @@
+// Package pdu defines the layer 2 PDUs of ETSI TS 102 361 with their
+// decoders and encoders: CSBK, Full LC, Short LC, data headers, MBC, PI
+// header, slot type, EMB and the data blocks. DecodeX decodes a PDU from its
+// information bits and X.Encode encodes it; most of these functions are
+// generated from the dmr struct tags by cmd/dmrgen.
 package pdu
 
 import (
@@ -427,10 +432,6 @@ const (
 	Opcode0x38TalkgroupDataGrantMultiItem
 )
 
-// dmr:crc crc_ccitt
-// dmr:crc_mask 0xA5A5
-// dmr:input_size 96
-// dmr:dispatch_if FID==0
 // ETSI TS 102 361-1 - 9.1.5 CSBK PDU
 //
 // The FID redefines the CSBKO (ETSI TS 102 361-1 Table 9.21), so the standard
@@ -444,6 +445,11 @@ const (
 // CSBK.Encode returns an error if more than one payload field is set, or if
 // CSBKOpcode and FID do not select the payload field that is set. Put the
 // payload of a manufacturer FID or of opcode 0x38 in RawPayload.
+//
+//dmr:crc crc_ccitt
+//dmr:crc_mask 0xA5A5
+//dmr:input_size 96
+//dmr:dispatch_if FID==0
 type CSBK struct {
 	LastBlock   bool               `dmr:"bit:0"`
 	ProtectFlag bool               `dmr:"bit:1"`

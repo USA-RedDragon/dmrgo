@@ -6,8 +6,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// dmr:const 4-7=FormatUnconfirmed
 // ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
+//
+//dmr:const 4-7=FormatUnconfirmed
 type UnconfirmedDataHeader struct {
 	Group             bool `dmr:"bit:0"`
 	ResponseRequested bool `dmr:"bit:1"`
@@ -23,15 +24,16 @@ type UnconfirmedDataHeader struct {
 	FragmentSequenceNumber uint8                      `dmr:"bits:76-79"`
 }
 
-// dmr:crc crc_ccitt
-// dmr:crc_mask 0xCCCC
-// dmr:input_size 96
 // ETSI TS 102 361-1 - 9.1.8 Data Header PDU
 //
 // DataHeader.Encode returns an error if more than one header field is set, or
 // if Format and the encoded Appended Blocks do not select the header field
 // that is set. An R_HEAD needs a non-zero AppendedBlocks; with zero appended
 // blocks, use StatusPrecodedHeader.
+//
+//dmr:crc crc_ccitt
+//dmr:crc_mask 0xCCCC
+//dmr:input_size 96
 type DataHeader struct {
 	crc            uint16     `dmr:"-"` //nolint:unused
 	FEC            fec.Result `dmr:"-"`
@@ -135,8 +137,9 @@ func (f Format) String() string {
 	}
 }
 
-// dmr:const 4-7=FormatConfirmed
 // ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
+//
+//dmr:const 4-7=FormatConfirmed
 type ConfirmedDataHeader struct {
 	Group                  bool                       `dmr:"bit:0"`
 	ResponseRequested      bool                       `dmr:"bit:1"`
@@ -152,8 +155,9 @@ type ConfirmedDataHeader struct {
 	FragmentSequenceNumber uint8                      `dmr:"bits:76-79"`
 }
 
-// dmr:const 4-7=FormatResponsePacket
 // ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
+//
+//dmr:const 4-7=FormatResponsePacket
 type ResponsePacketHeader struct {
 	Reserved          bool                       `dmr:"bit:0"`
 	ResponseRequested bool                       `dmr:"bit:1"`
@@ -169,8 +173,9 @@ type ResponsePacketHeader struct {
 	ResponseStatus    uint8                      `dmr:"bits:77-79"`
 }
 
-// dmr:const 4-7=FormatShortDataDefined
 // ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
+//
+//dmr:const 4-7=FormatShortDataDefined
 type DefinedDataHeader struct {
 	Group             bool                       `dmr:"bit:0"`
 	ResponseRequested bool                       `dmr:"bit:1"`
@@ -184,9 +189,10 @@ type DefinedDataHeader struct {
 	BitPadding        uint8                      `dmr:"bits:72-79"`
 }
 
-// dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
 // ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
 // Used when AppendedBlocks != 0 (short data with appended data blocks).
+//
+//dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
 type RawDataHeader struct {
 	Group             bool                       `dmr:"bit:0"`
 	ResponseRequested bool                       `dmr:"bit:1"`
@@ -201,10 +207,11 @@ type RawDataHeader struct {
 	BitPadding        uint8                      `dmr:"bits:72-79"`
 }
 
-// dmr:const 2-3+12-15=0
-// dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
 // ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
 // Used when AppendedBlocks == 0 (status/precoded message carried entirely in header).
+//
+//dmr:const 2-3+12-15=0
+//dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
 type StatusPrecodedHeader struct {
 	Group             bool                       `dmr:"bit:0"`
 	ResponseRequested bool                       `dmr:"bit:1"`
@@ -243,10 +250,11 @@ func (op UDTOpcode) String() string {
 	}
 }
 
-// dmr:const 4-7=FormatUnifiedDataTransport
 // UDTHeader takes octet 0 bits 5-4 from TS 102 361-4 Tables 7.24 (C_UDTHD)
 // and 7.28 (C_UDTHU).
 // ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
+//
+//dmr:const 4-7=FormatUnifiedDataTransport
 type UDTHeader struct {
 	Group             bool `dmr:"bit:0"`
 	ResponseRequested bool `dmr:"bit:1"`
@@ -267,8 +275,9 @@ type UDTHeader struct {
 	Opcode            UDTOpcode `dmr:"bits:74-79"`
 }
 
-// dmr:const 4-7=FormatProprietary
 // ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
+//
+//dmr:const 4-7=FormatProprietary
 type ProprietaryHeader struct {
 	SAP              enums.ServiceAccessPointID `dmr:"bits:0-3"`
 	MFID             enums.FeatureSetID         `dmr:"bits:8-15"`

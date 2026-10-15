@@ -6,9 +6,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// dmr:crc crc_ccitt
-// dmr:crc_mask 0x6969
-// dmr:input_size 96
 // ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
 //
 // ETSI TS 102 361-1 leaves the PI header content undefined (Table 6.1
@@ -19,6 +16,10 @@ import (
 // Other vendors, such as Hytera (MFID 0x68), use other layouts, so Raw
 // holds all 80 bits before the CRC for callers to decode themselves.
 // PIHeader.Encode writes the named fields and ignores Raw.
+//
+//dmr:crc crc_ccitt
+//dmr:crc_mask 0x6969
+//dmr:input_size 96
 type PIHeader struct {
 	crc              uint16             `dmr:"-"` //nolint:unused
 	FEC              fec.Result         `dmr:"-"`

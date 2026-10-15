@@ -50,10 +50,11 @@ func (st ServiceType) String() string {
 	}
 }
 
-// dmr:crc crc_ccitt
-// dmr:crc_mask 0x3333
-// dmr:input_size 96
 // ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
+//
+//dmr:crc crc_ccitt
+//dmr:crc_mask 0x3333
+//dmr:input_size 96
 type UnifiedSingleBlockData struct {
 	crc         uint16      `dmr:"-"` //nolint:unused
 	FEC         fec.Result  `dmr:"-"`
