@@ -180,8 +180,8 @@ func TestShortLC_UnknownSLCO_RoundTrip(t *testing.T) {
 		if fecResult.Uncorrectable {
 			t.Fatalf("SLCO %04b: CRC failed", slco)
 		}
-		if slc.RawPayload != payload {
-			t.Errorf("SLCO %04b: RawPayload = %v, want %v", slco, slc.RawPayload, payload)
+		if want := [3]byte(bit.Pack(payload[:])); slc.RawPayload != want {
+			t.Errorf("SLCO %04b: RawPayload = %x, want %x", slco, slc.RawPayload, want)
 		}
 		if got := must(slc.Encode()); got != in {
 			t.Errorf("SLCO %04b: Encode(Decode(x)) = %v, want %v", slco, got, in)

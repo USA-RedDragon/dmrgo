@@ -26,7 +26,7 @@ func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
 		FeatureSetID:  c.FID(),
-		RawPayload:    payload,
+		RawPayload:    [7]byte(bit.Pack(payload[:])),
 	}
 	tx, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, c.Silence())
 	if err != nil {

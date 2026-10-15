@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -49,7 +48,10 @@ type FullLinkControl struct {
 	TalkerAliasBlock          *FLCTalkerAliasBlock          `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasBlock1|enums.FLCOTalkerAliasBlock2|enums.FLCOTalkerAliasBlock3"`
 	TerminatorDataLinkControl *FLCTerminatorDataLinkControl `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTerminatorDataLinkControl"`
 
-	RawPayload [56]bit.Bit `dmr:"bits:16-71,raw,fallback"`
+	// RawPayload holds LC bits 16 to 71 when no payload field is set, as
+	// for a manufacturer FLCO, packed most significant bit first: bit 16
+	// is the top bit of byte 0, so the bytes are LC octets 2 to 8.
+	RawPayload [7]byte `dmr:"bits:16-71,raw,fallback"`
 }
 
 // Addresses returns the 24-bit target and source addresses (LC bits 24-47
@@ -70,14 +72,14 @@ func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
 		return 0, 0, false
 	}
-	return uint32(bit.Uint(s.RawPayload[8:32])), uint32(bit.Uint(s.RawPayload[32:56])), true //nolint:gosec // 24-bit fields
+	return uint24(s.RawPayload[1:4]), uint24(s.RawPayload[4:7]), true
 }
 
 // SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr
 // (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. With the standard FID it sets
 // GroupVoice or UnitToUnit, creating the payload when it is nil. With any
-// other FID it writes RawPayload bits 8-31 and 32-55, the layout Addresses
-// reads. It returns false, and changes nothing, for other FLCOs or when an
+// other FID it writes RawPayload bytes 1 to 3 and 4 to 6, the layout
+// Addresses reads. It returns false, and changes nothing, for other FLCOs or when an
 // address does not fit in 24 bits.
 func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 	if target>>24 != 0 || source>>24 != 0 {
@@ -87,8 +89,8 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 		return false
 	}
 	if s.FeatureSetID != enums.FIDStandardized {
-		bit.PutUint(s.RawPayload[8:32], uint64(target))
-		bit.PutUint(s.RawPayload[32:56], uint64(source))
+		putUint24(s.RawPayload[1:4], target)
+		putUint24(s.RawPayload[4:7], source)
 		return true
 	}
 	if s.FLCO == enums.FLCOGroupVoiceChannelUser {

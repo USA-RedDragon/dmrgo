@@ -136,7 +136,7 @@ func opcode0x38(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	c := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupDataGrantMultiItem, RawPayload: payload}
+	c := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupDataGrantMultiItem, RawPayload: [8]byte(bit.Pack(payload[:]))}
 	got, _, err := roundTripCSBK(c, layer2.SyncSourceBS)
 	if err != nil {
 		return err

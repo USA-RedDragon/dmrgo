@@ -3,7 +3,6 @@ package pdu
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -58,7 +57,11 @@ func (st ServiceType) String() string {
 type UnifiedSingleBlockData struct {
 	FEC         fec.Result  `dmr:"-"`
 	ServiceType ServiceType `dmr:"bits:0-3"`
-	Payload     [76]bit.Bit `dmr:"bits:4-79,raw"`
+	// Payload holds the 76 bits 4 to 79, packed most significant bit
+	// first: bit 4 is the top bit of byte 0 and bit 79 is bit 4 of byte 9.
+	// The low 4 bits of byte 9 are padding and must be zero; Encode returns
+	// a *bit.FieldRangeError otherwise.
+	Payload [10]byte `dmr:"bits:4-79,raw"`
 }
 
 // DataType returns enums.DataTypeUnifiedSingleBlock.

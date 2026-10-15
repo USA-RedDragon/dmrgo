@@ -1,6 +1,7 @@
 package pdu_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
@@ -61,16 +62,16 @@ func TestUSBD_DecodeLIP(t *testing.T) {
 	}
 
 	// Verify payload bits
-	if usbd.Payload[0] != 1 {
+	if rawBit(usbd.Payload[:], 0) != 1 {
 		t.Error("Payload[0] should be 1")
 	}
-	if usbd.Payload[10] != 1 {
+	if rawBit(usbd.Payload[:], 10) != 1 {
 		t.Error("Payload[10] should be 1")
 	}
-	if usbd.Payload[75] != 1 {
+	if rawBit(usbd.Payload[:], 75) != 1 {
 		t.Error("Payload[75] should be 1")
 	}
-	if usbd.Payload[1] != 0 {
+	if rawBit(usbd.Payload[:], 1) != 0 {
 		t.Error("Payload[1] should be 0")
 	}
 }
@@ -110,7 +111,7 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 			// Set some payload bits
 			for i := 0; i < 76; i += 3 {
-				orig.Payload[i] = 1
+				setRawBit(orig.Payload[:], i)
 			}
 
 			encoded := must(orig.Encode())
@@ -123,10 +124,8 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 			if decoded.ServiceType != orig.ServiceType {
 				t.Errorf("ServiceType = %d, want %d", decoded.ServiceType, orig.ServiceType)
 			}
-			for i := 0; i < 76; i++ {
-				if decoded.Payload[i] != orig.Payload[i] {
-					t.Errorf("Payload[%d] = %d, want %d", i, decoded.Payload[i], orig.Payload[i])
-				}
+			if decoded.Payload != orig.Payload {
+				t.Errorf("Payload = %x, want %x", decoded.Payload, orig.Payload)
 			}
 		})
 	}
@@ -137,7 +136,7 @@ func TestUSBD_EncodeStability(t *testing.T) {
 		ServiceType: pdu.ServiceTypeLIP,
 	}
 	for i := 0; i < 76; i += 2 {
-		orig.Payload[i] = 1
+		setRawBit(orig.Payload[:], i)
 	}
 
 	enc1 := must(orig.Encode())
@@ -238,5 +237,20 @@ func TestUSBD_AllServiceTypes(t *testing.T) {
 		if uint8(usbd.ServiceType) != uint8(st) {
 			t.Errorf("ServiceType %d: decoded as %d", st, usbd.ServiceType)
 		}
+	}
+}
+
+func TestUSBD_PayloadLayout(t *testing.T) {
+	var payload [76]bit.Bit
+	payload[0], payload[75] = 1, 1
+	usbd := pdu.DecodeUnifiedSingleBlockData(buildUSBDBits(0, payload))
+	if want := [10]byte{0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0x10}; usbd.Payload != want {
+		t.Fatalf("Payload = %x, want %x: bit 4 in the top bit of byte 0, bit 79 in bit 4 of byte 9", usbd.Payload, want)
+	}
+	usbd.Payload[9] |= 0x01
+	_, err := usbd.Encode()
+	var rangeErr *bit.FieldRangeError
+	if !errors.As(err, &rangeErr) || rangeErr.Field != "Payload" || rangeErr.Bits != 76 {
+		t.Errorf("Encode with a padding bit set: %v, want a FieldRangeError for Payload", err)
 	}
 }

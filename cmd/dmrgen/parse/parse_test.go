@@ -223,7 +223,7 @@ type T struct {
 		{
 			name: "stride without delegate",
 			src: `type T struct {
-	A [3]bit.Bit ` + "`dmr:\"bits:0-2,raw,stride:1\"`" + `
+	A [1]byte ` + "`dmr:\"bits:0-2,raw,stride:1\"`" + `
 }`,
 			want: "stride requires delegate",
 		},
@@ -335,23 +335,23 @@ type T struct {
 		{
 			name: "raw array shorter than range",
 			src: `type T struct {
-	A [4]bit.Bit ` + "`dmr:\"bits:0-7,raw\"`" + `
+	A [1]byte ` + "`dmr:\"bits:0-8,raw\"`" + `
 }`,
-			want: "does not match range width",
+			want: "raw field of 9 bits must be [2]byte, got [1]byte",
 		},
 		{
 			name: "raw array longer than range",
 			src: `type T struct {
-	A [9]bit.Bit ` + "`dmr:\"bits:0-7,raw\"`" + `
+	A [2]byte ` + "`dmr:\"bits:0-7,raw\"`" + `
 }`,
-			want: "does not match range width",
+			want: "raw field of 8 bits must be [1]byte, got [2]byte",
 		},
 		{
-			name: "raw wrong element type",
+			name: "raw bit array",
 			src: `type T struct {
-	A [8]byte ` + "`dmr:\"bits:0-7,raw\"`" + `
+	A [8]bit.Bit ` + "`dmr:\"bits:0-7,raw\"`" + `
 }`,
-			want: "raw field must be [N]bit.Bit",
+			want: "raw field of 8 bits must be [1]byte, got [8]bit.Bit",
 		},
 		{
 			name: "packed array shorter than range",
@@ -426,7 +426,7 @@ type T struct {
 		{
 			name: "non-contiguous raw",
 			src: `type T struct {
-	A [5]bit.Bit ` + "`dmr:\"bits:3+12-15,raw\"`" + `
+	A [1]byte ` + "`dmr:\"bits:3+12-15,raw\"`" + `
 }`,
 			want: "raw fields must be contiguous",
 		},
@@ -721,7 +721,7 @@ func TestParseRejectsBadFallbackAndDispatchIf(t *testing.T) {
 			name: "fallback without dispatch",
 			src: `type T struct {
 	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
-	R  [8]bit.Bit ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
 }`,
 			want: "without dispatch fields",
 		},
@@ -730,7 +730,7 @@ func TestParseRejectsBadFallbackAndDispatchIf(t *testing.T) {
 			src: `type T struct {
 	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
 	A  *Sub       ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-	R  [4]bit.Bit ` + "`dmr:\"bits:8-11,raw,fallback\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-11,raw,fallback\"`" + `
 }`,
 			want: "differs from dispatch range",
 		},
@@ -739,8 +739,8 @@ func TestParseRejectsBadFallbackAndDispatchIf(t *testing.T) {
 			src: `type T struct {
 	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
 	A  *Sub       ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-	R  [8]bit.Bit ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
-	S  [8]bit.Bit ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
+	S  [1]byte ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
 }`,
 			want: "multiple fallback fields",
 		},

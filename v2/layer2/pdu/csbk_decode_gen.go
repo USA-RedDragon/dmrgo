@@ -1952,10 +1952,14 @@ func DecodeCSBK(data [96]bit.Bit) CSBK {
 			_decoded := DecodeMaintenancePDU(_dispatchBits)
 			result.MaintenancePDU = &_decoded
 		default:
-			copy(result.RawPayload[:], _dispatchBits[:])
+			for _i := range 64 {
+				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+			}
 		}
 	} else {
-		copy(result.RawPayload[:], _dispatchBits[:])
+		for _i := range 64 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
 	}
 	return result
 }
@@ -2161,7 +2165,9 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		}
 		copy(data[16:80], _pduBits[:])
 	default:
-		copy(data[16:80], s.RawPayload[:])
+		for _i := range 64 {
+			data[16+_i] = bit.Bit(s.RawPayload[_i/8] >> (7 - _i%8) & 1)
+		}
 	}
 	if s.LastBlock {
 		data[0] = 1
@@ -2330,7 +2336,7 @@ func (s *CSBK) String() string {
 	case s.MaintenancePDU != nil:
 		_ret += s.MaintenancePDU.String()
 	default:
-		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
+		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}
 	_ret += " }"
 	return _ret

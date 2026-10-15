@@ -43,11 +43,13 @@ type MBCContinuation struct {
 	// LB=1 means last block (has CRC), LB=0 means intermediate (no CRC).
 	LastBlock bool `dmr:"bit:0"`
 
-	// Data holds the continuation block's data payload.
-	// For intermediate blocks (LB=0): 95 data bits (bits 1-95).
-	// For last blocks (LB=1): 79 data bits (bits 1-79) + 16-bit CRC (bits 80-95).
-	// We store the raw 95 bits and let higher layers interpret them.
-	Data [95]bit.Bit `dmr:"bits:1-95,raw"`
+	// Data holds bits 1 to 95 of the block, packed most significant bit
+	// first: bit 1 is the top bit of byte 0 and bit 95 is bit 1 of byte
+	// 11. The low bit of byte 11 is padding and must be zero; Encode
+	// returns a *bit.FieldRangeError otherwise. An intermediate block
+	// (LB=0) carries 95 data bits; a last block (LB=1) carries 79 data
+	// bits, bits 1 to 79, and the CRC in bits 80 to 95.
+	Data [12]byte `dmr:"bits:1-95,raw"`
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
@@ -60,7 +62,7 @@ func (s *MBCContinuation) bits() [96]bit.Bit {
 	if s.LastBlock {
 		data[0] = 1
 	}
-	copy(data[1:], s.Data[:])
+	copy(data[1:], bit.Unpack(s.Data[:]))
 	return data
 }
 

@@ -24,7 +24,7 @@ const (
 	FieldUint                       // bits:S-E → uint8/uint16/uint32
 	FieldInt                        // bits:S-E → int (unsigned unless Signed)
 	FieldEnum                       // bits:S-E,enum → named integer type with a String method
-	FieldRaw                        // bits:S-E,raw → [N]bit.Bit sub-array
+	FieldRaw                        // bits:S-E,raw → [N]byte, MSB-first, zero padding bits at the end
 	FieldDelegate                   // bits:S-E,delegate → sub-struct with DecodeFromBits
 	FieldPacked                     // bits:S-E,packed → packed bytes
 	FieldLongitude                  // bits:S-E,type:longitude → float64
@@ -637,11 +637,9 @@ func validateField(f *Field) error {
 			return errors.New("bool fields must be a single bit")
 		}
 	case FieldRaw:
-		if !isArray || f.GoType != fmt.Sprintf("[%d]bit.Bit", f.ArrayLen) {
-			return fmt.Errorf("raw field must be [N]bit.Bit, got %s", f.GoType)
-		}
-		if f.ArrayLen != f.BitWidth {
-			return fmt.Errorf("raw array length %d does not match range width %d", f.ArrayLen, f.BitWidth)
+		n := RawBytes(f.BitWidth)
+		if f.GoType != fmt.Sprintf("[%d]byte", n) && f.GoType != fmt.Sprintf("[%d]uint8", n) {
+			return fmt.Errorf("raw field of %d bits must be [%d]byte, got %s", f.BitWidth, n, f.GoType)
 		}
 	case FieldPacked:
 		if !isArray || (f.GoType != fmt.Sprintf("[%d]byte", f.ArrayLen) && f.GoType != fmt.Sprintf("[%d]uint8", f.ArrayLen)) {
@@ -665,6 +663,13 @@ func validateField(f *Field) error {
 		}
 	}
 	return nil
+}
+
+// RawBytes returns the number of bytes of a raw field of width bits: the
+// bits fill the bytes most significant bit first, and the padding bits of
+// the last byte are zero.
+func RawBytes(width int) int {
+	return (width + 7) / 8
 }
 
 func validateModifiers(f *Field) error {

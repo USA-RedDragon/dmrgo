@@ -233,11 +233,14 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 		ProtectFlag: false,
 		Opcode:      pdu.CSBKBSOutboundActivation,
 		FID:         0x00,
-		RawPayload: must((&pdu.BSOutboundActivationPDU{
-			Reserved:      0,
-			BSAddress:     uint32(bit.Uint(bsAddr[:])),
-			SourceAddress: uint32(bit.Uint(srcAddr[:])),
-		}).Encode()),
+		RawPayload: [8]byte(bit.Pack(func() []bit.Bit {
+			b := must((&pdu.BSOutboundActivationPDU{
+				Reserved:      0,
+				BSAddress:     uint32(bit.Uint(bsAddr[:])),
+				SourceAddress: uint32(bit.Uint(srcAddr[:])),
+			}).Encode())
+			return b[:]
+		}())),
 	}
 
 	encoded := must(original.Encode())

@@ -212,7 +212,9 @@ func DecodeShortLC(data [36]bit.Bit) ShortLC {
 		_decoded := DecodeShortLCPSysParms(_dispatchBits)
 		result.PSysParms = &_decoded
 	default:
-		copy(result.RawPayload[:], _dispatchBits[:])
+		for _i := range 24 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
 	}
 	return result
 }
@@ -264,7 +266,9 @@ func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 		}
 		copy(data[4:28], _pduBits[:])
 	default:
-		copy(data[4:28], s.RawPayload[:])
+		for _i := range 24 {
+			data[4+_i] = bit.Bit(s.RawPayload[_i/8] >> (7 - _i%8) & 1)
+		}
 	}
 	if uint64(s.SLCO)>>4 != 0 {
 		return [36]bit.Bit{}, &bit.FieldRangeError{
@@ -313,7 +317,7 @@ func (s *ShortLC) String() string {
 	case s.PSysParms != nil:
 		_ret += s.PSysParms.String()
 	default:
-		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
+		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}
 	_ret += " }"
 	return _ret

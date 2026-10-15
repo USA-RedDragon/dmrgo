@@ -35,7 +35,9 @@ func DecodePIHeader(data [96]bit.Bit) PIHeader {
 	result.KeyID = uint8(bit.Uint(data[16:24]))
 	result.MessageIndicator = uint32(bit.Uint(data[24:56]))
 	result.Destination = uint32(bit.Uint(data[56:80]))
-	copy(result.Raw[:], data[0:80])
+	for _i := range 80 {
+		result.Raw[_i/8] |= byte(data[_i]) << (7 - _i%8)
+	}
 	return result
 }
 
@@ -85,5 +87,5 @@ func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *PIHeader) String() string {
-	return fmt.Sprintf("PIHeader{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
+	return fmt.Sprintf("PIHeader{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
 }
