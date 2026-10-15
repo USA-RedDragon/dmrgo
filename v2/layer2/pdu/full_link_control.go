@@ -110,8 +110,7 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 // NewVoiceLC returns the standard FID Full LC of a voice call: a
 // Grp_V_Ch_Usr LC with GroupVoice set when group is true, and a UU_V_Ch_Usr
 // LC with UnitToUnit set otherwise (ETSI TS 102 361-2 Tables 7.1 and 7.2).
-// BurstDataType is DataTypeVoiceLCHeader. layer3.DefaultServiceOptions
-// gives the Service Options that most radios send. It returns a
+// BurstDataType is DataTypeVoiceLCHeader. It returns a
 // *bit.FieldRangeError when an address does not fit in 24 bits.
 func NewVoiceLC(group bool, target, source uint32, so layer3.ServiceOptions) (FullLinkControl, error) {
 	if err := checkAddresses("FullLinkControl", target, source); err != nil {

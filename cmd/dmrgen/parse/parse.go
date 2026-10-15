@@ -348,7 +348,6 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 func parseDirective(pdu *PDUStruct, text string) error {
 	name, arg, _ := strings.Cut(text, " ")
 	arg = strings.TrimSpace(arg)
-
 	if arg == "" {
 		return fmt.Errorf("directive %q missing argument", name)
 	}
