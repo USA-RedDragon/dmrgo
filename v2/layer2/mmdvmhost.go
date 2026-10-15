@@ -5,6 +5,14 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
+// MMDVMHostPayload returns the BPTC(196,96) payload of r, as BPTCPayload
+// returns it, and whether MMDVMHost accepts it from the network for a burst
+// of dt, as MMDVMHostAccepts reports.
+func (r RawBurst) MMDVMHostPayload(dt enums.DataType) ([12]byte, bool) {
+	p, _ := r.BPTCPayload()
+	return p, MMDVMHostAccepts(dt, p)
+}
+
 // MMDVMHostAccepts reports whether the 96-bit BPTC(196,96) payload of a
 // burst of dataType, as RawBurst.BPTCPayload returns it, passes the check that
 // MMDVMHost (g4klx/MMDVMHost 0acb758) applies before it uses a data burst
