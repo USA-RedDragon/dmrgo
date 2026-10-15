@@ -259,13 +259,11 @@ func (r RawBurst) word32(first, second int) [4]byte {
 	var bits [32]bit.Bit
 	r.readBits(bits[:16], first)
 	r.readBits(bits[16:], second)
-	var d [4]byte
-	copy(d[:], bit.Pack(bits[:]))
-	return d
+	return bit.Pack32(bits)
 }
 
 func (r *RawBurst) setWord32(d [4]byte, first, second int) {
-	bits := bit.Unpack(d[:])
+	bits := bit.Unpack32(d)
 	r.writeBits(bits[:16], first)
 	r.writeBits(bits[16:], second)
 }
