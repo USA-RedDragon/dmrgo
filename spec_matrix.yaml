@@ -982,6 +982,7 @@ documents:
           - v2/crc/crc_ccitt.go
           - v2/layer2/pdu/full_link_control.go
           - v2/layer2/mmdvmhost.go
+          - v2/layer2/pdu/codeword_bytes.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/crc
             names:
@@ -990,6 +991,13 @@ documents:
               - TestCRCCCITT_CheckInvalid
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
+              - TestCRCMask_TableB21
+              - TestFullLCCodeword_MatchesTableB18
+              - TestFullLCCodeword_RealCapture
+              - TestFullLCCodeword_RejectsOtherDataTypes
+              - TestDecodeFullLCCodeword_CorrectsAndStrictRejects
+              - TestSealBlock_MatchesGeneratedEncoders
+              - TestSealBlock_RoundTripAndRejects
               - TestPIHeader_CRCMask
               - TestRate34Data_Confirmed_CRC9Layout
               - TestRate1Data_Confirmed_CRC9Layout
