@@ -410,25 +410,36 @@ func power(x []complex128) []float64 {
 	return p
 }
 
-// carrierOffset estimates the carrier frequency from the mean discriminator
-// output over the samples where the signal is present.
-func carrierOffset(x []complex128) float64 {
-	p := power(x)
-	var peak float64
-	for _, v := range p {
-		peak = math.Max(peak, v)
+// burstPower returns the prefix sums of pw and the mean power of its
+// strongest burst-long stretch.
+func burstPower(pw []float64) (sum []float64, ref float64) {
+	n := min(int(burstSeconds*basebandRate), len(pw))
+	sum = make([]float64, len(pw)+1)
+	for i, v := range pw {
+		sum[i+1] = sum[i] + v
 	}
-	d := discriminate(x)
-	var s float64
-	var n int
-	for i := 1; i < len(d); i++ {
-		if p[i] > peak/4 && p[i-1] > peak/4 {
-			s += d[i]
-			n++
+	for i := n; i < len(sum); i++ {
+		ref = math.Max(ref, sum[i]-sum[i-n])
+	}
+	return sum, ref / float64(max(n, 1))
+}
+
+// carrierOffset estimates the carrier frequency from the phase of the lag-1
+// autocorrelation of x, over the samples in a burst-long stretch with at
+// least a quarter of the mean power of the strongest one. Each product
+// counts by its power, so the low-amplitude samples, whose phase steps are
+// mostly noise, pull the estimate toward 0 Hz less than in a mean of the
+// discriminator output.
+func carrierOffset(x []complex128) float64 {
+	sum, ref := burstPower(power(x))
+	n := int(burstSeconds * basebandRate)
+	var acc complex128
+	for i := 1; i < len(x); i++ {
+		lo := max(i-n/2, 0)
+		hi := min(lo+n, len(x))
+		if (sum[hi]-sum[lo])/float64(hi-lo) > ref/4 {
+			acc += x[i] * cmplx.Conj(x[i-1])
 		}
 	}
-	if n == 0 {
-		return 0
-	}
-	return s / float64(n)
+	return cmplx.Phase(acc) * basebandRate / (2 * math.Pi)
 }
