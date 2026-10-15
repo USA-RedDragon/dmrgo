@@ -23,6 +23,7 @@ func entries(t testing.TB) []entry {
 	t.Helper()
 	return slices.Concat(
 		layer2Entries(t),
+		packetEntries(t),
 	)
 }
 

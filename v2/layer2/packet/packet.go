@@ -80,31 +80,103 @@ func layout(n, per int) (blocks, pad int) {
 // rate and returns them with a copy of header. It sets the block count and
 // pad fields of the header, gives confirmed blocks DBSN 0, 1, 2 and so on,
 // and keeps the other header fields. It returns an error that wraps
-// ErrRate, ErrFormat or ErrTooLong.
+// ErrRate, ErrFormat or ErrTooLong. The Packet has its own storage;
+// Builder.Segment builds into reused storage.
 func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
-	confirmed, err := setLayout(&header, len(payload), rate)
+	var b Builder
+	return b.Segment(header, payload, rate)
+}
+
+// Builder builds packets into storage that it keeps, so that it does not
+// allocate once the storage has grown to the largest packet. A Packet that a
+// Builder returns points into this storage, through its sub-header and its
+// Blocks, and is valid until the next call on the Builder. The zero value is
+// ready to use. A Builder is not safe for concurrent use.
+type Builder struct {
+	unconfirmed pdu.UnconfirmedDataHeader
+	confirmed   pdu.ConfirmedDataHeader
+	defined     pdu.DefinedDataHeader
+	raw         pdu.RawDataHeader
+	response    pdu.ResponsePacketHeader
+	buf         []byte
+	rate12      []pdu.Rate12Data
+	rate34      []pdu.Rate34Data
+	rate1       []pdu.Rate1Data
+	blocks      []layer2.Data
+}
+
+// Segment does what the package function Segment does, into the storage of
+// b. It does not allocate once the storage has grown to the packet size.
+func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
+	confirmed, err := b.setLayout(&header, len(payload), rate)
 	if err != nil {
 		return Packet{}, err
 	}
 	per, _ := blockOctets(rate, confirmed)
 	n := blocksOf(&header)
-	buf := make([]byte, n*per-crcOctets)
-	copy(buf, payload)
-	buf = appendMessageCRC(buf)
+	size := n*per - crcOctets
+	b.buf = resize(b.buf, n*per)[:size]
+	clear(b.buf[copy(b.buf, payload):])
+	b.buf = appendMessageCRC(b.buf)
 
-	p := Packet{Header: header, Blocks: make([]layer2.Data, n)}
-	for i := range p.Blocks {
-		chunk := buf[i*per : (i+1)*per]
-		if confirmed {
-			p.Blocks[i] = confirmedBlock(uint8(i), chunk)
-		} else {
-			p.Blocks[i] = unconfirmedBlock(chunk)
-		}
+	b.blocks = resize(b.blocks, n)
+	switch per {
+	case 16, 18:
+		b.rate34 = resize(b.rate34, n)
+	case 22, 24:
+		b.rate1 = resize(b.rate1, n)
+	default:
+		b.rate12 = resize(b.rate12, n)
 	}
-	return p, nil
+	for i := range n {
+		b.blocks[i] = b.block(i, b.buf[i*per:(i+1)*per], confirmed)
+	}
+	return Packet{Header: header, Blocks: b.blocks}, nil
 }
 
-func setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
+// resize returns s with length n, in a new array when s has no room.
+func resize[T any](s []T, n int) []T {
+	if cap(s) < n {
+		return make([]T, n)
+	}
+	return s[:n]
+}
+
+// block fills block i of the storage for its chunk length and returns it.
+// A confirmed block gets DBSN i.
+func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
+	dbsn := uint8(i & 0x7F)
+	switch len(chunk) {
+	case 16, 18:
+		blk := &b.rate34[i]
+		if confirmed {
+			blk.SetConfirmed(dbsn, [16]byte(chunk))
+		} else {
+			blk.Data = [18]byte(chunk)
+		}
+		return blk
+	case 22, 24:
+		blk := &b.rate1[i]
+		if confirmed {
+			blk.SetConfirmed(dbsn, [22]byte(chunk))
+		} else {
+			blk.Data = [24]byte(chunk)
+		}
+		return blk
+	default:
+		blk := &b.rate12[i]
+		if confirmed {
+			blk.SetConfirmed(dbsn, [10]byte(chunk))
+		} else {
+			blk.Data = [12]byte(chunk)
+		}
+		return blk
+	}
+}
+
+// setLayout sets the block count and pad fields of a copy of the sub-header
+// of h in the storage of b, and points h at the copy.
+func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	confirmed, ok := isConfirmed(h)
 	if !ok {
 		return false, fmt.Errorf("%w: %s", ErrFormat, h.Format.String())
@@ -116,23 +188,23 @@ func setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	blocks, pad := layout(n, per)
 	switch h.Format {
 	case pdu.FormatUnconfirmed:
-		u := *h.UnconfirmedDataHeader
-		u.BlocksToFollow, u.PadOctetCount = uint8(blocks&0xFF), uint8(pad&0xFF)
-		h.UnconfirmedDataHeader = &u
+		b.unconfirmed = *h.UnconfirmedDataHeader
+		b.unconfirmed.BlocksToFollow, b.unconfirmed.PadOctetCount = uint8(blocks&0xFF), uint8(pad&0xFF)
+		h.UnconfirmedDataHeader = &b.unconfirmed
 	case pdu.FormatConfirmed:
-		c := *h.ConfirmedDataHeader
-		c.BlocksToFollow, c.PadOctetCount = uint8(blocks&0xFF), uint8(pad&0xFF)
-		h.ConfirmedDataHeader = &c
+		b.confirmed = *h.ConfirmedDataHeader
+		b.confirmed.BlocksToFollow, b.confirmed.PadOctetCount = uint8(blocks&0xFF), uint8(pad&0xFF)
+		h.ConfirmedDataHeader = &b.confirmed
 	case pdu.FormatShortDataDefined:
-		d := *h.DefinedDataHeader
-		d.AppendedBlocks = uint8(blocks & 0xFF)
-		h.DefinedDataHeader = &d
-		h.AppendedBlocks = d.AppendedBlocks
+		b.defined = *h.DefinedDataHeader
+		b.defined.AppendedBlocks = uint8(blocks & 0xFF)
+		h.DefinedDataHeader = &b.defined
+		h.AppendedBlocks = b.defined.AppendedBlocks
 	case pdu.FormatShortDataRawOrStatusPrecoded:
-		r := *h.RawDataHeader
-		r.AppendedBlocks = uint8(blocks & 0xFF)
-		h.RawDataHeader = &r
-		h.AppendedBlocks = r.AppendedBlocks
+		b.raw = *h.RawDataHeader
+		b.raw.AppendedBlocks = uint8(blocks & 0xFF)
+		h.RawDataHeader = &b.raw
+		h.AppendedBlocks = b.raw.AppendedBlocks
 	case pdu.FormatUnifiedDataTransport, pdu.FormatResponsePacket, pdu.FormatProprietary:
 	}
 	limit := maxBlocks
@@ -185,40 +257,6 @@ func padOf(h *pdu.DataHeader) int {
 		return int(h.ConfirmedDataHeader.PadOctetCount)
 	}
 	return 0
-}
-
-func unconfirmedBlock(chunk []byte) layer2.Data {
-	switch len(chunk) {
-	case 18:
-		b := &pdu.Rate34Data{}
-		copy(b.Data[:], chunk)
-		return b
-	case 24:
-		b := &pdu.Rate1Data{}
-		copy(b.Data[:], chunk)
-		return b
-	default:
-		b := &pdu.Rate12Data{}
-		copy(b.Data[:], chunk)
-		return b
-	}
-}
-
-func confirmedBlock(dbsn uint8, chunk []byte) layer2.Data {
-	switch len(chunk) {
-	case 16:
-		b := &pdu.Rate34Data{}
-		b.SetConfirmed(dbsn, [16]byte(chunk))
-		return b
-	case 22:
-		b := &pdu.Rate1Data{}
-		b.SetConfirmed(dbsn, [22]byte(chunk))
-		return b
-	default:
-		b := &pdu.Rate12Data{}
-		b.SetConfirmed(dbsn, [10]byte(chunk))
-		return b
-	}
 }
 
 type block struct {
