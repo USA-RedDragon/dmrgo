@@ -33,7 +33,7 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
 		t.Run(dt.String(), func(t *testing.T) {
 			lc := groupLC(enums.FIDStandardized)
-			lc.DataType = dt
+			lc.BurstDataType = dt
 			lcBits := must(lc.Encode())
 			var lcBytes [12]byte
 			copy(lcBytes[:], bit.PackBits(lcBits[:]))
@@ -87,13 +87,13 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 	}{
 		{enums.DataTypeVoiceLCHeader, &lc, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.FullLinkControl)
-			if !ok || g.GroupVoice == nil || *g.GroupVoice != *lc.GroupVoice || g.DataType != enums.DataTypeVoiceLCHeader {
+			if !ok || g.GroupVoice == nil || *g.GroupVoice != *lc.GroupVoice || g.DataType() != enums.DataTypeVoiceLCHeader {
 				t.Errorf("got %+v", got)
 			}
 		}},
 		{enums.DataTypeTerminatorWithLC, &lc, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.FullLinkControl)
-			if !ok || g.GroupVoice == nil || *g.GroupVoice != *lc.GroupVoice || g.DataType != enums.DataTypeTerminatorWithLC {
+			if !ok || g.GroupVoice == nil || *g.GroupVoice != *lc.GroupVoice || g.DataType() != enums.DataTypeTerminatorWithLC {
 				t.Errorf("got %+v", got)
 			}
 		}},
@@ -146,7 +146,7 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 			}
 		})
 	}
-	if lc.DataType != 0 {
+	if lc.DataType() != 0 {
 		t.Error("Encode changed the DataType of the caller's LC")
 	}
 }
@@ -158,7 +158,7 @@ func TestBurstEncode_IdleKeepsDecodedPayload(t *testing.T) {
 	if got := must(b.Encode()); got != frame {
 		t.Errorf("decoded idle burst: got %x, want %x", got, frame)
 	}
-	b.Data = &pdu.PRFill{DataType: enums.DataTypeIdle}
+	b.Data = &pdu.PRFill{}
 	got := must(layer2.NewBurstFromBytes(must(b.Encode())))
 	if p, _, _ := got.BPTCPayload(); !pdu.IsPRFill(bitsOf(p)) {
 		t.Errorf("new PR FILL encoded %x, want Table D.2", p)

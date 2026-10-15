@@ -263,13 +263,13 @@ documents:
               - TestMBCHeader_EncodeStability
               - TestMBCHeader_CRCFailure
               - TestMBCHeader_CRCBitFlip
-              - TestMBCHeader_GetDataType
+              - TestMBCHeader_DataType
               - TestMBCHeader_String
               - TestMBCContinuation_DecodeIntermediate
               - TestMBCContinuation_DecodeLastBlock
               - TestMBCContinuation_EncodeDecodeRoundTrip
               - TestMBCContinuation_EncodeStability
-              - TestMBCContinuation_GetDataType
+              - TestMBCContinuation_DataType
               - TestMBCContinuation_String
               - TestMBCContinuation_NoCRCCheck
               - TestMBCLastBlockCRC_MultiBlock
@@ -331,7 +331,7 @@ documents:
               - TestUSBD_EncodeStability
               - TestUSBD_CRCFailure
               - TestUSBD_CRCBitFlip
-              - TestUSBD_GetDataType
+              - TestUSBD_DataType
               - TestUSBD_String
               - TestServiceTypeString
               - TestUSBD_AllServiceTypes
@@ -501,7 +501,7 @@ documents:
               - TestPRFill_IsPRFill_NoMatch
               - TestPRFill_IsPRFill_SingleBitDifference
               - TestPRFill_PRFillBits_ReturnsCopy
-              - TestPRFill_GetDataType
+              - TestPRFill_DataType
               - TestPRFill_String
 
       # ── Section 9.2: Data related PDU description ──
@@ -514,7 +514,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestRate34Data_DecodeFromBits
-              - TestRate34Data_GetDataType
+              - TestRate34Data_DataType
               - TestRate34Data_String
               - TestRate34Data_AllOnes
               - TestRate34Data_EncodeDecodeRoundTrip
@@ -546,7 +546,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestRate12Data_DecodeFromBits
-              - TestRate12Data_GetDataType
+              - TestRate12Data_DataType
               - TestRate12Data_String
               - TestRate12Data_AllOnes
               - TestRate12Data_EncodeDecodeRoundTrip
@@ -584,7 +584,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestRate1Data_DecodeFromBits
-              - TestRate1Data_GetDataType
+              - TestRate1Data_DataType
               - TestRate1Data_String
               - TestRate1Data_AllOnes
               - TestRate1Data_EncodeDecodeRoundTrip

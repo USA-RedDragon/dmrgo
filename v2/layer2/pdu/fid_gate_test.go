@@ -91,14 +91,14 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 		payload[i] = bit.Bit(i % 3 % 2)
 	}
 	original := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.FIDMotorola,
-		RawPayload:   payload,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID:  enums.FIDMotorola,
+		RawPayload:    payload,
 	}
 	infoBits := must(original.Encode())
 
-	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
+	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType())
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
@@ -121,14 +121,14 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	payload[0] = 1
 	payload[55] = 1
 	original := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		FLCO:         enums.FLCO(0b111111),
-		FeatureSetID: enums.FeatureSetID(0x7F),
-		RawPayload:   payload,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCO(0b111111),
+		FeatureSetID:  enums.FeatureSetID(0x7F),
+		RawPayload:    payload,
 	}
 	infoBits := must(original.Encode())
 
-	decoded, _ := pdu.DecodeFullLinkControl(infoBits, original.DataType)
+	decoded, _ := pdu.DecodeFullLinkControl(infoBits, original.DataType())
 	if decoded.FLCO != 0b111111 {
 		t.Errorf("FLCO = %#x, want 0x3f", decoded.FLCO)
 	}
@@ -140,7 +140,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	}
 
 	original.FeatureSetID = enums.FIDStandardized
-	decoded, _ = pdu.DecodeFullLinkControl(must(original.Encode()), original.DataType)
+	decoded, _ = pdu.DecodeFullLinkControl(must(original.Encode()), original.DataType())
 	if decoded.FLCO != 0b111111 || decoded.RawPayload != payload {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
 	}

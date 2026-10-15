@@ -12,7 +12,7 @@ import (
 
 func airRoundTrip(t *testing.T, lc pdu.FullLinkControl) pdu.FullLinkControl {
 	t.Helper()
-	lc.DataType = enums.DataTypeVoiceLCHeader
+	lc.BurstDataType = enums.DataTypeVoiceLCHeader
 	bits, err := lc.Encode()
 	if err != nil {
 		t.Fatal(err)

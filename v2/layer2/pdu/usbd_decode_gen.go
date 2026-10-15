@@ -69,5 +69,5 @@ func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *UnifiedSingleBlockData) String() string {
-	return fmt.Sprintf("UnifiedSingleBlockData{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
+	return fmt.Sprintf("UnifiedSingleBlockData{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
 }

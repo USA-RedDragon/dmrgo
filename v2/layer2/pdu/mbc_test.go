@@ -148,7 +148,6 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 
 			orig := pdu.MBCHeader{
-				DataType:    enums.DataTypeMBCHeader,
 				LastBlock:   tt.lb,
 				ProtectFlag: tt.pf,
 				CSBKOpcode:  pdu.CSBKOpcode(tt.opcode),
@@ -227,12 +226,10 @@ func TestMBCHeader_CRCBitFlip(t *testing.T) {
 	}
 }
 
-func TestMBCHeader_GetDataType(t *testing.T) {
-	hdr := &pdu.MBCHeader{
-		DataType: enums.DataTypeMBCHeader,
-	}
-	if hdr.GetDataType() != enums.DataTypeMBCHeader {
-		t.Errorf("GetDataType() = %d, want DataTypeMBCHeader", hdr.GetDataType())
+func TestMBCHeader_DataType(t *testing.T) {
+	hdr := &pdu.MBCHeader{}
+	if hdr.DataType() != enums.DataTypeMBCHeader {
+		t.Errorf("DataType() = %d, want DataTypeMBCHeader", hdr.DataType())
 	}
 }
 
@@ -240,7 +237,6 @@ func TestMBCHeader_String(t *testing.T) {
 	var data [64]bit.Bit
 	infoBits := buildMBCHeaderBits(true, false, 0b00111101, 0x00, data)
 	hdr, _ := pdu.DecodeMBCHeader(infoBits)
-	hdr.DataType = enums.DataTypeMBCHeader
 
 	str := hdr.String()
 	if str == "" {
@@ -312,7 +308,6 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 
 			orig := pdu.MBCContinuation{
-				DataType:  enums.DataTypeMBCContinuation,
 				LastBlock: tt.lb,
 				Data:      data,
 			}
@@ -351,12 +346,10 @@ func TestMBCContinuation_EncodeStability(t *testing.T) {
 	}
 }
 
-func TestMBCContinuation_GetDataType(t *testing.T) {
-	cont := &pdu.MBCContinuation{
-		DataType: enums.DataTypeMBCContinuation,
-	}
-	if cont.GetDataType() != enums.DataTypeMBCContinuation {
-		t.Errorf("GetDataType() = %d, want DataTypeMBCContinuation", cont.GetDataType())
+func TestMBCContinuation_DataType(t *testing.T) {
+	cont := &pdu.MBCContinuation{}
+	if cont.DataType() != enums.DataTypeMBCContinuation {
+		t.Errorf("DataType() = %d, want DataTypeMBCContinuation", cont.DataType())
 	}
 }
 
@@ -366,7 +359,6 @@ func TestMBCContinuation_String(t *testing.T) {
 
 	infoBits := buildMBCContinuationBits(false, data)
 	cont, _ := pdu.DecodeMBCContinuation(infoBits)
-	cont.DataType = enums.DataTypeMBCContinuation
 
 	str := cont.String()
 	if str == "" {

@@ -34,9 +34,8 @@ func TestPIHeader_DecodeVector(t *testing.T) {
 	if must(pi.Encode()) != piHeaderVector() {
 		t.Error("re-encode does not match the vector")
 	}
-	pi.DataType = enums.DataTypePIHeader
-	if pi.GetDataType() != enums.DataTypePIHeader {
-		t.Error("GetDataType mismatch")
+	if pi.DataType() != enums.DataTypePIHeader {
+		t.Error("DataType mismatch")
 	}
 	if pi.String() == "" {
 		t.Error("String should not be empty")

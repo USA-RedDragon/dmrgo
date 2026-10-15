@@ -55,13 +55,13 @@ func (st ServiceType) String() string {
 // dmr:input_size 96
 // ETSI TS 102 361-1 - 8.2.3.1 Unified Single Block Data (USBD)
 type UnifiedSingleBlockData struct {
-	DataType    enums.DataType `dmr:"-"`
-	crc         uint16         `dmr:"-"` //nolint:unused
-	FEC         fec.Result     `dmr:"-"`
-	ServiceType ServiceType    `dmr:"bits:0-3"`
-	Payload     [76]bit.Bit    `dmr:"bits:4-79,raw"`
+	crc         uint16      `dmr:"-"` //nolint:unused
+	FEC         fec.Result  `dmr:"-"`
+	ServiceType ServiceType `dmr:"bits:0-3"`
+	Payload     [76]bit.Bit `dmr:"bits:4-79,raw"`
 }
 
-func (u *UnifiedSingleBlockData) GetDataType() enums.DataType {
-	return u.DataType
+// DataType returns enums.DataTypeUnifiedSingleBlock.
+func (u *UnifiedSingleBlockData) DataType() enums.DataType {
+	return enums.DataTypeUnifiedSingleBlock
 }

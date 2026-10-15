@@ -287,7 +287,7 @@ func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 
 func (s *DataHeader) String() string {
 	_ret := "DataHeader{ "
-	_ret += fmt.Sprintf("DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
+	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
 	switch {
 	case s.UnconfirmedDataHeader != nil:
 		_ret += s.UnconfirmedDataHeader.String()

@@ -84,7 +84,7 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *MBCHeader) String() string {
-	return fmt.Sprintf("MBCHeader{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, Data: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.Data)
+	return fmt.Sprintf("MBCHeader{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, Data: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.Data)
 }
 
 // DecodeMBCContinuation decodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
@@ -108,7 +108,7 @@ func (s *MBCContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *MBCContinuation) String() string {
-	return fmt.Sprintf("MBCContinuation{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, Data: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.Data)
+	return fmt.Sprintf("MBCContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, Data: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.Data)
 }
 
 // DecodeCGAPContinuation decodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
@@ -189,7 +189,7 @@ func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *CGAPContinuation) String() string {
-	return fmt.Sprintf("CGAPContinuation{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms)
+	return fmt.Sprintf("CGAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms)
 }
 
 // DecodeMVAPContinuation decodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
@@ -270,7 +270,7 @@ func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *MVAPContinuation) String() string {
-	return fmt.Sprintf("MVAPContinuation{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms)
+	return fmt.Sprintf("MVAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms)
 }
 
 // DecodeBCAPContinuation decodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
@@ -343,7 +343,7 @@ func (s *BCAPContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *BCAPContinuation) String() string {
-	return fmt.Sprintf("BCAPContinuation{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.Cdeftype, s.Reserved2, s.CdefParms)
+	return fmt.Sprintf("BCAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.Cdeftype, s.Reserved2, s.CdefParms)
 }
 
 // DecodeVNAPContinuation decodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
@@ -424,5 +424,5 @@ func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *VNAPContinuation) String() string {
-	return fmt.Sprintf("VNAPContinuation{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms)
+	return fmt.Sprintf("VNAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, Reserved1: %d, ColourCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.Reserved1, s.ColourCode, s.Cdeftype, s.Reserved2, s.CdefParms)
 }

@@ -774,9 +774,10 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 				src.Clone().Dot("ErrorsCorrected"),
 				src.Clone().Dot("Uncorrectable"),
 			}
-		case "DataType":
-			return "%s", []Code{src.Clone()}
 		default:
+			if pdu.IsInput(field.Name) {
+				return "%v", []Code{src.Clone()}
+			}
 			// Skip unexported and other skip fields
 			return "", nil
 		}

@@ -12,7 +12,7 @@ import (
 type VoiceTransmitterOptions struct {
 	// LC is the Full LC of the call. The Voice LC Header and the Terminator
 	// with LC carry it, and so does the embedded LC unless EmbeddedLC or
-	// SetEmbeddedLC replaces it. LC.DataType is ignored.
+	// SetEmbeddedLC replaces it. LC.BurstDataType is ignored.
 	LC pdu.FullLinkControl
 	// ColorCode is the 4-bit color code.
 	ColorCode uint8
@@ -63,7 +63,6 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 	t.embedded = t.callLC
 	if opts.PIHeader != nil {
 		pi := *opts.PIHeader
-		pi.DataType = enums.DataTypePIHeader
 		bits, err := pi.Encode()
 		if err != nil {
 			return nil, fmt.Errorf("cannot encode PI header: %w", err)

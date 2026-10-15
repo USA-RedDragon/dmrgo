@@ -445,8 +445,6 @@ const (
 // CSBKOpcode and FID do not select the payload field that is set. Put the
 // payload of a manufacturer FID or of opcode 0x38 in RawPayload.
 type CSBK struct {
-	DataType enums.DataType `dmr:"-"`
-
 	LastBlock   bool       `dmr:"bit:0"`
 	ProtectFlag bool       `dmr:"bit:1"`
 	CSBKOpcode  CSBKOpcode `dmr:"bits:2-7"`
@@ -513,6 +511,7 @@ func (csbk *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItem
 	return p, true
 }
 
-func (csbk *CSBK) GetDataType() enums.DataType {
-	return csbk.DataType
+// DataType returns enums.DataTypeCSBK.
+func (csbk *CSBK) DataType() enums.DataType {
+	return enums.DataTypeCSBK
 }

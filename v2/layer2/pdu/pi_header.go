@@ -20,17 +20,17 @@ import (
 // holds all 80 bits before the CRC for callers to decode themselves.
 // PIHeader.Encode writes the named fields and ignores Raw.
 type PIHeader struct {
-	DataType         enums.DataType `dmr:"-"`
-	crc              uint16         `dmr:"-"` //nolint:unused
-	FEC              fec.Result     `dmr:"-"`
-	AlgorithmID      uint8          `dmr:"bits:0-7"`
-	MFID             uint8          `dmr:"bits:8-15"`
-	KeyID            uint8          `dmr:"bits:16-23"`
-	MessageIndicator uint32         `dmr:"bits:24-55"`
-	Destination      int            `dmr:"bits:56-79"`
-	Raw              [80]bit.Bit    `dmr:"bits:0-79,raw,no_encode"`
+	crc              uint16      `dmr:"-"` //nolint:unused
+	FEC              fec.Result  `dmr:"-"`
+	AlgorithmID      uint8       `dmr:"bits:0-7"`
+	MFID             uint8       `dmr:"bits:8-15"`
+	KeyID            uint8       `dmr:"bits:16-23"`
+	MessageIndicator uint32      `dmr:"bits:24-55"`
+	Destination      int         `dmr:"bits:56-79"`
+	Raw              [80]bit.Bit `dmr:"bits:0-79,raw,no_encode"`
 }
 
-func (p *PIHeader) GetDataType() enums.DataType {
-	return p.DataType
+// DataType returns enums.DataTypePIHeader.
+func (p *PIHeader) DataType() enums.DataType {
+	return enums.DataTypePIHeader
 }

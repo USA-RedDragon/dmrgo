@@ -8,8 +8,8 @@ import (
 )
 
 // dmr:fec reed_solomon_12_9_4
-// dmr:input DataType
-// dmr:fec_mask DataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
+// dmr:input BurstDataType
+// dmr:fec_mask BurstDataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
 // dmr:dispatch_if FeatureSetID==0
 // ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
 //
@@ -20,10 +20,11 @@ import (
 // do not select the payload field that is set. Put the payload of a
 // manufacturer FID in RawPayload.
 //
-// DataType selects the Data Type CRC Mask XORed into the RS(12,9) parity
-// (ETSI TS 102 361-1 B.3.12, Table B.21). Pass the burst's data type to
-// DecodeFullLinkControl and set it before FullLinkControl.Encode.
-// FullLinkControl.Encode returns an error unless DataType is
+// BurstDataType, the data type of the burst that carries the LC, selects the
+// Data Type CRC Mask XORed into the RS(12,9) parity (ETSI TS 102 361-1
+// B.3.12, Table B.21). Pass it to DecodeFullLinkControl and set it before
+// FullLinkControl.Encode. FullLinkControl.Encode returns an error unless
+// BurstDataType is
 // DataTypeVoiceLCHeader or DataTypeTerminatorWithLC, the only data types
 // that carry an RS-protected Full LC. DecodeFullLinkControl applies no mask
 // for other data types.
@@ -33,12 +34,12 @@ import (
 // without correction; a caller that must match it rejects an LC with
 // FEC.ErrorsCorrected > 0 (see layer2.MMDVMHostAccepts).
 type FullLinkControl struct {
-	DataType     enums.DataType     `dmr:"-"`
-	ProtectFlag  bool               `dmr:"bit:0"`
-	Reserved     bool               `dmr:"bit:1"`
-	FLCO         enums.FLCO         `dmr:"bits:2-7,enum"`
-	FeatureSetID enums.FeatureSetID `dmr:"bits:8-15,enum"`
-	FEC          fec.Result         `dmr:"-"`
+	BurstDataType enums.DataType     `dmr:"-"`
+	ProtectFlag   bool               `dmr:"bit:0"`
+	Reserved      bool               `dmr:"bit:1"`
+	FLCO          enums.FLCO         `dmr:"bits:2-7,enum"`
+	FeatureSetID  enums.FeatureSetID `dmr:"bits:8-15,enum"`
+	FEC           fec.Result         `dmr:"-"`
 
 	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`
 	UnitToUnit                *FLCUnitToUnit                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`
@@ -121,6 +122,7 @@ type FLCTerminatorDataLinkControl struct {
 	SendSequenceNumber uint8 `dmr:"bits:53-55"`
 }
 
-func (flc FullLinkControl) GetDataType() enums.DataType {
-	return flc.DataType
+// DataType returns BurstDataType.
+func (flc *FullLinkControl) DataType() enums.DataType {
+	return flc.BurstDataType
 }

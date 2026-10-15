@@ -54,9 +54,8 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
-	dh.DataType = enums.DataTypeDataHeader
-	if dh.GetDataType() != enums.DataTypeDataHeader {
-		t.Errorf("GetDataType() = %d, want DataTypeDataHeader", dh.GetDataType())
+	if dh.DataType() != enums.DataTypeDataHeader {
+		t.Errorf("DataType() = %d, want DataTypeDataHeader", dh.DataType())
 	}
 	if dh.UnconfirmedDataHeader == nil {
 		t.Fatal("UnconfirmedDataHeader should not be nil")

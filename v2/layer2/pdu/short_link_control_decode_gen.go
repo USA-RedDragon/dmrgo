@@ -257,7 +257,7 @@ func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 
 func (s *ShortLC) String() string {
 	_ret := "ShortLC{ "
-	_ret += fmt.Sprintf("DataType: %s, SLCO: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.DataType, s.SLCO, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("SLCO: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.SLCO, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.NullMessage != nil:
 		_ret += s.NullMessage.String()

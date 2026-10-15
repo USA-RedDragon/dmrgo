@@ -96,8 +96,8 @@ func TestBurst_PIHeader_Decode(t *testing.T) {
 	if pi.AlgorithmID != 0x21 || pi.KeyID != 0x02 || pi.MessageIndicator != 0x177AFC73 || pi.Destination != 9 {
 		t.Errorf("PI header = %+v", pi)
 	}
-	if pi.GetDataType() != enums.DataTypePIHeader {
-		t.Errorf("DataType = %v, want PI header", pi.GetDataType())
+	if pi.DataType() != enums.DataTypePIHeader {
+		t.Errorf("DataType = %v, want PI header", pi.DataType())
 	}
 	if must(b.Encode()) != raw {
 		t.Error("Encode() does not reproduce the original burst")

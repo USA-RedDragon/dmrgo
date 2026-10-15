@@ -104,7 +104,6 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			orig := pdu.UnifiedSingleBlockData{
-				DataType:    enums.DataTypeUnifiedSingleBlock,
 				ServiceType: tt.serviceType,
 			}
 			// Set some payload bits
@@ -172,12 +171,10 @@ func TestUSBD_CRCBitFlip(t *testing.T) {
 	}
 }
 
-func TestUSBD_GetDataType(t *testing.T) {
-	usbd := &pdu.UnifiedSingleBlockData{
-		DataType: enums.DataTypeUnifiedSingleBlock,
-	}
-	if usbd.GetDataType() != enums.DataTypeUnifiedSingleBlock {
-		t.Errorf("GetDataType() = %d, want DataTypeUnifiedSingleBlock", usbd.GetDataType())
+func TestUSBD_DataType(t *testing.T) {
+	usbd := &pdu.UnifiedSingleBlockData{}
+	if usbd.DataType() != enums.DataTypeUnifiedSingleBlock {
+		t.Errorf("DataType() = %d, want DataTypeUnifiedSingleBlock", usbd.DataType())
 	}
 }
 
@@ -188,7 +185,6 @@ func TestUSBD_String(t *testing.T) {
 	infoBits := buildUSBDBits(0b0000, payload)
 
 	usbd, _ := pdu.DecodeUnifiedSingleBlockData(infoBits)
-	usbd.DataType = enums.DataTypeUnifiedSingleBlock
 
 	str := usbd.String()
 	if str == "" {

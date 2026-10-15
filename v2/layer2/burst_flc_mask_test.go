@@ -39,8 +39,8 @@ func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 			if !ok {
 				t.Fatalf("%s burst %d: Data is %T", file, i, b.Data)
 			}
-			if flc.DataType != dt {
-				t.Errorf("%s burst %d: DataType = %v, want %v", file, i, flc.DataType, dt)
+			if flc.DataType() != dt {
+				t.Errorf("%s burst %d: DataType = %v, want %v", file, i, flc.DataType(), dt)
 			}
 			if b.FEC.PDU.Uncorrectable || b.FEC.PDU.ErrorsCorrected != 0 {
 				t.Errorf("%s burst %d (%s): RS = %+v, want a clean codeword",

@@ -13,10 +13,10 @@ import (
 
 func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 	original := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		ProtectFlag:  false,
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.FIDStandardized,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		ProtectFlag:   false,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID:  enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:         false,
@@ -32,7 +32,7 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 
 	infoBits := must(original.Encode())
 
-	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
+	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType())
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
@@ -58,10 +58,10 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 
 func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 	original := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		ProtectFlag:  true,
-		FLCO:         enums.FLCOUnitToUnitVoiceChannelUser,
-		FeatureSetID: enums.FIDStandardized,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		ProtectFlag:   true,
+		FLCO:          enums.FLCOUnitToUnitVoiceChannelUser,
+		FeatureSetID:  enums.FIDStandardized,
 		UnitToUnit: &pdu.FLCUnitToUnit{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:         true,
@@ -77,7 +77,7 @@ func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 
 	infoBits := must(original.Encode())
 
-	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
+	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType())
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
@@ -107,10 +107,10 @@ func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 func TestFullLinkControl_EncodeStability(t *testing.T) {
 	// Encoding the same FLC twice should produce identical bytes
 	flc := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		ProtectFlag:  false,
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.FIDStandardized,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		ProtectFlag:   false,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID:  enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: layer3.ServiceOptions{
 				IsEmergency:   false,
@@ -131,9 +131,9 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 
 func TestFullLinkControl_String(t *testing.T) {
 	flc := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.FIDStandardized,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID:  enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  9990,
 			SourceAddress: 3120101,
@@ -160,9 +160,9 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 		PriorityLevel:       3,
 	}
 	flc := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.FIDStandardized,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID:  enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			ServiceOptions: so,
 			GroupAddress:   1,
@@ -171,7 +171,7 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 	}
 	infoBits := must(flc.Encode())
 
-	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType)
+	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType())
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
@@ -198,9 +198,9 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
 	// Same valid data should decode correctly regardless — DataType is set by caller
 	flc := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.FIDStandardized,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID:  enums.FIDStandardized,
 		GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress:  100,
 			SourceAddress: 200,
@@ -208,7 +208,7 @@ func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
 	}
 	infoBits := must(flc.Encode())
 
-	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType)
+	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType())
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
@@ -232,9 +232,9 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			flc := &pdu.FullLinkControl{
-				DataType:     enums.DataTypeVoiceLCHeader,
-				FLCO:         enums.FLCOGroupVoiceChannelUser,
-				FeatureSetID: enums.FIDStandardized,
+				BurstDataType: enums.DataTypeVoiceLCHeader,
+				FLCO:          enums.FLCOGroupVoiceChannelUser,
+				FeatureSetID:  enums.FIDStandardized,
 				GroupVoice: &pdu.FLCGroupVoice{
 					GroupAddress:  tt.groupAddr,
 					SourceAddress: tt.sourceAddr,
@@ -242,7 +242,7 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 			}
 			infoBits := must(flc.Encode())
 
-			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType)
+			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, flc.DataType())
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 			}
@@ -278,17 +278,17 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 			}
 
 			original := &pdu.FullLinkControl{
-				DataType:     enums.DataTypeVoiceLCHeader,
-				ProtectFlag:  false,
-				FLCO:         flco,
-				FeatureSetID: enums.FIDStandardized,
+				BurstDataType: enums.DataTypeVoiceLCHeader,
+				ProtectFlag:   false,
+				FLCO:          flco,
+				FeatureSetID:  enums.FIDStandardized,
 				TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
 					TalkerAliasData: aliasData,
 				},
 			}
 
 			infoBits := must(original.Encode())
-			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
+			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType())
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 			}
@@ -311,9 +311,9 @@ func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
 	aliasData[7] = 1
 
 	flc := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		FLCO:         enums.FLCOTalkerAliasBlock1,
-		FeatureSetID: enums.FIDStandardized,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCOTalkerAliasBlock1,
+		FeatureSetID:  enums.FIDStandardized,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
 			TalkerAliasData: aliasData,
 		},
@@ -352,10 +352,10 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 			aliasData[47] = 1
 
 			original := &pdu.FullLinkControl{
-				DataType:     enums.DataTypeVoiceLCHeader,
-				ProtectFlag:  false,
-				FLCO:         enums.FLCOTalkerAliasHeader,
-				FeatureSetID: enums.FIDStandardized,
+				BurstDataType: enums.DataTypeVoiceLCHeader,
+				ProtectFlag:   false,
+				FLCO:          enums.FLCOTalkerAliasHeader,
+				FeatureSetID:  enums.FIDStandardized,
 				TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 					TalkerAliasDataLength: tt.dataLength,
 					TalkerAliasDataMSB:    tt.msb,
@@ -364,7 +364,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 			}
 
 			infoBits := must(original.Encode())
-			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
+			decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType())
 			if fecResult.Uncorrectable {
 				t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 			}
@@ -387,10 +387,10 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 
 func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 	original := &pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		ProtectFlag:  false,
-		FLCO:         enums.FLCOTerminatorDataLinkControl,
-		FeatureSetID: enums.FIDStandardized,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		ProtectFlag:   false,
+		FLCO:          enums.FLCOTerminatorDataLinkControl,
+		FeatureSetID:  enums.FIDStandardized,
 		TerminatorDataLinkControl: &pdu.FLCTerminatorDataLinkControl{
 			LLIDDestination:    1234567,
 			LLIDSource:         7654321,
@@ -403,7 +403,7 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 	}
 
 	infoBits := must(original.Encode())
-	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType)
+	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType())
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
@@ -445,9 +445,9 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 
 func TestFullLinkControl_RSErrorsCountBits(t *testing.T) {
 	lc := &pdu.FullLinkControl{
-		DataType:   enums.DataTypeTerminatorWithLC,
-		FLCO:       enums.FLCOGroupVoiceChannelUser,
-		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101},
+		BurstDataType: enums.DataTypeTerminatorWithLC,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101},
 	}
 	clean := must(lc.Encode())
 	for _, flips := range []int{1, 3, 8} {
@@ -455,7 +455,7 @@ func TestFullLinkControl_RSErrorsCountBits(t *testing.T) {
 		for i := range flips {
 			rx[40+i] ^= 1
 		}
-		got, res := pdu.DecodeFullLinkControl(rx, lc.DataType)
+		got, res := pdu.DecodeFullLinkControl(rx, lc.DataType())
 		want := fec.Result{BitsChecked: 96, ErrorsCorrected: flips}
 		if res != want || got.FEC != want {
 			t.Errorf("%d bit errors in one octet: result %+v, want %+v", flips, res, want)

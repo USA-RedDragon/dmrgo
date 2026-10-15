@@ -210,7 +210,7 @@ func TestSegment_HeaderFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	u := p.Header.UnconfirmedDataHeader
-	if u.BlocksToFollow != 5 || u.PadOctetCount != 9 || p.Header.DataType != enums.DataTypeDataHeader {
+	if u.BlocksToFollow != 5 || u.PadOctetCount != 9 || p.Header.DataType() != enums.DataTypeDataHeader {
 		t.Fatalf("BF %d POC %d", u.BlocksToFollow, u.PadOctetCount)
 	}
 	p, err = packet.Segment(confirmed(), payload(41), enums.DataTypeRate34)

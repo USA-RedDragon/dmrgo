@@ -46,7 +46,7 @@ func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 // were built from.
 func lcBits(t *testing.T, lc pdu.FullLinkControl, dataType enums.DataType) [96]bit.Bit {
 	t.Helper()
-	lc.DataType = dataType
+	lc.BurstDataType = dataType
 	return must(lc.Encode())
 }
 

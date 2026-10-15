@@ -19,9 +19,9 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 			name: "FLCO",
 			encode: func() error {
 				_, err := (&pdu.FullLinkControl{
-					DataType:   enums.DataTypeVoiceLCHeader,
-					FLCO:       enums.FLCOUnitToUnitVoiceChannelUser,
-					GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
+					BurstDataType: enums.DataTypeVoiceLCHeader,
+					FLCO:          enums.FLCOUnitToUnitVoiceChannelUser,
+					GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
 				}).Encode()
 				return err
 			},
@@ -31,10 +31,10 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 			name: "FLC manufacturer FID",
 			encode: func() error {
 				_, err := (&pdu.FullLinkControl{
-					DataType:     enums.DataTypeVoiceLCHeader,
-					FLCO:         enums.FLCOGroupVoiceChannelUser,
-					FeatureSetID: enums.FIDMotorola,
-					GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
+					BurstDataType: enums.DataTypeVoiceLCHeader,
+					FLCO:          enums.FLCOGroupVoiceChannelUser,
+					FeatureSetID:  enums.FIDMotorola,
+					GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 1234},
 				}).Encode()
 				return err
 			},
@@ -44,10 +44,10 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 			name: "two FLC payloads",
 			encode: func() error {
 				_, err := (&pdu.FullLinkControl{
-					DataType:   enums.DataTypeVoiceLCHeader,
-					FLCO:       enums.FLCOUnitToUnitVoiceChannelUser,
-					GroupVoice: &pdu.FLCGroupVoice{},
-					UnitToUnit: &pdu.FLCUnitToUnit{},
+					BurstDataType: enums.DataTypeVoiceLCHeader,
+					FLCO:          enums.FLCOUnitToUnitVoiceChannelUser,
+					GroupVoice:    &pdu.FLCGroupVoice{},
+					UnitToUnit:    &pdu.FLCUnitToUnit{},
 				}).Encode()
 				return err
 			},
@@ -148,7 +148,7 @@ func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 	}
 
 	lc := pdu.FullLinkControl{
-		DataType:         enums.DataTypeTerminatorWithLC,
+		BurstDataType:    enums.DataTypeTerminatorWithLC,
 		FLCO:             enums.FLCOTalkerAliasBlock2,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{},
 	}

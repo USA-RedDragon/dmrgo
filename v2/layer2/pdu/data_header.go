@@ -33,11 +33,10 @@ type UnconfirmedDataHeader struct {
 // that is set. An R_HEAD needs a non-zero AppendedBlocks; with zero appended
 // blocks, use StatusPrecodedHeader.
 type DataHeader struct {
-	DataType       enums.DataType `dmr:"-"`
-	crc            uint16         `dmr:"-"` //nolint:unused
-	FEC            fec.Result     `dmr:"-"`
-	Format         Format         `dmr:"bits:4-7"`
-	AppendedBlocks uint8          `dmr:"bits:2-3+12-15,no_encode"`
+	crc            uint16     `dmr:"-"` //nolint:unused
+	FEC            fec.Result `dmr:"-"`
+	Format         Format     `dmr:"bits:4-7"`
+	AppendedBlocks uint8      `dmr:"bits:2-3+12-15,no_encode"`
 
 	UnconfirmedDataHeader *UnconfirmedDataHeader `dmr:"bits:0-79,dispatch:Format=FormatUnconfirmed"`
 	ConfirmedDataHeader   *ConfirmedDataHeader   `dmr:"bits:0-79,dispatch:Format=FormatConfirmed"`
@@ -75,8 +74,9 @@ const (
 	FormatProprietary                  Format = 0b00001111
 )
 
-func (dh *DataHeader) GetDataType() enums.DataType {
-	return dh.DataType
+// DataType returns enums.DataTypeDataHeader.
+func (dh *DataHeader) DataType() enums.DataType {
+	return enums.DataTypeDataHeader
 }
 
 // String returns a human-readable name for a DataHeader Format.

@@ -74,11 +74,11 @@ func TestPRFill_PRFillBits_ReturnsCopy(t *testing.T) {
 	}
 }
 
-func TestPRFill_GetDataType(t *testing.T) {
+func TestPRFill_DataType(t *testing.T) {
 	t.Parallel()
-	p := &pdu.PRFill{DataType: enums.DataTypeIdle}
-	if p.GetDataType() != enums.DataTypeIdle {
-		t.Fatalf("GetDataType() = %v, expected DataTypeIdle", p.GetDataType())
+	p := &pdu.PRFill{}
+	if p.DataType() != enums.DataTypeIdle {
+		t.Fatalf("DataType() = %v, expected DataTypeIdle", p.DataType())
 	}
 }
 

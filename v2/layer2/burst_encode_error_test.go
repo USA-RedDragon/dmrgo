@@ -79,7 +79,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 				SyncPattern: enums.SyncBSSourcedData,
 				IsData:      true,
 				SlotType:    pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeIdle},
-				Data:        &pdu.PRFill{DataType: enums.DataTypeIdle},
+				Data:        &pdu.PRFill{},
 			},
 			want: "no slot type",
 		},

@@ -1571,7 +1571,7 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 
 func (s *CSBK) String() string {
 	_ret := "CSBK{ "
-	_ret += fmt.Sprintf("DataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.DataType, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
 		_ret += s.UnitToUnitVoiceServiceRequestPDU.String()

@@ -31,5 +31,5 @@ func (s *Rate1Data) Encode() ([192]bit.Bit, error) {
 }
 
 func (s *Rate1Data) String() string {
-	return fmt.Sprintf("Rate1Data{ DataType: %s, Data: %v }", s.DataType, s.Data)
+	return fmt.Sprintf("Rate1Data{ Data: %v }", s.Data)
 }

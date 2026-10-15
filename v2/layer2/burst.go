@@ -392,7 +392,6 @@ func (b *Burst) extractData() (Data, error) {
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeCSBK(sizedBits)
-		decoded.DataType = dt
 		decoded.Hint0x38 = opcode0x38Hint(b.SyncPattern)
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
@@ -412,7 +411,6 @@ func (b *Burst) extractData() (Data, error) {
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodePIHeader(sizedBits)
-		decoded.DataType = dt
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode PI header from bits")
@@ -422,7 +420,6 @@ func (b *Burst) extractData() (Data, error) {
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeDataHeader(sizedBits)
-		decoded.DataType = dt
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode data header from bits: %v", decoded.String())
@@ -432,28 +429,24 @@ func (b *Burst) extractData() (Data, error) {
 		var sizedBits [144]bit.Bit
 		copy(sizedBits[:], infoBits[:144])
 		rt, fecResult := pdu.DecodeRate34Data(sizedBits)
-		rt.DataType = dt
 		b.FEC.PDU = fecResult
 		return &rt, nil
 	case enums.DataTypeRate12:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		rt, fecResult := pdu.DecodeRate12Data(sizedBits)
-		rt.DataType = dt
 		b.FEC.PDU = fecResult
 		return &rt, nil
 	case enums.DataTypeRate1:
 		var sizedBits [192]bit.Bit
 		copy(sizedBits[:], infoBits[:192])
 		rt, fecResult := pdu.DecodeRate1Data(sizedBits)
-		rt.DataType = dt
 		b.FEC.PDU = fecResult
 		return &rt, nil
 	case enums.DataTypeMBCHeader:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeMBCHeader(sizedBits)
-		decoded.DataType = dt
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode MBC header from bits")
@@ -463,17 +456,15 @@ func (b *Burst) extractData() (Data, error) {
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeMBCContinuation(sizedBits)
-		decoded.DataType = dt
 		b.FEC.PDU = fecResult
 		return &decoded, nil
 	case enums.DataTypeIdle:
-		prFill := &pdu.PRFill{DataType: dt}
+		prFill := &pdu.PRFill{}
 		return prFill, nil
 	case enums.DataTypeUnifiedSingleBlock:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(sizedBits)
-		decoded.DataType = dt
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode USBD from bits")
@@ -660,12 +651,12 @@ func dataTypeCarries(dataType enums.DataType, d Data) bool {
 
 // encodePDU returns the information bits of d, a type that dataTypeCarries
 // accepts. The data type of a Full LC selects its RS(12,9) mask, so
-// dataType replaces lc.DataType.
+// dataType replaces lc.BurstDataType.
 func encodePDU(d Data, dataType enums.DataType) ([]bit.Bit, error) {
 	switch v := d.(type) {
 	case *pdu.FullLinkControl:
 		lc := *v
-		lc.DataType = dataType
+		lc.BurstDataType = dataType
 		return bits96(lc.Encode())
 	case *pdu.CSBK:
 		return bits96(v.Encode())

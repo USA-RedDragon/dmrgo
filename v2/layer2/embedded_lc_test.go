@@ -34,8 +34,8 @@ func capturedFragments() [4][32]bit.Bit {
 
 func capturedLC() pdu.FullLinkControl {
 	return pdu.FullLinkControl{
-		DataType: enums.DataTypeVoiceLCHeader,
-		FLCO:     enums.FLCOUnitToUnitVoiceChannelUser,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCOUnitToUnitVoiceChannelUser,
 		UnitToUnit: &pdu.FLCUnitToUnit{
 			TargetAddress: 9990,
 			SourceAddress: 3191868,
@@ -60,8 +60,8 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 	if !ok || flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || target != 9990 || source != 3191868 {
 		t.Errorf("decoded %s", flc.String())
 	}
-	if flc.DataType != enums.DataTypeVoiceLCHeader {
-		t.Errorf("DataType = %v", flc.DataType)
+	if flc.DataType() != enums.DataTypeVoiceLCHeader {
+		t.Errorf("DataType = %v", flc.DataType())
 	}
 }
 

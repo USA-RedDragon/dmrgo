@@ -76,5 +76,5 @@ func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *PIHeader) String() string {
-	return fmt.Sprintf("PIHeader{ DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %v }", s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
+	return fmt.Sprintf("PIHeader{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
 }

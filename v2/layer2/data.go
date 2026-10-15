@@ -10,6 +10,6 @@ import (
 type Data interface {
 	fmt.Stringer
 
-	// GetDataType returns the data type.
-	GetDataType() enums.DataType
+	// DataType returns the data type of the bursts that carry the PDU.
+	DataType() enums.DataType
 }

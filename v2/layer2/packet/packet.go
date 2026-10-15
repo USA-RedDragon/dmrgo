@@ -114,7 +114,6 @@ func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet
 	copy(buf, payload)
 	buf = AppendMessageCRC(buf)
 
-	header.DataType = enums.DataTypeDataHeader
 	p := Packet{Header: header, Blocks: make([]layer2.Data, n)}
 	for i := range p.Blocks {
 		chunk := buf[i*per : (i+1)*per]
@@ -211,15 +210,15 @@ func padOf(h *pdu.DataHeader) int {
 func unconfirmedBlock(rate enums.DataType, chunk []byte) layer2.Data {
 	switch len(chunk) {
 	case 18:
-		b := &pdu.Rate34Data{DataType: rate}
+		b := &pdu.Rate34Data{}
 		copy(b.Data[:], chunk)
 		return b
 	case 24:
-		b := &pdu.Rate1Data{DataType: rate}
+		b := &pdu.Rate1Data{}
 		copy(b.Data[:], chunk)
 		return b
 	default:
-		b := &pdu.Rate12Data{DataType: rate}
+		b := &pdu.Rate12Data{}
 		copy(b.Data[:], chunk)
 		return b
 	}
@@ -228,15 +227,15 @@ func unconfirmedBlock(rate enums.DataType, chunk []byte) layer2.Data {
 func confirmedBlock(rate enums.DataType, dbsn uint8, chunk []byte) layer2.Data {
 	switch len(chunk) {
 	case 16:
-		b := &pdu.Rate34Data{DataType: rate}
+		b := &pdu.Rate34Data{}
 		b.SetConfirmed(dbsn, [16]byte(chunk))
 		return b
 	case 22:
-		b := &pdu.Rate1Data{DataType: rate}
+		b := &pdu.Rate1Data{}
 		b.SetConfirmed(dbsn, [22]byte(chunk))
 		return b
 	default:
-		b := &pdu.Rate12Data{DataType: rate}
+		b := &pdu.Rate12Data{}
 		b.SetConfirmed(dbsn, [10]byte(chunk))
 		return b
 	}

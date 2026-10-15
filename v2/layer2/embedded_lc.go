@@ -87,7 +87,7 @@ func embeddedLCChecksum(info [77]bit.Bit, result fec.Result) ([72]bit.Bit, fec.R
 }
 
 // EncodeEmbeddedFullLinkControl returns the four embedded signalling
-// fragments, in burst order B to E, that carry lc. lc.DataType is ignored.
+// fragments, in burst order B to E, that carry lc. lc.BurstDataType is ignored.
 func EncodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
 	bits, err := fullLCBits(lc)
 	if err != nil {
@@ -128,7 +128,7 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) (pdu.FullLinkCon
 // fullLCBits returns the 72 LC bits of lc, without RS(12,9) parity.
 func fullLCBits(lc *pdu.FullLinkControl) ([72]bit.Bit, error) {
 	header := *lc
-	header.DataType = enums.DataTypeVoiceLCHeader
+	header.BurstDataType = enums.DataTypeVoiceLCHeader
 	data, err := header.Encode()
 	if err != nil {
 		return [72]bit.Bit{}, fmt.Errorf("cannot encode full link control: %w", err)

@@ -42,11 +42,10 @@ func TestRate12Data_DecodeFromBits(t *testing.T) {
 	}
 }
 
-func TestRate12Data_GetDataType(t *testing.T) {
+func TestRate12Data_DataType(t *testing.T) {
 	rt, _ := pdu.DecodeRate12Data([96]bit.Bit{})
-	rt.DataType = enums.DataTypeRate12
-	if rt.GetDataType() != enums.DataTypeRate12 {
-		t.Errorf("GetDataType() = %d, want DataTypeRate12", rt.GetDataType())
+	if rt.DataType() != enums.DataTypeRate12 {
+		t.Errorf("DataType() = %d, want DataTypeRate12", rt.DataType())
 	}
 }
 

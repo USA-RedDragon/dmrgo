@@ -94,7 +94,7 @@ type VoiceTransmitter struct {
 
 // NewVoiceTransmitter returns a VoiceTransmitter for a transmission with
 // Full LC lc. The header, the embedded LC and the terminator all carry lc,
-// with its FID, and lc.DataType is ignored. silence is the 72-bit slot that
+// with its FID, and lc.BurstDataType is ignored. silence is the 72-bit slot that
 // pads the last superframe; it is codec specific, for AMBE the
 // vocoder.EncodeAMBE72 of a silence frame. NewVoiceTransmitter returns an
 // error when colorCode does not fit in 4 bits, source is unknown or lc does
@@ -109,7 +109,7 @@ func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode uint8, source SyncSou
 }
 
 func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
-	lc.DataType = dataType
+	lc.BurstDataType = dataType
 	bits, err := lc.Encode()
 	if err != nil {
 		return [33]byte{}, fmt.Errorf("cannot encode full link control: %w", err)

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -123,7 +122,7 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 	buf = AppendMessageCRC(buf)
 	out := make([]*pdu.Rate12Data, n)
 	for i := range out {
-		out[i] = &pdu.Rate12Data{DataType: enums.DataTypeRate12, Data: [12]byte(buf[i*12:])}
+		out[i] = &pdu.Rate12Data{Data: [12]byte(buf[i*12:])}
 	}
 	return out, nil
 }
@@ -189,7 +188,7 @@ func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (P
 		h.BlocksToFollow = uint8(len(blocks)) //nolint:gosec // 1 or 2
 	}
 	return Packet{
-		Header: pdu.DataHeader{DataType: enums.DataTypeDataHeader, Format: pdu.FormatResponsePacket, ResponsePacketHeader: h},
+		Header: pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: h},
 		Blocks: blocks,
 	}, nil
 }

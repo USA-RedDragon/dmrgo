@@ -23,10 +23,10 @@ func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
 		t.Fatal(err)
 	}
 	lc := pdu.FullLinkControl{
-		DataType:     enums.DataTypeVoiceLCHeader,
-		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: c.FID(),
-		RawPayload:   payload,
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		FeatureSetID:  c.FID(),
+		RawPayload:    payload,
 	}
 	tx, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, c.Silence())
 	if err != nil {

@@ -89,8 +89,6 @@ func (s *ShortLCPSysParms) SiteID() uint16 {
 // ShortLC.Encode returns an error if more than one payload field is set, or
 // if SLCO does not select the payload field that is set.
 type ShortLC struct {
-	DataType enums.DataType `dmr:"-"`
-
 	SLCO enums.SLCO `dmr:"bits:0-3,enum"`
 	FEC  fec.Result `dmr:"-"`
 
@@ -102,8 +100,4 @@ type ShortLC struct {
 	RawPayload [24]bit.Bit `dmr:"bits:4-27,raw,fallback"`
 
 	crc uint8 `dmr:"-"` //nolint:unused
-}
-
-func (slc *ShortLC) GetDataType() enums.DataType {
-	return slc.DataType
 }

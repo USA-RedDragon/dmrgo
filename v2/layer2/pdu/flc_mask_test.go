@@ -51,7 +51,7 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.dataType.String(), func(t *testing.T) {
 			flc := base
-			flc.DataType = tt.dataType
+			flc.BurstDataType = tt.dataType
 			masked := packedFLC(t, &flc)
 			unmasked := reedsolomon.Encode([9]byte(masked[:9]))
 			for i := 0; i < 3; i++ {
@@ -68,10 +68,10 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 	for _, dt := range []enums.DataType{enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeIdle} {
 		flc := pdu.FullLinkControl{
-			DataType:     dt,
-			FLCO:         enums.FLCOGroupVoiceChannelUser,
-			FeatureSetID: enums.FIDStandardized,
-			GroupVoice:   &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
+			BurstDataType: dt,
+			FLCO:          enums.FLCOGroupVoiceChannelUser,
+			FeatureSetID:  enums.FIDStandardized,
+			GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
 		}
 		if _, err := flc.Encode(); err == nil {
 			t.Errorf("%s: FullLinkControl.Encode returned no error", dt.String())
@@ -84,8 +84,8 @@ func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
 	if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
 		t.Fatalf("FEC = %+v, want a clean codeword", fecResult)
 	}
-	if flc.DataType != enums.DataTypeVoiceLCHeader {
-		t.Errorf("DataType = %v, want Voice LC Header", flc.DataType)
+	if flc.DataType() != enums.DataTypeVoiceLCHeader {
+		t.Errorf("DataType = %v, want Voice LC Header", flc.DataType())
 	}
 	if flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || flc.UnitToUnit == nil {
 		t.Fatalf("FLCO = %v, want UU_V_Ch_Usr", flc.FLCO)

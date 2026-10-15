@@ -25,9 +25,9 @@ import (
 )
 
 // DecodeFullLinkControl decodes a FullLinkControl per ETSI TS 102 361-1 - 9.1.6  Full Link Control (FULL LC) PDU
-func DecodeFullLinkControl(data [96]bit.Bit, dataType enums.DataType) (FullLinkControl, fec.Result) {
+func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) (FullLinkControl, fec.Result) {
 	var result FullLinkControl
-	result.DataType = dataType
+	result.BurstDataType = burstDataType
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
@@ -36,7 +36,7 @@ func DecodeFullLinkControl(data [96]bit.Bit, dataType enums.DataType) (FullLinkC
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	switch result.DataType {
+	switch result.BurstDataType {
 	case enums.DataTypeVoiceLCHeader:
 		_packedBytes[9] ^= 0x96
 		_packedBytes[10] ^= 0x96
@@ -200,7 +200,7 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 		}
 	}
 	_encoded := reedsolomon.Encode(_encData)
-	switch s.DataType {
+	switch s.BurstDataType {
 	case enums.DataTypeVoiceLCHeader:
 		_encoded[9] ^= 0x96
 		_encoded[10] ^= 0x96
@@ -210,7 +210,7 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 		_encoded[10] ^= 0x99
 		_encoded[11] ^= 0x99
 	default:
-		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.DataType: no FEC mask for value %d", s.DataType)
+		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.BurstDataType: no FEC mask for value %d", s.BurstDataType)
 	}
 	for i := range 12 {
 		for j := range 8 {
@@ -222,7 +222,7 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 
 func (s *FullLinkControl) String() string {
 	_ret := "FullLinkControl{ "
-	_ret += fmt.Sprintf("DataType: %s, ProtectFlag: %t, Reserved: %t, FLCO: %s, FeatureSetID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.DataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FeatureSetID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("BurstDataType: %v, ProtectFlag: %t, Reserved: %t, FLCO: %s, FeatureSetID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.BurstDataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FeatureSetID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.GroupVoice != nil:
 		_ret += s.GroupVoice.String()

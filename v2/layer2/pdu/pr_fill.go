@@ -36,12 +36,12 @@ func PRFillBits() [96]bit.Bit {
 
 // PRFill represents the PR FILL PDU (§9.1.9).
 type PRFill struct {
-	DataType enums.DataType
+	_ byte // non-zero size, so that distinct PRFill values have distinct addresses
 }
 
-// GetDataType returns the data type of the PDU.
-func (p *PRFill) GetDataType() enums.DataType {
-	return p.DataType
+// DataType returns enums.DataTypeIdle.
+func (p *PRFill) DataType() enums.DataType {
+	return enums.DataTypeIdle
 }
 
 // String returns a string representation of the PR FILL PDU.
