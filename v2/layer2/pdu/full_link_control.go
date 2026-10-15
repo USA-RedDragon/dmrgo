@@ -85,10 +85,10 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 	return true
 }
 
-// NewVoiceLC returns the standard FID Full LC of a voice call: a
-// Grp_V_Ch_Usr LC with GroupVoice set when group is true, and a UU_V_Ch_Usr
-// LC with UnitToUnit set otherwise (ETSI TS 102 361-2 Tables 7.1 and 7.2).
-// BurstDataType is DataTypeVoiceLCHeader. It returns a
+// NewVoiceLC returns the DataTypeVoiceLCHeader standard FID Full LC of a
+// voice call: Grp_V_Ch_Usr when group is true, else UU_V_Ch_Usr (ETSI TS 102
+// 361-2 Tables 7.1 and 7.2). The Service Options are so: MMDVMHost sends the
+// zero value and Motorola IPSC layer3.MotorolaServiceOptions. It returns a
 // *bit.FieldRangeError when an address does not fit in 24 bits.
 func NewVoiceLC(group bool, target, source uint32, so layer3.ServiceOptions) (FullLinkControl, error) {
 	if err := checkAddresses("FullLinkControl", target, source); err != nil {
