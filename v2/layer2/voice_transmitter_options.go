@@ -62,12 +62,8 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 	t.embedded = t.callLC
 	if opts.PIHeader != nil {
 		pi := *opts.PIHeader
-		bits, err := pi.Encode()
-		if err != nil {
+		if t.piHeader, err = BuildBurst(&pi, opts.ColorCode, opts.Source); err != nil {
 			return nil, fmt.Errorf("cannot encode PI header: %w", err)
-		}
-		if t.piHeader, err = BuildDataBurst(bit.Pack96(bits), enums.DataTypePIHeader, opts.ColorCode, opts.Source); err != nil {
-			return nil, err
 		}
 		t.hasPI = true
 	}

@@ -16,7 +16,7 @@ func TestRun(t *testing.T) {
 	for _, want := range []string{
 		"outbound CSBKs: 7 round trips ok",
 		"C_ALOHA SYScode 0x6acd: model 1 net 85 site 19 par 1",
-		"Burst.Encode matches BuildDataBurst",
+		"Burst.Encode matches BuildBurst",
 		"TD_GRANT_MI ch 77 tg 9 src 3120001",
 		"inbound C_RAND PDU ok, sync MS-sourced data",
 		"ch 0xFFF tg 9: TX 451.1250 MHz RX 456.1250 MHz",

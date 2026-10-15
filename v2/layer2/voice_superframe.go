@@ -140,11 +140,11 @@ func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode enums.ColorCode, sour
 
 func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
 	lc.BurstDataType = dataType
-	bits, err := lc.Encode()
+	r, err := BuildBurst(&lc, colorCode, src)
 	if err != nil {
 		return RawBurst{}, fmt.Errorf("cannot encode full link control: %w", err)
 	}
-	return BuildDataBurst(bit.Pack96(bits), dataType, colorCode, src)
+	return r, nil
 }
 
 // Header returns the Voice LC Header burst, sent before the first voice

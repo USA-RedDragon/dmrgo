@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -20,14 +19,6 @@ import (
 )
 
 const colorCode = 7
-
-func buildBurst(bits [96]bit.Bit, dt enums.DataType, src layer2.SyncSource) (layer2.RawBurst, error) {
-	p := bit.Pack96(bits)
-	if dt != enums.DataTypeMBCContinuation && !pdu.BlockCRCOK(p, dt) {
-		return layer2.RawBurst{}, fmt.Errorf("%s: block CRC does not check", dt)
-	}
-	return layer2.BuildDataBurst(p, dt, colorCode, src)
-}
 
 func decodeAs[T layer2.Data](raw layer2.RawBurst) (T, *layer2.Burst, error) {
 	var zero T
@@ -44,11 +35,7 @@ func decodeAs[T layer2.Data](raw layer2.RawBurst) (T, *layer2.Burst, error) {
 }
 
 func roundTripCSBK(c *pdu.CSBK, src layer2.SyncSource) (*pdu.CSBK, *layer2.Burst, error) {
-	bits, err := c.Encode()
-	if err != nil {
-		return nil, nil, err
-	}
-	raw, err := buildBurst(bits, enums.DataTypeCSBK, src)
+	raw, err := layer2.BuildBurst(c, colorCode, src)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,18 +102,14 @@ func encodeMatchesBuild(w io.Writer, c *pdu.CSBK) error {
 	if err != nil {
 		return err
 	}
-	bits, err := c.Encode()
-	if err != nil {
-		return err
-	}
-	built, err := buildBurst(bits, enums.DataTypeCSBK, layer2.SyncSourceBS)
+	built, err := layer2.BuildBurst(c, colorCode, layer2.SyncSourceBS)
 	if err != nil {
 		return err
 	}
 	if enc != built {
-		return errors.New("burst.Encode and BuildDataBurst differ")
+		return errors.New("burst.Encode and BuildBurst differ")
 	}
-	fmt.Fprintf(w, "Burst.Encode matches BuildDataBurst for %s\n", c.Opcode)
+	fmt.Fprintf(w, "Burst.Encode matches BuildBurst for %s\n", c.Opcode)
 	return nil
 }
 
@@ -168,24 +151,13 @@ func randomAccess(w io.Writer) error {
 func mbcGrant(w io.Writer) error {
 	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
 	hdr := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &grant}
-	hbits, err := hdr.Encode()
-	if err != nil {
-		return err
-	}
 	cgap := pdu.CGAPContinuation{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, ColorCode: colorCode,
 		CdefParms: layer3.CdefParms{Channel: 0xFFF, TXMHz: 451, TXKHz: 1000, RXMHz: 456, RXKHz: 1000}}
-	cbits, err := cgap.Encode()
+	hraw, err := layer2.BuildBurst(&hdr, colorCode, layer2.SyncSourceBS)
 	if err != nil {
 		return err
 	}
-	conts := [][96]bit.Bit{cbits}
-	pdu.SetMBCLastBlockCRC(conts)
-
-	hraw, err := buildBurst(hbits, enums.DataTypeMBCHeader, layer2.SyncSourceBS)
-	if err != nil {
-		return err
-	}
-	craw, err := buildBurst(conts[0], enums.DataTypeMBCContinuation, layer2.SyncSourceBS)
+	craw, err := layer2.BuildBurst(&cgap, colorCode, layer2.SyncSourceBS)
 	if err != nil {
 		return err
 	}

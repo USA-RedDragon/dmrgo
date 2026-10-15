@@ -10,6 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 func captureFrames(t *testing.T) []layer2.RawBurst {
@@ -427,4 +428,50 @@ func dataSource(sync enums.SyncPattern) (layer2.SyncSource, bool) {
 		}
 	}
 	return 0, false
+}
+
+func TestBuildBurst_MatchesBurstEncode(t *testing.T) {
+	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.DefaultServiceOptions()))
+	term := lc
+	term.BurstDataType = enums.DataTypeTerminatorWithLC
+	var r34 pdu.Rate34Data
+	var r1 pdu.Rate1Data
+	for i := range r34.Data {
+		r34.Data[i] = byte(i * 7)
+	}
+	for i := range r1.Data {
+		r1.Data[i] = byte(i * 11)
+	}
+	csbk := must(pdu.NewBSOutboundActivation(310123, 3191868))
+	for _, d := range []layer2.Data{
+		&lc, &term, &csbk, &r34, &r1, &pdu.Rate12Data{Data: [12]byte{1, 2, 3}}, &pdu.PRFill{},
+		&pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF}},
+	} {
+		got, err := layer2.BuildBurst(d, 9, layer2.SyncSourceMS)
+		if err != nil {
+			t.Fatalf("%T: %v", d, err)
+		}
+		b := layer2.Burst{Kind: layer2.KindData, SyncPattern: enums.SyncMSSourcedData, SlotType: pdu.SlotType{ColorCode: 9, DataType: d.DataType()}, Data: d}
+		if want := must(b.Encode()); got != want {
+			t.Errorf("%T: BuildBurst\ngot  %x\nwant %x", d, got, want)
+		}
+		dec := must(layer2.NewBurstFromBytes(got))
+		if dec.FEC.Aggregate().HasErrors() || dec.SlotType.DataType != d.DataType() {
+			t.Errorf("%T: decodes as %s", d, dec.String())
+		}
+	}
+	if _, err := layer2.BuildBurst(nil, 1, layer2.SyncSourceBS); err == nil {
+		t.Error("nil Data accepted")
+	}
+	if _, err := layer2.BuildBurst((*pdu.CSBK)(nil), 1, layer2.SyncSourceBS); err == nil {
+		t.Error("nil *CSBK accepted")
+	}
+	if _, err := layer2.BuildBurst(&csbk, 1, layer2.SyncSource(9)); err == nil {
+		t.Error("unknown source accepted")
+	}
+	bad := lc
+	bad.BurstDataType = enums.DataTypeCSBK
+	if _, err := layer2.BuildBurst(&bad, 1, layer2.SyncSourceBS); err == nil {
+		t.Error("Full LC with a CSBK data type accepted")
+	}
 }
