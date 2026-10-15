@@ -128,9 +128,13 @@ func (l *LCBytes) SetAddresses(target, source uint32) bool {
 	return true
 }
 
-// Group reports whether the FLCO is Grp_V_Ch_Usr (0).
-func (l LCBytes) Group() bool {
-	return l.FLCO() == enums.FLCOGroupVoiceChannelUser
+// Group reports whether the FLCO is Grp_V_Ch_Usr (0) rather than
+// UU_V_Ch_Usr (3). ok is false for other FLCOs.
+func (l LCBytes) Group() (group, ok bool) {
+	if !l.isVoiceChannelUser() {
+		return false, false
+	}
+	return l.FLCO() == enums.FLCOGroupVoiceChannelUser, true
 }
 
 // SetGroup sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to

@@ -52,9 +52,10 @@ type DataHeader struct {
 	RawPayload [10]byte `dmr:"bits:0-79,raw,fallback"`
 }
 
-// Addresses returns the destination and source LLIDs of the header that is
-// set. ok is false for a proprietary header and when no header is set.
-func (s *DataHeader) Addresses() (destination, source uint32, ok bool) {
+// Addresses returns the destination LLID as target and the source LLID of
+// the header that is set. ok is false for a proprietary header and when no
+// header is set.
+func (s *DataHeader) Addresses() (target, source uint32, ok bool) {
 	switch {
 	case s.UnconfirmedDataHeader != nil:
 		return s.UnconfirmedDataHeader.LLIDDestination, s.UnconfirmedDataHeader.LLIDSource, true
