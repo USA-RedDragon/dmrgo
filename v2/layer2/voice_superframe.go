@@ -208,7 +208,11 @@ func (t *VoiceTransmitter) Terminate() ([]RawBurst, error) {
 	if t.terminated {
 		return nil, ErrVoiceTerminated
 	}
-	return t.AppendTerminate(make([]RawBurst, 0, VoiceBurstsPerSuperframe+1))
+	out, err := t.AppendTerminate(make([]RawBurst, 0, VoiceBurstsPerSuperframe+1))
+	if len(out) == 0 {
+		return nil, err
+	}
+	return out, err
 }
 
 // AppendTerminate ends the transmission as Terminate does, appends the
