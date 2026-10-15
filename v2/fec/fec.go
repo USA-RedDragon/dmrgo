@@ -38,6 +38,7 @@ func (b *BERCalculator) AddBurst(stats BurstFECStats) {
 	b.Add(stats.Payload)
 	b.Add(stats.Voice)
 	b.Add(stats.PDU)
+	b.Add(stats.RC)
 }
 
 // BER returns the current Bit Error Rate as a percentage (0.0-100.0).
