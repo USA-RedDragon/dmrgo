@@ -225,15 +225,15 @@ func ComputeVocoderTables() (aTable, bTable, cTable []int) {
 // for the Hamming(16,11,4) code used in embedded signalling BPTC (§B.2.1, §B.2.2).
 //
 // The (16,11,4) code is derived from the (15,11,3) Hamming code with an extra
-// overall parity bit. It has 5 syndrome bits → 32-entry table.
+// parity bit. It has 5 syndrome bits → 32-entry table.
 //
 // Syndrome equations from the parity check matrix H (§B.3.4, Table B.16):
 //
 //	s₀ = r₀⊕r₁⊕r₂⊕r₃⊕r₅⊕r₇⊕r₈⊕r₁₁
 //	s₁ = r₁⊕r₂⊕r₃⊕r₄⊕r₆⊕r₈⊕r₉⊕r₁₂
 //	s₂ = r₂⊕r₃⊕r₄⊕r₅⊕r₇⊕r₉⊕r₁₀⊕r₁₃
-//	s₃ = r₀⊕r₁⊕r₂⊕r₄⊕r₅⊕r₆⊕r₇⊕r₁₄
-//	s₄ = r₀⊕r₂⊕r₄⊕r₅⊕r₆⊕r₈⊕r₉⊕r₁₀⊕r₁₅
+//	s₃ = r₀⊕r₁⊕r₂⊕r₄⊕r₆⊕r₇⊕r₁₀⊕r₁₄
+//	s₄ = r₀⊕r₂⊕r₅⊕r₆⊕r₈⊕r₉⊕r₁₀⊕r₁₅
 func ComputeHamming16_11Syndrome() [32]int {
 	var hCols [16]int
 	for p := 0; p < 16; p++ {
@@ -242,8 +242,8 @@ func ComputeHamming16_11Syndrome() [32]int {
 		s0 := b[0] ^ b[1] ^ b[2] ^ b[3] ^ b[5] ^ b[7] ^ b[8] ^ b[11]
 		s1 := b[1] ^ b[2] ^ b[3] ^ b[4] ^ b[6] ^ b[8] ^ b[9] ^ b[12]
 		s2 := b[2] ^ b[3] ^ b[4] ^ b[5] ^ b[7] ^ b[9] ^ b[10] ^ b[13]
-		s3 := b[0] ^ b[1] ^ b[2] ^ b[4] ^ b[5] ^ b[6] ^ b[7] ^ b[14]
-		s4 := b[0] ^ b[2] ^ b[4] ^ b[5] ^ b[6] ^ b[8] ^ b[9] ^ b[10] ^ b[15]
+		s3 := b[0] ^ b[1] ^ b[2] ^ b[4] ^ b[6] ^ b[7] ^ b[10] ^ b[14]
+		s4 := b[0] ^ b[2] ^ b[5] ^ b[6] ^ b[8] ^ b[9] ^ b[10] ^ b[15]
 		hCols[p] = s0 | s1<<1 | s2<<2 | s3<<3 | s4<<4
 	}
 

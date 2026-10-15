@@ -170,14 +170,14 @@ func EncodeEmbeddedLC(info [77]bit.Bit) [4][32]bit.Bit {
 //	s₀ = r₀⊕r₁⊕r₂⊕r₃⊕r₅⊕r₇⊕r₈⊕r₁₁
 //	s₁ = r₁⊕r₂⊕r₃⊕r₄⊕r₆⊕r₈⊕r₉⊕r₁₂
 //	s₂ = r₂⊕r₃⊕r₄⊕r₅⊕r₇⊕r₉⊕r₁₀⊕r₁₃
-//	s₃ = r₀⊕r₁⊕r₂⊕r₄⊕r₅⊕r₆⊕r₇⊕r₁₄
-//	s₄ = r₀⊕r₂⊕r₄⊕r₅⊕r₆⊕r₈⊕r₉⊕r₁₀⊕r₁₅
+//	s₃ = r₀⊕r₁⊕r₂⊕r₄⊕r₆⊕r₇⊕r₁₀⊕r₁₄
+//	s₄ = r₀⊕r₂⊕r₅⊕r₆⊕r₈⊕r₉⊕r₁₀⊕r₁₅
 func calculateSyndrome16_11(bits [16]bit.Bit) int {
 	s0 := bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
 	s1 := bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[12]
 	s2 := bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[7] ^ bits[9] ^ bits[10] ^ bits[13]
-	s3 := bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7] ^ bits[14]
-	s4 := bits[0] ^ bits[2] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[10] ^ bits[15]
+	s3 := bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7] ^ bits[10] ^ bits[14]
+	s4 := bits[0] ^ bits[2] ^ bits[5] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[10] ^ bits[15]
 	return int(s0) | int(s1)<<1 | int(s2)<<2 | int(s3)<<3 | int(s4)<<4
 }
 
@@ -188,14 +188,14 @@ func calculateSyndrome16_11(bits [16]bit.Bit) int {
 //	p₀ = d₀⊕d₁⊕d₂⊕d₃⊕d₅⊕d₇⊕d₈
 //	p₁ = d₁⊕d₂⊕d₃⊕d₄⊕d₆⊕d₈⊕d₉
 //	p₂ = d₂⊕d₃⊕d₄⊕d₅⊕d₇⊕d₉⊕d₁₀
-//	p₃ = d₀⊕d₁⊕d₂⊕d₄⊕d₅⊕d₆⊕d₇
-//	p₄ = d₀⊕d₂⊕d₄⊕d₅⊕d₆⊕d₈⊕d₉⊕d₁₀
+//	p₃ = d₀⊕d₁⊕d₂⊕d₄⊕d₆⊕d₇⊕d₁₀
+//	p₄ = d₀⊕d₂⊕d₅⊕d₆⊕d₈⊕d₉⊕d₁₀
 func parityHamming16_11(data [11]bit.Bit) [5]bit.Bit {
 	return [5]bit.Bit{
 		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[5] ^ data[7] ^ data[8],
 		data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[6] ^ data[8] ^ data[9],
 		data[2] ^ data[3] ^ data[4] ^ data[5] ^ data[7] ^ data[9] ^ data[10],
-		data[0] ^ data[1] ^ data[2] ^ data[4] ^ data[5] ^ data[6] ^ data[7],
-		data[0] ^ data[2] ^ data[4] ^ data[5] ^ data[6] ^ data[8] ^ data[9] ^ data[10],
+		data[0] ^ data[1] ^ data[2] ^ data[4] ^ data[6] ^ data[7] ^ data[10],
+		data[0] ^ data[2] ^ data[5] ^ data[6] ^ data[8] ^ data[9] ^ data[10],
 	}
 }
