@@ -17,16 +17,19 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
+// BurstBits is the length of a burst.
+//
+// Deprecated: use layer2.BurstBits.
+const BurstBits = layer2.BurstBits
+
 const (
-	// BurstBits is the length of a burst.
-	BurstBits = 264
 	// SyncOffset is the burst bit at which the SYNC field starts.
 	SyncOffset = 108
 	// SyncBits is the length of the SYNC field.
 	SyncBits = 48
 	// OutboundPeriod is the bit period of bursts in a BS outbound stream:
 	// one CACH and one burst.
-	OutboundPeriod = layer2.CACHBits + BurstBits
+	OutboundPeriod = layer2.CACHBits + layer2.BurstBits
 	// SlotPeriod is the bit period of the bursts of one TDMA channel.
 	SlotPeriod = 2 * OutboundPeriod
 	// DefaultMaxMisses is the default number of bursts without a SYNC that
@@ -197,7 +200,7 @@ func (f *Framer) Write(stream ...bit.Bit) []Burst {
 			}
 			f.locked, f.next, f.misses, f.channel = true, m.Offset-SyncOffset, 0, 0
 		}
-		if f.next+BurstBits > len(f.buf) {
+		if f.next+layer2.BurstBits > len(f.buf) {
 			break
 		}
 		out = append(out, f.cut())
@@ -208,8 +211,8 @@ func (f *Framer) Write(stream ...bit.Bit) []Burst {
 
 func (f *Framer) cut() Burst {
 	start := f.next
-	var raw [BurstBits]bit.Bit
-	copy(raw[:], f.buf[start:start+BurstBits])
+	var raw [layer2.BurstBits]bit.Bit
+	copy(raw[:], f.buf[start:start+layer2.BurstBits])
 	b := Burst{Offset: f.base + int64(start), Data: bit.Pack264(raw)}
 	b.Sync, b.Distance = nearest(window(f.buf, start+SyncOffset))
 	if b.Distance > f.cfg.Threshold {

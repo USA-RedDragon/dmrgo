@@ -24,7 +24,7 @@ func decodeAs[T layer2.Data](raw layer2.RawBurst) (T, *layer2.Burst, error) {
 	var zero T
 	cc := enums.ColorCode(colorCode)
 	var b layer2.Burst
-	if err := b.DecodeFromBytesWith(raw, layer2.DecodeOptions{ColorCode: &cc}); err != nil {
+	if err := b.DecodeFromBytesWith(raw, &layer2.DecodeOptions{ColorCode: &cc}); err != nil {
 		return zero, nil, err
 	}
 	d, ok := b.Data.(T)

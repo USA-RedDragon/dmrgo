@@ -9,17 +9,18 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// VoiceTransmitterOptions configures NewVoiceTransmitterWithOptions.
+// VoiceTransmitterOptions configures NewVoiceTransmitter.
 type VoiceTransmitterOptions struct {
 	// LC is the Full LC of the call. The Voice LC Header and the Terminator
-	// with LC carry it, and so does the embedded LC unless EmbeddedLC or
-	// SetEmbeddedLC replaces it. LC.BurstDataType is ignored.
+	// with LC carry it, with its FID, and so does the embedded LC unless
+	// EmbeddedLC or SetEmbeddedLC replaces it. LC.BurstDataType is ignored.
 	LC pdu.FullLinkControl
 	// ColorCode is the color code of the slot types and EMBs.
 	ColorCode enums.ColorCode
-	// Source selects the SYNC patterns.
+	// Source selects the SYNC patterns. The zero value is SyncSourceBS.
 	Source SyncSource
-	// Silence is the 72-bit slot that pads the last superframe.
+	// Silence is the 72-bit slot that pads the last superframe. It is codec
+	// specific: for AMBE+2 it is vocoder.EncodeAMBE72(vocoder.AMBESilence()).
 	Silence [72]bit.Bit
 	// PIHeader, when set, adds a PI Header burst after the Voice LC Header
 	// (ETSI TS 102 361-1 §5.1.2.2, §6.2).
@@ -32,11 +33,15 @@ type VoiceTransmitterOptions struct {
 	EmbeddedLC func(superframe int) *pdu.FullLinkControl
 }
 
-// NewVoiceTransmitterWithOptions returns a VoiceTransmitter for opts. It
-// returns an error when Source is unknown, or LC or PIHeader does not
-// encode.
-func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmitter, error) {
-	lowbit.Mask(opts.Silence[:])
+// NewVoiceTransmitter returns a VoiceTransmitter for opts. A nil opts means
+// the zero VoiceTransmitterOptions. It returns an error when Source is
+// unknown, or LC or PIHeader does not encode.
+func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, error) {
+	if opts == nil {
+		opts = &VoiceTransmitterOptions{}
+	}
+	silence := opts.Silence
+	lowbit.Mask(silence[:])
 	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {
 		return nil, fmt.Errorf("unknown sync source %d", opts.Source)
@@ -46,7 +51,7 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 		colorCode: opts.ColorCode & 0x0F,
 		voiceSync: voiceSync,
 		outbound:  opts.Source == SyncSourceBS,
-		silence:   opts.Silence,
+		silence:   silence,
 		lcHook:    opts.EmbeddedLC,
 	}
 	var err error
@@ -68,6 +73,13 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 		t.hasPI = true
 	}
 	return t, nil
+}
+
+// NewVoiceTransmitterWithOptions returns NewVoiceTransmitter(&opts).
+//
+// Deprecated: use NewVoiceTransmitter.
+func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmitter, error) {
+	return NewVoiceTransmitter(&opts)
 }
 
 // Headers returns the bursts sent before the first voice burst: the Voice

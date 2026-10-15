@@ -78,7 +78,7 @@ func run(w io.Writer, dataDir string) error {
 			if fb.Channel != 1 && fb.Channel != 2 {
 				continue
 			}
-			if err := b.DecodeFromBytesWith(fb.Data, opts); err != nil {
+			if err := b.DecodeFromBytesWith(fb.Data, &opts); err != nil {
 				fmt.Fprintf(w, "TS%d burst at bit %d: %v\n", fb.Channel, fb.Offset, err)
 				continue
 			}
@@ -119,7 +119,7 @@ func generatedCall() ([]layer2.RawBurst, error) {
 		PositionError: layer3.PositionLessThan20M, Longitude: -88.4321, Latitude: 27.1234,
 	}}
 	rotation = append(rotation, gps)
-	tx, err := layer2.NewVoiceTransmitterWithOptions(layer2.VoiceTransmitterOptions{
+	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{
 		LC: pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, GroupVoice: &pdu.FLCGroupVoice{
 			GroupAddress: 3100, SourceAddress: 3141592,
 		}},

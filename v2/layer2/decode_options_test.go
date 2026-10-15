@@ -50,7 +50,7 @@ func TestDecodeFromBytesWith_DefaultMatchesDecodeFromBytes(t *testing.T) {
 		wantErr := want.DecodeFromBytes(frame)
 		for _, opts := range []layer2.DecodeOptions{{}, {SyncThreshold: layer2.DefaultSyncThreshold}} {
 			var got layer2.Burst
-			err := got.DecodeFromBytesWith(frame, opts)
+			err := got.DecodeFromBytesWith(frame, &opts)
 			if errString(err) != errString(wantErr) || !reflect.DeepEqual(got, want) {
 				t.Fatalf("%x opts %+v: got %s (%v), want %s (%v)", frame, opts, got.String(), err, want.String(), wantErr)
 			}
@@ -72,7 +72,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 
 	var b layer2.Burst
 	opts := layer2.DecodeOptions{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstD}
-	if err := b.DecodeFromBytesWith(frame, opts); err != nil {
+	if err := b.DecodeFromBytesWith(frame, &opts); err != nil {
 		t.Fatal(err)
 	}
 	if (b.Kind == layer2.KindData) || b.VoiceBurst != enums.VoiceBurstD || !b.HasEmbeddedSignalling() || b.SyncPattern != enums.SyncNone {
@@ -104,14 +104,14 @@ func TestDecodeFromBytesWith_SyncThreshold(t *testing.T) {
 			t.Fatal("default threshold matched a SYNC 5 bits off")
 		}
 		var b layer2.Burst
-		if err := b.DecodeFromBytesWith(five, layer2.DecodeOptions{SyncThreshold: 5}); err != nil {
+		if err := b.DecodeFromBytesWith(five, &layer2.DecodeOptions{SyncThreshold: 5}); err != nil {
 			t.Fatal(err)
 		}
 		if b.Kind != layer2.KindData || b.SyncPattern != clean.SyncPattern || b.SyncDistance != 5 || !reflect.DeepEqual(b.Data, clean.Data) {
 			t.Fatalf("threshold 5: %s", b.String())
 		}
 		one := flipSync(frame, 1)
-		if err := b.DecodeFromBytesWith(one, layer2.DecodeOptions{SyncThreshold: -1}); err != nil {
+		if err := b.DecodeFromBytesWith(one, &layer2.DecodeOptions{SyncThreshold: -1}); err != nil {
 			t.Fatal(err)
 		}
 		if (b.Kind == layer2.KindData) || b.SyncPattern != enums.SyncNone || b.SyncDistance != 1 {
@@ -139,14 +139,14 @@ func TestDecodeFromBytesWith_KnownData(t *testing.T) {
 		broken[20] ^= 0xFC
 		dt := clean.SlotType.DataType
 		var b layer2.Burst
-		err := b.DecodeFromBytesWith(broken, layer2.DecodeOptions{Kind: layer2.KindData, DataType: &dt})
+		err := b.DecodeFromBytesWith(broken, &layer2.DecodeOptions{Kind: layer2.KindData, DataType: &dt})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if b.Kind != layer2.KindData || b.SlotType.DataType != dt || !reflect.DeepEqual(b.Data, clean.Data) {
 			t.Fatalf("known data type: %s, want %s", b.String(), clean.String())
 		}
-		if err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{Kind: layer2.KindData}); err != nil || !reflect.DeepEqual(b.Data, clean.Data) {
+		if err := b.DecodeFromBytesWith(frame, &layer2.DecodeOptions{Kind: layer2.KindData}); err != nil || !reflect.DeepEqual(b.Data, clean.Data) {
 			t.Fatalf("data kind without data type: %s (%v)", b.String(), err)
 		}
 	}
@@ -165,16 +165,16 @@ func TestDecodeFromBytesWith_KnownVoiceA(t *testing.T) {
 		n++
 		six := flipSync(frame, 6)
 		var b layer2.Burst
-		if err := b.DecodeFromBytesWith(six, layer2.DecodeOptions{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA}); err != nil {
+		if err := b.DecodeFromBytesWith(six, &layer2.DecodeOptions{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA}); err != nil {
 			t.Fatal(err)
 		}
 		if b.VoiceBurst != enums.VoiceBurstA || b.SyncPattern != clean.SyncPattern || b.SyncDistance != 6 || b.HasEmbeddedSignalling() || b.VoiceSlots != clean.VoiceSlots {
 			t.Fatalf("burst A: %s", b.String())
 		}
-		if err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{Kind: layer2.KindVoice}); err != nil || b.VoiceBurst != enums.VoiceBurstA {
+		if err := b.DecodeFromBytesWith(frame, &layer2.DecodeOptions{Kind: layer2.KindVoice}); err != nil || b.VoiceBurst != enums.VoiceBurstA {
 			t.Fatalf("voice of unknown position: %s (%v)", b.String(), err)
 		}
-		if err := b.DecodeFromBytesWith(six, layer2.DecodeOptions{Kind: layer2.KindVoice}); err != nil || b.VoiceBurst != enums.VoiceBurstUnknown || !b.HasEmbeddedSignalling() {
+		if err := b.DecodeFromBytesWith(six, &layer2.DecodeOptions{Kind: layer2.KindVoice}); err != nil || b.VoiceBurst != enums.VoiceBurstUnknown || !b.HasEmbeddedSignalling() {
 			t.Fatalf("voice of unknown position, SYNC 6 bits off: %s (%v)", b.String(), err)
 		}
 	}
@@ -182,10 +182,10 @@ func TestDecodeFromBytesWith_KnownVoiceA(t *testing.T) {
 		t.Fatal("no voice burst A")
 	}
 	var b layer2.Burst
-	if err := b.DecodeFromBytesWith([33]byte{}, layer2.DecodeOptions{Kind: layer2.KindVoice, VoiceBurst: 7}); err == nil {
+	if err := b.DecodeFromBytesWith([33]byte{}, &layer2.DecodeOptions{Kind: layer2.KindVoice, VoiceBurst: 7}); err == nil {
 		t.Fatal("position 7 accepted")
 	}
-	if err := b.DecodeFromBytesWith([33]byte{}, layer2.DecodeOptions{Kind: 9}); err == nil {
+	if err := b.DecodeFromBytesWith([33]byte{}, &layer2.DecodeOptions{Kind: 9}); err == nil {
 		t.Fatal("kind 9 accepted")
 	}
 }
@@ -196,7 +196,7 @@ func TestDecodeFromBytesWith_KnownReverseChannel(t *testing.T) {
 		t.Fatal("default decode matched a SYNC 6 bits off")
 	}
 	var b layer2.Burst
-	if err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{Kind: layer2.KindReverseChannel}); err != nil {
+	if err := b.DecodeFromBytesWith(frame, &layer2.DecodeOptions{Kind: layer2.KindReverseChannel}); err != nil {
 		t.Fatal(err)
 	}
 	if b.SyncPattern != enums.SyncMSSourcedRC || b.SyncDistance != 6 || !b.HasReverseChannel() || b.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest {
@@ -222,10 +222,10 @@ func TestDecodeFromBytesWith_ColorCode(t *testing.T) {
 		right := enums.ColorCode(cc)         //nolint:gosec // 4-bit color code
 		wrong := enums.ColorCode(cc+1) & 0xF //nolint:gosec // 4-bit color code
 		var b layer2.Burst
-		if err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{ColorCode: &right}); err != nil {
+		if err := b.DecodeFromBytesWith(frame, &layer2.DecodeOptions{ColorCode: &right}); err != nil {
 			t.Fatalf("%s: %v", kind, err)
 		}
-		err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{ColorCode: &wrong})
+		err := b.DecodeFromBytesWith(frame, &layer2.DecodeOptions{ColorCode: &wrong})
 		if kind == "voice A" {
 			if err != nil {
 				t.Fatalf("voice A checked: %v", err)

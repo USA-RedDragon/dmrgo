@@ -28,7 +28,7 @@ func transmit(t *testing.T, c *Codec, pcm []int16) []layer2.RawBurst {
 		FID:           c.FID(),
 		RawPayload:    [7]byte(bit.Pack(payload[:])),
 	}
-	tx, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, c.Silence())
+	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: c.Silence()})
 	if err != nil {
 		t.Fatal(err)
 	}

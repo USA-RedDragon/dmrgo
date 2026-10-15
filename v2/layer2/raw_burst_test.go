@@ -306,7 +306,7 @@ func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
 		}
 	}
 	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
-		tx := must(layer2.NewVoiceTransmitter(capturedLC(), 3, src, silenceSlot()))
+		tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: capturedLC(), ColorCode: 3, Source: src, Silence: silenceSlot()}))
 		got := must(layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, 3, src))
 		if got != tx.Header() {
 			t.Errorf("source %d: BuildDataBurst differs from the VoiceTransmitter header", src)
@@ -481,7 +481,7 @@ func TestBuildVoiceBurst_MatchesVoiceTransmitter(t *testing.T) {
 	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.DefaultServiceOptions()))
 	frags := must(layer2.EncodeEmbeddedFullLinkControl(&lc))
 	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS} {
-		tx := must(layer2.NewVoiceTransmitter(lc, 5, src, silenceSlot()))
+		tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 5, Source: src, Silence: silenceSlot()}))
 		var frames [18]vocoder.AMBEFrame
 		for i := range frames {
 			bit.PutUint(frames[i][:], uint64(i)*0x1F2E3D4C5B)

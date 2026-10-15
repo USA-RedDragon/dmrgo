@@ -16,7 +16,7 @@ import (
 // transmission of lc.
 func transmission(t *testing.T, lc pdu.FullLinkControl, n int) []layer2.RawBurst {
 	t.Helper()
-	tx := must(layer2.NewVoiceTransmitter(lc, 3, layer2.SyncSourceMS, silenceSlot()))
+	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 3, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	out := []layer2.RawBurst{tx.Header()}
 	for i := 0; i < 3*n; i++ {
 		out = append(out, must(tx.AddSlots(testSlot(i)))...)
