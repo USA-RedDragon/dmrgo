@@ -5,6 +5,13 @@
 # speccheck runs `go test -v -run <regex>` for each package and verifies pass.
 #
 # Out of scope: state machines, procedures, RF/physical layer, conformance testing.
+#
+# ignore_files lists Go source files under v2/ that implement no spec section.
+# Every other non-test, non-generated Go file must appear in a section's source_files.
+
+ignore_files:
+  - v2/bit/bit.go
+  - v2/fec/fec.go
 
 documents:
   - id: "TS-102-361-1"
