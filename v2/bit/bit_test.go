@@ -7,11 +7,7 @@ import (
 
 func TestReadersUseOnlyTheLowBit(t *testing.T) {
 	raw := []Bit{0xFF, 2, 3, 0x30, 7, 0xFE, 1, 0}
-	low := slices.Clone(raw)
-	Mask(low)
-	if want := []Bit{1, 0, 1, 0, 1, 0, 1, 0}; !slices.Equal(low, want) {
-		t.Fatalf("Mask = %v, want %v", low, want)
-	}
+	low := []Bit{1, 0, 1, 0, 1, 0, 1, 0}
 	if Uint(raw) != Uint(low) || Pack(raw)[0] != Pack(low)[0] {
 		t.Error("a reader used more than the low bit")
 	}

@@ -41,13 +41,14 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // DecodeBSOutboundActivationPDU decodes a BSOutboundActivationPDU per ETSI TS 102 361-2 - 7.1.2.1 BS Outbound Activation (BS_Dwn_Act) PDU
 func DecodeBSOutboundActivationPDU(data [64]bit.Bit) BSOutboundActivationPDU {
 	var result BSOutboundActivationPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Reserved = uint16(bit.Uint(data[0:16]))
 	result.BSAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
@@ -96,7 +97,7 @@ func (s *BSOutboundActivationPDU) String() string {
 // DecodeUnitToUnitVoiceServiceRequestPDU decodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-2 - 7.1.2.2 UU_V_Req PDU
 func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) UnitToUnitVoiceServiceRequestPDU {
 	var result UnitToUnitVoiceServiceRequestPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
@@ -153,7 +154,7 @@ func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
 // DecodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-2 - 7.1.2.3 UU_Ans_Rsp PDU
 func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) UnitToUnitVoiceServiceAnswerResponsePDU {
 	var result UnitToUnitVoiceServiceAnswerResponsePDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
@@ -210,7 +211,7 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
 // DecodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU per ETSI TS 102 361-2 - 7.1.2.4 NACK_Rsp PDU
 func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) NegativeAcknowledgementPDU {
 	var result NegativeAcknowledgementPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.AdditionalInfo = layer3.AdditionalInformationField(bit.Uint(data[0:1]))
 	result.SourceType = layer3.SourceType(bit.Uint(data[1:2]))
 	result.ServiceType = CSBKOpcode(bit.Uint(data[2:8]))
@@ -289,7 +290,7 @@ func (s *NegativeAcknowledgementPDU) String() string {
 // DecodePreamblePDU decodes a PreamblePDU per ETSI TS 102 361-2 - 7.1.2.5 Pre PDU
 func DecodePreamblePDU(data [64]bit.Bit) PreamblePDU {
 	var result PreamblePDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Data = data[0] == 1
 	result.Group = data[1] == 1
 	result.Reserved = uint8(bit.Uint(data[2:8]))
@@ -356,7 +357,7 @@ func (s *PreamblePDU) String() string {
 // DecodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
 func DecodeChannelTimingPDU(data [64]bit.Bit) ChannelTimingPDU {
 	var result ChannelTimingPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.SyncAge = uint16(bit.Uint(data[0:11]))
 	result.Generation = uint8(bit.Uint(data[11:16]))
 	result.LeaderIdentifier = uint32(bit.Uint(data[16:36]))
@@ -459,7 +460,7 @@ func (s *ChannelTimingPDU) String() string {
 // DecodePrivateVoiceGrantPDU decodes a PrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
 func DecodePrivateVoiceGrantPDU(data [64]bit.Bit) PrivateVoiceGrantPDU {
 	var result PrivateVoiceGrantPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.Reserved = data[13] == 1
@@ -532,7 +533,7 @@ func (s *PrivateVoiceGrantPDU) String() string {
 // DecodeTalkgroupVoiceGrantPDU decodes a TalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
 func DecodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) TalkgroupVoiceGrantPDU {
 	var result TalkgroupVoiceGrantPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.LateEntry = data[13] == 1
@@ -605,7 +606,7 @@ func (s *TalkgroupVoiceGrantPDU) String() string {
 // DecodeBroadcastTalkgroupVoiceGrantPDU decodes a BroadcastTalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
 func DecodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) BroadcastTalkgroupVoiceGrantPDU {
 	var result BroadcastTalkgroupVoiceGrantPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.LateEntry = data[13] == 1
@@ -678,7 +679,7 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
 // DecodePrivateDataGrantPDU decodes a PrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT PDU
 func DecodePrivateDataGrantPDU(data [64]bit.Bit) PrivateDataGrantPDU {
 	var result PrivateDataGrantPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -751,7 +752,7 @@ func (s *PrivateDataGrantPDU) String() string {
 // DecodeTalkgroupDataGrantPDU decodes a TalkgroupDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT PDU
 func DecodeTalkgroupDataGrantPDU(data [64]bit.Bit) TalkgroupDataGrantPDU {
 	var result TalkgroupDataGrantPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -824,7 +825,7 @@ func (s *TalkgroupDataGrantPDU) String() string {
 // DecodeDuplexPrivateVoiceGrantPDU decodes a DuplexPrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT_DX PDU
 func DecodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) DuplexPrivateVoiceGrantPDU {
 	var result DuplexPrivateVoiceGrantPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.Reserved = data[13] == 1
@@ -897,7 +898,7 @@ func (s *DuplexPrivateVoiceGrantPDU) String() string {
 // DecodeDuplexPrivateDataGrantPDU decodes a DuplexPrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_DX PDU
 func DecodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) DuplexPrivateDataGrantPDU {
 	var result DuplexPrivateDataGrantPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -970,7 +971,7 @@ func (s *DuplexPrivateDataGrantPDU) String() string {
 // DecodePrivateDataGrantMultiItemPDU decodes a PrivateDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
 func DecodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) PrivateDataGrantMultiItemPDU {
 	var result PrivateDataGrantMultiItemPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -1043,7 +1044,7 @@ func (s *PrivateDataGrantMultiItemPDU) String() string {
 // DecodeTalkgroupDataGrantMultiItemPDU decodes a TalkgroupDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
 func DecodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) TalkgroupDataGrantMultiItemPDU {
 	var result TalkgroupDataGrantMultiItemPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -1116,7 +1117,7 @@ func (s *TalkgroupDataGrantMultiItemPDU) String() string {
 // DecodeMovePDU decodes a MovePDU per ETSI TS 102 361-4 §7.1.1.1.3 C_MOVE PDU
 func DecodeMovePDU(data [64]bit.Bit) MovePDU {
 	var result MovePDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Reserved1 = uint16(bit.Uint(data[0:9]))
 	result.Mask = uint8(bit.Uint(data[9:14]))
 	result.Reserved2 = uint8(bit.Uint(data[14:19]))
@@ -1217,7 +1218,7 @@ func (s *MovePDU) String() string {
 // DecodeAlohaPDU decodes a AlohaPDU per ETSI TS 102 361-4 §7.1.1.1.4 C_ALOHA PDU
 func DecodeAlohaPDU(data [64]bit.Bit) AlohaPDU {
 	var result AlohaPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Reserved1 = data[0] == 1
 	result.TSCCAS = data[1] == 1
 	result.SiteTSSync = data[2] == 1
@@ -1330,7 +1331,7 @@ func (s *AlohaPDU) String() string {
 // DecodeCBroadcastPDU decodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
 func DecodeCBroadcastPDU(data [64]bit.Bit) CBroadcastPDU {
 	var result CBroadcastPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.AnnouncementType = enums.AnnouncementType(bit.Uint(data[0:5]))
 	result.BroadcastParms1 = uint16(bit.Uint(data[5:19]))
 	result.Reg = data[19] == 1
@@ -1403,7 +1404,7 @@ func (s *CBroadcastPDU) String() string {
 // DecodeClearPDU decodes a ClearPDU per ETSI TS 102 361-4 §7.1.1.3.2 P_CLEAR PDU
 func DecodeClearPDU(data [64]bit.Bit) ClearPDU {
 	var result ClearPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.Reserved1 = data[12] == 1
 	result.Reserved2 = uint8(bit.Uint(data[13:15]))
@@ -1478,7 +1479,7 @@ func (s *ClearPDU) String() string {
 // DecodeProtectPDU decodes a ProtectPDU per ETSI TS 102 361-4 §7.1.1.3.3 P_PROTECT PDU
 func DecodeProtectPDU(data [64]bit.Bit) ProtectPDU {
 	var result ProtectPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Reserved = uint16(bit.Uint(data[0:12]))
 	result.ProtectKind = uint8(bit.Uint(data[12:15]))
 	result.GroupIndividual = data[15] == 1
@@ -1549,7 +1550,7 @@ func (s *ProtectPDU) String() string {
 // DecodeAhoyPDU decodes a AhoyPDU per ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / §7.1.1.3.4 P_AHOY PDU
 func DecodeAhoyPDU(data [64]bit.Bit) AhoyPDU {
 	var result AhoyPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.ServiceOptsMirror = uint8(bit.Uint(data[0:7]))
 	result.ServiceKindFlag = data[7] == 1
 	result.ALS = data[8] == 1
@@ -1638,7 +1639,7 @@ func (s *AhoyPDU) String() string {
 // DecodeAckOutboundPDU decodes a AckOutboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
 func DecodeAckOutboundPDU(data [64]bit.Bit) AckOutboundPDU {
 	var result AckOutboundPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
@@ -1701,7 +1702,7 @@ func (s *AckOutboundPDU) String() string {
 // DecodeAckInboundPDU decodes a AckInboundPDU per ETSI TS 102 361-4 §7.1.1.2.3 C_ACKU PDU
 func DecodeAckInboundPDU(data [64]bit.Bit) AckInboundPDU {
 	var result AckInboundPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
@@ -1764,7 +1765,7 @@ func (s *AckInboundPDU) String() string {
 // DecodeAckOutboundPayloadPDU decodes a AckOutboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.3.5 P_ACKD PDU
 func DecodeAckOutboundPayloadPDU(data [64]bit.Bit) AckOutboundPayloadPDU {
 	var result AckOutboundPayloadPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
@@ -1827,7 +1828,7 @@ func (s *AckOutboundPayloadPDU) String() string {
 // DecodeAckInboundPayloadPDU decodes a AckInboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.4.2 P_ACKU PDU
 func DecodeAckInboundPayloadPDU(data [64]bit.Bit) AckInboundPayloadPDU {
 	var result AckInboundPayloadPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
@@ -1890,7 +1891,7 @@ func (s *AckInboundPayloadPDU) String() string {
 // DecodeRandomAccessPDU decodes a RandomAccessPDU per ETSI TS 102 361-4 §7.1.1.2.1 C_RAND PDU
 func DecodeRandomAccessPDU(data [64]bit.Bit) RandomAccessPDU {
 	var result RandomAccessPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.ServiceOptions = uint8(bit.Uint(data[0:7]))
 	result.ProxyFlag = data[7] == 1
 	result.Reserved = uint8(bit.Uint(data[8:12]))
@@ -1971,7 +1972,7 @@ func (s *RandomAccessPDU) String() string {
 // DecodeAckvitationPDU decodes a AckvitationPDU per ETSI TS 102 361-4 §7.1.1.2.2 C_ACKVIT PDU
 func DecodeAckvitationPDU(data [64]bit.Bit) AckvitationPDU {
 	var result AckvitationPDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.ServiceOptsMirror = uint8(bit.Uint(data[0:7]))
 	result.ServiceKindFlag = data[7] == 1
 	result.Reserved = uint8(bit.Uint(data[8:10]))
@@ -2062,7 +2063,7 @@ func (s *AckvitationPDU) String() string {
 // DecodeMaintenancePDU decodes a MaintenancePDU per ETSI TS 102 361-4 §7.1.1.4.3 P_MAINT PDU
 func DecodeMaintenancePDU(data [64]bit.Bit) MaintenancePDU {
 	var result MaintenancePDU
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Reserved = uint16(bit.Uint(data[0:12]))
 	result.MaintKind = uint8(bit.Uint(data[12:15]))
 	result.Reserved2 = data[15] == 1
@@ -2133,7 +2134,7 @@ func (s *MaintenancePDU) String() string {
 // DecodeCSBK decodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU
 func DecodeCSBK(data [96]bit.Bit) CSBK {
 	var result CSBK
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {

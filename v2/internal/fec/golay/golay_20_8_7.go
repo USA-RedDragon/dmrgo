@@ -8,12 +8,13 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // parity2087 returns the 12 parity bits of 8 data bits in the Golay (20,8,7)
 // code of ETSI TS 102 361-1 B.3.1.
 func parity2087(bits [8]bit.Bit) [12]bit.Bit {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	var p [12]bit.Bit
 	p[0] = bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7]
 	p[1] = bits[1] ^ bits[2] ^ bits[4]
@@ -33,7 +34,7 @@ func parity2087(bits [8]bit.Bit) [12]bit.Bit {
 // Decode2087 corrects up to 3 bit errors in a Golay (20,8,7) codeword and
 // returns the corrected codeword and a fec.Result.
 func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 20}
 
 	var data [8]bit.Bit
@@ -74,7 +75,7 @@ func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 
 // Check2087 reports whether bits is a Golay (20,8,7) codeword.
 func Check2087(bits [20]bit.Bit) bool {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	var dataBits [8]bit.Bit
 	copy(dataBits[:], bits[:8])
 

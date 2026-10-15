@@ -11,12 +11,13 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeRate34Data decodes a Rate34Data per ETSI TS 102 361-1 - 9.2.2 Rate 3/4 coded packet Data (R_3_4_DATA) PDU
 func DecodeRate34Data(data [144]bit.Bit) Rate34Data {
 	var result Rate34Data
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	copy(result.Data[:], bit.Pack(data[0:144]))
 	return result
 }

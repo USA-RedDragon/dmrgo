@@ -11,12 +11,13 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeServiceOptions decodes a ServiceOptions per ETSI TS 102 361-2 - 7.2.1  Service Options
 func DecodeServiceOptions(data [8]bit.Bit) ServiceOptions {
 	var result ServiceOptions
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.IsEmergency = data[0] == 1
 	result.IsPrivacy = data[1] == 1
 	result.Reserved = uint8(bit.Uint(data[2:4]))

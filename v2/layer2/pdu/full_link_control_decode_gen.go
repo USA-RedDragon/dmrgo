@@ -19,6 +19,7 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"math"
 )
@@ -27,7 +28,7 @@ import (
 func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) FullLinkControl {
 	var result FullLinkControl
 	result.BurstDataType = burstDataType
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
@@ -271,7 +272,7 @@ func (s *FullLinkControl) String() string {
 // DecodeFLCGroupVoice decodes a FLCGroupVoice per ETSI TS 102 361-2 - Table 7.1: Grp_V_Ch_Usr PDU content
 func DecodeFLCGroupVoice(data [56]bit.Bit) FLCGroupVoice {
 	var result FLCGroupVoice
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
@@ -326,7 +327,7 @@ func (s *FLCGroupVoice) String() string {
 // DecodeFLCUnitToUnit decodes a FLCUnitToUnit per ETSI TS 102 361-2 - Table 7.2: UU_V_Ch_Usr PDU content
 func DecodeFLCUnitToUnit(data [56]bit.Bit) FLCUnitToUnit {
 	var result FLCUnitToUnit
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
@@ -381,7 +382,7 @@ func (s *FLCUnitToUnit) String() string {
 // DecodeFLCGPSInfo decodes a FLCGPSInfo per ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
 func DecodeFLCGPSInfo(data [56]bit.Bit) FLCGPSInfo {
 	var result FLCGPSInfo
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Reserved = uint8(bit.Uint(data[0:4]))
 	result.PositionError = layer3.PositionError(bit.Uint(data[4:7]))
 	result.Longitude = float64(int32(uint32(bit.Uint(data[7:32]))<<7)>>7) * 360.0 / (1 << 25)
@@ -457,7 +458,7 @@ func (s *FLCGPSInfo) String() string {
 // DecodeFLCTalkerAliasHeader decodes a FLCTalkerAliasHeader per ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
 func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) FLCTalkerAliasHeader {
 	var result FLCTalkerAliasHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(bit.Uint(data[0:2]))
 	result.TalkerAliasDataLength = int(bit.Uint(data[2:7]))
 	result.TalkerAliasData = bit.Uint(data[7:56])
@@ -514,7 +515,7 @@ func (s *FLCTalkerAliasHeader) String() string {
 // DecodeFLCTalkerAliasBlock decodes a FLCTalkerAliasBlock per ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
 func DecodeFLCTalkerAliasBlock(data [56]bit.Bit) FLCTalkerAliasBlock {
 	var result FLCTalkerAliasBlock
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	copy(result.TalkerAliasData[:], bit.Pack(data[0:56]))
 	return result
 }
@@ -543,7 +544,7 @@ func (s *FLCTalkerAliasBlock) String() string {
 // DecodeFLCTerminatorDataLinkControl decodes a FLCTerminatorDataLinkControl per ETSI TS 102 361-3 - Table 7.1: Terminator Data Link Control PDU content
 func DecodeFLCTerminatorDataLinkControl(data [56]bit.Bit) FLCTerminatorDataLinkControl {
 	var result FLCTerminatorDataLinkControl
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.LLIDDestination = uint32(bit.Uint(data[0:24]))
 	result.LLIDSource = uint32(bit.Uint(data[24:48]))
 	result.GroupOrIndividual = data[48] == 1

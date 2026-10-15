@@ -187,7 +187,7 @@ func bitFuncNames(t *testing.T) []string {
 		}
 		rel, _ := filepath.Rel(root, path)
 		if d.IsDir() {
-			if rel == "bit" || rel == filepath.Join("vocoder", "codec2") {
+			if rel == "bit" || rel == filepath.Join("internal", "lowbit") || rel == filepath.Join("vocoder", "codec2") {
 				return filepath.SkipDir
 			}
 			return nil
