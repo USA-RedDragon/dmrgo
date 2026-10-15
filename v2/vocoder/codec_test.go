@@ -42,6 +42,8 @@ func mustPanic(t *testing.T, name string, f func()) {
 }
 
 func TestCodecRegistry(t *testing.T) {
+	t.Parallel()
+
 	factory := func() (vocoder.Codec, error) { return fakeCodec{fid: 0x7F}, nil }
 	a, b := uniqueName("test-fake-a"), uniqueName("test-fake-b")
 	vocoder.Register(b, factory)
@@ -74,6 +76,8 @@ func TestCodecRegistry(t *testing.T) {
 }
 
 func TestCodecRegistryFactoryError(t *testing.T) {
+	t.Parallel()
+
 	want := errors.New("factory failed")
 	name := uniqueName("test-fake-err")
 	vocoder.Register(name, func() (vocoder.Codec, error) { return nil, want })

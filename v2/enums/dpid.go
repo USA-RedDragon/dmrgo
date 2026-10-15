@@ -5,6 +5,7 @@ package enums
 // manufacturer specific (ETSI TS 102 361-3 Table 7.18).
 type DPID uint8
 
+// The DPID values.
 const (
 	DPIDExtendedHeader       DPID = 0  // port number in the extended header
 	DPIDTextMessage          DPID = 1  // Port 5016

@@ -10,6 +10,8 @@ import (
 )
 
 func TestCSBK_TierIII_OpcodeString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		opcode pdu.CSBKOpcode
 		want   string
@@ -44,6 +46,8 @@ func TestCSBK_TierIII_OpcodeString(t *testing.T) {
 }
 
 func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[3] = 1
 	payload[7] = 1
@@ -91,6 +95,8 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 }
 
 func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var targetAddr [24]bit.Bit
 	targetAddr[0] = 1
 	targetAddr[23] = 1
@@ -140,6 +146,8 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestCSBK_Aloha_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[1] = 1
 	payload[2] = 1
@@ -210,6 +218,8 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 }
 
 func TestCSBK_CBroadcast_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[2] = 1
 	payload[4] = 1
@@ -256,6 +266,8 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 }
 
 func TestCSBK_Clear_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[3] = 1
 	payload[15] = 1
@@ -281,6 +293,8 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 }
 
 func TestCSBK_Ahoy_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[0] = 1
 	payload[5] = 1
@@ -325,6 +339,8 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 }
 
 func TestCSBK_RandomAccess_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[6] = 1
 	payload[7] = 1
@@ -356,6 +372,8 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 }
 
 func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[39] = 1
 	payload[63] = 1
@@ -387,6 +405,8 @@ func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 }
 
 func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[3] = 1
 	payload[12] = 1
@@ -431,6 +451,8 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 }
 
 func TestCSBK_AckOutbound_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[2] = 1
 	payload[8] = 1
@@ -451,6 +473,8 @@ func TestCSBK_AckOutbound_Decode(t *testing.T) {
 }
 
 func TestCSBK_Move_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[9] = 1
 	payload[10] = 1
@@ -491,6 +515,8 @@ func TestCSBK_Move_Decode(t *testing.T) {
 }
 
 func TestCSBK_Maintenance_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[13] = 1
 	payload[14] = 1
@@ -513,6 +539,8 @@ func TestCSBK_Maintenance_Decode(t *testing.T) {
 }
 
 func TestCSBK_Ackvitation_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[6] = 1
 	payload[7] = 1
@@ -548,6 +576,8 @@ func TestCSBK_Ackvitation_Decode(t *testing.T) {
 }
 
 func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var targetAddr [24]bit.Bit
 	targetAddr[0] = 1
 	targetAddr[23] = 1
@@ -603,6 +633,8 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var msAddr [24]bit.Bit
 	msAddr[0] = 1
 	msAddr[15] = 1
@@ -668,6 +700,8 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestAnnouncementType_String(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		at   enums.AnnouncementType
 		want string
@@ -696,6 +730,8 @@ func TestAnnouncementType_String(t *testing.T) {
 }
 
 func TestAnnouncementType_Cast(t *testing.T) {
+	t.Parallel()
+
 	for i := 0; i <= 7; i++ {
 		at := enums.AnnouncementType(i)
 		if int(at) != i {
@@ -705,6 +741,8 @@ func TestAnnouncementType_Cast(t *testing.T) {
 }
 
 func TestSLCO_TierIII_Values(t *testing.T) {
+	t.Parallel()
+
 	csys := enums.SLCO(0b0010)
 	if csys != enums.SLCOCSysParms {
 		t.Errorf("SLCO(0b0010) = %d, want SLCOCSysParms(%d)", int(csys), int(enums.SLCOCSysParms))
@@ -745,8 +783,12 @@ func netSiteModelCases() []netSiteModelCase {
 }
 
 func TestShortLC_CSysParms_NetSite_Models(t *testing.T) {
+	t.Parallel()
+
 	for _, tt := range netSiteModelCases() {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			cs := &pdu.ShortLCCSysParms{MODEL: tt.model, NetSiteRaw: netSitePattern()}
 			if got := cs.NetID(); got != tt.wantNetID {
 				t.Errorf("NetID() = %b, want %b", got, tt.wantNetID)
@@ -759,8 +801,12 @@ func TestShortLC_CSysParms_NetSite_Models(t *testing.T) {
 }
 
 func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
+	t.Parallel()
+
 	for _, tt := range netSiteModelCases() {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			ps := &pdu.ShortLCPSysParms{MODEL: tt.model, NetSiteRaw: netSitePattern()}
 			if got := ps.NetID(); got != tt.wantNetID {
 				t.Errorf("NetID() = %b, want %b", got, tt.wantNetID)
@@ -776,6 +822,8 @@ func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
 // (C_UDTHD and C_UDTHU) are unknown CSBK opcodes, because they are sent in a
 // data header burst (ETSI TS 102 361-4 Table 7.2).
 func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
+	t.Parallel()
+
 	for _, op := range []byte{0b011010, 0b011011} {
 		var payload [64]bit.Bit
 		payload[0] = 1
@@ -791,6 +839,8 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 }
 
 func TestCSBK_Protect_Decode(t *testing.T) {
+	t.Parallel()
+
 	var payload [64]bit.Bit
 	payload[12] = 1
 	payload[14] = 1

@@ -1,9 +1,9 @@
 package compute
 
-// ComputeAMBEScrambleTable computes the 24-bit AMBE scramble mask for each
+// AMBEScrambleTable computes the 24-bit AMBE scramble mask for each
 // 12-bit A value i. The LCG p[n] = (173*p[n-1] + 13849) mod 65536 with seed
 // p[0] = 16*i gives the mask, MSB first: bit k is the MSB of p[k].
-func ComputeAMBEScrambleTable() [4096]uint32 {
+func AMBEScrambleTable() [4096]uint32 {
 	const (
 		lcgMultiplier = 173
 		lcgIncrement  = 13849
@@ -24,9 +24,9 @@ func ComputeAMBEScrambleTable() [4096]uint32 {
 	return table
 }
 
-// ComputeDM computes the BPTC(196,96) deinterleave matrix. Entry i is
+// DM computes the BPTC(196,96) deinterleave matrix. Entry i is
 // (i * 181) mod 196.
-func ComputeDM() [256]uint8 {
+func DM() [256]uint8 {
 	var dm [256]uint8
 	for i := range 256 {
 		dm[i] = uint8((i * 181) % 196) //nolint:gosec // result is always < 196, fits in uint8
@@ -34,10 +34,10 @@ func ComputeDM() [256]uint8 {
 	return dm
 }
 
-// ComputeHamming15_11Syndrome computes the bit position of a single-bit
+// Hamming15_11Syndrome computes the bit position of a single-bit
 // error for each 4-bit syndrome of the Hamming(15,11,3) code. A syndrome that
 // matches no bit maps to -1 (ETSI TS 102 361-1 clause B.3.4).
-func ComputeHamming15_11Syndrome() [16]int {
+func Hamming15_11Syndrome() [16]int {
 	var hCols [15]int
 	for p := 0; p < 15; p++ {
 		var b [15]int
@@ -59,11 +59,11 @@ func ComputeHamming15_11Syndrome() [16]int {
 	return table
 }
 
-// ComputeHamming13_9Syndrome computes the bit position of a single-bit
+// Hamming13_9Syndrome computes the bit position of a single-bit
 // error for each 4-bit syndrome of the shortened Hamming(13,9,3) code that
 // corrects the BPTC(196,96) columns. A syndrome that matches no bit maps to -1
 // (ETSI TS 102 361-1 clause B.3.4).
-func ComputeHamming13_9Syndrome() [16]int {
+func Hamming13_9Syndrome() [16]int {
 	var hCols [13]int
 	for p := 0; p < 13; p++ {
 		var b [13]int
@@ -88,9 +88,9 @@ func ComputeHamming13_9Syndrome() [16]int {
 	return table
 }
 
-// ComputeCRCCCITT computes the byte-at-a-time CRC-CCITT lookup table for
+// CRCCCITT computes the byte-at-a-time CRC-CCITT lookup table for
 // polynomial 0x1021 (ETSI TS 102 361-1 clause B.3.8).
-func ComputeCRCCCITT() [256]uint16 {
+func CRCCCITT() [256]uint16 {
 	var table [256]uint16
 	for i := 0; i < 256; i++ {
 		crc := uint16(i) << 8 //nolint:gosec // i is in [0,255], fits in uint16
@@ -106,9 +106,9 @@ func ComputeCRCCCITT() [256]uint16 {
 	return table
 }
 
-// ComputeConstellationPoints computes the 4-bit rate 3/4 trellis symbol
+// ConstellationPoints computes the 4-bit rate 3/4 trellis symbol
 // index of each pair of dibit symbol values (ETSI TS 102 361-1 clause B.2.4).
-func ComputeConstellationPoints() map[[2]int8]byte {
+func ConstellationPoints() map[[2]int8]byte {
 	return map[[2]int8]byte{
 		{1, -1}:  0,
 		{-1, -1}: 1,
@@ -129,9 +129,9 @@ func ComputeConstellationPoints() map[[2]int8]byte {
 	}
 }
 
-// ComputeReverseConstellation computes the dibit pair of each symbol index.
-func ComputeReverseConstellation() [][]int8 {
-	fwd := ComputeConstellationPoints()
+// ReverseConstellation computes the dibit pair of each symbol index.
+func ReverseConstellation() [][]int8 {
+	fwd := ConstellationPoints()
 	rev := make([][]int8, 16)
 	for pair, sym := range fwd {
 		rev[sym] = pair[:]
@@ -139,10 +139,10 @@ func ComputeReverseConstellation() [][]int8 {
 	return rev
 }
 
-// ComputeVocoderTables computes the positions in the 72-bit AMBE frame of the
+// VocoderTables computes the positions in the 72-bit AMBE frame of the
 // 24 A, 23 B and 25 C codeword bits. The positions step by 4 and wrap at 72 to
 // the next start column, from A through B to C.
-func ComputeVocoderTables() (aTable, bTable, cTable []int) {
+func VocoderTables() (aTable, bTable, cTable []int) {
 	aTable = make([]int, 24)
 	pos := 0
 	for i := 0; i < 24; i++ {
@@ -177,11 +177,11 @@ func ComputeVocoderTables() (aTable, bTable, cTable []int) {
 	return aTable, bTable, cTable
 }
 
-// ComputeHamming16_11Syndrome computes the bit position of a single-bit
+// Hamming16_11Syndrome computes the bit position of a single-bit
 // error for each 5-bit syndrome of the Hamming(16,11,4) code of the embedded
 // signalling BPTC. A syndrome that matches no bit maps to -1 (ETSI TS 102
 // 361-1 clause B.3.4, Table B.16).
-func ComputeHamming16_11Syndrome() [32]int {
+func Hamming16_11Syndrome() [32]int {
 	var hCols [16]int
 	for p := 0; p < 16; p++ {
 		var b [16]int
@@ -204,10 +204,10 @@ func ComputeHamming16_11Syndrome() [32]int {
 	return table
 }
 
-// ComputeSingleBurstBPTCInterleave computes the encode matrix index of each
+// SingleBurstBPTCInterleave computes the encode matrix index of each
 // transmit index of the single burst BPTC, where the transmit index is the
 // matrix index times 17 mod 32 (ETSI TS 102 361-1 clause B.2.2).
-func ComputeSingleBurstBPTCInterleave() [32]uint8 {
+func SingleBurstBPTCInterleave() [32]uint8 {
 	var table [32]uint8
 	for i := 0; i < 32; i++ {
 		table[(i*17)%32] = uint8(i) //nolint:gosec // i is always < 32, fits in uint8
@@ -215,9 +215,9 @@ func ComputeSingleBurstBPTCInterleave() [32]uint8 {
 	return table
 }
 
-// ComputeCRC32Table computes the byte-at-a-time CRC-32 lookup table for
+// CRC32Table computes the byte-at-a-time CRC-32 lookup table for
 // polynomial 0x04C11DB7 (ETSI TS 102 361-1 clause B.3.9).
-func ComputeCRC32Table() [256]uint32 {
+func CRC32Table() [256]uint32 {
 	const poly = uint32(0x04C11DB7)
 	var table [256]uint32
 	for i := 0; i < 256; i++ {
@@ -234,10 +234,10 @@ func ComputeCRC32Table() [256]uint32 {
 	return table
 }
 
-// ComputeHamming743Syndrome computes the bit position of a single-bit error
+// Hamming743Syndrome computes the bit position of a single-bit error
 // for each 3-bit syndrome s0<<2 | s1<<1 | s2 of the Hamming(7,4,3) code. A
 // syndrome that matches no bit maps to -1 (ETSI TS 102 361-1 clause B.3.5).
-func ComputeHamming743Syndrome() [8]int {
+func Hamming743Syndrome() [8]int {
 	var hCols [7]int
 	for p := 0; p < 7; p++ {
 		var b [7]int
@@ -258,11 +258,11 @@ func ComputeHamming743Syndrome() [8]int {
 	return table
 }
 
-// ComputeHamming17_12Syndrome computes the bit position of a single-bit
+// Hamming17_12Syndrome computes the bit position of a single-bit
 // error for each 5-bit syndrome of the Hamming(17,12,3) code with generator
 // x^5 + x^2 + 1. A syndrome that matches no bit maps to -1 (ETSI TS 102
 // 361-1 clause B.3.3, Table B.13).
-func ComputeHamming17_12Syndrome() [32]int {
+func Hamming17_12Syndrome() [32]int {
 	var hCols [17]int
 	for p := 0; p < 17; p++ {
 		var b [17]int
@@ -285,10 +285,10 @@ func ComputeHamming17_12Syndrome() [32]int {
 	return table
 }
 
-// ComputeGaloisTables computes the GF(2^8) exponent and logarithm tables for
+// GaloisTables computes the GF(2^8) exponent and logarithm tables for
 // Reed-Solomon(12,9,4) with primitive polynomial 0x11D (ETSI TS 102 361-1
 // clause B.3.6).
-func ComputeGaloisTables() (exp [256]uint8, log [256]uint8) {
+func GaloisTables() (exp [256]uint8, log [256]uint8) {
 	val := uint16(1)
 	for i := 0; i < 256; i++ {
 		exp[i] = uint8(val) //nolint:gosec // val is always < 256 in GF(2^8)

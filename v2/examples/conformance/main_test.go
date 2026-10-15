@@ -12,6 +12,8 @@ import (
 )
 
 func TestRun(t *testing.T) {
+	t.Parallel()
+
 	var buf bytes.Buffer
 	if err := run(&buf, filepath.Join("..", "..", "layer2", "testdata")); err != nil {
 		t.Fatalf("run: %v\n%s", err, buf.String())
@@ -32,6 +34,8 @@ func TestRun(t *testing.T) {
 }
 
 func TestBadCRCFails(t *testing.T) {
+	t.Parallel()
+
 	raw, err := os.ReadFile(filepath.Join("..", "..", "layer2", "testdata", "d-sms.bin"))
 	if err != nil {
 		t.Fatal(err)

@@ -5,6 +5,7 @@ package enums
 // specific (ETSI TS 102 361-3 Table 7.17).
 type SPID uint8
 
+// The SPID values.
 const (
 	SPIDExtendedHeader       SPID = 0  // port number in the extended header
 	SPIDTextMessage          SPID = 1  // Port 5016

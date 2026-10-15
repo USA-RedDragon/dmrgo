@@ -36,6 +36,8 @@ func hamming16_11Codeword(d int) [16]bit.Bit {
 }
 
 func TestHamming16_11_GeneratorMatchesTableB16(t *testing.T) {
+	t.Parallel()
+
 	for row, want := range tableB16() {
 		cw := hamming16_11Codeword(1 << row)
 		for col := range cw {
@@ -51,6 +53,8 @@ func TestHamming16_11_GeneratorMatchesTableB16(t *testing.T) {
 }
 
 func TestHamming16_11_MinimumDistance(t *testing.T) {
+	t.Parallel()
+
 	minWeight := 16
 	for d := 1; d < 1<<11; d++ {
 		cw := hamming16_11Codeword(d)
@@ -69,6 +73,8 @@ func TestHamming16_11_MinimumDistance(t *testing.T) {
 }
 
 func TestHamming16_11_SyndromeTableLocatesSingleErrors(t *testing.T) {
+	t.Parallel()
+
 	for d := 0; d < 1<<11; d += 37 {
 		for pos := 0; pos < 16; pos++ {
 			cw := hamming16_11Codeword(d)

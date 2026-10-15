@@ -24,6 +24,8 @@ func lcBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode) ([33]byte, error
 }
 
 func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
+	t.Parallel()
+
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -58,6 +60,8 @@ func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
 }
 
 func TestBuildDataBurst_Terminator(t *testing.T) {
+	t.Parallel()
+
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeTerminatorWithLC,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -85,6 +89,8 @@ func TestBuildDataBurst_Terminator(t *testing.T) {
 }
 
 func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
+	t.Parallel()
+
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -106,7 +112,6 @@ func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
 		burst, err := layer2.NewBurstFromBytes(result)
 		if err != nil {
 			t.Fatalf("NewBurstFromBytes failed for color code %d: %v", cc, err)
-			continue
 		}
 		if burst.Kind != layer2.KindData {
 			t.Errorf("cc=%d: burst has no slot type", cc)

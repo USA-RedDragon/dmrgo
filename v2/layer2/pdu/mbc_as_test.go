@@ -10,6 +10,8 @@ import (
 )
 
 func TestMBCContinuation_As(t *testing.T) {
+	t.Parallel()
+
 	parms := layer3.CdefParms{Channel: 0xFFF, TXMHz: 451, TXKHz: 1000, RXMHz: 456, RXKHz: 1000}
 
 	cgap := pdu.CGAPContinuation{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, ColorCode: 7, CdefParms: parms}

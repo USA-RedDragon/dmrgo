@@ -6,6 +6,7 @@ linters:
     - bidichk
     - containedctx
     - contextcheck
+    - copyloopvar
     - decorder
     - dogsled
     - dupword
@@ -32,18 +33,48 @@ linters:
     - nilnil
     - noctx
     - nosprintfhostport
+    - paralleltest
     - prealloc
     - predeclared
     - reassign
+    - revive
+    - tparallel
     - unconvert
     - unparam
     - usestdlibvars
     - wastedassign
     - whitespace
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: true
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: var-declaration
+        - name: var-naming
   exclusions:
     generated: lax
     presets:
-      - comments
       - common-false-positives
       - legacy
       - std-error-handling
@@ -53,6 +84,12 @@ linters:
           - dogsled
           - goconst
           - gosec
+      # jennifer's DSL is written with a dot import.
+      - path: cmd/dmrgen/emit/
+        linters:
+          - revive
+          - staticcheck
+        text: should not use dot imports
     paths:
       - third_party$
       - builtin$

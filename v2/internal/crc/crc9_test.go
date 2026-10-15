@@ -8,6 +8,8 @@ import (
 )
 
 func TestCRC9_ZeroInput(t *testing.T) {
+	t.Parallel()
+
 	bits := make([]bit.Bit, 87)
 	result := crc.CRC9(bits)
 	if result != 0x1FF {
@@ -16,6 +18,8 @@ func TestCRC9_ZeroInput(t *testing.T) {
 }
 
 func TestCRC9_SingleBit(t *testing.T) {
+	t.Parallel()
+
 	bits := []bit.Bit{1}
 	result := crc.CRC9(bits)
 	if result == 0x1FF {
@@ -27,6 +31,8 @@ func TestCRC9_SingleBit(t *testing.T) {
 }
 
 func TestCRC9_CheckValid_NoMask(t *testing.T) {
+	t.Parallel()
+
 	data := make([]bit.Bit, 87)
 	data[0] = 1
 	data[10] = 1
@@ -47,6 +53,8 @@ func TestCRC9_CheckValid_NoMask(t *testing.T) {
 }
 
 func TestCRC9_CheckValid_WithMask(t *testing.T) {
+	t.Parallel()
+
 	data := make([]bit.Bit, 135)
 	data[0] = 1
 	data[50] = 1
@@ -68,6 +76,8 @@ func TestCRC9_CheckValid_WithMask(t *testing.T) {
 }
 
 func TestCRC9_CheckInvalid(t *testing.T) {
+	t.Parallel()
+
 	data := make([]bit.Bit, 87)
 	data[0] = 1
 
@@ -86,12 +96,16 @@ func TestCRC9_CheckInvalid(t *testing.T) {
 }
 
 func TestCRC9_CheckTooShort(t *testing.T) {
+	t.Parallel()
+
 	if checkCRC9Codeword(make([]bit.Bit, 9), 0) {
 		t.Error("CheckCRC9 should return false for data shorter than 10 bits")
 	}
 }
 
 func TestCRC9_Deterministic(t *testing.T) {
+	t.Parallel()
+
 	data := make([]bit.Bit, 135)
 	for i := range data {
 		data[i] = bit.Bit(i % 2)
@@ -104,6 +118,8 @@ func TestCRC9_Deterministic(t *testing.T) {
 }
 
 func TestCRC9_ValueRange(t *testing.T) {
+	t.Parallel()
+
 	data := make([]bit.Bit, 183)
 	for i := range data {
 		data[i] = bit.Bit(i % 3)
@@ -115,6 +131,8 @@ func TestCRC9_ValueRange(t *testing.T) {
 }
 
 func TestCRC9_Rate12_DataSize(t *testing.T) {
+	t.Parallel()
+
 	data := make([]bit.Bit, 87)
 	data[0] = 1
 	data[86] = 1

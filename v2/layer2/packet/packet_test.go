@@ -40,6 +40,8 @@ func utf16le(s string) []byte {
 }
 
 func TestAssembler_Captures(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		file   string
 		format pdu.Format
@@ -52,6 +54,8 @@ func TestAssembler_Captures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.file, func(t *testing.T) {
+			t.Parallel()
+
 			var a packet.Assembler
 			var msgs []*packet.Message
 			for _, b := range loadBursts(t, "../testdata/"+tt.file+".bin") {
@@ -78,6 +82,8 @@ func TestAssembler_Captures(t *testing.T) {
 }
 
 func TestAssembler_CaptureCRCFailure(t *testing.T) {
+	t.Parallel()
+
 	bursts := loadBursts(t, "../testdata/m-sms.bin")
 	blk, ok := bursts[8].Data.(*pdu.Rate12Data)
 	if !ok {
@@ -176,6 +182,8 @@ func payload(n int) []byte {
 }
 
 func TestSegment_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	rates := []enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1}
 	for _, h := range []pdu.DataHeader{unconfirmed(), confirmed()} {
 		for _, rate := range rates {
@@ -203,6 +211,8 @@ func TestSegment_RoundTrip(t *testing.T) {
 }
 
 func TestSegment_HeaderFields(t *testing.T) {
+	t.Parallel()
+
 	p, err := packet.Segment(unconfirmed(), payload(38+9), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
@@ -236,6 +246,8 @@ func TestSegment_HeaderFields(t *testing.T) {
 }
 
 func TestSegment_Errors(t *testing.T) {
+	t.Parallel()
+
 	if _, err := packet.Segment(unconfirmed(), nil, enums.DataTypeCSBK); !errors.Is(err, packet.ErrRate) {
 		t.Errorf("rate: %v", err)
 	}
@@ -258,6 +270,8 @@ func TestSegment_Errors(t *testing.T) {
 }
 
 func TestSegment_ShortData(t *testing.T) {
+	t.Parallel()
+
 	for _, sarq := range []bool{false, true} {
 		h := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{
 			SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, DefinedData: 2, SARQ: sarq, FullMessageFlag: true}}
@@ -283,6 +297,8 @@ func TestSegment_ShortData(t *testing.T) {
 }
 
 func TestAssembler_Bursts(t *testing.T) {
+	t.Parallel()
+
 	p, err := packet.Segment(unconfirmed(), []byte("Hello from dmrgo"), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
@@ -336,6 +352,8 @@ func TestAssembler_Bursts(t *testing.T) {
 }
 
 func TestAssembler_SelectiveRetry(t *testing.T) {
+	t.Parallel()
+
 	data := []byte("LIP: 41.878,-87.629,hdg=90,v=12 and some more text")
 	p, err := packet.Segment(confirmed(), data, enums.DataTypeRate34)
 	if err != nil {
@@ -409,6 +427,8 @@ func retryAndACK(t *testing.T, rx, tx *packet.Assembler, p packet.Packet, data [
 }
 
 func TestAssembler_Errors(t *testing.T) {
+	t.Parallel()
+
 	var a packet.Assembler
 	if _, err := add(&a, &pdu.Rate12Data{}); !errors.Is(err, packet.ErrNoHeader) {
 		t.Errorf("no header: %v", err)
@@ -436,6 +456,8 @@ func TestAssembler_Errors(t *testing.T) {
 }
 
 func TestAssembler_ProprietaryHeader(t *testing.T) {
+	t.Parallel()
+
 	h := unconfirmed()
 	h.UnconfirmedDataHeader.SAP = enums.SAPProprietaryPacketData
 	p, err := packet.Segment(h, payload(20), enums.DataTypeRate12)
@@ -464,6 +486,8 @@ func TestAssembler_ProprietaryHeader(t *testing.T) {
 }
 
 func TestResponseData(t *testing.T) {
+	t.Parallel()
+
 	var rd packet.ResponseData
 	rd.Retry[0], rd.Retry[5], rd.Retry[63] = true, true, true
 	blocks, err := rd.Encode(64)
@@ -504,6 +528,8 @@ func TestResponseData(t *testing.T) {
 }
 
 func TestResponseCodes(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		r          packet.Response
 		class, typ uint8
@@ -535,6 +561,8 @@ func TestResponseCodes(t *testing.T) {
 }
 
 func TestMessageCRC(t *testing.T) {
+	t.Parallel()
+
 	data := payload(36)
 	ref := func(d []byte) uint32 {
 		var r uint32

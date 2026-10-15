@@ -4,6 +4,7 @@ package layer3
 // clause 7.2.15).
 type PositionError uint8
 
+// The PositionError values.
 const (
 	PositionLessThan2M    PositionError = iota // less than 2 m
 	PositionLessThan20M                        // less than 20 m

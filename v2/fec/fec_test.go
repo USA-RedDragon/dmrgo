@@ -8,6 +8,8 @@ import (
 )
 
 func TestBERCalculator_AddBurstMatchesAggregate(t *testing.T) {
+	t.Parallel()
+
 	stats := fec.BurstFECStats{
 		SlotType: fec.Result{BitsChecked: 20, ErrorsCorrected: 1},
 		EMB:      fec.Result{BitsChecked: 16, ErrorsCorrected: 2},
@@ -29,6 +31,8 @@ func TestBERCalculator_AddBurstMatchesAggregate(t *testing.T) {
 }
 
 func TestBERCalculator_BER(t *testing.T) {
+	t.Parallel()
+
 	var b fec.BERCalculator
 	if b.BER() != 0 {
 		t.Errorf("empty BER = %v, want 0", b.BER())
@@ -44,6 +48,8 @@ func TestBERCalculator_BER(t *testing.T) {
 }
 
 func TestResult_HasErrors(t *testing.T) {
+	t.Parallel()
+
 	if (fec.Result{BitsChecked: 10}).HasErrors() {
 		t.Error("clean result reports errors")
 	}
@@ -56,6 +62,8 @@ func TestResult_HasErrors(t *testing.T) {
 }
 
 func TestBERCalculator_Uncorrectable(t *testing.T) {
+	t.Parallel()
+
 	var b fec.BERCalculator
 	b.Add(fec.Result{BitsChecked: 24, ErrorsCorrected: 1})
 	b.Add(fec.Result{BitsChecked: 24, Uncorrectable: true})
@@ -70,6 +78,8 @@ func TestBERCalculator_Uncorrectable(t *testing.T) {
 }
 
 func TestResult_Combine(t *testing.T) {
+	t.Parallel()
+
 	got := fec.Result{BitsChecked: 32, ErrorsCorrected: 1}.Combine(fec.Result{Uncorrectable: true})
 	want := fec.Result{BitsChecked: 32, ErrorsCorrected: 1, Uncorrectable: true}
 	if got != want {
@@ -78,6 +88,8 @@ func TestResult_Combine(t *testing.T) {
 }
 
 func TestResult_Err(t *testing.T) {
+	t.Parallel()
+
 	if err := (fec.Result{BitsChecked: 96, ErrorsCorrected: 3}).Err(); err != nil {
 		t.Errorf("corrected result: Err() = %v, want nil", err)
 	}

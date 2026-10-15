@@ -114,11 +114,15 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 // TestVoiceTransmitter_Transmission builds a transmission of two full
 // superframes and one partial one and decodes every burst.
 func TestVoiceTransmitter_Transmission(t *testing.T) {
+	t.Parallel()
+
 	const cc = 5
 	sources := []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2}
 	for _, source := range sources {
 		for _, fid := range []enums.FeatureSetID{enums.FIDStandardized, enums.FeatureSetID(0xC2)} {
 			t.Run(fmt.Sprintf("source%d/FID%#x", source, int(fid)), func(t *testing.T) {
+				t.Parallel()
+
 				voiceSync, dataSync, ok := source.SyncPatterns()
 				if !ok {
 					t.Fatal("unknown source")
@@ -173,6 +177,8 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 }
 
 func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 	frames := make([]vocoder.AMBEFrame, 3)
 	slots := make([][72]bit.Bit, 3)
@@ -202,6 +208,8 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 }
 
 func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 2, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
 	if err := tx.SetReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}); err != nil {
@@ -236,6 +244,8 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 }
 
 func TestVoiceTransmitter_Terminate(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
@@ -265,6 +275,8 @@ func TestVoiceTransmitter_Terminate(t *testing.T) {
 }
 
 func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 0x17, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
 	bursts := append([]layer2.RawBurst{tx.Header()}, must(tx.AddSlots(make([][72]bit.Bit, 6)...))...)
@@ -320,6 +332,8 @@ func captureSuperframes(t *testing.T, bursts []*layer2.Burst) (kept, skipped []i
 // superframe without its burst A and parrot_kerchunk.bin a burst A without
 // bursts B to F. Every other burst must match the capture bit for bit.
 func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		file    string
 		kept    int
@@ -330,6 +344,8 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.file, func(t *testing.T) {
+			t.Parallel()
+
 			raws := loadBursts(t, tt.file)
 			bursts := make([]*layer2.Burst, len(raws))
 			for i, raw := range raws {
@@ -394,6 +410,8 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 }
 
 func TestSyncSourceOf(t *testing.T) {
+	t.Parallel()
+
 	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
 		voice, data, _ := src.SyncPatterns()
 		for p, kind := range map[enums.SyncPattern]layer2.Kind{voice: layer2.KindVoice, data: layer2.KindData} {

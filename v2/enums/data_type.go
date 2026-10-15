@@ -8,6 +8,7 @@ package enums
 // data burst (ETSI TS 102 361-1 clause 9.3.6, Table 9.22).
 type DataType uint8
 
+// The DataType values.
 const (
 	DataTypePIHeader           DataType = iota // PI Header
 	DataTypeVoiceLCHeader                      // Voice LC Header

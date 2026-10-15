@@ -55,9 +55,9 @@ func DecodeAMBE72(slot [72]bit.Bit) (AMBEFrame, fec.Result) {
 func encodeAMBE(ambe49 [49]bit.Bit) [72]bit.Bit {
 	var ambe72 [72]bit.Bit
 
-	var aOrig uint32 = 0
-	var bOrig uint32 = 0
-	var cOrig uint32 = 0
+	var aOrig uint32
+	var bOrig uint32
+	var cOrig uint32
 	var MASK uint32 = 0x000800
 
 	for i := 0; i < 12; i, MASK = i+1, MASK>>1 {
@@ -126,7 +126,7 @@ func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 	var ambe49 [49]bit.Bit
 	result := fec.Result{BitsChecked: 47}
 
-	var a uint32 = 0
+	var a uint32
 	var MASK uint32 = 0x800000
 
 	for i := 0; i < 24; i, MASK = i+1, MASK>>1 {
@@ -143,7 +143,7 @@ func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 	}
 	a = uint32(dataA)
 
-	var b uint32 = 0
+	var b uint32
 	MASK = 0x400000
 	for i := 0; i < 23; i, MASK = i+1, MASK>>1 {
 		bPos := bTable[i]
@@ -162,7 +162,7 @@ func decodeAMBE(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
 	}
 	b = uint32(dataB)
 
-	var c uint32 = 0
+	var c uint32
 	MASK = 0x1000000
 	for i := 0; i < 25; i, MASK = i+1, MASK>>1 {
 		cPos := cTable[i]

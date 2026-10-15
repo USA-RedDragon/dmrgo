@@ -29,8 +29,12 @@ func reencode(t *testing.T, b *layer2.Burst) *layer2.Burst {
 }
 
 func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
+	t.Parallel()
+
 	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
 		t.Run(dt.String(), func(t *testing.T) {
+			t.Parallel()
+
 			lc := groupLC(enums.FIDStandardized)
 			lc.BurstDataType = dt
 			lcBits := must(lc.Encode())
@@ -59,6 +63,8 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 }
 
 func TestBurstEncode_HandBuiltData(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 	header0, term := lc, lc
 	header0.BurstDataType = enums.DataTypeVoiceLCHeader
@@ -134,6 +140,8 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.dt.String(), func(t *testing.T) {
+			t.Parallel()
+
 			b := dataBurst(tt.dt, tt.data)
 			got := reencode(t, &b)
 			if got.SlotType.DataType != tt.dt || got.SlotType.ColorCode != 1 {
@@ -153,6 +161,8 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 // The BurstDataType of a Full LC selects its RS(12,9) mask, so it must
 // match the slot type of the burst.
 func TestBurstEncode_FullLCDataTypeMustMatchSlotType(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 	lc.BurstDataType = enums.DataTypeVoiceLCHeader
 	b := dataBurst(enums.DataTypeTerminatorWithLC, &lc)
@@ -179,6 +189,8 @@ func (c *customData) EncodeBits() ([]bit.Bit, error) { return c.bits, nil }
 // TestBurstEncode_CustomData checks that Burst.Encode takes a Data type from
 // outside package pdu and checks the number of bits it encodes.
 func TestBurstEncode_CustomData(t *testing.T) {
+	t.Parallel()
+
 	want := [12]byte{0xDE, 0xAD, 0xBE, 0xEF}
 	b := dataBurst(enums.DataTypeRate12, &customData{bits: bit.Unpack(want[:])})
 	got := reencode(t, &b)
@@ -192,6 +204,8 @@ func TestBurstEncode_CustomData(t *testing.T) {
 }
 
 func TestBurstEncode_IdleKeepsDecodedPayload(t *testing.T) {
+	t.Parallel()
+
 	payload := [12]byte{0x12, 0x34}
 	frame := must(lcBurst(payload, enums.DataTypeIdle, 1))
 	b := must(layer2.NewBurstFromBytes(frame))
@@ -212,6 +226,8 @@ func bitsOf(p [12]byte) [96]bit.Bit {
 }
 
 func TestBurstEncode_DataErrors(t *testing.T) {
+	t.Parallel()
+
 	csbk := &pdu.CSBK{Opcode: 0x3F}
 	tests := []struct {
 		name  string
@@ -227,6 +243,8 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := tt.burst.Encode()
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("Encode error = %v, want one containing %q", err, tt.want)
@@ -240,6 +258,8 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 // it; a data type that carries a different number of information bits is an
 // error.
 func TestBurstEncode_DecodedPayloadWithoutData(t *testing.T) {
+	t.Parallel()
+
 	frame := must(lcBurst([12]byte{0xDE, 0xAD}, enums.DataTypeCSBK, 1))
 	b, err := layer2.NewBurstFromBytes(frame)
 	if err != nil || b.Data == nil || !b.FEC.PDU.Uncorrectable {

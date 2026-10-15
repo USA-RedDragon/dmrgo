@@ -10,6 +10,8 @@ import (
 )
 
 func TestBurst_Opcode0x38HintFromSync(t *testing.T) {
+	t.Parallel()
+
 	act := pdu.BSOutboundActivationPDU{
 		BSAddress:     1,
 		SourceAddress: 2,

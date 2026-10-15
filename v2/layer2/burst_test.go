@@ -12,8 +12,12 @@ import (
 )
 
 func TestBurst_ReservedDataTypes(t *testing.T) {
+	t.Parallel()
+
 	for dt := enums.DataTypeReserved; dt <= 0xF; dt++ {
 		t.Run(fmt.Sprintf("DataType%d", dt), func(t *testing.T) {
+			t.Parallel()
+
 			frame := must(lcBurst([12]byte{}, dt, 1))
 			{
 				var burst layer2.Burst
@@ -54,6 +58,8 @@ func loadBursts(t testing.TB, path string) []layer2.RawBurst {
 }
 
 func TestBurst_Encode(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		file string
@@ -67,6 +73,8 @@ func TestBurst_Encode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			bursts := loadBursts(t, tt.file)
 			for i, data := range bursts {
 				burst, err := layer2.NewBurstFromBytes(data)
@@ -154,6 +162,8 @@ func flipBurstBits(frame [33]byte, positions ...int) [33]byte {
 }
 
 func TestBurst_SyncTolerance(t *testing.T) {
+	t.Parallel()
+
 	frame := must(lcBurst([12]byte{}, enums.DataTypeIdle, 1))
 
 	noisy := flipBurstBits(frame, layer2.SyncStart, layer2.SyncStart+11, layer2.SyncStart+30, layer2.SyncEnd-1)
@@ -180,6 +190,8 @@ func TestBurst_SyncTolerance(t *testing.T) {
 // codeword. The EMB positions of MS-sourced data SYNC are 2 bits from a
 // codeword, at bits 115 and 155.
 func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
+	t.Parallel()
+
 	frame := must(lcBurst([12]byte{}, enums.DataTypeIdle, 1))
 	diff := uint64(enums.SyncBSSourcedData ^ enums.SyncMSSourcedData)
 	for i := 0; i < 48; i++ {
@@ -208,6 +220,8 @@ func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 // the centre) as a SYNC burst. The captures have clean SYNC fields, so any
 // SYNC match at a non-zero distance would be a misclassified B-F burst.
 func TestBurst_SyncTolerance_EmbeddedVoiceBursts(t *testing.T) {
+	t.Parallel()
+
 	files, err := filepath.Glob("testdata/*.bin")
 	if err != nil {
 		t.Fatal(err)

@@ -12,6 +12,8 @@ import (
 // TestDecodedEqualsBuilt checks that a decoded PDU, with its FEC result
 // cleared, is reflect.DeepEqual to the value it was built from.
 func TestDecodedEqualsBuilt(t *testing.T) {
+	t.Parallel()
+
 	csbk := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble,
 		PreamblePDU: &pdu.PreamblePDU{Data: true, CSBKBlocksToFollow: 3, TargetAddress: 3120101, SourceAddress: 3120001}}
 	gotCSBK := pdu.DecodeCSBK(must(csbk.Encode()))

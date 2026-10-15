@@ -42,6 +42,8 @@ func buildContinuationBits96(pf bool, csbko byte, colourCode byte, cdefParms [58
 }
 
 func TestCGAPContinuation_Decode(t *testing.T) {
+	t.Parallel()
+
 	var cdefParms [58]bit.Bit
 	cdefParms[3] = 1
 	cdefParms[6] = 1
@@ -80,6 +82,8 @@ func TestCGAPContinuation_Decode(t *testing.T) {
 }
 
 func TestCGAPContinuation_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var cdefParms [58]bit.Bit
 	cdefParms[0] = 1
 	cdefParms[20] = 1
@@ -112,6 +116,8 @@ func TestCGAPContinuation_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestMVAPContinuation_Decode(t *testing.T) {
+	t.Parallel()
+
 	var cdefParms [58]bit.Bit
 	cdefParms[0] = 1
 
@@ -134,6 +140,8 @@ func TestMVAPContinuation_Decode(t *testing.T) {
 }
 
 func TestBCAPContinuation_Decode(t *testing.T) {
+	t.Parallel()
+
 	var cdefParms [58]bit.Bit
 	cdefParms[5] = 1
 
@@ -163,6 +171,8 @@ func TestBCAPContinuation_Decode(t *testing.T) {
 }
 
 func TestVNAPContinuation_Decode(t *testing.T) {
+	t.Parallel()
+
 	var cdefParms [58]bit.Bit
 	cdefParms[0] = 1
 	cdefParms[57] = 1
@@ -186,6 +196,8 @@ func TestVNAPContinuation_Decode(t *testing.T) {
 }
 
 func TestCGAPContinuation_String(t *testing.T) {
+	t.Parallel()
+
 	var cdefParms [58]bit.Bit
 	cgap := &pdu.CGAPContinuation{
 		LastBlock:   true,
@@ -203,6 +215,8 @@ func TestCGAPContinuation_String(t *testing.T) {
 }
 
 func TestMVAPContinuation_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	var cdefParms [58]bit.Bit
 	cdefParms[10] = 1
 	cdefParms[30] = 1
@@ -228,6 +242,8 @@ func TestMVAPContinuation_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestBit_ContinuationTypes_AllDecode(t *testing.T) {
+	t.Parallel()
+
 	var zeroBits [96]bit.Bit
 
 	pdu.DecodeCGAPContinuation(zeroBits)
@@ -237,6 +253,8 @@ func TestBit_ContinuationTypes_AllDecode(t *testing.T) {
 }
 
 func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
+	t.Parallel()
+
 	var parms [58]bit.Bit
 	parms[0] = 1
 	parms[57] = 1
@@ -270,6 +288,8 @@ func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
 }
 
 func TestMBCLastBlockCRC_MultiBlock(t *testing.T) {
+	t.Parallel()
+
 	var inter, last [96]bit.Bit
 	inter[5] = 1
 	inter[95] = 1

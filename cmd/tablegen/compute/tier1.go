@@ -2,10 +2,10 @@ package compute
 
 import "math/bits"
 
-// ComputeGolay23_12_7Encoding computes the systematic Golay(23,12,7)
+// Golay23_12_7Encoding computes the systematic Golay(23,12,7)
 // codeword (d << 11) | (d*x^11 mod g(x)) of each 12-bit data value d, with
 // g(x) = 0xC75. Each entry is the codeword shifted left by 1.
-func ComputeGolay23_12_7Encoding() []uint32 {
+func Golay23_12_7Encoding() []uint32 {
 	const genPoly = 0xC75
 	table := make([]uint32, 4096)
 
@@ -24,10 +24,10 @@ func ComputeGolay23_12_7Encoding() []uint32 {
 	return table
 }
 
-// ComputeGolay24_12_8Encoding computes the Golay(24,12,8) codeword of each
+// Golay24_12_8Encoding computes the Golay(24,12,8) codeword of each
 // 12-bit data value: the Golay(23,12,7) codeword shifted left by 1, with an
 // even parity bit in bit 0.
-func ComputeGolay24_12_8Encoding() []uint32 {
+func Golay24_12_8Encoding() []uint32 {
 	const genPoly = 0xC75
 	table := make([]uint32, 4096)
 
@@ -48,10 +48,10 @@ func ComputeGolay24_12_8Encoding() []uint32 {
 	return table
 }
 
-// ComputeQR16_7_6Syndrome computes the error pattern of weight 0 to 2 for each
+// QR16_7_6Syndrome computes the error pattern of weight 0 to 2 for each
 // 9-bit syndrome of the QR(16,7,6) code, or 0xFFFF when there is none (ETSI
 // TS 102 361-1 clause B.3.2).
-func ComputeQR16_7_6Syndrome() [512]uint16 {
+func QR16_7_6Syndrome() [512]uint16 {
 	var table [512]uint16
 	for i := range table {
 		table[i] = 0xFFFF
@@ -128,10 +128,10 @@ func qrParityBits(bits [7]byte) [9]byte {
 	}
 }
 
-// ComputeQR16_7_6Encoding computes the QR(16,7,6) codeword of each 7-bit data
+// QR16_7_6Encoding computes the QR(16,7,6) codeword of each 7-bit data
 // value, with data in bits 15 to 9 and parity in bits 8 to 0 (ETSI TS 102
 // 361-1 clause B.3.2).
-func ComputeQR16_7_6Encoding() []uint16 {
+func QR16_7_6Encoding() []uint16 {
 	table := make([]uint16, 128)
 
 	for d := 0; d < 128; d++ {
@@ -153,10 +153,10 @@ func ComputeQR16_7_6Encoding() []uint16 {
 	return table
 }
 
-// ComputeGolay20_8_7Encoding computes the Golay(20,8,7) codeword of each 8-bit
+// Golay20_8_7Encoding computes the Golay(20,8,7) codeword of each 8-bit
 // data value, with data in bits 0 to 7 and parity in bits 8 to 19 (ETSI TS
 // 102 361-1 clause B.3.1).
-func ComputeGolay20_8_7Encoding() []uint32 {
+func Golay20_8_7Encoding() []uint32 {
 	table := make([]uint32, 256)
 
 	for d := 0; d < 256; d++ {
@@ -177,9 +177,9 @@ func ComputeGolay20_8_7Encoding() []uint32 {
 	return table
 }
 
-// ComputeEncoderStateTransition computes the 4-bit symbol of the rate 3/4
+// EncoderStateTransition computes the 4-bit symbol of the rate 3/4
 // trellis encoder at index state*8+tribit (ETSI TS 102 361-1 clause B.2.4).
-func ComputeEncoderStateTransition() []byte {
+func EncoderStateTransition() []byte {
 	table := make([]byte, 64)
 
 	for state := 0; state < 8; state++ {
@@ -201,10 +201,10 @@ func reverseBits3(b byte) byte {
 	return ((b & 1) << 2) | (b & 2) | ((b & 4) >> 2)
 }
 
-// ComputeInterleaveMatrix computes the rate 3/4 trellis interleave order of
+// InterleaveMatrix computes the rate 3/4 trellis interleave order of
 // the 98 dibits: pairs of consecutive indexes in steps of 8, in 4 rows that
 // start at 0, 2, 4 and 6 (ETSI TS 102 361-1 clause B.2.4).
-func ComputeInterleaveMatrix() []byte {
+func InterleaveMatrix() []byte {
 	table := make([]byte, 0, 98)
 
 	for g := 0; g < 13; g++ {
@@ -222,10 +222,10 @@ func ComputeInterleaveMatrix() []byte {
 	return table
 }
 
-// ComputeGolay20_8_7Syndrome computes the error pattern of weight 0 to 3 for
+// Golay20_8_7Syndrome computes the error pattern of weight 0 to 3 for
 // each 12-bit syndrome of the Golay(20,8,7) code, or 0xFFFFFFFF when there is
 // none (ETSI TS 102 361-1 clause B.3.1).
-func ComputeGolay20_8_7Syndrome() [4096]uint32 {
+func Golay20_8_7Syndrome() [4096]uint32 {
 	var table [4096]uint32
 	for i := range table {
 		table[i] = 0xFFFFFFFF
@@ -308,10 +308,10 @@ func golay20ParityBits(bits [8]byte) [12]byte {
 	}
 }
 
-// ComputeGolay23_12_7Syndrome computes the error pattern of weight 0 to 3
+// Golay23_12_7Syndrome computes the error pattern of weight 0 to 3
 // for each 11-bit syndrome of the Golay(23,12,7) code. Entries 2048 and up
 // are 0xFFFFFFFF.
-func ComputeGolay23_12_7Syndrome() [4096]uint32 {
+func Golay23_12_7Syndrome() [4096]uint32 {
 	var table [4096]uint32
 	for i := range table {
 		table[i] = 0xFFFFFFFF
@@ -362,11 +362,11 @@ func golay23Syndrome(errPattern uint32) int {
 	return int(dividend & 0x7FF)
 }
 
-// ComputeGolay24_12_8Syndrome computes the error pattern of weight 0 to 3
+// Golay24_12_8Syndrome computes the error pattern of weight 0 to 3
 // for each 12-bit syndrome of the Golay(24,12,8) code, or 0xFFFFFFFF when
 // there is none. The syndrome is the Golay(23,12,7) syndrome shifted left by
 // 1, with the overall parity error in bit 0.
-func ComputeGolay24_12_8Syndrome() [4096]uint32 {
+func Golay24_12_8Syndrome() [4096]uint32 {
 	var table [4096]uint32
 	for i := range table {
 		table[i] = 0xFFFFFFFF

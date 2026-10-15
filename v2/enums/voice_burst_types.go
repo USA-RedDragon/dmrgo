@@ -4,6 +4,7 @@ package enums
 // (ETSI TS 102 361-1 clause 5.1.2.1). The zero value is VoiceBurstUnknown.
 type VoiceBurstType uint8
 
+// The VoiceBurstType values.
 const (
 	// VoiceBurstUnknown is a burst whose superframe position is not known.
 	VoiceBurstUnknown VoiceBurstType = iota
@@ -55,8 +56,8 @@ func (v VoiceBurstType) LCSS() (lcss LCSS, ok bool) {
 }
 
 // String returns the name of a voice burst type.
-func (burstType VoiceBurstType) String() string {
-	switch burstType {
+func (v VoiceBurstType) String() string {
+	switch v {
 	case VoiceBurstUnknown:
 		return unknownName
 	case VoiceBurstA:

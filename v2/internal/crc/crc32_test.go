@@ -7,6 +7,8 @@ import (
 )
 
 func TestCRC32_ZeroInput(t *testing.T) {
+	t.Parallel()
+
 	result := crc.CRC32([]byte{})
 	if result != 0 {
 		t.Errorf("CRC32 of empty input = 0x%08X, want 0x00000000", result)
@@ -14,6 +16,8 @@ func TestCRC32_ZeroInput(t *testing.T) {
 }
 
 func TestCRC32_AllZeros(t *testing.T) {
+	t.Parallel()
+
 	result := crc.CRC32(make([]byte, 10))
 	if result != 0 {
 		t.Errorf("CRC32 of 10 zero bytes = 0x%08X, want 0x00000000", result)
@@ -21,6 +25,8 @@ func TestCRC32_AllZeros(t *testing.T) {
 }
 
 func TestCRC32_NonZero(t *testing.T) {
+	t.Parallel()
+
 	result := crc.CRC32([]byte{0x01, 0x02})
 	if result == 0 {
 		t.Error("CRC32 of [0x01, 0x02] should be non-zero")
@@ -28,6 +34,8 @@ func TestCRC32_NonZero(t *testing.T) {
 }
 
 func TestCRC32_Deterministic(t *testing.T) {
+	t.Parallel()
+
 	data := []byte{0xAA, 0x55, 0xDE, 0xAD, 0xBE, 0xEF}
 	crc1 := crc.CRC32(data)
 	crc2 := crc.CRC32(data)
@@ -37,6 +45,8 @@ func TestCRC32_Deterministic(t *testing.T) {
 }
 
 func TestCRC32_ByteSwap(t *testing.T) {
+	t.Parallel()
+
 	result1 := crc.CRC32([]byte{0x01, 0x02})
 
 	result2 := crc.CRC32([]byte{0x02, 0x01})
@@ -47,6 +57,8 @@ func TestCRC32_ByteSwap(t *testing.T) {
 }
 
 func TestCRC32_OddLength(t *testing.T) {
+	t.Parallel()
+
 	result := crc.CRC32([]byte{0x01, 0x02, 0x03})
 	if result == 0 {
 		t.Error("CRC32 of 3 non-zero bytes should be non-zero")
@@ -54,6 +66,8 @@ func TestCRC32_OddLength(t *testing.T) {
 }
 
 func TestCRC32_CheckValid(t *testing.T) {
+	t.Parallel()
+
 	data := []byte{0xDE, 0xAD, 0xBE, 0xEF}
 	expected := crc.CRC32(data)
 
@@ -63,6 +77,8 @@ func TestCRC32_CheckValid(t *testing.T) {
 }
 
 func TestCRC32_CheckInvalid(t *testing.T) {
+	t.Parallel()
+
 	data := []byte{0xDE, 0xAD, 0xBE, 0xEF}
 	expected := crc.CRC32(data)
 
@@ -72,6 +88,8 @@ func TestCRC32_CheckInvalid(t *testing.T) {
 }
 
 func TestCRC32_DifferentDataDifferentCRC(t *testing.T) {
+	t.Parallel()
+
 	data1 := []byte{0x01, 0x02, 0x03, 0x04}
 	data2 := []byte{0x01, 0x02, 0x03, 0x05}
 	crc1 := crc.CRC32(data1)

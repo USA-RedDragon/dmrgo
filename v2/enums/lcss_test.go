@@ -3,6 +3,8 @@ package enums
 import "testing"
 
 func TestLCSSString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		lcss     LCSS
 		expected string
@@ -14,6 +16,8 @@ func TestLCSSString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.lcss.String()
 			if got != tt.expected {
 				t.Errorf("(%d).String() = %q, want %q", tt.lcss, got, tt.expected)
@@ -23,6 +27,8 @@ func TestLCSSString(t *testing.T) {
 }
 
 func TestLCSSString_Unknown(t *testing.T) {
+	t.Parallel()
+
 	got := (LCSS(99)).String()
 	if got != unknownName {
 		t.Errorf("(99).String() = %q, want %q", got, unknownName)
@@ -30,6 +36,8 @@ func TestLCSSString_Unknown(t *testing.T) {
 }
 
 func TestLCSS_Cast(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		input    int
 		expected LCSS

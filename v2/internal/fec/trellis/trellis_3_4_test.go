@@ -6,6 +6,8 @@ import (
 )
 
 func TestTrellis34Decode(t *testing.T) {
+	t.Parallel()
+
 	symbolToDibits := make(map[byte][2]int8)
 	for pair, sym := range trellis34_constellation {
 		symbolToDibits[sym] = pair

@@ -8,6 +8,8 @@ import (
 )
 
 func TestFLC_SetAddresses(t *testing.T) {
+	t.Parallel()
+
 	for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
 		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: flco}
 		if !lc.SetAddresses(91, 3191868) {
@@ -29,6 +31,8 @@ func TestFLC_SetAddresses(t *testing.T) {
 }
 
 func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
+	t.Parallel()
+
 	for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
 		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeTerminatorWithLC, FLCO: flco, FID: 0xC2}
 		lc.RawPayload[0] = 1
@@ -54,6 +58,8 @@ func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
 }
 
 func TestDataHeader_Addresses(t *testing.T) {
+	t.Parallel()
+
 	dh := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{}}
 	if !dh.SetAddresses(3120002, 3120001) {
 		t.Fatal("SetAddresses failed")

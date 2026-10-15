@@ -1,9 +1,9 @@
 package compute
 
-// ComputeTrellis34Transition inverts encoderStateTransition into the rate
+// Trellis34Transition inverts encoderStateTransition into the rate
 // 3/4 trellis decoder table: the tribit for each [state][symbol], or 0xFF
 // when the encoder does not send that symbol from that state.
-func ComputeTrellis34Transition(encoderStateTransition []byte) [][]byte {
+func Trellis34Transition(encoderStateTransition []byte) [][]byte {
 	table := make([][]byte, 8)
 	for s := range table {
 		table[s] = make([]byte, 16)

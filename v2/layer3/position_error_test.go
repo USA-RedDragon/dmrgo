@@ -6,6 +6,8 @@ import (
 )
 
 func TestPositionError_Constants(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		value    PositionError
@@ -23,6 +25,8 @@ func TestPositionError_Constants(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			if uint8(tt.value) != tt.expected {
 				t.Errorf("%s = %d, want %d", tt.name, tt.value, tt.expected)
 			}
@@ -31,6 +35,8 @@ func TestPositionError_Constants(t *testing.T) {
 }
 
 func TestPositionError_String(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		value    PositionError
 		contains string
@@ -47,6 +53,8 @@ func TestPositionError_String(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.contains, func(t *testing.T) {
+			t.Parallel()
+
 			str := tt.value.String()
 			if !strings.Contains(str, tt.contains) {
 				t.Errorf("String() = %q, want to contain %q", str, tt.contains)
@@ -56,6 +64,8 @@ func TestPositionError_String(t *testing.T) {
 }
 
 func TestPositionErrorString(t *testing.T) {
+	t.Parallel()
+
 	for i := uint8(0); i <= 7; i++ {
 		pe := PositionError(i)
 		name := pe.String()

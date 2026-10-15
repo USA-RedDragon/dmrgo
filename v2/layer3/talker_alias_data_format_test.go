@@ -5,6 +5,8 @@ import (
 )
 
 func TestTalkerAliasDataFormatString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		format   TalkerAliasDataFormat
 		expected string
@@ -17,6 +19,8 @@ func TestTalkerAliasDataFormatString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.format.String()
 			if got != tt.expected {
 				t.Errorf("(%d).String() = %q, want %q", tt.format, got, tt.expected)
@@ -26,6 +30,8 @@ func TestTalkerAliasDataFormatString(t *testing.T) {
 }
 
 func TestTalkerAliasDataFormatString_Unknown(t *testing.T) {
+	t.Parallel()
+
 	got := (TalkerAliasDataFormat(99)).String()
 	if got != "Unknown" {
 		t.Errorf("(99).String() = %q, want %q", got, "Unknown")
@@ -33,6 +39,8 @@ func TestTalkerAliasDataFormatString_Unknown(t *testing.T) {
 }
 
 func TestTalkerAliasDataFormat_Constants(t *testing.T) {
+	t.Parallel()
+
 	if TalkerAliasSevenBit != 0 {
 		t.Errorf("SevenBitCharacters = %d, want 0", TalkerAliasSevenBit)
 	}

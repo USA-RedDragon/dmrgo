@@ -8,6 +8,8 @@ import (
 )
 
 func TestGolay23127(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec // pseudo-random adequate for tests
 
 	for d := 0; d < 4096; d++ {
@@ -75,6 +77,8 @@ func TestGolay23127(t *testing.T) {
 // Golay (23,12,7) is perfect: each of the 2048 syndromes maps to one error
 // pattern of weight 3 or less, so no received word is uncorrectable.
 func TestGolay23127IsPerfect(t *testing.T) {
+	t.Parallel()
+
 	for s := range 2048 {
 		pattern := golay_23_12_7_syndrome_table[s]
 		if pattern == 0xFFFFFFFF || bits.OnesCount32(pattern) > 3 || golay23ComputeSyndrome(pattern) != s {

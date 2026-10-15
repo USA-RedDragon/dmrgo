@@ -3,6 +3,8 @@ package enums
 import "testing"
 
 func TestVoiceBurstTypeString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		burstType VoiceBurstType
 		expected  string
@@ -17,6 +19,8 @@ func TestVoiceBurstTypeString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.burstType.String()
 			if got != tt.expected {
 				t.Errorf("(%d).String() = %q, want %q", tt.burstType, got, tt.expected)
@@ -26,6 +30,8 @@ func TestVoiceBurstTypeString(t *testing.T) {
 }
 
 func TestVoiceBurstAtAndIndex(t *testing.T) {
+	t.Parallel()
+
 	for i := -1; i <= 6; i++ {
 		v, ok := VoiceBurstAt(i)
 		if ok != (i >= 0 && i <= 5) {
@@ -49,6 +55,8 @@ func TestVoiceBurstAtAndIndex(t *testing.T) {
 }
 
 func TestVoiceBurstTypeLCSS(t *testing.T) {
+	t.Parallel()
+
 	want := map[VoiceBurstType]LCSS{
 		VoiceBurstB: LCSSFirstFragment,
 		VoiceBurstC: LCSSContinuationFragment,
@@ -66,6 +74,8 @@ func TestVoiceBurstTypeLCSS(t *testing.T) {
 }
 
 func TestVoiceBurstTypeString_InvalidReturnsUnknown(t *testing.T) {
+	t.Parallel()
+
 	got := (VoiceBurstType(99)).String()
 	if got != unknownName {
 		t.Errorf("(99).String() = %q, want %q", got, unknownName)

@@ -8,6 +8,8 @@ import (
 )
 
 func TestGolay2087Decode(t *testing.T) {
+	t.Parallel()
+
 	for i := 0; i < 100; i++ {
 		var data [8]bit.Bit
 		for j := 0; j < 8; j++ {

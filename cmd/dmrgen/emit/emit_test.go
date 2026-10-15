@@ -18,7 +18,7 @@ var _ bit.Bit
 
 func generate(t *testing.T, src string) (string, error) {
 	t.Helper()
-	pdus, err := parse.ParseSource("test.go", header+src)
+	pdus, err := parse.Source("test.go", header+src)
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
@@ -57,6 +57,8 @@ func assertContains(t *testing.T, out string, want ...string) {
 }
 
 func TestNoPtrDelegateUsesWidthOfRange(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Wide uint16
 type T struct {
 	R uint8 `+"`dmr:\"bits:0-1\"`"+`
@@ -70,6 +72,8 @@ type T struct {
 }
 
 func TestUnknownCRCAlgorithmIsRejected(t *testing.T) {
+	t.Parallel()
+
 	_, err := render(t, []parse.PDUStruct{{
 		Name:      "T",
 		Package:   "pdu",
@@ -83,6 +87,8 @@ func TestUnknownCRCAlgorithmIsRejected(t *testing.T) {
 }
 
 func TestUnknownFECCodecIsRejected(t *testing.T) {
+	t.Parallel()
+
 	_, err := generate(t, `// dmr:fec golay_99
 type T struct {
 	FEC fec.Result `+"`dmr:\"-\"`"+`
@@ -94,6 +100,8 @@ type T struct {
 }
 
 func TestFieldsBeyondFECDataBitsAreRejected(t *testing.T) {
+	t.Parallel()
+
 	_, err := generate(t, `// dmr:fec golay_20_8_7
 type T struct {
 	FEC fec.Result `+"`dmr:\"-\"`"+`
@@ -105,6 +113,8 @@ type T struct {
 }
 
 func TestSharedDispatchValueWithoutGuardIsRejected(t *testing.T) {
+	t.Parallel()
+
 	_, err := generate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
 }
@@ -119,6 +129,8 @@ type T struct {
 }
 
 func TestGuardedDispatch(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
 }
@@ -132,6 +144,8 @@ type T struct {
 }
 
 func TestSignedFieldIsSignExtended(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Offset int16
 type T struct {
 	A int    `+"`dmr:\"bits:0-11,signed\"`"+`
@@ -148,6 +162,8 @@ type T struct {
 }
 
 func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type T struct {
 	Lon float64 `+"`dmr:\"bits:0-24,type:longitude\"`"+`
 	Lat float64 `+"`dmr:\"bits:25-48,type:latitude\"`"+`
@@ -165,6 +181,8 @@ func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
 }
 
 func TestNonContiguousRangesForAllIntegerKinds(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Kind uint8
 func (k Kind) String() string { return "" }
 type Wrapped uint16
@@ -193,6 +211,8 @@ type T struct {
 }
 
 func TestDispatchIfAndFallback(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
 }
@@ -217,6 +237,8 @@ type T struct {
 }
 
 func TestEncodeChecksDispatchField(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
 }
@@ -243,6 +265,8 @@ type T struct {
 }
 
 func TestGuardedDispatchFallsBackToRaw(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
 }
@@ -259,6 +283,8 @@ type T struct {
 }
 
 func TestEncodeReportsOutOfRangeValues(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
 }
@@ -285,6 +311,8 @@ type T struct {
 }
 
 func TestConstIsEncoded(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Format uint8
 
 const FormatX Format = 5
@@ -304,6 +332,8 @@ type T struct {
 }
 
 func TestInputsBecomeDecodeParameters(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
 }
@@ -325,6 +355,8 @@ type T struct {
 }
 
 func TestDecodeReportsFECInTheFECField(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `// dmr:fec golay_20_8_7
 type G struct {
 	FEC fec.Result `+"`dmr:\"-\"`"+`
@@ -354,6 +386,8 @@ type P struct {
 }
 
 func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type T struct {
 	A uint8   `+"`dmr:\"bits:0-3\"`"+`
 	R [2]byte `+"`dmr:\"bits:4-15,raw\"`"+`
@@ -368,6 +402,8 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 }
 
 func TestEncodeBitsWrapsEncode(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `type T struct {
 	A uint8 `+"`dmr:\"bits:0-7\"`"+`
 }`)
@@ -377,7 +413,9 @@ func TestEncodeBitsWrapsEncode(t *testing.T) {
 }
 
 func TestSubPDUDecodeIsUnexported(t *testing.T) {
-	pdus, err := parse.ParseSource("test.go", header+`type Kind uint8
+	t.Parallel()
+
+	pdus, err := parse.Source("test.go", header+`type Kind uint8
 func (o Kind) String() string { return "" }
 type Sub struct {
 	A uint8 `+"`dmr:\"bits:0-7\"`"+`
@@ -405,6 +443,8 @@ type Top struct {
 }
 
 func TestGeneratedHeaderAndDocs(t *testing.T) {
+	t.Parallel()
+
 	out := mustGenerate(t, `// UDTHeader is a test header (ETSI TS 102 361-1 Table 9.17D).
 type UDTHeader struct {
 	A uint8 `+"`dmr:\"bits:0-7\"`"+`

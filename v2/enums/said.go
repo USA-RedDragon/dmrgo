@@ -5,6 +5,7 @@ package enums
 // (ETSI TS 102 361-3 Table 7.15).
 type SAID uint8
 
+// The SAID values.
 const (
 	SAIDRadioNetwork         SAID = 0  // radio network
 	SAIDUSBEthernetNetwork   SAID = 1  // USB or Ethernet network

@@ -35,6 +35,8 @@ func packedFLC(t *testing.T, flc *pdu.FullLinkControl) []byte {
 // ETSI TS 102 361-1 B.3.12, Table B.21: the mask is XORed into the parity
 // only, and only for Voice LC Header and Terminator with LC.
 func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
+	t.Parallel()
+
 	base := pdu.FullLinkControl{
 		FLCO:       enums.FLCOGroupVoiceChannelUser,
 		FID:        enums.FIDStandardized,
@@ -50,6 +52,8 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.dataType.String(), func(t *testing.T) {
+			t.Parallel()
+
 			flc := base
 			flc.BurstDataType = tt.dataType
 			masked := packedFLC(t, &flc)
@@ -66,6 +70,8 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 // RS-protected Full LC is sent only in a Voice LC Header or a Terminator
 // with LC, so encoding with any other data type is an error.
 func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
+	t.Parallel()
+
 	for _, dt := range []enums.DataType{enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeIdle} {
 		flc := pdu.FullLinkControl{
 			BurstDataType: dt,
@@ -80,6 +86,8 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 }
 
 func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
+	t.Parallel()
+
 	flc := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), enums.DataTypeVoiceLCHeader)
 	fecResult := flc.FEC
 	if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
@@ -99,6 +107,8 @@ func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
 // Depends on a correct RS(12,9) decoder: a wrong mask leaves three bad
 // parity bytes, which RS(12,9) cannot correct.
 func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
+	t.Parallel()
+
 	for _, dt := range []enums.DataType{enums.DataTypeTerminatorWithLC, enums.DataTypePIHeader} {
 		fecResult := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), dt).FEC
 		if !fecResult.Uncorrectable && fecResult.ErrorsCorrected == 0 {
@@ -109,6 +119,8 @@ func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 
 // Depends on a correct RS(12,9) encoder.
 func TestFLC_EncodeRealVoiceLCHeader(t *testing.T) {
+	t.Parallel()
+
 	want := hexBits96(t, realVoiceLCHeader)
 	flc := pdu.DecodeFullLinkControl(want, enums.DataTypeVoiceLCHeader)
 	if got := must(flc.Encode()); got != want {

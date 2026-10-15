@@ -12,6 +12,8 @@ import (
 )
 
 func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	original := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   false,
@@ -58,6 +60,8 @@ func TestFullLinkControl_GroupVoice_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	original := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   true,
@@ -107,6 +111,8 @@ func TestFullLinkControl_UnitToUnit_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestFullLinkControl_EncodeStability(t *testing.T) {
+	t.Parallel()
+
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   false,
@@ -131,6 +137,8 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 }
 
 func TestFullLinkControl_String(t *testing.T) {
+	t.Parallel()
+
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -151,6 +159,8 @@ func TestFullLinkControl_String(t *testing.T) {
 }
 
 func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	so := layer3.ServiceOptions{
 		IsEmergency:         true,
 		IsPrivacy:           true,
@@ -196,6 +206,8 @@ func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {
 }
 
 func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
+	t.Parallel()
+
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -218,6 +230,8 @@ func TestFullLinkControl_Decode_BothDataTypes(t *testing.T) {
 }
 
 func TestFullLinkControl_AddressRange(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		groupAddr  uint32
@@ -230,6 +244,8 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			flc := &pdu.FullLinkControl{
 				BurstDataType: enums.DataTypeVoiceLCHeader,
 				FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -260,6 +276,8 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 }
 
 func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
+	t.Parallel()
+
 	flcoVariants := []enums.FLCO{
 		enums.FLCOTalkerAliasBlock1,
 		enums.FLCOTalkerAliasBlock2,
@@ -268,6 +286,8 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 
 	for _, flco := range flcoVariants {
 		t.Run(flco.String(), func(t *testing.T) {
+			t.Parallel()
+
 			var aliasData [56]bit.Bit
 			for i := 0; i < 56; i++ {
 				if i%3 == 0 {
@@ -305,6 +325,8 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 }
 
 func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
+	t.Parallel()
+
 	var aliasData [56]bit.Bit
 	aliasData[0] = 1
 	aliasData[7] = 1
@@ -328,6 +350,8 @@ func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
 }
 
 func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	// ETSI TS 102 361-2 Table 7.4: 5-bit data length (bits 2-6), then the
 	// 49-bit data whose MSB is bit 7.
 	tests := []struct {
@@ -345,6 +369,8 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			var aliasData [48]bit.Bit
 			aliasData[0] = 1
 			aliasData[47] = 1
@@ -388,6 +414,8 @@ func msbOf(msb bool) uint64 {
 }
 
 func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	original := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		ProtectFlag:   false,
@@ -446,6 +474,8 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 }
 
 func TestFullLinkControl_RSErrorsCountBits(t *testing.T) {
+	t.Parallel()
+
 	lc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeTerminatorWithLC,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,

@@ -8,6 +8,8 @@ import (
 )
 
 func TestCRC8_ZeroInput(t *testing.T) {
+	t.Parallel()
+
 	bits := make([]bit.Bit, 28)
 	result := crc.CRC8(bits)
 	if result != 0x00 {
@@ -16,6 +18,8 @@ func TestCRC8_ZeroInput(t *testing.T) {
 }
 
 func TestCRC8_SingleBit(t *testing.T) {
+	t.Parallel()
+
 	bits := []bit.Bit{1}
 	result := crc.CRC8(bits)
 	if result == 0x00 {
@@ -24,6 +28,8 @@ func TestCRC8_SingleBit(t *testing.T) {
 }
 
 func TestCRC8_CheckValid(t *testing.T) {
+	t.Parallel()
+
 	data := make([]bit.Bit, 28)
 	data[0] = 1
 	data[3] = 1
@@ -45,6 +51,8 @@ func TestCRC8_CheckValid(t *testing.T) {
 }
 
 func TestCRC8_CheckInvalid(t *testing.T) {
+	t.Parallel()
+
 	data := make([]bit.Bit, 28)
 	data[0] = 1
 	data[5] = 1
@@ -64,12 +72,16 @@ func TestCRC8_CheckInvalid(t *testing.T) {
 }
 
 func TestCRC8_CheckTooShort(t *testing.T) {
+	t.Parallel()
+
 	if checkCRC8Codeword(make([]bit.Bit, 8)) {
 		t.Error("CheckCRC8 should return false for data shorter than 9 bits")
 	}
 }
 
 func TestCRC8_Deterministic(t *testing.T) {
+	t.Parallel()
+
 	data := []bit.Bit{1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0}
 	crc1 := crc.CRC8(data)
 	crc2 := crc.CRC8(data)
@@ -79,6 +91,8 @@ func TestCRC8_Deterministic(t *testing.T) {
 }
 
 func TestCRC8_DifferentDataDifferentCRC(t *testing.T) {
+	t.Parallel()
+
 	data1 := []bit.Bit{1, 0, 0, 0, 0, 0, 0, 0}
 	data2 := []bit.Bit{0, 1, 0, 0, 0, 0, 0, 0}
 	crc1 := crc.CRC8(data1)

@@ -7,6 +7,7 @@ import "fmt"
 // clause 9.3.18, Table 9.31).
 type ServiceAccessPointID uint8
 
+// The ServiceAccessPointID values.
 const (
 	SAPUnifiedDataTransport      ServiceAccessPointID = 0b0000 // Unified Data Transport (UDT)
 	SAPTCPIPHeaderCompression    ServiceAccessPointID = 0b0010 // TCP/IP header compression

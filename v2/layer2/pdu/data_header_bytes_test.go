@@ -8,6 +8,8 @@ import (
 )
 
 func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
+	t.Parallel()
+
 	headers := []pdu.DataHeader{
 		{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &pdu.UDTHeader{LLIDDestination: 1, LLIDSource: 2, Opcode: pdu.UDTOpcodeOutboundHeader, AppendedBlocks: 1}},
 		{Format: pdu.FormatResponsePacket, ResponsePacketHeader: &pdu.ResponsePacketHeader{LLIDDestination: 1, LLIDSource: 2, BlocksToFollow: 1}},
