@@ -95,6 +95,12 @@ type VoiceTransmitter struct {
 	header     [33]byte
 	terminator [33]byte
 	embedded   [4][32]bit.Bit
+	callLC     [4][32]bit.Bit
+	nextLC     *[4][32]bit.Bit
+	lcHook     func(superframe int) *pdu.FullLinkControl
+	superframe int
+	piHeader   [33]byte
+	hasPI      bool
 	silence    [72]bit.Bit
 	slots      [VoiceSlotsPerBurst][72]bit.Bit
 	pending    int
@@ -110,33 +116,14 @@ type VoiceTransmitter struct {
 // pads the last superframe; it is codec specific, for AMBE the
 // vocoder.EncodeAMBE72 of a silence frame. NewVoiceTransmitter returns an
 // error when colorCode does not fit in 4 bits, source is unknown or lc does
-// not encode.
+// not encode. It is NewVoiceTransmitterWithOptions with only these options.
 func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode uint8, source SyncSource, silence [72]bit.Bit) (*VoiceTransmitter, error) {
-	bit.Mask(silence[:])
-	voiceSync, dataSync, ok := source.SyncPatterns()
-	if !ok {
-		return nil, fmt.Errorf("unknown sync source %d", source)
-	}
-	if colorCode > 15 {
-		return nil, fmt.Errorf("color code %d does not fit in 4 bits", colorCode)
-	}
-	t := &VoiceTransmitter{
-		colorCode: int(colorCode),
-		voiceSync: voiceSync,
-		outbound:  source == SyncSourceBS,
-		silence:   silence,
-	}
-	var err error
-	if t.header, err = lcDataBurst(lc, elements.DataTypeVoiceLCHeader, colorCode, dataSync); err != nil {
-		return nil, err
-	}
-	if t.terminator, err = lcDataBurst(lc, elements.DataTypeTerminatorWithLC, colorCode, dataSync); err != nil {
-		return nil, err
-	}
-	if t.embedded, err = EncodeEmbeddedFullLinkControl(&lc); err != nil {
-		return nil, err
-	}
-	return t, nil
+	return NewVoiceTransmitterWithOptions(VoiceTransmitterOptions{
+		LC:        lc,
+		ColorCode: colorCode,
+		Source:    source,
+		Silence:   silence,
+	})
 }
 
 func lcDataBurst(lc pdu.FullLinkControl, dataType elements.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
@@ -240,6 +227,10 @@ func (t *VoiceTransmitter) flush() ([33]byte, error) {
 	copy(bits[156:], voice[108:])
 
 	if t.position == 0 {
+		if err := t.startSuperframe(); err != nil {
+			t.pending = 0
+			return [33]byte{}, err
+		}
 		writeSync(&bits, t.voiceSync)
 	} else {
 		emb := pdu.EmbeddedSignalling{ColorCode: t.colorCode}

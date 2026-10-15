@@ -110,12 +110,12 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
 | §6.1 | Vocoder socket | ✅ verified | 19/19 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/pdu/vocoder.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
-| §6.2 | Data and control | ✅ verified | 6/6 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go`, `v2/layer2/pdu/pi_header.go` |
+| §6.2 | Data and control | ✅ verified | 7/7 passed | `v2/layer2/burst.go`, `v2/enums/burst_types.go`, `v2/layer2/pdu/pi_header.go`, `v2/layer2/voice_transmitter_options.go` |
 | §6.3 | Common Announcement Channel burst | ✅ verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
 | §6.4 | Reverse Channel | ✅ verified | 12/12 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
-| §7.1.1 | Voice LC header | ✅ verified | 7/7 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go` |
+| §7.1.1 | Voice LC header | ✅ verified | 9/9 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_transmitter_options.go` |
 | §7.1.2 | Terminator with LC | ✅ verified | 7/7 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go` |
-| §7.1.3 | Embedded signalling | ✅ verified | 26/26 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go` |
+| §7.1.3 | Embedded signalling | ✅ verified | 28/28 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go`, `v2/layer2/voice_transmitter_options.go` |
 | §7.1.4 | Short Link Control in CACH | ✅ verified | 9/9 passed | `v2/layer2/short_lc_assembler.go`, `v2/fec/bptc/bptc_cach.go` |
 | §7.2.1 | Control Signalling BlocK (CSBK) | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | §7.3 | Idle message | ✅ verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |

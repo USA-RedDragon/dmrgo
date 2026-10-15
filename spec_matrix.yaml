@@ -68,11 +68,13 @@ documents:
           - v2/layer2/burst.go
           - v2/enums/burst_types.go
           - v2/layer2/pdu/pi_header.go
+          - v2/layer2/voice_transmitter_options.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBurst_Encode
               - TestBurst_PIHeader_Decode
+              - TestVoiceTransmitter_PIHeader
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestPIHeader_DecodeVector
@@ -124,6 +126,7 @@ documents:
           - v2/layer2/burst.go
           - v2/layer2/pdu/full_link_control.go
           - v2/layer2/voice_superframe.go
+          - v2/layer2/voice_transmitter_options.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -135,6 +138,8 @@ documents:
             names:
               - TestBuildLCDataBurst_ProducesCorrectSize
               - TestVoiceTransmitter_Transmission
+              - TestVoiceTransmitter_OptionsMatchPositional
+              - TestVoiceTransmitter_PIHeader
               - TestVoiceTransmitter_ReproducesCaptures
 
       - section: "7.1.2"
@@ -165,6 +170,7 @@ documents:
           - v2/layer2/embedded_lc_bytes.go
           - v2/layer2/voice_superframe.go
           - v2/layer2/voice_receiver.go
+          - v2/layer2/voice_transmitter_options.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
@@ -184,6 +190,8 @@ documents:
               - TestVoiceTransmitter_ReverseChannel
               - TestVoiceTransmitter_Terminate
               - TestVoiceTransmitter_RejectsBadInput
+              - TestVoiceTransmitter_EmbeddedLCRotation
+              - TestVoiceTransmitter_EmbeddedLCHookError
               - TestVoiceTransmitter_ReproducesCaptures
               - TestVoiceReceiver_Transmission
               - TestVoiceReceiver_LateEntry
