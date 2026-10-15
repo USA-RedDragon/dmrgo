@@ -28,7 +28,7 @@ const voiceLCHeaderMask = 0x96
 // RawBurst.SetEmbeddedData takes.
 func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
 	var bits [72]bit.Bit
-	copy(bits[:], bit.Unpack(lc[:]))
+	unpackBits(bits[:], lc[:])
 	return fragmentOctets(encodeEmbeddedLC(bits))
 }
 
@@ -203,7 +203,7 @@ func embeddedFullLinkControl(lc [72]bit.Bit, result fec.Result) pdu.FullLinkCont
 		codeword[i] ^= voiceLCHeaderMask
 	}
 	var data [96]bit.Bit
-	copy(data[:], bit.Unpack(codeword[:]))
+	unpackBits(data[:], codeword[:])
 	flc := pdu.DecodeFullLinkControl(data, enums.DataTypeVoiceLCHeader)
 	result.ErrorsCorrected += flc.FEC.ErrorsCorrected
 	result.Uncorrectable = result.Uncorrectable || flc.FEC.Uncorrectable
@@ -226,6 +226,6 @@ func fullLCBits(lc *pdu.FullLinkControl) ([72]bit.Bit, error) {
 
 func lcOctets(lc [72]bit.Bit) [9]byte {
 	var octets [9]byte
-	copy(octets[:], bit.Pack(lc[:]))
+	packBits(octets[:], lc[:])
 	return octets
 }
