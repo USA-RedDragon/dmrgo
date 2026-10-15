@@ -86,56 +86,15 @@ func DecodeCACHBPTC(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.FECResult) {
 		matrix[encRow][encCol] = stream[j]
 	}
 
-	// Error correction: Hamming(17,12,3) on rows, then column parity check
-	// Iterate up to 5 passes for convergence
-	for pass := 0; pass < 5; pass++ {
-		fixing := false
+	received := matrix
+	correctCACHMatrix(&matrix)
 
-		// Column parity check (even parity, simple detection)
-		for col := 0; col < 17; col++ {
-			var parity bit.Bit
-			for row := 0; row < 4; row++ {
-				parity ^= matrix[row][col]
-			}
-			if parity != 0 {
-				result.ErrorsCorrected++
-				fixing = true
-			}
-		}
-
-		// Row Hamming(17,12,3) correction on rows 0..2
-		for row := 0; row < 3; row++ {
-			s := calculateSyndrome17_12(matrix[row])
-			if s != 0 {
-				errPos := hamming17_12_syndrome_table[s]
-				if errPos >= 0 && errPos < 17 {
-					matrix[row][errPos] ^= 1
-					result.ErrorsCorrected++
-					fixing = true
-				} else {
-					result.Uncorrectable = true
-				}
-			}
-		}
-
-		if !fixing {
-			break
+	for row := range matrix {
+		for col := range matrix[row] {
+			result.ErrorsCorrected += int(matrix[row][col] ^ received[row][col])
 		}
 	}
-
-	// Recompute column parity row from corrected data rows
-	if !result.Uncorrectable {
-		for col := 0; col < 17; col++ {
-			var expected bit.Bit
-			for row := 0; row < 3; row++ {
-				expected ^= matrix[row][col]
-			}
-			if matrix[3][col] != expected {
-				result.Uncorrectable = true
-				break
-			}
-		}
-	}
+	result.Uncorrectable = !cachMatrixValid(&matrix)
 
 	// Extract 36 info bits from rows 0..2, columns 0..11
 	var info [36]bit.Bit
@@ -144,6 +103,68 @@ func DecodeCACHBPTC(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.FECResult) {
 	}
 
 	return info, result
+}
+
+// correctCACHMatrix corrects the 4×17 product code in place. Row 3 is the even
+// column parity of rows 0..2, so it is also a Hamming(17,12,3) codeword. When
+// only one row has a nonzero syndrome, the failing column parities give the
+// exact error positions in that row. Otherwise each row is corrected for a
+// single error.
+func correctCACHMatrix(matrix *[4][17]bit.Bit) {
+	for pass := 0; pass < 3; pass++ {
+		var syndromes [4]int
+		badRow, badRows := 0, 0
+		for row := range matrix {
+			syndromes[row] = calculateSyndrome17_12(matrix[row])
+			if syndromes[row] != 0 {
+				badRow = row
+				badRows++
+			}
+		}
+
+		fixing := false
+		if badRows == 1 {
+			for col := 0; col < 17; col++ {
+				if cachColumnParity(matrix, col) != 0 {
+					matrix[badRow][col] ^= 1
+					fixing = true
+				}
+			}
+		}
+		if !fixing {
+			for row := range matrix {
+				if syndromes[row] == 0 {
+					continue
+				}
+				if errPos := hamming17_12_syndrome_table[syndromes[row]]; errPos >= 0 {
+					matrix[row][errPos] ^= 1
+					fixing = true
+				}
+			}
+		}
+
+		if !fixing {
+			return
+		}
+	}
+}
+
+func cachColumnParity(matrix *[4][17]bit.Bit, col int) bit.Bit {
+	return matrix[0][col] ^ matrix[1][col] ^ matrix[2][col] ^ matrix[3][col]
+}
+
+func cachMatrixValid(matrix *[4][17]bit.Bit) bool {
+	for row := range matrix {
+		if calculateSyndrome17_12(matrix[row]) != 0 {
+			return false
+		}
+	}
+	for col := 0; col < 17; col++ {
+		if cachColumnParity(matrix, col) != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // EncodeCACHBPTC encodes a 36-bit Short LC PDU into 4 × 17-bit CACH
