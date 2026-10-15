@@ -21,20 +21,8 @@ import (
 
 const colorCode = 7
 
-func pack96(bits [96]bit.Bit) [12]byte {
-	var p [12]byte
-	copy(p[:], bit.Pack(bits[:]))
-	return p
-}
-
-func unpack96(p [12]byte) [96]bit.Bit {
-	var bits [96]bit.Bit
-	copy(bits[:], bit.Unpack(p[:]))
-	return bits
-}
-
 func buildBurst(bits [96]bit.Bit, dt enums.DataType, src layer2.SyncSource) (layer2.RawBurst, error) {
-	p := pack96(bits)
+	p := bit.Pack96(bits)
 	if dt != enums.DataTypeMBCContinuation && !pdu.BlockCRCOK(p, dt) {
 		return layer2.RawBurst{}, fmt.Errorf("%s: block CRC does not check", dt)
 	}
@@ -220,7 +208,7 @@ func mbcGrant(w io.Writer) error {
 		return err
 	}
 	p, res := craw.BPTCPayload()
-	rx := unpack96(p)
+	rx := bit.Unpack96(p)
 	if res.Uncorrectable || !pdu.CheckMBCLastBlockCRC(rx) {
 		return errors.New("MBC last block CRC does not check")
 	}

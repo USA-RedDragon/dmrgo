@@ -108,9 +108,7 @@ func (r *RawBurst) setInfo(bits [196]bit.Bit) {
 // a Rate 3/4 or Rate 1 burst needs Rate34Payload or Rate1Payload.
 func (r *RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 	bits, res := bptc.Decode196(r.info())
-	var p [12]byte
-	copy(p[:], bit.Pack(bits[:]))
-	return p, res
+	return bit.Pack96(bits), res
 }
 
 // SetBPTCPayload BPTC(196,96) encodes p into the 196 information bits. The
@@ -118,9 +116,7 @@ func (r *RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 // RS(12,9) parity with the Data Type CRC Mask (see pdu.SealBlock and
 // pdu.FullLCCodeword).
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
-	var bits [96]bit.Bit
-	copy(bits[:], bit.Unpack(p[:]))
-	r.setInfo(bptc.Encode196(bits))
+	r.setInfo(bptc.Encode196(bit.Unpack96(p)))
 }
 
 // Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis

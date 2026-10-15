@@ -156,10 +156,7 @@ func generatedCall() ([][33]byte, error) {
 // burst, fills the shorter one with idle bursts, prepends junk bits and
 // flips bits at random.
 func buildStream(ts1, ts2 [][33]byte) ([]bit.Bit, int, error) {
-	var idlePayload [12]byte
-	info := layer2.IdleMessageInfo()
-	copy(idlePayload[:], bit.Pack(info[:]))
-	idle, err := layer2.BuildDataBurst(idlePayload, enums.DataTypeIdle, colorCode, layer2.SyncSourceBS)
+	idle, err := layer2.BuildDataBurst(bit.Pack96(layer2.IdleMessageInfo()), enums.DataTypeIdle, colorCode, layer2.SyncSourceBS)
 	if err != nil {
 		return nil, 0, err
 	}
