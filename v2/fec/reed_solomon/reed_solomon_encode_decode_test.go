@@ -186,14 +186,17 @@ func TestEncodePreservesData(t *testing.T) {
 	}
 }
 
-// tableB18Parity holds the parity columns of each row of ETSI TS 102 361-1 Table B.18.
-var tableB18Parity = [RS_12_9_DATASIZE][RS_12_9_CHECKSUMSIZE]byte{
-	{0x1C, 0xBC, 0xFD}, {0x89, 0x31, 0x08}, {0xAD, 0x41, 0x36},
-	{0x7D, 0x71, 0x16}, {0xF3, 0xA6, 0x3A}, {0x08, 0x83, 0x7B},
-	{0x3F, 0x6F, 0x02}, {0x6C, 0x0D, 0xA7}, {0x0E, 0x38, 0x40},
+// tableB18Parity returns the parity columns of each row of ETSI TS 102 361-1 Table B.18.
+func tableB18Parity() [RS_12_9_DATASIZE][RS_12_9_CHECKSUMSIZE]byte {
+	return [RS_12_9_DATASIZE][RS_12_9_CHECKSUMSIZE]byte{
+		{0x1C, 0xBC, 0xFD}, {0x89, 0x31, 0x08}, {0xAD, 0x41, 0x36},
+		{0x7D, 0x71, 0x16}, {0xF3, 0xA6, 0x3A}, {0x08, 0x83, 0x7B},
+		{0x3F, 0x6F, 0x02}, {0x6C, 0x0D, 0xA7}, {0x0E, 0x38, 0x40},
+	}
 }
 
 func TestEncodeTableB18Rows(t *testing.T) {
+	table := tableB18Parity()
 	for row := 0; row < RS_12_9_DATASIZE; row++ {
 		data := make([]byte, RS_12_9_DATASIZE)
 		data[row] = 0x01
@@ -202,17 +205,18 @@ func TestEncodeTableB18Rows(t *testing.T) {
 			t.Fatalf("row %d: Encode failed: %v", row, err)
 		}
 		got := [RS_12_9_CHECKSUMSIZE]byte(encoded[RS_12_9_DATASIZE:])
-		if got != tableB18Parity[row] {
-			t.Errorf("row %d: parity % X, want % X", row, got, tableB18Parity[row])
+		if got != table[row] {
+			t.Errorf("row %d: parity % X, want % X", row, got, table[row])
 		}
 	}
 }
 
 func specParity(data []byte) [RS_12_9_CHECKSUMSIZE]byte {
+	table := tableB18Parity()
 	var p [RS_12_9_CHECKSUMSIZE]byte
 	for i := range data {
 		for j := range p {
-			p[j] ^= refGaloisMul(data[i], tableB18Parity[i][j])
+			p[j] ^= refGaloisMul(data[i], table[i][j])
 		}
 	}
 	return p

@@ -73,15 +73,16 @@ func TestCACHBPTC_AllOnes(t *testing.T) {
 
 func TestCACHBPTC_FragmentSize(t *testing.T) {
 	t.Parallel()
-	var info [36]bit.Bit
+	info := cachInfo()
 	fragments := bptc.EncodeCACHBPTC(info)
 
-	if len(fragments) != 4 {
-		t.Errorf("expected 4 fragments, got %d", len(fragments))
-	}
-	for i, frag := range fragments {
-		if len(frag) != 17 {
-			t.Errorf("fragment %d: expected 17 bits, got %d", i, len(frag))
+	// Every fragment carries part of the codeword: one flipped bit in any of
+	// them must be corrected.
+	for i := range fragments {
+		rx := fragments
+		rx[i][16] ^= 1
+		if got, res := bptc.DecodeCACHBPTC(rx); got != info || res.ErrorsCorrected != 1 {
+			t.Errorf("fragment %d: data match=%v result=%+v", i, got == info, res)
 		}
 	}
 }

@@ -113,8 +113,8 @@ func TestSingleBurstBPTC_OutputSize(t *testing.T) {
 	t.Parallel()
 	var info [11]bit.Bit
 	txBits := bptc.EncodeSingleBurstBPTC(info, false)
-	if len(txBits) != 32 {
-		t.Fatalf("EncodeSingleBurstBPTC output length = %d, want 32", len(txBits))
+	if got, res := bptc.DecodeSingleBurstBPTC(txBits, false); got != info || res.HasErrors() {
+		t.Errorf("round trip: data match=%v result=%+v", got == info, res)
 	}
 }
 

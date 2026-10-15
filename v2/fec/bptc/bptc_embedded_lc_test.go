@@ -98,16 +98,16 @@ func TestEmbeddedLC_SingleBitErrorCorrection(t *testing.T) {
 
 func TestEmbeddedLC_FragmentCount(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit
-
+	info := embeddedLCInfo()
 	fragments := bptc.EncodeEmbeddedLC(info)
 
-	if len(fragments) != 4 {
-		t.Fatalf("EncodeEmbeddedLC returned %d fragments, want 4", len(fragments))
-	}
-	for i, f := range fragments {
-		if len(f) != 32 {
-			t.Errorf("fragment[%d] length = %d, want 32", i, len(f))
+	// Every fragment carries part of the codeword: one flipped bit in any of
+	// them must be corrected.
+	for i := range fragments {
+		rx := fragments
+		rx[i][31] ^= 1
+		if got, res := bptc.DecodeEmbeddedLC(rx); got != info || res.ErrorsCorrected != 1 {
+			t.Errorf("fragment %d: data match=%v result=%+v", i, got == info, res)
 		}
 	}
 }

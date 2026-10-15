@@ -6,19 +6,21 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
-// tableB16 is ETSI TS 102 361-1 Table B.16, the Hamming (16,11,4) generator matrix.
-var tableB16 = [11]string{
-	"1000000000010011",
-	"0100000000011010",
-	"0010000000011111",
-	"0001000000011100",
-	"0000100000001110",
-	"0000010000010101",
-	"0000001000001011",
-	"0000000100010110",
-	"0000000010011001",
-	"0000000001001101",
-	"0000000000100111",
+// tableB16 returns ETSI TS 102 361-1 Table B.16, the Hamming (16,11,4) generator matrix.
+func tableB16() [11]string {
+	return [11]string{
+		"1000000000010011",
+		"0100000000011010",
+		"0010000000011111",
+		"0001000000011100",
+		"0000100000001110",
+		"0000010000010101",
+		"0000001000001011",
+		"0000000100010110",
+		"0000000010011001",
+		"0000000001001101",
+		"0000000000100111",
+	}
 }
 
 func hamming16_11Codeword(d int) [16]bit.Bit {
@@ -34,7 +36,7 @@ func hamming16_11Codeword(d int) [16]bit.Bit {
 }
 
 func TestHamming16_11_GeneratorMatchesTableB16(t *testing.T) {
-	for row, want := range tableB16 {
+	for row, want := range tableB16() {
 		cw := hamming16_11Codeword(1 << row)
 		for col := range cw {
 			if byte(cw[col])+'0' != want[col] {
