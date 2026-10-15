@@ -1278,9 +1278,11 @@ documents:
         title: "Control Signalling BlocK (CSBK) PDUs"
         source_files:
           - v2/layer2/pdu/csbk.go
+          - v2/layer2/pdu/csbk_addresses.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
+              - TestCSBK_Addresses
               - TestCSBK_OpcodeString
               - TestCSBK_PreamblePDU_Decode
               - TestCSBK_NegativeAck_Decode
