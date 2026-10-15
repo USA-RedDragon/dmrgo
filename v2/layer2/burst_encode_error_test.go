@@ -56,12 +56,70 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 			},
 			want: "reverse channel",
 		},
+		{
+			name: "EmbeddedNilReverseChannel",
+			burst: layer2.Burst{
+				SyncPattern:           enums.EmbeddedSignallingPattern,
+				HasEmbeddedSignalling: true,
+				HasReverseChannel:     true,
+			},
+			want: "ReverseChannel is nil",
+		},
+		{
+			name: "StandaloneNilReverseChannel",
+			burst: layer2.Burst{
+				SyncPattern:           enums.MsSourcedRcSync,
+				HasEmbeddedSignalling: true,
+				HasReverseChannel:     true,
+			},
+			want: "ReverseChannel is nil",
+		},
+		{
+			name: "DataWithoutSlotType",
+			burst: layer2.Burst{
+				SyncPattern: enums.BsSourcedData,
+				IsData:      true,
+				SlotType:    pdu.SlotType{ColorCode: 1, DataType: elements.DataTypeIdle},
+				Data:        &pdu.PRFill{DataType: elements.DataTypeIdle},
+			},
+			want: "no slot type",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := tt.burst.Encode()
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("Encode error = %v, want one containing %q", err, tt.want)
+			}
+		})
+	}
+}
+
+func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
+	var stale [32]bit.Bit
+	stale[3] = 1
+	for _, sync := range []enums.SyncPattern{enums.EmbeddedSignallingPattern, enums.MsSourcedRcSync} {
+		t.Run(enums.SyncPatternToName(sync), func(t *testing.T) {
+			b := layer2.Burst{
+				SyncPattern:            sync,
+				HasEmbeddedSignalling:  true,
+				EmbeddedSignalling:     pdu.EmbeddedSignalling{ColorCode: 1, PreemptionAndPowerControlIndicator: true},
+				EmbeddedSignallingData: stale,
+				HasReverseChannel:      true,
+				ReverseChannel:         &pdu.ReverseChannel{RCCommand: enums.RCCommand(5)},
+			}
+			before := b
+			frame := must(b.Encode())
+			if b.EmbeddedSignallingData != before.EmbeddedSignallingData || b.ReverseChannel != before.ReverseChannel {
+				t.Fatal("Encode modified the burst")
+			}
+			got := must(layer2.NewBurstFromBytes(frame))
+			if !got.HasReverseChannel || got.ReverseChannel.RCCommand != 5 {
+				t.Fatalf("decoded RC %+v, want command 5", got.ReverseChannel)
+			}
+			want := must(layer2.EncodeRCToEmbeddedData(b.ReverseChannel))
+			if got.EmbeddedSignallingData != want {
+				t.Fatal("embedded data is not the coded reverse channel")
 			}
 		})
 	}

@@ -170,23 +170,37 @@ func (b *Burst) decodeStandaloneRC() {
 
 func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
 	var bitData [264]bit.Bit
-	if b.HasReverseChannel && b.ReverseChannel != nil {
-		rcBits, err := EncodeRCToEmbeddedData(b.ReverseChannel)
-		if err != nil {
-			return bitData, fmt.Errorf("cannot encode reverse channel: %w", err)
-		}
-		b.EmbeddedSignallingData = rcBits
+	data, err := b.embeddedData()
+	if err != nil {
+		return bitData, err
 	}
 	embBits, err := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
 	if err != nil {
 		return bitData, fmt.Errorf("cannot encode embedded signalling: %w", err)
 	}
 	copy(bitData[RCEMBFirstStart:RCEMBFirstEnd], embBits[:8])
-	copy(bitData[RCDataFirstStart:RCDataFirstEnd], b.EmbeddedSignallingData[:16])
+	copy(bitData[RCDataFirstStart:RCDataFirstEnd], data[:16])
 	writeSync(&bitData, enums.MsSourcedRcSync)
-	copy(bitData[RCDataSecondStart:RCDataSecondEnd], b.EmbeddedSignallingData[16:])
+	copy(bitData[RCDataSecondStart:RCDataSecondEnd], data[16:])
 	copy(bitData[RCEMBSecondStart:RCEMBSecondEnd], embBits[8:])
 	return bitData, nil
+}
+
+// embeddedData returns the 32 bits of the embedded signalling data field:
+// the coded ReverseChannel when HasReverseChannel is set, and
+// EmbeddedSignallingData otherwise.
+func (b *Burst) embeddedData() ([32]bit.Bit, error) {
+	if !b.HasReverseChannel {
+		return b.EmbeddedSignallingData, nil
+	}
+	if b.ReverseChannel == nil {
+		return [32]bit.Bit{}, fmt.Errorf("HasReverseChannel is set but ReverseChannel is nil")
+	}
+	rcBits, err := EncodeRCToEmbeddedData(b.ReverseChannel)
+	if err != nil {
+		return [32]bit.Bit{}, fmt.Errorf("cannot encode reverse channel: %w", err)
+	}
+	return rcBits, nil
 }
 
 func writeSync(bitData *[264]bit.Bit, sync enums.SyncPattern) {
@@ -454,8 +468,11 @@ func (b *Burst) extractData() (elements.Data, error) {
 // data, and every other burst carries voice. VoiceBurst has no effect. A
 // burst without embedded signalling needs a Table 9.2 SYNC pattern, and the
 // pattern is a data SYNC pattern exactly when IsData is set. The zero Burst
-// has neither, so it does not encode. Encode returns an error for such a
-// burst and when a field value does not fit in its on-air bits.
+// has neither, so it does not encode. A data burst needs HasSlotType. With
+// HasReverseChannel set, the embedded signalling data field carries the
+// coded ReverseChannel instead of EmbeddedSignallingData. Encode returns an
+// error for a burst that breaks these rules and when a field value does not
+// fit in its on-air bits. Encode does not modify the burst.
 func (b *Burst) Encode() ([33]byte, error) {
 	if b.SyncPattern == enums.MsSourcedRcSync {
 		bitData, err := b.encodeStandaloneRC()
@@ -467,6 +484,9 @@ func (b *Burst) Encode() ([33]byte, error) {
 	if err := b.checkCentre(); err != nil {
 		return [33]byte{}, err
 	}
+	if b.IsData && !b.HasSlotType {
+		return [33]byte{}, fmt.Errorf("data burst has no slot type")
+	}
 
 	var bitData [264]bit.Bit
 
@@ -476,15 +496,12 @@ func (b *Burst) Encode() ([33]byte, error) {
 		copy(bitData[:98], dataBits[:98])
 		copy(bitData[166:264], dataBits[98:196])
 
-		// Encode slot type
-		if b.HasSlotType {
-			slotBits, err := pdu.EncodeSlotType(&b.SlotType)
-			if err != nil {
-				return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
-			}
-			copy(bitData[98:108], slotBits[:10])
-			copy(bitData[156:166], slotBits[10:20])
+		slotBits, err := pdu.EncodeSlotType(&b.SlotType)
+		if err != nil {
+			return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
 		}
+		copy(bitData[98:108], slotBits[:10])
+		copy(bitData[156:166], slotBits[10:20])
 	} else {
 		voiceBits, err := pdu.EncodeVocoder(&b.VoiceData)
 		if err != nil {
@@ -496,20 +513,16 @@ func (b *Burst) Encode() ([33]byte, error) {
 
 	// Sync or Embedded Signalling
 	if b.HasEmbeddedSignalling {
-		// If RC is present, encode it into the embedded data field
-		if b.HasReverseChannel && b.ReverseChannel != nil {
-			rcBits, err := EncodeRCToEmbeddedData(b.ReverseChannel)
-			if err != nil {
-				return [33]byte{}, fmt.Errorf("cannot encode reverse channel: %w", err)
-			}
-			b.EmbeddedSignallingData = rcBits
+		data, err := b.embeddedData()
+		if err != nil {
+			return [33]byte{}, err
 		}
 		esBits, err := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
 		if err != nil {
 			return [33]byte{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
 		}
 		copy(bitData[108:116], esBits[0:8])
-		copy(bitData[116:148], b.EmbeddedSignallingData[:])
+		copy(bitData[116:148], data[:])
 		copy(bitData[148:156], esBits[8:16])
 	} else {
 		writeSync(&bitData, b.SyncPattern)
