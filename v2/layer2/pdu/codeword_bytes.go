@@ -52,8 +52,10 @@ func CRCMask(dt enums.DataType) (mask uint32, width int, ok bool) {
 
 // FullLCCodeword returns the 12-octet on-air codeword of the 72-bit LC lc
 // in a burst of dt (§9.1.6, §B.3.6): lc followed by its RS(12,9) parity
-// XORed with the Table B.21 mask of dt. It returns an error unless dt is
-// DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
+// XORed with the Table B.21 mask of dt. It never returns an error when dt
+// is DataTypeVoiceLCHeader or DataTypeTerminatorWithLC, and returns one for
+// every other data type. VoiceLCHeaderCodeword and TerminatorLCCodeword are
+// the forms without an error.
 func FullLCCodeword(lc [9]byte, dt enums.DataType) ([12]byte, error) {
 	mask, err := fullLCMask(dt)
 	if err != nil {
@@ -64,6 +66,26 @@ func FullLCCodeword(lc [9]byte, dt enums.DataType) ([12]byte, error) {
 		cw[i] ^= mask[i-9]
 	}
 	return cw, nil
+}
+
+// VoiceLCHeaderCodeword returns the codeword of lc in a Voice LC Header:
+// lc followed by its RS(12,9) parity XORed with 0x969696.
+func VoiceLCHeaderCodeword(lc [9]byte) [12]byte {
+	return maskedLCCodeword(lc, 0x96)
+}
+
+// TerminatorLCCodeword returns the codeword of lc in a Terminator with LC:
+// lc followed by its RS(12,9) parity XORed with 0x999999.
+func TerminatorLCCodeword(lc [9]byte) [12]byte {
+	return maskedLCCodeword(lc, 0x99)
+}
+
+func maskedLCCodeword(lc [9]byte, mask byte) [12]byte {
+	cw := reedsolomon.Encode(lc)
+	cw[9] ^= mask
+	cw[10] ^= mask
+	cw[11] ^= mask
+	return cw
 }
 
 // FullLCParityOK reports whether the RS(12,9) parity of the codeword cw, with

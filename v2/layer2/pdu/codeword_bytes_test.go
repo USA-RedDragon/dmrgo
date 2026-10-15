@@ -152,6 +152,28 @@ func TestFullLCCodeword_RealCapture(t *testing.T) {
 	}
 }
 
+func TestTypedLCCodewords(t *testing.T) {
+	lc := hex9(t, "03000000270630b43c")
+	vlc, tlc := pdu.VoiceLCHeaderCodeword(lc), pdu.TerminatorLCCodeword(lc)
+	if got := hex.EncodeToString(vlc[:]); got != "03000000270630b43c5dcfc1" {
+		t.Errorf("VoiceLCHeaderCodeword: %s", got)
+	}
+	if got := hex.EncodeToString(tlc[:]); got != "03000000270630b43c52c0ce" {
+		t.Errorf("TerminatorLCCodeword: %s", got)
+	}
+	rng := rand.New(rand.NewSource(3))
+	for range 500 {
+		var l [9]byte
+		rng.Read(l[:])
+		if pdu.VoiceLCHeaderCodeword(l) != must(pdu.FullLCCodeword(l, enums.DataTypeVoiceLCHeader)) {
+			t.Fatalf("lc %x: VoiceLCHeaderCodeword differs from FullLCCodeword", l)
+		}
+		if pdu.TerminatorLCCodeword(l) != must(pdu.FullLCCodeword(l, enums.DataTypeTerminatorWithLC)) {
+			t.Fatalf("lc %x: TerminatorLCCodeword differs from FullLCCodeword", l)
+		}
+	}
+}
+
 func TestFullLCCodeword_RejectsOtherDataTypes(t *testing.T) {
 	for dt := enums.DataType(0); dt <= 15; dt++ {
 		if dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypeTerminatorWithLC {
