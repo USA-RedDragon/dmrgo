@@ -44,23 +44,7 @@ func sampleOf(r Received) int { return int(math.Round(r.Seconds * basebandRate))
 // one, so a slow or fast symbol clock is followed.
 func Demodulate(x []complex128, rate float64) Demodulated {
 	bb := channelize(x, rate)
-	pw := power(bb)
-	var peak float64
-	for _, v := range pw {
-		peak = math.Max(peak, v)
-	}
-	present := func(t float64) bool {
-		lo := int(t * basebandRate)
-		hi := min(lo+int(burstSeconds*basebandRate), len(pw))
-		if lo < 0 || hi <= lo {
-			return false
-		}
-		var s float64
-		for _, v := range pw[lo:hi] {
-			s += v
-		}
-		return s/float64(hi-lo) > peak/4
-	}
+	present := presence(power(bb))
 	coarse := carrierOffset(bb)
 	bb = lowpass(shift(bb, coarse), 6000)
 	d := discriminate(bb)
@@ -137,6 +121,22 @@ func Demodulate(x []complex128, rate float64) Demodulated {
 	res.Bursts = append(res.Bursts, embeddedVoice(res.Bursts, cut, present, eye)...)
 	sort.Slice(res.Bursts, func(i, j int) bool { return res.Bursts[i].Seconds < res.Bursts[j].Seconds })
 	return res
+}
+
+// presence returns a test for whether the carrier is on during the burst
+// that starts at a time in seconds: its mean power is at least a quarter of
+// the strongest burst-long stretch of pw.
+func presence(pw []float64) func(float64) bool {
+	sum, ref := burstPower(pw)
+	n := int(burstSeconds * basebandRate)
+	return func(t float64) bool {
+		lo := int(t * basebandRate)
+		hi := min(lo+n, len(pw))
+		if lo < 0 || hi <= lo {
+			return false
+		}
+		return (sum[hi]-sum[lo])/float64(hi-lo) > ref/4
+	}
 }
 
 // pickBursts keeps one candidate per burst, in time order: of the sampling
