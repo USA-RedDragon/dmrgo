@@ -162,6 +162,20 @@ func (s *CSBK) Bytes() ([12]byte, error) {
 	return bit.Pack96(bits), nil
 }
 
+// checkAddresses returns a *bit.FieldRangeError of type typ when target or
+// source does not fit in 24 bits.
+func checkAddresses(typ string, target, source uint32) error {
+	for _, a := range [...]struct {
+		field string
+		v     uint32
+	}{{"target", target}, {"source", source}} {
+		if a.v>>24 != 0 {
+			return &bit.FieldRangeError{Type: typ, Field: a.field, Value: a.v, Bits: 24}
+		}
+	}
+	return nil
+}
+
 func uint24(b []byte) uint32 {
 	return uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])
 }

@@ -254,26 +254,16 @@ func TestAMBEFrame(i int) vocoder.AMBEFrame {
 	return f
 }
 
-func callLC(cfg SeqConfig, privacy bool) pdu.FullLinkControl {
-	so := layer3.ServiceOptions{IsPrivacy: privacy}
-	if cfg.Group {
-		return pdu.FullLinkControl{
-			FLCO:       enums.FLCOGroupVoiceChannelUser,
-			GroupVoice: &pdu.FLCGroupVoice{ServiceOptions: so, GroupAddress: cfg.Dest, SourceAddress: cfg.Source},
-		}
-	}
-	return pdu.FullLinkControl{
-		FLCO:       enums.FLCOUnitToUnitVoiceChannelUser,
-		UnitToUnit: &pdu.FLCUnitToUnit{ServiceOptions: so, TargetAddress: cfg.Dest, SourceAddress: cfg.Source},
-	}
-}
-
 // voiceBursts builds a voice call: the voice LC header, the PI header for
 // privacy, Superframes superframes of the AMBE test pattern and the
 // terminator with LC.
 func voiceBursts(cfg SeqConfig, privacy bool) ([]layer2.RawBurst, []string, error) {
+	lc, err := pdu.NewVoiceLC(cfg.Group, cfg.Dest, cfg.Source, layer3.ServiceOptions{IsPrivacy: privacy})
+	if err != nil {
+		return nil, nil, err
+	}
 	opts := layer2.VoiceTransmitterOptions{
-		LC:        callLC(cfg, privacy),
+		LC:        lc,
 		ColorCode: cfg.ColorCode,
 		Source:    cfg.source(),
 		Silence:   vocoder.EncodeAMBE72(vocoder.AMBESilence()),

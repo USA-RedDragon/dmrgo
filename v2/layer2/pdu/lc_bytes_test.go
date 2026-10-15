@@ -2,11 +2,14 @@ package pdu_test
 
 import (
 	"encoding/hex"
+	"errors"
 	"math/rand"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 func TestLCBytes_Capture(t *testing.T) {
@@ -174,5 +177,43 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 		if !l.SetGroup(g) || l.Group() != g || !within(diffMask(l, orig), flcoBits) {
 			t.Fatalf("%x: SetGroup(%t) gives %x", orig, g, l)
 		}
+	}
+}
+
+func TestNewVoiceLC(t *testing.T) {
+	for _, group := range []bool{true, false} {
+		so := layer3.ServiceOptions{IsPrivacy: true, PriorityLevel: 2}
+		f := must(pdu.NewVoiceLC(group, 91, 3191868, so))
+		if f.FeatureSetID != enums.FIDStandardized || f.BurstDataType != enums.DataTypeVoiceLCHeader || (f.GroupVoice != nil) != group || (f.UnitToUnit != nil) == group {
+			t.Fatalf("group %t: %s", group, f.String())
+		}
+		if tgt, src, ok := f.Addresses(); !ok || tgt != 91 || src != 3191868 {
+			t.Errorf("group %t: Addresses %d %d %t", group, tgt, src, ok)
+		}
+		if got, ok := f.ServiceOptions(); !ok || got != so {
+			t.Errorf("group %t: ServiceOptions %s %t", group, got.String(), ok)
+		}
+		l := must(pdu.NewVoiceLCBytes(group, 91, 3191868, so))
+		if b := must(f.Bytes()); b != [9]byte(l) {
+			t.Errorf("group %t: NewVoiceLCBytes %x, NewVoiceLC.Bytes %x", group, l, b)
+		}
+		if l.Group() != group || l.ServiceOptions() != so.Byte() {
+			t.Errorf("group %t: LCBytes %x", group, l)
+		}
+	}
+	var rangeErr *bit.FieldRangeError
+	if _, err := pdu.NewVoiceLC(true, 1<<24, 1, layer3.ServiceOptions{}); !errors.As(err, &rangeErr) {
+		t.Errorf("target 1<<24: %v", err)
+	}
+	if _, err := pdu.NewVoiceLCBytes(false, 1, 1<<24, layer3.ServiceOptions{}); !errors.As(err, &rangeErr) {
+		t.Errorf("source 1<<24: %v", err)
+	}
+	raw := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FeatureSetID: 0x10, RawPayload: [7]byte{0x20}}
+	if so, ok := raw.ServiceOptions(); !ok || so != layer3.DefaultServiceOptions() {
+		t.Errorf("manufacturer FID: ServiceOptions %s %t", so.String(), ok)
+	}
+	raw.FLCO = enums.FLCOGPSInfo
+	if _, ok := raw.ServiceOptions(); ok {
+		t.Error("GPS LC has Service Options")
 	}
 }
