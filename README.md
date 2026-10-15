@@ -249,7 +249,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| §5.1 | The Use of the CACH | ✅ verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/layer2/cach.go` |
+| §5.1 | The Use of the CACH | ✅ verified | 7/7 passed | `v2/layer2/pdu/short_link_control.go`, `v2/layer2/cach.go`, `v2/layer2/pdu/syscode.go` |
 | §5.2 | Tier III Signalling | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/burst.go` |
 | §5.3 | Modes of Control Channel | ✅ verified | 2/2 passed | `v2/layer2/burst.go` |
 | §5.4 | CSBK/MBC/UDT/USBD Block Structure | ✅ verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go` |

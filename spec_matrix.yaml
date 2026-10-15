@@ -1742,12 +1742,17 @@ documents:
         source_files:
           - v2/layer2/pdu/short_link_control.go
           - v2/layer2/cach.go
+          - v2/layer2/pdu/syscode.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestShortLC_CSysParms_NetSite_Models
               - TestShortLC_PSysParms_NetSite_Models
               - TestSLCO_TierIII_Values
+              - TestSysCode_PackUnpack
+              - TestSysCode_Overflow
+              - TestSysCode_ShortLCSysParms
+              - TestSysCode_AlohaField
 
       - section: "5.2"
         title: "Tier III Signalling"
