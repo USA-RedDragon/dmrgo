@@ -62,11 +62,19 @@ func TestActivityID_ToName_IndividualData(t *testing.T) {
 	}
 }
 
-func TestActivityID_ToName_AllEmergency(t *testing.T) {
+func TestActivityID_ToName_EmergencyGroupVoice(t *testing.T) {
 	t.Parallel()
-	name := enums.ActivityIDToName(enums.ActivityAllEmergency)
-	if name != "All/Emergency" {
-		t.Errorf("expected 'All/Emergency', got %q", name)
+	name := enums.ActivityIDToName(enums.ActivityEmergencyGroupVoice)
+	if name != "Emergency Group Voice" {
+		t.Errorf("expected 'Emergency Group Voice', got %q", name)
+	}
+}
+
+func TestActivityID_ToName_EmergencyIndividualVoice(t *testing.T) {
+	t.Parallel()
+	name := enums.ActivityIDToName(enums.ActivityEmergencyIndividualVoice)
+	if name != "Emergency Individual Voice" {
+		t.Errorf("expected 'Emergency Individual Voice', got %q", name)
 	}
 }
 
@@ -113,7 +121,16 @@ func TestActivityID_Values(t *testing.T) {
 	if int(enums.ActivityIndividualVoice) != 9 {
 		t.Errorf("ActivityIndividualVoice should be 9, got %d", enums.ActivityIndividualVoice)
 	}
-	if int(enums.ActivityAllEmergency) != 12 {
-		t.Errorf("ActivityAllEmergency should be 12, got %d", enums.ActivityAllEmergency)
+	if int(enums.ActivityIndividualData) != 0b1010 {
+		t.Errorf("ActivityIndividualData should be 0b1010, got %d", enums.ActivityIndividualData)
+	}
+	if int(enums.ActivityGroupData) != 0b1011 {
+		t.Errorf("ActivityGroupData should be 0b1011, got %d", enums.ActivityGroupData)
+	}
+	if int(enums.ActivityEmergencyGroupVoice) != 0b1100 {
+		t.Errorf("ActivityEmergencyGroupVoice should be 0b1100, got %d", enums.ActivityEmergencyGroupVoice)
+	}
+	if int(enums.ActivityEmergencyIndividualVoice) != 0b1101 {
+		t.Errorf("ActivityEmergencyIndividualVoice should be 0b1101, got %d", enums.ActivityEmergencyIndividualVoice)
 	}
 }

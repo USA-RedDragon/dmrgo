@@ -1120,7 +1120,8 @@ documents:
               - TestActivityID_ToName_NoActivity
               - TestActivityID_ToName_GroupVoice
               - TestActivityID_ToName_IndividualVoice
-              - TestActivityID_ToName_AllEmergency
+              - TestActivityID_ToName_EmergencyGroupVoice
+              - TestActivityID_ToName_EmergencyIndividualVoice
               - TestActivityID_ToName_Reserved
               - TestActivityID_FromInt_NoActivity
               - TestActivityID_FromInt_GroupVoice
