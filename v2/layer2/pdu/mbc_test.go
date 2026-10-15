@@ -257,16 +257,16 @@ func TestMBCContinuation_DecodeIntermediate(t *testing.T) {
 	if cont.LastBlock {
 		t.Error("LastBlock should be false for intermediate block")
 	}
-	if cont.Data[0] != 1 {
+	if rawBit(cont.Data[:], 0) != 1 {
 		t.Error("Data[0] should be 1")
 	}
-	if cont.Data[50] != 1 {
+	if rawBit(cont.Data[:], 50) != 1 {
 		t.Error("Data[50] should be 1")
 	}
-	if cont.Data[94] != 1 {
+	if rawBit(cont.Data[:], 94) != 1 {
 		t.Error("Data[94] should be 1")
 	}
-	if cont.Data[1] != 0 {
+	if rawBit(cont.Data[:], 1) != 0 {
 		t.Error("Data[1] should be 0")
 	}
 }
@@ -283,10 +283,10 @@ func TestMBCContinuation_DecodeLastBlock(t *testing.T) {
 	if !cont.LastBlock {
 		t.Error("LastBlock should be true for last block")
 	}
-	if cont.Data[0] != 1 {
+	if rawBit(cont.Data[:], 0) != 1 {
 		t.Error("Data[0] should be 1")
 	}
-	if cont.Data[78] != 1 {
+	if rawBit(cont.Data[:], 78) != 1 {
 		t.Error("Data[78] should be 1")
 	}
 }
@@ -309,7 +309,7 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 
 			orig := pdu.MBCContinuation{
 				LastBlock: tt.lb,
-				Data:      data,
+				Data:      [12]byte(bit.Pack(data[:])),
 			}
 
 			encoded := must(orig.Encode())
@@ -318,10 +318,8 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 			if decoded.LastBlock != orig.LastBlock {
 				t.Errorf("LastBlock = %v, want %v", decoded.LastBlock, orig.LastBlock)
 			}
-			for i := 0; i < 95; i++ {
-				if decoded.Data[i] != orig.Data[i] {
-					t.Errorf("Data[%d] = %d, want %d", i, decoded.Data[i], orig.Data[i])
-				}
+			if decoded.Data != orig.Data {
+				t.Errorf("Data = %x, want %x", decoded.Data, orig.Data)
 			}
 		})
 	}
@@ -332,7 +330,7 @@ func TestMBCContinuation_EncodeStability(t *testing.T) {
 		LastBlock: true,
 	}
 	for i := 0; i < 95; i += 3 {
-		orig.Data[i] = 1
+		orig.Data[i/8] |= 0x80 >> (i % 8)
 	}
 
 	enc1 := must(orig.Encode())

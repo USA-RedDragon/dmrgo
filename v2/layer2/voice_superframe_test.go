@@ -36,7 +36,8 @@ func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 	if fid == enums.FIDStandardized {
 		lc.GroupVoice = gv
 	} else {
-		lc.RawPayload = must(gv.Encode())
+		bits := must(gv.Encode())
+		lc.RawPayload = [7]byte(bit.Pack(bits[:]))
 	}
 	return lc
 }

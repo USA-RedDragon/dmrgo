@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -27,7 +26,9 @@ type PIHeader struct {
 	KeyID            uint8              `dmr:"bits:16-23"`
 	MessageIndicator uint32             `dmr:"bits:24-55"`
 	Destination      uint32             `dmr:"bits:56-79"`
-	Raw              [80]bit.Bit        `dmr:"bits:0-79,raw,no_encode"`
+	// Raw holds bits 0 to 79, packed most significant bit first: bit 0 is
+	// the top bit of byte 0.
+	Raw [10]byte `dmr:"bits:0-79,raw,no_encode"`
 }
 
 // DataType returns enums.DataTypePIHeader.

@@ -202,16 +202,16 @@ type T struct {
 	Op  uint8       `+"`dmr:\"bits:0-7\"`"+`
 	FID uint8       `+"`dmr:\"bits:8-15\"`"+`
 	A   *Sub        `+"`dmr:\"bits:16-23,dispatch:Op=1\"`"+`
-	Raw [8]bit.Bit  `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
+	Raw [1]byte     `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
 }`)
 	assertContains(t, out,
 		"if result.FID == 0 {",
-		"\tdefault:\n\t\t\tcopy(result.Raw[:], _dispatchBits[:])",
-		"} else {\n\t\tcopy(result.Raw[:], _dispatchBits[:])",
-		"\tdefault:\n\t\tcopy(data[16:24], s.Raw[:])",
-		`_ret += fmt.Sprintf("Raw: %v", s.Raw)`,
+		"\tdefault:\n\t\t\tfor _i := range 8 {\n\t\t\t\tresult.Raw[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)",
+		"} else {\n\t\tfor _i := range 8 {\n\t\t\tresult.Raw[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)",
+		"\tdefault:\n\t\tfor _i := range 8 {\n\t\t\tdata[16+_i] = bit.Bit(s.Raw[_i/8] >> (7 - _i%8) & 1)",
+		`_ret += fmt.Sprintf("Raw: %x", s.Raw)`,
 	)
-	if strings.Count(out, "copy(data[16:24], s.Raw[:])") != 1 {
+	if strings.Count(out, "data[16+_i] = bit.Bit(s.Raw[_i/8]") != 1 {
 		t.Error("fallback should only be encoded in the dispatch default branch")
 	}
 }
@@ -229,7 +229,7 @@ type T struct {
 	FID  uint8      `+"`dmr:\"bits:8-15\"`"+`
 	A    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=1,when:Mode==true\"`"+`
 	B    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=2\"`"+`
-	Raw  [8]bit.Bit `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
+	Raw  [1]byte    `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
 }`)
 	assertContains(t, out,
 		`{"A", s.A != nil}`,
@@ -253,9 +253,9 @@ type T struct {
 	Op   uint8      `+"`dmr:\"bits:0-7\"`"+`
 	K    uint8      `+"`dmr:\"bits:8-15\"`"+`
 	A    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=1,when:K==2\"`"+`
-	Raw  [8]bit.Bit `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
+	Raw  [1]byte    `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
 }`)
-	assertContains(t, out, "if result.K == 2 {", "} else {\n\t\t\tcopy(result.Raw[:], _dispatchBits[:])")
+	assertContains(t, out, "if result.K == 2 {", "} else {\n\t\t\tfor _i := range 8 {\n\t\t\t\tresult.Raw[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)")
 }
 
 func TestEncodeReportsOutOfRangeValues(t *testing.T) {
@@ -351,4 +351,18 @@ type P struct {
 	if strings.Contains(out, "fecResult") {
 		t.Errorf("generated code has a separate FEC result:\n%s", out)
 	}
+}
+
+func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
+	out := mustGenerate(t, `type T struct {
+	A uint8   `+"`dmr:\"bits:0-3\"`"+`
+	R [2]byte `+"`dmr:\"bits:4-15,raw\"`"+`
+}`)
+	assertContains(t, out,
+		"for _i := range 12 {\n\t\tresult.R[_i/8] |= byte(data[4+_i]) << (7 - _i%8)",
+		"if s.R[1]&15 != 0 {",
+		`Field: "R",`,
+		"for _i := range 12 {\n\t\tdata[4+_i] = bit.Bit(s.R[_i/8] >> (7 - _i%8) & 1)",
+		`fmt.Sprintf("T{ A: %d, R: %x }", s.A, s.R)`,
+	)
 }

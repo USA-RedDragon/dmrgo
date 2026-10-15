@@ -500,7 +500,11 @@ type CSBK struct {
 	AckvitationPDU                  *AckvitationPDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKAckvitation"`
 	MaintenancePDU                  *MaintenancePDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKMaintenance"`
 
-	RawPayload [64]bit.Bit `dmr:"bits:16-79,raw,fallback"`
+	// RawPayload holds CSBK bits 16 to 79 when no payload field is set, as
+	// for opcode 0x38 or a manufacturer FID, packed most significant bit
+	// first: bit 16 is the top bit of byte 0, so the bytes are CSBK octets
+	// 2 to 9.
+	RawPayload [8]byte `dmr:"bits:16-79,raw,fallback"`
 }
 
 // AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with
@@ -509,7 +513,7 @@ func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
 		return p, false
 	}
-	p = DecodeBSOutboundActivationPDU(s.RawPayload)
+	p = DecodeBSOutboundActivationPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
 	return p, true
 }
 
@@ -520,7 +524,7 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
 		return p, false
 	}
-	p = DecodeTalkgroupDataGrantMultiItemPDU(s.RawPayload)
+	p = DecodeTalkgroupDataGrantMultiItemPDU([64]bit.Bit(bit.Unpack(s.RawPayload[:])))
 	return p, true
 }
 

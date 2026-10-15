@@ -102,7 +102,9 @@ func DecodeMBCContinuation(data [96]bit.Bit) MBCContinuation {
 	var result MBCContinuation
 	bit.Mask(data[:])
 	result.LastBlock = data[0] == 1
-	copy(result.Data[:], data[1:96])
+	for _i := range 95 {
+		result.Data[_i/8] |= byte(data[1+_i]) << (7 - _i%8)
+	}
 	return result
 }
 
@@ -112,12 +114,22 @@ func (s *MBCContinuation) Encode() ([96]bit.Bit, error) {
 	if s.LastBlock {
 		data[0] = 1
 	}
-	copy(data[1:96], s.Data[:])
+	if s.Data[11]&1 != 0 {
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  95,
+			Field: "Data",
+			Type:  "MBCContinuation",
+			Value: s.Data,
+		}
+	}
+	for _i := range 95 {
+		data[1+_i] = bit.Bit(s.Data[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
 func (s *MBCContinuation) String() string {
-	return fmt.Sprintf("MBCContinuation{ LastBlock: %t, Data: %v }", s.LastBlock, s.Data)
+	return fmt.Sprintf("MBCContinuation{ LastBlock: %t, Data: %x }", s.LastBlock, s.Data)
 }
 
 // DecodeCGAPContinuation decodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16

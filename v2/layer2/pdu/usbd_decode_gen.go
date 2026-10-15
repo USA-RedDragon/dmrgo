@@ -30,7 +30,9 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) UnifiedSingleBlockData {
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.ServiceType = ServiceType(bit.Uint(data[0:4]))
-	copy(result.Payload[:], data[4:80])
+	for _i := range 76 {
+		result.Payload[_i/8] |= byte(data[4+_i]) << (7 - _i%8)
+	}
 	return result
 }
 
@@ -46,7 +48,17 @@ func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 		}
 	}
 	bit.PutUint(data[0:4], uint64(s.ServiceType))
-	copy(data[4:80], s.Payload[:])
+	if s.Payload[9]&15 != 0 {
+		return [96]bit.Bit{}, &bit.FieldRangeError{
+			Bits:  76,
+			Field: "Payload",
+			Type:  "UnifiedSingleBlockData",
+			Value: s.Payload,
+		}
+	}
+	for _i := range 76 {
+		data[4+_i] = bit.Bit(s.Payload[_i/8] >> (7 - _i%8) & 1)
+	}
 	var _encBytes [10]byte
 	for i := range 10 {
 		for j := range 8 {
@@ -69,5 +81,5 @@ func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *UnifiedSingleBlockData) String() string {
-	return fmt.Sprintf("UnifiedSingleBlockData{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
+	return fmt.Sprintf("UnifiedSingleBlockData{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
 }

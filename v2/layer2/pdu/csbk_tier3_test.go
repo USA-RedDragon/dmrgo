@@ -428,7 +428,7 @@ func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.RawPayload != payload {
+	if csbk.RawPayload != [8]byte(bit.Pack(payload[:])) {
 		t.Fatal("opcode 0x38 payload is not in RawPayload")
 	}
 	act, ok := csbk.AsBSOutboundActivation()
@@ -490,7 +490,8 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 	if ((grant.TargetAddress>>0)&1) != 1 || ((grant.SourceAddress>>0)&1) != 1 {
 		t.Error("TargetAddress/SourceAddress last bit should be set")
 	}
-	csbk.RawPayload = must(grant.Encode())
+	grantBits := must(grant.Encode())
+	csbk.RawPayload = [8]byte(bit.Pack(grantBits[:]))
 	if must(csbk.Encode()) != infoBits {
 		t.Error("RawPayload from the grant Encode does not round trip")
 	}

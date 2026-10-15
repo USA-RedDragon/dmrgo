@@ -81,10 +81,14 @@ func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) FullL
 			_decoded := DecodeFLCTerminatorDataLinkControl(_dispatchBits)
 			result.TerminatorDataLinkControl = &_decoded
 		default:
-			copy(result.RawPayload[:], _dispatchBits[:])
+			for _i := range 56 {
+				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+			}
 		}
 	} else {
-		copy(result.RawPayload[:], _dispatchBits[:])
+		for _i := range 56 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
 	}
 	return result
 }
@@ -150,7 +154,9 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 		}
 		copy(data[16:72], _pduBits[:])
 	default:
-		copy(data[16:72], s.RawPayload[:])
+		for _i := range 56 {
+			data[16+_i] = bit.Bit(s.RawPayload[_i/8] >> (7 - _i%8) & 1)
+		}
 	}
 	if s.ProtectFlag {
 		data[0] = 1
@@ -246,7 +252,7 @@ func (s *FullLinkControl) String() string {
 	case s.TerminatorDataLinkControl != nil:
 		_ret += s.TerminatorDataLinkControl.String()
 	default:
-		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
+		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}
 	_ret += " }"
 	return _ret

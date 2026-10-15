@@ -14,7 +14,7 @@ func TestBurst_Opcode0x38HintFromSync(t *testing.T) {
 		BSAddress:     1,
 		SourceAddress: 2,
 	}
-	csbk := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBSOutboundActivation, RawPayload: must(act.Encode())}
+	csbk := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBSOutboundActivation, RawPayload: [8]byte(bit.Pack(func() []bit.Bit { b := must(act.Encode()); return b[:] }()))}
 	encBits := must(csbk.Encode())
 	var payload [12]byte
 	copy(payload[:], bit.Pack(encBits[:]))

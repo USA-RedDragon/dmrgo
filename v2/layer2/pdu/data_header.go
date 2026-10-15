@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -48,7 +47,9 @@ type DataHeader struct {
 	UDTHeader             *UDTHeader             `dmr:"bits:0-79,dispatch:Format=FormatUnifiedDataTransport"`
 	ProprietaryHeader     *ProprietaryHeader     `dmr:"bits:0-79,dispatch:Format=FormatProprietary"`
 
-	RawPayload [80]bit.Bit `dmr:"bits:0-79,raw,fallback"`
+	// RawPayload holds header bits 0 to 79 when no header field is set,
+	// packed most significant bit first: bit 0 is the top bit of byte 0.
+	RawPayload [10]byte `dmr:"bits:0-79,raw,fallback"`
 }
 
 // Addresses returns the destination and source LLIDs of the header that is

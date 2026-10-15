@@ -184,7 +184,9 @@ func DecodeDataHeader(data [96]bit.Bit) DataHeader {
 		_decoded := DecodeProprietaryHeader(_dispatchBits)
 		result.ProprietaryHeader = &_decoded
 	default:
-		copy(result.RawPayload[:], _dispatchBits[:])
+		for _i := range 80 {
+			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
+		}
 	}
 	return result
 }
@@ -264,7 +266,9 @@ func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 		}
 		copy(data[0:80], _pduBits[:])
 	default:
-		copy(data[0:80], s.RawPayload[:])
+		for _i := range 80 {
+			data[0+_i] = bit.Bit(s.RawPayload[_i/8] >> (7 - _i%8) & 1)
+		}
 	}
 	if uint64(s.Format)>>4 != 0 {
 		return [96]bit.Bit{}, &bit.FieldRangeError{
@@ -350,7 +354,7 @@ func (s *DataHeader) String() string {
 	case s.ProprietaryHeader != nil:
 		_ret += s.ProprietaryHeader.String()
 	default:
-		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
+		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}
 	_ret += " }"
 	return _ret

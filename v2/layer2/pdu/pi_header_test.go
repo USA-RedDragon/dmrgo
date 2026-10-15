@@ -76,10 +76,10 @@ func TestPIHeader_Raw(t *testing.T) {
 	t.Parallel()
 	vector := piHeaderVector()
 	pi := pdu.DecodePIHeader(vector)
-	if [80]bit.Bit(vector[:80]) != pi.Raw {
-		t.Errorf("Raw = %x, want %x", bit.Pack(pi.Raw[:]), bit.Pack(vector[:80]))
+	if want := [10]byte(bit.Pack(vector[:80])); pi.Raw != want {
+		t.Errorf("Raw = %x, want %x", pi.Raw, want)
 	}
-	pi.Raw = [80]bit.Bit{}
+	pi.Raw = [10]byte{}
 	if must(pi.Encode()) != vector {
 		t.Error("PIHeader.Encode should ignore Raw")
 	}

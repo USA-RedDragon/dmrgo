@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -104,5 +103,7 @@ type ShortLC struct {
 	CSysParms      *ShortLCCSysParms      `dmr:"bits:4-27,dispatch:SLCO=enums.SLCOCSysParms"`
 	PSysParms      *ShortLCPSysParms      `dmr:"bits:4-27,dispatch:SLCO=enums.SLCOPSysParms"`
 
-	RawPayload [24]bit.Bit `dmr:"bits:4-27,raw,fallback"`
+	// RawPayload holds bits 4 to 27 when no payload field is set, packed
+	// most significant bit first: bit 4 is the top bit of byte 0.
+	RawPayload [3]byte `dmr:"bits:4-27,raw,fallback"`
 }

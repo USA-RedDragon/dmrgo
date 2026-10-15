@@ -413,7 +413,7 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 
 	var raw []Code
 	if fb := fallbackField(pdu); fb != nil {
-		raw = []Code{Copy(Id("result").Dot(fb.Name).Index(Empty(), Empty()), Id(tmpVar).Index(Empty(), Empty()))}
+		raw = []Code{packRaw(Id("result").Dot(fb.Name), Id(tmpVar), 0, fb.BitWidth)}
 	}
 	stmt, err := dispatchSelect(fields, pdu, func(field parse.Field) []Code {
 		return dispatchDecodeBlock(field, tmpVar)
@@ -716,7 +716,7 @@ func emitStringConcat(f *File, pdu parse.PDUStruct) {
 				}
 				if fb := fallbackField(pdu); fb != nil {
 					sw.Default().Block(
-						Id("_ret").Op("+=").Qual("fmt", "Sprintf").Call(Lit(fb.Name+": %v"), Id("s").Dot(fb.Name)),
+						Id("_ret").Op("+=").Qual("fmt", "Sprintf").Call(Lit(fb.Name+": %x"), Id("s").Dot(fb.Name)),
 					)
 				}
 			})
@@ -767,7 +767,7 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 	case parse.FieldEnum:
 		return "%s", []Code{src}
 	case parse.FieldRaw:
-		return "%v", []Code{src}
+		return "%x", []Code{src}
 	case parse.FieldPacked:
 		return "%v", []Code{src}
 	case parse.FieldDelegate:
@@ -810,8 +810,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
 
 	case parse.FieldRaw:
-		// Copy bits into a fixed-size array
-		g.Copy(target.Clone().Index(Empty(), Empty()), Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)))
+		g.Add(packRaw(target, Id("data"), field.BitStart, field.BitWidth))
 
 	case parse.FieldPacked:
 		// Pack bits into bytes using bit.Pack
@@ -1129,9 +1128,9 @@ func (e encoder) dispatch(g *Group, fields []parse.Field) {
 			)
 		}
 		if fb := fallbackField(e.pdu); fb != nil {
-			sw.Default().Block(
-				Copy(Id("data").Index(Lit(bitStart), Lit(bitEnd+1)), Id("s").Dot(fb.Name).Index(Empty(), Empty())),
-			)
+			sw.Default().BlockFunc(func(d *Group) {
+				e.raw(d, *fb)
+			})
 		}
 	})
 }
@@ -1258,10 +1257,7 @@ func (e encoder) field(g *Group, field parse.Field) {
 		)
 
 	case parse.FieldRaw:
-		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			source.Clone().Index(Empty(), Empty()),
-		)
+		e.raw(g, field)
 
 	case parse.FieldPacked:
 		g.Copy(
@@ -1321,6 +1317,35 @@ func (e encoder) field(g *Group, field parse.Field) {
 	case parse.FieldDispatch:
 		// Dispatch fields are handled separately in dispatch
 	}
+}
+
+// raw encodes a raw byte-array field after checking that its padding bits
+// are zero.
+func (e encoder) raw(g *Group, field parse.Field) {
+	n := parse.RawBytes(field.BitWidth)
+	if pad := n*8 - field.BitWidth; pad > 0 {
+		g.If(Id("s").Dot(field.Name).Index(Lit(n - 1)).Op("&").Lit(1<<pad - 1).Op("!=").Lit(0)).Block(
+			e.failRange(field, nil),
+		)
+	}
+	g.For(Id("_i").Op(":=").Range().Lit(field.BitWidth)).Block(
+		Id("data").Index(Lit(field.BitStart).Op("+").Id("_i")).Op("=").Qual(bitPkg, "Bit").Call(
+			Id("s").Dot(field.Name).Index(Id("_i").Op("/").Lit(8)).Op(">>").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)).Op("&").Lit(1),
+		),
+	)
+}
+
+// packRaw returns a loop that packs the width bits of src from start into
+// the byte array dst, most significant bit first. dst starts zero, so its
+// padding bits stay zero.
+func packRaw(dst, src *Statement, start, width int) *Statement {
+	idx := Id("_i")
+	if start > 0 {
+		idx = Lit(start).Op("+").Id("_i")
+	}
+	return For(Id("_i").Op(":=").Range().Lit(width)).Block(
+		dst.Clone().Index(Id("_i").Op("/").Lit(8)).Op("|=").Byte().Call(src.Clone().Index(idx)).Op("<<").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)),
+	)
 }
 
 // integer encodes an unsigned, signed, enum or noptr delegate field after
