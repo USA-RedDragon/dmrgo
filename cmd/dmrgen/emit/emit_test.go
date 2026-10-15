@@ -126,3 +126,23 @@ type T struct {
 }`)
 	assertContains(t, out, "if result.K == 0 {", "} else {")
 }
+
+func TestInputsBecomeDecodeParameters(t *testing.T) {
+	out := mustGenerate(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:input Mode
+type T struct {
+	Mode bool  `+"`dmr:\"-\"`"+`
+	Op   uint8 `+"`dmr:\"bits:0-7\"`"+`
+	A    *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==false\"`"+`
+	B    *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`"+`
+}`)
+	assertContains(t, out,
+		"func DecodeT(data [16]bit.Bit, mode bool) (T, fec.FECResult) {",
+		"result.Mode = mode",
+		"if !result.Mode {",
+		"} else if result.Mode {",
+	)
+}

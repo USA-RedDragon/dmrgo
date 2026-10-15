@@ -215,13 +215,23 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 
 	var genErr error
 	// func DecodeXxx(data [N]bit.Bit) (Xxx, fec.FECResult) {
-	f.Func().Id(funcName).Params(
-		Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit"),
-	).Params(
+	params := []Code{Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit")}
+	for _, in := range pdu.Inputs {
+		field := pdu.FieldByName(in)
+		if field == nil {
+			return fmt.Errorf("dmr:input %q is not a field", in)
+		}
+		params = append(params, Id(inputParamName(in)).Add(qualType(*field, pdu)))
+	}
+
+	f.Func().Id(funcName).Params(params...).Params(
 		Id(pdu.Name),
 		Qual(fecPkg, "FECResult"),
 	).BlockFunc(func(g *Group) {
 		g.Var().Id("result").Id(pdu.Name)
+		for _, in := range pdu.Inputs {
+			g.Id("result").Dot(in).Op("=").Id(inputParamName(in))
+		}
 
 		hasCRC := pdu.CRC != nil
 		hasPackedFEC := codec != nil && codec.PackedBytes
@@ -531,10 +541,11 @@ func emitGuardCondition(guard *parse.Guard) (*Statement, error) {
 
 	var val *Statement
 	switch guard.Value {
-	case "true":
-		val = True()
-	case "false":
-		val = False()
+	case "true", "false":
+		if (guard.Value == "true") == (guard.Op == "==") {
+			return lhs, nil
+		}
+		return Op("!").Add(lhs), nil
 	default:
 		n, err := strconv.Atoi(guard.Value)
 		if err != nil {
@@ -1508,6 +1519,16 @@ func needsCast(extractFn, goType string) bool {
 		return goType != "int"
 	}
 	return false
+}
+
+// inputParamName converts a dmr:input field name to its Decode parameter name.
+func inputParamName(field string) string {
+	name := strings.ToLower(field[:1]) + field[1:]
+	switch name {
+	case "data", "result", "fecResult":
+		return "_" + name
+	}
+	return name
 }
 
 func qualType(field parse.Field, pdu parse.PDUStruct) *Statement {

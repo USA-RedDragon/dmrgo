@@ -1009,8 +1009,9 @@ func (s *MaintenancePDU) ToString() string {
 }
 
 // DecodeCSBK decodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU
-func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.FECResult) {
+func DecodeCSBK(data [96]bit.Bit, trunkingMode bool) (CSBK, fec.FECResult) {
 	var result CSBK
+	result.TrunkingMode = trunkingMode
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
@@ -1035,10 +1036,10 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.FECResult) {
 	copy(_dispatchBits[:], data[16:80])
 	switch result.CSBKOpcode {
 	case CSBKBSOutboundActivationPDU:
-		if result.TrunkingMode == false {
+		if !result.TrunkingMode {
 			_decoded, _ := DecodeBSOutboundActivationPDU(_dispatchBits)
 			result.BSOutboundActivationPDU = &_decoded
-		} else if result.TrunkingMode == true {
+		} else if result.TrunkingMode {
 			_decoded, _ := DecodeTalkgroupDataGrantMultiItemPDU(_dispatchBits)
 			result.TalkgroupDataGrantMultiItemPDU = &_decoded
 		}

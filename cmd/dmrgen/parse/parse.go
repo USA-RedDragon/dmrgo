@@ -765,7 +765,7 @@ func checkGuardField(pdu *PDUStruct, name string) error {
 	switch {
 	case f == nil:
 		return fmt.Errorf("unknown field %q", name)
-	case false && f.Skip && !pdu.IsInput(name):
+	case f.Skip && !pdu.IsInput(name):
 		return fmt.Errorf("field %q is dmr:\"-\" and not a dmr:input, so it is never set during decode", name)
 	case f.Kind == FieldDispatch && !f.Skip:
 		return fmt.Errorf("field %q is a dispatch field", name)

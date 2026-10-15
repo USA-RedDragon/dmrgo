@@ -45,7 +45,7 @@ const (
 	CSBKDuplexPrivateDataGrant       CSBKOpcode = 0b00110110
 	CSBKPrivateDataGrantMultiItem    CSBKOpcode = 0b00110111
 	// Note: CSBKTalkgroupDataGrantMultiItem shares opcode 0x38 with CSBKBSOutboundActivationPDU.
-	// Disambiguation is via the TrunkingMode flag on the CSBK struct.
+	// Disambiguation is via the trunkingMode argument of DecodeCSBK.
 	CSBKMove CSBKOpcode = 0b00111001
 )
 
@@ -261,7 +261,8 @@ type PrivateDataGrantMultiItemPDU struct {
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
-// NOTE: Shares opcode 0x38 with BSOutboundActivationPDU; disambiguated via TrunkingMode.
+// NOTE: Shares opcode 0x38 with BSOutboundActivationPDU; disambiguated via the
+// trunkingMode argument of DecodeCSBK.
 type TalkgroupDataGrantMultiItemPDU struct {
 	PhysicalChannel uint16      `dmr:"bits:0-11"`
 	LogicalChannel  bool        `dmr:"bit:12"`
@@ -410,7 +411,8 @@ type MaintenancePDU struct {
 	SourceAddress [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// SetTrunkingMode sets the trunking mode flag, affecting opcode 0x38 dispatch.
+// SetTrunkingMode sets the trunking mode flag. It does not re-dispatch opcode
+// 0x38; pass the mode to DecodeCSBK for that.
 func (csbk *CSBK) SetTrunkingMode(mode bool) {
 	csbk.TrunkingMode = mode
 }
@@ -418,6 +420,7 @@ func (csbk *CSBK) SetTrunkingMode(mode bool) {
 // dmr:crc crc_ccitt
 // dmr:crc_mask 0xA5A5
 // dmr:input_size 96
+// dmr:input TrunkingMode
 // ETSI TS 102 361-1 - 9.1.5 CSBK PDU
 type CSBK struct {
 	DataType elements.DataType `dmr:"-"`

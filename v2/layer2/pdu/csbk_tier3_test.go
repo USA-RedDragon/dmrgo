@@ -67,7 +67,7 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -123,7 +123,7 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := pdu.EncodeCSBK(original)
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -184,7 +184,7 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAloha), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -259,7 +259,7 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKBroadcast), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -301,7 +301,7 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKClear), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -341,7 +341,7 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAhoy), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -388,7 +388,7 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKRandomAccess), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -417,7 +417,7 @@ func TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound(t *testing.T) {
 
 	infoBits := buildCSBKBits(0b00111000, payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -431,7 +431,8 @@ func TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound(t *testing.T) {
 }
 
 func TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI(t *testing.T) {
-	// With TrunkingMode=true, opcode 0x38 should decode as TalkgroupDataGrantMultiItem
+	// With TrunkingMode=true, opcode 0x38 decodes as TD_GRANT_MI
+	// (ETSI TS 102 361-4 Table B.1).
 	var payload [64]bit.Bit
 	// PhysicalChannel (bits 0-11) = 0x100
 	payload[3] = 1
@@ -446,24 +447,43 @@ func TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI(t *testing.T) {
 
 	infoBits := buildCSBKBits(0b00111000, payload)
 
-	// Create a CSBK with TrunkingMode=true and re-decode manually
-	// We need to set TrunkingMode before decode. Since DecodeCSBK returns a value,
-	// we need to test this through the Burst-level API or by modifying the approach.
-	// For now, we test at the PDU level: decode, set TrunkingMode, then re-encode/decode.
-	csbk, _ := pdu.DecodeCSBK(infoBits)
-	csbk.TrunkingMode = true
-	// Re-encode and decode with TrunkingMode set
-	encoded := pdu.EncodeCSBK(&csbk)
-	var csbk2 pdu.CSBK
-	csbk2.TrunkingMode = true
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
-	_ = decoded
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, true)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	// Note: DecodeCSBK returns a new CSBK without TrunkingMode preserved.
-	// The TrunkingMode propagation is done at the Burst level.
-	// This test validates that the opcode 0x38 decode path exists.
+	if !csbk.TrunkingMode {
+		t.Error("TrunkingMode should be true")
+	}
+	if csbk.BSOutboundActivationPDU != nil {
+		t.Error("BSOutboundActivationPDU should be nil when TrunkingMode=true")
+	}
+	grant := csbk.TalkgroupDataGrantMultiItemPDU
+	if grant == nil {
+		t.Fatal("TalkgroupDataGrantMultiItemPDU should not be nil when TrunkingMode=true")
+	}
+	if grant.PhysicalChannel != 0x100 {
+		t.Errorf("PhysicalChannel = %#x, want 0x100", grant.PhysicalChannel)
+	}
+	if !grant.LogicalChannel {
+		t.Error("LogicalChannel should be true")
+	}
+	if grant.HiRate {
+		t.Error("HiRate should be false")
+	}
+	if !grant.Emergency {
+		t.Error("Emergency should be true")
+	}
+	if grant.Offset {
+		t.Error("Offset should be false")
+	}
+	if grant.TargetAddress[23] != 1 || grant.SourceAddress[23] != 1 {
+		t.Error("TargetAddress/SourceAddress last bit should be set")
+	}
+
+	encoded := pdu.EncodeCSBK(&csbk)
+	if encoded != infoBits {
+		t.Error("EncodeCSBK(DecodeCSBK(x, true)) != x")
+	}
 }
 
 // ── C_ACKD Decode Test ──
@@ -483,7 +503,7 @@ func TestCSBK_AckOutbound_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAckOutbound), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -516,7 +536,7 @@ func TestCSBK_Move_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKMove), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -552,7 +572,7 @@ func TestCSBK_Maintenance_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKMaintenance), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -584,7 +604,7 @@ func TestCSBK_Ackvitation_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAckvitation), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -631,7 +651,7 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := pdu.EncodeCSBK(original)
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -689,7 +709,7 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := pdu.EncodeCSBK(original)
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded, fecResult := pdu.DecodeCSBK(encoded, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -846,7 +866,7 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 	for _, op := range []byte{0b011010, 0b011011} {
 		var payload [64]bit.Bit
 		payload[0] = 1
-		csbk, fecResult := pdu.DecodeCSBK(buildCSBKBits(op, payload))
+		csbk, fecResult := pdu.DecodeCSBK(buildCSBKBits(op, payload), false)
 		if fecResult.Uncorrectable {
 			t.Fatal("DecodeCSBK returned uncorrectable FEC")
 		}
@@ -872,7 +892,7 @@ func TestCSBK_Protect_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKProtect), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}

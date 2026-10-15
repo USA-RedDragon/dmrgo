@@ -553,6 +553,66 @@ func TestParseAllowsIntentionalOverlap(t *testing.T) {
 }`)
 }
 
+func TestParseWhenOnSkipFieldRequiresInput(t *testing.T) {
+	body := `type T struct {
+	Mode bool  ` + "`dmr:\"-\"`" + `
+	Op   uint8 ` + "`dmr:\"bits:0-7\"`" + `
+	A    *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`" + `
+	B    *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==false\"`" + `
+}`
+	_, err := parseSrc(t, body)
+	if err == nil || !strings.Contains(err.Error(), "not a dmr:input") {
+		t.Fatalf("expected dmr:input error, got %v", err)
+	}
+
+	pdus := mustParse(t, "// dmr:input Mode\n"+body)
+	if got := pdus[0].Inputs; len(got) != 1 || got[0] != "Mode" {
+		t.Errorf("Inputs = %v, want [Mode]", got)
+	}
+}
+
+func TestParseRejectsBadInput(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "input on decoded field",
+			src: `// dmr:input A
+type T struct {
+	A uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "must name a dmr:\"-\" field",
+		},
+		{
+			name: "input on unknown field",
+			src: `// dmr:input Nope
+type T struct {
+	A uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "must name a dmr:\"-\" field",
+		},
+		{
+			name: "duplicate input",
+			src: `// dmr:input M M
+type T struct {
+	M bool  ` + "`dmr:\"-\"`" + `
+	A uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "duplicate dmr:input",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseSrc(t, tt.src)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("expected error containing %q, got %v", tt.want, err)
+			}
+		})
+	}
+}
+
 func TestParseIgnoresUntaggedStructs(t *testing.T) {
 	pdus := mustParse(t, `type T struct {
 	A uint8

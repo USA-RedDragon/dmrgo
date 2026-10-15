@@ -309,9 +309,8 @@ func (b *Burst) extractData() (elements.Data, error) {
 	case elements.DataTypeCSBK:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeCSBK(sizedBits)
+		decoded, fecResult := pdu.DecodeCSBK(sizedBits, b.TrunkingMode)
 		decoded.DataType = dt
-		decoded.TrunkingMode = b.TrunkingMode
 		b.csbk = &decoded
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
