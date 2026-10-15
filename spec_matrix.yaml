@@ -184,6 +184,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestEmbeddedLCBytes_Capture
+              - TestEmbeddedLCAssembler
               - TestEmbeddedLC_DecodeCapture
               - TestEmbeddedLC_EncodeCapture
               - TestEmbeddedLC_RoundTrip
