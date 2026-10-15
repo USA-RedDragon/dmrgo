@@ -21,6 +21,7 @@ import (
 	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue"
 	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	layer3Elements "github.com/USA-RedDragon/dmrgo/v2/layer3/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -40,6 +41,12 @@ var bitFuncs = map[string]any{
 	},
 	"fec/trellis.Trellis34.Encode": func(data [144]bit.Bit) [196]bit.Bit {
 		return trellis34.New().Encode(data)
+	},
+	"layer2/framer.Search": func(stream [600]bit.Bit) (framer.Match, bool) {
+		return framer.Search(stream[:], 0, -1)
+	},
+	"layer2/framer.Framer.Write": func(stream [1200]bit.Bit) []framer.Burst {
+		return framer.New(framer.Config{}).Write(stream[:]...)
 	},
 	"layer2.ShortLCAssembler.AddFragment": func(payload [layer2.CACHPayloadBits]bit.Bit) (bool, error) {
 		var a layer2.ShortLCAssembler

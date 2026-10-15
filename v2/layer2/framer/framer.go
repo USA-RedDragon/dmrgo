@@ -183,7 +183,9 @@ func (f *Framer) Locked() bool {
 
 // Write adds bits to the stream and returns the bursts they complete.
 func (f *Framer) Write(stream ...bit.Bit) []Burst {
+	n := len(f.buf)
 	f.buf = append(f.buf, stream...)
+	bit.Mask(f.buf[n:])
 	var out []Burst
 	for {
 		if !f.locked {
