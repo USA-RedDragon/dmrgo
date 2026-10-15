@@ -73,11 +73,21 @@ func New(name string) (Codec, error) {
 // Names returns the sorted names of the registered codecs.
 func Names() []string {
 	registryMu.RLock()
+	n := len(registry)
+	registryMu.RUnlock()
+	return AppendNames(make([]string, 0, n))
+}
+
+// AppendNames appends the sorted names of the registered codecs to dst and
+// returns the extended slice. It does not allocate when dst has room for
+// them.
+func AppendNames(dst []string) []string {
+	registryMu.RLock()
 	defer registryMu.RUnlock()
-	names := make([]string, 0, len(registry))
+	n := len(dst)
 	for name := range registry {
-		names = append(names, name)
+		dst = append(dst, name)
 	}
-	slices.Sort(names)
-	return names
+	slices.Sort(dst[n:])
+	return dst
 }
