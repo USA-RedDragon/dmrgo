@@ -320,16 +320,19 @@ func TestFullLinkControl_TalkerAliasBlock_ToString(t *testing.T) {
 }
 
 func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
-	// Verify that TalkerAliasDataLength survives the encode-decode cycle
-	// with various lengths (0 to 63 fits in 6-bit field, bits:2-7)
+	// ETSI TS 102 361-2 Table 7.4: 5-bit data length (bits 2-6), then the
+	// 49-bit data whose MSB is bit 7.
 	tests := []struct {
 		name       string
 		dataLength int
+		msb        bool
 	}{
-		{"Zero", 0},
-		{"Small", 7},
-		{"Medium", 31},
-		{"Max", 63},
+		{"Zero", 0, false},
+		{"Small", 7, true},
+		{"Medium", 15, false},
+		{"Max", 31, false},
+		{"MaxWithMSB", 31, true},
+		{"ZeroWithMSB", 0, true},
 	}
 
 	for _, tt := range tests {
@@ -345,6 +348,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				FeatureSetID: enums.StandardizedFID,
 				TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 					TalkerAliasDataLength: tt.dataLength,
+					TalkerAliasDataMSB:    tt.msb,
 					TalkerAliasData:       aliasData,
 				},
 			}
@@ -360,6 +364,9 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 			if decoded.TalkerAliasHeader.TalkerAliasDataLength != tt.dataLength {
 				t.Errorf("TalkerAliasDataLength = %d, want %d",
 					decoded.TalkerAliasHeader.TalkerAliasDataLength, tt.dataLength)
+			}
+			if decoded.TalkerAliasHeader.TalkerAliasDataMSB != tt.msb {
+				t.Errorf("TalkerAliasDataMSB = %v, want %v", decoded.TalkerAliasHeader.TalkerAliasDataMSB, tt.msb)
 			}
 			if decoded.TalkerAliasHeader.TalkerAliasData != aliasData {
 				t.Error("TalkerAliasData mismatch after encode-decode cycle")

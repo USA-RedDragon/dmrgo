@@ -228,7 +228,7 @@ func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.FEC
 	var result FLCTalkerAliasHeader
 	var fecResult fec.FECResult
 	result.TalkerAliasDataFormat = layer3Elements.TalkerAliasDataFormat(bit.BitsToUint8(data[:], 0, 2))
-	result.TalkerAliasDataLength = bit.BitsToInt(data[:], 2, 6)
+	result.TalkerAliasDataLength = bit.BitsToInt(data[:], 2, 5)
 	result.TalkerAliasDataMSB = bit.BitsToBool(data[:], 7)
 	copy(result.TalkerAliasData[:], data[8:56])
 	return result, fecResult
@@ -238,7 +238,7 @@ func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.FEC
 func EncodeFLCTalkerAliasHeader(s *FLCTalkerAliasHeader) [56]bit.Bit {
 	var data [56]bit.Bit
 	copy(data[0:2], bit.BitsFromUint8(uint8(s.TalkerAliasDataFormat), 2))
-	copy(data[2:8], bit.BitsFromUint32(uint32(s.TalkerAliasDataLength), 6))
+	copy(data[2:7], bit.BitsFromUint32(uint32(s.TalkerAliasDataLength), 5))
 	if s.TalkerAliasDataMSB {
 		data[7] = 1
 	}

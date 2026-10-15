@@ -52,7 +52,7 @@ type FLCGPSInfo struct {
 // ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
 type FLCTalkerAliasHeader struct {
 	TalkerAliasDataFormat layer3Elements.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"`
-	TalkerAliasDataLength int                                  `dmr:"bits:2-7"`
+	TalkerAliasDataLength int                                  `dmr:"bits:2-6"`
 	TalkerAliasDataMSB    bool                                 `dmr:"bit:7"`
 	TalkerAliasData       [48]bit.Bit                          `dmr:"bits:8-55,raw"`
 }

@@ -686,7 +686,7 @@ func validateStruct(pdu *PDUStruct, maxBit int) error {
 	if err := checkDispatch(pdu, dispatch, fallback); err != nil {
 		return err
 	}
-	if err := checkOverlap(pdu); err != nil && false {
+	if err := checkOverlap(pdu); err != nil {
 		return err
 	}
 	if err := checkCRCRange(pdu); err != nil {

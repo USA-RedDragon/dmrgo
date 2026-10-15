@@ -510,6 +510,49 @@ func TestParseInputSizeDefaultsToFieldRange(t *testing.T) {
 	}
 }
 
+func TestParseRejectsOverlap(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "range and bit",
+			src: `type T struct {
+	Len int  ` + "`dmr:\"bits:2-7\"`" + `
+	MSB bool ` + "`dmr:\"bit:7\"`" + `
+}`,
+			want: "fields Len and MSB overlap at bit 7",
+		},
+		{
+			name: "non-contiguous segment",
+			src: `type T struct {
+	A uint8 ` + "`dmr:\"bits:3+12-15\"`" + `
+	B uint8 ` + "`dmr:\"bits:8-12\"`" + `
+}`,
+			want: "fields A and B overlap at bit 12",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseSrc(t, tt.src)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("expected error containing %q, got %v", tt.want, err)
+			}
+		})
+	}
+}
+
+func TestParseAllowsIntentionalOverlap(t *testing.T) {
+	mustParse(t, `type T struct {
+	Format uint8 `+"`dmr:\"bits:4-7\"`"+`
+	Blocks uint8 `+"`dmr:\"bits:2-3+12-15,no_encode\"`"+`
+	Other  uint8 `+"`dmr:\"bits:2-3\"`"+`
+	A      *Sub  `+"`dmr:\"bits:0-79,dispatch:Format=1\"`"+`
+	B      *Sub  `+"`dmr:\"bits:0-79,dispatch:Format=2\"`"+`
+}`)
+}
+
 func TestParseIgnoresUntaggedStructs(t *testing.T) {
 	pdus := mustParse(t, `type T struct {
 	A uint8
