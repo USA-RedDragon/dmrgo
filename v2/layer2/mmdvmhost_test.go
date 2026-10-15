@@ -48,10 +48,10 @@ func TestMMDVMHostAccepts_Vectors(t *testing.T) {
 	} {
 		var payload [12]byte
 		copy(payload[:], must(hex.DecodeString(v.payload)))
-		burst, _ := layer2.NewBurstFromBytes(must(layer2.BuildLCDataBurst(payload, v.dt, 1)))
-		got, _, ok := burst.BPTCPayload()
-		if !ok || got != payload {
-			t.Fatalf("%s %s: BPTCPayload %x ok=%v", v.dt.String(), v.payload, got, ok)
+		raw := layer2.RawBurst(must(lcBurst(payload, v.dt, 1)))
+		got, _ := raw.BPTCPayload()
+		if got != payload {
+			t.Fatalf("%s %s: BPTCPayload %x", v.dt.String(), v.payload, got)
 		}
 		if layer2.MMDVMHostAccepts(v.dt, got) != v.accept {
 			t.Errorf("%s %s: accepted %v, MMDVMHost %v", v.dt.String(), v.payload, !v.accept, v.accept)

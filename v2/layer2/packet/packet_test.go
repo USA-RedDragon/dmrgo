@@ -290,7 +290,7 @@ func TestAssembler_Bursts(t *testing.T) {
 		t.Fatal(err)
 	}
 	pack := func(bits [96]bit.Bit, dt enums.DataType) *layer2.Burst {
-		raw, err := layer2.BuildLCDataBurst([12]byte(bit.PackBits(bits[:])), dt, 1)
+		raw, err := layer2.BuildDataBurst([12]byte(bit.PackBits(bits[:])), dt, 1, layer2.SyncSourceBS)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -130,7 +130,7 @@ documents:
               - TestFullLinkControl_Decode_BothDataTypes
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestBuildLCDataBurst_ProducesCorrectSize
+              - TestBuildDataBurst_ProducesCorrectSize
               - TestVoiceTransmitter_Transmission
               - TestVoiceTransmitter_OptionsMatchPositional
               - TestVoiceTransmitter_PIHeader
@@ -151,7 +151,7 @@ documents:
               - TestFullLinkControl_Decode_BothDataTypes
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestBuildLCDataBurst_Terminator
+              - TestBuildDataBurst_Terminator
               - TestVoiceTransmitter_Terminate
               - TestVoiceTransmitter_ReproducesCaptures
 
@@ -169,10 +169,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestEmbeddedLCFragments_Capture
-              - TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip
-              - TestBurst_UnpackEmbeddedSignallingData_EmptySlice
-              - TestBurst_UnpackEmbeddedSignallingData_SingleByte
-              - TestBurst_PackEmbeddedSignallingData_KnownValue
               - TestEmbeddedLC_DecodeCapture
               - TestEmbeddedLC_EncodeCapture
               - TestEmbeddedLC_RoundTrip
@@ -386,7 +382,6 @@ documents:
               - TestEncodeEmbeddedSignalling_FullRoundTrip
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip
 
       - section: "9.1.3"
         title: "Slot Type (SLOT) PDU"
@@ -605,7 +600,7 @@ documents:
               - TestEmbeddedSignalling_AllColorCodes
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestBuildLCDataBurst_ColorCodeRange
+              - TestBuildDataBurst_ColorCodeRange
 
       - section: "9.3.2"
         title: "Pre-emption and power control Indicator (PI)"
@@ -757,7 +752,6 @@ documents:
               - TestBPTC19696_ColumnsFirstCorrection
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestBurst_BPTCPayload
 
       - section: "B.2.1"
         title: "Variable length BPTC for embedded signalling"

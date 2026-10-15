@@ -430,20 +430,6 @@ func isBPTCDataType(dataType enums.DataType) bool {
 	}
 }
 
-// BPTCPayload returns the 96 information bits of a data burst coded with
-// BPTC(196,96), packed most significant bit first, as DecodeFromBytes
-// corrected them before any CRC or RS(12,9) check, and the BPTC FEC result,
-// which is also FEC.Payload. ok is false for a voice burst, for the Rate 3/4,
-// Rate 1 and reserved data types, which are not BPTC coded, and for a burst
-// that DecodeFromBytes did not decode.
-func (b *Burst) BPTCPayload() (payload [12]byte, result fec.Result, ok bool) {
-	if b.Kind != KindData || !isBPTCDataType(b.SlotType.DataType) || b.deinterleavedInfoLen != 96 {
-		return payload, result, false
-	}
-	copy(payload[:], bit.PackBits(b.deinterleavedInfoBits[:96]))
-	return payload, b.FEC.Payload, true
-}
-
 // String returns a string representation of the burst.
 func (b *Burst) String() string {
 	ret := fmt.Sprintf("{ Kind: %s, SyncPattern: %s, ", b.Kind, b.SyncPattern)
@@ -780,88 +766,4 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	default:
 		return info, nil
 	}
-}
-
-// PackEmbeddedSignallingData converts the 32-bit (unpacked) embedded signalling
-// data into a 4-byte packed array.
-func (b *Burst) PackEmbeddedSignallingData() [4]byte {
-	var data [4]byte
-	for i := 0; i < 32; i++ {
-		data[i/8] |= byte(b.EmbeddedSignallingData[i]) << (7 - (i % 8)) //nolint:gosec // i/8 bounded: i<32 so i/8<=3 <4
-	}
-	return data
-}
-
-// UnpackEmbeddedSignallingData populates the 32-bit (unpacked) embedded signalling
-// data from a byte slice. Only best-effort unpacking is performed up to 32 bits.
-func (b *Burst) UnpackEmbeddedSignallingData(data []byte) {
-	// Clear existing
-	b.EmbeddedSignallingData = [32]bit.Bit{}
-
-	if len(data) == 0 {
-		return
-	}
-
-	for i := 0; i < 32 && i < len(data)*8; i++ {
-		byteIdx := i / 8
-		bitIdx := 7 - (i % 8)
-		if byteIdx < len(data) && (data[byteIdx]>>bitIdx)&1 == 1 {
-			b.EmbeddedSignallingData[i] = 1
-		}
-	}
-}
-
-// BuildLCDataBurst builds a 33-byte LC data burst (e.g. for Voice Header or
-// Terminator) with the BS-sourced data SYNC pattern. VoiceTransmitter builds
-// these bursts for the other SYNC sources.
-// lcBytes is the 12-byte on-air codeword with the Data Type CRC Mask already
-// applied, as returned by FullLinkControl.Encode with DataType set to dataType.
-// It returns an error if colorCode or dataType does not fit in the slot type.
-func BuildLCDataBurst(lcBytes [12]byte, dataType enums.DataType, colorCode uint8) ([33]byte, error) {
-	return buildLCDataBurst(lcBytes, dataType, colorCode, enums.SyncBSSourcedData)
-}
-
-func buildLCDataBurst(lcBytes [12]byte, dataType enums.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
-	// Convert LC bytes to 96 info bits
-	var infoBits [96]bit.Bit
-	for i := 0; i < 12; i++ {
-		for j := 0; j < 8; j++ {
-			if (lcBytes[i]>>(7-j))&1 == 1 {
-				infoBits[i*8+j] = 1
-			}
-		}
-	}
-
-	// BPTC(196,96) encode
-	encoded := bptc.Encode196(infoBits)
-
-	// Build the 264-bit burst:
-	// bits[0:97]   — first 98 data bits
-	// bits[98:107]  — slot type (first 10 bits)
-	// bits[108:155] — SYNC pattern (48 bits)
-	// bits[156:165] — slot type (last 10 bits)
-	// bits[166:263] — last 98 data bits
-	var bitData [264]bit.Bit
-
-	// Data part 1: encoded[0:97] → bits[0:97]
-	copy(bitData[:98], encoded[:98])
-
-	// Data part 2: encoded[98:195] → bits[166:263]
-	copy(bitData[166:264], encoded[98:196])
-
-	// Slot Type: encode color code + data type with Golay FEC
-	slotTypeBits, err := (&pdu.SlotType{
-		ColorCode: int(colorCode),
-		DataType:  dataType,
-	}).Encode()
-	if err != nil {
-		return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
-	}
-
-	copy(bitData[98:108], slotTypeBits[:10])
-	copy(bitData[156:166], slotTypeBits[10:20])
-
-	writeSync(&bitData, sync)
-
-	return bit.PackBits264(bitData), nil
 }

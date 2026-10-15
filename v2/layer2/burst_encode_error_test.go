@@ -98,10 +98,10 @@ func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 }
 
 func TestBuildLCDataBurst_RejectsOutOfRangeColorCode(t *testing.T) {
-	if _, err := layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeVoiceLCHeader, 16); err == nil {
+	if _, err := lcBurst([12]byte{}, enums.DataTypeVoiceLCHeader, 16); err == nil {
 		t.Fatal("color code 16 should be rejected")
 	}
-	if _, err := layer2.BuildLCDataBurst([12]byte{}, enums.DataType(16), 1); err == nil {
+	if _, err := lcBurst([12]byte{}, enums.DataType(16), 1); err == nil {
 		t.Fatal("data type 16 should be rejected")
 	}
 }

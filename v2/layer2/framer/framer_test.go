@@ -128,7 +128,7 @@ func TestFramer_OutboundCACH(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(3))
 	voice := loadVoice(t)
-	idle := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
+	idle := [33]byte(must(layer2.BuildDataBurst([12]byte{}, enums.DataTypeIdle, 1, layer2.SyncSourceBS)))
 	type sent struct {
 		data    [33]byte
 		channel int
@@ -173,7 +173,7 @@ func TestFramer_DirectChannel(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(4))
 	stream := make([]bit.Bit, 0, 500+3*framer.SlotPeriod)
-	ts2 := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
+	ts2 := [33]byte(must(layer2.BuildDataBurst([12]byte{}, enums.DataTypeIdle, 1, layer2.SyncSourceBS)))
 	var bits [264]bit.Bit
 	copy(bits[:], bit.UnpackBits(ts2[:]))
 	for i := range framer.SyncBits {

@@ -72,10 +72,10 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 			}
 		}
 		if b.Kind == layer2.KindData {
-			if want, wantRes, ok := b.BPTCPayload(); ok {
+			if isBPTC(b.SlotType.DataType) {
 				counts["BPTC"]++
-				if got, res := r.BPTCPayload(); got != want || res != wantRes {
-					t.Errorf("%x: BPTCPayload %x, Burst %x", frame, got, want)
+				if _, res := r.BPTCPayload(); res != b.FEC.Payload {
+					t.Errorf("%x: BPTCPayload FEC %+v, Burst %+v", frame, res, b.FEC.Payload)
 				}
 			}
 			switch d := b.Data.(type) {
@@ -100,8 +100,8 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 				emb, res = r.StandaloneRCEMB()
 				data = r.StandaloneRCData()
 			}
-			if emb != b.EmbeddedSignalling || res != b.FEC.EMB || data != b.PackEmbeddedSignallingData() {
-				t.Errorf("%x: EMB %+v %x, Burst %+v %x", frame, emb, data, b.EmbeddedSignalling, b.PackEmbeddedSignallingData())
+			if want := [4]byte(bit.PackBits(b.EmbeddedSignallingData[:])); emb != b.EmbeddedSignalling || res != b.FEC.EMB || data != want {
+				t.Errorf("%x: EMB %+v %x, Burst %+v %x", frame, emb, data, b.EmbeddedSignalling, want)
 			}
 		}
 		if b.SyncPattern != enums.SyncMSSourcedRC {
@@ -183,8 +183,8 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 				t.Fatal("SetBPTCPayload changed bits outside the information bits")
 			}
 			if nb, err := layer2.NewBurstFromBytes(w); err == nil {
-				if got, _, ok := nb.BPTCPayload(); !ok || got != p {
-					t.Fatalf("Burst reads %x, want %x", got, p)
+				if got := must(nb.Encode()); got != [33]byte(w) {
+					t.Fatalf("Burst re-encodes %x, want %x", got, w)
 				}
 			}
 			continue
@@ -248,7 +248,7 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 		t.Fatalf("StandaloneRCEMB %+v %+v", emb, res)
 	}
 	data := r.StandaloneRCData()
-	if data != b.PackEmbeddedSignallingData() {
+	if data != [4]byte(bit.PackBits(b.EmbeddedSignallingData[:])) {
 		t.Fatalf("StandaloneRCData %x", data)
 	}
 	var bits [32]bit.Bit
@@ -274,9 +274,9 @@ func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
 	cw := must(pdu.FullLCCodeword([9]byte(capturedEmbeddedLC), enums.DataTypeVoiceLCHeader))
 	for cc := uint8(0); cc < 16; cc++ {
 		got := must(layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS))
-		want := must(layer2.BuildLCDataBurst(cw, enums.DataTypeVoiceLCHeader, cc))
+		want := must(lcBurst(cw, enums.DataTypeVoiceLCHeader, cc))
 		if got != layer2.RawBurst(want) {
-			t.Fatalf("cc %d: BuildDataBurst differs from BuildLCDataBurst", cc)
+			t.Fatalf("cc %d: BuildDataBurst differs from a hand-built burst", cc)
 		}
 	}
 	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {

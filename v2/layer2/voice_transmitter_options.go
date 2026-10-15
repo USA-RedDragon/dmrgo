@@ -36,7 +36,7 @@ type VoiceTransmitterOptions struct {
 // or LC or PIHeader does not encode.
 func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmitter, error) {
 	bit.Mask(opts.Silence[:])
-	voiceSync, dataSync, ok := opts.Source.SyncPatterns()
+	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {
 		return nil, fmt.Errorf("unknown sync source %d", opts.Source)
 	}
@@ -51,10 +51,10 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 		lcHook:    opts.EmbeddedLC,
 	}
 	var err error
-	if t.header, err = lcDataBurst(opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, dataSync); err != nil {
+	if t.header, err = lcDataBurst(opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, opts.Source); err != nil {
 		return nil, err
 	}
-	if t.terminator, err = lcDataBurst(opts.LC, enums.DataTypeTerminatorWithLC, opts.ColorCode, dataSync); err != nil {
+	if t.terminator, err = lcDataBurst(opts.LC, enums.DataTypeTerminatorWithLC, opts.ColorCode, opts.Source); err != nil {
 		return nil, err
 	}
 	if t.callLC, err = EncodeEmbeddedFullLinkControl(&opts.LC); err != nil {
@@ -69,7 +69,7 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 		}
 		var piBytes [12]byte
 		copy(piBytes[:], bit.PackBits(bits[:]))
-		if t.piHeader, err = buildLCDataBurst(piBytes, enums.DataTypePIHeader, opts.ColorCode, dataSync); err != nil {
+		if t.piHeader, err = BuildDataBurst(piBytes, enums.DataTypePIHeader, opts.ColorCode, opts.Source); err != nil {
 			return nil, err
 		}
 		t.hasPI = true

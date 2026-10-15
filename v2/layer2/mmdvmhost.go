@@ -1,20 +1,19 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // MMDVMHostAccepts reports whether the 96-bit BPTC(196,96) payload of a
-// burst of dataType, as Burst.BPTCPayload returns it, passes the check that
+// burst of dataType, as RawBurst.BPTCPayload returns it, passes the check that
 // MMDVMHost (g4klx/MMDVMHost 0acb758) applies before it uses a data burst
 // from the network in CDMRSlot::writeNetwork. File and line references are
 // to that commit.
 //
 //   - Voice LC Header and Terminator with LC: the RS(12,9) parity, with the
 //     Data Type CRC Mask 0x969696 or 0x999999 removed, must equal the parity
-//     of the 9 LC octets. No error is corrected, as in CRS129::check
+//     of the 9 LC octets (pdu.FullLCParityOK). No error is corrected, as in CRS129::check
 //     (RS129.cpp:123-131) called by CDMRFullLC::decode (DMRFullLC.cpp:40-69).
 //     A pdu.FullLinkControl passes this check when its FEC has no error and
 //     no corrected error. MMDVMHost decodes the LC of a network Voice LC
@@ -24,7 +23,7 @@ import (
 //     decode a Terminator with LC on either path, but builds a new one from
 //     the header LC (DMRSlot.cpp:377-379, 1332-1334).
 //   - CSBK, MBC Header and Data Header: the CRC-CCITT with the mask 0xA5A5,
-//     0xAAAA or 0xCCCC removed must check (CDMRCSBK::put, DMRCSBK.cpp:60-88;
+//     0xAAAA or 0xCCCC removed must check (pdu.BlockCRCOK; CDMRCSBK::put, DMRCSBK.cpp:60-88;
 //     CDMRDataHeader::put, DMRDataHeader.cpp:57-69). MMDVMHost discards the
 //     burst when it fails (DMRSlot.cpp:1374-1378, 1690-1694, 1793-1797).
 //     It also discards a BS_Dwn_Act CSBK or MBC Header (DMRSlot.cpp:1697,
@@ -48,18 +47,13 @@ import (
 // blocks outside a data call. MMDVMHostAccepts does not check call state.
 func MMDVMHostAccepts(dataType enums.DataType, payload [12]byte) bool {
 	switch dataType {
-	case enums.DataTypeVoiceLCHeader:
-		return rs129Matches(payload, 0x96)
-	case enums.DataTypeTerminatorWithLC:
-		return rs129Matches(payload, 0x99)
-	case enums.DataTypeCSBK:
-		return crcCCITTMatches(payload, 0xA5)
-	case enums.DataTypeMBCHeader:
-		return crcCCITTMatches(payload, 0xAA)
-	case enums.DataTypeDataHeader:
-		return crcCCITTMatches(payload, 0xCC)
+	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
+		return pdu.FullLCParityOK(payload, dataType)
+	case enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader:
+		return pdu.BlockCRCOK(payload, dataType)
 	case enums.DataTypeMBCContinuation:
-		return crcCCITTMatches(payload, 0x00)
+		sealed := payload
+		return MMDVMHostSeal(dataType, &sealed) == nil && sealed == payload
 	case enums.DataTypePIHeader,
 		enums.DataTypeRate12,
 		enums.DataTypeRate34,
@@ -70,20 +64,4 @@ func MMDVMHostAccepts(dataType enums.DataType, payload [12]byte) bool {
 	default:
 		return false
 	}
-}
-
-func rs129Matches(payload [12]byte, mask byte) bool {
-	codeword := reedsolomon.Encode([9]byte(payload[:9]))
-	for i := 9; i < 12; i++ {
-		if codeword[i] != payload[i]^mask {
-			return false
-		}
-	}
-	return true
-}
-
-func crcCCITTMatches(payload [12]byte, mask byte) bool {
-	payload[10] ^= mask
-	payload[11] ^= mask
-	return crc.CheckCRCCCITT(payload[:])
 }

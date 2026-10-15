@@ -108,7 +108,7 @@ func NewVoiceTransmitter(lc pdu.FullLinkControl, colorCode uint8, source SyncSou
 	})
 }
 
-func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode uint8, sync enums.SyncPattern) ([33]byte, error) {
+func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode uint8, src SyncSource) ([33]byte, error) {
 	lc.BurstDataType = dataType
 	bits, err := lc.Encode()
 	if err != nil {
@@ -116,7 +116,8 @@ func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode uint
 	}
 	var lcBytes [12]byte
 	copy(lcBytes[:], bit.PackBits(bits[:]))
-	return buildLCDataBurst(lcBytes, dataType, colorCode, sync)
+	r, err := BuildDataBurst(lcBytes, dataType, colorCode, src)
+	return r, err
 }
 
 // Header returns the Voice LC Header burst, sent before the first voice

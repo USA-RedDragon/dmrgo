@@ -10,101 +10,22 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-func TestBurst_PackUnpackEmbeddedSignallingData_RoundTrip(t *testing.T) {
-	tests := []struct {
-		name string
-		data [32]bit.Bit
-	}{
-		{"AllZeros", [32]bit.Bit{}},
-		{"AllOnes", func() [32]bit.Bit {
-			var d [32]bit.Bit
-			for i := range d {
-				d[i] = 1
-			}
-			return d
-		}()},
-		{"Alternating", func() [32]bit.Bit {
-			var d [32]bit.Bit
-			for i := range d {
-				d[i] = bit.Bit(i % 2)
-			}
-			return d
-		}()},
-		{"FirstHalfSet", func() [32]bit.Bit {
-			var d [32]bit.Bit
-			for i := 0; i < 16; i++ {
-				d[i] = 1
-			}
-			return d
-		}()},
+// lcBurst builds a BS-sourced data burst that carries the BPTC(196,96)
+// payload p with a slot type of color code cc and data type dt, which may be
+// reserved.
+func lcBurst(p [12]byte, dt enums.DataType, cc uint8) ([33]byte, error) {
+	var r layer2.RawBurst
+	if err := r.SetSync(enums.SyncBSSourcedData); err != nil {
+		return r, err
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			burst := &layer2.Burst{}
-			burst.EmbeddedSignallingData = tt.data
-
-			packed := burst.PackEmbeddedSignallingData()
-			burst2 := &layer2.Burst{}
-			burst2.UnpackEmbeddedSignallingData(packed[:])
-
-			for i := 0; i < 32; i++ {
-				if burst2.EmbeddedSignallingData[i] != tt.data[i] {
-					t.Errorf("bit %d: got %d, want %d", i, burst2.EmbeddedSignallingData[i], tt.data[i])
-				}
-			}
-		})
+	if err := r.SetSlotType(pdu.SlotType{ColorCode: int(cc), DataType: dt}); err != nil {
+		return r, err
 	}
+	r.SetBPTCPayload(p)
+	return r, nil
 }
 
-func TestBurst_UnpackEmbeddedSignallingData_EmptySlice(t *testing.T) {
-	burst := &layer2.Burst{}
-	burst.EmbeddedSignallingData[0] = 1
-	burst.EmbeddedSignallingData[5] = 1
-
-	burst.UnpackEmbeddedSignallingData([]byte{})
-	for i := 0; i < 32; i++ {
-		if burst.EmbeddedSignallingData[i] != 0 {
-			t.Errorf("bit %d should be 0 after unpacking empty data, got %d", i, burst.EmbeddedSignallingData[i])
-		}
-	}
-}
-
-func TestBurst_UnpackEmbeddedSignallingData_SingleByte(t *testing.T) {
-	burst := &layer2.Burst{}
-	burst.UnpackEmbeddedSignallingData([]byte{0xA5}) // 10100101
-
-	expected := [8]bit.Bit{1, 0, 1, 0, 0, 1, 0, 1}
-	for i := 0; i < 8; i++ {
-		if burst.EmbeddedSignallingData[i] != expected[i] {
-			t.Errorf("bit %d: got %d, want %d", i, burst.EmbeddedSignallingData[i], expected[i])
-		}
-	}
-	for i := 8; i < 32; i++ {
-		if burst.EmbeddedSignallingData[i] != 0 {
-			t.Errorf("bit %d should be 0, got %d", i, burst.EmbeddedSignallingData[i])
-		}
-	}
-}
-
-func TestBurst_PackEmbeddedSignallingData_KnownValue(t *testing.T) {
-	burst := &layer2.Burst{}
-	for i := 0; i < 8; i++ {
-		burst.EmbeddedSignallingData[i] = 1
-	}
-
-	packed := burst.PackEmbeddedSignallingData()
-	if packed[0] != 0xFF {
-		t.Errorf("packed[0] = 0x%02X, want 0xFF", packed[0])
-	}
-	for i := 1; i < 4; i++ {
-		if packed[i] != 0x00 {
-			t.Errorf("packed[%d] = 0x%02X, want 0x00", i, packed[i])
-		}
-	}
-}
-
-func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
+func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -124,9 +45,9 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
 
-	result := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1))
+	result := [33]byte(must(layer2.BuildDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1, layer2.SyncSourceBS)))
 	if len(result) != 33 {
-		t.Errorf("BuildLCDataBurst returned %d bytes, want 33", len(result))
+		t.Errorf("BuildDataBurst returned %d bytes, want 33", len(result))
 	}
 
 	burst, err := layer2.NewBurstFromBytes(result)
@@ -138,7 +59,7 @@ func TestBuildLCDataBurst_ProducesCorrectSize(t *testing.T) {
 	}
 }
 
-func TestBuildLCDataBurst_Terminator(t *testing.T) {
+func TestBuildDataBurst_Terminator(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeTerminatorWithLC,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -155,7 +76,7 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	var lcBytes [12]byte
 	copy(lcBytes[:], encoded)
 
-	result := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeTerminatorWithLC, 0))
+	result := [33]byte(must(layer2.BuildDataBurst(lcBytes, enums.DataTypeTerminatorWithLC, 0, layer2.SyncSourceBS)))
 	burst, err := layer2.NewBurstFromBytes(result)
 	if err != nil {
 		t.Fatalf("NewBurstFromBytes failed: %v", err)
@@ -165,7 +86,7 @@ func TestBuildLCDataBurst_Terminator(t *testing.T) {
 	}
 }
 
-func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
+func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
@@ -183,7 +104,7 @@ func TestBuildLCDataBurst_ColorCodeRange(t *testing.T) {
 	copy(lcBytes[:], encoded)
 
 	for cc := uint8(0); cc < 16; cc++ {
-		result := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, cc))
+		result := [33]byte(must(layer2.BuildDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS)))
 		burst, err := layer2.NewBurstFromBytes(result)
 		if err != nil {
 			t.Fatalf("NewBurstFromBytes failed for color code %d: %v", cc, err)

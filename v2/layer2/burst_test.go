@@ -14,7 +14,7 @@ import (
 func TestBurst_ReservedDataTypes(t *testing.T) {
 	for dt := enums.DataTypeReserved; dt <= 0xF; dt++ {
 		t.Run(fmt.Sprintf("DataType%d", dt), func(t *testing.T) {
-			frame := must(layer2.BuildLCDataBurst([12]byte{}, dt, 1))
+			frame := must(lcBurst([12]byte{}, dt, 1))
 			{
 				var burst layer2.Burst
 				if err := burst.DecodeFromBytes(frame); err == nil {
@@ -155,36 +155,8 @@ func flipBurstBits(frame [33]byte, positions ...int) [33]byte {
 	return frame
 }
 
-func TestBurst_BPTCPayload(t *testing.T) {
-	payload := [12]byte{0x03, 0x10, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C, 0x01, 0x02, 0x03}
-	for _, dt := range []enums.DataType{enums.DataTypeCSBK, enums.DataTypeVoiceLCHeader, enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock} {
-		frame := flipBurstBits(must(layer2.BuildLCDataBurst(payload, dt, 1)), 5)
-		burst, _ := layer2.NewBurstFromBytes(frame)
-		got, res, ok := burst.BPTCPayload()
-		if !ok || got != payload || res.ErrorsCorrected != 1 || res.Uncorrectable || res != burst.FEC.Payload {
-			t.Errorf("%s: payload %x ok=%v result=%+v", dt.String(), got, ok, res)
-		}
-	}
-	for _, dt := range []enums.DataType{enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeReserved} {
-		burst, _ := layer2.NewBurstFromBytes(must(layer2.BuildLCDataBurst(payload, dt, 1)))
-		if _, _, ok := burst.BPTCPayload(); ok {
-			t.Errorf("%s: ok", dt.String())
-		}
-	}
-	voice, _ := layer2.NewBurstFromBytes(transmission(t, groupLC(enums.FIDStandardized), 1)[1])
-	if _, _, ok := voice.BPTCPayload(); ok || (voice.Kind == layer2.KindData) {
-		t.Error("voice burst: ok")
-	}
-	var empty layer2.Burst
-	empty.Kind = layer2.KindData
-	empty.SlotType.DataType = enums.DataTypeCSBK
-	if _, _, ok := empty.BPTCPayload(); ok {
-		t.Error("burst not decoded: ok")
-	}
-}
-
 func TestBurst_SyncTolerance(t *testing.T) {
-	frame := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
+	frame := must(lcBurst([12]byte{}, enums.DataTypeIdle, 1))
 
 	noisy := flipBurstBits(frame, layer2.SyncStart, layer2.SyncStart+11, layer2.SyncStart+30, layer2.SyncEnd-1)
 	burst, err := layer2.NewBurstFromBytes(noisy)
@@ -210,7 +182,7 @@ func TestBurst_SyncTolerance(t *testing.T) {
 // codeword. The EMB positions of MS-sourced data SYNC are 2 bits from a
 // codeword, at bits 115 and 155.
 func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
-	frame := must(layer2.BuildLCDataBurst([12]byte{}, enums.DataTypeIdle, 1))
+	frame := must(lcBurst([12]byte{}, enums.DataTypeIdle, 1))
 	diff := uint64(enums.SyncBSSourcedData ^ enums.SyncMSSourcedData)
 	for i := 0; i < 48; i++ {
 		if (diff>>(47-i))&1 == 1 {

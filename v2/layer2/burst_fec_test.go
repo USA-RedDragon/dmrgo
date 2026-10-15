@@ -20,7 +20,7 @@ func lcHeaderFrame(t *testing.T) [33]byte {
 	var lcBytes [12]byte
 	lcBits := must(lc.Encode())
 	copy(lcBytes[:], bit.PackBits(lcBits[:]))
-	return must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1))
+	return must(lcBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1))
 }
 
 func TestBurstFEC_LCHeaderCountsPayloadBitsOnce(t *testing.T) {
@@ -45,7 +45,7 @@ func TestBurstFEC_CSBKCountsNoCRCBits(t *testing.T) {
 	var lcBytes [12]byte
 	csbkBits := must(csbk.Encode())
 	copy(lcBytes[:], bit.PackBits(csbkBits[:]))
-	frame := must(layer2.BuildLCDataBurst(lcBytes, enums.DataTypeCSBK, 1))
+	frame := must(lcBurst(lcBytes, enums.DataTypeCSBK, 1))
 
 	b := must(layer2.NewBurstFromBytes(frame))
 	want := fec.Result{BitsChecked: 20 + 196}

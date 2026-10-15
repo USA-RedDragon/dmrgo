@@ -36,7 +36,7 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 			lcBits := must(lc.Encode())
 			var lcBytes [12]byte
 			copy(lcBytes[:], bit.PackBits(lcBits[:]))
-			frame := must(layer2.BuildLCDataBurst(lcBytes, dt, 1))
+			frame := must(lcBurst(lcBytes, dt, 1))
 
 			b := must(layer2.NewBurstFromBytes(frame))
 			flc, ok := b.Data.(*pdu.FullLinkControl)
@@ -152,14 +152,14 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 
 func TestBurstEncode_IdleKeepsDecodedPayload(t *testing.T) {
 	payload := [12]byte{0x12, 0x34}
-	frame := must(layer2.BuildLCDataBurst(payload, enums.DataTypeIdle, 1))
+	frame := must(lcBurst(payload, enums.DataTypeIdle, 1))
 	b := must(layer2.NewBurstFromBytes(frame))
 	if got := must(b.Encode()); got != frame {
 		t.Errorf("decoded idle burst: got %x, want %x", got, frame)
 	}
 	fresh := layer2.Burst{Kind: layer2.KindData, SyncPattern: b.SyncPattern, SlotType: b.SlotType, Data: &pdu.PRFill{}}
-	got := must(layer2.NewBurstFromBytes(must(fresh.Encode())))
-	if p, _, _ := got.BPTCPayload(); !pdu.IsPRFill(bitsOf(p)) {
+	raw := layer2.RawBurst(must(fresh.Encode()))
+	if p, _ := raw.BPTCPayload(); !pdu.IsPRFill(bitsOf(p)) {
 		t.Errorf("new PR FILL encoded %x, want Table D.2", p)
 	}
 }
@@ -199,7 +199,7 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 // it; a data type that carries a different number of information bits is an
 // error.
 func TestBurstEncode_DecodedPayloadWithoutData(t *testing.T) {
-	frame := must(layer2.BuildLCDataBurst([12]byte{0xDE, 0xAD}, enums.DataTypeCSBK, 1))
+	frame := must(lcBurst([12]byte{0xDE, 0xAD}, enums.DataTypeCSBK, 1))
 	b, err := layer2.NewBurstFromBytes(frame)
 	if err != nil || b.Data == nil || !b.FEC.PDU.Uncorrectable {
 		t.Fatalf("CSBK with a bad CRC: err %v, Data %v, FEC %+v", err, b.Data, b.FEC.PDU)
@@ -224,7 +224,7 @@ func TestBurstEncode_DecodedPayloadWithoutData(t *testing.T) {
 		}
 	}
 
-	idle := must(layer2.NewBurstFromBytes(must(layer2.BuildLCDataBurst([12]byte{1}, enums.DataTypeIdle, 1))))
+	idle := must(layer2.NewBurstFromBytes(must(lcBurst([12]byte{1}, enums.DataTypeIdle, 1))))
 	idle.SlotType.DataType = enums.DataTypeCSBK
 	if _, err := idle.Encode(); err == nil {
 		t.Error("decoded PR FILL as a CSBK: no error")
