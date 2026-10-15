@@ -130,6 +130,12 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 			if dh.UnconfirmedDataHeader != nil {
 				t.Errorf("format %s should have nil UnconfirmedDataHeader", tt.name)
 			}
+			if tt.name == "UDT" && dh.UDTHeader == nil {
+				t.Error("UDT format should populate UDTHeader")
+			}
+			if tt.name == "Proprietary" && dh.ProprietaryHeader == nil {
+				t.Error("Proprietary format should populate ProprietaryHeader")
+			}
 		})
 	}
 }
@@ -432,5 +438,134 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	}
 	if decoded.RawDataHeader != nil {
 		t.Error("RawDataHeader should be nil for zero AppendedBlocks")
+	}
+}
+
+func setBits(bits *[96]bit.Bit, start, length int, val uint32) {
+	for i := 0; i < length; i++ {
+		bits[start+i] = bit.Bit((val >> (length - 1 - i)) & 1)
+	}
+}
+
+// Bit positions follow TS 102 361-1 Table 9.17D and TS 102 361-4 Table 7.24.
+func TestDataHeader_UDT_Decode(t *testing.T) {
+	t.Parallel()
+	infoBits := buildDataHeaderBits(func(b *[96]bit.Bit) {
+		b[0] = 1                     // G/I
+		b[2] = 1                     // Emergency
+		b[3] = 1                     // UDT_Option_Flag
+		setBits(b, 4, 4, 0b0000)     // DPF = UDT
+		setBits(b, 8, 4, 0b0000)     // SAP = UDT
+		setBits(b, 12, 4, 0b0101)    // UDT_Format
+		setBits(b, 16, 24, 0x123456) // target
+		setBits(b, 40, 24, 0xABCDEF) // source
+		setBits(b, 64, 5, 0b10011)   // pad nibble
+		setBits(b, 70, 2, 0b10)      // UAB = 3 blocks
+		b[72] = 1                    // SF
+		setBits(b, 74, 6, 0b011010)  // C_UDTHD
+	})
+	dh, fecResult := pdu.DecodeDataHeader(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("unexpected CRC failure")
+	}
+	if dh.Format != pdu.FormatUnifiedDataTransport {
+		t.Fatalf("Format = %d, want UDT", dh.Format)
+	}
+	u := dh.UDTHeader
+	if u == nil {
+		t.Fatal("UDTHeader should not be nil")
+	}
+	if !u.Group || u.ResponseRequested || !u.Emergency || !u.OptionFlag {
+		t.Errorf("octet 0 flags = G:%t A:%t E:%t Opt:%t, want G/E/Opt set and A clear", u.Group, u.ResponseRequested, u.Emergency, u.OptionFlag)
+	}
+	if u.SAP != 0 || u.UDTFormat != 0b0101 {
+		t.Errorf("SAP=%d UDTFormat=%d, want 0 5", u.SAP, u.UDTFormat)
+	}
+	if u.LLIDDestination != 0x123456 || u.LLIDSource != 0xABCDEF {
+		t.Errorf("addresses = %X/%X, want 123456/ABCDEF", u.LLIDDestination, u.LLIDSource)
+	}
+	if u.PadNibble != 0b10011 || u.Reserved || u.AppendedBlocks != 0b10 {
+		t.Errorf("octet 8 = pad %d rsvd %t UAB %d, want 19 false 2", u.PadNibble, u.Reserved, u.AppendedBlocks)
+	}
+	if !u.SupplementaryFlag || u.ProtectFlag || u.Opcode != pdu.UDTOpcodeOutboundHeader {
+		t.Errorf("octet 9 = SF %t PF %t op %d, want true false C_UDTHD", u.SupplementaryFlag, u.ProtectFlag, u.Opcode)
+	}
+	if pdu.UDTOpcodeToName(u.Opcode) != "C_UDTHD" {
+		t.Errorf("UDTOpcodeToName = %q, want C_UDTHD", pdu.UDTOpcodeToName(u.Opcode))
+	}
+	if got := pdu.EncodeDataHeader(&dh); got != infoBits {
+		t.Error("re-encode does not match original bits")
+	}
+}
+
+func TestDataHeader_UDT_RoundTrip(t *testing.T) {
+	t.Parallel()
+	original := &pdu.DataHeader{
+		Format: pdu.FormatUnifiedDataTransport,
+		UDTHeader: &pdu.UDTHeader{
+			ResponseRequested: true,
+			OptionFlag:        true,
+			UDTFormat:         0b0111,
+			LLIDDestination:   0xFFFED4,
+			LLIDSource:        3120101,
+			PadNibble:         7,
+			AppendedBlocks:    3,
+			ProtectFlag:       true,
+			Opcode:            pdu.UDTOpcodeInboundHeader,
+		},
+	}
+	decoded, fecResult := pdu.DecodeDataHeader(pdu.EncodeDataHeader(original))
+	if fecResult.Uncorrectable {
+		t.Fatal("unexpected CRC failure")
+	}
+	if decoded.UDTHeader == nil || *decoded.UDTHeader != *original.UDTHeader {
+		t.Errorf("round trip = %+v, want %+v", decoded.UDTHeader, original.UDTHeader)
+	}
+}
+
+// Bit positions follow TS 102 361-1 Table 9.17.
+func TestDataHeader_Proprietary_Decode(t *testing.T) {
+	t.Parallel()
+	infoBits := buildDataHeaderBits(func(b *[96]bit.Bit) {
+		setBits(b, 0, 4, 0b1001) // SAP = proprietary packet data
+		setBits(b, 4, 4, 0b1111) // DPF = proprietary
+		setBits(b, 8, 8, 0x10)   // MFID
+		b[16] = 1
+		b[79] = 1
+	})
+	dh, fecResult := pdu.DecodeDataHeader(infoBits)
+	if fecResult.Uncorrectable {
+		t.Fatal("unexpected CRC failure")
+	}
+	p := dh.ProprietaryHeader
+	if p == nil {
+		t.Fatal("ProprietaryHeader should not be nil")
+	}
+	if p.SAP != 0b1001 || p.MFID != 0x10 {
+		t.Errorf("SAP=%d MFID=0x%02X, want 9 0x10", p.SAP, p.MFID)
+	}
+	if p.ManufacturerData[0] != 1 || p.ManufacturerData[63] != 1 {
+		t.Error("ManufacturerData should span bits 16-79")
+	}
+	if got := pdu.EncodeDataHeader(&dh); got != infoBits {
+		t.Error("re-encode does not match original bits")
+	}
+}
+
+func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
+	t.Parallel()
+	var mfData [64]bit.Bit
+	mfData[3] = 1
+	mfData[40] = 1
+	original := &pdu.DataHeader{
+		Format:            pdu.FormatProprietary,
+		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: mfData},
+	}
+	decoded, fecResult := pdu.DecodeDataHeader(pdu.EncodeDataHeader(original))
+	if fecResult.Uncorrectable {
+		t.Fatal("unexpected CRC failure")
+	}
+	if decoded.ProprietaryHeader == nil || *decoded.ProprietaryHeader != *original.ProprietaryHeader {
+		t.Errorf("round trip = %+v, want %+v", decoded.ProprietaryHeader, original.ProprietaryHeader)
 	}
 }

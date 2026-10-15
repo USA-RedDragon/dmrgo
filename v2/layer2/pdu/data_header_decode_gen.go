@@ -8,6 +8,8 @@ ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
 ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
 ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
 ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
+ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
+ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
 
 DO NOT EDIT.
 */
@@ -122,6 +124,12 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.FECResult) {
 			_decoded, _ := DecodeRawDataHeader(_dispatchBits)
 			result.RawDataHeader = &_decoded
 		}
+	case FormatUnifiedDataTransport:
+		_decoded, _ := DecodeUDTHeader(_dispatchBits)
+		result.UDTHeader = &_decoded
+	case FormatProprietary:
+		_decoded, _ := DecodeProprietaryHeader(_dispatchBits)
+		result.ProprietaryHeader = &_decoded
 	}
 	return result, fecResult
 }
@@ -147,6 +155,12 @@ func EncodeDataHeader(s *DataHeader) [96]bit.Bit {
 		copy(data[0:80], _pduBits[:])
 	case s.RawDataHeader != nil:
 		_pduBits := EncodeRawDataHeader(s.RawDataHeader)
+		copy(data[0:80], _pduBits[:])
+	case s.UDTHeader != nil:
+		_pduBits := EncodeUDTHeader(s.UDTHeader)
+		copy(data[0:80], _pduBits[:])
+	case s.ProprietaryHeader != nil:
+		_pduBits := EncodeProprietaryHeader(s.ProprietaryHeader)
 		copy(data[0:80], _pduBits[:])
 	}
 	copy(data[4:8], bit.BitsFromUint8(uint8(s.Format), 4))
@@ -187,6 +201,10 @@ func (s *DataHeader) ToString() string {
 		_ret += s.StatusPrecodedHeader.ToString()
 	case s.RawDataHeader != nil:
 		_ret += s.RawDataHeader.ToString()
+	case s.UDTHeader != nil:
+		_ret += s.UDTHeader.ToString()
+	case s.ProprietaryHeader != nil:
+		_ret += s.ProprietaryHeader.ToString()
 	}
 	_ret += " }"
 	return _ret
@@ -412,4 +430,86 @@ func EncodeStatusPrecodedHeader(s *StatusPrecodedHeader) [80]bit.Bit {
 
 func (s *StatusPrecodedHeader) ToString() string {
 	return fmt.Sprintf("StatusPrecodedHeader{ Group: %t, ResponseRequested: %t, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, StatusPrecoded: %d }", s.Group, s.ResponseRequested, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.StatusPrecoded)
+}
+
+// DecodeUDTHeader decodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
+func DecodeUDTHeader(data [80]bit.Bit) (UDTHeader, fec.FECResult) {
+	var result UDTHeader
+	var fecResult fec.FECResult
+	result.Group = bit.BitsToBool(data[:], 0)
+	result.ResponseRequested = bit.BitsToBool(data[:], 1)
+	result.Emergency = bit.BitsToBool(data[:], 2)
+	result.OptionFlag = bit.BitsToBool(data[:], 3)
+	result.SAP = bit.BitsToUint8(data[:], 8, 4)
+	result.UDTFormat = bit.BitsToUint8(data[:], 12, 4)
+	result.LLIDDestination = bit.BitsToInt(data[:], 16, 24)
+	result.LLIDSource = bit.BitsToInt(data[:], 40, 24)
+	result.PadNibble = bit.BitsToUint8(data[:], 64, 5)
+	result.Reserved = bit.BitsToBool(data[:], 69)
+	result.AppendedBlocks = bit.BitsToUint8(data[:], 70, 2)
+	result.SupplementaryFlag = bit.BitsToBool(data[:], 72)
+	result.ProtectFlag = bit.BitsToBool(data[:], 73)
+	result.Opcode = UDTOpcode(bit.BitsToUint8(data[:], 74, 6))
+	return result, fecResult
+}
+
+// EncodeUDTHeader encodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
+func EncodeUDTHeader(s *UDTHeader) [80]bit.Bit {
+	var data [80]bit.Bit
+	if s.Group {
+		data[0] = 1
+	}
+	if s.ResponseRequested {
+		data[1] = 1
+	}
+	if s.Emergency {
+		data[2] = 1
+	}
+	if s.OptionFlag {
+		data[3] = 1
+	}
+	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
+	copy(data[12:16], bit.BitsFromUint8(s.UDTFormat, 4))
+	copy(data[16:40], bit.BitsFromUint32(uint32(s.LLIDDestination), 24))
+	copy(data[40:64], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	copy(data[64:69], bit.BitsFromUint8(s.PadNibble, 5))
+	if s.Reserved {
+		data[69] = 1
+	}
+	copy(data[70:72], bit.BitsFromUint8(s.AppendedBlocks, 2))
+	if s.SupplementaryFlag {
+		data[72] = 1
+	}
+	if s.ProtectFlag {
+		data[73] = 1
+	}
+	copy(data[74:80], bit.BitsFromUint8(uint8(s.Opcode), 6))
+	return data
+}
+
+func (s *UDTHeader) ToString() string {
+	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
+}
+
+// DecodeProprietaryHeader decodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
+func DecodeProprietaryHeader(data [80]bit.Bit) (ProprietaryHeader, fec.FECResult) {
+	var result ProprietaryHeader
+	var fecResult fec.FECResult
+	result.SAP = bit.BitsToUint8(data[:], 0, 4)
+	result.MFID = bit.BitsToUint8(data[:], 8, 8)
+	copy(result.ManufacturerData[:], data[16:80])
+	return result, fecResult
+}
+
+// EncodeProprietaryHeader encodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
+func EncodeProprietaryHeader(s *ProprietaryHeader) [80]bit.Bit {
+	var data [80]bit.Bit
+	copy(data[0:4], bit.BitsFromUint8(s.SAP, 4))
+	copy(data[8:16], bit.BitsFromUint8(s.MFID, 8))
+	copy(data[16:80], s.ManufacturerData[:])
+	return data
+}
+
+func (s *ProprietaryHeader) ToString() string {
+	return fmt.Sprintf("ProprietaryHeader{ SAP: %d, MFID: %d, ManufacturerData: %v }", s.SAP, s.MFID, s.ManufacturerData)
 }

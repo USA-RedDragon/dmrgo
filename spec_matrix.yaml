@@ -439,6 +439,28 @@ documents:
               - TestRate12Data_AllOnes
               - TestRate12Data_EncodeDecodeRoundTrip
 
+      - section: "9.2.9"
+        title: "Proprietary Header (P_HEAD) PDU"
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_Proprietary_Decode
+              - TestDataHeader_Proprietary_RoundTrip
+              - TestDataHeader_FormatDispatch
+
+      - section: "9.2.13"
+        title: "Unified Data Transport Header (UDT_HEAD) PDU"
+        source_files:
+          - v2/layer2/pdu/data_header.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestDataHeader_UDT_Decode
+              - TestDataHeader_UDT_RoundTrip
+              - TestDataHeader_FormatDispatch
+
       - section: "9.2.15"
         title: "Rate 1 coded packet Data (R_1_DATA) PDU"
         source_files:

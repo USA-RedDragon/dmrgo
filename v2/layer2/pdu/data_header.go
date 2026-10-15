@@ -39,6 +39,8 @@ type DataHeader struct {
 	DefinedDataHeader     *DefinedDataHeader     `dmr:"bits:0-79,dispatch:Format=FormatShortDataDefined"`
 	StatusPrecodedHeader  *StatusPrecodedHeader  `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded,when:AppendedBlocks==0"`
 	RawDataHeader         *RawDataHeader         `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded"`
+	UDTHeader             *UDTHeader             `dmr:"bits:0-79,dispatch:Format=FormatUnifiedDataTransport"`
+	ProprietaryHeader     *ProprietaryHeader     `dmr:"bits:0-79,dispatch:Format=FormatProprietary"`
 }
 
 type ServiceAccessPointID uint8
@@ -158,4 +160,61 @@ type StatusPrecodedHeader struct {
 	SourcePort        uint8  `dmr:"bits:64-66"`
 	DestinationPort   uint8  `dmr:"bits:67-69"`
 	StatusPrecoded    uint16 `dmr:"bits:70-79"`
+}
+
+// UDTOpcode is the 6-bit UDT Opcode (UDTO) of a UDT header
+// (ETSI TS 102 361-4 Table B.1, "UDT Header" group).
+type UDTOpcode uint8
+
+const (
+	UDTOpcodeOutboundHeader     UDTOpcode = 0b011010 // C_UDTHD
+	UDTOpcodeInboundHeader      UDTOpcode = 0b011011 // C_UDTHU
+	UDTOpcodeDGNAOutboundHeader UDTOpcode = 0b100100 // C_DGNAHD
+	UDTOpcodeDGNAInboundHeader  UDTOpcode = 0b100101 // C_DGNAHU
+)
+
+// UDTOpcodeToName returns the alias of a UDT opcode.
+func UDTOpcodeToName(op UDTOpcode) string {
+	switch op {
+	case UDTOpcodeOutboundHeader:
+		return "C_UDTHD"
+	case UDTOpcodeInboundHeader:
+		return "C_UDTHU"
+	case UDTOpcodeDGNAOutboundHeader:
+		return "C_DGNAHD"
+	case UDTOpcodeDGNAInboundHeader:
+		return "C_DGNAHU"
+	default:
+		return "Unknown"
+	}
+}
+
+// UDTHeader takes octet 0 bits 5-4 from TS 102 361-4 Tables 7.24 (C_UDTHD)
+// and 7.28 (C_UDTHU).
+// ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
+type UDTHeader struct {
+	Group             bool `dmr:"bit:0"`
+	ResponseRequested bool `dmr:"bit:1"`
+	// Emergency in C_UDTHD; reserved in C_UDTHU.
+	Emergency bool `dmr:"bit:2"`
+	// UDT_Option_Flag in C_UDTHD; UDT_DIV in C_UDTHU.
+	OptionFlag      bool  `dmr:"bit:3"`
+	SAP             uint8 `dmr:"bits:8-11"`
+	UDTFormat       uint8 `dmr:"bits:12-15"`
+	LLIDDestination int   `dmr:"bits:16-39"`
+	LLIDSource      int   `dmr:"bits:40-63"`
+	PadNibble       uint8 `dmr:"bits:64-68"`
+	Reserved        bool  `dmr:"bit:69"`
+	// AppendedBlocks (UAB) is the number of appended blocks minus one.
+	AppendedBlocks    uint8     `dmr:"bits:70-71"`
+	SupplementaryFlag bool      `dmr:"bit:72"`
+	ProtectFlag       bool      `dmr:"bit:73"`
+	Opcode            UDTOpcode `dmr:"bits:74-79"`
+}
+
+// ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
+type ProprietaryHeader struct {
+	SAP              uint8       `dmr:"bits:0-3"`
+	MFID             uint8       `dmr:"bits:8-15"`
+	ManufacturerData [64]bit.Bit `dmr:"bits:16-79,raw"`
 }
