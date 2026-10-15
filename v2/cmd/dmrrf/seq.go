@@ -261,7 +261,7 @@ func voiceBursts(cfg SeqConfig, privacy bool) ([]layer2.RawBurst, []string, erro
 		}
 		info = append(info, fmt.Sprintf("pi algid=0x%02x mfid=0x%02x keyid=0x%02x mi=0x%08x dst=%d", piAlgorithmID, piMFID, piKeyID, piMI, cfg.Dest))
 	}
-	t, err := layer2.NewVoiceTransmitterWithOptions(opts)
+	t, err := layer2.NewVoiceTransmitter(&opts)
 	if err != nil {
 		return nil, nil, err
 	}
