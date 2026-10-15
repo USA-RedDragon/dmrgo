@@ -37,11 +37,11 @@ func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.R
 	_tmpPadOctetCount |= bit.Uint(data[12:16])
 	result.PadOctetCount = uint8(_tmpPadOctetCount)
 	result.SAP = uint8(bit.Uint(data[8:12]))
-	copy(result.LLIDDestination[:], data[16:40])
-	copy(result.LLIDSource[:], data[40:64])
+	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
+	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.FullMessage = data[64] == 1
 	result.BlocksToFollow = uint8(bit.Uint(data[65:72]))
-	copy(result.Reserved2[:], data[72:76])
+	result.Reserved2 = uint8(bit.Uint(data[72:76]))
 	result.FragmentSequenceNumber = uint8(bit.Uint(data[76:80]))
 	return result, fecResult
 }
@@ -68,8 +68,14 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.SAP: value %d does not fit in 4 bits", s.SAP)
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
-	copy(data[16:40], s.LLIDDestination[:])
-	copy(data[40:64], s.LLIDSource[:])
+	if uint64(s.LLIDDestination)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
+	}
+	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
+	if uint64(s.LLIDSource)>>24 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
+	}
+	bit.PutUint(data[40:64], uint64(s.LLIDSource))
 	if s.FullMessage {
 		data[64] = 1
 	}
@@ -77,7 +83,10 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.BlocksToFollow: value %d does not fit in 7 bits", s.BlocksToFollow)
 	}
 	bit.PutUint(data[65:72], uint64(s.BlocksToFollow))
-	copy(data[72:76], s.Reserved2[:])
+	if uint64(s.Reserved2)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.Reserved2: value %d does not fit in 4 bits", s.Reserved2)
+	}
+	bit.PutUint(data[72:76], uint64(s.Reserved2))
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
 		return [80]bit.Bit{}, fmt.Errorf("UnconfirmedDataHeader.FragmentSequenceNumber: value %d does not fit in 4 bits", s.FragmentSequenceNumber)
 	}
@@ -87,7 +96,7 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 }
 
 func (s *UnconfirmedDataHeader) String() string {
-	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %v, LLIDSource: %v, FullMessage: %t, BlocksToFollow: %d, Reserved2: %v, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessage, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
+	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessage: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessage, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
 
 // DecodeDataHeader decodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
@@ -326,8 +335,8 @@ func DecodeConfirmedDataHeader(data [80]bit.Bit) (ConfirmedDataHeader, fec.Resul
 	_tmpPadOctetCount |= bit.Uint(data[12:16])
 	result.PadOctetCount = uint8(_tmpPadOctetCount)
 	result.SAP = uint8(bit.Uint(data[8:12]))
-	result.LLIDDestination = int(bit.Uint(data[16:40]))
-	result.LLIDSource = int(bit.Uint(data[40:64]))
+	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
+	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.FullMessageFlag = data[64] == 1
 	result.BlocksToFollow = uint8(bit.Uint(data[65:72]))
 	result.ReSynchronizeFlag = data[72] == 1
@@ -399,11 +408,11 @@ func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.Res
 	var fecResult fec.Result
 	result.Reserved = data[0] == 1
 	result.ResponseRequested = data[1] == 1
-	copy(result.Reserved2[:], data[2:4])
+	result.Reserved2 = uint8(bit.Uint(data[2:4]))
 	result.SAP = uint8(bit.Uint(data[8:12]))
-	copy(result.Reserved3[:], data[12:16])
-	result.LLIDDestination = int(bit.Uint(data[16:40]))
-	result.LLIDSource = int(bit.Uint(data[40:64]))
+	result.Reserved3 = uint8(bit.Uint(data[12:16]))
+	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
+	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.FullMessageFlag = data[64] == 1
 	result.BlocksToFollow = uint8(bit.Uint(data[65:72]))
 	result.ResponseClass = uint8(bit.Uint(data[72:74]))
@@ -421,12 +430,18 @@ func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
 	if s.ResponseRequested {
 		data[1] = 1
 	}
-	copy(data[2:4], s.Reserved2[:])
+	if uint64(s.Reserved2)>>2 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.Reserved2: value %d does not fit in 2 bits", s.Reserved2)
+	}
+	bit.PutUint(data[2:4], uint64(s.Reserved2))
 	if uint64(s.SAP)>>4 != 0 {
 		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.SAP: value %d does not fit in 4 bits", s.SAP)
 	}
 	bit.PutUint(data[8:12], uint64(s.SAP))
-	copy(data[12:16], s.Reserved3[:])
+	if uint64(s.Reserved3)>>4 != 0 {
+		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.Reserved3: value %d does not fit in 4 bits", s.Reserved3)
+	}
+	bit.PutUint(data[12:16], uint64(s.Reserved3))
 	if uint64(s.LLIDDestination)>>24 != 0 {
 		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
 	}
@@ -459,7 +474,7 @@ func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
 }
 
 func (s *ResponsePacketHeader) String() string {
-	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %v, SAP: %d, Reserved3: %v, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
+	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %d, SAP: %d, Reserved3: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
 }
 
 // DecodeDefinedDataHeader decodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
@@ -475,8 +490,8 @@ func DecodeDefinedDataHeader(data [80]bit.Bit) (DefinedDataHeader, fec.Result) {
 	_tmpAppendedBlocks |= bit.Uint(data[12:16])
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
 	result.SAP = uint8(bit.Uint(data[8:12]))
-	result.LLIDDestination = int(bit.Uint(data[16:40]))
-	result.LLIDSource = int(bit.Uint(data[40:64]))
+	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
+	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.DefinedData = uint8(bit.Uint(data[64:70]))
 	result.SARQ = data[70] == 1
 	result.FullMessageFlag = data[71] == 1
@@ -543,8 +558,8 @@ func DecodeRawDataHeader(data [80]bit.Bit) (RawDataHeader, fec.Result) {
 	_tmpAppendedBlocks |= bit.Uint(data[12:16])
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
 	result.SAP = uint8(bit.Uint(data[8:12]))
-	result.LLIDDestination = int(bit.Uint(data[16:40]))
-	result.LLIDSource = int(bit.Uint(data[40:64]))
+	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
+	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.SourcePort = uint8(bit.Uint(data[64:67]))
 	result.DestinationPort = uint8(bit.Uint(data[67:70]))
 	result.SARQ = data[70] == 1
@@ -611,8 +626,8 @@ func DecodeStatusPrecodedHeader(data [80]bit.Bit) (StatusPrecodedHeader, fec.Res
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.SAP = uint8(bit.Uint(data[8:12]))
-	result.LLIDDestination = int(bit.Uint(data[16:40]))
-	result.LLIDSource = int(bit.Uint(data[40:64]))
+	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
+	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.SourcePort = uint8(bit.Uint(data[64:67]))
 	result.DestinationPort = uint8(bit.Uint(data[67:70]))
 	result.StatusPrecoded = uint16(bit.Uint(data[70:80]))
@@ -674,8 +689,8 @@ func DecodeUDTHeader(data [80]bit.Bit) (UDTHeader, fec.Result) {
 	result.OptionFlag = data[3] == 1
 	result.SAP = uint8(bit.Uint(data[8:12]))
 	result.UDTFormat = uint8(bit.Uint(data[12:16]))
-	result.LLIDDestination = int(bit.Uint(data[16:40]))
-	result.LLIDSource = int(bit.Uint(data[40:64]))
+	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
+	result.LLIDSource = uint32(bit.Uint(data[40:64]))
 	result.PadNibble = uint8(bit.Uint(data[64:69]))
 	result.Reserved = data[69] == 1
 	result.AppendedBlocks = uint8(bit.Uint(data[70:72]))
@@ -752,7 +767,7 @@ func DecodeProprietaryHeader(data [80]bit.Bit) (ProprietaryHeader, fec.Result) {
 	var fecResult fec.Result
 	result.SAP = uint8(bit.Uint(data[0:4]))
 	result.MFID = uint8(bit.Uint(data[8:16]))
-	copy(result.ManufacturerData[:], data[16:80])
+	copy(result.ManufacturerData[:], bit.Pack(data[16:80]))
 	return result, fecResult
 }
 
@@ -764,7 +779,7 @@ func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 	}
 	bit.PutUint(data[0:4], uint64(s.SAP))
 	bit.PutUint(data[8:16], uint64(s.MFID))
-	copy(data[16:80], s.ManufacturerData[:])
+	copy(data[16:80], bit.Unpack(s.ManufacturerData[:]))
 	bit.PutUint(data[4:8], uint64(FormatProprietary))
 	return data, nil
 }

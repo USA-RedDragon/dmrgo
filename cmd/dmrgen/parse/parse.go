@@ -745,8 +745,8 @@ func validateDelegate(f *Field) error {
 }
 
 func checkIntWidth(f *Field) error {
-	if f.BitWidth > 32 {
-		return fmt.Errorf("integer fields wider than 32 bits are not supported (%d)", f.BitWidth)
+	if f.BitWidth > 64 {
+		return fmt.Errorf("integer fields wider than 64 bits are not supported (%d)", f.BitWidth)
 	}
 	switch f.BaseType {
 	case "", typeInt, "uint", typeInt64, "uint64", "uintptr":

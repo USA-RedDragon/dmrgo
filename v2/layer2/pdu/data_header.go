@@ -13,14 +13,14 @@ type UnconfirmedDataHeader struct {
 	ResponseRequested bool `dmr:"bit:1"`
 	Reserved          bool `dmr:"bit:2"`
 	// 4th bit is MSB, 12-15th bits are LSBs
-	PadOctetCount          uint8       `dmr:"bits:3+12-15"`
-	SAP                    uint8       `dmr:"bits:8-11"`
-	LLIDDestination        [24]bit.Bit `dmr:"bits:16-39,raw"`
-	LLIDSource             [24]bit.Bit `dmr:"bits:40-63,raw"`
-	FullMessage            bool        `dmr:"bit:64"`
-	BlocksToFollow         uint8       `dmr:"bits:65-71"`
-	Reserved2              [4]bit.Bit  `dmr:"bits:72-75,raw"`
-	FragmentSequenceNumber uint8       `dmr:"bits:76-79"`
+	PadOctetCount          uint8  `dmr:"bits:3+12-15"`
+	SAP                    uint8  `dmr:"bits:8-11"`
+	LLIDDestination        uint32 `dmr:"bits:16-39"`
+	LLIDSource             uint32 `dmr:"bits:40-63"`
+	FullMessage            bool   `dmr:"bit:64"`
+	BlocksToFollow         uint8  `dmr:"bits:65-71"`
+	Reserved2              uint8  `dmr:"bits:72-75"`
+	FragmentSequenceNumber uint8  `dmr:"bits:76-79"`
 }
 
 // dmr:crc crc_ccitt
@@ -48,6 +48,52 @@ type DataHeader struct {
 	ProprietaryHeader     *ProprietaryHeader     `dmr:"bits:0-79,dispatch:Format=FormatProprietary"`
 
 	RawPayload [80]bit.Bit `dmr:"bits:0-79,raw,fallback"`
+}
+
+// Addresses returns the destination and source LLIDs of the header that is
+// set. ok is false for a proprietary header and when no header is set.
+func (dh *DataHeader) Addresses() (destination, source uint32, ok bool) {
+	switch {
+	case dh.UnconfirmedDataHeader != nil:
+		return dh.UnconfirmedDataHeader.LLIDDestination, dh.UnconfirmedDataHeader.LLIDSource, true
+	case dh.ConfirmedDataHeader != nil:
+		return dh.ConfirmedDataHeader.LLIDDestination, dh.ConfirmedDataHeader.LLIDSource, true
+	case dh.ResponsePacketHeader != nil:
+		return dh.ResponsePacketHeader.LLIDDestination, dh.ResponsePacketHeader.LLIDSource, true
+	case dh.DefinedDataHeader != nil:
+		return dh.DefinedDataHeader.LLIDDestination, dh.DefinedDataHeader.LLIDSource, true
+	case dh.StatusPrecodedHeader != nil:
+		return dh.StatusPrecodedHeader.LLIDDestination, dh.StatusPrecodedHeader.LLIDSource, true
+	case dh.RawDataHeader != nil:
+		return dh.RawDataHeader.LLIDDestination, dh.RawDataHeader.LLIDSource, true
+	case dh.UDTHeader != nil:
+		return dh.UDTHeader.LLIDDestination, dh.UDTHeader.LLIDSource, true
+	}
+	return 0, 0, false
+}
+
+// SetAddresses sets the destination and source LLIDs of the header that is
+// set. It returns false for a proprietary header and when no header is set.
+func (dh *DataHeader) SetAddresses(destination, source uint32) bool {
+	switch {
+	case dh.UnconfirmedDataHeader != nil:
+		dh.UnconfirmedDataHeader.LLIDDestination, dh.UnconfirmedDataHeader.LLIDSource = destination, source
+	case dh.ConfirmedDataHeader != nil:
+		dh.ConfirmedDataHeader.LLIDDestination, dh.ConfirmedDataHeader.LLIDSource = destination, source
+	case dh.ResponsePacketHeader != nil:
+		dh.ResponsePacketHeader.LLIDDestination, dh.ResponsePacketHeader.LLIDSource = destination, source
+	case dh.DefinedDataHeader != nil:
+		dh.DefinedDataHeader.LLIDDestination, dh.DefinedDataHeader.LLIDSource = destination, source
+	case dh.StatusPrecodedHeader != nil:
+		dh.StatusPrecodedHeader.LLIDDestination, dh.StatusPrecodedHeader.LLIDSource = destination, source
+	case dh.RawDataHeader != nil:
+		dh.RawDataHeader.LLIDDestination, dh.RawDataHeader.LLIDSource = destination, source
+	case dh.UDTHeader != nil:
+		dh.UDTHeader.LLIDDestination, dh.UDTHeader.LLIDSource = destination, source
+	default:
+		return false
+	}
+	return true
 }
 
 type ServiceAccessPointID uint8
@@ -104,67 +150,67 @@ func (f Format) String() string {
 // dmr:const 4-7=FormatConfirmed
 // ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
 type ConfirmedDataHeader struct {
-	Group                  bool  `dmr:"bit:0"`
-	ResponseRequested      bool  `dmr:"bit:1"`
-	Reserved               bool  `dmr:"bit:2"`
-	PadOctetCount          uint8 `dmr:"bits:3+12-15"`
-	SAP                    uint8 `dmr:"bits:8-11"`
-	LLIDDestination        int   `dmr:"bits:16-39"`
-	LLIDSource             int   `dmr:"bits:40-63"`
-	FullMessageFlag        bool  `dmr:"bit:64"`
-	BlocksToFollow         uint8 `dmr:"bits:65-71"`
-	ReSynchronizeFlag      bool  `dmr:"bit:72"`
-	SendSequenceNumber     uint8 `dmr:"bits:73-75"`
-	FragmentSequenceNumber uint8 `dmr:"bits:76-79"`
+	Group                  bool   `dmr:"bit:0"`
+	ResponseRequested      bool   `dmr:"bit:1"`
+	Reserved               bool   `dmr:"bit:2"`
+	PadOctetCount          uint8  `dmr:"bits:3+12-15"`
+	SAP                    uint8  `dmr:"bits:8-11"`
+	LLIDDestination        uint32 `dmr:"bits:16-39"`
+	LLIDSource             uint32 `dmr:"bits:40-63"`
+	FullMessageFlag        bool   `dmr:"bit:64"`
+	BlocksToFollow         uint8  `dmr:"bits:65-71"`
+	ReSynchronizeFlag      bool   `dmr:"bit:72"`
+	SendSequenceNumber     uint8  `dmr:"bits:73-75"`
+	FragmentSequenceNumber uint8  `dmr:"bits:76-79"`
 }
 
 // dmr:const 4-7=FormatResponsePacket
 // ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
 type ResponsePacketHeader struct {
-	Reserved          bool       `dmr:"bit:0"`
-	ResponseRequested bool       `dmr:"bit:1"`
-	Reserved2         [2]bit.Bit `dmr:"bits:2-3,raw"`
-	SAP               uint8      `dmr:"bits:8-11"`
-	Reserved3         [4]bit.Bit `dmr:"bits:12-15,raw"`
-	LLIDDestination   int        `dmr:"bits:16-39"`
-	LLIDSource        int        `dmr:"bits:40-63"`
-	FullMessageFlag   bool       `dmr:"bit:64"`
-	BlocksToFollow    uint8      `dmr:"bits:65-71"`
-	ResponseClass     uint8      `dmr:"bits:72-73"`
-	ResponseType      uint8      `dmr:"bits:74-76"`
-	ResponseStatus    uint8      `dmr:"bits:77-79"`
+	Reserved          bool   `dmr:"bit:0"`
+	ResponseRequested bool   `dmr:"bit:1"`
+	Reserved2         uint8  `dmr:"bits:2-3"`
+	SAP               uint8  `dmr:"bits:8-11"`
+	Reserved3         uint8  `dmr:"bits:12-15"`
+	LLIDDestination   uint32 `dmr:"bits:16-39"`
+	LLIDSource        uint32 `dmr:"bits:40-63"`
+	FullMessageFlag   bool   `dmr:"bit:64"`
+	BlocksToFollow    uint8  `dmr:"bits:65-71"`
+	ResponseClass     uint8  `dmr:"bits:72-73"`
+	ResponseType      uint8  `dmr:"bits:74-76"`
+	ResponseStatus    uint8  `dmr:"bits:77-79"`
 }
 
 // dmr:const 4-7=FormatShortDataDefined
 // ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
 type DefinedDataHeader struct {
-	Group             bool  `dmr:"bit:0"`
-	ResponseRequested bool  `dmr:"bit:1"`
-	AppendedBlocks    uint8 `dmr:"bits:2-3+12-15"`
-	SAP               uint8 `dmr:"bits:8-11"`
-	LLIDDestination   int   `dmr:"bits:16-39"`
-	LLIDSource        int   `dmr:"bits:40-63"`
-	DefinedData       uint8 `dmr:"bits:64-69"`
-	SARQ              bool  `dmr:"bit:70"`
-	FullMessageFlag   bool  `dmr:"bit:71"`
-	BitPadding        uint8 `dmr:"bits:72-79"`
+	Group             bool   `dmr:"bit:0"`
+	ResponseRequested bool   `dmr:"bit:1"`
+	AppendedBlocks    uint8  `dmr:"bits:2-3+12-15"`
+	SAP               uint8  `dmr:"bits:8-11"`
+	LLIDDestination   uint32 `dmr:"bits:16-39"`
+	LLIDSource        uint32 `dmr:"bits:40-63"`
+	DefinedData       uint8  `dmr:"bits:64-69"`
+	SARQ              bool   `dmr:"bit:70"`
+	FullMessageFlag   bool   `dmr:"bit:71"`
+	BitPadding        uint8  `dmr:"bits:72-79"`
 }
 
 // dmr:const 4-7=FormatShortDataRawOrStatusPrecoded
 // ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
 // Used when AppendedBlocks != 0 (short data with appended data blocks).
 type RawDataHeader struct {
-	Group             bool  `dmr:"bit:0"`
-	ResponseRequested bool  `dmr:"bit:1"`
-	AppendedBlocks    uint8 `dmr:"bits:2-3+12-15"`
-	SAP               uint8 `dmr:"bits:8-11"`
-	LLIDDestination   int   `dmr:"bits:16-39"`
-	LLIDSource        int   `dmr:"bits:40-63"`
-	SourcePort        uint8 `dmr:"bits:64-66"`
-	DestinationPort   uint8 `dmr:"bits:67-69"`
-	SARQ              bool  `dmr:"bit:70"`
-	FullMessageFlag   bool  `dmr:"bit:71"`
-	BitPadding        uint8 `dmr:"bits:72-79"`
+	Group             bool   `dmr:"bit:0"`
+	ResponseRequested bool   `dmr:"bit:1"`
+	AppendedBlocks    uint8  `dmr:"bits:2-3+12-15"`
+	SAP               uint8  `dmr:"bits:8-11"`
+	LLIDDestination   uint32 `dmr:"bits:16-39"`
+	LLIDSource        uint32 `dmr:"bits:40-63"`
+	SourcePort        uint8  `dmr:"bits:64-66"`
+	DestinationPort   uint8  `dmr:"bits:67-69"`
+	SARQ              bool   `dmr:"bit:70"`
+	FullMessageFlag   bool   `dmr:"bit:71"`
+	BitPadding        uint8  `dmr:"bits:72-79"`
 }
 
 // dmr:const 2-3+12-15=0
@@ -175,8 +221,8 @@ type StatusPrecodedHeader struct {
 	Group             bool   `dmr:"bit:0"`
 	ResponseRequested bool   `dmr:"bit:1"`
 	SAP               uint8  `dmr:"bits:8-11"`
-	LLIDDestination   int    `dmr:"bits:16-39"`
-	LLIDSource        int    `dmr:"bits:40-63"`
+	LLIDDestination   uint32 `dmr:"bits:16-39"`
+	LLIDSource        uint32 `dmr:"bits:40-63"`
 	SourcePort        uint8  `dmr:"bits:64-66"`
 	DestinationPort   uint8  `dmr:"bits:67-69"`
 	StatusPrecoded    uint16 `dmr:"bits:70-79"`
@@ -219,13 +265,13 @@ type UDTHeader struct {
 	// Emergency in C_UDTHD; reserved in C_UDTHU.
 	Emergency bool `dmr:"bit:2"`
 	// UDT_Option_Flag in C_UDTHD; UDT_DIV in C_UDTHU.
-	OptionFlag      bool  `dmr:"bit:3"`
-	SAP             uint8 `dmr:"bits:8-11"`
-	UDTFormat       uint8 `dmr:"bits:12-15"`
-	LLIDDestination int   `dmr:"bits:16-39"`
-	LLIDSource      int   `dmr:"bits:40-63"`
-	PadNibble       uint8 `dmr:"bits:64-68"`
-	Reserved        bool  `dmr:"bit:69"`
+	OptionFlag      bool   `dmr:"bit:3"`
+	SAP             uint8  `dmr:"bits:8-11"`
+	UDTFormat       uint8  `dmr:"bits:12-15"`
+	LLIDDestination uint32 `dmr:"bits:16-39"`
+	LLIDSource      uint32 `dmr:"bits:40-63"`
+	PadNibble       uint8  `dmr:"bits:64-68"`
+	Reserved        bool   `dmr:"bit:69"`
 	// AppendedBlocks (UAB) is the number of appended blocks minus one.
 	AppendedBlocks    uint8     `dmr:"bits:70-71"`
 	SupplementaryFlag bool      `dmr:"bit:72"`
@@ -236,7 +282,7 @@ type UDTHeader struct {
 // dmr:const 4-7=FormatProprietary
 // ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
 type ProprietaryHeader struct {
-	SAP              uint8       `dmr:"bits:0-3"`
-	MFID             uint8       `dmr:"bits:8-15"`
-	ManufacturerData [64]bit.Bit `dmr:"bits:16-79,raw"`
+	SAP              uint8   `dmr:"bits:0-3"`
+	MFID             uint8   `dmr:"bits:8-15"`
+	ManufacturerData [8]byte `dmr:"bits:16-79,packed"`
 }

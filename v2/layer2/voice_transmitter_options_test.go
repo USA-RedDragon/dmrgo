@@ -19,7 +19,7 @@ func talkerAliasLC() pdu.FullLinkControl {
 		TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 			TalkerAliasDataFormat: layer3.TalkerAliasISOEightBit,
 			TalkerAliasDataLength: 6,
-			TalkerAliasData:       data,
+			TalkerAliasData:       bit.Uint(data[:]),
 		},
 	}
 }

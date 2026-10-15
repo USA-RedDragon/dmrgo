@@ -26,7 +26,7 @@ type PIHeader struct {
 	MFID             uint8       `dmr:"bits:8-15"`
 	KeyID            uint8       `dmr:"bits:16-23"`
 	MessageIndicator uint32      `dmr:"bits:24-55"`
-	Destination      int         `dmr:"bits:56-79"`
+	Destination      uint32      `dmr:"bits:56-79"`
 	Raw              [80]bit.Bit `dmr:"bits:0-79,raw,no_encode"`
 }
 

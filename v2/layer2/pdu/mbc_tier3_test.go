@@ -80,8 +80,7 @@ func TestCGAPContinuation_Decode(t *testing.T) {
 	}
 
 	// Verify CdefParms can be parsed
-	parmsValue, _ := layer3.DecodeCdefParms(decoded.CdefParms)
-	parms := &parmsValue
+	parms := &decoded.CdefParms
 	if parms.Channel != 291 {
 		t.Errorf("Channel = %d, want 291", parms.Channel)
 	}
@@ -99,7 +98,7 @@ func TestCGAPContinuation_EncodeDecodeCycle(t *testing.T) {
 		CSBKOpcode:  pdu.CSBKTalkgroupVoiceGrant,
 		ColourCode:  7,
 		Cdeftype:    0,
-		CdefParms:   cdefParms,
+		CdefParms:   cdefOf(cdefParms),
 	}
 
 	encoded := must(original.Encode())
@@ -170,7 +169,7 @@ func TestBCAPContinuation_Decode(t *testing.T) {
 	if decoded.Reserved1 != 0xFF {
 		t.Errorf("Reserved1 = 0x%02X, want 0xFF", decoded.Reserved1)
 	}
-	if decoded.CdefParms != cdefParms {
+	if decoded.CdefParms != cdefOf(cdefParms) {
 		t.Error("CdefParms mismatch")
 	}
 }
@@ -193,7 +192,7 @@ func TestVNAPContinuation_Decode(t *testing.T) {
 	if decoded.ColourCode != 10 {
 		t.Errorf("ColourCode = %d, want 10", decoded.ColourCode)
 	}
-	if decoded.CdefParms != cdefParms {
+	if decoded.CdefParms != cdefOf(cdefParms) {
 		t.Error("CdefParms mismatch")
 	}
 }
@@ -206,7 +205,7 @@ func TestCGAPContinuation_String(t *testing.T) {
 		CSBKOpcode:  pdu.CSBKPrivateVoiceGrant,
 		ColourCode:  5,
 		Cdeftype:    0,
-		CdefParms:   cdefParms,
+		CdefParms:   cdefOf(cdefParms),
 	}
 
 	str := cgap.String()
@@ -226,7 +225,7 @@ func TestMVAPContinuation_EncodeDecodeCycle(t *testing.T) {
 		CSBKOpcode:  pdu.CSBKMove,
 		ColourCode:  15,
 		Cdeftype:    0,
-		CdefParms:   cdefParms,
+		CdefParms:   cdefOf(cdefParms),
 	}
 
 	encoded := must(original.Encode())
@@ -309,4 +308,9 @@ func TestMBCLastBlockCRC_MultiBlock(t *testing.T) {
 	if pdu.CheckMBCLastBlockCRC() {
 		t.Error("CheckMBCLastBlockCRC with no blocks should be false")
 	}
+}
+
+func cdefOf(bits [58]bit.Bit) layer3.CdefParms {
+	p, _ := layer3.DecodeCdefParms(bits)
+	return p
 }

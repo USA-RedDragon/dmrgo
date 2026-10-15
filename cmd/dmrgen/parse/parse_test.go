@@ -326,11 +326,11 @@ type T struct {
 			want: "narrower than the 9-bit range",
 		},
 		{
-			name: "integer wider than 32 bits",
+			name: "integer wider than 64 bits",
 			src: `type T struct {
-	A uint64 ` + "`dmr:\"bits:0-39\"`" + `
+	A uint64 ` + "`dmr:\"bits:0-64\"`" + `
 }`,
-			want: "wider than 32 bits",
+			want: "wider than 64 bits",
 		},
 		{
 			name: "raw array shorter than range",

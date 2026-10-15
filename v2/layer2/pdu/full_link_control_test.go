@@ -221,8 +221,8 @@ func TestFullLinkControl_AddressRange(t *testing.T) {
 	// Test with maximum 24-bit addresses (16777215)
 	tests := []struct {
 		name       string
-		groupAddr  int
-		sourceAddr int
+		groupAddr  uint32
+		sourceAddr uint32
 	}{
 		{"MinAddresses", 0, 0},
 		{"MaxAddresses", 0xFFFFFF, 0xFFFFFF},
@@ -283,7 +283,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 				FLCO:          flco,
 				FeatureSetID:  enums.FIDStandardized,
 				TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
-					TalkerAliasData: aliasData,
+					TalkerAliasData: [7]byte(bit.Pack(aliasData[:])),
 				},
 			}
 
@@ -298,7 +298,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 			if decoded.TalkerAliasBlock == nil {
 				t.Fatal("TalkerAliasBlock is nil")
 			}
-			if decoded.TalkerAliasBlock.TalkerAliasData != aliasData {
+			if decoded.TalkerAliasBlock.TalkerAliasData != [7]byte(bit.Pack(aliasData[:])) {
 				t.Error("TalkerAliasData mismatch after encode-decode cycle")
 			}
 		})
@@ -315,7 +315,7 @@ func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
 		FLCO:          enums.FLCOTalkerAliasBlock1,
 		FeatureSetID:  enums.FIDStandardized,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
-			TalkerAliasData: aliasData,
+			TalkerAliasData: [7]byte(bit.Pack(aliasData[:])),
 		},
 		FEC: fec.Result{BitsChecked: 96},
 	}
@@ -358,8 +358,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				FeatureSetID:  enums.FIDStandardized,
 				TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 					TalkerAliasDataLength: tt.dataLength,
-					TalkerAliasDataMSB:    tt.msb,
-					TalkerAliasData:       aliasData,
+					TalkerAliasData:       msbOf(tt.msb) | bit.Uint(aliasData[:]),
 				},
 			}
 
@@ -375,14 +374,18 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				t.Errorf("TalkerAliasDataLength = %d, want %d",
 					decoded.TalkerAliasHeader.TalkerAliasDataLength, tt.dataLength)
 			}
-			if decoded.TalkerAliasHeader.TalkerAliasDataMSB != tt.msb {
-				t.Errorf("TalkerAliasDataMSB = %v, want %v", decoded.TalkerAliasHeader.TalkerAliasDataMSB, tt.msb)
-			}
-			if decoded.TalkerAliasHeader.TalkerAliasData != aliasData {
+			if decoded.TalkerAliasHeader.TalkerAliasData != msbOf(tt.msb)|bit.Uint(aliasData[:]) {
 				t.Error("TalkerAliasData mismatch after encode-decode cycle")
 			}
 		})
 	}
+}
+
+func msbOf(msb bool) uint64 {
+	if msb {
+		return 1 << 48
+	}
+	return 0
 }
 
 func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {

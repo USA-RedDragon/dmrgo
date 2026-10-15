@@ -73,8 +73,8 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 			BlocksToFollow: 3,
 		},
 	}
-	header.UnconfirmedDataHeader.LLIDDestination[23] = 1
-	header.UnconfirmedDataHeader.LLIDSource[22] = 1
+	header.UnconfirmedDataHeader.LLIDDestination = 1 << 23
+	header.UnconfirmedDataHeader.LLIDSource = 1 << 22
 	r12 := &pdu.Rate12Data{Data: [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}}
 	r34 := &pdu.Rate34Data{Data: [18]byte{0xFF, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 0xAA}}
 	r1 := &pdu.Rate1Data{Data: [24]byte{0x80, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 0x01}}

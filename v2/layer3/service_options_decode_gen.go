@@ -21,7 +21,7 @@ func DecodeServiceOptions(data [8]bit.Bit) (ServiceOptions, fec.Result) {
 	var fecResult fec.Result
 	result.IsEmergency = data[0] == 1
 	result.IsPrivacy = data[1] == 1
-	copy(result.Reserved[:], data[2:4])
+	result.Reserved = uint8(bit.Uint(data[2:4]))
 	result.IsBroadcast = data[4] == 1
 	result.IsOpenVoiceCallMode = data[5] == 1
 	result.PriorityLevel = uint8(bit.Uint(data[6:8]))
@@ -37,7 +37,10 @@ func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 	if s.IsPrivacy {
 		data[1] = 1
 	}
-	copy(data[2:4], s.Reserved[:])
+	if uint64(s.Reserved)>>2 != 0 {
+		return [8]bit.Bit{}, fmt.Errorf("ServiceOptions.Reserved: value %d does not fit in 2 bits", s.Reserved)
+	}
+	bit.PutUint(data[2:4], uint64(s.Reserved))
 	if s.IsBroadcast {
 		data[4] = 1
 	}
@@ -52,5 +55,5 @@ func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 }
 
 func (s *ServiceOptions) String() string {
-	return fmt.Sprintf("ServiceOptions{ IsEmergency: %t, IsPrivacy: %t, Reserved: %v, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.Reserved, s.IsBroadcast, s.IsOpenVoiceCallMode, s.PriorityLevel)
+	return fmt.Sprintf("ServiceOptions{ IsEmergency: %t, IsPrivacy: %t, Reserved: %d, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.Reserved, s.IsBroadcast, s.IsOpenVoiceCallMode, s.PriorityLevel)
 }

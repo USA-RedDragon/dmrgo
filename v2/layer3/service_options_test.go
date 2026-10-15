@@ -124,11 +124,8 @@ func TestDecodeServiceOptions(t *testing.T) {
 func TestDecodeServiceOptions_ReservedBits(t *testing.T) {
 	bits := [8]bit.Bit{0, 0, 1, 1, 0, 0, 0, 0}
 	so, _ := DecodeServiceOptions(bits)
-	if so.Reserved[0] != 1 {
-		t.Errorf("Reserved[0] = %d, want 1", so.Reserved[0])
-	}
-	if so.Reserved[1] != 1 {
-		t.Errorf("Reserved[1] = %d, want 1", so.Reserved[1])
+	if so.Reserved != 0b11 {
+		t.Errorf("Reserved = %#b, want 0b11", so.Reserved)
 	}
 }
 

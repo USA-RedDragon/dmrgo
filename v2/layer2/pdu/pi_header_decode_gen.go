@@ -38,7 +38,7 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
 	result.MFID = uint8(bit.Uint(data[8:16]))
 	result.KeyID = uint8(bit.Uint(data[16:24]))
 	result.MessageIndicator = uint32(bit.Uint(data[24:56]))
-	result.Destination = int(bit.Uint(data[56:80]))
+	result.Destination = uint32(bit.Uint(data[56:80]))
 	copy(result.Raw[:], data[0:80])
 	return result, fecResult
 }

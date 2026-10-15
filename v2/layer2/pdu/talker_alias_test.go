@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -83,12 +82,12 @@ func TestTalkerAlias_HeaderBits7Bit(t *testing.T) {
 	if lcs[0].FLCO != enums.FLCOTalkerAliasHeader || lcs[0].FeatureSetID != enums.FIDStandardized {
 		t.Errorf("FLCO %v FID %v", lcs[0].FLCO, lcs[0].FeatureSetID)
 	}
-	if !h.TalkerAliasDataMSB || uint8(bit.Uint(h.TalkerAliasData[:6])) != 0b000100 || h.TalkerAliasDataLength != 1 {
+	if h.TalkerAliasData>>42 != 0b1000100 || h.TalkerAliasDataLength != 1 {
 		t.Errorf("header %+v", h)
 	}
 	lcs, _ = pdu.EncodeTalkerAlias("D", layer3.TalkerAliasUTF8)
 	h = lcs[0].TalkerAliasHeader
-	if h.TalkerAliasDataMSB || uint8(bit.Uint(h.TalkerAliasData[:8])) != 'D' {
+	if h.TalkerAliasData>>48 != 0 || h.TalkerAliasData>>40 != 'D' {
 		t.Errorf("UTF-8 header %+v", h)
 	}
 }
@@ -151,7 +150,7 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	}
 	bad := *lcs[0].TalkerAliasHeader
 	bad.TalkerAliasDataLength = 1
-	bit.PutUint(bad.TalkerAliasData[:8], uint64(0xC3))
+	bad.TalkerAliasData = 0xC3 << 40
 	if _, err := pdu.DecodeTalkerAlias(&bad); err == nil {
 		t.Error("invalid UTF-8 accepted")
 	}

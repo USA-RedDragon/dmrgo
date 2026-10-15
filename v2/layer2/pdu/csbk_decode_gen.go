@@ -51,8 +51,8 @@ func DecodeBSOutboundActivationPDU(data [64]bit.Bit) (BSOutboundActivationPDU, f
 	bit.Mask(data[:])
 	var fecResult fec.Result
 	result.Reserved = uint16(bit.Uint(data[0:16]))
-	copy(result.BSAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.BSAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -60,13 +60,19 @@ func DecodeBSOutboundActivationPDU(data [64]bit.Bit) (BSOutboundActivationPDU, f
 func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	bit.PutUint(data[0:16], uint64(s.Reserved))
-	copy(data[16:40], s.BSAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.BSAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("BSOutboundActivationPDU.BSAddress: value %d does not fit in 24 bits", s.BSAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.BSAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("BSOutboundActivationPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *BSOutboundActivationPDU) String() string {
-	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %v, SourceAddress: %v }", s.Reserved, s.BSAddress, s.SourceAddress)
+	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %d, SourceAddress: %d }", s.Reserved, s.BSAddress, s.SourceAddress)
 }
 
 // DecodeUnitToUnitVoiceServiceRequestPDU decodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
@@ -76,8 +82,8 @@ func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) (UnitToUnitVoiceSe
 	var fecResult fec.Result
 	result.ServiceOptions = byte(bit.Uint(data[0:8]))
 	result.Reserved = byte(bit.Uint(data[8:16]))
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -86,13 +92,19 @@ func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	bit.PutUint(data[0:8], uint64(s.ServiceOptions))
 	bit.PutUint(data[8:16], uint64(s.Reserved))
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
-	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %d, Reserved: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptions, s.Reserved, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %d, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions, s.Reserved, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
@@ -102,8 +114,8 @@ func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnit
 	var fecResult fec.Result
 	result.ServiceOptions = byte(bit.Uint(data[0:8]))
 	result.AnswerResponse = byte(bit.Uint(data[8:16]))
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -112,13 +124,19 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) 
 	var data [64]bit.Bit
 	bit.PutUint(data[0:8], uint64(s.ServiceOptions))
 	bit.PutUint(data[8:16], uint64(s.AnswerResponse))
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
-	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %d, AnswerResponse: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptions, s.AnswerResponse, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %d, AnswerResponse: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions, s.AnswerResponse, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU per ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
@@ -130,8 +148,8 @@ func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgement
 	result.SourceType = layer3.SourceType(bit.Uint(data[1:2]))
 	result.ServiceType = CSBKOpcode(bit.Uint(data[2:8]))
 	result.ReasonCode = byte(bit.Uint(data[8:16]))
-	copy(result.SourceAddress[:], data[16:40])
-	copy(result.TargetAddress[:], data[40:64])
+	result.SourceAddress = uint32(bit.Uint(data[16:40]))
+	result.TargetAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -151,13 +169,19 @@ func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
 	}
 	bit.PutUint(data[2:8], uint64(s.ServiceType))
 	bit.PutUint(data[8:16], uint64(s.ReasonCode))
-	copy(data[16:40], s.SourceAddress[:])
-	copy(data[40:64], s.TargetAddress[:])
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.SourceAddress))
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("NegativeAcknowledgementPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.TargetAddress))
 	return data, nil
 }
 
 func (s *NegativeAcknowledgementPDU) String() string {
-	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %v, TargetAddress: %v }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
+	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %d, TargetAddress: %d }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
 }
 
 // DecodePreamblePDU decodes a PreamblePDU per ETSI TS 102 361-1 - 9.3.7 Pre PDU
@@ -167,10 +191,10 @@ func DecodePreamblePDU(data [64]bit.Bit) (PreamblePDU, fec.Result) {
 	var fecResult fec.Result
 	result.Data = data[0] == 1
 	result.Group = data[1] == 1
-	copy(result.Reserved[:], data[2:8])
+	result.Reserved = uint8(bit.Uint(data[2:8]))
 	result.CSBKBlocksToFollow = byte(bit.Uint(data[8:16]))
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -183,15 +207,24 @@ func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
 	if s.Group {
 		data[1] = 1
 	}
-	copy(data[2:8], s.Reserved[:])
+	if uint64(s.Reserved)>>6 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PreamblePDU.Reserved: value %d does not fit in 6 bits", s.Reserved)
+	}
+	bit.PutUint(data[2:8], uint64(s.Reserved))
 	bit.PutUint(data[8:16], uint64(s.CSBKBlocksToFollow))
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PreamblePDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PreamblePDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *PreamblePDU) String() string {
-	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %v, CSBKBlocksToFollow: %d, TargetAddress: %v, SourceAddress: %v }", s.Data, s.Group, s.Reserved, s.CSBKBlocksToFollow, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %d, CSBKBlocksToFollow: %d, TargetAddress: %d, SourceAddress: %d }", s.Data, s.Group, s.Reserved, s.CSBKBlocksToFollow, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
@@ -199,15 +232,15 @@ func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.Result) {
 	var result ChannelTimingPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	copy(result.SyncAge[:], data[0:11])
-	copy(result.Generation[:], data[11:16])
-	copy(result.LeaderIdentifier[:], data[16:36])
+	result.SyncAge = uint16(bit.Uint(data[0:11]))
+	result.Generation = uint8(bit.Uint(data[11:16]))
+	result.LeaderIdentifier = uint32(bit.Uint(data[16:36]))
 	result.NewLeader = data[36] == 1
-	copy(result.LeaderDynamicIdentifier[:], data[37:39])
+	result.LeaderDynamicIdentifier = uint8(bit.Uint(data[37:39]))
 	result.ChannelTimingOp1 = data[39] == 1
-	copy(result.SourceIdentifier[:], data[40:60])
+	result.SourceIdentifier = uint32(bit.Uint(data[40:60]))
 	result.Reserved = data[60] == 1
-	copy(result.SourceDynamicIdentifier[:], data[61:63])
+	result.SourceDynamicIdentifier = uint8(bit.Uint(data[61:63]))
 	result.ChannelTimingOp0 = data[63] == 1
 	return result, fecResult
 }
@@ -215,21 +248,39 @@ func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.Result) {
 // Encode encodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
 func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	copy(data[0:11], s.SyncAge[:])
-	copy(data[11:16], s.Generation[:])
-	copy(data[16:36], s.LeaderIdentifier[:])
+	if uint64(s.SyncAge)>>11 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.SyncAge: value %d does not fit in 11 bits", s.SyncAge)
+	}
+	bit.PutUint(data[0:11], uint64(s.SyncAge))
+	if uint64(s.Generation)>>5 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.Generation: value %d does not fit in 5 bits", s.Generation)
+	}
+	bit.PutUint(data[11:16], uint64(s.Generation))
+	if uint64(s.LeaderIdentifier)>>20 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.LeaderIdentifier: value %d does not fit in 20 bits", s.LeaderIdentifier)
+	}
+	bit.PutUint(data[16:36], uint64(s.LeaderIdentifier))
 	if s.NewLeader {
 		data[36] = 1
 	}
-	copy(data[37:39], s.LeaderDynamicIdentifier[:])
+	if uint64(s.LeaderDynamicIdentifier)>>2 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.LeaderDynamicIdentifier: value %d does not fit in 2 bits", s.LeaderDynamicIdentifier)
+	}
+	bit.PutUint(data[37:39], uint64(s.LeaderDynamicIdentifier))
 	if s.ChannelTimingOp1 {
 		data[39] = 1
 	}
-	copy(data[40:60], s.SourceIdentifier[:])
+	if uint64(s.SourceIdentifier)>>20 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.SourceIdentifier: value %d does not fit in 20 bits", s.SourceIdentifier)
+	}
+	bit.PutUint(data[40:60], uint64(s.SourceIdentifier))
 	if s.Reserved {
 		data[60] = 1
 	}
-	copy(data[61:63], s.SourceDynamicIdentifier[:])
+	if uint64(s.SourceDynamicIdentifier)>>2 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ChannelTimingPDU.SourceDynamicIdentifier: value %d does not fit in 2 bits", s.SourceDynamicIdentifier)
+	}
+	bit.PutUint(data[61:63], uint64(s.SourceDynamicIdentifier))
 	if s.ChannelTimingOp0 {
 		data[63] = 1
 	}
@@ -237,7 +288,7 @@ func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
 }
 
 func (s *ChannelTimingPDU) String() string {
-	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %v, Generation: %v, LeaderIdentifier: %v, NewLeader: %t, LeaderDynamicIdentifier: %v, ChannelTimingOp1: %t, SourceIdentifier: %v, Reserved: %t, SourceDynamicIdentifier: %v, ChannelTimingOp0: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp1, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp0)
+	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %d, Generation: %d, LeaderIdentifier: %d, NewLeader: %t, LeaderDynamicIdentifier: %d, ChannelTimingOp1: %t, SourceIdentifier: %d, Reserved: %t, SourceDynamicIdentifier: %d, ChannelTimingOp0: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp1, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp0)
 }
 
 // DecodePrivateVoiceGrantPDU decodes a PrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
@@ -250,8 +301,8 @@ func DecodePrivateVoiceGrantPDU(data [64]bit.Bit) (PrivateVoiceGrantPDU, fec.Res
 	result.Reserved = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.Offset = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -274,13 +325,19 @@ func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	if s.Offset {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PrivateVoiceGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PrivateVoiceGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *PrivateVoiceGrantPDU) String() string {
-	return fmt.Sprintf("PrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("PrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeTalkgroupVoiceGrantPDU decodes a TalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
@@ -293,8 +350,8 @@ func DecodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) (TalkgroupVoiceGrantPDU, fec
 	result.LateEntry = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.Offset = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -317,13 +374,19 @@ func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	if s.Offset {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("TalkgroupVoiceGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("TalkgroupVoiceGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *TalkgroupVoiceGrantPDU) String() string {
-	return fmt.Sprintf("TalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("TalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeBroadcastTalkgroupVoiceGrantPDU decodes a BroadcastTalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
@@ -336,8 +399,8 @@ func DecodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) (BroadcastTalkgroup
 	result.LateEntry = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.Offset = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -360,13 +423,19 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	if s.Offset {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("BroadcastTalkgroupVoiceGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("BroadcastTalkgroupVoiceGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
-	return fmt.Sprintf("BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodePrivateDataGrantPDU decodes a PrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT PDU
@@ -379,8 +448,8 @@ func DecodePrivateDataGrantPDU(data [64]bit.Bit) (PrivateDataGrantPDU, fec.Resul
 	result.HiRate = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.Offset = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -403,13 +472,19 @@ func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	if s.Offset {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *PrivateDataGrantPDU) String() string {
-	return fmt.Sprintf("PrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("PrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeTalkgroupDataGrantPDU decodes a TalkgroupDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT PDU
@@ -422,8 +497,8 @@ func DecodeTalkgroupDataGrantPDU(data [64]bit.Bit) (TalkgroupDataGrantPDU, fec.R
 	result.HiRate = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.Offset = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -446,13 +521,19 @@ func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	if s.Offset {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *TalkgroupDataGrantPDU) String() string {
-	return fmt.Sprintf("TalkgroupDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("TalkgroupDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeDuplexPrivateVoiceGrantPDU decodes a DuplexPrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT_DX PDU
@@ -465,8 +546,8 @@ func DecodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) (DuplexPrivateVoiceGrant
 	result.Reserved = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.CallDirection = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -489,13 +570,19 @@ func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	if s.CallDirection {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateVoiceGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateVoiceGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *DuplexPrivateVoiceGrantPDU) String() string {
-	return fmt.Sprintf("DuplexPrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, CallDirection: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("DuplexPrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeDuplexPrivateDataGrantPDU decodes a DuplexPrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_DX PDU
@@ -508,8 +595,8 @@ func DecodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) (DuplexPrivateDataGrantPD
 	result.HiRate = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.CallDirection = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -532,13 +619,19 @@ func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	if s.CallDirection {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateDataGrantPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("DuplexPrivateDataGrantPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *DuplexPrivateDataGrantPDU) String() string {
-	return fmt.Sprintf("DuplexPrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, CallDirection: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("DuplexPrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodePrivateDataGrantMultiItemPDU decodes a PrivateDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
@@ -551,8 +644,8 @@ func DecodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) (PrivateDataGrantMulti
 	result.HiRate = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.Offset = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -575,13 +668,19 @@ func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	if s.Offset {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantMultiItemPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("PrivateDataGrantMultiItemPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *PrivateDataGrantMultiItemPDU) String() string {
-	return fmt.Sprintf("PrivateDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("PrivateDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeTalkgroupDataGrantMultiItemPDU decodes a TalkgroupDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
@@ -594,8 +693,8 @@ func DecodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) (TalkgroupDataGrantM
 	result.HiRate = data[13] == 1
 	result.Emergency = data[14] == 1
 	result.Offset = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -618,13 +717,19 @@ func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	if s.Offset {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantMultiItemPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("TalkgroupDataGrantMultiItemPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *TalkgroupDataGrantMultiItemPDU) String() string {
-	return fmt.Sprintf("TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeMovePDU decodes a MovePDU per ETSI TS 102 361-4 §7.1.1.1.2 C_MOVE PDU
@@ -632,26 +737,32 @@ func DecodeMovePDU(data [64]bit.Bit) (MovePDU, fec.Result) {
 	var result MovePDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	copy(result.Reserved1[:], data[0:9])
+	result.Reserved1 = uint16(bit.Uint(data[0:9]))
 	result.Mask = uint8(bit.Uint(data[9:14]))
-	copy(result.Reserved2[:], data[14:19])
+	result.Reserved2 = uint8(bit.Uint(data[14:19]))
 	result.Reg = data[19] == 1
 	result.Backoff = uint8(bit.Uint(data[20:24]))
-	copy(result.Reserved3[:], data[24:28])
+	result.Reserved3 = uint8(bit.Uint(data[24:28]))
 	result.PhysicalChannel = uint16(bit.Uint(data[28:40]))
-	copy(result.MSAddress[:], data[40:64])
+	result.MSAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
 // Encode encodes a MovePDU per ETSI TS 102 361-4 §7.1.1.1.2 C_MOVE PDU
 func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	copy(data[0:9], s.Reserved1[:])
+	if uint64(s.Reserved1)>>9 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Reserved1: value %d does not fit in 9 bits", s.Reserved1)
+	}
+	bit.PutUint(data[0:9], uint64(s.Reserved1))
 	if uint64(s.Mask)>>5 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Mask: value %d does not fit in 5 bits", s.Mask)
 	}
 	bit.PutUint(data[9:14], uint64(s.Mask))
-	copy(data[14:19], s.Reserved2[:])
+	if uint64(s.Reserved2)>>5 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Reserved2: value %d does not fit in 5 bits", s.Reserved2)
+	}
+	bit.PutUint(data[14:19], uint64(s.Reserved2))
 	if s.Reg {
 		data[19] = 1
 	}
@@ -659,17 +770,23 @@ func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Backoff: value %d does not fit in 4 bits", s.Backoff)
 	}
 	bit.PutUint(data[20:24], uint64(s.Backoff))
-	copy(data[24:28], s.Reserved3[:])
+	if uint64(s.Reserved3)>>4 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("MovePDU.Reserved3: value %d does not fit in 4 bits", s.Reserved3)
+	}
+	bit.PutUint(data[24:28], uint64(s.Reserved3))
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("MovePDU.PhysicalChannel: value %d does not fit in 12 bits", s.PhysicalChannel)
 	}
 	bit.PutUint(data[28:40], uint64(s.PhysicalChannel))
-	copy(data[40:64], s.MSAddress[:])
+	if uint64(s.MSAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("MovePDU.MSAddress: value %d does not fit in 24 bits", s.MSAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.MSAddress))
 	return data, nil
 }
 
 func (s *MovePDU) String() string {
-	return fmt.Sprintf("MovePDU{ Reserved1: %v, Mask: %d, Reserved2: %v, Reg: %t, Backoff: %d, Reserved3: %v, PhysicalChannel: %d, MSAddress: %v }", s.Reserved1, s.Mask, s.Reserved2, s.Reg, s.Backoff, s.Reserved3, s.PhysicalChannel, s.MSAddress)
+	return fmt.Sprintf("MovePDU{ Reserved1: %d, Mask: %d, Reserved2: %d, Reg: %t, Backoff: %d, Reserved3: %d, PhysicalChannel: %d, MSAddress: %d }", s.Reserved1, s.Mask, s.Reserved2, s.Reg, s.Backoff, s.Reserved3, s.PhysicalChannel, s.MSAddress)
 }
 
 // DecodeAlohaPDU decodes a AlohaPDU per ETSI TS 102 361-4 §7.1.1.1.3 C_ALOHA PDU
@@ -689,7 +806,7 @@ func DecodeAlohaPDU(data [64]bit.Bit) (AlohaPDU, fec.Result) {
 	result.Reg = data[19] == 1
 	result.Backoff = uint8(bit.Uint(data[20:24]))
 	result.SysIdentCode = uint16(bit.Uint(data[24:40]))
-	copy(result.MSAddress[:], data[40:64])
+	result.MSAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -735,12 +852,15 @@ func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 	}
 	bit.PutUint(data[20:24], uint64(s.Backoff))
 	bit.PutUint(data[24:40], uint64(s.SysIdentCode))
-	copy(data[40:64], s.MSAddress[:])
+	if uint64(s.MSAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AlohaPDU.MSAddress: value %d does not fit in 24 bits", s.MSAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.MSAddress))
 	return data, nil
 }
 
 func (s *AlohaPDU) String() string {
-	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %v }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
+	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %d }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
 }
 
 // DecodeCBroadcastPDU decodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
@@ -749,11 +869,11 @@ func DecodeCBroadcastPDU(data [64]bit.Bit) (CBroadcastPDU, fec.Result) {
 	bit.Mask(data[:])
 	var fecResult fec.Result
 	result.AnnouncementType = enums.AnnouncementType(bit.Uint(data[0:5]))
-	copy(result.BroadcastParms1[:], data[5:19])
+	result.BroadcastParms1 = uint16(bit.Uint(data[5:19]))
 	result.Reg = data[19] == 1
 	result.Backoff = uint8(bit.Uint(data[20:24]))
 	result.SysIdentCode = uint16(bit.Uint(data[24:40]))
-	copy(result.BroadcastParms2[:], data[40:64])
+	result.BroadcastParms2 = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -764,7 +884,10 @@ func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.AnnouncementType: value %d does not fit in 5 bits", s.AnnouncementType)
 	}
 	bit.PutUint(data[0:5], uint64(s.AnnouncementType))
-	copy(data[5:19], s.BroadcastParms1[:])
+	if uint64(s.BroadcastParms1)>>14 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.BroadcastParms1: value %d does not fit in 14 bits", s.BroadcastParms1)
+	}
+	bit.PutUint(data[5:19], uint64(s.BroadcastParms1))
 	if s.Reg {
 		data[19] = 1
 	}
@@ -773,12 +896,15 @@ func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 	}
 	bit.PutUint(data[20:24], uint64(s.Backoff))
 	bit.PutUint(data[24:40], uint64(s.SysIdentCode))
-	copy(data[40:64], s.BroadcastParms2[:])
+	if uint64(s.BroadcastParms2)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("CBroadcastPDU.BroadcastParms2: value %d does not fit in 24 bits", s.BroadcastParms2)
+	}
+	bit.PutUint(data[40:64], uint64(s.BroadcastParms2))
 	return data, nil
 }
 
 func (s *CBroadcastPDU) String() string {
-	return fmt.Sprintf("CBroadcastPDU{ AnnouncementType: %s, BroadcastParms1: %v, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %v }", s.AnnouncementType, s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
+	return fmt.Sprintf("CBroadcastPDU{ AnnouncementType: %s, BroadcastParms1: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %d }", s.AnnouncementType, s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
 }
 
 // DecodeClearPDU decodes a ClearPDU per ETSI TS 102 361-4 §7.1.1.1.5 P_CLEAR PDU
@@ -790,8 +916,8 @@ func DecodeClearPDU(data [64]bit.Bit) (ClearPDU, fec.Result) {
 	result.Reserved1 = data[12] == 1
 	result.Reserved2 = uint8(bit.Uint(data[13:15]))
 	result.GroupIndividual = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -812,13 +938,19 @@ func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
 	if s.GroupIndividual {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ClearPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *ClearPDU) String() string {
-	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, GroupIndividual: %t, TargetAddress: %v, SourceAddress: %v }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeProtectPDU decodes a ProtectPDU per ETSI TS 102 361-4 §7.1.1.1.5 P_PROTECT PDU
@@ -826,18 +958,21 @@ func DecodeProtectPDU(data [64]bit.Bit) (ProtectPDU, fec.Result) {
 	var result ProtectPDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	copy(result.Reserved[:], data[0:12])
+	result.Reserved = uint16(bit.Uint(data[0:12]))
 	result.ProtectKind = uint8(bit.Uint(data[12:15]))
 	result.GroupIndividual = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
 // Encode encodes a ProtectPDU per ETSI TS 102 361-4 §7.1.1.1.5 P_PROTECT PDU
 func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	copy(data[0:12], s.Reserved[:])
+	if uint64(s.Reserved)>>12 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.Reserved: value %d does not fit in 12 bits", s.Reserved)
+	}
+	bit.PutUint(data[0:12], uint64(s.Reserved))
 	if uint64(s.ProtectKind)>>3 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.ProtectKind: value %d does not fit in 3 bits", s.ProtectKind)
 	}
@@ -845,13 +980,19 @@ func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
 	if s.GroupIndividual {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("ProtectPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *ProtectPDU) String() string {
-	return fmt.Sprintf("ProtectPDU{ Reserved: %v, ProtectKind: %d, GroupIndividual: %t, TargetAddress: %v, SourceAddress: %v }", s.Reserved, s.ProtectKind, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("ProtectPDU{ Reserved: %d, ProtectKind: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.ProtectKind, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeAhoyPDU decodes a AhoyPDU per ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / P_AHOY PDU
@@ -865,8 +1006,8 @@ func DecodeAhoyPDU(data [64]bit.Bit) (AhoyPDU, fec.Result) {
 	result.GroupIndividual = data[9] == 1
 	result.AppendedBlocks = uint8(bit.Uint(data[10:12]))
 	result.ServiceKind = uint8(bit.Uint(data[12:16]))
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -894,13 +1035,19 @@ func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
 	}
 	bit.PutUint(data[12:16], uint64(s.ServiceKind))
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AhoyPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *AhoyPDU) String() string {
-	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, GroupIndividual: %t, AppendedBlocks: %d, ServiceKind: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.GroupIndividual, s.AppendedBlocks, s.ServiceKind, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, GroupIndividual: %t, AppendedBlocks: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.GroupIndividual, s.AppendedBlocks, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeAckOutboundPDU decodes a AckOutboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
@@ -911,8 +1058,8 @@ func DecodeAckOutboundPDU(data [64]bit.Bit) (AckOutboundPDU, fec.Result) {
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.AdditionalInfo[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -927,13 +1074,19 @@ func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
 	if s.Reserved {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.AdditionalInfo[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.AdditionalInfo)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPDU.AdditionalInfo: value %d does not fit in 24 bits", s.AdditionalInfo)
+	}
+	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
 	return data, nil
 }
 
 func (s *AckOutboundPDU) String() string {
-	return fmt.Sprintf("AckOutboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
+	return fmt.Sprintf("AckOutboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
 // DecodeAckInboundPDU decodes a AckInboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKU PDU
@@ -944,8 +1097,8 @@ func DecodeAckInboundPDU(data [64]bit.Bit) (AckInboundPDU, fec.Result) {
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.AdditionalInfo[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -960,13 +1113,19 @@ func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
 	if s.Reserved {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.AdditionalInfo[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckInboundPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.AdditionalInfo)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckInboundPDU.AdditionalInfo: value %d does not fit in 24 bits", s.AdditionalInfo)
+	}
+	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
 	return data, nil
 }
 
 func (s *AckInboundPDU) String() string {
-	return fmt.Sprintf("AckInboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
+	return fmt.Sprintf("AckInboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
 // DecodeAckOutboundPayloadPDU decodes a AckOutboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.1.7 P_ACKD PDU
@@ -977,8 +1136,8 @@ func DecodeAckOutboundPayloadPDU(data [64]bit.Bit) (AckOutboundPayloadPDU, fec.R
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.AdditionalInfo[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -993,13 +1152,19 @@ func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	if s.Reserved {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.AdditionalInfo[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPayloadPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.AdditionalInfo)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckOutboundPayloadPDU.AdditionalInfo: value %d does not fit in 24 bits", s.AdditionalInfo)
+	}
+	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
 	return data, nil
 }
 
 func (s *AckOutboundPayloadPDU) String() string {
-	return fmt.Sprintf("AckOutboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
+	return fmt.Sprintf("AckOutboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
 // DecodeAckInboundPayloadPDU decodes a AckInboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.1.7 P_ACKU PDU
@@ -1010,8 +1175,8 @@ func DecodeAckInboundPayloadPDU(data [64]bit.Bit) (AckInboundPayloadPDU, fec.Res
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.AdditionalInfo[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -1026,13 +1191,19 @@ func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	if s.Reserved {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.AdditionalInfo[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckInboundPayloadPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.AdditionalInfo)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckInboundPayloadPDU.AdditionalInfo: value %d does not fit in 24 bits", s.AdditionalInfo)
+	}
+	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
 	return data, nil
 }
 
 func (s *AckInboundPayloadPDU) String() string {
-	return fmt.Sprintf("AckInboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
+	return fmt.Sprintf("AckInboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
 // DecodeRandomAccessPDU decodes a RandomAccessPDU per ETSI TS 102 361-4 §7.1.1.1.9 C_RAND PDU
@@ -1044,8 +1215,8 @@ func DecodeRandomAccessPDU(data [64]bit.Bit) (RandomAccessPDU, fec.Result) {
 	result.ProxyFlag = data[7] == 1
 	result.Reserved = uint8(bit.Uint(data[8:12]))
 	result.ServiceKind = uint8(bit.Uint(data[12:16]))
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -1067,13 +1238,19 @@ func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
 		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
 	}
 	bit.PutUint(data[12:16], uint64(s.ServiceKind))
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("RandomAccessPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *RandomAccessPDU) String() string {
-	return fmt.Sprintf("RandomAccessPDU{ ServiceOptions: %d, ProxyFlag: %t, Reserved: %d, ServiceKind: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptions, s.ProxyFlag, s.Reserved, s.ServiceKind, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("RandomAccessPDU{ ServiceOptions: %d, ProxyFlag: %t, Reserved: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions, s.ProxyFlag, s.Reserved, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeAckvitationPDU decodes a AckvitationPDU per ETSI TS 102 361-4 §7.1.1.1.10 C_ACKVIT PDU
@@ -1086,8 +1263,8 @@ func DecodeAckvitationPDU(data [64]bit.Bit) (AckvitationPDU, fec.Result) {
 	result.Reserved = uint8(bit.Uint(data[8:10]))
 	result.UAB = uint8(bit.Uint(data[10:12]))
 	result.ServiceKind = uint8(bit.Uint(data[12:16]))
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
@@ -1113,13 +1290,19 @@ func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
 		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.ServiceKind: value %d does not fit in 4 bits", s.ServiceKind)
 	}
 	bit.PutUint(data[12:16], uint64(s.ServiceKind))
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("AckvitationPDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *AckvitationPDU) String() string {
-	return fmt.Sprintf("AckvitationPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, Reserved: %d, UAB: %d, ServiceKind: %d, TargetAddress: %v, SourceAddress: %v }", s.ServiceOptsMirror, s.ServiceKindFlag, s.Reserved, s.UAB, s.ServiceKind, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("AckvitationPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, Reserved: %d, UAB: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.Reserved, s.UAB, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeMaintenancePDU decodes a MaintenancePDU per ETSI TS 102 361-4 §7.1.1.1.11 P_MAINT PDU
@@ -1127,18 +1310,21 @@ func DecodeMaintenancePDU(data [64]bit.Bit) (MaintenancePDU, fec.Result) {
 	var result MaintenancePDU
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	copy(result.Reserved[:], data[0:12])
+	result.Reserved = uint16(bit.Uint(data[0:12]))
 	result.MaintKind = uint8(bit.Uint(data[12:15]))
 	result.Reserved2 = data[15] == 1
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
+	result.TargetAddress = uint32(bit.Uint(data[16:40]))
+	result.SourceAddress = uint32(bit.Uint(data[40:64]))
 	return result, fecResult
 }
 
 // Encode encodes a MaintenancePDU per ETSI TS 102 361-4 §7.1.1.1.11 P_MAINT PDU
 func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
-	copy(data[0:12], s.Reserved[:])
+	if uint64(s.Reserved)>>12 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.Reserved: value %d does not fit in 12 bits", s.Reserved)
+	}
+	bit.PutUint(data[0:12], uint64(s.Reserved))
 	if uint64(s.MaintKind)>>3 != 0 {
 		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.MaintKind: value %d does not fit in 3 bits", s.MaintKind)
 	}
@@ -1146,13 +1332,19 @@ func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
 	if s.Reserved2 {
 		data[15] = 1
 	}
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
+	if uint64(s.TargetAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.TargetAddress: value %d does not fit in 24 bits", s.TargetAddress)
+	}
+	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	if uint64(s.SourceAddress)>>24 != 0 {
+		return [64]bit.Bit{}, fmt.Errorf("MaintenancePDU.SourceAddress: value %d does not fit in 24 bits", s.SourceAddress)
+	}
+	bit.PutUint(data[40:64], uint64(s.SourceAddress))
 	return data, nil
 }
 
 func (s *MaintenancePDU) String() string {
-	return fmt.Sprintf("MaintenancePDU{ Reserved: %v, MaintKind: %d, Reserved2: %t, TargetAddress: %v, SourceAddress: %v }", s.Reserved, s.MaintKind, s.Reserved2, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("MaintenancePDU{ Reserved: %d, MaintKind: %d, Reserved2: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.MaintKind, s.Reserved2, s.TargetAddress, s.SourceAddress)
 }
 
 // DecodeCSBK decodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU

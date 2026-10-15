@@ -543,7 +543,7 @@ func TestDataHeader_Proprietary_Decode(t *testing.T) {
 	if p.SAP != 0b1001 || p.MFID != 0x10 {
 		t.Errorf("SAP=%d MFID=0x%02X, want 9 0x10", p.SAP, p.MFID)
 	}
-	if p.ManufacturerData[0] != 1 || p.ManufacturerData[63] != 1 {
+	if p.ManufacturerData[0]&0x80 == 0 || p.ManufacturerData[7]&1 == 0 {
 		t.Error("ManufacturerData should span bits 16-79")
 	}
 	if got := must(dh.Encode()); got != infoBits {
@@ -558,7 +558,7 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 	mfData[40] = 1
 	original := &pdu.DataHeader{
 		Format:            pdu.FormatProprietary,
-		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: mfData},
+		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: [8]byte(bit.Pack(mfData[:]))},
 	}
 	decoded, fecResult := pdu.DecodeDataHeader(must(original.Encode()))
 	if fecResult.Uncorrectable {

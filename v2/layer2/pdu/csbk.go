@@ -113,25 +113,25 @@ func (opcode CSBKOpcode) String() string {
 
 // ETSI TS 102 361-1 - 9.3.6 BS Outbound Activation (BS_Dwn_Act) PDU
 type BSOutboundActivationPDU struct {
-	Reserved      uint16      `dmr:"bits:0-15"`
-	BSAddress     [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress [24]bit.Bit `dmr:"bits:40-63,raw"`
+	Reserved      uint16 `dmr:"bits:0-15"`
+	BSAddress     uint32 `dmr:"bits:16-39"`
+	SourceAddress uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
 type UnitToUnitVoiceServiceRequestPDU struct {
-	ServiceOptions byte        `dmr:"bits:0-7"`
-	Reserved       byte        `dmr:"bits:8-15"`
-	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ServiceOptions byte   `dmr:"bits:0-7"`
+	Reserved       byte   `dmr:"bits:8-15"`
+	TargetAddress  uint32 `dmr:"bits:16-39"`
+	SourceAddress  uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
 type UnitToUnitVoiceServiceAnswerResponsePDU struct {
-	ServiceOptions byte        `dmr:"bits:0-7"`
-	AnswerResponse byte        `dmr:"bits:8-15"`
-	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ServiceOptions byte   `dmr:"bits:0-7"`
+	AnswerResponse byte   `dmr:"bits:8-15"`
+	TargetAddress  uint32 `dmr:"bits:16-39"`
+	SourceAddress  uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
@@ -140,8 +140,8 @@ type NegativeAcknowledgementPDU struct {
 	SourceType     layer3.SourceType                 `dmr:"bits:1-1,delegate,noptr"`
 	ServiceType    CSBKOpcode                        `dmr:"bits:2-7"`
 	ReasonCode     byte                              `dmr:"bits:8-15"`
-	SourceAddress  [24]bit.Bit                       `dmr:"bits:16-39,raw"`
-	TargetAddress  [24]bit.Bit                       `dmr:"bits:40-63,raw"`
+	SourceAddress  uint32                            `dmr:"bits:16-39"`
+	TargetAddress  uint32                            `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-1 - 9.3.7 Pre PDU
@@ -149,158 +149,158 @@ type PreamblePDU struct {
 	// 1 = data content follows, 0 = CSBK follows
 	Data bool `dmr:"bit:0"`
 	// 1 = target address is a group, 0 = individual
-	Group              bool        `dmr:"bit:1"`
-	Reserved           [6]bit.Bit  `dmr:"bits:2-7,raw"`
-	CSBKBlocksToFollow byte        `dmr:"bits:8-15"`
-	TargetAddress      [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress      [24]bit.Bit `dmr:"bits:40-63,raw"`
+	Group              bool   `dmr:"bit:1"`
+	Reserved           uint8  `dmr:"bits:2-7"`
+	CSBKBlocksToFollow byte   `dmr:"bits:8-15"`
+	TargetAddress      uint32 `dmr:"bits:16-39"`
+	SourceAddress      uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
 // ChannelTimingOp1 is the opcode MSB and ChannelTimingOp0 the LSB.
 type ChannelTimingPDU struct {
-	SyncAge                 [11]bit.Bit `dmr:"bits:0-10,raw"`
-	Generation              [5]bit.Bit  `dmr:"bits:11-15,raw"`
-	LeaderIdentifier        [20]bit.Bit `dmr:"bits:16-35,raw"`
-	NewLeader               bool        `dmr:"bit:36"`
-	LeaderDynamicIdentifier [2]bit.Bit  `dmr:"bits:37-38,raw"`
-	ChannelTimingOp1        bool        `dmr:"bit:39"`
-	SourceIdentifier        [20]bit.Bit `dmr:"bits:40-59,raw"`
-	Reserved                bool        `dmr:"bit:60"`
-	SourceDynamicIdentifier [2]bit.Bit  `dmr:"bits:61-62,raw"`
-	ChannelTimingOp0        bool        `dmr:"bit:63"`
+	SyncAge                 uint16 `dmr:"bits:0-10"`
+	Generation              uint8  `dmr:"bits:11-15"`
+	LeaderIdentifier        uint32 `dmr:"bits:16-35"`
+	NewLeader               bool   `dmr:"bit:36"`
+	LeaderDynamicIdentifier uint8  `dmr:"bits:37-38"`
+	ChannelTimingOp1        bool   `dmr:"bit:39"`
+	SourceIdentifier        uint32 `dmr:"bits:40-59"`
+	Reserved                bool   `dmr:"bit:60"`
+	SourceDynamicIdentifier uint8  `dmr:"bits:61-62"`
+	ChannelTimingOp0        bool   `dmr:"bit:63"`
 }
 
 // ── Tier III CSBK sub-PDU structs (ETSI TS 102 361-4 §7.1.1) ──
 
 // ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
 type PrivateVoiceGrantPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	Reserved        bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	Offset          bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	Reserved        bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	Offset          bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
 type TalkgroupVoiceGrantPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	LateEntry       bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	Offset          bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	LateEntry       bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	Offset          bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
 type BroadcastTalkgroupVoiceGrantPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	LateEntry       bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	Offset          bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	LateEntry       bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	Offset          bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT PDU
 type PrivateDataGrantPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	HiRate          bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	Offset          bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	HiRate          bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	Offset          bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT PDU
 type TalkgroupDataGrantPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	HiRate          bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	Offset          bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	HiRate          bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	Offset          bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT_DX PDU
 type DuplexPrivateVoiceGrantPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	Reserved        bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	CallDirection   bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	Reserved        bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	CallDirection   bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_DX PDU
 type DuplexPrivateDataGrantPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	HiRate          bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	CallDirection   bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	HiRate          bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	CallDirection   bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
 type PrivateDataGrantMultiItemPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	HiRate          bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	Offset          bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	HiRate          bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	Offset          bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
 // NOTE: Shares opcode 0x38 with BSOutboundActivationPDU; disambiguated via the
 // trunkingMode argument of DecodeCSBK.
 type TalkgroupDataGrantMultiItemPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	LogicalChannel  bool        `dmr:"bit:12"`
-	HiRate          bool        `dmr:"bit:13"`
-	Emergency       bool        `dmr:"bit:14"`
-	Offset          bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	LogicalChannel  bool   `dmr:"bit:12"`
+	HiRate          bool   `dmr:"bit:13"`
+	Emergency       bool   `dmr:"bit:14"`
+	Offset          bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.2 C_MOVE PDU
 type MovePDU struct {
-	Reserved1       [9]bit.Bit  `dmr:"bits:0-8,raw"`
-	Mask            uint8       `dmr:"bits:9-13"`
-	Reserved2       [5]bit.Bit  `dmr:"bits:14-18,raw"`
-	Reg             bool        `dmr:"bit:19"`
-	Backoff         uint8       `dmr:"bits:20-23"`
-	Reserved3       [4]bit.Bit  `dmr:"bits:24-27,raw"`
-	PhysicalChannel uint16      `dmr:"bits:28-39"`
-	MSAddress       [24]bit.Bit `dmr:"bits:40-63,raw"`
+	Reserved1       uint16 `dmr:"bits:0-8"`
+	Mask            uint8  `dmr:"bits:9-13"`
+	Reserved2       uint8  `dmr:"bits:14-18"`
+	Reg             bool   `dmr:"bit:19"`
+	Backoff         uint8  `dmr:"bits:20-23"`
+	Reserved3       uint8  `dmr:"bits:24-27"`
+	PhysicalChannel uint16 `dmr:"bits:28-39"`
+	MSAddress       uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.3 C_ALOHA PDU
 type AlohaPDU struct {
-	Reserved1    bool        `dmr:"bit:0"`
-	TSCCAS       bool        `dmr:"bit:1"`
-	SiteTSSync   bool        `dmr:"bit:2"`
-	Version      uint8       `dmr:"bits:3-5"`
-	Offset       bool        `dmr:"bit:6"`
-	ActiveConn   bool        `dmr:"bit:7"`
-	Mask         uint8       `dmr:"bits:8-12"`
-	ServiceFunc  uint8       `dmr:"bits:13-14"`
-	NRandWait    uint8       `dmr:"bits:15-18"`
-	Reg          bool        `dmr:"bit:19"`
-	Backoff      uint8       `dmr:"bits:20-23"`
-	SysIdentCode uint16      `dmr:"bits:24-39"`
-	MSAddress    [24]bit.Bit `dmr:"bits:40-63,raw"`
+	Reserved1    bool   `dmr:"bit:0"`
+	TSCCAS       bool   `dmr:"bit:1"`
+	SiteTSSync   bool   `dmr:"bit:2"`
+	Version      uint8  `dmr:"bits:3-5"`
+	Offset       bool   `dmr:"bit:6"`
+	ActiveConn   bool   `dmr:"bit:7"`
+	Mask         uint8  `dmr:"bits:8-12"`
+	ServiceFunc  uint8  `dmr:"bits:13-14"`
+	NRandWait    uint8  `dmr:"bits:15-18"`
+	Reg          bool   `dmr:"bit:19"`
+	Backoff      uint8  `dmr:"bits:20-23"`
+	SysIdentCode uint16 `dmr:"bits:24-39"`
+	MSAddress    uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
@@ -308,108 +308,108 @@ type AlohaPDU struct {
 // depends on AnnouncementType (TS 102 361-4 §7.2.19, Tables 7.69 onward).
 type CBroadcastPDU struct {
 	AnnouncementType enums.AnnouncementType `dmr:"bits:0-4,enum"`
-	BroadcastParms1  [14]bit.Bit            `dmr:"bits:5-18,raw"`
+	BroadcastParms1  uint16                 `dmr:"bits:5-18"`
 	Reg              bool                   `dmr:"bit:19"`
 	Backoff          uint8                  `dmr:"bits:20-23"`
 	SysIdentCode     uint16                 `dmr:"bits:24-39"`
-	BroadcastParms2  [24]bit.Bit            `dmr:"bits:40-63,raw"`
+	BroadcastParms2  uint32                 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.5 P_CLEAR PDU
 type ClearPDU struct {
-	PhysicalChannel uint16      `dmr:"bits:0-11"`
-	Reserved1       bool        `dmr:"bit:12"`
-	Reserved2       uint8       `dmr:"bits:13-14"`
-	GroupIndividual bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	PhysicalChannel uint16 `dmr:"bits:0-11"`
+	Reserved1       bool   `dmr:"bit:12"`
+	Reserved2       uint8  `dmr:"bits:13-14"`
+	GroupIndividual bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.5 P_PROTECT PDU
 type ProtectPDU struct {
-	Reserved        [12]bit.Bit `dmr:"bits:0-11,raw"`
-	ProtectKind     uint8       `dmr:"bits:12-14"`
-	GroupIndividual bool        `dmr:"bit:15"`
-	TargetAddress   [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress   [24]bit.Bit `dmr:"bits:40-63,raw"`
+	Reserved        uint16 `dmr:"bits:0-11"`
+	ProtectKind     uint8  `dmr:"bits:12-14"`
+	GroupIndividual bool   `dmr:"bit:15"`
+	TargetAddress   uint32 `dmr:"bits:16-39"`
+	SourceAddress   uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / P_AHOY PDU
 type AhoyPDU struct {
-	ServiceOptsMirror uint8       `dmr:"bits:0-6"`
-	ServiceKindFlag   bool        `dmr:"bit:7"`
-	ALS               bool        `dmr:"bit:8"`
-	GroupIndividual   bool        `dmr:"bit:9"`
-	AppendedBlocks    uint8       `dmr:"bits:10-11"`
-	ServiceKind       uint8       `dmr:"bits:12-15"`
-	TargetAddress     [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress     [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ServiceOptsMirror uint8  `dmr:"bits:0-6"`
+	ServiceKindFlag   bool   `dmr:"bit:7"`
+	ALS               bool   `dmr:"bit:8"`
+	GroupIndividual   bool   `dmr:"bit:9"`
+	AppendedBlocks    uint8  `dmr:"bits:10-11"`
+	ServiceKind       uint8  `dmr:"bits:12-15"`
+	TargetAddress     uint32 `dmr:"bits:16-39"`
+	SourceAddress     uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
 type AckOutboundPDU struct {
-	ResponseInfo   uint8       `dmr:"bits:0-6"`
-	ReasonCode     byte        `dmr:"bits:7-14"`
-	Reserved       bool        `dmr:"bit:15"`
-	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
-	AdditionalInfo [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ResponseInfo   uint8  `dmr:"bits:0-6"`
+	ReasonCode     byte   `dmr:"bits:7-14"`
+	Reserved       bool   `dmr:"bit:15"`
+	TargetAddress  uint32 `dmr:"bits:16-39"`
+	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.7 C_ACKU PDU
 type AckInboundPDU struct {
-	ResponseInfo   uint8       `dmr:"bits:0-6"`
-	ReasonCode     byte        `dmr:"bits:7-14"`
-	Reserved       bool        `dmr:"bit:15"`
-	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
-	AdditionalInfo [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ResponseInfo   uint8  `dmr:"bits:0-6"`
+	ReasonCode     byte   `dmr:"bits:7-14"`
+	Reserved       bool   `dmr:"bit:15"`
+	TargetAddress  uint32 `dmr:"bits:16-39"`
+	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.7 P_ACKD PDU
 type AckOutboundPayloadPDU struct {
-	ResponseInfo   uint8       `dmr:"bits:0-6"`
-	ReasonCode     byte        `dmr:"bits:7-14"`
-	Reserved       bool        `dmr:"bit:15"`
-	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
-	AdditionalInfo [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ResponseInfo   uint8  `dmr:"bits:0-6"`
+	ReasonCode     byte   `dmr:"bits:7-14"`
+	Reserved       bool   `dmr:"bit:15"`
+	TargetAddress  uint32 `dmr:"bits:16-39"`
+	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.7 P_ACKU PDU
 type AckInboundPayloadPDU struct {
-	ResponseInfo   uint8       `dmr:"bits:0-6"`
-	ReasonCode     byte        `dmr:"bits:7-14"`
-	Reserved       bool        `dmr:"bit:15"`
-	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
-	AdditionalInfo [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ResponseInfo   uint8  `dmr:"bits:0-6"`
+	ReasonCode     byte   `dmr:"bits:7-14"`
+	Reserved       bool   `dmr:"bit:15"`
+	TargetAddress  uint32 `dmr:"bits:16-39"`
+	AdditionalInfo uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.9 C_RAND PDU
 type RandomAccessPDU struct {
-	ServiceOptions uint8       `dmr:"bits:0-6"`
-	ProxyFlag      bool        `dmr:"bit:7"`
-	Reserved       uint8       `dmr:"bits:8-11"`
-	ServiceKind    uint8       `dmr:"bits:12-15"`
-	TargetAddress  [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress  [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ServiceOptions uint8  `dmr:"bits:0-6"`
+	ProxyFlag      bool   `dmr:"bit:7"`
+	Reserved       uint8  `dmr:"bits:8-11"`
+	ServiceKind    uint8  `dmr:"bits:12-15"`
+	TargetAddress  uint32 `dmr:"bits:16-39"`
+	SourceAddress  uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.10 C_ACKVIT PDU
 type AckvitationPDU struct {
-	ServiceOptsMirror uint8       `dmr:"bits:0-6"`
-	ServiceKindFlag   bool        `dmr:"bit:7"`
-	Reserved          uint8       `dmr:"bits:8-9"`
-	UAB               uint8       `dmr:"bits:10-11"`
-	ServiceKind       uint8       `dmr:"bits:12-15"`
-	TargetAddress     [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress     [24]bit.Bit `dmr:"bits:40-63,raw"`
+	ServiceOptsMirror uint8  `dmr:"bits:0-6"`
+	ServiceKindFlag   bool   `dmr:"bit:7"`
+	Reserved          uint8  `dmr:"bits:8-9"`
+	UAB               uint8  `dmr:"bits:10-11"`
+	ServiceKind       uint8  `dmr:"bits:12-15"`
+	TargetAddress     uint32 `dmr:"bits:16-39"`
+	SourceAddress     uint32 `dmr:"bits:40-63"`
 }
 
 // ETSI TS 102 361-4 §7.1.1.1.11 P_MAINT PDU
 type MaintenancePDU struct {
-	Reserved      [12]bit.Bit `dmr:"bits:0-11,raw"`
-	MaintKind     uint8       `dmr:"bits:12-14"`
-	Reserved2     bool        `dmr:"bit:15"`
-	TargetAddress [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress [24]bit.Bit `dmr:"bits:40-63,raw"`
+	Reserved      uint16 `dmr:"bits:0-11"`
+	MaintKind     uint8  `dmr:"bits:12-14"`
+	Reserved2     bool   `dmr:"bit:15"`
+	TargetAddress uint32 `dmr:"bits:16-39"`
+	SourceAddress uint32 `dmr:"bits:40-63"`
 }
 
 // Opcode0x38Hint is the likely meaning of a CSBK with opcode 0x38, which is

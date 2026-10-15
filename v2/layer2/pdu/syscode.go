@@ -2,8 +2,6 @@ package pdu
 
 import (
 	"fmt"
-
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
 // NetworkModel is the MODEL field of a System Identity Code
@@ -74,14 +72,9 @@ func (s SysCode) Pack14() (uint16, error) {
 
 // NetSite returns the 12 NET and SITE bits as in the NetSiteRaw field of
 // ShortLCCSysParms and ShortLCPSysParms.
-func (s SysCode) NetSite() ([12]bit.Bit, error) {
-	var out [12]bit.Bit
+func (s SysCode) NetSite() (uint16, error) {
 	v, err := s.Pack14()
-	if err != nil {
-		return out, err
-	}
-	bit.PutUint(out[:], uint64(v&0xFFF))
-	return out, nil
+	return v & 0xFFF, err
 }
 
 // UnpackSysCode splits a 16-bit C_SYScode into its fields.
@@ -101,8 +94,8 @@ func UnpackSysCode14(v uint16) SysCode {
 	return UnpackSysCode((v & 0x3FFF) << 2)
 }
 
-func sysCodeFromShortLC(model uint8, netSite [12]bit.Bit) SysCode {
-	return UnpackSysCode14(uint16(model&3)<<12 | uint16(bit.Uint(netSite[:12])))
+func sysCodeFromShortLC(model uint8, netSite uint16) SysCode {
+	return UnpackSysCode14(uint16(model&3)<<12 | netSite&0xFFF)
 }
 
 // SysCode returns the MODEL, NET and SITE carried in the C_SYS_Parms.

@@ -11,8 +11,8 @@ import (
 
 func TestBurst_Opcode0x38HintFromSync(t *testing.T) {
 	act := pdu.BSOutboundActivationPDU{
-		BSAddress:     [24]bit.Bit{23: 1},
-		SourceAddress: [24]bit.Bit{22: 1},
+		BSAddress:     1,
+		SourceAddress: 2,
 	}
 	csbk := &pdu.CSBK{LastBlock: true, CSBKOpcode: pdu.CSBKBSOutboundActivationPDU, RawPayload: must(act.Encode())}
 	encBits := must(csbk.Encode())

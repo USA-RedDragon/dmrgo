@@ -125,6 +125,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFLC_SetAddresses
               - TestFullLinkControl_UnitToUnit_EncodeDecodeCycle
               - TestFullLinkControl_EncodeStability
               - TestFullLinkControl_Decode_BothDataTypes
@@ -280,6 +281,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestDataHeader_UnconfirmedDecode
+              - TestDataHeader_Addresses
               - TestDataHeader_CRCFailure
               - TestDataHeader_FormatDispatch
 

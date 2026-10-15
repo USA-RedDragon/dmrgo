@@ -25,19 +25,22 @@ func DecodeShortLCNullMessage(data [24]bit.Bit) (ShortLCNullMessage, fec.Result)
 	var result ShortLCNullMessage
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	copy(result.Reserved[:], data[0:24])
+	result.Reserved = uint32(bit.Uint(data[0:24]))
 	return result, fecResult
 }
 
 // Encode encodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
 func (s *ShortLCNullMessage) Encode() ([24]bit.Bit, error) {
 	var data [24]bit.Bit
-	copy(data[0:24], s.Reserved[:])
+	if uint64(s.Reserved)>>24 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCNullMessage.Reserved: value %d does not fit in 24 bits", s.Reserved)
+	}
+	bit.PutUint(data[0:24], uint64(s.Reserved))
 	return data, nil
 }
 
 func (s *ShortLCNullMessage) String() string {
-	return fmt.Sprintf("ShortLCNullMessage{ Reserved: %v }", s.Reserved)
+	return fmt.Sprintf("ShortLCNullMessage{ Reserved: %d }", s.Reserved)
 }
 
 // DecodeShortLCActivityUpdate decodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
@@ -78,7 +81,7 @@ func DecodeShortLCCSysParms(data [24]bit.Bit) (ShortLCCSysParms, fec.Result) {
 	bit.Mask(data[:])
 	var fecResult fec.Result
 	result.MODEL = uint8(bit.Uint(data[0:2]))
-	copy(result.NetSiteRaw[:], data[2:14])
+	result.NetSiteRaw = uint16(bit.Uint(data[2:14]))
 	result.Reg = data[14] == 1
 	result.CommonSlotCounter = uint16(bit.Uint(data[15:24]))
 	return result, fecResult
@@ -91,7 +94,10 @@ func (s *ShortLCCSysParms) Encode() ([24]bit.Bit, error) {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCCSysParms.MODEL: value %d does not fit in 2 bits", s.MODEL)
 	}
 	bit.PutUint(data[0:2], uint64(s.MODEL))
-	copy(data[2:14], s.NetSiteRaw[:])
+	if uint64(s.NetSiteRaw)>>12 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCCSysParms.NetSiteRaw: value %d does not fit in 12 bits", s.NetSiteRaw)
+	}
+	bit.PutUint(data[2:14], uint64(s.NetSiteRaw))
 	if s.Reg {
 		data[14] = 1
 	}
@@ -103,7 +109,7 @@ func (s *ShortLCCSysParms) Encode() ([24]bit.Bit, error) {
 }
 
 func (s *ShortLCCSysParms) String() string {
-	return fmt.Sprintf("ShortLCCSysParms{ MODEL: %d, NetSiteRaw: %v, Reg: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
+	return fmt.Sprintf("ShortLCCSysParms{ MODEL: %d, NetSiteRaw: %d, Reg: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
 }
 
 // DecodeShortLCPSysParms decodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
@@ -112,7 +118,7 @@ func DecodeShortLCPSysParms(data [24]bit.Bit) (ShortLCPSysParms, fec.Result) {
 	bit.Mask(data[:])
 	var fecResult fec.Result
 	result.MODEL = uint8(bit.Uint(data[0:2]))
-	copy(result.NetSiteRaw[:], data[2:14])
+	result.NetSiteRaw = uint16(bit.Uint(data[2:14]))
 	result.PayloadChannelType = data[14] == 1
 	result.CommonSlotCounter = uint16(bit.Uint(data[15:24]))
 	return result, fecResult
@@ -125,7 +131,10 @@ func (s *ShortLCPSysParms) Encode() ([24]bit.Bit, error) {
 		return [24]bit.Bit{}, fmt.Errorf("ShortLCPSysParms.MODEL: value %d does not fit in 2 bits", s.MODEL)
 	}
 	bit.PutUint(data[0:2], uint64(s.MODEL))
-	copy(data[2:14], s.NetSiteRaw[:])
+	if uint64(s.NetSiteRaw)>>12 != 0 {
+		return [24]bit.Bit{}, fmt.Errorf("ShortLCPSysParms.NetSiteRaw: value %d does not fit in 12 bits", s.NetSiteRaw)
+	}
+	bit.PutUint(data[2:14], uint64(s.NetSiteRaw))
 	if s.PayloadChannelType {
 		data[14] = 1
 	}
@@ -137,7 +146,7 @@ func (s *ShortLCPSysParms) Encode() ([24]bit.Bit, error) {
 }
 
 func (s *ShortLCPSysParms) String() string {
-	return fmt.Sprintf("ShortLCPSysParms{ MODEL: %d, NetSiteRaw: %v, PayloadChannelType: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.PayloadChannelType, s.CommonSlotCounter)
+	return fmt.Sprintf("ShortLCPSysParms{ MODEL: %d, NetSiteRaw: %d, PayloadChannelType: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.PayloadChannelType, s.CommonSlotCounter)
 }
 
 // DecodeShortLC decodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU

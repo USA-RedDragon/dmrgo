@@ -87,10 +87,10 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 	if pvg.Offset {
 		t.Error("Offset should be false")
 	}
-	if pvg.TargetAddress[23] != 1 {
+	if ((pvg.TargetAddress >> 0) & 1) != 1 {
 		t.Error("TargetAddress last bit should be 1")
 	}
-	if pvg.SourceAddress[23] != 1 {
+	if ((pvg.SourceAddress >> 0) & 1) != 1 {
 		t.Error("SourceAddress last bit should be 1")
 	}
 
@@ -117,8 +117,8 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 			LateEntry:       false,
 			Emergency:       true,
 			Offset:          false,
-			TargetAddress:   targetAddr,
-			SourceAddress:   sourceAddr,
+			TargetAddress:   uint32(bit.Uint(targetAddr[:])),
+			SourceAddress:   uint32(bit.Uint(sourceAddr[:])),
 		},
 	}
 
@@ -140,10 +140,10 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	if !tvg.Emergency {
 		t.Error("Emergency should be true")
 	}
-	if tvg.TargetAddress != targetAddr {
+	if tvg.TargetAddress != uint32(bit.Uint(targetAddr[:])) {
 		t.Error("TargetAddress mismatch after encode-decode cycle")
 	}
-	if tvg.SourceAddress != sourceAddr {
+	if tvg.SourceAddress != uint32(bit.Uint(sourceAddr[:])) {
 		t.Error("SourceAddress mismatch after encode-decode cycle")
 	}
 }
@@ -427,7 +427,7 @@ func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 	if !ok {
 		t.Fatal("AsBSOutboundActivation of opcode 0x38 is not ok")
 	}
-	if act.BSAddress[23] != 1 || act.SourceAddress[23] != 1 {
+	if ((act.BSAddress>>0)&1) != 1 || ((act.SourceAddress>>0)&1) != 1 {
 		t.Error("BSAddress/SourceAddress last bit should be set")
 	}
 	if must(csbk.Encode()) != infoBits {
@@ -478,7 +478,7 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 	if grant.Offset {
 		t.Error("Offset should be false")
 	}
-	if grant.TargetAddress[23] != 1 || grant.SourceAddress[23] != 1 {
+	if ((grant.TargetAddress>>0)&1) != 1 || ((grant.SourceAddress>>0)&1) != 1 {
 		t.Error("TargetAddress/SourceAddress last bit should be set")
 	}
 	csbk.RawPayload = must(grant.Encode())
@@ -646,8 +646,8 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 			HiRate:          true,
 			Emergency:       false,
 			Offset:          true,
-			TargetAddress:   targetAddr,
-			SourceAddress:   sourceAddr,
+			TargetAddress:   uint32(bit.Uint(targetAddr[:])),
+			SourceAddress:   uint32(bit.Uint(sourceAddr[:])),
 		},
 	}
 
@@ -675,10 +675,10 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	if !pdg.Offset {
 		t.Error("Offset should be true")
 	}
-	if pdg.TargetAddress != targetAddr {
+	if pdg.TargetAddress != uint32(bit.Uint(targetAddr[:])) {
 		t.Error("TargetAddress mismatch")
 	}
-	if pdg.SourceAddress != sourceAddr {
+	if pdg.SourceAddress != uint32(bit.Uint(sourceAddr[:])) {
 		t.Error("SourceAddress mismatch")
 	}
 }
@@ -705,7 +705,7 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 			Reg:          true,
 			Backoff:      3,
 			SysIdentCode: 0x1234,
-			MSAddress:    msAddr,
+			MSAddress:    uint32(bit.Uint(msAddr[:])),
 		},
 	}
 
@@ -742,7 +742,7 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	if a.SysIdentCode != 0x1234 {
 		t.Errorf("SysIdentCode = 0x%04X, want 0x1234", a.SysIdentCode)
 	}
-	if a.MSAddress != msAddr {
+	if a.MSAddress != uint32(bit.Uint(msAddr[:])) {
 		t.Error("MSAddress mismatch")
 	}
 }
@@ -817,8 +817,8 @@ type netSiteModelCase struct {
 }
 
 // netSitePattern is 0b1100_1010_0101 in NetSiteRaw order.
-func netSitePattern() [12]bit.Bit {
-	return [12]bit.Bit{1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1}
+func netSitePattern() uint16 {
+	return 0b1100_1010_0101
 }
 
 // netSiteModelCases follows ETSI TS 102 361-4 Table 6.5.

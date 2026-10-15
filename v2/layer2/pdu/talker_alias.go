@@ -74,19 +74,19 @@ func DecodeTalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBl
 	if len(blocks) < n {
 		return "", ErrTalkerAliasIncomplete
 	}
+	var headerData [49]bit.Bit
+	bit.PutUint(headerData[:], header.TalkerAliasData)
 	stream := make([]bit.Bit, 0, 49+n*talkerAliasBlockBits)
 	if format == layer3.TalkerAliasSevenBit {
-		stream = append(stream, bit.Bit(0))
-		if header.TalkerAliasDataMSB {
-			stream[0] = 1
-		}
+		stream = append(stream, headerData[:]...)
+	} else {
+		stream = append(stream, headerData[1:]...)
 	}
-	stream = append(stream, header.TalkerAliasData[:]...)
 	for _, b := range blocks[:n] {
 		if b == nil {
 			return "", ErrTalkerAliasIncomplete
 		}
-		stream = append(stream, b.TalkerAliasData[:]...)
+		stream = append(stream, bit.Unpack(b.TalkerAliasData[:])...)
 	}
 	unit := talkerAliasUnitBits(format)
 	length := min(header.TalkerAliasDataLength, len(stream)/unit)
@@ -168,15 +168,17 @@ func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]Ful
 	}
 	header := &FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: len(units)}
 	if format == layer3.TalkerAliasSevenBit {
-		header.TalkerAliasDataMSB = stream[0] == 1
+		header.TalkerAliasData = bit.Uint(stream[:49])
 		stream = stream[1:]
+	} else {
+		header.TalkerAliasData = bit.Uint(stream[:48])
 	}
-	copy(header.TalkerAliasData[:], stream)
 	out := []FullLinkControl{{FLCO: enums.FLCOTalkerAliasHeader, FeatureSetID: enums.FIDStandardized, TalkerAliasHeader: header}}
 	opcodes := [talkerAliasMaxBlocks]enums.FLCO{enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3}
 	for i := range n {
 		block := &FLCTalkerAliasBlock{}
-		copy(block.TalkerAliasData[:], stream[48+i*talkerAliasBlockBits:])
+		start := 48 + i*talkerAliasBlockBits
+		copy(block.TalkerAliasData[:], bit.Pack(stream[start:start+talkerAliasBlockBits]))
 		out = append(out, FullLinkControl{FLCO: opcodes[i], FeatureSetID: enums.FIDStandardized, TalkerAliasBlock: block})
 	}
 	return out, nil

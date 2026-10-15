@@ -59,7 +59,7 @@ type FullLinkControl struct {
 // Motorola, 0x10) with these FLCOs, as MMDVMHost does. A manufacturer FID
 // may redefine the payload, so such addresses are a best effort. ok is false
 // for other FLCOs.
-func (f *FullLinkControl) Addresses() (target, source int, ok bool) {
+func (f *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 	if f.FLCO == enums.FLCOGroupVoiceChannelUser && f.GroupVoice != nil {
 		return f.GroupVoice.GroupAddress, f.GroupVoice.SourceAddress, true
 	}
@@ -69,7 +69,31 @@ func (f *FullLinkControl) Addresses() (target, source int, ok bool) {
 	if f.FLCO != enums.FLCOGroupVoiceChannelUser && f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
 		return 0, 0, false
 	}
-	return int(bit.Uint(f.RawPayload[8 : 8+24])), int(bit.Uint(f.RawPayload[32 : 32+24])), true
+	return uint32(bit.Uint(f.RawPayload[8:32])), uint32(bit.Uint(f.RawPayload[32:56])), true
+}
+
+// SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr
+// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC with the standard FID, creating its
+// payload when it is nil. It returns false for other FLCOs and FIDs.
+func (f *FullLinkControl) SetAddresses(target, source uint32) bool {
+	if f.FeatureSetID != enums.FIDStandardized {
+		return false
+	}
+	switch f.FLCO {
+	case enums.FLCOGroupVoiceChannelUser:
+		if f.GroupVoice == nil {
+			f.GroupVoice = &FLCGroupVoice{}
+		}
+		f.GroupVoice.GroupAddress, f.GroupVoice.SourceAddress = target, source
+	case enums.FLCOUnitToUnitVoiceChannelUser:
+		if f.UnitToUnit == nil {
+			f.UnitToUnit = &FLCUnitToUnit{}
+		}
+		f.UnitToUnit.TargetAddress, f.UnitToUnit.SourceAddress = target, source
+	default:
+		return false
+	}
+	return true
 }
 
 // FLC FLCO payload variants — these are the 56-bit payloads (infoBits[16:72])
@@ -78,20 +102,20 @@ func (f *FullLinkControl) Addresses() (target, source int, ok bool) {
 // ETSI TS 102 361-2 - Table 7.1: Grp_V_Ch_Usr PDU content
 type FLCGroupVoice struct {
 	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
-	GroupAddress   int                   `dmr:"bits:8-31"`
-	SourceAddress  int                   `dmr:"bits:32-55"`
+	GroupAddress   uint32                `dmr:"bits:8-31"`
+	SourceAddress  uint32                `dmr:"bits:32-55"`
 }
 
 // ETSI TS 102 361-2 - Table 7.2: UU_V_Ch_Usr PDU content
 type FLCUnitToUnit struct {
 	ServiceOptions layer3.ServiceOptions `dmr:"bits:0-7,delegate"`
-	TargetAddress  int                   `dmr:"bits:8-31"`
-	SourceAddress  int                   `dmr:"bits:32-55"`
+	TargetAddress  uint32                `dmr:"bits:8-31"`
+	SourceAddress  uint32                `dmr:"bits:32-55"`
 }
 
 // ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
 type FLCGPSInfo struct {
-	Reserved      [4]bit.Bit           `dmr:"bits:0-3,raw"`
+	Reserved      uint8                `dmr:"bits:0-3"`
 	PositionError layer3.PositionError `dmr:"bits:4-6,delegate,noptr"`
 	Longitude     float64              `dmr:"bits:7-31,type:longitude"`
 	Latitude      float64              `dmr:"bits:32-55,type:latitude"`
@@ -101,25 +125,27 @@ type FLCGPSInfo struct {
 type FLCTalkerAliasHeader struct {
 	TalkerAliasDataFormat layer3.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"`
 	TalkerAliasDataLength int                          `dmr:"bits:2-6"`
-	TalkerAliasDataMSB    bool                         `dmr:"bit:7"`
-	TalkerAliasData       [48]bit.Bit                  `dmr:"bits:8-55,raw"`
+	// TalkerAliasData is the 49-bit Talker alias data IE. The 7-bit format
+	// uses all 49 bits; the other formats leave the most significant bit
+	// unused.
+	TalkerAliasData uint64 `dmr:"bits:7-55"`
 }
 
 // ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
 type FLCTalkerAliasBlock struct {
-	TalkerAliasData [56]bit.Bit `dmr:"bits:0-55,raw"`
+	TalkerAliasData [7]byte `dmr:"bits:0-55,packed"`
 }
 
 // ETSI TS 102 361-3 - Table 7.1: Terminator Data Link Control PDU content
 type FLCTerminatorDataLinkControl struct {
-	LLIDDestination    int   `dmr:"bits:0-23"`
-	LLIDSource         int   `dmr:"bits:24-47"`
-	GroupOrIndividual  bool  `dmr:"bit:48"`
-	ResponseRequested  bool  `dmr:"bit:49"`
-	FullMessageFlag    bool  `dmr:"bit:50"`
-	Reserved           bool  `dmr:"bit:51"`
-	ReSynchronizeFlag  bool  `dmr:"bit:52"`
-	SendSequenceNumber uint8 `dmr:"bits:53-55"`
+	LLIDDestination    uint32 `dmr:"bits:0-23"`
+	LLIDSource         uint32 `dmr:"bits:24-47"`
+	GroupOrIndividual  bool   `dmr:"bit:48"`
+	ResponseRequested  bool   `dmr:"bit:49"`
+	FullMessageFlag    bool   `dmr:"bit:50"`
+	Reserved           bool   `dmr:"bit:51"`
+	ReSynchronizeFlag  bool   `dmr:"bit:52"`
+	SendSequenceNumber uint8  `dmr:"bits:53-55"`
 }
 
 // DataType returns BurstDataType.

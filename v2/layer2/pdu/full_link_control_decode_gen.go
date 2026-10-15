@@ -251,8 +251,8 @@ func DecodeFLCGroupVoice(data [56]bit.Bit) (FLCGroupVoice, fec.Result) {
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions, _ = layer3.DecodeServiceOptions(_serviceOptionsBits)
-	result.GroupAddress = int(bit.Uint(data[8:32]))
-	result.SourceAddress = int(bit.Uint(data[32:56]))
+	result.GroupAddress = uint32(bit.Uint(data[8:32]))
+	result.SourceAddress = uint32(bit.Uint(data[32:56]))
 	return result, fecResult
 }
 
@@ -287,8 +287,8 @@ func DecodeFLCUnitToUnit(data [56]bit.Bit) (FLCUnitToUnit, fec.Result) {
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
 	result.ServiceOptions, _ = layer3.DecodeServiceOptions(_serviceOptionsBits)
-	result.TargetAddress = int(bit.Uint(data[8:32]))
-	result.SourceAddress = int(bit.Uint(data[32:56]))
+	result.TargetAddress = uint32(bit.Uint(data[8:32]))
+	result.SourceAddress = uint32(bit.Uint(data[32:56]))
 	return result, fecResult
 }
 
@@ -320,7 +320,7 @@ func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.Result) {
 	var result FLCGPSInfo
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	copy(result.Reserved[:], data[0:4])
+	result.Reserved = uint8(bit.Uint(data[0:4]))
 	result.PositionError = layer3.PositionError(bit.Uint(data[4:7]))
 	result.Longitude = float64(int32(uint32(bit.Uint(data[7:32]))<<7)>>7) * 360.0 / (1 << 25)
 	result.Latitude = float64(int32(uint32(bit.Uint(data[32:56]))<<8)>>8) * 180.0 / (1 << 24)
@@ -330,7 +330,10 @@ func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.Result) {
 // Encode encodes a FLCGPSInfo per ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
 func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
 	var data [56]bit.Bit
-	copy(data[0:4], s.Reserved[:])
+	if uint64(s.Reserved)>>4 != 0 {
+		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Reserved: value %d does not fit in 4 bits", s.Reserved)
+	}
+	bit.PutUint(data[0:4], uint64(s.Reserved))
 	if uint64(s.PositionError)>>3 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.PositionError: value %d does not fit in 3 bits", s.PositionError)
 	}
@@ -350,7 +353,7 @@ func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
 }
 
 func (s *FLCGPSInfo) String() string {
-	return fmt.Sprintf("FLCGPSInfo{ Reserved: %v, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, s.PositionError, s.Longitude, s.Latitude)
+	return fmt.Sprintf("FLCGPSInfo{ Reserved: %d, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, s.PositionError, s.Longitude, s.Latitude)
 }
 
 // DecodeFLCTalkerAliasHeader decodes a FLCTalkerAliasHeader per ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
@@ -360,8 +363,7 @@ func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.Res
 	var fecResult fec.Result
 	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(bit.Uint(data[0:2]))
 	result.TalkerAliasDataLength = int(bit.Uint(data[2:7]))
-	result.TalkerAliasDataMSB = data[7] == 1
-	copy(result.TalkerAliasData[:], data[8:56])
+	result.TalkerAliasData = bit.Uint(data[7:56])
 	return result, fecResult
 }
 
@@ -376,15 +378,15 @@ func (s *FLCTalkerAliasHeader) Encode() ([56]bit.Bit, error) {
 		return [56]bit.Bit{}, fmt.Errorf("FLCTalkerAliasHeader.TalkerAliasDataLength: value %d does not fit in 5 bits", s.TalkerAliasDataLength)
 	}
 	bit.PutUint(data[2:7], uint64(s.TalkerAliasDataLength))
-	if s.TalkerAliasDataMSB {
-		data[7] = 1
+	if uint64(s.TalkerAliasData)>>49 != 0 {
+		return [56]bit.Bit{}, fmt.Errorf("FLCTalkerAliasHeader.TalkerAliasData: value %d does not fit in 49 bits", s.TalkerAliasData)
 	}
-	copy(data[8:56], s.TalkerAliasData[:])
+	bit.PutUint(data[7:56], s.TalkerAliasData)
 	return data, nil
 }
 
 func (s *FLCTalkerAliasHeader) String() string {
-	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasDataMSB: %t, TalkerAliasData: %v }", s.TalkerAliasDataFormat, s.TalkerAliasDataLength, s.TalkerAliasDataMSB, s.TalkerAliasData)
+	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasData: %d }", s.TalkerAliasDataFormat, s.TalkerAliasDataLength, s.TalkerAliasData)
 }
 
 // DecodeFLCTalkerAliasBlock decodes a FLCTalkerAliasBlock per ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
@@ -392,14 +394,14 @@ func DecodeFLCTalkerAliasBlock(data [56]bit.Bit) (FLCTalkerAliasBlock, fec.Resul
 	var result FLCTalkerAliasBlock
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	copy(result.TalkerAliasData[:], data[0:56])
+	copy(result.TalkerAliasData[:], bit.Pack(data[0:56]))
 	return result, fecResult
 }
 
 // Encode encodes a FLCTalkerAliasBlock per ETSI TS 102 361-2 - Table 7.5: Talker Alias Blk PDU content
 func (s *FLCTalkerAliasBlock) Encode() ([56]bit.Bit, error) {
 	var data [56]bit.Bit
-	copy(data[0:56], s.TalkerAliasData[:])
+	copy(data[0:56], bit.Unpack(s.TalkerAliasData[:]))
 	return data, nil
 }
 
@@ -412,8 +414,8 @@ func DecodeFLCTerminatorDataLinkControl(data [56]bit.Bit) (FLCTerminatorDataLink
 	var result FLCTerminatorDataLinkControl
 	bit.Mask(data[:])
 	var fecResult fec.Result
-	result.LLIDDestination = int(bit.Uint(data[0:24]))
-	result.LLIDSource = int(bit.Uint(data[24:48]))
+	result.LLIDDestination = uint32(bit.Uint(data[0:24]))
+	result.LLIDSource = uint32(bit.Uint(data[24:48]))
 	result.GroupOrIndividual = data[48] == 1
 	result.ResponseRequested = data[49] == 1
 	result.FullMessageFlag = data[50] == 1

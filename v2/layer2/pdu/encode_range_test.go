@@ -23,8 +23,8 @@ func TestEncode_RejectsValuesWiderThanField(t *testing.T) {
 	_, err := (&pdu.FLCGroupVoice{GroupAddress: 1 << 24}).Encode()
 	expectEncodeError(t, err, "FLCGroupVoice.GroupAddress: value 16777216 does not fit in 24 bits")
 
-	_, err = (&pdu.FLCGroupVoice{SourceAddress: -1}).Encode()
-	expectEncodeError(t, err, "FLCGroupVoice.SourceAddress: value -1 does not fit in 24 bits")
+	_, err = (&pdu.FLCGroupVoice{SourceAddress: 0xFFFFFFFF}).Encode()
+	expectEncodeError(t, err, "FLCGroupVoice.SourceAddress: value 4294967295 does not fit in 24 bits")
 
 	_, err = (&pdu.SlotType{ColorCode: 16}).Encode()
 	expectEncodeError(t, err, "SlotType.ColorCode")

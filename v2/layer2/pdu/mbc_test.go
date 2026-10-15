@@ -88,16 +88,17 @@ func TestMBCHeader_Decode(t *testing.T) {
 	}
 
 	// Verify data bits
-	if hdr.Data[0] != 1 {
+	dataBits := bit.Unpack(hdr.Data[:])
+	if dataBits[0] != 1 {
 		t.Error("Data[0] should be 1")
 	}
-	if hdr.Data[10] != 1 {
+	if dataBits[10] != 1 {
 		t.Error("Data[10] should be 1")
 	}
-	if hdr.Data[63] != 1 {
+	if dataBits[63] != 1 {
 		t.Error("Data[63] should be 1")
 	}
-	if hdr.Data[1] != 0 {
+	if dataBits[1] != 0 {
 		t.Error("Data[1] should be 0")
 	}
 }
@@ -152,7 +153,7 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 				ProtectFlag: tt.pf,
 				CSBKOpcode:  pdu.CSBKOpcode(tt.opcode),
 				FID:         tt.fid,
-				Data:        data,
+				Data:        [8]byte(bit.Pack(data[:])),
 			}
 
 			encoded := must(orig.Encode())
@@ -173,10 +174,8 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 			if decoded.FID != orig.FID {
 				t.Errorf("FID = 0x%02X, want 0x%02X", decoded.FID, orig.FID)
 			}
-			for i := 0; i < 64; i++ {
-				if decoded.Data[i] != orig.Data[i] {
-					t.Errorf("Data[%d] = %d, want %d", i, decoded.Data[i], orig.Data[i])
-				}
+			if decoded.Data != orig.Data {
+				t.Errorf("Data = %x, want %x", decoded.Data, orig.Data)
 			}
 		})
 	}
@@ -189,9 +188,7 @@ func TestMBCHeader_EncodeStability(t *testing.T) {
 		CSBKOpcode:  pdu.CSBKPreamblePDU,
 		FID:         0x68,
 	}
-	for i := 0; i < 64; i += 2 {
-		orig.Data[i] = 1
-	}
+	orig.Data = [8]byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}
 
 	enc1 := must(orig.Encode())
 	dec1, _ := pdu.DecodeMBCHeader(enc1)
