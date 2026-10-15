@@ -19,6 +19,13 @@ const (
 	DataTypeReserved
 )
 
+// IsReserved reports whether dt is one of the reserved Data Type values
+// 1100 to 1111 (Table 9.22). The 4-bit Data Type field is kept raw, so
+// values 13 to 15 are reserved as well as DataTypeReserved.
+func (dt DataType) IsReserved() bool {
+	return dt >= DataTypeReserved && dt <= 0xF
+}
+
 func DataTypeToName(dt DataType) string {
 	switch dt {
 	case DataTypePIHeader:
@@ -48,6 +55,9 @@ func DataTypeToName(dt DataType) string {
 	case DataTypeReserved:
 		return "Reserved"
 	default:
+		if dt.IsReserved() {
+			return "Reserved"
+		}
 		return "Unknown"
 	}
 }

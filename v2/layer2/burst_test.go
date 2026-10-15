@@ -2,11 +2,37 @@ package layer2_test
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 )
+
+func TestBurst_ReservedDataTypes(t *testing.T) {
+	for dt := elements.DataTypeReserved; dt <= 0xF; dt++ {
+		t.Run(fmt.Sprintf("DataType%d", dt), func(t *testing.T) {
+			frame := layer2.BuildLCDataBurst([12]byte{}, dt, 1)
+			for _, trunking := range []bool{false, true} {
+				var burst layer2.Burst
+				burst.SetTrunkingMode(trunking)
+				if err := burst.DecodeFromBytes(frame); err == nil {
+					t.Fatalf("data type %d: expected error", dt)
+				}
+				if !burst.IsData || burst.SlotType.DataType != dt {
+					t.Fatalf("data type %d: got IsData=%v DataType=%d", dt, burst.IsData, burst.SlotType.DataType)
+				}
+				if burst.Data != nil {
+					t.Errorf("data type %d: expected nil Data", dt)
+				}
+				if got := burst.Encode(); got != frame {
+					t.Errorf("data type %d: encode mismatch\ngot  %x\nwant %x", dt, got, frame)
+				}
+			}
+		})
+	}
+}
 
 func loadBursts(t testing.TB, path string) [][33]byte {
 	t.Helper()

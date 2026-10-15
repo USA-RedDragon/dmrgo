@@ -59,3 +59,15 @@ func TestDataType_Constants(t *testing.T) {
 		t.Errorf("DataTypeRate1 = %d, want 10", DataTypeRate1)
 	}
 }
+
+func TestDataType_IsReserved(t *testing.T) {
+	for dt := DataType(0); dt < 0x20; dt++ {
+		want := dt >= 12 && dt <= 15
+		if got := dt.IsReserved(); got != want {
+			t.Errorf("DataType(%d).IsReserved() = %v, want %v", dt, got, want)
+		}
+		if want && DataTypeToName(dt) != "Reserved" {
+			t.Errorf("DataTypeToName(%d) = %q, want Reserved", dt, DataTypeToName(dt))
+		}
+	}
+}

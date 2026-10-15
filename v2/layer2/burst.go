@@ -193,9 +193,11 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 		copy(b.deinterleavedInfoBits[:], decoded[:])
 		return len(decoded), result
 	case elements.DataTypeReserved:
-		panic(fmt.Sprintf("Unknown data type %v", dataType))
+		copy(b.deinterleavedInfoBits[:], bits[:])
+		return len(bits), fec.FECResult{}
 	default:
-		panic(fmt.Sprintf("Unhandled data type %v", dataType))
+		copy(b.deinterleavedInfoBits[:], bits[:])
+		return len(bits), fec.FECResult{}
 	}
 }
 
@@ -227,8 +229,11 @@ func (b *Burst) ToString() string {
 }
 
 func (b *Burst) extractData() (elements.Data, error) {
-	if !b.HasSlotType || b.SlotType.DataType == elements.DataTypeReserved {
+	if !b.HasSlotType {
 		return nil, fmt.Errorf("burst does not have valid slot type for data extraction")
+	}
+	if b.SlotType.DataType.IsReserved() {
+		return nil, fmt.Errorf("reserved data type %d", b.SlotType.DataType)
 	}
 
 	dt := b.SlotType.DataType
@@ -407,9 +412,9 @@ func (b *Burst) encodeDataBits() [196]bit.Bit {
 		copy(infoBits[:], b.deinterleavedInfoBits[:96])
 		return bptc.Encode(infoBits)
 	case elements.DataTypeReserved:
-		panic(fmt.Sprintf("cannot encode reserved data type %v", b.SlotType.DataType))
+		return b.deinterleavedInfoBits
 	default:
-		panic(fmt.Sprintf("unhandled data type %v", b.SlotType.DataType))
+		return b.deinterleavedInfoBits
 	}
 }
 
@@ -480,28 +485,7 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 	copy(bitData[98:108], slotTypeBits[:10])
 	copy(bitData[156:166], slotTypeBits[10:20])
 
-	// SYNC pattern: use BS-sourced data or MS-sourced data
-	var syncPattern enums.SyncPattern
-	switch dataType {
-	case elements.DataTypeVoiceLCHeader:
-		syncPattern = enums.BsSourcedData
-	case elements.DataTypeTerminatorWithLC:
-		syncPattern = enums.BsSourcedData
-	case elements.DataTypePIHeader,
-		elements.DataTypeCSBK,
-		elements.DataTypeMBCHeader,
-		elements.DataTypeMBCContinuation,
-		elements.DataTypeDataHeader,
-		elements.DataTypeRate12,
-		elements.DataTypeRate34,
-		elements.DataTypeIdle,
-		elements.DataTypeRate1,
-		elements.DataTypeUnifiedSingleBlock,
-		elements.DataTypeReserved:
-		syncPattern = enums.BsSourcedData
-	}
-
-	syncVal := int64(syncPattern)
+	syncVal := int64(enums.BsSourcedData)
 	for i := 0; i < 48; i++ {
 		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}

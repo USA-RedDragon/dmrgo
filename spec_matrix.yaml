@@ -506,6 +506,11 @@ documents:
               - TestDataTypeToName_AllTypes
               - TestDataTypeToName_Unknown
               - TestDataType_Constants
+              - TestDataType_IsReserved
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestBurst_ReservedDataTypes
+              - FuzzBurstDecode
 
       - section: "9.3.10"
         title: "Protect Flag (PF)"
