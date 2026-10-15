@@ -1,8 +1,6 @@
 package bptc
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -41,16 +39,7 @@ func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, fec.FE
 		deinterleavedBits[i] = bits[dm[i]]
 	}
 
-	correctedBits, errors, uncorrectable := hamming_correct(deinterleavedBits)
-	result.ErrorsCorrected = errors
-	result.Uncorrectable = uncorrectable
-	if errors > 0 && !uncorrectable {
-		deinterleavedBits = correctedBits
-	}
-
-	if uncorrectable {
-		fmt.Printf("BPTC uncorrectable error\n")
-	}
+	deinterleavedBits, result.ErrorsCorrected, result.Uncorrectable = hamming_correct(deinterleavedBits)
 
 	// Extract data bits
 	for i, k = 4, 0; i <= 11; i, k = i+1, k+1 {
@@ -65,56 +54,29 @@ func (b *BPTC19696) DeinterleaveDataBits(bits [196]bit.Bit) ([96]bit.Bit, fec.FE
 	return temp, result
 }
 
+// hamming_correct iteratively corrects the BPTC(196,96) grid with the row
+// Hamming(15,11,3) and column Hamming(13,9,3) codes. The four column parity
+// rows are also row codewords, because the column code is applied to all 15
+// columns, so all 13 rows are row-decoded. It returns the corrected grid, the
+// number of bits that differ from the input, and whether any row or column
+// syndrome is still nonzero after correction.
 func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
-	var row [15]bit.Bit
-	var col [13]bit.Bit
-	totalErrors := 0
-	uncorrectable := false
 	corrected := bits
 
-	// columns first, then rows, up to 5 passes.
 	for pass := 0; pass < 5; pass++ {
 		fixing := false
 
-		// Run through each of the 15 columns (Hamming 13,9,3)
-		for c := 0; c < 15; c++ {
-			pos := c + 1
-			for a := 0; a < 13; a++ {
-				col[a] = corrected[pos]
-				pos += 15
-			}
-
-			s := calculate_syndrome_13_9(col)
-			if s != 0 {
-				bitPos := hamming13_9_syndrome_table[s]
-				if bitPos != -1 {
-					idx := (c + 1) + (bitPos * 15)
-					corrected[idx] ^= 1 //nolint:gosec // idx bounded: c∈[0,14], bitPos∈[0,12], max idx=195 < 196
-					totalErrors++
-					fixing = true
-				} else {
-					uncorrectable = true
-				}
+		for r := 0; r < 13; r++ {
+			if bitPos := hamming15_11_syndrome_table[rowSyndrome(&corrected, r)]; bitPos != -1 {
+				corrected[r*15+1+bitPos] ^= 1 //nolint:gosec // r∈[0,12], bitPos∈[0,14], max idx=195 < 196
+				fixing = true
 			}
 		}
 
-		// Run through each of the 9 rows containing data (Hamming 15,11,3)
-		for r := 0; r < 9; r++ {
-			k := r*15 + 1
-			for a := 0; a < 15; a++ {
-				row[a] = corrected[k+a]
-			}
-
-			s := calculate_syndrome_15_11(row)
-			if s != 0 {
-				bitPos := hamming15_11_syndrome_table[s]
-				if bitPos != -1 {
-					corrected[k+bitPos] ^= 1 //nolint:gosec // k+bitPos bounded: k=r*15+1 (r∈[0,8]), bitPos∈[0,14], max=135 < 196
-					totalErrors++
-					fixing = true
-				} else {
-					uncorrectable = true
-				}
+		for c := 0; c < 15; c++ {
+			if bitPos := hamming13_9_syndrome_table[columnSyndrome(&corrected, c)]; bitPos != -1 {
+				corrected[(c+1)+(bitPos*15)] ^= 1 //nolint:gosec // c∈[0,14], bitPos∈[0,12], max idx=195 < 196
+				fixing = true
 			}
 		}
 
@@ -123,7 +85,34 @@ func hamming_correct(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
 		}
 	}
 
-	return corrected, totalErrors, uncorrectable
+	uncorrectable := false
+	for r := 0; r < 13 && !uncorrectable; r++ {
+		uncorrectable = rowSyndrome(&corrected, r) != 0
+	}
+	for c := 0; c < 15 && !uncorrectable; c++ {
+		uncorrectable = columnSyndrome(&corrected, c) != 0
+	}
+
+	flips := 0
+	for i := range corrected {
+		flips += int(corrected[i] ^ bits[i])
+	}
+
+	return corrected, flips, uncorrectable
+}
+
+func columnSyndrome(grid *[196]bit.Bit, c int) int {
+	var col [13]bit.Bit
+	for a := range col {
+		col[a] = grid[c+1+a*15]
+	}
+	return calculate_syndrome_13_9(col)
+}
+
+func rowSyndrome(grid *[196]bit.Bit, r int) int {
+	var row [15]bit.Bit
+	copy(row[:], grid[r*15+1:r*15+16])
+	return calculate_syndrome_15_11(row)
 }
 
 // Encode encodes 96 data bits using BPTC(196,96) interleaving with Hamming FEC.
