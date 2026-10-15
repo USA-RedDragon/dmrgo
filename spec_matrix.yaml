@@ -1054,6 +1054,7 @@ documents:
               - TestCRCMask_TableB21
               - TestFullLCCodeword_MatchesTableB18
               - TestFullLCCodeword_RealCapture
+              - TestTypedLCCodewords
               - TestFullLCCodeword_RejectsOtherDataTypes
               - TestDecodeFullLCCodeword_CorrectsAndStrictRejects
               - TestSealBlock_MatchesGeneratedEncoders
