@@ -164,3 +164,22 @@ func TestCalMeasuresCarrier(t *testing.T) {
 		t.Errorf("offset %.1f Hz, want -1234", off)
 	}
 }
+
+func TestSteadySymbolsHoldSpecDeviation(t *testing.T) {
+	for _, tc := range []struct {
+		fill byte
+		want float64
+	}{{0x55, 1944}, {0x00, 648}, {0xAA, -648}, {0xFF, -1944}} {
+		var b [33]byte
+		for i := range b {
+			b[i] = tc.fill
+		}
+		fm, _ := Modulate([][33]byte{b}, Schedule{Slot: 0})
+		mid := int((slotSeconds/2 - 0.005) * basebandRate)
+		for i := mid; i < mid+int(0.01*basebandRate); i++ {
+			if math.Abs(fm[i]-tc.want) > 0.01*math.Abs(tc.want) {
+				t.Fatalf("fill %#x: %.1f Hz at sample %d, want %.0f", tc.fill, fm[i], i, tc.want)
+			}
+		}
+	}
+}
