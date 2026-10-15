@@ -21,6 +21,7 @@ import (
 	"errors"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
@@ -30,7 +31,7 @@ const Name = "codec2"
 // DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2
 // calls. It is in the range ETSI TS 102 361-1 Table 9.21 reserves for future
 // MFID allocation (1xxxxxxx), so it is self-assigned, not allocated by ETSI.
-const DefaultFID uint8 = 0xC2
+const DefaultFID enums.FeatureSetID = 0xC2
 
 // FrameSamples is the number of 8 kHz PCM samples in one Codec2 frame.
 const FrameSamples = 160
@@ -51,7 +52,7 @@ type Config struct {
 	// FID is the Feature set ID to send in the Full LC. Zero selects
 	// DefaultFID. FID 0 is the ETSI feature set, which repeaters treat as
 	// AMBE, so it cannot be selected.
-	FID uint8
+	FID enums.FeatureSetID
 }
 
 var (

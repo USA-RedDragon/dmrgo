@@ -25,7 +25,7 @@ func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
 	lc := pdu.FullLinkControl{
 		DataType:     enums.DataTypeVoiceLCHeader,
 		FLCO:         enums.FLCOGroupVoiceChannelUser,
-		FeatureSetID: enums.FeatureSetID(c.FID()),
+		FeatureSetID: c.FID(),
 		RawPayload:   payload,
 	}
 	tx, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, c.Silence())
@@ -47,10 +47,10 @@ func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
 	return append(bursts, out...)
 }
 
-func checkLC(t *testing.T, where string, lc *pdu.FullLinkControl, fid uint8) {
+func checkLC(t *testing.T, where string, lc *pdu.FullLinkControl, fid enums.FeatureSetID) {
 	t.Helper()
-	if uint8(lc.FeatureSetID) != fid {
-		t.Errorf("%s: FID %#02x, want %#02x", where, uint8(lc.FeatureSetID), fid)
+	if lc.FeatureSetID != fid {
+		t.Errorf("%s: FID %#02x, want %#02x", where, uint8(lc.FeatureSetID), uint8(fid))
 	}
 	target, source, ok := lc.Addresses()
 	if !ok || target != burstTestGroup || source != burstTestSource {

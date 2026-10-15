@@ -2,7 +2,10 @@
 
 package codec2
 
-import "github.com/USA-RedDragon/dmrgo/v2/bit"
+import (
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+)
 
 // Codec is a Codec2 vocoder.Codec. This build has no libcodec2, so New
 // always returns ErrUnavailable and every method reports ErrUnavailable.
@@ -20,7 +23,7 @@ func (c *Codec) FrameSamples() int { return FrameSamples }
 func (c *Codec) Mode() Mode { return 0 }
 
 // FID returns zero.
-func (c *Codec) FID() uint8 { return 0 }
+func (c *Codec) FID() enums.FeatureSetID { return 0 }
 
 // Silence returns all-zero bits.
 func (c *Codec) Silence() [72]bit.Bit { return [72]bit.Bit{} }

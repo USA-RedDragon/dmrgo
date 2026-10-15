@@ -15,6 +15,7 @@ import (
 	"unsafe"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
 // libMu serializes libcodec2 calls. The decoder draws from a process-wide
@@ -34,7 +35,7 @@ var libMu sync.Mutex
 type Codec struct {
 	enc, dec *C.struct_CODEC2
 	mode     Mode
-	fid      uint8
+	fid      enums.FeatureSetID
 	nbytes   int
 	silence  [72]bit.Bit
 	cleanup  runtime.Cleanup
@@ -120,7 +121,7 @@ func (c *Codec) FrameSamples() int { return FrameSamples }
 func (c *Codec) Mode() Mode { return c.mode }
 
 // FID returns the configured Feature set ID.
-func (c *Codec) FID() uint8 { return c.fid }
+func (c *Codec) FID() enums.FeatureSetID { return c.fid }
 
 // Silence returns 20 ms of digital silence encoded with a fresh encoder
 // state in the configured mode.

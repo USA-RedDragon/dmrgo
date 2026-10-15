@@ -3,10 +3,12 @@ package vocoder
 import (
 	"errors"
 	"fmt"
+	"io"
 	"slices"
 	"sync"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
 // ErrUnknownCodec is returned by New when no codec is registered under the name.
@@ -20,9 +22,16 @@ var ErrUnknownCodec = errors.New("vocoder: unknown codec")
 // vocoder needs is the implementation's job.
 //
 // Implementations are not safe for concurrent use unless their documentation
-// says otherwise. An implementation that holds resources should also implement
-// io.Closer.
+// says otherwise. Close releases the resources of the codec; a codec that
+// holds none returns nil.
+//
+// The method set is frozen for v2: a later feature is an optional interface
+// that a caller detects with a type assertion, so existing codecs keep
+// compiling. A decoder that can report frame quality, for example, would
+// implement an additional QualityDecoder interface.
 type Codec interface {
+	io.Closer
+
 	// FrameSamples returns the number of PCM samples in one frame.
 	FrameSamples() int
 	// Encode encodes exactly FrameSamples samples into one 72-bit frame.
@@ -33,8 +42,10 @@ type Codec interface {
 	// burst of a call.
 	Silence() [72]bit.Bit
 	// FID returns the Feature set ID to send in the Full LC of calls that use
-	// this codec.
-	FID() uint8
+	// this codec. It is advisory: the FID does not identify the vocoder
+	// (ETSI TS 102 361-1 Table 9.21 NOTE), so a receiver selects the codec by
+	// name, agreed out of band, not by FID.
+	FID() enums.FeatureSetID
 }
 
 //nolint:gochecknoglobals // codec registry, like database/sql drivers
