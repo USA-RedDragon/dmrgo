@@ -25,6 +25,11 @@ import (
 // DataTypeVoiceLCHeader or DataTypeTerminatorWithLC, the only data types
 // that carry an RS-protected Full LC. DecodeFullLinkControl applies no mask
 // for other data types.
+//
+// FEC is the RS(12,9) result and ErrorsCorrected counts the corrected
+// errors. MMDVMHost accepts a Full LC only when the RS(12,9) parity matches
+// without correction; a caller that must match it rejects an LC with
+// FEC.ErrorsCorrected > 0 (see layer2.MMDVMHostAccepts).
 type FullLinkControl struct {
 	DataType     layer2Elements.DataType `dmr:"-"`
 	ProtectFlag  bool                    `dmr:"bit:0"`

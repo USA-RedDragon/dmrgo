@@ -976,6 +976,7 @@ documents:
         source_files:
           - v2/crc/crc_ccitt.go
           - v2/layer2/pdu/full_link_control.go
+          - v2/layer2/mmdvmhost.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/crc
             names:
@@ -996,6 +997,9 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBurst_FullLCCapturesUseDataTypeMask
+              - TestMMDVMHostAccepts_Vectors
+              - TestMMDVMHostAccepts_UncheckedDataTypes
+              - TestMMDVMHostAccepts_MBCContinuation
 
       - section: "B.3.13"
         title: "7-bit CRC calculation"
