@@ -4,19 +4,19 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 var (
-	// ErrEmbeddedLCSequence is returned by VoiceReceiver.Receive when a
-	// burst does not continue the partial embedded LC, which is discarded.
+	// ErrEmbeddedLCSequence is returned by VoiceReceiver.Receive and
+	// EmbeddedLCAssembler.Add when a burst does not continue the partial
+	// embedded LC, which is discarded.
 	ErrEmbeddedLCSequence = errors.New("embedded LC fragment out of sequence")
-	// ErrEmbeddedLCUncorrectable is returned by VoiceReceiver.Receive when
-	// the embedded LC of bursts B to E fails its FEC or its checksum. It
-	// wraps fec.ErrUncorrectable.
+	// ErrEmbeddedLCUncorrectable is returned by VoiceReceiver.Receive and
+	// EmbeddedLCAssembler.Add when the embedded LC of bursts B to E fails
+	// its FEC or its checksum. It wraps fec.ErrUncorrectable.
 	ErrEmbeddedLCUncorrectable = fmt.Errorf("embedded LC: %w", fec.ErrUncorrectable)
 )
 
@@ -27,13 +27,12 @@ var (
 // their position. The zero VoiceReceiver is ready to use. A VoiceReceiver
 // is not safe for concurrent use.
 type VoiceReceiver struct {
-	// Strict selects DecodeEmbeddedFullLinkControlStrict for the embedded
+	// Strict selects the strict decode of DecodeEmbeddedLC for the embedded
 	// LC. Reset keeps it.
 	Strict bool
 
-	position  enums.VoiceBurstType
-	fragments [4][32]bit.Bit
-	count     int
+	position enums.VoiceBurstType
+	lc       EmbeddedLCAssembler
 }
 
 // Reset forgets the superframe position and any partial embedded LC.
@@ -57,16 +56,14 @@ func (r *VoiceReceiver) Reset() {
 //
 // When burst E completes the fragments of bursts B to E, Receive returns
 // the embedded LC as DecodeEmbeddedFullLinkControl decodes it with ok set,
-// or that LC with ErrEmbeddedLCUncorrectable. It returns ErrEmbeddedLCSequence when a burst
-// discards a partial embedded LC. A burst with an uncorrectable EMB takes
-// the position after the previous burst and keeps its fragment for the BPTC
-// and checksum to check. Receive expects every burst of the logical channel
-// in order; a lost burst inside a superframe can shift the position of the
-// bursts after it until the next burst A, B or E.
-//
-// With Strict set, Receive decodes the embedded LC with
-// DecodeEmbeddedFullLinkControlStrict, which accepts the same LCs as
-// MMDVMHost.
+// or that LC with ErrEmbeddedLCUncorrectable. It returns
+// ErrEmbeddedLCSequence when a burst discards a partial embedded LC. A
+// burst with an uncorrectable EMB takes the position after the previous
+// burst and keeps its fragment for the BPTC and checksum to check. Receive
+// expects every burst of the logical channel in order; a lost burst inside
+// a superframe can shift the position of the bursts after it until the next
+// burst A, B or E. Receive collects the fragments with an
+// EmbeddedLCAssembler, with the LCSS of the burst position.
 func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err error) {
 	switch {
 	case b.Kind == KindReverseChannel:
@@ -74,42 +71,27 @@ func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err 
 		return lc, false, nil
 	case b.Kind != KindVoice || !b.HasEmbeddedSignalling() && !isVoiceSync(b.SyncPattern):
 		b.VoiceBurst = enums.VoiceBurstUnknown
-		err = r.discard()
+		err = r.lc.discard()
 		r.Reset()
 		return lc, false, err
 	case !b.HasEmbeddedSignalling():
 		b.VoiceBurst = enums.VoiceBurstA
 		r.position = enums.VoiceBurstA
-		return lc, false, r.discard()
+		return lc, false, r.lc.discard()
 	}
 
 	r.position = r.embeddedPosition(b)
 	b.VoiceBurst = r.position
-	switch {
-	case r.position == enums.VoiceBurstB:
-		err = r.discard()
-		r.fragments[0] = b.EmbeddedSignallingData
-		r.count = 1
+	lcss, ok := r.position.LCSS()
+	if !ok || r.position == enums.VoiceBurstF {
+		return lc, false, r.lc.discard()
+	}
+	r.lc.Strict = r.Strict
+	bits, res, done, err := r.lc.add(b.EmbeddedSignallingData, lcss)
+	if !done {
 		return lc, false, err
-	case r.position < enums.VoiceBurstC || r.position > enums.VoiceBurstE,
-		r.count != int(r.position-enums.VoiceBurstB):
-		return lc, false, r.discard()
 	}
-	r.fragments[r.count] = b.EmbeddedSignallingData
-	r.count++
-	if r.position != enums.VoiceBurstE {
-		return lc, false, nil
-	}
-	r.count = 0
-	decode := func(f [4][32]bit.Bit) pdu.FullLinkControl {
-		return embeddedFullLinkControl(decodeEmbeddedLC(f))
-	}
-	if r.Strict {
-		decode = func(f [4][32]bit.Bit) pdu.FullLinkControl {
-			return embeddedFullLinkControl(decodeEmbeddedLCStrict(f))
-		}
-	}
-	lc = decode(r.fragments)
+	lc = embeddedFullLinkControl(bits, res)
 	if lc.FEC.Uncorrectable {
 		return lc, false, ErrEmbeddedLCUncorrectable
 	}
@@ -139,12 +121,4 @@ func (r *VoiceReceiver) embeddedPosition(b *Burst) enums.VoiceBurstType {
 		}
 	}
 	return enums.VoiceBurstUnknown
-}
-
-func (r *VoiceReceiver) discard() error {
-	if r.count == 0 {
-		return nil
-	}
-	r.count = 0
-	return ErrEmbeddedLCSequence
 }
