@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -34,10 +33,6 @@ const (
 	// response data blocks.
 	ResponseSACK Response = 0b10_000
 )
-
-// ErrResponseData is returned for C_RDATA blocks of the wrong count or with
-// a bad CRC.
-var ErrResponseData = errors.New("invalid response data blocks")
 
 // NewResponseCode returns the Response of a Class and Type.
 func NewResponseCode(class, typ uint8) Response {

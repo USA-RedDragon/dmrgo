@@ -17,15 +17,6 @@ const (
 	talkerAliasMaxBlocks = 3
 )
 
-var (
-	// ErrTalkerAliasIncomplete is returned when the blocks that the header
-	// length calls for have not all been received.
-	ErrTalkerAliasIncomplete = errors.New("talker alias blocks missing")
-	// ErrTalkerAliasLength is returned when an alias does not fit in a
-	// header and three blocks.
-	ErrTalkerAliasLength = errors.New("talker alias too long")
-)
-
 func talkerAliasUnitBits(format layer3.TalkerAliasDataFormat) int {
 	switch format {
 	case layer3.TalkerAliasSevenBit:
