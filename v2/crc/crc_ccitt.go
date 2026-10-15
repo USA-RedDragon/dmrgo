@@ -23,6 +23,5 @@ func CheckCRCCCITT(data []byte) bool {
 
 	crc := CalculateCRCCCITT(data[:len(data)-2])
 
-	// MMDVM compares: crc8[0] == in[length-1] && crc8[1] == in[length-2]
-	return byte(crc) == data[len(data)-1] && byte(crc>>8) == data[len(data)-2]
+	return crc == uint16(data[len(data)-2])<<8|uint16(data[len(data)-1])
 }
