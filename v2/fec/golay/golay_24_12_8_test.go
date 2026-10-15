@@ -133,3 +133,20 @@ func TestEncodeGolay24128ExtendsGolay23127(t *testing.T) {
 		}
 	}
 }
+
+func TestDecodeGolayWideInput(t *testing.T) {
+	cw24 := EncodeGolay24128(0x5A5)
+	for _, high := range []uint32{1 << 24, 1 << 28, 1 << 30, 1 << 31} {
+		data, res := DecodeGolay24128(cw24 | high)
+		if data != 0x5A5 || res.ErrorsCorrected != 0 || !res.Uncorrectable || res.BitsChecked != 24 {
+			t.Errorf("Golay(24,12) %08x: data %03x result %+v, want data 5a5 with only Uncorrectable", cw24|high, data, res)
+		}
+	}
+	cw23 := cw24 >> 1
+	for _, high := range []uint32{1 << 23, 1 << 30} {
+		data, res := DecodeGolay23127(cw23 | high)
+		if data != 0x5A5 || res.ErrorsCorrected != 0 || !res.Uncorrectable || res.BitsChecked != 23 {
+			t.Errorf("Golay(23,12) %08x: data %03x result %+v, want data 5a5 with only Uncorrectable", cw23|high, data, res)
+		}
+	}
+}

@@ -36,8 +36,17 @@ func EncodeGolay23127(data uint16) uint32 {
 // A word with 4 or more bit errors decodes to the wrong data and reports
 // ErrorsCorrected of at most 3, so a caller that must detect such words
 // needs ErrorsCorrected or a check outside this code.
+//
+// A received word with bits set above bit 22 is not a 23-bit word: the
+// decoder ignores those bits and sets Uncorrectable.
 func DecodeGolay23127(received uint32) (data uint16, result fec.FECResult) {
 	result.BitsChecked = 23
+	if received>>23 != 0 {
+		received &= 1<<23 - 1
+		data, result = DecodeGolay23127(received)
+		result.Uncorrectable = true
+		return data, result
+	}
 
 	// Compute the 11-bit syndrome via polynomial division
 	syndrome := golay23ComputeSyndrome(received)
