@@ -24,8 +24,8 @@ import (
 	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeUnconfirmedDataHeader decodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
-func DecodeUnconfirmedDataHeader(data [80]bit.Bit) UnconfirmedDataHeader {
+// decodeUnconfirmedDataHeader decodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
+func decodeUnconfirmedDataHeader(data [80]bit.Bit) UnconfirmedDataHeader {
 	var result UnconfirmedDataHeader
 	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
@@ -169,30 +169,30 @@ func DecodeDataHeader(data [96]bit.Bit) DataHeader {
 	copy(_dispatchBits[:], data[0:80])
 	switch result.Format {
 	case FormatUnconfirmed:
-		_decoded := DecodeUnconfirmedDataHeader(_dispatchBits)
+		_decoded := decodeUnconfirmedDataHeader(_dispatchBits)
 		result.UnconfirmedDataHeader = &_decoded
 	case FormatConfirmed:
-		_decoded := DecodeConfirmedDataHeader(_dispatchBits)
+		_decoded := decodeConfirmedDataHeader(_dispatchBits)
 		result.ConfirmedDataHeader = &_decoded
 	case FormatResponsePacket:
-		_decoded := DecodeResponsePacketHeader(_dispatchBits)
+		_decoded := decodeResponsePacketHeader(_dispatchBits)
 		result.ResponsePacketHeader = &_decoded
 	case FormatShortDataDefined:
-		_decoded := DecodeDefinedDataHeader(_dispatchBits)
+		_decoded := decodeDefinedDataHeader(_dispatchBits)
 		result.DefinedDataHeader = &_decoded
 	case FormatShortDataRawOrStatusPrecoded:
 		if result.AppendedBlocks == 0 {
-			_decoded := DecodeStatusPrecodedHeader(_dispatchBits)
+			_decoded := decodeStatusPrecodedHeader(_dispatchBits)
 			result.StatusPrecodedHeader = &_decoded
 		} else {
-			_decoded := DecodeRawDataHeader(_dispatchBits)
+			_decoded := decodeRawDataHeader(_dispatchBits)
 			result.RawDataHeader = &_decoded
 		}
 	case FormatUnifiedDataTransport:
-		_decoded := DecodeUDTHeader(_dispatchBits)
+		_decoded := decodeUDTHeader(_dispatchBits)
 		result.UDTHeader = &_decoded
 	case FormatProprietary:
-		_decoded := DecodeProprietaryHeader(_dispatchBits)
+		_decoded := decodeProprietaryHeader(_dispatchBits)
 		result.ProprietaryHeader = &_decoded
 	default:
 		for _i := range 80 {
@@ -381,8 +381,8 @@ func (s *DataHeader) String() string {
 	return _ret
 }
 
-// DecodeConfirmedDataHeader decodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
-func DecodeConfirmedDataHeader(data [80]bit.Bit) ConfirmedDataHeader {
+// decodeConfirmedDataHeader decodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
+func decodeConfirmedDataHeader(data [80]bit.Bit) ConfirmedDataHeader {
 	var result ConfirmedDataHeader
 	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
@@ -505,8 +505,8 @@ func (s *ConfirmedDataHeader) String() string {
 	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
 }
 
-// DecodeResponsePacketHeader decodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
-func DecodeResponsePacketHeader(data [80]bit.Bit) ResponsePacketHeader {
+// decodeResponsePacketHeader decodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
+func decodeResponsePacketHeader(data [80]bit.Bit) ResponsePacketHeader {
 	var result ResponsePacketHeader
 	lowbit.Mask(data[:])
 	result.Reserved = data[0] == 1
@@ -635,8 +635,8 @@ func (s *ResponsePacketHeader) String() string {
 	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %d, SAP: %d, Reserved3: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
 }
 
-// DecodeDefinedDataHeader decodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
-func DecodeDefinedDataHeader(data [80]bit.Bit) DefinedDataHeader {
+// decodeDefinedDataHeader decodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
+func decodeDefinedDataHeader(data [80]bit.Bit) DefinedDataHeader {
 	var result DefinedDataHeader
 	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
@@ -737,8 +737,8 @@ func (s *DefinedDataHeader) String() string {
 	return fmt.Sprintf("DefinedDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, DefinedData: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.DefinedData, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
 
-// DecodeRawDataHeader decodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
-func DecodeRawDataHeader(data [80]bit.Bit) RawDataHeader {
+// decodeRawDataHeader decodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
+func decodeRawDataHeader(data [80]bit.Bit) RawDataHeader {
 	var result RawDataHeader
 	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
@@ -849,8 +849,8 @@ func (s *RawDataHeader) String() string {
 	return fmt.Sprintf("RawDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
 
-// DecodeStatusPrecodedHeader decodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
-func DecodeStatusPrecodedHeader(data [80]bit.Bit) StatusPrecodedHeader {
+// decodeStatusPrecodedHeader decodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
+func decodeStatusPrecodedHeader(data [80]bit.Bit) StatusPrecodedHeader {
 	var result StatusPrecodedHeader
 	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
@@ -948,8 +948,8 @@ func (s *StatusPrecodedHeader) String() string {
 	return fmt.Sprintf("StatusPrecodedHeader{ Group: %t, ResponseRequested: %t, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, StatusPrecoded: %d }", s.Group, s.ResponseRequested, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.StatusPrecoded)
 }
 
-// DecodeUDTHeader decodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
-func DecodeUDTHeader(data [80]bit.Bit) UDTHeader {
+// decodeUDTHeader decodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
+func decodeUDTHeader(data [80]bit.Bit) UDTHeader {
 	var result UDTHeader
 	lowbit.Mask(data[:])
 	result.Group = data[0] == 1
@@ -1074,8 +1074,8 @@ func (s *UDTHeader) String() string {
 	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
 }
 
-// DecodeProprietaryHeader decodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
-func DecodeProprietaryHeader(data [80]bit.Bit) ProprietaryHeader {
+// decodeProprietaryHeader decodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
+func decodeProprietaryHeader(data [80]bit.Bit) ProprietaryHeader {
 	var result ProprietaryHeader
 	lowbit.Mask(data[:])
 	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[0:4]))
