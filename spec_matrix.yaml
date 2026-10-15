@@ -543,6 +543,8 @@ documents:
         title: "Feature set ID (FID)"
         source_files:
           - v2/enums/feature_set_id.go
+          - v2/layer2/pdu/full_link_control.go
+          - v2/layer2/pdu/csbk.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
@@ -551,6 +553,13 @@ documents:
               - TestFeatureSetIDFromInt_ValidValues
               - TestFeatureSetIDFromInt_InvalidValue
               - TestFeatureSetIDFromInt_RoundTrip
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestCSBK_ManufacturerFIDKeepsRawPayload
+              - TestCSBK_UnknownOpcodeKeepsRawPayload
+              - TestCSBK_StandardFIDDoesNotFillRawPayload
+              - TestFLC_ManufacturerFIDKeepsRawPayload
+              - TestFLC_UnknownFLCOKeepsRawValues
 
       - section: "9.3.6"
         title: "Data Type"
@@ -905,6 +914,7 @@ documents:
         title: "Data Type CRC Mask"
         source_files:
           - v2/crc/crc_ccitt.go
+          - v2/layer2/pdu/full_link_control.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/crc
             names:
@@ -916,6 +926,13 @@ documents:
               - TestPIHeader_CRCMask
               - TestRate34Data_Confirmed_CRC9Layout
               - TestRate1Data_Confirmed_CRC9Layout
+              - TestFLC_DataTypeMaskAppliedToParity
+              - TestFLC_DecodeRealVoiceLCHeader
+              - TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails
+              - TestFLC_EncodeRealVoiceLCHeader
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestBurst_FullLCCapturesUseDataTypeMask
 
       - section: "B.3.13"
         title: "7-bit CRC calculation"
@@ -1086,7 +1103,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFLCGPSInfo_CoordinatesRoundTrip
 
       - section: "7.1.1.4"
         title: "Talker Alias header LC PDU"
@@ -1321,7 +1338,10 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFLCGPSInfo_CoordinatesRoundTrip
+              - TestFLCGPSInfo_DecodeTwosComplement
+              - TestFLCGPSInfo_EncodeTwosComplement
+              - TestEncode_RejectsCoordinatesOutOfRange
 
       - section: "7.2.17"
         title: "Latitude"
@@ -1330,7 +1350,10 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestFullLinkControl_GroupVoice_EncodeDecodeCycle
+              - TestFLCGPSInfo_CoordinatesRoundTrip
+              - TestFLCGPSInfo_DecodeTwosComplement
+              - TestFLCGPSInfo_EncodeTwosComplement
+              - TestEncode_RejectsCoordinatesOutOfRange
 
       - section: "7.2.18"
         title: "Talker Alias Data Format"
@@ -1594,6 +1617,9 @@ documents:
               - TestCSBK_TierIII_OpcodeToString
               - TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound
               - TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestBurst_TrunkingModeSelectsOpcode0x38Variant
 
       - section: "5.3"
         title: "Modes of Control Channel"
