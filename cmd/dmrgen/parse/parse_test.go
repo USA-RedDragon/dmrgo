@@ -1,6 +1,8 @@
 package parse_test
 
 import (
+	"io/fs"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -450,6 +452,24 @@ type T struct {
 			want: "unrecognized bit specifier",
 		},
 		{
+			name: "uncovered bits",
+			src: `type T struct {
+	A uint8 ` + "`dmr:\"bits:0-3\"`" + `
+	B bool  ` + "`dmr:\"bit:5\"`" + `
+	C uint8 ` + "`dmr:\"bits:9-10\"`" + `
+}`,
+			want: "uncovered bits 4,6-8: add a field, the CRC or a dmr:const",
+		},
+		{
+			name: "uncovered bits before the CRC",
+			src: `// dmr:crc crc_8
+// dmr:input_size 16
+type T struct {
+	A uint8 ` + "`dmr:\"bits:0-6\"`" + `
+}`,
+			want: "uncovered bits 7:",
+		},
+		{
 			name: "const without value",
 			src: `// dmr:const 0-3
 type T struct {
@@ -515,6 +535,7 @@ type T struct {
 	LB       bool   `+"`dmr:\"bit:0\"`"+`
 	Op       Opcode `+"`dmr:\"bits:2-7\"`"+`
 	Split    uint8  `+"`dmr:\"bits:1+8-11\"`"+`
+	Rsvd     uint8  `+"`dmr:\"bits:12-15\"`"+`
 	A        *Sub   `+"`dmr:\"bits:16-79,dispatch:Op=1|2\"`"+`
 }`)
 	if len(pdus) != 1 {
@@ -550,6 +571,7 @@ type T struct {
 func TestParseInputSizeDefaultsToFieldRange(t *testing.T) {
 	pdus := mustParse(t, `type T struct {
 	A uint8 `+"`dmr:\"bits:0-6\"`"+`
+	R uint8 `+"`dmr:\"bits:7-8\"`"+`
 	B bool  `+"`dmr:\"bit:9\"`"+`
 }`)
 	if pdus[0].InputSize != 10 {
@@ -748,6 +770,35 @@ type T struct {
 }`)
 	if pdus[0].SpecRef != "ETSI TS 102 361-1 - 9.1.6 first" {
 		t.Errorf("SpecRef = %q", pdus[0].SpecRef)
+	}
+}
+
+// TestParseV2Sources parses every tagged struct of the v2 module, so that a
+// tag error such as an uncovered bit fails here as well as in go generate.
+func TestParseV2Sources(t *testing.T) {
+	root := filepath.Join("..", "..", "..", "v2")
+	structs := 0
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		name := d.Name()
+		if d.IsDir() || !strings.HasSuffix(name, ".go") ||
+			strings.HasSuffix(name, "_test.go") || strings.HasSuffix(name, "_gen.go") {
+			return nil
+		}
+		pdus, err := parse.ParseFile(path)
+		if err != nil {
+			t.Errorf("%s: %v", path, err)
+		}
+		structs += len(pdus)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if structs == 0 {
+		t.Fatal("found no tagged structs")
 	}
 }
 

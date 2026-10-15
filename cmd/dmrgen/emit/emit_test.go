@@ -59,6 +59,7 @@ func assertContains(t *testing.T, out string, want ...string) {
 func TestNoPtrDelegateUsesWidthOfRange(t *testing.T) {
 	out := mustGenerate(t, `type Wide uint16
 type T struct {
+	R uint8 `+"`dmr:\"bits:0-1\"`"+`
 	A Wide `+"`dmr:\"bits:2-13,delegate,noptr\"`"+`
 }`)
 	assertContains(t, out,
@@ -120,7 +121,7 @@ func TestGuardedDispatch(t *testing.T) {
 }
 type T struct {
 	Op uint8 `+"`dmr:\"bits:0-7\"`"+`
-	K  uint8 `+"`dmr:\"bits:8-9\"`"+`
+	K  uint8 `+"`dmr:\"bits:8-15\"`"+`
 	A  *Sub  `+"`dmr:\"bits:16-23,dispatch:Op=1,when:K==0\"`"+`
 	B  *Sub  `+"`dmr:\"bits:16-23,dispatch:Op=1\"`"+`
 }`)

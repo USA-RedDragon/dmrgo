@@ -819,6 +819,9 @@ func validateStruct(pdu *PDUStruct, maxBit int) error {
 	if err := checkCRCRange(pdu); err != nil {
 		return err
 	}
+	if err := checkCoverage(pdu); err != nil {
+		return err
+	}
 	if pdu.FECMask != nil {
 		if !pdu.IsInput(pdu.FECMask.Field) {
 			return fmt.Errorf("dmr:fec_mask field %q must be a dmr:input, since FEC runs before field decode", pdu.FECMask.Field)
@@ -924,6 +927,53 @@ func checkOverlap(pdu *PDUStruct) error {
 				owner[b] = "dmr:const"
 			}
 		}
+	}
+	return nil
+}
+
+// checkCoverage verifies that a field, the CRC or a dmr:const covers every
+// input bit, so that decode then encode keeps every bit.
+func checkCoverage(pdu *PDUStruct) error {
+	covered := make([]bool, pdu.InputSize)
+	mark := func(r [2]int) {
+		for b := r[0]; b <= r[1]; b++ {
+			covered[b] = true
+		}
+	}
+	for _, f := range pdu.Fields {
+		if f.Skip {
+			continue
+		}
+		for _, r := range f.Ranges() {
+			mark(r)
+		}
+	}
+	for _, c := range pdu.Consts {
+		for _, r := range c.Ranges {
+			mark(r)
+		}
+	}
+	if pdu.CRC != nil {
+		mark([2]int{pdu.InputSize - CRCWidths[pdu.CRC.Algorithm], pdu.InputSize - 1})
+	}
+	var gaps []string
+	for b := 0; b < len(covered); b++ {
+		if covered[b] {
+			continue
+		}
+		e := b
+		for e+1 < len(covered) && !covered[e+1] {
+			e++
+		}
+		if e == b {
+			gaps = append(gaps, strconv.Itoa(b))
+		} else {
+			gaps = append(gaps, fmt.Sprintf("%d-%d", b, e))
+		}
+		b = e
+	}
+	if len(gaps) > 0 {
+		return fmt.Errorf("uncovered bits %s: add a field, the CRC or a dmr:const", strings.Join(gaps, ","))
 	}
 	return nil
 }
