@@ -3,7 +3,7 @@ package enums
 import "fmt"
 
 // AnnouncementType represents the 5-bit announcement type in a C_BCAST PDU.
-// ETSI TS 102 361-4 — §7.1.1.1.4, Table 7.19
+// ETSI TS 102 361-4 — §7.2.19, Table 7.68
 type AnnouncementType int
 
 const (
@@ -15,6 +15,9 @@ const (
 	AnnouncementChanFreq      AnnouncementType = 0b00101
 	AnnouncementAdjacentSite  AnnouncementType = 0b00110
 	AnnouncementGenSiteParams AnnouncementType = 0b00111
+
+	AnnouncementManufacturerSpecific1 AnnouncementType = 0b11110
+	AnnouncementManufacturerSpecific2 AnnouncementType = 0b11111
 )
 
 func AnnouncementTypeToName(a AnnouncementType) string {
@@ -28,13 +31,15 @@ func AnnouncementTypeToName(a AnnouncementType) string {
 	case AnnouncementLocalTime:
 		return "Local_Time"
 	case AnnouncementMassReg:
-		return "Mass_Reg"
+		return "MassReg"
 	case AnnouncementChanFreq:
 		return "Chan_Freq"
 	case AnnouncementAdjacentSite:
 		return "Adjacent_Site"
 	case AnnouncementGenSiteParams:
 		return "Gen_Site_Params"
+	case AnnouncementManufacturerSpecific1, AnnouncementManufacturerSpecific2:
+		return manufacturerSpecificName
 	default:
 		return fmt.Sprintf("Reserved AnnouncementType(%d)", int(a))
 	}

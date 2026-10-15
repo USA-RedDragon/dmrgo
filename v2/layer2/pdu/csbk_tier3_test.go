@@ -737,10 +737,12 @@ func TestAnnouncementType_ToName(t *testing.T) {
 		{enums.AnnouncementCallTimer, "CallTimer_Parms"},
 		{enums.AnnouncementVoteNow, "Vote_Now"},
 		{enums.AnnouncementLocalTime, "Local_Time"},
-		{enums.AnnouncementMassReg, "Mass_Reg"},
+		{enums.AnnouncementMassReg, "MassReg"},
 		{enums.AnnouncementChanFreq, "Chan_Freq"},
 		{enums.AnnouncementAdjacentSite, "Adjacent_Site"},
 		{enums.AnnouncementGenSiteParams, "Gen_Site_Params"},
+		{enums.AnnouncementManufacturerSpecific1, "Manufacturer Specific"},
+		{enums.AnnouncementManufacturerSpecific2, "Manufacturer Specific"},
 	}
 	for _, tt := range tests {
 		if got := enums.AnnouncementTypeToName(tt.at); got != tt.want {

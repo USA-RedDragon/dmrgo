@@ -301,7 +301,9 @@ type AlohaPDU struct {
 	MSAddress    [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.4 C_BCAST PDU (two-level dispatch on AnnouncementType)
+// ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
+// BroadcastParms1 and BroadcastParms2 are not decoded further; their layout
+// depends on AnnouncementType (TS 102 361-4 §7.2.19, Tables 7.69 onward).
 type CBroadcastPDU struct {
 	AnnouncementType enums.AnnouncementType `dmr:"bits:0-4,enum"`
 	BroadcastParms1  [14]bit.Bit            `dmr:"bits:5-18,raw"`

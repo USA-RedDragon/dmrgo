@@ -18,7 +18,7 @@ ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
 ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
 ETSI TS 102 361-4 §7.1.1.1.2 C_MOVE PDU
 ETSI TS 102 361-4 §7.1.1.1.3 C_ALOHA PDU
-ETSI TS 102 361-4 §7.1.1.1.4 C_BCAST PDU (two-level dispatch on AnnouncementType)
+ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
 ETSI TS 102 361-4 §7.1.1.1.5 P_CLEAR PDU
 ETSI TS 102 361-4 §7.1.1.1.5 P_PROTECT PDU
 ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / P_AHOY PDU
@@ -667,7 +667,7 @@ func (s *AlohaPDU) ToString() string {
 	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %v }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
 }
 
-// DecodeCBroadcastPDU decodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.4 C_BCAST PDU (two-level dispatch on AnnouncementType)
+// DecodeCBroadcastPDU decodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
 func DecodeCBroadcastPDU(data [64]bit.Bit) (CBroadcastPDU, fec.FECResult) {
 	var result CBroadcastPDU
 	var fecResult fec.FECResult
@@ -680,7 +680,7 @@ func DecodeCBroadcastPDU(data [64]bit.Bit) (CBroadcastPDU, fec.FECResult) {
 	return result, fecResult
 }
 
-// EncodeCBroadcastPDU encodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.4 C_BCAST PDU (two-level dispatch on AnnouncementType)
+// EncodeCBroadcastPDU encodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
 func EncodeCBroadcastPDU(s *CBroadcastPDU) [64]bit.Bit {
 	var data [64]bit.Bit
 	copy(data[0:5], bit.BitsFromUint8(uint8(s.AnnouncementType), 5))
