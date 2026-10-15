@@ -15,6 +15,8 @@ import (
 // Annex E), the form NewBurstFromBytes takes. Its methods read or write one
 // field in place and leave every other bit as it is. They do not classify
 // the burst: the caller knows, or decides, which fields the burst carries.
+// The getters have value receivers, so they work on a conversion such as
+// RawBurst(p).EmbeddedData(); the setters have pointer receivers.
 //
 // A data burst carries the slot type and one of the BPTCPayload,
 // Rate34Payload or Rate1Payload forms around a SYNC pattern; its slot type
@@ -26,7 +28,7 @@ import (
 // at offsets that differ from EMB and EmbeddedData.
 type RawBurst [33]byte
 
-func (r *RawBurst) readBits(dst []bit.Bit, start int) {
+func (r RawBurst) readBits(dst []bit.Bit, start int) {
 	for i := range dst {
 		p := start + i
 		dst[i] = bit.Bit(r[p/8] >> (7 - p%8) & 1)
@@ -47,7 +49,7 @@ func (r *RawBurst) writeBits(src []bit.Bit, start int) {
 
 // Sync returns the Table 9.2 SYNC pattern nearest to burst bits 108 to 155
 // and its Hamming distance, as enums.NearestSyncPattern does.
-func (r *RawBurst) Sync() (enums.SyncPattern, int) {
+func (r RawBurst) Sync() (enums.SyncPattern, int) {
 	var bits [48]bit.Bit
 	r.readBits(bits[:], syncStart)
 	var s [6]byte
@@ -69,7 +71,7 @@ func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 
 // SlotType decodes the Golay(20,8) slot type in burst bits 98 to 107 and
 // 156 to 165.
-func (r *RawBurst) SlotType() (pdu.SlotType, fec.Result) {
+func (r RawBurst) SlotType() (pdu.SlotType, fec.Result) {
 	var bits [20]bit.Bit
 	r.readBits(bits[:10], slotTypeFirstStart)
 	r.readBits(bits[10:], slotTypeSecondStart)
@@ -88,7 +90,7 @@ func (r *RawBurst) SetSlotType(st pdu.SlotType) error {
 	return nil
 }
 
-func (r *RawBurst) info() [196]bit.Bit {
+func (r RawBurst) info() [196]bit.Bit {
 	var bits [196]bit.Bit
 	r.readBits(bits[:98], infoFirstStart)
 	r.readBits(bits[98:], infoSecondStart)
@@ -106,7 +108,7 @@ func (r *RawBurst) setInfo(bits [196]bit.Bit) {
 // is the same for every data type that uses it, so the result does not
 // depend on the slot type, but it is meaningful only for those data types:
 // a Rate 3/4 or Rate 1 burst needs Rate34Payload or Rate1Payload.
-func (r *RawBurst) BPTCPayload() ([12]byte, fec.Result) {
+func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 	bits, res := bptc.Decode196(r.info())
 	return bit.Pack96(bits), res
 }
@@ -122,7 +124,7 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 // Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis
 // code (§B.1.1) and returns the 144 data bits packed most significant bit
 // first.
-func (r *RawBurst) Rate34Payload() ([18]byte, fec.Result) {
+func (r RawBurst) Rate34Payload() ([18]byte, fec.Result) {
 	bits, res := trellis.Decode(r.info())
 	var p [18]byte
 	copy(p[:], bit.Pack(bits[:]))
@@ -139,7 +141,7 @@ func (r *RawBurst) SetRate34Payload(p [18]byte) {
 // Rate1Payload returns the 192 uncoded data bits of a Rate 1 burst (Table
 // B.10B) packed most significant bit first: information bits 0 to 95 and
 // 100 to 195. Rate 1 has no FEC.
-func (r *RawBurst) Rate1Payload() [24]byte {
+func (r RawBurst) Rate1Payload() [24]byte {
 	info := r.info()
 	var bits [192]bit.Bit
 	copy(bits[:96], info[:96])
@@ -159,7 +161,7 @@ func (r *RawBurst) SetRate1Payload(p [24]byte) {
 
 // EMB decodes the QR(16,7) embedded signalling in burst bits 108 to 115 and
 // 148 to 155 of a voice burst B to F.
-func (r *RawBurst) EMB() (pdu.EmbeddedSignalling, fec.Result) {
+func (r RawBurst) EMB() (pdu.EmbeddedSignalling, fec.Result) {
 	return r.emb(embFirstStart, embSecondStart)
 }
 
@@ -172,7 +174,7 @@ func (r *RawBurst) SetEMB(e pdu.EmbeddedSignalling) error {
 // EmbeddedData returns the 32-bit embedded signalling field, burst bits 116
 // to 147, of a voice burst B to F: an embedded LC fragment, a Null
 // embedded message or an outbound RC, still FEC coded.
-func (r *RawBurst) EmbeddedData() [4]byte {
+func (r RawBurst) EmbeddedData() [4]byte {
 	return r.word32(embeddedDataStart, embeddedDataStart+16)
 }
 
@@ -183,7 +185,7 @@ func (r *RawBurst) SetEmbeddedData(d [4]byte) {
 
 // StandaloneRCEMB decodes the EMB of a standalone inbound RC burst (§6.4.1,
 // Figure 6.7), burst bits 84 to 91 and 172 to 179.
-func (r *RawBurst) StandaloneRCEMB() (pdu.EmbeddedSignalling, fec.Result) {
+func (r RawBurst) StandaloneRCEMB() (pdu.EmbeddedSignalling, fec.Result) {
 	return r.emb(rcembFirstStart, rcembSecondStart)
 }
 
@@ -195,7 +197,7 @@ func (r *RawBurst) SetStandaloneRCEMB(e pdu.EmbeddedSignalling) error {
 // StandaloneRCData returns the 32 FEC coded RC bits of a standalone RC
 // burst, burst bits 92 to 107 and 156 to 171, in the order that
 // DecodeEmbeddedRC takes.
-func (r *RawBurst) StandaloneRCData() [4]byte {
+func (r RawBurst) StandaloneRCData() [4]byte {
 	return r.word32(rcDataFirstStart, rcDataSecondStart)
 }
 
@@ -204,7 +206,7 @@ func (r *RawBurst) SetStandaloneRCData(d [4]byte) {
 	r.setWord32(d, rcDataFirstStart, rcDataSecondStart)
 }
 
-func (r *RawBurst) emb(first, second int) (pdu.EmbeddedSignalling, fec.Result) {
+func (r RawBurst) emb(first, second int) (pdu.EmbeddedSignalling, fec.Result) {
 	var bits [16]bit.Bit
 	r.readBits(bits[:8], first)
 	r.readBits(bits[8:], second)
@@ -221,7 +223,7 @@ func (r *RawBurst) setEMB(e pdu.EmbeddedSignalling, first, second int) error {
 	return nil
 }
 
-func (r *RawBurst) word32(first, second int) [4]byte {
+func (r RawBurst) word32(first, second int) [4]byte {
 	var bits [32]bit.Bit
 	r.readBits(bits[:16], first)
 	r.readBits(bits[16:], second)
@@ -240,7 +242,7 @@ func (r *RawBurst) setWord32(d [4]byte, first, second int) {
 // they are on air, before any FEC, as Burst.VoiceSlots does: slot i is
 // voice bits 72i to 72i+71, where voice bits 0 to 107 are burst bits 0 to
 // 107 and voice bits 108 to 215 are burst bits 156 to 263.
-func (r *RawBurst) VoiceSlots() [VoiceSlotsPerBurst][9]byte {
+func (r RawBurst) VoiceSlots() [VoiceSlotsPerBurst][9]byte {
 	var voice [216]bit.Bit
 	r.readBits(voice[:108], 0)
 	r.readBits(voice[108:], syncEnd)

@@ -119,6 +119,30 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 	t.Logf("checked %v", counts)
 }
 
+func TestRawBurst_GettersOnValue(t *testing.T) {
+	for _, frame := range captureFrames(t) {
+		r := layer2.RawBurst(frame)
+		p1, d1 := layer2.RawBurst(frame).Sync()
+		p2, d2 := r.Sync()
+		st1, _ := layer2.RawBurst(frame).SlotType()
+		st2, _ := r.SlotType()
+		bp1, _ := layer2.RawBurst(frame).BPTCPayload()
+		bp2, _ := r.BPTCPayload()
+		e1, _ := layer2.RawBurst(frame).EMB()
+		e2, _ := r.EMB()
+		if p1 != p2 || d1 != d2 || st1 != st2 || bp1 != bp2 || e1 != e2 ||
+			layer2.RawBurst(frame).EmbeddedData() != r.EmbeddedData() ||
+			layer2.RawBurst(frame).VoiceSlots() != r.VoiceSlots() ||
+			layer2.RawBurst(frame).Rate1Payload() != r.Rate1Payload() ||
+			layer2.RawBurst(frame).StandaloneRCData() != r.StandaloneRCData() {
+			t.Errorf("%x: getters on a value differ from getters on a variable", frame)
+		}
+		if r != layer2.RawBurst(frame) {
+			t.Errorf("%x: getters changed the burst", frame)
+		}
+	}
+}
+
 func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 	for _, frame := range captureFrames(t) {
 		r := layer2.RawBurst(frame)
