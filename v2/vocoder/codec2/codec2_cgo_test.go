@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -187,8 +188,32 @@ func TestClose(t *testing.T) {
 	if _, err := c.Encode(make([]int16, FrameSamples)); !errors.Is(err, ErrClosed) {
 		t.Errorf("Encode after Close error = %v", err)
 	}
-	if _, err := c.Decode([72]bit.Bit{}); !errors.Is(err, ErrClosed) {
-		t.Errorf("Decode after Close error = %v", err)
+	if pcm, err := c.Decode([72]bit.Bit{}); pcm != nil || !errors.Is(err, ErrClosed) {
+		t.Errorf("Decode after Close = %v, %v", pcm, err)
+	}
+	dst := []int16{1, 2}
+	if got, err := c.AppendDecode(dst, [72]bit.Bit{}); len(got) != len(dst) || !errors.Is(err, ErrClosed) {
+		t.Errorf("AppendDecode after Close = %v, %v", got, err)
+	}
+}
+
+func TestAppendDecode(t *testing.T) {
+	t.Parallel()
+
+	c := newCodec(t, Config{})
+	slot, err := c.Encode(voiced(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := c.AppendDecode([]int16{7, 8}, slot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2+FrameSamples || got[0] != 7 || got[1] != 8 {
+		t.Fatalf("AppendDecode = %d samples, prefix %v", len(got), got[:2])
+	}
+	if !slices.ContainsFunc(got[2:], func(s int16) bool { return s != 0 }) {
+		t.Error("AppendDecode of a voiced frame is all zero")
 	}
 }
 
@@ -312,8 +337,10 @@ func encodeBytes(t *testing.T, mode Mode, pcm []int16) []byte {
 	t.Helper()
 	slots := encodeAll(t, newCodec(t, Config{Mode: mode}), pcm)
 	out := make([]byte, 0, len(slots)*mode.frameBytes())
+	frame := make([]byte, mode.frameBytes())
 	for _, slot := range slots {
-		out = append(out, unpackSlot(slot, mode.frameBytes())...)
+		unpackSlot(frame, slot)
+		out = append(out, frame...)
 	}
 	return out
 }

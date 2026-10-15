@@ -11,6 +11,7 @@ import "C"
 import (
 	"fmt"
 	"runtime"
+	"slices"
 	"sync"
 	"unsafe"
 
@@ -34,6 +35,7 @@ type Codec struct {
 	fid      enums.FeatureSetID
 	nbytes   int
 	silence  [72]bit.Bit
+	frame    [72 / 8]byte
 	cleanup  runtime.Cleanup
 }
 
@@ -125,7 +127,8 @@ func (c *Codec) FID() enums.FeatureSetID { return c.fid }
 // state in the configured mode.
 func (c *Codec) Silence() [72]bit.Bit { return c.silence }
 
-// Encode encodes exactly FrameSamples samples into one 72-bit frame.
+// Encode encodes exactly FrameSamples samples into one 72-bit frame. It
+// does not allocate when pcm has FrameSamples samples.
 func (c *Codec) Encode(pcm []int16) ([72]bit.Bit, error) {
 	if c.enc == nil {
 		return [72]bit.Bit{}, ErrClosed
@@ -133,7 +136,7 @@ func (c *Codec) Encode(pcm []int16) ([72]bit.Bit, error) {
 	if len(pcm) != FrameSamples {
 		return [72]bit.Bit{}, fmt.Errorf("%w: got %d, want %d", ErrFrameLength, len(pcm), FrameSamples)
 	}
-	frame := make([]byte, c.nbytes)
+	frame := c.frame[:c.nbytes]
 	libMu.Lock()
 	C.codec2_encode(c.enc, (*C.uchar)(unsafe.Pointer(&frame[0])), (*C.short)(unsafe.Pointer(&pcm[0])))
 	libMu.Unlock()
@@ -147,13 +150,26 @@ func (c *Codec) Decode(slot [72]bit.Bit) ([]int16, error) {
 	if c.dec == nil {
 		return nil, ErrClosed
 	}
-	frame := unpackSlot(slot, c.nbytes)
-	pcm := make([]int16, FrameSamples)
+	return c.AppendDecode(make([]int16, 0, FrameSamples), slot)
+}
+
+// AppendDecode decodes one 72-bit frame as Decode does, appends the
+// FrameSamples samples to dst and returns the extended slice. It does not
+// allocate when dst has room for FrameSamples more samples. On error it
+// returns dst unchanged.
+func (c *Codec) AppendDecode(dst []int16, slot [72]bit.Bit) ([]int16, error) {
+	if c.dec == nil {
+		return dst, ErrClosed
+	}
+	frame := c.frame[:c.nbytes]
+	unpackSlot(frame, slot)
+	dst = slices.Grow(dst, FrameSamples)
+	pcm := dst[len(dst) : len(dst)+FrameSamples]
 	libMu.Lock()
 	C.codec2_decode(c.dec, (*C.short)(unsafe.Pointer(&pcm[0])), (*C.uchar)(unsafe.Pointer(&frame[0])))
 	libMu.Unlock()
 	runtime.KeepAlive(c)
-	return pcm, nil
+	return dst[:len(dst)+FrameSamples], nil
 }
 
 // Close frees the libcodec2 states. Later Encode and Decode calls return

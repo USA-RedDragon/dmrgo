@@ -34,5 +34,10 @@ func (c *Codec) Encode([]int16) ([72]bit.Bit, error) { return [72]bit.Bit{}, Err
 // Decode returns ErrUnavailable.
 func (c *Codec) Decode([72]bit.Bit) ([]int16, error) { return nil, ErrUnavailable }
 
+// AppendDecode returns dst and ErrUnavailable.
+func (c *Codec) AppendDecode(dst []int16, _ [72]bit.Bit) ([]int16, error) {
+	return dst, ErrUnavailable
+}
+
 // Close does nothing.
 func (c *Codec) Close() error { return nil }
