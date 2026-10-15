@@ -44,6 +44,9 @@ var bitFuncs = map[string]any{
 	"layer2/framer.Framer.Write": func(stream [1200]bit.Bit) []framer.Burst {
 		return framer.New(framer.Config{}).Write(stream[:]...)
 	},
+	"layer2/framer.Framer.AppendBursts": func(stream [1200]bit.Bit) []framer.Burst {
+		return framer.New(framer.Config{}).AppendBursts(nil, stream[:]...)
+	},
 	"layer2.ShortLCAssembler.AddFragment": func(payload [layer2.CACHPayloadBits]bit.Bit) (bool, error) {
 		var a layer2.ShortLCAssembler
 		return a.AddFragment(enums.LCSSFirstFragment, payload)

@@ -2,6 +2,7 @@ package framer
 
 import (
 	"math/bits"
+	"slices"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -149,7 +150,9 @@ type Framer struct {
 	channel int
 }
 
-// New returns a Framer with the given configuration.
+// New returns a Framer with the given configuration. It allocates the
+// stream buffer, which holds fewer than a CACH and a burst between writes,
+// with room for one more Period of bits.
 func New(cfg Config) *Framer {
 	if cfg.Threshold < 0 {
 		cfg.Threshold = layer2.DefaultSyncThreshold
@@ -165,6 +168,7 @@ func New(cfg Config) *Framer {
 		f.pre = layer2.CACHBits
 	}
 	f.search = f.pre + SyncOffset
+	f.buf = make([]bit.Bit, 0, f.pre+layer2.BurstBits+cfg.Period)
 	return f
 }
 
@@ -173,12 +177,24 @@ func (f *Framer) Locked() bool {
 	return f.locked
 }
 
-// Write adds bits to the stream and returns the bursts they complete.
+// Write adds bits to the stream and returns the bursts they complete, or nil
+// when they complete none.
 func (f *Framer) Write(stream ...bit.Bit) []Burst {
+	return f.AppendBursts(nil, stream...)
+}
+
+// AppendBursts adds bits to the stream as Write does, appends the bursts they
+// complete to dst and returns the extended slice. It does not allocate when
+// dst has room for the bursts and stream is no longer than Period or than an
+// earlier stream.
+func (f *Framer) AppendBursts(dst []Burst, stream ...bit.Bit) []Burst {
 	n := len(f.buf)
+	if cap(f.buf)-n < len(stream) {
+		// Fewer than f.pre+layer2.BurstBits bits stay in f.buf between calls.
+		f.buf = slices.Grow(f.buf, f.pre+layer2.BurstBits+len(stream))
+	}
 	f.buf = append(f.buf, stream...)
 	lowbit.Mask(f.buf[n:])
-	var out []Burst
 	for {
 		if !f.locked {
 			m, ok := Search(f.buf, f.search, f.cfg.Threshold)
@@ -191,10 +207,10 @@ func (f *Framer) Write(stream ...bit.Bit) []Burst {
 		if f.next+layer2.BurstBits > len(f.buf) {
 			break
 		}
-		out = append(out, f.cut())
+		dst = append(dst, f.cut())
 	}
 	f.trim()
-	return out
+	return dst
 }
 
 func (f *Framer) cut() Burst {

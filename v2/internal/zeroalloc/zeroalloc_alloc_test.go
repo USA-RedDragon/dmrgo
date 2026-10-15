@@ -24,6 +24,7 @@ func entries(t testing.TB) []entry {
 	return slices.Concat(
 		layer2Entries(t),
 		packetEntries(t),
+		framerEntries(t),
 	)
 }
 
