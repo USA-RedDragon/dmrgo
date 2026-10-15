@@ -8,6 +8,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -29,6 +30,13 @@ const (
 	FieldLongitude                  // bits:S-E,type:longitude → float64
 	FieldLatitude                   // bits:S-E,type:latitude → float64
 	FieldDispatch                   // bits:S-E,dispatch:Field=Val1|Val2 → pointer to sub-PDU
+)
+
+const (
+	typeBool    = "bool"
+	typeInt     = "int"
+	typeFloat64 = "float64"
+	typeInt64   = "int64"
 )
 
 // CRCWidths maps each supported CRC algorithm to its width in bits.
@@ -316,7 +324,7 @@ func parseDirective(pdu *PDUStruct, text string) error {
 		pdu.CRC.Algorithm = arg
 	case "dmr:crc_mask":
 		mask, err := parseHex(arg, 16)
-		if err != nil {
+		if err != nil || mask > math.MaxUint16 {
 			return fmt.Errorf("invalid dmr:crc_mask %q: %w", arg, err)
 		}
 		if pdu.CRC == nil {
@@ -358,27 +366,35 @@ func parseDirective(pdu *PDUStruct, text string) error {
 		if pdu.FECMask != nil {
 			return errors.New("duplicate dmr:fec_mask directive")
 		}
-		parts := strings.Fields(arg)
-		if len(parts) < 2 {
-			return fmt.Errorf("dmr:fec_mask needs a field and at least one Value=Mask pair: %q", arg)
-		}
-		dir := &FECMaskDirective{Field: parts[0]}
-		for _, p := range parts[1:] {
-			val, maskStr, ok := strings.Cut(p, "=")
-			if !ok || val == "" {
-				return fmt.Errorf("dmr:fec_mask entry %q is not Value=Mask", p)
-			}
-			mask, err := parseHex(maskStr, 64)
-			if err != nil {
-				return fmt.Errorf("dmr:fec_mask entry %q: %w", p, err)
-			}
-			dir.Masks = append(dir.Masks, FECMask{Value: val, Mask: mask})
+		dir, err := parseFECMask(arg)
+		if err != nil {
+			return err
 		}
 		pdu.FECMask = dir
 	default:
 		return fmt.Errorf("unknown directive %q", name)
 	}
 	return nil
+}
+
+func parseFECMask(arg string) (*FECMaskDirective, error) {
+	parts := strings.Fields(arg)
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("dmr:fec_mask needs a field and at least one Value=Mask pair: %q", arg)
+	}
+	dir := &FECMaskDirective{Field: parts[0]}
+	for _, p := range parts[1:] {
+		val, maskStr, ok := strings.Cut(p, "=")
+		if !ok || val == "" {
+			return nil, fmt.Errorf("dmr:fec_mask entry %q is not Value=Mask", p)
+		}
+		mask, err := parseHex(maskStr, 64)
+		if err != nil {
+			return nil, fmt.Errorf("dmr:fec_mask entry %q: %w", p, err)
+		}
+		dir.Masks = append(dir.Masks, FECMask{Value: val, Mask: mask})
+	}
+	return dir, nil
 }
 
 func parseHex(s string, bitSize int) (uint64, error) {
@@ -421,76 +437,14 @@ func parseTag(fieldName, tag, goType string, baseTypes map[string]string) (Field
 		return f, err
 	}
 
-	var hasSemType, hasFrom, hasErr bool
+	var seen modifierSet
 	for _, mod := range parts[1:] {
-		switch {
-		case mod == "enum":
-			f.Kind = FieldEnum
-		case mod == "raw":
-			f.Kind = FieldRaw
-		case mod == "delegate":
-			f.Kind = FieldDelegate
-		case mod == "packed":
-			f.Kind = FieldPacked
-		case mod == "signed":
-			f.Signed = true
-		case mod == "noptr":
-			f.DelegateNoPtr = true
-		case mod == "no_encode":
-			f.NoEncode = true
-		case mod == "fallback":
-			f.Fallback = true
-		case mod == "err":
-			hasErr = true
-			f.EnumReturnsErr = true
-		case strings.HasPrefix(mod, "type:"):
-			hasSemType = true
-			switch semType := strings.TrimPrefix(mod, "type:"); semType {
-			case "longitude":
-				f.Kind = FieldLongitude
-			case "latitude":
-				f.Kind = FieldLatitude
-			default:
-				return f, fmt.Errorf("unknown semantic type: %q", semType)
-			}
-		case strings.HasPrefix(mod, "from:"):
-			hasFrom = true
-			f.EnumFromInt = strings.TrimPrefix(mod, "from:")
-			if f.EnumFromInt == "" {
-				return f, errors.New("empty from: modifier")
-			}
-		case strings.HasPrefix(mod, "stride:"):
-			stride, err := strconv.Atoi(strings.TrimPrefix(mod, "stride:"))
-			if err != nil || stride <= 0 {
-				return f, fmt.Errorf("invalid stride: %q", mod)
-			}
-			f.Stride = stride
-		case strings.HasPrefix(mod, "dispatch:"):
-			f.Kind = FieldDispatch
-			dispatchSpec := strings.TrimPrefix(mod, "dispatch:")
-			name, values, ok := strings.Cut(dispatchSpec, "=")
-			if !ok || name == "" || values == "" {
-				return f, fmt.Errorf("dispatch modifier must be dispatch:Field=Value[|Value]: %q", mod)
-			}
-			f.DispatchFieldName = name
-			f.DispatchValues = strings.Split(values, "|")
-			for _, v := range f.DispatchValues {
-				if v == "" {
-					return f, fmt.Errorf("empty dispatch value in %q", mod)
-				}
-			}
-		case strings.HasPrefix(mod, "when:"):
-			g, err := parseGuard(strings.TrimPrefix(mod, "when:"))
-			if err != nil {
-				return f, fmt.Errorf("when modifier: %w", err)
-			}
-			f.When = g
-		default:
-			return f, fmt.Errorf("unrecognized modifier: %q", mod)
+		if err := applyModifier(&f, mod, &seen); err != nil {
+			return f, err
 		}
 	}
 
-	if (hasFrom || hasErr) && f.Kind != FieldEnum {
+	if (seen.from || seen.err) && f.Kind != FieldEnum {
 		return f, errors.New("from: and err modifiers require enum")
 	}
 	if f.Kind == FieldEnum && f.EnumFromInt == "" {
@@ -500,10 +454,95 @@ func parseTag(fieldName, tag, goType string, baseTypes map[string]string) (Field
 			f.EnumFromInt = f.TypeName + "FromInt"
 		}
 	}
-	if hasSemType && f.Signed {
+	if seen.semType && f.Signed {
 		return f, errors.New("type:latitude/longitude are already signed; drop the signed modifier")
 	}
 	return f, validateField(&f)
+}
+
+// modifierSet records modifiers whose validity depends on the final kind.
+type modifierSet struct {
+	semType, from, err bool
+}
+
+func applyModifier(f *Field, mod string, seen *modifierSet) error {
+	name, arg, hasArg := strings.Cut(mod, ":")
+	if !hasArg {
+		return applyFlag(f, mod, seen)
+	}
+	switch name {
+	case "type":
+		seen.semType = true
+		switch arg {
+		case "longitude":
+			f.Kind = FieldLongitude
+		case "latitude":
+			f.Kind = FieldLatitude
+		default:
+			return fmt.Errorf("unknown semantic type: %q", arg)
+		}
+	case "from":
+		seen.from = true
+		if arg == "" {
+			return errors.New("empty from: modifier")
+		}
+		f.EnumFromInt = arg
+	case "stride":
+		stride, err := strconv.Atoi(arg)
+		if err != nil || stride <= 0 {
+			return fmt.Errorf("invalid stride: %q", mod)
+		}
+		f.Stride = stride
+	case "dispatch":
+		f.Kind = FieldDispatch
+		field, values, ok := strings.Cut(arg, "=")
+		if !ok || field == "" || values == "" {
+			return fmt.Errorf("dispatch modifier must be dispatch:Field=Value[|Value]: %q", mod)
+		}
+		f.DispatchFieldName = field
+		f.DispatchValues = strings.Split(values, "|")
+		for _, v := range f.DispatchValues {
+			if v == "" {
+				return fmt.Errorf("empty dispatch value in %q", mod)
+			}
+		}
+	case "when":
+		g, err := parseGuard(arg)
+		if err != nil {
+			return fmt.Errorf("when modifier: %w", err)
+		}
+		f.When = g
+	default:
+		return fmt.Errorf("unrecognized modifier: %q", mod)
+	}
+	return nil
+}
+
+func applyFlag(f *Field, mod string, seen *modifierSet) error {
+	switch mod {
+	case "enum":
+		f.Kind = FieldEnum
+	case "raw":
+		f.Kind = FieldRaw
+	case "delegate":
+		f.Kind = FieldDelegate
+	case "packed":
+		f.Kind = FieldPacked
+	case "signed":
+		f.Signed = true
+	case "noptr":
+		f.DelegateNoPtr = true
+	case "no_encode":
+		f.NoEncode = true
+	case "fallback":
+		f.Fallback = true
+	case "err":
+		seen.err = true
+		f.EnumReturnsErr = true
+	default:
+		return fmt.Errorf("unrecognized modifier: %q", mod)
+	}
+	return nil
 }
 
 func parseBitSpec(f *Field, bitSpec string) error {
@@ -517,7 +556,7 @@ func parseBitSpec(f *Field, bitSpec string) error {
 		f.BitStart = idx
 		f.BitEnd = idx
 		f.BitWidth = 1
-		if f.GoType != "bool" {
+		if f.GoType != typeBool {
 			return fmt.Errorf("bit:N requires a bool field, got %s", f.GoType)
 		}
 	case strings.HasPrefix(bitSpec, "bits:"):
@@ -542,47 +581,26 @@ func parseBitSpec(f *Field, bitSpec string) error {
 }
 
 func validateField(f *Field) error {
+	if err := validateModifiers(f); err != nil {
+		return err
+	}
 	nonContiguous := len(f.ExtraBitRanges) > 0
+	if nonContiguous && !allowsNonContiguous(f) {
+		return fmt.Errorf("%s fields must be contiguous", kindName(f))
+	}
 	isArray := f.ArrayLen > 0
-
-	if f.DelegateNoPtr && f.Kind != FieldDelegate {
-		return errors.New("noptr requires delegate")
-	}
-	if f.Stride > 0 && f.Kind != FieldDelegate {
-		return errors.New("stride requires delegate")
-	}
-	if f.Fallback && f.Kind != FieldRaw {
-		return errors.New("fallback requires raw")
-	}
-	if f.When != nil && f.Kind != FieldDispatch {
-		return errors.New("when: requires dispatch")
-	}
-	if f.NoEncode && f.Kind == FieldDispatch {
-		return errors.New("no_encode is not valid on dispatch fields")
-	}
-	if f.Signed && (f.Kind != FieldInt || !isSignedBase(f.BaseType)) {
-		return fmt.Errorf("signed requires a signed integer field, got %s", f.GoType)
-	}
-	if f.Signed && f.BitWidth < 2 {
-		return errors.New("signed fields need at least 2 bits")
-	}
 
 	switch f.Kind {
 	case FieldUint, FieldInt, FieldEnum:
 		if isArray || f.IsPointer {
 			return fmt.Errorf("integer field cannot have type %s", f.GoType)
 		}
-		if err := checkIntWidth(f); err != nil {
-			return err
-		}
+		return checkIntWidth(f)
 	case FieldBool:
-		if f.BitWidth != 1 || nonContiguous {
+		if f.BitWidth != 1 {
 			return errors.New("bool fields must be a single bit")
 		}
 	case FieldRaw:
-		if nonContiguous {
-			return errors.New("raw fields must be contiguous")
-		}
 		if !isArray || f.GoType != fmt.Sprintf("[%d]bit.Bit", f.ArrayLen) {
 			return fmt.Errorf("raw field must be [N]bit.Bit, got %s", f.GoType)
 		}
@@ -590,9 +608,6 @@ func validateField(f *Field) error {
 			return fmt.Errorf("raw array length %d does not match range width %d", f.ArrayLen, f.BitWidth)
 		}
 	case FieldPacked:
-		if nonContiguous {
-			return errors.New("packed fields must be contiguous")
-		}
 		if !isArray || (f.GoType != fmt.Sprintf("[%d]byte", f.ArrayLen) && f.GoType != fmt.Sprintf("[%d]uint8", f.ArrayLen)) {
 			return fmt.Errorf("packed field must be [N]byte, got %s", f.GoType)
 		}
@@ -600,48 +615,94 @@ func validateField(f *Field) error {
 			return fmt.Errorf("packed array of %d bytes does not match range width %d", f.ArrayLen, f.BitWidth)
 		}
 	case FieldDelegate:
-		switch {
-		case f.Stride > 0:
-			if nonContiguous {
-				return errors.New("stride delegates must be contiguous")
-			}
-			if f.BitWidth%f.Stride != 0 {
-				return fmt.Errorf("stride %d does not divide range width %d", f.Stride, f.BitWidth)
-			}
-			if !isArray || f.ArrayLen != f.BitWidth/f.Stride {
-				return fmt.Errorf("stride delegate type %s does not hold %d elements", f.GoType, f.BitWidth/f.Stride)
-			}
-		case f.DelegateNoPtr:
-			if isArray || f.IsPointer {
-				return fmt.Errorf("noptr delegate cannot have type %s", f.GoType)
-			}
-			if err := checkIntWidth(f); err != nil {
-				return err
-			}
-		default:
-			if nonContiguous {
-				return errors.New("struct delegates must be contiguous")
-			}
-			if isArray || f.IsPointer {
-				return fmt.Errorf("struct delegate cannot have type %s", f.GoType)
-			}
-		}
+		return validateDelegate(f)
 	case FieldLongitude, FieldLatitude:
-		if nonContiguous {
-			return errors.New("latitude/longitude fields must be contiguous")
-		}
-		if f.GoType != "float64" {
+		if f.GoType != typeFloat64 {
 			return fmt.Errorf("latitude/longitude fields must be float64, got %s", f.GoType)
 		}
 		if f.BitWidth < 2 || f.BitWidth > 32 {
 			return fmt.Errorf("latitude/longitude width %d out of range 2-32", f.BitWidth)
 		}
 	case FieldDispatch:
-		if nonContiguous {
-			return errors.New("dispatch fields must be contiguous")
-		}
 		if !f.IsPointer {
 			return fmt.Errorf("dispatch field must be a pointer, got %s", f.GoType)
+		}
+	}
+	return nil
+}
+
+func validateModifiers(f *Field) error {
+	switch {
+	case f.DelegateNoPtr && f.Kind != FieldDelegate:
+		return errors.New("noptr requires delegate")
+	case f.Stride > 0 && f.Kind != FieldDelegate:
+		return errors.New("stride requires delegate")
+	case f.Fallback && f.Kind != FieldRaw:
+		return errors.New("fallback requires raw")
+	case f.When != nil && f.Kind != FieldDispatch:
+		return errors.New("when: requires dispatch")
+	case f.NoEncode && f.Kind == FieldDispatch:
+		return errors.New("no_encode is not valid on dispatch fields")
+	case f.Signed && (f.Kind != FieldInt || !isSignedBase(f.BaseType)):
+		return fmt.Errorf("signed requires a signed integer field, got %s", f.GoType)
+	case f.Signed && f.BitWidth < 2:
+		return errors.New("signed fields need at least 2 bits")
+	}
+	return nil
+}
+
+// allowsNonContiguous reports whether a field kind supports A+S-E ranges.
+func allowsNonContiguous(f *Field) bool {
+	switch f.Kind {
+	case FieldUint, FieldInt, FieldEnum:
+		return true
+	case FieldDelegate:
+		return f.DelegateNoPtr && f.Stride == 0
+	case FieldBool, FieldRaw, FieldPacked, FieldLongitude, FieldLatitude, FieldDispatch:
+	}
+	return false
+}
+
+func kindName(f *Field) string {
+	switch f.Kind {
+	case FieldBool:
+		return typeBool
+	case FieldRaw:
+		return "raw"
+	case FieldPacked:
+		return "packed"
+	case FieldDelegate:
+		if f.Stride > 0 {
+			return "stride delegate"
+		}
+		return "struct delegate"
+	case FieldLongitude, FieldLatitude:
+		return "latitude/longitude"
+	case FieldDispatch:
+		return "dispatch"
+	case FieldUint, FieldInt, FieldEnum:
+	}
+	return "integer"
+}
+
+func validateDelegate(f *Field) error {
+	isArray := f.ArrayLen > 0
+	switch {
+	case f.Stride > 0:
+		if f.BitWidth%f.Stride != 0 {
+			return fmt.Errorf("stride %d does not divide range width %d", f.Stride, f.BitWidth)
+		}
+		if !isArray || f.ArrayLen != f.BitWidth/f.Stride {
+			return fmt.Errorf("stride delegate type %s does not hold %d elements", f.GoType, f.BitWidth/f.Stride)
+		}
+	case f.DelegateNoPtr:
+		if isArray || f.IsPointer {
+			return fmt.Errorf("noptr delegate cannot have type %s", f.GoType)
+		}
+		return checkIntWidth(f)
+	default:
+		if isArray || f.IsPointer {
+			return fmt.Errorf("struct delegate cannot have type %s", f.GoType)
 		}
 	}
 	return nil
@@ -652,9 +713,9 @@ func checkIntWidth(f *Field) error {
 		return fmt.Errorf("integer fields wider than 32 bits are not supported (%d)", f.BitWidth)
 	}
 	switch f.BaseType {
-	case "", "int", "uint", "int64", "uint64", "uintptr":
+	case "", typeInt, "uint", typeInt64, "uint64", "uintptr":
 		return nil
-	case "float32", "float64", "bool", "string", "complex64", "complex128":
+	case "float32", typeFloat64, typeBool, "string", "complex64", "complex128":
 		return fmt.Errorf("type %s cannot hold an integer field", f.GoType)
 	}
 	if w := basicWidth(f.BaseType); w > 0 && f.BitWidth > w {
@@ -752,7 +813,7 @@ func checkGuard(pdu *PDUStruct, g *Guard) error {
 	}
 	f := pdu.FieldByName(g.Field)
 	isBoolLit := g.Value == "true" || g.Value == "false"
-	if (f.GoType == "bool") != isBoolLit {
+	if (f.GoType == typeBool) != isBoolLit {
 		return fmt.Errorf("value %s does not match type %s of %s", g.Value, f.GoType, g.Field)
 	}
 	return nil
@@ -846,7 +907,7 @@ func parseBitRange(s string) (int, int, error) {
 // classifyFieldKind picks the default FieldKind from the resolved base type.
 func classifyFieldKind(baseType string) FieldKind {
 	switch {
-	case baseType == "bool":
+	case baseType == typeBool:
 		return FieldBool
 	case isSignedBase(baseType):
 		return FieldInt
@@ -857,7 +918,7 @@ func classifyFieldKind(baseType string) FieldKind {
 
 func isSignedBase(t string) bool {
 	switch t {
-	case "int", "int8", "int16", "int32", "int64":
+	case typeInt, "int8", "int16", "int32", typeInt64:
 		return true
 	}
 	return false
@@ -865,7 +926,7 @@ func isSignedBase(t string) bool {
 
 func basicWidth(t string) int {
 	switch t {
-	case "bool":
+	case typeBool:
 		return 1
 	case "uint8", "byte", "int8":
 		return 8
@@ -873,7 +934,7 @@ func basicWidth(t string) int {
 		return 16
 	case "uint32", "int32", "rune":
 		return 32
-	case "uint64", "int64", "int", "uint":
+	case "uint64", typeInt64, typeInt, "uint":
 		return 64
 	}
 	return 0
@@ -911,7 +972,7 @@ func resolveType(f *Field, goType string, baseTypes map[string]string) {
 
 func resolveBase(name string, baseTypes map[string]string) string {
 	for range 8 {
-		if basicWidth(name) > 0 || name == "float32" || name == "float64" || name == "string" {
+		if basicWidth(name) > 0 || name == "float32" || name == typeFloat64 || name == "string" {
 			return name
 		}
 		next, ok := baseTypes[name]

@@ -602,9 +602,10 @@ type T struct {
 		},
 		{
 			name: "duplicate input",
-			src: `// dmr:input M M
+			src: `// dmr:input M N M
 type T struct {
 	M bool  ` + "`dmr:\"-\"`" + `
+	N bool  ` + "`dmr:\"-\"`" + `
 	A uint8 ` + "`dmr:\"bits:0-7\"`" + `
 }`,
 			want: "duplicate dmr:input",

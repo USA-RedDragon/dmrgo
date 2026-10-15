@@ -3,6 +3,7 @@
 package emit
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -10,10 +11,26 @@ import (
 	"strings"
 
 	"github.com/USA-RedDragon/dmrgo/cmd/dmrgen/parse"
-	. "github.com/dave/jennifer/jen" //nolint:revive,stylecheck,ST1001,staticcheck
+	. "github.com/dave/jennifer/jen" //nolint:revive,staticcheck // jennifer is designed for dot import
 )
 
 const (
+	fecFieldName  = "FEC"
+	ambeCodec     = "ambe_voice"
+	qrPkg         = "github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue"
+	l2ElementsPkg = "github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
+	encodeFnName  = "Encode"
+
+	typUint8     = "uint8"
+	typUint16    = "uint16"
+	typUint32    = "uint32"
+	fnToUint8    = "BitsToUint8"
+	fnToUint16   = "BitsToUint16"
+	fnToUint32   = "BitsToUint32"
+	fnFromUint8  = "BitsFromUint8"
+	fnFromUint16 = "BitsFromUint16"
+	fnFromUint32 = "BitsFromUint32"
+
 	bitPkg = "github.com/USA-RedDragon/dmrgo/v2/bit"
 	fecPkg = "github.com/USA-RedDragon/dmrgo/v2/fec"
 	crcPkg = "github.com/USA-RedDragon/dmrgo/v2/crc"
@@ -63,15 +80,15 @@ var fecCodecs = map[string]FECCodecInfo{
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
 		GoPkgName:  "golay",
 		DecodeFn:   "DecodeGolay2087",
-		EncodeFn:   "Encode",
+		EncodeFn:   encodeFnName,
 		InputSize:  20,
 		DataBits:   8,
 	},
 	"quadratic_residue_16_7_6": {
-		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue",
+		ImportPath: qrPkg,
 		GoPkgName:  "quadratic_residue",
 		DecodeFn:   "Decode",
-		EncodeFn:   "Encode",
+		EncodeFn:   encodeFnName,
 		InputSize:  16,
 		DataBits:   7,
 	},
@@ -85,7 +102,7 @@ var fecCodecs = map[string]FECCodecInfo{
 		TotalBytes:  12,
 		DataBytes:   9,
 	},
-	"ambe_voice": {
+	ambeCodec: {
 		// AMBE voice codec: 72 scattered input bits → 49 decoded bits
 		// Handled as a special case in emitDecode/emitEncode.
 		// The actual algorithm lives in private helpers (decodeAMBE/encodeAMBE)
@@ -97,7 +114,7 @@ var fecCodecs = map[string]FECCodecInfo{
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
 		GoPkgName:  "hamming",
 		DecodeFn:   "Decode743",
-		EncodeFn:   "Encode",
+		EncodeFn:   encodeFnName,
 		InputSize:  7,
 		DataBits:   4,
 	},
@@ -108,16 +125,16 @@ var fecCodecs = map[string]FECCodecInfo{
 //
 //nolint:gochecknoglobals
 var pkgNameOverrides = map[string]string{
-	"github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue": "quadratic_residue",
-	"github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon":      "reedsolomon",
-	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis":           "trellis34",
+	qrPkg: "quadratic_residue",
+	"github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon": "reedsolomon",
+	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis":      "trellis34",
 }
 
 // pkgAliasOverrides forces specific import aliases to disambiguate packages with the same name.
 //
 //nolint:gochecknoglobals
 var pkgAliasOverrides = map[string]string{
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements": "layer2Elements",
+	l2ElementsPkg: "layer2Elements",
 	"github.com/USA-RedDragon/dmrgo/v2/layer3/elements": "layer3Elements",
 }
 
@@ -126,13 +143,13 @@ func resolveImportPath(pkgName, sourceFile string) string {
 	// Map well-known package names to full import paths
 	knownPkgs := map[string]string{
 		"enums":            "github.com/USA-RedDragon/dmrgo/v2/enums",
-		"elements":         "github.com/USA-RedDragon/dmrgo/v2/layer2/elements",
-		"layer2Elements":   "github.com/USA-RedDragon/dmrgo/v2/layer2/elements",
+		"elements":         l2ElementsPkg,
+		"layer2Elements":   l2ElementsPkg,
 		"bit":              "github.com/USA-RedDragon/dmrgo/v2/bit",
 		"fec":              "github.com/USA-RedDragon/dmrgo/v2/fec",
 		"layer3Elements":   "github.com/USA-RedDragon/dmrgo/v2/layer3/elements",
 		"golay":            "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
-		"quadraticResidue": "github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue",
+		"quadraticResidue": qrPkg,
 		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/v2/fec/reed_solomon",
 		"bptc":             "github.com/USA-RedDragon/dmrgo/v2/fec/bptc",
 		"trellis":          "github.com/USA-RedDragon/dmrgo/v2/fec/trellis",
@@ -236,7 +253,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		hasCRC := pdu.CRC != nil
 		hasPackedFEC := codec != nil && codec.PackedBytes
 		hasBitFEC := codec != nil && !codec.PackedBytes
-		isAMBE := codec != nil && pdu.FEC.Codec == "ambe_voice"
+		isAMBE := codec != nil && pdu.FEC.Codec == ambeCodec
 
 		if isAMBE {
 			// AMBE voice codec: delegate to private decodeAMBE helper
@@ -259,25 +276,26 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 			}
 		}
 
-		if hasCRC {
+		switch {
+		case hasCRC:
 			if err := emitCRCCheck(g, pdu, inputSize); err != nil {
 				genErr = err
 				return
 			}
-		} else if hasPackedFEC {
+		case hasPackedFEC:
 			if err := emitFECMask(g, pdu, codec, Id("result"), "_packedBytes"); err != nil {
 				genErr = err
 				return
 			}
 			emitPackedFECDecode(g, codec, inputSize)
-		} else if hasBitFEC {
+		case hasBitFEC:
 			// Bit-level FEC (Golay, QR): operates directly on bit arrays
 			g.List(Id("corrected"), Id("fecResult")).Op(":=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("data"))
 			g.Id("result").Dot("FEC").Op("=").Id("fecResult")
 			g.If(Op("!").Id("fecResult").Dot("Uncorrectable")).Block(
 				Id("data").Op("=").Id("corrected"),
 			)
-		} else {
+		default:
 			g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
 		}
 
@@ -312,7 +330,8 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 }
 
 // resolveCodec looks up the FEC codec and CRC algorithm of a PDU and checks
-// that its fields fit the codec's data bits.
+// that its fields fit the codec's data bits. It returns a nil codec for PDUs
+// without a dmr:fec directive.
 func resolveCodec(pdu parse.PDUStruct) (*FECCodecInfo, error) {
 	if pdu.CRC != nil {
 		if _, ok := crcAlgorithms[pdu.CRC.Algorithm]; !ok {
@@ -320,7 +339,7 @@ func resolveCodec(pdu parse.PDUStruct) (*FECCodecInfo, error) {
 		}
 	}
 	if pdu.FEC == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no codec is a valid result
 	}
 	c, ok := fecCodecs[pdu.FEC.Codec]
 	if !ok {
@@ -385,8 +404,7 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	// Byte-level CRC (CRC-CCITT): operates on packed bytes
 	// Apply XOR mask if specified
 	if crcDir.HasMask {
-		highByte := byte(crcDir.Mask >> 8)
-		lowByte := byte(crcDir.Mask)
+		highByte, lowByte := maskBytes(crcDir.Mask)
 		totalBytes := inputSize / 8
 		g.Id("_packedBytes").Index(Lit(totalBytes - 2)).Op("^=").Lit(highByte)
 		g.Id("_packedBytes").Index(Lit(totalBytes - 1)).Op("^=").Lit(lowByte)
@@ -584,7 +602,7 @@ func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string, raw []Co
 		fallback = &fb
 	}
 
-	// Build the if/else if/else chain as a single jennifer *Statement so that
+	// Build the guard chain as a single jennifer *Statement so that
 	// "} else {" stays on one line.
 	var chain *Statement
 	for i, field := range guarded {
@@ -656,7 +674,7 @@ func emitAMBEVoiceDecode(g *Group, pdu parse.PDUStruct) {
 	// Find the data field (the non-FEC, non-skip field)
 	var dataFieldName string
 	for _, f := range pdu.Fields {
-		if f.Name != "FEC" {
+		if f.Name != fecFieldName {
 			dataFieldName = f.Name
 			break
 		}
@@ -674,7 +692,7 @@ func emitAMBEVoiceEncode(g *Group, pdu parse.PDUStruct) {
 	// Find the data field (the non-FEC, non-skip field)
 	var dataFieldName string
 	for _, f := range pdu.Fields {
-		if f.Name != "FEC" {
+		if f.Name != fecFieldName {
 			dataFieldName = f.Name
 			break
 		}
@@ -830,14 +848,14 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 
 	if field.Skip {
 		// Handle dmr:"-" fields
-		switch {
-		case field.Name == "FEC":
+		switch field.Name {
+		case fecFieldName:
 			return "{BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}", []Code{
 				src.Clone().Dot("BitsChecked"),
 				src.Clone().Dot("ErrorsCorrected"),
 				src.Clone().Dot("Uncorrectable"),
 			}
-		case field.Name == "DataType":
+		case "DataType":
 			// Use TypeNameToName convention
 			importPath := resolveImportPath(field.TypePkg, pdu.SourceFile)
 			toNameFn := field.TypeName + "ToName"
@@ -987,7 +1005,8 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			importPath = resolveImportPath(field.TypePkg, pdu.SourceFile)
 		}
 
-		if field.Stride > 0 && field.ArrayLen > 0 {
+		switch {
+		case field.Stride > 0 && field.ArrayLen > 0:
 			// Array delegate with stride: generate a loop calling DecodeXxx
 			decodeFn := "Decode" + field.TypeName
 			tmpVar := "_elemBits"
@@ -1007,7 +1026,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 					return List(target.Clone().Index(Id("_i")), Id("_")).Op("=").Add(call)
 				}(),
 			)
-		} else if field.DelegateNoPtr {
+		case field.DelegateNoPtr:
 			// noptr delegates are integer typedefs: extract and convert
 			fn := bitExtractFunc(field.BitWidth)
 			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(
@@ -1017,7 +1036,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 					Lit(field.BitWidth),
 				),
 			)
-		} else {
+		default:
 			// Struct delegate: call generated DecodeXxx function
 			decodeFnName := "Decode" + field.TypeName
 			arraySize := field.BitEnd - field.BitStart + 1
@@ -1065,7 +1084,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 	hasCRC := pdu.CRC != nil
 	hasPackedFEC := codec != nil && codec.PackedBytes
 	hasBitFEC := codec != nil && !codec.PackedBytes
-	isAMBE := codec != nil && pdu.FEC != nil && pdu.FEC.Codec == "ambe_voice"
+	isAMBE := codec != nil && pdu.FEC != nil && pdu.FEC.Codec == ambeCodec
 
 	// Output is the full codeword size
 	outputSize := pdu.InputSize
@@ -1230,8 +1249,7 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 
 	// Apply mask if present
 	if pdu.CRC != nil && pdu.CRC.HasMask {
-		highByte := byte(pdu.CRC.Mask >> 8)
-		lowByte := byte(pdu.CRC.Mask)
+		highByte, lowByte := maskBytes(pdu.CRC.Mask)
 		g.Id("_crcHigh").Op("^=").Lit(highByte)
 		g.Id("_crcLow").Op("^=").Lit(lowByte)
 	}
@@ -1266,7 +1284,7 @@ func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 		),
 	)
 
-	g.List(Id("_encoded"), Err()).Op(":=").Qual(codec.ImportPath, "Encode").Call(
+	g.List(Id("_encoded"), Err()).Op(":=").Qual(codec.ImportPath, encodeFnName).Call(
 		Id("_encData").Index(Empty(), Empty()),
 	)
 	g.If(Err().Op("!=").Nil()).Block(enc.fail(Err()))
@@ -1294,18 +1312,14 @@ func (e encoder) field(g *Group, field parse.Field) {
 	pdu := e.pdu
 	source := Id("s").Dot(field.Name)
 
-	switch field.Kind {
-	case parse.FieldUint, parse.FieldInt, parse.FieldEnum:
+	if isIntegerField(field) {
 		e.integer(g, field)
 		return
-	case parse.FieldDelegate:
-		if field.DelegateNoPtr && field.Stride == 0 {
-			e.integer(g, field)
-			return
-		}
 	}
 
 	switch field.Kind {
+	case parse.FieldUint, parse.FieldInt, parse.FieldEnum:
+		// handled by e.integer
 	case parse.FieldBool:
 		// if s.FieldName { data[bit] = 1 }
 		g.If(source.Clone()).Block(
@@ -1367,7 +1381,7 @@ func (e encoder) field(g *Group, field parse.Field) {
 		)
 		g.Copy(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			Qual(bitPkg, "BitsFromUint32").Call(
+			Qual(bitPkg, fnFromUint32).Call(
 				Uint32().Call(Int32().Call(Id(raw))),
 				Lit(field.BitWidth),
 			),
@@ -1423,15 +1437,27 @@ func (e encoder) integer(g *Group, field parse.Field) {
 	}
 }
 
+// isIntegerField reports whether a field is stored as a plain integer value.
+func isIntegerField(field parse.Field) bool {
+	switch field.Kind {
+	case parse.FieldUint, parse.FieldInt, parse.FieldEnum:
+		return true
+	case parse.FieldDelegate:
+		return field.DelegateNoPtr && field.Stride == 0
+	case parse.FieldBool, parse.FieldRaw, parse.FieldPacked, parse.FieldLongitude, parse.FieldLatitude, parse.FieldDispatch:
+	}
+	return false
+}
+
 // needsRangeCheck reports whether an unsigned field's Go type can hold values
 // wider than the field.
 func needsRangeCheck(field parse.Field) bool {
 	switch field.BaseType {
-	case "uint8", "byte":
+	case typUint8, "byte":
 		return field.BitWidth < 8
-	case "uint16":
+	case typUint16:
 		return field.BitWidth < 16
-	case "uint32":
+	case typUint32:
 		return field.BitWidth < 32
 	}
 	return true
@@ -1447,9 +1473,9 @@ func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	// var _tmpField uint8 (using the extract function's natural type)
 	switch fn {
-	case "BitsToUint8":
+	case fnToUint8:
 		g.Var().Id(tmpName).Uint8()
-	case "BitsToUint16":
+	case fnToUint16:
 		g.Var().Id(tmpName).Uint16()
 	default:
 		g.Var().Id(tmpName).Uint32()
@@ -1501,9 +1527,16 @@ func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 // Helper functions
 
+// maskBytes splits a 16-bit CRC mask into its high and low bytes.
+func maskBytes(mask uint16) (byte, byte) {
+	var b [2]byte
+	binary.BigEndian.PutUint16(b[:], mask)
+	return b[0], b[1]
+}
+
 // contiguousUint32 reads a contiguous field as a uint32.
 func contiguousUint32(field parse.Field) *Statement {
-	return Qual(bitPkg, "BitsToUint32").Call(
+	return Qual(bitPkg, fnToUint32).Call(
 		Id("data").Index(Empty(), Empty()),
 		Lit(field.BitStart),
 		Lit(field.BitWidth),
@@ -1538,53 +1571,41 @@ func coordRaw(field parse.Field, value *Statement) *Statement {
 func bitExtractFunc(width int) string {
 	switch {
 	case width <= 8:
-		return "BitsToUint8"
+		return fnToUint8
 	case width <= 16:
-		return "BitsToUint16"
+		return fnToUint16
 	default:
-		return "BitsToUint32"
+		return fnToUint32
 	}
 }
 
 func bitStoreFunc(width int) string {
 	switch {
 	case width <= 8:
-		return "BitsFromUint8"
+		return fnFromUint8
 	case width <= 16:
-		return "BitsFromUint16"
+		return fnFromUint16
 	default:
-		return "BitsFromUint32"
+		return fnFromUint32
 	}
 }
 
 func storeParamType(fn string) *Statement {
 	switch fn {
-	case "BitsFromUint8":
+	case fnFromUint8:
 		return Uint8()
-	case "BitsFromUint16":
+	case fnFromUint16:
 		return Uint16()
 	default:
 		return Uint32()
 	}
 }
 
-// storeParamGoType returns the Go type string corresponding to a BitsFromUintN function.
-func storeParamGoType(fn string) string {
-	switch fn {
-	case "BitsFromUint8":
-		return "uint8"
-	case "BitsFromUint16":
-		return "uint16"
-	default:
-		return "uint32"
-	}
-}
-
 func castToStoreFuncType(expr *Statement, goType, fn string) *Statement {
 	expected := map[string]string{
-		"BitsFromUint8":  "uint8",
-		"BitsFromUint16": "uint16",
-		"BitsFromUint32": "uint32",
+		fnFromUint8:  typUint8,
+		fnFromUint16: typUint16,
+		fnFromUint32: typUint32,
 	}
 	if goType == expected[fn] {
 		return expr
@@ -1594,12 +1615,12 @@ func castToStoreFuncType(expr *Statement, goType, fn string) *Statement {
 
 func needsCast(extractFn, goType string) bool {
 	switch extractFn {
-	case "BitsToUint8":
-		return goType != "uint8" && goType != "byte"
-	case "BitsToUint16":
-		return goType != "uint16"
-	case "BitsToUint32":
-		return goType != "uint32"
+	case fnToUint8:
+		return goType != typUint8 && goType != "byte"
+	case fnToUint16:
+		return goType != typUint16
+	case fnToUint32:
+		return goType != typUint32
 	case "BitsToInt":
 		return goType != "int"
 	}
