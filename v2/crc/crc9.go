@@ -19,9 +19,9 @@ const (
 	crc9Inversion = uint16(0x1FF) // all 9 bits set
 )
 
-// CalculateCRC9 computes the 9-bit CRC over the given bit data.
+// CRC9 computes the 9-bit CRC over the given bit data.
 // The polynomial is x⁹ + x⁶ + x⁴ + x³ + 1, with final inversion by 0x1FF.
-func CalculateCRC9(bits []bit.Bit) uint16 {
+func CRC9(bits []bit.Bit) uint16 {
 	var crc uint16
 
 	for _, b := range bits {
@@ -35,23 +35,7 @@ func CalculateCRC9(bits []bit.Bit) uint16 {
 	return crc ^ crc9Inversion
 }
 
-// CheckCRC9 validates a 9-bit CRC. The input should contain the data bits
-// followed by the 9-bit CRC. The mask parameter is XORed onto the computed
-// CRC before comparison (per B.3.12 Data Type CRC Mask; pass 0 for no mask).
-func CheckCRC9(bits []bit.Bit, mask uint16) bool {
-	if len(bits) < 10 {
-		return false
-	}
-
-	dataBits := bits[:len(bits)-9]
-	crc := CalculateCRC9(dataBits) ^ (mask & 0x1FF)
-
-	// Extract expected CRC from trailing 9 bits
-	var expected uint16
-	for i := 0; i < 9; i++ {
-		expected <<= 1
-		expected |= uint16(bits[len(bits)-9+i] & 1)
-	}
-
-	return crc == expected
+// CheckCRC9 reports whether want is the CRC-9 of bits.
+func CheckCRC9(bits []bit.Bit, want uint16) bool {
+	return CRC9(bits) == want&0x1FF
 }

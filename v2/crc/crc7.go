@@ -14,10 +14,10 @@ import (
 
 const crc7Poly = 0x27 // x⁵ + x² + x + 1 (low 7 bits of G₇(x))
 
-// CalculateCRC7 computes the 7-bit CRC over the given bit data.
+// CRC7 computes the 7-bit CRC over the given bit data.
 // The polynomial is x⁷ + x⁵ + x² + x + 1, initial value 0, no final inversion.
 // Data type CRC masks (per B.3.12) must be applied by the caller if needed.
-func CalculateCRC7(bits []bit.Bit) uint8 {
+func CRC7(bits []bit.Bit) uint8 {
 	var crc uint8
 
 	for _, b := range bits {
@@ -31,23 +31,7 @@ func CalculateCRC7(bits []bit.Bit) uint8 {
 	return crc
 }
 
-// CheckCRC7 validates a 7-bit CRC. The input should contain the data bits
-// followed by the 7-bit CRC. The mask parameter is XORed onto the computed
-// CRC before comparison (per B.3.12 Data Type CRC Mask; pass 0 for no mask).
-func CheckCRC7(bits []bit.Bit, mask uint8) bool {
-	if len(bits) < 8 {
-		return false
-	}
-
-	dataBits := bits[:len(bits)-7]
-	crc := CalculateCRC7(dataBits) ^ (mask & 0x7F)
-
-	// Extract expected CRC from trailing 7 bits
-	var expected uint8
-	for i := 0; i < 7; i++ {
-		expected <<= 1
-		expected |= uint8(bits[len(bits)-7+i] & 1)
-	}
-
-	return crc == expected
+// CheckCRC7 reports whether want is the CRC-7 of bits.
+func CheckCRC7(bits []bit.Bit, want uint8) bool {
+	return CRC7(bits) == want&0x7F
 }

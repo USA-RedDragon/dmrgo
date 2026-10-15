@@ -29,12 +29,12 @@ func DecodePIHeader(data [96]bit.Bit) (PIHeader, fec.Result) {
 	}
 	_packedBytes[10] ^= uint8(0x69)
 	_packedBytes[11] ^= uint8(0x69)
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.AlgorithmID = uint8(bit.Uint(data[0:8]))
 	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	result.KeyID = uint8(bit.Uint(data[16:24]))
@@ -65,7 +65,7 @@ func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 			_encBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcVal := crc.CCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
 	_crcHigh ^= uint8(0x69)

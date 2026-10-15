@@ -4,9 +4,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// CRC9MaskRate1 is the CRC-9 mask for Rate 1 Data Continuation
+// crc9MaskRate1 is the CRC-9 mask for Rate 1 Data Continuation
 // per ETSI TS 102 361-1 Table B.21.
-const CRC9MaskRate1 uint16 = 0x10F
+const crc9MaskRate1 uint16 = 0x10F
 
 // ETSI TS 102 361-1 - 9.2.15 Rate 1 coded packet Data (R_1_DATA) PDU
 //
@@ -43,11 +43,11 @@ func (rtData *Rate1Data) ConfirmedUserData() [22]byte {
 
 // CheckConfirmedCRC9 reports whether the CRC-9 of a confirmed block is valid.
 func (rtData *Rate1Data) CheckConfirmedCRC9() bool {
-	return checkConfirmedCRC9(rtData.Data[:], CRC9MaskRate1)
+	return checkConfirmedCRC9(rtData.Data[:], crc9MaskRate1)
 }
 
 // SetConfirmed fills Data as a confirmed block (Table 9.18) and computes
 // the masked CRC-9. Only the low 7 bits of dbsn are used.
 func (rtData *Rate1Data) SetConfirmed(dbsn uint8, userData [22]byte) {
-	setConfirmed(rtData.Data[:], dbsn, userData[:], CRC9MaskRate1)
+	setConfirmed(rtData.Data[:], dbsn, userData[:], crc9MaskRate1)
 }

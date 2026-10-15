@@ -24,7 +24,7 @@ func buildValidShortLCFragments(slco byte, data [24]bit.Bit) [4][17]bit.Bit {
 	// Data: bits 4-27
 	copy(bits[4:28], data[:])
 	// CRC-8: bits 28-35
-	crcVal := crc.CalculateCRC8(bits[:28])
+	crcVal := crc.CRC8(bits[:28])
 	for i := range 8 {
 		bits[28+i] = bit.Bit((crcVal >> (7 - i)) & 1)
 	}

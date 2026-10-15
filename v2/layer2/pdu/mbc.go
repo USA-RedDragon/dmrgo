@@ -73,7 +73,7 @@ func MBCLastBlockCRC(blocks ...[96]bit.Bit) uint16 {
 		}
 		data = append(data, bit.Pack(b[:n])...)
 	}
-	return crc.CalculateCRCCCITT(data)
+	return crc.CCITT(data)
 }
 
 // CheckMBCLastBlockCRC reports whether the CRC in bits 80-95 of the last of

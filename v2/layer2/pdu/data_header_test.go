@@ -41,7 +41,7 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 			dataBytes[i] |= byte(infoBits[i*8+j])
 		}
 	}
-	crcVal := crc.CalculateCRCCCITT(dataBytes[:])
+	crcVal := crc.CCITT(dataBytes[:])
 	// Apply Data Header CRC mask per ETSI TS 102 361-1 Table B.3
 	crcHigh := byte(crcVal>>8) ^ 0xCC
 	crcLow := byte(crcVal) ^ 0xCC
@@ -112,7 +112,7 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 					dataBytes[i] |= byte(infoBits[i*8+j])
 				}
 			}
-			crcVal := crc.CalculateCRCCCITT(dataBytes[:])
+			crcVal := crc.CCITT(dataBytes[:])
 			// Apply Data Header CRC mask per ETSI TS 102 361-1 Table B.3
 			crcHigh := byte(crcVal>>8) ^ 0xCC
 			crcLow := byte(crcVal) ^ 0xCC
@@ -153,7 +153,7 @@ func buildDataHeaderBits(setup func(bits *[96]bit.Bit)) [96]bit.Bit {
 			dataBytes[i] |= byte(infoBits[i*8+j])
 		}
 	}
-	crcVal := crc.CalculateCRCCCITT(dataBytes[:])
+	crcVal := crc.CCITT(dataBytes[:])
 	crcHigh := byte(crcVal>>8) ^ 0xCC
 	crcLow := byte(crcVal) ^ 0xCC
 	for b := 7; b >= 0; b-- {

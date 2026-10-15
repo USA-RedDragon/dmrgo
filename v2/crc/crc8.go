@@ -14,9 +14,9 @@ import (
 
 const crc8Poly = 0x07 // x² + x + 1 (low 8 bits of G₈(x))
 
-// CalculateCRC8 computes the 8-bit CRC over the given bit data.
+// CRC8 computes the 8-bit CRC over the given bit data.
 // The polynomial is x⁸ + x² + x + 1, initial value 0, no final inversion.
-func CalculateCRC8(bits []bit.Bit) uint8 {
+func CRC8(bits []bit.Bit) uint8 {
 	var crc uint8
 
 	for _, b := range bits {
@@ -30,22 +30,7 @@ func CalculateCRC8(bits []bit.Bit) uint8 {
 	return crc
 }
 
-// CheckCRC8 validates an 8-bit CRC. The input should contain the data bits
-// followed by the 8-bit CRC. Returns true if the CRC is valid.
-func CheckCRC8(bits []bit.Bit) bool {
-	if len(bits) < 9 {
-		return false
-	}
-
-	dataBits := bits[:len(bits)-8]
-	crc := CalculateCRC8(dataBits)
-
-	// Extract expected CRC from trailing 8 bits
-	var expected uint8
-	for i := 0; i < 8; i++ {
-		expected <<= 1
-		expected |= uint8(bits[len(bits)-8+i] & 1)
-	}
-
-	return crc == expected
+// CheckCRC8 reports whether want is the CRC-8 of bits.
+func CheckCRC8(bits []bit.Bit, want uint8) bool {
+	return CRC8(bits) == want
 }

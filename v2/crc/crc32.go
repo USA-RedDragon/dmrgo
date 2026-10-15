@@ -14,11 +14,11 @@ package crc
 // The input data bytes are organized in 16-bit words, and within each word
 // the bytes are swapped (LSO before MSO) before CRC computation.
 
-// CalculateCRC32 computes the 32-bit CRC over the given byte data.
+// CRC32 computes the 32-bit CRC over the given byte data.
 // The data bytes are swapped within 16-bit words per the DMR spec before
 // polynomial division. Uses the generated crc32_0x04C11DB7 lookup table
 // for byte-at-a-time processing.
-func CalculateCRC32(data []byte) uint32 {
+func CRC32(data []byte) uint32 {
 	// Swap bytes within 16-bit words
 	swapped := make([]byte, len(data))
 	for i := 0; i+1 < len(data); i += 2 {
@@ -38,9 +38,7 @@ func CalculateCRC32(data []byte) uint32 {
 	return crc
 }
 
-// CheckCRC32 validates a 32-bit CRC. The expected CRC is compared against the
-// computed CRC of the data. The CRC bytes in the data are stored in
-// little-endian order per the DMR spec.
-func CheckCRC32(data []byte, expected uint32) bool {
-	return CalculateCRC32(data) == expected
+// CheckCRC32 reports whether want is the CRC-32 of data.
+func CheckCRC32(data []byte, want uint32) bool {
+	return CRC32(data) == want
 }

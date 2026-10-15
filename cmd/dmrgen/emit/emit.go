@@ -34,8 +34,8 @@ const (
 type CRCAlgorithmInfo struct {
 	BitLevel bool   // true = operates on []bit.Bit, false = operates on []byte
 	CRCBits  int    // number of CRC bits (8 for CRC-8, 16 for CRC-CCITT)
-	CheckFn  string // e.g. "CheckCRC8", "CheckCRCCCITT"
-	CalcFn   string // e.g. "CalculateCRC8", "CalculateCRCCCITT"
+	CheckFn  string // e.g. "CheckCRC8", "CheckCCITT": func(data, want) bool
+	CalcFn   string // e.g. "CRC8", "CCITT"
 }
 
 //nolint:gochecknoglobals
@@ -43,14 +43,14 @@ var crcAlgorithms = map[string]CRCAlgorithmInfo{
 	"crc_ccitt": {
 		BitLevel: false,
 		CRCBits:  16,
-		CheckFn:  "CheckCRCCCITT",
-		CalcFn:   "CalculateCRCCCITT",
+		CheckFn:  "CheckCCITT",
+		CalcFn:   "CCITT",
 	},
 	"crc_8": {
 		BitLevel: true,
 		CRCBits:  8,
 		CheckFn:  "CheckCRC8",
-		CalcFn:   "CalculateCRC8",
+		CalcFn:   "CRC8",
 	},
 }
 
@@ -327,20 +327,13 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	}
 	if algo.BitLevel {
 		// Bit-level CRC (e.g. CRC-8): operates on data[:] directly, no byte packing
+		dataBits := inputSize - algo.CRCBits
+		g.Id("result").Dot("crc").Op("=").Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(dataBits), Empty())))
 		g.Var().Id("fecResult").Qual(fecPkg, "Result")
-		g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Empty()))).Block(
+		g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Lit(dataBits)), Id("result").Dot("crc"))).Block(
 			Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 		)
 		g.Id("result").Dot("FEC").Op("=").Id("fecResult")
-
-		// Store CRC value from trailing CRC bits
-		dataBits := inputSize - algo.CRCBits
-		g.Var().Id("_crcVal").Uint8()
-		g.For(Id("i").Op(":=").Range().Lit(algo.CRCBits)).Block(
-			Id("_crcVal").Op("<<=").Lit(1),
-			Id("_crcVal").Op("|=").Uint8().Call(Id("data").Index(Lit(dataBits).Op("+").Id("i"))),
-		)
-		g.Id("result").Dot("crc").Op("=").Id("_crcVal")
 		return nil
 	}
 
@@ -353,18 +346,16 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 		g.Id("_packedBytes").Index(Lit(totalBytes - 1)).Op("^=").Lit(lowByte)
 	}
 
-	// CRC check
-	g.Var().Id("fecResult").Qual(fecPkg, "Result")
-	g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Empty()))).Block(
-		Id("fecResult").Dot("Uncorrectable").Op("=").True(),
-	)
-	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
-
-	// Store CRC value from the (possibly masked) packed bytes
+	// Store CRC value from the (possibly masked) packed bytes, then check it
 	totalBytes := inputSize / 8
 	g.Id("result").Dot("crc").Op("=").
 		Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 2))).Op("<<").Lit(8).
 		Op("|").Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 1)))
+	g.Var().Id("fecResult").Qual(fecPkg, "Result")
+	g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Lit(totalBytes-2)), Id("result").Dot("crc"))).Block(
+		Id("fecResult").Dot("Uncorrectable").Op("=").True(),
+	)
+	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
 	return nil
 }
 

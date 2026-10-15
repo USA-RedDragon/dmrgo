@@ -57,9 +57,9 @@ var bitFuncs = map[string]any{
 	"layer2.VoiceTransmitter.AddFrames": func(frames ...vocoder.AMBEFrame) ([][33]byte, error) {
 		return voiceTransmitter().AddFrames(frames...)
 	},
-	"crc.CalculateCRC7":                                        crc.CalculateCRC7,
-	"crc.CalculateCRC8":                                        crc.CalculateCRC8,
-	"crc.CalculateCRC9":                                        crc.CalculateCRC9,
+	"crc.CRC7":                                                 crc.CRC7,
+	"crc.CRC8":                                                 crc.CRC8,
+	"crc.CRC9":                                                 crc.CRC9,
 	"crc.CheckCRC7":                                            crc.CheckCRC7,
 	"crc.CheckCRC8":                                            crc.CheckCRC8,
 	"crc.CheckCRC9":                                            crc.CheckCRC9,

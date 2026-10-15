@@ -30,7 +30,7 @@ func buildUSBDBits(serviceType byte, payload [76]bit.Bit) [96]bit.Bit {
 		}
 	}
 
-	crcVal := crc.CalculateCRCCCITT(dataBytes[:])
+	crcVal := crc.CCITT(dataBytes[:])
 	crcHigh := byte(crcVal>>8) ^ 0x33
 	crcLow := byte(crcVal) ^ 0x33
 	for b := 7; b >= 0; b-- {

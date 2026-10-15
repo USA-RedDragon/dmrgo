@@ -29,7 +29,7 @@ const voiceLCHeaderMask = 0x96
 // EncodeEmbeddedLC returns the four 32-bit embedded signalling fragments, in
 // burst order B to E, that carry the 72 LC bits of a Full LC.
 func EncodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
-	cs := crc.CalculateChecksum5(lcOctets(lc))
+	cs := crc.Checksum5(lcOctets(lc))
 	var info [77]bit.Bit
 	n := 0
 	for row := 0; row < 7; row++ {

@@ -35,12 +35,12 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.Result) {
 	}
 	_packedBytes[10] ^= uint8(0xaa)
 	_packedBytes[11] ^= uint8(0xaa)
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -74,7 +74,7 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 			_encBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcVal := crc.CCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
 	_crcHigh ^= uint8(0xaa)
@@ -127,12 +127,12 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -187,7 +187,7 @@ func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
 			_encBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcVal := crc.CCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
 	for j := range 8 {
@@ -214,12 +214,12 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -274,7 +274,7 @@ func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
 			_encBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcVal := crc.CCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
 	for j := range 8 {
@@ -301,12 +301,12 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.Result) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -353,7 +353,7 @@ func (s *BCAPContinuation) Encode() ([96]bit.Bit, error) {
 			_encBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcVal := crc.CCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
 	for j := range 8 {
@@ -380,12 +380,12 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -440,7 +440,7 @@ func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
 			_encBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcVal := crc.CCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
 	for j := range 8 {

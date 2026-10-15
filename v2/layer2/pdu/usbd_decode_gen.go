@@ -28,12 +28,12 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec
 	}
 	_packedBytes[10] ^= uint8(0x33)
 	_packedBytes[11] ^= uint8(0x33)
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.ServiceType = ServiceType(bit.Uint(data[0:4]))
 	copy(result.Payload[:], data[4:80])
 	return result, fecResult
@@ -54,7 +54,7 @@ func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 			_encBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcVal := crc.CCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
 	_crcHigh ^= uint8(0x33)

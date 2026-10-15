@@ -1,0 +1,40 @@
+package crc_test
+
+import (
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/crc"
+)
+
+// The helpers check a codeword whose last bits hold the CRC XORed with mask.
+
+func checkCRC7Codeword(bits []bit.Bit, mask uint8) bool {
+	n := len(bits)
+	if n < 8 {
+		return false
+	}
+	return crc.CheckCRC7(bits[:n-7], uint8(bit.Uint(bits[n-7:]))^mask)
+}
+
+func checkCRC8Codeword(bits []bit.Bit) bool {
+	n := len(bits)
+	if n < 9 {
+		return false
+	}
+	return crc.CheckCRC8(bits[:n-8], uint8(bit.Uint(bits[n-8:])))
+}
+
+func checkCRC9Codeword(bits []bit.Bit, mask uint16) bool {
+	n := len(bits)
+	if n < 10 {
+		return false
+	}
+	return crc.CheckCRC9(bits[:n-9], uint16(bit.Uint(bits[n-9:]))^mask)
+}
+
+func checkCCITTCodeword(data []byte) bool {
+	n := len(data)
+	if n < 3 {
+		return false
+	}
+	return crc.CheckCCITT(data[:n-2], uint16(data[n-2])<<8|uint16(data[n-1]))
+}

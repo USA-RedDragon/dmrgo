@@ -120,7 +120,7 @@ func SealBlock(b *[12]byte, dt enums.DataType) error {
 	if err != nil {
 		return err
 	}
-	c := crc.CalculateCRCCCITT(b[:10]) ^ mask
+	c := crc.CCITT(b[:10]) ^ mask
 	b[10] = byte(c >> 8)
 	b[11] = byte(c) //nolint:gosec // low octet of the CRC
 	return nil

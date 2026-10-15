@@ -2,9 +2,9 @@ package crc
 
 // TS 102 361-1 V1.2.1 B.3.8 - CRC-CCITT calculation
 
-// CalculateCRCCCITT computes the CRC-CCITT over the given byte data
+// CCITT computes the CRC-CCITT over the given byte data
 // using the table-based approach matching MMDVM's CCRC::checkCCITT162.
-func CalculateCRCCCITT(data []byte) uint16 {
+func CCITT(data []byte) uint16 {
 	var crc16 uint16
 
 	for _, b := range data {
@@ -14,14 +14,7 @@ func CalculateCRCCCITT(data []byte) uint16 {
 	return ^crc16
 }
 
-// CheckCRCCCITT validates the CRC-CCITT over the given byte data.
-// The last two bytes of the data are the CRC (big-endian, swapped like MMDVM).
-func CheckCRCCCITT(data []byte) bool {
-	if len(data) < 3 {
-		return false
-	}
-
-	crc := CalculateCRCCCITT(data[:len(data)-2])
-
-	return crc == uint16(data[len(data)-2])<<8|uint16(data[len(data)-1])
+// CheckCCITT reports whether want is the CRC-CCITT of data.
+func CheckCCITT(data []byte, want uint16) bool {
+	return CCITT(data) == want
 }

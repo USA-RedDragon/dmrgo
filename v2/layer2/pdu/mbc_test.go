@@ -39,7 +39,7 @@ func buildMBCHeaderBits(lb bool, pf bool, opcode byte, fid byte, data [64]bit.Bi
 		}
 	}
 
-	crcVal := crc.CalculateCRCCCITT(dataBytes[:])
+	crcVal := crc.CCITT(dataBytes[:])
 	crcHigh := byte(crcVal>>8) ^ 0xAA
 	crcLow := byte(crcVal) ^ 0xAA
 	for b := 7; b >= 0; b-- {

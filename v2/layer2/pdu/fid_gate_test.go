@@ -16,7 +16,7 @@ func buildCSBKBitsFID(opcode, fid byte, payload [64]bit.Bit) [96]bit.Bit {
 	b[0] = 0x80 | (opcode & 0x3F)
 	b[1] = fid
 	copy(b[2:10], bit.Pack(payload[:]))
-	c := crc.CalculateCRCCCITT(b[:10]) ^ 0xA5A5
+	c := crc.CCITT(b[:10]) ^ 0xA5A5
 	b[10] = byte(c >> 8)
 	b[11] = byte(c & 0xFF)
 	var bits [96]bit.Bit

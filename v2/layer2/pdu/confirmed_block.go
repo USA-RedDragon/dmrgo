@@ -23,7 +23,7 @@ func computeConfirmedCRC9(dbsn uint8, userData []byte, mask uint16) uint16 {
 	bits := make([]bit.Bit, len(userData)*8+7)
 	copy(bits, bit.Unpack(userData))
 	bit.PutUint(bits[len(bits)-7:], uint64(dbsn))
-	return (crc.CalculateCRC9(bits) ^ mask) & 0x1FF
+	return (crc.CRC9(bits) ^ mask) & 0x1FF
 }
 
 func checkConfirmedCRC9(block []byte, mask uint16) bool {

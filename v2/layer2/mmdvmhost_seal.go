@@ -40,7 +40,7 @@ func MMDVMHostSeal(dataType enums.DataType, p *[12]byte) error {
 	case enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader:
 		return pdu.SealBlock(p, dataType)
 	case enums.DataTypeMBCContinuation:
-		c := crc.CalculateCRCCCITT(p[:10])
+		c := crc.CCITT(p[:10])
 		p[10] = byte(c >> 8)
 		p[11] = byte(c) //nolint:gosec // low octet of the CRC
 		return nil

@@ -13,5 +13,5 @@ import (
 func AddressHash(id uint32) uint8 {
 	var bits [24]bit.Bit
 	bit.PutUint(bits[:], uint64(id))
-	return crc.CalculateCRC8(bits[:])
+	return crc.CRC8(bits[:])
 }

@@ -113,12 +113,12 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.Result) {
 	}
 	_packedBytes[10] ^= uint8(0xcc)
 	_packedBytes[11] ^= uint8(0xcc)
+	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCRCCCITT(_packedBytes[:]) {
+	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	result.Format = Format(bit.Uint(data[4:8]))
 	var _tmpAppendedBlocks uint64
 	_tmpAppendedBlocks = bit.Uint(data[2:4])
@@ -281,7 +281,7 @@ func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 			_encBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	_crcVal := crc.CalculateCRCCCITT(_encBytes[:])
+	_crcVal := crc.CCITT(_encBytes[:])
 	_crcHigh := byte(_crcVal >> 8)
 	_crcLow := byte(_crcVal)
 	_crcHigh ^= uint8(0xcc)

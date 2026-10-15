@@ -10,7 +10,7 @@ import (
 func TestCRC9_ZeroInput(t *testing.T) {
 	// All-zero input: polynomial division yields 0, then XOR with 0x1FF
 	bits := make([]bit.Bit, 87)
-	result := crc.CalculateCRC9(bits)
+	result := crc.CRC9(bits)
 	if result != 0x1FF {
 		t.Errorf("CRC9 of 87 zero bits = 0x%03X, want 0x1FF", result)
 	}
@@ -18,7 +18,7 @@ func TestCRC9_ZeroInput(t *testing.T) {
 
 func TestCRC9_SingleBit(t *testing.T) {
 	bits := []bit.Bit{1}
-	result := crc.CalculateCRC9(bits)
+	result := crc.CRC9(bits)
 	// With inversion, should not be 0x1FF
 	if result == 0x1FF {
 		t.Error("CRC9 of single 1-bit should differ from all-zero CRC")
@@ -36,7 +36,7 @@ func TestCRC9_CheckValid_NoMask(t *testing.T) {
 	data[40] = 1
 	data[86] = 1
 
-	c := crc.CalculateCRC9(data)
+	c := crc.CRC9(data)
 
 	// Append CRC as 9 bits MSB-first
 	withCRC := make([]bit.Bit, 96)
@@ -45,7 +45,7 @@ func TestCRC9_CheckValid_NoMask(t *testing.T) {
 		withCRC[87+i] = bit.Bit((c >> (8 - i)) & 1)
 	}
 
-	if !crc.CheckCRC9(withCRC, 0x000) {
+	if !checkCRC9Codeword(withCRC, 0x000) {
 		t.Error("CheckCRC9 should return true for valid data+CRC (no mask)")
 	}
 }
@@ -57,7 +57,7 @@ func TestCRC9_CheckValid_WithMask(t *testing.T) {
 	data[50] = 1
 	data[100] = 1
 
-	c := crc.CalculateCRC9(data) ^ 0x1FF // apply mask
+	c := crc.CRC9(data) ^ 0x1FF // apply mask
 
 	withCRC := make([]bit.Bit, 144)
 	copy(withCRC, data)
@@ -65,7 +65,7 @@ func TestCRC9_CheckValid_WithMask(t *testing.T) {
 		withCRC[135+i] = bit.Bit((c >> (8 - i)) & 1)
 	}
 
-	if !crc.CheckCRC9(withCRC, 0x1FF) {
+	if !checkCRC9Codeword(withCRC, 0x1FF) {
 		t.Error("CheckCRC9 should return true for valid data+CRC with mask 0x1FF")
 	}
 }
@@ -74,7 +74,7 @@ func TestCRC9_CheckInvalid(t *testing.T) {
 	data := make([]bit.Bit, 87)
 	data[0] = 1
 
-	c := crc.CalculateCRC9(data)
+	c := crc.CRC9(data)
 
 	withCRC := make([]bit.Bit, 96)
 	copy(withCRC, data)
@@ -84,13 +84,13 @@ func TestCRC9_CheckInvalid(t *testing.T) {
 
 	// Corrupt data
 	withCRC[0] ^= 1
-	if crc.CheckCRC9(withCRC, 0x000) {
+	if checkCRC9Codeword(withCRC, 0x000) {
 		t.Error("CheckCRC9 should return false for corrupted data")
 	}
 }
 
 func TestCRC9_CheckTooShort(t *testing.T) {
-	if crc.CheckCRC9(make([]bit.Bit, 9), 0) {
+	if checkCRC9Codeword(make([]bit.Bit, 9), 0) {
 		t.Error("CheckCRC9 should return false for data shorter than 10 bits")
 	}
 }
@@ -100,8 +100,8 @@ func TestCRC9_Deterministic(t *testing.T) {
 	for i := range data {
 		data[i] = bit.Bit(i % 2)
 	}
-	crc1 := crc.CalculateCRC9(data)
-	crc2 := crc.CalculateCRC9(data)
+	crc1 := crc.CRC9(data)
+	crc2 := crc.CRC9(data)
 	if crc1 != crc2 {
 		t.Errorf("CRC9 not deterministic: 0x%03X vs 0x%03X", crc1, crc2)
 	}
@@ -113,7 +113,7 @@ func TestCRC9_ValueRange(t *testing.T) {
 	for i := range data {
 		data[i] = bit.Bit(i % 3)
 	}
-	c := crc.CalculateCRC9(data)
+	c := crc.CRC9(data)
 	if c > 0x1FF {
 		t.Errorf("CRC9 = 0x%03X, exceeds 9-bit range", c)
 	}
@@ -124,7 +124,7 @@ func TestCRC9_Rate12_DataSize(t *testing.T) {
 	data := make([]bit.Bit, 87)
 	data[0] = 1
 	data[86] = 1
-	c := crc.CalculateCRC9(data)
+	c := crc.CRC9(data)
 	if c > 0x1FF {
 		t.Errorf("CRC9 for Rate 1/2 size = 0x%03X, exceeds range", c)
 	}

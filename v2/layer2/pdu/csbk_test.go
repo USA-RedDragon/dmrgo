@@ -28,7 +28,7 @@ func buildCSBKBits(opcode byte, payload [64]bit.Bit) [96]bit.Bit {
 	}
 
 	// Compute CRC over bytes 0..9
-	crc := crc.CalculateCRCCCITT(dataBytes[:10])
+	crc := crc.CCITT(dataBytes[:10])
 	dataBytes[10] = byte(crc >> 8)
 	dataBytes[11] = byte(crc)
 

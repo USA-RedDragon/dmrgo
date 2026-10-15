@@ -153,17 +153,12 @@ func (s *ShortLCPSysParms) String() string {
 func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.Result) {
 	var result ShortLC
 	bit.Mask(data[:])
+	result.crc = uint8(bit.Uint(data[28:]))
 	var fecResult fec.Result
-	if !crc.CheckCRC8(data[:]) {
+	if !crc.CheckCRC8(data[:28], result.crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
-	var _crcVal uint8
-	for i := range 8 {
-		_crcVal <<= 1
-		_crcVal |= uint8(data[28+i])
-	}
-	result.crc = _crcVal
 	result.SLCO = enums.SLCO(bit.Uint(data[0:4]))
 	var _dispatchBits [24]bit.Bit
 	copy(_dispatchBits[:], data[4:28])
@@ -257,7 +252,7 @@ func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 			return [36]bit.Bit{}, fmt.Errorf("ShortLC.%s is set, but SLCO selects %s", _payload, _want)
 		}
 	}
-	_crcVal := crc.CalculateCRC8(data[:28])
+	_crcVal := crc.CRC8(data[:28])
 	for j := range 8 {
 		data[28+j] = bit.Bit((_crcVal >> (7 - j)) & 1)
 	}

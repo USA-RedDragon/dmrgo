@@ -70,7 +70,7 @@ func BlockOctets(rate enums.DataType, confirmed bool) (int, error) {
 // MessageCRC returns the 32-bit message CRC of §B.3.9 over the user data and
 // pad octets.
 func MessageCRC(data []byte) uint32 {
-	return crc.CalculateCRC32(data)
+	return crc.CRC32(data)
 }
 
 // AppendMessageCRC appends the message CRC of data, least significant octet

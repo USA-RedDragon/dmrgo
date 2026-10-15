@@ -117,14 +117,14 @@ func TestRate12Data_Confirmed_CRC9Layout(t *testing.T) {
 
 	bits := append(bit.Unpack(user[:]), make([]bit.Bit, 7)...)
 	bit.PutUint(bits[len(bits)-7:], 3)
-	want := (crc.CalculateCRC9(bits) ^ 0x0F0) & 0x1FF
+	want := (crc.CRC9(bits) ^ 0x0F0) & 0x1FF
 	if got := rt.ConfirmedCRC9(); got != want {
 		t.Errorf("ConfirmedCRC9() = 0x%03X, want 0x%03X", got, want)
 	}
 	if rt.Data[0] != byte(3<<1)|byte(want>>8) || rt.Data[1] != byte(want) {
 		t.Errorf("header octets = %02X %02X, want DBSN<<1|CRC MSB, CRC low", rt.Data[0], rt.Data[1])
 	}
-	if pdu.CRC9MaskRate12 != 0x0F0 {
-		t.Errorf("CRC9MaskRate12 = 0x%03X, want 0x0F0", pdu.CRC9MaskRate12)
+	if m, _, _ := pdu.CRCMask(enums.DataTypeRate12); m != 0x0F0 {
+		t.Errorf("CRCMask(Rate12) = 0x%03X, want 0x0F0", m)
 	}
 }
