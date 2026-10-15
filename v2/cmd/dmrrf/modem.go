@@ -3,10 +3,9 @@ package main
 import (
 	"math"
 	"math/cmplx"
-	"sort"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 const (
@@ -17,6 +16,8 @@ const (
 	rrcAlpha     = 0.2
 	rrcSpan      = 8
 	burstSymbols = 132
+	cachSymbols  = 12
+	frameSamples = 2 * slotSeconds * basebandRate
 	slotSeconds  = 0.030
 	burstSeconds = 0.0275
 )
@@ -82,11 +83,10 @@ func filter(x, h []float64) []float64 {
 	return out
 }
 
-// symbolsFromBurst maps the 264 bits of a burst to 132 symbols using the
-// dibit map of ETSI TS 102 361-1 Table 10.3: 01 +3, 00 +1, 10 -1, 11 -3.
-func symbolsFromBurst(b [33]byte) [burstSymbols]int {
-	bits := bit.Unpack264(b)
-	var s [burstSymbols]int
+// symbolsFromBits maps bits to symbols using the dibit map of ETSI TS 102
+// 361-1 Table 10.3: 01 +3, 00 +1, 10 -1, 11 -3.
+func symbolsFromBits(bits []bit.Bit) []int {
+	s := make([]int, len(bits)/2)
 	for i := range s {
 		switch bits[2*i]<<1 | bits[2*i+1] {
 		case 0b01:
@@ -100,6 +100,12 @@ func symbolsFromBurst(b [33]byte) [burstSymbols]int {
 		}
 	}
 	return s
+}
+
+// symbolsFromBurst maps the 264 bits of a burst to 132 symbols.
+func symbolsFromBurst(b [33]byte) []int {
+	bits := bit.Unpack264(b)
+	return symbolsFromBits(bits[:])
 }
 
 func dibitFromSymbol(v float64) (bit.Bit, bit.Bit) {
@@ -158,6 +164,54 @@ func Modulate(bursts [][33]byte, sched Schedule) (freq, env []float64) {
 				a = 0.5 - 0.5*math.Cos(math.Pi*float64(off-j)/float64(rn))
 			}
 			env[j] = math.Max(env[j], a)
+		}
+	}
+	return convolve(impulses, rrcTaps()), env
+}
+
+// BSSlot is one 30 ms slot of a BS outbound stream: the CACH in transmit
+// order and the burst that follows it.
+type BSSlot struct {
+	CACH  [layer2.CACHBits]bit.Bit
+	Burst [33]byte
+}
+
+// ModulateBS turns a BS outbound stream into deviation and envelope. The
+// carrier is continuous: each 30 ms slot is 144 symbols, 12 of CACH and 132
+// of burst (ETSI TS 102 361-1 clause 6.3), with a ramp before the first slot
+// and after the last.
+func ModulateBS(slots []BSSlot) (freq, env []float64) {
+	if len(slots) == 0 {
+		return nil, nil
+	}
+	ramp := (slotSeconds - burstSeconds) / 2
+	total := 2*ramp + float64(len(slots))*slotSeconds
+	n := int(math.Ceil(total*basebandRate)) + 1
+	impulses := make([]float64, n)
+	put := func(t0 float64, syms []int) {
+		for k, s := range syms {
+			idx := int(math.Round((t0 + float64(k)/symbolRate) * basebandRate))
+			impulses[idx] = float64(s) * deviationHz * samplesPerSy
+		}
+	}
+	for i, s := range slots {
+		t0 := ramp + float64(i)*slotSeconds
+		put(t0, symbolsFromBits(s.CACH[:]))
+		b := bit.Unpack264(s.Burst)
+		put(t0+float64(cachSymbols)/symbolRate, symbolsFromBits(b[:]))
+	}
+	env = make([]float64, n)
+	rn := ramp * basebandRate
+	end := total * basebandRate
+	for j := range env {
+		x := float64(j)
+		switch {
+		case x < rn:
+			env[j] = 0.5 - 0.5*math.Cos(math.Pi*x/rn)
+		case x > end-rn:
+			env[j] = 0.5 - 0.5*math.Cos(math.Pi*math.Max(end-x, 0)/rn)
+		default:
+			env[j] = 1
 		}
 	}
 	return convolve(impulses, rrcTaps()), env
@@ -370,123 +424,4 @@ func carrierOffset(x []complex128) float64 {
 		return 0
 	}
 	return s / float64(n)
-}
-
-// Received is one burst recovered from I/Q.
-type Received struct {
-	Data     [33]byte
-	Seconds  float64
-	Distance int
-}
-
-// Demodulated is the result of Demodulate.
-type Demodulated struct {
-	Bursts      []Received
-	OffsetHz    float64
-	DeviationHz float64
-}
-
-// Demodulate recovers DMR bursts from complex samples at rate.
-func Demodulate(x []complex128, rate float64) Demodulated {
-	bb := channelize(x, rate)
-	pw := power(bb)
-	var peak float64
-	for _, v := range pw {
-		peak = math.Max(peak, v)
-	}
-	present := func(t float64) bool {
-		lo := int(t * basebandRate)
-		hi := min(lo+int(burstSeconds*basebandRate), len(pw))
-		if lo < 0 || hi <= lo {
-			return false
-		}
-		var s float64
-		for _, v := range pw[lo:hi] {
-			s += v
-		}
-		return s/float64(hi-lo) > peak/4
-	}
-	coarse := carrierOffset(bb)
-	bb = lowpass(shift(bb, coarse), 6000)
-	d := discriminate(bb)
-	sym := filter(d, rrcTaps())
-
-	type cand struct {
-		r     Received
-		phase int
-	}
-	var all []cand
-	for phase := range samplesPerSy {
-		var bits []bit.Bit
-		var times []float64
-		for i := phase; i < len(sym); i += samplesPerSy {
-			b0, b1 := dibitFromSymbol(sym[i])
-			bits = append(bits, b0, b1)
-			times = append(times, float64(i)/basebandRate)
-		}
-		for start := 0; ; {
-			m, ok := framer.Search(bits, start, -1)
-			if !ok {
-				break
-			}
-			start = m.Offset + 1
-			first := m.Offset - framer.SyncOffset
-			if first < 0 || first+framer.BurstBits > len(bits) {
-				continue
-			}
-			var b [264]bit.Bit
-			copy(b[:], bits[first:first+framer.BurstBits])
-			if !present(times[first/2]) {
-				continue
-			}
-			all = append(all, cand{Received{bit.Pack264(b), times[first/2], m.Distance}, phase})
-		}
-	}
-
-	sort.SliceStable(all, func(i, j int) bool { return all[i].r.Distance < all[j].r.Distance })
-	var res Demodulated
-	used := make([]bool, len(all))
-	for i := range all {
-		if used[i] {
-			continue
-		}
-		best := i
-		for j := i + 1; j < len(all); j++ {
-			if !used[j] && math.Abs(all[j].r.Seconds-all[i].r.Seconds) < burstSeconds {
-				used[j] = true
-				if all[j].r.Distance < all[best].r.Distance {
-					best = j
-				}
-			}
-		}
-		res.Bursts = append(res.Bursts, all[best].r)
-	}
-	sort.Slice(res.Bursts, func(i, j int) bool { return res.Bursts[i].Seconds < res.Bursts[j].Seconds })
-
-	var resid, outer float64
-	var nr, no int
-	for _, r := range res.Bursts {
-		ideal := symbolsFromBurst(r.Data)
-		first := int(math.Round(r.Seconds * basebandRate))
-		for k := 54; k < 78; k++ {
-			idx := first + k*samplesPerSy
-			if idx >= len(sym) {
-				break
-			}
-			resid += sym[idx] - float64(ideal[k])*deviationHz
-			nr++
-			if ideal[k] == 3 || ideal[k] == -3 {
-				outer += math.Abs(sym[idx])
-				no++
-			}
-		}
-	}
-	res.OffsetHz = coarse
-	if nr > 0 {
-		res.OffsetHz += resid / float64(nr)
-	}
-	if no > 0 {
-		res.DeviationHz = outer / float64(no)
-	}
-	return res
 }
