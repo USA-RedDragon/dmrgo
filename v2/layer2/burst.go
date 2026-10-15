@@ -3,6 +3,16 @@
 // CACH and Short LC, the Reverse Channel, and the voice superframe
 // transmitter and receiver. The PDUs that the bursts carry are in package
 // pdu.
+//
+// Errors follow the rule of package fec: decoding never fails because FEC
+// or a CRC cannot correct or check the bits. Burst.FEC and the FEC field of
+// each PDU report that, and the decoded fields are still set, so a caller
+// can inspect or forward them. An error means that the input cannot be
+// decoded, such as ErrReservedDataType, or breaks a caller-given rule, such
+// as ErrColorCodeMismatch. A caller that wants an error for an
+// uncorrectable burst uses b.FEC.Aggregate().Err(). The errors of this
+// package that report an uncorrectable result, such as
+// ErrEmbeddedLCUncorrectable, wrap fec.ErrUncorrectable.
 package layer2
 
 import (
@@ -125,7 +135,8 @@ func (b *Burst) HasReverseChannel() bool {
 }
 
 // NewBurstFromBytes decodes data into a new Burst, as DecodeFromBytes does.
-// It returns the burst also with an error.
+// It returns the burst also with an error, populated as DecodeFromBytes
+// leaves it.
 func NewBurstFromBytes(data [33]byte) (*Burst, error) {
 	burst := &Burst{}
 	err := burst.DecodeFromBytes(data)

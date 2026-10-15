@@ -3,7 +3,6 @@
 package reedsolomon
 
 import (
-	"errors"
 	"fmt"
 	"math/bits"
 
@@ -275,16 +274,16 @@ func correct(data []byte, syndrome *poly) (int, error) {
 	// With d=4 the code corrects one symbol error, so only a degree-1 locator
 	// with one root inside the shortened codeword is acceptable.
 	if ws.locator[1] == 0 {
-		return 0, errUncorrectable
+		return 0, fec.ErrUncorrectable
 	}
 	for j := 2; j < polyMaxDeg; j++ {
 		if ws.locator[j] != 0 {
-			return 0, errUncorrectable
+			return 0, fec.ErrUncorrectable
 		}
 	}
 	roots := findRootsInto(&ws.locator, ws.roots[:0])
 	if len(roots) != 1 || roots[0] >= dataSize+checksumSize {
-		return 0, errUncorrectable
+		return 0, fec.ErrUncorrectable
 	}
 	i := roots[0]
 
@@ -301,7 +300,7 @@ func correct(data []byte, syndrome *poly) (int, error) {
 	}
 	inv, ok := galoisInv(denom)
 	if !ok || num == 0 {
-		return 0, errUncorrectable
+		return 0, fec.ErrUncorrectable
 	}
 
 	pos := len(data) - int(i) - 1
@@ -311,13 +310,11 @@ func correct(data []byte, syndrome *poly) (int, error) {
 	var check poly
 	if err := calcSyndrome(data, &check); err != nil || syndromeHasErrors(&check) {
 		data[pos] ^= value
-		return 0, errUncorrectable
+		return 0, fec.ErrUncorrectable
 	}
 
 	return 1, nil
 }
-
-var errUncorrectable = errors.New("fec/rs_12_9: errors can't be corrected")
 
 // The error-locator polynomial's roots are found by looking for the values of a^n where
 // evaluating the polynomial yields zero (evaluating rs_12_9_error_locator_poly at

@@ -1,6 +1,7 @@
 package fec_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -73,5 +74,14 @@ func TestResult_Combine(t *testing.T) {
 	want := fec.Result{BitsChecked: 32, ErrorsCorrected: 1, Uncorrectable: true}
 	if got != want {
 		t.Errorf("Combine = %+v, want %+v", got, want)
+	}
+}
+
+func TestResult_Err(t *testing.T) {
+	if err := (fec.Result{BitsChecked: 96, ErrorsCorrected: 3}).Err(); err != nil {
+		t.Errorf("corrected result: Err() = %v, want nil", err)
+	}
+	if err := (fec.Result{Uncorrectable: true}).Err(); !errors.Is(err, fec.ErrUncorrectable) {
+		t.Errorf("uncorrectable result: Err() = %v, want ErrUncorrectable", err)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -128,6 +129,8 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 }
 
 // DecodeResponseData decodes one or two C_RDATA blocks and checks their CRC.
+// On a CRC failure it returns the decoded flags with an error that wraps
+// ErrResponseData and fec.ErrUncorrectable.
 func DecodeResponseData(blocks ...*pdu.Rate12Data) (ResponseData, error) {
 	if len(blocks) != 1 && len(blocks) != 2 {
 		return ResponseData{}, fmt.Errorf("%w: %d blocks", ErrResponseData, len(blocks))
@@ -141,8 +144,8 @@ func DecodeResponseData(blocks ...*pdu.Rate12Data) (ResponseData, error) {
 
 func decodeResponseData(buf []byte) (ResponseData, error) {
 	var r ResponseData
-	if (len(buf) != 12 && len(buf) != 24) || !CheckMessageCRC(buf) {
-		return r, fmt.Errorf("%w: bad length or CRC", ErrResponseData)
+	if len(buf) != 12 && len(buf) != 24 {
+		return r, fmt.Errorf("%w: %d octets", ErrResponseData, len(buf))
 	}
 	flags := 64
 	if len(buf) == 24 {
@@ -150,6 +153,9 @@ func decodeResponseData(buf []byte) (ResponseData, error) {
 	}
 	for i := 0; i < flags; i++ {
 		r.Retry[i] = buf[i/8]&(0x80>>(i%8)) == 0
+	}
+	if !CheckMessageCRC(buf) {
+		return r, fmt.Errorf("%w: %w", ErrResponseData, fec.ErrUncorrectable)
 	}
 	return r, nil
 }

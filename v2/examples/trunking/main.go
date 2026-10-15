@@ -77,8 +77,11 @@ func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", c.Opcode, err)
 		}
-		if got.FEC.Uncorrectable || b.SyncPattern != enums.SyncBSSourcedData {
-			return fmt.Errorf("%s: FEC %+v, sync %s", c.Opcode, got.FEC, b.SyncPattern)
+		if err := got.FEC.Err(); err != nil {
+			return fmt.Errorf("%s: %w", c.Opcode, err)
+		}
+		if b.SyncPattern != enums.SyncBSSourcedData {
+			return fmt.Errorf("%s: sync %s", c.Opcode, b.SyncPattern)
 		}
 		want, _ := c.Encode()
 		back, err := got.Encode()
@@ -209,8 +212,8 @@ func mbcGrant(w io.Writer) error {
 		return err
 	}
 	gotCGAP, res := gotCont.AsCGAP()
-	if res.Uncorrectable {
-		return errors.New("MBC last block CRC does not check")
+	if err := res.Err(); err != nil {
+		return fmt.Errorf("MBC last block CRC: %w", err)
 	}
 	if gotCGAP.CdefParms != cgap.CdefParms {
 		return fmt.Errorf("CGAP %+v, want %+v", gotCGAP.CdefParms, cgap.CdefParms)
@@ -271,8 +274,8 @@ func cachRoundTrip(asm *layer2.ShortLCAssembler, slc *pdu.ShortLC) (pdu.ShortLC,
 	done := false
 	for i, f := range fields {
 		c := layer2.DecodeCACH(layer2.CACHDeinterleave(f))
-		if c.FEC.Uncorrectable {
-			return pdu.ShortLC{}, fmt.Errorf("CACH %d: TACT uncorrectable", i)
+		if err := c.FEC.Err(); err != nil {
+			return pdu.ShortLC{}, fmt.Errorf("CACH %d TACT: %w", i, err)
 		}
 		if done, err = asm.AddFragment(c.TACT.LCSS, c.Payload); err != nil {
 			return pdu.ShortLC{}, err
@@ -285,8 +288,11 @@ func cachRoundTrip(asm *layer2.ShortLCAssembler, slc *pdu.ShortLC) (pdu.ShortLC,
 	if err != nil {
 		return got, err
 	}
-	if got.FEC.Uncorrectable || got.SLCO != slc.SLCO {
-		return got, fmt.Errorf("short LC %s: FEC %+v", got.SLCO, got.FEC)
+	if err := got.FEC.Err(); err != nil {
+		return got, fmt.Errorf("short LC %s: %w", got.SLCO, err)
+	}
+	if got.SLCO != slc.SLCO {
+		return got, fmt.Errorf("short LC %s, want %s", got.SLCO, slc.SLCO)
 	}
 	return got, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -27,12 +28,13 @@ type received struct {
 	positions []enums.VoiceBurstType
 	lcs       map[int]pdu.FullLinkControl
 	errs      map[int]error
+	badLCs    map[int]pdu.FullLinkControl
 }
 
 func receiveAll(t *testing.T, raws [][33]byte) received {
 	t.Helper()
 	var r layer2.VoiceReceiver
-	got := received{lcs: map[int]pdu.FullLinkControl{}, errs: map[int]error{}}
+	got := received{lcs: map[int]pdu.FullLinkControl{}, errs: map[int]error{}, badLCs: map[int]pdu.FullLinkControl{}}
 	for i, raw := range raws {
 		b, _ := layer2.NewBurstFromBytes(raw)
 		lc, ok, err := r.Receive(b)
@@ -42,6 +44,9 @@ func receiveAll(t *testing.T, raws [][33]byte) received {
 		}
 		if err != nil {
 			got.errs[i] = err
+		}
+		if errors.Is(err, layer2.ErrEmbeddedLCUncorrectable) {
+			got.badLCs[i] = lc
 		}
 	}
 	return got
@@ -127,8 +132,11 @@ func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 	raws[3] = bit.Pack264(all)
 	got := receiveAll(t, raws)
 	checkPositions(t, got.positions, "-ABCDEF-")
-	if !errors.Is(got.errs[5], layer2.ErrEmbeddedLCUncorrectable) || len(got.lcs) != 0 {
+	if !errors.Is(got.errs[5], layer2.ErrEmbeddedLCUncorrectable) || !errors.Is(got.errs[5], fec.ErrUncorrectable) || len(got.lcs) != 0 {
 		t.Errorf("LCs %v, errors %v; want ErrEmbeddedLCUncorrectable at burst 5", got.lcs, got.errs)
+	}
+	if lc, ok := got.badLCs[5]; !ok || !lc.FEC.Uncorrectable {
+		t.Errorf("uncorrectable embedded LC %+v: want the decoded LC with FEC.Uncorrectable", lc)
 	}
 }
 
