@@ -89,8 +89,8 @@ func packetEntries(t testing.TB) []entry {
 	payload := octets(53)
 	var b packet.Builder
 	segmentAllocs := map[string]float64{
-		"Unconfirmed Rate 1/2": 1, "Unconfirmed Rate 3/4": 1, "Unconfirmed Rate 1": 1,
-		"Confirmed Rate 1/2": 13, "Confirmed Rate 3/4": 9, "Confirmed Rate 1": 7,
+		"Unconfirmed Rate 1/2": 0, "Unconfirmed Rate 3/4": 0, "Unconfirmed Rate 1": 0,
+		"Confirmed Rate 1/2": 12, "Confirmed Rate 3/4": 8, "Confirmed Rate 1": 6,
 	}
 	for _, h := range []*pdu.DataHeader{&uh, &ch} {
 		for _, rate := range []enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1} {
@@ -102,10 +102,10 @@ func packetEntries(t testing.TB) []entry {
 		}
 	}
 	out = append(out,
-		entry{"layer2/packet.Segment", "unconfirmed rate 1/2", 5, func() {
+		entry{"layer2/packet.Segment", "unconfirmed rate 1/2", 4, func() {
 			keep.pkt, _ = packet.Segment(uh, payload, enums.DataTypeRate12)
 		}},
-		entry{"layer2/packet.Segment", "confirmed rate 3/4", 13, func() {
+		entry{"layer2/packet.Segment", "confirmed rate 3/4", 12, func() {
 			keep.pkt, _ = packet.Segment(ch, payload, enums.DataTypeRate34)
 		}},
 	)
@@ -127,8 +127,8 @@ func packetEntries(t testing.TB) []entry {
 func assemblerEntries(t testing.TB) []entry {
 	t.Helper()
 	var out []entry
-	freshAllocs := map[string]float64{"d-sms": 3, "m-sms": 3, "h-sms": 2}
-	reuseAllocs := map[string]float64{"d-sms": 1, "m-sms": 1, "h-sms": 0}
+	freshAllocs := map[string]float64{"d-sms": 2, "m-sms": 2, "h-sms": 2}
+	reuseAllocs := map[string]float64{"d-sms": 0, "m-sms": 0, "h-sms": 0}
 	for _, name := range []string{"d-sms", "m-sms", "h-sms"} {
 		bursts := captureBursts(t, name)
 		var fresh packet.Assembler
@@ -162,7 +162,7 @@ func assemblerEntries(t testing.TB) []entry {
 	udt := pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &pdu.UDTHeader{SAP: 1}}
 	var ign, single packet.Assembler
 	out = append(out,
-		entry{"layer2/packet.Assembler.Add", "confirmed rate 3/4 reuse", 9, addAll},
+		entry{"layer2/packet.Assembler.Add", "confirmed rate 3/4 reuse", 8, addAll},
 		entry{"layer2/packet.Assembler.Add", "UDT header (ignored)", 0, func() { _, _, _ = ign.Add(&udt) }},
 		entry{"layer2/packet.Assembler.Add", "C_HEAD", 0, func() { _, _, _ = single.Add(&hdr) }},
 		entry{"layer2/packet.Assembler.Reset", "reuse", 0, reuse.Reset},

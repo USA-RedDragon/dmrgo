@@ -5,17 +5,15 @@ package crc
 // of each 16-bit word before the division, and a last odd byte stays in place
 // (ETSI TS 102 361-1 clause B.3.9).
 func CRC32(data []byte) uint32 {
-	swapped := make([]byte, len(data))
-	for i := 0; i+1 < len(data); i += 2 {
-		swapped[i] = data[i+1]
-		swapped[i+1] = data[i]
-	}
-	if len(data)%2 == 1 {
-		swapped[len(data)-1] = data[len(data)-1]
-	}
-
 	var crc uint32
-	for _, b := range swapped {
+	for i := range data {
+		b := data[i]
+		switch {
+		case i%2 == 0 && i+1 < len(data):
+			b = data[i+1]
+		case i%2 == 1:
+			b = data[i-1]
+		}
 		crc = (crc << 8) ^ crc32_0x04C11DB7[byte(crc>>24)^b]
 	}
 
