@@ -16,7 +16,7 @@ const (
 	burstTestSource = 3191868
 )
 
-func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
+func transmit(t *testing.T, c *Codec, pcm []int16) []layer2.RawBurst {
 	t.Helper()
 	payload, err := (&pdu.FLCGroupVoice{GroupAddress: burstTestGroup, SourceAddress: burstTestSource}).Encode()
 	if err != nil {
@@ -32,7 +32,7 @@ func transmit(t *testing.T, c *Codec, pcm []int16) [][33]byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bursts := [][33]byte{tx.Header()}
+	bursts := []layer2.RawBurst{tx.Header()}
 	for _, slot := range encodeAll(t, c, pcm) {
 		out, err := tx.AddSlots(slot)
 		if err != nil {

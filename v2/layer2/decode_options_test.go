@@ -85,7 +85,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 	if packSlots(b.VoiceSlots) != r.VoiceSlots() {
 		t.Fatal("voice slots differ from the frame")
 	}
-	enc := layer2.RawBurst(must(b.Encode()))
+	enc := must(b.Encode())
 	if enc.VoiceSlots() != r.VoiceSlots() {
 		t.Fatal("Encode lost the voice")
 	}

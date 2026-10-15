@@ -127,7 +127,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 				tx := must(layer2.NewVoiceTransmitter(lc, cc, source, silenceSlot()))
 
 				var slots [][72]bit.Bit
-				var bursts [][33]byte
+				var bursts []layer2.RawBurst
 				for n := 0; n < 40; n++ {
 					slots = append(slots, testSlot(n))
 					bursts = append(bursts, must(tx.AddSlots(testSlot(n)))...)
@@ -207,7 +207,7 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 	if err := tx.SetReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}); err != nil {
 		t.Fatal(err)
 	}
-	var bursts [][33]byte
+	var bursts []layer2.RawBurst
 	for n := 0; n < 12*3; n++ {
 		bursts = append(bursts, must(tx.AddSlots(testSlot(n)))...)
 	}
@@ -267,11 +267,11 @@ func TestVoiceTransmitter_Terminate(t *testing.T) {
 func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
 	tx := must(layer2.NewVoiceTransmitter(lc, 0x17, layer2.SyncSourceBS, silenceSlot()))
-	bursts := append([][33]byte{tx.Header()}, must(tx.AddSlots(make([][72]bit.Bit, 6)...))...)
-	if st := layer2.RawBurst(bursts[0]).SlotType(); st.ColorCode != 7 {
+	bursts := append([]layer2.RawBurst{tx.Header()}, must(tx.AddSlots(make([][72]bit.Bit, 6)...))...)
+	if st := bursts[0].SlotType(); st.ColorCode != 7 {
 		t.Errorf("color code 0x17: header carries %d, want the low 4 bits 7", st.ColorCode)
 	}
-	if emb := layer2.RawBurst(bursts[2]).EMB(); emb.ColorCode != 7 {
+	if emb := bursts[2].EMB(); emb.ColorCode != 7 {
 		t.Errorf("color code 0x17: burst B carries %d, want the low 4 bits 7", emb.ColorCode)
 	}
 	if _, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSource(4), silenceSlot()); err == nil {

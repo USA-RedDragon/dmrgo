@@ -45,7 +45,7 @@ var bitFuncs = map[string]any{
 		var a layer2.ShortLCAssembler
 		return a.AddFragment(enums.LCSSFirstFragment, payload)
 	},
-	"layer2.VoiceTransmitter.AddSlots": func(slots ...[72]bit.Bit) ([][33]byte, error) {
+	"layer2.VoiceTransmitter.AddSlots": func(slots ...[72]bit.Bit) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AddSlots(slots...)
 	},
 	"layer2.Burst.SetAMBEFrames": func(frames [3]vocoder.AMBEFrame) [3][72]bit.Bit {
@@ -58,7 +58,7 @@ var bitFuncs = map[string]any{
 		return r
 	},
 	"vocoder.PackAMBEVoice": vocoder.PackAMBEVoice,
-	"layer2.VoiceTransmitter.AddFrames": func(frames ...vocoder.AMBEFrame) ([][33]byte, error) {
+	"layer2.VoiceTransmitter.AddFrames": func(frames ...vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AddFrames(frames...)
 	},
 	"internal/crc.CRC7":                                        crc.CRC7,

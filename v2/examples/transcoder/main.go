@@ -33,7 +33,7 @@ type call struct {
 	embLCs int
 }
 
-func readBursts(path string) ([][burstSize]byte, error) {
+func readBursts(path string) ([]layer2.RawBurst, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func readBursts(path string) ([][burstSize]byte, error) {
 	if len(data)%burstSize != 0 {
 		return nil, fmt.Errorf("%s: %d bytes is not a multiple of %d", path, len(data), burstSize)
 	}
-	bursts := make([][burstSize]byte, len(data)/burstSize)
+	bursts := make([]layer2.RawBurst, len(data)/burstSize)
 	for i := range bursts {
 		copy(bursts[i][:], data[i*burstSize:])
 	}
@@ -59,7 +59,7 @@ func syncSource(p enums.SyncPattern) (layer2.SyncSource, bool) {
 
 // receive decodes one voice transmission: the Full LC of the Voice LC Header,
 // the voice slots, their AMBE+2 frames and the number of embedded LCs.
-func receive(bursts [][burstSize]byte) (call, error) {
+func receive(bursts []layer2.RawBurst) (call, error) {
 	var c call
 	var rx layer2.VoiceReceiver
 	for i, raw := range bursts {
@@ -96,7 +96,7 @@ func receive(bursts [][burstSize]byte) (call, error) {
 	return c, nil
 }
 
-func transmit(lc pdu.FullLinkControl, cc enums.ColorCode, src layer2.SyncSource, silence [72]bit.Bit, add func(*layer2.VoiceTransmitter) ([][burstSize]byte, error)) ([][burstSize]byte, error) {
+func transmit(lc pdu.FullLinkControl, cc enums.ColorCode, src layer2.SyncSource, silence [72]bit.Bit, add func(*layer2.VoiceTransmitter) ([]layer2.RawBurst, error)) ([]layer2.RawBurst, error) {
 	tx, err := layer2.NewVoiceTransmitter(lc, cc, src, silence)
 	if err != nil {
 		return nil, err
@@ -148,7 +148,7 @@ func ambe(w io.Writer, dataDir string) (*pdu.FullLinkControl, error) {
 	_, _ = fmt.Fprintf(w, "AMBE72 with 3 flipped bits: %d corrected, frame restored %t\n", res.ErrorsCorrected, info == c.frames[0])
 
 	rebuilt, err := transmit(*c.lc, c.cc, c.source, vocoder.EncodeAMBE72(vocoder.AMBESilence()),
-		func(tx *layer2.VoiceTransmitter) ([][burstSize]byte, error) { return tx.AddFrames(c.frames...) })
+		func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddFrames(c.frames...) })
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 		return fmt.Errorf("cannot set addresses %d -> %d", src, dst)
 	}
 	bursts, err := transmit(lc, 1, layer2.SyncSourceMS, enc.Silence(),
-		func(tx *layer2.VoiceTransmitter) ([][burstSize]byte, error) { return tx.AddSlots(slots...) })
+		func(tx *layer2.VoiceTransmitter) ([]layer2.RawBurst, error) { return tx.AddSlots(slots...) })
 	if err != nil {
 		return err
 	}

@@ -146,7 +146,7 @@ func (b *Burst) HasReverseChannel() bool {
 // NewBurstFromBytes decodes data into a new Burst, as DecodeFromBytes does.
 // It returns the burst also with an error, populated as DecodeFromBytes
 // leaves it.
-func NewBurstFromBytes(data [33]byte) (*Burst, error) {
+func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 	burst := &Burst{}
 	err := burst.DecodeFromBytes(data)
 	return burst, err
@@ -155,7 +155,7 @@ func NewBurstFromBytes(data [33]byte) (*Burst, error) {
 // DecodeFromBytes populates the burst in place, enabling zero-allocation
 // decoding when reusing a Burst. It is DecodeFromBytesWith with the zero
 // DecodeOptions.
-func (b *Burst) DecodeFromBytes(data [33]byte) error {
+func (b *Burst) DecodeFromBytes(data RawBurst) error {
 	return b.DecodeFromBytesWith(data, DecodeOptions{})
 }
 
@@ -168,7 +168,7 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 // DecodeOptions.Kind, a voice burst B to F whose EMB and embedded data come
 // within the SYNC threshold of a SYNC pattern decodes as that kind of burst,
 // for example as a standalone RC burst (see DecodeOptions.VoiceBurst).
-func (b *Burst) DecodeFromBytesWith(data [33]byte, opts DecodeOptions) error {
+func (b *Burst) DecodeFromBytesWith(data RawBurst, opts DecodeOptions) error {
 	*b = Burst{}
 	b.bitData = bit.Unpack264(data)
 	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
@@ -620,16 +620,16 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 // A voice burst carries VoiceSlots as they are, so a slot of any codec, or
 // an AMBE+2 frame with bit errors, goes out unchanged. SetAMBEFrames codes
 // AMBE+2 frames into the slots.
-func (b *Burst) Encode() ([33]byte, error) {
+func (b *Burst) Encode() (RawBurst, error) {
 	if b.Kind == KindReverseChannel {
 		bitData, err := b.encodeStandaloneRC()
 		if err != nil {
-			return [33]byte{}, err
+			return RawBurst{}, err
 		}
 		return bit.Pack264(bitData), nil
 	}
 	if err := b.checkCentre(); err != nil {
-		return [33]byte{}, err
+		return RawBurst{}, err
 	}
 
 	var bitData [264]bit.Bit
@@ -637,14 +637,14 @@ func (b *Burst) Encode() ([33]byte, error) {
 	if b.Kind == KindData {
 		slotBits, err := b.SlotType.Encode()
 		if err != nil {
-			return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
+			return RawBurst{}, fmt.Errorf("cannot encode slot type: %w", err)
 		}
 		copy(bitData[98:108], slotBits[:10])
 		copy(bitData[156:166], slotBits[10:20])
 
 		dataBits, err := b.encodeDataBits()
 		if err != nil {
-			return [33]byte{}, err
+			return RawBurst{}, err
 		}
 		copy(bitData[:98], dataBits[:98])
 		copy(bitData[166:264], dataBits[98:196])
@@ -657,11 +657,11 @@ func (b *Burst) Encode() ([33]byte, error) {
 	if b.HasEmbeddedSignalling() {
 		data, err := b.embeddedData()
 		if err != nil {
-			return [33]byte{}, err
+			return RawBurst{}, err
 		}
 		esBits, err := b.EmbeddedSignalling.Encode()
 		if err != nil {
-			return [33]byte{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
+			return RawBurst{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
 		}
 		copy(bitData[108:116], esBits[0:8])
 		copy(bitData[116:148], data[:])

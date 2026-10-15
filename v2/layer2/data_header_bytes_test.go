@@ -39,7 +39,7 @@ func TestDataHeaderBytes_SMSCaptures(t *testing.T) {
 			if !isHeader || b.FEC.PDU.HasErrors() {
 				continue
 			}
-			r := layer2.RawBurst(frame)
+			r := frame
 			p, _ := r.BPTCPayload()
 			h := pdu.DataHeaderBytes(p)
 			if !h.CRCOK() || h.Format() != dh.Format {

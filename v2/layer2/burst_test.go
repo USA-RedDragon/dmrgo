@@ -34,7 +34,7 @@ func TestBurst_ReservedDataTypes(t *testing.T) {
 	}
 }
 
-func loadBursts(t testing.TB, path string) [][33]byte {
+func loadBursts(t testing.TB, path string) []layer2.RawBurst {
 	t.Helper()
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -46,7 +46,7 @@ func loadBursts(t testing.TB, path string) [][33]byte {
 	}
 
 	count := len(data) / 33
-	bursts := make([][33]byte, count)
+	bursts := make([]layer2.RawBurst, count)
 	for i := 0; i < count; i++ {
 		copy(bursts[i][:], data[i*33:(i+1)*33])
 	}

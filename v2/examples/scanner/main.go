@@ -93,7 +93,7 @@ func run(w io.Writer, dataDir string) error {
 	return nil
 }
 
-func loadBursts(path string) ([][33]byte, error) {
+func loadBursts(path string) ([]layer2.RawBurst, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func loadBursts(path string) ([][33]byte, error) {
 	if len(data)%33 != 0 {
 		return nil, fmt.Errorf("%s: %d bytes is not a whole number of bursts", path, len(data))
 	}
-	out := make([][33]byte, len(data)/33)
+	out := make([]layer2.RawBurst, len(data)/33)
 	for i := range out {
 		out[i] = [33]byte(data[i*33:])
 	}
@@ -110,7 +110,7 @@ func loadBursts(path string) ([][33]byte, error) {
 
 // generatedCall returns a group call whose embedded LC rotates through the
 // voice LC, the talker alias header and block, and a GPS position.
-func generatedCall() ([][33]byte, error) {
+func generatedCall() ([]layer2.RawBurst, error) {
 	rotation, err := pdu.EncodeTalkerAlias("KF5XYZ Jacob", layer3.TalkerAliasSevenBit)
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ func generatedCall() ([][33]byte, error) {
 // buildStream interleaves the two time slots with a CACH before every
 // burst, fills the shorter one with idle bursts, prepends junk bits and
 // flips bits at random.
-func buildStream(ts1, ts2 [][33]byte) ([]bit.Bit, int, error) {
+func buildStream(ts1, ts2 []layer2.RawBurst) ([]bit.Bit, int, error) {
 	idle, err := layer2.BuildDataBurst(bit.Pack96(layer2.IdleMessageInfo()), enums.DataTypeIdle, colorCode, layer2.SyncSourceBS)
 	if err != nil {
 		return nil, 0, err
@@ -166,8 +166,8 @@ func buildStream(ts1, ts2 [][33]byte) ([]bit.Bit, int, error) {
 		stream[i] = bit.Bit(r.next() & 1)
 	}
 	for i := range max(len(ts1), len(ts2)) {
-		for tc, ts := range [2][][33]byte{ts1, ts2} {
-			burst := [33]byte(idle)
+		for tc, ts := range [2][]layer2.RawBurst{ts1, ts2} {
+			burst := idle
 			if i < len(ts) {
 				burst = ts[i]
 			}
