@@ -25,6 +25,7 @@ func entries(t testing.TB) []entry {
 		layer2Entries(t),
 		packetEntries(t),
 		framerEntries(t),
+		vocoderEntries(t),
 	)
 }
 

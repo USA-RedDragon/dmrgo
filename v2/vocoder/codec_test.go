@@ -59,6 +59,11 @@ func TestCodecRegistry(t *testing.T) {
 		}
 	}
 
+	prefixed := vocoder.AppendNames([]string{"~first"})
+	if prefixed[0] != "~first" || !slices.IsSorted(prefixed[1:]) || !slices.Contains(prefixed, a) || !slices.Contains(prefixed, b) {
+		t.Errorf("AppendNames = %v", prefixed)
+	}
+
 	c, err := vocoder.New(a)
 	if err != nil {
 		t.Fatalf("New: %v", err)
