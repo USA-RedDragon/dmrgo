@@ -410,9 +410,13 @@ documents:
         title: "Slot Type (SLOT) PDU"
         source_files:
           - v2/layer2/pdu/slot_type.go
+          - v2/layer2/pdu/slot_type_info.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
+              - TestSlotTypeInfo_IPSCExample
+              - TestSlotTypeInfo_AllValues
+              - TestSlotTypeInfo_Setters
               - TestSlotType_DecodeEncodeRoundTrip
               - TestSlotType_AllColorCodes
               - TestSlotType_AllDataTypes
