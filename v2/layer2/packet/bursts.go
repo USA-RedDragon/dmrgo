@@ -13,20 +13,30 @@ import (
 // when the header or a block does not encode, a block has another data type,
 // or src is unknown.
 func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
+	out, err := AppendBursts(make([]layer2.RawBurst, 0, 1+len(p.Blocks)), &p, colorCode, src)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AppendBursts appends the bursts that Bursts returns to dst and returns the
+// extended slice. On error it returns dst unchanged.
+func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
+	n := len(dst)
 	raw, err := layer2.BuildBurst(&p.Header, colorCode, src)
 	if err != nil {
-		return nil, fmt.Errorf("header: %w", err)
+		return dst, fmt.Errorf("header: %w", err)
 	}
-	out := make([]layer2.RawBurst, 0, 1+len(p.Blocks))
-	out = append(out, raw)
+	dst = append(dst, raw)
 	for i, d := range p.Blocks {
 		raw, err = blockBurst(d, colorCode, src)
 		if err != nil {
-			return nil, fmt.Errorf("block %d: %w", i, err)
+			return dst[:n], fmt.Errorf("block %d: %w", i, err)
 		}
-		out = append(out, raw)
+		dst = append(dst, raw)
 	}
-	return out, nil
+	return dst, nil
 }
 
 func blockBurst(d layer2.Data, colorCode enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, error) {

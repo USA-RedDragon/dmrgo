@@ -1,8 +1,10 @@
 package packet
 
 import (
+	"encoding/binary"
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -84,28 +86,59 @@ type ResponseData struct {
 
 // RetryBlocks returns the DBSNs flagged for retry in ascending order.
 func (r *ResponseData) RetryBlocks() []int {
-	var out []int
-	for i, retry := range r.Retry {
+	n := 0
+	for _, retry := range r.Retry {
 		if retry {
-			out = append(out, i)
+			n++
 		}
 	}
-	return out
+	if n == 0 {
+		return nil
+	}
+	return r.AppendRetryBlocks(make([]int, 0, n))
+}
+
+// AppendRetryBlocks appends the DBSNs flagged for retry to dst in ascending
+// order and returns the extended slice. It does not allocate when dst has
+// room.
+func (r *ResponseData) AppendRetryBlocks(dst []int) []int {
+	for i, retry := range r.Retry {
+		if retry {
+			dst = append(dst, i)
+		}
+	}
+	return dst
 }
 
 // Encode returns the rate 1/2 C_RDATA blocks for a packet of the given
 // number of blocks: one block with 64 flags, or two blocks with 127 flags
 // when blocks is over 64. Flags for blocks past the packet are 1.
 func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
+	data, err := r.AppendEncode(make([]pdu.Rate12Data, 0, 2), blocks)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*pdu.Rate12Data, len(data))
+	for i := range data {
+		out[i] = &data[i]
+	}
+	return out, nil
+}
+
+// AppendEncode appends the C_RDATA blocks that Encode returns to dst and
+// returns the extended slice. It does not allocate when dst has room for two
+// blocks. On error it returns dst unchanged.
+func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rate12Data, error) {
 	if blocks < 0 || blocks > maxBlocks {
-		return nil, fmt.Errorf("%w: %d blocks", ErrTooLong, blocks)
+		return dst, fmt.Errorf("%w: %d blocks", ErrTooLong, blocks)
 	}
 	n, flags := 1, 64
 	if blocks > 64 {
 		n, flags = 2, maxBlocks
 	}
-	buf := make([]byte, n*12-crcOctets)
-	for i := range buf {
+	var buf [2 * 12]byte
+	size := n * 12
+	for i := range size - crcOctets {
 		buf[i] = 0xFF
 	}
 	for i := 0; i < flags; i++ {
@@ -113,12 +146,11 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 			buf[i/8] &^= 0x80 >> (i % 8)
 		}
 	}
-	buf = appendMessageCRC(buf)
-	out := make([]*pdu.Rate12Data, n)
-	for i := range out {
-		out[i] = &pdu.Rate12Data{Data: [12]byte(buf[i*12:])}
+	binary.LittleEndian.PutUint32(buf[size-crcOctets:], crc.CRC32(buf[:size-crcOctets]))
+	for i := range n {
+		dst = append(dst, pdu.Rate12Data{Data: [12]byte(buf[i*12:])})
 	}
-	return out, nil
+	return dst, nil
 }
 
 // DecodeResponseData decodes one or two C_RDATA blocks and checks their CRC.
@@ -161,12 +193,22 @@ func decodeResponseData(r *ResponseData, buf []byte) error {
 // destination to its source with the same SAP. Status is the packet's
 // N(S), or the 3 LSBs of its FSN for ResponseNACKFSNOutOfSequence. A
 // ResponseSACK carries data as C_RDATA blocks; data is ignored otherwise.
+// The Packet has its own storage; Builder.NewResponse builds into reused
+// storage.
 func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
+	var b Builder
+	return b.NewResponse(to, r, data)
+}
+
+// NewResponse does what the package function NewResponse does, into the
+// storage of b. It does not allocate once the storage has room for two
+// blocks.
+func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
 	status := to.SendSequenceNumber
 	if r == ResponseNACKFSNOutOfSequence {
 		status = to.FragmentSequenceNumber & 0b111
 	}
-	h := &pdu.ResponsePacketHeader{
+	b.response = pdu.ResponsePacketHeader{
 		SAP:             to.SAP,
 		LLIDDestination: to.LLIDSource,
 		LLIDSource:      to.LLIDDestination,
@@ -177,20 +219,24 @@ func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (P
 	}
 	var blocks []layer2.Data
 	if r == ResponseSACK {
+		var none ResponseData
 		if data == nil {
-			data = &ResponseData{}
+			data = &none
 		}
-		rd, err := data.Encode(int(to.BlocksToFollow))
+		var err error
+		b.rate12, err = data.AppendEncode(resize(b.rate12, 2)[:0], int(to.BlocksToFollow))
 		if err != nil {
 			return Packet{}, err
 		}
-		for _, b := range rd {
-			blocks = append(blocks, b)
+		b.blocks = resize(b.blocks, len(b.rate12))
+		for i := range b.rate12 {
+			b.blocks[i] = &b.rate12[i]
 		}
-		h.BlocksToFollow = uint8(len(blocks) & 0xFF)
+		blocks = b.blocks
+		b.response.BlocksToFollow = uint8(len(blocks) & 0xFF)
 	}
 	return Packet{
-		Header: pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: h},
+		Header: pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: &b.response},
 		Blocks: blocks,
 	}, nil
 }
