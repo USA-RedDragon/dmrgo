@@ -299,9 +299,11 @@ documents:
         source_files:
           - v2/layer2/packet/packet.go
           - v2/layer2/packet/assembler.go
+          - v2/layer2/packet/bursts.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/packet
             names:
+              - TestBursts
               - TestAssembler_Captures
               - TestAssembler_CaptureCRCFailure
               - TestSegment_RoundTrip
