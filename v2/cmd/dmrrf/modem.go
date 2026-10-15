@@ -136,7 +136,7 @@ func (s Schedule) start(i int) float64 {
 
 // Modulate turns bursts into the frequency deviation in Hz at the baseband
 // rate and the matching amplitude envelope (0 off, 1 full power).
-func Modulate(bursts [][33]byte, sched Schedule) (freq, env []float64) {
+func Modulate(bursts []layer2.RawBurst, sched Schedule) (freq, env []float64) {
 	if len(bursts) == 0 {
 		return nil, nil
 	}
