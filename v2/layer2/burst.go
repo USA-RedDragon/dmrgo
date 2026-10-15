@@ -96,6 +96,13 @@ type Burst struct {
 	// SlotType is the slot type of a data burst.
 	SlotType pdu.SlotType
 
+	// BPTCReserved holds the reserved bits R(0) to R(2) of the BPTC(196,96)
+	// payload of a data burst, R(i) at index i, after FEC correction. ETSI
+	// TS 102 361-1 B.1.1 sets them to zero. Motorola Capacity Max sets R(2)
+	// to flag RAS (Restricted Access System), which replaces the CRC with a
+	// keyed check. DecodeFromBytes sets them and Encode writes them.
+	BPTCReserved [3]bit.Bit
+
 	// EmbeddedSignalling and EmbeddedSignallingData are the EMB and the
 	// 32-bit embedded data field of a burst with HasEmbeddedSignalling.
 	EmbeddedSignalling     pdu.EmbeddedSignalling
@@ -415,8 +422,9 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType enums.DataType) (int, f
 		enums.DataTypeRate12,
 		enums.DataTypeIdle,
 		enums.DataTypeUnifiedSingleBlock:
-		decoded, result := bptc.Decode196(bits)
+		decoded, reserved, result := bptc.Decode196WithReserved(bits)
 		copy(b.deinterleavedInfoBits[:], decoded[:])
+		b.BPTCReserved = reserved
 		return len(decoded), result
 	case enums.DataTypeReserved:
 		copy(b.deinterleavedInfoBits[:], bits[:])
@@ -547,9 +555,9 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 // decoded payload, or whose Data is nil, carries the payload as it was
 // decoded, after FEC correction, so a burst whose CRC failed can still be
 // forwarded. The decoded payload goes out only under the data type it was
-// decoded as. A data burst built by hand needs Data. The BPTC
-// R(3..0) bits and the Rate 1 pad bits are set to zero (ETSI TS 102 361-1
-// B.1.1, B.2.5), so Encode writes zero there.
+// decoded as. A data burst built by hand needs Data. The BPTC R(0) to R(2)
+// bits are BPTCReserved. R(3) and the Rate 1 pad bits are set to zero (ETSI
+// TS 102 361-1 B.1.1, B.2.5), so Encode writes zero there.
 //
 // A voice burst carries VoiceSlots as they are, so a slot of any codec, or
 // an AMBE+2 frame with bit errors, goes out unchanged. SetAMBEFrames codes
@@ -704,7 +712,8 @@ func infoBitsLen(dataType enums.DataType) int {
 
 // encodeDataBits codes the information bits of a data burst for the
 // channel: BPTC(196,96), Rate 3/4 trellis or Rate 1 as the slot type data
-// type selects. The BPTC R(3..0) bits and the Rate 1 pad bits are zero.
+// type selects. The BPTC R(0) to R(2) bits are BPTCReserved; R(3) and the
+// Rate 1 pad bits are zero.
 func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	info, err := b.dataInfoBits()
 	if err != nil {
@@ -725,7 +734,7 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	case isBPTCDataType(dt):
 		var infoBits [96]bit.Bit
 		copy(infoBits[:], info[:96])
-		return bptc.Encode196(infoBits), nil
+		return bptc.Encode196WithReserved(infoBits, b.BPTCReserved), nil
 	default:
 		return info, nil
 	}

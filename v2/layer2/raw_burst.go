@@ -116,9 +116,37 @@ func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 // SetBPTCPayload BPTC(196,96) encodes p into the 196 information bits. The
 // slot type and the SYNC stay as they are. p must already carry its CRC or
 // RS(12,9) parity with the Data Type CRC Mask (see pdu.SealBlock and
-// pdu.FullLCCodeword).
+// pdu.FullLCCodeword). The reserved bits R(0) to R(3) are zero; see
+// SetBPTCReserved.
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 	r.setInfo(bptc.Encode196(bit.Unpack96(p)))
+}
+
+// BPTCReserved decodes the 196 information bits as BPTC(196,96) and returns
+// the reserved bits R(0) to R(2), R(i) at index i, after FEC correction, with
+// the BPTC result. ETSI TS 102 361-1 B.1.1 sets them to zero. Motorola
+// Capacity Max sets R(2) to flag RAS (Restricted Access System), which
+// replaces the CRC with a keyed check.
+func (r RawBurst) BPTCReserved() ([3]bit.Bit, fec.Result) {
+	_, res, result := bptc.Decode196WithReserved(r.info())
+	return res, result
+}
+
+// SetBPTCReserved sets the BPTC(196,96) reserved bits R(0) to R(2) to res,
+// R(i) at index i, and updates the Hamming parity bits that cover them. The
+// data bits and any bit errors stay as they are, so BPTCPayload returns the
+// same data and FEC result as before.
+func (r *RawBurst) SetBPTCReserved(res [3]bit.Bit) {
+	info := r.info()
+	_, cur, _ := bptc.Decode196WithReserved(info)
+	for i := range res {
+		res[i] = (res[i] ^ cur[i]) & 1
+	}
+	delta := bptc.Encode196WithReserved([96]bit.Bit{}, res)
+	for i := range info {
+		info[i] ^= delta[i]
+	}
+	r.setInfo(info)
 }
 
 // Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis
