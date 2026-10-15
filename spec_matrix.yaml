@@ -439,6 +439,7 @@ documents:
         title: "Rate ½ coded packet Data (R_1_2_DATA) PDU"
         source_files:
           - v2/layer2/pdu/rate12_data.go
+          - v2/layer2/pdu/confirmed_block.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -447,6 +448,8 @@ documents:
               - TestRate12Data_ToString
               - TestRate12Data_AllOnes
               - TestRate12Data_EncodeDecodeRoundTrip
+              - TestRate12Data_Confirmed_RoundTrip
+              - TestRate12Data_Confirmed_CRC9Layout
 
       - section: "9.2.9"
         title: "Proprietary Header (P_HEAD) PDU"
@@ -928,6 +931,7 @@ documents:
               - TestPIHeader_CRCMask
               - TestRate34Data_Confirmed_CRC9Layout
               - TestRate1Data_Confirmed_CRC9Layout
+              - TestRate12Data_Confirmed_CRC9Layout
               - TestFLC_DataTypeMaskAppliedToParity
               - TestFLC_EncodeRejectsUnmaskedDataType
               - TestFLC_DecodeRealVoiceLCHeader

@@ -33,6 +33,8 @@ func (rtData *Rate1Data) ConfirmedCRC9() uint16 {
 }
 
 // ConfirmedUserData returns the 22 user data octets of a confirmed block.
+// In a last block (R_1_LDATA, Table 9.18B) the last 4 octets are the
+// 32-bit message CRC.
 func (rtData *Rate1Data) ConfirmedUserData() [22]byte {
 	var out [22]byte
 	copy(out[:], rtData.Data[2:])
