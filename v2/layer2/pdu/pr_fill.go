@@ -5,21 +5,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-//nolint:gochecknoglobals
-var prFillBits = func() [96]bit.Bit {
-	packed := [12]byte{
-		0xFF, 0x83, 0xDF, 0x17, 0x32, 0x09,
-		0x4E, 0xD1, 0xE7, 0xCD, 0x8A, 0x91,
-	}
-	var bits [96]bit.Bit
-	for i := 0; i < 96; i++ {
-		if (packed[i/8]>>(7-(i%8)))&1 != 0 { //nolint:gosec // i/8 bounded: i < 96, so i/8 <= 11 < 12
-			bits[i] = 1
-		}
-	}
-	return bits
-}()
-
 // PRFillBits returns a copy of the 96 pseudo-random fill bits from Table D.2.
 func PRFillBits() [96]bit.Bit {
 	return prFillBits

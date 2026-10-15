@@ -3,8 +3,10 @@ package generate
 
 import (
 	"fmt"
+	"math"
 	"path/filepath"
 	"reflect"
+	"strconv"
 
 	"github.com/USA-RedDragon/dmrgo/cmd/tablegen/compute"
 	"github.com/dave/jennifer/jen"
@@ -31,6 +33,21 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		jen.Line(),
 		jen.Line(),
 		writeTable("single_burst_bptc_interleave", tables.SingleBurstBPTCInterleave[:]),
+		jen.Line(),
+		jen.Line(),
+		writeTable("embeddedLCPatterns", tables.EmbeddedLCPatterns),
+		jen.Line(),
+		jen.Line(),
+		writeTable("embeddedLCPatternStart", tables.EmbeddedLCPatternStart[:]),
+		jen.Line(),
+		jen.Line(),
+		writeTable("embeddedLCMinWeight", tables.EmbeddedLCMinWeight[:]),
+	); err != nil {
+		return err
+	}
+
+	if err := writeFile(dmrRoot, "layer2/pdu", "pdu",
+		writeBitTable("prFillBits", tables.PRFillBits[:]),
 	); err != nil {
 		return err
 	}
@@ -160,7 +177,7 @@ func writeMap[K comparable, V any](name string, data map[K]V) jen.Code {
 }
 
 func typeToCode(t reflect.Type) jen.Code {
-	switch t.Kind() { //nolint:exhaustive
+	switch t.Kind() {
 	case reflect.Int:
 		return jen.Int()
 	case reflect.Int8:
@@ -187,7 +204,7 @@ func typeToCode(t reflect.Type) jen.Code {
 }
 
 func valueToCode(v reflect.Value) jen.Code {
-	switch v.Kind() { //nolint:exhaustive
+	switch v.Kind() {
 	case reflect.Array, reflect.Slice:
 		elems := make([]jen.Code, v.Len())
 		for i := range v.Len() {
@@ -197,7 +214,10 @@ func valueToCode(v reflect.Value) jen.Code {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return jen.Lit(int(v.Int()))
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return jen.Lit(int(v.Uint())) //nolint:gosec
+		if v.Uint() > math.MaxInt {
+			panic("value does not fit in an int: " + strconv.FormatUint(v.Uint(), 10))
+		}
+		return jen.Lit(int(v.Uint() & math.MaxInt))
 	default:
 		panic("unsupported value kind: " + v.Kind().String())
 	}
@@ -223,6 +243,15 @@ func writeTable[T ~byte | ~int | ~uint16 | ~uint32](name string, data []T) jen.C
 		literals[i] = jen.Lit(int(b))
 	}
 	return table.Values(literals...)
+}
+
+// writeBitTable writes data as an array of bit.Bit.
+func writeBitTable(name string, data []uint8) jen.Code {
+	literals := make([]jen.Code, len(data))
+	for i, b := range data {
+		literals[i] = jen.Lit(int(b))
+	}
+	return jen.Var().Id(name).Op("=").Index(jen.Lit(len(data))).Qual("github.com/USA-RedDragon/dmrgo/v2/bit", "Bit").Values(literals...)
 }
 
 func writeTable2D[T ~byte | ~int | ~int8 | ~uint16 | ~uint32](name string, data [][]T) jen.Code {

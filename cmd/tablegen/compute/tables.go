@@ -36,6 +36,11 @@ type Tables struct {
 	InterleaveMatrix       []byte       // trellis 3/4 dibit interleave order
 
 	Trellis34Transition [][]byte // trellis 3/4 tribit per [state][symbol], 0xFF if invalid
+
+	PRFillBits             [96]uint8 // PR FILL information bits of an idle burst
+	EmbeddedLCPatterns     []uint16  // embedded LC row error patterns of weight up to 4, by syndrome and weight
+	EmbeddedLCPatternStart [161]int  // start of the patterns of syndrome s and weight w at index s*5+w
+	EmbeddedLCMinWeight    [32]int   // least pattern weight per syndrome, -1 for none
 }
 
 // All computes every table and returns the complete set.
@@ -173,6 +178,9 @@ func All() *Tables {
 		t.Trellis34Transition = Trellis34Transition(t.EncoderStateTransition)
 		wg.Done()
 	}()
+
+	t.PRFillBits = PRFillBits()
+	t.EmbeddedLCPatterns, t.EmbeddedLCPatternStart, t.EmbeddedLCMinWeight = EmbeddedLCPatterns()
 
 	wg.Wait()
 	return t
