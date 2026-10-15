@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"fmt"
 	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -86,7 +85,7 @@ func (b *Burst) checkColorCode(want *enums.ColorCode) error {
 		return nil
 	}
 	if got != *want {
-		return fmt.Errorf("%w: burst has %d, want %d", ErrColorCodeMismatch, got, *want)
+		return colorCodeMismatch(got, *want)
 	}
 	return nil
 }

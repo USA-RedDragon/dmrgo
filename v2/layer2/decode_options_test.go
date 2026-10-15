@@ -259,3 +259,45 @@ func TestDecodeFromBytesWith_ColorCode(t *testing.T) {
 		}
 	}
 }
+
+// TestDecodeFromBytesWith_ErrorMessages checks the text and the errors.Is
+// targets of the decode errors, alone and together.
+func TestDecodeFromBytesWith_ErrorMessages(t *testing.T) {
+	t.Parallel()
+
+	reserved := must(lcBurst([12]byte{}, enums.DataTypeReserved+1, 3))
+	data := must(lcBurst([12]byte{}, enums.DataTypeRate12, 3))
+	want, big := enums.ColorCode(9), enums.ColorCode(0x1F)
+	tests := []struct {
+		name  string
+		burst [33]byte
+		opts  *layer2.DecodeOptions
+		msg   string
+		is    []error
+	}{
+		{"reserved", reserved, nil, "reserved data type 13", []error{layer2.ErrReservedDataType}},
+		{"mismatch", data, &layer2.DecodeOptions{ColorCode: &want}, "color code mismatch: burst has 3, want 9",
+			[]error{layer2.ErrColorCodeMismatch}},
+		{"mismatch above 4 bits", data, &layer2.DecodeOptions{ColorCode: &big}, "color code mismatch: burst has 3, want 31",
+			[]error{layer2.ErrColorCodeMismatch}},
+		{"both", reserved, &layer2.DecodeOptions{ColorCode: &want},
+			"reserved data type 13\ncolor code mismatch: burst has 3, want 9",
+			[]error{layer2.ErrReservedDataType, layer2.ErrColorCodeMismatch}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var b layer2.Burst
+			err := b.DecodeFromBytesWith(tt.burst, tt.opts)
+			if err == nil || err.Error() != tt.msg {
+				t.Fatalf("err %v, want %q", err, tt.msg)
+			}
+			for _, target := range tt.is {
+				if !errors.Is(err, target) {
+					t.Errorf("errors.Is(%v, %v) is false", err, target)
+				}
+			}
+		})
+	}
+}
