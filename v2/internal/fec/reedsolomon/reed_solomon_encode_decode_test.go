@@ -82,7 +82,7 @@ func TestDecodeTableB18Codewords(t *testing.T) {
 		if result.Uncorrectable || result.ErrorsFound != 0 {
 			t.Errorf("row %d: Uncorrectable=%v ErrorsFound=%d, want clean", row, result.Uncorrectable, result.ErrorsFound)
 		}
-		if string(result.Data) != string(cw[:dataSize]) {
+		if string(result.Data[:]) != string(cw[:dataSize]) {
 			t.Errorf("row %d: data % X, want % X", row, result.Data, cw[:dataSize])
 		}
 	}
@@ -104,7 +104,7 @@ func TestDecodeSingleSymbolErrorAllPositions(t *testing.T) {
 				rx := append([]byte(nil), cw...)
 				rx[pos] ^= byte(e)
 				for _, result := range []decodeResult{decode(rx)} {
-					if result.Uncorrectable || result.ErrorsFound != 1 || result.BitsCorrected != bits.OnesCount8(uint8(e)) || string(result.Data) != string(data) {
+					if result.Uncorrectable || result.ErrorsFound != 1 || result.BitsCorrected != bits.OnesCount8(uint8(e)) || string(result.Data[:]) != string(data) {
 						t.Fatalf("pos %d err 0x%02X: Uncorrectable=%v ErrorsFound=%d BitsCorrected=%d data % X, want % X",
 							pos, e, result.Uncorrectable, result.ErrorsFound, result.BitsCorrected, result.Data, data)
 					}
@@ -157,7 +157,7 @@ func TestDecodeTripleSymbolErrorsNeverInvalid(t *testing.T) {
 		if result.ErrorsFound != 1 {
 			t.Fatalf("rx % X: accepted with ErrorsFound=%d", rx, result.ErrorsFound)
 		}
-		reencoded, err := encode(result.Data)
+		reencoded, err := encode(result.Data[:])
 		if err != nil {
 			t.Fatalf("Encode failed: %v", err)
 		}

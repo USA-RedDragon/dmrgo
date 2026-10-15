@@ -20,10 +20,10 @@ type poly [polyMaxDeg]uint8
 
 // decodeResult is the result of a Reed-Solomon decode.
 type decodeResult struct {
-	Data          []byte // Corrected data (9 bytes)
-	ErrorsFound   int    // Number of symbol (byte) errors found and corrected
-	BitsCorrected int    // Number of bits the correction flipped
-	Uncorrectable bool   // True if errors could not be corrected
+	Data          [dataSize]byte // Corrected data
+	ErrorsFound   int            // Number of symbol (byte) errors found and corrected
+	BitsCorrected int            // Number of bits the correction flipped
+	Uncorrectable bool           // True if errors could not be corrected
 }
 
 func bitDistance(a, b []byte) int {
@@ -48,11 +48,7 @@ type workspace struct {
 // decode corrects a 12-byte codeword (9 data bytes and 3 parity bytes) and
 // returns the data bytes and the error counts.
 func decode(data []byte) decodeResult {
-	result := decodeResult{
-		Data:          make([]byte, dataSize),
-		ErrorsFound:   0,
-		Uncorrectable: false,
-	}
+	var result decodeResult
 
 	if len(data) != dataSize+checksumSize {
 		result.Uncorrectable = true
@@ -70,7 +66,7 @@ func decode(data []byte) decodeResult {
 	}
 
 	if !syndromeHasErrors(&syndrome) {
-		copy(result.Data, workData[:dataSize])
+		copy(result.Data[:], workData[:dataSize])
 		return result
 	}
 
@@ -78,13 +74,13 @@ func decode(data []byte) decodeResult {
 	if err != nil {
 		result.Uncorrectable = true
 		result.ErrorsFound = errorsFound
-		copy(result.Data, workData[:dataSize])
+		copy(result.Data[:], workData[:dataSize])
 		return result
 	}
 
 	result.ErrorsFound = errorsFound
 	result.BitsCorrected = bitDistance(data, workData)
-	copy(result.Data, workData[:dataSize])
+	copy(result.Data[:], workData[:dataSize])
 	return result
 }
 
@@ -101,7 +97,7 @@ func Encode(data [9]byte) [12]byte {
 // Uncorrectable.
 func Decode(cw [12]byte) ([9]byte, fec.Result) {
 	r := decode(cw[:])
-	return [9]byte(r.Data), fec.Result{
+	return r.Data, fec.Result{
 		BitsChecked:     96,
 		ErrorsCorrected: r.BitsCorrected,
 		Uncorrectable:   r.Uncorrectable,
