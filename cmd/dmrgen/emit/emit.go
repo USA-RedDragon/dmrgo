@@ -24,9 +24,10 @@ const (
 	typUint32 = "uint32"
 	typUint64 = "uint64"
 
-	bitPkg = "github.com/USA-RedDragon/dmrgo/v2/bit"
-	crcPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	rsPkg  = "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
+	bitPkg    = "github.com/USA-RedDragon/dmrgo/v2/bit"
+	crcPkg    = "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	lowbitPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
+	rsPkg     = "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 )
 
 // CRCAlgorithmInfo describes a CRC algorithm for code generation.
@@ -198,7 +199,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		for _, in := range pdu.Inputs {
 			g.Id("result").Dot(in).Op("=").Id(inputParamName(in))
 		}
-		g.Qual(bitPkg, "Mask").Call(Id("data").Index(Empty(), Empty()))
+		g.Qual(lowbitPkg, "Mask").Call(Id("data").Index(Empty(), Empty()))
 
 		hasCRC := pdu.CRC != nil
 		hasPackedFEC := codec != nil && codec.PackedBytes

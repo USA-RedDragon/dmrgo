@@ -47,13 +47,6 @@ func (e *FieldRangeError) Error() string {
 	return fmt.Sprintf("%s.%s: value %d does not fit in %d %sbits", e.Type, e.Field, e.Value, e.Bits, signed)
 }
 
-// Mask clears all but the low bit of each element of bits in place.
-func Mask(bits []Bit) {
-	for i := range bits {
-		bits[i] &= 1
-	}
-}
-
 // Uint returns bits as an unsigned integer, the first bit most significant.
 // It reads at most the last 64 bits of a longer slice.
 func Uint(bits []Bit) uint64 {

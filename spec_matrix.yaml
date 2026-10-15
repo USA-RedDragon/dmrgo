@@ -11,6 +11,7 @@
 
 ignore_files:
   - v2/bit/bit.go
+  - v2/internal/lowbit/lowbit.go
   - v2/examples/bridge/main.go
   - v2/examples/conformance/main.go
   - v2/examples/data/main.go

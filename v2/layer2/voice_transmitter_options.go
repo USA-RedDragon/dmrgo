@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -35,7 +36,7 @@ type VoiceTransmitterOptions struct {
 // returns an error when ColorCode does not fit in 4 bits, Source is unknown,
 // or LC or PIHeader does not encode.
 func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmitter, error) {
-	bit.Mask(opts.Silence[:])
+	lowbit.Mask(opts.Silence[:])
 	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {
 		return nil, fmt.Errorf("unknown sync source %d", opts.Source)

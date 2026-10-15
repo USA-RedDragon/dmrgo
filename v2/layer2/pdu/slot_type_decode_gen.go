@@ -13,12 +13,13 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	golay "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeSlotType decodes a SlotType per ETSI TS 102 361-1 - 9.1.3 Slot Type (SLOT) PDU
 func DecodeSlotType(data [20]bit.Bit) SlotType {
 	var result SlotType
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var corrected [20]bit.Bit
 	corrected, result.FEC = golay.Decode2087(data)
 	if !result.FEC.Uncorrectable {

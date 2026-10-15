@@ -13,12 +13,13 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	hamming "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeTACT decodes a TACT per ETSI TS 102 361-1 - 9.1.4 TACT PDU
 func DecodeTACT(data [7]bit.Bit) TACT {
 	var result TACT
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var corrected [7]bit.Bit
 	corrected, result.FEC = hamming.Decode743(data)
 	if !result.FEC.Uncorrectable {

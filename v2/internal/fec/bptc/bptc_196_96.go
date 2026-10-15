@@ -6,6 +6,7 @@ package bptc
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 func calculate_syndrome_15_11(bits [15]bit.Bit) int {
@@ -39,7 +40,7 @@ func Decode196(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
 // also returns the corrected reserved bits R(0) to R(2), with R(i) at index
 // i. R(3) has no FEC and is not returned.
 func Decode196WithReserved(bits [196]bit.Bit) ([96]bit.Bit, [3]bit.Bit, fec.Result) {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 196}
 	var deinterleavedBits [196]bit.Bit
 	var temp [96]bit.Bit
@@ -138,8 +139,8 @@ func Encode196(data [96]bit.Bit) [196]bit.Bit {
 // Encode196WithReserved encodes 96 data bits as Encode196 does, with the
 // reserved bits R(0) to R(2) from reserved, R(i) at index i. R(3) is zero.
 func Encode196WithReserved(data [96]bit.Bit, reserved [3]bit.Bit) [196]bit.Bit {
-	bit.Mask(data[:])
-	bit.Mask(reserved[:])
+	lowbit.Mask(data[:])
+	lowbit.Mask(reserved[:])
 	grid := [196]bit.Bit{1: reserved[2], 2: reserved[1], 3: reserved[0]}
 
 	// Place data into the grid

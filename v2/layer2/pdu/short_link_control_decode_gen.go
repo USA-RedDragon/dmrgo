@@ -17,12 +17,13 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeShortLCNullMessage decodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
 func DecodeShortLCNullMessage(data [24]bit.Bit) ShortLCNullMessage {
 	var result ShortLCNullMessage
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Reserved = uint32(bit.Uint(data[0:24]))
 	return result
 }
@@ -59,7 +60,7 @@ func (s *ShortLCNullMessage) String() string {
 // DecodeShortLCActivityUpdate decodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
 func DecodeShortLCActivityUpdate(data [24]bit.Bit) ShortLCActivityUpdate {
 	var result ShortLCActivityUpdate
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.TS1ActivityID = enums.ActivityID(bit.Uint(data[0:4]))
 	result.TS2ActivityID = enums.ActivityID(bit.Uint(data[4:8]))
 	result.HashTS1 = byte(bit.Uint(data[8:16]))
@@ -110,7 +111,7 @@ func (s *ShortLCActivityUpdate) String() string {
 // DecodeShortLCCSysParms decodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
 func DecodeShortLCCSysParms(data [24]bit.Bit) ShortLCCSysParms {
 	var result ShortLCCSysParms
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.MODEL = uint8(bit.Uint(data[0:2]))
 	result.NetSiteRaw = uint16(bit.Uint(data[2:14]))
 	result.Reg = data[14] == 1
@@ -171,7 +172,7 @@ func (s *ShortLCCSysParms) String() string {
 // DecodeShortLCPSysParms decodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
 func DecodeShortLCPSysParms(data [24]bit.Bit) ShortLCPSysParms {
 	var result ShortLCPSysParms
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.MODEL = uint8(bit.Uint(data[0:2]))
 	result.NetSiteRaw = uint16(bit.Uint(data[2:14]))
 	result.PayloadChannelType = data[14] == 1
@@ -232,7 +233,7 @@ func (s *ShortLCPSysParms) String() string {
 // DecodeShortLC decodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
 func DecodeShortLC(data [36]bit.Bit) ShortLC {
 	var result ShortLC
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	_crc := uint8(bit.Uint(data[28:]))
 	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:28], _crc)
 	result.SLCO = enums.SLCO(bit.Uint(data[0:4]))

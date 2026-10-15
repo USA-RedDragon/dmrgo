@@ -13,12 +13,13 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodePIHeader decodes a PIHeader per ETSI TS 102 361-1 - 6.2 PI Header (Privacy Indicator header)
 func DecodePIHeader(data [96]bit.Bit) PIHeader {
 	var result PIHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {

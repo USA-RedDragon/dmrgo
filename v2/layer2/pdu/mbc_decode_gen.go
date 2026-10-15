@@ -18,13 +18,14 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // DecodeMBCHeader decodes a MBCHeader per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
 func DecodeMBCHeader(data [96]bit.Bit) MBCHeader {
 	var result MBCHeader
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
@@ -110,7 +111,7 @@ func (s *MBCHeader) String() string {
 // DecodeMBCContinuation decodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
 func DecodeMBCContinuation(data [96]bit.Bit) MBCContinuation {
 	var result MBCContinuation
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.LastBlock = data[0] == 1
 	for _i := range 95 {
 		result.Data[_i/8] |= byte(data[1+_i]) << (7 - _i%8)
@@ -155,7 +156,7 @@ func (s *MBCContinuation) String() string {
 // DecodeCGAPContinuation decodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
 func DecodeCGAPContinuation(data [96]bit.Bit) CGAPContinuation {
 	var result CGAPContinuation
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
@@ -273,7 +274,7 @@ func (s *CGAPContinuation) String() string {
 // DecodeMVAPContinuation decodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
 func DecodeMVAPContinuation(data [96]bit.Bit) MVAPContinuation {
 	var result MVAPContinuation
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
@@ -391,7 +392,7 @@ func (s *MVAPContinuation) String() string {
 // DecodeBCAPContinuation decodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
 func DecodeBCAPContinuation(data [96]bit.Bit) BCAPContinuation {
 	var result BCAPContinuation
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {
@@ -491,7 +492,7 @@ func (s *BCAPContinuation) String() string {
 // DecodeVNAPContinuation decodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
 func DecodeVNAPContinuation(data [96]bit.Bit) VNAPContinuation {
 	var result VNAPContinuation
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
 		for j := range 8 {

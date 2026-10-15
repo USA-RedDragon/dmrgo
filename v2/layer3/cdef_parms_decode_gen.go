@@ -11,12 +11,13 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // DecodeCdefParms decodes a CdefParms per ETSI TS 102 361-4 — §7.2.42, Table 7.103
 func DecodeCdefParms(data [58]bit.Bit) CdefParms {
 	var result CdefParms
-	bit.Mask(data[:])
+	lowbit.Mask(data[:])
 	result.Channel = uint16(bit.Uint(data[0:12]))
 	result.TXMHz = uint16(bit.Uint(data[12:22]))
 	result.TXKHz = uint16(bit.Uint(data[22:35]))

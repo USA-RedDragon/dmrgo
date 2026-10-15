@@ -5,10 +5,11 @@ package quadraticresidue
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 func parityBits(bits [7]bit.Bit) [9]bit.Bit {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	parity := [9]bit.Bit{}
 
 	// Multiplying the generator matrix with the given data bits.
@@ -28,7 +29,7 @@ func parityBits(bits [7]bit.Bit) [9]bit.Bit {
 
 // Check reports whether bits is a QR (16,7,6) codeword.
 func Check(bits [16]bit.Bit) bool {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	var data [7]bit.Bit
 	copy(data[:], bits[:7])
 
@@ -44,7 +45,7 @@ func Check(bits [16]bit.Bit) bool {
 // Decode corrects up to 2 bit errors in the 16-bit codeword.
 // Returns the corrected data words and a fec.Result.
 func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
-	bit.Mask(bits[:])
+	lowbit.Mask(bits[:])
 	result := fec.Result{BitsChecked: 16}
 
 	var data [7]bit.Bit

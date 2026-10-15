@@ -7,6 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // ETSI TS 102 361-1 — 9.1.5 Reverse Channel (RC) PDU
@@ -40,7 +41,7 @@ type ReverseChannel struct {
 // FEC field reports the CRC-7 check.
 func DecodeReverseChannel(infoBits [11]bit.Bit) ReverseChannel {
 	var result ReverseChannel
-	bit.Mask(infoBits[:])
+	lowbit.Mask(infoBits[:])
 	result.RCCommand = enums.RCCommand(bit.Uint(infoBits[:4]))                                        //nolint:gosec // 4-bit field
 	result.FEC.Uncorrectable = !crc.CheckCRC7(infoBits[:4], uint8(bit.Uint(infoBits[4:]))^CRC7MaskRC) //nolint:gosec // 7-bit field
 	return result

@@ -13,6 +13,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -185,7 +186,7 @@ func (f *Framer) Locked() bool {
 func (f *Framer) Write(stream ...bit.Bit) []Burst {
 	n := len(f.buf)
 	f.buf = append(f.buf, stream...)
-	bit.Mask(f.buf[n:])
+	lowbit.Mask(f.buf[n:])
 	var out []Burst
 	for {
 		if !f.locked {
