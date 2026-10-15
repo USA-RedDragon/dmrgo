@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -48,6 +49,35 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	}
 	if must(b.Encode()) != raw {
 		t.Error("Encode() does not reproduce the original burst")
+	}
+}
+
+// The trellis result of a Rate 3/4 block is in FEC.Payload. The block has
+// no PDU-level FEC, so FEC.PDU stays empty and Aggregate counts the trellis
+// corrections once.
+func TestBurst_Rate34Data_FEC(t *testing.T) {
+	var info [144]bit.Bit
+	for i := range info {
+		info[i] = bit.Bit(i % 3 % 2)
+	}
+	raw := buildDataBurst(elements.DataTypeRate34, trellis34.New().Encode(info))
+	raw[2] ^= 0x10
+
+	b, err := layer2.NewBurstFromBytes(raw)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if b.FEC.Payload.BitsChecked != 196 || b.FEC.Payload.ErrorsCorrected != 1 || b.FEC.Payload.Uncorrectable {
+		t.Errorf("FEC.Payload = %+v, want 196 bits checked, 1 error corrected", b.FEC.Payload)
+	}
+	if b.FEC.PDU != (fec.FECResult{}) {
+		t.Errorf("FEC.PDU = %+v, want empty", b.FEC.PDU)
+	}
+	if got := b.FEC.Aggregate().ErrorsCorrected; got != 1 {
+		t.Errorf("Aggregate().ErrorsCorrected = %d, want 1", got)
+	}
+	if rt, ok := b.Data.(*pdu.Rate34Data); !ok || string(rt.Data[:]) != string(bit.PackBits(info[:])) {
+		t.Error("data not corrected")
 	}
 }
 

@@ -423,6 +423,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestBurst_Rate34Data_Full144Bits_RoundTrip
+              - TestBurst_Rate34Data_FEC
 
       - section: "9.2.6"
         title: "Unconfirmed data packet Header (U_HEAD) PDU"

@@ -341,23 +341,26 @@ func (b *Burst) extractData() (elements.Data, error) {
 	case elements.DataTypeRate34:
 		var sizedBits [144]bit.Bit
 		copy(sizedBits[:], infoBits[:144])
-		rt, _ := pdu.DecodeRate34Data(sizedBits)
+		rt, fecResult := pdu.DecodeRate34Data(sizedBits)
 		rt.DataType = dt
 		b.threeQuarterRateData = &rt
+		b.FEC.PDU = fecResult
 		return b.threeQuarterRateData, nil
 	case elements.DataTypeRate12:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
-		rt, _ := pdu.DecodeRate12Data(sizedBits)
+		rt, fecResult := pdu.DecodeRate12Data(sizedBits)
 		rt.DataType = dt
 		b.halfRateData = &rt
+		b.FEC.PDU = fecResult
 		return b.halfRateData, nil
 	case elements.DataTypeRate1:
 		var sizedBits [192]bit.Bit
 		copy(sizedBits[:], infoBits[:192])
-		rt, _ := pdu.DecodeRate1Data(sizedBits)
+		rt, fecResult := pdu.DecodeRate1Data(sizedBits)
 		rt.DataType = dt
 		b.fullRateData = &rt
+		b.FEC.PDU = fecResult
 		return b.fullRateData, nil
 	case elements.DataTypeMBCHeader:
 		var sizedBits [96]bit.Bit
