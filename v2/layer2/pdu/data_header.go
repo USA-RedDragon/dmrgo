@@ -99,6 +99,7 @@ func FormatToName(f Format) string {
 type ConfirmedDataHeader struct {
 	Group                  bool  `dmr:"bit:0"`
 	ResponseRequested      bool  `dmr:"bit:1"`
+	Reserved               bool  `dmr:"bit:2"`
 	PadOctetCount          uint8 `dmr:"bits:3+12-15"`
 	SAP                    uint8 `dmr:"bits:8-11"`
 	LLIDDestination        int   `dmr:"bits:16-39"`
@@ -112,13 +113,18 @@ type ConfirmedDataHeader struct {
 
 // ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
 type ResponsePacketHeader struct {
-	SAP             uint8 `dmr:"bits:8-11"`
-	LLIDDestination int   `dmr:"bits:16-39"`
-	LLIDSource      int   `dmr:"bits:40-63"`
-	BlocksToFollow  uint8 `dmr:"bits:65-71"`
-	ResponseClass   uint8 `dmr:"bits:72-73"`
-	ResponseType    uint8 `dmr:"bits:74-76"`
-	ResponseStatus  uint8 `dmr:"bits:77-79"`
+	Reserved          bool       `dmr:"bit:0"`
+	ResponseRequested bool       `dmr:"bit:1"`
+	Reserved2         [2]bit.Bit `dmr:"bits:2-3,raw"`
+	SAP               uint8      `dmr:"bits:8-11"`
+	Reserved3         [4]bit.Bit `dmr:"bits:12-15,raw"`
+	LLIDDestination   int        `dmr:"bits:16-39"`
+	LLIDSource        int        `dmr:"bits:40-63"`
+	FullMessageFlag   bool       `dmr:"bit:64"`
+	BlocksToFollow    uint8      `dmr:"bits:65-71"`
+	ResponseClass     uint8      `dmr:"bits:72-73"`
+	ResponseType      uint8      `dmr:"bits:74-76"`
+	ResponseStatus    uint8      `dmr:"bits:77-79"`
 }
 
 // ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content

@@ -61,6 +61,7 @@ func DecodeFullLinkControl(data [96]bit.Bit, dataType layer2Elements.DataType) (
 		}
 	}
 	result.ProtectFlag = bit.BitsToBool(data[:], 0)
+	result.Reserved = bit.BitsToBool(data[:], 1)
 	{
 		_enumVal, _ := enums.FLCOFromInt(bit.BitsToInt(data[:], 2, 6))
 		result.FLCO = _enumVal
@@ -146,6 +147,9 @@ func EncodeFullLinkControl(s *FullLinkControl) ([96]bit.Bit, error) {
 	if s.ProtectFlag {
 		data[0] = 1
 	}
+	if s.Reserved {
+		data[1] = 1
+	}
 	if uint64(s.FLCO)>>6 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.FLCO: value %d does not fit in 6 bits", s.FLCO)
 	}
@@ -187,7 +191,7 @@ func EncodeFullLinkControl(s *FullLinkControl) ([96]bit.Bit, error) {
 
 func (s *FullLinkControl) ToString() string {
 	_ret := "FullLinkControl{ "
-	_ret += fmt.Sprintf("DataType: %s, ProtectFlag: %t, FLCO: %s, FeatureSetID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", layer2Elements.DataTypeToName(s.DataType), s.ProtectFlag, enums.FLCOToName(s.FLCO), enums.FeatureSetIDToName(s.FeatureSetID), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += fmt.Sprintf("DataType: %s, ProtectFlag: %t, Reserved: %t, FLCO: %s, FeatureSetID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", layer2Elements.DataTypeToName(s.DataType), s.ProtectFlag, s.Reserved, enums.FLCOToName(s.FLCO), enums.FeatureSetIDToName(s.FeatureSetID), s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
 	case s.GroupVoice != nil:
 		_ret += s.GroupVoice.ToString()
@@ -282,6 +286,7 @@ func (s *FLCUnitToUnit) ToString() string {
 func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
 	var result FLCGPSInfo
 	var fecResult fec.FECResult
+	copy(result.Reserved[:], data[0:4])
 	result.PositionError = layer3Elements.PositionError(bit.BitsToUint8(data[:], 4, 3))
 	result.Longitude = float64(int32(bit.BitsToUint32(data[:], 7, 25)<<7)>>7) * 360.0 / (1 << 25)
 	result.Latitude = float64(int32(bit.BitsToUint32(data[:], 32, 24)<<8)>>8) * 180.0 / (1 << 24)
@@ -291,6 +296,7 @@ func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
 // EncodeFLCGPSInfo encodes a FLCGPSInfo per ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
 func EncodeFLCGPSInfo(s *FLCGPSInfo) ([56]bit.Bit, error) {
 	var data [56]bit.Bit
+	copy(data[0:4], s.Reserved[:])
 	if uint64(s.PositionError)>>3 != 0 {
 		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.PositionError: value %d does not fit in 3 bits", s.PositionError)
 	}
@@ -310,7 +316,7 @@ func EncodeFLCGPSInfo(s *FLCGPSInfo) ([56]bit.Bit, error) {
 }
 
 func (s *FLCGPSInfo) ToString() string {
-	return fmt.Sprintf("FLCGPSInfo{ PositionError: %s, Longitude: %f, Latitude: %f }", layer3Elements.PositionErrorToName(s.PositionError), s.Longitude, s.Latitude)
+	return fmt.Sprintf("FLCGPSInfo{ Reserved: %v, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, layer3Elements.PositionErrorToName(s.PositionError), s.Longitude, s.Latitude)
 }
 
 // DecodeFLCTalkerAliasHeader decodes a FLCTalkerAliasHeader per ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content

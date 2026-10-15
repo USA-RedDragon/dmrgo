@@ -262,6 +262,7 @@ func DecodeConfirmedDataHeader(data [80]bit.Bit) (ConfirmedDataHeader, fec.FECRe
 	var fecResult fec.FECResult
 	result.Group = bit.BitsToBool(data[:], 0)
 	result.ResponseRequested = bit.BitsToBool(data[:], 1)
+	result.Reserved = bit.BitsToBool(data[:], 2)
 	var _tmpPadOctetCount uint8
 	_tmpPadOctetCount = bit.BitsToUint8(data[:], 3, 1)
 	_tmpPadOctetCount <<= 4
@@ -286,6 +287,9 @@ func EncodeConfirmedDataHeader(s *ConfirmedDataHeader) ([80]bit.Bit, error) {
 	}
 	if s.ResponseRequested {
 		data[1] = 1
+	}
+	if s.Reserved {
+		data[2] = 1
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
 		return [80]bit.Bit{}, fmt.Errorf("ConfirmedDataHeader.PadOctetCount: value %d does not fit in 5 bits", s.PadOctetCount)
@@ -327,16 +331,21 @@ func EncodeConfirmedDataHeader(s *ConfirmedDataHeader) ([80]bit.Bit, error) {
 }
 
 func (s *ConfirmedDataHeader) ToString() string {
-	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
+	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
 }
 
 // DecodeResponsePacketHeader decodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
 func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.FECResult) {
 	var result ResponsePacketHeader
 	var fecResult fec.FECResult
+	result.Reserved = bit.BitsToBool(data[:], 0)
+	result.ResponseRequested = bit.BitsToBool(data[:], 1)
+	copy(result.Reserved2[:], data[2:4])
 	result.SAP = bit.BitsToUint8(data[:], 8, 4)
+	copy(result.Reserved3[:], data[12:16])
 	result.LLIDDestination = bit.BitsToInt(data[:], 16, 24)
 	result.LLIDSource = bit.BitsToInt(data[:], 40, 24)
+	result.FullMessageFlag = bit.BitsToBool(data[:], 64)
 	result.BlocksToFollow = bit.BitsToUint8(data[:], 65, 7)
 	result.ResponseClass = bit.BitsToUint8(data[:], 72, 2)
 	result.ResponseType = bit.BitsToUint8(data[:], 74, 3)
@@ -347,10 +356,18 @@ func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.FEC
 // EncodeResponsePacketHeader encodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
 func EncodeResponsePacketHeader(s *ResponsePacketHeader) ([80]bit.Bit, error) {
 	var data [80]bit.Bit
+	if s.Reserved {
+		data[0] = 1
+	}
+	if s.ResponseRequested {
+		data[1] = 1
+	}
+	copy(data[2:4], s.Reserved2[:])
 	if uint64(s.SAP)>>4 != 0 {
 		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.SAP: value %d does not fit in 4 bits", s.SAP)
 	}
 	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
+	copy(data[12:16], s.Reserved3[:])
 	if uint64(s.LLIDDestination)>>24 != 0 {
 		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.LLIDDestination: value %d does not fit in 24 bits", s.LLIDDestination)
 	}
@@ -359,6 +376,9 @@ func EncodeResponsePacketHeader(s *ResponsePacketHeader) ([80]bit.Bit, error) {
 		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.LLIDSource: value %d does not fit in 24 bits", s.LLIDSource)
 	}
 	copy(data[40:64], bit.BitsFromUint32(uint32(s.LLIDSource), 24))
+	if s.FullMessageFlag {
+		data[64] = 1
+	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
 		return [80]bit.Bit{}, fmt.Errorf("ResponsePacketHeader.BlocksToFollow: value %d does not fit in 7 bits", s.BlocksToFollow)
 	}
@@ -379,7 +399,7 @@ func EncodeResponsePacketHeader(s *ResponsePacketHeader) ([80]bit.Bit, error) {
 }
 
 func (s *ResponsePacketHeader) ToString() string {
-	return fmt.Sprintf("ResponsePacketHeader{ SAP: %d, LLIDDestination: %d, LLIDSource: %d, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.SAP, s.LLIDDestination, s.LLIDSource, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
+	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %v, SAP: %d, Reserved3: %v, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
 }
 
 // DecodeDefinedDataHeader decodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content

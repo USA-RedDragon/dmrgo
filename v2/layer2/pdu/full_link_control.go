@@ -33,6 +33,7 @@ import (
 type FullLinkControl struct {
 	DataType     layer2Elements.DataType `dmr:"-"`
 	ProtectFlag  bool                    `dmr:"bit:0"`
+	Reserved     bool                    `dmr:"bit:1"`
 	FLCO         enums.FLCO              `dmr:"bits:2-7,enum,err,from:enums.FLCOFromInt"`
 	FeatureSetID enums.FeatureSetID      `dmr:"bits:8-15,enum,err,from:enums.FeatureSetIDFromInt"`
 	FEC          fec.FECResult           `dmr:"-"`
@@ -87,6 +88,7 @@ type FLCUnitToUnit struct {
 
 // ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
 type FLCGPSInfo struct {
+	Reserved      [4]bit.Bit                   `dmr:"bits:0-3,raw"`
 	PositionError layer3Elements.PositionError `dmr:"bits:4-6,delegate,noptr"`
 	Longitude     float64                      `dmr:"bits:7-31,type:longitude"`
 	Latitude      float64                      `dmr:"bits:32-55,type:latitude"`
