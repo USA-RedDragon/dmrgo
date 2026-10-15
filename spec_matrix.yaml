@@ -207,6 +207,7 @@ documents:
         title: "Short Link Control in CACH"
         source_files:
           - v2/layer2/short_lc_assembler.go
+          - v2/layer2/short_lc_cach.go
           - v2/fec/bptc/bptc_cach.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
@@ -220,6 +221,8 @@ documents:
               - TestShortLCAssembler_RejectsBadSequence
               - TestShortLCAssembler_FirstRestartsSequence
               - TestShortLCAssembler_CompleteIncomplete
+              - TestEncodeShortLCToCACH_RoundTrip
+              - TestEncodeShortLCToCACH_Error
 
       - section: "7.2.1"
         title: "Control Signalling BlocK (CSBK)"
