@@ -93,6 +93,9 @@ func TestAMBE72CorrectsErrors(t *testing.T) {
 
 func TestAMBESilence(t *testing.T) {
 	slot := vocoder.EncodeAMBE72(vocoder.AMBESilence())
+	if slot != vocoder.AMBESilenceSlot() {
+		t.Fatal("AMBESilenceSlot differs from EncodeAMBE72(AMBESilence())")
+	}
 	if got := hex.EncodeToString(bit.Pack(slot[:])); got != "b9e881526173002a6b" {
 		t.Fatalf("EncodeAMBE72(AMBESilence()) = %s, want b9e881526173002a6b", got)
 	}

@@ -38,6 +38,20 @@ func run(args []string, w io.Writer) error {
 	return fmt.Errorf("unknown command %q", args[0])
 }
 
+// idFlag defines a flag for a 24-bit radio or talkgroup ID, 0 by default.
+func idFlag(fs *flag.FlagSet, name, usage string) *uint32 {
+	id := new(uint32)
+	fs.Func(name, usage+" (default 0)", func(s string) error {
+		v, err := strconv.ParseUint(s, 10, 24)
+		if err != nil {
+			return err
+		}
+		*id = uint32(v)
+		return nil
+	})
+	return id
+}
+
 func runTX(args []string, w io.Writer) error {
 	fs := flag.NewFlagSet("tx", flag.ContinueOnError)
 	out := fs.String("o", "dmr.iq", "output file (signed 8-bit I/Q for hackrf_transfer -t)")
@@ -58,9 +72,9 @@ func runTX(args []string, w io.Writer) error {
 		cc, err = enums.NewColorCode(uint8(v))
 		return err
 	})
-	src := fs.Uint("src", 0, "source radio ID")
-	dst := fs.Uint("dst", 0, "destination radio or talkgroup ID")
-	bs := fs.Uint("bs", 0, "BS (repeater) address for the wakeup CSBK")
+	src := idFlag(fs, "src", "source radio ID")
+	dst := idFlag(fs, "dst", "destination radio or talkgroup ID")
+	bs := idFlag(fs, "bs", "BS (repeater) address for the wakeup CSBK")
 	group := fs.Bool("group", false, "send to a talkgroup instead of a radio")
 	wakeups := fs.Int("wakeups", 3, "wakeup CSBKs before the sequence, or idle frames before a -bs-sourced stream")
 	msg := fs.String("msg", "DMRGO TEST", "message text")
@@ -83,7 +97,7 @@ func runTX(args []string, w io.Writer) error {
 		iq = CW(*cw, *rate, corr, *level)
 		fmt.Fprintf(w, "carrier: %.1f s, offset %+.0f Hz\n", *cw, corr)
 	} else {
-		cfg := SeqConfig{ColorCode: cc, Source: uint32(*src), Dest: uint32(*dst), BS: uint32(*bs), Group: *group, Wakeups: *wakeups, Message: *msg, //nolint:gosec // flag ranges are checked by the encoders
+		cfg := SeqConfig{ColorCode: cc, Source: *src, Dest: *dst, BS: *bs, Group: *group, Wakeups: *wakeups, Message: *msg,
 			Superframes: *superframes, AMBESilence: *silence, LateEntry: *lateEntry, Preambles: *preambles, BSSourced: *bsSourced, Slot: *slot}
 		built, err := Sequence(*seq, cfg)
 		if err != nil {

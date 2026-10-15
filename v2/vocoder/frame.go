@@ -21,6 +21,16 @@ func AMBESilence() AMBEFrame {
 	}
 }
 
+// AMBESilenceSlot returns the 72 on-air bits of the AMBE+2 silence frame,
+// EncodeAMBE72(AMBESilence()), the slot B9E881526173002A6B. It is the
+// silence slot that pads the last superframe of an AMBE+2 call.
+func AMBESilenceSlot() [72]bit.Bit {
+	return [72]bit.Bit{
+		1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0,
+		0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1,
+	}
+}
+
 // EncodeAMBE72 applies the AMBE+2 frame FEC to 49 vocoder information bits
 // and returns the 72 on-air bits of one vocoder frame: Golay(24,12) on the
 // first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits

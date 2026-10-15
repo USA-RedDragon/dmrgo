@@ -20,7 +20,7 @@ type VoiceTransmitterOptions struct {
 	// Source selects the SYNC patterns. The zero value is SyncSourceBS.
 	Source SyncSource
 	// Silence is the 72-bit slot that pads the last superframe. It is codec
-	// specific: for AMBE+2 it is vocoder.EncodeAMBE72(vocoder.AMBESilence()).
+	// specific: for AMBE+2 it is vocoder.AMBESilenceSlot().
 	Silence [72]bit.Bit
 	// PIHeader, when set, adds a PI Header burst after the Voice LC Header
 	// (ETSI TS 102 361-1 §5.1.2.2, §6.2).

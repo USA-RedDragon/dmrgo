@@ -84,7 +84,7 @@ func ExampleVoiceTransmitter() {
 		FLCO:       enums.FLCOGroupVoiceChannelUser,
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120000},
 	}
-	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: vocoder.EncodeAMBE72(vocoder.AMBESilence())})
+	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: vocoder.AMBESilenceSlot()})
 	if err != nil {
 		fmt.Println(err)
 		return

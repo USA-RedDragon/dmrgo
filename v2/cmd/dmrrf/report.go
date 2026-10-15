@@ -26,20 +26,6 @@ func fecString(r fec.Result) string {
 	return "ok"
 }
 
-func lcssString(l enums.LCSS) string {
-	switch l {
-	case enums.LCSSSingleFragment:
-		return "single"
-	case enums.LCSSFirstFragment:
-		return "first"
-	case enums.LCSSContinuationFragment:
-		return "cont"
-	case enums.LCSSLastFragment:
-		return "last"
-	}
-	return fmt.Sprint(int(l))
-}
-
 func b01(v bool) int {
 	if v {
 		return 1
@@ -121,8 +107,8 @@ func (p *Reporter) Burst(r Received) {
 		}
 		key = parity ^ align + 1
 		ts = fmt.Sprint(key)
-		p.printf("cach %s at=%d tc=%d lcss=%s fec=%s payload=%s", t, b01(c.TACT.AccessType), b01(c.TACT.TDMAChannel),
-			lcssString(c.TACT.LCSS), fecString(c.TACT.FEC), bitString(c.Payload[:]))
+		p.printf("cach %s at=%d tc=%d lcss=%q fec=%s payload=%s", t, b01(c.TACT.AccessType), b01(c.TACT.TDMAChannel),
+			c.TACT.LCSS.String(), fecString(c.TACT.FEC), bitString(c.Payload[:]))
 		if s, done, _ := p.slc.Add(c); done {
 			p.printf("slc %s %s fec=%s", t, slcFields(&s), fecString(s.FEC))
 		}
@@ -143,7 +129,7 @@ func (p *Reporter) Burst(r Received) {
 	p.printf("           %s", b.String())
 	if b.HasEmbeddedSignalling() {
 		e := b.EmbeddedSignalling
-		p.printf("emb %s pos=%s cc=%d pi=%d lcss=%s fec=%s", t, b.VoiceBurst, e.ColorCode, b01(e.PreemptionAndPowerControlIndicator), lcssString(e.LCSS), fecString(e.FEC))
+		p.printf("emb %s pos=%s cc=%d pi=%d lcss=%q fec=%s", t, b.VoiceBurst, e.ColorCode, b01(e.PreemptionAndPowerControlIndicator), e.LCSS.String(), fecString(e.FEC))
 	}
 	if b.Kind == layer2.KindVoice {
 		for i, slot := range b.VoiceSlots {
