@@ -8,7 +8,7 @@ Decode and encode DMR (Digital Mobile Radio) bursts and PDUs as defined in [ETSI
 
 ## Installation
 
-Requires Go 1.27.2 or later.
+Requires Go 1.24 or later.
 
 ```sh
 go get github.com/USA-RedDragon/dmrgo/v2
