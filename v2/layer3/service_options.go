@@ -12,10 +12,10 @@ type ServiceOptions struct {
 	PriorityLevel       uint8 `dmr:"bits:6-7"`
 }
 
-// DefaultServiceOptions returns the Service Options octet 0x20 that
-// Motorola radios send in a voice call LC: no flag set and the first
-// Reserved bit set, so Reserved is 2. MMDVMHost sends 0x00 in an LC that it
-// builds.
+// DefaultServiceOptions returns the Service Options octet 0x20 seen in
+// Motorola IPSC voice traffic and sent by IPSC bridges: no flag set and the
+// first Reserved bit set, so Reserved is 2. MMDVMHost sends 0x00, the zero
+// ServiceOptions.
 func DefaultServiceOptions() ServiceOptions {
 	return ServiceOptions{Reserved: 2}
 }
