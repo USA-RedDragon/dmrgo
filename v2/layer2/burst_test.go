@@ -2,7 +2,6 @@ package layer2_test
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -185,29 +184,31 @@ func TestBurst_SyncTolerance(t *testing.T) {
 	}
 }
 
-// TestBurst_SyncTolerance_ValidEMB checks a voice burst B-F whose centre is
-// 4 bits from BS-sourced data SYNC. Its EMB is a valid QR(16,7,6) codeword,
-// so it must stay embedded signalling. FuzzBurstDecode found this frame.
-func TestBurst_SyncTolerance_ValidEMB(t *testing.T) {
-	raw, err := hex.DecodeString("3230307030303030703230307030ff57d75df5f130303070323030703030303070")
-	if err != nil {
-		t.Fatal(err)
+// TestBurst_SyncTolerance_EMBPositions checks that a damaged SYNC stays a
+// SYNC burst when the errors make the EMB positions a valid QR(16,7,6)
+// codeword. The EMB positions of MS-sourced data SYNC are 2 bits from a
+// codeword, at bits 115 and 155.
+func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
+	frame := must(layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeIdle, 1))
+	diff := uint64(enums.BsSourcedData ^ enums.MsSourcedData)
+	for i := 0; i < 48; i++ {
+		if (diff>>(47-i))&1 == 1 {
+			frame = flipBurstBits(frame, layer2.SyncStart+i)
+		}
 	}
-	var frame [33]byte
-	copy(frame[:], raw)
 
-	burst, err := layer2.NewBurstFromBytes(frame)
+	burst, err := layer2.NewBurstFromBytes(flipBurstBits(frame, 115, 155))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if burst.IsData || !burst.HasEmbeddedSignalling || burst.SyncPattern != enums.EmbeddedSignallingPattern {
-		t.Fatalf("IsData=%v HasEmbeddedSignalling=%v SyncPattern=%s", burst.IsData, burst.HasEmbeddedSignalling, enums.SyncPatternToName(burst.SyncPattern))
+	if !burst.IsData || burst.SyncPattern != enums.MsSourcedData || burst.SyncDistance != 2 {
+		t.Fatalf("IsData=%v SyncPattern=%s SyncDistance=%d", burst.IsData, enums.SyncPatternToName(burst.SyncPattern), burst.SyncDistance)
 	}
-	if burst.SyncDistance != 4 || burst.FEC.EMB.ErrorsCorrected != 0 {
-		t.Errorf("SyncDistance=%d EMB FEC %+v", burst.SyncDistance, burst.FEC.EMB)
+	if burst.SlotType.DataType != elements.DataTypeIdle {
+		t.Errorf("DataType=%v", burst.SlotType.DataType)
 	}
 	if got := must(burst.Encode()); got != frame {
-		t.Errorf("encode mismatch\ngot  %x\nwant %x", got, frame)
+		t.Errorf("encode did not restore clean sync\ngot  %x\nwant %x", got, frame)
 	}
 }
 

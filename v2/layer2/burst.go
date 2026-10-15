@@ -7,7 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/quadratic_residue"
 	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -117,11 +116,8 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	return err
 }
 
-// extractSyncPattern classifies the 48-bit centre of the burst. An inexact
-// SYNC match whose EMB positions hold a valid QR(16,7,6) codeword is taken
-// as embedded signalling: no Table 9.2 pattern has a valid codeword there,
-// so that reading needs no bit errors in the checked bits. This also keeps
-// a re-encoded voice burst B-F from decoding as a SYNC burst.
+// extractSyncPattern classifies the 48-bit centre of the burst against the
+// Table 9.2 SYNC patterns.
 func extractSyncPattern(bitData [264]bit.Bit) (enums.SyncPattern, int) {
 	syncBytes := [6]byte{}
 	for i := 0; i < 6; i++ {
@@ -129,16 +125,7 @@ func extractSyncPattern(bitData [264]bit.Bit) (enums.SyncPattern, int) {
 			syncBytes[i] |= byte(bitData[108+(i*8)+j]) << (7 - j) //nolint:gosec // max index: 108+5*8+7=155 < 264
 		}
 	}
-	sync, distance := enums.SyncPatternFromBytesWithDistance(syncBytes)
-	if distance > 0 && sync != enums.EmbeddedSignallingPattern {
-		var embBits [16]bit.Bit
-		copy(embBits[:8], bitData[EMBFirstStart:EMBFirstEnd])
-		copy(embBits[8:], bitData[EMBSecondStart:EMBSecondEnd])
-		if quadratic_residue.Check(embBits) {
-			return enums.EmbeddedSignallingPattern, distance
-		}
-	}
-	return sync, distance
+	return enums.SyncPatternFromBytesWithDistance(syncBytes)
 }
 
 func isDataSync(sync enums.SyncPattern) bool {

@@ -5,8 +5,20 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
+
+// ambiguousSync reports a decode whose SYNC classification can change on
+// re-encode: the first centre matched a SYNC pattern with bit errors, or a
+// voice burst B-F re-encoded with an embedded field within the SYNC match
+// threshold. A damaged SYNC burst and such a voice burst look the same.
+func ambiguousSync(first, second *layer2.Burst) bool {
+	if first.SyncPattern != enums.EmbeddedSignallingPattern {
+		return first.SyncDistance > 0
+	}
+	return second.SyncPattern != enums.EmbeddedSignallingPattern
+}
 
 func FuzzBurstDecode(f *testing.F) {
 	files, err := filepath.Glob("testdata/*.bin")
@@ -43,6 +55,9 @@ func FuzzBurstDecode(f *testing.F) {
 			b2.SetTrunkingMode(trunking)
 			_ = b2.DecodeFromBytes(first)
 			second, err := b2.Encode()
+			if ambiguousSync(&b, &b2) {
+				continue
+			}
 			if err != nil {
 				t.Fatalf("trunking=%v: re-encode failed: %v", trunking, err)
 			}
