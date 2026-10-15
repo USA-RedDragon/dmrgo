@@ -502,6 +502,7 @@ documents:
         title: "Control Signalling Block (CSBK) PDU"
         source_files:
           - v2/layer2/pdu/csbk.go
+          - v2/layer2/pdu/csbk_bytes.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -509,6 +510,11 @@ documents:
               - TestCSBK_PreamblePDU_Decode
               - TestCSBK_NegativeAck_Decode
               - TestCSBK_CRCValidation
+              - TestCSBKBytes_ReproducerPreamble
+              - TestCSBKBytes_MatchesCSBK
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestCSBKBytes_SMSCaptures
 
       - section: "9.1.9"
         title: "Pseudo Random Fill Bit (PR FILL) PDU"
@@ -1310,10 +1316,12 @@ documents:
         source_files:
           - v2/layer2/pdu/csbk.go
           - v2/layer2/pdu/csbk_addresses.go
+          - v2/layer2/pdu/csbk_bytes.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_Addresses
+              - TestCSBKBytes_MatchesCSBK
               - TestCSBK_OpcodeString
               - TestCSBK_PreamblePDU_Decode
               - TestCSBK_NegativeAck_Decode
