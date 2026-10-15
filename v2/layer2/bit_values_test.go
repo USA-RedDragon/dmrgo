@@ -1,3 +1,7 @@
+//go:build !tinygo
+
+// TinyGo has no reflect.Type.NumIn or reflect.Value.Call, which this test needs.
+
 package layer2_test
 
 import (
