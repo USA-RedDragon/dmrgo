@@ -10,29 +10,18 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 clause 9.1.5 Reverse Channel (RC) PDU
-//
-// The RC PDU carries 11 information bits recovered from Single Burst
-// Variable Length BPTC (§B.2.2) with odd column parity.
-//
-// Layout (Table 9.6):
-//
-//	Bits 0 to 3:  RC information payload (4 bits)
-//	Bits 4 to 10: CRC-7 with mask 0x7A (7 bits, per §B.3.13 / Table B.21)
-//
-// The 4-bit RC payload is defined in TS 102 361-4 (trunking protocol).
-
 // CRC7MaskRC is the CRC-7 data type mask for Reverse Channel PDUs
 // per ETSI TS 102 361-1 Table B.21.
 const CRC7MaskRC uint8 = 0x7A
 
-// ReverseChannel represents a decoded Reverse Channel PDU.
+// ReverseChannel is the Reverse Channel (RC) PDU: 4 information bits and a
+// CRC-7 masked with CRC7MaskRC, carried in Single Burst BPTC (ETSI TS 102
+// 361-1 clause 9.1.5).
 type ReverseChannel struct {
-	// RCCommand is the 4-bit RC information field.
-	// Per TS 102 361-2 §7.2.20, this carries an RC command.
+	// RCCommand is the 4-bit RC command (ETSI TS 102 361-2 clause 7.2.20).
 	RCCommand enums.RCCommand
 
-	// FEC holds the combined FEC result from BPTC + CRC verification.
+	// FEC reports the CRC-7 check.
 	FEC fec.Result
 }
 
@@ -57,10 +46,8 @@ func (rc *ReverseChannel) Encode() ([11]bit.Bit, error) {
 		return bits, &bit.FieldRangeError{Type: "ReverseChannel", Field: "RCCommand", Value: uint8(rc.RCCommand), Bits: 4}
 	}
 
-	// RC command (bits 0-3, MSB-first)
 	bit.PutUint(bits[0:4], uint64(uint8(rc.RCCommand)))
 
-	// CRC-7 with mask 0x7A
 	crcVal := crc.CRC7(bits[:4]) ^ CRC7MaskRC
 	for i := 0; i < 7; i++ {
 		bits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)

@@ -1,11 +1,3 @@
-// Package constants defines the timers, constants and identifiers of
-// ETSI TS 102 361-2 Annex A (and clause 6.1), ETSI TS 102 361-3 Annex A and
-// ETSI TS 102 361-4 Annex A.
-//
-// Annex A of TS 102 361-2 and TS 102 361-3 lists its values in clauses, not
-// tables, so those citations name the clause. Annex A of TS 102 361-4 uses
-// Tables A.1 to A.8. Where a name ends in Default and the spec gives only a
-// range, the value is a library choice inside that range.
 package constants
 
 import "time"
@@ -153,15 +145,9 @@ const TRandTCDefault = 10 * time.Second
 // value is a library choice (ETSI TS 102 361-4 Table A.1).
 const TNoSignalDefault = 5 * time.Second
 
-// TEmergTimerDefault is the default emergency call timer (T_EMERG_TIMER).
-// The spec gives no default; this value is a library choice. The air
-// interface carries T_EMERG_TIMER as a 9-bit token, not in seconds (ETSI TS
-// 102 361-4 Table A.2): 1 to 10 are 1 s to 10 s, 11 to 20 are 15 s to 60 s
-// in 5 s steps, 21 to 28 are 75 s to 180 s in 15 s steps, 29 to 40 are 3.5
-// min to 9 min in 30 s steps, 41 to 51 are 10 min to 20 min in 1 min steps,
-// 52 to 510 are 25 min to 2315 min in 5 min steps, and 511 is infinity. In
-// CallTimer_Parms, token 0 means the MS uses its internal timer (Table
-// 7.70). 120 s is token 24.
+// TEmergTimerDefault is the default emergency call timer (T_EMERG_TIMER),
+// token 24. The spec gives no default, so this value is a library choice
+// (ETSI TS 102 361-4 Table A.2).
 const TEmergTimerDefault = 120 * time.Second
 
 // TEmergTimerMax is the longest finite T_EMERG_TIMER, token 510 (ETSI TS 102
@@ -169,14 +155,8 @@ const TEmergTimerDefault = 120 * time.Second
 const TEmergTimerMax = 2315 * time.Minute
 
 // TPacketTimerDefault is the default packet data call timer
-// (T_PACKET_TIMER). The spec gives no default; this value is a library
-// choice. The air interface carries T_PACKET_TIMER as a 5-bit token, not in
-// seconds (ETSI TS 102 361-4 Table A.3): 1 to 5 are 1 s to 5 s, 6 to 10 are
-// 10 s to 30 s in 5 s steps, 11 to 12 are 45 s to 60 s in 15 s steps, 13 to
-// 20 are 1.5 min to 5 min in 30 s steps, 21 to 25 are 6 min to 10 min in 1
-// min steps, 26 to 30 are 15 min to 35 min in 5 min steps, and 31 is
-// infinity. In CallTimer_Parms, token 0 means the MS uses its internal timer
-// (Table 7.70). 10 s is token 6.
+// (T_PACKET_TIMER), token 6. The spec gives no default, so this value is a
+// library choice (ETSI TS 102 361-4 Table A.3).
 const TPacketTimerDefault = 10 * time.Second
 
 // TPacketTimerMax is the longest finite T_PACKET_TIMER, token 30 (ETSI TS
@@ -184,17 +164,11 @@ const TPacketTimerDefault = 10 * time.Second
 const TPacketTimerMax = 35 * time.Minute
 
 // TMSMSTimerMax is the longest finite MS to MS call timer (T_MS-MS_TIMER),
-// token 4094. The air interface carries T_MS-MS_TIMER as a 12-bit token, not
-// in seconds (ETSI TS 102 361-4 Table A.4): 1 to 59 are 1 s to 59 s, 60 to
-// 107 are 60 s to 295 s in 5 s steps, 108 to 138 are 5 min to 20 min in 30 s
-// steps, 139 to 4094 are 21 min to 3976 min in 1 min steps, and 4095 is
-// infinity. In CallTimer_Parms, token 0 means the MS uses its internal timer
-// (Table 7.70).
+// token 4094 (ETSI TS 102 361-4 Table A.4).
 const TMSMSTimerMax = 3976 * time.Minute
 
 // TMSLineTimerMax is the longest finite MS to line call timer
-// (T_MS-LINE_TIMER), token 4094. T_MS-LINE_TIMER uses the same 12-bit token
-// encoding as T_MS-MS_TIMER (ETSI TS 102 361-4 Table A.5).
+// (T_MS-LINE_TIMER), token 4094 (ETSI TS 102 361-4 Table A.5).
 const TMSLineTimerMax = 3976 * time.Minute
 
 // TPTimerDefault is the default TP_Timer, the timeout for a calling MS

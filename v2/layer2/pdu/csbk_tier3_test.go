@@ -45,20 +45,13 @@ func TestCSBK_TierIII_OpcodeString(t *testing.T) {
 
 func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// PhysicalChannel (bits 0-11) = 0x123 = 0b000100100011
-	payload[3] = 1  // bit 3
-	payload[7] = 1  // bit 7
-	payload[10] = 1 // bit 10
-	payload[11] = 1 // bit 11
-	// LogicalChannel (bit 12) = true
+	payload[3] = 1
+	payload[7] = 1
+	payload[10] = 1
+	payload[11] = 1
 	payload[12] = 1
-	// Reserved (bit 13) = 0
-	// Emergency (bit 14) = true
 	payload[14] = 1
-	// Offset (bit 15) = false
-	// TargetAddress (bits 16-39) = last bit set
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
@@ -148,34 +141,21 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 
 func TestCSBK_Aloha_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// Reserved1 (bit 0) = 0
-	// TSCCAS (bit 1) = true
 	payload[1] = 1
-	// SiteTSSync (bit 2) = true
 	payload[2] = 1
-	// Version (bits 3-5) = 3: 0b011
 	payload[4] = 1
 	payload[5] = 1
-	// Offset (bit 6) = true
 	payload[6] = 1
-	// ActiveConn (bit 7) = false
-	// Mask (bits 8-12) = 0b10101 = 21
 	payload[8] = 1
 	payload[10] = 1
 	payload[12] = 1
-	// ServiceFunc (bits 13-14) = 0b10 = 2
 	payload[13] = 1
-	// NRandWait (bits 15-18) = 5: 0b0101
 	payload[16] = 1
 	payload[18] = 1
-	// Reg (bit 19) = true
 	payload[19] = 1
-	// Backoff (bits 20-23) = 3: 0b0011
 	payload[22] = 1
 	payload[23] = 1
-	// SysIdentCode (bits 24-39) = last bit set
 	payload[39] = 1
-	// MSAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAloha), payload)
@@ -231,25 +211,18 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 
 func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// AnnouncementType (bits 0-4) = 0b00101 = AnnouncementChanFreq (5)
 	payload[2] = 1
 	payload[4] = 1
-	// BroadcastParms1 (bits 5-18): set bit 5
 	payload[5] = 1
-	// Reg (bit 19) = true
 	payload[19] = 1
-	// Backoff (bits 20-23) = 7: 0b0111
 	payload[21] = 1
 	payload[22] = 1
 	payload[23] = 1
-	// SysIdentCode (bits 24-39) = 0x1234
-	// 0x1234 = 0001 0010 0011 0100
-	payload[27] = 1 // bit 3
-	payload[30] = 1 // bit 6
-	payload[33] = 1 // bit 9
-	payload[34] = 1 // bit 10
-	payload[37] = 1 // bit 13
-	// BroadcastParms2 (bits 40-63): set bit 40
+	payload[27] = 1
+	payload[30] = 1
+	payload[33] = 1
+	payload[34] = 1
+	payload[37] = 1
 	payload[40] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKBroadcast), payload)
@@ -284,13 +257,9 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 
 func TestCSBK_Clear_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// PhysicalChannel (bits 0-11) = 0x100: 0b000100000000
 	payload[3] = 1
-	// GroupIndividual (bit 15) = true
 	payload[15] = 1
-	// TargetAddress (bits 16-39) = last bit set
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKClear), payload)
@@ -313,23 +282,15 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 
 func TestCSBK_Ahoy_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ServiceOptsMirror (bits 0-6) = 0x42: 0b1000010
 	payload[0] = 1
 	payload[5] = 1
-	// ServiceKindFlag (bit 7) = true
 	payload[7] = 1
-	// ALS (bit 8) = true
 	payload[8] = 1
-	// GroupIndividual (bit 9) = true
 	payload[9] = 1
-	// AppendedBlocks (bits 10-11) = 2: 0b10
 	payload[10] = 1
-	// ServiceKind (bits 12-15) = 5: 0b0101
 	payload[13] = 1
 	payload[15] = 1
-	// TargetAddress (bits 16-39) = last bit set
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAhoy), payload)
@@ -365,17 +326,11 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 
 func TestCSBK_RandomAccess_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ServiceOptions (bits 0-6) = 0x01
 	payload[6] = 1
-	// ProxyFlag (bit 7) = true
 	payload[7] = 1
-	// Reserved (bits 8-11) = 0
-	// ServiceKind (bits 12-15) = 3: 0b0011
 	payload[14] = 1
 	payload[15] = 1
-	// TargetAddress (bits 16-39) = last bit set
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKRandomAccess), payload)
@@ -402,8 +357,8 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 
 func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 	var payload [64]bit.Bit
-	payload[39] = 1 // BSAddress last bit
-	payload[63] = 1 // SourceAddress last bit
+	payload[39] = 1
+	payload[63] = 1
 
 	infoBits := buildCSBKBits(0b00111000, payload)
 
@@ -432,17 +387,11 @@ func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 }
 
 func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
-	// TD_GRANT_MI (ETSI TS 102 361-4 Table B.1).
 	var payload [64]bit.Bit
-	// PhysicalChannel (bits 0-11) = 0x100
 	payload[3] = 1
-	// LogicalChannel (bit 12) = true
 	payload[12] = 1
-	// Emergency (bit 14) = true
 	payload[14] = 1
-	// TargetAddress (bits 16-39) = last bit
 	payload[39] = 1
-	// SourceAddress (bits 40-63) = last bit
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(0b00111000, payload)
@@ -483,15 +432,10 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 
 func TestCSBK_AckOutbound_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ResponseInfo (bits 0-6) = 0x10: 0b0010000
 	payload[2] = 1
-	// ReasonCode (bits 7-14) = 0x42: 0b01000010
 	payload[8] = 1
 	payload[13] = 1
-	// Reserved (bit 15) = false
-	// TargetAddress (bits 16-39)
 	payload[39] = 1
-	// AdditionalInfo (bits 40-63)
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAckOutbound), payload)
@@ -508,22 +452,17 @@ func TestCSBK_AckOutbound_Decode(t *testing.T) {
 
 func TestCSBK_Move_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// Mask (bits 9-13) = 0b11111 = 31
 	payload[9] = 1
 	payload[10] = 1
 	payload[11] = 1
 	payload[12] = 1
 	payload[13] = 1
-	// Reg (bit 19) = true
 	payload[19] = 1
-	// Backoff (bits 20-23) = 5: 0b0101
 	payload[21] = 1
 	payload[23] = 1
-	// PhysicalChannel (bits 28-39) = 0xFFF: all 1s
 	for i := 28; i <= 39; i++ {
 		payload[i] = 1
 	}
-	// MSAddress (bits 40-63) = last bit set
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKMove), payload)
@@ -553,12 +492,9 @@ func TestCSBK_Move_Decode(t *testing.T) {
 
 func TestCSBK_Maintenance_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// MaintKind (bits 12-14) = 3: 0b011
 	payload[13] = 1
 	payload[14] = 1
-	// TargetAddress (bits 16-39)
 	payload[39] = 1
-	// SourceAddress (bits 40-63)
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKMaintenance), payload)
@@ -578,18 +514,12 @@ func TestCSBK_Maintenance_Decode(t *testing.T) {
 
 func TestCSBK_Ackvitation_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ServiceOptsMirror (bits 0-6) = 0x01
 	payload[6] = 1
-	// ServiceKindFlag (bit 7) = true
 	payload[7] = 1
-	// UAB (bits 10-11) = 0b11 = 3
 	payload[10] = 1
 	payload[11] = 1
-	// ServiceKind (bits 12-15) = 2: 0b0010
 	payload[14] = 1
-	// TargetAddress (bits 16-39)
 	payload[39] = 1
-	// SourceAddress (bits 40-63)
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAckvitation), payload)
@@ -759,7 +689,6 @@ func TestAnnouncementType_String(t *testing.T) {
 		}
 	}
 
-	// Reserved value
 	reserved := (enums.AnnouncementType(15)).String()
 	if reserved == "" {
 		t.Error("reserved AnnouncementType ToName should not be empty")
@@ -843,8 +772,9 @@ func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
 	}
 }
 
-// TS 102 361-4 Table 7.2 carries C_UDTHD/C_UDTHU in a Data Header burst,
-// so opcodes 0x1A/0x1B must not decode as a CSBK variant.
+// TestCSBK_UDTHeaderOpcodes_NotCSBK checks that opcodes 0x1A and 0x1B
+// (C_UDTHD and C_UDTHU) are unknown CSBK opcodes, because they are sent in a
+// data header burst (ETSI TS 102 361-4 Table 7.2).
 func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 	for _, op := range []byte{0b011010, 0b011011} {
 		var payload [64]bit.Bit
@@ -862,14 +792,10 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 
 func TestCSBK_Protect_Decode(t *testing.T) {
 	var payload [64]bit.Bit
-	// ProtectKind (bits 12-14) = 5: 0b101
 	payload[12] = 1
 	payload[14] = 1
-	// GroupIndividual (bit 15) = true
 	payload[15] = 1
-	// TargetAddress (bits 16-39)
 	payload[39] = 1
-	// SourceAddress (bits 40-63)
 	payload[63] = 1
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKProtect), payload)

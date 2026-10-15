@@ -1,34 +1,3 @@
-// Command speccheck validates spec_matrix.yaml against the codebase by
-// running the Go tests listed for each spec section.
-//
-// Status is derived from test execution:
-//   - verified:      has tests and all pass
-//   - failing:       has tests but some fail or were not found
-//   - untested:      has source files but no tests listed
-//   - unimplemented: no source files and no tests
-//
-// Checks:
-//  1. Every source_file and ignore_files entry actually exists on disk.
-//  2. For each section with test_functions, run `go test -v -run <regex>`
-//     and verify all named tests ran and passed.
-//  3. Every non-test, non-generated Go file under v2/ is listed in a
-//     section's source_files or in ignore_files.
-//  4. Prints a per-document summary and overall completion percentage.
-//  5. Exits non-zero on any test failure, missing test, build failure,
-//     or untracked file.
-//
-// Flags:
-//
-//	-update-readme   Inject the Markdown coverage report into README.md
-//	                 between <!-- BEGIN ETSI COVERAGE --> and <!-- END ETSI COVERAGE --> markers.
-//	                 README.md is only written when there are no errors.
-//	-check-readme    Fail if the coverage section in README.md is not up to date.
-//
-// Usage:
-//
-//	go run -C cmd/speccheck .
-//	go run -C cmd/speccheck . -update-readme
-//	go run -C cmd/speccheck . -check-readme
 package main
 
 import (
@@ -83,7 +52,7 @@ type testEvent struct {
 	Output  string  `json:"Output"`
 }
 
-// Derived status values (not from YAML - computed from test execution).
+// The section statuses, which speccheck derives from the test results.
 const (
 	statusVerified      = "verified"      // has tests, all pass
 	statusFailing       = "failing"       // has tests, some fail or not found
@@ -147,7 +116,6 @@ func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	// Resolve repo root relative to this source file.
 	_, thisFile, _, _ := runtime.Caller(0) //nolint:dogsled
 	repoRoot := filepath.Join(filepath.Dir(thisFile), "..", "..")
 
@@ -343,7 +311,6 @@ func parseTestEvents(r io.Reader, names map[string]bool) (*packageRun, error) {
 			pr.testFailed = true
 		}
 
-		// Handle sub-tests: the base of "TestFoo/bar" is "TestFoo".
 		baseName, _, _ := strings.Cut(ev.Test, "/")
 		res, ok := pr.results[baseName]
 		if !ok {
@@ -566,7 +533,6 @@ func generateMarkdown(docs []document, results map[sectionKey]*sectionVerificati
 		fmt.Fprintf(&b, "%d sections: %d verified, %d failing, %d untested, %d unimplemented.\n\n",
 			n, c[statusVerified], c[statusFailing], c[statusUntested], c[statusUnimplemented])
 
-		// Section table
 		b.WriteString("| Section | Title | Status | Tests | Source Files |\n")
 		b.WriteString("| --- | --- | --- | --- | --- |\n")
 
@@ -574,7 +540,6 @@ func generateMarkdown(docs []document, results map[sectionKey]*sectionVerificati
 			sv := results[sectionKey{doc.ID, sec.Section}]
 			status := deriveStatus(sec, sv)
 
-			// Source files as inline code list
 			srcFiles := "-"
 			if len(sec.SourceFiles) > 0 {
 				parts := make([]string, len(sec.SourceFiles))

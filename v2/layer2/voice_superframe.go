@@ -10,20 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// ETSI TS 102 361-1 §5.1.2: Voice superframe, initiation and termination
-//
-// A voice transmission is a Voice LC Header, then complete superframes of
-// six voice bursts A to F, then a Terminator with LC in the burst after the
-// last burst F (§5.1.2.3; ETSI TS 102 361-2 §5.2.1.1 and §5.2.2.1 transmit
-// the entire last superframe). Burst A carries a voice SYNC pattern. Bursts B to E
-// carry the embedded Full LC with LCSS First, Continuation, Continuation
-// and Last (§7.1.3.0). Burst F carries the Null embedded message (§D.1)
-// with LCSS Single fragment, or an outbound RC (§7.1.3.1, §6.4.2).
-//
-// Each voice burst carries three 72-bit vocoder slots (§6.1). The slots are
-// opaque here: an AMBE frame is a slot after vocoder.EncodeAMBE72, and any
-// other codec supplies its own 72-bit slots.
-
 // VoiceSlotsPerBurst is the number of 72-bit vocoder slots in a voice burst.
 const VoiceSlotsPerBurst = 3
 
@@ -138,9 +124,9 @@ func (t *VoiceTransmitter) Header() RawBurst {
 }
 
 // SetReverseChannel sends rc in place of the Null embedded message in the
-// next burst F (ETSI TS 102 361-1 §7.1.3.1). Only a BS-sourced transmission
-// carries an RC in burst F, and it carries one RC per superframe at most, so
-// a later call before that burst F replaces rc.
+// next burst F, and a later call before that burst replaces rc. It returns
+// an error for a transmission that is not BS-sourced (ETSI TS 102 361-1
+// clause 7.1.3.1).
 func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 	if t.terminated {
 		return ErrVoiceTerminated

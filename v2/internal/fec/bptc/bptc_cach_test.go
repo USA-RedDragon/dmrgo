@@ -9,7 +9,6 @@ import (
 
 func TestCACHBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	// Build a 36-bit info pattern
 	var info [36]bit.Bit
 	for i := range info {
 		info[i] = bit.Bit(i % 2)
@@ -76,8 +75,6 @@ func TestCACHBPTC_FragmentSize(t *testing.T) {
 	info := cachInfo()
 	fragments := bptc.EncodeCACH(info)
 
-	// Every fragment carries part of the codeword: one flipped bit in any of
-	// them must be corrected.
 	for i := range fragments {
 		rx := fragments
 		rx[i][16] ^= 1
@@ -115,7 +112,6 @@ func TestCACHBPTC_SingleBitErrorCorrection(t *testing.T) {
 
 	fragments := bptc.EncodeCACH(info)
 
-	// Corrupt one bit in the first fragment (within a data row)
 	fragments[0][0] ^= 1
 
 	decoded, fecResult := bptc.DecodeCACH(fragments)
@@ -132,7 +128,6 @@ func TestCACHBPTC_SingleBitErrorCorrection(t *testing.T) {
 
 func TestCACHBPTC_StabilityEncodeDecode(t *testing.T) {
 	t.Parallel()
-	// Encode, decode and encode again should produce identical fragments
 	var info [36]bit.Bit
 	for i := range info {
 		info[i] = bit.Bit((i * 7) % 2)
@@ -178,14 +173,10 @@ func TestCACHBPTC_ColumnParityError(t *testing.T) {
 	var info [36]bit.Bit
 	fragments := bptc.EncodeCACH(info)
 
-	// Corrupt two bits in the same column across different rows
-	// This creates an undetectable column error if both are in data rows
 	fragments[0][0] ^= 1
 	fragments[1][0] ^= 1
 
 	_, fecResult := bptc.DecodeCACH(fragments)
-	// With two errors, the result may or may not be correctable depending
-	// on the specific positions, but at minimum errors should be detected
 	if fecResult.ErrorsCorrected == 0 && !fecResult.Uncorrectable {
 		t.Error("expected error detection for multi-bit corruption")
 	}

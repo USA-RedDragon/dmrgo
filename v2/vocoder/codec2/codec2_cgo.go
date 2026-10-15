@@ -24,14 +24,11 @@ import (
 //nolint:gochecknoglobals // guards global state inside libcodec2
 var libMu sync.Mutex
 
-// Codec is a Codec2 vocoder.Codec. Encoding and decoding use separate
-// libcodec2 states. A Codec is not safe for concurrent use, but separate
-// Codecs may be used from separate goroutines. Call Close to free the
-// libcodec2 states; a garbage-collected Codec frees them too.
-//
-// libcodec2 synthesizes unvoiced sound from a process-wide random number
-// generator, so decoded PCM depends on earlier decodes in the process.
-// Encoding is deterministic.
+// Codec is a Codec2 vocoder.Codec with separate libcodec2 encoder and decoder
+// states. A Codec is not safe for concurrent use; separate Codecs may be used
+// from separate goroutines. Close frees the states, and so does the garbage
+// collector. Encoding is deterministic, but decoded PCM depends on earlier
+// decodes in the process, from a process-wide random number generator.
 type Codec struct {
 	enc, dec *C.struct_CODEC2
 	mode     Mode

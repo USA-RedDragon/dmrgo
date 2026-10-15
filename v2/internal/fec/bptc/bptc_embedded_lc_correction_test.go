@@ -30,8 +30,8 @@ func TestEmbeddedLC_CapturedSuperframe(t *testing.T) {
 	if res.Uncorrectable || res.ErrorsCorrected != 0 {
 		t.Fatalf("captured superframe: result=%+v, want clean", res)
 	}
-	// Figure B.3: rows 0 and 1 hold 11 LC bits, rows 2..6 hold 10 LC bits
-	// followed by one checksum bit.
+	// Rows 0 and 1 hold 11 LC bits, and rows 2 to 6 hold 10 LC bits and one
+	// checksum bit (ETSI TS 102 361-1 Figure B.3).
 	var lc []bit.Bit
 	var cs []bit.Bit
 	for row := 0; row < 7; row++ {

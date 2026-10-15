@@ -9,32 +9,16 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// ETSI TS 102 361-1 clause B.2.1: Variable length BPTC for Embedded Signalling
-//
-// The embedded signalling uses a BPTC with Hamming(16,11,4) row codes and
-// simple (even) parity column codes. For a full embedded LC:
-//
-// Encode matrix: 8 rows × 16 columns = 128 bits
-//   - Rows 0..6: 11 data bits + 5 Hamming(16,11,4) parity bits
-//   - Row 7: column parity (even parity per column)
-//
-// Info bits: 7×11 = 77 bits (72 LC + 5 checksum)
-//
-// The 128 bits are interleaved column-by-column into 4 fragments of 32 bits
-// each, transmitted across 4 consecutive voice bursts.
-//
-// Fragment assembly: columns are read top-to-bottom, left-to-right,
-// and split into 4 groups of 32 bits (columns 0-3, 4-7, 8-11, 12-15).
+// The embedded LC BPTC has an 8×16 encode matrix (ETSI TS 102 361-1 clause
+// B.2.1). Rows 0 to 6 hold 11 information bits and 5 Hamming(16,11,4) parity
+// bits, and row 7 holds the even parity of each column. The columns, top to
+// bottom and left to right, make 4 fragments of 32 bits for 4 voice bursts.
 
-// DecodeEmbedded decodes a full embedded LC from 4 × 32-bit fragments.
-// The fragments should be in order (fragment 0 from voice burst B, through
-// fragment 3 from voice burst E of a superframe).
-//
-// Returns the 77 information bits (72 LC + 5 checksum) and FEC result. The
-// bits are rows 0..6, columns 0..10 of the encode matrix in row-major order,
-// so per Figure B.3 the checksum bits are the last bit of rows 2..6. It is
-// DecodeEmbeddedWithCheck with no check, so a received word at equal
-// distance from two codewords is uncorrectable.
+// DecodeEmbedded decodes the 77 information bits (72 LC bits and a 5-bit
+// checksum) from the fragments of voice bursts B to E, in that order. They
+// are rows 0 to 6, columns 0 to 10 of the encode matrix in row-major order,
+// so the checksum bits are the last bit of rows 2 to 6 (ETSI TS 102 361-1
+// Figure B.3). It is DecodeEmbeddedWithCheck with a nil check.
 func DecodeEmbedded(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
 	return DecodeEmbeddedWithCheck(fragments, nil)
 }
@@ -43,15 +27,11 @@ func DecodeEmbedded(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
 // DecodeEmbeddedWithCheck corrects.
 const EmbeddedMaxErrors = 8
 
-// DecodeEmbeddedWithCheck decodes a full embedded LC to the nearest
-// codeword of the product code. It finds the codewords at the smallest
-// Hamming distance from the received bits, up to EmbeddedMaxErrors, and
-// keeps those whose information bits check accepts; a nil check accepts all
-// of them. The LC is uncorrectable unless exactly one codeword remains. The
-// search covers error patterns of up to 4 bits in each of rows 0..6. The
-// product code has minimum distance 8, so up to 3 errors always give one
-// nearest codeword. With 4 or more errors two codewords can be equally near,
-// and check, for example the 5-bit LC checksum, picks between them.
+// DecodeEmbeddedWithCheck decodes a full embedded LC to the nearest codewords
+// of the product code, up to EmbeddedMaxErrors bit errors, and keeps those
+// whose information bits check accepts (a nil check accepts all). The LC is
+// uncorrectable unless exactly one remains. Up to 3 errors give one nearest
+// codeword; with more, check (such as the LC checksum) picks between them.
 func DecodeEmbeddedWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.Result) {
 	for i := range fragments {
 		lowbit.Mask(fragments[i][:])
@@ -81,10 +61,9 @@ func DecodeEmbeddedWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.B
 }
 
 // embeddedLCSearch is a branch and bound search for the error patterns of
-// least weight. An error pattern of rows 0..6 with the row syndromes fixes
-// row 7, because the column parity of the errors must equal the column
-// parity of the received rows. Row 7 then also has its syndrome, as the
-// syndrome is linear.
+// least weight, with up to 4 errors in each of rows 0 to 6. The errors of
+// rows 0 to 6 fix the errors of row 7, because the column parity of the
+// errors must equal the column parity of the received rows.
 type embeddedLCSearch struct {
 	rows         [8]uint16
 	syndromes    [8]int
@@ -144,9 +123,7 @@ func (s *embeddedLCSearch) leaf(weight int) {
 }
 
 // embeddedLCPatternTable lists the 16-bit row error patterns of weight up to
-// 4 by Hamming(16,11,4) syndrome and weight. Bit c is column c. Each column
-// syndrome has odd weight, so the weight of a pattern has the parity of the
-// weight of its syndrome.
+// 4 by Hamming(16,11,4) syndrome and weight, with bit c for column c.
 type embeddedLCPatternTable struct {
 	bySyndrome [32][5][]uint16
 	minWeight  [32]int
@@ -183,11 +160,10 @@ var embeddedLCPatterns = sync.OnceValue(func() *embeddedLCPatternTable { //nolin
 })
 
 // DecodeEmbeddedStrict decodes a full embedded LC as MMDVMHost
-// (CDMREmbeddedData::decodeEmbeddedData) does. Each of rows 0..6 is
-// corrected for at most one error with Hamming(16,11,4), and a row with a
-// detected double error makes the LC uncorrectable. Row 7 is not corrected:
-// the LC is uncorrectable when any column parity over all 8 rows fails. It
-// accepts far fewer LCs with bit errors than DecodeEmbedded.
+// (CDMREmbeddedData::decodeEmbeddedData) does. It corrects at most one error
+// in each of rows 0 to 6. The LC is uncorrectable when a row has a detected
+// double error or a column parity over all 8 rows fails, so it accepts far
+// fewer LCs with bit errors than DecodeEmbedded.
 func DecodeEmbeddedStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
 	for i := range fragments {
 		lowbit.Mask(fragments[i][:])
@@ -255,13 +231,12 @@ func columnParity(matrix *[8][16]bit.Bit, col int) bit.Bit {
 	return parity
 }
 
-// EncodeEmbedded encodes 77 information bits (72 LC + 5 checksum) into
-// 4 × 32-bit fragments for transmission across 4 voice bursts.
+// EncodeEmbedded encodes 77 information bits (72 LC bits and a 5-bit
+// checksum) into the 32-bit fragments of 4 voice bursts.
 func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 	lowbit.Mask(info[:])
 	var matrix [8][16]bit.Bit
 
-	// Place 77 info bits into rows 0..6, columns 0..10
 	idx := 0
 	for row := 0; row < 7; row++ {
 		for col := 0; col < 11; col++ {
@@ -270,7 +245,6 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 		}
 	}
 
-	// Compute row Hamming(16,11,4) parity for rows 0..6
 	for row := 0; row < 7; row++ {
 		var data [11]bit.Bit
 		copy(data[:], matrix[row][:11])
@@ -282,7 +256,6 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 		matrix[row][15] = parity[4]
 	}
 
-	// Compute column parity (even) for row 7
 	for col := 0; col < 16; col++ {
 		var parity bit.Bit
 		for row := 0; row < 7; row++ {
@@ -291,7 +264,6 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 		matrix[7][col] = parity
 	}
 
-	// Interleave: read columns top-to-bottom, left-to-right, to a 128-bit stream
 	var stream [128]bit.Bit
 	for col := 0; col < 16; col++ {
 		for row := 0; row < 8; row++ {
@@ -299,7 +271,6 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 		}
 	}
 
-	// Split into 4 × 32-bit fragments
 	var fragments [4][32]bit.Bit
 	for i := 0; i < 4; i++ {
 		copy(fragments[i][:], stream[i*32:(i+1)*32])
@@ -308,16 +279,8 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 	return fragments
 }
 
-// calculateSyndrome16_11 computes the 5-bit syndrome for a 16-bit
-// Hamming(16,11,4) codeword.
-//
-// Syndrome equations from the H matrix (§B.3.4):
-//
-//	s₀ = r₀⊕r₁⊕r₂⊕r₃⊕r₅⊕r₇⊕r₈⊕r₁₁
-//	s₁ = r₁⊕r₂⊕r₃⊕r₄⊕r₆⊕r₈⊕r₉⊕r₁₂
-//	s₂ = r₂⊕r₃⊕r₄⊕r₅⊕r₇⊕r₉⊕r₁₀⊕r₁₃
-//	s₃ = r₀⊕r₁⊕r₂⊕r₄⊕r₆⊕r₇⊕r₁₀⊕r₁₄
-//	s₄ = r₀⊕r₂⊕r₅⊕r₆⊕r₈⊕r₉⊕r₁₀⊕r₁₅
+// calculateSyndrome16_11 returns the 5-bit Hamming(16,11,4) syndrome of a
+// 16-bit row (ETSI TS 102 361-1 clause B.3.4).
 func calculateSyndrome16_11(bits [16]bit.Bit) int {
 	s0 := bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
 	s1 := bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[12]
@@ -327,15 +290,8 @@ func calculateSyndrome16_11(bits [16]bit.Bit) int {
 	return int(s0) | int(s1)<<1 | int(s2)<<2 | int(s3)<<3 | int(s4)<<4
 }
 
-// parityHamming16_11 computes the 5 Hamming(16,11,4) parity bits for 11 data bits.
-//
-// From the generator matrix (§B.3.4, Table B.16):
-//
-//	p₀ = d₀⊕d₁⊕d₂⊕d₃⊕d₅⊕d₇⊕d₈
-//	p₁ = d₁⊕d₂⊕d₃⊕d₄⊕d₆⊕d₈⊕d₉
-//	p₂ = d₂⊕d₃⊕d₄⊕d₅⊕d₇⊕d₉⊕d₁₀
-//	p₃ = d₀⊕d₁⊕d₂⊕d₄⊕d₆⊕d₇⊕d₁₀
-//	p₄ = d₀⊕d₂⊕d₅⊕d₆⊕d₈⊕d₉⊕d₁₀
+// parityHamming16_11 returns the 5 Hamming(16,11,4) parity bits of 11 data
+// bits (ETSI TS 102 361-1 clause B.3.4, Table B.16).
 func parityHamming16_11(data [11]bit.Bit) [5]bit.Bit {
 	return [5]bit.Bit{
 		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[5] ^ data[7] ^ data[8],

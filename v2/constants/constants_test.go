@@ -60,7 +60,6 @@ func TestConstants_AnnexA2(t *testing.T) {
 
 func TestNoLeader_Equals_BeaconInterval(t *testing.T) {
 	t.Parallel()
-	// Per spec, NoLeader and BeaconInterval are both 4.5 minutes
 	if constants.NoLeader != constants.BeaconInterval {
 		t.Errorf("NoLeader (%v) should equal BeaconInterval (%v)", constants.NoLeader, constants.BeaconInterval)
 	}
@@ -68,7 +67,6 @@ func TestNoLeader_Equals_BeaconInterval(t *testing.T) {
 
 func TestSyncAgeWarning_Equals_TwoBeaconIntervals(t *testing.T) {
 	t.Parallel()
-	// Per spec, SyncAgeWarning = 2 × BeaconInterval = 9 min
 	if constants.SyncAgeWarning != 2*constants.BeaconInterval {
 		t.Errorf("SyncAgeWarning (%v) should equal 2*BeaconInterval (%v)", constants.SyncAgeWarning, 2*constants.BeaconInterval)
 	}
@@ -177,7 +175,6 @@ func TestTrunkingConstants_AnnexA6(t *testing.T) {
 
 func TestTrunkingGatewayAddresses_AnnexA8(t *testing.T) {
 	t.Parallel()
-	// Verify key gateway addresses are correctly defined
 	if constants.GatewayPSTNI != 0xFFFEC0 {
 		t.Errorf("GatewayPSTNI = 0x%06X, want 0xFFFEC0", constants.GatewayPSTNI)
 	}
@@ -204,9 +201,8 @@ func TestTrunkingGatewayAddresses_AnnexA8(t *testing.T) {
 	}
 }
 
-// Every DMR ID and value of TS 102 361-4 Table A.8. CHNULL is "000 16, a
-// logical physical channel that is not assigned"; channel 1 is a real
-// channel (Table A.6: Low_Comp_Ch 1 to 4 095).
+// TestTrunkingIdentifiers_AnnexA8 checks every DMR ID and value of ETSI TS
+// 102 361-4 Table A.8.
 func TestTrunkingIdentifiers_AnnexA8(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -251,10 +247,9 @@ func TestTrunkingIdentifiers_AnnexA8(t *testing.T) {
 	}
 }
 
-// Tables A.2 to A.5 of TS 102 361-4 give the call timers as tokens:
-// "510 = 2 315 minutes", "30 = 35 minutes", "4 094 = 3 976 minutes".
-// Table A.2 "21 = 75 s to 28 = 180 s" in 15 s steps puts 120 s at token 24;
-// Table A.3 "6 = 10 s" is the packet default.
+// TestCallTimerTokens_AnnexA2toA5 checks the call timers against the tokens
+// of ETSI TS 102 361-4 Tables A.2 to A.5: token 510 is 2315 min, token 30 is
+// 35 min, token 4094 is 3976 min, token 24 is 120 s and token 6 is 10 s.
 func TestCallTimerTokens_AnnexA2toA5(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

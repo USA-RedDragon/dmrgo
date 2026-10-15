@@ -1,14 +1,12 @@
-// Package crc implements the CRCs and the checksum of ETSI TS 102 361-1
-// B.3.7 to B.3.13: CRC-7, CRC-8, CRC-9, CRC-CCITT, CRC-32 and the 5-bit
-// checksum of the embedded LC. For each, crc.<Name>(data) computes the value
-// and crc.Check<Name>(data, want) compares it with a received one. The Data
-// Type CRC Masks of Table B.21 are not applied here; see pdu.CRCMask.
+// Package crc computes and checks the CRC-7, CRC-8, CRC-9, CRC-CCITT and
+// CRC-32 values and the 5-bit embedded LC checksum of DMR (ETSI TS 102 361-1
+// clauses B.3.7 to B.3.13). For each, crc.<Name>(data) computes the value and
+// crc.Check<Name>(data, want) compares it with a received one. The package
+// does not apply the Data Type CRC Masks of Table B.21 (pdu.CRCMask does).
 package crc
 
-// TS 102 361-1 V1.2.1 B.3.8 - CRC-CCITT calculation
-
-// CCITT computes the CRC-CCITT over the given byte data
-// using the table-based approach matching MMDVM's CCRC::checkCCITT162.
+// CCITT computes the inverted CRC-CCITT of data, as MMDVM's
+// CCRC::checkCCITT162 does (ETSI TS 102 361-1 clause B.3.8).
 func CCITT(data []byte) uint16 {
 	var crc16 uint16
 

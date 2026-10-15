@@ -18,7 +18,6 @@ import (
 )
 
 func main() {
-	// Resolve the code root from the location of this source file.
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
 		fmt.Fprintln(os.Stderr, "dmrgen: could not determine source file location")
@@ -52,7 +51,6 @@ func run(v2Root string) error {
 		if info.IsDir() {
 			return nil
 		}
-		// Only process .go files; skip tests and generated files.
 		if !strings.HasSuffix(path, ".go") ||
 			strings.HasSuffix(path, "_test.go") ||
 			strings.HasSuffix(path, "_gen.go") {

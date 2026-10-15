@@ -16,13 +16,10 @@ import (
 func buildUSBDBits(serviceType byte, payload [76]bit.Bit) [96]bit.Bit {
 	var data [96]bit.Bit
 
-	// ServiceType: bits 0-3
 	bit.PutUint(data[0:4], uint64(serviceType))
 
-	// Payload: bits 4-79
 	copy(data[4:80], payload[:])
 
-	// Pack first 10 bytes to compute CRC
 	var dataBytes [10]byte
 	for i := range 10 {
 		for j := range 8 {
@@ -44,12 +41,11 @@ func buildUSBDBits(serviceType byte, payload [76]bit.Bit) [96]bit.Bit {
 
 func TestUSBD_DecodeLIP(t *testing.T) {
 	var payload [76]bit.Bit
-	// Set some payload bits
 	payload[0] = 1
 	payload[10] = 1
 	payload[75] = 1
 
-	infoBits := buildUSBDBits(0b0000, payload) // LIP service type
+	infoBits := buildUSBDBits(0b0000, payload)
 
 	usbd := pdu.DecodeUnifiedSingleBlockData(infoBits)
 	fecResult := usbd.FEC
@@ -61,7 +57,6 @@ func TestUSBD_DecodeLIP(t *testing.T) {
 		t.Errorf("ServiceType = %d, want ServiceTypeLIP (0)", usbd.ServiceType)
 	}
 
-	// Verify payload bits
 	if rawBit(usbd.Payload[:], 0) != 1 {
 		t.Error("Payload[0] should be 1")
 	}
@@ -80,7 +75,7 @@ func TestUSBD_DecodeManufacturerSpecific(t *testing.T) {
 	var payload [76]bit.Bit
 	payload[0] = 1
 
-	infoBits := buildUSBDBits(0b1000, payload) // ManufacturerSpecific1
+	infoBits := buildUSBDBits(0b1000, payload)
 
 	usbd := pdu.DecodeUnifiedSingleBlockData(infoBits)
 	fecResult := usbd.FEC
@@ -109,7 +104,6 @@ func TestUSBD_EncodeDecodeRoundTrip(t *testing.T) {
 			orig := pdu.UnifiedSingleBlockData{
 				ServiceType: tt.serviceType,
 			}
-			// Set some payload bits
 			for i := 0; i < 76; i += 3 {
 				setRawBit(orig.Payload[:], i)
 			}
@@ -152,7 +146,6 @@ func TestUSBD_EncodeStability(t *testing.T) {
 
 func TestUSBD_CRCFailure(t *testing.T) {
 	var infoBits [96]bit.Bit
-	// All zeros will fail CRC check
 	fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeUnifiedSingleBlockData should return uncorrectable for invalid CRC")
@@ -164,7 +157,6 @@ func TestUSBD_CRCBitFlip(t *testing.T) {
 	payload[5] = 1
 	infoBits := buildUSBDBits(0b0000, payload)
 
-	// Flip a data bit to corrupt CRC
 	infoBits[5] ^= 1
 
 	fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits).FEC
@@ -216,7 +208,6 @@ func TestServiceTypeString(t *testing.T) {
 		}
 	}
 
-	// Reserved values should contain "Reserved"
 	reserved := pdu.ServiceType(0b0001)
 	name := reserved.String()
 	if name == "" {
@@ -225,7 +216,6 @@ func TestServiceTypeString(t *testing.T) {
 }
 
 func TestUSBD_AllServiceTypes(t *testing.T) {
-	// Test that all 16 possible service type values decode without panic
 	for st := 0; st < 16; st++ {
 		var payload [76]bit.Bit
 		infoBits := buildUSBDBits(byte(st), payload)

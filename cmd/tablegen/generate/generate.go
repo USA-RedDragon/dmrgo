@@ -1,3 +1,4 @@
+// Package generate writes computed lookup tables as Go source files.
 package generate
 
 import (

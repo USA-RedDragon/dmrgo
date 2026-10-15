@@ -8,15 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// MBCHeader is the header block of a Multi Block Control (MBC) PDU (ETSI TS 102
-// 361-1 clause 7.4.1).
-//
-// The header of a Tier III grant, C_MOVE or C_BCAST MBC carries the CSBK
-// payload of its opcode (ETSI TS 102 361-4 §7.1.1.1), so with the standard
-// FID DecodeMBCHeader sets the payload field of the opcode, as DecodeCSBK
-// does. Payloads of other opcodes and FIDs, and of opcode 0x38, are kept in
-// RawPayload. Encode returns an error if more than one payload field is set,
-// or if Opcode and FID do not select the payload field that is set.
+// MBCHeader is the header block of a Multi Block Control (MBC) PDU (ETSI TS 102 361-1 clause 7.4.1).
 //
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xAAAA
@@ -40,8 +32,8 @@ type MBCHeader struct {
 	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`                         // C_MOVE payload, or nil
 	BroadcastPDU                    *BroadcastPDU                    `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`                    // C_BCAST payload, or nil
 
-	// RawPayload holds header bits 16 to 79 when no payload field is set,
-	// packed most significant bit first, as CSBK.RawPayload does.
+	// RawPayload holds header octets 2 to 9 (bits 16 to 79) when no payload
+	// field is set.
 	RawPayload [8]byte `dmr:"bits:16-79,raw,fallback"`
 }
 
@@ -51,27 +43,14 @@ func (s *MBCHeader) DataType() enums.DataType {
 }
 
 // MBCContinuation is a continuation block of a Multi Block Control (MBC) PDU
-// (ETSI TS 102 361-1 clause 7.4.1).
-//
-// The continuation block carries either intermediate or last-block data.
-// LB=0: intermediate block (95 data bits, no CRC)
-// LB=1: last block (79 data bits + 16-bit CRC)
-//
-// The last-block CRC-CCITT covers every MBC block except the header (§7.4.0),
-// so a single block can only be checked when it is the only continuation
-// block. Use SetMBCLastBlockCRC and MBCLastBlockCRCOK with all continuation
-// blocks in order. It has no Data Type mask (Table B.21 NOTE 1).
+// (ETSI TS 102 361-1 clause 7.4.1). DecodeMBCContinuation does not check the
+// last-block CRC: check it with MBCLastBlockCRCOK over all continuation blocks.
 type MBCContinuation struct {
-	// LastBlock indicates whether this is the final continuation block.
-	// LB=1 means last block (has CRC), LB=0 means intermediate (no CRC).
-	LastBlock bool `dmr:"bit:0"`
+	LastBlock bool `dmr:"bit:0"` // LB bit, true for the last block, which holds the CRC
 
 	// Data holds bits 1 to 95 of the block, packed most significant bit
-	// first: bit 1 is the top bit of byte 0 and bit 95 is bit 1 of byte
-	// 11. The low bit of byte 11 is padding and must be zero; Encode
-	// returns a *bit.FieldRangeError otherwise. An intermediate block
-	// (LB=0) carries 95 data bits; a last block (LB=1) carries 79 data
-	// bits, bits 1 to 79, and the CRC in bits 80 to 95.
+	// first. A last block holds the CRC in bits 80 to 95. The low bit of
+	// byte 11 is padding: Encode returns a *bit.FieldRangeError when it is set.
 	Data [12]byte `dmr:"bits:1-95,raw"`
 }
 
@@ -89,29 +68,26 @@ func (s *MBCContinuation) bits() [96]bit.Bit {
 	return data
 }
 
-// AsCGAP decodes the block as the CGAP continuation of a grant MBC (ETSI TS
-// 102 361-4 Table 7.16). DecodeMBCContinuation decodes every continuation
-// block alike because its layout depends on the MBC header, so the caller
-// picks the layout from MBCHeader.Opcode. The FEC field of the result
-// reports the last-block CRC, which applies only when this is the one
-// continuation block of the MBC.
+// AsCGAP decodes the block as the CG_AP continuation of a grant MBC (ETSI TS
+// 102 361-4 Table 7.16). The FEC field of the result reports the last-block
+// CRC, which applies only when this is the one continuation block of the MBC.
 func (s *MBCContinuation) AsCGAP() CGAPContinuation {
 	return decodeCGAPContinuation(s.bits())
 }
 
-// AsMVAP decodes the block as the MVAP continuation of a C_MOVE MBC (ETSI TS
+// AsMVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS
 // 102 361-4 Table 7.18), as AsCGAP does.
 func (s *MBCContinuation) AsMVAP() MVAPContinuation {
 	return decodeMVAPContinuation(s.bits())
 }
 
-// AsBCAP decodes the block as the BCAP continuation of a C_BCAST MBC (ETSI
+// AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI
 // TS 102 361-4 Table 7.21), as AsCGAP does.
 func (s *MBCContinuation) AsBCAP() BCAPContinuation {
 	return decodeBCAPContinuation(s.bits())
 }
 
-// AsVNAP decodes the block as the VNAP continuation of a C_BCAST Vote_Now
+// AsVNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now
 // MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does.
 func (s *MBCContinuation) AsVNAP() VNAPContinuation {
 	return decodeVNAPContinuation(s.bits())
@@ -144,12 +120,9 @@ func MBCLastBlockCRCOK(blocks ...[96]bit.Bit) bool {
 	return uint16(bit.Uint(last[80:96])) == mbcLastBlockCRC(blocks...) //nolint:gosec // 16-bit field
 }
 
-// SetMBCLastBlockCRC writes the last-block CRC-CCITT (ETSI TS 102 361-1
-// §7.4.0) into bits 80 to 95 of the last of blocks. The CRC covers all 96
-// bits of each block before it and bits 0 to 79 of the last block, so
-// blocks holds every continuation block of the MBC in order, last block
-// last. It takes a slice, not variadic blocks, because it writes into the
-// last element. It does nothing for no blocks.
+// SetMBCLastBlockCRC writes the last-block CRC-CCITT into bits 80 to 95 of
+// the last of blocks, which holds every continuation block of the MBC in
+// order (ETSI TS 102 361-1 clause 7.4.0). It does nothing for no blocks.
 func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 	if len(blocks) == 0 {
 		return
@@ -161,20 +134,7 @@ func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 	}
 }
 
-// These structs parse the 96-bit BPTC output of a continuation block
-// based on the MBC header's CSBKO. They are always last-blocks (LB=1)
-// that directly follow the header, so the generated decoder checks the
-// last-block CRC over bits 0-79 and the encoder computes it.
-//
-// Usage: after receiving an MBCContinuation with LB=1, the higher layer
-// determines the type from the preceding MBCHeader.Opcode and
-// calls the appropriate Decode function on the full 96-bit block.
-
-// CGAPContinuation is the Channel Grant Absolute Parameters (CGAP) continuation
-// block of a grant MBC, used when PhysicalChannel is 0xFFF (ETSI TS 102 361-4
-// clause 7.1.1.1.2, Table 7.16). The grant opcodes are PV_GRANT, TV_GRANT,
-// BTV_GRANT, PD_GRANT, TD_GRANT, PV_GRANT_DX, PD_GRANT_DX, PD_GRANT_MI and
-// TD_GRANT_MI.
+// CGAPContinuation is the CG_AP continuation block of a grant MBC (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16).
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
@@ -196,9 +156,7 @@ func (s *CGAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// MVAPContinuation is the Move Absolute Parameters (MVAP) continuation block of
-// a C_MOVE (opcode 0x39) MBC, used when PhysicalChannel is 0xFFF (ETSI TS 102
-// 361-4 clause 7.1.1.1.3.1, Table 7.18).
+// MVAPContinuation is the MV_AP continuation block of a C_MOVE MBC (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18).
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
@@ -220,9 +178,7 @@ func (s *MVAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// BCAPContinuation is the Broadcast Absolute Parameters (BCAP) continuation
-// block of a C_BCAST (opcode 0x28) MBC for Ann_WD_TSCC and Chan_Freq (ETSI TS
-// 102 361-4 clause 7.1.1.1.5.1, Table 7.21).
+// BCAPContinuation is the BC_AP continuation block of a C_BCAST MBC (ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21).
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96
@@ -243,9 +199,7 @@ func (s *BCAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// VNAPContinuation is the Vote Now Absolute Parameters (VNAP) continuation
-// block of a C_BCAST Vote_Now MBC, used when CH_VOTE is 0xFFF (ETSI TS 102
-// 361-4 clause 7.2.19.3.1, Table 7.72).
+// VNAPContinuation is the VN_AP continuation block of a C_BCAST Vote_Now MBC (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72).
 //
 //dmr:crc crc_ccitt
 //dmr:input_size 96

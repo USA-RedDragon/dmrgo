@@ -9,7 +9,6 @@ import (
 )
 
 func TestEncodeDecodeRoundTrip(t *testing.T) {
-	// Test that Encode -> Decode produces the original data
 	testData := [][]byte{
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09},
@@ -28,14 +27,12 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 			t.Fatalf("test %d: Encode returned %d bytes, want %d", i, len(encoded), dataSize+checksumSize)
 		}
 
-		// Verify data portion is preserved
 		for j := 0; j < dataSize; j++ {
 			if encoded[j] != data[j] {
 				t.Errorf("test %d: encoded[%d] = 0x%02X, want 0x%02X", i, j, encoded[j], data[j])
 			}
 		}
 
-		// Decode and verify
 		result := decode(encoded)
 		if result.Uncorrectable {
 			t.Errorf("test %d: Decode reported uncorrectable", i)
@@ -52,10 +49,8 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestSyndromeDetectsCorruption(t *testing.T) {
-	// All-zero codeword is valid
 	data := make([]byte, dataSize+checksumSize)
 
-	// Corrupt one byte
 	corrupted := make([]byte, len(data))
 	copy(corrupted, data)
 	corrupted[3] = 0xFF
@@ -199,7 +194,6 @@ func TestPublicEncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestSyndromeCleanForValidCodeword(t *testing.T) {
-	// All-zero codeword should have zero syndrome
 	data := make([]byte, dataSize+checksumSize)
 
 	var syndrome poly
@@ -232,14 +226,12 @@ func TestEncodePreservesData(t *testing.T) {
 		t.Fatalf("Encode returned %d bytes, want %d", len(encoded), dataSize+checksumSize)
 	}
 
-	// Verify data portion is unchanged
 	for i := 0; i < dataSize; i++ {
 		if encoded[i] != data[i] {
 			t.Errorf("encoded[%d] = 0x%02X, want 0x%02X", i, encoded[i], data[i])
 		}
 	}
 
-	// Checksum bytes should not all be zero for non-zero data
 	allZero := true
 	for i := dataSize; i < len(encoded); i++ {
 		if encoded[i] != 0 {

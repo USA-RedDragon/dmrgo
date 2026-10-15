@@ -4,18 +4,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
-// TS 102 361-1 - B.3.7  8-bit CRC calculation
-//
-// Generator polynomial: G₈(x) = x⁸ + x² + x + 1 (0x107)
-// Initial remainder: 0x00
-// Final XOR: none
-//
-// F₈(x) = x⁸ · M(x) mod G₈(x)
-
 const crc8Poly = 0x07 // x² + x + 1 (low 8 bits of G₈(x))
 
-// CRC8 computes the 8-bit CRC over the given bit data.
-// The polynomial is x⁸ + x² + x + 1, initial value 0, no final inversion.
+// CRC8 computes the CRC-8 of bits with the generator polynomial
+// x⁸ + x² + x + 1, initial value 0 and no final inversion (ETSI TS 102 361-1
+// clause B.3.7).
 func CRC8(bits []bit.Bit) uint8 {
 	var crc uint8
 

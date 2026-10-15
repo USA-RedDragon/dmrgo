@@ -1,5 +1,6 @@
-// Package reedsolomon implements the shortened Reed-Solomon (12,9) code of
-// ETSI TS 102 361-1 B.3.6, which protects a 9-byte Full Link Control.
+// Package reedsolomon encodes, checks and decodes the shortened Reed-Solomon
+// (12,9) code that protects a 9-byte Full Link Control (ETSI TS 102 361-1
+// clause B.3.6).
 package reedsolomon
 
 import (
@@ -12,13 +13,12 @@ import (
 const (
 	dataSize     = 9
 	checksumSize = 3
-	// Maximum degree of various polynomials
-	polyMaxDeg = checksumSize * 2
+	polyMaxDeg   = checksumSize * 2
 )
 
 type poly [polyMaxDeg]uint8
 
-// decodeResult contains the result of a Reed-Solomon decode operation
+// decodeResult is the result of a Reed-Solomon decode.
 type decodeResult struct {
 	Data          []byte // Corrected data (9 bytes)
 	ErrorsFound   int    // Number of symbol (byte) errors found and corrected
@@ -45,8 +45,8 @@ type workspace struct {
 	roots     [dataSize + checksumSize]uint8
 }
 
-// decode performs syndrome calculation, error correction, and returns comprehensive results.
-// It takes a 12-byte codeword (9 data + 3 checksum) and returns the corrected data along with error metrics.
+// decode corrects a 12-byte codeword (9 data bytes and 3 parity bytes) and
+// returns the data bytes and the error counts.
 func decode(data []byte) decodeResult {
 	result := decodeResult{
 		Data:          make([]byte, dataSize),
@@ -59,11 +59,9 @@ func decode(data []byte) decodeResult {
 		return result
 	}
 
-	// Make a copy to work with
 	workData := make([]byte, len(data))
 	copy(workData, data)
 
-	// Calculate syndrome
 	var syndrome poly
 	err := calcSyndrome(workData, &syndrome)
 	if err != nil {
@@ -71,14 +69,11 @@ func decode(data []byte) decodeResult {
 		return result
 	}
 
-	// Check if there are any errors
 	if !syndromeHasErrors(&syndrome) {
-		// No errors
 		copy(result.Data, workData[:dataSize])
 		return result
 	}
 
-	// Attempt correction
 	errorsFound, err := correct(workData, &syndrome)
 	if err != nil {
 		result.Uncorrectable = true
@@ -94,7 +89,7 @@ func decode(data []byte) decodeResult {
 }
 
 // Encode returns the 12-byte codeword of 9 data bytes: the data followed by
-// 3 parity bytes (ETSI TS 102 361-1 B.3.6).
+// 3 parity bytes (ETSI TS 102 361-1 clause B.3.6).
 func Encode(data [9]byte) [12]byte {
 	cw, _ := encode(data[:])
 	return [12]byte(cw)
@@ -125,7 +120,6 @@ func encode(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("fec/rs_12_9: data must be %d bytes, got %d", dataSize, len(data))
 	}
 
-	// Create codeword with space for checksum
 	codeword := make([]byte, dataSize+checksumSize)
 	copy(codeword, data)
 
@@ -145,9 +139,7 @@ func encode(data []byte) ([]byte, error) {
 	return codeword, nil
 }
 
-// This finds the coefficients of the error locator polynomial, and then calculates
-// the error evaluator polynomial using the Berlekamp-Massey algorithm.
-// From  Cain, Clark, "Error-Correction Coding For Digital Communications", pp. 216.
+// calcSyndrome computes the 3 syndromes of a 12-byte codeword.
 func calcSyndrome(data []byte, syndrome *poly) error {
 	if len(data) != dataSize+checksumSize {
 		return fmt.Errorf("fec/rs_12_9: unexpected size %d, expected %d bytes",
@@ -202,12 +194,10 @@ func mulPolysWithTmp(p1, p2 *poly, dst, tmp []uint8) {
 			tmp[j] = 0
 		}
 
-		// Scale tmp by p1[i]
 		for j = 0; j < polyMaxDeg; j++ {
 			tmp[j] = galoisMul(p2[j], p1[i])
 		}
 
-		// Shift (multiply) tmp right by i
 		for j = (polyMaxDeg * 2) - 1; j >= i && j < (polyMaxDeg*2)-1; j-- {
 			tmp[j] = tmp[j-i]
 		}
@@ -215,7 +205,6 @@ func mulPolysWithTmp(p1, p2 *poly, dst, tmp []uint8) {
 			tmp[j] = 0
 		}
 
-		// Add into partial product
 		for j = 0; j < (polyMaxDeg * 2); j++ {
 			dst[j] ^= tmp[j]
 		}
@@ -238,7 +227,7 @@ func galoisMul(a, b uint8) uint8 {
 	return galois_exp_table[(int(galois_log_table[a])+int(galois_log_table[b]))%255]
 }
 
-// Multiply by z (shift right by 1).
+// mulPolyZ multiplies poly by z, a shift right by one coefficient.
 func mulPolyZ(poly *poly) {
 	for i := polyMaxDeg - 1; i > 0; i-- {
 		poly[i] = poly[i-1]
@@ -314,9 +303,8 @@ func correct(data []byte, syndrome *poly) (int, error) {
 	return 1, nil
 }
 
-// The error-locator polynomial's roots are found by looking for the values of a^n where
-// evaluating the polynomial yields zero (evaluating rs_12_9_error_locator_poly at
-// successive values of alpha (Chien's search)).
+// findRoots returns the roots of the error locator polynomial, found with a
+// Chien search over the powers of alpha.
 func findRoots(locator *poly) []uint8 {
 	var rootsBuf [dataSize + checksumSize]uint8
 	return findRootsInto(locator, rootsBuf[:0])
@@ -327,7 +315,6 @@ func findRootsInto(locator *poly, buf []uint8) []uint8 {
 	roots := buf[:0]
 	for r = 1; r < 256; r++ {
 		var sum uint8
-		// Evaluate locator at r
 		for k = 0; k < checksumSize+1; k++ {
 			sum ^= galoisMul(galois_exp_table[(k*r)%255], locator[k])
 		}
@@ -340,6 +327,9 @@ func findRootsInto(locator *poly, buf []uint8) []uint8 {
 	return roots
 }
 
+// calcWithScratch finds the error locator polynomial with the
+// Berlekamp-Massey algorithm and then the error evaluator polynomial (Clark
+// and Cain, "Error-Correction Coding for Digital Communications", p. 216).
 func calcWithScratch(
 	syndrome, locator, evaluator *poly,
 	psi2 []uint8, product []uint8, tmp []uint8,
@@ -361,7 +351,6 @@ func calcWithScratch(
 	for n = 0; n < checksumSize; n++ {
 		d = calcDiscrepancy(locator, syndrome, lCur, n)
 		if d != 0 {
-			// psi2 = locator - d*D
 			for i = 0; i < polyMaxDeg; i++ {
 				psi2[i] = locator[i] ^ galoisMul(d, D[i])
 			}
@@ -376,7 +365,6 @@ func calcWithScratch(
 				lCur = l2
 			}
 
-			// locator = psi2
 			for i = 0; i < polyMaxDeg; i++ {
 				locator[i] = psi2[i]
 			}

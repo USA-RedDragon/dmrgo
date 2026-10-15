@@ -176,8 +176,8 @@ func (c *customData) String() string                 { return "custom" }
 func (c *customData) DataType() enums.DataType       { return enums.DataTypeRate12 }
 func (c *customData) EncodeBits() ([]bit.Bit, error) { return c.bits, nil }
 
-// Burst.Encode takes any Data, not only the pdu types, and checks the
-// number of bits it encodes.
+// TestBurstEncode_CustomData checks that Burst.Encode takes a Data type from
+// outside package pdu and checks the number of bits it encodes.
 func TestBurstEncode_CustomData(t *testing.T) {
 	want := [12]byte{0xDE, 0xAD, 0xBE, 0xEF}
 	b := dataBurst(enums.DataTypeRate12, &customData{bits: bit.Unpack(want[:])})

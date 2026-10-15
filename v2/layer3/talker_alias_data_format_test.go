@@ -33,7 +33,6 @@ func TestTalkerAliasDataFormatString_Unknown(t *testing.T) {
 }
 
 func TestTalkerAliasDataFormat_Constants(t *testing.T) {
-	// Verify iota ordering
 	if TalkerAliasSevenBit != 0 {
 		t.Errorf("SevenBitCharacters = %d, want 0", TalkerAliasSevenBit)
 	}

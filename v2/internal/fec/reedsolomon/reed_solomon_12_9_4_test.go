@@ -5,8 +5,6 @@ import (
 )
 
 func TestReedSolomon1294SyndromeNoError(t *testing.T) {
-	// Test that a valid codeword has zero syndrome
-	// Use a known good codeword - all zeros is a valid codeword
 	data := make([]byte, dataSize+checksumSize)
 	var syndrome poly
 
@@ -21,8 +19,6 @@ func TestReedSolomon1294SyndromeNoError(t *testing.T) {
 }
 
 func TestReedSolomon1294DecodeClean(t *testing.T) {
-	// Test decoding a clean codeword (no errors)
-	// All-zero codeword is valid
 	data := make([]byte, dataSize+checksumSize)
 
 	result := decode(data)
@@ -41,9 +37,8 @@ func TestReedSolomon1294DecodeClean(t *testing.T) {
 }
 
 func TestReedSolomon1294SyndromeWithError(t *testing.T) {
-	// Test that syndrome is non-zero when data has errors
 	data := make([]byte, dataSize+checksumSize)
-	data[0] = 0x55 // Introduce an error
+	data[0] = 0x55
 
 	var syndrome poly
 	err := calcSyndrome(data, &syndrome)
@@ -57,8 +52,6 @@ func TestReedSolomon1294SyndromeWithError(t *testing.T) {
 }
 
 func TestReedSolomon1294GaloisMul(t *testing.T) {
-	// Test Galois field multiplication properties
-	// 1. Multiplication by 0
 	if galoisMul(0, 0x5A) != 0 {
 		t.Error("0 * x should be 0")
 	}
@@ -66,7 +59,6 @@ func TestReedSolomon1294GaloisMul(t *testing.T) {
 		t.Error("x * 0 should be 0")
 	}
 
-	// 2. Multiplication by 1 (α^0 = 1)
 	if galoisMul(1, 0x5A) != 0x5A {
 		t.Error("1 * x should be x")
 	}
@@ -74,7 +66,6 @@ func TestReedSolomon1294GaloisMul(t *testing.T) {
 		t.Error("x * 1 should be x")
 	}
 
-	// 3. Commutativity
 	a, b := byte(0x12), byte(0x34)
 	if galoisMul(a, b) != galoisMul(b, a) {
 		t.Error("Galois multiplication should be commutative")
@@ -82,7 +73,6 @@ func TestReedSolomon1294GaloisMul(t *testing.T) {
 }
 
 func TestReedSolomon1294GaloisMulAssociativity(t *testing.T) {
-	// Test (a*b)*c = a*(b*c)
 	a, b, c := byte(0x12), byte(0x34), byte(0x56)
 	left := galoisMul(galoisMul(a, b), c)
 	right := galoisMul(a, galoisMul(b, c))
@@ -93,7 +83,6 @@ func TestReedSolomon1294GaloisMulAssociativity(t *testing.T) {
 }
 
 func TestReedSolomon1294FindRootsEmpty(t *testing.T) {
-	// Locator polynomial of 1 (no errors) should have no roots
 	locator := poly{1, 0, 0, 0, 0, 0}
 	roots := findRoots(&locator)
 	if len(roots) != 0 {
@@ -102,14 +91,13 @@ func TestReedSolomon1294FindRootsEmpty(t *testing.T) {
 }
 
 func TestReedSolomon1294DecodeInvalidLength(t *testing.T) {
-	// Test that invalid input length is handled gracefully
-	shortData := make([]byte, dataSize) // Too short
+	shortData := make([]byte, dataSize)
 	result := decode(shortData)
 	if !result.Uncorrectable {
 		t.Error("Short data should be uncorrectable")
 	}
 
-	longData := make([]byte, dataSize+checksumSize+5) // Too long
+	longData := make([]byte, dataSize+checksumSize+5)
 	result = decode(longData)
 	if !result.Uncorrectable {
 		t.Error("Long data should be uncorrectable")
@@ -117,7 +105,6 @@ func TestReedSolomon1294DecodeInvalidLength(t *testing.T) {
 }
 
 func TestReedSolomon1294CalcSyndromeError(t *testing.T) {
-	// Test syndrome calculation with wrong size input
 	shortData := make([]byte, 5)
 	var syndrome poly
 
@@ -128,7 +115,6 @@ func TestReedSolomon1294CalcSyndromeError(t *testing.T) {
 }
 
 func TestReedSolomon1294CorrectError(t *testing.T) {
-	// Test correct with wrong size input
 	shortData := make([]byte, 5)
 	var syndrome poly
 
@@ -139,12 +125,10 @@ func TestReedSolomon1294CorrectError(t *testing.T) {
 }
 
 func TestReedSolomon1294DecodeResultFields(t *testing.T) {
-	// Test that decodeResult fields are properly initialized
 	data := make([]byte, dataSize+checksumSize)
 
 	result := decode(data)
 
-	// Verify Data slice is correct size
 	if len(result.Data) != dataSize {
 		t.Errorf("decodeResult.Data length = %d, expected %d", len(result.Data), dataSize)
 	}
@@ -187,9 +171,8 @@ func BenchmarkReedSolomon1294GaloisMul(b *testing.B) {
 }
 
 func TestReedSolomon1294SyndromeHasErrors(t *testing.T) {
-	// Create a codeword with errors and verify syndrome is non-zero
 	data := make([]byte, dataSize+checksumSize)
-	data[0] = 0x42 // Introduce an error
+	data[0] = 0x42
 
 	var syndrome poly
 	err := calcSyndrome(data, &syndrome)

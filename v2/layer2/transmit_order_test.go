@@ -16,7 +16,6 @@ func TestTransmitOrder_BurstBitsConstant(t *testing.T) {
 
 func TestTransmitOrder_FieldBoundaries(t *testing.T) {
 	t.Parallel()
-	// Verify the field boundaries sum to 264 and don't overlap
 	fields := []struct {
 		name  string
 		start int
@@ -37,7 +36,6 @@ func TestTransmitOrder_FieldBoundaries(t *testing.T) {
 		}
 		totalBits += width
 
-		// Check contiguous (each field starts where the previous ended)
 		if i > 0 && f.start != fields[i-1].end {
 			t.Fatalf("field %s starts at %d, but previous field %s ends at %d",
 				f.name, f.start, fields[i-1].name, fields[i-1].end)
@@ -81,7 +79,6 @@ func TestTransmitOrder_EMBFieldWidths(t *testing.T) {
 	if layer2.EMBSecondEnd-layer2.EMBSecondStart != 8 {
 		t.Error("EMB second half should be 8 bits")
 	}
-	// EMB first + embedded data + EMB second = sync field
 	total := (layer2.EMBFirstEnd - layer2.EMBFirstStart) +
 		(layer2.EmbeddedDataEnd - layer2.EmbeddedDataStart) +
 		(layer2.EMBSecondEnd - layer2.EMBSecondStart)
@@ -91,7 +88,7 @@ func TestTransmitOrder_EMBFieldWidths(t *testing.T) {
 }
 
 // TestTransmitOrder_StandaloneRCFields checks the standalone RC burst field
-// bounds against the symbol labels in Table E.12.
+// bounds against the symbol labels (ETSI TS 102 361-1 Table E.12).
 func TestTransmitOrder_StandaloneRCFields(t *testing.T) {
 	tests := []struct {
 		bitIndex int
@@ -115,8 +112,8 @@ func TestTransmitOrder_StandaloneRCFields(t *testing.T) {
 	}
 }
 
-// dibitLabel returns the Annex E label of dibit symbol idx: L66 to L1, then
-// R1 to R66.
+// dibitLabel returns the label of dibit symbol idx: L66 to L1, then R1 to
+// R66 (ETSI TS 102 361-1 Annex E).
 func dibitLabel(idx int) string {
 	if idx < 66 {
 		return "L" + strconv.Itoa(66-idx)

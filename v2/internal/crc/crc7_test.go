@@ -27,7 +27,6 @@ func TestCRC7_CheckValid_NoMask(t *testing.T) {
 	data := []bit.Bit{1, 0, 1, 1}
 	c := crc.CRC7(data)
 
-	// Append CRC as 7 bits MSB-first
 	withCRC := make([]bit.Bit, 11)
 	copy(withCRC, data)
 	for i := 0; i < 7; i++ {
@@ -40,8 +39,8 @@ func TestCRC7_CheckValid_NoMask(t *testing.T) {
 }
 
 func TestCRC7_CheckValid_WithMask(t *testing.T) {
-	// Simulate Reverse Channel CRC mask 0x7A (per B.3.12)
 	data := []bit.Bit{1, 0, 1, 1}
+	// 0x7A is the Reverse Channel CRC mask (ETSI TS 102 361-1 clause B.3.12).
 	c := crc.CRC7(data) ^ 0x7A
 
 	withCRC := make([]bit.Bit, 11)
@@ -65,7 +64,6 @@ func TestCRC7_CheckInvalid(t *testing.T) {
 		withCRC[4+i] = bit.Bit((c >> (6 - i)) & 1)
 	}
 
-	// Corrupt a data bit
 	withCRC[0] ^= 1
 	if checkCRC7Codeword(withCRC, 0x00) {
 		t.Error("CheckCRC7 should return false for corrupted data")
@@ -79,7 +77,6 @@ func TestCRC7_CheckTooShort(t *testing.T) {
 }
 
 func TestCRC7_ValueRange(t *testing.T) {
-	// CRC-7 should always be in range [0, 127]
 	for v := 0; v < 16; v++ {
 		data := []bit.Bit{
 			bit.Bit((v >> 3) & 1),

@@ -23,7 +23,6 @@ func TestChecksum5_SingleByte(t *testing.T) {
 }
 
 func TestChecksum5_SimpleSum(t *testing.T) {
-	// 1+2+3+4+5+6+7+8+9 = 45; 45 mod 31 = 14
 	data := [9]byte{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	result := crc.Checksum5(data)
 	if result != 14 {
@@ -32,7 +31,6 @@ func TestChecksum5_SimpleSum(t *testing.T) {
 }
 
 func TestChecksum5_MaxValues(t *testing.T) {
-	// 9 * 255 = 2295; 2295 mod 31 = 2295 - 74*31 = 2295 - 2294 = 1
 	data := [9]byte{255, 255, 255, 255, 255, 255, 255, 255, 255}
 	result := crc.Checksum5(data)
 	if result != 1 {
@@ -41,7 +39,6 @@ func TestChecksum5_MaxValues(t *testing.T) {
 }
 
 func TestChecksum5_Range(t *testing.T) {
-	// Result must always be in [0, 30]
 	for i := 0; i < 256; i++ {
 		data := [9]byte{byte(i), byte(i >> 1), byte(i >> 2), 0, 0, 0, 0, 0, 0}
 		result := crc.Checksum5(data)

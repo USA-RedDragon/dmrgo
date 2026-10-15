@@ -64,7 +64,6 @@ func TestPositionErrorString(t *testing.T) {
 		}
 	}
 
-	// Out of range should return Unknown
 	name := (PositionError(99)).String()
 	if name != "Unknown" {
 		t.Errorf("(99).String() = %q, want Unknown", name)

@@ -1,5 +1,5 @@
-// Package emit generates Go source code for PDU decode/encode functions
-// using the jennifer code generation library.
+// Package emit turns parsed PDU structs into jennifer files with their
+// Decode function and Encode, EncodeBits and String methods.
 package emit
 
 import (
@@ -102,7 +102,6 @@ var fecCodecs = map[string]FECCodecInfo{
 
 // resolveImportPath converts a short package name (e.g. "enums") to a full import path.
 func resolveImportPath(pkgName, sourceFile string) string {
-	// Map well-known package names to full import paths
 	knownPkgs := map[string]string{
 		"enums":            "github.com/USA-RedDragon/dmrgo/v2/enums",
 		"bit":              "github.com/USA-RedDragon/dmrgo/v2/bit",
@@ -119,7 +118,6 @@ func resolveImportPath(pkgName, sourceFile string) string {
 	if p, ok := knownPkgs[pkgName]; ok {
 		return p
 	}
-	// Fall back: assume it's a relative sibling package
 	dir := filepath.Dir(sourceFile)
 	return "github.com/USA-RedDragon/dmrgo/" + filepath.Join(dir, pkgName)
 }
@@ -206,7 +204,6 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 	}
 
 	var genErr error
-	// func DecodeXxx(data [N]bit.Bit) Xxx {
 	params := []Code{Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit")}
 	for _, in := range pdu.Inputs {
 		field := pdu.FieldByName(in)
@@ -227,7 +224,6 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		hasPackedFEC := codec != nil && codec.PackedBytes
 		hasBitFEC := codec != nil && !codec.PackedBytes
 		if hasCRC || hasPackedFEC {
-			// Check if the CRC is byte-level (needs packing) or bit-level
 			isBitCRC := false
 			if hasCRC {
 				if algo, ok := crcAlgorithms[pdu.CRC.Algorithm]; ok {
@@ -235,7 +231,6 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 				}
 			}
 			if !isBitCRC {
-				// Byte-level CRC and packed-bytes FEC need bit packing first
 				totalBytes := inputSize / 8
 				emitBitPacking(g, totalBytes)
 			}
@@ -254,7 +249,6 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 			}
 			emitPackedFECDecode(g, codec)
 		case hasBitFEC:
-			// Bit-level FEC (Golay, QR): operates directly on bit arrays
 			g.Var().Id("corrected").Index(Lit(codec.InputSize)).Qual(bitPkg, "Bit")
 			g.List(Id("corrected"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("data"))
 			g.If(Op("!").Id("result").Dot(fecFieldName).Dot("Uncorrectable")).Block(
@@ -262,11 +256,10 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 			)
 		}
 
-		// Emit field extractions (regular fields first, then dispatch)
 		var dispatchFields []parse.Field
 		for _, field := range pdu.Fields {
 			if field.Skip {
-				continue // skip dmr:"-" fields (DataType, FEC, crc, etc.)
+				continue
 			}
 			if field.Kind == parse.FieldDispatch {
 				dispatchFields = append(dispatchFields, field)
@@ -278,7 +271,6 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 			emitFieldDecode(g, field, pdu)
 		}
 
-		// Emit dispatch switch if there are dispatch fields
 		if len(dispatchFields) > 0 {
 			if err := emitDispatchSwitch(g, dispatchFields, pdu); err != nil {
 				genErr = err
@@ -323,9 +315,7 @@ func resolveCodec(pdu parse.PDUStruct) (*FECCodecInfo, error) {
 
 // emitBitPacking generates code to pack bit.Bit array into []byte.
 func emitBitPacking(g *Group, totalBytes int) {
-	// var _packedBytes [N]byte
 	g.Var().Id("_packedBytes").Index(Lit(totalBytes)).Byte()
-	// for i := range N { for j := range 8 { _packedBytes[i] <<= 1; _packedBytes[i] |= byte(data[i*8+j]) } }
 	g.For(Id("i").Op(":=").Range().Lit(totalBytes)).Block(
 		For(Id("j").Op(":=").Range().Lit(8)).Block(
 			Id("_packedBytes").Index(Id("i")).Op("<<=").Lit(1),
@@ -345,7 +335,6 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 		return fmt.Errorf("unknown CRC algorithm: %q", crcDir.Algorithm)
 	}
 	if algo.BitLevel {
-		// Bit-level CRC (e.g. CRC-8): operates on data[:] directly, no byte packing
 		dataBits := inputSize - algo.CRCBits
 		g.Id("_crc").Op(":=").Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(dataBits), Empty())))
 		g.Id("result").Dot(fecFieldName).Dot("Uncorrectable").Op("=").
@@ -353,8 +342,6 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 		return nil
 	}
 
-	// Byte-level CRC (CRC-CCITT): operates on packed bytes
-	// Apply XOR mask if specified
 	if crcDir.HasMask {
 		highByte, lowByte := maskBytes(crcDir.Mask)
 		totalBytes := inputSize / 8
@@ -362,7 +349,6 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 		g.Id("_packedBytes").Index(Lit(totalBytes - 1)).Op("^=").Lit(lowByte)
 	}
 
-	// Read the CRC from the (possibly masked) packed bytes, then check it
 	totalBytes := inputSize / 8
 	g.Id("_crc").Op(":=").
 		Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 2))).Op("<<").Lit(8).
@@ -373,7 +359,7 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 }
 
 // emitFECMask XORs the FEC parity bytes of buf with the mask selected by the
-// dmr:fec_mask field of src (ETSI TS 102 361-1 B.3.12, Table B.21). If
+// dmr:fec_mask field of src (ETSI TS 102 361-1 clause B.3.12, Table B.21). If
 // noMask is not nil, it is emitted for a field value with no mask.
 func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statement, buf string, noMask Code) error {
 	if pdu.FECMask == nil {
@@ -409,7 +395,6 @@ func emitPackedFECDecode(g *Group, codec *FECCodecInfo) {
 	g.Var().Id("_fecData").Index(Lit(codec.DataBytes)).Byte()
 	g.List(Id("_fecData"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("_packedBytes"))
 
-	// If corrected, unpack corrected data bytes back into the data bit array
 	g.If(Op("!").Id("result").Dot(fecFieldName).Dot("Uncorrectable")).Block(
 		For(Id("i").Op(":=").Range().Lit(codec.DataBytes)).Block(
 			For(Id("j").Op(":=").Range().Lit(8)).Block(
@@ -423,10 +408,9 @@ func emitPackedFECDecode(g *Group, codec *FECCodecInfo) {
 	)
 }
 
-// emitDispatchSwitch generates a switch statement that dispatches on a field value
-// and decodes the appropriate sub-PDU into a pointer field.
-// When multiple fields share the same dispatch value, a secondary guard condition
-// (parsed from the `when:` modifier) is used to disambiguate them via if/else.
+// emitDispatchSwitch emits a switch on the dispatch field value that decodes
+// the selected sub-PDU into its pointer field. A when: guard picks between
+// fields that share a dispatch value.
 func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) error {
 	bitStart := fields[0].BitStart
 	bitEnd := fields[0].BitEnd
@@ -454,7 +438,6 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) err
 // decoded fields of result. It emits pick for the selected field and raw
 // (if not nil) when no field is selected.
 func dispatchSelect(fields []parse.Field, pdu parse.PDUStruct, pick func(parse.Field) []Code, raw []Code) (*Statement, error) {
-	// Group fields by their dispatch values to detect shared-value cases.
 	type dispatchGroup struct {
 		values []string
 		fields []parse.Field
@@ -535,10 +518,9 @@ func dispatchTypeName(field parse.Field) string {
 	return field.TypeName
 }
 
-// emitGuardedDispatch emits an if/else chain for dispatch fields that share the
-// same primary dispatch value. Fields with a `when:` guard are emitted as `if`
-// conditions; the unguarded field (if any) becomes the final `else` branch,
-// otherwise raw (if not nil) does.
+// emitGuardedDispatch emits an if/else chain on the when: guards of fields
+// that share a dispatch value. The unguarded field, or else raw if not nil,
+// is the final else branch.
 func emitGuardedDispatch(g *Group, fields []parse.Field, pick func(parse.Field) []Code, raw []Code) error {
 	var guarded []parse.Field
 	var fallback *parse.Field
@@ -606,9 +588,9 @@ func emitGuardCondition(guard *parse.Guard) (*Statement, error) {
 	}
 }
 
-// emitDispatchConstant generates the jennifer Code for a dispatch constant reference.
-// If the value contains a ".", it's a cross-package constant (e.g. "enums.FLCOGroupVoiceChannelUser").
-// Otherwise it's a same-package constant (e.g. "CSBKBSOutboundActivationPDU").
+// emitDispatchConstant returns a reference to the dispatch constant val. A
+// val with a "." names a constant of another package, such as
+// "enums.FLCOGroupVoiceChannelUser".
 func emitDispatchConstant(val string, pdu parse.PDUStruct) Code {
 	if idx := strings.LastIndex(val, "."); idx >= 0 {
 		pkg := val[:idx]
@@ -619,11 +601,9 @@ func emitDispatchConstant(val string, pdu parse.PDUStruct) Code {
 	return Id(val)
 }
 
-// emitString generates a String() method for a PDU struct.
-// Simple structs (no dispatch/stride) use a single fmt.Sprintf.
-// Structs with dispatch or stride fields use string concatenation.
+// emitString generates the String method of a PDU struct: one fmt.Sprintf,
+// or string concatenation when the struct has dispatch or stride fields.
 func emitString(f *File, pdu parse.PDUStruct) {
-	// Determine if we need concatenation mode
 	hasDispatch := false
 	hasStride := false
 	for _, field := range pdu.Fields {
@@ -672,7 +652,6 @@ func emitStringConcat(f *File, pdu parse.PDUStruct) {
 	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("String").Params().String().BlockFunc(func(g *Group) {
 		g.Id("_ret").Op(":=").Lit(pdu.Name + "{ ")
 
-		// Collect dispatch fields for later, emit regular fields inline
 		var dispatchFields []parse.Field
 		regularParts := []string{}
 		regularArgs := []Code{}
@@ -695,7 +674,6 @@ func emitStringConcat(f *File, pdu parse.PDUStruct) {
 				continue
 			}
 			if field.Stride > 0 && field.ArrayLen > 0 {
-				// Emit the regular fields collected so far
 				if len(regularParts) > 0 {
 					fmtStr := strings.Join(regularParts, ", ") + ", "
 					allArgs := append([]Code{Lit(fmtStr)}, regularArgs...)
@@ -703,7 +681,6 @@ func emitStringConcat(f *File, pdu parse.PDUStruct) {
 					regularParts = nil
 					regularArgs = nil
 				}
-				// Emit stride array iteration
 				g.Id("_ret").Op("+=").Lit(field.Name + ": [")
 				g.For(Id("_i").Op(":=").Range().Id("s").Dot(field.Name)).Block(
 					If(Id("_i").Op(">").Lit(0)).Block(
@@ -722,7 +699,6 @@ func emitStringConcat(f *File, pdu parse.PDUStruct) {
 			regularArgs = append(regularArgs, fmtArgs...)
 		}
 
-		// Emit any remaining regular fields before dispatch
 		if len(regularParts) > 0 && len(dispatchFields) > 0 {
 			fmtStr := strings.Join(regularParts, ", ") + ", "
 			allArgs := append([]Code{Lit(fmtStr)}, regularArgs...)
@@ -731,7 +707,6 @@ func emitStringConcat(f *File, pdu parse.PDUStruct) {
 			regularArgs = nil
 		}
 
-		// Emit dispatch nil-check chain
 		if len(dispatchFields) > 0 {
 			g.Switch().BlockFunc(func(sw *Group) {
 				for _, field := range dispatchFields {
@@ -747,7 +722,6 @@ func emitStringConcat(f *File, pdu parse.PDUStruct) {
 			})
 		}
 
-		// Emit any remaining regular fields after dispatch (like FEC)
 		if len(regularParts) > 0 {
 			fmtStr := ", " + strings.Join(regularParts, ", ")
 			allArgs := append([]Code{Lit(fmtStr)}, regularArgs...)
@@ -765,7 +739,6 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 	src := Id("s").Dot(field.Name)
 
 	if field.Skip {
-		// Handle dmr:"-" fields
 		switch field.Name {
 		case fecFieldName:
 			return "{BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}", []Code{
@@ -777,7 +750,6 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 			if pdu.IsInput(field.Name) {
 				return "%v", []Code{src.Clone()}
 			}
-			// Skip unexported and other skip fields
 			return "", nil
 		}
 	}
@@ -799,12 +771,10 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 		if field.DelegateNoPtr {
 			return "%s", []Code{src}
 		}
-		// Struct delegate: call String()
 		return "%s", []Code{src.Clone().Dot("String").Call()}
 	case parse.FieldLongitude, parse.FieldLatitude:
 		return "%f", []Code{src}
 	case parse.FieldDispatch:
-		// Handled separately in concat mode
 		return "", nil
 	default:
 		return "%v", []Code{src}
@@ -838,12 +808,10 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		g.Add(packRaw(target, Id("data"), field.BitStart, field.BitWidth))
 
 	case parse.FieldPacked:
-		// Pack bits into bytes using bit.Pack
 		packed := Qual(bitPkg, "Pack").Call(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
 		)
 		if isFixedArray(field.GoType) {
-			// Fixed-size array: must use copy
 			g.Copy(target.Clone().Index(Empty(), Empty()), packed)
 		} else {
 			g.Add(target).Op("=").Add(packed)
@@ -857,7 +825,6 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 		switch {
 		case field.Stride > 0 && field.ArrayLen > 0:
-			// Array delegate with stride: generate a loop calling DecodeXxx
 			decodeFn := "Decode" + field.TypeName
 			if !field.IsQualified {
 				decodeFn = pdu.DecodeFuncName(field.TypeName)
@@ -880,10 +847,8 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 				}(),
 			)
 		case field.DelegateNoPtr:
-			// noptr delegates are integer typedefs: extract and convert
 			g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
 		default:
-			// Struct delegate: call generated DecodeXxx function
 			decodeFnName := "Decode" + field.TypeName
 			if !field.IsQualified {
 				decodeFnName = pdu.DecodeFuncName(field.TypeName)
@@ -904,19 +869,17 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		}
 
 	case parse.FieldLongitude, parse.FieldLatitude:
-		// Two's complement value scaled by span/2^width (ETSI TS 102 361-2 7.2.16/7.2.17)
+		// Two's complement value scaled by span/2^width (ETSI TS 102 361-2 clause 7.2.16, clause 7.2.17).
 		g.Add(target).Op("=").Float64().Call(signExtend(field, Uint32().Call(readUint(field)))).
 			Op("*").Lit(coordSpan(field)).Op("/").Parens(Lit(1).Op("<<").Lit(field.BitWidth))
 
 	case parse.FieldDispatch:
-		// Dispatch fields are handled separately in emitDispatchSwitch
-		// (no-op here: they are emitted after all regular fields)
 	}
 }
 
-// emitEncode generates the Encode method of a PDU struct.
-// For FEC-protected PDUs, the output includes FEC parity (full codeword).
-// The method returns an error when a field value does not fit its bits.
+// emitEncode generates the Encode method of a PDU struct. The method returns
+// the full codeword, FEC parity included, or an error when a field value
+// does not fit its bits.
 func emitEncode(f *File, pdu parse.PDUStruct) error {
 	f.Comment("Encode encodes " + docObject(pdu))
 
@@ -929,7 +892,6 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 	hasPackedFEC := codec != nil && codec.PackedBytes
 	hasBitFEC := codec != nil && !codec.PackedBytes
 
-	// Output is the full codeword size
 	outputSize := pdu.InputSize
 	if codec != nil {
 		outputSize = codec.InputSize
@@ -943,7 +905,6 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 	).BlockFunc(func(g *Group) {
 		switch {
 		case hasBitFEC:
-			// Bit-level FEC (Golay, QR): build data bits, then FEC-encode
 			g.Var().Id("data").Index(Lit(codec.DataBits)).Qual(bitPkg, "Bit")
 			if err := enc.fields(g); err != nil {
 				genErr = err
@@ -951,7 +912,6 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 			}
 			g.Return(Qual(codec.ImportPath, codec.EncodeFn).Call(Id("data")), Nil())
 		case hasCRC || hasPackedFEC:
-			// CRC or packed FEC: build data bits, then pack+CRC/RS-encode
 			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
 			if err := enc.fields(g); err != nil {
 				genErr = err
@@ -1024,16 +984,15 @@ func (e encoder) failRange(field parse.Field, extra Dict) *Statement {
 	return e.fail(Op("&").Qual(bitPkg, "FieldRangeError").Values(d))
 }
 
-// fields emits encoding for all fields (regular + dispatch).
-// Dispatch fields are encoded FIRST so their wide copy (e.g. data[0:80])
-// doesn't overwrite the outer struct's non-dispatch fields (e.g. Format,
-// AppendedBlocks) that may share the same bit range.
+// fields emits the encoding of all fields. It encodes the dispatch fields
+// first, because their wide copy (such as data[0:80]) would overwrite outer
+// fields that share the bit range, such as Format.
 func (e encoder) fields(g *Group) error {
 	var regularFields []parse.Field
 	var dispatchFields []parse.Field
 	for _, field := range e.pdu.Fields {
 		if field.Skip {
-			continue // skip dmr:"-" fields
+			continue
 		}
 		switch {
 		case field.Kind == parse.FieldDispatch:
@@ -1043,15 +1002,13 @@ func (e encoder) fields(g *Group) error {
 			regularFields = append(regularFields, field)
 		}
 	}
-	// Dispatch first: sub-PDU copies the full payload range.
 	if len(dispatchFields) > 0 {
 		e.payload(g, dispatchFields)
 		e.dispatch(g, dispatchFields)
 	}
-	// Then non-dispatch fields overwrite their specific bit positions.
 	for _, field := range regularFields {
 		if field.NoEncode {
-			continue // decoded for guard conditions but not encoded (sub-PDU handles these bits)
+			continue
 		}
 		e.field(g, field)
 	}
@@ -1184,10 +1141,8 @@ func (e encoder) dispatch(g *Group, fields []parse.Field) {
 func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 	algo := crcAlgorithms[pdu.CRC.Algorithm]
 	if algo.BitLevel {
-		// Bit-level CRC (e.g. CRC-8): compute over data bits directly
 		dataBits := outputSize - algo.CRCBits
 		g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("data").Index(Empty(), Lit(dataBits)))
-		// Unpack CRC bits (MSB-first)
 		g.For(Id("j").Op(":=").Range().Lit(algo.CRCBits)).Block(
 			Id("data").Index(Lit(dataBits).Op("+").Id("j")).Op("=").
 				Qual(bitPkg, "Bit").Call(
@@ -1197,11 +1152,9 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 		return
 	}
 
-	// Byte-level CRC (CRC-CCITT)
 	totalBytes := outputSize / 8
-	dataBytes := totalBytes - 2 // CRC is last 2 bytes
+	dataBytes := totalBytes - 2
 
-	// Pack the data bits (excluding CRC bytes) into _packedBytes
 	g.Var().Id("_encBytes").Index(Lit(dataBytes)).Byte()
 	g.For(Id("i").Op(":=").Range().Lit(dataBytes)).Block(
 		For(Id("j").Op(":=").Range().Lit(8)).Block(
@@ -1212,21 +1165,17 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 		),
 	)
 
-	// Calculate CRC
 	g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("_encBytes").Index(Empty(), Empty()))
 
-	// CRC bytes (big-endian, swapped like MMDVM: crc8[0]=low, crc8[1]=high)
 	g.Id("_crcHigh").Op(":=").Byte().Call(Id("_crcVal").Op(">>").Lit(8))
 	g.Id("_crcLow").Op(":=").Byte().Call(Id("_crcVal"))
 
-	// Apply mask if present
 	if pdu.CRC != nil && pdu.CRC.HasMask {
 		highByte, lowByte := maskBytes(pdu.CRC.Mask)
 		g.Id("_crcHigh").Op("^=").Lit(highByte)
 		g.Id("_crcLow").Op("^=").Lit(lowByte)
 	}
 
-	// Unpack CRC into data bits (last 16 bits)
 	crcBitStart := dataBytes * 8
 	g.For(Id("j").Op(":=").Range().Lit(8)).Block(
 		Id("data").Index(Lit(crcBitStart).Op("+").Id("j")).Op("=").
@@ -1245,7 +1194,6 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 // emitPackedFECEncode generates Reed-Solomon encoding for the encode path.
 func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 	pdu := enc.pdu
-	// Pack data bytes (first N data bytes)
 	g.Var().Id("_encData").Index(Lit(codec.DataBytes)).Byte()
 	g.For(Id("i").Op(":=").Range().Lit(codec.DataBytes)).Block(
 		For(Id("j").Op(":=").Range().Lit(8)).Block(
@@ -1267,7 +1215,6 @@ func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 		return err
 	}
 
-	// Unpack all encoded bytes (data + parity) back into data bits
 	totalBytes := enc.size / 8
 	g.For(Id("i").Op(":=").Range().Lit(totalBytes)).Block(
 		For(Id("j").Op(":=").Range().Lit(8)).Block(
@@ -1293,9 +1240,7 @@ func (e encoder) field(g *Group, field parse.Field) {
 
 	switch field.Kind {
 	case parse.FieldUint, parse.FieldInt, parse.FieldEnum:
-		// handled by e.integer
 	case parse.FieldBool:
-		// if s.FieldName { data[bit] = 1 }
 		g.If(source.Clone()).Block(
 			Id("data").Index(Lit(field.BitStart)).Op("=").Lit(1),
 		)
@@ -1311,7 +1256,6 @@ func (e encoder) field(g *Group, field parse.Field) {
 
 	case parse.FieldDelegate:
 		if field.Stride > 0 {
-			// Array delegate with stride: call Encode on each element
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 				List(Id("_elemBits"), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot("Encode").Call(),
 				If(Err().Op("!=").Nil()).Block(
@@ -1327,7 +1271,6 @@ func (e encoder) field(g *Group, field parse.Field) {
 			)
 			return
 		}
-		// Struct delegate: call the generated Encode method
 		tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
 		g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot("Encode").Call()
 		g.If(Err().Op("!=").Nil()).Block(
@@ -1359,7 +1302,6 @@ func (e encoder) field(g *Group, field parse.Field) {
 		)
 
 	case parse.FieldDispatch:
-		// Dispatch fields are handled separately in dispatch
 	}
 }
 
@@ -1476,9 +1418,8 @@ func needsRangeCheck(field parse.Field) bool {
 	return true
 }
 
-// emitNonContiguousDecode generates decode logic for a non-contiguous uint field.
-// For example, bits:3+12-15 means bit 3 is the MSB and bits 12-15 are the lower nibble.
-// It accumulates segments in a temp variable: extract first range, shift left, OR next range, etc.
+// emitNonContiguousDecode generates the decode of a non-contiguous uint field.
+// For bits:3+12-15, bit 3 is the MSB and bits 12 to 15 are the low nibble.
 func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	tmpName := "_tmp" + field.Name
 	g.Var().Id(tmpName).Uint64()
@@ -1500,8 +1441,6 @@ func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	}
 	g.Add(target).Op("=").Add(castUint(field, pdu, tmp))
 }
-
-// Helper functions
 
 // maskBytes splits a 16-bit CRC mask into its high and low bytes.
 func maskBytes(mask uint16) (byte, byte) {

@@ -15,7 +15,7 @@ var (
 	// ErrNoHeader is returned for a data block that no header announced.
 	ErrNoHeader = errors.New("data block without a header")
 	// ErrRateChange is returned when the data type changes within a packet
-	// (§8.2.2.1). The partial packet is discarded.
+	// (ETSI TS 102 361-1 clause 8.2.2.1). The partial packet is discarded.
 	ErrRateChange = errors.New("data type changed within a packet")
 	// ErrMessageCRC is returned with the Message whose message CRC failed.
 	// It wraps fec.ErrUncorrectable.
@@ -81,14 +81,9 @@ func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 }
 
 // Add adds a decoded PDU: a *pdu.DataHeader, *pdu.Rate12Data,
-// *pdu.Rate34Data or *pdu.Rate1Data. Other PDUs are ignored. done is true
-// when the packet is complete, with its Message; on ErrMessageCRC the Message
-// is returned too. A header other than a P_HEAD second
-// header discards any partial packet, except a C_HEAD with the same SAP,
-// LLIDs and N(S) as a confirmed packet that still has blocks missing, which
-// starts the retry of those blocks. A header with no blocks to follow, such
-// as an ACK, returns its Message at once. UDT and status precoded headers
-// are ignored.
+// *pdu.Rate34Data or *pdu.Rate1Data, and ignores other PDUs. done is true
+// when the packet is complete, with its Message; on ErrMessageCRC the
+// Message is returned too. The package doc gives the rules for headers.
 func (a *Assembler) Add(d layer2.Data) (Message, bool, error) {
 	switch v := d.(type) {
 	case *pdu.DataHeader:

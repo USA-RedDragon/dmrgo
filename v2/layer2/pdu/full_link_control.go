@@ -6,41 +6,23 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// FullLinkControl is the Full Link Control (Full LC) PDU (ETSI TS 102 361-1
-// clause 9.1.6).
-//
-// The FID redefines the FLCO (ETSI TS 102 361-1 Table 9.21), so the standard
-// payload layouts apply only to the SFID. Payloads of other FIDs and of
-// unknown FLCOs are kept in RawPayload. FullLinkControl.Encode returns an
-// error if more than one payload field is set, or if FLCO and FID
-// do not select the payload field that is set. Put the payload of a
-// manufacturer FID in RawPayload.
-//
-// BurstDataType, the data type of the burst that carries the LC, selects the
-// Data Type CRC Mask XORed into the RS(12,9) parity (ETSI TS 102 361-1
-// B.3.12, Table B.21). Pass it to DecodeFullLinkControl and set it before
-// FullLinkControl.Encode. FullLinkControl.Encode returns an error unless
-// BurstDataType is
-// DataTypeVoiceLCHeader or DataTypeTerminatorWithLC, the only data types
-// that carry an RS-protected Full LC. DecodeFullLinkControl applies no mask
-// for other data types.
-//
-// FEC is the RS(12,9) result and ErrorsCorrected counts the corrected
-// errors. MMDVMHost accepts a Full LC only when the RS(12,9) parity matches
-// without correction; a caller that must match it rejects an LC with
-// FEC.ErrorsCorrected > 0 (see layer2.MMDVMHostAccepts).
+// FullLinkControl is the Full Link Control (Full LC) PDU (ETSI TS 102 361-1 clause 9.1.6).
 //
 //dmr:fec reed_solomon_12_9_4
 //dmr:input BurstDataType
 //dmr:fec_mask BurstDataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
 //dmr:dispatch_if FID==0
 type FullLinkControl struct {
-	BurstDataType enums.DataType     `dmr:"-"`              // data type of the burst that carries the LC
-	ProtectFlag   bool               `dmr:"bit:0"`          // Protect Flag (PF)
-	Reserved      bool               `dmr:"bit:1"`          // reserved
-	FLCO          enums.FLCO         `dmr:"bits:2-7,enum"`  // Full Link Control Opcode (FLCO)
-	FID           enums.FeatureSetID `dmr:"bits:8-15,enum"` // Feature set ID (FID)
-	FEC           fec.Result         `dmr:"-"`              // RS(12,9) result
+	// BurstDataType selects the RS(12,9) parity mask; Encode returns an error unless it is DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
+	BurstDataType enums.DataType `dmr:"-"`
+	ProtectFlag   bool           `dmr:"bit:0"` // Protect Flag (PF)
+	Reserved      bool           `dmr:"bit:1"` // reserved
+	// FLCO is the Full Link Control Opcode; Encode returns an error unless FLCO and FID select the one payload field that is set.
+	FLCO enums.FLCO `dmr:"bits:2-7,enum"`
+	// FID is the Feature set ID; the payload fields apply only to the standard FID 0, and RawPayload holds the payload of any other FID.
+	FID enums.FeatureSetID `dmr:"bits:8-15,enum"`
+	// FEC is the RS(12,9) result; MMDVMHost accepts only an LC with FEC.ErrorsCorrected 0 (layer2.MMDVMHostAccepts).
+	FEC fec.Result `dmr:"-"`
 
 	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`                                                     // Grp_V_Ch_Usr payload
 	UnitToUnit                *FLCUnitToUnit                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`                                                // UU_V_Ch_Usr payload
@@ -55,14 +37,11 @@ type FullLinkControl struct {
 	RawPayload [7]byte `dmr:"bits:16-71,raw,fallback"`
 }
 
-// Addresses returns the 24-bit target and source addresses (LC bits 24-47
-// and 48-71) of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC (ETSI TS
-// 102 361-2 Tables 7.1 and 7.2). For a group call the target is the group
-// address. It ignores the FID and reads RawPayload when no variant was
-// decoded, so it also returns addresses from a manufacturer FID LC (such as
-// Motorola, 0x10) with these FLCOs, as MMDVMHost does. A manufacturer FID
-// may redefine the payload, so such addresses are a best effort. ok is false
-// for other FLCOs.
+// Addresses returns the 24-bit target and source addresses of a Grp_V_Ch_Usr
+// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC (ETSI TS 102 361-2 Tables 7.1 and 7.2).
+// It reads RawPayload when no payload field is set, so, as MMDVMHost does, it
+// also returns best-effort addresses from a manufacturer FID LC with these
+// FLCOs. ok is false for other FLCOs.
 func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 	if s.FLCO == enums.FLCOGroupVoiceChannelUser && s.GroupVoice != nil {
 		return s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress, true
@@ -76,12 +55,10 @@ func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 	return uint24(s.RawPayload[1:4]), uint24(s.RawPayload[4:7]), true
 }
 
-// SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr
-// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. With the standard FID it sets
-// GroupVoice or UnitToUnit, creating the payload when it is nil. With any
-// other FID it writes RawPayload bytes 1 to 3 and 4 to 6, the layout
-// Addresses reads. It returns false, and changes nothing, for other FLCOs or when an
-// address does not fit in 24 bits.
+// SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or
+// UU_V_Ch_Usr LC: in GroupVoice or UnitToUnit for the standard FID, created
+// when nil, and in RawPayload for any other FID. It returns false, and
+// changes nothing, for other FLCOs or when an address does not fit in 24 bits.
 func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 	if target>>24 != 0 || source>>24 != 0 {
 		return false
@@ -143,9 +120,6 @@ func (s *FullLinkControl) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
 	return so, false
 }
 
-// FLC FLCO payload variants. These are the 56-bit payloads (infoBits[16:72])
-// decoded per-FLCO type. Each struct uses 0-based bit offsets within the 56-bit window.
-
 // FLCGroupVoice is the group voice channel user (Grp_V_Ch_Usr) Full LC payload
 // (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1).
 type FLCGroupVoice struct {
@@ -175,7 +149,7 @@ type FLCGPSInfo struct {
 // (Talker_Alias_HDR) Full LC payload (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4).
 type FLCTalkerAliasHeader struct {
 	TalkerAliasDataFormat layer3.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"` // Talker alias data format
-	TalkerAliasDataLength int                          `dmr:"bits:2-6"`                // number of characters in the alias
+	TalkerAliasDataLength int                          `dmr:"bits:2-6"`                // alias length in Code Units
 	// TalkerAliasData is the 49-bit Talker alias data IE. The 7-bit format
 	// uses all 49 bits; the other formats leave the most significant bit
 	// unused.

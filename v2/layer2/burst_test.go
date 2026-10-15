@@ -77,9 +77,8 @@ func TestBurst_Encode(t *testing.T) {
 
 				encoded := must(burst.Encode())
 
-				// Verify stability: Encode(Decode(encoded)) == encoded
-				// This handles cases where the input file has invalid parity/FEC bits (captured data)
-				// which are "fixed" by the first Encode().
+				// A captured burst can have bad parity or FEC bits that the first
+				// Encode corrects, so the check is that a second round trip is stable.
 				burst2, err := layer2.NewBurstFromBytes(encoded)
 				if err != nil {
 					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
@@ -126,7 +125,6 @@ func benchmarkEncode(b *testing.B, file string) {
 	b.Helper()
 	bursts := loadBursts(b, file)
 
-	// Pre-decode bursts
 	decodedBursts := make([]*layer2.Burst, 0, len(bursts))
 	for _, d := range bursts {
 		burst, err := layer2.NewBurstFromBytes(d)
