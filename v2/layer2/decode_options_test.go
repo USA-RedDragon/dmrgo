@@ -32,6 +32,8 @@ func errString(err error) string {
 }
 
 func TestDecodeFromBytesWith_DefaultMatchesDecodeFromBytes(t *testing.T) {
+	t.Parallel()
+
 	frames := captureFrames(t)
 	frames = append(frames, buildStandaloneRCBurst(7, enums.RCCeaseTransmissionRequest))
 	rng := rand.New(rand.NewSource(5))
@@ -59,6 +61,8 @@ func TestDecodeFromBytesWith_DefaultMatchesDecodeFromBytes(t *testing.T) {
 }
 
 func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
+	t.Parallel()
+
 	raw, err := hex.DecodeString(dmrdVoiceBurstD)
 	if err != nil {
 		t.Fatal(err)
@@ -92,6 +96,8 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 }
 
 func TestDecodeFromBytesWith_SyncThreshold(t *testing.T) {
+	t.Parallel()
+
 	n := 0
 	for _, frame := range captureFrames(t) {
 		clean := must(layer2.NewBurstFromBytes(frame))
@@ -124,6 +130,8 @@ func TestDecodeFromBytesWith_SyncThreshold(t *testing.T) {
 }
 
 func TestDecodeFromBytesWith_KnownData(t *testing.T) {
+	t.Parallel()
+
 	n := 0
 	for _, frame := range captureFrames(t) {
 		clean := must(layer2.NewBurstFromBytes(frame))
@@ -156,6 +164,8 @@ func TestDecodeFromBytesWith_KnownData(t *testing.T) {
 }
 
 func TestDecodeFromBytesWith_KnownVoiceA(t *testing.T) {
+	t.Parallel()
+
 	n := 0
 	for _, frame := range captureFrames(t) {
 		clean := must(layer2.NewBurstFromBytes(frame))
@@ -191,6 +201,8 @@ func TestDecodeFromBytesWith_KnownVoiceA(t *testing.T) {
 }
 
 func TestDecodeFromBytesWith_KnownReverseChannel(t *testing.T) {
+	t.Parallel()
+
 	frame := flipSync(buildStandaloneRCBurst(7, enums.RCCeaseTransmissionRequest), 6)
 	if b, _ := layer2.NewBurstFromBytes(frame); b.SyncPattern == enums.SyncMSSourcedRC {
 		t.Fatal("default decode matched a SYNC 6 bits off")
@@ -205,6 +217,8 @@ func TestDecodeFromBytesWith_KnownReverseChannel(t *testing.T) {
 }
 
 func TestDecodeFromBytesWith_ColorCode(t *testing.T) {
+	t.Parallel()
+
 	seen := map[string]bool{}
 	for _, frame := range captureFrames(t) {
 		clean := must(layer2.NewBurstFromBytes(frame))

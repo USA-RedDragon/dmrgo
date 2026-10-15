@@ -24,6 +24,8 @@ func lcHeaderFrame(t *testing.T) [33]byte {
 }
 
 func TestBurstFEC_LCHeaderCountsPayloadBitsOnce(t *testing.T) {
+	t.Parallel()
+
 	frame := lcHeaderFrame(t)
 	frame[5] ^= 0x10
 	frame[30] ^= 0x01
@@ -41,6 +43,8 @@ func TestBurstFEC_LCHeaderCountsPayloadBitsOnce(t *testing.T) {
 }
 
 func TestBurstFEC_CSBKCountsNoCRCBits(t *testing.T) {
+	t.Parallel()
+
 	csbk := pdu.CSBK{Opcode: 0x3F}
 	var lcBytes [12]byte
 	csbkBits := must(csbk.Encode())

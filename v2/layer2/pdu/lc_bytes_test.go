@@ -13,6 +13,8 @@ import (
 )
 
 func TestLCBytes_Capture(t *testing.T) {
+	t.Parallel()
+
 	l := pdu.LCBytes(hex9(t, "03000000270630b43c"))
 	if g, ok := l.Group(); l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser || l.FID() != enums.FIDStandardized || l.ServiceOptions() != 0 || g || !ok || l.ProtectFlag() {
 		t.Fatalf("fields of %x", l)
@@ -51,6 +53,8 @@ func TestLCBytes_Capture(t *testing.T) {
 }
 
 func TestLCBytes_FlagBits(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(13))
 	for range 1000 {
 		var raw [9]byte
@@ -72,6 +76,8 @@ func TestLCBytes_FlagBits(t *testing.T) {
 }
 
 func TestLCBytes_ClearReservedOnFLCOChange(t *testing.T) {
+	t.Parallel()
+
 	l := pdu.LCBytes{0xC0, 0, 0x20, 0, 0, 9, 0, 0, 1}
 	l.SetFLCO(enums.FLCOUnitToUnitVoiceChannelUser)
 	if l[0] != 0xC3 || !l.Reserved() || !l.ProtectFlag() {
@@ -106,6 +112,8 @@ func within(d, allowed [9]byte) bool {
 }
 
 func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
+	t.Parallel()
+
 	flcoBits := [9]byte{0x3F}
 	fidBits := [9]byte{1: 0xFF}
 	soBits := [9]byte{2: 0xFF}
@@ -182,6 +190,8 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 }
 
 func TestNewVoiceLC(t *testing.T) {
+	t.Parallel()
+
 	for _, group := range []bool{true, false} {
 		so := layer3.ServiceOptions{IsPrivacy: true, PriorityLevel: 2}
 		f := must(pdu.NewVoiceLC(group, 91, 3191868, so))
@@ -220,6 +230,8 @@ func TestNewVoiceLC(t *testing.T) {
 }
 
 func TestLCBytes_GroupOtherFLCO(t *testing.T) {
+	t.Parallel()
+
 	l := pdu.LCBytes{byte(enums.FLCOGPSInfo)}
 	if g, ok := l.Group(); g || ok {
 		t.Errorf("GPS LC: Group %t %t", g, ok)

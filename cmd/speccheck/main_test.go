@@ -11,6 +11,8 @@ import (
 )
 
 func TestParseTestEvents(t *testing.T) {
+	t.Parallel()
+
 	input := strings.Join([]string{
 		`{"Action":"start","Package":"p"}`,
 		`{"Action":"run","Package":"p","Test":"TestPass"}`,
@@ -49,6 +51,8 @@ func TestParseTestEvents(t *testing.T) {
 }
 
 func TestParseTestEvents_SubtestFailMarksFailed(t *testing.T) {
+	t.Parallel()
+
 	input := `{"Action":"fail","Package":"p","Test":"TestOther/sub"}`
 	pr, err := parseTestEvents(strings.NewReader(input), map[string]bool{"TestX": true})
 	if err != nil {
@@ -60,6 +64,8 @@ func TestParseTestEvents_SubtestFailMarksFailed(t *testing.T) {
 }
 
 func TestVerifySection(t *testing.T) {
+	t.Parallel()
+
 	pkgRuns := map[string]*packageRun{
 		"a": {results: map[string]*testResult{
 			"TestPass":   {passed: true, ran: true},
@@ -88,6 +94,8 @@ func TestVerifySection(t *testing.T) {
 }
 
 func TestDeriveStatus(t *testing.T) {
+	t.Parallel()
+
 	tests := []testFuncGroup{{Package: "a", Names: []string{"T"}}}
 	cases := []struct {
 		name string
@@ -109,6 +117,8 @@ func TestDeriveStatus(t *testing.T) {
 }
 
 func TestFindUntracked(t *testing.T) {
+	t.Parallel()
+
 	root := t.TempDir()
 	files := []string{
 		"v2/a/listed.go",
@@ -144,6 +154,8 @@ func TestFindUntracked(t *testing.T) {
 }
 
 func TestReplaceCoverage(t *testing.T) {
+	t.Parallel()
+
 	content := "head\n" + beginMarker + "\nold\n" + endMarker + "\ntail\n"
 	got, err := replaceCoverage(content, "new\n")
 	if err != nil {
@@ -181,6 +193,8 @@ func writeModule(t *testing.T, files map[string]string) string {
 }
 
 func TestRunPackageTests(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("runs go test")
 	}
@@ -191,6 +205,8 @@ func TestRunPackageTests(t *testing.T) {
 	names := map[string]bool{"TestPass": true, "TestFail": true}
 
 	t.Run("test failure", func(t *testing.T) {
+		t.Parallel()
+
 		dir := writeModule(t, map[string]string{
 			"m.go": pkgSrc,
 			"m_test.go": `package m
@@ -214,6 +230,8 @@ func TestFail(t *testing.T) { t.Fatal("boom") }
 	})
 
 	t.Run("build failure", func(t *testing.T) {
+		t.Parallel()
+
 		dir := writeModule(t, map[string]string{
 			"m.go": pkgSrc,
 			"m_test.go": `package m
@@ -237,6 +255,8 @@ func TestPass(t *testing.T) { undefinedFunc() }
 }
 
 func TestGenerateMarkdown(t *testing.T) {
+	t.Parallel()
+
 	docs := []document{{
 		ID:    "D",
 		Title: "ETSI TS 102 361-1: Air Interface Protocol",

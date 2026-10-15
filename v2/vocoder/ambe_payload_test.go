@@ -15,6 +15,8 @@ import (
 const ipscSilence = "f801a99f8ce0be006a67e3382f801a99f8ce08"
 
 func TestAMBEVoice_IPSCCapture(t *testing.T) {
+	t.Parallel()
+
 	raw, err := hex.DecodeString(ipscSilence)
 	if err != nil {
 		t.Fatal(err)
@@ -34,6 +36,8 @@ func TestAMBEVoice_IPSCCapture(t *testing.T) {
 }
 
 func TestAMBEVoice_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(4))
 	for n := 0; n < 1000; n++ {
 		var frames [3]vocoder.AMBEFrame
@@ -64,6 +68,8 @@ func TestAMBEVoice_RoundTrip(t *testing.T) {
 // TestAMBEVoice_VoiceBurst checks the payload of the first voice burst of
 // layer2/testdata/voice.bin against the PackAMBEVoice of dmrgo v0.0.1.
 func TestAMBEVoice_VoiceBurst(t *testing.T) {
+	t.Parallel()
+
 	raw, err := hex.DecodeString("fba8e556272f8079d5daa8c6760755fd7df75f760ea149e1da8ac676077bf549f5")
 	if err != nil {
 		t.Fatal(err)

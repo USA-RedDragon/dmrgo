@@ -6,6 +6,8 @@ import (
 )
 
 func TestReadersUseOnlyTheLowBit(t *testing.T) {
+	t.Parallel()
+
 	raw := []Bit{0xFF, 2, 3, 0x30, 7, 0xFE, 1, 0}
 	low := []Bit{1, 0, 1, 0, 1, 0, 1, 0}
 	if Uint(raw) != Uint(low) || Pack(raw)[0] != Pack(low)[0] {
@@ -26,6 +28,8 @@ func TestReadersUseOnlyTheLowBit(t *testing.T) {
 }
 
 func TestUint(t *testing.T) {
+	t.Parallel()
+
 	bits := []Bit{1, 0, 1, 1, 0, 0, 1, 0}
 	if got := Uint(bits); got != 0b10110010 {
 		t.Errorf("Uint = %#b, want 0b10110010", got)
@@ -46,6 +50,8 @@ func TestUint(t *testing.T) {
 }
 
 func TestPutUint(t *testing.T) {
+	t.Parallel()
+
 	dst := make([]Bit, 10)
 	PutUint(dst[2:8], 0b101101)
 	if want := []Bit{0, 0, 1, 0, 1, 1, 0, 1, 0, 0}; !slices.Equal(dst, want) {
@@ -65,6 +71,8 @@ func TestPutUint(t *testing.T) {
 }
 
 func TestPackUnpack(t *testing.T) {
+	t.Parallel()
+
 	data := []byte{0xA5, 0x3C, 0x01}
 	bits := Unpack(data)
 	if len(bits) != 24 {
@@ -79,6 +87,8 @@ func TestPackUnpack(t *testing.T) {
 }
 
 func TestPack264Unpack264(t *testing.T) {
+	t.Parallel()
+
 	var data [33]byte
 	for i := range data {
 		data[i] = byte(i * 7)
@@ -89,6 +99,8 @@ func TestPack264Unpack264(t *testing.T) {
 }
 
 func TestPack32Unpack32(t *testing.T) {
+	t.Parallel()
+
 	data := [4]byte{0xA5, 0x3C, 0x01, 0xFE}
 	bits := Unpack32(data)
 	if !slices.Equal(bits[:], Unpack(data[:])) {
@@ -107,6 +119,8 @@ func TestPack32Unpack32(t *testing.T) {
 }
 
 func TestPack96Unpack96(t *testing.T) {
+	t.Parallel()
+
 	var data [12]byte
 	for i := range data {
 		data[i] = byte(i*29 + 3)

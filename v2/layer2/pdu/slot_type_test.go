@@ -8,6 +8,8 @@ import (
 )
 
 func TestSlotType_DecodeEncodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	cc := 5
 	dt := enums.DataTypeVoiceLCHeader
 
@@ -30,6 +32,8 @@ func TestSlotType_DecodeEncodeRoundTrip(t *testing.T) {
 }
 
 func TestSlotType_AllColorCodes(t *testing.T) {
+	t.Parallel()
+
 	dt := enums.DataTypeVoiceLCHeader
 	for cc := 0; cc < 16; cc++ {
 		encoded := must((&pdu.SlotType{ColorCode: enums.ColorCode(cc), DataType: dt}).Encode())
@@ -45,6 +49,8 @@ func TestSlotType_AllColorCodes(t *testing.T) {
 }
 
 func TestSlotType_AllDataTypes(t *testing.T) {
+	t.Parallel()
+
 	dataTypes := []enums.DataType{
 		enums.DataTypePIHeader,
 		enums.DataTypeVoiceLCHeader,
@@ -74,6 +80,8 @@ func TestSlotType_AllDataTypes(t *testing.T) {
 }
 
 func TestSlotType_String(t *testing.T) {
+	t.Parallel()
+
 	encoded := must((&pdu.SlotType{ColorCode: 3, DataType: enums.DataTypeCSBK}).Encode())
 	st := pdu.DecodeSlotType(encoded)
 	s := st.String()
@@ -83,6 +91,8 @@ func TestSlotType_String(t *testing.T) {
 }
 
 func TestSlotType_SingleBitError(t *testing.T) {
+	t.Parallel()
+
 	encoded := must((&pdu.SlotType{ColorCode: 7, DataType: enums.DataTypeVoiceLCHeader}).Encode())
 	// Flip one bit - Golay should correct it
 	encoded[10] ^= 1
@@ -97,6 +107,8 @@ func TestSlotType_SingleBitError(t *testing.T) {
 }
 
 func TestEncodeSlotType_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	st := pdu.SlotType{
 		ColorCode: 5,
 		DataType:  enums.DataTypeCSBK,

@@ -8,6 +8,8 @@ import (
 )
 
 func TestQuadraticResidue1676Decode(t *testing.T) {
+	t.Parallel()
+
 	for i := 0; i < 1000; i++ {
 		var data [7]bit.Bit
 		for j := 0; j < 7; j++ {

@@ -21,6 +21,8 @@ func flipSyncBits(b [6]byte, positions ...int) [6]byte {
 }
 
 func TestNearestSyncPattern_AllKnownPatterns(t *testing.T) {
+	t.Parallel()
+
 	for _, p := range syncPatterns {
 		got, dist := NearestSyncPattern(syncPatternBytes(p))
 		if got != p || dist != 0 {
@@ -30,6 +32,8 @@ func TestNearestSyncPattern_AllKnownPatterns(t *testing.T) {
 }
 
 func TestNearestSyncPattern_Tolerant(t *testing.T) {
+	t.Parallel()
+
 	flips := [][]int{
 		{},
 		{0},
@@ -50,6 +54,8 @@ func TestNearestSyncPattern_Tolerant(t *testing.T) {
 }
 
 func TestSyncPatternString_AllPatterns(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		pattern  SyncPattern
 		expected string
@@ -68,6 +74,8 @@ func TestSyncPatternString_AllPatterns(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.pattern.String()
 			if got != tt.expected {
 				t.Errorf("(%v).String() = %q, want %q", tt.pattern, got, tt.expected)
@@ -77,6 +85,8 @@ func TestSyncPatternString_AllPatterns(t *testing.T) {
 }
 
 func TestSyncPatternString_Unknown(t *testing.T) {
+	t.Parallel()
+
 	got := (SyncPattern(0x123456789ABC)).String()
 	if got != "Unknown SyncPattern 0x123456789abc" {
 		t.Errorf("unknown.String() = %q", got)
@@ -84,6 +94,8 @@ func TestSyncPatternString_Unknown(t *testing.T) {
 }
 
 func TestSyncPatterns_MinimumDistance(t *testing.T) {
+	t.Parallel()
+
 	for i, a := range syncPatterns {
 		for _, b := range syncPatterns[i+1:] {
 			if n := bits.OnesCount64(uint64(a ^ b)); n < 10 {

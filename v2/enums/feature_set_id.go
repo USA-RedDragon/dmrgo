@@ -8,6 +8,7 @@ import "fmt"
 // at http://www.etsi.org/images/files/DMRcodes/dmrs-mfid.xls.
 type FeatureSetID byte
 
+// The FeatureSetID values.
 const (
 	FIDStandardized        FeatureSetID = 0x0  // standardized feature set
 	FIDFlydeMicro          FeatureSetID = 0x4  // Flyde Micro

@@ -29,6 +29,8 @@ func headerGroup(t *testing.T, h *pdu.DataHeader) bool {
 }
 
 func TestDataHeaderBytes_SMSCaptures(t *testing.T) {
+	t.Parallel()
+
 	editable := [12]byte{0x80, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0xFF, 0xFF}
 	rng := rand.New(rand.NewSource(5))
 	formats := map[pdu.Format]int{}
@@ -97,6 +99,8 @@ func TestDataHeaderBytes_SMSCaptures(t *testing.T) {
 }
 
 func TestDataHeaderBytes_Formats(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		format    pdu.Format
 		llids, gi bool

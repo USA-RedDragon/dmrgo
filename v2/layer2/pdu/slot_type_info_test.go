@@ -11,6 +11,8 @@ import (
 )
 
 func TestSlotTypeInfo_IPSCExample(t *testing.T) {
+	t.Parallel()
+
 	st := pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeCSBK}
 	s := st.Info()
 	if s != 0x13 {
@@ -30,6 +32,8 @@ func TestSlotTypeInfo_IPSCExample(t *testing.T) {
 }
 
 func TestSlotTypeInfo_AllValues(t *testing.T) {
+	t.Parallel()
+
 	for v := range 256 {
 		s := pdu.SlotTypeInfo(v)
 		var data [8]bit.Bit
@@ -62,6 +66,8 @@ func TestSlotTypeInfo_AllValues(t *testing.T) {
 }
 
 func TestSlotTypeInfo_Setters(t *testing.T) {
+	t.Parallel()
+
 	for v := range 256 {
 		orig := pdu.SlotTypeInfo(v)
 		for x := range uint8(16) {

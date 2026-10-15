@@ -3,6 +3,8 @@ package enums
 import "testing"
 
 func TestServiceAccessPointID_String(t *testing.T) {
+	t.Parallel()
+
 	for sap, want := range map[ServiceAccessPointID]string{
 		SAPUnifiedDataTransport:      "UDT",
 		SAPTCPIPHeaderCompression:    "TCP/IP header compression",

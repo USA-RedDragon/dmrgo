@@ -8,6 +8,8 @@ import (
 )
 
 func TestGolay24128(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec // pseudo-random adequate for tests
 
 	for d := 0; d < 4096; d++ {
@@ -83,6 +85,8 @@ func TestGolay24128(t *testing.T) {
 }
 
 func TestDecodeGolay24128UncorrectableReturnsNearest23127(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(5)) //nolint:gosec // pseudo-random adequate for tests
 	checked := 0
 	for range 20000 {
@@ -109,6 +113,8 @@ func TestDecodeGolay24128UncorrectableReturnsNearest23127(t *testing.T) {
 // The Golay (23,12,7) codeword is divisible by g(x) = 0xC75, and the
 // Golay (24,12,8) codeword appends an even overall parity bit to it.
 func TestEncodeGolay24128ExtendsGolay23127(t *testing.T) {
+	t.Parallel()
+
 	if got := Encode23127(1); got != golay23GenPoly {
 		t.Fatalf("Encode23127(1) = %#x, want g(x) %#x", got, golay23GenPoly)
 	}
@@ -128,6 +134,8 @@ func TestEncodeGolay24128ExtendsGolay23127(t *testing.T) {
 }
 
 func TestDecodeGolayWideInput(t *testing.T) {
+	t.Parallel()
+
 	cw24 := Encode24128(0x5A5)
 	for _, high := range []uint32{1 << 24, 1 << 28, 1 << 30, 1 << 31} {
 		data, res := Decode24128(cw24 | high)

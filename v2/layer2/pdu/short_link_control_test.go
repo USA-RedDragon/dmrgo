@@ -160,6 +160,8 @@ func TestShortLC_String(t *testing.T) {
 }
 
 func TestShortLC_UnknownSLCO_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	var payload [24]bit.Bit
 	for i := range payload {
 		payload[i] = bit.Bit((i*7+3)%2 ^ i%3%2)

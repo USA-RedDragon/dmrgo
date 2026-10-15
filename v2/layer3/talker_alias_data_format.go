@@ -4,6 +4,7 @@ package layer3
 // (ETSI TS 102 361-2 clause 7.2.18, Table 7.25).
 type TalkerAliasDataFormat uint8
 
+// The TalkerAliasDataFormat values.
 const (
 	TalkerAliasSevenBit    TalkerAliasDataFormat = iota // 7-bit characters
 	TalkerAliasISOEightBit                              // ISO 8-bit characters

@@ -35,6 +35,8 @@ func superframeLC(t *testing.T, bursts []layer2.RawBurst, sf int) [4][32]bit.Bit
 }
 
 func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
+	t.Parallel()
+
 	call := groupLC(enums.FIDStandardized)
 	alias := talkerAliasLC()
 	var calls []int
@@ -92,6 +94,8 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 }
 
 func TestVoiceTransmitter_SetEmbeddedFragments(t *testing.T) {
+	t.Parallel()
+
 	call := groupLC(enums.FIDStandardized)
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: call, ColorCode: 2, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	f := layer2.EncodeEmbeddedLC([9]byte{1, 2, 3, 4, 5, 6, 7, 8, 9})
@@ -127,6 +131,8 @@ func TestVoiceTransmitter_SetEmbeddedFragments(t *testing.T) {
 }
 
 func TestVoiceTransmitter_EmbeddedLCHookError(t *testing.T) {
+	t.Parallel()
+
 	bad := groupLC(enums.FIDStandardized)
 	bad.FLCO = enums.FLCO(64)
 	fail := true
@@ -153,6 +159,8 @@ func TestVoiceTransmitter_EmbeddedLCHookError(t *testing.T) {
 }
 
 func TestVoiceTransmitter_PIHeader(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 	pi := pdu.PIHeader{AlgorithmID: 1, MFID: 0x10, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 91}
 	sources := map[layer2.SyncSource]enums.SyncPattern{
@@ -190,6 +198,8 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 }
 
 func TestVoiceTransmitter_OptionsMatchPositional(t *testing.T) {
+	t.Parallel()
+
 	lc := groupLC(enums.FIDStandardized)
 	for _, source := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
 		a := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 3, Source: source, Silence: silenceSlot()}))

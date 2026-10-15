@@ -59,6 +59,8 @@ outer:
 }
 
 func TestRawBurst_GettersMatchBurst(t *testing.T) {
+	t.Parallel()
+
 	counts := map[string]int{}
 	for _, frame := range captureFrames(t) {
 		r := frame
@@ -125,6 +127,8 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 }
 
 func TestRawBurst_GettersOnValue(t *testing.T) {
+	t.Parallel()
+
 	for _, frame := range captureFrames(t) {
 		r := frame
 		p1, d1 := frame.Sync()
@@ -151,6 +155,8 @@ func TestRawBurst_GettersOnValue(t *testing.T) {
 }
 
 func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
+	t.Parallel()
+
 	for _, frame := range captureFrames(t) {
 		r := frame
 		w := r
@@ -195,6 +201,8 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 }
 
 func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(3))
 	info := [][2]int{{layer2.InfoFirstStart, layer2.InfoFirstEnd}, {layer2.InfoSecondStart, layer2.InfoSecondEnd}}
 	for _, frame := range captureFrames(t) {
@@ -250,6 +258,8 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 }
 
 func TestRawBurst_SetSync(t *testing.T) {
+	t.Parallel()
+
 	var r layer2.RawBurst
 	for i := range r {
 		r[i] = 0xA5
@@ -267,6 +277,8 @@ func TestRawBurst_SetSync(t *testing.T) {
 }
 
 func TestRawBurst_StandaloneRC(t *testing.T) {
+	t.Parallel()
+
 	frame := buildStandaloneRCBurst(7, enums.RCCeaseTransmissionRequest)
 	r := layer2.RawBurst(frame)
 	b := must(layer2.NewBurstFromBytes(frame))
@@ -297,6 +309,8 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 }
 
 func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
+	t.Parallel()
+
 	cw := must(pdu.LCBytes(capturedEmbeddedLC).Codeword(enums.DataTypeVoiceLCHeader))
 	for cc := enums.ColorCode(0); cc < 16; cc++ {
 		got := must(layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS))
@@ -315,6 +329,8 @@ func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
 }
 
 func TestBuildDataBurst_ReproducesCaptures(t *testing.T) {
+	t.Parallel()
+
 	n := 0
 	for _, frame := range captureFrames(t) {
 		r := frame
@@ -344,6 +360,8 @@ func TestBuildDataBurst_ReproducesCaptures(t *testing.T) {
 }
 
 func TestBuildDataBurst_Rejects(t *testing.T) {
+	t.Parallel()
+
 	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeRate34, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Rate 3/4 accepted")
 	}
@@ -359,6 +377,8 @@ func TestBuildDataBurst_Rejects(t *testing.T) {
 }
 
 func TestBuildRateDataBursts_DecodeAsBurst(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(4))
 	for n := 0; n < 50; n++ {
 		var p34 [18]byte
@@ -396,6 +416,8 @@ func TestBuildRateDataBursts_DecodeAsBurst(t *testing.T) {
 }
 
 func TestEmbeddedLCBytes_Capture(t *testing.T) {
+	t.Parallel()
+
 	lc := [9]byte(capturedEmbeddedLC)
 	want := fragmentWords(capturedFragments())
 	if got := layer2.EncodeEmbeddedLC(lc); got != want {
@@ -432,6 +454,8 @@ func dataSource(sync enums.SyncPattern) (layer2.SyncSource, bool) {
 }
 
 func TestBuildBurst_MatchesBurstEncode(t *testing.T) {
+	t.Parallel()
+
 	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.DefaultServiceOptions()))
 	term := lc
 	term.BurstDataType = enums.DataTypeTerminatorWithLC
@@ -478,6 +502,8 @@ func TestBuildBurst_MatchesBurstEncode(t *testing.T) {
 }
 
 func TestBuildVoiceBurst_MatchesVoiceTransmitter(t *testing.T) {
+	t.Parallel()
+
 	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.DefaultServiceOptions()))
 	frags := must(layer2.EncodeEmbeddedFullLinkControl(&lc))
 	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS} {

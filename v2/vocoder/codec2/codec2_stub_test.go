@@ -11,6 +11,8 @@ import (
 )
 
 func TestStubUnavailable(t *testing.T) {
+	t.Parallel()
+
 	if _, err := New(Config{}); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("New error = %v, want ErrUnavailable", err)
 	}

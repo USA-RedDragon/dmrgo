@@ -3,6 +3,8 @@ package enums
 import "testing"
 
 func TestDataTypeString_AllTypes(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		dt       DataType
 		expected string
@@ -23,6 +25,8 @@ func TestDataTypeString_AllTypes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.dt.String()
 			if got != tt.expected {
 				t.Errorf("(%d).String() = %q, want %q", tt.dt, got, tt.expected)
@@ -32,6 +36,8 @@ func TestDataTypeString_AllTypes(t *testing.T) {
 }
 
 func TestDataTypeString_Unknown(t *testing.T) {
+	t.Parallel()
+
 	got := (DataType(99)).String()
 	if got != "Unknown" {
 		t.Errorf("(99).String() = %q, want %q", got, "Unknown")
@@ -39,6 +45,8 @@ func TestDataTypeString_Unknown(t *testing.T) {
 }
 
 func TestDataType_Constants(t *testing.T) {
+	t.Parallel()
+
 	if DataTypePIHeader != 0 {
 		t.Errorf("DataTypePIHeader = %d, want 0", DataTypePIHeader)
 	}
@@ -60,6 +68,8 @@ func TestDataType_Constants(t *testing.T) {
 }
 
 func TestDataType_IsBPTC(t *testing.T) {
+	t.Parallel()
+
 	for dt := DataType(0); dt < 0x20; dt++ {
 		want := dt <= DataTypeUnifiedSingleBlock && dt != DataTypeRate34 && dt != DataTypeRate1
 		if got := dt.IsBPTC(); got != want {
@@ -73,6 +83,8 @@ func TestDataType_IsBPTC(t *testing.T) {
 }
 
 func TestDataType_IsReserved(t *testing.T) {
+	t.Parallel()
+
 	for dt := DataType(0); dt < 0x20; dt++ {
 		want := dt >= 12 && dt <= 15
 		if got := dt.IsReserved(); got != want {

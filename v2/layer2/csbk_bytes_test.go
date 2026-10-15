@@ -11,6 +11,8 @@ import (
 )
 
 func TestCSBKBytes_SMSCaptures(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(7))
 	n := 0
 	for _, name := range []string{"d-sms", "h-sms", "m-sms"} {

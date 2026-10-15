@@ -56,7 +56,7 @@ func run(v2Root string) error {
 			strings.HasSuffix(path, "_gen.go") {
 			return nil
 		}
-		pdus, parseErr := parse.ParseFile(path)
+		pdus, parseErr := parse.File(path)
 		if parseErr != nil {
 			return fmt.Errorf("parsing %s: %w", path, parseErr)
 		}

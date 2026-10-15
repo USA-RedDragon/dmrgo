@@ -7,6 +7,7 @@ import "fmt"
 // clause 7.1.3.2, Table 7.10).
 type ActivityID uint8
 
+// The ActivityID values.
 const (
 	ActivityNoActivity               ActivityID = 0b0000 // no activity
 	ActivityGroupCSBK                ActivityID = 0b0010 // group CSBK activity

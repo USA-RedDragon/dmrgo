@@ -45,6 +45,8 @@ func capturedLC() pdu.FullLinkControl {
 }
 
 func TestEmbeddedLC_DecodeCapture(t *testing.T) {
+	t.Parallel()
+
 	lc, res := decodeLCBits(capturedFragments())
 	if res.Uncorrectable || res.ErrorsCorrected != 0 || res.BitsChecked != 128 {
 		t.Fatalf("FEC = %+v, want a clean 128-bit check", res)
@@ -67,6 +69,8 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 }
 
 func TestEmbeddedLC_EncodeCapture(t *testing.T) {
+	t.Parallel()
+
 	lc := capturedLC()
 	got, err := encodeFLCBits(&lc)
 	if err != nil {
@@ -83,6 +87,8 @@ func TestEmbeddedLC_EncodeCapture(t *testing.T) {
 }
 
 func TestEmbeddedLC_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	for seed := 0; seed < 64; seed++ {
 		var lc [72]bit.Bit
 		for i := range lc {
@@ -98,6 +104,8 @@ func TestEmbeddedLC_RoundTrip(t *testing.T) {
 // The Full LC decode of an embedded LC reports the embedded LC FEC result,
 // with nothing added by the Full LC decode, and keeps every LC bit.
 func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(5))
 	for range 2000 {
 		var fr [4][32]bit.Bit
@@ -139,6 +147,8 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 // A BPTC codeword whose checksum bits do not match its LC decodes cleanly
 // in the BPTC but must be reported as uncorrectable.
 func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
+	t.Parallel()
+
 	fr := capturedFragments()
 	info, _ := bptc.DecodeEmbedded(fr)
 	info[2*11+10] ^= 1
@@ -154,6 +164,8 @@ func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 // whether MMDVMHost accepts it. MMDVMHost returns the original LC for every
 // vector it accepts.
 func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
+	t.Parallel()
+
 	for _, v := range []struct {
 		lc, raw string
 		accept  bool
@@ -207,6 +219,8 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 // near codewords: with 5 random bit errors DecodeEmbeddedLC recovers nearly
 // every LC and returns almost no wrong LC.
 func TestEmbeddedLC_FiveErrors(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(5))
 	const n = 2000
 	recovered, wrong := 0, 0
@@ -234,6 +248,8 @@ func TestEmbeddedLC_FiveErrors(t *testing.T) {
 }
 
 func TestEmbeddedLC_EncodeRejectsBadLC(t *testing.T) {
+	t.Parallel()
+
 	lc := pdu.FullLinkControl{FLCO: enums.FLCO(64)}
 	if _, err := encodeFLCBits(&lc); err == nil {
 		t.Fatal("FLCO 64 should be rejected")
@@ -286,6 +302,8 @@ func fragOctets(f [4][32]bit.Bit) [4][4]byte {
 }
 
 func TestEmbeddedLCAssembler(t *testing.T) {
+	t.Parallel()
+
 	lc := [9]byte{0x00, 0x00, 0x20, 0x00, 0x00, 0x5b, 0x30, 0xb4, 0x3c}
 	frags := layer2.EncodeEmbeddedLC(lc)
 	order := [4]enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}

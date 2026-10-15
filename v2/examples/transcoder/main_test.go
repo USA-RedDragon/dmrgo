@@ -11,6 +11,8 @@ import (
 )
 
 func TestRun(t *testing.T) {
+	t.Parallel()
+
 	var buf bytes.Buffer
 	if err := run(&buf, filepath.Join("..", "..", "layer2", "testdata")); err != nil {
 		t.Fatal(err)

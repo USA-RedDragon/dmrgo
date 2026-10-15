@@ -11,6 +11,7 @@ const (
 // manufacturer specific (ETSI TS 102 361-3 Table 7.16).
 type DAID uint8
 
+// The DAID values.
 const (
 	DAIDRadioNetwork         DAID = 0  // radio network
 	DAIDUSBEthernetNetwork   DAID = 1  // USB or Ethernet network

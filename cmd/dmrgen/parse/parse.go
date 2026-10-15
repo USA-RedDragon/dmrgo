@@ -20,6 +20,7 @@ import (
 // FieldKind classifies how a PDU field should be decoded/encoded.
 type FieldKind int
 
+// The FieldKind values, with the dmr tag form of each.
 const (
 	FieldBool      FieldKind = iota // bit:N to bool
 	FieldUint                       // bits:S-E to uint8/uint16/uint32
@@ -219,8 +220,8 @@ func (p *PDUStruct) IsInput(name string) bool {
 	return false
 }
 
-// ParseFile parses a Go source file and returns all PDU structs with dmr tags.
-func ParseFile(filePath string) ([]PDUStruct, error) {
+// File parses a Go source file and returns all PDU structs with dmr tags.
+func File(filePath string) ([]PDUStruct, error) {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
@@ -229,8 +230,8 @@ func ParseFile(filePath string) ([]PDUStruct, error) {
 	return parseAST(node, filePath, packageBaseTypes(filePath, node))
 }
 
-// ParseSource parses Go source text; only types declared in src are resolved.
-func ParseSource(fileName, src string) ([]PDUStruct, error) {
+// Source parses Go source text; only types declared in src are resolved.
+func Source(fileName, src string) ([]PDUStruct, error) {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, fileName, src, parser.ParseComments)
 	if err != nil {

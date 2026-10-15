@@ -59,6 +59,8 @@ func checkLC(t *testing.T, where string, lc *pdu.FullLinkControl, fid enums.Feat
 }
 
 func TestBurstRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	pcm := voiced(50)
 	for _, mode := range allModes() {
 		want := encodeAll(t, newCodec(t, Config{Mode: mode}), pcm)

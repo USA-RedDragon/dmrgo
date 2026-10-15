@@ -8,6 +8,8 @@ import (
 )
 
 func TestHamming743_Parity(t *testing.T) {
+	t.Parallel()
+
 	data := [4]bit.Bit{1, 0, 0, 0}
 	p := parity743(data)
 	if p != [3]bit.Bit{1, 0, 1} {
@@ -40,6 +42,8 @@ func TestHamming743_Parity(t *testing.T) {
 }
 
 func TestHamming743_Check(t *testing.T) {
+	t.Parallel()
+
 	if !Check743([7]bit.Bit{1, 0, 0, 0, 1, 0, 1}) {
 		t.Error("Check743 should accept valid codeword [1,0,0,0, 1,0,1]")
 	}
@@ -50,6 +54,8 @@ func TestHamming743_Check(t *testing.T) {
 }
 
 func TestHamming743_Encode(t *testing.T) {
+	t.Parallel()
+
 	cw := Encode743([4]bit.Bit{1, 0, 1, 1})
 	if !Check743(cw) {
 		t.Errorf("Encode743 produced invalid codeword: %v", cw)
@@ -61,6 +67,8 @@ func TestHamming743_Encode(t *testing.T) {
 }
 
 func TestHamming743_DecodeNoError(t *testing.T) {
+	t.Parallel()
+
 	cw := Encode743([4]bit.Bit{1, 1, 0, 1})
 	decoded, result := Decode743(cw)
 	if result.ErrorsCorrected != 0 || result.Uncorrectable {
@@ -73,6 +81,8 @@ func TestHamming743_DecodeNoError(t *testing.T) {
 }
 
 func TestHamming743_DecodeSingleError(t *testing.T) {
+	t.Parallel()
+
 	for _, data := range [][4]bit.Bit{
 		{0, 0, 0, 0},
 		{1, 0, 0, 0},
@@ -103,6 +113,8 @@ func TestHamming743_DecodeSingleError(t *testing.T) {
 }
 
 func TestHamming743_DecodeRandom(t *testing.T) {
+	t.Parallel()
+
 	for i := 0; i < 200; i++ {
 		var data [4]bit.Bit
 		for j := 0; j < 4; j++ {
@@ -137,6 +149,8 @@ func TestHamming743_DecodeRandom(t *testing.T) {
 }
 
 func TestHamming743_EncodeDecode_AllCodewords(t *testing.T) {
+	t.Parallel()
+
 	for val := 0; val < 16; val++ {
 		data := [4]bit.Bit{
 			bit.Bit((val >> 3) & 1),
@@ -159,6 +173,8 @@ func TestHamming743_EncodeDecode_AllCodewords(t *testing.T) {
 }
 
 func TestHamming743_BitsChecked(t *testing.T) {
+	t.Parallel()
+
 	cw := Encode743([4]bit.Bit{0, 0, 0, 0})
 	_, result := Decode743(cw)
 	if result.BitsChecked != 7 {

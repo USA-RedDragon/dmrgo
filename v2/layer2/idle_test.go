@@ -30,6 +30,8 @@ var idleMessageFECMatrix = [13][15]bit.Bit{
 }
 
 func TestIdleMessageInfo_PackedHex(t *testing.T) {
+	t.Parallel()
+
 	expected := [12]byte{
 		0xFF, 0x83, 0xDF, 0x17, 0x32, 0x09,
 		0x4E, 0xD1, 0xE7, 0xCD, 0x8A, 0x91,
@@ -47,6 +49,8 @@ func TestIdleMessageInfo_PackedHex(t *testing.T) {
 }
 
 func TestIdleMessageInfo_BitsAreOnlyZeroOrOne(t *testing.T) {
+	t.Parallel()
+
 	for i, b := range layer2.IdleMessageInfo() {
 		if b != 0 && b != 1 {
 			t.Errorf("IdleMessageInfo()[%d] = %d, want 0 or 1", i, b)
@@ -55,12 +59,16 @@ func TestIdleMessageInfo_BitsAreOnlyZeroOrOne(t *testing.T) {
 }
 
 func TestIdleMessageInfo_EqualsPRFill(t *testing.T) {
+	t.Parallel()
+
 	if layer2.IdleMessageInfo() != pdu.PRFillBits() {
 		t.Error("IdleMessageInfo() should equal pdu.PRFillBits()")
 	}
 }
 
 func TestIdleMessageInfo_ReturnsCopy(t *testing.T) {
+	t.Parallel()
+
 	info := layer2.IdleMessageInfo()
 	info[0] ^= 1
 	idle := layer2.IdleMessageInfo()
@@ -76,6 +84,8 @@ func TestIdleMessageInfo_ReturnsCopy(t *testing.T) {
 // columns 3 to 10 and rows 1 to 8 columns 0 to 10 of the matrix (ETSI TS
 // 102 361-1 Figure B.1, Figure D.1).
 func TestIdleMessageFECMatrix_MatchesInfoBits(t *testing.T) {
+	t.Parallel()
+
 	var info [96]bit.Bit
 	n := 0
 	for c := 3; c <= 10; c++ {
@@ -98,6 +108,8 @@ func TestIdleMessageFECMatrix_MatchesInfoBits(t *testing.T) {
 // matrix bit i to transmit bit (i*181)%196. Bit 0 is the pad bit R(3), so
 // the matrix starts at bit 1 (ETSI TS 102 361-1 clause B.1.1, Figure D.1).
 func TestIdleMessageFECMatrix_MatchesBPTCEncode(t *testing.T) {
+	t.Parallel()
+
 	encoded := bptc.Encode196(layer2.IdleMessageInfo())
 	for r := range idleMessageFECMatrix {
 		for c := range idleMessageFECMatrix[r] {
@@ -110,12 +122,16 @@ func TestIdleMessageFECMatrix_MatchesBPTCEncode(t *testing.T) {
 }
 
 func TestIsIdleMessage_Match(t *testing.T) {
+	t.Parallel()
+
 	if !layer2.IsIdleMessage(layer2.IdleMessageInfo()) {
 		t.Error("IsIdleMessage should return true for IdleMessageInfo()")
 	}
 }
 
 func TestIsIdleMessage_NoMatch(t *testing.T) {
+	t.Parallel()
+
 	var bits [96]bit.Bit
 	if layer2.IsIdleMessage(bits) {
 		t.Error("IsIdleMessage should return false for all-zero bits")
@@ -126,6 +142,8 @@ func TestIsIdleMessage_NoMatch(t *testing.T) {
 // information bits is 32 zero transmit bits (ETSI TS 102 361-1 clause B.2.1,
 // Table D.1).
 func TestIsNullEmbeddedLC_Match(t *testing.T) {
+	t.Parallel()
+
 	null := bptc.EncodeSingleBurst([11]bit.Bit{}, false)
 	if null != [32]bit.Bit{} {
 		t.Errorf("single burst BPTC of 11 zero bits = %v, want 32 zero bits", null)
@@ -136,6 +154,8 @@ func TestIsNullEmbeddedLC_Match(t *testing.T) {
 }
 
 func TestIsNullEmbeddedLC_NoMatch(t *testing.T) {
+	t.Parallel()
+
 	var bits [32]bit.Bit
 	bits[0] = 1
 	if layer2.IsNullEmbeddedLC(bits) {

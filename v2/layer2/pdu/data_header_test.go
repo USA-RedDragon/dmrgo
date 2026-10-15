@@ -10,6 +10,8 @@ import (
 )
 
 func TestDataHeader_UnconfirmedDecode(t *testing.T) {
+	t.Parallel()
+
 	var infoBits [96]bit.Bit
 	// U_HEAD: group, POC 3, Full Message Flag and Blocks to Follow 10.
 	infoBits[6] = 1
@@ -63,6 +65,8 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 }
 
 func TestDataHeader_CRCFailure(t *testing.T) {
+	t.Parallel()
+
 	var infoBits [96]bit.Bit
 	fecResult := pdu.DecodeDataHeader(infoBits).FEC
 	if !fecResult.Uncorrectable {
@@ -71,6 +75,8 @@ func TestDataHeader_CRCFailure(t *testing.T) {
 }
 
 func TestDataHeader_FormatDispatch(t *testing.T) {
+	t.Parallel()
+
 	// Test that non-Unconfirmed formats decode without panic but have nil sub-PDUs
 	formats := []struct {
 		name string
@@ -82,6 +88,8 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 
 	for _, tt := range formats {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			var infoBits [96]bit.Bit
 			infoBits[4] = tt.bits[0]
 			infoBits[5] = tt.bits[1]
@@ -560,6 +568,8 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 }
 
 func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	in := buildDataHeaderBits(func(bits *[96]bit.Bit) {
 		for i := range 80 {
 			bits[i] = bit.Bit((i*5 + 1) / 3 % 2)
@@ -580,6 +590,8 @@ func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 }
 
 func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
+	t.Parallel()
+
 	encode := map[pdu.Format]func() ([80]bit.Bit, error){
 		pdu.FormatUnconfirmed: func() ([80]bit.Bit, error) {
 			return (&pdu.UnconfirmedDataHeader{}).Encode()
@@ -615,6 +627,8 @@ func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 }
 
 func TestStatusPrecodedEncoderClearsAppendedBlocks(t *testing.T) {
+	t.Parallel()
+
 	bits := must((&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}).Encode())
 	if got := pdu.Format(uint8(bit.Uint(bits[4 : 4+4]))); got != pdu.FormatShortDataRawOrStatusPrecoded {
 		t.Errorf("Format bits = %d, want %d", got, pdu.FormatShortDataRawOrStatusPrecoded)

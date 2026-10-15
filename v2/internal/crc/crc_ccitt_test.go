@@ -7,6 +7,8 @@ import (
 )
 
 func TestCRCCCITT_KnownValues(t *testing.T) {
+	t.Parallel()
+
 	data := []byte("123456789")
 	crc := crc.CCITT(data)
 	if crc != 0xCE3C {
@@ -15,19 +17,23 @@ func TestCRCCCITT_KnownValues(t *testing.T) {
 }
 
 func TestCRCCCITT_CheckValid(t *testing.T) {
-	data := []byte{0x01, 0x02, 0x03, 0x04, 0x05}
-	c_crc := crc.CCITT(data)
+	t.Parallel()
 
-	withCRC := append(append([]byte{}, data...), byte(c_crc>>8), byte(c_crc))
+	data := []byte{0x01, 0x02, 0x03, 0x04, 0x05}
+	cCRC := crc.CCITT(data)
+
+	withCRC := append(append([]byte{}, data...), byte(cCRC>>8), byte(cCRC))
 	if !checkCCITTCodeword(withCRC) {
 		t.Error("CheckCRCCCITT should return true for valid data+CRC")
 	}
 }
 
 func TestCRCCCITT_CheckInvalid(t *testing.T) {
+	t.Parallel()
+
 	data := []byte{0x01, 0x02, 0x03, 0x04, 0x05}
-	c_crc := crc.CCITT(data)
-	withCRC := append(append([]byte{}, data...), byte(c_crc>>8), byte(c_crc))
+	cCRC := crc.CCITT(data)
+	withCRC := append(append([]byte{}, data...), byte(cCRC>>8), byte(cCRC))
 
 	withCRC[2] ^= 0xFF
 	if checkCCITTCodeword(withCRC) {
@@ -36,12 +42,16 @@ func TestCRCCCITT_CheckInvalid(t *testing.T) {
 }
 
 func TestCRCCCITT_CheckTooShort(t *testing.T) {
+	t.Parallel()
+
 	if checkCCITTCodeword([]byte{0x01, 0x02}) {
 		t.Error("CheckCRCCCITT should return false for data shorter than 3 bytes")
 	}
 }
 
 func TestCRCCCITT_EmptyInput(t *testing.T) {
+	t.Parallel()
+
 	crc := crc.CCITT([]byte{})
 	if crc != 0xFFFF {
 		t.Errorf("CRC of empty = 0x%04X, want 0xFFFF", crc)

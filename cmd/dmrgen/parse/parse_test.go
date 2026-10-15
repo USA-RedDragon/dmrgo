@@ -22,7 +22,7 @@ var _ enums.FLCO
 
 func parseSrc(t *testing.T, src string) ([]parse.PDUStruct, error) {
 	t.Helper()
-	return parse.ParseSource("test.go", header+src)
+	return parse.Source("test.go", header+src)
 }
 
 func mustParse(t *testing.T, src string) []parse.PDUStruct {
@@ -35,6 +35,8 @@ func mustParse(t *testing.T, src string) []parse.PDUStruct {
 }
 
 func TestParseRejectsMalformed(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -531,6 +533,8 @@ type T struct {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := parseSrc(t, tt.src)
 			if err == nil {
 				t.Fatalf("expected error containing %q, got nil", tt.want)
@@ -543,6 +547,8 @@ type T struct {
 }
 
 func TestParseValidStruct(t *testing.T) {
+	t.Parallel()
+
 	pdus := mustParse(t, `type Opcode byte
 
 // dmr:crc crc_ccitt
@@ -589,6 +595,8 @@ type T struct {
 }
 
 func TestParseInputSizeDefaultsToFieldRange(t *testing.T) {
+	t.Parallel()
+
 	pdus := mustParse(t, `type T struct {
 	A uint8 `+"`dmr:\"bits:0-6\"`"+`
 	R uint8 `+"`dmr:\"bits:7-8\"`"+`
@@ -600,6 +608,8 @@ func TestParseInputSizeDefaultsToFieldRange(t *testing.T) {
 }
 
 func TestParseRejectsOverlap(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -624,6 +634,8 @@ func TestParseRejectsOverlap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := parseSrc(t, tt.src)
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("expected error containing %q, got %v", tt.want, err)
@@ -633,6 +645,8 @@ func TestParseRejectsOverlap(t *testing.T) {
 }
 
 func TestParseAllowsIntentionalOverlap(t *testing.T) {
+	t.Parallel()
+
 	mustParse(t, `type T struct {
 	Format uint8 `+"`dmr:\"bits:4-7\"`"+`
 	Blocks uint8 `+"`dmr:\"bits:2-3+12-15,no_encode\"`"+`
@@ -643,6 +657,8 @@ func TestParseAllowsIntentionalOverlap(t *testing.T) {
 }
 
 func TestParseWhenOnSkipFieldRequiresInput(t *testing.T) {
+	t.Parallel()
+
 	body := `type T struct {
 	Mode bool  ` + "`dmr:\"-\"`" + `
 	Op   uint8 ` + "`dmr:\"bits:0-7\"`" + `
@@ -661,6 +677,8 @@ func TestParseWhenOnSkipFieldRequiresInput(t *testing.T) {
 }
 
 func TestParseRejectsBadInput(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -695,6 +713,8 @@ type T struct {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := parseSrc(t, tt.src)
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("expected error containing %q, got %v", tt.want, err)
@@ -704,6 +724,8 @@ type T struct {
 }
 
 func TestParseRejectsBadFallbackAndDispatchIf(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -774,6 +796,8 @@ type T struct {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := parseSrc(t, tt.src)
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("expected error containing %q, got %v", tt.want, err)
@@ -783,6 +807,8 @@ type T struct {
 }
 
 func TestParseSpecRefUsesFirstCitation(t *testing.T) {
+	t.Parallel()
+
 	pdus := mustParse(t, `// T is the first PDU (ETSI TS 102 361-1
 // clause 9.1.6). It uses the FLCO (ETSI TS 102 361-1 Table 9.21).
 type T struct {
@@ -796,6 +822,8 @@ type T struct {
 // TestParseV2Sources parses every tagged struct of the v2 module, so that a
 // tag error such as an uncovered bit fails here as well as in go generate.
 func TestParseV2Sources(t *testing.T) {
+	t.Parallel()
+
 	root := filepath.Join("..", "..", "..", "v2")
 	structs := 0
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -807,7 +835,7 @@ func TestParseV2Sources(t *testing.T) {
 			strings.HasSuffix(name, "_test.go") || strings.HasSuffix(name, "_gen.go") {
 			return nil
 		}
-		pdus, err := parse.ParseFile(path)
+		pdus, err := parse.File(path)
 		if err != nil {
 			t.Errorf("%s: %v", path, err)
 		}
@@ -823,6 +851,8 @@ func TestParseV2Sources(t *testing.T) {
 }
 
 func TestParseIgnoresUntaggedStructs(t *testing.T) {
+	t.Parallel()
+
 	pdus := mustParse(t, `type T struct {
 	A uint8
 }`)

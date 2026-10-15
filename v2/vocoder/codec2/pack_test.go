@@ -28,6 +28,8 @@ func bitsFromString(t *testing.T, s string) [72]bit.Bit {
 }
 
 func TestPackSlotLayout(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name  string
 		frame []byte
@@ -48,6 +50,8 @@ func TestPackSlotLayout(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			want := bitsFromString(t, tt.want)
 			got := packSlot(tt.frame)
 			if got != want {
@@ -62,6 +66,8 @@ func TestPackSlotLayout(t *testing.T) {
 }
 
 func TestUnpackSlotIgnoresPadBits(t *testing.T) {
+	t.Parallel()
+
 	frame := []byte{0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02}
 	slot := packSlot(frame)
 	for i := 48; i < 72; i++ {
@@ -76,6 +82,8 @@ func TestUnpackSlotIgnoresPadBits(t *testing.T) {
 // (DMRControl::getTxAudio and DMRFrame::setVoice) and checks that the three
 // 9-byte frames land in the burst's voice bits in order.
 func TestQRadioLinkBurstLayout(t *testing.T) {
+	t.Parallel()
+
 	codecFrames := [3][]byte{
 		{0x11, 0x22, 0x33, 0x44, 0x55, 0x66},
 		{0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC},
@@ -108,6 +116,8 @@ func TestQRadioLinkBurstLayout(t *testing.T) {
 }
 
 func TestConfigDefaults(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		in      Config
 		want    Config

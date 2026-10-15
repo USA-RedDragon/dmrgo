@@ -4,6 +4,7 @@ package enums
 // Table B.1, ETSI TS 102 361-3 clause 7.1.1).
 type FLCO byte
 
+// The FLCO values.
 const (
 	FLCOGroupVoiceChannelUser      FLCO = 0b000000 // Grp_V_Ch_Usr, group voice channel user
 	FLCOUnitToUnitVoiceChannelUser FLCO = 0b000011 // UU_V_Ch_Usr, unit to unit voice channel user

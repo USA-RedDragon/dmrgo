@@ -10,6 +10,8 @@ import (
 )
 
 func TestRate1Data_DecodeFromBits(t *testing.T) {
+	t.Parallel()
+
 	// Build 96 info bits representing known packed data
 	var infoBits [192]bit.Bit
 
@@ -43,6 +45,8 @@ func TestRate1Data_DecodeFromBits(t *testing.T) {
 }
 
 func TestRate1Data_DataType(t *testing.T) {
+	t.Parallel()
+
 	rt := pdu.DecodeRate1Data([192]bit.Bit{})
 	if rt.DataType() != enums.DataTypeRate1 {
 		t.Errorf("DataType() = %d, want DataTypeRate1", rt.DataType())
@@ -50,6 +54,8 @@ func TestRate1Data_DataType(t *testing.T) {
 }
 
 func TestRate1Data_String(t *testing.T) {
+	t.Parallel()
+
 	rt := pdu.DecodeRate1Data([192]bit.Bit{})
 	s := rt.String()
 	if s == "" {
@@ -58,6 +64,8 @@ func TestRate1Data_String(t *testing.T) {
 }
 
 func TestRate1Data_AllOnes(t *testing.T) {
+	t.Parallel()
+
 	var infoBits [192]bit.Bit
 	for i := range infoBits {
 		infoBits[i] = 1
@@ -71,6 +79,8 @@ func TestRate1Data_AllOnes(t *testing.T) {
 }
 
 func TestRate1Data_EncodeDecodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	original := pdu.Rate1Data{
 		Data: [24]byte{0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B},
 	}
@@ -82,6 +92,8 @@ func TestRate1Data_EncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestRate1Data_FullLengthLastByte(t *testing.T) {
+	t.Parallel()
+
 	var infoBits [192]bit.Bit
 	infoBits[191] = 1
 	rt := pdu.DecodeRate1Data(infoBits)
@@ -91,6 +103,8 @@ func TestRate1Data_FullLengthLastByte(t *testing.T) {
 }
 
 func TestRate1Data_Confirmed_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	var user [22]byte
 	for i := range user {
 		user[i] = byte(i*7 + 1)
@@ -119,6 +133,8 @@ func TestRate1Data_Confirmed_RoundTrip(t *testing.T) {
 // The CRC-9 covers user data then DBSN (TS 102 361-1 B.3.10) with the
 // Table B.21 mask, placed MSB-first in octet 0 bit 0 and octet 1.
 func TestRate1Data_Confirmed_CRC9Layout(t *testing.T) {
+	t.Parallel()
+
 	var user [22]byte
 	user[0] = 0x80
 	var rt pdu.Rate1Data

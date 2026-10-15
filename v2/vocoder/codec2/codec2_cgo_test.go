@@ -97,6 +97,8 @@ func decodeAll(t *testing.T, c *Codec, slots [][72]bit.Bit) []int16 {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	c := newCodec(t, Config{})
 	if c.Mode() != Mode2400 || c.FID() != 0xC2 || c.FrameSamples() != 160 {
 		t.Errorf("defaults: mode %d FID %#x samples %d", c.Mode(), c.FID(), c.FrameSamples())
@@ -111,6 +113,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestRegistered(t *testing.T) {
+	t.Parallel()
+
 	c, err := vocoder.New(Name)
 	if err != nil {
 		t.Fatal(err)
@@ -126,6 +130,8 @@ func TestRegistered(t *testing.T) {
 }
 
 func TestSeparateCodecsConcurrently(t *testing.T) {
+	t.Parallel()
+
 	pcm := voiced(20)
 	done := make(chan error, 4)
 	for range 4 {
@@ -152,6 +158,8 @@ func TestSeparateCodecsConcurrently(t *testing.T) {
 }
 
 func TestEncodeFrameLength(t *testing.T) {
+	t.Parallel()
+
 	c := newCodec(t, Config{})
 	for _, n := range []int{0, 1, 159, 161, 320} {
 		if _, err := c.Encode(make([]int16, n)); !errors.Is(err, ErrFrameLength) {
@@ -164,6 +172,8 @@ func TestEncodeFrameLength(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
+	t.Parallel()
+
 	c, err := New(Config{})
 	if err != nil {
 		t.Fatal(err)
@@ -183,6 +193,8 @@ func TestClose(t *testing.T) {
 }
 
 func TestEncodePadBitsZero(t *testing.T) {
+	t.Parallel()
+
 	pcm := voiced(10)
 	for _, mode := range allModes() {
 		c := newCodec(t, Config{Mode: mode})
@@ -197,6 +209,8 @@ func TestEncodePadBitsZero(t *testing.T) {
 }
 
 func TestDecodeIgnoresPadBits(t *testing.T) {
+	t.Parallel()
+
 	pcm := voiced(10)
 	for _, mode := range allModes() {
 		slots := encodeAll(t, newCodec(t, Config{Mode: mode}), pcm)
@@ -216,6 +230,8 @@ func TestDecodeIgnoresPadBits(t *testing.T) {
 }
 
 func TestRoundTripVoiced(t *testing.T) {
+	t.Parallel()
+
 	pcm := voiced(50)
 	in := rms(pcm[800:])
 	for _, mode := range allModes() {
@@ -231,6 +247,8 @@ func TestRoundTripVoiced(t *testing.T) {
 }
 
 func TestSilence(t *testing.T) {
+	t.Parallel()
+
 	for _, mode := range allModes() {
 		a := newCodec(t, Config{Mode: mode})
 		b := newCodec(t, Config{Mode: mode})
@@ -312,6 +330,8 @@ func lookTools(t *testing.T) {
 // TestMatchesC2Enc checks that Encode produces the same bytes as the
 // libcodec2 c2enc tool.
 func TestMatchesC2Enc(t *testing.T) {
+	t.Parallel()
+
 	lookTools(t)
 	pcm := voiced(50)
 	dir := t.TempDir()
@@ -337,6 +357,8 @@ func TestMatchesC2Enc(t *testing.T) {
 // libcodec2 c2dec tool. The decoder uses a process-wide random number
 // generator, so the decode runs in a fresh test process, like c2dec.
 func TestMatchesC2Dec(t *testing.T) {
+	t.Parallel()
+
 	if os.Getenv("CODEC2_C2DEC_HELPER") != "" {
 		c2decHelper(t)
 		return

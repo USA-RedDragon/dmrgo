@@ -7,6 +7,8 @@ import (
 )
 
 func TestChecksum5_AllZeros(t *testing.T) {
+	t.Parallel()
+
 	data := [9]byte{}
 	result := crc.Checksum5(data)
 	if result != 0 {
@@ -15,6 +17,8 @@ func TestChecksum5_AllZeros(t *testing.T) {
 }
 
 func TestChecksum5_SingleByte(t *testing.T) {
+	t.Parallel()
+
 	data := [9]byte{31}
 	result := crc.Checksum5(data)
 	if result != 0 {
@@ -23,6 +27,8 @@ func TestChecksum5_SingleByte(t *testing.T) {
 }
 
 func TestChecksum5_SimpleSum(t *testing.T) {
+	t.Parallel()
+
 	data := [9]byte{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	result := crc.Checksum5(data)
 	if result != 14 {
@@ -31,6 +37,8 @@ func TestChecksum5_SimpleSum(t *testing.T) {
 }
 
 func TestChecksum5_MaxValues(t *testing.T) {
+	t.Parallel()
+
 	data := [9]byte{255, 255, 255, 255, 255, 255, 255, 255, 255}
 	result := crc.Checksum5(data)
 	if result != 1 {
@@ -39,6 +47,8 @@ func TestChecksum5_MaxValues(t *testing.T) {
 }
 
 func TestChecksum5_Range(t *testing.T) {
+	t.Parallel()
+
 	for i := 0; i < 256; i++ {
 		data := [9]byte{byte(i), byte(i >> 1), byte(i >> 2), 0, 0, 0, 0, 0, 0}
 		result := crc.Checksum5(data)
@@ -49,6 +59,8 @@ func TestChecksum5_Range(t *testing.T) {
 }
 
 func TestChecksum5_CheckValid(t *testing.T) {
+	t.Parallel()
+
 	data := [9]byte{0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90}
 	cs := crc.Checksum5(data)
 	if !crc.CheckChecksum5(data, cs) {
@@ -57,6 +69,8 @@ func TestChecksum5_CheckValid(t *testing.T) {
 }
 
 func TestChecksum5_CheckInvalid(t *testing.T) {
+	t.Parallel()
+
 	data := [9]byte{0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90}
 	cs := crc.Checksum5(data)
 	if crc.CheckChecksum5(data, cs+1) {
@@ -65,6 +79,8 @@ func TestChecksum5_CheckInvalid(t *testing.T) {
 }
 
 func TestChecksum5_Deterministic(t *testing.T) {
+	t.Parallel()
+
 	data := [9]byte{0xAA, 0x55, 0xFF, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9A}
 	cs1 := crc.Checksum5(data)
 	cs2 := crc.Checksum5(data)

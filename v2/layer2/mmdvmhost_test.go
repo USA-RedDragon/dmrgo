@@ -16,6 +16,8 @@ import (
 // valid payload, the same with one bit flipped, one with a wrong CRC mask
 // and a random payload.
 func TestMMDVMHostAccepts_Vectors(t *testing.T) {
+	t.Parallel()
+
 	for _, v := range []struct {
 		dt      enums.DataType
 		payload string
@@ -63,6 +65,8 @@ func TestMMDVMHostAccepts_Vectors(t *testing.T) {
 }
 
 func TestMMDVMHostAccepts_UncheckedDataTypes(t *testing.T) {
+	t.Parallel()
+
 	var payload [12]byte
 	for _, dt := range []enums.DataType{enums.DataTypePIHeader, enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1} {
 		if !layer2.MMDVMHostAccepts(dt, payload) {
@@ -80,6 +84,8 @@ func TestMMDVMHostAccepts_UncheckedDataTypes(t *testing.T) {
 // last block of an MBC with one continuation block, whose last-block CRC
 // covers only that block, and rejects that block when it follows another.
 func TestMMDVMHostAccepts_MBCContinuation(t *testing.T) {
+	t.Parallel()
+
 	var first, last [96]bit.Bit
 	for i := range last {
 		first[i] = bit.Bit(i % 3 & 1)

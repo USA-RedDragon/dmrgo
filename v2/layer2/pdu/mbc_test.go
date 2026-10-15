@@ -55,6 +55,8 @@ func buildMBCContinuationBits(lb bool, data [95]bit.Bit) [96]bit.Bit {
 }
 
 func TestMBCHeader_Decode(t *testing.T) {
+	t.Parallel()
+
 	var data [64]bit.Bit
 	data[0] = 1
 	data[10] = 1
@@ -97,6 +99,8 @@ func TestMBCHeader_Decode(t *testing.T) {
 }
 
 func TestMBCHeader_DecodeLastBlock(t *testing.T) {
+	t.Parallel()
+
 	var data [64]bit.Bit
 	infoBits := buildMBCHeaderBits(true, false, 0b00000001, 0x10, data)
 
@@ -121,6 +125,8 @@ func TestMBCHeader_DecodeLastBlock(t *testing.T) {
 }
 
 func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name   string
 		lb     bool
@@ -137,6 +143,8 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			var data [64]bit.Bit
 			for i := 0; i < 64; i += 3 {
 				data[i] = 1
@@ -177,6 +185,8 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestMBCHeader_EncodeStability(t *testing.T) {
+	t.Parallel()
+
 	orig := pdu.MBCHeader{
 		LastBlock:   true,
 		ProtectFlag: false,
@@ -197,6 +207,8 @@ func TestMBCHeader_EncodeStability(t *testing.T) {
 }
 
 func TestMBCHeader_CRCFailure(t *testing.T) {
+	t.Parallel()
+
 	var infoBits [96]bit.Bit
 	fecResult := pdu.DecodeMBCHeader(infoBits).FEC
 	if !fecResult.Uncorrectable {
@@ -205,6 +217,8 @@ func TestMBCHeader_CRCFailure(t *testing.T) {
 }
 
 func TestMBCHeader_CRCBitFlip(t *testing.T) {
+	t.Parallel()
+
 	var data [64]bit.Bit
 	data[0] = 1
 	infoBits := buildMBCHeaderBits(true, true, 0b00111101, 0x00, data)
@@ -218,6 +232,8 @@ func TestMBCHeader_CRCBitFlip(t *testing.T) {
 }
 
 func TestMBCHeader_DataType(t *testing.T) {
+	t.Parallel()
+
 	hdr := &pdu.MBCHeader{}
 	if hdr.DataType() != enums.DataTypeMBCHeader {
 		t.Errorf("DataType() = %d, want DataTypeMBCHeader", hdr.DataType())
@@ -225,6 +241,8 @@ func TestMBCHeader_DataType(t *testing.T) {
 }
 
 func TestMBCHeader_String(t *testing.T) {
+	t.Parallel()
+
 	var data [64]bit.Bit
 	infoBits := buildMBCHeaderBits(true, false, 0b00111101, 0x00, data)
 	hdr := pdu.DecodeMBCHeader(infoBits)
@@ -236,6 +254,8 @@ func TestMBCHeader_String(t *testing.T) {
 }
 
 func TestMBCContinuation_DecodeIntermediate(t *testing.T) {
+	t.Parallel()
+
 	var data [95]bit.Bit
 	data[0] = 1
 	data[50] = 1
@@ -263,6 +283,8 @@ func TestMBCContinuation_DecodeIntermediate(t *testing.T) {
 }
 
 func TestMBCContinuation_DecodeLastBlock(t *testing.T) {
+	t.Parallel()
+
 	var data [95]bit.Bit
 	data[0] = 1
 	data[78] = 1
@@ -283,6 +305,8 @@ func TestMBCContinuation_DecodeLastBlock(t *testing.T) {
 }
 
 func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		lb   bool
@@ -293,6 +317,8 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			var data [95]bit.Bit
 			for i := 0; i < 95; i += 2 {
 				data[i] = 1
@@ -317,6 +343,8 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestMBCContinuation_EncodeStability(t *testing.T) {
+	t.Parallel()
+
 	orig := pdu.MBCContinuation{
 		LastBlock: true,
 	}
@@ -336,6 +364,8 @@ func TestMBCContinuation_EncodeStability(t *testing.T) {
 }
 
 func TestMBCContinuation_DataType(t *testing.T) {
+	t.Parallel()
+
 	cont := &pdu.MBCContinuation{}
 	if cont.DataType() != enums.DataTypeMBCContinuation {
 		t.Errorf("DataType() = %d, want DataTypeMBCContinuation", cont.DataType())
@@ -343,6 +373,8 @@ func TestMBCContinuation_DataType(t *testing.T) {
 }
 
 func TestMBCContinuation_String(t *testing.T) {
+	t.Parallel()
+
 	var data [95]bit.Bit
 	data[0] = 1
 
@@ -356,6 +388,8 @@ func TestMBCContinuation_String(t *testing.T) {
 }
 
 func TestMBCContinuation_NoCRCCheck(t *testing.T) {
+	t.Parallel()
+
 	var infoBits [96]bit.Bit
 	for i := 0; i < 96; i += 3 {
 		infoBits[i] = 1

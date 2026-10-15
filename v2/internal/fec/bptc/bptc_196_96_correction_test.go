@@ -30,6 +30,8 @@ func randomBPTC19696(r *rand.Rand) ([96]bit.Bit, [196]bit.Bit) {
 }
 
 func TestBPTC19696_EncodedGridIsProductCodeword(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(6))
 	for n := 0; n < 1000; n++ {
 		_, enc := randomBPTC19696(r)
@@ -44,6 +46,8 @@ func TestBPTC19696_EncodedGridIsProductCodeword(t *testing.T) {
 }
 
 func TestBPTC19696_AllDoubleErrorsCorrected(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(10))
 	data, enc := randomBPTC19696(r)
 	for p := 1; p < 196; p++ {
@@ -60,6 +64,8 @@ func TestBPTC19696_AllDoubleErrorsCorrected(t *testing.T) {
 }
 
 func TestBPTC19696_AcceptedOutputIsCodeword(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(9))
 	for n := 0; n < 20000; n++ {
 		_, enc := randomBPTC19696(r)
@@ -71,7 +77,7 @@ func TestBPTC19696_AcceptedOutputIsCodeword(t *testing.T) {
 		for i := range g {
 			g[i] = rx[dm[i]]
 		}
-		corrected, flips, unc := hamming_correct(g)
+		corrected, flips, unc := hammingCorrect(g)
 		if !unc && !gridSyndromesZero(&corrected) {
 			t.Fatalf("accepted a grid with nonzero syndromes")
 		}
@@ -89,6 +95,8 @@ func TestBPTC19696_AcceptedOutputIsCodeword(t *testing.T) {
 // decoding first turns into a wrong codeword and column decoding first
 // corrects.
 func TestBPTC19696_ColumnsFirstCorrection(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(11))
 	data, enc := randomBPTC19696(r)
 	for _, p := range []int{124, 128, 172, 173} {

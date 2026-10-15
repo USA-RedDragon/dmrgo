@@ -8,6 +8,8 @@ import (
 )
 
 func TestBPTC19696Decode(t *testing.T) {
+	t.Parallel()
+
 	for run := 0; run < 100; run++ {
 		var data [96]bit.Bit
 		for i := 0; i < 96; i++ {
@@ -54,6 +56,8 @@ func TestBPTC19696Decode(t *testing.T) {
 }
 
 func TestBPTC19696Reserved(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(7))
 	for run := 0; run < 100; run++ {
 		var data [96]bit.Bit
@@ -75,6 +79,8 @@ func TestBPTC19696Reserved(t *testing.T) {
 }
 
 func TestBPTC19696ReservedPositions(t *testing.T) {
+	t.Parallel()
+
 	for i, txBit := range []int{151, 166, 181} {
 		var res [3]bit.Bit
 		res[i] = 1

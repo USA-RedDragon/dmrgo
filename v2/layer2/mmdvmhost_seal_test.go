@@ -10,6 +10,8 @@ import (
 )
 
 func TestMMDVMHostSeal_PairsWithAccepts(t *testing.T) {
+	t.Parallel()
+
 	rng := rand.New(rand.NewSource(6))
 	sealed := []enums.DataType{
 		enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypePIHeader,
@@ -56,6 +58,8 @@ func TestMMDVMHostSeal_PairsWithAccepts(t *testing.T) {
 }
 
 func TestMMDVMHostSeal_IdentityOnAcceptedCaptures(t *testing.T) {
+	t.Parallel()
+
 	n := 0
 	for _, frame := range captureFrames(t) {
 		r := frame

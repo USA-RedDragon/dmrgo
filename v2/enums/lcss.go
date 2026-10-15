@@ -5,6 +5,7 @@ package enums
 // 361-1 clause 9.3.3, Table 9.20).
 type LCSS uint8
 
+// The LCSS values.
 const (
 	LCSSSingleFragment       LCSS = iota // single fragment LC or first fragment CSBK
 	LCSSFirstFragment                    // first fragment LC

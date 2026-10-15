@@ -9,6 +9,8 @@ import (
 )
 
 func TestEncodeDecodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	testData := [][]byte{
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09},
@@ -49,6 +51,8 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestSyndromeDetectsCorruption(t *testing.T) {
+	t.Parallel()
+
 	data := make([]byte, dataSize+checksumSize)
 
 	corrupted := make([]byte, len(data))
@@ -67,6 +71,8 @@ func TestSyndromeDetectsCorruption(t *testing.T) {
 }
 
 func TestDecodeTableB18Codewords(t *testing.T) {
+	t.Parallel()
+
 	table := tableB18Parity()
 	for row := 0; row < dataSize; row++ {
 		cw := make([]byte, dataSize+checksumSize)
@@ -83,6 +89,8 @@ func TestDecodeTableB18Codewords(t *testing.T) {
 }
 
 func TestDecodeSingleSymbolErrorAllPositions(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(2))
 	for n := 0; n < 8; n++ {
 		data := make([]byte, dataSize)
@@ -107,6 +115,8 @@ func TestDecodeSingleSymbolErrorAllPositions(t *testing.T) {
 }
 
 func TestDecodeDoubleSymbolErrorsDetected(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(3))
 	for n := 0; n < 50000; n++ {
 		data := make([]byte, dataSize)
@@ -126,6 +136,8 @@ func TestDecodeDoubleSymbolErrorsDetected(t *testing.T) {
 }
 
 func TestDecodeTripleSymbolErrorsNeverInvalid(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(4))
 	for n := 0; n < 50000; n++ {
 		data := make([]byte, dataSize)
@@ -162,6 +174,8 @@ func TestDecodeTripleSymbolErrorsNeverInvalid(t *testing.T) {
 }
 
 func TestEncodeInvalidLength(t *testing.T) {
+	t.Parallel()
+
 	short := make([]byte, 5)
 	_, err := encode(short)
 	if err == nil {
@@ -176,6 +190,8 @@ func TestEncodeInvalidLength(t *testing.T) {
 }
 
 func TestPublicEncodeDecodeRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	data := [9]byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99}
 	cw := Encode(data)
 	if !Check(cw) {
@@ -194,6 +210,8 @@ func TestPublicEncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestSyndromeCleanForValidCodeword(t *testing.T) {
+	t.Parallel()
+
 	data := make([]byte, dataSize+checksumSize)
 
 	var syndrome poly
@@ -216,6 +234,8 @@ func TestSyndromeCleanForValidCodeword(t *testing.T) {
 }
 
 func TestEncodePreservesData(t *testing.T) {
+	t.Parallel()
+
 	data := []byte{0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE, 0x00}
 	encoded, err := encode(data)
 	if err != nil {
@@ -254,6 +274,8 @@ func tableB18Parity() [dataSize][checksumSize]byte {
 }
 
 func TestEncodeTableB18Rows(t *testing.T) {
+	t.Parallel()
+
 	table := tableB18Parity()
 	for row := 0; row < dataSize; row++ {
 		data := make([]byte, dataSize)
@@ -281,6 +303,8 @@ func specParity(data []byte) [checksumSize]byte {
 }
 
 func TestEncodeMatchesGeneratorMatrix(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(1))
 	for n := 0; n < 2000; n++ {
 		data := make([]byte, dataSize)
@@ -296,6 +320,8 @@ func TestEncodeMatchesGeneratorMatrix(t *testing.T) {
 }
 
 func TestEncodeKnownVector(t *testing.T) {
+	t.Parallel()
+
 	data := []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
 	encoded, err := encode(data)
 	if err != nil {
