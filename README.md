@@ -149,7 +149,7 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §6.1 | Vocoder socket | ✅ verified | 19/19 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/fec/golay/golay_23_12_7.go`, `v2/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
 | §6.2 | Data and control | ✅ verified | 6/6 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/pi_header.go`, `v2/layer2/voice_transmitter_options.go` |
 | §6.3 | Common Announcement Channel burst | ✅ verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
-| §6.4 | Reverse Channel | ✅ verified | 12/12 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
+| §6.4 | Reverse Channel | ✅ verified | 17/17 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
 | §7.1.1 | Voice LC header | ✅ verified | 10/10 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_transmitter_options.go` |
 | §7.1.2 | Terminator with LC | ✅ verified | 7/7 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go` |
 | §7.1.3 | Embedded signalling | ✅ verified | 25/25 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go`, `v2/layer2/voice_transmitter_options.go` |
@@ -188,7 +188,7 @@ The packages also have short godoc examples, for example `layer2.ExampleNewBurst
 | §9.3.18 | SAP identifier (SAP) | ✅ verified | 2/2 passed | `v2/layer2/pdu/data_header.go`, `v2/enums/sap.go` |
 | §9.3.19 | Logical Link ID (LLID) | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | §9.3.32 | Control Signalling BlocK Opcode (CSBKO) | ✅ verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
-| §B.1.1 | BPTC (196,96) | ✅ verified | 5/5 passed | `v2/fec/bptc/bptc_196_96.go` |
+| §B.1.1 | BPTC (196,96) | ✅ verified | 11/11 passed | `v2/fec/bptc/bptc_196_96.go` |
 | §B.2.1 | Variable length BPTC for embedded signalling | ✅ verified | 16/16 passed | `v2/fec/bptc/bptc_embedded_lc.go` |
 | §B.2.2 | Single Burst Variable length BPTC | ✅ verified | 14/14 passed | `v2/fec/bptc/bptc_single_burst.go` |
 | §B.2.3 | Variable length BPTC for CACH signalling | ✅ verified | 13/13 passed | `v2/fec/bptc/bptc_cach.go` |
