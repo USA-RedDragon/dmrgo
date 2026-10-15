@@ -227,7 +227,8 @@ func (b *Burst) decodeVoice(pos enums.VoiceBurstType, sync enums.SyncPattern) {
 		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
 		b.FEC.EMB = b.EmbeddedSignalling.FEC
 		if b.HasReverseChannel() {
-			b.ReverseChannel, b.FEC.RC = DecodeEmbeddedRC(b.EmbeddedSignallingData)
+			b.ReverseChannel = DecodeEmbeddedRC(b.EmbeddedSignallingData)
+			b.FEC.RC = b.ReverseChannel.FEC
 		}
 	}
 	b.VoiceSlots = parseVoiceSlots(b.bitData)
@@ -283,11 +284,13 @@ func (b *Burst) decodeStandaloneRC() {
 	var embBits [16]bit.Bit
 	copy(embBits[:8], b.bitData[rcembFirstStart:rcembFirstEnd])
 	copy(embBits[8:], b.bitData[rcembSecondStart:rcembSecondEnd])
-	b.EmbeddedSignalling, b.FEC.EMB = pdu.DecodeEmbeddedSignalling(embBits)
+	b.EmbeddedSignalling = pdu.DecodeEmbeddedSignalling(embBits)
+	b.FEC.EMB = b.EmbeddedSignalling.FEC
 
 	copy(b.EmbeddedSignallingData[:16], b.bitData[rcDataFirstStart:rcDataFirstEnd])
 	copy(b.EmbeddedSignallingData[16:], b.bitData[rcDataSecondStart:rcDataSecondEnd])
-	b.ReverseChannel, b.FEC.RC = DecodeEmbeddedRC(b.EmbeddedSignallingData)
+	b.ReverseChannel = DecodeEmbeddedRC(b.EmbeddedSignallingData)
+	b.FEC.RC = b.ReverseChannel.FEC
 }
 
 func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
@@ -333,7 +336,7 @@ func parseEmbedded(bitData [264]bit.Bit) (pdu.EmbeddedSignalling, [32]bit.Bit) {
 	copy(embeddedBits[:8], bitData[108:116])
 	copy(embeddedBits[8:], bitData[148:156])
 
-	embedded, _ := pdu.DecodeEmbeddedSignalling(embeddedBits)
+	embedded := pdu.DecodeEmbeddedSignalling(embeddedBits)
 	var embeddedData [32]bit.Bit
 	copy(embeddedData[:], bitData[116:148])
 	return embedded, embeddedData
@@ -343,8 +346,7 @@ func parseSlotType(bitData [264]bit.Bit) pdu.SlotType {
 	var slotBits [20]bit.Bit
 	copy(slotBits[:10], bitData[98:108])
 	copy(slotBits[10:], bitData[156:166])
-	st, _ := pdu.DecodeSlotType(slotBits)
-	return st
+	return pdu.DecodeSlotType(slotBits)
 }
 
 func parseVoiceSlots(bitData [264]bit.Bit) [VoiceSlotsPerBurst][72]bit.Bit {
@@ -473,7 +475,8 @@ func (b *Burst) String() string {
 }
 
 // decodePayload decodes the information bits of a data burst of data type dt
-// and SYNC pattern sync.
+// and SYNC pattern sync. The fec.Result is the FEC field of a PDU that has
+// one, and zero for the data blocks, whose only code is the payload code.
 func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern) (Data, fec.Result, error) {
 	if dt.IsReserved() {
 		return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)
@@ -482,42 +485,42 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 	copy(bits96[:], infoBits)
 	switch dt {
 	case enums.DataTypeCSBK:
-		decoded, fecResult := pdu.DecodeCSBK(bits96)
+		decoded := pdu.DecodeCSBK(bits96)
 		decoded.Hint0x38 = opcode0x38Hint(sync)
-		return &decoded, fecResult, nil
+		return &decoded, decoded.FEC, nil
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
-		decoded, fecResult := pdu.DecodeFullLinkControl(bits96, dt)
-		return &decoded, fecResult, nil
+		decoded := pdu.DecodeFullLinkControl(bits96, dt)
+		return &decoded, decoded.FEC, nil
 	case enums.DataTypePIHeader:
-		decoded, fecResult := pdu.DecodePIHeader(bits96)
-		return &decoded, fecResult, nil
+		decoded := pdu.DecodePIHeader(bits96)
+		return &decoded, decoded.FEC, nil
 	case enums.DataTypeDataHeader:
-		decoded, fecResult := pdu.DecodeDataHeader(bits96)
-		return &decoded, fecResult, nil
+		decoded := pdu.DecodeDataHeader(bits96)
+		return &decoded, decoded.FEC, nil
 	case enums.DataTypeRate34:
 		var sizedBits [144]bit.Bit
 		copy(sizedBits[:], infoBits)
-		rt, fecResult := pdu.DecodeRate34Data(sizedBits)
-		return &rt, fecResult, nil
+		rt := pdu.DecodeRate34Data(sizedBits)
+		return &rt, fec.Result{}, nil
 	case enums.DataTypeRate12:
-		rt, fecResult := pdu.DecodeRate12Data(bits96)
-		return &rt, fecResult, nil
+		rt := pdu.DecodeRate12Data(bits96)
+		return &rt, fec.Result{}, nil
 	case enums.DataTypeRate1:
 		var sizedBits [192]bit.Bit
 		copy(sizedBits[:], infoBits)
-		rt, fecResult := pdu.DecodeRate1Data(sizedBits)
-		return &rt, fecResult, nil
+		rt := pdu.DecodeRate1Data(sizedBits)
+		return &rt, fec.Result{}, nil
 	case enums.DataTypeMBCHeader:
-		decoded, fecResult := pdu.DecodeMBCHeader(bits96)
-		return &decoded, fecResult, nil
+		decoded := pdu.DecodeMBCHeader(bits96)
+		return &decoded, decoded.FEC, nil
 	case enums.DataTypeMBCContinuation:
-		decoded, fecResult := pdu.DecodeMBCContinuation(bits96)
-		return &decoded, fecResult, nil
+		decoded := pdu.DecodeMBCContinuation(bits96)
+		return &decoded, fec.Result{}, nil
 	case enums.DataTypeIdle:
 		return &pdu.PRFill{}, fec.Result{}, nil
 	case enums.DataTypeUnifiedSingleBlock:
-		decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(bits96)
-		return &decoded, fecResult, nil
+		decoded := pdu.DecodeUnifiedSingleBlockData(bits96)
+		return &decoded, decoded.FEC, nil
 	case enums.DataTypeReserved:
 	}
 	return nil, fec.Result{}, fmt.Errorf("%w %d", ErrReservedDataType, dt)

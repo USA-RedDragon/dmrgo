@@ -39,8 +39,6 @@ func (s *MBCHeader) DataType() enums.DataType {
 // all continuation blocks in order. It has no Data Type mask (Table B.21
 // NOTE 1).
 type MBCContinuation struct {
-	FEC fec.Result `dmr:"-"`
-
 	// LastBlock indicates whether this is the final continuation block.
 	// LB=1 means last block (has CRC), LB=0 means intermediate (no CRC).
 	LastBlock bool `dmr:"bit:0"`
@@ -69,28 +67,28 @@ func (s *MBCContinuation) bits() [96]bit.Bit {
 // AsCGAP decodes the block as the CGAP continuation of a grant MBC (ETSI TS
 // 102 361-4 Table 7.16). DecodeMBCContinuation decodes every continuation
 // block alike because its layout depends on the MBC header, so the caller
-// picks the layout from MBCHeader.Opcode. The fec.Result reports the
-// last-block CRC, which applies only when this is the one continuation
-// block of the MBC.
-func (s *MBCContinuation) AsCGAP() (CGAPContinuation, fec.Result) {
+// picks the layout from MBCHeader.Opcode. The FEC field of the result
+// reports the last-block CRC, which applies only when this is the one
+// continuation block of the MBC.
+func (s *MBCContinuation) AsCGAP() CGAPContinuation {
 	return DecodeCGAPContinuation(s.bits())
 }
 
 // AsMVAP decodes the block as the MVAP continuation of a C_MOVE MBC (ETSI TS
 // 102 361-4 Table 7.18), as AsCGAP does.
-func (s *MBCContinuation) AsMVAP() (MVAPContinuation, fec.Result) {
+func (s *MBCContinuation) AsMVAP() MVAPContinuation {
 	return DecodeMVAPContinuation(s.bits())
 }
 
 // AsBCAP decodes the block as the BCAP continuation of a C_BCAST MBC (ETSI
 // TS 102 361-4 Table 7.21), as AsCGAP does.
-func (s *MBCContinuation) AsBCAP() (BCAPContinuation, fec.Result) {
+func (s *MBCContinuation) AsBCAP() BCAPContinuation {
 	return DecodeBCAPContinuation(s.bits())
 }
 
 // AsVNAP decodes the block as the VNAP continuation of a C_BCAST Vote_Now
 // MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does.
-func (s *MBCContinuation) AsVNAP() (VNAPContinuation, fec.Result) {
+func (s *MBCContinuation) AsVNAP() VNAPContinuation {
 	return DecodeVNAPContinuation(s.bits())
 }
 

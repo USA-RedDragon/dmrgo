@@ -255,7 +255,8 @@ func TestShortLCAssembler_DecodeShortLCFromFragments(t *testing.T) {
 	var data [24]bit.Bit
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
-	slc, fecResult := layer2.DecodeShortLCFromFragments(fragments)
+	slc := layer2.DecodeShortLCFromFragments(fragments)
+	fecResult := slc.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
@@ -279,7 +280,8 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 	encoded := must(original.Encode())
 	fragments := bptc.EncodeCACH(encoded)
 
-	slc, fecResult := layer2.DecodeShortLCFromFragments(fragments)
+	slc := layer2.DecodeShortLCFromFragments(fragments)
+	fecResult := slc.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip failed: uncorrectable")
 	}
@@ -305,7 +307,8 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	var data [24]bit.Bit
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
-	slc, fecResult := layer2.DecodeShortLCFromFragments(fragments)
+	slc := layer2.DecodeShortLCFromFragments(fragments)
+	fecResult := slc.FEC
 	// The CRC-8 only detects errors, so BitsChecked is the BPTC's 68.
 	expectedBitsChecked := 68
 	if fecResult.BitsChecked != expectedBitsChecked {

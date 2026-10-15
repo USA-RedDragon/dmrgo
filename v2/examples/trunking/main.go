@@ -202,8 +202,8 @@ func mbcGrant(w io.Writer) error {
 	}
 	var hdata [64]bit.Bit
 	copy(hdata[:], bit.Unpack(gotHdr.Data[:]))
-	gotGrant, res := pdu.DecodeTalkgroupVoiceGrantPDU(hdata)
-	if gotHdr.FEC.Uncorrectable || res.Uncorrectable || gotGrant != grant {
+	gotGrant := pdu.DecodeTalkgroupVoiceGrantPDU(hdata)
+	if gotHdr.FEC.Uncorrectable || gotGrant != grant {
 		return fmt.Errorf("MBC header grant %+v, want %+v", gotGrant, grant)
 	}
 
@@ -211,8 +211,8 @@ func mbcGrant(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	gotCGAP, res := gotCont.AsCGAP()
-	if err := res.Err(); err != nil {
+	gotCGAP := gotCont.AsCGAP()
+	if err := gotCGAP.FEC.Err(); err != nil {
 		return fmt.Errorf("MBC last block CRC: %w", err)
 	}
 	if gotCGAP.CdefParms != cgap.CdefParms {
@@ -274,7 +274,7 @@ func cachRoundTrip(asm *layer2.ShortLCAssembler, slc *pdu.ShortLC) (pdu.ShortLC,
 	done := false
 	for i, f := range fields {
 		c := layer2.DecodeCACH(layer2.CACHDeinterleave(f))
-		if err := c.FEC.Err(); err != nil {
+		if err := c.TACT.FEC.Err(); err != nil {
 			return pdu.ShortLC{}, fmt.Errorf("CACH %d TACT: %w", i, err)
 		}
 		if done, err = asm.AddFragment(c.TACT.LCSS, c.Payload); err != nil {

@@ -25,7 +25,6 @@ const (
 	typUint64 = "uint64"
 
 	bitPkg = "github.com/USA-RedDragon/dmrgo/v2/bit"
-	fecPkg = "github.com/USA-RedDragon/dmrgo/v2/fec"
 	crcPkg = "github.com/USA-RedDragon/dmrgo/v2/crc"
 	rsPkg  = "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
 )
@@ -182,7 +181,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 	}
 
 	var genErr error
-	// func DecodeXxx(data [N]bit.Bit) (Xxx, fec.Result) {
+	// func DecodeXxx(data [N]bit.Bit) Xxx {
 	params := []Code{Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit")}
 	for _, in := range pdu.Inputs {
 		field := pdu.FieldByName(in)
@@ -192,10 +191,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		params = append(params, Id(inputParamName(in)).Add(qualType(*field, pdu)))
 	}
 
-	f.Func().Id(funcName).Params(params...).Params(
-		Id(pdu.Name),
-		Qual(fecPkg, "Result"),
-	).BlockFunc(func(g *Group) {
+	f.Func().Id(funcName).Params(params...).Id(pdu.Name).BlockFunc(func(g *Group) {
 		g.Var().Id("result").Id(pdu.Name)
 		for _, in := range pdu.Inputs {
 			g.Id("result").Dot(in).Op("=").Id(inputParamName(in))
@@ -234,13 +230,11 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 			emitPackedFECDecode(g, codec)
 		case hasBitFEC:
 			// Bit-level FEC (Golay, QR): operates directly on bit arrays
-			g.List(Id("corrected"), Id("fecResult")).Op(":=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("data"))
-			g.Id("result").Dot("FEC").Op("=").Id("fecResult")
-			g.If(Op("!").Id("fecResult").Dot("Uncorrectable")).Block(
+			g.Var().Id("corrected").Index(Lit(codec.InputSize)).Qual(bitPkg, "Bit")
+			g.List(Id("corrected"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("data"))
+			g.If(Op("!").Id("result").Dot(fecFieldName).Dot("Uncorrectable")).Block(
 				Id("data").Op("=").Id("corrected"),
 			)
-		default:
-			g.Var().Id("fecResult").Qual(fecPkg, "Result")
 		}
 
 		// Emit field extractions (regular fields first, then dispatch)
@@ -267,7 +261,7 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 			}
 		}
 
-		g.Return(Id("result"), Id("fecResult"))
+		g.Return(Id("result"))
 	})
 
 	return genErr
@@ -329,11 +323,8 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 		// Bit-level CRC (e.g. CRC-8): operates on data[:] directly, no byte packing
 		dataBits := inputSize - algo.CRCBits
 		g.Id("_crc").Op(":=").Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(dataBits), Empty())))
-		g.Var().Id("fecResult").Qual(fecPkg, "Result")
-		g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Lit(dataBits)), Id("_crc"))).Block(
-			Id("fecResult").Dot("Uncorrectable").Op("=").True(),
-		)
-		g.Id("result").Dot("FEC").Op("=").Id("fecResult")
+		g.Id("result").Dot(fecFieldName).Dot("Uncorrectable").Op("=").
+			Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Lit(dataBits)), Id("_crc"))
 		return nil
 	}
 
@@ -351,11 +342,8 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	g.Id("_crc").Op(":=").
 		Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 2))).Op("<<").Lit(8).
 		Op("|").Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 1)))
-	g.Var().Id("fecResult").Qual(fecPkg, "Result")
-	g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Lit(totalBytes-2)), Id("_crc"))).Block(
-		Id("fecResult").Dot("Uncorrectable").Op("=").True(),
-	)
-	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
+	g.Id("result").Dot(fecFieldName).Dot("Uncorrectable").Op("=").
+		Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Lit(totalBytes-2)), Id("_crc"))
 	return nil
 }
 
@@ -393,11 +381,11 @@ func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statem
 
 // emitPackedFECDecode generates packed-bytes FEC (e.g. Reed-Solomon) decode code.
 func emitPackedFECDecode(g *Group, codec *FECCodecInfo) {
-	g.List(Id("_fecData"), Id("fecResult")).Op(":=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("_packedBytes"))
-	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
+	g.Var().Id("_fecData").Index(Lit(codec.DataBytes)).Byte()
+	g.List(Id("_fecData"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("_packedBytes"))
 
 	// If corrected, unpack corrected data bytes back into the data bit array
-	g.If(Op("!").Id("fecResult").Dot("Uncorrectable")).Block(
+	g.If(Op("!").Id("result").Dot(fecFieldName).Dot("Uncorrectable")).Block(
 		For(Id("i").Op(":=").Range().Lit(codec.DataBytes)).Block(
 			For(Id("j").Op(":=").Range().Lit(8)).Block(
 				Id("data").Index(Id("i").Op("*").Lit(8).Op("+").Id("j")).Op("=").
@@ -510,7 +498,7 @@ func fallbackField(pdu parse.PDUStruct) *parse.Field {
 
 func dispatchDecodeBlock(field parse.Field, tmpVar string) []Code {
 	return []Code{
-		List(Id("_decoded"), Id("_")).Op(":=").Id("Decode" + dispatchTypeName(field)).Call(Id(tmpVar)),
+		Id("_decoded").Op(":=").Id("Decode" + dispatchTypeName(field)).Call(Id(tmpVar)),
 		Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
 	}
 }
@@ -850,7 +838,6 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			tmpVar := "_elemBits"
 			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 				Var().Id(tmpVar).Index(Lit(field.Stride)).Qual(bitPkg, "Bit"),
-				Var().Id("_elemFEC").Qual(fecPkg, "Result"),
 				Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(
 					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
 					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride).Op("+").Lit(field.Stride),
@@ -862,9 +849,8 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 					} else {
 						call = Id(decodeFn).Call(Id(tmpVar))
 					}
-					return List(target.Clone().Index(Id("_i")), Id("_elemFEC")).Op("=").Add(call)
+					return target.Clone().Index(Id("_i")).Op("=").Add(call)
 				}(),
-				Id("fecResult").Op("=").Id("fecResult").Dot("Combine").Call(Id("_elemFEC")),
 			)
 		case field.DelegateNoPtr:
 			// noptr delegates are integer typedefs: extract and convert
@@ -884,7 +870,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			} else {
 				decodeFnCall = Id(decodeFnName).Call(Id(tmpVar))
 			}
-			g.List(target, Id("_")).Op("=").Add(decodeFnCall)
+			g.Add(target).Op("=").Add(decodeFnCall)
 		}
 
 	case parse.FieldLongitude, parse.FieldLatitude:
@@ -1497,7 +1483,7 @@ func coordRaw(field parse.Field, value *Statement) *Statement {
 func inputParamName(field string) string {
 	name := strings.ToLower(field[:1]) + field[1:]
 	switch name {
-	case "data", "result", "fecResult":
+	case "data", "result", "corrected":
 		return "_" + name
 	}
 	return name

@@ -13,7 +13,7 @@ import (
 // zero values; set BurstDataType before Encode. It returns an error when
 // the decoded LC does not encode back to lc, so that no bit of lc is lost.
 func FullLinkControlFromBytes(lc [9]byte) (FullLinkControl, error) {
-	f, _ := DecodeFullLinkControl(bit.Unpack96(VoiceLCHeaderCodeword(lc)), enums.DataTypeVoiceLCHeader)
+	f := DecodeFullLinkControl(bit.Unpack96(VoiceLCHeaderCodeword(lc)), enums.DataTypeVoiceLCHeader)
 	f.BurstDataType = 0
 	f.FEC = fec.Result{}
 	got, err := f.Bytes()

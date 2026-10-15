@@ -74,7 +74,7 @@ func (s SlotTypeInfo) Codeword() uint32 {
 func DecodeSlotTypeCodeword(cw uint32) (SlotTypeInfo, fec.Result) {
 	var bits [20]bit.Bit
 	bit.PutUint(bits[:], uint64(cw))
-	st, res := DecodeSlotType(bits)
+	st := DecodeSlotType(bits)
 	s, _ := st.Info()
-	return s, res
+	return s, st.FEC
 }

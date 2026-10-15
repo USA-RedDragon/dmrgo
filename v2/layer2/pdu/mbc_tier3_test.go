@@ -61,7 +61,7 @@ func TestCGAPContinuation_Decode(t *testing.T) {
 
 	bits := buildContinuationBits96(false, byte(pdu.CSBKPrivateVoiceGrant), 5, cdefParms)
 
-	decoded, _ := pdu.DecodeCGAPContinuation(bits)
+	decoded := pdu.DecodeCGAPContinuation(bits)
 
 	if !decoded.LastBlock {
 		t.Error("LastBlock should be true")
@@ -102,7 +102,7 @@ func TestCGAPContinuation_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, _ := pdu.DecodeCGAPContinuation(encoded)
+	decoded := pdu.DecodeCGAPContinuation(encoded)
 
 	if decoded.LastBlock != original.LastBlock {
 		t.Error("LastBlock mismatch")
@@ -124,7 +124,7 @@ func TestMVAPContinuation_Decode(t *testing.T) {
 
 	bits := buildContinuationBits96(true, byte(pdu.CSBKMove), 3, cdefParms)
 
-	decoded, _ := pdu.DecodeMVAPContinuation(bits)
+	decoded := pdu.DecodeMVAPContinuation(bits)
 
 	if !decoded.LastBlock {
 		t.Error("LastBlock should be true")
@@ -158,7 +158,7 @@ func TestBCAPContinuation_Decode(t *testing.T) {
 	// CdefParms (bits 22-79)
 	copy(bits[22:80], cdefParms[:])
 
-	decoded, _ := pdu.DecodeBCAPContinuation(bits)
+	decoded := pdu.DecodeBCAPContinuation(bits)
 
 	if !decoded.LastBlock {
 		t.Error("LastBlock should be true")
@@ -181,7 +181,7 @@ func TestVNAPContinuation_Decode(t *testing.T) {
 
 	bits := buildContinuationBits96(false, byte(pdu.CSBKBroadcast), 10, cdefParms)
 
-	decoded, _ := pdu.DecodeVNAPContinuation(bits)
+	decoded := pdu.DecodeVNAPContinuation(bits)
 
 	if !decoded.LastBlock {
 		t.Error("LastBlock should be true")
@@ -229,7 +229,7 @@ func TestMVAPContinuation_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, _ := pdu.DecodeMVAPContinuation(encoded)
+	decoded := pdu.DecodeMVAPContinuation(encoded)
 
 	if decoded.ColorCode != original.ColorCode {
 		t.Errorf("ColorCode = %d, want %d", decoded.ColorCode, original.ColorCode)
@@ -256,10 +256,10 @@ func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
 	bits := buildContinuationBits96(false, 0x30, 5, parms)
 
 	decoders := map[string]func([96]bit.Bit) bool{
-		"CG_AP": func(b [96]bit.Bit) bool { _, r := pdu.DecodeCGAPContinuation(b); return r.Uncorrectable },
-		"MV_AP": func(b [96]bit.Bit) bool { _, r := pdu.DecodeMVAPContinuation(b); return r.Uncorrectable },
-		"BC_AP": func(b [96]bit.Bit) bool { _, r := pdu.DecodeBCAPContinuation(b); return r.Uncorrectable },
-		"VN_AP": func(b [96]bit.Bit) bool { _, r := pdu.DecodeVNAPContinuation(b); return r.Uncorrectable },
+		"CG_AP": func(b [96]bit.Bit) bool { return pdu.DecodeCGAPContinuation(b).FEC.Uncorrectable },
+		"MV_AP": func(b [96]bit.Bit) bool { return pdu.DecodeMVAPContinuation(b).FEC.Uncorrectable },
+		"BC_AP": func(b [96]bit.Bit) bool { return pdu.DecodeBCAPContinuation(b).FEC.Uncorrectable },
+		"VN_AP": func(b [96]bit.Bit) bool { return pdu.DecodeVNAPContinuation(b).FEC.Uncorrectable },
 	}
 	for name, dec := range decoders {
 		if dec(bits) {
@@ -276,7 +276,7 @@ func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
 		t.Error("CheckMBCLastBlockCRC should accept a single valid last block")
 	}
 
-	cg, _ := pdu.DecodeCGAPContinuation(bits)
+	cg := pdu.DecodeCGAPContinuation(bits)
 	if must(cg.Encode()) != bits {
 		t.Error("CGAPContinuation.Encode should reproduce the CRC")
 	}
@@ -311,6 +311,6 @@ func TestMBCLastBlockCRC_MultiBlock(t *testing.T) {
 }
 
 func cdefOf(bits [58]bit.Bit) layer3.CdefParms {
-	p, _ := layer3.DecodeCdefParms(bits)
+	p := layer3.DecodeCdefParms(bits)
 	return p
 }

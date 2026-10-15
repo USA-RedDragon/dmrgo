@@ -50,7 +50,7 @@ func ExampleBurst_DecodeFromBytesWith() {
 func ExampleRawBurst() {
 	r := layer2.RawBurst(voiceLCHeader())
 	sync, dist := r.Sync()
-	st, _ := r.SlotType()
+	st := r.SlotType()
 	payload, res := r.BPTCPayload()
 	fmt.Println(sync, dist, st.ColorCode, st.DataType)
 	fmt.Printf("%x %d\n", payload, res.ErrorsCorrected)

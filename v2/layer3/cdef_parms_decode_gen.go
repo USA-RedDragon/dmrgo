@@ -11,20 +11,18 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 // DecodeCdefParms decodes a CdefParms per ETSI TS 102 361-4 — §7.2.42, Table 7.103
-func DecodeCdefParms(data [58]bit.Bit) (CdefParms, fec.Result) {
+func DecodeCdefParms(data [58]bit.Bit) CdefParms {
 	var result CdefParms
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Channel = uint16(bit.Uint(data[0:12]))
 	result.TXMHz = uint16(bit.Uint(data[12:22]))
 	result.TXKHz = uint16(bit.Uint(data[22:35]))
 	result.RXMHz = uint16(bit.Uint(data[35:45]))
 	result.RXKHz = uint16(bit.Uint(data[45:58]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a CdefParms per ETSI TS 102 361-4 — §7.2.42, Table 7.103

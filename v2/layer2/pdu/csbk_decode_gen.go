@@ -41,19 +41,17 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // DecodeBSOutboundActivationPDU decodes a BSOutboundActivationPDU per ETSI TS 102 361-2 - 7.1.2.1 BS Outbound Activation (BS_Dwn_Act) PDU
-func DecodeBSOutboundActivationPDU(data [64]bit.Bit) (BSOutboundActivationPDU, fec.Result) {
+func DecodeBSOutboundActivationPDU(data [64]bit.Bit) BSOutboundActivationPDU {
 	var result BSOutboundActivationPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Reserved = uint16(bit.Uint(data[0:16]))
 	result.BSAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a BSOutboundActivationPDU per ETSI TS 102 361-2 - 7.1.2.1 BS Outbound Activation (BS_Dwn_Act) PDU
@@ -86,17 +84,16 @@ func (s *BSOutboundActivationPDU) String() string {
 }
 
 // DecodeUnitToUnitVoiceServiceRequestPDU decodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-2 - 7.1.2.2 UU_V_Req PDU
-func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) (UnitToUnitVoiceServiceRequestPDU, fec.Result) {
+func DecodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) UnitToUnitVoiceServiceRequestPDU {
 	var result UnitToUnitVoiceServiceRequestPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
-	result.ServiceOptions, _ = layer3.DecodeServiceOptions(_serviceOptionsBits)
+	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
 	result.Reserved = byte(bit.Uint(data[8:16]))
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a UnitToUnitVoiceServiceRequestPDU per ETSI TS 102 361-2 - 7.1.2.2 UU_V_Req PDU
@@ -134,17 +131,16 @@ func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
 }
 
 // DecodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-2 - 7.1.2.3 UU_Ans_Rsp PDU
-func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) (UnitToUnitVoiceServiceAnswerResponsePDU, fec.Result) {
+func DecodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) UnitToUnitVoiceServiceAnswerResponsePDU {
 	var result UnitToUnitVoiceServiceAnswerResponsePDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	var _serviceOptionsBits [8]bit.Bit
 	copy(_serviceOptionsBits[:], data[0:8])
-	result.ServiceOptions, _ = layer3.DecodeServiceOptions(_serviceOptionsBits)
+	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
 	result.AnswerResponse = byte(bit.Uint(data[8:16]))
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU per ETSI TS 102 361-2 - 7.1.2.3 UU_Ans_Rsp PDU
@@ -182,17 +178,16 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
 }
 
 // DecodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU per ETSI TS 102 361-2 - 7.1.2.4 NACK_Rsp PDU
-func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgementPDU, fec.Result) {
+func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) NegativeAcknowledgementPDU {
 	var result NegativeAcknowledgementPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.AdditionalInfo = layer3.AdditionalInformationField(bit.Uint(data[0:1]))
 	result.SourceType = layer3.SourceType(bit.Uint(data[1:2]))
 	result.ServiceType = CSBKOpcode(bit.Uint(data[2:8]))
 	result.ReasonCode = byte(bit.Uint(data[8:16]))
 	result.SourceAddress = uint32(bit.Uint(data[16:40]))
 	result.TargetAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a NegativeAcknowledgementPDU per ETSI TS 102 361-2 - 7.1.2.4 NACK_Rsp PDU
@@ -252,17 +247,16 @@ func (s *NegativeAcknowledgementPDU) String() string {
 }
 
 // DecodePreamblePDU decodes a PreamblePDU per ETSI TS 102 361-2 - 7.1.2.5 Pre PDU
-func DecodePreamblePDU(data [64]bit.Bit) (PreamblePDU, fec.Result) {
+func DecodePreamblePDU(data [64]bit.Bit) PreamblePDU {
 	var result PreamblePDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Data = data[0] == 1
 	result.Group = data[1] == 1
 	result.Reserved = uint8(bit.Uint(data[2:8]))
 	result.CSBKBlocksToFollow = byte(bit.Uint(data[8:16]))
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a PreamblePDU per ETSI TS 102 361-2 - 7.1.2.5 Pre PDU
@@ -310,10 +304,9 @@ func (s *PreamblePDU) String() string {
 }
 
 // DecodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
-func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.Result) {
+func DecodeChannelTimingPDU(data [64]bit.Bit) ChannelTimingPDU {
 	var result ChannelTimingPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.SyncAge = uint16(bit.Uint(data[0:11]))
 	result.Generation = uint8(bit.Uint(data[11:16]))
 	result.LeaderIdentifier = uint32(bit.Uint(data[16:36]))
@@ -324,7 +317,7 @@ func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.Result) {
 	result.Reserved = data[60] == 1
 	result.SourceDynamicIdentifier = uint8(bit.Uint(data[61:63]))
 	result.ChannelTimingOp0 = data[63] == 1
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
@@ -404,10 +397,9 @@ func (s *ChannelTimingPDU) String() string {
 }
 
 // DecodePrivateVoiceGrantPDU decodes a PrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
-func DecodePrivateVoiceGrantPDU(data [64]bit.Bit) (PrivateVoiceGrantPDU, fec.Result) {
+func DecodePrivateVoiceGrantPDU(data [64]bit.Bit) PrivateVoiceGrantPDU {
 	var result PrivateVoiceGrantPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.Reserved = data[13] == 1
@@ -415,7 +407,7 @@ func DecodePrivateVoiceGrantPDU(data [64]bit.Bit) (PrivateVoiceGrantPDU, fec.Res
 	result.Offset = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a PrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
@@ -468,10 +460,9 @@ func (s *PrivateVoiceGrantPDU) String() string {
 }
 
 // DecodeTalkgroupVoiceGrantPDU decodes a TalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
-func DecodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) (TalkgroupVoiceGrantPDU, fec.Result) {
+func DecodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) TalkgroupVoiceGrantPDU {
 	var result TalkgroupVoiceGrantPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.LateEntry = data[13] == 1
@@ -479,7 +470,7 @@ func DecodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) (TalkgroupVoiceGrantPDU, fec
 	result.Offset = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a TalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
@@ -532,10 +523,9 @@ func (s *TalkgroupVoiceGrantPDU) String() string {
 }
 
 // DecodeBroadcastTalkgroupVoiceGrantPDU decodes a BroadcastTalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
-func DecodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) (BroadcastTalkgroupVoiceGrantPDU, fec.Result) {
+func DecodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) BroadcastTalkgroupVoiceGrantPDU {
 	var result BroadcastTalkgroupVoiceGrantPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.LateEntry = data[13] == 1
@@ -543,7 +533,7 @@ func DecodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) (BroadcastTalkgroup
 	result.Offset = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a BroadcastTalkgroupVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
@@ -596,10 +586,9 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
 }
 
 // DecodePrivateDataGrantPDU decodes a PrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT PDU
-func DecodePrivateDataGrantPDU(data [64]bit.Bit) (PrivateDataGrantPDU, fec.Result) {
+func DecodePrivateDataGrantPDU(data [64]bit.Bit) PrivateDataGrantPDU {
 	var result PrivateDataGrantPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -607,7 +596,7 @@ func DecodePrivateDataGrantPDU(data [64]bit.Bit) (PrivateDataGrantPDU, fec.Resul
 	result.Offset = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a PrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT PDU
@@ -660,10 +649,9 @@ func (s *PrivateDataGrantPDU) String() string {
 }
 
 // DecodeTalkgroupDataGrantPDU decodes a TalkgroupDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT PDU
-func DecodeTalkgroupDataGrantPDU(data [64]bit.Bit) (TalkgroupDataGrantPDU, fec.Result) {
+func DecodeTalkgroupDataGrantPDU(data [64]bit.Bit) TalkgroupDataGrantPDU {
 	var result TalkgroupDataGrantPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -671,7 +659,7 @@ func DecodeTalkgroupDataGrantPDU(data [64]bit.Bit) (TalkgroupDataGrantPDU, fec.R
 	result.Offset = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a TalkgroupDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT PDU
@@ -724,10 +712,9 @@ func (s *TalkgroupDataGrantPDU) String() string {
 }
 
 // DecodeDuplexPrivateVoiceGrantPDU decodes a DuplexPrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT_DX PDU
-func DecodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) (DuplexPrivateVoiceGrantPDU, fec.Result) {
+func DecodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) DuplexPrivateVoiceGrantPDU {
 	var result DuplexPrivateVoiceGrantPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.Reserved = data[13] == 1
@@ -735,7 +722,7 @@ func DecodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) (DuplexPrivateVoiceGrant
 	result.CallDirection = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a DuplexPrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT_DX PDU
@@ -788,10 +775,9 @@ func (s *DuplexPrivateVoiceGrantPDU) String() string {
 }
 
 // DecodeDuplexPrivateDataGrantPDU decodes a DuplexPrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_DX PDU
-func DecodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) (DuplexPrivateDataGrantPDU, fec.Result) {
+func DecodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) DuplexPrivateDataGrantPDU {
 	var result DuplexPrivateDataGrantPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -799,7 +785,7 @@ func DecodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) (DuplexPrivateDataGrantPD
 	result.CallDirection = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a DuplexPrivateDataGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_DX PDU
@@ -852,10 +838,9 @@ func (s *DuplexPrivateDataGrantPDU) String() string {
 }
 
 // DecodePrivateDataGrantMultiItemPDU decodes a PrivateDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
-func DecodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) (PrivateDataGrantMultiItemPDU, fec.Result) {
+func DecodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) PrivateDataGrantMultiItemPDU {
 	var result PrivateDataGrantMultiItemPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -863,7 +848,7 @@ func DecodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) (PrivateDataGrantMulti
 	result.Offset = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a PrivateDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 PD_GRANT_MI PDU
@@ -916,10 +901,9 @@ func (s *PrivateDataGrantMultiItemPDU) String() string {
 }
 
 // DecodeTalkgroupDataGrantMultiItemPDU decodes a TalkgroupDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
-func DecodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) (TalkgroupDataGrantMultiItemPDU, fec.Result) {
+func DecodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) TalkgroupDataGrantMultiItemPDU {
 	var result TalkgroupDataGrantMultiItemPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.LogicalChannel = data[12] == 1
 	result.HiRate = data[13] == 1
@@ -927,7 +911,7 @@ func DecodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) (TalkgroupDataGrantM
 	result.Offset = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a TalkgroupDataGrantMultiItemPDU per ETSI TS 102 361-4 §7.1.1.1.1 TD_GRANT_MI PDU
@@ -980,10 +964,9 @@ func (s *TalkgroupDataGrantMultiItemPDU) String() string {
 }
 
 // DecodeMovePDU decodes a MovePDU per ETSI TS 102 361-4 §7.1.1.1.3 C_MOVE PDU
-func DecodeMovePDU(data [64]bit.Bit) (MovePDU, fec.Result) {
+func DecodeMovePDU(data [64]bit.Bit) MovePDU {
 	var result MovePDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Reserved1 = uint16(bit.Uint(data[0:9]))
 	result.Mask = uint8(bit.Uint(data[9:14]))
 	result.Reserved2 = uint8(bit.Uint(data[14:19]))
@@ -992,7 +975,7 @@ func DecodeMovePDU(data [64]bit.Bit) (MovePDU, fec.Result) {
 	result.Reserved3 = uint8(bit.Uint(data[24:28]))
 	result.PhysicalChannel = uint16(bit.Uint(data[28:40]))
 	result.MSAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a MovePDU per ETSI TS 102 361-4 §7.1.1.1.3 C_MOVE PDU
@@ -1072,10 +1055,9 @@ func (s *MovePDU) String() string {
 }
 
 // DecodeAlohaPDU decodes a AlohaPDU per ETSI TS 102 361-4 §7.1.1.1.4 C_ALOHA PDU
-func DecodeAlohaPDU(data [64]bit.Bit) (AlohaPDU, fec.Result) {
+func DecodeAlohaPDU(data [64]bit.Bit) AlohaPDU {
 	var result AlohaPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Reserved1 = data[0] == 1
 	result.TSCCAS = data[1] == 1
 	result.SiteTSSync = data[2] == 1
@@ -1089,7 +1071,7 @@ func DecodeAlohaPDU(data [64]bit.Bit) (AlohaPDU, fec.Result) {
 	result.Backoff = uint8(bit.Uint(data[20:24]))
 	result.SysIdentCode = uint16(bit.Uint(data[24:40]))
 	result.MSAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a AlohaPDU per ETSI TS 102 361-4 §7.1.1.1.4 C_ALOHA PDU
@@ -1176,17 +1158,16 @@ func (s *AlohaPDU) String() string {
 }
 
 // DecodeCBroadcastPDU decodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
-func DecodeCBroadcastPDU(data [64]bit.Bit) (CBroadcastPDU, fec.Result) {
+func DecodeCBroadcastPDU(data [64]bit.Bit) CBroadcastPDU {
 	var result CBroadcastPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.AnnouncementType = enums.AnnouncementType(bit.Uint(data[0:5]))
 	result.BroadcastParms1 = uint16(bit.Uint(data[5:19]))
 	result.Reg = data[19] == 1
 	result.Backoff = uint8(bit.Uint(data[20:24]))
 	result.SysIdentCode = uint16(bit.Uint(data[24:40]))
 	result.BroadcastParms2 = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
@@ -1240,17 +1221,16 @@ func (s *CBroadcastPDU) String() string {
 }
 
 // DecodeClearPDU decodes a ClearPDU per ETSI TS 102 361-4 §7.1.1.3.2 P_CLEAR PDU
-func DecodeClearPDU(data [64]bit.Bit) (ClearPDU, fec.Result) {
+func DecodeClearPDU(data [64]bit.Bit) ClearPDU {
 	var result ClearPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
 	result.Reserved1 = data[12] == 1
 	result.Reserved2 = uint8(bit.Uint(data[13:15]))
 	result.GroupIndividual = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ClearPDU per ETSI TS 102 361-4 §7.1.1.3.2 P_CLEAR PDU
@@ -1306,16 +1286,15 @@ func (s *ClearPDU) String() string {
 }
 
 // DecodeProtectPDU decodes a ProtectPDU per ETSI TS 102 361-4 §7.1.1.3.3 P_PROTECT PDU
-func DecodeProtectPDU(data [64]bit.Bit) (ProtectPDU, fec.Result) {
+func DecodeProtectPDU(data [64]bit.Bit) ProtectPDU {
 	var result ProtectPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Reserved = uint16(bit.Uint(data[0:12]))
 	result.ProtectKind = uint8(bit.Uint(data[12:15]))
 	result.GroupIndividual = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ProtectPDU per ETSI TS 102 361-4 §7.1.1.3.3 P_PROTECT PDU
@@ -1368,10 +1347,9 @@ func (s *ProtectPDU) String() string {
 }
 
 // DecodeAhoyPDU decodes a AhoyPDU per ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / §7.1.1.3.4 P_AHOY PDU
-func DecodeAhoyPDU(data [64]bit.Bit) (AhoyPDU, fec.Result) {
+func DecodeAhoyPDU(data [64]bit.Bit) AhoyPDU {
 	var result AhoyPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.ServiceOptsMirror = uint8(bit.Uint(data[0:7]))
 	result.ServiceKindFlag = data[7] == 1
 	result.ALS = data[8] == 1
@@ -1380,7 +1358,7 @@ func DecodeAhoyPDU(data [64]bit.Bit) (AhoyPDU, fec.Result) {
 	result.ServiceKind = uint8(bit.Uint(data[12:16]))
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a AhoyPDU per ETSI TS 102 361-4 §7.1.1.1.6 C_AHOY / §7.1.1.3.4 P_AHOY PDU
@@ -1448,16 +1426,15 @@ func (s *AhoyPDU) String() string {
 }
 
 // DecodeAckOutboundPDU decodes a AckOutboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
-func DecodeAckOutboundPDU(data [64]bit.Bit) (AckOutboundPDU, fec.Result) {
+func DecodeAckOutboundPDU(data [64]bit.Bit) AckOutboundPDU {
 	var result AckOutboundPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a AckOutboundPDU per ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
@@ -1502,16 +1479,15 @@ func (s *AckOutboundPDU) String() string {
 }
 
 // DecodeAckInboundPDU decodes a AckInboundPDU per ETSI TS 102 361-4 §7.1.1.2.3 C_ACKU PDU
-func DecodeAckInboundPDU(data [64]bit.Bit) (AckInboundPDU, fec.Result) {
+func DecodeAckInboundPDU(data [64]bit.Bit) AckInboundPDU {
 	var result AckInboundPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a AckInboundPDU per ETSI TS 102 361-4 §7.1.1.2.3 C_ACKU PDU
@@ -1556,16 +1532,15 @@ func (s *AckInboundPDU) String() string {
 }
 
 // DecodeAckOutboundPayloadPDU decodes a AckOutboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.3.5 P_ACKD PDU
-func DecodeAckOutboundPayloadPDU(data [64]bit.Bit) (AckOutboundPayloadPDU, fec.Result) {
+func DecodeAckOutboundPayloadPDU(data [64]bit.Bit) AckOutboundPayloadPDU {
 	var result AckOutboundPayloadPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a AckOutboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.3.5 P_ACKD PDU
@@ -1610,16 +1585,15 @@ func (s *AckOutboundPayloadPDU) String() string {
 }
 
 // DecodeAckInboundPayloadPDU decodes a AckInboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.4.2 P_ACKU PDU
-func DecodeAckInboundPayloadPDU(data [64]bit.Bit) (AckInboundPayloadPDU, fec.Result) {
+func DecodeAckInboundPayloadPDU(data [64]bit.Bit) AckInboundPayloadPDU {
 	var result AckInboundPayloadPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
 	result.ReasonCode = byte(bit.Uint(data[7:15]))
 	result.Reserved = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a AckInboundPayloadPDU per ETSI TS 102 361-4 §7.1.1.4.2 P_ACKU PDU
@@ -1664,17 +1638,16 @@ func (s *AckInboundPayloadPDU) String() string {
 }
 
 // DecodeRandomAccessPDU decodes a RandomAccessPDU per ETSI TS 102 361-4 §7.1.1.2.1 C_RAND PDU
-func DecodeRandomAccessPDU(data [64]bit.Bit) (RandomAccessPDU, fec.Result) {
+func DecodeRandomAccessPDU(data [64]bit.Bit) RandomAccessPDU {
 	var result RandomAccessPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.ServiceOptions = uint8(bit.Uint(data[0:7]))
 	result.ProxyFlag = data[7] == 1
 	result.Reserved = uint8(bit.Uint(data[8:12]))
 	result.ServiceKind = uint8(bit.Uint(data[12:16]))
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a RandomAccessPDU per ETSI TS 102 361-4 §7.1.1.2.1 C_RAND PDU
@@ -1736,10 +1709,9 @@ func (s *RandomAccessPDU) String() string {
 }
 
 // DecodeAckvitationPDU decodes a AckvitationPDU per ETSI TS 102 361-4 §7.1.1.2.2 C_ACKVIT PDU
-func DecodeAckvitationPDU(data [64]bit.Bit) (AckvitationPDU, fec.Result) {
+func DecodeAckvitationPDU(data [64]bit.Bit) AckvitationPDU {
 	var result AckvitationPDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.ServiceOptsMirror = uint8(bit.Uint(data[0:7]))
 	result.ServiceKindFlag = data[7] == 1
 	result.Reserved = uint8(bit.Uint(data[8:10]))
@@ -1747,7 +1719,7 @@ func DecodeAckvitationPDU(data [64]bit.Bit) (AckvitationPDU, fec.Result) {
 	result.ServiceKind = uint8(bit.Uint(data[12:16]))
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a AckvitationPDU per ETSI TS 102 361-4 §7.1.1.2.2 C_ACKVIT PDU
@@ -1818,16 +1790,15 @@ func (s *AckvitationPDU) String() string {
 }
 
 // DecodeMaintenancePDU decodes a MaintenancePDU per ETSI TS 102 361-4 §7.1.1.4.3 P_MAINT PDU
-func DecodeMaintenancePDU(data [64]bit.Bit) (MaintenancePDU, fec.Result) {
+func DecodeMaintenancePDU(data [64]bit.Bit) MaintenancePDU {
 	var result MaintenancePDU
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Reserved = uint16(bit.Uint(data[0:12]))
 	result.MaintKind = uint8(bit.Uint(data[12:15]))
 	result.Reserved2 = data[15] == 1
 	result.TargetAddress = uint32(bit.Uint(data[16:40]))
 	result.SourceAddress = uint32(bit.Uint(data[40:64]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a MaintenancePDU per ETSI TS 102 361-4 §7.1.1.4.3 P_MAINT PDU
@@ -1880,7 +1851,7 @@ func (s *MaintenancePDU) String() string {
 }
 
 // DecodeCSBK decodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU
-func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
+func DecodeCSBK(data [96]bit.Bit) CSBK {
 	var result CSBK
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -1893,11 +1864,7 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
 	_packedBytes[10] ^= uint8(0xa5)
 	_packedBytes[11] ^= uint8(0xa5)
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -1907,82 +1874,82 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
 	if result.FID == 0 {
 		switch result.Opcode {
 		case CSBKUnitToUnitVoiceServiceRequest:
-			_decoded, _ := DecodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
+			_decoded := DecodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
 			result.UnitToUnitVoiceServiceRequestPDU = &_decoded
 		case CSBKUnitToUnitVoiceServiceAnswerResponse:
-			_decoded, _ := DecodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBits)
+			_decoded := DecodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBits)
 			result.UnitToUnitVoiceServiceAnswerResponsePDU = &_decoded
 		case CSBKNegativeAcknowledgement:
-			_decoded, _ := DecodeNegativeAcknowledgementPDU(_dispatchBits)
+			_decoded := DecodeNegativeAcknowledgementPDU(_dispatchBits)
 			result.NegativeAcknowledgementPDU = &_decoded
 		case CSBKPreamble:
-			_decoded, _ := DecodePreamblePDU(_dispatchBits)
+			_decoded := DecodePreamblePDU(_dispatchBits)
 			result.PreamblePDU = &_decoded
 		case CSBKChannelTiming:
-			_decoded, _ := DecodeChannelTimingPDU(_dispatchBits)
+			_decoded := DecodeChannelTimingPDU(_dispatchBits)
 			result.ChannelTimingPDU = &_decoded
 		case CSBKPrivateVoiceGrant:
-			_decoded, _ := DecodePrivateVoiceGrantPDU(_dispatchBits)
+			_decoded := DecodePrivateVoiceGrantPDU(_dispatchBits)
 			result.PrivateVoiceGrantPDU = &_decoded
 		case CSBKTalkgroupVoiceGrant:
-			_decoded, _ := DecodeTalkgroupVoiceGrantPDU(_dispatchBits)
+			_decoded := DecodeTalkgroupVoiceGrantPDU(_dispatchBits)
 			result.TalkgroupVoiceGrantPDU = &_decoded
 		case CSBKBroadcastTalkgroupVoiceGrant:
-			_decoded, _ := DecodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
+			_decoded := DecodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
 			result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
 		case CSBKPrivateDataGrant:
-			_decoded, _ := DecodePrivateDataGrantPDU(_dispatchBits)
+			_decoded := DecodePrivateDataGrantPDU(_dispatchBits)
 			result.PrivateDataGrantPDU = &_decoded
 		case CSBKTalkgroupDataGrant:
-			_decoded, _ := DecodeTalkgroupDataGrantPDU(_dispatchBits)
+			_decoded := DecodeTalkgroupDataGrantPDU(_dispatchBits)
 			result.TalkgroupDataGrantPDU = &_decoded
 		case CSBKDuplexPrivateVoiceGrant:
-			_decoded, _ := DecodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
+			_decoded := DecodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
 			result.DuplexPrivateVoiceGrantPDU = &_decoded
 		case CSBKDuplexPrivateDataGrant:
-			_decoded, _ := DecodeDuplexPrivateDataGrantPDU(_dispatchBits)
+			_decoded := DecodeDuplexPrivateDataGrantPDU(_dispatchBits)
 			result.DuplexPrivateDataGrantPDU = &_decoded
 		case CSBKPrivateDataGrantMultiItem:
-			_decoded, _ := DecodePrivateDataGrantMultiItemPDU(_dispatchBits)
+			_decoded := DecodePrivateDataGrantMultiItemPDU(_dispatchBits)
 			result.PrivateDataGrantMultiItemPDU = &_decoded
 		case CSBKMove:
-			_decoded, _ := DecodeMovePDU(_dispatchBits)
+			_decoded := DecodeMovePDU(_dispatchBits)
 			result.MovePDU = &_decoded
 		case CSBKAloha:
-			_decoded, _ := DecodeAlohaPDU(_dispatchBits)
+			_decoded := DecodeAlohaPDU(_dispatchBits)
 			result.AlohaPDU = &_decoded
 		case CSBKBroadcast:
-			_decoded, _ := DecodeCBroadcastPDU(_dispatchBits)
+			_decoded := DecodeCBroadcastPDU(_dispatchBits)
 			result.CBroadcastPDU = &_decoded
 		case CSBKClear:
-			_decoded, _ := DecodeClearPDU(_dispatchBits)
+			_decoded := DecodeClearPDU(_dispatchBits)
 			result.ClearPDU = &_decoded
 		case CSBKProtect:
-			_decoded, _ := DecodeProtectPDU(_dispatchBits)
+			_decoded := DecodeProtectPDU(_dispatchBits)
 			result.ProtectPDU = &_decoded
 		case CSBKAhoy:
-			_decoded, _ := DecodeAhoyPDU(_dispatchBits)
+			_decoded := DecodeAhoyPDU(_dispatchBits)
 			result.AhoyPDU = &_decoded
 		case CSBKAckOutbound:
-			_decoded, _ := DecodeAckOutboundPDU(_dispatchBits)
+			_decoded := DecodeAckOutboundPDU(_dispatchBits)
 			result.AckOutboundPDU = &_decoded
 		case CSBKAckInbound:
-			_decoded, _ := DecodeAckInboundPDU(_dispatchBits)
+			_decoded := DecodeAckInboundPDU(_dispatchBits)
 			result.AckInboundPDU = &_decoded
 		case CSBKAckOutboundPayload:
-			_decoded, _ := DecodeAckOutboundPayloadPDU(_dispatchBits)
+			_decoded := DecodeAckOutboundPayloadPDU(_dispatchBits)
 			result.AckOutboundPayloadPDU = &_decoded
 		case CSBKAckInboundPayload:
-			_decoded, _ := DecodeAckInboundPayloadPDU(_dispatchBits)
+			_decoded := DecodeAckInboundPayloadPDU(_dispatchBits)
 			result.AckInboundPayloadPDU = &_decoded
 		case CSBKRandomAccess:
-			_decoded, _ := DecodeRandomAccessPDU(_dispatchBits)
+			_decoded := DecodeRandomAccessPDU(_dispatchBits)
 			result.RandomAccessPDU = &_decoded
 		case CSBKAckvitation:
-			_decoded, _ := DecodeAckvitationPDU(_dispatchBits)
+			_decoded := DecodeAckvitationPDU(_dispatchBits)
 			result.AckvitationPDU = &_decoded
 		case CSBKMaintenance:
-			_decoded, _ := DecodeMaintenancePDU(_dispatchBits)
+			_decoded := DecodeMaintenancePDU(_dispatchBits)
 			result.MaintenancePDU = &_decoded
 		default:
 			copy(result.RawPayload[:], _dispatchBits[:])
@@ -1990,7 +1957,7 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
 	} else {
 		copy(result.RawPayload[:], _dispatchBits[:])
 	}
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU

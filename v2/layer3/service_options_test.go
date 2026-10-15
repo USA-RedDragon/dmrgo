@@ -101,7 +101,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			so, _ := DecodeServiceOptions(tt.bits)
+			so := DecodeServiceOptions(tt.bits)
 			if so.IsEmergency != tt.isEmergency {
 				t.Errorf("IsEmergency = %v, want %v", so.IsEmergency, tt.isEmergency)
 			}
@@ -123,7 +123,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 
 func TestDecodeServiceOptions_ReservedBits(t *testing.T) {
 	bits := [8]bit.Bit{0, 0, 1, 1, 0, 0, 0, 0}
-	so, _ := DecodeServiceOptions(bits)
+	so := DecodeServiceOptions(bits)
 	if so.Reserved != 0b11 {
 		t.Errorf("Reserved = %#b, want 0b11", so.Reserved)
 	}
@@ -142,7 +142,7 @@ func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
 			}
 		}
 
-		so, _ := DecodeServiceOptions(bits)
+		so := DecodeServiceOptions(bits)
 		encoded := must(so.Encode())
 		if encoded != bits {
 			t.Errorf("byte 0x%02X: encode→decode→encode mismatch: got %v, want %v", b, encoded, bits)
@@ -152,7 +152,7 @@ func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
 
 func TestServiceOptions_String(t *testing.T) {
 	bits := [8]bit.Bit{1, 0, 0, 0, 1, 0, 1, 0}
-	so, _ := DecodeServiceOptions(bits)
+	so := DecodeServiceOptions(bits)
 	str := so.String()
 	if len(str) == 0 {
 		t.Error("ToString returned empty string")

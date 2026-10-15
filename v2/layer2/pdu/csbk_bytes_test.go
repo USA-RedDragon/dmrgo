@@ -44,7 +44,8 @@ func TestCSBKBytes_ReproducerPreamble(t *testing.T) {
 	if g, gok := c.Group(); !ok || tgt != 0x233863 || src != 0x23383b || g || !gok {
 		t.Fatalf("Addresses %x %x %t, Group %t %t", tgt, src, ok, g, gok)
 	}
-	want, res := pdu.DecodeCSBKBytes(c)
+	want := pdu.DecodeCSBKBytes(c)
+	res := want.FEC
 	if res.Uncorrectable {
 		t.Fatal("DecodeCSBKBytes fails the CRC")
 	}
@@ -71,7 +72,8 @@ func TestCSBKBytes_MatchesCSBK(t *testing.T) {
 		}
 		orig := pdu.CSBKBytes(raw)
 		orig.Reseal()
-		dec, res := pdu.DecodeCSBKBytes(orig)
+		dec := pdu.DecodeCSBKBytes(orig)
+		res := dec.FEC
 		if res.Uncorrectable {
 			t.Fatalf("%x: resealed CSBK fails its CRC", orig)
 		}

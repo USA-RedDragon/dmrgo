@@ -12,23 +12,22 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
 )
 
 // DecodeEmbeddedSignalling decodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU
-func DecodeEmbeddedSignalling(data [16]bit.Bit) (EmbeddedSignalling, fec.Result) {
+func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
 	var result EmbeddedSignalling
 	bit.Mask(data[:])
-	corrected, fecResult := quadraticresidue.Decode(data)
-	result.FEC = fecResult
-	if !fecResult.Uncorrectable {
+	var corrected [16]bit.Bit
+	corrected, result.FEC = quadraticresidue.Decode(data)
+	if !result.FEC.Uncorrectable {
 		data = corrected
 	}
 	result.ColorCode = uint8(bit.Uint(data[0:4]))
 	result.PreemptionAndPowerControlIndicator = data[4] == 1
 	result.LCSS = enums.LCSS(bit.Uint(data[5:7]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a EmbeddedSignalling per ETSI TS 102 361-1 - 9.1.2 Embedded signalling (EMB) PDU

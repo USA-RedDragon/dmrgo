@@ -17,16 +17,14 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 // DecodeShortLCNullMessage decodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
-func DecodeShortLCNullMessage(data [24]bit.Bit) (ShortLCNullMessage, fec.Result) {
+func DecodeShortLCNullMessage(data [24]bit.Bit) ShortLCNullMessage {
 	var result ShortLCNullMessage
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Reserved = uint32(bit.Uint(data[0:24]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ShortLCNullMessage per ETSI TS 102 361-2 - 7.1.1 Short LC Null Message PDU
@@ -49,15 +47,14 @@ func (s *ShortLCNullMessage) String() string {
 }
 
 // DecodeShortLCActivityUpdate decodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
-func DecodeShortLCActivityUpdate(data [24]bit.Bit) (ShortLCActivityUpdate, fec.Result) {
+func DecodeShortLCActivityUpdate(data [24]bit.Bit) ShortLCActivityUpdate {
 	var result ShortLCActivityUpdate
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.TS1ActivityID = enums.ActivityID(bit.Uint(data[0:4]))
 	result.TS2ActivityID = enums.ActivityID(bit.Uint(data[4:8]))
 	result.HashTS1 = byte(bit.Uint(data[8:16]))
 	result.HashTS2 = byte(bit.Uint(data[16:24]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ShortLCActivityUpdate per ETSI TS 102 361-2 - 7.1.2 Activity Update PDU
@@ -91,15 +88,14 @@ func (s *ShortLCActivityUpdate) String() string {
 }
 
 // DecodeShortLCCSysParms decodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
-func DecodeShortLCCSysParms(data [24]bit.Bit) (ShortLCCSysParms, fec.Result) {
+func DecodeShortLCCSysParms(data [24]bit.Bit) ShortLCCSysParms {
 	var result ShortLCCSysParms
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.MODEL = uint8(bit.Uint(data[0:2]))
 	result.NetSiteRaw = uint16(bit.Uint(data[2:14]))
 	result.Reg = data[14] == 1
 	result.CommonSlotCounter = uint16(bit.Uint(data[15:24]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ShortLCCSysParms per ETSI TS 102 361-4 §7.1.2 C_SYS_Parms Short LC PDU
@@ -143,15 +139,14 @@ func (s *ShortLCCSysParms) String() string {
 }
 
 // DecodeShortLCPSysParms decodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
-func DecodeShortLCPSysParms(data [24]bit.Bit) (ShortLCPSysParms, fec.Result) {
+func DecodeShortLCPSysParms(data [24]bit.Bit) ShortLCPSysParms {
 	var result ShortLCPSysParms
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.MODEL = uint8(bit.Uint(data[0:2]))
 	result.NetSiteRaw = uint16(bit.Uint(data[2:14]))
 	result.PayloadChannelType = data[14] == 1
 	result.CommonSlotCounter = uint16(bit.Uint(data[15:24]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ShortLCPSysParms per ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
@@ -195,35 +190,31 @@ func (s *ShortLCPSysParms) String() string {
 }
 
 // DecodeShortLC decodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU
-func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.Result) {
+func DecodeShortLC(data [36]bit.Bit) ShortLC {
 	var result ShortLC
 	bit.Mask(data[:])
 	_crc := uint8(bit.Uint(data[28:]))
-	var fecResult fec.Result
-	if !crc.CheckCRC8(data[:28], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:28], _crc)
 	result.SLCO = enums.SLCO(bit.Uint(data[0:4]))
 	var _dispatchBits [24]bit.Bit
 	copy(_dispatchBits[:], data[4:28])
 	switch result.SLCO {
 	case enums.SLCONullMessage:
-		_decoded, _ := DecodeShortLCNullMessage(_dispatchBits)
+		_decoded := DecodeShortLCNullMessage(_dispatchBits)
 		result.NullMessage = &_decoded
 	case enums.SLCOActivityUpdate:
-		_decoded, _ := DecodeShortLCActivityUpdate(_dispatchBits)
+		_decoded := DecodeShortLCActivityUpdate(_dispatchBits)
 		result.ActivityUpdate = &_decoded
 	case enums.SLCOCSysParms:
-		_decoded, _ := DecodeShortLCCSysParms(_dispatchBits)
+		_decoded := DecodeShortLCCSysParms(_dispatchBits)
 		result.CSysParms = &_decoded
 	case enums.SLCOPSysParms:
-		_decoded, _ := DecodeShortLCPSysParms(_dispatchBits)
+		_decoded := DecodeShortLCPSysParms(_dispatchBits)
 		result.PSysParms = &_decoded
 	default:
 		copy(result.RawPayload[:], _dispatchBits[:])
 	}
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ShortLC per ETSI TS 102 361-1 - 9.1.7 Short Link Control (SHORT_LC) PDU

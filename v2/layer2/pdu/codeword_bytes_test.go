@@ -134,7 +134,8 @@ func TestFullLCCodeword_RealCapture(t *testing.T) {
 			t.Errorf("dt %d: got %s, want %s", tt.dt, got, tt.want)
 		}
 		bits := hexBits96(t, tt.want)
-		flc, res := pdu.DecodeFullLinkControl(bits, tt.dt)
+		flc := pdu.DecodeFullLinkControl(bits, tt.dt)
+		res := flc.FEC
 		if res.HasErrors() {
 			t.Errorf("dt %d: generated decoder reports %+v", tt.dt, res)
 		}

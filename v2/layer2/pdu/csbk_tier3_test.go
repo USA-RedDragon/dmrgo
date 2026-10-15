@@ -67,7 +67,8 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -123,7 +124,8 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded := pdu.DecodeCSBK(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -184,7 +186,8 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAloha), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -259,7 +262,8 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKBroadcast), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -301,7 +305,8 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKClear), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -341,7 +346,8 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAhoy), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -388,7 +394,8 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKRandomAccess), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -416,7 +423,8 @@ func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 
 	infoBits := buildCSBKBits(0b00111000, payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -455,7 +463,8 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 
 	infoBits := buildCSBKBits(0b00111000, payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -504,7 +513,8 @@ func TestCSBK_AckOutbound_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAckOutbound), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -537,7 +547,8 @@ func TestCSBK_Move_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKMove), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -573,7 +584,8 @@ func TestCSBK_Maintenance_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKMaintenance), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -605,7 +617,8 @@ func TestCSBK_Ackvitation_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKAckvitation), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -652,7 +665,8 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded := pdu.DecodeCSBK(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -710,7 +724,8 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	decoded, fecResult := pdu.DecodeCSBK(encoded)
+	decoded := pdu.DecodeCSBK(encoded)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -867,7 +882,8 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 	for _, op := range []byte{0b011010, 0b011011} {
 		var payload [64]bit.Bit
 		payload[0] = 1
-		csbk, fecResult := pdu.DecodeCSBK(buildCSBKBits(op, payload))
+		csbk := pdu.DecodeCSBK(buildCSBKBits(op, payload))
+		fecResult := csbk.FEC
 		if fecResult.Uncorrectable {
 			t.Fatal("DecodeCSBK returned uncorrectable FEC")
 		}
@@ -893,7 +909,8 @@ func TestCSBK_Protect_Decode(t *testing.T) {
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKProtect), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}

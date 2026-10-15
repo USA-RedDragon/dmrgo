@@ -15,7 +15,8 @@ func TestTACT_DecodeEncode_RoundTrip(t *testing.T) {
 	data := [4]bit.Bit{1, 0, 0, 1}
 	codeword := hamming.Encode743(data)
 
-	tact, fecResult := pdu.DecodeTACT(codeword)
+	tact := pdu.DecodeTACT(codeword)
+	fecResult := tact.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
@@ -48,7 +49,8 @@ func TestTACT_DecodeEncode_AllCombinations(t *testing.T) {
 		}
 		codeword := hamming.Encode743(data)
 
-		tact, fecResult := pdu.DecodeTACT(codeword)
+		tact := pdu.DecodeTACT(codeword)
+		fecResult := tact.FEC
 		if fecResult.Uncorrectable {
 			t.Errorf("data=%d: unexpected uncorrectable error", i)
 			continue
@@ -71,7 +73,8 @@ func TestTACT_SingleBitError(t *testing.T) {
 		corrupted := codeword
 		corrupted[pos] ^= 1
 
-		tact, fecResult := pdu.DecodeTACT(corrupted)
+		tact := pdu.DecodeTACT(corrupted)
+		fecResult := tact.FEC
 		if fecResult.Uncorrectable {
 			t.Errorf("bit %d: should be correctable", pos)
 			continue
@@ -89,7 +92,7 @@ func TestTACT_SingleBitError(t *testing.T) {
 func TestTACT_BitsChecked(t *testing.T) {
 	t.Parallel()
 	var codeword [7]bit.Bit
-	_, fecResult := pdu.DecodeTACT(codeword)
+	fecResult := pdu.DecodeTACT(codeword).FEC
 	if fecResult.BitsChecked != 7 {
 		t.Errorf("expected BitsChecked=7, got %d", fecResult.BitsChecked)
 	}
@@ -109,7 +112,8 @@ func TestTACT_LCSS_Values(t *testing.T) {
 
 	for _, tt := range tests {
 		codeword := hamming.Encode743(tt.bits)
-		tact, fecResult := pdu.DecodeTACT(codeword)
+		tact := pdu.DecodeTACT(codeword)
+		fecResult := tact.FEC
 		if fecResult.Uncorrectable {
 			t.Errorf("LCSS=%d: unexpected uncorrectable", tt.lcss)
 			continue
@@ -124,7 +128,7 @@ func TestTACT_String(t *testing.T) {
 	t.Parallel()
 	data := [4]bit.Bit{1, 1, 0, 0}
 	codeword := hamming.Encode743(data)
-	tact, _ := pdu.DecodeTACT(codeword)
+	tact := pdu.DecodeTACT(codeword)
 	s := tact.String()
 	if s == "" {
 		t.Error("String should not be empty")

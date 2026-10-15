@@ -11,16 +11,14 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 // DecodeRate1Data decodes a Rate1Data per ETSI TS 102 361-1 - 9.2.15 Rate 1 coded packet Data (R_1_DATA) PDU
-func DecodeRate1Data(data [192]bit.Bit) (Rate1Data, fec.Result) {
+func DecodeRate1Data(data [192]bit.Bit) Rate1Data {
 	var result Rate1Data
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	copy(result.Data[:], bit.Pack(data[0:192]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a Rate1Data per ETSI TS 102 361-1 - 9.2.15 Rate 1 coded packet Data (R_1_DATA) PDU

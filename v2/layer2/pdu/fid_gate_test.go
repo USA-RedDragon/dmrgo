@@ -38,7 +38,8 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	payload := testPayload64()
 	infoBits := buildCSBKBitsFID(byte(pdu.CSBKPrivateVoiceGrant), byte(enums.FIDMotorola), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -60,7 +61,8 @@ func TestCSBK_UnknownOpcodeKeepsRawPayload(t *testing.T) {
 	payload := testPayload64()
 	infoBits := buildCSBKBits(0b111111, payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
+	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -76,7 +78,7 @@ func TestCSBK_StandardFIDDoesNotFillRawPayload(t *testing.T) {
 	payload := testPayload64()
 	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
-	csbk, _ := pdu.DecodeCSBK(infoBits)
+	csbk := pdu.DecodeCSBK(infoBits)
 	if csbk.PrivateVoiceGrantPDU == nil {
 		t.Fatal("PrivateVoiceGrantPDU should be set for the SFID")
 	}
@@ -98,7 +100,8 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	}
 	infoBits := must(original.Encode())
 
-	decoded, fecResult := pdu.DecodeFullLinkControl(infoBits, original.DataType())
+	decoded := pdu.DecodeFullLinkControl(infoBits, original.DataType())
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeFullLinkControl returned uncorrectable FEC")
 	}
@@ -128,7 +131,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	}
 	infoBits := must(original.Encode())
 
-	decoded, _ := pdu.DecodeFullLinkControl(infoBits, original.DataType())
+	decoded := pdu.DecodeFullLinkControl(infoBits, original.DataType())
 	if decoded.FLCO != 0b111111 {
 		t.Errorf("FLCO = %#x, want 0x3f", decoded.FLCO)
 	}
@@ -140,7 +143,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	}
 
 	original.FeatureSetID = enums.FIDStandardized
-	decoded, _ = pdu.DecodeFullLinkControl(must(original.Encode()), original.DataType())
+	decoded = pdu.DecodeFullLinkControl(must(original.Encode()), original.DataType())
 	if decoded.FLCO != 0b111111 || decoded.RawPayload != payload {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
 	}
@@ -155,7 +158,8 @@ func TestFLC_AddressesIgnoreFID(t *testing.T) {
 			}
 			var infoBits [96]bit.Bit
 			copy(infoBits[:], bit.Unpack(lc[:]))
-			flc, fecResult := pdu.DecodeFullLinkControl(infoBits, enums.DataTypeVoiceLCHeader)
+			flc := pdu.DecodeFullLinkControl(infoBits, enums.DataTypeVoiceLCHeader)
+			fecResult := flc.FEC
 			if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
 				t.Fatalf("FEC = %+v", fecResult)
 			}

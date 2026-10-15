@@ -32,7 +32,8 @@ func TestCSBK_Addresses(t *testing.T) {
 		if !c.SetAddresses(3120101, 3120001) {
 			t.Fatalf("%s: SetAddresses failed", c.Opcode)
 		}
-		decoded, res := pdu.DecodeCSBK(must(c.Encode()))
+		decoded := pdu.DecodeCSBK(must(c.Encode()))
+		res := decoded.FEC
 		if res.Uncorrectable {
 			t.Fatalf("%s: CRC fails", c.Opcode)
 		}

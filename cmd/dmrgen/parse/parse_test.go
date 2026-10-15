@@ -495,6 +495,32 @@ type T struct {
 			want: "A and dmr:const overlap at bit 4",
 		},
 		{
+			name: "fec without a FEC field",
+			src: `// dmr:fec golay_20_8_7
+type T struct {
+	A uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "need a dmr:\"-\" FEC fec.Result field",
+		},
+		{
+			name: "FEC field without fec or crc",
+			src: `type T struct {
+	FEC fec.Result ` + "`dmr:\"-\"`" + `
+	A   uint8      ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "field FEC needs dmr:fec or dmr:crc",
+		},
+		{
+			name: "FEC field of another type",
+			src: `// dmr:crc crc_8
+// dmr:input_size 16
+type T struct {
+	FEC uint8 ` + "`dmr:\"-\"`" + `
+	A   uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "field FEC must be a dmr:\"-\" fec.Result",
+		},
+		{
 			name: "const beyond input size",
 			src: `// dmr:const 8-9=1
 type T struct {
@@ -524,6 +550,7 @@ func TestParseValidStruct(t *testing.T) {
 // dmr:input_size 96
 // ETSI TS 102 361-1 - test
 type T struct {
+	FEC      fec.Result `+"`dmr:\"-\"`"+`
 	DataType uint8  `+"`dmr:\"-\"`"+`
 	LB       bool   `+"`dmr:\"bit:0\"`"+`
 	Op       Opcode `+"`dmr:\"bits:2-7\"`"+`

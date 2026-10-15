@@ -21,14 +21,12 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 // DecodeUnconfirmedDataHeader decodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
-func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.Result) {
+func DecodeUnconfirmedDataHeader(data [80]bit.Bit) UnconfirmedDataHeader {
 	var result UnconfirmedDataHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Reserved = data[2] == 1
@@ -44,7 +42,7 @@ func DecodeUnconfirmedDataHeader(data [80]bit.Bit) (UnconfirmedDataHeader, fec.R
 	result.BlocksToFollow = uint8(bit.Uint(data[65:72]))
 	result.Reserved2 = uint8(bit.Uint(data[72:76]))
 	result.FragmentSequenceNumber = uint8(bit.Uint(data[76:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a UnconfirmedDataHeader per ETSI TS 102 361-1 - 9.1.8 Unconfirmed Data Header
@@ -136,7 +134,7 @@ func (s *UnconfirmedDataHeader) String() string {
 }
 
 // DecodeDataHeader decodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
-func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.Result) {
+func DecodeDataHeader(data [96]bit.Bit) DataHeader {
 	var result DataHeader
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -149,11 +147,7 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.Result) {
 	_packedBytes[10] ^= uint8(0xcc)
 	_packedBytes[11] ^= uint8(0xcc)
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.Format = Format(bit.Uint(data[4:8]))
 	var _tmpAppendedBlocks uint64
 	_tmpAppendedBlocks = bit.Uint(data[2:4])
@@ -164,35 +158,35 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.Result) {
 	copy(_dispatchBits[:], data[0:80])
 	switch result.Format {
 	case FormatUnconfirmed:
-		_decoded, _ := DecodeUnconfirmedDataHeader(_dispatchBits)
+		_decoded := DecodeUnconfirmedDataHeader(_dispatchBits)
 		result.UnconfirmedDataHeader = &_decoded
 	case FormatConfirmed:
-		_decoded, _ := DecodeConfirmedDataHeader(_dispatchBits)
+		_decoded := DecodeConfirmedDataHeader(_dispatchBits)
 		result.ConfirmedDataHeader = &_decoded
 	case FormatResponsePacket:
-		_decoded, _ := DecodeResponsePacketHeader(_dispatchBits)
+		_decoded := DecodeResponsePacketHeader(_dispatchBits)
 		result.ResponsePacketHeader = &_decoded
 	case FormatShortDataDefined:
-		_decoded, _ := DecodeDefinedDataHeader(_dispatchBits)
+		_decoded := DecodeDefinedDataHeader(_dispatchBits)
 		result.DefinedDataHeader = &_decoded
 	case FormatShortDataRawOrStatusPrecoded:
 		if result.AppendedBlocks == 0 {
-			_decoded, _ := DecodeStatusPrecodedHeader(_dispatchBits)
+			_decoded := DecodeStatusPrecodedHeader(_dispatchBits)
 			result.StatusPrecodedHeader = &_decoded
 		} else {
-			_decoded, _ := DecodeRawDataHeader(_dispatchBits)
+			_decoded := DecodeRawDataHeader(_dispatchBits)
 			result.RawDataHeader = &_decoded
 		}
 	case FormatUnifiedDataTransport:
-		_decoded, _ := DecodeUDTHeader(_dispatchBits)
+		_decoded := DecodeUDTHeader(_dispatchBits)
 		result.UDTHeader = &_decoded
 	case FormatProprietary:
-		_decoded, _ := DecodeProprietaryHeader(_dispatchBits)
+		_decoded := DecodeProprietaryHeader(_dispatchBits)
 		result.ProprietaryHeader = &_decoded
 	default:
 		copy(result.RawPayload[:], _dispatchBits[:])
 	}
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a DataHeader per ETSI TS 102 361-1 - 9.1.8 Data Header PDU
@@ -363,10 +357,9 @@ func (s *DataHeader) String() string {
 }
 
 // DecodeConfirmedDataHeader decodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
-func DecodeConfirmedDataHeader(data [80]bit.Bit) (ConfirmedDataHeader, fec.Result) {
+func DecodeConfirmedDataHeader(data [80]bit.Bit) ConfirmedDataHeader {
 	var result ConfirmedDataHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Reserved = data[2] == 1
@@ -383,7 +376,7 @@ func DecodeConfirmedDataHeader(data [80]bit.Bit) (ConfirmedDataHeader, fec.Resul
 	result.ReSynchronizeFlag = data[72] == 1
 	result.SendSequenceNumber = uint8(bit.Uint(data[73:76]))
 	result.FragmentSequenceNumber = uint8(bit.Uint(data[76:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ConfirmedDataHeader per ETSI TS 102 361-1 - Table 9.10: Confirmed Data Header (C_HEAD) PDU content
@@ -478,10 +471,9 @@ func (s *ConfirmedDataHeader) String() string {
 }
 
 // DecodeResponsePacketHeader decodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
-func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.Result) {
+func DecodeResponsePacketHeader(data [80]bit.Bit) ResponsePacketHeader {
 	var result ResponsePacketHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Reserved = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Reserved2 = uint8(bit.Uint(data[2:4]))
@@ -494,7 +486,7 @@ func DecodeResponsePacketHeader(data [80]bit.Bit) (ResponsePacketHeader, fec.Res
 	result.ResponseClass = uint8(bit.Uint(data[72:74]))
 	result.ResponseType = uint8(bit.Uint(data[74:77]))
 	result.ResponseStatus = uint8(bit.Uint(data[77:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ResponsePacketHeader per ETSI TS 102 361-1 - Table 9.13: Response Packet Header (C_RHEAD) PDU content
@@ -599,10 +591,9 @@ func (s *ResponsePacketHeader) String() string {
 }
 
 // DecodeDefinedDataHeader decodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
-func DecodeDefinedDataHeader(data [80]bit.Bit) (DefinedDataHeader, fec.Result) {
+func DecodeDefinedDataHeader(data [80]bit.Bit) DefinedDataHeader {
 	var result DefinedDataHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	var _tmpAppendedBlocks uint64
@@ -617,7 +608,7 @@ func DecodeDefinedDataHeader(data [80]bit.Bit) (DefinedDataHeader, fec.Result) {
 	result.SARQ = data[70] == 1
 	result.FullMessageFlag = data[71] == 1
 	result.BitPadding = uint8(bit.Uint(data[72:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a DefinedDataHeader per ETSI TS 102 361-1 - Table 9.17C: Defined Data Header (DD_HEAD) PDU content
@@ -692,10 +683,9 @@ func (s *DefinedDataHeader) String() string {
 }
 
 // DecodeRawDataHeader decodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
-func DecodeRawDataHeader(data [80]bit.Bit) (RawDataHeader, fec.Result) {
+func DecodeRawDataHeader(data [80]bit.Bit) RawDataHeader {
 	var result RawDataHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	var _tmpAppendedBlocks uint64
@@ -711,7 +701,7 @@ func DecodeRawDataHeader(data [80]bit.Bit) (RawDataHeader, fec.Result) {
 	result.SARQ = data[70] == 1
 	result.FullMessageFlag = data[71] == 1
 	result.BitPadding = uint8(bit.Uint(data[72:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a RawDataHeader per ETSI TS 102 361-1 - Table 9.17B: Raw Data Header (R_HEAD) PDU content
@@ -795,10 +785,9 @@ func (s *RawDataHeader) String() string {
 }
 
 // DecodeStatusPrecodedHeader decodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
-func DecodeStatusPrecodedHeader(data [80]bit.Bit) (StatusPrecodedHeader, fec.Result) {
+func DecodeStatusPrecodedHeader(data [80]bit.Bit) StatusPrecodedHeader {
 	var result StatusPrecodedHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
@@ -807,7 +796,7 @@ func DecodeStatusPrecodedHeader(data [80]bit.Bit) (StatusPrecodedHeader, fec.Res
 	result.SourcePort = uint8(bit.Uint(data[64:67]))
 	result.DestinationPort = uint8(bit.Uint(data[67:70]))
 	result.StatusPrecoded = uint16(bit.Uint(data[70:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a StatusPrecodedHeader per ETSI TS 102 361-1 - Table 9.17A: Status/Precoded Data Header (SP_HEAD) PDU content
@@ -885,10 +874,9 @@ func (s *StatusPrecodedHeader) String() string {
 }
 
 // DecodeUDTHeader decodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
-func DecodeUDTHeader(data [80]bit.Bit) (UDTHeader, fec.Result) {
+func DecodeUDTHeader(data [80]bit.Bit) UDTHeader {
 	var result UDTHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.Group = data[0] == 1
 	result.ResponseRequested = data[1] == 1
 	result.Emergency = data[2] == 1
@@ -903,7 +891,7 @@ func DecodeUDTHeader(data [80]bit.Bit) (UDTHeader, fec.Result) {
 	result.SupplementaryFlag = data[72] == 1
 	result.ProtectFlag = data[73] == 1
 	result.Opcode = UDTOpcode(bit.Uint(data[74:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a UDTHeader per ETSI TS 102 361-1 - Table 9.17D: UDT Header (UDT_HEAD) PDU content
@@ -1002,14 +990,13 @@ func (s *UDTHeader) String() string {
 }
 
 // DecodeProprietaryHeader decodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content
-func DecodeProprietaryHeader(data [80]bit.Bit) (ProprietaryHeader, fec.Result) {
+func DecodeProprietaryHeader(data [80]bit.Bit) ProprietaryHeader {
 	var result ProprietaryHeader
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[0:4]))
 	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	copy(result.ManufacturerData[:], bit.Pack(data[16:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a ProprietaryHeader per ETSI TS 102 361-1 - Table 9.17: Proprietary Header (P_HEAD) PDU content

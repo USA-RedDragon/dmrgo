@@ -88,7 +88,8 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 				return withRS(t, b, lc.mask)
 			},
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
-				d, r := pdu.DecodeFullLinkControl(in, lc.dt)
+				d := pdu.DecodeFullLinkControl(in, lc.dt)
+				r := d.FEC
 				out, err := d.Encode()
 				return out, r, err
 			},
@@ -107,7 +108,8 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			return withCRC(b, 0xA5A5)
 		},
 		trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
-			d, r := pdu.DecodeCSBK(in)
+			d := pdu.DecodeCSBK(in)
+			r := d.FEC
 			out, err := d.Encode()
 			return out, r, err
 		},
@@ -128,7 +130,8 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 				return withCRC(b, 0xCCCC)
 			},
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
-				d, r := pdu.DecodeDataHeader(in)
+				d := pdu.DecodeDataHeader(in)
+				r := d.FEC
 				out, err := d.Encode()
 				return out, r, err
 			},
@@ -138,7 +141,8 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			values: 1,
 			build:  func(int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0xAAAA) },
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
-				d, r := pdu.DecodeMBCHeader(in)
+				d := pdu.DecodeMBCHeader(in)
+				r := d.FEC
 				out, err := d.Encode()
 				return out, r, err
 			},
@@ -148,7 +152,8 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			values: 1,
 			build:  func(int) [96]bit.Bit { return withCRC(randomPayload(rng, 10), 0x6969) },
 			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
-				d, r := pdu.DecodePIHeader(in)
+				d := pdu.DecodePIHeader(in)
+				r := d.FEC
 				out, err := d.Encode()
 				return out, r, err
 			},
@@ -199,7 +204,8 @@ func TestShortLCRoundTripKeepsEveryBit(t *testing.T) {
 				data[i] = bit.Bit(rng.UintN(2))
 			}
 			in := buildShortLCBits(byte(slco), data)
-			d, r := pdu.DecodeShortLC(in)
+			d := pdu.DecodeShortLC(in)
+			r := d.FEC
 			if r.Uncorrectable {
 				t.Fatal("valid Short LC decoded as uncorrectable")
 			}

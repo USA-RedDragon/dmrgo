@@ -3,6 +3,15 @@
 // header, slot type, EMB and the data blocks. DecodeX decodes a PDU from its
 // information bits and X.Encode encodes it; most of these functions are
 // generated from the dmr struct tags by cmd/dmrgen.
+//
+// DecodeX returns only the PDU. A PDU whose decode corrects or checks
+// errors, with FEC such as Golay, QR, Hamming or RS(12,9) or with a CRC,
+// has a FEC field that reports the result; a PDU without such a code, such
+// as a CSBK payload or a data block, has no FEC field. Decoding never fails
+// on an uncorrectable result: the fields are set from the received bits and
+// FEC.Uncorrectable is set. FEC.Err returns fec.ErrUncorrectable for a
+// caller that wants an error. Functions that decode a bare value, such as
+// DecodeEMBCodeword, return the fec.Result with it.
 package pdu
 
 import (
@@ -500,7 +509,7 @@ func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
 		return p, false
 	}
-	p, _ = DecodeBSOutboundActivationPDU(s.RawPayload)
+	p = DecodeBSOutboundActivationPDU(s.RawPayload)
 	return p, true
 }
 
@@ -511,7 +520,7 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
 		return p, false
 	}
-	p, _ = DecodeTalkgroupDataGrantMultiItemPDU(s.RawPayload)
+	p = DecodeTalkgroupDataGrantMultiItemPDU(s.RawPayload)
 	return p, true
 }
 

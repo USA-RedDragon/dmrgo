@@ -18,12 +18,11 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	crc "github.com/USA-RedDragon/dmrgo/v2/crc"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // DecodeMBCHeader decodes a MBCHeader per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
-func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.Result) {
+func DecodeMBCHeader(data [96]bit.Bit) MBCHeader {
 	var result MBCHeader
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -36,17 +35,13 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.Result) {
 	_packedBytes[10] ^= uint8(0xaa)
 	_packedBytes[11] ^= uint8(0xaa)
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
 	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
 	copy(result.Data[:], bit.Pack(data[16:80]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a MBCHeader per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Header
@@ -103,13 +98,12 @@ func (s *MBCHeader) String() string {
 }
 
 // DecodeMBCContinuation decodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
-func DecodeMBCContinuation(data [96]bit.Bit) (MBCContinuation, fec.Result) {
+func DecodeMBCContinuation(data [96]bit.Bit) MBCContinuation {
 	var result MBCContinuation
 	bit.Mask(data[:])
-	var fecResult fec.Result
 	result.LastBlock = data[0] == 1
 	copy(result.Data[:], data[1:96])
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a MBCContinuation per ETSI TS 102 361-1 - 7.4.1 Multi Block Control (MBC) Continuation
@@ -123,11 +117,11 @@ func (s *MBCContinuation) Encode() ([96]bit.Bit, error) {
 }
 
 func (s *MBCContinuation) String() string {
-	return fmt.Sprintf("MBCContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, Data: %v }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.Data)
+	return fmt.Sprintf("MBCContinuation{ LastBlock: %t, Data: %v }", s.LastBlock, s.Data)
 }
 
 // DecodeCGAPContinuation decodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
-func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
+func DecodeCGAPContinuation(data [96]bit.Bit) CGAPContinuation {
 	var result CGAPContinuation
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -138,11 +132,7 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
 		}
 	}
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -152,8 +142,8 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
 	copy(_cdefParmsBits[:], data[22:80])
-	result.CdefParms, _ = layer3.DecodeCdefParms(_cdefParmsBits)
-	return result, fecResult
+	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBits)
+	return result
 }
 
 // Encode encodes a CGAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.2, Table 7.16
@@ -239,7 +229,7 @@ func (s *CGAPContinuation) String() string {
 }
 
 // DecodeMVAPContinuation decodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
-func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
+func DecodeMVAPContinuation(data [96]bit.Bit) MVAPContinuation {
 	var result MVAPContinuation
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -250,11 +240,7 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
 		}
 	}
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -264,8 +250,8 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
 	copy(_cdefParmsBits[:], data[22:80])
-	result.CdefParms, _ = layer3.DecodeCdefParms(_cdefParmsBits)
-	return result, fecResult
+	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBits)
+	return result
 }
 
 // Encode encodes a MVAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.3.1, Table 7.18
@@ -351,7 +337,7 @@ func (s *MVAPContinuation) String() string {
 }
 
 // DecodeBCAPContinuation decodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
-func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.Result) {
+func DecodeBCAPContinuation(data [96]bit.Bit) BCAPContinuation {
 	var result BCAPContinuation
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -362,11 +348,7 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.Result) {
 		}
 	}
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -375,8 +357,8 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.Result) {
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
 	copy(_cdefParmsBits[:], data[22:80])
-	result.CdefParms, _ = layer3.DecodeCdefParms(_cdefParmsBits)
-	return result, fecResult
+	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBits)
+	return result
 }
 
 // Encode encodes a BCAPContinuation per ETSI TS 102 361-4 — §7.1.1.1.5.1, Table 7.21
@@ -445,7 +427,7 @@ func (s *BCAPContinuation) String() string {
 }
 
 // DecodeVNAPContinuation decodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72
-func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
+func DecodeVNAPContinuation(data [96]bit.Bit) VNAPContinuation {
 	var result VNAPContinuation
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
@@ -456,11 +438,7 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
 		}
 	}
 	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
-		fecResult.Uncorrectable = true
-	}
-	result.FEC = fecResult
+	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
 	result.LastBlock = data[0] == 1
 	result.ProtectFlag = data[1] == 1
 	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
@@ -470,8 +448,8 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
 	result.Reserved2 = uint8(bit.Uint(data[20:22]))
 	var _cdefParmsBits [58]bit.Bit
 	copy(_cdefParmsBits[:], data[22:80])
-	result.CdefParms, _ = layer3.DecodeCdefParms(_cdefParmsBits)
-	return result, fecResult
+	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBits)
+	return result
 }
 
 // Encode encodes a VNAPContinuation per ETSI TS 102 361-4 — §7.2.19.3.1, Table 7.72

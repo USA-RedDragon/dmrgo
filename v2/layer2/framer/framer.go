@@ -235,7 +235,7 @@ func (f *Framer) cut() Burst {
 		var c [layer2.CACHBits]bit.Bit
 		copy(c[:], f.buf[start-layer2.CACHBits:start])
 		b.CACH, b.HasCACH = layer2.DecodeCACH(layer2.CACHDeinterleave(c)), true
-		if !b.CACH.FEC.Uncorrectable {
+		if !b.CACH.TACT.FEC.Uncorrectable {
 			f.channel = 1
 			if b.CACH.TACT.TDMAChannel {
 				f.channel = 2

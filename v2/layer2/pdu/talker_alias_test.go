@@ -16,7 +16,8 @@ func airRoundTrip(t *testing.T, lc pdu.FullLinkControl) pdu.FullLinkControl {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, res := pdu.DecodeFullLinkControl(bits, enums.DataTypeVoiceLCHeader)
+	got := pdu.DecodeFullLinkControl(bits, enums.DataTypeVoiceLCHeader)
+	res := got.FEC
 	if res.Uncorrectable {
 		t.Fatal("uncorrectable")
 	}

@@ -12,23 +12,22 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	hamming "github.com/USA-RedDragon/dmrgo/v2/fec/hamming"
 )
 
 // DecodeTACT decodes a TACT per ETSI TS 102 361-1 - 9.1.4 TACT PDU
-func DecodeTACT(data [7]bit.Bit) (TACT, fec.Result) {
+func DecodeTACT(data [7]bit.Bit) TACT {
 	var result TACT
 	bit.Mask(data[:])
-	corrected, fecResult := hamming.Decode743(data)
-	result.FEC = fecResult
-	if !fecResult.Uncorrectable {
+	var corrected [7]bit.Bit
+	corrected, result.FEC = hamming.Decode743(data)
+	if !result.FEC.Uncorrectable {
 		data = corrected
 	}
 	result.AccessType = data[0] == 1
 	result.TDMAChannel = data[1] == 1
 	result.LCSS = enums.LCSS(bit.Uint(data[2:4]))
-	return result, fecResult
+	return result
 }
 
 // Encode encodes a TACT per ETSI TS 102 361-1 - 9.1.4 TACT PDU

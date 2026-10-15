@@ -259,11 +259,13 @@ func encodeFLCBits(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
 }
 
 func decodeFLCBits(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
-	return layer2.DecodeEmbeddedFullLinkControl(fragOctets(f))
+	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f))
+	return lc, lc.FEC
 }
 
 func decodeFLCBitsStrict(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
-	return layer2.DecodeEmbeddedFullLinkControlStrict(fragOctets(f))
+	lc := layer2.DecodeEmbeddedFullLinkControlStrict(fragOctets(f))
+	return lc, lc.FEC
 }
 
 func fragBits(f [4][4]byte) [4][32]bit.Bit {

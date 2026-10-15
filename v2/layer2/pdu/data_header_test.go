@@ -50,7 +50,8 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 		infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
 	}
 
-	dh, fecResult := pdu.DecodeDataHeader(infoBits)
+	dh := pdu.DecodeDataHeader(infoBits)
+	fecResult := dh.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
@@ -80,7 +81,7 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 func TestDataHeader_CRCFailure(t *testing.T) {
 	// All-zero bits will fail CRC check
 	var infoBits [96]bit.Bit
-	_, fecResult := pdu.DecodeDataHeader(infoBits)
+	fecResult := pdu.DecodeDataHeader(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeDataHeader should return uncorrectable for invalid CRC")
 	}
@@ -121,7 +122,8 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 				infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
 			}
 
-			dh, fecResult := pdu.DecodeDataHeader(infoBits)
+			dh := pdu.DecodeDataHeader(infoBits)
+			fecResult := dh.FEC
 			if fecResult.Uncorrectable {
 				t.Fatalf("DecodeDataHeader returned uncorrectable FEC for format %s", tt.name)
 			}
@@ -183,7 +185,8 @@ func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 	}
 
 	infoBits := must(original.Encode())
-	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
+	decoded := pdu.DecodeDataHeader(infoBits)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
@@ -242,7 +245,8 @@ func TestDataHeader_ResponsePacket_RoundTrip(t *testing.T) {
 	}
 
 	infoBits := must(original.Encode())
-	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
+	decoded := pdu.DecodeDataHeader(infoBits)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
@@ -296,7 +300,8 @@ func TestDataHeader_DefinedData_RoundTrip(t *testing.T) {
 	}
 
 	infoBits := must(original.Encode())
-	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
+	decoded := pdu.DecodeDataHeader(infoBits)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
@@ -354,7 +359,8 @@ func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 	}
 
 	infoBits := must(original.Encode())
-	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
+	decoded := pdu.DecodeDataHeader(infoBits)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
@@ -406,7 +412,8 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	}
 
 	infoBits := must(original.Encode())
-	decoded, fecResult := pdu.DecodeDataHeader(infoBits)
+	decoded := pdu.DecodeDataHeader(infoBits)
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
@@ -463,7 +470,8 @@ func TestDataHeader_UDT_Decode(t *testing.T) {
 		b[72] = 1                    // SF
 		setBits(b, 74, 6, 0b011010)  // C_UDTHD
 	})
-	dh, fecResult := pdu.DecodeDataHeader(infoBits)
+	dh := pdu.DecodeDataHeader(infoBits)
+	fecResult := dh.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
@@ -513,7 +521,8 @@ func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 			Opcode:            pdu.UDTOpcodeInboundHeader,
 		},
 	}
-	decoded, fecResult := pdu.DecodeDataHeader(must(original.Encode()))
+	decoded := pdu.DecodeDataHeader(must(original.Encode()))
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
@@ -532,7 +541,8 @@ func TestDataHeader_Proprietary_Decode(t *testing.T) {
 		b[16] = 1
 		b[79] = 1
 	})
-	dh, fecResult := pdu.DecodeDataHeader(infoBits)
+	dh := pdu.DecodeDataHeader(infoBits)
+	fecResult := dh.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
@@ -560,7 +570,8 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 		Format:            pdu.FormatProprietary,
 		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: [8]byte(bit.Pack(mfData[:]))},
 	}
-	decoded, fecResult := pdu.DecodeDataHeader(must(original.Encode()))
+	decoded := pdu.DecodeDataHeader(must(original.Encode()))
+	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
@@ -576,7 +587,8 @@ func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 		}
 		bit.PutUint(bits[4:8], uint64(0b0100))
 	})
-	dh, fecResult := pdu.DecodeDataHeader(in)
+	dh := pdu.DecodeDataHeader(in)
+	fecResult := dh.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("CRC failed")
 	}

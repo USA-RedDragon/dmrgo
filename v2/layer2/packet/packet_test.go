@@ -106,21 +106,21 @@ func encodeBlock(t *testing.T, d layer2.Data) layer2.Data {
 		if err != nil {
 			t.Fatal(err)
 		}
-		out, _ := pdu.DecodeRate12Data(bits)
+		out := pdu.DecodeRate12Data(bits)
 		return &out
 	case *pdu.Rate34Data:
 		bits, err := b.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
-		out, _ := pdu.DecodeRate34Data(bits)
+		out := pdu.DecodeRate34Data(bits)
 		return &out
 	case *pdu.Rate1Data:
 		bits, err := b.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
-		out, _ := pdu.DecodeRate1Data(bits)
+		out := pdu.DecodeRate1Data(bits)
 		return &out
 	}
 	t.Fatalf("unexpected block %T", d)
@@ -133,7 +133,8 @@ func encodeHeader(t *testing.T, h *pdu.DataHeader) *pdu.DataHeader {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, res := pdu.DecodeDataHeader(bits)
+	out := pdu.DecodeDataHeader(bits)
+	res := out.FEC
 	if res.Uncorrectable {
 		t.Fatal("header CRC")
 	}
