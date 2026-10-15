@@ -171,5 +171,5 @@ func uint24(b []byte) uint32 {
 }
 
 func putUint24(b []byte, v uint32) {
-	b[0], b[1], b[2] = byte(v>>16), byte(v>>8), byte(v) //nolint:gosec // 24-bit address split into octets
+	b[0], b[1], b[2] = byte(v>>16&0xFF), byte(v>>8&0xFF), byte(v&0xFF)
 }

@@ -11,8 +11,7 @@ import (
 
 // idleMessageFECMatrix is the 13x15 BPTC(196,96) idle message before
 // interleaving, row-major (ETSI TS 102 361-1 Figure D.1).
-//
-//nolint:gochecknoglobals
+
 var idleMessageFECMatrix = [13][15]bit.Bit{
 	{0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0},
 	{1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1},

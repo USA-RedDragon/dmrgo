@@ -108,7 +108,7 @@ func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet
 	for i := range p.Blocks {
 		chunk := buf[i*per : (i+1)*per]
 		if confirmed {
-			p.Blocks[i] = confirmedBlock(uint8(i), chunk) //nolint:gosec // i < maxBlocks
+			p.Blocks[i] = confirmedBlock(uint8(i), chunk)
 		} else {
 			p.Blocks[i] = unconfirmedBlock(chunk)
 		}
@@ -129,20 +129,20 @@ func setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	switch h.Format {
 	case pdu.FormatUnconfirmed:
 		u := *h.UnconfirmedDataHeader
-		u.BlocksToFollow, u.PadOctetCount = uint8(blocks), uint8(pad) //nolint:gosec // checked below
+		u.BlocksToFollow, u.PadOctetCount = uint8(blocks&0xFF), uint8(pad&0xFF)
 		h.UnconfirmedDataHeader = &u
 	case pdu.FormatConfirmed:
 		c := *h.ConfirmedDataHeader
-		c.BlocksToFollow, c.PadOctetCount = uint8(blocks), uint8(pad) //nolint:gosec // checked below
+		c.BlocksToFollow, c.PadOctetCount = uint8(blocks&0xFF), uint8(pad&0xFF)
 		h.ConfirmedDataHeader = &c
 	case pdu.FormatShortDataDefined:
 		d := *h.DefinedDataHeader
-		d.AppendedBlocks = uint8(blocks) //nolint:gosec // checked below
+		d.AppendedBlocks = uint8(blocks & 0xFF)
 		h.DefinedDataHeader = &d
 		h.AppendedBlocks = d.AppendedBlocks
 	case pdu.FormatShortDataRawOrStatusPrecoded:
 		r := *h.RawDataHeader
-		r.AppendedBlocks = uint8(blocks) //nolint:gosec // checked below
+		r.AppendedBlocks = uint8(blocks & 0xFF)
 		h.RawDataHeader = &r
 		h.AppendedBlocks = r.AppendedBlocks
 	case pdu.FormatUnifiedDataTransport, pdu.FormatResponsePacket, pdu.FormatProprietary:

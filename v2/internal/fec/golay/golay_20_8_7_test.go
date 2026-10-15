@@ -13,7 +13,7 @@ func TestGolay2087Decode(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		var data [8]bit.Bit
 		for j := 0; j < 8; j++ {
-			if rand.Intn(2) == 1 { //nolint:gosec // deterministic PRNG sufficient for tests
+			if rand.Intn(2) == 1 {
 				data[j] = 1
 			}
 		}
@@ -32,7 +32,7 @@ func TestGolay2087Decode(t *testing.T) {
 		}
 
 		cwErr1 := cw
-		pos := rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
+		pos := rand.Intn(20)
 		cwErr1[pos] ^= 1
 		decoded, result = Decode2087(cwErr1)
 		if result.Uncorrectable || result.ErrorsCorrected != 1 {
@@ -43,9 +43,9 @@ func TestGolay2087Decode(t *testing.T) {
 		}
 
 		cwErr2 := cw
-		p1, p2 := rand.Intn(20), rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
+		p1, p2 := rand.Intn(20), rand.Intn(20)
 		for p1 == p2 {
-			p2 = rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
+			p2 = rand.Intn(20)
 		}
 		cwErr2[p1] ^= 1
 		cwErr2[p2] ^= 1
@@ -58,12 +58,12 @@ func TestGolay2087Decode(t *testing.T) {
 		}
 
 		cwErr3 := cw
-		p1, p2, p3 := rand.Intn(20), rand.Intn(20), rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
+		p1, p2, p3 := rand.Intn(20), rand.Intn(20), rand.Intn(20)
 		for p1 == p2 {
-			p2 = rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
+			p2 = rand.Intn(20)
 		}
 		for p3 == p1 || p3 == p2 {
-			p3 = rand.Intn(20) //nolint:gosec // deterministic PRNG sufficient for tests
+			p3 = rand.Intn(20)
 		}
 		cwErr3[p1] ^= 1
 		cwErr3[p2] ^= 1

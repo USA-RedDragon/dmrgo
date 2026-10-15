@@ -44,17 +44,17 @@ func Decode23127(received uint32) (data uint16, result fec.Result) {
 	syndrome := golay23ComputeSyndrome(received)
 
 	if syndrome == 0 {
-		return uint16(received >> 11), result //nolint:gosec // received>>11 is at most 12 bits, fits in uint16
+		return uint16(received >> 11), result
 	}
 
 	errPattern := golay_23_12_7_syndrome_table[syndrome]
 	if errPattern == 0xFFFFFFFF {
 		result.Uncorrectable = true
-		return uint16(received >> 11), result //nolint:gosec // received>>11 is at most 12 bits, fits in uint16
+		return uint16(received >> 11), result
 	}
 
 	corrected := received ^ errPattern
 	result.ErrorsCorrected = bits.OnesCount32(errPattern)
 
-	return uint16(corrected >> 11), result //nolint:gosec // corrected>>11 is at most 12 bits, fits in uint16
+	return uint16(corrected >> 11 & 0xFFFF), result
 }

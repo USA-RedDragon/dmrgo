@@ -20,7 +20,11 @@ import (
 func main() {
 	tables := compute.All()
 
-	_, thisFile, _, _ := runtime.Caller(0) //nolint:dogsled
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "generate failed: cannot find the tablegen source directory")
+		os.Exit(1)
+	}
 	v2Root := filepath.Join(filepath.Dir(thisFile), "..", "..", "v2")
 
 	if err := generate.WriteAll(tables, v2Root); err != nil {

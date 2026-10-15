@@ -13,7 +13,7 @@ func TestBPTC19696Decode(t *testing.T) {
 	for run := 0; run < 100; run++ {
 		var data [96]bit.Bit
 		for i := 0; i < 96; i++ {
-			data[i] = bit.Bit(rand.Intn(2)) //nolint:gosec // deterministic PRNG fine for tests
+			data[i] = bit.Bit(rand.Intn(2))
 		}
 
 		encoded := Encode196(data)
@@ -32,10 +32,10 @@ func TestBPTC19696Decode(t *testing.T) {
 		}
 
 		encodedErr := encoded
-		pos := rand.Intn(196) //nolint:gosec // deterministic PRNG fine for tests
+		pos := rand.Intn(196)
 		// dm[0] is grid position 0, an unused corner, so a flip there has no effect.
 		for pos == int(dm[0]) {
-			pos = rand.Intn(196) //nolint:gosec // deterministic PRNG fine for tests
+			pos = rand.Intn(196)
 		}
 		encodedErr[pos] ^= 1
 

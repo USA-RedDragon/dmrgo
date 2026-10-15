@@ -29,8 +29,7 @@ import (
 // bitFuncs holds every exported function and method of the v2 module that
 // takes bit.Bit values, except those of package bit (see bit_test.go) and of
 // the cgo codec2 binding. Methods are wrapped with a fresh receiver.
-//
-//nolint:gochecknoglobals
+
 var bitFuncs = map[string]any{
 	"internal/fec/bptc.Decode196": bptc.Decode196,
 	"internal/fec/trellis.Decode": trellis.Decode,

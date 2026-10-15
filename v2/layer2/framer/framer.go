@@ -29,7 +29,6 @@ const (
 	DefaultMaxMisses = 12
 )
 
-//nolint:gochecknoglobals
 var syncPatterns = [...]enums.SyncPattern{
 	enums.SyncBSSourcedVoice,
 	enums.SyncBSSourcedData,
@@ -56,7 +55,7 @@ type Match struct {
 func nearest(window uint64) (enums.SyncPattern, int) {
 	best, bestDistance := enums.SyncNone, SyncBits+1
 	for _, p := range syncPatterns {
-		if d := bits.OnesCount64(window ^ uint64(p)); d < bestDistance { //nolint:gosec // patterns are 48-bit positive constants
+		if d := bits.OnesCount64(window ^ uint64(p)); d < bestDistance {
 			best, bestDistance = p, d
 		}
 	}

@@ -58,7 +58,7 @@ func (s *SlotType) Info() SlotTypeInfo {
 func (s SlotTypeInfo) Codeword() uint32 {
 	st := s.SlotType()
 	bits, _ := st.Encode()
-	return uint32(bit.Uint(bits[:])) //nolint:gosec // 20 bits
+	return uint32(bit.Uint(bits[:]) & 0xFFFFFFFF)
 }
 
 // DecodeSlotTypeCodeword decodes the 20-bit Golay(20,8) codeword in the low

@@ -78,7 +78,7 @@ func (s *EmbeddedSignalling) Info() EMBInfo {
 func (e EMBInfo) Codeword() uint16 {
 	s := e.EmbeddedSignalling()
 	bits, _ := s.Encode()
-	return uint16(bit.Uint(bits[:])) //nolint:gosec // 16 bits
+	return uint16(bit.Uint(bits[:]) & 0xFFFF)
 }
 
 // DecodeEMBCodeword decodes the 16-bit QR(16,7,6) codeword cw, first bit

@@ -52,7 +52,7 @@ var (
 
 var _ vocoder.Codec = (*Codec)(nil)
 
-func init() { //nolint:gochecknoinits // registers the codec, like database/sql drivers
+func init() {
 	vocoder.Register(Name, func() (vocoder.Codec, error) {
 		c, err := New(Config{})
 		if err != nil {

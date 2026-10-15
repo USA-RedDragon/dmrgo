@@ -79,11 +79,37 @@ linters:
       - legacy
       - std-error-handling
     rules:
+      # Test fixtures are package variables that tests only read.
       - path: _test\.go
         linters:
           - dogsled
+          - gochecknoglobals
           - goconst
           - gosec
+      # Read-only lookup tables of enum values and bit positions, which Go
+      # cannot declare as constants.
+      - path: v2/(enums/sync_patterns|layer2/cach_interleave|layer2/decode_options|layer2/framer/framer|layer2/short_lc_cach)\.go$
+        linters:
+          - gochecknoglobals
+        text: ^(syncPatterns|cachDeinterleaveTable|cachInterleaveTable|allSyncPatterns|voiceSyncPatterns|dataSyncPatterns|shortLCFragmentLCSS) is a global variable
+      # The codec registry works like the database/sql driver registry: codec
+      # packages register in init, and libcodec2 keeps process-wide state that
+      # one mutex guards.
+      - path: v2/vocoder/(codec\.go|codec2/codec2\.go|codec2/codec2_cgo\.go)$
+        linters:
+          - gochecknoglobals
+          - gochecknoinits
+        text: ^(registryMu is a global variable|registry is a global variable|libMu is a global variable|don't use `init` function)
+      # The generator's codec and CRC lookup tables.
+      - path: cmd/dmrgen/(emit/emit|parse/parse)\.go$
+        linters:
+          - gochecknoglobals
+        text: ^(crcAlgorithms|fecCodecs|CRCWidths) is a global variable
+      # speccheck runs go test with test names from spec_matrix.yaml.
+      - path: cmd/speccheck/main\.go$
+        linters:
+          - gosec
+        text: G204
       # jennifer's DSL is written with a dot import.
       - path: cmd/dmrgen/emit/
         linters:

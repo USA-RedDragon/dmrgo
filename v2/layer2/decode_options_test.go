@@ -233,8 +233,8 @@ func TestDecodeFromBytesWith_ColorCode(t *testing.T) {
 			kind = "voice A"
 		}
 		seen[kind] = true
-		right := enums.ColorCode(cc)         //nolint:gosec // 4-bit color code
-		wrong := enums.ColorCode(cc+1) & 0xF //nolint:gosec // 4-bit color code
+		right := enums.ColorCode(cc)
+		wrong := enums.ColorCode(cc+1) & 0xF
 		var b layer2.Burst
 		if err := b.DecodeFromBytesWith(frame, &layer2.DecodeOptions{ColorCode: &right}); err != nil {
 			t.Fatalf("%s: %v", kind, err)
