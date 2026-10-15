@@ -26,6 +26,10 @@ func entries(t testing.TB) []entry {
 		packetEntries(t),
 		framerEntries(t),
 		vocoderEntries(t),
+		bitEntries(t),
+		enumsEntries(t),
+		fecEntries(t),
+		layer3Entries(t),
 	)
 }
 
