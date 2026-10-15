@@ -128,7 +128,7 @@ func unconfirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	bursts, err := encodePacket(p)
+	bursts, err := packet.Bursts(p, colorCode, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	bursts, err := encodePacket(p)
+	bursts, err := packet.Bursts(p, colorCode, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func confirmed(w io.Writer) error {
 	}
 	bad := *blk
 	bad.Data[7] ^= 0x10
-	if bursts[2], err = encodeBlock(&bad); err != nil {
+	if bursts[2], err = layer2.BuildRate34DataBurst(bad.Data, colorCode, layer2.SyncSourceMS); err != nil {
 		return err
 	}
 
@@ -182,7 +182,7 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	sackBursts, err := encodePacket(sack)
+	sackBursts, err := packet.Bursts(sack, colorCode, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	ackBursts, err := encodePacket(ack)
+	ackBursts, err := packet.Bursts(ack, colorCode, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
@@ -224,26 +224,6 @@ func confirmed(w io.Writer) error {
 	fmt.Fprintf(w, "confirmed: retry done, %q, %s %d -> %d: ok\n",
 		m.Data, packet.ResponseOf(am.Header.ResponsePacketHeader), ackSrc, ackDst)
 	return nil
-}
-
-// encodePacket codes the header and blocks of p as MS-sourced data bursts.
-func encodePacket(p packet.Packet) ([][33]byte, error) {
-	out := make([][33]byte, 0, 1+len(p.Blocks))
-	for _, d := range append([]layer2.Data{&p.Header}, p.Blocks...) {
-		raw, err := encodeBlock(d)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, raw)
-	}
-	return out, nil
-}
-
-func encodeBlock(d layer2.Data) ([33]byte, error) {
-	_, sync, _ := layer2.SyncSourceMS.SyncPatterns()
-	b := layer2.Burst{Kind: layer2.KindData, SyncPattern: sync,
-		SlotType: pdu.SlotType{ColorCode: colorCode, DataType: d.DataType()}, Data: d}
-	return b.Encode()
 }
 
 // receive decodes bursts and adds them to a until it returns a message or an
