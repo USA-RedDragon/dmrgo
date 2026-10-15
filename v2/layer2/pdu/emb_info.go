@@ -1,0 +1,100 @@
+package pdu
+
+import (
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
+)
+
+// EMBInfo is the 7 information bits of an EMB PDU (ETSI TS 102 361-1
+// §9.1.2, Table 9.3) without the QR(16,7,6) parity of §B.3.2, in the top 7
+// bits of one octet, as IPSC carries them: bits 7 to 4 hold the Colour
+// Code, bit 3 the PI and bits 2 and 1 the LCSS. Bit 0 is not an EMB bit:
+// the getters and Codeword ignore it and the setters keep it. For example,
+// CC 1 with LCSS 1 (first fragment) is 0x12, whose codeword is 0x1391.
+type EMBInfo byte
+
+// ColorCode returns the 4-bit Colour Code, bits 7 to 4.
+func (e EMBInfo) ColorCode() uint8 {
+	return uint8(e >> 4)
+}
+
+// SetColorCode writes cc into bits 7 to 4. It returns false, and changes
+// nothing, when cc does not fit in 4 bits.
+func (e *EMBInfo) SetColorCode(cc uint8) bool {
+	if cc>>4 != 0 {
+		return false
+	}
+	*e = *e&0x0F | EMBInfo(cc<<4)
+	return true
+}
+
+// PI returns the Pre-emption and power control Indicator, bit 3.
+func (e EMBInfo) PI() bool {
+	return e&0x08 != 0
+}
+
+// SetPI writes the Pre-emption and power control Indicator into bit 3.
+func (e *EMBInfo) SetPI(pi bool) {
+	if pi {
+		*e |= 0x08
+	} else {
+		*e &^= 0x08
+	}
+}
+
+// LCSS returns the Link Control Start/Stop, bits 2 and 1.
+func (e EMBInfo) LCSS() enums.LCSS {
+	return enums.LCSS(e >> 1 & 0x03)
+}
+
+// SetLCSS writes l into bits 2 and 1. It returns false, and changes
+// nothing, when l does not fit in 2 bits.
+func (e *EMBInfo) SetLCSS(l enums.LCSS) bool {
+	if l>>2 != 0 {
+		return false
+	}
+	*e = *e&^0x06 | EMBInfo(l<<1)
+	return true
+}
+
+// EmbeddedSignalling returns the fields of e as an EmbeddedSignalling with
+// a zero FEC result.
+func (e EMBInfo) EmbeddedSignalling() EmbeddedSignalling {
+	return EmbeddedSignalling{
+		ColorCode:                          e.ColorCode(),
+		PreemptionAndPowerControlIndicator: e.PI(),
+		LCSS:                               e.LCSS(),
+	}
+}
+
+// Info returns the information bits of s as an EMBInfo with bit 0 clear.
+// It returns the errors that Encode returns for the fields.
+func (s *EmbeddedSignalling) Info() (EMBInfo, error) {
+	bits, err := s.Encode()
+	if err != nil {
+		return 0, err
+	}
+	return EMBInfo(bit.Pack(bits[:7])[0]), nil
+}
+
+// Codeword returns the 16-bit QR(16,7,6) codeword of e (§B.3.2), the 7
+// information bits followed by the 9 parity bits, first bit most
+// significant.
+func (e EMBInfo) Codeword() uint16 {
+	s := e.EmbeddedSignalling()
+	bits, _ := s.Encode()
+	return uint16(bit.Uint(bits[:])) //nolint:gosec // 16 bits
+}
+
+// DecodeEMBCodeword decodes the 16-bit QR(16,7,6) codeword cw, first bit
+// most significant, as DecodeEmbeddedSignalling does. It returns the
+// information bits with bit 0 clear, corrected when the result is not
+// Uncorrectable, and the FEC result.
+func DecodeEMBCodeword(cw uint16) (EMBInfo, fec.Result) {
+	var bits [16]bit.Bit
+	bit.PutUint(bits[:], uint64(cw))
+	s, res := DecodeEmbeddedSignalling(bits)
+	e, _ := s.Info()
+	return e, res
+}
