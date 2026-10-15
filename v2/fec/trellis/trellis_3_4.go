@@ -48,7 +48,10 @@ func (t *Trellis34) dibitsToBits(dibits [98]int8) [196]bit.Bit {
 // ErrorsCorrected is the number of received bits that differ from the
 // re-encoded decoded path. Uncorrectable is set when a path ending in a
 // nonzero state has a strictly lower metric than the best path ending in
-// state 0.
+// state 0. That is the only check: the trellis code has no other redundancy
+// to detect a miscorrection, so a false Uncorrectable does not mean the data
+// is right. Callers must check the block CRC (the CRC-9 of a confirmed block
+// or the message CRC-32) to detect a miscorrected block.
 func (t *Trellis34) Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.FECResult) {
 	result := fec.FECResult{BitsChecked: 196}
 
