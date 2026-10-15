@@ -6,7 +6,7 @@ ETSI TS 102 361-1 - 9.3.2 UU_V_Req PDU
 ETSI TS 102 361-1 - 9.3.3 UU_Ans_Rsp PDU
 ETSI TS 102 361-1 - 9.3.5 NACK_Rsp PDU
 ETSI TS 102 361-1 - 9.3.7 Pre PDU
-ETSI TS 102 361-1 - 9.3.8 Ch_Timing (Channel Timing) PDU
+ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
 ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU
 ETSI TS 102 361-4 §7.1.1.1.1 TV_GRANT PDU
 ETSI TS 102 361-4 §7.1.1.1.1 BTV_GRANT PDU
@@ -183,7 +183,7 @@ func (s *PreamblePDU) ToString() string {
 	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %v, CSBKBlocksToFollow: %d, TargetAddress: %v, SourceAddress: %v }", s.Data, s.Group, s.Reserved, s.CSBKBlocksToFollow, s.TargetAddress, s.SourceAddress)
 }
 
-// DecodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-1 - 9.3.8 Ch_Timing (Channel Timing) PDU
+// DecodeChannelTimingPDU decodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
 func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.FECResult) {
 	var result ChannelTimingPDU
 	var fecResult fec.FECResult
@@ -192,15 +192,15 @@ func DecodeChannelTimingPDU(data [64]bit.Bit) (ChannelTimingPDU, fec.FECResult) 
 	copy(result.LeaderIdentifier[:], data[16:36])
 	result.NewLeader = bit.BitsToBool(data[:], 36)
 	copy(result.LeaderDynamicIdentifier[:], data[37:39])
-	result.ChannelTimingOp0 = bit.BitsToBool(data[:], 39)
+	result.ChannelTimingOp1 = bit.BitsToBool(data[:], 39)
 	copy(result.SourceIdentifier[:], data[40:60])
 	result.Reserved = bit.BitsToBool(data[:], 60)
 	copy(result.SourceDynamicIdentifier[:], data[61:63])
-	result.ChannelTimingOp1 = bit.BitsToBool(data[:], 63)
+	result.ChannelTimingOp0 = bit.BitsToBool(data[:], 63)
 	return result, fecResult
 }
 
-// EncodeChannelTimingPDU encodes a ChannelTimingPDU per ETSI TS 102 361-1 - 9.3.8 Ch_Timing (Channel Timing) PDU
+// EncodeChannelTimingPDU encodes a ChannelTimingPDU per ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
 func EncodeChannelTimingPDU(s *ChannelTimingPDU) [64]bit.Bit {
 	var data [64]bit.Bit
 	copy(data[0:11], s.SyncAge[:])
@@ -210,7 +210,7 @@ func EncodeChannelTimingPDU(s *ChannelTimingPDU) [64]bit.Bit {
 		data[36] = 1
 	}
 	copy(data[37:39], s.LeaderDynamicIdentifier[:])
-	if s.ChannelTimingOp0 {
+	if s.ChannelTimingOp1 {
 		data[39] = 1
 	}
 	copy(data[40:60], s.SourceIdentifier[:])
@@ -218,14 +218,14 @@ func EncodeChannelTimingPDU(s *ChannelTimingPDU) [64]bit.Bit {
 		data[60] = 1
 	}
 	copy(data[61:63], s.SourceDynamicIdentifier[:])
-	if s.ChannelTimingOp1 {
+	if s.ChannelTimingOp0 {
 		data[63] = 1
 	}
 	return data
 }
 
 func (s *ChannelTimingPDU) ToString() string {
-	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %v, Generation: %v, LeaderIdentifier: %v, NewLeader: %t, LeaderDynamicIdentifier: %v, ChannelTimingOp0: %t, SourceIdentifier: %v, Reserved: %t, SourceDynamicIdentifier: %v, ChannelTimingOp1: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp0, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp1)
+	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %v, Generation: %v, LeaderIdentifier: %v, NewLeader: %t, LeaderDynamicIdentifier: %v, ChannelTimingOp1: %t, SourceIdentifier: %v, Reserved: %t, SourceDynamicIdentifier: %v, ChannelTimingOp0: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp1, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp0)
 }
 
 // DecodePrivateVoiceGrantPDU decodes a PrivateVoiceGrantPDU per ETSI TS 102 361-4 §7.1.1.1.1 PV_GRANT PDU

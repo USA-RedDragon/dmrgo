@@ -414,15 +414,14 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 	// LeaderDynamicIdentifier (bits 37-38) = 0b11
 	payload[37] = 1
 	payload[38] = 1
-	// ChannelTimingOp0 (bit 39) = true
+	// ChannelTimingOp1 (bit 39, opcode MSB) = true
 	payload[39] = 1
 	// SourceIdentifier (bits 40-59) = set bit 59
 	payload[59] = 1
 	// Reserved (bit 60) = false
 	// SourceDynamicIdentifier (bits 61-62) = 0b10
 	payload[61] = 1
-	// ChannelTimingOp1 (bit 63) = true
-	payload[63] = 1
+	// ChannelTimingOp0 (bit 63, opcode LSB) = false
 
 	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTimingPDU), 0x00, payload)
 
@@ -439,11 +438,11 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 	if !csbk.ChannelTimingPDU.NewLeader {
 		t.Error("NewLeader should be true")
 	}
-	if !csbk.ChannelTimingPDU.ChannelTimingOp0 {
-		t.Error("ChannelTimingOp0 should be true")
-	}
 	if !csbk.ChannelTimingPDU.ChannelTimingOp1 {
-		t.Error("ChannelTimingOp1 should be true")
+		t.Error("ChannelTimingOp1 (bit 39) should be true")
+	}
+	if csbk.ChannelTimingPDU.ChannelTimingOp0 {
+		t.Error("ChannelTimingOp0 (bit 63) should be false")
 	}
 	if csbk.ChannelTimingPDU.LeaderDynamicIdentifier[0] != 1 || csbk.ChannelTimingPDU.LeaderDynamicIdentifier[1] != 1 {
 		t.Error("LeaderDynamicIdentifier should be 0b11")
@@ -494,6 +493,12 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := pdu.EncodeCSBK(original)
+	if encoded[16+39] != 1 {
+		t.Error("ChannelTimingOp1 should be encoded at payload bit 39")
+	}
+	if encoded[16+63] != 0 {
+		t.Error("ChannelTimingOp0 should be encoded at payload bit 63")
+	}
 	decoded, fecResult := pdu.DecodeCSBK(encoded)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
@@ -518,6 +523,9 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 	}
 	if decoded.ChannelTimingPDU.ChannelTimingOp1 != true {
 		t.Error("ChannelTimingOp1 should be true after encode-decode cycle")
+	}
+	if decoded.ChannelTimingPDU.ChannelTimingOp0 != false {
+		t.Error("ChannelTimingOp0 should be false after encode-decode cycle")
 	}
 	if decoded.ChannelTimingPDU.SourceIdentifier != sourceID {
 		t.Error("SourceIdentifier mismatch after encode-decode cycle")

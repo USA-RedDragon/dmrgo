@@ -159,18 +159,19 @@ type PreamblePDU struct {
 	SourceAddress      [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// ETSI TS 102 361-1 - 9.3.8 Ch_Timing (Channel Timing) PDU
+// ETSI TS 102 361-2 - 7.1.2.6 CT_CSBK (Channel Timing) PDU, Table 7.8.
+// ChannelTimingOp1 is the opcode MSB and ChannelTimingOp0 the LSB.
 type ChannelTimingPDU struct {
 	SyncAge                 [11]bit.Bit `dmr:"bits:0-10,raw"`
 	Generation              [5]bit.Bit  `dmr:"bits:11-15,raw"`
 	LeaderIdentifier        [20]bit.Bit `dmr:"bits:16-35,raw"`
 	NewLeader               bool        `dmr:"bit:36"`
 	LeaderDynamicIdentifier [2]bit.Bit  `dmr:"bits:37-38,raw"`
-	ChannelTimingOp0        bool        `dmr:"bit:39"`
+	ChannelTimingOp1        bool        `dmr:"bit:39"`
 	SourceIdentifier        [20]bit.Bit `dmr:"bits:40-59,raw"`
 	Reserved                bool        `dmr:"bit:60"`
 	SourceDynamicIdentifier [2]bit.Bit  `dmr:"bits:61-62,raw"`
-	ChannelTimingOp1        bool        `dmr:"bit:63"`
+	ChannelTimingOp0        bool        `dmr:"bit:63"`
 }
 
 // ── Tier III CSBK sub-PDU structs (ETSI TS 102 361-4 §7.1.1) ──
