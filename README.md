@@ -84,7 +84,7 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
 
 ## Codec2
 
-`vocoder/codec2` links the system libcodec2 (LGPL 2.1) with cgo. A program that imports it needs a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. Build with `-tags nocodec2` or `CGO_ENABLED=0` to leave it out: `codec2.New` then returns `codec2.ErrUnavailable`.
+`vocoder/codec2` links the system libcodec2 (LGPL 2.1) with cgo. A program that imports it needs a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. Build with `-tags nocodec2` or `CGO_ENABLED=0` to leave it out: `codec2.New` then returns `codec2.ErrUnavailable`. TinyGo builds always leave it out.
 
 | Item | Value |
 | --- | --- |

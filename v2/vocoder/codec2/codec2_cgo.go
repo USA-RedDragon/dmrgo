@@ -1,4 +1,4 @@
-//go:build cgo && !nocodec2
+//go:build cgo && !nocodec2 && !tinygo
 
 package codec2
 
