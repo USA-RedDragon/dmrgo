@@ -198,9 +198,9 @@ func (s *ShortLCPSysParms) String() string {
 func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.Result) {
 	var result ShortLC
 	bit.Mask(data[:])
-	result.crc = uint8(bit.Uint(data[28:]))
+	_crc := uint8(bit.Uint(data[28:]))
 	var fecResult fec.Result
-	if !crc.CheckCRC8(data[:28], result.crc) {
+	if !crc.CheckCRC8(data[:28], _crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult

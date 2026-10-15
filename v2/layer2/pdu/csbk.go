@@ -492,8 +492,6 @@ type CSBK struct {
 	MaintenancePDU                  *MaintenancePDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKMaintenance"`
 
 	RawPayload [64]bit.Bit `dmr:"bits:16-79,raw,fallback"`
-
-	crc uint16 `dmr:"-"` //nolint:unused
 }
 
 // AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with

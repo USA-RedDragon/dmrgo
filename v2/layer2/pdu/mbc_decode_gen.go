@@ -35,9 +35,9 @@ func DecodeMBCHeader(data [96]bit.Bit) (MBCHeader, fec.Result) {
 	}
 	_packedBytes[10] ^= uint8(0xaa)
 	_packedBytes[11] ^= uint8(0xaa)
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
+	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
@@ -137,9 +137,9 @@ func DecodeCGAPContinuation(data [96]bit.Bit) (CGAPContinuation, fec.Result) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
+	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
@@ -249,9 +249,9 @@ func DecodeMVAPContinuation(data [96]bit.Bit) (MVAPContinuation, fec.Result) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
+	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
@@ -361,9 +361,9 @@ func DecodeBCAPContinuation(data [96]bit.Bit) (BCAPContinuation, fec.Result) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
+	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult
@@ -455,9 +455,9 @@ func DecodeVNAPContinuation(data [96]bit.Bit) (VNAPContinuation, fec.Result) {
 			_packedBytes[i] |= byte(data[i*8+j])
 		}
 	}
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
+	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult

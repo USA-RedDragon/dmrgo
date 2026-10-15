@@ -28,9 +28,9 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) (UnifiedSingleBlockData, fec
 	}
 	_packedBytes[10] ^= uint8(0x33)
 	_packedBytes[11] ^= uint8(0x33)
-	result.crc = uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
+	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
 	var fecResult fec.Result
-	if !crc.CheckCCITT(_packedBytes[:10], result.crc) {
+	if !crc.CheckCCITT(_packedBytes[:10], _crc) {
 		fecResult.Uncorrectable = true
 	}
 	result.FEC = fecResult

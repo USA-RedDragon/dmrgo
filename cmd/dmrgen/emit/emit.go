@@ -328,9 +328,9 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	if algo.BitLevel {
 		// Bit-level CRC (e.g. CRC-8): operates on data[:] directly, no byte packing
 		dataBits := inputSize - algo.CRCBits
-		g.Id("result").Dot("crc").Op("=").Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(dataBits), Empty())))
+		g.Id("_crc").Op(":=").Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(dataBits), Empty())))
 		g.Var().Id("fecResult").Qual(fecPkg, "Result")
-		g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Lit(dataBits)), Id("result").Dot("crc"))).Block(
+		g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Lit(dataBits)), Id("_crc"))).Block(
 			Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 		)
 		g.Id("result").Dot("FEC").Op("=").Id("fecResult")
@@ -346,13 +346,13 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 		g.Id("_packedBytes").Index(Lit(totalBytes - 1)).Op("^=").Lit(lowByte)
 	}
 
-	// Store CRC value from the (possibly masked) packed bytes, then check it
+	// Read the CRC from the (possibly masked) packed bytes, then check it
 	totalBytes := inputSize / 8
-	g.Id("result").Dot("crc").Op("=").
+	g.Id("_crc").Op(":=").
 		Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 2))).Op("<<").Lit(8).
 		Op("|").Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 1)))
 	g.Var().Id("fecResult").Qual(fecPkg, "Result")
-	g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Lit(totalBytes-2)), Id("result").Dot("crc"))).Block(
+	g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Lit(totalBytes-2)), Id("_crc"))).Block(
 		Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 	)
 	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
