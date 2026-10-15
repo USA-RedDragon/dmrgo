@@ -10,14 +10,16 @@ import (
 )
 
 // ambiguousSync reports a decode whose SYNC classification can change on
-// re-encode: the first centre matched a SYNC pattern with bit errors, or a
+// re-encode: the first centre matched a SYNC pattern with bit errors, a
 // voice burst B-F re-encoded with an embedded field within the SYNC match
-// threshold. A damaged SYNC burst and such a voice burst look the same.
+// threshold, or a burst without a SYNC pattern whose EMB Encode writes back
+// corrected, so that the EMB checks of a data burst with an EMB give another
+// result. A damaged SYNC burst and such a voice burst look the same.
 func ambiguousSync(first, second *layer2.Burst) bool {
 	if first.SyncPattern != enums.SyncNone {
 		return first.SyncDistance > 0
 	}
-	return second.SyncPattern != enums.SyncNone
+	return first.Kind != second.Kind || second.SyncPattern != enums.SyncNone
 }
 
 func FuzzBurstDecode(f *testing.F) {

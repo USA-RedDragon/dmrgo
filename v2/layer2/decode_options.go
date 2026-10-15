@@ -19,10 +19,17 @@ var ErrColorCodeMismatch = errors.New("color code mismatch")
 const DefaultSyncThreshold = 4
 
 // DecodeOptions are receive-side settings for DecodeFromBytesWith. The zero
-// value classifies the burst by its SYNC field.
+// value classifies the burst by its SYNC field. A burst without a SYNC
+// pattern is a voice burst, unless it is a data burst with an EMB in place
+// of the SYNC (§6.4.2): its centre is more than 12 bits from every data SYNC
+// pattern, its EMB decodes, its slot type decodes with at most 2
+// corrections and the color code of the EMB, its data type is BPTC coded,
+// its BPTC corrects at most 8 errors, and its CRC or RS(12,9) code checks
+// where the data type has one.
 type DecodeOptions struct {
 	// SyncThreshold is the largest Hamming distance at which the SYNC field
-	// of a burst of unknown kind matches a Table 9.2 pattern. 0 selects
+	// matches a Table 9.2 pattern, for a burst of unknown kind, a KindVoice
+	// burst of unknown position and a KindData burst. 0 selects
 	// DefaultSyncThreshold; a negative value accepts exact matches only.
 	SyncThreshold int
 	// ColorCode, when set, is the expected color code. DecodeFromBytesWith
@@ -32,7 +39,10 @@ type DecodeOptions struct {
 	ColorCode *uint8
 	// Kind is the burst kind, when the caller knows it from outside the
 	// burst, for example from TDMA timing or a network header. A known kind
-	// overrides the classification by the SYNC field.
+	// overrides the classification by the SYNC field. KindData takes the
+	// centre as the nearest data SYNC pattern, or as EMB and embedded data
+	// when no data SYNC pattern is within the SYNC threshold or within 12
+	// bits and the EMB decodes with the color code of the slot type.
 	Kind Kind
 	// VoiceBurst is the superframe position of a KindVoice burst.
 	// VoiceBurstA takes the SYNC field as the nearest voice SYNC pattern and

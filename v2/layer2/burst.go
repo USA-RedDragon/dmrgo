@@ -45,7 +45,8 @@ const (
 	// pattern (burst A) or embedded signalling (bursts B to F).
 	KindVoice
 	// KindData is a data or control burst: a slot type and an information
-	// payload around a data SYNC pattern.
+	// payload around a data SYNC pattern or around embedded signalling
+	// (§5.1.5.1, §6.4.2).
 	KindData
 	// KindReverseChannel is a standalone inbound RC burst (§6.4.1).
 	KindReverseChannel
@@ -71,7 +72,8 @@ type Burst struct {
 	Kind Kind
 	// SyncPattern is the Table 9.2 pattern in the burst centre, or
 	// enums.SyncNone when the centre carries embedded signalling, as in
-	// voice bursts B to F. A standalone RC burst has enums.SyncMSSourcedRC.
+	// voice bursts B to F and data bursts with an EMB. A standalone RC
+	// burst has enums.SyncMSSourcedRC.
 	SyncPattern enums.SyncPattern
 	// NearestSync is the Table 9.2 pattern nearest to the received centre
 	// field and SyncDistance its Hamming distance, whatever the
@@ -124,15 +126,15 @@ type Burst struct {
 }
 
 // HasEmbeddedSignalling reports whether the burst carries an EMB and an
-// embedded data field: a voice burst without a SYNC pattern, or a standalone
-// RC burst.
+// embedded data field: a voice or data burst without a SYNC pattern, or a
+// standalone RC burst.
 func (b *Burst) HasEmbeddedSignalling() bool {
-	return b.Kind == KindReverseChannel || b.Kind == KindVoice && b.SyncPattern == enums.SyncNone
+	return b.Kind == KindReverseChannel || (b.Kind == KindVoice || b.Kind == KindData) && b.SyncPattern == enums.SyncNone
 }
 
 // HasReverseChannel reports whether the embedded data field carries an RC
-// PDU: in a standalone RC burst, and in a voice burst whose EMB has PI set
-// and LCSS single fragment (§6.4).
+// PDU: in a standalone RC burst, and in a voice or data burst whose EMB has
+// PI set and LCSS single fragment (§6.4).
 func (b *Burst) HasReverseChannel() bool {
 	if b.Kind == KindReverseChannel {
 		return true
@@ -185,7 +187,7 @@ func (b *Burst) decode(opts DecodeOptions) error {
 	case KindVoice:
 		return b.decodeVoiceKind(opts.VoiceBurst, nearest, distance, threshold)
 	case KindData:
-		return b.decodeData(opts.DataType)
+		return b.decodeData(opts.DataType, threshold)
 	case KindReverseChannel:
 		b.decodeStandaloneRC()
 		return nil
@@ -195,10 +197,12 @@ func (b *Burst) decode(opts DecodeOptions) error {
 	}
 
 	switch {
+	case distance > threshold && b.isEmbeddedDataBurst():
+		return b.decodeData(nil, threshold)
 	case distance > threshold:
 		b.decodeVoice(enums.VoiceBurstUnknown, enums.SyncNone)
 	case isDataSync(nearest):
-		return b.decodeData(nil)
+		return b.decodeData(nil, threshold)
 	case isVoiceSync(nearest):
 		b.decodeVoice(enums.VoiceBurstA, nearest)
 	case nearest == enums.SyncMSSourcedRC:
@@ -231,21 +235,39 @@ func (b *Burst) decodeVoiceKind(pos enums.VoiceBurstType, nearest enums.SyncPatt
 func (b *Burst) decodeVoice(pos enums.VoiceBurstType, sync enums.SyncPattern) {
 	b.Kind, b.SyncPattern, b.VoiceBurst = KindVoice, sync, pos
 	if sync == enums.SyncNone {
-		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
-		b.FEC.EMB = b.EmbeddedSignalling.FEC
-		if b.HasReverseChannel() {
-			b.ReverseChannel = DecodeEmbeddedRC(b.EmbeddedSignallingData)
-			b.FEC.RC = b.ReverseChannel.FEC
-		}
+		b.setEmbedded(parseEmbedded(b.bitData))
 	}
 	b.VoiceSlots = parseVoiceSlots(b.bitData)
 }
 
-func (b *Burst) decodeData(dataType *enums.DataType) error {
+// setEmbedded sets the EMB and embedded data field of a burst with
+// HasEmbeddedSignalling, and the RC PDU when the field carries one.
+func (b *Burst) setEmbedded(emb pdu.EmbeddedSignalling, data [32]bit.Bit) {
+	b.EmbeddedSignalling, b.EmbeddedSignallingData = emb, data
+	b.FEC.EMB = emb.FEC
+	if b.HasReverseChannel() {
+		b.ReverseChannel = DecodeEmbeddedRC(data)
+		b.FEC.RC = b.ReverseChannel.FEC
+	}
+}
+
+// decodeData decodes a data burst. The centre is the nearest data SYNC
+// pattern, unless that is more than threshold and damagedSyncDistance bits
+// off and the centre decodes as an EMB with the color code of the slot
+// type: then the burst carries embedded signalling.
+func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	b.Kind = KindData
-	b.SyncPattern, _ = b.nearestSync(dataSyncPatterns)
 	b.SlotType = parseSlotType(b.bitData)
 	b.FEC.SlotType = b.SlotType.FEC
+	var distance int
+	b.SyncPattern, distance = b.nearestSync(dataSyncPatterns)
+	if distance > threshold && distance > damagedSyncDistance {
+		emb, data := parseEmbedded(b.bitData)
+		if !emb.FEC.Uncorrectable && emb.ColorCode == b.SlotType.ColorCode {
+			b.SyncPattern = enums.SyncNone
+			b.setEmbedded(emb, data)
+		}
+	}
 	if dataType != nil {
 		b.SlotType.DataType = *dataType
 	}
@@ -256,16 +278,70 @@ func (b *Burst) decodeData(dataType *enums.DataType) error {
 	return err
 }
 
+// Limits of isEmbeddedDataBurst. The BPTC(196,96) decoder accepts about 9%
+// of random blocks, but each with 16 or more corrections, so the BPTC limit
+// keeps voice out.
+const (
+	embeddedDataMaxSlotTypeErrors = 2
+	embeddedDataMaxBPTCErrors     = 8
+)
+
+// damagedSyncDistance is the largest Hamming distance at which the centre of
+// a data burst is a data SYNC pattern with bit errors, not an EMB and
+// embedded data. The MS-sourced data SYNC pattern is 2 bits from an EMB
+// codeword, but an EMB with random embedded data comes this close to a data
+// SYNC pattern in only about 0.14% of bursts.
+const damagedSyncDistance = 12
+
+// isEmbeddedDataBurst reports whether a burst without a SYNC pattern is a
+// data burst that carries an EMB and embedded data in place of the SYNC
+// (§6.4.2): the centre is more than damagedSyncDistance bits from every data
+// SYNC pattern, the EMB decodes, the slot type decodes with at most
+// embeddedDataMaxSlotTypeErrors corrections, the color code of the slot
+// type and the EMB are the same, the data type is BPTC coded, the BPTC
+// decodes with at most embeddedDataMaxBPTCErrors corrections, and the CRC
+// or RS(12,9) code of the PDU checks where the data type has one.
+func (b *Burst) isEmbeddedDataBurst() bool {
+	if _, d := b.nearestSync(dataSyncPatterns); d <= damagedSyncDistance {
+		return false
+	}
+	st := parseSlotType(b.bitData)
+	if st.FEC.Uncorrectable || st.FEC.ErrorsCorrected > embeddedDataMaxSlotTypeErrors || !isBPTCDataType(st.DataType) {
+		return false
+	}
+	if emb, _ := parseEmbedded(b.bitData); emb.FEC.Uncorrectable || emb.ColorCode != st.ColorCode {
+		return false
+	}
+	info, res := bptc.Decode196(extractDataBits(b.bitData))
+	if res.Uncorrectable || res.ErrorsCorrected > embeddedDataMaxBPTCErrors {
+		return false
+	}
+	p := bit.Pack96(info)
+	switch st.DataType {
+	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
+		_, lcRes, err := pdu.DecodeFullLCCodeword(p, st.DataType)
+		return err == nil && !lcRes.Uncorrectable
+	case enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader,
+		enums.DataTypeUnifiedSingleBlock:
+		return pdu.BlockCRCOK(p, st.DataType)
+	case enums.DataTypeMBCContinuation, enums.DataTypeRate12, enums.DataTypeIdle:
+		return true
+	case enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeReserved:
+	}
+	return false
+}
+
 // opcode0x38Hint returns the likely meaning of CSBK opcode 0x38 in a burst
 // with SYNC pattern sync: an MS sends BS_Dwn_Act and a TSCC sends TD_GRANT_MI.
+// Only a BS sends a data burst with an EMB in place of the SYNC (§6.4.2).
 func opcode0x38Hint(sync enums.SyncPattern) pdu.Opcode0x38Hint {
 	switch sync {
 	case enums.SyncMSSourcedData:
 		return pdu.Opcode0x38BSOutboundActivation
-	case enums.SyncBSSourcedData:
+	case enums.SyncBSSourcedData, enums.SyncNone:
 		return pdu.Opcode0x38TalkgroupDataGrantMultiItem
 	case enums.SyncBSSourcedVoice, enums.SyncMSSourcedVoice, enums.SyncMSSourcedRC, enums.SyncTDMA1Voice,
-		enums.SyncTDMA1Data, enums.SyncTDMA2Voice, enums.SyncTDMA2Data, enums.SyncReserved, enums.SyncNone:
+		enums.SyncTDMA1Data, enums.SyncTDMA2Voice, enums.SyncTDMA2Data, enums.SyncReserved:
 	}
 	return pdu.Opcode0x38Unknown
 }
@@ -536,11 +612,12 @@ func decodePayload(dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern
 
 // Encode returns the encoded bytes of the burst. Kind selects the payload.
 // A voice burst carries a voice SYNC pattern, enums.SyncReserved, or, with
-// SyncPattern enums.SyncNone, embedded signalling. A data burst carries a
-// data SYNC pattern and the slot type. A standalone RC burst carries the RC
-// SYNC pattern. VoiceBurst has no effect. When HasReverseChannel reports
-// true, the embedded signalling data field carries the coded ReverseChannel
-// instead of EmbeddedSignallingData. Otherwise the field carries
+// SyncPattern enums.SyncNone, embedded signalling. A data burst carries the
+// slot type and a data SYNC pattern or, with SyncPattern enums.SyncNone,
+// embedded signalling. A standalone RC burst carries the RC SYNC pattern.
+// VoiceBurst has no effect. When HasReverseChannel reports true, the
+// embedded signalling data field carries the coded ReverseChannel instead
+// of EmbeddedSignallingData. Otherwise the field carries
 // EmbeddedSignallingData as it is: the FEC of an embedded LC spans bursts B
 // to E, so a single burst does not correct it. Encode returns an error for a
 // burst that breaks these rules and when a field value does not fit in its
@@ -631,7 +708,7 @@ func (b *Burst) checkCentre() error {
 			return nil
 		}
 	case KindData:
-		if isDataSync(b.SyncPattern) {
+		if b.SyncPattern == enums.SyncNone || isDataSync(b.SyncPattern) {
 			return nil
 		}
 	case KindUnknown, KindReverseChannel:
