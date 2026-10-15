@@ -110,14 +110,14 @@ func TestVoiceTransmitter_SetEmbeddedFragments(t *testing.T) {
 	}
 	for i, raw := range bursts[1:6] {
 		pos := enums.VoiceBurstB + enums.VoiceBurstType(i)
-		want, ok := layer2.LCSSForPosition(pos)
+		want, ok := pos.LCSS()
 		if b := must(layer2.NewBurstFromBytes(raw)); !ok || b.EmbeddedSignalling.LCSS != want {
-			t.Errorf("burst %s: LCSS %s, LCSSForPosition %s", pos, b.EmbeddedSignalling.LCSS, want)
+			t.Errorf("burst %s: LCSS %s, VoiceBurstType.LCSS %s", pos, b.EmbeddedSignalling.LCSS, want)
 		}
 	}
 	for _, pos := range []enums.VoiceBurstType{enums.VoiceBurstUnknown, enums.VoiceBurstA} {
-		if _, ok := layer2.LCSSForPosition(pos); ok {
-			t.Errorf("LCSSForPosition(%s) is ok", pos)
+		if _, ok := pos.LCSS(); ok {
+			t.Errorf("(%s).LCSS() is ok", pos)
 		}
 	}
 	tail := must(tx.Terminate())

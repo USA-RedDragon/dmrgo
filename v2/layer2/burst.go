@@ -164,7 +164,10 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 // error is ErrReservedDataType for a reserved data type, ErrColorCodeMismatch
 // for a color code other than DecodeOptions.ColorCode, or an error for
 // invalid options. The burst is populated even when an error is returned; a
-// color code mismatch is joined with any decode error.
+// color code mismatch is joined with any decode error. Without
+// DecodeOptions.Kind, a voice burst B to F whose EMB and embedded data come
+// within the SYNC threshold of a SYNC pattern decodes as that kind of burst,
+// for example as a standalone RC burst (see DecodeOptions.VoiceBurst).
 func (b *Burst) DecodeFromBytesWith(data [33]byte, opts DecodeOptions) error {
 	*b = Burst{}
 	b.bitData = bit.Unpack264(data)
