@@ -1383,11 +1383,18 @@ func (e encoder) field(g *Group, field parse.Field) {
 	case parse.FieldLongitude, parse.FieldLatitude:
 		raw := "_raw" + field.Name
 		half := 1 << (field.BitWidth - 1)
-		g.Id(raw).Op(":=").Add(coordRaw(field, source.Clone()))
+		limit := coordSpan(field) / 2
 		// Negated form also rejects NaN.
-		g.If(Op("!").Parens(Id(raw).Op(">=").Lit(-half).Op("&&").Id(raw).Op("<=").Lit(half - 1))).Block(
-			e.failf(field, fmt.Sprintf("%%v degrees is outside [%v, %v)", -coordSpan(field)/2, coordSpan(field)/2), source.Clone()),
+		g.If(Op("!").Parens(source.Clone().Op(">=").Lit(-limit).Op("&&").Add(source.Clone()).Op("<=").Lit(limit))).Block(
+			e.failf(field, fmt.Sprintf("%%v degrees is outside [%v, %v]", -limit, limit), source.Clone()),
 		)
+		g.Id(raw).Op(":=").Add(coordRaw(field, source.Clone()))
+		// +180 degrees longitude rounds to 2^(width-1), which the two's
+		// complement store wraps to -180, the same meridian. +90 degrees
+		// latitude has no code, so it takes the nearest one.
+		if field.Kind == parse.FieldLatitude {
+			g.Id(raw).Op("=").Min(Id(raw), Lit(half-1))
+		}
 		g.Copy(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
 			Qual(bitPkg, fnFromUint32).Call(

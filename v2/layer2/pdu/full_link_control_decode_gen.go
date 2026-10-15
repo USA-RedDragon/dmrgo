@@ -295,15 +295,16 @@ func EncodeFLCGPSInfo(s *FLCGPSInfo) ([56]bit.Bit, error) {
 		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.PositionError: value %d does not fit in 3 bits", s.PositionError)
 	}
 	copy(data[4:7], bit.BitsFromUint8(uint8(s.PositionError), 3))
+	if !(s.Longitude >= -180.0 && s.Longitude <= 180.0) {
+		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Longitude: %v degrees is outside [-180, 180]", s.Longitude)
+	}
 	_rawLongitude := math.Round(s.Longitude * (1 << 25) / 360.0)
-	if !(_rawLongitude >= -16777216 && _rawLongitude <= 16777215) {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Longitude: %v degrees is outside [-180, 180)", s.Longitude)
-	}
 	copy(data[7:32], bit.BitsFromUint32(uint32(int32(_rawLongitude)), 25))
-	_rawLatitude := math.Round(s.Latitude * (1 << 24) / 180.0)
-	if !(_rawLatitude >= -8388608 && _rawLatitude <= 8388607) {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Latitude: %v degrees is outside [-90, 90)", s.Latitude)
+	if !(s.Latitude >= -90.0 && s.Latitude <= 90.0) {
+		return [56]bit.Bit{}, fmt.Errorf("FLCGPSInfo.Latitude: %v degrees is outside [-90, 90]", s.Latitude)
 	}
+	_rawLatitude := math.Round(s.Latitude * (1 << 24) / 180.0)
+	_rawLatitude = min(_rawLatitude, 8388607)
 	copy(data[32:56], bit.BitsFromUint32(uint32(int32(_rawLatitude)), 24))
 	return data, nil
 }

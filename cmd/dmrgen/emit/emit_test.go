@@ -151,10 +151,12 @@ func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
 	assertContains(t, out,
 		"result.Lon = float64(int32(bit.BitsToUint32(data[:], 0, 25)<<7)>>7) * 360.0 / (1 << 25)",
 		"result.Lat = float64(int32(bit.BitsToUint32(data[:], 25, 24)<<8)>>8) * 180.0 / (1 << 24)",
+		"if !(s.Lon >= -180.0 && s.Lon <= 180.0) {",
 		"_rawLon := math.Round(s.Lon * (1 << 25) / 360.0)",
-		"if !(_rawLon >= -16777216 && _rawLon <= 16777215) {",
+		"copy(data[0:25], bit.BitsFromUint32(uint32(int32(_rawLon)), 25))",
+		"if !(s.Lat >= -90.0 && s.Lat <= 90.0) {",
 		"_rawLat := math.Round(s.Lat * (1 << 24) / 180.0)",
-		"if !(_rawLat >= -8388608 && _rawLat <= 8388607) {",
+		"_rawLat = min(_rawLat, 8388607)",
 	)
 }
 

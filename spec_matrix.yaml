@@ -1349,6 +1349,7 @@ documents:
               - TestFLCGPSInfo_CoordinatesRoundTrip
               - TestFLCGPSInfo_DecodeTwosComplement
               - TestFLCGPSInfo_EncodeTwosComplement
+              - TestFLCGPSInfo_EncodeRangeEdges
               - TestEncode_RejectsCoordinatesOutOfRange
 
       - section: "7.2.17"
@@ -1361,6 +1362,7 @@ documents:
               - TestFLCGPSInfo_CoordinatesRoundTrip
               - TestFLCGPSInfo_DecodeTwosComplement
               - TestFLCGPSInfo_EncodeTwosComplement
+              - TestFLCGPSInfo_EncodeRangeEdges
               - TestEncode_RejectsCoordinatesOutOfRange
 
       - section: "7.2.18"

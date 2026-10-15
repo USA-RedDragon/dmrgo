@@ -73,9 +73,9 @@ func TestEncode_RejectsCoordinatesOutOfRange(t *testing.T) {
 		lon, lat float64
 		want     string
 	}{
-		{"Latitude90", 0, 90, "Latitude: 90 degrees is outside [-90, 90)"},
+		{"LatitudeAbove", 0, 90.0001, "Latitude: 90.0001 degrees is outside [-90, 90]"},
 		{"LatitudeBelow", 0, -90.0001, "Latitude"},
-		{"Longitude180", 180, 0, "Longitude: 180 degrees is outside [-180, 180)"},
+		{"LongitudeAbove", 180.0001, 0, "Longitude: 180.0001 degrees is outside [-180, 180]"},
 		{"LongitudeBelow", -180.0001, 0, "Longitude"},
 		{"NaN", math.NaN(), 0, "Longitude"},
 		{"Inf", 0, math.Inf(1), "Latitude"},

@@ -81,3 +81,27 @@ func TestFLCGPSInfo_EncodeTwosComplement(t *testing.T) {
 		}
 	}
 }
+
+// Values at the top of each range have no code of their own. Longitude
+// wraps to -180, the same meridian, and latitude takes the largest code.
+func TestFLCGPSInfo_EncodeRangeEdges(t *testing.T) {
+	tests := []struct {
+		name             string
+		lon, lat         float64
+		wantLon, wantLat float64
+	}{
+		{"Longitude180", 180, 0, -180, 0},
+		{"LongitudeRoundsTo180", 180 - lonStep/4, 0, -180, 0},
+		{"LongitudeBelowHalfStep", 180 - lonStep*3/4, 0, 180 - lonStep, 0},
+		{"Latitude90", 0, 90, 0, 90 - latStep},
+		{"LatitudeRoundsTo90", 0, 90 - latStep/4, 0, 90 - latStep},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out, _ := pdu.DecodeFLCGPSInfo(must(pdu.EncodeFLCGPSInfo(&pdu.FLCGPSInfo{Longitude: tt.lon, Latitude: tt.lat})))
+			if out.Longitude != tt.wantLon || out.Latitude != tt.wantLat {
+				t.Errorf("decoded %v, %v, want %v, %v", out.Longitude, out.Latitude, tt.wantLon, tt.wantLat)
+			}
+		})
+	}
+}
