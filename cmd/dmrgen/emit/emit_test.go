@@ -127,6 +127,35 @@ type T struct {
 	assertContains(t, out, "if result.K == 0 {", "} else {")
 }
 
+func TestSignedFieldIsSignExtended(t *testing.T) {
+	out := mustGenerate(t, `type Offset int16
+type T struct {
+	A int    `+"`dmr:\"bits:0-11,signed\"`"+`
+	B Offset `+"`dmr:\"bits:12-19,signed\"`"+`
+	C int32  `+"`dmr:\"bits:20-51,signed\"`"+`
+	D int    `+"`dmr:\"bits:52-59\"`"+`
+}`)
+	assertContains(t, out,
+		"result.A = int(int32(bit.BitsToUint32(data[:], 0, 12)<<20) >> 20)",
+		"result.B = Offset(int32(bit.BitsToUint32(data[:], 12, 8)<<24) >> 24)",
+		"result.C = int32(int32(bit.BitsToUint32(data[:], 20, 32)))",
+		"result.D = bit.BitsToInt(data[:], 52, 8)",
+	)
+}
+
+func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
+	out := mustGenerate(t, `type T struct {
+	Lon float64 `+"`dmr:\"bits:0-24,type:longitude\"`"+`
+	Lat float64 `+"`dmr:\"bits:25-48,type:latitude\"`"+`
+}`)
+	assertContains(t, out,
+		"result.Lon = float64(int32(bit.BitsToUint32(data[:], 0, 25)<<7)>>7) * 360.0 / (1 << 25)",
+		"result.Lat = float64(int32(bit.BitsToUint32(data[:], 25, 24)<<8)>>8) * 180.0 / (1 << 24)",
+		"math.Round(s.Lon*(1<<25)/360.0)",
+		"math.Round(s.Lat*(1<<24)/180.0)",
+	)
+}
+
 func TestInputsBecomeDecodeParameters(t *testing.T) {
 	out := mustGenerate(t, `type Sub struct {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`

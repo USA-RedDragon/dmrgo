@@ -842,6 +842,10 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		}
 
 	case parse.FieldInt:
+		if field.Signed {
+			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(signExtend(field, contiguousUint32(field)))
+			break
+		}
 		call := Qual(bitPkg, "BitsToInt").Call(
 			Id("data").Index(Empty(), Empty()),
 			Lit(field.BitStart),
@@ -949,29 +953,10 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			g.List(target, Id("_")).Op("=").Add(decodeFnCall)
 		}
 
-	case parse.FieldLongitude:
-		// Longitude = float32(rawInt) * float32(360.0 / math.Pow(2, bitWidth))
-		g.Add(target).Op("=").Float32().Call(
-			Qual(bitPkg, "BitsToInt").Call(
-				Id("data").Index(Empty(), Empty()),
-				Lit(field.BitStart),
-				Lit(field.BitWidth),
-			),
-		).Op("*").Float32().Call(
-			Lit(360.0).Op("/").Qual("math", "Pow").Call(Lit(2.0), Lit(float64(field.BitWidth))),
-		)
-
-	case parse.FieldLatitude:
-		// Latitude = float32(rawInt) * float32(180.0 / math.Pow(2, bitWidth))
-		g.Add(target).Op("=").Float32().Call(
-			Qual(bitPkg, "BitsToInt").Call(
-				Id("data").Index(Empty(), Empty()),
-				Lit(field.BitStart),
-				Lit(field.BitWidth),
-			),
-		).Op("*").Float32().Call(
-			Lit(180.0).Op("/").Qual("math", "Pow").Call(Lit(2.0), Lit(float64(field.BitWidth))),
-		)
+	case parse.FieldLongitude, parse.FieldLatitude:
+		// Two's complement value scaled by span/2^width (ETSI TS 102 361-2 7.2.16/7.2.17)
+		g.Add(target).Op("=").Float64().Call(signExtend(field, contiguousUint32(field))).
+			Op("*").Lit(coordSpan(field)).Op("/").Parens(Lit(1).Op("<<").Lit(field.BitWidth))
 
 	case parse.FieldDispatch:
 		// Dispatch fields are handled separately in emitDispatchSwitch
@@ -1322,30 +1307,11 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			)
 		}
 
-	case parse.FieldLongitude:
-		// Reverse: int(lon / (360.0 / float32(1 << bitWidth)))
+	case parse.FieldLongitude, parse.FieldLatitude:
 		g.Copy(
 			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
 			Qual(bitPkg, "BitsFromUint32").Call(
-				Uint32().Call(
-					source.Clone().Op("/").Float32().Call(
-						Lit(360.0).Op("/").Qual("math", "Pow").Call(Lit(2.0), Lit(float64(field.BitWidth))),
-					),
-				),
-				Lit(field.BitWidth),
-			),
-		)
-
-	case parse.FieldLatitude:
-		// Reverse: int(lat / (180.0 / float32(1 << bitWidth)))
-		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			Qual(bitPkg, "BitsFromUint32").Call(
-				Uint32().Call(
-					source.Clone().Op("/").Float32().Call(
-						Lit(180.0).Op("/").Qual("math", "Pow").Call(Lit(2.0), Lit(float64(field.BitWidth))),
-					),
-				),
+				Uint32().Call(Int32().Call(coordRaw(field, source.Clone()))),
 				Lit(field.BitWidth),
 			),
 		)
@@ -1449,6 +1415,40 @@ func emitNonContiguousEncode(g *Group, field parse.Field) {
 }
 
 // Helper functions
+
+// contiguousUint32 reads a contiguous field as a uint32.
+func contiguousUint32(field parse.Field) *Statement {
+	return Qual(bitPkg, "BitsToUint32").Call(
+		Id("data").Index(Empty(), Empty()),
+		Lit(field.BitStart),
+		Lit(field.BitWidth),
+	)
+}
+
+// signExtend converts a width-bit two's complement value held in a uint32
+// expression to int32.
+func signExtend(field parse.Field, raw *Statement) *Statement {
+	shift := 32 - field.BitWidth
+	if shift == 0 {
+		return Int32().Call(raw)
+	}
+	return Int32().Call(raw.Op("<<").Lit(shift)).Op(">>").Lit(shift)
+}
+
+// coordSpan returns the full range in degrees of a latitude or longitude field.
+func coordSpan(field parse.Field) float64 {
+	if field.Kind == parse.FieldLongitude {
+		return 360
+	}
+	return 180
+}
+
+// coordRaw converts a coordinate in degrees to the nearest raw step count.
+func coordRaw(field parse.Field, value *Statement) *Statement {
+	return Qual("math", "Round").Call(
+		value.Op("*").Parens(Lit(1).Op("<<").Lit(field.BitWidth)).Op("/").Lit(coordSpan(field)),
+	)
+}
 
 func bitExtractFunc(width int) string {
 	switch {

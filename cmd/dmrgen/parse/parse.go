@@ -630,7 +630,7 @@ func validateField(f *Field) error {
 		if nonContiguous {
 			return errors.New("latitude/longitude fields must be contiguous")
 		}
-		if f.GoType != "float64" && f.GoType != "float32" {
+		if f.GoType != "float64" {
 			return fmt.Errorf("latitude/longitude fields must be float64, got %s", f.GoType)
 		}
 		if f.BitWidth < 2 || f.BitWidth > 32 {

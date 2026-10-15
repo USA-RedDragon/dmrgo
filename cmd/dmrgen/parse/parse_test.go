@@ -422,6 +422,13 @@ type T struct {
 			want: "latitude/longitude fields must be",
 		},
 		{
+			name: "longitude on float32",
+			src: `type T struct {
+	A float32 ` + "`dmr:\"bits:0-24,type:longitude\"`" + `
+}`,
+			want: "latitude/longitude fields must be float64",
+		},
+		{
 			name: "non-contiguous raw",
 			src: `type T struct {
 	A [5]bit.Bit ` + "`dmr:\"bits:3+12-15,raw\"`" + `

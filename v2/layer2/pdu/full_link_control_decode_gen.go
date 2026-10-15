@@ -205,8 +205,8 @@ func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
 	var result FLCGPSInfo
 	var fecResult fec.FECResult
 	result.PositionError = layer3Elements.PositionError(bit.BitsToUint8(data[:], 4, 3))
-	result.Longitude = float32(bit.BitsToInt(data[:], 7, 25)) * float32(360.0/math.Pow(2.0, 25.0))
-	result.Latitude = float32(bit.BitsToInt(data[:], 32, 24)) * float32(180.0/math.Pow(2.0, 24.0))
+	result.Longitude = float64(int32(bit.BitsToUint32(data[:], 7, 25)<<7)>>7) * 360.0 / (1 << 25)
+	result.Latitude = float64(int32(bit.BitsToUint32(data[:], 32, 24)<<8)>>8) * 180.0 / (1 << 24)
 	return result, fecResult
 }
 
@@ -214,8 +214,8 @@ func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
 func EncodeFLCGPSInfo(s *FLCGPSInfo) [56]bit.Bit {
 	var data [56]bit.Bit
 	copy(data[4:7], bit.BitsFromUint8(uint8(s.PositionError), 3))
-	copy(data[7:32], bit.BitsFromUint32(uint32(s.Longitude/float32(360.0/math.Pow(2.0, 25.0))), 25))
-	copy(data[32:56], bit.BitsFromUint32(uint32(s.Latitude/float32(180.0/math.Pow(2.0, 24.0))), 24))
+	copy(data[7:32], bit.BitsFromUint32(uint32(int32(math.Round(s.Longitude*(1<<25)/360.0))), 25))
+	copy(data[32:56], bit.BitsFromUint32(uint32(int32(math.Round(s.Latitude*(1<<24)/180.0))), 24))
 	return data
 }
 

@@ -45,8 +45,8 @@ type FLCUnitToUnit struct {
 // ETSI TS 102 361-2 - Table 7.3: GPS Info PDU content
 type FLCGPSInfo struct {
 	PositionError layer3Elements.PositionError `dmr:"bits:4-6,delegate,noptr"`
-	Longitude     float32                      `dmr:"bits:7-31,type:longitude"`
-	Latitude      float32                      `dmr:"bits:32-55,type:latitude"`
+	Longitude     float64                      `dmr:"bits:7-31,type:longitude"`
+	Latitude      float64                      `dmr:"bits:32-55,type:latitude"`
 }
 
 // ETSI TS 102 361-2 - Table 7.4: Talker Alias Header Info PDU content
