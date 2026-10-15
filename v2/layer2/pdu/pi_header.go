@@ -32,6 +32,6 @@ type PIHeader struct {
 }
 
 // DataType returns enums.DataTypePIHeader.
-func (p *PIHeader) DataType() enums.DataType {
+func (s *PIHeader) DataType() enums.DataType {
 	return enums.DataTypePIHeader
 }

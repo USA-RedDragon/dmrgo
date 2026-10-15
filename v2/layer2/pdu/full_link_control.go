@@ -60,37 +60,37 @@ type FullLinkControl struct {
 // Motorola, 0x10) with these FLCOs, as MMDVMHost does. A manufacturer FID
 // may redefine the payload, so such addresses are a best effort. ok is false
 // for other FLCOs.
-func (f *FullLinkControl) Addresses() (target, source uint32, ok bool) {
-	if f.FLCO == enums.FLCOGroupVoiceChannelUser && f.GroupVoice != nil {
-		return f.GroupVoice.GroupAddress, f.GroupVoice.SourceAddress, true
+func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
+	if s.FLCO == enums.FLCOGroupVoiceChannelUser && s.GroupVoice != nil {
+		return s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress, true
 	}
-	if f.FLCO == enums.FLCOUnitToUnitVoiceChannelUser && f.UnitToUnit != nil {
-		return f.UnitToUnit.TargetAddress, f.UnitToUnit.SourceAddress, true
+	if s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser && s.UnitToUnit != nil {
+		return s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress, true
 	}
-	if f.FLCO != enums.FLCOGroupVoiceChannelUser && f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
+	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
 		return 0, 0, false
 	}
-	return uint32(bit.Uint(f.RawPayload[8:32])), uint32(bit.Uint(f.RawPayload[32:56])), true
+	return uint32(bit.Uint(s.RawPayload[8:32])), uint32(bit.Uint(s.RawPayload[32:56])), true
 }
 
 // SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr
 // (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC with the standard FID, creating its
 // payload when it is nil. It returns false for other FLCOs and FIDs.
-func (f *FullLinkControl) SetAddresses(target, source uint32) bool {
-	if f.FeatureSetID != enums.FIDStandardized {
+func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
+	if s.FeatureSetID != enums.FIDStandardized {
 		return false
 	}
-	switch f.FLCO {
+	switch s.FLCO {
 	case enums.FLCOGroupVoiceChannelUser:
-		if f.GroupVoice == nil {
-			f.GroupVoice = &FLCGroupVoice{}
+		if s.GroupVoice == nil {
+			s.GroupVoice = &FLCGroupVoice{}
 		}
-		f.GroupVoice.GroupAddress, f.GroupVoice.SourceAddress = target, source
+		s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress = target, source
 	case enums.FLCOUnitToUnitVoiceChannelUser:
-		if f.UnitToUnit == nil {
-			f.UnitToUnit = &FLCUnitToUnit{}
+		if s.UnitToUnit == nil {
+			s.UnitToUnit = &FLCUnitToUnit{}
 		}
-		f.UnitToUnit.TargetAddress, f.UnitToUnit.SourceAddress = target, source
+		s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress = target, source
 	default:
 		return false
 	}
@@ -150,6 +150,6 @@ type FLCTerminatorDataLinkControl struct {
 }
 
 // DataType returns BurstDataType.
-func (flc *FullLinkControl) DataType() enums.DataType {
-	return flc.BurstDataType
+func (s *FullLinkControl) DataType() enums.DataType {
+	return s.BurstDataType
 }

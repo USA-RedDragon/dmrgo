@@ -42,7 +42,7 @@ func (dpid DPID) String() string {
 	return unknownName
 }
 
-// Valid reports whether d fits the 7-bit DPID field.
-func (d DPID) Valid() bool {
-	return d <= 127
+// Valid reports whether dpid fits the 7-bit DPID field.
+func (dpid DPID) Valid() bool {
+	return dpid <= 127
 }

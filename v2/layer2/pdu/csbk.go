@@ -498,26 +498,26 @@ type CSBK struct {
 
 // AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with
 // opcode 0x38 as a BS_Dwn_Act PDU. ok is false for another opcode or FID.
-func (csbk *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
-	if csbk.Opcode != CSBKBSOutboundActivation || csbk.FID != 0 {
+func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
+	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
 		return p, false
 	}
-	p, _ = DecodeBSOutboundActivationPDU(csbk.RawPayload)
+	p, _ = DecodeBSOutboundActivationPDU(s.RawPayload)
 	return p, true
 }
 
 // AsTalkgroupDataGrantMultiItem decodes the RawPayload of a standard FID
 // CSBK with opcode 0x38 as a TD_GRANT_MI PDU. ok is false for another opcode
 // or FID.
-func (csbk *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU, ok bool) {
-	if csbk.Opcode != CSBKTalkgroupDataGrantMultiItem || csbk.FID != 0 {
+func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU, ok bool) {
+	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
 		return p, false
 	}
-	p, _ = DecodeTalkgroupDataGrantMultiItemPDU(csbk.RawPayload)
+	p, _ = DecodeTalkgroupDataGrantMultiItemPDU(s.RawPayload)
 	return p, true
 }
 
 // DataType returns enums.DataTypeCSBK.
-func (csbk *CSBK) DataType() enums.DataType {
+func (s *CSBK) DataType() enums.DataType {
 	return enums.DataTypeCSBK
 }

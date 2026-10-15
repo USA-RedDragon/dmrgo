@@ -19,26 +19,26 @@ type CdefParms struct {
 
 // TXFrequencyHz returns the transmit frequency in Hz, TXMHz MHz plus TXKHz
 // steps of 125 Hz.
-func (c *CdefParms) TXFrequencyHz() uint64 {
-	return uint64(c.TXMHz)*1_000_000 + uint64(c.TXKHz)*125
+func (s *CdefParms) TXFrequencyHz() uint64 {
+	return uint64(s.TXMHz)*1_000_000 + uint64(s.TXKHz)*125
 }
 
 // RXFrequencyHz returns the receive frequency in Hz, RXMHz MHz plus RXKHz
 // steps of 125 Hz.
-func (c *CdefParms) RXFrequencyHz() uint64 {
-	return uint64(c.RXMHz)*1_000_000 + uint64(c.RXKHz)*125
+func (s *CdefParms) RXFrequencyHz() uint64 {
+	return uint64(s.RXMHz)*1_000_000 + uint64(s.RXKHz)*125
 }
 
 // TXFrequencyMHz returns the transmit frequency in MHz.
 // Calculated as TXMHz + TXKHz × 0.000125.
 // ETSI TS 102 361-4 — Annex C
-func (c *CdefParms) TXFrequencyMHz() float64 {
-	return float64(c.TXMHz) + float64(c.TXKHz)*0.000125
+func (s *CdefParms) TXFrequencyMHz() float64 {
+	return float64(s.TXMHz) + float64(s.TXKHz)*0.000125
 }
 
 // RXFrequencyMHz returns the receive frequency in MHz.
 // Calculated as RXMHz + RXKHz × 0.000125.
 // ETSI TS 102 361-4 — Annex C
-func (c *CdefParms) RXFrequencyMHz() float64 {
-	return float64(c.RXMHz) + float64(c.RXKHz)*0.000125
+func (s *CdefParms) RXFrequencyMHz() float64 {
+	return float64(s.RXMHz) + float64(s.RXKHz)*0.000125
 }

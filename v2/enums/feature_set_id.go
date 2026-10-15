@@ -71,9 +71,9 @@ func (fsid FeatureSetID) String() string {
 	return fmt.Sprintf("Unknown FeatureSetID: %d", fsid)
 }
 
-// Valid reports whether f is a value that ETSI TS 102 361 defines.
-func (f FeatureSetID) Valid() bool {
-	switch f {
+// Valid reports whether fsid is a value that ETSI TS 102 361 defines.
+func (fsid FeatureSetID) Valid() bool {
+	switch fsid {
 	case FIDStandardized,
 		FIDFlydeMicro,
 		FIDProdEl,

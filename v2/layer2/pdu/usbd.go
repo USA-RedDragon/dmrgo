@@ -63,6 +63,6 @@ type UnifiedSingleBlockData struct {
 }
 
 // DataType returns enums.DataTypeUnifiedSingleBlock.
-func (u *UnifiedSingleBlockData) DataType() enums.DataType {
+func (s *UnifiedSingleBlockData) DataType() enums.DataType {
 	return enums.DataTypeUnifiedSingleBlock
 }

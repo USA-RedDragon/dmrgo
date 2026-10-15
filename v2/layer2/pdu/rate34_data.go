@@ -18,36 +18,36 @@ type Rate34Data struct {
 }
 
 // DataType returns enums.DataTypeRate34.
-func (rtData *Rate34Data) DataType() enums.DataType {
+func (s *Rate34Data) DataType() enums.DataType {
 	return enums.DataTypeRate34
 }
 
 // ConfirmedDBSN returns the Data Block Serial Number of a confirmed block.
-func (rtData *Rate34Data) ConfirmedDBSN() uint8 {
-	return confirmedDBSN(rtData.Data[:])
+func (s *Rate34Data) ConfirmedDBSN() uint8 {
+	return confirmedDBSN(s.Data[:])
 }
 
 // ConfirmedCRC9 returns the received (masked) CRC-9 of a confirmed block.
-func (rtData *Rate34Data) ConfirmedCRC9() uint16 {
-	return confirmedCRC9(rtData.Data[:])
+func (s *Rate34Data) ConfirmedCRC9() uint16 {
+	return confirmedCRC9(s.Data[:])
 }
 
 // ConfirmedUserData returns the 16 user data octets of a confirmed block.
 // In a last block (R_3_4_LDATA, Table 9.12) the last 4 octets are the
 // 32-bit message CRC.
-func (rtData *Rate34Data) ConfirmedUserData() [16]byte {
+func (s *Rate34Data) ConfirmedUserData() [16]byte {
 	var out [16]byte
-	copy(out[:], rtData.Data[2:])
+	copy(out[:], s.Data[2:])
 	return out
 }
 
 // CheckConfirmedCRC9 reports whether the CRC-9 of a confirmed block is valid.
-func (rtData *Rate34Data) CheckConfirmedCRC9() bool {
-	return checkConfirmedCRC9(rtData.Data[:], crc9MaskRate34)
+func (s *Rate34Data) CheckConfirmedCRC9() bool {
+	return checkConfirmedCRC9(s.Data[:], crc9MaskRate34)
 }
 
 // SetConfirmed fills Data as a confirmed block (Table 9.11) and computes
 // the masked CRC-9. Only the low 7 bits of dbsn are used.
-func (rtData *Rate34Data) SetConfirmed(dbsn uint8, userData [16]byte) {
-	setConfirmed(rtData.Data[:], dbsn, userData[:], crc9MaskRate34)
+func (s *Rate34Data) SetConfirmed(dbsn uint8, userData [16]byte) {
+	setConfirmed(s.Data[:], dbsn, userData[:], crc9MaskRate34)
 }

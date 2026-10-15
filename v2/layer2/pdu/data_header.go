@@ -54,44 +54,44 @@ type DataHeader struct {
 
 // Addresses returns the destination and source LLIDs of the header that is
 // set. ok is false for a proprietary header and when no header is set.
-func (dh *DataHeader) Addresses() (destination, source uint32, ok bool) {
+func (s *DataHeader) Addresses() (destination, source uint32, ok bool) {
 	switch {
-	case dh.UnconfirmedDataHeader != nil:
-		return dh.UnconfirmedDataHeader.LLIDDestination, dh.UnconfirmedDataHeader.LLIDSource, true
-	case dh.ConfirmedDataHeader != nil:
-		return dh.ConfirmedDataHeader.LLIDDestination, dh.ConfirmedDataHeader.LLIDSource, true
-	case dh.ResponsePacketHeader != nil:
-		return dh.ResponsePacketHeader.LLIDDestination, dh.ResponsePacketHeader.LLIDSource, true
-	case dh.DefinedDataHeader != nil:
-		return dh.DefinedDataHeader.LLIDDestination, dh.DefinedDataHeader.LLIDSource, true
-	case dh.StatusPrecodedHeader != nil:
-		return dh.StatusPrecodedHeader.LLIDDestination, dh.StatusPrecodedHeader.LLIDSource, true
-	case dh.RawDataHeader != nil:
-		return dh.RawDataHeader.LLIDDestination, dh.RawDataHeader.LLIDSource, true
-	case dh.UDTHeader != nil:
-		return dh.UDTHeader.LLIDDestination, dh.UDTHeader.LLIDSource, true
+	case s.UnconfirmedDataHeader != nil:
+		return s.UnconfirmedDataHeader.LLIDDestination, s.UnconfirmedDataHeader.LLIDSource, true
+	case s.ConfirmedDataHeader != nil:
+		return s.ConfirmedDataHeader.LLIDDestination, s.ConfirmedDataHeader.LLIDSource, true
+	case s.ResponsePacketHeader != nil:
+		return s.ResponsePacketHeader.LLIDDestination, s.ResponsePacketHeader.LLIDSource, true
+	case s.DefinedDataHeader != nil:
+		return s.DefinedDataHeader.LLIDDestination, s.DefinedDataHeader.LLIDSource, true
+	case s.StatusPrecodedHeader != nil:
+		return s.StatusPrecodedHeader.LLIDDestination, s.StatusPrecodedHeader.LLIDSource, true
+	case s.RawDataHeader != nil:
+		return s.RawDataHeader.LLIDDestination, s.RawDataHeader.LLIDSource, true
+	case s.UDTHeader != nil:
+		return s.UDTHeader.LLIDDestination, s.UDTHeader.LLIDSource, true
 	}
 	return 0, 0, false
 }
 
 // SetAddresses sets the destination and source LLIDs of the header that is
 // set. It returns false for a proprietary header and when no header is set.
-func (dh *DataHeader) SetAddresses(destination, source uint32) bool {
+func (s *DataHeader) SetAddresses(destination, source uint32) bool {
 	switch {
-	case dh.UnconfirmedDataHeader != nil:
-		dh.UnconfirmedDataHeader.LLIDDestination, dh.UnconfirmedDataHeader.LLIDSource = destination, source
-	case dh.ConfirmedDataHeader != nil:
-		dh.ConfirmedDataHeader.LLIDDestination, dh.ConfirmedDataHeader.LLIDSource = destination, source
-	case dh.ResponsePacketHeader != nil:
-		dh.ResponsePacketHeader.LLIDDestination, dh.ResponsePacketHeader.LLIDSource = destination, source
-	case dh.DefinedDataHeader != nil:
-		dh.DefinedDataHeader.LLIDDestination, dh.DefinedDataHeader.LLIDSource = destination, source
-	case dh.StatusPrecodedHeader != nil:
-		dh.StatusPrecodedHeader.LLIDDestination, dh.StatusPrecodedHeader.LLIDSource = destination, source
-	case dh.RawDataHeader != nil:
-		dh.RawDataHeader.LLIDDestination, dh.RawDataHeader.LLIDSource = destination, source
-	case dh.UDTHeader != nil:
-		dh.UDTHeader.LLIDDestination, dh.UDTHeader.LLIDSource = destination, source
+	case s.UnconfirmedDataHeader != nil:
+		s.UnconfirmedDataHeader.LLIDDestination, s.UnconfirmedDataHeader.LLIDSource = destination, source
+	case s.ConfirmedDataHeader != nil:
+		s.ConfirmedDataHeader.LLIDDestination, s.ConfirmedDataHeader.LLIDSource = destination, source
+	case s.ResponsePacketHeader != nil:
+		s.ResponsePacketHeader.LLIDDestination, s.ResponsePacketHeader.LLIDSource = destination, source
+	case s.DefinedDataHeader != nil:
+		s.DefinedDataHeader.LLIDDestination, s.DefinedDataHeader.LLIDSource = destination, source
+	case s.StatusPrecodedHeader != nil:
+		s.StatusPrecodedHeader.LLIDDestination, s.StatusPrecodedHeader.LLIDSource = destination, source
+	case s.RawDataHeader != nil:
+		s.RawDataHeader.LLIDDestination, s.RawDataHeader.LLIDSource = destination, source
+	case s.UDTHeader != nil:
+		s.UDTHeader.LLIDDestination, s.UDTHeader.LLIDSource = destination, source
 	default:
 		return false
 	}
@@ -111,7 +111,7 @@ const (
 )
 
 // DataType returns enums.DataTypeDataHeader.
-func (dh *DataHeader) DataType() enums.DataType {
+func (s *DataHeader) DataType() enums.DataType {
 	return enums.DataTypeDataHeader
 }
 

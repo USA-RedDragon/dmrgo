@@ -24,7 +24,7 @@ type MBCHeader struct {
 }
 
 // DataType returns enums.DataTypeMBCHeader.
-func (m *MBCHeader) DataType() enums.DataType {
+func (s *MBCHeader) DataType() enums.DataType {
 	return enums.DataTypeMBCHeader
 }
 
@@ -54,7 +54,7 @@ type MBCContinuation struct {
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
-func (m *MBCContinuation) DataType() enums.DataType {
+func (s *MBCContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
@@ -132,7 +132,7 @@ type CGAPContinuation struct {
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
-func (c *CGAPContinuation) DataType() enums.DataType {
+func (s *CGAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
@@ -156,7 +156,7 @@ type MVAPContinuation struct {
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
-func (c *MVAPContinuation) DataType() enums.DataType {
+func (s *MVAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
@@ -179,7 +179,7 @@ type BCAPContinuation struct {
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
-func (c *BCAPContinuation) DataType() enums.DataType {
+func (s *BCAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
@@ -203,6 +203,6 @@ type VNAPContinuation struct {
 }
 
 // DataType returns enums.DataTypeMBCContinuation.
-func (c *VNAPContinuation) DataType() enums.DataType {
+func (s *VNAPContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
