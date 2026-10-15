@@ -140,23 +140,18 @@ func Encode(data []byte) ([]byte, error) {
 	codeword := make([]byte, RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
 	copy(codeword, data)
 
-	// Calculate checksum bytes using the generator polynomial
-	// RS(12,9) systematic encoding: divide by generator polynomial
+	// Systematic encoding by division by g(x) = x^3 + 0x0E x^2 + 0x38 x + 0x40
+	// (ETSI TS 102 361-1 equation B.10).
+	var r0, r1, r2 uint8
 	for i := 0; i < RS_12_9_DATASIZE; i++ {
-		feedback := codeword[i] ^ codeword[RS_12_9_DATASIZE]
-		if feedback != 0 {
-			// Generator polynomial coefficients for RS(12,9,4) over GF(256)
-			// g(x) = (x - α)(x - α²)(x - α³) = x³ + g2·x² + g1·x + g0
-			// For DMR: α = 2, so roots are 2, 4, 8
-			codeword[RS_12_9_DATASIZE] ^= ReedSolomon1294GaloisMul(feedback, 0x40)   // g2
-			codeword[RS_12_9_DATASIZE+1] ^= ReedSolomon1294GaloisMul(feedback, 0x78) // g1
-			codeword[RS_12_9_DATASIZE+2] ^= ReedSolomon1294GaloisMul(feedback, 0x40) // g0 (shifted in next iteration)
-		}
-		// Shift
-		codeword[RS_12_9_DATASIZE] = codeword[RS_12_9_DATASIZE+1]
-		codeword[RS_12_9_DATASIZE+1] = codeword[RS_12_9_DATASIZE+2]
-		codeword[RS_12_9_DATASIZE+2] = feedback
+		fb := codeword[i] ^ r0
+		r0 = r1 ^ ReedSolomon1294GaloisMul(fb, 0x0E)
+		r1 = r2 ^ ReedSolomon1294GaloisMul(fb, 0x38)
+		r2 = ReedSolomon1294GaloisMul(fb, 0x40)
 	}
+	codeword[RS_12_9_DATASIZE] = r0
+	codeword[RS_12_9_DATASIZE+1] = r1
+	codeword[RS_12_9_DATASIZE+2] = r2
 
 	return codeword, nil
 }

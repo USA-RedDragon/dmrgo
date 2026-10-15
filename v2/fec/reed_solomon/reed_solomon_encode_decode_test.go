@@ -1,6 +1,9 @@
 package reedsolomon
 
-import "testing"
+import (
+	"math/rand"
+	"testing"
+)
 
 func TestEncodeDecodeRoundTrip(t *testing.T) {
 	// Test that Encode -> Decode produces the original data
@@ -180,6 +183,65 @@ func TestEncodePreservesData(t *testing.T) {
 	}
 	if allZero {
 		t.Error("Checksum bytes should not all be zero for non-zero data")
+	}
+}
+
+// tableB18Parity holds the parity columns of each row of ETSI TS 102 361-1 Table B.18.
+var tableB18Parity = [RS_12_9_DATASIZE][RS_12_9_CHECKSUMSIZE]byte{
+	{0x1C, 0xBC, 0xFD}, {0x89, 0x31, 0x08}, {0xAD, 0x41, 0x36},
+	{0x7D, 0x71, 0x16}, {0xF3, 0xA6, 0x3A}, {0x08, 0x83, 0x7B},
+	{0x3F, 0x6F, 0x02}, {0x6C, 0x0D, 0xA7}, {0x0E, 0x38, 0x40},
+}
+
+func TestEncodeTableB18Rows(t *testing.T) {
+	for row := 0; row < RS_12_9_DATASIZE; row++ {
+		data := make([]byte, RS_12_9_DATASIZE)
+		data[row] = 0x01
+		encoded, err := Encode(data)
+		if err != nil {
+			t.Fatalf("row %d: Encode failed: %v", row, err)
+		}
+		got := [RS_12_9_CHECKSUMSIZE]byte(encoded[RS_12_9_DATASIZE:])
+		if got != tableB18Parity[row] {
+			t.Errorf("row %d: parity % X, want % X", row, got, tableB18Parity[row])
+		}
+	}
+}
+
+func specParity(data []byte) [RS_12_9_CHECKSUMSIZE]byte {
+	var p [RS_12_9_CHECKSUMSIZE]byte
+	for i := range data {
+		for j := range p {
+			p[j] ^= refGaloisMul(data[i], tableB18Parity[i][j])
+		}
+	}
+	return p
+}
+
+func TestEncodeMatchesGeneratorMatrix(t *testing.T) {
+	r := rand.New(rand.NewSource(1))
+	for n := 0; n < 2000; n++ {
+		data := make([]byte, RS_12_9_DATASIZE)
+		r.Read(data)
+		encoded, err := Encode(data)
+		if err != nil {
+			t.Fatalf("Encode failed: %v", err)
+		}
+		if got, want := [RS_12_9_CHECKSUMSIZE]byte(encoded[RS_12_9_DATASIZE:]), specParity(data); got != want {
+			t.Fatalf("data % X: parity % X, want % X", data, got, want)
+		}
+	}
+}
+
+func TestEncodeKnownVector(t *testing.T) {
+	data := []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
+	encoded, err := Encode(data)
+	if err != nil {
+		t.Fatalf("Encode failed: %v", err)
+	}
+	want := [RS_12_9_CHECKSUMSIZE]byte{0xCB, 0x59, 0x57}
+	if got := [RS_12_9_CHECKSUMSIZE]byte(encoded[RS_12_9_DATASIZE:]); got != want {
+		t.Errorf("parity % X, want % X", got, want)
 	}
 }
 
