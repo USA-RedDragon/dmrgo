@@ -53,10 +53,11 @@ func (a *ShortLCAssembler) Count() int {
 
 // Add adds a decoded CACH and returns the Short LC when the CACH completes
 // it, with done set, as AddFragment and Complete do. A CACH whose TACT is
-// uncorrectable has no LCSS, so it discards the partial Short LC; Add then
-// returns ErrShortLCSequence when fragments were discarded.
+// uncorrectable has no LCSS, and a Single fragment LCSS is not used in the
+// CACH, so either discards the partial Short LC; Add then returns
+// ErrShortLCSequence when fragments were discarded.
 func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
-	if c.TACT.FEC.Uncorrectable {
+	if c.TACT.FEC.Uncorrectable || c.TACT.LCSS == enums.LCSSSingleFragment {
 		n := a.count
 		a.Reset()
 		if n > 0 {
