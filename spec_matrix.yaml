@@ -232,9 +232,9 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestIdleMessageInfoBits_Length
-              - TestIdleMessageInfoBits_PackedHex
-              - TestIdleMessageInfoBits_BitsAreOnlyZeroOrOne
+              - TestIdleMessageInfo_PackedHex
+              - TestIdleMessageInfo_BitsAreOnlyZeroOrOne
+              - TestIdleMessageInfo_ReturnsCopy
               - TestIsIdleMessage_Match
               - TestIsIdleMessage_NoMatch
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
@@ -448,6 +448,7 @@ documents:
               - TestPRFill_IsPRFill_Match
               - TestPRFill_IsPRFill_NoMatch
               - TestPRFill_IsPRFill_SingleBitDifference
+              - TestPRFill_PRFillBits_ReturnsCopy
               - TestPRFill_GetDataType
               - TestPRFill_ToString
 
@@ -1043,20 +1044,16 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestIdleMessageInfoBits_Length
-              - TestIdleMessageInfoBits_PackedHex
-              - TestIdleMessageInfoBits_BitsAreOnlyZeroOrOne
-              - TestNullEmbeddedLCBits_AllZeros
-              - TestNullEmbeddedLCBits_Length
-              - TestIdleMessageFECMatrix_Dimensions
-              - TestIdleMessageFECMatrix_TotalBits
+              - TestIdleMessageInfo_PackedHex
+              - TestIdleMessageInfo_BitsAreOnlyZeroOrOne
+              - TestIdleMessageInfo_EqualsPRFill
+              - TestIdleMessageInfo_ReturnsCopy
               - TestIsIdleMessage_Match
               - TestIsIdleMessage_NoMatch
               - TestIsNullEmbeddedLC_Match
               - TestIsNullEmbeddedLC_NoMatch
-              - TestIdleMessageFECMatrix_BitsAreOnlyZeroOrOne
               - TestIdleMessageFECMatrix_MatchesInfoBits
-              - TestIdleMessageInfoBits_EqualsPRFill
+              - TestIdleMessageFECMatrix_MatchesBPTCEncode
 
       - section: "E"
         title: "Transmit bit order"

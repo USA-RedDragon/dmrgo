@@ -4,22 +4,38 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func TestIdleMessageInfoBits_Length(t *testing.T) {
-	if len(layer2.IdleMessageInfoBits) != 96 {
-		t.Errorf("IdleMessageInfoBits length = %d, want 96", len(layer2.IdleMessageInfoBits))
-	}
+// idleMessageFECMatrix is the 13x15 BPTC(196,96) idle message of Figure D.1
+// of ETSI TS 102 361-1, before interleaving, row-major.
+//
+//nolint:gochecknoglobals
+var idleMessageFECMatrix = [13][15]bit.Bit{
+	{0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0},
+	{1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1},
+	{1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1},
+	{1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1},
+	{0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1},
+	{1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1},
+	{1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0},
+	{0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1},
+	{0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1},
+	{0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1},
+	{1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0},
+	{0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0},
+	{0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0},
 }
 
-func TestIdleMessageInfoBits_PackedHex(t *testing.T) {
+func TestIdleMessageInfo_PackedHex(t *testing.T) {
 	expected := [12]byte{
 		0xFF, 0x83, 0xDF, 0x17, 0x32, 0x09,
 		0x4E, 0xD1, 0xE7, 0xCD, 0x8A, 0x91,
 	}
-	packed := bit.PackBits(layer2.IdleMessageInfoBits[:])
+	info := layer2.IdleMessageInfo()
+	packed := bit.PackBits(info[:])
 	if len(packed) != 12 {
 		t.Fatalf("Packed length = %d, want 12", len(packed))
 	}
@@ -30,43 +46,29 @@ func TestIdleMessageInfoBits_PackedHex(t *testing.T) {
 	}
 }
 
-func TestIdleMessageInfoBits_BitsAreOnlyZeroOrOne(t *testing.T) {
-	for i, b := range layer2.IdleMessageInfoBits {
+func TestIdleMessageInfo_BitsAreOnlyZeroOrOne(t *testing.T) {
+	for i, b := range layer2.IdleMessageInfo() {
 		if b != 0 && b != 1 {
-			t.Errorf("IdleMessageInfoBits[%d] = %d, want 0 or 1", i, b)
+			t.Errorf("IdleMessageInfo()[%d] = %d, want 0 or 1", i, b)
 		}
 	}
 }
 
-func TestNullEmbeddedLCBits_AllZeros(t *testing.T) {
-	for i, b := range layer2.NullEmbeddedLCBits {
-		if b != 0 {
-			t.Errorf("NullEmbeddedLCBits[%d] = %d, want 0", i, b)
-		}
+func TestIdleMessageInfo_EqualsPRFill(t *testing.T) {
+	if layer2.IdleMessageInfo() != pdu.PRFillBits() {
+		t.Error("IdleMessageInfo() should equal pdu.PRFillBits()")
 	}
 }
 
-func TestNullEmbeddedLCBits_Length(t *testing.T) {
-	if len(layer2.NullEmbeddedLCBits) != 32 {
-		t.Errorf("NullEmbeddedLCBits length = %d, want 32", len(layer2.NullEmbeddedLCBits))
+func TestIdleMessageInfo_ReturnsCopy(t *testing.T) {
+	info := layer2.IdleMessageInfo()
+	info[0] ^= 1
+	idle := layer2.IdleMessageInfo()
+	if !layer2.IsIdleMessage(idle) || !pdu.IsPRFill(idle) {
+		t.Fatal("changing the returned bits changed the idle message constant")
 	}
-}
-
-func TestIdleMessageFECMatrix_Dimensions(t *testing.T) {
-	if len(layer2.IdleMessageFECMatrix) != 13 {
-		t.Fatalf("FEC matrix rows = %d, want 13", len(layer2.IdleMessageFECMatrix))
-	}
-	for i := range layer2.IdleMessageFECMatrix {
-		if len(layer2.IdleMessageFECMatrix[i]) != 15 {
-			t.Errorf("FEC matrix row %d cols = %d, want 15", i, len(layer2.IdleMessageFECMatrix[i]))
-		}
-	}
-}
-
-func TestIdleMessageFECMatrix_TotalBits(t *testing.T) {
-	total := len(layer2.IdleMessageFECMatrix) * len(layer2.IdleMessageFECMatrix[0])
-	if total != 195 {
-		t.Errorf("FEC matrix total cells = %d, want 195", total)
+	if layer2.IsIdleMessage(info) || pdu.IsPRFill(info) {
+		t.Fatal("IsIdleMessage and IsPRFill should reject the changed bits")
 	}
 }
 
@@ -76,29 +78,39 @@ func TestIdleMessageFECMatrix_MatchesInfoBits(t *testing.T) {
 	var info [96]bit.Bit
 	n := 0
 	for c := 3; c <= 10; c++ {
-		info[n] = layer2.IdleMessageFECMatrix[0][c]
+		info[n] = idleMessageFECMatrix[0][c]
 		n++
 	}
 	for r := 1; r <= 8; r++ {
 		for c := 0; c <= 10; c++ {
-			info[n] = layer2.IdleMessageFECMatrix[r][c]
+			info[n] = idleMessageFECMatrix[r][c]
 			n++
 		}
 	}
-	if info != layer2.IdleMessageInfoBits {
-		t.Errorf("FEC matrix info bits = %X, want %X", bit.PackBits(info[:]), bit.PackBits(layer2.IdleMessageInfoBits[:]))
+	want := layer2.IdleMessageInfo()
+	if info != want {
+		t.Errorf("FEC matrix info bits = %X, want %X", bit.PackBits(info[:]), bit.PackBits(want[:]))
 	}
 }
 
-func TestIdleMessageInfoBits_EqualsPRFill(t *testing.T) {
-	if layer2.IdleMessageInfoBits != pdu.PRFillBits {
-		t.Error("IdleMessageInfoBits should equal pdu.PRFillBits")
+// bptc.Encode moves matrix bit i to transmit bit (i*181)%196 (ETSI TS
+// 102 361-1 clause B.1.1, equation B.1). Bit 0 is the pad bit R(3), so
+// Figure D.1 starts at bit 1.
+func TestIdleMessageFECMatrix_MatchesBPTCEncode(t *testing.T) {
+	encoded := bptc.Encode(layer2.IdleMessageInfo())
+	for r := range idleMessageFECMatrix {
+		for c := range idleMessageFECMatrix[r] {
+			i := 1 + r*15 + c
+			if got := encoded[(i*181)%196]; got != idleMessageFECMatrix[r][c] {
+				t.Errorf("Figure D.1 [%d][%d] = %d, bptc.Encode gives %d", r, c, idleMessageFECMatrix[r][c], got)
+			}
+		}
 	}
 }
 
 func TestIsIdleMessage_Match(t *testing.T) {
-	if !layer2.IsIdleMessage(layer2.IdleMessageInfoBits) {
-		t.Error("IsIdleMessage should return true for IdleMessageInfoBits")
+	if !layer2.IsIdleMessage(layer2.IdleMessageInfo()) {
+		t.Error("IsIdleMessage should return true for IdleMessageInfo()")
 	}
 }
 
@@ -109,9 +121,15 @@ func TestIsIdleMessage_NoMatch(t *testing.T) {
 	}
 }
 
+// Table D.1: the 11 information bits are 0, so all 32 transmit bits of the
+// clause B.2.1 single burst BPTC are 0.
 func TestIsNullEmbeddedLC_Match(t *testing.T) {
-	if !layer2.IsNullEmbeddedLC(layer2.NullEmbeddedLCBits) {
-		t.Error("IsNullEmbeddedLC should return true for NullEmbeddedLCBits")
+	null := bptc.EncodeSingleBurstBPTC([11]bit.Bit{}, false)
+	if null != [32]bit.Bit{} {
+		t.Errorf("single burst BPTC of 11 zero bits = %v, want 32 zero bits", null)
+	}
+	if !layer2.IsNullEmbeddedLC(null) {
+		t.Error("IsNullEmbeddedLC should return true for 32 zero bits")
 	}
 }
 
@@ -120,15 +138,5 @@ func TestIsNullEmbeddedLC_NoMatch(t *testing.T) {
 	bits[0] = 1
 	if layer2.IsNullEmbeddedLC(bits) {
 		t.Error("IsNullEmbeddedLC should return false for non-zero bits")
-	}
-}
-
-func TestIdleMessageFECMatrix_BitsAreOnlyZeroOrOne(t *testing.T) {
-	for r, row := range layer2.IdleMessageFECMatrix {
-		for c, b := range row {
-			if b != 0 && b != 1 {
-				t.Errorf("FEC matrix[%d][%d] = %d, want 0 or 1", r, c, b)
-			}
-		}
 	}
 }

@@ -14,10 +14,8 @@ import (
 //
 // In packed hex, I(95) first: FF 83 DF 17 32 09 4E D1 E7 CD 8A 91
 
-// PRFillBits contains the 96 pseudo-random fill bits from Table D.2.
-//
 //nolint:gochecknoglobals
-var PRFillBits = func() [96]bit.Bit {
+var prFillBits = func() [96]bit.Bit {
 	packed := [12]byte{
 		0xFF, 0x83, 0xDF, 0x17, 0x32, 0x09,
 		0x4E, 0xD1, 0xE7, 0xCD, 0x8A, 0x91,
@@ -30,6 +28,11 @@ var PRFillBits = func() [96]bit.Bit {
 	}
 	return bits
 }()
+
+// PRFillBits returns a copy of the 96 pseudo-random fill bits from Table D.2.
+func PRFillBits() [96]bit.Bit {
+	return prFillBits
+}
 
 // PRFill represents the PR FILL PDU (§9.1.9).
 type PRFill struct {
@@ -49,5 +52,5 @@ func (p *PRFill) ToString() string {
 // IsPRFill checks whether the given 96 information bits match the
 // PR FILL constant from Table D.2.
 func IsPRFill(infoBits [96]bit.Bit) bool {
-	return infoBits == PRFillBits
+	return infoBits == prFillBits
 }
