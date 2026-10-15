@@ -29,40 +29,36 @@ type ShortLCCSysParms struct {
 	CommonSlotCounter uint16      `dmr:"bits:15-23"`
 }
 
-// NetID returns the network ID based on the MODEL field.
-// MODEL 00 (Tiny): 6-bit NET, MODEL 01 (Small): 7-bit NET,
-// MODEL 10 (Large): 9-bit NET, MODEL 11 (Huge): 12-bit NET.
-func (s *ShortLCCSysParms) NetID() uint16 {
-	switch s.MODEL {
-	case 0: // Tiny: bits 0-5
-		return uint16(bit.BitsToUint16(s.NetSiteRaw[:], 0, 6))
-	case 1: // Small: bits 0-6
-		return uint16(bit.BitsToUint16(s.NetSiteRaw[:], 0, 7))
-	case 2: // Large: bits 0-8
-		return uint16(bit.BitsToUint16(s.NetSiteRaw[:], 0, 9))
-	case 3: // Huge: bits 0-11
-		return uint16(bit.BitsToUint16(s.NetSiteRaw[:], 0, 12))
+// netSiteBits returns the NET field width for a MODEL value per
+// ETSI TS 102 361-4 Table 6.5. The SITE field takes the remaining bits.
+func netSiteBits(model uint8) int {
+	switch model {
+	case 0:
+		return 9
+	case 1:
+		return 7
+	case 2:
+		return 4
 	default:
-		return 0
+		return 2
 	}
 }
 
-// SiteID returns the site ID based on the MODEL field.
-// MODEL 00 (Tiny): 4-bit SITE, MODEL 01 (Small): 5-bit SITE,
-// MODEL 10 (Large): 3-bit SITE, MODEL 11 (Huge): no site bits (returns 0).
-func (s *ShortLCCSysParms) SiteID() uint8 {
-	switch s.MODEL {
-	case 0: // Tiny: bits 6-9
-		return bit.BitsToUint8(s.NetSiteRaw[:], 6, 4)
-	case 1: // Small: bits 7-11
-		return bit.BitsToUint8(s.NetSiteRaw[:], 7, 5)
-	case 2: // Large: bits 9-11
-		return bit.BitsToUint8(s.NetSiteRaw[:], 9, 3)
-	case 3: // Huge: no site bits
-		return 0
-	default:
-		return 0
-	}
+const netSiteLen = 12
+
+// NetID returns the network ID based on the MODEL field
+// (ETSI TS 102 361-4 Table 6.5): Tiny 9 bits, Small 7 bits,
+// Large 4 bits, Huge 2 bits.
+func (s *ShortLCCSysParms) NetID() uint16 {
+	return bit.BitsToUint16(s.NetSiteRaw[:], 0, netSiteBits(s.MODEL))
+}
+
+// SiteID returns the site ID based on the MODEL field
+// (ETSI TS 102 361-4 Table 6.5): Tiny 3 bits, Small 5 bits,
+// Large 8 bits, Huge 10 bits.
+func (s *ShortLCCSysParms) SiteID() uint16 {
+	n := netSiteBits(s.MODEL)
+	return bit.BitsToUint16(s.NetSiteRaw[:], n, netSiteLen-n)
 }
 
 // ETSI TS 102 361-4 §7.1.2 P_SYS_Parms Short LC PDU
@@ -74,36 +70,17 @@ type ShortLCPSysParms struct {
 	CommonSlotCounter  uint16      `dmr:"bits:15-23"`
 }
 
-// NetID returns the network ID based on the MODEL field.
+// NetID returns the network ID based on the MODEL field
+// (ETSI TS 102 361-4 Table 6.5).
 func (s *ShortLCPSysParms) NetID() uint16 {
-	switch s.MODEL {
-	case 0:
-		return uint16(bit.BitsToUint16(s.NetSiteRaw[:], 0, 6))
-	case 1:
-		return uint16(bit.BitsToUint16(s.NetSiteRaw[:], 0, 7))
-	case 2:
-		return uint16(bit.BitsToUint16(s.NetSiteRaw[:], 0, 9))
-	case 3:
-		return uint16(bit.BitsToUint16(s.NetSiteRaw[:], 0, 12))
-	default:
-		return 0
-	}
+	return bit.BitsToUint16(s.NetSiteRaw[:], 0, netSiteBits(s.MODEL))
 }
 
-// SiteID returns the site ID based on the MODEL field.
-func (s *ShortLCPSysParms) SiteID() uint8 {
-	switch s.MODEL {
-	case 0:
-		return bit.BitsToUint8(s.NetSiteRaw[:], 6, 4)
-	case 1:
-		return bit.BitsToUint8(s.NetSiteRaw[:], 7, 5)
-	case 2:
-		return bit.BitsToUint8(s.NetSiteRaw[:], 9, 3)
-	case 3:
-		return 0
-	default:
-		return 0
-	}
+// SiteID returns the site ID based on the MODEL field
+// (ETSI TS 102 361-4 Table 6.5).
+func (s *ShortLCPSysParms) SiteID() uint16 {
+	n := netSiteBits(s.MODEL)
+	return bit.BitsToUint16(s.NetSiteRaw[:], n, netSiteLen-n)
 }
 
 // dmr:crc crc_8

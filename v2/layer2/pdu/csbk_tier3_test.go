@@ -787,68 +787,51 @@ func TestSLCO_TierIII_Values(t *testing.T) {
 
 // ── ShortLC CSysParms Tests ──
 
-func TestShortLC_CSysParms_NetSite_Models(t *testing.T) {
-	tests := []struct {
-		name      string
-		model     uint8
-		netBits   int
-		siteBits  int
-		wantNetID uint16
-		wantSite  uint8
-	}{
-		{"Tiny", 0, 6, 4, 0b111111, 0b1111},
-		{"Small", 1, 7, 5, 0b1111111, 0b11111},
-		{"Large", 2, 9, 3, 0b111111111, 0b111},
-		{"Huge", 3, 12, 0, 0b111111111111, 0},
+type netSiteModelCase struct {
+	name      string
+	model     uint8
+	wantNetID uint16
+	wantSite  uint16
+}
+
+// netSitePattern is 0b1100_1010_0101 in NetSiteRaw order.
+func netSitePattern() [12]bit.Bit {
+	return [12]bit.Bit{1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1}
+}
+
+// netSiteModelCases follows ETSI TS 102 361-4 Table 6.5.
+func netSiteModelCases() []netSiteModelCase {
+	return []netSiteModelCase{
+		{"Tiny", 0, 0b110010100, 0b101},
+		{"Small", 1, 0b1100101, 0b00101},
+		{"Large", 2, 0b1100, 0b10100101},
+		{"Huge", 3, 0b11, 0b0010100101},
 	}
-	for _, tt := range tests {
+}
+
+func TestShortLC_CSysParms_NetSite_Models(t *testing.T) {
+	for _, tt := range netSiteModelCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			cs := &pdu.ShortLCCSysParms{MODEL: tt.model}
-			// Fill NetSiteRaw with all 1s
-			for i := range cs.NetSiteRaw {
-				cs.NetSiteRaw[i] = 1
+			cs := &pdu.ShortLCCSysParms{MODEL: tt.model, NetSiteRaw: netSitePattern()}
+			if got := cs.NetID(); got != tt.wantNetID {
+				t.Errorf("NetID() = %b, want %b", got, tt.wantNetID)
 			}
-
-			netID := cs.NetID()
-			siteID := cs.SiteID()
-
-			if netID != tt.wantNetID {
-				t.Errorf("NetID() = %d, want %d", netID, tt.wantNetID)
-			}
-			if siteID != tt.wantSite {
-				t.Errorf("SiteID() = %d, want %d", siteID, tt.wantSite)
+			if got := cs.SiteID(); got != tt.wantSite {
+				t.Errorf("SiteID() = %b, want %b", got, tt.wantSite)
 			}
 		})
 	}
 }
 
 func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
-	tests := []struct {
-		name      string
-		model     uint8
-		wantNetID uint16
-		wantSite  uint8
-	}{
-		{"Tiny", 0, 0b111111, 0b1111},
-		{"Small", 1, 0b1111111, 0b11111},
-		{"Large", 2, 0b111111111, 0b111},
-		{"Huge", 3, 0b111111111111, 0},
-	}
-	for _, tt := range tests {
+	for _, tt := range netSiteModelCases() {
 		t.Run(tt.name, func(t *testing.T) {
-			ps := &pdu.ShortLCPSysParms{MODEL: tt.model}
-			for i := range ps.NetSiteRaw {
-				ps.NetSiteRaw[i] = 1
+			ps := &pdu.ShortLCPSysParms{MODEL: tt.model, NetSiteRaw: netSitePattern()}
+			if got := ps.NetID(); got != tt.wantNetID {
+				t.Errorf("NetID() = %b, want %b", got, tt.wantNetID)
 			}
-
-			netID := ps.NetID()
-			siteID := ps.SiteID()
-
-			if netID != tt.wantNetID {
-				t.Errorf("NetID() = %d, want %d", netID, tt.wantNetID)
-			}
-			if siteID != tt.wantSite {
-				t.Errorf("SiteID() = %d, want %d", siteID, tt.wantSite)
+			if got := ps.SiteID(); got != tt.wantSite {
+				t.Errorf("SiteID() = %b, want %b", got, tt.wantSite)
 			}
 		})
 	}
