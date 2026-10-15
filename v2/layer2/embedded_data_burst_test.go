@@ -91,8 +91,15 @@ func TestDataBurstWithEMB_SameDataAsWithSync(t *testing.T) {
 	b := *withSync
 	b.SyncPattern = enums.SyncNone
 	b.EmbeddedSignalling = pdu.EmbeddedSignalling{ColorCode: aselsanColorCode, LCSS: enums.LCSSSingleFragment}
-	if got := must(b.Encode()); got != hexBurst(t, aselsanCSBKEMB) {
-		t.Errorf("Encode with EMB\ngot  %x\nwant %s", got, aselsanCSBKEMB)
+	if got, err := b.Encode(); err == nil {
+		t.Errorf("a data burst decoded with a SYNC encodes with SyncNone as %x", got)
+	}
+
+	r := must(layer2.BuildBurst(withSync.Data, aselsanColorCode, layer2.SyncSourceBS))
+	r.SetEMB(b.EmbeddedSignalling)
+	r.SetEmbeddedData([4]byte{})
+	if r != hexBurst(t, aselsanCSBKEMB) {
+		t.Errorf("BuildBurst with SetEMB\ngot  %x\nwant %s", r, aselsanCSBKEMB)
 	}
 }
 
