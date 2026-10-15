@@ -340,8 +340,8 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 		return RawBurst{}, fmt.Errorf("cannot build a burst from nil Data")
 	}
 	dt := d.DataType()
-	info, err := encodeData(d, dt)
-	if err != nil {
+	var info [196]bit.Bit
+	if err := encodeData(&info, d, dt); err != nil {
 		return RawBurst{}, err
 	}
 	r, err := dataBurstFrame(dt, cc, src)
