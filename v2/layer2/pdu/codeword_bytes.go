@@ -85,10 +85,26 @@ func DecodeFullLCCodeword(cw [12]byte, dt enums.DataType) ([9]byte, fec.Result, 
 	return lc, res, nil
 }
 
+// noFullLCError is the error for a data type that carries no RS(12,9) Full
+// LC. It is a one-byte value, so that returning it does not allocate.
+type noFullLCError enums.DataType
+
+func (e noFullLCError) Error() string {
+	return fmt.Sprintf("data type %s carries no RS(12,9) Full LC", enums.DataType(e).String())
+}
+
+// noBlockCRCError is the error for a data type that has no single-block
+// CRC-CCITT, a one-byte value as noFullLCError is.
+type noBlockCRCError enums.DataType
+
+func (e noBlockCRCError) Error() string {
+	return fmt.Sprintf("data type %s has no single-block CRC-CCITT", enums.DataType(e).String())
+}
+
 func fullLCMask(dt enums.DataType) ([3]byte, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 24 {
-		return [3]byte{}, fmt.Errorf("data type %s carries no RS(12,9) Full LC", dt.String())
+		return [3]byte{}, noFullLCError(dt)
 	}
 	return [3]byte{byte(mask >> 16 & 0xFF), byte(mask >> 8 & 0xFF), byte(mask & 0xFF)}, nil
 }
@@ -134,7 +150,7 @@ func BlockCRCOK(b [12]byte, dt enums.DataType) bool {
 func blockMask(dt enums.DataType) (uint16, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 16 {
-		return 0, fmt.Errorf("data type %s has no single-block CRC-CCITT", dt.String())
+		return 0, noBlockCRCError(dt)
 	}
 	return uint16(mask & 0xFFFF), nil
 }
