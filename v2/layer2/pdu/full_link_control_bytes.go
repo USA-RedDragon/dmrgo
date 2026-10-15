@@ -70,6 +70,6 @@ func (s *FullLinkControl) Bytes() ([9]byte, error) {
 		return [9]byte{}, err
 	}
 	var lc [9]byte
-	copy(lc[:], bit.Pack(bits[:72]))
+	packBits(lc[:], bits[:72])
 	return lc, nil
 }
