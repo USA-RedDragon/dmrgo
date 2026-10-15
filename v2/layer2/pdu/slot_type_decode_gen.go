@@ -55,5 +55,5 @@ func (s *SlotType) Encode() ([20]bit.Bit, error) {
 }
 
 func (s *SlotType) String() string {
-	return fmt.Sprintf("SlotType{ ColorCode: %d, DataType: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	return fmt.Sprintf("SlotType{ ColorCode: %d, DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }
