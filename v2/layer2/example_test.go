@@ -60,8 +60,8 @@ func ExampleRawBurst() {
 }
 
 func ExampleBuildDataBurst() {
-	lc := [9]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x5b, 0x00, 0x30, 0x39}
-	cw, err := pdu.FullLCCodeword(lc, enums.DataTypeTerminatorWithLC)
+	lc := pdu.LCBytes{0x00, 0x00, 0x00, 0x00, 0x00, 0x5b, 0x00, 0x30, 0x39}
+	cw, err := lc.Codeword(enums.DataTypeTerminatorWithLC)
 	if err != nil {
 		fmt.Println(err)
 		return
