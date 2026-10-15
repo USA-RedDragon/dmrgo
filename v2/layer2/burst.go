@@ -78,6 +78,11 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	b.IsData = isDataSync(b.SyncPattern)
 	b.VoiceBurst, b.HasEmbeddedSignalling = classifyVoice(b.SyncPattern)
 
+	if b.SyncPattern == enums.MsSourcedRcSync {
+		b.decodeStandaloneRC()
+		return nil
+	}
+
 	if b.HasEmbeddedSignalling {
 		b.EmbeddedSignalling, b.EmbeddedSignallingData = parseEmbedded(b.bitData)
 		b.FEC.EMB = b.EmbeddedSignalling.FEC
@@ -144,9 +149,46 @@ func classifyVoice(sync enums.SyncPattern) (enums.VoiceBurstType, bool) {
 	if sync == enums.Tdma2Voice || sync == enums.Tdma1Voice || sync == enums.MsSourcedVoice || sync == enums.BsSourcedVoice {
 		return enums.VoiceBurstA, false
 	}
-	// MsSourcedRcSync (§6.4.1) uses the same burst layout as embedded
-	// signalling voice bursts — EMB(16) + RC data(32) in the center.
 	return enums.VoiceBurstUnknown, sync == enums.EmbeddedSignallingPattern || sync == enums.MsSourcedRcSync
+}
+
+// decodeStandaloneRC decodes a §6.4.1 standalone inbound RC burst (Figure
+// 6.7, Table E.12): EMB(8) RC(16) SYNC(48) RC(16) EMB(8) around the burst
+// centre. The RC SYNC stays in place and the burst carries no voice.
+// An RC burst always carries an RC PDU, so PI does not gate RC decoding.
+func (b *Burst) decodeStandaloneRC() {
+	var embBits [16]bit.Bit
+	copy(embBits[:8], b.bitData[RCEMBFirstStart:RCEMBFirstEnd])
+	copy(embBits[8:], b.bitData[RCEMBSecondStart:RCEMBSecondEnd])
+	b.EmbeddedSignalling, b.FEC.EMB = pdu.DecodeEmbeddedSignalling(embBits)
+
+	copy(b.EmbeddedSignallingData[:16], b.bitData[RCDataFirstStart:RCDataFirstEnd])
+	copy(b.EmbeddedSignallingData[16:], b.bitData[RCDataSecondStart:RCDataSecondEnd])
+	rc, rcFEC := DecodeRCFromEmbeddedData(b.EmbeddedSignallingData)
+	b.HasReverseChannel = true
+	b.ReverseChannel = &rc
+	b.FEC.RC = rcFEC
+}
+
+func (b *Burst) encodeStandaloneRC() [264]bit.Bit {
+	var bitData [264]bit.Bit
+	if b.HasReverseChannel && b.ReverseChannel != nil {
+		b.EmbeddedSignallingData = EncodeRCToEmbeddedData(b.ReverseChannel)
+	}
+	embBits := pdu.EncodeEmbeddedSignalling(&b.EmbeddedSignalling)
+	copy(bitData[RCEMBFirstStart:RCEMBFirstEnd], embBits[:8])
+	copy(bitData[RCDataFirstStart:RCDataFirstEnd], b.EmbeddedSignallingData[:16])
+	writeSync(&bitData, enums.MsSourcedRcSync)
+	copy(bitData[RCDataSecondStart:RCDataSecondEnd], b.EmbeddedSignallingData[16:])
+	copy(bitData[RCEMBSecondStart:RCEMBSecondEnd], embBits[8:])
+	return bitData
+}
+
+func writeSync(bitData *[264]bit.Bit, sync enums.SyncPattern) {
+	syncVal := int64(sync)
+	for i := 0; i < 48; i++ {
+		bitData[SyncStart+i] = bit.Bit((syncVal >> (47 - i)) & 1)
+	}
 }
 
 func parseEmbedded(bitData [264]bit.Bit) (pdu.EmbeddedSignalling, [32]bit.Bit) {
@@ -240,7 +282,7 @@ func (b *Burst) ToString() string {
 		if b.Data != nil {
 			ret += fmt.Sprintf("Data: %v, ", b.Data.ToString())
 		}
-	} else {
+	} else if b.SyncPattern != enums.MsSourcedRcSync {
 		ret += fmt.Sprintf("VoiceBurst: %v, Voice Data: %v, ", enums.VoiceBurstTypeToName(b.VoiceBurst), b.VoiceData.ToString())
 	}
 
@@ -359,6 +401,10 @@ func (b *Burst) extractData() (elements.Data, error) {
 
 // Encode returns the encoded bytes of the burst.
 func (b *Burst) Encode() [33]byte {
+	if b.SyncPattern == enums.MsSourcedRcSync {
+		return bit.PackBits264(b.encodeStandaloneRC())
+	}
+
 	var bitData [264]bit.Bit
 
 	if b.IsData {
@@ -391,11 +437,7 @@ func (b *Burst) Encode() [33]byte {
 		copy(bitData[116:148], b.EmbeddedSignallingData[:])
 		copy(bitData[148:156], esBits[8:16])
 	} else {
-		// Encode Sync Pattern
-		syncVal := int64(b.SyncPattern)
-		for i := 0; i < 48; i++ {
-			bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
-		}
+		writeSync(&bitData, b.SyncPattern)
 	}
 
 	return bit.PackBits264(bitData)
@@ -506,10 +548,7 @@ func BuildLCDataBurst(lcBytes [12]byte, dataType elements.DataType, colorCode ui
 	copy(bitData[98:108], slotTypeBits[:10])
 	copy(bitData[156:166], slotTypeBits[10:20])
 
-	syncVal := int64(enums.BsSourcedData)
-	for i := 0; i < 48; i++ {
-		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
-	}
+	writeSync(&bitData, enums.BsSourcedData)
 
 	return bit.PackBits264(bitData)
 }

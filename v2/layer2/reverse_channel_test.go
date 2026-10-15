@@ -225,3 +225,71 @@ func TestRC_ToString(t *testing.T) {
 		t.Error("ToString should not be empty")
 	}
 }
+
+// buildStandaloneRCBurst lays out a §6.4.1 standalone RC burst by hand per
+// Table E.12: EMB at bits 84-91 and 172-179, RC at 92-107 and 156-171, and
+// the RC SYNC at 108-155.
+func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
+	var bitData [264]bit.Bit
+	embBits := pdu.EncodeEmbeddedSignalling(&pdu.EmbeddedSignalling{
+		ColorCode: cc,
+		LCSS:      enums.SingleFragmentLCorCSBK,
+	})
+	rcData := layer2.EncodeRCToEmbeddedData(&pdu.ReverseChannel{RCCommand: cmd})
+	copy(bitData[84:92], embBits[:8])
+	copy(bitData[92:108], rcData[:16])
+	syncVal := int64(enums.MsSourcedRcSync)
+	for i := 0; i < 48; i++ {
+		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
+	}
+	copy(bitData[156:172], rcData[16:])
+	copy(bitData[172:180], embBits[8:])
+	return bit.PackBits264(bitData)
+}
+
+func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
+	t.Parallel()
+	frame := buildStandaloneRCBurst(7, enums.RCCeaseTransmissionRequest)
+
+	burst, err := layer2.NewBurstFromBytes(frame)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if burst.SyncPattern != enums.MsSourcedRcSync || burst.IsData {
+		t.Fatalf("SyncPattern=%s IsData=%v", enums.SyncPatternToName(burst.SyncPattern), burst.IsData)
+	}
+	if !burst.HasEmbeddedSignalling || burst.EmbeddedSignalling.ColorCode != 7 || burst.FEC.EMB.Uncorrectable {
+		t.Errorf("EMB: %s", burst.EmbeddedSignalling.ToString())
+	}
+	if burst.EmbeddedSignalling.LCSS != enums.SingleFragmentLCorCSBK {
+		t.Errorf("LCSS = %s", enums.LCSSToName(burst.EmbeddedSignalling.LCSS))
+	}
+	if !burst.HasReverseChannel || burst.ReverseChannel == nil {
+		t.Fatal("standalone RC burst should carry an RC PDU")
+	}
+	if burst.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest || burst.FEC.RC.Uncorrectable {
+		t.Errorf("RC: %s", burst.ReverseChannel.ToString())
+	}
+	if burst.FEC.Voice.BitsChecked != 0 {
+		t.Errorf("standalone RC burst should not parse voice, Voice FEC %+v", burst.FEC.Voice)
+	}
+
+	if got := burst.Encode(); got != frame {
+		t.Errorf("encode mismatch\ngot  %x\nwant %x", got, frame)
+	}
+}
+
+func TestRC_StandaloneBurst_EncodeFromFields(t *testing.T) {
+	t.Parallel()
+	burst := layer2.Burst{
+		SyncPattern:           enums.MsSourcedRcSync,
+		HasEmbeddedSignalling: true,
+		EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 7},
+		HasReverseChannel:     true,
+		ReverseChannel:        &pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand},
+	}
+	want := buildStandaloneRCBurst(7, enums.RCCeaseTransmissionCommand)
+	if got := burst.Encode(); got != want {
+		t.Errorf("encode mismatch\ngot  %x\nwant %x", got, want)
+	}
+}

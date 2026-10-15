@@ -79,6 +79,33 @@ const (
 
 	// EMBSecondEnd is the exclusive end of the second EMB half.
 	EMBSecondEnd = 156
+
+	// The standalone inbound RC burst (§6.4.1, Figure 6.7, Table E.12)
+	// places EMB(8) RC(16) SYNC(48) RC(16) EMB(8) around the burst centre.
+
+	// RCEMBFirstStart is the start of the first EMB half in a standalone RC burst.
+	RCEMBFirstStart = 84
+
+	// RCEMBFirstEnd is the exclusive end of the first EMB half in a standalone RC burst.
+	RCEMBFirstEnd = 92
+
+	// RCDataFirstStart is the start of the first RC data half in a standalone RC burst.
+	RCDataFirstStart = 92
+
+	// RCDataFirstEnd is the exclusive end of the first RC data half in a standalone RC burst.
+	RCDataFirstEnd = 108
+
+	// RCDataSecondStart is the start of the second RC data half in a standalone RC burst.
+	RCDataSecondStart = 156
+
+	// RCDataSecondEnd is the exclusive end of the second RC data half in a standalone RC burst.
+	RCDataSecondEnd = 172
+
+	// RCEMBSecondStart is the start of the second EMB half in a standalone RC burst.
+	RCEMBSecondStart = 172
+
+	// RCEMBSecondEnd is the exclusive end of the second EMB half in a standalone RC burst.
+	RCEMBSecondEnd = 180
 )
 
 // DibitSymbol represents a single dibit symbol from the burst.

@@ -87,6 +87,8 @@ documents:
               - TestRC_BurstDetection_PI0_NoRC
               - TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC
               - TestRC_MsSourcedRcSync_HasEmbeddedSignalling
+              - TestRC_StandaloneBurst_RoundTrip
+              - TestRC_StandaloneBurst_EncodeFromFields
               - TestRC_BurstFECStats_RC
               - TestRC_ToString
 
@@ -903,6 +905,7 @@ documents:
               - TestTransmitOrder_DibitsToBurst_Roundtrip
               - TestTransmitOrder_ValidateBurstStructure_Valid
               - TestTransmitOrder_ValidateBurstStructure_Invalid
+              - TestTransmitOrder_StandaloneRCFields
               - TestTransmitOrder_DibitLabels_Symmetry
 
   - id: "TS-102-361-2"

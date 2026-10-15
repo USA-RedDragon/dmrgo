@@ -195,3 +195,29 @@ func TestTransmitOrder_DibitLabels_Symmetry(t *testing.T) {
 		}
 	}
 }
+
+// TestTransmitOrder_StandaloneRCFields checks the standalone RC burst field
+// bounds against the symbol labels in Table E.12.
+func TestTransmitOrder_StandaloneRCFields(t *testing.T) {
+	symbols := layer2.BurstToDibits([264]bit.Bit{})
+	tests := []struct {
+		bitIndex int
+		label    string
+	}{
+		{layer2.RCEMBFirstStart, "L24"},
+		{layer2.RCEMBFirstEnd - 2, "L21"},
+		{layer2.RCDataFirstStart, "L20"},
+		{layer2.RCDataFirstEnd - 2, "L13"},
+		{layer2.SyncStart, "L12"},
+		{layer2.SyncEnd - 2, "R12"},
+		{layer2.RCDataSecondStart, "R13"},
+		{layer2.RCDataSecondEnd - 2, "R20"},
+		{layer2.RCEMBSecondStart, "R21"},
+		{layer2.RCEMBSecondEnd - 2, "R24"},
+	}
+	for _, tt := range tests {
+		if got := symbols[tt.bitIndex/2].Label; got != tt.label {
+			t.Errorf("bit %d: symbol %s, want %s", tt.bitIndex, got, tt.label)
+		}
+	}
+}

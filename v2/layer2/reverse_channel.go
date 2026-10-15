@@ -14,12 +14,13 @@ import (
 // signalling data field of a voice burst.
 //
 // Two forms:
-//   - §6.4.1 Standalone inbound RC: MS sends burst with MsSourcedRcSync
-//     pattern. The 48-bit center contains EMB (16 bits) + RC data (32 bits).
+//   - §6.4.1 Standalone inbound RC: MS sends a burst with the
+//     MsSourcedRcSync pattern in the 48-bit centre. EMB (8+8 bits) and RC
+//     data (16+16 bits) sit on either side of the SYNC (Figure 6.7).
 //   - §6.4.2 Outbound embedded RC: BS echoes RC in a normal voice burst
 //     with EMB PI=1 and LCSS=SingleFragmentLCorCSBK.
 //
-// Detection: a voice burst's embedded signalling has
+// Detection of §6.4.2: a voice burst's embedded signalling has
 // PreemptionAndPowerControlIndicator=true (PI=1) AND
 // LCSS=SingleFragmentLCorCSBK (0) → the 32-bit data is RC, not LC.
 //
