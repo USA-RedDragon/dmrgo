@@ -2,7 +2,6 @@ package bptc
 
 import (
 	"math/bits"
-	"sync"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -45,11 +44,10 @@ func DecodeEmbeddedWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.B
 		s.syndromes[row] = calculateSyndrome16_11(matrix[row])
 		s.parity ^= s.rows[row]
 	}
-	patterns := embeddedLCPatterns()
 	for row := 7; row >= 0; row-- {
-		s.minRemaining[row] = s.minRemaining[row+1] + patterns.minWeight[s.syndromes[row]]
+		s.minRemaining[row] = s.minRemaining[row+1] + embeddedLCMinWeight[s.syndromes[row]]
 	}
-	s.search(patterns, 0, 0, 0)
+	s.search(0, 0, 0)
 
 	result := fec.Result{BitsChecked: 128}
 	if !s.found || s.ambiguous {
@@ -77,20 +75,20 @@ type embeddedLCSearch struct {
 	info         [77]bit.Bit
 }
 
-func (s *embeddedLCSearch) search(patterns *embeddedLCPatternTable, row int, sum uint16, weight int) {
+func (s *embeddedLCSearch) search(row int, sum uint16, weight int) {
 	if row == 7 {
 		s.errors[7] = s.parity ^ sum
 		s.leaf(weight + bits.OnesCount16(s.errors[7]))
 		return
 	}
 	syndrome := s.syndromes[row]
-	for w := patterns.minWeight[syndrome]; w < len(patterns.bySyndrome[syndrome]); w += 2 {
+	for w := embeddedLCMinWeight[syndrome]; w < 5; w += 2 {
 		if weight+w+s.minRemaining[row+1] > s.best {
 			return
 		}
-		for _, e := range patterns.bySyndrome[syndrome][w] {
+		for _, e := range embeddedLCPatterns[embeddedLCPatternStart[syndrome*5+w]:embeddedLCPatternStart[syndrome*5+w+1]] {
 			s.errors[row] = e
-			s.search(patterns, row+1, sum^e, weight+w)
+			s.search(row+1, sum^e, weight+w)
 		}
 	}
 }
@@ -121,43 +119,6 @@ func (s *embeddedLCSearch) leaf(weight int) {
 	s.found = true
 	s.info = info
 }
-
-// embeddedLCPatternTable lists the 16-bit row error patterns of weight up to
-// 4 by Hamming(16,11,4) syndrome and weight, with bit c for column c.
-type embeddedLCPatternTable struct {
-	bySyndrome [32][5][]uint16
-	minWeight  [32]int
-}
-
-var embeddedLCPatterns = sync.OnceValue(func() *embeddedLCPatternTable { //nolint:gochecknoglobals
-	t := &embeddedLCPatternTable{}
-	var columns [16]int
-	for col := range columns {
-		var unit [16]bit.Bit
-		unit[col] = 1
-		columns[col] = calculateSyndrome16_11(unit)
-	}
-	for s := range t.minWeight {
-		t.minWeight[s] = -1
-	}
-	for m := 0; m < 1<<16; m++ {
-		w := bits.OnesCount16(uint16(m))
-		if w > 4 {
-			continue
-		}
-		syndrome := 0
-		for col := range columns {
-			if m>>col&1 == 1 {
-				syndrome ^= columns[col]
-			}
-		}
-		t.bySyndrome[syndrome][w] = append(t.bySyndrome[syndrome][w], uint16(m))
-		if t.minWeight[syndrome] < 0 || w < t.minWeight[syndrome] {
-			t.minWeight[syndrome] = w
-		}
-	}
-	return t
-})
 
 // DecodeEmbeddedStrict decodes a full embedded LC as MMDVMHost
 // (CDMREmbeddedData::decodeEmbeddedData) does. It corrects at most one error
