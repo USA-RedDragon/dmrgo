@@ -15,7 +15,7 @@ func TestReedSolomon1294SyndromeNoError(t *testing.T) {
 		t.Fatalf("CalcSyndrome failed: %v", err)
 	}
 
-	if ReedSolomon1294CheckSyndrome(&syndrome) {
+	if ReedSolomon1294SyndromeHasErrors(&syndrome) {
 		t.Error("Zero codeword should have zero syndrome")
 	}
 }
@@ -51,7 +51,7 @@ func TestReedSolomon1294SyndromeWithError(t *testing.T) {
 		t.Fatalf("CalcSyndrome failed: %v", err)
 	}
 
-	if !ReedSolomon1294CheckSyndrome(&syndrome) {
+	if !ReedSolomon1294SyndromeHasErrors(&syndrome) {
 		t.Error("Corrupted codeword should have non-zero syndrome")
 	}
 }
@@ -189,7 +189,7 @@ func BenchmarkReedSolomon1294GaloisMul(b *testing.B) {
 	}
 }
 
-func TestReedSolomon1294CheckSyndromeWithErrors(t *testing.T) {
+func TestReedSolomon1294SyndromeHasErrors(t *testing.T) {
 	// Create a codeword with errors and verify syndrome is non-zero
 	data := make([]byte, RS_12_9_DATASIZE+RS_12_9_CHECKSUMSIZE)
 	data[0] = 0x42 // Introduce an error
@@ -200,7 +200,7 @@ func TestReedSolomon1294CheckSyndromeWithErrors(t *testing.T) {
 		t.Fatalf("CalcSyndrome failed: %v", err)
 	}
 
-	if !ReedSolomon1294CheckSyndrome(&syndrome) {
+	if !ReedSolomon1294SyndromeHasErrors(&syndrome) {
 		t.Error("Corrupted codeword should have non-zero syndrome")
 	}
 }

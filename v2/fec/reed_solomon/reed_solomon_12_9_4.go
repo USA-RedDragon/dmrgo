@@ -61,7 +61,7 @@ func Decode(data []byte) DecodeResult {
 	}
 
 	// Check if there are any errors
-	if !ReedSolomon1294CheckSyndrome(&syndrome) {
+	if !ReedSolomon1294SyndromeHasErrors(&syndrome) {
 		// No errors
 		copy(result.Data, workData[:RS_12_9_DATASIZE])
 		return result
@@ -115,7 +115,7 @@ func DecodeInto(data []byte, dst []byte, workspace *DecodeWorkspace) DecodeResul
 		return result
 	}
 
-	if !ReedSolomon1294CheckSyndrome(&ws.syndrome) {
+	if !ReedSolomon1294SyndromeHasErrors(&ws.syndrome) {
 		copy(result.Data, ws.workData[:RS_12_9_DATASIZE])
 		return result
 	}
@@ -179,7 +179,8 @@ func ReedSolomon1294CalcSyndrome(data []byte, syndrome *ReedSolomon1294) error {
 	return nil
 }
 
-func ReedSolomon1294CheckSyndrome(syndrome *ReedSolomon1294) bool {
+// ReedSolomon1294SyndromeHasErrors reports whether any syndrome value is nonzero.
+func ReedSolomon1294SyndromeHasErrors(syndrome *ReedSolomon1294) bool {
 	for _, v := range syndrome {
 		if v != 0 {
 			return true
@@ -296,7 +297,7 @@ func ReedSolomon1294CorrectWithWorkspace(data []byte, syndrome *ReedSolomon1294,
 		ws = &DecodeWorkspace{}
 	}
 
-	if !ReedSolomon1294CheckSyndrome(syndrome) {
+	if !ReedSolomon1294SyndromeHasErrors(syndrome) {
 		return 0, nil
 	}
 
@@ -339,7 +340,7 @@ func ReedSolomon1294CorrectWithWorkspace(data []byte, syndrome *ReedSolomon1294,
 	data[pos] ^= value
 
 	var check ReedSolomon1294
-	if err := ReedSolomon1294CalcSyndrome(data, &check); err != nil || ReedSolomon1294CheckSyndrome(&check) {
+	if err := ReedSolomon1294CalcSyndrome(data, &check); err != nil || ReedSolomon1294SyndromeHasErrors(&check) {
 		data[pos] ^= value
 		return 0, errUncorrectable
 	}

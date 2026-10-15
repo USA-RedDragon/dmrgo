@@ -63,7 +63,7 @@ func TestSyndromeDetectsCorruption(t *testing.T) {
 		t.Fatalf("CalcSyndrome failed: %v", err)
 	}
 
-	if !ReedSolomon1294CheckSyndrome(&syndrome) {
+	if !ReedSolomon1294SyndromeHasErrors(&syndrome) {
 		t.Error("Corrupted all-zero codeword should have non-zero syndrome")
 	}
 }
@@ -214,7 +214,7 @@ func TestSyndromeCleanForValidCodeword(t *testing.T) {
 		t.Fatalf("CalcSyndrome failed: %v", err)
 	}
 
-	if ReedSolomon1294CheckSyndrome(&syndrome) {
+	if ReedSolomon1294SyndromeHasErrors(&syndrome) {
 		t.Error("Valid all-zero codeword should have zero syndrome")
 	}
 

@@ -822,7 +822,7 @@ documents:
               - TestReedSolomon1294CalcSyndromeError
               - TestReedSolomon1294CorrectError
               - TestReedSolomon1294DecodeResultFields
-              - TestReedSolomon1294CheckSyndromeWithErrors
+              - TestReedSolomon1294SyndromeHasErrors
               - TestEncodeDecodeRoundTrip
               - TestSyndromeDetectsCorruption
               - TestDecodeTableB18Codewords
