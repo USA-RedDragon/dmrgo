@@ -9,6 +9,10 @@ import (
 // with a 7-bit DBSN in octet 0 bits 7-1, then the CRC-9 with its MSB in
 // octet 0 bit 0 and the rest in octet 1 (clause B.3.10), then user data.
 
+// confirmedMaxCRC9Bits is the CRC-9 input of the largest confirmed block:
+// the 22 user data octets of a rate 1 block and the 7 DBSN bits.
+const confirmedMaxCRC9Bits = 22*8 + 7
+
 func confirmedDBSN(block []byte) uint8 {
 	return block[0] >> 1
 }
@@ -20,8 +24,9 @@ func confirmedCRC9(block []byte) uint16 {
 // computeConfirmedCRC9 computes the masked CRC-9 over the user data followed
 // by the 7 DBSN bits, which is the M(x) order given in clause B.3.10.
 func computeConfirmedCRC9(dbsn uint8, userData []byte, mask uint16) uint16 {
-	bits := make([]bit.Bit, len(userData)*8+7)
-	copy(bits, bit.Unpack(userData))
+	var buf [confirmedMaxCRC9Bits]bit.Bit
+	bits := buf[:len(userData)*8+7]
+	unpackBits(bits[:len(userData)*8], userData)
 	bit.PutUint(bits[len(bits)-7:], uint64(dbsn))
 	return (crc.CRC9(bits) ^ mask) & 0x1FF
 }
