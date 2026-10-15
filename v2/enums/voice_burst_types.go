@@ -4,8 +4,7 @@ package enums
 type VoiceBurstType int
 
 const (
-	VoiceBurstUnknown     VoiceBurstType = 1
-	voiceBurstUnknownName                = "Unknown"
+	VoiceBurstUnknown VoiceBurstType = 1
 
 	VoiceBurstA VoiceBurstType = 100
 	VoiceBurstB VoiceBurstType = 101
@@ -19,7 +18,7 @@ const (
 func VoiceBurstTypeToName(burstType VoiceBurstType) string {
 	switch burstType {
 	case VoiceBurstUnknown:
-		return voiceBurstUnknownName
+		return unknownName
 	case VoiceBurstA:
 		return "A"
 	case VoiceBurstB:
@@ -33,5 +32,5 @@ func VoiceBurstTypeToName(burstType VoiceBurstType) string {
 	case VoiceBurstF:
 		return "F"
 	}
-	return voiceBurstUnknownName
+	return unknownName
 }

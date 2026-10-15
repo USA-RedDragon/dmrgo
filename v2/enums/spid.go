@@ -21,6 +21,8 @@ func SPIDToPort(spid SPID) uint16 {
 		return 5016
 	case SPIDLocationProtocol:
 		return 5017
+	case SPIDExtendedHeader, SPIDManufacturerSpecific:
+		return 0
 	default:
 		return 0
 	}
@@ -35,11 +37,11 @@ func SPIDToName(spid SPID) string {
 	case spid == SPIDLocationProtocol:
 		return "Location Protocol (5017)"
 	case spid >= 3 && spid <= 94:
-		return "Reserved"
+		return reservedName
 	case spid >= 95:
-		return "Manufacturer Specific"
+		return manufacturerSpecificName
 	}
-	return "Unknown"
+	return unknownName
 }
 
 func SPIDFromInt(i int) (SPID, error) {

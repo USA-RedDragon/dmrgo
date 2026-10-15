@@ -98,7 +98,7 @@ func SyncPatternToName(sync SyncPattern) string {
 	case EmbeddedSignallingPattern:
 		return embeddedSignallingName
 	case Reserved:
-		return "Reserved"
+		return reservedName
 	default:
 		return embeddedSignallingName
 	}

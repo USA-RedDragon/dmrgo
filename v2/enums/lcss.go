@@ -21,7 +21,7 @@ func LCSSToName(lcss LCSS) string {
 	case ContinuationFragmentLCorCSBK:
 		return "Continuation fragment LC or CSBK"
 	}
-	return "Unknown"
+	return unknownName
 }
 
 func LCSSFromInt(i int) LCSS {

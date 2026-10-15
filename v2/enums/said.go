@@ -20,11 +20,11 @@ func SAIDToName(said SAID) string {
 	case said == SAIDUSBEthernetNetwork:
 		return "USB/Ethernet Network"
 	case said >= 2 && said <= 11:
-		return "Reserved"
+		return reservedName
 	case said >= 12:
-		return "Manufacturer Specific"
+		return manufacturerSpecificName
 	}
-	return "Unknown"
+	return unknownName
 }
 
 func SAIDFromInt(i int) (SAID, error) {

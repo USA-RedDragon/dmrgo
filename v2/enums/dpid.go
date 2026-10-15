@@ -21,6 +21,8 @@ func DPIDToPort(dpid DPID) uint16 {
 		return 5016
 	case DPIDLocationProtocol:
 		return 5017
+	case DPIDExtendedHeader, DPIDManufacturerSpecific:
+		return 0
 	default:
 		return 0
 	}
@@ -35,11 +37,11 @@ func DPIDToName(dpid DPID) string {
 	case dpid == DPIDLocationProtocol:
 		return "Location Protocol (5017)"
 	case dpid >= 3 && dpid <= 94:
-		return "Reserved"
+		return reservedName
 	case dpid >= 95:
-		return "Manufacturer Specific"
+		return manufacturerSpecificName
 	}
-	return "Unknown"
+	return unknownName
 }
 
 func DPIDFromInt(i int) (DPID, error) {

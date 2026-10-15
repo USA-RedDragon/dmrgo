@@ -24,8 +24,8 @@ func TestLCSSToName(t *testing.T) {
 
 func TestLCSSToName_Unknown(t *testing.T) {
 	got := LCSSToName(LCSS(99))
-	if got != voiceBurstUnknownName {
-		t.Errorf("LCSSToName(99) = %q, want %q", got, voiceBurstUnknownName)
+	if got != unknownName {
+		t.Errorf("LCSSToName(99) = %q, want %q", got, unknownName)
 	}
 }
 

@@ -2,6 +2,12 @@ package enums
 
 import "fmt"
 
+const (
+	unknownName              = "Unknown"
+	reservedName             = "Reserved"
+	manufacturerSpecificName = "Manufacturer Specific"
+)
+
 // DAID (Destination IP Address Identifier) identifies the destination IP address type
 // in a UDP/IPv4 compressed header.
 // ETSI TS 102 361-3 — Table 7.16
@@ -23,11 +29,11 @@ func DAIDToName(daid DAID) string {
 	case daid == DAIDGroupNetwork:
 		return "Group Network"
 	case daid >= 3 && daid <= 11:
-		return "Reserved"
+		return reservedName
 	case daid >= 12:
-		return "Manufacturer Specific"
+		return manufacturerSpecificName
 	}
-	return "Unknown"
+	return unknownName
 }
 
 func DAIDFromInt(i int) (DAID, error) {
