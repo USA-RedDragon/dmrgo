@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -86,7 +87,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 				}
 			case *pdu.Rate1Data:
 				counts["rate 1"]++
-				if got := r.Rate1Payload(); got != d.Data {
+				if got, res := r.Rate1Payload(); got != d.Data || res != (fec.Result{}) {
 					t.Errorf("%x: Rate1Payload %x, Burst %x", frame, got, d.Data)
 				}
 			}
@@ -132,10 +133,12 @@ func TestRawBurst_GettersOnValue(t *testing.T) {
 		bp2, _ := r.BPTCPayload()
 		e1 := frame.EMB()
 		e2 := r.EMB()
+		r1a, _ := frame.Rate1Payload()
+		r1b, _ := r.Rate1Payload()
 		if p1 != p2 || d1 != d2 || st1 != st2 || bp1 != bp2 || e1 != e2 ||
 			frame.EmbeddedData() != r.EmbeddedData() ||
 			frame.VoiceSlots() != r.VoiceSlots() ||
-			frame.Rate1Payload() != r.Rate1Payload() ||
+			r1a != r1b ||
 			frame.StandaloneRCData() != r.StandaloneRCData() {
 			t.Errorf("%x: getters on a value differ from getters on a variable", frame)
 		}
@@ -167,7 +170,8 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 					w.SetRate34Payload(p)
 				}
 			case dt == enums.DataTypeRate1:
-				w.SetRate1Payload(r.Rate1Payload())
+				p, _ := r.Rate1Payload()
+				w.SetRate1Payload(p)
 			case isBPTC(dt):
 				if p, res := r.BPTCPayload(); !res.HasErrors() {
 					w.SetBPTCPayload(p)
@@ -378,7 +382,7 @@ func TestBuildRateDataBursts_DecodeAsBurst(t *testing.T) {
 		if !ok || d1.Data != p1 || b.SlotType.ColorCode != 9 {
 			t.Fatalf("Rate 1 burst decodes as %+v", b.Data)
 		}
-		if r.Rate1Payload() != p1 || must(b.Encode()) != r {
+		if got, _ := r.Rate1Payload(); got != p1 || must(b.Encode()) != r {
 			t.Fatal("Rate 1 burst round trip")
 		}
 		w := r
