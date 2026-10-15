@@ -70,6 +70,8 @@ func (s SyncSource) SyncPatterns() (voice, data enums.SyncPattern, ok bool) {
 // received, before any FEC: slot i is voice bits 72i to 72i+71, where voice
 // bits 0 to 107 are burst bits 0 to 107 and voice bits 108 to 215 are burst
 // bits 156 to 263. VoiceData holds the same slots decoded as AMBE frames.
+// Only DecodeFromBytes sets the received bits, so the slots of a Burst built
+// by hand are zero.
 func (b *Burst) VoiceSlots() [VoiceSlotsPerBurst][72]bit.Bit {
 	var voice [216]bit.Bit
 	copy(voice[:108], b.bitData[:108])
