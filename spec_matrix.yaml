@@ -390,9 +390,13 @@ documents:
         title: "Embedded signalling (EMB) PDU"
         source_files:
           - v2/layer2/pdu/embedded_signalling.go
+          - v2/layer2/pdu/emb_info.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
+              - TestEMBInfo_IPSCExample
+              - TestEMBInfo_AllValues
+              - TestEMBInfo_Setters
               - TestEmbeddedSignalling_EncodeDecodeRoundTrip
               - TestEmbeddedSignalling_AllColorCodes
               - TestEmbeddedSignalling_AllLCSS
