@@ -133,6 +133,35 @@ func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 	}
 }
 
+// TestVoiceReceiver_Strict checks that a Strict receiver rejects an error in
+// the column parity row of the embedded LC, which the default corrects, and
+// that Reset keeps Strict.
+func TestVoiceReceiver_Strict(t *testing.T) {
+	lc := groupLC(enums.StandardizedFID)
+	raws := transmission(t, lc, 6)
+	all := bit.UnpackBytesToBits264(raws[2])
+	all[layer2.EmbeddedDataStart+7] ^= 1
+	raws[2] = bit.PackBits264(all)
+	for _, strict := range []bool{false, true} {
+		r := layer2.VoiceReceiver{Strict: strict}
+		r.Reset()
+		var lcs, uncorrectable int
+		for _, raw := range raws {
+			b, _ := layer2.NewBurstFromBytes(raw)
+			_, ok, err := r.Receive(b)
+			if ok {
+				lcs++
+			}
+			if errors.Is(err, layer2.ErrEmbeddedLCUncorrectable) {
+				uncorrectable++
+			}
+		}
+		if strict && (lcs != 0 || uncorrectable != 1) || !strict && (lcs != 1 || uncorrectable != 0) {
+			t.Errorf("Strict=%v: %d LCs, %d uncorrectable", strict, lcs, uncorrectable)
+		}
+	}
+}
+
 func TestVoiceReceiver_DataBurstResets(t *testing.T) {
 	raws := transmission(t, groupLC(enums.StandardizedFID), 6)
 	seq := [][33]byte{raws[1], raws[2], raws[7], raws[3], raws[6]}

@@ -30,45 +30,74 @@ import (
 // bits are rows 0..6, columns 0..10 of the encode matrix in row-major order,
 // so per Figure B.3 the checksum bits are the last bit of rows 2..6.
 func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
-	result := fec.FECResult{BitsChecked: 128}
+	matrix := embeddedLCMatrix(fragments)
+	received := matrix
+	correctEmbeddedLCMatrix(&matrix)
+	result := embeddedLCResult(&matrix, &received)
+	result.Uncorrectable = !embeddedLCMatrixValid(&matrix)
+	return embeddedLCInfo(&matrix), result
+}
 
-	// Reassemble the 128-bit stream from 4 fragments
-	var stream [128]bit.Bit
-	for i := 0; i < 4; i++ {
-		copy(stream[i*32:(i+1)*32], fragments[i][:])
+// DecodeEmbeddedLCStrict decodes a full embedded LC as MMDVMHost
+// (CDMREmbeddedData::decodeEmbeddedData) does. Each of rows 0..6 is
+// corrected for at most one error with Hamming(16,11,4), and a row with a
+// detected double error makes the LC uncorrectable. Row 7 is not corrected:
+// the LC is uncorrectable when any column parity over all 8 rows fails. It
+// accepts far fewer LCs with bit errors than DecodeEmbeddedLC.
+func DecodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
+	matrix := embeddedLCMatrix(fragments)
+	received := matrix
+	uncorrectable := false
+	for row := 0; row < 7 && !uncorrectable; row++ {
+		syndrome := calculateSyndrome16_11(matrix[row])
+		if syndrome == 0 {
+			continue
+		}
+		if errPos := hamming16_11_syndrome_table[syndrome]; errPos >= 0 {
+			matrix[row][errPos] ^= 1
+		} else {
+			uncorrectable = true
+		}
 	}
+	for col := 0; col < 16 && !uncorrectable; col++ {
+		uncorrectable = columnParity(&matrix, col) != 0
+	}
+	result := embeddedLCResult(&matrix, &received)
+	result.Uncorrectable = uncorrectable
+	return embeddedLCInfo(&matrix), result
+}
 
-	// Deinterleave: transmit bits → encode matrix (8 rows × 16 columns)
-	// Interleaving writes columns top-to-bottom, left-to-right
-	// So stream[0..7] = column 0 (rows 0..7), stream[8..15] = column 1, etc.
+// embeddedLCMatrix reassembles the 8×16 encode matrix from the 4 fragments.
+// The interleaving writes the columns top to bottom, left to right.
+func embeddedLCMatrix(fragments [4][32]bit.Bit) [8][16]bit.Bit {
 	var matrix [8][16]bit.Bit
 	for col := 0; col < 16; col++ {
 		for row := 0; row < 8; row++ {
-			matrix[row][col] = stream[col*8+row]
+			n := col*8 + row
+			matrix[row][col] = fragments[n/32][n%32]
 		}
 	}
+	return matrix
+}
 
-	received := matrix
-	correctEmbeddedLCMatrix(&matrix)
-
+func embeddedLCResult(matrix, received *[8][16]bit.Bit) fec.FECResult {
+	result := fec.FECResult{BitsChecked: 128}
 	for row := range matrix {
 		for col := range matrix[row] {
 			result.ErrorsCorrected += int(matrix[row][col] ^ received[row][col])
 		}
 	}
-	result.Uncorrectable = !embeddedLCMatrixValid(&matrix)
+	return result
+}
 
-	// Extract 77 info bits from rows 0..6, columns 0..10
+// embeddedLCInfo returns the 77 information bits, rows 0..6 and columns
+// 0..10 of the matrix in row-major order.
+func embeddedLCInfo(matrix *[8][16]bit.Bit) [77]bit.Bit {
 	var info [77]bit.Bit
-	idx := 0
 	for row := 0; row < 7; row++ {
-		for col := 0; col < 11; col++ {
-			info[idx] = matrix[row][col]
-			idx++
-		}
+		copy(info[row*11:row*11+11], matrix[row][:11])
 	}
-
-	return info, result
+	return info
 }
 
 // correctEmbeddedLCMatrix corrects the 8×16 product code in place. Row 7 is

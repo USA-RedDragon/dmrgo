@@ -24,6 +24,10 @@ var (
 // their position. The zero VoiceReceiver is ready to use. A VoiceReceiver
 // is not safe for concurrent use.
 type VoiceReceiver struct {
+	// Strict selects DecodeEmbeddedFullLinkControlStrict for the embedded
+	// LC. Reset keeps it.
+	Strict bool
+
 	position  enums.VoiceBurstType
 	fragments [4][32]bit.Bit
 	count     int
@@ -31,7 +35,7 @@ type VoiceReceiver struct {
 
 // Reset forgets the superframe position and any partial embedded LC.
 func (r *VoiceReceiver) Reset() {
-	*r = VoiceReceiver{}
+	*r = VoiceReceiver{Strict: r.Strict}
 }
 
 // Receive takes the next decoded burst of the logical channel and sets
@@ -56,6 +60,10 @@ func (r *VoiceReceiver) Reset() {
 // and checksum to check. Receive expects every burst of the logical channel
 // in order; a lost burst inside a superframe can shift the position of the
 // bursts after it until the next burst A, B or E.
+//
+// With Strict set, Receive decodes the embedded LC with
+// DecodeEmbeddedFullLinkControlStrict, which accepts the same LCs as
+// MMDVMHost.
 func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err error) {
 	switch {
 	case b.SyncPattern == enums.MsSourcedRcSync:
@@ -90,7 +98,11 @@ func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err 
 		return lc, false, nil
 	}
 	r.count = 0
-	lc, result := DecodeEmbeddedFullLinkControl(r.fragments)
+	decode := DecodeEmbeddedFullLinkControl
+	if r.Strict {
+		decode = DecodeEmbeddedFullLinkControlStrict
+	}
+	lc, result := decode(r.fragments)
 	if result.Uncorrectable {
 		return pdu.FullLinkControl{}, false, ErrEmbeddedLCUncorrectable
 	}

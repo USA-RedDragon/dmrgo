@@ -97,3 +97,31 @@ func TestEmbeddedLC_ParityRowErrorCorrected(t *testing.T) {
 		}
 	}
 }
+
+// TestEmbeddedLCStrict_RowErrors checks the MMDVMHost rules: one error in
+// each of rows 0..6 is corrected, and an error in row 7 or two errors in one
+// row make the LC uncorrectable. Stream index col*8+row is that matrix bit.
+func TestEmbeddedLCStrict_RowErrors(t *testing.T) {
+	t.Parallel()
+	info := embeddedLCInfo()
+	fr := bptc.EncodeEmbeddedLC(info)
+	for p := 0; p < 128; p++ {
+		got, res := bptc.DecodeEmbeddedLCStrict(flipEmbedded(fr, p))
+		if p%8 == 7 {
+			if !res.Uncorrectable {
+				t.Fatalf("row 7 error at %d accepted", p)
+			}
+			continue
+		}
+		if got != info || res.Uncorrectable || res.ErrorsCorrected != 1 {
+			t.Fatalf("error at %d: data match=%v result=%+v", p, got == info, res)
+		}
+	}
+	got, res := bptc.DecodeEmbeddedLCStrict(flipEmbedded(fr, 0, 9, 18, 27, 36, 45, 54))
+	if got != info || res.Uncorrectable || res.ErrorsCorrected != 7 {
+		t.Fatalf("one error per row: data match=%v result=%+v", got == info, res)
+	}
+	if _, res := bptc.DecodeEmbeddedLCStrict(flipEmbedded(fr, 0, 8)); !res.Uncorrectable {
+		t.Fatal("two errors in row 0 accepted")
+	}
+}

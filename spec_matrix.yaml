@@ -172,6 +172,7 @@ documents:
               - TestEmbeddedLC_RoundTrip
               - TestEmbeddedLC_ChecksumMismatch
               - TestEmbeddedLC_EncodeRejectsBadLC
+              - TestEmbeddedLCStrict_MMDVMHostVectors
               - TestVoiceTransmitter_Transmission
               - TestVoiceTransmitter_ReverseChannel
               - TestVoiceTransmitter_Terminate
@@ -181,6 +182,7 @@ documents:
               - TestVoiceReceiver_LateEntry
               - TestVoiceReceiver_LostBurst
               - TestVoiceReceiver_UncorrectableLC
+              - TestVoiceReceiver_Strict
               - TestVoiceReceiver_DataBurstResets
               - TestVoiceReceiver_UncorrectableEMB
               - TestVoiceReceiver_Captures
@@ -719,6 +721,7 @@ documents:
               - TestEmbeddedLC_DifferentPatterns
               - TestEmbeddedLC_CapturedSuperframe
               - TestEmbeddedLC_UpToThreeErrorsCorrected
+              - TestEmbeddedLCStrict_RowErrors
               - TestEmbeddedLC_ParityRowErrorCorrected
 
       - section: "B.2.2"
