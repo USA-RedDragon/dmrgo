@@ -79,6 +79,8 @@ func readCapture(t *testing.T) []Received {
 // TestCaptureXPR8400 reports the bursts of a real repeater capture and
 // checks them against the call that the repeater sent.
 func TestCaptureXPR8400(t *testing.T) {
+	t.Parallel()
+
 	if iq := os.Getenv("DMRRF_CAPTURE"); iq != "" {
 		writeCapture(t, iq)
 	}
@@ -146,6 +148,8 @@ func checkEMB(t *testing.T, l loop, n int) {
 // gain of 4. The call is from 3191868 to TG 9 on TS2: three voice LC headers,
 // one superframe of the AMBE test pattern and a terminator.
 func TestCaptureXPR8400Weak(t *testing.T) {
+	t.Parallel()
+
 	iq, err := os.ReadFile("testdata/xpr8400_bs_voice_weak.cu8")
 	if err != nil {
 		t.Fatal(err)

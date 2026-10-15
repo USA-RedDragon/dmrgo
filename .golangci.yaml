@@ -118,11 +118,6 @@ linters:
           - revive
           - staticcheck
         text: should not use dot imports
-      # The dmrrf tests run one at a time.
-      - path: v2/cmd/dmrrf/
-        linters:
-          - paralleltest
-          - tparallel
     paths:
       - third_party$
       - builtin$

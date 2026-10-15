@@ -126,6 +126,8 @@ func checkAMBE(t *testing.T, l loop, frames int, silence bool) {
 }
 
 func TestTestAMBEFramesAreDistinct(t *testing.T) {
+	t.Parallel()
+
 	seen := map[uint64]bool{ambeValue(vocoder.AMBESilence()): true}
 	for i := range 1000 {
 		v := ambeValue(TestAMBEFrame(i))
@@ -137,6 +139,8 @@ func TestTestAMBEFramesAreDistinct(t *testing.T) {
 }
 
 func TestLoopbackVoice(t *testing.T) {
+	t.Parallel()
+
 	for _, group := range []bool{true, false} {
 		cfg := testConfig()
 		cfg.Group, cfg.Superframes = group, 3
@@ -160,6 +164,8 @@ func TestLoopbackVoice(t *testing.T) {
 }
 
 func TestLoopbackVoiceSlowClock(t *testing.T) {
+	t.Parallel()
+
 	for _, bs := range []bool{false, true} {
 		cfg := testConfig()
 		cfg.Superframes, cfg.BSSourced = 4, bs
@@ -182,6 +188,8 @@ func flipSync(b layer2.RawBurst, n int) layer2.RawBurst {
 // BS-sourced call, and the EMB of one burst B, and checks that the slot
 // timing still finds every superframe.
 func TestLoopbackVoiceDamagedSync(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Superframes = true, 4
 	built, err := Sequence("voice", cfg)
@@ -216,6 +224,8 @@ func TestLoopbackVoiceDamagedSync(t *testing.T) {
 // to the terminator finds every superframe. Then it ends a call after burst
 // C with a damaged terminator SYNC, which must not decode as burst D.
 func TestLoopbackMSVoiceDamagedSync(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.Superframes = 3
 	built, err := Sequence("voice", cfg)
@@ -249,6 +259,8 @@ func TestLoopbackMSVoiceDamagedSync(t *testing.T) {
 }
 
 func TestLoopbackVoiceLateEntry(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.Group, cfg.Superframes, cfg.LateEntry = true, 2, true
 	l := runLoop(t, "voice", cfg)
@@ -259,12 +271,16 @@ func TestLoopbackVoiceLateEntry(t *testing.T) {
 }
 
 func TestLoopbackVoiceSilence(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.Superframes, cfg.AMBESilence = 1, true
 	checkAMBE(t, runLoop(t, "voice", cfg), 18, true)
 }
 
 func TestLoopbackPI(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.Group, cfg.Superframes = true, 2
 	l := runLoop(t, "pi", cfg)
@@ -278,6 +294,8 @@ func TestLoopbackPI(t *testing.T) {
 }
 
 func TestLoopbackResponses(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	l := runLoop(t, "ack", cfg)
 	l.expect(t, "response", "ACK class=0 type=1 status=0 3191868 -> 9990", 1)
@@ -289,6 +307,8 @@ func TestLoopbackResponses(t *testing.T) {
 }
 
 func TestLoopbackPreamble(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.Preambles = 3
 	l := runLoop(t, "preamble", cfg)
@@ -340,6 +360,8 @@ func activeBlocks(l loop, cfg SeqConfig) int {
 // decodes clean, as two bit errors do, and checks that each burst still goes
 // to the channel of its slot time.
 func TestReportChannelFromTiming(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Slot, cfg.Superframes = true, 1, 2
 	l := runLoop(t, "voice", cfg)
@@ -381,6 +403,8 @@ func decodeAll(t *testing.T, l loop) []*layer2.Burst {
 }
 
 func TestLoopbackReverseChannel(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	b := decodeAll(t, runLoop(t, "rc", cfg))
 	rc := b[len(b)-1]
@@ -390,6 +414,8 @@ func TestLoopbackReverseChannel(t *testing.T) {
 }
 
 func TestLoopbackTier3(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Slot = true, 0
 	l := runLoop(t, "tier3", cfg)
@@ -416,6 +442,8 @@ func TestLoopbackTier3(t *testing.T) {
 }
 
 func TestLoopbackBSSourced(t *testing.T) {
+	t.Parallel()
+
 	for _, slot := range []int{0, 1} {
 		cfg := testConfig()
 		cfg.BSSourced, cfg.Slot, cfg.Group, cfg.Superframes = true, slot, true, 2

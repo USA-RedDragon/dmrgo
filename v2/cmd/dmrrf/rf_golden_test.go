@@ -59,6 +59,8 @@ func rfBursts(t *testing.T) map[string][]string {
 // DMRRF_UPDATE_GOLDEN=1 to rewrite testdata/rf_golden.txt, only after a new
 // over-the-air check.
 func TestRFGoldenBursts(t *testing.T) {
+	t.Parallel()
+
 	got := rfBursts(t)
 	const path = "testdata/rf_golden.txt"
 	if os.Getenv("DMRRF_UPDATE_GOLDEN") == "1" {
@@ -105,6 +107,8 @@ func TestRFGoldenBursts(t *testing.T) {
 
 // TestRFRelayedPayloads checks the payloads the repeater relayed on IPSC.
 func TestRFRelayedPayloads(t *testing.T) {
+	t.Parallel()
+
 	got := rfBursts(t)
 	bptc := func(name string, i int) string {
 		b, _ := hex.DecodeString(got[name][i])

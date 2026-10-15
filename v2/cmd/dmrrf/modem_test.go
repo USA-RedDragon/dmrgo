@@ -38,6 +38,8 @@ func channel(iq []byte, txRate, rxRate, offsetHz, snrDB float64, seed uint64) []
 }
 
 func TestLoopbackDecodesEverySequence(t *testing.T) {
+	t.Parallel()
+
 	for _, seq := range []string{"data12", "data34", "data1", "data12u", "data34u", "data1u"} {
 		cfg := testConfig()
 		built, err := Sequence(seq, cfg)
@@ -81,6 +83,8 @@ func TestLoopbackDecodesEverySequence(t *testing.T) {
 }
 
 func TestBitErrorRateBySNR(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.Wakeups = 40
 	built, err := Sequence("wakeup", cfg)
@@ -111,6 +115,8 @@ func TestBitErrorRateBySNR(t *testing.T) {
 // several times the mean power, and noise pulls a mean of the discriminator
 // output toward 0 Hz.
 func TestBitErrorRateWeakBS(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Superframes = true, 2
 	built, err := Sequence("voice", cfg)
@@ -146,6 +152,8 @@ func popcount(b byte) int {
 }
 
 func TestOccupiedBandwidth(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig()
 	cfg.Wakeups = 30
 	built, err := Sequence("wakeup", cfg)
@@ -191,6 +199,8 @@ func TestOccupiedBandwidth(t *testing.T) {
 }
 
 func TestCalMeasuresCarrier(t *testing.T) {
+	t.Parallel()
+
 	iq := CW(0.2, 2e6, 0, 0.9)
 	rx := channel(iq, 2e6, 2.048e6, -1234, 30, 3)
 	off := carrierOffset(decimate(FromRTL(rx), 2.048e6))
@@ -200,6 +210,8 @@ func TestCalMeasuresCarrier(t *testing.T) {
 }
 
 func TestSteadySymbolsHoldSpecDeviation(t *testing.T) {
+	t.Parallel()
+
 	for _, tc := range []struct {
 		fill byte
 		want float64
