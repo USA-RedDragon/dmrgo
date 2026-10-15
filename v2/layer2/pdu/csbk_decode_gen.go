@@ -1156,9 +1156,8 @@ func (s *MaintenancePDU) String() string {
 }
 
 // DecodeCSBK decodes a CSBK per ETSI TS 102 361-1 - 9.1.5 CSBK PDU
-func DecodeCSBK(data [96]bit.Bit, trunkingMode bool) (CSBK, fec.Result) {
+func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.Result) {
 	var result CSBK
-	result.TrunkingMode = trunkingMode
 	bit.Mask(data[:])
 	var _packedBytes [12]byte
 	for i := range 12 {
@@ -1183,16 +1182,6 @@ func DecodeCSBK(data [96]bit.Bit, trunkingMode bool) (CSBK, fec.Result) {
 	copy(_dispatchBits[:], data[16:80])
 	if result.FID == 0 {
 		switch result.CSBKOpcode {
-		case CSBKBSOutboundActivationPDU:
-			if !result.TrunkingMode {
-				_decoded, _ := DecodeBSOutboundActivationPDU(_dispatchBits)
-				result.BSOutboundActivationPDU = &_decoded
-			} else if result.TrunkingMode {
-				_decoded, _ := DecodeTalkgroupDataGrantMultiItemPDU(_dispatchBits)
-				result.TalkgroupDataGrantMultiItemPDU = &_decoded
-			} else {
-				copy(result.RawPayload[:], _dispatchBits[:])
-			}
 		case CSBKUnitToUnitVoiceServiceRequestPDU:
 			_decoded, _ := DecodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
 			result.UnitToUnitVoiceServiceRequestPDU = &_decoded
@@ -1288,7 +1277,6 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		name string
 		set  bool
 	}{
-		{"BSOutboundActivationPDU", s.BSOutboundActivationPDU != nil},
 		{"UnitToUnitVoiceServiceRequestPDU", s.UnitToUnitVoiceServiceRequestPDU != nil},
 		{"UnitToUnitVoiceServiceAnswerResponsePDU", s.UnitToUnitVoiceServiceAnswerResponsePDU != nil},
 		{"NegativeAcknowledgementPDU", s.NegativeAcknowledgementPDU != nil},
@@ -1302,7 +1290,6 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		{"DuplexPrivateVoiceGrantPDU", s.DuplexPrivateVoiceGrantPDU != nil},
 		{"DuplexPrivateDataGrantPDU", s.DuplexPrivateDataGrantPDU != nil},
 		{"PrivateDataGrantMultiItemPDU", s.PrivateDataGrantMultiItemPDU != nil},
-		{"TalkgroupDataGrantMultiItemPDU", s.TalkgroupDataGrantMultiItemPDU != nil},
 		{"MovePDU", s.MovePDU != nil},
 		{"AlohaPDU", s.AlohaPDU != nil},
 		{"CBroadcastPDU", s.CBroadcastPDU != nil},
@@ -1326,12 +1313,6 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		_payload = _p.name
 	}
 	switch {
-	case s.BSOutboundActivationPDU != nil:
-		_pduBits, err := s.BSOutboundActivationPDU.Encode()
-		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.BSOutboundActivationPDU: %w", err)
-		}
-		copy(data[16:80], _pduBits[:])
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
 		_pduBits, err := s.UnitToUnitVoiceServiceRequestPDU.Encode()
 		if err != nil {
@@ -1408,12 +1389,6 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		_pduBits, err := s.PrivateDataGrantMultiItemPDU.Encode()
 		if err != nil {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.PrivateDataGrantMultiItemPDU: %w", err)
-		}
-		copy(data[16:80], _pduBits[:])
-	case s.TalkgroupDataGrantMultiItemPDU != nil:
-		_pduBits, err := s.TalkgroupDataGrantMultiItemPDU.Encode()
-		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.TalkgroupDataGrantMultiItemPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.MovePDU != nil:
@@ -1512,16 +1487,9 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		var result CSBK
 		result.CSBKOpcode = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
 		result.FID = bit.BitsToUint8(data[:], 8, 8)
-		result.TrunkingMode = s.TrunkingMode
 		_want := "RawPayload"
 		if result.FID == 0 {
 			switch result.CSBKOpcode {
-			case CSBKBSOutboundActivationPDU:
-				if !result.TrunkingMode {
-					_want = "BSOutboundActivationPDU"
-				} else if result.TrunkingMode {
-					_want = "TalkgroupDataGrantMultiItemPDU"
-				}
 			case CSBKUnitToUnitVoiceServiceRequestPDU:
 				_want = "UnitToUnitVoiceServiceRequestPDU"
 			case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
@@ -1577,7 +1545,7 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 			}
 		}
 		if _payload != _want {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.%s is set, but CSBKOpcode, FID and TrunkingMode select %s", _payload, _want)
+			return [96]bit.Bit{}, fmt.Errorf("CSBK.%s is set, but CSBKOpcode and FID select %s", _payload, _want)
 		}
 	}
 	var _encBytes [10]byte
@@ -1605,8 +1573,6 @@ func (s *CSBK) String() string {
 	_ret := "CSBK{ "
 	_ret += fmt.Sprintf("DataType: %s, LastBlock: %t, ProtectFlag: %t, CSBKOpcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.DataType, s.LastBlock, s.ProtectFlag, s.CSBKOpcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	switch {
-	case s.BSOutboundActivationPDU != nil:
-		_ret += s.BSOutboundActivationPDU.String()
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
 		_ret += s.UnitToUnitVoiceServiceRequestPDU.String()
 	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
@@ -1633,8 +1599,6 @@ func (s *CSBK) String() string {
 		_ret += s.DuplexPrivateDataGrantPDU.String()
 	case s.PrivateDataGrantMultiItemPDU != nil:
 		_ret += s.PrivateDataGrantMultiItemPDU.String()
-	case s.TalkgroupDataGrantMultiItemPDU != nil:
-		_ret += s.TalkgroupDataGrantMultiItemPDU.String()
 	case s.MovePDU != nil:
 		_ret += s.MovePDU.String()
 	case s.AlohaPDU != nil:

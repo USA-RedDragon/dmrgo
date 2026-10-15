@@ -50,18 +50,11 @@ type Burst struct {
 	// DecodeFromBytes returns for an idle burst; see Encode.
 	Data                  Data
 	FEC                   fec.BurstFECStats
-	TrunkingMode          bool
 	bitData               [264]bit.Bit
 	decodedData           Data
 	decodedDataType       enums.DataType
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
-}
-
-// SetTrunkingMode sets whether the burst should be decoded as Tier III trunking.
-// This affects disambiguation of CSBK opcode 0x38 (BS_Dwn_Act vs TD_GRANT_MI).
-func (b *Burst) SetTrunkingMode(mode bool) {
-	b.TrunkingMode = mode
 }
 
 // NewBurstFromBytes creates a new Burst from the given bytes.
@@ -73,9 +66,7 @@ func NewBurstFromBytes(data [33]byte) (*Burst, error) {
 
 // DecodeFromBytes populates the burst in place, enabling zero-allocation decoding when reusing a Burst.
 func (b *Burst) DecodeFromBytes(data [33]byte) error {
-	trunkingMode := b.TrunkingMode
 	*b = Burst{}
-	b.TrunkingMode = trunkingMode
 	b.bitData = bit.UnpackBytesToBits264(data)
 
 	b.SyncPattern, b.SyncDistance = extractSyncPattern(b.bitData)
@@ -132,6 +123,19 @@ func extractSyncPattern(bitData [264]bit.Bit) (enums.SyncPattern, int) {
 		}
 	}
 	return enums.SyncPatternFromBytesWithDistance(syncBytes)
+}
+
+// opcode0x38Hint returns the likely meaning of CSBK opcode 0x38 in a burst
+// with SYNC pattern sync: an MS sends BS_Dwn_Act and a TSCC sends TD_GRANT_MI.
+func opcode0x38Hint(sync enums.SyncPattern) pdu.Opcode0x38Hint {
+	switch sync {
+	case enums.SyncMSSourcedData:
+		return pdu.Opcode0x38BSOutboundActivation
+	case enums.SyncBSSourcedData:
+		return pdu.Opcode0x38TalkgroupDataGrantMultiItem
+	default:
+		return pdu.Opcode0x38Unknown
+	}
 }
 
 func isDataSync(sync enums.SyncPattern) bool {
@@ -387,8 +391,9 @@ func (b *Burst) extractData() (Data, error) {
 	case enums.DataTypeCSBK:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
-		decoded, fecResult := pdu.DecodeCSBK(sizedBits, b.TrunkingMode)
+		decoded, fecResult := pdu.DecodeCSBK(sizedBits)
 		decoded.DataType = dt
+		decoded.Hint0x38 = opcode0x38Hint(b.SyncPattern)
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode CSBK from bits")

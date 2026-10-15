@@ -62,7 +62,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "CSBK.TalkgroupVoiceGrantPDU is set, but CSBKOpcode, FID and TrunkingMode select AlohaPDU",
+			want: "CSBK.TalkgroupVoiceGrantPDU is set, but CSBKOpcode and FID select AlohaPDU",
 		},
 		{
 			name: "CSBK manufacturer FID",
@@ -74,18 +74,18 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "CSBK.TalkgroupVoiceGrantPDU is set, but CSBKOpcode, FID and TrunkingMode select RawPayload",
+			want: "CSBK.TalkgroupVoiceGrantPDU is set, but CSBKOpcode and FID select RawPayload",
 		},
 		{
-			name: "CSBK opcode 0x38 outside trunking",
+			name: "CSBK opcode 0x38",
 			encode: func() error {
 				_, err := (&pdu.CSBK{
-					CSBKOpcode:                     pdu.CSBKBSOutboundActivationPDU,
-					TalkgroupDataGrantMultiItemPDU: &pdu.TalkgroupDataGrantMultiItemPDU{},
+					CSBKOpcode:             pdu.CSBKTalkgroupDataGrantMultiItem,
+					TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
 				}).Encode()
 				return err
 			},
-			want: "select BSOutboundActivationPDU",
+			want: "CSBKOpcode and FID select RawPayload",
 		},
 		{
 			name: "Format",
@@ -130,13 +130,12 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 
 func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 	csbk := pdu.CSBK{
-		CSBKOpcode:                     pdu.CSBKBSOutboundActivationPDU,
-		TrunkingMode:                   true,
-		TalkgroupDataGrantMultiItemPDU: &pdu.TalkgroupDataGrantMultiItemPDU{},
+		CSBKOpcode:             pdu.CSBKTalkgroupVoiceGrant,
+		TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{},
 	}
-	got, _ := pdu.DecodeCSBK(must(csbk.Encode()), true)
-	if got.TalkgroupDataGrantMultiItemPDU == nil {
-		t.Error("opcode 0x38 in trunking mode did not decode as TalkgroupDataGrantMultiItemPDU")
+	got, _ := pdu.DecodeCSBK(must(csbk.Encode()))
+	if got.TalkgroupVoiceGrantPDU == nil {
+		t.Error("TV_GRANT did not decode as TalkgroupVoiceGrantPDU")
 	}
 
 	dh := pdu.DataHeader{

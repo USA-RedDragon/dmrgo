@@ -1772,11 +1772,11 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_TierIII_OpcodeString
-              - TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound
-              - TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI
+              - TestCSBK_Opcode0x38_BSOutbound
+              - TestCSBK_Opcode0x38_TDGrantMI
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestBurst_TrunkingModeSelectsOpcode0x38Variant
+              - TestBurst_Opcode0x38HintFromSync
 
       - section: "5.3"
         title: "Modes of Control Channel"
@@ -1785,8 +1785,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestCSBK_Opcode0x38_TrunkingModeFalse_BSOutbound
-              - TestCSBK_Opcode0x38_TrunkingModeTrue_TDGrantMI
+              - TestCSBK_Opcode0x38_BSOutbound
+              - TestCSBK_Opcode0x38_TDGrantMI
 
       - section: "5.4"
         title: "CSBK/MBC/UDT/USBD Block Structure"

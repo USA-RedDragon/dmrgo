@@ -18,7 +18,11 @@ const (
 	CSBKChannelTimingPDU                        CSBKOpcode = 0b00000111
 	CSBKNegativeAcknowledgementPDU              CSBKOpcode = 0b00100110
 	CSBKBSOutboundActivationPDU                 CSBKOpcode = 0b00111000
-	CSBKPreamblePDU                             CSBKOpcode = 0b00111101
+	// CSBKTalkgroupDataGrantMultiItem is the Tier III TD_GRANT_MI opcode
+	// (ETSI TS 102 361-4 Table B.1). It is the same value as
+	// CSBKBSOutboundActivationPDU; see CSBK.AsTalkgroupDataGrantMultiItem.
+	CSBKTalkgroupDataGrantMultiItem CSBKOpcode = 0b00111000
+	CSBKPreamblePDU                 CSBKOpcode = 0b00111101
 
 	// Tier III opcodes (ETSI TS 102 361-4 — Table B.1). The "UDT Header"
 	// opcodes (C_UDTHD, C_UDTHU, ...) are not CSBKs: they travel in a Data
@@ -43,15 +47,13 @@ const (
 	CSBKDuplexPrivateVoiceGrant      CSBKOpcode = 0b00110101
 	CSBKDuplexPrivateDataGrant       CSBKOpcode = 0b00110110
 	CSBKPrivateDataGrantMultiItem    CSBKOpcode = 0b00110111
-	// Note: CSBKTalkgroupDataGrantMultiItem shares opcode 0x38 with CSBKBSOutboundActivationPDU.
-	// Disambiguation is via the trunkingMode argument of DecodeCSBK.
-	CSBKMove CSBKOpcode = 0b00111001
+	CSBKMove                         CSBKOpcode = 0b00111001
 )
 
 func (opcode CSBKOpcode) String() string {
 	switch opcode {
 	case CSBKBSOutboundActivationPDU:
-		return "BS Outbound Activation PDU"
+		return "BS Outbound Activation PDU or TD_GRANT_MI PDU"
 	case CSBKUnitToUnitVoiceServiceRequestPDU:
 		return "Unit-to-Unit Voice Service Request PDU"
 	case CSBKUnitToUnitVoiceServiceAnswerResponsePDU:
@@ -410,16 +412,24 @@ type MaintenancePDU struct {
 	SourceAddress [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// SetTrunkingMode sets the trunking mode flag. It does not re-dispatch opcode
-// 0x38; pass the mode to DecodeCSBK for that.
-func (csbk *CSBK) SetTrunkingMode(mode bool) {
-	csbk.TrunkingMode = mode
-}
+// Opcode0x38Hint is the likely meaning of a CSBK with opcode 0x38, which is
+// BS_Dwn_Act in Tier II and TD_GRANT_MI in Tier III.
+type Opcode0x38Hint uint8
+
+const (
+	// Opcode0x38Unknown gives no hint.
+	Opcode0x38Unknown Opcode0x38Hint = iota
+	// Opcode0x38BSOutboundActivation hints at BS_Dwn_Act, which an MS sends
+	// (ETSI TS 102 361-2 5.1.1.1).
+	Opcode0x38BSOutboundActivation
+	// Opcode0x38TalkgroupDataGrantMultiItem hints at TD_GRANT_MI, which a
+	// TSCC sends (ETSI TS 102 361-4).
+	Opcode0x38TalkgroupDataGrantMultiItem
+)
 
 // dmr:crc crc_ccitt
 // dmr:crc_mask 0xA5A5
 // dmr:input_size 96
-// dmr:input TrunkingMode
 // dmr:dispatch_if FID==0
 // ETSI TS 102 361-1 - 9.1.5 CSBK PDU
 //
@@ -427,21 +437,27 @@ func (csbk *CSBK) SetTrunkingMode(mode bool) {
 // payload layouts apply only to the SFID. Payloads of other FIDs and of
 // opcodes without a layout are kept in RawPayload.
 //
+// Opcode 0x38 is BS_Dwn_Act in Tier II and TD_GRANT_MI in Tier III, and the
+// CSBK does not say which, so its payload stays in RawPayload; see
+// AsBSOutboundActivation and AsTalkgroupDataGrantMultiItem.
+//
 // CSBK.Encode returns an error if more than one payload field is set, or if
-// CSBKOpcode, FID and TrunkingMode do not select the payload field that is
-// set. Put the payload of a manufacturer FID in RawPayload.
+// CSBKOpcode and FID do not select the payload field that is set. Put the
+// payload of a manufacturer FID or of opcode 0x38 in RawPayload.
 type CSBK struct {
 	DataType enums.DataType `dmr:"-"`
 
-	LastBlock    bool       `dmr:"bit:0"`
-	ProtectFlag  bool       `dmr:"bit:1"`
-	CSBKOpcode   CSBKOpcode `dmr:"bits:2-7"`
-	FID          byte       `dmr:"bits:8-15"`
-	FEC          fec.Result `dmr:"-"`
-	TrunkingMode bool       `dmr:"-"`
+	LastBlock   bool       `dmr:"bit:0"`
+	ProtectFlag bool       `dmr:"bit:1"`
+	CSBKOpcode  CSBKOpcode `dmr:"bits:2-7"`
+	FID         byte       `dmr:"bits:8-15"`
+	FEC         fec.Result `dmr:"-"`
+	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
+	// Opcode0x38Unknown; layer2.Burst sets it from the SYNC pattern of the
+	// burst. It is a hint only: a network relay can rewrite the SYNC.
+	Hint0x38 Opcode0x38Hint `dmr:"-"`
 
 	// Tier II CSBK PDUs (ETSI TS 102 361-1 / TS 102 361-2)
-	BSOutboundActivationPDU                 *BSOutboundActivationPDU                 `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKBSOutboundActivationPDU,when:TrunkingMode==false"`
 	UnitToUnitVoiceServiceRequestPDU        *UnitToUnitVoiceServiceRequestPDU        `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKUnitToUnitVoiceServiceRequestPDU"`
 	UnitToUnitVoiceServiceAnswerResponsePDU *UnitToUnitVoiceServiceAnswerResponsePDU `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKUnitToUnitVoiceServiceAnswerResponsePDU"`
 	NegativeAcknowledgementPDU              *NegativeAcknowledgementPDU              `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKNegativeAcknowledgementPDU"`
@@ -457,7 +473,6 @@ type CSBK struct {
 	DuplexPrivateVoiceGrantPDU      *DuplexPrivateVoiceGrantPDU      `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKDuplexPrivateVoiceGrant"`
 	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKDuplexPrivateDataGrant"`
 	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKPrivateDataGrantMultiItem"`
-	TalkgroupDataGrantMultiItemPDU  *TalkgroupDataGrantMultiItemPDU  `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKBSOutboundActivationPDU,when:TrunkingMode==true"`
 	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKMove"`
 	AlohaPDU                        *AlohaPDU                        `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAloha"`
 	CBroadcastPDU                   *CBroadcastPDU                   `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKBroadcast"`
@@ -475,6 +490,27 @@ type CSBK struct {
 	RawPayload [64]bit.Bit `dmr:"bits:16-79,raw,fallback"`
 
 	crc uint16 `dmr:"-"` //nolint:unused
+}
+
+// AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with
+// opcode 0x38 as a BS_Dwn_Act PDU. ok is false for another opcode or FID.
+func (csbk *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
+	if csbk.CSBKOpcode != CSBKBSOutboundActivationPDU || csbk.FID != 0 {
+		return p, false
+	}
+	p, _ = DecodeBSOutboundActivationPDU(csbk.RawPayload)
+	return p, true
+}
+
+// AsTalkgroupDataGrantMultiItem decodes the RawPayload of a standard FID
+// CSBK with opcode 0x38 as a TD_GRANT_MI PDU. ok is false for another opcode
+// or FID.
+func (csbk *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU, ok bool) {
+	if csbk.CSBKOpcode != CSBKTalkgroupDataGrantMultiItem || csbk.FID != 0 {
+		return p, false
+	}
+	p, _ = DecodeTalkgroupDataGrantMultiItemPDU(csbk.RawPayload)
+	return p, true
 }
 
 func (csbk *CSBK) GetDataType() enums.DataType {

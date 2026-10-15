@@ -94,30 +94,24 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 			},
 		})
 	}
-	for _, trunking := range []bool{false, true} {
-		name := "CSBK"
-		if trunking {
-			name = "CSBK trunking"
-		}
-		cases = append(cases, roundTrip{
-			name:   name,
-			values: 64 * 2,
-			build: func(v int) [96]bit.Bit {
-				b := randomPayload(rng, 10)
-				fid := byte(0)
-				if v%2 == 1 {
-					fid = manufacturerFID(rng)
-				}
-				forceOpcode(b, v/2, fid)
-				return withCRC(b, 0xA5A5)
-			},
-			trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
-				d, r := pdu.DecodeCSBK(in, trunking)
-				out, err := d.Encode()
-				return out, r, err
-			},
-		})
-	}
+	cases = append(cases, roundTrip{
+		name:   "CSBK",
+		values: 64 * 2,
+		build: func(v int) [96]bit.Bit {
+			b := randomPayload(rng, 10)
+			fid := byte(0)
+			if v%2 == 1 {
+				fid = manufacturerFID(rng)
+			}
+			forceOpcode(b, v/2, fid)
+			return withCRC(b, 0xA5A5)
+		},
+		trip: func(in [96]bit.Bit) ([96]bit.Bit, fec.Result, error) {
+			d, r := pdu.DecodeCSBK(in)
+			out, err := d.Encode()
+			return out, r, err
+		},
+	})
 	cases = append(cases,
 		roundTrip{
 			name:   "DataHeader",

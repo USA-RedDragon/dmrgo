@@ -38,7 +38,7 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	payload := testPayload64()
 	infoBits := buildCSBKBitsFID(byte(pdu.CSBKPrivateVoiceGrant), byte(enums.FIDMotorola), payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -60,7 +60,7 @@ func TestCSBK_UnknownOpcodeKeepsRawPayload(t *testing.T) {
 	payload := testPayload64()
 	infoBits := buildCSBKBits(0b111111, payload)
 
-	csbk, fecResult := pdu.DecodeCSBK(infoBits, false)
+	csbk, fecResult := pdu.DecodeCSBK(infoBits)
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
@@ -76,7 +76,7 @@ func TestCSBK_StandardFIDDoesNotFillRawPayload(t *testing.T) {
 	payload := testPayload64()
 	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
-	csbk, _ := pdu.DecodeCSBK(infoBits, false)
+	csbk, _ := pdu.DecodeCSBK(infoBits)
 	if csbk.PrivateVoiceGrantPDU == nil {
 		t.Fatal("PrivateVoiceGrantPDU should be set for the SFID")
 	}

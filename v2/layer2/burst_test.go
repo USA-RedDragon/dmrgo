@@ -15,9 +15,8 @@ func TestBurst_ReservedDataTypes(t *testing.T) {
 	for dt := enums.DataTypeReserved; dt <= 0xF; dt++ {
 		t.Run(fmt.Sprintf("DataType%d", dt), func(t *testing.T) {
 			frame := must(layer2.BuildLCDataBurst([12]byte{}, dt, 1))
-			for _, trunking := range []bool{false, true} {
+			{
 				var burst layer2.Burst
-				burst.SetTrunkingMode(trunking)
 				if err := burst.DecodeFromBytes(frame); err == nil {
 					t.Fatalf("data type %d: expected error", dt)
 				}

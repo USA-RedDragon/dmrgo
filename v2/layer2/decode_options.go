@@ -91,8 +91,7 @@ func (b *Burst) DecodeFromBytesWith(data [33]byte, opts DecodeOptions) error {
 }
 
 func (b *Burst) decodeWith(data [33]byte, opts DecodeOptions) error {
-	trunkingMode := b.TrunkingMode
-	*b = Burst{TrunkingMode: trunkingMode}
+	*b = Burst{}
 	b.bitData = bit.UnpackBytesToBits264(data)
 
 	threshold := opts.SyncThreshold
