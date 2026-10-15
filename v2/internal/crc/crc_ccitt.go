@@ -2,7 +2,8 @@
 // CRC-32 values and the 5-bit embedded LC checksum of DMR (ETSI TS 102 361-1
 // clauses B.3.7 to B.3.13). For each, crc.<Name>(data) computes the value and
 // crc.Check<Name>(data, want) compares it with a received one. The package
-// does not apply the Data Type CRC Masks of Table B.21 (pdu.CRCMask does).
+// does not apply the Data Type CRC Masks (ETSI TS 102 361-1 Table B.21);
+// pdu.CRCMask does.
 package crc
 
 // CCITT computes the inverted CRC-CCITT of data, as MMDVM's

@@ -394,8 +394,8 @@ func verifySections(matrix specMatrix, pkgRuns map[string]*packageRun) (map[sect
 	return sectionResults, errCount
 }
 
-// findUntracked returns non-test, non-generated Go files under v2/ that are
-// neither listed in any section's source_files nor in ignore_files.
+// findUntracked returns non-test, non-generated Go files under v2/, other than
+// doc.go files, that are neither listed in any section's source_files nor in ignore_files.
 func findUntracked(repoRoot string, matrix specMatrix) ([]string, error) {
 	known := make(map[string]bool)
 	for _, f := range matrix.IgnoreFiles {
@@ -416,7 +416,8 @@ func findUntracked(repoRoot string, matrix specMatrix) ([]string, error) {
 		}
 		if !strings.HasSuffix(path, ".go") ||
 			strings.HasSuffix(path, "_test.go") ||
-			strings.HasSuffix(path, "_gen.go") {
+			strings.HasSuffix(path, "_gen.go") ||
+			filepath.Base(path) == "doc.go" {
 			return nil
 		}
 		rel, err := filepath.Rel(repoRoot, path)

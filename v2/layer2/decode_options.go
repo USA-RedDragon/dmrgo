@@ -32,7 +32,7 @@ type DecodeOptions struct {
 	// zero value, classifies by the SYNC field.
 	Kind Kind
 	// VoiceBurst is the superframe position of a KindVoice burst.
-	// VoiceBurstA takes the centre as a voice SYNC pattern and VoiceBurstB to
+	// VoiceBurstA takes the center as a voice SYNC pattern and VoiceBurstB to
 	// VoiceBurstF take it as EMB and embedded data. VoiceBurstUnknown takes
 	// it as a voice SYNC pattern within the SYNC threshold and as EMB
 	// otherwise.

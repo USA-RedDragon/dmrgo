@@ -21,9 +21,9 @@ var (
 	// EmbeddedLCAssembler.Add when the embedded LC of bursts B to E fails
 	// its FEC or its checksum. It wraps fec.ErrUncorrectable.
 	ErrEmbeddedLCUncorrectable = fmt.Errorf("embedded LC: %w", fec.ErrUncorrectable)
-	// ErrShortLCSequence is returned by ShortLCAssembler.AddFragment when a
-	// CACH fragment arrives out of sequence or has an LCSS that is not valid
-	// for Short LC. The partial Short LC is discarded.
+	// ErrShortLCSequence is returned by ShortLCAssembler.Add and AddFragment
+	// when a CACH fragment arrives out of sequence or has an LCSS that is not
+	// valid for Short LC. The partial Short LC is discarded.
 	ErrShortLCSequence = errors.New("short LC fragment out of sequence")
 	// ErrShortLCIncomplete is returned by ShortLCAssembler.Complete when the
 	// assembler does not hold 4 fragments in sequence.

@@ -119,8 +119,8 @@ type Burst struct {
 
 // Config configures a Framer.
 type Config struct {
-	// Threshold is the largest SYNC distance accepted. A negative value
-	// means layer2.DefaultSyncThreshold.
+	// Threshold is the largest SYNC distance accepted. 0 accepts only an
+	// exact SYNC, and a negative value means layer2.DefaultSyncThreshold.
 	Threshold int
 	// Period is the number of bits from one burst to the next while
 	// locked. 0 means OutboundPeriod. Use SlotPeriod for the bursts of a

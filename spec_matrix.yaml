@@ -7,7 +7,7 @@
 # Out of scope: state machines, procedures, RF/physical layer, conformance testing.
 #
 # ignore_files lists Go source files under v2/ that implement no spec section.
-# Every other non-test, non-generated Go file must appear in a section's source_files.
+# Every other non-test, non-generated Go file except doc.go must appear in a section's source_files.
 
 ignore_files:
   - v2/bit/bit.go
@@ -25,19 +25,10 @@ ignore_files:
   - v2/vocoder/codec2/codec2.go
   - v2/vocoder/codec2/codec2_cgo.go
   - v2/vocoder/codec2/codec2_stub.go
-  - v2/constants/doc.go
-  - v2/fec/doc.go
-  - v2/layer2/doc.go
-  - v2/layer2/framer/doc.go
-  - v2/layer2/packet/doc.go
-  - v2/layer2/pdu/doc.go
-  - v2/doc.go
   - v2/layer2/errors.go
   - v2/layer2/packet/errors.go
   - v2/layer2/pdu/errors.go
   - v2/vocoder/codec2/errors.go
-  - v2/vocoder/doc.go
-  - v2/vocoder/codec2/doc.go
 
 documents:
   - id: "TS-102-361-1"
