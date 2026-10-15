@@ -54,6 +54,12 @@ var bitFuncs = map[string]any{
 	"layer2.VoiceTransmitter.AddSlots": func(slots ...[72]bit.Bit) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AddSlots(slots...)
 	},
+	"layer2.VoiceTransmitter.AppendSlots": func(slots ...[72]bit.Bit) ([]layer2.RawBurst, error) {
+		return voiceTransmitter().AppendSlots(nil, slots...)
+	},
+	"layer2.VoiceTransmitter.AppendFrames": func(frames ...vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
+		return voiceTransmitter().AppendFrames(nil, frames...)
+	},
 	"layer2.Burst.SetAMBEFrames": func(frames [3]vocoder.AMBEFrame) [3][72]bit.Bit {
 		var b layer2.Burst
 		b.SetAMBEFrames(frames)

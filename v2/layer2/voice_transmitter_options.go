@@ -85,10 +85,17 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 // Headers returns the bursts sent before the first voice burst: the Voice
 // LC Header, then the PI Header when the options set one.
 func (t *VoiceTransmitter) Headers() []RawBurst {
+	return t.AppendHeaders(make([]RawBurst, 0, 2))
+}
+
+// AppendHeaders appends the bursts that Headers returns to dst and returns
+// the extended slice. It does not allocate when dst has room for 2 bursts.
+func (t *VoiceTransmitter) AppendHeaders(dst []RawBurst) []RawBurst {
+	dst = append(dst, t.header)
 	if t.hasPI {
-		return []RawBurst{t.header, t.piHeader}
+		dst = append(dst, t.piHeader)
 	}
-	return []RawBurst{t.header}
+	return dst
 }
 
 // SetEmbeddedLC sets the embedded LC of the next superframe that starts. It
@@ -101,7 +108,7 @@ func (t *VoiceTransmitter) SetEmbeddedLC(lc pdu.FullLinkControl) error {
 	if err != nil {
 		return err
 	}
-	t.nextLC = &frags
+	t.nextLC, t.hasNextLC = frags, true
 	return nil
 }
 
@@ -113,8 +120,7 @@ func (t *VoiceTransmitter) SetEmbeddedFragments(f [4][4]byte) error {
 	if t.terminated {
 		return ErrVoiceTerminated
 	}
-	frags := fragmentBits(f)
-	t.nextLC = &frags
+	t.nextLC, t.hasNextLC = fragmentBits(f), true
 	return nil
 }
 
@@ -122,8 +128,8 @@ func (t *VoiceTransmitter) startSuperframe() error {
 	n := t.superframe
 	frags := t.callLC
 	switch {
-	case t.nextLC != nil:
-		frags = *t.nextLC
+	case t.hasNextLC:
+		frags = t.nextLC
 	case t.lcHook != nil:
 		if lc := t.lcHook(n); lc != nil {
 			var err error
@@ -132,7 +138,7 @@ func (t *VoiceTransmitter) startSuperframe() error {
 			}
 		}
 	}
-	t.embedded, t.nextLC = frags, nil
+	t.embedded, t.hasNextLC = frags, false
 	t.superframe++
 	return nil
 }
