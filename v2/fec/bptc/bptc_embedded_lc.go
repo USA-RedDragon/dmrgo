@@ -1,6 +1,9 @@
 package bptc
 
 import (
+	"math/bits"
+	"sync"
+
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -28,15 +31,152 @@ import (
 //
 // Returns the 77 information bits (72 LC + 5 checksum) and FEC result. The
 // bits are rows 0..6, columns 0..10 of the encode matrix in row-major order,
-// so per Figure B.3 the checksum bits are the last bit of rows 2..6.
+// so per Figure B.3 the checksum bits are the last bit of rows 2..6. It is
+// DecodeEmbeddedLCWithCheck with no check, so a received word at equal
+// distance from two codewords is uncorrectable.
 func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.FECResult) {
-	matrix := embeddedLCMatrix(fragments)
-	received := matrix
-	correctEmbeddedLCMatrix(&matrix)
-	result := embeddedLCResult(&matrix, &received)
-	result.Uncorrectable = !embeddedLCMatrixValid(&matrix)
-	return embeddedLCInfo(&matrix), result
+	return DecodeEmbeddedLCWithCheck(fragments, nil)
 }
+
+// EmbeddedLCMaxErrors is the largest number of bit errors that
+// DecodeEmbeddedLCWithCheck corrects.
+const EmbeddedLCMaxErrors = 8
+
+// DecodeEmbeddedLCWithCheck decodes a full embedded LC to the nearest
+// codeword of the product code. It finds the codewords at the smallest
+// Hamming distance from the received bits, up to EmbeddedLCMaxErrors, and
+// keeps those whose information bits check accepts; a nil check accepts all
+// of them. The LC is uncorrectable unless exactly one codeword remains. The
+// search covers error patterns of up to 4 bits in each of rows 0..6. The
+// product code has minimum distance 8, so up to 3 errors always give one
+// nearest codeword. With 4 or more errors two codewords can be equally near,
+// and check, for example the 5-bit LC checksum, picks between them.
+func DecodeEmbeddedLCWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.FECResult) {
+	matrix := embeddedLCMatrix(fragments)
+	s := embeddedLCSearch{best: EmbeddedLCMaxErrors, check: check}
+	for row := range matrix {
+		for col := range matrix[row] {
+			s.rows[row] |= uint16(matrix[row][col]) << col
+		}
+		s.syndromes[row] = calculateSyndrome16_11(matrix[row])
+		s.parity ^= s.rows[row]
+	}
+	patterns := embeddedLCPatterns()
+	for row := 7; row >= 0; row-- {
+		s.minRemaining[row] = s.minRemaining[row+1] + patterns.minWeight[s.syndromes[row]]
+	}
+	s.search(patterns, 0, 0, 0)
+
+	result := fec.FECResult{BitsChecked: 128}
+	if !s.found || s.ambiguous {
+		result.Uncorrectable = true
+		return embeddedLCInfo(&matrix), result
+	}
+	result.ErrorsCorrected = s.best
+	return s.info, result
+}
+
+// embeddedLCSearch is a branch and bound search for the error patterns of
+// least weight. An error pattern of rows 0..6 with the row syndromes fixes
+// row 7, because the column parity of the errors must equal the column
+// parity of the received rows. Row 7 then also has its syndrome, as the
+// syndrome is linear.
+type embeddedLCSearch struct {
+	rows         [8]uint16
+	syndromes    [8]int
+	parity       uint16
+	minRemaining [9]int
+	errors       [8]uint16
+	check        func([77]bit.Bit) bool
+	best         int
+	found        bool
+	ambiguous    bool
+	info         [77]bit.Bit
+}
+
+func (s *embeddedLCSearch) search(patterns *embeddedLCPatternTable, row int, sum uint16, weight int) {
+	if row == 7 {
+		s.errors[7] = s.parity ^ sum
+		s.leaf(weight + bits.OnesCount16(s.errors[7]))
+		return
+	}
+	syndrome := s.syndromes[row]
+	for w := patterns.minWeight[syndrome]; w < len(patterns.bySyndrome[syndrome]); w += 2 {
+		if weight+w+s.minRemaining[row+1] > s.best {
+			return
+		}
+		for _, e := range patterns.bySyndrome[syndrome][w] {
+			s.errors[row] = e
+			s.search(patterns, row+1, sum^e, weight+w)
+		}
+	}
+}
+
+func (s *embeddedLCSearch) leaf(weight int) {
+	if weight > s.best {
+		return
+	}
+	if weight < s.best {
+		s.best = weight
+		s.found = false
+		s.ambiguous = false
+	}
+	var info [77]bit.Bit
+	for row := 0; row < 7; row++ {
+		corrected := s.rows[row] ^ s.errors[row]
+		for col := 0; col < 11; col++ {
+			info[row*11+col] = bit.Bit(corrected >> col & 1)
+		}
+	}
+	if s.check != nil && !s.check(info) {
+		return
+	}
+	if s.found {
+		s.ambiguous = true
+		return
+	}
+	s.found = true
+	s.info = info
+}
+
+// embeddedLCPatternTable lists the 16-bit row error patterns of weight up to
+// 4 by Hamming(16,11,4) syndrome and weight. Bit c is column c. Each column
+// syndrome has odd weight, so the weight of a pattern has the parity of the
+// weight of its syndrome.
+type embeddedLCPatternTable struct {
+	bySyndrome [32][5][]uint16
+	minWeight  [32]int
+}
+
+var embeddedLCPatterns = sync.OnceValue(func() *embeddedLCPatternTable { //nolint:gochecknoglobals
+	t := &embeddedLCPatternTable{}
+	var columns [16]int
+	for col := range columns {
+		var unit [16]bit.Bit
+		unit[col] = 1
+		columns[col] = calculateSyndrome16_11(unit)
+	}
+	for s := range t.minWeight {
+		t.minWeight[s] = -1
+	}
+	for m := 0; m < 1<<16; m++ {
+		w := bits.OnesCount16(uint16(m))
+		if w > 4 {
+			continue
+		}
+		syndrome := 0
+		for col := range columns {
+			if m>>col&1 == 1 {
+				syndrome ^= columns[col]
+			}
+		}
+		t.bySyndrome[syndrome][w] = append(t.bySyndrome[syndrome][w], uint16(m))
+		if t.minWeight[syndrome] < 0 || w < t.minWeight[syndrome] {
+			t.minWeight[syndrome] = w
+		}
+	}
+	return t
+})
 
 // DecodeEmbeddedLCStrict decodes a full embedded LC as MMDVMHost
 // (CDMREmbeddedData::decodeEmbeddedData) does. Each of rows 0..6 is
@@ -100,72 +240,12 @@ func embeddedLCInfo(matrix *[8][16]bit.Bit) [77]bit.Bit {
 	return info
 }
 
-// correctEmbeddedLCMatrix corrects the 8×16 product code in place. Row 7 is
-// the even column parity of rows 0..6, so it is also a Hamming(16,11,4)
-// codeword and all 8 rows are row-decoded. When only one row has a nonzero
-// syndrome, the failing column parities give the exact error positions in
-// that row. This runs before single-error row decoding, which would turn a
-// row with 3 errors into a wrong codeword. Otherwise each row is corrected
-// for a single error.
-func correctEmbeddedLCMatrix(matrix *[8][16]bit.Bit) {
-	for pass := 0; pass < 3; pass++ {
-		var syndromes [8]int
-		badRow, badRows := 0, 0
-		for row := range matrix {
-			syndromes[row] = calculateSyndrome16_11(matrix[row])
-			if syndromes[row] != 0 {
-				badRow = row
-				badRows++
-			}
-		}
-
-		fixing := false
-		if badRows == 1 {
-			for col := 0; col < 16; col++ {
-				if columnParity(matrix, col) != 0 {
-					matrix[badRow][col] ^= 1
-					fixing = true
-				}
-			}
-		}
-		if !fixing {
-			for row := range matrix {
-				if syndromes[row] == 0 {
-					continue
-				}
-				if errPos := hamming16_11_syndrome_table[syndromes[row]]; errPos >= 0 {
-					matrix[row][errPos] ^= 1
-					fixing = true
-				}
-			}
-		}
-
-		if !fixing {
-			return
-		}
-	}
-}
-
 func columnParity(matrix *[8][16]bit.Bit, col int) bit.Bit {
 	var parity bit.Bit
 	for row := range matrix {
 		parity ^= matrix[row][col]
 	}
 	return parity
-}
-
-func embeddedLCMatrixValid(matrix *[8][16]bit.Bit) bool {
-	for row := range matrix {
-		if calculateSyndrome16_11(matrix[row]) != 0 {
-			return false
-		}
-	}
-	for col := 0; col < 16; col++ {
-		if columnParity(matrix, col) != 0 {
-			return false
-		}
-	}
-	return true
 }
 
 // EncodeEmbeddedLC encodes 77 information bits (72 LC + 5 checksum) into

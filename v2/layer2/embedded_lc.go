@@ -46,10 +46,17 @@ func EncodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
 }
 
 // DecodeEmbeddedLC decodes the 72 LC bits from the four embedded signalling
-// fragments of bursts B to E. The FEC result covers the BPTC; Uncorrectable
-// is also set when the 5-bit checksum does not match the decoded LC.
+// fragments of bursts B to E. It decodes the BPTC to the nearest codewords
+// with bptc.DecodeEmbeddedLCWithCheck and keeps the one whose 5-bit checksum
+// matches its LC. The FEC result covers the BPTC; Uncorrectable is set when
+// no nearest codeword or more than one has a matching checksum.
 func DecodeEmbeddedLC(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.FECResult) {
-	return embeddedLCChecksum(bptc.DecodeEmbeddedLC(fragments))
+	return embeddedLCChecksum(bptc.DecodeEmbeddedLCWithCheck(fragments, embeddedLCChecksumValid))
+}
+
+func embeddedLCChecksumValid(info [77]bit.Bit) bool {
+	_, result := embeddedLCChecksum(info, fec.FECResult{})
+	return !result.Uncorrectable
 }
 
 // DecodeEmbeddedLCStrict is DecodeEmbeddedLC with the BPTC decoded by

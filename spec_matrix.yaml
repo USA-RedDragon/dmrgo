@@ -173,6 +173,7 @@ documents:
               - TestEmbeddedLC_ChecksumMismatch
               - TestEmbeddedLC_EncodeRejectsBadLC
               - TestEmbeddedLCStrict_MMDVMHostVectors
+              - TestEmbeddedLC_FiveErrors
               - TestVoiceTransmitter_Transmission
               - TestVoiceTransmitter_ReverseChannel
               - TestVoiceTransmitter_Terminate
@@ -722,6 +723,8 @@ documents:
               - TestEmbeddedLC_CapturedSuperframe
               - TestEmbeddedLC_UpToThreeErrorsCorrected
               - TestEmbeddedLCStrict_RowErrors
+              - TestEmbeddedLC_TieResolvedByCheck
+              - TestEmbeddedLC_RandomWordsRejected
               - TestEmbeddedLC_ParityRowErrorCorrected
 
       - section: "B.2.2"

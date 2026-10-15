@@ -3,6 +3,7 @@ package layer2_test
 import (
 	"bytes"
 	"encoding/hex"
+	"math/rand"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
@@ -157,6 +158,36 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 		if flcRes != res || flc.FEC != res {
 			t.Errorf("%s: Full LC FEC %+v, want %+v", v.raw, flcRes, res)
 		}
+	}
+}
+
+// TestEmbeddedLC_FiveErrors checks that the checksum picks between equally
+// near codewords: with 5 random bit errors DecodeEmbeddedLC recovers nearly
+// every LC and returns almost no wrong LC.
+func TestEmbeddedLC_FiveErrors(t *testing.T) {
+	r := rand.New(rand.NewSource(5))
+	const n = 2000
+	recovered, wrong := 0, 0
+	for i := 0; i < n; i++ {
+		var lc [72]bit.Bit
+		for j := range lc {
+			lc[j] = bit.Bit(r.Intn(2))
+		}
+		fr := layer2.EncodeEmbeddedLC(lc)
+		for _, p := range r.Perm(128)[:5] {
+			fr[p/32][p%32] ^= 1
+		}
+		got, res := layer2.DecodeEmbeddedLC(fr)
+		switch {
+		case res.Uncorrectable:
+		case got == lc:
+			recovered++
+		default:
+			wrong++
+		}
+	}
+	if recovered < n*98/100 || wrong > 1 {
+		t.Errorf("%d of %d recovered, %d wrong", recovered, n, wrong)
 	}
 }
 
