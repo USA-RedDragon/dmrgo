@@ -363,14 +363,22 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 					decoded[j] = f.DecodedBits
 				}
 				fromFrames := must(frames.AddFrames(decoded[:]...))
-				want := must(bursts[i].Encode())
-				if len(fromFrames) != 1 || fromFrames[0] != want {
-					t.Errorf("burst %d from frames\ngot  %x\nwant %x", i, fromFrames, want)
+				if len(fromFrames) != 1 {
+					t.Fatalf("burst %d: %d bursts from frames", i, len(fromFrames))
+				}
+				if got := must(bursts[i].Encode()); got != raws[i] {
+					t.Errorf("burst %d: decode then Encode changed the burst\ngot  %x\nwant %x", i, got, raws[i])
 				}
 				if n := bursts[i].FEC.Voice.ErrorsCorrected; n != 0 {
+					regen := must(layer2.NewBurstFromBytes(fromFrames[0]))
+					for j, f := range regen.VoiceData.Frames {
+						if f.DecodedBits != decoded[j] || f.FEC.ErrorsCorrected != 0 {
+							t.Errorf("burst %d frame %d: the frame path did not regenerate a clean frame", i, j)
+						}
+					}
 					t.Logf("burst %d: the capture has %d voice bit errors, which the frame path corrects", i, n)
-				} else if want != raws[i] {
-					t.Errorf("burst %d: clean capture burst does not re-encode as captured", i)
+				} else if fromFrames[0] != raws[i] {
+					t.Errorf("burst %d from frames\ngot  %x\nwant %x", i, fromFrames[0], raws[i])
 				}
 			}
 			tail := must(tx.Terminate())

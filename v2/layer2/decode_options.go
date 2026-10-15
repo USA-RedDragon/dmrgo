@@ -174,6 +174,8 @@ func (b *Burst) decodeVoiceAt(pos enums.VoiceBurstType, sync enums.SyncPattern, 
 	}
 	b.VoiceData = parseVoiceBits(b.bitData)
 	b.FEC.Voice = b.VoiceData.FECResult()
+	b.decodedVoice = b.VoiceData
+	b.hasVoiceSlots = true
 }
 
 func (b *Burst) decodeDataFrame(dataType *elements.DataType) error {
@@ -188,6 +190,8 @@ func (b *Burst) decodeDataFrame(dataType *elements.DataType) error {
 	b.deinterleavedInfoLen, b.FEC.Payload = b.deinterleave(extractDataBits(b.bitData), b.SlotType.DataType)
 	var err error
 	b.Data, err = b.extractData()
+	b.decodedData = b.Data
+	b.decodedDataType = b.SlotType.DataType
 	return err
 }
 

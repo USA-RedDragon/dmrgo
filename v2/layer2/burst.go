@@ -2,6 +2,7 @@ package layer2
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -10,6 +11,7 @@ import (
 	trellis34 "github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/elements"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // Burst represents a DMR burst.
@@ -26,6 +28,10 @@ type Burst struct {
 	// F from the superframe sequence. Encode ignores it.
 	VoiceBurst enums.VoiceBurstType
 
+	// VoiceData holds the three voice slots decoded as AMBE+2 frames. Encode
+	// writes a slot as received while the DecodedBits of its frame are
+	// unchanged, and codes the frame with vocoder.EncodeAMBE72 otherwise; see
+	// Encode.
 	VoiceData pdu.Vocoder
 
 	HasSlotType bool
@@ -38,20 +44,18 @@ type Burst struct {
 	HasReverseChannel bool
 	ReverseChannel    *pdu.ReverseChannel
 
-	IsData                bool
+	IsData bool
+	// Data is the decoded PDU of a data burst, nil when its decode failed.
+	// Encode codes Data when it is set, except the PR FILL that
+	// DecodeFromBytes returns for an idle burst; see Encode.
 	Data                  elements.Data
 	FEC                   fec.BurstFECStats
 	TrunkingMode          bool
-	fullLinkControl       *pdu.FullLinkControl
-	csbk                  *pdu.CSBK
-	dataHeader            *pdu.DataHeader
-	mbcHeader             *pdu.MBCHeader
-	mbcContinuation       *pdu.MBCContinuation
-	usbd                  *pdu.UnifiedSingleBlockData
-	halfRateData          *pdu.Rate12Data
-	threeQuarterRateData  *pdu.Rate34Data
-	fullRateData          *pdu.Rate1Data
 	bitData               [264]bit.Bit
+	decodedData           elements.Data
+	decodedDataType       elements.DataType
+	decodedVoice          pdu.Vocoder
+	hasVoiceSlots         bool
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
 }
@@ -109,6 +113,8 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	if !b.IsData {
 		b.VoiceData = parseVoiceBits(b.bitData)
 		b.FEC.Voice = b.VoiceData.FECResult()
+		b.decodedVoice = b.VoiceData
+		b.hasVoiceSlots = true
 		return nil
 	}
 
@@ -116,6 +122,8 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	b.deinterleavedInfoLen, b.FEC.Payload = b.deinterleave(bBits, b.SlotType.DataType)
 	var err error
 	b.Data, err = b.extractData()
+	b.decodedData = b.Data
+	b.decodedDataType = b.SlotType.DataType
 	return err
 }
 
@@ -259,7 +267,7 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 		for i := 0; i < 96; i++ {
 			b.deinterleavedInfoBits[96+i] = bits[100+i]
 		}
-		return 196, fec.FECResult{}
+		return 192, fec.FECResult{}
 	case elements.DataTypePIHeader,
 		elements.DataTypeVoiceLCHeader,
 		elements.DataTypeTerminatorWithLC,
@@ -362,22 +370,20 @@ func (b *Burst) extractData() (elements.Data, error) {
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeCSBK(sizedBits, b.TrunkingMode)
 		decoded.DataType = dt
-		b.csbk = &decoded
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode CSBK from bits")
 		}
-		return b.csbk, nil
+		return &decoded, nil
 	case elements.DataTypeVoiceLCHeader, elements.DataTypeTerminatorWithLC:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeFullLinkControl(sizedBits, dt)
-		b.fullLinkControl = &decoded
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode full link control from bits")
 		}
-		return b.fullLinkControl, nil
+		return &decoded, nil
 	case elements.DataTypePIHeader:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
@@ -393,55 +399,49 @@ func (b *Burst) extractData() (elements.Data, error) {
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeDataHeader(sizedBits)
 		decoded.DataType = dt
-		b.dataHeader = &decoded
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
-			return nil, fmt.Errorf("failed to decode data header from bits: %v", b.dataHeader.ToString())
+			return nil, fmt.Errorf("failed to decode data header from bits: %v", decoded.ToString())
 		}
-		return b.dataHeader, nil
+		return &decoded, nil
 	case elements.DataTypeRate34:
 		var sizedBits [144]bit.Bit
 		copy(sizedBits[:], infoBits[:144])
 		rt, fecResult := pdu.DecodeRate34Data(sizedBits)
 		rt.DataType = dt
-		b.threeQuarterRateData = &rt
 		b.FEC.PDU = fecResult
-		return b.threeQuarterRateData, nil
+		return &rt, nil
 	case elements.DataTypeRate12:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		rt, fecResult := pdu.DecodeRate12Data(sizedBits)
 		rt.DataType = dt
-		b.halfRateData = &rt
 		b.FEC.PDU = fecResult
-		return b.halfRateData, nil
+		return &rt, nil
 	case elements.DataTypeRate1:
 		var sizedBits [192]bit.Bit
 		copy(sizedBits[:], infoBits[:192])
 		rt, fecResult := pdu.DecodeRate1Data(sizedBits)
 		rt.DataType = dt
-		b.fullRateData = &rt
 		b.FEC.PDU = fecResult
-		return b.fullRateData, nil
+		return &rt, nil
 	case elements.DataTypeMBCHeader:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeMBCHeader(sizedBits)
 		decoded.DataType = dt
-		b.mbcHeader = &decoded
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode MBC header from bits")
 		}
-		return b.mbcHeader, nil
+		return &decoded, nil
 	case elements.DataTypeMBCContinuation:
 		var sizedBits [96]bit.Bit
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeMBCContinuation(sizedBits)
 		decoded.DataType = dt
-		b.mbcContinuation = &decoded
 		b.FEC.PDU = fecResult
-		return b.mbcContinuation, nil
+		return &decoded, nil
 	case elements.DataTypeIdle:
 		prFill := &pdu.PRFill{DataType: dt}
 		return prFill, nil
@@ -450,12 +450,11 @@ func (b *Burst) extractData() (elements.Data, error) {
 		copy(sizedBits[:], infoBits[:96])
 		decoded, fecResult := pdu.DecodeUnifiedSingleBlockData(sizedBits)
 		decoded.DataType = dt
-		b.usbd = &decoded
 		b.FEC.PDU = fecResult
 		if fecResult.Uncorrectable {
 			return nil, fmt.Errorf("failed to decode USBD from bits")
 		}
-		return b.usbd, nil
+		return &decoded, nil
 	case elements.DataTypeReserved:
 		return nil, fmt.Errorf("reserved data type parsing not implemented")
 	default:
@@ -470,9 +469,33 @@ func (b *Burst) extractData() (elements.Data, error) {
 // pattern is a data SYNC pattern exactly when IsData is set. The zero Burst
 // has neither, so it does not encode. A data burst needs HasSlotType. With
 // HasReverseChannel set, the embedded signalling data field carries the
-// coded ReverseChannel instead of EmbeddedSignallingData. Encode returns an
+// coded ReverseChannel instead of EmbeddedSignallingData. Without it the
+// field carries EmbeddedSignallingData as it is: the FEC of an embedded LC
+// spans bursts B to E, so a single burst does not correct it. Encode returns an
 // error for a burst that breaks these rules and when a field value does not
 // fit in its on-air bits. Encode does not modify the burst.
+//
+// A data burst carries Data coded for SlotType.DataType: BPTC(196,96) for
+// the BPTC types, the Rate 3/4 trellis or Rate 1. The slot type data type
+// also selects the RS(12,9) mask of a Full LC and replaces its DataType.
+// Data must be the pdu type that DecodeFromBytes returns for the data type,
+// or for an MBC continuation one of its CGAP, MVAP, BCAP and VNAP forms. With
+// Data nil, a burst from DecodeFromBytes carries the payload that it decoded,
+// after FEC correction, so a burst whose CRC failed can still be forwarded.
+// The PR FILL that DecodeFromBytes returns for an idle burst also stands
+// for the decoded payload. The decoded payload goes out only under the data
+// type it was decoded as. A data burst built by hand needs Data. The BPTC
+// R(3..0) bits and the Rate 1 pad bits are set to zero (ETSI TS 102 361-1
+// B.1.1, B.2.5), so Encode writes zero there.
+//
+// A voice burst carries three 72-bit vocoder slots. For a burst from
+// DecodeFromBytes, Encode writes each slot as received while the
+// DecodedBits of its frame in VoiceData equal those that DecodeFromBytes
+// decoded, so a slot of a codec other than AMBE+2, or an AMBE+2 frame with
+// bit errors, goes out unchanged. Encode codes a changed frame, and every
+// frame of a burst built by hand, with vocoder.EncodeAMBE72, which also
+// gives a frame that the decoder corrected clean FEC bits. To regenerate
+// every frame of a decoded burst, copy its VoiceData into a new Burst.
 func (b *Burst) Encode() ([33]byte, error) {
 	if b.SyncPattern == enums.MsSourcedRcSync {
 		bitData, err := b.encodeStandaloneRC()
@@ -491,21 +514,23 @@ func (b *Burst) Encode() ([33]byte, error) {
 	var bitData [264]bit.Bit
 
 	if b.IsData {
-		// Encode data payload
-		dataBits := b.encodeDataBits()
-		copy(bitData[:98], dataBits[:98])
-		copy(bitData[166:264], dataBits[98:196])
-
 		slotBits, err := pdu.EncodeSlotType(&b.SlotType)
 		if err != nil {
 			return [33]byte{}, fmt.Errorf("cannot encode slot type: %w", err)
 		}
 		copy(bitData[98:108], slotBits[:10])
 		copy(bitData[156:166], slotBits[10:20])
-	} else {
-		voiceBits, err := pdu.EncodeVocoder(&b.VoiceData)
+
+		dataBits, err := b.encodeDataBits()
 		if err != nil {
-			return [33]byte{}, fmt.Errorf("cannot encode voice: %w", err)
+			return [33]byte{}, err
+		}
+		copy(bitData[:98], dataBits[:98])
+		copy(bitData[166:264], dataBits[98:196])
+	} else {
+		voiceBits, err := b.voiceBits()
+		if err != nil {
+			return [33]byte{}, err
 		}
 		copy(bitData[:108], voiceBits[:108])
 		copy(bitData[156:264], voiceBits[108:216])
@@ -531,6 +556,25 @@ func (b *Burst) Encode() ([33]byte, error) {
 	return bit.PackBits264(bitData), nil
 }
 
+// voiceBits returns the 216 voice bits that Encode writes, as described
+// there.
+func (b *Burst) voiceBits() ([216]bit.Bit, error) {
+	var voice [216]bit.Bit
+	copy(voice[:108], b.bitData[:108])
+	copy(voice[108:], b.bitData[156:264])
+	for i := range b.VoiceData.Frames {
+		if b.hasVoiceSlots && b.VoiceData.Frames[i].DecodedBits == b.decodedVoice.Frames[i].DecodedBits {
+			continue
+		}
+		slot, err := vocoder.EncodeVocoderFrame(&b.VoiceData.Frames[i])
+		if err != nil {
+			return voice, fmt.Errorf("cannot encode voice: VoiceData.Frames[%d]: %w", i, err)
+		}
+		copy(voice[i*72:(i+1)*72], slot[:])
+	}
+	return voice, nil
+}
+
 func (b *Burst) checkCentre() error {
 	if b.HasEmbeddedSignalling {
 		return nil
@@ -544,41 +588,146 @@ func (b *Burst) checkCentre() error {
 	return nil
 }
 
-func (b *Burst) encodeDataBits() [196]bit.Bit {
-	switch b.SlotType.DataType {
-	case elements.DataTypeRate34:
+// dataInfoBits returns the information bits of the data payload: Data coded
+// for the slot type data type or, when Data is nil, the payload that
+// DecodeFromBytes decoded. The PR FILL that DecodeFromBytes returns for an
+// idle burst stands for the decoded payload, which need not be Table D.2.
+func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
+	dt := b.SlotType.DataType
+	_, prFill := b.Data.(*pdu.PRFill)
+	switch {
+	case b.Data != nil && (!prFill || b.Data != b.decodedData):
+		return encodeData(b.Data, dt)
+	case b.deinterleavedInfoLen == 0:
+		return [196]bit.Bit{}, fmt.Errorf("data burst has no Data")
+	case dt != b.decodedDataType:
+		return [196]bit.Bit{}, fmt.Errorf("decoded payload is a %s but the slot type data type is %s; set Data",
+			elements.DataTypeToName(b.decodedDataType), elements.DataTypeToName(dt))
+	default:
+		return b.deinterleavedInfoBits, nil
+	}
+}
+
+// encodeData returns the information bits of d in a data burst of dataType.
+func encodeData(d elements.Data, dataType elements.DataType) ([196]bit.Bit, error) {
+	var info [196]bit.Bit
+	if rv := reflect.ValueOf(d); rv.Kind() == reflect.Pointer && rv.IsNil() || !dataTypeCarries(dataType, d) {
+		return info, fmt.Errorf("data type %s cannot carry Data of type %T", elements.DataTypeToName(dataType), d)
+	}
+	bits, err := encodePDU(d, dataType)
+	if err != nil {
+		return info, fmt.Errorf("cannot encode data: %w", err)
+	}
+	copy(info[:], bits)
+	return info, nil
+}
+
+// dataTypeCarries reports whether a data burst of dataType carries d.
+func dataTypeCarries(dataType elements.DataType, d elements.Data) bool {
+	switch d.(type) {
+	case *pdu.FullLinkControl:
+		return dataType == elements.DataTypeVoiceLCHeader || dataType == elements.DataTypeTerminatorWithLC
+	case *pdu.CSBK:
+		return dataType == elements.DataTypeCSBK
+	case *pdu.PIHeader:
+		return dataType == elements.DataTypePIHeader
+	case *pdu.DataHeader:
+		return dataType == elements.DataTypeDataHeader
+	case *pdu.MBCHeader:
+		return dataType == elements.DataTypeMBCHeader
+	case *pdu.MBCContinuation, *pdu.CGAPContinuation, *pdu.MVAPContinuation, *pdu.BCAPContinuation, *pdu.VNAPContinuation:
+		return dataType == elements.DataTypeMBCContinuation
+	case *pdu.UnifiedSingleBlockData:
+		return dataType == elements.DataTypeUnifiedSingleBlock
+	case *pdu.Rate12Data:
+		return dataType == elements.DataTypeRate12
+	case *pdu.Rate34Data:
+		return dataType == elements.DataTypeRate34
+	case *pdu.Rate1Data:
+		return dataType == elements.DataTypeRate1
+	case *pdu.PRFill:
+		return dataType == elements.DataTypeIdle
+	default:
+		return false
+	}
+}
+
+// encodePDU returns the information bits of d, a type that dataTypeCarries
+// accepts. The data type of a Full LC selects its RS(12,9) mask, so
+// dataType replaces lc.DataType.
+func encodePDU(d elements.Data, dataType elements.DataType) ([]bit.Bit, error) {
+	switch v := d.(type) {
+	case *pdu.FullLinkControl:
+		lc := *v
+		lc.DataType = dataType
+		return bits96(pdu.EncodeFullLinkControl(&lc))
+	case *pdu.CSBK:
+		return bits96(pdu.EncodeCSBK(v))
+	case *pdu.PIHeader:
+		return bits96(pdu.EncodePIHeader(v))
+	case *pdu.DataHeader:
+		return bits96(pdu.EncodeDataHeader(v))
+	case *pdu.MBCHeader:
+		return bits96(pdu.EncodeMBCHeader(v))
+	case *pdu.MBCContinuation:
+		return bits96(pdu.EncodeMBCContinuation(v))
+	case *pdu.CGAPContinuation:
+		return bits96(pdu.EncodeCGAPContinuation(v))
+	case *pdu.MVAPContinuation:
+		return bits96(pdu.EncodeMVAPContinuation(v))
+	case *pdu.BCAPContinuation:
+		return bits96(pdu.EncodeBCAPContinuation(v))
+	case *pdu.VNAPContinuation:
+		return bits96(pdu.EncodeVNAPContinuation(v))
+	case *pdu.UnifiedSingleBlockData:
+		return bits96(pdu.EncodeUnifiedSingleBlockData(v))
+	case *pdu.Rate12Data:
+		return bits96(pdu.EncodeRate12Data(v))
+	case *pdu.Rate34Data:
+		bits, err := pdu.EncodeRate34Data(v)
+		return bits[:], err
+	case *pdu.Rate1Data:
+		bits, err := pdu.EncodeRate1Data(v)
+		return bits[:], err
+	case *pdu.PRFill:
+		bits := pdu.PRFillBits()
+		return bits[:], nil
+	default:
+		return nil, fmt.Errorf("unsupported Data type %T", d)
+	}
+}
+
+func bits96(bits [96]bit.Bit, err error) ([]bit.Bit, error) {
+	return bits[:], err
+}
+
+// encodeDataBits codes the information bits of a data burst for the
+// channel: BPTC(196,96), Rate 3/4 trellis or Rate 1 as the slot type data
+// type selects. The BPTC R(3..0) bits and the Rate 1 pad bits are zero.
+func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
+	info, err := b.dataInfoBits()
+	if err != nil {
+		return [196]bit.Bit{}, err
+	}
+	dt := b.SlotType.DataType
+	switch {
+	case dt == elements.DataTypeRate34:
 		var t trellis34.Trellis34
 		var data [144]bit.Bit
-		copy(data[:], b.deinterleavedInfoBits[:144])
-		return t.Encode(data)
-	case elements.DataTypeRate1:
+		copy(data[:], info[:144])
+		return t.Encode(data), nil
+	case dt == elements.DataTypeRate1:
+		// Table B.10B: Transmit bit ordering for rate 1 coded data
 		var bits [196]bit.Bit
-		for i := 0; i < 96; i++ {
-			bits[i] = b.deinterleavedInfoBits[i]
-		}
-		// bits[96..99] are reserved (zero)
-		for i := 0; i < 96; i++ {
-			bits[100+i] = b.deinterleavedInfoBits[96+i]
-		}
-		return bits
-	case elements.DataTypePIHeader,
-		elements.DataTypeVoiceLCHeader,
-		elements.DataTypeTerminatorWithLC,
-		elements.DataTypeCSBK,
-		elements.DataTypeMBCHeader,
-		elements.DataTypeMBCContinuation,
-		elements.DataTypeDataHeader,
-		elements.DataTypeRate12,
-		elements.DataTypeIdle,
-		elements.DataTypeUnifiedSingleBlock:
-		// BPTC(196,96) types
+		copy(bits[:96], info[:96])
+		copy(bits[100:], info[96:192])
+		return bits, nil
+	case isBPTCDataType(dt):
 		var infoBits [96]bit.Bit
-		copy(infoBits[:], b.deinterleavedInfoBits[:96])
-		return bptc.Encode(infoBits)
-	case elements.DataTypeReserved:
-		return b.deinterleavedInfoBits
+		copy(infoBits[:], info[:96])
+		return bptc.Encode(infoBits), nil
 	default:
-		return b.deinterleavedInfoBits
+		return info, nil
 	}
 }
 

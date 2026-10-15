@@ -74,6 +74,9 @@ func TestBurstRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatalf("mode %d burst %d: %v", mode, i, err)
 			}
+			if got, err := b.Encode(); err != nil || got != raw {
+				t.Fatalf("mode %d burst %d: decode then Encode changed the burst (err %v)", mode, i, err)
+			}
 			if b.IsData {
 				lc, ok := b.Data.(*pdu.FullLinkControl)
 				if !ok || lc.FEC.Uncorrectable {
