@@ -94,7 +94,7 @@ func receive(captured []layer2.RawBurst) (rxStats, error) {
 		s.injFEC += f
 		s.injAMBE += a
 		var b layer2.Burst
-		if err := b.DecodeFromBytesWith(p, layer2.DecodeOptions{ColorCode: &cc}); err != nil {
+		if err := b.DecodeFromBytesWith(p, &layer2.DecodeOptions{ColorCode: &cc}); err != nil {
 			return s, err
 		}
 		s.fec = s.fec.Combine(b.FEC.Aggregate())
@@ -139,7 +139,7 @@ func sameCall(a, b *pdu.FullLinkControl) bool {
 }
 
 func regenerate(lc pdu.FullLinkControl, frames []vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
-	tx, err := layer2.NewVoiceTransmitter(lc, colorCode, layer2.SyncSourceBS, vocoder.EncodeAMBE72(vocoder.AMBESilence()))
+	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: colorCode, Source: layer2.SyncSourceBS, Silence: vocoder.EncodeAMBE72(vocoder.AMBESilence())})
 	if err != nil {
 		return nil, err
 	}

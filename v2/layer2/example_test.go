@@ -41,7 +41,7 @@ func ExampleNewBurstFromBytes() {
 func ExampleBurst_DecodeFromBytesWith() {
 	cc := enums.ColorCode(7)
 	var b layer2.Burst
-	err := b.DecodeFromBytesWith(voiceLCHeader(), layer2.DecodeOptions{ColorCode: &cc})
+	err := b.DecodeFromBytesWith(voiceLCHeader(), &layer2.DecodeOptions{ColorCode: &cc})
 	fmt.Println(errors.Is(err, layer2.ErrColorCodeMismatch), err)
 	// Output:
 	// true color code mismatch: burst has 1, want 7
@@ -84,7 +84,7 @@ func ExampleVoiceTransmitter() {
 		FLCO:       enums.FLCOGroupVoiceChannelUser,
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120000},
 	}
-	tx, err := layer2.NewVoiceTransmitter(lc, 1, layer2.SyncSourceBS, vocoder.EncodeAMBE72(vocoder.AMBESilence()))
+	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: vocoder.EncodeAMBE72(vocoder.AMBESilence())})
 	if err != nil {
 		fmt.Println(err)
 		return

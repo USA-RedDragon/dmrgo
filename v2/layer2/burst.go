@@ -153,13 +153,14 @@ func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 }
 
 // DecodeFromBytes populates the burst in place, enabling zero-allocation
-// decoding when reusing a Burst. It is DecodeFromBytesWith with the zero
-// DecodeOptions.
+// decoding when reusing a Burst. It is DecodeFromBytesWith with nil
+// options.
 func (b *Burst) DecodeFromBytes(data RawBurst) error {
-	return b.DecodeFromBytesWith(data, DecodeOptions{})
+	return b.DecodeFromBytesWith(data, nil)
 }
 
-// DecodeFromBytesWith decodes a burst with receive-side options. A FEC or
+// DecodeFromBytesWith decodes a burst with receive-side options. A nil opts
+// means the zero DecodeOptions. A FEC or
 // CRC failure is not an error: FEC reports it and Data is still set. The
 // error is ErrReservedDataType for a reserved data type, ErrColorCodeMismatch
 // for a color code other than DecodeOptions.ColorCode, or an error for
@@ -168,7 +169,10 @@ func (b *Burst) DecodeFromBytes(data RawBurst) error {
 // DecodeOptions.Kind, a voice burst B to F whose EMB and embedded data come
 // within the SYNC threshold of a SYNC pattern decodes as that kind of burst,
 // for example as a standalone RC burst (see DecodeOptions.VoiceBurst).
-func (b *Burst) DecodeFromBytesWith(data RawBurst, opts DecodeOptions) error {
+func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
+	if opts == nil {
+		opts = &DecodeOptions{}
+	}
 	*b = Burst{}
 	b.bitData = bit.Unpack264(data)
 	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
@@ -176,7 +180,7 @@ func (b *Burst) DecodeFromBytesWith(data RawBurst, opts DecodeOptions) error {
 	return errors.Join(err, b.checkColorCode(opts.ColorCode))
 }
 
-func (b *Burst) decode(opts DecodeOptions) error {
+func (b *Burst) decode(opts *DecodeOptions) error {
 	threshold := opts.SyncThreshold
 	switch {
 	case threshold == 0:

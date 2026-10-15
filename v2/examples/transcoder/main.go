@@ -97,7 +97,7 @@ func receive(bursts []layer2.RawBurst) (call, error) {
 }
 
 func transmit(lc pdu.FullLinkControl, cc enums.ColorCode, src layer2.SyncSource, silence [72]bit.Bit, add func(*layer2.VoiceTransmitter) ([]layer2.RawBurst, error)) ([]layer2.RawBurst, error) {
-	tx, err := layer2.NewVoiceTransmitter(lc, cc, src, silence)
+	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: cc, Source: src, Silence: silence})
 	if err != nil {
 		return nil, err
 	}

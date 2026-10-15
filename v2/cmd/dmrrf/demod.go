@@ -80,11 +80,11 @@ func Demodulate(x []complex128, rate float64) Demodulated {
 		}
 		bits := phaseBits[s%samplesPerSy]
 		first := 2 * (s / samplesPerSy)
-		if first+framer.BurstBits > len(bits) {
+		if first+layer2.BurstBits > len(bits) {
 			return Received{}, false
 		}
 		var b [264]bit.Bit
-		copy(b[:], bits[first:first+framer.BurstBits])
+		copy(b[:], bits[first:first+layer2.BurstBits])
 		r := Received{Data: bit.Pack264(b), Seconds: float64(s) / basebandRate}
 		if first >= layer2.CACHBits {
 			copy(r.CACH[:], bits[first-layer2.CACHBits:first])
