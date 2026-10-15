@@ -73,8 +73,8 @@ func DecodeMBCHeader(data [96]bit.Bit) MBCHeader {
 			_decoded := DecodeMovePDU(_dispatchBits)
 			result.MovePDU = &_decoded
 		case CSBKBroadcast:
-			_decoded := DecodeCBroadcastPDU(_dispatchBits)
-			result.CBroadcastPDU = &_decoded
+			_decoded := DecodeBroadcastPDU(_dispatchBits)
+			result.BroadcastPDU = &_decoded
 		default:
 			for _i := range 64 {
 				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
@@ -105,7 +105,7 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 		{"DuplexPrivateDataGrantPDU", s.DuplexPrivateDataGrantPDU != nil},
 		{"PrivateDataGrantMultiItemPDU", s.PrivateDataGrantMultiItemPDU != nil},
 		{"MovePDU", s.MovePDU != nil},
-		{"CBroadcastPDU", s.CBroadcastPDU != nil},
+		{"BroadcastPDU", s.BroadcastPDU != nil},
 	} {
 		if !_p.set {
 			continue
@@ -170,10 +170,10 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.MovePDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
-	case s.CBroadcastPDU != nil:
-		_pduBits, err := s.CBroadcastPDU.Encode()
+	case s.BroadcastPDU != nil:
+		_pduBits, err := s.BroadcastPDU.Encode()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.CBroadcastPDU: %w", err)
+			return [96]bit.Bit{}, fmt.Errorf("MBCHeader.BroadcastPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	default:
@@ -231,7 +231,7 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 			case CSBKMove:
 				_want = "MovePDU"
 			case CSBKBroadcast:
-				_want = "CBroadcastPDU"
+				_want = "BroadcastPDU"
 			}
 		}
 		if _payload != _want {
@@ -291,8 +291,8 @@ func (s *MBCHeader) String() string {
 		_ret += s.PrivateDataGrantMultiItemPDU.String()
 	case s.MovePDU != nil:
 		_ret += s.MovePDU.String()
-	case s.CBroadcastPDU != nil:
-		_ret += s.CBroadcastPDU.String()
+	case s.BroadcastPDU != nil:
+		_ret += s.BroadcastPDU.String()
 	default:
 		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}

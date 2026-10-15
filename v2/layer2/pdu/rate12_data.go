@@ -41,8 +41,8 @@ func (s *Rate12Data) ConfirmedUserData() [10]byte {
 	return out
 }
 
-// CheckConfirmedCRC9 reports whether the CRC-9 of a confirmed block is valid.
-func (s *Rate12Data) CheckConfirmedCRC9() bool {
+// ConfirmedCRC9OK reports whether the CRC-9 of a confirmed block is valid.
+func (s *Rate12Data) ConfirmedCRC9OK() bool {
 	return checkConfirmedCRC9(s.Data[:], crc9MaskRate12)
 }
 

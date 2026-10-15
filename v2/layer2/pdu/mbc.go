@@ -37,7 +37,7 @@ type MBCHeader struct {
 	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateDataGrant"`
 	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrantMultiItem"`
 	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`
-	CBroadcastPDU                   *CBroadcastPDU                   `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`
+	BroadcastPDU                    *BroadcastPDU                    `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`
 
 	// RawPayload holds header bits 16 to 79 when no payload field is set,
 	// packed most significant bit first, as CSBK.RawPayload does.
@@ -57,7 +57,7 @@ func (s *MBCHeader) DataType() enums.DataType {
 //
 // The last-block CRC-CCITT covers every MBC block except the header (§7.4.0),
 // so a single block can only be checked when it is the only continuation
-// block. Use MBCLastBlockCRC, CheckMBCLastBlockCRC and SetMBCLastBlockCRC with
+// block. Use mbcLastBlockCRC, CheckMBCLastBlockCRC and SetMBCLastBlockCRC with
 // all continuation blocks in order. It has no Data Type mask (Table B.21
 // NOTE 1).
 type MBCContinuation struct {
@@ -116,11 +116,8 @@ func (s *MBCContinuation) AsVNAP() VNAPContinuation {
 	return DecodeVNAPContinuation(s.bits())
 }
 
-// MBCLastBlockCRC computes the last-block CRC-CCITT (ETSI TS 102 361-1
-// §7.4.0) over all 96 bits of each intermediate block followed by bits 0-79
-// of the last block. blocks holds every continuation block in order, last
-// block last. It returns 0 if blocks is empty.
-func MBCLastBlockCRC(blocks ...[96]bit.Bit) uint16 {
+// mbcLastBlockCRC computes the last-block CRC-CCITT of blocks.
+func mbcLastBlockCRC(blocks ...[96]bit.Bit) uint16 {
 	if len(blocks) == 0 {
 		return 0
 	}
@@ -135,23 +132,27 @@ func MBCLastBlockCRC(blocks ...[96]bit.Bit) uint16 {
 	return crc.CCITT(data)
 }
 
-// CheckMBCLastBlockCRC reports whether the CRC in bits 80-95 of the last of
-// blocks matches MBCLastBlockCRC(blocks...).
-func CheckMBCLastBlockCRC(blocks ...[96]bit.Bit) bool {
+// MBCLastBlockCRCOK reports whether bits 80 to 95 of the last of blocks hold
+// the last-block CRC-CCITT that SetMBCLastBlockCRC writes. It returns false
+// for no blocks.
+func MBCLastBlockCRCOK(blocks ...[96]bit.Bit) bool {
 	if len(blocks) == 0 {
 		return false
 	}
 	last := blocks[len(blocks)-1]
-	return uint16(bit.Uint(last[80:96])) == MBCLastBlockCRC(blocks...) //nolint:gosec // 16-bit field
+	return uint16(bit.Uint(last[80:96])) == mbcLastBlockCRC(blocks...) //nolint:gosec // 16-bit field
 }
 
-// SetMBCLastBlockCRC writes MBCLastBlockCRC(blocks...) into bits 80-95 of
-// the last of blocks.
+// SetMBCLastBlockCRC writes the last-block CRC-CCITT (ETSI TS 102 361-1
+// §7.4.0) into bits 80 to 95 of the last of blocks. The CRC covers all 96
+// bits of each block before it and bits 0 to 79 of the last block, so
+// blocks holds every continuation block of the MBC in order, last block
+// last. It does nothing for no blocks.
 func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
 	if len(blocks) == 0 {
 		return
 	}
-	c := MBCLastBlockCRC(blocks...)
+	c := mbcLastBlockCRC(blocks...)
 	last := &blocks[len(blocks)-1]
 	for i := 0; i < 16; i++ {
 		last[80+i] = bit.Bit((c >> (15 - i)) & 1)

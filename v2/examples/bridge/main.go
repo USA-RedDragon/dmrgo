@@ -211,8 +211,8 @@ func bridgeVoice(w io.Writer, path string) error {
 // toGroupCall turns a group or private call LC into a group call to
 // talkgroup newTarget from newSource, keeping its service options.
 func toGroupCall(lc *pdu.FullLinkControl) error {
-	if lc.FeatureSetID != enums.FIDStandardized {
-		return fmt.Errorf("cannot rewrite an LC of FID %s", lc.FeatureSetID)
+	if lc.FID != enums.FIDStandardized {
+		return fmt.Errorf("cannot rewrite an LC of FID %s", lc.FID)
 	}
 	switch {
 	case lc.UnitToUnit != nil:

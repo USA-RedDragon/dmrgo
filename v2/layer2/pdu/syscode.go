@@ -77,11 +77,12 @@ func (s SysCode) NetSite() (uint16, error) {
 	return v & 0xFFF, err
 }
 
-// UnpackSysCode splits a 16-bit C_SYScode into its fields.
-func UnpackSysCode(v uint16) SysCode {
+// Unpack sets s to the fields of the 16-bit C_SYScode v. It is the inverse
+// of Pack.
+func (s *SysCode) Unpack(v uint16) {
 	model := NetworkModel(v >> 14)
 	siteBits := model.SiteBits()
-	return SysCode{
+	*s = SysCode{
 		Model: model,
 		Net:   (v >> (2 + siteBits)) & (1<<model.NetBits() - 1),
 		Site:  (v >> 2) & (1<<siteBits - 1),
@@ -89,13 +90,16 @@ func UnpackSysCode(v uint16) SysCode {
 	}
 }
 
-// UnpackSysCode14 splits the 14-bit CACH form of a C_SYScode. Par is 0.
-func UnpackSysCode14(v uint16) SysCode {
-	return UnpackSysCode((v & 0x3FFF) << 2)
+// Unpack14 sets s to the fields of the 14-bit CACH form v of a C_SYScode,
+// with Par 0. It is the inverse of Pack14.
+func (s *SysCode) Unpack14(v uint16) {
+	s.Unpack((v & 0x3FFF) << 2)
 }
 
 func sysCodeFromShortLC(model uint8, netSite uint16) SysCode {
-	return UnpackSysCode14(uint16(model&3)<<12 | netSite&0xFFF)
+	var s SysCode
+	s.Unpack14(uint16(model&3)<<12 | netSite&0xFFF)
+	return s
 }
 
 // SysCode returns the MODEL, NET and SITE carried in the C_SYS_Parms.

@@ -204,7 +204,7 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	}
 
 	dst, src, _ := captured.Addresses()
-	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FeatureSetID: enc.FID()}
+	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: enc.FID()}
 	if !lc.SetAddresses(dst, src) {
 		return fmt.Errorf("cannot set addresses %d -> %d", src, dst)
 	}
@@ -224,7 +224,7 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	}
 	rdst, rsrc, _ := c.lc.Addresses()
 	_, _ = fmt.Fprintf(w, "codec2: %d frames -> %d bursts, rx FID %#x, %d -> %d, %d embedded LCs, slots equal %t\n",
-		len(slots), len(bursts), uint8(c.lc.FeatureSetID), rsrc, rdst, c.embLCs, same)
+		len(slots), len(bursts), uint8(c.lc.FID), rsrc, rdst, c.embLCs, same)
 
 	dec, err := vocoder.New(codec2.Name)
 	if err != nil {

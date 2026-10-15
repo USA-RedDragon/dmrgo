@@ -1328,9 +1328,9 @@ func (s *AlohaPDU) String() string {
 	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %d }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
 }
 
-// DecodeCBroadcastPDU decodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
-func DecodeCBroadcastPDU(data [64]bit.Bit) CBroadcastPDU {
-	var result CBroadcastPDU
+// DecodeBroadcastPDU decodes a BroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
+func DecodeBroadcastPDU(data [64]bit.Bit) BroadcastPDU {
+	var result BroadcastPDU
 	lowbit.Mask(data[:])
 	result.AnnouncementType = enums.AnnouncementType(bit.Uint(data[0:5]))
 	result.BroadcastParms1 = uint16(bit.Uint(data[5:19]))
@@ -1341,14 +1341,14 @@ func DecodeCBroadcastPDU(data [64]bit.Bit) CBroadcastPDU {
 	return result
 }
 
-// Encode encodes a CBroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
-func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
+// Encode encodes a BroadcastPDU per ETSI TS 102 361-4 §7.1.1.1.5 C_BCAST PDU, Table 7.20
+func (s *BroadcastPDU) Encode() ([64]bit.Bit, error) {
 	var data [64]bit.Bit
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [64]bit.Bit{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "AnnouncementType",
-			Type:  "CBroadcastPDU",
+			Type:  "BroadcastPDU",
 			Value: s.AnnouncementType,
 		}
 	}
@@ -1357,7 +1357,7 @@ func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 		return [64]bit.Bit{}, &bit.FieldRangeError{
 			Bits:  14,
 			Field: "BroadcastParms1",
-			Type:  "CBroadcastPDU",
+			Type:  "BroadcastPDU",
 			Value: s.BroadcastParms1,
 		}
 	}
@@ -1369,7 +1369,7 @@ func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 		return [64]bit.Bit{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Backoff",
-			Type:  "CBroadcastPDU",
+			Type:  "BroadcastPDU",
 			Value: s.Backoff,
 		}
 	}
@@ -1379,7 +1379,7 @@ func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 		return [64]bit.Bit{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "BroadcastParms2",
-			Type:  "CBroadcastPDU",
+			Type:  "BroadcastPDU",
 			Value: s.BroadcastParms2,
 		}
 	}
@@ -1389,7 +1389,7 @@ func (s *CBroadcastPDU) Encode() ([64]bit.Bit, error) {
 
 // EncodeBits returns the bits that Encode returns as a slice, or nil and
 // the error of Encode.
-func (s *CBroadcastPDU) EncodeBits() ([]bit.Bit, error) {
+func (s *BroadcastPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
 		return nil, err
@@ -1397,8 +1397,8 @@ func (s *CBroadcastPDU) EncodeBits() ([]bit.Bit, error) {
 	return bits[:], nil
 }
 
-func (s *CBroadcastPDU) String() string {
-	return fmt.Sprintf("CBroadcastPDU{ AnnouncementType: %s, BroadcastParms1: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %d }", s.AnnouncementType, s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
+func (s *BroadcastPDU) String() string {
+	return fmt.Sprintf("BroadcastPDU{ AnnouncementType: %s, BroadcastParms1: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %d }", s.AnnouncementType, s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
 }
 
 // DecodeClearPDU decodes a ClearPDU per ETSI TS 102 361-4 §7.1.1.3.2 P_CLEAR PDU
@@ -2200,8 +2200,8 @@ func DecodeCSBK(data [96]bit.Bit) CSBK {
 			_decoded := DecodeAlohaPDU(_dispatchBits)
 			result.AlohaPDU = &_decoded
 		case CSBKBroadcast:
-			_decoded := DecodeCBroadcastPDU(_dispatchBits)
-			result.CBroadcastPDU = &_decoded
+			_decoded := DecodeBroadcastPDU(_dispatchBits)
+			result.BroadcastPDU = &_decoded
 		case CSBKClear:
 			_decoded := DecodeClearPDU(_dispatchBits)
 			result.ClearPDU = &_decoded
@@ -2268,7 +2268,7 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		{"PrivateDataGrantMultiItemPDU", s.PrivateDataGrantMultiItemPDU != nil},
 		{"MovePDU", s.MovePDU != nil},
 		{"AlohaPDU", s.AlohaPDU != nil},
-		{"CBroadcastPDU", s.CBroadcastPDU != nil},
+		{"BroadcastPDU", s.BroadcastPDU != nil},
 		{"ClearPDU", s.ClearPDU != nil},
 		{"ProtectPDU", s.ProtectPDU != nil},
 		{"AhoyPDU", s.AhoyPDU != nil},
@@ -2379,10 +2379,10 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 			return [96]bit.Bit{}, fmt.Errorf("CSBK.AlohaPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
-	case s.CBroadcastPDU != nil:
-		_pduBits, err := s.CBroadcastPDU.Encode()
+	case s.BroadcastPDU != nil:
+		_pduBits, err := s.BroadcastPDU.Encode()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.CBroadcastPDU: %w", err)
+			return [96]bit.Bit{}, fmt.Errorf("CSBK.BroadcastPDU: %w", err)
 		}
 		copy(data[16:80], _pduBits[:])
 	case s.ClearPDU != nil:
@@ -2512,7 +2512,7 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 			case CSBKAloha:
 				_want = "AlohaPDU"
 			case CSBKBroadcast:
-				_want = "CBroadcastPDU"
+				_want = "BroadcastPDU"
 			case CSBKClear:
 				_want = "ClearPDU"
 			case CSBKProtect:
@@ -2604,8 +2604,8 @@ func (s *CSBK) String() string {
 		_ret += s.MovePDU.String()
 	case s.AlohaPDU != nil:
 		_ret += s.AlohaPDU.String()
-	case s.CBroadcastPDU != nil:
-		_ret += s.CBroadcastPDU.String()
+	case s.BroadcastPDU != nil:
+		_ret += s.BroadcastPDU.String()
 	case s.ClearPDU != nil:
 		_ret += s.ClearPDU.String()
 	case s.ProtectPDU != nil:

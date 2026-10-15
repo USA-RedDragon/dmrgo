@@ -270,10 +270,10 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKBroadcast {
 		t.Errorf("CSBKOpcode = %08b, want C_BCAST", byte(csbk.Opcode))
 	}
-	if csbk.CBroadcastPDU == nil {
-		t.Fatal("CBroadcastPDU should not be nil")
+	if csbk.BroadcastPDU == nil {
+		t.Fatal("BroadcastPDU should not be nil")
 	}
-	bc := csbk.CBroadcastPDU
+	bc := csbk.BroadcastPDU
 	if bc.AnnouncementType != enums.AnnouncementChanFreq {
 		t.Errorf("AnnouncementType = %d, want %d (ChanFreq)", int(bc.AnnouncementType), int(enums.AnnouncementChanFreq))
 	}

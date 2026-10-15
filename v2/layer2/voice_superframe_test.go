@@ -32,7 +32,7 @@ func silenceSlot() [72]bit.Bit {
 // payload bits in RawPayload, since only the SFID dispatches to GroupVoice.
 func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 	gv := &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868}
-	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FeatureSetID: fid}
+	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: fid}
 	if fid == enums.FIDStandardized {
 		lc.GroupVoice = gv
 	} else {
@@ -70,7 +70,7 @@ func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType e
 	if b.FEC.PDU.HasErrors() || b.FEC.Payload.HasErrors() {
 		t.Fatalf("FEC %+v", b.FEC)
 	}
-	if got.FeatureSetID != lc.FeatureSetID || lcBits(t, *got, dataType) != lcBits(t, lc, dataType) {
+	if got.FID != lc.FID || lcBits(t, *got, dataType) != lcBits(t, lc, dataType) {
 		t.Errorf("decoded %s, want %s", got.String(), lc.String())
 	}
 }
@@ -158,7 +158,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 						continue
 					}
 					got, res := decodeFLCBits(fragments)
-					if res.HasErrors() || got.FeatureSetID != fid ||
+					if res.HasErrors() || got.FID != fid ||
 						lcBits(t, got, enums.DataTypeVoiceLCHeader) != lcBits(t, lc, enums.DataTypeVoiceLCHeader) {
 						t.Errorf("burst %d: embedded LC %s (%+v)", i, got.String(), res)
 					}
