@@ -1248,6 +1248,8 @@ documents:
               - TestFullLinkControl_AddressRange
               - TestLCBytes_Capture
               - TestLCBytes_EditsKeepOtherBits
+              - TestLCBytes_ClearReservedOnFLCOChange
+              - TestLCBytes_FlagBits
 
       - section: "7.1.1.2"
         title: "Unit to Unit Voice Channel User LC PDU"
@@ -1261,6 +1263,8 @@ documents:
               - TestFullLinkControl_AddressRange
               - TestLCBytes_Capture
               - TestLCBytes_EditsKeepOtherBits
+              - TestLCBytes_ClearReservedOnFLCOChange
+              - TestLCBytes_FlagBits
 
       - section: "7.1.1.3"
         title: "GPS Info LC PDU"
