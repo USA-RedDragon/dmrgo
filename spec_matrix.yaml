@@ -1164,10 +1164,17 @@ documents:
         source_files:
           - v2/layer2/pdu/full_link_control.go
           - v2/layer3/elements/talker_alias_data_format.go
+          - v2/layer2/pdu/talker_alias.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3/elements
             names:
               - TestTalkerAliasDataFormatToName
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestTalkerAlias_RoundTrip
+              - TestTalkerAlias_HeaderBits7Bit
+              - TestTalkerAliasBlocks_Table
+              - TestTalkerAlias_Errors
 
       # ── Section 6: DMR facilities ──
       - section: "6.1"

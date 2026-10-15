@@ -183,7 +183,7 @@ The package uses cgo to link the system libcodec2 (LGPL 2.1) dynamically. To bui
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
 | §5.4.2 | Inband positioning data service | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
-| §5.4.3 | Inband talker alias data service | ✅ verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/elements/talker_alias_data_format.go` |
+| §5.4.3 | Inband talker alias data service | ✅ verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/elements/talker_alias_data_format.go`, `v2/layer2/pdu/talker_alias.go` |
 | §6.1 | Transmit timeout | ✅ verified | 2/2 passed | `v2/constants/constants.go` |
 | §6.3 | Reverse Channel Transmitter Interrupt | ✅ verified | 10/10 passed | `v2/layer2/pdu/reverse_channel.go`, `v2/enums/rc_command.go`, `v2/constants/constants.go` |
 | §7.1.1 | Full Link Control PDUs | ✅ verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go` |
