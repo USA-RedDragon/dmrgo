@@ -7,13 +7,10 @@ import (
 func TestReedSolomon1294SyndromeNoError(t *testing.T) {
 	t.Parallel()
 
-	data := make([]byte, dataSize+checksumSize)
+	var data [dataSize + checksumSize]byte
 	var syndrome poly
 
-	err := calcSyndrome(data, &syndrome)
-	if err != nil {
-		t.Fatalf("CalcSyndrome failed: %v", err)
-	}
+	calcSyndrome(&data, &syndrome)
 
 	if syndromeHasErrors(&syndrome) {
 		t.Error("Zero codeword should have zero syndrome")
@@ -23,7 +20,7 @@ func TestReedSolomon1294SyndromeNoError(t *testing.T) {
 func TestReedSolomon1294DecodeClean(t *testing.T) {
 	t.Parallel()
 
-	data := make([]byte, dataSize+checksumSize)
+	var data [dataSize + checksumSize]byte
 
 	result := decode(data)
 
@@ -43,14 +40,11 @@ func TestReedSolomon1294DecodeClean(t *testing.T) {
 func TestReedSolomon1294SyndromeWithError(t *testing.T) {
 	t.Parallel()
 
-	data := make([]byte, dataSize+checksumSize)
+	var data [dataSize + checksumSize]byte
 	data[0] = 0x55
 
 	var syndrome poly
-	err := calcSyndrome(data, &syndrome)
-	if err != nil {
-		t.Fatalf("CalcSyndrome failed: %v", err)
-	}
+	calcSyndrome(&data, &syndrome)
 
 	if !syndromeHasErrors(&syndrome) {
 		t.Error("Corrupted codeword should have non-zero syndrome")
@@ -96,56 +90,15 @@ func TestReedSolomon1294FindRootsEmpty(t *testing.T) {
 	t.Parallel()
 
 	locator := poly{1, 0, 0, 0, 0, 0}
-	roots := findRoots(&locator)
-	if len(roots) != 0 {
-		t.Errorf("Locator=1 should have no roots, got %d", len(roots))
-	}
-}
-
-func TestReedSolomon1294DecodeInvalidLength(t *testing.T) {
-	t.Parallel()
-
-	shortData := make([]byte, dataSize)
-	result := decode(shortData)
-	if !result.Uncorrectable {
-		t.Error("Short data should be uncorrectable")
-	}
-
-	longData := make([]byte, dataSize+checksumSize+5)
-	result = decode(longData)
-	if !result.Uncorrectable {
-		t.Error("Long data should be uncorrectable")
-	}
-}
-
-func TestReedSolomon1294CalcSyndromeError(t *testing.T) {
-	t.Parallel()
-
-	shortData := make([]byte, 5)
-	var syndrome poly
-
-	err := calcSyndrome(shortData, &syndrome)
-	if err == nil {
-		t.Error("CalcSyndrome should return error for wrong input size")
-	}
-}
-
-func TestReedSolomon1294CorrectError(t *testing.T) {
-	t.Parallel()
-
-	shortData := make([]byte, 5)
-	var syndrome poly
-
-	_, err := correct(shortData, &syndrome)
-	if err == nil {
-		t.Error("Correct should return error for wrong input size")
+	if _, n := findRoots(&locator); n != 0 {
+		t.Errorf("Locator=1 should have no roots, got %d", n)
 	}
 }
 
 func TestReedSolomon1294DecodeResultFields(t *testing.T) {
 	t.Parallel()
 
-	data := make([]byte, dataSize+checksumSize)
+	var data [dataSize + checksumSize]byte
 
 	result := decode(data)
 
@@ -156,7 +109,7 @@ func TestReedSolomon1294DecodeResultFields(t *testing.T) {
 
 // BenchmarkReedSolomon1294CalcSyndrome benchmarks syndrome calculation
 func BenchmarkReedSolomon1294CalcSyndrome(b *testing.B) {
-	data := make([]byte, dataSize+checksumSize)
+	var data [dataSize + checksumSize]byte
 	for i := range data {
 		data[i] = byte(i)
 	}
@@ -164,13 +117,13 @@ func BenchmarkReedSolomon1294CalcSyndrome(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = calcSyndrome(data, &syndrome)
+		calcSyndrome(&data, &syndrome)
 	}
 }
 
 // BenchmarkReedSolomon1294Decode benchmarks the full decode operation
 func BenchmarkReedSolomon1294Decode(b *testing.B) {
-	data := make([]byte, dataSize+checksumSize)
+	var data [dataSize + checksumSize]byte
 	for i := range data {
 		data[i] = byte(i)
 	}
@@ -193,14 +146,11 @@ func BenchmarkReedSolomon1294GaloisMul(b *testing.B) {
 func TestReedSolomon1294SyndromeHasErrors(t *testing.T) {
 	t.Parallel()
 
-	data := make([]byte, dataSize+checksumSize)
+	var data [dataSize + checksumSize]byte
 	data[0] = 0x42
 
 	var syndrome poly
-	err := calcSyndrome(data, &syndrome)
-	if err != nil {
-		t.Fatalf("CalcSyndrome failed: %v", err)
-	}
+	calcSyndrome(&data, &syndrome)
 
 	if !syndromeHasErrors(&syndrome) {
 		t.Error("Corrupted codeword should have non-zero syndrome")
