@@ -12,15 +12,15 @@ import (
 // in Table D.2 — there is no runtime LFSR calculation. Implementations
 // use the literal constant from the table.
 //
-// In packed hex (MSB-first): FF 83 DF 16 64 21 4E 16 EC 5C CD 49
+// In packed hex, I(95) first: FF 83 DF 17 32 09 4E D1 E7 CD 8A 91
 
 // PRFillBits contains the 96 pseudo-random fill bits from Table D.2.
 //
 //nolint:gochecknoglobals
 var PRFillBits = func() [96]bit.Bit {
 	packed := [12]byte{
-		0xFF, 0x83, 0xDF, 0x16, 0x64, 0x21,
-		0x4E, 0x16, 0xEC, 0x5C, 0xCD, 0x49,
+		0xFF, 0x83, 0xDF, 0x17, 0x32, 0x09,
+		0x4E, 0xD1, 0xE7, 0xCD, 0x8A, 0x91,
 	}
 	var bits [96]bit.Bit
 	for i := 0; i < 96; i++ {

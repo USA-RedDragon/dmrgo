@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func TestIdleMessageInfoBits_Length(t *testing.T) {
@@ -15,8 +16,8 @@ func TestIdleMessageInfoBits_Length(t *testing.T) {
 
 func TestIdleMessageInfoBits_PackedHex(t *testing.T) {
 	expected := [12]byte{
-		0xFF, 0x83, 0xDF, 0x16, 0x64, 0x21,
-		0x4E, 0x16, 0xEC, 0x5C, 0xCD, 0x49,
+		0xFF, 0x83, 0xDF, 0x17, 0x32, 0x09,
+		0x4E, 0xD1, 0xE7, 0xCD, 0x8A, 0x91,
 	}
 	packed := bit.PackBits(layer2.IdleMessageInfoBits[:])
 	if len(packed) != 12 {
@@ -55,9 +56,9 @@ func TestIdleMessageFECMatrix_Dimensions(t *testing.T) {
 	if len(layer2.IdleMessageFECMatrix) != 13 {
 		t.Fatalf("FEC matrix rows = %d, want 13", len(layer2.IdleMessageFECMatrix))
 	}
-	for i, row := range layer2.IdleMessageFECMatrix {
-		if len(row) != 15 {
-			t.Errorf("FEC matrix row %d cols = %d, want 15", i, len(row))
+	for i := range layer2.IdleMessageFECMatrix {
+		if len(layer2.IdleMessageFECMatrix[i]) != 15 {
+			t.Errorf("FEC matrix row %d cols = %d, want 15", i, len(layer2.IdleMessageFECMatrix[i]))
 		}
 	}
 }
@@ -66,6 +67,32 @@ func TestIdleMessageFECMatrix_TotalBits(t *testing.T) {
 	total := len(layer2.IdleMessageFECMatrix) * len(layer2.IdleMessageFECMatrix[0])
 	if total != 195 {
 		t.Errorf("FEC matrix total cells = %d, want 195", total)
+	}
+}
+
+// The info bits sit in row 0 columns 3-10 and rows 1-8 columns 0-10 of
+// Figure D.1 (layout of Figure B.1).
+func TestIdleMessageFECMatrix_MatchesInfoBits(t *testing.T) {
+	var info [96]bit.Bit
+	n := 0
+	for c := 3; c <= 10; c++ {
+		info[n] = layer2.IdleMessageFECMatrix[0][c]
+		n++
+	}
+	for r := 1; r <= 8; r++ {
+		for c := 0; c <= 10; c++ {
+			info[n] = layer2.IdleMessageFECMatrix[r][c]
+			n++
+		}
+	}
+	if info != layer2.IdleMessageInfoBits {
+		t.Errorf("FEC matrix info bits = %X, want %X", bit.PackBits(info[:]), bit.PackBits(layer2.IdleMessageInfoBits[:]))
+	}
+}
+
+func TestIdleMessageInfoBits_EqualsPRFill(t *testing.T) {
+	if layer2.IdleMessageInfoBits != pdu.PRFillBits {
+		t.Error("IdleMessageInfoBits should equal pdu.PRFillBits")
 	}
 }
 

@@ -2,29 +2,16 @@ package layer2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // TS 102 361-1 Annex D — Idle and Null message bit definitions
 
 // IdleMessageInfoBits contains the 96 information bits of the idle message
-// from Table D.2 of ETSI TS 102 361-1.
-//
-// In packed hex (MSB-first): FF 83 DF 16 64 21 4E 16 EC 5C CD 49
+// from Table D.2 of ETSI TS 102 361-1. It is the same value as pdu.PRFillBits.
 //
 //nolint:gochecknoglobals
-var IdleMessageInfoBits = func() [96]bit.Bit {
-	packed := [12]byte{
-		0xFF, 0x83, 0xDF, 0x16, 0x64, 0x21,
-		0x4E, 0x16, 0xEC, 0x5C, 0xCD, 0x49,
-	}
-	var bits [96]bit.Bit
-	for i := 0; i < 96; i++ {
-		if (packed[i/8]>>(7-(i%8)))&1 != 0 { //nolint:gosec // i/8 bounded: i < 96, so i/8 <= 11 < 12
-			bits[i] = 1
-		}
-	}
-	return bits
-}()
+var IdleMessageInfoBits = pdu.PRFillBits
 
 // NullEmbeddedLCBits contains the 32 transmit bits of the null embedded LC
 // message from Table D.1 of ETSI TS 102 361-1.

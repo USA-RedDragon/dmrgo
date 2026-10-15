@@ -888,6 +888,8 @@ documents:
               - TestIsNullEmbeddedLC_Match
               - TestIsNullEmbeddedLC_NoMatch
               - TestIdleMessageFECMatrix_BitsAreOnlyZeroOrOne
+              - TestIdleMessageFECMatrix_MatchesInfoBits
+              - TestIdleMessageInfoBits_EqualsPRFill
 
       - section: "E"
         title: "Transmit bit order"
