@@ -30,7 +30,7 @@ func TestTimers_AnnexA1(t *testing.T) {
 		{"TBSChanAuthRspCSBKSingle", constants.TBSChanAuthRspCSBKSingle, 900 * time.Millisecond},
 		{"TBSChanAuthRspCSBKMulti", constants.TBSChanAuthRspCSBKMulti, 1140 * time.Millisecond},
 		{"TBSChanAuthSel", constants.TBSChanAuthSel, 240 * time.Millisecond},
-		{"TRCtimer", constants.TRCtimer, 600 * time.Millisecond},
+		{"TRCtimer", constants.TRCTimer, 600 * time.Millisecond},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -83,11 +83,11 @@ func TestPDPTimers_AnnexA1(t *testing.T) {
 		got      time.Duration
 		expected time.Duration
 	}{
-		{"TDataTxLmt", constants.TDataTxLmt, 60 * time.Second},
-		{"TRspnsWait", constants.TRspnsWait, 180 * time.Millisecond},
-		{"TRspnsWaitSimulcast", constants.TRspnsWaitSimulcast, 2 * time.Second},
+		{"TDataTxLmt", constants.TDataTxLimit, 60 * time.Second},
+		{"TRspnsWait", constants.TResponseWait, 180 * time.Millisecond},
+		{"TRspnsWaitSimulcast", constants.TResponseWaitSimulcast, 2 * time.Second},
 		{"THoldoffMax", constants.THoldoffMax, 2 * time.Second},
-		{"TDataHngtime", constants.TDataHngtime, 180 * time.Millisecond},
+		{"TDataHngtime", constants.TDataHangtime, 180 * time.Millisecond},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -101,8 +101,8 @@ func TestPDPTimers_AnnexA1(t *testing.T) {
 
 func TestPDPConstants_AnnexA2(t *testing.T) {
 	t.Parallel()
-	if constants.NRtryLmt != 8 {
-		t.Errorf("NRtryLmt = %d, want 8", constants.NRtryLmt)
+	if constants.NRetryLimit != 8 {
+		t.Errorf("NRtryLmt = %d, want 8", constants.NRetryLimit)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestTrunkingTimers_AnnexA1(t *testing.T) {
 		expected time.Duration
 	}{
 		{"TRandTCDefault", constants.TRandTCDefault, 10 * time.Second},
-		{"TNosigDefault", constants.TNosigDefault, 5 * time.Second},
+		{"TNosigDefault", constants.TNoSignalDefault, 5 * time.Second},
 		{"TEmergTimerDefault", constants.TEmergTimerDefault, 120 * time.Second},
 		{"TPacketTimerDefault", constants.TPacketTimerDefault, 10 * time.Second},
 		{"TPTimerDefault", constants.TPTimerDefault, 10 * time.Second},
@@ -132,7 +132,7 @@ func TestTrunkingTimers_AnnexA1(t *testing.T) {
 		{"TPendingDefault", constants.TPendingDefault, 5 * time.Second},
 		{"TDeregDefault", constants.TDeregDefault, 500 * time.Millisecond},
 		{"TBSInactiveDefault", constants.TBSInactiveDefault, 60 * time.Second},
-		{"TDENREGDefault", constants.TDENREGDefault, 60 * time.Second},
+		{"TDENREGDefault", constants.TDenRegDefault, 60 * time.Second},
 		{"TALSDefault", constants.TALSDefault, 60 * time.Second},
 		{"TALSEDefault", constants.TALSEDefault, 300 * time.Second},
 		{"TALSRequestLifeSpanDefault", constants.TALSRequestLifeSpanDefault, 5 * time.Second},
@@ -162,20 +162,20 @@ func TestTrunkingConstants_AnnexA6(t *testing.T) {
 	if constants.NMaint != 4 {
 		t.Errorf("NMaint = %d, want 4", constants.NMaint)
 	}
-	if constants.NmaxCh != 50 {
-		t.Errorf("NmaxCh = %d, want 50", constants.NmaxCh)
+	if constants.NMaxCh != 50 {
+		t.Errorf("NmaxCh = %d, want 50", constants.NMaxCh)
 	}
 	if constants.ChPref != 50 {
 		t.Errorf("ChPref = %d, want 50", constants.ChPref)
 	}
-	if constants.NSYSerrDefault != 2 {
-		t.Errorf("NSYSerrDefault = %d, want 2", constants.NSYSerrDefault)
+	if constants.NSysErrDefault != 2 {
+		t.Errorf("NSYSerrDefault = %d, want 2", constants.NSysErrDefault)
 	}
 	if constants.DMRLADefault != 1 {
 		t.Errorf("DMRLADefault = %d, want 1", constants.DMRLADefault)
 	}
-	if constants.VoteBlkDefault != 3 {
-		t.Errorf("VoteBlkDefault = %d, want 3", constants.VoteBlkDefault)
+	if constants.VoteBlockDefault != 3 {
+		t.Errorf("VoteBlkDefault = %d, want 3", constants.VoteBlockDefault)
 	}
 }
 

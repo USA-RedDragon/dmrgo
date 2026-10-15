@@ -96,12 +96,12 @@ const TBSChanAuthRspCSBKMulti = 1140 * time.Millisecond
 // ETSI TS 102 361-2 — clause A.1
 const TBSChanAuthSel = 240 * time.Millisecond
 
-// TRCtimer is the recommended T_RCtimer: the time an MS waits for the target
+// TRCTimer is the recommended T_RCtimer: the time an MS waits for the target
 // MS of a Tier 2 RC Command to end its transmission before it retries the
 // command. The value is chosen by the MS designer; simulcast systems can need
 // a larger value.
 // ETSI TS 102 361-2 — clause A.1, clause 6.3
-const TRCtimer = 600 * time.Millisecond
+const TRCTimer = 600 * time.Millisecond
 
 // ── A.2 Layer 3 constants ──
 
@@ -129,23 +129,23 @@ const CTDuration = 180 * time.Millisecond
 
 // ── A.1 Layer 2 timers ──
 
-// TDataTxLmt is the recommended maximum Data Transmission Limit
+// TDataTxLimit is the recommended maximum Data Transmission Limit
 // (T_DataTxLmt): the time an MS attempts to transmit an unconfirmed data
 // message, or to transmit a confirmed data message and receive a reply.
 // The value is chosen by the MS designer.
 // ETSI TS 102 361-3 — clause A.1
-const TDataTxLmt = 60 * time.Second
+const TDataTxLimit = 60 * time.Second
 
-// TRspnsWait is the recommended Confirmed Data Response Wait Limit
+// TResponseWait is the recommended Confirmed Data Response Wait Limit
 // (T_RspnsWait): the time an MS waits to receive the confirmed header packet
 // data response. The value is chosen by the MS designer.
 // ETSI TS 102 361-3 — clause A.1
-const TRspnsWait = 180 * time.Millisecond
+const TResponseWait = 180 * time.Millisecond
 
-// TRspnsWaitSimulcast is the recommended minimum T_RspnsWait for simulcast
+// TResponseWaitSimulcast is the recommended minimum T_RspnsWait for simulcast
 // systems.
 // ETSI TS 102 361-3 — clause A.1
-const TRspnsWaitSimulcast = 2 * time.Second
+const TResponseWaitSimulcast = 2 * time.Second
 
 // THoldoffMax is the recommended maximum Random Holdoff Time (T_Holdoff) for
 // unconfirmed and confirmed data. The MS randomly generates the timer
@@ -154,20 +154,20 @@ const TRspnsWaitSimulcast = 2 * time.Second
 // ETSI TS 102 361-3 — clause A.1
 const THoldoffMax = 2 * time.Second
 
-// TDataHngtime is the recommended Data Hangtime (T_DataHngtime), 3 traffic
+// TDataHangtime is the recommended Data Hangtime (T_DataHngtime), 3 traffic
 // bursts: the time the BS transmits TD_LC PDUs to reserve the channel for a
 // confirmed data response. The value is chosen by the BS designer.
 // ETSI TS 102 361-3 — clause A.1
-const TDataHngtime = 180 * time.Millisecond
+const TDataHangtime = 180 * time.Millisecond
 
 // ── A.2 Layer 2 constants ──
 
-// NRtryLmt is the recommended maximum Data Air Interface Retry Limit
+// NRetryLimit is the recommended maximum Data Air Interface Retry Limit
 // (N_RtryLmt): the number of times the DLL transmits and attempts to receive
 // the confirmed data response from the target MS. The value is chosen by the
 // MS designer.
 // ETSI TS 102 361-3 — clause A.2
-const NRtryLmt = 8
+const NRetryLimit = 8
 
 // ── ETSI TS 102 361-4 Annex A: Timers, constants levels and addresses ──
 
@@ -179,11 +179,11 @@ const NRtryLmt = 8
 // ETSI TS 102 361-4 — Table A.1 (range: 2 s to 60 s)
 const TRandTCDefault = 10 * time.Second
 
-// TNosigDefault is the default T_Nosig, the timeout for entering hunting
+// TNoSignalDefault is the default T_Nosig, the timeout for entering hunting
 // procedures if no TSCC is received.
 // The spec gives only a range; this value is a library choice.
 // ETSI TS 102 361-4 — Table A.1 (range: 1 s to 15 s)
-const TNosigDefault = 5 * time.Second
+const TNoSignalDefault = 5 * time.Second
 
 // TEmergTimerDefault is the default emergency call timer (T_EMERG_TIMER).
 // The spec gives no default; this value is a library choice.
@@ -305,12 +305,12 @@ const TDeregDefault = 500 * time.Millisecond
 // ETSI TS 102 361-4 — Table A.1 (range: 1 s to 300 s)
 const TBSInactiveDefault = 60 * time.Second
 
-// TDENREGDefault is the default T_DENREG, the denied registration lifetime.
+// TDenRegDefault is the default T_DENREG, the denied registration lifetime.
 // It is coded in steps of 10 s: 0 is inactive, 1 to 1 000 are 10 s to
 // 10 000 s.
 // The spec gives only a range; this value is a library choice.
 // ETSI TS 102 361-4 — Table A.1 (range: 0, or 10 s to 10 000 s)
-const TDENREGDefault = 60 * time.Second
+const TDenRegDefault = 60 * time.Second
 
 // TALSDefault is the default T_ALS, the Ambient Listening Service timer for
 // normal priority calls.
@@ -359,20 +359,20 @@ const NRandNE = 10
 // ETSI TS 102 361-4 — Table A.6
 const NMaint = 4
 
-// NmaxCh is Nmax_Ch, the minimum number of channels in the Short Hunt List.
+// NMaxCh is Nmax_Ch, the minimum number of channels in the Short Hunt List.
 // ETSI TS 102 361-4 — Table A.6
-const NmaxCh = 50
+const NMaxCh = 50
 
 // ChPref is Ch_Pref, the channels that are marked as Preferred TSCC for
 // Vote_Now.
 // ETSI TS 102 361-4 — Table A.6
 const ChPref = 50
 
-// NSYSerrDefault is the default NSYSerr, the number of C_SYScodes received
+// NSysErrDefault is the default NSYSerr, the number of C_SYScodes received
 // that differ from the verified value.
 // The spec gives only a range; this value is a library choice.
 // ETSI TS 102 361-4 — Table A.6 (range: 1 to 3)
-const NSYSerrDefault = 2
+const NSysErrDefault = 2
 
 // DMRLADefault is the default DMRLA, the length of the SYS_AREA information
 // field from the C_SYScode.
@@ -380,11 +380,11 @@ const NSYSerrDefault = 2
 // ETSI TS 102 361-4 — Table A.6 (range: 1 to 10)
 const DMRLADefault = 1
 
-// VoteBlkDefault is the default VOTE_BLK, the number of TDMA frames for which
+// VoteBlockDefault is the default VOTE_BLK, the number of TDMA frames for which
 // the TSCC withdraws random access activity after a Vote Now Advice.
 // The spec gives only a range; this value is a library choice.
 // ETSI TS 102 361-4 — Table A.6 (range: 2 to 10)
-const VoteBlkDefault = 3
+const VoteBlockDefault = 3
 
 // ── A.4 Tier III Gateways/Identifiers ──
 
