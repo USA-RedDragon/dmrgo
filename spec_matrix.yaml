@@ -702,6 +702,9 @@ documents:
               - TestBPTC19696_AllDoubleErrorsCorrected
               - TestBPTC19696_AcceptedOutputIsCodeword
               - TestBPTC19696_ColumnsFirstCorrection
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestBurst_BPTCPayload
 
       - section: "B.2.1"
         title: "Variable length BPTC for embedded signalling"

@@ -269,6 +269,42 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType elements.DataType) (int
 	}
 }
 
+// isBPTCDataType reports whether bursts of dataType carry 96 information
+// bits coded with BPTC(196,96).
+func isBPTCDataType(dataType elements.DataType) bool {
+	switch dataType {
+	case elements.DataTypePIHeader,
+		elements.DataTypeVoiceLCHeader,
+		elements.DataTypeTerminatorWithLC,
+		elements.DataTypeCSBK,
+		elements.DataTypeMBCHeader,
+		elements.DataTypeMBCContinuation,
+		elements.DataTypeDataHeader,
+		elements.DataTypeRate12,
+		elements.DataTypeIdle,
+		elements.DataTypeUnifiedSingleBlock:
+		return true
+	case elements.DataTypeRate34, elements.DataTypeRate1, elements.DataTypeReserved:
+		return false
+	default:
+		return false
+	}
+}
+
+// BPTCPayload returns the 96 information bits of a data burst coded with
+// BPTC(196,96), packed most significant bit first, as DecodeFromBytes
+// corrected them before any CRC or RS(12,9) check, and the BPTC FEC result,
+// which is also FEC.Payload. ok is false for a voice burst, for the Rate 3/4,
+// Rate 1 and reserved data types, which are not BPTC coded, and for a burst
+// that DecodeFromBytes did not decode.
+func (b *Burst) BPTCPayload() (payload [12]byte, result fec.FECResult, ok bool) {
+	if !b.IsData || !isBPTCDataType(b.SlotType.DataType) || b.deinterleavedInfoLen != 96 {
+		return payload, result, false
+	}
+	copy(payload[:], bit.PackBits(b.deinterleavedInfoBits[:96]))
+	return payload, b.FEC.Payload, true
+}
+
 // ToString returns a string representation of the burst.
 func (b *Burst) ToString() string {
 	ret := fmt.Sprintf("{ SyncPattern: %s", enums.SyncPatternToName(b.SyncPattern))

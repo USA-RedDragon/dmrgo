@@ -162,6 +162,34 @@ func flipBurstBits(frame [33]byte, positions ...int) [33]byte {
 	return frame
 }
 
+func TestBurst_BPTCPayload(t *testing.T) {
+	payload := [12]byte{0x03, 0x10, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C, 0x01, 0x02, 0x03}
+	for _, dt := range []elements.DataType{elements.DataTypeCSBK, elements.DataTypeVoiceLCHeader, elements.DataTypeIdle, elements.DataTypeUnifiedSingleBlock} {
+		frame := flipBurstBits(must(layer2.BuildLCDataBurst(payload, dt, 1)), 5)
+		burst, _ := layer2.NewBurstFromBytes(frame)
+		got, res, ok := burst.BPTCPayload()
+		if !ok || got != payload || res.ErrorsCorrected != 1 || res.Uncorrectable || res != burst.FEC.Payload {
+			t.Errorf("%s: payload %x ok=%v result=%+v", elements.DataTypeToName(dt), got, ok, res)
+		}
+	}
+	for _, dt := range []elements.DataType{elements.DataTypeRate34, elements.DataTypeRate1, elements.DataTypeReserved} {
+		burst, _ := layer2.NewBurstFromBytes(must(layer2.BuildLCDataBurst(payload, dt, 1)))
+		if _, _, ok := burst.BPTCPayload(); ok {
+			t.Errorf("%s: ok", elements.DataTypeToName(dt))
+		}
+	}
+	voice, _ := layer2.NewBurstFromBytes(transmission(t, groupLC(enums.StandardizedFID), 1)[1])
+	if _, _, ok := voice.BPTCPayload(); ok || voice.IsData {
+		t.Error("voice burst: ok")
+	}
+	var empty layer2.Burst
+	empty.IsData = true
+	empty.SlotType.DataType = elements.DataTypeCSBK
+	if _, _, ok := empty.BPTCPayload(); ok {
+		t.Error("burst not decoded: ok")
+	}
+}
+
 func TestBurst_SyncTolerance(t *testing.T) {
 	frame := must(layer2.BuildLCDataBurst([12]byte{}, elements.DataTypeIdle, 1))
 
