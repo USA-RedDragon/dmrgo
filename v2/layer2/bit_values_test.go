@@ -48,7 +48,13 @@ var bitFuncs = map[string]any{
 	"layer2.VoiceTransmitter.AddSlots": func(slots ...[72]bit.Bit) ([][33]byte, error) {
 		return voiceTransmitter().AddSlots(slots...)
 	},
-	"layer2.VoiceTransmitter.AddFrames": func(frames ...[49]bit.Bit) ([][33]byte, error) {
+	"layer2.Burst.SetAMBEFrames": func(frames [3]vocoder.AMBEFrame) [3][72]bit.Bit {
+		var b layer2.Burst
+		b.SetAMBEFrames(frames)
+		return b.VoiceSlots
+	},
+	"vocoder.PackAMBEVoice": vocoder.PackAMBEVoice,
+	"layer2.VoiceTransmitter.AddFrames": func(frames ...vocoder.AMBEFrame) ([][33]byte, error) {
 		return voiceTransmitter().AddFrames(frames...)
 	},
 	"crc.CalculateCRC7":                                        crc.CalculateCRC7,
@@ -157,14 +163,12 @@ var bitFuncs = map[string]any{
 	"layer2/pdu.DecodeUnitToUnitVoiceServiceAnswerResponsePDU": pdu.DecodeUnitToUnitVoiceServiceAnswerResponsePDU,
 	"layer2/pdu.DecodeUnitToUnitVoiceServiceRequestPDU":        pdu.DecodeUnitToUnitVoiceServiceRequestPDU,
 	"layer2/pdu.DecodeVNAPContinuation":                        pdu.DecodeVNAPContinuation,
-	"layer2/pdu.DecodeVocoder":                                 pdu.DecodeVocoder,
 	"layer2/pdu.IsPRFill":                                      pdu.IsPRFill,
 	"layer2/pdu.MBCLastBlockCRC":                               pdu.MBCLastBlockCRC,
 	"layer2/pdu.SetMBCLastBlockCRC":                            pdu.SetMBCLastBlockCRC,
 	"layer3.DecodeCdefParms":                                   layer3.DecodeCdefParms,
 	"layer3.DecodeServiceOptions":                              layer3.DecodeServiceOptions,
 	"vocoder.DecodeAMBE72":                                     vocoder.DecodeAMBE72,
-	"vocoder.DecodeVocoderFrame":                               vocoder.DecodeVocoderFrame,
 	"vocoder.EncodeAMBE72":                                     vocoder.EncodeAMBE72,
 }
 
@@ -220,10 +224,13 @@ func takesBits(params *ast.FieldList) bool {
 	found := false
 	for _, p := range params.List {
 		ast.Inspect(p.Type, func(n ast.Node) bool {
-			if sel, ok := n.(*ast.SelectorExpr); ok && sel.Sel.Name == "Bit" {
-				if x, ok := sel.X.(*ast.Ident); ok && x.Name == "bit" {
+			switch n := n.(type) {
+			case *ast.SelectorExpr:
+				if x, ok := n.X.(*ast.Ident); ok && (x.Name == "bit" && n.Sel.Name == "Bit" || x.Name == "vocoder" && n.Sel.Name == "AMBEFrame") {
 					found = true
 				}
+			case *ast.Ident:
+				found = found || n.Name == "AMBEFrame"
 			}
 			return !found
 		})

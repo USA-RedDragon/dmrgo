@@ -6,7 +6,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -38,8 +37,9 @@ func TestBurstEncode_KeepsNonAMBEVoiceSlots(t *testing.T) {
 			if got := must(b.Encode()); got != raw {
 				t.Fatalf("slot %d: decode then Encode changed the burst\ngot  %x\nwant %x", n, got, raw)
 			}
-			for i, f := range b.VoiceData.Frames {
-				if vocoder.EncodeAMBE72(f.DecodedBits) != b.VoiceSlots()[i] {
+			frames, _ := b.AMBEFrames()
+			for i, f := range frames {
+				if vocoder.EncodeAMBE72(f) != b.VoiceSlots[i] {
 					changed++
 				}
 			}
@@ -50,10 +50,9 @@ func TestBurstEncode_KeepsNonAMBEVoiceSlots(t *testing.T) {
 	}
 }
 
-func noisyAMBEBurst(t *testing.T) (clean, noisy [33]byte) {
+func noisyAMBEBurst(t *testing.T) (clean, noisy [33]byte, info [3]vocoder.AMBEFrame) {
 	t.Helper()
 	tx := must(layer2.NewVoiceTransmitter(groupLC(enums.FIDStandardized), 1, layer2.SyncSourceMS, silenceSlot()))
-	var info [3][49]bit.Bit
 	for i := range info {
 		for j := range info[i] {
 			info[i][j] = bit.Bit((i + j*5) >> 1 & 1)
@@ -61,49 +60,24 @@ func noisyAMBEBurst(t *testing.T) (clean, noisy [33]byte) {
 	}
 	clean = must(tx.AddFrames(info[:]...))[0]
 	noisy = flipBurstBits(clean, voiceBurstBit(0, 0), voiceBurstBit(1, 0), voiceBurstBit(2, 0))
-	b := must(layer2.NewBurstFromBytes(noisy))
-	for i, f := range b.VoiceData.Frames {
-		if f.FEC.ErrorsCorrected != 1 || f.FEC.Uncorrectable || f.DecodedBits != info[i] {
-			t.Fatalf("frame %d: FEC %+v; the flipped bit is not one the frame FEC corrects", i, f.FEC)
-		}
-	}
-	return clean, noisy
+	return clean, noisy, info
 }
 
 func TestBurstEncode_AMBEWithCorrectedErrors(t *testing.T) {
-	clean, noisy := noisyAMBEBurst(t)
+	clean, noisy, info := noisyAMBEBurst(t)
 	b := must(layer2.NewBurstFromBytes(noisy))
+	frames, res := b.AMBEFrames()
+	if frames != info || res.ErrorsCorrected != 3 || res.Uncorrectable {
+		t.Fatalf("AMBEFrames = %v %+v, want the sent frames with 3 corrected bits", frames, res)
+	}
 	if got := must(b.Encode()); got != noisy {
-		t.Errorf("unchanged VoiceData: got %x, want the received %x", got, noisy)
+		t.Errorf("decode then Encode: got %x, want the received %x", got, noisy)
 	}
-
-	regen := layer2.Burst{
-		SyncPattern: b.SyncPattern,
-		VoiceData:   b.VoiceData,
+	b.SetAMBEFrames(frames)
+	if got := must(b.Encode()); got != clean {
+		t.Errorf("SetAMBEFrames: got %x, want the regenerated %x", got, clean)
 	}
-	if got := must(regen.Encode()); got != clean {
-		t.Errorf("VoiceData in a new Burst: got %x, want the regenerated %x", got, clean)
-	}
-	if regen.VoiceSlots() != must(layer2.NewBurstFromBytes(clean)).VoiceSlots() {
-		t.Error("VoiceSlots of a hand-built burst are not the slots Encode writes")
-	}
-
-	b.VoiceData.Frames[1].FEC = fec.Result{}
-	if got := must(b.Encode()); got != noisy {
-		t.Error("a frame whose FEC changed but whose bits did not is re-coded")
-	}
-
-	b.VoiceData.Frames[0].DecodedBits[48] ^= 1
-	got := must(layer2.NewBurstFromBytes(must(b.Encode())))
-	slots := got.VoiceSlots()
-	noisySlots := must(layer2.NewBurstFromBytes(noisy)).VoiceSlots()
-	if slots[0] != vocoder.EncodeAMBE72(b.VoiceData.Frames[0].DecodedBits) {
-		t.Error("edited frame 0 is not regenerated")
-	}
-	if slots[1] != noisySlots[1] || slots[2] != noisySlots[2] {
-		t.Error("unedited frames 1 and 2 are not kept as received")
-	}
-	if b.VoiceSlots() != slots {
-		t.Error("VoiceSlots of an edited burst are not the slots Encode writes")
+	if b.VoiceSlots != must(layer2.NewBurstFromBytes(clean)).VoiceSlots {
+		t.Error("VoiceSlots after SetAMBEFrames are not the clean slots")
 	}
 }

@@ -29,7 +29,6 @@ documents:
           - v2/vocoder/frame.go
           - v2/vocoder/codec.go
           - v2/layer2/voice_superframe.go
-          - v2/layer2/pdu/vocoder.go
           - v2/fec/golay/golay_23_12_7.go
           - v2/fec/golay/golay_24_12_8.go
           - v2/enums/voice_burst_types.go
@@ -41,7 +40,6 @@ documents:
               - TestScrambleTableDistribution
               - TestCodecRegistry
               - TestCodecRegistryFactoryError
-              - TestAMBE72MatchesVocoderFrame
               - TestAMBE72RoundTrip
               - TestAMBE72CorrectsErrors
               - TestAMBEVoice_IPSCCapture

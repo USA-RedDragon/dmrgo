@@ -65,25 +65,6 @@ func (s SyncSource) SyncPatterns() (voice, data enums.SyncPattern, ok bool) {
 	return 0, 0, false
 }
 
-// VoiceSlots returns the three 72-bit vocoder slots of a voice burst that
-// Encode writes: slot i is voice bits 72i to 72i+71, where voice bits 0 to
-// 107 are burst bits 0 to 107 and voice bits 108 to 215 are burst bits 156
-// to 263. A slot is as received, before any FEC, while the DecodedBits of
-// its frame in VoiceData are those that DecodeFromBytes decoded, and
-// vocoder.EncodeAMBE72 of the frame otherwise. If a frame does not encode,
-// all three slots are zero.
-func (b *Burst) VoiceSlots() [VoiceSlotsPerBurst][72]bit.Bit {
-	voice, err := b.voiceBits()
-	if err != nil {
-		voice = [216]bit.Bit{}
-	}
-	var slots [VoiceSlotsPerBurst][72]bit.Bit
-	for i := range slots {
-		copy(slots[i][:], voice[i*72:(i+1)*72])
-	}
-	return slots
-}
-
 // VoiceTransmitter builds the bursts of one voice transmission from a
 // stream of 72-bit vocoder slots. Each call returns the bursts it completed,
 // one burst for every three slots, so a caller that adds three slots every
@@ -184,9 +165,9 @@ func (t *VoiceTransmitter) AddSlots(slots ...[72]bit.Bit) ([][33]byte, error) {
 	return out, nil
 }
 
-// AddFrames adds 49-bit AMBE frames in transmit order, each as the slot
+// AddFrames adds AMBE+2 frames in transmit order, each as the slot
 // vocoder.EncodeAMBE72 returns, and returns the voice bursts they complete.
-func (t *VoiceTransmitter) AddFrames(frames ...[49]bit.Bit) ([][33]byte, error) {
+func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([][33]byte, error) {
 	slots := make([][72]bit.Bit, len(frames))
 	for i, frame := range frames {
 		slots[i] = vocoder.EncodeAMBE72(frame)

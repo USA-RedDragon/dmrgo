@@ -171,10 +171,7 @@ func (b *Burst) decodeVoiceAt(pos enums.VoiceBurstType, sync enums.SyncPattern, 
 			b.FEC.RC = rcFEC
 		}
 	}
-	b.VoiceData = parseVoiceBits(b.bitData)
-	b.FEC.Voice = b.VoiceData.FECResult()
-	b.decodedVoice = b.VoiceData
-	b.hasVoiceSlots = true
+	b.VoiceSlots = parseVoiceSlots(b.bitData)
 }
 
 func (b *Burst) decodeDataFrame(dataType *enums.DataType) error {

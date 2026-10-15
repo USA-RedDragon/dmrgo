@@ -6,21 +6,15 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec/golay"
 )
 
-// VocoderFrame is one decoded AMBE+2 vocoder frame: the 49 information bits
-// and the FEC result of the frame FEC. FEC.Uncorrectable reflects only
-// section A; see DecodeAMBE72.
-//
-// dmr:fec ambe_voice
-type VocoderFrame struct {
-	DecodedBits [49]bit.Bit `dmr:"bits:0-48,raw"`
-	FEC         fec.Result  `dmr:"-"`
-}
+// AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame,
+// without the frame FEC.
+type AMBEFrame [49]bit.Bit
 
 // EncodeAMBE72 applies the AMBE+2 frame FEC to 49 vocoder information bits
 // and returns the 72 on-air bits of one vocoder frame: Golay(24,12) on the
 // first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits
 // unprotected, interleaved into the slot.
-func EncodeAMBE72(info [49]bit.Bit) [72]bit.Bit {
+func EncodeAMBE72(info AMBEFrame) [72]bit.Bit {
 	bit.Mask(info[:])
 	return encodeAMBE(info)
 }
@@ -37,9 +31,10 @@ func EncodeAMBE72(info [49]bit.Bit) [72]bit.Bit {
 // A and B, parity bits included. mbelib, for example, repeats the last frame
 // when errs2 is above 3; errs2 counts only the corrected data bits of
 // sections A and B, and mbelib does not check the section A parity bit.
-func DecodeAMBE72(slot [72]bit.Bit) ([49]bit.Bit, fec.Result) {
+func DecodeAMBE72(slot [72]bit.Bit) (AMBEFrame, fec.Result) {
 	bit.Mask(slot[:])
-	return decodeAMBE(slot)
+	info, res := decodeAMBE(slot)
+	return AMBEFrame(info), res
 }
 
 // encodeAMBE takes the decoded 49 bits and encodes them into a 72 bit AMBE frame.

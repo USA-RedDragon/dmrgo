@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -65,7 +66,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 	frame := [33]byte(raw)
 
 	def := must(layer2.NewBurstFromBytes(frame))
-	if def.SyncPattern != enums.SyncMSSourcedRC || def.FEC.Voice.BitsChecked != 0 {
+	if def.SyncPattern != enums.SyncMSSourcedRC || def.VoiceSlots != ([3][72]bit.Bit{}) {
 		t.Fatalf("DecodeFromBytes no longer takes this burst as RC: %s", def.String())
 	}
 
@@ -77,12 +78,11 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 	if b.IsData || b.VoiceBurst != enums.VoiceBurstD || !b.HasEmbeddedSignalling || b.SyncPattern != enums.SyncEmbeddedSignalling {
 		t.Fatalf("not decoded as voice burst D: %s", b.String())
 	}
-	if b.FEC.Voice.BitsChecked == 0 || b.FEC.Voice.ErrorsCorrected != 0 || b.FEC.Voice.Uncorrectable {
-		t.Fatalf("AMBE not clean: %+v", b.FEC.Voice)
+	if _, res := b.AMBEFrames(); res.BitsChecked == 0 || res.ErrorsCorrected != 0 || res.Uncorrectable {
+		t.Fatalf("AMBE not clean: %+v", res)
 	}
-	t.Logf("voice FEC %+v", b.FEC.Voice)
 	r := layer2.RawBurst(frame)
-	if packSlots(b.VoiceSlots()) != r.VoiceSlots() {
+	if packSlots(b.VoiceSlots) != r.VoiceSlots() {
 		t.Fatal("voice slots differ from the frame")
 	}
 	enc := layer2.RawBurst(must(b.Encode()))
@@ -168,7 +168,7 @@ func TestDecodeFromBytesWith_KnownVoiceA(t *testing.T) {
 		if err := b.DecodeFromBytesWith(six, layer2.DecodeOptions{Frame: layer2.FrameType{Kind: layer2.FrameKindVoice, VoiceBurst: enums.VoiceBurstA}}); err != nil {
 			t.Fatal(err)
 		}
-		if b.VoiceBurst != enums.VoiceBurstA || b.SyncPattern != clean.SyncPattern || b.SyncDistance != 6 || b.HasEmbeddedSignalling || b.VoiceData != clean.VoiceData {
+		if b.VoiceBurst != enums.VoiceBurstA || b.SyncPattern != clean.SyncPattern || b.SyncDistance != 6 || b.HasEmbeddedSignalling || b.VoiceSlots != clean.VoiceSlots {
 			t.Fatalf("burst A: %s", b.String())
 		}
 		if err := b.DecodeFromBytesWith(frame, layer2.DecodeOptions{Frame: layer2.FrameType{Kind: layer2.FrameKindVoice}}); err != nil || b.VoiceBurst != enums.VoiceBurstA {

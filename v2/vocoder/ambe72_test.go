@@ -43,23 +43,6 @@ func voiceSlots(t *testing.T) [][72]bit.Bit {
 	return slots
 }
 
-func TestAMBE72MatchesVocoderFrame(t *testing.T) {
-	for i, slot := range voiceSlots(t) {
-		info, res := vocoder.DecodeAMBE72(slot)
-		frame, frameRes := vocoder.DecodeVocoderFrame(slot)
-		if info != frame.DecodedBits || res != frameRes {
-			t.Fatalf("slot %d: DecodeAMBE72 differs from DecodeVocoderFrame", i)
-		}
-		want, err := frame.Encode()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got := vocoder.EncodeAMBE72(info); got != want {
-			t.Fatalf("slot %d: EncodeAMBE72 differs from EncodeVocoderFrame", i)
-		}
-	}
-}
-
 func TestAMBE72RoundTrip(t *testing.T) {
 	clean := 0
 	for i, slot := range voiceSlots(t) {

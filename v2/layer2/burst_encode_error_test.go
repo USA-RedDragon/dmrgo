@@ -155,10 +155,10 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 // A voice burst encodes its vocoder frames from the SYNC pattern and the
 // embedded signalling alone; VoiceBurst does not select the payload.
 func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
-	var voice pdu.Vocoder
-	for i := range voice.Frames {
-		for j := range voice.Frames[i].DecodedBits {
-			voice.Frames[i].DecodedBits[j] = bit.Bit((i + j) & 1)
+	var voice [3][72]bit.Bit
+	for i := range voice {
+		for j := range voice[i] {
+			voice[i][j] = bit.Bit((i + j) & 1)
 		}
 	}
 	for _, sync := range []enums.SyncPattern{enums.SyncBSSourcedVoice, enums.SyncReserved, enums.SyncEmbeddedSignalling} {
@@ -167,7 +167,7 @@ func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 				SyncPattern:           sync,
 				HasEmbeddedSignalling: sync == enums.SyncEmbeddedSignalling,
 				EmbeddedSignalling:    pdu.EmbeddedSignalling{ColorCode: 3, LCSS: enums.LCSSFirstFragment},
-				VoiceData:             voice,
+				VoiceSlots:            voice,
 			}
 			got, err := layer2.NewBurstFromBytes(must(b.Encode()))
 			if err != nil {
@@ -176,10 +176,8 @@ func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 			if got.IsData || got.SyncPattern != sync {
 				t.Fatalf("decoded IsData=%v SyncPattern=%s", got.IsData, got.SyncPattern.String())
 			}
-			for i := range voice.Frames {
-				if got.VoiceData.Frames[i].DecodedBits != voice.Frames[i].DecodedBits {
-					t.Errorf("frame %d: got %v, want %v", i, got.VoiceData.Frames[i].DecodedBits, voice.Frames[i].DecodedBits)
-				}
+			if got.VoiceSlots != voice {
+				t.Errorf("voice slots: got %v, want %v", got.VoiceSlots, voice)
 			}
 		})
 	}

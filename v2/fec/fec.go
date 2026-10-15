@@ -91,12 +91,13 @@ func (b *BERCalculator) Reset() {
 	*b = BERCalculator{}
 }
 
-// BurstFECStats holds per-layer FEC results for a single DMR burst.
+// BurstFECStats holds per-layer FEC results for a single DMR burst. It has
+// no voice layer: the vocoder FEC is codec specific, and a caller that
+// decodes AMBE+2 frames adds their result (layer2.Burst.AMBEFrames).
 type BurstFECStats struct {
 	SlotType Result // Golay(20,8,7) — 20 bits
 	EMB      Result // QR(16,7,6) — 16 bits (voice bursts only)
 	Payload  Result // BPTC/Trellis/Rate1 — 196/196/0 bits
-	Voice    Result // Golay(24,12,8)+Golay(23,12,7) summed across 3 frames, 141 bits (voice only)
 	// PDU is the RS(12,9) correction (96 bits) or the CRC check (0 bits) of
 	// the information bits that the Payload code returned (FLC/CSBK/DataHeader).
 	PDU Result
@@ -107,7 +108,7 @@ type BurstFECStats struct {
 // PDU bits are a subset of the Payload bits, so Aggregate counts the errors
 // that the PDU layer corrected but not its BitsChecked.
 func (s BurstFECStats) Aggregate() Result {
-	agg := s.SlotType.Combine(s.EMB).Combine(s.Payload).Combine(s.Voice).Combine(s.RC)
+	agg := s.SlotType.Combine(s.EMB).Combine(s.Payload).Combine(s.RC)
 	agg.ErrorsCorrected += s.PDU.ErrorsCorrected
 	agg.Uncorrectable = agg.Uncorrectable || s.PDU.Uncorrectable
 	return agg

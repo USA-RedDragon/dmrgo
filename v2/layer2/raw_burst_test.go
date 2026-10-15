@@ -106,7 +106,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 		}
 		if b.SyncPattern != enums.SyncMSSourcedRC {
 			counts["voice"]++
-			if got := r.VoiceSlots(); got != packSlots(b.VoiceSlots()) {
+			if got := r.VoiceSlots(); got != packSlots(b.VoiceSlots) {
 				t.Errorf("%x: VoiceSlots %x", frame, got)
 			}
 		}

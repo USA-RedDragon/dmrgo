@@ -85,7 +85,7 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 	if b.IsData {
 		t.Fatalf("burst %d is data", i)
 	}
-	if b.VoiceSlots() != slots {
+	if b.VoiceSlots != slots {
 		t.Errorf("burst %d: voice slots differ", i)
 	}
 	pos := i % 6
@@ -173,7 +173,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 
 func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
-	frames := make([][49]bit.Bit, 3)
+	frames := make([]vocoder.AMBEFrame, 3)
 	slots := make([][72]bit.Bit, 3)
 	for i := range frames {
 		for j := range frames[i] {
@@ -189,9 +189,13 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 		t.Fatalf("AddFrames %x, AddSlots %x", got, want)
 	}
 	burst := must(layer2.NewBurstFromBytes(got[0]))
+	decoded, res := burst.AMBEFrames()
+	if res.HasErrors() {
+		t.Errorf("AMBE FEC %+v", res)
+	}
 	for i := range frames {
-		if burst.VoiceData.Frames[i].DecodedBits != frames[i] || burst.VoiceData.Frames[i].FEC.HasErrors() {
-			t.Errorf("frame %d: decoded %v", i, burst.VoiceData.Frames[i].DecodedBits)
+		if decoded[i] != frames[i] {
+			t.Errorf("frame %d: decoded %v", i, decoded[i])
 		}
 	}
 }
@@ -351,16 +355,13 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 				t.Errorf("header\ngot  %x\nwant %x", tx.Header(), raws[0])
 			}
 			for _, i := range kept {
-				slots := bursts[i].VoiceSlots()
+				slots := bursts[i].VoiceSlots
 				got := must(tx.AddSlots(slots[:]...))
 				if len(got) != 1 || got[0] != raws[i] {
 					t.Errorf("burst %d\ngot  %x\nwant %x", i, got, raws[i])
 				}
 
-				var decoded [3][49]bit.Bit
-				for j, f := range bursts[i].VoiceData.Frames {
-					decoded[j] = f.DecodedBits
-				}
+				decoded, voiceFEC := bursts[i].AMBEFrames()
 				fromFrames := must(frames.AddFrames(decoded[:]...))
 				if len(fromFrames) != 1 {
 					t.Fatalf("burst %d: %d bursts from frames", i, len(fromFrames))
@@ -368,12 +369,10 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 				if got := must(bursts[i].Encode()); got != raws[i] {
 					t.Errorf("burst %d: decode then Encode changed the burst\ngot  %x\nwant %x", i, got, raws[i])
 				}
-				if n := bursts[i].FEC.Voice.ErrorsCorrected; n != 0 {
+				if n := voiceFEC.ErrorsCorrected; n != 0 {
 					regen := must(layer2.NewBurstFromBytes(fromFrames[0]))
-					for j, f := range regen.VoiceData.Frames {
-						if f.DecodedBits != decoded[j] || f.FEC.ErrorsCorrected != 0 {
-							t.Errorf("burst %d frame %d: the frame path did not regenerate a clean frame", i, j)
-						}
+					if f, r := regen.AMBEFrames(); f != decoded || r.ErrorsCorrected != 0 {
+						t.Errorf("burst %d: the frame path did not regenerate clean frames", i)
 					}
 					t.Logf("burst %d: the capture has %d voice bit errors, which the frame path corrects", i, n)
 				} else if fromFrames[0] != raws[i] {

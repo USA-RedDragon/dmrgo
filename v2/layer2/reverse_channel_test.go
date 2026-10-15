@@ -284,8 +284,8 @@ func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
 	if burst.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest || burst.FEC.RC.Uncorrectable {
 		t.Errorf("RC: %s", burst.ReverseChannel.String())
 	}
-	if burst.FEC.Voice.BitsChecked != 0 {
-		t.Errorf("standalone RC burst should not parse voice, Voice FEC %+v", burst.FEC.Voice)
+	if burst.VoiceSlots != ([3][72]bit.Bit{}) {
+		t.Error("standalone RC burst should not parse voice")
 	}
 
 	if got := must(burst.Encode()); got != frame {

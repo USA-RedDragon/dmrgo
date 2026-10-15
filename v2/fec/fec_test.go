@@ -11,7 +11,6 @@ func TestBERCalculator_AddBurstMatchesAggregate(t *testing.T) {
 		SlotType: fec.Result{BitsChecked: 20, ErrorsCorrected: 1},
 		EMB:      fec.Result{BitsChecked: 16, ErrorsCorrected: 2},
 		Payload:  fec.Result{BitsChecked: 196, ErrorsCorrected: 3},
-		Voice:    fec.Result{BitsChecked: 144, ErrorsCorrected: 4},
 		PDU:      fec.Result{BitsChecked: 96, ErrorsCorrected: 5},
 		RC:       fec.Result{BitsChecked: 32, ErrorsCorrected: 6},
 	}
@@ -23,8 +22,8 @@ func TestBERCalculator_AddBurstMatchesAggregate(t *testing.T) {
 		t.Errorf("AddBurst totals %d/%d, Aggregate %d/%d",
 			b.TotalErrors(), b.TotalBitsChecked(), agg.ErrorsCorrected, agg.BitsChecked)
 	}
-	if b.TotalBitsChecked() != 408 || b.TotalErrors() != 21 {
-		t.Errorf("totals %d errors / %d bits, want 21 / 408", b.TotalErrors(), b.TotalBitsChecked())
+	if b.TotalBitsChecked() != 264 || b.TotalErrors() != 17 {
+		t.Errorf("totals %d errors / %d bits, want 17 / 264", b.TotalErrors(), b.TotalBitsChecked())
 	}
 }
 

@@ -88,18 +88,13 @@ func TestBurst_Encode(t *testing.T) {
 				encoded2 := must(burst2.Encode())
 
 				if !bytes.Equal(encoded[:], encoded2[:]) {
-					t.Errorf("Burst %d stability mismatch:\nfirst  %x\nsecond %x\nSync: %v\nVoice: %v\nHasEmbSig: %v\nCorrected Errors: %d\nUncorrectable: %v",
+					t.Errorf("Burst %d stability mismatch:\nfirst  %x\nsecond %x\nSync: %v\nVoice: %v\nHasEmbSig: %v",
 						i, encoded, encoded2,
 						burst.SyncPattern,
 						burst.VoiceBurst,
-						burst.HasEmbeddedSignalling,
-						burst.VoiceData.CorrectedErrors(),
-						burst.VoiceData.Uncorrectable())
+						burst.HasEmbeddedSignalling)
 				} else if !bytes.Equal(data[:], encoded[:]) {
 					t.Logf("Burst %d input differed from stable encoding (expected for captured data)", i)
-					if !burst.IsData {
-						t.Logf("Corrected Errors: %d, Uncorrectable: %v", burst.VoiceData.CorrectedErrors(), burst.VoiceData.Uncorrectable())
-					}
 					t.Logf("Input:   %x", data)
 					t.Logf("Encoded: %x", encoded)
 				}

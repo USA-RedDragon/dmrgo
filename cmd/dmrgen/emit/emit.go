@@ -16,7 +16,6 @@ import (
 
 const (
 	fecFieldName = "FEC"
-	ambeCodec    = "ambe_voice"
 	qrPkg        = "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
 	encodeFnName = "Encode"
 
@@ -96,14 +95,6 @@ var fecCodecs = map[string]FECCodecInfo{
 		PackedBytes: true,
 		TotalBytes:  12,
 		DataBytes:   9,
-	},
-	ambeCodec: {
-		// AMBE voice codec: 72 scattered input bits → 49 decoded bits
-		// Handled as a special case in emitDecode/emitEncode.
-		// The actual algorithm lives in private helpers (decodeAMBE/encodeAMBE)
-		// within the vocoder package.
-		InputSize: 72,
-		DataBits:  49,
 	},
 	"hamming_7_4_3": {
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
@@ -219,14 +210,6 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		hasCRC := pdu.CRC != nil
 		hasPackedFEC := codec != nil && codec.PackedBytes
 		hasBitFEC := codec != nil && !codec.PackedBytes
-		isAMBE := codec != nil && pdu.FEC.Codec == ambeCodec
-
-		if isAMBE {
-			// AMBE voice codec: delegate to private decodeAMBE helper
-			emitAMBEVoiceDecode(g, pdu)
-			return
-		}
-
 		if hasCRC || hasPackedFEC {
 			// Check if the CRC is byte-level (needs packing) or bit-level
 			isBitCRC := false
@@ -637,40 +620,6 @@ func emitDispatchConstant(val string, pdu parse.PDUStruct) Code {
 	return Id(val)
 }
 
-// emitAMBEVoiceDecode generates the decode body for the AMBE voice codec.
-// It delegates to the private decodeAMBE helper in the vocoder package
-// and assigns the decoded bits and FEC result to the struct fields.
-func emitAMBEVoiceDecode(g *Group, pdu parse.PDUStruct) {
-	// Find the data field (the non-FEC, non-skip field)
-	var dataFieldName string
-	for _, f := range pdu.Fields {
-		if f.Name != fecFieldName {
-			dataFieldName = f.Name
-			break
-		}
-	}
-
-	g.List(Id("_decoded"), Id("fecResult")).Op(":=").Id("decodeAMBE").Call(Id("data"))
-	g.Id("result").Dot(dataFieldName).Op("=").Id("_decoded")
-	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
-	g.Return(Id("result"), Id("fecResult"))
-}
-
-// emitAMBEVoiceEncode generates the encode body for the AMBE voice codec.
-// It delegates to the private encodeAMBE helper in the vocoder package.
-func emitAMBEVoiceEncode(g *Group, pdu parse.PDUStruct) {
-	// Find the data field (the non-FEC, non-skip field)
-	var dataFieldName string
-	for _, f := range pdu.Fields {
-		if f.Name != fecFieldName {
-			dataFieldName = f.Name
-			break
-		}
-	}
-
-	g.Return(Id("encodeAMBE").Call(Id("s").Dot(dataFieldName)), Nil())
-}
-
 // emitString generates a String() method for a PDU struct.
 // Simple structs (no dispatch/stride) use a single fmt.Sprintf.
 // Structs with dispatch or stride fields use string concatenation.
@@ -1017,7 +966,6 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 	hasCRC := pdu.CRC != nil
 	hasPackedFEC := codec != nil && codec.PackedBytes
 	hasBitFEC := codec != nil && !codec.PackedBytes
-	isAMBE := codec != nil && pdu.FEC != nil && pdu.FEC.Codec == ambeCodec
 
 	// Output is the full codeword size
 	outputSize := pdu.InputSize
@@ -1032,9 +980,6 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 		Error(),
 	).BlockFunc(func(g *Group) {
 		switch {
-		case isAMBE:
-			// AMBE voice codec: delegate to private encodeAMBE helper
-			emitAMBEVoiceEncode(g, pdu)
 		case hasBitFEC:
 			// Bit-level FEC (Golay, QR): build data bits, then FEC-encode
 			g.Var().Id("data").Index(Lit(codec.DataBits)).Qual(bitPkg, "Bit")

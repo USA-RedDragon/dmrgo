@@ -100,7 +100,7 @@ func TestBurstRoundTrip(t *testing.T) {
 				embedded++
 				checkLC(t, "embedded LC", &lc, c.FID())
 			}
-			for _, s := range b.VoiceSlots() {
+			for _, s := range b.VoiceSlots {
 				slots = append(slots, s)
 			}
 		}

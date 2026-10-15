@@ -24,8 +24,8 @@ func TestAMBEVoice_IPSCCapture(t *testing.T) {
 	frames := vocoder.UnpackAMBEVoice(data)
 	silence := bit.UnpackBits([]byte{0xF8, 0x01, 0xA9, 0x9F, 0x8C, 0xE0, 0x80})[:49]
 	for k, f := range frames {
-		if string(bit.PackBits(f.DecodedBits[:])) != string(bit.PackBits(silence)) {
-			t.Errorf("frame %d: % X, want the AMBE+2 silence frame", k, bit.PackBits(f.DecodedBits[:]))
+		if string(bit.PackBits(f[:])) != string(bit.PackBits(silence)) {
+			t.Errorf("frame %d: % X, want the AMBE+2 silence frame", k, bit.PackBits(f[:]))
 		}
 	}
 	if got := vocoder.PackAMBEVoice(frames); got != data {
@@ -36,10 +36,10 @@ func TestAMBEVoice_IPSCCapture(t *testing.T) {
 func TestAMBEVoice_RoundTrip(t *testing.T) {
 	r := rand.New(rand.NewSource(4))
 	for n := 0; n < 1000; n++ {
-		var frames [3]vocoder.VocoderFrame
+		var frames [3]vocoder.AMBEFrame
 		for k := range frames {
-			for i := range frames[k].DecodedBits {
-				frames[k].DecodedBits[i] = bit.Bit(r.Intn(2))
+			for i := range frames[k] {
+				frames[k][i] = bit.Bit(r.Intn(2))
 			}
 		}
 		data := vocoder.PackAMBEVoice(frames)
@@ -74,7 +74,8 @@ func TestAMBEVoice_VoiceBurst(t *testing.T) {
 	if err != nil || burst.IsData {
 		t.Fatalf("voice burst: %v", err)
 	}
-	payload := vocoder.PackAMBEVoice(burst.VoiceData.Frames)
+	frames, _ := burst.AMBEFrames()
+	payload := vocoder.PackAMBEVoice(frames)
 	if got := hex.EncodeToString(payload[:]); got != "f813d9918ca7be04f6314102af81329c504fb8" {
 		t.Errorf("AMBE payload %s", got)
 	}

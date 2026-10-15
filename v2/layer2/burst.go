@@ -10,6 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // Burst represents a DMR burst.
@@ -26,11 +27,12 @@ type Burst struct {
 	// F from the superframe sequence. Encode ignores it.
 	VoiceBurst enums.VoiceBurstType
 
-	// VoiceData holds the three voice slots decoded as AMBE+2 frames. Encode
-	// writes a slot as received while the DecodedBits of its frame are
-	// unchanged, and codes the frame with vocoder.EncodeAMBE72 otherwise; see
-	// Encode.
-	VoiceData pdu.Vocoder
+	// VoiceSlots holds the three 72-bit vocoder slots of a voice burst as
+	// received, before any FEC: slot i is voice bits 72i to 72i+71, where
+	// voice bits 0 to 107 are burst bits 0 to 107 and voice bits 108 to 215
+	// are burst bits 156 to 263. Encode writes them as they are. The slots
+	// are codec specific; AMBEFrames decodes AMBE+2 slots.
+	VoiceSlots [VoiceSlotsPerBurst][72]bit.Bit
 
 	HasSlotType bool
 	SlotType    pdu.SlotType
@@ -52,8 +54,6 @@ type Burst struct {
 	bitData               [264]bit.Bit
 	decodedData           Data
 	decodedDataType       enums.DataType
-	decodedVoice          pdu.Vocoder
-	hasVoiceSlots         bool
 	deinterleavedInfoBits [196]bit.Bit
 	deinterleavedInfoLen  int
 }
@@ -109,10 +109,7 @@ func (b *Burst) DecodeFromBytes(data [33]byte) error {
 	}
 
 	if !b.IsData {
-		b.VoiceData = parseVoiceBits(b.bitData)
-		b.FEC.Voice = b.VoiceData.FECResult()
-		b.decodedVoice = b.VoiceData
-		b.hasVoiceSlots = true
+		b.VoiceSlots = parseVoiceSlots(b.bitData)
 		return nil
 	}
 
@@ -235,12 +232,38 @@ func parseSlotType(bitData [264]bit.Bit) pdu.SlotType {
 	return st
 }
 
-func parseVoiceBits(bitData [264]bit.Bit) pdu.Vocoder {
-	var voiceBits [216]bit.Bit
-	copy(voiceBits[:108], bitData[:108])
-	copy(voiceBits[108:], bitData[156:264])
-	decoded, _ := pdu.DecodeVocoder(voiceBits)
-	return decoded
+func parseVoiceSlots(bitData [264]bit.Bit) [VoiceSlotsPerBurst][72]bit.Bit {
+	var voice [216]bit.Bit
+	copy(voice[:108], bitData[:108])
+	copy(voice[108:], bitData[156:264])
+	var slots [VoiceSlotsPerBurst][72]bit.Bit
+	for i := range slots {
+		copy(slots[i][:], voice[i*72:(i+1)*72])
+	}
+	return slots
+}
+
+// AMBEFrames decodes the three voice slots as AMBE+2 frames and returns them
+// with the combined FEC result of the frame FEC (vocoder.DecodeAMBE72). The
+// result is meaningful only for a burst that carries AMBE+2 voice; the
+// slots of another codec decode to noise.
+func (b *Burst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result) {
+	var frames [VoiceSlotsPerBurst]vocoder.AMBEFrame
+	var result fec.Result
+	for i, slot := range b.VoiceSlots {
+		f, r := vocoder.DecodeAMBE72(slot)
+		frames[i] = f
+		result = result.Combine(r)
+	}
+	return frames, result
+}
+
+// SetAMBEFrames sets the three voice slots to the AMBE+2 coding of frames
+// (vocoder.EncodeAMBE72).
+func (b *Burst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
+	for i, f := range frames {
+		b.VoiceSlots[i] = vocoder.EncodeAMBE72(f)
+	}
 }
 
 func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
@@ -342,7 +365,7 @@ func (b *Burst) String() string {
 			ret += fmt.Sprintf("Data: %v, ", b.Data.String())
 		}
 	} else if b.SyncPattern != enums.SyncMSSourcedRC {
-		ret += fmt.Sprintf("VoiceBurst: %v, Voice Data: %v, ", b.VoiceBurst.String(), b.VoiceData.String())
+		ret += fmt.Sprintf("VoiceBurst: %v, ", b.VoiceBurst.String())
 	}
 
 	ret += fmt.Sprintf("IsData: %v }", b.IsData)
@@ -484,14 +507,9 @@ func (b *Burst) extractData() (Data, error) {
 // R(3..0) bits and the Rate 1 pad bits are set to zero (ETSI TS 102 361-1
 // B.1.1, B.2.5), so Encode writes zero there.
 //
-// A voice burst carries three 72-bit vocoder slots. For a burst from
-// DecodeFromBytes, Encode writes each slot as received while the
-// DecodedBits of its frame in VoiceData equal those that DecodeFromBytes
-// decoded, so a slot of a codec other than AMBE+2, or an AMBE+2 frame with
-// bit errors, goes out unchanged. Encode codes a changed frame, and every
-// frame of a burst built by hand, with vocoder.EncodeAMBE72, which also
-// gives a frame that the decoder corrected clean FEC bits. To regenerate
-// every frame of a decoded burst, copy its VoiceData into a new Burst.
+// A voice burst carries VoiceSlots as they are, so a slot of any codec, or
+// an AMBE+2 frame with bit errors, goes out unchanged. SetAMBEFrames codes
+// AMBE+2 frames into the slots.
 func (b *Burst) Encode() ([33]byte, error) {
 	if b.SyncPattern == enums.SyncMSSourcedRC {
 		bitData, err := b.encodeStandaloneRC()
@@ -524,10 +542,7 @@ func (b *Burst) Encode() ([33]byte, error) {
 		copy(bitData[:98], dataBits[:98])
 		copy(bitData[166:264], dataBits[98:196])
 	} else {
-		voiceBits, err := b.voiceBits()
-		if err != nil {
-			return [33]byte{}, err
-		}
+		voiceBits := b.voiceBits()
 		copy(bitData[:108], voiceBits[:108])
 		copy(bitData[156:264], voiceBits[108:216])
 	}
@@ -552,23 +567,13 @@ func (b *Burst) Encode() ([33]byte, error) {
 	return bit.PackBits264(bitData), nil
 }
 
-// voiceBits returns the 216 voice bits that Encode writes, as described
-// there.
-func (b *Burst) voiceBits() ([216]bit.Bit, error) {
+// voiceBits returns the 216 voice bits of VoiceSlots.
+func (b *Burst) voiceBits() [216]bit.Bit {
 	var voice [216]bit.Bit
-	copy(voice[:108], b.bitData[:108])
-	copy(voice[108:], b.bitData[156:264])
-	for i := range b.VoiceData.Frames {
-		if b.hasVoiceSlots && b.VoiceData.Frames[i].DecodedBits == b.decodedVoice.Frames[i].DecodedBits {
-			continue
-		}
-		slot, err := b.VoiceData.Frames[i].Encode()
-		if err != nil {
-			return voice, fmt.Errorf("cannot encode voice: VoiceData.Frames[%d]: %w", i, err)
-		}
+	for i, slot := range b.VoiceSlots {
 		copy(voice[i*72:(i+1)*72], slot[:])
 	}
-	return voice, nil
+	return voice
 }
 
 func (b *Burst) checkCentre() error {

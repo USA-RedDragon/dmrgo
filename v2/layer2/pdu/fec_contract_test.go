@@ -6,30 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
-
-func TestDecodeVocoder_AggregatesFrames(t *testing.T) {
-	var data [216]bit.Bit
-	for i := range 3 {
-		var info [49]bit.Bit
-		info[i] = 1
-		slot := vocoder.EncodeAMBE72(info)
-		copy(data[i*72:], slot[:])
-	}
-	data[5] ^= 1
-	data[72+5] ^= 1
-	data[144+5] ^= 1
-
-	v, res := pdu.DecodeVocoder(data)
-	want := fec.Result{BitsChecked: 141, ErrorsCorrected: 3}
-	if res != want {
-		t.Errorf("DecodeVocoder result %+v, want %+v", res, want)
-	}
-	if v.FECResult() != res {
-		t.Errorf("Vocoder.FECResult() %+v, want %+v", v.FECResult(), res)
-	}
-}
 
 func TestCRCOnlyPDUReportsDetectionOnly(t *testing.T) {
 	var zero [96]bit.Bit
