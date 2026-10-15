@@ -37,8 +37,8 @@ var (
 // *pdu.Rate12Data, *pdu.Rate34Data or *pdu.Rate1Data with DataType set, ready
 // for the matching pdu Encode function.
 type Packet struct {
-	Header pdu.DataHeader
-	Blocks []layer2.Data
+	Header pdu.DataHeader // the data header that starts the packet
+	Blocks []layer2.Data  // the data blocks that follow the header
 }
 
 // blockOctets returns the user data octets of one block: 12, 18 or 24 for

@@ -15,7 +15,7 @@ const crc9MaskRate34 uint16 = 0x1FF
 // as user data. Confirmed data (Table 9.11) carries a 7-bit DBSN, a 9-bit
 // CRC-9 and 128 bits of user data; use the Confirmed* methods for it.
 type Rate34Data struct {
-	Data [18]byte `dmr:"bits:0-143,packed"`
+	Data [18]byte `dmr:"bits:0-143,packed"` // the 144 block bits, most significant bit first
 }
 
 // DataType returns enums.DataTypeRate34.

@@ -69,6 +69,7 @@ func (k Kind) String() string {
 
 // Burst represents a DMR burst.
 type Burst struct {
+	// Kind is the kind of the burst.
 	Kind Kind
 	// SyncPattern is the Table 9.2 pattern in the burst centre, or
 	// enums.SyncNone when the centre carries embedded signalling, as in
@@ -76,9 +77,11 @@ type Burst struct {
 	// burst has enums.SyncMSSourcedRC.
 	SyncPattern enums.SyncPattern
 	// NearestSync is the Table 9.2 pattern nearest to the received centre
-	// field and SyncDistance its Hamming distance, whatever the
-	// classification. DecodeFromBytes sets them; Encode ignores them.
-	NearestSync  enums.SyncPattern
+	// field, whatever the classification. DecodeFromBytes sets it; Encode
+	// ignores it.
+	NearestSync enums.SyncPattern
+	// SyncDistance is the Hamming distance of the centre field from
+	// NearestSync. DecodeFromBytes sets it; Encode ignores it.
 	SyncDistance int
 	// VoiceBurst is the superframe position of a voice burst. Decoding is
 	// stateless per burst, so DecodeFromBytes sets VoiceBurstA for a burst
@@ -105,9 +108,10 @@ type Burst struct {
 	// keyed check. DecodeFromBytes sets them and Encode writes them.
 	BPTCReserved [3]bit.Bit
 
-	// EmbeddedSignalling and EmbeddedSignallingData are the EMB and the
-	// 32-bit embedded data field of a burst with HasEmbeddedSignalling.
-	EmbeddedSignalling     pdu.EmbeddedSignalling
+	// EmbeddedSignalling is the EMB of a burst with HasEmbeddedSignalling.
+	EmbeddedSignalling pdu.EmbeddedSignalling
+	// EmbeddedSignallingData is the 32-bit embedded data field of a burst
+	// with HasEmbeddedSignalling.
 	EmbeddedSignallingData [32]bit.Bit
 
 	// ReverseChannel is the RC PDU of a burst with HasReverseChannel.
@@ -117,7 +121,8 @@ type Burst struct {
 	// when the PDU CRC or FEC fails, which FEC reports, and leaves it nil
 	// only for a reserved data type. See Encode.
 	Data Data
-	FEC  fec.BurstFECStats
+	// FEC reports the FEC and CRC results of the decode.
+	FEC fec.BurstFECStats
 
 	bitData               [264]bit.Bit
 	decodedDataType       enums.DataType

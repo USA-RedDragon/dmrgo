@@ -12,7 +12,7 @@ import (
 
 // buildUSBDBits constructs a [96]bit.Bit array for a USBD PDU.
 // serviceType is 4 bits, payload is 76 bits.
-// CRC-CCITT is computed and XOR-masked per §B.3.9 (mask 0x3333).
+// CRC-CCITT is computed and XOR-masked with mask 0x3333 (ETSI TS 102 361-1 clause B.3.8).
 func buildUSBDBits(serviceType byte, payload [76]bit.Bit) [96]bit.Bit {
 	var data [96]bit.Bit
 

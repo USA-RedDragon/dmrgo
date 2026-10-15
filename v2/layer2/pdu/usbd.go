@@ -7,20 +7,22 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// ServiceType represents the higher layer service supported by a USBD.
-// ETSI TS 102 361-1 §9.3.43
+// ServiceType is the higher layer service that a USBD carries (ETSI TS 102
+// 361-1 clause 9.3.43).
 type ServiceType uint8
 
+// ServiceType values (ETSI TS 102 361-1 Table 9.55). Values 0b0001 to 0b0111
+// are reserved.
 const (
-	ServiceTypeLIP                   ServiceType = 0b0000
-	ServiceTypeManufacturerSpecific1 ServiceType = 0b1000
-	ServiceTypeManufacturerSpecific2 ServiceType = 0b1001
-	ServiceTypeManufacturerSpecific3 ServiceType = 0b1010
-	ServiceTypeManufacturerSpecific4 ServiceType = 0b1011
-	ServiceTypeManufacturerSpecific5 ServiceType = 0b1100
-	ServiceTypeManufacturerSpecific6 ServiceType = 0b1101
-	ServiceTypeManufacturerSpecific7 ServiceType = 0b1110
-	ServiceTypeManufacturerSpecific8 ServiceType = 0b1111
+	ServiceTypeLIP                   ServiceType = 0b0000 // Location Information Protocol
+	ServiceTypeManufacturerSpecific1 ServiceType = 0b1000 // manufacturer specific service 1
+	ServiceTypeManufacturerSpecific2 ServiceType = 0b1001 // manufacturer specific service 2
+	ServiceTypeManufacturerSpecific3 ServiceType = 0b1010 // manufacturer specific service 3
+	ServiceTypeManufacturerSpecific4 ServiceType = 0b1011 // manufacturer specific service 4
+	ServiceTypeManufacturerSpecific5 ServiceType = 0b1100 // manufacturer specific service 5
+	ServiceTypeManufacturerSpecific6 ServiceType = 0b1101 // manufacturer specific service 6
+	ServiceTypeManufacturerSpecific7 ServiceType = 0b1110 // manufacturer specific service 7
+	ServiceTypeManufacturerSpecific8 ServiceType = 0b1111 // manufacturer specific service 8
 )
 
 // String returns a human-readable name for a ServiceType.
@@ -56,8 +58,8 @@ func (st ServiceType) String() string {
 //dmr:crc_mask 0x3333
 //dmr:input_size 96
 type UnifiedSingleBlockData struct {
-	FEC         fec.Result  `dmr:"-"`
-	ServiceType ServiceType `dmr:"bits:0-3"`
+	FEC         fec.Result  `dmr:"-"`        // result of the CRC check
+	ServiceType ServiceType `dmr:"bits:0-3"` // service that the payload carries
 	// Payload holds the 76 bits 4 to 79, packed most significant bit
 	// first: bit 4 is the top bit of byte 0 and bit 79 is bit 4 of byte 9.
 	// The low 4 bits of byte 9 are padding and must be zero; Encode returns

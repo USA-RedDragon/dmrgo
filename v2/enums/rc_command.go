@@ -2,12 +2,13 @@ package enums
 
 import "fmt"
 
-// ETSI TS 102 361-2 - 7.2.20 Tier 2 Reverse Channel (RC) Command
+// RCCommand is the 4-bit Tier 2 Reverse Channel (RC) command. Values that
+// have no constant are reserved (ETSI TS 102 361-2 clause 7.2.20).
 type RCCommand uint8
 
 const (
-	RCCeaseTransmissionCommand RCCommand = 0b0100
-	RCCeaseTransmissionRequest RCCommand = 0b0101
+	RCCeaseTransmissionCommand RCCommand = 0b0100 // cease transmission command
+	RCCeaseTransmissionRequest RCCommand = 0b0101 // cease transmission request
 )
 
 func (rc RCCommand) String() string {

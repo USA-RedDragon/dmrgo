@@ -6,16 +6,16 @@ const (
 	manufacturerSpecificName = "Manufacturer Specific"
 )
 
-// DAID (Destination IP Address Identifier) identifies the destination IP address type
-// in a UDP/IPv4 compressed header.
-// ETSI TS 102 361-3 — Table 7.16
+// DAID is the 4-bit Destination IP Address Identifier of a UDP/IPv4
+// compressed header. Values 3 to 11 are reserved and 12 to 15 are
+// manufacturer specific (ETSI TS 102 361-3 Table 7.16).
 type DAID uint8
 
 const (
-	DAIDRadioNetwork         DAID = 0
-	DAIDUSBEthernetNetwork   DAID = 1
-	DAIDGroupNetwork         DAID = 2
-	DAIDManufacturerSpecific DAID = 12
+	DAIDRadioNetwork         DAID = 0  // radio network
+	DAIDUSBEthernetNetwork   DAID = 1  // USB or Ethernet network
+	DAIDGroupNetwork         DAID = 2  // group network
+	DAIDManufacturerSpecific DAID = 12 // first manufacturer specific value
 )
 
 func (daid DAID) String() string {

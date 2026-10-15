@@ -1,19 +1,19 @@
 package enums
 
 // VoiceBurstType is the position of a voice burst in a voice superframe
-// (ETSI TS 102 361-1 §5.1.2.1). The zero value is VoiceBurstUnknown.
+// (ETSI TS 102 361-1 clause 5.1.2.1). The zero value is VoiceBurstUnknown.
 type VoiceBurstType uint8
 
 const (
 	// VoiceBurstUnknown is a burst whose superframe position is not known.
 	VoiceBurstUnknown VoiceBurstType = iota
 
-	VoiceBurstA
-	VoiceBurstB
-	VoiceBurstC
-	VoiceBurstD
-	VoiceBurstE
-	VoiceBurstF
+	VoiceBurstA // burst A, which carries the voice SYNC
+	VoiceBurstB // burst B
+	VoiceBurstC // burst C
+	VoiceBurstD // burst D
+	VoiceBurstE // burst E
+	VoiceBurstF // burst F
 )
 
 // VoiceBurstAt returns the voice burst at index i of a superframe, 0 for
@@ -36,7 +36,7 @@ func (v VoiceBurstType) Index() (i int, ok bool) {
 }
 
 // LCSS returns the LCSS that the EMB of voice burst v carries in a
-// superframe with an embedded LC (ETSI TS 102 361-1 §7.1.3): First for
+// superframe with an embedded LC (ETSI TS 102 361-1 clause 7.1.3): First for
 // burst B, Continuation for C and D, Last for E, and Single for F, which
 // carries a Null embedded message or a Reverse Channel. ok is false for
 // burst A, which has a SYNC pattern instead of an EMB, and for an unknown

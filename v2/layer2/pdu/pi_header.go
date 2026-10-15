@@ -20,12 +20,12 @@ import (
 //dmr:crc_mask 0x6969
 //dmr:input_size 96
 type PIHeader struct {
-	FEC              fec.Result         `dmr:"-"`
-	AlgorithmID      uint8              `dmr:"bits:0-7"`
-	MFID             enums.FeatureSetID `dmr:"bits:8-15"`
-	KeyID            uint8              `dmr:"bits:16-23"`
-	MessageIndicator uint32             `dmr:"bits:24-55"`
-	Destination      uint32             `dmr:"bits:56-79"`
+	FEC              fec.Result         `dmr:"-"`          // result of the CRC check
+	AlgorithmID      uint8              `dmr:"bits:0-7"`   // privacy algorithm ID
+	MFID             enums.FeatureSetID `dmr:"bits:8-15"`  // manufacturer FID
+	KeyID            uint8              `dmr:"bits:16-23"` // key ID
+	MessageIndicator uint32             `dmr:"bits:24-55"` // 32-bit message indicator
+	Destination      uint32             `dmr:"bits:56-79"` // 24-bit destination address
 	// Raw holds bits 0 to 79, packed most significant bit first: bit 0 is
 	// the top bit of byte 0.
 	Raw [10]byte `dmr:"bits:0-79,raw,no_encode"`

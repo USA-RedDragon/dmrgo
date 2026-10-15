@@ -2,30 +2,31 @@ package enums
 
 import "fmt"
 
-// ETSI TS 102 361-1 - 9.3.5  Feature set ID (FID)
-//
-// list of specific manufacturers: http://www.etsi.org/images/files/DMRcodes/dmrs-mfid.xls
+// FeatureSetID is the 8-bit Feature set ID (FID) of a full LC or CSBK. 0 is
+// the standardized feature set and 4 to 127 identify a manufacturer (ETSI TS
+// 102 361-1 clause 9.3.5, Table 9.21). ETSI publishes the manufacturer list
+// at http://www.etsi.org/images/files/DMRcodes/dmrs-mfid.xls.
 type FeatureSetID byte
 
 const (
-	FIDStandardized        FeatureSetID = 0x0
-	FIDFlydeMicro          FeatureSetID = 0x4
-	FIDProdEl              FeatureSetID = 0x5
-	FIDTridentMicroSystems FeatureSetID = 0x6
-	FIDRadiodata           FeatureSetID = 0x7
-	FIDHYTScienceTech      FeatureSetID = 0x8
-	FIDAselsan             FeatureSetID = 0x9
-	FIDKirisun             FeatureSetID = 0xA
-	FIDDMRAssociation      FeatureSetID = 0xB
-	FIDMotorola            FeatureSetID = 0x10
-	FIDEMC                 FeatureSetID = 0x13
-	FIDEMC2                FeatureSetID = 0x1C
-	FIDJVCKenwood          FeatureSetID = 0x20
-	FIDRadioActivity       FeatureSetID = 0x33
-	FIDRadioActivity2      FeatureSetID = 0x3C
-	FIDTait                FeatureSetID = 0x58
-	FIDHYTScienceTech2     FeatureSetID = 0x68
-	FIDVertexStandard      FeatureSetID = 0x77
+	FIDStandardized        FeatureSetID = 0x0  // standardized feature set
+	FIDFlydeMicro          FeatureSetID = 0x4  // Flyde Micro
+	FIDProdEl              FeatureSetID = 0x5  // PROD-EL
+	FIDTridentMicroSystems FeatureSetID = 0x6  // Trident Micro Systems
+	FIDRadiodata           FeatureSetID = 0x7  // RADIODATA
+	FIDHYTScienceTech      FeatureSetID = 0x8  // HYT Science Tech
+	FIDAselsan             FeatureSetID = 0x9  // ASELSAN
+	FIDKirisun             FeatureSetID = 0xA  // Kirisun
+	FIDDMRAssociation      FeatureSetID = 0xB  // DMR Association
+	FIDMotorola            FeatureSetID = 0x10 // Motorola
+	FIDEMC                 FeatureSetID = 0x13 // EMC
+	FIDEMC2                FeatureSetID = 0x1C // EMC, second ID
+	FIDJVCKenwood          FeatureSetID = 0x20 // JVC Kenwood
+	FIDRadioActivity       FeatureSetID = 0x33 // Radio Activity
+	FIDRadioActivity2      FeatureSetID = 0x3C // Radio Activity, second ID
+	FIDTait                FeatureSetID = 0x58 // Tait
+	FIDHYTScienceTech2     FeatureSetID = 0x68 // HYT Science Tech, second ID
+	FIDVertexStandard      FeatureSetID = 0x77 // Vertex Standard
 )
 
 func (fsid FeatureSetID) String() string {

@@ -5,23 +5,25 @@ import (
 	"math/bits"
 )
 
-// ETSI TS 102 361-1 - 9.1.1 Synchronization (SYNC) PDU - Table 9.2: SYNC patterns
+// SyncPattern is the 48-bit SYNC pattern in the center of a burst, as an
+// integer with the first bit most significant (ETSI TS 102 361-1 clause
+// 9.1.1, Table 9.2).
 type SyncPattern uint64
 
 const embeddedSignallingName = "Embedded Signalling"
 
 const (
-	SyncBSSourcedVoice SyncPattern = 0x755FD7DF75F7
-	SyncBSSourcedData  SyncPattern = 0xDFF57D75DF5D
-	SyncMSSourcedVoice SyncPattern = 0x7F7D5DD57DFD
-	SyncMSSourcedData  SyncPattern = 0xD5D7F77FD757
-	SyncMSSourcedRC    SyncPattern = 0x77D55F7DFD77
-	SyncTDMA1Voice     SyncPattern = 0x5D577F7757FF
-	SyncTDMA1Data      SyncPattern = 0xF7FDD5DDFD55
-	SyncTDMA2Voice     SyncPattern = 0x7DFFD5F55D5F
-	SyncTDMA2Data      SyncPattern = 0xD7557F5FF7F5
-	SyncReserved       SyncPattern = 0xDD7FF5D757DD
-	// SyncNone is the SyncPattern of a burst whose centre carries embedded
+	SyncBSSourcedVoice SyncPattern = 0x755FD7DF75F7 // BS sourced voice
+	SyncBSSourcedData  SyncPattern = 0xDFF57D75DF5D // BS sourced data
+	SyncMSSourcedVoice SyncPattern = 0x7F7D5DD57DFD // MS sourced voice
+	SyncMSSourcedData  SyncPattern = 0xD5D7F77FD757 // MS sourced data
+	SyncMSSourcedRC    SyncPattern = 0x77D55F7DFD77 // MS sourced RC sync
+	SyncTDMA1Voice     SyncPattern = 0x5D577F7757FF // TDMA direct mode time slot 1 voice
+	SyncTDMA1Data      SyncPattern = 0xF7FDD5DDFD55 // TDMA direct mode time slot 1 data
+	SyncTDMA2Voice     SyncPattern = 0x7DFFD5F55D5F // TDMA direct mode time slot 2 voice
+	SyncTDMA2Data      SyncPattern = 0xD7557F5FF7F5 // TDMA direct mode time slot 2 data
+	SyncReserved       SyncPattern = 0xDD7FF5D757DD // reserved pattern
+	// SyncNone is the SyncPattern of a burst whose center carries embedded
 	// signalling instead of a SYNC pattern.
 	SyncNone SyncPattern = 0
 )

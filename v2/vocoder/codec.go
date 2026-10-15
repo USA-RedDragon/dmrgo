@@ -73,7 +73,8 @@ func Register(name string, factory func() (Codec, error)) {
 	registry[name] = factory
 }
 
-// New creates a codec with the factory registered under name.
+// New creates a codec with the factory registered under name. It returns an
+// error that wraps ErrUnknownCodec when no codec is registered under name.
 func New(name string) (Codec, error) {
 	registryMu.RLock()
 	factory, ok := registry[name]

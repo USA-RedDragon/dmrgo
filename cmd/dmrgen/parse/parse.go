@@ -66,25 +66,21 @@ type Field struct {
 	BitEnd   int       // last bit index (inclusive)
 	BitWidth int       // total width across all ranges
 
-	// Type information
 	GoType      string // e.g. "int", "uint8", "enums.LCSS", "enums.DataType"
 	TypePkg     string // package path for qualified types (e.g. "enums")
 	TypeName    string // unqualified type name (e.g. "LCSS")
 	IsQualified bool   // true if GoType contains a package qualifier
 	ArrayLen    int    // element count when GoType is a fixed array, else 0
 
-	// Pointer type information (for dispatch fields)
 	IsPointer   bool   // true if GoType starts with "*"
 	PointedType string // type without "*" prefix (e.g. "BSOutboundActivationPDU")
 
 	// Signed marks a two's complement integer field.
 	Signed bool
 
-	// Delegate-specific
-	DelegateNoPtr bool // true if the constructor returns a value (not a pointer)
+	DelegateNoPtr bool // true if the delegate constructor returns a value
 	Stride        int  // for array delegates: each element spans Stride bits
 
-	// Dispatch-specific
 	DispatchFieldName string   // field name to switch on (e.g. "CSBKOpcode")
 	DispatchValues    []string // constant names (e.g. ["CSBKBSOutboundActivationPDU"])
 
@@ -96,15 +92,16 @@ type Field struct {
 	// dispatch variant is decoded, and is encoded when no variant is set.
 	Fallback bool
 
-	// For non-contiguous fields: additional bit ranges
-	// e.g. "bits:3+12-15" → ExtraBitRanges = [{12,15}]
+	// ExtraBitRanges holds the bit ranges after the first of a non-contiguous
+	// field: "bits:3+12-15" gives [{12,15}].
 	ExtraBitRanges [][2]int
 
-	// Skip fields (dmr:"-") are included for String generation but excluded from decode/encode.
+	// Skip marks a dmr:"-" field, which decode and encode skip. String prints
+	// it only when it is the FEC field or a dmr:input.
 	Skip bool
 
-	// NoEncode fields are decoded (e.g. for when: guard conditions) but skipped during encode
-	// because the sub-PDU's encode already writes the overlapping bits.
+	// NoEncode marks a field that decode reads (for example for a when:
+	// guard) and encode skips, because the sub-PDU encode writes its bits.
 	NoEncode bool
 
 	// BaseType is the resolved underlying Go basic type (e.g. "uint8"), or "" if unknown.
@@ -136,8 +133,8 @@ type FECMask struct {
 
 // FECMaskDirective selects an FEC parity XOR mask by the value of a field.
 type FECMaskDirective struct {
-	Field string
-	Masks []FECMask
+	Field string    // name of the selector field
+	Masks []FECMask // mask per selector value
 }
 
 // ConstDirective is a dmr:const directive: bits that Encode sets to a fixed
