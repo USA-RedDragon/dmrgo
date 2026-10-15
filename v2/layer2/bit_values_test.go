@@ -99,7 +99,7 @@ var bitFuncs = map[string]any{
 	"layer2.CACHInterleave":                                    layer2.CACHInterleave,
 	"layer2.DecodeCACH":                                        layer2.DecodeCACH,
 	"layer2.DecodeEmbeddedRC":                                  layer2.DecodeEmbeddedRC,
-	"layer2.DecodeShortLCFromFragments":                        layer2.DecodeShortLCFromFragments,
+	"layer2.DecodeCACHField":                                   layer2.DecodeCACHField,
 	"layer2.IsIdleMessage":                                     layer2.IsIdleMessage,
 	"layer2.IsNullEmbeddedLC":                                  layer2.IsNullEmbeddedLC,
 	"layer2.NewVoiceTransmitter":                               layer2.NewVoiceTransmitter,

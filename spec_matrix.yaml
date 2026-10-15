@@ -222,7 +222,8 @@ documents:
               - TestShortLCAssembler_Lifecycle
               - TestShortLCAssembler_Complete_NullMessage
               - TestShortLCAssembler_Complete_ActivityUpdate
-              - TestShortLCAssembler_DecodeShortLCFromFragments
+              - TestShortLCAssembler_Add
+              - TestShortLCAssembler_AddUncorrectableTACT
               - TestShortLCAssembler_RoundTrip_EncodeShortLC
               - TestShortLCAssembler_CombinedFEC
               - TestShortLCAssembler_RejectsBadSequence
