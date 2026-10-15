@@ -1568,12 +1568,14 @@ documents:
         source_files:
           - v2/layer2/pdu/csbk.go
           - v2/layer2/pdu/mbc.go
+          - v2/layer2/pdu/data_header.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_Aloha_Decode
               - TestCGAPContinuation_Decode
-              - TestCSBK_UDTOutboundHeader_Decode
+              - TestCSBK_UDTHeaderOpcodes_NotCSBK
+              - TestDataHeader_UDT_Decode
 
       # ── Section 6: Trunking Procedures ──
       - section: "6.2"
@@ -1606,6 +1608,7 @@ documents:
         source_files:
           - v2/layer2/pdu/csbk.go
           - v2/layer2/pdu/mbc.go
+          - v2/layer2/pdu/data_header.go
           - v2/enums/announcement_type.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
@@ -1619,7 +1622,8 @@ documents:
               - TestCSBK_Maintenance_Decode
               - TestCSBK_Ackvitation_Decode
               - TestCSBK_Protect_Decode
-              - TestCSBK_UDTOutboundHeader_Decode
+              - TestCSBK_UDTHeaderOpcodes_NotCSBK
+              - TestDataHeader_UDT_Decode
               - TestCGAPContinuation_Decode
               - TestMVAPContinuation_Decode
               - TestBCAPContinuation_Decode

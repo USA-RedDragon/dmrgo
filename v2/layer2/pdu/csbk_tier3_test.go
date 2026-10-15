@@ -1,6 +1,7 @@
 package pdu_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
@@ -33,8 +34,6 @@ func TestCSBK_TierIII_OpcodeToString(t *testing.T) {
 		{pdu.CSBKAckInbound, "C_ACKU PDU"},
 		{pdu.CSBKAckOutboundPayload, "P_ACKD PDU"},
 		{pdu.CSBKAckInboundPayload, "P_ACKU PDU"},
-		{pdu.CSBKUDTOutboundHeader, "C_UDTHD PDU"},
-		{pdu.CSBKUDTInboundHeader, "C_UDTHU PDU"},
 		{pdu.CSBKRandomAccess, "C_RAND PDU"},
 		{pdu.CSBKAckvitation, "C_ACKVIT PDU"},
 		{pdu.CSBKMaintenance, "P_MAINT PDU"},
@@ -837,58 +836,21 @@ func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
 	}
 }
 
-// ── UDT Header Decode Tests ──
+// ── UDT Header opcodes are not CSBK opcodes ──
 
-func TestCSBK_UDTOutboundHeader_Decode(t *testing.T) {
-	var payload [64]bit.Bit
-	// GroupIndividual (bit 0) = true
-	payload[0] = 1
-	// A (bit 1) = true
-	payload[1] = 1
-	// Emergency (bit 2) = true
-	payload[2] = 1
-	// UDTOptionFlag (bit 3) = false
-	// DataPacketFormat (bits 4-7) = 0b1010
-	payload[4] = 1
-	payload[6] = 1
-	// SAP (bits 8-11) = 0b0011
-	payload[10] = 1
-	payload[11] = 1
-	// UDTFormat (bits 12-15) = 0b0101
-	payload[13] = 1
-	payload[15] = 1
-	// TargetAddress (bits 16-39)
-	payload[39] = 1
-	// SourceAddress (bits 40-63)
-	payload[63] = 1
-
-	infoBits := buildCSBKBits(byte(pdu.CSBKUDTOutboundHeader), payload)
-
-	csbk, fecResult := pdu.DecodeCSBK(infoBits)
-	if fecResult.Uncorrectable {
-		t.Fatal("DecodeCSBK returned uncorrectable FEC")
-	}
-	if csbk.UDTOutboundHeaderPDU == nil {
-		t.Fatal("UDTOutboundHeaderPDU should not be nil")
-	}
-	udt := csbk.UDTOutboundHeaderPDU
-	if !udt.GroupIndividual {
-		t.Error("GroupIndividual should be true")
-	}
-	if !udt.A {
-		t.Error("A should be true")
-	}
-	if !udt.Emergency {
-		t.Error("Emergency should be true")
-	}
-	if udt.DataPacketFormat != 0b1010 {
-		t.Errorf("DataPacketFormat = %d, want 10", udt.DataPacketFormat)
-	}
-	if udt.SAP != 3 {
-		t.Errorf("SAP = %d, want 3", udt.SAP)
-	}
-	if udt.UDTFormat != 5 {
-		t.Errorf("UDTFormat = %d, want 5", udt.UDTFormat)
+// TS 102 361-4 Table 7.2 carries C_UDTHD/C_UDTHU in a Data Header burst,
+// so opcodes 0x1A/0x1B must not decode as a CSBK variant.
+func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
+	for _, op := range []byte{0b011010, 0b011011} {
+		var payload [64]bit.Bit
+		payload[0] = 1
+		csbk, fecResult := pdu.DecodeCSBK(buildCSBKBits(op, payload))
+		if fecResult.Uncorrectable {
+			t.Fatal("DecodeCSBK returned uncorrectable FEC")
+		}
+		if got := csbk.CSBKOpcode.ToString(); !strings.HasPrefix(got, "Unknown CSBKOpcode") {
+			t.Errorf("opcode %06b ToString() = %q, want Unknown CSBKOpcode", op, got)
+		}
 	}
 }
 

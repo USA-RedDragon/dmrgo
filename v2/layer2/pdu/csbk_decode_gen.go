@@ -26,8 +26,6 @@ ETSI TS 102 361-4 §7.1.1.1.7 C_ACKD PDU
 ETSI TS 102 361-4 §7.1.1.1.7 C_ACKU PDU
 ETSI TS 102 361-4 §7.1.1.1.7 P_ACKD PDU
 ETSI TS 102 361-4 §7.1.1.1.7 P_ACKU PDU
-ETSI TS 102 361-4 §7.1.1.1.8 C_UDTHD PDU
-ETSI TS 102 361-4 §7.1.1.1.8 C_UDTHU PDU
 ETSI TS 102 361-4 §7.1.1.1.9 C_RAND PDU
 ETSI TS 102 361-4 §7.1.1.1.10 C_ACKVIT PDU
 ETSI TS 102 361-4 §7.1.1.1.11 P_MAINT PDU
@@ -917,92 +915,6 @@ func (s *AckInboundPayloadPDU) ToString() string {
 	return fmt.Sprintf("AckInboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %v, AdditionalInfo: %v }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
-// DecodeUDTOutboundHeaderPDU decodes a UDTOutboundHeaderPDU per ETSI TS 102 361-4 §7.1.1.1.8 C_UDTHD PDU
-func DecodeUDTOutboundHeaderPDU(data [64]bit.Bit) (UDTOutboundHeaderPDU, fec.FECResult) {
-	var result UDTOutboundHeaderPDU
-	var fecResult fec.FECResult
-	result.GroupIndividual = bit.BitsToBool(data[:], 0)
-	result.A = bit.BitsToBool(data[:], 1)
-	result.Emergency = bit.BitsToBool(data[:], 2)
-	result.UDTOptionFlag = bit.BitsToBool(data[:], 3)
-	result.DataPacketFormat = bit.BitsToUint8(data[:], 4, 4)
-	result.SAP = bit.BitsToUint8(data[:], 8, 4)
-	result.UDTFormat = bit.BitsToUint8(data[:], 12, 4)
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
-	return result, fecResult
-}
-
-// EncodeUDTOutboundHeaderPDU encodes a UDTOutboundHeaderPDU per ETSI TS 102 361-4 §7.1.1.1.8 C_UDTHD PDU
-func EncodeUDTOutboundHeaderPDU(s *UDTOutboundHeaderPDU) [64]bit.Bit {
-	var data [64]bit.Bit
-	if s.GroupIndividual {
-		data[0] = 1
-	}
-	if s.A {
-		data[1] = 1
-	}
-	if s.Emergency {
-		data[2] = 1
-	}
-	if s.UDTOptionFlag {
-		data[3] = 1
-	}
-	copy(data[4:8], bit.BitsFromUint8(s.DataPacketFormat, 4))
-	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
-	copy(data[12:16], bit.BitsFromUint8(s.UDTFormat, 4))
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
-	return data
-}
-
-func (s *UDTOutboundHeaderPDU) ToString() string {
-	return fmt.Sprintf("UDTOutboundHeaderPDU{ GroupIndividual: %t, A: %t, Emergency: %t, UDTOptionFlag: %t, DataPacketFormat: %d, SAP: %d, UDTFormat: %d, TargetAddress: %v, SourceAddress: %v }", s.GroupIndividual, s.A, s.Emergency, s.UDTOptionFlag, s.DataPacketFormat, s.SAP, s.UDTFormat, s.TargetAddress, s.SourceAddress)
-}
-
-// DecodeUDTInboundHeaderPDU decodes a UDTInboundHeaderPDU per ETSI TS 102 361-4 §7.1.1.1.8 C_UDTHU PDU
-func DecodeUDTInboundHeaderPDU(data [64]bit.Bit) (UDTInboundHeaderPDU, fec.FECResult) {
-	var result UDTInboundHeaderPDU
-	var fecResult fec.FECResult
-	result.GroupIndividual = bit.BitsToBool(data[:], 0)
-	result.A = bit.BitsToBool(data[:], 1)
-	result.Emergency = bit.BitsToBool(data[:], 2)
-	result.UDTOptionFlag = bit.BitsToBool(data[:], 3)
-	result.DataPacketFormat = bit.BitsToUint8(data[:], 4, 4)
-	result.SAP = bit.BitsToUint8(data[:], 8, 4)
-	result.UDTFormat = bit.BitsToUint8(data[:], 12, 4)
-	copy(result.TargetAddress[:], data[16:40])
-	copy(result.SourceAddress[:], data[40:64])
-	return result, fecResult
-}
-
-// EncodeUDTInboundHeaderPDU encodes a UDTInboundHeaderPDU per ETSI TS 102 361-4 §7.1.1.1.8 C_UDTHU PDU
-func EncodeUDTInboundHeaderPDU(s *UDTInboundHeaderPDU) [64]bit.Bit {
-	var data [64]bit.Bit
-	if s.GroupIndividual {
-		data[0] = 1
-	}
-	if s.A {
-		data[1] = 1
-	}
-	if s.Emergency {
-		data[2] = 1
-	}
-	if s.UDTOptionFlag {
-		data[3] = 1
-	}
-	copy(data[4:8], bit.BitsFromUint8(s.DataPacketFormat, 4))
-	copy(data[8:12], bit.BitsFromUint8(s.SAP, 4))
-	copy(data[12:16], bit.BitsFromUint8(s.UDTFormat, 4))
-	copy(data[16:40], s.TargetAddress[:])
-	copy(data[40:64], s.SourceAddress[:])
-	return data
-}
-
-func (s *UDTInboundHeaderPDU) ToString() string {
-	return fmt.Sprintf("UDTInboundHeaderPDU{ GroupIndividual: %t, A: %t, Emergency: %t, UDTOptionFlag: %t, DataPacketFormat: %d, SAP: %d, UDTFormat: %d, TargetAddress: %v, SourceAddress: %v }", s.GroupIndividual, s.A, s.Emergency, s.UDTOptionFlag, s.DataPacketFormat, s.SAP, s.UDTFormat, s.TargetAddress, s.SourceAddress)
-}
-
 // DecodeRandomAccessPDU decodes a RandomAccessPDU per ETSI TS 102 361-4 §7.1.1.1.9 C_RAND PDU
 func DecodeRandomAccessPDU(data [64]bit.Bit) (RandomAccessPDU, fec.FECResult) {
 	var result RandomAccessPDU
@@ -1199,12 +1111,6 @@ func DecodeCSBK(data [96]bit.Bit) (CSBK, fec.FECResult) {
 	case CSBKAckInboundPayload:
 		_decoded, _ := DecodeAckInboundPayloadPDU(_dispatchBits)
 		result.AckInboundPayloadPDU = &_decoded
-	case CSBKUDTOutboundHeader:
-		_decoded, _ := DecodeUDTOutboundHeaderPDU(_dispatchBits)
-		result.UDTOutboundHeaderPDU = &_decoded
-	case CSBKUDTInboundHeader:
-		_decoded, _ := DecodeUDTInboundHeaderPDU(_dispatchBits)
-		result.UDTInboundHeaderPDU = &_decoded
 	case CSBKRandomAccess:
 		_decoded, _ := DecodeRandomAccessPDU(_dispatchBits)
 		result.RandomAccessPDU = &_decoded
@@ -1296,12 +1202,6 @@ func EncodeCSBK(s *CSBK) [96]bit.Bit {
 		copy(data[16:80], _pduBits[:])
 	case s.AckInboundPayloadPDU != nil:
 		_pduBits := EncodeAckInboundPayloadPDU(s.AckInboundPayloadPDU)
-		copy(data[16:80], _pduBits[:])
-	case s.UDTOutboundHeaderPDU != nil:
-		_pduBits := EncodeUDTOutboundHeaderPDU(s.UDTOutboundHeaderPDU)
-		copy(data[16:80], _pduBits[:])
-	case s.UDTInboundHeaderPDU != nil:
-		_pduBits := EncodeUDTInboundHeaderPDU(s.UDTInboundHeaderPDU)
 		copy(data[16:80], _pduBits[:])
 	case s.RandomAccessPDU != nil:
 		_pduBits := EncodeRandomAccessPDU(s.RandomAccessPDU)
@@ -1396,10 +1296,6 @@ func (s *CSBK) ToString() string {
 		_ret += s.AckOutboundPayloadPDU.ToString()
 	case s.AckInboundPayloadPDU != nil:
 		_ret += s.AckInboundPayloadPDU.ToString()
-	case s.UDTOutboundHeaderPDU != nil:
-		_ret += s.UDTOutboundHeaderPDU.ToString()
-	case s.UDTInboundHeaderPDU != nil:
-		_ret += s.UDTInboundHeaderPDU.ToString()
 	case s.RandomAccessPDU != nil:
 		_ret += s.RandomAccessPDU.ToString()
 	case s.AckvitationPDU != nil:

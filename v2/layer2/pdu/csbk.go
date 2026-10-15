@@ -21,10 +21,10 @@ const (
 	CSBKBSOutboundActivationPDU                 CSBKOpcode = 0b00111000
 	CSBKPreamblePDU                             CSBKOpcode = 0b00111101
 
-	// Tier III opcodes (ETSI TS 102 361-4 — Table B.1)
+	// Tier III opcodes (ETSI TS 102 361-4 — Table B.1). The "UDT Header"
+	// opcodes (C_UDTHD, C_UDTHU, ...) are not CSBKs: they travel in a Data
+	// Header burst (Table 7.2), see UDTHeader and UDTOpcode.
 	CSBKAloha                        CSBKOpcode = 0b00011001
-	CSBKUDTOutboundHeader            CSBKOpcode = 0b00011010
-	CSBKUDTInboundHeader             CSBKOpcode = 0b00011011
 	CSBKAhoy                         CSBKOpcode = 0b00011100
 	CSBKAckvitation                  CSBKOpcode = 0b00011110
 	CSBKRandomAccess                 CSBKOpcode = 0b00011111
@@ -65,10 +65,6 @@ func (opcode CSBKOpcode) ToString() string {
 		return "Channel Timing PDU"
 	case CSBKAloha:
 		return "C_ALOHA PDU"
-	case CSBKUDTOutboundHeader:
-		return "C_UDTHD PDU"
-	case CSBKUDTInboundHeader:
-		return "C_UDTHU PDU"
 	case CSBKAhoy:
 		return "C_AHOY PDU"
 	case CSBKAckvitation:
@@ -382,32 +378,6 @@ type AckInboundPayloadPDU struct {
 	AdditionalInfo [24]bit.Bit `dmr:"bits:40-63,raw"`
 }
 
-// ETSI TS 102 361-4 §7.1.1.1.8 C_UDTHD PDU
-type UDTOutboundHeaderPDU struct {
-	GroupIndividual  bool        `dmr:"bit:0"`
-	A                bool        `dmr:"bit:1"`
-	Emergency        bool        `dmr:"bit:2"`
-	UDTOptionFlag    bool        `dmr:"bit:3"`
-	DataPacketFormat uint8       `dmr:"bits:4-7"`
-	SAP              uint8       `dmr:"bits:8-11"`
-	UDTFormat        uint8       `dmr:"bits:12-15"`
-	TargetAddress    [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress    [24]bit.Bit `dmr:"bits:40-63,raw"`
-}
-
-// ETSI TS 102 361-4 §7.1.1.1.8 C_UDTHU PDU
-type UDTInboundHeaderPDU struct {
-	GroupIndividual  bool        `dmr:"bit:0"`
-	A                bool        `dmr:"bit:1"`
-	Emergency        bool        `dmr:"bit:2"`
-	UDTOptionFlag    bool        `dmr:"bit:3"`
-	DataPacketFormat uint8       `dmr:"bits:4-7"`
-	SAP              uint8       `dmr:"bits:8-11"`
-	UDTFormat        uint8       `dmr:"bits:12-15"`
-	TargetAddress    [24]bit.Bit `dmr:"bits:16-39,raw"`
-	SourceAddress    [24]bit.Bit `dmr:"bits:40-63,raw"`
-}
-
 // ETSI TS 102 361-4 §7.1.1.1.9 C_RAND PDU
 type RandomAccessPDU struct {
 	ServiceOptions uint8       `dmr:"bits:0-6"`
@@ -485,8 +455,6 @@ type CSBK struct {
 	AckInboundPDU                   *AckInboundPDU                   `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckInbound"`
 	AckOutboundPayloadPDU           *AckOutboundPayloadPDU           `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckOutboundPayload"`
 	AckInboundPayloadPDU            *AckInboundPayloadPDU            `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckInboundPayload"`
-	UDTOutboundHeaderPDU            *UDTOutboundHeaderPDU            `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKUDTOutboundHeader"`
-	UDTInboundHeaderPDU             *UDTInboundHeaderPDU             `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKUDTInboundHeader"`
 	RandomAccessPDU                 *RandomAccessPDU                 `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKRandomAccess"`
 	AckvitationPDU                  *AckvitationPDU                  `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKAckvitation"`
 	MaintenancePDU                  *MaintenancePDU                  `dmr:"bits:16-79,dispatch:CSBKOpcode=CSBKMaintenance"`
