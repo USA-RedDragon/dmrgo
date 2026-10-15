@@ -115,7 +115,7 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 		{"VoiceWithoutKind", layer2.Burst{SyncPattern: enums.SyncMSSourcedVoice}},
 		{"VoiceWithDataSync", layer2.Burst{Kind: layer2.KindVoice, SyncPattern: enums.SyncBSSourcedData}},
 		{"DataWithVoiceSync", layer2.Burst{Kind: layer2.KindData, SyncPattern: enums.SyncMSSourcedVoice}},
-		{"DataWithoutSync", layer2.Burst{Kind: layer2.KindData, SyncPattern: enums.SyncNone}},
+		{"DataWithRCSync", layer2.Burst{Kind: layer2.KindData, SyncPattern: enums.SyncMSSourcedRC}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

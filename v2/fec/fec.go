@@ -126,13 +126,13 @@ func (b *BERCalculator) Reset() {
 // no voice layer: the vocoder FEC is codec specific, and a caller that
 // decodes AMBE+2 frames adds their result (layer2.Burst.AMBEFrames).
 type BurstFECStats struct {
-	SlotType Result // Golay(20,8,7) — 20 bits
-	EMB      Result // QR(16,7,6) — 16 bits (voice bursts only)
-	Payload  Result // BPTC/Trellis/Rate1 — 196/196/0 bits
+	SlotType Result // Golay(20,8,7), 20 bits
+	EMB      Result // QR(16,7,6), 16 bits (bursts with embedded signalling only)
+	Payload  Result // BPTC/Trellis/Rate1, 196/196/0 bits
 	// PDU is the RS(12,9) correction (96 bits) or the CRC check (0 bits) of
 	// the information bits that the Payload code returned (FLC/CSBK/DataHeader).
 	PDU Result
-	RC  Result // Single Burst BPTC, 32 bits, + CRC-7 check (Reverse Channel, voice bursts only)
+	RC  Result // Single Burst BPTC, 32 bits, + CRC-7 check (Reverse Channel only)
 }
 
 // Aggregate returns combined stats across all FEC layers in this burst. The
