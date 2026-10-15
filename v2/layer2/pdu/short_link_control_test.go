@@ -163,3 +163,23 @@ func TestShortLC_ToString(t *testing.T) {
 		t.Error("ToString should not be empty")
 	}
 }
+
+func TestShortLC_UnknownSLCO_RoundTrip(t *testing.T) {
+	var payload [24]bit.Bit
+	for i := range payload {
+		payload[i] = bit.Bit((i*7+3)%2 ^ i%3%2)
+	}
+	for _, slco := range []byte{0b0101, 0b1111} {
+		in := buildShortLCBits(slco, payload)
+		slc, fecResult := pdu.DecodeShortLC(in)
+		if fecResult.Uncorrectable {
+			t.Fatalf("SLCO %04b: CRC failed", slco)
+		}
+		if slc.RawPayload != payload {
+			t.Errorf("SLCO %04b: RawPayload = %v, want %v", slco, slc.RawPayload, payload)
+		}
+		if got := must(pdu.EncodeShortLC(&slc)); got != in {
+			t.Errorf("SLCO %04b: Encode(Decode(x)) = %v, want %v", slco, got, in)
+		}
+	}
+}

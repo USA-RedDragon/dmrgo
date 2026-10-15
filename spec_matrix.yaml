@@ -361,6 +361,7 @@ documents:
               - TestShortLC_NullMessage_Decode
               - TestShortLC_ActivityUpdate_Decode
               - TestShortLC_EncodeDecodeRoundTrip
+              - TestShortLC_UnknownSLCO_RoundTrip
               - TestShortLC_CRCFailure
               - TestShortLC_BitsChecked
               - TestShortLC_ToString
@@ -1469,6 +1470,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestDataHeader_Confirmed_RoundTrip
+              - TestDataHeader_ReservedFormat_RoundTrip
               - TestDataHeader_ResponsePacket_RoundTrip
 
       - section: "5.5"

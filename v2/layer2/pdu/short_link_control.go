@@ -97,6 +97,8 @@ type ShortLC struct {
 	CSysParms      *ShortLCCSysParms      `dmr:"bits:4-27,dispatch:SLCO=enums.SLCOCSysParms"`
 	PSysParms      *ShortLCPSysParms      `dmr:"bits:4-27,dispatch:SLCO=enums.SLCOPSysParms"`
 
+	RawPayload [24]bit.Bit `dmr:"bits:4-27,raw,fallback"`
+
 	crc uint8 `dmr:"-"` //nolint:unused
 }
 

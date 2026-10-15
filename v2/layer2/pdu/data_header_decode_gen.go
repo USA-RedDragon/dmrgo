@@ -143,6 +143,8 @@ func DecodeDataHeader(data [96]bit.Bit) (DataHeader, fec.FECResult) {
 	case FormatProprietary:
 		_decoded, _ := DecodeProprietaryHeader(_dispatchBits)
 		result.ProprietaryHeader = &_decoded
+	default:
+		copy(result.RawPayload[:], _dispatchBits[:])
 	}
 	return result, fecResult
 }
@@ -199,6 +201,8 @@ func EncodeDataHeader(s *DataHeader) ([96]bit.Bit, error) {
 			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ProprietaryHeader: %w", err)
 		}
 		copy(data[0:80], _pduBits[:])
+	default:
+		copy(data[0:80], s.RawPayload[:])
 	}
 	if uint64(s.Format)>>4 != 0 {
 		return [96]bit.Bit{}, fmt.Errorf("DataHeader.Format: value %d does not fit in 4 bits", s.Format)
@@ -245,6 +249,8 @@ func (s *DataHeader) ToString() string {
 		_ret += s.UDTHeader.ToString()
 	case s.ProprietaryHeader != nil:
 		_ret += s.ProprietaryHeader.ToString()
+	default:
+		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
 	}
 	_ret += " }"
 	return _ret

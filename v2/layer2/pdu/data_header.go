@@ -41,6 +41,8 @@ type DataHeader struct {
 	RawDataHeader         *RawDataHeader         `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded"`
 	UDTHeader             *UDTHeader             `dmr:"bits:0-79,dispatch:Format=FormatUnifiedDataTransport"`
 	ProprietaryHeader     *ProprietaryHeader     `dmr:"bits:0-79,dispatch:Format=FormatProprietary"`
+
+	RawPayload [80]bit.Bit `dmr:"bits:0-79,raw,fallback"`
 }
 
 type ServiceAccessPointID uint8

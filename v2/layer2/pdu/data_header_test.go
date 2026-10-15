@@ -569,3 +569,22 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 		t.Errorf("round trip = %+v, want %+v", decoded.ProprietaryHeader, original.ProprietaryHeader)
 	}
 }
+
+func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
+	in := buildDataHeaderBits(func(bits *[96]bit.Bit) {
+		for i := range 80 {
+			bits[i] = bit.Bit((i*5 + 1) / 3 % 2)
+		}
+		copy(bits[4:8], bit.BitsFromUint8(0b0100, 4))
+	})
+	dh, fecResult := pdu.DecodeDataHeader(in)
+	if fecResult.Uncorrectable {
+		t.Fatal("CRC failed")
+	}
+	if dh.Format != 0b0100 {
+		t.Fatalf("Format = %04b, want 0100", dh.Format)
+	}
+	if got := must(pdu.EncodeDataHeader(&dh)); got != in {
+		t.Errorf("Encode(Decode(x)) = %v, want %v", got, in)
+	}
+}

@@ -168,6 +168,8 @@ func DecodeShortLC(data [36]bit.Bit) (ShortLC, fec.FECResult) {
 	case enums.SLCOPSysParms:
 		_decoded, _ := DecodeShortLCPSysParms(_dispatchBits)
 		result.PSysParms = &_decoded
+	default:
+		copy(result.RawPayload[:], _dispatchBits[:])
 	}
 	return result, fecResult
 }
@@ -200,6 +202,8 @@ func EncodeShortLC(s *ShortLC) ([36]bit.Bit, error) {
 			return [36]bit.Bit{}, fmt.Errorf("ShortLC.PSysParms: %w", err)
 		}
 		copy(data[4:28], _pduBits[:])
+	default:
+		copy(data[4:28], s.RawPayload[:])
 	}
 	if uint64(s.SLCO)>>4 != 0 {
 		return [36]bit.Bit{}, fmt.Errorf("ShortLC.SLCO: value %d does not fit in 4 bits", s.SLCO)
@@ -224,6 +228,8 @@ func (s *ShortLC) ToString() string {
 		_ret += s.CSysParms.ToString()
 	case s.PSysParms != nil:
 		_ret += s.PSysParms.ToString()
+	default:
+		_ret += fmt.Sprintf("RawPayload: %v", s.RawPayload)
 	}
 	_ret += " }"
 	return _ret
