@@ -37,14 +37,6 @@ type Demodulated struct {
 
 func sampleOf(r Received) int { return int(math.Round(r.Seconds * basebandRate)) }
 
-func isVoiceSync(p enums.SyncPattern) bool {
-	return p == enums.SyncBSSourcedVoice || p == enums.SyncMSSourcedVoice || p == enums.SyncTDMA1Voice || p == enums.SyncTDMA2Voice
-}
-
-func isBSSync(p enums.SyncPattern) bool {
-	return p == enums.SyncBSSourcedVoice || p == enums.SyncBSSourcedData
-}
-
 // Demodulate recovers DMR bursts from complex samples at rate. Bursts with a
 // SYNC pattern are found by search. Voice bursts B to F carry embedded
 // signalling instead, so they are cut at 60 ms steps after their burst A.
@@ -133,7 +125,8 @@ func Demodulate(x []complex128, rate float64) Demodulated {
 			if !ok || !present(r.Seconds) {
 				continue
 			}
-			r.Distance, r.Sync, r.BS = m.Distance, m.Pattern, isBSSync(m.Pattern)
+			src, _, known := layer2.SyncSourceOf(m.Pattern)
+			r.Distance, r.Sync, r.BS = m.Distance, m.Pattern, known && src == layer2.SyncSourceBS
 			all = append(all, r)
 		}
 	}
@@ -216,7 +209,7 @@ func embeddedVoice(found []Received, cut func(int) (Received, bool), present fun
 	}
 	var out []Received
 	for i, a := range found {
-		if !isVoiceSync(a.Sync) {
+		if _, k, _ := layer2.SyncSourceOf(a.Sync); k != layer2.KindVoice {
 			continue
 		}
 		sa := sample(a)

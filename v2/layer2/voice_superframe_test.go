@@ -387,3 +387,23 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 		})
 	}
 }
+
+func TestSyncSourceOf(t *testing.T) {
+	for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
+		voice, data, _ := src.SyncPatterns()
+		for p, kind := range map[enums.SyncPattern]layer2.Kind{voice: layer2.KindVoice, data: layer2.KindData} {
+			gotSrc, gotKind, ok := layer2.SyncSourceOf(p)
+			if !ok || gotSrc != src || gotKind != kind {
+				t.Errorf("SyncSourceOf(%s) = %d, %s, %v; want %d, %s", p, gotSrc, gotKind, ok, src, kind)
+			}
+		}
+	}
+	if src, k, ok := layer2.SyncSourceOf(enums.SyncMSSourcedRC); !ok || src != layer2.SyncSourceMS || k != layer2.KindReverseChannel {
+		t.Errorf("SyncSourceOf(RC) = %d, %s, %v", src, k, ok)
+	}
+	for _, p := range []enums.SyncPattern{enums.SyncNone, enums.SyncReserved, 0x123456789ABC} {
+		if _, k, ok := layer2.SyncSourceOf(p); ok || k != layer2.KindUnknown {
+			t.Errorf("SyncSourceOf(%s) = %s, %v", p, k, ok)
+		}
+	}
+}
