@@ -1,10 +1,11 @@
 package reedsolomon
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"math/bits"
 	"math/rand"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
 func TestEncodeDecodeRoundTrip(t *testing.T) {

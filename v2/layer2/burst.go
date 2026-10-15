@@ -245,9 +245,10 @@ func opcode0x38Hint(sync enums.SyncPattern) pdu.Opcode0x38Hint {
 		return pdu.Opcode0x38BSOutboundActivation
 	case enums.SyncBSSourcedData:
 		return pdu.Opcode0x38TalkgroupDataGrantMultiItem
-	default:
-		return pdu.Opcode0x38Unknown
+	case enums.SyncBSSourcedVoice, enums.SyncMSSourcedVoice, enums.SyncMSSourcedRC, enums.SyncTDMA1Voice,
+		enums.SyncTDMA1Data, enums.SyncTDMA2Voice, enums.SyncTDMA2Data, enums.SyncReserved, enums.SyncNone:
 	}
+	return pdu.Opcode0x38Unknown
 }
 
 func isDataSync(sync enums.SyncPattern) bool {
@@ -633,12 +634,11 @@ func (b *Burst) dataInfoBits() ([196]bit.Bit, error) {
 		if err != nil || !decoded {
 			return info, err
 		}
-		orig, _, err := decodePayload(dt, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
-		if err != nil {
-			return info, nil
-		}
-		if origInfo, err := encodeData(orig, dt); err == nil && origInfo == info {
-			return b.deinterleavedInfoBits, nil
+		orig, _, decodeErr := decodePayload(dt, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
+		if decodeErr == nil {
+			if origInfo, err := encodeData(orig, dt); err == nil && origInfo == info {
+				return b.deinterleavedInfoBits, nil
+			}
 		}
 		return info, nil
 	case b.deinterleavedInfoLen == 0:

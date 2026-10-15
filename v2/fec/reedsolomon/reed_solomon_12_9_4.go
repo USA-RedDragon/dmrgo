@@ -38,8 +38,6 @@ func bitDistance(a, b []byte) int {
 // workspace holds reusable scratch buffers for zero-allocation decode paths.
 // A workspace must not be shared between goroutines.
 type workspace struct {
-	workData  [dataSize + checksumSize]byte
-	syndrome  poly
 	locator   poly
 	evaluator poly
 	product   [polyMaxDeg * 2]uint8

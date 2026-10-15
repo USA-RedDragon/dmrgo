@@ -70,7 +70,7 @@ func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
 		return 0, 0, false
 	}
-	return uint32(bit.Uint(s.RawPayload[8:32])), uint32(bit.Uint(s.RawPayload[32:56])), true
+	return uint32(bit.Uint(s.RawPayload[8:32])), uint32(bit.Uint(s.RawPayload[32:56])), true //nolint:gosec // 24-bit fields
 }
 
 // SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr
@@ -91,6 +91,9 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 			s.UnitToUnit = &FLCUnitToUnit{}
 		}
 		s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress = target, source
+	case enums.FLCOTalkerAliasHeader, enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3,
+		enums.FLCOGPSInfo, enums.FLCOTerminatorDataLinkControl:
+		return false
 	default:
 		return false
 	}

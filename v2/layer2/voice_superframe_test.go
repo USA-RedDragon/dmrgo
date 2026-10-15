@@ -349,8 +349,8 @@ func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 				t.Fatalf("header Data is %T", bursts[0].Data)
 			}
 			cc := bursts[0].SlotType.ColorCode
-			tx := must(layer2.NewVoiceTransmitter(*lc, uint8(cc), layer2.SyncSourceBS, silenceSlot()))
-			frames := must(layer2.NewVoiceTransmitter(*lc, uint8(cc), layer2.SyncSourceBS, silenceSlot()))
+			tx := must(layer2.NewVoiceTransmitter(*lc, cc, layer2.SyncSourceBS, silenceSlot()))
+			frames := must(layer2.NewVoiceTransmitter(*lc, cc, layer2.SyncSourceBS, silenceSlot()))
 			if tx.Header() != raws[0] {
 				t.Errorf("header\ngot  %x\nwant %x", tx.Header(), raws[0])
 			}

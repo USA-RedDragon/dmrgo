@@ -84,7 +84,7 @@ func CheckMBCLastBlockCRC(blocks ...[96]bit.Bit) bool {
 		return false
 	}
 	last := blocks[len(blocks)-1]
-	return uint16(bit.Uint(last[80:80+16])) == MBCLastBlockCRC(blocks...)
+	return uint16(bit.Uint(last[80:96])) == MBCLastBlockCRC(blocks...) //nolint:gosec // 16-bit field
 }
 
 // SetMBCLastBlockCRC writes MBCLastBlockCRC(blocks...) into bits 80-95 of

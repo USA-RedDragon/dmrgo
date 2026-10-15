@@ -118,9 +118,9 @@ func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet
 	for i := range p.Blocks {
 		chunk := buf[i*per : (i+1)*per]
 		if confirmed {
-			p.Blocks[i] = confirmedBlock(rate, uint8(i), chunk) //nolint:gosec // i < MaxBlocks
+			p.Blocks[i] = confirmedBlock(uint8(i), chunk) //nolint:gosec // i < MaxBlocks
 		} else {
-			p.Blocks[i] = unconfirmedBlock(rate, chunk)
+			p.Blocks[i] = unconfirmedBlock(chunk)
 		}
 	}
 	return p, nil
@@ -207,7 +207,7 @@ func padOf(h *pdu.DataHeader) int {
 	return 0
 }
 
-func unconfirmedBlock(rate enums.DataType, chunk []byte) layer2.Data {
+func unconfirmedBlock(chunk []byte) layer2.Data {
 	switch len(chunk) {
 	case 18:
 		b := &pdu.Rate34Data{}
@@ -224,7 +224,7 @@ func unconfirmedBlock(rate enums.DataType, chunk []byte) layer2.Data {
 	}
 }
 
-func confirmedBlock(rate enums.DataType, dbsn uint8, chunk []byte) layer2.Data {
+func confirmedBlock(dbsn uint8, chunk []byte) layer2.Data {
 	switch len(chunk) {
 	case 16:
 		b := &pdu.Rate34Data{}

@@ -1511,13 +1511,6 @@ func qualType(field parse.Field, pdu parse.PDUStruct) *Statement {
 	return Id(field.GoType)
 }
 
-func splitQualified(s string) (string, string) {
-	if idx := strings.LastIndex(s, "."); idx >= 0 {
-		return s[:idx], s[idx+1:]
-	}
-	return "", s
-}
-
 // isFixedArray returns true if the Go type is a fixed-size array (e.g. "[12]byte")
 // as opposed to a slice (e.g. "[]byte").
 func isFixedArray(goType string) bool {

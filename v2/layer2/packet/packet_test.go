@@ -154,12 +154,6 @@ func feed(t *testing.T, a *packet.Assembler, p packet.Packet) (*packet.Message, 
 	return m, err
 }
 
-func llid(v uint32) [24]bit.Bit {
-	var b [24]bit.Bit
-	bit.PutUint(b[:], uint64(v))
-	return b
-}
-
 func unconfirmed() pdu.DataHeader {
 	return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001, FullMessageFlag: true}}

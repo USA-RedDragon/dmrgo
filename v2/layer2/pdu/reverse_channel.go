@@ -42,10 +42,10 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.Result) {
 	var fecResult fec.Result
 
 	// Extract RC command (bits 0-3)
-	result.RCCommand = enums.RCCommand(uint8(bit.Uint(infoBits[:4])))
+	result.RCCommand = enums.RCCommand(bit.Uint(infoBits[:4])) //nolint:gosec // 4-bit field
 
 	// CRC-7 verification with mask 0x7A (Table B.21)
-	if !crc.CheckCRC7(infoBits[:4], uint8(bit.Uint(infoBits[4:]))^CRC7MaskRC) {
+	if !crc.CheckCRC7(infoBits[:4], uint8(bit.Uint(infoBits[4:]))^CRC7MaskRC) { //nolint:gosec // 7-bit field
 		fecResult.Uncorrectable = true
 	}
 
@@ -59,7 +59,7 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) (ReverseChannel, fec.Result) {
 func (rc *ReverseChannel) Encode() ([11]bit.Bit, error) {
 	var bits [11]bit.Bit
 
-	if rc.RCCommand < 0 || rc.RCCommand > 0x0F {
+	if rc.RCCommand > 0x0F {
 		return bits, fmt.Errorf("RC command %d out of range 0-15", int(rc.RCCommand))
 	}
 

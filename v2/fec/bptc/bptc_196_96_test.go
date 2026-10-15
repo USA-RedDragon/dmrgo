@@ -8,7 +8,6 @@ import (
 )
 
 func TestBPTC19696Decode(t *testing.T) {
-
 	for run := 0; run < 100; run++ {
 		// 1. Generate Random Data
 		var data [96]bit.Bit

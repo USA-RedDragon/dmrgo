@@ -513,7 +513,7 @@ type modifierSet struct {
 func applyModifier(f *Field, mod string, seen *modifierSet) error {
 	name, arg, hasArg := strings.Cut(mod, ":")
 	if !hasArg {
-		return applyFlag(f, mod, seen)
+		return applyFlag(f, mod)
 	}
 	switch name {
 	case "type":
@@ -557,7 +557,7 @@ func applyModifier(f *Field, mod string, seen *modifierSet) error {
 	return nil
 }
 
-func applyFlag(f *Field, mod string, seen *modifierSet) error {
+func applyFlag(f *Field, mod string) error {
 	switch mod {
 	case "enum":
 		f.Kind = FieldEnum
