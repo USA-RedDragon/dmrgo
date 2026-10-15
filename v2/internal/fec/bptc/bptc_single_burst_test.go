@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 )
 
 func TestSingleBurstBPTC_EncodeDecodeRoundTrip(t *testing.T) {

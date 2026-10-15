@@ -3,7 +3,7 @@ package vocoder
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/golay"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 )
 
 // AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame,

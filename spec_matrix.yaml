@@ -36,8 +36,8 @@ documents:
           - v2/vocoder/frame.go
           - v2/vocoder/codec.go
           - v2/layer2/voice_superframe.go
-          - v2/fec/golay/golay_23_12_7.go
-          - v2/fec/golay/golay_24_12_8.go
+          - v2/internal/fec/golay/golay_23_12_7.go
+          - v2/internal/fec/golay/golay_24_12_8.go
           - v2/enums/voice_burst_types.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/vocoder
@@ -59,7 +59,7 @@ documents:
               - TestBurstEncode_VoiceIgnoresVoiceBurst
               - TestBurstEncode_RejectsBurstWithoutSync
               - TestVoiceTransmitter_AddFramesUsesAMBE72
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/golay
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay
             names:
               - TestGolay23127
               - TestGolay24128
@@ -213,7 +213,7 @@ documents:
         source_files:
           - v2/layer2/short_lc_assembler.go
           - v2/layer2/short_lc_cach.go
-          - v2/fec/bptc/bptc_cach.go
+          - v2/internal/fec/bptc/bptc_cach.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
@@ -433,7 +433,7 @@ documents:
         title: "TACT PDU"
         source_files:
           - v2/layer2/pdu/tact.go
-          - v2/fec/hamming/hamming_7_4_3.go
+          - v2/internal/fec/hamming/hamming_7_4_3.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -482,7 +482,7 @@ documents:
         source_files:
           - v2/layer2/pdu/short_link_control.go
           - v2/enums/slco.go
-          - v2/crc/crc8.go
+          - v2/internal/crc/crc8.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -667,10 +667,10 @@ documents:
       - section: "9.3.4"
         title: "EMB parity"
         source_files:
-          - v2/fec/quadraticresidue/quadratic_residue_16_7_6.go
+          - v2/internal/fec/quadraticresidue/quadratic_residue_16_7_6.go
           - v2/layer2/pdu/embedded_signalling.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue
             names:
               - TestQuadraticResidue1676Decode
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
@@ -787,9 +787,9 @@ documents:
       - section: "B.1.1"
         title: "BPTC (196,96)"
         source_files:
-          - v2/fec/bptc/bptc_196_96.go
+          - v2/internal/fec/bptc/bptc_196_96.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc
             names:
               - TestBPTC19696Decode
               - TestBPTC19696_EncodedGridIsProductCodeword
@@ -808,9 +808,9 @@ documents:
       - section: "B.2.1"
         title: "Variable length BPTC for embedded signalling"
         source_files:
-          - v2/fec/bptc/bptc_embedded_lc.go
+          - v2/internal/fec/bptc/bptc_embedded_lc.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc
             names:
               - TestEmbeddedLC_EncodeDecodeRoundTrip
               - TestEmbeddedLC_BitsChecked
@@ -832,9 +832,9 @@ documents:
       - section: "B.2.2"
         title: "Single Burst Variable length BPTC"
         source_files:
-          - v2/fec/bptc/bptc_single_burst.go
+          - v2/internal/fec/bptc/bptc_single_burst.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc
             names:
               - TestSingleBurstBPTC_EncodeDecodeRoundTrip
               - TestSingleBurstBPTC_RC_EncodeDecodeRoundTrip
@@ -854,9 +854,9 @@ documents:
       - section: "B.2.3"
         title: "Variable length BPTC for CACH signalling"
         source_files:
-          - v2/fec/bptc/bptc_cach.go
+          - v2/internal/fec/bptc/bptc_cach.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc
             names:
               - TestCACHBPTC_EncodeDecodeRoundTrip
               - TestCACHBPTC_BitsChecked
@@ -875,9 +875,9 @@ documents:
       - section: "B.2.4"
         title: "Rate ¾ Trellis code"
         source_files:
-          - v2/fec/trellis/trellis_3_4.go
+          - v2/internal/fec/trellis/trellis_3_4.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/trellis
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis
             names:
               - TestTrellis34Decode
               - TestTrellis34_EncoderTablesMatchSpec
@@ -898,9 +898,9 @@ documents:
       - section: "B.3.1"
         title: "Golay (20,8)"
         source_files:
-          - v2/fec/golay/golay_20_8_7.go
+          - v2/internal/fec/golay/golay_20_8_7.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/golay
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay
             names:
               - TestGolay2087Decode
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
@@ -910,28 +910,28 @@ documents:
       - section: "B.3.2"
         title: "Quadratic residue (16,7,6)"
         source_files:
-          - v2/fec/quadraticresidue/quadratic_residue_16_7_6.go
+          - v2/internal/fec/quadraticresidue/quadratic_residue_16_7_6.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue
             names:
               - TestQuadraticResidue1676Decode
 
       - section: "B.3.3"
         title: "Hamming (17,12,3)"
         source_files:
-          - v2/fec/bptc/bptc_196_96.go
+          - v2/internal/fec/bptc/bptc_196_96.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc
             names:
               - TestBPTC19696Decode
 
       - section: "B.3.4"
         title: "Hamming (13,9,3), Hamming (15,11,3), and Hamming (16,11,4)"
         source_files:
-          - v2/fec/bptc/bptc_196_96.go
-          - v2/fec/bptc/bptc_embedded_lc.go
+          - v2/internal/fec/bptc/bptc_196_96.go
+          - v2/internal/fec/bptc/bptc_embedded_lc.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/bptc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc
             names:
               - TestBPTC19696Decode
               - TestHamming16_11_GeneratorMatchesTableB16
@@ -941,9 +941,9 @@ documents:
       - section: "B.3.5"
         title: "Hamming (7,4,3)"
         source_files:
-          - v2/fec/hamming/hamming_7_4_3.go
+          - v2/internal/fec/hamming/hamming_7_4_3.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/hamming
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming
             names:
               - TestHamming743_Parity
               - TestHamming743_Check
@@ -957,9 +957,9 @@ documents:
       - section: "B.3.6"
         title: "Reed-Solomon (12,9)"
         source_files:
-          - v2/fec/reedsolomon/reed_solomon_12_9_4.go
+          - v2/internal/fec/reedsolomon/reed_solomon_12_9_4.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon
             names:
               - TestReedSolomon1294SyndromeNoError
               - TestReedSolomon1294DecodeClean
@@ -991,9 +991,9 @@ documents:
       - section: "B.3.7"
         title: "8-bit CRC calculation"
         source_files:
-          - v2/crc/crc8.go
+          - v2/internal/crc/crc8.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/crc
             names:
               - TestCRC8_ZeroInput
               - TestCRC8_SingleBit
@@ -1006,9 +1006,9 @@ documents:
       - section: "B.3.8"
         title: "CRC-CCITT calculation"
         source_files:
-          - v2/crc/crc_ccitt.go
+          - v2/internal/crc/crc_ccitt.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/crc
             names:
               - TestCRCCCITT_KnownValues
               - TestCRCCCITT_CheckValid
@@ -1019,9 +1019,9 @@ documents:
       - section: "B.3.9"
         title: "32-bit CRC calculation"
         source_files:
-          - v2/crc/crc32.go
+          - v2/internal/crc/crc32.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/crc
             names:
               - TestCRC32_ZeroInput
               - TestCRC32_AllZeros
@@ -1036,9 +1036,9 @@ documents:
       - section: "B.3.10"
         title: "CRC-9 calculation"
         source_files:
-          - v2/crc/crc9.go
+          - v2/internal/crc/crc9.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/crc
             names:
               - TestCRC9_ZeroInput
               - TestCRC9_SingleBit
@@ -1053,13 +1053,13 @@ documents:
       - section: "B.3.11"
         title: "5-bit Checksum (CS) calculation"
         source_files:
-          - v2/crc/checksum5.go
+          - v2/internal/crc/checksum5.go
           - v2/layer2/embedded_lc.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestEmbeddedLC_ChecksumMismatch
-          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/crc
             names:
               - TestChecksum5_AllZeros
               - TestChecksum5_SingleByte
@@ -1073,13 +1073,13 @@ documents:
       - section: "B.3.12"
         title: "Data Type CRC Mask"
         source_files:
-          - v2/crc/crc_ccitt.go
+          - v2/internal/crc/crc_ccitt.go
           - v2/layer2/pdu/full_link_control.go
           - v2/layer2/mmdvmhost.go
           - v2/layer2/pdu/codeword_bytes.go
           - v2/layer2/mmdvmhost_seal.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/crc
             names:
               - TestCRCCCITT_KnownValues
               - TestCRCCCITT_CheckValid
@@ -1115,9 +1115,9 @@ documents:
       - section: "B.3.13"
         title: "7-bit CRC calculation"
         source_files:
-          - v2/crc/crc7.go
+          - v2/internal/crc/crc7.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/crc
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/crc
             names:
               - TestCRC7_ZeroInput
               - TestCRC7_SingleBit

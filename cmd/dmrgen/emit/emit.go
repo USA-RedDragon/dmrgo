@@ -16,7 +16,7 @@ import (
 
 const (
 	fecFieldName = "FEC"
-	qrPkg        = "github.com/USA-RedDragon/dmrgo/v2/fec/quadraticresidue"
+	qrPkg        = "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	encodeFnName = "Encode"
 
 	typUint8  = "uint8"
@@ -25,8 +25,8 @@ const (
 	typUint64 = "uint64"
 
 	bitPkg = "github.com/USA-RedDragon/dmrgo/v2/bit"
-	crcPkg = "github.com/USA-RedDragon/dmrgo/v2/crc"
-	rsPkg  = "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
+	crcPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	rsPkg  = "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 )
 
 // CRCAlgorithmInfo describes a CRC algorithm for code generation.
@@ -55,7 +55,7 @@ var crcAlgorithms = map[string]CRCAlgorithmInfo{
 
 // FECCodecInfo maps FEC directive names to their decode function and import path.
 type FECCodecInfo struct {
-	ImportPath  string // e.g. "github.com/USA-RedDragon/dmrgo/v2/fec/golay"
+	ImportPath  string // e.g. "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 	DecodeFn    string // e.g. "Decode2087"
 	EncodeFn    string // e.g. "Encode2087", func([DataBits]bit.Bit) [InputSize]bit.Bit
 	InputSize   int    // full FEC codeword size in bits, e.g. 20
@@ -68,7 +68,7 @@ type FECCodecInfo struct {
 //nolint:gochecknoglobals
 var fecCodecs = map[string]FECCodecInfo{
 	"golay_20_8_7": {
-		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
+		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay",
 		DecodeFn:   "Decode2087",
 		EncodeFn:   "Encode2087",
 		InputSize:  20,
@@ -91,7 +91,7 @@ var fecCodecs = map[string]FECCodecInfo{
 		DataBytes:   9,
 	},
 	"hamming_7_4_3": {
-		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
+		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming",
 		DecodeFn:   "Decode743",
 		EncodeFn:   "Encode743",
 		InputSize:  7,
@@ -107,12 +107,12 @@ func resolveImportPath(pkgName, sourceFile string) string {
 		"bit":              "github.com/USA-RedDragon/dmrgo/v2/bit",
 		"fec":              "github.com/USA-RedDragon/dmrgo/v2/fec",
 		"layer3":           "github.com/USA-RedDragon/dmrgo/v2/layer3",
-		"golay":            "github.com/USA-RedDragon/dmrgo/v2/fec/golay",
+		"golay":            "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay",
 		"quadraticResidue": qrPkg,
-		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon",
-		"bptc":             "github.com/USA-RedDragon/dmrgo/v2/fec/bptc",
-		"trellis":          "github.com/USA-RedDragon/dmrgo/v2/fec/trellis",
-		"hamming":          "github.com/USA-RedDragon/dmrgo/v2/fec/hamming",
+		"reedSolomon":      "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon",
+		"bptc":             "github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc",
+		"trellis":          "github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis",
+		"hamming":          "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming",
 		"vocoder":          "github.com/USA-RedDragon/dmrgo/v2/vocoder",
 	}
 	if p, ok := knownPkgs[pkgName]; ok {

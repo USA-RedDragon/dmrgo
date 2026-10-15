@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
-	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
+	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 

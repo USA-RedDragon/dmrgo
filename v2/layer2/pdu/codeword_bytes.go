@@ -3,10 +3,10 @@ package pdu
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/fec/reedsolomon"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 )
 
 // ETSI TS 102 361-1 §B.3.12 — Data Type CRC Mask, applied to the 96-bit

@@ -6,7 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/golay"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 

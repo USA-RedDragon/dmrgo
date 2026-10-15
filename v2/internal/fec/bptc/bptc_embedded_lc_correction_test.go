@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 )
 
 func fragmentsFromBytes(b [4][4]byte) [4][32]bit.Bit {

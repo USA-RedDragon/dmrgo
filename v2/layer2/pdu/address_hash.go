@@ -2,7 +2,7 @@ package pdu
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
 // AddressHash returns the 8-bit hashed form of a 24-bit address, as in the
