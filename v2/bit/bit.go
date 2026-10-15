@@ -96,6 +96,30 @@ func Unpack(data []byte) []Bit {
 	return bits
 }
 
+// Unpack96 returns the 96 bits of a 12-byte BPTC(196,96) payload, as Unpack
+// does.
+func Unpack96(data [12]byte) [96]Bit {
+	var bits [96]Bit
+	for i := range 96 {
+		if (data[i/8]>>(7-(i%8)))&1 != 0 {
+			bits[i] = 1
+		}
+	}
+	return bits
+}
+
+// Pack96 packs 96 bits, such as the information bits of a CSBK or data
+// header, into 12 bytes, as Pack does.
+func Pack96(bits [96]Bit) [12]byte {
+	var data [12]byte
+	for i := range 96 {
+		if bits[i]&1 == 1 {
+			data[i/8] |= 1 << (7 - (i % 8))
+		}
+	}
+	return data
+}
+
 // Unpack264 returns the 264 bits of a 33-byte burst, as Unpack does.
 func Unpack264(data [33]byte) [264]Bit {
 	var bits [264]Bit

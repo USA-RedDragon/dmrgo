@@ -21,6 +21,12 @@ func TestReadersUseOnlyTheLowBit(t *testing.T) {
 	if Pack264(raw264) != Pack264(low264) {
 		t.Error("Pack264 used more than the low bit")
 	}
+	var raw96, low96 [96]Bit
+	copy(raw96[:], raw)
+	copy(low96[:], low)
+	if Pack96(raw96) != Pack96(low96) {
+		t.Error("Pack96 used more than the low bit")
+	}
 }
 
 func TestUint(t *testing.T) {
@@ -83,5 +89,19 @@ func TestPack264Unpack264(t *testing.T) {
 	}
 	if got := Pack264(Unpack264(data)); got != data {
 		t.Errorf("Pack264(Unpack264) = %x, want %x", got, data)
+	}
+}
+
+func TestPack96Unpack96(t *testing.T) {
+	var data [12]byte
+	for i := range data {
+		data[i] = byte(i*29 + 3)
+	}
+	bits := Unpack96(data)
+	if !slices.Equal(bits[:], Unpack(data[:])) {
+		t.Error("Unpack96 differs from Unpack")
+	}
+	if got := Pack96(bits); got != data {
+		t.Errorf("Pack96(Unpack96) = %x, want %x", got, data)
 	}
 }
