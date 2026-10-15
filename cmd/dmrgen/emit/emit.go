@@ -3,6 +3,7 @@
 package emit
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -184,7 +185,9 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 			return nil, fmt.Errorf("generating decode for %s: %w", pdu.Name, err)
 		}
 		f.Line()
-		emitEncode(f, pdu)
+		if err := emitEncode(f, pdu); err != nil {
+			return nil, fmt.Errorf("generating encode for %s: %w", pdu.Name, err)
+		}
 		f.Line()
 		emitToString(f, pdu)
 	}
@@ -202,17 +205,15 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		f.Comment(funcName + " decodes a " + pdu.Name + " per " + pdu.SpecRef)
 	}
 
-	// Determine if FEC pre-processing is needed
-	var codec *FECCodecInfo
-	if pdu.FEC != nil {
-		c, ok := fecCodecs[pdu.FEC.Codec]
-		if !ok {
-			return fmt.Errorf("unknown FEC codec: %s", pdu.FEC.Codec)
-		}
-		codec = &c
+	codec, err := resolveCodec(pdu)
+	if err != nil {
+		return err
+	}
+	if codec != nil {
 		inputSize = codec.InputSize
 	}
 
+	var genErr error
 	// func DecodeXxx(data [N]bit.Bit) (Xxx, fec.FECResult) {
 	f.Func().Id(funcName).Params(
 		Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit"),
@@ -249,7 +250,10 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 		}
 
 		if hasCRC {
-			emitCRCCheck(g, pdu, inputSize)
+			if err := emitCRCCheck(g, pdu, inputSize); err != nil {
+				genErr = err
+				return
+			}
 		} else if hasPackedFEC {
 			emitPackedFECDecode(g, codec, inputSize)
 		} else if hasBitFEC {
@@ -278,13 +282,44 @@ func emitDecode(f *File, pdu parse.PDUStruct) error {
 
 		// Emit dispatch switch if there are dispatch fields
 		if len(dispatchFields) > 0 {
-			emitDispatchSwitch(g, dispatchFields, pdu)
+			if err := emitDispatchSwitch(g, dispatchFields, pdu); err != nil {
+				genErr = err
+				return
+			}
 		}
 
 		g.Return(Id("result"), Id("fecResult"))
 	})
 
-	return nil
+	return genErr
+}
+
+// resolveCodec looks up the FEC codec and CRC algorithm of a PDU and checks
+// that its fields fit the codec's data bits.
+func resolveCodec(pdu parse.PDUStruct) (*FECCodecInfo, error) {
+	if pdu.CRC != nil {
+		if _, ok := crcAlgorithms[pdu.CRC.Algorithm]; !ok {
+			return nil, fmt.Errorf("unknown CRC algorithm: %q", pdu.CRC.Algorithm)
+		}
+	}
+	if pdu.FEC == nil {
+		return nil, nil
+	}
+	c, ok := fecCodecs[pdu.FEC.Codec]
+	if !ok {
+		return nil, fmt.Errorf("unknown FEC codec: %s", pdu.FEC.Codec)
+	}
+	if pdu.CRC != nil {
+		return nil, errors.New("dmr:fec and dmr:crc cannot be combined")
+	}
+	dataBits := c.DataBits
+	if c.PackedBytes {
+		dataBits = c.DataBytes * 8
+	}
+	if pdu.InputSize > dataBits {
+		return nil, fmt.Errorf("fields span %d bits but %s carries %d data bits", pdu.InputSize, pdu.FEC.Codec, dataBits)
+	}
+	return &c, nil
 }
 
 // emitBitPacking generates code to pack bit.Bit array into []byte.
@@ -303,11 +338,14 @@ func emitBitPacking(g *Group, totalBytes int) {
 }
 
 // emitCRCCheck generates CRC validation code for both byte-level (CRC-CCITT) and bit-level (CRC-8) CRCs.
-func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) {
+func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	crcDir := pdu.CRC
 
-	algo, algoKnown := crcAlgorithms[crcDir.Algorithm]
-	if algoKnown && algo.BitLevel {
+	algo, ok := crcAlgorithms[crcDir.Algorithm]
+	if !ok {
+		return fmt.Errorf("unknown CRC algorithm: %q", crcDir.Algorithm)
+	}
+	if algo.BitLevel {
 		// Bit-level CRC (e.g. CRC-8): operates on data[:] directly, no byte packing
 		g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
 		g.Id("fecResult").Dot("BitsChecked").Op("=").Lit(inputSize)
@@ -324,7 +362,7 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) {
 			Id("_crcVal").Op("|=").Uint8().Call(Id("data").Index(Lit(dataBits).Op("+").Id("i"))),
 		)
 		g.Id("result").Dot("crc").Op("=").Id("_crcVal")
-		return
+		return nil
 	}
 
 	// Byte-level CRC (CRC-CCITT): operates on packed bytes
@@ -340,11 +378,7 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) {
 	// CRC check
 	g.Var().Id("fecResult").Qual(fecPkg, "FECResult")
 	g.Id("fecResult").Dot("BitsChecked").Op("=").Lit(inputSize)
-	checkFn := "CheckCRCCCITT"
-	if algoKnown {
-		checkFn = algo.CheckFn
-	}
-	g.If(Op("!").Qual(crcPkg, checkFn).Call(Id("_packedBytes").Index(Empty(), Empty()))).Block(
+	g.If(Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Empty()))).Block(
 		Id("fecResult").Dot("Uncorrectable").Op("=").True(),
 	)
 	g.Id("result").Dot("FEC").Op("=").Id("fecResult")
@@ -354,6 +388,7 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) {
 	g.Id("result").Dot("crc").Op("=").
 		Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 2))).Op("<<").Lit(8).
 		Op("|").Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 1)))
+	return nil
 }
 
 // emitPackedFECDecode generates packed-bytes FEC (e.g. Reed-Solomon) decode code.
@@ -387,30 +422,23 @@ func emitPackedFECDecode(g *Group, codec *FECCodecInfo, inputSize int) {
 // and decodes the appropriate sub-PDU into a pointer field.
 // When multiple fields share the same dispatch value, a secondary guard condition
 // (parsed from the `when:` modifier) is used to disambiguate them via if/else.
-func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) {
-	if len(fields) == 0 {
-		return
-	}
-
-	// All dispatch fields in a PDU share the same dispatch field name and bit range
+func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) error {
 	dispatchFieldName := fields[0].DispatchFieldName
 	bitStart := fields[0].BitStart
 	bitEnd := fields[0].BitEnd
 	arraySize := bitEnd - bitStart + 1
 
-	// Declare the payload bits variable
 	tmpVar := "_dispatchBits"
 	g.Var().Id(tmpVar).Index(Lit(arraySize)).Qual(bitPkg, "Bit")
 	g.Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Lit(bitStart), Lit(bitEnd+1)))
 
 	// Group fields by their dispatch values to detect shared-value cases.
-	// Key: sorted dispatch values joined by "|", Value: list of fields sharing those values.
 	type dispatchGroup struct {
 		values []string
 		fields []parse.Field
 	}
 	var groups []dispatchGroup
-	groupIndex := map[string]int{} // key → index in groups
+	groupIndex := map[string]int{}
 	for _, field := range fields {
 		key := strings.Join(field.DispatchValues, "|")
 		if idx, ok := groupIndex[key]; ok {
@@ -421,138 +449,106 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct) {
 		}
 	}
 
-	// Build the switch statement
+	var genErr error
 	g.Switch(Id("result").Dot(dispatchFieldName)).BlockFunc(func(sw *Group) {
 		for _, grp := range groups {
-			// Build case values
 			caseValues := make([]Code, len(grp.values))
 			for i, val := range grp.values {
 				caseValues[i] = emitDispatchConstant(val, pdu)
 			}
 
-			if len(grp.fields) == 1 {
-				// Simple case: one field per dispatch value
-				field := grp.fields[0]
-				typeName := field.TypeName
-				if field.IsPointer && field.PointedType != "" {
-					typeName = field.PointedType
-				}
-				decodeFn := "Decode" + typeName
-
-				sw.Case(caseValues...).Block(
-					List(Id("_decoded"), Id("_")).Op(":=").Id(decodeFn).Call(Id(tmpVar)),
-					Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
-				)
-			} else {
-				// Multiple fields share the same dispatch value: use when: guards
-				sw.Case(caseValues...).BlockFunc(func(caseBody *Group) {
-					emitGuardedDispatch(caseBody, grp.fields, tmpVar, pdu)
-				})
+			if len(grp.fields) == 1 && grp.fields[0].When == nil {
+				sw.Case(caseValues...).Block(dispatchDecodeBlock(grp.fields[0], tmpVar)...)
+				continue
 			}
+			sw.Case(caseValues...).BlockFunc(func(caseBody *Group) {
+				if err := emitGuardedDispatch(caseBody, grp.fields, tmpVar); err != nil && genErr == nil {
+					genErr = err
+				}
+			})
 		}
 	})
+	return genErr
+}
+
+func dispatchDecodeBlock(field parse.Field, tmpVar string) []Code {
+	return []Code{
+		List(Id("_decoded"), Id("_")).Op(":=").Id("Decode" + dispatchTypeName(field)).Call(Id(tmpVar)),
+		Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
+	}
+}
+
+func dispatchTypeName(field parse.Field) string {
+	if field.IsPointer && field.PointedType != "" {
+		return field.PointedType
+	}
+	return field.TypeName
 }
 
 // emitGuardedDispatch emits an if/else chain for dispatch fields that share the
 // same primary dispatch value. Fields with a `when:` guard are emitted as `if`
 // conditions; the unguarded field (if any) becomes the final `else` fallback.
-func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string, pdu parse.PDUStruct) {
-	// Separate guarded and unguarded fields
+func emitGuardedDispatch(g *Group, fields []parse.Field, tmpVar string) error {
 	var guarded []parse.Field
 	var fallback *parse.Field
 	for i := range fields {
-		if fields[i].SecondaryField != "" {
+		if fields[i].When != nil {
 			guarded = append(guarded, fields[i])
-		} else {
-			fb := fields[i]
-			fallback = &fb
+			continue
 		}
+		if fallback != nil {
+			return fmt.Errorf("dispatch fields %s and %s share values and neither has a when: guard", fallback.Name, fields[i].Name)
+		}
+		fb := fields[i]
+		fallback = &fb
 	}
 
 	// Build the if/else if/else chain as a single jennifer *Statement so that
-	// Go's "} else {" is on one line (separate g.If / g.Else calls would put
-	// them on different lines, producing invalid Go).
+	// "} else {" stays on one line.
 	var chain *Statement
 	for i, field := range guarded {
-		typeName := field.TypeName
-		if field.IsPointer && field.PointedType != "" {
-			typeName = field.PointedType
+		guardCond, err := emitGuardCondition(field.When)
+		if err != nil {
+			return fmt.Errorf("field %s: %w", field.Name, err)
 		}
-		decodeFn := "Decode" + typeName
-
-		// Build the guard condition: result.SecondaryField <op> <value>
-		guardCond := emitGuardCondition(field)
-
-		decodeBlock := []Code{
-			List(Id("_decoded"), Id("_")).Op(":=").Id(decodeFn).Call(Id(tmpVar)),
-			Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
-		}
-
 		if i == 0 {
-			chain = If(guardCond).Block(decodeBlock...)
+			chain = If(guardCond).Block(dispatchDecodeBlock(field, tmpVar)...)
 		} else {
-			chain.Else().If(guardCond).Block(decodeBlock...)
+			chain.Else().If(guardCond).Block(dispatchDecodeBlock(field, tmpVar)...)
 		}
 	}
-
 	if fallback != nil {
-		typeName := fallback.TypeName
-		if fallback.IsPointer && fallback.PointedType != "" {
-			typeName = fallback.PointedType
-		}
-		decodeFn := "Decode" + typeName
-
-		fallbackBlock := []Code{
-			List(Id("_decoded"), Id("_")).Op(":=").Id(decodeFn).Call(Id(tmpVar)),
-			Id("result").Dot(fallback.Name).Op("=").Op("&").Id("_decoded"),
-		}
-
-		if chain != nil {
-			chain.Else().Block(fallbackBlock...)
-		} else {
-			// No guards at all — shouldn't happen, but handle gracefully
-			for _, stmt := range fallbackBlock {
-				g.Add(stmt)
-			}
-			return
-		}
+		chain.Else().Block(dispatchDecodeBlock(*fallback, tmpVar)...)
 	}
-
-	if chain != nil {
-		g.Add(chain)
-	}
+	g.Add(chain)
+	return nil
 }
 
-// emitGuardCondition generates the Code for a when: guard condition.
-// e.g. result.AppendedBlocks == 0 or result.TrunkingMode == true
-func emitGuardCondition(field parse.Field) *Statement {
-	lhs := Id("result").Dot(field.SecondaryField)
+// emitGuardCondition generates the Code for a guard condition on the decoded result,
+// e.g. result.AppendedBlocks == 0 or result.TrunkingMode == true.
+func emitGuardCondition(guard *parse.Guard) (*Statement, error) {
+	lhs := Id("result").Dot(guard.Field)
 
-	// Support boolean literal values (true/false) in addition to integers
 	var val *Statement
-	switch field.SecondaryValue {
+	switch guard.Value {
 	case "true":
 		val = True()
 	case "false":
 		val = False()
 	default:
-		val = Lit(mustAtoi(field.SecondaryValue))
+		n, err := strconv.Atoi(guard.Value)
+		if err != nil {
+			return nil, fmt.Errorf("guard value %q is not an integer or bool", guard.Value)
+		}
+		val = Lit(n)
 	}
 
-	switch field.SecondaryOp {
-	case "==":
-		return lhs.Op("==").Add(val)
-	case "!=":
-		return lhs.Op("!=").Add(val)
+	switch guard.Op {
+	case "==", "!=":
+		return lhs.Op(guard.Op).Add(val), nil
 	default:
-		return lhs.Op("==").Add(val) // fallback
+		return nil, fmt.Errorf("unsupported guard operator %q", guard.Op)
 	}
-}
-
-// mustAtoi converts a string to int, returning 0 on error.
-func mustAtoi(s string) int {
-	n, _ := strconv.Atoi(s)
-	return n
 }
 
 // emitDispatchConstant generates the jennifer Code for a dispatch constant reference.
@@ -821,7 +817,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			emitNonContiguousDecode(g, field, pdu)
 		} else {
 			// Choose the right bit extraction function based on width
-			fn, castType := bitExtractFunc(field.BitWidth, field.GoType)
+			fn := bitExtractFunc(field.BitWidth)
 			call := Qual(bitPkg, fn).Call(
 				Id("data").Index(Empty(), Empty()),
 				Lit(field.BitStart),
@@ -830,17 +826,21 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			if needsCast(fn, field.GoType) {
 				g.Add(target).Op("=").Add(qualType(field, pdu)).Call(call)
 			} else {
-				_ = castType
 				g.Add(target).Op("=").Add(call)
 			}
 		}
 
 	case parse.FieldInt:
-		g.Add(target).Op("=").Qual(bitPkg, "BitsToInt").Call(
+		call := Qual(bitPkg, "BitsToInt").Call(
 			Id("data").Index(Empty(), Empty()),
 			Lit(field.BitStart),
 			Lit(field.BitWidth),
 		)
+		if field.GoType == "int" {
+			g.Add(target).Op("=").Add(call)
+		} else {
+			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(call)
+		}
 
 	case parse.FieldEnum:
 		// Extract as int, then call FromInt
@@ -911,19 +911,13 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 				}(),
 			)
 		} else if field.DelegateNoPtr {
-			// noptr delegates are uint typedefs — inline BitsToUint8 cast
-			arraySize := field.BitEnd - field.BitStart + 1
-			var typeQual Code
-			if field.IsQualified {
-				typeQual = Qual(importPath, field.TypeName)
-			} else {
-				typeQual = Id(field.TypeName)
-			}
-			g.Add(target).Op("=").Add(typeQual).Call(
-				Qual(bitPkg, "BitsToUint8").Call(
-					Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-					Lit(0),
-					Lit(arraySize),
+			// noptr delegates are integer typedefs: extract and convert
+			fn := bitExtractFunc(field.BitWidth)
+			g.Add(target).Op("=").Add(qualType(field, pdu)).Call(
+				Qual(bitPkg, fn).Call(
+					Id("data").Index(Empty(), Empty()),
+					Lit(field.BitStart),
+					Lit(field.BitWidth),
 				),
 			)
 		} else {
@@ -976,7 +970,7 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 // emitEncode generates an EncodeXxx function for a PDU struct.
 // For FEC-protected PDUs, the output includes FEC parity (full codeword).
-func emitEncode(f *File, pdu parse.PDUStruct) {
+func emitEncode(f *File, pdu parse.PDUStruct) error {
 	funcName := "Encode" + pdu.Name
 
 	// Add spec reference comment above the function if available.
@@ -984,12 +978,9 @@ func emitEncode(f *File, pdu parse.PDUStruct) {
 		f.Comment(funcName + " encodes a " + pdu.Name + " per " + pdu.SpecRef)
 	}
 
-	var codec *FECCodecInfo
-	if pdu.FEC != nil {
-		c, ok := fecCodecs[pdu.FEC.Codec]
-		if ok {
-			codec = &c
-		}
+	codec, err := resolveCodec(pdu)
+	if err != nil {
+		return err
 	}
 
 	hasCRC := pdu.CRC != nil
@@ -1034,6 +1025,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) {
 			g.Return(Id("data"))
 		}
 	})
+	return nil
 }
 
 // emitEncodeFields emits encoding for all fields (regular + dispatch).
@@ -1099,8 +1091,8 @@ func emitDispatchEncode(g *Group, fields []parse.Field, pdu parse.PDUStruct) {
 // emitCRCEncode generates CRC calculation and embedding for encoding.
 // Supports both byte-level CRC (CRC-CCITT) and bit-level CRC (CRC-8).
 func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
-	algo, algoKnown := crcAlgorithms[pdu.CRC.Algorithm]
-	if algoKnown && algo.BitLevel {
+	algo := crcAlgorithms[pdu.CRC.Algorithm]
+	if algo.BitLevel {
 		// Bit-level CRC (e.g. CRC-8): compute over data bits directly
 		dataBits := outputSize - algo.CRCBits
 		g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("data").Index(Empty(), Lit(dataBits)))
@@ -1130,11 +1122,7 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 	)
 
 	// Calculate CRC
-	calcFn := "CalculateCRCCCITT"
-	if algoKnown {
-		calcFn = algo.CalcFn
-	}
-	g.Id("_crcVal").Op(":=").Qual(crcPkg, calcFn).Call(Id("_encBytes").Index(Empty(), Empty()))
+	g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("_encBytes").Index(Empty(), Empty()))
 
 	// CRC bytes (big-endian, swapped like MMDVM: crc8[0]=low, crc8[1]=high)
 	g.Id("_crcHigh").Op(":=").Byte().Call(Id("_crcVal").Op(">>").Lit(8))
@@ -1211,7 +1199,7 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 			// Non-contiguous bits: decompose value into segments
 			emitNonContiguousEncode(g, field)
 		} else {
-			fn := bitStoreFunc(field.BitWidth, field.GoType)
+			fn := bitStoreFunc(field.BitWidth)
 			bits := Qual(bitPkg, fn).Call(
 				castToStoreFuncType(source.Clone(), field.GoType, fn),
 				Lit(field.BitWidth),
@@ -1235,7 +1223,7 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	case parse.FieldEnum:
 		// Cast enum to int, then to uint for BitsFromUint
-		fn := bitStoreFunc(field.BitWidth, "uint8")
+		fn := bitStoreFunc(field.BitWidth)
 		storeType := storeParamType(fn)
 		bits := Qual(bitPkg, fn).Call(
 			Add(storeType).Call(source.Clone()),
@@ -1293,11 +1281,12 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 				),
 			)
 		} else if field.DelegateNoPtr {
-			// noptr delegates are uint typedefs — cast to uint8 and pack bits
+			// noptr delegates are integer typedefs: convert and store
+			fn := bitStoreFunc(field.BitWidth)
 			g.Copy(
 				Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-				Qual(bitPkg, "BitsFromUint8").Call(
-					Uint8().Call(source.Clone()),
+				Qual(bitPkg, fn).Call(
+					Add(storeParamType(fn)).Call(source.Clone()),
 					Lit(arraySize),
 				),
 			)
@@ -1361,7 +1350,7 @@ func emitFieldEncode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 // It accumulates segments in a temp variable: extract first range, shift left, OR next range, etc.
 func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	tmpName := "_tmp" + field.Name
-	fn, _ := bitExtractFunc(field.BitWidth, field.GoType)
+	fn := bitExtractFunc(field.BitWidth)
 	firstWidth := field.BitEnd - field.BitStart + 1
 
 	// var _tmpField uint8 (using the extract function's natural type)
@@ -1405,7 +1394,7 @@ func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 // Decomposes the value into segments (MSB-first) and stores each in its bit range.
 func emitNonContiguousEncode(g *Group, field parse.Field) {
 	source := Id("s").Dot(field.Name)
-	fn := bitStoreFunc(field.BitWidth, field.GoType)
+	fn := bitStoreFunc(field.BitWidth)
 	firstWidth := field.BitEnd - field.BitStart + 1
 
 	// Calculate remaining bits after the first range
@@ -1450,18 +1439,18 @@ func emitNonContiguousEncode(g *Group, field parse.Field) {
 
 // Helper functions
 
-func bitExtractFunc(width int, _ string) (string, string) {
+func bitExtractFunc(width int) string {
 	switch {
 	case width <= 8:
-		return "BitsToUint8", "uint8"
+		return "BitsToUint8"
 	case width <= 16:
-		return "BitsToUint16", "uint16"
+		return "BitsToUint16"
 	default:
-		return "BitsToUint32", "uint32"
+		return "BitsToUint32"
 	}
 }
 
-func bitStoreFunc(width int, _ string) string {
+func bitStoreFunc(width int) string {
 	switch {
 	case width <= 8:
 		return "BitsFromUint8"

@@ -204,7 +204,7 @@ func (s *FLCUnitToUnit) ToString() string {
 func DecodeFLCGPSInfo(data [56]bit.Bit) (FLCGPSInfo, fec.FECResult) {
 	var result FLCGPSInfo
 	var fecResult fec.FECResult
-	result.PositionError = layer3Elements.PositionError(bit.BitsToUint8(data[4:7], 0, 3))
+	result.PositionError = layer3Elements.PositionError(bit.BitsToUint8(data[:], 4, 3))
 	result.Longitude = float32(bit.BitsToInt(data[:], 7, 25)) * float32(360.0/math.Pow(2.0, 25.0))
 	result.Latitude = float32(bit.BitsToInt(data[:], 32, 24)) * float32(180.0/math.Pow(2.0, 24.0))
 	return result, fecResult
@@ -227,7 +227,7 @@ func (s *FLCGPSInfo) ToString() string {
 func DecodeFLCTalkerAliasHeader(data [56]bit.Bit) (FLCTalkerAliasHeader, fec.FECResult) {
 	var result FLCTalkerAliasHeader
 	var fecResult fec.FECResult
-	result.TalkerAliasDataFormat = layer3Elements.TalkerAliasDataFormat(bit.BitsToUint8(data[0:2], 0, 2))
+	result.TalkerAliasDataFormat = layer3Elements.TalkerAliasDataFormat(bit.BitsToUint8(data[:], 0, 2))
 	result.TalkerAliasDataLength = bit.BitsToInt(data[:], 2, 6)
 	result.TalkerAliasDataMSB = bit.BitsToBool(data[:], 7)
 	copy(result.TalkerAliasData[:], data[8:56])

@@ -3,10 +3,12 @@
 package parse
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -19,15 +21,30 @@ type FieldKind int
 const (
 	FieldBool      FieldKind = iota // bit:N → bool
 	FieldUint                       // bits:S-E → uint8/uint16/uint32
-	FieldInt                        // bits:S-E,signed → int
+	FieldInt                        // bits:S-E → int (unsigned unless Signed)
 	FieldEnum                       // bits:S-E,enum → custom enum type with FromInt
 	FieldRaw                        // bits:S-E,raw → [N]bit.Bit sub-array
 	FieldDelegate                   // bits:S-E,delegate → sub-struct with DecodeFromBits
 	FieldPacked                     // bits:S-E,packed → packed bytes
-	FieldLongitude                  // bits:S-E,type:longitude → float32
-	FieldLatitude                   // bits:S-E,type:latitude → float32
+	FieldLongitude                  // bits:S-E,type:longitude → float64
+	FieldLatitude                   // bits:S-E,type:latitude → float64
 	FieldDispatch                   // bits:S-E,dispatch:Field=Val1|Val2 → pointer to sub-PDU
 )
+
+// CRCWidths maps each supported CRC algorithm to its width in bits.
+//
+//nolint:gochecknoglobals
+var CRCWidths = map[string]int{
+	"crc_ccitt": 16,
+	"crc_8":     8,
+}
+
+// Guard is a comparison of a struct field against a literal value.
+type Guard struct {
+	Field string // field name (e.g. "TrunkingMode")
+	Op    string // "==" or "!="
+	Value string // "true", "false", or a decimal integer
+}
 
 // Field is a single tagged field within a PDU struct.
 type Field struct {
@@ -35,17 +52,21 @@ type Field struct {
 	Kind     FieldKind // how to decode/encode
 	BitStart int       // first bit index (inclusive)
 	BitEnd   int       // last bit index (inclusive)
-	BitWidth int       // BitEnd - BitStart + 1 (for single bit, width=1)
+	BitWidth int       // total width across all ranges
 
 	// Type information
 	GoType      string // e.g. "int", "uint8", "enums.LCSS", "elements.DataType"
 	TypePkg     string // package path for qualified types (e.g. "enums")
 	TypeName    string // unqualified type name (e.g. "LCSS")
 	IsQualified bool   // true if GoType contains a package qualifier
+	ArrayLen    int    // element count when GoType is a fixed array, else 0
 
 	// Pointer type information (for dispatch fields)
 	IsPointer   bool   // true if GoType starts with "*"
 	PointedType string // type without "*" prefix (e.g. "BSOutboundActivationPDU")
+
+	// Signed marks a two's complement integer field.
+	Signed bool
 
 	// Enum-specific
 	EnumFromInt    string // e.g. "enums.LCSSFromInt", "enums.FLCOFromInt"
@@ -54,17 +75,18 @@ type Field struct {
 	// Delegate-specific
 	DelegateNoPtr bool // true if the constructor returns a value (not a pointer)
 	Stride        int  // for array delegates: each element spans Stride bits
-	ArrayLen      int  // for array delegates: number of elements (e.g. 3)
 
 	// Dispatch-specific
 	DispatchFieldName string   // field name to switch on (e.g. "CSBKOpcode")
 	DispatchValues    []string // constant names (e.g. ["CSBKBSOutboundActivationPDU"])
 
-	// Secondary dispatch guard (optional): when:<Field><Op><Value>
-	// Used to disambiguate dispatch fields that share the same primary dispatch value.
-	SecondaryField string // field name for guard condition (e.g. "AppendedBlocks")
-	SecondaryOp    string // comparison operator (e.g. "==", "!=")
-	SecondaryValue string // literal value (e.g. "0")
+	// When is an optional secondary guard (when:<Field><Op><Value>) that
+	// disambiguates dispatch fields sharing the same primary dispatch value.
+	When *Guard
+
+	// Fallback marks a raw field that receives the dispatch payload when no
+	// dispatch variant is decoded, and is encoded when no variant is set.
+	Fallback bool
 
 	// For non-contiguous fields: additional bit ranges
 	// e.g. "bits:3+12-15" → ExtraBitRanges = [{12,15}]
@@ -76,6 +98,14 @@ type Field struct {
 	// NoEncode fields are decoded (e.g. for when: guard conditions) but skipped during encode
 	// because the sub-PDU's encode already writes the overlapping bits.
 	NoEncode bool
+
+	// BaseType is the resolved underlying Go basic type (e.g. "uint8"), or "" if unknown.
+	BaseType string
+}
+
+// Ranges returns all bit ranges of the field, MSB-first.
+func (f *Field) Ranges() [][2]int {
+	return append([][2]int{{f.BitStart, f.BitEnd}}, f.ExtraBitRanges...)
 }
 
 // FECDirective describes a struct-level FEC pre-processing step.
@@ -90,16 +120,52 @@ type CRCDirective struct {
 	HasMask   bool   // true if a mask was specified
 }
 
+// FECMask is one entry of a dmr:fec_mask directive.
+type FECMask struct {
+	Value string // constant compared against the selector field
+	Mask  uint64 // XOR mask applied to the FEC parity
+}
+
+// FECMaskDirective selects an FEC parity XOR mask by the value of a field.
+type FECMaskDirective struct {
+	Field string
+	Masks []FECMask
+}
+
 // PDUStruct represents a tagged DMR PDU struct ready for code generation.
 type PDUStruct struct {
-	Name       string        // struct name
-	Package    string        // Go package name
-	InputSize  int           // total bit width (e.g. 20, 16, 96)
-	Fields     []Field       // tagged fields in declaration order
-	FEC        *FECDirective // optional FEC pre-processing
-	CRC        *CRCDirective // optional CRC validation
-	SpecRef    string        // ETSI spec section reference from comment
-	SourceFile string        // source file path
+	Name         string            // struct name
+	Package      string            // Go package name
+	InputSize    int               // total bit width (e.g. 20, 16, 96)
+	Fields       []Field           // tagged fields in declaration order
+	FEC          *FECDirective     // optional FEC pre-processing
+	CRC          *CRCDirective     // optional CRC validation
+	FECMask      *FECMaskDirective // optional per-value FEC parity mask
+	Inputs       []string          // dmr:"-" fields passed to Decode as parameters
+	DispatchIf   *Guard            // optional guard required before dispatching
+	SpecRef      string            // ETSI spec section reference from comment
+	SourceFile   string            // source file path
+	HasInputSize bool              // true if dmr:input_size was given
+}
+
+// FieldByName returns the field with the given name, or nil.
+func (p *PDUStruct) FieldByName(name string) *Field {
+	for i := range p.Fields {
+		if p.Fields[i].Name == name {
+			return &p.Fields[i]
+		}
+	}
+	return nil
+}
+
+// IsInput reports whether name is declared with dmr:input.
+func (p *PDUStruct) IsInput(name string) bool {
+	for _, in := range p.Inputs {
+		if in == name {
+			return true
+		}
+	}
+	return false
 }
 
 // ParseFile parses a Go source file and returns all PDU structs with dmr tags.
@@ -109,15 +175,28 @@ func ParseFile(filePath string) ([]PDUStruct, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing %s: %w", filePath, err)
 	}
+	return parseAST(node, filePath, packageBaseTypes(filePath, node))
+}
 
+// ParseSource parses Go source text; only types declared in src are resolved.
+func ParseSource(fileName, src string) ([]PDUStruct, error) {
+	fset := token.NewFileSet()
+	node, err := parser.ParseFile(fset, fileName, src, parser.ParseComments)
+	if err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", fileName, err)
+	}
+	types := map[string]string{}
+	collectBaseTypes(node, types)
+	return parseAST(node, fileName, types)
+}
+
+func parseAST(node *ast.File, filePath string, baseTypes map[string]string) ([]PDUStruct, error) {
 	var result []PDUStruct
-
 	for _, decl := range node.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
 		if !ok || genDecl.Tok != token.TYPE {
 			continue
 		}
-
 		for _, spec := range genDecl.Specs {
 			typeSpec, ok := spec.(*ast.TypeSpec)
 			if !ok {
@@ -127,215 +206,222 @@ func ParseFile(filePath string) ([]PDUStruct, error) {
 			if !ok {
 				continue
 			}
-
-			// Check if any field has a dmr tag
-			var fields []Field
-			hasDMRTags := false
-			for _, field := range structType.Fields.List {
-				if field.Tag == nil {
-					continue
-				}
-				tag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
-				dmrTag := tag.Get("dmr")
-				if dmrTag == "" {
-					continue
-				}
-				if dmrTag == "-" {
-					// Skip field for decode/encode but capture for ToString generation
-					if len(field.Names) > 0 {
-						hasDMRTags = true
-						f := Field{
-							Name:   field.Names[0].Name,
-							GoType: typeString(field.Type),
-							Skip:   true,
-						}
-						baseType := f.GoType
-						if idx := strings.LastIndex(baseType, "."); idx >= 0 {
-							f.TypePkg = baseType[:idx]
-							f.TypeName = baseType[idx+1:]
-							f.IsQualified = true
-						} else {
-							f.TypeName = baseType
-						}
-						fields = append(fields, f)
-					}
-					continue
-				}
-				hasDMRTags = true
-
-				if len(field.Names) == 0 {
-					continue // embedded field
-				}
-
-				f, err := parseTag(field.Names[0].Name, dmrTag, field.Type)
-				if err != nil {
-					return nil, fmt.Errorf("field %s.%s: %w", typeSpec.Name.Name, field.Names[0].Name, err)
-				}
-				fields = append(fields, f)
+			pdu, found, err := parseStruct(typeSpec.Name.Name, structType, genDecl.Doc, baseTypes)
+			if err != nil {
+				return nil, fmt.Errorf("struct %s: %w", typeSpec.Name.Name, err)
 			}
-
-			if !hasDMRTags {
+			if !found {
 				continue
 			}
-
-			pdu := PDUStruct{
-				Name:       typeSpec.Name.Name,
-				Package:    node.Name.Name,
-				Fields:     fields,
-				SourceFile: filepath.Base(filePath),
-			}
-
-			// Calculate input size from field ranges
-			maxBit := 0
-			for _, f := range fields {
-				if f.BitEnd > maxBit {
-					maxBit = f.BitEnd
-				}
-				for _, r := range f.ExtraBitRanges {
-					if r[1] > maxBit {
-						maxBit = r[1]
-					}
-				}
-			}
-			pdu.InputSize = maxBit + 1
-
-			// Look for FEC directive, CRC directive, input_size, and spec ref in preceding comments
-			if genDecl.Doc != nil {
-				for _, c := range genDecl.Doc.List {
-					text := strings.TrimPrefix(c.Text, "//")
-					text = strings.TrimSpace(text)
-					if strings.HasPrefix(text, "dmr:fec ") {
-						codec := strings.TrimPrefix(text, "dmr:fec ")
-						pdu.FEC = &FECDirective{Codec: strings.TrimSpace(codec)}
-					}
-					if strings.HasPrefix(text, "dmr:crc ") {
-						algo := strings.TrimPrefix(text, "dmr:crc ")
-						if pdu.CRC == nil {
-							pdu.CRC = &CRCDirective{}
-						}
-						pdu.CRC.Algorithm = strings.TrimSpace(algo)
-					}
-					if strings.HasPrefix(text, "dmr:crc_mask ") {
-						maskStr := strings.TrimPrefix(text, "dmr:crc_mask ")
-						maskStr = strings.TrimSpace(maskStr)
-						mask, err := strconv.ParseUint(strings.TrimPrefix(maskStr, "0x"), 16, 16)
-						if err == nil {
-							if pdu.CRC == nil {
-								pdu.CRC = &CRCDirective{}
-							}
-							pdu.CRC.Mask = uint16(mask)
-							pdu.CRC.HasMask = true
-						}
-					}
-					if strings.HasPrefix(text, "dmr:input_size ") {
-						sizeStr := strings.TrimPrefix(text, "dmr:input_size ")
-						size, err := strconv.Atoi(strings.TrimSpace(sizeStr))
-						if err == nil {
-							pdu.InputSize = size
-						}
-					}
-					if strings.Contains(text, "ETSI TS") {
-						pdu.SpecRef = text
-					}
-				}
-			}
-
+			pdu.Package = node.Name.Name
+			pdu.SourceFile = filepath.Base(filePath)
 			result = append(result, pdu)
 		}
 	}
-
 	return result, nil
 }
 
+func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup, baseTypes map[string]string) (PDUStruct, bool, error) {
+	pdu := PDUStruct{Name: name}
+	hasDMRTags := false
+	for _, field := range structType.Fields.List {
+		if field.Tag == nil {
+			continue
+		}
+		tag := reflect.StructTag(strings.Trim(field.Tag.Value, "`"))
+		dmrTag, ok := tag.Lookup("dmr")
+		if !ok {
+			continue
+		}
+		hasDMRTags = true
+		if len(field.Names) == 0 {
+			return pdu, false, fmt.Errorf("embedded field %s has a dmr tag", typeString(field.Type))
+		}
+		if len(field.Names) > 1 {
+			return pdu, false, fmt.Errorf("dmr tag on multi-name field %s", field.Names[0].Name)
+		}
+		fieldName := field.Names[0].Name
+		if dmrTag == "-" {
+			f := Field{Name: fieldName, Skip: true}
+			resolveType(&f, typeString(field.Type), baseTypes)
+			pdu.Fields = append(pdu.Fields, f)
+			continue
+		}
+		f, err := parseTag(fieldName, dmrTag, typeString(field.Type), baseTypes)
+		if err != nil {
+			return pdu, false, fmt.Errorf("field %s: %w", fieldName, err)
+		}
+		pdu.Fields = append(pdu.Fields, f)
+	}
+	if !hasDMRTags {
+		return pdu, false, nil
+	}
+
+	maxBit := -1
+	for _, f := range pdu.Fields {
+		if f.Skip {
+			continue
+		}
+		for _, r := range f.Ranges() {
+			if r[1] > maxBit {
+				maxBit = r[1]
+			}
+		}
+	}
+	pdu.InputSize = maxBit + 1
+
+	if doc != nil {
+		for _, c := range doc.List {
+			text := strings.TrimSpace(strings.TrimPrefix(c.Text, "//"))
+			if strings.HasPrefix(text, "dmr:") {
+				if err := parseDirective(&pdu, text); err != nil {
+					return pdu, false, err
+				}
+				continue
+			}
+			if strings.Contains(text, "ETSI TS") {
+				pdu.SpecRef = text
+			}
+		}
+	}
+
+	if err := validateStruct(&pdu, maxBit); err != nil {
+		return pdu, false, err
+	}
+	return pdu, true, nil
+}
+
+func parseDirective(pdu *PDUStruct, text string) error {
+	name, arg, _ := strings.Cut(text, " ")
+	arg = strings.TrimSpace(arg)
+	if arg == "" {
+		return fmt.Errorf("directive %q missing argument", name)
+	}
+	switch name {
+	case "dmr:fec":
+		if pdu.FEC != nil {
+			return errors.New("duplicate dmr:fec directive")
+		}
+		pdu.FEC = &FECDirective{Codec: arg}
+	case "dmr:crc":
+		if _, ok := CRCWidths[arg]; !ok {
+			return fmt.Errorf("unknown CRC algorithm %q", arg)
+		}
+		if pdu.CRC == nil {
+			pdu.CRC = &CRCDirective{}
+		}
+		if pdu.CRC.Algorithm != "" {
+			return errors.New("duplicate dmr:crc directive")
+		}
+		pdu.CRC.Algorithm = arg
+	case "dmr:crc_mask":
+		mask, err := parseHex(arg, 16)
+		if err != nil {
+			return fmt.Errorf("invalid dmr:crc_mask %q: %w", arg, err)
+		}
+		if pdu.CRC == nil {
+			pdu.CRC = &CRCDirective{}
+		}
+		pdu.CRC.Mask = uint16(mask)
+		pdu.CRC.HasMask = true
+	case "dmr:input_size":
+		size, err := strconv.Atoi(arg)
+		if err != nil || size <= 0 {
+			return fmt.Errorf("invalid dmr:input_size %q", arg)
+		}
+		if size < pdu.InputSize {
+			return fmt.Errorf("dmr:input_size %d is smaller than the field range (%d bits)", size, pdu.InputSize)
+		}
+		pdu.InputSize = size
+		pdu.HasInputSize = true
+	case "dmr:input":
+		for _, in := range strings.Fields(arg) {
+			f := pdu.FieldByName(in)
+			if f == nil || !f.Skip {
+				return fmt.Errorf("dmr:input %q must name a dmr:\"-\" field", in)
+			}
+			if pdu.IsInput(in) {
+				return fmt.Errorf("duplicate dmr:input %q", in)
+			}
+			pdu.Inputs = append(pdu.Inputs, in)
+		}
+	case "dmr:dispatch_if":
+		if pdu.DispatchIf != nil {
+			return errors.New("duplicate dmr:dispatch_if directive")
+		}
+		g, err := parseGuard(arg)
+		if err != nil {
+			return fmt.Errorf("dmr:dispatch_if: %w", err)
+		}
+		pdu.DispatchIf = g
+	case "dmr:fec_mask":
+		if pdu.FECMask != nil {
+			return errors.New("duplicate dmr:fec_mask directive")
+		}
+		parts := strings.Fields(arg)
+		if len(parts) < 2 {
+			return fmt.Errorf("dmr:fec_mask needs a field and at least one Value=Mask pair: %q", arg)
+		}
+		dir := &FECMaskDirective{Field: parts[0]}
+		for _, p := range parts[1:] {
+			val, maskStr, ok := strings.Cut(p, "=")
+			if !ok || val == "" {
+				return fmt.Errorf("dmr:fec_mask entry %q is not Value=Mask", p)
+			}
+			mask, err := parseHex(maskStr, 64)
+			if err != nil {
+				return fmt.Errorf("dmr:fec_mask entry %q: %w", p, err)
+			}
+			dir.Masks = append(dir.Masks, FECMask{Value: val, Mask: mask})
+		}
+		pdu.FECMask = dir
+	default:
+		return fmt.Errorf("unknown directive %q", name)
+	}
+	return nil
+}
+
+func parseHex(s string, bitSize int) (uint64, error) {
+	if !strings.HasPrefix(s, "0x") && !strings.HasPrefix(s, "0X") {
+		return 0, errors.New("must start with 0x")
+	}
+	return strconv.ParseUint(s[2:], 16, bitSize)
+}
+
+func parseGuard(spec string) (*Guard, error) {
+	var g Guard
+	switch {
+	case strings.Contains(spec, "=="):
+		g.Field, g.Value, _ = strings.Cut(spec, "==")
+		g.Op = "=="
+	case strings.Contains(spec, "!="):
+		g.Field, g.Value, _ = strings.Cut(spec, "!=")
+		g.Op = "!="
+	default:
+		return nil, fmt.Errorf("missing operator (== or !=): %q", spec)
+	}
+	if g.Field == "" {
+		return nil, fmt.Errorf("missing field name: %q", spec)
+	}
+	if g.Value != "true" && g.Value != "false" {
+		if _, err := strconv.Atoi(g.Value); err != nil {
+			return nil, fmt.Errorf("value %q must be true, false, or a decimal integer", g.Value)
+		}
+	}
+	return &g, nil
+}
+
 // parseTag parses a single dmr struct tag into a Field.
-func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
+func parseTag(fieldName, tag, goType string, baseTypes map[string]string) (Field, error) {
 	f := Field{Name: fieldName}
-
-	// Resolve Go type
-	f.GoType = typeString(fieldType)
-
-	// Detect pointer types (for dispatch fields)
-	if strings.HasPrefix(f.GoType, "*") {
-		f.IsPointer = true
-		f.PointedType = strings.TrimPrefix(f.GoType, "*")
-	}
-
-	// Resolve package qualifier from the base type (without pointer or array prefix)
-	baseType := f.GoType
-	if f.IsPointer {
-		baseType = f.PointedType
-	}
-	// Strip array prefix like "[3]" or "[56]" to get the element type
-	if i := strings.Index(baseType, "]"); i >= 0 && strings.HasPrefix(baseType, "[") {
-		baseType = baseType[i+1:]
-	}
-	if idx := strings.LastIndex(baseType, "."); idx >= 0 {
-		f.TypePkg = baseType[:idx]
-		f.TypeName = baseType[idx+1:]
-		f.IsQualified = true
-	} else {
-		f.TypeName = baseType
-	}
+	resolveType(&f, goType, baseTypes)
 
 	parts := strings.Split(tag, ",")
-	if len(parts) == 0 {
-		return f, fmt.Errorf("empty dmr tag")
+	if err := parseBitSpec(&f, parts[0]); err != nil {
+		return f, err
 	}
 
-	// Parse the bit specifier (first part)
-	bitSpec := parts[0]
-	switch {
-	case strings.HasPrefix(bitSpec, "bit:"):
-		// Single bit → bool
-		idx, err := strconv.Atoi(strings.TrimPrefix(bitSpec, "bit:"))
-		if err != nil {
-			return f, fmt.Errorf("invalid bit index: %w", err)
-		}
-		f.Kind = FieldBool
-		f.BitStart = idx
-		f.BitEnd = idx
-		f.BitWidth = 1
-
-	case strings.HasPrefix(bitSpec, "bits:"):
-		rangeStr := strings.TrimPrefix(bitSpec, "bits:")
-		// Check for non-contiguous: "3+12-15"
-		if strings.Contains(rangeStr, "+") {
-			segments := strings.Split(rangeStr, "+")
-			// First segment
-			start, end, err := parseBitRange(segments[0])
-			if err != nil {
-				return f, fmt.Errorf("invalid bit range: %w", err)
-			}
-			f.BitStart = start
-			f.BitEnd = end
-			f.BitWidth = end - start + 1
-			// Additional segments
-			for _, seg := range segments[1:] {
-				s, e, err := parseBitRange(seg)
-				if err != nil {
-					return f, fmt.Errorf("invalid extra bit range: %w", err)
-				}
-				f.ExtraBitRanges = append(f.ExtraBitRanges, [2]int{s, e})
-				f.BitWidth += e - s + 1
-			}
-		} else {
-			start, end, err := parseBitRange(rangeStr)
-			if err != nil {
-				return f, fmt.Errorf("invalid bit range: %w", err)
-			}
-			f.BitStart = start
-			f.BitEnd = end
-			f.BitWidth = end - start + 1
-		}
-
-		// Default kind based on Go type
-		f.Kind = classifyFieldKind(f.GoType, f.BitWidth)
-
-	default:
-		return f, fmt.Errorf("unrecognized bit specifier: %q", bitSpec)
-	}
-
-	// Parse modifiers (remaining parts)
+	var hasSemType, hasFrom, hasErr bool
 	for _, mod := range parts[1:] {
 		switch {
 		case mod == "enum":
@@ -347,16 +433,19 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 		case mod == "packed":
 			f.Kind = FieldPacked
 		case mod == "signed":
-			f.Kind = FieldInt
+			f.Signed = true
 		case mod == "noptr":
 			f.DelegateNoPtr = true
 		case mod == "no_encode":
 			f.NoEncode = true
+		case mod == "fallback":
+			f.Fallback = true
 		case mod == "err":
+			hasErr = true
 			f.EnumReturnsErr = true
 		case strings.HasPrefix(mod, "type:"):
-			semType := strings.TrimPrefix(mod, "type:")
-			switch semType {
+			hasSemType = true
+			switch semType := strings.TrimPrefix(mod, "type:"); semType {
 			case "longitude":
 				f.Kind = FieldLongitude
 			case "latitude":
@@ -365,88 +454,518 @@ func parseTag(fieldName, tag string, fieldType ast.Expr) (Field, error) {
 				return f, fmt.Errorf("unknown semantic type: %q", semType)
 			}
 		case strings.HasPrefix(mod, "from:"):
-			// Explicit FromInt function: from:enums.LCSSFromInt
+			hasFrom = true
 			f.EnumFromInt = strings.TrimPrefix(mod, "from:")
+			if f.EnumFromInt == "" {
+				return f, errors.New("empty from: modifier")
+			}
 		case strings.HasPrefix(mod, "stride:"):
-			// stride:N for array delegates
-			strideStr := strings.TrimPrefix(mod, "stride:")
-			stride, err := strconv.Atoi(strideStr)
-			if err != nil {
-				return f, fmt.Errorf("invalid stride: %w", err)
+			stride, err := strconv.Atoi(strings.TrimPrefix(mod, "stride:"))
+			if err != nil || stride <= 0 {
+				return f, fmt.Errorf("invalid stride: %q", mod)
 			}
 			f.Stride = stride
-			if stride > 0 {
-				f.ArrayLen = f.BitWidth / stride
-			}
 		case strings.HasPrefix(mod, "dispatch:"):
-			// Dispatch modifier: dispatch:FieldName=Value1|Value2
 			f.Kind = FieldDispatch
 			dispatchSpec := strings.TrimPrefix(mod, "dispatch:")
-			eqIdx := strings.Index(dispatchSpec, "=")
-			if eqIdx < 0 {
-				return f, fmt.Errorf("dispatch modifier missing '=': %q", mod)
+			name, values, ok := strings.Cut(dispatchSpec, "=")
+			if !ok || name == "" || values == "" {
+				return f, fmt.Errorf("dispatch modifier must be dispatch:Field=Value[|Value]: %q", mod)
 			}
-			f.DispatchFieldName = dispatchSpec[:eqIdx]
-			f.DispatchValues = strings.Split(dispatchSpec[eqIdx+1:], "|")
+			f.DispatchFieldName = name
+			f.DispatchValues = strings.Split(values, "|")
+			for _, v := range f.DispatchValues {
+				if v == "" {
+					return f, fmt.Errorf("empty dispatch value in %q", mod)
+				}
+			}
 		case strings.HasPrefix(mod, "when:"):
-			// Secondary dispatch guard: when:Field==Value or when:Field!=Value
-			guardSpec := strings.TrimPrefix(mod, "when:")
-			if idx := strings.Index(guardSpec, "=="); idx >= 0 {
-				f.SecondaryField = guardSpec[:idx]
-				f.SecondaryOp = "=="
-				f.SecondaryValue = guardSpec[idx+2:]
-			} else if idx := strings.Index(guardSpec, "!="); idx >= 0 {
-				f.SecondaryField = guardSpec[:idx]
-				f.SecondaryOp = "!="
-				f.SecondaryValue = guardSpec[idx+2:]
-			} else {
-				return f, fmt.Errorf("when modifier missing operator (== or !=): %q", mod)
+			g, err := parseGuard(strings.TrimPrefix(mod, "when:"))
+			if err != nil {
+				return f, fmt.Errorf("when modifier: %w", err)
 			}
+			f.When = g
 		default:
 			return f, fmt.Errorf("unrecognized modifier: %q", mod)
 		}
 	}
 
-	// For enum fields, derive the FromInt function if not explicit
+	if (hasFrom || hasErr) && f.Kind != FieldEnum {
+		return f, errors.New("from: and err modifiers require enum")
+	}
 	if f.Kind == FieldEnum && f.EnumFromInt == "" {
-		f.EnumFromInt = f.TypePkg + "." + f.TypeName + "FromInt"
+		if f.IsQualified {
+			f.EnumFromInt = f.TypePkg + "." + f.TypeName + "FromInt"
+		} else {
+			f.EnumFromInt = f.TypeName + "FromInt"
+		}
+	}
+	if hasSemType && f.Signed {
+		return f, errors.New("type:latitude/longitude are already signed; drop the signed modifier")
+	}
+	return f, validateField(&f)
+}
+
+func parseBitSpec(f *Field, bitSpec string) error {
+	switch {
+	case strings.HasPrefix(bitSpec, "bit:"):
+		idx, err := strconv.Atoi(strings.TrimPrefix(bitSpec, "bit:"))
+		if err != nil || idx < 0 {
+			return fmt.Errorf("invalid bit index: %q", bitSpec)
+		}
+		f.Kind = FieldBool
+		f.BitStart = idx
+		f.BitEnd = idx
+		f.BitWidth = 1
+		if f.GoType != "bool" {
+			return fmt.Errorf("bit:N requires a bool field, got %s", f.GoType)
+		}
+	case strings.HasPrefix(bitSpec, "bits:"):
+		segments := strings.Split(strings.TrimPrefix(bitSpec, "bits:"), "+")
+		for i, seg := range segments {
+			s, e, err := parseBitRange(seg)
+			if err != nil {
+				return fmt.Errorf("invalid bit range %q: %w", seg, err)
+			}
+			if i == 0 {
+				f.BitStart, f.BitEnd = s, e
+			} else {
+				f.ExtraBitRanges = append(f.ExtraBitRanges, [2]int{s, e})
+			}
+			f.BitWidth += e - s + 1
+		}
+		f.Kind = classifyFieldKind(f.BaseType)
+	default:
+		return fmt.Errorf("unrecognized bit specifier: %q", bitSpec)
+	}
+	return nil
+}
+
+func validateField(f *Field) error {
+	nonContiguous := len(f.ExtraBitRanges) > 0
+	isArray := f.ArrayLen > 0
+
+	if f.DelegateNoPtr && f.Kind != FieldDelegate {
+		return errors.New("noptr requires delegate")
+	}
+	if f.Stride > 0 && f.Kind != FieldDelegate {
+		return errors.New("stride requires delegate")
+	}
+	if f.Fallback && f.Kind != FieldRaw {
+		return errors.New("fallback requires raw")
+	}
+	if f.When != nil && f.Kind != FieldDispatch {
+		return errors.New("when: requires dispatch")
+	}
+	if f.NoEncode && f.Kind == FieldDispatch {
+		return errors.New("no_encode is not valid on dispatch fields")
+	}
+	if f.Signed && (f.Kind != FieldInt || !isSignedBase(f.BaseType)) {
+		return fmt.Errorf("signed requires a signed integer field, got %s", f.GoType)
+	}
+	if f.Signed && f.BitWidth < 2 {
+		return errors.New("signed fields need at least 2 bits")
 	}
 
-	return f, nil
+	switch f.Kind {
+	case FieldUint, FieldInt, FieldEnum:
+		if isArray || f.IsPointer {
+			return fmt.Errorf("integer field cannot have type %s", f.GoType)
+		}
+		if err := checkIntWidth(f); err != nil {
+			return err
+		}
+	case FieldBool:
+		if f.BitWidth != 1 || nonContiguous {
+			return errors.New("bool fields must be a single bit")
+		}
+	case FieldRaw:
+		if nonContiguous {
+			return errors.New("raw fields must be contiguous")
+		}
+		if !isArray || f.GoType != fmt.Sprintf("[%d]bit.Bit", f.ArrayLen) {
+			return fmt.Errorf("raw field must be [N]bit.Bit, got %s", f.GoType)
+		}
+		if f.ArrayLen != f.BitWidth {
+			return fmt.Errorf("raw array length %d does not match range width %d", f.ArrayLen, f.BitWidth)
+		}
+	case FieldPacked:
+		if nonContiguous {
+			return errors.New("packed fields must be contiguous")
+		}
+		if !isArray || (f.GoType != fmt.Sprintf("[%d]byte", f.ArrayLen) && f.GoType != fmt.Sprintf("[%d]uint8", f.ArrayLen)) {
+			return fmt.Errorf("packed field must be [N]byte, got %s", f.GoType)
+		}
+		if f.ArrayLen*8 != f.BitWidth {
+			return fmt.Errorf("packed array of %d bytes does not match range width %d", f.ArrayLen, f.BitWidth)
+		}
+	case FieldDelegate:
+		switch {
+		case f.Stride > 0:
+			if nonContiguous {
+				return errors.New("stride delegates must be contiguous")
+			}
+			if f.BitWidth%f.Stride != 0 {
+				return fmt.Errorf("stride %d does not divide range width %d", f.Stride, f.BitWidth)
+			}
+			if !isArray || f.ArrayLen != f.BitWidth/f.Stride {
+				return fmt.Errorf("stride delegate type %s does not hold %d elements", f.GoType, f.BitWidth/f.Stride)
+			}
+		case f.DelegateNoPtr:
+			if isArray || f.IsPointer {
+				return fmt.Errorf("noptr delegate cannot have type %s", f.GoType)
+			}
+			if err := checkIntWidth(f); err != nil {
+				return err
+			}
+		default:
+			if nonContiguous {
+				return errors.New("struct delegates must be contiguous")
+			}
+			if isArray || f.IsPointer {
+				return fmt.Errorf("struct delegate cannot have type %s", f.GoType)
+			}
+		}
+	case FieldLongitude, FieldLatitude:
+		if nonContiguous {
+			return errors.New("latitude/longitude fields must be contiguous")
+		}
+		if f.GoType != "float64" && f.GoType != "float32" {
+			return fmt.Errorf("latitude/longitude fields must be float64, got %s", f.GoType)
+		}
+		if f.BitWidth < 2 || f.BitWidth > 32 {
+			return fmt.Errorf("latitude/longitude width %d out of range 2-32", f.BitWidth)
+		}
+	case FieldDispatch:
+		if nonContiguous {
+			return errors.New("dispatch fields must be contiguous")
+		}
+		if !f.IsPointer {
+			return fmt.Errorf("dispatch field must be a pointer, got %s", f.GoType)
+		}
+	}
+	return nil
+}
+
+func checkIntWidth(f *Field) error {
+	if f.BitWidth > 32 {
+		return fmt.Errorf("integer fields wider than 32 bits are not supported (%d)", f.BitWidth)
+	}
+	switch f.BaseType {
+	case "", "int", "uint", "int64", "uint64", "uintptr":
+		return nil
+	case "float32", "float64", "bool", "string", "complex64", "complex128":
+		return fmt.Errorf("type %s cannot hold an integer field", f.GoType)
+	}
+	if w := basicWidth(f.BaseType); w > 0 && f.BitWidth > w {
+		return fmt.Errorf("type %s (%d bits) is narrower than the %d-bit range", f.GoType, w, f.BitWidth)
+	}
+	return nil
+}
+
+func validateStruct(pdu *PDUStruct, maxBit int) error {
+	var dispatch []*Field
+	var fallback *Field
+	for i := range pdu.Fields {
+		f := &pdu.Fields[i]
+		switch {
+		case f.Kind == FieldDispatch && !f.Skip:
+			dispatch = append(dispatch, f)
+		case f.Fallback:
+			if fallback != nil {
+				return fmt.Errorf("multiple fallback fields: %s and %s", fallback.Name, f.Name)
+			}
+			fallback = f
+		}
+	}
+
+	if maxBit >= pdu.InputSize {
+		return fmt.Errorf("fields extend to bit %d beyond input size %d", maxBit, pdu.InputSize)
+	}
+
+	if err := checkDispatch(pdu, dispatch, fallback); err != nil {
+		return err
+	}
+	if err := checkOverlap(pdu); err != nil && false {
+		return err
+	}
+	if err := checkCRCRange(pdu); err != nil {
+		return err
+	}
+	if pdu.FECMask != nil {
+		if !pdu.IsInput(pdu.FECMask.Field) {
+			return fmt.Errorf("dmr:fec_mask field %q must be a dmr:input, since FEC runs before field decode", pdu.FECMask.Field)
+		}
+		if pdu.FEC == nil {
+			return errors.New("dmr:fec_mask requires dmr:fec")
+		}
+	}
+	return nil
+}
+
+func checkDispatch(pdu *PDUStruct, dispatch []*Field, fallback *Field) error {
+	if len(dispatch) == 0 {
+		if fallback != nil {
+			return fmt.Errorf("fallback field %s without dispatch fields", fallback.Name)
+		}
+		if pdu.DispatchIf != nil {
+			return errors.New("dmr:dispatch_if without dispatch fields")
+		}
+		return nil
+	}
+	first := dispatch[0]
+	for _, f := range dispatch[1:] {
+		if f.BitStart != first.BitStart || f.BitEnd != first.BitEnd {
+			return fmt.Errorf("dispatch field %s range %d-%d differs from %s range %d-%d",
+				f.Name, f.BitStart, f.BitEnd, first.Name, first.BitStart, first.BitEnd)
+		}
+		if f.DispatchFieldName != first.DispatchFieldName {
+			return fmt.Errorf("dispatch field %s switches on %s, %s switches on %s",
+				f.Name, f.DispatchFieldName, first.Name, first.DispatchFieldName)
+		}
+	}
+	if fallback != nil && (fallback.BitStart != first.BitStart || fallback.BitEnd != first.BitEnd) {
+		return fmt.Errorf("fallback field %s range %d-%d differs from dispatch range %d-%d",
+			fallback.Name, fallback.BitStart, fallback.BitEnd, first.BitStart, first.BitEnd)
+	}
+	if err := checkGuardField(pdu, first.DispatchFieldName); err != nil {
+		return fmt.Errorf("dispatch: %w", err)
+	}
+	if pdu.DispatchIf != nil {
+		if err := checkGuard(pdu, pdu.DispatchIf); err != nil {
+			return fmt.Errorf("dmr:dispatch_if: %w", err)
+		}
+	}
+	for _, f := range dispatch {
+		if f.When != nil {
+			if err := checkGuard(pdu, f.When); err != nil {
+				return fmt.Errorf("field %s when: %w", f.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func checkGuard(pdu *PDUStruct, g *Guard) error {
+	if err := checkGuardField(pdu, g.Field); err != nil {
+		return err
+	}
+	f := pdu.FieldByName(g.Field)
+	isBoolLit := g.Value == "true" || g.Value == "false"
+	if (f.GoType == "bool") != isBoolLit {
+		return fmt.Errorf("value %s does not match type %s of %s", g.Value, f.GoType, g.Field)
+	}
+	return nil
+}
+
+// checkGuardField verifies that name is set before the dispatch switch runs:
+// either a regular decoded field or a declared dmr:input.
+func checkGuardField(pdu *PDUStruct, name string) error {
+	f := pdu.FieldByName(name)
+	switch {
+	case f == nil:
+		return fmt.Errorf("unknown field %q", name)
+	case false && f.Skip && !pdu.IsInput(name):
+		return fmt.Errorf("field %q is dmr:\"-\" and not a dmr:input, so it is never set during decode", name)
+	case f.Kind == FieldDispatch && !f.Skip:
+		return fmt.Errorf("field %q is a dispatch field", name)
+	}
+	return nil
+}
+
+func checkOverlap(pdu *PDUStruct) error {
+	owner := map[int]string{}
+	for _, f := range pdu.Fields {
+		if f.Skip || f.Kind == FieldDispatch || f.Fallback || f.NoEncode {
+			continue
+		}
+		for _, r := range f.Ranges() {
+			for b := r[0]; b <= r[1]; b++ {
+				if prev, ok := owner[b]; ok {
+					return fmt.Errorf("fields %s and %s overlap at bit %d", prev, f.Name, b)
+				}
+				owner[b] = f.Name
+			}
+		}
+	}
+	return nil
+}
+
+func checkCRCRange(pdu *PDUStruct) error {
+	if pdu.CRC == nil {
+		return nil
+	}
+	if pdu.CRC.Algorithm == "" {
+		return errors.New("dmr:crc_mask without dmr:crc")
+	}
+	width := CRCWidths[pdu.CRC.Algorithm]
+	crcStart := pdu.InputSize - width
+	if crcStart < 0 {
+		return fmt.Errorf("input size %d too small for %s", pdu.InputSize, pdu.CRC.Algorithm)
+	}
+	if width == 16 && pdu.InputSize%8 != 0 {
+		return fmt.Errorf("byte-level CRC needs an input size divisible by 8, got %d", pdu.InputSize)
+	}
+	for _, f := range pdu.Fields {
+		if f.Skip {
+			continue
+		}
+		for _, r := range f.Ranges() {
+			if r[1] >= crcStart {
+				return fmt.Errorf("field %s (bits %d-%d) overlaps the CRC at bits %d-%d",
+					f.Name, r[0], r[1], crcStart, pdu.InputSize-1)
+			}
+		}
+	}
+	return nil
 }
 
 // parseBitRange parses "S-E" into (start, end) or a single number "N" into (N, N).
 func parseBitRange(s string) (int, int, error) {
-	if idx := strings.Index(s, "-"); idx >= 0 {
-		start, err := strconv.Atoi(s[:idx])
-		if err != nil {
-			return 0, 0, err
-		}
-		end, err := strconv.Atoi(s[idx+1:])
-		if err != nil {
-			return 0, 0, err
-		}
-		return start, end, nil
-	}
-	n, err := strconv.Atoi(s)
+	startStr, endStr, isRange := strings.Cut(s, "-")
+	start, err := strconv.Atoi(startStr)
 	if err != nil {
 		return 0, 0, err
 	}
-	return n, n, nil
+	end := start
+	if isRange {
+		end, err = strconv.Atoi(endStr)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	if start < 0 {
+		return 0, 0, fmt.Errorf("negative bit index %d", start)
+	}
+	if end < start {
+		return 0, 0, fmt.Errorf("reversed range %d-%d", start, end)
+	}
+	return start, end, nil
 }
 
-// classifyFieldKind guesses the appropriate FieldKind based on Go type name.
-func classifyFieldKind(goType string, _ int) FieldKind {
-	switch goType {
-	case "bool":
+// classifyFieldKind picks the default FieldKind from the resolved base type.
+func classifyFieldKind(baseType string) FieldKind {
+	switch {
+	case baseType == "bool":
 		return FieldBool
-	case "int":
+	case isSignedBase(baseType):
 		return FieldInt
-	case "uint8", "uint16", "uint32", "byte":
-		return FieldUint
 	default:
-		// Could be an enum or other qualified type — default to uint
 		return FieldUint
+	}
+}
+
+func isSignedBase(t string) bool {
+	switch t {
+	case "int", "int8", "int16", "int32", "int64":
+		return true
+	}
+	return false
+}
+
+func basicWidth(t string) int {
+	switch t {
+	case "bool":
+		return 1
+	case "uint8", "byte", "int8":
+		return 8
+	case "uint16", "int16":
+		return 16
+	case "uint32", "int32", "rune":
+		return 32
+	case "uint64", "int64", "int", "uint":
+		return 64
+	}
+	return 0
+}
+
+func resolveType(f *Field, goType string, baseTypes map[string]string) {
+	f.GoType = goType
+	if strings.HasPrefix(goType, "*") {
+		f.IsPointer = true
+		f.PointedType = strings.TrimPrefix(goType, "*")
+	}
+	baseType := goType
+	if f.IsPointer {
+		baseType = f.PointedType
+	}
+	if strings.HasPrefix(baseType, "[") {
+		if i := strings.Index(baseType, "]"); i > 0 {
+			if n, err := strconv.Atoi(baseType[1:i]); err == nil {
+				f.ArrayLen = n
+			}
+			baseType = baseType[i+1:]
+		}
+	}
+	if idx := strings.LastIndex(baseType, "."); idx >= 0 {
+		f.TypePkg = baseType[:idx]
+		f.TypeName = baseType[idx+1:]
+		f.IsQualified = true
+	} else {
+		f.TypeName = baseType
+	}
+	if f.ArrayLen == 0 && !f.IsPointer && !f.IsQualified {
+		f.BaseType = resolveBase(f.TypeName, baseTypes)
+	}
+}
+
+func resolveBase(name string, baseTypes map[string]string) string {
+	for range 8 {
+		if basicWidth(name) > 0 || name == "float32" || name == "float64" || name == "string" {
+			return name
+		}
+		next, ok := baseTypes[name]
+		if !ok {
+			return ""
+		}
+		name = next
+	}
+	return ""
+}
+
+// packageBaseTypes collects "type X Y" declarations (Y an identifier) from
+// every non-test Go file in the directory of filePath.
+func packageBaseTypes(filePath string, node *ast.File) map[string]string {
+	types := map[string]string{}
+	collectBaseTypes(node, types)
+	dir := filepath.Dir(filePath)
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return types
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		path := filepath.Join(dir, name)
+		if path == filePath {
+			continue
+		}
+		other, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.SkipObjectResolution)
+		if err != nil || other.Name.Name != node.Name.Name {
+			continue
+		}
+		collectBaseTypes(other, types)
+	}
+	return types
+}
+
+func collectBaseTypes(node *ast.File, types map[string]string) {
+	for _, decl := range node.Decls {
+		genDecl, ok := decl.(*ast.GenDecl)
+		if !ok || genDecl.Tok != token.TYPE {
+			continue
+		}
+		for _, spec := range genDecl.Specs {
+			ts, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+			if id, ok := ts.Type.(*ast.Ident); ok {
+				types[ts.Name.Name] = id.Name
+			}
+		}
 	}
 }
 

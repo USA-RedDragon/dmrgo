@@ -123,8 +123,8 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) ToString() string {
 func DecodeNegativeAcknowledgementPDU(data [64]bit.Bit) (NegativeAcknowledgementPDU, fec.FECResult) {
 	var result NegativeAcknowledgementPDU
 	var fecResult fec.FECResult
-	result.AdditionalInfo = layer3Elements.AdditionalInformationField(bit.BitsToUint8(data[0:1], 0, 1))
-	result.SourceType = layer3Elements.SourceType(bit.BitsToUint8(data[1:2], 0, 1))
+	result.AdditionalInfo = layer3Elements.AdditionalInformationField(bit.BitsToUint8(data[:], 0, 1))
+	result.SourceType = layer3Elements.SourceType(bit.BitsToUint8(data[:], 1, 1))
 	result.ServiceType = CSBKOpcode(bit.BitsToUint8(data[:], 2, 6))
 	result.ReasonCode = bit.BitsToUint8(data[:], 8, 8)
 	copy(result.SourceAddress[:], data[16:40])
