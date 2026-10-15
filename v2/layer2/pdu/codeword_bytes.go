@@ -50,42 +50,20 @@ func CRCMask(dt enums.DataType) (mask uint32, width int, ok bool) {
 	}
 }
 
-// FullLCCodeword returns the 12-octet on-air codeword of the 72-bit LC lc
-// in a burst of dt (§9.1.6, §B.3.6): lc followed by its RS(12,9) parity
-// XORed with the Table B.21 mask of dt. It never returns an error when dt
-// is DataTypeVoiceLCHeader or DataTypeTerminatorWithLC, and returns one for
-// every other data type. VoiceLCHeaderCodeword and TerminatorLCCodeword are
-// the forms without an error.
-func FullLCCodeword(lc [9]byte, dt enums.DataType) ([12]byte, error) {
+// Codeword returns the 12-octet on-air codeword of l in a burst of dt
+// (§9.1.6, §B.3.6): l followed by its RS(12,9) parity XORed with the Table
+// B.21 mask of dt. It returns an error unless dt.CarriesFullLC reports
+// true.
+func (l LCBytes) Codeword(dt enums.DataType) ([12]byte, error) {
 	mask, err := fullLCMask(dt)
 	if err != nil {
 		return [12]byte{}, err
 	}
-	cw := reedsolomon.Encode(lc)
+	cw := reedsolomon.Encode(l)
 	for i := 9; i < 12; i++ {
 		cw[i] ^= mask[i-9]
 	}
 	return cw, nil
-}
-
-// VoiceLCHeaderCodeword returns the codeword of lc in a Voice LC Header:
-// lc followed by its RS(12,9) parity XORed with 0x969696.
-func VoiceLCHeaderCodeword(lc [9]byte) [12]byte {
-	return maskedLCCodeword(lc, 0x96)
-}
-
-// TerminatorLCCodeword returns the codeword of lc in a Terminator with LC:
-// lc followed by its RS(12,9) parity XORed with 0x999999.
-func TerminatorLCCodeword(lc [9]byte) [12]byte {
-	return maskedLCCodeword(lc, 0x99)
-}
-
-func maskedLCCodeword(lc [9]byte, mask byte) [12]byte {
-	cw := reedsolomon.Encode(lc)
-	cw[9] ^= mask
-	cw[10] ^= mask
-	cw[11] ^= mask
-	return cw
 }
 
 // FullLCParityOK reports whether the RS(12,9) parity of the codeword cw, with
@@ -94,9 +72,7 @@ func maskedLCCodeword(lc [9]byte, mask byte) [12]byte {
 // (CRS129::check). It returns false unless dt is DataTypeVoiceLCHeader or
 // DataTypeTerminatorWithLC.
 func FullLCParityOK(cw [12]byte, dt enums.DataType) bool {
-	var lc [9]byte
-	copy(lc[:], cw[:9])
-	want, err := FullLCCodeword(lc, dt)
+	want, err := LCBytes(cw[:9]).Codeword(dt)
 	return err == nil && want == cw
 }
 
@@ -125,35 +101,44 @@ func fullLCMask(dt enums.DataType) ([3]byte, error) {
 	return [3]byte{byte(mask >> 16), byte(mask >> 8), byte(mask)}, nil //nolint:gosec // 24-bit mask split into octets
 }
 
-// SealBlock writes into octets 10 and 11 of the single-block payload b the
-// CRC-CCITT of octets 0 to 9 XORed with the Table B.21 mask of dt
-// (§B.3.8). dt must be DataTypePIHeader, DataTypeCSBK, DataTypeMBCHeader,
-// DataTypeDataHeader or DataTypeUnifiedSingleBlock; for any other data type
-// SealBlock returns an error and leaves b as it is.
-//
-// The CRCs that a single block and its data type do not determine are out
-// of scope: the MBC Continuation last block CRC over all continuation
-// blocks (MBCLastBlockCRC, SetMBCLastBlockCRC), the CRC-9 of confirmed
-// Rate 1/2, Rate 3/4 and Rate 1 blocks, which covers the DBSN
-// (Rate12Data.SetConfirmed and its Rate 3/4 and Rate 1 forms), and the
-// CRC-32 of a data continuation last block.
-func SealBlock(b *[12]byte, dt enums.DataType) error {
+// Seal rewrites the parity or CRC of the 12-octet BPTC(196,96) payload p of
+// a burst of dt after the caller edited p. For a Voice LC Header or
+// Terminator with LC, octets 9 to 11 become the masked RS(12,9) parity of
+// octets 0 to 8, as LCBytes.Codeword gives it. For a PI Header, CSBK, MBC
+// Header, Data Header or Unified Single Block Data, octets 10 and 11 become
+// the CRC-CCITT of octets 0 to 9 XORed with the Table B.21 mask of dt
+// (§B.3.8). For any other data type Seal returns an error and leaves p as
+// it is: the MBC Continuation CRC covers all continuation blocks
+// (SetMBCLastBlockCRC), and the CRC-9 of a confirmed data block covers its
+// DBSN (Rate12Data.SetConfirmed and its Rate 3/4 and Rate 1 forms).
+func Seal(p *[12]byte, dt enums.DataType) error {
+	if dt.CarriesFullLC() {
+		cw, err := LCBytes(p[:9]).Codeword(dt)
+		if err != nil {
+			return err
+		}
+		*p = cw
+		return nil
+	}
 	mask, err := blockMask(dt)
 	if err != nil {
 		return err
 	}
-	c := crc.CCITT(b[:10]) ^ mask
-	b[10] = byte(c >> 8)
-	b[11] = byte(c) //nolint:gosec // low octet of the CRC
+	c := crc.CCITT(p[:10]) ^ mask
+	p[10] = byte(c >> 8)
+	p[11] = byte(c) //nolint:gosec // low octet of the CRC
 	return nil
 }
 
 // BlockCRCOK reports whether octets 10 and 11 of the single-block payload b
-// hold the CRC that SealBlock writes for dt. It returns false for the data
-// types that SealBlock rejects.
+// hold the CRC that Seal writes for dt. It returns false unless dt is a PI
+// Header, CSBK, MBC Header, Data Header or Unified Single Block Data.
 func BlockCRCOK(b [12]byte, dt enums.DataType) bool {
+	if dt.CarriesFullLC() {
+		return false
+	}
 	want := b
-	if SealBlock(&want, dt) != nil {
+	if Seal(&want, dt) != nil {
 		return false
 	}
 	return want == b

@@ -141,9 +141,9 @@ func (c CSBKBytes) CRCOK() bool {
 }
 
 // Reseal writes the CRC of octets 0 to 9 with the CSBK mask into octets 10
-// and 11, as SealBlock does.
+// and 11, as Seal does.
 func (c *CSBKBytes) Reseal() {
-	_ = SealBlock((*[12]byte)(c), enums.DataTypeCSBK)
+	_ = Seal((*[12]byte)(c), enums.DataTypeCSBK)
 }
 
 // DecodeCSBKBytes decodes the 12-octet payload b of a CSBK burst as

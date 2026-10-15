@@ -204,7 +204,11 @@ func rewriteTarget(header [33]byte, target uint32) (before, after, sameAsCodewor
 		return
 	}
 	after = layer2.MMDVMHostAccepts(enums.DataTypeVoiceLCHeader, p)
-	sameAsCodeword = pdu.VoiceLCHeaderCodeword(lc) == p
+	cw, err := lc.Codeword(enums.DataTypeVoiceLCHeader)
+	if err != nil {
+		return
+	}
+	sameAsCodeword = cw == p
 	out, err := layer2.BuildDataBurst(p, enums.DataTypeVoiceLCHeader, colorCode, layer2.SyncSourceBS)
 	if err != nil {
 		return
@@ -256,7 +260,7 @@ func run(w io.Writer, dataDir string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "rewrite target %d -> %d: accepted before seal %t, after seal %t, equals VoiceLCHeaderCodeword %t\n",
+	fmt.Fprintf(w, "rewrite target %d -> %d: accepted before seal %t, after seal %t, equals LCBytes.Codeword %t\n",
 		target, decoded, before, after, sameCW)
 	return nil
 }

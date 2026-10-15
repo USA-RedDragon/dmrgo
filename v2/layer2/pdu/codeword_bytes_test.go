@@ -90,7 +90,7 @@ func TestCRCMask_TableB21(t *testing.T) {
 	}
 }
 
-func TestFullLCCodeword_MatchesTableB18(t *testing.T) {
+func TestLCBytesCodeword_MatchesTableB18(t *testing.T) {
 	rng := rand.New(rand.NewSource(1))
 	for n := 0; n < 1000; n++ {
 		var lc [9]byte
@@ -98,7 +98,7 @@ func TestFullLCCodeword_MatchesTableB18(t *testing.T) {
 		p := matrixParity(lc)
 		for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
 			mask, _, _ := pdu.CRCMask(dt)
-			cw, err := pdu.FullLCCodeword(lc, dt)
+			cw, err := pdu.LCBytes(lc).Codeword(dt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -116,7 +116,7 @@ func TestFullLCCodeword_MatchesTableB18(t *testing.T) {
 	}
 }
 
-func TestFullLCCodeword_RealCapture(t *testing.T) {
+func TestLCBytesCodeword_RealCapture(t *testing.T) {
 	lc := hex9(t, "03000000270630b43c")
 	tests := []struct {
 		dt   enums.DataType
@@ -126,7 +126,7 @@ func TestFullLCCodeword_RealCapture(t *testing.T) {
 		{enums.DataTypeTerminatorWithLC, "03000000270630b43c52c0ce"},
 	}
 	for _, tt := range tests {
-		cw, err := pdu.FullLCCodeword(lc, tt.dt)
+		cw, err := pdu.LCBytes(lc).Codeword(tt.dt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -153,34 +153,41 @@ func TestFullLCCodeword_RealCapture(t *testing.T) {
 	}
 }
 
-func TestTypedLCCodewords(t *testing.T) {
+func TestFullLinkControlCodeword(t *testing.T) {
 	lc := hex9(t, "03000000270630b43c")
-	vlc, tlc := pdu.VoiceLCHeaderCodeword(lc), pdu.TerminatorLCCodeword(lc)
-	if got := hex.EncodeToString(vlc[:]); got != "03000000270630b43c5dcfc1" {
-		t.Errorf("VoiceLCHeaderCodeword: %s", got)
-	}
-	if got := hex.EncodeToString(tlc[:]); got != "03000000270630b43c52c0ce" {
-		t.Errorf("TerminatorLCCodeword: %s", got)
-	}
-	rng := rand.New(rand.NewSource(3))
-	for range 500 {
-		var l [9]byte
-		rng.Read(l[:])
-		if pdu.VoiceLCHeaderCodeword(l) != must(pdu.FullLCCodeword(l, enums.DataTypeVoiceLCHeader)) {
-			t.Fatalf("lc %x: VoiceLCHeaderCodeword differs from FullLCCodeword", l)
+	f := must(pdu.FullLinkControlFromBytes(lc))
+	for dt, want := range map[enums.DataType]string{
+		enums.DataTypeVoiceLCHeader:    "03000000270630b43c5dcfc1",
+		enums.DataTypeTerminatorWithLC: "03000000270630b43c52c0ce",
+	} {
+		f.BurstDataType = dt
+		cw := must(f.Codeword())
+		if got := hex.EncodeToString(cw[:]); got != want {
+			t.Errorf("dt %s: FullLinkControl.Codeword %s, want %s", dt, got, want)
 		}
-		if pdu.TerminatorLCCodeword(l) != must(pdu.FullLCCodeword(l, enums.DataTypeTerminatorWithLC)) {
-			t.Fatalf("lc %x: TerminatorLCCodeword differs from FullLCCodeword", l)
+		p := must(pdu.LCBytes(lc).Codeword(dt))
+		p[9], p[10], p[11] = 0, 0, 0
+		if err := pdu.Seal(&p, dt); err != nil || hex.EncodeToString(p[:]) != want {
+			t.Errorf("dt %s: Seal gives %x %v, want %s", dt, p, err, want)
 		}
+	}
+	f.BurstDataType = enums.DataTypeCSBK
+	if _, err := f.Codeword(); err == nil {
+		t.Error("FullLinkControl.Codeword accepts a CSBK data type")
+	}
+	f.BurstDataType = enums.DataTypeVoiceLCHeader
+	f.FLCO = 64
+	if _, err := f.Codeword(); err == nil {
+		t.Error("FullLinkControl.Codeword accepts FLCO 64")
 	}
 }
 
-func TestFullLCCodeword_RejectsOtherDataTypes(t *testing.T) {
+func TestLCBytesCodeword_RejectsOtherDataTypes(t *testing.T) {
 	for dt := enums.DataType(0); dt <= 15; dt++ {
 		if dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypeTerminatorWithLC {
 			continue
 		}
-		if _, err := pdu.FullLCCodeword([9]byte{}, dt); err == nil {
+		if _, err := (pdu.LCBytes{}).Codeword(dt); err == nil {
 			t.Errorf("dt %d: no error", dt)
 		}
 		if _, _, err := pdu.DecodeFullLCCodeword([12]byte{}, dt); err == nil {
@@ -194,7 +201,7 @@ func TestFullLCCodeword_RejectsOtherDataTypes(t *testing.T) {
 
 func TestDecodeFullLCCodeword_CorrectsAndStrictRejects(t *testing.T) {
 	lc := hex9(t, "03000000270630b43c")
-	cw := must(pdu.FullLCCodeword(lc, enums.DataTypeVoiceLCHeader))
+	cw := must(pdu.LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader))
 	got, res, err := pdu.DecodeFullLCCodeword(cw, enums.DataTypeVoiceLCHeader)
 	if err != nil || got != lc || res.HasErrors() {
 		t.Fatalf("clean: %x %+v %v", got, res, err)
@@ -209,7 +216,7 @@ func TestDecodeFullLCCodeword_CorrectsAndStrictRejects(t *testing.T) {
 	}
 }
 
-func TestSealBlock_MatchesGeneratedEncoders(t *testing.T) {
+func TestSeal_MatchesGeneratedEncoders(t *testing.T) {
 	csbk := must((&pdu.CSBK{}).Encode())
 	mbc := must((&pdu.MBCHeader{}).Encode())
 	pi := must((&pdu.PIHeader{AlgorithmID: 1, KeyID: 7, MessageIndicator: 0xDEADBEEF, Destination: 9990}).Encode())
@@ -231,13 +238,13 @@ func TestSealBlock_MatchesGeneratedEncoders(t *testing.T) {
 		}
 		sealed := b
 		sealed[10], sealed[11] = 0, 0
-		if err := pdu.SealBlock(&sealed, tt.dt); err != nil || sealed != b {
-			t.Errorf("dt %d: SealBlock gives %x (%v), want %x", tt.dt, sealed, err, b)
+		if err := pdu.Seal(&sealed, tt.dt); err != nil || sealed != b {
+			t.Errorf("dt %d: Seal gives %x (%v), want %x", tt.dt, sealed, err, b)
 		}
 	}
 }
 
-func TestSealBlock_RoundTripAndRejects(t *testing.T) {
+func TestSeal_RoundTripAndRejects(t *testing.T) {
 	singles := []enums.DataType{
 		enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader,
 		enums.DataTypeDataHeader, enums.DataTypeUnifiedSingleBlock,
@@ -247,7 +254,7 @@ func TestSealBlock_RoundTripAndRejects(t *testing.T) {
 		for n := 0; n < 100; n++ {
 			var b [12]byte
 			rng.Read(b[:])
-			if err := pdu.SealBlock(&b, dt); err != nil {
+			if err := pdu.Seal(&b, dt); err != nil {
 				t.Fatal(err)
 			}
 			if !pdu.BlockCRCOK(b, dt) {
@@ -265,17 +272,22 @@ func TestSealBlock_RoundTripAndRejects(t *testing.T) {
 		}
 	}
 	for _, dt := range []enums.DataType{
-		enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeMBCContinuation,
-		enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeIdle,
-		enums.DataTypeReserved,
+		enums.DataTypeMBCContinuation, enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1,
+		enums.DataTypeIdle, enums.DataTypeReserved,
 	} {
 		b := [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 		before := b
-		if err := pdu.SealBlock(&b, dt); err == nil || b != before {
-			t.Errorf("dt %d: SealBlock accepted or changed the block", dt)
+		if err := pdu.Seal(&b, dt); err == nil || b != before {
+			t.Errorf("dt %d: Seal accepted or changed the block", dt)
 		}
 		if pdu.BlockCRCOK(b, dt) {
 			t.Errorf("dt %d: BlockCRCOK true", dt)
+		}
+	}
+	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
+		b := [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+		if err := pdu.Seal(&b, dt); err != nil || !pdu.FullLCParityOK(b, dt) || pdu.BlockCRCOK(b, dt) {
+			t.Errorf("dt %d: Seal gives %x %v", dt, b, err)
 		}
 	}
 }

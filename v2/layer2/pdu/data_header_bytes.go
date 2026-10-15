@@ -78,7 +78,7 @@ func (h DataHeaderBytes) CRCOK() bool {
 }
 
 // Reseal writes the CRC of octets 0 to 9 with the Data Header mask into
-// octets 10 and 11, as SealBlock does.
+// octets 10 and 11, as Seal does.
 func (h *DataHeaderBytes) Reseal() {
-	_ = SealBlock((*[12]byte)(h), enums.DataTypeDataHeader)
+	_ = Seal((*[12]byte)(h), enums.DataTypeDataHeader)
 }

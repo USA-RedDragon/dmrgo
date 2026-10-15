@@ -5,8 +5,8 @@ import "github.com/USA-RedDragon/dmrgo/v2/enums"
 // LCBytes is the 72 LC bits of a Full LC (ETSI TS 102 361-1 §9.1.6),
 // without RS(12,9) parity, as FullLinkControl.Bytes returns them. Its
 // methods read or write one field in place and leave every other bit as it
-// is. After an edit, VoiceLCHeaderCodeword and TerminatorLCCodeword give
-// the new codeword, and layer2.EncodeEmbeddedLC the new embedded LC.
+// is. After an edit, Codeword gives the new codeword, and
+// layer2.EncodeEmbeddedLC the new embedded LC.
 //
 // Octet 0 holds the PF and Reserved bits and the 6-bit FLCO, octet 1 the
 // FID. In a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC (ETSI TS 102

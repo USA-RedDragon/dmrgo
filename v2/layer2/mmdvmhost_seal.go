@@ -12,11 +12,9 @@ import (
 // parity or CRC of the BPTC(196,96) payload p of a burst of dataType, after
 // the caller edited p, so that MMDVMHostAccepts(dataType, *p) holds.
 //
-//   - Voice LC Header and Terminator with LC: octets 9 to 11 become the
-//     masked RS(12,9) parity of octets 0 to 8 (pdu.FullLCCodeword).
-//   - PI Header, CSBK, MBC Header and Data Header: octets 10 and 11 become
-//     the masked CRC-CCITT of octets 0 to 9 (pdu.SealBlock). MMDVMHost does
-//     not check the PI Header CRC, but the seal is the ETSI one.
+//   - Voice LC Header, Terminator with LC, PI Header, CSBK, MBC Header and
+//     Data Header: the ETSI parity or CRC that pdu.Seal writes. MMDVMHost
+//     does not check the PI Header CRC.
 //   - MBC Continuation: octets 10 and 11 become the unmasked CRC-CCITT of
 //     octets 0 to 9, the per-block check of MMDVMHost. ETSI TS 102 361-1
 //     §7.4.0 puts one CRC over all continuation blocks in the last block
@@ -30,15 +28,9 @@ import (
 //     as it is.
 func MMDVMHostSeal(dataType enums.DataType, p *[12]byte) error {
 	switch dataType {
-	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
-		cw, err := pdu.FullLCCodeword([9]byte(p[:9]), dataType)
-		if err != nil {
-			return err
-		}
-		*p = cw
-		return nil
-	case enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader:
-		return pdu.SealBlock(p, dataType)
+	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypePIHeader,
+		enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeDataHeader:
+		return pdu.Seal(p, dataType)
 	case enums.DataTypeMBCContinuation:
 		c := crc.CCITT(p[:10])
 		p[10] = byte(c >> 8)
