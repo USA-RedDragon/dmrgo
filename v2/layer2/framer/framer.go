@@ -2,7 +2,6 @@ package framer
 
 import (
 	"math/bits"
-	"slices"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -131,8 +130,8 @@ type Config struct {
 }
 
 // Framer cuts bursts out of a bit stream written to it in pieces of any
-// size, as the package doc describes. A Framer is not safe for concurrent
-// use.
+// size, as the package doc describes. Make one with New: a zero Framer has
+// no buffer and drops every bit. A Framer is not safe for concurrent use.
 type Framer struct {
 	cfg     Config
 	pre     int
@@ -179,16 +178,25 @@ func (f *Framer) Write(stream ...bit.Bit) []Burst {
 }
 
 // AppendBursts adds bits to the stream as Write does, appends the bursts they
-// complete to dst and returns the extended slice. It does not allocate when
-// dst has room for the bursts and stream is no longer than Period or than an
-// earlier stream.
+// complete to dst and returns the extended slice. It allocates only when dst
+// has no room for the bursts.
 func (f *Framer) AppendBursts(dst []Burst, stream ...bit.Bit) []Burst {
-	n := len(f.buf)
-	if need := f.pre + layer2.BurstBits + len(stream); cap(f.buf) < need {
-		// Fewer than f.pre+layer2.BurstBits bits stay in f.buf between calls.
-		f.buf = slices.Grow(f.buf, need-n)
+	// Fewer than f.pre+layer2.BurstBits bits stay in f.buf between pieces,
+	// so New leaves room for at least Period more.
+	for len(stream) > 0 && len(f.buf) < cap(f.buf) {
+		k := min(len(stream), cap(f.buf)-len(f.buf))
+		dst = f.appendPiece(dst, stream[:k])
+		stream = stream[k:]
 	}
-	f.buf = append(f.buf, stream...)
+	return dst
+}
+
+// appendPiece adds stream, which fits in the room of f.buf, and appends the
+// bursts it completes to dst.
+func (f *Framer) appendPiece(dst []Burst, stream []bit.Bit) []Burst {
+	n := len(f.buf)
+	f.buf = f.buf[:n+len(stream)]
+	copy(f.buf[n:], stream)
 	lowbit.Mask(f.buf[n:])
 	for {
 		if !f.locked {
