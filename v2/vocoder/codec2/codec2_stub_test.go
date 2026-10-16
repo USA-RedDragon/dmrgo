@@ -21,7 +21,7 @@ func TestStubUnavailable(t *testing.T) {
 	if _, err := New(Config{}); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("New error = %v, want ErrUnavailable", err)
 	}
-	registerOnce.Do(func() { vocoder.Register(Name, NewFactory(Config{})) })
+	registerOnce.Do(func() { _ = vocoder.Register(Name, NewFactory(Config{})) })
 	if _, err := vocoder.New(Name); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("vocoder.New error = %v, want ErrUnavailable", err)
 	}

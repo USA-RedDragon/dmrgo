@@ -31,23 +31,16 @@ func uniqueName(base string) string {
 	}
 }
 
-func mustPanic(t *testing.T, name string, f func()) {
-	t.Helper()
-	defer func() {
-		if recover() == nil {
-			t.Errorf("%s: expected panic", name)
-		}
-	}()
-	f()
-}
-
 func TestCodecRegistry(t *testing.T) {
 	t.Parallel()
 
 	factory := func() (vocoder.Codec, error) { return fakeCodec{fid: 0x7F}, nil }
 	a, b := uniqueName("test-fake-a"), uniqueName("test-fake-b")
-	vocoder.Register(b, factory)
-	vocoder.Register(a, factory)
+	for _, name := range []string{b, a} {
+		if err := vocoder.Register(name, factory); err != nil {
+			t.Fatalf("Register(%q): %v", name, err)
+		}
+	}
 
 	names := vocoder.Names()
 	if !slices.IsSorted(names) {
@@ -76,8 +69,12 @@ func TestCodecRegistry(t *testing.T) {
 		t.Errorf("New(missing) error = %v, want ErrUnknownCodec", err)
 	}
 
-	mustPanic(t, "duplicate", func() { vocoder.Register(a, factory) })
-	mustPanic(t, "nil factory", func() { vocoder.Register("test-fake-nil", nil) })
+	if err := vocoder.Register(a, factory); !errors.Is(err, vocoder.ErrDuplicateCodec) {
+		t.Errorf("Register(duplicate) error = %v, want ErrDuplicateCodec", err)
+	}
+	if err := vocoder.Register(uniqueName("test-fake-nil"), nil); !errors.Is(err, vocoder.ErrNilFactory) {
+		t.Errorf("Register(nil) error = %v, want ErrNilFactory", err)
+	}
 }
 
 func TestCodecRegistryFactoryError(t *testing.T) {
@@ -85,7 +82,9 @@ func TestCodecRegistryFactoryError(t *testing.T) {
 
 	want := errors.New("factory failed")
 	name := uniqueName("test-fake-err")
-	vocoder.Register(name, func() (vocoder.Codec, error) { return nil, want })
+	if err := vocoder.Register(name, func() (vocoder.Codec, error) { return nil, want }); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
 	if _, err := vocoder.New(name); !errors.Is(err, want) {
 		t.Errorf("New error = %v, want %v", err, want)
 	}
