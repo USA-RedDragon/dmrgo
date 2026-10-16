@@ -14,7 +14,7 @@ const (
 
 // symLag returns the discriminator sample that matches channel sample t.
 func (r *Receiver) symLag(t float64) float64 {
-	return t + float64(r.chz.delaySym-r.chz.delayCh) + 0.5
+	return r.chz.symIndex(t)
 }
 
 // measureDisc classifies the SYNC field of slot s on the discriminator
@@ -26,7 +26,7 @@ func (r *Receiver) measureDisc(s *slotState) {
 	data := false
 	for tau := -3.0; tau <= 3; tau += 0.5 {
 		t := r.symLag(r.symTime(s.index, syncFirstSym) + tau)
-		rho, src, d := r.search.discAt(&r.chz.sym, t, r.nsrc)
+		rho, src, d := r.search.discAt(&r.chz.sym, t, float64(samplesPerSy)/float64(r.chz.discDec), r.nsrc)
 		if src == r.src && rho > best {
 			best, bestTau, data = rho, tau, d
 		}

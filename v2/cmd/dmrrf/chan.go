@@ -88,35 +88,45 @@ func (r *ring) interp(t float64) complex64 {
 	return complex(re, im)
 }
 
-// fring is a power-of-two ring of real samples addressed by absolute sample
-// number.
+// fring is a ring of real samples addressed by absolute sample number.
 type fring struct {
-	buf  []float32
-	mask int64
-	n    int64
+	buf []float32
+	n   int64
+	w   int
 }
 
-// newFring returns a ring of at least size samples.
+// newFring returns a ring of size samples.
 func newFring(size int) fring {
-	n := 1
-	for n < size {
-		n <<= 1
-	}
-	return fring{buf: make([]float32, n), mask: int64(n - 1)}
+	return fring{buf: make([]float32, size)}
 }
 
 // push appends sample v.
 func (r *fring) push(v float32) {
-	r.buf[r.n&r.mask] = v
+	r.buf[r.w] = v
 	r.n++
+	if r.w++; r.w == len(r.buf) {
+		r.w = 0
+	}
 }
 
 // at returns sample i, or 0 outside the samples the ring holds.
 func (r *fring) at(i int64) float32 {
-	if i < 0 || i >= r.n || i < r.n-int64(len(r.buf)) {
+	d := r.n - i
+	if i < 0 || d <= 0 || d > int64(len(r.buf)) {
 		return 0
 	}
-	return r.buf[i&r.mask]
+	k := r.w - int(d)
+	if k < 0 {
+		k += len(r.buf)
+	}
+	return r.buf[k]
+}
+
+// add adds v to every sample the ring holds.
+func (r *fring) add(v float32) {
+	for i := range r.buf {
+		r.buf[i] += v
+	}
 }
 
 // lerp returns the ring at the fractional sample t by linear interpolation.
@@ -126,55 +136,112 @@ func (r *fring) lerp(t float64) float32 {
 	return r.at(i0)*(1-fr) + r.at(i0+1)*fr
 }
 
+// Layout of the discriminator path.
+const (
+	// energyBin is the number of channel samples whose power the
+	// discriminator path sums into one bin of its energy ring.
+	energyBin = 40
+)
+
 // channelizer moves the carrier to 0 Hz with an oscillator and filters the
-// channel: a wide filter for coherent detection into ch, and for the
-// discriminator tiers a narrower prefilter, the FM discriminator and the
-// RRC matched filter into sym (Hz of deviation). Every output has the delay
-// of its causal filters, which delay compensates.
+// channel. For coherent detection it runs a wide filter into ch. For the
+// discriminator tiers it runs a narrower prefilter at basebandRate/discDec,
+// sums the power of its output into energy, and runs the FM discriminator
+// and the RRC matched filter into sym (Hz of deviation), discDec times
+// decimated. Every output has the delay of its causal filters: channel
+// sample t, the time base of the receiver, is input sample t-delayCh, and
+// symIndex maps it to sym.
 type channelizer struct {
-	wide     ring
-	ncoHz    float64
-	ncoStep  complex64
-	ncoRot   complex64
-	hist     []complex64
-	head     int
-	chTaps   []float32
-	dTaps    []float32
-	rrc      []float32
-	dHist    []complex64
-	dHead    int
-	fHist    []float32
-	fHead    int
-	prev     complex64
-	ch       ring
-	sym      fring
-	disc     bool
-	delayCh  int
-	delaySym int
+	disc    bool
+	n       int64
+	ncoHz   float64
+	ncoStep complex64
+	ncoRot  complex64
+	delayCh int
+
+	wide   ring
+	hist   []complex64
+	head   int
+	chTaps []float32
+	ch     ring
+
+	discDec int
+	dTaps   []float32
+	dHist   []complex64
+	dHead   int
+	prev    complex64
+	rrc     []float32
+	fHist   []float32
+	fHead   int
+	sym     fring
+	energy  fring
+	eAcc    float32
+	discHz  float32
 }
 
-// newChannelizer returns a channelizer whose rings hold size samples, with
-// the discriminator path when disc, its prefilter cut off at cutHz.
-func newChannelizer(size int, disc bool, cutHz float64) *channelizer {
-	c := &channelizer{disc: disc, ncoRot: 1, ncoStep: 1}
-	c.wide = newRing(size)
-	c.hist = make([]complex64, 2*chanTaps)
-	c.chTaps = kaiserLowpass(chanTaps, (chanPassHz+chanStopHz)/2/basebandRate, 7)
-	c.ch = newRing(size)
-	c.delayCh = chanTaps / 2
-	if disc {
-		c.dHist = make([]complex64, 2*discTaps)
-		c.dTaps = kaiserLowpass(discTaps, cutHz/basebandRate, 5)
-		r := rrcTapsAt(samplesPerSy)
-		c.rrc = make([]float32, len(r))
-		for i, v := range r {
-			c.rrc[i] = float32(v)
-		}
-		c.fHist = make([]float32, 2*len(r))
-		c.sym = newFring(size)
-		c.delaySym = discTaps/2 + len(r)/2
+// newChannelizer returns a channelizer whose rings hold size channel
+// samples, with the discriminator path at basebandRate/dec when disc, its
+// prefilter cut off at cutHz.
+func newChannelizer(size int, disc bool, cutHz float64, dec int) *channelizer {
+	c := &channelizer{disc: disc, ncoRot: 1, ncoStep: 1, delayCh: chanTaps / 2}
+	if !disc {
+		c.wide = newRing(size)
+		c.hist = make([]complex64, 2*chanTaps)
+		c.chTaps = kaiserLowpass(chanTaps, (chanPassHz+chanStopHz)/2/basebandRate, 7)
+		c.ch = newRing(size)
+		return c
 	}
+	c.discDec = dec
+	c.dHist = make([]complex64, 2*discTaps)
+	c.dTaps = kaiserLowpass(discTaps, cutHz/basebandRate, 5)
+	r := rrcTapsAt(float64(samplesPerSy) / float64(dec))
+	c.rrc = make([]float32, len(r))
+	for i, v := range r {
+		c.rrc[i] = float32(v)
+	}
+	c.fHist = make([]float32, 2*len(r))
+	c.sym = newFring(size/dec + 1)
+	c.energy = newFring(size/energyBin + 2)
+	c.discHz = float32(basebandRate / float64(dec) / (2 * math.Pi))
 	return c
+}
+
+// count returns the number of channel samples so far.
+func (c *channelizer) count() int64 {
+	if c.disc {
+		return c.n
+	}
+	return c.ch.n
+}
+
+// oldest returns the first channel sample that every ring still holds,
+// negative before the rings fill.
+func (c *channelizer) oldest() int64 {
+	if c.disc {
+		return c.n - int64(min(len(c.sym.buf)*c.discDec, (len(c.energy.buf)-1)*energyBin))
+	}
+	return c.ch.n - int64(len(c.ch.buf))
+}
+
+// symIndex returns the fractional sym sample of channel sample t: the
+// prefilter output of input sample m*dec+dec-1 has its center discTaps/2
+// samples earlier, the discriminator output half a step before that, and
+// the matched filter output rrcSpan symbols before that.
+func (c *channelizer) symIndex(t float64) float64 {
+	d := float64(c.discDec)
+	return (t - float64(c.delayCh) + discTaps/2 + rrcSpan*samplesPerSy + 1 - d/2) / d
+}
+
+// slotEnergyAt returns the mean power of the discriminator prefilter output
+// over the n channel samples from a, to the nearest bins of the energy ring.
+func (c *channelizer) slotEnergyAt(a float64, n int) float64 {
+	b0 := int64(math.Round(a / energyBin))
+	b1 := int64(math.Round((a + float64(n)) / energyBin))
+	var e float64
+	for b := b0; b < b1; b++ {
+		e += float64(c.energy.at(b))
+	}
+	return e / float64(max(b1-b0, 1)*energyBin/int64(c.discDec))
 }
 
 // kaiserLowpass returns a Kaiser windowed sinc low-pass of n taps with
@@ -199,20 +266,28 @@ func kaiserLowpass(n int, fc, beta float64) []float32 {
 	return h
 }
 
-// tune sets the oscillator to hz, the carrier offset to remove, and
-// filters again the wide samples the ring still holds, so that every
-// sample of the channel rings has the same carrier.
+// tune sets the oscillator to hz, the carrier offset to remove. The coherent
+// path filters again the wide samples the ring still holds, so that every
+// sample of the channel ring has the same carrier. The discriminator path
+// keeps the phase of the oscillator and shifts the discriminator samples it
+// holds by the change of frequency.
 func (c *channelizer) tune(hz float64) {
-	c.ncoHz = hz
 	p := -2 * math.Pi * hz / basebandRate
 	c.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
+	if c.disc {
+		d := float32(c.ncoHz - hz)
+		c.ncoHz = hz
+		c.sym.add(d)
+		for i := range c.fHist {
+			c.fHist[i] += d
+		}
+		return
+	}
+	c.ncoHz = hz
 	n := c.wide.n
 	from := max(n-int64(len(c.wide.buf)), 0)
-	c.ch.n, c.sym.n = from, from
+	c.ch.n = from
 	clear(c.hist)
-	clear(c.dHist)
-	clear(c.fHist)
-	c.prev = 0
 	for i := from; i < n; i++ {
 		c.filter(c.wide.at(i), i)
 	}
@@ -220,13 +295,17 @@ func (c *channelizer) tune(hz float64) {
 
 // push filters one wide baseband sample.
 func (c *channelizer) push(v complex64) {
+	if c.disc {
+		c.discFilter(v)
+		return
+	}
 	n := c.wide.n
 	c.wide.push(v)
 	c.filter(v, n)
 }
 
 // filter runs the wide sample v, number n, through the oscillator and the
-// filters.
+// channel filter.
 func (c *channelizer) filter(v complex64, n int64) {
 	if n&1023 == 0 {
 		p := -2 * math.Pi * c.ncoHz * float64(n) / basebandRate
@@ -238,17 +317,35 @@ func (c *channelizer) filter(v complex64, n int64) {
 	c.hist[c.head+chanTaps] = v
 	c.head = (c.head + 1) % chanTaps
 	c.ch.push(fir(c.hist[c.head:c.head+chanTaps], c.chTaps))
-	if !c.disc {
+}
+
+// discFilter runs the wide sample v through the oscillator, and every
+// discDec samples through the prefilter, the discriminator and the matched
+// filter.
+func (c *channelizer) discFilter(v complex64) {
+	n := c.n
+	c.n++
+	if n&1023 == 0 {
+		g := (3 - real(c.ncoRot)*real(c.ncoRot) - imag(c.ncoRot)*imag(c.ncoRot)) / 2
+		c.ncoRot *= complex(g, 0)
+	}
+	v *= c.ncoRot
+	c.ncoRot *= c.ncoStep
+	c.dHist[c.dHead] = v
+	c.dHist[c.dHead+discTaps] = v
+	c.dHead = (c.dHead + 1) % discTaps
+	if (n+1)%int64(c.discDec) != 0 {
 		return
 	}
-	nd := len(c.dTaps)
-	c.dHist[c.dHead] = v
-	c.dHist[c.dHead+nd] = v
-	c.dHead = (c.dHead + 1) % nd
-	y := fir(c.dHist[c.dHead:c.dHead+nd], c.dTaps)
+	y := fir(c.dHist[c.dHead:c.dHead+discTaps], c.dTaps)
+	c.eAcc += real(y)*real(y) + imag(y)*imag(y)
+	if (n+1+int64(c.delayCh)-discTaps/2)%energyBin == 0 {
+		c.energy.push(c.eAcc)
+		c.eAcc = 0
+	}
 	d := y * complex(real(c.prev), -imag(c.prev))
 	c.prev = y
-	f := float32(math.Atan2(float64(imag(d)), float64(real(d))) * basebandRate / (2 * math.Pi))
+	f := float32(math.Atan2(float64(imag(d)), float64(real(d)))) * c.discHz
 	nr := len(c.rrc)
 	c.fHist[c.fHead] = f
 	c.fHist[c.fHead+nr] = f

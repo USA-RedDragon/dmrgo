@@ -22,7 +22,7 @@ func opsPerSample(o Options) float64 {
 		ops += 60000.0 / slotSamplesN
 	}
 	if !o.Coherent {
-		ops += float64(discTaps*2*2 + 6 + 40 + len(rrcTapsAt(samplesPerSy))*2)
+		ops += float64(discTaps*2*2 + 6 + 40 + len(rrcTapsAt(float64(samplesPerSy)))*2)
 		return ops + float64(13*syncSymbols*2*2)/slotSamplesN
 	}
 	ops += float64(13*syncSpan*interpOps+13*2*syncSpan*8) / slotSamplesN
