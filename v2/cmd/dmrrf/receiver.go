@@ -319,11 +319,12 @@ func (r *Receiver) WriteBaseband(x []complex64) []Received {
 	return r.out
 }
 
-// push runs wide baseband samples through the spectrum estimate and the
+// push runs wide baseband samples through the spectrum estimate, which
+// only an unlocked receiver uses and so only it runs, and through the
 // channel filters, then searches or follows the stream.
 func (r *Receiver) push(x []complex64) {
 	for _, v := range x {
-		if r.spec.push(v) && !r.locked && r.spec.OK && math.Abs(r.spec.Hz-r.chz.ncoHz) > 50 {
+		if !r.locked && r.spec.push(v) && r.spec.OK && math.Abs(r.spec.Hz-r.chz.ncoHz) > 50 {
 			r.chz.tune(r.spec.Hz)
 			r.searchAt, r.candAt = 0, -1
 		}
