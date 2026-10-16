@@ -17,7 +17,8 @@ import (
 const moduleRoot = "../.."
 
 // skipDirs are the module directories whose exported API is not library API.
-var skipDirs = []string{"cmd", "examples", "internal/zeroalloc"}
+// internal/fecref holds reference codecs that only tests call.
+var skipDirs = []string{"cmd", "examples", "internal/fecref", "internal/zeroalloc"}
 
 // exemptMethods are method names that no type needs an entry for, with the
 // reason.
