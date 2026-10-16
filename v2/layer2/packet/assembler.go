@@ -32,6 +32,10 @@ type Message struct {
 	CRC uint32
 	// Response is the decoded C_RDATA of a SACK response packet, or nil.
 	Response *ResponseData
+	// BadCRC reports that the message CRC failed, or, with
+	// Assembler.AcceptBadCRC, that Data holds a confirmed block whose CRC-9
+	// failed.
+	BadCRC bool
 }
 
 // Assembler collects the header and data blocks of one packet at a time on
@@ -48,6 +52,16 @@ type Assembler struct {
 	// the next Response. False, the default, gives each Message and Packet
 	// its own storage. Reset keeps Reuse.
 	Reuse bool
+	// AcceptBadCRC makes the Assembler deliver a packet whose message CRC
+	// failed, or whose confirmed blocks failed their CRC-9, as the "skip
+	// CRC" setting of some radios does. The Message then has BadCRC set and
+	// comes with no error. A confirmed block with a bad CRC-9 fills its DBSN
+	// until a good copy arrives, and an attempt in which every DBSN arrived
+	// completes the packet. A block that was lost or whose FEC failed is
+	// still missing, and a header must still pass its CRC, because the
+	// addresses must be right. False, the default, returns ErrMessageCRC
+	// and ErrBlocksMissing as the CRCs require. Reset keeps AcceptBadCRC.
+	AcceptBadCRC bool
 
 	msg       Message
 	active    bool
@@ -59,6 +73,7 @@ type Assembler struct {
 	per       int
 	ns        uint8
 	valid     [maxBlocks]bool
+	bad       [maxBlocks]bool
 	blocks    []byte
 	store     store
 	builder   Builder
@@ -123,6 +138,7 @@ func (a *Assembler) Reset() {
 	a.active, a.confirmed, a.hasBlocks = false, false, false
 	a.total, a.expect, a.count, a.per, a.ns = 0, 0, 0, 0, 0
 	clear(a.valid[:])
+	clear(a.bad[:])
 	if !a.Reuse {
 		a.blocks = nil
 	}
@@ -301,7 +317,7 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 	if a.count < a.expect {
 		return Message{}, false, nil
 	}
-	if !a.confirmed {
+	if !a.confirmed || a.AcceptBadCRC && a.allPresent() {
 		return a.finish()
 	}
 	return Message{}, false, ErrBlocksMissing
@@ -319,11 +335,26 @@ func (a *Assembler) storeBlock(idx int, b block) {
 		return
 	}
 	dbsn := int(b.raw[0] >> 1)
-	if dbsn >= a.total || !b.confirmedOK() {
+	if dbsn >= a.total || a.valid[dbsn] {
+		return
+	}
+	ok := b.confirmedOK()
+	if !ok && !a.AcceptBadCRC {
 		return
 	}
 	copy(a.blocks[dbsn*a.per:], b.raw[2:])
-	a.valid[dbsn] = true
+	a.valid[dbsn], a.bad[dbsn] = ok, !ok
+}
+
+// allPresent reports whether every block of the packet has arrived, with a
+// good CRC-9 or, with AcceptBadCRC, a bad one.
+func (a *Assembler) allPresent() bool {
+	for i, ok := range a.valid[:a.total] {
+		if !ok && !a.bad[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func (a *Assembler) allValid() bool {
@@ -390,14 +421,21 @@ func (a *Assembler) finish() (Message, bool, error) {
 	if a.hasBlocks {
 		buf = a.blocks
 		for i, ok := range a.valid[:a.total] {
-			if !ok {
+			switch {
+			case a.bad[i]:
+				m.BadCRC = true
+			case !ok:
 				complete = false
 				clear(buf[i*a.per : (i+1)*a.per])
 			}
 		}
 	}
+	accept := a.AcceptBadCRC
 	a.Reset()
 	err := a.fill(&m, buf, complete)
+	if errors.Is(err, ErrMessageCRC) && complete && accept {
+		err = nil
+	}
 	a.newStore(&m)
 	return m, true, err
 }
@@ -423,7 +461,10 @@ func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 	if fullMessage(&m.Header) {
 		m.Data = buf[:max(n-padOf(&m.Header), 0)]
 	}
-	if !complete || !checkMessageCRC(buf) {
+	if !checkMessageCRC(buf) {
+		m.BadCRC = true
+	}
+	if !complete || m.BadCRC {
 		return ErrMessageCRC
 	}
 	return nil
