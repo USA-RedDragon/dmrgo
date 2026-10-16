@@ -35,3 +35,25 @@ func TestRingRotateCompact(t *testing.T) {
 		t.Errorf("first %d", first)
 	}
 }
+
+// TestQringAdd shifts the samples of a discriminator ring by amounts that
+// are not whole steps and checks that every sample moves by the sum, to
+// within the rounding of its own quantization.
+func TestQringAdd(t *testing.T) {
+	t.Parallel()
+	r := newQring(50, discStepHz)
+	val := func(i int64) float32 { return float32((i*37)%900 - 450) }
+	for i := range int64(80) {
+		r.push(val(i))
+	}
+	var sum float32
+	for _, d := range []float32{-1400.4, 21.7, 37, 300.25} {
+		r.add(d)
+		sum += d
+	}
+	for i := int64(30); i < 80; i++ {
+		if e := math.Abs(float64(r.at(i) - val(i) - sum)); e > discStepHz/2+0.01 {
+			t.Errorf("sample %d: off by %.1f Hz", i, e)
+		}
+	}
+}
