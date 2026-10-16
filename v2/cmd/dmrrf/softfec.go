@@ -847,6 +847,11 @@ func newSoftEmbLC() (*softEmbLC, error) {
 	if err != nil {
 		return nil, err
 	}
+	for _, p := range code.pos[:code.n] {
+		if b := int(p) % softBurstBits; b < embFirstBit || b >= embFirstBit+embBits {
+			return nil, fmt.Errorf("%w: embedded LC bit at burst bit %d", errSoftDerive, b)
+		}
+	}
 	e := &softEmbLC{code: code}
 	infoOf := func(lc [9]byte) []int {
 		img := softEmbFragments(layer2.EncodeEmbeddedLC(lc))
@@ -1571,11 +1576,21 @@ func (c *softOSDCode) shortLCInfo(cw *[softOSDWords]uint64) [softShortLCInfo]bit
 // Uncorrectable set when none does. When out is not nil, the corrected
 // embedded signalling fields are written into its bursts.
 func (d *softDecoder) decodeEmbeddedLC(llr *[4][softBurstBits]int16, out *[4]layer2.RawBurst) ([9]byte, fec.Result) {
+	var frags [4][embBits]int16
+	for i := range frags {
+		copy(frags[i][:], llr[i][embFirstBit:embFirstBit+embBits])
+	}
+	return d.decodeEmbeddedFrags(&frags, out)
+}
+
+// decodeEmbeddedFrags decodes an embedded LC as decodeEmbeddedLC does,
+// from the LLRs of the embedded signalling fragment of each burst only.
+func (d *softDecoder) decodeEmbeddedFrags(llr *[4][embBits]int16, out *[4]layer2.RawBurst) ([9]byte, fec.Result) {
 	e, s := d.embLC, &d.osd
 	c := e.code
 	for j := range c.n {
 		p := c.pos[j]
-		s.l[j] = int32(llr[p/softBurstBits][p%softBurstBits])
+		s.l[j] = int32(llr[p/softBurstBits][p%softBurstBits-embFirstBit])
 	}
 	s.accept = d.acceptEmbLC
 	c.osd(s, d.OSDOrder, d.OSDWindow, d.EmbLCList)

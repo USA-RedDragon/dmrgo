@@ -56,9 +56,9 @@ type trackEntry struct {
 type chanTrack struct {
 	sf  int64
 	hdr int64
-	// acc sums the log-likelihood ratios of the embedded LC of the
-	// superframes of the current call, which all carry the same LC.
-	acc  [4][layer2.BurstBits]int16
+	// acc sums the log-likelihood ratios of the embedded LC fragments of
+	// the superframes of the current call, which all carry the same LC.
+	acc  [4][embBits]int16
 	accN int
 }
 
