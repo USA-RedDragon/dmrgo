@@ -51,7 +51,7 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 	}
 	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {
-		return newSyncSourceError(opts.Source)
+		return errUnknownSyncSource
 	}
 	header, err := lcDataBurst(&opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, opts.Source)
 	if err != nil {
@@ -69,7 +69,7 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 	if opts.PIHeader != nil {
 		coded, err := opts.PIHeader.Encode()
 		if err != nil {
-			return newWrappedError("cannot encode PI header", err)
+			return err
 		}
 		var p [12]byte
 		packBits(p[:], coded[:])

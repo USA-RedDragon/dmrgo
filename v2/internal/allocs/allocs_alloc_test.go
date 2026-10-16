@@ -186,6 +186,12 @@ func TestAllocsVoiceTransmitterReset(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+	bad := &layer2.VoiceTransmitterOptions{Source: layer2.SyncSource(9)}
+	assertZero(t, "reset with an unknown source", func() {
+		if err := tx.Reset(bad); err == nil {
+			t.Fatal("no error")
+		}
+	})
 }
 
 // TestAllocsVoiceReceiver runs the voice captures through a Receiver, with

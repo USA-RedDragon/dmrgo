@@ -111,7 +111,7 @@ func lcDataBurst(lc *pdu.FullLinkControl, dataType enums.DataType, colorCode enu
 	l.BurstDataType = dataType
 	coded, err := l.Encode()
 	if err != nil {
-		return RawBurst{}, newWrappedError("cannot encode full link control", err)
+		return RawBurst{}, err
 	}
 	var p [12]byte
 	packBits(p[:], coded[:])
