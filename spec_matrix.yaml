@@ -54,6 +54,10 @@ ignore_files:
   - v2/enums/slot.go
   - v2/layer2/hint.go
   - v2/layer2/pdu/csbk_motorola.go
+  - v2/voice/errors.go
+  - v2/voice/event.go
+  - v2/voice/position.go
+  - v2/voice/receiver.go
 
 documents:
   - id: "TS-102-361-1"
