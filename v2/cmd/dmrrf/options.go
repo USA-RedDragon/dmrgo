@@ -49,7 +49,7 @@ type Options struct {
 	// only to settle the carrier, timing and modulation index estimates.
 	WarmUp bool
 	// TrackCarrier follows the carrier between anchors with a
-	// decision-directed estimate.
+	// decision-directed estimate, after the warm pass.
 	TrackCarrier bool
 	// TrackH estimates the modulation index of each stream.
 	TrackH bool

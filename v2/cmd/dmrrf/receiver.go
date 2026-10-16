@@ -524,7 +524,7 @@ func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
 }
 
 // warmFreq sets the carrier estimate and the modulation index from the
-// anchors from slot 0 to j at the timing of the slot fit: the values that
+// slots from 0 to j at the timing of the slot fit: the values that
 // maximize the sum of their squared SYNC correlations, searched in turn.
 // The discriminator detection does not use the carrier estimate, so for it
 // warmFreq only reports the deviation.
@@ -564,23 +564,26 @@ func (r *Receiver) searchFreq(j int64, center, span, step float64) {
 }
 
 // bestFreq returns the frequency, from center-span to center+span in steps
-// of step, with the best sum of the SYNC metrics of the anchors from slot 0
-// to j at the timing of the slot fit. It interpolates each anchor once and
-// removes each carrier offset from the interpolated samples.
+// of step, with the best sum over the slots from 0 to j of the better SYNC
+// metric of the voice and data patterns, at the timing of the slot fit. It
+// interpolates each slot once and removes each carrier offset from the
+// interpolated samples.
 func (r *Receiver) bestFreq(j int64, center, span, step float64) float64 {
 	tot := r.freqTot[:int(math.Round(2*span/step))+1]
 	clear(tot)
 	saved := r.freq
 	r.freq = 0
+	voice, data, _ := sourceAt(r.src).SyncPatterns()
 	for k := int64(0); k <= j; k++ {
 		s := r.slot(k)
-		if s.index != k || !s.anchor {
+		if s.index != k {
 			continue
 		}
 		e := r.syncSamples(s, 0)
 		t0 := r.syncStart(s, 0)
 		for i := range tot {
-			tot[i] += r.syncMetricAt(s.a.pattern, e, t0, center-span+float64(i)*step)
+			f := center - span + float64(i)*step
+			tot[i] += max(r.syncMetricAt(voice, e, t0, f), r.syncMetricAt(data, e, t0, f))
 		}
 	}
 	r.freq = saved
@@ -593,15 +596,20 @@ func (r *Receiver) bestFreq(j int64, center, span, step float64) float64 {
 	return center - span + float64(best)*step
 }
 
-// anchorScore returns the sum of the SYNC metrics of the anchors from slot
-// 0 to j at the timing of the slot fit and the current carrier estimate.
+// anchorScore returns the sum over the slots from 0 to j of the better
+// SYNC metric of the voice and data patterns, at the timing of the slot
+// fit and the current carrier estimate. It does not use the anchors that
+// the warm pass found, which a wrong lock frequency makes wrong.
 func (r *Receiver) anchorScore(j int64) float64 {
 	var tot float64
+	voice, data, _ := sourceAt(r.src).SyncPatterns()
 	for k := int64(0); k <= j; k++ {
 		s := r.slot(k)
-		if s.index == k && s.anchor {
-			tot += r.syncCorr(s.a.pattern, r.syncSamples(s, 0)).metric
+		if s.index != k {
+			continue
 		}
+		e := r.syncSamples(s, 0)
+		tot += max(r.syncCorr(voice, e).metric, r.syncCorr(data, e).metric)
 	}
 	return tot
 }
