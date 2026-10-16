@@ -6,7 +6,7 @@ package pdu
 
 import (
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
@@ -63,12 +63,12 @@ func (s *PIHeader) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errPIHeaderMFIDRange = &bit.FieldRangeError{
+	errPIHeaderMFIDRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "MFID",
 		Type:  "PIHeader",
 	}
-	errPIHeaderDestinationRange = &bit.FieldRangeError{
+	errPIHeaderDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Destination",
 		Type:  "PIHeader",

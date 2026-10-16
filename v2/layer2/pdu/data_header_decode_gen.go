@@ -15,7 +15,7 @@ package pdu
 import (
 	"errors"
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
@@ -929,254 +929,254 @@ func (s *ProprietaryHeader) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errUnconfirmedDataHeaderPadOctetCountRange = &bit.FieldRangeError{
+	errUnconfirmedDataHeaderPadOctetCountRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "PadOctetCount",
 		Type:  "UnconfirmedDataHeader",
 	}
-	errUnconfirmedDataHeaderSAPRange = &bit.FieldRangeError{
+	errUnconfirmedDataHeaderSAPRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAP",
 		Type:  "UnconfirmedDataHeader",
 	}
-	errUnconfirmedDataHeaderLLIDDestinationRange = &bit.FieldRangeError{
+	errUnconfirmedDataHeaderLLIDDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDDestination",
 		Type:  "UnconfirmedDataHeader",
 	}
-	errUnconfirmedDataHeaderLLIDSourceRange = &bit.FieldRangeError{
+	errUnconfirmedDataHeaderLLIDSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDSource",
 		Type:  "UnconfirmedDataHeader",
 	}
-	errUnconfirmedDataHeaderBlocksToFollowRange = &bit.FieldRangeError{
+	errUnconfirmedDataHeaderBlocksToFollowRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "BlocksToFollow",
 		Type:  "UnconfirmedDataHeader",
 	}
-	errUnconfirmedDataHeaderReserved2Range = &bit.FieldRangeError{
+	errUnconfirmedDataHeaderReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Reserved2",
 		Type:  "UnconfirmedDataHeader",
 	}
-	errUnconfirmedDataHeaderFragmentSequenceNumberRange = &bit.FieldRangeError{
+	errUnconfirmedDataHeaderFragmentSequenceNumberRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "FragmentSequenceNumber",
 		Type:  "UnconfirmedDataHeader",
 	}
 	errDataHeaderPayloads    = errors.New("DataHeader: more than one payload field is set")
-	errDataHeaderFormatRange = &bit.FieldRangeError{
+	errDataHeaderFormatRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Format",
 		Type:  "DataHeader",
 	}
 	errDataHeaderPayload                     = errors.New("DataHeader: the payload field that is set is not the one that Format and AppendedBlocks select")
-	errConfirmedDataHeaderPadOctetCountRange = &bit.FieldRangeError{
+	errConfirmedDataHeaderPadOctetCountRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "PadOctetCount",
 		Type:  "ConfirmedDataHeader",
 	}
-	errConfirmedDataHeaderSAPRange = &bit.FieldRangeError{
+	errConfirmedDataHeaderSAPRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAP",
 		Type:  "ConfirmedDataHeader",
 	}
-	errConfirmedDataHeaderLLIDDestinationRange = &bit.FieldRangeError{
+	errConfirmedDataHeaderLLIDDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDDestination",
 		Type:  "ConfirmedDataHeader",
 	}
-	errConfirmedDataHeaderLLIDSourceRange = &bit.FieldRangeError{
+	errConfirmedDataHeaderLLIDSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDSource",
 		Type:  "ConfirmedDataHeader",
 	}
-	errConfirmedDataHeaderBlocksToFollowRange = &bit.FieldRangeError{
+	errConfirmedDataHeaderBlocksToFollowRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "BlocksToFollow",
 		Type:  "ConfirmedDataHeader",
 	}
-	errConfirmedDataHeaderSendSequenceNumberRange = &bit.FieldRangeError{
+	errConfirmedDataHeaderSendSequenceNumberRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "SendSequenceNumber",
 		Type:  "ConfirmedDataHeader",
 	}
-	errConfirmedDataHeaderFragmentSequenceNumberRange = &bit.FieldRangeError{
+	errConfirmedDataHeaderFragmentSequenceNumberRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "FragmentSequenceNumber",
 		Type:  "ConfirmedDataHeader",
 	}
-	errResponsePacketHeaderReserved2Range = &bit.FieldRangeError{
+	errResponsePacketHeaderReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "Reserved2",
 		Type:  "ResponsePacketHeader",
 	}
-	errResponsePacketHeaderSAPRange = &bit.FieldRangeError{
+	errResponsePacketHeaderSAPRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAP",
 		Type:  "ResponsePacketHeader",
 	}
-	errResponsePacketHeaderReserved3Range = &bit.FieldRangeError{
+	errResponsePacketHeaderReserved3Range = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Reserved3",
 		Type:  "ResponsePacketHeader",
 	}
-	errResponsePacketHeaderLLIDDestinationRange = &bit.FieldRangeError{
+	errResponsePacketHeaderLLIDDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDDestination",
 		Type:  "ResponsePacketHeader",
 	}
-	errResponsePacketHeaderLLIDSourceRange = &bit.FieldRangeError{
+	errResponsePacketHeaderLLIDSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDSource",
 		Type:  "ResponsePacketHeader",
 	}
-	errResponsePacketHeaderBlocksToFollowRange = &bit.FieldRangeError{
+	errResponsePacketHeaderBlocksToFollowRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "BlocksToFollow",
 		Type:  "ResponsePacketHeader",
 	}
-	errResponsePacketHeaderResponseClassRange = &bit.FieldRangeError{
+	errResponsePacketHeaderResponseClassRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "ResponseClass",
 		Type:  "ResponsePacketHeader",
 	}
-	errResponsePacketHeaderResponseTypeRange = &bit.FieldRangeError{
+	errResponsePacketHeaderResponseTypeRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "ResponseType",
 		Type:  "ResponsePacketHeader",
 	}
-	errResponsePacketHeaderResponseStatusRange = &bit.FieldRangeError{
+	errResponsePacketHeaderResponseStatusRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "ResponseStatus",
 		Type:  "ResponsePacketHeader",
 	}
-	errDefinedDataHeaderAppendedBlocksRange = &bit.FieldRangeError{
+	errDefinedDataHeaderAppendedBlocksRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "AppendedBlocks",
 		Type:  "DefinedDataHeader",
 	}
-	errDefinedDataHeaderSAPRange = &bit.FieldRangeError{
+	errDefinedDataHeaderSAPRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAP",
 		Type:  "DefinedDataHeader",
 	}
-	errDefinedDataHeaderLLIDDestinationRange = &bit.FieldRangeError{
+	errDefinedDataHeaderLLIDDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDDestination",
 		Type:  "DefinedDataHeader",
 	}
-	errDefinedDataHeaderLLIDSourceRange = &bit.FieldRangeError{
+	errDefinedDataHeaderLLIDSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDSource",
 		Type:  "DefinedDataHeader",
 	}
-	errDefinedDataHeaderDefinedDataRange = &bit.FieldRangeError{
+	errDefinedDataHeaderDefinedDataRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "DefinedData",
 		Type:  "DefinedDataHeader",
 	}
-	errRawDataHeaderAppendedBlocksRange = &bit.FieldRangeError{
+	errRawDataHeaderAppendedBlocksRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "AppendedBlocks",
 		Type:  "RawDataHeader",
 	}
-	errRawDataHeaderSAPRange = &bit.FieldRangeError{
+	errRawDataHeaderSAPRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAP",
 		Type:  "RawDataHeader",
 	}
-	errRawDataHeaderLLIDDestinationRange = &bit.FieldRangeError{
+	errRawDataHeaderLLIDDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDDestination",
 		Type:  "RawDataHeader",
 	}
-	errRawDataHeaderLLIDSourceRange = &bit.FieldRangeError{
+	errRawDataHeaderLLIDSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDSource",
 		Type:  "RawDataHeader",
 	}
-	errRawDataHeaderSourcePortRange = &bit.FieldRangeError{
+	errRawDataHeaderSourcePortRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "SourcePort",
 		Type:  "RawDataHeader",
 	}
-	errRawDataHeaderDestinationPortRange = &bit.FieldRangeError{
+	errRawDataHeaderDestinationPortRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "DestinationPort",
 		Type:  "RawDataHeader",
 	}
-	errStatusPrecodedHeaderSAPRange = &bit.FieldRangeError{
+	errStatusPrecodedHeaderSAPRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAP",
 		Type:  "StatusPrecodedHeader",
 	}
-	errStatusPrecodedHeaderLLIDDestinationRange = &bit.FieldRangeError{
+	errStatusPrecodedHeaderLLIDDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDDestination",
 		Type:  "StatusPrecodedHeader",
 	}
-	errStatusPrecodedHeaderLLIDSourceRange = &bit.FieldRangeError{
+	errStatusPrecodedHeaderLLIDSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDSource",
 		Type:  "StatusPrecodedHeader",
 	}
-	errStatusPrecodedHeaderSourcePortRange = &bit.FieldRangeError{
+	errStatusPrecodedHeaderSourcePortRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "SourcePort",
 		Type:  "StatusPrecodedHeader",
 	}
-	errStatusPrecodedHeaderDestinationPortRange = &bit.FieldRangeError{
+	errStatusPrecodedHeaderDestinationPortRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "DestinationPort",
 		Type:  "StatusPrecodedHeader",
 	}
-	errStatusPrecodedHeaderStatusPrecodedRange = &bit.FieldRangeError{
+	errStatusPrecodedHeaderStatusPrecodedRange = &dmrgo.FieldRangeError{
 		Bits:  10,
 		Field: "StatusPrecoded",
 		Type:  "StatusPrecodedHeader",
 	}
-	errUDTHeaderSAPRange = &bit.FieldRangeError{
+	errUDTHeaderSAPRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAP",
 		Type:  "UDTHeader",
 	}
-	errUDTHeaderUDTFormatRange = &bit.FieldRangeError{
+	errUDTHeaderUDTFormatRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "UDTFormat",
 		Type:  "UDTHeader",
 	}
-	errUDTHeaderLLIDDestinationRange = &bit.FieldRangeError{
+	errUDTHeaderLLIDDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDDestination",
 		Type:  "UDTHeader",
 	}
-	errUDTHeaderLLIDSourceRange = &bit.FieldRangeError{
+	errUDTHeaderLLIDSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDSource",
 		Type:  "UDTHeader",
 	}
-	errUDTHeaderPadNibbleRange = &bit.FieldRangeError{
+	errUDTHeaderPadNibbleRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "PadNibble",
 		Type:  "UDTHeader",
 	}
-	errUDTHeaderAppendedBlocksRange = &bit.FieldRangeError{
+	errUDTHeaderAppendedBlocksRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "AppendedBlocks",
 		Type:  "UDTHeader",
 	}
-	errUDTHeaderOpcodeRange = &bit.FieldRangeError{
+	errUDTHeaderOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
 		Type:  "UDTHeader",
 	}
-	errProprietaryHeaderSAPRange = &bit.FieldRangeError{
+	errProprietaryHeaderSAPRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAP",
 		Type:  "ProprietaryHeader",
 	}
-	errProprietaryHeaderMFIDRange = &bit.FieldRangeError{
+	errProprietaryHeaderMFIDRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "MFID",
 		Type:  "ProprietaryHeader",

@@ -207,7 +207,7 @@ func decodeResponseData(r *ResponseData, buf []byte) error {
 // destination to its source with the same SAP. Status is the packet's
 // N(S), or the 3 LSBs of its FSN for ResponseNACKFSNOutOfSequence. A
 // ResponseSACK carries data as C_RDATA blocks; data is ignored otherwise.
-// It returns a *bit.FieldRangeError when the Class of r does not fit in 2
+// It returns a *dmrgo.FieldRangeError when the Class of r does not fit in 2
 // bits. It allocates the storage of the Packet; Builder.NewResponse builds into
 // the storage of a Builder.
 func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {

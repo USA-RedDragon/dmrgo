@@ -1,7 +1,7 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
@@ -136,7 +136,7 @@ func (c *CSBKBytes) Reseal() {
 	_ = Seal((*[12]byte)(c), enums.DataTypeCSBK)
 }
 
-// The *bit.FieldRangeError values of the addresses of NewVoiceLCBytes and
+// The *dmrgo.FieldRangeError values of the addresses of NewVoiceLCBytes and
 // NewVoiceLC.
 var (
 	errLCBytesTargetRange         = addressRangeError("LCBytes", "target")
@@ -145,10 +145,10 @@ var (
 	errFullLinkControlSourceRange = addressRangeError("FullLinkControl", "source")
 )
 
-// addressRangeError returns the *bit.FieldRangeError of a 24-bit address
+// addressRangeError returns the *dmrgo.FieldRangeError of a 24-bit address
 // field of type typ.
 func addressRangeError(typ, field string) error {
-	return &bit.FieldRangeError{Type: typ, Field: field, Bits: 24}
+	return &dmrgo.FieldRangeError{Type: typ, Field: field, Bits: 24}
 }
 
 // checkAddresses returns targetErr when target, or sourceErr when source,

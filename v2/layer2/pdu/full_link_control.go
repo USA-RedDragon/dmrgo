@@ -91,7 +91,7 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 // voice call: Grp_V_Ch_Usr when group is true, else UU_V_Ch_Usr (ETSI TS 102
 // 361-2 Tables 7.1 and 7.2), with Service Options so. MMDVMHost sends the
 // zero value and Motorola IPSC layer3.MotorolaServiceOptions. It returns a
-// *bit.FieldRangeError when an address does not fit in 24 bits. It allocates
+// *dmrgo.FieldRangeError when an address does not fit in 24 bits. It allocates
 // the payload struct of the LC.
 func NewVoiceLC(group bool, target, source uint32, so layer3.ServiceOptions) (FullLinkControl, error) {
 	if err := checkAddresses(target, source, errFullLinkControlTargetRange, errFullLinkControlSourceRange); err != nil {

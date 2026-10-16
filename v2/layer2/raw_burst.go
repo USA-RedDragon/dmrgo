@@ -279,7 +279,7 @@ func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
 // AMBE+2 frames. Burst A carries the voice SYNC pattern of src; bursts B to
 // F carry emb, with its LCSS set from pos, and the embedded signalling field
 // embedded. It returns an error when pos is not A to F or src is unknown,
-// and a *bit.FieldRangeError when a padding bit of a frame is set or a
+// and a *dmrgo.FieldRangeError when a padding bit of a frame is set or a
 // field of emb does not fit its bits.
 func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.VoiceBurstType, emb pdu.EmbeddedSignalling,
 	embedded [4]byte, src SyncSource,
@@ -319,7 +319,7 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 // BuildBurst returns the data burst that carries d, with a slot type of
 // color code cc and data type d.DataType() and the data SYNC pattern of src.
 // The BPTC reserved bits are zero. It returns an error when d is nil or does
-// not encode, or src is unknown, and a *bit.FieldRangeError when cc does
+// not encode, or src is unknown, and a *dmrgo.FieldRangeError when cc does
 // not fit in 4 bits. Its type switch on the Encode method of d
 // can allocate once for each type of d, to fill the runtime cache of the
 // switch.
@@ -355,7 +355,7 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 // p, which must already carry its CRC or parity (see pdu.Seal), with a slot
 // type of color code cc and data type dt and the data SYNC pattern of src.
 // It returns an error when dt is not BPTC coded or src is unknown, and a
-// *bit.FieldRangeError when cc does not fit in 4 bits.
+// *dmrgo.FieldRangeError when cc does not fit in 4 bits.
 func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if !dt.IsBPTC() {
 		return RawBurst{}, errNotBPTC
@@ -370,7 +370,7 @@ func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncS
 
 // BuildRate34DataBurst returns a Rate 3/4 data burst that carries p, with
 // a slot type of color code cc and the data SYNC pattern of src. It returns
-// an error when src is unknown, and a *bit.FieldRangeError when cc does not
+// an error when src is unknown, and a *dmrgo.FieldRangeError when cc does not
 // fit in 4 bits.
 func BuildRate34DataBurst(p [18]byte, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	r, err := dataBurstFrame(enums.DataTypeRate34, cc, src)
@@ -384,7 +384,7 @@ func BuildRate34DataBurst(p [18]byte, cc enums.ColorCode, src SyncSource) (RawBu
 // BuildRate1DataBurst returns a Rate 1 data burst that carries p, with a
 // slot type of color code cc and the data SYNC pattern of src. Information
 // bits 96 to 99 are zero. It returns an error when src is unknown, and a
-// *bit.FieldRangeError when cc does not fit in 4 bits.
+// *dmrgo.FieldRangeError when cc does not fit in 4 bits.
 func BuildRate1DataBurst(p [24]byte, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	r, err := dataBurstFrame(enums.DataTypeRate1, cc, src)
 	if err != nil {

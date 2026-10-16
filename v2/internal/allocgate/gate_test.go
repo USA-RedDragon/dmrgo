@@ -25,7 +25,7 @@ const moduleRoot = "../.."
 var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/unpacked"}
 
 // libraryPackages returns the import paths of the library packages, relative
-// to the module ("./bit" and so on).
+// to the module ("./enums" and so on).
 func libraryPackages(t *testing.T) []string {
 	t.Helper()
 	var pkgs []string

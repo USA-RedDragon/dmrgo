@@ -302,8 +302,8 @@ type T struct {
 		"func (s *T) Encode() ([8]byte, error) {",
 		"if uint64(s.Part)>>12 != 0 {",
 		`return [8]byte{}, errTPartRange`,
-		"errTPartRange = &bit.FieldRangeError{\n\t\tBits:  12,\n\t\tField: \"Part\",\n\t\tType:  \"T\",\n\t}",
-		"errTOffRange = &bit.FieldRangeError{\n\t\tBits:   8,\n\t\tField:  \"Off\",\n\t\tSigned: true,\n\t\tType:   \"T\",\n\t}",
+		"errTPartRange = &dmrgo.FieldRangeError{\n\t\tBits:  12,\n\t\tField: \"Part\",\n\t\tType:  \"T\",\n\t}",
+		"errTOffRange = &dmrgo.FieldRangeError{\n\t\tBits:   8,\n\t\tField:  \"Off\",\n\t\tSigned: true,\n\t\tType:   \"T\",\n\t}",
 		"if uint64(s.Addr)>>24 != 0 {",
 		"if int64(s.Off) < -128 || int64(s.Off) > 127 {",
 		"_kidBytes, err := s.Kid.Encode()",
@@ -534,7 +534,7 @@ func TestPackedFieldIsPackedWithoutAllocating(t *testing.T) {
 		"copy(result.D[0:2], data[1:3])",
 		"copy(data[1:3], s.D[0:2])",
 	)
-	if strings.Contains(out, "bit.Pack(") || strings.Contains(out, "bit.Unpack(") {
-		t.Errorf("packed field uses bit.Pack or bit.Unpack:\n%s", out)
+	if strings.Contains(out, "bits.Copy(") {
+		t.Errorf("byte-aligned packed field uses bits.Copy:\n%s", out)
 	}
 }

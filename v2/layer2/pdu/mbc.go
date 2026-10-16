@@ -50,7 +50,7 @@ type MBCContinuation struct {
 
 	// Data holds bits 1 to 95 of the block, packed most significant bit
 	// first. A last block holds the CRC in bits 80 to 95. The low bit of
-	// byte 11 is padding: Encode returns a *bit.FieldRangeError when it is set.
+	// byte 11 is padding: Encode returns a *dmrgo.FieldRangeError when it is set.
 	Data [12]byte `dmr:"bits:1-95,raw"`
 }
 

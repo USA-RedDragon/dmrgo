@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -106,7 +106,7 @@ var (
 	errSyncPattern     = errors.New("not a Table 9.2 SYNC pattern")
 	errMMDVMHostData   = errors.New("MMDVMHost discards bursts of this data type")
 
-	errBurstBPTCReservedRange = &bit.FieldRangeError{Type: "Burst", Field: "BPTCReserved", Bits: 3}
+	errBurstBPTCReservedRange = &dmrgo.FieldRangeError{Type: "Burst", Field: "BPTCReserved", Bits: 3}
 )
 
 // The joins of a decode error with ErrColorCodeMismatch, which

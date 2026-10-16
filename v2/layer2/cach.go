@@ -1,7 +1,7 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -48,7 +48,7 @@ func DecodeCACHField(onAir [3]byte) CACH {
 
 // errCACHPayloadRange is the error of an Encode whose Payload has a padding
 // bit set.
-var errCACHPayloadRange = &bit.FieldRangeError{Type: "CACH", Field: "Payload", Bits: CACHPayloadBits}
+var errCACHPayloadRange = &dmrgo.FieldRangeError{Type: "CACH", Field: "Payload", Bits: CACHPayloadBits}
 
 // Encode encodes a CACH struct into a 24-bit field in logical order, packed
 // as DecodeCACH takes it. Use CACHInterleave to get the bits in transmit

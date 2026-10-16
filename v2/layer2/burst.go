@@ -81,7 +81,7 @@ type Burst struct {
 	// BPTCReserved holds the reserved bits R(0) to R(2) of the BPTC(196,96)
 	// payload of a data burst after FEC correction, R(i) in bit i, so that
 	// it reads R(2), R(1), R(0) in the order of the BPTC matrix, the first
-	// most significant. Encode returns a *bit.FieldRangeError for a data
+	// most significant. Encode returns a *dmrgo.FieldRangeError for a data
 	// burst when one of bits 3 to 7 is set. The spec sets R(0) to R(2) to
 	// zero, and Motorola Capacity Max sets R(2), 0x4, to flag RAS (ETSI TS
 	// 102 361-1 clause B.1.1).
@@ -630,7 +630,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 // Encode returns the burst in transmit bit order, as the package doc
 // describes. It returns an error for KindUnknown, a SyncPattern that does
 // not fit the kind, a missing Data, or a Data whose data type is not
-// SlotType.DataType, and a *bit.FieldRangeError for a field value that does
+// SlotType.DataType, and a *dmrgo.FieldRangeError for a field value that does
 // not fit its bits or a padding bit that is set. For a data
 // burst, its type switch on the Encode method of Data can allocate once for
 // each type of Data, to fill the runtime cache of the switch.

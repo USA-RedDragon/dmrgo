@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -212,7 +212,7 @@ func TestNewVoiceLC(t *testing.T) {
 			t.Errorf("group %t: LCBytes %x", group, l)
 		}
 	}
-	var rangeErr *bit.FieldRangeError
+	var rangeErr *dmrgo.FieldRangeError
 	if _, err := pdu.NewVoiceLC(true, 1<<24, 1, layer3.ServiceOptions{}); !errors.As(err, &rangeErr) {
 		t.Errorf("target 1<<24: %v", err)
 	}

@@ -18,7 +18,7 @@
 // significant bit of byte 0, so a CSBK is a [12]byte and a Short LC of 36
 // bits is a [5]byte. When the number of bits is not a multiple of 8,
 // DecodeX ignores the low bits of the last byte and Encode sets them to 0.
-// Encode returns a *bit.FieldRangeError when a field value does not fit its
+// Encode returns a *dmrgo.FieldRangeError when a field value does not fit its
 // bits, or when a padding bit of a raw field, such as MBCContinuation.Data,
 // is set.
 //

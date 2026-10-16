@@ -3,7 +3,7 @@ package pdu
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -39,7 +39,7 @@ func DecodeReverseChannel(info [2]byte) ReverseChannel {
 
 // errReverseChannelRCCommandRange is the error of an Encode whose RCCommand
 // does not fit in 4 bits.
-var errReverseChannelRCCommandRange = &bit.FieldRangeError{Type: "ReverseChannel", Field: "RCCommand", Bits: 4}
+var errReverseChannelRCCommandRange = &dmrgo.FieldRangeError{Type: "ReverseChannel", Field: "RCCommand", Bits: 4}
 
 // Encode encodes an RC PDU into its 11 information bits: the 4-bit RC command
 // and the CRC-7 masked with CRC7MaskRC, packed as DecodeReverseChannel takes

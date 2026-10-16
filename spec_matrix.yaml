@@ -10,7 +10,7 @@
 # Every other non-test, non-generated Go file except doc.go must appear in a section's source_files.
 
 ignore_files:
-  - v2/bit/bit.go
+  - v2/errors.go
   - v2/internal/bits/bits.go
   - v2/internal/unpacked/unpacked.go
   - v2/internal/allocgate/apigen/apigen.go
