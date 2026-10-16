@@ -392,13 +392,13 @@ func (r *Receiver) searchStep() bool {
 			if base+int64(syncSymbols*step)+2 >= r.chz.sym.n {
 				return false
 			}
-			rho, src, data := r.search.discAt(&r.chz.sym, base, u, step, r.nsrc)
-			if rho >= discLock {
+			rho2, src, data := r.search.discAt(&r.chz.sym, base, u, step, r.nsrc)
+			if rho2 >= discLock*discLock {
 				best := r.searchAt
 				for k := int64(1); k < 6; k++ {
 					b, v := r.chz.symAt(r.searchAt + k)
-					if q, s2, d2 := r.search.discAt(&r.chz.sym, b, v, step, r.nsrc); q > rho {
-						rho, src, data, best = q, s2, d2, r.searchAt+k
+					if q, s2, d2 := r.search.discAt(&r.chz.sym, b, v, step, r.nsrc); q > rho2 {
+						rho2, src, data, best = q, s2, d2, r.searchAt+k
 					}
 				}
 				r.lock(float64(best), src, data, 0)
