@@ -1077,6 +1077,11 @@ type softDecoder struct {
 	// OSDOrder is the OSD order, 0 to 3, and OSDWindow the number of least
 	// reliable basis bits that order 3 uses.
 	OSDOrder, OSDWindow int
+	// GridIters is the number of row and column passes of decodeBPTCGrid,
+	// and GridWeight the weight of the extrinsic information that one
+	// component passes to the other.
+	GridIters  int
+	GridWeight float32
 	// BPTCList, ShortLCList and EmbLCList are the numbers of best candidates
 	// that the BPTC(196,96) decodes with a check, the Short LC decode and the
 	// embedded LC decode try. A longer list corrects more blocks and passes
@@ -1092,6 +1097,7 @@ type softDecoder struct {
 	shortLC  *softOSDCode
 	embLC    *softEmbLC
 	trellis  *softTrellis
+	grid     *softGrid
 	// info holds the burst positions of the 196 information bits, and
 	// bptcInfo the information bit of BPTC(196,96) codeword bit j, which has
 	// no R(3).
@@ -1103,6 +1109,8 @@ type softDecoder struct {
 	osd   softOSDScratch
 	tab   [softTabLen]int32
 	prev  [softTrellisSteps][softTrellisStates]uint8
+	// gridPost holds the a posteriori ratios of decodeBPTCGrid.
+	gridPost [softBurstBits]int16
 	// check is the BPTC check of the current decode, and acceptBPTC,
 	// acceptShortLC and acceptEmbLC are the checks of the OSD codewords.
 	check                                  func([12]byte) bool
@@ -1112,7 +1120,7 @@ type softDecoder struct {
 // newSoftDecoder derives every code table from the library encoders. It
 // returns an error only when a library encoder changes its layout.
 func newSoftDecoder() (*softDecoder, error) {
-	d := &softDecoder{AMBECandidates: 4, ChaseBits: 6, OSDOrder: 2, BPTCList: softListMax, ShortLCList: 4, EmbLCList: 2}
+	d := &softDecoder{AMBECandidates: 4, ChaseBits: 6, OSDOrder: 2, BPTCList: softListMax, ShortLCList: 4, EmbLCList: 2, GridIters: 4, GridWeight: 0.7}
 	d.small.tab, d.osd.tab = &d.tab, &d.tab
 	var err error
 	if d.ambe, err = newSoftAMBE(); err != nil {
@@ -1128,6 +1136,9 @@ func newSoftDecoder() (*softDecoder, error) {
 		return nil, err
 	}
 	if d.trellis, err = newSoftTrellis(&d.info); err != nil {
+		return nil, err
+	}
+	if d.grid, err = newSoftGrid(&d.info, d.bptc); err != nil {
 		return nil, err
 	}
 	if d.shortLC, err = newSoftOSDCode(softShortLCInfo, 2, softShortLCEncoder); err != nil {
@@ -1446,6 +1457,18 @@ func (d *softDecoder) decodeBPTCOSD(llr *[softBurstBits]int16, check func([12]by
 	d.bptcLLRs(llr)
 	d.bptc.osd(&d.osd, d.OSDOrder, d.OSDWindow, d.bptcCheck(check))
 	return d.bptcPick(check, out)
+}
+
+// decodeBPTCGrid decodes a BPTC(196,96) block from the 264 LLRs of its
+// burst by GridIters passes of row and column decoding of the grid, then
+// by ordered statistics from the a posteriori ratios. It corrects blocks
+// with confidently wrong bits, which ordered statistics alone takes into
+// its most reliable basis. check and out work as in decodeBPTCOSD.
+func (d *softDecoder) decodeBPTCGrid(llr *[softBurstBits]int16, check func([12]byte) bool, out *layer2.RawBurst) (softBPTCResult, fec.Result) {
+	d.grid.decode(llr, d.GridIters, d.GridWeight)
+	d.gridPost = [softBurstBits]int16{}
+	d.grid.posterior(llr, &d.gridPost)
+	return d.decodeBPTCOSD(&d.gridPost, check, out)
 }
 
 // decodeBPTCChase decodes a BPTC(196,96) block from the 264 LLRs of its

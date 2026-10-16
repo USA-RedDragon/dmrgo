@@ -29,6 +29,7 @@ ignore_files:
   - v2/cmd/dmrrf/seq.go
   - v2/cmd/dmrrf/site.go
   - v2/cmd/dmrrf/softfec.go
+  - v2/cmd/dmrrf/softgrid.go
   - v2/cmd/dmrrf/spectrum.go
   - v2/cmd/dmrrf/track.go
   - v2/bit/bit.go

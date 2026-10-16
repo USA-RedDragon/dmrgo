@@ -296,7 +296,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	r.tk = newTracker()
 	r.emitFn = r.emit
 	if r.opt.SoftFEC {
-		r.rep = newRepairer(r.opt.BPTCOSD)
+		r.rep = newRepairer(r.opt.BPTCOSD, r.opt.GridBPTC)
 		r.tk.repair = r.repairEntry
 		r.tk.elc = r.rep.embeddedLC
 	}

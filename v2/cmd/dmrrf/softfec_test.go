@@ -753,6 +753,7 @@ func softBenchCases(d *softDecoder, in *softBenchInputs) []struct {
 		{"BPTC osd2 LC check", func() { d.OSDOrder, d.OSDWindow = 2, 0; d.decodeBPTCOSD(&in.bptc, lcCheck, &out) }},
 		{"BPTC osd2 no check", func() { d.OSDOrder, d.OSDWindow = 2, 0; d.decodeBPTCOSD(&in.bptc, nil, &out) }},
 		{"BPTC osd3 w24", func() { d.OSDOrder, d.OSDWindow = 3, 24; d.decodeBPTCOSD(&in.bptc, check, &out) }},
+		{"BPTC grid", func() { d.OSDOrder, d.OSDWindow = 2, 0; d.decodeBPTCGrid(&in.bptc, check, &out) }},
 		{"Rate34 viterbi", func() { d.decodeRate34(&in.rate34, &out) }},
 		{"SlotType", func() { d.decodeSlotType(&in.bptc, 0, false, &out) }},
 		{"SlotType cc", func() { d.decodeSlotType(&in.bptc, 1, true, &out) }},

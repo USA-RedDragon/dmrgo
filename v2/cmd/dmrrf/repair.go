@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -9,7 +10,11 @@ import (
 // soft-decision decoding of its log-likelihood ratios picks, so that the
 // library's hard decoders see a clean codeword.
 type repairer struct {
-	osd    bool
+	osd bool
+	// grid decodes a checked BPTC(196,96) block that fails its check again
+	// with decodeBPTCGrid.
+	grid   bool
+	fixed  layer2.RawBurst
 	soft   *softDecoder
 	checks [16]func([12]byte) bool
 	cur    [4][embBits]int16
@@ -30,13 +35,14 @@ const (
 const maxCombine = 4
 
 // newRepairer returns a repairer that decodes BPTC(196,96) by ordered
-// statistics when osd, or nil when the soft decoders cannot be built.
-func newRepairer(osd bool) *repairer {
+// statistics when osd, and again by iterative decoding of its grid when
+// grid and the check fails, or nil when the soft decoders cannot be built.
+func newRepairer(osd, grid bool) *repairer {
 	d, err := newSoftDecoder()
 	if err != nil {
 		return nil
 	}
-	p := &repairer{soft: d, osd: osd}
+	p := &repairer{soft: d, osd: osd, grid: grid}
 	for dt := range p.checks {
 		p.checks[dt] = softBPTCCheck(enums.DataType(dt))
 	}
@@ -73,10 +79,18 @@ func (p *repairer) repair(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 			p.soft.decodeRate34(llr, &out.Fixed)
 		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
 		default:
+			check := p.checks[dt&0xF]
+			var r fec.Result
 			if p.osd {
-				p.soft.decodeBPTCOSD(llr, p.checks[dt&0xF], &out.Fixed)
+				_, r = p.soft.decodeBPTCOSD(llr, check, &out.Fixed)
 			} else {
-				p.soft.decodeBPTCChase(llr, p.checks[dt&0xF], &out.Fixed)
+				_, r = p.soft.decodeBPTCChase(llr, check, &out.Fixed)
+			}
+			if p.grid && check != nil && r.Uncorrectable {
+				p.fixed = out.Fixed
+				if _, r = p.soft.decodeBPTCGrid(llr, check, &out.Fixed); r.Uncorrectable {
+					out.Fixed = p.fixed
+				}
 			}
 		}
 	}
