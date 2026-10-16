@@ -425,7 +425,13 @@ func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
 // warmFreq sets the carrier estimate and the modulation index from the
 // anchors from slot 0 to j at the timing of the slot fit: the values that
 // maximize the sum of their squared SYNC correlations, searched in turn.
+// The discriminator detection does not use the carrier estimate, so for it
+// warmFreq only reports the deviation.
 func (r *Receiver) warmFreq(j int64) {
+	if !r.opt.Coherent {
+		r.DeviationHz = 3 * deviationHz * r.devScale
+		return
+	}
 	r.searchFreq(j, r.lockFreq, lockSpanHz/2, 0.5)
 	if !r.opt.TrackH {
 		r.fw = 1 / (1 - freqForget)
@@ -590,6 +596,9 @@ func (r *Receiver) finishStream() {
 		r.first = r.next
 	}
 	r.OffsetHz = r.chz.ncoHz + r.freq
+	if !r.opt.Coherent {
+		r.OffsetHz = r.chz.ncoHz + r.dcHz
+	}
 	r.locked = false
 	r.searchAt = max(int64(r.slotTime(r.next)), r.lockAt+searchStep)
 	r.tk.flush(r.emit)
