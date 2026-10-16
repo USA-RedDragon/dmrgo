@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
@@ -97,16 +97,16 @@ func TestCACH_TACTErrorCorrection(t *testing.T) {
 }
 
 // TestCACH_EncodeRejectsPayloadPadding checks that Encode returns a
-// *bit.FieldRangeError when one of the padding bits of Payload is set.
+// *dmrgo.FieldRangeError when one of the padding bits of Payload is set.
 func TestCACH_EncodeRejectsPayloadPadding(t *testing.T) {
 	t.Parallel()
 	for i := layer2.CACHPayloadBits; i < 8*len(layer2.CACH{}.Payload); i++ {
 		var c layer2.CACH
 		bits.SetBit(c.Payload[:], i, 1)
 		_, err := c.Encode()
-		var fre *bit.FieldRangeError
+		var fre *dmrgo.FieldRangeError
 		if !errors.As(err, &fre) {
-			t.Errorf("padding bit %d: err = %v, want *bit.FieldRangeError", i, err)
+			t.Errorf("padding bit %d: err = %v, want *dmrgo.FieldRangeError", i, err)
 		}
 	}
 }

@@ -27,7 +27,7 @@ package pdu
 import (
 	"errors"
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -2378,533 +2378,533 @@ func (s *CSBK) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errBSOutboundActivationPDUBSAddressRange = &bit.FieldRangeError{
+	errBSOutboundActivationPDUBSAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "BSAddress",
 		Type:  "BSOutboundActivationPDU",
 	}
-	errBSOutboundActivationPDUSourceAddressRange = &bit.FieldRangeError{
+	errBSOutboundActivationPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "BSOutboundActivationPDU",
 	}
-	errUnitToUnitVoiceServiceRequestPDUTargetAddressRange = &bit.FieldRangeError{
+	errUnitToUnitVoiceServiceRequestPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "UnitToUnitVoiceServiceRequestPDU",
 	}
-	errUnitToUnitVoiceServiceRequestPDUSourceAddressRange = &bit.FieldRangeError{
+	errUnitToUnitVoiceServiceRequestPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "UnitToUnitVoiceServiceRequestPDU",
 	}
-	errUnitToUnitVoiceServiceAnswerResponsePDUTargetAddressRange = &bit.FieldRangeError{
+	errUnitToUnitVoiceServiceAnswerResponsePDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
 	}
-	errUnitToUnitVoiceServiceAnswerResponsePDUSourceAddressRange = &bit.FieldRangeError{
+	errUnitToUnitVoiceServiceAnswerResponsePDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
 	}
-	errNegativeAcknowledgementPDUAdditionalInfoRange = &bit.FieldRangeError{
+	errNegativeAcknowledgementPDUAdditionalInfoRange = &dmrgo.FieldRangeError{
 		Bits:  1,
 		Field: "AdditionalInfo",
 		Type:  "NegativeAcknowledgementPDU",
 	}
-	errNegativeAcknowledgementPDUSourceTypeRange = &bit.FieldRangeError{
+	errNegativeAcknowledgementPDUSourceTypeRange = &dmrgo.FieldRangeError{
 		Bits:  1,
 		Field: "SourceType",
 		Type:  "NegativeAcknowledgementPDU",
 	}
-	errNegativeAcknowledgementPDUServiceTypeRange = &bit.FieldRangeError{
+	errNegativeAcknowledgementPDUServiceTypeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "ServiceType",
 		Type:  "NegativeAcknowledgementPDU",
 	}
-	errNegativeAcknowledgementPDUSourceAddressRange = &bit.FieldRangeError{
+	errNegativeAcknowledgementPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "NegativeAcknowledgementPDU",
 	}
-	errNegativeAcknowledgementPDUTargetAddressRange = &bit.FieldRangeError{
+	errNegativeAcknowledgementPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "NegativeAcknowledgementPDU",
 	}
-	errPreamblePDUReservedRange = &bit.FieldRangeError{
+	errPreamblePDUReservedRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Reserved",
 		Type:  "PreamblePDU",
 	}
-	errPreamblePDUTargetAddressRange = &bit.FieldRangeError{
+	errPreamblePDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "PreamblePDU",
 	}
-	errPreamblePDUSourceAddressRange = &bit.FieldRangeError{
+	errPreamblePDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "PreamblePDU",
 	}
-	errChannelTimingPDUSyncAgeRange = &bit.FieldRangeError{
+	errChannelTimingPDUSyncAgeRange = &dmrgo.FieldRangeError{
 		Bits:  11,
 		Field: "SyncAge",
 		Type:  "ChannelTimingPDU",
 	}
-	errChannelTimingPDUGenerationRange = &bit.FieldRangeError{
+	errChannelTimingPDUGenerationRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "Generation",
 		Type:  "ChannelTimingPDU",
 	}
-	errChannelTimingPDULeaderIdentifierRange = &bit.FieldRangeError{
+	errChannelTimingPDULeaderIdentifierRange = &dmrgo.FieldRangeError{
 		Bits:  20,
 		Field: "LeaderIdentifier",
 		Type:  "ChannelTimingPDU",
 	}
-	errChannelTimingPDULeaderDynamicIdentifierRange = &bit.FieldRangeError{
+	errChannelTimingPDULeaderDynamicIdentifierRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "LeaderDynamicIdentifier",
 		Type:  "ChannelTimingPDU",
 	}
-	errChannelTimingPDUSourceIdentifierRange = &bit.FieldRangeError{
+	errChannelTimingPDUSourceIdentifierRange = &dmrgo.FieldRangeError{
 		Bits:  20,
 		Field: "SourceIdentifier",
 		Type:  "ChannelTimingPDU",
 	}
-	errChannelTimingPDUSourceDynamicIdentifierRange = &bit.FieldRangeError{
+	errChannelTimingPDUSourceDynamicIdentifierRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "SourceDynamicIdentifier",
 		Type:  "ChannelTimingPDU",
 	}
-	errPrivateVoiceGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errPrivateVoiceGrantPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "PrivateVoiceGrantPDU",
 	}
-	errPrivateVoiceGrantPDUTargetAddressRange = &bit.FieldRangeError{
+	errPrivateVoiceGrantPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "PrivateVoiceGrantPDU",
 	}
-	errPrivateVoiceGrantPDUSourceAddressRange = &bit.FieldRangeError{
+	errPrivateVoiceGrantPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "PrivateVoiceGrantPDU",
 	}
-	errTalkgroupVoiceGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errTalkgroupVoiceGrantPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "TalkgroupVoiceGrantPDU",
 	}
-	errTalkgroupVoiceGrantPDUTargetAddressRange = &bit.FieldRangeError{
+	errTalkgroupVoiceGrantPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "TalkgroupVoiceGrantPDU",
 	}
-	errTalkgroupVoiceGrantPDUSourceAddressRange = &bit.FieldRangeError{
+	errTalkgroupVoiceGrantPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "TalkgroupVoiceGrantPDU",
 	}
-	errBroadcastTalkgroupVoiceGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errBroadcastTalkgroupVoiceGrantPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "BroadcastTalkgroupVoiceGrantPDU",
 	}
-	errBroadcastTalkgroupVoiceGrantPDUTargetAddressRange = &bit.FieldRangeError{
+	errBroadcastTalkgroupVoiceGrantPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "BroadcastTalkgroupVoiceGrantPDU",
 	}
-	errBroadcastTalkgroupVoiceGrantPDUSourceAddressRange = &bit.FieldRangeError{
+	errBroadcastTalkgroupVoiceGrantPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "BroadcastTalkgroupVoiceGrantPDU",
 	}
-	errPrivateDataGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errPrivateDataGrantPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "PrivateDataGrantPDU",
 	}
-	errPrivateDataGrantPDUTargetAddressRange = &bit.FieldRangeError{
+	errPrivateDataGrantPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "PrivateDataGrantPDU",
 	}
-	errPrivateDataGrantPDUSourceAddressRange = &bit.FieldRangeError{
+	errPrivateDataGrantPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "PrivateDataGrantPDU",
 	}
-	errTalkgroupDataGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errTalkgroupDataGrantPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "TalkgroupDataGrantPDU",
 	}
-	errTalkgroupDataGrantPDUTargetAddressRange = &bit.FieldRangeError{
+	errTalkgroupDataGrantPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "TalkgroupDataGrantPDU",
 	}
-	errTalkgroupDataGrantPDUSourceAddressRange = &bit.FieldRangeError{
+	errTalkgroupDataGrantPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "TalkgroupDataGrantPDU",
 	}
-	errDuplexPrivateVoiceGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errDuplexPrivateVoiceGrantPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "DuplexPrivateVoiceGrantPDU",
 	}
-	errDuplexPrivateVoiceGrantPDUTargetAddressRange = &bit.FieldRangeError{
+	errDuplexPrivateVoiceGrantPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "DuplexPrivateVoiceGrantPDU",
 	}
-	errDuplexPrivateVoiceGrantPDUSourceAddressRange = &bit.FieldRangeError{
+	errDuplexPrivateVoiceGrantPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "DuplexPrivateVoiceGrantPDU",
 	}
-	errDuplexPrivateDataGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errDuplexPrivateDataGrantPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "DuplexPrivateDataGrantPDU",
 	}
-	errDuplexPrivateDataGrantPDUTargetAddressRange = &bit.FieldRangeError{
+	errDuplexPrivateDataGrantPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "DuplexPrivateDataGrantPDU",
 	}
-	errDuplexPrivateDataGrantPDUSourceAddressRange = &bit.FieldRangeError{
+	errDuplexPrivateDataGrantPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "DuplexPrivateDataGrantPDU",
 	}
-	errPrivateDataGrantMultiItemPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errPrivateDataGrantMultiItemPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "PrivateDataGrantMultiItemPDU",
 	}
-	errPrivateDataGrantMultiItemPDUTargetAddressRange = &bit.FieldRangeError{
+	errPrivateDataGrantMultiItemPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "PrivateDataGrantMultiItemPDU",
 	}
-	errPrivateDataGrantMultiItemPDUSourceAddressRange = &bit.FieldRangeError{
+	errPrivateDataGrantMultiItemPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "PrivateDataGrantMultiItemPDU",
 	}
-	errTalkgroupDataGrantMultiItemPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errTalkgroupDataGrantMultiItemPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "TalkgroupDataGrantMultiItemPDU",
 	}
-	errTalkgroupDataGrantMultiItemPDUTargetAddressRange = &bit.FieldRangeError{
+	errTalkgroupDataGrantMultiItemPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "TalkgroupDataGrantMultiItemPDU",
 	}
-	errTalkgroupDataGrantMultiItemPDUSourceAddressRange = &bit.FieldRangeError{
+	errTalkgroupDataGrantMultiItemPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "TalkgroupDataGrantMultiItemPDU",
 	}
-	errMovePDUReserved1Range = &bit.FieldRangeError{
+	errMovePDUReserved1Range = &dmrgo.FieldRangeError{
 		Bits:  9,
 		Field: "Reserved1",
 		Type:  "MovePDU",
 	}
-	errMovePDUMaskRange = &bit.FieldRangeError{
+	errMovePDUMaskRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "Mask",
 		Type:  "MovePDU",
 	}
-	errMovePDUReserved2Range = &bit.FieldRangeError{
+	errMovePDUReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "Reserved2",
 		Type:  "MovePDU",
 	}
-	errMovePDUBackoffRange = &bit.FieldRangeError{
+	errMovePDUBackoffRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Backoff",
 		Type:  "MovePDU",
 	}
-	errMovePDUReserved3Range = &bit.FieldRangeError{
+	errMovePDUReserved3Range = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Reserved3",
 		Type:  "MovePDU",
 	}
-	errMovePDUPhysicalChannelRange = &bit.FieldRangeError{
+	errMovePDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "MovePDU",
 	}
-	errMovePDUMSAddressRange = &bit.FieldRangeError{
+	errMovePDUMSAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "MSAddress",
 		Type:  "MovePDU",
 	}
-	errAlohaPDUVersionRange = &bit.FieldRangeError{
+	errAlohaPDUVersionRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "Version",
 		Type:  "AlohaPDU",
 	}
-	errAlohaPDUMaskRange = &bit.FieldRangeError{
+	errAlohaPDUMaskRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "Mask",
 		Type:  "AlohaPDU",
 	}
-	errAlohaPDUServiceFuncRange = &bit.FieldRangeError{
+	errAlohaPDUServiceFuncRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "ServiceFunc",
 		Type:  "AlohaPDU",
 	}
-	errAlohaPDUNRandWaitRange = &bit.FieldRangeError{
+	errAlohaPDUNRandWaitRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "NRandWait",
 		Type:  "AlohaPDU",
 	}
-	errAlohaPDUBackoffRange = &bit.FieldRangeError{
+	errAlohaPDUBackoffRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Backoff",
 		Type:  "AlohaPDU",
 	}
-	errAlohaPDUMSAddressRange = &bit.FieldRangeError{
+	errAlohaPDUMSAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "MSAddress",
 		Type:  "AlohaPDU",
 	}
-	errBroadcastPDUAnnouncementTypeRange = &bit.FieldRangeError{
+	errBroadcastPDUAnnouncementTypeRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "AnnouncementType",
 		Type:  "BroadcastPDU",
 	}
-	errBroadcastPDUBroadcastParms1Range = &bit.FieldRangeError{
+	errBroadcastPDUBroadcastParms1Range = &dmrgo.FieldRangeError{
 		Bits:  14,
 		Field: "BroadcastParms1",
 		Type:  "BroadcastPDU",
 	}
-	errBroadcastPDUBackoffRange = &bit.FieldRangeError{
+	errBroadcastPDUBackoffRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Backoff",
 		Type:  "BroadcastPDU",
 	}
-	errBroadcastPDUBroadcastParms2Range = &bit.FieldRangeError{
+	errBroadcastPDUBroadcastParms2Range = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "BroadcastParms2",
 		Type:  "BroadcastPDU",
 	}
-	errClearPDUPhysicalChannelRange = &bit.FieldRangeError{
+	errClearPDUPhysicalChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "PhysicalChannel",
 		Type:  "ClearPDU",
 	}
-	errClearPDUReserved2Range = &bit.FieldRangeError{
+	errClearPDUReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "Reserved2",
 		Type:  "ClearPDU",
 	}
-	errClearPDUTargetAddressRange = &bit.FieldRangeError{
+	errClearPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "ClearPDU",
 	}
-	errClearPDUSourceAddressRange = &bit.FieldRangeError{
+	errClearPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "ClearPDU",
 	}
-	errProtectPDUReservedRange = &bit.FieldRangeError{
+	errProtectPDUReservedRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "Reserved",
 		Type:  "ProtectPDU",
 	}
-	errProtectPDUProtectKindRange = &bit.FieldRangeError{
+	errProtectPDUProtectKindRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "ProtectKind",
 		Type:  "ProtectPDU",
 	}
-	errProtectPDUTargetAddressRange = &bit.FieldRangeError{
+	errProtectPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "ProtectPDU",
 	}
-	errProtectPDUSourceAddressRange = &bit.FieldRangeError{
+	errProtectPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "ProtectPDU",
 	}
-	errAhoyPDUServiceOptsMirrorRange = &bit.FieldRangeError{
+	errAhoyPDUServiceOptsMirrorRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "ServiceOptsMirror",
 		Type:  "AhoyPDU",
 	}
-	errAhoyPDUAppendedBlocksRange = &bit.FieldRangeError{
+	errAhoyPDUAppendedBlocksRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "AppendedBlocks",
 		Type:  "AhoyPDU",
 	}
-	errAhoyPDUServiceKindRange = &bit.FieldRangeError{
+	errAhoyPDUServiceKindRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "ServiceKind",
 		Type:  "AhoyPDU",
 	}
-	errAhoyPDUTargetAddressRange = &bit.FieldRangeError{
+	errAhoyPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "AhoyPDU",
 	}
-	errAhoyPDUSourceAddressRange = &bit.FieldRangeError{
+	errAhoyPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "AhoyPDU",
 	}
-	errAckOutboundPDUResponseInfoRange = &bit.FieldRangeError{
+	errAckOutboundPDUResponseInfoRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "ResponseInfo",
 		Type:  "AckOutboundPDU",
 	}
-	errAckOutboundPDUTargetAddressRange = &bit.FieldRangeError{
+	errAckOutboundPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "AckOutboundPDU",
 	}
-	errAckOutboundPDUAdditionalInfoRange = &bit.FieldRangeError{
+	errAckOutboundPDUAdditionalInfoRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "AdditionalInfo",
 		Type:  "AckOutboundPDU",
 	}
-	errAckInboundPDUResponseInfoRange = &bit.FieldRangeError{
+	errAckInboundPDUResponseInfoRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "ResponseInfo",
 		Type:  "AckInboundPDU",
 	}
-	errAckInboundPDUTargetAddressRange = &bit.FieldRangeError{
+	errAckInboundPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "AckInboundPDU",
 	}
-	errAckInboundPDUAdditionalInfoRange = &bit.FieldRangeError{
+	errAckInboundPDUAdditionalInfoRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "AdditionalInfo",
 		Type:  "AckInboundPDU",
 	}
-	errAckOutboundPayloadPDUResponseInfoRange = &bit.FieldRangeError{
+	errAckOutboundPayloadPDUResponseInfoRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "ResponseInfo",
 		Type:  "AckOutboundPayloadPDU",
 	}
-	errAckOutboundPayloadPDUTargetAddressRange = &bit.FieldRangeError{
+	errAckOutboundPayloadPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "AckOutboundPayloadPDU",
 	}
-	errAckOutboundPayloadPDUAdditionalInfoRange = &bit.FieldRangeError{
+	errAckOutboundPayloadPDUAdditionalInfoRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "AdditionalInfo",
 		Type:  "AckOutboundPayloadPDU",
 	}
-	errAckInboundPayloadPDUResponseInfoRange = &bit.FieldRangeError{
+	errAckInboundPayloadPDUResponseInfoRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "ResponseInfo",
 		Type:  "AckInboundPayloadPDU",
 	}
-	errAckInboundPayloadPDUTargetAddressRange = &bit.FieldRangeError{
+	errAckInboundPayloadPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "AckInboundPayloadPDU",
 	}
-	errAckInboundPayloadPDUAdditionalInfoRange = &bit.FieldRangeError{
+	errAckInboundPayloadPDUAdditionalInfoRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "AdditionalInfo",
 		Type:  "AckInboundPayloadPDU",
 	}
-	errRandomAccessPDUServiceOptionsRange = &bit.FieldRangeError{
+	errRandomAccessPDUServiceOptionsRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "ServiceOptions",
 		Type:  "RandomAccessPDU",
 	}
-	errRandomAccessPDUReservedRange = &bit.FieldRangeError{
+	errRandomAccessPDUReservedRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Reserved",
 		Type:  "RandomAccessPDU",
 	}
-	errRandomAccessPDUServiceKindRange = &bit.FieldRangeError{
+	errRandomAccessPDUServiceKindRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "ServiceKind",
 		Type:  "RandomAccessPDU",
 	}
-	errRandomAccessPDUTargetAddressRange = &bit.FieldRangeError{
+	errRandomAccessPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "RandomAccessPDU",
 	}
-	errRandomAccessPDUSourceAddressRange = &bit.FieldRangeError{
+	errRandomAccessPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "RandomAccessPDU",
 	}
-	errAckvitationPDUServiceOptsMirrorRange = &bit.FieldRangeError{
+	errAckvitationPDUServiceOptsMirrorRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "ServiceOptsMirror",
 		Type:  "AckvitationPDU",
 	}
-	errAckvitationPDUReservedRange = &bit.FieldRangeError{
+	errAckvitationPDUReservedRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "Reserved",
 		Type:  "AckvitationPDU",
 	}
-	errAckvitationPDUUABRange = &bit.FieldRangeError{
+	errAckvitationPDUUABRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "UAB",
 		Type:  "AckvitationPDU",
 	}
-	errAckvitationPDUServiceKindRange = &bit.FieldRangeError{
+	errAckvitationPDUServiceKindRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "ServiceKind",
 		Type:  "AckvitationPDU",
 	}
-	errAckvitationPDUTargetAddressRange = &bit.FieldRangeError{
+	errAckvitationPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "AckvitationPDU",
 	}
-	errAckvitationPDUSourceAddressRange = &bit.FieldRangeError{
+	errAckvitationPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "AckvitationPDU",
 	}
-	errMaintenancePDUReservedRange = &bit.FieldRangeError{
+	errMaintenancePDUReservedRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "Reserved",
 		Type:  "MaintenancePDU",
 	}
-	errMaintenancePDUMaintKindRange = &bit.FieldRangeError{
+	errMaintenancePDUMaintKindRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "MaintKind",
 		Type:  "MaintenancePDU",
 	}
-	errMaintenancePDUTargetAddressRange = &bit.FieldRangeError{
+	errMaintenancePDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "MaintenancePDU",
 	}
-	errMaintenancePDUSourceAddressRange = &bit.FieldRangeError{
+	errMaintenancePDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "MaintenancePDU",
 	}
 	errCSBKPayloads    = errors.New("CSBK: more than one payload field is set")
-	errCSBKOpcodeRange = &bit.FieldRangeError{
+	errCSBKOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
 		Type:  "CSBK",
 	}
-	errCSBKFIDRange = &bit.FieldRangeError{
+	errCSBKFIDRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "FID",
 		Type:  "CSBK",

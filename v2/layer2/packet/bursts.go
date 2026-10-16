@@ -9,7 +9,7 @@ import (
 // one Rate 1/2, Rate 3/4 or Rate 1 burst per block, each with a slot type of
 // color code colorCode and the data SYNC pattern of src. It returns an error
 // when the header or a block does not encode, a block has another data type,
-// or src is unknown, and a *bit.FieldRangeError when colorCode does not fit
+// or src is unknown, and a *dmrgo.FieldRangeError when colorCode does not fit
 // in 4 bits. It allocates the slice; AppendBursts does not.
 func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
 	out, err := AppendBursts(make([]layer2.RawBurst, 0, 1+len(p.Blocks)), &p, colorCode, src)

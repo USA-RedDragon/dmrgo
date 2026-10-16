@@ -1,6 +1,6 @@
 package pdu
 
-import "github.com/USA-RedDragon/dmrgo/v2/bit"
+import "github.com/USA-RedDragon/dmrgo/v2"
 
 // NetworkModel is the MODEL field of a System Identity Code
 // (ETSI TS 102 361-4 Table 6.5).
@@ -53,7 +53,7 @@ func (s SysCode) check() error {
 }
 
 // Pack returns the 16-bit C_SYScode, as in the SysIdentCode field of
-// C_ALOHA and C_BCAST. It returns a *bit.FieldRangeError when a field does
+// C_ALOHA and C_BCAST. It returns a *dmrgo.FieldRangeError when a field does
 // not fit its bits.
 func (s SysCode) Pack() (uint16, error) {
 	if err := s.check(); err != nil {
@@ -172,14 +172,14 @@ const (
 // The errors of a SYSCODE field whose value does not fit in its bits. NET
 // and SITE have one for each network model, which sets their widths.
 var (
-	errSysCodeModelRange     = &bit.FieldRangeError{Type: sysCodeType, Field: "Model", Bits: 2}
-	errSysCodeParRange       = &bit.FieldRangeError{Type: sysCodeType, Field: "Par", Bits: 2}
-	errSysCodeNetRangeTiny   = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 9}
-	errSysCodeNetRangeSmall  = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 7}
-	errSysCodeNetRangeLarge  = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 4}
-	errSysCodeNetRangeHuge   = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 2}
-	errSysCodeSiteRangeTiny  = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 3}
-	errSysCodeSiteRangeSmall = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 5}
-	errSysCodeSiteRangeLarge = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 8}
-	errSysCodeSiteRangeHuge  = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 10}
+	errSysCodeModelRange     = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Model", Bits: 2}
+	errSysCodeParRange       = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Par", Bits: 2}
+	errSysCodeNetRangeTiny   = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 9}
+	errSysCodeNetRangeSmall  = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 7}
+	errSysCodeNetRangeLarge  = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 4}
+	errSysCodeNetRangeHuge   = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 2}
+	errSysCodeSiteRangeTiny  = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 3}
+	errSysCodeSiteRangeSmall = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 5}
+	errSysCodeSiteRangeLarge = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 8}
+	errSysCodeSiteRangeHuge  = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 10}
 )

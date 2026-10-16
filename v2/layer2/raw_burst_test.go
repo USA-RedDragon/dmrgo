@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -361,7 +361,7 @@ func TestBuildDataBurst_Rejects(t *testing.T) {
 	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeRate1, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Rate 1 accepted")
 	}
-	var rangeErr *bit.FieldRangeError
+	var rangeErr *dmrgo.FieldRangeError
 	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 0x17, layer2.SyncSourceBS); !errors.As(err, &rangeErr) || rangeErr.Field != "ColorCode" {
 		t.Errorf("color code 0x17: error %v, want the FieldRangeError of ColorCode", err)
 	}

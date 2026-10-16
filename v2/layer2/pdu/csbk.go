@@ -556,7 +556,7 @@ func (s *CSBK) setOpcode0x38(payload [8]byte, hint Opcode0x38Hint) {
 
 // NewBSOutboundActivation returns the BS_Dwn_Act CSBK, with LastBlock set,
 // that an MS sends to wake up the BS with address bs (ETSI TS 102 361-2
-// clause 7.1.2.1). It returns a *bit.FieldRangeError when an address does
+// clause 7.1.2.1). It returns a *dmrgo.FieldRangeError when an address does
 // not fit in 24 bits.
 func NewBSOutboundActivation(bs, source uint32) (CSBK, error) {
 	s := CSBK{LastBlock: true}

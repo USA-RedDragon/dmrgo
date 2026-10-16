@@ -6,7 +6,7 @@ package layer3
 
 import (
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 )
 
 // DecodeCdefParms decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42,
@@ -72,27 +72,27 @@ func (s *CdefParms) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errCdefParmsChannelRange = &bit.FieldRangeError{
+	errCdefParmsChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "Channel",
 		Type:  "CdefParms",
 	}
-	errCdefParmsTXMHzRange = &bit.FieldRangeError{
+	errCdefParmsTXMHzRange = &dmrgo.FieldRangeError{
 		Bits:  10,
 		Field: "TXMHz",
 		Type:  "CdefParms",
 	}
-	errCdefParmsTXKHzRange = &bit.FieldRangeError{
+	errCdefParmsTXKHzRange = &dmrgo.FieldRangeError{
 		Bits:  13,
 		Field: "TXKHz",
 		Type:  "CdefParms",
 	}
-	errCdefParmsRXMHzRange = &bit.FieldRangeError{
+	errCdefParmsRXMHzRange = &dmrgo.FieldRangeError{
 		Bits:  10,
 		Field: "RXMHz",
 		Type:  "CdefParms",
 	}
-	errCdefParmsRXKHzRange = &bit.FieldRangeError{
+	errCdefParmsRXKHzRange = &dmrgo.FieldRangeError{
 		Bits:  13,
 		Field: "RXKHz",
 		Type:  "CdefParms",

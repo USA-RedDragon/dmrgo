@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -364,7 +364,7 @@ func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
 
 	lc := groupLC(enums.FIDStandardized)
 	_, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 0x17, Source: layer2.SyncSourceBS, Silence: silenceSlot()})
-	var rangeErr *bit.FieldRangeError
+	var rangeErr *dmrgo.FieldRangeError
 	if !errors.As(err, &rangeErr) || rangeErr.Field != "ColorCode" {
 		t.Errorf("color code 0x17: error %v, want the FieldRangeError of ColorCode", err)
 	}

@@ -4,7 +4,7 @@ package pdu
 
 import (
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 )
 
 // decodeMotorolaRadioCheckPDU decodes a MotorolaRadioCheckPDU. data holds
@@ -140,37 +140,37 @@ func (s *MotorolaCallAlertAckPDU) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errMotorolaRadioCheckPDUReserved2Range = &bit.FieldRangeError{
+	errMotorolaRadioCheckPDUReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "Reserved2",
 		Type:  "MotorolaRadioCheckPDU",
 	}
-	errMotorolaRadioCheckPDURequesterAddressRange = &bit.FieldRangeError{
+	errMotorolaRadioCheckPDURequesterAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "RequesterAddress",
 		Type:  "MotorolaRadioCheckPDU",
 	}
-	errMotorolaRadioCheckPDUCheckedAddressRange = &bit.FieldRangeError{
+	errMotorolaRadioCheckPDUCheckedAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "CheckedAddress",
 		Type:  "MotorolaRadioCheckPDU",
 	}
-	errMotorolaCallAlertPDUTargetAddressRange = &bit.FieldRangeError{
+	errMotorolaCallAlertPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "MotorolaCallAlertPDU",
 	}
-	errMotorolaCallAlertPDUSourceAddressRange = &bit.FieldRangeError{
+	errMotorolaCallAlertPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "MotorolaCallAlertPDU",
 	}
-	errMotorolaCallAlertAckPDUTargetAddressRange = &bit.FieldRangeError{
+	errMotorolaCallAlertAckPDUTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "MotorolaCallAlertAckPDU",
 	}
-	errMotorolaCallAlertAckPDUSourceAddressRange = &bit.FieldRangeError{
+	errMotorolaCallAlertAckPDUSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "MotorolaCallAlertAckPDU",

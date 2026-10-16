@@ -1,7 +1,7 @@
 package vocoder
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 )
@@ -30,7 +30,7 @@ func AMBESilenceSlot() [9]byte {
 // and returns the 72 on-air bits of one vocoder frame, packed, the first bit
 // in the most significant bit of byte 0: Golay(24,12) on the first 12 bits,
 // PN-scrambled Golay(23,12) on the next 12, the last 25 bits unprotected,
-// interleaved into the slot. It returns a *bit.FieldRangeError when a
+// interleaved into the slot. It returns a *dmrgo.FieldRangeError when a
 // padding bit of info is set.
 func EncodeAMBE72(info AMBEFrame) ([9]byte, error) {
 	if info[6]&0x7F != 0 {
@@ -41,7 +41,7 @@ func EncodeAMBE72(info AMBEFrame) ([9]byte, error) {
 
 // errAMBEFrameRange is the error of an EncodeAMBE72 whose frame has a
 // padding bit set.
-var errAMBEFrameRange = &bit.FieldRangeError{Type: "vocoder", Field: "AMBEFrame", Bits: 49}
+var errAMBEFrameRange = &dmrgo.FieldRangeError{Type: "vocoder", Field: "AMBEFrame", Bits: 49}
 
 // DecodeAMBE72 reverses EncodeAMBE72 and corrects the bit errors that the
 // Golay codes allow. Uncorrectable reflects only the overall parity check of

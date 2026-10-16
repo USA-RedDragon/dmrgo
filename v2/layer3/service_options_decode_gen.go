@@ -6,7 +6,7 @@ package layer3
 
 import (
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 )
 
 // DecodeServiceOptions decodes a ServiceOptions (ETSI TS 102 361-2 clause
@@ -60,12 +60,12 @@ func (s *ServiceOptions) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errServiceOptionsReservedRange = &bit.FieldRangeError{
+	errServiceOptionsReservedRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "Reserved",
 		Type:  "ServiceOptions",
 	}
-	errServiceOptionsPriorityLevelRange = &bit.FieldRangeError{
+	errServiceOptionsPriorityLevelRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "PriorityLevel",
 		Type:  "ServiceOptions",
