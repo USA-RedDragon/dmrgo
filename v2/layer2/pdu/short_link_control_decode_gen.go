@@ -9,12 +9,12 @@
 package pdu
 
 import (
+	"errors"
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeShortLCNullMessageBytes decodes a ShortLCNullMessage (ETSI TS 102 361-2 clause 7.1.3.1).
@@ -30,7 +30,7 @@ func decodeShortLCNullMessageBytes(data [3]byte) ShortLCNullMessage {
 func (s *ShortLCNullMessage) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.Reserved)>>24 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCNullMessage", "Reserved", s.Reserved, 24, false)
+		return [3]byte{}, errShortLCNullMessageReservedRange
 	}
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 16)
@@ -72,11 +72,11 @@ func decodeShortLCActivityUpdateBytes(data [3]byte) ShortLCActivityUpdate {
 func (s *ShortLCActivityUpdate) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.TS1ActivityID)>>4 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCActivityUpdate", "TS1ActivityID", s.TS1ActivityID, 4, false)
+		return [3]byte{}, errShortLCActivityUpdateTS1ActivityIDRange
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.TS1ActivityID)<<4)&0xF0
 	if uint64(s.TS2ActivityID)>>4 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCActivityUpdate", "TS2ActivityID", s.TS2ActivityID, 4, false)
+		return [3]byte{}, errShortLCActivityUpdateTS2ActivityIDRange
 	}
 	data[0] = data[0]&^0x0F | byte(uint64(s.TS2ActivityID))&0x0F
 	data[1] = byte(uint64(s.HashTS1))
@@ -117,11 +117,11 @@ func decodeShortLCCSysParmsBytes(data [3]byte) ShortLCCSysParms {
 func (s *ShortLCCSysParms) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.MODEL)>>2 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCCSysParms", "MODEL", s.MODEL, 2, false)
+		return [3]byte{}, errShortLCCSysParmsMODELRange
 	}
 	data[0] = data[0]&^0xC0 | byte(uint64(s.MODEL)<<6)&0xC0
 	if uint64(s.NetSiteRaw)>>12 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCCSysParms", "NetSiteRaw", s.NetSiteRaw, 12, false)
+		return [3]byte{}, errShortLCCSysParmsNetSiteRawRange
 	}
 	_valNetSiteRaw := uint64(s.NetSiteRaw)
 	data[0] = data[0]&^0x3F | byte(_valNetSiteRaw>>6)&0x3F
@@ -130,7 +130,7 @@ func (s *ShortLCCSysParms) encodeBytes() ([3]byte, error) {
 		data[1] |= 0x02
 	}
 	if uint64(s.CommonSlotCounter)>>9 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCCSysParms", "CommonSlotCounter", s.CommonSlotCounter, 9, false)
+		return [3]byte{}, errShortLCCSysParmsCommonSlotCounterRange
 	}
 	_valCommonSlotCounter := uint64(s.CommonSlotCounter)
 	data[1] = data[1]&^0x01 | byte(_valCommonSlotCounter>>8)&0x01
@@ -171,11 +171,11 @@ func decodeShortLCPSysParmsBytes(data [3]byte) ShortLCPSysParms {
 func (s *ShortLCPSysParms) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.MODEL)>>2 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCPSysParms", "MODEL", s.MODEL, 2, false)
+		return [3]byte{}, errShortLCPSysParmsMODELRange
 	}
 	data[0] = data[0]&^0xC0 | byte(uint64(s.MODEL)<<6)&0xC0
 	if uint64(s.NetSiteRaw)>>12 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCPSysParms", "NetSiteRaw", s.NetSiteRaw, 12, false)
+		return [3]byte{}, errShortLCPSysParmsNetSiteRawRange
 	}
 	_valNetSiteRaw := uint64(s.NetSiteRaw)
 	data[0] = data[0]&^0x3F | byte(_valNetSiteRaw>>6)&0x3F
@@ -184,7 +184,7 @@ func (s *ShortLCPSysParms) encodeBytes() ([3]byte, error) {
 		data[1] |= 0x02
 	}
 	if uint64(s.CommonSlotCounter)>>9 != 0 {
-		return [3]byte{}, errs.NewFieldRange("ShortLCPSysParms", "CommonSlotCounter", s.CommonSlotCounter, 9, false)
+		return [3]byte{}, errShortLCPSysParmsCommonSlotCounterRange
 	}
 	_valCommonSlotCounter := uint64(s.CommonSlotCounter)
 	data[1] = data[1]&^0x01 | byte(_valCommonSlotCounter>>8)&0x01
@@ -308,19 +308,19 @@ func (s *ShortLC) encodeBytes() ([5]byte, error) {
 	}
 	if s.ActivityUpdate != nil {
 		if _payload != "" {
-			return [5]byte{}, errs.NewBothSet("ShortLC", _payload, "ActivityUpdate")
+			return [5]byte{}, errShortLCPayloads
 		}
 		_payload = "ActivityUpdate"
 	}
 	if s.CSysParms != nil {
 		if _payload != "" {
-			return [5]byte{}, errs.NewBothSet("ShortLC", _payload, "CSysParms")
+			return [5]byte{}, errShortLCPayloads
 		}
 		_payload = "CSysParms"
 	}
 	if s.PSysParms != nil {
 		if _payload != "" {
-			return [5]byte{}, errs.NewBothSet("ShortLC", _payload, "PSysParms")
+			return [5]byte{}, errShortLCPayloads
 		}
 		_payload = "PSysParms"
 	}
@@ -328,32 +328,32 @@ func (s *ShortLC) encodeBytes() ([5]byte, error) {
 	case s.NullMessage != nil:
 		_pduBytes, err := s.NullMessage.encodeBytes()
 		if err != nil {
-			return [5]byte{}, errs.NewWrapped("ShortLC.NullMessage", err)
+			return [5]byte{}, err
 		}
 		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
 	case s.ActivityUpdate != nil:
 		_pduBytes, err := s.ActivityUpdate.encodeBytes()
 		if err != nil {
-			return [5]byte{}, errs.NewWrapped("ShortLC.ActivityUpdate", err)
+			return [5]byte{}, err
 		}
 		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
 	case s.CSysParms != nil:
 		_pduBytes, err := s.CSysParms.encodeBytes()
 		if err != nil {
-			return [5]byte{}, errs.NewWrapped("ShortLC.CSysParms", err)
+			return [5]byte{}, err
 		}
 		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
 	case s.PSysParms != nil:
 		_pduBytes, err := s.PSysParms.encodeBytes()
 		if err != nil {
-			return [5]byte{}, errs.NewWrapped("ShortLC.PSysParms", err)
+			return [5]byte{}, err
 		}
 		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
 	default:
 		bits.Copy(data[:], 4, s.RawPayload[:], 0, 24)
 	}
 	if uint64(s.SLCO)>>4 != 0 {
-		return [5]byte{}, errs.NewFieldRange("ShortLC", "SLCO", s.SLCO, 4, false)
+		return [5]byte{}, errShortLCSLCORange
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.SLCO)<<4)&0xF0
 	if _payload != "" {
@@ -371,7 +371,7 @@ func (s *ShortLC) encodeBytes() ([5]byte, error) {
 			_want = "PSysParms"
 		}
 		if _payload != _want {
-			return [5]byte{}, errs.NewWrongPayload("ShortLC", _payload, "SLCO selects ", _want)
+			return [5]byte{}, errShortLCPayload
 		}
 	}
 	_crcVal := uint64(crc.CRC8(data[:], 28))
@@ -411,3 +411,60 @@ func (s *ShortLC) String() string {
 	_ret += " }"
 	return _ret
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errShortLCNullMessageReservedRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "Reserved",
+		Type:  "ShortLCNullMessage",
+	}
+	errShortLCActivityUpdateTS1ActivityIDRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "TS1ActivityID",
+		Type:  "ShortLCActivityUpdate",
+	}
+	errShortLCActivityUpdateTS2ActivityIDRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "TS2ActivityID",
+		Type:  "ShortLCActivityUpdate",
+	}
+	errShortLCCSysParmsMODELRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "MODEL",
+		Type:  "ShortLCCSysParms",
+	}
+	errShortLCCSysParmsNetSiteRawRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "NetSiteRaw",
+		Type:  "ShortLCCSysParms",
+	}
+	errShortLCCSysParmsCommonSlotCounterRange = &bit.FieldRangeError{
+		Bits:  9,
+		Field: "CommonSlotCounter",
+		Type:  "ShortLCCSysParms",
+	}
+	errShortLCPSysParmsMODELRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "MODEL",
+		Type:  "ShortLCPSysParms",
+	}
+	errShortLCPSysParmsNetSiteRawRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "NetSiteRaw",
+		Type:  "ShortLCPSysParms",
+	}
+	errShortLCPSysParmsCommonSlotCounterRange = &bit.FieldRangeError{
+		Bits:  9,
+		Field: "CommonSlotCounter",
+		Type:  "ShortLCPSysParms",
+	}
+	errShortLCPayloads  = errors.New("ShortLC: more than one payload field is set")
+	errShortLCSLCORange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SLCO",
+		Type:  "ShortLC",
+	}
+	errShortLCPayload = errors.New("ShortLC: the payload field that is set is not the one that SLCO selects")
+)

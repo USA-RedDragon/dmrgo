@@ -8,7 +8,6 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 )
 
@@ -43,14 +42,14 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
 func (s *EmbeddedSignalling) encodeBytes() ([2]byte, error) {
 	var data [2]byte
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [2]byte{}, errs.NewFieldRange("EmbeddedSignalling", "ColorCode", s.ColorCode, 4, false)
+		return [2]byte{}, errEmbeddedSignallingColorCodeRange
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.ColorCode)<<4)&0xF0
 	if s.PreemptionAndPowerControlIndicator {
 		data[0] |= 0x08
 	}
 	if uint64(s.LCSS)>>2 != 0 {
-		return [2]byte{}, errs.NewFieldRange("EmbeddedSignalling", "LCSS", s.LCSS, 2, false)
+		return [2]byte{}, errEmbeddedSignallingLCSSRange
 	}
 	data[0] = data[0]&^0x06 | byte(uint64(s.LCSS)<<1)&0x06
 	_cw := quadraticresidue.Encode(uint8(uint64(data[0]) >> 1))
@@ -76,3 +75,18 @@ func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
 func (s *EmbeddedSignalling) String() string {
 	return fmt.Sprintf("EmbeddedSignalling{ ColorCode: %d, PreemptionAndPowerControlIndicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.PreemptionAndPowerControlIndicator, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errEmbeddedSignallingColorCodeRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "ColorCode",
+		Type:  "EmbeddedSignalling",
+	}
+	errEmbeddedSignallingLCSSRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "LCSS",
+		Type:  "EmbeddedSignalling",
+	}
+)

@@ -27,7 +27,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "FullLinkControl.GroupVoice is set, but FLCO and FID select UnitToUnit",
+			want: "FullLinkControl: the payload field that is set is not the one that FLCO and FID select",
 		},
 		{
 			name: "FLC manufacturer FID",
@@ -40,7 +40,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "FullLinkControl.GroupVoice is set, but FLCO and FID select RawPayload",
+			want: "FullLinkControl: the payload field that is set is not the one that FLCO and FID select",
 		},
 		{
 			name: "two FLC payloads",
@@ -53,7 +53,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "FullLinkControl: GroupVoice and UnitToUnit are both set",
+			want: "FullLinkControl: more than one payload field is set",
 		},
 		{
 			name: "CSBKO",
@@ -64,7 +64,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "CSBK.TalkgroupVoiceGrantPDU is set, but Opcode and FID select AlohaPDU",
+			want: "CSBK: the payload field that is set is not the one that Opcode and FID select",
 		},
 		{
 			name: "CSBK manufacturer FID",
@@ -76,7 +76,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "CSBK.TalkgroupVoiceGrantPDU is set, but Opcode and FID select RawPayload",
+			want: "CSBK: the payload field that is set is not the one that Opcode and FID select",
 		},
 		{
 			name: "CSBK opcode 0x38",
@@ -87,7 +87,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "Opcode and FID select RawPayload",
+			want: "CSBK: the payload field that is set is not the one that Opcode and FID select",
 		},
 		{
 			name: "Format",
@@ -98,7 +98,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "DataHeader.UnconfirmedDataHeader is set, but Format and AppendedBlocks select ConfirmedDataHeader",
+			want: "DataHeader: the payload field that is set is not the one that Format and AppendedBlocks select",
 		},
 		{
 			name: "R_HEAD without appended blocks",
@@ -109,7 +109,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "select StatusPrecodedHeader",
+			want: "DataHeader: the payload field that is set is not the one that Format and AppendedBlocks select",
 		},
 		{
 			name: "SLCO",
@@ -120,7 +120,7 @@ func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 				}).Encode()
 				return err
 			},
-			want: "ShortLC.ActivityUpdate is set, but SLCO selects NullMessage",
+			want: "ShortLC: the payload field that is set is not the one that SLCO selects",
 		},
 	}
 	for _, tt := range tests {

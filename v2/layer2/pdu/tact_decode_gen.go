@@ -8,7 +8,6 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	hamming "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 )
 
@@ -47,7 +46,7 @@ func (s *TACT) encodeBytes() ([1]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.LCSS)>>2 != 0 {
-		return [1]byte{}, errs.NewFieldRange("TACT", "LCSS", s.LCSS, 2, false)
+		return [1]byte{}, errTACTLCSSRange
 	}
 	data[0] = data[0]&^0x30 | byte(uint64(s.LCSS)<<4)&0x30
 	_cw := hamming.Encode743(uint8(uint64(data[0]) >> 4))
@@ -71,3 +70,13 @@ func (s *TACT) Encode() ([7]bit.Bit, error) {
 func (s *TACT) String() string {
 	return fmt.Sprintf("TACT{ AccessType: %t, TDMAChannel: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.AccessType, s.TDMAChannel, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errTACTLCSSRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "LCSS",
+		Type:  "TACT",
+	}
+)

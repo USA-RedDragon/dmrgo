@@ -1,8 +1,8 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst, as
@@ -155,16 +155,29 @@ func (s *CSBK) Bytes() ([12]byte, error) {
 	return s.encodeBytes()
 }
 
-// checkAddresses returns a *bit.FieldRangeError of type typ when target or
-// source does not fit in 24 bits.
-func checkAddresses(typ string, target, source uint32) error {
-	for _, a := range [...]struct {
-		field string
-		v     uint32
-	}{{"target", target}, {"source", source}} {
-		if a.v>>24 != 0 {
-			return errs.NewFieldRange(typ, a.field, a.v, 24, false)
-		}
+// The *bit.FieldRangeError values of the addresses of NewVoiceLCBytes and
+// NewVoiceLC.
+var (
+	errLCBytesTargetRange         = addressRangeError("LCBytes", "target")
+	errLCBytesSourceRange         = addressRangeError("LCBytes", "source")
+	errFullLinkControlTargetRange = addressRangeError("FullLinkControl", "target")
+	errFullLinkControlSourceRange = addressRangeError("FullLinkControl", "source")
+)
+
+// addressRangeError returns the *bit.FieldRangeError of a 24-bit address
+// field of type typ.
+func addressRangeError(typ, field string) error {
+	return &bit.FieldRangeError{Type: typ, Field: field, Bits: 24}
+}
+
+// checkAddresses returns targetErr when target, or sourceErr when source,
+// does not fit in 24 bits.
+func checkAddresses(target, source uint32, targetErr, sourceErr error) error {
+	switch {
+	case target>>24 != 0:
+		return targetErr
+	case source>>24 != 0:
+		return sourceErr
 	}
 	return nil
 }

@@ -25,12 +25,12 @@
 package pdu
 
 import (
+	"errors"
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
@@ -52,14 +52,14 @@ func (s *BSOutboundActivationPDU) encodeBytes() ([8]byte, error) {
 	data[0] = byte(_valReserved >> 8)
 	data[1] = byte(_valReserved)
 	if uint64(s.BSAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BSOutboundActivationPDU", "BSAddress", s.BSAddress, 24, false)
+		return [8]byte{}, errBSOutboundActivationPDUBSAddressRange
 	}
 	_valBSAddress := uint64(s.BSAddress)
 	data[2] = byte(_valBSAddress >> 16)
 	data[3] = byte(_valBSAddress >> 8)
 	data[4] = byte(_valBSAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BSOutboundActivationPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errBSOutboundActivationPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -104,19 +104,19 @@ func (s *UnitToUnitVoiceServiceRequestPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [8]byte{}, errs.NewWrapped("UnitToUnitVoiceServiceRequestPDU.ServiceOptions", err)
+		return [8]byte{}, err
 	}
 	bits.Pack(data[:], 0, _serviceOptionsBits[:])
 	data[1] = byte(uint64(s.Reserved))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("UnitToUnitVoiceServiceRequestPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errUnitToUnitVoiceServiceRequestPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("UnitToUnitVoiceServiceRequestPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errUnitToUnitVoiceServiceRequestPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -161,19 +161,19 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) encodeBytes() ([8]byte, error)
 	var data [8]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [8]byte{}, errs.NewWrapped("UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions", err)
+		return [8]byte{}, err
 	}
 	bits.Pack(data[:], 0, _serviceOptionsBits[:])
 	data[1] = byte(uint64(s.AnswerResponse))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("UnitToUnitVoiceServiceAnswerResponsePDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errUnitToUnitVoiceServiceAnswerResponsePDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("UnitToUnitVoiceServiceAnswerResponsePDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errUnitToUnitVoiceServiceAnswerResponsePDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -217,27 +217,27 @@ func decodeNegativeAcknowledgementPDUBytes(data [8]byte) NegativeAcknowledgement
 func (s *NegativeAcknowledgementPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AdditionalInfo)>>1 != 0 {
-		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "AdditionalInfo", s.AdditionalInfo, 1, false)
+		return [8]byte{}, errNegativeAcknowledgementPDUAdditionalInfoRange
 	}
 	data[0] = data[0]&^0x80 | byte(uint64(s.AdditionalInfo)<<7)&0x80
 	if uint64(s.SourceType)>>1 != 0 {
-		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "SourceType", s.SourceType, 1, false)
+		return [8]byte{}, errNegativeAcknowledgementPDUSourceTypeRange
 	}
 	data[0] = data[0]&^0x40 | byte(uint64(s.SourceType)<<6)&0x40
 	if uint64(s.ServiceType)>>6 != 0 {
-		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "ServiceType", s.ServiceType, 6, false)
+		return [8]byte{}, errNegativeAcknowledgementPDUServiceTypeRange
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.ServiceType))&0x3F
 	data[1] = byte(uint64(s.ReasonCode))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errNegativeAcknowledgementPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[2] = byte(_valSourceAddress >> 16)
 	data[3] = byte(_valSourceAddress >> 8)
 	data[4] = byte(_valSourceAddress)
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errNegativeAcknowledgementPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[5] = byte(_valTargetAddress >> 16)
@@ -287,19 +287,19 @@ func (s *PreamblePDU) encodeBytes() ([8]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Reserved)>>6 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PreamblePDU", "Reserved", s.Reserved, 6, false)
+		return [8]byte{}, errPreamblePDUReservedRange
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Reserved))&0x3F
 	data[1] = byte(uint64(s.CSBKBlocksToFollow))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PreamblePDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errPreamblePDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PreamblePDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errPreamblePDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -347,17 +347,17 @@ func decodeChannelTimingPDUBytes(data [8]byte) ChannelTimingPDU {
 func (s *ChannelTimingPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.SyncAge)>>11 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "SyncAge", s.SyncAge, 11, false)
+		return [8]byte{}, errChannelTimingPDUSyncAgeRange
 	}
 	_valSyncAge := uint64(s.SyncAge)
 	data[0] = byte(_valSyncAge >> 3)
 	data[1] = data[1]&^0xE0 | byte(_valSyncAge<<5)&0xE0
 	if uint64(s.Generation)>>5 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "Generation", s.Generation, 5, false)
+		return [8]byte{}, errChannelTimingPDUGenerationRange
 	}
 	data[1] = data[1]&^0x1F | byte(uint64(s.Generation))&0x1F
 	if uint64(s.LeaderIdentifier)>>20 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "LeaderIdentifier", s.LeaderIdentifier, 20, false)
+		return [8]byte{}, errChannelTimingPDULeaderIdentifierRange
 	}
 	_valLeaderIdentifier := uint64(s.LeaderIdentifier)
 	data[2] = byte(_valLeaderIdentifier >> 12)
@@ -367,14 +367,14 @@ func (s *ChannelTimingPDU) encodeBytes() ([8]byte, error) {
 		data[4] |= 0x08
 	}
 	if uint64(s.LeaderDynamicIdentifier)>>2 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "LeaderDynamicIdentifier", s.LeaderDynamicIdentifier, 2, false)
+		return [8]byte{}, errChannelTimingPDULeaderDynamicIdentifierRange
 	}
 	data[4] = data[4]&^0x06 | byte(uint64(s.LeaderDynamicIdentifier)<<1)&0x06
 	if s.ChannelTimingOp1 {
 		data[4] |= 0x01
 	}
 	if uint64(s.SourceIdentifier)>>20 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "SourceIdentifier", s.SourceIdentifier, 20, false)
+		return [8]byte{}, errChannelTimingPDUSourceIdentifierRange
 	}
 	_valSourceIdentifier := uint64(s.SourceIdentifier)
 	data[5] = byte(_valSourceIdentifier >> 12)
@@ -384,7 +384,7 @@ func (s *ChannelTimingPDU) encodeBytes() ([8]byte, error) {
 		data[7] |= 0x08
 	}
 	if uint64(s.SourceDynamicIdentifier)>>2 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "SourceDynamicIdentifier", s.SourceDynamicIdentifier, 2, false)
+		return [8]byte{}, errChannelTimingPDUSourceDynamicIdentifierRange
 	}
 	data[7] = data[7]&^0x06 | byte(uint64(s.SourceDynamicIdentifier)<<1)&0x06
 	if s.ChannelTimingOp0 {
@@ -429,7 +429,7 @@ func decodePrivateVoiceGrantPDUBytes(data [8]byte) PrivateVoiceGrantPDU {
 func (s *PrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateVoiceGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errPrivateVoiceGrantPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -447,14 +447,14 @@ func (s *PrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateVoiceGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errPrivateVoiceGrantPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateVoiceGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errPrivateVoiceGrantPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -499,7 +499,7 @@ func decodeTalkgroupVoiceGrantPDUBytes(data [8]byte) TalkgroupVoiceGrantPDU {
 func (s *TalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupVoiceGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errTalkgroupVoiceGrantPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -517,14 +517,14 @@ func (s *TalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupVoiceGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errTalkgroupVoiceGrantPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupVoiceGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errTalkgroupVoiceGrantPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -569,7 +569,7 @@ func decodeBroadcastTalkgroupVoiceGrantPDUBytes(data [8]byte) BroadcastTalkgroup
 func (s *BroadcastTalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BroadcastTalkgroupVoiceGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errBroadcastTalkgroupVoiceGrantPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -587,14 +587,14 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BroadcastTalkgroupVoiceGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errBroadcastTalkgroupVoiceGrantPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BroadcastTalkgroupVoiceGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errBroadcastTalkgroupVoiceGrantPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -639,7 +639,7 @@ func decodePrivateDataGrantPDUBytes(data [8]byte) PrivateDataGrantPDU {
 func (s *PrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errPrivateDataGrantPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -657,14 +657,14 @@ func (s *PrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errPrivateDataGrantPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errPrivateDataGrantPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -709,7 +709,7 @@ func decodeTalkgroupDataGrantPDUBytes(data [8]byte) TalkgroupDataGrantPDU {
 func (s *TalkgroupDataGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errTalkgroupDataGrantPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -727,14 +727,14 @@ func (s *TalkgroupDataGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errTalkgroupDataGrantPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errTalkgroupDataGrantPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -779,7 +779,7 @@ func decodeDuplexPrivateVoiceGrantPDUBytes(data [8]byte) DuplexPrivateVoiceGrant
 func (s *DuplexPrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("DuplexPrivateVoiceGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errDuplexPrivateVoiceGrantPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -797,14 +797,14 @@ func (s *DuplexPrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("DuplexPrivateVoiceGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errDuplexPrivateVoiceGrantPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("DuplexPrivateVoiceGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errDuplexPrivateVoiceGrantPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -849,7 +849,7 @@ func decodeDuplexPrivateDataGrantPDUBytes(data [8]byte) DuplexPrivateDataGrantPD
 func (s *DuplexPrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("DuplexPrivateDataGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errDuplexPrivateDataGrantPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -867,14 +867,14 @@ func (s *DuplexPrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("DuplexPrivateDataGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errDuplexPrivateDataGrantPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("DuplexPrivateDataGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errDuplexPrivateDataGrantPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -919,7 +919,7 @@ func decodePrivateDataGrantMultiItemPDUBytes(data [8]byte) PrivateDataGrantMulti
 func (s *PrivateDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantMultiItemPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errPrivateDataGrantMultiItemPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -937,14 +937,14 @@ func (s *PrivateDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantMultiItemPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errPrivateDataGrantMultiItemPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantMultiItemPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errPrivateDataGrantMultiItemPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -989,7 +989,7 @@ func decodeTalkgroupDataGrantMultiItemPDUBytes(data [8]byte) TalkgroupDataGrantM
 func (s *TalkgroupDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantMultiItemPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errTalkgroupDataGrantMultiItemPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -1007,14 +1007,14 @@ func (s *TalkgroupDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantMultiItemPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errTalkgroupDataGrantMultiItemPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantMultiItemPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errTalkgroupDataGrantMultiItemPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1060,17 +1060,17 @@ func decodeMovePDUBytes(data [8]byte) MovePDU {
 func (s *MovePDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved1)>>9 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MovePDU", "Reserved1", s.Reserved1, 9, false)
+		return [8]byte{}, errMovePDUReserved1Range
 	}
 	_valReserved1 := uint64(s.Reserved1)
 	data[0] = byte(_valReserved1 >> 1)
 	data[1] = data[1]&^0x80 | byte(_valReserved1<<7)&0x80
 	if uint64(s.Mask)>>5 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MovePDU", "Mask", s.Mask, 5, false)
+		return [8]byte{}, errMovePDUMaskRange
 	}
 	data[1] = data[1]&^0x7C | byte(uint64(s.Mask)<<2)&0x7C
 	if uint64(s.Reserved2)>>5 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MovePDU", "Reserved2", s.Reserved2, 5, false)
+		return [8]byte{}, errMovePDUReserved2Range
 	}
 	_valReserved2 := uint64(s.Reserved2)
 	data[1] = data[1]&^0x03 | byte(_valReserved2>>3)&0x03
@@ -1079,21 +1079,21 @@ func (s *MovePDU) encodeBytes() ([8]byte, error) {
 		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MovePDU", "Backoff", s.Backoff, 4, false)
+		return [8]byte{}, errMovePDUBackoffRange
 	}
 	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
 	if uint64(s.Reserved3)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MovePDU", "Reserved3", s.Reserved3, 4, false)
+		return [8]byte{}, errMovePDUReserved3Range
 	}
 	data[3] = data[3]&^0xF0 | byte(uint64(s.Reserved3)<<4)&0xF0
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MovePDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errMovePDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[3] = data[3]&^0x0F | byte(_valPhysicalChannel>>8)&0x0F
 	data[4] = byte(_valPhysicalChannel)
 	if uint64(s.MSAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MovePDU", "MSAddress", s.MSAddress, 24, false)
+		return [8]byte{}, errMovePDUMSAddressRange
 	}
 	_valMSAddress := uint64(s.MSAddress)
 	data[5] = byte(_valMSAddress >> 16)
@@ -1153,7 +1153,7 @@ func (s *AlohaPDU) encodeBytes() ([8]byte, error) {
 		data[0] |= 0x20
 	}
 	if uint64(s.Version)>>3 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "Version", s.Version, 3, false)
+		return [8]byte{}, errAlohaPDUVersionRange
 	}
 	data[0] = data[0]&^0x1C | byte(uint64(s.Version)<<2)&0x1C
 	if s.Offset {
@@ -1163,15 +1163,15 @@ func (s *AlohaPDU) encodeBytes() ([8]byte, error) {
 		data[0] |= 0x01
 	}
 	if uint64(s.Mask)>>5 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "Mask", s.Mask, 5, false)
+		return [8]byte{}, errAlohaPDUMaskRange
 	}
 	data[1] = data[1]&^0xF8 | byte(uint64(s.Mask)<<3)&0xF8
 	if uint64(s.ServiceFunc)>>2 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "ServiceFunc", s.ServiceFunc, 2, false)
+		return [8]byte{}, errAlohaPDUServiceFuncRange
 	}
 	data[1] = data[1]&^0x06 | byte(uint64(s.ServiceFunc)<<1)&0x06
 	if uint64(s.NRandWait)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "NRandWait", s.NRandWait, 4, false)
+		return [8]byte{}, errAlohaPDUNRandWaitRange
 	}
 	_valNRandWait := uint64(s.NRandWait)
 	data[1] = data[1]&^0x01 | byte(_valNRandWait>>3)&0x01
@@ -1180,14 +1180,14 @@ func (s *AlohaPDU) encodeBytes() ([8]byte, error) {
 		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "Backoff", s.Backoff, 4, false)
+		return [8]byte{}, errAlohaPDUBackoffRange
 	}
 	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
 	_valSysIdentCode := uint64(s.SysIdentCode)
 	data[3] = byte(_valSysIdentCode >> 8)
 	data[4] = byte(_valSysIdentCode)
 	if uint64(s.MSAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "MSAddress", s.MSAddress, 24, false)
+		return [8]byte{}, errAlohaPDUMSAddressRange
 	}
 	_valMSAddress := uint64(s.MSAddress)
 	data[5] = byte(_valMSAddress >> 16)
@@ -1231,11 +1231,11 @@ func decodeBroadcastPDUBytes(data [8]byte) BroadcastPDU {
 func (s *BroadcastPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BroadcastPDU", "AnnouncementType", s.AnnouncementType, 5, false)
+		return [8]byte{}, errBroadcastPDUAnnouncementTypeRange
 	}
 	data[0] = data[0]&^0xF8 | byte(uint64(s.AnnouncementType)<<3)&0xF8
 	if uint64(s.BroadcastParms1)>>14 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BroadcastPDU", "BroadcastParms1", s.BroadcastParms1, 14, false)
+		return [8]byte{}, errBroadcastPDUBroadcastParms1Range
 	}
 	_valBroadcastParms1 := uint64(s.BroadcastParms1)
 	data[0] = data[0]&^0x07 | byte(_valBroadcastParms1>>11)&0x07
@@ -1245,14 +1245,14 @@ func (s *BroadcastPDU) encodeBytes() ([8]byte, error) {
 		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BroadcastPDU", "Backoff", s.Backoff, 4, false)
+		return [8]byte{}, errBroadcastPDUBackoffRange
 	}
 	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
 	_valSysIdentCode := uint64(s.SysIdentCode)
 	data[3] = byte(_valSysIdentCode >> 8)
 	data[4] = byte(_valSysIdentCode)
 	if uint64(s.BroadcastParms2)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("BroadcastPDU", "BroadcastParms2", s.BroadcastParms2, 24, false)
+		return [8]byte{}, errBroadcastPDUBroadcastParms2Range
 	}
 	_valBroadcastParms2 := uint64(s.BroadcastParms2)
 	data[5] = byte(_valBroadcastParms2 >> 16)
@@ -1296,7 +1296,7 @@ func decodeClearPDUBytes(data [8]byte) ClearPDU {
 func (s *ClearPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ClearPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
+		return [8]byte{}, errClearPDUPhysicalChannelRange
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -1305,21 +1305,21 @@ func (s *ClearPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x08
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ClearPDU", "Reserved2", s.Reserved2, 2, false)
+		return [8]byte{}, errClearPDUReserved2Range
 	}
 	data[1] = data[1]&^0x06 | byte(uint64(s.Reserved2)<<1)&0x06
 	if s.GroupIndividual {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ClearPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errClearPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ClearPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errClearPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1362,27 +1362,27 @@ func decodeProtectPDUBytes(data [8]byte) ProtectPDU {
 func (s *ProtectPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ProtectPDU", "Reserved", s.Reserved, 12, false)
+		return [8]byte{}, errProtectPDUReservedRange
 	}
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 4)
 	data[1] = data[1]&^0xF0 | byte(_valReserved<<4)&0xF0
 	if uint64(s.ProtectKind)>>3 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ProtectPDU", "ProtectKind", s.ProtectKind, 3, false)
+		return [8]byte{}, errProtectPDUProtectKindRange
 	}
 	data[1] = data[1]&^0x0E | byte(uint64(s.ProtectKind)<<1)&0x0E
 	if s.GroupIndividual {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ProtectPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errProtectPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("ProtectPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errProtectPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1428,7 +1428,7 @@ func decodeAhoyPDUBytes(data [8]byte) AhoyPDU {
 func (s *AhoyPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "ServiceOptsMirror", s.ServiceOptsMirror, 7, false)
+		return [8]byte{}, errAhoyPDUServiceOptsMirrorRange
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptsMirror)<<1)&0xFE
 	if s.ServiceKindFlag {
@@ -1441,22 +1441,22 @@ func (s *AhoyPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "AppendedBlocks", s.AppendedBlocks, 2, false)
+		return [8]byte{}, errAhoyPDUAppendedBlocksRange
 	}
 	data[1] = data[1]&^0x30 | byte(uint64(s.AppendedBlocks)<<4)&0x30
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "ServiceKind", s.ServiceKind, 4, false)
+		return [8]byte{}, errAhoyPDUServiceKindRange
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errAhoyPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errAhoyPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1499,7 +1499,7 @@ func decodeAckOutboundPDUBytes(data [8]byte) AckOutboundPDU {
 func (s *AckOutboundPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckOutboundPDU", "ResponseInfo", s.ResponseInfo, 7, false)
+		return [8]byte{}, errAckOutboundPDUResponseInfoRange
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
 	_valReasonCode := uint64(s.ReasonCode)
@@ -1509,14 +1509,14 @@ func (s *AckOutboundPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckOutboundPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errAckOutboundPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckOutboundPDU", "AdditionalInfo", s.AdditionalInfo, 24, false)
+		return [8]byte{}, errAckOutboundPDUAdditionalInfoRange
 	}
 	_valAdditionalInfo := uint64(s.AdditionalInfo)
 	data[5] = byte(_valAdditionalInfo >> 16)
@@ -1559,7 +1559,7 @@ func decodeAckInboundPDUBytes(data [8]byte) AckInboundPDU {
 func (s *AckInboundPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckInboundPDU", "ResponseInfo", s.ResponseInfo, 7, false)
+		return [8]byte{}, errAckInboundPDUResponseInfoRange
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
 	_valReasonCode := uint64(s.ReasonCode)
@@ -1569,14 +1569,14 @@ func (s *AckInboundPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckInboundPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errAckInboundPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckInboundPDU", "AdditionalInfo", s.AdditionalInfo, 24, false)
+		return [8]byte{}, errAckInboundPDUAdditionalInfoRange
 	}
 	_valAdditionalInfo := uint64(s.AdditionalInfo)
 	data[5] = byte(_valAdditionalInfo >> 16)
@@ -1619,7 +1619,7 @@ func decodeAckOutboundPayloadPDUBytes(data [8]byte) AckOutboundPayloadPDU {
 func (s *AckOutboundPayloadPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckOutboundPayloadPDU", "ResponseInfo", s.ResponseInfo, 7, false)
+		return [8]byte{}, errAckOutboundPayloadPDUResponseInfoRange
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
 	_valReasonCode := uint64(s.ReasonCode)
@@ -1629,14 +1629,14 @@ func (s *AckOutboundPayloadPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckOutboundPayloadPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errAckOutboundPayloadPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckOutboundPayloadPDU", "AdditionalInfo", s.AdditionalInfo, 24, false)
+		return [8]byte{}, errAckOutboundPayloadPDUAdditionalInfoRange
 	}
 	_valAdditionalInfo := uint64(s.AdditionalInfo)
 	data[5] = byte(_valAdditionalInfo >> 16)
@@ -1679,7 +1679,7 @@ func decodeAckInboundPayloadPDUBytes(data [8]byte) AckInboundPayloadPDU {
 func (s *AckInboundPayloadPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckInboundPayloadPDU", "ResponseInfo", s.ResponseInfo, 7, false)
+		return [8]byte{}, errAckInboundPayloadPDUResponseInfoRange
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
 	_valReasonCode := uint64(s.ReasonCode)
@@ -1689,14 +1689,14 @@ func (s *AckInboundPayloadPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckInboundPayloadPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errAckInboundPayloadPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckInboundPayloadPDU", "AdditionalInfo", s.AdditionalInfo, 24, false)
+		return [8]byte{}, errAckInboundPayloadPDUAdditionalInfoRange
 	}
 	_valAdditionalInfo := uint64(s.AdditionalInfo)
 	data[5] = byte(_valAdditionalInfo >> 16)
@@ -1740,29 +1740,29 @@ func decodeRandomAccessPDUBytes(data [8]byte) RandomAccessPDU {
 func (s *RandomAccessPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptions)>>7 != 0 {
-		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "ServiceOptions", s.ServiceOptions, 7, false)
+		return [8]byte{}, errRandomAccessPDUServiceOptionsRange
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptions)<<1)&0xFE
 	if s.ProxyFlag {
 		data[0] |= 0x01
 	}
 	if uint64(s.Reserved)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "Reserved", s.Reserved, 4, false)
+		return [8]byte{}, errRandomAccessPDUReservedRange
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.Reserved)<<4)&0xF0
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "ServiceKind", s.ServiceKind, 4, false)
+		return [8]byte{}, errRandomAccessPDUServiceKindRange
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errRandomAccessPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errRandomAccessPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1807,33 +1807,33 @@ func decodeAckvitationPDUBytes(data [8]byte) AckvitationPDU {
 func (s *AckvitationPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "ServiceOptsMirror", s.ServiceOptsMirror, 7, false)
+		return [8]byte{}, errAckvitationPDUServiceOptsMirrorRange
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptsMirror)<<1)&0xFE
 	if s.ServiceKindFlag {
 		data[0] |= 0x01
 	}
 	if uint64(s.Reserved)>>2 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "Reserved", s.Reserved, 2, false)
+		return [8]byte{}, errAckvitationPDUReservedRange
 	}
 	data[1] = data[1]&^0xC0 | byte(uint64(s.Reserved)<<6)&0xC0
 	if uint64(s.UAB)>>2 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "UAB", s.UAB, 2, false)
+		return [8]byte{}, errAckvitationPDUUABRange
 	}
 	data[1] = data[1]&^0x30 | byte(uint64(s.UAB)<<4)&0x30
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "ServiceKind", s.ServiceKind, 4, false)
+		return [8]byte{}, errAckvitationPDUServiceKindRange
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errAckvitationPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errAckvitationPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1876,27 +1876,27 @@ func decodeMaintenancePDUBytes(data [8]byte) MaintenancePDU {
 func (s *MaintenancePDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MaintenancePDU", "Reserved", s.Reserved, 12, false)
+		return [8]byte{}, errMaintenancePDUReservedRange
 	}
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 4)
 	data[1] = data[1]&^0xF0 | byte(_valReserved<<4)&0xF0
 	if uint64(s.MaintKind)>>3 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MaintenancePDU", "MaintKind", s.MaintKind, 3, false)
+		return [8]byte{}, errMaintenancePDUMaintKindRange
 	}
 	data[1] = data[1]&^0x0E | byte(uint64(s.MaintKind)<<1)&0x0E
 	if s.Reserved2 {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MaintenancePDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errMaintenancePDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MaintenancePDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errMaintenancePDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -2189,151 +2189,151 @@ func (s *CSBK) encodeBytes() ([12]byte, error) {
 	}
 	if s.UnitToUnitVoiceServiceAnswerResponsePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "UnitToUnitVoiceServiceAnswerResponsePDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "UnitToUnitVoiceServiceAnswerResponsePDU"
 	}
 	if s.NegativeAcknowledgementPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "NegativeAcknowledgementPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "NegativeAcknowledgementPDU"
 	}
 	if s.PreamblePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "PreamblePDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "PreamblePDU"
 	}
 	if s.ChannelTimingPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "ChannelTimingPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "ChannelTimingPDU"
 	}
 	if s.PrivateVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "PrivateVoiceGrantPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "PrivateVoiceGrantPDU"
 	}
 	if s.TalkgroupVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "TalkgroupVoiceGrantPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "TalkgroupVoiceGrantPDU"
 	}
 	if s.BroadcastTalkgroupVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "BroadcastTalkgroupVoiceGrantPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "BroadcastTalkgroupVoiceGrantPDU"
 	}
 	if s.PrivateDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "PrivateDataGrantPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "PrivateDataGrantPDU"
 	}
 	if s.TalkgroupDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "TalkgroupDataGrantPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "TalkgroupDataGrantPDU"
 	}
 	if s.DuplexPrivateVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "DuplexPrivateVoiceGrantPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "DuplexPrivateVoiceGrantPDU"
 	}
 	if s.DuplexPrivateDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "DuplexPrivateDataGrantPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "DuplexPrivateDataGrantPDU"
 	}
 	if s.PrivateDataGrantMultiItemPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "PrivateDataGrantMultiItemPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "PrivateDataGrantMultiItemPDU"
 	}
 	if s.MovePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "MovePDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "MovePDU"
 	}
 	if s.AlohaPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AlohaPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "AlohaPDU"
 	}
 	if s.BroadcastPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "BroadcastPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "BroadcastPDU"
 	}
 	if s.ClearPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "ClearPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "ClearPDU"
 	}
 	if s.ProtectPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "ProtectPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "ProtectPDU"
 	}
 	if s.AhoyPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AhoyPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "AhoyPDU"
 	}
 	if s.AckOutboundPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckOutboundPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "AckOutboundPDU"
 	}
 	if s.AckInboundPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckInboundPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "AckInboundPDU"
 	}
 	if s.AckOutboundPayloadPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckOutboundPayloadPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "AckOutboundPayloadPDU"
 	}
 	if s.AckInboundPayloadPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckInboundPayloadPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "AckInboundPayloadPDU"
 	}
 	if s.RandomAccessPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "RandomAccessPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "RandomAccessPDU"
 	}
 	if s.AckvitationPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckvitationPDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "AckvitationPDU"
 	}
 	if s.MaintenancePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "MaintenancePDU")
+			return [12]byte{}, errCSBKPayloads
 		}
 		_payload = "MaintenancePDU"
 	}
@@ -2341,157 +2341,157 @@ func (s *CSBK) encodeBytes() ([12]byte, error) {
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
 		_pduBytes, err := s.UnitToUnitVoiceServiceRequestPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.UnitToUnitVoiceServiceRequestPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
 		_pduBytes, err := s.UnitToUnitVoiceServiceAnswerResponsePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.UnitToUnitVoiceServiceAnswerResponsePDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.NegativeAcknowledgementPDU != nil:
 		_pduBytes, err := s.NegativeAcknowledgementPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.NegativeAcknowledgementPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PreamblePDU != nil:
 		_pduBytes, err := s.PreamblePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.PreamblePDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.ChannelTimingPDU != nil:
 		_pduBytes, err := s.ChannelTimingPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.ChannelTimingPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateVoiceGrantPDU != nil:
 		_pduBytes, err := s.PrivateVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.PrivateVoiceGrantPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupVoiceGrantPDU != nil:
 		_pduBytes, err := s.TalkgroupVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.TalkgroupVoiceGrantPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
 		_pduBytes, err := s.BroadcastTalkgroupVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.BroadcastTalkgroupVoiceGrantPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantPDU != nil:
 		_pduBytes, err := s.PrivateDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.PrivateDataGrantPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupDataGrantPDU != nil:
 		_pduBytes, err := s.TalkgroupDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.TalkgroupDataGrantPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateVoiceGrantPDU != nil:
 		_pduBytes, err := s.DuplexPrivateVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.DuplexPrivateVoiceGrantPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateDataGrantPDU != nil:
 		_pduBytes, err := s.DuplexPrivateDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.DuplexPrivateDataGrantPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantMultiItemPDU != nil:
 		_pduBytes, err := s.PrivateDataGrantMultiItemPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.PrivateDataGrantMultiItemPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.MovePDU != nil:
 		_pduBytes, err := s.MovePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.MovePDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AlohaPDU != nil:
 		_pduBytes, err := s.AlohaPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.AlohaPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastPDU != nil:
 		_pduBytes, err := s.BroadcastPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.BroadcastPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.ClearPDU != nil:
 		_pduBytes, err := s.ClearPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.ClearPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.ProtectPDU != nil:
 		_pduBytes, err := s.ProtectPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.ProtectPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AhoyPDU != nil:
 		_pduBytes, err := s.AhoyPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.AhoyPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckOutboundPDU != nil:
 		_pduBytes, err := s.AckOutboundPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.AckOutboundPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckInboundPDU != nil:
 		_pduBytes, err := s.AckInboundPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.AckInboundPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckOutboundPayloadPDU != nil:
 		_pduBytes, err := s.AckOutboundPayloadPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.AckOutboundPayloadPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckInboundPayloadPDU != nil:
 		_pduBytes, err := s.AckInboundPayloadPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.AckInboundPayloadPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.RandomAccessPDU != nil:
 		_pduBytes, err := s.RandomAccessPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.RandomAccessPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckvitationPDU != nil:
 		_pduBytes, err := s.AckvitationPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.AckvitationPDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.MaintenancePDU != nil:
 		_pduBytes, err := s.MaintenancePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("CSBK.MaintenancePDU", err)
+			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	default:
@@ -2504,11 +2504,11 @@ func (s *CSBK) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [12]byte{}, errs.NewFieldRange("CSBK", "Opcode", s.Opcode, 6, false)
+		return [12]byte{}, errCSBKOpcodeRange
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	if uint64(s.FID)>>8 != 0 {
-		return [12]byte{}, errs.NewFieldRange("CSBK", "FID", s.FID, 8, false)
+		return [12]byte{}, errCSBKFIDRange
 	}
 	data[1] = byte(uint64(s.FID))
 	if _payload != "" {
@@ -2573,7 +2573,7 @@ func (s *CSBK) encodeBytes() ([12]byte, error) {
 			}
 		}
 		if _payload != _want {
-			return [12]byte{}, errs.NewWrongPayload("CSBK", _payload, "Opcode and FID select ", _want)
+			return [12]byte{}, errCSBKPayload
 		}
 	}
 	_crcVal := crc.CCITT(data[:10])
@@ -2657,3 +2657,540 @@ func (s *CSBK) String() string {
 	_ret += " }"
 	return _ret
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errBSOutboundActivationPDUBSAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "BSAddress",
+		Type:  "BSOutboundActivationPDU",
+	}
+	errBSOutboundActivationPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "BSOutboundActivationPDU",
+	}
+	errUnitToUnitVoiceServiceRequestPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "UnitToUnitVoiceServiceRequestPDU",
+	}
+	errUnitToUnitVoiceServiceRequestPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "UnitToUnitVoiceServiceRequestPDU",
+	}
+	errUnitToUnitVoiceServiceAnswerResponsePDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
+	}
+	errUnitToUnitVoiceServiceAnswerResponsePDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
+	}
+	errNegativeAcknowledgementPDUAdditionalInfoRange = &bit.FieldRangeError{
+		Bits:  1,
+		Field: "AdditionalInfo",
+		Type:  "NegativeAcknowledgementPDU",
+	}
+	errNegativeAcknowledgementPDUSourceTypeRange = &bit.FieldRangeError{
+		Bits:  1,
+		Field: "SourceType",
+		Type:  "NegativeAcknowledgementPDU",
+	}
+	errNegativeAcknowledgementPDUServiceTypeRange = &bit.FieldRangeError{
+		Bits:  6,
+		Field: "ServiceType",
+		Type:  "NegativeAcknowledgementPDU",
+	}
+	errNegativeAcknowledgementPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "NegativeAcknowledgementPDU",
+	}
+	errNegativeAcknowledgementPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "NegativeAcknowledgementPDU",
+	}
+	errPreamblePDUReservedRange = &bit.FieldRangeError{
+		Bits:  6,
+		Field: "Reserved",
+		Type:  "PreamblePDU",
+	}
+	errPreamblePDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "PreamblePDU",
+	}
+	errPreamblePDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "PreamblePDU",
+	}
+	errChannelTimingPDUSyncAgeRange = &bit.FieldRangeError{
+		Bits:  11,
+		Field: "SyncAge",
+		Type:  "ChannelTimingPDU",
+	}
+	errChannelTimingPDUGenerationRange = &bit.FieldRangeError{
+		Bits:  5,
+		Field: "Generation",
+		Type:  "ChannelTimingPDU",
+	}
+	errChannelTimingPDULeaderIdentifierRange = &bit.FieldRangeError{
+		Bits:  20,
+		Field: "LeaderIdentifier",
+		Type:  "ChannelTimingPDU",
+	}
+	errChannelTimingPDULeaderDynamicIdentifierRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "LeaderDynamicIdentifier",
+		Type:  "ChannelTimingPDU",
+	}
+	errChannelTimingPDUSourceIdentifierRange = &bit.FieldRangeError{
+		Bits:  20,
+		Field: "SourceIdentifier",
+		Type:  "ChannelTimingPDU",
+	}
+	errChannelTimingPDUSourceDynamicIdentifierRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "SourceDynamicIdentifier",
+		Type:  "ChannelTimingPDU",
+	}
+	errPrivateVoiceGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "PrivateVoiceGrantPDU",
+	}
+	errPrivateVoiceGrantPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "PrivateVoiceGrantPDU",
+	}
+	errPrivateVoiceGrantPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "PrivateVoiceGrantPDU",
+	}
+	errTalkgroupVoiceGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "TalkgroupVoiceGrantPDU",
+	}
+	errTalkgroupVoiceGrantPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "TalkgroupVoiceGrantPDU",
+	}
+	errTalkgroupVoiceGrantPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "TalkgroupVoiceGrantPDU",
+	}
+	errBroadcastTalkgroupVoiceGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "BroadcastTalkgroupVoiceGrantPDU",
+	}
+	errBroadcastTalkgroupVoiceGrantPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "BroadcastTalkgroupVoiceGrantPDU",
+	}
+	errBroadcastTalkgroupVoiceGrantPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "BroadcastTalkgroupVoiceGrantPDU",
+	}
+	errPrivateDataGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "PrivateDataGrantPDU",
+	}
+	errPrivateDataGrantPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "PrivateDataGrantPDU",
+	}
+	errPrivateDataGrantPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "PrivateDataGrantPDU",
+	}
+	errTalkgroupDataGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "TalkgroupDataGrantPDU",
+	}
+	errTalkgroupDataGrantPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "TalkgroupDataGrantPDU",
+	}
+	errTalkgroupDataGrantPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "TalkgroupDataGrantPDU",
+	}
+	errDuplexPrivateVoiceGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "DuplexPrivateVoiceGrantPDU",
+	}
+	errDuplexPrivateVoiceGrantPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "DuplexPrivateVoiceGrantPDU",
+	}
+	errDuplexPrivateVoiceGrantPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "DuplexPrivateVoiceGrantPDU",
+	}
+	errDuplexPrivateDataGrantPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "DuplexPrivateDataGrantPDU",
+	}
+	errDuplexPrivateDataGrantPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "DuplexPrivateDataGrantPDU",
+	}
+	errDuplexPrivateDataGrantPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "DuplexPrivateDataGrantPDU",
+	}
+	errPrivateDataGrantMultiItemPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "PrivateDataGrantMultiItemPDU",
+	}
+	errPrivateDataGrantMultiItemPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "PrivateDataGrantMultiItemPDU",
+	}
+	errPrivateDataGrantMultiItemPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "PrivateDataGrantMultiItemPDU",
+	}
+	errTalkgroupDataGrantMultiItemPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "TalkgroupDataGrantMultiItemPDU",
+	}
+	errTalkgroupDataGrantMultiItemPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "TalkgroupDataGrantMultiItemPDU",
+	}
+	errTalkgroupDataGrantMultiItemPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "TalkgroupDataGrantMultiItemPDU",
+	}
+	errMovePDUReserved1Range = &bit.FieldRangeError{
+		Bits:  9,
+		Field: "Reserved1",
+		Type:  "MovePDU",
+	}
+	errMovePDUMaskRange = &bit.FieldRangeError{
+		Bits:  5,
+		Field: "Mask",
+		Type:  "MovePDU",
+	}
+	errMovePDUReserved2Range = &bit.FieldRangeError{
+		Bits:  5,
+		Field: "Reserved2",
+		Type:  "MovePDU",
+	}
+	errMovePDUBackoffRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "Backoff",
+		Type:  "MovePDU",
+	}
+	errMovePDUReserved3Range = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "Reserved3",
+		Type:  "MovePDU",
+	}
+	errMovePDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "MovePDU",
+	}
+	errMovePDUMSAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "MSAddress",
+		Type:  "MovePDU",
+	}
+	errAlohaPDUVersionRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "Version",
+		Type:  "AlohaPDU",
+	}
+	errAlohaPDUMaskRange = &bit.FieldRangeError{
+		Bits:  5,
+		Field: "Mask",
+		Type:  "AlohaPDU",
+	}
+	errAlohaPDUServiceFuncRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "ServiceFunc",
+		Type:  "AlohaPDU",
+	}
+	errAlohaPDUNRandWaitRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "NRandWait",
+		Type:  "AlohaPDU",
+	}
+	errAlohaPDUBackoffRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "Backoff",
+		Type:  "AlohaPDU",
+	}
+	errAlohaPDUMSAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "MSAddress",
+		Type:  "AlohaPDU",
+	}
+	errBroadcastPDUAnnouncementTypeRange = &bit.FieldRangeError{
+		Bits:  5,
+		Field: "AnnouncementType",
+		Type:  "BroadcastPDU",
+	}
+	errBroadcastPDUBroadcastParms1Range = &bit.FieldRangeError{
+		Bits:  14,
+		Field: "BroadcastParms1",
+		Type:  "BroadcastPDU",
+	}
+	errBroadcastPDUBackoffRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "Backoff",
+		Type:  "BroadcastPDU",
+	}
+	errBroadcastPDUBroadcastParms2Range = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "BroadcastParms2",
+		Type:  "BroadcastPDU",
+	}
+	errClearPDUPhysicalChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "PhysicalChannel",
+		Type:  "ClearPDU",
+	}
+	errClearPDUReserved2Range = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "Reserved2",
+		Type:  "ClearPDU",
+	}
+	errClearPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "ClearPDU",
+	}
+	errClearPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "ClearPDU",
+	}
+	errProtectPDUReservedRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "Reserved",
+		Type:  "ProtectPDU",
+	}
+	errProtectPDUProtectKindRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "ProtectKind",
+		Type:  "ProtectPDU",
+	}
+	errProtectPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "ProtectPDU",
+	}
+	errProtectPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "ProtectPDU",
+	}
+	errAhoyPDUServiceOptsMirrorRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "ServiceOptsMirror",
+		Type:  "AhoyPDU",
+	}
+	errAhoyPDUAppendedBlocksRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "AppendedBlocks",
+		Type:  "AhoyPDU",
+	}
+	errAhoyPDUServiceKindRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "ServiceKind",
+		Type:  "AhoyPDU",
+	}
+	errAhoyPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "AhoyPDU",
+	}
+	errAhoyPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "AhoyPDU",
+	}
+	errAckOutboundPDUResponseInfoRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "ResponseInfo",
+		Type:  "AckOutboundPDU",
+	}
+	errAckOutboundPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "AckOutboundPDU",
+	}
+	errAckOutboundPDUAdditionalInfoRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "AdditionalInfo",
+		Type:  "AckOutboundPDU",
+	}
+	errAckInboundPDUResponseInfoRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "ResponseInfo",
+		Type:  "AckInboundPDU",
+	}
+	errAckInboundPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "AckInboundPDU",
+	}
+	errAckInboundPDUAdditionalInfoRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "AdditionalInfo",
+		Type:  "AckInboundPDU",
+	}
+	errAckOutboundPayloadPDUResponseInfoRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "ResponseInfo",
+		Type:  "AckOutboundPayloadPDU",
+	}
+	errAckOutboundPayloadPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "AckOutboundPayloadPDU",
+	}
+	errAckOutboundPayloadPDUAdditionalInfoRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "AdditionalInfo",
+		Type:  "AckOutboundPayloadPDU",
+	}
+	errAckInboundPayloadPDUResponseInfoRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "ResponseInfo",
+		Type:  "AckInboundPayloadPDU",
+	}
+	errAckInboundPayloadPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "AckInboundPayloadPDU",
+	}
+	errAckInboundPayloadPDUAdditionalInfoRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "AdditionalInfo",
+		Type:  "AckInboundPayloadPDU",
+	}
+	errRandomAccessPDUServiceOptionsRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "ServiceOptions",
+		Type:  "RandomAccessPDU",
+	}
+	errRandomAccessPDUReservedRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "Reserved",
+		Type:  "RandomAccessPDU",
+	}
+	errRandomAccessPDUServiceKindRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "ServiceKind",
+		Type:  "RandomAccessPDU",
+	}
+	errRandomAccessPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "RandomAccessPDU",
+	}
+	errRandomAccessPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "RandomAccessPDU",
+	}
+	errAckvitationPDUServiceOptsMirrorRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "ServiceOptsMirror",
+		Type:  "AckvitationPDU",
+	}
+	errAckvitationPDUReservedRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "Reserved",
+		Type:  "AckvitationPDU",
+	}
+	errAckvitationPDUUABRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "UAB",
+		Type:  "AckvitationPDU",
+	}
+	errAckvitationPDUServiceKindRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "ServiceKind",
+		Type:  "AckvitationPDU",
+	}
+	errAckvitationPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "AckvitationPDU",
+	}
+	errAckvitationPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "AckvitationPDU",
+	}
+	errMaintenancePDUReservedRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "Reserved",
+		Type:  "MaintenancePDU",
+	}
+	errMaintenancePDUMaintKindRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "MaintKind",
+		Type:  "MaintenancePDU",
+	}
+	errMaintenancePDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "MaintenancePDU",
+	}
+	errMaintenancePDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "MaintenancePDU",
+	}
+	errCSBKPayloads    = errors.New("CSBK: more than one payload field is set")
+	errCSBKOpcodeRange = &bit.FieldRangeError{
+		Bits:  6,
+		Field: "Opcode",
+		Type:  "CSBK",
+	}
+	errCSBKFIDRange = &bit.FieldRangeError{
+		Bits:  8,
+		Field: "FID",
+		Type:  "CSBK",
+	}
+	errCSBKPayload = errors.New("CSBK: the payload field that is set is not the one that Opcode and FID select")
+)

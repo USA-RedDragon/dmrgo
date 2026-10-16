@@ -91,7 +91,7 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 // zero value and Motorola IPSC layer3.MotorolaServiceOptions. It returns a
 // *bit.FieldRangeError when an address does not fit in 24 bits.
 func NewVoiceLC(group bool, target, source uint32, so layer3.ServiceOptions) (FullLinkControl, error) {
-	if err := checkAddresses("FullLinkControl", target, source); err != nil {
+	if err := checkAddresses(target, source, errFullLinkControlTargetRange, errFullLinkControlSourceRange); err != nil {
 		return FullLinkControl{}, err
 	}
 	s := FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: enums.FLCOUnitToUnitVoiceChannelUser}

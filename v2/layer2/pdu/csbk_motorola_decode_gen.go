@@ -5,7 +5,6 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeMotorolaRadioCheckPDUBytes decodes a MotorolaRadioCheckPDU.
@@ -29,18 +28,18 @@ func (s *MotorolaRadioCheckPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x80
 	}
 	if uint64(s.Reserved2)>>7 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MotorolaRadioCheckPDU", "Reserved2", s.Reserved2, 7, false)
+		return [8]byte{}, errMotorolaRadioCheckPDUReserved2Range
 	}
 	data[1] = data[1]&^0x7F | byte(uint64(s.Reserved2))&0x7F
 	if uint64(s.RequesterAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MotorolaRadioCheckPDU", "RequesterAddress", s.RequesterAddress, 24, false)
+		return [8]byte{}, errMotorolaRadioCheckPDURequesterAddressRange
 	}
 	_valRequesterAddress := uint64(s.RequesterAddress)
 	data[2] = byte(_valRequesterAddress >> 16)
 	data[3] = byte(_valRequesterAddress >> 8)
 	data[4] = byte(_valRequesterAddress)
 	if uint64(s.CheckedAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MotorolaRadioCheckPDU", "CheckedAddress", s.CheckedAddress, 24, false)
+		return [8]byte{}, errMotorolaRadioCheckPDUCheckedAddressRange
 	}
 	_valCheckedAddress := uint64(s.CheckedAddress)
 	data[5] = byte(_valCheckedAddress >> 16)
@@ -84,14 +83,14 @@ func (s *MotorolaCallAlertPDU) encodeBytes() ([8]byte, error) {
 	data[0] = byte(_valReserved >> 8)
 	data[1] = byte(_valReserved)
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MotorolaCallAlertPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errMotorolaCallAlertPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MotorolaCallAlertPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errMotorolaCallAlertPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -135,14 +134,14 @@ func (s *MotorolaCallAlertAckPDU) encodeBytes() ([8]byte, error) {
 	data[0] = byte(uint64(s.Request))
 	data[1] = byte(uint64(s.Reserved))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MotorolaCallAlertAckPDU", "TargetAddress", s.TargetAddress, 24, false)
+		return [8]byte{}, errMotorolaCallAlertAckPDUTargetAddressRange
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, errs.NewFieldRange("MotorolaCallAlertAckPDU", "SourceAddress", s.SourceAddress, 24, false)
+		return [8]byte{}, errMotorolaCallAlertAckPDUSourceAddressRange
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -167,3 +166,43 @@ func (s *MotorolaCallAlertAckPDU) Encode() ([64]bit.Bit, error) {
 func (s *MotorolaCallAlertAckPDU) String() string {
 	return fmt.Sprintf("MotorolaCallAlertAckPDU{ Request: %d, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Request, s.Reserved, s.TargetAddress, s.SourceAddress)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errMotorolaRadioCheckPDUReserved2Range = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "Reserved2",
+		Type:  "MotorolaRadioCheckPDU",
+	}
+	errMotorolaRadioCheckPDURequesterAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "RequesterAddress",
+		Type:  "MotorolaRadioCheckPDU",
+	}
+	errMotorolaRadioCheckPDUCheckedAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "CheckedAddress",
+		Type:  "MotorolaRadioCheckPDU",
+	}
+	errMotorolaCallAlertPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "MotorolaCallAlertPDU",
+	}
+	errMotorolaCallAlertPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "MotorolaCallAlertPDU",
+	}
+	errMotorolaCallAlertAckPDUTargetAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "TargetAddress",
+		Type:  "MotorolaCallAlertAckPDU",
+	}
+	errMotorolaCallAlertAckPDUSourceAddressRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "SourceAddress",
+		Type:  "MotorolaCallAlertAckPDU",
+	}
+)
