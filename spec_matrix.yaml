@@ -38,7 +38,6 @@ ignore_files:
   - v2/internal/fecref/quadraticresidue/quadratic_residue_16_7_6.go
   - v2/internal/fecref/reedsolomon/reed_solomon_12_9_4.go
   - v2/internal/fecref/trellis/trellis_3_4.go
-  - v2/layer2/pdu/deprecated.go
   - v2/layer2/pdu/pack.go
   - v2/examples/bridge/main.go
   - v2/examples/conformance/main.go
