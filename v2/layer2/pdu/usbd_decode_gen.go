@@ -9,7 +9,6 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeUnifiedSingleBlockDataBytes decodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
@@ -36,11 +35,11 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) UnifiedSingleBlockData {
 func (s *UnifiedSingleBlockData) encodeBytes() ([12]byte, error) {
 	var data [12]byte
 	if uint64(s.ServiceType)>>4 != 0 {
-		return [12]byte{}, errs.NewFieldRange("UnifiedSingleBlockData", "ServiceType", s.ServiceType, 4, false)
+		return [12]byte{}, errUnifiedSingleBlockDataServiceTypeRange
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.ServiceType)<<4)&0xF0
 	if s.Payload[9]&15 != 0 {
-		return [12]byte{}, errs.NewFieldRange("UnifiedSingleBlockData", "Payload", s.Payload, 76, false)
+		return [12]byte{}, errUnifiedSingleBlockDataPayloadRange
 	}
 	bits.Copy(data[:], 4, s.Payload[:], 0, 76)
 	_crcVal := crc.CCITT(data[:10])
@@ -65,3 +64,18 @@ func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 func (s *UnifiedSingleBlockData) String() string {
 	return fmt.Sprintf("UnifiedSingleBlockData{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errUnifiedSingleBlockDataServiceTypeRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "ServiceType",
+		Type:  "UnifiedSingleBlockData",
+	}
+	errUnifiedSingleBlockDataPayloadRange = &bit.FieldRangeError{
+		Bits:  76,
+		Field: "Payload",
+		Type:  "UnifiedSingleBlockData",
+	}
+)

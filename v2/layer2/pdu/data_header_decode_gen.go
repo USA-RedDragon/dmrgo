@@ -13,11 +13,11 @@
 package pdu
 
 import (
+	"errors"
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeUnconfirmedDataHeaderBytes decodes an UnconfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.6).
@@ -56,24 +56,24 @@ func (s *UnconfirmedDataHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x20
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "PadOctetCount", s.PadOctetCount, 5, false)
+		return [10]byte{}, errUnconfirmedDataHeaderPadOctetCountRange
 	}
 	_valPadOctetCount := uint64(s.PadOctetCount)
 	data[0] = data[0]&^0x10 | byte(_valPadOctetCount>>4<<4)&0x10
 	data[1] = data[1]&^0x0F | byte(_valPadOctetCount)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "SAP", s.SAP, 4, false)
+		return [10]byte{}, errUnconfirmedDataHeaderSAPRange
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "LLIDDestination", s.LLIDDestination, 24, false)
+		return [10]byte{}, errUnconfirmedDataHeaderLLIDDestinationRange
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "LLIDSource", s.LLIDSource, 24, false)
+		return [10]byte{}, errUnconfirmedDataHeaderLLIDSourceRange
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
@@ -83,15 +83,15 @@ func (s *UnconfirmedDataHeader) encodeBytes() ([10]byte, error) {
 		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "BlocksToFollow", s.BlocksToFollow, 7, false)
+		return [10]byte{}, errUnconfirmedDataHeaderBlocksToFollowRange
 	}
 	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if uint64(s.Reserved2)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "Reserved2", s.Reserved2, 4, false)
+		return [10]byte{}, errUnconfirmedDataHeaderReserved2Range
 	}
 	data[9] = data[9]&^0xF0 | byte(uint64(s.Reserved2)<<4)&0xF0
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "FragmentSequenceNumber", s.FragmentSequenceNumber, 4, false)
+		return [10]byte{}, errUnconfirmedDataHeaderFragmentSequenceNumberRange
 	}
 	data[9] = data[9]&^0x0F | byte(uint64(s.FragmentSequenceNumber))&0x0F
 	data[0] = data[0]&^0x0F | byte(uint64(FormatUnconfirmed))&0x0F
@@ -256,43 +256,43 @@ func (s *DataHeader) encodeBytes() ([12]byte, error) {
 	}
 	if s.ConfirmedDataHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "ConfirmedDataHeader")
+			return [12]byte{}, errDataHeaderPayloads
 		}
 		_payload = "ConfirmedDataHeader"
 	}
 	if s.ResponsePacketHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "ResponsePacketHeader")
+			return [12]byte{}, errDataHeaderPayloads
 		}
 		_payload = "ResponsePacketHeader"
 	}
 	if s.DefinedDataHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "DefinedDataHeader")
+			return [12]byte{}, errDataHeaderPayloads
 		}
 		_payload = "DefinedDataHeader"
 	}
 	if s.StatusPrecodedHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "StatusPrecodedHeader")
+			return [12]byte{}, errDataHeaderPayloads
 		}
 		_payload = "StatusPrecodedHeader"
 	}
 	if s.RawDataHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "RawDataHeader")
+			return [12]byte{}, errDataHeaderPayloads
 		}
 		_payload = "RawDataHeader"
 	}
 	if s.UDTHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "UDTHeader")
+			return [12]byte{}, errDataHeaderPayloads
 		}
 		_payload = "UDTHeader"
 	}
 	if s.ProprietaryHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "ProprietaryHeader")
+			return [12]byte{}, errDataHeaderPayloads
 		}
 		_payload = "ProprietaryHeader"
 	}
@@ -300,56 +300,56 @@ func (s *DataHeader) encodeBytes() ([12]byte, error) {
 	case s.UnconfirmedDataHeader != nil:
 		_pduBytes, err := s.UnconfirmedDataHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("DataHeader.UnconfirmedDataHeader", err)
+			return [12]byte{}, err
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.ConfirmedDataHeader != nil:
 		_pduBytes, err := s.ConfirmedDataHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("DataHeader.ConfirmedDataHeader", err)
+			return [12]byte{}, err
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.ResponsePacketHeader != nil:
 		_pduBytes, err := s.ResponsePacketHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("DataHeader.ResponsePacketHeader", err)
+			return [12]byte{}, err
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.DefinedDataHeader != nil:
 		_pduBytes, err := s.DefinedDataHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("DataHeader.DefinedDataHeader", err)
+			return [12]byte{}, err
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.StatusPrecodedHeader != nil:
 		_pduBytes, err := s.StatusPrecodedHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("DataHeader.StatusPrecodedHeader", err)
+			return [12]byte{}, err
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.RawDataHeader != nil:
 		_pduBytes, err := s.RawDataHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("DataHeader.RawDataHeader", err)
+			return [12]byte{}, err
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.UDTHeader != nil:
 		_pduBytes, err := s.UDTHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("DataHeader.UDTHeader", err)
+			return [12]byte{}, err
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.ProprietaryHeader != nil:
 		_pduBytes, err := s.ProprietaryHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, errs.NewWrapped("DataHeader.ProprietaryHeader", err)
+			return [12]byte{}, err
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	default:
 		copy(data[0:10], s.RawPayload[0:10])
 	}
 	if uint64(s.Format)>>4 != 0 {
-		return [12]byte{}, errs.NewFieldRange("DataHeader", "Format", s.Format, 4, false)
+		return [12]byte{}, errDataHeaderFormatRange
 	}
 	data[0] = data[0]&^0x0F | byte(uint64(s.Format))&0x0F
 	if _payload != "" {
@@ -382,7 +382,7 @@ func (s *DataHeader) encodeBytes() ([12]byte, error) {
 			_want = "ProprietaryHeader"
 		}
 		if _payload != _want {
-			return [12]byte{}, errs.NewWrongPayload("DataHeader", _payload, "Format and AppendedBlocks select ", _want)
+			return [12]byte{}, errDataHeaderPayload
 		}
 	}
 	_crcVal := crc.CCITT(data[:10])
@@ -468,24 +468,24 @@ func (s *ConfirmedDataHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x20
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "PadOctetCount", s.PadOctetCount, 5, false)
+		return [10]byte{}, errConfirmedDataHeaderPadOctetCountRange
 	}
 	_valPadOctetCount := uint64(s.PadOctetCount)
 	data[0] = data[0]&^0x10 | byte(_valPadOctetCount>>4<<4)&0x10
 	data[1] = data[1]&^0x0F | byte(_valPadOctetCount)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "SAP", s.SAP, 4, false)
+		return [10]byte{}, errConfirmedDataHeaderSAPRange
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "LLIDDestination", s.LLIDDestination, 24, false)
+		return [10]byte{}, errConfirmedDataHeaderLLIDDestinationRange
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "LLIDSource", s.LLIDSource, 24, false)
+		return [10]byte{}, errConfirmedDataHeaderLLIDSourceRange
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
@@ -495,18 +495,18 @@ func (s *ConfirmedDataHeader) encodeBytes() ([10]byte, error) {
 		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "BlocksToFollow", s.BlocksToFollow, 7, false)
+		return [10]byte{}, errConfirmedDataHeaderBlocksToFollowRange
 	}
 	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if s.ReSynchronizeFlag {
 		data[9] |= 0x80
 	}
 	if uint64(s.SendSequenceNumber)>>3 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "SendSequenceNumber", s.SendSequenceNumber, 3, false)
+		return [10]byte{}, errConfirmedDataHeaderSendSequenceNumberRange
 	}
 	data[9] = data[9]&^0x70 | byte(uint64(s.SendSequenceNumber)<<4)&0x70
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "FragmentSequenceNumber", s.FragmentSequenceNumber, 4, false)
+		return [10]byte{}, errConfirmedDataHeaderFragmentSequenceNumberRange
 	}
 	data[9] = data[9]&^0x0F | byte(uint64(s.FragmentSequenceNumber))&0x0F
 	data[0] = data[0]&^0x0F | byte(uint64(FormatConfirmed))&0x0F
@@ -560,26 +560,26 @@ func (s *ResponsePacketHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "Reserved2", s.Reserved2, 2, false)
+		return [10]byte{}, errResponsePacketHeaderReserved2Range
 	}
 	data[0] = data[0]&^0x30 | byte(uint64(s.Reserved2)<<4)&0x30
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "SAP", s.SAP, 4, false)
+		return [10]byte{}, errResponsePacketHeaderSAPRange
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.Reserved3)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "Reserved3", s.Reserved3, 4, false)
+		return [10]byte{}, errResponsePacketHeaderReserved3Range
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.Reserved3))&0x0F
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "LLIDDestination", s.LLIDDestination, 24, false)
+		return [10]byte{}, errResponsePacketHeaderLLIDDestinationRange
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "LLIDSource", s.LLIDSource, 24, false)
+		return [10]byte{}, errResponsePacketHeaderLLIDSourceRange
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
@@ -589,19 +589,19 @@ func (s *ResponsePacketHeader) encodeBytes() ([10]byte, error) {
 		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "BlocksToFollow", s.BlocksToFollow, 7, false)
+		return [10]byte{}, errResponsePacketHeaderBlocksToFollowRange
 	}
 	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if uint64(s.ResponseClass)>>2 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "ResponseClass", s.ResponseClass, 2, false)
+		return [10]byte{}, errResponsePacketHeaderResponseClassRange
 	}
 	data[9] = data[9]&^0xC0 | byte(uint64(s.ResponseClass)<<6)&0xC0
 	if uint64(s.ResponseType)>>3 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "ResponseType", s.ResponseType, 3, false)
+		return [10]byte{}, errResponsePacketHeaderResponseTypeRange
 	}
 	data[9] = data[9]&^0x38 | byte(uint64(s.ResponseType)<<3)&0x38
 	if uint64(s.ResponseStatus)>>3 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "ResponseStatus", s.ResponseStatus, 3, false)
+		return [10]byte{}, errResponsePacketHeaderResponseStatusRange
 	}
 	data[9] = data[9]&^0x07 | byte(uint64(s.ResponseStatus))&0x07
 	data[0] = data[0]&^0x0F | byte(uint64(FormatResponsePacket))&0x0F
@@ -657,31 +657,31 @@ func (s *DefinedDataHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>6 != 0 {
-		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "AppendedBlocks", s.AppendedBlocks, 6, false)
+		return [10]byte{}, errDefinedDataHeaderAppendedBlocksRange
 	}
 	_valAppendedBlocks := uint64(s.AppendedBlocks)
 	data[0] = data[0]&^0x30 | byte(_valAppendedBlocks>>4<<4)&0x30
 	data[1] = data[1]&^0x0F | byte(_valAppendedBlocks)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "SAP", s.SAP, 4, false)
+		return [10]byte{}, errDefinedDataHeaderSAPRange
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "LLIDDestination", s.LLIDDestination, 24, false)
+		return [10]byte{}, errDefinedDataHeaderLLIDDestinationRange
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "LLIDSource", s.LLIDSource, 24, false)
+		return [10]byte{}, errDefinedDataHeaderLLIDSourceRange
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
 	data[6] = byte(_valLLIDSource >> 8)
 	data[7] = byte(_valLLIDSource)
 	if uint64(s.DefinedData)>>6 != 0 {
-		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "DefinedData", s.DefinedData, 6, false)
+		return [10]byte{}, errDefinedDataHeaderDefinedDataRange
 	}
 	data[8] = data[8]&^0xFC | byte(uint64(s.DefinedData)<<2)&0xFC
 	if s.SARQ {
@@ -745,35 +745,35 @@ func (s *RawDataHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>6 != 0 {
-		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "AppendedBlocks", s.AppendedBlocks, 6, false)
+		return [10]byte{}, errRawDataHeaderAppendedBlocksRange
 	}
 	_valAppendedBlocks := uint64(s.AppendedBlocks)
 	data[0] = data[0]&^0x30 | byte(_valAppendedBlocks>>4<<4)&0x30
 	data[1] = data[1]&^0x0F | byte(_valAppendedBlocks)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "SAP", s.SAP, 4, false)
+		return [10]byte{}, errRawDataHeaderSAPRange
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "LLIDDestination", s.LLIDDestination, 24, false)
+		return [10]byte{}, errRawDataHeaderLLIDDestinationRange
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "LLIDSource", s.LLIDSource, 24, false)
+		return [10]byte{}, errRawDataHeaderLLIDSourceRange
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
 	data[6] = byte(_valLLIDSource >> 8)
 	data[7] = byte(_valLLIDSource)
 	if uint64(s.SourcePort)>>3 != 0 {
-		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "SourcePort", s.SourcePort, 3, false)
+		return [10]byte{}, errRawDataHeaderSourcePortRange
 	}
 	data[8] = data[8]&^0xE0 | byte(uint64(s.SourcePort)<<5)&0xE0
 	if uint64(s.DestinationPort)>>3 != 0 {
-		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "DestinationPort", s.DestinationPort, 3, false)
+		return [10]byte{}, errRawDataHeaderDestinationPortRange
 	}
 	data[8] = data[8]&^0x1C | byte(uint64(s.DestinationPort)<<2)&0x1C
 	if s.SARQ {
@@ -830,33 +830,33 @@ func (s *StatusPrecodedHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "SAP", s.SAP, 4, false)
+		return [10]byte{}, errStatusPrecodedHeaderSAPRange
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "LLIDDestination", s.LLIDDestination, 24, false)
+		return [10]byte{}, errStatusPrecodedHeaderLLIDDestinationRange
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "LLIDSource", s.LLIDSource, 24, false)
+		return [10]byte{}, errStatusPrecodedHeaderLLIDSourceRange
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
 	data[6] = byte(_valLLIDSource >> 8)
 	data[7] = byte(_valLLIDSource)
 	if uint64(s.SourcePort)>>3 != 0 {
-		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "SourcePort", s.SourcePort, 3, false)
+		return [10]byte{}, errStatusPrecodedHeaderSourcePortRange
 	}
 	data[8] = data[8]&^0xE0 | byte(uint64(s.SourcePort)<<5)&0xE0
 	if uint64(s.DestinationPort)>>3 != 0 {
-		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "DestinationPort", s.DestinationPort, 3, false)
+		return [10]byte{}, errStatusPrecodedHeaderDestinationPortRange
 	}
 	data[8] = data[8]&^0x1C | byte(uint64(s.DestinationPort)<<2)&0x1C
 	if uint64(s.StatusPrecoded)>>10 != 0 {
-		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "StatusPrecoded", s.StatusPrecoded, 10, false)
+		return [10]byte{}, errStatusPrecodedHeaderStatusPrecodedRange
 	}
 	_valStatusPrecoded := uint64(s.StatusPrecoded)
 	data[8] = data[8]&^0x03 | byte(_valStatusPrecoded>>8)&0x03
@@ -923,36 +923,36 @@ func (s *UDTHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x10
 	}
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UDTHeader", "SAP", s.SAP, 4, false)
+		return [10]byte{}, errUDTHeaderSAPRange
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.UDTFormat)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UDTHeader", "UDTFormat", s.UDTFormat, 4, false)
+		return [10]byte{}, errUDTHeaderUDTFormatRange
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.UDTFormat))&0x0F
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UDTHeader", "LLIDDestination", s.LLIDDestination, 24, false)
+		return [10]byte{}, errUDTHeaderLLIDDestinationRange
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UDTHeader", "LLIDSource", s.LLIDSource, 24, false)
+		return [10]byte{}, errUDTHeaderLLIDSourceRange
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
 	data[6] = byte(_valLLIDSource >> 8)
 	data[7] = byte(_valLLIDSource)
 	if uint64(s.PadNibble)>>5 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UDTHeader", "PadNibble", s.PadNibble, 5, false)
+		return [10]byte{}, errUDTHeaderPadNibbleRange
 	}
 	data[8] = data[8]&^0xF8 | byte(uint64(s.PadNibble)<<3)&0xF8
 	if s.Reserved {
 		data[8] |= 0x04
 	}
 	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UDTHeader", "AppendedBlocks", s.AppendedBlocks, 2, false)
+		return [10]byte{}, errUDTHeaderAppendedBlocksRange
 	}
 	data[8] = data[8]&^0x03 | byte(uint64(s.AppendedBlocks))&0x03
 	if s.SupplementaryFlag {
@@ -962,7 +962,7 @@ func (s *UDTHeader) encodeBytes() ([10]byte, error) {
 		data[9] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [10]byte{}, errs.NewFieldRange("UDTHeader", "Opcode", s.Opcode, 6, false)
+		return [10]byte{}, errUDTHeaderOpcodeRange
 	}
 	data[9] = data[9]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	data[0] = data[0]&^0x0F | byte(uint64(FormatUnifiedDataTransport))&0x0F
@@ -1001,11 +1001,11 @@ func decodeProprietaryHeaderBytes(data [10]byte) ProprietaryHeader {
 func (s *ProprietaryHeader) encodeBytes() ([10]byte, error) {
 	var data [10]byte
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ProprietaryHeader", "SAP", s.SAP, 4, false)
+		return [10]byte{}, errProprietaryHeaderSAPRange
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.MFID)>>8 != 0 {
-		return [10]byte{}, errs.NewFieldRange("ProprietaryHeader", "MFID", s.MFID, 8, false)
+		return [10]byte{}, errProprietaryHeaderMFIDRange
 	}
 	data[1] = byte(uint64(s.MFID))
 	copy(data[2:10], s.ManufacturerData[0:8])
@@ -1029,3 +1029,260 @@ func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 func (s *ProprietaryHeader) String() string {
 	return fmt.Sprintf("ProprietaryHeader{ SAP: %d, MFID: %d, ManufacturerData: %v }", s.SAP, s.MFID, s.ManufacturerData)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errUnconfirmedDataHeaderPadOctetCountRange = &bit.FieldRangeError{
+		Bits:  5,
+		Field: "PadOctetCount",
+		Type:  "UnconfirmedDataHeader",
+	}
+	errUnconfirmedDataHeaderSAPRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SAP",
+		Type:  "UnconfirmedDataHeader",
+	}
+	errUnconfirmedDataHeaderLLIDDestinationRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDDestination",
+		Type:  "UnconfirmedDataHeader",
+	}
+	errUnconfirmedDataHeaderLLIDSourceRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDSource",
+		Type:  "UnconfirmedDataHeader",
+	}
+	errUnconfirmedDataHeaderBlocksToFollowRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "BlocksToFollow",
+		Type:  "UnconfirmedDataHeader",
+	}
+	errUnconfirmedDataHeaderReserved2Range = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "Reserved2",
+		Type:  "UnconfirmedDataHeader",
+	}
+	errUnconfirmedDataHeaderFragmentSequenceNumberRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "FragmentSequenceNumber",
+		Type:  "UnconfirmedDataHeader",
+	}
+	errDataHeaderPayloads    = errors.New("DataHeader: more than one payload field is set")
+	errDataHeaderFormatRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "Format",
+		Type:  "DataHeader",
+	}
+	errDataHeaderPayload                     = errors.New("DataHeader: the payload field that is set is not the one that Format and AppendedBlocks select")
+	errConfirmedDataHeaderPadOctetCountRange = &bit.FieldRangeError{
+		Bits:  5,
+		Field: "PadOctetCount",
+		Type:  "ConfirmedDataHeader",
+	}
+	errConfirmedDataHeaderSAPRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SAP",
+		Type:  "ConfirmedDataHeader",
+	}
+	errConfirmedDataHeaderLLIDDestinationRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDDestination",
+		Type:  "ConfirmedDataHeader",
+	}
+	errConfirmedDataHeaderLLIDSourceRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDSource",
+		Type:  "ConfirmedDataHeader",
+	}
+	errConfirmedDataHeaderBlocksToFollowRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "BlocksToFollow",
+		Type:  "ConfirmedDataHeader",
+	}
+	errConfirmedDataHeaderSendSequenceNumberRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "SendSequenceNumber",
+		Type:  "ConfirmedDataHeader",
+	}
+	errConfirmedDataHeaderFragmentSequenceNumberRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "FragmentSequenceNumber",
+		Type:  "ConfirmedDataHeader",
+	}
+	errResponsePacketHeaderReserved2Range = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "Reserved2",
+		Type:  "ResponsePacketHeader",
+	}
+	errResponsePacketHeaderSAPRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SAP",
+		Type:  "ResponsePacketHeader",
+	}
+	errResponsePacketHeaderReserved3Range = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "Reserved3",
+		Type:  "ResponsePacketHeader",
+	}
+	errResponsePacketHeaderLLIDDestinationRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDDestination",
+		Type:  "ResponsePacketHeader",
+	}
+	errResponsePacketHeaderLLIDSourceRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDSource",
+		Type:  "ResponsePacketHeader",
+	}
+	errResponsePacketHeaderBlocksToFollowRange = &bit.FieldRangeError{
+		Bits:  7,
+		Field: "BlocksToFollow",
+		Type:  "ResponsePacketHeader",
+	}
+	errResponsePacketHeaderResponseClassRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "ResponseClass",
+		Type:  "ResponsePacketHeader",
+	}
+	errResponsePacketHeaderResponseTypeRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "ResponseType",
+		Type:  "ResponsePacketHeader",
+	}
+	errResponsePacketHeaderResponseStatusRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "ResponseStatus",
+		Type:  "ResponsePacketHeader",
+	}
+	errDefinedDataHeaderAppendedBlocksRange = &bit.FieldRangeError{
+		Bits:  6,
+		Field: "AppendedBlocks",
+		Type:  "DefinedDataHeader",
+	}
+	errDefinedDataHeaderSAPRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SAP",
+		Type:  "DefinedDataHeader",
+	}
+	errDefinedDataHeaderLLIDDestinationRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDDestination",
+		Type:  "DefinedDataHeader",
+	}
+	errDefinedDataHeaderLLIDSourceRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDSource",
+		Type:  "DefinedDataHeader",
+	}
+	errDefinedDataHeaderDefinedDataRange = &bit.FieldRangeError{
+		Bits:  6,
+		Field: "DefinedData",
+		Type:  "DefinedDataHeader",
+	}
+	errRawDataHeaderAppendedBlocksRange = &bit.FieldRangeError{
+		Bits:  6,
+		Field: "AppendedBlocks",
+		Type:  "RawDataHeader",
+	}
+	errRawDataHeaderSAPRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SAP",
+		Type:  "RawDataHeader",
+	}
+	errRawDataHeaderLLIDDestinationRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDDestination",
+		Type:  "RawDataHeader",
+	}
+	errRawDataHeaderLLIDSourceRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDSource",
+		Type:  "RawDataHeader",
+	}
+	errRawDataHeaderSourcePortRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "SourcePort",
+		Type:  "RawDataHeader",
+	}
+	errRawDataHeaderDestinationPortRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "DestinationPort",
+		Type:  "RawDataHeader",
+	}
+	errStatusPrecodedHeaderSAPRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SAP",
+		Type:  "StatusPrecodedHeader",
+	}
+	errStatusPrecodedHeaderLLIDDestinationRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDDestination",
+		Type:  "StatusPrecodedHeader",
+	}
+	errStatusPrecodedHeaderLLIDSourceRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDSource",
+		Type:  "StatusPrecodedHeader",
+	}
+	errStatusPrecodedHeaderSourcePortRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "SourcePort",
+		Type:  "StatusPrecodedHeader",
+	}
+	errStatusPrecodedHeaderDestinationPortRange = &bit.FieldRangeError{
+		Bits:  3,
+		Field: "DestinationPort",
+		Type:  "StatusPrecodedHeader",
+	}
+	errStatusPrecodedHeaderStatusPrecodedRange = &bit.FieldRangeError{
+		Bits:  10,
+		Field: "StatusPrecoded",
+		Type:  "StatusPrecodedHeader",
+	}
+	errUDTHeaderSAPRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SAP",
+		Type:  "UDTHeader",
+	}
+	errUDTHeaderUDTFormatRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "UDTFormat",
+		Type:  "UDTHeader",
+	}
+	errUDTHeaderLLIDDestinationRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDDestination",
+		Type:  "UDTHeader",
+	}
+	errUDTHeaderLLIDSourceRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "LLIDSource",
+		Type:  "UDTHeader",
+	}
+	errUDTHeaderPadNibbleRange = &bit.FieldRangeError{
+		Bits:  5,
+		Field: "PadNibble",
+		Type:  "UDTHeader",
+	}
+	errUDTHeaderAppendedBlocksRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "AppendedBlocks",
+		Type:  "UDTHeader",
+	}
+	errUDTHeaderOpcodeRange = &bit.FieldRangeError{
+		Bits:  6,
+		Field: "Opcode",
+		Type:  "UDTHeader",
+	}
+	errProprietaryHeaderSAPRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "SAP",
+		Type:  "ProprietaryHeader",
+	}
+	errProprietaryHeaderMFIDRange = &bit.FieldRangeError{
+		Bits:  8,
+		Field: "MFID",
+		Type:  "ProprietaryHeader",
+	}
+)

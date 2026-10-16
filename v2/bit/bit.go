@@ -17,12 +17,11 @@ type Bit byte
 
 // FieldRangeError is the error of a PDU Encode method when a field value
 // does not fit in its on-air bits, or for a coordinate when it is outside
-// [Min, Max].
+// [Min, Max]. Each field has one static FieldRangeError, so an Encode that
+// fails does not allocate; it does not hold the value that failed.
 type FieldRangeError struct {
 	// Type and Field name the PDU type and its field.
 	Type, Field string
-	// Value is the field value.
-	Value any
 	// Bits is the width of the field in bits.
 	Bits int
 	// Signed is true for a two's complement field.
@@ -34,13 +33,13 @@ type FieldRangeError struct {
 
 func (e *FieldRangeError) Error() string {
 	if e.Min != e.Max {
-		return fmt.Sprintf("%s.%s: value %v is outside [%v, %v]", e.Type, e.Field, e.Value, e.Min, e.Max)
+		return fmt.Sprintf("%s.%s: value is outside [%v, %v]", e.Type, e.Field, e.Min, e.Max)
 	}
 	signed := ""
 	if e.Signed {
 		signed = "signed "
 	}
-	return fmt.Sprintf("%s.%s: value %d does not fit in %d %sbits", e.Type, e.Field, e.Value, e.Bits, signed)
+	return fmt.Sprintf("%s.%s: value does not fit in %d %sbits", e.Type, e.Field, e.Bits, signed)
 }
 
 // Uint returns bits as an unsigned integer, the first bit most significant.

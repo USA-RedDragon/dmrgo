@@ -9,7 +9,6 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodePIHeaderBytes decodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
@@ -41,7 +40,7 @@ func (s *PIHeader) encodeBytes() ([12]byte, error) {
 	var data [12]byte
 	data[0] = byte(uint64(s.AlgorithmID))
 	if uint64(s.MFID)>>8 != 0 {
-		return [12]byte{}, errs.NewFieldRange("PIHeader", "MFID", s.MFID, 8, false)
+		return [12]byte{}, errPIHeaderMFIDRange
 	}
 	data[1] = byte(uint64(s.MFID))
 	data[2] = byte(uint64(s.KeyID))
@@ -51,7 +50,7 @@ func (s *PIHeader) encodeBytes() ([12]byte, error) {
 	data[5] = byte(_valMessageIndicator >> 8)
 	data[6] = byte(_valMessageIndicator)
 	if uint64(s.Destination)>>24 != 0 {
-		return [12]byte{}, errs.NewFieldRange("PIHeader", "Destination", s.Destination, 24, false)
+		return [12]byte{}, errPIHeaderDestinationRange
 	}
 	_valDestination := uint64(s.Destination)
 	data[7] = byte(_valDestination >> 16)
@@ -79,3 +78,18 @@ func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 func (s *PIHeader) String() string {
 	return fmt.Sprintf("PIHeader{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errPIHeaderMFIDRange = &bit.FieldRangeError{
+		Bits:  8,
+		Field: "MFID",
+		Type:  "PIHeader",
+	}
+	errPIHeaderDestinationRange = &bit.FieldRangeError{
+		Bits:  24,
+		Field: "Destination",
+		Type:  "PIHeader",
+	}
+)

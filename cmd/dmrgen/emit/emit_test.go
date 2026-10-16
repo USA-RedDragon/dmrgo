@@ -258,11 +258,13 @@ type T struct {
 	assertContains(t, out,
 		"if s.A != nil {\n\t\t_payload = \"A\"\n\t}",
 		"if s.B != nil {\n\t\tif _payload != \"\" {",
-		`return [3]byte{}, errs.NewBothSet("T", _payload, "B")`,
+		`return [3]byte{}, errTPayloads`,
+		`errTPayloads = errors.New("T: more than one payload field is set")`,
 		"\tif _payload != \"\" {\n\t\tvar result T\n\t\tresult.Op = uint8(uint64(data[0]))\n\t\tresult.FID = uint8(uint64(data[1]))\n\t\tresult.Mode = s.Mode\n\t\t_want := \"Raw\"",
 		"\t\t\t\tif result.Mode {\n\t\t\t\t\t_want = \"A\"\n\t\t\t\t}",
 		"\t\t\tcase 2:\n\t\t\t\t_want = \"B\"",
-		`return [3]byte{}, errs.NewWrongPayload("T", _payload, "Op, FID and Mode select ", _want)`,
+		`return [3]byte{}, errTPayload`,
+		`errTPayload  = errors.New("T: the payload field that is set is not the one that Op, FID and Mode select")`,
 	)
 	if strings.Contains(out, "[...]struct") {
 		t.Error("the payload check builds an array, which is a large local on 32-bit targets")
@@ -303,11 +305,13 @@ type T struct {
 	assertContains(t, out,
 		"func (s *T) Encode() ([60]bit.Bit, error) {",
 		"if uint64(s.Part)>>12 != 0 {",
-		`return [8]byte{}, errs.NewFieldRange("T", "Part", s.Part, 12, false)`,
+		`return [8]byte{}, errTPartRange`,
+		"errTPartRange = &bit.FieldRangeError{\n\t\tBits:  12,\n\t\tField: \"Part\",\n\t\tType:  \"T\",\n\t}",
+		"errTOffRange = &bit.FieldRangeError{\n\t\tBits:   8,\n\t\tField:  \"Off\",\n\t\tSigned: true,\n\t\tType:   \"T\",\n\t}",
 		"if uint64(s.Addr)>>24 != 0 {",
 		"if int64(s.Off) < -128 || int64(s.Off) > 127 {",
 		"_kidBytes, err := s.Kid.encodeBytes()",
-		`return [8]byte{}, errs.NewWrapped("T.Kid", err)`,
+		"if err != nil {\n\t\treturn [8]byte{}, err\n\t}",
 		"return data, nil",
 	)
 	if strings.Contains(out, "uint64(s.Full)>>") {
@@ -401,7 +405,7 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 	assertContains(t, out,
 		"bits.Copy(result.R[:], 0, data[:], 4, 12)",
 		"if s.R[1]&15 != 0 {",
-		`errs.NewFieldRange("T", "R", s.R,`,
+		"return [2]byte{}, errTRRange",
 		"bits.Copy(data[:], 4, s.R[:], 0, 12)",
 		`fmt.Sprintf("T{ A: %d, R: %x }", s.A, s.R)`,
 	)

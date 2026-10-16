@@ -8,7 +8,6 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	golay "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 )
 
@@ -43,11 +42,11 @@ func DecodeSlotType(data [20]bit.Bit) SlotType {
 func (s *SlotType) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [3]byte{}, errs.NewFieldRange("SlotType", "ColorCode", s.ColorCode, 4, false)
+		return [3]byte{}, errSlotTypeColorCodeRange
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.ColorCode)<<4)&0xF0
 	if uint64(s.DataType)>>4 != 0 {
-		return [3]byte{}, errs.NewFieldRange("SlotType", "DataType", s.DataType, 4, false)
+		return [3]byte{}, errSlotTypeDataTypeRange
 	}
 	data[0] = data[0]&^0x0F | byte(uint64(s.DataType))&0x0F
 	_cw := golay.Encode2087(uint8(uint64(data[0])))
@@ -74,3 +73,18 @@ func (s *SlotType) Encode() ([20]bit.Bit, error) {
 func (s *SlotType) String() string {
 	return fmt.Sprintf("SlotType{ ColorCode: %d, DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errSlotTypeColorCodeRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "ColorCode",
+		Type:  "SlotType",
+	}
+	errSlotTypeDataTypeRange = &bit.FieldRangeError{
+		Bits:  4,
+		Field: "DataType",
+		Type:  "SlotType",
+	}
+)
