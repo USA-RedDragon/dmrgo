@@ -80,10 +80,9 @@ type syncSearch struct {
 	// devSq the sum of their squares, for the discriminator correlation.
 	dev   [numSources][syncSymbols]float32
 	devSq [numSources]float32
-	tpl   [numSources][]complex64
-	rot   [searchFreqs][]complex64
-	// tplRot holds tpl of source src turned by rot of offset fi at
-	// tplRot[fi*numSources+src].
+	// tplRot holds the conjugate waveform of the voice SYNC of source src
+	// turned by search offset fi at tplRot[fi*numSources+src], for the
+	// sources that the receiver searches.
 	tplRot [searchFreqs * numSources][]complex64
 	x      []complex64
 	full   []float64
@@ -95,8 +94,9 @@ type syncSearch struct {
 
 // newSyncSearch returns a search with the symbols of the voice SYNC of each
 // source, and when coherent the waveforms of every SYNC pattern at the
-// nominal modulation index, sampled at every dec channel samples.
-func newSyncSearch(coherent bool, dec int) *syncSearch {
+// nominal modulation index, sampled at every dec channel samples, and the
+// search templates of nsrc sources.
+func newSyncSearch(coherent bool, dec, nsrc int) *syncSearch {
 	s := &syncSearch{}
 	for i := range numSources {
 		v, _, _ := sourceAt(i).SyncPatterns()
@@ -117,36 +117,38 @@ func newSyncSearch(coherent bool, dec int) *syncSearch {
 	s.dec, s.sps, s.span = dec, samplesPerSy/dec, syncSpan/dec
 	sps, span := s.sps, s.span
 	s.x, s.full = make([]complex64, span), make([]float64, syncSymbols*sps)
+	var rot [searchFreqs][]complex64
 	for i := range searchFreqs {
 		f := searchHzAt(i)
-		s.rot[i] = make([]complex64, span)
+		rot[i] = make([]complex64, span)
 		for j := range span {
 			p := -2 * math.Pi * f * float64(j*dec) / basebandRate
-			s.rot[i][j] = complex(float32(math.Cos(p)), float32(math.Sin(p)))
+			rot[i][j] = complex(float32(math.Cos(p)), float32(math.Sin(p)))
 		}
 	}
+	tpl := make([]complex64, span)
 	for i := range numSources {
 		v, _, _ := sourceAt(i).SyncPatterns()
+		_, d, _ := sourceAt(i).SyncPatterns()
+		s.pats[2*i], s.pats[2*i+1] = v, d
+		if i >= nsrc {
+			continue
+		}
 		syms := make([]int, syncSymbols)
 		for k, a := range s.voice[i] {
 			syms[k] = int(a)
 		}
 		ph := refPhase(syms, sps, 0.27)
-		_, d, _ := sourceAt(i).SyncPatterns()
-		s.pats[2*i], s.pats[2*i+1] = v, d
-		s.tpl[i] = make([]complex64, span)
 		for j := range span {
 			p := ph[syncEdge*sps+j]
-			s.tpl[i][j] = complex(float32(math.Cos(p)), float32(-math.Sin(p)))
+			tpl[j] = complex(float32(math.Cos(p)), float32(-math.Sin(p)))
 		}
-	}
-	for fi := range searchFreqs {
-		for src := range numSources {
+		for fi := range searchFreqs {
 			t := make([]complex64, span)
 			for j := range t {
-				t[j] = s.tpl[src][j] * s.rot[fi][j]
+				t[j] = tpl[j] * rot[fi][j]
 			}
-			s.tplRot[fi*numSources+src] = t
+			s.tplRot[fi*numSources+i] = t
 		}
 	}
 	s.pats[2*numSources] = enums.SyncMSSourcedRC
@@ -211,7 +213,7 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 	if etot == 0 {
 		return best
 	}
-	for fi := range s.rot {
+	for fi := range searchFreqs {
 		for src := range nsrc {
 			t := s.tplRot[fi*numSources+src]
 			var ac, bd, bc, ad float32
