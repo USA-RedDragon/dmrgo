@@ -101,7 +101,7 @@ func TestQRadioLinkBurstLayout(t *testing.T) {
 	burst[19] = audio[13] & 0x0F
 	copy(burst[20:], audio[14:])
 
-	bits := bit.Unpack264(burst)
+	bits := [264]bit.Bit(bit.Unpack(burst[:]))
 	var voice [216]bit.Bit
 	copy(voice[:108], bits[:108])
 	copy(voice[108:], bits[156:])

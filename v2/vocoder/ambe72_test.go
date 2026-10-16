@@ -28,7 +28,7 @@ func voiceSlots(t *testing.T) [][72]bit.Bit {
 		if burst.Kind == layer2.KindData {
 			continue
 		}
-		bits := bit.Unpack264(raw)
+		bits := [264]bit.Bit(bit.Unpack(raw[:]))
 		var voice [216]bit.Bit
 		copy(voice[:108], bits[:108])
 		copy(voice[108:], bits[156:])

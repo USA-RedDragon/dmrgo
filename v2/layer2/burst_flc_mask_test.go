@@ -10,7 +10,7 @@ import (
 )
 
 func burstInfoBits(raw [33]byte) [96]bit.Bit {
-	all := bit.Unpack264(raw)
+	all := [264]bit.Bit(bit.Unpack(raw[:]))
 	var dataBits [196]bit.Bit
 	copy(dataBits[:98], all[:98])
 	copy(dataBits[98:], all[166:])

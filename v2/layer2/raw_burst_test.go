@@ -42,8 +42,8 @@ func isBPTC(dt enums.DataType) bool {
 // sameBits reports whether a and b agree outside the burst bit ranges in
 // skip, each given as [start, end).
 func sameBits(a, b layer2.RawBurst, skip ...[2]int) bool {
-	x := bit.Unpack264(a)
-	y := bit.Unpack264(b)
+	x := [264]bit.Bit(bit.Unpack(a[:]))
+	y := [264]bit.Bit(bit.Unpack(b[:]))
 outer:
 	for i := range x {
 		for _, s := range skip {
