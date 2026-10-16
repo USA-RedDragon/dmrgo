@@ -1717,19 +1717,19 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 59
+       "exact": 69
       },
       "ambe_c0c1": {
        "truth": 108,
-       "exact": 85
+       "exact": 89
       },
       "csbk": {
        "truth": 6,
-       "exact": 3
+       "exact": 5
       },
       "elc": {
        "truth": 6,
-       "exact": 5
+       "exact": 4
       },
       "emb": {
        "truth": 30,
@@ -1737,11 +1737,11 @@
       },
       "header": {
        "truth": 13,
-       "exact": 6
+       "exact": 9
       },
       "lc": {
        "truth": 2,
-       "exact": 1
+       "exact": 0
       },
       "rate1": {
        "truth": 3,
@@ -1749,7 +1749,7 @@
       },
       "rate12": {
        "truth": 14,
-       "exact": 8
+       "exact": 9
       },
       "rate34": {
        "truth": 6,
@@ -1770,11 +1770,11 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 97
+       "exact": 99
       },
       "ambe_c0c1": {
        "truth": 108,
-       "exact": 104
+       "exact": 105
       },
       "csbk": {
        "truth": 6,
@@ -1851,7 +1851,7 @@
       },
       "rate1": {
        "truth": 3,
-       "exact": 1
+       "exact": 2
       },
       "rate12": {
        "truth": 14,
@@ -1859,7 +1859,7 @@
       },
       "rate34": {
        "truth": 6,
-       "exact": 6
+       "exact": 5
       },
       "slottype": {
        "truth": 44,

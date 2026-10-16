@@ -88,7 +88,7 @@ func (r *Receiver) fill(g symRef, n int, rev bool) {
 		dir = -1
 	}
 	sps := r.model.sps
-	sp := float64(dir * samplesPerSy / sps)
+	sp := float64(dir*samplesPerSy) / float64(sps)
 	step := complex64(r.rotAt(sp))
 	for i := range n {
 		h := g.add(dir * i)
@@ -275,7 +275,8 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 		}
 		syms[i] = 2*best - 3
 	}
-	r.pulse.refPhaseInto(syms, samplesPerSy, r.h, r.ddPh[:n*samplesPerSy])
+	sps, dec := r.search.sps, r.search.dec
+	r.pulse.refPhaseInto(syms, sps, r.h, r.ddPh[:n*sps])
 	ch := &r.chz.ch
 	var z complex128
 	var prev complex128
@@ -288,9 +289,9 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 		for i := w; i < w+ddWindow; i++ {
 			h := lo.add(i)
 			t := r.symTime(h.slot, h.k)
-			for j := range samplesPerSy {
-				ts := t + float64(j-samplesPerSy/2)
-				p := r.ddPh[i*samplesPerSy+j]
+			for j := range sps {
+				ts := t + float64((j-sps/2)*dec)
+				p := r.ddPh[i*sps+j]
 				c += complex128(ch.interp(ts)) * r.rotAt(ts) * complex(math.Cos(p), -math.Sin(p))
 			}
 		}
