@@ -244,8 +244,10 @@ func (f *Framer) cut() Burst {
 		enums.SyncMSSourcedRC, enums.SyncReserved, enums.SyncNone:
 	}
 	if f.cfg.CACH && start >= layer2.CACHBits {
-		var c [layer2.CACHBits]bit.Bit
-		copy(c[:], f.buf[start-layer2.CACHBits:start])
+		var c [3]byte
+		for i, x := range f.buf[start-layer2.CACHBits : start] {
+			c[i>>3] |= byte(x) << (7 - i&7)
+		}
 		b.CACH, b.HasCACH = layer2.DecodeCACHField(c), true
 		if !b.CACH.TACT.FEC.Uncorrectable {
 			f.channel = 1

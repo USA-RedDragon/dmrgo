@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 func TestCACHInterleave_RoundTrip(t *testing.T) {
 	t.Parallel()
 	for pos := 0; pos < layer2.CACHBits; pos++ {
-		var logical [layer2.CACHBits]bit.Bit
-		logical[pos] = 1
+		var logical [3]byte
+		bits.SetBit(logical[:], pos, 1)
 
 		tx := layer2.CACHInterleave(logical)
 		recovered := layer2.CACHDeinterleave(tx)
 
 		for i := 0; i < layer2.CACHBits; i++ {
-			if recovered[i] != logical[i] {
-				t.Errorf("pos=%d: bit %d: got %d, want %d", pos, i, recovered[i], logical[i])
+			if bits.Bit(recovered[:], i) != bits.Bit(logical[:], i) {
+				t.Errorf("pos=%d: bit %d: got %d, want %d", pos, i, bits.Bit(recovered[:], i), bits.Bit(logical[:], i))
 			}
 		}
 	}
@@ -28,15 +28,15 @@ func TestCACHInterleave_RoundTrip(t *testing.T) {
 func TestCACHDeinterleave_RoundTrip(t *testing.T) {
 	t.Parallel()
 	for pos := 0; pos < layer2.CACHBits; pos++ {
-		var tx [layer2.CACHBits]bit.Bit
-		tx[pos] = 1
+		var tx [3]byte
+		bits.SetBit(tx[:], pos, 1)
 
 		logical := layer2.CACHDeinterleave(tx)
 		recovered := layer2.CACHInterleave(logical)
 
 		for i := 0; i < layer2.CACHBits; i++ {
-			if recovered[i] != tx[i] {
-				t.Errorf("pos=%d: bit %d: got %d, want %d", pos, i, recovered[i], tx[i])
+			if bits.Bit(recovered[:], i) != bits.Bit(tx[:], i) {
+				t.Errorf("pos=%d: bit %d: got %d, want %d", pos, i, bits.Bit(recovered[:], i), bits.Bit(tx[:], i))
 			}
 		}
 	}
@@ -44,16 +44,14 @@ func TestCACHDeinterleave_RoundTrip(t *testing.T) {
 
 func TestCACHInterleave_TACTSpread(t *testing.T) {
 	t.Parallel()
-	var logical [layer2.CACHBits]bit.Bit
-	for i := 0; i < 7; i++ {
-		logical[i] = 1
-	}
+	var logical [3]byte
+	logical[0] = 0xFE
 
 	tx := layer2.CACHInterleave(logical)
 
 	contiguous := 0
 	for i := 0; i < layer2.CACHBits; i++ {
-		if tx[i] == 1 {
+		if bits.Bit(tx[:], i) == 1 {
 			contiguous++
 		} else {
 			break
@@ -66,7 +64,7 @@ func TestCACHInterleave_TACTSpread(t *testing.T) {
 
 	total := 0
 	for i := 0; i < layer2.CACHBits; i++ {
-		if tx[i] == 1 {
+		if bits.Bit(tx[:], i) == 1 {
 			total++
 		}
 	}
@@ -77,12 +75,12 @@ func TestCACHInterleave_TACTSpread(t *testing.T) {
 
 func TestCACHInterleave_ATPosition(t *testing.T) {
 	t.Parallel()
-	var logical [layer2.CACHBits]bit.Bit
-	logical[0] = 1
+	var logical [3]byte
+	bits.SetBit(logical[:], 0, 1)
 
 	tx := layer2.CACHInterleave(logical)
-	if tx[0] != 1 {
-		t.Errorf("AT should be at tx[0] (TX(23), first sent), but tx[0]=%d", tx[0])
+	if bits.Bit(tx[:], 0) != 1 {
+		t.Errorf("AT should be at tx[0] (TX(23), first sent), but tx[0]=%d", bits.Bit(tx[:], 0))
 	}
 }
 
@@ -101,11 +99,11 @@ func TestCACHInterleave_FigureB9(t *testing.T) {
 	}
 
 	for l := 0; l < layer2.CACHBits; l++ {
-		var logical [layer2.CACHBits]bit.Bit
-		logical[l] = 1
+		var logical [3]byte
+		bits.SetBit(logical[:], l, 1)
 		tx := layer2.CACHInterleave(logical)
 		for i := 0; i < layer2.CACHBits; i++ {
-			if tx[i] == 1 && txRow[i] != logicalRow[l] {
+			if bits.Bit(tx[:], i) == 1 && txRow[i] != logicalRow[l] {
 				t.Errorf("logical %s landed at tx[%d] (%s)", logicalRow[l], i, txRow[i])
 			}
 		}
@@ -114,29 +112,29 @@ func TestCACHInterleave_FigureB9(t *testing.T) {
 
 func TestCACHDeinterleave_PreservesData(t *testing.T) {
 	t.Parallel()
-	var logical [layer2.CACHBits]bit.Bit
-	logical[0] = 1
-	logical[2] = 1
-	logical[4] = 1
-	logical[6] = 1
-	logical[23] = 1
+	var logical [3]byte
+	bits.SetBit(logical[:], 0, 1)
+	bits.SetBit(logical[:], 2, 1)
+	bits.SetBit(logical[:], 4, 1)
+	bits.SetBit(logical[:], 6, 1)
+	bits.SetBit(logical[:], 23, 1)
 
 	tx := layer2.CACHInterleave(logical)
 	recovered := layer2.CACHDeinterleave(tx)
 
-	if recovered[0] != 1 {
+	if bits.Bit(recovered[:], 0) != 1 {
 		t.Error("AT not recovered")
 	}
-	if recovered[2] != 1 {
+	if bits.Bit(recovered[:], 2) != 1 {
 		t.Error("LS(1) not recovered")
 	}
-	if recovered[4] != 1 {
+	if bits.Bit(recovered[:], 4) != 1 {
 		t.Error("H(2) not recovered")
 	}
-	if recovered[6] != 1 {
+	if bits.Bit(recovered[:], 6) != 1 {
 		t.Error("H(0) not recovered")
 	}
-	if recovered[23] != 1 {
+	if bits.Bit(recovered[:], 23) != 1 {
 		t.Error("P(0) not recovered")
 	}
 
@@ -144,8 +142,8 @@ func TestCACHDeinterleave_PreservesData(t *testing.T) {
 		if i == 0 || i == 2 || i == 4 || i == 6 || i == 23 {
 			continue
 		}
-		if recovered[i] != 0 {
-			t.Errorf("bit %d should be 0, got %d", i, recovered[i])
+		if bits.Bit(recovered[:], i) != 0 {
+			t.Errorf("bit %d should be 0, got %d", i, bits.Bit(recovered[:], i))
 		}
 	}
 }
@@ -156,7 +154,7 @@ func TestCACHDeinterleave_WithDecodeCACH(t *testing.T) {
 	cach.TACT.AccessType = true
 	cach.TACT.TDMAChannel = false
 	for i := 0; i < layer2.CACHPayloadBits; i++ {
-		cach.Payload[i] = bit.Bit(i % 2)
+		bits.SetBit(cach.Payload[:], i, byte(i%2))
 	}
 
 	logical := must(cach.Encode())
@@ -171,8 +169,8 @@ func TestCACHDeinterleave_WithDecodeCACH(t *testing.T) {
 		t.Error("TDMAChannel should be false")
 	}
 	for i := 0; i < layer2.CACHPayloadBits; i++ {
-		if decoded.Payload[i] != bit.Bit(i%2) {
-			t.Errorf("payload bit %d: got %d, want %d", i, decoded.Payload[i], i%2)
+		if got := bits.Bit(decoded.Payload[:], i); got != byte(i%2) {
+			t.Errorf("payload bit %d: got %d, want %d", i, got, i%2)
 		}
 	}
 }
@@ -180,15 +178,15 @@ func TestCACHDeinterleave_WithDecodeCACH(t *testing.T) {
 func TestCACHInterleave_InverseConsistency(t *testing.T) {
 	t.Parallel()
 	for i := 0; i < layer2.CACHBits; i++ {
-		var logical [layer2.CACHBits]bit.Bit
-		logical[i] = 1
+		var logical [3]byte
+		bits.SetBit(logical[:], i, 1)
 
 		tx := layer2.CACHInterleave(logical)
 
 		count := 0
 		txPos := -1
 		for j := 0; j < layer2.CACHBits; j++ {
-			if tx[j] == 1 {
+			if bits.Bit(tx[:], j) == 1 {
 				count++
 				txPos = j
 			}
@@ -198,11 +196,11 @@ func TestCACHInterleave_InverseConsistency(t *testing.T) {
 			continue
 		}
 
-		var tx2 [layer2.CACHBits]bit.Bit
-		tx2[txPos] = 1
+		var tx2 [3]byte
+		bits.SetBit(tx2[:], txPos, 1)
 		logical2 := layer2.CACHDeinterleave(tx2)
 
-		if logical2[i] != 1 {
+		if bits.Bit(logical2[:], i) != 1 {
 			t.Errorf("logical[%d] -> tx[%d] -> logical[%d] should be 1", i, txPos, i)
 		}
 	}

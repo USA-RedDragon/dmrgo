@@ -171,7 +171,7 @@ func buildStream(ts1, ts2 []layer2.RawBurst) ([]bit.Bit, int, error) {
 				return nil, 0, err
 			}
 			tx := layer2.CACHInterleave(logical)
-			stream = append(stream, tx[:]...)
+			stream = append(stream, bit.Unpack(tx[:])...)
 			stream = append(stream, bit.Unpack(burst[:])...)
 		}
 	}

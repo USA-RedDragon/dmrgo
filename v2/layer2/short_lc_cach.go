@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -18,8 +17,8 @@ var shortLCFragmentLCSS = [4]enums.LCSS{
 // carry it, in transmit order. Each field carries tact with its LCSS set to
 // First, Continuation, Continuation and Last (ETSI TS 102 361-1 clause
 // 7.1.4).
-func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][CACHBits]bit.Bit, error) {
-	var out [4][CACHBits]bit.Bit
+func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][3]byte, error) {
+	var out [4][3]byte
 	info, err := slc.Encode()
 	if err != nil {
 		return out, err
@@ -28,7 +27,8 @@ func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][CACHBits]bit.Bit,
 	fragments := bptc.EncodeCACH(v >> 4)
 	for i, fragment := range fragments {
 		c := CACH{TACT: tact}
-		bit.PutUint(c.Payload[:], uint64(fragment))
+		p := fragment << 7
+		c.Payload = [3]byte{byte(p >> 16 & 0xFF), byte(p >> 8 & 0xFF), byte(p & 0x80)}
 		c.TACT.LCSS = shortLCFragmentLCSS[i]
 		logical, err := c.Encode()
 		if err != nil {

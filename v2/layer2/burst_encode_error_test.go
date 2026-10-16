@@ -72,8 +72,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 	t.Parallel()
 
-	var stale [32]bit.Bit
-	stale[3] = 1
+	stale := [4]byte{0x10}
 	for _, sync := range []enums.SyncPattern{enums.SyncNone, enums.SyncMSSourcedRC} {
 		t.Run(sync.String(), func(t *testing.T) {
 			t.Parallel()

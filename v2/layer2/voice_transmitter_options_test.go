@@ -24,9 +24,9 @@ func talkerAliasLC() pdu.FullLinkControl {
 	}
 }
 
-func superframeLC(t *testing.T, bursts []layer2.RawBurst, sf int) [4][32]bit.Bit {
+func superframeLC(t *testing.T, bursts []layer2.RawBurst, sf int) [4][4]byte {
 	t.Helper()
-	var frags [4][32]bit.Bit
+	var frags [4][4]byte
 	for i := range frags {
 		b := must(layer2.NewBurstFromBytes(bursts[sf*6+1+i]))
 		frags[i] = b.EmbeddedSignallingData
@@ -57,8 +57,8 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 	if len(calls) != 4 || calls[0] != 0 || calls[3] != 3 {
 		t.Fatalf("hook calls %v", calls)
 	}
-	callFrags := must(encodeFLCBits(&call))
-	aliasFrags := must(encodeFLCBits(&alias))
+	callFrags := must(layer2.EncodeEmbeddedFullLinkControl(&call))
+	aliasFrags := must(layer2.EncodeEmbeddedFullLinkControl(&alias))
 	for sf := 0; sf < 4; sf++ {
 		want := callFrags
 		if sf%2 == 1 {
@@ -68,8 +68,8 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 		if got != want {
 			t.Errorf("superframe %d: wrong embedded LC", sf)
 		}
-		lc, res := decodeFLCBits(got)
-		if res.Uncorrectable || (sf%2 == 1) != (lc.FLCO == enums.FLCOTalkerAliasHeader) {
+		lc := layer2.DecodeEmbeddedFullLinkControl(got, false)
+		if lc.FEC.Uncorrectable || (sf%2 == 1) != (lc.FLCO == enums.FLCOTalkerAliasHeader) {
 			t.Errorf("superframe %d: decoded %s", sf, lc.String())
 		}
 	}
@@ -106,10 +106,10 @@ func TestVoiceTransmitter_SetEmbeddedFragments(t *testing.T) {
 	for n := 0; n < 2*18; n++ {
 		bursts = append(bursts, must(tx.AddSlots(testSlot(n)))...)
 	}
-	if superframeLC(t, bursts, 0) != fragBits(f) {
+	if superframeLC(t, bursts, 0) != f {
 		t.Error("the fragments were not passed through")
 	}
-	if superframeLC(t, bursts, 1) != must(encodeFLCBits(&call)) {
+	if superframeLC(t, bursts, 1) != must(layer2.EncodeEmbeddedFullLinkControl(&call)) {
 		t.Error("the next superframe does not carry the call LC")
 	}
 	for i, raw := range bursts[1:6] {

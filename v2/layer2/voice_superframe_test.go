@@ -105,7 +105,7 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, vo
 		t.Errorf("burst %d: LCSS %s, want %s", i, emb.LCSS.String(), wantLCSS.String())
 	}
 	if pos == 5 && (!layer2.IsNullEmbeddedLC(b.EmbeddedSignallingData) || b.HasReverseChannel()) {
-		t.Errorf("burst %d: burst F carries %x, want the Null embedded message", i, bit.Pack(b.EmbeddedSignallingData[:]))
+		t.Errorf("burst %d: burst F carries %x, want the Null embedded message", i, b.EmbeddedSignallingData)
 	}
 	return b
 }
@@ -150,7 +150,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 				checkLCBurst(t, tx.Header(), lc, enums.DataTypeVoiceLCHeader, cc, dataSync)
 				checkLCBurst(t, tail[5], lc, enums.DataTypeTerminatorWithLC, cc, dataSync)
 
-				var fragments [4][32]bit.Bit
+				var fragments [4][4]byte
 				for i, raw := range bursts {
 					want := [3][72]bit.Bit{slots[3*i], slots[3*i+1], slots[3*i+2]}
 					b := checkVoiceBurst(t, i, raw, want, voiceSync, cc)
@@ -160,8 +160,8 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 					if i%6 != 4 {
 						continue
 					}
-					got, res := decodeFLCBits(fragments)
-					if res.HasErrors() || got.FID != fid ||
+					got := layer2.DecodeEmbeddedFullLinkControl(fragments, false)
+					if res := got.FEC; res.HasErrors() || got.FID != fid ||
 						lcBits(t, got, enums.DataTypeVoiceLCHeader) != lcBits(t, lc, enums.DataTypeVoiceLCHeader) {
 						t.Errorf("burst %d: embedded LC %s (%+v)", i, got.String(), res)
 					}

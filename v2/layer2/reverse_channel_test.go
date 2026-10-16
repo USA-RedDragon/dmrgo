@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -13,15 +14,11 @@ import (
 
 // buildRCEmbeddedData constructs valid 32-bit embedded data for RC with
 // a given 4-bit payload, encoded through Single Burst BPTC with odd parity.
-func buildRCEmbeddedData(payload byte) [32]bit.Bit {
-	var infoBits [11]bit.Bit
-	bit.PutUint(infoBits[0:4], uint64(payload&0x0F))
-	crcVal := crc7Bits(infoBits[:4]) ^ pdu.CRC7MaskRC
-	for i := 0; i < 7; i++ {
-		infoBits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)
-	}
-	var tx [32]bit.Bit
-	bit.PutUint(tx[:], uint64(bptc.EncodeSingleBurst(uint16(bit.Uint(infoBits[:])), true)))
+func buildRCEmbeddedData(payload byte) [4]byte {
+	crcVal := crc.CRC7([]byte{payload << 4}, 4) ^ pdu.CRC7MaskRC
+	info := uint16(payload&0x0F)<<7 | uint16(crcVal&0x7F)
+	var tx [4]byte
+	bits.SetField(tx[:], 0, 32, uint64(bptc.EncodeSingleBurst(info, true)))
 	return tx
 }
 
@@ -82,7 +79,7 @@ func TestRC_CombinedFEC(t *testing.T) {
 func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 	t.Parallel()
 
-	var bitData [264]bit.Bit
+	var packed [33]byte
 
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
@@ -90,13 +87,11 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(embSig.Encode())
-	bits.Unpack(bitData[108:116], embBits[:], 0)
-	bits.Unpack(bitData[148:156], embBits[:], 8)
+	bits.Copy(packed[:], 108, embBits[:], 0, 8)
+	bits.Copy(packed[:], 148, embBits[:], 8, 8)
 
 	rcData := buildRCEmbeddedData(9)
-	copy(bitData[116:148], rcData[:])
-
-	packed := [33]byte(bit.Pack(bitData[:]))
+	bits.Copy(packed[:], 116, rcData[:], 0, 32)
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -116,7 +111,7 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 
 func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 	t.Parallel()
-	var bitData [264]bit.Bit
+	var packed [33]byte
 
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
@@ -124,10 +119,8 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(embSig.Encode())
-	bits.Unpack(bitData[108:116], embBits[:], 0)
-	bits.Unpack(bitData[148:156], embBits[:], 8)
-
-	packed := [33]byte(bit.Pack(bitData[:]))
+	bits.Copy(packed[:], 108, embBits[:], 0, 8)
+	bits.Copy(packed[:], 148, embBits[:], 8, 8)
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -141,7 +134,7 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 
 func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 	t.Parallel()
-	var bitData [264]bit.Bit
+	var packed [33]byte
 
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
@@ -149,10 +142,8 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 		LCSS:                               enums.LCSSFirstFragment,
 	}
 	embBits := must(embSig.Encode())
-	bits.Unpack(bitData[108:116], embBits[:], 0)
-	bits.Unpack(bitData[148:156], embBits[:], 8)
-
-	packed := [33]byte(bit.Pack(bitData[:]))
+	bits.Copy(packed[:], 108, embBits[:], 0, 8)
+	bits.Copy(packed[:], 148, embBits[:], 8, 8)
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -166,14 +157,9 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 
 func TestRC_MsSourcedRcSync_HasEmbeddedSignalling(t *testing.T) {
 	t.Parallel()
-	var bitData [264]bit.Bit
+	var packed [33]byte
 
-	syncVal := int64(enums.SyncMSSourcedRC)
-	for i := 0; i < 48; i++ {
-		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
-	}
-
-	packed := [33]byte(bit.Pack(bitData[:]))
+	bits.SetField64(packed[:], 108, 48, uint64(enums.SyncMSSourcedRC))
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -187,7 +173,7 @@ func TestRC_MsSourcedRcSync_HasEmbeddedSignalling(t *testing.T) {
 
 func TestRC_BurstFECStats_RC(t *testing.T) {
 	t.Parallel()
-	var bitData [264]bit.Bit
+	var packed [33]byte
 
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
@@ -195,13 +181,12 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(embSig.Encode())
-	bits.Unpack(bitData[108:116], embBits[:], 0)
-	bits.Unpack(bitData[148:156], embBits[:], 8)
+	bits.Copy(packed[:], 108, embBits[:], 0, 8)
+	bits.Copy(packed[:], 148, embBits[:], 8, 8)
 
 	rcData := buildRCEmbeddedData(0)
-	copy(bitData[116:148], rcData[:])
+	bits.Copy(packed[:], 116, rcData[:], 0, 32)
 
-	packed := [33]byte(bit.Pack(bitData[:]))
 	burst, _ := layer2.NewBurstFromBytes(packed)
 
 	if burst.FEC.RC.BitsChecked == 0 {
@@ -215,7 +200,7 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 
 func TestRC_String(t *testing.T) {
 	t.Parallel()
-	var bitData [264]bit.Bit
+	var packed [33]byte
 
 	embSig := pdu.EmbeddedSignalling{
 		ColorCode:                          0,
@@ -223,13 +208,12 @@ func TestRC_String(t *testing.T) {
 		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(embSig.Encode())
-	bits.Unpack(bitData[108:116], embBits[:], 0)
-	bits.Unpack(bitData[148:156], embBits[:], 8)
+	bits.Copy(packed[:], 108, embBits[:], 0, 8)
+	bits.Copy(packed[:], 148, embBits[:], 8, 8)
 
 	rcData := buildRCEmbeddedData(5)
-	copy(bitData[116:148], rcData[:])
+	bits.Copy(packed[:], 116, rcData[:], 0, 32)
 
-	packed := [33]byte(bit.Pack(bitData[:]))
 	burst, _ := layer2.NewBurstFromBytes(packed)
 
 	s := burst.String()
@@ -242,7 +226,7 @@ func TestRC_String(t *testing.T) {
 // 84 to 91 and 172 to 179, RC at 92 to 107 and 156 to 171, and the RC SYNC
 // at 108 to 155 (ETSI TS 102 361-1 clause 6.4.1, Table E.12).
 func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
-	var bitData [264]bit.Bit
+	var packed [33]byte
 	embBits := must((&pdu.EmbeddedSignalling{
 		ColorCode: enums.ColorCode(cc),
 		LCSS:      enums.LCSSSingleFragment,
@@ -251,15 +235,12 @@ func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	if err != nil {
 		panic(err)
 	}
-	bits.Unpack(bitData[84:92], embBits[:], 0)
-	copy(bitData[92:108], rcData[:16])
-	syncVal := int64(enums.SyncMSSourcedRC)
-	for i := 0; i < 48; i++ {
-		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
-	}
-	copy(bitData[156:172], rcData[16:])
-	bits.Unpack(bitData[172:180], embBits[:], 8)
-	return [33]byte(bit.Pack(bitData[:]))
+	bits.Copy(packed[:], 84, embBits[:], 0, 8)
+	bits.Copy(packed[:], 92, rcData[:], 0, 16)
+	bits.SetField64(packed[:], 108, 48, uint64(enums.SyncMSSourcedRC))
+	bits.Copy(packed[:], 156, rcData[:], 16, 16)
+	bits.Copy(packed[:], 172, embBits[:], 8, 8)
+	return packed
 }
 
 func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
