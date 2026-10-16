@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -271,15 +270,15 @@ func tinyCACHOps(t *testing.T) []tinyOp {
 
 func tinyFramerOps(t *testing.T, r *rand.Rand) []tinyOp {
 	t.Helper()
-	stream := make([]bit.Bit, 0, 8*264)
+	stream := make([]byte, 0, 8*33)
 	for i := range 8 {
 		raw := tinyDataBurst(t, r, tinyDataTypes[i%len(tinyDataTypes)])
-		stream = bit.AppendUnpack(stream, raw[:])
+		stream = append(stream, raw[:]...)
 	}
 	f := framer.New(framer.Config{Period: 264})
 	dst := make([]framer.Burst, 0, 16)
 	return []tinyOp{
-		{"layer2/framer.Framer.AppendBursts", func() { dst = f.AppendBursts(dst[:0], stream...) }},
+		{"layer2/framer.Framer.AppendBursts", func() { dst = f.AppendBursts(dst[:0], stream) }},
 	}
 }
 
