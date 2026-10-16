@@ -203,7 +203,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	r.fe = newFrontEnd(cfg.Rate, cfg.Signed)
 	r.wide = make([]complex64, int(float64(cfg.MaxWrite/2)/(cfg.Rate/basebandRate))+4)
 	size := (cfg.LookbackSlots + maxGapSlots + 4) * slotSamplesN
-	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz)
+	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, 1)
 	r.spec = newSpectrum()
 	r.search = newSyncSearch()
 	if r.opt.Coherent {
@@ -322,20 +322,21 @@ func (r *Receiver) step(end bool) {
 // searchStep tries the next search positions and reports whether it locked.
 func (r *Receiver) searchStep() bool {
 	ch := &r.chz.ch
-	if r.searchAt < ch.n-int64(len(ch.buf))+slotSamplesN {
-		r.searchAt = ch.n - int64(len(ch.buf)) + slotSamplesN
+	if from := r.chz.oldest() + slotSamplesN; r.searchAt < from {
+		r.searchAt = from
 	}
 	for {
 		if !r.opt.Coherent {
-			t := float64(r.searchAt) + float64(r.chz.delaySym-r.chz.delayCh) + 0.5
-			if int64(t)+syncSymbols*samplesPerSy+2 >= r.chz.sym.n {
+			t := r.symLag(float64(r.searchAt))
+			step := float64(samplesPerSy) / float64(r.chz.discDec)
+			if int64(t+syncSymbols*step)+2 >= r.chz.sym.n {
 				return false
 			}
-			rho, src, data := r.search.discAt(&r.chz.sym, t, r.nsrc)
+			rho, src, data := r.search.discAt(&r.chz.sym, t, step, r.nsrc)
 			if rho >= discLock {
 				best := r.searchAt
 				for k := int64(1); k < 6; k++ {
-					if q, s2, d2 := r.search.discAt(&r.chz.sym, t+float64(k), r.nsrc); q > rho {
+					if q, s2, d2 := r.search.discAt(&r.chz.sym, r.symLag(float64(r.searchAt+k)), step, r.nsrc); q > rho {
 						rho, src, data, best = q, s2, d2, r.searchAt+k
 					}
 				}
@@ -388,9 +389,8 @@ func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
 	r.devScale = 1
 	r.dcHz = 0
 	r.lost = 0
-	ch := &r.chz.ch
 	back := int64(0)
-	for back < int64(r.cfg.LookbackSlots) && r.slotTime(-back-1)-2*slotSamplesN > float64(ch.n-int64(len(ch.buf))) {
+	for back < int64(r.cfg.LookbackSlots) && r.slotTime(-back-1)-2*slotSamplesN > float64(r.chz.oldest()) {
 		back++
 	}
 	r.first = -back
@@ -526,10 +526,10 @@ func (r *Receiver) slot(j int64) *slotState {
 // made progress.
 func (r *Receiver) followStep(end bool) bool {
 	need := r.symTime(r.next, slotSymbols) + float64(2*samplesPerSy+sincTaps)
-	if !end && need >= float64(r.chz.ch.n) {
+	if !end && need >= float64(r.chz.count()) {
 		return false
 	}
-	if end && r.slotTime(r.next) >= float64(r.chz.ch.n) {
+	if end && r.slotTime(r.next) >= float64(r.chz.count()) {
 		return false
 	}
 	j := r.next
@@ -696,10 +696,13 @@ func (r *Receiver) rotAt(t float64) complex128 {
 
 // slotEnergy returns the mean power over the burst of slot s.
 func (r *Receiver) slotEnergy(s *slotState) float64 {
+	n := burstSymbols * samplesPerSy
+	if !r.opt.Coherent {
+		return r.chz.slotEnergyAt(r.symTime(s.index, cachSymbols), n)
+	}
 	ch := &r.chz.ch
 	a := int64(r.symTime(s.index, cachSymbols))
 	var e float64
-	n := burstSymbols * samplesPerSy
 	for i := range int64(n) {
 		v := ch.at(a + i)
 		e += float64(real(v)*real(v) + imag(v)*imag(v))

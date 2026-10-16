@@ -27,7 +27,7 @@ type cpmModel struct {
 // sps samples per symbol and modulation index h (0.27 nominal).
 func newCPMModel(d, sps int, h float64) *cpmModel {
 	m := &cpmModel{d: d, sps: sps, states: 1 << (4 * d), windows: 1 << (4*d + 2)}
-	taps := rrcTapsAt(sps)
+	taps := rrcTapsAt(float64(sps))
 	m.q = make([]float64, len(taps)+1)
 	for i, v := range taps {
 		m.q[i+1] = m.q[i] + v
@@ -71,12 +71,12 @@ func (m *cpmModel) setH(h float64) {
 }
 
 // rrcTapsAt returns rrcTaps for sps samples per symbol.
-func rrcTapsAt(sps int) []float64 {
-	n := 2*rrcSpan*sps + 1
+func rrcTapsAt(sps float64) []float64 {
+	n := int(2*rrcSpan*sps) + 1
 	h := make([]float64, n)
 	var c float64
 	for i := range h {
-		t := float64(i-n/2) / float64(sps)
+		t := float64(i-n/2) / sps
 		switch {
 		case t == 0:
 			h[i] = 1 - rrcAlpha + 4*rrcAlpha/math.Pi
@@ -241,7 +241,7 @@ type phasePulse struct {
 
 // newPhasePulse returns the phase pulse at sps samples per symbol.
 func newPhasePulse(sps int) phasePulse {
-	taps := rrcTapsAt(sps)
+	taps := rrcTapsAt(float64(sps))
 	p := phasePulse{q: make([]float64, len(taps)+1), half: len(taps) / 2}
 	for i, v := range taps {
 		p.q[i+1] = p.q[i] + v
@@ -280,7 +280,7 @@ func (p *phasePulse) refPhaseInto(syms []int, sps int, h float64, out []float64)
 // symbols before and after them are 0: n*sps samples, sample j of symbol k
 // at offset j-sps/2 from its center, phase 0 before the first symbol.
 func refPhase(syms []int, sps int, h float64) []float64 {
-	taps := rrcTapsAt(sps)
+	taps := rrcTapsAt(float64(sps))
 	half := len(taps) / 2
 	q := make([]float64, len(taps)+1)
 	for i, v := range taps {
