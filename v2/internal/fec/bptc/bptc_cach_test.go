@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 )
 
 func TestCACHBPTC_EncodeDecodeRoundTrip(t *testing.T) {
@@ -14,8 +13,8 @@ func TestCACHBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 		info[i] = bit.Bit(i % 2)
 	}
 
-	fragments := bptc.EncodeCACH(info)
-	decoded, fecResult := bptc.DecodeCACH(fragments)
+	fragments := encodeCACH(info)
+	decoded, fecResult := decodeCACH(fragments)
 
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -28,7 +27,7 @@ func TestCACHBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 func TestCACHBPTC_BitsChecked(t *testing.T) {
 	t.Parallel()
 	var fragments [4][17]bit.Bit
-	_, fecResult := bptc.DecodeCACH(fragments)
+	_, fecResult := decodeCACH(fragments)
 	if fecResult.BitsChecked != 68 {
 		t.Errorf("expected BitsChecked=68, got %d", fecResult.BitsChecked)
 	}
@@ -37,8 +36,8 @@ func TestCACHBPTC_BitsChecked(t *testing.T) {
 func TestCACHBPTC_AllZero(t *testing.T) {
 	t.Parallel()
 	var info [36]bit.Bit
-	fragments := bptc.EncodeCACH(info)
-	decoded, fecResult := bptc.DecodeCACH(fragments)
+	fragments := encodeCACH(info)
+	decoded, fecResult := decodeCACH(fragments)
 
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -57,8 +56,8 @@ func TestCACHBPTC_AllOnes(t *testing.T) {
 		info[i] = 1
 	}
 
-	fragments := bptc.EncodeCACH(info)
-	decoded, fecResult := bptc.DecodeCACH(fragments)
+	fragments := encodeCACH(info)
+	decoded, fecResult := decodeCACH(fragments)
 
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -73,12 +72,12 @@ func TestCACHBPTC_AllOnes(t *testing.T) {
 func TestCACHBPTC_FragmentSize(t *testing.T) {
 	t.Parallel()
 	info := cachInfo()
-	fragments := bptc.EncodeCACH(info)
+	fragments := encodeCACH(info)
 
 	for i := range fragments {
 		rx := fragments
 		rx[i][16] ^= 1
-		if got, res := bptc.DecodeCACH(rx); got != info || res.ErrorsCorrected != 1 {
+		if got, res := decodeCACH(rx); got != info || res.ErrorsCorrected != 1 {
 			t.Errorf("fragment %d: data match=%v result=%+v", i, got == info, res)
 		}
 	}
@@ -91,7 +90,7 @@ func TestCACHBPTC_FragmentBitsValid(t *testing.T) {
 	info[15] = 1
 	info[35] = 1
 
-	fragments := bptc.EncodeCACH(info)
+	fragments := encodeCACH(info)
 	for i, frag := range fragments {
 		for j, b := range frag {
 			if b != 0 && b != 1 {
@@ -110,11 +109,11 @@ func TestCACHBPTC_SingleBitErrorCorrection(t *testing.T) {
 	info[20] = 1
 	info[30] = 1
 
-	fragments := bptc.EncodeCACH(info)
+	fragments := encodeCACH(info)
 
 	fragments[0][0] ^= 1
 
-	decoded, fecResult := bptc.DecodeCACH(fragments)
+	decoded, fecResult := decodeCACH(fragments)
 	if fecResult.Uncorrectable {
 		t.Fatal("single bit error should be correctable")
 	}
@@ -133,12 +132,12 @@ func TestCACHBPTC_StabilityEncodeDecode(t *testing.T) {
 		info[i] = bit.Bit((i * 7) % 2)
 	}
 
-	fragments1 := bptc.EncodeCACH(info)
-	decoded, fecResult := bptc.DecodeCACH(fragments1)
+	fragments1 := encodeCACH(info)
+	decoded, fecResult := decodeCACH(fragments1)
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
-	fragments2 := bptc.EncodeCACH(decoded)
+	fragments2 := encodeCACH(decoded)
 
 	if fragments1 != fragments2 {
 		t.Error("encode, decode, encode produced different fragments")
@@ -157,8 +156,8 @@ func TestCACHBPTC_DifferentPatterns(t *testing.T) {
 	}
 
 	for _, info := range patterns {
-		fragments := bptc.EncodeCACH(info)
-		decoded, fecResult := bptc.DecodeCACH(fragments)
+		fragments := encodeCACH(info)
+		decoded, fecResult := decodeCACH(fragments)
 		if fecResult.Uncorrectable {
 			t.Error("unexpected uncorrectable error")
 		}
@@ -171,12 +170,12 @@ func TestCACHBPTC_DifferentPatterns(t *testing.T) {
 func TestCACHBPTC_ColumnParityError(t *testing.T) {
 	t.Parallel()
 	var info [36]bit.Bit
-	fragments := bptc.EncodeCACH(info)
+	fragments := encodeCACH(info)
 
 	fragments[0][0] ^= 1
 	fragments[1][0] ^= 1
 
-	_, fecResult := bptc.DecodeCACH(fragments)
+	_, fecResult := decodeCACH(fragments)
 	if fecResult.ErrorsCorrected == 0 && !fecResult.Uncorrectable {
 		t.Error("expected error detection for multi-bit corruption")
 	}

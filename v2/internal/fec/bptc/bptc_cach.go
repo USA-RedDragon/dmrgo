@@ -1,89 +1,80 @@
 package bptc
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"math/bits"
+
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // The CACH BPTC spreads a 36-bit Short LC PDU over the 17-bit payloads of 4
 // CACH bursts (ETSI TS 102 361-1 clause B.2.3). Rows 0 to 2 of the 4×17
 // encode matrix hold 12 information bits and 5 Hamming(17,12,3) parity bits,
 // and row 3 holds the even parity of each column. The transmit stream reads
-// the encode matrix column by column, top to bottom.
+// the encode matrix column by column, top to bottom, so row r is every
+// fourth bit of the stream from bit r. A row is a uint32 with column c in
+// bit c.
 
-// calculateSyndrome17_12 returns the 5-bit Hamming(17,12,3) syndrome of a
-// 17-bit row, from the parity check matrix H = [Pᵀ | I₅].
-func calculateSyndrome17_12(bits [17]bit.Bit) int {
-	var s [5]bit.Bit
-	s[0] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[6] ^ bits[7] ^ bits[9] ^ bits[12]
-	s[1] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[7] ^ bits[8] ^ bits[10] ^ bits[13]
-	s[2] = bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[8] ^ bits[9] ^ bits[11] ^ bits[14]
-	s[3] = bits[0] ^ bits[1] ^ bits[4] ^ bits[5] ^ bits[7] ^ bits[10] ^ bits[15]
-	s[4] = bits[0] ^ bits[1] ^ bits[2] ^ bits[5] ^ bits[6] ^ bits[8] ^ bits[11] ^ bits[16]
-	return int(s[0]) | int(s[1])<<1 | int(s[2])<<2 | int(s[3])<<3 | int(s[4])<<4
-}
+// Masks of the columns that each Hamming(17,12,3) parity check covers, from
+// the parity check matrix H = [Pᵀ | I₅] (ETSI TS 102 361-1 Table B.13).
+const (
+	h1712Check0 = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<6 | 1<<7 | 1<<9 | 1<<12
+	h1712Check1 = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<7 | 1<<8 | 1<<10 | 1<<13
+	h1712Check2 = 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<8 | 1<<9 | 1<<11 | 1<<14
+	h1712Check3 = 1<<0 | 1<<1 | 1<<4 | 1<<5 | 1<<7 | 1<<10 | 1<<15
+	h1712Check4 = 1<<0 | 1<<1 | 1<<2 | 1<<5 | 1<<6 | 1<<8 | 1<<11 | 1<<16
+)
 
-// parityHamming17_12 returns the 5 Hamming(17,12,3) parity bits of 12 data
-// bits (ETSI TS 102 361-1 Table B.13).
-func parityHamming17_12(data [12]bit.Bit) [5]bit.Bit {
-	return [5]bit.Bit{
-		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[6] ^ data[7] ^ data[9],
-		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[7] ^ data[8] ^ data[10],
-		data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[5] ^ data[8] ^ data[9] ^ data[11],
-		data[0] ^ data[1] ^ data[4] ^ data[5] ^ data[7] ^ data[10],
-		data[0] ^ data[1] ^ data[2] ^ data[5] ^ data[6] ^ data[8] ^ data[11],
-	}
+// cachRowMask covers the 17 columns of a row.
+const cachRowMask = 1<<17 - 1
+
+// rowSyndrome17_12 returns the 5-bit Hamming(17,12,3) syndrome of a row,
+// check k in bit k.
+func rowSyndrome17_12(row uint32) int {
+	return bits.OnesCount32(row&h1712Check0)&1 | bits.OnesCount32(row&h1712Check1)&1<<1 |
+		bits.OnesCount32(row&h1712Check2)&1<<2 | bits.OnesCount32(row&h1712Check3)&1<<3 |
+		bits.OnesCount32(row&h1712Check4)&1<<4
 }
 
 // DecodeCACH decodes a 36-bit Short LC PDU (28 data bits and a CRC-8) from
-// the 17-bit signalling payloads of CACH bursts 0 to 3, in that order, and
-// returns it with a fec.Result.
-func DecodeCACH(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
-	for i := range fragments {
-		lowbit.Mask(fragments[i][:])
-	}
+// the 17-bit signalling payloads of CACH bursts 0 to 3, in that order, each
+// in the low 17 bits with its first bit most significant. It returns the PDU
+// in the low 36 bits, the first most significant, with a fec.Result.
+func DecodeCACH(fragments [4]uint32) (uint64, fec.Result) {
 	result := fec.Result{BitsChecked: 68}
 
-	var stream [68]bit.Bit
-	for i := 0; i < 4; i++ {
-		copy(stream[i*17:(i+1)*17], fragments[i][:])
+	for i := range fragments {
+		fragments[i] &= cachRowMask
+	}
+	head := uint64(fragments[0])<<47 | uint64(fragments[1])<<30 | uint64(fragments[2])<<13 | uint64(fragments[3]>>4)
+	var rows [4]uint32
+	for r := range rows {
+		rows[r] = uint32(bits.Reverse16(compactFourth(head>>(3-r)))) | (fragments[3]>>(3-r)&1)<<16
 	}
 
-	var matrix [4][17]bit.Bit
-	for j := 0; j < 68; j++ {
-		encRow := j % 4
-		encCol := j / 4
-		matrix[encRow][encCol] = stream[j]
+	received := rows
+	correctCACHMatrix(&rows)
+
+	for row := range rows {
+		result.ErrorsCorrected += bits.OnesCount32(rows[row] ^ received[row])
 	}
+	result.Uncorrectable = !cachMatrixValid(&rows)
 
-	received := matrix
-	correctCACHMatrix(&matrix)
-
-	for row := range matrix {
-		for col := range matrix[row] {
-			result.ErrorsCorrected += int(matrix[row][col] ^ received[row][col])
-		}
+	var info uint64
+	for row := range 3 {
+		info = info<<12 | uint64(bits.Reverse16(uint16(rows[row]&0xFFF))>>4)
 	}
-	result.Uncorrectable = !cachMatrixValid(&matrix)
-
-	var info [36]bit.Bit
-	for row := 0; row < 3; row++ {
-		copy(info[row*12:(row+1)*12], matrix[row][:12])
-	}
-
 	return info, result
 }
 
 // correctCACHMatrix corrects the 4×17 product code in place. When only one
 // row has a nonzero syndrome, the failing column parities give the error
 // positions in that row; otherwise each row is corrected for one error.
-func correctCACHMatrix(matrix *[4][17]bit.Bit) {
-	for pass := 0; pass < 3; pass++ {
+func correctCACHMatrix(rows *[4]uint32) {
+	for range 3 {
 		var syndromes [4]int
 		badRow, badRows := 0, 0
-		for row := range matrix {
-			syndromes[row] = calculateSyndrome17_12(matrix[row])
+		for row := range rows {
+			syndromes[row] = rowSyndrome17_12(rows[row])
 			if syndromes[row] != 0 {
 				badRow = row
 				badRows++
@@ -92,20 +83,18 @@ func correctCACHMatrix(matrix *[4][17]bit.Bit) {
 
 		fixing := false
 		if badRows == 1 {
-			for col := 0; col < 17; col++ {
-				if cachColumnParity(matrix, col) != 0 {
-					matrix[badRow][col] ^= 1
-					fixing = true
-				}
+			if parity := cachColumnParity(rows); parity != 0 {
+				rows[badRow] ^= parity
+				fixing = true
 			}
 		}
 		if !fixing {
-			for row := range matrix {
+			for row := range rows {
 				if syndromes[row] == 0 {
 					continue
 				}
 				if errPos := hamming17_12_syndrome_table[syndromes[row]]; errPos >= 0 {
-					matrix[row][errPos] ^= 1
+					rows[row] ^= 1 << errPos
 					fixing = true
 				}
 			}
@@ -117,60 +106,57 @@ func correctCACHMatrix(matrix *[4][17]bit.Bit) {
 	}
 }
 
-func cachColumnParity(matrix *[4][17]bit.Bit, col int) bit.Bit {
-	return matrix[0][col] ^ matrix[1][col] ^ matrix[2][col] ^ matrix[3][col]
+// cachColumnParity returns the parity of each column over the 4 rows.
+func cachColumnParity(rows *[4]uint32) uint32 {
+	return (rows[0] ^ rows[1] ^ rows[2] ^ rows[3]) & cachRowMask
 }
 
-func cachMatrixValid(matrix *[4][17]bit.Bit) bool {
-	for row := range matrix {
-		if calculateSyndrome17_12(matrix[row]) != 0 {
+func cachMatrixValid(rows *[4]uint32) bool {
+	for row := range rows {
+		if rowSyndrome17_12(rows[row]) != 0 {
 			return false
 		}
 	}
-	for col := 0; col < 17; col++ {
-		if cachColumnParity(matrix, col) != 0 {
-			return false
-		}
-	}
-	return true
+	return cachColumnParity(rows) == 0
 }
 
-// EncodeCACH encodes a 36-bit Short LC PDU into the 17-bit signalling
-// payloads of 4 CACH bursts.
-func EncodeCACH(info [36]bit.Bit) [4][17]bit.Bit {
-	lowbit.Mask(info[:])
-	var matrix [4][17]bit.Bit
-
-	for row := 0; row < 3; row++ {
-		copy(matrix[row][:12], info[row*12:(row+1)*12])
+// EncodeCACH encodes the 36-bit Short LC PDU in the low bits of info, the
+// first most significant, into the 17-bit signalling payloads of 4 CACH
+// bursts, as DecodeCACH takes them.
+func EncodeCACH(info uint64) [4]uint32 {
+	var rows [4]uint32
+	for row := range 3 {
+		data := uint32(bits.Reverse16(uint16(info>>(24-12*row)&0xFFF) << 4))
+		rows[row] = data | uint32(rowSyndrome17_12(data)&0x1F)<<12
 	}
+	rows[3] = rows[0] ^ rows[1] ^ rows[2]
 
-	for row := 0; row < 3; row++ {
-		var data [12]bit.Bit
-		copy(data[:], matrix[row][:12])
-		parity := parityHamming17_12(data)
-		matrix[row][12] = parity[0]
-		matrix[row][13] = parity[1]
-		matrix[row][14] = parity[2]
-		matrix[row][15] = parity[3]
-		matrix[row][16] = parity[4]
+	var head uint64
+	var tail uint32
+	for r, row := range rows {
+		head |= spreadFourth(bits.Reverse16(uint16(row&0xFFFF))) << (3 - r)
+		tail |= (row >> 16 & 1) << (3 - r)
 	}
-
-	for col := 0; col < 17; col++ {
-		matrix[3][col] = matrix[0][col] ^ matrix[1][col] ^ matrix[2][col]
+	return [4]uint32{
+		uint32(head >> 47 & cachRowMask), uint32(head >> 30 & cachRowMask), uint32(head >> 13 & cachRowMask),
+		uint32(head&(1<<13-1))<<4 | tail,
 	}
+}
 
-	var stream [68]bit.Bit
-	for j := 0; j < 68; j++ {
-		encRow := j % 4
-		encCol := j / 4
-		stream[j] = matrix[encRow][encCol]
-	}
+// compactFourth returns bits 0, 4, 8 and so on to 60 of x as bits 0 to 15.
+func compactFourth(x uint64) uint16 {
+	x &= 0x1111111111111111
+	x = (x | x>>3) & 0x0303030303030303
+	x = (x | x>>6) & 0x000F000F000F000F
+	x = (x | x>>12) & 0x000000FF000000FF
+	return uint16((x | x>>24) & 0xFFFF)
+}
 
-	var fragments [4][17]bit.Bit
-	for i := 0; i < 4; i++ {
-		copy(fragments[i][:], stream[i*17:(i+1)*17])
-	}
-
-	return fragments
+// spreadFourth returns bits 0 to 15 of x as bits 0, 4, 8 and so on to 60.
+func spreadFourth(x uint16) uint64 {
+	v := uint64(x)
+	v = (v | v<<24) & 0x000000FF000000FF
+	v = (v | v<<12) & 0x000F000F000F000F
+	v = (v | v<<6) & 0x0303030303030303
+	return (v | v<<3) & 0x1111111111111111
 }
