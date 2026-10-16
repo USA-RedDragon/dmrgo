@@ -5,7 +5,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -40,8 +39,8 @@ func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, erro
 	if opts == nil {
 		opts = &VoiceTransmitterOptions{}
 	}
-	silence := opts.Silence
-	lowbit.Mask(silence[:])
+	var silence [9]byte
+	packBits(silence[:], opts.Silence[:])
 	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {
 		return nil, fmt.Errorf("unknown sync source %d", opts.Source)
@@ -120,7 +119,7 @@ func (t *VoiceTransmitter) SetEmbeddedFragments(f [4][4]byte) error {
 	if t.terminated {
 		return ErrVoiceTerminated
 	}
-	t.nextLC, t.hasNextLC = fragmentBits(f), true
+	t.nextLC, t.hasNextLC = fragmentWords(f), true
 	return nil
 }
 
