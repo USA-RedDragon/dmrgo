@@ -58,16 +58,18 @@ func (f *fft) transform(x []complex64) {
 // spectrum estimates the carrier frequency and the C/N of the strongest
 // channel-wide signal in the wide baseband from a Welch power spectrum.
 type spectrum struct {
-	f      *fft
-	win    []float32
-	frame  []complex64
+	f *fft
+	// win holds the window from its middle out: sample i and fftSize-i
+	// take win[min(i, fftSize-i)].
+	win []float32
+	// hist holds the samples of the frame, and save the second half while
+	// the transform runs in hist.
 	hist   []complex64
+	save   []complex64
 	fill   int
 	power  []float32
 	frames int
-	// pass holds the power of the passband bins from -passBins to
-	// passBins, and sorted the same in increasing order.
-	pass   []float32
+	// sorted holds the power of the passband bins in increasing order.
 	sorted []float32
 	// Hz, CN and OK hold the last estimate: carrier offset, C/N in dB in
 	// 12.5 kHz, and whether a signal stands above the noise.
@@ -78,9 +80,8 @@ type spectrum struct {
 
 // newSpectrum returns an estimator with no frames yet.
 func newSpectrum() *spectrum {
-	s := &spectrum{f: newFFT(fftSize), win: make([]float32, fftSize), frame: make([]complex64, fftSize),
-		hist: make([]complex64, fftSize), power: make([]float32, fftSize),
-		pass: make([]float32, 2*passBins+1), sorted: make([]float32, 2*passBins+1)}
+	s := &spectrum{f: newFFT(fftSize), win: make([]float32, fftSize/2+1), hist: make([]complex64, fftSize),
+		save: make([]complex64, fftSize/2), power: make([]float32, fftSize), sorted: make([]float32, 2*passBins+1)}
 	for i := range s.win {
 		s.win[i] = float32(0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/fftSize))
 	}
@@ -95,15 +96,16 @@ func (s *spectrum) push(v complex64) bool {
 	if s.fill < fftSize {
 		return false
 	}
-	for i := range s.frame {
-		s.frame[i] = s.hist[i] * complex(s.win[i], 0)
+	copy(s.save, s.hist[fftSize/2:])
+	for i := range s.hist {
+		s.hist[i] *= complex(s.win[min(i, fftSize-i)], 0)
 	}
-	copy(s.hist, s.hist[fftSize/2:])
-	s.fill = fftSize / 2
-	s.f.transform(s.frame)
-	for i, x := range s.frame {
+	s.f.transform(s.hist)
+	for i, x := range s.hist {
 		s.power[i] += real(x)*real(x) + imag(x)*imag(x)
 	}
+	copy(s.hist, s.save)
+	s.fill = fftSize / 2
 	s.frames++
 	switch {
 	case s.frames == specFrames:
@@ -123,22 +125,21 @@ func (s *spectrum) push(v complex64) bool {
 // passband bins away from that span, and the centroid of the excess.
 func (s *spectrum) estimate() {
 	bin := float64(basebandRate) / fftSize
-	pass := s.pass
+	pass := func(k int) float64 { return float64(s.power[(k+fftSize)%fftSize]) }
 	for k := -passBins; k <= passBins; k++ {
-		pass[k+passBins] = s.power[(k+fftSize)%fftSize]
+		s.sorted[k+passBins] = s.power[(k+fftSize)%fftSize]
 	}
-	copy(s.sorted, pass)
 	slices.Sort(s.sorted)
 	floor := float64(s.sorted[len(s.sorted)/4])
 	half := int(channelHz / 2 / bin)
 	limit := passBins - half
 	var e float64
 	for k := -limit - half; k <= -limit+half; k++ {
-		e += float64(pass[k+passBins]) - floor
+		e += pass(k) - floor
 	}
 	best, center := e, -limit
 	for c := -limit + 1; c <= limit; c++ {
-		e += float64(pass[c+half+passBins]) - float64(pass[c-half-1+passBins])
+		e += pass(c+half) - pass(c-half-1)
 		if e > best {
 			best, center = e, c
 		}
@@ -147,7 +148,7 @@ func (s *spectrum) estimate() {
 	var n int
 	for k := -passBins; k <= passBins; k++ {
 		if k < center-half-8 || k > center+half+8 {
-			sum += float64(pass[k+passBins])
+			sum += pass(k)
 			n++
 		}
 	}
@@ -156,7 +157,7 @@ func (s *spectrum) estimate() {
 	}
 	var num, den float64
 	for k := center - half; k <= center+half; k++ {
-		e := float64(pass[k+passBins]) - floor
+		e := pass(k) - floor
 		num += e * float64(k)
 		den += e
 	}
