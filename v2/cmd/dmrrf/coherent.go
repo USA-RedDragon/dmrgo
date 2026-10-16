@@ -213,13 +213,17 @@ func (t *trellis) forward(j int, lp []float32, scale, mu float32) {
 	sps, ns := m.sps, m.states
 	shift := 4 * m.d
 	seg := t.x[j*sps : (j+1)*sps]
-	for w := range m.windows {
+	for w := range m.windows / 2 {
 		tp := m.tpl[w*sps : (w+1)*sps]
-		var c complex64
+		var ac, bd, ad, bc float32
 		for i, v := range seg {
-			c += v * tp[i]
+			ac += real(v) * real(tp[i])
+			bd += imag(v) * imag(tp[i])
+			ad += real(v) * imag(tp[i])
+			bc += imag(v) * real(tp[i])
 		}
-		t.corr[w] = c
+		t.corr[w] = complex(ac-bd, ad+bc)
+		t.corr[m.windows-1-w] = complex(ac+bd, bc-ad)
 	}
 	alpha := t.alpha[j*ns : (j+1)*ns]
 	next := t.alpha[(j+1)*ns : (j+2)*ns]
@@ -229,7 +233,8 @@ func (t *trellis) forward(j int, lp []float32, scale, mu float32) {
 		best, bd := negInf, 0
 		for d0 := range 4 {
 			w := d0<<shift | s2
-			v := scale*real(t.rot[w>>2]*t.corr[w]) + bonus
+			ro, c := t.rot[w>>2], t.corr[w]
+			v := scale*(real(ro)*real(c)-imag(ro)*imag(c)) + bonus
 			bm[w] = v
 			if a := alpha[w>>2] + v; a > best {
 				best, bd = a, d0
