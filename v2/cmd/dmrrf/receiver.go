@@ -206,11 +206,12 @@ type Receiver struct {
 	streams int
 	rep     *repairer
 	// scratchRec holds a slot record while repairEntry detects a voice
-	// burst again.
-	scratchRec slotRec
-	known      [layer2.BurstBits]bool
+	// burst again, and known the burst bits it fixed, for the tiers that
+	// refine.
+	scratchRec *slotRec
+	known      *[layer2.BurstBits]bool
 	// freqTot holds the anchor scores of the carrier offsets of bestFreq.
-	freqTot [64]float64
+	freqTot []float64
 	h       float64
 	// OffsetHz is the carrier offset of the last locked stream.
 	OffsetHz float64
@@ -265,6 +266,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	}
 	if r.opt.Coherent {
 		r.scr = make([]complex64, (fillChunk+1)*samplesPerSy/dec+2*sincTaps+4)
+		r.freqTot = make([]float64, 2*20+1)
 		r.pulse = newPhasePulse(samplesPerSy / dec)
 		r.corrX = make([]complex64, syncSpan/dec)
 	}
@@ -274,6 +276,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 		if r.opt.RefinePrior > 0 {
 			r.refined = newSymStore(maxGapSlots + 1)
 			r.prior = make([]float32, slotSymbols*4)
+			r.scratchRec, r.known = new(slotRec), new([layer2.BurstBits]bool)
 		}
 	} else {
 		r.syms = newSymStore(1)
@@ -1071,7 +1074,7 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	r.rep.repair(e, cc, ccOK)
 	j := e.rec.index
 	s := r.slot(j)
-	if r.opt.RefinePrior == 0 || !r.opt.Coherent || s.index != j || !r.rep.voiceBits(e, &r.known) {
+	if r.opt.RefinePrior == 0 || !r.opt.Coherent || s.index != j || !r.rep.voiceBits(e, r.known) {
 		return
 	}
 	bits := bit.Unpack264(e.out.Fixed)
@@ -1115,7 +1118,7 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		r.coherentBurst(j)
 	}
 	s.hasPrior = false
-	rec := &r.scratchRec
+	rec := r.scratchRec
 	r.fill264(s, rec)
 	r.refining = false
 	e.rec.llr, e.rec.cachLLR = rec.llr, rec.cachLLR
