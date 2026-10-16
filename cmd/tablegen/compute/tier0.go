@@ -139,44 +139,6 @@ func ReverseConstellation() [][]int8 {
 	return rev
 }
 
-// VocoderTables computes the positions in the 72-bit AMBE frame of the
-// 24 A, 23 B and 25 C codeword bits. The positions step by 4 and wrap at 72 to
-// the next start column, from A through B to C.
-func VocoderTables() (aTable, bTable, cTable []int) {
-	aTable = make([]int, 24)
-	pos := 0
-	for i := 0; i < 24; i++ {
-		aTable[i] = pos
-		pos += 4
-		if pos >= 72 {
-			pos -= 72
-			pos++
-		}
-	}
-
-	bTable = make([]int, 23)
-	for i := 0; i < 23; i++ {
-		bTable[i] = pos
-		pos += 4
-		if pos >= 72 {
-			pos -= 72
-			pos++
-		}
-	}
-
-	cTable = make([]int, 25)
-	for i := 0; i < 25; i++ {
-		cTable[i] = pos
-		pos += 4
-		if pos >= 72 {
-			pos -= 72
-			pos++
-		}
-	}
-
-	return aTable, bTable, cTable
-}
-
 // Hamming16_11Syndrome computes the bit position of a single-bit
 // error for each 5-bit syndrome of the Hamming(16,11,4) code of the embedded
 // signalling BPTC. A syndrome that matches no bit maps to -1 (ETSI TS 102
