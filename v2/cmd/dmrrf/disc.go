@@ -78,9 +78,17 @@ func (r *Receiver) measureDisc(s *slotState) {
 }
 
 // discDetect sets the symbol log-likelihoods of slot s from the
-// discriminator output, as Gaussian around the four levels.
+// discriminator output, as Gaussian around the four levels, with a click
+// outlier of Options.DiscOutlier spread over the basebandRate Hz of the
+// discriminator range as their floor.
 func (r *Receiver) discDetect(s *slotState) {
-	g := -1 / float32(2*math.Max(r.discNoise, 1))
+	v := math.Max(r.discNoise, 1)
+	g := -1 / float32(2*v)
+	po := r.opt.DiscOutlier
+	floor := float32(math.Inf(-1))
+	if po > 0 {
+		floor = float32(math.Log(po/basebandRate) - math.Log((1-po)/math.Sqrt(2*math.Pi*v)))
+	}
 	dc, dev := float32(r.dcHz), float32(r.devScale*deviationHz)
 	t0 := r.symLag(r.symTime(s.index, 0))
 	base := int64(math.Floor(t0))
@@ -91,7 +99,7 @@ func (r *Receiver) discDetect(s *slotState) {
 		x := r.chz.sym.lerpFrom(base, u+float32(k)*du) - dc
 		for d := range a {
 			e := x - dev*float32(2*d-3)
-			a[d] = e * e * g
+			a[d] = max(e*e*g, floor)
 		}
 		st.set(p+k, a[:])
 	}

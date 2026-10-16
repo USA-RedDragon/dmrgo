@@ -57,6 +57,10 @@ type Options struct {
 	// block floating point and keeps no copy of the wide input: a retune
 	// rotates the samples it holds instead of filtering the input again.
 	CompactChannel bool
+	// DiscOutlier is the share of discriminator samples that a click
+	// throws anywhere in the band. It puts a floor under the symbol
+	// log-likelihoods, so that a click does not make a confident error.
+	DiscOutlier float64
 	// Sources is the number of SYNC sources the search tries: 2 for BS
 	// and MS, 4 with both direct mode slots.
 	Sources int
@@ -64,7 +68,7 @@ type Options struct {
 
 // TierOptions returns the settings of tier t.
 func TierOptions(t Tier) Options {
-	o := Options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 6000, Sources: 2}
+	o := Options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 6000, DiscOutlier: 0.01, Sources: 2}
 	o.SoftFEC, o.GridBPTC = true, true
 	switch t {
 	case TierDisc:
