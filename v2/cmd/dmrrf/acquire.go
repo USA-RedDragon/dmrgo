@@ -316,23 +316,23 @@ func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rh
 		}
 	}
 	var mx, xx float32
-	for _, v := range x {
+	var sxy [numSources]float32
+	for k, v := range x {
 		mx += v
 		xx += v * v
+		for i := range sxy {
+			sxy[i] += s.dev[i][k] * v
+		}
 	}
 	sxx := xx - mx*mx/syncSymbols
 	if sxx <= 0 {
 		return 0, 0, false
 	}
-	var best, bestSxy float32
+	var best float32
 	for i := range nsrc {
-		var sxy float32
-		for k, p := range s.dev[i] {
-			sxy += p * x[k]
-		}
-		if q := sxy * sxy / s.devSq[i]; q > best {
-			best, bestSxy, src = q, sxy, i
+		if q := sxy[i] * sxy[i] / s.devSq[i]; q > best {
+			best, src = q, i
 		}
 	}
-	return best / sxx, src, bestSxy < 0
+	return best / sxx, src, sxy[src] < 0
 }
