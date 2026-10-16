@@ -5,6 +5,7 @@ import (
 	"math/cmplx"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	pbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -88,7 +89,8 @@ func symbolsFromBits(bits []bit.Bit) []int {
 
 // symbolsFromBurst maps the 264 bits of a burst to 132 symbols.
 func symbolsFromBurst(b [33]byte) []int {
-	bits := bit.Unpack264(b)
+	var bits [264]bit.Bit
+	pbits.Unpack(bits[:], b[:], 0)
 	return symbolsFromBits(bits[:])
 }
 
@@ -168,7 +170,8 @@ func ModulateBS(slots []BSSlot) (freq, env []float64) {
 	for i, s := range slots {
 		t0 := ramp + float64(i)*slotSeconds
 		put(t0, symbolsFromBits(s.CACH[:]))
-		b := bit.Unpack264(s.Burst)
+		var b [264]bit.Bit
+		pbits.Unpack(b[:], s.Burst[:], 0)
 		put(t0+float64(cachSymbols)/symbolRate, symbolsFromBits(b[:]))
 	}
 	env = make([]float64, n)

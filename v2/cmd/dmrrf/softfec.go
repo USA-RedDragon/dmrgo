@@ -10,6 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	pbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -309,7 +310,8 @@ func softPutSmall(r *layer2.RawBurst, c *softSmallCode, cw uint32) {
 
 // softBurstImage returns the bits of r as a field image.
 func softBurstImage(r *layer2.RawBurst) []bit.Bit {
-	b := bit.Unpack264(*r)
+	var b [264]bit.Bit
+	pbits.Unpack(b[:], r[:], 0)
 	return b[:]
 }
 
