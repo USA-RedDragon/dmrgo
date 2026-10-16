@@ -1,9 +1,6 @@
 package layer2
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
@@ -106,11 +103,13 @@ type VoiceTransmitter struct {
 	terminated bool
 }
 
-func lcDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
+// newLCDataBurst returns the Voice LC Header or Terminator with LC burst of
+// lc for a VoiceTransmitter.
+func newLCDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
 	lc.BurstDataType = dataType
 	r, err := BuildBurst(&lc, colorCode, src)
 	if err != nil {
-		return RawBurst{}, fmt.Errorf("cannot encode full link control: %w", err)
+		return RawBurst{}, newWrappedError("cannot encode full link control", err)
 	}
 	return r, nil
 }
@@ -130,7 +129,7 @@ func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 		return ErrVoiceTerminated
 	}
 	if !t.outbound {
-		return errors.New("only a BS-sourced voice burst F carries a reverse channel")
+		return errRCNotOutbound
 	}
 	d, err := encodeRC(&rc)
 	if err != nil {
@@ -158,7 +157,7 @@ func (t *VoiceTransmitter) AppendSlots(dst []RawBurst, slots ...[72]bit.Bit) ([]
 	for i := range slots {
 		var slot [9]byte
 		packBits(slot[:], slots[i][:])
-		if dst, err = t.addSlot(dst, &slot); err != nil {
+		if dst, err = t.appendSlot(dst, &slot); err != nil {
 			return dst, err
 		}
 	}
@@ -184,15 +183,15 @@ func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFr
 		var f [7]byte
 		packBits(f[:], frames[i][:])
 		slot := ambe.Encode(f)
-		if dst, err = t.addSlot(dst, &slot); err != nil {
+		if dst, err = t.appendSlot(dst, &slot); err != nil {
 			return dst, err
 		}
 	}
 	return dst, nil
 }
 
-// addSlot adds one slot and appends the burst that it completes to dst.
-func (t *VoiceTransmitter) addSlot(dst []RawBurst, slot *[9]byte) ([]RawBurst, error) {
+// appendSlot adds one slot and appends the burst that it completes to dst.
+func (t *VoiceTransmitter) appendSlot(dst []RawBurst, slot *[9]byte) ([]RawBurst, error) {
 	t.slots[t.pending] = *slot
 	t.pending++
 	if t.pending < VoiceSlotsPerBurst {
@@ -208,7 +207,8 @@ func (t *VoiceTransmitter) addSlot(dst []RawBurst, slot *[9]byte) ([]RawBurst, e
 // Terminate ends the transmission. It fills the last burst and then the last
 // superframe with the silence slot and returns those bursts followed by the
 // Terminator with LC. A transmission without voice bursts ends with the
-// terminator alone. Later calls return ErrVoiceTerminated.
+// terminator alone. Later calls return ErrVoiceTerminated. It allocates the
+// slice; AppendTerminate does not.
 func (t *VoiceTransmitter) Terminate() ([]RawBurst, error) {
 	if t.terminated {
 		return nil, ErrVoiceTerminated
@@ -272,7 +272,7 @@ func (t *VoiceTransmitter) flush() (RawBurst, error) {
 		}
 		embBits, err := emb.Encode()
 		if err != nil {
-			return RawBurst{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
+			return RawBurst{}, newWrappedError("cannot encode embedded signalling", err)
 		}
 		r.setField(embFirstStart, 8, embSecondStart, 8, bit.Uint(embBits[:]))
 		r.setField(embeddedDataStart, 16, embeddedDataStart+16, 16, uint64(data))

@@ -54,10 +54,10 @@ func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, erro
 		lcHook:    opts.EmbeddedLC,
 	}
 	var err error
-	if t.header, err = lcDataBurst(opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, opts.Source); err != nil {
+	if t.header, err = newLCDataBurst(opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, opts.Source); err != nil {
 		return nil, err
 	}
-	if t.terminator, err = lcDataBurst(opts.LC, enums.DataTypeTerminatorWithLC, opts.ColorCode, opts.Source); err != nil {
+	if t.terminator, err = newLCDataBurst(opts.LC, enums.DataTypeTerminatorWithLC, opts.ColorCode, opts.Source); err != nil {
 		return nil, err
 	}
 	if t.callLC, err = encodeEmbeddedFullLinkControl(&opts.LC); err != nil {
@@ -82,7 +82,8 @@ func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmi
 }
 
 // Headers returns the bursts sent before the first voice burst: the Voice
-// LC Header, then the PI Header when the options set one.
+// LC Header, then the PI Header when the options set one. It allocates the
+// slice; AppendHeaders does not.
 func (t *VoiceTransmitter) Headers() []RawBurst {
 	return t.AppendHeaders(make([]RawBurst, 0, 2))
 }
@@ -133,7 +134,7 @@ func (t *VoiceTransmitter) startSuperframe() error {
 		if lc := t.lcHook(n); lc != nil {
 			var err error
 			if frags, err = encodeEmbeddedFullLinkControl(lc); err != nil {
-				return fmt.Errorf("superframe %d embedded LC: %w", n, err)
+				return newSuperframeLCError(n, err)
 			}
 		}
 	}

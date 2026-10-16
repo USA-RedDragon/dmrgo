@@ -269,7 +269,7 @@ func (f *Framer) trim() {
 		return
 	}
 	keep = min(keep, len(f.buf))
-	f.buf = append(f.buf[:0], f.buf[keep:]...)
+	f.buf = f.buf[:copy(f.buf, f.buf[keep:])]
 	f.base += int64(keep)
 	f.next -= keep
 	f.search -= keep
