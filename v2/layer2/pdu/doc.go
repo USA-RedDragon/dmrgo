@@ -36,6 +36,11 @@
 // it with CSBK.SetBSOutboundActivation or CSBK.SetTalkgroupDataGrantMultiItem.
 // When the CSBK comes from a burst, CSBK.Hint0x38 gives the likely meaning.
 //
+// The radio check, call alert and call alert acknowledgement of the
+// Motorola feature set (FID 0x10) also stay in RawPayload. Read them with
+// CSBK.AsMotorolaRadioCheck, CSBK.AsMotorolaCallAlert and
+// CSBK.AsMotorolaCallAlertAck, and set them with the matching Set methods.
+//
 // The header of a grant, C_MOVE or C_BCAST MBC carries the CSBK payload of
 // its opcode (ETSI TS 102 361-4 clause 7.1.1.1). DecodeMBCContinuation
 // decodes every continuation block in the same way, because the layout
