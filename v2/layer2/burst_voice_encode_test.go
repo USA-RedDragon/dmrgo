@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -29,9 +29,9 @@ func TestBurstEncode_KeepsNonAMBEVoiceSlots(t *testing.T) {
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	changed := 0
 	for n := range 600 {
-		var slot [72]bit.Bit
-		for i := range slot {
-			slot[i] = bit.Bit(rng.Intn(2))
+		var slot [9]byte
+		for i := range 72 {
+			bits.SetBit(slot[:], i, byte(rng.Intn(2)))
 		}
 		bursts := must(tx.AddSlots(slot))
 		for _, raw := range bursts {
@@ -56,8 +56,8 @@ func noisyAMBEBurst(t *testing.T) (clean, noisy [33]byte, info [3]vocoder.AMBEFr
 	t.Helper()
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
 	for i := range info {
-		for j := range info[i] {
-			info[i][j] = bit.Bit((i + j*5) >> 1 & 1)
+		for j := range 49 {
+			bits.SetBit(info[i][:], j, byte((i+j*5)>>1&1))
 		}
 	}
 	clean = must(tx.AddFrames(info[:]...))[0]

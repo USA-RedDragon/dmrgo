@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -48,8 +48,8 @@ func benchVoiceBursts(b *testing.B) []layer2.RawBurst {
 	for i := range out {
 		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 		for j := range frames {
-			for k := range frames[j] {
-				frames[j][k] = bit.Bit(r.Intn(2))
+			for k := range 49 {
+				bits.SetBit(frames[j][:], k, byte(r.Intn(2)))
 			}
 		}
 		pos := enums.VoiceBurstType(int(enums.VoiceBurstA) + i%6)
@@ -201,7 +201,7 @@ func BenchmarkRawBurst(b *testing.B) {
 		var rb layer2.RawBurst
 		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 		for b.Loop() {
-			frames[0][0] ^= 1
+			frames[0][0] ^= 0x80
 			rb.SetAMBEFrames(frames)
 		}
 	})

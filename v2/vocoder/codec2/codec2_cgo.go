@@ -14,7 +14,6 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
@@ -43,7 +42,7 @@ type Codec struct {
 	mode     Mode
 	fid      enums.FeatureSetID
 	nbytes   int
-	silence  [72]bit.Bit
+	silence  [9]byte
 	frame    [72 / 8]byte
 	cleanup  runtime.Cleanup
 }
@@ -112,19 +111,19 @@ func New(cfg Config) (*Codec, error) {
 
 // newSilence returns 20 ms of silence, encoded by a fresh encoder of mode
 // cmode into nbytes bytes.
-func newSilence(cmode C.int, nbytes int) ([72]bit.Bit, error) {
+func newSilence(cmode C.int, nbytes int) ([9]byte, error) {
 	libMu.Lock()
 	defer libMu.Unlock()
 	st := C.codec2_create(cmode)
 	if st == nil {
-		return [72]bit.Bit{}, errCreate
+		return [9]byte{}, errCreate
 	}
 	defer C.codec2_destroy(st)
 	var pcm [FrameSamples]C.short
-	var buf [72 / 8]byte
-	frame := buf[:nbytes]
-	C.codec2_encode(st, (*C.uchar)(unsafe.Pointer(&frame[0])), &pcm[0])
-	return packSlot(frame), nil
+	var slot [9]byte
+	C.codec2_encode(st, (*C.uchar)(unsafe.Pointer(&slot[0])), &pcm[0])
+	clear(slot[nbytes:])
+	return slot, nil
 }
 
 // FrameSamples returns FrameSamples.
@@ -138,29 +137,31 @@ func (c *Codec) FID() enums.FeatureSetID { return c.fid }
 
 // Silence returns 20 ms of digital silence encoded with a fresh encoder
 // state in the configured mode.
-func (c *Codec) Silence() [72]bit.Bit { return c.silence }
+func (c *Codec) Silence() [9]byte { return c.silence }
 
 // Encode encodes exactly FrameSamples samples into one 72-bit frame. It
 // does not allocate when pcm has FrameSamples samples.
-func (c *Codec) Encode(pcm []int16) ([72]bit.Bit, error) {
+func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 	if c.enc == nil {
-		return [72]bit.Bit{}, ErrClosed
+		return [9]byte{}, ErrClosed
 	}
 	if len(pcm) != FrameSamples {
-		return [72]bit.Bit{}, ErrFrameLength
+		return [9]byte{}, ErrFrameLength
 	}
 	frame := c.frame[:c.nbytes]
 	libMu.Lock()
 	C.codec2_encode(c.enc, (*C.uchar)(unsafe.Pointer(&frame[0])), (*C.short)(unsafe.Pointer(&pcm[0])))
 	libMu.Unlock()
 	runtime.KeepAlive(c)
-	return packSlot(frame), nil
+	var slot [9]byte
+	copy(slot[:], frame)
+	return slot, nil
 }
 
 // Decode decodes one 72-bit frame into FrameSamples samples. The bits after
 // the Codec2 frame are ignored. It allocates the samples; AppendDecode does
 // not.
-func (c *Codec) Decode(slot [72]bit.Bit) ([]int16, error) {
+func (c *Codec) Decode(slot [9]byte) ([]int16, error) {
 	if c.dec == nil {
 		return nil, ErrClosed
 	}
@@ -171,12 +172,12 @@ func (c *Codec) Decode(slot [72]bit.Bit) ([]int16, error) {
 // FrameSamples samples to dst and returns the extended slice. It does not
 // allocate when dst has room for FrameSamples more samples. On error it
 // returns dst unchanged.
-func (c *Codec) AppendDecode(dst []int16, slot [72]bit.Bit) ([]int16, error) {
+func (c *Codec) AppendDecode(dst []int16, slot [9]byte) ([]int16, error) {
 	if c.dec == nil {
 		return dst, ErrClosed
 	}
 	frame := c.frame[:c.nbytes]
-	unpackSlot(frame, slot)
+	copy(frame, slot[:])
 	n := len(dst)
 	dst = append(dst, make([]int16, FrameSamples)...)
 	pcm := dst[n:]

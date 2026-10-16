@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -39,9 +38,10 @@ type TransmitterConfig struct {
 	// value, for a repeater outbound, layer2.SyncSourceMS for a radio.
 	Source layer2.SyncSource
 	// Silence is the 72-bit slot that fills a burst when no voice is
-	// queued, and pads the last superframe. For AMBE+2 it is
+	// queued, and pads the last superframe, packed as
+	// layer2.RawBurst.VoiceSlots returns it. For AMBE+2 it is
 	// vocoder.AMBESilenceSlot().
-	Silence [72]bit.Bit
+	Silence [9]byte
 	// Headers is the number of Voice LC Headers before burst A. 0 means
 	// 1, as ETSI TS 102 361-1 clause 5.1.2.2 gives; at most MaxHeaders.
 	// MMDVMHost sends 3 as a duplex repeater.
@@ -172,7 +172,7 @@ func (s TransmitterState) String() string {
 type Transmitter struct {
 	cc          enums.ColorCode
 	source      layer2.SyncSource
-	silence     [72]bit.Bit
+	silence     [9]byte
 	headers     int
 	terminators int
 	timeout     time.Duration
@@ -198,10 +198,10 @@ type Transmitter struct {
 	piSent     bool
 	underruns  int
 
-	queue  [][72]bit.Bit
+	queue  [][9]byte
 	head   int
 	length int
-	slots  [layer2.VoiceSlotsPerBurst][72]bit.Bit
+	slots  [layer2.VoiceSlotsPerBurst][9]byte
 
 	ta        [4]pdu.FullLinkControl
 	taP       [4]pdu.FullLinkControlPayloads
@@ -212,7 +212,7 @@ type Transmitter struct {
 	nextExtra int
 
 	relay      bool
-	last       [72]bit.Bit
+	last       [9]byte
 	hasLast    bool
 	frags      [4][4]byte
 	fragNext   int
@@ -264,7 +264,7 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	case queue < layer2.VoiceSlotsPerBurst*(t.headers+1) || queue > MaxQueue:
 		return nil, errQueue
 	}
-	t.queue = make([][72]bit.Bit, queue)
+	t.queue = make([][9]byte, queue)
 	return t, nil
 }
 
@@ -400,8 +400,9 @@ func (t *Transmitter) Frames(f ...vocoder.AMBEFrame) error {
 	return nil
 }
 
-// Slot queues one 72-bit vocoder slot of any codec, as Frame does.
-func (t *Transmitter) Slot(s [72]bit.Bit) error {
+// Slot queues one 72-bit vocoder slot of any codec, packed as
+// layer2.RawBurst.VoiceSlots returns it, as Frame does.
+func (t *Transmitter) Slot(s [9]byte) error {
 	switch {
 	case t.state == TransmitterTimedOut || t.timedOut:
 		return ErrTimedOut
@@ -416,7 +417,7 @@ func (t *Transmitter) Slot(s [72]bit.Bit) error {
 }
 
 // Slots queues 72-bit vocoder slots as Slot does.
-func (t *Transmitter) Slots(s ...[72]bit.Bit) error {
+func (t *Transmitter) Slots(s ...[9]byte) error {
 	for i := range s {
 		if err := t.Slot(s[i]); err != nil {
 			return err
@@ -425,7 +426,7 @@ func (t *Transmitter) Slots(s ...[72]bit.Bit) error {
 	return nil
 }
 
-func (t *Transmitter) push(s *[72]bit.Bit) {
+func (t *Transmitter) push(s *[9]byte) {
 	t.queue[(t.head+t.length)%len(t.queue)] = *s
 	t.length++
 }
@@ -571,7 +572,7 @@ func (t *Transmitter) voice(o *Output) {
 	if silent == len(t.slots) && t.state == TransmitterVoice {
 		t.underruns++
 	}
-	if b, err := t.vt.AddBurst(&t.slots); err == nil {
+	if b, err := t.vt.AddBurst(t.slots); err == nil {
 		o.Burst = b
 	}
 	o.Position, _ = enums.VoiceBurstAt(t.pos)
@@ -744,9 +745,7 @@ func (t *Transmitter) relayVoice(e *Event) {
 	packed := e.Burst.VoiceSlots()
 	for i := range packed {
 		s := &t.queue[(t.head+t.length)%len(t.queue)]
-		for j := range s {
-			s[j] = bit.Bit(packed[i][j/8] >> (7 - j%8) & 1)
-		}
+		*s = packed[i]
 		t.length++
 		if !next {
 			t.last, t.hasLast = *s, true

@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -18,37 +17,6 @@ import (
 // the burst. The getters have value receivers and the setters have pointer
 // receivers.
 type RawBurst [33]byte
-
-// unpackBits writes the first len(dst) bits of src into dst in the order of
-// bit.Unpack, without the slice that bit.Unpack allocates.
-func unpackBits(dst []bit.Bit, src []byte) {
-	n := len(dst) &^ 7
-	for i := 0; i < n; i += 8 {
-		b, d := src[i>>3], dst[i:i+8:i+8]
-		d[0], d[1], d[2], d[3] = bit.Bit(b>>7), bit.Bit(b>>6&1), bit.Bit(b>>5&1), bit.Bit(b>>4&1)
-		d[4], d[5], d[6], d[7] = bit.Bit(b>>3&1), bit.Bit(b>>2&1), bit.Bit(b>>1&1), bit.Bit(b&1)
-	}
-	for i := n; i < len(dst); i++ {
-		dst[i] = bit.Bit(src[i>>3] >> (7 - i&7) & 1)
-	}
-}
-
-// packBits packs src into the first (len(src)+7)/8 bytes of dst in the order
-// of bit.Pack, without the slice that bit.Pack allocates.
-func packBits(dst []byte, src []bit.Bit) {
-	n := len(src) &^ 7
-	for i := 0; i < n; i += 8 {
-		b := src[i : i+8 : i+8]
-		dst[i>>3] = byte(b[0]&1)<<7 | byte(b[1]&1)<<6 | byte(b[2]&1)<<5 | byte(b[3]&1)<<4 |
-			byte(b[4]&1)<<3 | byte(b[5]&1)<<2 | byte(b[6]&1)<<1 | byte(b[7]&1)
-	}
-	if n < len(src) {
-		dst[n>>3] = 0
-		for i := n; i < len(src); i++ {
-			dst[i>>3] |= byte(src[i]&1) << (7 - i&7)
-		}
-	}
-}
 
 // field returns the a-bit field at first and the b-bit field at second as
 // one value, the first field most significant.
@@ -290,8 +258,8 @@ func (r RawBurst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Resul
 	var frames [VoiceSlotsPerBurst]vocoder.AMBEFrame
 	var result fec.Result
 	for i, slot := range r.VoiceSlots() {
-		f, res := ambe.Decode(slot)
-		unpackBits(frames[i][:], f[:])
+		var res fec.Result
+		frames[i], res = ambe.Decode(slot)
 		result = result.Combine(res)
 	}
 	return frames, result
@@ -302,9 +270,7 @@ func (r RawBurst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Resul
 func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
 	var s [VoiceSlotsPerBurst][9]byte
 	for i := range frames {
-		var f [7]byte
-		packBits(f[:], frames[i][:])
-		s[i] = ambe.Encode(f)
+		s[i] = ambe.Encode(frames[i])
 	}
 	r.SetVoiceSlots(s)
 }

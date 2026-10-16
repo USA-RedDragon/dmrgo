@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -70,7 +69,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 	frame := [33]byte(raw)
 
 	def := must(layer2.NewBurstFromBytes(frame))
-	if def.SyncPattern != enums.SyncMSSourcedRC || def.VoiceSlots != ([3][72]bit.Bit{}) {
+	if def.SyncPattern != enums.SyncMSSourcedRC || def.VoiceSlots != ([3][9]byte{}) {
 		t.Fatalf("DecodeFromBytes no longer takes this burst as RC: %s", def.String())
 	}
 
@@ -86,7 +85,7 @@ func TestDecodeFromBytesWith_KnownVoiceBurstOverridesRCSync(t *testing.T) {
 		t.Fatalf("AMBE not clean: %+v", res)
 	}
 	r := layer2.RawBurst(frame)
-	if packSlots(b.VoiceSlots) != r.VoiceSlots() {
+	if b.VoiceSlots != r.VoiceSlots() {
 		t.Fatal("voice slots differ from the frame")
 	}
 	enc := must(b.Encode())

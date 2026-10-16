@@ -14,7 +14,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
@@ -73,9 +73,9 @@ func pitchLag(pcm []int16) int {
 	return bestLag
 }
 
-func encodeAll(t *testing.T, c *Codec, pcm []int16) [][72]bit.Bit {
+func encodeAll(t *testing.T, c *Codec, pcm []int16) [][9]byte {
 	t.Helper()
-	slots := make([][72]bit.Bit, 0, len(pcm)/FrameSamples)
+	slots := make([][9]byte, 0, len(pcm)/FrameSamples)
 	for off := 0; off < len(pcm); off += FrameSamples {
 		slot, err := c.Encode(pcm[off : off+FrameSamples])
 		if err != nil {
@@ -86,7 +86,7 @@ func encodeAll(t *testing.T, c *Codec, pcm []int16) [][72]bit.Bit {
 	return slots
 }
 
-func decodeAll(t *testing.T, c *Codec, slots [][72]bit.Bit) []int16 {
+func decodeAll(t *testing.T, c *Codec, slots [][9]byte) []int16 {
 	t.Helper()
 	pcm := make([]int16, 0, len(slots)*FrameSamples)
 	for _, slot := range slots {
@@ -194,11 +194,11 @@ func TestClose(t *testing.T) {
 	if _, err := c.Encode(make([]int16, FrameSamples)); !errors.Is(err, ErrClosed) {
 		t.Errorf("Encode after Close error = %v", err)
 	}
-	if pcm, err := c.Decode([72]bit.Bit{}); pcm != nil || !errors.Is(err, ErrClosed) {
+	if pcm, err := c.Decode([9]byte{}); pcm != nil || !errors.Is(err, ErrClosed) {
 		t.Errorf("Decode after Close = %v, %v", pcm, err)
 	}
 	dst := []int16{1, 2}
-	if got, err := c.AppendDecode(dst, [72]bit.Bit{}); len(got) != len(dst) || !errors.Is(err, ErrClosed) {
+	if got, err := c.AppendDecode(dst, [9]byte{}); len(got) != len(dst) || !errors.Is(err, ErrClosed) {
 		t.Errorf("AppendDecode after Close = %v, %v", got, err)
 	}
 }
@@ -231,7 +231,7 @@ func TestEncodePadBitsZero(t *testing.T) {
 		c := newCodec(t, Config{Mode: mode})
 		for i, slot := range encodeAll(t, c, pcm) {
 			for b := mode.frameBytes() * 8; b < 72; b++ {
-				if slot[b] != 0 {
+				if bits.Bit(slot[:], b) != 0 {
 					t.Fatalf("mode %d frame %d: pad bit %d set", mode, i, b)
 				}
 			}
@@ -245,10 +245,10 @@ func TestDecodeIgnoresPadBits(t *testing.T) {
 	pcm := voiced(10)
 	for _, mode := range allModes() {
 		slots := encodeAll(t, newCodec(t, Config{Mode: mode}), pcm)
-		padded := make([][72]bit.Bit, len(slots))
+		padded := make([][9]byte, len(slots))
 		for i, slot := range slots {
 			for b := mode.frameBytes() * 8; b < 72; b++ {
-				slot[b] = 1
+				bits.SetBit(slot[:], b, 1)
 			}
 			padded[i] = slot
 		}
@@ -286,7 +286,7 @@ func TestSilence(t *testing.T) {
 		if a.Silence() != b.Silence() {
 			t.Fatalf("mode %d: Silence differs between codecs", mode)
 		}
-		if a.Silence() == ([72]bit.Bit{}) {
+		if a.Silence() == ([9]byte{}) {
 			t.Errorf("mode %d: Silence is all zero bits", mode)
 		}
 
@@ -305,7 +305,7 @@ func TestSilence(t *testing.T) {
 		}
 
 		dec := newCodec(t, Config{Mode: mode})
-		slots := make([][72]bit.Bit, 10)
+		slots := make([][9]byte, 10)
 		for i := range slots {
 			slots[i] = a.Silence()
 		}
@@ -345,7 +345,7 @@ func encodeBytes(t *testing.T, mode Mode, pcm []int16) []byte {
 	out := make([]byte, 0, len(slots)*mode.frameBytes())
 	frame := make([]byte, mode.frameBytes())
 	for _, slot := range slots {
-		unpackSlot(frame, slot)
+		copy(frame, slot[:])
 		out = append(out, frame...)
 	}
 	return out
@@ -442,9 +442,11 @@ func c2decHelper(t *testing.T) {
 	}
 	m := Mode(mode)
 	c := newCodec(t, Config{Mode: m})
-	var slots [][72]bit.Bit
+	var slots [][9]byte
 	for off := 0; off+m.frameBytes() <= len(frames); off += m.frameBytes() {
-		slots = append(slots, packSlot(frames[off:off+m.frameBytes()]))
+		var slot [9]byte
+		copy(slot[:], frames[off:off+m.frameBytes()])
+		slots = append(slots, slot)
 	}
 	writeRaw(t, os.Getenv("CODEC2_C2DEC_OUT"), decodeAll(t, c, slots))
 }

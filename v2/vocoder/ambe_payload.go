@@ -1,9 +1,6 @@
 package vocoder
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-)
+import "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 
 // The Motorola IPSC voice burst carries the three vocoder frames of a DMR
 // voice burst without their FEC in a 19-byte AMBE payload, bytes 33 to 51 of
@@ -22,12 +19,10 @@ const (
 // IPSC AMBE payload. The bits that carry no frame bits are 0. It does not
 // allocate.
 func PackAMBEVoice(frames [3]AMBEFrame) [19]byte {
-	var frameBits [152]bit.Bit
-	for k, f := range frames {
-		copy(frameBits[k*50:k*50+49], f[:])
-	}
 	var data [19]byte
-	bits.Pack(data[:], 0, frameBits[:])
+	for k := range frames {
+		bits.Copy(data[:], k*50, frames[k][:], 0, 49)
+	}
 	return data
 }
 
@@ -36,10 +31,7 @@ func PackAMBEVoice(frames [3]AMBEFrame) [19]byte {
 func UnpackAMBEVoice(data [19]byte) [3]AMBEFrame {
 	var frames [3]AMBEFrame
 	for k := range frames {
-		for i := range frames[k] {
-			n := k*50 + i
-			frames[k][i] = bit.Bit(data[n/8] >> (7 - n%8) & 1)
-		}
+		bits.Copy(frames[k][:], 0, data[:], k*50, 49)
 	}
 	return frames
 }
