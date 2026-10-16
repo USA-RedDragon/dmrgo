@@ -12,6 +12,24 @@
 ignore_files:
   - v2/bit/bit.go
   - v2/internal/lowbit/lowbit.go
+  - v2/internal/bits/bits.go
+  - v2/internal/fecref/bptc/bptc_196_96.go
+  - v2/internal/fecref/bptc/bptc_cach.go
+  - v2/internal/fecref/bptc/bptc_embedded_lc.go
+  - v2/internal/fecref/bptc/bptc_single_burst.go
+  - v2/internal/fecref/crc/checksum5.go
+  - v2/internal/fecref/crc/crc32.go
+  - v2/internal/fecref/crc/crc7.go
+  - v2/internal/fecref/crc/crc8.go
+  - v2/internal/fecref/crc/crc9.go
+  - v2/internal/fecref/crc/crc_ccitt.go
+  - v2/internal/fecref/golay/golay_20_8_7.go
+  - v2/internal/fecref/golay/golay_23_12_7.go
+  - v2/internal/fecref/golay/golay_24_12_8.go
+  - v2/internal/fecref/hamming/hamming_7_4_3.go
+  - v2/internal/fecref/quadraticresidue/quadratic_residue_16_7_6.go
+  - v2/internal/fecref/reedsolomon/reed_solomon_12_9_4.go
+  - v2/internal/fecref/trellis/trellis_3_4.go
   - v2/layer2/pdu/deprecated.go
   - v2/layer2/pdu/pack.go
   - v2/examples/bridge/main.go
