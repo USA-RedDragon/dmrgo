@@ -78,13 +78,9 @@ type Receiver struct {
 	lc       pdu.FullLinkControl
 	lcp      pdu.FullLinkControlPayloads
 	alias    pdu.TalkerAliasAssembler
-	text     [talkerAliasText]byte
+	text     [pdu.TalkerAliasMaxText]byte
 	noCopy   noCopy
 }
-
-// talkerAliasText is the size of the talker alias buffer: 31 UTF-16 code
-// units of at most 3 UTF-8 octets each.
-const talkerAliasText = 96
 
 // NewReceiver returns a Receiver for cfg. A nil cfg means the zero
 // ReceiverConfig. It returns a *ConfigError when the color code is above 15.
@@ -613,10 +609,10 @@ func (r *Receiver) embedded(lc pdu.LCBytes, out []Event) []Event {
 	var e *Event
 	out, e = appendEvent(out, EventEmbedded, &r.call)
 	e.LC = r.lc
-	alias, ok, err := r.alias.AppendAdd(r.text[:0], &r.lc)
+	n, ok, err := r.alias.AddInto(&r.text, &r.lc)
 	if ok && err == nil {
 		out, e = appendEvent(out, EventTalkerAlias, &r.call)
-		e.Text = alias
+		e.Text = r.text[:n]
 	}
 	return out
 }
