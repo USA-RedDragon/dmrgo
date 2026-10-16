@@ -10,6 +10,9 @@ type Options struct {
 	// Window is the number of symbols on each side of a symbol that the
 	// trellis models, 1 or 2.
 	Window int
+	// TrellisSPS is the number of samples per symbol that the trellis
+	// correlates, 5 or 10.
+	TrellisSPS int
 	// PSPGain is the gain of the phase tracking of each trellis survivor.
 	PSPGain float32
 	// KnownPrior is the log prior, in nats, of the expected symbols of the
@@ -41,7 +44,7 @@ type Options struct {
 
 // TierOptions returns the settings of tier t.
 func TierOptions(t Tier) Options {
-	o := Options{KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 6000, Sources: 2}
+	o := Options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 6000, Sources: 2}
 	switch t {
 	case TierDisc:
 	case TierCoherent:

@@ -76,28 +76,32 @@ func (r *Receiver) symPrior(g symRef, lp []float32) {
 
 // fill aligns n symbols from g into r.buf, forward in time or backward (time
 // reversed and conjugated, which is the waveform of the reversed symbols).
-// The discrete phase of the modulator sums the frequency up to and
-// including each sample, so the reversed waveform matches the model one
-// sample earlier, and fill takes the reversed samples there.
+// The discrete phase of the model sums the frequency up to and including
+// each sample, so the reversed waveform matches it one model sample
+// earlier, and fill takes the reversed samples there.
 func (r *Receiver) fill(g symRef, n int, rev bool) {
 	ch := &r.chz.ch
 	dir := 1
 	if rev {
 		dir = -1
 	}
+	sps := r.model.sps
+	sp := float64(dir * samplesPerSy / sps)
+	step := complex64(r.rotAt(sp))
 	for i := range n {
 		h := g.add(dir * i)
-		t := r.symTime(h.slot, h.k)
-		for j := range samplesPerSy {
-			ts := t + float64(dir*(j-samplesPerSy/2))
-			if rev {
-				ts--
-			}
-			v := complex64(complex128(ch.interp(ts)) * r.rotAt(ts))
+		t := r.symTime(h.slot, h.k) - float64(sps/2)*sp
+		if rev {
+			t += sp
+		}
+		rot := complex64(r.rotAt(t))
+		for j := range sps {
+			v := ch.interp(t+float64(j)*sp) * rot
+			rot *= step
 			if rev {
 				v = complex(real(v), -imag(v))
 			}
-			r.buf[i*samplesPerSy+j] = v
+			r.buf[i*sps+j] = v
 		}
 	}
 }

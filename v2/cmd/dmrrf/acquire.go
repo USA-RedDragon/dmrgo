@@ -79,6 +79,8 @@ type syncSearch struct {
 	// correlated span.
 	pats   [2*numSources + 1]enums.SyncPattern
 	phases [2*numSources + 1][]float64
+	// conj holds e^-j*phase of each pattern over the correlated span.
+	conj [2*numSources + 1][]complex128
 }
 
 // newSyncSearch returns a search with the waveforms of every SYNC pattern
@@ -122,6 +124,7 @@ func newSyncSearch() *syncSearch {
 	}
 	s.pats[2*numSources] = enums.SyncMSSourcedRC
 	s.phases[2*numSources] = refPhase(syms, samplesPerSy, 0.27)[syncEdge*samplesPerSy : syncEdge*samplesPerSy+syncSpan]
+	s.setConj()
 	return s
 }
 
@@ -138,14 +141,27 @@ func (s *syncSearch) setH(h float64, p *phasePulse) {
 		p.refPhaseInto(in[:], samplesPerSy, h, s.full)
 		copy(s.phases[i], s.full[syncEdge*samplesPerSy:syncEdge*samplesPerSy+syncSpan])
 	}
+	s.setConj()
 }
 
-// phase returns the waveform phase of SYNC pattern p over the correlated
-// span, or nil for an unknown pattern.
-func (s *syncSearch) phase(p enums.SyncPattern) []float64 {
+// setConj computes conj from phases.
+func (s *syncSearch) setConj() {
+	for i, ph := range s.phases {
+		if s.conj[i] == nil {
+			s.conj[i] = make([]complex128, syncSpan)
+		}
+		for j, p := range ph {
+			s.conj[i][j] = complex(math.Cos(p), -math.Sin(p))
+		}
+	}
+}
+
+// conjOf returns e^-j*phase of SYNC pattern p over the correlated span, or
+// nil for an unknown pattern.
+func (s *syncSearch) conjOf(p enums.SyncPattern) []complex128 {
 	for i, q := range s.pats {
 		if q == p {
-			return s.phases[i]
+			return s.conj[i]
 		}
 	}
 	return nil

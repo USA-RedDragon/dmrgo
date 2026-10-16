@@ -178,7 +178,7 @@ func (t *trellis) run(x []complex64, steps int, rot0 complex64, scale, mu float3
 			r := t.rot[w>>2] * m.step[bd]
 			if mu != 0 && best > negInf {
 				c := t.rot[w>>2] * t.corr[w]
-				if a := float32(math.Hypot(float64(real(c)), float64(imag(c)))); a > 0 {
+				if a := float32(math.Sqrt(float64(real(c)*real(c) + imag(c)*imag(c)))); a > 0 {
 					e := mu * imag(c) / a
 					r *= complex(1, -e)
 				}
