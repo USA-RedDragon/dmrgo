@@ -25,8 +25,8 @@ var tinyGoSiteRE = regexp.MustCompile(`^(.+\.go):(\d+)\.\d+`)
 // the rules of exemptReason do not allow. TinyGo puts a local larger than
 // 256 bytes on the heap at that stack size, so it finds allocations that gc
 // does not. It runs only with DMRGO_TINYGO_ALLOCS set, as the TinyGo CI job
-// sets it, and is skipped when tinygo is not installed or does not support
-// the go command in PATH.
+// sets it, and then fails when tinygo is missing or cannot build the
+// example, so that a toolchain change cannot turn the check off.
 func TestTinyGoHeapAllocations(t *testing.T) {
 	t.Parallel()
 
@@ -35,7 +35,7 @@ func TestTinyGoHeapAllocations(t *testing.T) {
 	}
 	tinygo, err := exec.LookPath("tinygo")
 	if err != nil {
-		t.Skip("no tinygo command")
+		t.Fatal("DMRGO_TINYGO_ALLOCS is set but there is no tinygo command")
 	}
 	root, err := filepath.Abs(moduleRoot)
 	if err != nil {
@@ -48,9 +48,6 @@ func TestTinyGoHeapAllocations(t *testing.T) {
 	var buf bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &buf, &buf
 	if err := cmd.Run(); err != nil {
-		if strings.Contains(buf.String(), "requires go version") {
-			t.Skipf("tinygo does not support this go: %s", strings.TrimSpace(buf.String()))
-		}
 		t.Fatalf("tinygo build: %v\n%s", err, buf.String())
 	}
 
