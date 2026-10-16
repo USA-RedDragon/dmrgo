@@ -17,7 +17,7 @@ func TestBursts(t *testing.T) {
 	for _, rate := range []enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1} {
 		for _, h := range []pdu.DataHeader{unconfirmed(), confirmed()} {
 			data := payload(53)
-			p, err := packet.Segment(h, data, rate)
+			p, err := packet.NewPacket(h, data, rate)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -29,7 +29,7 @@ func TestBursts(t *testing.T) {
 				t.Fatalf("%s: %d bursts for %d blocks", rate, len(bursts), len(p.Blocks))
 			}
 			_, sync, _ := layer2.SyncSourceMS.SyncPatterns()
-			var a packet.Assembler
+			a := packet.NewAssembler(127)
 			var got packet.Message
 			var done bool
 			for i, raw := range bursts {
@@ -55,7 +55,7 @@ func TestBursts(t *testing.T) {
 		}
 	}
 
-	p, _ := packet.Segment(unconfirmed(), payload(5), enums.DataTypeRate12)
+	p, _ := packet.NewPacket(unconfirmed(), payload(5), enums.DataTypeRate12)
 	if _, err := packet.Bursts(p, 1, layer2.SyncSource(9)); err == nil {
 		t.Error("Bursts accepted sync source 9")
 	}

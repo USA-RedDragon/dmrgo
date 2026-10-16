@@ -131,8 +131,19 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 // returns the extended slice. It does not allocate when dst has room for two
 // blocks. On error it returns dst unchanged.
 func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rate12Data, error) {
+	var out [2]pdu.Rate12Data
+	n, err := r.encodeInto(&out, blocks)
+	if err != nil {
+		return dst, err
+	}
+	return append(dst, out[:n]...), nil
+}
+
+// encodeInto writes the C_RDATA blocks that Encode returns to dst and
+// returns their number.
+func (r *ResponseData) encodeInto(dst *[2]pdu.Rate12Data, blocks int) (int, error) {
 	if blocks < 0 || blocks > maxBlocks {
-		return dst, ErrTooLong
+		return 0, ErrTooLong
 	}
 	n, flags := 1, 64
 	if blocks > 64 {
@@ -150,9 +161,9 @@ func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rat
 	}
 	binary.LittleEndian.PutUint32(buf[size-crcOctets:], crc.CRC32(buf[:size-crcOctets]))
 	for i := range n {
-		dst = append(dst, pdu.Rate12Data{Data: [12]byte(buf[i*12:])})
+		dst[i] = pdu.Rate12Data{Data: [12]byte(buf[i*12:])}
 	}
-	return dst, nil
+	return n, nil
 }
 
 // DecodeResponseData decodes one or two C_RDATA blocks and checks their CRC.
@@ -195,24 +206,34 @@ func decodeResponseData(r *ResponseData, buf []byte) error {
 // destination to its source with the same SAP. Status is the packet's
 // N(S), or the 3 LSBs of its FSN for ResponseNACKFSNOutOfSequence. A
 // ResponseSACK carries data as C_RDATA blocks; data is ignored otherwise.
-// The Packet has its own storage; Builder.NewResponse builds into reused
-// storage.
-//
-//go:noinline
+// It allocates the storage of the Packet; Builder.NewResponse builds into
+// the storage of a Builder.
 func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
-	var b Builder
-	return b.NewResponse(to, r, data)
+	s := new(responseStore)
+	return s.build(to, r, data)
 }
 
 // NewResponse does what the package function NewResponse does, into the
-// storage of b. It does not allocate once the storage has room for two
-// blocks.
+// storage of b. The Packet is valid until the next NewResponse.
 func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
+	return b.resp.build(to, r, data)
+}
+
+// responseStore holds the header and the C_RDATA blocks of a response
+// packet.
+type responseStore struct {
+	header pdu.ResponsePacketHeader
+	rate12 [2]pdu.Rate12Data
+	blocks [2]layer2.Data
+}
+
+// build builds the response packet that NewResponse returns into s.
+func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
 	status := to.SendSequenceNumber
 	if r == ResponseNACKFSNOutOfSequence {
 		status = to.FragmentSequenceNumber & 0b111
 	}
-	b.response = pdu.ResponsePacketHeader{
+	s.header = pdu.ResponsePacketHeader{
 		SAP:             to.SAP,
 		LLIDDestination: to.LLIDSource,
 		LLIDSource:      to.LLIDDestination,
@@ -227,20 +248,18 @@ func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *Res
 		if data == nil {
 			data = &none
 		}
-		var err error
-		b.rate12, err = data.AppendEncode(appendLen(b.rate12, 2)[:0], int(to.BlocksToFollow))
+		n, err := data.encodeInto(&s.rate12, int(to.BlocksToFollow))
 		if err != nil {
 			return Packet{}, err
 		}
-		b.blocks = appendLen(b.blocks, len(b.rate12))
-		for i := range b.rate12 {
-			b.blocks[i] = &b.rate12[i]
+		for i := range n {
+			s.blocks[i] = &s.rate12[i]
 		}
-		blocks = b.blocks
-		b.response.BlocksToFollow = uint8(len(blocks) & 0xFF)
+		blocks = s.blocks[:n]
+		s.header.BlocksToFollow = uint8(n & 0xFF)
 	}
 	return Packet{
-		Header: pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: &b.response},
+		Header: pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: &s.header},
 		Blocks: blocks,
 	}, nil
 }

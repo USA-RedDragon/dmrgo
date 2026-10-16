@@ -13,6 +13,13 @@ import (
 // Blocks To Follow element has 7 bits.
 const maxBlocks = 127
 
+// maxBlocksPerPacket is maxBlocks under the name that NewBuilder and
+// NewAssembler, whose parameter is maxBlocks, use.
+const maxBlocksPerPacket = maxBlocks
+
+// maxBlockOctets is the most octets that a block holds: 24, for rate 1.
+const maxBlockOctets = 24
+
 // crcOctets is the length of the message CRC at the end of the last block.
 const crcOctets = 4
 
@@ -75,37 +82,62 @@ func layout(n, per int) (blocks, pad int) {
 	return blocks, blocks*per - crcOctets - n
 }
 
-// Segment splits payload into the data blocks of one packet at the given
+// NewPacket splits payload into the data blocks of one packet at the given
 // rate and returns them with a copy of header. It sets the block count and
 // pad fields of the header, gives confirmed blocks DBSN 0, 1, 2 and so on,
 // and keeps the other header fields. It returns an error that wraps
 // ErrRate, ErrFormat or ErrTooLong. It allocates the storage of the Packet;
-// Builder.Segment does not.
-//
-//go:noinline
-func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
-	var b Builder
-	return b.Segment(header, payload, rate)
+// Builder.Segment builds into the storage of a Builder.
+func NewPacket(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
+	confirmed, ok := isConfirmed(&header)
+	if !ok {
+		return Packet{}, ErrFormat
+	}
+	per, err := blockOctets(rate, confirmed)
+	if err != nil {
+		return Packet{}, err
+	}
+	blocks, _ := layout(len(payload), per)
+	return NewBuilder(min(blocks, maxBlocks)).Segment(header, payload, rate)
 }
 
-// Builder builds packets into storage that it keeps, so that it does not
-// allocate once the storage has grown to the largest packet. A Packet that a
-// Builder returns points into this storage, through its sub-header and its
-// Blocks, and is valid until the next call on the Builder, except that
-// Retry leaves a Packet from Segment as it is. The zero value is
-// ready to use. A Builder is not safe for concurrent use.
+// Builder builds packets into storage that NewBuilder allocates once, so
+// that it does not allocate. A Packet that a Builder returns points into this
+// storage, through its sub-header and its Blocks, and is valid until the next
+// call of the same method on the Builder, except that Retry leaves a Packet
+// from Segment as it is. The zero value has no storage for blocks: Segment
+// and Retry return ErrTooLong for a packet with blocks, and NewResponse
+// works. A Builder is not safe for concurrent use.
 type Builder struct {
 	unconfirmed pdu.UnconfirmedDataHeader
 	confirmed   pdu.ConfirmedDataHeader
 	defined     pdu.DefinedDataHeader
 	raw         pdu.RawDataHeader
-	response    pdu.ResponsePacketHeader
 	buf         []byte
 	rate12      []pdu.Rate12Data
 	rate34      []pdu.Rate34Data
 	rate1       []pdu.Rate1Data
 	blocks      []layer2.Data
 	retry       retryStore
+	resp        responseStore
+}
+
+// NewBuilder returns a Builder for packets of up to maxBlocks data blocks of
+// any rate. It allocates 94 bytes for each block on a 32-bit target and 110
+// on a 64-bit one, on top of the Builder itself, 276 and 368 bytes, so 16
+// blocks take about 1.8 KB on a microcontroller and 127, the most that a
+// header counts, about 12 KB. A maxBlocks over 127 means 127, and one under
+// 0 means 0.
+func NewBuilder(maxBlocks int) *Builder {
+	n := max(0, min(maxBlocks, maxBlocksPerPacket))
+	return &Builder{
+		buf:    make([]byte, n*maxBlockOctets),
+		rate12: make([]pdu.Rate12Data, n),
+		rate34: make([]pdu.Rate34Data, n),
+		rate1:  make([]pdu.Rate1Data, n),
+		blocks: make([]layer2.Data, n),
+		retry:  retryStore{blocks: make([]layer2.Data, n)},
+	}
 }
 
 // retryStore holds the header and block list of the Packet that
@@ -118,8 +150,7 @@ type retryStore struct {
 	blocks    []layer2.Data
 }
 
-// Segment does what the package function Segment does, into the storage of
-// b. It does not allocate once the storage has grown to the packet size.
+// Segment does what NewPacket does, into the storage of b.
 func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
 	confirmed, err := b.setLayout(&header, len(payload), rate)
 	if err != nil {
@@ -127,24 +158,16 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 	}
 	per, _ := blockOctets(rate, confirmed)
 	n := blocksOf(&header)
+	if n > len(b.blocks) {
+		return Packet{}, ErrTooLong
+	}
 	size := n*per - crcOctets
-	b.buf = appendLen(b.buf, n*per)
 	clear(b.buf[copy(b.buf[:size], payload):size])
 	binary.LittleEndian.PutUint32(b.buf[size:], crc.CRC32(b.buf[:size]))
-
-	b.blocks = appendLen(b.blocks, n)
-	switch per {
-	case 16, 18:
-		b.rate34 = appendLen(b.rate34, n)
-	case 22, 24:
-		b.rate1 = appendLen(b.rate1, n)
-	default:
-		b.rate12 = appendLen(b.rate12, n)
-	}
 	for i := range n {
 		b.blocks[i] = b.block(i, b.buf[i*per:(i+1)*per], confirmed)
 	}
-	return Packet{Header: header, Blocks: b.blocks}, nil
+	return Packet{Header: header, Blocks: b.blocks[:n]}, nil
 }
 
 // Retry builds the later try of the confirmed packet p that a SACK with
@@ -158,8 +181,7 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 // returns an error that wraps ErrFormat for another header, and
 // ErrNoRetryBlocks when rd flags no block of p. The Packet points to the
 // blocks of p and to storage of b, apart from that of Segment and
-// NewResponse, and is valid until the next Retry. It does not allocate
-// once the storage has room for the blocks.
+// NewResponse, and is valid until the next Retry.
 func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 	h := p.Header
 	n := 0
@@ -174,6 +196,8 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 		return Packet{}, errRetryFormat
 	case n == 0:
 		return Packet{}, ErrNoRetryBlocks
+	case n > len(b.retry.blocks):
+		return Packet{}, ErrTooLong
 	case h.Format == pdu.FormatConfirmed:
 		b.retry.confirmed = *h.ConfirmedDataHeader
 		b.retry.confirmed.FullMessageFlag, b.retry.confirmed.BlocksToFollow = false, count
@@ -187,7 +211,6 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 		b.retry.raw.FullMessageFlag, b.retry.raw.AppendedBlocks = false, count
 		h.RawDataHeader, h.AppendedBlocks = &b.retry.raw, count
 	}
-	b.retry.blocks = appendLen(b.retry.blocks, n)
 	j := 0
 	for i, blk := range p.Blocks {
 		if rd == nil || i < len(rd.Retry) && rd.Retry[i] {
@@ -195,18 +218,7 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 			j++
 		}
 	}
-	return Packet{Header: h, Blocks: b.retry.blocks}, nil
-}
-
-// appendLen returns s with length n. Like append, it allocates a new array
-// only when s lacks the capacity.
-//
-//go:noinline
-func appendLen[T any](s []T, n int) []T {
-	if cap(s) < n {
-		return make([]T, n)
-	}
-	return s[:n]
+	return Packet{Header: h, Blocks: b.retry.blocks[:n]}, nil
 }
 
 // block fills block i of the storage for its chunk length and returns it.

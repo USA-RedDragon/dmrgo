@@ -54,7 +54,7 @@ func lcFields(lc *pdu.FullLinkControl) string {
 // chanState is the receive state of one TDMA channel.
 type chanState struct {
 	voice layer2.VoiceReceiver
-	asm   packet.Assembler
+	asm   *packet.Assembler
 	ambe  int
 }
 
@@ -127,7 +127,7 @@ func (p *Reporter) Burst(r Received) {
 	t += " ts=" + ts
 	ch := p.chans[key]
 	if ch == nil {
-		ch = &chanState{}
+		ch = &chanState{asm: packet.NewAssembler(127)}
 		p.chans[key] = ch
 	}
 

@@ -25,11 +25,12 @@ func TestAssembler_AcceptBadCRCCapture(t *testing.T) {
 			t.Fatal("burst 8 is not rate 1/2")
 		}
 		blk.Data[3] ^= 0x01
-		a := packet.Assembler{AcceptBadCRC: accept}
+		a := packet.NewAssembler(127)
+		a.AcceptBadCRC = accept
 		var msg *packet.Message
 		var got error
 		for _, b := range bursts {
-			if m, err := addBurst(&a, b); m != nil {
+			if m, err := addBurst(a, b); m != nil {
 				msg, got = m, err
 			}
 		}
@@ -49,7 +50,7 @@ func TestAssembler_AcceptBadCRCConfirmed(t *testing.T) {
 	t.Parallel()
 
 	data := payload(60)
-	p, err := packet.Segment(confirmed(), data, enums.DataTypeRate12)
+	p, err := packet.NewPacket(confirmed(), data, enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,8 +76,9 @@ func TestAssembler_AcceptBadCRCConfirmed(t *testing.T) {
 		return m, err
 	}
 
-	a := packet.Assembler{AcceptBadCRC: true}
-	m, err := send(&a, -1)
+	a := packet.NewAssembler(127)
+	a.AcceptBadCRC = true
+	m, err := send(a, -1)
 	if err != nil || m == nil || !m.BadCRC {
 		t.Fatalf("bad CRC-9: %v %+v", err, m)
 	}
@@ -87,17 +89,17 @@ func TestAssembler_AcceptBadCRCConfirmed(t *testing.T) {
 	}
 
 	a.Reset()
-	if m, err := send(&a, 4); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
+	if m, err := send(a, 4); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
 		t.Fatalf("lost block: %v %v, want ErrBlocksMissing", m, err)
 	}
 	r := laterTry(t, p, []int{2, 4})
-	m, err = feed(t, &a, r)
+	m, err = feed(t, a, r)
 	if err != nil || m == nil || m.BadCRC || !bytes.Equal(m.Data, data) {
 		t.Fatalf("later try with good copies: %v %+v", err, m)
 	}
 
-	var strict packet.Assembler
-	if m, err := send(&strict, -1); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
+	strict := packet.NewAssembler(127)
+	if m, err := send(strict, -1); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
 		t.Fatalf("without AcceptBadCRC: %v %v, want ErrBlocksMissing", m, err)
 	}
 }
@@ -107,15 +109,16 @@ func TestAssembler_AcceptBadCRCConfirmed(t *testing.T) {
 func TestAssembler_AcceptBadCRCHeader(t *testing.T) {
 	t.Parallel()
 
-	a := packet.Assembler{AcceptBadCRC: true}
-	if _, err := addBurst(&a, badHeader(t)); !errors.Is(err, packet.ErrHeaderCRC) {
+	a := packet.NewAssembler(127)
+	a.AcceptBadCRC = true
+	if _, err := addBurst(a, badHeader(t)); !errors.Is(err, packet.ErrHeaderCRC) {
 		t.Fatalf("bad header: %v, want ErrHeaderCRC", err)
 	}
-	p, err := packet.Segment(confirmed(), payload(20), enums.DataTypeRate34)
+	p, err := packet.NewPacket(confirmed(), payload(20), enums.DataTypeRate34)
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := feed(t, &a, p)
+	m, err := feed(t, a, p)
 	if err != nil || m == nil || m.BadCRC {
 		t.Fatalf("good packet: %v %+v", err, m)
 	}
@@ -125,16 +128,16 @@ func TestAssembler_AcceptBadCRCHeader(t *testing.T) {
 func TestAssembler_AllBlocksLost(t *testing.T) {
 	t.Parallel()
 
-	p, err := packet.Segment(unconfirmed(), payload(10), enums.DataTypeRate12)
+	p, err := packet.NewPacket(unconfirmed(), payload(10), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var a packet.Assembler
+	a := packet.NewAssembler(127)
 	all := make([]int, len(p.Blocks))
 	for i := range all {
 		all[i] = i
 	}
-	m, err := sendLosing(t, &a, p, all...)
+	m, err := sendLosing(t, a, p, all...)
 	if m == nil || !m.BadCRC || !errors.Is(err, packet.ErrMessageCRC) {
 		t.Fatalf("got %v %+v", err, m)
 	}

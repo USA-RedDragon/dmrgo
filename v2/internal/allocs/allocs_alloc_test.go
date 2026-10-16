@@ -98,13 +98,13 @@ func TestAllocsNewBurstFirstDecode(t *testing.T) {
 }
 
 // TestAllocsPacketAssembly reassembles the packets of the SMS captures with a
-// reused Burst and an Assembler with Reuse set.
+// reused Burst and Assembler.
 func TestAllocsPacketAssembly(t *testing.T) {
 	all := captures(t)
 	for _, name := range []string{"d-sms.bin", "h-sms.bin", "m-sms.bin"} {
 		bursts := all[name]
 		var b layer2.Burst
-		a := packet.Assembler{Reuse: true}
+		a := packet.NewAssembler(127)
 		assertZero(t, name, func() {
 			for _, raw := range bursts {
 				if b.DecodeFromBytes(raw) == nil {
@@ -118,7 +118,7 @@ func TestAllocsPacketAssembly(t *testing.T) {
 // TestAllocsPacketRetry builds the retry of two blocks of a confirmed packet
 // with a reused Builder.
 func TestAllocsPacketRetry(t *testing.T) {
-	var b packet.Builder
+	b := packet.NewBuilder(127)
 	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
 		SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}}
 	p, err := b.Segment(h, make([]byte, 100), enums.DataTypeRate12)

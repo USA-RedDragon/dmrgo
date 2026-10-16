@@ -8,9 +8,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ExampleSegment splits a payload into a header and data blocks and
+// ExampleNewPacket splits a payload into a header and data blocks and
 // reassembles them.
-func ExampleSegment() {
+func ExampleNewPacket() {
 	header := pdu.DataHeader{
 		Format: pdu.FormatUnconfirmed,
 		UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
@@ -20,7 +20,7 @@ func ExampleSegment() {
 			FullMessageFlag: true,
 		},
 	}
-	p, err := packet.Segment(header, []byte("hello, DMR"), enums.DataTypeRate12)
+	p, err := packet.NewPacket(header, []byte("hello, DMR"), enums.DataTypeRate12)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -28,7 +28,7 @@ func ExampleSegment() {
 	h := p.Header.UnconfirmedDataHeader
 	fmt.Println(len(p.Blocks), h.BlocksToFollow, h.PadOctetCount)
 
-	var a packet.Assembler
+	a := packet.NewAssembler(127)
 	if _, _, err := a.Add(&p.Header); err != nil {
 		fmt.Println(err)
 		return
