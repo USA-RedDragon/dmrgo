@@ -49,7 +49,7 @@ const (
 	lockMetric = 0.4
 	// discLock is the discriminator SYNC correlation at which the search of
 	// TierDisc locks.
-	discLock = 0.8
+	discLock = 0.9
 	// anchorMetric is the share of the expected SYNC metric at which a slot
 	// counts as an anchor.
 	anchorMetric = 0.45
