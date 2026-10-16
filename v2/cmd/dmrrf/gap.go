@@ -17,6 +17,8 @@ const (
 	// phaseBank is the number of carrier phases tried where no anchor gives
 	// one.
 	phaseBank = 8
+	// noRun is the run distance of a symbol that no trellis run set.
+	noRun = math.MaxInt16
 )
 
 // symRef is a symbol of a stream: slot and symbol within the slot.
@@ -70,7 +72,7 @@ func (r *Receiver) symPrior(g symRef, lp []float32) {
 		return
 	}
 	for d := range 4 {
-		lp[d] += s.lp[4*g.k+d]
+		lp[d] += r.prior[4*g.k+d]
 	}
 }
 
@@ -155,11 +157,12 @@ func (r *Receiver) run(g symRef, n int, rev bool, lo, hi symRef) {
 			continue
 		}
 		dist := k + 2*d
-		if dist >= s.have[h.k] {
+		have := r.haveOf(s)
+		if dist < 0 || dist >= int(have[h.k]) || dist > math.MaxInt16 {
 			continue
 		}
-		copy(s.app[4*h.k:4*h.k+4], r.tapp[4*k:4*k+4])
-		s.have[h.k] = dist
+		copy(r.appOf(s)[4*h.k:4*h.k+4], r.tapp[4*k:4*k+4])
+		have[h.k] = int16(dist)
 	}
 }
 
@@ -205,7 +208,7 @@ func (r *Receiver) coherentGap(first, j int64, final bool) {
 		keep.k = syncFirstSym + syncSymbols
 	}
 	for g := keep; g.diff(hi) <= 0; g = g.add(1) {
-		r.slot(g.slot).have[g.k] = math.MaxInt
+		r.haveOf(r.slot(g.slot))[g.k] = noRun
 	}
 	margin := r.model.d + runMargin
 	if left {
@@ -231,8 +234,8 @@ func (r *Receiver) coherentBurst(j int64) {
 		return
 	}
 	s := r.slot(j)
-	for i := range s.have {
-		s.have[i] = math.MaxInt
+	for i := range r.haveOf(s) {
+		r.haveOf(s)[i] = noRun
 	}
 	lo := symRef{slot: j, k: cachSymbols}
 	hi := symRef{slot: j, k: slotSymbols - 1}
@@ -263,7 +266,7 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 	for i := range n {
 		h := lo.add(i)
 		s := r.slot(h.slot)
-		a := s.app[4*h.k : 4*h.k+4]
+		a := r.appOf(s)[4*h.k : 4*h.k+4]
 		best := 0
 		for v := 1; v < 4; v++ {
 			if a[v] > a[best] {

@@ -80,11 +80,12 @@ func (r *Receiver) measureDisc(s *slotState) {
 // discriminator output, as Gaussian around the four levels.
 func (r *Receiver) discDetect(s *slotState) {
 	v := math.Max(r.discNoise, 1)
+	app := r.appOf(s)
 	for k := range slotSymbols {
 		x := float64(r.chz.sym.lerp(r.symLag(r.symTime(s.index, k)))) - r.dcHz
 		for d := range 4 {
 			e := x - r.devScale*deviationHz*float64(2*d-3)
-			s.app[4*k+d] = float32(-e * e / (2 * v))
+			app[4*k+d] = float32(-e * e / (2 * v))
 		}
 	}
 }
