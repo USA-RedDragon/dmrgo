@@ -255,7 +255,8 @@ func (r *Receiver) bankRun(steps int, scale float32) {
 // coherentGap detects the symbols of slots first to j: forward from the
 // anchor of slot first, if any, and backward from the anchor of slot j, if
 // any, or from the first slot with phaseBank carrier phases when neither
-// has one.
+// has one. With both anchors, each run stops trellisLook symbols past the
+// middle, as each symbol keeps the APPs of the nearer run.
 func (r *Receiver) coherentGap(first, j int64, final bool) {
 	if r.amp == 0 || r.noise == 0 {
 		return
@@ -278,10 +279,16 @@ func (r *Receiver) coherentGap(first, j int64, final bool) {
 	margin := r.model.d + runMargin
 	if left {
 		lo = symRef{slot: first, k: syncFirstSym}
-		r.run(lo, hi.diff(lo)+1+margin, false, lo, hi)
+	}
+	span := hi.diff(lo) + 1
+	if left && right {
+		span = min(span, (span+1)/2+trellisLook)
+	}
+	if left {
+		r.run(lo, span+margin, false, lo, hi)
 	}
 	if right {
-		r.run(hi, hi.diff(lo)+1+margin, true, lo, hi)
+		r.run(hi, span+margin, true, lo, hi)
 	}
 	if !left && !right {
 		r.run(lo, hi.diff(lo)+1+margin, false, lo, hi)
