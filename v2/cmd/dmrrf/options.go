@@ -44,6 +44,9 @@ type Options struct {
 	TrackH bool
 	// DiscCutHz is the cutoff of the discriminator prefilter.
 	DiscCutHz float64
+	// DiscDecimation is the factor, 1, 2 or 4, by which the discriminator
+	// runs below basebandRate; 0 means 1.
+	DiscDecimation int
 	// Sources is the number of SYNC sources the search tries: 2 for BS
 	// and MS, 4 with both direct mode slots.
 	Sources int
@@ -55,6 +58,7 @@ func TierOptions(t Tier) Options {
 	o.SoftFEC = true
 	switch t {
 	case TierDisc:
+		o.DiscDecimation = 2
 	case TierCoherent:
 		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior = true, 1, 5, 0.12, true, 20
 	case TierExact:

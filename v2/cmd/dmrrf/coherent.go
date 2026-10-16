@@ -72,7 +72,13 @@ func (m *cpmModel) setH(h float64) {
 
 // rrcTapsAt returns rrcTaps for sps samples per symbol.
 func rrcTapsAt(sps float64) []float64 {
-	n := int(2*rrcSpan*sps) + 1
+	return rrcTapsSpan(sps, rrcSpan)
+}
+
+// rrcTapsSpan returns rrcTaps for sps samples per symbol, span symbols on
+// each side.
+func rrcTapsSpan(sps float64, span int) []float64 {
+	n := int(2*float64(span)*sps) + 1
 	h := make([]float64, n)
 	var c float64
 	for i := range h {
