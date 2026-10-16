@@ -28,14 +28,14 @@ func TestAddressHash(t *testing.T) {
 	}
 	for _, id := range []uint32{0, 1, 9990, 3191868, 3120001, 0xFFFFFF, 0x123456} {
 		want := crc8Bytes([]byte{byte(id >> 16), byte(id >> 8), byte(id)})
-		if got := pdu.AddressHash(id); got != want {
+		if got := must(pdu.AddressHash(id)); got != want {
 			t.Errorf("AddressHash(%d) = %#x, want %#x", id, got, want)
 		}
 	}
-	if pdu.AddressHash(0x1000001) != pdu.AddressHash(1) {
-		t.Error("bits above 23 not ignored")
+	if _, err := pdu.AddressHash(0x1000001); !isRangeError(err, "pdu", "AddressHash", 24) {
+		t.Errorf("AddressHash(0x1000001): %v, want the FieldRangeError of AddressHash", err)
 	}
-	if pdu.AddressHash(1) != 0x07 {
-		t.Errorf("AddressHash(1) = %#x, want 0x07", pdu.AddressHash(1))
+	if got := must(pdu.AddressHash(1)); got != 0x07 {
+		t.Errorf("AddressHash(1) = %#x, want 0x07", got)
 	}
 }

@@ -87,21 +87,22 @@ func (s *CSBK) Addresses() (target, source uint32, ok bool) {
 }
 
 // SetAddresses sets the target and source addresses of a CSBK for which
-// Addresses returns ok. It returns false, and changes nothing, for other
-// CSBKs or when an address does not fit in 24 bits.
-func (s *CSBK) SetAddresses(target, source uint32) bool {
-	if target>>24 != 0 || source>>24 != 0 {
-		return false
+// Addresses returns ok. It returns ErrNoAddresses for other CSBKs and a
+// *dmrgo.FieldRangeError when an address does not fit in 24 bits, and then
+// changes nothing.
+func (s *CSBK) SetAddresses(target, source uint32) error {
+	if err := checkAddresses(target, source, errCSBKTargetRange, errCSBKSourceRange); err != nil {
+		return err
 	}
 	if s.is0x38() {
 		putUint24(s.RawPayload[2:5], target)
 		putUint24(s.RawPayload[5:8], source)
-		return true
+		return nil
 	}
 	t, src := s.addressFields()
 	if t == nil {
-		return false
+		return ErrNoAddresses
 	}
 	*t, *src = target, source
-	return true
+	return nil
 }

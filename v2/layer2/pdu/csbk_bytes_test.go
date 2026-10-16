@@ -51,11 +51,11 @@ func TestCSBKBytes_ReproducerPreamble(t *testing.T) {
 	if res.Uncorrectable {
 		t.Fatal("DecodeCSBK fails the CRC")
 	}
-	if !c.SetAddresses(9, 0x23383B) || !c.SetGroup(true) {
+	if c.SetAddresses(9, 0x23383B) != nil || !c.SetGroup(true) {
 		t.Fatal("edit refused")
 	}
 	c.Reseal()
-	want.SetAddresses(9, 0x23383B)
+	noErr(want.SetAddresses(9, 0x23383B))
 	want.PreamblePDU.Group = true
 	if b := must(want.Encode()); b != [12]byte(c) || !c.CRCOK() {
 		t.Fatalf("CSBKBytes %x, CSBK.Encode %x", c, b)
@@ -97,10 +97,10 @@ func TestCSBKBytes_MatchesCSBK(t *testing.T) {
 		c := orig
 		tgt, src := uint32(rng.Intn(1<<24)), uint32(rng.Intn(1<<24))
 		want := dec
-		if c.SetAddresses(tgt, src) != want.SetAddresses(tgt, src) {
+		if (c.SetAddresses(tgt, src) == nil) != (want.SetAddresses(tgt, src) == nil) {
 			t.Fatalf("%x: SetAddresses ok differs from CSBK", orig)
 		}
-		if c.SetAddresses(1<<24, 0) || c.SetAddresses(0, 1<<24) {
+		if c.SetAddresses(1<<24, 0) == nil || c.SetAddresses(0, 1<<24) == nil {
 			t.Fatalf("%x: SetAddresses accepts 25 bits", orig)
 		}
 		g := rng.Intn(2) == 0

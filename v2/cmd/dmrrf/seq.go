@@ -538,7 +538,7 @@ func BSStream(bursts []layer2.RawBurst, cfg SeqConfig, activity enums.ActivityID
 	for f := range frames {
 		au := &pdu.ShortLCActivityUpdate{}
 		if busy(f-f%2) || busy(f-f%2+1) {
-			hash := pdu.AddressHash(cfg.Dest)
+			hash, _ := pdu.AddressHash(cfg.Dest)
 			if cfg.Slot == 0 {
 				au.TS1ActivityID, au.HashTS1 = activity, hash
 			} else {

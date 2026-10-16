@@ -13,4 +13,8 @@ var (
 	// ErrTalkerAliasInvalidUTF8 is returned when the Code Units of a UTF-8
 	// talker alias are not valid UTF-8.
 	ErrTalkerAliasInvalidUTF8 = errors.New("talker alias is not valid UTF-8")
+	// ErrNoAddresses is returned by the SetAddresses methods when the PDU
+	// has no address fields: its FLCO, opcode or format has none, or the
+	// payload field that holds them is nil.
+	ErrNoAddresses = errors.New("the PDU has no address fields")
 )

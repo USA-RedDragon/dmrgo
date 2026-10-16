@@ -127,15 +127,18 @@ func (l LCBytes) Addresses() (target, source uint32, ok bool) {
 
 // SetAddresses writes target into octets 3 to 5 and source into octets 6
 // to 8 of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC, whatever the FID. It returns
-// false, and changes nothing, for other FLCOs or when an address does not
-// fit in 24 bits.
-func (l *LCBytes) SetAddresses(target, source uint32) bool {
-	if !l.isVoiceChannelUser() || target>>24 != 0 || source>>24 != 0 {
-		return false
+// ErrNoAddresses for other FLCOs and a *dmrgo.FieldRangeError when an
+// address does not fit in 24 bits, and then changes nothing.
+func (l *LCBytes) SetAddresses(target, source uint32) error {
+	if err := checkAddresses(target, source, errLCBytesTargetRange, errLCBytesSourceRange); err != nil {
+		return err
 	}
-	l[3], l[4], l[5] = byte(target>>16), byte(target>>8), byte(target)
-	l[6], l[7], l[8] = byte(source>>16), byte(source>>8), byte(source)
-	return true
+	if !l.isVoiceChannelUser() {
+		return ErrNoAddresses
+	}
+	putUint24(l[3:6], target)
+	putUint24(l[6:9], source)
+	return nil
 }
 
 // Group reports whether the FLCO is Grp_V_Ch_Usr (0). ok is false unless

@@ -218,8 +218,8 @@ func toGroupCall(lc *pdu.FullLinkControl) error {
 		return fmt.Errorf("cannot rewrite a %s LC", lc.FLCO)
 	}
 	lc.FLCO = enums.FLCOGroupVoiceChannelUser
-	if !lc.SetAddresses(newTarget, newSource) {
-		return fmt.Errorf("cannot set addresses of a %s LC", lc.FLCO)
+	if err := lc.SetAddresses(newTarget, newSource); err != nil {
+		return fmt.Errorf("cannot set addresses of a %s LC: %w", lc.FLCO, err)
 	}
 	return nil
 }
@@ -237,12 +237,12 @@ func bridgeSMS(w io.Writer, path string) error {
 		}
 		switch d := b.Data.(type) {
 		case *pdu.CSBK:
-			if d.PreamblePDU == nil || !d.SetAddresses(newTarget, newSource) {
+			if d.PreamblePDU == nil || d.SetAddresses(newTarget, newSource) != nil {
 				continue
 			}
 			preambles++
 		case *pdu.DataHeader:
-			if !d.SetAddresses(newTarget, newSource) {
+			if d.SetAddresses(newTarget, newSource) != nil {
 				continue
 			}
 			headers++

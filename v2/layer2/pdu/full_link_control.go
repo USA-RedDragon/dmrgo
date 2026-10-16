@@ -57,34 +57,34 @@ func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 
 // SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or
 // UU_V_Ch_Usr LC: in GroupVoice or UnitToUnit for the standard FID, and in
-// RawPayload for any other FID. It returns false, and changes nothing, for
-// other FLCOs, when an address does not fit in 24 bits, and for the standard
-// FID when the payload field of the FLCO is nil: NewVoiceLC and a decode set
-// it.
-func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
-	if target>>24 != 0 || source>>24 != 0 {
-		return false
+// RawPayload for any other FID. It returns ErrNoAddresses for other FLCOs
+// and for the standard FID when the payload field of the FLCO is nil
+// (NewVoiceLC and a decode set it), and a *dmrgo.FieldRangeError when an
+// address does not fit in 24 bits, and then changes nothing.
+func (s *FullLinkControl) SetAddresses(target, source uint32) error {
+	if err := checkAddresses(target, source, errFullLinkControlTargetRange, errFullLinkControlSourceRange); err != nil {
+		return err
 	}
 	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
-		return false
+		return ErrNoAddresses
 	}
 	if s.FID != enums.FIDStandardized {
 		putUint24(s.RawPayload[1:4], target)
 		putUint24(s.RawPayload[4:7], source)
-		return true
+		return nil
 	}
 	if s.FLCO == enums.FLCOGroupVoiceChannelUser {
 		if s.GroupVoice == nil {
-			return false
+			return ErrNoAddresses
 		}
 		s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress = target, source
-		return true
+		return nil
 	}
 	if s.UnitToUnit == nil {
-		return false
+		return ErrNoAddresses
 	}
 	s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress = target, source
-	return true
+	return nil
 }
 
 // NewVoiceLC returns the DataTypeVoiceLCHeader standard FID Full LC of a

@@ -59,16 +59,18 @@ func (c CSBKBytes) Addresses() (target, source uint32, ok bool) {
 
 // SetAddresses writes target and source into the address octets of a CSBK
 // for which Addresses returns ok. It does not update the CRC; call Reseal.
-// It returns false, and changes nothing, for other CSBKs or when an address
-// does not fit in 24 bits, as CSBK.SetAddresses does.
-func (c *CSBKBytes) SetAddresses(target, source uint32) bool {
+// It returns the errors of CSBK.SetAddresses and then changes nothing.
+func (c *CSBKBytes) SetAddresses(target, source uint32) error {
+	if err := checkAddresses(target, source, errCSBKBytesTargetRange, errCSBKBytesSourceRange); err != nil {
+		return err
+	}
 	t, s, ok := c.addressOffsets()
-	if !ok || target>>24 != 0 || source>>24 != 0 {
-		return false
+	if !ok {
+		return ErrNoAddresses
 	}
 	putUint24(c[t:], target)
 	putUint24(c[s:], source)
-	return true
+	return nil
 }
 
 func (c CSBKBytes) groupBit() (octet int, mask byte, ok bool) {
@@ -143,6 +145,14 @@ var (
 	errLCBytesSourceRange         = addressRangeError("LCBytes", "source")
 	errFullLinkControlTargetRange = addressRangeError("FullLinkControl", "target")
 	errFullLinkControlSourceRange = addressRangeError("FullLinkControl", "source")
+	errCSBKTargetRange            = addressRangeError("CSBK", "target")
+	errCSBKSourceRange            = addressRangeError("CSBK", "source")
+	errCSBKBytesTargetRange       = addressRangeError("CSBKBytes", "target")
+	errCSBKBytesSourceRange       = addressRangeError("CSBKBytes", "source")
+	errDataHeaderTargetRange      = addressRangeError("DataHeader", "destination")
+	errDataHeaderSourceRange      = addressRangeError("DataHeader", "source")
+	errDataHeaderBytesTargetRange = addressRangeError("DataHeaderBytes", "target")
+	errDataHeaderBytesSourceRange = addressRangeError("DataHeaderBytes", "source")
 )
 
 // addressRangeError returns the *dmrgo.FieldRangeError of a 24-bit address

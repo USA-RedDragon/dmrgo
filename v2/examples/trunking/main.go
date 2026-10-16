@@ -213,9 +213,12 @@ func cachSysParms(w io.Writer) error {
 			}
 			var back pdu.SysCode
 			if got.CSysParms != nil {
-				back = got.CSysParms.SysCode()
+				back, err = got.CSysParms.SysCode()
 			} else if got.PSysParms != nil {
-				back = got.PSysParms.SysCode()
+				back, err = got.PSysParms.SysCode()
+			}
+			if err != nil {
+				return err
 			}
 			if back != sc {
 				return fmt.Errorf("%s: SYScode %+v, want %+v", slc.SLCO, back, sc)
