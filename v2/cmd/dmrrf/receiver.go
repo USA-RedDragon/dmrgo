@@ -219,6 +219,9 @@ type Receiver struct {
 	// refine.
 	scratchRec *slotRec
 	known      *[layer2.BurstBits]bool
+	// data holds the ratios of repairData, for the tiers that detect a
+	// data burst again.
+	data *dataPass
 	// freqTot holds the anchor scores of the carrier offsets of bestFreq.
 	freqTot []float64
 	h       float64
@@ -285,10 +288,13 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	r.slots = make([]slotState, cfg.LookbackSlots+maxGapSlots+4)
 	if r.opt.Coherent {
 		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots) + 2)
-		if r.opt.RefinePrior > 0 {
+		if r.opt.RefinePrior > 0 || r.opt.DataPasses > 0 {
 			r.refined = newSymStore(maxGapSlots + 1)
 			r.prior = make([]float32, slotSymbols*4)
 			r.scratchRec, r.known = new(slotRec), new([layer2.BurstBits]bool)
+		}
+		if r.opt.DataPasses > 0 {
+			r.data = new(dataPass)
 		}
 	} else {
 		r.syms = newSymStore(1)
@@ -297,6 +303,9 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	r.emitFn = r.emit
 	if r.opt.SoftFEC {
 		r.rep = newRepairer(r.opt.BPTCOSD, r.opt.GridBPTC)
+		if r.rep != nil {
+			r.rep.retryUnchecked = r.opt.DataUnchecked
+		}
 		r.tk.repair = r.repairEntry
 		r.tk.elc = r.rep.embeddedLC
 	}
@@ -1085,6 +1094,10 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	r.rep.repair(e, cc, ccOK)
 	j := e.rec.index
 	s := r.slot(j)
+	if r.data != nil && s.index == j && r.rep.bptcRetry {
+		r.repairData(e, cc, ccOK)
+		return
+	}
 	if r.opt.RefinePrior == 0 || !r.opt.Coherent || s.index != j || !r.rep.voiceBits(e, r.known) {
 		return
 	}
@@ -1120,6 +1133,64 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		e.out.Fixed.SetEmbeddedData(elc)
 	}
 	r.rep.repair(e, cc, ccOK)
+}
+
+// dataPass holds the ratios of repairData: the extrinsic ratios of the
+// grid decode, in nats, the channel ratios and the ratios of a burst.
+type dataPass struct {
+	ext  [layer2.BurstBits]float32
+	ch   [layer2.BurstBits]int16
+	llr  [layer2.BurstBits]int16
+	next [layer2.BurstBits]int16
+}
+
+// repairData detects the BPTC(196,96) data burst of entry e again with
+// the extrinsic information of the grid decode of its LLRs as bit priors,
+// weighed by Options.DataPrior, and repairs it with the new channel
+// information and the grid's, up to Options.DataPasses times or until it
+// passes its check. The other fields of the burst keep their first
+// detection, which the priors of a wrong block would only make worse.
+func (r *Receiver) repairData(e *trackEntry, cc enums.ColorCode, ccOK bool) {
+	j := e.rec.index
+	w := r.opt.DataPrior
+	dp := r.data
+	e.rec.llr.get(&dp.ch)
+	for range r.opt.DataPasses {
+		r.rep.soft.bptcExtrinsic(&dp.ch, &dp.ext)
+		clear(r.prior)
+		for k := range burstSymbols {
+			lp := r.prior[4*(cachSymbols+k) : 4*(cachSymbols+k)+4]
+			for d := range 4 {
+				b0, b1 := dibitOfDigit(d)
+				lp[d] = bitPrior(w*dp.ext[2*k], b0) + bitPrior(w*dp.ext[2*k+1], b1)
+			}
+		}
+		if !r.redetect(j) {
+			return
+		}
+		r.scratchRec.llr.get(&dp.next)
+		e.rec.llr.get(&dp.llr)
+		bp := r.rep.soft.bptc
+		for _, i := range bp.pos[:bp.n] {
+			c := float32(dp.next[i])/8 - w*dp.ext[i]
+			dp.ch[i] = satLLR(c)
+			dp.llr[i] = satLLR(c + dp.ext[i])
+		}
+		e.rec.llr.set(&dp.llr)
+		r.rep.repair(e, cc, ccOK)
+		if !r.rep.bptcRetry {
+			return
+		}
+	}
+}
+
+// bitPrior returns the log prior, in nats, of bit value b from the
+// log-likelihood ratio l, positive for 0: l/2 for 0 and -l/2 for 1.
+func bitPrior(l float32, b unpacked.Bit) float32 {
+	if b == 0 {
+		return l / 2
+	}
+	return -l / 2
 }
 
 // redetect detects slot j again with the priors in r.prior, between the

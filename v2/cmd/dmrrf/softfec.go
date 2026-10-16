@@ -1471,6 +1471,14 @@ func (d *softDecoder) decodeBPTCGrid(llr *[softBurstBits]int16, check func([12]b
 	return d.decodeBPTCOSD(&d.gridPost, check, out)
 }
 
+// bptcExtrinsic sets ext to the extrinsic log-likelihood ratios, in nats,
+// of the BPTC(196,96) bits of a burst from its 264 LLRs, by GridIters
+// passes of the grid decode, and to 0 elsewhere.
+func (d *softDecoder) bptcExtrinsic(llr *[softBurstBits]int16, ext *[softBurstBits]float32) {
+	d.grid.decode(llr, d.GridIters, d.GridWeight)
+	d.grid.extrinsic(ext)
+}
+
 // decodeBPTCChase decodes a BPTC(196,96) block from the 264 LLRs of its
 // burst with a Chase-II decoder: it flips every pattern of the ChaseBits
 // least reliable bits, decodes each with the library hard decoder and keeps

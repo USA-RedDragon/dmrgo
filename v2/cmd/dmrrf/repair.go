@@ -13,11 +13,17 @@ type repairer struct {
 	osd bool
 	// grid decodes a checked BPTC(196,96) block that fails its check again
 	// with decodeBPTCGrid.
-	grid   bool
-	fixed  layer2.RawBurst
-	soft   *softDecoder
-	checks [16]func([12]byte) bool
-	cur    [4][embBits]int16
+	grid  bool
+	fixed layer2.RawBurst
+	// bptcRetry reports that the last repair left a BPTC(196,96) block
+	// that another detection pass may correct: one that fails its check,
+	// or, with retryUnchecked, one without a check that needed
+	// corrections.
+	bptcRetry      bool
+	retryUnchecked bool
+	soft           *softDecoder
+	checks         [16]func([12]byte) bool
+	cur            [4][embBits]int16
 	// llr holds the ratios of the burst under repair.
 	llr    [layer2.BurstBits]int16
 	sum    [4][embBits]int16
@@ -62,6 +68,7 @@ func (p *repairer) repair(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	}
 	e.rec.llr.get(&p.llr)
 	llr := &p.llr
+	p.bptcRetry = false
 	_, kind, known := layer2.SyncSourceOf(out.Sync)
 	switch {
 	case out.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
@@ -92,6 +99,7 @@ func (p *repairer) repair(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 					out.Fixed = p.fixed
 				}
 			}
+			p.bptcRetry = check != nil && r.Uncorrectable || check == nil && p.retryUnchecked && r.ErrorsCorrected > 0
 		}
 	}
 	if known && e.rec.anchor == out.Sync {
