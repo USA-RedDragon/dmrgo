@@ -1,8 +1,11 @@
 package dmrgo_test
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -32,4 +35,20 @@ func Example() {
 	// Voice LC Header <nil>
 	// call from 3191868 to 9990
 	// true <nil>
+}
+
+// ExampleFieldRangeError finds the field that an Encode method rejected.
+func ExampleFieldRangeError() {
+	lc := pdu.FullLinkControl{
+		BurstDataType: enums.DataTypeVoiceLCHeader,
+		FLCO:          enums.FLCOGroupVoiceChannelUser,
+		GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 1 << 24},
+	}
+	_, err := lc.Encode()
+	var rangeErr *dmrgo.FieldRangeError
+	if errors.As(err, &rangeErr) {
+		fmt.Println(rangeErr.Field, rangeErr.Bits)
+	}
+	// Output:
+	// GroupAddress 24
 }

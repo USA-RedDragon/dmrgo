@@ -11,7 +11,7 @@ package pdu
 import (
 	"errors"
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -349,53 +349,53 @@ func (s *ShortLC) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errShortLCNullMessageReservedRange = &bit.FieldRangeError{
+	errShortLCNullMessageReservedRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Reserved",
 		Type:  "ShortLCNullMessage",
 	}
-	errShortLCActivityUpdateTS1ActivityIDRange = &bit.FieldRangeError{
+	errShortLCActivityUpdateTS1ActivityIDRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "TS1ActivityID",
 		Type:  "ShortLCActivityUpdate",
 	}
-	errShortLCActivityUpdateTS2ActivityIDRange = &bit.FieldRangeError{
+	errShortLCActivityUpdateTS2ActivityIDRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "TS2ActivityID",
 		Type:  "ShortLCActivityUpdate",
 	}
-	errShortLCCSysParmsMODELRange = &bit.FieldRangeError{
+	errShortLCCSysParmsMODELRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "MODEL",
 		Type:  "ShortLCCSysParms",
 	}
-	errShortLCCSysParmsNetSiteRawRange = &bit.FieldRangeError{
+	errShortLCCSysParmsNetSiteRawRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "NetSiteRaw",
 		Type:  "ShortLCCSysParms",
 	}
-	errShortLCCSysParmsCommonSlotCounterRange = &bit.FieldRangeError{
+	errShortLCCSysParmsCommonSlotCounterRange = &dmrgo.FieldRangeError{
 		Bits:  9,
 		Field: "CommonSlotCounter",
 		Type:  "ShortLCCSysParms",
 	}
-	errShortLCPSysParmsMODELRange = &bit.FieldRangeError{
+	errShortLCPSysParmsMODELRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "MODEL",
 		Type:  "ShortLCPSysParms",
 	}
-	errShortLCPSysParmsNetSiteRawRange = &bit.FieldRangeError{
+	errShortLCPSysParmsNetSiteRawRange = &dmrgo.FieldRangeError{
 		Bits:  12,
 		Field: "NetSiteRaw",
 		Type:  "ShortLCPSysParms",
 	}
-	errShortLCPSysParmsCommonSlotCounterRange = &bit.FieldRangeError{
+	errShortLCPSysParmsCommonSlotCounterRange = &dmrgo.FieldRangeError{
 		Bits:  9,
 		Field: "CommonSlotCounter",
 		Type:  "ShortLCPSysParms",
 	}
 	errShortLCPayloads  = errors.New("ShortLC: more than one payload field is set")
-	errShortLCSLCORange = &bit.FieldRangeError{
+	errShortLCSLCORange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SLCO",
 		Type:  "ShortLC",

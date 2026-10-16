@@ -1,12 +1,6 @@
-// Package bit holds FieldRangeError, the error of an encoder for a value
-// that does not fit its bits or a padding bit that is set. The API of dmrgo
-// takes and returns bits packed in bytes, the first bit in the most
-// significant bit of byte 0.
-package bit
+package dmrgo
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // FieldRangeError is the error of an encoder when a field value does not
 // fit in its on-air bits, when a padding bit of a packed field is set, or

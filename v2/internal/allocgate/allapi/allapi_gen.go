@@ -6,7 +6,7 @@
 package main
 
 import (
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	internal_bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -30,7 +30,7 @@ import (
 
 // api holds the functions and methods.
 var api = [...]any{
-	(*bit.FieldRangeError).Error,
+	(*dmrgo.FieldRangeError).Error,
 	(*enums.ColorCodeError).Error,
 	enums.Access.String,
 	enums.ActivityID.String,

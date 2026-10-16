@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -27,7 +27,7 @@ func TestEncode_RejectsValuesWiderThanField(t *testing.T) {
 	_, err := (&pdu.FLCGroupVoice{GroupAddress: 1 << 24}).Encode()
 	expectEncodeError(t, err, "FLCGroupVoice.GroupAddress: value does not fit in 24 bits")
 
-	var rangeErr *bit.FieldRangeError
+	var rangeErr *dmrgo.FieldRangeError
 	if !errors.As(err, &rangeErr) || rangeErr.Type != "FLCGroupVoice" || rangeErr.Field != "GroupAddress" || rangeErr.Bits != 24 {
 		t.Fatalf("error %#v is not the FieldRangeError of GroupAddress", err)
 	}

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -42,7 +42,7 @@ func TestNewBSOutboundActivation(t *testing.T) {
 	if back := must(got.Encode()); back != [12]byte(cb) {
 		t.Fatalf("CSBK %x, CSBKBytes %x", back, cb)
 	}
-	var rangeErr *bit.FieldRangeError
+	var rangeErr *dmrgo.FieldRangeError
 	if _, err := pdu.NewBSOutboundActivation(1<<24, 1); !errors.As(err, &rangeErr) {
 		t.Fatalf("BS address 1<<24: %v", err)
 	}

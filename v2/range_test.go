@@ -5,7 +5,7 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -23,10 +23,10 @@ func must[T any](v T, err error) T {
 	return v
 }
 
-// isRangeError reports whether err is the *bit.FieldRangeError of field
+// isRangeError reports whether err is the *dmrgo.FieldRangeError of field
 // typ.field in n bits.
 func isRangeError(err error, typ, field string, n int) bool {
-	var rangeErr *bit.FieldRangeError
+	var rangeErr *dmrgo.FieldRangeError
 	return errors.As(err, &rangeErr) && rangeErr.Type == typ && rangeErr.Field == field && rangeErr.Bits == n
 }
 
@@ -41,7 +41,7 @@ type paddingRejectCase struct {
 }
 
 // TestEncodeRejectsPaddingBits checks that each encoder returns the
-// *bit.FieldRangeError of the field when one padding bit of its input is
+// *dmrgo.FieldRangeError of the field when one padding bit of its input is
 // set, and no error when none is.
 func TestEncodeRejectsPaddingBits(t *testing.T) {
 	t.Parallel()
@@ -139,7 +139,7 @@ type rangeCase struct {
 }
 
 // TestEncodeRejectsOutOfRangeValues checks that the encoders written by hand
-// return the *bit.FieldRangeError of a value that does not fit its bits.
+// return the *dmrgo.FieldRangeError of a value that does not fit its bits.
 func TestEncodeRejectsOutOfRangeValues(t *testing.T) {
 	t.Parallel()
 

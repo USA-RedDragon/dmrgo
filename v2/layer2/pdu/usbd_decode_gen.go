@@ -6,7 +6,7 @@ package pdu
 
 import (
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
@@ -50,12 +50,12 @@ func (s *UnifiedSingleBlockData) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errUnifiedSingleBlockDataServiceTypeRange = &bit.FieldRangeError{
+	errUnifiedSingleBlockDataServiceTypeRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "ServiceType",
 		Type:  "UnifiedSingleBlockData",
 	}
-	errUnifiedSingleBlockDataPayloadRange = &bit.FieldRangeError{
+	errUnifiedSingleBlockDataPayloadRange = &dmrgo.FieldRangeError{
 		Bits:  76,
 		Field: "Payload",
 		Type:  "UnifiedSingleBlockData",

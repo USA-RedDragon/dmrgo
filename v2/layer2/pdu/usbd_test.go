@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -251,7 +251,7 @@ func TestUSBD_PayloadLayout(t *testing.T) {
 	}
 	usbd.Payload[9] |= 0x01
 	_, err := usbd.Encode()
-	var rangeErr *bit.FieldRangeError
+	var rangeErr *dmrgo.FieldRangeError
 	if !errors.As(err, &rangeErr) || rangeErr.Field != "Payload" || rangeErr.Bits != 76 {
 		t.Errorf("Encode with a padding bit set: %v, want a FieldRangeError for Payload", err)
 	}

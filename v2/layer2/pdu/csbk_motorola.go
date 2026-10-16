@@ -89,7 +89,7 @@ func (s *CSBK) AsMotorolaCallAlertAck() (p MotorolaCallAlertAckPDU, ok bool) {
 
 // SetMotorolaRadioCheck makes s a Motorola radio check CSBK that carries
 // p: it sets Opcode, FID and RawPayload, clears the payload fields and
-// keeps LastBlock and ProtectFlag. It returns a *bit.FieldRangeError when
+// keeps LastBlock and ProtectFlag. It returns a *dmrgo.FieldRangeError when
 // a field does not fit in its bits, and leaves s as it is on an error.
 func (s *CSBK) SetMotorolaRadioCheck(p MotorolaRadioCheckPDU) error {
 	payload, err := p.Encode()

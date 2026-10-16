@@ -53,15 +53,13 @@
 // bytes, the low bits of the last byte are padding: a decode ignores them
 // and an encode sets them to 0. An encoder that takes such a field, such as
 // CACH.Encode, UnifiedSingleBlockData.Encode or vocoder.EncodeAMBE72,
-// returns a *bit.FieldRangeError when a padding bit is set, as it does for a
+// returns a *FieldRangeError when a padding bit is set, as it does for a
 // value that does not fit its bits. The setters of RawBurst, LCBytes and
 // the other byte-level editors write the low bits of a value and ignore the
 // rest.
 //
 // # Packages
 //
-//   - bit: FieldRangeError, the error of an encoder for a value that does
-//     not fit its bits or a padding bit that is set.
 //   - enums: the enumerated information elements, such as data types, SYNC
 //     patterns, FLCO, FID and color codes.
 //   - constants: the timers and constants of the Annexes of ETSI TS 102 361.
@@ -106,8 +104,9 @@
 //
 // These error types can be matched with errors.As:
 //
-//   - *bit.FieldRangeError: an encoder got a value that does not fit in its
-//     bits, or a field with a padding bit set.
+//   - *FieldRangeError: an encoder got a value that does not fit in its
+//     bits, or a field with a padding bit set. It is the one type of this
+//     package.
 //   - *enums.ColorCodeError: enums.NewColorCode got a value over 15.
 //
 // # More

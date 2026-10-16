@@ -6,7 +6,7 @@ package pdu
 
 import (
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	hamming "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 )
@@ -56,7 +56,7 @@ func (s *TACT) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errTACTLCSSRange = &bit.FieldRangeError{
+	errTACTLCSSRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "LCSS",
 		Type:  "TACT",

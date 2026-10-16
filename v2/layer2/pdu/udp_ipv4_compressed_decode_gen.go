@@ -6,7 +6,7 @@ package pdu
 
 import (
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
@@ -78,27 +78,27 @@ func (s *UDPIPv4CompressedHeader) String() string {
 // The errors of the Encode methods. Each is a static value, so that an
 // Encode that fails does not allocate.
 var (
-	errUDPIPv4CompressedHeaderSAIDRange = &bit.FieldRangeError{
+	errUDPIPv4CompressedHeaderSAIDRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SAID",
 		Type:  "UDPIPv4CompressedHeader",
 	}
-	errUDPIPv4CompressedHeaderDAIDRange = &bit.FieldRangeError{
+	errUDPIPv4CompressedHeaderDAIDRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "DAID",
 		Type:  "UDPIPv4CompressedHeader",
 	}
-	errUDPIPv4CompressedHeaderHeaderCompressionOpcodeRange = &bit.FieldRangeError{
+	errUDPIPv4CompressedHeaderHeaderCompressionOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "HeaderCompressionOpcode",
 		Type:  "UDPIPv4CompressedHeader",
 	}
-	errUDPIPv4CompressedHeaderSPIDRange = &bit.FieldRangeError{
+	errUDPIPv4CompressedHeaderSPIDRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "SPID",
 		Type:  "UDPIPv4CompressedHeader",
 	}
-	errUDPIPv4CompressedHeaderDPIDRange = &bit.FieldRangeError{
+	errUDPIPv4CompressedHeaderDPIDRange = &dmrgo.FieldRangeError{
 		Bits:  7,
 		Field: "DPID",
 		Type:  "UDPIPv4CompressedHeader",

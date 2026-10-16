@@ -13,7 +13,7 @@ package pdu
 import (
 	"errors"
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -587,49 +587,49 @@ func (s *FLCTerminatorDataLinkControl) String() string {
 // Encode that fails does not allocate.
 var (
 	errFullLinkControlPayloads  = errors.New("FullLinkControl: more than one payload field is set")
-	errFullLinkControlFLCORange = &bit.FieldRangeError{
+	errFullLinkControlFLCORange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "FLCO",
 		Type:  "FullLinkControl",
 	}
-	errFullLinkControlFIDRange = &bit.FieldRangeError{
+	errFullLinkControlFIDRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "FID",
 		Type:  "FullLinkControl",
 	}
 	errFullLinkControlPayload           = errors.New("FullLinkControl: the payload field that is set is not the one that FLCO and FID select")
 	errFullLinkControlBurstDataTypeMask = errors.New("FullLinkControl.BurstDataType: no FEC mask for the value")
-	errFLCGroupVoiceGroupAddressRange   = &bit.FieldRangeError{
+	errFLCGroupVoiceGroupAddressRange   = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "GroupAddress",
 		Type:  "FLCGroupVoice",
 	}
-	errFLCGroupVoiceSourceAddressRange = &bit.FieldRangeError{
+	errFLCGroupVoiceSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "FLCGroupVoice",
 	}
-	errFLCUnitToUnitTargetAddressRange = &bit.FieldRangeError{
+	errFLCUnitToUnitTargetAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "TargetAddress",
 		Type:  "FLCUnitToUnit",
 	}
-	errFLCUnitToUnitSourceAddressRange = &bit.FieldRangeError{
+	errFLCUnitToUnitSourceAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "SourceAddress",
 		Type:  "FLCUnitToUnit",
 	}
-	errFLCGPSInfoReservedRange = &bit.FieldRangeError{
+	errFLCGPSInfoReservedRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Reserved",
 		Type:  "FLCGPSInfo",
 	}
-	errFLCGPSInfoPositionErrorRange = &bit.FieldRangeError{
+	errFLCGPSInfoPositionErrorRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "PositionError",
 		Type:  "FLCGPSInfo",
 	}
-	errFLCGPSInfoLongitudeRange = &bit.FieldRangeError{
+	errFLCGPSInfoLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:   25,
 		Field:  "Longitude",
 		Max:    180.0,
@@ -637,7 +637,7 @@ var (
 		Signed: true,
 		Type:   "FLCGPSInfo",
 	}
-	errFLCGPSInfoLatitudeRange = &bit.FieldRangeError{
+	errFLCGPSInfoLatitudeRange = &dmrgo.FieldRangeError{
 		Bits:   24,
 		Field:  "Latitude",
 		Max:    90.0,
@@ -645,32 +645,32 @@ var (
 		Signed: true,
 		Type:   "FLCGPSInfo",
 	}
-	errFLCTalkerAliasHeaderTalkerAliasDataFormatRange = &bit.FieldRangeError{
+	errFLCTalkerAliasHeaderTalkerAliasDataFormatRange = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "TalkerAliasDataFormat",
 		Type:  "FLCTalkerAliasHeader",
 	}
-	errFLCTalkerAliasHeaderTalkerAliasDataLengthRange = &bit.FieldRangeError{
+	errFLCTalkerAliasHeaderTalkerAliasDataLengthRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "TalkerAliasDataLength",
 		Type:  "FLCTalkerAliasHeader",
 	}
-	errFLCTalkerAliasHeaderTalkerAliasDataRange = &bit.FieldRangeError{
+	errFLCTalkerAliasHeaderTalkerAliasDataRange = &dmrgo.FieldRangeError{
 		Bits:  49,
 		Field: "TalkerAliasData",
 		Type:  "FLCTalkerAliasHeader",
 	}
-	errFLCTerminatorDataLinkControlLLIDDestinationRange = &bit.FieldRangeError{
+	errFLCTerminatorDataLinkControlLLIDDestinationRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDDestination",
 		Type:  "FLCTerminatorDataLinkControl",
 	}
-	errFLCTerminatorDataLinkControlLLIDSourceRange = &bit.FieldRangeError{
+	errFLCTerminatorDataLinkControlLLIDSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "LLIDSource",
 		Type:  "FLCTerminatorDataLinkControl",
 	}
-	errFLCTerminatorDataLinkControlSendSequenceNumberRange = &bit.FieldRangeError{
+	errFLCTerminatorDataLinkControlSendSequenceNumberRange = &dmrgo.FieldRangeError{
 		Bits:  3,
 		Field: "SendSequenceNumber",
 		Type:  "FLCTerminatorDataLinkControl",

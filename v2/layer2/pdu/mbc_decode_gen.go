@@ -11,7 +11,7 @@ package pdu
 import (
 	"errors"
 	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -649,108 +649,108 @@ func (s *VNAPContinuation) String() string {
 // Encode that fails does not allocate.
 var (
 	errMBCHeaderPayloads    = errors.New("MBCHeader: more than one payload field is set")
-	errMBCHeaderOpcodeRange = &bit.FieldRangeError{
+	errMBCHeaderOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
 		Type:  "MBCHeader",
 	}
-	errMBCHeaderFIDRange = &bit.FieldRangeError{
+	errMBCHeaderFIDRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "FID",
 		Type:  "MBCHeader",
 	}
 	errMBCHeaderPayload         = errors.New("MBCHeader: the payload field that is set is not the one that Opcode and FID select")
-	errMBCContinuationDataRange = &bit.FieldRangeError{
+	errMBCContinuationDataRange = &dmrgo.FieldRangeError{
 		Bits:  95,
 		Field: "Data",
 		Type:  "MBCContinuation",
 	}
-	errCGAPContinuationOpcodeRange = &bit.FieldRangeError{
+	errCGAPContinuationOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
 		Type:  "CGAPContinuation",
 	}
-	errCGAPContinuationReserved1Range = &bit.FieldRangeError{
+	errCGAPContinuationReserved1Range = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Reserved1",
 		Type:  "CGAPContinuation",
 	}
-	errCGAPContinuationColorCodeRange = &bit.FieldRangeError{
+	errCGAPContinuationColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "ColorCode",
 		Type:  "CGAPContinuation",
 	}
-	errCGAPContinuationCdeftypeRange = &bit.FieldRangeError{
+	errCGAPContinuationCdeftypeRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Cdeftype",
 		Type:  "CGAPContinuation",
 	}
-	errCGAPContinuationReserved2Range = &bit.FieldRangeError{
+	errCGAPContinuationReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "Reserved2",
 		Type:  "CGAPContinuation",
 	}
-	errMVAPContinuationOpcodeRange = &bit.FieldRangeError{
+	errMVAPContinuationOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
 		Type:  "MVAPContinuation",
 	}
-	errMVAPContinuationReserved1Range = &bit.FieldRangeError{
+	errMVAPContinuationReserved1Range = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Reserved1",
 		Type:  "MVAPContinuation",
 	}
-	errMVAPContinuationColorCodeRange = &bit.FieldRangeError{
+	errMVAPContinuationColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "ColorCode",
 		Type:  "MVAPContinuation",
 	}
-	errMVAPContinuationCdeftypeRange = &bit.FieldRangeError{
+	errMVAPContinuationCdeftypeRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Cdeftype",
 		Type:  "MVAPContinuation",
 	}
-	errMVAPContinuationReserved2Range = &bit.FieldRangeError{
+	errMVAPContinuationReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "Reserved2",
 		Type:  "MVAPContinuation",
 	}
-	errBCAPContinuationOpcodeRange = &bit.FieldRangeError{
+	errBCAPContinuationOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
 		Type:  "BCAPContinuation",
 	}
-	errBCAPContinuationCdeftypeRange = &bit.FieldRangeError{
+	errBCAPContinuationCdeftypeRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Cdeftype",
 		Type:  "BCAPContinuation",
 	}
-	errBCAPContinuationReserved2Range = &bit.FieldRangeError{
+	errBCAPContinuationReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "Reserved2",
 		Type:  "BCAPContinuation",
 	}
-	errVNAPContinuationOpcodeRange = &bit.FieldRangeError{
+	errVNAPContinuationOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
 		Type:  "VNAPContinuation",
 	}
-	errVNAPContinuationReserved1Range = &bit.FieldRangeError{
+	errVNAPContinuationReserved1Range = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Reserved1",
 		Type:  "VNAPContinuation",
 	}
-	errVNAPContinuationColorCodeRange = &bit.FieldRangeError{
+	errVNAPContinuationColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "ColorCode",
 		Type:  "VNAPContinuation",
 	}
-	errVNAPContinuationCdeftypeRange = &bit.FieldRangeError{
+	errVNAPContinuationCdeftypeRange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "Cdeftype",
 		Type:  "VNAPContinuation",
 	}
-	errVNAPContinuationReserved2Range = &bit.FieldRangeError{
+	errVNAPContinuationReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  2,
 		Field: "Reserved2",
 		Type:  "VNAPContinuation",

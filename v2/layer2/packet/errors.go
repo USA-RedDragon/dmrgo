@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
@@ -59,5 +59,5 @@ var (
 	errNoConfirmed    = fmt.Errorf("%w: no confirmed packet in progress", ErrFormat)
 	errRetryFormat    = fmt.Errorf("%w: only a confirmed or SARQ packet has a later try", ErrFormat)
 
-	errResponseClassRange = &bit.FieldRangeError{Type: "Response", Field: "Class", Bits: 2}
+	errResponseClassRange = &dmrgo.FieldRangeError{Type: "Response", Field: "Class", Bits: 2}
 )
