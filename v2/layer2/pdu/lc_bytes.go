@@ -17,7 +17,7 @@ type LCBytes [9]byte
 // standard FID, octet 2 so.Byte() and octets 3 to 8 the addresses. It
 // returns a *bit.FieldRangeError when an address does not fit in 24 bits.
 func NewVoiceLCBytes(group bool, target, source uint32, so layer3.ServiceOptions) (LCBytes, error) {
-	if err := checkAddresses("LCBytes", target, source); err != nil {
+	if err := checkAddresses(target, source, errLCBytesTargetRange, errLCBytesSourceRange); err != nil {
 		return LCBytes{}, err
 	}
 	l := LCBytes{byte(enums.FLCOUnitToUnitVoiceChannelUser), byte(enums.FIDStandardized), so.Byte()}

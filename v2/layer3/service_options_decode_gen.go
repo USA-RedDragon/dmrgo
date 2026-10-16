@@ -7,7 +7,6 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeServiceOptionsBytes decodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
@@ -43,7 +42,7 @@ func (s *ServiceOptions) encodeBytes() ([1]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Reserved)>>2 != 0 {
-		return [1]byte{}, errs.NewFieldRange("ServiceOptions", "Reserved", s.Reserved, 2, false)
+		return [1]byte{}, errServiceOptionsReservedRange
 	}
 	data[0] = data[0]&^0x30 | byte(uint64(s.Reserved)<<4)&0x30
 	if s.IsBroadcast {
@@ -53,7 +52,7 @@ func (s *ServiceOptions) encodeBytes() ([1]byte, error) {
 		data[0] |= 0x04
 	}
 	if uint64(s.PriorityLevel)>>2 != 0 {
-		return [1]byte{}, errs.NewFieldRange("ServiceOptions", "PriorityLevel", s.PriorityLevel, 2, false)
+		return [1]byte{}, errServiceOptionsPriorityLevelRange
 	}
 	data[0] = data[0]&^0x03 | byte(uint64(s.PriorityLevel))&0x03
 	return data, nil
@@ -75,3 +74,18 @@ func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 func (s *ServiceOptions) String() string {
 	return fmt.Sprintf("ServiceOptions{ IsEmergency: %t, IsPrivacy: %t, Reserved: %d, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.Reserved, s.IsBroadcast, s.IsOpenVoiceCallMode, s.PriorityLevel)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errServiceOptionsReservedRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "Reserved",
+		Type:  "ServiceOptions",
+	}
+	errServiceOptionsPriorityLevelRange = &bit.FieldRangeError{
+		Bits:  2,
+		Field: "PriorityLevel",
+		Type:  "ServiceOptions",
+	}
+)

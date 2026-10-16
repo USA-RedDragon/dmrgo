@@ -7,7 +7,6 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeCdefParmsBytes decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
@@ -36,32 +35,32 @@ func DecodeCdefParms(data [58]bit.Bit) CdefParms {
 func (s *CdefParms) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Channel)>>12 != 0 {
-		return [8]byte{}, errs.NewFieldRange("CdefParms", "Channel", s.Channel, 12, false)
+		return [8]byte{}, errCdefParmsChannelRange
 	}
 	_valChannel := uint64(s.Channel)
 	data[0] = byte(_valChannel >> 4)
 	data[1] = data[1]&^0xF0 | byte(_valChannel<<4)&0xF0
 	if uint64(s.TXMHz)>>10 != 0 {
-		return [8]byte{}, errs.NewFieldRange("CdefParms", "TXMHz", s.TXMHz, 10, false)
+		return [8]byte{}, errCdefParmsTXMHzRange
 	}
 	_valTXMHz := uint64(s.TXMHz)
 	data[1] = data[1]&^0x0F | byte(_valTXMHz>>6)&0x0F
 	data[2] = data[2]&^0xFC | byte(_valTXMHz<<2)&0xFC
 	if uint64(s.TXKHz)>>13 != 0 {
-		return [8]byte{}, errs.NewFieldRange("CdefParms", "TXKHz", s.TXKHz, 13, false)
+		return [8]byte{}, errCdefParmsTXKHzRange
 	}
 	_valTXKHz := uint64(s.TXKHz)
 	data[2] = data[2]&^0x03 | byte(_valTXKHz>>11)&0x03
 	data[3] = byte(_valTXKHz >> 3)
 	data[4] = data[4]&^0xE0 | byte(_valTXKHz<<5)&0xE0
 	if uint64(s.RXMHz)>>10 != 0 {
-		return [8]byte{}, errs.NewFieldRange("CdefParms", "RXMHz", s.RXMHz, 10, false)
+		return [8]byte{}, errCdefParmsRXMHzRange
 	}
 	_valRXMHz := uint64(s.RXMHz)
 	data[4] = data[4]&^0x1F | byte(_valRXMHz>>5)&0x1F
 	data[5] = data[5]&^0xF8 | byte(_valRXMHz<<3)&0xF8
 	if uint64(s.RXKHz)>>13 != 0 {
-		return [8]byte{}, errs.NewFieldRange("CdefParms", "RXKHz", s.RXKHz, 13, false)
+		return [8]byte{}, errCdefParmsRXKHzRange
 	}
 	_valRXKHz := uint64(s.RXKHz)
 	data[5] = data[5]&^0x07 | byte(_valRXKHz>>10)&0x07
@@ -86,3 +85,33 @@ func (s *CdefParms) Encode() ([58]bit.Bit, error) {
 func (s *CdefParms) String() string {
 	return fmt.Sprintf("CdefParms{ Channel: %d, TXMHz: %d, TXKHz: %d, RXMHz: %d, RXKHz: %d }", s.Channel, s.TXMHz, s.TXKHz, s.RXMHz, s.RXKHz)
 }
+
+// The errors of the Encode methods. Each is a static value, so that an
+// Encode that fails does not allocate.
+var (
+	errCdefParmsChannelRange = &bit.FieldRangeError{
+		Bits:  12,
+		Field: "Channel",
+		Type:  "CdefParms",
+	}
+	errCdefParmsTXMHzRange = &bit.FieldRangeError{
+		Bits:  10,
+		Field: "TXMHz",
+		Type:  "CdefParms",
+	}
+	errCdefParmsTXKHzRange = &bit.FieldRangeError{
+		Bits:  13,
+		Field: "TXKHz",
+		Type:  "CdefParms",
+	}
+	errCdefParmsRXMHzRange = &bit.FieldRangeError{
+		Bits:  10,
+		Field: "RXMHz",
+		Type:  "CdefParms",
+	}
+	errCdefParmsRXKHzRange = &bit.FieldRangeError{
+		Bits:  13,
+		Field: "RXKHz",
+		Type:  "CdefParms",
+	}
+)

@@ -28,7 +28,6 @@ const (
 
 	bitPkg  = "github.com/USA-RedDragon/dmrgo/v2/bit"
 	bitsPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-	errsPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	crcPkg  = "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	rsPkg   = "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 )
@@ -143,6 +142,7 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 		}
 	}
 
+	ev := &errVars{defs: map[string]Code{}}
 	for _, pdu := range pdus {
 		if err := emitDecode(f, pdu, false); err != nil {
 			return nil, fmt.Errorf("generating decode for %s: %w", pdu.Name, err)
@@ -156,14 +156,46 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 			}
 			f.Line()
 		}
-		if err := emitEncode(f, pdu); err != nil {
+		if err := emitEncode(f, pdu, ev); err != nil {
 			return nil, fmt.Errorf("generating encode for %s: %w", pdu.Name, err)
 		}
 		f.Line()
 		emitString(f, pdu)
 	}
+	if len(ev.names) > 0 {
+		f.Line()
+		f.Comment("The errors of the Encode methods. Each is a static value, so that an")
+		f.Comment("Encode that fails does not allocate.")
+		f.Var().DefsFunc(func(g *Group) {
+			for _, name := range ev.names {
+				g.Id(name).Op("=").Add(ev.defs[name])
+			}
+		})
+	}
 
 	return f, nil
+}
+
+// errVars collects the package-level error values that the Encode methods
+// of a file return, in the order of first use.
+type errVars struct {
+	names []string
+	defs  map[string]Code
+}
+
+// get returns the variable name for an error value, declaring it with def
+// on first use.
+func (v *errVars) get(name string, def Code) Code {
+	if _, ok := v.defs[name]; !ok {
+		v.names = append(v.names, name)
+		v.defs[name] = def
+	}
+	return Id(name)
+}
+
+// errorsNew returns errors.New(text).
+func errorsNew(text string) Code {
+	return Qual("errors", "New").Call(Lit(text))
 }
 
 // docObject returns the object of a generated doc sentence: the struct name
@@ -1130,7 +1162,7 @@ func emitDelegateDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 // first, or an error when a field value does not fit its bits, and the
 // Encode method, which returns the codeword of encodeBytes as bit.Bit
 // values.
-func emitEncode(f *File, pdu parse.PDUStruct) error {
+func emitEncode(f *File, pdu parse.PDUStruct, ev *errVars) error {
 	codec, hasFEC, err := resolveCodec(pdu)
 	if err != nil {
 		return err
@@ -1140,7 +1172,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 	if hasFEC {
 		outputSize = codec.InputSize
 	}
-	enc := encoder{pdu: pdu, bytes: packedSize(outputSize)}
+	enc := encoder{pdu: pdu, bytes: packedSize(outputSize), errs: ev}
 
 	f.Comment("encodeBytes encodes " + docObject(pdu))
 	f.Comment("It returns the bits of Encode packed, the first bit most significant.")
@@ -1196,6 +1228,7 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 type encoder struct {
 	pdu   parse.PDUStruct
 	bytes int
+	errs  *errVars
 }
 
 // fail returns a statement that returns a zero codeword and the given error.
@@ -1203,15 +1236,24 @@ func (e encoder) fail(err Code) *Statement {
 	return Return(Index(Lit(e.bytes)).Byte().Values(), err)
 }
 
-// failRange returns a statement that returns a zero codeword and a
-// *bit.FieldRangeError for field. lo and hi, when not nil, are the range of a
+// failRange returns a statement that returns a zero codeword and the static
+// *bit.FieldRangeError of field. lo and hi, when not nil, are the range of a
 // coordinate field.
 func (e encoder) failRange(field parse.Field, lo, hi Code) *Statement {
-	if lo != nil {
-		return e.fail(Qual(errsPkg, "NewCoordinateRange").Call(Lit(e.pdu.Name), Lit(field.Name), Id("s").Dot(field.Name), Lit(field.BitWidth), lo, hi))
-	}
 	signed := field.Signed || field.Kind == parse.FieldLongitude || field.Kind == parse.FieldLatitude
-	return e.fail(Qual(errsPkg, "NewFieldRange").Call(Lit(e.pdu.Name), Lit(field.Name), Id("s").Dot(field.Name), Lit(field.BitWidth), Lit(signed)))
+	values := Dict{
+		Id("Type"):  Lit(e.pdu.Name),
+		Id("Field"): Lit(field.Name),
+		Id("Bits"):  Lit(field.BitWidth),
+	}
+	if signed {
+		values[Id("Signed")] = True()
+	}
+	if lo != nil {
+		values[Id("Min")], values[Id("Max")] = lo, hi
+	}
+	def := Op("&").Qual(bitPkg, "FieldRangeError").Values(values)
+	return e.fail(e.errs.get("err"+e.pdu.Name+field.Name+"Range", def))
 }
 
 // fields emits the encoding of all fields. It encodes the dispatch fields
@@ -1259,7 +1301,7 @@ func (e encoder) payload(g *Group, fields []parse.Field) {
 		set := []Code{Id("_payload").Op("=").Lit(field.Name)}
 		if i > 0 {
 			set = append([]Code{If(Id("_payload").Op("!=").Lit("")).Block(
-				e.fail(Qual(errsPkg, "NewBothSet").Call(Lit(e.pdu.Name), Id("_payload"), Lit(field.Name))),
+				e.fail(e.errs.get("err"+e.pdu.Name+"Payloads", errorsNew(e.pdu.Name+": more than one payload field is set"))),
 			)}, set...)
 		}
 		g.If(Id("s").Dot(field.Name).Op("!=").Nil()).Block(set...)
@@ -1297,9 +1339,7 @@ func (e encoder) checkPayload(g *Group, fields []parse.Field) error {
 		b.Id("_want").Op(":=").Lit(none)
 		b.Add(sel)
 		b.If(Id("_payload").Op("!=").Id("_want")).Block(
-			e.fail(Qual(errsPkg, "NewWrongPayload").Call(
-				Lit(e.pdu.Name), Id("_payload"), Lit(joinNames(selectors)+verb), Id("_want"),
-			)),
+			e.fail(e.errs.get("err"+e.pdu.Name+"Payload", errorsNew(e.pdu.Name+": the payload field that is set is not the one that "+joinNames(selectors)+strings.TrimRight(verb, " ")))),
 		)
 	})
 	return nil
@@ -1347,9 +1387,7 @@ func (e encoder) dispatch(g *Group, fields []parse.Field) {
 			body := make([]Code, 0, 2+len(store))
 			body = append(body,
 				List(Id("_pduBytes"), Err()).Op(":=").Id("s").Dot(field.Name).Dot("encodeBytes").Call(),
-				If(Err().Op("!=").Nil()).Block(
-					e.fail(Qual(errsPkg, "NewWrapped").Call(Lit(e.pdu.Name+"."+field.Name), Err())),
-				),
+				If(Err().Op("!=").Nil()).Block(e.fail(Err())),
 			)
 			body = append(body, store...)
 			sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(body...)
@@ -1396,8 +1434,7 @@ func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 
 	var noMask Code
 	if pdu.FECMask != nil {
-		noMask = enc.fail(Qual(errsPkg, "NewNoFECMask").Call(
-			Lit(pdu.Name), Lit(pdu.FECMask.Field), Id("uint64").Call(Id("s").Dot(pdu.FECMask.Field))))
+		noMask = enc.fail(enc.errs.get("err"+pdu.Name+pdu.FECMask.Field+"Mask", errorsNew(pdu.Name+"."+pdu.FECMask.Field+": no FEC mask for the value")))
 	}
 	if err := emitFECMask(g, pdu, codec, Id("s"), "_encoded", noMask); err != nil {
 		return err
@@ -1454,7 +1491,6 @@ func (e encoder) field(g *Group, field parse.Field) {
 // this package, or from the bit.Bit values that the Encode method of a
 // delegate of another package returns.
 func (e encoder) delegate(g *Group, field parse.Field) {
-	pdu := e.pdu
 	source := Id("s").Dot(field.Name)
 	method := "encodeBytes"
 	suffix := "Bytes"
@@ -1471,18 +1507,14 @@ func (e encoder) delegate(g *Group, field parse.Field) {
 		}
 		g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 			List(Id("_elem"+suffix), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot(method).Call(),
-			If(Err().Op("!=").Nil()).Block(
-				e.fail(Qual(errsPkg, "NewWrappedIndex").Call(Lit(pdu.Name+"."+field.Name), Id("_i"), Err())),
-			),
+			If(Err().Op("!=").Nil()).Block(e.fail(Err())),
 			store,
 		)
 		return
 	}
 	tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + suffix
 	g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot(method).Call()
-	g.If(Err().Op("!=").Nil()).Block(
-		e.fail(Qual(errsPkg, "NewWrapped").Call(Lit(pdu.Name+"."+field.Name), Err())),
-	)
+	g.If(Err().Op("!=").Nil()).Block(e.fail(Err()))
 	if field.IsQualified {
 		g.Qual(bitsPkg, "Pack").Call(Id("data").Index(Empty(), Empty()), Lit(field.BitStart), Id(tmpVar).Index(Empty(), Empty()))
 		return

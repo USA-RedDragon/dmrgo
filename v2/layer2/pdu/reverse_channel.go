@@ -7,7 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
@@ -38,6 +37,10 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) ReverseChannel {
 	return result
 }
 
+// errReverseChannelRCCommandRange is the error of an Encode whose RCCommand
+// does not fit in 4 bits.
+var errReverseChannelRCCommandRange = &bit.FieldRangeError{Type: "ReverseChannel", Field: "RCCommand", Bits: 4}
+
 // Encode encodes an RC PDU into 11 information bits.
 // The output contains the 4-bit payload followed by 7-bit CRC-7 (masked).
 // It returns an error if RCCommand does not fit in 4 bits.
@@ -45,7 +48,7 @@ func (rc *ReverseChannel) Encode() ([11]bit.Bit, error) {
 	var bits [11]bit.Bit
 
 	if rc.RCCommand > 0x0F {
-		return bits, errs.NewFieldRange("ReverseChannel", "RCCommand", uint8(rc.RCCommand), 4, false)
+		return bits, errReverseChannelRCCommandRange
 	}
 
 	bit.PutUint(bits[0:4], uint64(uint8(rc.RCCommand)))
