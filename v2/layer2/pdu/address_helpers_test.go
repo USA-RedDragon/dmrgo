@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 func TestFLC_SetAddresses(t *testing.T) {
@@ -31,9 +32,9 @@ func TestFLC_SetAddresses(t *testing.T) {
 	if lc.SetAddresses(1, 2) == nil {
 		t.Error("SetAddresses of a GPS Info LC succeeded")
 	}
-	lc = pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser}
-	if lc.SetAddresses(1<<24, 2) == nil || lc.GroupVoice != nil {
-		t.Error("SetAddresses of a 25-bit target succeeded")
+	lc = must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
+	if err := lc.SetAddresses(1<<24, 2); !isRangeError(err, "FullLinkControl", "TargetAddress", 24) || lc.GroupVoice.GroupAddress != 91 {
+		t.Errorf("SetAddresses of a 25-bit target: %v", err)
 	}
 }
 

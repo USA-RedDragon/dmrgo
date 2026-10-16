@@ -15,14 +15,22 @@ const (
 )
 
 // NetBits returns the width of the NET field for the model. The SITE field
-// takes the other 12 - NetBits bits.
-func (m NetworkModel) NetBits() int {
-	return netSiteBits(uint8(m))
+// takes the other 12 - NetBits bits. It returns a *dmrgo.FieldRangeError
+// when m does not fit in 2 bits.
+func (m NetworkModel) NetBits() (int, error) {
+	if m > NetworkModelHuge {
+		return 0, errNetworkModelRange
+	}
+	return netSiteBits(uint8(m)), nil
 }
 
-// SiteBits returns the width of the SITE field for the model.
-func (m NetworkModel) SiteBits() int {
-	return netSiteLen - m.NetBits()
+// SiteBits returns the width of the SITE field for the model, with the
+// errors of NetBits.
+func (m NetworkModel) SiteBits() (int, error) {
+	if m > NetworkModelHuge {
+		return 0, errNetworkModelRange
+	}
+	return netSiteLen - netSiteBits(uint8(m)), nil
 }
 
 // SysCode is the 16-bit C_SYScode: MODEL (2 bits), NET and SITE (12 bits
@@ -40,10 +48,10 @@ func (s SysCode) check() error {
 	if s.Model > NetworkModelHuge {
 		return errSysCodeModelRange
 	}
-	if s.Net>>s.Model.NetBits() != 0 {
+	if s.Net>>netSiteBits(uint8(s.Model)) != 0 {
 		return sysCodeNetRange(s.Model)
 	}
-	if s.Site>>s.Model.SiteBits() != 0 {
+	if s.Site>>(netSiteLen-netSiteBits(uint8(s.Model))) != 0 {
 		return sysCodeSiteRange(s.Model)
 	}
 	if s.Par > 3 {
@@ -59,7 +67,7 @@ func (s SysCode) Pack() (uint16, error) {
 	if err := s.check(); err != nil {
 		return 0, err
 	}
-	return uint16(s.Model)<<14 | s.Net<<(2+s.Model.SiteBits()) | s.Site<<2 | uint16(s.Par), nil
+	return uint16(s.Model)<<14 | s.Net<<(2+netSiteLen-netSiteBits(uint8(s.Model))) | s.Site<<2 | uint16(s.Par), nil
 }
 
 // Pack14 returns the 14 most significant bits of the C_SYScode, the form
@@ -81,10 +89,10 @@ func (s SysCode) NetSite() (uint16, error) {
 // of Pack.
 func (s *SysCode) Unpack(v uint16) {
 	model := NetworkModel(v >> 14)
-	siteBits := model.SiteBits()
+	siteBits := netSiteLen - netSiteBits(uint8(model))
 	*s = SysCode{
 		Model: model,
-		Net:   (v >> (2 + siteBits)) & (1<<model.NetBits() - 1),
+		Net:   (v >> (2 + siteBits)) & (1<<netSiteBits(uint8(model)) - 1),
 		Site:  (v >> 2) & (1<<siteBits - 1),
 		Par:   uint8(v & 3),
 	}
@@ -102,15 +110,25 @@ func (s *SysCode) Unpack14(v uint16) error {
 	return nil
 }
 
-// sysCodeFromShortLC returns the SysCode of the MODEL and NET and SITE
-// fields of a Short LC, or modelErr or netSiteErr when one does not fit.
-func sysCodeFromShortLC(model uint8, netSite uint16, modelErr, netSiteErr error) (SysCode, error) {
-	var s SysCode
+// checkNetSite returns modelErr when the MODEL field of a Short LC does not
+// fit in 2 bits, or netSiteErr when its NET and SITE field does not fit in
+// 12.
+func checkNetSite(model uint8, netSite uint16, modelErr, netSiteErr error) error {
 	switch {
 	case model>>2 != 0:
-		return s, modelErr
-	case netSite>>12 != 0:
-		return s, netSiteErr
+		return modelErr
+	case netSite>>netSiteLen != 0:
+		return netSiteErr
+	}
+	return nil
+}
+
+// sysCodeFromShortLC returns the SysCode of the MODEL and NET and SITE
+// fields of a Short LC, with the errors of checkNetSite.
+func sysCodeFromShortLC(model uint8, netSite uint16, modelErr, netSiteErr error) (SysCode, error) {
+	var s SysCode
+	if err := checkNetSite(model, netSite, modelErr, netSiteErr); err != nil {
+		return s, err
 	}
 	s.Unpack(uint16(model)<<14 | netSite<<2)
 	return s, nil
@@ -189,7 +207,8 @@ const (
 // The errors of a SYSCODE field whose value does not fit in its bits. NET
 // and SITE have one for each network model, which sets their widths.
 var (
-	errSysCode14Range        = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Pack14", Bits: 14}
+	errSysCode14Range        = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Unpack14", Bits: 14}
+	errNetworkModelRange     = &dmrgo.FieldRangeError{Type: "pdu", Field: "NetworkModel", Bits: 2}
 	errSysCodeModelRange     = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Model", Bits: 2}
 	errSysCodeParRange       = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Par", Bits: 2}
 	errSysCodeNetRangeTiny   = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 9}

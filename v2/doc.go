@@ -55,7 +55,9 @@
 // CACH.Encode, UnifiedSingleBlockData.Encode or vocoder.EncodeAMBE72,
 // returns a *FieldRangeError when a padding bit is set, as it does for a
 // value that does not fit its bits. So do the setters, which then change
-// nothing, and the SetAddresses methods for an address over 24 bits.
+// nothing, the SetAddresses methods for an address over 24 bits, and the
+// functions and getters that read a value of a fixed width, such as
+// pdu.AddressHash, SysCode.Unpack14 and ShortLCCSysParms.NetID.
 //
 // # Packages
 //
@@ -105,9 +107,9 @@
 //
 // These error types can be matched with errors.As:
 //
-//   - *FieldRangeError: an encoder got a value that does not fit in its
-//     bits, or a field with a padding bit set. It is the one type of this
-//     package.
+//   - *FieldRangeError: an encoder, setter, getter or function got a value
+//     that does not fit in its bits, or a field with a padding bit set. It
+//     is the one type of this package.
 //   - *enums.ColorCodeError: enums.NewColorCode got a value over 15.
 //
 // # More
