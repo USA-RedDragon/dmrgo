@@ -80,6 +80,8 @@ type syncSearch struct {
 	// devSq the sum of their squares, for the discriminator correlation.
 	dev   [numSources][syncSymbols]float32
 	devSq [numSources]float32
+	// dx holds the discriminator symbols that discAt correlates.
+	dx [syncSymbols]float32
 	// tplRot holds the conjugate waveform of the voice SYNC of source src
 	// turned by search offset fi at tplRot[fi*numSources+src], for the
 	// sources that the receiver searches.
@@ -266,29 +268,25 @@ func (s *syncSearch) window(r *ring, first int64) []complex64 {
 	return s.xs[s.xh : s.xh+n]
 }
 
-// discAt returns the correlation coefficient of the discriminator symbols
-// at base+u, base+u+step, ... with the voice SYNC of each source, the best
-// source and whether its sign shows the data SYNC.
-func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rho float32, src int, data bool) {
-	var x [syncSymbols]float32
+// discAt returns the square of the correlation coefficient of the
+// discriminator symbols at base+u, base+u+step, ... with the voice SYNC of
+// each source, the best source and whether its sign shows the data SYNC.
+func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rho2 float32, src int, data bool) {
+	x := s.dx[:]
 	if stride := int(step); u == 0 && float32(stride) == step {
-		r.gather(base, stride, x[:])
+		r.gather(base, stride, x)
 	} else {
-		for k := range syncSymbols {
+		for k := range x {
 			x[k] = r.lerpFrom(base, u+float32(k)*step)
 		}
 	}
-	var mx float32
+	var mx, xx float32
 	for _, v := range x {
 		mx += v
+		xx += v * v
 	}
-	mx /= syncSymbols
-	var sxx float32
-	for k := range x {
-		x[k] -= mx
-		sxx += x[k] * x[k]
-	}
-	if sxx == 0 {
+	sxx := xx - mx*mx/syncSymbols
+	if sxx <= 0 {
 		return 0, 0, false
 	}
 	var best, bestSxy float32
@@ -301,5 +299,5 @@ func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rh
 			best, bestSxy, src = q, sxy, i
 		}
 	}
-	return sqrtf(best / sxx), src, bestSxy < 0
+	return best / sxx, src, bestSxy < 0
 }

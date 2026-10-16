@@ -27,13 +27,13 @@ func (r *Receiver) measureDisc(s *slotState) {
 	for tau := -3.0; tau <= 3; tau += 0.5 {
 		t := r.symLag(r.symTime(s.index, syncFirstSym) + tau)
 		base := int64(math.Floor(t))
-		rho, src, d := r.search.discAt(&r.chz.sym, base, float32(t-float64(base)), r.chz.symStep(), r.nsrc)
-		if src == r.src && rho > best {
-			best, bestTau, data = rho, tau, d
+		rho2, src, d := r.search.discAt(&r.chz.sym, base, float32(t-float64(base)), r.chz.symStep(), r.nsrc)
+		if src == r.src && rho2 > best {
+			best, bestTau, data = rho2, tau, d
 		}
 	}
 	s.present = r.noise == 0 || r.slotEnergy(s) > 1.5*r.noise
-	s.anchor = best >= discAnchor
+	s.anchor = best >= discAnchor*discAnchor
 	if !s.anchor {
 		return
 	}
