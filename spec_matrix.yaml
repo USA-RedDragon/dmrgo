@@ -19,6 +19,7 @@ ignore_files:
   - v2/bit/bit.go
   - v2/internal/lowbit/lowbit.go
   - v2/internal/bits/bits.go
+  - v2/internal/fecref/ambe/ambe.go
   - v2/internal/fecref/bptc/bptc_196_96.go
   - v2/internal/fecref/bptc/bptc_cach.go
   - v2/internal/fecref/bptc/bptc_embedded_lc.go
@@ -65,17 +66,22 @@ documents:
         source_files:
           - v2/layer2/burst.go
           - v2/vocoder/frame.go
+          - v2/internal/fec/ambe/ambe.go
           - v2/vocoder/codec.go
           - v2/layer2/voice_superframe.go
           - v2/internal/fec/golay/golay_23_12_7.go
           - v2/internal/fec/golay/golay_24_12_8.go
           - v2/enums/voice_burst_types.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/vocoder
+          - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe
             names:
               - TestAMBEScrambleTableValues
               - TestScrambleTableBitWidth
               - TestScrambleTableDistribution
+              - TestEncodeMatchesReference
+              - TestDecodeMatchesReference
+          - package: github.com/USA-RedDragon/dmrgo/v2/vocoder
+            names:
               - TestCodecRegistry
               - TestCodecRegistryFactoryError
               - TestAMBE72RoundTrip

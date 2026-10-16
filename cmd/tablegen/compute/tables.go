@@ -16,9 +16,6 @@ type Tables struct {
 	CRC32                     [256]uint32  // CRC-32 byte table, polynomial 0x04C11DB7
 	SingleBurstBPTCInterleave [32]uint8    // single-burst BPTC encode matrix index per transmit index
 	ReverseConstellation      [][]int8     // trellis 3/4 dibit pair per symbol index
-	ATable                    []int        // AMBE frame position of each bit of the A codeword
-	BTable                    []int        // AMBE frame position of each bit of the B codeword
-	CTable                    []int        // AMBE frame position of each bit of the C codeword
 	GaloisExp                 [256]uint8   // GF(2^8) exponent table, polynomial 0x11D
 	GaloisLog                 [256]uint8   // GF(2^8) logarithm table, polynomial 0x11D
 	AMBEScrambleTable         [4096]uint32 // AMBE 24-bit scramble mask per 12-bit A value
@@ -98,11 +95,6 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.ReverseConstellation = ReverseConstellation()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.ATable, t.BTable, t.CTable = VocoderTables()
 		wg.Done()
 	}()
 	wg.Add(1)
