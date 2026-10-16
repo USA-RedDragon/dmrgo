@@ -215,9 +215,10 @@ func (f *Framer) AppendBursts(dst []Burst, stream ...bit.Bit) []Burst {
 
 func (f *Framer) cut() Burst {
 	start := f.next
-	var raw [layer2.BurstBits]bit.Bit
-	copy(raw[:], f.buf[start:start+layer2.BurstBits])
-	b := Burst{Offset: f.base + int64(start), Data: bit.Pack264(raw)}
+	b := Burst{Offset: f.base + int64(start)}
+	for i, x := range f.buf[start : start+layer2.BurstBits] {
+		b.Data[i>>3] |= byte(x&1) << (7 - i&7)
+	}
 	b.Sync, b.Distance = nearest(window(f.buf, start+SyncOffset))
 	if b.Distance > f.cfg.Threshold {
 		b.Sync = enums.SyncNone
