@@ -3,6 +3,7 @@ package main
 import (
 	"math"
 	"math/rand/v2"
+	"strconv"
 	"testing"
 )
 
@@ -99,6 +100,32 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 			t.Errorf("tier %d: %d frames exact, the tier below %d", tier, exact, prev)
 		}
 		prev = exact
+	}
+}
+
+// BenchmarkReceiver times each tier on a BS outbound voice call at 6 dB
+// C/N, in nanoseconds per second of signal, with its allocations.
+func BenchmarkReceiver(b *testing.B) {
+	cfg := testConfig()
+	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 2, 1
+	built, err := Sequence("voice", cfg)
+	if err != nil {
+		b.Fatal(err)
+	}
+	x := noisyBaseband(built.Slots, 1200, 6, 3)
+	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact, TierMax} {
+		b.Run(strconv.Itoa(int(tier)), func(b *testing.B) {
+			r := NewReceiver(ReceiverConfig{Rate: basebandRate, Tier: tier})
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				for k := 0; k < len(x); k += 4096 {
+					r.WriteBaseband(x[k:min(k+4096, len(x))])
+				}
+				r.Flush()
+			}
+			b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N)/(float64(len(x))/basebandRate), "ns/signal-s")
+		})
 	}
 }
 
