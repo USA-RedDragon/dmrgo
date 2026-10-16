@@ -11,7 +11,10 @@ const (
 	// chanStopHz is the edge of its stopband.
 	chanStopHz = 11000.0
 	// discTaps is the length of the discriminator prefilter.
-	discTaps = 63
+	discTaps = 31
+	// discSpan is the number of symbols on each side of the matched
+	// filter of the discriminator.
+	discSpan = 4
 )
 
 // ring is a power-of-two ring of complex samples addressed by absolute
@@ -194,7 +197,7 @@ func newChannelizer(size int, disc bool, cutHz float64, dec int) *channelizer {
 	c.discDec = dec
 	c.dHist = make([]complex64, 2*discTaps)
 	c.dTaps = kaiserLowpass(discTaps, cutHz/basebandRate, 5)
-	r := rrcTapsAt(float64(samplesPerSy) / float64(dec))
+	r := rrcTapsSpan(float64(samplesPerSy)/float64(dec), discSpan)
 	c.rrc = make([]float32, len(r))
 	for i, v := range r {
 		c.rrc[i] = float32(v)
@@ -229,7 +232,7 @@ func (c *channelizer) oldest() int64 {
 // the matched filter output rrcSpan symbols before that.
 func (c *channelizer) symIndex(t float64) float64 {
 	d := float64(c.discDec)
-	return (t - float64(c.delayCh) + discTaps/2 + rrcSpan*samplesPerSy + 1 - d/2) / d
+	return (t - float64(c.delayCh) + discTaps/2 + discSpan*samplesPerSy + 1 - d/2) / d
 }
 
 // slotEnergyAt returns the mean power of the discriminator prefilter output

@@ -203,7 +203,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	r.fe = newFrontEnd(cfg.Rate, cfg.Signed)
 	r.wide = make([]complex64, int(float64(cfg.MaxWrite/2)/(cfg.Rate/basebandRate))+4)
 	size := (cfg.LookbackSlots + maxGapSlots + 4) * slotSamplesN
-	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, 1)
+	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, max(r.opt.DiscDecimation, 1))
 	r.spec = newSpectrum()
 	r.search = newSyncSearch()
 	if r.opt.Coherent {
