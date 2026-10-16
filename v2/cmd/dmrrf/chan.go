@@ -205,44 +205,31 @@ func (r *ring) ringAt(t float64, pad int) (base int64, u float32) {
 	return i0 - int64(pad), float32(t-float64(i0)) + float32(pad)
 }
 
-// interpAt returns the ring at ring position base+u, u at least 0, by a
+// interpIn returns x, samples of the ring, at the fractional index u by a
 // Blackman windowed sinc of sincTaps samples, at the nearest of the phases
-// fractional delays, in single precision.
-func (r *ring) interpAt(base int64, u float32) complex64 {
-	iu := int32(u)
+// fractional delays. Samples outside x count as 0.
+func (r *ring) interpIn(x []complex64, u float32) complex64 {
+	iu := int(u)
+	if u < 0 {
+		iu--
+	}
 	p := int((u-float32(iu))*float32(r.phases) + 0.5)
 	taps := r.tab[p*sincTaps : (p+1)*sincTaps]
-	lo := base + int64(iu) - sincTaps/2 + 1
+	lo := iu - sincTaps/2 + 1
 	var re, im float32
-	if r.q != nil {
-		if k := r.pos(lo); k >= 0 && lo+sincTaps <= r.n&^(qBlock-1) && k+sincTaps <= len(r.ex)*qBlock {
-			for j := 0; j < sincTaps; {
-				b := (k + j) / qBlock
-				end := min(sincTaps, (b+1)*qBlock-k)
-				var br, bi float32
-				for ; j < end; j++ {
-					w := taps[j]
-					br += float32(r.q[2*(k+j)]) * w
-					bi += float32(r.q[2*(k+j)+1]) * w
-				}
-				g := pow2(int32(r.ex[b]))
-				re += br * g
-				im += bi * g
-			}
-			return complex(re, im)
-		}
-	} else if lo >= 0 && lo >= r.n-int64(len(r.buf)) && lo+sincTaps <= r.n {
-		for k, w := range taps {
-			v := r.buf[(lo+int64(k))&r.mask]
-			re += real(v) * w
-			im += imag(v) * w
+	if lo >= 0 && lo+sincTaps <= len(x) {
+		w := x[lo : lo+sincTaps]
+		for k, t := range taps {
+			re += real(w[k]) * t
+			im += imag(w[k]) * t
 		}
 		return complex(re, im)
 	}
-	for k, w := range taps {
-		v := r.at(lo + int64(k))
-		re += real(v) * w
-		im += imag(v) * w
+	for k, t := range taps {
+		if j := lo + k; j >= 0 && j < len(x) {
+			re += real(x[j]) * t
+			im += imag(x[j]) * t
+		}
 	}
 	return complex(re, im)
 }
@@ -251,7 +238,19 @@ func (r *ring) interpAt(base int64, u float32) complex64 {
 // ring holds.
 func (r *ring) gather(first int64, x []complex64) {
 	n := int64(len(x))
-	if r.q == nil || first < 0 || first+n > r.n&^(qBlock-1) {
+	if r.q == nil {
+		if first >= 0 && first >= r.n-int64(len(r.buf)) && first+n <= r.n {
+			for j := range x {
+				x[j] = r.buf[(first+int64(j))&r.mask]
+			}
+			return
+		}
+		for j := range x {
+			x[j] = r.at(first + int64(j))
+		}
+		return
+	}
+	if first < 0 || first+n > r.n&^(qBlock-1) {
 		for j := range x {
 			x[j] = r.at(first + int64(j))
 		}

@@ -17,6 +17,9 @@ const (
 	// phaseBank is the number of carrier phases tried where no anchor gives
 	// one.
 	phaseBank = 8
+	// fillChunk is the number of symbols whose ring samples fillRange loads
+	// at once.
+	fillChunk = trellisWin + trellisLook
 	// noRun is the run distance of a symbol that no trellis run set.
 	noRun = math.MaxInt16
 	// maxPulseSpan is the most symbols on each side of a symbol that its
@@ -104,18 +107,20 @@ func (r *Receiver) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 		t0 += sp
 	}
 	symRot, symStep := complex64(r.rotAt(t0)), complex64(r.rotAt(float64(dir)*r.period/slotSymbols))
-	pad := 0
-	if rev {
-		pad = (i1-i0)*samplesPerSy/ch.dec + sincTaps
-	}
-	base, u0 := ch.ringAt(t0, pad)
+	base, u0 := ch.ringAt(t0, 0)
 	du, su := float32(float64(dir)*r.period/slotSymbols/float64(ch.dec)), float32(sp/float64(ch.dec))
+	var first int64
+	var scr []complex64
 	for i := i0; i < i1; i++ {
 		u := u0 + float32(i-i0)*du
+		if (i-i0)%fillChunk == 0 {
+			first, scr = r.loadChunk(base, u, du, su, min(fillChunk, i1-i)*sps, rev)
+		}
+		off := float32(base - first)
 		rot := symRot
 		symRot *= symStep
 		for j := range sps {
-			v := ch.interpAt(base, u+float32(j)*su) * rot
+			v := ch.interpIn(scr, off+u+float32(j)*su) * rot
 			rot *= step
 			if rev {
 				v = complex(real(v), -imag(v))
@@ -123,6 +128,23 @@ func (r *Receiver) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 			x[(i-i0)*sps+j] = v
 		}
 	}
+}
+
+// loadChunk loads into r.scr the ring samples that n trellis samples need,
+// the first at ring position base+u, sample j of symbol i at
+// base+u+i*du+j*su, and returns the ring position of r.scr[0] and the
+// loaded samples.
+func (r *Receiver) loadChunk(base int64, u, du, su float32, n int, rev bool) (int64, []complex64) {
+	sps := r.model.sps
+	span := float32(n/sps)*abs32(du) + float32(sps)*abs32(su)
+	lo := u
+	if rev {
+		lo = u - span
+	}
+	first := base + int64(math.Floor(float64(lo))) - sincTaps
+	m := min(int(span)+2*sincTaps+2, len(r.scr))
+	r.chz.ch.gather(first, r.scr[:m])
+	return first, r.scr[:m]
 }
 
 // runSamples writes the samples of the intervals k0 to k1-1 of the current
@@ -361,6 +383,10 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 		rotW := complex64(r.rotAt(tw))
 		wHz := float32(-2 * math.Pi * r.freq / basebandRate)
 		base, uw := ch.ringAt(tw, sps)
+		first := base - sincTaps
+		scr := r.scr[:min(ddWindow*sps+sps+2*sincTaps+4, len(r.scr))]
+		ch.gather(first, scr)
+		uw += sincTaps
 		du := float32(r.period / slotSymbols / float64(dec))
 		dt := float32(r.period / slotSymbols)
 		var c complex64
@@ -383,7 +409,7 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 				}
 				rs, rc := sincosf(wHz * (ti + float32((j-sps/2)*dec)))
 				ps, pc := sincosf(ph)
-				c += ch.interpAt(base, ui+float32(j-sps/2)) * rotW * complex(rc, rs) * complex(pc, -ps)
+				c += ch.interpIn(scr, ui+float32(j-sps/2)) * rotW * complex(rc, rs) * complex(pc, -ps)
 			}
 		}
 		z += c * complex(real(prev), -imag(prev))

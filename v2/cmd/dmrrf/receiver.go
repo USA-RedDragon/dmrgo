@@ -146,6 +146,8 @@ type Receiver struct {
 	slp     []float32
 	buf     []complex64
 	tapp    []float32
+	// scr holds the ring samples that fillRange interpolates from.
+	scr []complex64
 	// runG, runDir, runSteps, runLo and runHi describe the trellis run
 	// that runSamples, runPrior and runKeep serve.
 	runG, runLo, runHi symRef
@@ -256,6 +258,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 		}
 	}
 	if r.opt.Coherent {
+		r.scr = make([]complex64, (fillChunk+1)*samplesPerSy/dec+2*sincTaps+4)
 		r.pulse = newPhasePulse(samplesPerSy / dec)
 		r.corrX = make([]complex64, syncSpan/dec)
 	}
@@ -575,9 +578,13 @@ func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
 	t0 := r.syncStart(s, tau)
 	rot, step := complex64(r.rotAt(t0)), complex64(r.rotAt(float64(dec)))
 	base, u := ch.ringAt(t0, 0)
+	first := base - sincTaps
+	scr := r.scr[:min(r.search.span+2*sincTaps+2, len(r.scr))]
+	ch.gather(first, scr)
+	u += sincTaps
 	var e float32
 	for j := range r.search.span {
-		v := ch.interpAt(base, u+float32(j)) * rot
+		v := ch.interpIn(scr, u+float32(j)) * rot
 		rot *= step
 		r.corrX[j] = v
 		e += real(v)*real(v) + imag(v)*imag(v)
