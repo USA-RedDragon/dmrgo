@@ -190,3 +190,14 @@ func (g *softGrid) posterior(llr, post *[softBurstBits]int16) {
 		}
 	}
 }
+
+// extrinsic sets ext to the extrinsic ratios of the last decode, in nats,
+// at the grid cells and 0 elsewhere.
+func (g *softGrid) extrinsic(ext *[softBurstBits]float32) {
+	*ext = [softBurstBits]float32{}
+	for r := range gridRows {
+		for c := range gridCols {
+			ext[g.pos[r][c]] = g.er[r][c] + g.ec[r][c]
+		}
+	}
+}
