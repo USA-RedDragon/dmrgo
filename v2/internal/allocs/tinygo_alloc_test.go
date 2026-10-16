@@ -278,7 +278,7 @@ func tinyFramerOps(t *testing.T, r *rand.Rand) []tinyOp {
 	f := framer.New(framer.Config{Period: 264})
 	dst := make([]framer.Burst, 0, 16)
 	return []tinyOp{
-		{"layer2/framer.Framer.AppendBursts", func() { dst = f.AppendBursts(dst[:0], stream) }},
+		{"layer2/framer.Framer.AppendBursts", func() { dst = f.AppendBursts(dst[:0], stream, 8*len(stream)) }},
 	}
 }
 

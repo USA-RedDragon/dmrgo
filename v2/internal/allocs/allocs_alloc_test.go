@@ -306,7 +306,8 @@ func TestAllocsFramer(t *testing.T) {
 	dst := make([]framer.Burst, 0, 16)
 	assertZero(t, "voice.bin", func() {
 		for i := 0; i < len(stream); i += 13 {
-			dst = f.AppendBursts(dst[:0], stream[i:min(i+13, len(stream))])
+			chunk := stream[i:min(i+13, len(stream))]
+			dst = f.AppendBursts(dst[:0], chunk, 8*len(chunk))
 		}
 	})
 }

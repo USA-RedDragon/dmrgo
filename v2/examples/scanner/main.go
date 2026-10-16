@@ -63,7 +63,7 @@ func run(w io.Writer, dataDir string) error {
 	n, first := 0, int64(-1)
 	for len(stream) > 0 {
 		chunk := min(len(stream), 1+int(r.next()%63))
-		for _, fb := range f.Write(stream[:chunk]) {
+		for _, fb := range f.Write(stream[:chunk], 8*chunk) {
 			if first < 0 {
 				first = fb.Offset
 			}
