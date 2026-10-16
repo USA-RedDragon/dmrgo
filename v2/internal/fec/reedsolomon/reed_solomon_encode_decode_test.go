@@ -49,7 +49,7 @@ func TestSyndromeDetectsCorruption(t *testing.T) {
 	var corrupted [dataSize + checksumSize]byte
 	corrupted[3] = 0xFF
 
-	var syndrome poly
+	var syndrome syndromes
 	calcSyndrome(&corrupted, &syndrome)
 
 	if !syndromeHasErrors(&syndrome) {
@@ -173,7 +173,7 @@ func TestSyndromeCleanForValidCodeword(t *testing.T) {
 
 	var data [dataSize + checksumSize]byte
 
-	var syndrome poly
+	var syndrome syndromes
 	calcSyndrome(&data, &syndrome)
 
 	if syndromeHasErrors(&syndrome) {
