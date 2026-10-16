@@ -16,6 +16,11 @@
 // Feature set ID 0xC2 in the Full LC. The FID does not identify the Codec2
 // mode, so both ends must agree on it out of band.
 //
+// The package does not register itself. A program that creates codecs by
+// name registers it once, before vocoder.New:
+//
+//	vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{}))
+//
 // libcodec2 is licensed under the GNU LGPL 2.1. This package links it
 // dynamically and contains none of its source. A program that links
 // libcodec2 statically must meet the LGPL terms for that copy.

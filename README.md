@@ -91,6 +91,13 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
 
 `vocoder/codec2` links the system libcodec2 (LGPL 2.1) with cgo. A program that imports it needs a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. Build with `-tags nocodec2` or `CGO_ENABLED=0` to leave it out: `codec2.New` then returns `codec2.ErrUnavailable`. TinyGo builds always leave it out.
 
+The package does not register itself. A program that creates codecs by name registers it once at startup:
+
+```go
+vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{}))
+enc, err := vocoder.New(codec2.Name)
+```
+
 | Item | Value |
 | --- | --- |
 | Modes | `Mode2400`, `Mode3200`, one 20 ms frame per 72-bit voice slot, MSB first, zero padded, no FEC |

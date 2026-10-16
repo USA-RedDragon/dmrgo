@@ -181,6 +181,7 @@ func rms(pcm []int16) float64 {
 }
 
 func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
+	vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{}))
 	enc, err := vocoder.New(codec2.Name)
 	if errors.Is(err, codec2.ErrUnavailable) {
 		_, _ = fmt.Fprintln(w, "codec2 unavailable, skipping")

@@ -94,14 +94,12 @@ linters:
         linters:
           - gochecknoglobals
         text: ^(syncPatterns|cachDeinterleaveTable|cachInterleaveTable|allSyncPatterns|voiceSyncPatterns|dataSyncPatterns|shortLCFragmentLCSS) is a global variable
-      # The codec registry works like the database/sql driver registry: codec
-      # packages register in init, and libcodec2 keeps process-wide state that
-      # one mutex guards.
-      - path: v2/vocoder/(codec\.go|codec2/codec2\.go|codec2/codec2_cgo\.go)$
+      # The codec registry is process-wide, like the database/sql driver
+      # registry, and libcodec2 keeps process-wide state that one mutex guards.
+      - path: v2/vocoder/(codec\.go|codec2/codec2_cgo\.go)$
         linters:
           - gochecknoglobals
-          - gochecknoinits
-        text: ^(registryMu is a global variable|registry is a global variable|libMu is a global variable|don't use `init` function)
+        text: ^(registryMu is a global variable|registry is a global variable|libMu is a global variable)
       # The generator's codec and CRC lookup tables.
       - path: cmd/dmrgen/(emit/emit|parse/parse)\.go$
         linters:
