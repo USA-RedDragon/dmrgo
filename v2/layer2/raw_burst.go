@@ -1,8 +1,6 @@
 package layer2
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -76,7 +74,7 @@ func (r RawBurst) Sync() (enums.SyncPattern, int) {
 // an error unless p is a SYNC pattern (ETSI TS 102 361-1 Table 9.2).
 func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 	if !isSyncPattern(p) {
-		return fmt.Errorf("%#x is not a Table 9.2 SYNC pattern", uint64(p))
+		return newSyncPatternError(p)
 	}
 	r.setSync(p)
 	return nil
@@ -328,7 +326,7 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 	var r RawBurst
 	voice, _, ok := src.SyncPatterns()
 	if !ok {
-		return r, fmt.Errorf("unknown sync source %d", src)
+		return r, newSyncSourceError(src)
 	}
 	r.SetAMBEFrames(frames)
 	if pos == enums.VoiceBurstA {
@@ -339,7 +337,7 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 	}
 	lcss, ok := pos.LCSS()
 	if !ok {
-		return RawBurst{}, fmt.Errorf("voice burst position %s is not A to F", pos.String())
+		return RawBurst{}, newNotAToFError(pos)
 	}
 	emb.LCSS = lcss
 	r.SetEMB(emb)
@@ -353,7 +351,7 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 // not encode, or src is unknown.
 func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if d == nil {
-		return RawBurst{}, fmt.Errorf("cannot build a burst from nil Data")
+		return RawBurst{}, errNilData
 	}
 	dt := d.DataType()
 	info, err := encodeData(d, dt)
@@ -385,7 +383,7 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 // It returns an error when dt is not BPTC coded or src is unknown.
 func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if !dt.IsBPTC() {
-		return RawBurst{}, fmt.Errorf("data type %s is not BPTC(196,96) coded", dt.String())
+		return RawBurst{}, newNotBPTCError(dt)
 	}
 	r, err := dataBurstFrame(dt, cc, src)
 	if err != nil {
@@ -423,7 +421,7 @@ func dataBurstFrame(dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawB
 	var r RawBurst
 	_, sync, ok := src.SyncPatterns()
 	if !ok {
-		return r, fmt.Errorf("unknown sync source %d", src)
+		return r, newSyncSourceError(src)
 	}
 	if err := r.SetSync(sync); err != nil {
 		return r, err

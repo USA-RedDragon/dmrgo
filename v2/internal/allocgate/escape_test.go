@@ -25,10 +25,6 @@ const moduleRoot = "../.."
 // skipDirs are the module directories that are not library code.
 var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/zeroalloc"}
 
-// pendingDirs are library directories that the gate does not check yet,
-// because their code still allocates. Empty it when they are clean.
-var pendingDirs = []string{"layer2", "layer2/framer"}
-
 // makeRE matches a make call that -gcflags=-m reports as not escaping. The
 // runtime puts such a slice on the stack only when its size is a constant
 // or at most 32 bytes, so a make with a size that is not a literal can still
@@ -286,9 +282,6 @@ func TestNoHeapAllocations(t *testing.T) {
 	var bad []string
 	for _, s := range escapeSites(t) {
 		dir := filepath.ToSlash(filepath.Dir(s.file))
-		if slices.Contains(pendingDirs, dir) {
-			continue
-		}
 		p, ok := pkgs[dir]
 		if !ok {
 			p = parsePackage(t, dir)
