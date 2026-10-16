@@ -1,8 +1,8 @@
 package vocoder_test
 
 import (
+	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -37,8 +37,10 @@ func (lsbCodec) FID() enums.FeatureSetID { return enums.FIDStandardized }
 // ExampleNew registers a toy codec, opens it by name, and shows the error
 // for an unknown name.
 func ExampleNew() {
-	if !slices.Contains(vocoder.Names(), "example-lsb") {
-		vocoder.Register("example-lsb", func() (vocoder.Codec, error) { return lsbCodec{}, nil })
+	err := vocoder.Register("example-lsb", func() (vocoder.Codec, error) { return lsbCodec{}, nil })
+	if err != nil && !errors.Is(err, vocoder.ErrDuplicateCodec) {
+		fmt.Println(err)
+		return
 	}
 
 	c, err := vocoder.New("example-lsb")

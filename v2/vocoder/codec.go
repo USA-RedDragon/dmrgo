@@ -14,8 +14,12 @@ import (
 // ErrUnknownCodec is returned by New when no codec is registered under the name.
 var ErrUnknownCodec = errors.New("vocoder: unknown codec")
 
-// errNilFactory is the panic value of Register with a nil factory.
-var errNilFactory = errors.New("vocoder: Register factory is nil")
+// ErrDuplicateCodec is returned by Register when a codec is already
+// registered under the name.
+var ErrDuplicateCodec = errors.New("vocoder: codec already registered")
+
+// ErrNilFactory is returned by Register when the factory is nil.
+var ErrNilFactory = errors.New("vocoder: codec factory is nil")
 
 // Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of
 // one of the three vocoder frames of a DMR voice burst (ETSI TS 102 361-1
@@ -59,17 +63,19 @@ var (
 
 // Register makes a codec factory available under name. A program calls it
 // once per codec at startup; no codec package registers itself. Register
-// panics if name is already registered or factory is nil.
-func Register(name string, factory func() (Codec, error)) {
+// returns ErrNilFactory if factory is nil and ErrDuplicateCodec if name is
+// already registered.
+func Register(name string, factory func() (Codec, error)) error {
+	if factory == nil {
+		return ErrNilFactory
+	}
 	registryMu.Lock()
 	defer registryMu.Unlock()
-	if factory == nil {
-		panic(errNilFactory)
-	}
 	if _, dup := registry[name]; dup {
-		panic(newDuplicateCodecError(name))
+		return ErrDuplicateCodec
 	}
 	registry[name] = factory
+	return nil
 }
 
 // New creates a codec with the factory registered under name. It returns an
@@ -105,12 +111,4 @@ func AppendNames(dst []string) []string {
 	}
 	slices.Sort(dst[n:])
 	return dst
-}
-
-// newDuplicateCodecError returns the panic value of a second Register of
-// name.
-//
-//go:noinline
-func newDuplicateCodecError(name string) error {
-	return errors.New("vocoder: Register called twice for codec " + name)
 }

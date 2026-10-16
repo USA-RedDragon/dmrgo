@@ -97,7 +97,9 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
 The package does not register itself. A program that creates codecs by name registers it once at startup:
 
 ```go
-vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{}))
+if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil {
+	return err
+}
 enc, err := vocoder.New(codec2.Name)
 ```
 
