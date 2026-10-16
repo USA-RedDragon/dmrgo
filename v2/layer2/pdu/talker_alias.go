@@ -1,7 +1,7 @@
 package pdu
 
 import (
-	"fmt"
+	"errors"
 	"slices"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -159,13 +159,13 @@ func talkerAliasUnits(units *[talkerAliasMaxUnits]uint16, alias string, format l
 		}
 		for _, r := range alias {
 			if r > limit {
-				return 0, newCharacterFormatError(r, format)
+				return 0, errCharacterFormat
 			}
 			n = putUnit(units, n, uint16(r&0xFFFF))
 		}
 		return n, nil
 	}
-	return 0, newUnknownFormatError(format)
+	return 0, errUnknownFormat
 }
 
 // putUnit sets units[n] to u when it fits, and returns n+1.
@@ -316,17 +316,8 @@ func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias
 	return out, err == nil, err
 }
 
-// newCharacterFormatError returns the error of a character r that is not in
-// the talker alias format.
-//
-//go:noinline
-func newCharacterFormatError(r rune, format layer3.TalkerAliasDataFormat) error {
-	return fmt.Errorf("character %q is not in the %s format", r, format.String())
-}
-
-// newUnknownFormatError returns the error of an unknown talker alias format.
-//
-//go:noinline
-func newUnknownFormatError(format layer3.TalkerAliasDataFormat) error {
-	return fmt.Errorf("unknown talker alias format %d", format)
-}
+// The errors of EncodeTalkerAlias for an alias that its format cannot carry.
+var (
+	errCharacterFormat = errors.New("a character of the talker alias is not in its format")
+	errUnknownFormat   = errors.New("unknown talker alias format")
+)

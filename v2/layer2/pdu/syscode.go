@@ -1,7 +1,7 @@
 package pdu
 
 import (
-	"fmt"
+	"errors"
 )
 
 // NetworkModel is the MODEL field of a System Identity Code
@@ -40,16 +40,16 @@ type SysCode struct {
 
 func (s SysCode) check() error {
 	if s.Model > NetworkModelHuge {
-		return newSysCodeRangeError("network model", uint16(s.Model), 2)
+		return errSysCodeModelRange
 	}
 	if s.Net>>s.Model.NetBits() != 0 {
-		return newSysCodeRangeError("NET", s.Net, s.Model.NetBits())
+		return errSysCodeNetRange
 	}
 	if s.Site>>s.Model.SiteBits() != 0 {
-		return newSysCodeRangeError("SITE", s.Site, s.Model.SiteBits())
+		return errSysCodeSiteRange
 	}
 	if s.Par > 3 {
-		return newSysCodeRangeError("PAR", uint16(s.Par), 2)
+		return errSysCodeParRange
 	}
 	return nil
 }
@@ -133,10 +133,10 @@ func (s *ShortLCPSysParms) SetSysCode(c SysCode) error {
 	return nil
 }
 
-// newSysCodeRangeError returns the error of a SYSCODE field name whose value
-// does not fit in its bits.
-//
-//go:noinline
-func newSysCodeRangeError(name string, value uint16, bits int) error {
-	return fmt.Errorf("%s %d does not fit in %d bits", name, value, bits)
-}
+// The errors of a SYSCODE field whose value does not fit in its bits.
+var (
+	errSysCodeModelRange = errors.New("network model does not fit in 2 bits")
+	errSysCodeNetRange   = errors.New("NET does not fit in the bits of the network model")
+	errSysCodeSiteRange  = errors.New("SITE does not fit in the bits of the network model")
+	errSysCodeParRange   = errors.New("PAR does not fit in 2 bits")
+)
