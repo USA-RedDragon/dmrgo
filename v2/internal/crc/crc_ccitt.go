@@ -9,13 +9,17 @@ package crc
 // CCITT computes the inverted CRC-CCITT of data, as MMDVM's
 // CCRC::checkCCITT162 does (ETSI TS 102 361-1 clause B.3.8).
 func CCITT(data []byte) uint16 {
-	var crc16 uint16
+	return ^CCITTUpdate(0, data)
+}
 
+// CCITTUpdate returns the CRC-CCITT register after data, from the register
+// reg, before the inversion. CCITT(data) is ^CCITTUpdate(0, data), so a CRC
+// over several slices is ^CCITTUpdate(CCITTUpdate(0, a), b).
+func CCITTUpdate(reg uint16, data []byte) uint16 {
 	for _, b := range data {
-		crc16 = (uint16(byte(crc16)) << 8) ^ ccitt16_0x1021[byte(crc16>>8)^b]
+		reg = (reg&0xFF)<<8 ^ ccitt16_0x1021[uint8(reg>>8)^b]
 	}
-
-	return ^crc16
+	return reg
 }
 
 // CheckCCITT reports whether want is the CRC-CCITT of data.
