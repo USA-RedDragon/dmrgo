@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	reftrellis "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
@@ -110,7 +109,7 @@ func TestTrellis34_EncodeMatchesReference(t *testing.T) {
 	r := rand.New(rand.NewSource(1))
 	for range 20000 {
 		data, got := randomBlock(r)
-		var in [144]bit.Bit
+		var in [144]unpacked.Bit
 		copy(in[:], unpacked.Unpack(data[:]))
 		want := reftrellis.Encode(in)
 		if [25]byte(unpacked.Pack(want[:])) != got {

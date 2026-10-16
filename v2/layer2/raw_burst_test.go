@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -36,8 +35,8 @@ func isBPTC(dt enums.DataType) bool {
 // sameBits reports whether a and b agree outside the burst bit ranges in
 // skip, each given as [start, end).
 func sameBits(a, b layer2.RawBurst, skip ...[2]int) bool {
-	x := [264]bit.Bit(unpacked.Unpack(a[:]))
-	y := [264]bit.Bit(unpacked.Unpack(b[:]))
+	x := [264]unpacked.Bit(unpacked.Unpack(a[:]))
+	y := [264]unpacked.Bit(unpacked.Unpack(b[:]))
 outer:
 	for i := range x {
 		for _, s := range skip {
@@ -428,7 +427,7 @@ func TestEmbeddedLCBytes_Capture(t *testing.T) {
 	}
 }
 
-func fragmentWords(fr [4][32]bit.Bit) [4][4]byte {
+func fragmentWords(fr [4][32]unpacked.Bit) [4][4]byte {
 	var out [4][4]byte
 	for i := range fr {
 		copy(out[i][:], unpacked.Pack(fr[i][:]))

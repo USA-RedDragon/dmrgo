@@ -3,7 +3,7 @@ package bptc
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // tableB16 returns ETSI TS 102 361-1 Table B.16, the Hamming (16,11,4) generator matrix.
@@ -23,17 +23,17 @@ func tableB16() [11]string {
 	}
 }
 
-func hamming16_11Codeword(d int) [16]bit.Bit {
+func hamming16_11Codeword(d int) [16]unpacked.Bit {
 	row := rowParity16_11(uint16(d & 0x7FF))
-	var cw [16]bit.Bit
+	var cw [16]unpacked.Bit
 	for i := range cw {
-		cw[i] = bit.Bit(row >> i & 1)
+		cw[i] = unpacked.Bit(row >> i & 1)
 	}
 	return cw
 }
 
-// syndrome16_11 returns the syndrome of a row given one bit.Bit per column.
-func syndrome16_11(cw [16]bit.Bit) int {
+// syndrome16_11 returns the syndrome of a row given one unpacked.Bit per column.
+func syndrome16_11(cw [16]unpacked.Bit) int {
 	var row uint16
 	for i, b := range cw {
 		row |= uint16(b&1) << i

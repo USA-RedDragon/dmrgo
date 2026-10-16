@@ -4,13 +4,12 @@ import (
 	"math/bits"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-func bits20(cw uint32) [20]bit.Bit {
-	var b [20]bit.Bit
+func bits20(cw uint32) [20]unpacked.Bit {
+	var b [20]unpacked.Bit
 	unpacked.PutUint(b[:], uint64(cw))
 	return b
 }
@@ -30,7 +29,7 @@ func TestGolay2087MatchesReferenceOnEveryWord(t *testing.T) {
 	}
 	for d := range 256 {
 		data := bits20(uint32(d) << 12)
-		want := ref.Encode2087([8]bit.Bit(data[:8]))
+		want := ref.Encode2087([8]unpacked.Bit(data[:8]))
 		if got := Encode2087(uint8(d)); got != uint32(unpacked.Uint(want[:])) {
 			t.Fatalf("Encode2087(%#02x) = %#05x, want %#05x", d, got, unpacked.Uint(want[:]))
 		}

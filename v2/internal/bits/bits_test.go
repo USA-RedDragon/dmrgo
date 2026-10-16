@@ -3,8 +3,6 @@ package bits
 import (
 	"math/rand"
 	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
 func refField(b []byte, start, n int) uint64 {
@@ -57,7 +55,7 @@ func TestSetFieldWritesOnlyTheField(t *testing.T) {
 	}
 }
 
-func TestCopyUnpackPack(t *testing.T) {
+func TestCopy(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(3))
@@ -75,13 +73,6 @@ func TestCopyUnpackPack(t *testing.T) {
 		Copy(dst, ds, src, ss, n)
 		if string(dst) != string(want) {
 			t.Fatalf("Copy(%d, %d, %d) = %x, want %x", ds, ss, n, dst, want)
-		}
-		unpacked := make([]bit.Bit, n)
-		Unpack(unpacked, src, ss)
-		packed := make([]byte, 33)
-		Pack(packed, ds, unpacked)
-		if refField(packed, ds, min(n, 64)) != refField(src, ss, min(n, 64)) {
-			t.Fatalf("Pack(Unpack) at %d, %d, %d differs", ds, ss, n)
 		}
 	}
 }

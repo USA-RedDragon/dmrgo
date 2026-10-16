@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func gridSyndromesZero(rows *[13]uint16) bool {
@@ -21,10 +21,10 @@ func gridSyndromesZero(rows *[13]uint16) bool {
 	return true
 }
 
-func randomBPTC19696(r *rand.Rand) ([96]bit.Bit, [196]bit.Bit) {
-	var data [96]bit.Bit
+func randomBPTC19696(r *rand.Rand) ([96]unpacked.Bit, [196]unpacked.Bit) {
+	var data [96]unpacked.Bit
 	for i := range data {
-		data[i] = bit.Bit(r.Intn(2))
+		data[i] = unpacked.Bit(r.Intn(2))
 	}
 	return data, encode196Bits(data)
 }
@@ -35,7 +35,7 @@ func TestBPTC19696_EncodedGridIsProductCodeword(t *testing.T) {
 	r := rand.New(rand.NewSource(6))
 	for n := 0; n < 1000; n++ {
 		_, enc := randomBPTC19696(r)
-		var g [196]bit.Bit
+		var g [196]unpacked.Bit
 		for i := range g {
 			g[i] = enc[dm[i]]
 		}
@@ -73,7 +73,7 @@ func TestBPTC19696_AcceptedOutputIsCodeword(t *testing.T) {
 		for _, p := range r.Perm(196)[:4+r.Intn(6)] {
 			rx[p] ^= 1
 		}
-		var g [196]bit.Bit
+		var g [196]unpacked.Bit
 		for i := range g {
 			g[i] = rx[dm[i]]
 		}

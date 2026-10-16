@@ -1,16 +1,11 @@
-// Package bit holds the Bit type, one bit stored in a byte, and
-// FieldRangeError, the error of the PDU Encode methods. The API of dmrgo
-// takes and returns bits packed in bytes, the first bit in the most
-// significant bit of byte 0.
+// Package bit holds FieldRangeError, the error of the PDU Encode methods.
+// The API of dmrgo takes and returns bits packed in bytes, the first bit in
+// the most significant bit of byte 0.
 package bit
 
 import (
 	"fmt"
 )
-
-// Bit is one bit stored in a byte, 0 or 1. A function that reads a Bit uses
-// only its low bit, so a Bit of 2 reads as 0 and a Bit of 0xFF reads as 1.
-type Bit byte
 
 // FieldRangeError is the error of a PDU Encode method when a field value
 // does not fit in its on-air bits, or for a coordinate when it is outside

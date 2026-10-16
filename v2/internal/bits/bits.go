@@ -1,11 +1,8 @@
 // Package bits reads and writes bit fields of packed byte slices, the first
 // bit in the most significant bit of the first byte, the order of a DMR
-// burst on air. Pack and Unpack convert a range of bits between packed
-// bytes and bit.Bit slices for the tests. A function panics when a
-// slice is shorter than the bits it reads or writes.
+// burst on air. A function panics when a slice is shorter than the bits it
+// reads or writes.
 package bits
-
-import "github.com/USA-RedDragon/dmrgo/v2/bit"
 
 // Bit returns bit i of b, 0 or 1.
 func Bit(b []byte, i int) byte {
@@ -84,38 +81,5 @@ func Copy(dst []byte, dstStart int, src []byte, srcStart, n int) {
 		dstStart += k
 		srcStart += k
 		n -= k
-	}
-}
-
-// Unpack writes len(dst) bits of src from bit start into dst, one bit.Bit
-// per bit.
-func Unpack(dst []bit.Bit, src []byte, start int) {
-	if start&7 == 0 {
-		for i := range dst {
-			dst[i] = bit.Bit(src[start>>3+i>>3] >> (7 - i&7) & 1)
-		}
-		return
-	}
-	for i := range dst {
-		dst[i] = bit.Bit(Bit(src, start+i))
-	}
-}
-
-// Pack writes the low bits of src into dst from bit start. The other bits of
-// dst stay as they are.
-func Pack(dst []byte, start int, src []bit.Bit) {
-	if start&7 == 0 {
-		whole := len(src) &^ 7
-		for i := 0; i < whole; i += 8 {
-			var x byte
-			for _, b := range src[i : i+8] {
-				x = x<<1 | byte(b&1)
-			}
-			dst[start>>3+i>>3] = x
-		}
-		src, start = src[whole:], start+whole
-	}
-	for i, b := range src {
-		SetBit(dst, start+i, byte(b))
 	}
 }

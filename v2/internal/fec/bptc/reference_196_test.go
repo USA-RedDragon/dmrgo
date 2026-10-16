@@ -4,8 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	packed "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
@@ -23,11 +21,11 @@ func TestBPTC19696MatchesReference(t *testing.T) {
 		var data [12]byte
 		r.Read(data[:])
 		reserved := uint8(r.Intn(8))
-		refRes := [3]bit.Bit{bit.Bit(reserved & 1), bit.Bit(reserved >> 1 & 1), bit.Bit(reserved >> 2 & 1)}
+		refRes := [3]unpacked.Bit{unpacked.Bit(reserved & 1), unpacked.Bit(reserved >> 1 & 1), unpacked.Bit(reserved >> 2 & 1)}
 		info := bptc.Encode196(data, reserved)
 		refInfo := ref.Encode196WithReserved(unpacked.Unpack96(data), refRes)
 		var want [25]byte
-		packed.Pack(want[:], 0, refInfo[:])
+		unpacked.PackAt(want[:], 0, refInfo[:])
 		if info != want {
 			t.Fatalf("Encode196(%x, %d) = %x, want %x", data, reserved, info, want)
 		}
@@ -45,7 +43,7 @@ func TestBPTC19696MatchesReference(t *testing.T) {
 				info[p/8] ^= 0x80 >> (p % 8)
 			}
 		}
-		packed.Unpack(refInfo[:], info[:], 0)
+		unpacked.UnpackAt(refInfo[:], info[:], 0)
 		got, gotRes, gotResult := bptc.Decode196(info)
 		wantData, wantRes, wantResult := ref.Decode196WithReserved(refInfo)
 		wantReserved := uint8(wantRes[0] | wantRes[1]<<1 | wantRes[2]<<2)
@@ -61,8 +59,8 @@ func BenchmarkBPTC19696(b *testing.B) {
 	bad := clean
 	bad[5] ^= 0x10
 	refClean := ref.Encode196(unpacked.Unpack96(data))
-	var refBad [196]bit.Bit
-	packed.Unpack(refBad[:], bad[:], 0)
+	var refBad [196]unpacked.Bit
+	unpacked.UnpackAt(refBad[:], bad[:], 0)
 	b.Run("Decode/clean", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {

@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -21,8 +20,8 @@ import (
 // 3191868 to 9990.
 var capturedEmbeddedLC = []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
 
-func capturedFragments() [4][32]bit.Bit {
-	var fr [4][32]bit.Bit
+func capturedFragments() [4][32]unpacked.Bit {
+	var fr [4][32]unpacked.Bit
 	for i, word := range [4][4]byte{
 		{0x00, 0x00, 0x11, 0x09},
 		{0x0F, 0x12, 0x96, 0x96},
@@ -80,7 +79,7 @@ func TestEmbeddedLC_EncodeCapture(t *testing.T) {
 	if got != capturedFragments() {
 		t.Errorf("fragments differ from the capture")
 	}
-	var bits [72]bit.Bit
+	var bits [72]unpacked.Bit
 	copy(bits[:], unpacked.Unpack(capturedEmbeddedLC))
 	if encodeLCBits(bits) != capturedFragments() {
 		t.Errorf("EncodeEmbeddedLC differs from the capture")
@@ -91,9 +90,9 @@ func TestEmbeddedLC_RoundTrip(t *testing.T) {
 	t.Parallel()
 
 	for seed := 0; seed < 64; seed++ {
-		var lc [72]bit.Bit
+		var lc [72]unpacked.Bit
 		for i := range lc {
-			lc[i] = bit.Bit(((i*31 + seed*17) >> 3 & 1) ^ (seed >> (i % 6) & 1))
+			lc[i] = unpacked.Bit(((i*31 + seed*17) >> 3 & 1) ^ (seed >> (i % 6) & 1))
 		}
 		got, res := decodeLCBits(encodeLCBits(lc))
 		if res.HasErrors() || got != lc {
@@ -109,23 +108,23 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 
 	rng := rand.New(rand.NewSource(5))
 	for range 2000 {
-		var fr [4][32]bit.Bit
+		var fr [4][32]unpacked.Bit
 		for i := range fr {
 			for j := range fr[i] {
-				fr[i][j] = bit.Bit(rng.Intn(2))
+				fr[i][j] = unpacked.Bit(rng.Intn(2))
 			}
 		}
 		if rng.Intn(2) == 0 {
-			var lc [72]bit.Bit
+			var lc [72]unpacked.Bit
 			for i := range lc {
-				lc[i] = bit.Bit(rng.Intn(2))
+				lc[i] = unpacked.Bit(rng.Intn(2))
 			}
 			fr = encodeLCBits(lc)
 			fr[rng.Intn(4)][rng.Intn(32)] ^= 1
 		}
 		for _, d := range []struct {
-			lc  func([4][32]bit.Bit) ([72]bit.Bit, fec.Result)
-			flc func([4][32]bit.Bit) (pdu.FullLinkControl, fec.Result)
+			lc  func([4][32]unpacked.Bit) ([72]unpacked.Bit, fec.Result)
+			flc func([4][32]unpacked.Bit) (pdu.FullLinkControl, fec.Result)
 		}{
 			{decodeLCBits, decodeFLCBits},
 			{decodeLCBitsStrict, decodeFLCBitsStrict},
@@ -205,7 +204,7 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 		{"0d3456555ae86ce17b", "6c15c83396b676a95233ed15c53cb750", true},
 	} {
 		raw := must(hex.DecodeString(v.raw))
-		var fr [4][32]bit.Bit
+		var fr [4][32]unpacked.Bit
 		for i := range fr {
 			copy(fr[i][:], unpacked.Unpack(raw[i*4:i*4+4]))
 		}
@@ -234,9 +233,9 @@ func TestEmbeddedLC_FiveErrors(t *testing.T) {
 	const n = 2000
 	recovered, wrong := 0, 0
 	for i := 0; i < n; i++ {
-		var lc [72]bit.Bit
+		var lc [72]unpacked.Bit
 		for j := range lc {
-			lc[j] = bit.Bit(r.Intn(2))
+			lc[j] = unpacked.Bit(r.Intn(2))
 		}
 		fr := encodeLCBits(lc)
 		for _, p := range r.Perm(128)[:5] {
@@ -265,44 +264,44 @@ func TestEmbeddedLC_EncodeRejectsBadLC(t *testing.T) {
 	}
 }
 
-func encodeLCBits(lc [72]bit.Bit) [4][32]bit.Bit {
+func encodeLCBits(lc [72]unpacked.Bit) [4][32]unpacked.Bit {
 	return fragBits(layer2.EncodeEmbeddedLC([9]byte(unpacked.Pack(lc[:]))))
 }
 
-func decodeLCBits(f [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
+func decodeLCBits(f [4][32]unpacked.Bit) ([72]unpacked.Bit, fec.Result) {
 	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f), false)
-	return [72]bit.Bit(unpacked.Unpack(lc[:])), res
+	return [72]unpacked.Bit(unpacked.Unpack(lc[:])), res
 }
 
-func decodeLCBitsStrict(f [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
+func decodeLCBitsStrict(f [4][32]unpacked.Bit) ([72]unpacked.Bit, fec.Result) {
 	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f), true)
-	return [72]bit.Bit(unpacked.Unpack(lc[:])), res
+	return [72]unpacked.Bit(unpacked.Unpack(lc[:])), res
 }
 
-func encodeFLCBits(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
+func encodeFLCBits(lc *pdu.FullLinkControl) ([4][32]unpacked.Bit, error) {
 	f, err := layer2.EncodeEmbeddedFullLinkControl(lc)
 	return fragBits(f), err
 }
 
-func decodeFLCBits(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
+func decodeFLCBits(f [4][32]unpacked.Bit) (pdu.FullLinkControl, fec.Result) {
 	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f), false)
 	return lc, lc.FEC
 }
 
-func decodeFLCBitsStrict(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
+func decodeFLCBitsStrict(f [4][32]unpacked.Bit) (pdu.FullLinkControl, fec.Result) {
 	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f), true)
 	return lc, lc.FEC
 }
 
-func fragBits(f [4][4]byte) [4][32]bit.Bit {
-	var out [4][32]bit.Bit
+func fragBits(f [4][4]byte) [4][32]unpacked.Bit {
+	var out [4][32]unpacked.Bit
 	for i := range f {
 		copy(out[i][:], unpacked.Unpack(f[i][:]))
 	}
 	return out
 }
 
-func fragOctets(f [4][32]bit.Bit) [4][4]byte {
+func fragOctets(f [4][32]unpacked.Bit) [4][4]byte {
 	var out [4][4]byte
 	for i := range f {
 		copy(out[i][:], unpacked.Pack(f[i][:]))

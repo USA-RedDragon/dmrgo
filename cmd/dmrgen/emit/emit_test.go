@@ -10,10 +10,6 @@ import (
 )
 
 const header = `package pdu
-
-import "github.com/USA-RedDragon/dmrgo/v2/bit"
-
-var _ bit.Bit
 `
 
 func generate(t *testing.T, src string) (string, error) {

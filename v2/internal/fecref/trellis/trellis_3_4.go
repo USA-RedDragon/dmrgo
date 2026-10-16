@@ -6,13 +6,12 @@ import (
 	"math"
 	mathbits "math/bits"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-func dibitsToBits(dibits [98]int8) [196]bit.Bit {
-	var bits [196]bit.Bit
+func dibitsToBits(dibits [98]int8) [196]unpacked.Bit {
+	var bits [196]unpacked.Bit
 
 	for i := 0; i < 98; i++ {
 		o := i * 2
@@ -40,8 +39,8 @@ func dibitsToBits(dibits [98]int8) [196]bit.Bit {
 // received bits that differ from the decoded path. Uncorrectable is set only
 // when a path that ends in another state has a lower metric, so callers check
 // the block CRC-9 or the message CRC-32 to detect a miscorrected block.
-func Decode(bits [196]bit.Bit) ([144]bit.Bit, fec.Result) {
-	lowbit.Mask(bits[:])
+func Decode(bits [196]unpacked.Bit) ([144]unpacked.Bit, fec.Result) {
+	unpacked.Mask(bits[:])
 	result := fec.Result{BitsChecked: 196}
 
 	var rxDibits [98]byte
@@ -109,14 +108,14 @@ func dibitBits(d int8) byte {
 	}
 }
 
-func tribitsToBits(tribits [49]byte) [144]bit.Bit {
-	var bits [144]bit.Bit
+func tribitsToBits(tribits [49]byte) [144]unpacked.Bit {
+	var bits [144]unpacked.Bit
 
 	for o := range 48 {
 		tb := tribits[o]
-		bits[3*o] = bit.Bit((tb >> 2) & 1)
-		bits[3*o+1] = bit.Bit((tb >> 1) & 1)
-		bits[3*o+2] = bit.Bit(tb & 1)
+		bits[3*o] = unpacked.Bit((tb >> 2) & 1)
+		bits[3*o+1] = unpacked.Bit((tb >> 1) & 1)
+		bits[3*o+2] = unpacked.Bit(tb & 1)
 	}
 
 	return bits
@@ -124,8 +123,8 @@ func tribitsToBits(tribits [49]byte) [144]bit.Bit {
 
 // Encode encodes 144 data bits with the rate 3/4 trellis code and a tail
 // tribit of 0 into 196 interleaved bits.
-func Encode(data [144]bit.Bit) [196]bit.Bit {
-	lowbit.Mask(data[:])
+func Encode(data [144]unpacked.Bit) [196]unpacked.Bit {
+	unpacked.Mask(data[:])
 	var tribits [49]byte
 	for i := 0; i < 48; i++ {
 		o := i * 3
