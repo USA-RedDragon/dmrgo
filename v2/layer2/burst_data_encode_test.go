@@ -179,11 +179,22 @@ var _ = []layer2.Data{
 	(*pdu.Rate1Data)(nil), (*pdu.PRFill)(nil),
 }
 
-type customData struct{ bits []bit.Bit }
+type customData struct{ bits [96]bit.Bit }
 
-func (c *customData) String() string                 { return "custom" }
-func (c *customData) DataType() enums.DataType       { return enums.DataTypeRate12 }
-func (c *customData) EncodeBits() ([]bit.Bit, error) { return c.bits, nil }
+func (c *customData) String() string               { return "custom" }
+func (c *customData) DataType() enums.DataType     { return enums.DataTypeRate12 }
+func (c *customData) Encode() ([96]bit.Bit, error) { return c.bits, nil }
+
+type customRate34 struct{}
+
+func (customRate34) String() string                { return "custom 3/4" }
+func (customRate34) DataType() enums.DataType      { return enums.DataTypeRate12 }
+func (customRate34) Encode() ([144]bit.Bit, error) { return [144]bit.Bit{}, nil }
+
+type customNoEncode struct{}
+
+func (customNoEncode) String() string           { return "custom" }
+func (customNoEncode) DataType() enums.DataType { return enums.DataTypeRate12 }
 
 // TestBurstEncode_CustomData checks that Burst.Encode takes a Data type from
 // outside package pdu and checks the number of bits it encodes.
@@ -191,14 +202,18 @@ func TestBurstEncode_CustomData(t *testing.T) {
 	t.Parallel()
 
 	want := [12]byte{0xDE, 0xAD, 0xBE, 0xEF}
-	b := dataBurst(enums.DataTypeRate12, &customData{bits: bit.Unpack(want[:])})
+	b := dataBurst(enums.DataTypeRate12, &customData{bits: bit.Unpack96(want)})
 	got := reencode(t, &b)
 	if r, ok := got.Data.(*pdu.Rate12Data); !ok || r.Data != want {
 		t.Errorf("custom Rate 1/2 Data decoded as %+v, want %x", got.Data, want)
 	}
-	b.Data = &customData{bits: make([]bit.Bit, 95)}
+	b.Data = customRate34{}
 	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "carries 96 information bits") {
-		t.Errorf("Encode of 95 bits: %v, want a length error", err)
+		t.Errorf("Encode of 144 bits in a Rate 1/2 burst: %v, want a length error", err)
+	}
+	b.Data = customNoEncode{}
+	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "no Encode method") {
+		t.Errorf("Encode of Data without Encode: %v, want a no Encode error", err)
 	}
 }
 

@@ -71,16 +71,6 @@ func (s *SlotType) Encode() ([20]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *SlotType) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *SlotType) String() string {
 	return fmt.Sprintf("SlotType{ ColorCode: %d, DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

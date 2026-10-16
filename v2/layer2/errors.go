@@ -37,6 +37,9 @@ var (
 	// ErrVoiceTerminated is returned by VoiceTransmitter methods called after
 	// Terminate.
 	ErrVoiceTerminated = errors.New("voice transmission already terminated")
+	// errNoEncode is returned by Burst.Encode and BuildBurst for Data without
+	// an Encode method that returns 96, 144 or 192 information bits.
+	errNoEncode = errors.New("data has no Encode method that returns 96, 144 or 192 information bits")
 )
 
 // reservedDataTypeError is ErrReservedDataType for a burst of data type dt.

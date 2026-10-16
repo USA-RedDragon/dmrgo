@@ -72,16 +72,6 @@ func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *ServiceOptions) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *ServiceOptions) String() string {
 	return fmt.Sprintf("ServiceOptions{ IsEmergency: %t, IsPrivacy: %t, Reserved: %d, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.Reserved, s.IsBroadcast, s.IsOpenVoiceCallMode, s.PriorityLevel)
 }
