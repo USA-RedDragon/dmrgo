@@ -322,6 +322,8 @@ type qring struct {
 	w    int
 	step float32
 	inv  float32
+	// off is added to every sample the ring holds.
+	off float32
 }
 
 // newQring returns a ring of size samples of resolution step.
@@ -347,7 +349,7 @@ func (r *qring) quantize(v float32) int8 {
 
 // push appends sample v.
 func (r *qring) push(v float32) {
-	r.buf[r.w] = r.quantize(v)
+	r.buf[r.w] = r.quantize(v - r.off)
 	r.n++
 	if r.w++; r.w == len(r.buf) {
 		r.w = 0
@@ -364,7 +366,7 @@ func (r *qring) at(i int64) float32 {
 	if k < 0 {
 		k += len(r.buf)
 	}
-	return float32(r.buf[k]) * r.step
+	return float32(r.buf[k])*r.step + r.off
 }
 
 // gather writes samples base, base+stride, ... into x, 0 outside the
@@ -382,17 +384,25 @@ func (r *qring) gather(base int64, stride int, x []float32) {
 		k0 += len(r.buf)
 	}
 	for k := range x {
-		x[k] = float32(r.buf[k0]) * r.step
+		x[k] = float32(r.buf[k0])*r.step + r.off
 		if k0 += stride; k0 >= len(r.buf) {
 			k0 -= len(r.buf)
 		}
 	}
 }
 
-// add adds v to every sample the ring holds.
+// add adds v to every sample the ring holds: the whole steps go into the
+// samples and the rest into the offset of the ring, so that each sample
+// keeps its value to within its own rounding.
 func (r *qring) add(v float32) {
+	r.off += v
+	k := int32(r.quantize(r.off))
+	if k == 0 {
+		return
+	}
+	r.off -= float32(k) * r.step
 	for i, q := range r.buf {
-		r.buf[i] = r.quantize(float32(q)*r.step + v)
+		r.buf[i] = int8(max(min(int32(q)+k, math.MaxInt8), math.MinInt8))
 	}
 }
 
