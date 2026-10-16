@@ -25,7 +25,7 @@ func buildValidShortLCFragments(slco byte, data [24]bit.Bit) [4][17]bit.Bit {
 	for i := range 8 {
 		bits[28+i] = bit.Bit((crcVal >> (7 - i)) & 1)
 	}
-	return bptc.EncodeCACH(bits)
+	return encodeCACHBits(bits)
 }
 
 var shortLCSequence = [4]enums.LCSS{
@@ -308,7 +308,7 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 		},
 	}
 	encoded := must(original.Encode())
-	fragments := bptc.EncodeCACH(encoded)
+	fragments := encodeCACHBits(encoded)
 
 	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC
@@ -347,4 +347,13 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	if slc.FEC.BitsChecked != fecResult.BitsChecked {
 		t.Errorf("ShortLC.FEC.BitsChecked mismatch: got %d, want %d", slc.FEC.BitsChecked, fecResult.BitsChecked)
 	}
+}
+
+// encodeCACHBits calls bptc.EncodeCACH with one bit.Bit per bit.
+func encodeCACHBits(info [36]bit.Bit) [4][layer2.CACHPayloadBits]bit.Bit {
+	var out [4][layer2.CACHPayloadBits]bit.Bit
+	for i, f := range bptc.EncodeCACH(bit.Uint(info[:])) {
+		bit.PutUint(out[i][:], uint64(f))
+	}
+	return out
 }
