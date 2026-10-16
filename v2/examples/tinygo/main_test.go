@@ -18,7 +18,7 @@ func TestRun(t *testing.T) {
 	var b layer2.Burst
 	f := newFollower()
 	got := run(&b, f, capture)
-	want := summary{bursts: 15, voice: 13, data: 2, reencoded: 15, target: 9990, source: 3191868, calls: 1, ended: voice.EndTerminator}
+	want := summary{bursts: 15, voice: 13, data: 2, reencoded: 15, target: 9990, source: 3191868, calls: 1, relayed: 20, ended: voice.EndTerminator}
 	if got != want {
 		t.Fatalf("run = %+v, want %+v", got, want)
 	}

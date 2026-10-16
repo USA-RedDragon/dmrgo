@@ -217,6 +217,62 @@ func TestAllocsVoiceReceiver(t *testing.T) {
 	}
 }
 
+// TestAllocsVoiceTransmitter sends a call with a PI header, a talker alias
+// and GPS with a reused Transmitter, and relays the voice capture into it.
+func TestAllocsVoiceTransmitter(t *testing.T) {
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	gps := pdu.FLCGPSInfo{Latitude: 41.75}
+	opts := &voice.CallOptions{PIHeader: &pdu.PIHeader{AlgorithmID: 1}, TalkerAlias: "KI5VMF", GPS: &gps}
+	out := make([]voice.Output, 0, voice.MaxOutputs)
+	var now time.Duration
+	drain := func() {
+		for {
+			at, ok := tx.Deadline()
+			if !ok {
+				return
+			}
+			now = max(now, at)
+			out = tx.Tick(now, out[:0])
+		}
+	}
+	assertZero(t, "source", func() {
+		if err := tx.Start(now, voice.Call{Group: true, Target: 91, Source: 3191868}, opts); err != nil {
+			t.Fatal(err)
+		}
+		for range 3 * 12 {
+			if tx.Room() == 0 {
+				out = tx.Tick(now, out[:0])
+				now += 60 * time.Millisecond
+			}
+			_ = tx.Frame(vocoder.AMBESilence())
+		}
+		tx.Stop()
+		drain()
+	})
+	rx, err := voice.NewReceiver(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ev := make([]voice.Event, 0, voice.MaxEvents)
+	bursts := captures(t)["voice.bin"]
+	assertZero(t, "relay", func() {
+		for i := range bursts {
+			now += 60 * time.Millisecond
+			ev = rx.Burst(now, &bursts[i], layer2.Hint{}, ev[:0])
+			for j := range ev {
+				_ = tx.Relay(now, &ev[j])
+			}
+			out = tx.Tick(now, out[:0])
+		}
+		drain()
+		now += 10 * time.Second
+		ev = rx.Tick(now, ev[:0])
+	})
+}
+
 // TestAllocsVocoder decodes and encodes the AMBE+2 frames of the voice capture and
 // packs and unpacks them as IPSC voice payloads.
 func TestAllocsVocoder(t *testing.T) {

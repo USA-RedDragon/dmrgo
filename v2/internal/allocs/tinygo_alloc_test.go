@@ -195,6 +195,11 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	events := make([]voice.Event, 0, voice.MaxEvents)
 	var now time.Duration
 
+	vtx := tinyOK(voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 20}))
+	outs := make([]voice.Output, 0, voice.MaxOutputs)
+	gps := pdu.FLCGPSInfo{Latitude: 41.75}
+	callOpts := &voice.CallOptions{TalkerAlias: "KI5VMF JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
+
 	var b packet.Builder
 	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}}
 	p := tinyOK(b.Segment(h, make([]byte, 100), enums.DataTypeRate12))
@@ -210,6 +215,26 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 			}
 			now += 10 * time.Second
 			events = rx.Tick(now, events[:0])
+		}},
+		{"voice.Transmitter", func() {
+			if err = vtx.Start(now, voice.Call{Group: true, Target: 91, Source: 3191868}, callOpts); err != nil {
+				return
+			}
+			for range 2 * layer2.VoiceBurstsPerSuperframe {
+				f := tinyFrames(r)
+				_ = vtx.Frames(f[:]...)
+				now += 60 * time.Millisecond
+				outs = vtx.Tick(now, outs[:0])
+			}
+			vtx.Stop()
+			for {
+				at, ok := vtx.Deadline()
+				if !ok {
+					break
+				}
+				now = max(now, at)
+				outs = vtx.Tick(now, outs[:0])
+			}
 		}},
 		{"layer2.VoiceTransmitter.Reset", func() { err = tx.Reset(opts) }},
 		{"packet.Builder.Retry", func() { _, err = b.Retry(&p, &rd) }},

@@ -58,6 +58,9 @@ func (c *Call) sameParties(o *Call) bool {
 	return c.Group == o.Group && c.Target == o.Target && c.Source == o.Source
 }
 
+// idleName is the name of EndIdle and of the idle states.
+const idleName = "Idle"
+
 // Origin is where a Receiver learned the identity of a call.
 type Origin uint8
 
@@ -114,6 +117,9 @@ const (
 	// EndSuperseded is a new call: an LC with other addresses, or another
 	// transport stream.
 	EndSuperseded
+	// EndTimeout is the transmit timeout T_TO of a Transmitter (ETSI TS
+	// 102 361-2 clause 6.1).
+	EndTimeout
 )
 
 // String returns the name of the reason.
@@ -124,7 +130,7 @@ func (r EndReason) String() string {
 	case EndDataSync:
 		return "DataSync"
 	case EndIdle:
-		return "Idle"
+		return idleName
 	case EndLost:
 		return "Lost"
 	case EndSyncLost:
@@ -133,6 +139,8 @@ func (r EndReason) String() string {
 		return "Transport"
 	case EndSuperseded:
 		return "Superseded"
+	case EndTimeout:
+		return "Timeout"
 	}
 	return fmt.Sprintf("EndReason(%d)", uint8(r))
 }
@@ -268,7 +276,7 @@ const (
 func (s State) String() string {
 	switch s {
 	case StateIdle:
-		return "Idle"
+		return idleName
 	case StateLateEntry:
 		return "LateEntry"
 	case StateInCall:
