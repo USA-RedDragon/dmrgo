@@ -72,8 +72,13 @@ func (s *DataHeader) Addresses() (target, source uint32, ok bool) {
 }
 
 // SetAddresses sets the destination and source LLIDs of the header that is
-// set. It returns false for a proprietary header and when no header is set.
-func (s *DataHeader) SetAddresses(destination, source uint32) bool {
+// set. It returns ErrNoAddresses for a proprietary header and when no header
+// is set, and a *dmrgo.FieldRangeError when an LLID does not fit in 24 bits,
+// and then changes nothing.
+func (s *DataHeader) SetAddresses(destination, source uint32) error {
+	if err := checkAddresses(destination, source, errDataHeaderTargetRange, errDataHeaderSourceRange); err != nil {
+		return err
+	}
 	switch {
 	case s.UnconfirmedDataHeader != nil:
 		s.UnconfirmedDataHeader.LLIDDestination, s.UnconfirmedDataHeader.LLIDSource = destination, source
@@ -90,9 +95,9 @@ func (s *DataHeader) SetAddresses(destination, source uint32) bool {
 	case s.UDTHeader != nil:
 		s.UDTHeader.LLIDDestination, s.UDTHeader.LLIDSource = destination, source
 	default:
-		return false
+		return ErrNoAddresses
 	}
-	return true
+	return nil
 }
 
 // Format is the 4-bit Data Packet Format (DPF) of a data header (ETSI TS 102

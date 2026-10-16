@@ -32,7 +32,7 @@ func TestCSBK_Addresses(t *testing.T) {
 	}
 	for _, c := range csbks {
 		c.LastBlock = true
-		if !c.SetAddresses(3120101, 3120001) {
+		if c.SetAddresses(3120101, 3120001) != nil {
 			t.Fatalf("%s: SetAddresses failed", c.Opcode)
 		}
 		decoded := pdu.DecodeCSBK(must(c.Encode()))
@@ -43,7 +43,7 @@ func TestCSBK_Addresses(t *testing.T) {
 		if target, source, ok := decoded.Addresses(); !ok || target != 3120101 || source != 3120001 {
 			t.Errorf("%s: Addresses = %d %d %v", c.Opcode, target, source, ok)
 		}
-		if c.SetAddresses(1<<24, 1) {
+		if c.SetAddresses(1<<24, 1) == nil {
 			t.Errorf("%s: SetAddresses of a 25-bit target succeeded", c.Opcode)
 		}
 	}
@@ -58,7 +58,7 @@ func TestCSBK_Addresses(t *testing.T) {
 		{Opcode: pdu.CSBKPreamble, FID: 0x10},
 	}
 	for _, c := range none {
-		if _, _, ok := c.Addresses(); ok || c.SetAddresses(1, 2) {
+		if _, _, ok := c.Addresses(); ok || c.SetAddresses(1, 2) == nil {
 			t.Errorf("%s FID %#x: has addresses", c.Opcode, uint8(c.FID))
 		}
 	}

@@ -188,8 +188,8 @@ func rewriteTarget(header [33]byte, target uint32) (before, after, sameAsCodewor
 	p, _ := layer2.RawBurst(header).BPTCPayload()
 	lc := pdu.LCBytes(p[:9])
 	_, source, _ := lc.Addresses()
-	if !lc.SetAddresses(target, source) {
-		err = fmt.Errorf("cannot set the target of a %s LC", lc.FLCO())
+	if err = lc.SetAddresses(target, source); err != nil {
+		err = fmt.Errorf("cannot set the target of a %s LC: %w", lc.FLCO(), err)
 		return
 	}
 	copy(p[:9], lc[:])

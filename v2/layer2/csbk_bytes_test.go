@@ -56,7 +56,7 @@ func editPreamble(t *testing.T, where string, r layer2.RawBurst, c pdu.CSBKBytes
 	g, _ := c.Group()
 	newT, newS, newG := uint32(rng.Intn(1<<24)), uint32(rng.Intn(1<<24)), !g
 	e := c
-	if !e.SetAddresses(newT, newS) || !e.SetGroup(newG) {
+	if e.SetAddresses(newT, newS) != nil || !e.SetGroup(newG) {
 		t.Fatalf("%s: edit refused", where)
 	}
 	if e.CRCOK() {
@@ -74,7 +74,7 @@ func editPreamble(t *testing.T, where string, r layer2.RawBurst, c pdu.CSBKBytes
 	want := *dc
 	pre := *dc.PreamblePDU
 	want.PreamblePDU = &pre
-	want.SetAddresses(newT, newS)
+	noErr(want.SetAddresses(newT, newS))
 	want.PreamblePDU.Group = newG
 	if must(want.Encode()) != [12]byte(e) {
 		t.Fatalf("%s: CSBKBytes edit %x, CSBK edit %x", where, e, must(want.Encode()))

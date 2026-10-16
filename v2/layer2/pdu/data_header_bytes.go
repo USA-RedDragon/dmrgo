@@ -41,15 +41,19 @@ func (h DataHeaderBytes) Addresses() (target, source uint32, ok bool) {
 }
 
 // SetAddresses writes the destination and source LLIDs. It does not update
-// the CRC; call Reseal. It returns false, and changes nothing, for a P_HEAD
-// or a reserved format and when an LLID does not fit in 24 bits.
-func (h *DataHeaderBytes) SetAddresses(target, source uint32) bool {
-	if !h.hasLLIDs() || target>>24 != 0 || source>>24 != 0 {
-		return false
+// the CRC; call Reseal. It returns ErrNoAddresses for a P_HEAD or a reserved
+// format and a *dmrgo.FieldRangeError when an LLID does not fit in 24 bits,
+// and then changes nothing.
+func (h *DataHeaderBytes) SetAddresses(target, source uint32) error {
+	if err := checkAddresses(target, source, errDataHeaderBytesTargetRange, errDataHeaderBytesSourceRange); err != nil {
+		return err
+	}
+	if !h.hasLLIDs() {
+		return ErrNoAddresses
 	}
 	putUint24(h[2:5], target)
 	putUint24(h[5:8], source)
-	return true
+	return nil
 }
 
 // Group returns the Group or Individual flag, bit 7 of octet 0: true for a
