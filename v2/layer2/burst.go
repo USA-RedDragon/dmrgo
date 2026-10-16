@@ -329,16 +329,22 @@ func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	var err error
 	b.Data, b.FEC.PDU, err = decodePayload(&b.store, b.SlotType.DataType, &b.payload, b.SyncPattern)
 	b.decodedDataType = b.SlotType.DataType
-	switch b.decodedDataType {
-	case enums.DataTypeCSBK, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeDataHeader,
-		enums.DataTypeMBCHeader:
-		if enc, ok := b.Data.(encoder96); ok {
-			coded, encErr := enc.Encode()
-			packBits(b.decodedCoded[:], coded[:])
-			b.hasDecodedCoded = encErr == nil
-		}
+	var coded [96]bit.Bit
+	var encErr error
+	switch d := b.Data.(type) {
+	case *pdu.CSBK:
+		coded, encErr = d.Encode()
+	case *pdu.FullLinkControl:
+		coded, encErr = d.Encode()
+	case *pdu.DataHeader:
+		coded, encErr = d.Encode()
+	case *pdu.MBCHeader:
+		coded, encErr = d.Encode()
 	default:
+		return err
 	}
+	packBits(b.decodedCoded[:], coded[:])
+	b.hasDecodedCoded = encErr == nil
 	return err
 }
 
