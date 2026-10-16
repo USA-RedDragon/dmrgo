@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -22,23 +21,14 @@ func benchPayloads(dt enums.DataType) [][12]byte {
 	return out
 }
 
-func benchBits(dt enums.DataType) [][96]bit.Bit {
-	p := benchPayloads(dt)
-	out := make([][96]bit.Bit, len(p))
-	for i := range p {
-		out[i] = bit.Unpack96(p[i])
-	}
-	return out
-}
-
 func BenchmarkPDUDecode(b *testing.B) {
-	csbk := benchBits(enums.DataTypeCSBK)
-	lc := benchBits(enums.DataTypeVoiceLCHeader)
-	pi := benchBits(enums.DataTypePIHeader)
-	dh := benchBits(enums.DataTypeDataHeader)
-	mbc := benchBits(enums.DataTypeMBCHeader)
-	usbd := benchBits(enums.DataTypeUnifiedSingleBlock)
-	r12 := benchBits(enums.DataTypeRate12)
+	csbk := benchPayloads(enums.DataTypeCSBK)
+	lc := benchPayloads(enums.DataTypeVoiceLCHeader)
+	pi := benchPayloads(enums.DataTypePIHeader)
+	dh := benchPayloads(enums.DataTypeDataHeader)
+	mbc := benchPayloads(enums.DataTypeMBCHeader)
+	usbd := benchPayloads(enums.DataTypeUnifiedSingleBlock)
+	r12 := benchPayloads(enums.DataTypeRate12)
 	var csbkDst pdu.CSBK
 	var csbkP pdu.CSBKPayloads
 	var lcDst pdu.FullLinkControl
@@ -63,11 +53,11 @@ func BenchmarkPDUDecode(b *testing.B) {
 		{"MBCContinuation", func(i int) { _ = pdu.DecodeMBCContinuation(mbc[i]) }},
 		{"UnifiedSingleBlockData", func(i int) { _ = pdu.DecodeUnifiedSingleBlockData(usbd[i]) }},
 		{"Rate12Data", func(i int) { _ = pdu.DecodeRate12Data(r12[i]) }},
-		{"SlotType", func(i int) { _ = pdu.DecodeSlotType([20]bit.Bit(r12[i][:20])) }},
-		{"EmbeddedSignalling", func(i int) { _ = pdu.DecodeEmbeddedSignalling([16]bit.Bit(r12[i][:16])) }},
-		{"TACT", func(i int) { _ = pdu.DecodeTACT([7]bit.Bit(r12[i][:7])) }},
-		{"ShortLC", func(i int) { _ = pdu.DecodeShortLC([36]bit.Bit(r12[i][:36])) }},
-		{"ServiceOptions", func(i int) { _ = layer3.DecodeServiceOptions([8]bit.Bit(r12[i][:8])) }},
+		{"SlotType", func(i int) { _ = pdu.DecodeSlotType([3]byte(r12[i][:3])) }},
+		{"EmbeddedSignalling", func(i int) { _ = pdu.DecodeEmbeddedSignalling([2]byte(r12[i][:2])) }},
+		{"TACT", func(i int) { _ = pdu.DecodeTACT([1]byte(r12[i][:1])) }},
+		{"ShortLC", func(i int) { _ = pdu.DecodeShortLC([5]byte(r12[i][:5])) }},
+		{"ServiceOptions", func(i int) { _ = layer3.DecodeServiceOptions([1]byte(r12[i][:1])) }},
 	}
 	for _, c := range cases {
 		b.Run(c.name, func(b *testing.B) {
@@ -88,20 +78,20 @@ func BenchmarkPDUBytes(b *testing.B) {
 	var csbkP pdu.CSBKPayloads
 	var lcDst pdu.FullLinkControl
 	var lcP pdu.FullLinkControlPayloads
-	csbkPDU := pdu.DecodeCSBKBytes(csbk[0])
-	lcPDU := pdu.DecodeFullLinkControl(bit.Unpack96(lc[0]), enums.DataTypeVoiceLCHeader)
+	csbkPDU := pdu.DecodeCSBK(csbk[0])
+	lcPDU := pdu.DecodeFullLinkControl(lc[0], enums.DataTypeVoiceLCHeader)
 	cases := []struct {
 		name string
 		fn   func(i int)
 	}{
-		{"DecodeCSBKBytes", func(i int) { _ = pdu.DecodeCSBKBytes(csbk[i]) }},
-		{"DecodeCSBKBytesInto", func(i int) { pdu.DecodeCSBKBytesInto(&csbkDst, &csbkP, csbk[i]) }},
-		{"CSBKBytes", func(int) { _, _ = csbkPDU.Bytes() }},
+		{"DecodeCSBK", func(i int) { _ = pdu.DecodeCSBK(csbk[i]) }},
+		{"DecodeCSBKInto", func(i int) { pdu.DecodeCSBKInto(&csbkDst, &csbkP, csbk[i]) }},
+		{"CSBKEncode", func(int) { _, _ = csbkPDU.Encode() }},
 		{"DecodeFullLCCodeword", func(i int) { _, _, _ = pdu.DecodeFullLCCodeword(lc[i], enums.DataTypeVoiceLCHeader) }},
 		{"DecodeFullLinkControlBytesInto", func(i int) {
 			_ = pdu.DecodeFullLinkControlBytesInto(&lcDst, &lcP, [9]byte(lc[i][:9]))
 		}},
-		{"FullLinkControlCodeword", func(int) { _, _ = lcPDU.Codeword() }},
+		{"FullLinkControlEncode", func(int) { _, _ = lcPDU.Encode() }},
 		{"Seal", func(i int) { _ = pdu.Seal(&csbk[i], enums.DataTypeCSBK) }},
 		{"BlockCRCOK", func(i int) { _ = pdu.BlockCRCOK(csbk[i], enums.DataTypeCSBK) }},
 	}
@@ -118,13 +108,13 @@ func BenchmarkPDUBytes(b *testing.B) {
 }
 
 func BenchmarkPDUEncode(b *testing.B) {
-	csbk := benchBits(enums.DataTypeCSBK)
-	lc := benchBits(enums.DataTypeVoiceLCHeader)
-	pi := benchBits(enums.DataTypePIHeader)
-	dh := benchBits(enums.DataTypeDataHeader)
-	mbc := benchBits(enums.DataTypeMBCHeader)
-	usbd := benchBits(enums.DataTypeUnifiedSingleBlock)
-	r12 := benchBits(enums.DataTypeRate12)
+	csbk := benchPayloads(enums.DataTypeCSBK)
+	lc := benchPayloads(enums.DataTypeVoiceLCHeader)
+	pi := benchPayloads(enums.DataTypePIHeader)
+	dh := benchPayloads(enums.DataTypeDataHeader)
+	mbc := benchPayloads(enums.DataTypeMBCHeader)
+	usbd := benchPayloads(enums.DataTypeUnifiedSingleBlock)
+	r12 := benchPayloads(enums.DataTypeRate12)
 	csbks := make([]pdu.CSBK, 64)
 	lcs := make([]pdu.FullLinkControl, 64)
 	pis := make([]pdu.PIHeader, 64)
@@ -143,7 +133,7 @@ func BenchmarkPDUEncode(b *testing.B) {
 		usbds[i] = pdu.DecodeUnifiedSingleBlockData(usbd[i])
 		r12s[i] = pdu.DecodeRate12Data(r12[i])
 		sts[i] = pdu.SlotType{ColorCode: enums.ColorCode(i % 16), DataType: enums.DataType(i % 10)}
-		slcs[i] = pdu.DecodeShortLC([36]bit.Bit(r12[i][:36]))
+		slcs[i] = pdu.DecodeShortLC([5]byte(r12[i][:5]))
 	}
 	cases := []struct {
 		name string

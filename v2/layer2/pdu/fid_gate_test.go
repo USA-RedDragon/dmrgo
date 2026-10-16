@@ -3,31 +3,29 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildCSBKBitsFID is buildCSBKBits with a caller-chosen FID.
-func buildCSBKBitsFID(opcode, fid byte, payload [64]bit.Bit) [96]bit.Bit {
+// buildCSBKFID is buildCSBK with a caller-chosen FID.
+func buildCSBKFID(opcode, fid byte, payload [8]byte) [12]byte {
 	var b [12]byte
 	b[0] = 0x80 | (opcode & 0x3F)
 	b[1] = fid
-	copy(b[2:10], bit.Pack(payload[:]))
+	copy(b[2:10], payload[:])
 	c := crc.CCITT(b[:10]) ^ 0xA5A5
 	b[10] = byte(c >> 8)
 	b[11] = byte(c & 0xFF)
-	var bits [96]bit.Bit
-	copy(bits[:], bit.Unpack(b[:]))
-	return bits
+	return b
 }
 
-func testPayload64() [64]bit.Bit {
-	var p [64]bit.Bit
-	for i := range p {
-		p[i] = bit.Bit((i * 7 / 3) % 2)
+func testPayload64() [8]byte {
+	var p [8]byte
+	for i := range 64 {
+		bits.SetBit(p[:], i, byte((i*7/3)%2))
 	}
 	return p
 }
@@ -38,7 +36,7 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	t.Parallel()
 
 	payload := testPayload64()
-	infoBits := buildCSBKBitsFID(byte(pdu.CSBKPrivateVoiceGrant), byte(enums.FIDMotorola), payload)
+	infoBits := buildCSBKFID(byte(pdu.CSBKPrivateVoiceGrant), byte(enums.FIDMotorola), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -51,7 +49,7 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if csbk.PrivateVoiceGrantPDU != nil {
 		t.Error("PrivateVoiceGrantPDU should be nil for a manufacturer FID")
 	}
-	if csbk.RawPayload != [8]byte(bit.Pack(payload[:])) {
+	if csbk.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
 	if got := must(csbk.Encode()); got != infoBits {
@@ -63,14 +61,14 @@ func TestCSBK_UnknownOpcodeKeepsRawPayload(t *testing.T) {
 	t.Parallel()
 
 	payload := testPayload64()
-	infoBits := buildCSBKBits(0b111111, payload)
+	infoBits := buildCSBK(0b111111, payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.RawPayload != [8]byte(bit.Pack(payload[:])) {
+	if csbk.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
 	if got := must(csbk.Encode()); got != infoBits {
@@ -82,7 +80,7 @@ func TestCSBK_StandardFIDDoesNotFillRawPayload(t *testing.T) {
 	t.Parallel()
 
 	payload := testPayload64()
-	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	if csbk.PrivateVoiceGrantPDU == nil {
@@ -96,15 +94,15 @@ func TestCSBK_StandardFIDDoesNotFillRawPayload(t *testing.T) {
 func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	t.Parallel()
 
-	var payload [56]bit.Bit
-	for i := range payload {
-		payload[i] = bit.Bit(i % 3 % 2)
+	var payload [7]byte
+	for i := range 56 {
+		bits.SetBit(payload[:], i, byte(i%3%2))
 	}
 	original := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
 		FID:           enums.FIDMotorola,
-		RawPayload:    [7]byte(bit.Pack(payload[:])),
+		RawPayload:    payload,
 	}
 	infoBits := must(original.Encode())
 
@@ -119,7 +117,7 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if decoded.GroupVoice != nil {
 		t.Error("GroupVoice should be nil for a manufacturer FID")
 	}
-	if decoded.RawPayload != [7]byte(bit.Pack(payload[:])) {
+	if decoded.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
 	if got := must(decoded.Encode()); got != infoBits {
@@ -130,14 +128,14 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	t.Parallel()
 
-	var payload [56]bit.Bit
-	payload[0] = 1
-	payload[55] = 1
+	var payload [7]byte
+	bits.SetBit(payload[:], 0, 1)
+	bits.SetBit(payload[:], 55, 1)
 	original := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCO(0b111111),
 		FID:           enums.FeatureSetID(0x7F),
-		RawPayload:    [7]byte(bit.Pack(payload[:])),
+		RawPayload:    payload,
 	}
 	infoBits := must(original.Encode())
 
@@ -148,13 +146,13 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	if decoded.FID != 0x7F {
 		t.Errorf("FeatureSetID = %#x, want 0x7f", decoded.FID)
 	}
-	if decoded.RawPayload != [7]byte(bit.Pack(payload[:])) {
+	if decoded.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
 	}
 
 	original.FID = enums.FIDStandardized
 	decoded = pdu.DecodeFullLinkControl(must(original.Encode()), original.DataType())
-	if decoded.FLCO != 0b111111 || decoded.RawPayload != [7]byte(bit.Pack(payload[:])) {
+	if decoded.FLCO != 0b111111 || decoded.RawPayload != payload {
 		t.Error("unknown FLCO with SFID should keep the raw FLCO and payload")
 	}
 }
@@ -168,9 +166,7 @@ func TestFLC_AddressesIgnoreFID(t *testing.T) {
 			for i := 9; i < 12; i++ {
 				lc[i] ^= 0x96
 			}
-			var infoBits [96]bit.Bit
-			copy(infoBits[:], bit.Unpack(lc[:]))
-			flc := pdu.DecodeFullLinkControl(infoBits, enums.DataTypeVoiceLCHeader)
+			flc := pdu.DecodeFullLinkControl(lc, enums.DataTypeVoiceLCHeader)
 			fecResult := flc.FEC
 			if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
 				t.Fatalf("FEC = %+v", fecResult)

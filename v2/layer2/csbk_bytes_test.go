@@ -28,11 +28,11 @@ func TestCSBKBytes_SMSCaptures(t *testing.T) {
 			if !c.CRCOK() || c.Opcode() != pdu.CSBKPreamble || c.Opcode() != dc.Opcode || c.FID() != dc.FID {
 				t.Fatalf("%s burst %d: CRC %t, opcode %s", name, i, c.CRCOK(), c.Opcode())
 			}
-			if d := pdu.DecodeCSBKBytes(c); d.PreamblePDU == nil || *d.PreamblePDU != *dc.PreamblePDU {
-				t.Fatalf("%s burst %d: DecodeCSBKBytes differs from the burst decode", name, i)
+			if d := pdu.DecodeCSBK(c); d.PreamblePDU == nil || *d.PreamblePDU != *dc.PreamblePDU {
+				t.Fatalf("%s burst %d: DecodeCSBK differs from the burst decode", name, i)
 			}
-			if must(dc.Bytes()) != p {
-				t.Fatalf("%s burst %d: CSBK.Bytes %x, payload %x", name, i, must(dc.Bytes()), p)
+			if must(dc.Encode()) != p {
+				t.Fatalf("%s burst %d: CSBK.Encode %x, payload %x", name, i, must(dc.Encode()), p)
 			}
 			n++
 			wantT, wantS, _ := dc.Addresses()
@@ -76,8 +76,8 @@ func editPreamble(t *testing.T, where string, r layer2.RawBurst, c pdu.CSBKBytes
 	want.PreamblePDU = &pre
 	want.SetAddresses(newT, newS)
 	want.PreamblePDU.Group = newG
-	if must(want.Bytes()) != [12]byte(e) {
-		t.Fatalf("%s: CSBKBytes edit %x, CSBK edit %x", where, e, must(want.Bytes()))
+	if must(want.Encode()) != [12]byte(e) {
+		t.Fatalf("%s: CSBKBytes edit %x, CSBK edit %x", where, e, must(want.Encode()))
 	}
 
 	r.SetBPTCPayload(e)

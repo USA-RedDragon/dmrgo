@@ -13,7 +13,7 @@ func TestNewBSOutboundActivation(t *testing.T) {
 	t.Parallel()
 
 	c := must(pdu.NewBSOutboundActivation(310123, 3191868))
-	b := must(c.Bytes())
+	b := must(c.Encode())
 	if b[0] != 0x80|0x38 || b[1] != 0 || b[2] != 0 || b[3] != 0 {
 		t.Fatalf("octets 0 to 3 %x, want b8000000", b[:4])
 	}
@@ -21,7 +21,7 @@ func TestNewBSOutboundActivation(t *testing.T) {
 	if tgt, src, ok := cb.Addresses(); !ok || tgt != 310123 || src != 3191868 || !cb.CRCOK() {
 		t.Fatalf("CSBKBytes.Addresses %d %d %t, CRC %t", tgt, src, ok, cb.CRCOK())
 	}
-	got := pdu.DecodeCSBKBytes(b)
+	got := pdu.DecodeCSBK(b)
 	p, ok := got.AsBSOutboundActivation()
 	if !ok || p.BSAddress != 310123 || p.SourceAddress != 3191868 || got.FEC.HasErrors() {
 		t.Fatalf("decoded %+v %t", p, ok)
@@ -39,7 +39,7 @@ func TestNewBSOutboundActivation(t *testing.T) {
 		t.Fatal("CSBKBytes.SetAddresses on opcode 0x38")
 	}
 	cb.Reseal()
-	if back := must(got.Bytes()); back != [12]byte(cb) {
+	if back := must(got.Encode()); back != [12]byte(cb) {
 		t.Fatalf("CSBK %x, CSBKBytes %x", back, cb)
 	}
 	var rangeErr *bit.FieldRangeError

@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -48,17 +49,17 @@ func TestCSBK_TierIII_OpcodeString(t *testing.T) {
 func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[3] = 1
-	payload[7] = 1
-	payload[10] = 1
-	payload[11] = 1
-	payload[12] = 1
-	payload[14] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 3, 1)
+	bits.SetBit(payload[:], 7, 1)
+	bits.SetBit(payload[:], 10, 1)
+	bits.SetBit(payload[:], 11, 1)
+	bits.SetBit(payload[:], 12, 1)
+	bits.SetBit(payload[:], 14, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKPrivateVoiceGrant), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -148,25 +149,25 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 func TestCSBK_Aloha_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[1] = 1
-	payload[2] = 1
-	payload[4] = 1
-	payload[5] = 1
-	payload[6] = 1
-	payload[8] = 1
-	payload[10] = 1
-	payload[12] = 1
-	payload[13] = 1
-	payload[16] = 1
-	payload[18] = 1
-	payload[19] = 1
-	payload[22] = 1
-	payload[23] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 1, 1)
+	bits.SetBit(payload[:], 2, 1)
+	bits.SetBit(payload[:], 4, 1)
+	bits.SetBit(payload[:], 5, 1)
+	bits.SetBit(payload[:], 6, 1)
+	bits.SetBit(payload[:], 8, 1)
+	bits.SetBit(payload[:], 10, 1)
+	bits.SetBit(payload[:], 12, 1)
+	bits.SetBit(payload[:], 13, 1)
+	bits.SetBit(payload[:], 16, 1)
+	bits.SetBit(payload[:], 18, 1)
+	bits.SetBit(payload[:], 19, 1)
+	bits.SetBit(payload[:], 22, 1)
+	bits.SetBit(payload[:], 23, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKAloha), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKAloha), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -220,22 +221,22 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[2] = 1
-	payload[4] = 1
-	payload[5] = 1
-	payload[19] = 1
-	payload[21] = 1
-	payload[22] = 1
-	payload[23] = 1
-	payload[27] = 1
-	payload[30] = 1
-	payload[33] = 1
-	payload[34] = 1
-	payload[37] = 1
-	payload[40] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 2, 1)
+	bits.SetBit(payload[:], 4, 1)
+	bits.SetBit(payload[:], 5, 1)
+	bits.SetBit(payload[:], 19, 1)
+	bits.SetBit(payload[:], 21, 1)
+	bits.SetBit(payload[:], 22, 1)
+	bits.SetBit(payload[:], 23, 1)
+	bits.SetBit(payload[:], 27, 1)
+	bits.SetBit(payload[:], 30, 1)
+	bits.SetBit(payload[:], 33, 1)
+	bits.SetBit(payload[:], 34, 1)
+	bits.SetBit(payload[:], 37, 1)
+	bits.SetBit(payload[:], 40, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKBroadcast), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKBroadcast), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -268,13 +269,13 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 func TestCSBK_Clear_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[3] = 1
-	payload[15] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 3, 1)
+	bits.SetBit(payload[:], 15, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKClear), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKClear), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -295,19 +296,19 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 func TestCSBK_Ahoy_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[0] = 1
-	payload[5] = 1
-	payload[7] = 1
-	payload[8] = 1
-	payload[9] = 1
-	payload[10] = 1
-	payload[13] = 1
-	payload[15] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 0, 1)
+	bits.SetBit(payload[:], 5, 1)
+	bits.SetBit(payload[:], 7, 1)
+	bits.SetBit(payload[:], 8, 1)
+	bits.SetBit(payload[:], 9, 1)
+	bits.SetBit(payload[:], 10, 1)
+	bits.SetBit(payload[:], 13, 1)
+	bits.SetBit(payload[:], 15, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKAhoy), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKAhoy), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -341,15 +342,15 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 func TestCSBK_RandomAccess_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[6] = 1
-	payload[7] = 1
-	payload[14] = 1
-	payload[15] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 6, 1)
+	bits.SetBit(payload[:], 7, 1)
+	bits.SetBit(payload[:], 14, 1)
+	bits.SetBit(payload[:], 15, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKRandomAccess), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKRandomAccess), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -374,18 +375,18 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(0b00111000, payload)
+	infoBits := buildCSBK(0b00111000, payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.RawPayload != [8]byte(bit.Pack(payload[:])) {
+	if csbk.RawPayload != payload {
 		t.Fatal("opcode 0x38 payload is not in RawPayload")
 	}
 	act, ok := csbk.AsBSOutboundActivation()
@@ -407,14 +408,14 @@ func TestCSBK_Opcode0x38_BSOutbound(t *testing.T) {
 func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[3] = 1
-	payload[12] = 1
-	payload[14] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 3, 1)
+	bits.SetBit(payload[:], 12, 1)
+	bits.SetBit(payload[:], 14, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(0b00111000, payload)
+	infoBits := buildCSBK(0b00111000, payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -443,8 +444,7 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 	if ((grant.TargetAddress>>0)&1) != 1 || ((grant.SourceAddress>>0)&1) != 1 {
 		t.Error("TargetAddress/SourceAddress last bit should be set")
 	}
-	grantBits := must(grant.Encode())
-	csbk.RawPayload = [8]byte(bit.Pack(grantBits[:]))
+	csbk.RawPayload = must(grant.Encode())
 	if must(csbk.Encode()) != infoBits {
 		t.Error("RawPayload from the grant Encode does not round trip")
 	}
@@ -453,14 +453,14 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 func TestCSBK_AckOutbound_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[2] = 1
-	payload[8] = 1
-	payload[13] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 2, 1)
+	bits.SetBit(payload[:], 8, 1)
+	bits.SetBit(payload[:], 13, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKAckOutbound), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKAckOutbound), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -475,21 +475,21 @@ func TestCSBK_AckOutbound_Decode(t *testing.T) {
 func TestCSBK_Move_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[9] = 1
-	payload[10] = 1
-	payload[11] = 1
-	payload[12] = 1
-	payload[13] = 1
-	payload[19] = 1
-	payload[21] = 1
-	payload[23] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 9, 1)
+	bits.SetBit(payload[:], 10, 1)
+	bits.SetBit(payload[:], 11, 1)
+	bits.SetBit(payload[:], 12, 1)
+	bits.SetBit(payload[:], 13, 1)
+	bits.SetBit(payload[:], 19, 1)
+	bits.SetBit(payload[:], 21, 1)
+	bits.SetBit(payload[:], 23, 1)
 	for i := 28; i <= 39; i++ {
-		payload[i] = 1
+		bits.SetBit(payload[:], i, 1)
 	}
-	payload[63] = 1
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKMove), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKMove), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -517,13 +517,13 @@ func TestCSBK_Move_Decode(t *testing.T) {
 func TestCSBK_Maintenance_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[13] = 1
-	payload[14] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 13, 1)
+	bits.SetBit(payload[:], 14, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKMaintenance), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKMaintenance), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -541,16 +541,16 @@ func TestCSBK_Maintenance_Decode(t *testing.T) {
 func TestCSBK_Ackvitation_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[6] = 1
-	payload[7] = 1
-	payload[10] = 1
-	payload[11] = 1
-	payload[14] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 6, 1)
+	bits.SetBit(payload[:], 7, 1)
+	bits.SetBit(payload[:], 10, 1)
+	bits.SetBit(payload[:], 11, 1)
+	bits.SetBit(payload[:], 14, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKAckvitation), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKAckvitation), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -825,9 +825,9 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 	t.Parallel()
 
 	for _, op := range []byte{0b011010, 0b011011} {
-		var payload [64]bit.Bit
-		payload[0] = 1
-		csbk := pdu.DecodeCSBK(buildCSBKBits(op, payload))
+		var payload [8]byte
+		bits.SetBit(payload[:], 0, 1)
+		csbk := pdu.DecodeCSBK(buildCSBK(op, payload))
 		fecResult := csbk.FEC
 		if fecResult.Uncorrectable {
 			t.Fatal("DecodeCSBK returned uncorrectable FEC")
@@ -841,14 +841,14 @@ func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 func TestCSBK_Protect_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[12] = 1
-	payload[14] = 1
-	payload[15] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 12, 1)
+	bits.SetBit(payload[:], 14, 1)
+	bits.SetBit(payload[:], 15, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKProtect), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKProtect), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC

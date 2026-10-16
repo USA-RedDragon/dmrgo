@@ -6,23 +6,24 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func buildDataBurst(dataType enums.DataType, payload [196]bit.Bit) [33]byte {
-	var bits [264]bit.Bit
-	copy(bits[:98], payload[:98])
-	copy(bits[166:], payload[98:])
+	var burst [264]bit.Bit
+	copy(burst[:98], payload[:98])
+	copy(burst[166:], payload[98:])
 	slot := must((&pdu.SlotType{ColorCode: 1, DataType: dataType}).Encode())
-	copy(bits[98:108], slot[:10])
-	copy(bits[156:166], slot[10:])
+	bits.Unpack(burst[98:108], slot[:], 0)
+	bits.Unpack(burst[156:166], slot[:], 10)
 	syncVal := int64(enums.SyncBSSourcedData)
 	for i := 0; i < 48; i++ {
-		bits[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
+		burst[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
-	return [33]byte(bit.Pack(bits[:]))
+	return [33]byte(bit.Pack(burst[:]))
 }
 
 func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {

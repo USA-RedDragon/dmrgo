@@ -3,17 +3,14 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // piHeaderVector is a captured PI header (ok-dmrlib test vector) with a
 // valid CRC-CCITT under mask 0x6969.
-func piHeaderVector() [96]bit.Bit {
-	var bits [96]bit.Bit
-	copy(bits[:], bit.Unpack([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
-	return bits
+func piHeaderVector() [12]byte {
+	return [12]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}
 }
 
 func TestPIHeader_DecodeVector(t *testing.T) {
@@ -45,12 +42,11 @@ func TestPIHeader_DecodeVector(t *testing.T) {
 
 func TestPIHeader_CRCMask(t *testing.T) {
 	t.Parallel()
-	bits := piHeaderVector()
+	data := piHeaderVector()
 	// Removing the 0x6969 mask must make the CRC fail.
-	for i, m := range bit.Unpack([]byte{0x69, 0x69}) {
-		bits[80+i] ^= m
-	}
-	if fecResult := pdu.DecodePIHeader(bits).FEC; !fecResult.Uncorrectable {
+	data[10] ^= 0x69
+	data[11] ^= 0x69
+	if fecResult := pdu.DecodePIHeader(data).FEC; !fecResult.Uncorrectable {
 		t.Error("PI header CRC without the 0x6969 mask should fail")
 	}
 }
@@ -76,7 +72,7 @@ func TestPIHeader_Raw(t *testing.T) {
 	t.Parallel()
 	vector := piHeaderVector()
 	pi := pdu.DecodePIHeader(vector)
-	if want := [10]byte(bit.Pack(vector[:80])); pi.Raw != want {
+	if want := [10]byte(vector[:10]); pi.Raw != want {
 		t.Errorf("Raw = %x, want %x", pi.Raw, want)
 	}
 	pi.Raw = [10]byte{}

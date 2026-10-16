@@ -42,7 +42,7 @@ func TestMotorolaRadioCheck(t *testing.T) {
 	}
 	for _, tt := range tests {
 		raw := motoBytes(t, tt.vector)
-		c := pdu.DecodeCSBKBytes(raw)
+		c := pdu.DecodeCSBK(raw)
 		if c.FEC.Uncorrectable || c.FID != enums.FIDMotorola || c.Opcode != pdu.CSBKMotorolaRadioCheck || !c.LastBlock {
 			t.Fatalf("%s: decoded %+v", tt.name, c)
 		}
@@ -61,7 +61,7 @@ func TestMotorolaRadioCheck(t *testing.T) {
 		if err := built.SetMotorolaRadioCheck(pdu.MotorolaRadioCheckPDU{Answer: tt.answer, RequesterAddress: 3140598, CheckedAddress: 3191868}); err != nil {
 			t.Fatal(err)
 		}
-		if got := must(built.Bytes()); got != raw {
+		if got := must(built.Encode()); got != raw {
 			t.Errorf("%s: built %x, radio sent %x", tt.name, got, raw)
 		}
 	}
@@ -71,7 +71,7 @@ func TestMotorolaCallAlert(t *testing.T) {
 	t.Parallel()
 
 	raw := motoBytes(t, motoCallAlert)
-	c := pdu.DecodeCSBKBytes(raw)
+	c := pdu.DecodeCSBK(raw)
 	p, ok := c.AsMotorolaCallAlert()
 	if c.FEC.Uncorrectable || !ok || p.TargetAddress != 3191868 || p.SourceAddress != 3140598 {
 		t.Fatalf("decoded %+v %+v %t", c, p, ok)
@@ -83,7 +83,7 @@ func TestMotorolaCallAlert(t *testing.T) {
 	if err := built.SetMotorolaCallAlert(pdu.MotorolaCallAlertPDU{TargetAddress: 3191868, SourceAddress: 3140598}); err != nil {
 		t.Fatal(err)
 	}
-	if got := must(built.Bytes()); got != raw {
+	if got := must(built.Encode()); got != raw {
 		t.Errorf("built %x, radio sent %x", got, raw)
 	}
 }
@@ -92,7 +92,7 @@ func TestMotorolaCallAlertAck(t *testing.T) {
 	t.Parallel()
 
 	raw := motoBytes(t, motoCallAlertAck)
-	c := pdu.DecodeCSBKBytes(raw)
+	c := pdu.DecodeCSBK(raw)
 	p, ok := c.AsMotorolaCallAlertAck()
 	if c.FEC.Uncorrectable || !ok || p.Request != 0x9F || p.TargetAddress != 3140598 || p.SourceAddress != 3191868 {
 		t.Fatalf("decoded %+v %+v %t", c, p, ok)
@@ -105,7 +105,7 @@ func TestMotorolaCallAlertAck(t *testing.T) {
 	if err := built.SetMotorolaCallAlertAck(pdu.MotorolaCallAlertAckPDU{Request: 0x9F, TargetAddress: 3140598, SourceAddress: 3191868}); err != nil {
 		t.Fatal(err)
 	}
-	if got := must(built.Bytes()); got != raw {
+	if got := must(built.Encode()); got != raw {
 		t.Errorf("built %x, radio sent %x", got, raw)
 	}
 }
@@ -115,7 +115,7 @@ func TestMotorolaCSBKOtherFID(t *testing.T) {
 
 	raw := motoBytes(t, motoRadioCheckRequest)
 	raw[1] = 0
-	c := pdu.DecodeCSBKBytes(raw)
+	c := pdu.DecodeCSBK(raw)
 	if _, ok := c.AsMotorolaRadioCheck(); ok {
 		t.Error("standard FID: AsMotorolaRadioCheck ok")
 	}

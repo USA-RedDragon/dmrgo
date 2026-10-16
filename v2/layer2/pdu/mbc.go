@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -75,68 +74,66 @@ func (s *MBCContinuation) packed() [12]byte {
 // 102 361-4 Table 7.16). The FEC field of the result reports the last-block
 // CRC, which applies only when this is the one continuation block of the MBC.
 func (s *MBCContinuation) AsCGAP() CGAPContinuation {
-	return decodeCGAPContinuationBytes(s.packed())
+	return decodeCGAPContinuation(s.packed())
 }
 
 // AsMVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS
 // 102 361-4 Table 7.18), as AsCGAP does.
 func (s *MBCContinuation) AsMVAP() MVAPContinuation {
-	return decodeMVAPContinuationBytes(s.packed())
+	return decodeMVAPContinuation(s.packed())
 }
 
 // AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI
 // TS 102 361-4 Table 7.21), as AsCGAP does.
 func (s *MBCContinuation) AsBCAP() BCAPContinuation {
-	return decodeBCAPContinuationBytes(s.packed())
+	return decodeBCAPContinuation(s.packed())
 }
 
 // AsVNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now
 // MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does.
 func (s *MBCContinuation) AsVNAP() VNAPContinuation {
-	return decodeVNAPContinuationBytes(s.packed())
+	return decodeVNAPContinuation(s.packed())
 }
 
 // mbcLastBlockCRC computes the last-block CRC-CCITT of blocks.
-func mbcLastBlockCRC(blocks ...[96]bit.Bit) uint16 {
+func mbcLastBlockCRC(blocks ...[12]byte) uint16 {
 	if len(blocks) == 0 {
 		return 0
 	}
 	var reg uint16
 	for i := range blocks {
-		n := 96
+		n := 12
 		if i == len(blocks)-1 {
-			n = 80
+			n = 10
 		}
-		var octets [12]byte
-		packBits(octets[:], blocks[i][:n])
-		reg = crc.CCITTUpdate(reg, octets[:n/8])
+		reg = crc.CCITTUpdate(reg, blocks[i][:n])
 	}
 	return ^reg
 }
 
 // MBCLastBlockCRCOK reports whether bits 80 to 95 of the last of blocks hold
-// the last-block CRC-CCITT that SetMBCLastBlockCRC writes. It returns false
-// for no blocks.
-func MBCLastBlockCRCOK(blocks ...[96]bit.Bit) bool {
+// the last-block CRC-CCITT that SetMBCLastBlockCRC writes. Each block holds
+// its 96 bits packed, the first bit in the most significant bit of byte 0.
+// It returns false for no blocks.
+func MBCLastBlockCRCOK(blocks ...[12]byte) bool {
 	if len(blocks) == 0 {
 		return false
 	}
 	last := blocks[len(blocks)-1]
-	return uint16(bit.Uint(last[80:96])&0xFFFF) == mbcLastBlockCRC(blocks...)
+	return uint16(last[10])<<8|uint16(last[11]) == mbcLastBlockCRC(blocks...)
 }
 
 // SetMBCLastBlockCRC writes the last-block CRC-CCITT into bits 80 to 95 of
 // the last of blocks, which holds every continuation block of the MBC in
-// order (ETSI TS 102 361-1 clause 7.4.0). It does nothing for no blocks.
-func SetMBCLastBlockCRC(blocks [][96]bit.Bit) {
+// order, packed as MBCLastBlockCRCOK takes them (ETSI TS 102 361-1 clause
+// 7.4.0). It does nothing for no blocks.
+func SetMBCLastBlockCRC(blocks [][12]byte) {
 	if len(blocks) == 0 {
 		return
 	}
 	c := mbcLastBlockCRC(blocks...)
 	last := &blocks[len(blocks)-1]
-	for i := 0; i < 16; i++ {
-		last[80+i] = bit.Bit((c >> (15 - i)) & 1)
-	}
+	last[10], last[11] = byte(c>>8), byte(c&0xFF)
 }
 
 // CGAPContinuation is the CG_AP continuation block of a grant MBC (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16).

@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -15,21 +14,13 @@ import (
 // 0x969696 Data Type CRC Mask is removed.
 const realVoiceLCHeader = "03000000270630b43c5dcfc1"
 
-func hexBits96(t *testing.T, s string) [96]bit.Bit {
+func hex12(t *testing.T, s string) [12]byte {
 	t.Helper()
 	raw, err := hex.DecodeString(s)
 	if err != nil || len(raw) != 12 {
 		t.Fatalf("bad hex %q", s)
 	}
-	var bits [96]bit.Bit
-	copy(bits[:], bit.Unpack(raw))
-	return bits
-}
-
-func packedFLC(t *testing.T, flc *pdu.FullLinkControl) []byte {
-	t.Helper()
-	bits := must(flc.Encode())
-	return bit.Pack(bits[:])
+	return [12]byte(raw)
 }
 
 // ETSI TS 102 361-1 B.3.12, Table B.21: the mask is XORed into the parity
@@ -56,7 +47,7 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 
 			flc := base
 			flc.BurstDataType = tt.dataType
-			masked := packedFLC(t, &flc)
+			masked := must(flc.Encode())
 			unmasked := reedsolomon.Encode([9]byte(masked[:9]))
 			for i := 0; i < 3; i++ {
 				if got := masked[9+i] ^ unmasked[9+i]; got != tt.mask[i] {
@@ -88,7 +79,7 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
 	t.Parallel()
 
-	flc := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), enums.DataTypeVoiceLCHeader)
+	flc := pdu.DecodeFullLinkControl(hex12(t, realVoiceLCHeader), enums.DataTypeVoiceLCHeader)
 	fecResult := flc.FEC
 	if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
 		t.Fatalf("FEC = %+v, want a clean codeword", fecResult)
@@ -110,7 +101,7 @@ func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 	t.Parallel()
 
 	for _, dt := range []enums.DataType{enums.DataTypeTerminatorWithLC, enums.DataTypePIHeader} {
-		fecResult := pdu.DecodeFullLinkControl(hexBits96(t, realVoiceLCHeader), dt).FEC
+		fecResult := pdu.DecodeFullLinkControl(hex12(t, realVoiceLCHeader), dt).FEC
 		if !fecResult.Uncorrectable && fecResult.ErrorsCorrected == 0 {
 			t.Errorf("%s: FEC = %+v, want an RS failure", dt.String(), fecResult)
 		}
@@ -121,9 +112,9 @@ func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 func TestFLC_EncodeRealVoiceLCHeader(t *testing.T) {
 	t.Parallel()
 
-	want := hexBits96(t, realVoiceLCHeader)
+	want := hex12(t, realVoiceLCHeader)
 	flc := pdu.DecodeFullLinkControl(want, enums.DataTypeVoiceLCHeader)
 	if got := must(flc.Encode()); got != want {
-		t.Errorf("FullLinkControl.Encode = %x, want %s", bit.Pack(got[:]), realVoiceLCHeader)
+		t.Errorf("FullLinkControl.Encode = %x, want %s", got, realVoiceLCHeader)
 	}
 }

@@ -230,11 +230,10 @@ func article(name string) string {
 	return "a"
 }
 
-// emitDecode generates the packed decode function of a PDU struct,
-// decodeXxxBytes, and, unless the struct is a sub-PDU, its exported form
-// DecodeXxx, which takes bit.Bit values. With into, it generates
-// decodeXxxBytesInto and DecodeXxxInto, which decode into a caller's struct
-// and point the dispatch field into a caller's payloads struct.
+// emitDecode generates the decode function of a PDU struct, DecodeXxx, or
+// decodeXxx for a sub-PDU. With into, it generates DecodeXxxInto (or
+// decodeXxxInto), which decodes into a caller's struct and points the
+// dispatch field into a caller's payloads struct.
 func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 	codec, hasFEC, err := resolveCodec(pdu)
 	if err != nil {
@@ -244,93 +243,86 @@ func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 	if hasFEC {
 		inputSize = codec.InputSize
 	}
-	if err := emitDecodeBytes(f, pdu, into, codec, inputSize); err != nil {
-		return err
-	}
-	if !pdu.UnexportedDecode[pdu.Name] {
-		f.Line()
-		emitDecodeAdapter(f, pdu, into, inputSize)
-	}
-	return nil
+	return emitDecodeBytes(f, pdu, into, codec, inputSize)
 }
 
-// bytesDecodeName returns the name of the packed decode function of the
-// struct typeName.
-func bytesDecodeName(typeName string, into bool) string {
-	name := "decode" + typeName + "Bytes"
+// decodeName returns the name of the decode function of the struct typeName
+// of the package of pdu.
+func decodeName(pdu parse.PDUStruct, typeName string, into bool) string {
+	name := pdu.DecodeFuncName(typeName)
 	if into {
 		name += "Into"
 	}
 	return name
 }
 
-// ownDecodeName returns the name of the packed decode function of pdu. The
-// function of a PDU with dispatch fields that is not the Into form
-// allocates the payload struct, so it is named as a constructor.
-func ownDecodeName(pdu parse.PDUStruct, into bool) string {
-	if !into && len(dispatchPayloads(pdu)) > 0 {
-		return "new" + pdu.Name + "Bytes"
+// decodeDoc returns the sentences of a decode doc comment that say how
+// data holds the n bits of a PDU.
+func decodeDoc(n int) string {
+	s := "data holds the " + strconv.Itoa(n) + " bits of the PDU packed, the first bit in the most significant bit of data[0]."
+	last := "data[" + strconv.Itoa(packedSize(n)-1) + "]"
+	switch pad := packedSize(n)*8 - n; {
+	case pad == 1:
+		s += " The least significant bit of " + last + " is ignored."
+	case pad > 1:
+		s += " The low " + strconv.Itoa(pad) + " bits of " + last + " are ignored."
 	}
-	return bytesDecodeName(pdu.Name, into)
+	return s
 }
 
-// emitDecodeAdapter generates DecodeXxx (or DecodeXxxInto), which packs its
-// bit.Bit values and calls the packed decode function.
-func emitDecodeAdapter(f *File, pdu parse.PDUStruct, into bool, inputSize int) {
-	funcName := pdu.DecodeFuncName(pdu.Name)
-	if into {
-		f.Comment(funcName + "Into decodes data into dst as " + funcName + " does,")
+// encodeDoc returns the sentences of an Encode doc comment that say how the
+// result holds the n bits of a PDU.
+func encodeDoc(n int) string {
+	s := "It returns the " + strconv.Itoa(n) + " bits packed, the first bit in the most significant bit of byte 0."
+	last := "byte " + strconv.Itoa(packedSize(n)-1)
+	switch pad := packedSize(n)*8 - n; {
+	case pad == 1:
+		s += " The least significant bit of " + last + " is 0."
+	case pad > 1:
+		s += " The low " + strconv.Itoa(pad) + " bits of " + last + " are 0."
+	}
+	return s
+}
+
+// comment adds text to f as comment lines of at most 77 columns.
+func comment(f *File, text string) {
+	line := ""
+	for _, w := range strings.Fields(text) {
+		if line != "" && len(line)+1+len(w) > 74 {
+			f.Comment(line)
+			line = ""
+		}
+		if line != "" {
+			line += " "
+		}
+		line += w
+	}
+	if line != "" {
+		f.Comment(line)
+	}
+}
+
+// emitDecodeBytes generates the decode function of a PDU struct, which
+// reads data, the inputSize bits of the PDU packed most significant bit
+// first.
+func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInfo, inputSize int) error {
+	name := decodeName(pdu, pdu.Name, into)
+	exported := !pdu.UnexportedDecode[pdu.Name]
+	switch {
+	case into && exported:
+		plain := decodeName(pdu, pdu.Name, false)
+		f.Comment(name + " decodes data into dst as " + plain + " does,")
 		f.Comment("but points the dispatch field of dst into p, so it does not allocate.")
 		f.Comment("The payload stays valid until the next decode into p. dst and p must")
 		f.Comment("not be nil.")
-	} else {
-		f.Comment(funcName + " decodes " + docObject(pdu))
+	case into:
+		comment(f, name+" decodes "+docObject(pdu)+" "+decodeDoc(inputSize)+" It decodes into dst and points the dispatch field of dst into p.")
+	default:
+		text := name + " decodes " + docObject(pdu) + " " + decodeDoc(inputSize)
 		if len(dispatchPayloads(pdu)) > 0 {
-			f.Comment("It allocates the payload struct that the dispatch field points to;")
-			f.Comment(funcName + "Into does not.")
+			text += " It allocates the payload struct that the dispatch field points to; " + name + "Into does not."
 		}
-	}
-	var params, args []Code
-	if into {
-		params = append(params, Id("dst").Op("*").Id(pdu.Name), Id("p").Op("*").Id(payloadsTypeName(pdu)))
-		args = append(args, Id("dst"), Id("p"))
-	}
-	params = append(params, Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit"))
-	args = append(args, Id("_b"))
-	for _, in := range pdu.Inputs {
-		params = append(params, Id(inputParamName(in)).Add(qualType(*pdu.FieldByName(in), pdu)))
-		args = append(args, Id(inputParamName(in)))
-	}
-	body := []Code{
-		Var().Id("_b").Index(Lit(packedSize(inputSize))).Byte(),
-		For(Id("_i").Op(":=").Range().Lit(inputSize)).Block(
-			Id("_b").Index(Id("_i").Op("/").Lit(8)).Op("|=").Byte().Call(Id("data").Index(Id("_i")).Op("&").Lit(1)).
-				Op("<<").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)),
-		),
-	}
-	call := Id(ownDecodeName(pdu, into)).Call(args...)
-	if into {
-		f.Func().Id(funcName + "Into").Params(params...).Block(append(body, call)...)
-		return
-	}
-	f.Func().Id(funcName).Params(params...).Id(pdu.Name).Block(append(body, Return(call))...)
-}
-
-// emitDecodeBytes generates the packed decode function of a PDU struct,
-// which reads data, the inputSize bits of the PDU packed most significant
-// bit first.
-func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInfo, inputSize int) error {
-	name := ownDecodeName(pdu, into)
-	if into {
-		f.Comment(name + " decodes " + docObject(pdu))
-		f.Comment("data holds its bits packed, the first bit most significant. It decodes")
-		f.Comment("into dst and points the dispatch field of dst into p.")
-	} else {
-		f.Comment(name + " decodes " + docObject(pdu))
-		f.Comment("data holds its bits packed, the first bit most significant.")
-		if len(dispatchPayloads(pdu)) > 0 {
-			f.Comment("It allocates the payload struct that the dispatch field points to.")
-		}
+		comment(f, text)
 	}
 
 	var params []Code
@@ -651,7 +643,7 @@ func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct, int
 		raw = copyBits(fieldOf("result", fb.Name), 0, dataBuf, bitStart, fb.BitWidth)
 	}
 	stmt, err := dispatchSelect(fields, pdu, func(field parse.Field) []Code {
-		return dispatchDecodeBlock(field, tmpVar, into)
+		return dispatchDecodeBlock(pdu, field, tmpVar, into)
 	}, raw)
 	if err != nil {
 		return err
@@ -732,9 +724,9 @@ func fallbackField(pdu parse.PDUStruct) *parse.Field {
 
 // dispatchDecodeBlock decodes the sub-PDU of field from tmpVar and points
 // the field to it: to a new value, or with into to its field of p.
-func dispatchDecodeBlock(field parse.Field, tmpVar string, into bool) []Code {
+func dispatchDecodeBlock(pdu parse.PDUStruct, field parse.Field, tmpVar string, into bool) []Code {
 	typ := dispatchTypeName(field)
-	decode := Id(bytesDecodeName(typ, false)).Call(Id(tmpVar))
+	decode := Id(decodeName(pdu, typ, false)).Call(Id(tmpVar))
 	if into {
 		slot := Id("p").Dot(payloadFieldName(typ))
 		return []Code{
@@ -1115,9 +1107,9 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	}
 }
 
-// emitDelegateDecode generates the decode of a delegate field. A delegate of
-// this package decodes from packed bits; a delegate of another package
-// decodes from bit.Bit values through its exported Decode function.
+// emitDelegateDecode generates the decode of a delegate field, from packed
+// bits through the decode function of its type: the exported Decode
+// function for a type of another package.
 func emitDelegateDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	target := Id("result").Dot(field.Name)
 	if field.DelegateNoPtr && field.Stride == 0 {
@@ -1129,23 +1121,17 @@ func emitDelegateDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		width = field.Stride
 	}
 	tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bytes"
-	var decl, fill, call Code
+	decl := Var().Id(tmpVar).Index(Lit(packedSize(width))).Byte()
+	var call Code
 	if field.IsQualified {
-		tmpVar = "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
-		decl = Var().Id(tmpVar).Index(Lit(width)).Qual(bitPkg, "Bit")
 		call = Qual(resolveImportPath(field.TypePkg, pdu.SourceFile), "Decode"+field.TypeName).Call(Id(tmpVar))
 	} else {
-		decl = Var().Id(tmpVar).Index(Lit(packedSize(width))).Byte()
-		call = Id(bytesDecodeName(field.TypeName, false)).Call(Id(tmpVar))
+		call = Id(decodeName(pdu, field.TypeName, false)).Call(Id(tmpVar))
 	}
 
 	if field.Stride > 0 && field.ArrayLen > 0 {
 		start := Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride)
-		if field.IsQualified {
-			fill = Qual(bitsPkg, "Unpack").Call(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Empty(), Empty()), start)
-		} else {
-			fill = Qual(bitsPkg, "Copy").Call(Id(tmpVar).Index(Empty(), Empty()), Lit(0), Id("data").Index(Empty(), Empty()), start, Lit(field.Stride))
-		}
+		fill := Qual(bitsPkg, "Copy").Call(Id(tmpVar).Index(Empty(), Empty()), Lit(0), Id("data").Index(Empty(), Empty()), start, Lit(field.Stride))
 		g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 			decl, fill, target.Clone().Index(Id("_i")).Op("=").Add(call),
 		)
@@ -1153,19 +1139,13 @@ func emitDelegateDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	}
 
 	g.Add(decl)
-	if field.IsQualified {
-		g.Qual(bitsPkg, "Unpack").Call(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Empty(), Empty()), Lit(field.BitStart))
-	} else {
-		addAll(g, copyBits(idOf(tmpVar), 0, dataBuf, field.BitStart, width))
-	}
+	addAll(g, copyBits(idOf(tmpVar), 0, dataBuf, field.BitStart, width))
 	g.Add(target).Op("=").Add(call)
 }
 
-// emitEncode generates the encodeBytes method of a PDU struct, which returns
-// the full codeword, FEC parity included, packed most significant bit
-// first, or an error when a field value does not fit its bits, and the
-// Encode method, which returns the codeword of encodeBytes as bit.Bit
-// values.
+// emitEncode generates the Encode method of a PDU struct, which returns the
+// full codeword, FEC parity included, packed most significant bit first, or
+// an error when a field value does not fit its bits.
 func emitEncode(f *File, pdu parse.PDUStruct, ev *errVars) error {
 	codec, hasFEC, err := resolveCodec(pdu)
 	if err != nil {
@@ -1178,10 +1158,9 @@ func emitEncode(f *File, pdu parse.PDUStruct, ev *errVars) error {
 	}
 	enc := encoder{pdu: pdu, bytes: packedSize(outputSize), errs: ev}
 
-	f.Comment("encodeBytes encodes " + docObject(pdu))
-	f.Comment("It returns the bits of Encode packed, the first bit most significant.")
+	comment(f, "Encode encodes "+docObject(pdu)+" "+encodeDoc(outputSize))
 	var genErr error
-	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("encodeBytes").Params().Params(
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id(encodeFnName).Params().Params(
 		Index(Lit(enc.bytes)).Byte(),
 		Error(),
 	).BlockFunc(func(g *Group) {
@@ -1204,31 +1183,11 @@ func emitEncode(f *File, pdu parse.PDUStruct, ev *errVars) error {
 		}
 		g.Return(Id("data"), Nil())
 	})
-	if genErr != nil {
-		return genErr
-	}
-	f.Line()
-
-	f.Comment("Encode encodes " + docObject(pdu))
-	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("Encode").Params().Params(
-		Index(Lit(outputSize)).Qual(bitPkg, "Bit"),
-		Error(),
-	).Block(
-		List(Id("_b"), Err()).Op(":=").Id("s").Dot("encodeBytes").Call(),
-		If(Err().Op("!=").Nil()).Block(Return(Index(Lit(outputSize)).Qual(bitPkg, "Bit").Values(), Err())),
-		Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit"),
-		For(Id("_i").Op(":=").Range().Lit(outputSize)).Block(
-			Id("data").Index(Id("_i")).Op("=").Qual(bitPkg, "Bit").Call(
-				Id("_b").Index(Id("_i").Op("/").Lit(8)).Op(">>").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)).Op("&").Lit(1),
-			),
-		),
-		Return(Id("data"), Nil()),
-	)
-	return nil
+	return genErr
 }
 
 // encoder carries the PDU and the packed output size in bytes while
-// emitting an encodeBytes body.
+// emitting an Encode body.
 type encoder struct {
 	pdu   parse.PDUStruct
 	bytes int
@@ -1390,7 +1349,7 @@ func (e encoder) dispatch(g *Group, fields []parse.Field) {
 			store := copyBits(dataBuf, bitStart, idOf("_pduBytes"), 0, n)
 			body := make([]Code, 0, 2+len(store))
 			body = append(body,
-				List(Id("_pduBytes"), Err()).Op(":=").Id("s").Dot(field.Name).Dot("encodeBytes").Call(),
+				List(Id("_pduBytes"), Err()).Op(":=").Id("s").Dot(field.Name).Dot(encodeFnName).Call(),
 				If(Err().Op("!=").Nil()).Block(e.fail(Err())),
 			)
 			body = append(body, store...)
@@ -1491,38 +1450,22 @@ func (e encoder) field(g *Group, field parse.Field) {
 	}
 }
 
-// delegate encodes a delegate field: from the packed bits of a delegate of
-// this package, or from the bit.Bit values that the Encode method of a
-// delegate of another package returns.
+// delegate encodes a delegate field from the packed bits that the Encode
+// method of its type returns.
 func (e encoder) delegate(g *Group, field parse.Field) {
 	source := Id("s").Dot(field.Name)
-	method := "encodeBytes"
-	suffix := "Bytes"
-	if field.IsQualified {
-		method, suffix = encodeFnName, "Bits"
-	}
 	if field.Stride > 0 {
 		start := Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride)
-		var store Code
-		if field.IsQualified {
-			store = Qual(bitsPkg, "Pack").Call(Id("data").Index(Empty(), Empty()), start, Id("_elem"+suffix).Index(Empty(), Empty()))
-		} else {
-			store = Qual(bitsPkg, "Copy").Call(Id("data").Index(Empty(), Empty()), start, Id("_elem"+suffix).Index(Empty(), Empty()), Lit(0), Lit(field.Stride))
-		}
 		g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
-			List(Id("_elem"+suffix), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot(method).Call(),
+			List(Id("_elemBytes"), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot(encodeFnName).Call(),
 			If(Err().Op("!=").Nil()).Block(e.fail(Err())),
-			store,
+			Qual(bitsPkg, "Copy").Call(Id("data").Index(Empty(), Empty()), start, Id("_elemBytes").Index(Empty(), Empty()), Lit(0), Lit(field.Stride)),
 		)
 		return
 	}
-	tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + suffix
-	g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot(method).Call()
+	tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bytes"
+	g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot(encodeFnName).Call()
 	g.If(Err().Op("!=").Nil()).Block(e.fail(Err()))
-	if field.IsQualified {
-		g.Qual(bitsPkg, "Pack").Call(Id("data").Index(Empty(), Empty()), Lit(field.BitStart), Id(tmpVar).Index(Empty(), Empty()))
-		return
-	}
 	addAll(g, copyBits(dataBuf, field.BitStart, idOf(tmpVar), 0, field.BitEnd-field.BitStart+1))
 }
 

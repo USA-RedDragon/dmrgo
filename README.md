@@ -102,7 +102,7 @@ The rest allocates as little as it can. These are all the places where the libra
 | A String, GoString or Error method | When the text is built, for a person to read. | 97 |
 | An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 14 |
 | An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. | 20 |
-| An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 24 |
+| An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 23 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
 | A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 5 |
 | The runtime print functions, which the runtime calls on its debug paths | Never: they format into fixed buffers that the gate cannot prove are large enough. | 1 |
@@ -271,7 +271,7 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 | 9.1.6 | Full Link Control (FULL LC) PDU | verified | 10/10 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/full_link_control_bytes.go` |
 | 9.1.7 | Short Link Control (SHORT LC) PDU | verified | 14/14 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/internal/crc/crc8.go` |
 | 9.1.8 | Control Signalling Block (CSBK) PDU | verified | 7/7 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/csbk_bytes.go` |
-| 9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | verified | 9/9 passed | `v2/layer2/pdu/pr_fill.go` |
+| 9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | verified | 8/8 passed | `v2/layer2/pdu/pr_fill.go` |
 | 9.2.2 | Rate ¾ coded packet Data (R_3_4_DATA) PDU | verified | 10/10 passed | `v2/layer2/pdu/rate34_data.go`, `v2/layer2/pdu/confirmed_block.go` |
 | 9.2.6 | Unconfirmed data packet Header (U_HEAD) PDU | verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | 9.2.7 | Rate ½ coded packet Data (R_1_2_DATA) PDU | verified | 7/7 passed | `v2/layer2/pdu/rate12_data.go`, `v2/layer2/pdu/confirmed_block.go` |

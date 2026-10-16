@@ -244,9 +244,9 @@ func TestVoiceReceiver_Captures(t *testing.T) {
 				if got.positions[i] != enums.VoiceBurstE || lc.FEC.HasErrors() {
 					t.Errorf("burst %d: LC at %s, FEC %+v", i, got.positions[i].String(), lc.FEC)
 				}
-				bits := lcBits(t, lc, enums.DataTypeVoiceLCHeader)
-				if packed := bit.Pack(bits[:72]); !bytes.Equal(packed, capturedEmbeddedLC) {
-					t.Errorf("burst %d: LC % X, want % X", i, packed, capturedEmbeddedLC)
+				info := lcBits(t, lc, enums.DataTypeVoiceLCHeader)
+				if !bytes.Equal(info[:9], capturedEmbeddedLC) {
+					t.Errorf("burst %d: LC % X, want % X", i, info[:9], capturedEmbeddedLC)
 				}
 				target, source, ok := lc.Addresses()
 				if !ok || target != 9990 || source != 3191868 {

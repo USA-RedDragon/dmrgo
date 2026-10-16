@@ -1,17 +1,13 @@
 package layer3
 
-import (
-	"testing"
-
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-)
+import "testing"
 
 func TestDecodeServiceOptions(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name                string
-		bits                [8]bit.Bit
+		bits                [1]byte
 		isEmergency         bool
 		isPrivacy           bool
 		isBroadcast         bool
@@ -20,7 +16,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 	}{
 		{
 			name:                "AllZeros",
-			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 0},
+			bits:                [1]byte{0b00000000},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -29,7 +25,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 		},
 		{
 			name:                "Emergency",
-			bits:                [8]bit.Bit{1, 0, 0, 0, 0, 0, 0, 0},
+			bits:                [1]byte{0b10000000},
 			isEmergency:         true,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -38,7 +34,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 		},
 		{
 			name:                "Privacy",
-			bits:                [8]bit.Bit{0, 1, 0, 0, 0, 0, 0, 0},
+			bits:                [1]byte{0b01000000},
 			isEmergency:         false,
 			isPrivacy:           true,
 			isBroadcast:         false,
@@ -47,7 +43,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 		},
 		{
 			name:                "Broadcast",
-			bits:                [8]bit.Bit{0, 0, 0, 0, 1, 0, 0, 0},
+			bits:                [1]byte{0b00001000},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         true,
@@ -56,7 +52,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 		},
 		{
 			name:                "OpenVoiceCallMode",
-			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 1, 0, 0},
+			bits:                [1]byte{0b00000100},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -65,7 +61,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 		},
 		{
 			name:                "Priority2",
-			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 1, 0},
+			bits:                [1]byte{0b00000010},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -74,7 +70,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 		},
 		{
 			name:                "Priority1",
-			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 0, 1},
+			bits:                [1]byte{0b00000001},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -83,7 +79,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 		},
 		{
 			name:                "Priority3",
-			bits:                [8]bit.Bit{0, 0, 0, 0, 0, 0, 1, 1},
+			bits:                [1]byte{0b00000011},
 			isEmergency:         false,
 			isPrivacy:           false,
 			isBroadcast:         false,
@@ -92,7 +88,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 		},
 		{
 			name:                "AllSet",
-			bits:                [8]bit.Bit{1, 1, 1, 1, 1, 1, 1, 1},
+			bits:                [1]byte{0b11111111},
 			isEmergency:         true,
 			isPrivacy:           true,
 			isBroadcast:         true,
@@ -128,7 +124,7 @@ func TestDecodeServiceOptions(t *testing.T) {
 func TestDecodeServiceOptions_ReservedBits(t *testing.T) {
 	t.Parallel()
 
-	bits := [8]bit.Bit{0, 0, 1, 1, 0, 0, 0, 0}
+	bits := [1]byte{0b00110000}
 	so := DecodeServiceOptions(bits)
 	if so.Reserved != 0b11 {
 		t.Errorf("Reserved = %#b, want 0b11", so.Reserved)
@@ -141,12 +137,7 @@ func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
 	for i := 0; i < 256; i++ {
 		b := byte(i)
 
-		var bits [8]bit.Bit
-		for j := 0; j < 8; j++ {
-			if (b>>(7-j))&1 == 1 {
-				bits[j] = 1
-			}
-		}
+		bits := [1]byte{b}
 
 		so := DecodeServiceOptions(bits)
 		encoded := must(so.Encode())
@@ -159,7 +150,7 @@ func TestServiceOptions_EncodeDecodeRoundTrip(t *testing.T) {
 func TestServiceOptions_String(t *testing.T) {
 	t.Parallel()
 
-	bits := [8]bit.Bit{1, 0, 0, 0, 1, 0, 1, 0}
+	bits := [1]byte{0b10001010}
 	so := DecodeServiceOptions(bits)
 	str := so.String()
 	if len(str) == 0 {
@@ -191,7 +182,7 @@ func TestServiceOptionsByte(t *testing.T) {
 			t.Errorf("ServiceOptionsFromByte(%#02x).Byte() = %#02x", v, got)
 		}
 		bits := must(so.Encode())
-		if got := byte(bit.Uint(bits[:])); got != byte(v) {
+		if got := bits[0]; got != byte(v) {
 			t.Errorf("%#02x: Encode gives %#02x", v, got)
 		}
 	}

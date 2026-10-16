@@ -6,35 +6,24 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildUSBDBits constructs a [96]bit.Bit array for a USBD PDU.
-// serviceType is 4 bits, payload is 76 bits.
+// buildUSBDBits constructs the 96 packed bits of a USBD PDU.
+// serviceType is 4 bits, payload holds 76 bits from its first bit.
 // CRC-CCITT is computed and XOR-masked with mask 0x3333 (ETSI TS 102 361-1 clause B.3.8).
-func buildUSBDBits(serviceType byte, payload [76]bit.Bit) [96]bit.Bit {
-	var data [96]bit.Bit
+func buildUSBDBits(serviceType byte, payload [10]byte) [12]byte {
+	var data [12]byte
 
-	bit.PutUint(data[0:4], uint64(serviceType))
+	bits.SetField(data[:], 0, 4, uint64(serviceType))
 
-	copy(data[4:80], payload[:])
+	bits.Copy(data[:], 4, payload[:], 0, 76)
 
-	var dataBytes [10]byte
-	for i := range 10 {
-		for j := range 8 {
-			dataBytes[i] <<= 1
-			dataBytes[i] |= byte(data[i*8+j])
-		}
-	}
-
-	crcVal := crc.CCITT(dataBytes[:])
-	crcHigh := byte(crcVal>>8) ^ 0x33
-	crcLow := byte(crcVal) ^ 0x33
-	for b := 7; b >= 0; b-- {
-		data[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
-		data[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
-	}
+	crcVal := crc.CCITT(data[:10])
+	data[10] = byte(crcVal>>8) ^ 0x33
+	data[11] = byte(crcVal) ^ 0x33
 
 	return data
 }
@@ -42,10 +31,10 @@ func buildUSBDBits(serviceType byte, payload [76]bit.Bit) [96]bit.Bit {
 func TestUSBD_DecodeLIP(t *testing.T) {
 	t.Parallel()
 
-	var payload [76]bit.Bit
-	payload[0] = 1
-	payload[10] = 1
-	payload[75] = 1
+	var payload [10]byte
+	setRawBit(payload[:], 0)
+	setRawBit(payload[:], 10)
+	setRawBit(payload[:], 75)
 
 	infoBits := buildUSBDBits(0b0000, payload)
 
@@ -76,8 +65,8 @@ func TestUSBD_DecodeLIP(t *testing.T) {
 func TestUSBD_DecodeManufacturerSpecific(t *testing.T) {
 	t.Parallel()
 
-	var payload [76]bit.Bit
-	payload[0] = 1
+	var payload [10]byte
+	setRawBit(payload[:], 0)
 
 	infoBits := buildUSBDBits(0b1000, payload)
 
@@ -147,17 +136,15 @@ func TestUSBD_EncodeStability(t *testing.T) {
 	dec1 := pdu.DecodeUnifiedSingleBlockData(enc1)
 	enc2 := must(dec1.Encode())
 
-	for i := 0; i < 96; i++ {
-		if enc1[i] != enc2[i] {
-			t.Errorf("Encode stability failed at bit %d: first=%d, second=%d", i, enc1[i], enc2[i])
-		}
+	if enc1 != enc2 {
+		t.Errorf("Encode stability failed: first=%x, second=%x", enc1, enc2)
 	}
 }
 
 func TestUSBD_CRCFailure(t *testing.T) {
 	t.Parallel()
 
-	var infoBits [96]bit.Bit
+	var infoBits [12]byte
 	fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeUnifiedSingleBlockData should return uncorrectable for invalid CRC")
@@ -167,11 +154,11 @@ func TestUSBD_CRCFailure(t *testing.T) {
 func TestUSBD_CRCBitFlip(t *testing.T) {
 	t.Parallel()
 
-	var payload [76]bit.Bit
-	payload[5] = 1
+	var payload [10]byte
+	setRawBit(payload[:], 5)
 	infoBits := buildUSBDBits(0b0000, payload)
 
-	infoBits[5] ^= 1
+	infoBits[0] ^= 0x04
 
 	fecResult := pdu.DecodeUnifiedSingleBlockData(infoBits).FEC
 	if !fecResult.Uncorrectable {
@@ -191,8 +178,8 @@ func TestUSBD_DataType(t *testing.T) {
 func TestUSBD_String(t *testing.T) {
 	t.Parallel()
 
-	var payload [76]bit.Bit
-	payload[0] = 1
+	var payload [10]byte
+	setRawBit(payload[:], 0)
 
 	infoBits := buildUSBDBits(0b0000, payload)
 
@@ -239,7 +226,7 @@ func TestUSBD_AllServiceTypes(t *testing.T) {
 	t.Parallel()
 
 	for st := 0; st < 16; st++ {
-		var payload [76]bit.Bit
+		var payload [10]byte
 		infoBits := buildUSBDBits(byte(st), payload)
 		usbd := pdu.DecodeUnifiedSingleBlockData(infoBits)
 		fecResult := usbd.FEC
@@ -255,8 +242,9 @@ func TestUSBD_AllServiceTypes(t *testing.T) {
 func TestUSBD_PayloadLayout(t *testing.T) {
 	t.Parallel()
 
-	var payload [76]bit.Bit
-	payload[0], payload[75] = 1, 1
+	var payload [10]byte
+	setRawBit(payload[:], 0)
+	setRawBit(payload[:], 75)
 	usbd := pdu.DecodeUnifiedSingleBlockData(buildUSBDBits(0, payload))
 	if want := [10]byte{0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0x10}; usbd.Payload != want {
 		t.Fatalf("Payload = %x, want %x: bit 4 in the top bit of byte 0, bit 79 in bit 4 of byte 9", usbd.Payload, want)

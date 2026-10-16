@@ -3,7 +3,6 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -21,7 +20,7 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 	}
 	for _, dh := range headers {
 		enc := must(dh.Encode())
-		h := pdu.DataHeaderBytes(bit.Pack96(enc))
+		h := pdu.DataHeaderBytes(enc)
 		if !h.CRCOK() || h.Format() != dh.Format {
 			t.Fatalf("%s: CRC %t format %s", dh.Format, h.CRCOK(), h.Format())
 		}
@@ -34,7 +33,7 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 			t.Fatalf("%s: SetAddresses or SetGroup refused", dh.Format)
 		}
 		h.Reseal()
-		got := pdu.DecodeDataHeader(bit.Unpack96(h))
+		got := pdu.DecodeDataHeader(h)
 		res := got.FEC
 		if res.HasErrors() {
 			t.Fatalf("%s: edited header %+v", dh.Format, res)

@@ -7,7 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
 // CRC7MaskRC is the CRC-7 data type mask for Reverse Channel PDUs (ETSI TS
@@ -25,15 +24,16 @@ type ReverseChannel struct {
 	FEC fec.Result
 }
 
-// DecodeReverseChannel decodes an 11-bit RC PDU (after Single Burst BPTC decode).
-// The input is the 11 information bits: 4-bit payload + 7-bit CRC-7. The
-// FEC field reports the CRC-7 check.
-func DecodeReverseChannel(infoBits [11]bit.Bit) ReverseChannel {
+// DecodeReverseChannel decodes an RC PDU from its 11 information bits, after
+// the Single Burst BPTC decode: the 4-bit RC command and the masked CRC-7.
+// info holds the bits packed, the first bit in the most significant bit of
+// info[0], and the low 5 bits of info[1] are ignored. The FEC field reports
+// the CRC-7 check.
+func DecodeReverseChannel(info [2]byte) ReverseChannel {
 	var result ReverseChannel
-	lowbit.Mask(infoBits[:])
-	result.RCCommand = enums.RCCommand(bit.Uint(infoBits[:4]) & 0xFF)
-	cmd := [1]byte{byte(result.RCCommand) << 4}
-	result.FEC.Uncorrectable = !crc.CheckCRC7(cmd[:], 4, uint8(bit.Uint(infoBits[4:])&0xFF)^CRC7MaskRC)
+	result.RCCommand = enums.RCCommand(info[0] >> 4)
+	cmd := [1]byte{info[0] & 0xF0}
+	result.FEC.Uncorrectable = !crc.CheckCRC7(cmd[:], 4, (info[0]<<3|info[1]>>5)&0x7F^CRC7MaskRC)
 	return result
 }
 
@@ -41,25 +41,17 @@ func DecodeReverseChannel(infoBits [11]bit.Bit) ReverseChannel {
 // does not fit in 4 bits.
 var errReverseChannelRCCommandRange = &bit.FieldRangeError{Type: "ReverseChannel", Field: "RCCommand", Bits: 4}
 
-// Encode encodes an RC PDU into 11 information bits.
-// The output contains the 4-bit payload followed by 7-bit CRC-7 (masked).
-// It returns an error if RCCommand does not fit in 4 bits.
-func (rc *ReverseChannel) Encode() ([11]bit.Bit, error) {
-	var bits [11]bit.Bit
-
+// Encode encodes an RC PDU into its 11 information bits: the 4-bit RC command
+// and the CRC-7 masked with CRC7MaskRC, packed as DecodeReverseChannel takes
+// them, with the low 5 bits of byte 1 0. It returns an error if RCCommand
+// does not fit in 4 bits.
+func (rc *ReverseChannel) Encode() ([2]byte, error) {
 	if rc.RCCommand > 0x0F {
-		return bits, errReverseChannelRCCommandRange
+		return [2]byte{}, errReverseChannelRCCommandRange
 	}
-
-	bit.PutUint(bits[0:4], uint64(uint8(rc.RCCommand)))
-
 	cmd := [1]byte{byte(rc.RCCommand) << 4}
-	crcVal := crc.CRC7(cmd[:], 4) ^ CRC7MaskRC
-	for i := 0; i < 7; i++ {
-		bits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)
-	}
-
-	return bits, nil
+	c := crc.CRC7(cmd[:], 4) ^ CRC7MaskRC
+	return [2]byte{cmd[0] | c>>3, c << 5}, nil
 }
 
 // String returns a human-readable string representation of the RC PDU. It

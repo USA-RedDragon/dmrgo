@@ -3,34 +3,29 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // buildShortLCBits constructs a valid 36-bit Short LC PDU with correct CRC-8.
 // slco is the 4-bit SLCO value, data is the 24-bit payload.
-func buildShortLCBits(slco byte, data [24]bit.Bit) [36]bit.Bit {
-	var bits [36]bit.Bit
-	bits[0] = bit.Bit((slco >> 3) & 1)
-	bits[1] = bit.Bit((slco >> 2) & 1)
-	bits[2] = bit.Bit((slco >> 1) & 1)
-	bits[3] = bit.Bit(slco & 1)
-	copy(bits[4:28], data[:])
-	crcVal := crc8Bits(bits[:28])
-	for i := range 8 {
-		bits[28+i] = bit.Bit((crcVal >> (7 - i)) & 1)
-	}
-	return bits
+func buildShortLCBits(slco byte, data [3]byte) [5]byte {
+	var info [5]byte
+	bits.SetField(info[:], 0, 4, uint64(slco))
+	bits.Copy(info[:], 4, data[:], 0, 24)
+	bits.SetField(info[:], 28, 8, uint64(crc.CRC8(info[:], 28)))
+	return info
 }
 
 func TestShortLC_NullMessage_Decode(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
-	bits := buildShortLCBits(byte(enums.SLCONullMessage), data)
+	var data [3]byte
+	info := buildShortLCBits(byte(enums.SLCONullMessage), data)
 
-	slc := pdu.DecodeShortLC(bits)
+	slc := pdu.DecodeShortLC(info)
 	fecResult := slc.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -49,17 +44,11 @@ func TestShortLC_NullMessage_Decode(t *testing.T) {
 func TestShortLC_ActivityUpdate_Decode(t *testing.T) {
 	t.Parallel()
 	// TS1ActivityID=5, TS2ActivityID=3, HashTS1=0xAB, HashTS2=0xCD
-	var data [24]bit.Bit
-	data[0], data[1], data[2], data[3] = 0, 1, 0, 1
-	data[4], data[5], data[6], data[7] = 0, 0, 1, 1
-	data[8], data[9], data[10], data[11] = 1, 0, 1, 0
-	data[12], data[13], data[14], data[15] = 1, 0, 1, 1
-	data[16], data[17], data[18], data[19] = 1, 1, 0, 0
-	data[20], data[21], data[22], data[23] = 1, 1, 0, 1
+	data := [3]byte{0b0101_0011, 0b1010_1011, 0b1100_1101}
 
-	bits := buildShortLCBits(byte(enums.SLCOActivityUpdate), data)
+	info := buildShortLCBits(byte(enums.SLCOActivityUpdate), data)
 
-	slc := pdu.DecodeShortLC(bits)
+	slc := pdu.DecodeShortLC(info)
 	fecResult := slc.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
@@ -124,12 +113,12 @@ func TestShortLC_EncodeDecodeRoundTrip(t *testing.T) {
 
 func TestShortLC_CRCFailure(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
-	bits := buildShortLCBits(byte(enums.SLCONullMessage), data)
+	var data [3]byte
+	info := buildShortLCBits(byte(enums.SLCONullMessage), data)
 
-	bits[30] ^= 1
+	info[3] ^= 0x02
 
-	fecResult := pdu.DecodeShortLC(bits).FEC
+	fecResult := pdu.DecodeShortLC(info).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("expected uncorrectable after CRC corruption")
 	}
@@ -137,10 +126,10 @@ func TestShortLC_CRCFailure(t *testing.T) {
 
 func TestShortLC_BitsChecked(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
-	bits := buildShortLCBits(byte(enums.SLCONullMessage), data)
+	var data [3]byte
+	info := buildShortLCBits(byte(enums.SLCONullMessage), data)
 
-	fecResult := pdu.DecodeShortLC(bits).FEC
+	fecResult := pdu.DecodeShortLC(info).FEC
 	if fecResult != (fec.Result{}) {
 		t.Errorf("CRC-8 only PDU: got %+v, want a zero result", fecResult)
 	}
@@ -148,10 +137,10 @@ func TestShortLC_BitsChecked(t *testing.T) {
 
 func TestShortLC_String(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
-	bits := buildShortLCBits(byte(enums.SLCOActivityUpdate), data)
+	var data [3]byte
+	info := buildShortLCBits(byte(enums.SLCOActivityUpdate), data)
 
-	slc := pdu.DecodeShortLC(bits)
+	slc := pdu.DecodeShortLC(info)
 	s := slc.String()
 	if s == "" {
 		t.Error("String should not be empty")
@@ -161,9 +150,9 @@ func TestShortLC_String(t *testing.T) {
 func TestShortLC_UnknownSLCO_RoundTrip(t *testing.T) {
 	t.Parallel()
 
-	var payload [24]bit.Bit
-	for i := range payload {
-		payload[i] = bit.Bit((i*7+3)%2 ^ i%3%2)
+	var payload [3]byte
+	for i := range 24 {
+		bits.SetBit(payload[:], i, byte((i*7+3)%2^i%3%2))
 	}
 	for _, slco := range []byte{0b0101, 0b1111} {
 		in := buildShortLCBits(slco, payload)
@@ -172,8 +161,8 @@ func TestShortLC_UnknownSLCO_RoundTrip(t *testing.T) {
 		if fecResult.Uncorrectable {
 			t.Fatalf("SLCO %04b: CRC failed", slco)
 		}
-		if want := [3]byte(bit.Pack(payload[:])); slc.RawPayload != want {
-			t.Errorf("SLCO %04b: RawPayload = %x, want %x", slco, slc.RawPayload, want)
+		if slc.RawPayload != payload {
+			t.Errorf("SLCO %04b: RawPayload = %x, want %x", slco, slc.RawPayload, payload)
 		}
 		if got := must(slc.Encode()); got != in {
 			t.Errorf("SLCO %04b: Encode(Decode(x)) = %v, want %v", slco, got, in)

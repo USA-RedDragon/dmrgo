@@ -73,12 +73,10 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 	}
 	var piHeader RawBurst
 	if opts.PIHeader != nil {
-		coded, err := opts.PIHeader.Encode()
+		p, err := opts.PIHeader.Encode()
 		if err != nil {
 			return err
 		}
-		var p [12]byte
-		packBits(p[:], coded[:])
 		if piHeader, err = BuildDataBurst(p, enums.DataTypePIHeader, opts.ColorCode, opts.Source); err != nil {
 			return err
 		}

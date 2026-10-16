@@ -11,9 +11,10 @@ import (
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
-// decodePIHeaderBytes decodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
-// data holds its bits packed, the first bit most significant.
-func decodePIHeaderBytes(data [12]byte) PIHeader {
+// DecodePIHeader decodes a PIHeader (ETSI TS 102 361-1 clause 6.2). data
+// holds the 96 bits of the PDU packed, the first bit in the most significant
+// bit of data[0].
+func DecodePIHeader(data [12]byte) PIHeader {
 	var result PIHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0x6969)
 	result.AlgorithmID = uint8(uint64(data[0]))
@@ -25,18 +26,9 @@ func decodePIHeaderBytes(data [12]byte) PIHeader {
 	return result
 }
 
-// DecodePIHeader decodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
-func DecodePIHeader(data [96]bit.Bit) PIHeader {
-	var _b [12]byte
-	for _i := range 96 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodePIHeaderBytes(_b)
-}
-
-// encodeBytes encodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *PIHeader) encodeBytes() ([12]byte, error) {
+// Encode encodes a PIHeader (ETSI TS 102 361-1 clause 6.2). It returns the
+// 96 bits packed, the first bit in the most significant bit of byte 0.
+func (s *PIHeader) Encode() ([12]byte, error) {
 	var data [12]byte
 	data[0] = byte(uint64(s.AlgorithmID))
 	if uint64(s.MFID)>>8 != 0 {
@@ -59,19 +51,6 @@ func (s *PIHeader) encodeBytes() ([12]byte, error) {
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal>>8) ^ 0x69
 	data[11] = byte(_crcVal) ^ 0x69
-	return data, nil
-}
-
-// Encode encodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
-func (s *PIHeader) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

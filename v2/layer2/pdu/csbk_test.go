@@ -4,42 +4,22 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// buildCSBKBits returns the 96 information bits of a standard FID CSBK with
-// LB set, the given opcode and payload, and the CRC-CCITT with the CSBK mask.
-func buildCSBKBits(opcode byte, payload [64]bit.Bit) [96]bit.Bit {
-	var dataBytes [12]byte
-
-	dataBytes[0] = 0x80 | (opcode & 0x3F)
-
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			dataBytes[2+i] <<= 1
-			dataBytes[2+i] |= byte(payload[i*8+j])
-		}
-	}
-
-	crc := crc.CCITT(dataBytes[:10])
-	dataBytes[10] = byte(crc >> 8)
-	dataBytes[11] = byte(crc)
-
-	dataBytes[10] ^= 0xA5
-	dataBytes[11] ^= 0xA5
-
-	var bits [96]bit.Bit
-	for i := 0; i < 12; i++ {
-		for j := 0; j < 8; j++ {
-			if (dataBytes[i]>>(7-j))&1 == 1 {
-				bits[i*8+j] = 1
-			}
-		}
-	}
-
-	return bits
+// buildCSBK returns the 12 octets of a standard FID CSBK with LB set, the
+// given opcode and payload, and the CRC-CCITT with the CSBK mask.
+func buildCSBK(opcode byte, payload [8]byte) [12]byte {
+	var data [12]byte
+	data[0] = 0x80 | (opcode & 0x3F)
+	copy(data[2:10], payload[:])
+	c := crc.CCITT(data[:10]) ^ 0xA5A5
+	data[10] = byte(c >> 8)
+	data[11] = byte(c)
+	return data
 }
 
 func TestCSBK_OpcodeString(t *testing.T) {
@@ -71,15 +51,15 @@ func TestCSBK_OpcodeString(t *testing.T) {
 func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[0] = 1
-	payload[1] = 0
-	payload[8+5] = 1
-	payload[8+7] = 1
-	payload[39] = 1
-	payload[62] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 0, 1)
+	bits.SetBit(payload[:], 1, 0)
+	bits.SetBit(payload[:], 8+5, 1)
+	bits.SetBit(payload[:], 8+7, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 62, 1)
 
-	infoBits := buildCSBKBits(0b00111101, payload)
+	infoBits := buildCSBK(0b00111101, payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -114,14 +94,14 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 func TestCSBK_NegativeAck_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[0] = 1
-	payload[6] = 1
-	payload[7] = 1
-	payload[9] = 1
-	payload[14] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 0, 1)
+	bits.SetBit(payload[:], 6, 1)
+	bits.SetBit(payload[:], 7, 1)
+	bits.SetBit(payload[:], 9, 1)
+	bits.SetBit(payload[:], 14, 1)
 
-	infoBits := buildCSBKBits(0b00100110, payload)
+	infoBits := buildCSBK(0b00100110, payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -148,18 +128,17 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 func TestCSBK_CRCValidation(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[0] = 1
-	infoBits := buildCSBKBits(0b00111101, payload)
+	var payload [8]byte
+	bits.SetBit(payload[:], 0, 1)
+	infoBits := buildCSBK(0b00111101, payload)
 
 	fecResult := pdu.DecodeCSBK(infoBits).FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("valid CSBK should decode ok")
 	}
 
-	var corrupted [96]bit.Bit
-	copy(corrupted[:], infoBits[:])
-	corrupted[40] ^= 1
+	corrupted := infoBits
+	corrupted[5] ^= 0x80
 
 	fecResult2 := pdu.DecodeCSBK(corrupted).FEC
 	if !fecResult2.Uncorrectable {
@@ -170,12 +149,12 @@ func TestCSBK_CRCValidation(t *testing.T) {
 func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[39] = 1
-	payload[62] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 62, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKBSOutboundActivation), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKBSOutboundActivation), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -216,14 +195,11 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 		ProtectFlag: false,
 		Opcode:      pdu.CSBKBSOutboundActivation,
 		FID:         0x00,
-		RawPayload: [8]byte(bit.Pack(func() []bit.Bit {
-			b := must((&pdu.BSOutboundActivationPDU{
-				Reserved:      0,
-				BSAddress:     uint32(bit.Uint(bsAddr[:])),
-				SourceAddress: uint32(bit.Uint(srcAddr[:])),
-			}).Encode())
-			return b[:]
-		}())),
+		RawPayload: must((&pdu.BSOutboundActivationPDU{
+			Reserved:      0,
+			BSAddress:     uint32(bit.Uint(bsAddr[:])),
+			SourceAddress: uint32(bit.Uint(srcAddr[:])),
+		}).Encode()),
 	}
 
 	encoded := must(original.Encode())
@@ -247,12 +223,12 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[0] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 0, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceRequest), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKUnitToUnitVoiceServiceRequest), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -319,13 +295,13 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[1] = 1
-	payload[10] = 1
-	payload[39] = 1
-	payload[63] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 1, 1)
+	bits.SetBit(payload[:], 10, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 63, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponse), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponse), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -399,18 +375,18 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.
 func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 	t.Parallel()
 
-	var payload [64]bit.Bit
-	payload[10] = 1
-	payload[15] = 1
-	payload[35] = 1
-	payload[36] = 1
-	payload[37] = 1
-	payload[38] = 1
-	payload[39] = 1
-	payload[59] = 1
-	payload[61] = 1
+	var payload [8]byte
+	bits.SetBit(payload[:], 10, 1)
+	bits.SetBit(payload[:], 15, 1)
+	bits.SetBit(payload[:], 35, 1)
+	bits.SetBit(payload[:], 36, 1)
+	bits.SetBit(payload[:], 37, 1)
+	bits.SetBit(payload[:], 38, 1)
+	bits.SetBit(payload[:], 39, 1)
+	bits.SetBit(payload[:], 59, 1)
+	bits.SetBit(payload[:], 61, 1)
 
-	infoBits := buildCSBKBits(byte(pdu.CSBKChannelTiming), payload)
+	infoBits := buildCSBK(byte(pdu.CSBKChannelTiming), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
 	fecResult := csbk.FEC
@@ -483,10 +459,10 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 	}
 
 	encoded := must(original.Encode())
-	if encoded[16+39] != 1 {
+	if bits.Bit(encoded[:], 16+39) != 1 {
 		t.Error("ChannelTimingOp1 should be encoded at payload bit 39")
 	}
-	if encoded[16+63] != 0 {
+	if bits.Bit(encoded[:], 16+63) != 0 {
 		t.Error("ChannelTimingOp0 should be encoded at payload bit 63")
 	}
 	decoded := pdu.DecodeCSBK(encoded)
@@ -527,8 +503,5 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 }
 
 func serviceOptions(b byte) layer3.ServiceOptions {
-	var bits [8]bit.Bit
-	bit.PutUint(bits[:], uint64(b))
-	so := layer3.DecodeServiceOptions(bits)
-	return so
+	return layer3.DecodeServiceOptions([1]byte{b})
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -89,8 +90,8 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(embSig.Encode())
-	copy(bitData[108:116], embBits[:8])
-	copy(bitData[148:156], embBits[8:16])
+	bits.Unpack(bitData[108:116], embBits[:], 0)
+	bits.Unpack(bitData[148:156], embBits[:], 8)
 
 	rcData := buildRCEmbeddedData(9)
 	copy(bitData[116:148], rcData[:])
@@ -123,8 +124,8 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(embSig.Encode())
-	copy(bitData[108:116], embBits[:8])
-	copy(bitData[148:156], embBits[8:16])
+	bits.Unpack(bitData[108:116], embBits[:], 0)
+	bits.Unpack(bitData[148:156], embBits[:], 8)
 
 	packed := [33]byte(bit.Pack(bitData[:]))
 
@@ -148,8 +149,8 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 		LCSS:                               enums.LCSSFirstFragment,
 	}
 	embBits := must(embSig.Encode())
-	copy(bitData[108:116], embBits[:8])
-	copy(bitData[148:156], embBits[8:16])
+	bits.Unpack(bitData[108:116], embBits[:], 0)
+	bits.Unpack(bitData[148:156], embBits[:], 8)
 
 	packed := [33]byte(bit.Pack(bitData[:]))
 
@@ -194,8 +195,8 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(embSig.Encode())
-	copy(bitData[108:116], embBits[:8])
-	copy(bitData[148:156], embBits[8:16])
+	bits.Unpack(bitData[108:116], embBits[:], 0)
+	bits.Unpack(bitData[148:156], embBits[:], 8)
 
 	rcData := buildRCEmbeddedData(0)
 	copy(bitData[116:148], rcData[:])
@@ -222,8 +223,8 @@ func TestRC_String(t *testing.T) {
 		LCSS:                               enums.LCSSSingleFragment,
 	}
 	embBits := must(embSig.Encode())
-	copy(bitData[108:116], embBits[:8])
-	copy(bitData[148:156], embBits[8:16])
+	bits.Unpack(bitData[108:116], embBits[:], 0)
+	bits.Unpack(bitData[148:156], embBits[:], 8)
 
 	rcData := buildRCEmbeddedData(5)
 	copy(bitData[116:148], rcData[:])
@@ -250,14 +251,14 @@ func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	if err != nil {
 		panic(err)
 	}
-	copy(bitData[84:92], embBits[:8])
+	bits.Unpack(bitData[84:92], embBits[:], 0)
 	copy(bitData[92:108], rcData[:16])
 	syncVal := int64(enums.SyncMSSourcedRC)
 	for i := 0; i < 48; i++ {
 		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
 	copy(bitData[156:172], rcData[16:])
-	copy(bitData[172:180], embBits[8:])
+	bits.Unpack(bitData[172:180], embBits[:], 8)
 	return [33]byte(bit.Pack(bitData[:]))
 }
 

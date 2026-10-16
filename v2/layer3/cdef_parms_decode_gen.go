@@ -9,9 +9,11 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
-// decodeCdefParmsBytes decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
-// data holds its bits packed, the first bit most significant.
-func decodeCdefParmsBytes(data [8]byte) CdefParms {
+// DecodeCdefParms decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42,
+// Table 7.103). data holds the 58 bits of the PDU packed, the first bit in
+// the most significant bit of data[0]. The low 6 bits of data[7] are
+// ignored.
+func DecodeCdefParms(data [8]byte) CdefParms {
 	var result CdefParms
 	result.Channel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
 	result.TXMHz = uint16((uint64(data[1])<<8 | uint64(data[2])) >> 2 & 0x3FF)
@@ -21,18 +23,10 @@ func decodeCdefParmsBytes(data [8]byte) CdefParms {
 	return result
 }
 
-// DecodeCdefParms decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
-func DecodeCdefParms(data [58]bit.Bit) CdefParms {
-	var _b [8]byte
-	for _i := range 58 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodeCdefParmsBytes(_b)
-}
-
-// encodeBytes encodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *CdefParms) encodeBytes() ([8]byte, error) {
+// Encode encodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
+// It returns the 58 bits packed, the first bit in the most significant bit
+// of byte 0. The low 6 bits of byte 7 are 0.
+func (s *CdefParms) Encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Channel)>>12 != 0 {
 		return [8]byte{}, errCdefParmsChannelRange
@@ -66,19 +60,6 @@ func (s *CdefParms) encodeBytes() ([8]byte, error) {
 	data[5] = data[5]&^0x07 | byte(_valRXKHz>>10)&0x07
 	data[6] = byte(_valRXKHz >> 2)
 	data[7] = data[7]&^0xC0 | byte(_valRXKHz<<6)&0xC0
-	return data, nil
-}
-
-// Encode encodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
-func (s *CdefParms) Encode() ([58]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [58]bit.Bit{}, err
-	}
-	var data [58]bit.Bit
-	for _i := range 58 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

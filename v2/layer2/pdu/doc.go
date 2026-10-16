@@ -11,6 +11,14 @@
 // DecodeXInto decodes into a caller's struct and points the field into a
 // caller's XPayloads, so that a reused pair decodes without allocating.
 //
+// # Bit order
+//
+// DecodeX takes the bits of a PDU packed in bytes, and Encode returns them
+// in the same form: bit 0 of the PDU, the first bit on air, is the most
+// significant bit of byte 0, so a CSBK is a [12]byte and a Short LC of 36
+// bits is a [5]byte. When the number of bits is not a multiple of 8,
+// DecodeX ignores the low bits of the last byte and Encode sets them to 0.
+//
 // # FEC results
 //
 // DecodeX returns only the PDU. A PDU whose decode corrects or checks

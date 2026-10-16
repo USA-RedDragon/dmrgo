@@ -3,8 +3,8 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -12,30 +12,19 @@ import (
 func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	t.Parallel()
 
-	var infoBits [96]bit.Bit
+	var infoBits [12]byte
 	// U_HEAD: group, POC 3, Full Message Flag and Blocks to Follow 10.
-	infoBits[6] = 1
-	infoBits[0] = 1
-	infoBits[14] = 1
-	infoBits[15] = 1
-	infoBits[64] = 1
-	infoBits[65+3] = 1
-	infoBits[65+5] = 1
+	bits.SetBit(infoBits[:], 6, 1)
+	bits.SetBit(infoBits[:], 0, 1)
+	bits.SetBit(infoBits[:], 14, 1)
+	bits.SetBit(infoBits[:], 15, 1)
+	bits.SetBit(infoBits[:], 64, 1)
+	bits.SetBit(infoBits[:], 65+3, 1)
+	bits.SetBit(infoBits[:], 65+5, 1)
 
-	var dataBytes [10]byte
-	for i := range 10 {
-		for j := range 8 {
-			dataBytes[i] <<= 1
-			dataBytes[i] |= byte(infoBits[i*8+j])
-		}
-	}
-	crcVal := crc.CCITT(dataBytes[:])
-	crcHigh := byte(crcVal>>8) ^ 0xCC
-	crcLow := byte(crcVal) ^ 0xCC
-	for b := 7; b >= 0; b-- {
-		infoBits[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
-		infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
-	}
+	crcVal := crc.CCITT(infoBits[:10]) ^ 0xCCCC
+	infoBits[10] = byte(crcVal >> 8)
+	infoBits[11] = byte(crcVal)
 
 	dh := pdu.DecodeDataHeader(infoBits)
 	fecResult := dh.FEC
@@ -67,7 +56,7 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 func TestDataHeader_CRCFailure(t *testing.T) {
 	t.Parallel()
 
-	var infoBits [96]bit.Bit
+	var infoBits [12]byte
 	fecResult := pdu.DecodeDataHeader(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeDataHeader should return uncorrectable for invalid CRC")
@@ -79,37 +68,23 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 
 	// Test that non-Unconfirmed formats decode without panic but have nil sub-PDUs
 	formats := []struct {
-		name string
-		bits [4]bit.Bit
+		name   string
+		format uint64
 	}{
-		{"UDT", [4]bit.Bit{0, 0, 0, 0}},
-		{"Proprietary", [4]bit.Bit{1, 1, 1, 1}},
+		{"UDT", 0b0000},
+		{"Proprietary", 0b1111},
 	}
 
 	for _, tt := range formats {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var infoBits [96]bit.Bit
-			infoBits[4] = tt.bits[0]
-			infoBits[5] = tt.bits[1]
-			infoBits[6] = tt.bits[2]
-			infoBits[7] = tt.bits[3]
+			var infoBits [12]byte
+			bits.SetField(infoBits[:], 4, 4, tt.format)
 
-			var dataBytes [10]byte
-			for i := range 10 {
-				for j := range 8 {
-					dataBytes[i] <<= 1
-					dataBytes[i] |= byte(infoBits[i*8+j])
-				}
-			}
-			crcVal := crc.CCITT(dataBytes[:])
-			crcHigh := byte(crcVal>>8) ^ 0xCC
-			crcLow := byte(crcVal) ^ 0xCC
-			for b := 7; b >= 0; b-- {
-				infoBits[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
-				infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
-			}
+			crcVal := crc.CCITT(infoBits[:10]) ^ 0xCCCC
+			infoBits[10] = byte(crcVal >> 8)
+			infoBits[11] = byte(crcVal)
 
 			dh := pdu.DecodeDataHeader(infoBits)
 			fecResult := dh.FEC
@@ -129,26 +104,15 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 	}
 }
 
-// buildDataHeaderBits creates a 96-bit DataHeader with valid CRC for testing.
+// buildDataHeader creates a 12-octet DataHeader with valid CRC for testing.
 // The provided setup function may modify bits 0-79; this helper computes the CRC.
-func buildDataHeaderBits(setup func(bits *[96]bit.Bit)) [96]bit.Bit {
-	var infoBits [96]bit.Bit
+func buildDataHeader(setup func(b *[12]byte)) [12]byte {
+	var infoBits [12]byte
 	setup(&infoBits)
 
-	var dataBytes [10]byte
-	for i := range 10 {
-		for j := range 8 {
-			dataBytes[i] <<= 1
-			dataBytes[i] |= byte(infoBits[i*8+j])
-		}
-	}
-	crcVal := crc.CCITT(dataBytes[:])
-	crcHigh := byte(crcVal>>8) ^ 0xCC
-	crcLow := byte(crcVal) ^ 0xCC
-	for b := 7; b >= 0; b-- {
-		infoBits[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
-		infoBits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
-	}
+	crcVal := crc.CCITT(infoBits[:10]) ^ 0xCCCC
+	infoBits[10] = byte(crcVal >> 8)
+	infoBits[11] = byte(crcVal)
 	return infoBits
 }
 
@@ -434,28 +398,22 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	}
 }
 
-func setBits(bits *[96]bit.Bit, start, length int, val uint32) {
-	for i := 0; i < length; i++ {
-		bits[start+i] = bit.Bit((val >> (length - 1 - i)) & 1)
-	}
-}
-
 // Bit positions follow TS 102 361-1 Table 9.17D and TS 102 361-4 Table 7.24.
 func TestDataHeader_UDT_Decode(t *testing.T) {
 	t.Parallel()
-	infoBits := buildDataHeaderBits(func(b *[96]bit.Bit) {
-		b[0] = 1
-		b[2] = 1
-		b[3] = 1
-		setBits(b, 4, 4, 0b0000)
-		setBits(b, 8, 4, 0b0000)
-		setBits(b, 12, 4, 0b0101)
-		setBits(b, 16, 24, 0x123456)
-		setBits(b, 40, 24, 0xABCDEF)
-		setBits(b, 64, 5, 0b10011)
-		setBits(b, 70, 2, 0b10)
-		b[72] = 1
-		setBits(b, 74, 6, 0b011010)
+	infoBits := buildDataHeader(func(b *[12]byte) {
+		bits.SetBit(b[:], 0, 1)
+		bits.SetBit(b[:], 2, 1)
+		bits.SetBit(b[:], 3, 1)
+		bits.SetField(b[:], 4, 4, 0b0000)
+		bits.SetField(b[:], 8, 4, 0b0000)
+		bits.SetField(b[:], 12, 4, 0b0101)
+		bits.SetField(b[:], 16, 24, 0x123456)
+		bits.SetField(b[:], 40, 24, 0xABCDEF)
+		bits.SetField(b[:], 64, 5, 0b10011)
+		bits.SetField(b[:], 70, 2, 0b10)
+		bits.SetBit(b[:], 72, 1)
+		bits.SetField(b[:], 74, 6, 0b011010)
 	})
 	dh := pdu.DecodeDataHeader(infoBits)
 	fecResult := dh.FEC
@@ -521,12 +479,12 @@ func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 // Bit positions follow TS 102 361-1 Table 9.17.
 func TestDataHeader_Proprietary_Decode(t *testing.T) {
 	t.Parallel()
-	infoBits := buildDataHeaderBits(func(b *[96]bit.Bit) {
-		setBits(b, 0, 4, 0b1001)
-		setBits(b, 4, 4, 0b1111)
-		setBits(b, 8, 8, 0x10)
-		b[16] = 1
-		b[79] = 1
+	infoBits := buildDataHeader(func(b *[12]byte) {
+		bits.SetField(b[:], 0, 4, 0b1001)
+		bits.SetField(b[:], 4, 4, 0b1111)
+		bits.SetField(b[:], 8, 8, 0x10)
+		bits.SetBit(b[:], 16, 1)
+		bits.SetBit(b[:], 79, 1)
 	})
 	dh := pdu.DecodeDataHeader(infoBits)
 	fecResult := dh.FEC
@@ -550,12 +508,12 @@ func TestDataHeader_Proprietary_Decode(t *testing.T) {
 
 func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 	t.Parallel()
-	var mfData [64]bit.Bit
-	mfData[3] = 1
-	mfData[40] = 1
+	var mfData [8]byte
+	bits.SetBit(mfData[:], 3, 1)
+	bits.SetBit(mfData[:], 40, 1)
 	original := &pdu.DataHeader{
 		Format:            pdu.FormatProprietary,
-		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: [8]byte(bit.Pack(mfData[:]))},
+		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: mfData},
 	}
 	decoded := pdu.DecodeDataHeader(must(original.Encode()))
 	fecResult := decoded.FEC
@@ -570,11 +528,11 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 	t.Parallel()
 
-	in := buildDataHeaderBits(func(bits *[96]bit.Bit) {
+	in := buildDataHeader(func(b *[12]byte) {
 		for i := range 80 {
-			bits[i] = bit.Bit((i*5 + 1) / 3 % 2)
+			bits.SetBit(b[:], i, byte((i*5+1)/3%2))
 		}
-		bit.PutUint(bits[4:8], uint64(0b0100))
+		bits.SetField(b[:], 4, 4, 0b0100)
 	})
 	dh := pdu.DecodeDataHeader(in)
 	fecResult := dh.FEC
@@ -592,35 +550,35 @@ func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 	t.Parallel()
 
-	encode := map[pdu.Format]func() ([80]bit.Bit, error){
-		pdu.FormatUnconfirmed: func() ([80]bit.Bit, error) {
+	encode := map[pdu.Format]func() ([10]byte, error){
+		pdu.FormatUnconfirmed: func() ([10]byte, error) {
 			return (&pdu.UnconfirmedDataHeader{}).Encode()
 		},
-		pdu.FormatConfirmed: func() ([80]bit.Bit, error) {
+		pdu.FormatConfirmed: func() ([10]byte, error) {
 			return (&pdu.ConfirmedDataHeader{}).Encode()
 		},
-		pdu.FormatResponsePacket: func() ([80]bit.Bit, error) {
+		pdu.FormatResponsePacket: func() ([10]byte, error) {
 			return (&pdu.ResponsePacketHeader{}).Encode()
 		},
-		pdu.FormatShortDataDefined: func() ([80]bit.Bit, error) {
+		pdu.FormatShortDataDefined: func() ([10]byte, error) {
 			return (&pdu.DefinedDataHeader{}).Encode()
 		},
-		pdu.FormatShortDataRawOrStatusPrecoded: func() ([80]bit.Bit, error) {
+		pdu.FormatShortDataRawOrStatusPrecoded: func() ([10]byte, error) {
 			return (&pdu.RawDataHeader{AppendedBlocks: 1}).Encode()
 		},
-		pdu.FormatUnifiedDataTransport: func() ([80]bit.Bit, error) {
+		pdu.FormatUnifiedDataTransport: func() ([10]byte, error) {
 			return (&pdu.UDTHeader{}).Encode()
 		},
-		pdu.FormatProprietary: func() ([80]bit.Bit, error) {
+		pdu.FormatProprietary: func() ([10]byte, error) {
 			return (&pdu.ProprietaryHeader{}).Encode()
 		},
 	}
 	for format, enc := range encode {
-		bits, err := enc()
+		hdr, err := enc()
 		if err != nil {
 			t.Fatalf("%s: %v", format.String(), err)
 		}
-		if got := pdu.Format(uint8(bit.Uint(bits[4 : 4+4]))); got != format {
+		if got := pdu.Format(uint8(bits.Field(hdr[:], 4, 4))); got != format {
 			t.Errorf("%s: Format bits = %d, want %d", format.String(), got, format)
 		}
 	}
@@ -629,11 +587,11 @@ func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 func TestStatusPrecodedEncoderClearsAppendedBlocks(t *testing.T) {
 	t.Parallel()
 
-	bits := must((&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}).Encode())
-	if got := pdu.Format(uint8(bit.Uint(bits[4 : 4+4]))); got != pdu.FormatShortDataRawOrStatusPrecoded {
+	hdr := must((&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}).Encode())
+	if got := pdu.Format(uint8(bits.Field(hdr[:], 4, 4))); got != pdu.FormatShortDataRawOrStatusPrecoded {
 		t.Errorf("Format bits = %d, want %d", got, pdu.FormatShortDataRawOrStatusPrecoded)
 	}
-	if ab := uint8(bit.Uint(bits[2:2+2]))<<4 | uint8(bit.Uint(bits[12:12+4])); ab != 0 {
+	if ab := uint8(bits.Field(hdr[:], 2, 2))<<4 | uint8(bits.Field(hdr[:], 12, 4)); ab != 0 {
 		t.Errorf("Appended Blocks = %d, want 0 (ETSI TS 102 361-1 Table 9.17A)", ab)
 	}
 }

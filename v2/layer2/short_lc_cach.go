@@ -24,7 +24,8 @@ func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][CACHBits]bit.Bit,
 	if err != nil {
 		return out, err
 	}
-	fragments := bptc.EncodeCACH(bit.Uint(info[:]))
+	v := uint64(info[0])<<32 | uint64(info[1])<<24 | uint64(info[2])<<16 | uint64(info[3])<<8 | uint64(info[4])
+	fragments := bptc.EncodeCACH(v >> 4)
 	for i, fragment := range fragments {
 		c := CACH{TACT: tact}
 		bit.PutUint(c.Payload[:], uint64(fragment))

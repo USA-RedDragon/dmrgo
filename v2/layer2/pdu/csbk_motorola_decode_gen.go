@@ -7,9 +7,10 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
-// decodeMotorolaRadioCheckPDUBytes decodes a MotorolaRadioCheckPDU.
-// data holds its bits packed, the first bit most significant.
-func decodeMotorolaRadioCheckPDUBytes(data [8]byte) MotorolaRadioCheckPDU {
+// decodeMotorolaRadioCheckPDU decodes a MotorolaRadioCheckPDU. data holds
+// the 64 bits of the PDU packed, the first bit in the most significant bit
+// of data[0].
+func decodeMotorolaRadioCheckPDU(data [8]byte) MotorolaRadioCheckPDU {
 	var result MotorolaRadioCheckPDU
 	result.Reserved = uint8(uint64(data[0]))
 	result.Answer = data[1]&0x80 != 0
@@ -19,9 +20,9 @@ func decodeMotorolaRadioCheckPDUBytes(data [8]byte) MotorolaRadioCheckPDU {
 	return result
 }
 
-// encodeBytes encodes a MotorolaRadioCheckPDU.
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *MotorolaRadioCheckPDU) encodeBytes() ([8]byte, error) {
+// Encode encodes a MotorolaRadioCheckPDU. It returns the 64 bits packed, the
+// first bit in the most significant bit of byte 0.
+func (s *MotorolaRadioCheckPDU) Encode() ([8]byte, error) {
 	var data [8]byte
 	data[0] = byte(uint64(s.Reserved))
 	if s.Answer {
@@ -48,28 +49,16 @@ func (s *MotorolaRadioCheckPDU) encodeBytes() ([8]byte, error) {
 	return data, nil
 }
 
-// Encode encodes a MotorolaRadioCheckPDU.
-func (s *MotorolaRadioCheckPDU) Encode() ([64]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [64]bit.Bit{}, err
-	}
-	var data [64]bit.Bit
-	for _i := range 64 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
-	return data, nil
-}
-
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaRadioCheckPDU) String() string {
 	return fmt.Sprintf("MotorolaRadioCheckPDU{ Reserved: %d, Answer: %t, Reserved2: %d, RequesterAddress: %d, CheckedAddress: %d }", s.Reserved, s.Answer, s.Reserved2, s.RequesterAddress, s.CheckedAddress)
 }
 
-// decodeMotorolaCallAlertPDUBytes decodes a MotorolaCallAlertPDU.
-// data holds its bits packed, the first bit most significant.
-func decodeMotorolaCallAlertPDUBytes(data [8]byte) MotorolaCallAlertPDU {
+// decodeMotorolaCallAlertPDU decodes a MotorolaCallAlertPDU. data holds the
+// 64 bits of the PDU packed, the first bit in the most significant bit of
+// data[0].
+func decodeMotorolaCallAlertPDU(data [8]byte) MotorolaCallAlertPDU {
 	var result MotorolaCallAlertPDU
 	result.Reserved = uint16(uint64(data[0])<<8 | uint64(data[1]))
 	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
@@ -77,9 +66,9 @@ func decodeMotorolaCallAlertPDUBytes(data [8]byte) MotorolaCallAlertPDU {
 	return result
 }
 
-// encodeBytes encodes a MotorolaCallAlertPDU.
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *MotorolaCallAlertPDU) encodeBytes() ([8]byte, error) {
+// Encode encodes a MotorolaCallAlertPDU. It returns the 64 bits packed, the
+// first bit in the most significant bit of byte 0.
+func (s *MotorolaCallAlertPDU) Encode() ([8]byte, error) {
 	var data [8]byte
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 8)
@@ -101,28 +90,16 @@ func (s *MotorolaCallAlertPDU) encodeBytes() ([8]byte, error) {
 	return data, nil
 }
 
-// Encode encodes a MotorolaCallAlertPDU.
-func (s *MotorolaCallAlertPDU) Encode() ([64]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [64]bit.Bit{}, err
-	}
-	var data [64]bit.Bit
-	for _i := range 64 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
-	return data, nil
-}
-
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaCallAlertPDU) String() string {
 	return fmt.Sprintf("MotorolaCallAlertPDU{ Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeMotorolaCallAlertAckPDUBytes decodes a MotorolaCallAlertAckPDU.
-// data holds its bits packed, the first bit most significant.
-func decodeMotorolaCallAlertAckPDUBytes(data [8]byte) MotorolaCallAlertAckPDU {
+// decodeMotorolaCallAlertAckPDU decodes a MotorolaCallAlertAckPDU. data
+// holds the 64 bits of the PDU packed, the first bit in the most significant
+// bit of data[0].
+func decodeMotorolaCallAlertAckPDU(data [8]byte) MotorolaCallAlertAckPDU {
 	var result MotorolaCallAlertAckPDU
 	result.Request = uint8(uint64(data[0]))
 	result.Reserved = uint8(uint64(data[1]))
@@ -131,9 +108,9 @@ func decodeMotorolaCallAlertAckPDUBytes(data [8]byte) MotorolaCallAlertAckPDU {
 	return result
 }
 
-// encodeBytes encodes a MotorolaCallAlertAckPDU.
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *MotorolaCallAlertAckPDU) encodeBytes() ([8]byte, error) {
+// Encode encodes a MotorolaCallAlertAckPDU. It returns the 64 bits packed,
+// the first bit in the most significant bit of byte 0.
+func (s *MotorolaCallAlertAckPDU) Encode() ([8]byte, error) {
 	var data [8]byte
 	data[0] = byte(uint64(s.Request))
 	data[1] = byte(uint64(s.Reserved))
@@ -151,19 +128,6 @@ func (s *MotorolaCallAlertAckPDU) encodeBytes() ([8]byte, error) {
 	data[5] = byte(_valSourceAddress >> 16)
 	data[6] = byte(_valSourceAddress >> 8)
 	data[7] = byte(_valSourceAddress)
-	return data, nil
-}
-
-// Encode encodes a MotorolaCallAlertAckPDU.
-func (s *MotorolaCallAlertAckPDU) Encode() ([64]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [64]bit.Bit{}, err
-	}
-	var data [64]bit.Bit
-	for _i := range 64 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

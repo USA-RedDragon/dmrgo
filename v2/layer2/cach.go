@@ -32,9 +32,11 @@ func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
 	lowbit.Mask(bits[:])
 	var result CACH
 
-	var tactBits [TACTBits]bit.Bit
-	copy(tactBits[:], bits[:TACTBits])
-	result.TACT = pdu.DecodeTACT(tactBits)
+	var tact [1]byte
+	for i := range TACTBits {
+		tact[0] |= byte(bits[i]) << (7 - i)
+	}
+	result.TACT = pdu.DecodeTACT(tact)
 
 	copy(result.Payload[:], bits[TACTBits:CACHBits])
 
@@ -52,11 +54,13 @@ func DecodeCACHField(onAir [CACHBits]bit.Bit) CACH {
 func (c *CACH) Encode() ([CACHBits]bit.Bit, error) {
 	var bits [CACHBits]bit.Bit
 
-	tactBits, err := c.TACT.Encode()
+	tact, err := c.TACT.Encode()
 	if err != nil {
 		return bits, err
 	}
-	copy(bits[:TACTBits], tactBits[:])
+	for i := range TACTBits {
+		bits[i] = bit.Bit(tact[0] >> (7 - i) & 1)
+	}
 
 	for i, b := range c.Payload {
 		bits[TACTBits+i] = b & 1

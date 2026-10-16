@@ -66,7 +66,7 @@ func (s *CSBK) AsMotorolaRadioCheck() (p MotorolaRadioCheckPDU, ok bool) {
 	if s.Opcode != CSBKMotorolaRadioCheck || s.FID != enums.FIDMotorola {
 		return p, false
 	}
-	return decodeMotorolaRadioCheckPDUBytes(s.RawPayload), true
+	return decodeMotorolaRadioCheckPDU(s.RawPayload), true
 }
 
 // AsMotorolaCallAlert decodes the RawPayload of a Motorola call alert CSBK.
@@ -75,7 +75,7 @@ func (s *CSBK) AsMotorolaCallAlert() (p MotorolaCallAlertPDU, ok bool) {
 	if s.Opcode != CSBKMotorolaCallAlert || s.FID != enums.FIDMotorola {
 		return p, false
 	}
-	return decodeMotorolaCallAlertPDUBytes(s.RawPayload), true
+	return decodeMotorolaCallAlertPDU(s.RawPayload), true
 }
 
 // AsMotorolaCallAlertAck decodes the RawPayload of a Motorola call alert
@@ -84,7 +84,7 @@ func (s *CSBK) AsMotorolaCallAlertAck() (p MotorolaCallAlertAckPDU, ok bool) {
 	if s.Opcode != CSBKMotorolaCallAlertAck || s.FID != enums.FIDMotorola {
 		return p, false
 	}
-	return decodeMotorolaCallAlertAckPDUBytes(s.RawPayload), true
+	return decodeMotorolaCallAlertAckPDU(s.RawPayload), true
 }
 
 // SetMotorolaRadioCheck makes s a Motorola radio check CSBK that carries
@@ -92,7 +92,7 @@ func (s *CSBK) AsMotorolaCallAlertAck() (p MotorolaCallAlertAckPDU, ok bool) {
 // keeps LastBlock and ProtectFlag. It returns a *bit.FieldRangeError when
 // a field does not fit in its bits, and leaves s as it is on an error.
 func (s *CSBK) SetMotorolaRadioCheck(p MotorolaRadioCheckPDU) error {
-	payload, err := p.encodeBytes()
+	payload, err := p.Encode()
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (s *CSBK) SetMotorolaRadioCheck(p MotorolaRadioCheckPDU) error {
 // SetMotorolaCallAlert makes s a Motorola call alert CSBK that carries p,
 // as SetMotorolaRadioCheck does.
 func (s *CSBK) SetMotorolaCallAlert(p MotorolaCallAlertPDU) error {
-	payload, err := p.encodeBytes()
+	payload, err := p.Encode()
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (s *CSBK) SetMotorolaCallAlert(p MotorolaCallAlertPDU) error {
 // SetMotorolaCallAlertAck makes s a Motorola call alert acknowledgement
 // CSBK that carries p, as SetMotorolaRadioCheck does.
 func (s *CSBK) SetMotorolaCallAlertAck(p MotorolaCallAlertAckPDU) error {
-	payload, err := p.encodeBytes()
+	payload, err := p.Encode()
 	if err != nil {
 		return err
 	}

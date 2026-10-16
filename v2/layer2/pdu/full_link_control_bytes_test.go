@@ -27,7 +27,7 @@ func TestDecodeFullLinkControlBytes_Capture(t *testing.T) {
 	}
 	f.BurstDataType = enums.DataTypeTerminatorWithLC
 	enc := must(f.Encode())
-	if want := hexBits96(t, "03000000270630b43c52c0ce"); enc != want {
+	if want := hex12(t, "03000000270630b43c52c0ce"); enc != want {
 		t.Fatal("Encode after DecodeFullLinkControlBytes does not give the terminator codeword")
 	}
 }
