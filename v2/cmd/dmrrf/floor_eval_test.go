@@ -40,6 +40,9 @@ type floorEval struct {
 	elcI  map[int]*[4]float64
 	elcAt map[int]*[4]int
 	only  map[string]bool
+	// gridIters and gridWeight set the BPTC grid decode of bptcTurbo.
+	gridIters  int
+	gridWeight float32
 }
 
 // newFloorEval returns an evaluator with a genie trellis of window d.
