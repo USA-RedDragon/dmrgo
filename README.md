@@ -87,7 +87,7 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
   - A `Codec` interface with a registry, and a Codec2 codec (`vocoder/codec2`).
 - No cgo outside `vocoder/codec2`.
 - No allocation in steady state, with Go 1.24 or later and with TinyGo at the default stack size. After construction (`NewBurstFromBytes`, `NewVoiceTransmitter`, `framer.New` and the like), decode, encode, build, check and assemble calls allocate nothing, with these limits:
-  - A call that returns a fresh slice, string or payload struct by contract allocates, and its doc says so. Each has a form that does not: `bit.AppendPack` for `bit.Pack`, `Encode` for `EncodeBits`, `pdu.DecodeCSBKInto` for `pdu.DecodeCSBK` (and the other dispatch PDUs), `VoiceTransmitter.AppendFrames` for `AddFrames`, `packet.Builder` for `packet.Segment`, `Framer.AppendBursts` for `Write`.
+  - A call that returns a fresh slice, string or payload struct by contract allocates, and its doc says so. Each has a form that does not: `bit.AppendPack` for `bit.Pack`, `pdu.DecodeCSBKInto` for `pdu.DecodeCSBK` (and the other dispatch PDUs), `VoiceTransmitter.AppendFrames` for `AddFrames`, `packet.Builder` for `packet.Segment`, `Framer.AppendBursts` for `Write`.
   - Errors for programmer mistakes, and a decode that returns two joined errors, also allocate.
   - A reused `layer2.Burst`, or a copy of it, keeps its decoded `Data`, and the payload structs that `Data` points to, until the next decode into it. `packet.Builder` and `packet.Assembler` with `Reuse` keep their results the same way.
   - Three checks keep it so, with no list of functions to maintain:

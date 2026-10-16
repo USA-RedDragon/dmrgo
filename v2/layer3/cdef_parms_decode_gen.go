@@ -83,16 +83,6 @@ func (s *CdefParms) Encode() ([58]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *CdefParms) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *CdefParms) String() string {
 	return fmt.Sprintf("CdefParms{ Channel: %d, TXMHz: %d, TXKHz: %d, RXMHz: %d, RXKHz: %d }", s.Channel, s.TXMHz, s.TXKHz, s.RXMHz, s.RXKHz)
 }

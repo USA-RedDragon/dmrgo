@@ -66,8 +66,35 @@ func dataString(d layer2.Data) string {
 	if d == nil {
 		return "<nil>"
 	}
-	bits, err := d.EncodeBits()
+	bits, err := encodeBits(d)
 	return fmt.Sprintf("%T %s enc=%x err=%s", d, d.String(), bit.Pack(bits), errString(err))
+}
+
+// encodeBits returns the bits of the Encode method of d as a slice, or nil
+// and the error of Encode.
+func encodeBits(d layer2.Data) ([]bit.Bit, error) {
+	var bits []bit.Bit
+	var err error
+	switch e := d.(type) {
+	case interface{ Encode() ([96]bit.Bit, error) }:
+		var a [96]bit.Bit
+		a, err = e.Encode()
+		bits = a[:]
+	case interface{ Encode() ([144]bit.Bit, error) }:
+		var a [144]bit.Bit
+		a, err = e.Encode()
+		bits = a[:]
+	case interface{ Encode() ([192]bit.Bit, error) }:
+		var a [192]bit.Bit
+		a, err = e.Encode()
+		bits = a[:]
+	default:
+		return nil, fmt.Errorf("%T has no Encode method", d)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return bits, nil
 }
 
 func burstString(b *layer2.Burst) string {
