@@ -17,45 +17,45 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// decodeUnconfirmedDataHeader decodes an UnconfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.6).
-func decodeUnconfirmedDataHeader(data [80]bit.Bit) UnconfirmedDataHeader {
+// decodeUnconfirmedDataHeaderBytes decodes an UnconfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.6).
+// data holds its bits packed, the first bit most significant.
+func decodeUnconfirmedDataHeaderBytes(data [10]byte) UnconfirmedDataHeader {
 	var result UnconfirmedDataHeader
-	lowbit.Mask(data[:])
-	result.Group = data[0] == 1
-	result.ResponseRequested = data[1] == 1
-	result.Reserved = data[2] == 1
+	result.Group = data[0]&0x80 != 0
+	result.ResponseRequested = data[0]&0x40 != 0
+	result.Reserved = data[0]&0x20 != 0
 	var _tmpPadOctetCount uint64
-	_tmpPadOctetCount = bit.Uint(data[3:4])
+	_tmpPadOctetCount = uint64(data[0]) >> 4 & 0x1
 	_tmpPadOctetCount <<= 4
-	_tmpPadOctetCount |= bit.Uint(data[12:16])
+	_tmpPadOctetCount |= uint64(data[1]) & 0xF
 	result.PadOctetCount = uint8(_tmpPadOctetCount)
-	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
-	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
-	result.LLIDSource = uint32(bit.Uint(data[40:64]))
-	result.FullMessageFlag = data[64] == 1
-	result.BlocksToFollow = uint8(bit.Uint(data[65:72]))
-	result.Reserved2 = uint8(bit.Uint(data[72:76]))
-	result.FragmentSequenceNumber = uint8(bit.Uint(data[76:80]))
+	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
+	result.FullMessageFlag = data[8]&0x80 != 0
+	result.BlocksToFollow = uint8(uint64(data[8]) & 0x7F)
+	result.Reserved2 = uint8(uint64(data[9]) >> 4)
+	result.FragmentSequenceNumber = uint8(uint64(data[9]) & 0xF)
 	return result
 }
 
-// Encode encodes an UnconfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.6).
-func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
-	var data [80]bit.Bit
+// encodeBytes encodes an UnconfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.6).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *UnconfirmedDataHeader) encodeBytes() ([10]byte, error) {
+	var data [10]byte
 	if s.Group {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.ResponseRequested {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if s.Reserved {
-		data[2] = 1
+		data[0] |= 0x20
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "PadOctetCount",
 			Type:  "UnconfirmedDataHeader",
@@ -63,66 +63,85 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 		}
 	}
 	_valPadOctetCount := uint64(s.PadOctetCount)
-	bit.PutUint(data[3:4], _valPadOctetCount>>4)
-	bit.PutUint(data[12:16], _valPadOctetCount)
+	data[0] = data[0]&^0x10 | byte(_valPadOctetCount>>4<<4)&0x10
+	data[1] = data[1]&^0x0F | byte(_valPadOctetCount)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAP",
 			Type:  "UnconfirmedDataHeader",
 			Value: s.SAP,
 		}
 	}
-	bit.PutUint(data[8:12], uint64(s.SAP))
+	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDDestination",
 			Type:  "UnconfirmedDataHeader",
 			Value: s.LLIDDestination,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
+	_valLLIDDestination := uint64(s.LLIDDestination)
+	data[2] = byte(_valLLIDDestination >> 16)
+	data[3] = byte(_valLLIDDestination >> 8)
+	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDSource",
 			Type:  "UnconfirmedDataHeader",
 			Value: s.LLIDSource,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.LLIDSource))
+	_valLLIDSource := uint64(s.LLIDSource)
+	data[5] = byte(_valLLIDSource >> 16)
+	data[6] = byte(_valLLIDSource >> 8)
+	data[7] = byte(_valLLIDSource)
 	if s.FullMessageFlag {
-		data[64] = 1
+		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "BlocksToFollow",
 			Type:  "UnconfirmedDataHeader",
 			Value: s.BlocksToFollow,
 		}
 	}
-	bit.PutUint(data[65:72], uint64(s.BlocksToFollow))
+	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if uint64(s.Reserved2)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Reserved2",
 			Type:  "UnconfirmedDataHeader",
 			Value: s.Reserved2,
 		}
 	}
-	bit.PutUint(data[72:76], uint64(s.Reserved2))
+	data[9] = data[9]&^0xF0 | byte(uint64(s.Reserved2)<<4)&0xF0
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "FragmentSequenceNumber",
 			Type:  "UnconfirmedDataHeader",
 			Value: s.FragmentSequenceNumber,
 		}
 	}
-	bit.PutUint(data[76:80], uint64(s.FragmentSequenceNumber))
-	bit.PutUint(data[4:8], uint64(FormatUnconfirmed))
+	data[9] = data[9]&^0x0F | byte(uint64(s.FragmentSequenceNumber))&0x0F
+	data[0] = data[0]&^0x0F | byte(uint64(FormatUnconfirmed))&0x0F
+	return data, nil
+}
+
+// Encode encodes an UnconfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.6).
+func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [80]bit.Bit{}, err
+	}
+	var data [80]bit.Bit
+	for _i := range 80 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -140,62 +159,59 @@ func (s *UnconfirmedDataHeader) String() string {
 	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
 
-// DecodeDataHeader decodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
-func DecodeDataHeader(data [96]bit.Bit) DataHeader {
+// decodeDataHeaderBytes decodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
+// data holds its bits packed, the first bit most significant.
+func decodeDataHeaderBytes(data [12]byte) DataHeader {
 	var result DataHeader
-	lowbit.Mask(data[:])
-	var _packedBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			_packedBytes[i] <<= 1
-			_packedBytes[i] |= byte(data[i*8+j])
-		}
-	}
-	_packedBytes[10] ^= uint8(0xcc)
-	_packedBytes[11] ^= uint8(0xcc)
-	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
-	result.Format = Format(bit.Uint(data[4:8]))
+	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
+	result.Format = Format(uint64(data[0]) & 0xF)
 	var _tmpAppendedBlocks uint64
-	_tmpAppendedBlocks = bit.Uint(data[2:4])
+	_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
 	_tmpAppendedBlocks <<= 4
-	_tmpAppendedBlocks |= bit.Uint(data[12:16])
+	_tmpAppendedBlocks |= uint64(data[1]) & 0xF
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	var _dispatchBits [80]bit.Bit
-	copy(_dispatchBits[:], data[0:80])
+	var _dispatchBytes [10]byte
+	copy(_dispatchBytes[0:10], data[0:10])
 	switch result.Format {
 	case FormatUnconfirmed:
-		_decoded := decodeUnconfirmedDataHeader(_dispatchBits)
+		_decoded := decodeUnconfirmedDataHeaderBytes(_dispatchBytes)
 		result.UnconfirmedDataHeader = &_decoded
 	case FormatConfirmed:
-		_decoded := decodeConfirmedDataHeader(_dispatchBits)
+		_decoded := decodeConfirmedDataHeaderBytes(_dispatchBytes)
 		result.ConfirmedDataHeader = &_decoded
 	case FormatResponsePacket:
-		_decoded := decodeResponsePacketHeader(_dispatchBits)
+		_decoded := decodeResponsePacketHeaderBytes(_dispatchBytes)
 		result.ResponsePacketHeader = &_decoded
 	case FormatShortDataDefined:
-		_decoded := decodeDefinedDataHeader(_dispatchBits)
+		_decoded := decodeDefinedDataHeaderBytes(_dispatchBytes)
 		result.DefinedDataHeader = &_decoded
 	case FormatShortDataRawOrStatusPrecoded:
 		if result.AppendedBlocks == 0 {
-			_decoded := decodeStatusPrecodedHeader(_dispatchBits)
+			_decoded := decodeStatusPrecodedHeaderBytes(_dispatchBytes)
 			result.StatusPrecodedHeader = &_decoded
 		} else {
-			_decoded := decodeRawDataHeader(_dispatchBits)
+			_decoded := decodeRawDataHeaderBytes(_dispatchBytes)
 			result.RawDataHeader = &_decoded
 		}
 	case FormatUnifiedDataTransport:
-		_decoded := decodeUDTHeader(_dispatchBits)
+		_decoded := decodeUDTHeaderBytes(_dispatchBytes)
 		result.UDTHeader = &_decoded
 	case FormatProprietary:
-		_decoded := decodeProprietaryHeader(_dispatchBits)
+		_decoded := decodeProprietaryHeaderBytes(_dispatchBytes)
 		result.ProprietaryHeader = &_decoded
 	default:
-		for _i := range 80 {
-			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-		}
+		copy(result.RawPayload[0:10], data[0:10])
 	}
 	return result
+}
+
+// DecodeDataHeader decodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
+func DecodeDataHeader(data [96]bit.Bit) DataHeader {
+	var _b [12]byte
+	for _i := range 96 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeDataHeaderBytes(_b)
 }
 
 // DataHeaderPayloads holds one payload struct of each type that
@@ -212,162 +228,182 @@ type DataHeaderPayloads struct {
 	proprietaryHeader     ProprietaryHeader
 }
 
+// decodeDataHeaderBytesInto decodes data into dst as decodeDataHeaderBytes does, and
+// points the dispatch field of dst into p.
+func decodeDataHeaderBytesInto(dst *DataHeader, p *DataHeaderPayloads, data [12]byte) {
+	*dst = DataHeader{}
+	result := dst
+	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
+	result.Format = Format(uint64(data[0]) & 0xF)
+	var _tmpAppendedBlocks uint64
+	_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
+	_tmpAppendedBlocks <<= 4
+	_tmpAppendedBlocks |= uint64(data[1]) & 0xF
+	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
+	var _dispatchBytes [10]byte
+	copy(_dispatchBytes[0:10], data[0:10])
+	switch result.Format {
+	case FormatUnconfirmed:
+		p.unconfirmedDataHeader = decodeUnconfirmedDataHeaderBytes(_dispatchBytes)
+		result.UnconfirmedDataHeader = &p.unconfirmedDataHeader
+	case FormatConfirmed:
+		p.confirmedDataHeader = decodeConfirmedDataHeaderBytes(_dispatchBytes)
+		result.ConfirmedDataHeader = &p.confirmedDataHeader
+	case FormatResponsePacket:
+		p.responsePacketHeader = decodeResponsePacketHeaderBytes(_dispatchBytes)
+		result.ResponsePacketHeader = &p.responsePacketHeader
+	case FormatShortDataDefined:
+		p.definedDataHeader = decodeDefinedDataHeaderBytes(_dispatchBytes)
+		result.DefinedDataHeader = &p.definedDataHeader
+	case FormatShortDataRawOrStatusPrecoded:
+		if result.AppendedBlocks == 0 {
+			p.statusPrecodedHeader = decodeStatusPrecodedHeaderBytes(_dispatchBytes)
+			result.StatusPrecodedHeader = &p.statusPrecodedHeader
+		} else {
+			p.rawDataHeader = decodeRawDataHeaderBytes(_dispatchBytes)
+			result.RawDataHeader = &p.rawDataHeader
+		}
+	case FormatUnifiedDataTransport:
+		p.udtHeader = decodeUDTHeaderBytes(_dispatchBytes)
+		result.UDTHeader = &p.udtHeader
+	case FormatProprietary:
+		p.proprietaryHeader = decodeProprietaryHeaderBytes(_dispatchBytes)
+		result.ProprietaryHeader = &p.proprietaryHeader
+	default:
+		copy(result.RawPayload[0:10], data[0:10])
+	}
+}
+
 // DecodeDataHeaderInto decodes data into dst as DecodeDataHeader does,
 // but points the dispatch field of dst into p, so it does not allocate.
 // The payload stays valid until the next decode into p. dst and p must
 // not be nil.
 func DecodeDataHeaderInto(dst *DataHeader, p *DataHeaderPayloads, data [96]bit.Bit) {
-	*dst = DataHeader{}
-	result := dst
-	lowbit.Mask(data[:])
-	var _packedBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			_packedBytes[i] <<= 1
-			_packedBytes[i] |= byte(data[i*8+j])
-		}
+	var _b [12]byte
+	for _i := range 96 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
 	}
-	_packedBytes[10] ^= uint8(0xcc)
-	_packedBytes[11] ^= uint8(0xcc)
-	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
-	result.Format = Format(bit.Uint(data[4:8]))
-	var _tmpAppendedBlocks uint64
-	_tmpAppendedBlocks = bit.Uint(data[2:4])
-	_tmpAppendedBlocks <<= 4
-	_tmpAppendedBlocks |= bit.Uint(data[12:16])
-	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	var _dispatchBits [80]bit.Bit
-	copy(_dispatchBits[:], data[0:80])
-	switch result.Format {
-	case FormatUnconfirmed:
-		p.unconfirmedDataHeader = decodeUnconfirmedDataHeader(_dispatchBits)
-		result.UnconfirmedDataHeader = &p.unconfirmedDataHeader
-	case FormatConfirmed:
-		p.confirmedDataHeader = decodeConfirmedDataHeader(_dispatchBits)
-		result.ConfirmedDataHeader = &p.confirmedDataHeader
-	case FormatResponsePacket:
-		p.responsePacketHeader = decodeResponsePacketHeader(_dispatchBits)
-		result.ResponsePacketHeader = &p.responsePacketHeader
-	case FormatShortDataDefined:
-		p.definedDataHeader = decodeDefinedDataHeader(_dispatchBits)
-		result.DefinedDataHeader = &p.definedDataHeader
-	case FormatShortDataRawOrStatusPrecoded:
-		if result.AppendedBlocks == 0 {
-			p.statusPrecodedHeader = decodeStatusPrecodedHeader(_dispatchBits)
-			result.StatusPrecodedHeader = &p.statusPrecodedHeader
-		} else {
-			p.rawDataHeader = decodeRawDataHeader(_dispatchBits)
-			result.RawDataHeader = &p.rawDataHeader
-		}
-	case FormatUnifiedDataTransport:
-		p.udtHeader = decodeUDTHeader(_dispatchBits)
-		result.UDTHeader = &p.udtHeader
-	case FormatProprietary:
-		p.proprietaryHeader = decodeProprietaryHeader(_dispatchBits)
-		result.ProprietaryHeader = &p.proprietaryHeader
-	default:
-		for _i := range 80 {
-			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-		}
-	}
+	decodeDataHeaderBytesInto(dst, p, _b)
 }
 
-// Encode encodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
-func (s *DataHeader) Encode() ([96]bit.Bit, error) {
-	var data [96]bit.Bit
+// encodeBytes encodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *DataHeader) encodeBytes() ([12]byte, error) {
+	var data [12]byte
 	_payload := ""
-	for _, _p := range [...]struct {
-		name string
-		set  bool
-	}{
-		{"UnconfirmedDataHeader", s.UnconfirmedDataHeader != nil},
-		{"ConfirmedDataHeader", s.ConfirmedDataHeader != nil},
-		{"ResponsePacketHeader", s.ResponsePacketHeader != nil},
-		{"DefinedDataHeader", s.DefinedDataHeader != nil},
-		{"StatusPrecodedHeader", s.StatusPrecodedHeader != nil},
-		{"RawDataHeader", s.RawDataHeader != nil},
-		{"UDTHeader", s.UDTHeader != nil},
-		{"ProprietaryHeader", s.ProprietaryHeader != nil},
-	} {
-		if !_p.set {
-			continue
-		}
+	if s.UnconfirmedDataHeader != nil {
+		_payload = "UnconfirmedDataHeader"
+	}
+	if s.ConfirmedDataHeader != nil {
 		if _payload != "" {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, _p.name)
+			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "ConfirmedDataHeader")
 		}
-		_payload = _p.name
+		_payload = "ConfirmedDataHeader"
+	}
+	if s.ResponsePacketHeader != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "ResponsePacketHeader")
+		}
+		_payload = "ResponsePacketHeader"
+	}
+	if s.DefinedDataHeader != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "DefinedDataHeader")
+		}
+		_payload = "DefinedDataHeader"
+	}
+	if s.StatusPrecodedHeader != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "StatusPrecodedHeader")
+		}
+		_payload = "StatusPrecodedHeader"
+	}
+	if s.RawDataHeader != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "RawDataHeader")
+		}
+		_payload = "RawDataHeader"
+	}
+	if s.UDTHeader != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "UDTHeader")
+		}
+		_payload = "UDTHeader"
+	}
+	if s.ProprietaryHeader != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "ProprietaryHeader")
+		}
+		_payload = "ProprietaryHeader"
 	}
 	switch {
 	case s.UnconfirmedDataHeader != nil:
-		_pduBits, err := s.UnconfirmedDataHeader.Encode()
+		_pduBytes, err := s.UnconfirmedDataHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.UnconfirmedDataHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("DataHeader.UnconfirmedDataHeader: %w", err)
 		}
-		copy(data[0:80], _pduBits[:])
+		copy(data[0:10], _pduBytes[0:10])
 	case s.ConfirmedDataHeader != nil:
-		_pduBits, err := s.ConfirmedDataHeader.Encode()
+		_pduBytes, err := s.ConfirmedDataHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ConfirmedDataHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("DataHeader.ConfirmedDataHeader: %w", err)
 		}
-		copy(data[0:80], _pduBits[:])
+		copy(data[0:10], _pduBytes[0:10])
 	case s.ResponsePacketHeader != nil:
-		_pduBits, err := s.ResponsePacketHeader.Encode()
+		_pduBytes, err := s.ResponsePacketHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ResponsePacketHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("DataHeader.ResponsePacketHeader: %w", err)
 		}
-		copy(data[0:80], _pduBits[:])
+		copy(data[0:10], _pduBytes[0:10])
 	case s.DefinedDataHeader != nil:
-		_pduBits, err := s.DefinedDataHeader.Encode()
+		_pduBytes, err := s.DefinedDataHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.DefinedDataHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("DataHeader.DefinedDataHeader: %w", err)
 		}
-		copy(data[0:80], _pduBits[:])
+		copy(data[0:10], _pduBytes[0:10])
 	case s.StatusPrecodedHeader != nil:
-		_pduBits, err := s.StatusPrecodedHeader.Encode()
+		_pduBytes, err := s.StatusPrecodedHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.StatusPrecodedHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("DataHeader.StatusPrecodedHeader: %w", err)
 		}
-		copy(data[0:80], _pduBits[:])
+		copy(data[0:10], _pduBytes[0:10])
 	case s.RawDataHeader != nil:
-		_pduBits, err := s.RawDataHeader.Encode()
+		_pduBytes, err := s.RawDataHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.RawDataHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("DataHeader.RawDataHeader: %w", err)
 		}
-		copy(data[0:80], _pduBits[:])
+		copy(data[0:10], _pduBytes[0:10])
 	case s.UDTHeader != nil:
-		_pduBits, err := s.UDTHeader.Encode()
+		_pduBytes, err := s.UDTHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.UDTHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("DataHeader.UDTHeader: %w", err)
 		}
-		copy(data[0:80], _pduBits[:])
+		copy(data[0:10], _pduBytes[0:10])
 	case s.ProprietaryHeader != nil:
-		_pduBits, err := s.ProprietaryHeader.Encode()
+		_pduBytes, err := s.ProprietaryHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.ProprietaryHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("DataHeader.ProprietaryHeader: %w", err)
 		}
-		copy(data[0:80], _pduBits[:])
+		copy(data[0:10], _pduBytes[0:10])
 	default:
-		for _i := range 80 {
-			data[0+_i] = bit.Bit(s.RawPayload[_i/8] >> (7 - _i%8) & 1)
-		}
+		copy(data[0:10], s.RawPayload[0:10])
 	}
 	if uint64(s.Format)>>4 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Format",
 			Type:  "DataHeader",
 			Value: s.Format,
 		}
 	}
-	bit.PutUint(data[4:8], uint64(s.Format))
+	data[0] = data[0]&^0x0F | byte(uint64(s.Format))&0x0F
 	if _payload != "" {
 		var result DataHeader
-		result.Format = Format(bit.Uint(data[4:8]))
+		result.Format = Format(uint64(data[0]) & 0xF)
 		var _tmpAppendedBlocks uint64
-		_tmpAppendedBlocks = bit.Uint(data[2:4])
+		_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
 		_tmpAppendedBlocks <<= 4
-		_tmpAppendedBlocks |= bit.Uint(data[12:16])
+		_tmpAppendedBlocks |= uint64(data[1]) & 0xF
 		result.AppendedBlocks = uint8(_tmpAppendedBlocks)
 		_want := "RawPayload"
 		switch result.Format {
@@ -391,26 +427,24 @@ func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 			_want = "ProprietaryHeader"
 		}
 		if _payload != _want {
-			return [96]bit.Bit{}, fmt.Errorf("DataHeader.%s is set, but Format and AppendedBlocks select %s", _payload, _want)
+			return [12]byte{}, fmt.Errorf("DataHeader.%s is set, but Format and AppendedBlocks select %s", _payload, _want)
 		}
 	}
-	var _encBytes [10]byte
-	for i := range 10 {
-		for j := range 8 {
-			_encBytes[i] <<= 1
-			_encBytes[i] |= byte(data[i*8+j])
-		}
+	_crcVal := crc.CCITT(data[:10])
+	data[10] = byte(_crcVal>>8) ^ 0xCC
+	data[11] = byte(_crcVal) ^ 0xCC
+	return data, nil
+}
+
+// Encode encodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
+func (s *DataHeader) Encode() ([96]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [96]bit.Bit{}, err
 	}
-	_crcVal := crc.CCITT(_encBytes[:])
-	_crcHigh := byte(_crcVal >> 8)
-	_crcLow := byte(_crcVal)
-	_crcHigh ^= uint8(0xcc)
-	_crcLow ^= uint8(0xcc)
-	for j := range 8 {
-		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
-	}
-	for j := range 8 {
-		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
+	var data [96]bit.Bit
+	for _i := range 96 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
 }
@@ -452,43 +486,44 @@ func (s *DataHeader) String() string {
 	return _ret
 }
 
-// decodeConfirmedDataHeader decodes a ConfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.1, Table 9.10).
-func decodeConfirmedDataHeader(data [80]bit.Bit) ConfirmedDataHeader {
+// decodeConfirmedDataHeaderBytes decodes a ConfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.1, Table 9.10).
+// data holds its bits packed, the first bit most significant.
+func decodeConfirmedDataHeaderBytes(data [10]byte) ConfirmedDataHeader {
 	var result ConfirmedDataHeader
-	lowbit.Mask(data[:])
-	result.Group = data[0] == 1
-	result.ResponseRequested = data[1] == 1
-	result.Reserved = data[2] == 1
+	result.Group = data[0]&0x80 != 0
+	result.ResponseRequested = data[0]&0x40 != 0
+	result.Reserved = data[0]&0x20 != 0
 	var _tmpPadOctetCount uint64
-	_tmpPadOctetCount = bit.Uint(data[3:4])
+	_tmpPadOctetCount = uint64(data[0]) >> 4 & 0x1
 	_tmpPadOctetCount <<= 4
-	_tmpPadOctetCount |= bit.Uint(data[12:16])
+	_tmpPadOctetCount |= uint64(data[1]) & 0xF
 	result.PadOctetCount = uint8(_tmpPadOctetCount)
-	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
-	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
-	result.LLIDSource = uint32(bit.Uint(data[40:64]))
-	result.FullMessageFlag = data[64] == 1
-	result.BlocksToFollow = uint8(bit.Uint(data[65:72]))
-	result.ReSynchronizeFlag = data[72] == 1
-	result.SendSequenceNumber = uint8(bit.Uint(data[73:76]))
-	result.FragmentSequenceNumber = uint8(bit.Uint(data[76:80]))
+	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
+	result.FullMessageFlag = data[8]&0x80 != 0
+	result.BlocksToFollow = uint8(uint64(data[8]) & 0x7F)
+	result.ReSynchronizeFlag = data[9]&0x80 != 0
+	result.SendSequenceNumber = uint8(uint64(data[9]) >> 4 & 0x7)
+	result.FragmentSequenceNumber = uint8(uint64(data[9]) & 0xF)
 	return result
 }
 
-// Encode encodes a ConfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.1, Table 9.10).
-func (s *ConfirmedDataHeader) Encode() ([80]bit.Bit, error) {
-	var data [80]bit.Bit
+// encodeBytes encodes a ConfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.1, Table 9.10).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *ConfirmedDataHeader) encodeBytes() ([10]byte, error) {
+	var data [10]byte
 	if s.Group {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.ResponseRequested {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if s.Reserved {
-		data[2] = 1
+		data[0] |= 0x20
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "PadOctetCount",
 			Type:  "ConfirmedDataHeader",
@@ -496,69 +531,88 @@ func (s *ConfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 		}
 	}
 	_valPadOctetCount := uint64(s.PadOctetCount)
-	bit.PutUint(data[3:4], _valPadOctetCount>>4)
-	bit.PutUint(data[12:16], _valPadOctetCount)
+	data[0] = data[0]&^0x10 | byte(_valPadOctetCount>>4<<4)&0x10
+	data[1] = data[1]&^0x0F | byte(_valPadOctetCount)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAP",
 			Type:  "ConfirmedDataHeader",
 			Value: s.SAP,
 		}
 	}
-	bit.PutUint(data[8:12], uint64(s.SAP))
+	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDDestination",
 			Type:  "ConfirmedDataHeader",
 			Value: s.LLIDDestination,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
+	_valLLIDDestination := uint64(s.LLIDDestination)
+	data[2] = byte(_valLLIDDestination >> 16)
+	data[3] = byte(_valLLIDDestination >> 8)
+	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDSource",
 			Type:  "ConfirmedDataHeader",
 			Value: s.LLIDSource,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.LLIDSource))
+	_valLLIDSource := uint64(s.LLIDSource)
+	data[5] = byte(_valLLIDSource >> 16)
+	data[6] = byte(_valLLIDSource >> 8)
+	data[7] = byte(_valLLIDSource)
 	if s.FullMessageFlag {
-		data[64] = 1
+		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "BlocksToFollow",
 			Type:  "ConfirmedDataHeader",
 			Value: s.BlocksToFollow,
 		}
 	}
-	bit.PutUint(data[65:72], uint64(s.BlocksToFollow))
+	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if s.ReSynchronizeFlag {
-		data[72] = 1
+		data[9] |= 0x80
 	}
 	if uint64(s.SendSequenceNumber)>>3 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "SendSequenceNumber",
 			Type:  "ConfirmedDataHeader",
 			Value: s.SendSequenceNumber,
 		}
 	}
-	bit.PutUint(data[73:76], uint64(s.SendSequenceNumber))
+	data[9] = data[9]&^0x70 | byte(uint64(s.SendSequenceNumber)<<4)&0x70
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "FragmentSequenceNumber",
 			Type:  "ConfirmedDataHeader",
 			Value: s.FragmentSequenceNumber,
 		}
 	}
-	bit.PutUint(data[76:80], uint64(s.FragmentSequenceNumber))
-	bit.PutUint(data[4:8], uint64(FormatConfirmed))
+	data[9] = data[9]&^0x0F | byte(uint64(s.FragmentSequenceNumber))&0x0F
+	data[0] = data[0]&^0x0F | byte(uint64(FormatConfirmed))&0x0F
+	return data, nil
+}
+
+// Encode encodes a ConfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.1, Table 9.10).
+func (s *ConfirmedDataHeader) Encode() ([80]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [80]bit.Bit{}, err
+	}
+	var data [80]bit.Bit
+	for _i := range 80 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -576,119 +630,139 @@ func (s *ConfirmedDataHeader) String() string {
 	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
 }
 
-// decodeResponsePacketHeader decodes a ResponsePacketHeader (ETSI TS 102 361-1 clause 9.2.4, Table 9.13).
-func decodeResponsePacketHeader(data [80]bit.Bit) ResponsePacketHeader {
+// decodeResponsePacketHeaderBytes decodes a ResponsePacketHeader (ETSI TS 102 361-1 clause 9.2.4, Table 9.13).
+// data holds its bits packed, the first bit most significant.
+func decodeResponsePacketHeaderBytes(data [10]byte) ResponsePacketHeader {
 	var result ResponsePacketHeader
-	lowbit.Mask(data[:])
-	result.Reserved = data[0] == 1
-	result.ResponseRequested = data[1] == 1
-	result.Reserved2 = uint8(bit.Uint(data[2:4]))
-	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
-	result.Reserved3 = uint8(bit.Uint(data[12:16]))
-	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
-	result.LLIDSource = uint32(bit.Uint(data[40:64]))
-	result.FullMessageFlag = data[64] == 1
-	result.BlocksToFollow = uint8(bit.Uint(data[65:72]))
-	result.ResponseClass = uint8(bit.Uint(data[72:74]))
-	result.ResponseType = uint8(bit.Uint(data[74:77]))
-	result.ResponseStatus = uint8(bit.Uint(data[77:80]))
+	result.Reserved = data[0]&0x80 != 0
+	result.ResponseRequested = data[0]&0x40 != 0
+	result.Reserved2 = uint8(uint64(data[0]) >> 4 & 0x3)
+	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.Reserved3 = uint8(uint64(data[1]) & 0xF)
+	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
+	result.FullMessageFlag = data[8]&0x80 != 0
+	result.BlocksToFollow = uint8(uint64(data[8]) & 0x7F)
+	result.ResponseClass = uint8(uint64(data[9]) >> 6)
+	result.ResponseType = uint8(uint64(data[9]) >> 3 & 0x7)
+	result.ResponseStatus = uint8(uint64(data[9]) & 0x7)
 	return result
 }
 
-// Encode encodes a ResponsePacketHeader (ETSI TS 102 361-1 clause 9.2.4, Table 9.13).
-func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
-	var data [80]bit.Bit
+// encodeBytes encodes a ResponsePacketHeader (ETSI TS 102 361-1 clause 9.2.4, Table 9.13).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *ResponsePacketHeader) encodeBytes() ([10]byte, error) {
+	var data [10]byte
 	if s.Reserved {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.ResponseRequested {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "Reserved2",
 			Type:  "ResponsePacketHeader",
 			Value: s.Reserved2,
 		}
 	}
-	bit.PutUint(data[2:4], uint64(s.Reserved2))
+	data[0] = data[0]&^0x30 | byte(uint64(s.Reserved2)<<4)&0x30
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAP",
 			Type:  "ResponsePacketHeader",
 			Value: s.SAP,
 		}
 	}
-	bit.PutUint(data[8:12], uint64(s.SAP))
+	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.Reserved3)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Reserved3",
 			Type:  "ResponsePacketHeader",
 			Value: s.Reserved3,
 		}
 	}
-	bit.PutUint(data[12:16], uint64(s.Reserved3))
+	data[1] = data[1]&^0x0F | byte(uint64(s.Reserved3))&0x0F
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDDestination",
 			Type:  "ResponsePacketHeader",
 			Value: s.LLIDDestination,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
+	_valLLIDDestination := uint64(s.LLIDDestination)
+	data[2] = byte(_valLLIDDestination >> 16)
+	data[3] = byte(_valLLIDDestination >> 8)
+	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDSource",
 			Type:  "ResponsePacketHeader",
 			Value: s.LLIDSource,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.LLIDSource))
+	_valLLIDSource := uint64(s.LLIDSource)
+	data[5] = byte(_valLLIDSource >> 16)
+	data[6] = byte(_valLLIDSource >> 8)
+	data[7] = byte(_valLLIDSource)
 	if s.FullMessageFlag {
-		data[64] = 1
+		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "BlocksToFollow",
 			Type:  "ResponsePacketHeader",
 			Value: s.BlocksToFollow,
 		}
 	}
-	bit.PutUint(data[65:72], uint64(s.BlocksToFollow))
+	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if uint64(s.ResponseClass)>>2 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "ResponseClass",
 			Type:  "ResponsePacketHeader",
 			Value: s.ResponseClass,
 		}
 	}
-	bit.PutUint(data[72:74], uint64(s.ResponseClass))
+	data[9] = data[9]&^0xC0 | byte(uint64(s.ResponseClass)<<6)&0xC0
 	if uint64(s.ResponseType)>>3 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "ResponseType",
 			Type:  "ResponsePacketHeader",
 			Value: s.ResponseType,
 		}
 	}
-	bit.PutUint(data[74:77], uint64(s.ResponseType))
+	data[9] = data[9]&^0x38 | byte(uint64(s.ResponseType)<<3)&0x38
 	if uint64(s.ResponseStatus)>>3 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "ResponseStatus",
 			Type:  "ResponsePacketHeader",
 			Value: s.ResponseStatus,
 		}
 	}
-	bit.PutUint(data[77:80], uint64(s.ResponseStatus))
-	bit.PutUint(data[4:8], uint64(FormatResponsePacket))
+	data[9] = data[9]&^0x07 | byte(uint64(s.ResponseStatus))&0x07
+	data[0] = data[0]&^0x0F | byte(uint64(FormatResponsePacket))&0x0F
+	return data, nil
+}
+
+// Encode encodes a ResponsePacketHeader (ETSI TS 102 361-1 clause 9.2.4, Table 9.13).
+func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [80]bit.Bit{}, err
+	}
+	var data [80]bit.Bit
+	for _i := range 80 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -706,38 +780,39 @@ func (s *ResponsePacketHeader) String() string {
 	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %d, SAP: %d, Reserved3: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
 }
 
-// decodeDefinedDataHeader decodes a DefinedDataHeader (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C).
-func decodeDefinedDataHeader(data [80]bit.Bit) DefinedDataHeader {
+// decodeDefinedDataHeaderBytes decodes a DefinedDataHeader (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C).
+// data holds its bits packed, the first bit most significant.
+func decodeDefinedDataHeaderBytes(data [10]byte) DefinedDataHeader {
 	var result DefinedDataHeader
-	lowbit.Mask(data[:])
-	result.Group = data[0] == 1
-	result.ResponseRequested = data[1] == 1
+	result.Group = data[0]&0x80 != 0
+	result.ResponseRequested = data[0]&0x40 != 0
 	var _tmpAppendedBlocks uint64
-	_tmpAppendedBlocks = bit.Uint(data[2:4])
+	_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
 	_tmpAppendedBlocks <<= 4
-	_tmpAppendedBlocks |= bit.Uint(data[12:16])
+	_tmpAppendedBlocks |= uint64(data[1]) & 0xF
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
-	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
-	result.LLIDSource = uint32(bit.Uint(data[40:64]))
-	result.DefinedData = uint8(bit.Uint(data[64:70]))
-	result.SARQ = data[70] == 1
-	result.FullMessageFlag = data[71] == 1
-	result.BitPadding = uint8(bit.Uint(data[72:80]))
+	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
+	result.DefinedData = uint8(uint64(data[8]) >> 2)
+	result.SARQ = data[8]&0x02 != 0
+	result.FullMessageFlag = data[8]&0x01 != 0
+	result.BitPadding = uint8(uint64(data[9]))
 	return result
 }
 
-// Encode encodes a DefinedDataHeader (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C).
-func (s *DefinedDataHeader) Encode() ([80]bit.Bit, error) {
-	var data [80]bit.Bit
+// encodeBytes encodes a DefinedDataHeader (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *DefinedDataHeader) encodeBytes() ([10]byte, error) {
+	var data [10]byte
 	if s.Group {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.ResponseRequested {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>6 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  6,
 			Field: "AppendedBlocks",
 			Type:  "DefinedDataHeader",
@@ -745,52 +820,71 @@ func (s *DefinedDataHeader) Encode() ([80]bit.Bit, error) {
 		}
 	}
 	_valAppendedBlocks := uint64(s.AppendedBlocks)
-	bit.PutUint(data[2:4], _valAppendedBlocks>>4)
-	bit.PutUint(data[12:16], _valAppendedBlocks)
+	data[0] = data[0]&^0x30 | byte(_valAppendedBlocks>>4<<4)&0x30
+	data[1] = data[1]&^0x0F | byte(_valAppendedBlocks)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAP",
 			Type:  "DefinedDataHeader",
 			Value: s.SAP,
 		}
 	}
-	bit.PutUint(data[8:12], uint64(s.SAP))
+	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDDestination",
 			Type:  "DefinedDataHeader",
 			Value: s.LLIDDestination,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
+	_valLLIDDestination := uint64(s.LLIDDestination)
+	data[2] = byte(_valLLIDDestination >> 16)
+	data[3] = byte(_valLLIDDestination >> 8)
+	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDSource",
 			Type:  "DefinedDataHeader",
 			Value: s.LLIDSource,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.LLIDSource))
+	_valLLIDSource := uint64(s.LLIDSource)
+	data[5] = byte(_valLLIDSource >> 16)
+	data[6] = byte(_valLLIDSource >> 8)
+	data[7] = byte(_valLLIDSource)
 	if uint64(s.DefinedData)>>6 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  6,
 			Field: "DefinedData",
 			Type:  "DefinedDataHeader",
 			Value: s.DefinedData,
 		}
 	}
-	bit.PutUint(data[64:70], uint64(s.DefinedData))
+	data[8] = data[8]&^0xFC | byte(uint64(s.DefinedData)<<2)&0xFC
 	if s.SARQ {
-		data[70] = 1
+		data[8] |= 0x02
 	}
 	if s.FullMessageFlag {
-		data[71] = 1
+		data[8] |= 0x01
 	}
-	bit.PutUint(data[72:80], uint64(s.BitPadding))
-	bit.PutUint(data[4:8], uint64(FormatShortDataDefined))
+	data[9] = byte(uint64(s.BitPadding))
+	data[0] = data[0]&^0x0F | byte(uint64(FormatShortDataDefined))&0x0F
+	return data, nil
+}
+
+// Encode encodes a DefinedDataHeader (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C).
+func (s *DefinedDataHeader) Encode() ([80]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [80]bit.Bit{}, err
+	}
+	var data [80]bit.Bit
+	for _i := range 80 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -808,39 +902,40 @@ func (s *DefinedDataHeader) String() string {
 	return fmt.Sprintf("DefinedDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, DefinedData: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.DefinedData, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
 
-// decodeRawDataHeader decodes a RawDataHeader (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B).
-func decodeRawDataHeader(data [80]bit.Bit) RawDataHeader {
+// decodeRawDataHeaderBytes decodes a RawDataHeader (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B).
+// data holds its bits packed, the first bit most significant.
+func decodeRawDataHeaderBytes(data [10]byte) RawDataHeader {
 	var result RawDataHeader
-	lowbit.Mask(data[:])
-	result.Group = data[0] == 1
-	result.ResponseRequested = data[1] == 1
+	result.Group = data[0]&0x80 != 0
+	result.ResponseRequested = data[0]&0x40 != 0
 	var _tmpAppendedBlocks uint64
-	_tmpAppendedBlocks = bit.Uint(data[2:4])
+	_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
 	_tmpAppendedBlocks <<= 4
-	_tmpAppendedBlocks |= bit.Uint(data[12:16])
+	_tmpAppendedBlocks |= uint64(data[1]) & 0xF
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
-	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
-	result.LLIDSource = uint32(bit.Uint(data[40:64]))
-	result.SourcePort = uint8(bit.Uint(data[64:67]))
-	result.DestinationPort = uint8(bit.Uint(data[67:70]))
-	result.SARQ = data[70] == 1
-	result.FullMessageFlag = data[71] == 1
-	result.BitPadding = uint8(bit.Uint(data[72:80]))
+	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
+	result.SourcePort = uint8(uint64(data[8]) >> 5)
+	result.DestinationPort = uint8(uint64(data[8]) >> 2 & 0x7)
+	result.SARQ = data[8]&0x02 != 0
+	result.FullMessageFlag = data[8]&0x01 != 0
+	result.BitPadding = uint8(uint64(data[9]))
 	return result
 }
 
-// Encode encodes a RawDataHeader (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B).
-func (s *RawDataHeader) Encode() ([80]bit.Bit, error) {
-	var data [80]bit.Bit
+// encodeBytes encodes a RawDataHeader (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *RawDataHeader) encodeBytes() ([10]byte, error) {
+	var data [10]byte
 	if s.Group {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.ResponseRequested {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>6 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  6,
 			Field: "AppendedBlocks",
 			Type:  "RawDataHeader",
@@ -848,61 +943,80 @@ func (s *RawDataHeader) Encode() ([80]bit.Bit, error) {
 		}
 	}
 	_valAppendedBlocks := uint64(s.AppendedBlocks)
-	bit.PutUint(data[2:4], _valAppendedBlocks>>4)
-	bit.PutUint(data[12:16], _valAppendedBlocks)
+	data[0] = data[0]&^0x30 | byte(_valAppendedBlocks>>4<<4)&0x30
+	data[1] = data[1]&^0x0F | byte(_valAppendedBlocks)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAP",
 			Type:  "RawDataHeader",
 			Value: s.SAP,
 		}
 	}
-	bit.PutUint(data[8:12], uint64(s.SAP))
+	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDDestination",
 			Type:  "RawDataHeader",
 			Value: s.LLIDDestination,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
+	_valLLIDDestination := uint64(s.LLIDDestination)
+	data[2] = byte(_valLLIDDestination >> 16)
+	data[3] = byte(_valLLIDDestination >> 8)
+	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDSource",
 			Type:  "RawDataHeader",
 			Value: s.LLIDSource,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.LLIDSource))
+	_valLLIDSource := uint64(s.LLIDSource)
+	data[5] = byte(_valLLIDSource >> 16)
+	data[6] = byte(_valLLIDSource >> 8)
+	data[7] = byte(_valLLIDSource)
 	if uint64(s.SourcePort)>>3 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "SourcePort",
 			Type:  "RawDataHeader",
 			Value: s.SourcePort,
 		}
 	}
-	bit.PutUint(data[64:67], uint64(s.SourcePort))
+	data[8] = data[8]&^0xE0 | byte(uint64(s.SourcePort)<<5)&0xE0
 	if uint64(s.DestinationPort)>>3 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "DestinationPort",
 			Type:  "RawDataHeader",
 			Value: s.DestinationPort,
 		}
 	}
-	bit.PutUint(data[67:70], uint64(s.DestinationPort))
+	data[8] = data[8]&^0x1C | byte(uint64(s.DestinationPort)<<2)&0x1C
 	if s.SARQ {
-		data[70] = 1
+		data[8] |= 0x02
 	}
 	if s.FullMessageFlag {
-		data[71] = 1
+		data[8] |= 0x01
 	}
-	bit.PutUint(data[72:80], uint64(s.BitPadding))
-	bit.PutUint(data[4:8], uint64(FormatShortDataRawOrStatusPrecoded))
+	data[9] = byte(uint64(s.BitPadding))
+	data[0] = data[0]&^0x0F | byte(uint64(FormatShortDataRawOrStatusPrecoded))&0x0F
+	return data, nil
+}
+
+// Encode encodes a RawDataHeader (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B).
+func (s *RawDataHeader) Encode() ([80]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [80]bit.Bit{}, err
+	}
+	var data [80]bit.Bit
+	for _i := range 80 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -920,88 +1034,110 @@ func (s *RawDataHeader) String() string {
 	return fmt.Sprintf("RawDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
 
-// decodeStatusPrecodedHeader decodes a StatusPrecodedHeader (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A).
-func decodeStatusPrecodedHeader(data [80]bit.Bit) StatusPrecodedHeader {
+// decodeStatusPrecodedHeaderBytes decodes a StatusPrecodedHeader (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A).
+// data holds its bits packed, the first bit most significant.
+func decodeStatusPrecodedHeaderBytes(data [10]byte) StatusPrecodedHeader {
 	var result StatusPrecodedHeader
-	lowbit.Mask(data[:])
-	result.Group = data[0] == 1
-	result.ResponseRequested = data[1] == 1
-	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
-	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
-	result.LLIDSource = uint32(bit.Uint(data[40:64]))
-	result.SourcePort = uint8(bit.Uint(data[64:67]))
-	result.DestinationPort = uint8(bit.Uint(data[67:70]))
-	result.StatusPrecoded = uint16(bit.Uint(data[70:80]))
+	result.Group = data[0]&0x80 != 0
+	result.ResponseRequested = data[0]&0x40 != 0
+	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
+	result.SourcePort = uint8(uint64(data[8]) >> 5)
+	result.DestinationPort = uint8(uint64(data[8]) >> 2 & 0x7)
+	result.StatusPrecoded = uint16((uint64(data[8])<<8 | uint64(data[9])) & 0x3FF)
 	return result
 }
 
-// Encode encodes a StatusPrecodedHeader (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A).
-func (s *StatusPrecodedHeader) Encode() ([80]bit.Bit, error) {
-	var data [80]bit.Bit
+// encodeBytes encodes a StatusPrecodedHeader (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *StatusPrecodedHeader) encodeBytes() ([10]byte, error) {
+	var data [10]byte
 	if s.Group {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.ResponseRequested {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAP",
 			Type:  "StatusPrecodedHeader",
 			Value: s.SAP,
 		}
 	}
-	bit.PutUint(data[8:12], uint64(s.SAP))
+	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDDestination",
 			Type:  "StatusPrecodedHeader",
 			Value: s.LLIDDestination,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
+	_valLLIDDestination := uint64(s.LLIDDestination)
+	data[2] = byte(_valLLIDDestination >> 16)
+	data[3] = byte(_valLLIDDestination >> 8)
+	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDSource",
 			Type:  "StatusPrecodedHeader",
 			Value: s.LLIDSource,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.LLIDSource))
+	_valLLIDSource := uint64(s.LLIDSource)
+	data[5] = byte(_valLLIDSource >> 16)
+	data[6] = byte(_valLLIDSource >> 8)
+	data[7] = byte(_valLLIDSource)
 	if uint64(s.SourcePort)>>3 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "SourcePort",
 			Type:  "StatusPrecodedHeader",
 			Value: s.SourcePort,
 		}
 	}
-	bit.PutUint(data[64:67], uint64(s.SourcePort))
+	data[8] = data[8]&^0xE0 | byte(uint64(s.SourcePort)<<5)&0xE0
 	if uint64(s.DestinationPort)>>3 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "DestinationPort",
 			Type:  "StatusPrecodedHeader",
 			Value: s.DestinationPort,
 		}
 	}
-	bit.PutUint(data[67:70], uint64(s.DestinationPort))
+	data[8] = data[8]&^0x1C | byte(uint64(s.DestinationPort)<<2)&0x1C
 	if uint64(s.StatusPrecoded)>>10 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  10,
 			Field: "StatusPrecoded",
 			Type:  "StatusPrecodedHeader",
 			Value: s.StatusPrecoded,
 		}
 	}
-	bit.PutUint(data[70:80], uint64(s.StatusPrecoded))
+	_valStatusPrecoded := uint64(s.StatusPrecoded)
+	data[8] = data[8]&^0x03 | byte(_valStatusPrecoded>>8)&0x03
+	data[9] = byte(_valStatusPrecoded)
 	_const0 := uint64(0)
-	bit.PutUint(data[2:4], _const0>>4)
-	bit.PutUint(data[12:16], _const0)
-	bit.PutUint(data[4:8], uint64(FormatShortDataRawOrStatusPrecoded))
+	data[0] = data[0]&^0x30 | byte(_const0>>4<<4)&0x30
+	data[1] = data[1]&^0x0F | byte(_const0)&0x0F
+	data[0] = data[0]&^0x0F | byte(uint64(FormatShortDataRawOrStatusPrecoded))&0x0F
+	return data, nil
+}
+
+// Encode encodes a StatusPrecodedHeader (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A).
+func (s *StatusPrecodedHeader) Encode() ([80]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [80]bit.Bit{}, err
+	}
+	var data [80]bit.Bit
+	for _i := range 80 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1019,115 +1155,135 @@ func (s *StatusPrecodedHeader) String() string {
 	return fmt.Sprintf("StatusPrecodedHeader{ Group: %t, ResponseRequested: %t, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, StatusPrecoded: %d }", s.Group, s.ResponseRequested, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.StatusPrecoded)
 }
 
-// decodeUDTHeader decodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D).
-func decodeUDTHeader(data [80]bit.Bit) UDTHeader {
+// decodeUDTHeaderBytes decodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D).
+// data holds its bits packed, the first bit most significant.
+func decodeUDTHeaderBytes(data [10]byte) UDTHeader {
 	var result UDTHeader
-	lowbit.Mask(data[:])
-	result.Group = data[0] == 1
-	result.ResponseRequested = data[1] == 1
-	result.Emergency = data[2] == 1
-	result.OptionFlag = data[3] == 1
-	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[8:12]))
-	result.UDTFormat = uint8(bit.Uint(data[12:16]))
-	result.LLIDDestination = uint32(bit.Uint(data[16:40]))
-	result.LLIDSource = uint32(bit.Uint(data[40:64]))
-	result.PadNibble = uint8(bit.Uint(data[64:69]))
-	result.Reserved = data[69] == 1
-	result.AppendedBlocks = uint8(bit.Uint(data[70:72]))
-	result.SupplementaryFlag = data[72] == 1
-	result.ProtectFlag = data[73] == 1
-	result.Opcode = UDTOpcode(bit.Uint(data[74:80]))
+	result.Group = data[0]&0x80 != 0
+	result.ResponseRequested = data[0]&0x40 != 0
+	result.Emergency = data[0]&0x20 != 0
+	result.OptionFlag = data[0]&0x10 != 0
+	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.UDTFormat = uint8(uint64(data[1]) & 0xF)
+	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
+	result.PadNibble = uint8(uint64(data[8]) >> 3)
+	result.Reserved = data[8]&0x04 != 0
+	result.AppendedBlocks = uint8(uint64(data[8]) & 0x3)
+	result.SupplementaryFlag = data[9]&0x80 != 0
+	result.ProtectFlag = data[9]&0x40 != 0
+	result.Opcode = UDTOpcode(uint64(data[9]) & 0x3F)
 	return result
 }
 
-// Encode encodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D).
-func (s *UDTHeader) Encode() ([80]bit.Bit, error) {
-	var data [80]bit.Bit
+// encodeBytes encodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *UDTHeader) encodeBytes() ([10]byte, error) {
+	var data [10]byte
 	if s.Group {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.ResponseRequested {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if s.Emergency {
-		data[2] = 1
+		data[0] |= 0x20
 	}
 	if s.OptionFlag {
-		data[3] = 1
+		data[0] |= 0x10
 	}
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAP",
 			Type:  "UDTHeader",
 			Value: s.SAP,
 		}
 	}
-	bit.PutUint(data[8:12], uint64(s.SAP))
+	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.UDTFormat)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "UDTFormat",
 			Type:  "UDTHeader",
 			Value: s.UDTFormat,
 		}
 	}
-	bit.PutUint(data[12:16], uint64(s.UDTFormat))
+	data[1] = data[1]&^0x0F | byte(uint64(s.UDTFormat))&0x0F
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDDestination",
 			Type:  "UDTHeader",
 			Value: s.LLIDDestination,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.LLIDDestination))
+	_valLLIDDestination := uint64(s.LLIDDestination)
+	data[2] = byte(_valLLIDDestination >> 16)
+	data[3] = byte(_valLLIDDestination >> 8)
+	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDSource",
 			Type:  "UDTHeader",
 			Value: s.LLIDSource,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.LLIDSource))
+	_valLLIDSource := uint64(s.LLIDSource)
+	data[5] = byte(_valLLIDSource >> 16)
+	data[6] = byte(_valLLIDSource >> 8)
+	data[7] = byte(_valLLIDSource)
 	if uint64(s.PadNibble)>>5 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "PadNibble",
 			Type:  "UDTHeader",
 			Value: s.PadNibble,
 		}
 	}
-	bit.PutUint(data[64:69], uint64(s.PadNibble))
+	data[8] = data[8]&^0xF8 | byte(uint64(s.PadNibble)<<3)&0xF8
 	if s.Reserved {
-		data[69] = 1
+		data[8] |= 0x04
 	}
 	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "AppendedBlocks",
 			Type:  "UDTHeader",
 			Value: s.AppendedBlocks,
 		}
 	}
-	bit.PutUint(data[70:72], uint64(s.AppendedBlocks))
+	data[8] = data[8]&^0x03 | byte(uint64(s.AppendedBlocks))&0x03
 	if s.SupplementaryFlag {
-		data[72] = 1
+		data[9] |= 0x80
 	}
 	if s.ProtectFlag {
-		data[73] = 1
+		data[9] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  6,
 			Field: "Opcode",
 			Type:  "UDTHeader",
 			Value: s.Opcode,
 		}
 	}
-	bit.PutUint(data[74:80], uint64(s.Opcode))
-	bit.PutUint(data[4:8], uint64(FormatUnifiedDataTransport))
+	data[9] = data[9]&^0x3F | byte(uint64(s.Opcode))&0x3F
+	data[0] = data[0]&^0x0F | byte(uint64(FormatUnifiedDataTransport))&0x0F
+	return data, nil
+}
+
+// Encode encodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D).
+func (s *UDTHeader) Encode() ([80]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [80]bit.Bit{}, err
+	}
+	var data [80]bit.Bit
+	for _i := range 80 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1145,43 +1301,53 @@ func (s *UDTHeader) String() string {
 	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
 }
 
-// decodeProprietaryHeader decodes a ProprietaryHeader (ETSI TS 102 361-1 clause 9.2.9, Table 9.17).
-func decodeProprietaryHeader(data [80]bit.Bit) ProprietaryHeader {
+// decodeProprietaryHeaderBytes decodes a ProprietaryHeader (ETSI TS 102 361-1 clause 9.2.9, Table 9.17).
+// data holds its bits packed, the first bit most significant.
+func decodeProprietaryHeaderBytes(data [10]byte) ProprietaryHeader {
 	var result ProprietaryHeader
-	lowbit.Mask(data[:])
-	result.SAP = enums.ServiceAccessPointID(bit.Uint(data[0:4]))
-	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
-	for _i := range 64 {
-		result.ManufacturerData[_i/8] |= byte(data[16+_i]) << (7 - _i%8)
-	}
+	result.SAP = enums.ServiceAccessPointID(uint64(data[0]) >> 4)
+	result.MFID = enums.FeatureSetID(uint64(data[1]))
+	copy(result.ManufacturerData[0:8], data[2:10])
 	return result
 }
 
-// Encode encodes a ProprietaryHeader (ETSI TS 102 361-1 clause 9.2.9, Table 9.17).
-func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
-	var data [80]bit.Bit
+// encodeBytes encodes a ProprietaryHeader (ETSI TS 102 361-1 clause 9.2.9, Table 9.17).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *ProprietaryHeader) encodeBytes() ([10]byte, error) {
+	var data [10]byte
 	if uint64(s.SAP)>>4 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAP",
 			Type:  "ProprietaryHeader",
 			Value: s.SAP,
 		}
 	}
-	bit.PutUint(data[0:4], uint64(s.SAP))
+	data[0] = data[0]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.MFID)>>8 != 0 {
-		return [80]bit.Bit{}, &bit.FieldRangeError{
+		return [10]byte{}, &bit.FieldRangeError{
 			Bits:  8,
 			Field: "MFID",
 			Type:  "ProprietaryHeader",
 			Value: s.MFID,
 		}
 	}
-	bit.PutUint(data[8:16], uint64(s.MFID))
-	for _i := range 64 {
-		data[16+_i] = bit.Bit(s.ManufacturerData[_i/8] >> (7 - _i%8) & 1)
+	data[1] = byte(uint64(s.MFID))
+	copy(data[2:10], s.ManufacturerData[0:8])
+	data[0] = data[0]&^0x0F | byte(uint64(FormatProprietary))&0x0F
+	return data, nil
+}
+
+// Encode encodes a ProprietaryHeader (ETSI TS 102 361-1 clause 9.2.9, Table 9.17).
+func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [80]bit.Bit{}, err
 	}
-	bit.PutUint(data[4:8], uint64(FormatProprietary))
+	var data [80]bit.Bit
+	for _i := range 80 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 

@@ -8,52 +8,63 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
-func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) UDPIPv4CompressedHeader {
+// decodeUDPIPv4CompressedHeaderBytes decodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
+// data holds its bits packed, the first bit most significant.
+func decodeUDPIPv4CompressedHeaderBytes(data [9]byte) UDPIPv4CompressedHeader {
 	var result UDPIPv4CompressedHeader
-	lowbit.Mask(data[:])
-	result.IPv4Identification = uint16(bit.Uint(data[0:16]))
-	result.SAID = enums.SAID(bit.Uint(data[16:20]))
-	result.DAID = enums.DAID(bit.Uint(data[20:24]))
+	result.IPv4Identification = uint16(uint64(data[0])<<8 | uint64(data[1]))
+	result.SAID = enums.SAID(uint64(data[2]) >> 4)
+	result.DAID = enums.DAID(uint64(data[2]) & 0xF)
 	var _tmpHeaderCompressionOpcode uint64
-	_tmpHeaderCompressionOpcode = bit.Uint(data[24:25])
+	_tmpHeaderCompressionOpcode = uint64(data[3]) >> 7
 	_tmpHeaderCompressionOpcode <<= 1
-	_tmpHeaderCompressionOpcode |= bit.Uint(data[32:33])
+	_tmpHeaderCompressionOpcode |= uint64(data[4]) >> 7
 	result.HeaderCompressionOpcode = uint8(_tmpHeaderCompressionOpcode)
-	result.SPID = enums.SPID(bit.Uint(data[25:32]))
-	result.DPID = enums.DPID(bit.Uint(data[33:40]))
-	result.ExtendedHeader1 = uint16(bit.Uint(data[40:56]))
-	result.ExtendedHeader2 = uint16(bit.Uint(data[56:72]))
+	result.SPID = enums.SPID(uint64(data[3]) & 0x7F)
+	result.DPID = enums.DPID(uint64(data[4]) & 0x7F)
+	result.ExtendedHeader1 = uint16(uint64(data[5])<<8 | uint64(data[6]))
+	result.ExtendedHeader2 = uint16(uint64(data[7])<<8 | uint64(data[8]))
 	return result
 }
 
-// Encode encodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
-func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
-	var data [72]bit.Bit
-	bit.PutUint(data[0:16], uint64(s.IPv4Identification))
+// DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
+func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) UDPIPv4CompressedHeader {
+	var _b [9]byte
+	for _i := range 72 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeUDPIPv4CompressedHeaderBytes(_b)
+}
+
+// encodeBytes encodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *UDPIPv4CompressedHeader) encodeBytes() ([9]byte, error) {
+	var data [9]byte
+	_valIPv4Identification := uint64(s.IPv4Identification)
+	data[0] = byte(_valIPv4Identification >> 8)
+	data[1] = byte(_valIPv4Identification)
 	if uint64(s.SAID)>>4 != 0 {
-		return [72]bit.Bit{}, &bit.FieldRangeError{
+		return [9]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "SAID",
 			Type:  "UDPIPv4CompressedHeader",
 			Value: s.SAID,
 		}
 	}
-	bit.PutUint(data[16:20], uint64(s.SAID))
+	data[2] = data[2]&^0xF0 | byte(uint64(s.SAID)<<4)&0xF0
 	if uint64(s.DAID)>>4 != 0 {
-		return [72]bit.Bit{}, &bit.FieldRangeError{
+		return [9]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "DAID",
 			Type:  "UDPIPv4CompressedHeader",
 			Value: s.DAID,
 		}
 	}
-	bit.PutUint(data[20:24], uint64(s.DAID))
+	data[2] = data[2]&^0x0F | byte(uint64(s.DAID))&0x0F
 	if uint64(s.HeaderCompressionOpcode)>>2 != 0 {
-		return [72]bit.Bit{}, &bit.FieldRangeError{
+		return [9]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "HeaderCompressionOpcode",
 			Type:  "UDPIPv4CompressedHeader",
@@ -61,28 +72,45 @@ func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
 		}
 	}
 	_valHeaderCompressionOpcode := uint64(s.HeaderCompressionOpcode)
-	bit.PutUint(data[24:25], _valHeaderCompressionOpcode>>1)
-	bit.PutUint(data[32:33], _valHeaderCompressionOpcode)
+	data[3] = data[3]&^0x80 | byte(_valHeaderCompressionOpcode>>1<<7)&0x80
+	data[4] = data[4]&^0x80 | byte(_valHeaderCompressionOpcode<<7)&0x80
 	if uint64(s.SPID)>>7 != 0 {
-		return [72]bit.Bit{}, &bit.FieldRangeError{
+		return [9]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "SPID",
 			Type:  "UDPIPv4CompressedHeader",
 			Value: s.SPID,
 		}
 	}
-	bit.PutUint(data[25:32], uint64(s.SPID))
+	data[3] = data[3]&^0x7F | byte(uint64(s.SPID))&0x7F
 	if uint64(s.DPID)>>7 != 0 {
-		return [72]bit.Bit{}, &bit.FieldRangeError{
+		return [9]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "DPID",
 			Type:  "UDPIPv4CompressedHeader",
 			Value: s.DPID,
 		}
 	}
-	bit.PutUint(data[33:40], uint64(s.DPID))
-	bit.PutUint(data[40:56], uint64(s.ExtendedHeader1))
-	bit.PutUint(data[56:72], uint64(s.ExtendedHeader2))
+	data[4] = data[4]&^0x7F | byte(uint64(s.DPID))&0x7F
+	_valExtendedHeader1 := uint64(s.ExtendedHeader1)
+	data[5] = byte(_valExtendedHeader1 >> 8)
+	data[6] = byte(_valExtendedHeader1)
+	_valExtendedHeader2 := uint64(s.ExtendedHeader2)
+	data[7] = byte(_valExtendedHeader2 >> 8)
+	data[8] = byte(_valExtendedHeader2)
+	return data, nil
+}
+
+// Encode encodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
+func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [72]bit.Bit{}, err
+	}
+	var data [72]bit.Bit
+	for _i := range 72 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 

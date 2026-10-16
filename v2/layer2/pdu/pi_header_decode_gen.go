@@ -9,76 +9,78 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodePIHeader decodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
-func DecodePIHeader(data [96]bit.Bit) PIHeader {
+// decodePIHeaderBytes decodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
+// data holds its bits packed, the first bit most significant.
+func decodePIHeaderBytes(data [12]byte) PIHeader {
 	var result PIHeader
-	lowbit.Mask(data[:])
-	var _packedBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			_packedBytes[i] <<= 1
-			_packedBytes[i] |= byte(data[i*8+j])
-		}
-	}
-	_packedBytes[10] ^= uint8(0x69)
-	_packedBytes[11] ^= uint8(0x69)
-	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
-	result.AlgorithmID = uint8(bit.Uint(data[0:8]))
-	result.MFID = enums.FeatureSetID(bit.Uint(data[8:16]))
-	result.KeyID = uint8(bit.Uint(data[16:24]))
-	result.MessageIndicator = uint32(bit.Uint(data[24:56]))
-	result.Destination = uint32(bit.Uint(data[56:80]))
-	for _i := range 80 {
-		result.Raw[_i/8] |= byte(data[_i]) << (7 - _i%8)
-	}
+	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0x6969)
+	result.AlgorithmID = uint8(uint64(data[0]))
+	result.MFID = enums.FeatureSetID(uint64(data[1]))
+	result.KeyID = uint8(uint64(data[2]))
+	result.MessageIndicator = uint32(uint64(data[3])<<24 | uint64(data[4])<<16 | uint64(data[5])<<8 | uint64(data[6]))
+	result.Destination = uint32(uint64(data[7])<<16 | uint64(data[8])<<8 | uint64(data[9]))
+	copy(result.Raw[0:10], data[0:10])
 	return result
 }
 
-// Encode encodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
-func (s *PIHeader) Encode() ([96]bit.Bit, error) {
-	var data [96]bit.Bit
-	bit.PutUint(data[0:8], uint64(s.AlgorithmID))
+// DecodePIHeader decodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
+func DecodePIHeader(data [96]bit.Bit) PIHeader {
+	var _b [12]byte
+	for _i := range 96 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodePIHeaderBytes(_b)
+}
+
+// encodeBytes encodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *PIHeader) encodeBytes() ([12]byte, error) {
+	var data [12]byte
+	data[0] = byte(uint64(s.AlgorithmID))
 	if uint64(s.MFID)>>8 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  8,
 			Field: "MFID",
 			Type:  "PIHeader",
 			Value: s.MFID,
 		}
 	}
-	bit.PutUint(data[8:16], uint64(s.MFID))
-	bit.PutUint(data[16:24], uint64(s.KeyID))
-	bit.PutUint(data[24:56], uint64(s.MessageIndicator))
+	data[1] = byte(uint64(s.MFID))
+	data[2] = byte(uint64(s.KeyID))
+	_valMessageIndicator := uint64(s.MessageIndicator)
+	data[3] = byte(_valMessageIndicator >> 24)
+	data[4] = byte(_valMessageIndicator >> 16)
+	data[5] = byte(_valMessageIndicator >> 8)
+	data[6] = byte(_valMessageIndicator)
 	if uint64(s.Destination)>>24 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "Destination",
 			Type:  "PIHeader",
 			Value: s.Destination,
 		}
 	}
-	bit.PutUint(data[56:80], uint64(s.Destination))
-	var _encBytes [10]byte
-	for i := range 10 {
-		for j := range 8 {
-			_encBytes[i] <<= 1
-			_encBytes[i] |= byte(data[i*8+j])
-		}
+	_valDestination := uint64(s.Destination)
+	data[7] = byte(_valDestination >> 16)
+	data[8] = byte(_valDestination >> 8)
+	data[9] = byte(_valDestination)
+	_crcVal := crc.CCITT(data[:10])
+	data[10] = byte(_crcVal>>8) ^ 0x69
+	data[11] = byte(_crcVal) ^ 0x69
+	return data, nil
+}
+
+// Encode encodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
+func (s *PIHeader) Encode() ([96]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [96]bit.Bit{}, err
 	}
-	_crcVal := crc.CCITT(_encBytes[:])
-	_crcHigh := byte(_crcVal >> 8)
-	_crcLow := byte(_crcVal)
-	_crcHigh ^= uint8(0x69)
-	_crcLow ^= uint8(0x69)
-	for j := range 8 {
-		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
-	}
-	for j := range 8 {
-		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
+	var data [96]bit.Bit
+	for _i := range 96 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
 }

@@ -9,51 +9,77 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeEmbeddedSignalling decodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
-func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
+// decodeEmbeddedSignallingBytes decodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
+// data holds its bits packed, the first bit most significant.
+func decodeEmbeddedSignallingBytes(data [2]byte) EmbeddedSignalling {
 	var result EmbeddedSignalling
-	lowbit.Mask(data[:])
 	var _cw uint16
-	_cw, result.FEC = quadraticresidue.Decode(uint16(bit.Uint(data[:])))
+	_cw, result.FEC = quadraticresidue.Decode(uint16(uint64(data[0])<<8 | uint64(data[1])))
 	if !result.FEC.Uncorrectable {
-		bit.PutUint(data[:], uint64(_cw))
+		_cwBits := uint64(_cw)
+		data[0] = byte(_cwBits >> 8)
+		data[1] = byte(_cwBits)
 	}
-	result.ColorCode = enums.ColorCode(bit.Uint(data[0:4]))
-	result.PreemptionAndPowerControlIndicator = data[4] == 1
-	result.LCSS = enums.LCSS(bit.Uint(data[5:7]))
+	result.ColorCode = enums.ColorCode(uint64(data[0]) >> 4)
+	result.PreemptionAndPowerControlIndicator = data[0]&0x08 != 0
+	result.LCSS = enums.LCSS(uint64(data[0]) >> 1 & 0x3)
 	return result
 }
 
-// Encode encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
-func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
-	var data [7]bit.Bit
+// DecodeEmbeddedSignalling decodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
+func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
+	var _b [2]byte
+	for _i := range 16 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeEmbeddedSignallingBytes(_b)
+}
+
+// encodeBytes encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *EmbeddedSignalling) encodeBytes() ([2]byte, error) {
+	var data [2]byte
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [16]bit.Bit{}, &bit.FieldRangeError{
+		return [2]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "ColorCode",
 			Type:  "EmbeddedSignalling",
 			Value: s.ColorCode,
 		}
 	}
-	bit.PutUint(data[0:4], uint64(s.ColorCode))
+	data[0] = data[0]&^0xF0 | byte(uint64(s.ColorCode)<<4)&0xF0
 	if s.PreemptionAndPowerControlIndicator {
-		data[4] = 1
+		data[0] |= 0x08
 	}
 	if uint64(s.LCSS)>>2 != 0 {
-		return [16]bit.Bit{}, &bit.FieldRangeError{
+		return [2]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "LCSS",
 			Type:  "EmbeddedSignalling",
 			Value: s.LCSS,
 		}
 	}
-	bit.PutUint(data[5:7], uint64(s.LCSS))
-	var _cw [16]bit.Bit
-	bit.PutUint(_cw[:], uint64(quadraticresidue.Encode(uint8(bit.Uint(data[:])))))
-	return _cw, nil
+	data[0] = data[0]&^0x06 | byte(uint64(s.LCSS)<<1)&0x06
+	_cw := quadraticresidue.Encode(uint8(uint64(data[0]) >> 1))
+	_cwBits := uint64(_cw)
+	data[0] = byte(_cwBits >> 8)
+	data[1] = byte(_cwBits)
+	return data, nil
+}
+
+// Encode encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
+func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [16]bit.Bit{}, err
+	}
+	var data [16]bit.Bit
+	for _i := range 16 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
+	return data, nil
 }
 
 // EncodeBits returns the bits that Encode returns as a slice, or nil and

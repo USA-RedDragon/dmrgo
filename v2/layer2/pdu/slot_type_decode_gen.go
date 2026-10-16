@@ -9,47 +9,75 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	golay "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeSlotType decodes a SlotType (ETSI TS 102 361-1 clause 9.1.3).
-func DecodeSlotType(data [20]bit.Bit) SlotType {
+// decodeSlotTypeBytes decodes a SlotType (ETSI TS 102 361-1 clause 9.1.3).
+// data holds its bits packed, the first bit most significant.
+func decodeSlotTypeBytes(data [3]byte) SlotType {
 	var result SlotType
-	lowbit.Mask(data[:])
 	var _cw uint32
-	_cw, result.FEC = golay.Decode2087(uint32(bit.Uint(data[:])))
+	_cw, result.FEC = golay.Decode2087(uint32((uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2])) >> 4))
 	if !result.FEC.Uncorrectable {
-		bit.PutUint(data[:], uint64(_cw))
+		_cwBits := uint64(_cw)
+		data[0] = byte(_cwBits >> 12)
+		data[1] = byte(_cwBits >> 4)
+		data[2] = data[2]&^0xF0 | byte(_cwBits<<4)&0xF0
 	}
-	result.ColorCode = enums.ColorCode(bit.Uint(data[0:4]))
-	result.DataType = enums.DataType(bit.Uint(data[4:8]))
+	result.ColorCode = enums.ColorCode(uint64(data[0]) >> 4)
+	result.DataType = enums.DataType(uint64(data[0]) & 0xF)
 	return result
 }
 
-// Encode encodes a SlotType (ETSI TS 102 361-1 clause 9.1.3).
-func (s *SlotType) Encode() ([20]bit.Bit, error) {
-	var data [8]bit.Bit
+// DecodeSlotType decodes a SlotType (ETSI TS 102 361-1 clause 9.1.3).
+func DecodeSlotType(data [20]bit.Bit) SlotType {
+	var _b [3]byte
+	for _i := range 20 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeSlotTypeBytes(_b)
+}
+
+// encodeBytes encodes a SlotType (ETSI TS 102 361-1 clause 9.1.3).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *SlotType) encodeBytes() ([3]byte, error) {
+	var data [3]byte
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [20]bit.Bit{}, &bit.FieldRangeError{
+		return [3]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "ColorCode",
 			Type:  "SlotType",
 			Value: s.ColorCode,
 		}
 	}
-	bit.PutUint(data[0:4], uint64(s.ColorCode))
+	data[0] = data[0]&^0xF0 | byte(uint64(s.ColorCode)<<4)&0xF0
 	if uint64(s.DataType)>>4 != 0 {
-		return [20]bit.Bit{}, &bit.FieldRangeError{
+		return [3]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "DataType",
 			Type:  "SlotType",
 			Value: s.DataType,
 		}
 	}
-	bit.PutUint(data[4:8], uint64(s.DataType))
-	var _cw [20]bit.Bit
-	bit.PutUint(_cw[:], uint64(golay.Encode2087(uint8(bit.Uint(data[:])))))
-	return _cw, nil
+	data[0] = data[0]&^0x0F | byte(uint64(s.DataType))&0x0F
+	_cw := golay.Encode2087(uint8(uint64(data[0])))
+	_cwBits := uint64(_cw)
+	data[0] = byte(_cwBits >> 12)
+	data[1] = byte(_cwBits >> 4)
+	data[2] = data[2]&^0xF0 | byte(_cwBits<<4)&0xF0
+	return data, nil
+}
+
+// Encode encodes a SlotType (ETSI TS 102 361-1 clause 9.1.3).
+func (s *SlotType) Encode() ([20]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [20]bit.Bit{}, err
+	}
+	var data [20]bit.Bit
+	for _i := range 20 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
+	return data, nil
 }
 
 // EncodeBits returns the bits that Encode returns as a slice, or nil and

@@ -3,7 +3,6 @@ package pdu
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -505,9 +504,7 @@ func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
 		return p, false
 	}
-	var bits [64]bit.Bit
-	unpackBits(bits[:], s.RawPayload[:])
-	return decodeBSOutboundActivationPDU(bits), true
+	return decodeBSOutboundActivationPDUBytes(s.RawPayload), true
 }
 
 // AsTalkgroupDataGrantMultiItem decodes the RawPayload of a standard FID
@@ -517,9 +514,7 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
 		return p, false
 	}
-	var bits [64]bit.Bit
-	unpackBits(bits[:], s.RawPayload[:])
-	return decodeTalkgroupDataGrantMultiItemPDU(bits), true
+	return decodeTalkgroupDataGrantMultiItemPDUBytes(s.RawPayload), true
 }
 
 // SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that
@@ -527,28 +522,26 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 // payload fields and keeps LastBlock and ProtectFlag. It returns the error
 // of p.Encode and leaves s as it is on an error.
 func (s *CSBK) SetBSOutboundActivation(p BSOutboundActivationPDU) error {
-	bits, err := p.Encode()
+	payload, err := p.encodeBytes()
 	if err != nil {
 		return err
 	}
-	s.setOpcode0x38(bits, Opcode0x38BSOutboundActivation)
+	s.setOpcode0x38(payload, Opcode0x38BSOutboundActivation)
 	return nil
 }
 
 // SetTalkgroupDataGrantMultiItem makes s a standard FID TD_GRANT_MI CSBK
 // that carries p, as SetBSOutboundActivation does.
 func (s *CSBK) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) error {
-	bits, err := p.Encode()
+	payload, err := p.encodeBytes()
 	if err != nil {
 		return err
 	}
-	s.setOpcode0x38(bits, Opcode0x38TalkgroupDataGrantMultiItem)
+	s.setOpcode0x38(payload, Opcode0x38TalkgroupDataGrantMultiItem)
 	return nil
 }
 
-func (s *CSBK) setOpcode0x38(bits [64]bit.Bit, hint Opcode0x38Hint) {
-	var payload [8]byte
-	packBits(payload[:], bits[:])
+func (s *CSBK) setOpcode0x38(payload [8]byte, hint Opcode0x38Hint) {
 	*s = CSBK{
 		LastBlock:   s.LastBlock,
 		ProtectFlag: s.ProtectFlag,
