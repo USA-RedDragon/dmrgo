@@ -136,27 +136,21 @@ func appendTalkerAliasText(dst []byte, format layer3.TalkerAliasDataFormat, unit
 // units and returns the number of Code Units of the whole alias.
 func talkerAliasUnits(units *[talkerAliasMaxUnits]uint16, alias string, format layer3.TalkerAliasDataFormat) (int, error) {
 	n := 0
-	put := func(u uint16) {
-		if n < len(units) {
-			units[n] = u
-		}
-		n++
-	}
 	switch format {
 	case layer3.TalkerAliasUTF8:
 		for i := 0; i < len(alias); i++ {
-			put(uint16(alias[i]))
+			n = putUnit(units, n, uint16(alias[i]))
 		}
 		return n, nil
 	case layer3.TalkerAliasUTF16:
 		for _, r := range alias {
 			if r < 0x10000 {
-				put(uint16(r & 0xFFFF))
+				n = putUnit(units, n, uint16(r&0xFFFF))
 				continue
 			}
 			r1, r2 := utf16.EncodeRune(r)
-			put(uint16(r1 & 0xFFFF))
-			put(uint16(r2 & 0xFFFF))
+			n = putUnit(units, n, uint16(r1&0xFFFF))
+			n = putUnit(units, n, uint16(r2&0xFFFF))
 		}
 		return n, nil
 	case layer3.TalkerAliasSevenBit, layer3.TalkerAliasISOEightBit:
@@ -168,11 +162,32 @@ func talkerAliasUnits(units *[talkerAliasMaxUnits]uint16, alias string, format l
 			if r > limit {
 				return 0, newCharacterFormatError(r, format)
 			}
-			put(uint16(r & 0xFFFF))
+			n = putUnit(units, n, uint16(r&0xFFFF))
 		}
 		return n, nil
 	}
 	return 0, newUnknownFormatError(format)
+}
+
+// putUnit sets units[n] to u when it fits, and returns n+1.
+func putUnit(units *[talkerAliasMaxUnits]uint16, n int, u uint16) int {
+	if n < len(units) {
+		units[n] = u
+	}
+	return n + 1
+}
+
+// streamBits writes bits first to first+len(dst)-1 of the Code Units of
+// units, each unit bits long, most significant bit first, into dst. Bits
+// past the units are 0.
+func streamBits(dst []bit.Bit, units *[talkerAliasMaxUnits]uint16, count, unit, first int) {
+	for i := range dst {
+		k := first + i
+		dst[i] = 0
+		if j := k / unit; j < count {
+			dst[i] = bit.Bit(units[j] >> (unit - 1 - k%unit) & 1)
+		}
+	}
 }
 
 // EncodeTalkerAlias returns the Talker Alias header LC and the block LCs
@@ -207,26 +222,26 @@ func EncodeTalkerAliasInto(dst *[talkerAliasMaxBlocks + 1]FullLinkControl, p *[t
 		return 0, ErrTalkerAliasLength
 	}
 	n := TalkerAliasBlocks(format, count)
-	var stream [talkerAliasStreamBits]bit.Bit
-	for i, u := range units[:count] {
-		bit.PutUint(stream[i*unit:(i+1)*unit], uint64(u))
-	}
 	header := &p[0].flcTalkerAliasHeader
 	*header = FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: count}
-	data := stream[:]
+	var head [49]bit.Bit
+	skip := 0
 	if format == layer3.TalkerAliasSevenBit {
-		header.TalkerAliasData = bit.Uint(stream[:49])
-		data = stream[1:]
+		streamBits(head[:], &units, count, unit, 0)
+		header.TalkerAliasData = bit.Uint(head[:])
+		skip = 1
 	} else {
-		header.TalkerAliasData = bit.Uint(stream[:48])
+		streamBits(head[:48], &units, count, unit, 0)
+		header.TalkerAliasData = bit.Uint(head[:48])
 	}
 	dst[0] = FullLinkControl{FLCO: enums.FLCOTalkerAliasHeader, FID: enums.FIDStandardized, TalkerAliasHeader: header}
 	opcodes := [talkerAliasMaxBlocks]enums.FLCO{enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3}
 	for i := range n {
 		block := &p[i+1].flcTalkerAliasBlock
 		*block = FLCTalkerAliasBlock{}
-		start := 48 + i*talkerAliasBlockBits
-		packBits(block.TalkerAliasData[:], data[start:start+talkerAliasBlockBits])
+		var bits [talkerAliasBlockBits]bit.Bit
+		streamBits(bits[:], &units, count, unit, skip+48+i*talkerAliasBlockBits)
+		packBits(block.TalkerAliasData[:], bits[:])
 		dst[i+1] = FullLinkControl{FLCO: opcodes[i], FID: enums.FIDStandardized, TalkerAliasBlock: block}
 	}
 	return n + 1, nil
