@@ -742,8 +742,8 @@ func softBit[T int | int16](cw *[softOSDWords]uint64, j T) bool {
 type softBPTCResult struct {
 	// Payload holds the 96 data bits, most significant bit first.
 	Payload [12]byte
-	// Reserved holds R(0) to R(2), R(i) at index i.
-	Reserved [3]bit.Bit
+	// Reserved holds R(0) to R(2), R(i) in bit i.
+	Reserved uint8
 }
 
 // softBPTCEncoder encodes info bit i of BPTC(196,96) into a burst: data bit
@@ -762,10 +762,8 @@ func softBPTCEncoder(info uint32) ([]bit.Bit, error) {
 		r.SetBPTCPayload(p)
 		return softBurstImage(&r), nil
 	}
-	var res [3]bit.Bit
-	res[i-softBPTCData] = 1
 	r.SetBPTCPayload([12]byte{})
-	r.SetBPTCReserved(res)
+	r.SetBPTCReserved(1 << (i - softBPTCData))
 	return softBurstImage(&r), nil
 }
 
@@ -777,9 +775,9 @@ func (c *softOSDCode) bptcResult(cw *[softOSDWords]uint64) softBPTCResult {
 			r.Payload[i/8] |= 0x80 >> (i % 8)
 		}
 	}
-	for i := range r.Reserved {
+	for i := range 3 {
 		if softBit(cw, c.sys[softBPTCData+i]) {
-			r.Reserved[i] = 1
+			r.Reserved |= 1 << i
 		}
 	}
 	return r
@@ -796,12 +794,12 @@ func softShortLCEncoder(info uint32) ([]bit.Bit, error) {
 	img := make([]bit.Bit, 0, 4*layer2.CACHBits)
 	for _, f := range frags {
 		var c layer2.CACH
-		bit.PutUint(c.Payload[:], uint64(f))
+		c.Payload = cachPayload(f)
 		logical, err := c.Encode()
 		if err != nil {
 			return nil, err
 		}
-		onAir := layer2.CACHInterleave(logical)
+		onAir := cachBits(layer2.CACHInterleave(logical))
 		img = append(img, onAir[:]...)
 	}
 	return img, nil
@@ -1156,7 +1154,7 @@ func newSoftDecoder() (*softDecoder, error) {
 		if err != nil {
 			return nil, err
 		}
-		onAir := layer2.CACHInterleave(logical)
+		onAir := cachBits(layer2.CACHInterleave(logical))
 		return onAir[:], nil
 	}, nil); err != nil {
 		return nil, err

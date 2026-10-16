@@ -103,7 +103,7 @@ func (p *Reporter) Burst(r Received) {
 	ts := "-"
 	key := 0
 	if r.BS && r.HasCACH {
-		c := layer2.DecodeCACHField(cach)
+		c := layer2.DecodeCACHField(cachBytes(cach))
 		if !p.ref || r.Stream != p.stream {
 			p.t0, p.ref, p.stream, p.votes = r.Seconds, true, r.Stream, [2]int{}
 		}
@@ -119,7 +119,7 @@ func (p *Reporter) Burst(r Received) {
 		key = parity ^ align + 1
 		ts = fmt.Sprint(key)
 		p.printf("cach %s at=%d tc=%d lcss=%q fec=%s payload=%s", t, b01(c.TACT.AccessType), b01(c.TACT.TDMAChannel),
-			c.TACT.LCSS.String(), fecString(c.TACT.FEC), bitString(c.Payload[:]))
+			c.TACT.LCSS.String(), fecString(c.TACT.FEC), fmt.Sprintf("%017b", cachPayloadWord(c.Payload)))
 		if s, done, _ := p.slc.Add(c); done {
 			p.printf("slc %s %s fec=%s", t, slcFields(&s), fecString(s.FEC))
 		}
@@ -193,14 +193,6 @@ func (p *Reporter) Burst(r Received) {
 	case ok:
 		p.printf("           packet complete: %q (%s)", m.Data, m.DataType)
 	}
-}
-
-func bitString(b []bit.Bit) string {
-	var s strings.Builder
-	for _, v := range b {
-		s.WriteByte('0' + byte(v))
-	}
-	return s.String()
 }
 
 func slcFields(s *pdu.ShortLC) string {
