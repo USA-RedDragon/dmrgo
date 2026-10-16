@@ -2,7 +2,6 @@ package vocoder
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"slices"
 	"sync"
@@ -20,6 +19,10 @@ var ErrDuplicateCodec = errors.New("vocoder: codec already registered")
 
 // ErrNilFactory is returned by Register when the factory is nil.
 var ErrNilFactory = errors.New("vocoder: codec factory is nil")
+
+// ErrRegistryFull is returned by Register when MaxCodecs codecs are
+// registered.
+var ErrRegistryFull = errors.New("vocoder: codec registry is full")
 
 // Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of
 // one of the three vocoder frames of a DMR voice burst (ETSI TS 102 361-1
@@ -56,36 +59,77 @@ type AppendDecoder interface {
 	AppendDecode(dst []int16, slot [72]bit.Bit) ([]int16, error)
 }
 
-var (
-	registryMu sync.RWMutex
-	registry   = map[string]func() (Codec, error){}
-)
+// MaxCodecs is the number of codec factories that Register can hold.
+const MaxCodecs = 8
 
-// Register makes a codec factory available under name. A program calls it
-// once per codec at startup; no codec package registers itself. Register
-// returns ErrNilFactory if factory is nil and ErrDuplicateCodec if name is
-// already registered.
-func Register(name string, factory func() (Codec, error)) error {
+// registry holds the registered codec factories, in the order of
+// registration, in fixed storage.
+type registry struct {
+	mu        sync.RWMutex
+	n         int
+	names     [MaxCodecs]string
+	factories [MaxCodecs]func() (Codec, error)
+}
+
+var codecs registry
+
+func (r *registry) register(name string, factory func() (Codec, error)) error {
 	if factory == nil {
 		return ErrNilFactory
 	}
-	registryMu.Lock()
-	defer registryMu.Unlock()
-	if _, dup := registry[name]; dup {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if slices.Contains(r.names[:r.n], name) {
 		return ErrDuplicateCodec
 	}
-	registry[name] = factory
+	if r.n == MaxCodecs {
+		return ErrRegistryFull
+	}
+	r.names[r.n], r.factories[r.n] = name, factory
+	r.n++
 	return nil
 }
 
-// New creates a codec with the factory registered under name. It returns an
-// error that wraps ErrUnknownCodec when no codec is registered under name.
+func (r *registry) factory(name string) func() (Codec, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if i := slices.Index(r.names[:r.n], name); i >= 0 {
+		return r.factories[i]
+	}
+	return nil
+}
+
+func (r *registry) len() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.n
+}
+
+func (r *registry) appendNames(dst []string) []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	n := len(dst)
+	dst = append(dst, r.names[:r.n]...)
+	slices.Sort(dst[n:])
+	return dst
+}
+
+// Register makes a codec factory available under name. A program calls it
+// once per codec at startup; no codec package registers itself. The registry
+// holds MaxCodecs factories in fixed storage, so Register does not allocate.
+// Register returns ErrNilFactory if factory is nil, ErrDuplicateCodec if name
+// is already registered and ErrRegistryFull if MaxCodecs codecs are.
+func Register(name string, factory func() (Codec, error)) error {
+	return codecs.register(name, factory)
+}
+
+// New creates a codec with the factory registered under name. It returns
+// ErrUnknownCodec when no codec is registered under name. The codec is what
+// the factory returns, so New allocates what the factory allocates.
 func New(name string) (Codec, error) {
-	registryMu.RLock()
-	factory, ok := registry[name]
-	registryMu.RUnlock()
-	if !ok {
-		return nil, fmt.Errorf("%w: %q", ErrUnknownCodec, name)
+	factory := codecs.factory(name)
+	if factory == nil {
+		return nil, ErrUnknownCodec
 	}
 	return factory()
 }
@@ -93,22 +137,12 @@ func New(name string) (Codec, error) {
 // Names returns the sorted names of the registered codecs. It allocates the
 // slice; AppendNames does not.
 func Names() []string {
-	registryMu.RLock()
-	n := len(registry)
-	registryMu.RUnlock()
-	return AppendNames(make([]string, 0, n))
+	return AppendNames(make([]string, 0, codecs.len()))
 }
 
 // AppendNames appends the sorted names of the registered codecs to dst and
-// returns the extended slice. It does not allocate when dst has room for
+// returns the extended slice. It allocates only when dst has no room for
 // them.
 func AppendNames(dst []string) []string {
-	registryMu.RLock()
-	defer registryMu.RUnlock()
-	n := len(dst)
-	for name := range registry {
-		dst = append(dst, name)
-	}
-	slices.Sort(dst[n:])
-	return dst
+	return codecs.appendNames(dst)
 }
