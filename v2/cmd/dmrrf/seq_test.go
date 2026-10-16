@@ -177,11 +177,11 @@ func TestLoopbackVoiceSlowClock(t *testing.T) {
 
 // flipSync inverts the first n bits of the SYNC field of b.
 func flipSync(b layer2.RawBurst, n int) layer2.RawBurst {
-	bits := bit.Unpack264(b)
+	bits := [264]bit.Bit(bit.Unpack(b[:]))
 	for k := framer.SyncOffset; k < framer.SyncOffset+n; k++ {
 		bits[k] ^= 1
 	}
-	return bit.Pack264(bits)
+	return [33]byte(bit.Pack(bits[:]))
 }
 
 // TestLoopbackVoiceDamagedSync damages the SYNC of every burst A of a

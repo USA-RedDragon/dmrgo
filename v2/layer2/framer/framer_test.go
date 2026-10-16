@@ -179,7 +179,7 @@ func TestFramer_DirectChannel(t *testing.T) {
 	for i := range framer.SyncBits {
 		bits[framer.SyncOffset+i] = bit.Bit(uint64(enums.SyncTDMA2Data) >> (framer.SyncBits - 1 - i) & 1)
 	}
-	ts2 = bit.Pack264(bits)
+	ts2 = [33]byte(bit.Pack(bits[:]))
 	stream = append(stream, noise(r, 500)...)
 	for range 3 {
 		stream = append(stream, burstBits(ts2)...)
