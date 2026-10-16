@@ -77,6 +77,7 @@ ignore_files:
   - v2/voice/event.go
   - v2/voice/position.go
   - v2/voice/receiver.go
+  - v2/voice/transmitter.go
 
 documents:
   - id: "TS-102-361-1"

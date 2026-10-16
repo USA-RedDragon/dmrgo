@@ -100,7 +100,7 @@ func TestStrings(t *testing.T) {
 			t.Error("empty origin name")
 		}
 	}
-	for r := voice.EndTerminator; r <= voice.EndSuperseded; r++ {
+	for r := voice.EndTerminator; r <= voice.EndTimeout; r++ {
 		if r.String() == "" {
 			t.Error("empty reason name")
 		}

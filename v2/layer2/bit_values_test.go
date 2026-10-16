@@ -23,6 +23,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
+	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
 // bitFuncs holds every exported function and method of the v2 module that
@@ -51,6 +52,18 @@ var bitFuncs = map[string]any{
 	},
 	"layer2.VoiceTransmitter.AppendFrames": func(frames ...vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AppendFrames(nil, frames...)
+	},
+	"voice.Transmitter.Slot": func(s [72]bit.Bit) []layer2.RawBurst {
+		return transmitVoice(func(tx *voice.Transmitter) error { return tx.Slot(s) })
+	},
+	"voice.Transmitter.Slots": func(s ...[72]bit.Bit) []layer2.RawBurst {
+		return transmitVoice(func(tx *voice.Transmitter) error { return tx.Slots(s...) })
+	},
+	"voice.Transmitter.Frame": func(f vocoder.AMBEFrame) []layer2.RawBurst {
+		return transmitVoice(func(tx *voice.Transmitter) error { return tx.Frame(f) })
+	},
+	"voice.Transmitter.Frames": func(f ...vocoder.AMBEFrame) []layer2.RawBurst {
+		return transmitVoice(func(tx *voice.Transmitter) error { return tx.Frames(f...) })
 	},
 	"layer2.Burst.SetAMBEFrames": func(frames [3]vocoder.AMBEFrame) [3][72]bit.Bit {
 		var b layer2.Burst
@@ -145,6 +158,31 @@ var bitFuncs = map[string]any{
 	"layer3.DecodeServiceOptions":              layer3.DecodeServiceOptions,
 	"vocoder.DecodeAMBE72":                     vocoder.DecodeAMBE72,
 	"vocoder.EncodeAMBE72":                     vocoder.EncodeAMBE72,
+}
+
+// transmitVoice sends a call whose voice add queues with a voice.Transmitter
+// and returns its bursts.
+func transmitVoice(add func(tx *voice.Transmitter) error) []layer2.RawBurst {
+	tx := must(voice.NewTransmitter(&voice.TransmitterConfig{Queue: voice.MaxQueue}))
+	if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
+		panic(err)
+	}
+	if err := add(tx); err != nil {
+		panic(err)
+	}
+	tx.Stop()
+	var out []layer2.RawBurst
+	for {
+		at, ok := tx.Deadline()
+		if !ok {
+			return out
+		}
+		for _, o := range tx.Tick(at, nil) {
+			if o.Kind == voice.OutputBurst {
+				out = append(out, o.Burst)
+			}
+		}
+	}
 }
 
 func voiceTransmitter() *layer2.VoiceTransmitter {
