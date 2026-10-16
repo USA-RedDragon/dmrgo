@@ -7,7 +7,6 @@ package bit
 
 import (
 	"fmt"
-	"slices"
 )
 
 // Bit is one bit stored in a byte, 0 or 1. The functions of this module that
@@ -72,14 +71,12 @@ func Pack(bits []Bit) []byte {
 // AppendPack appends the bytes that Pack returns for bits to dst and
 // returns the extended slice. It allocates only when dst lacks the capacity.
 func AppendPack(dst []byte, bits []Bit) []byte {
-	n, size := len(dst), (len(bits)+7)/8
-	dst = slices.Grow(dst, size)[:n+size]
-	data := dst[n:]
-	clear(data)
-	for i, b := range bits {
-		if b&1 == 1 {
-			data[i/8] |= 1 << (7 - (i % 8))
+	for i := 0; i < len(bits); i += 8 {
+		var b byte
+		for j, x := range bits[i:min(i+8, len(bits))] {
+			b |= byte(x&1) << (7 - j)
 		}
+		dst = append(dst, b)
 	}
 	return dst
 }
@@ -93,11 +90,8 @@ func Unpack(data []byte) []Bit {
 // AppendUnpack appends the bits that Unpack returns for data to dst and
 // returns the extended slice. It allocates only when dst lacks the capacity.
 func AppendUnpack(dst []Bit, data []byte) []Bit {
-	n, size := len(dst), len(data)*8
-	dst = slices.Grow(dst, size)[:n+size]
-	bits := dst[n:]
-	for i := range bits {
-		bits[i] = Bit(data[i/8]>>(7-(i%8))) & 1
+	for _, b := range data {
+		dst = append(dst, Bit(b>>7&1), Bit(b>>6&1), Bit(b>>5&1), Bit(b>>4&1), Bit(b>>3&1), Bit(b>>2&1), Bit(b>>1&1), Bit(b&1))
 	}
 	return dst
 }
