@@ -89,7 +89,7 @@ func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCT
 	}
 	unit := talkerAliasUnitBits(format)
 	var units [talkerAliasMaxUnits]uint16
-	length := min(header.TalkerAliasDataLength, used/unit, talkerAliasMaxUnits)
+	length := max(0, min(header.TalkerAliasDataLength, used/unit, talkerAliasMaxUnits))
 	for i := range length {
 		units[i] = uint16(bit.Uint(stream[i*unit:(i+1)*unit]) & 0xFFFF)
 	}
