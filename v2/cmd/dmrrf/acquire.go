@@ -71,6 +71,10 @@ func symbolOf(b0, b1 bit.Bit) int8 {
 // give both correlations.
 type syncSearch struct {
 	voice [numSources][syncSymbols]int8
+	// dev holds the voice SYNC symbols of each source less their mean, and
+	// devSq the sum of their squares, for the discriminator correlation.
+	dev   [numSources][syncSymbols]float32
+	devSq [numSources]float32
 	tpl   [numSources][]complex64
 	rot   [searchFreqs][]complex64
 	x     []complex64
@@ -91,6 +95,15 @@ func newSyncSearch(coherent bool) *syncSearch {
 	for i := range numSources {
 		v, _, _ := sourceAt(i).SyncPatterns()
 		syncSyms(v, &s.voice[i])
+		var mp float32
+		for _, a := range s.voice[i] {
+			mp += float32(a)
+		}
+		mp /= syncSymbols
+		for k, a := range s.voice[i] {
+			s.dev[i][k] = float32(a) - mp
+			s.devSq[i] += s.dev[i][k] * s.dev[i][k]
+		}
 	}
 	if !coherent {
 		return s
@@ -230,11 +243,13 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 // discAt returns the correlation coefficient of the discriminator symbols
 // at t, t+step, ... with the voice SYNC of each source, the best source and
 // whether its sign shows the data SYNC.
-func (s *syncSearch) discAt(r *qring, t, step float64, nsrc int) (rho float64, src int, data bool) {
+func (s *syncSearch) discAt(r *qring, t, step float64, nsrc int) (rho float32, src int, data bool) {
+	base := int64(math.Floor(t))
+	u, du := float32(t-float64(base)), float32(step)
 	var x [syncSymbols]float32
 	var mx float32
 	for k := range syncSymbols {
-		x[k] = r.lerp(t + float64(k)*step)
+		x[k] = r.lerpFrom(base, u+float32(k)*du)
 		mx += x[k]
 	}
 	mx /= syncSymbols
@@ -246,21 +261,15 @@ func (s *syncSearch) discAt(r *qring, t, step float64, nsrc int) (rho float64, s
 	if sxx == 0 {
 		return 0, 0, false
 	}
+	var best, bestSxy float32
 	for i := range nsrc {
-		var mp, sxy, spp float32
-		for _, a := range s.voice[i] {
-			mp += float32(a)
-		}
-		mp /= syncSymbols
-		for k, a := range s.voice[i] {
-			p := float32(a) - mp
+		var sxy float32
+		for k, p := range s.dev[i] {
 			sxy += p * x[k]
-			spp += p * p
 		}
-		c := float64(sxy) / math.Sqrt(float64(spp)*float64(sxx))
-		if math.Abs(c) > math.Abs(rho) {
-			rho, src, data = c, i, c < 0
+		if q := sxy * sxy / s.devSq[i]; q > best {
+			best, bestSxy, src = q, sxy, i
 		}
 	}
-	return math.Abs(rho), src, data
+	return sqrtf(best / sxx), src, bestSxy < 0
 }

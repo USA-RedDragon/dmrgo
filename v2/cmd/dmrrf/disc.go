@@ -21,7 +21,7 @@ func (r *Receiver) symLag(t float64) float64 {
 // output and, for an anchor, updates the timing, the carrier offset and
 // the deviation scale from it.
 func (r *Receiver) measureDisc(s *slotState) {
-	var best float64
+	var best float32
 	bestTau := 0.0
 	data := false
 	for tau := -3.0; tau <= 3; tau += 0.5 {
@@ -79,13 +79,17 @@ func (r *Receiver) measureDisc(s *slotState) {
 // discDetect sets the symbol log-likelihoods of slot s from the
 // discriminator output, as Gaussian around the four levels.
 func (r *Receiver) discDetect(s *slotState) {
-	v := math.Max(r.discNoise, 1)
+	g := -1 / float32(2*math.Max(r.discNoise, 1))
+	dc, dev := float32(r.dcHz), float32(r.devScale*deviationHz)
+	t0 := r.symLag(r.symTime(s.index, 0))
+	base := int64(math.Floor(t0))
+	u, du := float32(t0-float64(base)), float32(r.symLag(r.symTime(s.index, 1))-r.symLag(r.symTime(s.index, 0)))
 	app := r.appOf(s)
 	for k := range slotSymbols {
-		x := float64(r.chz.sym.lerp(r.symLag(r.symTime(s.index, k)))) - r.dcHz
+		x := r.chz.sym.lerpFrom(base, u+float32(k)*du) - dc
 		for d := range 4 {
-			e := x - r.devScale*deviationHz*float64(2*d-3)
-			app[4*k+d] = float32(-e * e / (2 * v))
+			e := x - dev*float32(2*d-3)
+			app[4*k+d] = e * e * g
 		}
 	}
 }
