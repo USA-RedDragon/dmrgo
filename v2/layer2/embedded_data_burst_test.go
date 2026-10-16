@@ -88,14 +88,14 @@ func TestDataBurstWithEMB_SameDataAsWithSync(t *testing.T) {
 		t.Errorf("Data differs:\nSYNC %s\nEMB  %s", withSync.Data, withEMB.Data)
 	}
 
-	b := *withSync
+	b := must(layer2.NewBurstFromBytes(hexBurst(t, aselsanCSBKSync)))
 	b.SyncPattern = enums.SyncNone
 	b.EmbeddedSignalling = pdu.EmbeddedSignalling{ColorCode: aselsanColorCode, LCSS: enums.LCSSSingleFragment}
 	if got, err := b.Encode(); err == nil {
 		t.Errorf("a data burst decoded with a SYNC encodes with SyncNone as %x", got)
 	}
 
-	rewritten := *withEMB
+	rewritten := must(layer2.NewBurstFromBytes(hexBurst(t, aselsanCSBKEMB)))
 	rewritten.SlotType.ColorCode = aselsanColorCode + 1
 	if got, err := rewritten.Encode(); err == nil {
 		t.Errorf("a slot type color code that differs from the EMB encodes as %x", got)

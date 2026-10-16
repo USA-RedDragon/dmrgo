@@ -138,7 +138,8 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 			}
 		}},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := &tests[i]
 		t.Run(tt.dt.String(), func(t *testing.T) {
 			t.Parallel()
 
@@ -255,7 +256,8 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 		{"ReservedType", dataBurst(enums.DataTypeReserved, csbk), "cannot carry"},
 		{"BadField", dataBurst(enums.DataTypeCSBK, &pdu.CSBK{Opcode: 0x40}), "CSBK.Opcode"},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := &tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

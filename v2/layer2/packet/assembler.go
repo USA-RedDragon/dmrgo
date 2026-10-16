@@ -44,8 +44,9 @@ type Message struct {
 // caller can reuse a layer2.Burst or PDU after Add or AddBurst returns. It
 // keeps the storage that NewAssembler allocates from packet to packet, so
 // that it does not allocate. The zero value has no storage for blocks: a
-// header of a packet with blocks returns ErrTooLong. An Assembler is not
-// safe for concurrent use.
+// header of a packet with blocks returns ErrTooLong. A Message points into
+// the Assembler, so an Assembler must not be copied after first use; go vet
+// reports a copy. An Assembler is not safe for concurrent use.
 type Assembler struct {
 	// AcceptBadCRC makes the Assembler deliver a packet whose message CRC
 	// failed, or whose confirmed blocks failed their CRC-9, as the "skip
@@ -73,6 +74,7 @@ type Assembler struct {
 	blocks    []byte
 	store     store
 	resp      responseStore
+	noCopy    noCopy
 }
 
 // NewAssembler returns an Assembler for packets of up to maxBlocks data

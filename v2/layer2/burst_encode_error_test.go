@@ -56,7 +56,8 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 			want: "ReverseChannel.RCCommand",
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := &tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -88,9 +89,9 @@ func TestBurstEncode_DoesNotModifyBurst(t *testing.T) {
 				EmbeddedSignallingData: stale,
 				ReverseChannel:         pdu.ReverseChannel{RCCommand: enums.RCCommand(5)},
 			}
-			before := b
+			data, rc := b.EmbeddedSignallingData, b.ReverseChannel
 			frame := must(b.Encode())
-			if b.EmbeddedSignallingData != before.EmbeddedSignallingData || b.ReverseChannel != before.ReverseChannel {
+			if b.EmbeddedSignallingData != data || b.ReverseChannel != rc {
 				t.Fatal("Encode modified the burst")
 			}
 			got := must(layer2.NewBurstFromBytes(frame))
@@ -119,7 +120,8 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 		{"DataWithRCSync", layer2.Burst{Kind: layer2.KindData, SyncPattern: enums.SyncMSSourcedRC}},
 		{"DataWithoutSync", layer2.Burst{Kind: layer2.KindData, SlotType: pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeIdle}, Data: &pdu.PRFill{}}},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := &tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
