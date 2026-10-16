@@ -307,7 +307,6 @@ documents:
               - TestIsIdleMessage_NoMatch
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestPRFill_Length
               - TestPRFill_IsPRFill_Match
 
       - section: "7.4.1"
@@ -578,7 +577,6 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
-              - TestPRFill_Length
               - TestPRFill_PackedHex
               - TestPRFill_IsPRFill_Match
               - TestPRFill_IsPRFill_NoMatch
