@@ -142,7 +142,7 @@ func DataPacket(name string, cfg SeqConfig) (packet.Packet, error) {
 			},
 		}
 	}
-	return packet.Segment(h, []byte(cfg.Message), rate)
+	return packet.NewPacket(h, []byte(cfg.Message), rate)
 }
 
 func (cfg SeqConfig) source() layer2.SyncSource {

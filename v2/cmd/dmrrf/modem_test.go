@@ -54,7 +54,7 @@ func TestLoopbackDecodesEverySequence(t *testing.T) {
 		if len(d.Bursts) != len(bursts) {
 			t.Fatalf("%s: got %d bursts, want %d", seq, len(d.Bursts), len(bursts))
 		}
-		var asm packet.Assembler
+		asm := packet.NewAssembler(127)
 		var got string
 		for i, r := range d.Bursts {
 			if r.Data != bursts[i] {
