@@ -12,6 +12,13 @@ func TestFLC_SetAddresses(t *testing.T) {
 
 	for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
 		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: flco}
+		if lc.SetAddresses(91, 3191868) {
+			t.Fatalf("FLCO %s: SetAddresses without a payload field succeeded", flco)
+		}
+		lc.GroupVoice, lc.UnitToUnit = &pdu.FLCGroupVoice{}, nil
+		if flco == enums.FLCOUnitToUnitVoiceChannelUser {
+			lc.GroupVoice, lc.UnitToUnit = nil, &pdu.FLCUnitToUnit{}
+		}
 		if !lc.SetAddresses(91, 3191868) {
 			t.Fatalf("FLCO %s: SetAddresses failed", flco)
 		}
