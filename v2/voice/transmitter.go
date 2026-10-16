@@ -183,7 +183,6 @@ type Transmitter struct {
 	pi    pdu.PIHeader
 	lc    pdu.FullLinkControl
 	lcp   pdu.FullLinkControlPayloads
-	burst [2]layer2.RawBurst
 
 	state      TransmitterState
 	call       Call
@@ -518,8 +517,8 @@ func (t *Transmitter) dropOwn() {
 func (t *Transmitter) header(o *Output) {
 	switch {
 	case t.sent >= t.headers && t.piPending() && t.vopts.PIHeader != nil:
-		h := t.vt.AppendHeaders(t.burst[:0])
-		o.Burst, o.DataType = h[len(h)-1], enums.DataTypePIHeader
+		o.Burst, _ = t.vt.PIHeader()
+		o.DataType = enums.DataTypePIHeader
 		t.piSent = true
 	case t.sent >= t.headers && t.piPending():
 		o.Burst, o.DataType = t.relayPI, enums.DataTypePIHeader
@@ -572,9 +571,8 @@ func (t *Transmitter) voice(o *Output) {
 	if silent == len(t.slots) && t.state == TransmitterVoice {
 		t.underruns++
 	}
-	bursts, _ := t.vt.AppendSlots(t.burst[:0], t.slots[:]...)
-	if len(bursts) == 1 {
-		o.Burst = bursts[0]
+	if b, err := t.vt.AddBurst(&t.slots); err == nil {
+		o.Burst = b
 	}
 	o.Position, _ = enums.VoiceBurstAt(t.pos)
 	t.pos = (t.pos + 1) % layer2.VoiceBurstsPerSuperframe
@@ -602,11 +600,7 @@ func (t *Transmitter) startSuperframe() {
 // terminator fills o with a Terminator with LC, and appends OutputEnded
 // after the last one.
 func (t *Transmitter) terminator(o *Output, out []Output) []Output {
-	if t.sent == 0 {
-		end, _ := t.vt.AppendTerminate(t.burst[:0])
-		t.burst[0] = end[len(end)-1]
-	}
-	o.Burst, o.DataType = t.burst[0], enums.DataTypeTerminatorWithLC
+	o.Burst, o.DataType = t.vt.Terminator(), enums.DataTypeTerminatorWithLC
 	t.sent++
 	switch {
 	case t.timedOut && t.ended:
