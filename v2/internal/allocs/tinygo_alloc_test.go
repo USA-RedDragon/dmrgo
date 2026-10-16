@@ -1,6 +1,6 @@
 //go:build tinygo
 
-package zeroalloc_test
+package allocs_test
 
 import (
 	"math/rand"

@@ -81,11 +81,14 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
   - A `Codec` interface with a registry, and a Codec2 codec (`vocoder/codec2`).
 - No cgo outside `vocoder/codec2`.
-- No allocation in steady state, with Go 1.24 or later. After construction (`NewBurstFromBytes`, `NewVoiceTransmitter`, `framer.New` and the like), decode, encode, build, check and assemble calls allocate nothing, with these limits:
-  - A call that returns a fresh slice, string or payload struct by contract allocates. Each has a form that does not: `bit.AppendPack` for `bit.Pack`, `Encode` for `EncodeBits`, `pdu.DecodeCSBKInto` for `pdu.DecodeCSBK` (and the other dispatch PDUs), `VoiceTransmitter.AppendFrames` for `AddFrames`, `packet.Builder` for `packet.Segment`, `Framer.AppendBursts` for `Write`.
+- No allocation in steady state, with Go 1.24 or later and with TinyGo at the default stack size. After construction (`NewBurstFromBytes`, `NewVoiceTransmitter`, `framer.New` and the like), decode, encode, build, check and assemble calls allocate nothing, with these limits:
+  - A call that returns a fresh slice, string or payload struct by contract allocates, and its doc says so. Each has a form that does not: `bit.AppendPack` for `bit.Pack`, `Encode` for `EncodeBits`, `pdu.DecodeCSBKInto` for `pdu.DecodeCSBK` (and the other dispatch PDUs), `VoiceTransmitter.AppendFrames` for `AddFrames`, `packet.Builder` for `packet.Segment`, `Framer.AppendBursts` for `Write`.
   - Errors for programmer mistakes, and a decode that returns two joined errors, also allocate.
   - A reused `layer2.Burst`, or a copy of it, keeps its decoded `Data`, and the payload structs that `Data` points to, until the next decode into it. `packet.Builder` and `packet.Assembler` with `Reuse` keep their results the same way.
-  - [v2/internal/zeroalloc](v2/internal/zeroalloc) measures the exported functions and methods with `testing.AllocsPerRun`, and fails for one that has no entry. The exceptions are listed there: `String`, `Error`, `Unwrap`, `EncodeBits`, deprecated forwarders, and setup and close calls. It does not run with TinyGo.
+  - Three checks keep it so, with no list of functions to maintain:
+    - [v2/internal/allocgate](v2/internal/allocgate) builds the library with `-gcflags=-m` and fails on each heap allocation that gc reports. Only these may allocate: constructors (`New*`, `new*`), `String`, `GoString` and `Error` methods, `Append*` functions (only when the slice lacks capacity), package-level declarations, and wrappers whose doc says "It allocates ...; X does not." for a twin X. It also fails on an `init` function.
+    - The same package builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the pico with `tinygo build -print-allocs` and fails on each heap allocation site under the same rules.
+    - [v2/internal/allocs](v2/internal/allocs) checks decode and encode of every capture, packet assembly, a voice superframe, the vocoder frames and the framer with `testing.AllocsPerRun`, and under TinyGo reads `runtime.MemStats` around the main decode and encode calls.
 
 ## Codec2
 
