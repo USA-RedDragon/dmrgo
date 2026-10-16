@@ -62,6 +62,9 @@ const (
 	// lockSpanHz is the carrier error, in Hz, that the receiver searches
 	// at lock: the spectrum estimate is no closer than that.
 	lockSpanHz = 300.0
+	// wideChunk is the number of baseband samples that the receiver filters
+	// before it searches or follows the stream again.
+	wideChunk = 512
 	// warmSlots is the number of slots after the first anchor that the
 	// receiver detects twice, the first time only to settle the carrier
 	// estimate.
@@ -119,27 +122,29 @@ type slotState struct {
 // slot timing of the first SYNC it finds, follows the timing and the
 // carrier through the transmission, and returns every burst it recovers.
 type Receiver struct {
-	cfg    ReceiverConfig
-	opt    Options
-	fe     *frontEnd
-	wide   []complex64
-	chz    *channelizer
-	spec   *spectrum
-	search *syncSearch
-	model  *cpmModel
-	tr     *trellis
-	xt     *xtrellis
-	maxRun int
-	lp     []float32
-	slp    []float32
-	buf    []complex64
-	tapp   []float32
-	tk     *tracker
-	out    []Received
-	pulse  phasePulse
-	ddSyms []int
-	ddPh   []float64
-	corrX  []complex128
+	cfg  ReceiverConfig
+	opt  Options
+	fe   *frontEnd
+	wide []complex64
+	// inChunk is the most input bytes whose baseband samples fit in wide.
+	inChunk int
+	chz     *channelizer
+	spec    *spectrum
+	search  *syncSearch
+	model   *cpmModel
+	tr      *trellis
+	xt      *xtrellis
+	maxRun  int
+	lp      []float32
+	slp     []float32
+	buf     []complex64
+	tapp    []float32
+	tk      *tracker
+	out     []Received
+	pulse   phasePulse
+	ddSyms  []int
+	ddPh    []float64
+	corrX   []complex128
 
 	nsrc      int
 	searchAt  int64
@@ -208,7 +213,8 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	}
 	r.nsrc = r.opt.Sources
 	r.fe = newFrontEnd(cfg.Rate, cfg.Signed)
-	r.wide = make([]complex64, int(float64(cfg.MaxWrite/2)/(cfg.Rate/basebandRate))+4)
+	r.wide = make([]complex64, wideChunk)
+	r.inChunk = max(2*int(float64(wideChunk-4)*cfg.Rate/basebandRate), 2)
 	size := (cfg.LookbackSlots + maxGapSlots + 4) * slotSamplesN
 	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, max(r.opt.DiscDecimation, 1))
 	r.spec = newSpectrum()
@@ -258,7 +264,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 func (r *Receiver) Write(iq []byte) []Received {
 	r.out = r.out[:0]
 	for len(iq) > 0 {
-		n := min(len(iq), r.cfg.MaxWrite) &^ 1
+		n := min(len(iq), r.cfg.MaxWrite, r.inChunk) &^ 1
 		if n == 0 {
 			break
 		}
