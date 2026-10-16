@@ -64,7 +64,7 @@ func capture(w io.Writer, path string) error {
 	if len(raw)%33 != 0 {
 		return fmt.Errorf("length %d is not a multiple of 33", len(raw))
 	}
-	var a packet.Assembler
+	a := packet.NewAssembler(127)
 	n := 0
 	for off := 0; off < len(raw); off += 33 {
 		b, err := layer2.NewBurstFromBytes([33]byte(raw[off:]))
@@ -122,7 +122,7 @@ func unconfirmed(w io.Writer) error {
 
 	h := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: dst, LLIDSource: src, FullMessageFlag: true}}
-	p, err := packet.Segment(h, payload, enums.DataTypeRate12)
+	p, err := packet.NewPacket(h, payload, enums.DataTypeRate12)
 	if err != nil {
 		return err
 	}
@@ -130,8 +130,8 @@ func unconfirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	var a packet.Assembler
-	m, err := receive(&a, bursts)
+	a := packet.NewAssembler(127)
+	m, err := receive(a, bursts)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func confirmed(w io.Writer) error {
 	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: dst, LLIDSource: src,
 		FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}}
-	p, err := packet.Segment(h, lip, enums.DataTypeRate34)
+	p, err := packet.NewPacket(h, lip, enums.DataTypeRate34)
 	if err != nil {
 		return err
 	}
@@ -172,8 +172,8 @@ func confirmed(w io.Writer) error {
 		return err
 	}
 
-	var rx packet.Assembler
-	if _, err := receive(&rx, bursts); !errors.Is(err, packet.ErrBlocksMissing) {
+	rx := packet.NewAssembler(127)
+	if _, err := receive(rx, bursts); !errors.Is(err, packet.ErrBlocksMissing) {
 		return fmt.Errorf("corrupted packet: %w, want %w", err, packet.ErrBlocksMissing)
 	}
 	sack, err := rx.Response()
@@ -184,8 +184,8 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	var tx packet.Assembler
-	rm, err := receive(&tx, sackBursts)
+	tx := packet.NewAssembler(127)
+	rm, err := receive(tx, sackBursts)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func confirmed(w io.Writer) error {
 		return fmt.Errorf("retry %v, want [1]", retry)
 	}
 
-	m, err := receive(&rx, []layer2.RawBurst{bursts[0], good})
+	m, err := receive(rx, []layer2.RawBurst{bursts[0], good})
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	am, err := receive(&tx, ackBursts)
+	am, err := receive(tx, ackBursts)
 	if err != nil {
 		return err
 	}

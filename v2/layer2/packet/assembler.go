@@ -10,10 +10,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// Message is a reassembled packet. Without Assembler.Reuse it has its own
-// storage. With Reuse, Data, the sub-headers of Header, Proprietary and
-// Response point into the storage of the Assembler and are valid until its
-// next Add, AddBurst or Reset.
+// Message is a reassembled packet. Data, the sub-headers of Header,
+// Proprietary and Response point into the storage of the Assembler and are
+// valid until its next Add, AddBurst, Lost or Reset.
 type Message struct {
 	// Header is the first header block.
 	Header pdu.DataHeader
@@ -42,16 +41,12 @@ type Message struct {
 // one channel and returns each packet with its message CRC checked. For a
 // confirmed packet it tracks blocks by DBSN, so a retry of the failed blocks
 // completes it. The Assembler copies the headers and blocks it gets, so the
-// caller can reuse a layer2.Burst or PDU after Add or AddBurst returns. The
-// zero value is ready to use. An Assembler is not safe for concurrent use.
+// caller can reuse a layer2.Burst or PDU after Add or AddBurst returns. It
+// keeps the storage that NewAssembler allocates from packet to packet, so
+// that it does not allocate. The zero value has no storage for blocks: a
+// header of a packet with blocks returns ErrTooLong. An Assembler is not
+// safe for concurrent use.
 type Assembler struct {
-	// Reuse makes the Assembler keep its storage from packet to packet, so
-	// that Add and AddBurst do not allocate once the storage has grown to
-	// the largest packet, and Response does not allocate. A Message then
-	// points into this storage, and a Packet from Response is valid until
-	// the next Response. False, the default, gives each Message and Packet
-	// its own storage. Reset keeps Reuse.
-	Reuse bool
 	// AcceptBadCRC makes the Assembler deliver a packet whose message CRC
 	// failed, or whose confirmed blocks failed their CRC-9, as the "skip
 	// CRC" setting of some radios does. The Message then has BadCRC set and
@@ -77,7 +72,17 @@ type Assembler struct {
 	bad       [maxBlocks]bool
 	blocks    []byte
 	store     store
-	builder   Builder
+	resp      responseStore
+}
+
+// NewAssembler returns an Assembler for packets of up to maxBlocks data
+// blocks of any rate. It allocates 24 bytes for each block on top of the
+// Assembler itself, 740 bytes on a 32-bit target and 880 on a 64-bit one,
+// so 16 blocks take about 1.1 KB on a microcontroller and 127, the most
+// that a header counts, about 3.8 KB. A maxBlocks over 127 means 127, and
+// one under 0 means 0.
+func NewAssembler(maxBlocks int) *Assembler {
+	return &Assembler{blocks: make([]byte, max(0, min(maxBlocks, maxBlocksPerPacket))*maxBlockOctets)}
 }
 
 // store holds copies of the headers and the response data that a Message
@@ -132,17 +137,13 @@ func (s *store) copyHeader(dst, src *pdu.DataHeader) {
 	}
 }
 
-// Reset discards any partial packet. It keeps Reuse and, with Reuse, the
-// storage.
+// Reset discards any partial packet. It keeps AcceptBadCRC.
 func (a *Assembler) Reset() {
 	a.msg = Message{}
 	a.active, a.confirmed, a.hasBlocks = false, false, false
 	a.total, a.expect, a.count, a.per, a.ns = 0, 0, 0, 0, 0
 	clear(a.valid[:])
 	clear(a.bad[:])
-	if !a.Reuse {
-		a.blocks = nil
-	}
 }
 
 // InProgress reports whether a header has started a packet that has not
@@ -225,6 +226,9 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 	if !ok && (h.Format != pdu.FormatResponsePacket || h.ResponsePacketHeader == nil) {
 		return Message{}, false, nil
 	}
+	if blocksOf(h)*maxBlockOctets > len(a.blocks) {
+		return Message{}, false, ErrTooLong
+	}
 	a.active, a.confirmed = true, confirmed
 	a.store.copyHeader(&a.msg.Header, h)
 	a.total = blocksOf(h)
@@ -268,26 +272,7 @@ func (a *Assembler) finishIfEmpty() (Message, bool, error) {
 	}
 	m := a.msg
 	a.Reset()
-	a.newStore(&m)
 	return m, true, nil
-}
-
-// newStore gives m its own copies of the storage it points to, unless the
-// Assembler reuses its storage.
-func (a *Assembler) newStore(m *Message) {
-	if a.Reuse {
-		return
-	}
-	s := new(store)
-	s.copyHeader(&m.Header, &m.Header)
-	if m.Proprietary != nil {
-		s.second = *m.Proprietary
-		m.Proprietary = &s.second
-	}
-	if m.Response != nil {
-		s.responseData = *m.Response
-		m.Response = &s.responseData
-	}
 }
 
 func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
@@ -301,7 +286,6 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 				return Message{}, false, err
 			}
 			a.per, a.msg.DataType, a.hasBlocks = per, b.dataType, true
-			a.blocks = appendLen(a.blocks, a.total*per)
 		} else if b.dataType != a.msg.DataType {
 			a.Reset()
 			return Message{}, false, ErrRateChange
@@ -420,10 +404,7 @@ func (a *Assembler) Response() (Packet, error) {
 	for i, ok := range a.valid[:a.total] {
 		rd.Retry[i] = !ok || !a.hasBlocks
 	}
-	if a.Reuse {
-		return a.builder.NewResponse(h, ResponseSACK, &rd)
-	}
-	return NewResponse(h, ResponseSACK, &rd)
+	return a.resp.build(h, ResponseSACK, &rd)
 }
 
 func (a *Assembler) finish() (Message, bool, error) {
@@ -431,7 +412,7 @@ func (a *Assembler) finish() (Message, bool, error) {
 	buf := a.blocks[:0]
 	complete := true
 	if a.hasBlocks {
-		buf = a.blocks
+		buf = a.blocks[:a.total*a.per]
 		for i, ok := range a.valid[:a.total] {
 			switch {
 			case a.bad[i]:
@@ -448,7 +429,6 @@ func (a *Assembler) finish() (Message, bool, error) {
 	if errors.Is(err, ErrMessageCRC) && complete && accept {
 		err = nil
 	}
-	a.newStore(&m)
 	return m, true, err
 }
 

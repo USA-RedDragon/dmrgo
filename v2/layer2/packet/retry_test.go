@@ -77,7 +77,7 @@ func TestAssembler_FirstHeaderLost(t *testing.T) {
 	t.Parallel()
 
 	data := payload(25)
-	p, err := packet.Segment(confirmed(), data, enums.DataTypeRate12)
+	p, err := packet.NewPacket(confirmed(), data, enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,13 +85,13 @@ func TestAssembler_FirstHeaderLost(t *testing.T) {
 	if pad == 0 {
 		t.Fatal("test needs pad octets")
 	}
-	var rx packet.Assembler
+	rx := packet.NewAssembler(127)
 	for i, b := range p.Blocks {
-		if _, err := add(&rx, encodeBlock(t, b)); !errors.Is(err, packet.ErrNoHeader) {
+		if _, err := add(rx, encodeBlock(t, b)); !errors.Is(err, packet.ErrNoHeader) {
 			t.Fatalf("block %d of the first try: %v, want ErrNoHeader", i, err)
 		}
 	}
-	m, err := feed(t, &rx, laterTry(t, p, allBlocks(p)))
+	m, err := feed(t, rx, laterTry(t, p, allBlocks(p)))
 	if err != nil || m == nil {
 		t.Fatalf("later try: %v %v", m, err)
 	}
@@ -107,16 +107,16 @@ func TestAssembler_FirstHeaderLost(t *testing.T) {
 func TestAssembler_FirstHeaderLostPartialRetry(t *testing.T) {
 	t.Parallel()
 
-	p, err := packet.Segment(confirmed(), payload(60), enums.DataTypeRate12)
+	p, err := packet.NewPacket(confirmed(), payload(60), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var rx packet.Assembler
-	if m, err := feed(t, &rx, laterTry(t, p, []int{1, 4})); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
+	rx := packet.NewAssembler(127)
+	if m, err := feed(t, rx, laterTry(t, p, []int{1, 4})); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
 		t.Fatalf("retry of 1 and 4: %v %v, want ErrBlocksMissing", m, err)
 	}
 	rx.Reset()
-	if _, err := feed(t, &rx, laterTry(t, p, []int{0, 1})); !errors.Is(err, packet.ErrMessageCRC) {
+	if _, err := feed(t, rx, laterTry(t, p, []int{0, 1})); !errors.Is(err, packet.ErrMessageCRC) {
 		t.Fatalf("retry of 0 and 1: %v, want ErrMessageCRC", err)
 	}
 }
@@ -128,23 +128,23 @@ func TestAssembler_RetryWhileBlocksLost(t *testing.T) {
 	t.Parallel()
 
 	data := payload(60)
-	p, err := packet.Segment(confirmed(), data, enums.DataTypeRate34)
+	p, err := packet.NewPacket(confirmed(), data, enums.DataTypeRate34)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var rx packet.Assembler
-	if m, err := add(&rx, encodeHeader(t, &p.Header)); m != nil || err != nil {
+	rx := packet.NewAssembler(127)
+	if m, err := add(rx, encodeHeader(t, &p.Header)); m != nil || err != nil {
 		t.Fatal(m, err)
 	}
 	for i, b := range p.Blocks {
 		if i == 1 || i == len(p.Blocks)-1 {
 			continue
 		}
-		if m, err := add(&rx, encodeBlock(t, b)); m != nil || err != nil {
+		if m, err := add(rx, encodeBlock(t, b)); m != nil || err != nil {
 			t.Fatalf("block %d: %v %v", i, m, err)
 		}
 	}
-	m, err := feed(t, &rx, laterTry(t, p, []int{1, len(p.Blocks) - 1}))
+	m, err := feed(t, rx, laterTry(t, p, []int{1, len(p.Blocks) - 1}))
 	if err != nil || m == nil || !bytes.Equal(m.Data, data) {
 		t.Fatalf("after the later try: %v %+v", err, m)
 	}
@@ -157,30 +157,30 @@ func TestAssembler_UnexpectedRetry(t *testing.T) {
 	t.Parallel()
 
 	data := payload(30)
-	p, err := packet.Segment(confirmed(), data, enums.DataTypeRate12)
+	p, err := packet.NewPacket(confirmed(), data, enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
 	other := confirmed()
 	other.ConfirmedDataHeader.SendSequenceNumber = 6
-	q, err := packet.Segment(other, payload(30), enums.DataTypeRate12)
+	q, err := packet.NewPacket(other, payload(30), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var rx packet.Assembler
-	if _, err := add(&rx, encodeHeader(t, &p.Header)); err != nil {
+	rx := packet.NewAssembler(127)
+	if _, err := add(rx, encodeHeader(t, &p.Header)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add(&rx, encodeBlock(t, p.Blocks[0])); err != nil {
+	if _, err := add(rx, encodeBlock(t, p.Blocks[0])); err != nil {
 		t.Fatal(err)
 	}
 	stray := laterTry(t, q, []int{1})
-	if m, err := add(&rx, encodeHeader(t, &stray.Header)); m != nil || !errors.Is(err, packet.ErrUnexpectedRetry) {
+	if m, err := add(rx, encodeHeader(t, &stray.Header)); m != nil || !errors.Is(err, packet.ErrUnexpectedRetry) {
 		t.Fatalf("stray later try: %v %v, want ErrUnexpectedRetry", m, err)
 	}
 	var m *packet.Message
 	for _, b := range p.Blocks[1:] {
-		if m, err = add(&rx, encodeBlock(t, b)); err != nil {
+		if m, err = add(rx, encodeBlock(t, b)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -206,12 +206,12 @@ func TestAssembler_ShortDataRetry(t *testing.T) {
 			t.Parallel()
 
 			data := payload(40)
-			p, err := packet.Segment(h, data, enums.DataTypeRate12)
+			p, err := packet.NewPacket(h, data, enums.DataTypeRate12)
 			if err != nil {
 				t.Fatal(err)
 			}
-			var rx packet.Assembler
-			if _, err := add(&rx, encodeHeader(t, &p.Header)); err != nil {
+			rx := packet.NewAssembler(127)
+			if _, err := add(rx, encodeHeader(t, &p.Header)); err != nil {
 				t.Fatal(err)
 			}
 			var last error
@@ -221,12 +221,12 @@ func TestAssembler_ShortDataRetry(t *testing.T) {
 				} else {
 					b = encodeBlock(t, b)
 				}
-				_, last = add(&rx, b)
+				_, last = add(rx, b)
 			}
 			if !errors.Is(last, packet.ErrBlocksMissing) || !slices.Equal(rx.Missing(), []int{2}) {
 				t.Fatalf("first try: %v, missing %v", last, rx.Missing())
 			}
-			m, err := feed(t, &rx, laterTry(t, p, []int{2}))
+			m, err := feed(t, rx, laterTry(t, p, []int{2}))
 			if err != nil || m == nil || !bytes.Equal(m.Data[:len(data)], data) {
 				t.Fatalf("later try: %v %+v", err, m)
 			}
@@ -241,16 +241,17 @@ func TestAssembler_ShortDataRetry(t *testing.T) {
 func TestAssembler_OrphanRetry(t *testing.T) {
 	t.Parallel()
 
-	p, err := packet.Segment(confirmed(), payload(60), enums.DataTypeRate12)
+	p, err := packet.NewPacket(confirmed(), payload(60), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	rx := packet.Assembler{AcceptBadCRC: true}
-	if m, err := feed(t, &rx, laterTry(t, p, []int{0, 1})); m == nil || !m.BadCRC || !errors.Is(err, packet.ErrMessageCRC) {
+	rx := packet.NewAssembler(127)
+	rx.AcceptBadCRC = true
+	if m, err := feed(t, rx, laterTry(t, p, []int{0, 1})); m == nil || !m.BadCRC || !errors.Is(err, packet.ErrMessageCRC) {
 		t.Fatalf("partial later try with AcceptBadCRC: %v %+v, want ErrMessageCRC", err, m)
 	}
 	rx.Reset()
-	if _, err := feed(t, &rx, laterTry(t, p, []int{3, 4})); !errors.Is(err, packet.ErrBlocksMissing) {
+	if _, err := feed(t, rx, laterTry(t, p, []int{3, 4})); !errors.Is(err, packet.ErrBlocksMissing) {
 		t.Fatalf("later try of 3 and 4: %v", err)
 	}
 	if _, err := rx.Response(); !errors.Is(err, packet.ErrNoFirstTry) {
@@ -260,11 +261,11 @@ func TestAssembler_OrphanRetry(t *testing.T) {
 	next := confirmed()
 	next.ConfirmedDataHeader.SendSequenceNumber = 6
 	data := payload(40)
-	q, err := packet.Segment(next, data, enums.DataTypeRate12)
+	q, err := packet.NewPacket(next, data, enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := feed(t, &rx, laterTry(t, q, allBlocks(q)))
+	m, err := feed(t, rx, laterTry(t, q, allBlocks(q)))
 	if err != nil || m == nil || !bytes.Equal(m.Data[:len(data)], data) {
 		t.Fatalf("full later try of the next packet: %v %+v", err, m)
 	}
