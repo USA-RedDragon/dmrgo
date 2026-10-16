@@ -1,0 +1,334 @@
+// Package reedsolomon encodes, checks and decodes the shortened Reed-Solomon
+// (12,9) code that protects a 9-byte Full Link Control (ETSI TS 102 361-1
+// clause B.3.6).
+package reedsolomon
+
+import (
+	"math/bits"
+
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
+)
+
+const (
+	dataSize     = 9
+	checksumSize = 3
+	polyMaxDeg   = checksumSize * 2
+)
+
+type poly [polyMaxDeg]uint8
+
+// decodeResult is the result of a Reed-Solomon decode.
+type decodeResult struct {
+	Data          [dataSize]byte // Corrected data
+	ErrorsFound   int            // Number of symbol (byte) errors found and corrected
+	BitsCorrected int            // Number of bits the correction flipped
+	Uncorrectable bool           // True if errors could not be corrected
+}
+
+func bitDistance(a, b *[dataSize + checksumSize]byte) int {
+	n := 0
+	for i := range a {
+		n += bits.OnesCount8(a[i] ^ b[i])
+	}
+	return n
+}
+
+// workspace holds reusable scratch buffers for zero-allocation decode paths.
+// A workspace must not be shared between goroutines.
+type workspace struct {
+	locator   poly
+	evaluator poly
+	product   [polyMaxDeg * 2]uint8
+	tmp       [polyMaxDeg * 2]uint8
+	psi2      [polyMaxDeg]uint8
+}
+
+// decode corrects a 12-byte codeword (9 data bytes and 3 parity bytes) and
+// returns the data bytes and the error counts.
+func decode(data [dataSize + checksumSize]byte) decodeResult {
+	var result decodeResult
+
+	workData := data
+	var syndrome poly
+	calcSyndrome(&workData, &syndrome)
+
+	if !syndromeHasErrors(&syndrome) {
+		copy(result.Data[:], workData[:dataSize])
+		return result
+	}
+
+	errorsFound, err := correct(&workData, &syndrome)
+	if err != nil {
+		result.Uncorrectable = true
+		result.ErrorsFound = errorsFound
+		copy(result.Data[:], workData[:dataSize])
+		return result
+	}
+
+	result.ErrorsFound = errorsFound
+	result.BitsCorrected = bitDistance(&data, &workData)
+	copy(result.Data[:], workData[:dataSize])
+	return result
+}
+
+// Encode returns the 12-byte codeword of 9 data bytes: the data followed by
+// 3 parity bytes (ETSI TS 102 361-1 clause B.3.6).
+func Encode(data [9]byte) [12]byte {
+	var codeword [12]byte
+	copy(codeword[:], data[:])
+
+	// Systematic encoding by division by g(x) = x^3 + 0x0E x^2 + 0x38 x + 0x40
+	// (ETSI TS 102 361-1 equation B.10).
+	var r0, r1, r2 uint8
+	for i := 0; i < dataSize; i++ {
+		fb := codeword[i] ^ r0
+		r0 = r1 ^ galoisMul(fb, 0x0E)
+		r1 = r2 ^ galoisMul(fb, 0x38)
+		r2 = galoisMul(fb, 0x40)
+	}
+	codeword[dataSize] = r0
+	codeword[dataSize+1] = r1
+	codeword[dataSize+2] = r2
+
+	return codeword
+}
+
+// Decode corrects up to one symbol error in a 12-byte codeword and returns
+// the 9 data bytes. ErrorsCorrected counts corrected bits. When the codeword
+// is uncorrectable, Decode returns the received data bytes and sets
+// Uncorrectable.
+func Decode(cw [12]byte) ([9]byte, fec.Result) {
+	r := decode(cw)
+	return r.Data, fec.Result{
+		BitsChecked:     96,
+		ErrorsCorrected: r.BitsCorrected,
+		Uncorrectable:   r.Uncorrectable,
+	}
+}
+
+// Check reports whether cw is a codeword.
+func Check(cw [12]byte) bool {
+	var syndrome poly
+	calcSyndrome(&cw, &syndrome)
+	return !syndromeHasErrors(&syndrome)
+}
+
+// calcSyndrome computes the 3 syndromes of a 12-byte codeword.
+func calcSyndrome(data *[dataSize + checksumSize]byte, syndrome *poly) {
+	var i, j uint8
+	for i = 0; i < 3; i++ {
+		syndrome[i] = 0
+	}
+
+	for j = 0; j < 3; j++ {
+		for i = 0; i < uint8(len(data)&0xFF); i++ {
+			syndrome[j] = data[i] ^ galoisMul(galois_exp_table[j+1], syndrome[j])
+		}
+	}
+}
+
+// syndromeHasErrors reports whether any syndrome value is nonzero.
+func syndromeHasErrors(syndrome *poly) bool {
+	for _, v := range syndrome {
+		if v != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func calcErrorEvaluatorPolyWithScratch(locator, syndrome, evaluator *poly, product []uint8, tmp []uint8) {
+	mulPolysWithTmp(locator, syndrome, product, tmp)
+
+	var i uint8
+	for i = 0; i < checksumSize; i++ {
+		evaluator[i] = product[i]
+	}
+	for ; i < polyMaxDeg; i++ {
+		evaluator[i] = 0
+	}
+}
+
+func mulPolysWithTmp(p1, p2 *poly, dst, tmp []uint8) {
+	var i, j uint8
+
+	for i = 0; i < polyMaxDeg*2; i++ {
+		dst[i] = 0
+	}
+
+	for i = 0; i < polyMaxDeg; i++ {
+		for j := polyMaxDeg; j < (polyMaxDeg * 2); j++ {
+			tmp[j] = 0
+		}
+
+		for j = 0; j < polyMaxDeg; j++ {
+			tmp[j] = galoisMul(p2[j], p1[i])
+		}
+
+		for j = (polyMaxDeg * 2) - 1; j >= i && j < (polyMaxDeg*2)-1; j-- {
+			tmp[j] = tmp[j-i]
+		}
+		for j = 0; j < i; j++ {
+			tmp[j] = 0
+		}
+
+		for j = 0; j < (polyMaxDeg * 2); j++ {
+			dst[j] ^= tmp[j]
+		}
+	}
+}
+
+// galoisInv returns the multiplicative inverse of elt in GF(2^8).
+// The second result is false when elt is zero, which has no inverse.
+func galoisInv(elt uint8) (uint8, bool) {
+	if elt == 0 {
+		return 0, false
+	}
+	return galois_exp_table[255-int(galois_log_table[elt])], true
+}
+
+func galoisMul(a, b uint8) uint8 {
+	if a == 0 || b == 0 {
+		return 0
+	}
+	return galois_exp_table[(int(galois_log_table[a])+int(galois_log_table[b]))%255]
+}
+
+// mulPolyZ multiplies poly by z, a shift right by one coefficient.
+func mulPolyZ(poly *poly) {
+	for i := polyMaxDeg - 1; i > 0; i-- {
+		poly[i] = poly[i-1]
+	}
+	poly[0] = 0
+}
+
+func calcDiscrepancy(locator, syndrome *poly, lVal, n uint8) uint8 {
+	var i, sum uint8
+
+	for i = 0; i <= lVal && i <= n; i++ {
+		sum ^= galoisMul(locator[i], syndrome[n-i])
+	}
+
+	return sum
+}
+
+func correct(data *[dataSize + checksumSize]byte, syndrome *poly) (int, error) {
+	var ws workspace
+	if !syndromeHasErrors(syndrome) {
+		return 0, nil
+	}
+
+	calcWithScratch(syndrome, &ws.locator, &ws.evaluator, ws.psi2[:], ws.product[:], ws.tmp[:])
+
+	// With d=4 the code corrects one symbol error, so only a degree-1 locator
+	// with one root inside the shortened codeword is acceptable.
+	if ws.locator[1] == 0 {
+		return 0, fec.ErrUncorrectable
+	}
+	for j := 2; j < polyMaxDeg; j++ {
+		if ws.locator[j] != 0 {
+			return 0, fec.ErrUncorrectable
+		}
+	}
+	i, n := findRoots(&ws.locator)
+	if n != 1 || i >= dataSize+checksumSize {
+		return 0, fec.ErrUncorrectable
+	}
+
+	// Forney: the error value is the evaluator over the locator derivative,
+	// both evaluated at alpha^(-i).
+	var num, denom uint8
+	for j := 0; j < polyMaxDeg; j++ {
+		idx := (255 - int(i)) * j % 255
+		num ^= galoisMul(ws.evaluator[j], galois_exp_table[idx])
+	}
+	for j := 1; j < polyMaxDeg; j += 2 {
+		idx := (255 - int(i)) * (j - 1) % 255
+		denom ^= galoisMul(ws.locator[j], galois_exp_table[idx])
+	}
+	inv, ok := galoisInv(denom)
+	if !ok || num == 0 {
+		return 0, fec.ErrUncorrectable
+	}
+
+	pos := len(data) - int(i) - 1
+	value := galoisMul(num, inv)
+	data[pos] ^= value
+
+	var check poly
+	calcSyndrome(data, &check)
+	if syndromeHasErrors(&check) {
+		data[pos] ^= value
+		return 0, fec.ErrUncorrectable
+	}
+
+	return 1, nil
+}
+
+// findRoots returns the first root of the error locator polynomial and the
+// number of roots, found with a Chien search over the powers of alpha.
+func findRoots(locator *poly) (first uint8, n int) {
+	var k, r uint16
+	for r = 1; r < 256; r++ {
+		var sum uint8
+		for k = 0; k < checksumSize+1; k++ {
+			sum ^= galoisMul(galois_exp_table[(k*r)%255], locator[k])
+		}
+
+		if sum == 0 {
+			if n == 0 {
+				first = uint8(255 - r)
+			}
+			n++
+		}
+	}
+
+	return first, n
+}
+
+// calcWithScratch finds the error locator polynomial with the
+// Berlekamp-Massey algorithm and then the error evaluator polynomial (Clark
+// and Cain, "Error-Correction Coding for Digital Communications", p. 216).
+func calcWithScratch(
+	syndrome, locator, evaluator *poly,
+	psi2 []uint8, product []uint8, tmp []uint8,
+) {
+	var (
+		n, lCur, l2 uint8
+		k           int8
+		d, i        uint8
+		D           = poly{0, 1, 0}
+	)
+
+	k = -1
+	for i = 0; i < polyMaxDeg; i++ {
+		locator[i] = 0
+		psi2[i] = 0
+	}
+	locator[0] = 1
+
+	for n = 0; n < checksumSize; n++ {
+		d = calcDiscrepancy(locator, syndrome, lCur, n)
+		if d != 0 {
+			for i = 0; i < polyMaxDeg; i++ {
+				psi2[i] = locator[i] ^ galoisMul(d, D[i])
+			}
+
+			if int(lCur) < int(n)-int(k) {
+				l2 = uint8(int(n) - int(k))
+				k = int8(int(n) - int(lCur))
+				dInv, _ := galoisInv(d)
+				for i = 0; i < polyMaxDeg; i++ {
+					D[i] = galoisMul(locator[i], dInv)
+				}
+				lCur = l2
+			}
+
+			for i = 0; i < polyMaxDeg; i++ {
+				locator[i] = psi2[i]
+			}
+		}
+		mulPolyZ(&D)
+	}
+	calcErrorEvaluatorPolyWithScratch(locator, syndrome, evaluator, product, tmp)
+}
