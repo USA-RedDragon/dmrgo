@@ -9,7 +9,7 @@ package codec2
 import "C"
 
 import (
-	"fmt"
+	"errors"
 	"runtime"
 	"slices"
 	"sync"
@@ -23,6 +23,16 @@ import (
 // random number generator in libcodec2 that has no locking.
 
 var libMu sync.Mutex
+
+// The errors of New for a failure of libcodec2.
+var (
+	// errCreate is returned by New when libcodec2 cannot create a codec
+	// state.
+	errCreate = errors.New("codec2: codec2_create failed")
+	// errFrameSize is returned by New when libcodec2 has another frame
+	// size for the mode than the package expects.
+	errFrameSize = errors.New("codec2: libcodec2 has another frame size for the mode")
+)
 
 // Codec is a Codec2 vocoder.Codec with separate libcodec2 encoder and decoder
 // states. A Codec is not safe for concurrent use; separate Codecs may be used
@@ -75,11 +85,11 @@ func New(cfg Config) (*Codec, error) {
 	libMu.Unlock()
 	if s.enc == nil || s.dec == nil {
 		s.destroy()
-		return nil, fmt.Errorf("codec2: codec2_create(%d) failed", cfg.Mode)
+		return nil, errCreate
 	}
 	if nsam != FrameSamples || nbits != cfg.Mode.frameBytes()*8 {
 		s.destroy()
-		return nil, fmt.Errorf("codec2: libcodec2 mode %d has %d samples and %d bits per frame", cfg.Mode, nsam, nbits)
+		return nil, errFrameSize
 	}
 
 	silence, err := newSilence(cmode, cfg.Mode.frameBytes())
@@ -107,11 +117,12 @@ func newSilence(cmode C.int, nbytes int) ([72]bit.Bit, error) {
 	defer libMu.Unlock()
 	st := C.codec2_create(cmode)
 	if st == nil {
-		return [72]bit.Bit{}, fmt.Errorf("codec2: codec2_create(%d) failed", cmode)
+		return [72]bit.Bit{}, errCreate
 	}
 	defer C.codec2_destroy(st)
 	var pcm [FrameSamples]C.short
-	frame := make([]byte, nbytes)
+	var buf [72 / 8]byte
+	frame := buf[:nbytes]
 	C.codec2_encode(st, (*C.uchar)(unsafe.Pointer(&frame[0])), &pcm[0])
 	return packSlot(frame), nil
 }
@@ -136,7 +147,7 @@ func (c *Codec) Encode(pcm []int16) ([72]bit.Bit, error) {
 		return [72]bit.Bit{}, ErrClosed
 	}
 	if len(pcm) != FrameSamples {
-		return [72]bit.Bit{}, newFrameLengthError(len(pcm))
+		return [72]bit.Bit{}, ErrFrameLength
 	}
 	frame := c.frame[:c.nbytes]
 	libMu.Lock()
@@ -185,11 +196,4 @@ func (c *Codec) Close() error {
 	states{enc: c.enc, dec: c.dec}.destroy()
 	c.enc, c.dec = nil, nil
 	return nil
-}
-
-// newFrameLengthError returns the error of an Encode of n samples.
-//
-//go:noinline
-func newFrameLengthError(n int) error {
-	return fmt.Errorf("%w: got %d, want %d", ErrFrameLength, n, FrameSamples)
 }
