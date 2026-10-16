@@ -57,9 +57,9 @@ var (
 	registry   = map[string]func() (Codec, error){}
 )
 
-// Register makes a codec factory available under name. It is meant to be
-// called from an init function. Register panics if name is already
-// registered or factory is nil.
+// Register makes a codec factory available under name. A program calls it
+// once per codec at startup; no codec package registers itself. Register
+// panics if name is already registered or factory is nil.
 func Register(name string, factory func() (Codec, error)) {
 	registryMu.Lock()
 	defer registryMu.Unlock()

@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// Name is the name the codec registers under in the vocoder registry.
+// Name is the name to register the codec under in the vocoder registry.
 const Name = "codec2"
 
 // DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2
@@ -38,14 +38,18 @@ type Config struct {
 
 var _ vocoder.AppendDecoder = (*Codec)(nil)
 
-func init() {
-	vocoder.Register(Name, func() (vocoder.Codec, error) {
-		c, err := New(Config{})
+// NewFactory returns a vocoder codec factory that creates a Codec with cfg,
+// for vocoder.Register:
+//
+//	vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{}))
+func NewFactory(cfg Config) func() (vocoder.Codec, error) {
+	return func() (vocoder.Codec, error) {
+		c, err := New(cfg)
 		if err != nil {
 			return nil, err
 		}
 		return c, nil
-	})
+	}
 }
 
 func (cfg Config) withDefaults() (Config, error) {
