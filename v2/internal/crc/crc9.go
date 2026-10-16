@@ -16,11 +16,15 @@ func CRC9(data []byte, n int) uint16 {
 	for _, b := range data[:n>>3] {
 		reg = reg<<8 ^ crc9_0x259[byte(reg>>8)^b]
 	}
-	for i := n &^ 7; i < n; i++ {
-		feedback := reg>>15 ^ uint16(data[i>>3]>>(7-i&7)&1)
-		reg <<= 1
-		if feedback != 0 {
-			reg ^= crc9Poly << 7
+	if rest := n & 7; rest != 0 {
+		b := uint16(data[n>>3]) << 8
+		for range rest {
+			feedback := (reg ^ b) & 0x8000
+			reg <<= 1
+			b <<= 1
+			if feedback != 0 {
+				reg ^= crc9Poly << 7
+			}
 		}
 	}
 	return reg>>7 ^ crc9Inversion
