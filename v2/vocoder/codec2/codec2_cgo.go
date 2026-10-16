@@ -11,7 +11,6 @@ import "C"
 import (
 	"errors"
 	"runtime"
-	"slices"
 	"sync"
 	"unsafe"
 
@@ -178,13 +177,14 @@ func (c *Codec) AppendDecode(dst []int16, slot [72]bit.Bit) ([]int16, error) {
 	}
 	frame := c.frame[:c.nbytes]
 	unpackSlot(frame, slot)
-	dst = slices.Grow(dst, FrameSamples)
-	pcm := dst[len(dst) : len(dst)+FrameSamples]
+	n := len(dst)
+	dst = append(dst, make([]int16, FrameSamples)...)
+	pcm := dst[n:]
 	libMu.Lock()
 	C.codec2_decode(c.dec, (*C.short)(unsafe.Pointer(&pcm[0])), (*C.uchar)(unsafe.Pointer(&frame[0])))
 	libMu.Unlock()
 	runtime.KeepAlive(c)
-	return dst[:len(dst)+FrameSamples], nil
+	return dst, nil
 }
 
 // Close frees the libcodec2 states. Later Encode and Decode calls return
