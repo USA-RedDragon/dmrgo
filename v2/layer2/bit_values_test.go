@@ -23,7 +23,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -37,8 +36,6 @@ import (
 
 var bitFuncs = map[string]any{
 	"internal/fec/bptc.Decode196": bptc.Decode196,
-	"internal/fec/trellis.Decode": trellis.Decode,
-	"internal/fec/trellis.Encode": trellis.Encode,
 	"layer2/framer.Search": func(stream [600]bit.Bit) (framer.Match, bool) {
 		return framer.Search(stream[:], 0, -1)
 	},

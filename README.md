@@ -188,7 +188,7 @@ The example prints its counts on the serial console once a second.
 | B.2.1 | Variable length BPTC for embedded signalling | verified | 16/16 passed | `v2/internal/fec/bptc/bptc_embedded_lc.go` |
 | B.2.2 | Single Burst Variable length BPTC | verified | 14/14 passed | `v2/internal/fec/bptc/bptc_single_burst.go` |
 | B.2.3 | Variable length BPTC for CACH signalling | verified | 13/13 passed | `v2/internal/fec/bptc/bptc_cach.go` |
-| B.2.4 | Rate ¾ Trellis code | verified | 6/6 passed | `v2/internal/fec/trellis/trellis_3_4.go` |
+| B.2.4 | Rate ¾ Trellis code | verified | 10/10 passed | `v2/internal/fec/trellis/trellis_3_4.go` |
 | B.2.5 | Rate 1 coded data | verified | 1/1 passed | `v2/layer2/burst.go` |
 | B.3.1 | Golay (20,8) | verified | 2/2 passed | `v2/internal/fec/golay/golay_20_8_7.go` |
 | B.3.2 | Quadratic residue (16,7,6) | verified | 1/1 passed | `v2/internal/fec/quadraticresidue/quadratic_residue_16_7_6.go` |

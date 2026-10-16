@@ -129,6 +129,12 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		jen.Line(),
 		jen.Line(),
 		writeTable2D("trellis34_reverse_constellation", tables.ReverseConstellation),
+		jen.Line(),
+		jen.Line(),
+		writeTable("trellis34BranchDibits", tables.Trellis34BranchDibits),
+		jen.Line(),
+		jen.Line(),
+		writeTable2D("trellis34BranchMetric", tables.Trellis34BranchMetric),
 	); err != nil {
 		return err
 	}
@@ -185,7 +191,7 @@ func writeBitTable(name string, data []uint8) jen.Code {
 	return jen.Var().Id(name).Op("=").Index(jen.Lit(len(data))).Qual("github.com/USA-RedDragon/dmrgo/v2/bit", "Bit").Values(literals...)
 }
 
-func writeTable2D[T ~byte | ~int | ~int8 | ~uint16 | ~uint32](name string, data [][]T) jen.Code {
+func writeTable2D[T ~byte | ~int | ~int8 | ~uint16 | ~uint32 | ~uint64](name string, data [][]T) jen.Code {
 	if len(data) == 0 {
 		return jen.Null()
 	}
@@ -203,6 +209,8 @@ func writeTable2D[T ~byte | ~int | ~int8 | ~uint16 | ~uint32](name string, data 
 			return jen.Uint16()
 		case []uint32:
 			return jen.Uint32()
+		case []uint64:
+			return jen.Uint64()
 		default:
 			panic("unsupported type")
 		}
@@ -214,7 +222,11 @@ func writeTable2D[T ~byte | ~int | ~int8 | ~uint16 | ~uint32](name string, data 
 	for i, row := range data {
 		literals := make([]jen.Code, len(row))
 		for j, val := range row {
-			literals[j] = jen.Lit(int(val))
+			if v, ok := any(val).(uint64); ok {
+				literals[j] = jen.Op(fmt.Sprintf("%#016x", v))
+			} else {
+				literals[j] = jen.Lit(int(val))
+			}
 		}
 		rows[i] = jen.Values(literals...)
 	}

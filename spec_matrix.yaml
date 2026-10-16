@@ -908,12 +908,18 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis
             names:
-              - TestTrellis34Decode
-              - TestTrellis34_EncoderTablesMatchSpec
+              - TestTrellis34_TablesMatchSpec
+              - TestTrellis34_EncodeMatchesReference
               - TestTrellis34_CleanDecode
-              - TestTrellis34_SingleBitErrorsCorrected
-              - TestTrellis34_SeparatedDoubleBitErrorsCorrected
+              - TestTrellis34_SingleOneStepErrorsCorrected
+              - TestTrellis34_MaximumLikelihood
+              - TestTrellis34_SingleDibitErrors
+              - TestTrellis34_TwoDibitDistance
               - TestTrellis34_NonzeroFinalStateFlagged
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
+            names:
+              - TestRate34OverTheAir
+              - TestRate34SingleDibitErrors
 
       - section: "B.2.5"
         title: "Rate 1 coded data"
