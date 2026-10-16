@@ -14,6 +14,8 @@ type Tables struct {
 	Hamming17_12Syndrome      [32]int      // Hamming(17,12,3) bit position per syndrome, -1 for none
 	CRCCCITT                  [256]uint16  // CRC-CCITT byte table, polynomial 0x1021
 	CRC32                     [256]uint32  // CRC-32 byte table, polynomial 0x04C11DB7
+	CRC7                      [256]uint8   // CRC-7 byte table, polynomial 0xA7, register MSB-aligned
+	CRC8                      [256]uint8   // CRC-8 byte table, polynomial 0x107
 	CRC9                      [256]uint16  // CRC-9 byte table, polynomial 0x259, register MSB-aligned
 	SingleBurstBPTCInterleave [32]uint8    // single-burst BPTC encode matrix index per transmit index
 	ReverseConstellation      [][]int8     // trellis 3/4 dibit pair per symbol index
@@ -86,6 +88,12 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.CRC32 = CRC32Table()
+		wg.Done()
+	}()
+	wg.Add(1)
+	go func() {
+		t.CRC7 = CRC7Table()
+		t.CRC8 = CRC8Table()
 		wg.Done()
 	}()
 	wg.Add(1)
