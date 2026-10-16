@@ -258,11 +258,11 @@ type T struct {
 	assertContains(t, out,
 		"if s.A != nil {\n\t\t_payload = \"A\"\n\t}",
 		"if s.B != nil {\n\t\tif _payload != \"\" {",
-		`return [3]byte{}, fmt.Errorf("T: %s and %s are both set", _payload, "B")`,
+		`return [3]byte{}, errs.NewBothSet("T", _payload, "B")`,
 		"\tif _payload != \"\" {\n\t\tvar result T\n\t\tresult.Op = uint8(uint64(data[0]))\n\t\tresult.FID = uint8(uint64(data[1]))\n\t\tresult.Mode = s.Mode\n\t\t_want := \"Raw\"",
 		"\t\t\t\tif result.Mode {\n\t\t\t\t\t_want = \"A\"\n\t\t\t\t}",
 		"\t\t\tcase 2:\n\t\t\t\t_want = \"B\"",
-		`return [3]byte{}, fmt.Errorf("T.%s is set, but Op, FID and Mode select %s", _payload, _want)`,
+		`return [3]byte{}, errs.NewWrongPayload("T", _payload, "Op, FID and Mode select ", _want)`,
 	)
 	if strings.Contains(out, "[...]struct") {
 		t.Error("the payload check builds an array, which is a large local on 32-bit targets")
@@ -303,11 +303,11 @@ type T struct {
 	assertContains(t, out,
 		"func (s *T) Encode() ([60]bit.Bit, error) {",
 		"if uint64(s.Part)>>12 != 0 {",
-		`return [8]byte{}, &bit.FieldRangeError{`,
+		`return [8]byte{}, errs.NewFieldRange("T", "Part", s.Part, 12, false)`,
 		"if uint64(s.Addr)>>24 != 0 {",
 		"if int64(s.Off) < -128 || int64(s.Off) > 127 {",
 		"_kidBytes, err := s.Kid.encodeBytes()",
-		`return [8]byte{}, fmt.Errorf("T.Kid: %w", err)`,
+		`return [8]byte{}, errs.NewWrapped("T.Kid", err)`,
 		"return data, nil",
 	)
 	if strings.Contains(out, "uint64(s.Full)>>") {
@@ -352,6 +352,7 @@ type T struct {
 }`)
 	assertContains(t, out,
 		"func DecodeT(data [16]bit.Bit, mode bool) T {",
+		"return newTBytes(_b, mode)",
 		"_decoded := decodeSubBytes(_dispatchBytes)",
 		"result.Mode = mode",
 		"if !result.Mode {",
@@ -400,7 +401,7 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 	assertContains(t, out,
 		"bits.Copy(result.R[:], 0, data[:], 4, 12)",
 		"if s.R[1]&15 != 0 {",
-		`Field: "R",`,
+		`errs.NewFieldRange("T", "R", s.R,`,
 		"bits.Copy(data[:], 4, s.R[:], 0, 12)",
 		`fmt.Sprintf("T{ A: %d, R: %x }", s.A, s.R)`,
 	)
@@ -441,7 +442,7 @@ type Top struct {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertContains(t, out, "func decodeSubBytes(", "func decodeMarkedBytes(", "func DecodeTop(", ":= decodeSubBytes(")
+	assertContains(t, out, "func decodeSubBytes(", "func decodeMarkedBytes(", "func DecodeTop(", "= decodeSubBytes(")
 	if strings.Contains(out, "func DecodeSub(") || strings.Contains(out, "func DecodeMarked(") {
 		t.Errorf("sub-PDU Decode is exported\n%s", out)
 	}
@@ -495,6 +496,7 @@ type T struct {
 		"p.sub = decodeSubBytes(_dispatchBytes)\n\t\t\tresult.A = &p.sub",
 		"p.sub = decodeSubBytes(_dispatchBytes)\n\t\t\tresult.B = &p.sub",
 		"p.bspdu = decodeBSPDUBytes(_dispatchBytes)\n\t\tresult.C = &p.bspdu",
+		"func newTBytes(data [2]byte, mode bool) T {",
 		"_decoded := decodeSubBytes(_dispatchBytes)\n\t\t\tresult.A = &_decoded",
 	)
 	_, into, _ := strings.Cut(out, "func decodeTBytesInto(")

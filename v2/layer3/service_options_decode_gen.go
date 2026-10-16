@@ -7,6 +7,7 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeServiceOptionsBytes decodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
@@ -42,12 +43,7 @@ func (s *ServiceOptions) encodeBytes() ([1]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Reserved)>>2 != 0 {
-		return [1]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "Reserved",
-			Type:  "ServiceOptions",
-			Value: s.Reserved,
-		}
+		return [1]byte{}, errs.NewFieldRange("ServiceOptions", "Reserved", s.Reserved, 2, false)
 	}
 	data[0] = data[0]&^0x30 | byte(uint64(s.Reserved)<<4)&0x30
 	if s.IsBroadcast {
@@ -57,12 +53,7 @@ func (s *ServiceOptions) encodeBytes() ([1]byte, error) {
 		data[0] |= 0x04
 	}
 	if uint64(s.PriorityLevel)>>2 != 0 {
-		return [1]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "PriorityLevel",
-			Type:  "ServiceOptions",
-			Value: s.PriorityLevel,
-		}
+		return [1]byte{}, errs.NewFieldRange("ServiceOptions", "PriorityLevel", s.PriorityLevel, 2, false)
 	}
 	data[0] = data[0]&^0x03 | byte(uint64(s.PriorityLevel))&0x03
 	return data, nil
@@ -81,8 +72,8 @@ func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ServiceOptions) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

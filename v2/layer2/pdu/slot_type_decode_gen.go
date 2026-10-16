@@ -8,6 +8,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	golay "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 )
 
@@ -42,21 +43,11 @@ func DecodeSlotType(data [20]bit.Bit) SlotType {
 func (s *SlotType) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ColorCode",
-			Type:  "SlotType",
-			Value: s.ColorCode,
-		}
+		return [3]byte{}, errs.NewFieldRange("SlotType", "ColorCode", s.ColorCode, 4, false)
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.ColorCode)<<4)&0xF0
 	if uint64(s.DataType)>>4 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "DataType",
-			Type:  "SlotType",
-			Value: s.DataType,
-		}
+		return [3]byte{}, errs.NewFieldRange("SlotType", "DataType", s.DataType, 4, false)
 	}
 	data[0] = data[0]&^0x0F | byte(uint64(s.DataType))&0x0F
 	_cw := golay.Encode2087(uint8(uint64(data[0])))
@@ -80,8 +71,8 @@ func (s *SlotType) Encode() ([20]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *SlotType) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

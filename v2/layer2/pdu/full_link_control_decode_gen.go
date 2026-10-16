@@ -15,14 +15,16 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"math"
 )
 
-// decodeFullLinkControlBytes decodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
+// newFullLinkControlBytes decodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
 // data holds its bits packed, the first bit most significant.
-func decodeFullLinkControlBytes(data [12]byte, burstDataType enums.DataType) FullLinkControl {
+// It allocates the payload struct that the dispatch field points to.
+func newFullLinkControlBytes(data [12]byte, burstDataType enums.DataType) FullLinkControl {
 	var result FullLinkControl
 	result.BurstDataType = burstDataType
 	_cw := data
@@ -77,12 +79,14 @@ func decodeFullLinkControlBytes(data [12]byte, burstDataType enums.DataType) Ful
 }
 
 // DecodeFullLinkControl decodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
+// It allocates the payload struct that the dispatch field points to;
+// DecodeFullLinkControlInto does not.
 func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) FullLinkControl {
 	var _b [12]byte
 	for _i := range 96 {
 		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
 	}
-	return decodeFullLinkControlBytes(_b, burstDataType)
+	return newFullLinkControlBytes(_b, burstDataType)
 }
 
 // FullLinkControlPayloads holds one payload struct of each type that
@@ -97,8 +101,9 @@ type FullLinkControlPayloads struct {
 	flcTerminatorDataLinkControl FLCTerminatorDataLinkControl
 }
 
-// decodeFullLinkControlBytesInto decodes data into dst as decodeFullLinkControlBytes does, and
-// points the dispatch field of dst into p.
+// decodeFullLinkControlBytesInto decodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
+// data holds its bits packed, the first bit most significant. It decodes
+// into dst and points the dispatch field of dst into p.
 func decodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayloads, data [12]byte, burstDataType enums.DataType) {
 	*dst = FullLinkControl{}
 	result := dst
@@ -175,31 +180,31 @@ func (s *FullLinkControl) encodeBytes() ([12]byte, error) {
 	}
 	if s.UnitToUnit != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "UnitToUnit")
+			return [12]byte{}, errs.NewBothSet("FullLinkControl", _payload, "UnitToUnit")
 		}
 		_payload = "UnitToUnit"
 	}
 	if s.GPSInfo != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "GPSInfo")
+			return [12]byte{}, errs.NewBothSet("FullLinkControl", _payload, "GPSInfo")
 		}
 		_payload = "GPSInfo"
 	}
 	if s.TalkerAliasHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "TalkerAliasHeader")
+			return [12]byte{}, errs.NewBothSet("FullLinkControl", _payload, "TalkerAliasHeader")
 		}
 		_payload = "TalkerAliasHeader"
 	}
 	if s.TalkerAliasBlock != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "TalkerAliasBlock")
+			return [12]byte{}, errs.NewBothSet("FullLinkControl", _payload, "TalkerAliasBlock")
 		}
 		_payload = "TalkerAliasBlock"
 	}
 	if s.TerminatorDataLinkControl != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "TerminatorDataLinkControl")
+			return [12]byte{}, errs.NewBothSet("FullLinkControl", _payload, "TerminatorDataLinkControl")
 		}
 		_payload = "TerminatorDataLinkControl"
 	}
@@ -207,37 +212,37 @@ func (s *FullLinkControl) encodeBytes() ([12]byte, error) {
 	case s.GroupVoice != nil:
 		_pduBytes, err := s.GroupVoice.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("FullLinkControl.GroupVoice: %w", err)
+			return [12]byte{}, errs.NewWrapped("FullLinkControl.GroupVoice", err)
 		}
 		copy(data[2:9], _pduBytes[0:7])
 	case s.UnitToUnit != nil:
 		_pduBytes, err := s.UnitToUnit.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("FullLinkControl.UnitToUnit: %w", err)
+			return [12]byte{}, errs.NewWrapped("FullLinkControl.UnitToUnit", err)
 		}
 		copy(data[2:9], _pduBytes[0:7])
 	case s.GPSInfo != nil:
 		_pduBytes, err := s.GPSInfo.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("FullLinkControl.GPSInfo: %w", err)
+			return [12]byte{}, errs.NewWrapped("FullLinkControl.GPSInfo", err)
 		}
 		copy(data[2:9], _pduBytes[0:7])
 	case s.TalkerAliasHeader != nil:
 		_pduBytes, err := s.TalkerAliasHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("FullLinkControl.TalkerAliasHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("FullLinkControl.TalkerAliasHeader", err)
 		}
 		copy(data[2:9], _pduBytes[0:7])
 	case s.TalkerAliasBlock != nil:
 		_pduBytes, err := s.TalkerAliasBlock.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("FullLinkControl.TalkerAliasBlock: %w", err)
+			return [12]byte{}, errs.NewWrapped("FullLinkControl.TalkerAliasBlock", err)
 		}
 		copy(data[2:9], _pduBytes[0:7])
 	case s.TerminatorDataLinkControl != nil:
 		_pduBytes, err := s.TerminatorDataLinkControl.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("FullLinkControl.TerminatorDataLinkControl: %w", err)
+			return [12]byte{}, errs.NewWrapped("FullLinkControl.TerminatorDataLinkControl", err)
 		}
 		copy(data[2:9], _pduBytes[0:7])
 	default:
@@ -250,21 +255,11 @@ func (s *FullLinkControl) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.FLCO)>>6 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "FLCO",
-			Type:  "FullLinkControl",
-			Value: s.FLCO,
-		}
+		return [12]byte{}, errs.NewFieldRange("FullLinkControl", "FLCO", s.FLCO, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.FLCO))&0x3F
 	if uint64(s.FID)>>8 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  8,
-			Field: "FID",
-			Type:  "FullLinkControl",
-			Value: s.FID,
-		}
+		return [12]byte{}, errs.NewFieldRange("FullLinkControl", "FID", s.FID, 8, false)
 	}
 	data[1] = byte(uint64(s.FID))
 	if _payload != "" {
@@ -289,7 +284,7 @@ func (s *FullLinkControl) encodeBytes() ([12]byte, error) {
 			}
 		}
 		if _payload != _want {
-			return [12]byte{}, fmt.Errorf("FullLinkControl.%s is set, but FLCO and FID select %s", _payload, _want)
+			return [12]byte{}, errs.NewWrongPayload("FullLinkControl", _payload, "FLCO and FID select ", _want)
 		}
 	}
 	_encoded := reedsolomon.Encode([9]byte(data[:9]))
@@ -303,7 +298,7 @@ func (s *FullLinkControl) encodeBytes() ([12]byte, error) {
 		_encoded[10] ^= 0x99
 		_encoded[11] ^= 0x99
 	default:
-		return [12]byte{}, fmt.Errorf("FullLinkControl.BurstDataType: no FEC mask for value %d", s.BurstDataType)
+		return [12]byte{}, errs.NewNoFECMask("FullLinkControl", "BurstDataType", uint64(s.BurstDataType))
 	}
 	data = _encoded
 	return data, nil
@@ -322,8 +317,8 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *FullLinkControl) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -373,28 +368,18 @@ func (s *FLCGroupVoice) encodeBytes() ([7]byte, error) {
 	var data [7]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [7]byte{}, fmt.Errorf("FLCGroupVoice.ServiceOptions: %w", err)
+		return [7]byte{}, errs.NewWrapped("FLCGroupVoice.ServiceOptions", err)
 	}
 	bits.Pack(data[:], 0, _serviceOptionsBits[:])
 	if uint64(s.GroupAddress)>>24 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "GroupAddress",
-			Type:  "FLCGroupVoice",
-			Value: s.GroupAddress,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCGroupVoice", "GroupAddress", s.GroupAddress, 24, false)
 	}
 	_valGroupAddress := uint64(s.GroupAddress)
 	data[1] = byte(_valGroupAddress >> 16)
 	data[2] = byte(_valGroupAddress >> 8)
 	data[3] = byte(_valGroupAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "FLCGroupVoice",
-			Value: s.SourceAddress,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCGroupVoice", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[4] = byte(_valSourceAddress >> 16)
@@ -416,8 +401,8 @@ func (s *FLCGroupVoice) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *FLCGroupVoice) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -448,28 +433,18 @@ func (s *FLCUnitToUnit) encodeBytes() ([7]byte, error) {
 	var data [7]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [7]byte{}, fmt.Errorf("FLCUnitToUnit.ServiceOptions: %w", err)
+		return [7]byte{}, errs.NewWrapped("FLCUnitToUnit.ServiceOptions", err)
 	}
 	bits.Pack(data[:], 0, _serviceOptionsBits[:])
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "FLCUnitToUnit",
-			Value: s.TargetAddress,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCUnitToUnit", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[1] = byte(_valTargetAddress >> 16)
 	data[2] = byte(_valTargetAddress >> 8)
 	data[3] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "FLCUnitToUnit",
-			Value: s.SourceAddress,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCUnitToUnit", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[4] = byte(_valSourceAddress >> 16)
@@ -491,8 +466,8 @@ func (s *FLCUnitToUnit) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *FLCUnitToUnit) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -521,33 +496,15 @@ func decodeFLCGPSInfoBytes(data [7]byte) FLCGPSInfo {
 func (s *FLCGPSInfo) encodeBytes() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.Reserved)>>4 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Reserved",
-			Type:  "FLCGPSInfo",
-			Value: s.Reserved,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCGPSInfo", "Reserved", s.Reserved, 4, false)
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.Reserved)<<4)&0xF0
 	if uint64(s.PositionError)>>3 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "PositionError",
-			Type:  "FLCGPSInfo",
-			Value: s.PositionError,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCGPSInfo", "PositionError", s.PositionError, 3, false)
 	}
 	data[0] = data[0]&^0x0E | byte(uint64(s.PositionError)<<1)&0x0E
 	if !(s.Longitude >= -180.0 && s.Longitude <= 180.0) {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:   25,
-			Field:  "Longitude",
-			Max:    180.0,
-			Min:    -180.0,
-			Signed: true,
-			Type:   "FLCGPSInfo",
-			Value:  s.Longitude,
-		}
+		return [7]byte{}, errs.NewCoordinateRange("FLCGPSInfo", "Longitude", s.Longitude, 25, -180.0, 180.0)
 	}
 	_rawLongitude := math.Round(s.Longitude * (1 << 25) / 360.0)
 	_valLongitude := uint64(int64(_rawLongitude))
@@ -556,15 +513,7 @@ func (s *FLCGPSInfo) encodeBytes() ([7]byte, error) {
 	data[2] = byte(_valLongitude >> 8)
 	data[3] = byte(_valLongitude)
 	if !(s.Latitude >= -90.0 && s.Latitude <= 90.0) {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:   24,
-			Field:  "Latitude",
-			Max:    90.0,
-			Min:    -90.0,
-			Signed: true,
-			Type:   "FLCGPSInfo",
-			Value:  s.Latitude,
-		}
+		return [7]byte{}, errs.NewCoordinateRange("FLCGPSInfo", "Latitude", s.Latitude, 24, -90.0, 90.0)
 	}
 	_rawLatitude := math.Round(s.Latitude * (1 << 24) / 180.0)
 	_rawLatitude = min(_rawLatitude, 8388607)
@@ -588,8 +537,8 @@ func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *FLCGPSInfo) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -617,30 +566,15 @@ func decodeFLCTalkerAliasHeaderBytes(data [7]byte) FLCTalkerAliasHeader {
 func (s *FLCTalkerAliasHeader) encodeBytes() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.TalkerAliasDataFormat)>>2 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "TalkerAliasDataFormat",
-			Type:  "FLCTalkerAliasHeader",
-			Value: s.TalkerAliasDataFormat,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCTalkerAliasHeader", "TalkerAliasDataFormat", s.TalkerAliasDataFormat, 2, false)
 	}
 	data[0] = data[0]&^0xC0 | byte(uint64(s.TalkerAliasDataFormat)<<6)&0xC0
 	if uint64(s.TalkerAliasDataLength)>>5 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "TalkerAliasDataLength",
-			Type:  "FLCTalkerAliasHeader",
-			Value: s.TalkerAliasDataLength,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCTalkerAliasHeader", "TalkerAliasDataLength", s.TalkerAliasDataLength, 5, false)
 	}
 	data[0] = data[0]&^0x3E | byte(uint64(s.TalkerAliasDataLength)<<1)&0x3E
 	if uint64(s.TalkerAliasData)>>49 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  49,
-			Field: "TalkerAliasData",
-			Type:  "FLCTalkerAliasHeader",
-			Value: s.TalkerAliasData,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCTalkerAliasHeader", "TalkerAliasData", s.TalkerAliasData, 49, false)
 	}
 	_valTalkerAliasData := s.TalkerAliasData
 	data[0] = data[0]&^0x01 | byte(_valTalkerAliasData>>48)&0x01
@@ -666,8 +600,8 @@ func (s *FLCTalkerAliasHeader) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *FLCTalkerAliasHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -709,8 +643,8 @@ func (s *FLCTalkerAliasBlock) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *FLCTalkerAliasBlock) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -743,24 +677,14 @@ func decodeFLCTerminatorDataLinkControlBytes(data [7]byte) FLCTerminatorDataLink
 func (s *FLCTerminatorDataLinkControl) encodeBytes() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDDestination",
-			Type:  "FLCTerminatorDataLinkControl",
-			Value: s.LLIDDestination,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCTerminatorDataLinkControl", "LLIDDestination", s.LLIDDestination, 24, false)
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[0] = byte(_valLLIDDestination >> 16)
 	data[1] = byte(_valLLIDDestination >> 8)
 	data[2] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDSource",
-			Type:  "FLCTerminatorDataLinkControl",
-			Value: s.LLIDSource,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCTerminatorDataLinkControl", "LLIDSource", s.LLIDSource, 24, false)
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[3] = byte(_valLLIDSource >> 16)
@@ -782,12 +706,7 @@ func (s *FLCTerminatorDataLinkControl) encodeBytes() ([7]byte, error) {
 		data[6] |= 0x08
 	}
 	if uint64(s.SendSequenceNumber)>>3 != 0 {
-		return [7]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "SendSequenceNumber",
-			Type:  "FLCTerminatorDataLinkControl",
-			Value: s.SendSequenceNumber,
-		}
+		return [7]byte{}, errs.NewFieldRange("FLCTerminatorDataLinkControl", "SendSequenceNumber", s.SendSequenceNumber, 3, false)
 	}
 	data[6] = data[6]&^0x07 | byte(uint64(s.SendSequenceNumber))&0x07
 	return data, nil
@@ -806,8 +725,8 @@ func (s *FLCTerminatorDataLinkControl) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *FLCTerminatorDataLinkControl) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
