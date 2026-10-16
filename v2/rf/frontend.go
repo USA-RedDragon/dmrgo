@@ -21,10 +21,11 @@ const (
 )
 
 // frontEnd turns interleaved 8-bit I/Q at the input rate into complex
-// baseband at basebandRate, flat to wideHz: a removal of the receiver's DC
-// offset, a CIC decimator by an integer factor to at least four times the
-// baseband rate, and a polyphase resampler to the baseband rate, which
-// input at basebandRate skips. It keeps its state between calls and
+// baseband at the output rate, basebandRate or discRate, flat to wideHz
+// times the share of basebandRate that the output rate is: a removal of
+// the receiver's DC offset, a CIC decimator by an integer factor to at
+// least four times the output rate, and a polyphase resampler to the
+// output rate, which input at the output rate skips. It keeps its state between calls and
 // allocates only in newFrontEnd.
 type frontEnd struct {
 	signed  bool
@@ -45,11 +46,11 @@ type frontEnd struct {
 }
 
 // newFrontEnd returns a front end for input at rate, signed (HackRF) or
-// unsigned (rtl_sdr) 8-bit I/Q.
-func newFrontEnd(rate float64, signed bool) *frontEnd {
-	dec := max(int(rate/(4*basebandRate)), 1)
+// unsigned (rtl_sdr) 8-bit I/Q, with output at out.
+func newFrontEnd(rate float64, signed bool, out float64) *frontEnd {
+	dec := max(int(rate/(4*out)), 1)
 	mid := rate / float64(dec)
-	f := &frontEnd{signed: signed, dec: dec, step: mid / basebandRate}
+	f := &frontEnd{signed: signed, dec: dec, step: mid / out}
 	f.gain = float32(1 / (255 * math.Pow(float64(dec), cicOrder)))
 	f.dcGain = float32(1 / (dcSeconds * mid))
 	f.dcStart = float32(dcStartSeconds * mid)
@@ -58,7 +59,7 @@ func newFrontEnd(rate float64, signed bool) *frontEnd {
 	}
 	f.hist = make([]complex64, 2*resampleTaps)
 	f.coef = make([]float32, resamplePhases*resampleTaps)
-	fc := (wideHz + (basebandRate - wideHz)) / 2 / mid
+	fc := out / 2 / mid
 	const beta = 8.0
 	for p := range resamplePhases {
 		for j := range resampleTaps {
@@ -89,7 +90,7 @@ func bessel0(x float64) float64 {
 }
 
 // process converts the I/Q pairs of in and appends the baseband samples to
-// out, which must have room for len(in)/2/(rate/basebandRate)+2 samples, and
+// out, which must have room for len(in)/2/(rate/output rate)+2 samples, and
 // returns the number written.
 func (f *frontEnd) process(in []byte, out []complex64) int {
 	w := 0

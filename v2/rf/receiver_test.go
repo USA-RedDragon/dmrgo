@@ -106,6 +106,40 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 	}
 }
 
+// TestReceiverHalfRate receives a BS outbound voice call at 12 dB C/N as
+// baseband at BasebandRate and, averaged over pairs of samples, at half
+// that rate, and checks that TierDisc recovers about as many AMBE+2 frames
+// from each.
+func TestReceiverHalfRate(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig()
+	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 4, 1
+	built, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	x := noisyBaseband(built.Slots, 1200, 12, 6)
+	full, total := exactFrames(built.Slots, receiveBaseband(x, TierDisc))
+	h := make([]complex64, len(x)/2)
+	for i := range h {
+		h[i] = (x[2*i] + x[2*i+1]) / 2
+	}
+	r := mustNew(Config{Tier: TierDisc, BasebandHz: BasebandRate / 2})
+	var got []Burst
+	for k := 0; k < len(h); k += 2048 {
+		got = append(got, r.WriteBaseband(h[k:min(k+2048, len(h))])...)
+	}
+	got = append(got, r.Flush()...)
+	half, _ := exactFrames(built.Slots, got)
+	t.Logf("%d of %d frames exact at %d Hz, %d at %d Hz", full, total, BasebandRate, half, BasebandRate/2)
+	if full < total*9/10 || half < full-total/20 {
+		t.Errorf("%d of %d frames exact at %d Hz, %d at %d Hz", full, total, BasebandRate, half, BasebandRate/2)
+	}
+	if _, err := New(Config{Tier: TierCoherent, BasebandHz: BasebandRate / 2}); err == nil {
+		t.Error("TierCoherent takes input at half rate")
+	}
+}
+
 // TestReceiverOnBurst checks that a receiver with OnBurst hands it the
 // bursts that the returned slices hold without it, and returns none.
 func TestReceiverOnBurst(t *testing.T) {

@@ -1,0 +1,142 @@
+package rf
+
+import "math"
+
+// Layout of the discriminator front end.
+const (
+	// discRate is the sample rate of the discriminator path, in Hz.
+	discRate = basebandRate / 2
+	// halfTaps is the length of the half-band decimator from basebandRate
+	// to discRate, halfSide the number of its taps on each side of the
+	// center that are not 0, and halfBeta the Kaiser window parameter.
+	halfTaps = 11
+	halfSide = (halfTaps/2 + 1) / 2
+	halfBeta = 6
+	// preTaps is the length of the prefilter at discRate.
+	preTaps = 17
+	// discSpan is the number of symbols on each side of the matched
+	// filter of the discriminator.
+	discSpan = 4
+	// discSPS is the number of discriminator samples per symbol.
+	discSPS = samplesPerSy / 2
+)
+
+// discFront turns complex baseband at basebandRate, or at discRate when
+// half, into the FM discriminator output at discRate after the RRC matched
+// filter, in Hz of deviation: a half-band decimator, which input at
+// discRate skips, an oscillator that moves the carrier to 0 Hz, the
+// prefilter, the discriminator and the matched filter.
+type discFront struct {
+	half    bool
+	odd     bool
+	hbMid   float32
+	hb      [halfSide]float32
+	hbHist  [2 * halfTaps]complex64
+	hbHead  int
+	ncoStep complex64
+	ncoRot  complex64
+	ncoN    int
+	pre     [preTaps/2 + 1]float32
+	preHist [2 * preTaps]complex64
+	preHead int
+	prev    complex64
+	rrc     [2*discSpan*discSPS + 1]float32
+	fHist   [2 * (2*discSpan*discSPS + 1)]float32
+	fHead   int
+}
+
+// newDiscFront returns a front end for input at discRate when half, at
+// basebandRate otherwise, with the prefilter cut off at cutHz.
+func newDiscFront(half bool, cutHz float64) *discFront {
+	f := &discFront{half: half, ncoRot: 1, ncoStep: 1}
+	hb := kaiserLowpass(halfTaps, 0.25, halfBeta)
+	f.hbMid = hb[halfTaps/2]
+	for k := range f.hb {
+		f.hb[k] = hb[halfTaps/2-(2*k+1)]
+	}
+	p := kaiserLowpass(preTaps, cutHz/discRate, 5)
+	copy(f.pre[:], p)
+	for i, v := range rrcTapsSpan(discSPS, discSpan) {
+		f.rrc[i] = float32(v)
+	}
+	return f
+}
+
+// center returns the input sample, at basebandRate, at the center of
+// discriminator sample 0; sample m is centered 2m input samples later.
+// The half-band output of input 2m+1 has its center halfTaps/2 samples
+// earlier, the prefilter output preTaps-1 input samples earlier still, the
+// discriminator output one input sample before that, and the matched
+// filter output discSpan symbols before that. Input at discRate puts
+// discriminator sample m at input sample 2m before its filters.
+func (f *discFront) center() int64 {
+	c := -int64(preTaps-1) - 1 - discSpan*samplesPerSy
+	if !f.half {
+		c += 1 - halfTaps/2
+	}
+	return c
+}
+
+// tune sets the oscillator to remove a carrier at hz, from the next sample.
+func (f *discFront) tune(hz float64) {
+	p := -2 * math.Pi * hz / discRate
+	f.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
+}
+
+// push takes one input sample and reports whether it completed a
+// discriminator sample, which it returns, with the power of the prefilter
+// output.
+func (f *discFront) push(v complex64) (s, power float32, ok bool) {
+	if !f.half {
+		f.hbHist[f.hbHead] = v
+		f.hbHist[f.hbHead+halfTaps] = v
+		if f.hbHead++; f.hbHead == halfTaps {
+			f.hbHead = 0
+		}
+		if f.odd = !f.odd; f.odd {
+			return 0, 0, false
+		}
+		x := f.hbHist[f.hbHead : f.hbHead+halfTaps]
+		c := halfTaps / 2
+		v = x[c] * complex(f.hbMid, 0)
+		for k, h := range f.hb {
+			a, b := x[c-2*k-1], x[c+2*k+1]
+			v += complex((real(a)+real(b))*h, (imag(a)+imag(b))*h)
+		}
+	}
+	if f.ncoN++; f.ncoN == 512 {
+		f.ncoN = 0
+		g := (3 - real(f.ncoRot)*real(f.ncoRot) - imag(f.ncoRot)*imag(f.ncoRot)) / 2
+		f.ncoRot *= complex(g, 0)
+	}
+	v *= f.ncoRot
+	f.ncoRot *= f.ncoStep
+	f.preHist[f.preHead] = v
+	f.preHist[f.preHead+preTaps] = v
+	if f.preHead++; f.preHead == preTaps {
+		f.preHead = 0
+	}
+	x := f.preHist[f.preHead : f.preHead+preTaps]
+	c := preTaps / 2
+	y := x[c] * complex(f.pre[c], 0)
+	for k, h := range f.pre[:c] {
+		a, b := x[k], x[preTaps-1-k]
+		y += complex((real(a)+real(b))*h, (imag(a)+imag(b))*h)
+	}
+	d := y * complex(real(f.prev), -imag(f.prev))
+	f.prev = y
+	fr := atan2f(imag(d), real(d)) * (discRate / (2 * math.Pi))
+	const nr = len(f.rrc)
+	f.fHist[f.fHead] = fr
+	f.fHist[f.fHead+nr] = fr
+	if f.fHead++; f.fHead == nr {
+		f.fHead = 0
+	}
+	h := f.fHist[f.fHead : f.fHead+nr]
+	m := nr / 2
+	s = h[m] * f.rrc[m]
+	for k, t := range f.rrc[:m] {
+		s += (h[k] + h[nr-1-k]) * t
+	}
+	return s, real(y)*real(y) + imag(y)*imag(y), true
+}

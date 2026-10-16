@@ -103,20 +103,25 @@ const (
 )
 
 // BasebandRate is the sample rate of the complex baseband that
-// WriteBaseband takes, in Hz.
+// WriteBaseband takes by default, in Hz.
 const BasebandRate = basebandRate
 
 // Config sizes a Receiver. New allocates every buffer from it, and the
 // Receiver allocates nothing after that.
 type Config struct {
 	// Rate is the sample rate of the I/Q bytes of Write, in Hz, at least
-	// BasebandRate. 0 means BasebandRate. WriteBaseband does not use it.
+	// BasebandHz. 0 means BasebandHz. WriteBaseband does not use it.
 	Rate float64
 	// Signed selects signed 8-bit I/Q (HackRF) for Write instead of
 	// unsigned (rtl_sdr).
 	Signed bool
 	// Tier selects the detection. The zero value is TierDisc.
 	Tier Tier
+	// BasebandHz is the sample rate of the complex baseband that
+	// WriteBaseband takes and that the front end of Write makes: 0 or
+	// BasebandRate, or BasebandRate/2 with TierDisc, which halves the cost
+	// of its front end. 0 means BasebandRate.
+	BasebandHz int
 	// MaxWrite is the largest number of bytes in one Write. 0 means 1 << 16.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
@@ -272,14 +277,21 @@ type Receiver struct {
 // New returns a Receiver sized by cfg. It allocates every buffer of the
 // Receiver. It returns a *ConfigError when a field of cfg is out of range.
 func New(cfg Config) (*Receiver, error) {
-	switch {
-	case cfg.Rate == 0:
-		cfg.Rate = basebandRate
-	case !(cfg.Rate >= basebandRate) || cfg.Rate > 1e9:
-		return nil, &ConfigError{Field: "Rate"}
-	}
 	if cfg.Tier < TierDisc || cfg.Tier > TierMax {
 		return nil, &ConfigError{Field: "Tier"}
+	}
+	switch {
+	case cfg.BasebandHz == 0:
+		cfg.BasebandHz = basebandRate
+	case cfg.BasebandHz == discRate && cfg.Tier == TierDisc, cfg.BasebandHz == basebandRate:
+	default:
+		return nil, &ConfigError{Field: "BasebandHz"}
+	}
+	switch {
+	case cfg.Rate == 0:
+		cfg.Rate = float64(cfg.BasebandHz)
+	case !(cfg.Rate >= float64(cfg.BasebandHz)) || cfg.Rate > 1e9:
+		return nil, &ConfigError{Field: "Rate"}
 	}
 	if cfg.MaxWrite < 0 {
 		return nil, &ConfigError{Field: "MaxWrite"}
@@ -305,16 +317,17 @@ func New(cfg Config) (*Receiver, error) {
 		r.llrScale = 1
 	}
 	r.nsrc = r.opt.Sources
-	r.fe = newFrontEnd(cfg.Rate, cfg.Signed)
+	half := cfg.BasebandHz == discRate
+	r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
 	r.wide = make([]complex64, wideChunk)
-	r.inChunk = max(2*int(float64(wideChunk-4)*cfg.Rate/basebandRate), 2)
+	r.inChunk = max(2*int(float64(wideChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), 2)
 	size := (cfg.LookbackSlots + maxGapSlots + 4) * slotSamplesN
-	dec := max(r.opt.DiscDecimation, 1)
+	dec := 2
 	if r.opt.Coherent {
 		dec = max(r.opt.ChanDecimation, 1)
 	}
-	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, dec, r.opt.CompactChannel)
-	r.spec = newSpectrum()
+	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, dec, r.opt.CompactChannel, half)
+	r.spec = newSpectrum(float64(cfg.BasebandHz))
 	r.search = newSyncSearch(r.opt.Coherent, dec, r.nsrc)
 	if r.opt.Coherent {
 		d := r.opt.Window
@@ -395,8 +408,8 @@ func (r *Receiver) Write(iq []byte) []Burst {
 	return r.out
 }
 
-// WriteBaseband processes complex baseband samples at BasebandRate, as a
-// radio front end delivers them, in place of Write. The returned slice is
+// WriteBaseband processes complex baseband samples at Config.BasebandHz, as
+// a radio front end delivers them, in place of Write. The returned slice is
 // valid until the next call.
 func (r *Receiver) WriteBaseband(x []complex64) []Burst {
 	r.out = r.out[:0]

@@ -7,6 +7,8 @@ import (
 	"os"
 	"runtime"
 	"slices"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 
@@ -451,7 +453,8 @@ func steadyAllocs(x []complex64, t Tier) float64 {
 // few C/N points per tier below TierMax, which is for offline decoding,
 // and checks the frame recovery against the baseline in rxbenchPath. With
 // DMRRF_RXBENCH=full it runs the README sweep instead and rewrites
-// rxbenchPath, and with DMRRF_RXBENCH=fast it rewrites only the CI points.
+// rxbenchPath, only for the tiers in DMRRF_RXBENCH_TIERS when it is set,
+// and with DMRRF_RXBENCH=fast it rewrites only the CI points.
 func TestRxBench(t *testing.T) {
 	t.Parallel()
 	full := os.Getenv("DMRRF_RXBENCH") == "full"
@@ -469,6 +472,10 @@ func TestRxBench(t *testing.T) {
 	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact} {
 		bt := benchTier{Tier: int(tier)}
 		bt.Fast = runBench(t, slots, truth, tier, fastCases(tier))
+		if full && !benchTierSelected(tier) {
+			out.Tiers = append(out.Tiers, base.Tiers[tier])
+			continue
+		}
 		if full {
 			fs, ft := benchStream(t, 30)
 			bt.Full = deepen(t, fs, ft, tier, runBench(t, fs, ft, tier, fullCases()))
@@ -499,6 +506,13 @@ func TestRxBench(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+// benchTierSelected reports whether DMRRF_RXBENCH_TIERS, a comma-separated
+// list of tier numbers, names tier t, or is empty.
+func benchTierSelected(t Tier) bool {
+	v := os.Getenv("DMRRF_RXBENCH_TIERS")
+	return v == "" || slices.Contains(strings.Split(v, ","), strconv.Itoa(int(t)))
 }
 
 // checkBench fails when the recovery of a payload type at a C/N of the CI

@@ -2,7 +2,6 @@ package rf
 
 import (
 	"math"
-	"math/bits"
 )
 
 // Limits of the channel stage.
@@ -13,11 +12,6 @@ const (
 	chanPassHz = 7500.0
 	// chanStopHz is the edge of its stopband.
 	chanStopHz = 11000.0
-	// discTaps is the length of the discriminator prefilter.
-	discTaps = 31
-	// discSpan is the number of symbols on each side of the matched
-	// filter of the discriminator.
-	discSpan = 4
 )
 
 // ring is a ring of complex samples addressed by absolute sample number,
@@ -433,12 +427,11 @@ const (
 
 // channelizer moves the carrier to 0 Hz with an oscillator and filters the
 // channel. For coherent detection it runs a wide filter into ch. For the
-// discriminator tiers it runs a narrower prefilter at basebandRate/discDec,
-// sums the power of its output into energy, and runs the FM discriminator
-// and the RRC matched filter into sym (Hz of deviation), discDec times
-// decimated. Every output has the delay of its causal filters: channel
-// sample t, the time base of the receiver, is input sample t-delayCh, and
-// symIndex maps it to sym.
+// discriminator tier it runs the discriminator front end into sym (Hz of
+// deviation) at discRate and sums the power of its prefilter output into
+// energy. Every output has the delay of its causal filters: channel sample
+// t, the time base of the receiver, is input sample t-delayCh at
+// basebandRate, and symIndex maps it to sym.
 type channelizer struct {
 	disc    bool
 	n       int64
@@ -455,30 +448,22 @@ type channelizer struct {
 	chDec   int
 	compact bool
 
-	discDec int
-	dTaps   []float32
-	dHist   []complex64
-	dHead   int
-	prev    complex64
-	rrc     []float32
-	fHist   []float32
-	fHead   int
-	sym     qring
-	energy  fring
-	eAcc    float32
-	discHz  float32
-	// decLeft and binLeft count the input samples to the next prefilter
-	// output and to the end of the next energy bin.
-	decLeft int
-	binLeft int
+	df     *discFront
+	sym    qring
+	energy fring
+	// step is the number of channel samples per input sample, 2 for input
+	// at discRate. eAcc sums the power of the energy bin eBin.
+	step int64
+	eAcc float32
+	eBin int64
 }
 
 // newChannelizer returns a channelizer whose rings hold size channel
-// samples, with the discriminator path at basebandRate/dec when disc, its
-// prefilter cut off at cutHz, and the coherent channel ring at
-// basebandRate/dec otherwise, compact when compact.
-func newChannelizer(size int, disc bool, cutHz float64, dec int, compact bool) *channelizer {
-	c := &channelizer{disc: disc, ncoRot: 1, ncoStep: 1, delayCh: chanTaps / 2}
+// samples, with the discriminator path when disc, its prefilter cut off at
+// cutHz and its input at discRate when half, and the coherent channel ring
+// at basebandRate/dec otherwise, compact when compact.
+func newChannelizer(size int, disc bool, cutHz float64, dec int, compact, half bool) *channelizer {
+	c := &channelizer{disc: disc, ncoRot: 1, ncoStep: 1, delayCh: chanTaps / 2, step: 1}
 	if !disc {
 		c.chDec, c.compact = dec, compact
 		if !compact {
@@ -489,20 +474,12 @@ func newChannelizer(size int, disc bool, cutHz float64, dec int, compact bool) *
 		c.ch = newRing((size+dec-1)/dec, dec, compact)
 		return c
 	}
-	c.discDec = dec
-	c.dHist = make([]complex64, 2*discTaps)
-	c.dTaps = kaiserLowpass(discTaps, cutHz/basebandRate, 5)
-	r := rrcTapsSpan(float64(samplesPerSy)/float64(dec), discSpan)
-	c.rrc = make([]float32, len(r))
-	for i, v := range r {
-		c.rrc[i] = float32(v)
+	c.df = newDiscFront(half, cutHz)
+	if half {
+		c.step = 2
 	}
-	c.fHist = make([]float32, 2*len(r))
-	c.sym = newQring(size/dec+1, discStepHz)
+	c.sym = newQring(size/2+1, discStepHz)
 	c.energy = newFring(size/energyBin + 2)
-	c.discHz = float32(basebandRate / float64(dec) / (2 * math.Pi))
-	c.decLeft = dec
-	c.binLeft = (energyBin-(1+c.delayCh-discTaps/2)%energyBin)%energyBin + 1
 	return c
 }
 
@@ -515,33 +492,28 @@ func (c *channelizer) count() int64 {
 // negative before the rings fill.
 func (c *channelizer) oldest() int64 {
 	if c.disc {
-		return c.n - int64(min(len(c.sym.buf)*c.discDec, (len(c.energy.buf)-1)*energyBin))
+		return c.n - int64(min(len(c.sym.buf)*2, (len(c.energy.buf)-1)*energyBin))
 	}
 	return c.ch.first() * int64(c.chDec)
 }
 
-// symAt returns the sym sample of channel sample t as base+u, u from 0 to
-// 1, from the integers of symIndex: twice the index is q over 2*discDec, a
-// power of two.
+// symAt returns the sym sample of channel sample t as base+u, u 0 or 1/2,
+// from the integers of symIndex.
 func (c *channelizer) symAt(t int64) (base int64, u float32) {
-	d2 := 2 * c.discDec
-	q := 2*(t-int64(c.delayCh)+discTaps/2+discSpan*samplesPerSy+1) - int64(c.discDec)
-	sh := uint(bits.TrailingZeros(uint(d2)))
-	return q >> sh, float32(q&int64(d2-1)) / float32(d2)
+	q := t - int64(c.delayCh) - c.df.center()
+	return q >> 1, float32(q&1) / 2
 }
 
-// symIndex returns the fractional sym sample of channel sample t: the
-// prefilter output of input sample m*dec+dec-1 has its center discTaps/2
-// samples earlier, the discriminator output half a step before that, and
-// the matched filter output rrcSpan symbols before that.
+// symIndex returns the fractional sym sample of channel sample t, whose
+// input sample is t-delayCh: sym sample m is centered 2m input samples
+// after discFront.center.
 func (c *channelizer) symIndex(t float64) float64 {
-	d := float64(c.discDec)
-	return (t - float64(c.delayCh) + discTaps/2 + discSpan*samplesPerSy + 1 - d/2) / d
+	return (t - float64(c.delayCh) - float64(c.df.center())) / 2
 }
 
 // symStep returns the number of sym samples per symbol.
 func (c *channelizer) symStep() float32 {
-	return float32(samplesPerSy) / float32(c.discDec)
+	return discSPS
 }
 
 // slotEnergyAt returns the mean power of the discriminator prefilter output
@@ -553,7 +525,7 @@ func (c *channelizer) slotEnergyAt(a float64, n int) float64 {
 	for b := b0; b < b1; b++ {
 		e += float64(c.energy.at(b))
 	}
-	return e / float64(max(b1-b0, 1)*energyBin/int64(c.discDec))
+	return e / float64(max(b1-b0, 1)*energyBin/2)
 }
 
 // kaiserLowpass returns a Kaiser windowed sinc low-pass of n taps with
@@ -591,9 +563,10 @@ func (c *channelizer) tune(hz float64) {
 	if c.disc {
 		d := float32(c.ncoHz - hz)
 		c.ncoHz = hz
+		c.df.tune(hz)
 		c.sym.add(d)
-		for i := range c.fHist {
-			c.fHist[i] += d
+		for i := range c.df.fHist {
+			c.df.fHist[i] += d
 		}
 		return
 	}
@@ -664,47 +637,25 @@ func (c *channelizer) filter(v complex64, n int64) {
 	}
 }
 
-// discFilter runs the wide sample v through the oscillator, and every
-// discDec samples through the prefilter, the discriminator and the matched
-// filter.
+// discFilter runs the input sample v through the discriminator front end
+// and, for each sample it completes, adds the power of its prefilter
+// output to the energy bin of its center and the discriminator sample to
+// sym. The prefilter output of sym sample m is centered discSpan symbols
+// and half a discRate sample after the sample itself.
 func (c *channelizer) discFilter(v complex64) {
-	n := c.n
-	c.n++
-	c.binLeft--
-	if n&1023 == 0 {
-		g := (3 - real(c.ncoRot)*real(c.ncoRot) - imag(c.ncoRot)*imag(c.ncoRot)) / 2
-		c.ncoRot *= complex(g, 0)
-	}
-	v *= c.ncoRot
-	c.ncoRot *= c.ncoStep
-	c.dHist[c.dHead] = v
-	c.dHist[c.dHead+discTaps] = v
-	if c.dHead++; c.dHead == discTaps {
-		c.dHead = 0
-	}
-	if c.decLeft--; c.decLeft > 0 {
+	c.n += c.step
+	s, p, ok := c.df.push(v)
+	if !ok {
 		return
 	}
-	c.decLeft = c.discDec
-	y := fir(c.dHist[c.dHead:c.dHead+discTaps], c.dTaps)
-	c.eAcc += real(y)*real(y) + imag(y)*imag(y)
-	if c.binLeft <= 0 {
-		c.energy.push(c.eAcc)
-		c.eAcc = 0
-		c.binLeft += energyBin
-	}
-	d := y * complex(real(c.prev), -imag(c.prev))
-	c.prev = y
-	f := atan2f(imag(d), real(d)) * c.discHz
-	nr := len(c.rrc)
-	c.fHist[c.fHead] = f
-	c.fHist[c.fHead+nr] = f
-	if c.fHead++; c.fHead == nr {
-		c.fHead = 0
-	}
-	var s float32
-	for k, h := range c.rrc {
-		s += c.fHist[c.fHead+k] * h
+	t := 2*c.sym.n + c.df.center() + discSpan*samplesPerSy + 1 + int64(c.delayCh)
+	if t >= 0 {
+		for t >= (c.eBin+1)*energyBin {
+			c.energy.push(c.eAcc)
+			c.eAcc = 0
+			c.eBin++
+		}
+		c.eAcc += p
 	}
 	c.sym.push(s)
 }

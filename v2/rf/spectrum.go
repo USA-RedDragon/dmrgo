@@ -14,9 +14,6 @@ const (
 	specFrames = 96
 	// channelHz is the occupied bandwidth that the estimator looks for.
 	channelHz = 12500.0
-	// passBins is the number of bins on each side of 0 Hz in the passband
-	// of the front end.
-	passBins = int(wideHz) * fftSize / basebandRate
 )
 
 // fft is an in-place radix-2 FFT of a fixed power-of-two size.
@@ -59,6 +56,10 @@ func (f *fft) transform(x []complex64) {
 // channel-wide signal in the wide baseband from a Welch power spectrum.
 type spectrum struct {
 	f *fft
+	// rate is the sample rate, and pass the number of bins on each side of
+	// 0 Hz in the passband of the front end.
+	rate float64
+	pass int
 	// win holds the window from its middle out: sample i and fftSize-i
 	// take win[min(i, fftSize-i)].
 	win []float32
@@ -85,10 +86,11 @@ func (s *spectrum) reset() {
 	s.frames, s.fill, s.ready = 0, 0, false
 }
 
-// newSpectrum returns an estimator with no frames yet.
-func newSpectrum() *spectrum {
-	s := &spectrum{f: newFFT(fftSize), win: make([]float32, fftSize/2+1), hist: make([]complex64, fftSize),
-		save: make([]complex64, fftSize/2), power: make([]float32, fftSize), sorted: make([]float32, 2*passBins+1)}
+// newSpectrum returns an estimator of samples at rate with no frames yet.
+func newSpectrum(rate float64) *spectrum {
+	pass := int(wideHz*rate/basebandRate) * fftSize / int(rate)
+	s := &spectrum{f: newFFT(fftSize), rate: rate, pass: pass, win: make([]float32, fftSize/2+1), hist: make([]complex64, fftSize),
+		save: make([]complex64, fftSize/2), power: make([]float32, fftSize), sorted: make([]float32, 2*pass+1)}
 	for i := range s.win {
 		s.win[i] = float32(0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/fftSize))
 	}
@@ -131,7 +133,8 @@ func (s *spectrum) push(v complex64) bool {
 // percentile of the passband bins, then the noise floor as the mean of the
 // passband bins away from that span, and the centroid of the excess.
 func (s *spectrum) estimate() {
-	bin := float64(basebandRate) / fftSize
+	bin := s.rate / fftSize
+	passBins := s.pass
 	pass := func(k int) float64 { return float64(s.power[(k+fftSize)%fftSize]) }
 	for k := -passBins; k <= passBins; k++ {
 		s.sorted[k+passBins] = s.power[(k+fftSize)%fftSize]

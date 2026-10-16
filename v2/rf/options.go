@@ -61,9 +61,6 @@ type options struct {
 	TrackH bool
 	// DiscCutHz is the cutoff of the discriminator prefilter.
 	DiscCutHz float64
-	// DiscDecimation is the factor, 1, 2 or 4, by which the discriminator
-	// runs below basebandRate; 0 means 1.
-	DiscDecimation int
 	// ChanDecimation is the factor, 1 or 2, by which the channel ring of
 	// the coherent tiers runs below basebandRate; 0 means 1.
 	ChanDecimation int
@@ -88,8 +85,6 @@ func tierOptions(t Tier) options {
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 	}
 	switch t {
-	case TierDisc:
-		o.DiscDecimation = 2
 	case TierCoherent:
 		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, 5, 0.12, true, 10, 0.5
 		o.ChanDecimation, o.CompactChannel = 2, true
