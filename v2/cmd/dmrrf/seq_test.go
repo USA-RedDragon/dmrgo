@@ -301,7 +301,7 @@ func TestLoopbackResponses(t *testing.T) {
 	l.expect(t, "response", "ACK class=0 type=1 status=0 3191868 -> 9990", 1)
 	l = runLoop(t, "sr", cfg)
 	l.expect(t, "response", "SACK class=2 type=0 status=0 3191868 -> 9990 retry=1,4,6", 1)
-	if !strings.HasPrefix(l.built.Info[0], "sr retry=1,4,6 of 8 blocks, C_RDATA b5") {
+	if !strings.HasPrefix(l.built.Info[0], "sr retry=1,4,6 of 8 blocks, C_RDATA ad") {
 		t.Errorf("tx info %q", l.built.Info[0])
 	}
 }
