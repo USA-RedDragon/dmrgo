@@ -11,6 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -305,8 +306,6 @@ type softAMBESlot struct {
 type softAMBE struct {
 	// slot holds the codes of voice slot i.
 	slot [layer2.VoiceSlotsPerBurst]softAMBESlot
-	// pn holds the C1 scrambling mask for C0 info word a, on the C1 bits.
-	pn [1 << softAMBEC0]uint32
 }
 
 // softAMBEEncoder returns the encoder of a frame in voice slot s whose bits
@@ -366,15 +365,27 @@ func newSoftAMBE() (*softAMBE, error) {
 			return nil, fmt.Errorf("%w: AMBE+2 C0 has %d bits and C1 %d", errSoftDerive, sl.c0.n, sl.c1.n)
 		}
 	}
-	enc := softAMBEEncoder(0, 0)
-	for v := range a.pn {
-		img, err := enc(uint32(v))
-		if err != nil {
-			return nil, err
+	for _, p := range a.slot[0].c1.pos[:a.slot[0].c1.n] {
+		if p >= 8*len(ambe.Encode([7]byte{})) {
+			return nil, fmt.Errorf("%w: AMBE+2 C1 bit %d is not in voice slot 0", errSoftDerive, p)
 		}
-		a.pn[v] = softMask(img, a.slot[0].c1.pos[:a.slot[0].c1.n])
 	}
 	return a, nil
+}
+
+// pn returns the C1 scrambling mask, on the C1 bits, of C0 info word v: the
+// C1 bits of the slot that ambe.Encode makes of a frame whose C0 is v and
+// whose other bits are 0.
+func (a *softAMBE) pn(v uint32) uint32 {
+	var f [7]byte
+	f[0], f[1] = byte(v>>(softAMBEC0-8)&0xff), byte(v<<(16-softAMBEC0)&0xff)
+	slot := ambe.Encode(f)
+	c := &a.slot[0].c1
+	var m uint32
+	for j, p := range c.pos[:c.n] {
+		m |= uint32(slot[p/8]>>(7-p%8)&1) << j
+	}
+	return m
 }
 
 // softOSDCode is a binary linear (n, k) block code with n at most 196 and k
@@ -1200,7 +1211,7 @@ func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst
 				break
 			}
 			s.top1.reset(1)
-			sl.c1.search(&s.tab, d.ambe.pn[s.top.info[c]], 0, 0, &s.top1)
+			sl.c1.search(&s.tab, d.ambe.pn(s.top.info[c]), 0, 0, &s.top1)
 			if total := s.top.cost[c] + s.top1.cost[0]; total < best {
 				best = total
 				info0, cw0 = s.top.info[c], s.top.cw[c]
