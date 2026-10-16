@@ -1,6 +1,7 @@
 package framer_test
 
 import (
+	"math"
 	"math/rand"
 	"os"
 	"testing"
@@ -93,6 +94,9 @@ func TestSearch(t *testing.T) {
 	}
 	if _, ok := framer.Search(stream, -5, -1); !ok {
 		t.Error("negative start")
+	}
+	if _, ok := framer.Search(stream, math.MaxInt, -1); ok {
+		t.Error("found a SYNC after the end of the stream")
 	}
 }
 
