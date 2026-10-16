@@ -165,8 +165,8 @@ Loss is the Eb/N0 in dB above the floor at 90% frame recovery. The floor is a lo
 
 | Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | RAM | Allocs |
 |------|-------|---------------|------|---------------|-------------------------|-----|--------|
-| 0: discriminator | 8.3 dB | 9.2 dB | 10.2 dB | 8.4 dB | 4,000,000 | 68 KiB | 0 |
-| 1: coherent, two pass | 2.6 dB | 6.2 dB | 7.2 dB | 4.9 dB | 20,000,000 | 183 KiB | 0 |
+| 0: discriminator | 8.2 dB | 9.2 dB | 10.2 dB | 8.4 dB | 4,000,000 | 68 KiB | 0 |
+| 1: coherent, two pass | 2.5 dB | 6.2 dB | 7.2 dB | 4.9 dB | 20,000,000 | 183 KiB | 0 |
 | 2: phase trellis, two pass | 1.2 dB | 5.1 dB | 6.2 dB | 4.4 dB | 196,000,000 | 2878 KiB | 0 |
 
 Cost is the CPU time on AMD Ryzen 9 7950X 16-Core Processor. RAM is the heap that NewReceiver keeps for input at 48 kHz with ReceiverConfig.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.
@@ -177,11 +177,11 @@ Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a pay
 
 | Payload | Floor | Tier 0: discriminator | Tier 1: coherent, two pass | Tier 2: phase trellis, two pass |
 |---------|-------|------|------|------|
-| Voice frame (AMBE+2, 49 bits) | 1.2 (0.1) | 9.5 (8.4) | 3.8 (2.7) | 2.5 (1.3) |
+| Voice frame (AMBE+2, 49 bits) | 1.3 (0.1) | 9.5 (8.4) | 3.8 (2.7) | 2.5 (1.3) |
 | Voice frame, protected bits (C0 and C1) | -5.3 (-6.5) | 6.6 (5.5) | 2.7 (1.6) | 1.6 (0.5) |
 | Data block, rate 1/2 | -3.0 (-4.2) | 6.2 (5.1) | 3.2 (2.1) | 2.1 (1.0) |
 | Data block, rate 3/4 | 0.2 (-1.0) | 8.5 (7.4) | 5.1 (4.0) | 4.6 (3.5) |
-| Data block, rate 1 | 6.2 (5.1) | 10.9 (9.7) | 7.2 (6.1) | 7.2 (6.1) |
+| Data block, rate 1 | 6.5 (5.4) | 10.9 (9.7) | 7.2 (6.1) | 7.2 (6.1) |
 | CSBK | -4.1 (-5.3) | 6.1 (4.9) | 3.0 (1.9) | 2.1 (0.9) |
 | Voice LC header and terminator | -4.3 (-5.4) | 6.0 (4.9) | 2.9 (1.8) | 1.7 (0.6) |
 | Data header | -3.9 (-5.1) | 6.2 (5.1) | 3.2 (2.1) | 2.3 (1.2) |
