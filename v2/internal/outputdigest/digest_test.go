@@ -533,13 +533,14 @@ func collectFramer(d digests) {
 	}
 	p := pack(stream)
 	for start := 0; start < len(stream); start += 97 {
-		m, ok := framer.Search(p, start, 6)
+		m, ok := framer.Search(p, 8*len(p), start, 6)
 		d.add("framer/search", "%d %+v %v", start, m, ok)
 	}
 	f := framer.New(framer.Config{})
 	var out []framer.Burst
 	for i := 0; i < len(p); i += 13 {
-		out = f.AppendBursts(out[:0], p[i:min(i+13, len(p))])
+		chunk := p[i:min(i+13, len(p))]
+		out = f.AppendBursts(out[:0], chunk, 8*len(chunk))
 		for _, b := range out {
 			d.add("framer/write", "{Data:%v Offset:%v Sync:%v Distance:%v HasCACH:%v CACH:%s Channel:%v}",
 				b.Data, b.Offset, b.Sync, b.Distance, b.HasCACH, cachString(b.CACH), b.Channel)
