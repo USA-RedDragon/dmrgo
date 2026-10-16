@@ -177,8 +177,8 @@ func (t *VoiceTransmitter) AppendSlots(dst []RawBurst, slots ...[9]byte) ([]RawB
 
 // AddFrames adds AMBE+2 frames in transmit order, each as the slot
 // vocoder.EncodeAMBE72 returns, and returns the voice bursts they complete
-// and the errors of EncodeAMBE72, as AppendFrames does with a nil dst. It allocates the slice; AppendFrames
-// does not.
+// and the errors of EncodeAMBE72, as AppendFrames does with a nil dst. It
+// allocates the slice; AppendFrames does not.
 func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([]RawBurst, error) {
 	return t.AppendFrames(nil, frames...)
 }
@@ -186,7 +186,8 @@ func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([]RawBurst, e
 // AppendFrames adds AMBE+2 frames in transmit order, each as the slot
 // vocoder.EncodeAMBE72 returns, appends the voice bursts they complete to
 // dst and returns the extended slice, as AppendSlots does, with the errors
-// of EncodeAMBE72. It allocates only when dst has no room.
+// of EncodeAMBE72. On an error the frames before the failing one stay
+// added. It allocates only when dst has no room.
 func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFrame) ([]RawBurst, error) {
 	if t.terminated {
 		return dst, ErrVoiceTerminated
