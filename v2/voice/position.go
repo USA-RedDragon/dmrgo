@@ -37,33 +37,34 @@ type tracker struct {
 	hasRaw bool
 }
 
+// afterHeader anchors the sequence number of a Voice LC Header with Hint
+// h, as the position before burst A, when no voice burst of the call has
+// come yet.
+func (t *tracker) afterHeader(h *layer2.Hint) {
+	if t.hasRaw {
+		return
+	}
+	t.known, t.pos = true, layer2.VoiceBurstsPerSuperframe-1
+	t.seq, t.hasSeq = h.Seq, true
+}
+
 // place returns the superframe index of the voice burst b, whose bits are
 // raw, 0 for burst A to 5 for burst F, or -1 when no evidence places it,
 // and the number of voice bursts lost before it. The evidence, strongest
 // first, is the transport position, the voice SYNC, the EMB LCSS of bursts
 // B, E and F, and the position predicted from the sequence number or,
 // without one, from the time since the last burst. A prediction never
-// places a burst at A, which needs its SYNC. Without a sequence number, a
-// burst that comes less than half a slot period after the last one is a
-// duplicate when it has the same bits, and else the next burst, which
-// arrived early.
+// places a burst at A, which needs its SYNC. A burst without a SYNC whose
+// sequence number predicts A is burst B: a MOTOTRBO repeater that misses
+// burst A does not count it in the RTP sequence (ipsc2hbrp commit a1a8d00,
+// from an XPR 8400 capture), and burst A counts as lost. Without a
+// sequence number, a burst that comes less than half a slot period after
+// the last one is a duplicate when it has the same bits, and else the next
+// burst, which arrived early.
 func (t *tracker) place(b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, now time.Duration) (idx, lost int, p placement) {
-	gap := 0
-	if h.HasSeq && t.hasSeq {
-		bits := uint(h.SeqBits)
-		if bits == 0 || bits > 16 {
-			bits = 16
-		}
-		size := 1 << bits
-		d := int(h.Seq-t.seq) & (size - 1)
-		switch {
-		case d == 0:
-			return -1, 0, duplicate
-		case d < size/2:
-			gap = d
-		case size-d <= lateWindow:
-			return -1, 0, late
-		}
+	gap, p := t.seqGap(h)
+	if p != placed {
+		return -1, 0, p
 	}
 	steps, at := 1, now
 	switch {
@@ -79,19 +80,11 @@ func (t *tracker) place(b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, n
 		}
 	}
 
-	idx = -1
-	if pos, ok := strongPosition(b, h); ok {
-		idx = pos
-	} else if t.known {
-		pred := (t.pos + steps) % layer2.VoiceBurstsPerSuperframe
-		cont := b.HasEmbeddedSignalling() && !b.EmbeddedSignalling.FEC.Uncorrectable &&
-			b.EmbeddedSignalling.LCSS == enums.LCSSContinuationFragment
-		if pred != 0 && (!cont || pred == 2 || pred == 3) {
-			idx = pred
-		}
-	}
-
+	idx = t.position(b, h, steps, gap > 0)
+	missedA := gap > 0 && t.known && idx == 1 && (t.pos+steps)%layer2.VoiceBurstsPerSuperframe == 0
 	switch {
+	case gap > 0 && missedA:
+		lost = gap
 	case gap > 0:
 		lost = gap - 1
 	case idx >= 0 && t.known:
@@ -110,6 +103,52 @@ func (t *tracker) place(b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, n
 		t.seq, t.hasSeq = h.Seq, true
 	}
 	return idx, lost, placed
+}
+
+// seqGap returns how many sequence numbers h is past the last burst, 0
+// without a sequence number or after a jump, or the placement of a
+// duplicate or late burst.
+func (t *tracker) seqGap(h *layer2.Hint) (int, placement) {
+	if !h.HasSeq || !t.hasSeq {
+		return 0, placed
+	}
+	bits := uint(h.SeqBits)
+	if bits == 0 || bits > 16 {
+		bits = 16
+	}
+	size := 1 << bits
+	d := int(h.Seq-t.seq) & (size - 1)
+	switch {
+	case d == 0:
+		return 0, duplicate
+	case d < size/2:
+		return d, placed
+	case size-d <= lateWindow:
+		return 0, late
+	}
+	return 0, placed
+}
+
+// position returns the superframe index of b from its own evidence, or
+// predicted steps bursts after the last one, or -1. bySeq reports that a
+// sequence number gave steps.
+func (t *tracker) position(b *layer2.Burst, h *layer2.Hint, steps int, bySeq bool) int {
+	if pos, ok := strongPosition(b, h); ok {
+		return pos
+	}
+	if !t.known {
+		return -1
+	}
+	pred := (t.pos + steps) % layer2.VoiceBurstsPerSuperframe
+	if pred == 0 && bySeq {
+		pred = 1
+	}
+	cont := b.HasEmbeddedSignalling() && !b.EmbeddedSignalling.FEC.Uncorrectable &&
+		b.EmbeddedSignalling.LCSS == enums.LCSSContinuationFragment
+	if pred == 0 || cont && pred != 2 && pred != 3 {
+		return -1
+	}
+	return pred
 }
 
 // strongPosition returns the superframe index of b from the transport, the

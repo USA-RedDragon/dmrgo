@@ -364,7 +364,8 @@ func TestReceiver_Sequence(t *testing.T) {
 }
 
 // TestReceiver_TransportPosition places bursts by Hint.VoiceBurst and
-// checks that a burst is never placed at A without its SYNC.
+// checks that a burst without its SYNC where the sequence number predicts A
+// is placed at B.
 func TestReceiver_TransportPosition(t *testing.T) {
 	t.Parallel()
 
@@ -388,8 +389,8 @@ func TestReceiver_TransportPosition(t *testing.T) {
 	b.EmbeddedSignalling.FEC.Uncorrectable = true
 	in[7].decoded = &b
 	got = feed(t, newReceiver(t, nil), in, -1)
-	if p := positions(got); p != "ABCDEF?BCDEF" {
-		t.Errorf("positions %s; a burst without its SYNC must not be placed at A", p)
+	if p := positions(got); p != "ABCDEFBBCDEF" {
+		t.Errorf("positions %s; a burst without its SYNC where the sequence number predicts A is B", p)
 	}
 }
 
