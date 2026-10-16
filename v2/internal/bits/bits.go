@@ -90,6 +90,12 @@ func Copy(dst []byte, dstStart int, src []byte, srcStart, n int) {
 // Unpack writes len(dst) bits of src from bit start into dst, one bit.Bit
 // per bit.
 func Unpack(dst []bit.Bit, src []byte, start int) {
+	if start&7 == 0 {
+		for i := range dst {
+			dst[i] = bit.Bit(src[start>>3+i>>3] >> (7 - i&7) & 1)
+		}
+		return
+	}
 	for i := range dst {
 		dst[i] = bit.Bit(Bit(src, start+i))
 	}
@@ -98,6 +104,17 @@ func Unpack(dst []bit.Bit, src []byte, start int) {
 // Pack writes the low bits of src into dst from bit start. The other bits of
 // dst stay as they are.
 func Pack(dst []byte, start int, src []bit.Bit) {
+	if start&7 == 0 {
+		whole := len(src) &^ 7
+		for i := 0; i < whole; i += 8 {
+			var x byte
+			for _, b := range src[i : i+8] {
+				x = x<<1 | byte(b&1)
+			}
+			dst[start>>3+i>>3] = x
+		}
+		src, start = src[whole:], start+whole
+	}
 	for i, b := range src {
 		SetBit(dst, start+i, byte(b))
 	}
