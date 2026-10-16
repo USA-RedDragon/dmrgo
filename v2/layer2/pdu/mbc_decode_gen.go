@@ -18,10 +18,11 @@ import (
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// newMBCHeaderBytes decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
-// data holds its bits packed, the first bit most significant.
-// It allocates the payload struct that the dispatch field points to.
-func newMBCHeaderBytes(data [12]byte) MBCHeader {
+// DecodeMBCHeader decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
+// data holds the 96 bits of the PDU packed, the first bit in the most
+// significant bit of data[0]. It allocates the payload struct that the
+// dispatch field points to; DecodeMBCHeaderInto does not.
+func DecodeMBCHeader(data [12]byte) MBCHeader {
 	var result MBCHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xAAAA)
 	result.LastBlock = data[0]&0x80 != 0
@@ -33,34 +34,34 @@ func newMBCHeaderBytes(data [12]byte) MBCHeader {
 	if result.FID == 0 {
 		switch result.Opcode {
 		case CSBKPrivateVoiceGrant:
-			_decoded := decodePrivateVoiceGrantPDUBytes(_dispatchBytes)
+			_decoded := decodePrivateVoiceGrantPDU(_dispatchBytes)
 			result.PrivateVoiceGrantPDU = &_decoded
 		case CSBKTalkgroupVoiceGrant:
-			_decoded := decodeTalkgroupVoiceGrantPDUBytes(_dispatchBytes)
+			_decoded := decodeTalkgroupVoiceGrantPDU(_dispatchBytes)
 			result.TalkgroupVoiceGrantPDU = &_decoded
 		case CSBKBroadcastTalkgroupVoiceGrant:
-			_decoded := decodeBroadcastTalkgroupVoiceGrantPDUBytes(_dispatchBytes)
+			_decoded := decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBytes)
 			result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
 		case CSBKPrivateDataGrant:
-			_decoded := decodePrivateDataGrantPDUBytes(_dispatchBytes)
+			_decoded := decodePrivateDataGrantPDU(_dispatchBytes)
 			result.PrivateDataGrantPDU = &_decoded
 		case CSBKTalkgroupDataGrant:
-			_decoded := decodeTalkgroupDataGrantPDUBytes(_dispatchBytes)
+			_decoded := decodeTalkgroupDataGrantPDU(_dispatchBytes)
 			result.TalkgroupDataGrantPDU = &_decoded
 		case CSBKDuplexPrivateVoiceGrant:
-			_decoded := decodeDuplexPrivateVoiceGrantPDUBytes(_dispatchBytes)
+			_decoded := decodeDuplexPrivateVoiceGrantPDU(_dispatchBytes)
 			result.DuplexPrivateVoiceGrantPDU = &_decoded
 		case CSBKDuplexPrivateDataGrant:
-			_decoded := decodeDuplexPrivateDataGrantPDUBytes(_dispatchBytes)
+			_decoded := decodeDuplexPrivateDataGrantPDU(_dispatchBytes)
 			result.DuplexPrivateDataGrantPDU = &_decoded
 		case CSBKPrivateDataGrantMultiItem:
-			_decoded := decodePrivateDataGrantMultiItemPDUBytes(_dispatchBytes)
+			_decoded := decodePrivateDataGrantMultiItemPDU(_dispatchBytes)
 			result.PrivateDataGrantMultiItemPDU = &_decoded
 		case CSBKMove:
-			_decoded := decodeMovePDUBytes(_dispatchBytes)
+			_decoded := decodeMovePDU(_dispatchBytes)
 			result.MovePDU = &_decoded
 		case CSBKBroadcast:
-			_decoded := decodeBroadcastPDUBytes(_dispatchBytes)
+			_decoded := decodeBroadcastPDU(_dispatchBytes)
 			result.BroadcastPDU = &_decoded
 		default:
 			copy(result.RawPayload[0:8], data[2:10])
@@ -69,17 +70,6 @@ func newMBCHeaderBytes(data [12]byte) MBCHeader {
 		copy(result.RawPayload[0:8], data[2:10])
 	}
 	return result
-}
-
-// DecodeMBCHeader decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
-// It allocates the payload struct that the dispatch field points to;
-// DecodeMBCHeaderInto does not.
-func DecodeMBCHeader(data [96]bit.Bit) MBCHeader {
-	var _b [12]byte
-	for _i := range 96 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return newMBCHeaderBytes(_b)
 }
 
 // MBCHeaderPayloads holds one payload struct of each type that
@@ -98,10 +88,11 @@ type MBCHeaderPayloads struct {
 	broadcastPDU                    BroadcastPDU
 }
 
-// decodeMBCHeaderBytesInto decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
-// data holds its bits packed, the first bit most significant. It decodes
-// into dst and points the dispatch field of dst into p.
-func decodeMBCHeaderBytesInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byte) {
+// DecodeMBCHeaderInto decodes data into dst as DecodeMBCHeader does,
+// but points the dispatch field of dst into p, so it does not allocate.
+// The payload stays valid until the next decode into p. dst and p must
+// not be nil.
+func DecodeMBCHeaderInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byte) {
 	*dst = MBCHeader{}
 	result := dst
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xAAAA)
@@ -114,34 +105,34 @@ func decodeMBCHeaderBytesInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byt
 	if result.FID == 0 {
 		switch result.Opcode {
 		case CSBKPrivateVoiceGrant:
-			p.privateVoiceGrantPDU = decodePrivateVoiceGrantPDUBytes(_dispatchBytes)
+			p.privateVoiceGrantPDU = decodePrivateVoiceGrantPDU(_dispatchBytes)
 			result.PrivateVoiceGrantPDU = &p.privateVoiceGrantPDU
 		case CSBKTalkgroupVoiceGrant:
-			p.talkgroupVoiceGrantPDU = decodeTalkgroupVoiceGrantPDUBytes(_dispatchBytes)
+			p.talkgroupVoiceGrantPDU = decodeTalkgroupVoiceGrantPDU(_dispatchBytes)
 			result.TalkgroupVoiceGrantPDU = &p.talkgroupVoiceGrantPDU
 		case CSBKBroadcastTalkgroupVoiceGrant:
-			p.broadcastTalkgroupVoiceGrantPDU = decodeBroadcastTalkgroupVoiceGrantPDUBytes(_dispatchBytes)
+			p.broadcastTalkgroupVoiceGrantPDU = decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBytes)
 			result.BroadcastTalkgroupVoiceGrantPDU = &p.broadcastTalkgroupVoiceGrantPDU
 		case CSBKPrivateDataGrant:
-			p.privateDataGrantPDU = decodePrivateDataGrantPDUBytes(_dispatchBytes)
+			p.privateDataGrantPDU = decodePrivateDataGrantPDU(_dispatchBytes)
 			result.PrivateDataGrantPDU = &p.privateDataGrantPDU
 		case CSBKTalkgroupDataGrant:
-			p.talkgroupDataGrantPDU = decodeTalkgroupDataGrantPDUBytes(_dispatchBytes)
+			p.talkgroupDataGrantPDU = decodeTalkgroupDataGrantPDU(_dispatchBytes)
 			result.TalkgroupDataGrantPDU = &p.talkgroupDataGrantPDU
 		case CSBKDuplexPrivateVoiceGrant:
-			p.duplexPrivateVoiceGrantPDU = decodeDuplexPrivateVoiceGrantPDUBytes(_dispatchBytes)
+			p.duplexPrivateVoiceGrantPDU = decodeDuplexPrivateVoiceGrantPDU(_dispatchBytes)
 			result.DuplexPrivateVoiceGrantPDU = &p.duplexPrivateVoiceGrantPDU
 		case CSBKDuplexPrivateDataGrant:
-			p.duplexPrivateDataGrantPDU = decodeDuplexPrivateDataGrantPDUBytes(_dispatchBytes)
+			p.duplexPrivateDataGrantPDU = decodeDuplexPrivateDataGrantPDU(_dispatchBytes)
 			result.DuplexPrivateDataGrantPDU = &p.duplexPrivateDataGrantPDU
 		case CSBKPrivateDataGrantMultiItem:
-			p.privateDataGrantMultiItemPDU = decodePrivateDataGrantMultiItemPDUBytes(_dispatchBytes)
+			p.privateDataGrantMultiItemPDU = decodePrivateDataGrantMultiItemPDU(_dispatchBytes)
 			result.PrivateDataGrantMultiItemPDU = &p.privateDataGrantMultiItemPDU
 		case CSBKMove:
-			p.movePDU = decodeMovePDUBytes(_dispatchBytes)
+			p.movePDU = decodeMovePDU(_dispatchBytes)
 			result.MovePDU = &p.movePDU
 		case CSBKBroadcast:
-			p.broadcastPDU = decodeBroadcastPDUBytes(_dispatchBytes)
+			p.broadcastPDU = decodeBroadcastPDU(_dispatchBytes)
 			result.BroadcastPDU = &p.broadcastPDU
 		default:
 			copy(result.RawPayload[0:8], data[2:10])
@@ -151,21 +142,9 @@ func decodeMBCHeaderBytesInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byt
 	}
 }
 
-// DecodeMBCHeaderInto decodes data into dst as DecodeMBCHeader does,
-// but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. dst and p must
-// not be nil.
-func DecodeMBCHeaderInto(dst *MBCHeader, p *MBCHeaderPayloads, data [96]bit.Bit) {
-	var _b [12]byte
-	for _i := range 96 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	decodeMBCHeaderBytesInto(dst, p, _b)
-}
-
-// encodeBytes encodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *MBCHeader) encodeBytes() ([12]byte, error) {
+// Encode encodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1). It returns
+// the 96 bits packed, the first bit in the most significant bit of byte 0.
+func (s *MBCHeader) Encode() ([12]byte, error) {
 	var data [12]byte
 	_payload := ""
 	if s.PrivateVoiceGrantPDU != nil {
@@ -227,61 +206,61 @@ func (s *MBCHeader) encodeBytes() ([12]byte, error) {
 	}
 	switch {
 	case s.PrivateVoiceGrantPDU != nil:
-		_pduBytes, err := s.PrivateVoiceGrantPDU.encodeBytes()
+		_pduBytes, err := s.PrivateVoiceGrantPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupVoiceGrantPDU != nil:
-		_pduBytes, err := s.TalkgroupVoiceGrantPDU.encodeBytes()
+		_pduBytes, err := s.TalkgroupVoiceGrantPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_pduBytes, err := s.BroadcastTalkgroupVoiceGrantPDU.encodeBytes()
+		_pduBytes, err := s.BroadcastTalkgroupVoiceGrantPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantPDU != nil:
-		_pduBytes, err := s.PrivateDataGrantPDU.encodeBytes()
+		_pduBytes, err := s.PrivateDataGrantPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupDataGrantPDU != nil:
-		_pduBytes, err := s.TalkgroupDataGrantPDU.encodeBytes()
+		_pduBytes, err := s.TalkgroupDataGrantPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_pduBytes, err := s.DuplexPrivateVoiceGrantPDU.encodeBytes()
+		_pduBytes, err := s.DuplexPrivateVoiceGrantPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateDataGrantPDU != nil:
-		_pduBytes, err := s.DuplexPrivateDataGrantPDU.encodeBytes()
+		_pduBytes, err := s.DuplexPrivateDataGrantPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantMultiItemPDU != nil:
-		_pduBytes, err := s.PrivateDataGrantMultiItemPDU.encodeBytes()
+		_pduBytes, err := s.PrivateDataGrantMultiItemPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.MovePDU != nil:
-		_pduBytes, err := s.MovePDU.encodeBytes()
+		_pduBytes, err := s.MovePDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastPDU != nil:
-		_pduBytes, err := s.BroadcastPDU.encodeBytes()
+		_pduBytes, err := s.BroadcastPDU.Encode()
 		if err != nil {
 			return [12]byte{}, err
 		}
@@ -342,19 +321,6 @@ func (s *MBCHeader) encodeBytes() ([12]byte, error) {
 	return data, nil
 }
 
-// Encode encodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
-func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
-	return data, nil
-}
-
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MBCHeader) String() string {
@@ -388,27 +354,20 @@ func (s *MBCHeader) String() string {
 	return _ret
 }
 
-// decodeMBCContinuationBytes decodes an MBCContinuation (ETSI TS 102 361-1 clause 7.4.1).
-// data holds its bits packed, the first bit most significant.
-func decodeMBCContinuationBytes(data [12]byte) MBCContinuation {
+// DecodeMBCContinuation decodes an MBCContinuation (ETSI TS 102 361-1 clause
+// 7.4.1). data holds the 96 bits of the PDU packed, the first bit in the
+// most significant bit of data[0].
+func DecodeMBCContinuation(data [12]byte) MBCContinuation {
 	var result MBCContinuation
 	result.LastBlock = data[0]&0x80 != 0
 	bits.Copy(result.Data[:], 0, data[:], 1, 95)
 	return result
 }
 
-// DecodeMBCContinuation decodes an MBCContinuation (ETSI TS 102 361-1 clause 7.4.1).
-func DecodeMBCContinuation(data [96]bit.Bit) MBCContinuation {
-	var _b [12]byte
-	for _i := range 96 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodeMBCContinuationBytes(_b)
-}
-
-// encodeBytes encodes an MBCContinuation (ETSI TS 102 361-1 clause 7.4.1).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *MBCContinuation) encodeBytes() ([12]byte, error) {
+// Encode encodes an MBCContinuation (ETSI TS 102 361-1 clause 7.4.1). It
+// returns the 96 bits packed, the first bit in the most significant bit of
+// byte 0.
+func (s *MBCContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -420,28 +379,16 @@ func (s *MBCContinuation) encodeBytes() ([12]byte, error) {
 	return data, nil
 }
 
-// Encode encodes an MBCContinuation (ETSI TS 102 361-1 clause 7.4.1).
-func (s *MBCContinuation) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
-	return data, nil
-}
-
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MBCContinuation) String() string {
 	return fmt.Sprintf("MBCContinuation{ LastBlock: %t, Data: %x }", s.LastBlock, s.Data)
 }
 
-// decodeCGAPContinuationBytes decodes a CGAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16).
-// data holds its bits packed, the first bit most significant.
-func decodeCGAPContinuationBytes(data [12]byte) CGAPContinuation {
+// decodeCGAPContinuation decodes a CGAPContinuation (ETSI TS 102 361-4
+// clause 7.1.1.1.2, Table 7.16). data holds the 96 bits of the PDU packed,
+// the first bit in the most significant bit of data[0].
+func decodeCGAPContinuation(data [12]byte) CGAPContinuation {
 	var result CGAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
 	result.LastBlock = data[0]&0x80 != 0
@@ -451,15 +398,16 @@ func decodeCGAPContinuationBytes(data [12]byte) CGAPContinuation {
 	result.ColorCode = enums.ColorCode(uint64(data[1]) & 0xF)
 	result.Cdeftype = uint8(uint64(data[2]) >> 4)
 	result.Reserved2 = uint8(uint64(data[2]) >> 2 & 0x3)
-	var _cdefParmsBits [58]bit.Bit
-	bits.Unpack(_cdefParmsBits[:], data[:], 22)
-	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBits)
+	var _cdefParmsBytes [8]byte
+	bits.Copy(_cdefParmsBytes[:], 0, data[:], 22, 58)
+	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBytes)
 	return result
 }
 
-// encodeBytes encodes a CGAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *CGAPContinuation) encodeBytes() ([12]byte, error) {
+// Encode encodes a CGAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.2,
+// Table 7.16). It returns the 96 bits packed, the first bit in the most
+// significant bit of byte 0.
+func (s *CGAPContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -487,27 +435,14 @@ func (s *CGAPContinuation) encodeBytes() ([12]byte, error) {
 		return [12]byte{}, errCGAPContinuationReserved2Range
 	}
 	data[2] = data[2]&^0x0C | byte(uint64(s.Reserved2)<<2)&0x0C
-	_cdefParmsBits, err := s.CdefParms.Encode()
+	_cdefParmsBytes, err := s.CdefParms.Encode()
 	if err != nil {
 		return [12]byte{}, err
 	}
-	bits.Pack(data[:], 22, _cdefParmsBits[:])
+	bits.Copy(data[:], 22, _cdefParmsBytes[:], 0, 58)
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal >> 8)
 	data[11] = byte(_crcVal)
-	return data, nil
-}
-
-// Encode encodes a CGAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16).
-func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 
@@ -517,9 +452,10 @@ func (s *CGAPContinuation) String() string {
 	return fmt.Sprintf("CGAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
 
-// decodeMVAPContinuationBytes decodes an MVAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18).
-// data holds its bits packed, the first bit most significant.
-func decodeMVAPContinuationBytes(data [12]byte) MVAPContinuation {
+// decodeMVAPContinuation decodes an MVAPContinuation (ETSI TS 102 361-4
+// clause 7.1.1.1.3.1, Table 7.18). data holds the 96 bits of the PDU packed,
+// the first bit in the most significant bit of data[0].
+func decodeMVAPContinuation(data [12]byte) MVAPContinuation {
 	var result MVAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
 	result.LastBlock = data[0]&0x80 != 0
@@ -529,15 +465,16 @@ func decodeMVAPContinuationBytes(data [12]byte) MVAPContinuation {
 	result.ColorCode = enums.ColorCode(uint64(data[1]) & 0xF)
 	result.Cdeftype = uint8(uint64(data[2]) >> 4)
 	result.Reserved2 = uint8(uint64(data[2]) >> 2 & 0x3)
-	var _cdefParmsBits [58]bit.Bit
-	bits.Unpack(_cdefParmsBits[:], data[:], 22)
-	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBits)
+	var _cdefParmsBytes [8]byte
+	bits.Copy(_cdefParmsBytes[:], 0, data[:], 22, 58)
+	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBytes)
 	return result
 }
 
-// encodeBytes encodes an MVAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *MVAPContinuation) encodeBytes() ([12]byte, error) {
+// Encode encodes an MVAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.3.1,
+// Table 7.18). It returns the 96 bits packed, the first bit in the most
+// significant bit of byte 0.
+func (s *MVAPContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -565,27 +502,14 @@ func (s *MVAPContinuation) encodeBytes() ([12]byte, error) {
 		return [12]byte{}, errMVAPContinuationReserved2Range
 	}
 	data[2] = data[2]&^0x0C | byte(uint64(s.Reserved2)<<2)&0x0C
-	_cdefParmsBits, err := s.CdefParms.Encode()
+	_cdefParmsBytes, err := s.CdefParms.Encode()
 	if err != nil {
 		return [12]byte{}, err
 	}
-	bits.Pack(data[:], 22, _cdefParmsBits[:])
+	bits.Copy(data[:], 22, _cdefParmsBytes[:], 0, 58)
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal >> 8)
 	data[11] = byte(_crcVal)
-	return data, nil
-}
-
-// Encode encodes an MVAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18).
-func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 
@@ -595,9 +519,10 @@ func (s *MVAPContinuation) String() string {
 	return fmt.Sprintf("MVAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
 
-// decodeBCAPContinuationBytes decodes a BCAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21).
-// data holds its bits packed, the first bit most significant.
-func decodeBCAPContinuationBytes(data [12]byte) BCAPContinuation {
+// decodeBCAPContinuation decodes a BCAPContinuation (ETSI TS 102 361-4
+// clause 7.1.1.1.5.1, Table 7.21). data holds the 96 bits of the PDU packed,
+// the first bit in the most significant bit of data[0].
+func decodeBCAPContinuation(data [12]byte) BCAPContinuation {
 	var result BCAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
 	result.LastBlock = data[0]&0x80 != 0
@@ -606,15 +531,16 @@ func decodeBCAPContinuationBytes(data [12]byte) BCAPContinuation {
 	result.Reserved1 = byte(uint64(data[1]))
 	result.Cdeftype = uint8(uint64(data[2]) >> 4)
 	result.Reserved2 = uint8(uint64(data[2]) >> 2 & 0x3)
-	var _cdefParmsBits [58]bit.Bit
-	bits.Unpack(_cdefParmsBits[:], data[:], 22)
-	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBits)
+	var _cdefParmsBytes [8]byte
+	bits.Copy(_cdefParmsBytes[:], 0, data[:], 22, 58)
+	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBytes)
 	return result
 }
 
-// encodeBytes encodes a BCAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *BCAPContinuation) encodeBytes() ([12]byte, error) {
+// Encode encodes a BCAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.5.1,
+// Table 7.21). It returns the 96 bits packed, the first bit in the most
+// significant bit of byte 0.
+func (s *BCAPContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -635,27 +561,14 @@ func (s *BCAPContinuation) encodeBytes() ([12]byte, error) {
 		return [12]byte{}, errBCAPContinuationReserved2Range
 	}
 	data[2] = data[2]&^0x0C | byte(uint64(s.Reserved2)<<2)&0x0C
-	_cdefParmsBits, err := s.CdefParms.Encode()
+	_cdefParmsBytes, err := s.CdefParms.Encode()
 	if err != nil {
 		return [12]byte{}, err
 	}
-	bits.Pack(data[:], 22, _cdefParmsBits[:])
+	bits.Copy(data[:], 22, _cdefParmsBytes[:], 0, 58)
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal >> 8)
 	data[11] = byte(_crcVal)
-	return data, nil
-}
-
-// Encode encodes a BCAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21).
-func (s *BCAPContinuation) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 
@@ -665,9 +578,10 @@ func (s *BCAPContinuation) String() string {
 	return fmt.Sprintf("BCAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
 
-// decodeVNAPContinuationBytes decodes a VNAPContinuation (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72).
-// data holds its bits packed, the first bit most significant.
-func decodeVNAPContinuationBytes(data [12]byte) VNAPContinuation {
+// decodeVNAPContinuation decodes a VNAPContinuation (ETSI TS 102 361-4
+// clause 7.2.19.3.1, Table 7.72). data holds the 96 bits of the PDU packed,
+// the first bit in the most significant bit of data[0].
+func decodeVNAPContinuation(data [12]byte) VNAPContinuation {
 	var result VNAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
 	result.LastBlock = data[0]&0x80 != 0
@@ -677,15 +591,16 @@ func decodeVNAPContinuationBytes(data [12]byte) VNAPContinuation {
 	result.ColorCode = enums.ColorCode(uint64(data[1]) & 0xF)
 	result.Cdeftype = uint8(uint64(data[2]) >> 4)
 	result.Reserved2 = uint8(uint64(data[2]) >> 2 & 0x3)
-	var _cdefParmsBits [58]bit.Bit
-	bits.Unpack(_cdefParmsBits[:], data[:], 22)
-	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBits)
+	var _cdefParmsBytes [8]byte
+	bits.Copy(_cdefParmsBytes[:], 0, data[:], 22, 58)
+	result.CdefParms = layer3.DecodeCdefParms(_cdefParmsBytes)
 	return result
 }
 
-// encodeBytes encodes a VNAPContinuation (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *VNAPContinuation) encodeBytes() ([12]byte, error) {
+// Encode encodes a VNAPContinuation (ETSI TS 102 361-4 clause 7.2.19.3.1,
+// Table 7.72). It returns the 96 bits packed, the first bit in the most
+// significant bit of byte 0.
+func (s *VNAPContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -713,27 +628,14 @@ func (s *VNAPContinuation) encodeBytes() ([12]byte, error) {
 		return [12]byte{}, errVNAPContinuationReserved2Range
 	}
 	data[2] = data[2]&^0x0C | byte(uint64(s.Reserved2)<<2)&0x0C
-	_cdefParmsBits, err := s.CdefParms.Encode()
+	_cdefParmsBytes, err := s.CdefParms.Encode()
 	if err != nil {
 		return [12]byte{}, err
 	}
-	bits.Pack(data[:], 22, _cdefParmsBits[:])
+	bits.Copy(data[:], 22, _cdefParmsBytes[:], 0, 58)
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal >> 8)
 	data[11] = byte(_crcVal)
-	return data, nil
-}
-
-// Encode encodes a VNAPContinuation (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72).
-func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

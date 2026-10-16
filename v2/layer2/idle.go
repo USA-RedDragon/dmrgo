@@ -9,13 +9,18 @@ import (
 // IdleMessageInfo returns a copy of the 96 information bits of the idle
 // message, the same value as pdu.PRFillBits (ETSI TS 102 361-1 Table D.2).
 func IdleMessageInfo() [96]bit.Bit {
-	return pdu.PRFillBits()
+	var b [96]bit.Bit
+	p := pdu.PRFillBits()
+	unpackBits(b[:], p[:])
+	return b
 }
 
 // IsIdleMessage reports whether infoBits is the idle message, as
 // pdu.IsPRFill does (ETSI TS 102 361-1 Table D.2).
 func IsIdleMessage(infoBits [96]bit.Bit) bool {
-	return pdu.IsPRFill(infoBits)
+	var p [12]byte
+	packBits(p[:], infoBits[:])
+	return pdu.IsPRFill(p)
 }
 
 // IsNullEmbeddedLC reports whether the 32 transmit bits are the Null

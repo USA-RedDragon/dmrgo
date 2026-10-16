@@ -36,16 +36,15 @@ func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 	if fid == enums.FIDStandardized {
 		lc.GroupVoice = gv
 	} else {
-		bits := must(gv.Encode())
-		lc.RawPayload = [7]byte(bit.Pack(bits[:]))
+		lc.RawPayload = must(gv.Encode())
 	}
 	return lc
 }
 
-// lcBits returns the 96 on-air bits of lc as a burst of dataType carries
-// them, so LCs decoded with RawPayload compare equal to the variant they
-// were built from.
-func lcBits(t *testing.T, lc pdu.FullLinkControl, dataType enums.DataType) [96]bit.Bit {
+// lcBits returns the 96 on-air bits of lc, packed, as a burst of dataType
+// carries them, so LCs decoded with RawPayload compare equal to the variant
+// they were built from.
+func lcBits(t *testing.T, lc pdu.FullLinkControl, dataType enums.DataType) [12]byte {
 	t.Helper()
 	lc.BurstDataType = dataType
 	return must(lc.Encode())

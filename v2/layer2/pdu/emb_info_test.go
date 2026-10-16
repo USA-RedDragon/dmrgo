@@ -3,8 +3,8 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -20,8 +20,7 @@ func TestEMBInfo_IPSCExample(t *testing.T) {
 	if cw := e.Codeword(); cw != 0x1391 {
 		t.Fatalf("Codeword %#04x, want 0x1391", cw)
 	}
-	bits := must(s.Encode())
-	if got := bit.Pack(bits[:]); got[0] != 0x13 || got[1] != 0x91 {
+	if got := must(s.Encode()); got[0] != 0x13 || got[1] != 0x91 {
 		t.Fatalf("EmbeddedSignalling.Encode %x", got)
 	}
 	d, res := pdu.DecodeEMBCodeword(0x1391)
@@ -49,7 +48,7 @@ func TestEMBInfo_AllValues(t *testing.T) {
 		if back := s.Info(); back != e {
 			t.Fatalf("%#02x: Info %#02x", byte(e), byte(back))
 		}
-		if enc := must(s.Encode()); uint16(bit.Uint(enc[:])) != want {
+		if enc := must(s.Encode()); uint16(bits.Field(enc[:], 0, 16)) != want {
 			t.Fatalf("%#02x: EmbeddedSignalling.Encode differs", byte(e))
 		}
 		if d, res := pdu.DecodeEMBCodeword(want); d != e || res.ErrorsCorrected != 0 || res.Uncorrectable {

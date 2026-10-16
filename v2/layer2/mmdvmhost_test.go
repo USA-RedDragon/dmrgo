@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -86,23 +86,20 @@ func TestMMDVMHostAccepts_UncheckedDataTypes(t *testing.T) {
 func TestMMDVMHostAccepts_MBCContinuation(t *testing.T) {
 	t.Parallel()
 
-	var first, last [96]bit.Bit
-	for i := range last {
-		first[i] = bit.Bit(i % 3 & 1)
-		last[i] = bit.Bit(i % 5 & 1)
+	var first, last [12]byte
+	for i := range 96 {
+		bits.SetBit(first[:], i, byte(i%3&1))
+		bits.SetBit(last[:], i, byte(i%5&1))
 	}
-	last[0] = 1
-	blocks := [][96]bit.Bit{last}
+	bits.SetBit(last[:], 0, 1)
+	blocks := [][12]byte{last}
 	pdu.SetMBCLastBlockCRC(blocks)
-	var payload [12]byte
-	copy(payload[:], bit.Pack(blocks[0][:]))
-	if !layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, payload) {
+	if !layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, blocks[0]) {
 		t.Error("single continuation block rejected")
 	}
-	blocks = [][96]bit.Bit{first, last}
+	blocks = [][12]byte{first, last}
 	pdu.SetMBCLastBlockCRC(blocks)
-	copy(payload[:], bit.Pack(blocks[1][:]))
-	if !pdu.MBCLastBlockCRCOK(blocks...) || layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, payload) {
+	if !pdu.MBCLastBlockCRCOK(blocks...) || layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, blocks[1]) {
 		t.Error("last of two continuation blocks accepted")
 	}
 }

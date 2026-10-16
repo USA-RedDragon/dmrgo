@@ -21,7 +21,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
@@ -101,66 +100,15 @@ var bitFuncs = map[string]any{
 		bits.Unpack(dst[:], []byte{0xA5, 0x3C}, 0)
 		return dst
 	},
-	"layer2.CACHDeinterleave":      layer2.CACHDeinterleave,
-	"layer2.CACHInterleave":        layer2.CACHInterleave,
-	"layer2.DecodeCACH":            layer2.DecodeCACH,
-	"layer2.DecodeEmbeddedRC":      layer2.DecodeEmbeddedRC,
-	"layer2.DecodeCACHField":       layer2.DecodeCACHField,
-	"layer2.IsIdleMessage":         layer2.IsIdleMessage,
-	"layer2.IsNullEmbeddedLC":      layer2.IsNullEmbeddedLC,
-	"layer2/pdu.MBCLastBlockCRCOK": pdu.MBCLastBlockCRCOK,
-	"layer2/pdu.DecodeCSBK":        pdu.DecodeCSBK,
-	"layer2/pdu.DecodeCSBKInto": func(data [96]bit.Bit) pdu.CSBK {
-		var d pdu.CSBK
-		var p pdu.CSBKPayloads
-		pdu.DecodeCSBKInto(&d, &p, data)
-		return d
-	},
-	"layer2/pdu.DecodeDataHeaderInto": func(data [96]bit.Bit) pdu.DataHeader {
-		var d pdu.DataHeader
-		var p pdu.DataHeaderPayloads
-		pdu.DecodeDataHeaderInto(&d, &p, data)
-		return d
-	},
-	"layer2/pdu.DecodeFullLinkControlInto": func(data [96]bit.Bit, dt enums.DataType) pdu.FullLinkControl {
-		var d pdu.FullLinkControl
-		var p pdu.FullLinkControlPayloads
-		pdu.DecodeFullLinkControlInto(&d, &p, data, dt)
-		return d
-	},
-	"layer2/pdu.DecodeMBCHeaderInto": func(data [96]bit.Bit) pdu.MBCHeader {
-		var d pdu.MBCHeader
-		var p pdu.MBCHeaderPayloads
-		pdu.DecodeMBCHeaderInto(&d, &p, data)
-		return d
-	},
-	"layer2/pdu.DecodeShortLCInto": func(data [36]bit.Bit) pdu.ShortLC {
-		var d pdu.ShortLC
-		var p pdu.ShortLCPayloads
-		pdu.DecodeShortLCInto(&d, &p, data)
-		return d
-	},
-	"layer2/pdu.DecodeDataHeader":              pdu.DecodeDataHeader,
-	"layer2/pdu.DecodeEmbeddedSignalling":      pdu.DecodeEmbeddedSignalling,
-	"layer2/pdu.DecodeFullLinkControl":         pdu.DecodeFullLinkControl,
-	"layer2/pdu.DecodeMBCContinuation":         pdu.DecodeMBCContinuation,
-	"layer2/pdu.DecodeMBCHeader":               pdu.DecodeMBCHeader,
-	"layer2/pdu.DecodePIHeader":                pdu.DecodePIHeader,
-	"layer2/pdu.DecodeRate12Data":              pdu.DecodeRate12Data,
-	"layer2/pdu.DecodeRate1Data":               pdu.DecodeRate1Data,
-	"layer2/pdu.DecodeRate34Data":              pdu.DecodeRate34Data,
-	"layer2/pdu.DecodeReverseChannel":          pdu.DecodeReverseChannel,
-	"layer2/pdu.DecodeShortLC":                 pdu.DecodeShortLC,
-	"layer2/pdu.DecodeSlotType":                pdu.DecodeSlotType,
-	"layer2/pdu.DecodeTACT":                    pdu.DecodeTACT,
-	"layer2/pdu.DecodeUDPIPv4CompressedHeader": pdu.DecodeUDPIPv4CompressedHeader,
-	"layer2/pdu.DecodeUnifiedSingleBlockData":  pdu.DecodeUnifiedSingleBlockData,
-	"layer2/pdu.IsPRFill":                      pdu.IsPRFill,
-	"layer2/pdu.SetMBCLastBlockCRC":            pdu.SetMBCLastBlockCRC,
-	"layer3.DecodeCdefParms":                   layer3.DecodeCdefParms,
-	"layer3.DecodeServiceOptions":              layer3.DecodeServiceOptions,
-	"vocoder.DecodeAMBE72":                     vocoder.DecodeAMBE72,
-	"vocoder.EncodeAMBE72":                     vocoder.EncodeAMBE72,
+	"layer2.CACHDeinterleave": layer2.CACHDeinterleave,
+	"layer2.CACHInterleave":   layer2.CACHInterleave,
+	"layer2.DecodeCACH":       layer2.DecodeCACH,
+	"layer2.DecodeEmbeddedRC": layer2.DecodeEmbeddedRC,
+	"layer2.DecodeCACHField":  layer2.DecodeCACHField,
+	"layer2.IsIdleMessage":    layer2.IsIdleMessage,
+	"layer2.IsNullEmbeddedLC": layer2.IsNullEmbeddedLC,
+	"vocoder.DecodeAMBE72":    vocoder.DecodeAMBE72,
+	"vocoder.EncodeAMBE72":    vocoder.EncodeAMBE72,
 }
 
 // transmitVoice sends a call whose voice add queues with a voice.Transmitter

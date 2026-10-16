@@ -7,6 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -308,7 +309,9 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 		},
 	}
 	encoded := must(original.Encode())
-	fragments := encodeCACHBits(encoded)
+	var info [36]bit.Bit
+	bits.Unpack(info[:], encoded[:], 0)
+	fragments := encodeCACHBits(info)
 
 	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC

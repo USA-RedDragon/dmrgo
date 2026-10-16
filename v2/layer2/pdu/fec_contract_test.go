@@ -3,7 +3,6 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -12,7 +11,7 @@ import (
 func TestCRCOnlyPDUReportsDetectionOnly(t *testing.T) {
 	t.Parallel()
 
-	var zero [96]bit.Bit
+	var zero [12]byte
 	if res := pdu.DecodeCSBK(zero).FEC; res != (fec.Result{Uncorrectable: true}) {
 		t.Errorf("CSBK with a bad CRC: %+v, want only Uncorrectable", res)
 	}
@@ -32,17 +31,17 @@ func TestCorrectingPDUsReportCorrectionsInFEC(t *testing.T) {
 
 	st := pdu.SlotType{ColorCode: 3, DataType: enums.DataTypeCSBK}
 	stBits := must(st.Encode())
-	stBits[2] ^= 1
+	stBits[0] ^= 0x20
 	emb := pdu.EmbeddedSignalling{ColorCode: 5, LCSS: enums.LCSSFirstFragment}
 	embBits := must(emb.Encode())
-	embBits[9] ^= 1
+	embBits[1] ^= 0x40
 	tact := pdu.TACT{AccessType: true, LCSS: enums.LCSSLastFragment}
 	tactBits := must(tact.Encode())
-	tactBits[6] ^= 1
+	tactBits[0] ^= 0x02
 	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, BurstDataType: enums.DataTypeVoiceLCHeader,
 		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3120001}}
 	lcBits := must(lc.Encode())
-	lcBits[30] ^= 1
+	lcBits[3] ^= 0x02
 	tests := []struct {
 		name string
 		got  fec.Result

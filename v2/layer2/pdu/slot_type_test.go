@@ -95,7 +95,7 @@ func TestSlotType_SingleBitError(t *testing.T) {
 
 	encoded := must((&pdu.SlotType{ColorCode: 7, DataType: enums.DataTypeVoiceLCHeader}).Encode())
 	// Flip one bit - Golay should correct it
-	encoded[10] ^= 1
+	encoded[1] ^= 0x20
 	st := pdu.DecodeSlotType(encoded)
 	fecResult := st.FEC
 	if st.ColorCode != 7 {
@@ -114,7 +114,7 @@ func TestEncodeSlotType_RoundTrip(t *testing.T) {
 		DataType:  enums.DataTypeCSBK,
 	}
 	encoded := must(st.Encode())
-	// Full round-trip: encode produces [20]bit.Bit with Golay parity
+	// Full round-trip: encode produces the 20 packed bits with Golay parity
 	decoded := pdu.DecodeSlotType(encoded)
 	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {

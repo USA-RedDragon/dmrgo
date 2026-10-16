@@ -10,9 +10,10 @@ import (
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// decodeUDPIPv4CompressedHeaderBytes decodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
-// data holds its bits packed, the first bit most significant.
-func decodeUDPIPv4CompressedHeaderBytes(data [9]byte) UDPIPv4CompressedHeader {
+// DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader (ETSI TS
+// 102 361-3 clause 7.2.3, Table 7.14). data holds the 72 bits of the PDU
+// packed, the first bit in the most significant bit of data[0].
+func DecodeUDPIPv4CompressedHeader(data [9]byte) UDPIPv4CompressedHeader {
 	var result UDPIPv4CompressedHeader
 	result.IPv4Identification = uint16(uint64(data[0])<<8 | uint64(data[1]))
 	result.SAID = enums.SAID(uint64(data[2]) >> 4)
@@ -29,18 +30,10 @@ func decodeUDPIPv4CompressedHeaderBytes(data [9]byte) UDPIPv4CompressedHeader {
 	return result
 }
 
-// DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
-func DecodeUDPIPv4CompressedHeader(data [72]bit.Bit) UDPIPv4CompressedHeader {
-	var _b [9]byte
-	for _i := range 72 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodeUDPIPv4CompressedHeaderBytes(_b)
-}
-
-// encodeBytes encodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *UDPIPv4CompressedHeader) encodeBytes() ([9]byte, error) {
+// Encode encodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3,
+// Table 7.14). It returns the 72 bits packed, the first bit in the most
+// significant bit of byte 0.
+func (s *UDPIPv4CompressedHeader) Encode() ([9]byte, error) {
 	var data [9]byte
 	_valIPv4Identification := uint64(s.IPv4Identification)
 	data[0] = byte(_valIPv4Identification >> 8)
@@ -73,19 +66,6 @@ func (s *UDPIPv4CompressedHeader) encodeBytes() ([9]byte, error) {
 	_valExtendedHeader2 := uint64(s.ExtendedHeader2)
 	data[7] = byte(_valExtendedHeader2 >> 8)
 	data[8] = byte(_valExtendedHeader2)
-	return data, nil
-}
-
-// Encode encodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
-func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [72]bit.Bit{}, err
-	}
-	var data [72]bit.Bit
-	for _i := range 72 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

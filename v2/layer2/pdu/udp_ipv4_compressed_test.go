@@ -3,7 +3,6 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -100,13 +99,7 @@ func TestUDPIPv4CompressedHeader_EncodeStability(t *testing.T) {
 	enc2 := must(h.Encode())
 	for i := range enc1 {
 		if enc1[i] != enc2[i] {
-			t.Errorf("bit %d: first=%d, second=%d", i, enc1[i], enc2[i])
-		}
-	}
-
-	for i, b := range enc1 {
-		if b != bit.Bit(0) && b != bit.Bit(1) {
-			t.Errorf("bit %d: invalid value %d", i, b)
+			t.Errorf("octet %d: first=%#02x, second=%#02x", i, enc1[i], enc2[i])
 		}
 	}
 }

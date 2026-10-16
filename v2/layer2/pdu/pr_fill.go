@@ -1,13 +1,11 @@
 package pdu
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
-)
+import "github.com/USA-RedDragon/dmrgo/v2/enums"
 
-// PRFillBits returns a copy of the 96 pseudo-random fill bits from Table D.2.
-func PRFillBits() [96]bit.Bit {
-	return prFillBits
+// PRFillBits returns a copy of the 96 pseudo-random fill bits from Table D.2,
+// packed, the first bit in the most significant bit of byte 0.
+func PRFillBits() [12]byte {
+	return prFill
 }
 
 // PRFill is the Pseudo Random Fill Bit (PR FILL) PDU of an idle burst, the
@@ -20,8 +18,8 @@ func (p *PRFill) DataType() enums.DataType {
 }
 
 // Encode returns PRFillBits and a nil error.
-func (p *PRFill) Encode() ([96]bit.Bit, error) {
-	return prFillBits, nil
+func (p *PRFill) Encode() ([12]byte, error) {
+	return prFill, nil
 }
 
 // String returns a string representation of the PR FILL PDU.
@@ -29,13 +27,8 @@ func (p *PRFill) String() string {
 	return "PR FILL (Idle)"
 }
 
-// IsPRFill checks whether the given 96 information bits match the
-// PR FILL constant from Table D.2. It reads only the low bit of each value.
-func IsPRFill(infoBits [96]bit.Bit) bool {
-	for i, b := range infoBits {
-		if b&1 != prFillBits[i] {
-			return false
-		}
-	}
-	return true
+// IsPRFill reports whether the 96 information bits info, packed as
+// PRFillBits returns them, are the PR FILL bits of Table D.2.
+func IsPRFill(info [12]byte) bool {
+	return info == prFill
 }

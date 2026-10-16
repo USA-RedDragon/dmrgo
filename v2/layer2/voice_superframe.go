@@ -109,12 +109,10 @@ type VoiceTransmitter struct {
 func lcDataBurst(lc *pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
 	l := *lc
 	l.BurstDataType = dataType
-	coded, err := l.Encode()
+	p, err := l.Encode()
 	if err != nil {
 		return RawBurst{}, err
 	}
-	var p [12]byte
-	packBits(p[:], coded[:])
 	return BuildDataBurst(p, dataType, colorCode, src)
 }
 
@@ -322,11 +320,11 @@ func (t *VoiceTransmitter) flush() (RawBurst, error) {
 				t.hasRC = false
 			}
 		}
-		embBits, err := emb.Encode()
+		embBytes, err := emb.Encode()
 		if err != nil {
 			return RawBurst{}, err
 		}
-		r.setField(embFirstStart, 8, embSecondStart, 8, bit.Uint(embBits[:]))
+		r.setField(embFirstStart, 8, embSecondStart, 8, uint64(embBytes[0])<<8|uint64(embBytes[1]))
 		r.setField(embeddedDataStart, 16, embeddedDataStart+16, 16, uint64(data))
 	}
 

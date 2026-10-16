@@ -331,21 +331,19 @@ func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	var err error
 	b.Data, b.FEC.PDU, err = decodePayload(&b.store, b.SlotType.DataType, &b.payload, b.SyncPattern)
 	b.decodedDataType = b.SlotType.DataType
-	var coded [96]bit.Bit
 	var encErr error
 	switch d := b.Data.(type) {
 	case *pdu.CSBK:
-		coded, encErr = d.Encode()
+		b.decodedCoded, encErr = d.Encode()
 	case *pdu.FullLinkControl:
-		coded, encErr = d.Encode()
+		b.decodedCoded, encErr = d.Encode()
 	case *pdu.DataHeader:
-		coded, encErr = d.Encode()
+		b.decodedCoded, encErr = d.Encode()
 	case *pdu.MBCHeader:
-		coded, encErr = d.Encode()
+		b.decodedCoded, encErr = d.Encode()
 	default:
 		return err
 	}
-	packBits(b.decodedCoded[:], coded[:])
 	b.hasDecodedCoded = encErr == nil
 	return err
 }
@@ -458,11 +456,11 @@ func (b *Burst) encodeStandaloneRC() (RawBurst, error) {
 // embCodeword returns the QR(16,7) codeword of EmbeddedSignalling, or an
 // error when one of its fields does not fit.
 func (b *Burst) embCodeword() (uint16, error) {
-	embBits, err := b.EmbeddedSignalling.Encode()
+	emb, err := b.EmbeddedSignalling.Encode()
 	if err != nil {
 		return 0, err
 	}
-	return uint16(bit.Uint(embBits[:]) & 0xFFFF), nil
+	return uint16(emb[0])<<8 | uint16(emb[1]), nil
 }
 
 // embeddedData returns the 32 bits of the embedded signalling data field,
@@ -579,57 +577,50 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 	if dt.IsReserved() {
 		return nil, fec.Result{}, reservedDataTypeError{dt}
 	}
-	var bits96 [96]bit.Bit
-	if dt != enums.DataTypeCSBK && dt != enums.DataTypeRate34 && dt != enums.DataTypeRate1 {
-		unpackBits(bits96[:], payload[:12])
-	}
+	p96 := [12]byte(payload[:12])
 	switch dt {
 	case enums.DataTypeCSBK:
 		d := &st.csbk
-		pdu.DecodeCSBKBytesInto(d, &st.csbkPayloads, [12]byte(payload[:12]))
+		pdu.DecodeCSBKInto(d, &st.csbkPayloads, p96)
 		d.Hint0x38 = opcode0x38Hint(sync)
 		return d, d.FEC, nil
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
 		d := &st.lc
-		pdu.DecodeFullLinkControlInto(d, &st.lcPayloads, bits96, dt)
+		pdu.DecodeFullLinkControlInto(d, &st.lcPayloads, p96, dt)
 		return d, d.FEC, nil
 	case enums.DataTypePIHeader:
 		d := &st.piHeader
-		*d = pdu.DecodePIHeader(bits96)
+		*d = pdu.DecodePIHeader(p96)
 		return d, d.FEC, nil
 	case enums.DataTypeDataHeader:
 		d := &st.dataHeader
-		pdu.DecodeDataHeaderInto(d, &st.dataHeaderPayload, bits96)
+		pdu.DecodeDataHeaderInto(d, &st.dataHeaderPayload, p96)
 		return d, d.FEC, nil
 	case enums.DataTypeRate34:
-		var sizedBits [144]bit.Bit
-		unpackBits(sizedBits[:], payload[:18])
 		d := &st.rate34
-		*d = pdu.DecodeRate34Data(sizedBits)
+		*d = pdu.DecodeRate34Data([18]byte(payload[:18]))
 		return d, fec.Result{}, nil
 	case enums.DataTypeRate12:
 		d := &st.rate12
-		*d = pdu.DecodeRate12Data(bits96)
+		*d = pdu.DecodeRate12Data(p96)
 		return d, fec.Result{}, nil
 	case enums.DataTypeRate1:
-		var sizedBits [192]bit.Bit
-		unpackBits(sizedBits[:], payload[:24])
 		d := &st.rate1
-		*d = pdu.DecodeRate1Data(sizedBits)
+		*d = pdu.DecodeRate1Data([24]byte(payload[:24]))
 		return d, fec.Result{}, nil
 	case enums.DataTypeMBCHeader:
 		d := &st.mbcHeader
-		pdu.DecodeMBCHeaderInto(d, &st.mbcHeaderPayloads, bits96)
+		pdu.DecodeMBCHeaderInto(d, &st.mbcHeaderPayloads, p96)
 		return d, d.FEC, nil
 	case enums.DataTypeMBCContinuation:
 		d := &st.mbcCont
-		*d = pdu.DecodeMBCContinuation(bits96)
+		*d = pdu.DecodeMBCContinuation(p96)
 		return d, fec.Result{}, nil
 	case enums.DataTypeIdle:
 		return &st.prFill, fec.Result{}, nil
 	case enums.DataTypeUnifiedSingleBlock:
 		d := &st.usbd
-		*d = pdu.DecodeUnifiedSingleBlockData(bits96)
+		*d = pdu.DecodeUnifiedSingleBlockData(p96)
 		return d, d.FEC, nil
 	case enums.DataTypeReserved:
 	}
@@ -653,11 +644,11 @@ func (b *Burst) Encode() (RawBurst, error) {
 	var r RawBurst
 
 	if b.Kind == KindData {
-		slotBits, err := b.SlotType.Encode()
+		st, err := b.SlotType.Encode()
 		if err != nil {
 			return RawBurst{}, err
 		}
-		r.setField(slotTypeFirstStart, 10, slotTypeSecondStart, 10, bit.Uint(slotBits[:]))
+		r.setField(slotTypeFirstStart, 10, slotTypeSecondStart, 10, uint64(st[0])<<12|uint64(st[1])<<4|uint64(st[2])>>4)
 
 		info, err := b.encodeDataBits()
 		if err != nil {
@@ -752,8 +743,8 @@ func (b *Burst) decodedCodesTo(want [12]byte) bool {
 	default:
 		return false
 	}
-	var payload, coded [96]bit.Bit
-	unpackBits(payload[:], b.payload[:12])
+	payload := [12]byte(b.payload[:12])
+	var coded [12]byte
 	var err error
 	switch b.decodedDataType {
 	case enums.DataTypePIHeader:
@@ -768,17 +759,15 @@ func (b *Burst) decodedCodesTo(want [12]byte) bool {
 	default:
 		coded = pdu.PRFillBits()
 	}
-	var got [12]byte
-	packBits(got[:], coded[:])
-	return err == nil && want == got
+	return err == nil && want == coded
 }
 
 // encoder96, encoder144 and encoder192 are the PDUs whose Encode returns
 // their information bits as an array, which does not allocate.
 type (
-	encoder96  interface{ Encode() ([96]bit.Bit, error) }
-	encoder144 interface{ Encode() ([144]bit.Bit, error) }
-	encoder192 interface{ Encode() ([192]bit.Bit, error) }
+	encoder96  interface{ Encode() ([12]byte, error) }
+	encoder144 interface{ Encode() ([18]byte, error) }
+	encoder192 interface{ Encode() ([24]byte, error) }
 )
 
 // encodeData returns the information bits of d in a data burst of
@@ -792,20 +781,17 @@ func encodeData(d Data, dataType enums.DataType) ([25]byte, error) {
 	var err error
 	switch e := d.(type) {
 	case encoder96:
-		var coded [96]bit.Bit
+		var coded [12]byte
 		coded, err = e.Encode()
-		packBits(info[:], coded[:])
-		n = len(coded)
+		n = copy(info[:], coded[:]) * 8
 	case encoder144:
-		var coded [144]bit.Bit
+		var coded [18]byte
 		coded, err = e.Encode()
-		packBits(info[:], coded[:])
-		n = len(coded)
+		n = copy(info[:], coded[:]) * 8
 	case encoder192:
-		var coded [192]bit.Bit
+		var coded [24]byte
 		coded, err = e.Encode()
-		packBits(info[:], coded[:])
-		n = len(coded)
+		n = copy(info[:], coded[:]) * 8
 	default:
 		return info, errNoEncode
 	}

@@ -11,9 +11,10 @@ import (
 	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 )
 
-// decodeEmbeddedSignallingBytes decodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
-// data holds its bits packed, the first bit most significant.
-func decodeEmbeddedSignallingBytes(data [2]byte) EmbeddedSignalling {
+// DecodeEmbeddedSignalling decodes an EmbeddedSignalling (ETSI TS 102 361-1
+// clause 9.1.2). data holds the 16 bits of the PDU packed, the first bit in
+// the most significant bit of data[0].
+func DecodeEmbeddedSignalling(data [2]byte) EmbeddedSignalling {
 	var result EmbeddedSignalling
 	var _cw uint16
 	_cw, result.FEC = quadraticresidue.Decode(uint16(uint64(data[0])<<8 | uint64(data[1])))
@@ -28,18 +29,10 @@ func decodeEmbeddedSignallingBytes(data [2]byte) EmbeddedSignalling {
 	return result
 }
 
-// DecodeEmbeddedSignalling decodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
-func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
-	var _b [2]byte
-	for _i := range 16 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodeEmbeddedSignallingBytes(_b)
-}
-
-// encodeBytes encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *EmbeddedSignalling) encodeBytes() ([2]byte, error) {
+// Encode encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2). It
+// returns the 16 bits packed, the first bit in the most significant bit of
+// byte 0.
+func (s *EmbeddedSignalling) Encode() ([2]byte, error) {
 	var data [2]byte
 	if uint64(s.ColorCode)>>4 != 0 {
 		return [2]byte{}, errEmbeddedSignallingColorCodeRange
@@ -56,19 +49,6 @@ func (s *EmbeddedSignalling) encodeBytes() ([2]byte, error) {
 	_cwBits := uint64(_cw)
 	data[0] = byte(_cwBits >> 8)
 	data[1] = byte(_cwBits)
-	return data, nil
-}
-
-// Encode encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).
-func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [16]bit.Bit{}, err
-	}
-	var data [16]bit.Bit
-	for _i := range 16 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

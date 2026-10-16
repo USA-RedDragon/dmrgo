@@ -3,30 +3,29 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // buildRCInfoBits constructs a valid 11-bit RC PDU with correct CRC-7.
-func buildRCInfoBits(payload byte) [11]bit.Bit {
-	var bits [11]bit.Bit
+func buildRCInfoBits(payload byte) [2]byte {
+	var info [2]byte
 	// Payload: bits 0-3 (MSB-first)
-	bit.PutUint(bits[0:4], uint64(payload&0x0F))
+	bits.SetField(info[:], 0, 4, uint64(payload&0x0F))
 	// CRC-7 with mask 0x7A
-	crcVal := crc7Bits(bits[:4]) ^ pdu.CRC7MaskRC
-	for i := 0; i < 7; i++ {
-		bits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)
-	}
-	return bits
+	crcVal := crc.CRC7(info[:], 4) ^ pdu.CRC7MaskRC
+	bits.SetField(info[:], 4, 7, uint64(crcVal))
+	return info
 }
 
 func TestReverseChannel_DecodeEncode_RoundTrip(t *testing.T) {
 	t.Parallel()
 	for payload := byte(0); payload < 16; payload++ {
-		bits := buildRCInfoBits(payload)
-		rc := pdu.DecodeReverseChannel(bits)
+		info := buildRCInfoBits(payload)
+		rc := pdu.DecodeReverseChannel(info)
 		fecResult := rc.FEC
 		if fecResult.Uncorrectable {
 			t.Errorf("payload=%d: unexpected uncorrectable error", payload)
@@ -42,20 +41,20 @@ func TestReverseChannel_DecodeEncode_RoundTrip(t *testing.T) {
 		if err != nil {
 			t.Fatalf("payload=%d: unexpected error: %v", payload, err)
 		}
-		if encoded != bits {
-			t.Errorf("payload=%d: round-trip failed: encoded %v != original %v", payload, encoded, bits)
+		if encoded != info {
+			t.Errorf("payload=%d: round-trip failed: encoded %v != original %v", payload, encoded, info)
 		}
 	}
 }
 
 func TestReverseChannel_CRCFailure(t *testing.T) {
 	t.Parallel()
-	bits := buildRCInfoBits(5)
+	info := buildRCInfoBits(5)
 
 	// Corrupt a CRC bit
-	bits[7] ^= 1
+	info[0] ^= 0x01
 
-	fecResult := pdu.DecodeReverseChannel(bits).FEC
+	fecResult := pdu.DecodeReverseChannel(info).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("expected uncorrectable after CRC corruption")
 	}
@@ -63,8 +62,8 @@ func TestReverseChannel_CRCFailure(t *testing.T) {
 
 func TestReverseChannel_BitsChecked(t *testing.T) {
 	t.Parallel()
-	bits := buildRCInfoBits(0)
-	fecResult := pdu.DecodeReverseChannel(bits).FEC
+	info := buildRCInfoBits(0)
+	fecResult := pdu.DecodeReverseChannel(info).FEC
 	if fecResult != (fec.Result{}) {
 		t.Errorf("CRC-7 only PDU: got %+v, want a zero result", fecResult)
 	}
@@ -82,8 +81,8 @@ func TestReverseChannel_OutOfRangeRejected(t *testing.T) {
 
 func TestReverseChannel_String(t *testing.T) {
 	t.Parallel()
-	bits := buildRCInfoBits(7)
-	rc := pdu.DecodeReverseChannel(bits)
+	info := buildRCInfoBits(7)
+	rc := pdu.DecodeReverseChannel(info)
 	s := rc.String()
 	if s == "" {
 		t.Error("String should not be empty")

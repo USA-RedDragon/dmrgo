@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -20,9 +20,8 @@ func TestSlotTypeInfo_IPSCExample(t *testing.T) {
 	if cw := s.Codeword(); cw != 0x132b2 {
 		t.Fatalf("Codeword %#05x, want 0x132b2", cw)
 	}
-	bits := must(st.Encode())
-	if got := hex.EncodeToString(bit.Pack(bits[:])); got != "132b20" {
-		t.Fatalf("SlotType.Encode packs as %s, want 132b20", got)
+	if enc := must(st.Encode()); hex.EncodeToString(enc[:]) != "132b20" {
+		t.Fatalf("SlotType.Encode packs as %x, want 132b20", enc)
 	}
 	d, res := pdu.DecodeSlotTypeCodeword(0x132b2)
 	if d != 0x13 || res.ErrorsCorrected != 0 || res.Uncorrectable || d.SlotType() != st {
@@ -35,10 +34,7 @@ func TestSlotTypeInfo_AllValues(t *testing.T) {
 
 	for v := range 256 {
 		s := pdu.SlotTypeInfo(v)
-		var data [8]bit.Bit
-		bit.PutUint(data[:], uint64(v))
-		cw := golay2087Bits(data)
-		want := uint32(bit.Uint(cw[:]))
+		want := golay.Encode2087(uint8(v))
 		if got := s.Codeword(); got != want {
 			t.Fatalf("%#02x: Codeword %#05x, want %#05x", v, got, want)
 		}

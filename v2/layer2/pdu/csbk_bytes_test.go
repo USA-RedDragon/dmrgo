@@ -46,10 +46,10 @@ func TestCSBKBytes_ReproducerPreamble(t *testing.T) {
 	if g, gok := c.Group(); !ok || tgt != 0x233863 || src != 0x23383b || g || !gok {
 		t.Fatalf("Addresses %x %x %t, Group %t %t", tgt, src, ok, g, gok)
 	}
-	want := pdu.DecodeCSBKBytes(c)
+	want := pdu.DecodeCSBK(c)
 	res := want.FEC
 	if res.Uncorrectable {
-		t.Fatal("DecodeCSBKBytes fails the CRC")
+		t.Fatal("DecodeCSBK fails the CRC")
 	}
 	if !c.SetAddresses(9, 0x23383B) || !c.SetGroup(true) {
 		t.Fatal("edit refused")
@@ -57,8 +57,8 @@ func TestCSBKBytes_ReproducerPreamble(t *testing.T) {
 	c.Reseal()
 	want.SetAddresses(9, 0x23383B)
 	want.PreamblePDU.Group = true
-	if b := must(want.Bytes()); b != [12]byte(c) || !c.CRCOK() {
-		t.Fatalf("CSBKBytes %x, CSBK.Bytes %x", c, b)
+	if b := must(want.Encode()); b != [12]byte(c) || !c.CRCOK() {
+		t.Fatalf("CSBKBytes %x, CSBK.Encode %x", c, b)
 	}
 }
 
@@ -76,13 +76,13 @@ func TestCSBKBytes_MatchesCSBK(t *testing.T) {
 		}
 		orig := pdu.CSBKBytes(raw)
 		orig.Reseal()
-		dec := pdu.DecodeCSBKBytes(orig)
+		dec := pdu.DecodeCSBK(orig)
 		res := dec.FEC
 		if res.Uncorrectable {
 			t.Fatalf("%x: resealed CSBK fails its CRC", orig)
 		}
-		if must(dec.Bytes()) != [12]byte(orig) {
-			t.Fatalf("%x: CSBK.Bytes does not round trip", orig)
+		if must(dec.Encode()) != [12]byte(orig) {
+			t.Fatalf("%x: CSBK.Encode does not round trip", orig)
 		}
 		wt, ws, wok := dec.Addresses()
 		gt, gs, gok := orig.Addresses()
@@ -126,7 +126,7 @@ func TestCSBKBytes_MatchesCSBK(t *testing.T) {
 			}
 		}
 		c.Reseal()
-		if b := must(want.Bytes()); b != [12]byte(c) {
+		if b := must(want.Encode()); b != [12]byte(c) {
 			t.Fatalf("%x: CSBKBytes edit %x, CSBK edit %x", orig, c, b)
 		}
 	}

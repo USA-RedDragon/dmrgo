@@ -11,9 +11,10 @@ import (
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
-// decodeUnifiedSingleBlockDataBytes decodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
-// data holds its bits packed, the first bit most significant.
-func decodeUnifiedSingleBlockDataBytes(data [12]byte) UnifiedSingleBlockData {
+// DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData (ETSI TS 102
+// 361-1 clause 8.2.3.1). data holds the 96 bits of the PDU packed, the first
+// bit in the most significant bit of data[0].
+func DecodeUnifiedSingleBlockData(data [12]byte) UnifiedSingleBlockData {
 	var result UnifiedSingleBlockData
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0x3333)
 	result.ServiceType = ServiceType(uint64(data[0]) >> 4)
@@ -21,18 +22,10 @@ func decodeUnifiedSingleBlockDataBytes(data [12]byte) UnifiedSingleBlockData {
 	return result
 }
 
-// DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
-func DecodeUnifiedSingleBlockData(data [96]bit.Bit) UnifiedSingleBlockData {
-	var _b [12]byte
-	for _i := range 96 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodeUnifiedSingleBlockDataBytes(_b)
-}
-
-// encodeBytes encodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *UnifiedSingleBlockData) encodeBytes() ([12]byte, error) {
+// Encode encodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause
+// 8.2.3.1). It returns the 96 bits packed, the first bit in the most
+// significant bit of byte 0.
+func (s *UnifiedSingleBlockData) Encode() ([12]byte, error) {
 	var data [12]byte
 	if uint64(s.ServiceType)>>4 != 0 {
 		return [12]byte{}, errUnifiedSingleBlockDataServiceTypeRange
@@ -45,19 +38,6 @@ func (s *UnifiedSingleBlockData) encodeBytes() ([12]byte, error) {
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal>>8) ^ 0x33
 	data[11] = byte(_crcVal) ^ 0x33
-	return data, nil
-}
-
-// Encode encodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
-func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

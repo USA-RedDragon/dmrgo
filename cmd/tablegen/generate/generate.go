@@ -44,7 +44,7 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 	}
 
 	if err := writeFile(dmrRoot, "layer2/pdu", "pdu",
-		writeBitTable("prFillBits", tables.PRFillBits[:]),
+		writePackedBits("prFill", tables.PRFillBits[:]),
 	); err != nil {
 		return err
 	}
@@ -182,13 +182,19 @@ func writeTable[T ~byte | ~int | ~uint16 | ~uint32](name string, data []T) jen.C
 	return table.Values(literals...)
 }
 
-// writeBitTable writes data as an array of bit.Bit.
-func writeBitTable(name string, data []uint8) jen.Code {
-	literals := make([]jen.Code, len(data))
+// writePackedBits writes the bits of data, one bit per element, as a byte
+// array that holds them packed, the first bit in the most significant bit
+// of byte 0.
+func writePackedBits(name string, data []uint8) jen.Code {
+	packed := make([]byte, (len(data)+7)/8)
 	for i, b := range data {
-		literals[i] = jen.Lit(int(b))
+		packed[i/8] |= (b & 1) << (7 - i%8)
 	}
-	return jen.Var().Id(name).Op("=").Index(jen.Lit(len(data))).Qual("github.com/USA-RedDragon/dmrgo/v2/bit", "Bit").Values(literals...)
+	literals := make([]jen.Code, len(packed))
+	for i, b := range packed {
+		literals[i] = jen.Id(fmt.Sprintf("0x%02X", b))
+	}
+	return jen.Var().Id(name).Op("=").Index(jen.Lit(len(packed))).Byte().Values(literals...)
 }
 
 func writeTable2D[T ~byte | ~int | ~int8 | ~uint16 | ~uint32 | ~uint64](name string, data [][]T) jen.Code {

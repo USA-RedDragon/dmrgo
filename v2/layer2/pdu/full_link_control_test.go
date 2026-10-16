@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -131,7 +130,7 @@ func TestFullLinkControl_EncodeStability(t *testing.T) {
 	enc2 := must(flc.Encode())
 	for i := range enc1 {
 		if enc1[i] != enc2[i] {
-			t.Errorf("bit %d: first=%d, second=%d", i, enc1[i], enc2[i])
+			t.Errorf("byte %d: first=%#02x, second=%#02x", i, enc1[i], enc2[i])
 		}
 	}
 }
@@ -288,10 +287,10 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 		t.Run(flco.String(), func(t *testing.T) {
 			t.Parallel()
 
-			var aliasData [56]bit.Bit
+			var aliasData [7]byte
 			for i := 0; i < 56; i++ {
 				if i%3 == 0 {
-					aliasData[i] = 1
+					setRawBit(aliasData[:], i)
 				}
 			}
 
@@ -301,7 +300,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 				FLCO:          flco,
 				FID:           enums.FIDStandardized,
 				TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
-					TalkerAliasData: [7]byte(bit.Pack(aliasData[:])),
+					TalkerAliasData: aliasData,
 				},
 			}
 
@@ -317,7 +316,7 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 			if decoded.TalkerAliasBlock == nil {
 				t.Fatal("TalkerAliasBlock is nil")
 			}
-			if decoded.TalkerAliasBlock.TalkerAliasData != [7]byte(bit.Pack(aliasData[:])) {
+			if decoded.TalkerAliasBlock.TalkerAliasData != aliasData {
 				t.Error("TalkerAliasData mismatch after encode-decode cycle")
 			}
 		})
@@ -327,16 +326,16 @@ func TestFullLinkControl_TalkerAliasBlock_EncodeDecodeCycle(t *testing.T) {
 func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
 	t.Parallel()
 
-	var aliasData [56]bit.Bit
-	aliasData[0] = 1
-	aliasData[7] = 1
+	var aliasData [7]byte
+	setRawBit(aliasData[:], 0)
+	setRawBit(aliasData[:], 7)
 
 	flc := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCOTalkerAliasBlock1,
 		FID:           enums.FIDStandardized,
 		TalkerAliasBlock: &pdu.FLCTalkerAliasBlock{
-			TalkerAliasData: [7]byte(bit.Pack(aliasData[:])),
+			TalkerAliasData: aliasData,
 		},
 		FEC: fec.Result{BitsChecked: 96},
 	}
@@ -371,9 +370,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var aliasData [48]bit.Bit
-			aliasData[0] = 1
-			aliasData[47] = 1
+			aliasData := uint64(1<<47 | 1)
 
 			original := &pdu.FullLinkControl{
 				BurstDataType: enums.DataTypeVoiceLCHeader,
@@ -382,7 +379,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				FID:           enums.FIDStandardized,
 				TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 					TalkerAliasDataLength: tt.dataLength,
-					TalkerAliasData:       msbOf(tt.msb) | bit.Uint(aliasData[:]),
+					TalkerAliasData:       msbOf(tt.msb) | aliasData,
 				},
 			}
 
@@ -399,7 +396,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				t.Errorf("TalkerAliasDataLength = %d, want %d",
 					decoded.TalkerAliasHeader.TalkerAliasDataLength, tt.dataLength)
 			}
-			if decoded.TalkerAliasHeader.TalkerAliasData != msbOf(tt.msb)|bit.Uint(aliasData[:]) {
+			if decoded.TalkerAliasHeader.TalkerAliasData != msbOf(tt.msb)|aliasData {
 				t.Error("TalkerAliasData mismatch after encode-decode cycle")
 			}
 		})
@@ -485,7 +482,7 @@ func TestFullLinkControl_RSErrorsCountBits(t *testing.T) {
 	for _, flips := range []int{1, 3, 8} {
 		rx := clean
 		for i := range flips {
-			rx[40+i] ^= 1
+			rx[(40+i)/8] ^= 0x80 >> ((40 + i) % 8)
 		}
 		got := pdu.DecodeFullLinkControl(rx, lc.DataType())
 		res := got.FEC

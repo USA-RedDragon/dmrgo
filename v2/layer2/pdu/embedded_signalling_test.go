@@ -3,7 +3,6 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -81,7 +80,7 @@ func TestEmbeddedSignalling_AllLCSS(t *testing.T) {
 func TestEmbeddedSignalling_String(t *testing.T) {
 	t.Parallel()
 
-	es := pdu.DecodeEmbeddedSignalling([16]bit.Bit{})
+	es := pdu.DecodeEmbeddedSignalling([2]byte{})
 	s := es.String()
 	if s == "" {
 		t.Error("String() should not be empty")
@@ -114,7 +113,7 @@ func TestEncodeEmbeddedSignalling_FullRoundTrip(t *testing.T) {
 		LCSS:                               enums.LCSSFirstFragment,
 	}
 	encoded := must(es.Encode())
-	// Verify full [16]bit.Bit round-trip through decode
+	// Verify the full [2]byte round trip through decode
 	decoded := pdu.DecodeEmbeddedSignalling(encoded)
 	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {

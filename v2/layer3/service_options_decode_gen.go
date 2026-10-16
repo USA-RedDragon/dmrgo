@@ -9,9 +9,10 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
-// decodeServiceOptionsBytes decodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
-// data holds its bits packed, the first bit most significant.
-func decodeServiceOptionsBytes(data [1]byte) ServiceOptions {
+// DecodeServiceOptions decodes a ServiceOptions (ETSI TS 102 361-2 clause
+// 7.2.1). data holds the 8 bits of the PDU packed, the first bit in the most
+// significant bit of data[0].
+func DecodeServiceOptions(data [1]byte) ServiceOptions {
 	var result ServiceOptions
 	result.IsEmergency = data[0]&0x80 != 0
 	result.IsPrivacy = data[0]&0x40 != 0
@@ -22,18 +23,10 @@ func decodeServiceOptionsBytes(data [1]byte) ServiceOptions {
 	return result
 }
 
-// DecodeServiceOptions decodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
-func DecodeServiceOptions(data [8]bit.Bit) ServiceOptions {
-	var _b [1]byte
-	for _i := range 8 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodeServiceOptionsBytes(_b)
-}
-
-// encodeBytes encodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *ServiceOptions) encodeBytes() ([1]byte, error) {
+// Encode encodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1). It
+// returns the 8 bits packed, the first bit in the most significant bit of
+// byte 0.
+func (s *ServiceOptions) Encode() ([1]byte, error) {
 	var data [1]byte
 	if s.IsEmergency {
 		data[0] |= 0x80
@@ -55,19 +48,6 @@ func (s *ServiceOptions) encodeBytes() ([1]byte, error) {
 		return [1]byte{}, errServiceOptionsPriorityLevelRange
 	}
 	data[0] = data[0]&^0x03 | byte(uint64(s.PriorityLevel))&0x03
-	return data, nil
-}
-
-// Encode encodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
-func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [8]bit.Bit{}, err
-	}
-	var data [8]bit.Bit
-	for _i := range 8 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

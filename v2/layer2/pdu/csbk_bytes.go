@@ -136,25 +136,6 @@ func (c *CSBKBytes) Reseal() {
 	_ = Seal((*[12]byte)(c), enums.DataTypeCSBK)
 }
 
-// DecodeCSBKBytes decodes the 12-octet payload b of a CSBK burst as
-// DecodeCSBK does. The FEC field reports the CRC check. It allocates the
-// payload struct; DecodeCSBKBytesInto does not.
-func DecodeCSBKBytes(b [12]byte) CSBK {
-	return newCSBKBytes(b)
-}
-
-// DecodeCSBKBytesInto decodes the 12-octet payload b of a CSBK burst into
-// dst as DecodeCSBKInto does.
-func DecodeCSBKBytesInto(dst *CSBK, p *CSBKPayloads, b [12]byte) {
-	decodeCSBKBytesInto(dst, p, b)
-}
-
-// Bytes returns the 12-octet payload of s with its CRC, as Encode returns
-// it packed most significant bit first, and the errors that Encode returns.
-func (s *CSBK) Bytes() ([12]byte, error) {
-	return s.encodeBytes()
-}
-
 // The *bit.FieldRangeError values of the addresses of NewVoiceLCBytes and
 // NewVoiceLC.
 var (

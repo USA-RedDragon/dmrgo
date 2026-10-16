@@ -76,7 +76,7 @@ func (s *EmbeddedSignalling) Info() EMBInfo {
 // 102 361-1 clause B.3.2).
 func (e EMBInfo) Codeword() uint16 {
 	s := e.EmbeddedSignalling()
-	cw, _ := s.encodeBytes()
+	cw, _ := s.Encode()
 	return uint16(cw[0])<<8 | uint16(cw[1])
 }
 
@@ -85,6 +85,6 @@ func (e EMBInfo) Codeword() uint16 {
 // information bits with bit 0 clear, corrected when the result is not
 // Uncorrectable, and the FEC result.
 func DecodeEMBCodeword(cw uint16) (EMBInfo, fec.Result) {
-	s := decodeEmbeddedSignallingBytes([2]byte{byte(cw >> 8), byte(cw & 0xFF)})
+	s := DecodeEmbeddedSignalling([2]byte{byte(cw >> 8), byte(cw & 0xFF)})
 	return s.Info(), s.FEC
 }

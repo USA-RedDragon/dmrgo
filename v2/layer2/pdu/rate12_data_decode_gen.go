@@ -4,46 +4,22 @@
 
 package pdu
 
-import (
-	"fmt"
-	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-)
+import "fmt"
 
-// decodeRate12DataBytes decodes a Rate12Data (ETSI TS 102 361-1 clause 9.2.7).
-// data holds its bits packed, the first bit most significant.
-func decodeRate12DataBytes(data [12]byte) Rate12Data {
+// DecodeRate12Data decodes a Rate12Data (ETSI TS 102 361-1 clause 9.2.7).
+// data holds the 96 bits of the PDU packed, the first bit in the most
+// significant bit of data[0].
+func DecodeRate12Data(data [12]byte) Rate12Data {
 	var result Rate12Data
 	copy(result.Data[0:12], data[0:12])
 	return result
 }
 
-// DecodeRate12Data decodes a Rate12Data (ETSI TS 102 361-1 clause 9.2.7).
-func DecodeRate12Data(data [96]bit.Bit) Rate12Data {
-	var _b [12]byte
-	for _i := range 96 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodeRate12DataBytes(_b)
-}
-
-// encodeBytes encodes a Rate12Data (ETSI TS 102 361-1 clause 9.2.7).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *Rate12Data) encodeBytes() ([12]byte, error) {
+// Encode encodes a Rate12Data (ETSI TS 102 361-1 clause 9.2.7). It returns
+// the 96 bits packed, the first bit in the most significant bit of byte 0.
+func (s *Rate12Data) Encode() ([12]byte, error) {
 	var data [12]byte
 	copy(data[0:12], s.Data[0:12])
-	return data, nil
-}
-
-// Encode encodes a Rate12Data (ETSI TS 102 361-1 clause 9.2.7).
-func (s *Rate12Data) Encode() ([96]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [96]bit.Bit{}, err
-	}
-	var data [96]bit.Bit
-	for _i := range 96 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 
