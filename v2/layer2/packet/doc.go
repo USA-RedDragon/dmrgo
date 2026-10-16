@@ -13,9 +13,11 @@
 // progress, and the same N(S) for a C_HEAD, starts the retry of the blocks
 // it announces. A first-try header that matches in the same way is also a
 // retry, but only after all blocks of the attempt have arrived. A later-try
-// header that matches nothing is dropped with ErrUnexpectedRetry while a
-// packet is in progress, and otherwise starts a packet, which completes only
-// when the blocks cover the whole packet and the message CRC passes. Lost
+// header that matches nothing is dropped with ErrUnexpectedRetry while the
+// packet in progress waits for blocks of its attempt, and otherwise starts
+// a packet. Such a packet completes only when its blocks carry every DBSN
+// from 0 to BF-1, and it is delivered without an error only when the
+// message CRC passes. Lost
 // counts a block burst that was not received, so that the attempt still
 // ends. A header with no blocks to follow, such as an ACK, completes its
 // Message at once. The Assembler ignores UDT and status precoded headers.

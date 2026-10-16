@@ -233,3 +233,39 @@ func TestAssembler_ShortDataRetry(t *testing.T) {
 		})
 	}
 }
+
+// TestAssembler_OrphanRetry checks a packet that a later try started: its
+// SACK cannot name the blocks, AcceptBadCRC does not deliver it when the
+// message CRC fails, and a full later try of the next packet replaces an
+// abandoned one.
+func TestAssembler_OrphanRetry(t *testing.T) {
+	t.Parallel()
+
+	p, err := packet.Segment(confirmed(), payload(60), enums.DataTypeRate12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rx := packet.Assembler{AcceptBadCRC: true}
+	if m, err := feed(t, &rx, laterTry(t, p, []int{0, 1})); m == nil || !m.BadCRC || !errors.Is(err, packet.ErrMessageCRC) {
+		t.Fatalf("partial later try with AcceptBadCRC: %v %+v, want ErrMessageCRC", err, m)
+	}
+	rx.Reset()
+	if _, err := feed(t, &rx, laterTry(t, p, []int{3, 4})); !errors.Is(err, packet.ErrBlocksMissing) {
+		t.Fatalf("later try of 3 and 4: %v", err)
+	}
+	if _, err := rx.Response(); !errors.Is(err, packet.ErrNoFirstTry) {
+		t.Fatalf("Response: %v, want ErrNoFirstTry", err)
+	}
+
+	next := confirmed()
+	next.ConfirmedDataHeader.SendSequenceNumber = 6
+	data := payload(40)
+	q, err := packet.Segment(next, data, enums.DataTypeRate12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := feed(t, &rx, laterTry(t, q, allBlocks(q)))
+	if err != nil || m == nil || !bytes.Equal(m.Data[:len(data)], data) {
+		t.Fatalf("full later try of the next packet: %v %+v", err, m)
+	}
+}

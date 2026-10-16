@@ -59,7 +59,8 @@ type Assembler struct {
 	// until a good copy arrives, and an attempt in which every DBSN arrived
 	// completes the packet. A block that was lost or whose FEC failed is
 	// still missing, and a header must still pass its CRC, because the
-	// addresses must be right. False, the default, returns ErrMessageCRC
+	// addresses must be right. AcceptBadCRC does not apply to a packet that
+	// a later try started, whose size only a good message CRC confirms. False, the default, returns ErrMessageCRC
 	// and ErrBlocksMissing as the CRCs require. Reset keeps AcceptBadCRC.
 	AcceptBadCRC bool
 
@@ -216,7 +217,7 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 		a.expect, a.count = blocksOf(h), 0
 		return Message{}, false, nil
 	}
-	if !fullMessage(h) && a.active {
+	if !fullMessage(h) && a.active && a.count < a.expect {
 		return Message{}, false, ErrUnexpectedRetry
 	}
 	a.Reset()
@@ -317,7 +318,7 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 	if a.count < a.expect {
 		return Message{}, false, nil
 	}
-	if !a.confirmed || a.AcceptBadCRC && a.allPresent() {
+	if !a.confirmed || a.acceptBadCRC() && a.allPresent() {
 		return a.finish()
 	}
 	return Message{}, false, ErrBlocksMissing
@@ -339,11 +340,18 @@ func (a *Assembler) storeBlock(idx int, b block) {
 		return
 	}
 	ok := b.confirmedOK()
-	if !ok && !a.AcceptBadCRC {
+	if !ok && !a.acceptBadCRC() {
 		return
 	}
 	copy(a.blocks[dbsn*a.per:], b.raw[2:])
 	a.valid[dbsn], a.bad[dbsn] = ok, !ok
+}
+
+// acceptBadCRC reports whether AcceptBadCRC applies to the packet in
+// progress: it does not to a packet that a later try started, whose size
+// only a good message CRC confirms.
+func (a *Assembler) acceptBadCRC() bool {
+	return a.AcceptBadCRC && fullMessage(&a.msg.Header)
 }
 
 // allPresent reports whether every block of the packet has arrived, with a
@@ -397,12 +405,16 @@ func (a *Assembler) AppendMissing(dst []int) []int {
 
 // Response builds the response packet for the current confirmed packet: a
 // SACK for the blocks Missing returns. It returns ErrFormat when there is no
-// confirmed packet in progress. After Add returns a confirmed Message, use
+// confirmed packet in progress, and ErrNoFirstTry for a packet that a later
+// try started. After Add returns a confirmed Message, use
 // NewResponse with ResponseACK, or ResponseNACKPacketCRC on ErrMessageCRC.
 func (a *Assembler) Response() (Packet, error) {
 	h := a.msg.Header.ConfirmedDataHeader
 	if !a.active || h == nil {
 		return Packet{}, errNoConfirmed
+	}
+	if !fullMessage(&a.msg.Header) {
+		return Packet{}, ErrNoFirstTry
 	}
 	var rd ResponseData
 	for i, ok := range a.valid[:a.total] {
@@ -430,7 +442,7 @@ func (a *Assembler) finish() (Message, bool, error) {
 			}
 		}
 	}
-	accept := a.AcceptBadCRC
+	accept := a.acceptBadCRC()
 	a.Reset()
 	err := a.fill(&m, buf, complete)
 	if errors.Is(err, ErrMessageCRC) && complete && accept {
@@ -453,6 +465,7 @@ func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 		return err
 	}
 	if len(buf) < crcOctets {
+		m.BadCRC = true
 		return ErrMessageCRC
 	}
 	n := len(buf) - crcOctets
