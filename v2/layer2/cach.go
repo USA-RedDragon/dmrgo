@@ -58,7 +58,9 @@ func (c *CACH) Encode() ([CACHBits]bit.Bit, error) {
 	}
 	copy(bits[:TACTBits], tactBits[:])
 
-	copy(bits[TACTBits:CACHBits], c.Payload[:])
+	for i, b := range c.Payload {
+		bits[TACTBits+i] = b & 1
+	}
 
 	return bits, nil
 }
