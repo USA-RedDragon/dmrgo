@@ -89,12 +89,10 @@ jobs:
 
       - name: Test the allocations at the pico stack size and collector
         run: |
-          tinygo test -gc=conservative ./internal/zeroalloc
-          tinygo test -stack-size=8KB -gc=conservative ./internal/zeroalloc
+          tinygo test -gc=conservative ./internal/allocs
+          tinygo test -stack-size=8KB -gc=conservative ./internal/allocs
 
       - name: Check the heap allocation sites of the pico build
-        # layer2 still allocates under TinyGo; remove continue-on-error when it does not.
-        continue-on-error: true
         run: DMRGO_TINYGO_ALLOCS=1 go test -run TestTinyGoHeapAllocations -v ./internal/allocgate
 
   unit-tests:

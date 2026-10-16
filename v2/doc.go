@@ -36,7 +36,9 @@
 // contract has a form that does not allocate, such as pdu.DecodeCSBKInto for
 // pdu.DecodeCSBK, Encode for EncodeBits and the Append forms. A reused
 // layer2.Burst, or a copy of it, keeps its decoded Data and the payload
-// structs that Data points to until the next decode into it.
+// structs that Data points to until the next decode into it. This holds
+// with gc and with TinyGo at the default stack size of a microcontroller
+// target, and the tests in internal/allocgate and internal/allocs check it.
 //
 // The PDUs of package pdu decode with pdu.DecodeX and encode with the Encode
 // method of the PDU. A PDU with its own FEC or CRC, such as a CSBK, Full LC,
