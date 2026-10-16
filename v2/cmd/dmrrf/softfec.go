@@ -32,8 +32,9 @@ const (
 	softOSDMaxK = 99
 	// softOSDWords is the number of 64-bit words of a softOSDCode codeword.
 	softOSDWords = 4
-	// softOSDBytes is the number of cost tables of a softOSDCode codeword.
-	softOSDBytes = 25
+	// softOSDNibbles is the number of cost tables of a softOSDCode codeword,
+	// one per 4 bits.
+	softOSDNibbles = 49
 	// softListMax is the largest candidate list of a decode.
 	softListMax = 8
 	// softChaseMax is the largest number of bits that the Chase decode flips.
@@ -194,6 +195,21 @@ func softTables(tab [][256]int32, l []int32) {
 		t := &tab[b]
 		for m := range t {
 			t[m] = lo[m&15] + hi[m>>4]
+		}
+	}
+}
+
+// softNibbleTables fills tab[b][m] with the sum of l[4b+i] over the set
+// bits i of m, for the tables that cover l.
+func softNibbleTables(tab [][16]int32, l []int32) {
+	for b := 0; b*4 < len(l); b++ {
+		t := &tab[b]
+		for m := 1; m < 16; m++ {
+			if j := b*4 + bits.TrailingZeros(uint(m)); j < len(l) {
+				t[m] = t[m&(m-1)] + l[j]
+			} else {
+				t[m] = t[m&(m-1)]
+			}
 		}
 	}
 }
@@ -509,7 +525,7 @@ type softOSDScratch struct {
 	work  [softOSDMaxK][softOSDWords]uint64
 	pivot [softOSDMaxK]int
 	// tab holds the cost tables of the code bits.
-	tab [softOSDBytes][256]int32
+	tab [softOSDNibbles][16]int32
 	// list holds the best candidates.
 	list softOSDList
 	// accept is the check of the decode, nil for none.
@@ -519,7 +535,7 @@ type softOSDScratch struct {
 	cand [4][softOSDWords]uint64
 	pmag [softOSDMaxK]int32
 	// pass is the cost of the best accepted codeword, floor the cost of the
-	// hard decisions, and nw and nb the words and bytes of a codeword.
+	// hard decisions, and nw and nb the words and nibbles of a codeword.
 	pass, floor int32
 	nw, nb      int
 	// chase holds the Chase test pattern bits and bits the hard decisions of
@@ -556,7 +572,7 @@ func (s *softOSDScratch) prepare(n int) {
 func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, nb int) int32 {
 	var sum int32
 	for b := range nb {
-		sum += s.tab[b][cw[b>>3]>>((b&7)*8)&0xff]
+		sum += s.tab[b][cw[b>>4]>>((b&15)*4)&0xf]
 	}
 	return sum
 }
@@ -571,7 +587,7 @@ func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, nb int) int32 {
 // accepted codeword of the list, so it is skipped.
 func (c *softOSDCode) osd(s *softOSDScratch, order, window, listMax int) {
 	s.prepare(c.n)
-	softTables(s.tab[:], s.l[:c.n])
+	softNibbleTables(s.tab[:], s.l[:c.n])
 	c.basis(s)
 	c.reprocess(s, order, window, listMax)
 }
@@ -618,7 +634,7 @@ func (c *softOSDCode) basis(s *softOSDScratch) {
 // into s.list.
 func (c *softOSDCode) reprocess(s *softOSDScratch, order, window, listMax int) {
 	k := c.k
-	s.nw, s.nb = (c.n+63)/64, (c.n+7)/8
+	s.nw, s.nb = (c.n+63)/64, (c.n+3)/4
 	c0, ci, cj, cw := &s.cand[0], &s.cand[1], &s.cand[2], &s.cand[3]
 	*c0 = [softOSDWords]uint64{}
 	for i := range k {
