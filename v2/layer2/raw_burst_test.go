@@ -107,7 +107,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 				res = emb.FEC
 				data = r.StandaloneRCData()
 			}
-			if want := [4]byte(bit.Pack(b.EmbeddedSignallingData[:])); emb != b.EmbeddedSignalling || res != b.FEC.EMB || data != want {
+			if want := b.EmbeddedSignallingData; emb != b.EmbeddedSignalling || res != b.FEC.EMB || data != want {
 				t.Errorf("%x: EMB %+v %x, Burst %+v %x", frame, emb, data, b.EmbeddedSignalling, want)
 			}
 		}
@@ -288,12 +288,10 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 		t.Fatalf("StandaloneRCEMB %+v %+v", emb, res)
 	}
 	data := r.StandaloneRCData()
-	if data != [4]byte(bit.Pack(b.EmbeddedSignallingData[:])) {
+	if data != b.EmbeddedSignallingData {
 		t.Fatalf("StandaloneRCData %x", data)
 	}
-	var bits [32]bit.Bit
-	copy(bits[:], bit.Unpack(data[:]))
-	if rc := layer2.DecodeEmbeddedRC(bits); rc.RCCommand != enums.RCCeaseTransmissionRequest {
+	if rc := layer2.DecodeEmbeddedRC(data); rc.RCCommand != enums.RCCeaseTransmissionRequest {
 		t.Fatalf("RC %+v", rc)
 	}
 

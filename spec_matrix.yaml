@@ -302,7 +302,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestIdleMessageInfo_PackedHex
-              - TestIdleMessageInfo_BitsAreOnlyZeroOrOne
               - TestIdleMessageInfo_ReturnsCopy
               - TestIsIdleMessage_Match
               - TestIsIdleMessage_NoMatch
@@ -1201,7 +1200,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestIdleMessageInfo_PackedHex
-              - TestIdleMessageInfo_BitsAreOnlyZeroOrOne
               - TestIdleMessageInfo_EqualsPRFill
               - TestIdleMessageInfo_ReturnsCopy
               - TestIsIdleMessage_Match

@@ -145,7 +145,7 @@ func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 	if !t.outbound {
 		return errRCNotOutbound
 	}
-	d, err := encodeRC(&rc)
+	d, err := EncodeEmbeddedRC(&rc)
 	if err != nil {
 		return err
 	}

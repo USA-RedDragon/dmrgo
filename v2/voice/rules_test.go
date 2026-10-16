@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -78,9 +77,7 @@ func TestReceiver_XPR8400(t *testing.T) {
 		if err1 != nil || err2 != nil || err3 != nil || len(cach) != 3 || len(b) != 33 {
 			t.Fatalf("line %q", sc.Text())
 		}
-		var cb [layer2.CACHBits]bit.Bit
-		copy(cb[:], bit.Unpack(cach))
-		if !layer2.DecodeCACHField(cb).TACT.TDMAChannel {
+		if !layer2.DecodeCACHField([3]byte(cach)).TACT.TDMAChannel {
 			continue
 		}
 		at := time.Duration(sample) * time.Second / 48000
@@ -146,8 +143,7 @@ func TestReceiver_Ends(t *testing.T) {
 	t.Parallel()
 
 	bursts := transmission(t, groupLC(t, 91, 3191868), 1, nil)
-	info := layer2.IdleMessageInfo()
-	idle, err := layer2.BuildDataBurst([12]byte(bit.Pack(info[:])), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
+	idle, err := layer2.BuildDataBurst(layer2.IdleMessageInfo(), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
 	if err != nil {
 		t.Fatal(err)
 	}

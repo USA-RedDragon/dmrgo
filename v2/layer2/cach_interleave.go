@@ -1,10 +1,5 @@
 package layer2
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
-)
-
 // cachDeinterleaveTable maps transmit bit index (0 = first sent) to logical
 // bit position. TACT bits are at transmit indices 0, 4, 8, 12, 14, 18, 22.
 
@@ -21,23 +16,22 @@ var cachInterleaveTable = [CACHBits]int{
 
 // CACHDeinterleave converts a 24-bit CACH field from transmit order to the
 // logical order that DecodeCACH takes: AT, TC, LCSS, Hamming parity, then
-// the 17 payload bits (ETSI TS 102 361-1 clause B.4.1, Figure B.9).
-func CACHDeinterleave(txBits [CACHBits]bit.Bit) [CACHBits]bit.Bit {
-	lowbit.Mask(txBits[:])
-	var logical [CACHBits]bit.Bit
-	for i := 0; i < CACHBits; i++ {
-		logical[cachDeinterleaveTable[i]] = txBits[i]
+// the 17 payload bits (ETSI TS 102 361-1 clause B.4.1, Figure B.9). Both
+// hold the bits packed, the first bit in the most significant bit of byte 0.
+func CACHDeinterleave(tx [3]byte) [3]byte {
+	var logical [3]byte
+	for i, to := range cachDeinterleaveTable {
+		logical[to>>3] |= tx[i>>3] >> (7 - i&7) & 1 << (7 - to&7)
 	}
 	return logical
 }
 
 // CACHInterleave converts a 24-bit CACH field from logical order to
 // transmit order. It is the inverse of CACHDeinterleave.
-func CACHInterleave(logical [CACHBits]bit.Bit) [CACHBits]bit.Bit {
-	lowbit.Mask(logical[:])
-	var txBits [CACHBits]bit.Bit
-	for i := 0; i < CACHBits; i++ {
-		txBits[cachInterleaveTable[i]] = logical[i]
+func CACHInterleave(logical [3]byte) [3]byte {
+	var tx [3]byte
+	for i, to := range cachInterleaveTable {
+		tx[to>>3] |= logical[i>>3] >> (7 - i&7) & 1 << (7 - to&7)
 	}
-	return txBits
+	return tx
 }

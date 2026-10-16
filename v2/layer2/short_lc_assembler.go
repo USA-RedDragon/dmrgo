@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -12,13 +11,13 @@ import (
 // the Short LC PDU they carry (ETSI TS 102 361-1 clause 7.1.4). The zero
 // ShortLCAssembler is ready to use.
 type ShortLCAssembler struct {
-	fragments [4][CACHPayloadBits]bit.Bit
+	fragments [4][3]byte
 	count     int
 }
 
 // Reset clears the assembler state for reuse.
 func (a *ShortLCAssembler) Reset() {
-	a.fragments = [4][CACHPayloadBits]bit.Bit{}
+	a.fragments = [4][3]byte{}
 	a.count = 0
 }
 
@@ -49,12 +48,13 @@ func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
 	return slc, err == nil, err
 }
 
-// AddFragment adds a 17-bit CACH signalling payload with the LCSS of the
-// TACT of the same CACH. It returns true when a Last fragment follows a
+// AddFragment adds a 17-bit CACH signalling payload, packed as CACH.Payload
+// holds it, with the LCSS of the TACT of the same CACH. It ignores the low 7
+// bits of payload[2]. It returns true when a Last fragment follows a
 // First and two Continuation fragments, and the assembler is ready for
 // Complete. Any other LCSS or order discards the partial Short LC and
 // returns ErrShortLCSequence.
-func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [CACHPayloadBits]bit.Bit) (bool, error) {
+func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [3]byte) (bool, error) {
 	switch lcss {
 	case enums.LCSSFirstFragment:
 		a.Reset()
@@ -134,7 +134,8 @@ func (a *ShortLCAssembler) decode() ([5]byte, fec.Result) {
 	defer a.Reset()
 	var fragments [4]uint32
 	for i := range fragments {
-		fragments[i] = uint32(bit.Uint(a.fragments[i][:]) & 0x1FFFF)
+		f := a.fragments[i]
+		fragments[i] = uint32(f[0])<<9 | uint32(f[1])<<1 | uint32(f[2])>>7
 	}
 	info, res := bptc.DecodeCACH(fragments)
 	v := info << 4

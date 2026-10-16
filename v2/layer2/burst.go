@@ -79,16 +79,18 @@ type Burst struct {
 	SlotType pdu.SlotType
 
 	// BPTCReserved holds the reserved bits R(0) to R(2) of the BPTC(196,96)
-	// payload of a data burst, R(i) at index i, after FEC correction. The
-	// spec sets them to zero, and Motorola Capacity Max sets R(2) to flag
-	// RAS (ETSI TS 102 361-1 clause B.1.1).
-	BPTCReserved [3]bit.Bit
+	// payload of a data burst after FEC correction, R(i) in bit i, so that
+	// it reads R(2), R(1), R(0) in the order of the BPTC matrix, the first
+	// most significant. Encode ignores bits 3 to 7. The spec sets them to
+	// zero, and Motorola Capacity Max sets R(2), 0x4, to flag RAS (ETSI TS
+	// 102 361-1 clause B.1.1).
+	BPTCReserved uint8
 
 	// EmbeddedSignalling is the EMB of a burst with HasEmbeddedSignalling.
 	EmbeddedSignalling pdu.EmbeddedSignalling
 	// EmbeddedSignallingData is the 32-bit embedded data field of a burst
-	// with HasEmbeddedSignalling.
-	EmbeddedSignallingData [32]bit.Bit
+	// with HasEmbeddedSignalling, packed as RawBurst.EmbeddedData returns it.
+	EmbeddedSignallingData [4]byte
 
 	// ReverseChannel is the RC PDU of a burst with HasReverseChannel.
 	ReverseChannel pdu.ReverseChannel
@@ -146,9 +148,9 @@ func (b *Burst) reset(data RawBurst) {
 	b.VoiceBurst = 0
 	b.VoiceSlots = [VoiceSlotsPerBurst][72]bit.Bit{}
 	b.SlotType = pdu.SlotType{}
-	b.BPTCReserved = [3]bit.Bit{}
+	b.BPTCReserved = 0
 	b.EmbeddedSignalling = pdu.EmbeddedSignalling{}
-	b.EmbeddedSignallingData = [32]bit.Bit{}
+	b.EmbeddedSignallingData = [4]byte{}
 	b.ReverseChannel = pdu.ReverseChannel{}
 	b.Data = nil
 	b.FEC = fec.BurstFECStats{}
@@ -298,10 +300,10 @@ func (b *Burst) decodeVoice(pos enums.VoiceBurstType, sync enums.SyncPattern) {
 func (b *Burst) setEmbedded(emb pdu.EmbeddedSignalling) {
 	data := b.raw.EmbeddedData()
 	b.EmbeddedSignalling = emb
-	unpackBits(b.EmbeddedSignallingData[:], data[:])
+	b.EmbeddedSignallingData = data
 	b.FEC.EMB = emb.FEC
 	if b.HasReverseChannel() {
-		b.ReverseChannel = decodeRC(data)
+		b.ReverseChannel = DecodeEmbeddedRC(data)
 		b.FEC.RC = b.ReverseChannel.FEC
 	}
 }
@@ -432,8 +434,8 @@ func (b *Burst) decodeStandaloneRC() {
 	b.FEC.EMB = b.EmbeddedSignalling.FEC
 
 	data := b.raw.StandaloneRCData()
-	unpackBits(b.EmbeddedSignallingData[:], data[:])
-	b.ReverseChannel = decodeRC(data)
+	b.EmbeddedSignallingData = data
+	b.ReverseChannel = DecodeEmbeddedRC(data)
 	b.FEC.RC = b.ReverseChannel.FEC
 }
 
@@ -467,12 +469,10 @@ func (b *Burst) embCodeword() (uint16, error) {
 // packed: the coded ReverseChannel when HasReverseChannel reports true, and
 // EmbeddedSignallingData otherwise.
 func (b *Burst) embeddedData() ([4]byte, error) {
-	var d [4]byte
 	if !b.HasReverseChannel() {
-		packBits(d[:], b.EmbeddedSignallingData[:])
-		return d, nil
+		return b.EmbeddedSignallingData, nil
 	}
-	d, err := encodeRC(&b.ReverseChannel)
+	d, err := EncodeEmbeddedRC(&b.ReverseChannel)
 	if err != nil {
 		return d, err
 	}
@@ -526,7 +526,7 @@ func (b *Burst) deinterleave(info [25]byte, dataType enums.DataType) (int, fec.R
 		enums.DataTypeUnifiedSingleBlock:
 		decoded, reserved, result := bptc.Decode196(info)
 		copy(b.payload[:], decoded[:])
-		b.BPTCReserved = reservedBits(reserved)
+		b.BPTCReserved = reserved
 		return 96, result
 	case enums.DataTypeReserved:
 	}
@@ -835,8 +835,7 @@ func (b *Burst) encodeDataBits() ([25]byte, error) {
 	case dt == enums.DataTypeRate1:
 		return rate1Info(&info), nil
 	case dt.IsBPTC():
-		r := b.BPTCReserved
-		return bptc.Encode196([12]byte(info[:12]), uint8(r[0]&1|r[1]&1<<1|r[2]&1<<2)), nil
+		return bptc.Encode196([12]byte(info[:12]), b.BPTCReserved&0x7), nil
 	default:
 		return info, nil
 	}

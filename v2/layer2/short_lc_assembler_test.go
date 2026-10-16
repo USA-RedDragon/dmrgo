@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -15,18 +15,12 @@ import (
 
 // buildValidShortLCFragments constructs 4x17-bit CACH payloads that encode
 // a valid Short LC PDU with the given SLCO and 24-bit data payload.
-func buildValidShortLCFragments(slco byte, data [24]bit.Bit) [4][17]bit.Bit {
-	var bits [36]bit.Bit
-	bits[0] = bit.Bit((slco >> 3) & 1)
-	bits[1] = bit.Bit((slco >> 2) & 1)
-	bits[2] = bit.Bit((slco >> 1) & 1)
-	bits[3] = bit.Bit(slco & 1)
-	copy(bits[4:28], data[:])
-	crcVal := crc8Bits(bits[:28])
-	for i := range 8 {
-		bits[28+i] = bit.Bit((crcVal >> (7 - i)) & 1)
-	}
-	return encodeCACHBits(bits)
+func buildValidShortLCFragments(slco byte, data [3]byte) [4][3]byte {
+	var info [5]byte
+	bits.SetField(info[:], 0, 4, uint64(slco))
+	bits.Copy(info[:], 4, data[:], 0, 24)
+	bits.SetField(info[:], 28, 8, uint64(crc.CRC8(info[:], 28)))
+	return encodeCACHFragments(info)
 }
 
 var shortLCSequence = [4]enums.LCSS{
@@ -36,7 +30,7 @@ var shortLCSequence = [4]enums.LCSS{
 	enums.LCSSLastFragment,
 }
 
-func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4][17]bit.Bit) {
+func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4][3]byte) {
 	t.Helper()
 	for i := range fragments {
 		ready, err := a.AddFragment(shortLCSequence[i], fragments[i])
@@ -51,7 +45,7 @@ func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4]
 
 // decodeShortLCFragments adds fragments to a new ShortLCAssembler as the
 // CACHs First, Continuation, Continuation and Last with Add.
-func decodeShortLCFragments(t *testing.T, fragments [4][17]bit.Bit) pdu.ShortLC {
+func decodeShortLCFragments(t *testing.T, fragments [4][3]byte) pdu.ShortLC {
 	t.Helper()
 	var a layer2.ShortLCAssembler
 	for i, f := range fragments {
@@ -68,7 +62,7 @@ func decodeShortLCFragments(t *testing.T, fragments [4][17]bit.Bit) pdu.ShortLC 
 
 func TestShortLCAssembler_AddUncorrectableTACT(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
+	var data [3]byte
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 	var a layer2.ShortLCAssembler
 	if _, _, err := a.Add(layer2.CACH{TACT: pdu.TACT{FEC: fec.Result{Uncorrectable: true}}}); err != nil {
@@ -93,7 +87,7 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 		t.Errorf("initial count should be 0, got %d", a.Count())
 	}
 
-	var payload [layer2.CACHPayloadBits]bit.Bit
+	var payload [3]byte
 	for i := 0; i < 3; i++ {
 		ready, err := a.AddFragment(shortLCSequence[i], payload)
 		if err != nil {
@@ -152,7 +146,7 @@ func TestShortLCAssembler_RejectsBadSequence(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			var a layer2.ShortLCAssembler
-			var payload [layer2.CACHPayloadBits]bit.Bit
+			var payload [3]byte
 			var err error
 			for _, lcss := range tt.seq {
 				_, err = a.AddFragment(lcss, payload)
@@ -172,11 +166,9 @@ func TestShortLCAssembler_RejectsBadSequence(t *testing.T) {
 
 func TestShortLCAssembler_FirstRestartsSequence(t *testing.T) {
 	t.Parallel()
-	var garbage [layer2.CACHPayloadBits]bit.Bit
-	for i := range garbage {
-		garbage[i] = 1
-	}
-	var data [24]bit.Bit
+	var garbage [3]byte
+	bits.SetField(garbage[:], 0, layer2.CACHPayloadBits, 1<<layer2.CACHPayloadBits-1)
+	var data [3]byte
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
 	var a layer2.ShortLCAssembler
@@ -204,7 +196,7 @@ func TestShortLCAssembler_FirstRestartsSequence(t *testing.T) {
 func TestShortLCAssembler_CompleteIncomplete(t *testing.T) {
 	t.Parallel()
 	var a layer2.ShortLCAssembler
-	var payload [layer2.CACHPayloadBits]bit.Bit
+	var payload [3]byte
 	for i := 0; i < 3; i++ {
 		if _, err := a.AddFragment(shortLCSequence[i], payload); err != nil {
 			t.Fatal(err)
@@ -217,7 +209,7 @@ func TestShortLCAssembler_CompleteIncomplete(t *testing.T) {
 
 func TestShortLCAssembler_Complete_NullMessage(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
+	var data [3]byte
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
 	var a layer2.ShortLCAssembler
@@ -241,13 +233,7 @@ func TestShortLCAssembler_Complete_NullMessage(t *testing.T) {
 
 func TestShortLCAssembler_Complete_ActivityUpdate(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
-	data[0], data[1], data[2], data[3] = 0, 1, 0, 1
-	data[4], data[5], data[6], data[7] = 0, 0, 1, 1
-	data[8], data[9], data[10], data[11] = 1, 0, 1, 0
-	data[12], data[13], data[14], data[15] = 1, 0, 1, 1
-	data[16], data[17], data[18], data[19] = 1, 1, 0, 0
-	data[20], data[21], data[22], data[23] = 1, 1, 0, 1
+	data := [3]byte{0x53, 0xAB, 0xCD}
 
 	fragments := buildValidShortLCFragments(byte(enums.SLCOActivityUpdate), data)
 
@@ -284,7 +270,7 @@ func TestShortLCAssembler_Complete_ActivityUpdate(t *testing.T) {
 
 func TestShortLCAssembler_Add(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
+	var data [3]byte
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
 	slc := decodeShortLCFragments(t, fragments)
@@ -309,9 +295,7 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 		},
 	}
 	encoded := must(original.Encode())
-	var info [36]bit.Bit
-	bits.Unpack(info[:], encoded[:], 0)
-	fragments := encodeCACHBits(info)
+	fragments := encodeCACHFragments(encoded)
 
 	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC
@@ -337,7 +321,7 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 
 func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	t.Parallel()
-	var data [24]bit.Bit
+	var data [3]byte
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
 	slc := decodeShortLCFragments(t, fragments)
@@ -352,11 +336,12 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	}
 }
 
-// encodeCACHBits calls bptc.EncodeCACH with one bit.Bit per bit.
-func encodeCACHBits(info [36]bit.Bit) [4][layer2.CACHPayloadBits]bit.Bit {
-	var out [4][layer2.CACHPayloadBits]bit.Bit
-	for i, f := range bptc.EncodeCACH(bit.Uint(info[:])) {
-		bit.PutUint(out[i][:], uint64(f))
+// encodeCACHFragments calls bptc.EncodeCACH on the 36 bits of a packed
+// Short LC PDU and returns the packed CACH payloads.
+func encodeCACHFragments(info [5]byte) [4][3]byte {
+	var out [4][3]byte
+	for i, f := range bptc.EncodeCACH(bits.Field64(info[:], 0, 36)) {
+		bits.SetField(out[i][:], 0, layer2.CACHPayloadBits, uint64(f))
 	}
 	return out
 }

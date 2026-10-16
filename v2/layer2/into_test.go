@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -77,10 +76,7 @@ func TestDecodeEmbeddedFullLinkControlInto_MatchesValue(t *testing.T) {
 func TestShortLCAssembler_AddInto_MatchesAdd(t *testing.T) {
 	t.Parallel()
 
-	var data [24]bit.Bit
-	for i := range data {
-		data[i] = bit.Bit(i % 3 & 1)
-	}
+	data := [3]byte{0x49, 0x24, 0x92}
 	fragments := buildValidShortLCFragments(byte(enums.SLCOActivityUpdate), data)
 	cachs := make([]layer2.CACH, 0, 6)
 	for i, f := range fragments {
