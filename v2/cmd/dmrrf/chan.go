@@ -20,7 +20,13 @@ type ring struct {
 	buf  []complex64
 	mask int64
 	n    int64
+	// tab holds the interpolator taps for interpPhases fractional delays.
+	tab []float32
 }
+
+// interpPhases is the number of fractional delays the interpolator has
+// taps for.
+const interpPhases = 256
 
 // newRing returns a ring of at least size samples.
 func newRing(size int) ring {
@@ -28,7 +34,19 @@ func newRing(size int) ring {
 	for n < size {
 		n <<= 1
 	}
-	return ring{buf: make([]complex64, n), mask: int64(n - 1)}
+	r := ring{buf: make([]complex64, n), mask: int64(n - 1), tab: make([]float32, (interpPhases+1)*sincTaps)}
+	for p := range interpPhases + 1 {
+		fr := float64(p) / interpPhases
+		for k := range sincTaps {
+			u := float64(k-sincTaps/2+1) - fr
+			w := 0.42 + 0.5*math.Cos(math.Pi*u/(sincTaps/2)) + 0.08*math.Cos(2*math.Pi*u/(sincTaps/2))
+			if u != 0 {
+				w *= math.Sin(math.Pi*u) / (math.Pi * u)
+			}
+			r.tab[p*sincTaps+k] = float32(w)
+		}
+	}
+	return r
 }
 
 // push appends sample v.
@@ -46,20 +64,28 @@ func (r *ring) at(i int64) complex64 {
 }
 
 // interp returns the ring at the fractional sample t by a Blackman windowed
-// sinc of sincTaps samples.
+// sinc of sincTaps samples, at the nearest of interpPhases fractional
+// delays.
 func (r *ring) interp(t float64) complex64 {
 	i0 := int64(math.Floor(t))
-	fr := t - float64(i0)
-	var s complex64
-	for k := -sincTaps/2 + 1; k <= sincTaps/2; k++ {
-		u := float64(k) - fr
-		w := 0.42 + 0.5*math.Cos(math.Pi*u/(sincTaps/2)) + 0.08*math.Cos(2*math.Pi*u/(sincTaps/2))
-		if u != 0 {
-			w *= math.Sin(math.Pi*u) / (math.Pi * u)
+	p := int((t-float64(i0))*interpPhases + 0.5)
+	taps := r.tab[p*sincTaps : (p+1)*sincTaps]
+	lo := i0 - sincTaps/2 + 1
+	var re, im float32
+	if lo >= 0 && lo >= r.n-int64(len(r.buf)) && lo+sincTaps <= r.n {
+		for k, w := range taps {
+			v := r.buf[(lo+int64(k))&r.mask]
+			re += real(v) * w
+			im += imag(v) * w
 		}
-		s += r.at(i0+int64(k)) * complex(float32(w), 0)
+		return complex(re, im)
 	}
-	return s
+	for k, w := range taps {
+		v := r.at(lo + int64(k))
+		re += real(v) * w
+		im += imag(v) * w
+	}
+	return complex(re, im)
 }
 
 // fring is a power-of-two ring of real samples addressed by absolute sample

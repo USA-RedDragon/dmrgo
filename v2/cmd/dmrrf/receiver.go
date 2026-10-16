@@ -195,7 +195,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	r.search = newSyncSearch()
 	if r.opt.Coherent {
 		d := r.opt.Window
-		r.model = newCPMModel(d, samplesPerSy, 0.27)
+		r.model = newCPMModel(d, r.opt.TrellisSPS, 0.27)
 		r.tr = newTrellis(r.model, (maxGapSlots+1)*slotSymbols)
 		r.buf = make([]complex64, (maxGapSlots+1)*slotSymbols*samplesPerSy)
 		r.tapp = make([]float32, 4*(maxGapSlots+1)*slotSymbols)
@@ -460,11 +460,12 @@ func (r *Receiver) setH(h float64) {
 // energy.
 func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
 	ch := &r.chz.ch
-	t0 := r.symTime(s.index, syncFirstSym+syncEdge) + tau
+	t0 := r.symTime(s.index, syncFirstSym+syncEdge) + tau - samplesPerSy/2
+	rot, step := r.rotAt(t0), r.rotAt(1)
 	var e float64
 	for j := range syncSpan {
-		t := t0 + float64(j-samplesPerSy/2)
-		v := complex128(ch.interp(t)) * r.rotAt(t)
+		v := complex128(ch.interp(t0+float64(j))) * rot
+		rot *= step
 		r.corrX[j] = v
 		e += real(v)*real(v) + imag(v)*imag(v)
 	}
@@ -640,10 +641,10 @@ func (r *Receiver) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 	if e == 0 {
 		return anchorInfo{pattern: p}
 	}
-	ph := r.search.phase(p)
+	tpl := r.search.conjOf(p)
 	var c complex128
 	for j, v := range r.corrX {
-		c += v * complex(math.Cos(ph[j]), -math.Sin(ph[j]))
+		c += v * tpl[j]
 	}
 	a := math.Hypot(real(c), imag(c))
 	amp := a / syncSpan
