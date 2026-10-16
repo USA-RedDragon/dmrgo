@@ -129,7 +129,7 @@ func softCheckFER(t *testing.T, counts [][]int, hard, soft, mid int, ratio float
 
 // softCost returns the sum of the LLRs at the positions pos where r has a 1
 // bit, the cost that an ML decoder minimizes.
-func softCost(r *layer2.RawBurst, llr []int16, pos []int) int64 {
+func softCost(r *layer2.RawBurst, llr []int16, pos []int16) int64 {
 	var c int64
 	for _, q := range pos {
 		if r[q/8]>>(7-q%8)&1 != 0 {
@@ -343,7 +343,8 @@ func TestSoftRate34(t *testing.T) {
 	p := random(rng)
 	var clean layer2.RawBurst
 	clean.SetRate34Payload(p)
-	for _, j := range d.trellis.pos {
+	for _, q := range d.trellis.pos {
+		j := int(q)
 		if j%2 != 0 {
 			continue
 		}

@@ -121,7 +121,7 @@ type softSmallCode struct {
 	// t is the number of bit errors that the code always corrects.
 	t int
 	// pos holds the LLR index of codeword bit j, in increasing order.
-	pos [softSmallMaxN]int
+	pos [softSmallMaxN]int16
 	// base is the codeword of the zero info word, codeword bit j at 1<<j.
 	base uint32
 	// rows holds the codeword change of info bit i.
@@ -153,7 +153,7 @@ func newSoftSmallCode(k, t int, enc softEncoder, skip []bool) (softSmallCode, er
 			if c.n == softSmallMaxN {
 				return c, fmt.Errorf("%w: more than 24 code bits", errSoftDerive)
 			}
-			c.pos[c.n] = p
+			c.pos[c.n] = int16(p)
 			c.n++
 			break
 		}
@@ -166,7 +166,7 @@ func newSoftSmallCode(k, t int, enc softEncoder, skip []bool) (softSmallCode, er
 }
 
 // softMask returns the bits of img at pos, pos[j] at 1<<j.
-func softMask(img []bit.Bit, pos []int) uint32 {
+func softMask[T int | int16](img []bit.Bit, pos []T) uint32 {
 	var m uint32
 	for j, p := range pos {
 		if img[p]&1 != 0 {
@@ -287,7 +287,7 @@ func softResult(n, errs, t int) fec.Result {
 
 // softPut sets bit p of r, in transmit order, to 1 when one is true and to 0
 // when it is false.
-func softPut(r *layer2.RawBurst, p int, one bool) {
+func softPut[T int | int16](r *layer2.RawBurst, p T, one bool) {
 	m := byte(0x80) >> (p % 8)
 	if one {
 		r[p/8] |= m
@@ -315,7 +315,7 @@ type softAMBESlot struct {
 	// its scrambling. Info bit 11-i is frame bit i, and frame bit 12+i for C1.
 	c0, c1 softSmallCode
 	// c2 holds the burst position of uncoded frame bit 24+i.
-	c2 [softAMBEC2]int
+	c2 [softAMBEC2]int16
 }
 
 // softAMBE holds the tables of the AMBE+2 frame decoder.
@@ -366,7 +366,7 @@ func newSoftAMBE() (*softAMBE, error) {
 			n := 0
 			for p := range img {
 				if img[p] != zimg[p] {
-					sl.c2[i], skip[p] = p, true
+					sl.c2[i], skip[p] = int16(p), true
 					n++
 				}
 			}
@@ -382,7 +382,7 @@ func newSoftAMBE() (*softAMBE, error) {
 		}
 	}
 	for _, p := range a.slot[0].c1.pos[:a.slot[0].c1.n] {
-		if p >= 8*len(ambe.Encode([7]byte{})) {
+		if int(p) >= 8*len(ambe.Encode([7]byte{})) {
 			return nil, fmt.Errorf("%w: AMBE+2 C1 bit %d is not in voice slot 0", errSoftDerive, p)
 		}
 	}
@@ -412,11 +412,11 @@ type softOSDCode struct {
 	// t is the number of bit errors that the code always corrects.
 	t int
 	// pos holds the image index of codeword bit j, in increasing order.
-	pos [softOSDMaxN]int
+	pos [softOSDMaxN]int16
 	// rows holds the codeword of info bit i.
 	rows [softOSDMaxK][softOSDWords]uint64
 	// sys holds a codeword bit that equals info bit i.
-	sys [softOSDMaxK]int
+	sys [softOSDMaxK]int16
 }
 
 // newSoftOSDCode derives a linear code from enc, where enc(0) encodes the
@@ -445,7 +445,7 @@ func newSoftOSDCode(k, t int, enc softEncoder) (*softOSDCode, error) {
 			if c.n == softOSDMaxN {
 				return nil, fmt.Errorf("%w: more than 196 code bits", errSoftDerive)
 			}
-			c.pos[c.n] = p
+			c.pos[c.n] = int16(p)
 			c.n++
 			break
 		}
@@ -463,7 +463,7 @@ func newSoftOSDCode(k, t int, enc softEncoder) (*softOSDCode, error) {
 		c.sys[i] = -1
 		for j := range c.n {
 			if weight[j] == 1 && c.rows[i][j>>6]>>(j&63)&1 != 0 {
-				c.sys[i] = j
+				c.sys[i] = int16(j)
 				break
 			}
 		}
@@ -518,12 +518,12 @@ type softOSDScratch struct {
 	// l holds the LLRs of the code bits and mag their magnitudes.
 	l, mag [softOSDMaxN]int32
 	// order holds the code bits by decreasing reliability.
-	order [softOSDMaxN]int
+	order [softOSDMaxN]int16
 	// hard holds the hard decisions of the code bits.
 	hard [softOSDWords]uint64
 	// work holds the generator rows in systematic form on pivot[i].
 	work  [softOSDMaxK][softOSDWords]uint64
-	pivot [softOSDMaxK]int
+	pivot [softOSDMaxK]int16
 	// tab holds the cost tables of the code bits.
 	tab [softOSDNibbles][16]int32
 	// list holds the best candidates.
@@ -540,7 +540,7 @@ type softOSDScratch struct {
 	nw, nb      int
 	// chase holds the Chase test pattern bits and bits the hard decisions of
 	// the 196 information bits.
-	chase [softOSDMaxN]int
+	chase [softChaseMax]int16
 	bits  [softTrellisBits]bit.Bit
 }
 
@@ -598,7 +598,7 @@ func (c *softOSDCode) osd(s *softOSDScratch, order, window, listMax int) {
 func (c *softOSDCode) basis(s *softOSDScratch) {
 	n, k, nw := c.n, c.k, (c.n+63)/64
 	for j := range n {
-		s.order[j] = j
+		s.order[j] = int16(j)
 		for i := j; i > 0 && s.mag[s.order[i-1]] < s.mag[s.order[i]]; i-- {
 			s.order[i-1], s.order[i] = s.order[i], s.order[i-1]
 		}
@@ -715,7 +715,7 @@ func (s *softOSDScratch) errors(cw *[softOSDWords]uint64) int {
 }
 
 // softBit reports whether bit j of cw is set.
-func softBit(cw *[softOSDWords]uint64, j int) bool {
+func softBit[T int | int16](cw *[softOSDWords]uint64, j T) bool {
 	return cw[j>>6]>>(j&63)&1 != 0
 }
 
@@ -822,9 +822,9 @@ type softEmbLC struct {
 	// code is the BPTC(128,77) code over four bursts, burst i at 264i.
 	code *softOSDCode
 	// lc holds the info bit of LC bit j, most significant bit first.
-	lc [softEmbLCBits]int
+	lc [softEmbLCBits]int16
 	// cs holds the info bit of checksum bit c, bit 0 least significant.
-	cs [softEmbLCChecksum]int
+	cs [softEmbLCChecksum]int16
 }
 
 // newSoftEmbLC derives the embedded LC code from bptc.EncodeEmbedded and the
@@ -859,7 +859,7 @@ func newSoftEmbLC() (*softEmbLC, error) {
 		e.lc[j] = -1
 		for _, i := range set {
 			if count[i] == 1 {
-				e.lc[j] = i
+				e.lc[j] = int16(i & 0x7f)
 			}
 		}
 		if e.lc[j] < 0 {
@@ -870,8 +870,8 @@ func newSoftEmbLC() (*softEmbLC, error) {
 		j := softEmbLCBits - 1 - c
 		e.cs[c] = -1
 		for _, i := range sets[j] {
-			if i != e.lc[j] {
-				e.cs[c] = i
+			if i != int(e.lc[j]) {
+				e.cs[c] = int16(i & 0x7f)
 			}
 		}
 		if e.cs[c] < 0 || len(sets[j]) != 2 {
@@ -884,12 +884,12 @@ func newSoftEmbLC() (*softEmbLC, error) {
 // softTrellis holds the rate 3/4 trellis tables.
 type softTrellis struct {
 	// pos holds the burst position of codeword bit j, in increasing order.
-	pos [softTrellisBits]int
+	pos [softTrellisBits]int16
 	// step holds the codeword bits of the 4-bit label of step k, label most
 	// significant bit first.
-	step [softTrellisSteps][4]int
+	step [softTrellisSteps][4]uint8
 	// label holds the label of input tribit in from state s.
-	label [softTrellisStates][softTrellisStates]int
+	label [softTrellisStates][softTrellisStates]uint8
 }
 
 // softTrellisImage returns the burst image of the 48 tribits t, tribit k
@@ -913,7 +913,7 @@ func softTrellisImage(t *[softTrellisSteps - 1]int) []bit.Bit {
 // layer2.RawBurst.SetRate34Payload. pos holds the burst positions of the 196
 // information bits, as the BPTC(196,96) code finds them: one trellis bit is 1
 // in every codeword, so the trellis images alone do not find it.
-func newSoftTrellis(pos *[softTrellisBits]int) (*softTrellis, error) {
+func newSoftTrellis(pos *[softTrellisBits]int16) (*softTrellis, error) {
 	tr := &softTrellis{pos: *pos}
 	pairs, err := tr.pairs()
 	if err != nil {
@@ -921,7 +921,7 @@ func newSoftTrellis(pos *[softTrellisBits]int) (*softTrellis, error) {
 	}
 	for s := range softTrellisStates {
 		for in := range softTrellisStates {
-			tr.label[s][in] = tr.read(pairs, 1, false, s, in)
+			tr.label[s][in] = uint8(tr.read(pairs, 1, false, s, in) & 0xf)
 		}
 	}
 	for k := range softTrellisSteps {
@@ -988,12 +988,12 @@ func (tr *softTrellis) pairs() (*[softTrellisSteps][2]int, error) {
 
 // stepBits returns the codeword bits of step k, the dibits of pairs in
 // order, or swapped.
-func stepBits(pairs *[softTrellisSteps][2]int, k int, swap bool) [4]int {
-	a, b := pairs[k][0], pairs[k][1]
+func stepBits(pairs *[softTrellisSteps][2]int, k int, swap bool) [4]uint8 {
+	a, b := uint8(pairs[k][0]&0x7f), uint8(pairs[k][1]&0x7f)
 	if swap {
 		a, b = b, a
 	}
-	return [4]int{2 * a, 2*a + 1, 2 * b, 2*b + 1}
+	return [4]uint8{2 * a, 2*a + 1, 2 * b, 2*b + 1}
 }
 
 // read encodes tribit in after tribit s at step k, every other tribit 0,
@@ -1030,7 +1030,7 @@ func (tr *softTrellis) order(pairs *[softTrellisSteps][2]int, k int) bool {
 				if (k == 0 && s != 0) || (k == softTrellisSteps-1 && in != 0) {
 					continue
 				}
-				ok = ok && tr.read(pairs, k, swap, s, in) == tr.label[s][in]
+				ok = ok && tr.read(pairs, k, swap, s, in) == int(tr.label[s][in])
 			}
 		}
 		if ok {
@@ -1074,13 +1074,13 @@ type softDecoder struct {
 	// info holds the burst positions of the 196 information bits, and
 	// bptcInfo the information bit of BPTC(196,96) codeword bit j, which has
 	// no R(3).
-	info     [softTrellisBits]int
-	bptcInfo [softOSDMaxN]int
+	info     [softTrellisBits]int16
+	bptcInfo [softOSDMaxN]uint8
 	// small and osd hold the scratch of the decodes, and prev the Viterbi
 	// survivors.
 	small softSmallScratch
 	osd   softOSDScratch
-	prev  [softTrellisSteps][softTrellisStates]int
+	prev  [softTrellisSteps][softTrellisStates]uint8
 	// check is the BPTC check of the current decode, and acceptBPTC,
 	// acceptShortLC and acceptEmbLC are the checks of the OSD codewords.
 	check                                  func([12]byte) bool
@@ -1178,10 +1178,10 @@ func (d *softDecoder) infoBits() error {
 		if n == softTrellisBits {
 			return fmt.Errorf("%w: more than 196 information bits", errSoftDerive)
 		}
-		d.info[n] = q
+		d.info[n] = int16(q)
 		for j := range d.bptc.n {
-			if d.bptc.pos[j] == q {
-				d.bptcInfo[j] = n
+			if d.bptc.pos[j] == int16(q) {
+				d.bptcInfo[j] = uint8(n)
 			}
 		}
 		n++
@@ -1342,7 +1342,7 @@ func (d *softDecoder) decodeRate34(llr *[softBurstBits]int16, out *layer2.RawBur
 				}
 			}
 			next[in] = best
-			d.prev[k][in] = arg
+			d.prev[k][in] = uint8(arg)
 		}
 		metric = next
 	}
@@ -1356,7 +1356,7 @@ func (d *softDecoder) decodeRate34(llr *[softBurstBits]int16, out *layer2.RawBur
 	state := 0
 	for k := softTrellisSteps - 1; k >= 0; k-- {
 		t[k] = state
-		state = d.prev[k][state]
+		state = int(d.prev[k][state])
 	}
 	state = 0
 	for k := range softTrellisSteps {
@@ -1448,7 +1448,7 @@ func (d *softDecoder) decodeBPTCChase(llr *[softBurstBits]int16, check func([12]
 		for i := range p {
 			if s.chase[i] < 0 || s.mag[j] < s.mag[s.chase[i]] {
 				copy(s.chase[i+1:p], s.chase[i:p-1])
-				s.chase[i] = j
+				s.chase[i] = int16(j)
 				break
 			}
 		}
