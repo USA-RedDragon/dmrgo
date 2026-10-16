@@ -75,6 +75,23 @@ func TestRxFloor(t *testing.T) {
 	if os.Getenv("DMRRF_FLOOR") != "full" {
 		t.Skip("set DMRRF_FLOOR=full to regenerate " + floorPath)
 	}
+	genCurves(t, false, floorPath, "cmd/dmrrf floor_eval_test.go: a lower bound on the frame error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the field, on the stream and noise seeds of the sweep", floorBounds())
+}
+
+// TestRxAware writes awarePath with DMRRF_AWARE=full: the error rates of
+// the code-aware receiver on the points and seeds of TestRxFloor.
+func TestRxAware(t *testing.T) {
+	t.Parallel()
+	if os.Getenv("DMRRF_AWARE") != "full" {
+		t.Skip("set DMRRF_AWARE=full to regenerate " + awarePath)
+	}
+	genCurves(t, true, awarePath, "cmd/dmrrf floor_aware_test.go: the error rate of a receiver with the knowledge of the genie of the floor and the decoders of the tiers, on the stream and noise seeds of the sweep", awareDescriptions())
+}
+
+// genCurves writes the floor, or the code-aware receiver when aware, of
+// every payload of the sweep stream to path, with source and the
+// description of each payload in bounds.
+func genCurves(t *testing.T, aware bool, path, source string, bounds map[string]string) {
 	slots, truth := benchStream(t, 30)
 	workers := max(1, runtime.NumCPU()*3/4)
 	var cases []benchCase
@@ -83,7 +100,7 @@ func TestRxFloor(t *testing.T) {
 			cases = append(cases, benchCase{cn, 100 + seed})
 		}
 	}
-	pts := floorRun(t, slots, truth, cases, 1, true, nil, workers)
+	pts := floorRun(t, slots, truth, cases, 1, true, nil, workers, aware)
 	done := map[string]bool{}
 	for pi := range pts {
 		p := &pts[pi]
@@ -103,7 +120,7 @@ func TestRxFloor(t *testing.T) {
 			for j := range deep {
 				deep[j] = benchCase{p.CN, 1000 + uint64(pi)<<20 + uint64(batch*workers+j)}
 			}
-			more := floorRun(t, slots, truth, deep, 1, true, only, workers)
+			more := floorRun(t, slots, truth, deep, 1, true, only, workers, aware)
 			for k, v := range more[0].Counts {
 				if !only[k] && !only[strings.TrimSuffix(k, "/st")] {
 					continue
@@ -125,12 +142,9 @@ func TestRxFloor(t *testing.T) {
 		}
 		t.Logf("C/N %.1f dB done", p.CN)
 	}
-	out := floorFile{
-		Source:   "cmd/dmrrf floor_eval_test.go: a lower bound on the frame error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the field, on the stream and noise seeds of the sweep",
-		Payloads: map[string]*floorCurve{},
-	}
+	out := floorFile{Source: source, Payloads: map[string]*floorCurve{}}
 	for _, k := range floorPayloads() {
-		c := &floorCurve{Bound: floorBounds()[k]}
+		c := &floorCurve{Bound: bounds[k]}
 		for i := range pts {
 			v, n, ok := pts[i].fer(k)
 			if !ok {
@@ -146,7 +160,7 @@ func TestRxFloor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(floorPath, append(b, '\n'), 0o600); err != nil {
+	if err := os.WriteFile(path, append(b, '\n'), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }

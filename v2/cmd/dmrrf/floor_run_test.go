@@ -43,9 +43,10 @@ func (p *floorPoint) fer(k string) (float64, int, bool) {
 }
 
 // floorRun computes the floor of the sweep stream at each case on workers
-// goroutines, with a genie trellis of window d, and returns the points
-// summed over seeds.
-func floorRun(t testing.TB, slots []BSSlot, truth []benchSlot, cases []benchCase, d int, tail bool, only map[string]bool, workers int) []floorPoint {
+// goroutines, with a genie trellis of window d, or the error rates of the
+// code-aware receiver when aware, and returns the points summed over
+// seeds.
+func floorRun(t testing.TB, slots []BSSlot, truth []benchSlot, cases []benchCase, d int, tail bool, only map[string]bool, workers int, aware bool) []floorPoint {
 	t.Helper()
 	type result struct {
 		sc   map[string]*benchScore
@@ -59,7 +60,7 @@ func floorRun(t testing.TB, slots []BSSlot, truth []benchSlot, cases []benchCase
 		go func() {
 			defer wg.Done()
 			e := newFloorEval(d)
-			e.tail, e.only = tail, only
+			e.tail, e.only, e.aware = tail, only, aware
 			e.slots, e.truth = slots, truth
 			for i := range next {
 				c := cases[i]
@@ -104,7 +105,8 @@ func floorRun(t testing.TB, slots []BSSlot, truth []benchSlot, cases []benchCase
 
 // TestFloorProbe prints the floor of the payloads on a grid, for the
 // settings in DMRRF_FLOOR_PROBE: window, tail (A or B), seeds, the C/N
-// grid lo:hi:step and optionally the payloads joined by +.
+// grid lo:hi:step and optionally the payloads joined by +. With
+// DMRRF_FLOOR_AWARE set it prints the code-aware receiver instead.
 func TestFloorProbe(t *testing.T) {
 	t.Parallel()
 	spec := os.Getenv("DMRRF_FLOOR_PROBE")
@@ -134,7 +136,7 @@ func TestFloorProbe(t *testing.T) {
 		}
 	}
 	start := time.Now()
-	pts := floorRun(t, slots, truth, cases, d, tail, only, runtime.NumCPU()*3/4)
+	pts := floorRun(t, slots, truth, cases, d, tail, only, runtime.NumCPU()*3/4, os.Getenv("DMRRF_FLOOR_AWARE") != "")
 	fmt.Printf("%d streams in %v\n", len(cases), time.Since(start))
 	if out := os.Getenv("DMRRF_FLOOR_OUT"); out != "" {
 		b, err := json.Marshal(pts)

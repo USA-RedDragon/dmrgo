@@ -43,6 +43,10 @@ type floorEval struct {
 	// gridIters and gridWeight set the BPTC grid decode of bptcTurbo.
 	gridIters  int
 	gridWeight float32
+	// aware, when set, scores the fields with the code-aware receiver of
+	// awareStream in place of the floor, with the state in aw.
+	aware bool
+	aw    *awareState
 }
 
 // newFloorEval returns an evaluator with a genie trellis of window d.
@@ -219,6 +223,10 @@ func (e *floorEval) smallBeats(i int, c *softSmallCode, fixed, want uint32) bool
 
 // stream scores every field of the stream in f.
 func (e *floorEval) stream() {
+	if e.aware {
+		e.awareStream()
+		return
+	}
 	e.sc = map[string]*benchScore{}
 	e.conv = map[string][]float64{}
 	e.elc = map[int]*[4][softBurstBits]int16{}
