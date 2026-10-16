@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	packedbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
@@ -137,20 +138,44 @@ func encodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
 		n += 10
 		info[row*11+10] = bit.Bit((cs >> (6 - row)) & 1)
 	}
-	return bptc.EncodeEmbedded(info)
+	var p [10]byte
+	packedbits.Pack(p[:], 0, info[:])
+	var fragments [4][32]bit.Bit
+	for i, w := range bptc.EncodeEmbedded(p) {
+		bit.PutUint(fragments[i][:], uint64(w))
+	}
+	return fragments
+}
+
+// embeddedWords returns the fragments as bptc takes them.
+func embeddedWords(fragments *[4][32]bit.Bit) [4]uint32 {
+	var w [4]uint32
+	for i := range fragments {
+		w[i] = uint32(bit.Uint(fragments[i][:]) & 0xFFFFFFFF)
+	}
+	return w
+}
+
+// embeddedInfoBits unpacks the 77 information bits that bptc returns.
+func embeddedInfoBits(p *[10]byte) [77]bit.Bit {
+	var info [77]bit.Bit
+	packedbits.Unpack(info[:], p[:], 0)
+	return info
 }
 
 func decodeEmbeddedLC(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
-	return embeddedLCChecksum(bptc.DecodeEmbeddedWithCheck(fragments, embeddedLCChecksumValid))
+	info, res := bptc.DecodeEmbeddedWithCheck(embeddedWords(&fragments), embeddedLCChecksumValid)
+	return embeddedLCChecksum(embeddedInfoBits(&info), res)
 }
 
-func embeddedLCChecksumValid(info [77]bit.Bit) bool {
-	_, result := embeddedLCChecksum(info, fec.Result{})
+func embeddedLCChecksumValid(info [10]byte) bool {
+	_, result := embeddedLCChecksum(embeddedInfoBits(&info), fec.Result{})
 	return !result.Uncorrectable
 }
 
 func decodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
-	return embeddedLCChecksum(bptc.DecodeEmbeddedStrict(fragments))
+	info, res := bptc.DecodeEmbeddedStrict(embeddedWords(&fragments))
+	return embeddedLCChecksum(embeddedInfoBits(&info), res)
 }
 
 func embeddedLCChecksum(info [77]bit.Bit, result fec.Result) ([72]bit.Bit, fec.Result) {

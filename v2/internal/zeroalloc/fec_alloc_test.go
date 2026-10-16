@@ -10,6 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	packedbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -154,13 +155,24 @@ func fecEntries(t testing.TB) []entry {
 	for i := range fragments {
 		fragments[i] = splitBurst(voice[2+i]).embedded
 	}
-	embInfo, res := bptc.DecodeEmbedded(fragments)
+	var fragWords [4]uint32
+	for i := range fragments {
+		fragWords[i] = uint32(bit.Uint(fragments[i][:]) & 0xFFFFFFFF)
+	}
+	embPacked, res := bptc.DecodeEmbedded(fragWords)
+	var embInfo [77]bit.Bit
+	packedbits.Unpack(embInfo[:], embPacked[:], 0)
 	if res.HasErrors() || !embeddedLCValid(embInfo) {
 		t.Fatalf("embedded LC: %+v", res)
 	}
 	embLC, embCS := embeddedLC(embInfo)
-	fragmentsBad := fragments
-	flip(fragmentsBad[1][:], 9)
+	fragWordsBad := fragWords
+	fragWordsBad[1] ^= 1 << (31 - 9)
+	embeddedCheck := func(p [10]byte) bool {
+		var info [77]bit.Bit
+		packedbits.Unpack(info[:], p[:], 0)
+		return embeddedLCValid(info)
+	}
 
 	csbk := splitBurst(sms[0])
 	csbkBits, res := bptc.Decode196(csbk.info)
@@ -239,7 +251,8 @@ func fecEntries(t testing.TB) []entry {
 		bits20     [20]bit.Bit
 		bits16     [16]bit.Bit
 		bits7      [7]bit.Bit
-		frags      [4][32]bit.Bit
+		frags      [4]uint32
+		emb10      [10]byte
 		cachOut    [4]uint32
 		u64        uint64
 		bits32     [32]bit.Bit
@@ -281,11 +294,11 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/fec/bptc.Decode196WithReserved", "CSBK", 0, func() { bits96, reserved, r = bptc.Decode196WithReserved(csbk.info) }},
 		{"internal/fec/bptc.Encode196", "voice LC header", 0, func() { bits196 = bptc.Encode196(lcBits) }},
 		{"internal/fec/bptc.Encode196WithReserved", "CSBK", 0, func() { bits196 = bptc.Encode196WithReserved(csbkBits, reserved) }},
-		{"internal/fec/bptc.DecodeEmbedded", "voice B to E", 0, func() { bits77, r = bptc.DecodeEmbedded(fragments) }},
-		{"internal/fec/bptc.DecodeEmbedded", "voice B to E, 1 error", 0, func() { bits77, r = bptc.DecodeEmbedded(fragmentsBad) }},
-		{"internal/fec/bptc.DecodeEmbeddedWithCheck", "voice B to E, 1 error", 0, func() { bits77, r = bptc.DecodeEmbeddedWithCheck(fragmentsBad, embeddedLCValid) }},
-		{"internal/fec/bptc.DecodeEmbeddedStrict", "voice B to E, 1 error", 0, func() { bits77, r = bptc.DecodeEmbeddedStrict(fragmentsBad) }},
-		{"internal/fec/bptc.EncodeEmbedded", "voice B to E", 0, func() { frags = bptc.EncodeEmbedded(embInfo) }},
+		{"internal/fec/bptc.DecodeEmbedded", "voice B to E", 0, func() { emb10, r = bptc.DecodeEmbedded(fragWords) }},
+		{"internal/fec/bptc.DecodeEmbedded", "voice B to E, 1 error", 0, func() { emb10, r = bptc.DecodeEmbedded(fragWordsBad) }},
+		{"internal/fec/bptc.DecodeEmbeddedWithCheck", "voice B to E, 1 error", 0, func() { emb10, r = bptc.DecodeEmbeddedWithCheck(fragWordsBad, embeddedCheck) }},
+		{"internal/fec/bptc.DecodeEmbeddedStrict", "voice B to E, 1 error", 0, func() { emb10, r = bptc.DecodeEmbeddedStrict(fragWordsBad) }},
+		{"internal/fec/bptc.EncodeEmbedded", "voice B to E", 0, func() { frags = bptc.EncodeEmbedded(embPacked) }},
 		{"internal/fec/bptc.DecodeCACH", "1 error", 0, func() { u64, r = bptc.DecodeCACH(cachBad) }},
 		{"internal/fec/bptc.EncodeCACH", "", 0, func() { cachOut = bptc.EncodeCACH(cachWord) }},
 		{"internal/fec/bptc.DecodeSingleBurst", "reverse channel, 2 errors", 0, func() { u16, r = bptc.DecodeSingleBurst(rcBad, true) }},
@@ -336,6 +349,6 @@ func fecEntries(t testing.TB) []entry {
 	}
 	_ = ambeFrame
 	_, _, _, _, _, _, _, _, _, _, _, _ = bits96, bits196, rate34Out, trellisOut, bits77, bits36, bits11, bits20, bits16, bits7, frags, cachOut
-	_, _, _, _, _, _, _, _, _, _, _, _, _ = u64, bits32, rsData, rsCW, u16, u32, u8, ok, r, err, ber, n, reserved
+	_, _, _, _, _, _, _, _, _, _, _, _, _, _ = emb10, u64, bits32, rsData, rsCW, u16, u32, u8, ok, r, err, ber, n, reserved
 	return out
 }
