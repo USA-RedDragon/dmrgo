@@ -61,6 +61,8 @@ func (s *MotorolaRadioCheckPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *MotorolaRadioCheckPDU) String() string {
 	return fmt.Sprintf("MotorolaRadioCheckPDU{ Reserved: %d, Answer: %t, Reserved2: %d, RequesterAddress: %d, CheckedAddress: %d }", s.Reserved, s.Answer, s.Reserved2, s.RequesterAddress, s.CheckedAddress)
 }
@@ -112,6 +114,8 @@ func (s *MotorolaCallAlertPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *MotorolaCallAlertPDU) String() string {
 	return fmt.Sprintf("MotorolaCallAlertPDU{ Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.TargetAddress, s.SourceAddress)
 }
@@ -163,6 +167,8 @@ func (s *MotorolaCallAlertAckPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *MotorolaCallAlertAckPDU) String() string {
 	return fmt.Sprintf("MotorolaCallAlertAckPDU{ Request: %d, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Request, s.Reserved, s.TargetAddress, s.SourceAddress)
 }

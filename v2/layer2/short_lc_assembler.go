@@ -31,7 +31,8 @@ func (a *ShortLCAssembler) Count() int {
 // it, with done set, as AddFragment and Complete do. A CACH whose TACT is
 // uncorrectable has no LCSS, and a Single fragment LCSS is not used in the
 // CACH, so either discards the partial Short LC; Add then returns
-// ErrShortLCSequence when fragments were discarded.
+// ErrShortLCSequence when fragments were discarded. It allocates the payload
+// struct of a completed Short LC; AddInto does not.
 func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
 	if c.TACT.FEC.Uncorrectable || c.TACT.LCSS == enums.LCSSSingleFragment {
 		n := a.count
@@ -82,7 +83,8 @@ func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [CACHPayloadBits
 // Complete decodes the assembled Short LC PDU from the 4 accumulated
 // fragments and resets the assembler. The FEC field of the ShortLC is the
 // combined result of the BPTC FEC and the CRC-8 check. Complete returns
-// ErrShortLCIncomplete if the assembler does not hold a full sequence.
+// ErrShortLCIncomplete if the assembler does not hold a full sequence. It
+// allocates the payload struct of the Short LC; CompleteInto does not.
 func (a *ShortLCAssembler) Complete() (pdu.ShortLC, error) {
 	if a.count != 4 {
 		return pdu.ShortLC{}, ErrShortLCIncomplete

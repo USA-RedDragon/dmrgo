@@ -59,7 +59,8 @@ func NearestSyncPattern(field [6]byte) (SyncPattern, int) {
 	return best, bestDistance
 }
 
-// String returns the name of the SyncPattern.
+// String returns the name of the SyncPattern. It allocates only for a value
+// without a name.
 func (sync SyncPattern) String() string {
 	switch sync {
 	case SyncBSSourcedVoice:

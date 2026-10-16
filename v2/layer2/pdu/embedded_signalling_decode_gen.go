@@ -72,6 +72,8 @@ func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *EmbeddedSignalling) String() string {
 	return fmt.Sprintf("EmbeddedSignalling{ ColorCode: %d, PreemptionAndPowerControlIndicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.PreemptionAndPowerControlIndicator, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

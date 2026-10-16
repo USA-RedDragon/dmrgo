@@ -87,7 +87,8 @@ const (
 	OutputEnded
 )
 
-// String returns the name of the kind.
+// String returns the name of the kind. It allocates only for a value without
+// a name.
 func (k OutputKind) String() string {
 	switch k {
 	case OutputBurst:
@@ -144,7 +145,8 @@ const (
 	TransmitterTimedOut
 )
 
-// String returns the name of the state.
+// String returns the name of the state. It allocates only for a value
+// without a name.
 func (s TransmitterState) String() string {
 	switch s {
 	case TransmitterIdle:
@@ -231,6 +233,7 @@ type Transmitter struct {
 
 // NewTransmitter returns a Transmitter for cfg. A nil cfg means the zero
 // TransmitterConfig. It returns a *ConfigError for a field out of range.
+// It allocates the Transmitter and its queue, 72 bytes for each slot.
 func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	if cfg == nil {
 		cfg = &TransmitterConfig{}

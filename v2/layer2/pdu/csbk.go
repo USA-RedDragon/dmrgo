@@ -46,6 +46,8 @@ const (
 	CSBKMove                                 CSBKOpcode = 0b00111001 // C_MOVE
 )
 
+// String returns the name of the CSBKOpcode. It allocates only for a value
+// without a name.
 func (opcode CSBKOpcode) String() string {
 	switch opcode {
 	case CSBKBSOutboundActivation:

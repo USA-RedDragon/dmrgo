@@ -81,6 +81,8 @@ func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *BSOutboundActivationPDU) String() string {
 	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %d, SourceAddress: %d }", s.Reserved, s.BSAddress, s.SourceAddress)
 }
@@ -138,6 +140,8 @@ func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %s, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.Reserved, s.TargetAddress, s.SourceAddress)
 }
@@ -195,6 +199,8 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) 
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %s, AnswerResponse: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.AnswerResponse, s.TargetAddress, s.SourceAddress)
 }
@@ -259,6 +265,8 @@ func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *NegativeAcknowledgementPDU) String() string {
 	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %d, TargetAddress: %d }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
 }
@@ -321,6 +329,8 @@ func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *PreamblePDU) String() string {
 	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %d, CSBKBlocksToFollow: %d, TargetAddress: %d, SourceAddress: %d }", s.Data, s.Group, s.Reserved, s.CSBKBlocksToFollow, s.TargetAddress, s.SourceAddress)
 }
@@ -406,6 +416,8 @@ func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ChannelTimingPDU) String() string {
 	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %d, Generation: %d, LeaderIdentifier: %d, NewLeader: %t, LeaderDynamicIdentifier: %d, ChannelTimingOp1: %t, SourceIdentifier: %d, Reserved: %t, SourceDynamicIdentifier: %d, ChannelTimingOp0: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp1, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp0)
 }
@@ -476,6 +488,8 @@ func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *PrivateVoiceGrantPDU) String() string {
 	return fmt.Sprintf("PrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -546,6 +560,8 @@ func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *TalkgroupVoiceGrantPDU) String() string {
 	return fmt.Sprintf("TalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -616,6 +632,8 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
 	return fmt.Sprintf("BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -686,6 +704,8 @@ func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *PrivateDataGrantPDU) String() string {
 	return fmt.Sprintf("PrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -756,6 +776,8 @@ func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *TalkgroupDataGrantPDU) String() string {
 	return fmt.Sprintf("TalkgroupDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -826,6 +848,8 @@ func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *DuplexPrivateVoiceGrantPDU) String() string {
 	return fmt.Sprintf("DuplexPrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
@@ -896,6 +920,8 @@ func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *DuplexPrivateDataGrantPDU) String() string {
 	return fmt.Sprintf("DuplexPrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
@@ -966,6 +992,8 @@ func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *PrivateDataGrantMultiItemPDU) String() string {
 	return fmt.Sprintf("PrivateDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -1036,6 +1064,8 @@ func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *TalkgroupDataGrantMultiItemPDU) String() string {
 	return fmt.Sprintf("TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -1115,6 +1145,8 @@ func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *MovePDU) String() string {
 	return fmt.Sprintf("MovePDU{ Reserved1: %d, Mask: %d, Reserved2: %d, Reg: %t, Backoff: %d, Reserved3: %d, PhysicalChannel: %d, MSAddress: %d }", s.Reserved1, s.Mask, s.Reserved2, s.Reg, s.Backoff, s.Reserved3, s.PhysicalChannel, s.MSAddress)
 }
@@ -1209,6 +1241,8 @@ func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *AlohaPDU) String() string {
 	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %d }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
 }
@@ -1274,6 +1308,8 @@ func (s *BroadcastPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *BroadcastPDU) String() string {
 	return fmt.Sprintf("BroadcastPDU{ AnnouncementType: %s, BroadcastParms1: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %d }", s.AnnouncementType, s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
 }
@@ -1341,6 +1377,8 @@ func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ClearPDU) String() string {
 	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
@@ -1404,6 +1442,8 @@ func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ProtectPDU) String() string {
 	return fmt.Sprintf("ProtectPDU{ Reserved: %d, ProtectKind: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.ProtectKind, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
@@ -1478,6 +1518,8 @@ func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *AhoyPDU) String() string {
 	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, GroupIndividual: %t, AppendedBlocks: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.GroupIndividual, s.AppendedBlocks, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
@@ -1538,6 +1580,8 @@ func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *AckOutboundPDU) String() string {
 	return fmt.Sprintf("AckOutboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -1598,6 +1642,8 @@ func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *AckInboundPDU) String() string {
 	return fmt.Sprintf("AckInboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -1658,6 +1704,8 @@ func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *AckOutboundPayloadPDU) String() string {
 	return fmt.Sprintf("AckOutboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -1718,6 +1766,8 @@ func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *AckInboundPayloadPDU) String() string {
 	return fmt.Sprintf("AckInboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -1784,6 +1834,8 @@ func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *RandomAccessPDU) String() string {
 	return fmt.Sprintf("RandomAccessPDU{ ServiceOptions: %d, ProxyFlag: %t, Reserved: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions, s.ProxyFlag, s.Reserved, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
@@ -1855,6 +1907,8 @@ func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *AckvitationPDU) String() string {
 	return fmt.Sprintf("AckvitationPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, Reserved: %d, UAB: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.Reserved, s.UAB, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
@@ -1918,6 +1972,8 @@ func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *MaintenancePDU) String() string {
 	return fmt.Sprintf("MaintenancePDU{ Reserved: %d, MaintKind: %d, Reserved2: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.MaintKind, s.Reserved2, s.TargetAddress, s.SourceAddress)
 }
@@ -2595,6 +2651,8 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *CSBK) String() string {
 	_ret := "CSBK{ "
 	_ret += fmt.Sprintf("LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.LastBlock, s.ProtectFlag, s.Opcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)

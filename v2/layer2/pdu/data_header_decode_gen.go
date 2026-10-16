@@ -111,6 +111,8 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *UnconfirmedDataHeader) String() string {
 	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
@@ -404,6 +406,8 @@ func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *DataHeader) String() string {
 	_ret := "DataHeader{ "
 	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
@@ -526,6 +530,8 @@ func (s *ConfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ConfirmedDataHeader) String() string {
 	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
 }
@@ -621,6 +627,8 @@ func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ResponsePacketHeader) String() string {
 	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %d, SAP: %d, Reserved3: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
 }
@@ -708,6 +716,8 @@ func (s *DefinedDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *DefinedDataHeader) String() string {
 	return fmt.Sprintf("DefinedDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, DefinedData: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.DefinedData, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
@@ -800,6 +810,8 @@ func (s *RawDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *RawDataHeader) String() string {
 	return fmt.Sprintf("RawDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
@@ -881,6 +893,8 @@ func (s *StatusPrecodedHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *StatusPrecodedHeader) String() string {
 	return fmt.Sprintf("StatusPrecodedHeader{ Group: %t, ResponseRequested: %t, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, StatusPrecoded: %d }", s.Group, s.ResponseRequested, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.StatusPrecoded)
 }
@@ -982,6 +996,8 @@ func (s *UDTHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *UDTHeader) String() string {
 	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
 }
@@ -1026,6 +1042,8 @@ func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ProprietaryHeader) String() string {
 	return fmt.Sprintf("ProprietaryHeader{ SAP: %d, MFID: %d, ManufacturerData: %v }", s.SAP, s.MFID, s.ManufacturerData)
 }

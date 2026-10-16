@@ -31,6 +31,7 @@ type FieldRangeError struct {
 	Min, Max float64
 }
 
+// Error returns the message of e. It allocates the message.
 func (e *FieldRangeError) Error() string {
 	if e.Min != e.Max {
 		return fmt.Sprintf("%s.%s: value is outside [%v, %v]", e.Type, e.Field, e.Min, e.Max)

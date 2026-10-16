@@ -20,6 +20,8 @@ const (
 	ActivityEmergencyIndividualVoice ActivityID = 0b1101 // emergency individual voice activity
 )
 
+// String returns the name of the ActivityID. It allocates only for a value
+// without a name.
 func (a ActivityID) String() string {
 	switch a {
 	case ActivityNoActivity:

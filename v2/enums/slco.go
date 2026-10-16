@@ -15,6 +15,8 @@ const (
 	SLCOPSysParms      SLCO = 0b0011 // P_SYS_Parms (ETSI TS 102 361-4 clause 7.1.2)
 )
 
+// String returns the name of the SLCO. It allocates only for a value without
+// a name.
 func (slco SLCO) String() string {
 	switch slco {
 	case SLCONullMessage:

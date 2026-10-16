@@ -52,6 +52,8 @@ func (s *ShortLCNullMessage) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ShortLCNullMessage) String() string {
 	return fmt.Sprintf("ShortLCNullMessage{ Reserved: %d }", s.Reserved)
 }
@@ -97,6 +99,8 @@ func (s *ShortLCActivityUpdate) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ShortLCActivityUpdate) String() string {
 	return fmt.Sprintf("ShortLCActivityUpdate{ TS1ActivityID: %s, TS2ActivityID: %s, HashTS1: %d, HashTS2: %d }", s.TS1ActivityID, s.TS2ActivityID, s.HashTS1, s.HashTS2)
 }
@@ -151,6 +155,8 @@ func (s *ShortLCCSysParms) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ShortLCCSysParms) String() string {
 	return fmt.Sprintf("ShortLCCSysParms{ MODEL: %d, NetSiteRaw: %d, Reg: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
 }
@@ -205,6 +211,8 @@ func (s *ShortLCPSysParms) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ShortLCPSysParms) String() string {
 	return fmt.Sprintf("ShortLCPSysParms{ MODEL: %d, NetSiteRaw: %d, PayloadChannelType: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.PayloadChannelType, s.CommonSlotCounter)
 }
@@ -393,6 +401,8 @@ func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *ShortLC) String() string {
 	_ret := "ShortLC{ "
 	_ret += fmt.Sprintf("SLCO: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.SLCO, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
