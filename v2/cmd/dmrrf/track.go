@@ -79,9 +79,11 @@ type tracker struct {
 	es     [4]*trackEntry
 }
 
-// newTracker returns a tracker with an empty queue.
+// newTracker returns a tracker with an empty queue. The slots of a stream
+// arrive in order, and add pops every entry more than pendingSlots slots
+// older than the newest, so the queue holds at most pendingSlots+2.
 func newTracker() *tracker {
-	t := &tracker{q: make([]trackEntry, 2*pendingSlots+4)}
+	t := &tracker{q: make([]trackEntry, pendingSlots+2)}
 	t.reset(false)
 	return t
 }
