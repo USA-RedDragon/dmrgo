@@ -450,10 +450,11 @@ func steadyAllocs(x []complex64, t Tier) float64 {
 // few C/N points per tier below TierMax, which is for offline decoding,
 // and checks the frame recovery against the baseline in rxbenchPath. With
 // DMRRF_RXBENCH=full it runs the README sweep instead and rewrites
-// rxbenchPath.
+// rxbenchPath, and with DMRRF_RXBENCH=fast it rewrites only the CI points.
 func TestRxBench(t *testing.T) {
 	t.Parallel()
 	full := os.Getenv("DMRRF_RXBENCH") == "full"
+	fast := os.Getenv("DMRRF_RXBENCH") == "fast"
 	var base benchData
 	if b, err := os.ReadFile(rxbenchPath); err == nil {
 		if err := json.Unmarshal(b, &base); err != nil {
@@ -479,14 +480,16 @@ func TestRxBench(t *testing.T) {
 		}
 		if int(tier) < len(base.Tiers) {
 			want := base.Tiers[tier]
-			checkBench(t, tier, want.Fast, bt.Fast)
+			if !fast {
+				checkBench(t, tier, want.Fast, bt.Fast)
+			}
 			if !full {
 				bt.Full, bt.NsPerSecond, bt.FalsePerHour, bt.Allocs, bt.RAMBytes = want.Full, want.NsPerSecond, want.FalsePerHour, want.Allocs, want.RAMBytes
 			}
 		}
 		out.Tiers = append(out.Tiers, bt)
 	}
-	if full {
+	if full || fast {
 		b, err := json.MarshalIndent(out, "", " ")
 		if err != nil {
 			t.Fatal(err)
