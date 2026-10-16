@@ -48,6 +48,10 @@ type floorEval struct {
 	// awareStream in place of the floor, with the state in aw.
 	aware bool
 	aw    *awareState
+	// as holds the state of the C0 and C1 search.
+	as *ambeSearch
+	// ts holds the state of the rate 3/4 search.
+	ts *trellisSearch
 }
 
 // newFloorEval returns an evaluator with a genie trellis of window d.
@@ -289,7 +293,9 @@ func (e *floorEval) voice(i int, cc enums.ColorCode) {
 }
 
 // ambe scores frame f of voice burst i: the whole frame, and C0 and C1
-// with the genie also giving C2 and C3.
+// with the genie also giving C2 and C3. When the evaluation scores C0 and
+// C1, c0c1Search looks for their candidates; otherwise only the 8 C0 and 4
+// C1 codewords of the lowest bit cost are tried.
 func (e *floorEval) ambe(i, f int) {
 	sl := softAMBESlot(f)
 	tb := e.truth[i].burst
@@ -307,6 +313,12 @@ func (e *floorEval) ambe(i, f int) {
 	}
 	e.setFree(sl.id0.bits(), sl.id1.bits())
 	e.addInfo("ambe_c0c1", e.detect(i, false)-24*math.Ln2)
+	if e.want("ambe_c0c1") {
+		okC0C1 := !e.c0c1Search(i, f)
+		e.add("ambe", okFrame && okC0C1)
+		e.add("ambe_c0c1", okC0C1)
+		return
+	}
 	okC0C1 := true
 	s := &e.dec.small
 	sl.id0.gather(e.llr[:], &s.l)
@@ -528,7 +540,8 @@ func sameBits(a, b *layer2.RawBurst, pos []int16) bool {
 	return true
 }
 
-// rate34 scores the rate 3/4 payload of data burst i.
+// rate34 scores the rate 3/4 payload of data burst i: the Viterbi path of
+// the genie LLRs, and the paths of rate34Search.
 func (e *floorEval) rate34(i int) bool {
 	tb := e.truth[i].burst
 	want, _ := tb.Rate34Payload()
@@ -536,10 +549,10 @@ func (e *floorEval) rate34(i int) bool {
 	e.addInfo("rate34", e.detect(i, false)-144*math.Ln2)
 	cand := tb
 	e.dec.decodeRate34(&e.llr, &cand)
-	if got, _ := cand.Rate34Payload(); got == want {
-		return true
+	if got, _ := cand.Rate34Payload(); got != want && e.beats(i, &cand) {
+		return false
 	}
-	return !e.beats(i, &cand)
+	return !e.rate34Search(i)
 }
 
 // rate1 scores the rate 1 payload of data burst i, and its bits with the
