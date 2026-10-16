@@ -127,7 +127,13 @@ func runTX(args []string, w io.Writer) error {
 			fmt.Fprintf(w, "sequence %s: %d bursts, %.2f s, slot %d, cc %d, %d -> %d, offset %+.0f Hz\n",
 				*seq, len(built.Bursts), float64(len(fm))/basebandRate, *slot, cc, *src, *dst, corr)
 		}
-		iq = ToIQ(fm, env, *rate*(1+*stretch*1e-6), corr, *level)
+		if *repeat > 0 && len(built.Carriers) > 0 {
+			return fmt.Errorf("-repeat does not apply to the multi-channel sequence %s", *seq)
+		}
+		for _, c := range built.Carriers {
+			fmt.Fprintf(w, "carrier at %+.0f Hz: %d slots from %.2f s\n", c.OffsetHz, len(c.Slots), float64(c.LeadFrames)*2*slotSeconds)
+		}
+		iq = MixIQ(built.carriers(fm, env, corr), *rate*(1+*stretch*1e-6), *level)
 		if *repeat > 0 && !*bsSourced {
 			n := max(1, int(*repeat**rate*2/float64(len(iq))))
 			iq = bytes.Repeat(iq, n)
