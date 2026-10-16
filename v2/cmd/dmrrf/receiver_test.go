@@ -101,3 +101,28 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 		prev = exact
 	}
 }
+
+// TestReceiverWithoutWarmUp receives a BS outbound voice call at 20 dB C/N
+// with WarmUp off and checks that the coherent receiver still decodes it.
+func TestReceiverWithoutWarmUp(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig()
+	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 2, 1
+	built, err := Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	x := noisyBaseband(built.Slots, 1200, 20, 5)
+	o := TierOptions(TierCoherent)
+	o.WarmUp = false
+	r := NewReceiver(ReceiverConfig{Rate: basebandRate, Options: &o})
+	var got []Received
+	for k := 0; k < len(x); k += 4096 {
+		got = append(got, r.WriteBaseband(x[k:min(k+4096, len(x))])...)
+	}
+	got = append(got, r.Flush()...)
+	exact, total := exactFrames(built.Slots, got)
+	if exact < total*9/10 {
+		t.Errorf("%d of %d frames exact", exact, total)
+	}
+}
