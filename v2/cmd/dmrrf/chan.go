@@ -21,11 +21,12 @@ const (
 )
 
 // ring is a power-of-two ring of complex samples addressed by absolute
-// sample number.
+// sample number, one sample every dec channel samples.
 type ring struct {
 	buf  []complex64
 	mask int64
 	n    int64
+	dec  int
 	// tab holds the interpolator taps for interpPhases fractional delays.
 	tab []float32
 }
@@ -34,13 +35,14 @@ type ring struct {
 // taps for.
 const interpPhases = 256
 
-// newRing returns a ring of at least size samples.
-func newRing(size int) ring {
+// newRing returns a ring of at least size samples, one every dec channel
+// samples.
+func newRing(size, dec int) ring {
 	n := 1
 	for n < size {
 		n <<= 1
 	}
-	r := ring{buf: make([]complex64, n), mask: int64(n - 1), tab: make([]float32, (interpPhases+1)*sincTaps)}
+	r := ring{buf: make([]complex64, n), mask: int64(n - 1), dec: dec, tab: make([]float32, (interpPhases+1)*sincTaps)}
 	for p := range interpPhases + 1 {
 		fr := float64(p) / interpPhases
 		for k := range sincTaps {
@@ -69,10 +71,11 @@ func (r *ring) at(i int64) complex64 {
 	return r.buf[i&r.mask]
 }
 
-// interp returns the ring at the fractional sample t by a Blackman windowed
-// sinc of sincTaps samples, at the nearest of interpPhases fractional
-// delays.
+// interp returns the ring at the fractional channel sample t by a Blackman
+// windowed sinc of sincTaps samples, at the nearest of interpPhases
+// fractional delays.
 func (r *ring) interp(t float64) complex64 {
+	t /= float64(r.dec)
 	i0 := int64(math.Floor(t))
 	p := int((t-float64(i0))*interpPhases + 0.5)
 	taps := r.tab[p*sincTaps : (p+1)*sincTaps]
@@ -256,6 +259,7 @@ type channelizer struct {
 	head   int
 	chTaps []float32
 	ch     ring
+	chDec  int
 
 	discDec int
 	dTaps   []float32
@@ -277,14 +281,16 @@ type channelizer struct {
 
 // newChannelizer returns a channelizer whose rings hold size channel
 // samples, with the discriminator path at basebandRate/dec when disc, its
-// prefilter cut off at cutHz.
+// prefilter cut off at cutHz, and the coherent channel ring at
+// basebandRate/dec otherwise.
 func newChannelizer(size int, disc bool, cutHz float64, dec int) *channelizer {
 	c := &channelizer{disc: disc, ncoRot: 1, ncoStep: 1, delayCh: chanTaps / 2}
 	if !disc {
-		c.wide = newRing(size)
+		c.chDec = dec
+		c.wide = newRing(size, 1)
 		c.hist = make([]complex64, 2*chanTaps)
 		c.chTaps = kaiserLowpass(chanTaps, (chanPassHz+chanStopHz)/2/basebandRate, 7)
-		c.ch = newRing(size)
+		c.ch = newRing((size+dec-1)/dec, dec)
 		return c
 	}
 	c.discDec = dec
@@ -306,10 +312,7 @@ func newChannelizer(size int, disc bool, cutHz float64, dec int) *channelizer {
 
 // count returns the number of channel samples so far.
 func (c *channelizer) count() int64 {
-	if c.disc {
-		return c.n
-	}
-	return c.ch.n
+	return c.n
 }
 
 // oldest returns the first channel sample that every ring still holds,
@@ -318,7 +321,7 @@ func (c *channelizer) oldest() int64 {
 	if c.disc {
 		return c.n - int64(min(len(c.sym.buf)*c.discDec, (len(c.energy.buf)-1)*energyBin))
 	}
-	return c.ch.n - int64(len(c.ch.buf))
+	return (c.ch.n - int64(len(c.ch.buf))) * int64(c.chDec)
 }
 
 // symAt returns the sym sample of channel sample t as base+u, u from 0 to
@@ -399,7 +402,7 @@ func (c *channelizer) tune(hz float64) {
 	c.ncoHz = hz
 	n := c.wide.n
 	from := max(n-int64(len(c.wide.buf)), 0)
-	c.ch.n = from
+	c.ch.n = (from + int64(c.chDec) - 1) / int64(c.chDec)
 	clear(c.hist)
 	for i := from; i < n; i++ {
 		c.filter(c.wide.at(i), i)
@@ -413,12 +416,13 @@ func (c *channelizer) push(v complex64) {
 		return
 	}
 	n := c.wide.n
+	c.n++
 	c.wide.push(v)
 	c.filter(v, n)
 }
 
-// filter runs the wide sample v, number n, through the oscillator and the
-// channel filter.
+// filter runs the wide sample v, number n, through the oscillator and, for
+// every chDec samples, the channel filter.
 func (c *channelizer) filter(v complex64, n int64) {
 	if n&1023 == 0 {
 		p := -2 * math.Pi * c.ncoHz * float64(n) / basebandRate
@@ -429,7 +433,9 @@ func (c *channelizer) filter(v complex64, n int64) {
 	c.hist[c.head] = v
 	c.hist[c.head+chanTaps] = v
 	c.head = (c.head + 1) % chanTaps
-	c.ch.push(fir(c.hist[c.head:c.head+chanTaps], c.chTaps))
+	if n&int64(c.chDec-1) == 0 {
+		c.ch.push(fir(c.hist[c.head:c.head+chanTaps], c.chTaps))
+	}
 }
 
 // discFilter runs the wide sample v through the oscillator, and every

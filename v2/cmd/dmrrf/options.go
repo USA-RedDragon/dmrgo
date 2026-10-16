@@ -11,7 +11,7 @@ type Options struct {
 	// trellis models, 1 or 2.
 	Window int
 	// TrellisSPS is the number of samples per symbol that the trellis
-	// correlates, 5 or 10.
+	// correlates, such as 5 or 10.
 	TrellisSPS int
 	// ExactPhase carries the carrier phase in the trellis state, so that
 	// paths merge only with the same phase, instead of with each survivor.
@@ -47,6 +47,9 @@ type Options struct {
 	// DiscDecimation is the factor, 1, 2 or 4, by which the discriminator
 	// runs below basebandRate; 0 means 1.
 	DiscDecimation int
+	// ChanDecimation is the factor, 1 or 2, by which the channel ring of
+	// the coherent tiers runs below basebandRate; 0 means 1.
+	ChanDecimation int
 	// Sources is the number of SYNC sources the search tries: 2 for BS
 	// and MS, 4 with both direct mode slots.
 	Sources int
@@ -60,7 +63,7 @@ func TierOptions(t Tier) Options {
 	case TierDisc:
 		o.DiscDecimation = 2
 	case TierCoherent:
-		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior = true, 1, 5, 0.12, true, 20
+		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior, o.ChanDecimation = true, 1, 5, 0.12, true, 20, 2
 	case TierExact:
 		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior = true, 1, true, 52, true, 20
 	case TierMax:

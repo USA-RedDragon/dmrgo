@@ -216,9 +216,13 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	r.wide = make([]complex64, wideChunk)
 	r.inChunk = max(2*int(float64(wideChunk-4)*cfg.Rate/basebandRate), 2)
 	size := (cfg.LookbackSlots + maxGapSlots + 4) * slotSamplesN
-	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, max(r.opt.DiscDecimation, 1))
+	dec := max(r.opt.DiscDecimation, 1)
+	if r.opt.Coherent {
+		dec = max(r.opt.ChanDecimation, 1)
+	}
+	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, dec)
 	r.spec = newSpectrum()
-	r.search = newSyncSearch(r.opt.Coherent)
+	r.search = newSyncSearch(r.opt.Coherent, dec)
 	if r.opt.Coherent {
 		d := r.opt.Window
 		r.model = newCPMModel(d, r.opt.TrellisSPS, 0.27)
@@ -238,11 +242,11 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 		r.buf = make([]complex64, (maxGapSlots+1)*slotSymbols*samplesPerSy)
 		r.tapp = make([]float32, 4*(maxGapSlots+1)*slotSymbols)
 		r.ddSyms = make([]int, (maxGapSlots+1)*slotSymbols)
-		r.ddPh = make([]float64, (maxGapSlots+1)*slotSymbols*samplesPerSy)
+		r.ddPh = make([]float64, (maxGapSlots+1)*slotSymbols*samplesPerSy/dec)
 	}
 	if r.opt.Coherent {
-		r.pulse = newPhasePulse(samplesPerSy)
-		r.corrX = make([]complex128, syncSpan)
+		r.pulse = newPhasePulse(samplesPerSy / dec)
+		r.corrX = make([]complex128, syncSpan/dec)
 	}
 	r.slots = make([]slotState, cfg.LookbackSlots+maxGapSlots+4)
 	if r.opt.Coherent {
@@ -346,6 +350,9 @@ func (r *Receiver) searchStep() bool {
 	if from := r.chz.oldest() + slotSamplesN; r.searchAt < from {
 		r.searchAt = from
 	}
+	if r.opt.Coherent {
+		r.searchAt = r.alignSearch(r.searchAt)
+	}
 	for {
 		if !r.opt.Coherent {
 			base, u := r.chz.symAt(r.searchAt)
@@ -366,7 +373,7 @@ func (r *Receiver) searchStep() bool {
 				return true
 			}
 		} else {
-			if r.searchAt+syncSpan+3*samplesPerSy >= ch.n {
+			if r.searchAt+syncSpan+3*samplesPerSy >= r.chz.count() {
 				return false
 			}
 			h := r.search.at(ch, r.searchAt, r.nsrc)
@@ -378,7 +385,7 @@ func (r *Receiver) searchStep() bool {
 			}
 			if r.candAt >= 0 && r.searchAt >= r.candAt+slotSamplesN {
 				best, bt := r.cand, r.candPos
-				for k := int64(-searchStep); k <= searchStep; k++ {
+				for k := int64(-searchStep); k <= searchStep; k += int64(r.search.dec) {
 					if h2 := r.search.at(ch, r.candPos+k, r.nsrc); h2.Metric > best.Metric {
 						best, bt = h2, r.candPos+k
 					}
@@ -391,6 +398,14 @@ func (r *Receiver) searchStep() bool {
 		}
 		r.searchAt += searchStep
 	}
+}
+
+// alignSearch returns the first channel sample from t at which the
+// coherent search can start, a multiple of the decimation of the channel
+// ring.
+func (r *Receiver) alignSearch(t int64) int64 {
+	d := int64(r.search.dec)
+	return t + (d-(t%d+d)%d)%d
 }
 
 // lock starts following a stream whose SYNC starts (center of its first
@@ -512,11 +527,12 @@ func (r *Receiver) setH(h float64) {
 // energy.
 func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
 	ch := &r.chz.ch
-	t0 := r.symTime(s.index, syncFirstSym+syncEdge) + tau - samplesPerSy/2
-	rot, step := r.rotAt(t0), r.rotAt(1)
+	dec := r.search.dec
+	t0 := r.symTime(s.index, syncFirstSym+syncEdge) + tau - float64(r.search.sps/2*dec)
+	rot, step := r.rotAt(t0), r.rotAt(float64(dec))
 	var e float64
-	for j := range syncSpan {
-		v := complex128(ch.interp(t0+float64(j))) * rot
+	for j := range r.search.span {
+		v := complex128(ch.interp(t0+float64(j*dec))) * rot
 		rot *= step
 		r.corrX[j] = v
 		e += real(v)*real(v) + imag(v)*imag(v)
@@ -652,6 +668,9 @@ func (r *Receiver) finishStream() {
 	}
 	r.locked = false
 	r.searchAt = max(int64(r.slotTime(r.next)), r.lockAt+searchStep)
+	if r.opt.Coherent {
+		r.searchAt = r.alignSearch(r.searchAt)
+	}
 	r.tk.flush(r.emit)
 }
 
@@ -684,7 +703,7 @@ func (r *Receiver) measure(s *slotState) {
 		expect = r.amp * r.amp / (r.amp*r.amp + r.noise)
 	}
 	s.present = energy > max(presenceFactor*r.noise, r.noise+0.25*r.amp*r.amp)
-	s.anchor = best.metric >= anchorMetric*expect && best.metric >= 4.0/syncSpan
+	s.anchor = best.metric >= anchorMetric*expect && best.metric >= 4.0/float64(r.search.span)
 	s.present = s.present || s.anchor
 	if !s.anchor {
 		return
@@ -732,10 +751,11 @@ func (r *Receiver) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 		c += v * tpl[j]
 	}
 	a := math.Hypot(real(c), imag(c))
-	amp := a / syncSpan
-	noise := math.Max(e/syncSpan-amp*amp, 1e-12)
+	span := float64(r.search.span)
+	amp := a / span
+	noise := math.Max(e/span-amp*amp, 1e-12)
 	rot := complex64(complex(real(c)/a, -imag(c)/a))
-	return anchorInfo{pattern: p, metric: a * a / (e * syncSpan), rot: rot, amp: amp, noise: noise}
+	return anchorInfo{pattern: p, metric: a * a / (e * span), rot: rot, amp: amp, noise: noise}
 }
 
 // rotAt returns the rotation that removes the residual carrier at channel
@@ -752,7 +772,10 @@ func (r *Receiver) slotEnergy(s *slotState) float64 {
 		return r.chz.slotEnergyAt(r.symTime(s.index, cachSymbols), n)
 	}
 	ch := &r.chz.ch
+	dec := int64(ch.dec)
 	a := int64(r.symTime(s.index, cachSymbols))
+	a = (a - (a%dec+dec)%dec) / dec
+	n /= ch.dec
 	var e float64
 	for i := range int64(n) {
 		v := ch.at(a + i)
