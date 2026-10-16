@@ -19,15 +19,9 @@ func MotorolaServiceOptions() ServiceOptions {
 	return ServiceOptions{Reserved: 2}
 }
 
-// ServiceOptionsFromByte decodes the Service Options octet b, as
-// LCBytes.ServiceOptions returns it.
-func ServiceOptionsFromByte(b byte) ServiceOptions {
-	return DecodeServiceOptions([1]byte{b})
-}
-
 // Byte returns s as the Service Options octet, with the low 2 bits of
 // Reserved and of PriorityLevel. It is the inverse of
-// ServiceOptionsFromByte.
+// DecodeServiceOptions.
 func (s ServiceOptions) Byte() byte {
 	var b byte
 	for _, f := range [...]struct {

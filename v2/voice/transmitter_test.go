@@ -101,7 +101,7 @@ func TestTransmitter_RFGolden(t *testing.T) {
 		}
 		c := voice.Call{Group: true, LC: octets}
 		c.Target, c.Source, _ = pdu.LCBytes(octets).Addresses()
-		c.Options = layer3.ServiceOptionsFromByte(pdu.LCBytes(octets).ServiceOptions())
+		c.Options = layer3.DecodeServiceOptions([1]byte{pdu.LCBytes(octets).ServiceOptions()})
 		var opts *voice.CallOptions
 		if name == "pi" {
 			var pb layer2.Burst

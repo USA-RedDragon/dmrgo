@@ -315,19 +315,15 @@ documents:
       - section: "7.3"
         title: "Idle message"
         source_files:
-          - v2/layer2/idle.go
           - v2/layer2/pdu/pr_fill.go
           - v2/layer2/burst.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer2
-            names:
-              - TestIdleMessageInfo_PackedHex
-              - TestIdleMessageInfo_ReturnsCopy
-              - TestIsIdleMessage_Match
-              - TestIsIdleMessage_NoMatch
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
+              - TestPRFill_PackedHex
+              - TestPRFill_PRFillBits_ReturnsCopy
               - TestPRFill_IsPRFill_Match
+              - TestPRFill_IsPRFill_NoMatch
 
       - section: "7.4.1"
         title: "Multi Block Control (MBC)"
@@ -1213,19 +1209,18 @@ documents:
       - section: "D"
         title: "Idle and Null message bit definition"
         source_files:
-          - v2/layer2/idle.go
+          - v2/layer2/pdu/pr_fill.go
+          - v2/layer2/voice_superframe.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
-              - TestIdleMessageInfo_PackedHex
-              - TestIdleMessageInfo_EqualsPRFill
-              - TestIdleMessageInfo_ReturnsCopy
-              - TestIsIdleMessage_Match
-              - TestIsIdleMessage_NoMatch
-              - TestIsNullEmbeddedLC_Match
-              - TestIsNullEmbeddedLC_NoMatch
+              - TestNullEmbeddedLC_IsZero
               - TestIdleMessageFECMatrix_MatchesInfoBits
               - TestIdleMessageFECMatrix_MatchesBPTCEncode
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestPRFill_PackedHex
+              - TestPRFill_IsPRFill_SingleBitDifference
 
       - section: "E"
         title: "Transmit bit order"
