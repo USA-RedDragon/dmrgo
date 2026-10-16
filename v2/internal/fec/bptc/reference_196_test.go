@@ -8,6 +8,7 @@ import (
 	packed "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func TestBPTC19696MatchesReference(t *testing.T) {
@@ -24,7 +25,7 @@ func TestBPTC19696MatchesReference(t *testing.T) {
 		reserved := uint8(r.Intn(8))
 		refRes := [3]bit.Bit{bit.Bit(reserved & 1), bit.Bit(reserved >> 1 & 1), bit.Bit(reserved >> 2 & 1)}
 		info := bptc.Encode196(data, reserved)
-		refInfo := ref.Encode196WithReserved(bit.Unpack96(data), refRes)
+		refInfo := ref.Encode196WithReserved(unpacked.Unpack96(data), refRes)
 		var want [25]byte
 		packed.Pack(want[:], 0, refInfo[:])
 		if info != want {
@@ -48,8 +49,8 @@ func TestBPTC19696MatchesReference(t *testing.T) {
 		got, gotRes, gotResult := bptc.Decode196(info)
 		wantData, wantRes, wantResult := ref.Decode196WithReserved(refInfo)
 		wantReserved := uint8(wantRes[0] | wantRes[1]<<1 | wantRes[2]<<2)
-		if got != bit.Pack96(wantData) || gotRes != wantReserved || gotResult != wantResult {
-			t.Fatalf("Decode196(%x) = %x %d %+v, want %x %d %+v", info, got, gotRes, gotResult, bit.Pack96(wantData), wantReserved, wantResult)
+		if got != unpacked.Pack96(wantData) || gotRes != wantReserved || gotResult != wantResult {
+			t.Fatalf("Decode196(%x) = %x %d %+v, want %x %d %+v", info, got, gotRes, gotResult, unpacked.Pack96(wantData), wantReserved, wantResult)
 		}
 	}
 }
@@ -59,7 +60,7 @@ func BenchmarkBPTC19696(b *testing.B) {
 	clean := bptc.Encode196(data, 0)
 	bad := clean
 	bad[5] ^= 0x10
-	refClean := ref.Encode196(bit.Unpack96(data))
+	refClean := ref.Encode196(unpacked.Unpack96(data))
 	var refBad [196]bit.Bit
 	packed.Unpack(refBad[:], bad[:], 0)
 	b.Run("Decode/clean", func(b *testing.B) {
@@ -91,7 +92,7 @@ func BenchmarkBPTC19696(b *testing.B) {
 			_, _ = ref.Decode196(refBad)
 		}
 	})
-	refData := bit.Unpack96(data)
+	refData := unpacked.Unpack96(data)
 	b.Run("RefEncode", func(b *testing.B) {
 		for b.Loop() {
 			refData[0] ^= 1

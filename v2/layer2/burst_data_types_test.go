@@ -8,6 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -23,7 +24,7 @@ func buildDataBurst(dataType enums.DataType, payload [196]bit.Bit) [33]byte {
 	for i := 0; i < 48; i++ {
 		burst[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
-	return [33]byte(bit.Pack(burst[:]))
+	return [33]byte(unpacked.Pack(burst[:]))
 }
 
 func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
@@ -34,7 +35,7 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 		want[i] = byte(0xA0 + i)
 	}
 	var info [144]bit.Bit
-	copy(info[:], bit.Unpack(want[:]))
+	copy(info[:], unpacked.Unpack(want[:]))
 	raw := buildDataBurst(enums.DataTypeRate34, trellisInfo(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
@@ -79,7 +80,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 	if got := b.FEC.Aggregate().ErrorsCorrected; got != 1 {
 		t.Errorf("Aggregate().ErrorsCorrected = %d, want 1", got)
 	}
-	if rt, ok := b.Data.(*pdu.Rate34Data); !ok || string(rt.Data[:]) != string(bit.Pack(info[:])) {
+	if rt, ok := b.Data.(*pdu.Rate34Data); !ok || string(rt.Data[:]) != string(unpacked.Pack(info[:])) {
 		t.Error("data not corrected")
 	}
 }
@@ -88,7 +89,7 @@ func TestBurst_PIHeader_Decode(t *testing.T) {
 	t.Parallel()
 
 	var info [96]bit.Bit
-	copy(info[:], bit.Unpack([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
+	copy(info[:], unpacked.Unpack([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
 	raw := buildDataBurst(enums.DataTypePIHeader, encode196Bits(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
@@ -117,7 +118,7 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 	for i := range want {
 		want[i] = byte(0x30 + i)
 	}
-	info := bit.Unpack(want[:])
+	info := unpacked.Unpack(want[:])
 	var payload [196]bit.Bit
 	copy(payload[:96], info[:96])
 	copy(payload[100:], info[96:])
@@ -141,8 +142,8 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 
 // trellisInfo returns the 196 rate 3/4 trellis coded bits of info.
 func trellisInfo(info [144]bit.Bit) [196]bit.Bit {
-	enc := trellis.Encode([18]byte(bit.Pack(info[:])))
+	enc := trellis.Encode([18]byte(unpacked.Pack(info[:])))
 	var bits [196]bit.Bit
-	copy(bits[:], bit.Unpack(enc[:]))
+	copy(bits[:], unpacked.Unpack(enc[:]))
 	return bits
 }

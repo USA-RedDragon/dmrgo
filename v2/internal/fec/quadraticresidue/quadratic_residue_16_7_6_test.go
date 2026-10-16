@@ -6,11 +6,12 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/quadraticresidue"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func bits16(cw uint16) [16]bit.Bit {
 	var b [16]bit.Bit
-	bit.PutUint(b[:], uint64(cw))
+	unpacked.PutUint(b[:], uint64(cw))
 	return b
 }
 
@@ -21,8 +22,8 @@ func TestQR1676MatchesReferenceOnEveryWord(t *testing.T) {
 		cw := uint16(v)
 		got, res := Decode(cw)
 		want, wantRes := ref.Decode(bits16(cw))
-		if got != uint16(bit.Uint(want[:])) || res != wantRes {
-			t.Fatalf("Decode(%#04x) = %#04x %+v, want %#04x %+v", cw, got, res, bit.Uint(want[:]), wantRes)
+		if got != uint16(unpacked.Uint(want[:])) || res != wantRes {
+			t.Fatalf("Decode(%#04x) = %#04x %+v, want %#04x %+v", cw, got, res, unpacked.Uint(want[:]), wantRes)
 		}
 		if Check(cw) != ref.Check(bits16(cw)) {
 			t.Fatalf("Check(%#04x) differs from the reference", cw)
@@ -31,8 +32,8 @@ func TestQR1676MatchesReferenceOnEveryWord(t *testing.T) {
 	for d := range 128 {
 		data := bits16(uint16(d) << 9)
 		want := ref.Encode([7]bit.Bit(data[:7]))
-		if got := Encode(uint8(d)); got != uint16(bit.Uint(want[:])) {
-			t.Fatalf("Encode(%#02x) = %#04x, want %#04x", d, got, bit.Uint(want[:]))
+		if got := Encode(uint8(d)); got != uint16(unpacked.Uint(want[:])) {
+			t.Fatalf("Encode(%#02x) = %#04x, want %#04x", d, got, unpacked.Uint(want[:]))
 		}
 	}
 }

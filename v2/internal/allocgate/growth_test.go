@@ -14,7 +14,7 @@ import (
 )
 
 // grower is a library function that takes a slice and returns a slice of
-// the same type, such as AppendPack(dst []byte, bits []Bit) []byte or
+// the same type, such as AppendNames(dst []string) []string or
 // appendEvent(out []Event, ...) ([]Event, *Event). The gate proves from its
 // source that every append in it grows that slice, or a value that it
 // derives from that slice, and that it passes such a value as the slice of

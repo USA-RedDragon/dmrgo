@@ -30,7 +30,7 @@ func Generate(dir string) ([]byte, error) {
 	ctx := build.Default
 	ctx.CgoEnabled = false
 	ctx.GOOS, ctx.GOARCH = "linux", "amd64"
-	skipDirs := []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest"}
+	skipDirs := []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/unpacked"}
 	var refs, imports []string
 	err := filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
 		if err != nil || !d.IsDir() {

@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func BenchmarkSingleBurst(b *testing.B) {
@@ -13,7 +14,7 @@ func BenchmarkSingleBurst(b *testing.B) {
 	clean := bptc.EncodeSingleBurst(info, true)
 	bad := clean ^ 1<<20
 	var refInfo [11]bit.Bit
-	bit.PutUint(refInfo[:], info)
+	unpacked.PutUint(refInfo[:], info)
 	refClean := ref.EncodeSingleBurst(refInfo, true)
 	refBad := refClean
 	refBad[11] ^= 1

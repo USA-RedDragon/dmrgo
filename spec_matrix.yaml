@@ -34,6 +34,7 @@ ignore_files:
   - v2/bit/bit.go
   - v2/internal/lowbit/lowbit.go
   - v2/internal/bits/bits.go
+  - v2/internal/unpacked/unpacked.go
   - v2/internal/allocgate/apigen/apigen.go
   - v2/internal/allocgate/apigen/gen/main.go
   - v2/internal/allocgate/testdata/cases/cases.go
@@ -61,7 +62,6 @@ ignore_files:
   - v2/internal/fecref/quadraticresidue/quadratic_residue_16_7_6.go
   - v2/internal/fecref/reedsolomon/reed_solomon_12_9_4.go
   - v2/internal/fecref/trellis/trellis_3_4.go
-  - v2/layer2/pdu/pack.go
   - v2/examples/bridge/main.go
   - v2/examples/conformance/main.go
   - v2/examples/data/main.go

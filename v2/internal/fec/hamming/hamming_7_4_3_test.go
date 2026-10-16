@@ -5,11 +5,12 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/hamming"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func bits7(cw uint8) [7]bit.Bit {
 	var b [7]bit.Bit
-	bit.PutUint(b[:], uint64(cw))
+	unpacked.PutUint(b[:], uint64(cw))
 	return b
 }
 
@@ -20,8 +21,8 @@ func TestHamming743MatchesReferenceOnEveryWord(t *testing.T) {
 		cw := uint8(v)
 		got, res := Decode743(cw)
 		want, wantRes := ref.Decode743(bits7(cw))
-		if got != uint8(bit.Uint(want[:])) || res != wantRes {
-			t.Fatalf("Decode743(%#02x) = %#02x %+v, want %#02x %+v", cw, got, res, bit.Uint(want[:]), wantRes)
+		if got != uint8(unpacked.Uint(want[:])) || res != wantRes {
+			t.Fatalf("Decode743(%#02x) = %#02x %+v, want %#02x %+v", cw, got, res, unpacked.Uint(want[:]), wantRes)
 		}
 		if Check743(cw) != ref.Check743(bits7(cw)) {
 			t.Fatalf("Check743(%#02x) differs from the reference", cw)
@@ -30,8 +31,8 @@ func TestHamming743MatchesReferenceOnEveryWord(t *testing.T) {
 	for d := range 16 {
 		data := bits7(uint8(d) << 3)
 		want := ref.Encode743([4]bit.Bit(data[:4]))
-		if got := Encode743(uint8(d)); got != uint8(bit.Uint(want[:])) {
-			t.Fatalf("Encode743(%#x) = %#02x, want %#02x", d, got, bit.Uint(want[:]))
+		if got := Encode743(uint8(d)); got != uint8(unpacked.Uint(want[:])) {
+			t.Fatalf("Encode743(%#x) = %#02x, want %#02x", d, got, unpacked.Uint(want[:]))
 		}
 	}
 }

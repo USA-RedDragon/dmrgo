@@ -15,6 +15,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -790,7 +791,7 @@ func softShortLCEncoder(info uint32) ([]bit.Bit, error) {
 	if i := int(info) - 1; i >= 0 && i < len(in) {
 		in[i] = 1
 	}
-	frags := bptc.EncodeCACH(bit.Uint(in[:]))
+	frags := bptc.EncodeCACH(unpacked.Uint(in[:]))
 	img := make([]bit.Bit, 0, 4*layer2.CACHBits)
 	for _, f := range frags {
 		var c layer2.CACH
@@ -825,7 +826,7 @@ func softEmbLCEncoder(info uint32) ([]bit.Bit, error) {
 		in[i] = 1
 	}
 	var packed [10]byte
-	copy(packed[:], bit.Pack(in[:]))
+	copy(packed[:], unpacked.Pack(in[:]))
 	var frags [4][4]byte
 	for i, f := range bptc.EncodeEmbedded(packed) {
 		binary.BigEndian.PutUint32(frags[i][:], f)
@@ -1172,7 +1173,7 @@ func newSoftDecoder() (*softDecoder, error) {
 		for i, v := range info[:softShortLCData] {
 			data[i/8] |= byte(v&1) << (7 - i%8)
 		}
-		return crc.CheckCRC8(data[:], softShortLCData, uint8(bit.Uint(info[softShortLCData:])&0xff))
+		return crc.CheckCRC8(data[:], softShortLCData, uint8(unpacked.Uint(info[softShortLCData:])&0xff))
 	}
 	d.acceptEmbLC = d.embLC.accept
 	return d, nil

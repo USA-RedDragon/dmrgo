@@ -1,8 +1,8 @@
 // Package bits reads and writes bit fields of packed byte slices, the first
 // bit in the most significant bit of the first byte, the order of a DMR
-// burst on air. It converts between packed bytes and bit.Bit slices at the
-// edges of the public API. A function panics when a slice is shorter than the
-// bits it reads or writes.
+// burst on air. Pack and Unpack convert a range of bits between packed
+// bytes and bit.Bit slices for the tests and dmrrf. A function panics when a
+// slice is shorter than the bits it reads or writes.
 package bits
 
 import "github.com/USA-RedDragon/dmrgo/v2/bit"

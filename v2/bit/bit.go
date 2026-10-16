@@ -1,17 +1,15 @@
-// Package bit holds DMR bits unpacked, one Bit per bit, and converts Bit
-// slices and arrays to and from packed bytes and unsigned integers, the first
-// bit most significant. dmrgo uses packed bytes only at I/O boundaries, such
-// as a 33-byte burst. A function panics when a slice is shorter than the bits
-// it reads or writes.
+// Package bit holds the Bit type, one bit stored in a byte, and
+// FieldRangeError, the error of the PDU Encode methods. The API of dmrgo
+// takes and returns bits packed in bytes, the first bit in the most
+// significant bit of byte 0.
 package bit
 
 import (
 	"fmt"
 )
 
-// Bit is one bit stored in a byte, 0 or 1. The functions of this module that
-// read a Bit use only its low bit, so a Bit of 2 reads as 0 and a Bit of 0xFF
-// reads as 1.
+// Bit is one bit stored in a byte, 0 or 1. A function that reads a Bit uses
+// only its low bit, so a Bit of 2 reads as 0 and a Bit of 0xFF reads as 1.
 type Bit byte
 
 // FieldRangeError is the error of a PDU Encode method when a field value
@@ -40,106 +38,4 @@ func (e *FieldRangeError) Error() string {
 		signed = "signed "
 	}
 	return fmt.Sprintf("%s.%s: value does not fit in %d %sbits", e.Type, e.Field, e.Bits, signed)
-}
-
-// Uint returns bits as an unsigned integer, the first bit most significant.
-// It reads at most the last 64 bits of a longer slice.
-func Uint(bits []Bit) uint64 {
-	var v uint64
-	for _, b := range bits {
-		v = v<<1 | uint64(b&1)
-	}
-	return v
-}
-
-// PutUint writes the low len(dst) bits of v into dst, the most significant
-// of them first. Bits of dst beyond the 64th from the end are set to 0.
-func PutUint(dst []Bit, v uint64) {
-	for i := len(dst) - 1; i >= 0; i-- {
-		dst[i] = Bit(v & 1)
-		v >>= 1
-	}
-}
-
-// Pack packs bits into bytes, the first bit in the most significant bit of
-// the first byte. The last byte is padded with 0 bits. It allocates the
-// slice; AppendPack does not.
-func Pack(bits []Bit) []byte {
-	return AppendPack(make([]byte, 0, (len(bits)+7)/8), bits)
-}
-
-// AppendPack appends the bytes that Pack returns for bits to dst and
-// returns the extended slice. It allocates only when dst lacks the capacity.
-func AppendPack(dst []byte, bits []Bit) []byte {
-	for i := 0; i < len(bits); i += 8 {
-		var b byte
-		for j, x := range bits[i:min(i+8, len(bits))] {
-			b |= byte(x&1) << (7 - j)
-		}
-		dst = append(dst, b)
-	}
-	return dst
-}
-
-// Unpack is the reverse of Pack: it returns the len(data)*8 bits of data.
-// It allocates the slice; AppendUnpack does not.
-func Unpack(data []byte) []Bit {
-	return AppendUnpack(make([]Bit, 0, len(data)*8), data)
-}
-
-// AppendUnpack appends the bits that Unpack returns for data to dst and
-// returns the extended slice. It allocates only when dst lacks the capacity.
-func AppendUnpack(dst []Bit, data []byte) []Bit {
-	for _, b := range data {
-		dst = append(dst, Bit(b>>7&1), Bit(b>>6&1), Bit(b>>5&1), Bit(b>>4&1), Bit(b>>3&1), Bit(b>>2&1), Bit(b>>1&1), Bit(b&1))
-	}
-	return dst
-}
-
-// Unpack32 returns the 32 bits of 4 bytes, such as an embedded signalling
-// field, as Unpack does.
-func Unpack32(data [4]byte) [32]Bit {
-	var bits [32]Bit
-	for i := range 32 {
-		if (data[i/8]>>(7-(i%8)))&1 != 0 {
-			bits[i] = 1
-		}
-	}
-	return bits
-}
-
-// Pack32 packs 32 bits, such as an embedded signalling field, into 4 bytes,
-// as Pack does.
-func Pack32(bits [32]Bit) [4]byte {
-	var data [4]byte
-	for i := range 32 {
-		if bits[i]&1 == 1 {
-			data[i/8] |= 1 << (7 - (i % 8))
-		}
-	}
-	return data
-}
-
-// Unpack96 returns the 96 bits of a 12-byte BPTC(196,96) payload, as Unpack
-// does.
-func Unpack96(data [12]byte) [96]Bit {
-	var bits [96]Bit
-	for i := range 96 {
-		if (data[i/8]>>(7-(i%8)))&1 != 0 {
-			bits[i] = 1
-		}
-	}
-	return bits
-}
-
-// Pack96 packs 96 bits, such as the information bits of a CSBK or data
-// header, into 12 bytes, as Pack does.
-func Pack96(bits [96]Bit) [12]byte {
-	var data [12]byte
-	for i := range 96 {
-		if bits[i]&1 == 1 {
-			data[i/8] |= 1 << (7 - (i % 8))
-		}
-	}
-	return data
 }

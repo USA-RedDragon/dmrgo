@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
@@ -51,7 +52,7 @@ func sourceAt(i int) layer2.SyncSource {
 // syncSyms returns the 24 symbols of the SYNC pattern p.
 func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {
 	var b [framer.SyncBits]bit.Bit
-	bit.PutUint(b[:], uint64(p))
+	unpacked.PutUint(b[:], uint64(p))
 	for k := range syncSymbols {
 		out[k] = symbolOf(b[2*k], b[2*k+1])
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -12,14 +13,14 @@ import (
 
 func talkerAliasLC() pdu.FullLinkControl {
 	var data [48]bit.Bit
-	copy(data[:], bit.Unpack([]byte("KI5VMF")))
+	copy(data[:], unpacked.Unpack([]byte("KI5VMF")))
 	return pdu.FullLinkControl{
 		FLCO: enums.FLCOTalkerAliasHeader,
 		FID:  enums.FIDStandardized,
 		TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
 			TalkerAliasDataFormat: layer3.TalkerAliasISOEightBit,
 			TalkerAliasDataLength: 6,
-			TalkerAliasData:       bit.Uint(data[:]),
+			TalkerAliasData:       unpacked.Uint(data[:]),
 		},
 	}
 }

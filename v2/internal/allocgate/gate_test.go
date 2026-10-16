@@ -22,7 +22,7 @@ import (
 const moduleRoot = "../.."
 
 // skipDirs are the module directories that are not library code.
-var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest"}
+var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/unpacked"}
 
 // libraryPackages returns the import paths of the library packages, relative
 // to the module ("./bit" and so on).
