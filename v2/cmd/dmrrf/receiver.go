@@ -64,7 +64,7 @@ const (
 	lockSpanHz = 300.0
 	// wideChunk is the number of baseband samples that the receiver filters
 	// before it searches or follows the stream again.
-	wideChunk = 512
+	wideChunk = 256
 	// trellisWin is the number of symbols of a block of the trellis of the
 	// coherent tiers, and trellisLook the symbols of lookahead of its
 	// backward pass. Eight symbols of lookahead give the same sweep as
@@ -194,7 +194,7 @@ type Receiver struct {
 	refLo    int64
 	// prior holds the log priors of the digits of each symbol of the slot
 	// that a refinement detects again, from its decoded FEC.
-	prior [slotSymbols * 4]float32
+	prior []float32
 
 	streams int
 	rep     *repairer
@@ -235,7 +235,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	}
 	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, dec, r.opt.CompactChannel)
 	r.spec = newSpectrum()
-	r.search = newSyncSearch(r.opt.Coherent, dec)
+	r.search = newSyncSearch(r.opt.Coherent, dec, r.nsrc)
 	if r.opt.Coherent {
 		d := r.opt.Window
 		r.model = newCPMModel(d, r.opt.TrellisSPS, 0.27)
@@ -266,6 +266,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots) + 2)
 		if r.opt.RefinePrior > 0 {
 			r.refined = newSymStore(maxGapSlots + 1)
+			r.prior = make([]float32, slotSymbols*4)
 		}
 	} else {
 		r.syms = newSymStore(1)
@@ -1050,7 +1051,7 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		return
 	}
 	bits := bit.Unpack264(e.out.Fixed)
-	clear(r.prior[:])
+	clear(r.prior)
 	for k := range burstSymbols {
 		lp := r.prior[4*(cachSymbols+k) : 4*(cachSymbols+k)+4]
 		for b := range 2 {
