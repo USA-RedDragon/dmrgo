@@ -5,7 +5,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -15,8 +14,7 @@ func burstInfoBits(raw [33]byte) [96]bit.Bit {
 	var dataBits [196]bit.Bit
 	copy(dataBits[:98], all[:98])
 	copy(dataBits[98:], all[166:])
-	info, _ := bptc.Decode196(dataBits)
-	return info
+	return decode196Bits(dataBits)
 }
 
 // Real Voice LC Headers and Terminators carry the Data Type CRC Mask in their

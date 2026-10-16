@@ -123,7 +123,9 @@ func fecEntries(t testing.TB) []entry {
 	sms := captureRawBursts(t, "d-sms")
 
 	header := splitBurst(voice[0])
-	lcBits, res := bptc.Decode196(header.info)
+	headerInfo := packInfo196(header.info)
+	lcPacked, _, res := bptc.Decode196(headerInfo)
+	lcBits := bit.Unpack96(lcPacked)
 	if res.HasErrors() {
 		t.Fatalf("voice LC header BPTC: %+v", res)
 	}
@@ -141,8 +143,9 @@ func fecEntries(t testing.TB) []entry {
 	}
 	lcBad := lc
 	lcBad[4] ^= 0x81
-	infoBad := header.info
-	flip(infoBad[:], 7, 120)
+	infoBadBits := header.info
+	flip(infoBadBits[:], 7, 120)
+	infoBad := packInfo196(infoBadBits)
 	stBad := headerSTCW ^ 1<<17 ^ 1<<4
 
 	voiceB := splitBurst(voice[2])
@@ -175,11 +178,12 @@ func fecEntries(t testing.TB) []entry {
 	}
 
 	csbk := splitBurst(sms[0])
-	csbkBits, res := bptc.Decode196(csbk.info)
+	csbkInfo := packInfo196(csbk.info)
+	csbkPacked, reserved, res := bptc.Decode196(csbkInfo)
 	if res.HasErrors() {
 		t.Fatalf("CSBK BPTC: %+v", res)
 	}
-	csbkBytes := bit.Pack96(csbkBits)
+	csbkBytes := csbkPacked
 	csbkCRC := binary.BigEndian.Uint16(csbkBytes[10:]) ^ 0xA5A5
 	if !crc.CheckCCITT(csbkBytes[:10], csbkCRC) {
 		t.Fatalf("CSBK % X: bad CRC-CCITT", csbkBytes)
@@ -187,6 +191,7 @@ func fecEntries(t testing.TB) []entry {
 
 	var message []byte
 	var rate12 [196]bit.Bit
+	var rate12Info [25]byte
 	for _, b := range sms {
 		f := splitBurst(b)
 		st, _ := golay.Decode2087(uint32(bit.Uint(f.slotType[:])))
@@ -194,8 +199,8 @@ func fecEntries(t testing.TB) []entry {
 			continue
 		}
 		rate12 = f.info
-		block, _ := bptc.Decode196(f.info)
-		p := bit.Pack96(block)
+		rate12Info = packInfo196(f.info)
+		p, _, _ := bptc.Decode196(rate12Info)
 		message = append(message, p[:]...)
 	}
 	msgCRC := binary.LittleEndian.Uint32(message[len(message)-4:])
@@ -232,7 +237,6 @@ func fecEntries(t testing.TB) []entry {
 	ambeA := golay.Encode24128(0xA5C)
 	ambeB := golay.Encode23127(0x3B1)
 
-	var reserved [3]bit.Bit
 	var rcCRCBits [4]bit.Bit
 	patternBits(rcCRCBits[:], 3)
 	rcInfoBytes := bit.Pack(rcInfo[:])
@@ -253,6 +257,8 @@ func fecEntries(t testing.TB) []entry {
 		bits7      [7]bit.Bit
 		frags      [4]uint32
 		emb10      [10]byte
+		b12        [12]byte
+		b25        [25]byte
 		cachOut    [4]uint32
 		u64        uint64
 		bits32     [32]bit.Bit
@@ -288,12 +294,12 @@ func fecEntries(t testing.TB) []entry {
 		{"fec.BERCalculator.Uncorrectable", "", 0, func() { n = calc.Uncorrectable() }},
 		{"fec.BERCalculator.Reset", "", 0, func() { calc.Reset() }},
 
-		{"internal/fec/bptc.Decode196", "voice LC header", 0, func() { bits96, r = bptc.Decode196(header.info) }},
-		{"internal/fec/bptc.Decode196", "voice LC header, 2 errors", 0, func() { bits96, r = bptc.Decode196(infoBad) }},
-		{"internal/fec/bptc.Decode196", "rate 1/2", 0, func() { bits96, r = bptc.Decode196(rate12) }},
-		{"internal/fec/bptc.Decode196WithReserved", "CSBK", 0, func() { bits96, reserved, r = bptc.Decode196WithReserved(csbk.info) }},
-		{"internal/fec/bptc.Encode196", "voice LC header", 0, func() { bits196 = bptc.Encode196(lcBits) }},
-		{"internal/fec/bptc.Encode196WithReserved", "CSBK", 0, func() { bits196 = bptc.Encode196WithReserved(csbkBits, reserved) }},
+		{"internal/fec/bptc.Decode196", "voice LC header", 0, func() { b12, u8, r = bptc.Decode196(headerInfo) }},
+		{"internal/fec/bptc.Decode196", "voice LC header, 2 errors", 0, func() { b12, u8, r = bptc.Decode196(infoBad) }},
+		{"internal/fec/bptc.Decode196", "rate 1/2", 0, func() { b12, u8, r = bptc.Decode196(rate12Info) }},
+		{"internal/fec/bptc.Decode196", "CSBK", 0, func() { b12, reserved, r = bptc.Decode196(csbkInfo) }},
+		{"internal/fec/bptc.Encode196", "voice LC header", 0, func() { b25 = bptc.Encode196(lcPacked, 0) }},
+		{"internal/fec/bptc.Encode196", "CSBK", 0, func() { b25 = bptc.Encode196(csbkPacked, reserved) }},
 		{"internal/fec/bptc.DecodeEmbedded", "voice B to E", 0, func() { emb10, r = bptc.DecodeEmbedded(fragWords) }},
 		{"internal/fec/bptc.DecodeEmbedded", "voice B to E, 1 error", 0, func() { emb10, r = bptc.DecodeEmbedded(fragWordsBad) }},
 		{"internal/fec/bptc.DecodeEmbeddedWithCheck", "voice B to E, 1 error", 0, func() { emb10, r = bptc.DecodeEmbeddedWithCheck(fragWordsBad, embeddedCheck) }},
@@ -349,6 +355,13 @@ func fecEntries(t testing.TB) []entry {
 	}
 	_ = ambeFrame
 	_, _, _, _, _, _, _, _, _, _, _, _ = bits96, bits196, rate34Out, trellisOut, bits77, bits36, bits11, bits20, bits16, bits7, frags, cachOut
-	_, _, _, _, _, _, _, _, _, _, _, _, _, _ = emb10, u64, bits32, rsData, rsCW, u16, u32, u8, ok, r, err, ber, n, reserved
+	_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = b12, b25, emb10, u64, bits32, rsData, rsCW, u16, u32, u8, ok, r, err, ber, n, reserved
 	return out
+}
+
+// packInfo196 packs 196 information bits as bptc.Decode196 takes them.
+func packInfo196(info [196]bit.Bit) [25]byte {
+	var p [25]byte
+	packedbits.Pack(p[:], 0, info[:])
+	return p
 }

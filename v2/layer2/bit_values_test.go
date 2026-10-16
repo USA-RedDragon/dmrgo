@@ -18,7 +18,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -31,7 +30,6 @@ import (
 // the cgo codec2 binding. Methods are wrapped with a fresh receiver.
 
 var bitFuncs = map[string]any{
-	"internal/fec/bptc.Decode196": bptc.Decode196,
 	"layer2/framer.Search": func(stream [600]bit.Bit) (framer.Match, bool) {
 		return framer.Search(stream[:], 0, -1)
 	},
@@ -87,18 +85,15 @@ var bitFuncs = map[string]any{
 		bits.Unpack(dst[:], []byte{0xA5, 0x3C}, 0)
 		return dst
 	},
-	"internal/fec/bptc.Decode196WithReserved": bptc.Decode196WithReserved,
-	"internal/fec/bptc.Encode196":             bptc.Encode196,
-	"internal/fec/bptc.Encode196WithReserved": bptc.Encode196WithReserved,
-	"layer2.CACHDeinterleave":                 layer2.CACHDeinterleave,
-	"layer2.CACHInterleave":                   layer2.CACHInterleave,
-	"layer2.DecodeCACH":                       layer2.DecodeCACH,
-	"layer2.DecodeEmbeddedRC":                 layer2.DecodeEmbeddedRC,
-	"layer2.DecodeCACHField":                  layer2.DecodeCACHField,
-	"layer2.IsIdleMessage":                    layer2.IsIdleMessage,
-	"layer2.IsNullEmbeddedLC":                 layer2.IsNullEmbeddedLC,
-	"layer2/pdu.MBCLastBlockCRCOK":            pdu.MBCLastBlockCRCOK,
-	"layer2/pdu.DecodeCSBK":                   pdu.DecodeCSBK,
+	"layer2.CACHDeinterleave":      layer2.CACHDeinterleave,
+	"layer2.CACHInterleave":        layer2.CACHInterleave,
+	"layer2.DecodeCACH":            layer2.DecodeCACH,
+	"layer2.DecodeEmbeddedRC":      layer2.DecodeEmbeddedRC,
+	"layer2.DecodeCACHField":       layer2.DecodeCACHField,
+	"layer2.IsIdleMessage":         layer2.IsIdleMessage,
+	"layer2.IsNullEmbeddedLC":      layer2.IsNullEmbeddedLC,
+	"layer2/pdu.MBCLastBlockCRCOK": pdu.MBCLastBlockCRCOK,
+	"layer2/pdu.DecodeCSBK":        pdu.DecodeCSBK,
 	"layer2/pdu.DecodeCSBKInto": func(data [96]bit.Bit) pdu.CSBK {
 		var d pdu.CSBK
 		var p pdu.CSBKPayloads

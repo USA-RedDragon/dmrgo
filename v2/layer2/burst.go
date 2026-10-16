@@ -343,11 +343,10 @@ func (b *Burst) isEmbeddedDataBurst() bool {
 	if emb, _ := parseEmbedded(b.bitData); emb.FEC.Uncorrectable || emb.ColorCode != st.ColorCode {
 		return false
 	}
-	info, res := bptc.Decode196(extractDataBits(b.bitData))
+	p, _, res := bptc.Decode196(packInfo(extractDataBits(b.bitData)))
 	if res.Uncorrectable || res.ErrorsCorrected > embeddedDataMaxBPTCErrors {
 		return false
 	}
-	p := bit.Pack96(info)
 	switch st.DataType {
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
 		_, lcRes, err := pdu.DecodeFullLCCodeword(p, st.DataType)
@@ -530,10 +529,10 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType enums.DataType) (int, f
 		enums.DataTypeRate12,
 		enums.DataTypeIdle,
 		enums.DataTypeUnifiedSingleBlock:
-		decoded, reserved, result := bptc.Decode196WithReserved(bits)
-		copy(b.deinterleavedInfoBits[:], decoded[:])
-		b.BPTCReserved = reserved
-		return len(decoded), result
+		decoded, reserved, result := bptc.Decode196(packInfo(bits))
+		pbits.Unpack(b.deinterleavedInfoBits[:96], decoded[:], 0)
+		b.BPTCReserved = reservedBits(reserved)
+		return 96, result
 	case enums.DataTypeReserved:
 		copy(b.deinterleavedInfoBits[:], bits[:])
 		return len(bits), fec.Result{}
@@ -867,9 +866,9 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 		copy(bits[100:], info[96:192])
 		return bits, nil
 	case dt.IsBPTC():
-		var infoBits [96]bit.Bit
-		copy(infoBits[:], info[:96])
-		return bptc.Encode196WithReserved(infoBits, b.BPTCReserved), nil
+		var data [12]byte
+		pbits.Pack(data[:], 0, info[:96])
+		return unpackInfo(bptc.Encode196(data, reservedByte(b.BPTCReserved))), nil
 	default:
 		return info, nil
 	}
