@@ -125,15 +125,68 @@ func (r *fring) at(i int64) float32 {
 	return r.buf[k]
 }
 
+// qring is a ring of real samples addressed by absolute sample number, each
+// held as an int8 multiple of step, saturated.
+type qring struct {
+	buf  []int8
+	n    int64
+	w    int
+	step float32
+	inv  float32
+}
+
+// newQring returns a ring of size samples of resolution step.
+func newQring(size int, step float32) qring {
+	return qring{buf: make([]int8, size), step: step, inv: 1 / step}
+}
+
+// quantize returns v in units of step, rounded and saturated.
+func (r *qring) quantize(v float32) int8 {
+	q := v*r.inv + 0.5
+	switch {
+	case q >= math.MaxInt8:
+		return math.MaxInt8
+	case q <= math.MinInt8:
+		return math.MinInt8
+	}
+	i := int8(q)
+	if float32(i) > q {
+		i--
+	}
+	return i
+}
+
+// push appends sample v.
+func (r *qring) push(v float32) {
+	r.buf[r.w] = r.quantize(v)
+	r.n++
+	if r.w++; r.w == len(r.buf) {
+		r.w = 0
+	}
+}
+
+// at returns sample i, or 0 outside the samples the ring holds.
+func (r *qring) at(i int64) float32 {
+	d := r.n - i
+	if i < 0 || d <= 0 || d > int64(len(r.buf)) {
+		return 0
+	}
+	k := r.w - int(d)
+	if k < 0 {
+		k += len(r.buf)
+	}
+	return float32(r.buf[k]) * r.step
+}
+
 // add adds v to every sample the ring holds.
-func (r *fring) add(v float32) {
-	for i := range r.buf {
-		r.buf[i] += v
+func (r *qring) add(v float32) {
+	for i, q := range r.buf {
+		r.buf[i] = r.quantize(float32(q)*r.step + v)
 	}
 }
 
 // lerp returns the ring at the fractional sample t by linear interpolation.
-func (r *fring) lerp(t float64) float32 {
+func (r *qring) lerp(t float64) float32 {
 	i0 := int64(math.Floor(t))
 	fr := float32(t - float64(i0))
 	return r.at(i0)*(1-fr) + r.at(i0+1)*fr
@@ -144,6 +197,9 @@ const (
 	// energyBin is the number of channel samples whose power the
 	// discriminator path sums into one bin of its energy ring.
 	energyBin = 40
+	// discStepHz is the resolution of the discriminator samples that the
+	// ring holds.
+	discStepHz = 64
 )
 
 // channelizer moves the carrier to 0 Hz with an oscillator and filters the
@@ -176,7 +232,7 @@ type channelizer struct {
 	rrc     []float32
 	fHist   []float32
 	fHead   int
-	sym     fring
+	sym     qring
 	energy  fring
 	eAcc    float32
 	discHz  float32
@@ -203,7 +259,7 @@ func newChannelizer(size int, disc bool, cutHz float64, dec int) *channelizer {
 		c.rrc[i] = float32(v)
 	}
 	c.fHist = make([]float32, 2*len(r))
-	c.sym = newFring(size/dec + 1)
+	c.sym = newQring(size/dec+1, discStepHz)
 	c.energy = newFring(size/energyBin + 2)
 	c.discHz = float32(basebandRate / float64(dec) / (2 * math.Pi))
 	return c
