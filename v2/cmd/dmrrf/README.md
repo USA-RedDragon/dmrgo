@@ -3,7 +3,7 @@
 `dmrrf` turns DMR bursts built with dmrgo into I/Q for a HackRF, and decodes DMR from `rtl_sdr` captures. It only reads and writes files. Transmitting is a separate, manual `hackrf_transfer` step for a licensed operator.
 
 - `dmrrf tx`: writes signed 8-bit I/Q (the `hackrf_transfer -t` format). DMR 4FSK at 4800 symbols/s, ±648/±1944 Hz deviation, RRC alpha 0.2 (ETSI TS 102 361-1 clause 10.2), one TDMA slot per 60 ms frame by default.
-- `dmrrf rx`: reads `rtl_sdr` unsigned 8-bit I/Q, decodes every burst, reassembles data packets and voice superframes, and reports the carrier offset and deviation. It finds the bursts with a SYNC first, then cuts the slots between them on their slot timing. A voice superframe starts at a burst A, at a slot near the voice SYNC where the call timing expects a burst A, or before a burst B or E with a clean EMB, when the SYNC of its burst A is within 16 bits of the voice SYNC.
+- `dmrrf rx`: reads `rtl_sdr` unsigned 8-bit I/Q, decodes every burst, reassembles data packets and voice superframes, and reports the carrier offset and deviation. It is a streaming receiver: it estimates the carrier from the spectrum, locks to the first SYNC it finds, and then follows the slot timing and the carrier through the transmission. `-tier` selects the detector: 0 slices the FM discriminator output, 1 and 2 detect the symbols coherently with a trellis over 3 or 5 symbols and decode each FEC field with soft decisions, and 2 also detects each voice burst again with the bits that its FEC fixed. A voice superframe starts at a burst A, at a slot near the voice SYNC where the call timing expects a burst A, or before a burst B or E with a clean EMB, when the SYNC of its burst A is within 16 bits of the voice SYNC.
 - `dmrrf cal`: reports the frequency offset of a carrier in an `rtl_sdr` capture.
 
 Sequences for `tx -seq`. An MS-sourced sequence starts with `-wakeups` BS_Dwn_Act CSBKs. The data packets carry `-msg` from `-src` to `-dst` (`-group` for a talkgroup).
@@ -49,7 +49,7 @@ Voice flags:
 | `pi` | PI header fields |
 | `response` | a response packet: ACK, NACK or SACK with the blocks to retry |
 
-`ts=1` or `ts=2` is the TDMA channel of a BS-sourced burst, and `ts=-` when there is no CACH. It comes from the slot time, which alternates every 30 ms, aligned with the CACH TC bits by majority: the Hamming(7,4,3) code of the TACT corrects every pattern to some codeword, so a TACT with two bit errors decodes with a wrong TC and `fec=fixed:1`, never `fec=bad`. `fec=ok`, `fec=fixed:<n>` (n bits corrected) and `fec=bad` report the FEC. For example:
+Each burst line shows the bits that `rx` decodes, and `fixed <n>` when soft-decision decoding changed n of the detected bits. `ts=1` or `ts=2` is the TDMA channel of a BS-sourced burst, and `ts=-` when there is no CACH. It comes from the slot number in the locked stream, which alternates every 30 ms, aligned with the CACH TC bits by majority: the Hamming(7,4,3) code of the TACT corrects every pattern to some codeword, so a TACT with two bit errors decodes with a wrong TC and `fec=fixed:1`, never `fec=bad`. `fec=ok`, `fec=fixed:<n>` (n bits corrected) and `fec=bad` report the FEC. For example:
 
 ```
 cach t=93.75ms at=0 tc=1 lcss=last fec=ok payload=11111011000110000

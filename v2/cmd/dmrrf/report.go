@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/bits"
 	"strings"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
@@ -63,16 +64,18 @@ type chanState struct {
 // header, and packet and response for data.
 //
 // The TDMA channel of a BS-sourced burst, ts=1 or ts=2, comes from its slot
-// time, which alternates every 30 ms, aligned with the TC bits of the CACHs
-// by majority. The Hamming(7,4,3) code of the TACT corrects every error
+// number in its stream, or its slot time when the burst has no stream,
+// which alternates every 30 ms, aligned with the TC bits of the CACHs of
+// the stream by majority. The Hamming(7,4,3) code of the TACT corrects every error
 // pattern to some codeword, so a single TC bit cannot be trusted.
 type Reporter struct {
-	w     io.Writer
-	chans map[int]*chanState
-	slc   layer2.ShortLCAssembler
-	t0    float64
-	ref   bool
-	votes [2]int
+	w      io.Writer
+	chans  map[int]*chanState
+	slc    layer2.ShortLCAssembler
+	t0     float64
+	ref    bool
+	votes  [2]int
+	stream int
 }
 
 // NewReporter returns a Reporter that writes to w.
@@ -87,19 +90,27 @@ func (p *Reporter) printf(format string, a ...any) {
 // Burst reports one received burst.
 func (p *Reporter) Burst(r Received) {
 	t := fmt.Sprintf("t=%.2fms", r.Seconds*1000)
+	data, cach := r.decoded()
+	fixed := ""
+	if n := bitDiff(data, r.Data); n > 0 {
+		fixed = fmt.Sprintf("  fixed %d", n)
+	}
 	if r.Timed() {
-		p.printf("%9.2f ms  no sync (timed)  %x", r.Seconds*1000, r.Data)
+		p.printf("%9.2f ms  no sync (timed)  %x%s", r.Seconds*1000, data, fixed)
 	} else {
-		p.printf("%9.2f ms  sync distance %d  %x", r.Seconds*1000, r.Distance, r.Data)
+		p.printf("%9.2f ms  sync distance %d  %x%s", r.Seconds*1000, r.Distance, data, fixed)
 	}
 	ts := "-"
 	key := 0
 	if r.BS && r.HasCACH {
-		c := layer2.DecodeCACHField(r.CACH)
-		if !p.ref {
-			p.t0, p.ref = r.Seconds, true
+		c := layer2.DecodeCACHField(cach)
+		if !p.ref || r.Stream != p.stream {
+			p.t0, p.ref, p.stream, p.votes = r.Seconds, true, r.Stream, [2]int{}
 		}
 		parity := int(math.Round((r.Seconds-p.t0)/slotSeconds)) & 1
+		if r.Stream != 0 {
+			parity = int(r.Slot & 1)
+		}
 		p.votes[parity^b01(c.TACT.TDMAChannel)]++
 		align := 0
 		if p.votes[1] > p.votes[0] {
@@ -127,7 +138,7 @@ func (p *Reporter) Burst(r Received) {
 		opts.SyncThreshold = r.Distance
 	}
 	b := &layer2.Burst{}
-	if err := b.DecodeFromBytesWith(r.Data, &opts); err != nil {
+	if err := b.DecodeFromBytesWith(data, &opts); err != nil {
 		p.printf("           decode error: %v", err)
 		return
 	}
@@ -209,4 +220,13 @@ func intList(v []int) string {
 		s[i] = fmt.Sprint(x)
 	}
 	return strings.Join(s, ",")
+}
+
+// bitDiff returns the number of bits in which a and b differ.
+func bitDiff(a, b layer2.RawBurst) int {
+	n := 0
+	for i := range a {
+		n += bits.OnesCount8(a[i] ^ b[i])
+	}
+	return n
 }
