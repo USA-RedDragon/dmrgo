@@ -159,12 +159,12 @@ func (r *Receiver) keepAPP(g symRef, dir, k, steps int, app []float32, lo, hi sy
 		return
 	}
 	dist := k + 2*d
-	have := r.haveOf(s)
-	if dist < 0 || dist >= int(have[h.k]) || dist > math.MaxInt16 {
+	st, p := r.symsOf(s)
+	if dist < 0 || dist >= int(st.have[p+h.k]) || dist > math.MaxInt16 {
 		return
 	}
-	copy(r.appOf(s)[4*h.k:4*h.k+4], app)
-	have[h.k] = int16(dist)
+	st.set(p+h.k, app)
+	st.have[p+h.k] = int16(dist)
 }
 
 // run detects n symbols from g (forward or backward) with the trellis,
@@ -270,7 +270,8 @@ func (r *Receiver) coherentGap(first, j int64, final bool) {
 		keep.k = syncFirstSym + syncSymbols
 	}
 	for g := keep; g.diff(hi) <= 0; g = g.add(1) {
-		r.haveOf(r.slot(g.slot))[g.k] = noRun
+		st, p := r.symsOf(r.slot(g.slot))
+		st.have[p+g.k] = noRun
 	}
 	margin := r.model.d + runMargin
 	if left {
@@ -296,8 +297,9 @@ func (r *Receiver) coherentBurst(j int64) {
 		return
 	}
 	s := r.slot(j)
-	for i := range r.haveOf(s) {
-		r.haveOf(s)[i] = noRun
+	st, p := r.symsOf(s)
+	for i := range slotSymbols {
+		st.have[p+i] = noRun
 	}
 	lo := symRef{slot: j, k: cachSymbols}
 	hi := symRef{slot: j, k: slotSymbols - 1}
@@ -388,12 +390,6 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 // decision returns the symbol, -3 to 3, with the highest log-APP of stream
 // symbol h.
 func (r *Receiver) decision(h symRef) int {
-	a := r.appOf(r.slot(h.slot))[4*h.k : 4*h.k+4]
-	best := 0
-	for v := 1; v < 4; v++ {
-		if a[v] > a[best] {
-			best = v
-		}
-	}
-	return 2*best - 3
+	st, p := r.symsOf(r.slot(h.slot))
+	return 2*int(st.digit[p+h.k]) - 3
 }
