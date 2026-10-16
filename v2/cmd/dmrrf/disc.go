@@ -15,6 +15,12 @@ const (
 	// embedded signalling of a voice burst E that correlates with the
 	// pattern through noise does not count as an anchor.
 	discAnchorBits = 12
+	// discFirstSpread is the largest RMS distance of the SYNC samples of
+	// the first anchor of a stream from the levels that it fits, in units
+	// of the spacing of the levels. The first anchor sets the levels that
+	// the other anchors are checked against, and a SYNC correlation
+	// through noise fits levels far from its samples.
+	discFirstSpread = 0.35
 )
 
 // discSyncErrors returns the number of bits where the sliced symbols of
@@ -24,22 +30,25 @@ func (r *Receiver) discSyncErrors(s *slotState, tau float64, syms *[syncSymbols]
 	n := 0
 	for k, want := range syms {
 		x := (float64(r.chz.sym.lerp(r.symLag(r.symTime(s.index, syncFirstSym+k)+tau))) - r.dcHz) / step
-		var got int8
-		switch {
-		case x >= 2:
-			got = 3
-		case x >= 0:
-			got = 1
-		case x >= -2:
-			got = -1
-		default:
-			got = -3
-		}
-		if got != want {
+		if got := sliceSymbol(x); got != want {
 			n += symbolBitErrors(got, want)
 		}
 	}
 	return n
+}
+
+// sliceSymbol returns the symbol level nearest to x, in units of the
+// deviation of level 1.
+func sliceSymbol(x float64) int8 {
+	switch {
+	case x >= 2:
+		return 3
+	case x >= 0:
+		return 1
+	case x >= -2:
+		return -1
+	}
+	return -3
 }
 
 // symbolBitErrors returns the number of bits where the dibits of symbols a
@@ -110,6 +119,10 @@ func (r *Receiver) measureDisc(s *slotState) {
 	}
 	res /= syncSymbols
 	if r.amp == 0 {
+		if g <= 0 || math.Sqrt(res) > discFirstSpread*2*g*deviationHz {
+			s.anchor = false
+			return
+		}
 		r.devScale, r.dcHz, r.discNoise = g, dc, res
 		r.amp, r.noise = math.Sqrt(r.slotEnergy(s)), r.slotEnergy(s)/4
 	} else {
