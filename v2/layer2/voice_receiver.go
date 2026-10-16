@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -61,9 +60,9 @@ func (r *VoiceReceiver) ReceiveInto(dst *pdu.FullLinkControl, p *pdu.FullLinkCon
 	return true, nil
 }
 
-// receive places b in the superframe and returns the 72 LC bits and the
+// receive places b in the superframe and returns the LC octets and the
 // embedded LC result when b completes an embedded LC, with done set.
-func (r *VoiceReceiver) receive(b *Burst) (lc [72]bit.Bit, res fec.Result, done bool, err error) {
+func (r *VoiceReceiver) receive(b *Burst) (lc [9]byte, res fec.Result, done bool, err error) {
 	switch {
 	case b.Kind == KindReverseChannel:
 		b.VoiceBurst = enums.VoiceBurstUnknown
@@ -86,7 +85,9 @@ func (r *VoiceReceiver) receive(b *Burst) (lc [72]bit.Bit, res fec.Result, done 
 		return lc, res, false, r.lc.discard()
 	}
 	r.lc.Strict = r.Strict
-	return r.lc.add(b.EmbeddedSignallingData, lcss)
+	var frag [4]byte
+	packBits(frag[:], b.EmbeddedSignallingData[:])
+	return r.lc.add(fragmentWord(frag), lcss)
 }
 
 func (r *VoiceReceiver) embeddedPosition(b *Burst) enums.VoiceBurstType {
