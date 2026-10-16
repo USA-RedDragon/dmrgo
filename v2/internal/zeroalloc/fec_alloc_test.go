@@ -204,9 +204,9 @@ func fecEntries(t testing.TB) []entry {
 
 	var cachInfo [36]bit.Bit
 	patternBits(cachInfo[:], 3)
-	cach := bptc.EncodeCACH(cachInfo)
-	cachBad := cach
-	flip(cachBad[2][:], 5)
+	cachWord := bit.Uint(cachInfo[:])
+	cachBad := bptc.EncodeCACH(cachWord)
+	cachBad[2] ^= 1 << (16 - 5)
 
 	var rcInfo [11]bit.Bit
 	patternBits(rcInfo[:], 7)
@@ -240,7 +240,8 @@ func fecEntries(t testing.TB) []entry {
 		bits16     [16]bit.Bit
 		bits7      [7]bit.Bit
 		frags      [4][32]bit.Bit
-		cachOut    [4][17]bit.Bit
+		cachOut    [4]uint32
+		u64        uint64
 		bits32     [32]bit.Bit
 		rsData     [9]byte
 		rsCW       [12]byte
@@ -285,8 +286,8 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/fec/bptc.DecodeEmbeddedWithCheck", "voice B to E, 1 error", 0, func() { bits77, r = bptc.DecodeEmbeddedWithCheck(fragmentsBad, embeddedLCValid) }},
 		{"internal/fec/bptc.DecodeEmbeddedStrict", "voice B to E, 1 error", 0, func() { bits77, r = bptc.DecodeEmbeddedStrict(fragmentsBad) }},
 		{"internal/fec/bptc.EncodeEmbedded", "voice B to E", 0, func() { frags = bptc.EncodeEmbedded(embInfo) }},
-		{"internal/fec/bptc.DecodeCACH", "1 error", 0, func() { bits36, r = bptc.DecodeCACH(cachBad) }},
-		{"internal/fec/bptc.EncodeCACH", "", 0, func() { cachOut = bptc.EncodeCACH(cachInfo) }},
+		{"internal/fec/bptc.DecodeCACH", "1 error", 0, func() { u64, r = bptc.DecodeCACH(cachBad) }},
+		{"internal/fec/bptc.EncodeCACH", "", 0, func() { cachOut = bptc.EncodeCACH(cachWord) }},
 		{"internal/fec/bptc.DecodeSingleBurst", "reverse channel, 2 errors", 0, func() { u16, r = bptc.DecodeSingleBurst(rcBad, true) }},
 		{"internal/fec/bptc.EncodeSingleBurst", "reverse channel", 0, func() { u32 = bptc.EncodeSingleBurst(rcWord, true) }},
 
@@ -335,6 +336,6 @@ func fecEntries(t testing.TB) []entry {
 	}
 	_ = ambeFrame
 	_, _, _, _, _, _, _, _, _, _, _, _ = bits96, bits196, rate34Out, trellisOut, bits77, bits36, bits11, bits20, bits16, bits7, frags, cachOut
-	_, _, _, _, _, _, _, _, _, _, _, _ = bits32, rsData, rsCW, u16, u32, u8, ok, r, err, ber, n, reserved
+	_, _, _, _, _, _, _, _, _, _, _, _, _ = u64, bits32, rsData, rsCW, u16, u32, u8, ok, r, err, ber, n, reserved
 	return out
 }

@@ -88,13 +88,11 @@ var bitFuncs = map[string]any{
 		return dst
 	},
 	"internal/fec/bptc.Decode196WithReserved":   bptc.Decode196WithReserved,
-	"internal/fec/bptc.DecodeCACH":              bptc.DecodeCACH,
 	"internal/fec/bptc.DecodeEmbedded":          bptc.DecodeEmbedded,
 	"internal/fec/bptc.DecodeEmbeddedStrict":    bptc.DecodeEmbeddedStrict,
 	"internal/fec/bptc.DecodeEmbeddedWithCheck": bptc.DecodeEmbeddedWithCheck,
 	"internal/fec/bptc.Encode196":               bptc.Encode196,
 	"internal/fec/bptc.Encode196WithReserved":   bptc.Encode196WithReserved,
-	"internal/fec/bptc.EncodeCACH":              bptc.EncodeCACH,
 	"internal/fec/bptc.EncodeEmbedded":          bptc.EncodeEmbedded,
 	"layer2.CACHDeinterleave":                   layer2.CACHDeinterleave,
 	"layer2.CACHInterleave":                     layer2.CACHInterleave,
