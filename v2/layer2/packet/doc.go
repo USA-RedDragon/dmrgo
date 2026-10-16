@@ -7,10 +7,16 @@
 //
 // An Assembler takes one packet at a time. It drops a header whose CRC failed
 // and returns ErrHeaderCRC, and the packet in progress stays as it was. A
-// header other than a P_HEAD
-// second header discards any partial packet. The exception is a C_HEAD with
-// the same SAP, LLIDs and N(S) as a confirmed packet that still has blocks
-// missing: it starts the retry of those blocks. A header with no blocks to
-// follow, such as an ACK, completes its Message at once. The Assembler
-// ignores UDT and status precoded headers.
+// header of a first try (Full Message Flag set), other than a P_HEAD second
+// header, discards any partial packet. A header of a later try (flag clear)
+// with the same format, SAP and LLIDs as the confirmed or SARQ packet in
+// progress, and the same N(S) for a C_HEAD, starts the retry of the blocks
+// it announces. A first-try header that matches in the same way is also a
+// retry, but only after all blocks of the attempt have arrived. A later-try
+// header that matches nothing is dropped with ErrUnexpectedRetry while a
+// packet is in progress, and otherwise starts a packet, which completes only
+// when the blocks cover the whole packet and the message CRC passes. Lost
+// counts a block burst that was not received, so that the attempt still
+// ends. A header with no blocks to follow, such as an ACK, completes its
+// Message at once. The Assembler ignores UDT and status precoded headers.
 package packet

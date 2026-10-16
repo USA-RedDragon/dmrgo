@@ -38,6 +38,10 @@ var (
 	// Response builds the SACK. The Assembler keeps the good blocks for the
 	// retry. It wraps fec.ErrUncorrectable.
 	ErrBlocksMissing = fmt.Errorf("confirmed blocks failed CRC-9: %w", fec.ErrUncorrectable)
+	// ErrUnexpectedRetry is returned for a header of a later try (Full
+	// Message Flag 0) that is not a retry of the packet in progress. The
+	// Assembler drops the header and keeps the packet in progress.
+	ErrUnexpectedRetry = errors.New("later try of a packet that is not in progress")
 	// ErrResponseData is returned for C_RDATA blocks of the wrong count or with
 	// a bad CRC.
 	ErrResponseData = errors.New("invalid response data blocks")
