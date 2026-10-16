@@ -17,6 +17,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
@@ -83,6 +84,15 @@ var bitFuncs = map[string]any{
 	},
 	"layer2.VoiceTransmitter.AddFrames": func(frames ...vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AddFrames(frames...)
+	},
+	"internal/bits.Pack": func(src [96]bit.Bit) [12]byte {
+		var dst [12]byte
+		bits.Pack(dst[:], 0, src[:])
+		return dst
+	},
+	"internal/bits.Unpack": func(dst [16]bit.Bit) [16]bit.Bit {
+		bits.Unpack(dst[:], []byte{0xA5, 0x3C}, 0)
+		return dst
 	},
 	"internal/crc.CRC7":                         crc.CRC7,
 	"internal/crc.CRC8":                         crc.CRC8,
@@ -188,7 +198,7 @@ func bitFuncNames(t *testing.T) []string {
 		}
 		rel, _ := filepath.Rel(root, path)
 		if d.IsDir() {
-			if rel == "bit" || rel == filepath.Join("internal", "lowbit") || rel == filepath.Join("vocoder", "codec2") {
+			if rel == "bit" || rel == filepath.Join("internal", "lowbit") || rel == filepath.Join("internal", "fecref") || rel == filepath.Join("vocoder", "codec2") {
 				return filepath.SkipDir
 			}
 			return nil
