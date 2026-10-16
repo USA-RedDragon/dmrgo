@@ -1725,7 +1725,7 @@
       },
       "csbk": {
        "truth": 6,
-       "exact": 5
+       "exact": 3
       },
       "elc": {
        "truth": 6,
@@ -1749,7 +1749,7 @@
       },
       "rate12": {
        "truth": 14,
-       "exact": 9
+       "exact": 8
       },
       "rate34": {
        "truth": 6,
@@ -3425,7 +3425,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 74
+       "exact": 75
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -3559,7 +3559,7 @@
       },
       "rate1": {
        "truth": 3,
-       "exact": 0
+       "exact": 1
       },
       "rate12": {
        "truth": 14,

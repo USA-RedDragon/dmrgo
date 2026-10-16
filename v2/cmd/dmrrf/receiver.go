@@ -182,13 +182,14 @@ type Receiver struct {
 	slots    []slotState
 	first    int64
 	lastAnch int64
-	// apps holds the symbol log-APPs of each slot of slots, four per
-	// symbol, and haves the distance of each symbol from the start of the
-	// trellis run that set them, for the coherent detection. The
-	// discriminator detection finishes each slot at once, so apps holds one
-	// slot and haves none.
-	apps  []float32
-	haves []int16
+	// syms holds the detection of the slots on their way to the tracker,
+	// as many as the gap that the first detection after a lock spans, and
+	// refined that of the slots that a refinement detects again, from
+	// refLo, while refining.
+	syms     symStore
+	refined  symStore
+	refining bool
+	refLo    int64
 	// prior holds the log priors of the digits of each symbol of the slot
 	// that a refinement detects again, from its decoded FEC.
 	prior [slotSymbols * 4]float32
@@ -257,10 +258,12 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	}
 	r.slots = make([]slotState, cfg.LookbackSlots+maxGapSlots+4)
 	if r.opt.Coherent {
-		r.apps = make([]float32, len(r.slots)*slotSymbols*4)
-		r.haves = make([]int16, len(r.slots)*slotSymbols)
+		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots) + 2)
+		if r.opt.RefinePrior > 0 {
+			r.refined = newSymStore(maxGapSlots + 1)
+		}
 	} else {
-		r.apps = make([]float32, slotSymbols*4)
+		r.syms = newSymStore(1)
 	}
 	r.tk = newTracker()
 	if r.opt.SoftFEC {
@@ -568,10 +571,8 @@ func (r *Receiver) slot(j int64) *slotState {
 func (r *Receiver) resetSlot(j int64) *slotState {
 	s := r.slot(j)
 	*s = slotState{index: j, start: r.slotTime(j)}
-	clear(r.appOf(s))
-	if r.haves != nil {
-		clear(r.haveOf(s))
-	}
+	r.syms.clear(r.syms.base(j), slotSymbols, 0)
+	r.syms.own[r.syms.base(j)/slotSymbols] = j
 	return s
 }
 
@@ -581,19 +582,59 @@ func (r *Receiver) slotPos(j int64) int {
 	return int(((j % n) + n) % n)
 }
 
-// appOf returns the symbol log-APPs of slot s.
-func (r *Receiver) appOf(s *slotState) []float32 {
-	if len(r.apps) == slotSymbols*4 {
-		return r.apps
-	}
-	p := r.slotPos(s.index) * slotSymbols * 4
-	return r.apps[p : p+slotSymbols*4]
+// symStore holds, for each symbol of a number of slots, the digit with the
+// highest log-APP, the log-likelihood ratios of its two bits, and the
+// distance from the start of the trellis run that set them.
+type symStore struct {
+	slots int
+	digit []int8
+	llr   []int16
+	have  []int16
+	// own holds the slot whose symbols each place holds.
+	own []int64
 }
 
-// haveOf returns the run distances of the symbols of slot s.
-func (r *Receiver) haveOf(s *slotState) []int16 {
-	p := r.slotPos(s.index) * slotSymbols
-	return r.haves[p : p+slotSymbols]
+// newSymStore returns a store of n slots.
+func newSymStore(n int) symStore {
+	return symStore{slots: n, digit: make([]int8, n*slotSymbols), llr: make([]int16, 2*n*slotSymbols), have: make([]int16, n*slotSymbols),
+		own: make([]int64, n)}
+}
+
+// base returns the store index of the first symbol of slot j, which shares
+// its place with every slot a multiple of slots away.
+func (st *symStore) base(j int64) int {
+	n := int64(st.slots)
+	return int(((j%n)+n)%n) * slotSymbols
+}
+
+// clear resets n symbols from store index p, with run distance have.
+func (st *symStore) clear(p, n int, have int16) {
+	clear(st.digit[p : p+n])
+	clear(st.llr[2*p : 2*(p+n)])
+	for i := p; i < p+n; i++ {
+		st.have[i] = have
+	}
+}
+
+// set stores the four log-APPs a of the symbol at store index p.
+func (st *symStore) set(p int, a []float32) {
+	best := 0
+	for v := 1; v < 4; v++ {
+		if a[v] > a[best] {
+			best = v
+		}
+	}
+	st.digit[p] = int8(best)
+	st.llr[2*p], st.llr[2*p+1] = dibitLLR(a)
+}
+
+// symsOf returns the store that holds slot s and the store index of its
+// first symbol: the refinement store while a refinement detects s again.
+func (r *Receiver) symsOf(s *slotState) (*symStore, int) {
+	if j := s.index; r.refining && j >= r.refLo && j < r.refLo+int64(r.refined.slots) {
+		return &r.refined, int(j-r.refLo) * slotSymbols
+	}
+	return &r.syms, r.syms.base(s.index)
 }
 
 // followStep measures the next slot once its samples and a lookahead have
@@ -840,7 +881,8 @@ func (r *Receiver) finish(s *slotState) {
 		return
 	}
 	if r.opt.Coherent {
-		for _, h := range r.haveOf(s)[cachSymbols:] {
+		st, p := r.symsOf(s)
+		for _, h := range st.have[p+cachSymbols : p+slotSymbols] {
 			if h == noRun {
 				return
 			}
@@ -860,20 +902,13 @@ func (r *Receiver) finish(s *slotState) {
 }
 
 // fill264 sets the hard bits and log-likelihood ratios of rec, burst and
-// CACH, from the symbol APPs of slot s.
+// CACH, from the detected symbols of slot s.
 func (r *Receiver) fill264(s *slotState, rec *slotRec) {
 	var bits [layer2.BurstBits]bit.Bit
-	app := r.appOf(s)
+	st, p := r.symsOf(s)
 	for k := range slotSymbols {
-		best := 0
-		a := app[4*k : 4*k+4]
-		for v := 1; v < 4; v++ {
-			if a[v] > a[best] {
-				best = v
-			}
-		}
-		b0, b1 := dibitOfDigit(best)
-		l0, l1 := dibitLLR(a)
+		b0, b1 := dibitOfDigit(int(st.digit[p+k]))
+		l0, l1 := st.llr[2*(p+k)], st.llr[2*(p+k)+1]
 		if k < cachSymbols {
 			rec.cach[2*k], rec.cach[2*k+1] = b0, b1
 			rec.cachLLR[2*k], rec.cachLLR[2*k+1] = l0, l1
@@ -905,6 +940,24 @@ func satLLR(v float32) int16 {
 		return -32000
 	}
 	return int16(v)
+}
+
+// refine starts a refinement of the slots from lo, which detects them into
+// the refinement store, from their detection on the way to the tracker,
+// and leaves that as it is.
+func (r *Receiver) refine(lo int64) {
+	r.refining, r.refLo = true, lo
+	st := &r.syms
+	for i := range r.refined.slots {
+		j, p := lo+int64(i), i*slotSymbols
+		if q := st.base(j); st.own[q/slotSymbols] == j {
+			copy(r.refined.digit[p:p+slotSymbols], st.digit[q:q+slotSymbols])
+			copy(r.refined.llr[2*p:2*(p+slotSymbols)], st.llr[2*q:2*(q+slotSymbols)])
+			copy(r.refined.have[p:p+slotSymbols], st.have[q:q+slotSymbols])
+		} else {
+			r.refined.clear(p, slotSymbols, noRun)
+		}
+	}
 }
 
 // repairEntry repairs the FEC fields of entry e and, for a voice burst whose
@@ -951,13 +1004,16 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 			s.hasPrior = false
 			return
 		}
+		r.refine(la)
 		r.coherentGap(la, ra, false)
 	} else {
+		r.refine(j)
 		r.coherentBurst(j)
 	}
 	s.hasPrior = false
 	rec := &r.scratchRec
 	r.fill264(s, rec)
+	r.refining = false
 	e.rec.llr, e.rec.cachLLR = rec.llr, rec.cachLLR
 	elc := e.out.Fixed.EmbeddedData()
 	e.out.Data, e.out.Fixed, e.out.FixedCACH = rec.data, rec.data, rec.cach

@@ -85,12 +85,14 @@ func (r *Receiver) discDetect(s *slotState) {
 	t0 := r.symLag(r.symTime(s.index, 0))
 	base := int64(math.Floor(t0))
 	u, du := float32(t0-float64(base)), float32(r.period/slotSymbols/float64(r.chz.discDec))
-	app := r.appOf(s)
+	st, p := r.symsOf(s)
+	var a [4]float32
 	for k := range slotSymbols {
 		x := r.chz.sym.lerpFrom(base, u+float32(k)*du) - dc
-		for d := range 4 {
+		for d := range a {
 			e := x - dev*float32(2*d-3)
-			app[4*k+d] = e * e * g
+			a[d] = e * e * g
 		}
+		st.set(p+k, a[:])
 	}
 }
