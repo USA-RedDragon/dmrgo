@@ -195,22 +195,39 @@ func (r *ring) rotate(rot, step complex64) complex64 {
 	return rot
 }
 
-// interp returns the ring at the fractional channel sample t by a Blackman
-// windowed sinc of sincTaps samples, at the nearest of the phases
-// fractional delays.
-func (r *ring) interp(t float64) complex64 {
+// ringAt returns the ring position of channel sample t as base+u, with u
+// from 0 to 1 at t and base pad ring samples lower, so that the positions
+// of a run of samples from t and up to pad ring samples before it have a
+// non-negative u.
+func (r *ring) ringAt(t float64, pad int) (base int64, u float32) {
 	t /= float64(r.dec)
 	i0 := int64(math.Floor(t))
-	p := int((t-float64(i0))*float64(r.phases) + 0.5)
+	return i0 - int64(pad), float32(t-float64(i0)) + float32(pad)
+}
+
+// interpAt returns the ring at ring position base+u, u at least 0, by a
+// Blackman windowed sinc of sincTaps samples, at the nearest of the phases
+// fractional delays, in single precision.
+func (r *ring) interpAt(base int64, u float32) complex64 {
+	iu := int32(u)
+	p := int((u-float32(iu))*float32(r.phases) + 0.5)
 	taps := r.tab[p*sincTaps : (p+1)*sincTaps]
-	lo := i0 - sincTaps/2 + 1
+	lo := base + int64(iu) - sincTaps/2 + 1
 	var re, im float32
 	if r.q != nil {
 		if k := r.pos(lo); k >= 0 && lo+sincTaps <= r.n&^(qBlock-1) && k+sincTaps <= len(r.ex)*qBlock {
-			for j, w := range taps {
-				v := r.sample(k + j)
-				re += real(v) * w
-				im += imag(v) * w
+			for j := 0; j < sincTaps; {
+				b := (k + j) / qBlock
+				end := min(sincTaps, (b+1)*qBlock-k)
+				var br, bi float32
+				for ; j < end; j++ {
+					w := taps[j]
+					br += float32(r.q[2*(k+j)]) * w
+					bi += float32(r.q[2*(k+j)+1]) * w
+				}
+				g := pow2(int32(r.ex[b]))
+				re += br * g
+				im += bi * g
 			}
 			return complex(re, im)
 		}
@@ -228,6 +245,33 @@ func (r *ring) interp(t float64) complex64 {
 		im += imag(v) * w
 	}
 	return complex(re, im)
+}
+
+// gather writes the samples from first into x, 0 outside the samples the
+// ring holds.
+func (r *ring) gather(first int64, x []complex64) {
+	n := int64(len(x))
+	if r.q == nil || first < 0 || first+n > r.n&^(qBlock-1) {
+		for j := range x {
+			x[j] = r.at(first + int64(j))
+		}
+		return
+	}
+	k := r.pos(first)
+	if k < 0 || k+len(x) > len(r.ex)*qBlock {
+		for j := range x {
+			x[j] = r.at(first + int64(j))
+		}
+		return
+	}
+	for j := 0; j < len(x); {
+		b := (k + j) / qBlock
+		end := min(len(x), (b+1)*qBlock-k)
+		g := pow2(int32(r.ex[b]))
+		for ; j < end; j++ {
+			x[j] = complex(float32(r.q[2*(k+j)])*g, float32(r.q[2*(k+j)+1])*g)
+		}
+	}
 }
 
 // fring is a ring of real samples addressed by absolute sample number.
