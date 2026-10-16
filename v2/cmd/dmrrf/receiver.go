@@ -230,6 +230,8 @@ type Receiver struct {
 	// freqTot holds the anchor scores of the carrier offsets of bestFreq.
 	freqTot []float64
 	h       float64
+	// llrScale is Options.LLRScale, 1 for 0.
+	llrScale float32
 	// OffsetHz is the carrier offset of the last locked stream.
 	OffsetHz float64
 	// DeviationHz is the outer deviation of the last locked stream.
@@ -251,7 +253,10 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 			cfg.LookbackSlots = 8
 		}
 	}
-	r := &Receiver{cfg: cfg, opt: opt, candAt: -1, h: 0.27, doneAt: math.MinInt64}
+	r := &Receiver{cfg: cfg, opt: opt, candAt: -1, h: 0.27, doneAt: math.MinInt64, llrScale: opt.LLRScale}
+	if r.llrScale == 0 {
+		r.llrScale = 1
+	}
 	r.nsrc = r.opt.Sources
 	r.fe = newFrontEnd(cfg.Rate, cfg.Signed)
 	r.wide = make([]complex64, wideChunk)
@@ -292,9 +297,9 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	}
 	r.slots = make([]slotState, cfg.LookbackSlots+maxGapSlots+4)
 	if r.opt.Coherent {
-		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots) + 2)
+		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots)+2, r.llrScale)
 		if r.opt.RefinePrior > 0 || r.opt.DataPasses > 0 {
-			r.refined = newSymStore(maxGapSlots + 1)
+			r.refined = newSymStore(maxGapSlots+1, r.llrScale)
 			r.prior = make([]float32, slotSymbols*4)
 			r.scratchRec, r.known = new(slotRec), new([layer2.BurstBits]bool)
 		}
@@ -302,7 +307,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 			r.data = new(dataPass)
 		}
 	} else {
-		r.syms = newSymStore(1)
+		r.syms = newSymStore(1, 1)
 	}
 	r.tk = newTracker()
 	r.emitFn = r.emit
@@ -733,12 +738,14 @@ type symStore struct {
 	have  []int16
 	// own holds the slot whose symbols each place holds.
 	own []int64
+	// scale multiplies the ratios that set stores.
+	scale float32
 }
 
-// newSymStore returns a store of n slots.
-func newSymStore(n int) symStore {
+// newSymStore returns a store of n slots whose ratios set scales by scale.
+func newSymStore(n int, scale float32) symStore {
 	return symStore{slots: n, digit: make([]int8, n*slotSymbols), llr: make([]int16, 2*n*slotSymbols), have: make([]int16, n*slotSymbols),
-		own: make([]int64, n)}
+		own: make([]int64, n), scale: scale}
 }
 
 // base returns the store index of the first symbol of slot j, which shares
@@ -765,7 +772,7 @@ func (st *symStore) set(p int, a []float32) {
 		}
 	}
 	st.digit[p] = int8(best)
-	st.llr[2*p], st.llr[2*p+1] = dibitLLR(a)
+	st.llr[2*p], st.llr[2*p+1] = dibitLLR(a, st.scale)
 }
 
 // symsOf returns the store that holds slot s and the store index of its
@@ -1072,11 +1079,12 @@ func (r *Receiver) fill264(s *slotState, rec *slotRec) {
 
 // dibitLLR returns the log-likelihood ratios of the two bits of a symbol
 // from its four log-APPs (digits 0 to 3 for symbols -3, -1, +1, +3; dibits
-// 11, 10, 00, 01), positive for bit 0, in units of 1/8, saturated.
-func dibitLLR(a []float32) (int16, int16) {
+// 11, 10, 00, 01), positive for bit 0, times scale, in units of 1/8,
+// saturated.
+func dibitLLR(a []float32, scale float32) (int16, int16) {
 	b0 := max(a[2], a[3]) - max(a[0], a[1])
 	b1 := max(a[1], a[2]) - max(a[0], a[3])
-	return satLLR(b0), satLLR(b1)
+	return satLLR(scale * b0), satLLR(scale * b1)
 }
 
 // satLLR returns v in units of 1/8, saturated to the int16 range, and at

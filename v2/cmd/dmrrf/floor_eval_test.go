@@ -148,7 +148,7 @@ func (e *floorEval) detect(i int, maxlog bool) float64 {
 		a := e.app[4*j : 4*j+4]
 		var l0, l1 int16
 		if maxlog {
-			l0, l1 = dibitLLR(a)
+			l0, l1 = dibitLLR(a, 1)
 		} else {
 			l0 = satLLR(floorLogAdd(a[2], a[3]) - floorLogAdd(a[0], a[1]))
 			l1 = satLLR(floorLogAdd(a[1], a[2]) - floorLogAdd(a[0], a[3]))
