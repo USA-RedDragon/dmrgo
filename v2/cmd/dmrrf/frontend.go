@@ -23,8 +23,9 @@ const (
 // frontEnd turns interleaved 8-bit I/Q at the input rate into complex
 // baseband at basebandRate, flat to wideHz: a removal of the receiver's DC
 // offset, a CIC decimator by an integer factor to at least four times the
-// baseband rate, and a polyphase resampler to the baseband rate. It keeps
-// its state between calls and allocates only in newFrontEnd.
+// baseband rate, and a polyphase resampler to the baseband rate, which
+// input at basebandRate skips. It keeps its state between calls and
+// allocates only in newFrontEnd.
 type frontEnd struct {
 	signed  bool
 	dec     int
@@ -52,6 +53,9 @@ func newFrontEnd(rate float64, signed bool) *frontEnd {
 	f.gain = float32(1 / (255 * math.Pow(float64(dec), cicOrder)))
 	f.dcGain = float32(1 / (dcSeconds * mid))
 	f.dcStart = float32(dcStartSeconds * mid)
+	if f.step == 1 {
+		return f
+	}
 	f.hist = make([]complex64, 2*resampleTaps)
 	f.coef = make([]float32, resamplePhases*resampleTaps)
 	fc := (wideHz + (basebandRate - wideHz)) / 2 / mid
@@ -113,6 +117,12 @@ func (f *frontEnd) process(in []byte, out []complex64) int {
 		g := max(f.dcGain, 1/(float32(f.n)+f.dcStart))
 		f.dc += (v - f.dc) * complex(g, 0)
 		v -= f.dc
+		if f.coef == nil {
+			out[w] = v
+			w++
+			f.n++
+			continue
+		}
 		f.hist[f.head] = v
 		f.hist[f.head+resampleTaps] = v
 		f.head = (f.head + 1) % resampleTaps
