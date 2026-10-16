@@ -189,7 +189,7 @@ func (s *syncSearch) conjOf(p enums.SyncPattern) []complex64 {
 // syncHit is one coherent SYNC correlation.
 type syncHit struct {
 	// Metric is the squared normalized correlation, 0 to 1.
-	Metric float64
+	Metric float32
 	// Data is true for the data SYNC, false for the voice SYNC.
 	Data bool
 	// Source indexes sourceAt.
@@ -223,7 +223,7 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 				ad += real(v) * imag(w)
 			}
 			for k, c := range [2]complex64{complex(ac-bd, bc+ad), complex(ac+bd, bc-ad)} {
-				metric := float64((real(c)*real(c) + imag(c)*imag(c)) / (etot * float32(s.span)))
+				metric := (real(c)*real(c) + imag(c)*imag(c)) / (etot * float32(s.span))
 				if metric > best.Metric {
 					hz := searchHzAt(fi)
 					if k == 1 {

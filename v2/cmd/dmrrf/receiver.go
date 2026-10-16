@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"math/cmplx"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -605,9 +604,7 @@ func (r *Receiver) syncMetricAt(p enums.SyncPattern, e, t0, f float64) float64 {
 	if e == 0 {
 		return 0
 	}
-	w := -2 * math.Pi * f / basebandRate
-	rot := complex64(cmplx.Exp(complex(0, math.Mod(w*t0, 2*math.Pi))))
-	step := complex64(cmplx.Exp(complex(0, w*float64(r.search.dec))))
+	rot, step := turn(-f*t0/basebandRate), turn(-f*float64(r.search.dec)/basebandRate)
 	tpl := r.search.conjOf(p)
 	var c complex64
 	for j, v := range r.corrX {
@@ -645,8 +642,18 @@ func (r *Receiver) resetSlot(j int64) *slotState {
 
 // slotPos returns the position of slot j in the ring of slot states.
 func (r *Receiver) slotPos(j int64) int {
-	n := int64(len(r.slots))
-	return int(((j % n) + n) % n)
+	return floorMod(j, len(r.slots))
+}
+
+// floorMod returns j modulo n, from 0 to n-1. Slot numbers count from the
+// lock of a stream, so j fits 32 bits and a 32-bit CPU divides it as an
+// int instead of in software.
+func floorMod(j int64, n int) int {
+	x := int(j) % n
+	if x < 0 {
+		x += n
+	}
+	return x
 }
 
 // symStore holds, for each symbol of a number of slots, the digit with the
@@ -670,8 +677,7 @@ func newSymStore(n int) symStore {
 // base returns the store index of the first symbol of slot j, which shares
 // its place with every slot a multiple of slots away.
 func (st *symStore) base(j int64) int {
-	n := int64(st.slots)
-	return int(((j%n)+n)%n) * slotSymbols
+	return floorMod(j, st.slots) * slotSymbols
 }
 
 // clear resets n symbols from store index p, with run distance have.
@@ -876,8 +882,14 @@ func (r *Receiver) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 // rotAt returns the rotation that removes the residual carrier at channel
 // sample t.
 func (r *Receiver) rotAt(t float64) complex128 {
-	p := -2 * math.Pi * r.freq * t / basebandRate
-	return complex(math.Cos(p), math.Sin(p))
+	return complex128(turn(-r.freq * t / basebandRate))
+}
+
+// turn returns e^(2*pi*j*c) in single precision, from the fraction of the
+// cycles c.
+func turn(c float64) complex64 {
+	s, co := sincosf(float32(2 * math.Pi * (c - math.Round(c))))
+	return complex(co, s)
 }
 
 // slotEnergy returns the mean power over the burst of slot s.
@@ -891,12 +903,12 @@ func (r *Receiver) slotEnergy(s *slotState) float64 {
 	a := int64(r.symTime(s.index, cachSymbols))
 	a = (a - (a%dec+dec)%dec) / dec
 	n /= ch.dec
-	var e float64
+	var e float32
 	for i := range int64(n) {
 		v := ch.at(a + i)
-		e += float64(real(v)*real(v) + imag(v)*imag(v))
+		e += real(v)*real(v) + imag(v)*imag(v)
 	}
-	return e / float64(n)
+	return float64(e) / float64(n)
 }
 
 // detectUpTo detects the symbols of the slots from r.first to j and hands

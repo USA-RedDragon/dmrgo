@@ -33,20 +33,15 @@ type symRef struct {
 	k    int
 }
 
-// add returns the symbol n symbols after g.
+// add returns the symbol n symbols after g. The division of an int keeps a
+// 64-bit one, which a 32-bit CPU runs in software, out of the detection.
 func (g symRef) add(n int) symRef {
-	x := int64(g.k) + int64(n)
-	s := g.slot + floorDiv(x, slotSymbols)
-	return symRef{slot: s, k: int(x - (s-g.slot)*slotSymbols)}
-}
-
-// floorDiv returns a/b rounded toward minus infinity.
-func floorDiv(a, b int64) int64 {
-	q := a / b
-	if a%b != 0 && (a < 0) != (b < 0) {
+	x := g.k + n
+	q := x / slotSymbols
+	if x%slotSymbols < 0 {
 		q--
 	}
-	return q
+	return symRef{slot: g.slot + int64(q), k: x - q*slotSymbols}
 }
 
 // diff returns the number of symbols from h to g.
