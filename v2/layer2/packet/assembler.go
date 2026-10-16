@@ -146,6 +146,20 @@ func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 	return a.Add(b.Data)
 }
 
+// Lost tells the Assembler that one block burst of the packet in progress
+// was not received, for example because its slot passed without a SYNC on
+// RF. The block counts as a block whose CRC failed, so the last block of
+// an attempt still completes the attempt: an unconfirmed packet returns its
+// Message with ErrMessageCRC, and a confirmed packet returns
+// ErrBlocksMissing, so that Response builds the SACK. Lost does nothing
+// when no packet waits for blocks.
+func (a *Assembler) Lost() (Message, bool, error) {
+	if !a.active || a.count >= a.expect {
+		return Message{}, false, nil
+	}
+	return a.addBlock(block{}, false)
+}
+
 // Add adds a decoded PDU: a *pdu.DataHeader, *pdu.Rate12Data,
 // *pdu.Rate34Data or *pdu.Rate1Data, and ignores other PDUs. done is true
 // when the packet is complete, with its Message; on ErrMessageCRC the
