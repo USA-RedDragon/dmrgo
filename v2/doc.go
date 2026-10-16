@@ -44,10 +44,16 @@
 //
 // The PDUs of package pdu decode with pdu.DecodeX and encode with the Encode
 // method of the PDU. A PDU with its own FEC or CRC, such as a CSBK, Full LC,
-// data header or slot type, reports the result in its FEC field. Raw and
-// fallback fields, such as CSBK.RawPayload, hold their bits most significant
-// bit first. When the field is not a whole number of bytes, the low bits of
-// the last byte are padding and must be 0.
+// data header or slot type, reports the result in its FEC field.
+//
+// Every field of bits that the library takes or returns is packed in bytes
+// in transmit order: the first bit on air is the most significant bit of
+// byte 0. A 264-bit burst is a [33]byte, a 96-bit PDU a [12]byte and a
+// 72-bit vocoder slot a [9]byte. When a field is not a whole number of
+// bytes, the low bits of the last byte are padding: a decode ignores them
+// and an encode sets them to 0. Raw and fallback fields, such as
+// CSBK.RawPayload, hold their bits in the same order, and Encode returns an
+// error when their padding bits are not 0.
 //
 // # Packages
 //

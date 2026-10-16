@@ -58,6 +58,8 @@ func main() {
 
 The program prints `Voice LC Header: call from 3191868 to 9990` and `re-encoded unchanged: true`. An FEC or CRC error does not make `NewBurstFromBytes` fail: `burst.FEC` reports it and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match.
 
+Every field of bits is packed in bytes in transmit order, the first bit on air in the most significant bit of byte 0: a burst is a `[33]byte`, a CSBK a `[12]byte` and a vocoder slot a `[9]byte`.
+
 More in [v2/examples](v2/examples), which run offline on the captures in `v2/layer2/testdata` (`go run -C v2 ./examples/<name>`): [hotspot](v2/examples/hotspot/main.go) (MMDVMHost check and regenerated bursts), [bridge](v2/examples/bridge/main.go) (rewrite a call's talkgroup and source), [scanner](v2/examples/scanner/main.go) (find bursts in a bit stream), [trunking](v2/examples/trunking/main.go) (Tier III CSBKs, MBC and CACH), [data](v2/examples/data/main.go) (packet data and selective retry), [transcoder](v2/examples/transcoder/main.go) (AMBE+2 FEC and Codec2) and [conformance](v2/examples/conformance/main.go) (byte-for-byte re-encode of every capture). [tinygo](v2/examples/tinygo/main.go) decodes and re-encodes a call on a microcontroller follows it with `voice.Receiver` and relays it with `voice.Transmitter` (see [TinyGo](#tinygo)).
 
 ## Features
