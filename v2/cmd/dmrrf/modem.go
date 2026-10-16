@@ -233,23 +233,51 @@ func padToFrames(freq, env []float64) ([]float64, []float64) {
 // tuned frequency and returns signed 8-bit interleaved I/Q at rate, the format
 // hackrf_transfer -t reads.
 func ToIQ(freq, env []float64, rate, offsetHz, level float64) []byte {
-	n := int(float64(len(freq)) * rate / basebandRate)
+	return MixIQ([]Carrier{{Freq: freq, Env: env, OffsetHz: offsetHz}}, rate, level)
+}
+
+// Carrier is one FM carrier of a multi-channel I/Q file: its deviation and
+// envelope at the baseband rate and its offset from the tuned frequency.
+type Carrier struct {
+	Freq, Env []float64
+	OffsetHz  float64
+}
+
+// MixIQ FM-modulates each carrier, sums them and returns signed 8-bit
+// interleaved I/Q at rate, as ToIQ does for one carrier. Each carrier gets
+// level divided by the number of carriers, so the sum never clips. The
+// output is as long as the longest carrier.
+func MixIQ(carriers []Carrier, rate, level float64) []byte {
+	var longest int
+	for _, c := range carriers {
+		longest = max(longest, len(c.Freq))
+	}
+	n := int(float64(longest) * rate / basebandRate)
 	out := make([]byte, 2*n)
-	var phase float64
+	phase := make([]float64, len(carriers))
+	scale := 127 * level / float64(max(len(carriers), 1))
 	for i := range n {
 		pos := float64(i) * basebandRate / rate
 		k := int(pos)
 		frac := pos - float64(k)
-		f, a := freq[k], env[k]
-		if k+1 < len(freq) {
-			f += (freq[k+1] - freq[k]) * frac
-			a += (env[k+1] - env[k]) * frac
+		var re, im float64
+		for j, c := range carriers {
+			f, a := 0.0, 0.0
+			if k < len(c.Freq) {
+				f, a = c.Freq[k], c.Env[k]
+				if k+1 < len(c.Freq) {
+					f += (c.Freq[k+1] - c.Freq[k]) * frac
+					a += (c.Env[k+1] - c.Env[k]) * frac
+				}
+			}
+			phase[j] += 2 * math.Pi * (f + c.OffsetHz) / rate
+			phase[j] = math.Mod(phase[j], 2*math.Pi)
+			amp := scale * a
+			re += amp * math.Cos(phase[j])
+			im += amp * math.Sin(phase[j])
 		}
-		phase += 2 * math.Pi * (f + offsetHz) / rate
-		phase = math.Mod(phase, 2*math.Pi)
-		amp := 127 * level * a
-		out[2*i] = s8(amp * math.Cos(phase))
-		out[2*i+1] = s8(amp * math.Sin(phase))
+		out[2*i] = s8(re)
+		out[2*i+1] = s8(im)
 	}
 	return out
 }
