@@ -164,18 +164,26 @@ func (r *ring) at(i int64) complex64 {
 	return r.buf[i&r.mask]
 }
 
+// first returns the oldest sample the ring holds when full, negative before
+// it fills: a compact ring holds whole blocks.
+func (r *ring) first() int64 {
+	if r.q != nil {
+		return r.n&^(qBlock-1) - int64(r.size())
+	}
+	return r.n - int64(r.size())
+}
+
 // rotate multiplies every sample the ring holds, sample i by
-// rot*step^(i-first) where first is the oldest sample it holds, and
-// returns the product after the newest sample.
-func (r *ring) rotate(rot, step complex64) complex64 {
-	first := max(r.n-int64(r.size()), 0)
+// rot*step^(i-first) where first is max(r.first(), 0).
+func (r *ring) rotate(rot, step complex64) {
+	first := max(r.first(), 0)
 	end := r.n &^ (qBlock - 1)
 	if r.q == nil {
 		for i := first; i < r.n; i++ {
 			r.buf[i&r.mask] *= rot
 			rot *= step
 		}
-		return rot
+		return
 	}
 	var b [qBlock]complex64
 	for i := first; i < end; i += qBlock {
@@ -192,7 +200,6 @@ func (r *ring) rotate(rot, step complex64) complex64 {
 		r.stage[i&(qBlock-1)] *= rot
 		rot *= step
 	}
-	return rot
 }
 
 // ringAt returns the ring position of channel sample t as base+u, with u
@@ -500,7 +507,7 @@ func (c *channelizer) oldest() int64 {
 	if c.disc {
 		return c.n - int64(min(len(c.sym.buf)*c.discDec, (len(c.energy.buf)-1)*energyBin))
 	}
-	return (c.ch.n - int64(c.ch.size())) * int64(c.chDec)
+	return c.ch.first() * int64(c.chDec)
 }
 
 // symAt returns the sym sample of channel sample t as base+u, u from 0 to
@@ -603,7 +610,7 @@ func (c *channelizer) retune(hz float64) {
 		p := math.Mod(w*float64(i), 2*math.Pi)
 		return complex(float32(math.Cos(p)), float32(math.Sin(p)))
 	}
-	first := max(c.ch.n-int64(c.ch.size()), 0)
+	first := max(c.ch.first(), 0)
 	c.ch.rotate(turn(first*int64(c.chDec)-int64(c.delayCh)), turn(int64(c.chDec)))
 	for k := range chanTaps {
 		j := (c.head + k) % chanTaps
