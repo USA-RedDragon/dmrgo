@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"math/cmplx"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -200,7 +201,9 @@ type Receiver struct {
 	// burst again.
 	scratchRec slotRec
 	known      [layer2.BurstBits]bool
-	h          float64
+	// freqTot holds the anchor scores of the carrier offsets of bestFreq.
+	freqTot [64]float64
+	h       float64
 	// OffsetHz is the carrier offset of the last locked stream.
 	OffsetHz float64
 	// DeviationHz is the outer deviation of the last locked stream.
@@ -452,17 +455,19 @@ func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
 		if data {
 			p = dp
 		}
-		var best anchorInfo
-		bestF, bestTau := 0.0, 0.0
+		bestM, bestF, bestTau := 0.0, 0.0, 0.0
 		for tau := -2.0; tau <= 2; tau += 0.25 {
+			r.freq = 0
+			e := r.syncSamples(s, tau)
+			t0 := r.syncStart(s, tau)
 			for f := -lockSpanHz; f <= lockSpanHz; f += 5 {
-				r.freq = f
-				if a := r.syncCorr(p, r.syncSamples(s, tau)); a.metric > best.metric {
-					best, bestF, bestTau = a, f, tau
+				if m := r.syncMetricAt(p, e, t0, f); m > bestM {
+					bestM, bestF, bestTau = m, f, tau
 				}
 			}
 		}
 		r.freq, r.lockFreq = bestF, bestF
+		best := r.syncCorr(p, r.syncSamples(s, bestTau))
 		r.t0 += bestTau
 		r.amp, r.noise = best.amp, best.noise
 	}
@@ -498,15 +503,44 @@ func (r *Receiver) warmFreq(j int64) {
 
 // searchFreq sets the carrier estimate to the frequency, from center-span
 // to center+span in steps of step, with the best anchorScore up to slot j.
+// A wide search first takes steps 20 times as large, then searches one of
+// them around the best.
 func (r *Receiver) searchFreq(j int64, center, span, step float64) {
-	best, bestF := -1.0, r.freq
-	for f := center - span; f <= center+span; f += step {
-		r.freq = f
-		if v := r.anchorScore(j); v > best {
-			best, bestF = v, f
+	if span > 20*step {
+		coarse := 20 * step
+		center, span = r.bestFreq(j, center, span, coarse), coarse
+	}
+	r.freq = r.bestFreq(j, center, span, step)
+}
+
+// bestFreq returns the frequency, from center-span to center+span in steps
+// of step, with the best sum of the SYNC metrics of the anchors from slot 0
+// to j at the timing of the slot fit. It interpolates each anchor once and
+// removes each carrier offset from the interpolated samples.
+func (r *Receiver) bestFreq(j int64, center, span, step float64) float64 {
+	tot := r.freqTot[:int(math.Round(2*span/step))+1]
+	clear(tot)
+	saved := r.freq
+	r.freq = 0
+	for k := int64(0); k <= j; k++ {
+		s := r.slot(k)
+		if s.index != k || !s.anchor {
+			continue
+		}
+		e := r.syncSamples(s, 0)
+		t0 := r.syncStart(s, 0)
+		for i := range tot {
+			tot[i] += r.syncMetricAt(s.a.pattern, e, t0, center-span+float64(i)*step)
 		}
 	}
-	r.freq = bestF
+	r.freq = saved
+	best := 0
+	for i, v := range tot {
+		if v > tot[best] {
+			best = i
+		}
+	}
+	return center - span + float64(best)*step
 }
 
 // anchorScore returns the sum of the SYNC metrics of the anchors from slot
@@ -538,7 +572,7 @@ func (r *Receiver) setH(h float64) {
 func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
 	ch := &r.chz.ch
 	dec := r.search.dec
-	t0 := r.symTime(s.index, syncFirstSym+syncEdge) + tau - float64(r.search.sps/2*dec)
+	t0 := r.syncStart(s, tau)
 	rot, step := complex64(r.rotAt(t0)), complex64(r.rotAt(float64(dec)))
 	base, u := ch.ringAt(t0, 0)
 	var e float32
@@ -549,6 +583,31 @@ func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
 		e += real(v)*real(v) + imag(v)*imag(v)
 	}
 	return float64(e)
+}
+
+// syncStart returns the channel sample of the first sample that
+// syncSamples interpolates.
+func (r *Receiver) syncStart(s *slotState, tau float64) float64 {
+	return r.symTime(s.index, syncFirstSym+syncEdge) + tau - float64(r.search.sps/2*r.search.dec)
+}
+
+// syncMetricAt returns the SYNC metric of pattern p, as syncCorr, over
+// r.corrX, interpolated without the carrier from channel sample t0 and of
+// energy e, with the carrier at offset f removed.
+func (r *Receiver) syncMetricAt(p enums.SyncPattern, e, t0, f float64) float64 {
+	if e == 0 {
+		return 0
+	}
+	w := -2 * math.Pi * f / basebandRate
+	rot := complex64(cmplx.Exp(complex(0, math.Mod(w*t0, 2*math.Pi))))
+	step := complex64(cmplx.Exp(complex(0, w*float64(r.search.dec))))
+	tpl := r.search.conjOf(p)
+	var c complex64
+	for j, v := range r.corrX {
+		c += v * rot * tpl[j]
+		rot *= step
+	}
+	return float64(real(c)*real(c)+imag(c)*imag(c)) / (e * float64(r.search.span))
 }
 
 // slotTime returns the channel sample of the center of the first CACH
