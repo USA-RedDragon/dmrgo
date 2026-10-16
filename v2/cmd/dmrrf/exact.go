@@ -5,10 +5,9 @@ import "math"
 // Layout of the exact-phase trellis.
 const (
 	// phaseStates is the number of carrier phases of the exact-phase
-	// trellis: a symbol a turns the phase by phaseStep*a of them, which is
-	// 0.27*pi*a.
+	// trellis by default: a symbol a turns the phase by 27*a of them, which
+	// is 0.27*pi*a.
 	phaseStates = 200
-	phaseStep   = 27
 	// driftPenalty is the cost, in nats, of a step of one phase state.
 	driftPenalty = 3
 	// exactBeam is how far under the best state a state can be and still
@@ -21,20 +20,21 @@ const (
 )
 
 // xtrellis is a max-log BCJR detector over the windows of a cpmModel and
-// the carrier phase: its state is the window of 2d symbols and one of
-// phaseStates phases, so paths merge only with the same phase. The
-// modulation index must be 0.27. Its buffers hold up to maxSteps symbol
-// intervals.
+// the carrier phase: its state is the window of 2d symbols and one of np
+// phases, so paths merge only with the same phase. A symbol a turns the
+// phase by step*a phases, the nearest to 0.27*pi*a. Its buffers hold up
+// to maxSteps symbol intervals.
 type xtrellis struct {
 	m        *cpmModel
 	maxSteps int
+	np, step int
 	alpha    []float32
 	beta     []float32
 	next     []float32
 	corr     []complex64
 	top      []float32
 	beam     []float32
-	cos, sin [phaseStates]float32
+	cos, sin []float32
 	// off holds the phase states that each leaving symbol digit turns.
 	off [4]int
 	// lp and slp hold the digit priors as in trellis.
@@ -42,22 +42,23 @@ type xtrellis struct {
 	slp []float32
 }
 
-// newXTrellis returns an exact-phase trellis over model m for runs of up to
-// maxSteps symbol intervals.
-func newXTrellis(m *cpmModel, maxSteps int) *xtrellis {
-	n := m.states * phaseStates
+// newXTrellis returns an exact-phase trellis over model m with np carrier
+// phases for runs of up to maxSteps symbol intervals.
+func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
+	n := m.states * np
 	t := &xtrellis{
-		m: m, maxSteps: maxSteps,
+		m: m, maxSteps: maxSteps, np: np, step: int(math.Round(0.135 * float64(np))),
 		alpha: make([]float32, (maxSteps+1)*n), beta: make([]float32, n), next: make([]float32, n),
 		corr: make([]complex64, maxSteps*m.windows), top: make([]float32, maxSteps+1), beam: make([]float32, maxSteps),
+		cos: make([]float32, np), sin: make([]float32, np),
 		lp: make([]float32, 4*maxSteps), slp: make([]float32, 8*m.d),
 	}
-	for p := range phaseStates {
-		t.cos[p] = float32(math.Cos(2 * math.Pi * float64(p) / phaseStates))
-		t.sin[p] = float32(math.Sin(2 * math.Pi * float64(p) / phaseStates))
+	for p := range np {
+		t.cos[p] = float32(math.Cos(2 * math.Pi * float64(p) / float64(np)))
+		t.sin[p] = float32(math.Sin(2 * math.Pi * float64(p) / float64(np)))
 	}
 	for v := range t.off {
-		t.off[v] = phaseAfter(0, v)
+		t.off[v] = t.phaseAfter(0, v)
 	}
 	return t
 }
@@ -103,8 +104,8 @@ func (t *xtrellis) backward(src, beta, dst, cos, sin []float32, re, im, bonus, t
 
 // phaseAfter returns the phase state after symbol digit v leaves the window
 // at phase p.
-func phaseAfter(p, v int) int {
-	return ((p+phaseStep*(2*v-3))%phaseStates + phaseStates) % phaseStates
+func (t *xtrellis) phaseAfter(p, v int) int {
+	return ((p+t.step*(2*v-3))%t.np + t.np) % t.np
 }
 
 // run detects as trellis.run does, with the carrier phase rot0 before
@@ -113,7 +114,8 @@ func phaseAfter(p, v int) int {
 func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa float32, app []float32) {
 	m := t.m
 	sps, ns := m.sps, m.states
-	n := ns * phaseStates
+	np := t.np
+	n := ns * np
 	shift := 4 * m.d
 	mask := ns - 1
 	alpha := t.alpha[:n]
@@ -123,8 +125,8 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		for i := range 2 * m.d {
 			a += t.slp[4*i+(s>>(2*(2*m.d-1-i)))&3]
 		}
-		for p := range phaseStates {
-			alpha[s*phaseStates+p] = a - kappa*(1-t.cos[p])
+		for p := range np {
+			alpha[s*np+p] = a - kappa*(1-t.cos[p])
 		}
 		t.top[0] = max(t.top[0], a)
 	}
@@ -154,11 +156,11 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			s, s2 := w>>2, w&mask
 			re, im := real(corr[w]), imag(corr[w])
 			bonus := lp[w&3]
-			src := alpha[s*phaseStates : (s+1)*phaseStates]
-			dst := next[s2*phaseStates : (s2+1)*phaseStates]
+			src := alpha[s*np : (s+1)*np]
+			dst := next[s2*np : (s2+1)*np]
 			off := t.off[w>>shift]
-			top = t.forward(src[:phaseStates-off], dst[off:], t.cos[:phaseStates-off], t.sin[:phaseStates-off], re, im, bonus, thr, top)
-			top = t.forward(src[phaseStates-off:], dst[:off], t.cos[phaseStates-off:], t.sin[phaseStates-off:], re, im, bonus, thr, top)
+			top = t.forward(src[:np-off], dst[off:], t.cos[:np-off], t.sin[:np-off], re, im, bonus, thr, top)
+			top = t.forward(src[np-off:], dst[:off], t.cos[np-off:], t.sin[np-off:], re, im, bonus, thr, top)
 		}
 		t.top[k+1] = top
 		t.drift(next, ns)
@@ -183,13 +185,13 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			s, s2 := w>>2, w&mask
 			re, im := real(corr[w]), imag(corr[w])
 			bonus := lp[w&3]
-			src := alpha[s*phaseStates : (s+1)*phaseStates]
-			bsrc := beta[s2*phaseStates : (s2+1)*phaseStates]
-			dst := t.next[s*phaseStates : (s+1)*phaseStates]
+			src := alpha[s*np : (s+1)*np]
+			bsrc := beta[s2*np : (s2+1)*np]
+			dst := t.next[s*np : (s+1)*np]
 			off := t.off[w>>shift]
 			best := a[w&3]
-			best = t.backward(src[:phaseStates-off], bsrc[off:], dst[:phaseStates-off], t.cos[:phaseStates-off], t.sin[:phaseStates-off], re, im, bonus, thr, best)
-			best = t.backward(src[phaseStates-off:], bsrc[:off], dst[phaseStates-off:], t.cos[phaseStates-off:], t.sin[phaseStates-off:], re, im, bonus, thr, best)
+			best = t.backward(src[:np-off], bsrc[off:], dst[:np-off], t.cos[:np-off], t.sin[:np-off], re, im, bonus, thr, best)
+			best = t.backward(src[np-off:], bsrc[:off], dst[np-off:], t.cos[np-off:], t.sin[np-off:], re, im, bonus, thr, best)
 			a[w&3] = best
 		}
 		beta, t.next = t.next, beta
@@ -203,12 +205,12 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 // to one phase state per symbol.
 func (t *xtrellis) drift(m []float32, ns int) {
 	for s := range ns {
-		b := m[s*phaseStates : (s+1)*phaseStates]
-		first, prev := b[0], b[phaseStates-1]
-		for p := range phaseStates {
+		b := m[s*t.np : (s+1)*t.np]
+		first, prev := b[0], b[t.np-1]
+		for p := range t.np {
 			cur := b[p]
 			nxt := first
-			if p+1 < phaseStates {
+			if p+1 < t.np {
 				nxt = b[p+1]
 			}
 			b[p] = max(cur, max(prev, nxt)-driftPenalty)
@@ -220,7 +222,7 @@ func (t *xtrellis) drift(m []float32, ns int) {
 // best returns the highest path metric at the end of the last run of that
 // many steps.
 func (t *xtrellis) best(steps int) float32 {
-	n := t.m.states * phaseStates
+	n := t.m.states * t.np
 	b := negInf
 	for _, v := range t.alpha[steps*n : (steps+1)*n] {
 		b = max(b, v)

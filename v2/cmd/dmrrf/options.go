@@ -16,6 +16,10 @@ type Options struct {
 	// ExactPhase carries the carrier phase in the trellis state, so that
 	// paths merge only with the same phase, instead of with each survivor.
 	ExactPhase bool
+	// PhaseStates is the number of carrier phases of the ExactPhase
+	// trellis; 0 means 200, the exact count for h = 0.27. Fewer phases
+	// round the phase turn of each symbol and cost proportionally less.
+	PhaseStates int
 	// PSPGain is the gain of the phase tracking of each trellis survivor.
 	PSPGain float32
 	// KnownPrior is the log prior, in nats, of the expected symbols of the
@@ -54,7 +58,7 @@ func TierOptions(t Tier) Options {
 	case TierCoherent:
 		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior = true, 1, 5, 0.12, true, 20
 	case TierExact:
-		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior = true, 1, true, true, 20
+		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior = true, 1, true, 52, true, 20
 	case TierMax:
 		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior = true, 2, true, true, 20
 	}
