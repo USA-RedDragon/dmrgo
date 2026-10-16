@@ -20,8 +20,8 @@ const (
 	// TierCoherent detects the symbols coherently with a trellis over a
 	// window of three symbols that carries the carrier phase with each
 	// survivor, at 5 samples per symbol, and detects each voice burst
-	// again with the bits that its FEC fixed. It fits a Cortex-M4F class
-	// microcontroller.
+	// again with the bits that its FEC fixed. It needs about three times
+	// the cycles of a 168 MHz Cortex-M4F.
 	TierCoherent
 	// TierExact detects over a window of three symbols with one of 52
 	// carrier phases in the trellis state, and detects each voice burst
