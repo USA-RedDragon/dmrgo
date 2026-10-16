@@ -32,11 +32,31 @@ type slotRec struct {
 	bs      bool
 	src     layer2.SyncSource
 	data    layer2.RawBurst
-	llr     [layer2.BurstBits]int16
+	llr     llr8
 	cachLLR [layer2.CACHBits]int16
 	cach    [layer2.CACHBits]bit.Bit
 	anchor  enums.SyncPattern
 	stream  int
+}
+
+// llr8 holds the log-likelihood ratios of a burst as int8 multiples of 1/4,
+// saturated at about 32: the soft decoders take ratios in units of 1/8, and
+// at 1/4 with that limit the sweep of every tier stays the same, at half
+// the bytes.
+type llr8 [layer2.BurstBits]int8
+
+// set stores the ratios of v.
+func (l *llr8) set(v *[layer2.BurstBits]int16) {
+	for i, x := range v {
+		l[i] = int8(max(min((int32(x)+1)>>1, math.MaxInt8), math.MinInt8))
+	}
+}
+
+// get writes the stored ratios into v.
+func (l *llr8) get(v *[layer2.BurstBits]int16) {
+	for i, q := range l {
+		v[i] = int16(q) * 2
+	}
 }
 
 // trackEntry is a slot waiting in the tracker's queue.

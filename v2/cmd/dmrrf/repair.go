@@ -13,6 +13,8 @@ type repairer struct {
 	soft   *softDecoder
 	checks [16]func([12]byte) bool
 	cur    [4][embBits]int16
+	// llr holds the ratios of the burst under repair.
+	llr    [layer2.BurstBits]int16
 	sum    [4][embBits]int16
 	bursts [4]layer2.RawBurst
 }
@@ -52,7 +54,8 @@ func (p *repairer) repair(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	if !out.HasFixed {
 		out.Fixed, out.FixedCACH, out.HasFixed = out.Data, out.CACH, true
 	}
-	llr := &e.rec.llr
+	e.rec.llr.get(&p.llr)
+	llr := &p.llr
 	_, kind, known := layer2.SyncSourceOf(out.Sync)
 	switch {
 	case out.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
@@ -125,7 +128,8 @@ func (p *repairer) embeddedLC(c *chanTrack, es *[4]*trackEntry) {
 		return
 	}
 	for i, e := range es {
-		copy(p.cur[i][:], e.rec.llr[embFirstBit:embFirstBit+embBits])
+		e.rec.llr.get(&p.llr)
+		copy(p.cur[i][:], p.llr[embFirstBit:embFirstBit+embBits])
 		if !e.out.HasFixed {
 			e.out.Fixed, e.out.FixedCACH, e.out.HasFixed = e.out.Data, e.out.CACH, true
 		}
