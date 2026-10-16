@@ -11,11 +11,16 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
+
+// registerOnce registers the codec once per test binary, as a program does
+// at startup.
+var registerOnce sync.Once
 
 func allModes() []Mode { return []Mode{Mode2400, Mode3200} }
 
@@ -116,7 +121,7 @@ func TestNew(t *testing.T) {
 func TestRegistered(t *testing.T) {
 	t.Parallel()
 
-	vocoder.Register(Name, NewFactory(Config{}))
+	registerOnce.Do(func() { vocoder.Register(Name, NewFactory(Config{})) })
 	c, err := vocoder.New(Name)
 	if err != nil {
 		t.Fatal(err)
