@@ -71,7 +71,7 @@ func search(stream []byte, n, start, threshold int) (m Match, ok bool) {
 		threshold = layer2.DefaultSyncThreshold
 	}
 	start = max(start, 0)
-	if start+SyncBits > n {
+	if start > n-SyncBits {
 		return Match{}, false
 	}
 	const mask = 1<<SyncBits - 1
