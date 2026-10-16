@@ -62,16 +62,6 @@ func (s *MotorolaRadioCheckPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *MotorolaRadioCheckPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *MotorolaRadioCheckPDU) String() string {
 	return fmt.Sprintf("MotorolaRadioCheckPDU{ Reserved: %d, Answer: %t, Reserved2: %d, RequesterAddress: %d, CheckedAddress: %d }", s.Reserved, s.Answer, s.Reserved2, s.RequesterAddress, s.CheckedAddress)
 }
@@ -123,16 +113,6 @@ func (s *MotorolaCallAlertPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *MotorolaCallAlertPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *MotorolaCallAlertPDU) String() string {
 	return fmt.Sprintf("MotorolaCallAlertPDU{ Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.TargetAddress, s.SourceAddress)
 }
@@ -182,16 +162,6 @@ func (s *MotorolaCallAlertAckPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *MotorolaCallAlertAckPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *MotorolaCallAlertAckPDU) String() string {

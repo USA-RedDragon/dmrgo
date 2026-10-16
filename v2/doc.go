@@ -34,7 +34,7 @@
 // except a decode that returns two joined errors and errors for programmer
 // mistakes. A call that returns a fresh slice, string or payload struct by
 // contract has a form that does not allocate, such as pdu.DecodeCSBKInto for
-// pdu.DecodeCSBK, Encode for EncodeBits and the Append forms. A reused
+// pdu.DecodeCSBK and the Append forms. A reused
 // layer2.Burst, or a copy of it, keeps its decoded Data and the payload
 // structs that Data points to until the next decode into it. This holds
 // with gc and with TinyGo at the default stack size of a microcontroller

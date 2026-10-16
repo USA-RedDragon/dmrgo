@@ -81,16 +81,6 @@ func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *BSOutboundActivationPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *BSOutboundActivationPDU) String() string {
 	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %d, SourceAddress: %d }", s.Reserved, s.BSAddress, s.SourceAddress)
 }
@@ -148,16 +138,6 @@ func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *UnitToUnitVoiceServiceRequestPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %s, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.Reserved, s.TargetAddress, s.SourceAddress)
 }
@@ -213,16 +193,6 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) 
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *UnitToUnitVoiceServiceAnswerResponsePDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
@@ -289,16 +259,6 @@ func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *NegativeAcknowledgementPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *NegativeAcknowledgementPDU) String() string {
 	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %d, TargetAddress: %d }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
 }
@@ -359,16 +319,6 @@ func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *PreamblePDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *PreamblePDU) String() string {
@@ -456,16 +406,6 @@ func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *ChannelTimingPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *ChannelTimingPDU) String() string {
 	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %d, Generation: %d, LeaderIdentifier: %d, NewLeader: %t, LeaderDynamicIdentifier: %d, ChannelTimingOp1: %t, SourceIdentifier: %d, Reserved: %t, SourceDynamicIdentifier: %d, ChannelTimingOp0: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp1, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp0)
 }
@@ -534,16 +474,6 @@ func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *PrivateVoiceGrantPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *PrivateVoiceGrantPDU) String() string {
@@ -616,16 +546,6 @@ func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *TalkgroupVoiceGrantPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *TalkgroupVoiceGrantPDU) String() string {
 	return fmt.Sprintf("TalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -694,16 +614,6 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *BroadcastTalkgroupVoiceGrantPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
@@ -776,16 +686,6 @@ func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *PrivateDataGrantPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *PrivateDataGrantPDU) String() string {
 	return fmt.Sprintf("PrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -854,16 +754,6 @@ func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *TalkgroupDataGrantPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *TalkgroupDataGrantPDU) String() string {
@@ -936,16 +826,6 @@ func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *DuplexPrivateVoiceGrantPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *DuplexPrivateVoiceGrantPDU) String() string {
 	return fmt.Sprintf("DuplexPrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
@@ -1014,16 +894,6 @@ func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *DuplexPrivateDataGrantPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *DuplexPrivateDataGrantPDU) String() string {
@@ -1096,16 +966,6 @@ func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *PrivateDataGrantMultiItemPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *PrivateDataGrantMultiItemPDU) String() string {
 	return fmt.Sprintf("PrivateDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -1174,16 +1034,6 @@ func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *TalkgroupDataGrantMultiItemPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *TalkgroupDataGrantMultiItemPDU) String() string {
@@ -1263,16 +1113,6 @@ func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *MovePDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *MovePDU) String() string {
@@ -1369,16 +1209,6 @@ func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *AlohaPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *AlohaPDU) String() string {
 	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %d }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
 }
@@ -1442,16 +1272,6 @@ func (s *BroadcastPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *BroadcastPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *BroadcastPDU) String() string {
@@ -1521,16 +1341,6 @@ func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *ClearPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *ClearPDU) String() string {
 	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
@@ -1592,16 +1402,6 @@ func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *ProtectPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *ProtectPDU) String() string {
@@ -1678,16 +1478,6 @@ func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *AhoyPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *AhoyPDU) String() string {
 	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, GroupIndividual: %t, AppendedBlocks: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.GroupIndividual, s.AppendedBlocks, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
@@ -1746,16 +1536,6 @@ func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *AckOutboundPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *AckOutboundPDU) String() string {
@@ -1818,16 +1598,6 @@ func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *AckInboundPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *AckInboundPDU) String() string {
 	return fmt.Sprintf("AckInboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -1888,16 +1658,6 @@ func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *AckOutboundPayloadPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *AckOutboundPayloadPDU) String() string {
 	return fmt.Sprintf("AckOutboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -1956,16 +1716,6 @@ func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *AckInboundPayloadPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *AckInboundPayloadPDU) String() string {
@@ -2032,16 +1782,6 @@ func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *RandomAccessPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *RandomAccessPDU) String() string {
@@ -2115,16 +1855,6 @@ func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *AckvitationPDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *AckvitationPDU) String() string {
 	return fmt.Sprintf("AckvitationPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, Reserved: %d, UAB: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.Reserved, s.UAB, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
@@ -2186,16 +1916,6 @@ func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *MaintenancePDU) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *MaintenancePDU) String() string {
@@ -2873,16 +2593,6 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *CSBK) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *CSBK) String() string {

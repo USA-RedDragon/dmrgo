@@ -407,17 +407,6 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 	)
 }
 
-func TestEncodeBitsWrapsEncode(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type T struct {
-	A uint8 `+"`dmr:\"bits:0-7\"`"+`
-}`)
-	assertContains(t, out,
-		"func (s *T) EncodeBits() ([]bit.Bit, error) {\n\tbits, err := s.Encode()\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn bits[:], nil\n}",
-	)
-}
-
 func TestSubPDUDecodeIsUnexported(t *testing.T) {
 	t.Parallel()
 

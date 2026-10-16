@@ -317,16 +317,6 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *FullLinkControl) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *FullLinkControl) String() string {
 	_ret := "FullLinkControl{ "
 	_ret += fmt.Sprintf("BurstDataType: %v, ProtectFlag: %t, Reserved: %t, FLCO: %s, FID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.BurstDataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
@@ -401,16 +391,6 @@ func (s *FLCGroupVoice) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *FLCGroupVoice) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *FLCGroupVoice) String() string {
 	return fmt.Sprintf("FLCGroupVoice{ ServiceOptions: %s, GroupAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.GroupAddress, s.SourceAddress)
 }
@@ -464,16 +444,6 @@ func (s *FLCUnitToUnit) Encode() ([56]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *FLCUnitToUnit) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *FLCUnitToUnit) String() string {
@@ -537,16 +507,6 @@ func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *FLCGPSInfo) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *FLCGPSInfo) String() string {
 	return fmt.Sprintf("FLCGPSInfo{ Reserved: %d, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, s.PositionError, s.Longitude, s.Latitude)
 }
@@ -600,16 +560,6 @@ func (s *FLCTalkerAliasHeader) Encode() ([56]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *FLCTalkerAliasHeader) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
-}
-
 func (s *FLCTalkerAliasHeader) String() string {
 	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasData: %d }", s.TalkerAliasDataFormat, s.TalkerAliasDataLength, s.TalkerAliasData)
 }
@@ -641,16 +591,6 @@ func (s *FLCTalkerAliasBlock) Encode() ([56]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *FLCTalkerAliasBlock) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *FLCTalkerAliasBlock) String() string {
@@ -723,16 +663,6 @@ func (s *FLCTerminatorDataLinkControl) Encode() ([56]bit.Bit, error) {
 		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
-}
-
-// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
-// and the error of Encode. It allocates the slice; Encode does not.
-func (s *FLCTerminatorDataLinkControl) EncodeBits() ([]bit.Bit, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return nil, err
-	}
-	return bits[:], nil
 }
 
 func (s *FLCTerminatorDataLinkControl) String() string {

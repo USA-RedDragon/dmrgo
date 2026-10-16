@@ -801,15 +801,8 @@ func encodeData(d Data, dataType enums.DataType) ([25]byte, error) {
 		coded, err = e.Encode()
 		packBits(info[:], coded[:])
 		n = len(coded)
-	case *pdu.PRFill:
-		coded := pdu.PRFillBits()
-		packBits(info[:], coded[:])
-		n = len(coded)
 	default:
-		var coded []bit.Bit
-		coded, err = d.EncodeBits()
-		n = len(coded)
-		packBits(info[:], coded[:min(n, 196)])
+		return info, errNoEncode
 	}
 	if err != nil {
 		return info, newWrappedError("cannot encode data", err)
