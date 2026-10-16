@@ -11,13 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// LCSSForPosition returns pos.LCSS().
-//
-// Deprecated: use enums.VoiceBurstType.LCSS.
-func LCSSForPosition(pos enums.VoiceBurstType) (lcss enums.LCSS, ok bool) {
-	return pos.LCSS()
-}
-
 // voiceLCHeaderMask is the Voice LC Header Data Type CRC Mask octet (ETSI
 // TS 102 361-1 Table B.21).
 const voiceLCHeaderMask = 0x96
