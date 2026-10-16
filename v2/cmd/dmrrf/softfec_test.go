@@ -783,3 +783,24 @@ func BenchmarkSoftNewDecoder(b *testing.B) {
 		newTestSoftDecoder(b)
 	}
 }
+
+// TestSoftAMBEScramble checks the C1 scrambling mask of every C0 info word
+// against the C1 bits of the burst that SetAMBEFrames makes of it.
+func TestSoftAMBEScramble(t *testing.T) {
+	t.Parallel()
+	a, err := newSoftAMBE()
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := &a.slot[0].c1
+	enc := softAMBEEncoder(0, 0)
+	for v := range uint32(1 << softAMBEC0) {
+		img, err := enc(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := a.pn(v), softMask(img, c.pos[:c.n]); got != want {
+			t.Fatalf("C0 %#x: mask %#x, want %#x", v, got, want)
+		}
+	}
+}
