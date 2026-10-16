@@ -388,6 +388,11 @@ func (r *Receiver) searchStep() bool {
 	for {
 		if !r.opt.Coherent {
 			base, u := r.chz.symAt(r.searchAt)
+			if u != 0 {
+				if b, v := r.chz.symAt(r.searchAt + 1); v == 0 {
+					r.searchAt, base, u = r.searchAt+1, b, v
+				}
+			}
 			step := r.chz.symStep()
 			if base+int64(syncSymbols*step)+2 >= r.chz.sym.n {
 				return false
