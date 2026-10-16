@@ -51,7 +51,7 @@ func TestTalkerAlias_RoundTrip(t *testing.T) {
 		if len(lcs) != tt.blocks+1 {
 			t.Errorf("%q: %d LCs, want %d", tt.alias, len(lcs), tt.blocks+1)
 		}
-		var a pdu.TalkerAliasAssembler
+		var a, b, c pdu.TalkerAliasAssembler
 		var got string
 		var done bool
 		for i := len(lcs) - 1; i >= 0; i-- {
@@ -62,6 +62,12 @@ func TestTalkerAlias_RoundTrip(t *testing.T) {
 			}
 			if ok {
 				got, done = alias, true
+			}
+			var text [pdu.TalkerAliasMaxText]byte
+			n, okInto, errInto := b.AddInto(&text, &rx)
+			appended, okAppend, errAppend := c.AppendAdd([]byte("x"), &rx)
+			if okInto != ok || errInto != nil || string(text[:n]) != alias || okAppend != ok || errAppend != nil || string(appended) != "x"+alias {
+				t.Errorf("%q: AddInto gives %q %v %v and AppendAdd %q %v %v, want %q %v", tt.alias, text[:n], okInto, errInto, appended, okAppend, errAppend, alias, ok)
 			}
 		}
 		if !done || got != tt.alias {
@@ -154,6 +160,9 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	bad.TalkerAliasData = 0xC3 << 40
 	if _, err := pdu.TalkerAlias(&bad); err == nil {
 		t.Error("invalid UTF-8 accepted")
+	}
+	if got, err := pdu.AppendTalkerAlias([]byte("x"), &bad); !errors.Is(err, pdu.ErrTalkerAliasInvalidUTF8) || string(got) != "x\xc3" {
+		t.Errorf("AppendTalkerAlias of invalid UTF-8: %q, %v", got, err)
 	}
 	var a pdu.TalkerAliasAssembler
 	if _, ok, err := a.Add(&pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser}); ok || err != nil {
