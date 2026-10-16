@@ -12,10 +12,19 @@ type ColorCode uint8
 // is above 15.
 func NewColorCode(v uint8) (ColorCode, error) {
 	if v > 15 {
-		return 0, &ColorCodeError{Value: v}
+		return 0, &colorCodeErrors[v-16]
 	}
 	return ColorCode(v), nil
 }
+
+// colorCodeErrors holds the *ColorCodeError of each value above 15, so that
+// NewColorCode does not allocate.
+var colorCodeErrors = func() (t [256 - 16]ColorCodeError) {
+	for i := range t {
+		t[i].Value = uint8(i + 16)
+	}
+	return t
+}()
 
 // ColorCodeError is the error of NewColorCode for a value that does not fit
 // in 4 bits.
@@ -24,6 +33,7 @@ type ColorCodeError struct {
 	Value uint8
 }
 
+// Error returns the message of e. It allocates the message.
 func (e *ColorCodeError) Error() string {
 	return fmt.Sprintf("color code %d does not fit in 4 bits", e.Value)
 }
