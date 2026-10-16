@@ -1,6 +1,6 @@
 # dmrgo
 
-[![go.mod version](https://img.shields.io/github/go-mod/go-version/USA-RedDragon/dmrgo.svg?filename=v2/go.mod)](https://github.com/USA-RedDragon/dmrgo) [![coverage](https://raw.githubusercontent.com/USA-RedDragon/dmrgo/main/.github/badges/coverage-v2.svg)](https://github.com/USA-RedDragon/dmrgo/actions/workflows/test.yaml) [![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE.md)
+[![go.mod version](https://img.shields.io/github/go-mod/go-version/USA-RedDragon/dmrgo.svg?filename=v2/go.mod)](https://github.com/USA-RedDragon/dmrgo) [![coverage](https://raw.githubusercontent.com/USA-RedDragon/dmrgo/main/.github/badges/coverage-v2.svg)](https://github.com/USA-RedDragon/dmrgo/actions/workflows/test.yaml) [![License](https://badgen.net/github/license/USA-RedDragon/dmrgo)](https://github.com/USA-RedDragon/dmrgo/blob/main/LICENSE)
 
 Decode and encode DMR (Digital Mobile Radio) bursts and PDUs as defined in [ETSI TS 102 361](https://www.etsi.org/standards) parts 1 to 4.
 
