@@ -506,7 +506,7 @@ func collectVocoder(d digests) {
 		d.add("ambe/decode", "%v %v %+v", slot, unpack(f[:], 49), res)
 		var fr [49]unpacked.Bit
 		randBits(r, fr[:])
-		enc := vocoder.EncodeAMBE72(vocoder.AMBEFrame(pack(fr[:])))
+		enc, _ := vocoder.EncodeAMBE72(vocoder.AMBEFrame(pack(fr[:])))
 		corrupt2 := enc
 		for range n % 6 {
 			j := r.Intn(72)

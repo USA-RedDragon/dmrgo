@@ -384,9 +384,14 @@ func (t *Transmitter) extra(i int) *pdu.FullLinkControl {
 }
 
 // Frame queues one AMBE+2 frame. It returns ErrQueueFull when Room is 0,
-// ErrTimedOut after T_TO, and ErrNotActive when no call takes voice.
+// ErrTimedOut after T_TO, ErrNotActive when no call takes voice, and the
+// errors of vocoder.EncodeAMBE72.
 func (t *Transmitter) Frame(f vocoder.AMBEFrame) error {
-	return t.Slot(vocoder.EncodeAMBE72(f))
+	slot, err := vocoder.EncodeAMBE72(f)
+	if err != nil {
+		return err
+	}
+	return t.Slot(slot)
 }
 
 // Frames queues AMBE+2 frames as Frame does. On an error the frames

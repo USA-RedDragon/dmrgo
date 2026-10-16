@@ -287,7 +287,7 @@ func TestAllocsVocoder(t *testing.T) {
 			var frames [3]vocoder.AMBEFrame
 			for j := range frames {
 				frames[j], _ = vocoder.DecodeAMBE72(slots[i+j])
-				_ = vocoder.EncodeAMBE72(frames[j])
+				_, _ = vocoder.EncodeAMBE72(frames[j])
 			}
 			payload := vocoder.PackAMBEVoice(frames)
 			_ = vocoder.UnpackAMBEVoice(payload)

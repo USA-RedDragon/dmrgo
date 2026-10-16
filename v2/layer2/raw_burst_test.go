@@ -1,10 +1,12 @@
 package layer2_test
 
 import (
+	"errors"
 	"math/rand"
 	"path/filepath"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -359,8 +361,9 @@ func TestBuildDataBurst_Rejects(t *testing.T) {
 	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeRate1, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Rate 1 accepted")
 	}
-	if r := must(layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 0x17, layer2.SyncSourceBS)); r.SlotType().ColorCode != 7 {
-		t.Errorf("color code 0x17 gives %d, want the low 4 bits 7", r.SlotType().ColorCode)
+	var rangeErr *bit.FieldRangeError
+	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 0x17, layer2.SyncSourceBS); !errors.As(err, &rangeErr) || rangeErr.Field != "ColorCode" {
+		t.Errorf("color code 0x17: error %v, want the FieldRangeError of ColorCode", err)
 	}
 	if _, err := layer2.BuildDataBurst([12]byte{}, enums.DataTypeCSBK, 1, layer2.SyncSource(9)); err == nil {
 		t.Error("unknown source accepted")
