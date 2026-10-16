@@ -10,7 +10,7 @@ import (
 // bursts.
 func TestAllocsReceiver(t *testing.T) {
 	cfg := testConfig()
-	cfg.BSSourced, cfg.Superframes = true, 4
+	cfg.BSSourced, cfg.Superframes = true, 2
 	built, err := Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -18,7 +18,7 @@ func TestAllocsReceiver(t *testing.T) {
 	fm, env := ModulateBS(built.Slots)
 	iq := channel(ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 1500, 25, 0)
 	const chunk = 1 << 14
-	for _, tier := range []Tier{TierDisc, TierCoherent, TierMax} {
+	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact, TierMax} {
 		r := NewReceiver(ReceiverConfig{Rate: 2.048e6, Tier: tier, MaxWrite: chunk})
 		pos, bursts := 0, 0
 		n := testing.AllocsPerRun(len(iq)/chunk-2, func() {

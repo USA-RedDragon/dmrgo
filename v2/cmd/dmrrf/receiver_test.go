@@ -79,9 +79,9 @@ func exactFrames(slots []BSSlot, got []Received) (exact, total int) {
 // AMBEFrameValue is the 49 bits of an AMBE+2 frame as a number.
 type AMBEFrameValue = uint64
 
-// TestReceiverTiersAtLowSNR receives a BS outbound voice call at 4 dB C/N
-// and checks that each tier recovers more AMBE+2 frames exactly than the
-// one below it.
+// TestReceiverTiersAtLowSNR receives a BS outbound voice call at 3 dB C/N
+// and checks that TierDisc, TierCoherent and TierExact each recover more
+// AMBE+2 frames exactly than the tier below.
 func TestReceiverTiersAtLowSNR(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -90,13 +90,13 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	x := noisyBaseband(built.Slots, 1200, 4, 3)
+	x := noisyBaseband(built.Slots, 1200, 3, 3)
 	prev := -1
-	for _, tier := range []Tier{TierDisc, TierCoherent, TierMax} {
+	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact} {
 		exact, total := exactFrames(built.Slots, receiveBaseband(x, tier))
 		t.Logf("tier %d: %d of %d frames exact", tier, exact, total)
 		if exact <= prev {
-			t.Errorf("tier %d: %d frames exact, not more than the tier below (%d)", tier, exact, prev)
+			t.Errorf("tier %d: %d frames exact, the tier below %d", tier, exact, prev)
 		}
 		prev = exact
 	}

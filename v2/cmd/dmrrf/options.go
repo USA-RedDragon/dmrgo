@@ -13,6 +13,9 @@ type Options struct {
 	// TrellisSPS is the number of samples per symbol that the trellis
 	// correlates, 5 or 10.
 	TrellisSPS int
+	// ExactPhase carries the carrier phase in the trellis state, so that
+	// paths merge only with the same phase, instead of with each survivor.
+	ExactPhase bool
 	// PSPGain is the gain of the phase tracking of each trellis survivor.
 	PSPGain float32
 	// KnownPrior is the log prior, in nats, of the expected symbols of the
@@ -45,12 +48,15 @@ type Options struct {
 // TierOptions returns the settings of tier t.
 func TierOptions(t Tier) Options {
 	o := Options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 6000, Sources: 2}
+	o.SoftFEC = true
 	switch t {
 	case TierDisc:
 	case TierCoherent:
-		o.Coherent, o.Window, o.SoftFEC = true, 1, true
+		o.Coherent, o.Window = true, 1
+	case TierExact:
+		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior = true, 1, true, true, 20
 	case TierMax:
-		o.Coherent, o.Window, o.SoftFEC, o.BPTCOSD, o.RefinePrior = true, 2, true, true, 20
+		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior = true, 2, true, true, 20
 	}
 	return o
 }

@@ -60,14 +60,14 @@ type Demodulated struct {
 func sampleOf(r Received) int { return int(math.Round(r.Seconds * basebandRate)) }
 
 // Demodulate recovers DMR bursts from complex samples at rate, as rtl_sdr
-// unsigned 8-bit I/Q scaled by FromRTL, with TierMax.
+// unsigned 8-bit I/Q scaled by FromRTL, with TierExact.
 func Demodulate(x []complex128, rate float64) Demodulated {
 	b := make([]byte, 2*len(x))
 	for i, v := range x {
 		b[2*i] = byte(math.Max(0, math.Min(255, math.Round(real(v)*127.5+127.5))))
 		b[2*i+1] = byte(math.Max(0, math.Min(255, math.Round(imag(v)*127.5+127.5))))
 	}
-	return DemodulateBytes(b, rate, false, TierMax)
+	return DemodulateBytes(b, rate, false, TierExact)
 }
 
 // DemodulateBytes recovers DMR bursts from 8-bit I/Q at rate with a
