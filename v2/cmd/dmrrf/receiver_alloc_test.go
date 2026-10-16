@@ -40,6 +40,16 @@ func TestAllocsReceiver(t *testing.T) {
 		if n != 0 || bursts == 0 {
 			t.Errorf("tier %d: %v allocations per WriteBaseband, %d bursts", tier, n, bursts)
 		}
+		bursts = 0
+		r = NewReceiver(ReceiverConfig{Rate: basebandRate, Tier: tier, OnBurst: func(Received) { bursts++ }})
+		pos = 0
+		n = testing.AllocsPerRun(len(x)/chunk-2, func() {
+			r.WriteBaseband(x[pos : pos+chunk])
+			pos += chunk
+		})
+		if n != 0 || bursts == 0 {
+			t.Errorf("tier %d: %v allocations per WriteBaseband with OnBurst, %d bursts", tier, n, bursts)
+		}
 	}
 }
 

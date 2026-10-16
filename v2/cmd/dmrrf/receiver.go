@@ -100,6 +100,10 @@ type ReceiverConfig struct {
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
 	// locks to that the receiver keeps and decodes. 0 means 16.
 	LookbackSlots int
+	// OnBurst, when not nil, takes each burst as the receiver recovers it,
+	// in place of the slice that Write, WriteBaseband and Flush return,
+	// which are then nil. The receiver then keeps no buffer of bursts.
+	OnBurst func(Received)
 }
 
 // anchorInfo is the measurement of a slot whose SYNC field holds a known
@@ -277,7 +281,9 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 		r.tk.repair = r.repairEntry
 		r.tk.elc = r.rep.embeddedLC
 	}
-	r.out = make([]Received, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+2*len(r.slots)+16)
+	if cfg.OnBurst == nil {
+		r.out = make([]Received, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+2*len(r.slots)+16)
+	}
 	return r
 }
 
@@ -338,8 +344,13 @@ func (r *Receiver) Flush() []Received {
 	return r.out
 }
 
-// emit appends burst x to the bursts that Write returns.
+// emit hands burst x to OnBurst, or appends it to the bursts that Write
+// returns.
 func (r *Receiver) emit(x Received) {
+	if r.cfg.OnBurst != nil {
+		r.cfg.OnBurst(x)
+		return
+	}
 	if len(r.out) < cap(r.out) {
 		r.out = append(r.out, x)
 	}
