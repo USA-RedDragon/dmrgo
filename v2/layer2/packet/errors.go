@@ -4,10 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // Errors returned by the package. Match them with errors.Is.
@@ -60,54 +57,3 @@ var (
 	errNoConfirmed    = fmt.Errorf("%w: no confirmed packet in progress", ErrFormat)
 	errRetryFormat    = fmt.Errorf("%w: only a confirmed or SARQ packet has a later try", ErrFormat)
 )
-
-// newRateError returns ErrRate for the data type rate. Like the other new*
-// error constructors, it is not inlined, so that its caller has no heap
-// allocation.
-//
-//go:noinline
-func newRateError(rate enums.DataType) error {
-	return fmt.Errorf("%w: %s", ErrRate, rate.String())
-}
-
-// newFormatError returns ErrFormat for the header format f.
-//
-//go:noinline
-func newFormatError(f pdu.Format) error {
-	return fmt.Errorf("%w: %s", ErrFormat, f.String())
-}
-
-// newTooLongError returns ErrTooLong for a packet of blocks blocks, over limit.
-//
-//go:noinline
-func newTooLongError(blocks, limit int) error {
-	return fmt.Errorf("%w: %d blocks, at most %d", ErrTooLong, blocks, limit)
-}
-
-// newCountError returns err for a count of n blocks.
-//
-//go:noinline
-func newCountError(err error, n int) error {
-	return fmt.Errorf("%w: %d blocks", err, n)
-}
-
-// newHeaderError returns the error err of the header burst.
-//
-//go:noinline
-func newHeaderError(err error) error {
-	return fmt.Errorf("header: %w", err)
-}
-
-// newBlockError returns the error err of block i.
-//
-//go:noinline
-func newBlockError(i int, err error) error {
-	return fmt.Errorf("block %d: %w", i, err)
-}
-
-// newBlockRateError returns ErrRate for a block d of data type dt.
-//
-//go:noinline
-func newBlockRateError(d layer2.Data, dt enums.DataType) error {
-	return fmt.Errorf("%w: %T with data type %s", ErrRate, d, dt.String())
-}

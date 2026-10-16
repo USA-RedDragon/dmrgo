@@ -132,7 +132,7 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 // blocks. On error it returns dst unchanged.
 func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rate12Data, error) {
 	if blocks < 0 || blocks > maxBlocks {
-		return dst, newCountError(ErrTooLong, blocks)
+		return dst, ErrTooLong
 	}
 	n, flags := 1, 64
 	if blocks > 64 {
@@ -161,7 +161,7 @@ func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rat
 func DecodeResponseData(blocks ...*pdu.Rate12Data) (ResponseData, error) {
 	var r ResponseData
 	if len(blocks) != 1 && len(blocks) != 2 {
-		return r, newCountError(ErrResponseData, len(blocks))
+		return r, ErrResponseData
 	}
 	var buf [2 * 12]byte
 	for i, b := range blocks {
