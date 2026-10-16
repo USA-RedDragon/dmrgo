@@ -196,8 +196,11 @@ func (t *tracker) resolveLeftover(e *trackEntry) {
 
 // syncDist returns the Hamming distance of the SYNC field of b from p.
 func syncDist(b layer2.RawBurst, p enums.SyncPattern) int {
-	all := bit.Unpack264(b)
-	return bits.OnesCount64(bit.Uint(all[framer.SyncOffset:framer.SyncOffset+framer.SyncBits]) ^ uint64(p))
+	var v uint64
+	for i := framer.SyncOffset; i < framer.SyncOffset+framer.SyncBits; i++ {
+		v = v<<1 | uint64(b[i/8]>>(7-i%8)&1)
+	}
+	return bits.OnesCount64(v ^ uint64(p))
 }
 
 // setA makes entry e a burst A at SYNC distance d and starts a superframe.
