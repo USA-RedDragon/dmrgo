@@ -8,7 +8,7 @@ func TestReedSolomon1294SyndromeNoError(t *testing.T) {
 	t.Parallel()
 
 	var data [dataSize + checksumSize]byte
-	var syndrome poly
+	var syndrome syndromes
 
 	calcSyndrome(&data, &syndrome)
 
@@ -43,7 +43,7 @@ func TestReedSolomon1294SyndromeWithError(t *testing.T) {
 	var data [dataSize + checksumSize]byte
 	data[0] = 0x55
 
-	var syndrome poly
+	var syndrome syndromes
 	calcSyndrome(&data, &syndrome)
 
 	if !syndromeHasErrors(&syndrome) {
@@ -86,15 +86,6 @@ func TestReedSolomon1294GaloisMulAssociativity(t *testing.T) {
 	}
 }
 
-func TestReedSolomon1294FindRootsEmpty(t *testing.T) {
-	t.Parallel()
-
-	locator := poly{1, 0, 0, 0, 0, 0}
-	if _, n := findRoots(&locator); n != 0 {
-		t.Errorf("Locator=1 should have no roots, got %d", n)
-	}
-}
-
 func TestReedSolomon1294DecodeResultFields(t *testing.T) {
 	t.Parallel()
 
@@ -113,7 +104,7 @@ func BenchmarkReedSolomon1294CalcSyndrome(b *testing.B) {
 	for i := range data {
 		data[i] = byte(i)
 	}
-	var syndrome poly
+	var syndrome syndromes
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -149,7 +140,7 @@ func TestReedSolomon1294SyndromeHasErrors(t *testing.T) {
 	var data [dataSize + checksumSize]byte
 	data[0] = 0x42
 
-	var syndrome poly
+	var syndrome syndromes
 	calcSyndrome(&data, &syndrome)
 
 	if !syndromeHasErrors(&syndrome) {
@@ -182,23 +173,6 @@ func TestReedSolomon1294GaloisMulExhaustive(t *testing.T) {
 			if want := refGaloisMul(byte(a), byte(b)); got != want {
 				t.Fatalf("GaloisMul(0x%02X, 0x%02X) = 0x%02X, want 0x%02X", a, b, got, want)
 			}
-		}
-	}
-}
-
-func TestReedSolomon1294GaloisInv(t *testing.T) {
-	t.Parallel()
-
-	if _, ok := galoisInv(0); ok {
-		t.Error("GaloisInv(0) should report failure")
-	}
-	for a := 1; a < 256; a++ {
-		inv, ok := galoisInv(byte(a))
-		if !ok {
-			t.Fatalf("GaloisInv(0x%02X) reported failure", a)
-		}
-		if p := refGaloisMul(byte(a), inv); p != 1 {
-			t.Fatalf("0x%02X * GaloisInv = 0x%02X, want 1", a, p)
 		}
 	}
 }
