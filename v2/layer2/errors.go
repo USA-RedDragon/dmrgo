@@ -81,10 +81,11 @@ func (e colorCodeMismatchError) Unwrap() error {
 
 // Errors of misuse that carry no values.
 var (
-	errDataBurstNoSync = errors.New("a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
-	errNoData          = errors.New("data burst has no Data")
-	errNilData         = errors.New("cannot build a burst from nil Data")
-	errRCNotOutbound   = errors.New("only a BS-sourced voice burst F carries a reverse channel")
+	errDataBurstNoSync   = errors.New("a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
+	errNoData            = errors.New("data burst has no Data")
+	errNilData           = errors.New("cannot build a burst from nil Data")
+	errRCNotOutbound     = errors.New("only a BS-sourced voice burst F carries a reverse channel")
+	errUnknownSyncSource = errors.New("unknown sync source")
 )
 
 // The new*Error functions build the errors of the package that carry
