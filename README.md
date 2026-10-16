@@ -161,7 +161,7 @@ The example prints its counts on the serial console once a second.
 [v2/cmd/dmrrf](v2/cmd/dmrrf/README.md) receives DMR from RTL-SDR captures with one of four tiers, from a discriminator that fits a microcontroller to a coherent trellis detector with soft-decision decoding of each FEC field. The tables below come from a sweep over synthetic noise and from captures of a repeater.
 
 <!-- rxbench:begin -->
-Loss is the Eb/N0 in dB above the ideal receiver at 90% frame recovery. The ideal receiver has perfect timing and carrier, detects the symbols with a coherent BCJR over the exact CPM phase trellis and decodes each FEC field by soft-decision maximum likelihood; for voice it also detects each burst again with its decoded C0, C1, EMB and embedded LC bits.
+Loss is the Eb/N0 in dB above the floor at 90% frame recovery. The floor is a lower bound for any receiver: a genie gives it the timing, the carrier, the noise level and every transmitted bit outside the payload (see the sensitivity details). For the data payloads it is the bound for any code with as many values over the same symbols, so their loss includes what a stronger code than the DMR one would gain, which no receiver can.
 
 | Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | RAM | Allocs |
 |------|-------|---------------|------|---------------|-------------------------|-----|--------|
@@ -173,7 +173,7 @@ Cost is the CPU time on AMD Ryzen 9 7950X 16-Core Processor. RAM is the heap tha
 
 <details><summary>Sensitivity per payload type</summary>
 
-Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor is described in testdata/rxbench_floor.json.
+Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a payload is a lower bound on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call. Its error rate is the larger of two bounds. In the first, the payload is in error when a candidate value is more likely than the transmitted one, by the exact likelihood of the whole stream, so maximum likelihood decoding would pick it; for the EMB, the slot type and the SYNC the candidates are all values, so this is the error rate of the best receiver. The second is the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values, which no code of that size and no decoder can beat. Both take the error rate as the same for every message. The floor runs on the stream and noise seeds of the tiers; its generator is v2/cmd/dmrrf/floor_gen_test.go and testdata/rxbench_floor.json names the bound of each payload.
 
 | Payload | Floor | Tier 0: discriminator | Tier 1: coherent, two pass | Tier 2: phase trellis, two pass |
 |---------|-------|------|------|------|
@@ -185,10 +185,10 @@ Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor is descr
 | CSBK | -4.1 (-5.3) | 6.1 (4.9) | 3.0 (1.9) | 2.1 (0.9) |
 | Voice LC header and terminator | -4.3 (-5.4) | 6.0 (4.9) | 2.9 (1.8) | 1.7 (0.6) |
 | Data header | -3.9 (-5.1) | 6.2 (5.1) | 3.2 (2.1) | 2.3 (1.2) |
-| Embedded LC | -6.9 (-8.0) | 6.7 (5.6) | 1.5 (0.4) | 1.4 (0.2) |
-| EMB | -6.9 (-8.0) | 4.7 (3.5) | 1.2 (0.1) | 1.0 (-0.1) |
-| Slot type | -6.9 (-8.0) | 4.5 (3.3) | -0.0 (-1.2) | -0.4 (-1.5) |
-| SYNC detection | -6.9 (-8.0) | 2.4 (1.3) | -0.9 (-2.0) | -0.6 (-1.8) |
+| Embedded LC | < -6.9 (< -8.0) | 6.7 (5.6) | 1.5 (0.4) | 1.4 (0.2) |
+| EMB | < -6.9 (< -8.0) | 4.7 (3.5) | 1.2 (0.1) | 1.0 (-0.1) |
+| Slot type | < -6.9 (< -8.0) | 4.5 (3.3) | -0.0 (-1.2) | -0.4 (-1.5) |
+| SYNC detection | < -6.9 (< -8.0) | 2.4 (1.3) | < -0.9 (< -2.0) | -0.6 (-1.8) |
 
 </details>
 

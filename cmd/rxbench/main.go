@@ -222,18 +222,25 @@ func tierName(i int) string {
 	return [...]string{"0: discriminator", "1: coherent, two pass", "2: phase trellis, two pass"}[i]
 }
 
+// crossing is the Eb/N0 where a curve first reaches 90% recovery. below
+// marks a curve that is already there at its first point, Eb/N0.
+type crossing struct {
+	ebn0      float64
+	ok, below bool
+}
+
 // at90 returns the Eb/N0 where the curve first reaches 90% recovery, by
-// linear interpolation, and false when it never does.
-func at90(x, y []float64) (float64, bool) {
+// linear interpolation.
+func at90(x, y []float64) crossing {
+	if len(y) > 0 && y[0] >= 0.9 {
+		return crossing{x[0], true, true}
+	}
 	for i := 1; i < len(x); i++ {
 		if y[i-1] < 0.9 && y[i] >= 0.9 {
-			return x[i-1] + (0.9-y[i-1])/(y[i]-y[i-1])*(x[i]-x[i-1]), true
+			return crossing{x[i-1] + (0.9-y[i-1])/(y[i]-y[i-1])*(x[i]-x[i-1]), true, false}
 		}
 	}
-	if len(y) > 0 && y[0] >= 0.9 {
-		return x[0], true
-	}
-	return 0, false
+	return crossing{}
 }
 
 // tierCurve returns the Eb/N0 and recovery of payload k of tier t.
@@ -261,7 +268,7 @@ func f1(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) }
 func renderBlock(d data) []byte {
 	var b strings.Builder
 	b.WriteString("\n")
-	b.WriteString("Loss is the Eb/N0 in dB above the ideal receiver at 90% frame recovery. The ideal receiver has perfect timing and carrier, detects the symbols with a coherent BCJR over the exact CPM phase trellis and decodes each FEC field by soft-decision maximum likelihood; for voice it also detects each burst again with its decoded C0, C1, EMB and embedded LC bits.\n\n")
+	b.WriteString("Loss is the Eb/N0 in dB above the floor at 90% frame recovery. The floor is a lower bound for any receiver: a genie gives it the timing, the carrier, the noise level and every transmitted bit outside the payload (see the sensitivity details). For the data payloads it is the bound for any code with as many values over the same symbols, so their loss includes what a stronger code than the DMR one would gain, which no receiver can.\n\n")
 	b.WriteString("| Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | RAM | Allocs |\n")
 	b.WriteString("|------|-------|---------------|------|---------------|-------------------------|-----|--------|\n")
 	for _, t := range d.bench.Tiers {
@@ -277,7 +284,7 @@ func renderBlock(d data) []byte {
 	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
 	b.WriteString(" RAM is the heap that NewReceiver keeps for input at 48 kHz with ReceiverConfig.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
 	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
-	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor is described in testdata/rxbench_floor.json.")
+	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a payload is a lower bound on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call. Its error rate is the larger of two bounds. In the first, the payload is in error when a candidate value is more likely than the transmitted one, by the exact likelihood of the whole stream, so maximum likelihood decoding would pick it; for the EMB, the slot type and the SYNC the candidates are all values, so this is the error rate of the best receiver. The second is the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values, which no code of that size and no decoder can beat. Both take the error rate as the same for every message. The floor runs on the stream and noise seeds of the tiers; its generator is v2/cmd/dmrrf/floor_gen_test.go and testdata/rxbench_floor.json names the bound of each payload.")
 	b.WriteString("\n\n| Payload | Floor |")
 	for _, t := range d.bench.Tiers {
 		b.WriteString(" Tier " + tierName(t.Tier) + " |")
@@ -345,20 +352,28 @@ func lossCell(d data, t tier, k string) string {
 	if !ok {
 		return "-"
 	}
-	f, ok1 := at90(c.EbN0, c.recovery())
-	v, ok2 := at90(tierCurve(t, k))
-	if !ok1 || !ok2 {
+	f := at90(c.EbN0, c.recovery())
+	v := at90(tierCurve(t, k))
+	if !f.ok || !v.ok || v.below {
 		return "-"
 	}
-	return f1(v-f) + " dB"
+	if f.below {
+		return "> " + f1(v.ebn0-f.ebn0) + " dB"
+	}
+	return f1(v.ebn0-f.ebn0) + " dB"
 }
 
-// ebCell formats an Eb/N0 at 90% with its C/N.
-func ebCell(v float64, ok bool) string {
-	if !ok {
+// ebCell formats an Eb/N0 at 90% with its C/N, as an upper limit for a
+// curve that starts above 90%.
+func ebCell(c crossing) string {
+	if !c.ok {
 		return "-"
 	}
-	return f1(v) + " (" + f1(v-10*math.Log10(12500.0/9600)) + ")"
+	cn := f1(c.ebn0 - 10*math.Log10(12500.0/9600))
+	if c.below {
+		return "< " + f1(c.ebn0) + " (< " + cn + ")"
+	}
+	return f1(c.ebn0) + " (" + cn + ")"
 }
 
 // graph is a README graph: data key, title and error rate name.
