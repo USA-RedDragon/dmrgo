@@ -188,6 +188,9 @@ type Receiver struct {
 	slots    []slotState
 	first    int64
 	lastAnch int64
+	// doneAt is the channel sample where the last stream ended, before
+	// which the search does not go again.
+	doneAt int64
 	// syms holds the detection of the slots on their way to the tracker,
 	// as many as the gap that the first detection after a lock spans, and
 	// refined that of the slots that a refinement detects again, from
@@ -223,7 +226,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	if cfg.LookbackSlots == 0 {
 		cfg.LookbackSlots = 16
 	}
-	r := &Receiver{cfg: cfg, candAt: -1, h: 0.27}
+	r := &Receiver{cfg: cfg, candAt: -1, h: 0.27, doneAt: math.MinInt64}
 	r.opt = TierOptions(cfg.Tier)
 	if cfg.Options != nil {
 		r.opt = *cfg.Options
@@ -374,7 +377,7 @@ func (r *Receiver) step(end bool) {
 // searchStep tries the next search positions and reports whether it locked.
 func (r *Receiver) searchStep() bool {
 	ch := &r.chz.ch
-	if from := r.chz.oldest() + slotSamplesN; r.searchAt < from {
+	if from := max(r.chz.oldest()+slotSamplesN, r.doneAt); r.searchAt < from {
 		r.searchAt = from
 	}
 	if r.opt.Coherent {
@@ -803,6 +806,7 @@ func (r *Receiver) finishStream() {
 	}
 	r.locked = false
 	r.searchAt = max(int64(r.slotTime(r.next)), r.lockAt+searchStep)
+	r.doneAt = int64(r.slotTime(r.next))
 	if r.opt.Coherent {
 		r.searchAt = r.alignSearch(r.searchAt)
 	}
