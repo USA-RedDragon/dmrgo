@@ -52,21 +52,21 @@ func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
 	return min((need+talkerAliasBlockBits-1)/talkerAliasBlockBits, talkerAliasMaxBlocks)
 }
 
-// DecodeTalkerAlias returns the alias carried by a Talker Alias header and
+// TalkerAlias returns the alias carried by a Talker Alias header and
 // its blocks, given in order block 1, 2, 3. Only the blocks that the
 // header length calls for are used. It returns ErrTalkerAliasIncomplete
 // when fewer blocks are given, and ErrTalkerAliasInvalidUTF8, with the
 // alias, when the Code Units of the UTF-8 format are not valid UTF-8. It
 // allocates the string; AppendTalkerAlias does not.
-func DecodeTalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (string, error) {
+func TalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (string, error) {
 	var buf [talkerAliasMaxText]byte
 	b, err := AppendTalkerAlias(buf[:0], header, blocks...)
 	return string(b), err
 }
 
-// AppendTalkerAlias appends the alias that DecodeTalkerAlias returns to dst
+// AppendTalkerAlias appends the alias that TalkerAlias returns to dst
 // as UTF-8 and returns the extended slice, with the errors of
-// DecodeTalkerAlias. With ErrTalkerAliasIncomplete it returns dst unchanged.
+// TalkerAlias. With ErrTalkerAliasIncomplete it returns dst unchanged.
 func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) ([]byte, error) {
 	format := header.TalkerAliasDataFormat
 	n := TalkerAliasBlocks(format, header.TalkerAliasDataLength)
