@@ -5,7 +5,6 @@ package codec2
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -68,7 +67,7 @@ func TestBurstRoundTrip(t *testing.T) {
 		bursts := transmit(t, c, pcm)
 
 		var rx layer2.VoiceReceiver
-		var slots [][72]bit.Bit
+		var slots [][9]byte
 		var headers, terminators, embedded int
 		for i, raw := range bursts {
 			b, err := layer2.NewBurstFromBytes(raw)

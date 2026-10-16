@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -171,10 +170,10 @@ func TestDataBurstWithEMB_VoiceStaysVoice(t *testing.T) {
 	}
 
 	silence := vocoder.EncodeAMBE72(vocoder.AMBESilence())
-	for _, slot := range [][72]bit.Bit{silence, {}} {
+	for _, slot := range [][9]byte{silence, {}} {
 		var slots [layer2.VoiceSlotsPerBurst][9]byte
 		for i := range slots {
-			slots[i] = [9]byte(bit.Pack(slot[:]))
+			slots[i] = slot
 		}
 		for e := range 128 {
 			var r layer2.RawBurst

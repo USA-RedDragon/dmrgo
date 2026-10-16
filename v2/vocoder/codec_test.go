@@ -6,19 +6,18 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 type fakeCodec struct{ fid enums.FeatureSetID }
 
-func (fakeCodec) FrameSamples() int                   { return 160 }
-func (fakeCodec) Encode([]int16) ([72]bit.Bit, error) { return [72]bit.Bit{}, nil }
-func (fakeCodec) Decode([72]bit.Bit) ([]int16, error) { return make([]int16, 160), nil }
-func (fakeCodec) Silence() [72]bit.Bit                { return [72]bit.Bit{} }
-func (c fakeCodec) FID() enums.FeatureSetID           { return c.fid }
-func (fakeCodec) Close() error                        { return nil }
+func (fakeCodec) FrameSamples() int               { return 160 }
+func (fakeCodec) Encode([]int16) ([9]byte, error) { return [9]byte{}, nil }
+func (fakeCodec) Decode([9]byte) ([]int16, error) { return make([]int16, 160), nil }
+func (fakeCodec) Silence() [9]byte                { return [9]byte{} }
+func (c fakeCodec) FID() enums.FeatureSetID       { return c.fid }
+func (fakeCodec) Close() error                    { return nil }
 
 // errFactory is the error of the failing test factory.
 var errFactory = errors.New("factory failed")

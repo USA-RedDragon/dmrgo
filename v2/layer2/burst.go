@@ -3,7 +3,6 @@ package layer2
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -71,9 +70,9 @@ type Burst struct {
 	VoiceBurst enums.VoiceBurstType
 
 	// VoiceSlots holds the three 72-bit vocoder slots of a voice burst as
-	// received, before any FEC. Encode writes them as they are. AMBEFrames
-	// decodes AMBE+2 slots.
-	VoiceSlots [VoiceSlotsPerBurst][72]bit.Bit
+	// received, before any FEC, packed as RawBurst.VoiceSlots returns them.
+	// Encode writes them as they are. AMBEFrames decodes AMBE+2 slots.
+	VoiceSlots [VoiceSlotsPerBurst][9]byte
 
 	// SlotType is the slot type of a data burst.
 	SlotType pdu.SlotType
@@ -146,7 +145,7 @@ func (b *Burst) reset(data RawBurst) {
 	b.Kind = KindUnknown
 	b.SyncPattern, b.NearestSync, b.SyncDistance = 0, 0, 0
 	b.VoiceBurst = 0
-	b.VoiceSlots = [VoiceSlotsPerBurst][72]bit.Bit{}
+	b.VoiceSlots = [VoiceSlotsPerBurst][9]byte{}
 	b.SlotType = pdu.SlotType{}
 	b.BPTCReserved = 0
 	b.EmbeddedSignalling = pdu.EmbeddedSignalling{}
@@ -290,9 +289,7 @@ func (b *Burst) decodeVoice(pos enums.VoiceBurstType, sync enums.SyncPattern) {
 	if sync == enums.SyncNone {
 		b.setEmbedded(b.raw.EMB())
 	}
-	for i, slot := range b.raw.VoiceSlots() {
-		unpackBits(b.VoiceSlots[i][:], slot[:])
-	}
+	b.VoiceSlots = b.raw.VoiceSlots()
 }
 
 // setEmbedded sets the EMB emb and the embedded data field of a burst with
@@ -656,11 +653,7 @@ func (b *Burst) Encode() (RawBurst, error) {
 		}
 		r.setInfo(&info)
 	} else {
-		var slots [VoiceSlotsPerBurst][9]byte
-		for i := range slots {
-			packBits(slots[i][:], b.VoiceSlots[i][:])
-		}
-		r.SetVoiceSlots(slots)
+		r.SetVoiceSlots(b.VoiceSlots)
 	}
 
 	if b.HasEmbeddedSignalling() {

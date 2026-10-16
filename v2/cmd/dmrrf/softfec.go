@@ -337,7 +337,7 @@ func softAMBEEncoder(s, from int) softEncoder {
 		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 		for i := range softAMBEC0 {
 			if info>>(softAMBEC0-1-i)&1 != 0 {
-				frames[s][from+i] = 1
+				frames[s][(from+i)/8] |= 0x80 >> ((from + i) % 8)
 			}
 		}
 		var r layer2.RawBurst
@@ -365,7 +365,7 @@ func newSoftAMBE() (*softAMBE, error) {
 		zimg := softBurstImage(&zero)
 		for i := range softAMBEC2 {
 			var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
-			frames[s][2*softAMBEC0+i] = 1
+			frames[s][(2*softAMBEC0+i)/8] |= 0x80 >> ((2*softAMBEC0 + i) % 8)
 			var r layer2.RawBurst
 			r.SetAMBEFrames(frames)
 			img := softBurstImage(&r)
@@ -1258,14 +1258,14 @@ func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst
 				info1, cw1 = s.top1.info[0], s.top1.cw[0]
 			}
 		}
-		for b := range softAMBEC0 {
-			frames[i][b] = bit.Bit(info0 >> (softAMBEC0 - 1 - b) & 1)
-			frames[i][softAMBEC0+b] = bit.Bit(info1 >> (softAMBEC0 - 1 - b) & 1)
-		}
+		v := uint64(info0)<<(softAMBEC0+softAMBEC2) | uint64(info1)<<softAMBEC2
 		for b, p := range sl.c2 {
 			if llr[p] < 0 {
-				frames[i][2*softAMBEC0+b] = 1
+				v |= 1 << (softAMBEC2 - 1 - b)
 			}
+		}
+		for k := range frames[i] {
+			frames[i][k] = byte(v << 7 >> (48 - 8*k) & 0xFF)
 		}
 		e0, e1 := bits.OnesCount32(cw0^hard0), bits.OnesCount32(cw1^hard1)
 		res = res.Combine(fec.Result{BitsChecked: sl.c0.n + sl.c1.n, ErrorsCorrected: e0 + e1, Uncorrectable: e0 > sl.c0.t || e1 > sl.c1.t})

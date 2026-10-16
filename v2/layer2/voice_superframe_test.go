@@ -5,25 +5,25 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-func testSlot(n int) [72]bit.Bit {
-	var slot [72]bit.Bit
-	for i := range slot {
-		slot[i] = bit.Bit(((i*7 + n*13) >> 2 & 1) ^ (n >> (i % 5) & 1))
+func testSlot(n int) [9]byte {
+	var slot [9]byte
+	for i := range 72 {
+		bits.SetBit(slot[:], i, byte(((i*7+n*13)>>2&1)^(n>>(i%5)&1)))
 	}
 	return slot
 }
 
-func silenceSlot() [72]bit.Bit {
-	var slot [72]bit.Bit
-	for i := range slot {
-		slot[i] = bit.Bit(i % 3 & 1)
+func silenceSlot() [9]byte {
+	var slot [9]byte
+	for i := range 72 {
+		bits.SetBit(slot[:], i, byte(i%3&1))
 	}
 	return slot
 }
@@ -76,7 +76,7 @@ func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType e
 
 // checkVoiceBurst decodes voice burst i of a transmission and checks its
 // slots and its SYNC or EMB for superframe position i mod 6.
-func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][72]bit.Bit, voiceSync enums.SyncPattern, cc int) *layer2.Burst {
+func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][9]byte, voiceSync enums.SyncPattern, cc int) *layer2.Burst {
 	t.Helper()
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
@@ -129,7 +129,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 				lc := groupLC(fid)
 				tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: cc, Source: source, Silence: silenceSlot()}))
 
-				var slots [][72]bit.Bit
+				var slots [][9]byte
 				var bursts []layer2.RawBurst
 				for n := 0; n < 40; n++ {
 					slots = append(slots, testSlot(n))
@@ -152,7 +152,7 @@ func TestVoiceTransmitter_Transmission(t *testing.T) {
 
 				var fragments [4][4]byte
 				for i, raw := range bursts {
-					want := [3][72]bit.Bit{slots[3*i], slots[3*i+1], slots[3*i+2]}
+					want := [3][9]byte{slots[3*i], slots[3*i+1], slots[3*i+2]}
 					b := checkVoiceBurst(t, i, raw, want, voiceSync, cc)
 					if pos := i % 6; pos >= 1 && pos <= 4 {
 						fragments[pos-1] = b.EmbeddedSignallingData
@@ -180,10 +180,10 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 
 	lc := groupLC(enums.FIDStandardized)
 	frames := make([]vocoder.AMBEFrame, 3)
-	slots := make([][72]bit.Bit, 3)
+	slots := make([][9]byte, 3)
 	for i := range frames {
-		for j := range frames[i] {
-			frames[i][j] = bit.Bit((i + j*j) & 1)
+		for j := range 49 {
+			bits.SetBit(frames[i][:], j, byte((i+j*j)&1))
 		}
 		slots[i] = vocoder.EncodeAMBE72(frames[i])
 	}
@@ -218,10 +218,10 @@ func TestVoiceTransmitter_Append(t *testing.T) {
 	a := must(layer2.NewVoiceTransmitter(opts))
 	b := must(layer2.NewVoiceTransmitter(opts))
 	frames := make([]vocoder.AMBEFrame, 4)
-	slots := make([][72]bit.Bit, 4)
+	slots := make([][9]byte, 4)
 	for i := range slots {
 		slots[i] = testSlot(i)
-		frames[i][i] = 1
+		bits.SetBit(frames[i][:], i, 1)
 	}
 	want := a.Headers()
 	want = append(want, must(a.AddSlots(slots...))...)
@@ -265,12 +265,12 @@ func TestVoiceTransmitter_AddBurst(t *testing.T) {
 			got = must(b.AppendSlots(got, testSlot(100+i)))
 		}
 		for n := range 14 {
-			var slots [layer2.VoiceSlotsPerBurst][72]bit.Bit
+			var slots [layer2.VoiceSlotsPerBurst][9]byte
 			for i := range slots {
 				slots[i] = testSlot(3*n + i)
 			}
 			want = must(a.AppendSlots(want, slots[:]...))
-			got = append(got, must(b.AddBurst(&slots)))
+			got = append(got, must(b.AddBurst(slots)))
 		}
 		if len(got) != len(want) {
 			t.Fatalf("lead %d: %d bursts, want %d", lead, len(got), len(want))
@@ -285,7 +285,7 @@ func TestVoiceTransmitter_AddBurst(t *testing.T) {
 		if tail[len(tail)-1] != term {
 			t.Errorf("lead %d: Terminator is not the last burst of Terminate", lead)
 		}
-		if _, err := b.AddBurst(&[layer2.VoiceSlotsPerBurst][72]bit.Bit{}); !errors.Is(err, layer2.ErrVoiceTerminated) {
+		if _, err := b.AddBurst([layer2.VoiceSlotsPerBurst][9]byte{}); !errors.Is(err, layer2.ErrVoiceTerminated) {
 			t.Errorf("lead %d: AddBurst after Terminate: %v", lead, err)
 		}
 	}
@@ -349,7 +349,7 @@ func TestVoiceTransmitter_Terminate(t *testing.T) {
 	}
 
 	tx = must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
-	slots := make([][72]bit.Bit, 18)
+	slots := make([][9]byte, 18)
 	if n := len(must(tx.AddSlots(slots...))); n != 6 {
 		t.Fatalf("%d bursts from 18 slots", n)
 	}
@@ -363,7 +363,7 @@ func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
 
 	lc := groupLC(enums.FIDStandardized)
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 0x17, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
-	bursts := append([]layer2.RawBurst{tx.Header()}, must(tx.AddSlots(make([][72]bit.Bit, 6)...))...)
+	bursts := append([]layer2.RawBurst{tx.Header()}, must(tx.AddSlots(make([][9]byte, 6)...))...)
 	if st := bursts[0].SlotType(); st.ColorCode != 7 {
 		t.Errorf("color code 0x17: header carries %d, want the low 4 bits 7", st.ColorCode)
 	}

@@ -2,10 +2,7 @@
 
 package codec2
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
-)
+import "github.com/USA-RedDragon/dmrgo/v2/enums"
 
 // Codec is a Codec2 vocoder.Codec. This build has no libcodec2, so New
 // always returns ErrUnavailable and every method reports ErrUnavailable.
@@ -25,17 +22,17 @@ func (c *Codec) Mode() Mode { return 0 }
 // FID returns zero.
 func (c *Codec) FID() enums.FeatureSetID { return 0 }
 
-// Silence returns all-zero bits.
-func (c *Codec) Silence() [72]bit.Bit { return [72]bit.Bit{} }
+// Silence returns an all-zero slot.
+func (c *Codec) Silence() [9]byte { return [9]byte{} }
 
 // Encode returns ErrUnavailable.
-func (c *Codec) Encode([]int16) ([72]bit.Bit, error) { return [72]bit.Bit{}, ErrUnavailable }
+func (c *Codec) Encode([]int16) ([9]byte, error) { return [9]byte{}, ErrUnavailable }
 
 // Decode returns ErrUnavailable.
-func (c *Codec) Decode([72]bit.Bit) ([]int16, error) { return nil, ErrUnavailable }
+func (c *Codec) Decode([9]byte) ([]int16, error) { return nil, ErrUnavailable }
 
 // AppendDecode returns dst and ErrUnavailable.
-func (c *Codec) AppendDecode(dst []int16, _ [72]bit.Bit) ([]int16, error) {
+func (c *Codec) AppendDecode(dst []int16, _ [9]byte) ([]int16, error) {
 	return dst, ErrUnavailable
 }
 

@@ -276,7 +276,7 @@ func TestAllocsVoiceTransmitter(t *testing.T) {
 // TestAllocsVocoder decodes and encodes the AMBE+2 frames of the voice capture and
 // packs and unpacks them as IPSC voice payloads.
 func TestAllocsVocoder(t *testing.T) {
-	var slots [][72]bit.Bit
+	var slots [][9]byte
 	var b layer2.Burst
 	for _, raw := range captures(t)["voice.bin"] {
 		if b.DecodeFromBytes(raw) == nil && b.Kind == layer2.KindVoice {

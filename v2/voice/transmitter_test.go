@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -199,8 +198,8 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := range 3 * 6 * 6 {
-		var s [72]bit.Bit
-		s[i%72] = 1
+		var s [9]byte
+		s[i%72/8] = 0x80 >> (i % 8)
 		if err := tx.Slot(s); err != nil {
 			t.Fatal(err)
 		}

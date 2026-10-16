@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -61,7 +60,7 @@ func loadBursts(path string) ([]layer2.RawBurst, error) {
 type inbound struct {
 	lc        pdu.FullLinkControl
 	colorCode enums.ColorCode
-	slots     [][72]bit.Bit
+	slots     [][9]byte
 }
 
 func receive(bursts []layer2.RawBurst) (inbound, error) {
@@ -116,7 +115,7 @@ func transmit(in inbound) ([]layer2.RawBurst, error) {
 type verified struct {
 	lcBursts, lcAccepted  int
 	embedded, embeddedNew int
-	slots                 [][72]bit.Bit
+	slots                 [][9]byte
 	ambeUncorrectable     int
 }
 

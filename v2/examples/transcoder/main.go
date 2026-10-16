@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -25,7 +24,7 @@ type call struct {
 	lc     *pdu.FullLinkControl
 	cc     enums.ColorCode
 	source layer2.SyncSource
-	slots  [][72]bit.Bit
+	slots  [][9]byte
 	frames []vocoder.AMBEFrame
 	voice  int
 	embLCs int
@@ -94,7 +93,7 @@ func receive(bursts []layer2.RawBurst) (call, error) {
 	return c, nil
 }
 
-func transmit(lc pdu.FullLinkControl, cc enums.ColorCode, src layer2.SyncSource, silence [72]bit.Bit, add func(*layer2.VoiceTransmitter) ([]layer2.RawBurst, error)) ([]layer2.RawBurst, error) {
+func transmit(lc pdu.FullLinkControl, cc enums.ColorCode, src layer2.SyncSource, silence [9]byte, add func(*layer2.VoiceTransmitter) ([]layer2.RawBurst, error)) ([]layer2.RawBurst, error) {
 	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: cc, Source: src, Silence: silence})
 	if err != nil {
 		return nil, err
@@ -140,7 +139,7 @@ func ambe(w io.Writer, dataDir string) (*pdu.FullLinkControl, error) {
 
 	slot := vocoder.EncodeAMBE72(c.frames[0])
 	for _, k := range []int{0, 30, 60} {
-		slot[k] ^= 1
+		slot[k/8] ^= 0x80 >> (k % 8)
 	}
 	info, res := vocoder.DecodeAMBE72(slot)
 	_, _ = fmt.Fprintf(w, "AMBE72 with 3 flipped bits: %d corrected, frame restored %t\n", res.ErrorsCorrected, info == c.frames[0])
@@ -195,7 +194,7 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	defer func() { _ = enc.Close() }()
 
 	pcm := sweep(50 * enc.FrameSamples())
-	slots := make([][72]bit.Bit, 0, 50)
+	slots := make([][9]byte, 0, 50)
 	for off := 0; off < len(pcm); off += enc.FrameSamples() {
 		s, err := enc.Encode(pcm[off : off+enc.FrameSamples()])
 		if err != nil {
