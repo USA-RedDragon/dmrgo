@@ -12,8 +12,8 @@ type repairer struct {
 	osd    bool
 	soft   *softDecoder
 	checks [16]func([12]byte) bool
-	cur    [4][layer2.BurstBits]int16
-	sum    [4][layer2.BurstBits]int16
+	cur    [4][embBits]int16
+	sum    [4][embBits]int16
 	bursts [4]layer2.RawBurst
 }
 
@@ -125,7 +125,7 @@ func (p *repairer) embeddedLC(c *chanTrack, es *[4]*trackEntry) {
 		return
 	}
 	for i, e := range es {
-		p.cur[i] = e.rec.llr
+		copy(p.cur[i][:], e.rec.llr[embFirstBit:embFirstBit+embBits])
 		if !e.out.HasFixed {
 			e.out.Fixed, e.out.FixedCACH, e.out.HasFixed = e.out.Data, e.out.CACH, true
 		}
@@ -137,14 +137,14 @@ func (p *repairer) embeddedLC(c *chanTrack, es *[4]*trackEntry) {
 			p.sum[i] = c.acc[i]
 			softCombine(p.sum[i][:], p.cur[i][:])
 		}
-		_, res := p.soft.decodeEmbeddedLC(&p.sum, &p.bursts)
+		_, res := p.soft.decodeEmbeddedFrags(&p.sum, &p.bursts)
 		if ok = !res.Uncorrectable; ok {
 			c.acc = p.sum
 			c.accN = min(c.accN+1, maxCombine)
 		}
 	}
 	if !ok {
-		_, res := p.soft.decodeEmbeddedLC(&p.cur, &p.bursts)
+		_, res := p.soft.decodeEmbeddedFrags(&p.cur, &p.bursts)
 		ok = !res.Uncorrectable
 		c.acc, c.accN = p.cur, 1
 	}
