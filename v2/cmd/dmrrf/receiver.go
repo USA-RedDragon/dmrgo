@@ -152,9 +152,7 @@ type Receiver struct {
 	tk                 *tracker
 	out                []Received
 	pulse              phasePulse
-	ddSyms             []int
-	ddPh               []float64
-	corrX              []complex128
+	corrX              []complex64
 
 	nsrc      int
 	searchAt  int64
@@ -252,12 +250,10 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 			r.slp = r.tr.slp
 			r.buf = make([]complex64, syncSymbols*r.opt.TrellisSPS)
 		}
-		r.ddSyms = make([]int, r.maxRun)
-		r.ddPh = make([]float64, r.maxRun*samplesPerSy/dec)
 	}
 	if r.opt.Coherent {
 		r.pulse = newPhasePulse(samplesPerSy / dec)
-		r.corrX = make([]complex128, syncSpan/dec)
+		r.corrX = make([]complex64, syncSpan/dec)
 	}
 	r.slots = make([]slotState, cfg.LookbackSlots+maxGapSlots+4)
 	if r.opt.Coherent {
@@ -540,15 +536,15 @@ func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
 	ch := &r.chz.ch
 	dec := r.search.dec
 	t0 := r.symTime(s.index, syncFirstSym+syncEdge) + tau - float64(r.search.sps/2*dec)
-	rot, step := r.rotAt(t0), r.rotAt(float64(dec))
-	var e float64
+	rot, step := complex64(r.rotAt(t0)), complex64(r.rotAt(float64(dec)))
+	var e float32
 	for j := range r.search.span {
-		v := complex128(ch.interp(t0+float64(j*dec))) * rot
+		v := ch.interp(t0+float64(j*dec)) * rot
 		rot *= step
 		r.corrX[j] = v
 		e += real(v)*real(v) + imag(v)*imag(v)
 	}
-	return e
+	return float64(e)
 }
 
 // slotTime returns the channel sample of the center of the first CACH
@@ -757,15 +753,15 @@ func (r *Receiver) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 		return anchorInfo{pattern: p}
 	}
 	tpl := r.search.conjOf(p)
-	var c complex128
+	var c complex64
 	for j, v := range r.corrX {
 		c += v * tpl[j]
 	}
-	a := math.Hypot(real(c), imag(c))
+	a := float64(sqrtf(real(c)*real(c) + imag(c)*imag(c)))
 	span := float64(r.search.span)
 	amp := a / span
 	noise := math.Max(e/span-amp*amp, 1e-12)
-	rot := complex64(complex(real(c)/a, -imag(c)/a))
+	rot := complex(real(c)/float32(a), -imag(c)/float32(a))
 	return anchorInfo{pattern: p, metric: a * a / (e * span), rot: rot, amp: amp, noise: noise}
 }
 

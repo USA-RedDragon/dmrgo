@@ -70,3 +70,35 @@ func sat8(x float32) int8 {
 	}
 	return int8(x + 0.5)
 }
+
+// sincosf returns the sine and cosine of x in single precision, within
+// about 1e-6 for |x| up to a few thousand radians: x is reduced to within
+// pi/4 of a multiple of pi/2, and the polynomials of the Cephes sinf and
+// cosf take the rest.
+func sincosf(x float32) (sin, cos float32) {
+	const (
+		twoOverPi = 0.63661977
+		pio2Hi    = 1.5707963705062866
+		pio2Lo    = -4.371139000186241e-08
+	)
+	k := x * twoOverPi
+	if k < 0 {
+		k -= 0.5
+	} else {
+		k += 0.5
+	}
+	q := int32(k)
+	r := (x - float32(q)*pio2Hi) - float32(q)*pio2Lo
+	r2 := r * r
+	sr := r + r*r2*(-1.6666654611e-1+r2*(8.3321608736e-3+r2*-1.9515295891e-4))
+	cr := 1 - 0.5*r2 + r2*r2*(4.166664568298827e-2+r2*(-1.388731625493765e-3+r2*2.443315711809948e-5))
+	switch q & 3 {
+	case 1:
+		return cr, -sr
+	case 2:
+		return -sr, -cr
+	case 3:
+		return -cr, sr
+	}
+	return sr, cr
+}

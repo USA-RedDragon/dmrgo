@@ -19,6 +19,9 @@ const (
 	phaseBank = 8
 	// noRun is the run distance of a symbol that no trellis run set.
 	noRun = math.MaxInt16
+	// maxPulseSpan is the most symbols on each side of a symbol that its
+	// phase pulse reaches.
+	maxPulseSpan = rrcSpan + 1
 )
 
 // symRef is a symbol of a stream: slot and symbol within the slot.
@@ -95,13 +98,20 @@ func (r *Receiver) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 	sps := r.model.sps
 	sp := float64(dir*samplesPerSy) / float64(sps)
 	step := complex64(r.rotAt(sp))
+	h0 := g.add(dir * i0)
+	t0 := r.symTime(h0.slot, h0.k) - float64(sps/2)*sp
+	if rev {
+		t0 += sp
+	}
+	symRot, symStep := complex64(r.rotAt(t0)), complex64(r.rotAt(float64(dir)*r.period/slotSymbols))
 	for i := i0; i < i1; i++ {
 		h := g.add(dir * i)
 		t := r.symTime(h.slot, h.k) - float64(sps/2)*sp
 		if rev {
 			t += sp
 		}
-		rot := complex64(r.rotAt(t))
+		rot := symRot
+		symRot *= symStep
 		for j := range sps {
 			v := ch.interp(t+float64(j)*sp) * rot
 			rot *= step
@@ -307,54 +317,83 @@ func (r *Receiver) coherentBurst(j int64) {
 
 // trackCarrier updates the carrier estimate from the phase drift of the
 // received symbols of lo to hi against the waveform of their decisions,
-// over windows of ddWindow symbols.
+// over windows of ddWindow symbols. The waveform phase of a sample sums the
+// phase pulse of the decisions within the span of the pulse and the whole
+// phase steps of the decisions before it, as refPhaseInto does for the
+// symbols from lo.
 func (r *Receiver) trackCarrier(lo, hi symRef) {
 	n := hi.diff(lo) + 1
 	if n < 3*ddWindow {
 		return
 	}
 	n = min(n, r.maxRun)
-	syms := r.ddSyms[:n]
-	for i := range n {
-		h := lo.add(i)
-		s := r.slot(h.slot)
-		a := r.appOf(s)[4*h.k : 4*h.k+4]
-		best := 0
-		for v := 1; v < 4; v++ {
-			if a[v] > a[best] {
-				best = v
-			}
-		}
-		syms[i] = 2*best - 3
-	}
 	sps, dec := r.search.sps, r.search.dec
-	r.pulse.refPhaseInto(syms, sps, r.h, r.ddPh[:n*sps])
+	p := &r.pulse
+	hpi := float32(r.h * math.Pi)
+	nq := len(p.q) - 1
 	ch := &r.chz.ch
-	var z complex128
-	var prev complex128
+	var z, prev complex64
+	var done float32
+	doneK := 0
+	var decs [ddWindow + 2*maxPulseSpan + 1]float32
 	for w := 1; w+ddWindow <= n-1; w += ddWindow {
 		if s := r.slot(lo.add(w).slot); !s.present || !r.slot(lo.add(w+ddWindow-1).slot).present {
 			prev = 0
 			continue
 		}
-		var c complex128
+		m0, m1 := max(w-p.span, 0), min(w+ddWindow-1+p.span, n-1)
+		for m := m0; m <= m1; m++ {
+			decs[m-m0] = hpi * float32(r.decision(lo.add(m)))
+		}
+		h0 := lo.add(w)
+		tw := r.symTime(h0.slot, h0.k)
+		rotW := complex64(r.rotAt(tw))
+		wHz := float32(-2 * math.Pi * r.freq / basebandRate)
+		var c complex64
 		for i := w; i < w+ddWindow; i++ {
+			for ; doneK <= i-p.span-1; doneK++ {
+				done += hpi * float32(r.decision(lo.add(doneK)))
+			}
 			h := lo.add(i)
 			t := r.symTime(h.slot, h.k)
 			for j := range sps {
 				ts := t + float64((j-sps/2)*dec)
-				p := r.ddPh[i*sps+j]
-				c += complex128(ch.interp(ts)) * r.rotAt(ts) * complex(math.Cos(p), -math.Sin(p))
+				tt := i*sps + j - sps/2
+				ph := done
+				for m := max(i-p.span, 0); m <= min(i+p.span, n-1); m++ {
+					switch idx := tt - m*sps + p.half; {
+					case idx >= nq:
+						ph += decs[m-m0]
+					case idx >= 0:
+						ph += decs[m-m0] * p.q32[idx+1]
+					}
+				}
+				rs, rc := sincosf(wHz * float32(ts-tw))
+				ps, pc := sincosf(ph)
+				c += ch.interp(ts) * rotW * complex(rc, rs) * complex(pc, -ps)
 			}
 		}
-		z += c * cmplx.Conj(prev)
+		z += c * complex(real(prev), -imag(prev))
 		prev = c
 	}
 	if z == 0 {
 		return
 	}
-	hz := cmplx.Phase(z) * basebandRate / (2 * math.Pi * ddWindow * samplesPerSy)
+	hz := float64(atan2f(imag(z), real(z))) * basebandRate / (2 * math.Pi * ddWindow * samplesPerSy)
 	g := 1 / (1 + r.fw)
 	r.fw = math.Min(freqForget*r.fw+1, 1/(1-freqForget))
 	r.freq += math.Max(g, 0.2) * hz
+}
+
+// decision returns the symbol, -3 to 3, with the highest log-APP of stream
+// symbol h.
+func (r *Receiver) decision(h symRef) int {
+	a := r.appOf(r.slot(h.slot))[4*h.k : 4*h.k+4]
+	best := 0
+	for v := 1; v < 4; v++ {
+		if a[v] > a[best] {
+			best = v
+		}
+	}
+	return 2*best - 3
 }
