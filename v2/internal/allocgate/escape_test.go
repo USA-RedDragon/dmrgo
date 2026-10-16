@@ -219,46 +219,66 @@ func twinOK(p *pkgFuncs, fd *ast.FuncDecl, twin string) bool {
 // as "It allocates the slice; AppendPack does not.", and captures the twin.
 var twinRE = regexp.MustCompile(`allocates[^.;]*; ((?:\w+\.)?\w+) does not`)
 
-// exemptReason returns why the function fd may allocate, or "" when it may
-// not. The rules are:
-//   - A package-level declaration or an init function runs once, when the
-//     program starts.
-//   - A constructor, a function or method named New* or new*, allocates the
-//     value it returns.
-//   - A String, GoString or Error method builds text for fmt or an error,
-//     which allocates by design.
-//   - An Append* or append* function grows the slice it appends to, which
-//     allocates only when the caller's slice lacks the capacity.
-//   - A convenience wrapper whose doc comment says "allocates ...; Twin does
-//     not.", where Twin is a function or a Type.Method of the package, or a
-//     method of the same receiver, such as AppendPack for Pack or
-//     DecodeCSBKInto for DecodeCSBK.
-//   - A deprecated function forwards to the API that replaces it.
-func exemptReason(p *pkgFuncs, fd *ast.FuncDecl) string {
-	if fd == nil {
-		return "package-level declaration"
-	}
-	name := fd.Name.Name
-	switch {
-	case name == "init" && fd.Recv == nil:
-		return "init"
-	case strings.HasPrefix(name, "New") || strings.HasPrefix(name, "new"):
-		return "constructor"
-	case fd.Recv != nil && (name == "String" || name == "GoString" || name == "Error"):
-		return "fmt or error text"
-	case strings.HasPrefix(name, "Append") || strings.HasPrefix(name, "append"):
-		return "append"
-	}
-	if fd.Doc != nil {
-		doc := fd.Doc.Text()
-		if strings.Contains("\n"+doc, "\nDeprecated: ") {
-			return "deprecated"
+// exemptRule is one rule that lets a function allocate. match reports
+// whether the rule covers the function declaration fd of package p; fd is
+// nil for a package-level declaration.
+type exemptRule struct {
+	name  string
+	match func(p *pkgFuncs, fd *ast.FuncDecl) bool
+}
+
+// exemptRules lists every rule that lets a function allocate, one rule per
+// entry, so that removing a rule is removing its entry. The owner set the
+// first two; the others wait for the owner's decision.
+var exemptRules = []exemptRule{
+	// A constructor, a function or method named New* or new*, allocates the
+	// value it returns.
+	{"constructor", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
+		return fd != nil && (strings.HasPrefix(fd.Name.Name, "New") || strings.HasPrefix(fd.Name.Name, "new"))
+	}},
+	// A convenience wrapper whose doc comment says "allocates ...; Twin does
+	// not.", where Twin is a function or a Type.Method of the package, or a
+	// method of the same receiver, such as AppendPack for Pack or
+	// DecodeCSBKInto for DecodeCSBK.
+	{"allocating wrapper", func(p *pkgFuncs, fd *ast.FuncDecl) bool {
+		if fd == nil || fd.Doc == nil {
+			return false
 		}
-		doc = strings.Join(strings.Fields(doc), " ")
+		doc := strings.Join(strings.Fields(fd.Doc.Text()), " ")
 		for _, m := range twinRE.FindAllStringSubmatch(doc, -1) {
 			if twinOK(p, fd, m[1]) {
-				return "allocating wrapper of " + m[1]
+				return true
 			}
+		}
+		return false
+	}},
+	// A String, GoString or Error method builds text for fmt or an error,
+	// which allocates by design.
+	{"fmt or error text", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
+		return fd != nil && fd.Recv != nil && (fd.Name.Name == "String" || fd.Name.Name == "GoString" || fd.Name.Name == "Error")
+	}},
+	// An Append* or append* function grows the slice it appends to, which
+	// allocates only when the caller's slice lacks the capacity.
+	{"append", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
+		return fd != nil && (strings.HasPrefix(fd.Name.Name, "Append") || strings.HasPrefix(fd.Name.Name, "append"))
+	}},
+	// A deprecated function forwards to the API that replaces it.
+	{"deprecated", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
+		return fd != nil && fd.Doc != nil && strings.Contains("\n"+fd.Doc.Text(), "\nDeprecated: ")
+	}},
+	// A package-level declaration or an init function runs once, when the
+	// program starts.
+	{"package level or init", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
+		return fd == nil || fd.Name.Name == "init" && fd.Recv == nil
+	}},
+}
+
+// exemptReason returns the name of the first rule of exemptRules that lets
+// fd allocate, or "" when none does.
+func exemptReason(p *pkgFuncs, fd *ast.FuncDecl) string {
+	for _, r := range exemptRules {
+		if r.match(p, fd) {
+			return r.name
 		}
 	}
 	return ""
