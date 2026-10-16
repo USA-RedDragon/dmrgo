@@ -153,17 +153,18 @@ func (r *RawBurst) SetBPTCReserved(res [3]bit.Bit) {
 // code and returns the 144 data bits packed most significant bit first
 // (ETSI TS 102 361-1 clause B.1.1).
 func (r RawBurst) Rate34Payload() ([18]byte, fec.Result) {
-	bits, res := trellis.Decode(r.info())
-	var p [18]byte
-	packBits(p[:], bits[:])
-	return p, res
+	info := r.info()
+	var packed [25]byte
+	packBits(packed[:], info[:])
+	return trellis.Decode(packed)
 }
 
 // SetRate34Payload trellis encodes p into the 196 information bits.
 func (r *RawBurst) SetRate34Payload(p [18]byte) {
-	var bits [144]bit.Bit
-	unpackBits(bits[:], p[:])
-	r.setInfo(trellis.Encode(bits))
+	enc := trellis.Encode(p)
+	var info [196]bit.Bit
+	unpackBits(info[:], enc[:])
+	r.setInfo(info)
 }
 
 // Rate1Payload returns the 192 uncoded data bits of a Rate 1 burst packed
@@ -368,9 +369,11 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	}
 	switch dt {
 	case enums.DataTypeRate34:
-		var bits [144]bit.Bit
-		copy(bits[:], info[:])
-		r.setInfo(trellis.Encode(bits))
+		var data [18]byte
+		packBits(data[:], info[:144])
+		enc := trellis.Encode(data)
+		unpackBits(info[:], enc[:])
+		r.setInfo(info)
 	case enums.DataTypeRate1:
 		var bits [196]bit.Bit
 		copy(bits[:96], info[:96])

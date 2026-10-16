@@ -35,7 +35,7 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	}
 	var info [144]bit.Bit
 	copy(info[:], bit.Unpack(want[:]))
-	raw := buildDataBurst(enums.DataTypeRate34, trellis.Encode(info))
+	raw := buildDataBurst(enums.DataTypeRate34, trellisInfo(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {
@@ -63,7 +63,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 	for i := range info {
 		info[i] = bit.Bit(i % 3 % 2)
 	}
-	raw := buildDataBurst(enums.DataTypeRate34, trellis.Encode(info))
+	raw := buildDataBurst(enums.DataTypeRate34, trellisInfo(info))
 	raw[2] ^= 0x10
 
 	b, err := layer2.NewBurstFromBytes(raw)
@@ -137,4 +137,12 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 	if must(b.Encode()) != raw {
 		t.Error("Encode() does not reproduce the original burst")
 	}
+}
+
+// trellisInfo returns the 196 rate 3/4 trellis coded bits of info.
+func trellisInfo(info [144]bit.Bit) [196]bit.Bit {
+	enc := trellis.Encode([18]byte(bit.Pack(info[:])))
+	var bits [196]bit.Bit
+	copy(bits[:], bit.Unpack(enc[:]))
+	return bits
 }
