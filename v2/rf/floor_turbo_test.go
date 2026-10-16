@@ -81,15 +81,15 @@ func (e *floorEval) bptcTurbo(i int, dt enums.DataType, iters int, alpha float32
 	tb := e.truth[i].burst
 	want, _ := tb.BPTCPayload()
 	var free, rpos []int16
-	for j := range d.bptc.n {
+	for j := range softBPTCCode.code().n {
 		r := false
 		for x := softBPTCData; x < softBPTCInfo; x++ {
-			r = r || int(d.bptc.sys[x]) == j
+			r = r || int(softBPTCCode.code().sys[x]) == j
 		}
 		if r {
-			rpos = append(rpos, d.bptc.pos[j])
+			rpos = append(rpos, softBPTCCode.code().pos[j])
 		} else {
-			free = append(free, d.bptc.pos[j])
+			free = append(free, softBPTCCode.code().pos[j])
 		}
 	}
 	e.setFree(free)
@@ -136,7 +136,7 @@ func (e *floorEval) bptcTurbo(i int, dt enums.DataType, iters int, alpha float32
 			sep = ok
 		}
 		turbo = ok
-		if check != nil && !fr.Uncorrectable || check == nil && d.grid.isCodeword(&img) {
+		if check != nil && !fr.Uncorrectable || check == nil && gridIsCodeword(&softGridPos, &softGridRowH, &softGridColH, &img) {
 			break
 		}
 		if it == 0 {

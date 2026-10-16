@@ -71,16 +71,6 @@ func softSigns(llr *[softBurstBits]int16) *[softBurstBits]int16 {
 	return &s
 }
 
-// newTestSoftDecoder returns a softDecoder or fails the test.
-func newTestSoftDecoder(tb testing.TB) *softDecoder {
-	tb.Helper()
-	d, err := newSoftDecoder()
-	if err != nil {
-		tb.Fatal(err)
-	}
-	return d
-}
-
 // softFER runs trials frames at each SNR. run returns for each column the
 // number of frame errors of one trial of units frames. It logs the table of
 // frame error rates and returns the error counts by SNR and column.
@@ -174,7 +164,7 @@ func softFrameErrors(got, want *[layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) in
 // TestSoftAMBE checks the AMBE+2 decode against the library hard decoder.
 func TestSoftAMBE(t *testing.T) {
 	t.Parallel()
-	d := newTestSoftDecoder(t)
+	d := newSoftDecoder()
 	rng := rand.New(rand.NewPCG(1, 2))
 	for range 50 {
 		frames := softRandomFrames(rng)
@@ -230,7 +220,7 @@ func softBPTCPayload(t testing.TB, rng *rand.Rand) [12]byte {
 // library hard decoder.
 func TestSoftBPTC(t *testing.T) {
 	t.Parallel()
-	d := newTestSoftDecoder(t)
+	d := newSoftDecoder()
 	check := softBPTCCheck(enums.DataTypeCSBK)
 	rng := rand.New(rand.NewPCG(3, 4))
 	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
@@ -306,7 +296,7 @@ func TestSoftBPTC(t *testing.T) {
 		d.ChaseBits, d.OSDOrder, d.OSDWindow = 6, 2, 0
 		out := hb
 		got, _ := d.decodeBPTCOSD(&llr, nil, &out)
-		pos := d.bptc.pos[:d.bptc.n]
+		pos := softBPTCCode.code().pos[:softBPTCCode.code().n]
 		errs = append(errs, softBool(got.Payload != p && softCost(&out, llr[:], pos) <= softCost(&r, llr[:], pos)), d.osd.list.scored)
 		return errs
 	})
@@ -319,7 +309,7 @@ func TestSoftBPTC(t *testing.T) {
 // the library hard decoder.
 func TestSoftRate34(t *testing.T) {
 	t.Parallel()
-	d := newTestSoftDecoder(t)
+	d := newSoftDecoder()
 	rng := rand.New(rand.NewPCG(5, 6))
 	random := func(rng *rand.Rand) [18]byte {
 		var p [18]byte
@@ -345,7 +335,7 @@ func TestSoftRate34(t *testing.T) {
 	p := random(rng)
 	var clean layer2.RawBurst
 	clean.SetRate34Payload(p)
-	for _, q := range d.trellis.pos {
+	for _, q := range softTrellisTables.pos {
 		j := int(q)
 		if j%2 != 0 {
 			continue
@@ -379,7 +369,7 @@ func TestSoftRate34(t *testing.T) {
 	}
 	cost := func(r *layer2.RawBurst, llr *[softBurstBits]int16) int64 {
 		var c int64
-		for _, q := range d.trellis.pos {
+		for _, q := range softTrellisTables.pos {
 			if r[q/8]>>(7-q%8)&1 != 0 {
 				c += int64(llr[q])
 			}
@@ -437,7 +427,7 @@ func TestSoftRate34(t *testing.T) {
 // library hard decoders.
 func TestSoftEMBAndSlotType(t *testing.T) {
 	t.Parallel()
-	d := newTestSoftDecoder(t)
+	d := newSoftDecoder()
 	for v := range 256 {
 		var r layer2.RawBurst
 		st := pdu.SlotTypeInfo(v)
@@ -522,7 +512,7 @@ func softSameTACT(a, b pdu.TACT) bool {
 // decoders.
 func TestSoftCACH(t *testing.T) {
 	t.Parallel()
-	d := newTestSoftDecoder(t)
+	d := newSoftDecoder()
 	rng := rand.New(rand.NewPCG(7, 8))
 	for range 50 {
 		info := softShortLCInfoBits(rng)
@@ -617,7 +607,7 @@ func softRandomLC(rng *rand.Rand) [9]byte {
 // two combined copies, against the library hard decoder.
 func TestSoftEmbeddedLC(t *testing.T) {
 	t.Parallel()
-	d := newTestSoftDecoder(t)
+	d := newSoftDecoder()
 	rng := rand.New(rand.NewPCG(9, 10))
 	for range 50 {
 		lc := softRandomLC(rng)
@@ -770,7 +760,7 @@ func softBenchCases(d *softDecoder, in *softBenchInputs) []struct {
 
 // BenchmarkSoftFEC times each decode at 3 dB.
 func BenchmarkSoftFEC(b *testing.B) {
-	d := newTestSoftDecoder(b)
+	d := newSoftDecoder()
 	in := newSoftBenchInputs(b, 3)
 	for _, c := range softBenchCases(d, in) {
 		b.Run(strings.ReplaceAll(c.name, " ", "_"), func(b *testing.B) {
@@ -782,30 +772,18 @@ func BenchmarkSoftFEC(b *testing.B) {
 	}
 }
 
-// BenchmarkSoftNewDecoder times the derivation of the code tables.
-func BenchmarkSoftNewDecoder(b *testing.B) {
-	b.ReportAllocs()
-	for b.Loop() {
-		newTestSoftDecoder(b)
-	}
-}
-
 // TestSoftAMBEScramble checks the C1 scrambling mask of every C0 info word
 // against the C1 bits of the burst that SetAMBEFrames makes of it.
 func TestSoftAMBEScramble(t *testing.T) {
 	t.Parallel()
-	a, err := newSoftAMBE()
-	if err != nil {
-		t.Fatal(err)
-	}
-	c := &a.slot[0].c1
+	c := softAMBESlot(0).c1
 	enc := softAMBEEncoder(0, 0)
 	for v := range uint32(1 << softAMBEC0) {
 		img, err := enc(v)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got, want := a.pn(v), softMask(img, c.pos[:c.n]); got != want {
+		if got, want := softAMBEPN(v), softMask(img, c.pos[:c.n]); got != want {
 			t.Fatalf("C0 %#x: mask %#x, want %#x", v, got, want)
 		}
 	}

@@ -42,13 +42,9 @@ const maxCombine = 4
 
 // newRepairer returns a repairer that decodes BPTC(196,96) by ordered
 // statistics when osd, and again by iterative decoding of its grid when
-// grid and the check fails, or nil when the soft decoders cannot be built.
+// grid and the check fails.
 func newRepairer(osd, grid bool) *repairer {
-	d, err := newSoftDecoder()
-	if err != nil {
-		return nil
-	}
-	p := &repairer{soft: d, osd: osd, grid: grid}
+	p := &repairer{soft: newSoftDecoder(), osd: osd, grid: grid}
 	for dt := range p.checks {
 		p.checks[dt] = softBPTCCheck(enums.DataType(dt))
 	}
@@ -120,17 +116,15 @@ func (p *repairer) voiceBits(e *trackEntry, known *[layer2.BurstBits]bool) bool 
 	if out.voice == enums.VoiceBurstUnknown && (!ok || kind != layer2.KindVoice) {
 		return false
 	}
-	for i := range p.soft.ambe.slot {
-		sl := &p.soft.ambe.slot[i]
-		for _, q := range sl.c0.pos[:sl.c0.n] {
-			known[q] = true
-		}
-		for _, q := range sl.c1.pos[:sl.c1.n] {
+	for id := softAMBECode; id < softSmallCount; id++ {
+		c := &softSmallCodes[id]
+		for _, q := range c.pos[:c.n] {
 			known[q] = true
 		}
 	}
 	if out.voice != enums.VoiceBurstUnknown && out.voice != enums.VoiceBurstA {
-		for _, q := range p.soft.emb.pos[:p.soft.emb.n] {
+		c := &softSmallCodes[softEMBCode]
+		for _, q := range c.pos[:c.n] {
 			known[q] = true
 		}
 	}

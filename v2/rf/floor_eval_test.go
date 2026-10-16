@@ -52,16 +52,13 @@ type floorEval struct {
 
 // newFloorEval returns an evaluator with a genie trellis of window d.
 func newFloorEval(d int) *floorEval {
-	dec, err := newSoftDecoder()
-	if err != nil {
-		panic(err)
-	}
+	dec := newSoftDecoder()
 	dec.OSDOrder, dec.OSDWindow = 3, 24
 	g := newGenieTrellis(d, 2*slotSymbols)
 	e := &floorEval{g: g, g1: g, dec: dec, app: make([]float32, 4*2*slotSymbols), tail: true}
 	for i := range 96 {
-		e.r1pos[i] = dec.info[i]
-		e.r1pos[96+i] = dec.info[100+i]
+		e.r1pos[i] = softInfoPos[i]
+		e.r1pos[96+i] = softInfoPos[100+i]
 	}
 	return e
 }
@@ -207,14 +204,15 @@ func smallCodeword(c *softSmallCode, info uint32) uint32 {
 
 // smallBeats reports whether a codeword of c with info bits under fixed
 // equal to want, other than the transmitted one, makes burst i more likely.
-func (e *floorEval) smallBeats(i int, c *softSmallCode, fixed, want uint32) bool {
+func (e *floorEval) smallBeats(i int, id softSmallID, fixed, want uint32) bool {
+	c := &softSmallCodes[id]
 	tb := e.truth[i].burst
 	for info := range uint32(1) << c.k {
 		if info&fixed != want {
 			continue
 		}
 		cand := tb
-		softPutSmall(&cand, c, smallCodeword(c, info))
+		softPutSmall(&cand, id, smallCodeword(c, info))
 		if e.beats(i, &cand) {
 			return true
 		}
@@ -283,7 +281,7 @@ func (e *floorEval) voice(i int, cc enums.ColorCode) {
 		return
 	}
 	if e.want("emb") {
-		e.add("emb", !e.smallBeats(i, &e.dec.emb, 0x78, uint32(cc&0x0f)<<3))
+		e.add("emb", !e.smallBeats(i, softEMBCode, 0x78, uint32(cc&0x0f)<<3))
 	}
 	if ts.pos >= enums.VoiceBurstB && ts.pos <= enums.VoiceBurstE && e.want("elc") {
 		e.elcFragment(i, ts)
@@ -293,9 +291,9 @@ func (e *floorEval) voice(i int, cc enums.ColorCode) {
 // ambe scores frame f of voice burst i: the whole frame, and C0 and C1
 // with the genie also giving C2 and C3.
 func (e *floorEval) ambe(i, f int) {
-	sl := &e.dec.ambe.slot[f]
+	sl := softAMBESlot(f)
 	tb := e.truth[i].burst
-	e.setFree(sl.c0.pos[:sl.c0.n], sl.c1.pos[:sl.c1.n], sl.c2[:])
+	e.setFree(sl.id0.bits(), sl.id1.bits(), sl.c2[:])
 	e.addInfo("ambe", e.detect(i, false)-49*math.Ln2)
 	okFrame := true
 	e.setFree(sl.c2[:])
@@ -307,24 +305,24 @@ func (e *floorEval) ambe(i, f int) {
 	if e.beats(i, &cand) {
 		okFrame = false
 	}
-	e.setFree(sl.c0.pos[:sl.c0.n], sl.c1.pos[:sl.c1.n])
+	e.setFree(sl.id0.bits(), sl.id1.bits())
 	e.addInfo("ambe_c0c1", e.detect(i, false)-24*math.Ln2)
 	okC0C1 := true
 	s := &e.dec.small
-	sl.c0.gather(e.llr[:], &s.l)
+	sl.id0.gather(e.llr[:], &s.l)
 	softTables(s.tab, s.l[:sl.c0.n])
 	s.top.reset(softListMax)
-	sl.c0.search(s.tab, 0, 0, 0, &s.top)
+	sl.id0.search(s.tab, 0, 0, 0, &s.top)
 	top0 := s.top
-	sl.c1.gather(e.llr[:], &s.l)
+	sl.id1.gather(e.llr[:], &s.l)
 	softTables(s.tab, s.l[:sl.c1.n])
 	for c := range top0.n {
 		s.top1.reset(4)
-		sl.c1.search(s.tab, e.dec.ambe.pn(top0.info[c]), 0, 0, &s.top1)
+		sl.id1.search(s.tab, softAMBEPN(top0.info[c]), 0, 0, &s.top1)
 		for c1 := range s.top1.n {
 			cand := tb
-			softPutSmall(&cand, &sl.c0, top0.cw[c])
-			softPutSmall(&cand, &sl.c1, s.top1.cw[c1])
+			softPutSmall(&cand, sl.id0, top0.cw[c])
+			softPutSmall(&cand, sl.id1, s.top1.cw[c1])
 			if e.beats(i, &cand) {
 				okC0C1, okFrame = false, false
 			}
@@ -376,13 +374,13 @@ func (e *floorEval) elcFragment(i int, ts benchSlot) {
 		tb[k] = e.truth[at[k]].burst
 	}
 	d, s := e.dec, &e.dec.osd
-	c := d.embLC.code
+	c := softEmbLCCode.code()
 	for j := range c.n {
 		p := c.pos[j]
 		s.l[j] = int32(sum[p/softBurstBits][p%softBurstBits])
 	}
-	s.accept = d.acceptEmbLC
-	c.osd(s, d.OSDOrder, d.OSDWindow, softListMax)
+	s.accept = softEmbLCAccept
+	softEmbLCCode.osd(s, d.OSDOrder, d.OSDWindow, softListMax)
 	ok := true
 	for x := range s.list.n {
 		cw := &s.list.cw[x]
@@ -426,7 +424,7 @@ func (e *floorEval) data(i int, cc enums.ColorCode) {
 	ts := e.truth[i]
 	_, dsync, _ := layer2.SyncSourceBS.SyncPatterns()
 	k := benchDataKey(ts.dt)
-	okST := !e.smallBeats(i, &e.dec.slotType, 0xf0, uint32(cc&0x0f)<<4)
+	okST := !e.smallBeats(i, softSlotTypeCode, 0xf0, uint32(cc&0x0f)<<4)
 	if e.want("slottype") {
 		e.add("slottype", okST)
 	}
@@ -470,15 +468,15 @@ func (e *floorEval) bptc(i int, dt enums.DataType) bool {
 	tb := e.truth[i].burst
 	want, _ := tb.BPTCPayload()
 	var free, rpos []int16
-	for j := range d.bptc.n {
+	for j := range softBPTCCode.code().n {
 		r := false
 		for x := softBPTCData; x < softBPTCInfo; x++ {
-			r = r || int(d.bptc.sys[x]) == j
+			r = r || int(softBPTCCode.code().sys[x]) == j
 		}
 		if r {
-			rpos = append(rpos, d.bptc.pos[j])
+			rpos = append(rpos, softBPTCCode.code().pos[j])
 		} else {
-			free = append(free, d.bptc.pos[j])
+			free = append(free, softBPTCCode.code().pos[j])
 		}
 	}
 	e.setFree(free)
@@ -496,15 +494,15 @@ func (e *floorEval) bptc(i int, dt enums.DataType) bool {
 	if check != nil {
 		s.accept = d.acceptBPTC
 	}
-	d.bptc.osd(s, d.OSDOrder, d.OSDWindow, softListMax)
+	softBPTCCode.osd(s, d.OSDOrder, d.OSDWindow, softListMax)
 	for x := range s.list.n {
 		cw := &s.list.cw[x]
-		if check != nil && !check(d.bptc.bptcResult(cw).Payload) {
+		if check != nil && !check(softBPTCOf(cw).Payload) {
 			continue
 		}
 		cand := tb
-		for j := range d.bptc.n {
-			softPut(&cand, d.bptc.pos[j], softBit(cw, j))
+		for j := range softBPTCCode.code().n {
+			softPut(&cand, softBPTCCode.code().pos[j], softBit(cw, j))
 		}
 		if !sameBits(&cand, &tb, rpos) {
 			continue
@@ -534,7 +532,7 @@ func sameBits(a, b *layer2.RawBurst, pos []int16) bool {
 func (e *floorEval) rate34(i int) bool {
 	tb := e.truth[i].burst
 	want, _ := tb.Rate34Payload()
-	e.setFree(e.dec.trellis.pos[:])
+	e.setFree(softTrellisTables.pos[:])
 	e.addInfo("rate34", e.detect(i, false)-144*math.Ln2)
 	cand := tb
 	e.dec.decodeRate34(&e.llr, &cand)

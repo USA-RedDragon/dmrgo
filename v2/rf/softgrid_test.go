@@ -15,19 +15,16 @@ import (
 // against the best codeword with each bit value, found by enumeration.
 func TestSoftGridComponent(t *testing.T) {
 	t.Parallel()
-	d, err := newSoftDecoder()
-	if err != nil {
-		t.Fatal(err)
-	}
-	g := d.grid
+	d := newSoftDecoder()
+	g := &d.grid
 	rng := rand.New(rand.NewPCG(3, 4))
-	for _, h := range [][]uint8{g.rowH[:], g.colH[:]} {
+	for col, h := range [][]uint8{softGridRowH[:], softGridColH[:]} {
 		n := len(h)
 		for range 10 {
 			for k := range n {
 				g.in[k] = float32(rng.NormFloat64() * 3)
 			}
-			g.component(h)
+			g.component(col == 1)
 			for k := range n {
 				b0, b1 := math.Inf(-1), math.Inf(-1)
 				for w := range 1 << n {
@@ -62,14 +59,14 @@ func TestSoftGridComponent(t *testing.T) {
 		var s uint8
 		for j := range gridCols {
 			if w>>j&1 != 0 {
-				s ^= g.rowH[j]
+				s ^= softGridRowH[j]
 			}
 		}
 		if s == 0 {
 			n++
 		}
 	}
-	if n != 1<<11 || bits.OnesCount8(g.colH[0]|g.colH[1]|g.colH[2]|g.colH[3]) == 0 {
+	if n != 1<<11 || bits.OnesCount8(softGridColH[0]|softGridColH[1]|softGridColH[2]|softGridColH[3]) == 0 {
 		t.Fatalf("row code has %d codewords", n)
 	}
 }
@@ -80,7 +77,7 @@ func TestSoftGridComponent(t *testing.T) {
 // not.
 func TestDecodeBPTCGrid(t *testing.T) {
 	t.Parallel()
-	d := newTestSoftDecoder(t)
+	d := newSoftDecoder()
 	check := softBPTCCheck(enums.DataTypeCSBK)
 	rng := rand.New(rand.NewPCG(5, 6))
 	osdFails := 0
@@ -98,7 +95,7 @@ func TestDecodeBPTCGrid(t *testing.T) {
 			}
 		}
 		for k := range 4 {
-			q := d.grid.pos[2+3*k][1+4*k]
+			q := softGridPos[2+3*k][1+4*k]
 			llr[q] = -llr[q] * 2
 		}
 		if got, res := d.decodeBPTCOSD(&llr, check, nil); res.Uncorrectable || got.Payload != p {

@@ -1275,7 +1275,7 @@ func (r *Receiver) repairData(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		}
 		r.scratchRec.llr.get(&dp.next)
 		e.rec.llr.get(&dp.llr)
-		bp := r.rep.soft.bptc
+		bp := &softOSDCodes[softBPTCCode]
 		for _, i := range bp.pos[:bp.n] {
 			c := float32(dp.next[i])/8 - w*dp.ext[i]
 			dp.ch[i] = satLLR(c)

@@ -73,10 +73,7 @@ func (e *floorEval) awareStream() {
 	e.sc = map[string]*benchScore{}
 	e.conv = map[string][]float64{}
 	if e.aw == nil {
-		dec, err := newSoftDecoder()
-		if err != nil {
-			panic(err)
-		}
+		dec := newSoftDecoder()
 		e.aw = &awareState{dec: dec}
 	}
 	e.aw.accN = 0
@@ -104,13 +101,13 @@ func (e *floorEval) awareVoice(i int, cc enums.ColorCode) {
 	voice, _, _ := layer2.SyncSourceBS.SyncPatterns()
 	want, _ := ts.burst.AMBEFrames()
 	for f := range layer2.VoiceSlotsPerBurst {
-		sl := &d.ambe.slot[f]
+		sl := softAMBESlot(f)
 		if e.want("ambe") {
-			got := e.awareAMBE(i, f, sl.c0.pos[:sl.c0.n], sl.c1.pos[:sl.c1.n], sl.c2[:])
+			got := e.awareAMBE(i, f, sl.id0.bits(), sl.id1.bits(), sl.c2[:])
 			e.add("ambe", got == want[f])
 		}
 		if e.want("ambe_c0c1") {
-			got := e.awareAMBE(i, f, sl.c0.pos[:sl.c0.n], sl.c1.pos[:sl.c1.n])
+			got := e.awareAMBE(i, f, sl.id0.bits(), sl.id1.bits())
 			e.add("ambe_c0c1", slices.Equal(got[:3], want[f][:3]))
 		}
 	}
@@ -121,7 +118,7 @@ func (e *floorEval) awareVoice(i int, cc enums.ColorCode) {
 		return
 	}
 	if e.want("emb") {
-		e.awareDetect(i, d.emb.pos[:d.emb.n])
+		e.awareDetect(i, softEMBCode.bits())
 		out := ts.burst
 		d.decodeEMB(&e.llr, cc, true, &out)
 		g, w := out.EMB(), ts.burst.EMB()
@@ -143,8 +140,8 @@ func (e *floorEval) awareAMBE(i, f int, pos ...[]int16) vocoder.AMBEFrame {
 	d.decodeAMBE(&e.llr, &out)
 	var pri, lapp [softBurstBits]float32
 	w := tierOptions(TierExact).RefinePrior
-	sl := &d.ambe.slot[f]
-	for _, ps := range [][]int16{sl.c0.pos[:sl.c0.n], sl.c1.pos[:sl.c1.n]} {
+	sl := softAMBESlot(f)
+	for _, ps := range [][]int16{sl.id0.bits(), sl.id1.bits()} {
 		for _, p := range ps {
 			pri[p] = w
 			if out[p/8]&(0x80>>(p%8)) != 0 {
@@ -213,7 +210,7 @@ func (e *floorEval) awareData(i int, cc enums.ColorCode) {
 	d := e.aw.dec
 	_, dsync, _ := layer2.SyncSourceBS.SyncPatterns()
 	k := benchDataKey(ts.dt)
-	e.awareDetect(i, d.slotType.pos[:d.slotType.n])
+	e.awareDetect(i, softSlotTypeCode.bits())
 	out := ts.burst
 	d.decodeSlotType(&e.llr, cc, true, &out)
 	okST := out.SlotType() == ts.burst.SlotType()
@@ -229,7 +226,7 @@ func (e *floorEval) awareData(i int, cc enums.ColorCode) {
 	var ok bool
 	switch ts.dt {
 	case enums.DataTypeRate34:
-		e.awareDetect(i, d.trellis.pos[:])
+		e.awareDetect(i, softTrellisTables.pos[:])
 		out := ts.burst
 		d.decodeRate34(&e.llr, &out)
 		a, _ := out.Rate34Payload()
@@ -257,13 +254,13 @@ func (e *floorEval) awareBPTC(i int, dt enums.DataType) bool {
 	tb := e.truth[i].burst
 	want, _ := tb.BPTCPayload()
 	var free []int16
-	for j := range d.bptc.n {
+	for j := range softBPTCCode.code().n {
 		r := false
 		for x := softBPTCData; x < softBPTCInfo; x++ {
-			r = r || int(d.bptc.sys[x]) == j
+			r = r || int(softBPTCCode.code().sys[x]) == j
 		}
 		if !r {
-			free = append(free, d.bptc.pos[j])
+			free = append(free, softBPTCCode.code().pos[j])
 		}
 	}
 	e.setFree(free)
