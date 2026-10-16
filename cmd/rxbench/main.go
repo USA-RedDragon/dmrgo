@@ -330,10 +330,12 @@ func renderBlock(d data) []byte {
 		b.WriteString("\n")
 	}
 	b.WriteString("\n</details>\n\n")
-	for _, p := range graphPayloads() {
-		b.WriteString("![" + p[1] + ": frame recovery against Eb/N0, floor and tiers](docs/rx/" + p[0] + ".svg)\n")
+	b.WriteString("<details><summary>Error rate graphs</summary>\n\n")
+	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the floor and each tier. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
+	for _, g := range graphs() {
+		b.WriteString("![" + g.title + ": " + strings.ToLower(g.rate) + " against Eb/N0, floor and tiers](docs/rx/" + g.key + ".svg)\n")
 	}
-	b.WriteString("\n")
+	b.WriteString("\n</details>\n\n")
 	return []byte(b.String())
 }
 
@@ -359,25 +361,43 @@ func ebCell(v float64, ok bool) string {
 	return f1(v) + " (" + f1(v-10*math.Log10(12500.0/9600)) + ")"
 }
 
-// graphPayloads lists the payload types with a graph: data key and title.
-func graphPayloads() [][2]string {
-	return [][2]string{{keyAMBE, "Voice frame"}, {keyRate12, "Data rate 1/2"}, {keyRate34, "Data rate 3/4"}, {keyCSBK, "CSBK"}, {"elc", "Embedded LC"}}
+// graph is a README graph: data key, title and error rate name.
+type graph struct {
+	key, title, rate string
 }
 
-// renderGraphs returns one SVG per graph payload: frame recovery against
-// Eb/N0, the floor dashed and each tier solid.
+// graphs lists the README graphs.
+func graphs() []graph {
+	const fer = "Frame error rate"
+	return []graph{
+		{keyAMBE, "Voice frame", fer}, {keyRate12, "Data rate 1/2", fer}, {keyRate34, "Data rate 3/4", fer},
+		{keyCSBK, "CSBK", fer}, {"elc", "Embedded LC", fer}, {"rate1_bit", "Data rate 1 payload bits", "Bit error rate"},
+	}
+}
+
+// errorRate returns 1 minus each recovery of y.
+func errorRate(y []float64) []float64 {
+	out := make([]float64, len(y))
+	for i, v := range y {
+		out[i] = 1 - v
+	}
+	return out
+}
+
+// renderGraphs returns one SVG per graph: the error rate against Eb/N0 on
+// a log scale, the floor dashed and each tier solid.
 func renderGraphs(d data) map[string][]byte {
 	out := map[string][]byte{}
-	for _, p := range graphPayloads() {
+	for _, g := range graphs() {
 		var series []svgSeries
-		if c, ok := d.floor.Payloads[p[0]]; ok {
-			series = append(series, svgSeries{name: "Floor", x: c.EbN0, y: c.recovery(), dash: true, class: "s0"})
+		if c, ok := d.floor.Payloads[g.key]; ok {
+			series = append(series, svgSeries{name: "Floor", x: c.EbN0, y: errorRate(c.recovery()), dash: true, class: "s0"})
 		}
 		for _, t := range d.bench.Tiers {
-			x, y := tierCurve(t, p[0])
-			series = append(series, svgSeries{name: "Tier " + strconv.Itoa(t.Tier), x: x, y: y, class: "s" + strconv.Itoa(t.Tier+1)})
+			x, y := tierCurve(t, g.key)
+			series = append(series, svgSeries{name: "Tier " + strconv.Itoa(t.Tier), x: x, y: errorRate(y), class: "s" + strconv.Itoa(t.Tier+1)})
 		}
-		out[p[0]+".svg"] = svgChart(p[1], series)
+		out[g.key+".svg"] = svgChart(g.title, g.rate, series)
 	}
 	return out
 }

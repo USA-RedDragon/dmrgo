@@ -212,11 +212,18 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 
 </details>
 
-![Voice frame: frame recovery against Eb/N0, floor and tiers](docs/rx/ambe.svg)
-![Data rate 1/2: frame recovery against Eb/N0, floor and tiers](docs/rx/rate12.svg)
-![Data rate 3/4: frame recovery against Eb/N0, floor and tiers](docs/rx/rate34.svg)
-![CSBK: frame recovery against Eb/N0, floor and tiers](docs/rx/csbk.svg)
-![Embedded LC: frame recovery against Eb/N0, floor and tiers](docs/rx/elc.svg)
+<details><summary>Error rate graphs</summary>
+
+Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the floor and each tier. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.
+
+![Voice frame: frame error rate against Eb/N0, floor and tiers](docs/rx/ambe.svg)
+![Data rate 1/2: frame error rate against Eb/N0, floor and tiers](docs/rx/rate12.svg)
+![Data rate 3/4: frame error rate against Eb/N0, floor and tiers](docs/rx/rate34.svg)
+![CSBK: frame error rate against Eb/N0, floor and tiers](docs/rx/csbk.svg)
+![Embedded LC: frame error rate against Eb/N0, floor and tiers](docs/rx/elc.svg)
+![Data rate 1 payload bits: bit error rate against Eb/N0, floor and tiers](docs/rx/rate1_bit.svg)
+
+</details>
 
 <!-- rxbench:end -->
 
