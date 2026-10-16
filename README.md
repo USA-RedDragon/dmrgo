@@ -194,7 +194,7 @@ The example prints its counts on the serial console once a second.
 | 7.1.3 | Embedded signalling | verified | 26/26 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go`, `v2/layer2/voice_transmitter_options.go` |
 | 7.1.4 | Short Link Control in CACH | verified | 12/12 passed | `v2/layer2/short_lc_assembler.go`, `v2/layer2/short_lc_cach.go`, `v2/internal/fec/bptc/bptc_cach.go` |
 | 7.2.1 | Control Signalling BlocK (CSBK) | verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
-| 7.3 | Idle message | verified | 6/6 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
+| 7.3 | Idle message | verified | 5/5 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
 | 7.4.1 | Multi Block Control (MBC) | verified | 17/17 passed | `v2/layer2/pdu/mbc.go`, `v2/layer2/burst.go` |
 | 8.2.1 | Header block structure | verified | 7/7 passed | `v2/layer2/pdu/data_header.go`, `v2/layer2/pdu/data_header_bytes.go` |
 | 8.2.2 | Data block structure | verified | 13/13 passed | `v2/layer2/packet/packet.go`, `v2/layer2/packet/assembler.go`, `v2/layer2/packet/bursts.go` |
@@ -208,7 +208,7 @@ The example prints its counts on the serial console once a second.
 | 9.1.6 | Full Link Control (FULL LC) PDU | verified | 10/10 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/full_link_control_bytes.go` |
 | 9.1.7 | Short Link Control (SHORT LC) PDU | verified | 14/14 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go`, `v2/internal/crc/crc8.go` |
 | 9.1.8 | Control Signalling Block (CSBK) PDU | verified | 7/7 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/csbk_bytes.go` |
-| 9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | verified | 8/8 passed | `v2/layer2/pdu/pr_fill.go` |
+| 9.1.9 | Pseudo Random Fill Bit (PR FILL) PDU | verified | 7/7 passed | `v2/layer2/pdu/pr_fill.go` |
 | 9.2.2 | Rate ¾ coded packet Data (R_3_4_DATA) PDU | verified | 10/10 passed | `v2/layer2/pdu/rate34_data.go`, `v2/layer2/pdu/confirmed_block.go` |
 | 9.2.6 | Unconfirmed data packet Header (U_HEAD) PDU | verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | 9.2.7 | Rate ½ coded packet Data (R_1_2_DATA) PDU | verified | 7/7 passed | `v2/layer2/pdu/rate12_data.go`, `v2/layer2/pdu/confirmed_block.go` |
