@@ -3,7 +3,6 @@ package layer2_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -11,8 +10,8 @@ import (
 )
 
 func burstInfoBits(raw [33]byte) [12]byte {
-	all := [264]bit.Bit(unpacked.Unpack(raw[:]))
-	var dataBits [196]bit.Bit
+	all := [264]unpacked.Bit(unpacked.Unpack(raw[:]))
+	var dataBits [196]unpacked.Bit
 	copy(dataBits[:98], all[:98])
 	copy(dataBits[98:], all[166:])
 	info := decode196Bits(dataBits)

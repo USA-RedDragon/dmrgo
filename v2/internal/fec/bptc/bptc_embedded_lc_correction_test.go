@@ -4,13 +4,12 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-func fragmentsFromBytes(b [4][4]byte) [4][32]bit.Bit {
-	var fr [4][32]bit.Bit
+func fragmentsFromBytes(b [4][4]byte) [4][32]unpacked.Bit {
+	var fr [4][32]unpacked.Bit
 	for i := range b {
 		copy(fr[i][:], unpacked.Unpack(b[i][:]))
 	}
@@ -33,8 +32,8 @@ func TestEmbeddedLC_CapturedSuperframe(t *testing.T) {
 	}
 	// Rows 0 and 1 hold 11 LC bits, and rows 2 to 6 hold 10 LC bits and one
 	// checksum bit (ETSI TS 102 361-1 Figure B.3).
-	var lc []bit.Bit
-	var cs []bit.Bit
+	var lc []unpacked.Bit
+	var cs []unpacked.Bit
 	for row := 0; row < 7; row++ {
 		r := info[row*11 : row*11+11]
 		if row < 2 {
@@ -58,15 +57,15 @@ func TestEmbeddedLC_CapturedSuperframe(t *testing.T) {
 	}
 }
 
-func embeddedLCInfo() [77]bit.Bit {
-	var info [77]bit.Bit
+func embeddedLCInfo() [77]unpacked.Bit {
+	var info [77]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit((i*7 + i/3) & 1)
+		info[i] = unpacked.Bit((i*7 + i/3) & 1)
 	}
 	return info
 }
 
-func flipEmbedded(fr [4][32]bit.Bit, pos ...int) [4][32]bit.Bit {
+func flipEmbedded(fr [4][32]unpacked.Bit, pos ...int) [4][32]unpacked.Bit {
 	for _, p := range pos {
 		fr[p/32][p%32] ^= 1
 	}
@@ -111,13 +110,13 @@ func TestEmbeddedLC_TieResolvedByCheck(t *testing.T) {
 	if _, res := decodeEmbedded(rx); !res.Uncorrectable {
 		t.Fatalf("tie accepted: %+v", res)
 	}
-	got, res := decodeEmbeddedWithCheck(rx, func(i [77]bit.Bit) bool { return i == info })
+	got, res := decodeEmbeddedWithCheck(rx, func(i [77]unpacked.Bit) bool { return i == info })
 	if got != info || res.Uncorrectable || res.ErrorsCorrected != 4 {
 		t.Fatalf("data match=%v result=%+v", got == info, res)
 	}
 	other := info
 	other[0] ^= 1
-	got, res = decodeEmbeddedWithCheck(rx, func(i [77]bit.Bit) bool { return i == other })
+	got, res = decodeEmbeddedWithCheck(rx, func(i [77]unpacked.Bit) bool { return i == other })
 	if got != other || res.Uncorrectable || res.ErrorsCorrected != 4 {
 		t.Fatalf("other codeword: data match=%v result=%+v", got == other, res)
 	}
@@ -130,9 +129,9 @@ func TestEmbeddedLC_RandomWordsRejected(t *testing.T) {
 	r := rand.New(rand.NewSource(3))
 	accepted := 0
 	for n := 0; n < 2000; n++ {
-		var rx [4][32]bit.Bit
+		var rx [4][32]unpacked.Bit
 		for i := 0; i < 128; i++ {
-			rx[i/32][i%32] = bit.Bit(r.Intn(2))
+			rx[i/32][i%32] = unpacked.Bit(r.Intn(2))
 		}
 		if _, res := decodeEmbedded(rx); !res.Uncorrectable {
 			if res.ErrorsCorrected > bptc.EmbeddedMaxErrors {

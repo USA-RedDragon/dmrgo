@@ -57,8 +57,7 @@
 //
 // # Packages
 //
-//   - bit: the Bit type and FieldRangeError, the error of the PDU Encode
-//     methods.
+//   - bit: FieldRangeError, the error of the PDU Encode methods.
 //   - enums: the enumerated information elements, such as data types, SYNC
 //     patterns, FLCO, FID and color codes.
 //   - constants: the timers and constants of the Annexes of ETSI TS 102 361.

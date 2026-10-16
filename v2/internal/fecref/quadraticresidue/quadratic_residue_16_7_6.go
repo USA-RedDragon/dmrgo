@@ -3,17 +3,15 @@
 package quadraticresidue
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // parityBits returns the 9 parity bits of 7 data bits, from the generator
 // matrix of ETSI TS 102 361-1 clause B.3.2.
-func parityBits(bits [7]bit.Bit) [9]bit.Bit {
-	lowbit.Mask(bits[:])
-	parity := [9]bit.Bit{}
+func parityBits(bits [7]unpacked.Bit) [9]unpacked.Bit {
+	unpacked.Mask(bits[:])
+	parity := [9]unpacked.Bit{}
 
 	parity[0] = bits[1] ^ bits[2] ^ bits[3] ^ bits[4]
 	parity[1] = bits[2] ^ bits[3] ^ bits[4] ^ bits[5]
@@ -29,9 +27,9 @@ func parityBits(bits [7]bit.Bit) [9]bit.Bit {
 }
 
 // Check reports whether bits is a QR (16,7,6) codeword.
-func Check(bits [16]bit.Bit) bool {
-	lowbit.Mask(bits[:])
-	var data [7]bit.Bit
+func Check(bits [16]unpacked.Bit) bool {
+	unpacked.Mask(bits[:])
+	var data [7]unpacked.Bit
 	copy(data[:], bits[:7])
 
 	calcParity := parityBits(data)
@@ -45,11 +43,11 @@ func Check(bits [16]bit.Bit) bool {
 
 // Decode corrects up to 2 bit errors in a QR (16,7,6) codeword and returns
 // the corrected codeword and a fec.Result.
-func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
-	lowbit.Mask(bits[:])
+func Decode(bits [16]unpacked.Bit) ([16]unpacked.Bit, fec.Result) {
+	unpacked.Mask(bits[:])
 	result := fec.Result{BitsChecked: 16}
 
-	var data [7]bit.Bit
+	var data [7]unpacked.Bit
 	copy(data[:], bits[:7])
 
 	calcParity := parityBits(data)
@@ -70,7 +68,7 @@ func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
 		return bits, result
 	}
 
-	var corrected [16]bit.Bit
+	var corrected [16]unpacked.Bit
 	copy(corrected[:], bits[:])
 
 	for i := 0; i < 16; i++ {
@@ -85,8 +83,8 @@ func Decode(bits [16]bit.Bit) ([16]bit.Bit, fec.Result) {
 
 // Encode returns the QR (16,7,6) codeword of 7 data bits: the data bits
 // followed by 9 parity bits.
-func Encode(dataBits [7]bit.Bit) [16]bit.Bit {
-	var bits [16]bit.Bit
+func Encode(dataBits [7]unpacked.Bit) [16]unpacked.Bit {
+	var bits [16]unpacked.Bit
 	data := uint8(unpacked.Uint(dataBits[:7]) & 0xFF)
 
 	// Bits 15 to 9 of a table entry are data[0] to data[6], and bits 8 to 0

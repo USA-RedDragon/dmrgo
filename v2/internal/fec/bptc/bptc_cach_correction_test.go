@@ -3,18 +3,18 @@ package bptc_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-func cachInfo() [36]bit.Bit {
-	var info [36]bit.Bit
+func cachInfo() [36]unpacked.Bit {
+	var info [36]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit((i*5 + i/4) & 1)
+		info[i] = unpacked.Bit((i*5 + i/4) & 1)
 	}
 	return info
 }
 
-func flipCACH(fr [4][17]bit.Bit, pos ...int) [4][17]bit.Bit {
+func flipCACH(fr [4][17]unpacked.Bit, pos ...int) [4][17]unpacked.Bit {
 	for _, p := range pos {
 		fr[p/17][p%17] ^= 1
 	}

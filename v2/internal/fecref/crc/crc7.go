@@ -1,7 +1,7 @@
 package crc
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 const crc7Poly = 0x27 // x⁵ + x² + x + 1 (low 7 bits of G₇(x))
@@ -9,7 +9,7 @@ const crc7Poly = 0x27 // x⁵ + x² + x + 1 (low 7 bits of G₇(x))
 // CRC7 computes the CRC-7 of bits with the generator polynomial
 // x⁷ + x⁵ + x² + x + 1, initial value 0 and no final inversion (ETSI TS 102
 // 361-1 clause B.3.13). The caller applies the CRC mask of clause B.3.12.
-func CRC7(bits []bit.Bit) uint8 {
+func CRC7(bits []unpacked.Bit) uint8 {
 	var crc uint8
 
 	for _, b := range bits {
@@ -24,6 +24,6 @@ func CRC7(bits []bit.Bit) uint8 {
 }
 
 // CheckCRC7 reports whether want is the CRC-7 of bits.
-func CheckCRC7(bits []bit.Bit, want uint8) bool {
+func CheckCRC7(bits []unpacked.Bit, want uint8) bool {
 	return CRC7(bits) == want&0x7F
 }

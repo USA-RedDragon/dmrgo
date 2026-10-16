@@ -4,16 +4,16 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func TestBPTC19696Decode(t *testing.T) {
 	t.Parallel()
 
 	for run := 0; run < 100; run++ {
-		var data [96]bit.Bit
+		var data [96]unpacked.Bit
 		for i := 0; i < 96; i++ {
-			data[i] = bit.Bit(rand.Intn(2))
+			data[i] = unpacked.Bit(rand.Intn(2))
 		}
 
 		encoded := encode196Bits(data)
@@ -60,13 +60,13 @@ func TestBPTC19696Reserved(t *testing.T) {
 
 	r := rand.New(rand.NewSource(7))
 	for run := 0; run < 100; run++ {
-		var data [96]bit.Bit
+		var data [96]unpacked.Bit
 		for i := range data {
-			data[i] = bit.Bit(r.Intn(2))
+			data[i] = unpacked.Bit(r.Intn(2))
 		}
-		res := [3]bit.Bit{bit.Bit(run & 1), bit.Bit(run >> 1 & 1), bit.Bit(run >> 2 & 1)}
+		res := [3]unpacked.Bit{unpacked.Bit(run & 1), unpacked.Bit(run >> 1 & 1), unpacked.Bit(run >> 2 & 1)}
 		encoded := encode196BitsReserved(data, res)
-		if res == ([3]bit.Bit{}) && encoded != encode196Bits(data) {
+		if res == ([3]unpacked.Bit{}) && encoded != encode196Bits(data) {
 			t.Fatalf("encode with zero R differs from encode without R")
 		}
 		pos := r.Intn(196)
@@ -82,9 +82,9 @@ func TestBPTC19696ReservedPositions(t *testing.T) {
 	t.Parallel()
 
 	for i, txBit := range []int{151, 166, 181} {
-		var res [3]bit.Bit
+		var res [3]unpacked.Bit
 		res[i] = 1
-		encoded := encode196BitsReserved([96]bit.Bit{}, res)
+		encoded := encode196BitsReserved([96]unpacked.Bit{}, res)
 		if encoded[txBit] != 1 {
 			t.Errorf("R(%d) is not at transmit bit %d (ETSI TS 102 361-1 Table B.1)", i, txBit)
 		}

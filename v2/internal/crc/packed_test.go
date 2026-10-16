@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
@@ -16,9 +15,9 @@ func TestPackedCRCsMatchReference(t *testing.T) {
 	r := rand.New(rand.NewSource(1))
 	for range 20000 {
 		n := r.Intn(200)
-		bits := make([]bit.Bit, n)
+		bits := make([]unpacked.Bit, n)
 		for i := range bits {
-			bits[i] = bit.Bit(r.Intn(2))
+			bits[i] = unpacked.Bit(r.Intn(2))
 		}
 		data := unpacked.Pack(bits)
 		if got, want := crc.CRC7(data, n), ref.CRC7(bits); got != want {

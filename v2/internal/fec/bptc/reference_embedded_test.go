@@ -5,8 +5,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	packed "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
@@ -22,9 +20,9 @@ func evenInfo(info [10]byte) bool {
 	return w%2 == 0
 }
 
-func refEvenInfo(info [77]bit.Bit) bool {
+func refEvenInfo(info [77]unpacked.Bit) bool {
 	var p [10]byte
-	packed.Pack(p[:], 0, info[:])
+	unpacked.PackAt(p[:], 0, info[:])
 	return evenInfo(p)
 }
 
@@ -40,8 +38,8 @@ func TestEmbeddedMatchesReference(t *testing.T) {
 		var info [10]byte
 		r.Read(info[:])
 		info[9] &= 0xF8
-		var refInfo [77]bit.Bit
-		packed.Unpack(refInfo[:], info[:], 0)
+		var refInfo [77]unpacked.Bit
+		unpacked.UnpackAt(refInfo[:], info[:], 0)
 		frags := bptc.EncodeEmbedded(info)
 		refFrags := ref.EncodeEmbedded(refInfo)
 		for k := range frags {
@@ -62,10 +60,10 @@ func TestEmbeddedMatchesReference(t *testing.T) {
 		for k := range frags {
 			unpacked.PutUint(refFrags[k][:], uint64(frags[k]))
 		}
-		cmp := func(name string, got [10]byte, gotRes, wantRes any, want [77]bit.Bit) {
+		cmp := func(name string, got [10]byte, gotRes, wantRes any, want [77]unpacked.Bit) {
 			t.Helper()
 			var w [10]byte
-			packed.Pack(w[:], 0, want[:])
+			unpacked.PackAt(w[:], 0, want[:])
 			if got != w || gotRes != wantRes {
 				t.Fatalf("%s(%08x) = %x %+v, want %x %+v", name, frags, got, gotRes, w, wantRes)
 			}
@@ -87,8 +85,8 @@ func BenchmarkEmbedded(b *testing.B) {
 	clean := bptc.EncodeEmbedded(info)
 	bad := clean
 	bad[2] ^= 1 << 5
-	var refInfo [77]bit.Bit
-	packed.Unpack(refInfo[:], info[:], 0)
+	var refInfo [77]unpacked.Bit
+	unpacked.UnpackAt(refInfo[:], info[:], 0)
 	refClean := ref.EncodeEmbedded(refInfo)
 	refBad := refClean
 	refBad[2][26] ^= 1

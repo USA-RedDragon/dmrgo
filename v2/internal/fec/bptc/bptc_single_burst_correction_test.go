@@ -3,7 +3,7 @@ package bptc_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // forEachErrorPattern calls fn with every set of k distinct positions in [0, n).
@@ -23,10 +23,10 @@ func forEachErrorPattern(n, k int, fn func(pos []int)) {
 	rec(0, 0)
 }
 
-func singleBurstInfo(m int) [11]bit.Bit {
-	var info [11]bit.Bit
+func singleBurstInfo(m int) [11]unpacked.Bit {
+	var info [11]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit((m >> i) & 1)
+		info[i] = unpacked.Bit((m >> i) & 1)
 	}
 	return info
 }

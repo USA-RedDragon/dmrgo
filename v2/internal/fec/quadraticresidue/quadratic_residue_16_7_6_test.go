@@ -4,13 +4,12 @@ import (
 	"math/bits"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/quadraticresidue"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-func bits16(cw uint16) [16]bit.Bit {
-	var b [16]bit.Bit
+func bits16(cw uint16) [16]unpacked.Bit {
+	var b [16]unpacked.Bit
 	unpacked.PutUint(b[:], uint64(cw))
 	return b
 }
@@ -31,7 +30,7 @@ func TestQR1676MatchesReferenceOnEveryWord(t *testing.T) {
 	}
 	for d := range 128 {
 		data := bits16(uint16(d) << 9)
-		want := ref.Encode([7]bit.Bit(data[:7]))
+		want := ref.Encode([7]unpacked.Bit(data[:7]))
 		if got := Encode(uint8(d)); got != uint16(unpacked.Uint(want[:])) {
 			t.Fatalf("Encode(%#02x) = %#04x, want %#04x", d, got, unpacked.Uint(want[:]))
 		}

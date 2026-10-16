@@ -3,9 +3,8 @@ package bptc
 import (
 	"math/bits"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // The embedded LC BPTC has an 8×16 encode matrix (ETSI TS 102 361-1 clause
@@ -18,7 +17,7 @@ import (
 // are rows 0 to 6, columns 0 to 10 of the encode matrix in row-major order,
 // so the checksum bits are the last bit of rows 2 to 6 (ETSI TS 102 361-1
 // Figure B.3). It is DecodeEmbeddedWithCheck with a nil check.
-func DecodeEmbedded(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
+func DecodeEmbedded(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.Result) {
 	return DecodeEmbeddedWithCheck(fragments, nil)
 }
 
@@ -31,9 +30,9 @@ const EmbeddedMaxErrors = 8
 // whose information bits check accepts (a nil check accepts all). The LC is
 // uncorrectable unless exactly one remains. Up to 3 errors give one nearest
 // codeword; with more, check (such as the LC checksum) picks between them.
-func DecodeEmbeddedWithCheck(fragments [4][32]bit.Bit, check func(info [77]bit.Bit) bool) ([77]bit.Bit, fec.Result) {
+func DecodeEmbeddedWithCheck(fragments [4][32]unpacked.Bit, check func(info [77]unpacked.Bit) bool) ([77]unpacked.Bit, fec.Result) {
 	for i := range fragments {
-		lowbit.Mask(fragments[i][:])
+		unpacked.Mask(fragments[i][:])
 	}
 	matrix := embeddedLCMatrix(fragments)
 	s := embeddedLCSearch{best: EmbeddedMaxErrors, check: check}
@@ -68,11 +67,11 @@ type embeddedLCSearch struct {
 	parity       uint16
 	minRemaining [9]int
 	errors       [8]uint16
-	check        func([77]bit.Bit) bool
+	check        func([77]unpacked.Bit) bool
 	best         int
 	found        bool
 	ambiguous    bool
-	info         [77]bit.Bit
+	info         [77]unpacked.Bit
 }
 
 func (s *embeddedLCSearch) search(row int, sum uint16, weight int) {
@@ -102,11 +101,11 @@ func (s *embeddedLCSearch) leaf(weight int) {
 		s.found = false
 		s.ambiguous = false
 	}
-	var info [77]bit.Bit
+	var info [77]unpacked.Bit
 	for row := 0; row < 7; row++ {
 		corrected := s.rows[row] ^ s.errors[row]
 		for col := 0; col < 11; col++ {
-			info[row*11+col] = bit.Bit(corrected >> col & 1)
+			info[row*11+col] = unpacked.Bit(corrected >> col & 1)
 		}
 	}
 	if s.check != nil && !s.check(info) {
@@ -125,9 +124,9 @@ func (s *embeddedLCSearch) leaf(weight int) {
 // in each of rows 0 to 6. The LC is uncorrectable when a row has a detected
 // double error or a column parity over all 8 rows fails, so it accepts far
 // fewer LCs with bit errors than DecodeEmbedded.
-func DecodeEmbeddedStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
+func DecodeEmbeddedStrict(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.Result) {
 	for i := range fragments {
-		lowbit.Mask(fragments[i][:])
+		unpacked.Mask(fragments[i][:])
 	}
 	matrix := embeddedLCMatrix(fragments)
 	received := matrix
@@ -153,8 +152,8 @@ func DecodeEmbeddedStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
 
 // embeddedLCMatrix reassembles the 8×16 encode matrix from the 4 fragments.
 // The interleaving writes the columns top to bottom, left to right.
-func embeddedLCMatrix(fragments [4][32]bit.Bit) [8][16]bit.Bit {
-	var matrix [8][16]bit.Bit
+func embeddedLCMatrix(fragments [4][32]unpacked.Bit) [8][16]unpacked.Bit {
+	var matrix [8][16]unpacked.Bit
 	for col := 0; col < 16; col++ {
 		for row := 0; row < 8; row++ {
 			n := col*8 + row
@@ -164,7 +163,7 @@ func embeddedLCMatrix(fragments [4][32]bit.Bit) [8][16]bit.Bit {
 	return matrix
 }
 
-func embeddedLCResult(matrix, received *[8][16]bit.Bit) fec.Result {
+func embeddedLCResult(matrix, received *[8][16]unpacked.Bit) fec.Result {
 	result := fec.Result{BitsChecked: 128}
 	for row := range matrix {
 		for col := range matrix[row] {
@@ -176,16 +175,16 @@ func embeddedLCResult(matrix, received *[8][16]bit.Bit) fec.Result {
 
 // embeddedLCInfo returns the 77 information bits, rows 0..6 and columns
 // 0..10 of the matrix in row-major order.
-func embeddedLCInfo(matrix *[8][16]bit.Bit) [77]bit.Bit {
-	var info [77]bit.Bit
+func embeddedLCInfo(matrix *[8][16]unpacked.Bit) [77]unpacked.Bit {
+	var info [77]unpacked.Bit
 	for row := 0; row < 7; row++ {
 		copy(info[row*11:row*11+11], matrix[row][:11])
 	}
 	return info
 }
 
-func columnParity(matrix *[8][16]bit.Bit, col int) bit.Bit {
-	var parity bit.Bit
+func columnParity(matrix *[8][16]unpacked.Bit, col int) unpacked.Bit {
+	var parity unpacked.Bit
 	for row := range matrix {
 		parity ^= matrix[row][col]
 	}
@@ -194,9 +193,9 @@ func columnParity(matrix *[8][16]bit.Bit, col int) bit.Bit {
 
 // EncodeEmbedded encodes 77 information bits (72 LC bits and a 5-bit
 // checksum) into the 32-bit fragments of 4 voice bursts.
-func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
-	lowbit.Mask(info[:])
-	var matrix [8][16]bit.Bit
+func EncodeEmbedded(info [77]unpacked.Bit) [4][32]unpacked.Bit {
+	unpacked.Mask(info[:])
+	var matrix [8][16]unpacked.Bit
 
 	idx := 0
 	for row := 0; row < 7; row++ {
@@ -207,7 +206,7 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 	}
 
 	for row := 0; row < 7; row++ {
-		var data [11]bit.Bit
+		var data [11]unpacked.Bit
 		copy(data[:], matrix[row][:11])
 		parity := parityHamming16_11(data)
 		matrix[row][11] = parity[0]
@@ -218,21 +217,21 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 	}
 
 	for col := 0; col < 16; col++ {
-		var parity bit.Bit
+		var parity unpacked.Bit
 		for row := 0; row < 7; row++ {
 			parity ^= matrix[row][col]
 		}
 		matrix[7][col] = parity
 	}
 
-	var stream [128]bit.Bit
+	var stream [128]unpacked.Bit
 	for col := 0; col < 16; col++ {
 		for row := 0; row < 8; row++ {
 			stream[col*8+row] = matrix[row][col]
 		}
 	}
 
-	var fragments [4][32]bit.Bit
+	var fragments [4][32]unpacked.Bit
 	for i := 0; i < 4; i++ {
 		copy(fragments[i][:], stream[i*32:(i+1)*32])
 	}
@@ -242,7 +241,7 @@ func EncodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
 
 // calculateSyndrome16_11 returns the 5-bit Hamming(16,11,4) syndrome of a
 // 16-bit row (ETSI TS 102 361-1 clause B.3.4).
-func calculateSyndrome16_11(bits [16]bit.Bit) int {
+func calculateSyndrome16_11(bits [16]unpacked.Bit) int {
 	s0 := bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
 	s1 := bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[12]
 	s2 := bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[7] ^ bits[9] ^ bits[10] ^ bits[13]
@@ -253,8 +252,8 @@ func calculateSyndrome16_11(bits [16]bit.Bit) int {
 
 // parityHamming16_11 returns the 5 Hamming(16,11,4) parity bits of 11 data
 // bits (ETSI TS 102 361-1 clause B.3.4, Table B.16).
-func parityHamming16_11(data [11]bit.Bit) [5]bit.Bit {
-	return [5]bit.Bit{
+func parityHamming16_11(data [11]unpacked.Bit) [5]unpacked.Bit {
+	return [5]unpacked.Bit{
 		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[5] ^ data[7] ^ data[8],
 		data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[6] ^ data[8] ^ data[9],
 		data[2] ^ data[3] ^ data[4] ^ data[5] ^ data[7] ^ data[9] ^ data[10],

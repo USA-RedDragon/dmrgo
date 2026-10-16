@@ -11,12 +11,8 @@ import (
 
 const header = `package pdu
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
-)
+import "github.com/USA-RedDragon/dmrgo/v2/enums"
 
-var _ bit.Bit
 var _ enums.FLCO
 `
 
@@ -349,11 +345,11 @@ type T struct {
 			want: "raw field of 8 bits must be [1]byte, got [2]byte",
 		},
 		{
-			name: "raw bit array",
+			name: "raw bool array",
 			src: `type T struct {
-	A [8]bit.Bit ` + "`dmr:\"bits:0-7,raw\"`" + `
+	A [8]bool ` + "`dmr:\"bits:0-7,raw\"`" + `
 }`,
-			want: "raw field of 8 bits must be [1]byte, got [8]bit.Bit",
+			want: "raw field of 8 bits must be [1]byte, got [8]bool",
 		},
 		{
 			name: "packed array shorter than range",

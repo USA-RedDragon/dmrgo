@@ -6,17 +6,15 @@ package golay
 import (
 	"math/bits"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // parity2087 returns the 12 Golay (20,8,7) parity bits of 8 data bits
 // (ETSI TS 102 361-1 clause B.3.1).
-func parity2087(bits [8]bit.Bit) [12]bit.Bit {
-	lowbit.Mask(bits[:])
-	var p [12]bit.Bit
+func parity2087(bits [8]unpacked.Bit) [12]unpacked.Bit {
+	unpacked.Mask(bits[:])
+	var p [12]unpacked.Bit
 	p[0] = bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7]
 	p[1] = bits[1] ^ bits[2] ^ bits[4]
 	p[2] = bits[0] ^ bits[2] ^ bits[3] ^ bits[5]
@@ -34,11 +32,11 @@ func parity2087(bits [8]bit.Bit) [12]bit.Bit {
 
 // Decode2087 corrects up to 3 bit errors in a Golay (20,8,7) codeword and
 // returns the corrected codeword and a fec.Result.
-func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
-	lowbit.Mask(bits[:])
+func Decode2087(bits [20]unpacked.Bit) ([20]unpacked.Bit, fec.Result) {
+	unpacked.Mask(bits[:])
 	result := fec.Result{BitsChecked: 20}
 
-	var data [8]bit.Bit
+	var data [8]unpacked.Bit
 	copy(data[:], bits[:8])
 
 	calcParity := parity2087(data)
@@ -59,7 +57,7 @@ func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 		return bits, result
 	}
 
-	var corrected [20]bit.Bit
+	var corrected [20]unpacked.Bit
 	copy(corrected[:], bits[:])
 
 	for i := 0; i < 20; i++ {
@@ -73,9 +71,9 @@ func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
 }
 
 // Check2087 reports whether bits is a Golay (20,8,7) codeword.
-func Check2087(bits [20]bit.Bit) bool {
-	lowbit.Mask(bits[:])
-	var dataBits [8]bit.Bit
+func Check2087(bits [20]unpacked.Bit) bool {
+	unpacked.Mask(bits[:])
+	var dataBits [8]unpacked.Bit
 	copy(dataBits[:], bits[:8])
 
 	parity := parity2087(dataBits)
@@ -89,8 +87,8 @@ func Check2087(bits [20]bit.Bit) bool {
 
 // Encode2087 returns the Golay (20,8,7) codeword of 8 data bits: the data
 // bits followed by 12 parity bits.
-func Encode2087(dataBits [8]bit.Bit) [20]bit.Bit {
-	var result [20]bit.Bit
+func Encode2087(dataBits [8]unpacked.Bit) [20]unpacked.Bit {
+	var result [20]unpacked.Bit
 	data := uint8(unpacked.Uint(dataBits[:8]) & 0xFF)
 
 	// The encoding table uses LSB-first bit ordering (bits[i] = (d>>i)&1),

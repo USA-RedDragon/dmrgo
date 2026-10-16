@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	refambe "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
@@ -20,7 +19,7 @@ func TestEncodeMatchesReference(t *testing.T) {
 		if n < 4096 {
 			frame[0], frame[1] = byte(n>>4), byte(n<<4)|frame[1]&0x0F
 		}
-		var info [49]bit.Bit
+		var info [49]unpacked.Bit
 		copy(info[:], unpacked.Unpack(frame[:]))
 		want := refambe.Encode(info)
 		if got := Encode(frame); got != [9]byte(unpacked.Pack(want[:])) {
@@ -47,7 +46,7 @@ func TestDecodeMatchesReference(t *testing.T) {
 				slot[i/8] ^= 0x80 >> (i % 8)
 			}
 		}
-		var in [72]bit.Bit
+		var in [72]unpacked.Bit
 		copy(in[:], unpacked.Unpack(slot[:]))
 		wantInfo, wantRes := refambe.Decode(in)
 		got, res := Decode(slot)

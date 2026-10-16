@@ -3,14 +3,14 @@ package bptc_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func TestSingleBurstBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit(i % 2)
+		info[i] = unpacked.Bit(i % 2)
 	}
 
 	txBits := encodeSingleBurst(info, false)
@@ -29,7 +29,7 @@ func TestSingleBurstBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 
 func TestSingleBurstBPTC_RC_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	info[0] = 1
 	info[5] = 1
 	info[10] = 1
@@ -47,7 +47,7 @@ func TestSingleBurstBPTC_RC_EncodeDecodeRoundTrip(t *testing.T) {
 
 func TestSingleBurstBPTC_BitsChecked(t *testing.T) {
 	t.Parallel()
-	var txBits [32]bit.Bit
+	var txBits [32]unpacked.Bit
 	_, result := decodeSingleBurst(txBits, false)
 	if result.BitsChecked != 32 {
 		t.Errorf("BitsChecked = %d, want 32", result.BitsChecked)
@@ -56,7 +56,7 @@ func TestSingleBurstBPTC_BitsChecked(t *testing.T) {
 
 func TestSingleBurstBPTC_AllZero(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 
 	txBits := encodeSingleBurst(info, false)
 	decoded, result := decodeSingleBurst(txBits, false)
@@ -71,7 +71,7 @@ func TestSingleBurstBPTC_AllZero(t *testing.T) {
 
 func TestSingleBurstBPTC_AllOnes(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	for i := range info {
 		info[i] = 1
 	}
@@ -89,7 +89,7 @@ func TestSingleBurstBPTC_AllOnes(t *testing.T) {
 
 func TestSingleBurstBPTC_SingleBitErrorCorrection(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	info[3] = 1
 	info[7] = 1
 
@@ -109,7 +109,7 @@ func TestSingleBurstBPTC_SingleBitErrorCorrection(t *testing.T) {
 
 func TestSingleBurstBPTC_OutputSize(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	txBits := encodeSingleBurst(info, false)
 	if got, res := decodeSingleBurst(txBits, false); got != info || res.HasErrors() {
 		t.Errorf("round trip: data match=%v result=%+v", got == info, res)
@@ -118,7 +118,7 @@ func TestSingleBurstBPTC_OutputSize(t *testing.T) {
 
 func TestSingleBurstBPTC_OutputBitsValid(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	info[0] = 1
 	info[10] = 1
 
@@ -132,7 +132,7 @@ func TestSingleBurstBPTC_OutputBitsValid(t *testing.T) {
 
 func TestSingleBurstBPTC_RC_DifferentFromNonRC(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	info[0] = 1
 
 	nonRC := encodeSingleBurst(info, false)
@@ -145,9 +145,9 @@ func TestSingleBurstBPTC_RC_DifferentFromNonRC(t *testing.T) {
 
 func TestSingleBurstBPTC_Stability(t *testing.T) {
 	t.Parallel()
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit((i + 1) % 2)
+		info[i] = unpacked.Bit((i + 1) % 2)
 	}
 
 	tx1 := encodeSingleBurst(info, false)
@@ -161,7 +161,7 @@ func TestSingleBurstBPTC_Stability(t *testing.T) {
 
 func TestSingleBurstBPTC_DifferentData(t *testing.T) {
 	t.Parallel()
-	var info1, info2 [11]bit.Bit
+	var info1, info2 [11]unpacked.Bit
 	info1[0] = 1
 	info2[0] = 0
 

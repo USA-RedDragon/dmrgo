@@ -1,9 +1,8 @@
 package bptc
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // The single burst BPTC has a 2×16 encode matrix (ETSI TS 102 361-1 clause
@@ -14,16 +13,16 @@ import (
 // DecodeSingleBurst decodes the 11 information bits from the 32-bit embedded
 // data field of one burst. Set oddParity for a Reverse Channel burst. It
 // corrects up to 3 bit errors, and it always detects 4 and sets Uncorrectable.
-func DecodeSingleBurst(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Result) {
-	lowbit.Mask(txBits[:])
+func DecodeSingleBurst(txBits [32]unpacked.Bit, oddParity bool) ([11]unpacked.Bit, fec.Result) {
+	unpacked.Mask(txBits[:])
 	result := fec.Result{BitsChecked: 32}
 
-	var deinterleaved [32]bit.Bit
+	var deinterleaved [32]unpacked.Bit
 	for i := 0; i < 32; i++ {
 		deinterleaved[single_burst_bptc_interleave[i]] = txBits[i]
 	}
 
-	var matrix [2][16]bit.Bit
+	var matrix [2][16]unpacked.Bit
 	for i := 0; i < 32; i++ {
 		row := i % 2
 		col := i / 2
@@ -43,7 +42,7 @@ func DecodeSingleBurst(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Res
 	}
 
 	best, bestDist := matrix[0], 33
-	for _, row := range [2][16]bit.Bit{matrix[0], row1} {
+	for _, row := range [2][16]unpacked.Bit{matrix[0], row1} {
 		candidate, ok := correctHamming16_11(row)
 		if !ok {
 			continue
@@ -60,7 +59,7 @@ func DecodeSingleBurst(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Res
 		result.ErrorsCorrected = bestDist
 	}
 
-	var info [11]bit.Bit
+	var info [11]unpacked.Bit
 	copy(info[:], matrix[0][:11])
 
 	return info, result
@@ -68,9 +67,9 @@ func DecodeSingleBurst(txBits [32]bit.Bit, oddParity bool) ([11]bit.Bit, fec.Res
 
 // EncodeSingleBurst encodes 11 information bits into the 32-bit embedded
 // data field of one burst. Set oddParity for a Reverse Channel burst.
-func EncodeSingleBurst(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
-	lowbit.Mask(info[:])
-	var matrix [2][16]bit.Bit
+func EncodeSingleBurst(info [11]unpacked.Bit, oddParity bool) [32]unpacked.Bit {
+	unpacked.Mask(info[:])
+	var matrix [2][16]unpacked.Bit
 
 	copy(matrix[0][:11], info[:])
 
@@ -88,13 +87,13 @@ func EncodeSingleBurst(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
 		}
 	}
 
-	var stream [32]bit.Bit
+	var stream [32]unpacked.Bit
 	for col := 0; col < 16; col++ {
 		stream[col*2] = matrix[0][col]
 		stream[col*2+1] = matrix[1][col]
 	}
 
-	var txBits [32]bit.Bit
+	var txBits [32]unpacked.Bit
 	for i := 0; i < 32; i++ {
 		txBits[(i*17)%32] = stream[i]
 	}
@@ -104,7 +103,7 @@ func EncodeSingleBurst(info [11]bit.Bit, oddParity bool) [32]bit.Bit {
 
 // correctHamming16_11 corrects up to one bit error in a Hamming(16,11,4)
 // codeword. ok is false when the syndrome does not match a single-bit error.
-func correctHamming16_11(row [16]bit.Bit) ([16]bit.Bit, bool) {
+func correctHamming16_11(row [16]unpacked.Bit) ([16]unpacked.Bit, bool) {
 	s := calculateSyndrome16_11(row)
 	if s == 0 {
 		return row, true
@@ -117,7 +116,7 @@ func correctHamming16_11(row [16]bit.Bit) ([16]bit.Bit, bool) {
 	return row, true
 }
 
-func hammingDistance16(a, b [16]bit.Bit) int {
+func hammingDistance16(a, b [16]unpacked.Bit) int {
 	d := 0
 	for i := range a {
 		d += int(a[i] ^ b[i])

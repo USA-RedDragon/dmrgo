@@ -16,9 +16,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -42,37 +41,37 @@ func (d digests) add(cat string, format string, args ...any) {
 	h.Write([]byte{'\n'})
 }
 
-func randBits(r *rand.Rand, dst []bit.Bit) {
+func randBits(r *rand.Rand, dst []unpacked.Bit) {
 	for i := range dst {
-		dst[i] = bit.Bit(r.Intn(2))
+		dst[i] = unpacked.Bit(r.Intn(2))
 	}
 }
 
 // pack returns b packed, the first bit in the most significant bit of byte 0.
-func pack(b []bit.Bit) []byte {
+func pack(b []unpacked.Bit) []byte {
 	p := make([]byte, (len(b)+7)/8)
-	bits.Pack(p, 0, b)
+	unpacked.PackAt(p, 0, b)
 	return p
 }
 
-// unpack returns the first n bits of p, one bit.Bit per bit, the form that
+// unpack returns the first n bits of p, one unpacked.Bit per bit, the form that
 // the digests print.
-func unpack(p []byte, n int) []bit.Bit {
-	b := make([]bit.Bit, n)
-	bits.Unpack(b, p, 0)
+func unpack(p []byte, n int) []unpacked.Bit {
+	b := make([]unpacked.Bit, n)
+	unpacked.UnpackAt(b, p, 0)
 	return b
 }
 
 // reserved returns the BPTC reserved bits res, R(i) in bit i, as the digests
 // print them: R(i) at index i.
-func reserved(res uint8) [3]bit.Bit {
-	return [3]bit.Bit{bit.Bit(res & 1), bit.Bit(res >> 1 & 1), bit.Bit(res >> 2 & 1)}
+func reserved(res uint8) [3]unpacked.Bit {
+	return [3]unpacked.Bit{unpacked.Bit(res & 1), unpacked.Bit(res >> 1 & 1), unpacked.Bit(res >> 2 & 1)}
 }
 
 // slotBits returns the three voice slots s as the digests print them: 72
-// bit.Bit values each.
-func slotBits(s [layer2.VoiceSlotsPerBurst][9]byte) [layer2.VoiceSlotsPerBurst][]bit.Bit {
-	var out [layer2.VoiceSlotsPerBurst][]bit.Bit
+// unpacked.Bit values each.
+func slotBits(s [layer2.VoiceSlotsPerBurst][9]byte) [layer2.VoiceSlotsPerBurst][]unpacked.Bit {
+	var out [layer2.VoiceSlotsPerBurst][]unpacked.Bit
 	for i := range s {
 		out[i] = unpack(s[i][:], 72)
 	}
@@ -80,9 +79,9 @@ func slotBits(s [layer2.VoiceSlotsPerBurst][9]byte) [layer2.VoiceSlotsPerBurst][
 }
 
 // frameBits returns the three AMBE+2 frames f as the digests print them: 49
-// bit.Bit values each.
-func frameBits(f [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) [layer2.VoiceSlotsPerBurst][]bit.Bit {
-	var out [layer2.VoiceSlotsPerBurst][]bit.Bit
+// unpacked.Bit values each.
+func frameBits(f [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) [layer2.VoiceSlotsPerBurst][]unpacked.Bit {
+	var out [layer2.VoiceSlotsPerBurst][]unpacked.Bit
 	for i := range f {
 		out[i] = unpack(f[i][:], 49)
 	}
@@ -90,7 +89,7 @@ func frameBits(f [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) [layer2.VoiceSlot
 }
 
 // cachString returns c in the form that %+v printed when CACH.Payload held
-// one bit.Bit per bit.
+// one unpacked.Bit per bit.
 func cachString(c layer2.CACH) string {
 	return fmt.Sprintf("{TACT:%+v Payload:%v}", c.TACT, unpack(c.Payload[:], layer2.CACHPayloadBits))
 }
@@ -208,7 +207,7 @@ func builtBurst(r *rand.Rand, dt enums.DataType, src layer2.SyncSource) layer2.R
 func voiceBurst(r *rand.Rand, src layer2.SyncSource) layer2.RawBurst {
 	var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	for i := range frames {
-		var b [49]bit.Bit
+		var b [49]unpacked.Bit
 		randBits(r, b[:])
 		frames[i] = vocoder.AMBEFrame(pack(b[:]))
 	}
@@ -316,7 +315,7 @@ func collectBuild(d digests) {
 func collectPDU(d digests) {
 	r := rand.New(rand.NewSource(3))
 	for n := range 4000 {
-		var b96 [96]bit.Bit
+		var b96 [96]unpacked.Bit
 		randBits(r, b96[:])
 		p96 := [12]byte(pack(b96[:]))
 		if n%2 == 0 {
@@ -352,52 +351,52 @@ func collectPDU(d digests) {
 		r12 := pdu.DecodeRate12Data(p96)
 		enc, err = r12.Encode()
 		d.add("pdu/r12", "%v %s %v %s", unpack(p96[:], 96), r12.String(), unpack(enc[:], 96), errString(err))
-		var b144 [144]bit.Bit
+		var b144 [144]unpacked.Bit
 		randBits(r, b144[:])
 		r34 := pdu.DecodeRate34Data([18]byte(pack(b144[:])))
 		e144, err := r34.Encode()
 		d.add("pdu/r34", "%s %v %s", r34.String(), unpack(e144[:], 144), errString(err))
-		var b192 [192]bit.Bit
+		var b192 [192]unpacked.Bit
 		randBits(r, b192[:])
 		r1 := pdu.DecodeRate1Data([24]byte(pack(b192[:])))
 		e192, err := r1.Encode()
 		d.add("pdu/r1", "%s %v %s", r1.String(), unpack(e192[:], 192), errString(err))
-		var b20 [20]bit.Bit
+		var b20 [20]unpacked.Bit
 		randBits(r, b20[:])
 		st := pdu.DecodeSlotType([3]byte(pack(b20[:])))
 		e20, err := st.Encode()
 		d.add("pdu/st", "%v %+v %v %s", b20, st, unpack(e20[:], 20), errString(err))
-		var b16 [16]bit.Bit
+		var b16 [16]unpacked.Bit
 		randBits(r, b16[:])
 		es := pdu.DecodeEmbeddedSignalling([2]byte(pack(b16[:])))
 		e16, err := es.Encode()
 		d.add("pdu/emb", "%v %+v %v %s", b16, es, unpack(e16[:], 16), errString(err))
-		var b7 [7]bit.Bit
+		var b7 [7]unpacked.Bit
 		randBits(r, b7[:])
 		ta := pdu.DecodeTACT([1]byte(pack(b7[:])))
 		e7, err := ta.Encode()
 		d.add("pdu/tact", "%v %+v %v %s", b7, ta, unpack(e7[:], 7), errString(err))
-		var b36 [36]bit.Bit
+		var b36 [36]unpacked.Bit
 		randBits(r, b36[:])
 		sl := pdu.DecodeShortLC([5]byte(pack(b36[:])))
 		e36, err := sl.Encode()
 		d.add("pdu/slc", "%v %s %v %s %+v", b36, sl.String(), unpack(e36[:], 36), errString(err), sl.FEC)
-		var b72 [72]bit.Bit
+		var b72 [72]unpacked.Bit
 		randBits(r, b72[:])
 		udp := pdu.DecodeUDPIPv4CompressedHeader([9]byte(pack(b72[:])))
 		e72, err := udp.Encode()
 		d.add("pdu/udp", "%v %s %v %s", b72, udp.String(), unpack(e72[:], 72), errString(err))
-		var b11 [11]bit.Bit
+		var b11 [11]unpacked.Bit
 		randBits(r, b11[:])
 		rc := pdu.DecodeReverseChannel([2]byte(pack(b11[:])))
 		e11, err := rc.Encode()
 		d.add("pdu/rc", "%v %+v %v %s", b11, rc, unpack(e11[:], 11), errString(err))
-		var b8 [8]bit.Bit
+		var b8 [8]unpacked.Bit
 		randBits(r, b8[:])
 		so := layer3.DecodeServiceOptions([1]byte(pack(b8[:])))
 		e8, err := so.Encode()
 		d.add("pdu/so", "%v %s %v %s", b8, so.String(), unpack(e8[:], 8), errString(err))
-		var b58 [58]bit.Bit
+		var b58 [58]unpacked.Bit
 		randBits(r, b58[:])
 		cp := layer3.DecodeCdefParms([8]byte(pack(b58[:])))
 		e58, err := cp.Encode()
@@ -453,7 +452,7 @@ func collectEmbedded(d digests) {
 			lc, res, done, err := asm.Add(f[i], l)
 			d.add("emb/asm", "%x %+v %v %s", lc, res, done, errString(err))
 		}
-		var e32 [32]bit.Bit
+		var e32 [32]unpacked.Bit
 		randBits(r, e32[:])
 		p32 := [4]byte(pack(e32[:]))
 		rc := layer2.DecodeEmbeddedRC(p32)
@@ -468,7 +467,7 @@ func collectCACH(d digests) {
 	r := rand.New(rand.NewSource(5))
 	var asm layer2.ShortLCAssembler
 	for n := range 4000 {
-		var b [layer2.CACHBits]bit.Bit
+		var b [layer2.CACHBits]unpacked.Bit
 		randBits(r, b[:])
 		p := [3]byte(pack(b[:]))
 		c := layer2.DecodeCACH(p)
@@ -477,12 +476,12 @@ func collectCACH(d digests) {
 		d.add("cach/decode", "%v %s %s %v %v", b, cachString(c), cachString(cf), unpack(de[:], 24), unpack(in[:], 24))
 		slc, done, err := asm.Add(cf)
 		d.add("cach/asm", "%s %v %s", slc.String(), done, errString(err))
-		var s36 [36]bit.Bit
+		var s36 [36]unpacked.Bit
 		randBits(r, s36[:])
 		sl := pdu.DecodeShortLC([5]byte(pack(s36[:])))
 		ta := pdu.TACT{AccessType: r.Intn(2) == 1, TDMAChannel: r.Intn(2) == 1}
 		frags, err := layer2.EncodeShortLCToCACH(&sl, ta)
-		var fragBits [4][]bit.Bit
+		var fragBits [4][]unpacked.Bit
 		for i := range frags {
 			fragBits[i] = unpack(frags[i][:], layer2.CACHBits)
 		}
@@ -501,11 +500,11 @@ func collectCACH(d digests) {
 func collectVocoder(d digests) {
 	r := rand.New(rand.NewSource(6))
 	for n := range 20000 {
-		var slot [72]bit.Bit
+		var slot [72]unpacked.Bit
 		randBits(r, slot[:])
 		f, res := vocoder.DecodeAMBE72([9]byte(pack(slot[:])))
 		d.add("ambe/decode", "%v %v %+v", slot, unpack(f[:], 49), res)
-		var fr [49]bit.Bit
+		var fr [49]unpacked.Bit
 		randBits(r, fr[:])
 		enc := vocoder.EncodeAMBE72(vocoder.AMBEFrame(pack(fr[:])))
 		corrupt2 := enc
@@ -520,7 +519,7 @@ func collectVocoder(d digests) {
 
 func collectFramer(d digests) {
 	r := rand.New(rand.NewSource(7))
-	stream := make([]bit.Bit, 0, 264*40)
+	stream := make([]unpacked.Bit, 0, 264*40)
 	for n := range 40 {
 		rb := builtBurst(r, dataTypes[n%len(dataTypes)], layer2.SyncSourceBS)
 		if n%3 == 0 {
@@ -528,7 +527,7 @@ func collectFramer(d digests) {
 		}
 		corrupt(r, rb[:], n%4)
 		stream = append(stream, unpack(rb[:], layer2.BurstBits)...)
-		var junk [37]bit.Bit
+		var junk [37]unpacked.Bit
 		randBits(r, junk[:n%37])
 		stream = append(stream, junk[:n%37]...)
 	}

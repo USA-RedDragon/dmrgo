@@ -3,9 +3,9 @@ package layer2_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -13,7 +13,7 @@ import (
 // idleMessageFECMatrix is the 13x15 BPTC(196,96) idle message before
 // interleaving, row-major (ETSI TS 102 361-1 Figure D.1).
 
-var idleMessageFECMatrix = [13][15]bit.Bit{
+var idleMessageFECMatrix = [13][15]unpacked.Bit{
 	{0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0},
 	{1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1},
 	{1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1},
@@ -98,7 +98,7 @@ func TestIdleMessageFECMatrix_MatchesBPTCEncode(t *testing.T) {
 	for r := range idleMessageFECMatrix {
 		for c := range idleMessageFECMatrix[r] {
 			i := 1 + r*15 + c
-			if got := bit.Bit(bits.Bit(encoded[:], (i*181)%196)); got != idleMessageFECMatrix[r][c] {
+			if got := unpacked.Bit(bits.Bit(encoded[:], (i*181)%196)); got != idleMessageFECMatrix[r][c] {
 				t.Errorf("Figure D.1 [%d][%d] = %d, bptc.Encode196 gives %d", r, c, idleMessageFECMatrix[r][c], got)
 			}
 		}
