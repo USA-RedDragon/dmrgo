@@ -143,7 +143,8 @@ func TestIsIdleMessage_NoMatch(t *testing.T) {
 func TestIsNullEmbeddedLC_Match(t *testing.T) {
 	t.Parallel()
 
-	null := bptc.EncodeSingleBurst([11]bit.Bit{}, false)
+	var null [32]bit.Bit
+	bit.PutUint(null[:], uint64(bptc.EncodeSingleBurst(0, false)))
 	if null != [32]bit.Bit{} {
 		t.Errorf("single burst BPTC of 11 zero bits = %v, want 32 zero bits", null)
 	}
