@@ -110,11 +110,8 @@ type slotState struct {
 	present bool
 	anchor  bool
 	a       anchorInfo
-	app     [slotSymbols * 4]float32
-	have    [slotSymbols]int
-	// lp holds the log priors of the digits of each symbol that a
-	// refinement set from the decoded FEC, when hasPrior.
-	lp       [slotSymbols * 4]float32
+	// hasPrior is set while a refinement detects the slot again with the
+	// log priors of Receiver.prior.
 	hasPrior bool
 }
 
@@ -172,6 +169,16 @@ type Receiver struct {
 	slots    []slotState
 	first    int64
 	lastAnch int64
+	// apps holds the symbol log-APPs of each slot of slots, four per
+	// symbol, and haves the distance of each symbol from the start of the
+	// trellis run that set them, for the coherent detection. The
+	// discriminator detection finishes each slot at once, so apps holds one
+	// slot and haves none.
+	apps  []float32
+	haves []int16
+	// prior holds the log priors of the digits of each symbol of the slot
+	// that a refinement detects again, from its decoded FEC.
+	prior [slotSymbols * 4]float32
 
 	streams int
 	rep     *repairer
@@ -230,6 +237,12 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	r.pulse = newPhasePulse(samplesPerSy)
 	r.corrX = make([]complex128, syncSpan)
 	r.slots = make([]slotState, cfg.LookbackSlots+maxGapSlots+4)
+	if r.opt.Coherent {
+		r.apps = make([]float32, len(r.slots)*slotSymbols*4)
+		r.haves = make([]int16, len(r.slots)*slotSymbols)
+	} else {
+		r.apps = make([]float32, slotSymbols*4)
+	}
 	r.tk = newTracker()
 	if r.opt.SoftFEC {
 		r.rep = newRepairer(r.opt.BPTCOSD)
@@ -399,8 +412,7 @@ func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
 	r.lastAnch = math.MinInt64
 	r.tk.reset(r.bs)
 	if r.opt.Coherent {
-		s := r.slot(0)
-		*s = slotState{index: 0, start: r.slotTime(0)}
+		s := r.resetSlot(0)
 		voice, dp, _ := sourceAt(src).SyncPatterns()
 		p := voice
 		if data {
@@ -517,8 +529,39 @@ func (r *Receiver) symTime(j int64, k int) float64 {
 
 // slot returns the state of slot j in the ring of slot states.
 func (r *Receiver) slot(j int64) *slotState {
+	return &r.slots[r.slotPos(j)]
+}
+
+// resetSlot clears the state of slot j and returns it.
+func (r *Receiver) resetSlot(j int64) *slotState {
+	s := r.slot(j)
+	*s = slotState{index: j, start: r.slotTime(j)}
+	clear(r.appOf(s))
+	if r.haves != nil {
+		clear(r.haveOf(s))
+	}
+	return s
+}
+
+// slotPos returns the position of slot j in the ring of slot states.
+func (r *Receiver) slotPos(j int64) int {
 	n := int64(len(r.slots))
-	return &r.slots[((j%n)+n)%n]
+	return int(((j % n) + n) % n)
+}
+
+// appOf returns the symbol log-APPs of slot s.
+func (r *Receiver) appOf(s *slotState) []float32 {
+	if len(r.apps) == slotSymbols*4 {
+		return r.apps
+	}
+	p := r.slotPos(s.index) * slotSymbols * 4
+	return r.apps[p : p+slotSymbols*4]
+}
+
+// haveOf returns the run distances of the symbols of slot s.
+func (r *Receiver) haveOf(s *slotState) []int16 {
+	p := r.slotPos(s.index) * slotSymbols
+	return r.haves[p : p+slotSymbols]
 }
 
 // followStep measures the next slot once its samples and a lookahead have
@@ -534,8 +577,7 @@ func (r *Receiver) followStep(end bool) bool {
 	}
 	j := r.next
 	r.next++
-	s := r.slot(j)
-	*s = slotState{index: j, start: r.slotTime(j)}
+	s := r.resetSlot(j)
 	r.measure(s)
 	switch {
 	case j < 0:
@@ -722,15 +764,14 @@ func (r *Receiver) detectUpTo(j int64) {
 	if s.index == j && s.anchor {
 		last = j - 1
 	}
-	if !r.opt.Coherent {
-		for k := r.first; k <= last; k++ {
-			r.discDetect(r.slot(k))
-		}
-	} else {
+	if r.opt.Coherent {
 		r.coherentGap(r.first, j, false)
 	}
-	if !r.warm {
-		for k := r.first; k <= last; k++ {
+	for k := r.first; k <= last; k++ {
+		if !r.opt.Coherent {
+			r.discDetect(r.slot(k))
+		}
+		if !r.warm {
 			r.finish(r.slot(k))
 		}
 	}
@@ -760,8 +801,8 @@ func (r *Receiver) finish(s *slotState) {
 		return
 	}
 	if r.opt.Coherent {
-		for _, h := range s.have[cachSymbols:] {
-			if h == math.MaxInt {
+		for _, h := range r.haveOf(s)[cachSymbols:] {
+			if h == noRun {
 				return
 			}
 		}
@@ -783,9 +824,10 @@ func (r *Receiver) finish(s *slotState) {
 // CACH, from the symbol APPs of slot s.
 func (r *Receiver) fill264(s *slotState, rec *slotRec) {
 	var bits [layer2.BurstBits]bit.Bit
+	app := r.appOf(s)
 	for k := range slotSymbols {
 		best := 0
-		a := s.app[4*k : 4*k+4]
+		a := app[4*k : 4*k+4]
 		for v := 1; v < 4; v++ {
 			if a[v] > a[best] {
 				best = v
@@ -837,9 +879,9 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		return
 	}
 	bits := bit.Unpack264(e.out.Fixed)
+	clear(r.prior[:])
 	for k := range burstSymbols {
-		lp := s.lp[4*(cachSymbols+k) : 4*(cachSymbols+k)+4]
-		clear(lp)
+		lp := r.prior[4*(cachSymbols+k) : 4*(cachSymbols+k)+4]
 		for b := range 2 {
 			i := 2*k + b
 			if !r.known[i] {
