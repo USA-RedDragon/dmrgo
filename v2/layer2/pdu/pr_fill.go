@@ -32,7 +32,12 @@ func (p *PRFill) String() string {
 }
 
 // IsPRFill checks whether the given 96 information bits match the
-// PR FILL constant from Table D.2.
+// PR FILL constant from Table D.2. It reads only the low bit of each value.
 func IsPRFill(infoBits [96]bit.Bit) bool {
-	return infoBits == prFillBits
+	for i, b := range infoBits {
+		if b&1 != prFillBits[i] {
+			return false
+		}
+	}
+	return true
 }
