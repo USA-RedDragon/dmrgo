@@ -123,10 +123,75 @@ tinygo flash -target=pico ./examples/tinygo
 
 The example prints its counts on the serial console once a second.
 
+## Receiver
+
+[v2/cmd/dmrrf](v2/cmd/dmrrf/README.md) receives DMR from RTL-SDR captures with one of four tiers, from a discriminator that fits a microcontroller to a coherent trellis detector with soft-decision decoding of each FEC field. The tables below come from a sweep over synthetic noise and from captures of a repeater.
+
+<!-- rxbench:begin -->
+Loss is the Eb/N0 in dB above the ideal receiver at 90% frame recovery. The ideal receiver has perfect timing and carrier, detects the symbols with a coherent BCJR over the exact CPM phase trellis and decodes each FEC field by soft-decision maximum likelihood; for voice it also detects each burst again with its decoded C0, C1, EMB and embedded LC bits.
+
+| Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | Cortex-M4F cycles per sample | RAM | Allocs |
+|------|-------|---------------|------|---------------|-------------------------|------------------------------|-----|--------|
+| 0: discriminator | 7.4 dB | 5.2 dB | 5.2 dB | 4.6 dB | 19,000,000 | 1699 | 2009 KiB | 0 |
+| 1: coherent, two pass | 2.0 dB | 2.2 dB | 2.1 dB | 1.4 dB | 54,000,000 | 3028 | 2405 KiB | 0 |
+| 2: phase trellis, two pass | 0.3 dB | 0.8 dB | 1.0 dB | 0.6 dB | 534,000,000 | n/a (PC only) | 3663 KiB | 0 |
+
+Cost is the CPU time on AMD Ryzen 9 7950X 16-Core Processor. The Cortex-M4F figure is an estimate from the operation count. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.
+
+<details><summary>Sensitivity per payload type</summary>
+
+Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. A tier can be under the floor where it uses more than one burst: it combines the embedded LC over superframes, its second pass puts priors on the EMB, and the stream gives each burst its neighbors, while the floor detects one MS burst alone.
+
+| Payload | Floor | Tier 0: discriminator | Tier 1: coherent, two pass | Tier 2: phase trellis, two pass |
+|---------|-------|------|------|------|
+| Voice frame (AMBE+2, 49 bits) | 2.2 (1.0) | 9.6 (8.4) | 4.1 (3.0) | 2.5 (1.3) |
+| Voice frame, protected bits (C0 and C1) | 1.3 (0.2) | 7.0 (5.8) | 2.8 (1.6) | 1.6 (0.5) |
+| Data block, rate 1/2 | 1.3 (0.2) | 6.5 (5.4) | 3.5 (2.4) | 2.1 (0.9) |
+| Data block, rate 3/4 | 4.0 (2.9) | 8.6 (7.4) | 5.4 (4.2) | 4.6 (3.5) |
+| Data block, rate 1 | 7.1 (5.9) | 11.2 (10.1) | 7.5 (6.4) | 7.2 (6.1) |
+| CSBK | 1.0 (-0.1) | 6.2 (5.1) | 3.1 (2.0) | 2.1 (0.9) |
+| Voice LC header and terminator | 1.0 (-0.1) | 6.7 (5.6) | 2.7 (1.6) | 1.4 (0.3) |
+| Data header | 1.0 (-0.1) | 6.5 (5.3) | 3.3 (2.1) | 2.4 (1.2) |
+| Embedded LC | 1.7 (0.6) | 6.8 (5.6) | 1.5 (0.4) | 1.4 (0.3) |
+| EMB | 0.8 (-0.4) | 5.0 (3.8) | 1.2 (0.0) | 1.0 (-0.2) |
+| Slot type | -0.1 (-1.3) | 4.6 (3.5) | -0.0 (-1.2) | -0.4 (-1.5) |
+| SYNC detection | - | 2.5 (1.3) | -0.6 (-1.8) | -0.6 (-1.8) |
+
+</details>
+
+<details><summary>Real recordings</summary>
+
+Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR, by tier.
+
+| Recording | Frames | Tier 0 | Tier 1 | Tier 2 |
+|-----------|--------|--------|--------|--------|
+| MS voice relayed, HackRF on the uplink (9.3 dB C/N) | 2013 | 1392 | 1728 | 1765 |
+| Late entry voice relayed, HackRF on the uplink (11.1 dB C/N) | 1890 | 1431 | 1611 | 1613 |
+| Voice with PI header relayed, HackRF on the uplink (17.3 dB C/N) | 1818 | 1818 | 1818 | 1818 |
+| Mixed voice and data, network to air, run 1 (9.7 dB C/N) | 144 | 109 | 119 | 120 |
+| Mixed voice and data, network to air, run 2 (10.6 dB C/N) | 144 | 114 | 120 | 120 |
+| Voice, network to air (10.0 dB C/N) | 90 | 89 | 90 | 90 |
+| Voice, network to air (11.6 dB C/N) | 90 | 84 | 90 | 90 |
+| Gain sweep, RTL gain 0 dB (9.9 dB C/N) | 51 | 19 | 50 | 50 |
+| Gain sweep, RTL gain 9.7 dB (7.3 dB C/N) | 54 | 35 | 48 | 48 |
+| Gain sweep, RTL gain 19.7 dB (10.4 dB C/N) | 51 | 51 | 51 | 51 |
+| Gain sweep, RTL gain 29.7 dB (11.2 dB C/N) | 54 | 50 | 50 | 50 |
+
+</details>
+
+![Voice frame: frame recovery against Eb/N0, floor and tiers](docs/rx/ambe.svg)
+![Data rate 1/2: frame recovery against Eb/N0, floor and tiers](docs/rx/rate12.svg)
+![Data rate 3/4: frame recovery against Eb/N0, floor and tiers](docs/rx/rate34.svg)
+![CSBK: frame recovery against Eb/N0, floor and tiers](docs/rx/csbk.svg)
+![Embedded LC: frame recovery against Eb/N0, floor and tiers](docs/rx/elc.svg)
+
+<!-- rxbench:end -->
+
 ## Tooling
 
 - `go generate ./...` from the repository root runs `cmd/tablegen`, which writes the FEC and CRC lookup tables (`tables_gen.go`), and `cmd/dmrgen`, which writes the decoder and encoder of each struct with `dmr` field tags (`*_decode_gen.go`). Do not edit generated files.
 - `env CGO_ENABLED=0 go run -C cmd/speccheck . -update-readme` runs the tests that `spec_matrix.yaml` maps to each ETSI clause and writes the table below. `-check-readme` fails when the table is out of date.
+- `go run -C cmd/rxbench . -update-readme` runs the receiver sweep of `v2/cmd/dmrrf` (about an hour on 32 cores) and writes the receiver tables and the graphs in `docs/rx`. `-check-readme` fails when they differ from the sweep data in `v2/cmd/dmrrf/testdata`.
 
 ## ETSI TS 102 361 Specification Coverage
 

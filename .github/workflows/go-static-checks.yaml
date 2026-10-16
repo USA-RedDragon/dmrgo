@@ -19,6 +19,7 @@ jobs:
         module:
           - v2
           - cmd/dmrgen
+          - cmd/rxbench
           - cmd/speccheck
           - cmd/tablegen
     steps:
