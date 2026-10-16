@@ -250,6 +250,48 @@ func TestVoiceTransmitter_Append(t *testing.T) {
 	}
 }
 
+// TestVoiceTransmitter_AddBurst checks that AddBurst returns the bursts that
+// AppendSlots returns for the same slots, also with a slot that waits from
+// an earlier call, and that Terminator is the last burst of Terminate.
+func TestVoiceTransmitter_AddBurst(t *testing.T) {
+	t.Parallel()
+
+	opts := &layer2.VoiceTransmitterOptions{LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot()}
+	for _, lead := range []int{0, 1, 2} {
+		a := must(layer2.NewVoiceTransmitter(opts))
+		b := must(layer2.NewVoiceTransmitter(opts))
+		var want, got []layer2.RawBurst
+		for i := range lead {
+			want = must(a.AppendSlots(want, testSlot(100+i)))
+			got = must(b.AppendSlots(got, testSlot(100+i)))
+		}
+		for n := range 14 {
+			var slots [layer2.VoiceSlotsPerBurst][72]bit.Bit
+			for i := range slots {
+				slots[i] = testSlot(3*n + i)
+			}
+			want = must(a.AppendSlots(want, slots[:]...))
+			got = append(got, must(b.AddBurst(&slots)))
+		}
+		if len(got) != len(want) {
+			t.Fatalf("lead %d: %d bursts, want %d", lead, len(got), len(want))
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Errorf("lead %d: burst %d differs", lead, i)
+			}
+		}
+		term := b.Terminator()
+		tail := must(b.Terminate())
+		if tail[len(tail)-1] != term {
+			t.Errorf("lead %d: Terminator is not the last burst of Terminate", lead)
+		}
+		if _, err := b.AddBurst(&[layer2.VoiceSlotsPerBurst][72]bit.Bit{}); !errors.Is(err, layer2.ErrVoiceTerminated) {
+			t.Errorf("lead %d: AddBurst after Terminate: %v", lead, err)
+		}
+	}
+}
+
 func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 	t.Parallel()
 

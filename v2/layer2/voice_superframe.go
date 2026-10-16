@@ -124,6 +124,18 @@ func (t *VoiceTransmitter) Header() RawBurst {
 	return t.header
 }
 
+// PIHeader returns the PI Header burst that Headers returns after the Voice
+// LC Header. ok is false when the options set no PI Header.
+func (t *VoiceTransmitter) PIHeader() (b RawBurst, ok bool) {
+	return t.piHeader, t.hasPI
+}
+
+// Terminator returns the Terminator with LC burst that Terminate returns
+// last. It does not end the transmission.
+func (t *VoiceTransmitter) Terminator() RawBurst {
+	return t.terminator
+}
+
 // SetReverseChannel sends rc in place of the Null embedded message in the
 // next burst F, and a later call before that burst replaces rc. It returns
 // an error for a transmission that is not BS-sourced (ETSI TS 102 361-1
@@ -197,18 +209,51 @@ func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFr
 	return dst, nil
 }
 
+// AddBurst adds the VoiceSlotsPerBurst slots of one burst in transmit order,
+// as AppendSlots does, and returns the voice burst that they complete. A
+// burst holds VoiceSlotsPerBurst slots, so they complete exactly one: the
+// burst of the slots that wait from an earlier call, if any, and the first
+// slots.
+func (t *VoiceTransmitter) AddBurst(slots *[VoiceSlotsPerBurst][72]bit.Bit) (RawBurst, error) {
+	if t.terminated {
+		return RawBurst{}, ErrVoiceTerminated
+	}
+	var burst RawBurst
+	for i := range slots {
+		var slot [9]byte
+		packBits(slot[:], slots[i][:])
+		b, done, err := t.addSlot(&slot)
+		if err != nil {
+			return RawBurst{}, err
+		}
+		if done {
+			burst = b
+		}
+	}
+	return burst, nil
+}
+
 // appendSlot adds one slot and appends the burst that it completes to dst.
 func (t *VoiceTransmitter) appendSlot(dst []RawBurst, slot *[9]byte) ([]RawBurst, error) {
-	t.slots[t.pending] = *slot
-	t.pending++
-	if t.pending < VoiceSlotsPerBurst {
-		return dst, nil
-	}
-	burst, err := t.flush()
-	if err != nil {
+	burst, done, err := t.addSlot(slot)
+	if err != nil || !done {
 		return dst, err
 	}
 	return append(dst, burst), nil
+}
+
+// addSlot adds one slot and returns the burst that it completes, if any.
+func (t *VoiceTransmitter) addSlot(slot *[9]byte) (RawBurst, bool, error) {
+	t.slots[t.pending] = *slot
+	t.pending++
+	if t.pending < VoiceSlotsPerBurst {
+		return RawBurst{}, false, nil
+	}
+	burst, err := t.flush()
+	if err != nil {
+		return RawBurst{}, false, err
+	}
+	return burst, true, nil
 }
 
 // Terminate ends the transmission. It fills the last burst and then the last

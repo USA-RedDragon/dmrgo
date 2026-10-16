@@ -47,6 +47,9 @@ var bitFuncs = map[string]any{
 	"layer2.VoiceTransmitter.AddSlots": func(slots ...[72]bit.Bit) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AddSlots(slots...)
 	},
+	"layer2.VoiceTransmitter.AddBurst": func(slots [layer2.VoiceSlotsPerBurst][72]bit.Bit) (layer2.RawBurst, error) {
+		return voiceTransmitter().AddBurst(&slots)
+	},
 	"layer2.VoiceTransmitter.AppendSlots": func(slots ...[72]bit.Bit) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AppendSlots(nil, slots...)
 	},
