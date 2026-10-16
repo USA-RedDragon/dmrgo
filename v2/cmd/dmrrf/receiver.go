@@ -407,6 +407,9 @@ func (r *Receiver) step(end bool) {
 }
 
 // searchStep tries the next search positions and reports whether it locked.
+// The discriminator tier first waits for a spectrum estimate that finds a
+// signal and tunes the channel to it: it never tunes while locked, and a
+// carrier offset through its prefilter cost it 1 dB or more.
 func (r *Receiver) searchStep() bool {
 	ch := &r.chz.ch
 	if from := max(r.chz.oldest()+slotSamplesN, r.doneAt); r.searchAt < from {
@@ -417,6 +420,9 @@ func (r *Receiver) searchStep() bool {
 	}
 	for {
 		if !r.opt.Coherent {
+			if !r.spec.OK {
+				return false
+			}
 			base, u := r.chz.symAt(r.searchAt)
 			if u != 0 {
 				if b, v := r.chz.symAt(r.searchAt + 1); v == 0 {

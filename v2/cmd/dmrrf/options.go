@@ -76,7 +76,7 @@ type Options struct {
 
 // TierOptions returns the settings of tier t.
 func TierOptions(t Tier) Options {
-	o := Options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 6000, DiscOutlier: 0.01, Sources: 2}
+	o := Options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 4500, DiscOutlier: 0.01, Sources: 2}
 	o.SoftFEC, o.GridBPTC = true, true
 	if t != TierDisc {
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
