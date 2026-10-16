@@ -79,8 +79,7 @@ func TestLCBytes_ClearReservedOnFLCOChange(t *testing.T) {
 	t.Parallel()
 
 	l := pdu.LCBytes{0xC0, 0, 0x20, 0, 0, 9, 0, 0, 1}
-	l.SetFLCO(enums.FLCOUnitToUnitVoiceChannelUser)
-	if l[0] != 0xC3 || !l.Reserved() || !l.ProtectFlag() {
+	if err := l.SetFLCO(enums.FLCOUnitToUnitVoiceChannelUser); err != nil || l[0] != 0xC3 || !l.Reserved() || !l.ProtectFlag() {
 		t.Fatalf("SetFLCO gives octet 0 %#02x", l[0])
 	}
 	l.SetReserved(false)
@@ -111,6 +110,18 @@ func within(d, allowed [9]byte) bool {
 	return true
 }
 
+func TestLCBytes_SetFLCORange(t *testing.T) {
+	t.Parallel()
+
+	orig := pdu.LCBytes{0xC3, 1, 2, 3, 4, 5, 6, 7, 8}
+	for _, flco := range []enums.FLCO{64, 0x80, 0xFF} {
+		l := orig
+		if err := l.SetFLCO(flco); !isRangeError(err, "LCBytes", "FLCO", 6) || l != orig {
+			t.Errorf("SetFLCO(%d) gives %x, %v", flco, l, err)
+		}
+	}
+}
+
 func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 	t.Parallel()
 
@@ -129,9 +140,8 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 		voice := orig.FLCO() == enums.FLCOGroupVoiceChannelUser || orig.FLCO() == enums.FLCOUnitToUnitVoiceChannelUser
 
 		l := orig
-		flco := enums.FLCO(rng.Intn(256))
-		l.SetFLCO(flco)
-		if l.FLCO() != flco&0x3F || !within(diffMask(l, orig), flcoBits) {
+		flco := enums.FLCO(rng.Intn(64))
+		if err := l.SetFLCO(flco); err != nil || l.FLCO() != flco || !within(diffMask(l, orig), flcoBits) {
 			t.Fatalf("%x: SetFLCO changed %x", orig, diffMask(l, orig))
 		}
 		l = orig
@@ -208,7 +218,7 @@ func TestNewVoiceLC(t *testing.T) {
 		if b := must(f.Bytes()); b != [9]byte(l) {
 			t.Errorf("group %t: NewVoiceLCBytes %x, NewVoiceLC.Bytes %x", group, l, b)
 		}
-		if g, ok := l.Group(); !ok || g != group || l.ServiceOptions() != so.Byte() {
+		if g, ok := l.Group(); !ok || g != group || l.ServiceOptions() != must(so.Byte()) {
 			t.Errorf("group %t: LCBytes %x", group, l)
 		}
 	}

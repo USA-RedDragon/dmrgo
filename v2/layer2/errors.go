@@ -106,7 +106,8 @@ var (
 	errSyncPattern     = errors.New("not a Table 9.2 SYNC pattern")
 	errMMDVMHostData   = errors.New("MMDVMHost discards bursts of this data type")
 
-	errBurstBPTCReservedRange = &dmrgo.FieldRangeError{Type: "Burst", Field: "BPTCReserved", Bits: 3}
+	errBurstBPTCReservedRange    = &dmrgo.FieldRangeError{Type: "Burst", Field: "BPTCReserved", Bits: 3}
+	errRawBurstBPTCReservedRange = &dmrgo.FieldRangeError{Type: "RawBurst", Field: "BPTCReserved", Bits: 3}
 )
 
 // The joins of a decode error with ErrColorCodeMismatch, which

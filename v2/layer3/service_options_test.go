@@ -1,6 +1,11 @@
 package layer3
 
-import "testing"
+import (
+	"errors"
+	"testing"
+
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
+)
 
 func TestDecodeServiceOptions(t *testing.T) {
 	t.Parallel()
@@ -178,7 +183,7 @@ func TestServiceOptionsByte(t *testing.T) {
 
 	for v := range 256 {
 		so := DecodeServiceOptions([1]byte{byte(v)})
-		if got := so.Byte(); got != byte(v) {
+		if got := must(so.Byte()); got != byte(v) {
 			t.Errorf("DecodeServiceOptions(%#02x).Byte() = %#02x", v, got)
 		}
 		bits := must(so.Encode())
@@ -186,10 +191,14 @@ func TestServiceOptionsByte(t *testing.T) {
 			t.Errorf("%#02x: Encode gives %#02x", v, got)
 		}
 	}
-	if got := MotorolaServiceOptions().Byte(); got != 0x20 {
+	if got := must(MotorolaServiceOptions().Byte()); got != 0x20 {
 		t.Errorf("MotorolaServiceOptions().Byte() = %#02x, want 0x20", got)
 	}
-	if got := (ServiceOptions{Reserved: 7, PriorityLevel: 6}).Byte(); got != 0x32 {
-		t.Errorf("out of range fields give %#02x, want their low bits 0x32", got)
+	var rangeErr *dmrgo.FieldRangeError
+	if _, err := (ServiceOptions{Reserved: 4}).Byte(); !errors.As(err, &rangeErr) || rangeErr.Field != "Reserved" {
+		t.Errorf("Reserved 4: error %v, want the FieldRangeError of Reserved", err)
+	}
+	if _, err := (ServiceOptions{PriorityLevel: 4}).Byte(); !errors.As(err, &rangeErr) || rangeErr.Field != "PriorityLevel" {
+		t.Errorf("PriorityLevel 4: error %v, want the FieldRangeError of PriorityLevel", err)
 	}
 }

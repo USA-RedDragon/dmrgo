@@ -54,9 +54,9 @@
 // and an encode sets them to 0. An encoder that takes such a field, such as
 // CACH.Encode, UnifiedSingleBlockData.Encode or vocoder.EncodeAMBE72,
 // returns a *FieldRangeError when a padding bit is set, as it does for a
-// value that does not fit its bits. The setters of RawBurst, LCBytes and
-// the other byte-level editors write the low bits of a value and ignore the
-// rest.
+// value that does not fit its bits. So do the setters of RawBurst, LCBytes,
+// EMBInfo and SlotTypeInfo, which then change nothing. The SetAddresses
+// methods return false for an address over 24 bits.
 //
 // # Packages
 //

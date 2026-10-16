@@ -77,7 +77,7 @@ func TestBurstEncode_AMBEWithCorrectedErrors(t *testing.T) {
 	if got := must(b.Encode()); got != noisy {
 		t.Errorf("decode then Encode: got %x, want the received %x", got, noisy)
 	}
-	b.SetAMBEFrames(frames)
+	noErr(b.SetAMBEFrames(frames))
 	if got := must(b.Encode()); got != clean {
 		t.Errorf("SetAMBEFrames: got %x, want the regenerated %x", got, clean)
 	}
