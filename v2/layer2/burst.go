@@ -114,36 +114,45 @@ type Burst struct {
 }
 
 // decodeStore holds the PDUs that a Burst decodes into, and the payload
-// structs that their dispatch fields point to, so that a reused Burst
-// decodes without allocating. Each is allocated on the first decode of its
-// data type.
+// structs that their dispatch fields point to, so that a Burst decodes
+// without allocating.
 type decodeStore struct {
-	csbk              *pdu.CSBK
-	csbkPayloads      *pdu.CSBKPayloads
-	lc                *pdu.FullLinkControl
-	lcPayloads        *pdu.FullLinkControlPayloads
-	dataHeaderPayload *pdu.DataHeaderPayloads
-	mbcHeaderPayloads *pdu.MBCHeaderPayloads
-	piHeader          *pdu.PIHeader
-	dataHeader        *pdu.DataHeader
-	rate12            *pdu.Rate12Data
-	rate34            *pdu.Rate34Data
-	rate1             *pdu.Rate1Data
-	mbcHeader         *pdu.MBCHeader
-	mbcCont           *pdu.MBCContinuation
-	usbd              *pdu.UnifiedSingleBlockData
-	prFill            *pdu.PRFill
+	csbk              pdu.CSBK
+	csbkPayloads      pdu.CSBKPayloads
+	lc                pdu.FullLinkControl
+	lcPayloads        pdu.FullLinkControlPayloads
+	dataHeaderPayload pdu.DataHeaderPayloads
+	mbcHeaderPayloads pdu.MBCHeaderPayloads
+	piHeader          pdu.PIHeader
+	dataHeader        pdu.DataHeader
+	rate12            pdu.Rate12Data
+	rate34            pdu.Rate34Data
+	rate1             pdu.Rate1Data
+	mbcHeader         pdu.MBCHeader
+	mbcCont           pdu.MBCContinuation
+	usbd              pdu.UnifiedSingleBlockData
+	prFill            pdu.PRFill
 }
 
-// newSlot returns *p, after it allocates *p when it is nil, which happens on
-// the first decode of a data type into a Burst.
-//
-//go:noinline
-func newSlot[T any](p **T) *T {
-	if *p == nil {
-		*p = new(T)
-	}
-	return *p
+// reset sets every field of b to its zero value, except the decode store,
+// which the next decode overwrites, and sets the raw burst to data. It
+// does not copy the store, as *b = Burst{} would.
+func (b *Burst) reset(data RawBurst) {
+	b.Kind = KindUnknown
+	b.SyncPattern, b.NearestSync, b.SyncDistance = 0, 0, 0
+	b.VoiceBurst = 0
+	b.VoiceSlots = [VoiceSlotsPerBurst][72]bit.Bit{}
+	b.SlotType = pdu.SlotType{}
+	b.BPTCReserved = [3]bit.Bit{}
+	b.EmbeddedSignalling = pdu.EmbeddedSignalling{}
+	b.EmbeddedSignallingData = [32]bit.Bit{}
+	b.ReverseChannel = pdu.ReverseChannel{}
+	b.Data = nil
+	b.FEC = fec.BurstFECStats{}
+	b.raw = data
+	b.decodedDataType, b.decodedEMB = 0, false
+	b.payload, b.payloadBits = [25]byte{}, 0
+	b.decodedCoded, b.hasDecodedCoded = [12]byte{}, false
 }
 
 // HasEmbeddedSignalling reports whether the burst carries an EMB and an
@@ -164,19 +173,10 @@ func (b *Burst) HasReverseChannel() bool {
 		b.EmbeddedSignalling.LCSS == enums.LCSSSingleFragment
 }
 
-// NewBurst returns a Burst with the storage of every PDU that a decode
-// fills, so that no decode into it allocates. A zero Burst also works, but
-// its first decode of each data type allocates that storage.
+// NewBurst returns a new Burst. A Burst holds the storage of every PDU that
+// a decode fills, so no decode into it allocates.
 func NewBurst() *Burst {
-	b := new(Burst)
-	st := &b.store
-	st.csbk, st.csbkPayloads = new(pdu.CSBK), new(pdu.CSBKPayloads)
-	st.lc, st.lcPayloads = new(pdu.FullLinkControl), new(pdu.FullLinkControlPayloads)
-	st.dataHeader, st.dataHeaderPayload = new(pdu.DataHeader), new(pdu.DataHeaderPayloads)
-	st.mbcHeader, st.mbcHeaderPayloads = new(pdu.MBCHeader), new(pdu.MBCHeaderPayloads)
-	st.piHeader, st.mbcCont, st.usbd, st.prFill = new(pdu.PIHeader), new(pdu.MBCContinuation), new(pdu.UnifiedSingleBlockData), new(pdu.PRFill)
-	st.rate12, st.rate34, st.rate1 = new(pdu.Rate12Data), new(pdu.Rate34Data), new(pdu.Rate1Data)
-	return b
+	return new(Burst)
 }
 
 // NewBurstFromBytes decodes data into a new Burst from NewBurst, as
@@ -204,9 +204,7 @@ func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
 	if opts != nil {
 		o = *opts
 	}
-	store := b.store
-	*b = Burst{}
-	b.store, b.raw = store, data
+	b.reset(data)
 	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
 	err := b.decode(o)
 	ccErr := b.checkColorCode(o.ColorCode)
@@ -582,50 +580,50 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 	}
 	switch dt {
 	case enums.DataTypeCSBK:
-		d := newSlot(&st.csbk)
-		pdu.DecodeCSBKBytesInto(d, newSlot(&st.csbkPayloads), [12]byte(payload[:12]))
+		d := &st.csbk
+		pdu.DecodeCSBKBytesInto(d, &st.csbkPayloads, [12]byte(payload[:12]))
 		d.Hint0x38 = opcode0x38Hint(sync)
 		return d, d.FEC, nil
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
-		d := newSlot(&st.lc)
-		pdu.DecodeFullLinkControlInto(d, newSlot(&st.lcPayloads), bits96, dt)
+		d := &st.lc
+		pdu.DecodeFullLinkControlInto(d, &st.lcPayloads, bits96, dt)
 		return d, d.FEC, nil
 	case enums.DataTypePIHeader:
-		d := newSlot(&st.piHeader)
+		d := &st.piHeader
 		*d = pdu.DecodePIHeader(bits96)
 		return d, d.FEC, nil
 	case enums.DataTypeDataHeader:
-		d := newSlot(&st.dataHeader)
-		pdu.DecodeDataHeaderInto(d, newSlot(&st.dataHeaderPayload), bits96)
+		d := &st.dataHeader
+		pdu.DecodeDataHeaderInto(d, &st.dataHeaderPayload, bits96)
 		return d, d.FEC, nil
 	case enums.DataTypeRate34:
 		var sizedBits [144]bit.Bit
 		unpackBits(sizedBits[:], payload[:18])
-		d := newSlot(&st.rate34)
+		d := &st.rate34
 		*d = pdu.DecodeRate34Data(sizedBits)
 		return d, fec.Result{}, nil
 	case enums.DataTypeRate12:
-		d := newSlot(&st.rate12)
+		d := &st.rate12
 		*d = pdu.DecodeRate12Data(bits96)
 		return d, fec.Result{}, nil
 	case enums.DataTypeRate1:
 		var sizedBits [192]bit.Bit
 		unpackBits(sizedBits[:], payload[:24])
-		d := newSlot(&st.rate1)
+		d := &st.rate1
 		*d = pdu.DecodeRate1Data(sizedBits)
 		return d, fec.Result{}, nil
 	case enums.DataTypeMBCHeader:
-		d := newSlot(&st.mbcHeader)
-		pdu.DecodeMBCHeaderInto(d, newSlot(&st.mbcHeaderPayloads), bits96)
+		d := &st.mbcHeader
+		pdu.DecodeMBCHeaderInto(d, &st.mbcHeaderPayloads, bits96)
 		return d, d.FEC, nil
 	case enums.DataTypeMBCContinuation:
-		d := newSlot(&st.mbcCont)
+		d := &st.mbcCont
 		*d = pdu.DecodeMBCContinuation(bits96)
 		return d, fec.Result{}, nil
 	case enums.DataTypeIdle:
-		return newSlot(&st.prFill), fec.Result{}, nil
+		return &st.prFill, fec.Result{}, nil
 	case enums.DataTypeUnifiedSingleBlock:
-		d := newSlot(&st.usbd)
+		d := &st.usbd
 		*d = pdu.DecodeUnifiedSingleBlockData(bits96)
 		return d, d.FEC, nil
 	case enums.DataTypeReserved:
