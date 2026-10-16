@@ -34,6 +34,14 @@ type Options struct {
 	// GridBPTC decodes a BPTC(196,96) block whose CRC or Reed-Solomon
 	// check fails again by iterative row and column decoding of its grid.
 	GridBPTC bool
+	// DataPasses is the number of times a coherent tier detects a
+	// BPTC(196,96) data burst that fails its check again, with the
+	// extrinsic information of its grid decode as priors weighed by
+	// DataPrior. DataUnchecked does so also for a burst without a check
+	// whose decode corrected bits.
+	DataPasses    int
+	DataPrior     float32
+	DataUnchecked bool
 	// RefinePrior, when above 0, detects each voice burst again with the
 	// bits that soft-decision decoding fixed as priors of that many nats.
 	RefinePrior float32
@@ -70,6 +78,9 @@ type Options struct {
 func TierOptions(t Tier) Options {
 	o := Options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 6000, DiscOutlier: 0.01, Sources: 2}
 	o.SoftFEC, o.GridBPTC = true, true
+	if t != TierDisc {
+		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
+	}
 	switch t {
 	case TierDisc:
 		o.DiscDecimation = 2

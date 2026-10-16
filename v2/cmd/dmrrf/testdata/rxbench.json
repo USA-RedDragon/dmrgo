@@ -1751,7 +1751,7 @@
       },
       "header": {
        "truth": 13,
-       "exact": 9
+       "exact": 10
       },
       "lc": {
        "truth": 2,
@@ -1763,7 +1763,7 @@
       },
       "rate12": {
        "truth": 14,
-       "exact": 8
+       "exact": 12
       },
       "rate1_bit": {
        "truth": 576,
@@ -3472,11 +3472,11 @@
       },
       "header": {
        "truth": 13,
-       "exact": 8
+       "exact": 10
       },
       "lc": {
        "truth": 2,
-       "exact": 1
+       "exact": 2
       },
       "rate1": {
        "truth": 3,
@@ -3484,7 +3484,7 @@
       },
       "rate12": {
        "truth": 14,
-       "exact": 11
+       "exact": 12
       },
       "rate1_bit": {
        "truth": 576,
