@@ -15,6 +15,7 @@ ignore_files:
   - v2/cmd/dmrrf/modem.go
   - v2/cmd/dmrrf/report.go
   - v2/cmd/dmrrf/seq.go
+  - v2/cmd/dmrrf/site.go
   - v2/bit/bit.go
   - v2/internal/lowbit/lowbit.go
   - v2/layer2/pdu/deprecated.go

@@ -40,11 +40,13 @@ type SeqConfig struct {
 }
 
 // Built is a transmission: Bursts for an MS-sourced one, Slots for a
-// BS-sourced stream, and Info lines that describe the content.
+// BS-sourced stream, Carriers for the other channels of a multi-channel
+// one, and Info lines that describe the content.
 type Built struct {
-	Bursts []layer2.RawBurst
-	Slots  []BSSlot
-	Info   []string
+	Bursts   []layer2.RawBurst
+	Slots    []BSSlot
+	Carriers []SiteCarrier
+	Info     []string
 }
 
 // Names of the sequences that are not data packets.
@@ -58,13 +60,14 @@ const (
 	seqRC       = "rc"
 	seqMBC      = "mbc"
 	seqTier3    = "tier3"
+	seqSite     = "t3site"
 )
 
 // Sequences returns the names Sequence accepts.
 func Sequences() []string {
 	return []string{
 		seqWakeup, "data12", "data34", "data1", "data12u", "data34u", "data1u",
-		seqACK, seqSR, seqPreamble, seqVoice, seqPI, seqRC, seqMBC, seqTier3,
+		seqACK, seqSR, seqPreamble, seqVoice, seqPI, seqRC, seqMBC, seqTier3, seqSite,
 	}
 }
 
@@ -401,8 +404,15 @@ func payload(name string, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 
 // Sequence builds the bursts of a named transmission (see Sequences). An
 // MS-sourced one starts with Wakeups BS_Dwn_Act CSBKs; "wakeup" sends only
-// those. A BS-sourced one is a continuous stream (see BSStream).
+// those. A BS-sourced one is a continuous stream (see BSStream), and
+// "t3site" adds a second channel in Carriers (see siteSequence).
 func Sequence(name string, cfg SeqConfig) (Built, error) {
+	if name == seqSite {
+		if !cfg.BSSourced {
+			return Built{}, fmt.Errorf("%s sends outbound Tier III PDUs and needs -bs-sourced", name)
+		}
+		return siteSequence(cfg)
+	}
 	p, info, err := payload(name, cfg)
 	if err != nil {
 		return Built{}, err

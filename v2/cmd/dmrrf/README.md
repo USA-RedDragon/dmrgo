@@ -23,6 +23,12 @@ Sequences for `tx -seq`. An MS-sourced sequence starts with `-wakeups` BS_Dwn_Ac
 | `rc` | wakeups, then a standalone MS-sourced reverse channel burst with the Cease Transmission command |
 | `mbc` | `-bs-sourced` only: TV_GRANT as an MBC: header with physical channel 0xFFF, then a CG_AP continuation (channel 1, 446 MHz + 50 x 125 Hz) |
 | `tier3` | C_ALOHA (system code 0x1234), TV_GRANT and C_MOVE CSBKs, then the `mbc` grant; `-bs-sourced` only, for a Tier III decoder such as dsd-fme |
+| `t3site` | `-bs-sourced` only: a simulated Tier III site in one file with two carriers (see below) |
+
+`t3site` writes a control channel at the tuned frequency (446.00625 MHz, LCN 1) and a traffic channel 25 kHz above it (LCN 2), with the MS transmit frequencies 5 MHz below:
+- Control channel, TS1: C_ALOHA and C_BCAST Chan_Freq MBCs that give the absolute frequencies of LCN 1 and 2 (system code Small, NET 21, SITE 3), then a TV_GRANT from `-src` to talkgroup `-dst` on LCN 2 TS2, the same grant as an MBC with a CG_AP block, and late entry TV_GRANTs every 6 frames during the call. TS2 is idle. Every CACH carries a C_SYS_Parms Short LC.
+- Traffic channel: the carrier keys up 3 frames after the grant and carries the call on TS2 (voice LC header, `-superframes` superframes, terminator) with Activity Update Short LCs.
+- `-wakeups` and `-repeat` do not apply. Each carrier gets half of `-level`.
 
 Voice flags:
 - The voice carries a test pattern: AMBE+2 frame `n` is a distinct, known 49-bit value. `tx` prints each frame it sends as `ambe tx seq=<n> 0x<13 hex digits>`, and `rx` prints each frame it receives with the same `seq` (counted from the voice LC header), so a relayed call can be compared bit for bit. `-ambe-silence` sends AMBE+2 silence instead.
