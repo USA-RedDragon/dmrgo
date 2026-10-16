@@ -220,7 +220,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	if r.opt.Coherent {
 		dec = max(r.opt.ChanDecimation, 1)
 	}
-	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, dec)
+	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, dec, r.opt.CompactChannel)
 	r.spec = newSpectrum()
 	r.search = newSyncSearch(r.opt.Coherent, dec)
 	if r.opt.Coherent {

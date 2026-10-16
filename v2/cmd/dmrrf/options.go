@@ -50,6 +50,10 @@ type Options struct {
 	// ChanDecimation is the factor, 1 or 2, by which the channel ring of
 	// the coherent tiers runs below basebandRate; 0 means 1.
 	ChanDecimation int
+	// CompactChannel holds the channel ring of the coherent tiers as 8-bit
+	// block floating point and keeps no copy of the wide input: a retune
+	// rotates the samples it holds instead of filtering the input again.
+	CompactChannel bool
 	// Sources is the number of SYNC sources the search tries: 2 for BS
 	// and MS, 4 with both direct mode slots.
 	Sources int
@@ -63,7 +67,8 @@ func TierOptions(t Tier) Options {
 	case TierDisc:
 		o.DiscDecimation = 2
 	case TierCoherent:
-		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior, o.ChanDecimation = true, 1, 5, 0.12, true, 20, 2
+		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior = true, 1, 5, 0.12, true, 20
+		o.ChanDecimation, o.CompactChannel = 2, true
 	case TierExact:
 		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior = true, 1, true, 52, true, 20
 	case TierMax:

@@ -1717,11 +1717,11 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 69
+       "exact": 70
       },
       "ambe_c0c1": {
        "truth": 108,
-       "exact": 89
+       "exact": 91
       },
       "csbk": {
        "truth": 6,
@@ -1741,7 +1741,7 @@
       },
       "lc": {
        "truth": 2,
-       "exact": 0
+       "exact": 1
       },
       "rate1": {
        "truth": 3,
@@ -1770,7 +1770,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 99
+       "exact": 100
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -1859,7 +1859,7 @@
       },
       "rate34": {
        "truth": 6,
-       "exact": 5
+       "exact": 6
       },
       "slottype": {
        "truth": 44,
