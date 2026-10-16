@@ -231,7 +231,11 @@ func DecodeShortLC(data [36]bit.Bit) ShortLC {
 	var result ShortLC
 	lowbit.Mask(data[:])
 	_crc := uint8(bit.Uint(data[28:]))
-	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:28], _crc)
+	var _crcBytes [4]byte
+	for _i := range 28 {
+		_crcBytes[_i/8] |= byte(data[_i]) << (7 - _i%8)
+	}
+	result.FEC.Uncorrectable = !crc.CheckCRC8(_crcBytes[:], 28, _crc)
 	result.SLCO = enums.SLCO(bit.Uint(data[0:4]))
 	var _dispatchBits [24]bit.Bit
 	copy(_dispatchBits[:], data[4:28])
@@ -275,7 +279,11 @@ func DecodeShortLCInto(dst *ShortLC, p *ShortLCPayloads, data [36]bit.Bit) {
 	result := dst
 	lowbit.Mask(data[:])
 	_crc := uint8(bit.Uint(data[28:]))
-	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:28], _crc)
+	var _crcBytes [4]byte
+	for _i := range 28 {
+		_crcBytes[_i/8] |= byte(data[_i]) << (7 - _i%8)
+	}
+	result.FEC.Uncorrectable = !crc.CheckCRC8(_crcBytes[:], 28, _crc)
 	result.SLCO = enums.SLCO(bit.Uint(data[0:4]))
 	var _dispatchBits [24]bit.Bit
 	copy(_dispatchBits[:], data[4:28])
@@ -377,7 +385,11 @@ func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 			return [36]bit.Bit{}, fmt.Errorf("ShortLC.%s is set, but SLCO selects %s", _payload, _want)
 		}
 	}
-	_crcVal := crc.CRC8(data[:28])
+	var _crcBytes [4]byte
+	for _i := range 28 {
+		_crcBytes[_i/8] |= byte(data[_i]) << (7 - _i%8)
+	}
+	_crcVal := crc.CRC8(_crcBytes[:], 28)
 	for j := range 8 {
 		data[28+j] = bit.Bit((_crcVal >> (7 - j)) & 1)
 	}

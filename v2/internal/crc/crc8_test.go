@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
 func TestCRC8_ZeroInput(t *testing.T) {
 	t.Parallel()
 
 	bits := make([]bit.Bit, 28)
-	result := crc.CRC8(bits)
+	result := crc8Of(bits)
 	if result != 0x00 {
 		t.Errorf("CRC8 of 28 zero bits = 0x%02X, want 0x00", result)
 	}
@@ -21,7 +20,7 @@ func TestCRC8_SingleBit(t *testing.T) {
 	t.Parallel()
 
 	bits := []bit.Bit{1}
-	result := crc.CRC8(bits)
+	result := crc8Of(bits)
 	if result == 0x00 {
 		t.Error("CRC8 of single 1-bit should be non-zero")
 	}
@@ -37,7 +36,7 @@ func TestCRC8_CheckValid(t *testing.T) {
 	data[15] = 1
 	data[27] = 1
 
-	c := crc.CRC8(data)
+	c := crc8Of(data)
 
 	withCRC := make([]bit.Bit, 36)
 	copy(withCRC, data)
@@ -57,7 +56,7 @@ func TestCRC8_CheckInvalid(t *testing.T) {
 	data[0] = 1
 	data[5] = 1
 
-	c := crc.CRC8(data)
+	c := crc8Of(data)
 
 	withCRC := make([]bit.Bit, 36)
 	copy(withCRC, data)
@@ -83,8 +82,8 @@ func TestCRC8_Deterministic(t *testing.T) {
 	t.Parallel()
 
 	data := []bit.Bit{1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0}
-	crc1 := crc.CRC8(data)
-	crc2 := crc.CRC8(data)
+	crc1 := crc8Of(data)
+	crc2 := crc8Of(data)
 	if crc1 != crc2 {
 		t.Errorf("CRC8 not deterministic: 0x%02X vs 0x%02X", crc1, crc2)
 	}
@@ -95,8 +94,8 @@ func TestCRC8_DifferentDataDifferentCRC(t *testing.T) {
 
 	data1 := []bit.Bit{1, 0, 0, 0, 0, 0, 0, 0}
 	data2 := []bit.Bit{0, 1, 0, 0, 0, 0, 0, 0}
-	crc1 := crc.CRC8(data1)
-	crc2 := crc.CRC8(data2)
+	crc1 := crc8Of(data1)
+	crc2 := crc8Of(data2)
 	if crc1 == crc2 {
 		t.Error("Different data should produce different CRCs")
 	}

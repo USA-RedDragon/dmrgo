@@ -1,32 +1,32 @@
 package crc
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-)
-
 const (
 	crc9Poly      = uint16(0x59)  // x⁶ + x⁴ + x³ + 1 (low 9 bits of G₉(x) without x⁹)
 	crc9Inversion = uint16(0x1FF) // all 9 bits set
 )
 
-// CRC9 computes the CRC-9 of bits with the generator polynomial
-// x⁹ + x⁶ + x⁴ + x³ + 1, initial value 0 and the result inverted with 0x1FF
-// (ETSI TS 102 361-1 clause B.3.10).
-func CRC9(bits []bit.Bit) uint16 {
-	var crc uint16
-
-	for _, b := range bits {
-		feedback := ((crc >> 8) & 1) ^ uint16(b&1)
-		crc = (crc << 1) & 0x1FF
+// CRC9 computes the CRC-9 of the first n bits of data, the first bit most
+// significant, with the generator polynomial x⁹ + x⁶ + x⁴ + x³ + 1, initial
+// value 0 and the result inverted with 0x1FF (ETSI TS 102 361-1 clause
+// B.3.10).
+func CRC9(data []byte, n int) uint16 {
+	// The register holds the 9 CRC bits in its top bits, so that a whole
+	// byte goes through the table at once.
+	var reg uint16
+	for _, b := range data[:n>>3] {
+		reg = reg<<8 ^ crc9_0x259[byte(reg>>8)^b]
+	}
+	for i := n &^ 7; i < n; i++ {
+		feedback := reg>>15 ^ uint16(data[i>>3]>>(7-i&7)&1)
+		reg <<= 1
 		if feedback != 0 {
-			crc ^= crc9Poly
+			reg ^= crc9Poly << 7
 		}
 	}
-
-	return crc ^ crc9Inversion
+	return reg>>7 ^ crc9Inversion
 }
 
-// CheckCRC9 reports whether want is the CRC-9 of bits.
-func CheckCRC9(bits []bit.Bit, want uint16) bool {
-	return CRC9(bits) == want&0x1FF
+// CheckCRC9 reports whether want is the CRC-9 of the first n bits of data.
+func CheckCRC9(data []byte, n int, want uint16) bool {
+	return CRC9(data, n) == want&0x1FF
 }

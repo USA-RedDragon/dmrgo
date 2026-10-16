@@ -5,7 +5,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -13,7 +12,7 @@ func TestTACT_DecodeEncode_RoundTrip(t *testing.T) {
 	t.Parallel()
 	// Build a valid TACT codeword: AT=1, TC=0, LCSS=01 (FirstFragmentLC)
 	data := [4]bit.Bit{1, 0, 0, 1}
-	codeword := hamming.Encode743(data)
+	codeword := hamming743Bits(data)
 
 	tact := pdu.DecodeTACT(codeword)
 	fecResult := tact.FEC
@@ -47,7 +46,7 @@ func TestTACT_DecodeEncode_AllCombinations(t *testing.T) {
 			bit.Bit((i >> 1) & 1),
 			bit.Bit(i & 1),
 		}
-		codeword := hamming.Encode743(data)
+		codeword := hamming743Bits(data)
 
 		tact := pdu.DecodeTACT(codeword)
 		fecResult := tact.FEC
@@ -66,7 +65,7 @@ func TestTACT_DecodeEncode_AllCombinations(t *testing.T) {
 func TestTACT_SingleBitError(t *testing.T) {
 	t.Parallel()
 	data := [4]bit.Bit{0, 1, 1, 0}
-	codeword := hamming.Encode743(data)
+	codeword := hamming743Bits(data)
 
 	// Flip each bit position and verify correction
 	for pos := 0; pos < 7; pos++ {
@@ -111,7 +110,7 @@ func TestTACT_LCSS_Values(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		codeword := hamming.Encode743(tt.bits)
+		codeword := hamming743Bits(tt.bits)
 		tact := pdu.DecodeTACT(codeword)
 		fecResult := tact.FEC
 		if fecResult.Uncorrectable {
@@ -127,7 +126,7 @@ func TestTACT_LCSS_Values(t *testing.T) {
 func TestTACT_String(t *testing.T) {
 	t.Parallel()
 	data := [4]bit.Bit{1, 1, 0, 0}
-	codeword := hamming.Encode743(data)
+	codeword := hamming743Bits(data)
 	tact := pdu.DecodeTACT(codeword)
 	s := tact.String()
 	if s == "" {

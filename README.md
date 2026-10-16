@@ -175,7 +175,7 @@ The example prints its counts on the serial console once a second.
 | 9.3.1 | Colour Code (CC) | verified | 4/4 passed | `v2/enums/color_code.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/pdu/slot_type.go` |
 | 9.3.2 | Pre-emption and power control Indicator (PI) | verified | 1/1 passed | `v2/layer2/pdu/embedded_signalling.go` |
 | 9.3.3 | LC Start/Stop (LCSS) | verified | 3/3 passed | `v2/enums/lcss.go` |
-| 9.3.4 | EMB parity | verified | 3/3 passed | `v2/internal/fec/quadraticresidue/quadratic_residue_16_7_6.go`, `v2/layer2/pdu/embedded_signalling.go` |
+| 9.3.4 | EMB parity | verified | 4/4 passed | `v2/internal/fec/quadraticresidue/quadratic_residue_16_7_6.go`, `v2/layer2/pdu/embedded_signalling.go` |
 | 9.3.5 | Feature set ID (FID) | verified | 11/11 passed | `v2/enums/feature_set_id.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | 9.3.6 | Data Type | verified | 6/6 passed | `v2/enums/data_type.go`, `v2/layer2/data.go` |
 | 9.3.10 | Protect Flag (PF) | verified | 2/2 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
@@ -190,11 +190,11 @@ The example prints its counts on the serial console once a second.
 | B.2.3 | Variable length BPTC for CACH signalling | verified | 13/13 passed | `v2/internal/fec/bptc/bptc_cach.go` |
 | B.2.4 | Rate ¾ Trellis code | verified | 10/10 passed | `v2/internal/fec/trellis/trellis_3_4.go` |
 | B.2.5 | Rate 1 coded data | verified | 1/1 passed | `v2/layer2/burst.go` |
-| B.3.1 | Golay (20,8) | verified | 2/2 passed | `v2/internal/fec/golay/golay_20_8_7.go` |
-| B.3.2 | Quadratic residue (16,7,6) | verified | 1/1 passed | `v2/internal/fec/quadraticresidue/quadratic_residue_16_7_6.go` |
+| B.3.1 | Golay (20,8) | verified | 3/3 passed | `v2/internal/fec/golay/golay_20_8_7.go` |
+| B.3.2 | Quadratic residue (16,7,6) | verified | 2/2 passed | `v2/internal/fec/quadraticresidue/quadratic_residue_16_7_6.go` |
 | B.3.3 | Hamming (17,12,3) | verified | 1/1 passed | `v2/internal/fec/bptc/bptc_196_96.go` |
 | B.3.4 | Hamming (13,9,3), Hamming (15,11,3), and Hamming (16,11,4) | verified | 4/4 passed | `v2/internal/fec/bptc/bptc_196_96.go`, `v2/internal/fec/bptc/bptc_embedded_lc.go` |
-| B.3.5 | Hamming (7,4,3) | verified | 8/8 passed | `v2/internal/fec/hamming/hamming_7_4_3.go` |
+| B.3.5 | Hamming (7,4,3) | verified | 2/2 passed | `v2/internal/fec/hamming/hamming_7_4_3.go` |
 | B.3.6 | Reed-Solomon (12,9) | verified | 22/22 passed | `v2/internal/fec/reedsolomon/reed_solomon_12_9_4.go` |
 | B.3.7 | 8-bit CRC calculation | verified | 7/7 passed | `v2/internal/crc/crc8.go` |
 | B.3.8 | CRC-CCITT calculation | verified | 5/5 passed | `v2/internal/crc/crc_ccitt.go` |

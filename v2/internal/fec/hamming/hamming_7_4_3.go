@@ -2,70 +2,53 @@
 // the TACT of the CACH (ETSI TS 102 361-1 clause B.3.5).
 package hamming
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
+import "github.com/USA-RedDragon/dmrgo/v2/fec"
+
+// The parity checks of the Hamming (7,4,3) code over a codeword whose first
+// bit is bit 6, from the generator matrix [I₄ | P] of ETSI TS 102 361-1
+// clause B.3.5.
+const (
+	check0 = 0b1110100
+	check1 = 0b0111010
+	check2 = 0b1101001
 )
 
-// parity743 returns the 3 Hamming(7,4,3) parity bits of 4 data bits, from
-// the generator matrix [I₄ | P] of ETSI TS 102 361-1 clause B.3.5.
-func parity743(data [4]bit.Bit) [3]bit.Bit {
-	lowbit.Mask(data[:])
-	return [3]bit.Bit{
-		data[0] ^ data[1] ^ data[2],
-		data[1] ^ data[2] ^ data[3],
-		data[0] ^ data[1] ^ data[3],
-	}
+// parity returns 1 when x has an odd number of set bits, and 0 otherwise.
+func parity(x uint8) uint8 {
+	x ^= x >> 4
+	x ^= x >> 2
+	x ^= x >> 1
+	return x & 1
 }
 
-// Decode743 corrects up to 1 bit error in a 7-bit Hamming(7,4,3) codeword
-// and returns the corrected codeword and a fec.Result.
-func Decode743(bits [7]bit.Bit) ([7]bit.Bit, fec.Result) {
-	lowbit.Mask(bits[:])
+// syndrome returns the 3-bit syndrome of the 7-bit codeword cw.
+func syndrome(cw uint8) uint8 {
+	return parity(cw&check0)<<2 | parity(cw&check1)<<1 | parity(cw&check2)
+}
+
+// Encode743 returns the Hamming (7,4,3) codeword of the low 4 bits of data:
+// the data bits followed by 3 parity bits, the first bit most significant.
+func Encode743(data uint8) uint8 {
+	cw := (data & 0xF) << 3
+	return cw | syndrome(cw)
+}
+
+// Check743 reports whether the low 7 bits of cw are a Hamming (7,4,3)
+// codeword.
+func Check743(cw uint8) bool {
+	return syndrome(cw&0x7F) == 0
+}
+
+// Decode743 corrects up to 1 bit error in the 7-bit Hamming (7,4,3)
+// codeword cw, the first bit most significant, and returns the corrected
+// codeword and a fec.Result. Bits of cw above the 7th are ignored.
+func Decode743(cw uint8) (uint8, fec.Result) {
+	cw &= 0x7F
 	result := fec.Result{BitsChecked: 7}
-
-	s0 := bits[0] ^ bits[1] ^ bits[2] ^ bits[4]
-	s1 := bits[1] ^ bits[2] ^ bits[3] ^ bits[5]
-	s2 := bits[0] ^ bits[1] ^ bits[3] ^ bits[6]
-
-	syndrome := int(s0)<<2 | int(s1)<<1 | int(s2)
-
-	if syndrome == 0 {
-		return bits, result
+	s := syndrome(cw)
+	if s == 0 {
+		return cw, result
 	}
-
-	errPos := hamming743_syndrome_table[syndrome]
-	if errPos < 0 {
-		// Should not happen for a 3-bit syndrome in Hamming(7,4,3)
-		result.Uncorrectable = true
-		return bits, result
-	}
-
-	corrected := bits
-	corrected[errPos] ^= 1
 	result.ErrorsCorrected = 1
-
-	return corrected, result
-}
-
-// Check743 reports whether bits is a Hamming(7,4,3) codeword.
-func Check743(bits [7]bit.Bit) bool {
-	lowbit.Mask(bits[:])
-	var data [4]bit.Bit
-	copy(data[:], bits[:4])
-
-	parity := parity743(data)
-	return parity[0] == bits[4] && parity[1] == bits[5] && parity[2] == bits[6]
-}
-
-// Encode743 encodes 4 data bits into a 7-bit Hamming(7,4,3) codeword: the
-// data bits followed by the 3 parity bits.
-func Encode743(data [4]bit.Bit) [7]bit.Bit {
-	lowbit.Mask(data[:])
-	parity := parity743(data)
-	return [7]bit.Bit{
-		data[0], data[1], data[2], data[3],
-		parity[0], parity[1], parity[2],
-	}
+	return cw ^ 0x40>>hamming743_syndrome_table[s], result
 }

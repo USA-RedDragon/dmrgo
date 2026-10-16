@@ -6,7 +6,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -19,7 +18,7 @@ func buildShortLCBits(slco byte, data [24]bit.Bit) [36]bit.Bit {
 	bits[2] = bit.Bit((slco >> 1) & 1)
 	bits[3] = bit.Bit(slco & 1)
 	copy(bits[4:28], data[:])
-	crcVal := crc.CRC8(bits[:28])
+	crcVal := crc8Bits(bits[:28])
 	for i := range 8 {
 		bits[28+i] = bit.Bit((crcVal >> (7 - i)) & 1)
 	}

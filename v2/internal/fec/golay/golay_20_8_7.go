@@ -6,108 +6,45 @@ package golay
 import (
 	"math/bits"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// parity2087 returns the 12 Golay (20,8,7) parity bits of 8 data bits
-// (ETSI TS 102 361-1 clause B.3.1).
-func parity2087(bits [8]bit.Bit) [12]bit.Bit {
-	lowbit.Mask(bits[:])
-	var p [12]bit.Bit
-	p[0] = bits[1] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7]
-	p[1] = bits[1] ^ bits[2] ^ bits[4]
-	p[2] = bits[0] ^ bits[2] ^ bits[3] ^ bits[5]
-	p[3] = bits[0] ^ bits[1] ^ bits[3] ^ bits[4] ^ bits[6]
-	p[4] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[5] ^ bits[7]
-	p[5] = bits[0] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[7]
-	p[6] = bits[3] ^ bits[6] ^ bits[7]
-	p[7] = bits[0] ^ bits[1] ^ bits[5] ^ bits[6]
-	p[8] = bits[0] ^ bits[1] ^ bits[2] ^ bits[6] ^ bits[7]
-	p[9] = bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[6]
-	p[10] = bits[0] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[6] ^ bits[7]
-	p[11] = bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7]
-	return p
-}
-
-// Decode2087 corrects up to 3 bit errors in a Golay (20,8,7) codeword and
-// returns the corrected codeword and a fec.Result.
-func Decode2087(bits [20]bit.Bit) ([20]bit.Bit, fec.Result) {
-	lowbit.Mask(bits[:])
-	result := fec.Result{BitsChecked: 20}
-
-	var data [8]bit.Bit
-	copy(data[:], bits[:8])
-
-	calcParity := parity2087(data)
-	syndrome := 0
-	for i := 0; i < 12; i++ {
-		if calcParity[i] != bits[8+i] {
-			syndrome |= (1 << i)
-		}
-	}
-
-	if syndrome == 0 {
-		return bits, result
-	}
-
-	errPattern := golay_20_8_7_syndrome_table[syndrome]
-	if errPattern == 0xFFFFFFFF {
-		result.Uncorrectable = true
-		return bits, result
-	}
-
-	var corrected [20]bit.Bit
-	copy(corrected[:], bits[:])
-
-	for i := 0; i < 20; i++ {
-		if (errPattern & (1 << i)) != 0 {
-			corrected[i] ^= 1
-			result.ErrorsCorrected++
-		}
-	}
-
-	return corrected, result
-}
-
-// Check2087 reports whether bits is a Golay (20,8,7) codeword.
-func Check2087(bits [20]bit.Bit) bool {
-	lowbit.Mask(bits[:])
-	var dataBits [8]bit.Bit
-	copy(dataBits[:], bits[:8])
-
-	parity := parity2087(dataBits)
-	for i := 0; i < 12; i++ {
-		if parity[i] != bits[8+i] {
-			return false
-		}
-	}
-	return true
+// reverse20 reverses the order of the low 20 bits of x. The Golay (20,8,7)
+// tables hold codeword bit i in bit i, and a packed codeword holds it in bit
+// 19-i.
+func reverse20(x uint32) uint32 {
+	return bits.Reverse32(x) >> 12
 }
 
 // Encode2087 returns the Golay (20,8,7) codeword of 8 data bits: the data
-// bits followed by 12 parity bits.
-func Encode2087(dataBits [8]bit.Bit) [20]bit.Bit {
-	var result [20]bit.Bit
-	data := uint8(bit.Uint(dataBits[:8]) & 0xFF)
+// bits followed by 12 parity bits, the first bit most significant.
+func Encode2087(data uint8) uint32 {
+	return reverse20(golay_20_8_7_table[bits.Reverse8(data)])
+}
 
-	// The encoding table uses LSB-first bit ordering (bits[i] = (d>>i)&1),
-	// but the codeword bit array uses MSB-first (bits[i] = (data>>(7-i))&1).
-	// Reverse the data byte to match the table's convention.
-	tableIdx := bits.Reverse8(data)
-	codeword := golay_20_8_7_table[tableIdx]
-
-	for i := 0; i < 8; i++ {
-		if (data>>(7-i))&1 == 1 {
-			result[i] = 1
-		}
+// Decode2087 corrects up to 3 bit errors in the 20-bit Golay (20,8,7)
+// codeword cw, the first bit most significant, and returns the corrected
+// codeword and a fec.Result. Bits of cw above the 20th are ignored. An
+// uncorrectable codeword is returned as it is.
+func Decode2087(cw uint32) (uint32, fec.Result) {
+	cw &= 0xFFFFF
+	result := fec.Result{BitsChecked: 20}
+	diff := (Encode2087(uint8(cw>>12)) ^ cw) & 0xFFF
+	if diff == 0 {
+		return cw, result
 	}
-	for i := 0; i < 12; i++ {
-		if (codeword>>(8+i))&1 == 1 {
-			result[8+i] = 1
-		}
+	errPattern := golay_20_8_7_syndrome_table[bits.Reverse16(uint16(diff))>>4]
+	if errPattern == 0xFFFFFFFF {
+		result.Uncorrectable = true
+		return cw, result
 	}
+	result.ErrorsCorrected = bits.OnesCount32(errPattern)
+	return cw ^ reverse20(errPattern), result
+}
 
-	return result
+// Check2087 reports whether the low 20 bits of cw are a Golay (20,8,7)
+// codeword.
+func Check2087(cw uint32) bool {
+	cw &= 0xFFFFF
+	return Encode2087(uint8(cw>>12)) == cw
 }
