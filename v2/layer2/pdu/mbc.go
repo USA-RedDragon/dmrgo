@@ -96,17 +96,12 @@ func (s *MBCContinuation) AsVNAP() VNAPContinuation {
 	return decodeVNAPContinuationBytes(s.packed())
 }
 
-// mbcCRCBlocks is the number of blocks whose last-block CRC input
-// mbcLastBlockCRC holds on the stack. More blocks allocate.
-const mbcCRCBlocks = 4
-
 // mbcLastBlockCRC computes the last-block CRC-CCITT of blocks.
 func mbcLastBlockCRC(blocks ...[96]bit.Bit) uint16 {
 	if len(blocks) == 0 {
 		return 0
 	}
-	var buf [mbcCRCBlocks * 12]byte
-	data := buf[:0]
+	var reg uint16
 	for i := range blocks {
 		n := 96
 		if i == len(blocks)-1 {
@@ -114,9 +109,9 @@ func mbcLastBlockCRC(blocks ...[96]bit.Bit) uint16 {
 		}
 		var octets [12]byte
 		packBits(octets[:], blocks[i][:n])
-		data = append(data, octets[:n/8]...)
+		reg = crc.CCITTUpdate(reg, octets[:n/8])
 	}
-	return crc.CCITT(data)
+	return ^reg
 }
 
 // MBCLastBlockCRCOK reports whether bits 80 to 95 of the last of blocks hold
