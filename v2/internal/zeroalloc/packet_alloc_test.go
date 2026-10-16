@@ -168,6 +168,7 @@ func assemblerEntries(t testing.TB) []entry {
 		entry{"layer2/packet.Assembler.Add", "UDT header (ignored)", 0, func() { _, _, _ = ign.Add(&udt) }},
 		entry{"layer2/packet.Assembler.Add", "C_HEAD", 0, func() { _, _, _ = single.Add(&hdr) }},
 		entry{"layer2/packet.Assembler.Reset", "reuse", 0, reuse.Reset},
+		entry{"layer2/packet.Assembler.InProgress", "after C_HEAD", 0, func() { _ = single.InProgress() }},
 	)
 
 	var pending packet.Assembler

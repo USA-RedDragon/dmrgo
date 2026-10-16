@@ -125,6 +125,14 @@ func (a *Assembler) Reset() {
 	}
 }
 
+// InProgress reports whether a header has started a packet that has not
+// completed or been reset. It is true for confirmed, unconfirmed and
+// response packets, after a proprietary header, and while a confirmed
+// packet waits for retried blocks.
+func (a *Assembler) InProgress() bool {
+	return a.active
+}
+
 // AddBurst adds a decoded burst. A burst that is not data, or whose data did
 // not decode, is ignored. A data block with an uncorrectable FEC result is
 // counted but not used, so the message CRC or CRC-9 catches it.
