@@ -183,7 +183,8 @@ func (p *Reporter) Burst(r Received) {
 		p.printf("           packet: %v", err)
 	case ok && m.Header.ResponsePacketHeader != nil:
 		h := m.Header.ResponsePacketHeader
-		line := fmt.Sprintf("response %s %s class=%d type=%d status=%d %d -> %d", t, strings.ReplaceAll(packet.ResponseOf(h).String(), " ", "_"),
+		r, _ := packet.ResponseOf(h)
+		line := fmt.Sprintf("response %s %s class=%d type=%d status=%d %d -> %d", t, strings.ReplaceAll(r.String(), " ", "_"),
 			h.ResponseClass, h.ResponseType, h.ResponseStatus, h.LLIDSource, h.LLIDDestination)
 		if m.Response != nil {
 			line += " retry=" + intList(m.Response.RetryBlocks())

@@ -340,7 +340,9 @@ func softAMBEEncoder(s, from int) softEncoder {
 			}
 		}
 		var r layer2.RawBurst
-		r.SetAMBEFrames(frames)
+		if err := r.SetAMBEFrames(frames); err != nil {
+			return nil, err
+		}
 		return softBurstImage(&r), nil
 	}
 }
@@ -360,13 +362,17 @@ func newSoftAMBE() (*softAMBE, error) {
 			skip[sl.c1.pos[j]] = true
 		}
 		var zero layer2.RawBurst
-		zero.SetAMBEFrames([layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame{})
+		if err := zero.SetAMBEFrames([layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame{}); err != nil {
+			return nil, err
+		}
 		zimg := softBurstImage(&zero)
 		for i := range softAMBEC2 {
 			var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 			frames[s][(2*softAMBEC0+i)/8] |= 0x80 >> ((2*softAMBEC0 + i) % 8)
 			var r layer2.RawBurst
-			r.SetAMBEFrames(frames)
+			if err := r.SetAMBEFrames(frames); err != nil {
+				return nil, err
+			}
 			img := softBurstImage(&r)
 			n := 0
 			for p := range img {
@@ -762,7 +768,9 @@ func softBPTCEncoder(info uint32) ([]unpacked.Bit, error) {
 		return softBurstImage(&r), nil
 	}
 	r.SetBPTCPayload([12]byte{})
-	r.SetBPTCReserved(1 << (i - softBPTCData))
+	if err := r.SetBPTCReserved(1 << (i - softBPTCData)); err != nil {
+		return nil, err
+	}
 	return softBurstImage(&r), nil
 }
 
@@ -1146,14 +1154,18 @@ func newSoftDecoder() (*softDecoder, error) {
 	}
 	if d.slotType, err = newSoftSmallCode(8, 3, func(info uint32) ([]unpacked.Bit, error) {
 		var r layer2.RawBurst
-		r.SetSlotType(pdu.SlotTypeInfo(info & 0xff).SlotType())
+		if err := r.SetSlotType(pdu.SlotTypeInfo(info & 0xff).SlotType()); err != nil {
+			return nil, err
+		}
 		return softBurstImage(&r), nil
 	}, nil); err != nil {
 		return nil, err
 	}
 	if d.emb, err = newSoftSmallCode(7, 2, func(info uint32) ([]unpacked.Bit, error) {
 		var r layer2.RawBurst
-		r.SetEMB(pdu.EMBInfo(info << 1 & 0xfe).EmbeddedSignalling())
+		if err := r.SetEMB(pdu.EMBInfo(info << 1 & 0xfe).EmbeddedSignalling()); err != nil {
+			return nil, err
+		}
 		return softBurstImage(&r), nil
 	}, nil); err != nil {
 		return nil, err

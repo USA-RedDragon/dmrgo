@@ -179,7 +179,7 @@ func TestSoftAMBE(t *testing.T) {
 	for range 50 {
 		frames := softRandomFrames(rng)
 		var r layer2.RawBurst
-		r.SetAMBEFrames(frames)
+		_ = r.SetAMBEFrames(frames)
 		bits := [264]unpacked.Bit(unpacked.Unpack(r[:]))
 		var llr [softBurstBits]int16
 		newSoftChannel(0, math.Inf(1)).llrs(bits[:], llr[:])
@@ -194,7 +194,7 @@ func TestSoftAMBE(t *testing.T) {
 		func(ch *softChannel) []int {
 			frames := softRandomFrames(ch.rng)
 			var r layer2.RawBurst
-			r.SetAMBEFrames(frames)
+			_ = r.SetAMBEFrames(frames)
 			bits := [264]unpacked.Bit(unpacked.Unpack(r[:]))
 			var llr [softBurstBits]int16
 			ch.llrs(bits[:], llr[:])
@@ -254,7 +254,7 @@ func TestSoftBPTC(t *testing.T) {
 		var r layer2.RawBurst
 		r.SetBPTCPayload(p)
 		res3 := uint8(i & 7)
-		r.SetBPTCReserved(res3)
+		_ = r.SetBPTCReserved(res3)
 		bits := [264]unpacked.Bit(unpacked.Unpack(r[:]))
 		var llr [softBurstBits]int16
 		newSoftChannel(0, math.Inf(1)).llrs(bits[:], llr[:])
@@ -441,9 +441,9 @@ func TestSoftEMBAndSlotType(t *testing.T) {
 	for v := range 256 {
 		var r layer2.RawBurst
 		st := pdu.SlotTypeInfo(v)
-		r.SetSlotType(st.SlotType())
+		_ = r.SetSlotType(st.SlotType())
 		emb := pdu.EMBInfo(v & 0xfe)
-		r.SetEMB(emb.EmbeddedSignalling())
+		_ = r.SetEMB(emb.EmbeddedSignalling())
 		bits := [264]unpacked.Bit(unpacked.Unpack(r[:]))
 		var llr [softBurstBits]int16
 		newSoftChannel(0, math.Inf(1)).llrs(bits[:], llr[:])
@@ -460,8 +460,8 @@ func TestSoftEMBAndSlotType(t *testing.T) {
 		st := pdu.SlotTypeInfo(ch.rng.IntN(256))
 		emb := pdu.EMBInfo(ch.rng.IntN(128) << 1)
 		var r layer2.RawBurst
-		r.SetSlotType(st.SlotType())
-		r.SetEMB(emb.EmbeddedSignalling())
+		_ = r.SetSlotType(st.SlotType())
+		_ = r.SetEMB(emb.EmbeddedSignalling())
 		bits := [264]unpacked.Bit(unpacked.Unpack(r[:]))
 		var llr [softBurstBits]int16
 		ch.llrs(bits[:], llr[:])
@@ -472,9 +472,11 @@ func TestSoftEMBAndSlotType(t *testing.T) {
 		s2, _ := d.decodeSlotType(&llr, st.ColorCode(), true, nil)
 		e1, _ := d.decodeEMB(&llr, 0, false, nil)
 		e2, _ := d.decodeEMB(&llr, emb.ColorCode(), true, nil)
+		hstInfo, _ := hst.Info()
+		hembInfo, _ := hemb.Info()
 		return []int{
-			softBool(hst.Info() != st), softBool(s1 != st), softBool(s2 != st),
-			softBool(hemb.Info() != emb), softBool(e1 != emb), softBool(e2 != emb),
+			softBool(hstInfo != st), softBool(s1 != st), softBool(s2 != st),
+			softBool(hembInfo != emb), softBool(e1 != emb), softBool(e2 != emb),
 		}
 	})
 	softCheckFER(t, counts, 0, 1, 1, 0.7)
@@ -704,12 +706,12 @@ func newSoftBenchInputs(tb testing.TB, esn0 float64) *softBenchInputs {
 	ch := newSoftChannel(11, esn0)
 	in := &softBenchInputs{}
 	var r layer2.RawBurst
-	r.SetAMBEFrames(softRandomFrames(ch.rng))
+	_ = r.SetAMBEFrames(softRandomFrames(ch.rng))
 	bits := [264]unpacked.Bit(unpacked.Unpack(r[:]))
 	ch.llrs(bits[:], in.voice[:])
 	r = layer2.RawBurst{}
 	r.SetBPTCPayload(softBPTCPayload(tb, ch.rng))
-	r.SetSlotType(pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeCSBK})
+	_ = r.SetSlotType(pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeCSBK})
 	bits = [264]unpacked.Bit(unpacked.Unpack(r[:]))
 	ch.llrs(bits[:], in.bptc[:])
 	r = layer2.RawBurst{}
@@ -717,7 +719,7 @@ func newSoftBenchInputs(tb testing.TB, esn0 float64) *softBenchInputs {
 	bits = [264]unpacked.Bit(unpacked.Unpack(r[:]))
 	ch.llrs(bits[:], in.rate34[:])
 	r = layer2.RawBurst{}
-	r.SetEMB(pdu.EMBInfo(0x12).EmbeddedSignalling())
+	_ = r.SetEMB(pdu.EMBInfo(0x12).EmbeddedSignalling())
 	bits = [264]unpacked.Bit(unpacked.Unpack(r[:]))
 	ch.llrs(bits[:], in.emb[:])
 	cach, _ := softCACH(tb, ch.rng, softShortLCInfoBits(ch.rng))
