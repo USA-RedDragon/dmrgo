@@ -4,11 +4,16 @@ package codec2
 
 import (
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
+
+// registerOnce registers the codec once per test binary, as a program does
+// at startup.
+var registerOnce sync.Once
 
 func TestStubUnavailable(t *testing.T) {
 	t.Parallel()
@@ -16,7 +21,7 @@ func TestStubUnavailable(t *testing.T) {
 	if _, err := New(Config{}); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("New error = %v, want ErrUnavailable", err)
 	}
-	vocoder.Register(Name, NewFactory(Config{}))
+	registerOnce.Do(func() { vocoder.Register(Name, NewFactory(Config{})) })
 	if _, err := vocoder.New(Name); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("vocoder.New error = %v, want ErrUnavailable", err)
 	}
