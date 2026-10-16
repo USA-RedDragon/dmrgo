@@ -23,12 +23,13 @@ const (
 	// again with the bits that its FEC fixed. It fits a Cortex-M4F class
 	// microcontroller.
 	TierCoherent
-	// TierExact detects over a window of three symbols with the carrier
-	// phase in the trellis state, and detects each voice burst again with
-	// the bits that its FEC fixed. It is for a PC.
+	// TierExact detects over a window of three symbols with one of 52
+	// carrier phases in the trellis state, and detects each voice burst
+	// again with the bits that its FEC fixed. It is for a PC.
 	TierExact
-	// TierMax is TierExact over a window of five symbols. It is for a PC
-	// and needs about 100 MB.
+	// TierMax is TierExact over a window of five symbols with 200 carrier
+	// phases, the exact count for h = 0.27, at about 50 times the compute.
+	// It is for offline decoding on a PC and needs about 100 MB.
 	TierMax
 )
 
@@ -211,7 +212,11 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 		r.maxRun = (maxGapSlots + 1) * slotSymbols
 		if r.opt.ExactPhase {
 			r.maxRun = exactGapSlots * slotSymbols
-			r.xt = newXTrellis(r.model, r.maxRun)
+			np := r.opt.PhaseStates
+			if np == 0 {
+				np = phaseStates
+			}
+			r.xt = newXTrellis(r.model, np, r.maxRun)
 			r.lp, r.slp = r.xt.lp, r.xt.slp
 		} else {
 			r.tr = newTrellis(r.model, r.maxRun)
