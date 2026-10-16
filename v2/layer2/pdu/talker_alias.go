@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 	"unicode/utf16"
@@ -304,16 +303,15 @@ func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias
 	if !a.hasHeader || a.completed {
 		return dst, false, nil
 	}
+	n := TalkerAliasBlocks(a.header.TalkerAliasDataFormat, a.header.TalkerAliasDataLength)
 	var blocks [talkerAliasMaxBlocks]*FLCTalkerAliasBlock
-	for i := range blocks {
-		if a.hasBlock[i] {
-			blocks[i] = &a.blocks[i]
+	for i := range n {
+		if !a.hasBlock[i] {
+			return dst, false, nil
 		}
+		blocks[i] = &a.blocks[i]
 	}
-	out, err := AppendTalkerAlias(dst, &a.header, blocks[:TalkerAliasBlocks(a.header.TalkerAliasDataFormat, a.header.TalkerAliasDataLength)]...)
-	if errors.Is(err, ErrTalkerAliasIncomplete) {
-		return dst, false, nil
-	}
+	out, err := AppendTalkerAlias(dst, &a.header, blocks[:n]...)
 	a.completed = true
 	return out, err == nil, err
 }
