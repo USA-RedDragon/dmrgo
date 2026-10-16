@@ -7,72 +7,66 @@ package pdu
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
+	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
-func DecodeUnifiedSingleBlockData(data [96]bit.Bit) UnifiedSingleBlockData {
+// decodeUnifiedSingleBlockDataBytes decodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
+// data holds its bits packed, the first bit most significant.
+func decodeUnifiedSingleBlockDataBytes(data [12]byte) UnifiedSingleBlockData {
 	var result UnifiedSingleBlockData
-	lowbit.Mask(data[:])
-	var _packedBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			_packedBytes[i] <<= 1
-			_packedBytes[i] |= byte(data[i*8+j])
-		}
-	}
-	_packedBytes[10] ^= uint8(0x33)
-	_packedBytes[11] ^= uint8(0x33)
-	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
-	result.ServiceType = ServiceType(bit.Uint(data[0:4]))
-	for _i := range 76 {
-		result.Payload[_i/8] |= byte(data[4+_i]) << (7 - _i%8)
-	}
+	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0x3333)
+	result.ServiceType = ServiceType(uint64(data[0]) >> 4)
+	bits.Copy(result.Payload[:], 0, data[:], 4, 76)
 	return result
 }
 
-// Encode encodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
-func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
-	var data [96]bit.Bit
+// DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
+func DecodeUnifiedSingleBlockData(data [96]bit.Bit) UnifiedSingleBlockData {
+	var _b [12]byte
+	for _i := range 96 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeUnifiedSingleBlockDataBytes(_b)
+}
+
+// encodeBytes encodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *UnifiedSingleBlockData) encodeBytes() ([12]byte, error) {
+	var data [12]byte
 	if uint64(s.ServiceType)>>4 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "ServiceType",
 			Type:  "UnifiedSingleBlockData",
 			Value: s.ServiceType,
 		}
 	}
-	bit.PutUint(data[0:4], uint64(s.ServiceType))
+	data[0] = data[0]&^0xF0 | byte(uint64(s.ServiceType)<<4)&0xF0
 	if s.Payload[9]&15 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  76,
 			Field: "Payload",
 			Type:  "UnifiedSingleBlockData",
 			Value: s.Payload,
 		}
 	}
-	for _i := range 76 {
-		data[4+_i] = bit.Bit(s.Payload[_i/8] >> (7 - _i%8) & 1)
+	bits.Copy(data[:], 4, s.Payload[:], 0, 76)
+	_crcVal := crc.CCITT(data[:10])
+	data[10] = byte(_crcVal>>8) ^ 0x33
+	data[11] = byte(_crcVal) ^ 0x33
+	return data, nil
+}
+
+// Encode encodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
+func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [96]bit.Bit{}, err
 	}
-	var _encBytes [10]byte
-	for i := range 10 {
-		for j := range 8 {
-			_encBytes[i] <<= 1
-			_encBytes[i] |= byte(data[i*8+j])
-		}
-	}
-	_crcVal := crc.CCITT(_encBytes[:])
-	_crcHigh := byte(_crcVal >> 8)
-	_crcLow := byte(_crcVal)
-	_crcHigh ^= uint8(0x33)
-	_crcLow ^= uint8(0x33)
-	for j := range 8 {
-		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
-	}
-	for j := range 8 {
-		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
+	var data [96]bit.Bit
+	for _i := range 96 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
 }

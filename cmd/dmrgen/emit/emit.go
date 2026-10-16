@@ -26,17 +26,17 @@ const (
 	typUint32 = "uint32"
 	typUint64 = "uint64"
 
-	bitPkg    = "github.com/USA-RedDragon/dmrgo/v2/bit"
-	crcPkg    = "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	lowbitPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
-	rsPkg     = "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
+	bitPkg  = "github.com/USA-RedDragon/dmrgo/v2/bit"
+	bitsPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	crcPkg  = "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	rsPkg   = "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 )
 
 // CRCAlgorithmInfo describes a CRC algorithm for code generation.
 type CRCAlgorithmInfo struct {
-	BitLevel bool   // true = operates on []bit.Bit, false = operates on []byte
+	BitLevel bool   // true = covers a bit count, false = covers whole bytes
 	CRCBits  int    // number of CRC bits (8 for CRC-8, 16 for CRC-CCITT)
-	CheckFn  string // e.g. "CheckCRC8", "CheckCCITT": func(data, want) bool
+	CheckFn  string // e.g. "CheckCRC8", "CheckCCITT": func(data, n, want) bool for a bit-level CRC, func(data, want) bool otherwise
 	CalcFn   string // e.g. "CRC8", "CCITT"
 }
 
@@ -59,7 +59,7 @@ var crcAlgorithms = map[string]CRCAlgorithmInfo{
 type FECCodecInfo struct {
 	ImportPath  string // e.g. "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 	DecodeFn    string // e.g. "Decode2087"
-	EncodeFn    string // e.g. "Encode2087", func([DataBits]bit.Bit) [InputSize]bit.Bit
+	EncodeFn    string // e.g. "Encode2087", func(data uint8) WordType
 	InputSize   int    // full FEC codeword size in bits, e.g. 20
 	DataBits    int    // data-only bits before FEC, e.g. 8
 	WordType    string // for a bit-level codec: the unsigned type of a codeword, e.g. "uint32"
@@ -199,14 +199,44 @@ func article(name string) string {
 	return "a"
 }
 
-// emitDecode generates a DecodeXxx function for a PDU struct, or decodeXxx
-// for a sub-PDU. With into, it generates DecodeXxxInto, which decodes into
-// a caller's struct and points the dispatch field into a caller's payloads
-// struct.
+// emitDecode generates the packed decode function of a PDU struct,
+// decodeXxxBytes, and, unless the struct is a sub-PDU, its exported form
+// DecodeXxx, which takes bit.Bit values. With into, it generates
+// decodeXxxBytesInto and DecodeXxxInto, which decode into a caller's struct
+// and point the dispatch field into a caller's payloads struct.
 func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
-	funcName := pdu.DecodeFuncName(pdu.Name)
+	codec, hasFEC, err := resolveCodec(pdu)
+	if err != nil {
+		return err
+	}
 	inputSize := pdu.InputSize
+	if hasFEC {
+		inputSize = codec.InputSize
+	}
+	if err := emitDecodeBytes(f, pdu, into, codec, inputSize); err != nil {
+		return err
+	}
+	if !pdu.UnexportedDecode[pdu.Name] {
+		f.Line()
+		emitDecodeAdapter(f, pdu, into, inputSize)
+	}
+	return nil
+}
 
+// bytesDecodeName returns the name of the packed decode function of the
+// struct typeName.
+func bytesDecodeName(typeName string, into bool) string {
+	name := "decode" + typeName + "Bytes"
+	if into {
+		name += "Into"
+	}
+	return name
+}
+
+// emitDecodeAdapter generates DecodeXxx (or DecodeXxxInto), which packs its
+// bit.Bit values and calls the packed decode function.
+func emitDecodeAdapter(f *File, pdu parse.PDUStruct, into bool, inputSize int) {
+	funcName := pdu.DecodeFuncName(pdu.Name)
 	if into {
 		f.Comment(funcName + "Into decodes data into dst as " + funcName + " does,")
 		f.Comment("but points the dispatch field of dst into p, so it does not allocate.")
@@ -215,21 +245,50 @@ func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 	} else {
 		f.Comment(funcName + " decodes " + docObject(pdu))
 	}
-
-	codec, hasFEC, err := resolveCodec(pdu)
-	if err != nil {
-		return err
+	var params, args []Code
+	if into {
+		params = append(params, Id("dst").Op("*").Id(pdu.Name), Id("p").Op("*").Id(payloadsTypeName(pdu)))
+		args = append(args, Id("dst"), Id("p"))
 	}
-	if hasFEC {
-		inputSize = codec.InputSize
+	params = append(params, Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit"))
+	args = append(args, Id("_b"))
+	for _, in := range pdu.Inputs {
+		params = append(params, Id(inputParamName(in)).Add(qualType(*pdu.FieldByName(in), pdu)))
+		args = append(args, Id(inputParamName(in)))
+	}
+	body := []Code{
+		Var().Id("_b").Index(Lit(packedSize(inputSize))).Byte(),
+		For(Id("_i").Op(":=").Range().Lit(inputSize)).Block(
+			Id("_b").Index(Id("_i").Op("/").Lit(8)).Op("|=").Byte().Call(Id("data").Index(Id("_i")).Op("&").Lit(1)).
+				Op("<<").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)),
+		),
+	}
+	call := Id(bytesDecodeName(pdu.Name, into)).Call(args...)
+	if into {
+		f.Func().Id(funcName + "Into").Params(params...).Block(append(body, call)...)
+		return
+	}
+	f.Func().Id(funcName).Params(params...).Id(pdu.Name).Block(append(body, Return(call))...)
+}
+
+// emitDecodeBytes generates the packed decode function of a PDU struct,
+// which reads data, the inputSize bits of the PDU packed most significant
+// bit first.
+func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInfo, inputSize int) error {
+	name := bytesDecodeName(pdu.Name, into)
+	if into {
+		f.Comment(name + " decodes data into dst as " + bytesDecodeName(pdu.Name, false) + " does, and")
+		f.Comment("points the dispatch field of dst into p.")
+	} else {
+		f.Comment(name + " decodes " + docObject(pdu))
+		f.Comment("data holds its bits packed, the first bit most significant.")
 	}
 
-	var genErr error
 	var params []Code
 	if into {
 		params = append(params, Id("dst").Op("*").Id(pdu.Name), Id("p").Op("*").Id(payloadsTypeName(pdu)))
 	}
-	params = append(params, Id("data").Index(Lit(inputSize)).Qual(bitPkg, "Bit"))
+	params = append(params, Id("data").Index(Lit(packedSize(inputSize))).Byte())
 	for _, in := range pdu.Inputs {
 		field := pdu.FieldByName(in)
 		if field == nil {
@@ -240,10 +299,11 @@ func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 
 	var fn *Statement
 	if into {
-		fn = f.Func().Id(funcName + "Into").Params(params...)
+		fn = f.Func().Id(name).Params(params...)
 	} else {
-		fn = f.Func().Id(funcName).Params(params...).Id(pdu.Name)
+		fn = f.Func().Id(name).Params(params...).Id(pdu.Name)
 	}
+	var genErr error
 	fn.BlockFunc(func(g *Group) {
 		if into {
 			g.Op("*").Id("dst").Op("=").Id(pdu.Name).Values()
@@ -254,42 +314,30 @@ func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 		for _, in := range pdu.Inputs {
 			g.Id("result").Dot(in).Op("=").Id(inputParamName(in))
 		}
-		g.Qual(lowbitPkg, "Mask").Call(Id("data").Index(Empty(), Empty()))
-
-		hasCRC := pdu.CRC != nil
-		hasPackedFEC := hasFEC && codec.PackedBytes
-		hasBitFEC := hasFEC && !codec.PackedBytes
-		if hasCRC || hasPackedFEC {
-			isBitCRC := false
-			if hasCRC {
-				if algo, ok := crcAlgorithms[pdu.CRC.Algorithm]; ok {
-					isBitCRC = algo.BitLevel
-				}
-			}
-			if !isBitCRC {
-				totalBytes := inputSize / 8
-				emitBitPacking(g, totalBytes)
-			}
-		}
 
 		switch {
-		case hasCRC:
+		case pdu.CRC != nil:
 			if err := emitCRCCheck(g, pdu, inputSize); err != nil {
 				genErr = err
 				return
 			}
-		case hasPackedFEC:
-			if err := emitFECMask(g, pdu, codec, Id("result"), "_packedBytes", nil); err != nil {
+		case codec != nil && codec.PackedBytes:
+			g.Id("_cw").Op(":=").Id("data")
+			if err := emitFECMask(g, pdu, codec, Id("result"), "_cw", nil); err != nil {
 				genErr = err
 				return
 			}
-			emitPackedFECDecode(g, codec)
-		case hasBitFEC:
+			g.Var().Id("_fecData").Index(Lit(codec.DataBytes)).Byte()
+			g.List(Id("_fecData"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("_cw"))
+			g.If(Op("!").Id("result").Dot(fecFieldName).Dot("Uncorrectable")).Block(
+				Copy(Id("data").Index(Empty(), Lit(codec.DataBytes)), Id("_fecData").Index(Empty(), Empty())),
+			)
+		case codec != nil:
 			g.Var().Id("_cw").Id(codec.WordType)
 			g.List(Id("_cw"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(
-				Id(codec.WordType).Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Empty(), Empty()))))
+				Id(codec.WordType).Call(readPacked(dataBuf, 0, codec.InputSize)))
 			g.If(Op("!").Id("result").Dot(fecFieldName).Dot("Uncorrectable")).Block(
-				Qual(bitPkg, "PutUint").Call(Id("data").Index(Empty(), Empty()), Uint64().Call(Id("_cw"))),
+				writePacked(dataBuf, 0, codec.InputSize, Uint64().Call(Id("_cw")), "_cwBits")...,
 			)
 		}
 
@@ -319,8 +367,133 @@ func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 			g.Return(Id("result"))
 		}
 	})
-
 	return genErr
+}
+
+// packedSize returns the number of bytes that hold n bits.
+func packedSize(n int) int {
+	return (n + 7) / 8
+}
+
+// dataBuf returns the data identifier, the packed bits of a decode or
+// encode function.
+func dataBuf() *Statement {
+	return Id("data")
+}
+
+// hexByte returns a byte literal in hexadecimal.
+func hexByte(b byte) *Statement {
+	return Id(fmt.Sprintf("0x%02X", b))
+}
+
+// readPacked returns a uint64 expression of the n bits of the packed byte
+// array buf from bit start, the first bit most significant.
+func readPacked(buf func() *Statement, start, n int) *Statement {
+	first, last := start/8, (start+n-1)/8
+	if last-first >= 8 {
+		hi := n - 32
+		return Parens(readPacked(buf, start, hi).Op("<<").Lit(32).Op("|").Add(readPacked(buf, start+hi, 32)))
+	}
+	shift := 7 - (start+n-1)%8
+	var e *Statement
+	for k := first; k <= last; k++ {
+		term := Uint64().Call(buf().Index(Lit(k)))
+		if sh := 8 * (last - k); sh > 0 {
+			term = term.Op("<<").Lit(sh)
+		}
+		if e == nil {
+			e = term
+		} else {
+			e = e.Op("|").Add(term)
+		}
+	}
+	if first != last && (shift > 0 || start%8 != 0) {
+		e = Parens(e)
+	}
+	if shift > 0 {
+		e = e.Op(">>").Lit(shift)
+	}
+	if start%8 != 0 {
+		e = e.Op("&").Id(fmt.Sprintf("0x%X", uint64(1)<<n-1))
+	}
+	return e
+}
+
+// writePacked returns statements that store the low n bits of the uint64
+// expression v into the packed byte array buf from bit start and keep the
+// other bits of buf. A v that spans bytes is first stored in tmp, unless tmp
+// is "".
+func writePacked(buf func() *Statement, start, n int, v *Statement, tmp string) []Code {
+	first, last := start/8, (start+n-1)/8
+	var out []Code
+	val := v
+	if first != last && tmp != "" {
+		out = append(out, Id(tmp).Op(":=").Add(v))
+		val = Id(tmp)
+	}
+	for k := first; k <= last; k++ {
+		sh := start + n - 1 - (8*k + 7)
+		var b *Statement
+		switch {
+		case sh > 0:
+			b = Byte().Call(val.Clone().Op(">>").Lit(sh))
+		case sh < 0:
+			b = Byte().Call(val.Clone().Op("<<").Lit(-sh))
+		default:
+			b = Byte().Call(val.Clone())
+		}
+		var m byte
+		for p := max(start, 8*k); p <= min(start+n-1, 8*k+7); p++ {
+			m |= 0x80 >> (p - 8*k)
+		}
+		if m == 0xFF {
+			out = append(out, buf().Index(Lit(k)).Op("=").Add(b))
+			continue
+		}
+		out = append(out, buf().Index(Lit(k)).Op("=").Add(buf().Index(Lit(k))).Op("&^").Add(hexByte(m)).
+			Op("|").Add(b).Op("&").Add(hexByte(m)))
+	}
+	return out
+}
+
+// copyBits returns statements that copy n bits of the packed byte array src
+// from bit srcStart to dst from bit dstStart and keep the other bits of dst.
+func copyBits(dst func() *Statement, dstStart int, src func() *Statement, srcStart, n int) []Code {
+	if dstStart%8 != 0 || srcStart%8 != 0 {
+		return []Code{Qual(bitsPkg, "Copy").Call(dst().Index(Empty(), Empty()), Lit(dstStart), src().Index(Empty(), Empty()), Lit(srcStart), Lit(n))}
+	}
+	a, b, full, rem := dstStart/8, srcStart/8, n/8, n%8
+	var out []Code
+	switch {
+	case full == 1:
+		out = append(out, dst().Index(Lit(a)).Op("=").Add(src().Index(Lit(b))))
+	case full > 1:
+		out = append(out, Copy(dst().Index(Lit(a), Lit(a+full)), src().Index(Lit(b), Lit(b+full))))
+	}
+	if rem > 0 {
+		m := byte(0xFF) << (8 - rem)
+		out = append(out, dst().Index(Lit(a+full)).Op("=").Add(dst().Index(Lit(a+full))).Op("&^").Add(hexByte(m)).
+			Op("|").Add(src().Index(Lit(b+full))).Op("&").Add(hexByte(m)))
+	}
+	return out
+}
+
+// addAll adds each statement of codes to g.
+func addAll(g *Group, codes []Code) {
+	for _, c := range codes {
+		g.Add(c)
+	}
+}
+
+// fieldOf returns a function that returns the expression x.name, such as
+// result.Data, for copyBits.
+func fieldOf(x, name string) func() *Statement {
+	return func() *Statement { return Id(x).Dot(name) }
+}
+
+// idOf returns a function that returns the identifier name, for copyBits.
+func idOf(name string) func() *Statement {
+	return func() *Statement { return Id(name) }
 }
 
 // resolveCodec looks up the FEC codec and CRC algorithm of a PDU and checks
@@ -352,20 +525,8 @@ func resolveCodec(pdu parse.PDUStruct) (codec *FECCodecInfo, ok bool, err error)
 	return &c, true, nil
 }
 
-// emitBitPacking generates code to pack bit.Bit array into []byte.
-func emitBitPacking(g *Group, totalBytes int) {
-	g.Var().Id("_packedBytes").Index(Lit(totalBytes)).Byte()
-	g.For(Id("i").Op(":=").Range().Lit(totalBytes)).Block(
-		For(Id("j").Op(":=").Range().Lit(8)).Block(
-			Id("_packedBytes").Index(Id("i")).Op("<<=").Lit(1),
-			Id("_packedBytes").Index(Id("i")).Op("|=").Byte().Call(
-				Id("data").Index(Id("i").Op("*").Lit(8).Op("+").Id("j")),
-			),
-		),
-	)
-}
-
-// emitCRCCheck generates CRC validation code for both byte-level (CRC-CCITT) and bit-level (CRC-8) CRCs.
+// emitCRCCheck generates the CRC check of the packed bits data, for a
+// byte-level CRC (CRC-CCITT) or a bit-level CRC (CRC-8).
 func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	crcDir := pdu.CRC
 
@@ -375,34 +536,21 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	}
 	if algo.BitLevel {
 		dataBits := inputSize - algo.CRCBits
-		g.Id("_crc").Op(":=").Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(dataBits), Empty())))
-		emitCRCBytes(g, dataBits)
 		g.Id("result").Dot(fecFieldName).Dot("Uncorrectable").Op("=").
-			Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_crcBytes").Index(Empty(), Empty()), Lit(dataBits), Id("_crc"))
+			Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Empty()), Lit(dataBits),
+			Uint8().Call(readPacked(dataBuf, dataBits, algo.CRCBits)))
 		return nil
 	}
 
-	if crcDir.HasMask {
-		highByte, lowByte := maskBytes(crcDir.Mask)
-		totalBytes := inputSize / 8
-		g.Id("_packedBytes").Index(Lit(totalBytes - 2)).Op("^=").Lit(highByte)
-		g.Id("_packedBytes").Index(Lit(totalBytes - 1)).Op("^=").Lit(lowByte)
-	}
-
 	totalBytes := inputSize / 8
-	g.Id("_crc").Op(":=").
-		Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 2))).Op("<<").Lit(8).
-		Op("|").Uint16().Call(Id("_packedBytes").Index(Lit(totalBytes - 1)))
+	want := Uint16().Call(Id("data").Index(Lit(totalBytes - 2))).Op("<<").Lit(8).
+		Op("|").Uint16().Call(Id("data").Index(Lit(totalBytes - 1)))
+	if crcDir.HasMask {
+		want = Parens(want).Op("^").Id(fmt.Sprintf("0x%04X", crcDir.Mask))
+	}
 	g.Id("result").Dot(fecFieldName).Dot("Uncorrectable").Op("=").
-		Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Lit(totalBytes-2)), Id("_crc"))
+		Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Lit(totalBytes-2)), want)
 	return nil
-}
-
-// emitCRCBytes packs the first n bits of data into _crcBytes for a CRC
-// that works on packed bits.
-func emitCRCBytes(g *Group, n int) {
-	g.Var().Id("_crcBytes").Index(Lit((n + 7) / 8)).Byte()
-	g.Add(packRaw(Id("_crcBytes"), Id("data"), 0, n))
 }
 
 // emitFECMask XORs the FEC parity bytes of buf with the mask selected by the
@@ -437,43 +585,24 @@ func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statem
 	return genErr
 }
 
-// emitPackedFECDecode generates packed-bytes FEC (e.g. Reed-Solomon) decode code.
-func emitPackedFECDecode(g *Group, codec *FECCodecInfo) {
-	g.Var().Id("_fecData").Index(Lit(codec.DataBytes)).Byte()
-	g.List(Id("_fecData"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("_packedBytes"))
-
-	g.If(Op("!").Id("result").Dot(fecFieldName).Dot("Uncorrectable")).Block(
-		For(Id("i").Op(":=").Range().Lit(codec.DataBytes)).Block(
-			For(Id("j").Op(":=").Range().Lit(8)).Block(
-				Id("data").Index(Id("i").Op("*").Lit(8).Op("+").Id("j")).Op("=").
-					Qual(bitPkg, "Bit").Call(
-					Parens(Id("_fecData").Index(Id("i")).Op(">>").
-						Parens(Lit(7).Op("-").Id("j"))).Op("&").Lit(1),
-				),
-			),
-		),
-	)
-}
-
 // emitDispatchSwitch emits a switch on the dispatch field value that decodes
 // the selected sub-PDU into its pointer field. A when: guard picks between
 // fields that share a dispatch value. With into, the sub-PDU is decoded into
 // its field of the payloads struct p.
 func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct, into bool) error {
 	bitStart := fields[0].BitStart
-	bitEnd := fields[0].BitEnd
-	arraySize := bitEnd - bitStart + 1
+	n := fields[0].BitEnd - bitStart + 1
 
-	tmpVar := "_dispatchBits"
-	g.Var().Id(tmpVar).Index(Lit(arraySize)).Qual(bitPkg, "Bit")
-	g.Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Lit(bitStart), Lit(bitEnd+1)))
+	tmpVar := "_dispatchBytes"
+	g.Var().Id(tmpVar).Index(Lit(packedSize(n))).Byte()
+	addAll(g, copyBits(idOf(tmpVar), 0, dataBuf, bitStart, n))
 
 	var raw []Code
 	if fb := fallbackField(pdu); fb != nil {
-		raw = []Code{packRaw(Id("result").Dot(fb.Name), Id(tmpVar), 0, fb.BitWidth)}
+		raw = copyBits(fieldOf("result", fb.Name), 0, dataBuf, bitStart, fb.BitWidth)
 	}
 	stmt, err := dispatchSelect(fields, pdu, func(field parse.Field) []Code {
-		return dispatchDecodeBlock(field, pdu, tmpVar, into)
+		return dispatchDecodeBlock(field, tmpVar, into)
 	}, raw)
 	if err != nil {
 		return err
@@ -554,9 +683,9 @@ func fallbackField(pdu parse.PDUStruct) *parse.Field {
 
 // dispatchDecodeBlock decodes the sub-PDU of field from tmpVar and points
 // the field to it: to a new value, or with into to its field of p.
-func dispatchDecodeBlock(field parse.Field, pdu parse.PDUStruct, tmpVar string, into bool) []Code {
+func dispatchDecodeBlock(field parse.Field, tmpVar string, into bool) []Code {
 	typ := dispatchTypeName(field)
-	decode := Id(pdu.DecodeFuncName(typ)).Call(Id(tmpVar))
+	decode := Id(bytesDecodeName(typ, false)).Call(Id(tmpVar))
 	if into {
 		slot := Id("p").Dot(payloadFieldName(typ))
 		return []Code{
@@ -893,7 +1022,8 @@ func toStringFieldFormat(field parse.Field, pdu parse.PDUStruct) (string, []Code
 	}
 }
 
-// emitFieldDecode generates the decode logic for a single field.
+// emitFieldDecode generates the decode of a single field from the packed
+// bits data.
 func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	target := Id("result").Dot(field.Name)
 
@@ -904,7 +1034,8 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 
 	switch field.Kind {
 	case parse.FieldBool:
-		g.Add(target).Op("=").Id("data").Index(Lit(field.BitStart)).Op("==").Lit(1)
+		g.Add(target).Op("=").Id("data").Index(Lit(field.BitStart / 8)).Op("&").
+			Add(hexByte(0x80 >> (field.BitStart % 8))).Op("!=").Lit(0)
 
 	case parse.FieldUint, parse.FieldEnum:
 		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
@@ -917,58 +1048,10 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
 
 	case parse.FieldRaw, parse.FieldPacked:
-		g.Add(packRaw(target, Id("data"), field.BitStart, field.BitWidth))
+		addAll(g, copyBits(fieldOf("result", field.Name), 0, dataBuf, field.BitStart, field.BitWidth))
 
 	case parse.FieldDelegate:
-		var importPath string
-		if field.IsQualified {
-			importPath = resolveImportPath(field.TypePkg, pdu.SourceFile)
-		}
-
-		switch {
-		case field.Stride > 0 && field.ArrayLen > 0:
-			decodeFn := "Decode" + field.TypeName
-			if !field.IsQualified {
-				decodeFn = pdu.DecodeFuncName(field.TypeName)
-			}
-			tmpVar := "_elemBits"
-			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
-				Var().Id(tmpVar).Index(Lit(field.Stride)).Qual(bitPkg, "Bit"),
-				Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(
-					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
-					Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride).Op("+").Lit(field.Stride),
-				)),
-				func() Code {
-					var call Code
-					if field.IsQualified {
-						call = Qual(importPath, decodeFn).Call(Id(tmpVar))
-					} else {
-						call = Id(decodeFn).Call(Id(tmpVar))
-					}
-					return target.Clone().Index(Id("_i")).Op("=").Add(call)
-				}(),
-			)
-		case field.DelegateNoPtr:
-			g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
-		default:
-			decodeFnName := "Decode" + field.TypeName
-			if !field.IsQualified {
-				decodeFnName = pdu.DecodeFuncName(field.TypeName)
-			}
-			arraySize := field.BitEnd - field.BitStart + 1
-			tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
-
-			g.Var().Id(tmpVar).Index(Lit(arraySize)).Qual(bitPkg, "Bit")
-			g.Copy(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)))
-
-			var decodeFnCall Code
-			if field.IsQualified {
-				decodeFnCall = Qual(importPath, decodeFnName).Call(Id(tmpVar))
-			} else {
-				decodeFnCall = Id(decodeFnName).Call(Id(tmpVar))
-			}
-			g.Add(target).Op("=").Add(decodeFnCall)
-		}
+		emitDelegateDecode(g, field, pdu)
 
 	case parse.FieldLongitude, parse.FieldLatitude:
 		// Two's complement value scaled by span/2^width (ETSI TS 102 361-2 clause 7.2.16, clause 7.2.17).
@@ -979,70 +1062,116 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	}
 }
 
-// emitEncode generates the Encode method of a PDU struct. The method returns
-// the full codeword, FEC parity included, or an error when a field value
-// does not fit its bits.
-func emitEncode(f *File, pdu parse.PDUStruct) error {
-	f.Comment("Encode encodes " + docObject(pdu))
+// emitDelegateDecode generates the decode of a delegate field. A delegate of
+// this package decodes from packed bits; a delegate of another package
+// decodes from bit.Bit values through its exported Decode function.
+func emitDelegateDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
+	target := Id("result").Dot(field.Name)
+	if field.DelegateNoPtr && field.Stride == 0 {
+		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
+		return
+	}
+	width := field.BitEnd - field.BitStart + 1
+	if field.Stride > 0 && field.ArrayLen > 0 {
+		width = field.Stride
+	}
+	tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bytes"
+	var decl, fill, call Code
+	if field.IsQualified {
+		tmpVar = "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
+		decl = Var().Id(tmpVar).Index(Lit(width)).Qual(bitPkg, "Bit")
+		call = Qual(resolveImportPath(field.TypePkg, pdu.SourceFile), "Decode"+field.TypeName).Call(Id(tmpVar))
+	} else {
+		decl = Var().Id(tmpVar).Index(Lit(packedSize(width))).Byte()
+		call = Id(bytesDecodeName(field.TypeName, false)).Call(Id(tmpVar))
+	}
 
+	if field.Stride > 0 && field.ArrayLen > 0 {
+		start := Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride)
+		if field.IsQualified {
+			fill = Qual(bitsPkg, "Unpack").Call(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Empty(), Empty()), start)
+		} else {
+			fill = Qual(bitsPkg, "Copy").Call(Id(tmpVar).Index(Empty(), Empty()), Lit(0), Id("data").Index(Empty(), Empty()), start, Lit(field.Stride))
+		}
+		g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
+			decl, fill, target.Clone().Index(Id("_i")).Op("=").Add(call),
+		)
+		return
+	}
+
+	g.Add(decl)
+	if field.IsQualified {
+		g.Qual(bitsPkg, "Unpack").Call(Id(tmpVar).Index(Empty(), Empty()), Id("data").Index(Empty(), Empty()), Lit(field.BitStart))
+	} else {
+		addAll(g, copyBits(idOf(tmpVar), 0, dataBuf, field.BitStart, width))
+	}
+	g.Add(target).Op("=").Add(call)
+}
+
+// emitEncode generates the encodeBytes method of a PDU struct, which returns
+// the full codeword, FEC parity included, packed most significant bit
+// first, or an error when a field value does not fit its bits, and the
+// Encode method, which returns the codeword of encodeBytes as bit.Bit
+// values.
+func emitEncode(f *File, pdu parse.PDUStruct) error {
 	codec, hasFEC, err := resolveCodec(pdu)
 	if err != nil {
 		return err
 	}
 
-	hasCRC := pdu.CRC != nil
-	hasPackedFEC := hasFEC && codec.PackedBytes
-	hasBitFEC := hasFEC && !codec.PackedBytes
-
 	outputSize := pdu.InputSize
 	if hasFEC {
 		outputSize = codec.InputSize
 	}
-	enc := encoder{pdu: pdu, size: outputSize}
+	enc := encoder{pdu: pdu, bytes: packedSize(outputSize)}
 
+	f.Comment("encodeBytes encodes " + docObject(pdu))
+	f.Comment("It returns the bits of Encode packed, the first bit most significant.")
 	var genErr error
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("encodeBytes").Params().Params(
+		Index(Lit(enc.bytes)).Byte(),
+		Error(),
+	).BlockFunc(func(g *Group) {
+		g.Var().Id("data").Index(Lit(enc.bytes)).Byte()
+		if err := enc.fields(g); err != nil {
+			genErr = err
+			return
+		}
+		switch {
+		case pdu.CRC != nil:
+			emitCRCEncode(g, pdu, outputSize)
+		case hasFEC && codec.PackedBytes:
+			if err := emitPackedFECEncode(g, enc, codec); err != nil {
+				genErr = err
+				return
+			}
+		case hasFEC:
+			g.Id("_cw").Op(":=").Qual(codec.ImportPath, codec.EncodeFn).Call(Uint8().Call(readPacked(dataBuf, 0, codec.DataBits)))
+			addAll(g, writePacked(dataBuf, 0, codec.InputSize, Uint64().Call(Id("_cw")), "_cwBits"))
+		}
+		g.Return(Id("data"), Nil())
+	})
+	if genErr != nil {
+		return genErr
+	}
+	f.Line()
+
+	f.Comment("Encode encodes " + docObject(pdu))
 	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("Encode").Params().Params(
 		Index(Lit(outputSize)).Qual(bitPkg, "Bit"),
 		Error(),
-	).BlockFunc(func(g *Group) {
-		switch {
-		case hasBitFEC:
-			g.Var().Id("data").Index(Lit(codec.DataBits)).Qual(bitPkg, "Bit")
-			if err := enc.fields(g); err != nil {
-				genErr = err
-				return
-			}
-			g.Var().Id("_cw").Index(Lit(codec.InputSize)).Qual(bitPkg, "Bit")
-			g.Qual(bitPkg, "PutUint").Call(Id("_cw").Index(Empty(), Empty()), Uint64().Call(
-				Qual(codec.ImportPath, codec.EncodeFn).Call(Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Empty(), Empty())))),
-			))
-			g.Return(Id("_cw"), Nil())
-		case hasCRC || hasPackedFEC:
-			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
-			if err := enc.fields(g); err != nil {
-				genErr = err
-				return
-			}
-			if hasCRC {
-				emitCRCEncode(g, pdu, outputSize)
-			}
-			if hasPackedFEC {
-				if err := emitPackedFECEncode(g, enc, codec); err != nil {
-					genErr = err
-					return
-				}
-			}
-			g.Return(Id("data"), Nil())
-		default:
-			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
-			if err := enc.fields(g); err != nil {
-				genErr = err
-				return
-			}
-			g.Return(Id("data"), Nil())
-		}
-	})
-	return genErr
+	).Block(
+		List(Id("_b"), Err()).Op(":=").Id("s").Dot("encodeBytes").Call(),
+		If(Err().Op("!=").Nil()).Block(Return(Index(Lit(outputSize)).Qual(bitPkg, "Bit").Values(), Err())),
+		Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit"),
+		For(Id("_i").Op(":=").Range().Lit(outputSize)).Block(
+			Id("data").Index(Id("_i")).Op("=").Qual(bitPkg, "Bit").Call(
+				Id("_b").Index(Id("_i").Op("/").Lit(8)).Op(">>").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)).Op("&").Lit(1),
+			),
+		),
+		Return(Id("data"), Nil()),
+	)
+	return nil
 }
 
 // emitEncodeBits generates the EncodeBits method, which returns the
@@ -1061,15 +1190,16 @@ func emitEncodeBits(f *File, pdu parse.PDUStruct) {
 	)
 }
 
-// encoder carries the PDU and output size while emitting an Encode body.
+// encoder carries the PDU and the packed output size in bytes while
+// emitting an encodeBytes body.
 type encoder struct {
-	pdu  parse.PDUStruct
-	size int
+	pdu   parse.PDUStruct
+	bytes int
 }
 
 // fail returns a statement that returns a zero codeword and the given error.
 func (e encoder) fail(err Code) *Statement {
-	return Return(Index(Lit(e.size)).Qual(bitPkg, "Bit").Values(), err)
+	return Return(Index(Lit(e.bytes)).Byte().Values(), err)
 }
 
 // failRange returns a statement that returns a zero codeword and a
@@ -1131,21 +1261,15 @@ func (e encoder) fields(g *Group) error {
 // or "" if none is, and fails if more than one is set.
 func (e encoder) payload(g *Group, fields []parse.Field) {
 	g.Id("_payload").Op(":=").Lit("")
-	g.For(List(Id("_"), Id("_p")).Op(":=").Range().Index(Op("...")).Struct(
-		Id("name").String(),
-		Id("set").Bool(),
-	).ValuesFunc(func(vals *Group) {
-		for _, field := range fields {
-			vals.Line().Values(Lit(field.Name), Id("s").Dot(field.Name).Op("!=").Nil())
+	for i, field := range fields {
+		set := []Code{Id("_payload").Op("=").Lit(field.Name)}
+		if i > 0 {
+			set = append([]Code{If(Id("_payload").Op("!=").Lit("")).Block(
+				e.fail(Qual("fmt", "Errorf").Call(Lit(e.pdu.Name+": %s and %s are both set"), Id("_payload"), Lit(field.Name))),
+			)}, set...)
 		}
-		vals.Line()
-	})).Block(
-		If(Op("!").Id("_p").Dot("set")).Block(Continue()),
-		If(Id("_payload").Op("!=").Lit("")).Block(
-			e.fail(Qual("fmt", "Errorf").Call(Lit(e.pdu.Name+": %s and %s are both set"), Id("_payload"), Id("_p").Dot("name"))),
-		),
-		Id("_payload").Op("=").Id("_p").Dot("name"),
-	)
+		g.If(Id("s").Dot(field.Name).Op("!=").Nil()).Block(set...)
+	}
 }
 
 // checkPayload fails if the encoded bits would decode into a different
@@ -1222,17 +1346,20 @@ func joinNames(names []string) string {
 // dispatch generates a switch that encodes the active dispatch field.
 func (e encoder) dispatch(g *Group, fields []parse.Field) {
 	bitStart := fields[0].BitStart
-	bitEnd := fields[0].BitEnd
+	n := fields[0].BitEnd - bitStart + 1
 
 	g.Switch().BlockFunc(func(sw *Group) {
 		for _, field := range fields {
-			sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(
-				List(Id("_pduBits"), Err()).Op(":=").Id("s").Dot(field.Name).Dot("Encode").Call(),
+			store := copyBits(dataBuf, bitStart, idOf("_pduBytes"), 0, n)
+			body := make([]Code, 0, 2+len(store))
+			body = append(body,
+				List(Id("_pduBytes"), Err()).Op(":=").Id("s").Dot(field.Name).Dot("encodeBytes").Call(),
 				If(Err().Op("!=").Nil()).Block(
 					e.fail(Qual("fmt", "Errorf").Call(Lit(e.pdu.Name+"."+field.Name+": %w"), Err())),
 				),
-				Copy(Id("data").Index(Lit(bitStart), Lit(bitEnd+1)), Id("_pduBits").Index(Empty(), Empty())),
 			)
+			body = append(body, store...)
+			sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(body...)
 		}
 		if fb := fallbackField(e.pdu); fb != nil {
 			sw.Default().BlockFunc(func(d *Group) {
@@ -1242,76 +1369,37 @@ func (e encoder) dispatch(g *Group, fields []parse.Field) {
 	})
 }
 
-// emitCRCEncode generates CRC calculation and embedding for encoding.
-// Supports both byte-level CRC (CRC-CCITT) and bit-level CRC (CRC-8).
+// emitCRCEncode generates the CRC calculation and its store into the
+// packed bits data, for a byte-level CRC (CRC-CCITT) or a bit-level CRC
+// (CRC-8).
 func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 	algo := crcAlgorithms[pdu.CRC.Algorithm]
 	if algo.BitLevel {
 		dataBits := outputSize - algo.CRCBits
-		emitCRCBytes(g, dataBits)
-		g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("_crcBytes").Index(Empty(), Empty()), Lit(dataBits))
-		g.For(Id("j").Op(":=").Range().Lit(algo.CRCBits)).Block(
-			Id("data").Index(Lit(dataBits).Op("+").Id("j")).Op("=").
-				Qual(bitPkg, "Bit").Call(
-				Parens(Id("_crcVal").Op(">>").Parens(Lit(algo.CRCBits - 1).Op("-").Id("j"))).Op("&").Lit(1),
-			),
-		)
+		value := Uint64().Call(Qual(crcPkg, algo.CalcFn).Call(Id("data").Index(Empty(), Empty()), Lit(dataBits)))
+		addAll(g, writePacked(dataBuf, dataBits, algo.CRCBits, value, "_crcVal"))
 		return
 	}
 
-	totalBytes := outputSize / 8
-	dataBytes := totalBytes - 2
-
-	g.Var().Id("_encBytes").Index(Lit(dataBytes)).Byte()
-	g.For(Id("i").Op(":=").Range().Lit(dataBytes)).Block(
-		For(Id("j").Op(":=").Range().Lit(8)).Block(
-			Id("_encBytes").Index(Id("i")).Op("<<=").Lit(1),
-			Id("_encBytes").Index(Id("i")).Op("|=").Byte().Call(
-				Id("data").Index(Id("i").Op("*").Lit(8).Op("+").Id("j")),
-			),
-		),
-	)
-
-	g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("_encBytes").Index(Empty(), Empty()))
-
-	g.Id("_crcHigh").Op(":=").Byte().Call(Id("_crcVal").Op(">>").Lit(8))
-	g.Id("_crcLow").Op(":=").Byte().Call(Id("_crcVal"))
-
-	if pdu.CRC != nil && pdu.CRC.HasMask {
+	dataBytes := outputSize/8 - 2
+	g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("data").Index(Empty(), Lit(dataBytes)))
+	high := Byte().Call(Id("_crcVal").Op(">>").Lit(8))
+	low := Byte().Call(Id("_crcVal"))
+	if pdu.CRC.HasMask {
 		highByte, lowByte := maskBytes(pdu.CRC.Mask)
-		g.Id("_crcHigh").Op("^=").Lit(highByte)
-		g.Id("_crcLow").Op("^=").Lit(lowByte)
+		high = high.Op("^").Add(hexByte(highByte))
+		low = low.Op("^").Add(hexByte(lowByte))
 	}
-
-	crcBitStart := dataBytes * 8
-	g.For(Id("j").Op(":=").Range().Lit(8)).Block(
-		Id("data").Index(Lit(crcBitStart).Op("+").Id("j")).Op("=").
-			Qual(bitPkg, "Bit").Call(
-			Parens(Id("_crcHigh").Op(">>").Parens(Lit(7).Op("-").Id("j"))).Op("&").Lit(1),
-		),
-	)
-	g.For(Id("j").Op(":=").Range().Lit(8)).Block(
-		Id("data").Index(Lit(crcBitStart+8).Op("+").Id("j")).Op("=").
-			Qual(bitPkg, "Bit").Call(
-			Parens(Id("_crcLow").Op(">>").Parens(Lit(7).Op("-").Id("j"))).Op("&").Lit(1),
-		),
-	)
+	g.Id("data").Index(Lit(dataBytes)).Op("=").Add(high)
+	g.Id("data").Index(Lit(dataBytes + 1)).Op("=").Add(low)
 }
 
-// emitPackedFECEncode generates Reed-Solomon encoding for the encode path.
+// emitPackedFECEncode generates the Reed-Solomon encoding of the packed bits
+// data.
 func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 	pdu := enc.pdu
-	g.Var().Id("_encData").Index(Lit(codec.DataBytes)).Byte()
-	g.For(Id("i").Op(":=").Range().Lit(codec.DataBytes)).Block(
-		For(Id("j").Op(":=").Range().Lit(8)).Block(
-			Id("_encData").Index(Id("i")).Op("<<=").Lit(1),
-			Id("_encData").Index(Id("i")).Op("|=").Byte().Call(
-				Id("data").Index(Id("i").Op("*").Lit(8).Op("+").Id("j")),
-			),
-		),
-	)
-
-	g.Id("_encoded").Op(":=").Qual(codec.ImportPath, encodeFnName).Call(Id("_encData"))
+	g.Id("_encoded").Op(":=").Qual(codec.ImportPath, encodeFnName).Call(
+		Index(Lit(codec.DataBytes)).Byte().Parens(Id("data").Index(Empty(), Lit(codec.DataBytes))))
 
 	var noMask Code
 	if pdu.FECMask != nil {
@@ -1321,23 +1409,12 @@ func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 	if err := emitFECMask(g, pdu, codec, Id("s"), "_encoded", noMask); err != nil {
 		return err
 	}
-
-	totalBytes := enc.size / 8
-	g.For(Id("i").Op(":=").Range().Lit(totalBytes)).Block(
-		For(Id("j").Op(":=").Range().Lit(8)).Block(
-			Id("data").Index(Id("i").Op("*").Lit(8).Op("+").Id("j")).Op("=").
-				Qual(bitPkg, "Bit").Call(
-				Parens(Id("_encoded").Index(Id("i")).Op(">>").
-					Parens(Lit(7).Op("-").Id("j"))).Op("&").Lit(1),
-			),
-		),
-	)
+	g.Id("data").Op("=").Id("_encoded")
 	return nil
 }
 
 // field generates the encode logic for a single field.
 func (e encoder) field(g *Group, field parse.Field) {
-	pdu := e.pdu
 	source := Id("s").Dot(field.Name)
 
 	if isIntegerField(field) {
@@ -1348,39 +1425,16 @@ func (e encoder) field(g *Group, field parse.Field) {
 	switch field.Kind {
 	case parse.FieldUint, parse.FieldInt, parse.FieldEnum:
 	case parse.FieldBool:
+		k := field.BitStart / 8
 		g.If(source.Clone()).Block(
-			Id("data").Index(Lit(field.BitStart)).Op("=").Lit(1),
+			Id("data").Index(Lit(k)).Op("|=").Add(hexByte(0x80 >> (field.BitStart % 8))),
 		)
 
 	case parse.FieldRaw, parse.FieldPacked:
 		e.raw(g, field)
 
 	case parse.FieldDelegate:
-		if field.Stride > 0 {
-			g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
-				List(Id("_elemBits"), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot("Encode").Call(),
-				If(Err().Op("!=").Nil()).Block(
-					e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+"[%d]: %w"), Id("_i"), Err())),
-				),
-				Copy(
-					Id("data").Index(
-						Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride),
-						Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride).Op("+").Lit(field.Stride),
-					),
-					Id("_elemBits").Index(Empty(), Empty()),
-				),
-			)
-			return
-		}
-		tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bits"
-		g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot("Encode").Call()
-		g.If(Err().Op("!=").Nil()).Block(
-			e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+": %w"), Err())),
-		)
-		g.Copy(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			Id(tmpVar).Index(Empty(), Empty()),
-		)
+		e.delegate(g, field)
 
 	case parse.FieldLongitude, parse.FieldLatitude:
 		raw := "_raw" + field.Name
@@ -1397,13 +1451,50 @@ func (e encoder) field(g *Group, field parse.Field) {
 		if field.Kind == parse.FieldLatitude {
 			g.Id(raw).Op("=").Min(Id(raw), Lit(half-1))
 		}
-		g.Qual(bitPkg, "PutUint").Call(
-			Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)),
-			Uint64().Call(Int64().Call(Id(raw))),
-		)
+		addAll(g, writePacked(dataBuf, field.BitStart, field.BitWidth, Uint64().Call(Int64().Call(Id(raw))), "_val"+field.Name))
 
 	case parse.FieldDispatch:
 	}
+}
+
+// delegate encodes a delegate field: from the packed bits of a delegate of
+// this package, or from the bit.Bit values that the Encode method of a
+// delegate of another package returns.
+func (e encoder) delegate(g *Group, field parse.Field) {
+	pdu := e.pdu
+	source := Id("s").Dot(field.Name)
+	method := "encodeBytes"
+	suffix := "Bytes"
+	if field.IsQualified {
+		method, suffix = encodeFnName, "Bits"
+	}
+	if field.Stride > 0 {
+		start := Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride)
+		var store Code
+		if field.IsQualified {
+			store = Qual(bitsPkg, "Pack").Call(Id("data").Index(Empty(), Empty()), start, Id("_elem"+suffix).Index(Empty(), Empty()))
+		} else {
+			store = Qual(bitsPkg, "Copy").Call(Id("data").Index(Empty(), Empty()), start, Id("_elem"+suffix).Index(Empty(), Empty()), Lit(0), Lit(field.Stride))
+		}
+		g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
+			List(Id("_elem"+suffix), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot(method).Call(),
+			If(Err().Op("!=").Nil()).Block(
+				e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+"[%d]: %w"), Id("_i"), Err())),
+			),
+			store,
+		)
+		return
+	}
+	tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + suffix
+	g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot(method).Call()
+	g.If(Err().Op("!=").Nil()).Block(
+		e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+": %w"), Err())),
+	)
+	if field.IsQualified {
+		g.Qual(bitsPkg, "Pack").Call(Id("data").Index(Empty(), Empty()), Lit(field.BitStart), Id(tmpVar).Index(Empty(), Empty()))
+		return
+	}
+	addAll(g, copyBits(dataBuf, field.BitStart, idOf(tmpVar), 0, field.BitEnd-field.BitStart+1))
 }
 
 // raw encodes a raw or packed byte-array field after checking that its
@@ -1415,24 +1506,7 @@ func (e encoder) raw(g *Group, field parse.Field) {
 			e.failRange(field, nil),
 		)
 	}
-	g.For(Id("_i").Op(":=").Range().Lit(field.BitWidth)).Block(
-		Id("data").Index(Lit(field.BitStart).Op("+").Id("_i")).Op("=").Qual(bitPkg, "Bit").Call(
-			Id("s").Dot(field.Name).Index(Id("_i").Op("/").Lit(8)).Op(">>").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)).Op("&").Lit(1),
-		),
-	)
-}
-
-// packRaw returns a loop that packs the width bits of src from start into
-// the byte array dst of a raw or packed field, most significant bit first.
-// dst starts zero, so its padding bits stay zero.
-func packRaw(dst, src *Statement, start, width int) *Statement {
-	idx := Id("_i")
-	if start > 0 {
-		idx = Lit(start).Op("+").Id("_i")
-	}
-	return For(Id("_i").Op(":=").Range().Lit(width)).Block(
-		dst.Clone().Index(Id("_i").Op("/").Lit(8)).Op("|=").Byte().Call(src.Clone().Index(idx)).Op("<<").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)),
-	)
+	addAll(g, copyBits(dataBuf, field.BitStart, fieldOf("s", field.Name), 0, field.BitWidth))
 }
 
 // integer encodes an unsigned, signed, enum or noptr delegate field after
@@ -1470,11 +1544,12 @@ func (e encoder) constant(g *Group, c parse.ConstDirective, idx int) {
 	storeBits(g, c.Ranges, value, fmt.Sprintf("_const%d", idx))
 }
 
-// storeBits stores the uint64 value MSB-first across ranges. A
-// non-contiguous value goes through the temporary variable tmp.
+// storeBits stores the uint64 value MSB-first across ranges of the packed
+// bits data. A value that spans bytes or ranges goes through the temporary
+// variable tmp.
 func storeBits(g *Group, ranges [][2]int, value *Statement, tmp string) {
 	if len(ranges) == 1 {
-		g.Qual(bitPkg, "PutUint").Call(Id("data").Index(Lit(ranges[0][0]), Lit(ranges[0][1]+1)), value)
+		addAll(g, writePacked(dataBuf, ranges[0][0], ranges[0][1]-ranges[0][0]+1, value, tmp))
 		return
 	}
 
@@ -1489,7 +1564,7 @@ func storeBits(g *Group, ranges [][2]int, value *Statement, tmp string) {
 		if remaining > 0 {
 			seg = Id(tmp).Op(">>").Lit(remaining)
 		}
-		g.Qual(bitPkg, "PutUint").Call(Id("data").Index(Lit(r[0]), Lit(r[1]+1)), seg)
+		addAll(g, writePacked(dataBuf, r[0], r[1]-r[0]+1, seg, ""))
 	}
 }
 
@@ -1525,7 +1600,7 @@ func emitNonContiguousDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	tmpName := "_tmp" + field.Name
 	g.Var().Id(tmpName).Uint64()
 	for i, r := range field.Ranges() {
-		read := Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(r[0]), Lit(r[1]+1)))
+		read := readPacked(dataBuf, r[0], r[1]-r[0]+1)
 		if i == 0 {
 			g.Id(tmpName).Op("=").Add(read)
 			continue
@@ -1550,9 +1625,9 @@ func maskBytes(mask uint16) (byte, byte) {
 	return b[0], b[1]
 }
 
-// readUint reads a contiguous field as a uint64.
+// readUint reads a contiguous field from the packed bits data as a uint64.
 func readUint(field parse.Field) *Statement {
-	return Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(field.BitStart), Lit(field.BitEnd+1)))
+	return readPacked(dataBuf, field.BitStart, field.BitEnd-field.BitStart+1)
 }
 
 // castUint converts the uint64 expression v to the type of field.

@@ -65,9 +65,10 @@ type T struct {
 	A Wide `+"`dmr:\"bits:2-13,delegate,noptr\"`"+`
 }`)
 	assertContains(t, out,
-		"lowbit.Mask(data[:])",
-		"result.A = Wide(bit.Uint(data[2:14]))",
-		"bit.PutUint(data[2:14], uint64(s.A))",
+		"result.A = Wide((uint64(data[0])<<8 | uint64(data[1])) >> 2 & 0xFFF)",
+		"_valA := uint64(s.A)",
+		"data[0] = data[0]&^0x3F | byte(_valA>>6)&0x3F",
+		"data[1] = data[1]&^0xFC | byte(_valA<<2)&0xFC",
 	)
 }
 
@@ -154,10 +155,10 @@ type T struct {
 	D int    `+"`dmr:\"bits:52-59\"`"+`
 }`)
 	assertContains(t, out,
-		"result.A = int(int32(uint32(bit.Uint(data[0:12]))<<20) >> 20)",
-		"result.B = Offset(int32(uint32(bit.Uint(data[12:20]))<<24) >> 24)",
-		"result.C = int32(int32(uint32(bit.Uint(data[20:52]))))",
-		"result.D = int(bit.Uint(data[52:60]))",
+		"result.A = int(int32(uint32((uint64(data[0])<<8|uint64(data[1]))>>4)<<20) >> 20)",
+		"result.B = Offset(int32(uint32((uint64(data[1])<<8|uint64(data[2]))>>4&0xFF)<<24) >> 24)",
+		"result.C = int32(int32(uint32((uint64(data[2])<<32 | uint64(data[3])<<24 | uint64(data[4])<<16 | uint64(data[5])<<8 | uint64(data[6])) >> 4 & 0xFFFFFFFF)))",
+		"result.D = int((uint64(data[6])<<8 | uint64(data[7])) >> 4 & 0xFF)",
 	)
 }
 
@@ -169,11 +170,12 @@ func TestCoordinatesAreTwosComplementFloat64(t *testing.T) {
 	Lat float64 `+"`dmr:\"bits:25-48,type:latitude\"`"+`
 }`)
 	assertContains(t, out,
-		"result.Lon = float64(int32(uint32(bit.Uint(data[0:25]))<<7)>>7) * 360.0 / (1 << 25)",
-		"result.Lat = float64(int32(uint32(bit.Uint(data[25:49]))<<8)>>8) * 180.0 / (1 << 24)",
+		"result.Lon = float64(int32(uint32((uint64(data[0])<<24|uint64(data[1])<<16|uint64(data[2])<<8|uint64(data[3]))>>7)<<7)>>7) * 360.0 / (1 << 25)",
+		"result.Lat = float64(int32(uint32((uint64(data[3])<<24|uint64(data[4])<<16|uint64(data[5])<<8|uint64(data[6]))>>7&0xFFFFFF)<<8)>>8) * 180.0 / (1 << 24)",
 		"if !(s.Lon >= -180.0 && s.Lon <= 180.0) {",
 		"_rawLon := math.Round(s.Lon * (1 << 25) / 360.0)",
-		"bit.PutUint(data[0:25], uint64(int64(_rawLon)))",
+		"_valLon := uint64(int64(_rawLon))",
+		"data[3] = data[3]&^0x80 | byte(_valLon<<7)&0x80",
 		"if !(s.Lat >= -90.0 && s.Lat <= 90.0) {",
 		"_rawLat := math.Round(s.Lat * (1 << 24) / 180.0)",
 		"_rawLat = min(_rawLat, 8388607)",
@@ -202,11 +204,11 @@ type T struct {
 		"result.E = Kind(_tmpE)",
 		"result.D = Wrapped(_tmpD)",
 		"_valI := uint64(s.I)",
-		"bit.PutUint(data[1:2], _valI>>3)",
-		"bit.PutUint(data[10:13], _valS)",
-		"bit.PutUint(data[3:4], _valE>>3)",
+		"data[0] = data[0]&^0x40 | byte(_valI>>3<<6)&0x40",
+		"data[1] = data[1]&^0x38 | byte(_valS<<3)&0x38",
+		"data[0] = data[0]&^0x10 | byte(_valE>>3<<4)&0x10",
 		"_valD := uint64(s.D)",
-		"bit.PutUint(data[16:24], _valD>>4)",
+		"data[2] = byte(_valD >> 4)",
 	)
 }
 
@@ -226,12 +228,12 @@ type T struct {
 }`)
 	assertContains(t, out,
 		"if result.FID == 0 {",
-		"\tdefault:\n\t\t\tfor _i := range 8 {\n\t\t\t\tresult.Raw[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)",
-		"} else {\n\t\tfor _i := range 8 {\n\t\t\tresult.Raw[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)",
-		"\tdefault:\n\t\tfor _i := range 8 {\n\t\t\tdata[16+_i] = bit.Bit(s.Raw[_i/8] >> (7 - _i%8) & 1)",
+		"\tdefault:\n\t\t\tresult.Raw[0] = data[2]",
+		"} else {\n\t\tresult.Raw[0] = data[2]",
+		"\tdefault:\n\t\tdata[2] = s.Raw[0]",
 		`_ret += fmt.Sprintf("Raw: %x", s.Raw)`,
 	)
-	if strings.Count(out, "data[16+_i] = bit.Bit(s.Raw[_i/8]") != 1 {
+	if strings.Count(out, "data[2] = s.Raw[0]") != 1 {
 		t.Error("fallback should only be encoded in the dispatch default branch")
 	}
 }
@@ -254,14 +256,17 @@ type T struct {
 	Raw  [1]byte    `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
 }`)
 	assertContains(t, out,
-		`{"A", s.A != nil}`,
-		`{"B", s.B != nil}`,
-		`return [24]bit.Bit{}, fmt.Errorf("T: %s and %s are both set", _payload, _p.name)`,
-		"\tif _payload != \"\" {\n\t\tvar result T\n\t\tresult.Op = uint8(bit.Uint(data[0:8]))\n\t\tresult.FID = uint8(bit.Uint(data[8:16]))\n\t\tresult.Mode = s.Mode\n\t\t_want := \"Raw\"",
+		"if s.A != nil {\n\t\t_payload = \"A\"\n\t}",
+		"if s.B != nil {\n\t\tif _payload != \"\" {",
+		`return [3]byte{}, fmt.Errorf("T: %s and %s are both set", _payload, "B")`,
+		"\tif _payload != \"\" {\n\t\tvar result T\n\t\tresult.Op = uint8(uint64(data[0]))\n\t\tresult.FID = uint8(uint64(data[1]))\n\t\tresult.Mode = s.Mode\n\t\t_want := \"Raw\"",
 		"\t\t\t\tif result.Mode {\n\t\t\t\t\t_want = \"A\"\n\t\t\t\t}",
 		"\t\t\tcase 2:\n\t\t\t\t_want = \"B\"",
-		`return [24]bit.Bit{}, fmt.Errorf("T.%s is set, but Op, FID and Mode select %s", _payload, _want)`,
+		`return [3]byte{}, fmt.Errorf("T.%s is set, but Op, FID and Mode select %s", _payload, _want)`,
 	)
+	if strings.Contains(out, "[...]struct") {
+		t.Error("the payload check builds an array, which is a large local on 32-bit targets")
+	}
 }
 
 func TestGuardedDispatchFallsBackToRaw(t *testing.T) {
@@ -279,7 +284,7 @@ type T struct {
 	A    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=1,when:K==2\"`"+`
 	Raw  [1]byte    `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
 }`)
-	assertContains(t, out, "if result.K == 2 {", "} else {\n\t\t\tfor _i := range 8 {\n\t\t\t\tresult.Raw[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)")
+	assertContains(t, out, "if result.K == 2 {", "} else {\n\t\t\tresult.Raw[0] = data[2]")
 }
 
 func TestEncodeReportsOutOfRangeValues(t *testing.T) {
@@ -298,11 +303,11 @@ type T struct {
 	assertContains(t, out,
 		"func (s *T) Encode() ([60]bit.Bit, error) {",
 		"if uint64(s.Part)>>12 != 0 {",
-		`return [60]bit.Bit{}, &bit.FieldRangeError{`,
+		`return [8]byte{}, &bit.FieldRangeError{`,
 		"if uint64(s.Addr)>>24 != 0 {",
 		"if int64(s.Off) < -128 || int64(s.Off) > 127 {",
-		"_kidBits, err := s.Kid.Encode()",
-		`return [60]bit.Bit{}, fmt.Errorf("T.Kid: %w", err)`,
+		"_kidBytes, err := s.Kid.encodeBytes()",
+		`return [8]byte{}, fmt.Errorf("T.Kid: %w", err)`,
 		"return data, nil",
 	)
 	if strings.Contains(out, "uint64(s.Full)>>") {
@@ -324,10 +329,10 @@ type T struct {
 	B uint8 `+"`dmr:\"bits:12-15\"`"+`
 }`)
 	assertContains(t, out,
-		"bit.PutUint(data[0:4], uint64(FormatX))",
+		"data[0] = data[0]&^0xF0 | byte(uint64(FormatX)<<4)&0xF0",
 		"_const1 := uint64(9)",
-		"bit.PutUint(data[4:6], _const1>>2)",
-		"bit.PutUint(data[10:12], _const1)",
+		"data[0] = data[0]&^0x0C | byte(_const1>>2<<2)&0x0C",
+		"data[1] = data[1]&^0x30 | byte(_const1<<4)&0x30",
 	)
 }
 
@@ -347,7 +352,7 @@ type T struct {
 }`)
 	assertContains(t, out,
 		"func DecodeT(data [16]bit.Bit, mode bool) T {",
-		"_decoded := DecodeSub(_dispatchBits)",
+		"_decoded := decodeSubBytes(_dispatchBytes)",
 		"result.Mode = mode",
 		"if !result.Mode {",
 		"} else if result.Mode {",
@@ -375,9 +380,9 @@ type P struct {
 }`)
 	assertContains(t, out,
 		"func DecodeG(data [20]bit.Bit) G {",
-		"_cw, result.FEC = golay.Decode2087(uint32(bit.Uint(data[:])))",
+		"_cw, result.FEC = golay.Decode2087(uint32((uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2])) >> 4))",
 		"func DecodeC(data [16]bit.Bit) C {",
-		"result.FEC.Uncorrectable = !crc.CheckCRC8(_crcBytes[:], 8, _crc)",
+		"result.FEC.Uncorrectable = !crc.CheckCRC8(data[:], 8, uint8(uint64(data[1])))",
 		"func DecodeP(data [8]bit.Bit) P {",
 	)
 	if strings.Contains(out, "fecResult") {
@@ -393,10 +398,10 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 	R [2]byte `+"`dmr:\"bits:4-15,raw\"`"+`
 }`)
 	assertContains(t, out,
-		"for _i := range 12 {\n\t\tresult.R[_i/8] |= byte(data[4+_i]) << (7 - _i%8)",
+		"bits.Copy(result.R[:], 0, data[:], 4, 12)",
 		"if s.R[1]&15 != 0 {",
 		`Field: "R",`,
-		"for _i := range 12 {\n\t\tdata[4+_i] = bit.Bit(s.R[_i/8] >> (7 - _i%8) & 1)",
+		"bits.Copy(data[:], 4, s.R[:], 0, 12)",
 		`fmt.Sprintf("T{ A: %d, R: %x }", s.A, s.R)`,
 	)
 }
@@ -436,7 +441,7 @@ type Top struct {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertContains(t, out, "func decodeSub(", "func decodeMarked(", "func DecodeTop(", ":= decodeSub(")
+	assertContains(t, out, "func decodeSubBytes(", "func decodeMarkedBytes(", "func DecodeTop(", ":= decodeSubBytes(")
 	if strings.Contains(out, "func DecodeSub(") || strings.Contains(out, "func DecodeMarked(") {
 		t.Errorf("sub-PDU Decode is exported\n%s", out)
 	}
@@ -484,13 +489,15 @@ type T struct {
 }`)
 	assertContains(t, out,
 		"// TPayloads holds one payload struct of each type that\n// a T dispatch field points to, for DecodeTInto.\n// The zero value is ready to use.\ntype TPayloads struct {\n\tsub   Sub\n\tbspdu BSPDU\n}",
-		"func DecodeTInto(dst *T, p *TPayloads, data [16]bit.Bit, mode bool) {\n\t*dst = T{}\n\tresult := dst\n\tresult.Mode = mode\n",
-		"p.sub = DecodeSub(_dispatchBits)\n\t\t\tresult.A = &p.sub",
-		"p.sub = DecodeSub(_dispatchBits)\n\t\t\tresult.B = &p.sub",
-		"p.bspdu = DecodeBSPDU(_dispatchBits)\n\t\tresult.C = &p.bspdu",
-		"_decoded := DecodeSub(_dispatchBits)\n\t\t\tresult.A = &_decoded",
+		"func DecodeTInto(dst *T, p *TPayloads, data [16]bit.Bit, mode bool) {",
+		"decodeTBytesInto(dst, p, _b, mode)",
+		"func decodeTBytesInto(dst *T, p *TPayloads, data [2]byte, mode bool) {\n\t*dst = T{}\n\tresult := dst\n\tresult.Mode = mode\n",
+		"p.sub = decodeSubBytes(_dispatchBytes)\n\t\t\tresult.A = &p.sub",
+		"p.sub = decodeSubBytes(_dispatchBytes)\n\t\t\tresult.B = &p.sub",
+		"p.bspdu = decodeBSPDUBytes(_dispatchBytes)\n\t\tresult.C = &p.bspdu",
+		"_decoded := decodeSubBytes(_dispatchBytes)\n\t\t\tresult.A = &_decoded",
 	)
-	_, into, _ := strings.Cut(out, "func DecodeTInto(")
+	_, into, _ := strings.Cut(out, "func decodeTBytesInto(")
 	into, _, _ = strings.Cut(into, "\n}\n")
 	if strings.Contains(into, "return") || strings.Contains(into, "_decoded") {
 		t.Errorf("DecodeTInto returns or allocates a payload:\n%s", into)
@@ -536,8 +543,8 @@ func TestPackedFieldIsPackedWithoutAllocating(t *testing.T) {
 	D [2]byte `+"`dmr:\"bits:8-23,packed\"`"+`
 }`)
 	assertContains(t, out,
-		"for _i := range 16 {\n\t\tresult.D[_i/8] |= byte(data[8+_i]) << (7 - _i%8)",
-		"for _i := range 16 {\n\t\tdata[8+_i] = bit.Bit(s.D[_i/8] >> (7 - _i%8) & 1)",
+		"copy(result.D[0:2], data[1:3])",
+		"copy(data[1:3], s.D[0:2])",
 	)
 	if strings.Contains(out, "bit.Pack(") || strings.Contains(out, "bit.Unpack(") {
 		t.Errorf("packed field uses bit.Pack or bit.Unpack:\n%s", out)

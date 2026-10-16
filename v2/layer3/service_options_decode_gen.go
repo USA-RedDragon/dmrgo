@@ -7,55 +7,77 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeServiceOptions decodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
-func DecodeServiceOptions(data [8]bit.Bit) ServiceOptions {
+// decodeServiceOptionsBytes decodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
+// data holds its bits packed, the first bit most significant.
+func decodeServiceOptionsBytes(data [1]byte) ServiceOptions {
 	var result ServiceOptions
-	lowbit.Mask(data[:])
-	result.IsEmergency = data[0] == 1
-	result.IsPrivacy = data[1] == 1
-	result.Reserved = uint8(bit.Uint(data[2:4]))
-	result.IsBroadcast = data[4] == 1
-	result.IsOpenVoiceCallMode = data[5] == 1
-	result.PriorityLevel = uint8(bit.Uint(data[6:8]))
+	result.IsEmergency = data[0]&0x80 != 0
+	result.IsPrivacy = data[0]&0x40 != 0
+	result.Reserved = uint8(uint64(data[0]) >> 4 & 0x3)
+	result.IsBroadcast = data[0]&0x08 != 0
+	result.IsOpenVoiceCallMode = data[0]&0x04 != 0
+	result.PriorityLevel = uint8(uint64(data[0]) & 0x3)
 	return result
 }
 
-// Encode encodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
-func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
-	var data [8]bit.Bit
+// DecodeServiceOptions decodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
+func DecodeServiceOptions(data [8]bit.Bit) ServiceOptions {
+	var _b [1]byte
+	for _i := range 8 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeServiceOptionsBytes(_b)
+}
+
+// encodeBytes encodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *ServiceOptions) encodeBytes() ([1]byte, error) {
+	var data [1]byte
 	if s.IsEmergency {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.IsPrivacy {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.Reserved)>>2 != 0 {
-		return [8]bit.Bit{}, &bit.FieldRangeError{
+		return [1]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "Reserved",
 			Type:  "ServiceOptions",
 			Value: s.Reserved,
 		}
 	}
-	bit.PutUint(data[2:4], uint64(s.Reserved))
+	data[0] = data[0]&^0x30 | byte(uint64(s.Reserved)<<4)&0x30
 	if s.IsBroadcast {
-		data[4] = 1
+		data[0] |= 0x08
 	}
 	if s.IsOpenVoiceCallMode {
-		data[5] = 1
+		data[0] |= 0x04
 	}
 	if uint64(s.PriorityLevel)>>2 != 0 {
-		return [8]bit.Bit{}, &bit.FieldRangeError{
+		return [1]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "PriorityLevel",
 			Type:  "ServiceOptions",
 			Value: s.PriorityLevel,
 		}
 	}
-	bit.PutUint(data[6:8], uint64(s.PriorityLevel))
+	data[0] = data[0]&^0x03 | byte(uint64(s.PriorityLevel))&0x03
+	return data, nil
+}
+
+// Encode encodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1).
+func (s *ServiceOptions) Encode() ([8]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [8]bit.Bit{}, err
+	}
+	var data [8]bit.Bit
+	for _i := range 8 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 

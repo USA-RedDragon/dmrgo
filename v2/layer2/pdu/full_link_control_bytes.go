@@ -3,7 +3,6 @@ package pdu
 import (
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -14,7 +13,7 @@ import (
 // the decoded LC does not encode back to lc, so that no bit of lc is lost.
 func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
-	f := DecodeFullLinkControl(bit.Unpack96(cw), enums.DataTypeVoiceLCHeader)
+	f := decodeFullLinkControlBytes(cw, enums.DataTypeVoiceLCHeader)
 	f.BurstDataType = 0
 	f.FEC = fec.Result{}
 	got, err := f.Bytes()
@@ -33,7 +32,7 @@ func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 // DecodeFullLinkControlBytes and sets dst to the zero value on an error.
 func DecodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayloads, lc [9]byte) error {
 	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
-	DecodeFullLinkControlInto(dst, p, bit.Unpack96(cw), enums.DataTypeVoiceLCHeader)
+	decodeFullLinkControlBytesInto(dst, p, cw, enums.DataTypeVoiceLCHeader)
 	dst.BurstDataType = 0
 	dst.FEC = fec.Result{}
 	got, err := dst.Bytes()
@@ -65,11 +64,9 @@ func (s *FullLinkControl) Codeword() ([12]byte, error) {
 func (s *FullLinkControl) Bytes() ([9]byte, error) {
 	c := *s
 	c.BurstDataType = enums.DataTypeVoiceLCHeader
-	bits, err := c.Encode()
+	cw, err := c.encodeBytes()
 	if err != nil {
 		return [9]byte{}, err
 	}
-	var lc [9]byte
-	packBits(lc[:], bits[:72])
-	return lc, nil
+	return [9]byte(cw[:9]), nil
 }

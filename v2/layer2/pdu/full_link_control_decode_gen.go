@@ -14,80 +14,75 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"math"
 )
 
-// DecodeFullLinkControl decodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
-func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) FullLinkControl {
+// decodeFullLinkControlBytes decodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
+// data holds its bits packed, the first bit most significant.
+func decodeFullLinkControlBytes(data [12]byte, burstDataType enums.DataType) FullLinkControl {
 	var result FullLinkControl
 	result.BurstDataType = burstDataType
-	lowbit.Mask(data[:])
-	var _packedBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			_packedBytes[i] <<= 1
-			_packedBytes[i] |= byte(data[i*8+j])
-		}
-	}
+	_cw := data
 	switch result.BurstDataType {
 	case enums.DataTypeVoiceLCHeader:
-		_packedBytes[9] ^= 0x96
-		_packedBytes[10] ^= 0x96
-		_packedBytes[11] ^= 0x96
+		_cw[9] ^= 0x96
+		_cw[10] ^= 0x96
+		_cw[11] ^= 0x96
 	case enums.DataTypeTerminatorWithLC:
-		_packedBytes[9] ^= 0x99
-		_packedBytes[10] ^= 0x99
-		_packedBytes[11] ^= 0x99
+		_cw[9] ^= 0x99
+		_cw[10] ^= 0x99
+		_cw[11] ^= 0x99
 	}
 	var _fecData [9]byte
-	_fecData, result.FEC = reedsolomon.Decode(_packedBytes)
+	_fecData, result.FEC = reedsolomon.Decode(_cw)
 	if !result.FEC.Uncorrectable {
-		for i := range 9 {
-			for j := range 8 {
-				data[i*8+j] = bit.Bit((_fecData[i] >> (7 - j)) & 1)
-			}
-		}
+		copy(data[:9], _fecData[:])
 	}
-	result.ProtectFlag = data[0] == 1
-	result.Reserved = data[1] == 1
-	result.FLCO = enums.FLCO(bit.Uint(data[2:8]))
-	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
-	var _dispatchBits [56]bit.Bit
-	copy(_dispatchBits[:], data[16:72])
+	result.ProtectFlag = data[0]&0x80 != 0
+	result.Reserved = data[0]&0x40 != 0
+	result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
+	result.FID = enums.FeatureSetID(uint64(data[1]))
+	var _dispatchBytes [7]byte
+	copy(_dispatchBytes[0:7], data[2:9])
 	if result.FID == 0 {
 		switch result.FLCO {
 		case enums.FLCOGroupVoiceChannelUser:
-			_decoded := decodeFLCGroupVoice(_dispatchBits)
+			_decoded := decodeFLCGroupVoiceBytes(_dispatchBytes)
 			result.GroupVoice = &_decoded
 		case enums.FLCOUnitToUnitVoiceChannelUser:
-			_decoded := decodeFLCUnitToUnit(_dispatchBits)
+			_decoded := decodeFLCUnitToUnitBytes(_dispatchBytes)
 			result.UnitToUnit = &_decoded
 		case enums.FLCOGPSInfo:
-			_decoded := decodeFLCGPSInfo(_dispatchBits)
+			_decoded := decodeFLCGPSInfoBytes(_dispatchBytes)
 			result.GPSInfo = &_decoded
 		case enums.FLCOTalkerAliasHeader:
-			_decoded := decodeFLCTalkerAliasHeader(_dispatchBits)
+			_decoded := decodeFLCTalkerAliasHeaderBytes(_dispatchBytes)
 			result.TalkerAliasHeader = &_decoded
 		case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
-			_decoded := decodeFLCTalkerAliasBlock(_dispatchBits)
+			_decoded := decodeFLCTalkerAliasBlockBytes(_dispatchBytes)
 			result.TalkerAliasBlock = &_decoded
 		case enums.FLCOTerminatorDataLinkControl:
-			_decoded := decodeFLCTerminatorDataLinkControl(_dispatchBits)
+			_decoded := decodeFLCTerminatorDataLinkControlBytes(_dispatchBytes)
 			result.TerminatorDataLinkControl = &_decoded
 		default:
-			for _i := range 56 {
-				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-			}
+			copy(result.RawPayload[0:7], data[2:9])
 		}
 	} else {
-		for _i := range 56 {
-			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-		}
+		copy(result.RawPayload[0:7], data[2:9])
 	}
 	return result
+}
+
+// DecodeFullLinkControl decodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
+func DecodeFullLinkControl(data [96]bit.Bit, burstDataType enums.DataType) FullLinkControl {
+	var _b [12]byte
+	for _i := range 96 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeFullLinkControlBytes(_b, burstDataType)
 }
 
 // FullLinkControlPayloads holds one payload struct of each type that
@@ -102,172 +97,180 @@ type FullLinkControlPayloads struct {
 	flcTerminatorDataLinkControl FLCTerminatorDataLinkControl
 }
 
+// decodeFullLinkControlBytesInto decodes data into dst as decodeFullLinkControlBytes does, and
+// points the dispatch field of dst into p.
+func decodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayloads, data [12]byte, burstDataType enums.DataType) {
+	*dst = FullLinkControl{}
+	result := dst
+	result.BurstDataType = burstDataType
+	_cw := data
+	switch result.BurstDataType {
+	case enums.DataTypeVoiceLCHeader:
+		_cw[9] ^= 0x96
+		_cw[10] ^= 0x96
+		_cw[11] ^= 0x96
+	case enums.DataTypeTerminatorWithLC:
+		_cw[9] ^= 0x99
+		_cw[10] ^= 0x99
+		_cw[11] ^= 0x99
+	}
+	var _fecData [9]byte
+	_fecData, result.FEC = reedsolomon.Decode(_cw)
+	if !result.FEC.Uncorrectable {
+		copy(data[:9], _fecData[:])
+	}
+	result.ProtectFlag = data[0]&0x80 != 0
+	result.Reserved = data[0]&0x40 != 0
+	result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
+	result.FID = enums.FeatureSetID(uint64(data[1]))
+	var _dispatchBytes [7]byte
+	copy(_dispatchBytes[0:7], data[2:9])
+	if result.FID == 0 {
+		switch result.FLCO {
+		case enums.FLCOGroupVoiceChannelUser:
+			p.flcGroupVoice = decodeFLCGroupVoiceBytes(_dispatchBytes)
+			result.GroupVoice = &p.flcGroupVoice
+		case enums.FLCOUnitToUnitVoiceChannelUser:
+			p.flcUnitToUnit = decodeFLCUnitToUnitBytes(_dispatchBytes)
+			result.UnitToUnit = &p.flcUnitToUnit
+		case enums.FLCOGPSInfo:
+			p.flcgpsInfo = decodeFLCGPSInfoBytes(_dispatchBytes)
+			result.GPSInfo = &p.flcgpsInfo
+		case enums.FLCOTalkerAliasHeader:
+			p.flcTalkerAliasHeader = decodeFLCTalkerAliasHeaderBytes(_dispatchBytes)
+			result.TalkerAliasHeader = &p.flcTalkerAliasHeader
+		case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
+			p.flcTalkerAliasBlock = decodeFLCTalkerAliasBlockBytes(_dispatchBytes)
+			result.TalkerAliasBlock = &p.flcTalkerAliasBlock
+		case enums.FLCOTerminatorDataLinkControl:
+			p.flcTerminatorDataLinkControl = decodeFLCTerminatorDataLinkControlBytes(_dispatchBytes)
+			result.TerminatorDataLinkControl = &p.flcTerminatorDataLinkControl
+		default:
+			copy(result.RawPayload[0:7], data[2:9])
+		}
+	} else {
+		copy(result.RawPayload[0:7], data[2:9])
+	}
+}
+
 // DecodeFullLinkControlInto decodes data into dst as DecodeFullLinkControl does,
 // but points the dispatch field of dst into p, so it does not allocate.
 // The payload stays valid until the next decode into p. dst and p must
 // not be nil.
 func DecodeFullLinkControlInto(dst *FullLinkControl, p *FullLinkControlPayloads, data [96]bit.Bit, burstDataType enums.DataType) {
-	*dst = FullLinkControl{}
-	result := dst
-	result.BurstDataType = burstDataType
-	lowbit.Mask(data[:])
-	var _packedBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			_packedBytes[i] <<= 1
-			_packedBytes[i] |= byte(data[i*8+j])
-		}
+	var _b [12]byte
+	for _i := range 96 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
 	}
-	switch result.BurstDataType {
-	case enums.DataTypeVoiceLCHeader:
-		_packedBytes[9] ^= 0x96
-		_packedBytes[10] ^= 0x96
-		_packedBytes[11] ^= 0x96
-	case enums.DataTypeTerminatorWithLC:
-		_packedBytes[9] ^= 0x99
-		_packedBytes[10] ^= 0x99
-		_packedBytes[11] ^= 0x99
-	}
-	var _fecData [9]byte
-	_fecData, result.FEC = reedsolomon.Decode(_packedBytes)
-	if !result.FEC.Uncorrectable {
-		for i := range 9 {
-			for j := range 8 {
-				data[i*8+j] = bit.Bit((_fecData[i] >> (7 - j)) & 1)
-			}
-		}
-	}
-	result.ProtectFlag = data[0] == 1
-	result.Reserved = data[1] == 1
-	result.FLCO = enums.FLCO(bit.Uint(data[2:8]))
-	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
-	var _dispatchBits [56]bit.Bit
-	copy(_dispatchBits[:], data[16:72])
-	if result.FID == 0 {
-		switch result.FLCO {
-		case enums.FLCOGroupVoiceChannelUser:
-			p.flcGroupVoice = decodeFLCGroupVoice(_dispatchBits)
-			result.GroupVoice = &p.flcGroupVoice
-		case enums.FLCOUnitToUnitVoiceChannelUser:
-			p.flcUnitToUnit = decodeFLCUnitToUnit(_dispatchBits)
-			result.UnitToUnit = &p.flcUnitToUnit
-		case enums.FLCOGPSInfo:
-			p.flcgpsInfo = decodeFLCGPSInfo(_dispatchBits)
-			result.GPSInfo = &p.flcgpsInfo
-		case enums.FLCOTalkerAliasHeader:
-			p.flcTalkerAliasHeader = decodeFLCTalkerAliasHeader(_dispatchBits)
-			result.TalkerAliasHeader = &p.flcTalkerAliasHeader
-		case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
-			p.flcTalkerAliasBlock = decodeFLCTalkerAliasBlock(_dispatchBits)
-			result.TalkerAliasBlock = &p.flcTalkerAliasBlock
-		case enums.FLCOTerminatorDataLinkControl:
-			p.flcTerminatorDataLinkControl = decodeFLCTerminatorDataLinkControl(_dispatchBits)
-			result.TerminatorDataLinkControl = &p.flcTerminatorDataLinkControl
-		default:
-			for _i := range 56 {
-				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-			}
-		}
-	} else {
-		for _i := range 56 {
-			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-		}
-	}
+	decodeFullLinkControlBytesInto(dst, p, _b, burstDataType)
 }
 
-// Encode encodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
-func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
-	var data [96]bit.Bit
+// encodeBytes encodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *FullLinkControl) encodeBytes() ([12]byte, error) {
+	var data [12]byte
 	_payload := ""
-	for _, _p := range [...]struct {
-		name string
-		set  bool
-	}{
-		{"GroupVoice", s.GroupVoice != nil},
-		{"UnitToUnit", s.UnitToUnit != nil},
-		{"GPSInfo", s.GPSInfo != nil},
-		{"TalkerAliasHeader", s.TalkerAliasHeader != nil},
-		{"TalkerAliasBlock", s.TalkerAliasBlock != nil},
-		{"TerminatorDataLinkControl", s.TerminatorDataLinkControl != nil},
-	} {
-		if !_p.set {
-			continue
-		}
+	if s.GroupVoice != nil {
+		_payload = "GroupVoice"
+	}
+	if s.UnitToUnit != nil {
 		if _payload != "" {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, _p.name)
+			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "UnitToUnit")
 		}
-		_payload = _p.name
+		_payload = "UnitToUnit"
+	}
+	if s.GPSInfo != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "GPSInfo")
+		}
+		_payload = "GPSInfo"
+	}
+	if s.TalkerAliasHeader != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "TalkerAliasHeader")
+		}
+		_payload = "TalkerAliasHeader"
+	}
+	if s.TalkerAliasBlock != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "TalkerAliasBlock")
+		}
+		_payload = "TalkerAliasBlock"
+	}
+	if s.TerminatorDataLinkControl != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("FullLinkControl: %s and %s are both set", _payload, "TerminatorDataLinkControl")
+		}
+		_payload = "TerminatorDataLinkControl"
 	}
 	switch {
 	case s.GroupVoice != nil:
-		_pduBits, err := s.GroupVoice.Encode()
+		_pduBytes, err := s.GroupVoice.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.GroupVoice: %w", err)
+			return [12]byte{}, fmt.Errorf("FullLinkControl.GroupVoice: %w", err)
 		}
-		copy(data[16:72], _pduBits[:])
+		copy(data[2:9], _pduBytes[0:7])
 	case s.UnitToUnit != nil:
-		_pduBits, err := s.UnitToUnit.Encode()
+		_pduBytes, err := s.UnitToUnit.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.UnitToUnit: %w", err)
+			return [12]byte{}, fmt.Errorf("FullLinkControl.UnitToUnit: %w", err)
 		}
-		copy(data[16:72], _pduBits[:])
+		copy(data[2:9], _pduBytes[0:7])
 	case s.GPSInfo != nil:
-		_pduBits, err := s.GPSInfo.Encode()
+		_pduBytes, err := s.GPSInfo.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.GPSInfo: %w", err)
+			return [12]byte{}, fmt.Errorf("FullLinkControl.GPSInfo: %w", err)
 		}
-		copy(data[16:72], _pduBits[:])
+		copy(data[2:9], _pduBytes[0:7])
 	case s.TalkerAliasHeader != nil:
-		_pduBits, err := s.TalkerAliasHeader.Encode()
+		_pduBytes, err := s.TalkerAliasHeader.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.TalkerAliasHeader: %w", err)
+			return [12]byte{}, fmt.Errorf("FullLinkControl.TalkerAliasHeader: %w", err)
 		}
-		copy(data[16:72], _pduBits[:])
+		copy(data[2:9], _pduBytes[0:7])
 	case s.TalkerAliasBlock != nil:
-		_pduBits, err := s.TalkerAliasBlock.Encode()
+		_pduBytes, err := s.TalkerAliasBlock.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.TalkerAliasBlock: %w", err)
+			return [12]byte{}, fmt.Errorf("FullLinkControl.TalkerAliasBlock: %w", err)
 		}
-		copy(data[16:72], _pduBits[:])
+		copy(data[2:9], _pduBytes[0:7])
 	case s.TerminatorDataLinkControl != nil:
-		_pduBits, err := s.TerminatorDataLinkControl.Encode()
+		_pduBytes, err := s.TerminatorDataLinkControl.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.TerminatorDataLinkControl: %w", err)
+			return [12]byte{}, fmt.Errorf("FullLinkControl.TerminatorDataLinkControl: %w", err)
 		}
-		copy(data[16:72], _pduBits[:])
+		copy(data[2:9], _pduBytes[0:7])
 	default:
-		for _i := range 56 {
-			data[16+_i] = bit.Bit(s.RawPayload[_i/8] >> (7 - _i%8) & 1)
-		}
+		copy(data[2:9], s.RawPayload[0:7])
 	}
 	if s.ProtectFlag {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.Reserved {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.FLCO)>>6 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  6,
 			Field: "FLCO",
 			Type:  "FullLinkControl",
 			Value: s.FLCO,
 		}
 	}
-	bit.PutUint(data[2:8], uint64(s.FLCO))
+	data[0] = data[0]&^0x3F | byte(uint64(s.FLCO))&0x3F
 	if uint64(s.FID)>>8 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  8,
 			Field: "FID",
 			Type:  "FullLinkControl",
 			Value: s.FID,
 		}
 	}
-	bit.PutUint(data[8:16], uint64(s.FID))
+	data[1] = byte(uint64(s.FID))
 	if _payload != "" {
 		var result FullLinkControl
-		result.FLCO = enums.FLCO(bit.Uint(data[2:8]))
-		result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
+		result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
+		result.FID = enums.FeatureSetID(uint64(data[1]))
 		_want := "RawPayload"
 		if result.FID == 0 {
 			switch result.FLCO {
@@ -286,17 +289,10 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 			}
 		}
 		if _payload != _want {
-			return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.%s is set, but FLCO and FID select %s", _payload, _want)
+			return [12]byte{}, fmt.Errorf("FullLinkControl.%s is set, but FLCO and FID select %s", _payload, _want)
 		}
 	}
-	var _encData [9]byte
-	for i := range 9 {
-		for j := range 8 {
-			_encData[i] <<= 1
-			_encData[i] |= byte(data[i*8+j])
-		}
-	}
-	_encoded := reedsolomon.Encode(_encData)
+	_encoded := reedsolomon.Encode([9]byte(data[:9]))
 	switch s.BurstDataType {
 	case enums.DataTypeVoiceLCHeader:
 		_encoded[9] ^= 0x96
@@ -307,12 +303,21 @@ func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
 		_encoded[10] ^= 0x99
 		_encoded[11] ^= 0x99
 	default:
-		return [96]bit.Bit{}, fmt.Errorf("FullLinkControl.BurstDataType: no FEC mask for value %d", s.BurstDataType)
+		return [12]byte{}, fmt.Errorf("FullLinkControl.BurstDataType: no FEC mask for value %d", s.BurstDataType)
 	}
-	for i := range 12 {
-		for j := range 8 {
-			data[i*8+j] = bit.Bit((_encoded[i] >> (7 - j)) & 1)
-		}
+	data = _encoded
+	return data, nil
+}
+
+// Encode encodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6).
+func (s *FullLinkControl) Encode() ([96]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [96]bit.Bit{}, err
+	}
+	var data [96]bit.Bit
+	for _i := range 96 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
 }
@@ -350,44 +355,64 @@ func (s *FullLinkControl) String() string {
 	return _ret
 }
 
-// decodeFLCGroupVoice decodes an FLCGroupVoice (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1).
-func decodeFLCGroupVoice(data [56]bit.Bit) FLCGroupVoice {
+// decodeFLCGroupVoiceBytes decodes an FLCGroupVoice (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1).
+// data holds its bits packed, the first bit most significant.
+func decodeFLCGroupVoiceBytes(data [7]byte) FLCGroupVoice {
 	var result FLCGroupVoice
-	lowbit.Mask(data[:])
 	var _serviceOptionsBits [8]bit.Bit
-	copy(_serviceOptionsBits[:], data[0:8])
+	bits.Unpack(_serviceOptionsBits[:], data[:], 0)
 	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
-	result.GroupAddress = uint32(bit.Uint(data[8:32]))
-	result.SourceAddress = uint32(bit.Uint(data[32:56]))
+	result.GroupAddress = uint32(uint64(data[1])<<16 | uint64(data[2])<<8 | uint64(data[3]))
+	result.SourceAddress = uint32(uint64(data[4])<<16 | uint64(data[5])<<8 | uint64(data[6]))
 	return result
 }
 
-// Encode encodes an FLCGroupVoice (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1).
-func (s *FLCGroupVoice) Encode() ([56]bit.Bit, error) {
-	var data [56]bit.Bit
+// encodeBytes encodes an FLCGroupVoice (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *FLCGroupVoice) encodeBytes() ([7]byte, error) {
+	var data [7]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [56]bit.Bit{}, fmt.Errorf("FLCGroupVoice.ServiceOptions: %w", err)
+		return [7]byte{}, fmt.Errorf("FLCGroupVoice.ServiceOptions: %w", err)
 	}
-	copy(data[0:8], _serviceOptionsBits[:])
+	bits.Pack(data[:], 0, _serviceOptionsBits[:])
 	if uint64(s.GroupAddress)>>24 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "GroupAddress",
 			Type:  "FLCGroupVoice",
 			Value: s.GroupAddress,
 		}
 	}
-	bit.PutUint(data[8:32], uint64(s.GroupAddress))
+	_valGroupAddress := uint64(s.GroupAddress)
+	data[1] = byte(_valGroupAddress >> 16)
+	data[2] = byte(_valGroupAddress >> 8)
+	data[3] = byte(_valGroupAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "FLCGroupVoice",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[32:56], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[4] = byte(_valSourceAddress >> 16)
+	data[5] = byte(_valSourceAddress >> 8)
+	data[6] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes an FLCGroupVoice (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1).
+func (s *FLCGroupVoice) Encode() ([56]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [56]bit.Bit{}, err
+	}
+	var data [56]bit.Bit
+	for _i := range 56 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -405,44 +430,64 @@ func (s *FLCGroupVoice) String() string {
 	return fmt.Sprintf("FLCGroupVoice{ ServiceOptions: %s, GroupAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.GroupAddress, s.SourceAddress)
 }
 
-// decodeFLCUnitToUnit decodes an FLCUnitToUnit (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2).
-func decodeFLCUnitToUnit(data [56]bit.Bit) FLCUnitToUnit {
+// decodeFLCUnitToUnitBytes decodes an FLCUnitToUnit (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2).
+// data holds its bits packed, the first bit most significant.
+func decodeFLCUnitToUnitBytes(data [7]byte) FLCUnitToUnit {
 	var result FLCUnitToUnit
-	lowbit.Mask(data[:])
 	var _serviceOptionsBits [8]bit.Bit
-	copy(_serviceOptionsBits[:], data[0:8])
+	bits.Unpack(_serviceOptionsBits[:], data[:], 0)
 	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
-	result.TargetAddress = uint32(bit.Uint(data[8:32]))
-	result.SourceAddress = uint32(bit.Uint(data[32:56]))
+	result.TargetAddress = uint32(uint64(data[1])<<16 | uint64(data[2])<<8 | uint64(data[3]))
+	result.SourceAddress = uint32(uint64(data[4])<<16 | uint64(data[5])<<8 | uint64(data[6]))
 	return result
 }
 
-// Encode encodes an FLCUnitToUnit (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2).
-func (s *FLCUnitToUnit) Encode() ([56]bit.Bit, error) {
-	var data [56]bit.Bit
+// encodeBytes encodes an FLCUnitToUnit (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *FLCUnitToUnit) encodeBytes() ([7]byte, error) {
+	var data [7]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [56]bit.Bit{}, fmt.Errorf("FLCUnitToUnit.ServiceOptions: %w", err)
+		return [7]byte{}, fmt.Errorf("FLCUnitToUnit.ServiceOptions: %w", err)
 	}
-	copy(data[0:8], _serviceOptionsBits[:])
+	bits.Pack(data[:], 0, _serviceOptionsBits[:])
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "FLCUnitToUnit",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[8:32], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[1] = byte(_valTargetAddress >> 16)
+	data[2] = byte(_valTargetAddress >> 8)
+	data[3] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "FLCUnitToUnit",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[32:56], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[4] = byte(_valSourceAddress >> 16)
+	data[5] = byte(_valSourceAddress >> 8)
+	data[6] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes an FLCUnitToUnit (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2).
+func (s *FLCUnitToUnit) Encode() ([56]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [56]bit.Bit{}, err
+	}
+	var data [56]bit.Bit
+	for _i := range 56 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -460,40 +505,41 @@ func (s *FLCUnitToUnit) String() string {
 	return fmt.Sprintf("FLCUnitToUnit{ ServiceOptions: %s, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.TargetAddress, s.SourceAddress)
 }
 
-// decodeFLCGPSInfo decodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3).
-func decodeFLCGPSInfo(data [56]bit.Bit) FLCGPSInfo {
+// decodeFLCGPSInfoBytes decodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3).
+// data holds its bits packed, the first bit most significant.
+func decodeFLCGPSInfoBytes(data [7]byte) FLCGPSInfo {
 	var result FLCGPSInfo
-	lowbit.Mask(data[:])
-	result.Reserved = uint8(bit.Uint(data[0:4]))
-	result.PositionError = layer3.PositionError(bit.Uint(data[4:7]))
-	result.Longitude = float64(int32(uint32(bit.Uint(data[7:32]))<<7)>>7) * 360.0 / (1 << 25)
-	result.Latitude = float64(int32(uint32(bit.Uint(data[32:56]))<<8)>>8) * 180.0 / (1 << 24)
+	result.Reserved = uint8(uint64(data[0]) >> 4)
+	result.PositionError = layer3.PositionError(uint64(data[0]) >> 1 & 0x7)
+	result.Longitude = float64(int32(uint32((uint64(data[0])<<24|uint64(data[1])<<16|uint64(data[2])<<8|uint64(data[3]))&0x1FFFFFF)<<7)>>7) * 360.0 / (1 << 25)
+	result.Latitude = float64(int32(uint32(uint64(data[4])<<16|uint64(data[5])<<8|uint64(data[6]))<<8)>>8) * 180.0 / (1 << 24)
 	return result
 }
 
-// Encode encodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3).
-func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
-	var data [56]bit.Bit
+// encodeBytes encodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *FLCGPSInfo) encodeBytes() ([7]byte, error) {
+	var data [7]byte
 	if uint64(s.Reserved)>>4 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Reserved",
 			Type:  "FLCGPSInfo",
 			Value: s.Reserved,
 		}
 	}
-	bit.PutUint(data[0:4], uint64(s.Reserved))
+	data[0] = data[0]&^0xF0 | byte(uint64(s.Reserved)<<4)&0xF0
 	if uint64(s.PositionError)>>3 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "PositionError",
 			Type:  "FLCGPSInfo",
 			Value: s.PositionError,
 		}
 	}
-	bit.PutUint(data[4:7], uint64(s.PositionError))
+	data[0] = data[0]&^0x0E | byte(uint64(s.PositionError)<<1)&0x0E
 	if !(s.Longitude >= -180.0 && s.Longitude <= 180.0) {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:   25,
 			Field:  "Longitude",
 			Max:    180.0,
@@ -504,9 +550,13 @@ func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
 		}
 	}
 	_rawLongitude := math.Round(s.Longitude * (1 << 25) / 360.0)
-	bit.PutUint(data[7:32], uint64(int64(_rawLongitude)))
+	_valLongitude := uint64(int64(_rawLongitude))
+	data[0] = data[0]&^0x01 | byte(_valLongitude>>24)&0x01
+	data[1] = byte(_valLongitude >> 16)
+	data[2] = byte(_valLongitude >> 8)
+	data[3] = byte(_valLongitude)
 	if !(s.Latitude >= -90.0 && s.Latitude <= 90.0) {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:   24,
 			Field:  "Latitude",
 			Max:    90.0,
@@ -518,7 +568,23 @@ func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
 	}
 	_rawLatitude := math.Round(s.Latitude * (1 << 24) / 180.0)
 	_rawLatitude = min(_rawLatitude, 8388607)
-	bit.PutUint(data[32:56], uint64(int64(_rawLatitude)))
+	_valLatitude := uint64(int64(_rawLatitude))
+	data[4] = byte(_valLatitude >> 16)
+	data[5] = byte(_valLatitude >> 8)
+	data[6] = byte(_valLatitude)
+	return data, nil
+}
+
+// Encode encodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3).
+func (s *FLCGPSInfo) Encode() ([56]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [56]bit.Bit{}, err
+	}
+	var data [56]bit.Bit
+	for _i := range 56 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -536,46 +602,67 @@ func (s *FLCGPSInfo) String() string {
 	return fmt.Sprintf("FLCGPSInfo{ Reserved: %d, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, s.PositionError, s.Longitude, s.Latitude)
 }
 
-// decodeFLCTalkerAliasHeader decodes an FLCTalkerAliasHeader (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4).
-func decodeFLCTalkerAliasHeader(data [56]bit.Bit) FLCTalkerAliasHeader {
+// decodeFLCTalkerAliasHeaderBytes decodes an FLCTalkerAliasHeader (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4).
+// data holds its bits packed, the first bit most significant.
+func decodeFLCTalkerAliasHeaderBytes(data [7]byte) FLCTalkerAliasHeader {
 	var result FLCTalkerAliasHeader
-	lowbit.Mask(data[:])
-	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(bit.Uint(data[0:2]))
-	result.TalkerAliasDataLength = int(bit.Uint(data[2:7]))
-	result.TalkerAliasData = bit.Uint(data[7:56])
+	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(uint64(data[0]) >> 6)
+	result.TalkerAliasDataLength = int(uint64(data[0]) >> 1 & 0x1F)
+	result.TalkerAliasData = (uint64(data[0])<<48 | uint64(data[1])<<40 | uint64(data[2])<<32 | uint64(data[3])<<24 | uint64(data[4])<<16 | uint64(data[5])<<8 | uint64(data[6])) & 0x1FFFFFFFFFFFF
 	return result
 }
 
-// Encode encodes an FLCTalkerAliasHeader (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4).
-func (s *FLCTalkerAliasHeader) Encode() ([56]bit.Bit, error) {
-	var data [56]bit.Bit
+// encodeBytes encodes an FLCTalkerAliasHeader (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *FLCTalkerAliasHeader) encodeBytes() ([7]byte, error) {
+	var data [7]byte
 	if uint64(s.TalkerAliasDataFormat)>>2 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "TalkerAliasDataFormat",
 			Type:  "FLCTalkerAliasHeader",
 			Value: s.TalkerAliasDataFormat,
 		}
 	}
-	bit.PutUint(data[0:2], uint64(s.TalkerAliasDataFormat))
+	data[0] = data[0]&^0xC0 | byte(uint64(s.TalkerAliasDataFormat)<<6)&0xC0
 	if uint64(s.TalkerAliasDataLength)>>5 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "TalkerAliasDataLength",
 			Type:  "FLCTalkerAliasHeader",
 			Value: s.TalkerAliasDataLength,
 		}
 	}
-	bit.PutUint(data[2:7], uint64(s.TalkerAliasDataLength))
+	data[0] = data[0]&^0x3E | byte(uint64(s.TalkerAliasDataLength)<<1)&0x3E
 	if uint64(s.TalkerAliasData)>>49 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  49,
 			Field: "TalkerAliasData",
 			Type:  "FLCTalkerAliasHeader",
 			Value: s.TalkerAliasData,
 		}
 	}
-	bit.PutUint(data[7:56], s.TalkerAliasData)
+	_valTalkerAliasData := s.TalkerAliasData
+	data[0] = data[0]&^0x01 | byte(_valTalkerAliasData>>48)&0x01
+	data[1] = byte(_valTalkerAliasData >> 40)
+	data[2] = byte(_valTalkerAliasData >> 32)
+	data[3] = byte(_valTalkerAliasData >> 24)
+	data[4] = byte(_valTalkerAliasData >> 16)
+	data[5] = byte(_valTalkerAliasData >> 8)
+	data[6] = byte(_valTalkerAliasData)
+	return data, nil
+}
+
+// Encode encodes an FLCTalkerAliasHeader (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4).
+func (s *FLCTalkerAliasHeader) Encode() ([56]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [56]bit.Bit{}, err
+	}
+	var data [56]bit.Bit
+	for _i := range 56 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -593,21 +680,31 @@ func (s *FLCTalkerAliasHeader) String() string {
 	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasData: %d }", s.TalkerAliasDataFormat, s.TalkerAliasDataLength, s.TalkerAliasData)
 }
 
-// decodeFLCTalkerAliasBlock decodes an FLCTalkerAliasBlock (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5).
-func decodeFLCTalkerAliasBlock(data [56]bit.Bit) FLCTalkerAliasBlock {
+// decodeFLCTalkerAliasBlockBytes decodes an FLCTalkerAliasBlock (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5).
+// data holds its bits packed, the first bit most significant.
+func decodeFLCTalkerAliasBlockBytes(data [7]byte) FLCTalkerAliasBlock {
 	var result FLCTalkerAliasBlock
-	lowbit.Mask(data[:])
-	for _i := range 56 {
-		result.TalkerAliasData[_i/8] |= byte(data[_i]) << (7 - _i%8)
-	}
+	copy(result.TalkerAliasData[0:7], data[0:7])
 	return result
+}
+
+// encodeBytes encodes an FLCTalkerAliasBlock (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *FLCTalkerAliasBlock) encodeBytes() ([7]byte, error) {
+	var data [7]byte
+	copy(data[0:7], s.TalkerAliasData[0:7])
+	return data, nil
 }
 
 // Encode encodes an FLCTalkerAliasBlock (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5).
 func (s *FLCTalkerAliasBlock) Encode() ([56]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [56]bit.Bit{}, err
+	}
 	var data [56]bit.Bit
 	for _i := range 56 {
-		data[0+_i] = bit.Bit(s.TalkerAliasData[_i/8] >> (7 - _i%8) & 1)
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
 }
@@ -626,66 +723,86 @@ func (s *FLCTalkerAliasBlock) String() string {
 	return fmt.Sprintf("FLCTalkerAliasBlock{ TalkerAliasData: %v }", s.TalkerAliasData)
 }
 
-// decodeFLCTerminatorDataLinkControl decodes an FLCTerminatorDataLinkControl (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1).
-func decodeFLCTerminatorDataLinkControl(data [56]bit.Bit) FLCTerminatorDataLinkControl {
+// decodeFLCTerminatorDataLinkControlBytes decodes an FLCTerminatorDataLinkControl (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1).
+// data holds its bits packed, the first bit most significant.
+func decodeFLCTerminatorDataLinkControlBytes(data [7]byte) FLCTerminatorDataLinkControl {
 	var result FLCTerminatorDataLinkControl
-	lowbit.Mask(data[:])
-	result.LLIDDestination = uint32(bit.Uint(data[0:24]))
-	result.LLIDSource = uint32(bit.Uint(data[24:48]))
-	result.GroupOrIndividual = data[48] == 1
-	result.ResponseRequested = data[49] == 1
-	result.FullMessageFlag = data[50] == 1
-	result.Reserved = data[51] == 1
-	result.ReSynchronizeFlag = data[52] == 1
-	result.SendSequenceNumber = uint8(bit.Uint(data[53:56]))
+	result.LLIDDestination = uint32(uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2]))
+	result.LLIDSource = uint32(uint64(data[3])<<16 | uint64(data[4])<<8 | uint64(data[5]))
+	result.GroupOrIndividual = data[6]&0x80 != 0
+	result.ResponseRequested = data[6]&0x40 != 0
+	result.FullMessageFlag = data[6]&0x20 != 0
+	result.Reserved = data[6]&0x10 != 0
+	result.ReSynchronizeFlag = data[6]&0x08 != 0
+	result.SendSequenceNumber = uint8(uint64(data[6]) & 0x7)
 	return result
 }
 
-// Encode encodes an FLCTerminatorDataLinkControl (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1).
-func (s *FLCTerminatorDataLinkControl) Encode() ([56]bit.Bit, error) {
-	var data [56]bit.Bit
+// encodeBytes encodes an FLCTerminatorDataLinkControl (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *FLCTerminatorDataLinkControl) encodeBytes() ([7]byte, error) {
+	var data [7]byte
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDDestination",
 			Type:  "FLCTerminatorDataLinkControl",
 			Value: s.LLIDDestination,
 		}
 	}
-	bit.PutUint(data[0:24], uint64(s.LLIDDestination))
+	_valLLIDDestination := uint64(s.LLIDDestination)
+	data[0] = byte(_valLLIDDestination >> 16)
+	data[1] = byte(_valLLIDDestination >> 8)
+	data[2] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "LLIDSource",
 			Type:  "FLCTerminatorDataLinkControl",
 			Value: s.LLIDSource,
 		}
 	}
-	bit.PutUint(data[24:48], uint64(s.LLIDSource))
+	_valLLIDSource := uint64(s.LLIDSource)
+	data[3] = byte(_valLLIDSource >> 16)
+	data[4] = byte(_valLLIDSource >> 8)
+	data[5] = byte(_valLLIDSource)
 	if s.GroupOrIndividual {
-		data[48] = 1
+		data[6] |= 0x80
 	}
 	if s.ResponseRequested {
-		data[49] = 1
+		data[6] |= 0x40
 	}
 	if s.FullMessageFlag {
-		data[50] = 1
+		data[6] |= 0x20
 	}
 	if s.Reserved {
-		data[51] = 1
+		data[6] |= 0x10
 	}
 	if s.ReSynchronizeFlag {
-		data[52] = 1
+		data[6] |= 0x08
 	}
 	if uint64(s.SendSequenceNumber)>>3 != 0 {
-		return [56]bit.Bit{}, &bit.FieldRangeError{
+		return [7]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "SendSequenceNumber",
 			Type:  "FLCTerminatorDataLinkControl",
 			Value: s.SendSequenceNumber,
 		}
 	}
-	bit.PutUint(data[53:56], uint64(s.SendSequenceNumber))
+	data[6] = data[6]&^0x07 | byte(uint64(s.SendSequenceNumber))&0x07
+	return data, nil
+}
+
+// Encode encodes an FLCTerminatorDataLinkControl (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1).
+func (s *FLCTerminatorDataLinkControl) Encode() ([56]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [56]bit.Bit{}, err
+	}
+	var data [56]bit.Bit
+	for _i := range 56 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 

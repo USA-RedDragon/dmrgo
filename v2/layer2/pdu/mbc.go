@@ -4,6 +4,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
@@ -59,12 +60,14 @@ func (s *MBCContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-func (s *MBCContinuation) bits() [96]bit.Bit {
-	var data [96]bit.Bit
+// packed returns the 96 bits of the block packed most significant bit
+// first.
+func (s *MBCContinuation) packed() [12]byte {
+	var data [12]byte
 	if s.LastBlock {
-		data[0] = 1
+		data[0] = 0x80
 	}
-	unpackBits(data[1:], s.Data[:])
+	bits.Copy(data[:], 1, s.Data[:], 0, 95)
 	return data
 }
 
@@ -72,25 +75,25 @@ func (s *MBCContinuation) bits() [96]bit.Bit {
 // 102 361-4 Table 7.16). The FEC field of the result reports the last-block
 // CRC, which applies only when this is the one continuation block of the MBC.
 func (s *MBCContinuation) AsCGAP() CGAPContinuation {
-	return decodeCGAPContinuation(s.bits())
+	return decodeCGAPContinuationBytes(s.packed())
 }
 
 // AsMVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS
 // 102 361-4 Table 7.18), as AsCGAP does.
 func (s *MBCContinuation) AsMVAP() MVAPContinuation {
-	return decodeMVAPContinuation(s.bits())
+	return decodeMVAPContinuationBytes(s.packed())
 }
 
 // AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI
 // TS 102 361-4 Table 7.21), as AsCGAP does.
 func (s *MBCContinuation) AsBCAP() BCAPContinuation {
-	return decodeBCAPContinuation(s.bits())
+	return decodeBCAPContinuationBytes(s.packed())
 }
 
 // AsVNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now
 // MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does.
 func (s *MBCContinuation) AsVNAP() VNAPContinuation {
-	return decodeVNAPContinuation(s.bits())
+	return decodeVNAPContinuationBytes(s.packed())
 }
 
 // mbcCRCBlocks is the number of blocks whose last-block CRC input

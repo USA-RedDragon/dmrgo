@@ -7,69 +7,103 @@ package layer3
 import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeCdefParms decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
-func DecodeCdefParms(data [58]bit.Bit) CdefParms {
+// decodeCdefParmsBytes decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
+// data holds its bits packed, the first bit most significant.
+func decodeCdefParmsBytes(data [8]byte) CdefParms {
 	var result CdefParms
-	lowbit.Mask(data[:])
-	result.Channel = uint16(bit.Uint(data[0:12]))
-	result.TXMHz = uint16(bit.Uint(data[12:22]))
-	result.TXKHz = uint16(bit.Uint(data[22:35]))
-	result.RXMHz = uint16(bit.Uint(data[35:45]))
-	result.RXKHz = uint16(bit.Uint(data[45:58]))
+	result.Channel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.TXMHz = uint16((uint64(data[1])<<8 | uint64(data[2])) >> 2 & 0x3FF)
+	result.TXKHz = uint16((uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4])) >> 5 & 0x1FFF)
+	result.RXMHz = uint16((uint64(data[4])<<8 | uint64(data[5])) >> 3 & 0x3FF)
+	result.RXKHz = uint16((uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7])) >> 6 & 0x1FFF)
 	return result
 }
 
-// Encode encodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
-func (s *CdefParms) Encode() ([58]bit.Bit, error) {
-	var data [58]bit.Bit
+// DecodeCdefParms decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
+func DecodeCdefParms(data [58]bit.Bit) CdefParms {
+	var _b [8]byte
+	for _i := range 58 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeCdefParmsBytes(_b)
+}
+
+// encodeBytes encodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *CdefParms) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.Channel)>>12 != 0 {
-		return [58]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "Channel",
 			Type:  "CdefParms",
 			Value: s.Channel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.Channel))
+	_valChannel := uint64(s.Channel)
+	data[0] = byte(_valChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valChannel<<4)&0xF0
 	if uint64(s.TXMHz)>>10 != 0 {
-		return [58]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  10,
 			Field: "TXMHz",
 			Type:  "CdefParms",
 			Value: s.TXMHz,
 		}
 	}
-	bit.PutUint(data[12:22], uint64(s.TXMHz))
+	_valTXMHz := uint64(s.TXMHz)
+	data[1] = data[1]&^0x0F | byte(_valTXMHz>>6)&0x0F
+	data[2] = data[2]&^0xFC | byte(_valTXMHz<<2)&0xFC
 	if uint64(s.TXKHz)>>13 != 0 {
-		return [58]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  13,
 			Field: "TXKHz",
 			Type:  "CdefParms",
 			Value: s.TXKHz,
 		}
 	}
-	bit.PutUint(data[22:35], uint64(s.TXKHz))
+	_valTXKHz := uint64(s.TXKHz)
+	data[2] = data[2]&^0x03 | byte(_valTXKHz>>11)&0x03
+	data[3] = byte(_valTXKHz >> 3)
+	data[4] = data[4]&^0xE0 | byte(_valTXKHz<<5)&0xE0
 	if uint64(s.RXMHz)>>10 != 0 {
-		return [58]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  10,
 			Field: "RXMHz",
 			Type:  "CdefParms",
 			Value: s.RXMHz,
 		}
 	}
-	bit.PutUint(data[35:45], uint64(s.RXMHz))
+	_valRXMHz := uint64(s.RXMHz)
+	data[4] = data[4]&^0x1F | byte(_valRXMHz>>5)&0x1F
+	data[5] = data[5]&^0xF8 | byte(_valRXMHz<<3)&0xF8
 	if uint64(s.RXKHz)>>13 != 0 {
-		return [58]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  13,
 			Field: "RXKHz",
 			Type:  "CdefParms",
 			Value: s.RXKHz,
 		}
 	}
-	bit.PutUint(data[45:58], uint64(s.RXKHz))
+	_valRXKHz := uint64(s.RXKHz)
+	data[5] = data[5]&^0x07 | byte(_valRXKHz>>10)&0x07
+	data[6] = byte(_valRXKHz >> 2)
+	data[7] = data[7]&^0xC0 | byte(_valRXKHz<<6)&0xC0
+	return data, nil
+}
+
+// Encode encodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
+func (s *CdefParms) Encode() ([58]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [58]bit.Bit{}, err
+	}
+	var data [58]bit.Bit
+	for _i := range 58 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 

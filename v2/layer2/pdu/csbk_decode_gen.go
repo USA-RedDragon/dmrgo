@@ -28,43 +28,65 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// decodeBSOutboundActivationPDU decodes a BSOutboundActivationPDU (ETSI TS 102 361-2 clause 7.1.2.1).
-func decodeBSOutboundActivationPDU(data [64]bit.Bit) BSOutboundActivationPDU {
+// decodeBSOutboundActivationPDUBytes decodes a BSOutboundActivationPDU (ETSI TS 102 361-2 clause 7.1.2.1).
+// data holds its bits packed, the first bit most significant.
+func decodeBSOutboundActivationPDUBytes(data [8]byte) BSOutboundActivationPDU {
 	var result BSOutboundActivationPDU
-	lowbit.Mask(data[:])
-	result.Reserved = uint16(bit.Uint(data[0:16]))
-	result.BSAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.Reserved = uint16(uint64(data[0])<<8 | uint64(data[1]))
+	result.BSAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a BSOutboundActivationPDU (ETSI TS 102 361-2 clause 7.1.2.1).
-func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
-	bit.PutUint(data[0:16], uint64(s.Reserved))
+// encodeBytes encodes a BSOutboundActivationPDU (ETSI TS 102 361-2 clause 7.1.2.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *BSOutboundActivationPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
+	_valReserved := uint64(s.Reserved)
+	data[0] = byte(_valReserved >> 8)
+	data[1] = byte(_valReserved)
 	if uint64(s.BSAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "BSAddress",
 			Type:  "BSOutboundActivationPDU",
 			Value: s.BSAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.BSAddress))
+	_valBSAddress := uint64(s.BSAddress)
+	data[2] = byte(_valBSAddress >> 16)
+	data[3] = byte(_valBSAddress >> 8)
+	data[4] = byte(_valBSAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "BSOutboundActivationPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a BSOutboundActivationPDU (ETSI TS 102 361-2 clause 7.1.2.1).
+func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -82,46 +104,66 @@ func (s *BSOutboundActivationPDU) String() string {
 	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %d, SourceAddress: %d }", s.Reserved, s.BSAddress, s.SourceAddress)
 }
 
-// decodeUnitToUnitVoiceServiceRequestPDU decodes a UnitToUnitVoiceServiceRequestPDU (ETSI TS 102 361-2 clause 7.1.2.2).
-func decodeUnitToUnitVoiceServiceRequestPDU(data [64]bit.Bit) UnitToUnitVoiceServiceRequestPDU {
+// decodeUnitToUnitVoiceServiceRequestPDUBytes decodes a UnitToUnitVoiceServiceRequestPDU (ETSI TS 102 361-2 clause 7.1.2.2).
+// data holds its bits packed, the first bit most significant.
+func decodeUnitToUnitVoiceServiceRequestPDUBytes(data [8]byte) UnitToUnitVoiceServiceRequestPDU {
 	var result UnitToUnitVoiceServiceRequestPDU
-	lowbit.Mask(data[:])
 	var _serviceOptionsBits [8]bit.Bit
-	copy(_serviceOptionsBits[:], data[0:8])
+	bits.Unpack(_serviceOptionsBits[:], data[:], 0)
 	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
-	result.Reserved = byte(bit.Uint(data[8:16]))
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.Reserved = byte(uint64(data[1]))
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a UnitToUnitVoiceServiceRequestPDU (ETSI TS 102 361-2 clause 7.1.2.2).
-func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a UnitToUnitVoiceServiceRequestPDU (ETSI TS 102 361-2 clause 7.1.2.2).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *UnitToUnitVoiceServiceRequestPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.ServiceOptions: %w", err)
+		return [8]byte{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.ServiceOptions: %w", err)
 	}
-	copy(data[0:8], _serviceOptionsBits[:])
-	bit.PutUint(data[8:16], uint64(s.Reserved))
+	bits.Pack(data[:], 0, _serviceOptionsBits[:])
+	data[1] = byte(uint64(s.Reserved))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "UnitToUnitVoiceServiceRequestPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "UnitToUnitVoiceServiceRequestPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a UnitToUnitVoiceServiceRequestPDU (ETSI TS 102 361-2 clause 7.1.2.2).
+func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -139,46 +181,66 @@ func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %s, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.Reserved, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a UnitToUnitVoiceServiceAnswerResponsePDU (ETSI TS 102 361-2 clause 7.1.2.3).
-func decodeUnitToUnitVoiceServiceAnswerResponsePDU(data [64]bit.Bit) UnitToUnitVoiceServiceAnswerResponsePDU {
+// decodeUnitToUnitVoiceServiceAnswerResponsePDUBytes decodes a UnitToUnitVoiceServiceAnswerResponsePDU (ETSI TS 102 361-2 clause 7.1.2.3).
+// data holds its bits packed, the first bit most significant.
+func decodeUnitToUnitVoiceServiceAnswerResponsePDUBytes(data [8]byte) UnitToUnitVoiceServiceAnswerResponsePDU {
 	var result UnitToUnitVoiceServiceAnswerResponsePDU
-	lowbit.Mask(data[:])
 	var _serviceOptionsBits [8]bit.Bit
-	copy(_serviceOptionsBits[:], data[0:8])
+	bits.Unpack(_serviceOptionsBits[:], data[:], 0)
 	result.ServiceOptions = layer3.DecodeServiceOptions(_serviceOptionsBits)
-	result.AnswerResponse = byte(bit.Uint(data[8:16]))
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.AnswerResponse = byte(uint64(data[1]))
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU (ETSI TS 102 361-2 clause 7.1.2.3).
-func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a UnitToUnitVoiceServiceAnswerResponsePDU (ETSI TS 102 361-2 clause 7.1.2.3).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *UnitToUnitVoiceServiceAnswerResponsePDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [64]bit.Bit{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions: %w", err)
+		return [8]byte{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions: %w", err)
 	}
-	copy(data[0:8], _serviceOptionsBits[:])
-	bit.PutUint(data[8:16], uint64(s.AnswerResponse))
+	bits.Pack(data[:], 0, _serviceOptionsBits[:])
+	data[1] = byte(uint64(s.AnswerResponse))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU (ETSI TS 102 361-2 clause 7.1.2.3).
+func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -196,68 +258,88 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %s, AnswerResponse: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.AnswerResponse, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU (ETSI TS 102 361-2 clause 7.1.2.4).
-func decodeNegativeAcknowledgementPDU(data [64]bit.Bit) NegativeAcknowledgementPDU {
+// decodeNegativeAcknowledgementPDUBytes decodes a NegativeAcknowledgementPDU (ETSI TS 102 361-2 clause 7.1.2.4).
+// data holds its bits packed, the first bit most significant.
+func decodeNegativeAcknowledgementPDUBytes(data [8]byte) NegativeAcknowledgementPDU {
 	var result NegativeAcknowledgementPDU
-	lowbit.Mask(data[:])
-	result.AdditionalInfo = layer3.AdditionalInformationField(bit.Uint(data[0:1]))
-	result.SourceType = layer3.SourceType(bit.Uint(data[1:2]))
-	result.ServiceType = CSBKOpcode(bit.Uint(data[2:8]))
-	result.ReasonCode = byte(bit.Uint(data[8:16]))
-	result.SourceAddress = uint32(bit.Uint(data[16:40]))
-	result.TargetAddress = uint32(bit.Uint(data[40:64]))
+	result.AdditionalInfo = layer3.AdditionalInformationField(uint64(data[0]) >> 7)
+	result.SourceType = layer3.SourceType(uint64(data[0]) >> 6 & 0x1)
+	result.ServiceType = CSBKOpcode(uint64(data[0]) & 0x3F)
+	result.ReasonCode = byte(uint64(data[1]))
+	result.SourceAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.TargetAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a NegativeAcknowledgementPDU (ETSI TS 102 361-2 clause 7.1.2.4).
-func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a NegativeAcknowledgementPDU (ETSI TS 102 361-2 clause 7.1.2.4).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *NegativeAcknowledgementPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.AdditionalInfo)>>1 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  1,
 			Field: "AdditionalInfo",
 			Type:  "NegativeAcknowledgementPDU",
 			Value: s.AdditionalInfo,
 		}
 	}
-	bit.PutUint(data[0:1], uint64(s.AdditionalInfo))
+	data[0] = data[0]&^0x80 | byte(uint64(s.AdditionalInfo)<<7)&0x80
 	if uint64(s.SourceType)>>1 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  1,
 			Field: "SourceType",
 			Type:  "NegativeAcknowledgementPDU",
 			Value: s.SourceType,
 		}
 	}
-	bit.PutUint(data[1:2], uint64(s.SourceType))
+	data[0] = data[0]&^0x40 | byte(uint64(s.SourceType)<<6)&0x40
 	if uint64(s.ServiceType)>>6 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  6,
 			Field: "ServiceType",
 			Type:  "NegativeAcknowledgementPDU",
 			Value: s.ServiceType,
 		}
 	}
-	bit.PutUint(data[2:8], uint64(s.ServiceType))
-	bit.PutUint(data[8:16], uint64(s.ReasonCode))
+	data[0] = data[0]&^0x3F | byte(uint64(s.ServiceType))&0x3F
+	data[1] = byte(uint64(s.ReasonCode))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "NegativeAcknowledgementPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[2] = byte(_valSourceAddress >> 16)
+	data[3] = byte(_valSourceAddress >> 8)
+	data[4] = byte(_valSourceAddress)
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "NegativeAcknowledgementPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[5] = byte(_valTargetAddress >> 16)
+	data[6] = byte(_valTargetAddress >> 8)
+	data[7] = byte(_valTargetAddress)
+	return data, nil
+}
+
+// Encode encodes a NegativeAcknowledgementPDU (ETSI TS 102 361-2 clause 7.1.2.4).
+func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -275,56 +357,76 @@ func (s *NegativeAcknowledgementPDU) String() string {
 	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %d, TargetAddress: %d }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
 }
 
-// decodePreamblePDU decodes a PreamblePDU (ETSI TS 102 361-2 clause 7.1.2.5).
-func decodePreamblePDU(data [64]bit.Bit) PreamblePDU {
+// decodePreamblePDUBytes decodes a PreamblePDU (ETSI TS 102 361-2 clause 7.1.2.5).
+// data holds its bits packed, the first bit most significant.
+func decodePreamblePDUBytes(data [8]byte) PreamblePDU {
 	var result PreamblePDU
-	lowbit.Mask(data[:])
-	result.Data = data[0] == 1
-	result.Group = data[1] == 1
-	result.Reserved = uint8(bit.Uint(data[2:8]))
-	result.CSBKBlocksToFollow = byte(bit.Uint(data[8:16]))
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.Data = data[0]&0x80 != 0
+	result.Group = data[0]&0x40 != 0
+	result.Reserved = uint8(uint64(data[0]) & 0x3F)
+	result.CSBKBlocksToFollow = byte(uint64(data[1]))
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a PreamblePDU (ETSI TS 102 361-2 clause 7.1.2.5).
-func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a PreamblePDU (ETSI TS 102 361-2 clause 7.1.2.5).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *PreamblePDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if s.Data {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.Group {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.Reserved)>>6 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  6,
 			Field: "Reserved",
 			Type:  "PreamblePDU",
 			Value: s.Reserved,
 		}
 	}
-	bit.PutUint(data[2:8], uint64(s.Reserved))
-	bit.PutUint(data[8:16], uint64(s.CSBKBlocksToFollow))
+	data[0] = data[0]&^0x3F | byte(uint64(s.Reserved))&0x3F
+	data[1] = byte(uint64(s.CSBKBlocksToFollow))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "PreamblePDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "PreamblePDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a PreamblePDU (ETSI TS 102 361-2 clause 7.1.2.5).
+func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -342,91 +444,113 @@ func (s *PreamblePDU) String() string {
 	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %d, CSBKBlocksToFollow: %d, TargetAddress: %d, SourceAddress: %d }", s.Data, s.Group, s.Reserved, s.CSBKBlocksToFollow, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeChannelTimingPDU decodes a ChannelTimingPDU (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8).
-func decodeChannelTimingPDU(data [64]bit.Bit) ChannelTimingPDU {
+// decodeChannelTimingPDUBytes decodes a ChannelTimingPDU (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8).
+// data holds its bits packed, the first bit most significant.
+func decodeChannelTimingPDUBytes(data [8]byte) ChannelTimingPDU {
 	var result ChannelTimingPDU
-	lowbit.Mask(data[:])
-	result.SyncAge = uint16(bit.Uint(data[0:11]))
-	result.Generation = uint8(bit.Uint(data[11:16]))
-	result.LeaderIdentifier = uint32(bit.Uint(data[16:36]))
-	result.NewLeader = data[36] == 1
-	result.LeaderDynamicIdentifier = uint8(bit.Uint(data[37:39]))
-	result.ChannelTimingOp1 = data[39] == 1
-	result.SourceIdentifier = uint32(bit.Uint(data[40:60]))
-	result.Reserved = data[60] == 1
-	result.SourceDynamicIdentifier = uint8(bit.Uint(data[61:63]))
-	result.ChannelTimingOp0 = data[63] == 1
+	result.SyncAge = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 5)
+	result.Generation = uint8(uint64(data[1]) & 0x1F)
+	result.LeaderIdentifier = uint32((uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4])) >> 4)
+	result.NewLeader = data[4]&0x08 != 0
+	result.LeaderDynamicIdentifier = uint8(uint64(data[4]) >> 1 & 0x3)
+	result.ChannelTimingOp1 = data[4]&0x01 != 0
+	result.SourceIdentifier = uint32((uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7])) >> 4)
+	result.Reserved = data[7]&0x08 != 0
+	result.SourceDynamicIdentifier = uint8(uint64(data[7]) >> 1 & 0x3)
+	result.ChannelTimingOp0 = data[7]&0x01 != 0
 	return result
 }
 
-// Encode encodes a ChannelTimingPDU (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8).
-func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a ChannelTimingPDU (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *ChannelTimingPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.SyncAge)>>11 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  11,
 			Field: "SyncAge",
 			Type:  "ChannelTimingPDU",
 			Value: s.SyncAge,
 		}
 	}
-	bit.PutUint(data[0:11], uint64(s.SyncAge))
+	_valSyncAge := uint64(s.SyncAge)
+	data[0] = byte(_valSyncAge >> 3)
+	data[1] = data[1]&^0xE0 | byte(_valSyncAge<<5)&0xE0
 	if uint64(s.Generation)>>5 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "Generation",
 			Type:  "ChannelTimingPDU",
 			Value: s.Generation,
 		}
 	}
-	bit.PutUint(data[11:16], uint64(s.Generation))
+	data[1] = data[1]&^0x1F | byte(uint64(s.Generation))&0x1F
 	if uint64(s.LeaderIdentifier)>>20 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  20,
 			Field: "LeaderIdentifier",
 			Type:  "ChannelTimingPDU",
 			Value: s.LeaderIdentifier,
 		}
 	}
-	bit.PutUint(data[16:36], uint64(s.LeaderIdentifier))
+	_valLeaderIdentifier := uint64(s.LeaderIdentifier)
+	data[2] = byte(_valLeaderIdentifier >> 12)
+	data[3] = byte(_valLeaderIdentifier >> 4)
+	data[4] = data[4]&^0xF0 | byte(_valLeaderIdentifier<<4)&0xF0
 	if s.NewLeader {
-		data[36] = 1
+		data[4] |= 0x08
 	}
 	if uint64(s.LeaderDynamicIdentifier)>>2 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "LeaderDynamicIdentifier",
 			Type:  "ChannelTimingPDU",
 			Value: s.LeaderDynamicIdentifier,
 		}
 	}
-	bit.PutUint(data[37:39], uint64(s.LeaderDynamicIdentifier))
+	data[4] = data[4]&^0x06 | byte(uint64(s.LeaderDynamicIdentifier)<<1)&0x06
 	if s.ChannelTimingOp1 {
-		data[39] = 1
+		data[4] |= 0x01
 	}
 	if uint64(s.SourceIdentifier)>>20 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  20,
 			Field: "SourceIdentifier",
 			Type:  "ChannelTimingPDU",
 			Value: s.SourceIdentifier,
 		}
 	}
-	bit.PutUint(data[40:60], uint64(s.SourceIdentifier))
+	_valSourceIdentifier := uint64(s.SourceIdentifier)
+	data[5] = byte(_valSourceIdentifier >> 12)
+	data[6] = byte(_valSourceIdentifier >> 4)
+	data[7] = data[7]&^0xF0 | byte(_valSourceIdentifier<<4)&0xF0
 	if s.Reserved {
-		data[60] = 1
+		data[7] |= 0x08
 	}
 	if uint64(s.SourceDynamicIdentifier)>>2 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "SourceDynamicIdentifier",
 			Type:  "ChannelTimingPDU",
 			Value: s.SourceDynamicIdentifier,
 		}
 	}
-	bit.PutUint(data[61:63], uint64(s.SourceDynamicIdentifier))
+	data[7] = data[7]&^0x06 | byte(uint64(s.SourceDynamicIdentifier)<<1)&0x06
 	if s.ChannelTimingOp0 {
-		data[63] = 1
+		data[7] |= 0x01
+	}
+	return data, nil
+}
+
+// Encode encodes a ChannelTimingPDU (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8).
+func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
 }
@@ -445,62 +569,84 @@ func (s *ChannelTimingPDU) String() string {
 	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %d, Generation: %d, LeaderIdentifier: %d, NewLeader: %t, LeaderDynamicIdentifier: %d, ChannelTimingOp1: %t, SourceIdentifier: %d, Reserved: %t, SourceDynamicIdentifier: %d, ChannelTimingOp0: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp1, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp0)
 }
 
-// decodePrivateVoiceGrantPDU decodes a PrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodePrivateVoiceGrantPDU(data [64]bit.Bit) PrivateVoiceGrantPDU {
+// decodePrivateVoiceGrantPDUBytes decodes a PrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodePrivateVoiceGrantPDUBytes(data [8]byte) PrivateVoiceGrantPDU {
 	var result PrivateVoiceGrantPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.Reserved = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.Offset = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.Reserved = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.Offset = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a PrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a PrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *PrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "PrivateVoiceGrantPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.Reserved {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.Offset {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "PrivateVoiceGrantPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "PrivateVoiceGrantPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a PrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -518,62 +664,84 @@ func (s *PrivateVoiceGrantPDU) String() string {
 	return fmt.Sprintf("PrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeTalkgroupVoiceGrantPDU decodes a TalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodeTalkgroupVoiceGrantPDU(data [64]bit.Bit) TalkgroupVoiceGrantPDU {
+// decodeTalkgroupVoiceGrantPDUBytes decodes a TalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodeTalkgroupVoiceGrantPDUBytes(data [8]byte) TalkgroupVoiceGrantPDU {
 	var result TalkgroupVoiceGrantPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.LateEntry = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.Offset = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.LateEntry = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.Offset = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a TalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a TalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *TalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "TalkgroupVoiceGrantPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.LateEntry {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.Offset {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "TalkgroupVoiceGrantPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "TalkgroupVoiceGrantPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a TalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -591,62 +759,84 @@ func (s *TalkgroupVoiceGrantPDU) String() string {
 	return fmt.Sprintf("TalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeBroadcastTalkgroupVoiceGrantPDU decodes a BroadcastTalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodeBroadcastTalkgroupVoiceGrantPDU(data [64]bit.Bit) BroadcastTalkgroupVoiceGrantPDU {
+// decodeBroadcastTalkgroupVoiceGrantPDUBytes decodes a BroadcastTalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodeBroadcastTalkgroupVoiceGrantPDUBytes(data [8]byte) BroadcastTalkgroupVoiceGrantPDU {
 	var result BroadcastTalkgroupVoiceGrantPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.LateEntry = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.Offset = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.LateEntry = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.Offset = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a BroadcastTalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a BroadcastTalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *BroadcastTalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "BroadcastTalkgroupVoiceGrantPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.LateEntry {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.Offset {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "BroadcastTalkgroupVoiceGrantPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "BroadcastTalkgroupVoiceGrantPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a BroadcastTalkgroupVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -664,62 +854,84 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
 	return fmt.Sprintf("BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
-// decodePrivateDataGrantPDU decodes a PrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodePrivateDataGrantPDU(data [64]bit.Bit) PrivateDataGrantPDU {
+// decodePrivateDataGrantPDUBytes decodes a PrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodePrivateDataGrantPDUBytes(data [8]byte) PrivateDataGrantPDU {
 	var result PrivateDataGrantPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.HiRate = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.Offset = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.HiRate = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.Offset = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a PrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a PrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *PrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "PrivateDataGrantPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.HiRate {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.Offset {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "PrivateDataGrantPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "PrivateDataGrantPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a PrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -737,62 +949,84 @@ func (s *PrivateDataGrantPDU) String() string {
 	return fmt.Sprintf("PrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeTalkgroupDataGrantPDU decodes a TalkgroupDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodeTalkgroupDataGrantPDU(data [64]bit.Bit) TalkgroupDataGrantPDU {
+// decodeTalkgroupDataGrantPDUBytes decodes a TalkgroupDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodeTalkgroupDataGrantPDUBytes(data [8]byte) TalkgroupDataGrantPDU {
 	var result TalkgroupDataGrantPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.HiRate = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.Offset = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.HiRate = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.Offset = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a TalkgroupDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a TalkgroupDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *TalkgroupDataGrantPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "TalkgroupDataGrantPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.HiRate {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.Offset {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "TalkgroupDataGrantPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "TalkgroupDataGrantPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a TalkgroupDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -810,62 +1044,84 @@ func (s *TalkgroupDataGrantPDU) String() string {
 	return fmt.Sprintf("TalkgroupDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeDuplexPrivateVoiceGrantPDU decodes a DuplexPrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodeDuplexPrivateVoiceGrantPDU(data [64]bit.Bit) DuplexPrivateVoiceGrantPDU {
+// decodeDuplexPrivateVoiceGrantPDUBytes decodes a DuplexPrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodeDuplexPrivateVoiceGrantPDUBytes(data [8]byte) DuplexPrivateVoiceGrantPDU {
 	var result DuplexPrivateVoiceGrantPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.Reserved = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.CallDirection = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.Reserved = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.CallDirection = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a DuplexPrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a DuplexPrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *DuplexPrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "DuplexPrivateVoiceGrantPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.Reserved {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.CallDirection {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "DuplexPrivateVoiceGrantPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "DuplexPrivateVoiceGrantPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a DuplexPrivateVoiceGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -883,62 +1139,84 @@ func (s *DuplexPrivateVoiceGrantPDU) String() string {
 	return fmt.Sprintf("DuplexPrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeDuplexPrivateDataGrantPDU decodes a DuplexPrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodeDuplexPrivateDataGrantPDU(data [64]bit.Bit) DuplexPrivateDataGrantPDU {
+// decodeDuplexPrivateDataGrantPDUBytes decodes a DuplexPrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodeDuplexPrivateDataGrantPDUBytes(data [8]byte) DuplexPrivateDataGrantPDU {
 	var result DuplexPrivateDataGrantPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.HiRate = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.CallDirection = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.HiRate = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.CallDirection = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a DuplexPrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a DuplexPrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *DuplexPrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "DuplexPrivateDataGrantPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.HiRate {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.CallDirection {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "DuplexPrivateDataGrantPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "DuplexPrivateDataGrantPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a DuplexPrivateDataGrantPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -956,62 +1234,84 @@ func (s *DuplexPrivateDataGrantPDU) String() string {
 	return fmt.Sprintf("DuplexPrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
 
-// decodePrivateDataGrantMultiItemPDU decodes a PrivateDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodePrivateDataGrantMultiItemPDU(data [64]bit.Bit) PrivateDataGrantMultiItemPDU {
+// decodePrivateDataGrantMultiItemPDUBytes decodes a PrivateDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodePrivateDataGrantMultiItemPDUBytes(data [8]byte) PrivateDataGrantMultiItemPDU {
 	var result PrivateDataGrantMultiItemPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.HiRate = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.Offset = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.HiRate = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.Offset = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a PrivateDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a PrivateDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *PrivateDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "PrivateDataGrantMultiItemPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.HiRate {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.Offset {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "PrivateDataGrantMultiItemPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "PrivateDataGrantMultiItemPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a PrivateDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1029,62 +1329,84 @@ func (s *PrivateDataGrantMultiItemPDU) String() string {
 	return fmt.Sprintf("PrivateDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeTalkgroupDataGrantMultiItemPDU decodes a TalkgroupDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func decodeTalkgroupDataGrantMultiItemPDU(data [64]bit.Bit) TalkgroupDataGrantMultiItemPDU {
+// decodeTalkgroupDataGrantMultiItemPDUBytes decodes a TalkgroupDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// data holds its bits packed, the first bit most significant.
+func decodeTalkgroupDataGrantMultiItemPDUBytes(data [8]byte) TalkgroupDataGrantMultiItemPDU {
 	var result TalkgroupDataGrantMultiItemPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.LogicalChannel = data[12] == 1
-	result.HiRate = data[13] == 1
-	result.Emergency = data[14] == 1
-	result.Offset = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.LogicalChannel = data[1]&0x08 != 0
+	result.HiRate = data[1]&0x04 != 0
+	result.Emergency = data[1]&0x02 != 0
+	result.Offset = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a TalkgroupDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
-func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a TalkgroupDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *TalkgroupDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "TalkgroupDataGrantMultiItemPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.LogicalChannel {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if s.HiRate {
-		data[13] = 1
+		data[1] |= 0x04
 	}
 	if s.Emergency {
-		data[14] = 1
+		data[1] |= 0x02
 	}
 	if s.Offset {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "TalkgroupDataGrantMultiItemPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "TalkgroupDataGrantMultiItemPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a TalkgroupDataGrantMultiItemPDU (ETSI TS 102 361-4 clause 7.1.1.1.1).
+func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1102,90 +1424,113 @@ func (s *TalkgroupDataGrantMultiItemPDU) String() string {
 	return fmt.Sprintf("TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeMovePDU decodes a MovePDU (ETSI TS 102 361-4 clause 7.1.1.1.3).
-func decodeMovePDU(data [64]bit.Bit) MovePDU {
+// decodeMovePDUBytes decodes a MovePDU (ETSI TS 102 361-4 clause 7.1.1.1.3).
+// data holds its bits packed, the first bit most significant.
+func decodeMovePDUBytes(data [8]byte) MovePDU {
 	var result MovePDU
-	lowbit.Mask(data[:])
-	result.Reserved1 = uint16(bit.Uint(data[0:9]))
-	result.Mask = uint8(bit.Uint(data[9:14]))
-	result.Reserved2 = uint8(bit.Uint(data[14:19]))
-	result.Reg = data[19] == 1
-	result.Backoff = uint8(bit.Uint(data[20:24]))
-	result.Reserved3 = uint8(bit.Uint(data[24:28]))
-	result.PhysicalChannel = uint16(bit.Uint(data[28:40]))
-	result.MSAddress = uint32(bit.Uint(data[40:64]))
+	result.Reserved1 = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 7)
+	result.Mask = uint8(uint64(data[1]) >> 2 & 0x1F)
+	result.Reserved2 = uint8((uint64(data[1])<<8 | uint64(data[2])) >> 5 & 0x1F)
+	result.Reg = data[2]&0x10 != 0
+	result.Backoff = uint8(uint64(data[2]) & 0xF)
+	result.Reserved3 = uint8(uint64(data[3]) >> 4)
+	result.PhysicalChannel = uint16((uint64(data[3])<<8 | uint64(data[4])) & 0xFFF)
+	result.MSAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a MovePDU (ETSI TS 102 361-4 clause 7.1.1.1.3).
-func (s *MovePDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a MovePDU (ETSI TS 102 361-4 clause 7.1.1.1.3).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *MovePDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.Reserved1)>>9 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  9,
 			Field: "Reserved1",
 			Type:  "MovePDU",
 			Value: s.Reserved1,
 		}
 	}
-	bit.PutUint(data[0:9], uint64(s.Reserved1))
+	_valReserved1 := uint64(s.Reserved1)
+	data[0] = byte(_valReserved1 >> 1)
+	data[1] = data[1]&^0x80 | byte(_valReserved1<<7)&0x80
 	if uint64(s.Mask)>>5 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "Mask",
 			Type:  "MovePDU",
 			Value: s.Mask,
 		}
 	}
-	bit.PutUint(data[9:14], uint64(s.Mask))
+	data[1] = data[1]&^0x7C | byte(uint64(s.Mask)<<2)&0x7C
 	if uint64(s.Reserved2)>>5 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "Reserved2",
 			Type:  "MovePDU",
 			Value: s.Reserved2,
 		}
 	}
-	bit.PutUint(data[14:19], uint64(s.Reserved2))
+	_valReserved2 := uint64(s.Reserved2)
+	data[1] = data[1]&^0x03 | byte(_valReserved2>>3)&0x03
+	data[2] = data[2]&^0xE0 | byte(_valReserved2<<5)&0xE0
 	if s.Reg {
-		data[19] = 1
+		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Backoff",
 			Type:  "MovePDU",
 			Value: s.Backoff,
 		}
 	}
-	bit.PutUint(data[20:24], uint64(s.Backoff))
+	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
 	if uint64(s.Reserved3)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Reserved3",
 			Type:  "MovePDU",
 			Value: s.Reserved3,
 		}
 	}
-	bit.PutUint(data[24:28], uint64(s.Reserved3))
+	data[3] = data[3]&^0xF0 | byte(uint64(s.Reserved3)<<4)&0xF0
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "MovePDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[28:40], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[3] = data[3]&^0x0F | byte(_valPhysicalChannel>>8)&0x0F
+	data[4] = byte(_valPhysicalChannel)
 	if uint64(s.MSAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "MSAddress",
 			Type:  "MovePDU",
 			Value: s.MSAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.MSAddress))
+	_valMSAddress := uint64(s.MSAddress)
+	data[5] = byte(_valMSAddress >> 16)
+	data[6] = byte(_valMSAddress >> 8)
+	data[7] = byte(_valMSAddress)
+	return data, nil
+}
+
+// Encode encodes a MovePDU (ETSI TS 102 361-4 clause 7.1.1.1.3).
+func (s *MovePDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1203,102 +1548,123 @@ func (s *MovePDU) String() string {
 	return fmt.Sprintf("MovePDU{ Reserved1: %d, Mask: %d, Reserved2: %d, Reg: %t, Backoff: %d, Reserved3: %d, PhysicalChannel: %d, MSAddress: %d }", s.Reserved1, s.Mask, s.Reserved2, s.Reg, s.Backoff, s.Reserved3, s.PhysicalChannel, s.MSAddress)
 }
 
-// decodeAlohaPDU decodes an AlohaPDU (ETSI TS 102 361-4 clause 7.1.1.1.4).
-func decodeAlohaPDU(data [64]bit.Bit) AlohaPDU {
+// decodeAlohaPDUBytes decodes an AlohaPDU (ETSI TS 102 361-4 clause 7.1.1.1.4).
+// data holds its bits packed, the first bit most significant.
+func decodeAlohaPDUBytes(data [8]byte) AlohaPDU {
 	var result AlohaPDU
-	lowbit.Mask(data[:])
-	result.Reserved1 = data[0] == 1
-	result.TSCCAS = data[1] == 1
-	result.SiteTSSync = data[2] == 1
-	result.Version = uint8(bit.Uint(data[3:6]))
-	result.Offset = data[6] == 1
-	result.ActiveConn = data[7] == 1
-	result.Mask = uint8(bit.Uint(data[8:13]))
-	result.ServiceFunc = uint8(bit.Uint(data[13:15]))
-	result.NRandWait = uint8(bit.Uint(data[15:19]))
-	result.Reg = data[19] == 1
-	result.Backoff = uint8(bit.Uint(data[20:24]))
-	result.SysIdentCode = uint16(bit.Uint(data[24:40]))
-	result.MSAddress = uint32(bit.Uint(data[40:64]))
+	result.Reserved1 = data[0]&0x80 != 0
+	result.TSCCAS = data[0]&0x40 != 0
+	result.SiteTSSync = data[0]&0x20 != 0
+	result.Version = uint8(uint64(data[0]) >> 2 & 0x7)
+	result.Offset = data[0]&0x02 != 0
+	result.ActiveConn = data[0]&0x01 != 0
+	result.Mask = uint8(uint64(data[1]) >> 3)
+	result.ServiceFunc = uint8(uint64(data[1]) >> 1 & 0x3)
+	result.NRandWait = uint8((uint64(data[1])<<8 | uint64(data[2])) >> 5 & 0xF)
+	result.Reg = data[2]&0x10 != 0
+	result.Backoff = uint8(uint64(data[2]) & 0xF)
+	result.SysIdentCode = uint16(uint64(data[3])<<8 | uint64(data[4]))
+	result.MSAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes an AlohaPDU (ETSI TS 102 361-4 clause 7.1.1.1.4).
-func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes an AlohaPDU (ETSI TS 102 361-4 clause 7.1.1.1.4).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *AlohaPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if s.Reserved1 {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.TSCCAS {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if s.SiteTSSync {
-		data[2] = 1
+		data[0] |= 0x20
 	}
 	if uint64(s.Version)>>3 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "Version",
 			Type:  "AlohaPDU",
 			Value: s.Version,
 		}
 	}
-	bit.PutUint(data[3:6], uint64(s.Version))
+	data[0] = data[0]&^0x1C | byte(uint64(s.Version)<<2)&0x1C
 	if s.Offset {
-		data[6] = 1
+		data[0] |= 0x02
 	}
 	if s.ActiveConn {
-		data[7] = 1
+		data[0] |= 0x01
 	}
 	if uint64(s.Mask)>>5 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "Mask",
 			Type:  "AlohaPDU",
 			Value: s.Mask,
 		}
 	}
-	bit.PutUint(data[8:13], uint64(s.Mask))
+	data[1] = data[1]&^0xF8 | byte(uint64(s.Mask)<<3)&0xF8
 	if uint64(s.ServiceFunc)>>2 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "ServiceFunc",
 			Type:  "AlohaPDU",
 			Value: s.ServiceFunc,
 		}
 	}
-	bit.PutUint(data[13:15], uint64(s.ServiceFunc))
+	data[1] = data[1]&^0x06 | byte(uint64(s.ServiceFunc)<<1)&0x06
 	if uint64(s.NRandWait)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "NRandWait",
 			Type:  "AlohaPDU",
 			Value: s.NRandWait,
 		}
 	}
-	bit.PutUint(data[15:19], uint64(s.NRandWait))
+	_valNRandWait := uint64(s.NRandWait)
+	data[1] = data[1]&^0x01 | byte(_valNRandWait>>3)&0x01
+	data[2] = data[2]&^0xE0 | byte(_valNRandWait<<5)&0xE0
 	if s.Reg {
-		data[19] = 1
+		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Backoff",
 			Type:  "AlohaPDU",
 			Value: s.Backoff,
 		}
 	}
-	bit.PutUint(data[20:24], uint64(s.Backoff))
-	bit.PutUint(data[24:40], uint64(s.SysIdentCode))
+	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
+	_valSysIdentCode := uint64(s.SysIdentCode)
+	data[3] = byte(_valSysIdentCode >> 8)
+	data[4] = byte(_valSysIdentCode)
 	if uint64(s.MSAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "MSAddress",
 			Type:  "AlohaPDU",
 			Value: s.MSAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.MSAddress))
+	_valMSAddress := uint64(s.MSAddress)
+	data[5] = byte(_valMSAddress >> 16)
+	data[6] = byte(_valMSAddress >> 8)
+	data[7] = byte(_valMSAddress)
+	return data, nil
+}
+
+// Encode encodes an AlohaPDU (ETSI TS 102 361-4 clause 7.1.1.1.4).
+func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1316,62 +1682,84 @@ func (s *AlohaPDU) String() string {
 	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %d }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
 }
 
-// decodeBroadcastPDU decodes a BroadcastPDU (ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20).
-func decodeBroadcastPDU(data [64]bit.Bit) BroadcastPDU {
+// decodeBroadcastPDUBytes decodes a BroadcastPDU (ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20).
+// data holds its bits packed, the first bit most significant.
+func decodeBroadcastPDUBytes(data [8]byte) BroadcastPDU {
 	var result BroadcastPDU
-	lowbit.Mask(data[:])
-	result.AnnouncementType = enums.AnnouncementType(bit.Uint(data[0:5]))
-	result.BroadcastParms1 = uint16(bit.Uint(data[5:19]))
-	result.Reg = data[19] == 1
-	result.Backoff = uint8(bit.Uint(data[20:24]))
-	result.SysIdentCode = uint16(bit.Uint(data[24:40]))
-	result.BroadcastParms2 = uint32(bit.Uint(data[40:64]))
+	result.AnnouncementType = enums.AnnouncementType(uint64(data[0]) >> 3)
+	result.BroadcastParms1 = uint16((uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2])) >> 5 & 0x3FFF)
+	result.Reg = data[2]&0x10 != 0
+	result.Backoff = uint8(uint64(data[2]) & 0xF)
+	result.SysIdentCode = uint16(uint64(data[3])<<8 | uint64(data[4]))
+	result.BroadcastParms2 = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a BroadcastPDU (ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20).
-func (s *BroadcastPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a BroadcastPDU (ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *BroadcastPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  5,
 			Field: "AnnouncementType",
 			Type:  "BroadcastPDU",
 			Value: s.AnnouncementType,
 		}
 	}
-	bit.PutUint(data[0:5], uint64(s.AnnouncementType))
+	data[0] = data[0]&^0xF8 | byte(uint64(s.AnnouncementType)<<3)&0xF8
 	if uint64(s.BroadcastParms1)>>14 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  14,
 			Field: "BroadcastParms1",
 			Type:  "BroadcastPDU",
 			Value: s.BroadcastParms1,
 		}
 	}
-	bit.PutUint(data[5:19], uint64(s.BroadcastParms1))
+	_valBroadcastParms1 := uint64(s.BroadcastParms1)
+	data[0] = data[0]&^0x07 | byte(_valBroadcastParms1>>11)&0x07
+	data[1] = byte(_valBroadcastParms1 >> 3)
+	data[2] = data[2]&^0xE0 | byte(_valBroadcastParms1<<5)&0xE0
 	if s.Reg {
-		data[19] = 1
+		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Backoff",
 			Type:  "BroadcastPDU",
 			Value: s.Backoff,
 		}
 	}
-	bit.PutUint(data[20:24], uint64(s.Backoff))
-	bit.PutUint(data[24:40], uint64(s.SysIdentCode))
+	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
+	_valSysIdentCode := uint64(s.SysIdentCode)
+	data[3] = byte(_valSysIdentCode >> 8)
+	data[4] = byte(_valSysIdentCode)
 	if uint64(s.BroadcastParms2)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "BroadcastParms2",
 			Type:  "BroadcastPDU",
 			Value: s.BroadcastParms2,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.BroadcastParms2))
+	_valBroadcastParms2 := uint64(s.BroadcastParms2)
+	data[5] = byte(_valBroadcastParms2 >> 16)
+	data[6] = byte(_valBroadcastParms2 >> 8)
+	data[7] = byte(_valBroadcastParms2)
+	return data, nil
+}
+
+// Encode encodes a BroadcastPDU (ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20).
+func (s *BroadcastPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1389,64 +1777,86 @@ func (s *BroadcastPDU) String() string {
 	return fmt.Sprintf("BroadcastPDU{ AnnouncementType: %s, BroadcastParms1: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %d }", s.AnnouncementType, s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
 }
 
-// decodeClearPDU decodes a ClearPDU (ETSI TS 102 361-4 clause 7.1.1.3.2).
-func decodeClearPDU(data [64]bit.Bit) ClearPDU {
+// decodeClearPDUBytes decodes a ClearPDU (ETSI TS 102 361-4 clause 7.1.1.3.2).
+// data holds its bits packed, the first bit most significant.
+func decodeClearPDUBytes(data [8]byte) ClearPDU {
 	var result ClearPDU
-	lowbit.Mask(data[:])
-	result.PhysicalChannel = uint16(bit.Uint(data[0:12]))
-	result.Reserved1 = data[12] == 1
-	result.Reserved2 = uint8(bit.Uint(data[13:15]))
-	result.GroupIndividual = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.Reserved1 = data[1]&0x08 != 0
+	result.Reserved2 = uint8(uint64(data[1]) >> 1 & 0x3)
+	result.GroupIndividual = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a ClearPDU (ETSI TS 102 361-4 clause 7.1.1.3.2).
-func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a ClearPDU (ETSI TS 102 361-4 clause 7.1.1.3.2).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *ClearPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "PhysicalChannel",
 			Type:  "ClearPDU",
 			Value: s.PhysicalChannel,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.PhysicalChannel))
+	_valPhysicalChannel := uint64(s.PhysicalChannel)
+	data[0] = byte(_valPhysicalChannel >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valPhysicalChannel<<4)&0xF0
 	if s.Reserved1 {
-		data[12] = 1
+		data[1] |= 0x08
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "Reserved2",
 			Type:  "ClearPDU",
 			Value: s.Reserved2,
 		}
 	}
-	bit.PutUint(data[13:15], uint64(s.Reserved2))
+	data[1] = data[1]&^0x06 | byte(uint64(s.Reserved2)<<1)&0x06
 	if s.GroupIndividual {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "ClearPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "ClearPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a ClearPDU (ETSI TS 102 361-4 clause 7.1.1.3.2).
+func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1464,60 +1874,82 @@ func (s *ClearPDU) String() string {
 	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeProtectPDU decodes a ProtectPDU (ETSI TS 102 361-4 clause 7.1.1.3.3).
-func decodeProtectPDU(data [64]bit.Bit) ProtectPDU {
+// decodeProtectPDUBytes decodes a ProtectPDU (ETSI TS 102 361-4 clause 7.1.1.3.3).
+// data holds its bits packed, the first bit most significant.
+func decodeProtectPDUBytes(data [8]byte) ProtectPDU {
 	var result ProtectPDU
-	lowbit.Mask(data[:])
-	result.Reserved = uint16(bit.Uint(data[0:12]))
-	result.ProtectKind = uint8(bit.Uint(data[12:15]))
-	result.GroupIndividual = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.Reserved = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.ProtectKind = uint8(uint64(data[1]) >> 1 & 0x7)
+	result.GroupIndividual = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a ProtectPDU (ETSI TS 102 361-4 clause 7.1.1.3.3).
-func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a ProtectPDU (ETSI TS 102 361-4 clause 7.1.1.3.3).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *ProtectPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.Reserved)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "Reserved",
 			Type:  "ProtectPDU",
 			Value: s.Reserved,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.Reserved))
+	_valReserved := uint64(s.Reserved)
+	data[0] = byte(_valReserved >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valReserved<<4)&0xF0
 	if uint64(s.ProtectKind)>>3 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "ProtectKind",
 			Type:  "ProtectPDU",
 			Value: s.ProtectKind,
 		}
 	}
-	bit.PutUint(data[12:15], uint64(s.ProtectKind))
+	data[1] = data[1]&^0x0E | byte(uint64(s.ProtectKind)<<1)&0x0E
 	if s.GroupIndividual {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "ProtectPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "ProtectPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a ProtectPDU (ETSI TS 102 361-4 clause 7.1.1.3.3).
+func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1535,78 +1967,98 @@ func (s *ProtectPDU) String() string {
 	return fmt.Sprintf("ProtectPDU{ Reserved: %d, ProtectKind: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.ProtectKind, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeAhoyPDU decodes an AhoyPDU (ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4).
-func decodeAhoyPDU(data [64]bit.Bit) AhoyPDU {
+// decodeAhoyPDUBytes decodes an AhoyPDU (ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4).
+// data holds its bits packed, the first bit most significant.
+func decodeAhoyPDUBytes(data [8]byte) AhoyPDU {
 	var result AhoyPDU
-	lowbit.Mask(data[:])
-	result.ServiceOptsMirror = uint8(bit.Uint(data[0:7]))
-	result.ServiceKindFlag = data[7] == 1
-	result.ALS = data[8] == 1
-	result.GroupIndividual = data[9] == 1
-	result.AppendedBlocks = uint8(bit.Uint(data[10:12]))
-	result.ServiceKind = uint8(bit.Uint(data[12:16]))
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.ServiceOptsMirror = uint8(uint64(data[0]) >> 1)
+	result.ServiceKindFlag = data[0]&0x01 != 0
+	result.ALS = data[1]&0x80 != 0
+	result.GroupIndividual = data[1]&0x40 != 0
+	result.AppendedBlocks = uint8(uint64(data[1]) >> 4 & 0x3)
+	result.ServiceKind = uint8(uint64(data[1]) & 0xF)
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes an AhoyPDU (ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4).
-func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes an AhoyPDU (ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *AhoyPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "ServiceOptsMirror",
 			Type:  "AhoyPDU",
 			Value: s.ServiceOptsMirror,
 		}
 	}
-	bit.PutUint(data[0:7], uint64(s.ServiceOptsMirror))
+	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptsMirror)<<1)&0xFE
 	if s.ServiceKindFlag {
-		data[7] = 1
+		data[0] |= 0x01
 	}
 	if s.ALS {
-		data[8] = 1
+		data[1] |= 0x80
 	}
 	if s.GroupIndividual {
-		data[9] = 1
+		data[1] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "AppendedBlocks",
 			Type:  "AhoyPDU",
 			Value: s.AppendedBlocks,
 		}
 	}
-	bit.PutUint(data[10:12], uint64(s.AppendedBlocks))
+	data[1] = data[1]&^0x30 | byte(uint64(s.AppendedBlocks)<<4)&0x30
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "ServiceKind",
 			Type:  "AhoyPDU",
 			Value: s.ServiceKind,
 		}
 	}
-	bit.PutUint(data[12:16], uint64(s.ServiceKind))
+	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "AhoyPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "AhoyPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes an AhoyPDU (ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4).
+func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1624,52 +2076,74 @@ func (s *AhoyPDU) String() string {
 	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, GroupIndividual: %t, AppendedBlocks: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.GroupIndividual, s.AppendedBlocks, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeAckOutboundPDU decodes an AckOutboundPDU (ETSI TS 102 361-4 clause 7.1.1.1.7).
-func decodeAckOutboundPDU(data [64]bit.Bit) AckOutboundPDU {
+// decodeAckOutboundPDUBytes decodes an AckOutboundPDU (ETSI TS 102 361-4 clause 7.1.1.1.7).
+// data holds its bits packed, the first bit most significant.
+func decodeAckOutboundPDUBytes(data [8]byte) AckOutboundPDU {
 	var result AckOutboundPDU
-	lowbit.Mask(data[:])
-	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
-	result.ReasonCode = byte(bit.Uint(data[7:15]))
-	result.Reserved = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
+	result.ResponseInfo = uint8(uint64(data[0]) >> 1)
+	result.ReasonCode = byte((uint64(data[0])<<8 | uint64(data[1])) >> 1 & 0xFF)
+	result.Reserved = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.AdditionalInfo = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes an AckOutboundPDU (ETSI TS 102 361-4 clause 7.1.1.1.7).
-func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes an AckOutboundPDU (ETSI TS 102 361-4 clause 7.1.1.1.7).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *AckOutboundPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "ResponseInfo",
 			Type:  "AckOutboundPDU",
 			Value: s.ResponseInfo,
 		}
 	}
-	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
-	bit.PutUint(data[7:15], uint64(s.ReasonCode))
+	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
+	_valReasonCode := uint64(s.ReasonCode)
+	data[0] = data[0]&^0x01 | byte(_valReasonCode>>7)&0x01
+	data[1] = data[1]&^0xFE | byte(_valReasonCode<<1)&0xFE
 	if s.Reserved {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "AckOutboundPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "AdditionalInfo",
 			Type:  "AckOutboundPDU",
 			Value: s.AdditionalInfo,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
+	_valAdditionalInfo := uint64(s.AdditionalInfo)
+	data[5] = byte(_valAdditionalInfo >> 16)
+	data[6] = byte(_valAdditionalInfo >> 8)
+	data[7] = byte(_valAdditionalInfo)
+	return data, nil
+}
+
+// Encode encodes an AckOutboundPDU (ETSI TS 102 361-4 clause 7.1.1.1.7).
+func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1687,52 +2161,74 @@ func (s *AckOutboundPDU) String() string {
 	return fmt.Sprintf("AckOutboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
-// decodeAckInboundPDU decodes an AckInboundPDU (ETSI TS 102 361-4 clause 7.1.1.2.3).
-func decodeAckInboundPDU(data [64]bit.Bit) AckInboundPDU {
+// decodeAckInboundPDUBytes decodes an AckInboundPDU (ETSI TS 102 361-4 clause 7.1.1.2.3).
+// data holds its bits packed, the first bit most significant.
+func decodeAckInboundPDUBytes(data [8]byte) AckInboundPDU {
 	var result AckInboundPDU
-	lowbit.Mask(data[:])
-	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
-	result.ReasonCode = byte(bit.Uint(data[7:15]))
-	result.Reserved = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
+	result.ResponseInfo = uint8(uint64(data[0]) >> 1)
+	result.ReasonCode = byte((uint64(data[0])<<8 | uint64(data[1])) >> 1 & 0xFF)
+	result.Reserved = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.AdditionalInfo = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes an AckInboundPDU (ETSI TS 102 361-4 clause 7.1.1.2.3).
-func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes an AckInboundPDU (ETSI TS 102 361-4 clause 7.1.1.2.3).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *AckInboundPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "ResponseInfo",
 			Type:  "AckInboundPDU",
 			Value: s.ResponseInfo,
 		}
 	}
-	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
-	bit.PutUint(data[7:15], uint64(s.ReasonCode))
+	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
+	_valReasonCode := uint64(s.ReasonCode)
+	data[0] = data[0]&^0x01 | byte(_valReasonCode>>7)&0x01
+	data[1] = data[1]&^0xFE | byte(_valReasonCode<<1)&0xFE
 	if s.Reserved {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "AckInboundPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "AdditionalInfo",
 			Type:  "AckInboundPDU",
 			Value: s.AdditionalInfo,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
+	_valAdditionalInfo := uint64(s.AdditionalInfo)
+	data[5] = byte(_valAdditionalInfo >> 16)
+	data[6] = byte(_valAdditionalInfo >> 8)
+	data[7] = byte(_valAdditionalInfo)
+	return data, nil
+}
+
+// Encode encodes an AckInboundPDU (ETSI TS 102 361-4 clause 7.1.1.2.3).
+func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1750,52 +2246,74 @@ func (s *AckInboundPDU) String() string {
 	return fmt.Sprintf("AckInboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
-// decodeAckOutboundPayloadPDU decodes an AckOutboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.3.5).
-func decodeAckOutboundPayloadPDU(data [64]bit.Bit) AckOutboundPayloadPDU {
+// decodeAckOutboundPayloadPDUBytes decodes an AckOutboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.3.5).
+// data holds its bits packed, the first bit most significant.
+func decodeAckOutboundPayloadPDUBytes(data [8]byte) AckOutboundPayloadPDU {
 	var result AckOutboundPayloadPDU
-	lowbit.Mask(data[:])
-	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
-	result.ReasonCode = byte(bit.Uint(data[7:15]))
-	result.Reserved = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
+	result.ResponseInfo = uint8(uint64(data[0]) >> 1)
+	result.ReasonCode = byte((uint64(data[0])<<8 | uint64(data[1])) >> 1 & 0xFF)
+	result.Reserved = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.AdditionalInfo = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes an AckOutboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.3.5).
-func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes an AckOutboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.3.5).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *AckOutboundPayloadPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "ResponseInfo",
 			Type:  "AckOutboundPayloadPDU",
 			Value: s.ResponseInfo,
 		}
 	}
-	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
-	bit.PutUint(data[7:15], uint64(s.ReasonCode))
+	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
+	_valReasonCode := uint64(s.ReasonCode)
+	data[0] = data[0]&^0x01 | byte(_valReasonCode>>7)&0x01
+	data[1] = data[1]&^0xFE | byte(_valReasonCode<<1)&0xFE
 	if s.Reserved {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "AckOutboundPayloadPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "AdditionalInfo",
 			Type:  "AckOutboundPayloadPDU",
 			Value: s.AdditionalInfo,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
+	_valAdditionalInfo := uint64(s.AdditionalInfo)
+	data[5] = byte(_valAdditionalInfo >> 16)
+	data[6] = byte(_valAdditionalInfo >> 8)
+	data[7] = byte(_valAdditionalInfo)
+	return data, nil
+}
+
+// Encode encodes an AckOutboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.3.5).
+func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1813,52 +2331,74 @@ func (s *AckOutboundPayloadPDU) String() string {
 	return fmt.Sprintf("AckOutboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
-// decodeAckInboundPayloadPDU decodes an AckInboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.4.2).
-func decodeAckInboundPayloadPDU(data [64]bit.Bit) AckInboundPayloadPDU {
+// decodeAckInboundPayloadPDUBytes decodes an AckInboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.4.2).
+// data holds its bits packed, the first bit most significant.
+func decodeAckInboundPayloadPDUBytes(data [8]byte) AckInboundPayloadPDU {
 	var result AckInboundPayloadPDU
-	lowbit.Mask(data[:])
-	result.ResponseInfo = uint8(bit.Uint(data[0:7]))
-	result.ReasonCode = byte(bit.Uint(data[7:15]))
-	result.Reserved = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.AdditionalInfo = uint32(bit.Uint(data[40:64]))
+	result.ResponseInfo = uint8(uint64(data[0]) >> 1)
+	result.ReasonCode = byte((uint64(data[0])<<8 | uint64(data[1])) >> 1 & 0xFF)
+	result.Reserved = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.AdditionalInfo = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes an AckInboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.4.2).
-func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes an AckInboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.4.2).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *AckInboundPayloadPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "ResponseInfo",
 			Type:  "AckInboundPayloadPDU",
 			Value: s.ResponseInfo,
 		}
 	}
-	bit.PutUint(data[0:7], uint64(s.ResponseInfo))
-	bit.PutUint(data[7:15], uint64(s.ReasonCode))
+	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
+	_valReasonCode := uint64(s.ReasonCode)
+	data[0] = data[0]&^0x01 | byte(_valReasonCode>>7)&0x01
+	data[1] = data[1]&^0xFE | byte(_valReasonCode<<1)&0xFE
 	if s.Reserved {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "AckInboundPayloadPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "AdditionalInfo",
 			Type:  "AckInboundPayloadPDU",
 			Value: s.AdditionalInfo,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.AdditionalInfo))
+	_valAdditionalInfo := uint64(s.AdditionalInfo)
+	data[5] = byte(_valAdditionalInfo >> 16)
+	data[6] = byte(_valAdditionalInfo >> 8)
+	data[7] = byte(_valAdditionalInfo)
+	return data, nil
+}
+
+// Encode encodes an AckInboundPayloadPDU (ETSI TS 102 361-4 clause 7.1.1.4.2).
+func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1876,70 +2416,90 @@ func (s *AckInboundPayloadPDU) String() string {
 	return fmt.Sprintf("AckInboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
 
-// decodeRandomAccessPDU decodes a RandomAccessPDU (ETSI TS 102 361-4 clause 7.1.1.2.1).
-func decodeRandomAccessPDU(data [64]bit.Bit) RandomAccessPDU {
+// decodeRandomAccessPDUBytes decodes a RandomAccessPDU (ETSI TS 102 361-4 clause 7.1.1.2.1).
+// data holds its bits packed, the first bit most significant.
+func decodeRandomAccessPDUBytes(data [8]byte) RandomAccessPDU {
 	var result RandomAccessPDU
-	lowbit.Mask(data[:])
-	result.ServiceOptions = uint8(bit.Uint(data[0:7]))
-	result.ProxyFlag = data[7] == 1
-	result.Reserved = uint8(bit.Uint(data[8:12]))
-	result.ServiceKind = uint8(bit.Uint(data[12:16]))
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.ServiceOptions = uint8(uint64(data[0]) >> 1)
+	result.ProxyFlag = data[0]&0x01 != 0
+	result.Reserved = uint8(uint64(data[1]) >> 4)
+	result.ServiceKind = uint8(uint64(data[1]) & 0xF)
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a RandomAccessPDU (ETSI TS 102 361-4 clause 7.1.1.2.1).
-func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a RandomAccessPDU (ETSI TS 102 361-4 clause 7.1.1.2.1).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *RandomAccessPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.ServiceOptions)>>7 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "ServiceOptions",
 			Type:  "RandomAccessPDU",
 			Value: s.ServiceOptions,
 		}
 	}
-	bit.PutUint(data[0:7], uint64(s.ServiceOptions))
+	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptions)<<1)&0xFE
 	if s.ProxyFlag {
-		data[7] = 1
+		data[0] |= 0x01
 	}
 	if uint64(s.Reserved)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "Reserved",
 			Type:  "RandomAccessPDU",
 			Value: s.Reserved,
 		}
 	}
-	bit.PutUint(data[8:12], uint64(s.Reserved))
+	data[1] = data[1]&^0xF0 | byte(uint64(s.Reserved)<<4)&0xF0
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "ServiceKind",
 			Type:  "RandomAccessPDU",
 			Value: s.ServiceKind,
 		}
 	}
-	bit.PutUint(data[12:16], uint64(s.ServiceKind))
+	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "RandomAccessPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "RandomAccessPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a RandomAccessPDU (ETSI TS 102 361-4 clause 7.1.1.2.1).
+func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -1957,80 +2517,100 @@ func (s *RandomAccessPDU) String() string {
 	return fmt.Sprintf("RandomAccessPDU{ ServiceOptions: %d, ProxyFlag: %t, Reserved: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions, s.ProxyFlag, s.Reserved, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeAckvitationPDU decodes an AckvitationPDU (ETSI TS 102 361-4 clause 7.1.1.2.2).
-func decodeAckvitationPDU(data [64]bit.Bit) AckvitationPDU {
+// decodeAckvitationPDUBytes decodes an AckvitationPDU (ETSI TS 102 361-4 clause 7.1.1.2.2).
+// data holds its bits packed, the first bit most significant.
+func decodeAckvitationPDUBytes(data [8]byte) AckvitationPDU {
 	var result AckvitationPDU
-	lowbit.Mask(data[:])
-	result.ServiceOptsMirror = uint8(bit.Uint(data[0:7]))
-	result.ServiceKindFlag = data[7] == 1
-	result.Reserved = uint8(bit.Uint(data[8:10]))
-	result.UAB = uint8(bit.Uint(data[10:12]))
-	result.ServiceKind = uint8(bit.Uint(data[12:16]))
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.ServiceOptsMirror = uint8(uint64(data[0]) >> 1)
+	result.ServiceKindFlag = data[0]&0x01 != 0
+	result.Reserved = uint8(uint64(data[1]) >> 6)
+	result.UAB = uint8(uint64(data[1]) >> 4 & 0x3)
+	result.ServiceKind = uint8(uint64(data[1]) & 0xF)
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes an AckvitationPDU (ETSI TS 102 361-4 clause 7.1.1.2.2).
-func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes an AckvitationPDU (ETSI TS 102 361-4 clause 7.1.1.2.2).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *AckvitationPDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  7,
 			Field: "ServiceOptsMirror",
 			Type:  "AckvitationPDU",
 			Value: s.ServiceOptsMirror,
 		}
 	}
-	bit.PutUint(data[0:7], uint64(s.ServiceOptsMirror))
+	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptsMirror)<<1)&0xFE
 	if s.ServiceKindFlag {
-		data[7] = 1
+		data[0] |= 0x01
 	}
 	if uint64(s.Reserved)>>2 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "Reserved",
 			Type:  "AckvitationPDU",
 			Value: s.Reserved,
 		}
 	}
-	bit.PutUint(data[8:10], uint64(s.Reserved))
+	data[1] = data[1]&^0xC0 | byte(uint64(s.Reserved)<<6)&0xC0
 	if uint64(s.UAB)>>2 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "UAB",
 			Type:  "AckvitationPDU",
 			Value: s.UAB,
 		}
 	}
-	bit.PutUint(data[10:12], uint64(s.UAB))
+	data[1] = data[1]&^0x30 | byte(uint64(s.UAB)<<4)&0x30
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  4,
 			Field: "ServiceKind",
 			Type:  "AckvitationPDU",
 			Value: s.ServiceKind,
 		}
 	}
-	bit.PutUint(data[12:16], uint64(s.ServiceKind))
+	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "AckvitationPDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "AckvitationPDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes an AckvitationPDU (ETSI TS 102 361-4 clause 7.1.1.2.2).
+func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -2048,60 +2628,82 @@ func (s *AckvitationPDU) String() string {
 	return fmt.Sprintf("AckvitationPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, Reserved: %d, UAB: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.Reserved, s.UAB, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeMaintenancePDU decodes a MaintenancePDU (ETSI TS 102 361-4 clause 7.1.1.4.3).
-func decodeMaintenancePDU(data [64]bit.Bit) MaintenancePDU {
+// decodeMaintenancePDUBytes decodes a MaintenancePDU (ETSI TS 102 361-4 clause 7.1.1.4.3).
+// data holds its bits packed, the first bit most significant.
+func decodeMaintenancePDUBytes(data [8]byte) MaintenancePDU {
 	var result MaintenancePDU
-	lowbit.Mask(data[:])
-	result.Reserved = uint16(bit.Uint(data[0:12]))
-	result.MaintKind = uint8(bit.Uint(data[12:15]))
-	result.Reserved2 = data[15] == 1
-	result.TargetAddress = uint32(bit.Uint(data[16:40]))
-	result.SourceAddress = uint32(bit.Uint(data[40:64]))
+	result.Reserved = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
+	result.MaintKind = uint8(uint64(data[1]) >> 1 & 0x7)
+	result.Reserved2 = data[1]&0x01 != 0
+	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
+	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
 }
 
-// Encode encodes a MaintenancePDU (ETSI TS 102 361-4 clause 7.1.1.4.3).
-func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
-	var data [64]bit.Bit
+// encodeBytes encodes a MaintenancePDU (ETSI TS 102 361-4 clause 7.1.1.4.3).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *MaintenancePDU) encodeBytes() ([8]byte, error) {
+	var data [8]byte
 	if uint64(s.Reserved)>>12 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  12,
 			Field: "Reserved",
 			Type:  "MaintenancePDU",
 			Value: s.Reserved,
 		}
 	}
-	bit.PutUint(data[0:12], uint64(s.Reserved))
+	_valReserved := uint64(s.Reserved)
+	data[0] = byte(_valReserved >> 4)
+	data[1] = data[1]&^0xF0 | byte(_valReserved<<4)&0xF0
 	if uint64(s.MaintKind)>>3 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  3,
 			Field: "MaintKind",
 			Type:  "MaintenancePDU",
 			Value: s.MaintKind,
 		}
 	}
-	bit.PutUint(data[12:15], uint64(s.MaintKind))
+	data[1] = data[1]&^0x0E | byte(uint64(s.MaintKind)<<1)&0x0E
 	if s.Reserved2 {
-		data[15] = 1
+		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "TargetAddress",
 			Type:  "MaintenancePDU",
 			Value: s.TargetAddress,
 		}
 	}
-	bit.PutUint(data[16:40], uint64(s.TargetAddress))
+	_valTargetAddress := uint64(s.TargetAddress)
+	data[2] = byte(_valTargetAddress >> 16)
+	data[3] = byte(_valTargetAddress >> 8)
+	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [64]bit.Bit{}, &bit.FieldRangeError{
+		return [8]byte{}, &bit.FieldRangeError{
 			Bits:  24,
 			Field: "SourceAddress",
 			Type:  "MaintenancePDU",
 			Value: s.SourceAddress,
 		}
 	}
-	bit.PutUint(data[40:64], uint64(s.SourceAddress))
+	_valSourceAddress := uint64(s.SourceAddress)
+	data[5] = byte(_valSourceAddress >> 16)
+	data[6] = byte(_valSourceAddress >> 8)
+	data[7] = byte(_valSourceAddress)
+	return data, nil
+}
+
+// Encode encodes a MaintenancePDU (ETSI TS 102 361-4 clause 7.1.1.4.3).
+func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [64]bit.Bit{}, err
+	}
+	var data [64]bit.Bit
+	for _i := range 64 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
 	return data, nil
 }
 
@@ -2119,118 +2721,113 @@ func (s *MaintenancePDU) String() string {
 	return fmt.Sprintf("MaintenancePDU{ Reserved: %d, MaintKind: %d, Reserved2: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.MaintKind, s.Reserved2, s.TargetAddress, s.SourceAddress)
 }
 
-// DecodeCSBK decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
-func DecodeCSBK(data [96]bit.Bit) CSBK {
+// decodeCSBKBytes decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
+// data holds its bits packed, the first bit most significant.
+func decodeCSBKBytes(data [12]byte) CSBK {
 	var result CSBK
-	lowbit.Mask(data[:])
-	var _packedBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			_packedBytes[i] <<= 1
-			_packedBytes[i] |= byte(data[i*8+j])
-		}
-	}
-	_packedBytes[10] ^= uint8(0xa5)
-	_packedBytes[11] ^= uint8(0xa5)
-	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
-	result.LastBlock = data[0] == 1
-	result.ProtectFlag = data[1] == 1
-	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
-	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
-	var _dispatchBits [64]bit.Bit
-	copy(_dispatchBits[:], data[16:80])
+	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xA5A5)
+	result.LastBlock = data[0]&0x80 != 0
+	result.ProtectFlag = data[0]&0x40 != 0
+	result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
+	result.FID = enums.FeatureSetID(uint64(data[1]))
+	var _dispatchBytes [8]byte
+	copy(_dispatchBytes[0:8], data[2:10])
 	if result.FID == 0 {
 		switch result.Opcode {
 		case CSBKUnitToUnitVoiceServiceRequest:
-			_decoded := decodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
+			_decoded := decodeUnitToUnitVoiceServiceRequestPDUBytes(_dispatchBytes)
 			result.UnitToUnitVoiceServiceRequestPDU = &_decoded
 		case CSBKUnitToUnitVoiceServiceAnswerResponse:
-			_decoded := decodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBits)
+			_decoded := decodeUnitToUnitVoiceServiceAnswerResponsePDUBytes(_dispatchBytes)
 			result.UnitToUnitVoiceServiceAnswerResponsePDU = &_decoded
 		case CSBKNegativeAcknowledgement:
-			_decoded := decodeNegativeAcknowledgementPDU(_dispatchBits)
+			_decoded := decodeNegativeAcknowledgementPDUBytes(_dispatchBytes)
 			result.NegativeAcknowledgementPDU = &_decoded
 		case CSBKPreamble:
-			_decoded := decodePreamblePDU(_dispatchBits)
+			_decoded := decodePreamblePDUBytes(_dispatchBytes)
 			result.PreamblePDU = &_decoded
 		case CSBKChannelTiming:
-			_decoded := decodeChannelTimingPDU(_dispatchBits)
+			_decoded := decodeChannelTimingPDUBytes(_dispatchBytes)
 			result.ChannelTimingPDU = &_decoded
 		case CSBKPrivateVoiceGrant:
-			_decoded := decodePrivateVoiceGrantPDU(_dispatchBits)
+			_decoded := decodePrivateVoiceGrantPDUBytes(_dispatchBytes)
 			result.PrivateVoiceGrantPDU = &_decoded
 		case CSBKTalkgroupVoiceGrant:
-			_decoded := decodeTalkgroupVoiceGrantPDU(_dispatchBits)
+			_decoded := decodeTalkgroupVoiceGrantPDUBytes(_dispatchBytes)
 			result.TalkgroupVoiceGrantPDU = &_decoded
 		case CSBKBroadcastTalkgroupVoiceGrant:
-			_decoded := decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
+			_decoded := decodeBroadcastTalkgroupVoiceGrantPDUBytes(_dispatchBytes)
 			result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
 		case CSBKPrivateDataGrant:
-			_decoded := decodePrivateDataGrantPDU(_dispatchBits)
+			_decoded := decodePrivateDataGrantPDUBytes(_dispatchBytes)
 			result.PrivateDataGrantPDU = &_decoded
 		case CSBKTalkgroupDataGrant:
-			_decoded := decodeTalkgroupDataGrantPDU(_dispatchBits)
+			_decoded := decodeTalkgroupDataGrantPDUBytes(_dispatchBytes)
 			result.TalkgroupDataGrantPDU = &_decoded
 		case CSBKDuplexPrivateVoiceGrant:
-			_decoded := decodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
+			_decoded := decodeDuplexPrivateVoiceGrantPDUBytes(_dispatchBytes)
 			result.DuplexPrivateVoiceGrantPDU = &_decoded
 		case CSBKDuplexPrivateDataGrant:
-			_decoded := decodeDuplexPrivateDataGrantPDU(_dispatchBits)
+			_decoded := decodeDuplexPrivateDataGrantPDUBytes(_dispatchBytes)
 			result.DuplexPrivateDataGrantPDU = &_decoded
 		case CSBKPrivateDataGrantMultiItem:
-			_decoded := decodePrivateDataGrantMultiItemPDU(_dispatchBits)
+			_decoded := decodePrivateDataGrantMultiItemPDUBytes(_dispatchBytes)
 			result.PrivateDataGrantMultiItemPDU = &_decoded
 		case CSBKMove:
-			_decoded := decodeMovePDU(_dispatchBits)
+			_decoded := decodeMovePDUBytes(_dispatchBytes)
 			result.MovePDU = &_decoded
 		case CSBKAloha:
-			_decoded := decodeAlohaPDU(_dispatchBits)
+			_decoded := decodeAlohaPDUBytes(_dispatchBytes)
 			result.AlohaPDU = &_decoded
 		case CSBKBroadcast:
-			_decoded := decodeBroadcastPDU(_dispatchBits)
+			_decoded := decodeBroadcastPDUBytes(_dispatchBytes)
 			result.BroadcastPDU = &_decoded
 		case CSBKClear:
-			_decoded := decodeClearPDU(_dispatchBits)
+			_decoded := decodeClearPDUBytes(_dispatchBytes)
 			result.ClearPDU = &_decoded
 		case CSBKProtect:
-			_decoded := decodeProtectPDU(_dispatchBits)
+			_decoded := decodeProtectPDUBytes(_dispatchBytes)
 			result.ProtectPDU = &_decoded
 		case CSBKAhoy:
-			_decoded := decodeAhoyPDU(_dispatchBits)
+			_decoded := decodeAhoyPDUBytes(_dispatchBytes)
 			result.AhoyPDU = &_decoded
 		case CSBKAckOutbound:
-			_decoded := decodeAckOutboundPDU(_dispatchBits)
+			_decoded := decodeAckOutboundPDUBytes(_dispatchBytes)
 			result.AckOutboundPDU = &_decoded
 		case CSBKAckInbound:
-			_decoded := decodeAckInboundPDU(_dispatchBits)
+			_decoded := decodeAckInboundPDUBytes(_dispatchBytes)
 			result.AckInboundPDU = &_decoded
 		case CSBKAckOutboundPayload:
-			_decoded := decodeAckOutboundPayloadPDU(_dispatchBits)
+			_decoded := decodeAckOutboundPayloadPDUBytes(_dispatchBytes)
 			result.AckOutboundPayloadPDU = &_decoded
 		case CSBKAckInboundPayload:
-			_decoded := decodeAckInboundPayloadPDU(_dispatchBits)
+			_decoded := decodeAckInboundPayloadPDUBytes(_dispatchBytes)
 			result.AckInboundPayloadPDU = &_decoded
 		case CSBKRandomAccess:
-			_decoded := decodeRandomAccessPDU(_dispatchBits)
+			_decoded := decodeRandomAccessPDUBytes(_dispatchBytes)
 			result.RandomAccessPDU = &_decoded
 		case CSBKAckvitation:
-			_decoded := decodeAckvitationPDU(_dispatchBits)
+			_decoded := decodeAckvitationPDUBytes(_dispatchBytes)
 			result.AckvitationPDU = &_decoded
 		case CSBKMaintenance:
-			_decoded := decodeMaintenancePDU(_dispatchBits)
+			_decoded := decodeMaintenancePDUBytes(_dispatchBytes)
 			result.MaintenancePDU = &_decoded
 		default:
-			for _i := range 64 {
-				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-			}
+			copy(result.RawPayload[0:8], data[2:10])
 		}
 	} else {
-		for _i := range 64 {
-			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-		}
+		copy(result.RawPayload[0:8], data[2:10])
 	}
 	return result
+}
+
+// DecodeCSBK decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
+func DecodeCSBK(data [96]bit.Bit) CSBK {
+	var _b [12]byte
+	for _i := range 96 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeCSBKBytes(_b)
 }
 
 // CSBKPayloads holds one payload struct of each type that
@@ -2265,356 +2862,464 @@ type CSBKPayloads struct {
 	maintenancePDU                          MaintenancePDU
 }
 
+// decodeCSBKBytesInto decodes data into dst as decodeCSBKBytes does, and
+// points the dispatch field of dst into p.
+func decodeCSBKBytesInto(dst *CSBK, p *CSBKPayloads, data [12]byte) {
+	*dst = CSBK{}
+	result := dst
+	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xA5A5)
+	result.LastBlock = data[0]&0x80 != 0
+	result.ProtectFlag = data[0]&0x40 != 0
+	result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
+	result.FID = enums.FeatureSetID(uint64(data[1]))
+	var _dispatchBytes [8]byte
+	copy(_dispatchBytes[0:8], data[2:10])
+	if result.FID == 0 {
+		switch result.Opcode {
+		case CSBKUnitToUnitVoiceServiceRequest:
+			p.unitToUnitVoiceServiceRequestPDU = decodeUnitToUnitVoiceServiceRequestPDUBytes(_dispatchBytes)
+			result.UnitToUnitVoiceServiceRequestPDU = &p.unitToUnitVoiceServiceRequestPDU
+		case CSBKUnitToUnitVoiceServiceAnswerResponse:
+			p.unitToUnitVoiceServiceAnswerResponsePDU = decodeUnitToUnitVoiceServiceAnswerResponsePDUBytes(_dispatchBytes)
+			result.UnitToUnitVoiceServiceAnswerResponsePDU = &p.unitToUnitVoiceServiceAnswerResponsePDU
+		case CSBKNegativeAcknowledgement:
+			p.negativeAcknowledgementPDU = decodeNegativeAcknowledgementPDUBytes(_dispatchBytes)
+			result.NegativeAcknowledgementPDU = &p.negativeAcknowledgementPDU
+		case CSBKPreamble:
+			p.preamblePDU = decodePreamblePDUBytes(_dispatchBytes)
+			result.PreamblePDU = &p.preamblePDU
+		case CSBKChannelTiming:
+			p.channelTimingPDU = decodeChannelTimingPDUBytes(_dispatchBytes)
+			result.ChannelTimingPDU = &p.channelTimingPDU
+		case CSBKPrivateVoiceGrant:
+			p.privateVoiceGrantPDU = decodePrivateVoiceGrantPDUBytes(_dispatchBytes)
+			result.PrivateVoiceGrantPDU = &p.privateVoiceGrantPDU
+		case CSBKTalkgroupVoiceGrant:
+			p.talkgroupVoiceGrantPDU = decodeTalkgroupVoiceGrantPDUBytes(_dispatchBytes)
+			result.TalkgroupVoiceGrantPDU = &p.talkgroupVoiceGrantPDU
+		case CSBKBroadcastTalkgroupVoiceGrant:
+			p.broadcastTalkgroupVoiceGrantPDU = decodeBroadcastTalkgroupVoiceGrantPDUBytes(_dispatchBytes)
+			result.BroadcastTalkgroupVoiceGrantPDU = &p.broadcastTalkgroupVoiceGrantPDU
+		case CSBKPrivateDataGrant:
+			p.privateDataGrantPDU = decodePrivateDataGrantPDUBytes(_dispatchBytes)
+			result.PrivateDataGrantPDU = &p.privateDataGrantPDU
+		case CSBKTalkgroupDataGrant:
+			p.talkgroupDataGrantPDU = decodeTalkgroupDataGrantPDUBytes(_dispatchBytes)
+			result.TalkgroupDataGrantPDU = &p.talkgroupDataGrantPDU
+		case CSBKDuplexPrivateVoiceGrant:
+			p.duplexPrivateVoiceGrantPDU = decodeDuplexPrivateVoiceGrantPDUBytes(_dispatchBytes)
+			result.DuplexPrivateVoiceGrantPDU = &p.duplexPrivateVoiceGrantPDU
+		case CSBKDuplexPrivateDataGrant:
+			p.duplexPrivateDataGrantPDU = decodeDuplexPrivateDataGrantPDUBytes(_dispatchBytes)
+			result.DuplexPrivateDataGrantPDU = &p.duplexPrivateDataGrantPDU
+		case CSBKPrivateDataGrantMultiItem:
+			p.privateDataGrantMultiItemPDU = decodePrivateDataGrantMultiItemPDUBytes(_dispatchBytes)
+			result.PrivateDataGrantMultiItemPDU = &p.privateDataGrantMultiItemPDU
+		case CSBKMove:
+			p.movePDU = decodeMovePDUBytes(_dispatchBytes)
+			result.MovePDU = &p.movePDU
+		case CSBKAloha:
+			p.alohaPDU = decodeAlohaPDUBytes(_dispatchBytes)
+			result.AlohaPDU = &p.alohaPDU
+		case CSBKBroadcast:
+			p.broadcastPDU = decodeBroadcastPDUBytes(_dispatchBytes)
+			result.BroadcastPDU = &p.broadcastPDU
+		case CSBKClear:
+			p.clearPDU = decodeClearPDUBytes(_dispatchBytes)
+			result.ClearPDU = &p.clearPDU
+		case CSBKProtect:
+			p.protectPDU = decodeProtectPDUBytes(_dispatchBytes)
+			result.ProtectPDU = &p.protectPDU
+		case CSBKAhoy:
+			p.ahoyPDU = decodeAhoyPDUBytes(_dispatchBytes)
+			result.AhoyPDU = &p.ahoyPDU
+		case CSBKAckOutbound:
+			p.ackOutboundPDU = decodeAckOutboundPDUBytes(_dispatchBytes)
+			result.AckOutboundPDU = &p.ackOutboundPDU
+		case CSBKAckInbound:
+			p.ackInboundPDU = decodeAckInboundPDUBytes(_dispatchBytes)
+			result.AckInboundPDU = &p.ackInboundPDU
+		case CSBKAckOutboundPayload:
+			p.ackOutboundPayloadPDU = decodeAckOutboundPayloadPDUBytes(_dispatchBytes)
+			result.AckOutboundPayloadPDU = &p.ackOutboundPayloadPDU
+		case CSBKAckInboundPayload:
+			p.ackInboundPayloadPDU = decodeAckInboundPayloadPDUBytes(_dispatchBytes)
+			result.AckInboundPayloadPDU = &p.ackInboundPayloadPDU
+		case CSBKRandomAccess:
+			p.randomAccessPDU = decodeRandomAccessPDUBytes(_dispatchBytes)
+			result.RandomAccessPDU = &p.randomAccessPDU
+		case CSBKAckvitation:
+			p.ackvitationPDU = decodeAckvitationPDUBytes(_dispatchBytes)
+			result.AckvitationPDU = &p.ackvitationPDU
+		case CSBKMaintenance:
+			p.maintenancePDU = decodeMaintenancePDUBytes(_dispatchBytes)
+			result.MaintenancePDU = &p.maintenancePDU
+		default:
+			copy(result.RawPayload[0:8], data[2:10])
+		}
+	} else {
+		copy(result.RawPayload[0:8], data[2:10])
+	}
+}
+
 // DecodeCSBKInto decodes data into dst as DecodeCSBK does,
 // but points the dispatch field of dst into p, so it does not allocate.
 // The payload stays valid until the next decode into p. dst and p must
 // not be nil.
 func DecodeCSBKInto(dst *CSBK, p *CSBKPayloads, data [96]bit.Bit) {
-	*dst = CSBK{}
-	result := dst
-	lowbit.Mask(data[:])
-	var _packedBytes [12]byte
-	for i := range 12 {
-		for j := range 8 {
-			_packedBytes[i] <<= 1
-			_packedBytes[i] |= byte(data[i*8+j])
-		}
+	var _b [12]byte
+	for _i := range 96 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
 	}
-	_packedBytes[10] ^= uint8(0xa5)
-	_packedBytes[11] ^= uint8(0xa5)
-	_crc := uint16(_packedBytes[10])<<8 | uint16(_packedBytes[11])
-	result.FEC.Uncorrectable = !crc.CheckCCITT(_packedBytes[:10], _crc)
-	result.LastBlock = data[0] == 1
-	result.ProtectFlag = data[1] == 1
-	result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
-	result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
-	var _dispatchBits [64]bit.Bit
-	copy(_dispatchBits[:], data[16:80])
-	if result.FID == 0 {
-		switch result.Opcode {
-		case CSBKUnitToUnitVoiceServiceRequest:
-			p.unitToUnitVoiceServiceRequestPDU = decodeUnitToUnitVoiceServiceRequestPDU(_dispatchBits)
-			result.UnitToUnitVoiceServiceRequestPDU = &p.unitToUnitVoiceServiceRequestPDU
-		case CSBKUnitToUnitVoiceServiceAnswerResponse:
-			p.unitToUnitVoiceServiceAnswerResponsePDU = decodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBits)
-			result.UnitToUnitVoiceServiceAnswerResponsePDU = &p.unitToUnitVoiceServiceAnswerResponsePDU
-		case CSBKNegativeAcknowledgement:
-			p.negativeAcknowledgementPDU = decodeNegativeAcknowledgementPDU(_dispatchBits)
-			result.NegativeAcknowledgementPDU = &p.negativeAcknowledgementPDU
-		case CSBKPreamble:
-			p.preamblePDU = decodePreamblePDU(_dispatchBits)
-			result.PreamblePDU = &p.preamblePDU
-		case CSBKChannelTiming:
-			p.channelTimingPDU = decodeChannelTimingPDU(_dispatchBits)
-			result.ChannelTimingPDU = &p.channelTimingPDU
-		case CSBKPrivateVoiceGrant:
-			p.privateVoiceGrantPDU = decodePrivateVoiceGrantPDU(_dispatchBits)
-			result.PrivateVoiceGrantPDU = &p.privateVoiceGrantPDU
-		case CSBKTalkgroupVoiceGrant:
-			p.talkgroupVoiceGrantPDU = decodeTalkgroupVoiceGrantPDU(_dispatchBits)
-			result.TalkgroupVoiceGrantPDU = &p.talkgroupVoiceGrantPDU
-		case CSBKBroadcastTalkgroupVoiceGrant:
-			p.broadcastTalkgroupVoiceGrantPDU = decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBits)
-			result.BroadcastTalkgroupVoiceGrantPDU = &p.broadcastTalkgroupVoiceGrantPDU
-		case CSBKPrivateDataGrant:
-			p.privateDataGrantPDU = decodePrivateDataGrantPDU(_dispatchBits)
-			result.PrivateDataGrantPDU = &p.privateDataGrantPDU
-		case CSBKTalkgroupDataGrant:
-			p.talkgroupDataGrantPDU = decodeTalkgroupDataGrantPDU(_dispatchBits)
-			result.TalkgroupDataGrantPDU = &p.talkgroupDataGrantPDU
-		case CSBKDuplexPrivateVoiceGrant:
-			p.duplexPrivateVoiceGrantPDU = decodeDuplexPrivateVoiceGrantPDU(_dispatchBits)
-			result.DuplexPrivateVoiceGrantPDU = &p.duplexPrivateVoiceGrantPDU
-		case CSBKDuplexPrivateDataGrant:
-			p.duplexPrivateDataGrantPDU = decodeDuplexPrivateDataGrantPDU(_dispatchBits)
-			result.DuplexPrivateDataGrantPDU = &p.duplexPrivateDataGrantPDU
-		case CSBKPrivateDataGrantMultiItem:
-			p.privateDataGrantMultiItemPDU = decodePrivateDataGrantMultiItemPDU(_dispatchBits)
-			result.PrivateDataGrantMultiItemPDU = &p.privateDataGrantMultiItemPDU
-		case CSBKMove:
-			p.movePDU = decodeMovePDU(_dispatchBits)
-			result.MovePDU = &p.movePDU
-		case CSBKAloha:
-			p.alohaPDU = decodeAlohaPDU(_dispatchBits)
-			result.AlohaPDU = &p.alohaPDU
-		case CSBKBroadcast:
-			p.broadcastPDU = decodeBroadcastPDU(_dispatchBits)
-			result.BroadcastPDU = &p.broadcastPDU
-		case CSBKClear:
-			p.clearPDU = decodeClearPDU(_dispatchBits)
-			result.ClearPDU = &p.clearPDU
-		case CSBKProtect:
-			p.protectPDU = decodeProtectPDU(_dispatchBits)
-			result.ProtectPDU = &p.protectPDU
-		case CSBKAhoy:
-			p.ahoyPDU = decodeAhoyPDU(_dispatchBits)
-			result.AhoyPDU = &p.ahoyPDU
-		case CSBKAckOutbound:
-			p.ackOutboundPDU = decodeAckOutboundPDU(_dispatchBits)
-			result.AckOutboundPDU = &p.ackOutboundPDU
-		case CSBKAckInbound:
-			p.ackInboundPDU = decodeAckInboundPDU(_dispatchBits)
-			result.AckInboundPDU = &p.ackInboundPDU
-		case CSBKAckOutboundPayload:
-			p.ackOutboundPayloadPDU = decodeAckOutboundPayloadPDU(_dispatchBits)
-			result.AckOutboundPayloadPDU = &p.ackOutboundPayloadPDU
-		case CSBKAckInboundPayload:
-			p.ackInboundPayloadPDU = decodeAckInboundPayloadPDU(_dispatchBits)
-			result.AckInboundPayloadPDU = &p.ackInboundPayloadPDU
-		case CSBKRandomAccess:
-			p.randomAccessPDU = decodeRandomAccessPDU(_dispatchBits)
-			result.RandomAccessPDU = &p.randomAccessPDU
-		case CSBKAckvitation:
-			p.ackvitationPDU = decodeAckvitationPDU(_dispatchBits)
-			result.AckvitationPDU = &p.ackvitationPDU
-		case CSBKMaintenance:
-			p.maintenancePDU = decodeMaintenancePDU(_dispatchBits)
-			result.MaintenancePDU = &p.maintenancePDU
-		default:
-			for _i := range 64 {
-				result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-			}
-		}
-	} else {
-		for _i := range 64 {
-			result.RawPayload[_i/8] |= byte(_dispatchBits[_i]) << (7 - _i%8)
-		}
-	}
+	decodeCSBKBytesInto(dst, p, _b)
 }
 
-// Encode encodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
-func (s *CSBK) Encode() ([96]bit.Bit, error) {
-	var data [96]bit.Bit
+// encodeBytes encodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *CSBK) encodeBytes() ([12]byte, error) {
+	var data [12]byte
 	_payload := ""
-	for _, _p := range [...]struct {
-		name string
-		set  bool
-	}{
-		{"UnitToUnitVoiceServiceRequestPDU", s.UnitToUnitVoiceServiceRequestPDU != nil},
-		{"UnitToUnitVoiceServiceAnswerResponsePDU", s.UnitToUnitVoiceServiceAnswerResponsePDU != nil},
-		{"NegativeAcknowledgementPDU", s.NegativeAcknowledgementPDU != nil},
-		{"PreamblePDU", s.PreamblePDU != nil},
-		{"ChannelTimingPDU", s.ChannelTimingPDU != nil},
-		{"PrivateVoiceGrantPDU", s.PrivateVoiceGrantPDU != nil},
-		{"TalkgroupVoiceGrantPDU", s.TalkgroupVoiceGrantPDU != nil},
-		{"BroadcastTalkgroupVoiceGrantPDU", s.BroadcastTalkgroupVoiceGrantPDU != nil},
-		{"PrivateDataGrantPDU", s.PrivateDataGrantPDU != nil},
-		{"TalkgroupDataGrantPDU", s.TalkgroupDataGrantPDU != nil},
-		{"DuplexPrivateVoiceGrantPDU", s.DuplexPrivateVoiceGrantPDU != nil},
-		{"DuplexPrivateDataGrantPDU", s.DuplexPrivateDataGrantPDU != nil},
-		{"PrivateDataGrantMultiItemPDU", s.PrivateDataGrantMultiItemPDU != nil},
-		{"MovePDU", s.MovePDU != nil},
-		{"AlohaPDU", s.AlohaPDU != nil},
-		{"BroadcastPDU", s.BroadcastPDU != nil},
-		{"ClearPDU", s.ClearPDU != nil},
-		{"ProtectPDU", s.ProtectPDU != nil},
-		{"AhoyPDU", s.AhoyPDU != nil},
-		{"AckOutboundPDU", s.AckOutboundPDU != nil},
-		{"AckInboundPDU", s.AckInboundPDU != nil},
-		{"AckOutboundPayloadPDU", s.AckOutboundPayloadPDU != nil},
-		{"AckInboundPayloadPDU", s.AckInboundPayloadPDU != nil},
-		{"RandomAccessPDU", s.RandomAccessPDU != nil},
-		{"AckvitationPDU", s.AckvitationPDU != nil},
-		{"MaintenancePDU", s.MaintenancePDU != nil},
-	} {
-		if !_p.set {
-			continue
-		}
+	if s.UnitToUnitVoiceServiceRequestPDU != nil {
+		_payload = "UnitToUnitVoiceServiceRequestPDU"
+	}
+	if s.UnitToUnitVoiceServiceAnswerResponsePDU != nil {
 		if _payload != "" {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, _p.name)
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "UnitToUnitVoiceServiceAnswerResponsePDU")
 		}
-		_payload = _p.name
+		_payload = "UnitToUnitVoiceServiceAnswerResponsePDU"
+	}
+	if s.NegativeAcknowledgementPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "NegativeAcknowledgementPDU")
+		}
+		_payload = "NegativeAcknowledgementPDU"
+	}
+	if s.PreamblePDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "PreamblePDU")
+		}
+		_payload = "PreamblePDU"
+	}
+	if s.ChannelTimingPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "ChannelTimingPDU")
+		}
+		_payload = "ChannelTimingPDU"
+	}
+	if s.PrivateVoiceGrantPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "PrivateVoiceGrantPDU")
+		}
+		_payload = "PrivateVoiceGrantPDU"
+	}
+	if s.TalkgroupVoiceGrantPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "TalkgroupVoiceGrantPDU")
+		}
+		_payload = "TalkgroupVoiceGrantPDU"
+	}
+	if s.BroadcastTalkgroupVoiceGrantPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "BroadcastTalkgroupVoiceGrantPDU")
+		}
+		_payload = "BroadcastTalkgroupVoiceGrantPDU"
+	}
+	if s.PrivateDataGrantPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "PrivateDataGrantPDU")
+		}
+		_payload = "PrivateDataGrantPDU"
+	}
+	if s.TalkgroupDataGrantPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "TalkgroupDataGrantPDU")
+		}
+		_payload = "TalkgroupDataGrantPDU"
+	}
+	if s.DuplexPrivateVoiceGrantPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "DuplexPrivateVoiceGrantPDU")
+		}
+		_payload = "DuplexPrivateVoiceGrantPDU"
+	}
+	if s.DuplexPrivateDataGrantPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "DuplexPrivateDataGrantPDU")
+		}
+		_payload = "DuplexPrivateDataGrantPDU"
+	}
+	if s.PrivateDataGrantMultiItemPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "PrivateDataGrantMultiItemPDU")
+		}
+		_payload = "PrivateDataGrantMultiItemPDU"
+	}
+	if s.MovePDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "MovePDU")
+		}
+		_payload = "MovePDU"
+	}
+	if s.AlohaPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AlohaPDU")
+		}
+		_payload = "AlohaPDU"
+	}
+	if s.BroadcastPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "BroadcastPDU")
+		}
+		_payload = "BroadcastPDU"
+	}
+	if s.ClearPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "ClearPDU")
+		}
+		_payload = "ClearPDU"
+	}
+	if s.ProtectPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "ProtectPDU")
+		}
+		_payload = "ProtectPDU"
+	}
+	if s.AhoyPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AhoyPDU")
+		}
+		_payload = "AhoyPDU"
+	}
+	if s.AckOutboundPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckOutboundPDU")
+		}
+		_payload = "AckOutboundPDU"
+	}
+	if s.AckInboundPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckInboundPDU")
+		}
+		_payload = "AckInboundPDU"
+	}
+	if s.AckOutboundPayloadPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckOutboundPayloadPDU")
+		}
+		_payload = "AckOutboundPayloadPDU"
+	}
+	if s.AckInboundPayloadPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckInboundPayloadPDU")
+		}
+		_payload = "AckInboundPayloadPDU"
+	}
+	if s.RandomAccessPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "RandomAccessPDU")
+		}
+		_payload = "RandomAccessPDU"
+	}
+	if s.AckvitationPDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckvitationPDU")
+		}
+		_payload = "AckvitationPDU"
+	}
+	if s.MaintenancePDU != nil {
+		if _payload != "" {
+			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "MaintenancePDU")
+		}
+		_payload = "MaintenancePDU"
 	}
 	switch {
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
-		_pduBits, err := s.UnitToUnitVoiceServiceRequestPDU.Encode()
+		_pduBytes, err := s.UnitToUnitVoiceServiceRequestPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.UnitToUnitVoiceServiceRequestPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.UnitToUnitVoiceServiceRequestPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
-		_pduBits, err := s.UnitToUnitVoiceServiceAnswerResponsePDU.Encode()
+		_pduBytes, err := s.UnitToUnitVoiceServiceAnswerResponsePDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.UnitToUnitVoiceServiceAnswerResponsePDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.UnitToUnitVoiceServiceAnswerResponsePDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.NegativeAcknowledgementPDU != nil:
-		_pduBits, err := s.NegativeAcknowledgementPDU.Encode()
+		_pduBytes, err := s.NegativeAcknowledgementPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.NegativeAcknowledgementPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.NegativeAcknowledgementPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.PreamblePDU != nil:
-		_pduBits, err := s.PreamblePDU.Encode()
+		_pduBytes, err := s.PreamblePDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.PreamblePDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.PreamblePDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.ChannelTimingPDU != nil:
-		_pduBits, err := s.ChannelTimingPDU.Encode()
+		_pduBytes, err := s.ChannelTimingPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.ChannelTimingPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.ChannelTimingPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateVoiceGrantPDU != nil:
-		_pduBits, err := s.PrivateVoiceGrantPDU.Encode()
+		_pduBytes, err := s.PrivateVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.PrivateVoiceGrantPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.PrivateVoiceGrantPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupVoiceGrantPDU != nil:
-		_pduBits, err := s.TalkgroupVoiceGrantPDU.Encode()
+		_pduBytes, err := s.TalkgroupVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.TalkgroupVoiceGrantPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.TalkgroupVoiceGrantPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_pduBits, err := s.BroadcastTalkgroupVoiceGrantPDU.Encode()
+		_pduBytes, err := s.BroadcastTalkgroupVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.BroadcastTalkgroupVoiceGrantPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.BroadcastTalkgroupVoiceGrantPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantPDU != nil:
-		_pduBits, err := s.PrivateDataGrantPDU.Encode()
+		_pduBytes, err := s.PrivateDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.PrivateDataGrantPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.PrivateDataGrantPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupDataGrantPDU != nil:
-		_pduBits, err := s.TalkgroupDataGrantPDU.Encode()
+		_pduBytes, err := s.TalkgroupDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.TalkgroupDataGrantPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.TalkgroupDataGrantPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_pduBits, err := s.DuplexPrivateVoiceGrantPDU.Encode()
+		_pduBytes, err := s.DuplexPrivateVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.DuplexPrivateVoiceGrantPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.DuplexPrivateVoiceGrantPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateDataGrantPDU != nil:
-		_pduBits, err := s.DuplexPrivateDataGrantPDU.Encode()
+		_pduBytes, err := s.DuplexPrivateDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.DuplexPrivateDataGrantPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.DuplexPrivateDataGrantPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantMultiItemPDU != nil:
-		_pduBits, err := s.PrivateDataGrantMultiItemPDU.Encode()
+		_pduBytes, err := s.PrivateDataGrantMultiItemPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.PrivateDataGrantMultiItemPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.PrivateDataGrantMultiItemPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.MovePDU != nil:
-		_pduBits, err := s.MovePDU.Encode()
+		_pduBytes, err := s.MovePDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.MovePDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.MovePDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.AlohaPDU != nil:
-		_pduBits, err := s.AlohaPDU.Encode()
+		_pduBytes, err := s.AlohaPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.AlohaPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.AlohaPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastPDU != nil:
-		_pduBits, err := s.BroadcastPDU.Encode()
+		_pduBytes, err := s.BroadcastPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.BroadcastPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.BroadcastPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.ClearPDU != nil:
-		_pduBits, err := s.ClearPDU.Encode()
+		_pduBytes, err := s.ClearPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.ClearPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.ClearPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.ProtectPDU != nil:
-		_pduBits, err := s.ProtectPDU.Encode()
+		_pduBytes, err := s.ProtectPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.ProtectPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.ProtectPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.AhoyPDU != nil:
-		_pduBits, err := s.AhoyPDU.Encode()
+		_pduBytes, err := s.AhoyPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.AhoyPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.AhoyPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.AckOutboundPDU != nil:
-		_pduBits, err := s.AckOutboundPDU.Encode()
+		_pduBytes, err := s.AckOutboundPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckOutboundPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.AckOutboundPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.AckInboundPDU != nil:
-		_pduBits, err := s.AckInboundPDU.Encode()
+		_pduBytes, err := s.AckInboundPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckInboundPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.AckInboundPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.AckOutboundPayloadPDU != nil:
-		_pduBits, err := s.AckOutboundPayloadPDU.Encode()
+		_pduBytes, err := s.AckOutboundPayloadPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckOutboundPayloadPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.AckOutboundPayloadPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.AckInboundPayloadPDU != nil:
-		_pduBits, err := s.AckInboundPayloadPDU.Encode()
+		_pduBytes, err := s.AckInboundPayloadPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckInboundPayloadPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.AckInboundPayloadPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.RandomAccessPDU != nil:
-		_pduBits, err := s.RandomAccessPDU.Encode()
+		_pduBytes, err := s.RandomAccessPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.RandomAccessPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.RandomAccessPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.AckvitationPDU != nil:
-		_pduBits, err := s.AckvitationPDU.Encode()
+		_pduBytes, err := s.AckvitationPDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.AckvitationPDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.AckvitationPDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	case s.MaintenancePDU != nil:
-		_pduBits, err := s.MaintenancePDU.Encode()
+		_pduBytes, err := s.MaintenancePDU.encodeBytes()
 		if err != nil {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.MaintenancePDU: %w", err)
+			return [12]byte{}, fmt.Errorf("CSBK.MaintenancePDU: %w", err)
 		}
-		copy(data[16:80], _pduBits[:])
+		copy(data[2:10], _pduBytes[0:8])
 	default:
-		for _i := range 64 {
-			data[16+_i] = bit.Bit(s.RawPayload[_i/8] >> (7 - _i%8) & 1)
-		}
+		copy(data[2:10], s.RawPayload[0:8])
 	}
 	if s.LastBlock {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.ProtectFlag {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  6,
 			Field: "Opcode",
 			Type:  "CSBK",
 			Value: s.Opcode,
 		}
 	}
-	bit.PutUint(data[2:8], uint64(s.Opcode))
+	data[0] = data[0]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	if uint64(s.FID)>>8 != 0 {
-		return [96]bit.Bit{}, &bit.FieldRangeError{
+		return [12]byte{}, &bit.FieldRangeError{
 			Bits:  8,
 			Field: "FID",
 			Type:  "CSBK",
 			Value: s.FID,
 		}
 	}
-	bit.PutUint(data[8:16], uint64(s.FID))
+	data[1] = byte(uint64(s.FID))
 	if _payload != "" {
 		var result CSBK
-		result.Opcode = CSBKOpcode(bit.Uint(data[2:8]))
-		result.FID = enums.FeatureSetID(bit.Uint(data[8:16]))
+		result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
+		result.FID = enums.FeatureSetID(uint64(data[1]))
 		_want := "RawPayload"
 		if result.FID == 0 {
 			switch result.Opcode {
@@ -2673,26 +3378,24 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 			}
 		}
 		if _payload != _want {
-			return [96]bit.Bit{}, fmt.Errorf("CSBK.%s is set, but Opcode and FID select %s", _payload, _want)
+			return [12]byte{}, fmt.Errorf("CSBK.%s is set, but Opcode and FID select %s", _payload, _want)
 		}
 	}
-	var _encBytes [10]byte
-	for i := range 10 {
-		for j := range 8 {
-			_encBytes[i] <<= 1
-			_encBytes[i] |= byte(data[i*8+j])
-		}
+	_crcVal := crc.CCITT(data[:10])
+	data[10] = byte(_crcVal>>8) ^ 0xA5
+	data[11] = byte(_crcVal) ^ 0xA5
+	return data, nil
+}
+
+// Encode encodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
+func (s *CSBK) Encode() ([96]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [96]bit.Bit{}, err
 	}
-	_crcVal := crc.CCITT(_encBytes[:])
-	_crcHigh := byte(_crcVal >> 8)
-	_crcLow := byte(_crcVal)
-	_crcHigh ^= uint8(0xa5)
-	_crcLow ^= uint8(0xa5)
-	for j := range 8 {
-		data[80+j] = bit.Bit((_crcHigh >> (7 - j)) & 1)
-	}
-	for j := range 8 {
-		data[88+j] = bit.Bit((_crcLow >> (7 - j)) & 1)
+	var data [96]bit.Bit
+	for _i := range 96 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
 	}
 	return data, nil
 }
