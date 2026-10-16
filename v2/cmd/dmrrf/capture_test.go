@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -37,7 +37,7 @@ func writeCapture(t *testing.T, iq string) {
 	var sb strings.Builder
 	sb.WriteString(captureHeader)
 	for _, r := range Demodulate(FromRTL(b), 2.048e6).Bursts {
-		fmt.Fprintf(&sb, "%d %06x %d %x\n", sampleOf(r), bit.Uint(r.CACH[:]), r.Distance, r.Data)
+		fmt.Fprintf(&sb, "%d %06x %d %x\n", sampleOf(r), unpacked.Uint(r.CACH[:]), r.Distance, r.Data)
 	}
 	if err := os.WriteFile(capturePath, []byte(sb.String()), 0o600); err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func readCapture(t *testing.T) []Received {
 		if n, err := hex.Decode(r.Data[:], []byte(burst)); err != nil || n != len(r.Data) {
 			t.Fatalf("bad burst %q: %v", burst, err)
 		}
-		bit.PutUint(r.CACH[:], cach)
+		unpacked.PutUint(r.CACH[:], cach)
 		out = append(out, r)
 	}
 	if err := sc.Err(); err != nil {
