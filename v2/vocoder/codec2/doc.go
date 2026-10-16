@@ -19,7 +19,9 @@
 // The package does not register itself. A program that creates codecs by
 // name registers it once, before vocoder.New:
 //
-//	vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{}))
+//	if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil {
+//		return err
+//	}
 //
 // libcodec2 is licensed under the GNU LGPL 2.1. This package links it
 // dynamically and contains none of its source. A program that links

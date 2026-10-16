@@ -41,7 +41,9 @@ var _ vocoder.AppendDecoder = (*Codec)(nil)
 // NewFactory returns a vocoder codec factory that creates a Codec with cfg,
 // for vocoder.Register:
 //
-//	vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{}))
+//	if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil {
+//		return err
+//	}
 func NewFactory(cfg Config) func() (vocoder.Codec, error) {
 	return func() (vocoder.Codec, error) {
 		c, err := New(cfg)

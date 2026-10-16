@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"slices"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -182,8 +181,8 @@ func rms(pcm []int16) float64 {
 }
 
 func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
-	if !slices.Contains(vocoder.Names(), codec2.Name) {
-		vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{}))
+	if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil && !errors.Is(err, vocoder.ErrDuplicateCodec) {
+		return err
 	}
 	enc, err := vocoder.New(codec2.Name)
 	if errors.Is(err, codec2.ErrUnavailable) {
