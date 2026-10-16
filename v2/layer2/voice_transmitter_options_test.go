@@ -177,6 +177,9 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 		if len(headers) != 2 || headers[0] != tx.Header() {
 			t.Fatalf("source %d: %d headers", source, len(headers))
 		}
+		if p, ok := tx.PIHeader(); !ok || p != headers[1] {
+			t.Errorf("source %d: PIHeader is not the second header", source)
+		}
 		checkLCBurst(t, headers[0], lc, enums.DataTypeVoiceLCHeader, 5, sync)
 		b := must(layer2.NewBurstFromBytes(headers[1]))
 		got, ok := b.Data.(*pdu.PIHeader)
@@ -190,6 +193,9 @@ func TestVoiceTransmitter_PIHeader(t *testing.T) {
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, Silence: silenceSlot()}))
 	if h := tx.Headers(); len(h) != 1 || h[0] != tx.Header() {
 		t.Errorf("no PI header: %d headers", len(h))
+	}
+	if _, ok := tx.PIHeader(); ok {
+		t.Error("no PI header: PIHeader reports one")
 	}
 	pi.Destination = 1 << 24
 	if _, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, PIHeader: &pi}); err == nil {
