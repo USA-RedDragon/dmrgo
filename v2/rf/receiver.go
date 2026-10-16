@@ -125,8 +125,10 @@ type Config struct {
 	// MaxWrite is the largest number of bytes in one Write. 0 means 1 << 16.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
-	// locks to that the receiver keeps and decodes. 0 means 8 for
-	// TierDisc and 16 for the coherent tiers.
+	// locks to that the receiver keeps and decodes. For TierDisc, 0 means
+	// none: the receiver then streams, keeps one slot of symbols and fits
+	// in about 1 KB of RAM, and above 0 it keeps that many slots of
+	// samples. For the coherent tiers, 0 means 16.
 	LookbackSlots int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
 	// in place of the slice that Write, WriteBaseband and Flush return,
@@ -165,7 +167,7 @@ type slotState struct {
 	anchor  bool
 	a       anchorInfo
 	// hasPrior is set while a refinement detects the slot again with the
-	// log priors of Receiver.prior.
+	// log priors of engine.prior.
 	hasPrior bool
 }
 
@@ -173,6 +175,13 @@ type slotState struct {
 // the slot timing of the first SYNC it finds, follows the timing and the
 // carrier through the transmission, and returns every burst it recovers.
 type Receiver struct {
+	e    *engine
+	lean *leanRx
+}
+
+// engine is the receiver of every tier. It keeps the samples of a number
+// of slots and detects the slots between the anchors of a stream.
+type engine struct {
 	cfg  Config
 	opt  options
 	fe   *frontEnd
@@ -309,13 +318,18 @@ func New(cfg Config) (*Receiver, error) {
 	if !opt.tabled() {
 		return nil, &ConfigError{Field: "opt"}
 	}
+	if !opt.Coherent && cfg.LookbackSlots == 0 {
+		return &Receiver{lean: newLean(cfg, opt)}, nil
+	}
 	if cfg.LookbackSlots == 0 {
 		cfg.LookbackSlots = 16
-		if !opt.Coherent {
-			cfg.LookbackSlots = 8
-		}
 	}
-	r := &Receiver{cfg: cfg, opt: opt, candAt: -1, h: 0.27, doneAt: math.MinInt64, llrScale: opt.LLRScale}
+	return &Receiver{e: newEngine(cfg, opt)}, nil
+}
+
+// newEngine returns the receiver of cfg with the settings opt.
+func newEngine(cfg Config, opt options) *engine {
+	r := &engine{cfg: cfg, opt: opt, candAt: -1, h: 0.27, doneAt: math.MinInt64, llrScale: opt.LLRScale}
 	if r.llrScale == 0 {
 		r.llrScale = 1
 	}
@@ -385,19 +399,55 @@ func New(cfg Config) (*Receiver, error) {
 	if cfg.OnBurst == nil {
 		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+2*len(r.slots)+16)
 	}
-	return r, nil
+	return r
 }
 
 // OffsetHz returns the carrier offset of the last stream that ended, in Hz.
-func (r *Receiver) OffsetHz() float64 { return r.offsetHz }
+func (r *Receiver) OffsetHz() float64 {
+	if r.lean != nil {
+		return float64(r.lean.offsetHz)
+	}
+	return r.e.offsetHz
+}
 
 // DeviationHz returns the outer deviation of the last locked stream, in Hz.
-func (r *Receiver) DeviationHz() float64 { return r.devHz }
+func (r *Receiver) DeviationHz() float64 {
+	if r.lean != nil {
+		return float64(r.lean.devHz)
+	}
+	return r.e.devHz
+}
 
 // Write processes interleaved 8-bit I/Q at Config.Rate and returns the
 // bursts that are complete. The returned slice is valid until the next
 // call.
 func (r *Receiver) Write(iq []byte) []Burst {
+	if r.lean != nil {
+		return r.lean.write(iq)
+	}
+	return r.e.write(iq)
+}
+
+// WriteBaseband processes complex baseband samples at Config.BasebandHz, as
+// a radio front end delivers them, in place of Write. The returned slice is
+// valid until the next call.
+func (r *Receiver) WriteBaseband(x []complex64) []Burst {
+	if r.lean != nil {
+		return r.lean.writeBaseband(x)
+	}
+	return r.e.writeBaseband(x)
+}
+
+// Flush finishes the stream at its end and returns the remaining bursts.
+func (r *Receiver) Flush() []Burst {
+	if r.lean != nil {
+		return r.lean.flush()
+	}
+	return r.e.flush()
+}
+
+// write processes the I/Q bytes of Receiver.Write.
+func (r *engine) write(iq []byte) []Burst {
 	r.out = r.out[:0]
 	for len(iq) > 0 {
 		n := min(len(iq), r.cfg.MaxWrite, r.inChunk) &^ 1
@@ -411,10 +461,8 @@ func (r *Receiver) Write(iq []byte) []Burst {
 	return r.out
 }
 
-// WriteBaseband processes complex baseband samples at Config.BasebandHz, as
-// a radio front end delivers them, in place of Write. The returned slice is
-// valid until the next call.
-func (r *Receiver) WriteBaseband(x []complex64) []Burst {
+// writeBaseband processes the samples of Receiver.WriteBaseband.
+func (r *engine) writeBaseband(x []complex64) []Burst {
 	r.out = r.out[:0]
 	for len(x) > 0 {
 		n := min(len(x), len(r.wide))
@@ -427,7 +475,7 @@ func (r *Receiver) WriteBaseband(x []complex64) []Burst {
 // push runs wide baseband samples through the spectrum estimate, which
 // only an unlocked receiver uses and so only it runs, and through the
 // channel filters, then searches or follows the stream.
-func (r *Receiver) push(x []complex64) {
+func (r *engine) push(x []complex64) {
 	for _, v := range x {
 		if !r.locked && r.spec.push(v) && r.spec.OK && math.Abs(r.spec.Hz-r.chz.ncoHz) > 50 {
 			r.chz.tune(r.spec.Hz)
@@ -439,8 +487,8 @@ func (r *Receiver) push(x []complex64) {
 	r.step(false)
 }
 
-// Flush finishes the stream at its end and returns the remaining bursts.
-func (r *Receiver) Flush() []Burst {
+// flush finishes the stream at its end and returns the remaining bursts.
+func (r *engine) flush() []Burst {
 	r.out = r.out[:0]
 	for range slotSamplesN {
 		r.chz.push(0)
@@ -456,7 +504,7 @@ func (r *Receiver) Flush() []Burst {
 
 // emit hands burst x to OnBurst, or appends it to the bursts that Write
 // returns.
-func (r *Receiver) emit(x *received) {
+func (r *engine) emit(x *received) {
 	if r.cfg.OnBurst != nil {
 		x.put(&r.cb)
 		r.cfg.OnBurst(r.cb)
@@ -469,7 +517,7 @@ func (r *Receiver) emit(x *received) {
 }
 
 // step searches or follows the stream over the samples that arrived.
-func (r *Receiver) step(end bool) {
+func (r *engine) step(end bool) {
 	for {
 		if !r.locked {
 			if !r.searchStep() {
@@ -487,7 +535,7 @@ func (r *Receiver) step(end bool) {
 // The discriminator tier first waits for a spectrum estimate that finds a
 // signal and tunes the channel to it: it never tunes while locked, and a
 // carrier offset through its prefilter cost it 1 dB or more.
-func (r *Receiver) searchStep() bool {
+func (r *engine) searchStep() bool {
 	ch := &r.chz.ch
 	if from := max(r.chz.oldest()+slotSamplesN, r.doneAt); r.searchAt < from {
 		r.searchAt = from
@@ -553,14 +601,14 @@ func (r *Receiver) searchStep() bool {
 // alignSearch returns the first channel sample from t at which the
 // coherent search can start, a multiple of the decimation of the channel
 // ring.
-func (r *Receiver) alignSearch(t int64) int64 {
+func (r *engine) alignSearch(t int64) int64 {
 	d := int64(r.search.dec)
 	return t + (d-(t%d+d)%d)%d
 }
 
 // lock starts following a stream whose SYNC starts (center of its first
 // symbol) at channel sample t.
-func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
+func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	r.locked = true
 	r.spec.reset()
 	r.streams++
@@ -616,7 +664,7 @@ func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
 // maximize the sum of their squared SYNC correlations, searched in turn.
 // The discriminator detection does not use the carrier estimate, so for it
 // warmFreq only reports the deviation.
-func (r *Receiver) warmFreq(j int64) {
+func (r *engine) warmFreq(j int64) {
 	if !r.opt.Coherent {
 		r.devHz = 3 * deviationHz * r.devScale
 		return
@@ -643,7 +691,7 @@ func (r *Receiver) warmFreq(j int64) {
 // to center+span in steps of step, with the best anchorScore up to slot j.
 // A wide search first takes steps 20 times as large, then searches one of
 // them around the best.
-func (r *Receiver) searchFreq(j int64, center, span, step float64) {
+func (r *engine) searchFreq(j int64, center, span, step float64) {
 	if span > 20*step {
 		coarse := 20 * step
 		center, span = r.bestFreq(j, center, span, coarse), coarse
@@ -656,7 +704,7 @@ func (r *Receiver) searchFreq(j int64, center, span, step float64) {
 // metric of the voice and data patterns, at the timing of the slot fit. It
 // interpolates each slot once and removes each carrier offset from the
 // interpolated samples.
-func (r *Receiver) bestFreq(j int64, center, span, step float64) float64 {
+func (r *engine) bestFreq(j int64, center, span, step float64) float64 {
 	tot := r.freqTot[:int(math.Round(2*span/step))+1]
 	clear(tot)
 	saved := r.freq
@@ -688,7 +736,7 @@ func (r *Receiver) bestFreq(j int64, center, span, step float64) float64 {
 // SYNC metric of the voice and data patterns, at the timing of the slot
 // fit and the current carrier estimate. It does not use the anchors that
 // the warm pass found, which a wrong lock frequency makes wrong.
-func (r *Receiver) anchorScore(j int64) float64 {
+func (r *engine) anchorScore(j int64) float64 {
 	var tot float64
 	voice, data, _ := sourceAt(r.src).SyncPatterns()
 	for k := int64(0); k <= j; k++ {
@@ -703,7 +751,7 @@ func (r *Receiver) anchorScore(j int64) float64 {
 }
 
 // setH sets the modulation index of the SYNC waveforms and of the trellis.
-func (r *Receiver) setH(h float64) {
+func (r *engine) setH(h float64) {
 	r.h = h
 	r.search.setH(h, &r.pulse)
 	if r.model != nil {
@@ -715,7 +763,7 @@ func (r *Receiver) setH(h float64) {
 // syncSamples interpolates the SYNC field of slot s, shifted by tau
 // samples, into r.corrX with the residual carrier removed, and returns its
 // energy.
-func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
+func (r *engine) syncSamples(s *slotState, tau float64) float64 {
 	ch := &r.chz.ch
 	dec := r.search.dec
 	t0 := r.syncStart(s, tau)
@@ -737,14 +785,14 @@ func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
 
 // syncStart returns the channel sample of the first sample that
 // syncSamples interpolates.
-func (r *Receiver) syncStart(s *slotState, tau float64) float64 {
+func (r *engine) syncStart(s *slotState, tau float64) float64 {
 	return r.symTime(s.index, syncFirstSym+syncEdge) + tau - float64(r.search.sps/2*r.search.dec)
 }
 
 // syncMetricAt returns the SYNC metric of pattern p, as syncCorr, over
 // r.corrX, interpolated without the carrier from channel sample t0 and of
 // energy e, with the carrier at offset f removed.
-func (r *Receiver) syncMetricAt(p enums.SyncPattern, e, t0, f float64) float64 {
+func (r *engine) syncMetricAt(p enums.SyncPattern, e, t0, f float64) float64 {
 	if e == 0 {
 		return 0
 	}
@@ -760,23 +808,23 @@ func (r *Receiver) syncMetricAt(p enums.SyncPattern, e, t0, f float64) float64 {
 
 // slotTime returns the channel sample of the center of the first CACH
 // symbol of slot j.
-func (r *Receiver) slotTime(j int64) float64 {
+func (r *engine) slotTime(j int64) float64 {
 	return r.t0 + float64(j)*r.period
 }
 
 // symTime returns the channel sample of the center of symbol k (0 to 143,
 // CACH first) of slot j.
-func (r *Receiver) symTime(j int64, k int) float64 {
+func (r *engine) symTime(j int64, k int) float64 {
 	return r.slotTime(j) + float64(k)*r.period/slotSymbols
 }
 
 // slot returns the state of slot j in the ring of slot states.
-func (r *Receiver) slot(j int64) *slotState {
+func (r *engine) slot(j int64) *slotState {
 	return &r.slots[r.slotPos(j)]
 }
 
 // resetSlot clears the state of slot j and returns it.
-func (r *Receiver) resetSlot(j int64) *slotState {
+func (r *engine) resetSlot(j int64) *slotState {
 	s := r.slot(j)
 	*s = slotState{index: j, start: r.slotTime(j)}
 	r.syms.clear(r.syms.base(j), slotSymbols, 0)
@@ -785,7 +833,7 @@ func (r *Receiver) resetSlot(j int64) *slotState {
 }
 
 // slotPos returns the position of slot j in the ring of slot states.
-func (r *Receiver) slotPos(j int64) int {
+func (r *engine) slotPos(j int64) int {
 	return floorMod(j, len(r.slots))
 }
 
@@ -849,7 +897,7 @@ func (st *symStore) set(p int, a []float32) {
 
 // symsOf returns the store that holds slot s and the store index of its
 // first symbol: the refinement store while a refinement detects s again.
-func (r *Receiver) symsOf(s *slotState) (*symStore, int) {
+func (r *engine) symsOf(s *slotState) (*symStore, int) {
 	if j := s.index; r.refining && j >= r.refLo && j < r.refLo+int64(r.refined.slots) {
 		return &r.refined, int(j-r.refLo) * slotSymbols
 	}
@@ -859,7 +907,7 @@ func (r *Receiver) symsOf(s *slotState) (*symStore, int) {
 // followStep measures the next slot once its samples and a lookahead have
 // arrived, and detects the slots between anchors. It reports whether it
 // made progress.
-func (r *Receiver) followStep(end bool) bool {
+func (r *engine) followStep(end bool) bool {
 	need := r.symTime(r.next, slotSymbols) + float64(2*samplesPerSy+sincTaps)
 	if !end && need >= float64(r.chz.count()) {
 		return false
@@ -906,7 +954,7 @@ func (r *Receiver) followStep(end bool) bool {
 }
 
 // finishStream detects the slots that are still pending and unlocks.
-func (r *Receiver) finishStream() {
+func (r *engine) finishStream() {
 	if r.warm {
 		r.warmFreq(r.next - 1)
 		r.warm = false
@@ -946,7 +994,7 @@ func (r *Receiver) finishStream() {
 
 // measure classifies the SYNC field of slot s, measures its timing,
 // carrier and level when it is an anchor, and tests the carrier.
-func (r *Receiver) measure(s *slotState) {
+func (r *engine) measure(s *slotState) {
 	if !r.opt.Coherent {
 		r.measureDisc(s)
 		return
@@ -993,7 +1041,7 @@ func (r *Receiver) measure(s *slotState) {
 
 // timing adds the SYNC of anchor slot s, tau samples from where the fit
 // put it, to the fit of the slot timing.
-func (r *Receiver) timing(s *slotState, tau float64) {
+func (r *engine) timing(s *slotState, tau float64) {
 	k := s.index
 	r.fit[0] = timingForget*r.fit[0] + 1
 	r.fit[1] = timingForget*r.fit[1] + float64(k)
@@ -1014,7 +1062,7 @@ func (r *Receiver) timing(s *slotState, tau float64) {
 
 // syncCorr correlates r.corrX, the SYNC field samples of energy e, with the
 // waveform of pattern p.
-func (r *Receiver) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
+func (r *engine) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 	if e == 0 {
 		return anchorInfo{pattern: p}
 	}
@@ -1033,7 +1081,7 @@ func (r *Receiver) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 
 // rotAt returns the rotation that removes the residual carrier at channel
 // sample t.
-func (r *Receiver) rotAt(t float64) complex128 {
+func (r *engine) rotAt(t float64) complex128 {
 	return complex128(turn(-r.freq * t / basebandRate))
 }
 
@@ -1045,7 +1093,7 @@ func turn(c float64) complex64 {
 }
 
 // slotEnergy returns the mean power over the burst of slot s.
-func (r *Receiver) slotEnergy(s *slotState) float64 {
+func (r *engine) slotEnergy(s *slotState) float64 {
 	n := burstSymbols * samplesPerSy
 	if !r.opt.Coherent {
 		return r.chz.slotEnergyAt(r.symTime(s.index, cachSymbols), n)
@@ -1066,7 +1114,7 @@ func (r *Receiver) slotEnergy(s *slotState) float64 {
 // detectUpTo detects the symbols of the slots from r.first to j and hands
 // them to the tracker: up to j-1 when slot j is an anchor, whose second
 // half the next gap detects, and up to j otherwise.
-func (r *Receiver) detectUpTo(j int64) {
+func (r *engine) detectUpTo(j int64) {
 	if j < r.first {
 		return
 	}
@@ -1091,7 +1139,7 @@ func (r *Receiver) detectUpTo(j int64) {
 
 // detectBurst detects and finishes slot s of a stream whose carrier is off
 // between bursts.
-func (r *Receiver) detectBurst(s *slotState) {
+func (r *engine) detectBurst(s *slotState) {
 	if s.present {
 		if !r.opt.Coherent {
 			r.discDetect(s)
@@ -1107,7 +1155,7 @@ func (r *Receiver) detectBurst(s *slotState) {
 
 // finish turns the detected symbols of slot s into a received burst for
 // the tracker.
-func (r *Receiver) finish(s *slotState) {
+func (r *engine) finish(s *slotState) {
 	if !s.present {
 		return
 	}
@@ -1131,7 +1179,7 @@ func (r *Receiver) finish(s *slotState) {
 
 // fill264 sets the hard bits and log-likelihood ratios of rec, burst and
 // CACH, from the detected symbols of slot s.
-func (r *Receiver) fill264(s *slotState, rec *slotRec) {
+func (r *engine) fill264(s *slotState, rec *slotRec) {
 	rec.data = layer2.RawBurst{}
 	st, p := r.symsOf(s)
 	for k := range slotSymbols {
@@ -1180,7 +1228,7 @@ func satLLR(v float32) int16 {
 // refine starts a refinement of the slots from lo, which detects them into
 // the refinement store, from their detection on the way to the tracker,
 // and leaves that as it is.
-func (r *Receiver) refine(lo int64) {
+func (r *engine) refine(lo int64) {
 	r.refining, r.refLo = true, lo
 	st := &r.syms
 	for i := range r.refined.slots {
@@ -1198,7 +1246,7 @@ func (r *Receiver) refine(lo int64) {
 // repairEntry repairs the FEC fields of entry e and, for a voice burst whose
 // slot the ring still holds, detects the burst again with the repaired bits
 // as priors, then repairs it again with the new log-likelihood ratios.
-func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
+func (r *engine) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	r.rep.repair(e, cc, ccOK)
 	j := e.rec.index
 	s := r.slot(j)
@@ -1258,7 +1306,7 @@ type dataPass struct {
 // information and the grid's, up to options.DataPasses times or until it
 // passes its check. The other fields of the burst keep their first
 // detection, which the priors of a wrong block would only make worse.
-func (r *Receiver) repairData(e *trackEntry, cc enums.ColorCode, ccOK bool) {
+func (r *engine) repairData(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	j := e.rec.index
 	w := r.opt.DataPrior
 	dp := r.data
@@ -1305,7 +1353,7 @@ func bitPrior(l float32, b unpacked.Bit) float32 {
 // anchors on either side of it in a BS stream, into r.scratchRec, and
 // reports whether it could. The carrier estimate stays as it is, as the
 // priors would bias it.
-func (r *Receiver) redetect(j int64) bool {
+func (r *engine) redetect(j int64) bool {
 	s := r.slot(j)
 	s.hasPrior = true
 	if r.bs {

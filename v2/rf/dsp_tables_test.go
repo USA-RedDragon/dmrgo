@@ -14,6 +14,9 @@ type dspTables struct {
 	half      [halfTaps]float32
 	pre       [preTaps]float32
 	rrc       [rrcTaps]float32
+	halfQ15   [halfSide + 1]int16
+	preQ15    [preTaps/2 + 1]int16
+	rrcQ15    [rrcTaps/2 + 1]int16
 	twiddles  [fftSize / 2]complex64
 	window    [fftSize/2 + 1]float32
 	dev       [numSources][syncSymbols]float32
@@ -44,6 +47,17 @@ func deriveDSP() *dspTables {
 	copy(t.pre[:], kaiserLowpass(preTaps, discCutHz/discRate, 5))
 	for i, v := range rrcTapsSpan(discSPS, discSpan) {
 		t.rrc[i] = float32(v)
+	}
+	q15 := func(v float32) int16 { return int16(math.Round(float64(v) * 32768)) }
+	t.halfQ15[0] = q15(t.half[halfTaps/2])
+	for k := range halfSide {
+		t.halfQ15[k+1] = q15(t.half[halfTaps/2-(2*k+1)])
+	}
+	for i := range t.preQ15 {
+		t.preQ15[i] = q15(t.pre[i])
+	}
+	for i := range t.rrcQ15 {
+		t.rrcQ15[i] = q15(t.rrc[i])
 	}
 	for i := range t.twiddles {
 		p := -2 * math.Pi * float64(i) / fftSize

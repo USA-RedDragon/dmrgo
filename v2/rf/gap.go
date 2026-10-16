@@ -50,7 +50,7 @@ func (g symRef) diff(h symRef) int {
 }
 
 // anchorSym returns the SYNC symbol of an anchor at stream symbol g.
-func (r *Receiver) anchorSym(g symRef) (int, bool) {
+func (r *engine) anchorSym(g symRef) (int, bool) {
 	s := r.slot(g.slot)
 	if s.index != g.slot || !s.anchor || g.k < syncFirstSym || g.k >= syncFirstSym+syncSymbols {
 		return 0, false
@@ -63,7 +63,7 @@ func (r *Receiver) anchorSym(g symRef) (int, bool) {
 // symPrior writes the log priors of the four digits of stream symbol g:
 // options.KnownPrior for the expected symbol of an anchor's SYNC, plus the bit
 // priors that a refinement set on its slot.
-func (r *Receiver) symPrior(g symRef, lp []float32) {
+func (r *engine) symPrior(g symRef, lp []float32) {
 	clear(lp)
 	if a, ok := r.anchorSym(g); ok {
 		lp[(a+3)/2] = r.opt.KnownPrior
@@ -78,7 +78,7 @@ func (r *Receiver) symPrior(g symRef, lp []float32) {
 }
 
 // fill aligns n symbols from g into r.buf, as fillRange.
-func (r *Receiver) fill(g symRef, n int, rev bool) {
+func (r *engine) fill(g symRef, n int, rev bool) {
 	r.fillRange(g, 0, n, rev, r.buf)
 }
 
@@ -87,7 +87,7 @@ func (r *Receiver) fill(g symRef, n int, rev bool) {
 // reversed symbols). The discrete phase of the model sums the frequency up
 // to and including each sample, so the reversed waveform matches it one
 // model sample earlier, and fillRange takes the reversed samples there.
-func (r *Receiver) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
+func (r *engine) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 	ch := &r.chz.ch
 	dir := 1
 	if rev {
@@ -129,7 +129,7 @@ func (r *Receiver) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 // the first at ring position base+u, sample j of symbol i at
 // base+u+i*du+j*su, and returns the ring position of r.scr[0] and the
 // loaded samples.
-func (r *Receiver) loadChunk(base int64, u, du, su float32, n int, rev bool) (int64, []complex64) {
+func (r *engine) loadChunk(base int64, u, du, su float32, n int, rev bool) (int64, []complex64) {
 	sps := r.model.sps
 	span := float32(n/sps)*abs32(du) + float32(sps)*abs32(su)
 	lo := u
@@ -144,27 +144,27 @@ func (r *Receiver) loadChunk(base int64, u, du, su float32, n int, rev bool) (in
 
 // runSamples writes the samples of the intervals k0 to k1-1 of the current
 // trellis run into x.
-func (r *Receiver) runSamples(k0, k1 int, x []complex64) {
+func (r *engine) runSamples(k0, k1 int, x []complex64) {
 	d := r.model.d
 	r.fillRange(r.runG, k0+d, k1+d, r.runDir < 0, x)
 }
 
 // runPrior writes the log priors of the newest symbol of interval k of the
 // current trellis run.
-func (r *Receiver) runPrior(k int, lp []float32) {
+func (r *engine) runPrior(k int, lp []float32) {
 	r.symPrior(r.runG.add(r.runDir*(k+2*r.model.d)), lp)
 }
 
 // runKeep keeps the log-APPs of interval k of the current trellis run for
 // its symbol when no run nearer that symbol set them.
-func (r *Receiver) runKeep(k int, app []float32) {
+func (r *engine) runKeep(k int, app []float32) {
 	r.keepAPP(r.runG, r.runDir, k, r.runSteps, app, r.runLo, r.runHi)
 }
 
 // keepAPP keeps app, the log-APPs of interval k of a run of steps
 // intervals from g in direction dir, for its symbol between lo and hi when
 // no run nearer that symbol set them.
-func (r *Receiver) keepAPP(g symRef, dir, k, steps int, app []float32, lo, hi symRef) {
+func (r *engine) keepAPP(g symRef, dir, k, steps int, app []float32, lo, hi symRef) {
 	d := r.model.d
 	if k >= steps-d {
 		return
@@ -189,7 +189,7 @@ func (r *Receiver) keepAPP(g symRef, dir, k, steps int, app []float32, lo, hi sy
 // run detects n symbols from g (forward or backward) with the trellis,
 // starting from the known symbols at g when there are enough, and keeps the
 // APPs of symbols nearer this start than the ones they have.
-func (r *Receiver) run(g symRef, n int, rev bool, lo, hi symRef) {
+func (r *engine) run(g symRef, n int, rev bool, lo, hi symRef) {
 	m := r.model
 	d, sps := m.d, m.sps
 	n = min(n, r.maxRun)
@@ -242,7 +242,7 @@ func (r *Receiver) run(g symRef, n int, rev bool, lo, hi symRef) {
 }
 
 // discard drops the log-APPs of a trellis run.
-type discard struct{ *Receiver }
+type discard struct{ *engine }
 
 // runKeep drops app.
 func (discard) runKeep(int, []float32) {}
@@ -250,7 +250,7 @@ func (discard) runKeep(int, []float32) {}
 // bankRun runs the trellis from an unknown state with phaseBank carrier
 // phases and keeps the APPs of the run whose best path scores highest. The
 // exact-phase trellis takes an unknown phase in one run.
-func (r *Receiver) bankRun(steps int, scale float32) {
+func (r *engine) bankRun(steps int, scale float32) {
 	sps, d := r.model.sps, r.model.d
 	if r.xt != nil {
 		r.xt.run(r.buf[d*sps:], steps, 1, scale, 0, r.tapp)
@@ -274,7 +274,7 @@ func (r *Receiver) bankRun(steps int, scale float32) {
 // any, or from the first slot with phaseBank carrier phases when neither
 // has one. With both anchors, each run stops trellisLook symbols past the
 // middle, as each symbol keeps the APPs of the nearer run.
-func (r *Receiver) coherentGap(first, j int64, final bool) {
+func (r *engine) coherentGap(first, j int64, final bool) {
 	if r.amp == 0 || r.noise == 0 {
 		return
 	}
@@ -318,7 +318,7 @@ func (r *Receiver) coherentGap(first, j int64, final bool) {
 // coherentBurst detects the burst of slot j alone, for a stream whose
 // carrier is off between bursts: forward and backward from its SYNC, or
 // with phaseBank carrier phases when it has none.
-func (r *Receiver) coherentBurst(j int64) {
+func (r *engine) coherentBurst(j int64) {
 	if r.amp == 0 || r.noise == 0 {
 		return
 	}
@@ -349,7 +349,7 @@ func (r *Receiver) coherentBurst(j int64) {
 // phase pulse of the decisions within the span of the pulse and the whole
 // phase steps of the decisions before it, as refPhaseInto does for the
 // symbols from lo.
-func (r *Receiver) trackCarrier(lo, hi symRef) {
+func (r *engine) trackCarrier(lo, hi symRef) {
 	n := hi.diff(lo) + 1
 	if n < 3*ddWindow {
 		return
@@ -421,7 +421,7 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 
 // decision returns the symbol, -3 to 3, with the highest log-APP of stream
 // symbol h.
-func (r *Receiver) decision(h symRef) int {
+func (r *engine) decision(h symRef) int {
 	st, p := r.symsOf(r.slot(h.slot))
 	return 2*int(st.digit[p+h.k]) - 3
 }

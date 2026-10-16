@@ -25,7 +25,7 @@ const (
 
 // discSyncErrors returns the number of bits where the sliced symbols of
 // the SYNC field of slot s, tau samples off, differ from syms.
-func (r *Receiver) discSyncErrors(s *slotState, tau float64, syms *[syncSymbols]int8) int {
+func (r *engine) discSyncErrors(s *slotState, tau float64, syms *[syncSymbols]int8) int {
 	step := r.devScale * deviationHz
 	n := 0
 	for k, want := range syms {
@@ -60,14 +60,14 @@ func symbolBitErrors(a, b int8) int {
 }
 
 // symLag returns the discriminator sample that matches channel sample t.
-func (r *Receiver) symLag(t float64) float64 {
+func (r *engine) symLag(t float64) float64 {
 	return r.chz.symIndex(t)
 }
 
 // measureDisc classifies the SYNC field of slot s on the discriminator
 // output and, for an anchor, updates the timing, the carrier offset and
 // the deviation scale from it.
-func (r *Receiver) measureDisc(s *slotState) {
+func (r *engine) measureDisc(s *slotState) {
 	var best float32
 	bestTau := 0.0
 	data := false
@@ -136,7 +136,7 @@ func (r *Receiver) measureDisc(s *slotState) {
 // discriminator output, as Gaussian around the four levels, with a click
 // outlier of options.DiscOutlier spread over the basebandRate Hz of the
 // discriminator range as their floor.
-func (r *Receiver) discDetect(s *slotState) {
+func (r *engine) discDetect(s *slotState) {
 	v := math.Max(r.discNoise, 1)
 	g := -1 / float32(2*v)
 	po := r.opt.DiscOutlier
