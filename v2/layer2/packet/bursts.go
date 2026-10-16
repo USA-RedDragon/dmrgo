@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -11,7 +9,7 @@ import (
 // one Rate 1/2, Rate 3/4 or Rate 1 burst per block, each with a slot type of
 // color code colorCode and the data SYNC pattern of src. It returns an error
 // when the header or a block does not encode, a block has another data type,
-// or src is unknown.
+// or src is unknown. It allocates the slice; AppendBursts does not.
 func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
 	out, err := AppendBursts(make([]layer2.RawBurst, 0, 1+len(p.Blocks)), &p, colorCode, src)
 	if err != nil {
@@ -26,13 +24,13 @@ func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, s
 	n := len(dst)
 	raw, err := layer2.BuildBurst(&p.Header, colorCode, src)
 	if err != nil {
-		return dst, fmt.Errorf("header: %w", err)
+		return dst, newHeaderError(err)
 	}
 	dst = append(dst, raw)
 	for i, d := range p.Blocks {
 		raw, err = blockBurst(d, colorCode, src)
 		if err != nil {
-			return dst[:n], fmt.Errorf("block %d: %w", i, err)
+			return dst[:n], newBlockError(i, err)
 		}
 		dst = append(dst, raw)
 	}
@@ -41,7 +39,7 @@ func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, s
 
 func blockBurst(d layer2.Data, colorCode enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, error) {
 	if dt := d.DataType(); dt != enums.DataTypeRate12 && dt != enums.DataTypeRate34 && dt != enums.DataTypeRate1 {
-		return layer2.RawBurst{}, fmt.Errorf("%w: %T with data type %s", ErrRate, d, dt.String())
+		return layer2.RawBurst{}, newBlockRateError(d, dt)
 	}
 	return layer2.BuildBurst(d, colorCode, src)
 }
