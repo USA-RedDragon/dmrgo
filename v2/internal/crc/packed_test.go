@@ -7,6 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func TestPackedCRCsMatchReference(t *testing.T) {
@@ -19,7 +20,7 @@ func TestPackedCRCsMatchReference(t *testing.T) {
 		for i := range bits {
 			bits[i] = bit.Bit(r.Intn(2))
 		}
-		data := bit.Pack(bits)
+		data := unpacked.Pack(bits)
 		if got, want := crc.CRC7(data, n), ref.CRC7(bits); got != want {
 			t.Fatalf("CRC7 of %d bits = %#x, want %#x", n, got, want)
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -114,8 +115,8 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 			LateEntry:       false,
 			Emergency:       true,
 			Offset:          false,
-			TargetAddress:   uint32(bit.Uint(targetAddr[:])),
-			SourceAddress:   uint32(bit.Uint(sourceAddr[:])),
+			TargetAddress:   uint32(unpacked.Uint(targetAddr[:])),
+			SourceAddress:   uint32(unpacked.Uint(sourceAddr[:])),
 		},
 	}
 
@@ -138,10 +139,10 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	if !tvg.Emergency {
 		t.Error("Emergency should be true")
 	}
-	if tvg.TargetAddress != uint32(bit.Uint(targetAddr[:])) {
+	if tvg.TargetAddress != uint32(unpacked.Uint(targetAddr[:])) {
 		t.Error("TargetAddress mismatch after encode-decode cycle")
 	}
-	if tvg.SourceAddress != uint32(bit.Uint(sourceAddr[:])) {
+	if tvg.SourceAddress != uint32(unpacked.Uint(sourceAddr[:])) {
 		t.Error("SourceAddress mismatch after encode-decode cycle")
 	}
 }
@@ -594,8 +595,8 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 			HiRate:          true,
 			Emergency:       false,
 			Offset:          true,
-			TargetAddress:   uint32(bit.Uint(targetAddr[:])),
-			SourceAddress:   uint32(bit.Uint(sourceAddr[:])),
+			TargetAddress:   uint32(unpacked.Uint(targetAddr[:])),
+			SourceAddress:   uint32(unpacked.Uint(sourceAddr[:])),
 		},
 	}
 
@@ -624,10 +625,10 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	if !pdg.Offset {
 		t.Error("Offset should be true")
 	}
-	if pdg.TargetAddress != uint32(bit.Uint(targetAddr[:])) {
+	if pdg.TargetAddress != uint32(unpacked.Uint(targetAddr[:])) {
 		t.Error("TargetAddress mismatch")
 	}
-	if pdg.SourceAddress != uint32(bit.Uint(sourceAddr[:])) {
+	if pdg.SourceAddress != uint32(unpacked.Uint(sourceAddr[:])) {
 		t.Error("SourceAddress mismatch")
 	}
 }
@@ -656,7 +657,7 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 			Reg:          true,
 			Backoff:      3,
 			SysIdentCode: 0x1234,
-			MSAddress:    uint32(bit.Uint(msAddr[:])),
+			MSAddress:    uint32(unpacked.Uint(msAddr[:])),
 		},
 	}
 
@@ -694,7 +695,7 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	if a.SysIdentCode != 0x1234 {
 		t.Errorf("SysIdentCode = 0x%04X, want 0x1234", a.SysIdentCode)
 	}
-	if a.MSAddress != uint32(bit.Uint(msAddr[:])) {
+	if a.MSAddress != uint32(unpacked.Uint(msAddr[:])) {
 		t.Error("MSAddress mismatch")
 	}
 }

@@ -20,8 +20,9 @@ import (
 )
 
 // bitFuncs holds every exported function and method of the v2 module that
-// takes bit.Bit values, except those of package bit (see bit_test.go) and of
-// the cgo codec2 binding. Methods are wrapped with a fresh receiver.
+// takes bit.Bit values, except those of internal/unpacked (see
+// unpacked_test.go) and of the cgo codec2 binding. Methods are wrapped with
+// a fresh receiver.
 
 var bitFuncs = map[string]any{
 	"internal/bits.Pack": func(src [96]bit.Bit) [12]byte {
@@ -47,7 +48,7 @@ func bitFuncNames(t *testing.T) []string {
 		}
 		rel, _ := filepath.Rel(root, path)
 		if d.IsDir() {
-			if rel == "bit" || rel == filepath.Join("internal", "lowbit") || rel == filepath.Join("internal", "fecref") || rel == filepath.Join("vocoder", "codec2") {
+			if rel == "bit" || rel == filepath.Join("internal", "unpacked") || rel == filepath.Join("internal", "lowbit") || rel == filepath.Join("internal", "fecref") || rel == filepath.Join("vocoder", "codec2") {
 				return filepath.SkipDir
 			}
 			return nil

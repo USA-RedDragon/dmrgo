@@ -11,6 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -28,7 +29,7 @@ func capturedFragments() [4][32]bit.Bit {
 		{0x09, 0x0C, 0x35, 0x95},
 		{0x84, 0xAA, 0x2B, 0xA5},
 	} {
-		copy(fr[i][:], bit.Unpack(word[:]))
+		copy(fr[i][:], unpacked.Unpack(word[:]))
 	}
 	return fr
 }
@@ -51,7 +52,7 @@ func TestEmbeddedLC_DecodeCapture(t *testing.T) {
 	if res.Uncorrectable || res.ErrorsCorrected != 0 || res.BitsChecked != 128 {
 		t.Fatalf("FEC = %+v, want a clean 128-bit check", res)
 	}
-	if got := bit.Pack(lc[:]); !bytes.Equal(got, capturedEmbeddedLC) {
+	if got := unpacked.Pack(lc[:]); !bytes.Equal(got, capturedEmbeddedLC) {
 		t.Errorf("LC % X, want % X", got, capturedEmbeddedLC)
 	}
 
@@ -80,7 +81,7 @@ func TestEmbeddedLC_EncodeCapture(t *testing.T) {
 		t.Errorf("fragments differ from the capture")
 	}
 	var bits [72]bit.Bit
-	copy(bits[:], bit.Unpack(capturedEmbeddedLC))
+	copy(bits[:], unpacked.Unpack(capturedEmbeddedLC))
 	if encodeLCBits(bits) != capturedFragments() {
 		t.Errorf("EncodeEmbeddedLC differs from the capture")
 	}
@@ -152,13 +153,13 @@ func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 	fr := capturedFragments()
 	var words [4]uint32
 	for i := range fr {
-		words[i] = uint32(bit.Uint(fr[i][:]) & 0xFFFFFFFF)
+		words[i] = uint32(unpacked.Uint(fr[i][:]) & 0xFFFFFFFF)
 	}
 	info, _ := bptc.DecodeEmbedded(words)
 	const checksumBit = 2*11 + 10
 	info[checksumBit/8] ^= 0x80 >> (checksumBit % 8)
 	for i, w := range bptc.EncodeEmbedded(info) {
-		bit.PutUint(fr[i][:], uint64(w))
+		unpacked.PutUint(fr[i][:], uint64(w))
 	}
 	_, res := decodeLCBits(fr)
 	if !res.Uncorrectable || res.ErrorsCorrected != 0 {
@@ -206,14 +207,14 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 		raw := must(hex.DecodeString(v.raw))
 		var fr [4][32]bit.Bit
 		for i := range fr {
-			copy(fr[i][:], bit.Unpack(raw[i*4:i*4+4]))
+			copy(fr[i][:], unpacked.Unpack(raw[i*4:i*4+4]))
 		}
 		lc, res := decodeLCBitsStrict(fr)
 		if res.Uncorrectable == v.accept {
 			t.Errorf("%s: accepted %v, MMDVMHost %v", v.raw, !res.Uncorrectable, v.accept)
 			continue
 		}
-		if got := hex.EncodeToString(bit.Pack(lc[:])); v.accept && got != v.lc {
+		if got := hex.EncodeToString(unpacked.Pack(lc[:])); v.accept && got != v.lc {
 			t.Errorf("%s: LC %s, want %s", v.raw, got, v.lc)
 		}
 		flc, flcRes := decodeFLCBitsStrict(fr)
@@ -265,17 +266,17 @@ func TestEmbeddedLC_EncodeRejectsBadLC(t *testing.T) {
 }
 
 func encodeLCBits(lc [72]bit.Bit) [4][32]bit.Bit {
-	return fragBits(layer2.EncodeEmbeddedLC([9]byte(bit.Pack(lc[:]))))
+	return fragBits(layer2.EncodeEmbeddedLC([9]byte(unpacked.Pack(lc[:]))))
 }
 
 func decodeLCBits(f [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
 	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f), false)
-	return [72]bit.Bit(bit.Unpack(lc[:])), res
+	return [72]bit.Bit(unpacked.Unpack(lc[:])), res
 }
 
 func decodeLCBitsStrict(f [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
 	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f), true)
-	return [72]bit.Bit(bit.Unpack(lc[:])), res
+	return [72]bit.Bit(unpacked.Unpack(lc[:])), res
 }
 
 func encodeFLCBits(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
@@ -296,7 +297,7 @@ func decodeFLCBitsStrict(f [4][32]bit.Bit) (pdu.FullLinkControl, fec.Result) {
 func fragBits(f [4][4]byte) [4][32]bit.Bit {
 	var out [4][32]bit.Bit
 	for i := range f {
-		copy(out[i][:], bit.Unpack(f[i][:]))
+		copy(out[i][:], unpacked.Unpack(f[i][:]))
 	}
 	return out
 }
@@ -304,7 +305,7 @@ func fragBits(f [4][4]byte) [4][32]bit.Bit {
 func fragOctets(f [4][32]bit.Bit) [4][4]byte {
 	var out [4][4]byte
 	for i := range f {
-		copy(out[i][:], bit.Pack(f[i][:]))
+		copy(out[i][:], unpacked.Pack(f[i][:]))
 	}
 	return out
 }

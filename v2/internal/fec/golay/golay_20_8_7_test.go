@@ -6,11 +6,12 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/golay"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func bits20(cw uint32) [20]bit.Bit {
 	var b [20]bit.Bit
-	bit.PutUint(b[:], uint64(cw))
+	unpacked.PutUint(b[:], uint64(cw))
 	return b
 }
 
@@ -20,8 +21,8 @@ func TestGolay2087MatchesReferenceOnEveryWord(t *testing.T) {
 	for cw := range uint32(1 << 20) {
 		got, res := Decode2087(cw)
 		want, wantRes := ref.Decode2087(bits20(cw))
-		if got != uint32(bit.Uint(want[:])) || res != wantRes {
-			t.Fatalf("Decode2087(%#05x) = %#05x %+v, want %#05x %+v", cw, got, res, bit.Uint(want[:]), wantRes)
+		if got != uint32(unpacked.Uint(want[:])) || res != wantRes {
+			t.Fatalf("Decode2087(%#05x) = %#05x %+v, want %#05x %+v", cw, got, res, unpacked.Uint(want[:]), wantRes)
 		}
 		if Check2087(cw) != ref.Check2087(bits20(cw)) {
 			t.Fatalf("Check2087(%#05x) differs from the reference", cw)
@@ -30,8 +31,8 @@ func TestGolay2087MatchesReferenceOnEveryWord(t *testing.T) {
 	for d := range 256 {
 		data := bits20(uint32(d) << 12)
 		want := ref.Encode2087([8]bit.Bit(data[:8]))
-		if got := Encode2087(uint8(d)); got != uint32(bit.Uint(want[:])) {
-			t.Fatalf("Encode2087(%#02x) = %#05x, want %#05x", d, got, bit.Uint(want[:]))
+		if got := Encode2087(uint8(d)); got != uint32(unpacked.Uint(want[:])) {
+			t.Fatalf("Encode2087(%#02x) = %#05x, want %#05x", d, got, unpacked.Uint(want[:]))
 		}
 	}
 }

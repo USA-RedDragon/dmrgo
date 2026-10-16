@@ -32,16 +32,6 @@ import (
 // api holds the functions and methods.
 var api = [...]any{
 	(*bit.FieldRangeError).Error,
-	bit.AppendPack,
-	bit.AppendUnpack,
-	bit.Pack,
-	bit.Pack32,
-	bit.Pack96,
-	bit.PutUint,
-	bit.Uint,
-	bit.Unpack,
-	bit.Unpack32,
-	bit.Unpack96,
 	(*enums.ColorCodeError).Error,
 	enums.Access.String,
 	enums.ActivityID.String,
