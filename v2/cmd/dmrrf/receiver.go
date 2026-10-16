@@ -65,6 +65,12 @@ const (
 	// wideChunk is the number of baseband samples that the receiver filters
 	// before it searches or follows the stream again.
 	wideChunk = 512
+	// trellisWin is the number of symbols of a block of the trellis of the
+	// coherent tiers, and trellisLook the symbols of lookahead of its
+	// backward pass. Eight symbols of lookahead give the same sweep as
+	// whole runs.
+	trellisWin  = 64
+	trellisLook = 8
 	// warmSlots is the number of slots after the first anchor that the
 	// receiver detects twice, the first time only to settle the carrier
 	// estimate.
@@ -236,13 +242,13 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 			r.xt = newXTrellis(r.model, np, r.maxRun)
 			r.lp, r.slp = r.xt.lp, r.xt.slp
 		} else {
-			r.tr = newTrellis(r.model, r.maxRun)
+			r.tr = newTrellis(r.model, r.maxRun, trellisWin, trellisLook)
 			r.lp, r.slp = r.tr.lp, r.tr.slp
 		}
-		r.buf = make([]complex64, (maxGapSlots+1)*slotSymbols*samplesPerSy)
-		r.tapp = make([]float32, 4*(maxGapSlots+1)*slotSymbols)
-		r.ddSyms = make([]int, (maxGapSlots+1)*slotSymbols)
-		r.ddPh = make([]float64, (maxGapSlots+1)*slotSymbols*samplesPerSy/dec)
+		r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)
+		r.tapp = make([]float32, 4*r.maxRun)
+		r.ddSyms = make([]int, r.maxRun)
+		r.ddPh = make([]float64, r.maxRun*samplesPerSy/dec)
 	}
 	if r.opt.Coherent {
 		r.pulse = newPhasePulse(samplesPerSy / dec)

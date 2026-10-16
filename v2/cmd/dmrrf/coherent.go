@@ -102,17 +102,28 @@ func rrcTapsSpan(sps float64, span int) []float64 {
 
 // trellis is a max-log BCJR detector over the windows of a cpmModel, with
 // the phase of the symbols before the window carried per survivor (per
-// survivor processing). Its buffers hold up to maxSteps symbol intervals.
+// survivor processing). It runs in blocks of win symbol intervals: the
+// forward pass of a block goes look intervals past it, and the backward
+// pass starts there, so its buffers hold win+look intervals, and the
+// forward pass of the next block repeats the look intervals from the state
+// at the end of the block. With win at least the run, it is the whole-run
+// BCJR. lp holds up to maxSteps intervals.
 type trellis struct {
-	m        *cpmModel
-	maxSteps int
-	alpha    []float32
-	beta     []float32
-	next     []float32
-	rot      []complex64
-	nrot     []complex64
-	bm       []float32
-	corr     []complex64
+	m         *cpmModel
+	maxSteps  int
+	win, look int
+	alpha     []float32
+	beta      []float32
+	next      []float32
+	rot       []complex64
+	nrot      []complex64
+	bm        []float32
+	corr      []complex64
+	// saveA and saveR hold the forward state at the end of a block, and
+	// last the forward metrics after the last interval of a run.
+	saveA []float32
+	saveR []complex64
+	last  []float32
 	// lp holds, per step, the log prior of each digit of the newest symbol
 	// of the window, and slp the log priors of the digits of the first
 	// window state, oldest first. Zero means no prior.
@@ -121,13 +132,17 @@ type trellis struct {
 }
 
 // newTrellis returns a trellis over model m for runs of up to maxSteps
-// symbol intervals.
-func newTrellis(m *cpmModel, maxSteps int) *trellis {
+// symbol intervals in blocks of win, with look intervals of lookahead.
+func newTrellis(m *cpmModel, maxSteps, win, look int) *trellis {
+	win = min(win, maxSteps)
+	look = min(look, maxSteps-win)
+	n := win + look
 	return &trellis{
-		m: m, maxSteps: maxSteps,
-		alpha: make([]float32, (maxSteps+1)*m.states), beta: make([]float32, m.states), next: make([]float32, m.states),
+		m: m, maxSteps: maxSteps, win: win, look: look,
+		alpha: make([]float32, (n+1)*m.states), beta: make([]float32, m.states), next: make([]float32, m.states),
 		rot: make([]complex64, m.states), nrot: make([]complex64, m.states),
-		bm: make([]float32, maxSteps*m.windows), corr: make([]complex64, m.windows),
+		bm: make([]float32, n*m.windows), corr: make([]complex64, m.windows),
+		saveA: make([]float32, m.states), saveR: make([]complex64, m.states), last: make([]float32, m.states),
 		lp: make([]float32, 4*maxSteps), slp: make([]float32, 8*m.d),
 	}
 }
@@ -142,9 +157,7 @@ const negInf = float32(-1e30)
 // per symbol.
 func (t *trellis) run(x []complex64, steps int, rot0 complex64, scale, mu float32, app []float32) {
 	m := t.m
-	sps, ns := m.sps, m.states
-	mask := ns - 1
-	shift := 4 * m.d
+	ns := m.states
 	alpha := t.alpha[:ns]
 	for s := range ns {
 		var a float32
@@ -154,53 +167,92 @@ func (t *trellis) run(x []complex64, steps int, rot0 complex64, scale, mu float3
 		alpha[s] = a
 		t.rot[s] = rot0
 	}
-	for k := range steps {
-		seg := x[k*sps : (k+1)*sps]
-		for w := range m.windows {
-			tp := m.tpl[w*sps : (w+1)*sps]
-			var c complex64
-			for j, v := range seg {
-				c += v * tp[j]
+	for b0 := 0; b0 < steps; b0 += t.win {
+		b1 := min(b0+t.win, steps)
+		e := min(b1+t.look, steps)
+		for k := b0; k < e; k++ {
+			if k == b1 {
+				copy(t.saveA, t.alpha[(k-b0)*ns:(k-b0+1)*ns])
+				copy(t.saveR, t.rot)
 			}
-			t.corr[w] = c
+			t.forward(x, k, k-b0, scale, mu)
 		}
-		alpha := t.alpha[k*ns : (k+1)*ns]
-		next := t.alpha[(k+1)*ns : (k+2)*ns]
-		bm := t.bm[k*m.windows : (k+1)*m.windows]
-		lp := t.lp[4*k : 4*k+4]
-		for s2 := range ns {
-			bonus := lp[s2&3]
-			best, bd := negInf, 0
-			for d0 := range 4 {
-				w := d0<<shift | s2
-				v := scale*real(t.rot[w>>2]*t.corr[w]) + bonus
-				bm[w] = v
-				if a := alpha[w>>2] + v; a > best {
-					best, bd = a, d0
-				}
-			}
-			next[s2] = best
-			w := bd<<shift | s2
-			r := t.rot[w>>2] * m.step[bd]
-			if mu != 0 && best > negInf {
-				c := t.rot[w>>2] * t.corr[w]
-				if a := float32(math.Sqrt(float64(real(c)*real(c) + imag(c)*imag(c)))); a > 0 {
-					e := mu * imag(c) / a
-					r *= complex(1, -e)
-				}
-			}
-			t.nrot[s2] = r
+		if e == steps {
+			copy(t.last, t.alpha[(e-b0)*ns:(e-b0+1)*ns])
 		}
-		t.rot, t.nrot = t.nrot, t.rot
+		t.backward(b0, b1, e, app)
+		if b1 < e {
+			copy(t.alpha[:ns], t.saveA)
+			copy(t.rot, t.saveR)
+		}
 	}
+}
+
+// forward runs the forward pass over interval k into row j of the block
+// buffers.
+func (t *trellis) forward(x []complex64, k, j int, scale, mu float32) {
+	m := t.m
+	sps, ns := m.sps, m.states
+	shift := 4 * m.d
+	seg := x[k*sps : (k+1)*sps]
+	for w := range m.windows {
+		tp := m.tpl[w*sps : (w+1)*sps]
+		var c complex64
+		for i, v := range seg {
+			c += v * tp[i]
+		}
+		t.corr[w] = c
+	}
+	alpha := t.alpha[j*ns : (j+1)*ns]
+	next := t.alpha[(j+1)*ns : (j+2)*ns]
+	bm := t.bm[j*m.windows : (j+1)*m.windows]
+	lp := t.lp[4*k : 4*k+4]
+	for s2 := range ns {
+		bonus := lp[s2&3]
+		best, bd := negInf, 0
+		for d0 := range 4 {
+			w := d0<<shift | s2
+			v := scale*real(t.rot[w>>2]*t.corr[w]) + bonus
+			bm[w] = v
+			if a := alpha[w>>2] + v; a > best {
+				best, bd = a, d0
+			}
+		}
+		next[s2] = best
+		w := bd<<shift | s2
+		r := t.rot[w>>2] * m.step[bd]
+		if mu != 0 && best > negInf {
+			c := t.rot[w>>2] * t.corr[w]
+			if a := sqrtf(real(c)*real(c) + imag(c)*imag(c)); a > 0 {
+				e := mu * imag(c) / a
+				r *= complex(1, -e)
+			}
+		}
+		t.nrot[s2] = r
+	}
+	t.rot, t.nrot = t.nrot, t.rot
+}
+
+// backward runs the backward pass of the block from interval b0, whose
+// forward pass reaches e, from equal metrics after e, and writes the
+// log-APPs of the intervals before b1.
+func (t *trellis) backward(b0, b1, e int, app []float32) {
+	m := t.m
+	ns := m.states
+	mask := ns - 1
 	beta := t.beta
 	for s := range ns {
 		beta[s] = 0
 	}
-	for k := steps - 1; k >= 0; k-- {
-		alpha := t.alpha[k*ns : (k+1)*ns]
-		bm := t.bm[k*m.windows : (k+1)*m.windows]
-		a := app[4*k : 4*k+4]
+	var dummy [4]float32
+	for k := e - 1; k >= b0; k-- {
+		j := k - b0
+		alpha := t.alpha[j*ns : (j+1)*ns]
+		bm := t.bm[j*m.windows : (j+1)*m.windows]
+		a := dummy[:]
+		if k < b1 {
+			a = app[4*k : 4*k+4]
+		}
 		for v := range a {
 			a[v] = negInf
 		}
@@ -226,12 +278,10 @@ func (t *trellis) run(x []complex64, steps int, rot0 complex64, scale, mu float3
 	t.beta = beta
 }
 
-// best returns the highest path metric at the end of the last run of
-// that many steps.
-func (t *trellis) best(steps int) float32 {
-	ns := t.m.states
+// best returns the highest path metric at the end of the last run.
+func (t *trellis) best(int) float32 {
 	b := negInf
-	for _, v := range t.alpha[steps*ns : (steps+1)*ns] {
+	for _, v := range t.last {
 		b = max(b, v)
 	}
 	return b
