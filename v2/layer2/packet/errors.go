@@ -42,6 +42,9 @@ var (
 	// Message Flag 0) that is not a retry of the packet in progress. The
 	// Assembler drops the header and keeps the packet in progress.
 	ErrUnexpectedRetry = errors.New("later try of a packet that is not in progress")
+	// ErrNoRetryBlocks is returned by Builder.Retry when the response data
+	// flags no block of the packet.
+	ErrNoRetryBlocks = errors.New("response data flags no block to resend")
 	// ErrResponseData is returned for C_RDATA blocks of the wrong count or with
 	// a bad CRC.
 	ErrResponseData = errors.New("invalid response data blocks")
@@ -49,6 +52,7 @@ var (
 	errResponseLength = fmt.Errorf("%w: length is not 1 or 2 rate 1/2 blocks", ErrResponseData)
 	errResponseCRC    = fmt.Errorf("%w: %w", ErrResponseData, fec.ErrUncorrectable)
 	errNoConfirmed    = fmt.Errorf("%w: no confirmed packet in progress", ErrFormat)
+	errRetryFormat    = fmt.Errorf("%w: only a confirmed or SARQ packet has a later try", ErrFormat)
 )
 
 // newRateError returns ErrRate for the data type rate. Like the other new*
