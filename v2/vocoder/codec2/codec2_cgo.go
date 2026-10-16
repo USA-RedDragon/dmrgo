@@ -82,7 +82,7 @@ func New(cfg Config) (*Codec, error) {
 		return nil, fmt.Errorf("codec2: libcodec2 mode %d has %d samples and %d bits per frame", cfg.Mode, nsam, nbits)
 	}
 
-	silence, err := encodeSilence(cmode, cfg.Mode.frameBytes())
+	silence, err := newSilence(cmode, cfg.Mode.frameBytes())
 	if err != nil {
 		s.destroy()
 		return nil, err
@@ -100,7 +100,9 @@ func New(cfg Config) (*Codec, error) {
 	return c, nil
 }
 
-func encodeSilence(cmode C.int, nbytes int) ([72]bit.Bit, error) {
+// newSilence returns 20 ms of silence, encoded by a fresh encoder of mode
+// cmode into nbytes bytes.
+func newSilence(cmode C.int, nbytes int) ([72]bit.Bit, error) {
 	libMu.Lock()
 	defer libMu.Unlock()
 	st := C.codec2_create(cmode)
@@ -134,7 +136,7 @@ func (c *Codec) Encode(pcm []int16) ([72]bit.Bit, error) {
 		return [72]bit.Bit{}, ErrClosed
 	}
 	if len(pcm) != FrameSamples {
-		return [72]bit.Bit{}, fmt.Errorf("%w: got %d, want %d", ErrFrameLength, len(pcm), FrameSamples)
+		return [72]bit.Bit{}, newFrameLengthError(len(pcm))
 	}
 	frame := c.frame[:c.nbytes]
 	libMu.Lock()
@@ -145,7 +147,8 @@ func (c *Codec) Encode(pcm []int16) ([72]bit.Bit, error) {
 }
 
 // Decode decodes one 72-bit frame into FrameSamples samples. The bits after
-// the Codec2 frame are ignored.
+// the Codec2 frame are ignored. It allocates the samples; AppendDecode does
+// not.
 func (c *Codec) Decode(slot [72]bit.Bit) ([]int16, error) {
 	if c.dec == nil {
 		return nil, ErrClosed
@@ -182,4 +185,11 @@ func (c *Codec) Close() error {
 	states{enc: c.enc, dec: c.dec}.destroy()
 	c.enc, c.dec = nil, nil
 	return nil
+}
+
+// newFrameLengthError returns the error of an Encode of n samples.
+//
+//go:noinline
+func newFrameLengthError(n int) error {
+	return fmt.Errorf("%w: got %d, want %d", ErrFrameLength, n, FrameSamples)
 }

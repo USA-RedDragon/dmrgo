@@ -57,7 +57,8 @@ func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
 // its blocks, given in order block 1, 2, 3. Only the blocks that the
 // header length calls for are used. It returns ErrTalkerAliasIncomplete
 // when fewer blocks are given, and ErrTalkerAliasInvalidUTF8, with the
-// alias, when the Code Units of the UTF-8 format are not valid UTF-8.
+// alias, when the Code Units of the UTF-8 format are not valid UTF-8. It
+// allocates the string; AppendTalkerAlias does not.
 func DecodeTalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (string, error) {
 	var buf [talkerAliasMaxText]byte
 	b, err := AppendTalkerAlias(buf[:0], header, blocks...)
@@ -165,20 +166,21 @@ func talkerAliasUnits(units *[talkerAliasMaxUnits]uint16, alias string, format l
 		}
 		for _, r := range alias {
 			if r > limit {
-				return 0, fmt.Errorf("character %q is not in the %s format", r, format.String())
+				return 0, newCharacterFormatError(r, format)
 			}
 			put(uint16(r & 0xFFFF))
 		}
 		return n, nil
 	}
-	return 0, fmt.Errorf("unknown talker alias format %d", format)
+	return 0, newUnknownFormatError(format)
 }
 
 // EncodeTalkerAlias returns the Talker Alias header LC and the block LCs
 // that carry alias in the given format, with the SFID. DataType is not set.
 // It returns ErrTalkerAliasLength when the alias needs more than 31 Code
 // Units or more than three blocks, and an error when a character is not in
-// the format.
+// the format. It allocates the LCs and their payloads;
+// EncodeTalkerAliasInto does not.
 func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]FullLinkControl, error) {
 	var lcs [talkerAliasMaxBlocks + 1]FullLinkControl
 	p := new([talkerAliasMaxBlocks + 1]FullLinkControlPayloads)
@@ -251,7 +253,7 @@ func (a *TalkerAliasAssembler) Reset() {
 // Add adds a Full LC. LCs that are not SFID Talker Alias header or block
 // LCs are ignored. ok is true when the alias is complete; it is reported
 // once for each new alias. err is set when a complete alias does not
-// decode.
+// decode. It allocates the string; AppendAdd does not.
 func (a *TalkerAliasAssembler) Add(lc *FullLinkControl) (alias string, ok bool, err error) {
 	var buf [talkerAliasMaxText]byte
 	b, ok, err := a.AppendAdd(buf[:0], lc)
@@ -299,4 +301,19 @@ func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias
 	}
 	a.completed = true
 	return out, err == nil, err
+}
+
+// newCharacterFormatError returns the error of a character r that is not in
+// the talker alias format.
+//
+//go:noinline
+func newCharacterFormatError(r rune, format layer3.TalkerAliasDataFormat) error {
+	return fmt.Errorf("character %q is not in the %s format", r, format.String())
+}
+
+// newUnknownFormatError returns the error of an unknown talker alias format.
+//
+//go:noinline
+func newUnknownFormatError(format layer3.TalkerAliasDataFormat) error {
+	return fmt.Errorf("unknown talker alias format %d", format)
 }

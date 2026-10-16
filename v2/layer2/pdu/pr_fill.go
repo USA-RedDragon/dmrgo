@@ -19,7 +19,8 @@ func (p *PRFill) DataType() enums.DataType {
 	return enums.DataTypeIdle
 }
 
-// EncodeBits returns PRFillBits as a slice.
+// EncodeBits returns PRFillBits as a fresh slice. It allocates the slice;
+// PRFillBits does not.
 func (p *PRFill) EncodeBits() ([]bit.Bit, error) {
 	bits := prFillBits
 	return bits[:], nil
