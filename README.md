@@ -86,13 +86,38 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
   - A `Codec` interface with a registry, and a Codec2 codec (`vocoder/codec2`).
 - No cgo outside `vocoder/codec2`.
-- No allocation in steady state, with Go 1.24 or later and with TinyGo at the default stack size. After construction (`NewBurstFromBytes`, `NewVoiceTransmitter`, `framer.New` and the like), decode, encode, build, check and assemble calls allocate nothing, with these limits:
-  - A call that returns a fresh slice, string or payload struct by contract allocates, and its doc says so. Each has a form that does not: `bit.AppendPack` for `bit.Pack`, `pdu.DecodeCSBKInto` for `pdu.DecodeCSBK` (and the other dispatch PDUs), `VoiceTransmitter.AppendFrames` for `AddFrames`, `packet.Builder` for `packet.NewPacket`, `Framer.AppendBursts` for `Write`.
-  - Errors for programmer mistakes, and a decode that returns two joined errors, also allocate.
-  - A reused `layer2.Burst`, or a copy of it, keeps its decoded `Data`, and the payload structs that `Data` points to, until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
-  - Two checks keep it so, with no list of functions to maintain:
-    - [v2/internal/allocgate](v2/internal/allocgate) builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the pico with `tinygo build -print-allocs` and fails on each heap allocation site, outside constructors (`New*`, `new*`), `String`, `GoString` and `Error` methods, `Append*` functions, package-level declarations and wrappers whose doc says "It allocates ...; X does not." for a twin X. It also fails on an `init` function.
-    - [v2/internal/allocs](v2/internal/allocs) checks decode and encode of every capture, packet assembly, a voice superframe, `voice.Receiver` and `voice.Transmitter`, the vocoder frames and the framer with `testing.AllocsPerRun`, and under TinyGo reads `runtime.MemStats` around the main decode and encode calls.
+- No allocation on the hot path: see [Allocation](#allocation).
+
+## Allocation
+
+The hot path allocates nothing. After construction, decoding, encoding, building, receiving and assembling bursts and packets do not allocate, with gc (Go 1.24 or later) and with TinyGo at the default stack size of a microcontroller target. This covers `Burst.DecodeFromBytes` and `Encode`, the `RawBurst` builders, `VoiceTransmitter`, `VoiceReceiver`, `voice.Receiver`, `voice.Transmitter`, `framer.Framer`, `packet.Assembler` and `packet.Builder`, the `Into` and `Append` forms of the PDU decoders, and the FEC. Errors are static values, so a call that fails does not allocate either; an error does not hold the value that failed.
+
+The rest allocates as little as it can. These are all the places where the library can allocate, and when. The gate in [v2/internal/allocgate](v2/internal/allocgate) generates this table from its rules and fails when the README differs:
+
+<!-- allocgate:begin -->
+
+| What may allocate | When | Functions |
+| --- | --- | ---: |
+| The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 2 |
+| A String, GoString or Error method | When the text is built, for a person to read. | 97 |
+| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 14 |
+| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. | 20 |
+| An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 24 |
+| An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
+| A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 5 |
+| The runtime print functions, which the runtime calls on its debug paths | Never: they format into fixed buffers that the gate cannot prove are large enough. | 1 |
+
+The counts are of exported functions and methods, for linux/amd64 with cgo. `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table.
+
+<!-- allocgate:end -->
+
+Each exported function that a rule covers says in its doc when it allocates, and the gate checks that the sentence is there. Some types keep pointers into their own storage, so they must not be copied after first use: `layer2.Burst`, `packet.Assembler`, `packet.Builder` and `voice.Receiver`. `go vet` reports a copy. A `layer2.Burst` keeps its decoded `Data` and the payload structs that `Data` points to until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
+
+Three checks keep this so, with no list of functions to maintain:
+
+- [v2/internal/allocgate](v2/internal/allocgate) reads the machine code that the compiler emits. It builds the library and its dependencies with `go list -export`, disassembles them with `go tool objdump`, and builds the call graph from the relocations: direct calls, the functions whose address the code takes, interface method calls resolved to the library types that implement the interface, and func value calls resolved by signature. The allocator is every runtime function that takes memory from the cache of the P. Paths that end in a panic, a throw or a goroutine switch do not count; the gate reads the functions that never return from the source of the compiler. The gate fails on each exported function that reaches the allocator outside the rules of the table, with the call chain. For the dst growth rule it also proves from the source that every append on the way grows dst, or a slice that the function derives from dst, also in the unexported helpers that take and return the slice, and that every function on a path to the growth is such a helper; when it cannot prove that, it fails. It fails when a function has the name or the shape of a rule but breaks the rule, when a rule covers nothing, when a doc sentence names the wrong twin, and when a tool it needs cannot run. It does not follow a call through the dictionary of a generic function, a method of a generic type, or a callback that package-level data holds and that the stdlib calls; the library has none of these, and they are its known limits. Its own test cases in `testdata/cases` allocate in ways that the escape analysis of their own body does not show, such as a map write, a call of `strconv.Itoa` and an interface call.
+- The same package builds a program that references every exported function and method (`go generate` writes it from the exports) with `tinygo build -print-allocs` for the pico and for `riscv-qemu`, and adds each allocation site that TinyGo reports to the same call graph and rules.
+- [v2/internal/allocs](v2/internal/allocs) checks decode and encode of every capture, packet assembly, a voice superframe, `voice.Receiver` and `voice.Transmitter`, the vocoder frames and the framer with `testing.AllocsPerRun`, and under TinyGo reads `runtime.MemStats` around the main decode and encode calls.
 
 ## Codec2
 
