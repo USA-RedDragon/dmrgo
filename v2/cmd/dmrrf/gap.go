@@ -112,7 +112,7 @@ func (r *Receiver) fill(g symRef, n int, rev bool) {
 func (r *Receiver) run(g symRef, n int, rev bool, lo, hi symRef) {
 	m := r.model
 	d, sps := m.d, m.sps
-	n = min(n, r.tr.maxSteps)
+	n = min(n, r.maxRun)
 	if n <= 2*d+1 {
 		return
 	}
@@ -133,15 +133,15 @@ func (r *Receiver) run(g symRef, n int, rev bool, lo, hi symRef) {
 	}
 	steps := n - 2*d
 	for k := range steps {
-		r.symPrior(g.add(dir*(k+2*d)), r.tr.lp[4*k:4*k+4])
+		r.symPrior(g.add(dir*(k+2*d)), r.lp[4*k:4*k+4])
 	}
 	for i := range 2 * d {
-		r.symPrior(g.add(dir*i), r.tr.slp[4*i:4*i+4])
+		r.symPrior(g.add(dir*i), r.slp[4*i:4*i+4])
 	}
 	scale := float32(2 * r.amp / r.noise)
 	if nk >= 2*d+2 {
 		rot, _, _ := m.anchor(r.buf, syms[:nk])
-		r.tr.run(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
+		r.detect(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
 	} else {
 		r.bankRun(steps, scale)
 	}
@@ -164,20 +164,25 @@ func (r *Receiver) run(g symRef, n int, rev bool, lo, hi symRef) {
 }
 
 // bankRun runs the trellis from an unknown state with phaseBank carrier
-// phases and keeps the APPs of the run whose best path scores highest.
+// phases and keeps the APPs of the run whose best path scores highest. The
+// exact-phase trellis takes an unknown phase in one run.
 func (r *Receiver) bankRun(steps int, scale float32) {
 	sps, d := r.model.sps, r.model.d
+	if r.xt != nil {
+		r.xt.run(r.buf[d*sps:], steps, 1, scale, 0, r.tapp)
+		return
+	}
 	best := float32(negInf)
 	bestP := 0
 	for p := range phaseBank {
 		rot := complex64(cmplx.Exp(complex(0, -2*math.Pi*float64(p)/phaseBank)))
-		r.tr.run(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
-		if v := r.tr.best(steps); v > best {
+		r.detect(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
+		if v := r.detBest(steps); v > best {
 			best, bestP = v, p
 		}
 	}
 	rot := complex64(cmplx.Exp(complex(0, -2*math.Pi*float64(bestP)/phaseBank)))
-	r.tr.run(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
+	r.detect(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
 }
 
 // coherentGap detects the symbols of slots first to j: forward from the
@@ -253,7 +258,7 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 	if n < 3*ddWindow {
 		return
 	}
-	n = min(n, r.tr.maxSteps)
+	n = min(n, r.maxRun)
 	syms := r.ddSyms[:n]
 	for i := range n {
 		h := lo.add(i)

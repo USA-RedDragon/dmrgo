@@ -11,17 +11,22 @@ import (
 // Tier selects how a Receiver detects symbols, by compute budget.
 type Tier int
 
-// The tiers, from the least compute to the most.
+// The tiers, from the least compute to the most. Every tier decodes each
+// FEC field with soft decisions.
 const (
 	// TierDisc slices the output of an FM discriminator and its matched
 	// filter. It fits a microcontroller.
 	TierDisc Tier = iota
 	// TierCoherent detects the symbols coherently with a trellis over a
-	// window of three symbols. It fits a Cortex-M4F class microcontroller.
+	// window of three symbols that carries the carrier phase with each
+	// survivor. It fits a Cortex-M4F class microcontroller.
 	TierCoherent
-	// TierMax detects coherently over a window of five symbols and detects
-	// each voice burst again with the bits that its FEC fixed. It is for a
-	// PC.
+	// TierExact detects over a window of three symbols with the carrier
+	// phase in the trellis state, and detects each voice burst again with
+	// the bits that its FEC fixed. It is for a PC.
+	TierExact
+	// TierMax is TierExact over a window of five symbols. It is for a PC
+	// and needs about 100 MB.
 	TierMax
 )
 
@@ -32,8 +37,9 @@ const (
 	slotSamplesN = slotSymbols * samplesPerSy
 	syncFirstSym = cachSymbols + 54
 	// maxGapSlots is the most slots between two anchors that one trellis
-	// run covers.
-	maxGapSlots = 7
+	// run covers, and exactGapSlots the most for the exact-phase trellis.
+	maxGapSlots   = 7
+	exactGapSlots = 3
 	// searchStep is the spacing of the positions the SYNC search tries.
 	searchStep = 2
 	// lockMetric is the coherent SYNC metric at which the search locks.
@@ -122,6 +128,10 @@ type Receiver struct {
 	search *syncSearch
 	model  *cpmModel
 	tr     *trellis
+	xt     *xtrellis
+	maxRun int
+	lp     []float32
+	slp    []float32
 	buf    []complex64
 	tapp   []float32
 	tk     *tracker
@@ -196,7 +206,15 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	if r.opt.Coherent {
 		d := r.opt.Window
 		r.model = newCPMModel(d, r.opt.TrellisSPS, 0.27)
-		r.tr = newTrellis(r.model, (maxGapSlots+1)*slotSymbols)
+		r.maxRun = (maxGapSlots + 1) * slotSymbols
+		if r.opt.ExactPhase {
+			r.maxRun = exactGapSlots * slotSymbols
+			r.xt = newXTrellis(r.model, r.maxRun)
+			r.lp, r.slp = r.xt.lp, r.xt.slp
+		} else {
+			r.tr = newTrellis(r.model, r.maxRun)
+			r.lp, r.slp = r.tr.lp, r.tr.slp
+		}
 		r.buf = make([]complex64, (maxGapSlots+1)*slotSymbols*samplesPerSy)
 		r.tapp = make([]float32, 4*(maxGapSlots+1)*slotSymbols)
 		r.ddSyms = make([]int, (maxGapSlots+1)*slotSymbols)
@@ -847,4 +865,21 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		e.out.Fixed.SetEmbeddedData(elc)
 	}
 	r.rep.repair(e, cc, ccOK)
+}
+
+// detect runs the trellis of the receiver, exact-phase or per-survivor.
+func (r *Receiver) detect(x []complex64, steps int, rot complex64, scale, mu float32, app []float32) {
+	if r.xt != nil {
+		r.xt.run(x, steps, rot, scale, anchorKappa, app)
+		return
+	}
+	r.tr.run(x, steps, rot, scale, mu, app)
+}
+
+// detBest returns the best path metric of the last detect run.
+func (r *Receiver) detBest(steps int) float32 {
+	if r.xt != nil {
+		return r.xt.best(steps)
+	}
+	return r.tr.best(steps)
 }
