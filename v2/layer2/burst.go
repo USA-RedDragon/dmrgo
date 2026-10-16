@@ -164,10 +164,25 @@ func (b *Burst) HasReverseChannel() bool {
 		b.EmbeddedSignalling.LCSS == enums.LCSSSingleFragment
 }
 
-// NewBurstFromBytes decodes data into a new Burst, as DecodeFromBytes does.
-// It returns the burst also when it returns an error.
+// NewBurst returns a Burst with the storage of every PDU that a decode
+// fills, so that no decode into it allocates. A zero Burst also works, but
+// its first decode of each data type allocates that storage.
+func NewBurst() *Burst {
+	b := new(Burst)
+	st := &b.store
+	st.csbk, st.csbkPayloads = new(pdu.CSBK), new(pdu.CSBKPayloads)
+	st.lc, st.lcPayloads = new(pdu.FullLinkControl), new(pdu.FullLinkControlPayloads)
+	st.dataHeader, st.dataHeaderPayload = new(pdu.DataHeader), new(pdu.DataHeaderPayloads)
+	st.mbcHeader, st.mbcHeaderPayloads = new(pdu.MBCHeader), new(pdu.MBCHeaderPayloads)
+	st.piHeader, st.mbcCont, st.usbd, st.prFill = new(pdu.PIHeader), new(pdu.MBCContinuation), new(pdu.UnifiedSingleBlockData), new(pdu.PRFill)
+	st.rate12, st.rate34, st.rate1 = new(pdu.Rate12Data), new(pdu.Rate34Data), new(pdu.Rate1Data)
+	return b
+}
+
+// NewBurstFromBytes decodes data into a new Burst from NewBurst, as
+// DecodeFromBytes does. It returns the burst also when it returns an error.
 func NewBurstFromBytes(data RawBurst) (*Burst, error) {
-	burst := &Burst{}
+	burst := NewBurst()
 	err := burst.DecodeFromBytes(data)
 	return burst, err
 }
