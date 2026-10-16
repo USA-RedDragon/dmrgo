@@ -65,6 +65,50 @@ func TestAMBEVoice_RoundTrip(t *testing.T) {
 	}
 }
 
+// TestAMBEVoiceFlags_BadBits checks bits 49 and 99, the bad flags of frames
+// 2 and 3 (ipsc2hbpc GV_BAD2_BIT and GV_BAD3_BIT).
+func TestAMBEVoiceFlags_BadBits(t *testing.T) {
+	t.Parallel()
+
+	var data [19]byte
+	data[6] |= 0x40
+	data[12] |= 0x10
+	frames, bad := vocoder.UnpackAMBEVoiceFlags(data)
+	if bad != [3]bool{false, true, true} {
+		t.Fatalf("bad %v, want [false true true]", bad)
+	}
+	if frames != ([3]vocoder.AMBEFrame{}) {
+		t.Fatal("the flag bits changed the frames")
+	}
+	if got := vocoder.PackAMBEVoiceFlags(frames, bad); got != data {
+		t.Fatalf("pack % X, want % X", got, data)
+	}
+	if got := vocoder.PackAMBEVoiceFlags(frames, [3]bool{true, false, false}); got != ([19]byte{}) {
+		t.Fatalf("bad[0] set bits % X", got)
+	}
+}
+
+func TestAMBEVoiceFlags_RoundTrip(t *testing.T) {
+	t.Parallel()
+
+	raw, err := hex.DecodeString(ipscSilence)
+	if err != nil {
+		t.Fatal(err)
+	}
+	frames := vocoder.UnpackAMBEVoice([19]byte(raw))
+	for n := range 4 {
+		want := [3]bool{false, n&1 != 0, n&2 != 0}
+		data := vocoder.PackAMBEVoiceFlags(frames, want)
+		gotFrames, got := vocoder.UnpackAMBEVoiceFlags(data)
+		if got != want || gotFrames != frames {
+			t.Errorf("flags %v: got %v", want, got)
+		}
+		if vocoder.UnpackAMBEVoice(data) != frames {
+			t.Errorf("flags %v: UnpackAMBEVoice changed the frames", want)
+		}
+	}
+}
+
 // TestAMBEVoice_VoiceBurst checks the payload of the first voice burst of
 // layer2/testdata/voice.bin against the PackAMBEVoice of dmrgo v0.0.1.
 func TestAMBEVoice_VoiceBurst(t *testing.T) {

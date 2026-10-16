@@ -78,6 +78,9 @@ var bitFuncs = map[string]any{
 		return r
 	},
 	"vocoder.PackAMBEVoice": vocoder.PackAMBEVoice,
+	"vocoder.PackAMBEVoiceFlags": func(frames [3]vocoder.AMBEFrame) [19]byte {
+		return vocoder.PackAMBEVoiceFlags(frames, [3]bool{true, true, true})
+	},
 	"layer2.VoiceTransmitter.AddFrames": func(frames ...vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AddFrames(frames...)
 	},

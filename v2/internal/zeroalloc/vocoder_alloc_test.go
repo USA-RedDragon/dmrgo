@@ -62,18 +62,23 @@ func vocoderEntries(t testing.TB) []entry {
 	var frame vocoder.AMBEFrame
 	var payload [19]byte
 	var voice [3]vocoder.AMBEFrame
+	var bad [3]bool
 	names := make([]string, 0, 8)
 	out := slices.Concat([]entry{
 		{"vocoder.DecodeAMBE72", "voice.bin slots", 0, func() { frame, _ = vocoder.DecodeAMBE72(slots[i%len(slots)]); i++ }},
 		{"vocoder.EncodeAMBE72", "voice.bin frames", 0, func() { sink = vocoder.EncodeAMBE72(frames[i%len(frames)]); i++ }},
 		{"vocoder.PackAMBEVoice", "IPSC silence", 0, func() { payload = vocoder.PackAMBEVoice(vocoder.UnpackAMBEVoice(ipsc)) }},
 		{"vocoder.UnpackAMBEVoice", "IPSC silence", 0, func() { voice = vocoder.UnpackAMBEVoice(ipsc) }},
+		{"vocoder.PackAMBEVoiceFlags", "IPSC silence", 0, func() {
+			payload = vocoder.PackAMBEVoiceFlags(vocoder.UnpackAMBEVoice(ipsc), [3]bool{false, true, true})
+		}},
+		{"vocoder.UnpackAMBEVoiceFlags", "IPSC silence", 0, func() { voice, bad = vocoder.UnpackAMBEVoiceFlags(ipsc) }},
 		{"vocoder.AMBESilence", "", 0, func() { frame = vocoder.AMBESilence() }},
 		{"vocoder.AMBESilenceSlot", "", 0, func() { sink = vocoder.AMBESilenceSlot() }},
 		{"vocoder.Names", "codec2 registered", 1, func() { names = vocoder.Names() }},
 		{"vocoder.AppendNames", "codec2 registered", 0, func() { names = vocoder.AppendNames(names[:0]) }},
 	}, codec2Entries(t))
-	_, _, _, _, _ = sink, frame, payload, voice, names
+	_, _, _, _, _, _ = sink, frame, payload, voice, bad, names
 	return out
 }
 
