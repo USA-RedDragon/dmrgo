@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -297,17 +296,17 @@ func TestAllocsVocoder(t *testing.T) {
 }
 
 // TestAllocsFramer finds the bursts of the voice capture in its bit stream, fed in
-// chunks of 100 bits.
+// chunks of 13 bytes.
 func TestAllocsFramer(t *testing.T) {
-	var stream []bit.Bit
+	var stream []byte
 	for _, raw := range captures(t)["voice.bin"] {
-		stream = bit.AppendUnpack(stream, raw[:])
+		stream = append(stream, raw[:]...)
 	}
 	f := framer.New(framer.Config{})
 	dst := make([]framer.Burst, 0, 16)
 	assertZero(t, "voice.bin", func() {
-		for i := 0; i < len(stream); i += 100 {
-			dst = f.AppendBursts(dst[:0], stream[i:min(i+100, len(stream))]...)
+		for i := 0; i < len(stream); i += 13 {
+			dst = f.AppendBursts(dst[:0], stream[i:min(i+13, len(stream))])
 		}
 	})
 }

@@ -17,7 +17,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
 
 // bitFuncs holds every exported function and method of the v2 module that
@@ -25,15 +24,6 @@ import (
 // the cgo codec2 binding. Methods are wrapped with a fresh receiver.
 
 var bitFuncs = map[string]any{
-	"layer2/framer.Search": func(stream [600]bit.Bit) (framer.Match, bool) {
-		return framer.Search(stream[:], 0, -1)
-	},
-	"layer2/framer.Framer.Write": func(stream [1200]bit.Bit) []framer.Burst {
-		return framer.New(framer.Config{}).Write(stream[:]...)
-	},
-	"layer2/framer.Framer.AppendBursts": func(stream [1200]bit.Bit) []framer.Burst {
-		return framer.New(framer.Config{}).AppendBursts(nil, stream[:]...)
-	},
 	"internal/bits.Pack": func(src [96]bit.Bit) [12]byte {
 		var dst [12]byte
 		bits.Pack(dst[:], 0, src[:])

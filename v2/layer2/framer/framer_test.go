@@ -35,7 +35,18 @@ func noise(r *rand.Rand, n int) []bit.Bit {
 }
 
 func burstBits(b [33]byte) []bit.Bit {
-	return bit.Unpack(b[:])
+	out := make([]bit.Bit, layer2.BurstBits)
+	bits.Unpack(out, b[:], 0)
+	return out
+}
+
+// pack returns stream packed, the first bit in the most significant bit of
+// byte 0, the form that Search and Framer take. The last byte is padded
+// with 0 bits.
+func pack(stream []bit.Bit) []byte {
+	out := make([]byte, (len(stream)+7)/8)
+	bits.Pack(out, 0, stream)
+	return out
 }
 
 func flip(b [33]byte, positions ...int) [33]byte {
@@ -47,10 +58,10 @@ func flip(b [33]byte, positions ...int) [33]byte {
 
 func writeChunks(r *rand.Rand, f *framer.Framer, stream []bit.Bit) []framer.Burst {
 	var out []framer.Burst
-	for len(stream) > 0 {
-		n := min(1+r.Intn(400), len(stream))
-		out = append(out, f.Write(stream[:n]...)...)
-		stream = stream[n:]
+	for p := pack(stream); len(p) > 0; {
+		n := min(1+r.Intn(50), len(p))
+		out = append(out, f.Write(p[:n])...)
+		p = p[n:]
 	}
 	return out
 }
@@ -59,9 +70,9 @@ func TestSearch(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(1))
 	burst := flip(loadVoice(t)[1], 110, 130, 150)
-	stream := append(noise(r, 1001), burstBits(burst)...)
+	stream := pack(append(noise(r, 1004), burstBits(burst)...))
 	m, ok := framer.Search(stream, 0, -1)
-	if !ok || m.Offset != 1001+framer.SyncOffset || m.Pattern != enums.SyncBSSourcedVoice || m.Distance != 3 {
+	if !ok || m.Offset != 1004+framer.SyncOffset || m.Pattern != enums.SyncBSSourcedVoice || m.Distance != 3 {
 		t.Fatalf("got %+v %v", m, ok)
 	}
 	if _, ok := framer.Search(stream, 0, 2); ok {
@@ -70,7 +81,14 @@ func TestSearch(t *testing.T) {
 	if _, ok := framer.Search(stream, m.Offset+1, -1); ok {
 		t.Error("found a second SYNC")
 	}
-	if _, ok := framer.Search(stream[:m.Offset+framer.SyncBits-1], 0, -1); ok {
+	end := m.Offset + framer.SyncBits
+	if end%8 != 0 {
+		t.Fatalf("the SYNC ends at bit %d, inside a byte", end)
+	}
+	if _, ok := framer.Search(stream[:end/8], 0, -1); !ok {
+		t.Error("missed a SYNC that ends the stream")
+	}
+	if _, ok := framer.Search(stream[:end/8-1], 0, -1); ok {
 		t.Error("matched a partial SYNC")
 	}
 	if _, ok := framer.Search(stream, -5, -1); !ok {
@@ -115,11 +133,11 @@ func TestFramer_SlotPeriod(t *testing.T) {
 	if got[7].Distance != 4 || got[7].Sync != enums.SyncBSSourcedVoice {
 		t.Errorf("burst 7: %+v", got[7])
 	}
-	more := f.Write(noise(r, 20*framer.SlotPeriod)...)
+	more := f.Write(pack(noise(r, 20*framer.SlotPeriod)))
 	if f.Locked() || len(more) == 0 || len(more) > framer.DefaultMaxMisses+1 {
 		t.Errorf("after noise: locked %v, %d bursts", f.Locked(), len(more))
 	}
-	again := f.Write(append(burstBits(bursts[1]), noise(r, 10)...)...)
+	again := f.Write(pack(append(burstBits(bursts[1]), noise(r, 10)...)))
 	if len(again) != 1 || again[0].Data != bursts[1] {
 		t.Errorf("relock: %d bursts", len(again))
 	}
@@ -176,18 +194,13 @@ func TestFramer_DirectChannel(t *testing.T) {
 	r := rand.New(rand.NewSource(4))
 	stream := make([]bit.Bit, 0, 500+3*framer.SlotPeriod)
 	ts2 := [33]byte(must(layer2.BuildDataBurst([12]byte{}, enums.DataTypeIdle, 1, layer2.SyncSourceBS)))
-	var bits [264]bit.Bit
-	copy(bits[:], bit.Unpack(ts2[:]))
-	for i := range framer.SyncBits {
-		bits[framer.SyncOffset+i] = bit.Bit(uint64(enums.SyncTDMA2Data) >> (framer.SyncBits - 1 - i) & 1)
-	}
-	ts2 = [33]byte(bit.Pack(bits[:]))
+	bits.SetField64(ts2[:], framer.SyncOffset, framer.SyncBits, uint64(enums.SyncTDMA2Data))
 	stream = append(stream, noise(r, 500)...)
 	for range 3 {
 		stream = append(stream, burstBits(ts2)...)
 		stream = append(stream, noise(r, framer.SlotPeriod-layer2.BurstBits)...)
 	}
-	got := framer.New(framer.Config{Threshold: -1, Period: framer.SlotPeriod}).Write(stream...)
+	got := framer.New(framer.Config{Threshold: -1, Period: framer.SlotPeriod}).Write(pack(stream))
 	if len(got) != 3 {
 		t.Fatalf("%d bursts", len(got))
 	}

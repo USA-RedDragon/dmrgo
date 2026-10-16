@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -49,11 +48,11 @@ func run(w io.Writer, dataDir string) error {
 	if err != nil {
 		return err
 	}
-	stream, flipped, err := buildStream(ts1[lateEntry:], ts2)
+	stream, n, flipped, err := buildStream(ts1[lateEntry:], ts2)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "stream: %d bits, %d junk bits, %d bits flipped\n", len(stream), junkBits, flipped)
+	fmt.Fprintf(w, "stream: %d bits, %d junk bits, %d bits flipped\n", n, junkBits, flipped)
 
 	r := xorshift(2)
 	f := framer.New(framer.Config{Threshold: -1, CACH: true})
@@ -63,8 +62,8 @@ func run(w io.Writer, dataDir string) error {
 	var b layer2.Burst
 	n, first := 0, int64(-1)
 	for len(stream) > 0 {
-		chunk := min(len(stream), 1+int(r.next()%500))
-		for _, fb := range f.Write(stream[:chunk]...) {
+		chunk := min(len(stream), 1+int(r.next()%63))
+		for _, fb := range f.Write(stream[:chunk]) {
 			if first < 0 {
 				first = fb.Offset
 			}
@@ -148,18 +147,30 @@ func generatedCall() ([]layer2.RawBurst, error) {
 
 // buildStream interleaves the two time slots with a CACH before every
 // burst, fills the shorter one with idle bursts, prepends junk bits and
-// flips bits at random.
-func buildStream(ts1, ts2 []layer2.RawBurst) ([]bit.Bit, int, error) {
+// flips bits at random. It returns the n bits of the stream packed, the
+// first bit in the most significant bit of byte 0, and the number of bits
+// it flipped.
+func buildStream(ts1, ts2 []layer2.RawBurst) (stream []byte, n, flipped int, err error) {
 	idle, err := layer2.BuildBurst(&pdu.PRFill{}, colorCode, layer2.SyncSourceBS)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
+	}
+	bursts := max(len(ts1), len(ts2))
+	stream = make([]byte, (junkBits+2*bursts*framer.OutboundPeriod+7)/8)
+	put := func(v byte) {
+		stream[n/8] |= v & 1 << (7 - n%8)
+		n++
+	}
+	putBytes := func(b []byte) {
+		for i := range len(b) * 8 {
+			put(b[i/8] >> (7 - i%8))
+		}
 	}
 	r := xorshift(1)
-	stream := make([]bit.Bit, junkBits)
-	for i := range stream {
-		stream[i] = bit.Bit(r.next() & 1)
+	for range junkBits {
+		put(byte(r.next() & 1))
 	}
-	for i := range max(len(ts1), len(ts2)) {
+	for i := range bursts {
 		for tc, ts := range [2][]layer2.RawBurst{ts1, ts2} {
 			burst := idle
 			if i < len(ts) {
@@ -168,21 +179,20 @@ func buildStream(ts1, ts2 []layer2.RawBurst) ([]bit.Bit, int, error) {
 			cach := layer2.CACH{TACT: pdu.TACT{AccessType: true, TDMAChannel: tc == 1, LCSS: enums.LCSSSingleFragment}}
 			logical, err := cach.Encode()
 			if err != nil {
-				return nil, 0, err
+				return nil, 0, 0, err
 			}
 			tx := layer2.CACHInterleave(logical)
-			stream = append(stream, bit.Unpack(tx[:])...)
-			stream = append(stream, bit.Unpack(burst[:])...)
+			putBytes(tx[:])
+			putBytes(burst[:])
 		}
 	}
-	flipped := 0
-	for i := junkBits; i < len(stream); i++ {
+	for i := junkBits; i < n; i++ {
 		if r.next()%1_000_000 < berPPM {
-			stream[i] ^= 1
+			stream[i/8] ^= 0x80 >> (i % 8)
 			flipped++
 		}
 	}
-	return stream, flipped, nil
+	return stream, n, flipped, nil
 }
 
 type channel struct {
