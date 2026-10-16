@@ -1254,9 +1254,28 @@ func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst
 	var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	var res fec.Result
 	s := &d.small
+	var hb layer2.RawBurst
+	for p, v := range llr {
+		if v < 0 {
+			hb[p/8] |= 0x80 >> (p % 8)
+		}
+	}
+	slots := hb.VoiceSlots()
 	for i := range frames {
 		sl := &d.ambe.slot[i]
 		hard0 := sl.c0.gather(llr[:], &s.l)
+		if f, r := vocoder.DecodeAMBE72(slots[i]); r.ErrorsCorrected == 0 && !r.Uncorrectable {
+			frames[i] = f
+			res = res.Combine(fec.Result{BitsChecked: sl.c0.n + sl.c1.n})
+			if out != nil {
+				softPutSmall(out, &sl.c0, hard0)
+				softPutSmall(out, &sl.c1, sl.c1.gather(llr[:], &s.l))
+				for _, p := range sl.c2 {
+					softPut(out, p, llr[p] < 0)
+				}
+			}
+			continue
+		}
 		softTables(s.tab, s.l[:sl.c0.n])
 		s.top.reset(d.AMBECandidates)
 		sl.c0.search(s.tab, 0, 0, 0, &s.top)
@@ -1466,9 +1485,52 @@ func (d *softDecoder) bptcCheck(check func([12]byte) bool) int {
 // with Uncorrectable set when check accepts none. When out is not nil, the
 // corrected codeword is written into it.
 func (d *softDecoder) decodeBPTCOSD(llr *[softBurstBits]int16, check func([12]byte) bool, out *layer2.RawBurst) (softBPTCResult, fec.Result) {
+	if d.bptcHard(llr, check) {
+		return d.bptcPick(check, out)
+	}
 	d.bptcLLRs(llr)
 	d.bptc.osd(&d.osd, d.OSDOrder, d.OSDWindow, d.bptcCheck(check))
 	return d.bptcPick(check, out)
+}
+
+// bptcHard reports whether the hard decisions of the BPTC(196,96) bits of
+// the 264 LLRs llr form a codeword that check accepts, any codeword when
+// check is nil, and then leaves it as the one candidate for bptcPick. No
+// other codeword costs as little, so every soft decode picks it too.
+func (d *softDecoder) bptcHard(llr *[softBurstBits]int16, check func([12]byte) bool) bool {
+	s, c := &d.osd, d.bptc
+	var packed [25]byte
+	for i, q := range d.info {
+		if llr[q] < 0 {
+			packed[i/8] |= 0x80 >> (i % 8)
+		}
+	}
+	data, reserved, res := bptc.Decode196(packed)
+	if res.ErrorsCorrected != 0 || res.Uncorrectable || check != nil && !check(data) {
+		return false
+	}
+	var cw [softOSDWords]uint64
+	for i := range softBPTCData + 3 {
+		var b byte
+		if i < softBPTCData {
+			b = data[i/8] >> (7 - i%8) & 1
+		} else {
+			b = reserved >> (i - softBPTCData) & 1
+		}
+		if b != 0 {
+			for x := range cw {
+				cw[x] ^= c.rows[i][x]
+			}
+		}
+	}
+	d.bptcLLRs(llr)
+	s.prepare(c.n)
+	if cw != s.hard {
+		return false
+	}
+	s.list.reset(d.bptcCheck(check))
+	s.list.add(0, &cw)
+	return true
 }
 
 // decodeBPTCGrid decodes a BPTC(196,96) block from the 264 LLRs of its
@@ -1497,6 +1559,9 @@ func (d *softDecoder) bptcExtrinsic(llr *[softBurstBits]int16, ext *[softBurstBi
 // the codeword with the lowest soft cost. It needs no cost tables, so it
 // suits a small MCU. check works as in decodeBPTCOSD.
 func (d *softDecoder) decodeBPTCChase(llr *[softBurstBits]int16, check func([12]byte) bool, out *layer2.RawBurst) (softBPTCResult, fec.Result) {
+	if d.bptcHard(llr, check) {
+		return d.bptcPick(check, out)
+	}
 	s, c := &d.osd, d.bptc
 	d.bptcLLRs(llr)
 	s.prepare(c.n)
