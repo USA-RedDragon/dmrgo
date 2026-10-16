@@ -460,21 +460,23 @@ func (t *Transmitter) Deadline() (at time.Duration, ok bool) {
 // Tick appends the next burst when now has reached its Due time minus
 // TransmitterConfig.Lead, and OutputEnded after the last terminator. A
 // Tick before Deadline appends nothing. Each Tick appends at most one
-// burst; a late caller calls Tick until Deadline is in the future.
-func (t *Transmitter) Tick(now time.Duration, out []Output) []Output {
+// burst; a late caller calls Tick until Deadline is in the future. It
+// appends to dst, and allocates only when dst has no room for MaxOutputs
+// outputs.
+func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 	at, ok := t.Deadline()
 	if !ok || now < at {
-		return out
+		return dst
 	}
 	if t.state == TransmitterTimedOut {
-		return t.finish(out, EndTimeout)
+		return t.finish(dst, EndTimeout)
 	}
 	if t.state == TransmitterHeader && !t.headersDone() {
 		var o *Output
-		out, o = appendOutput(out, OutputBurst, t.due)
+		dst, o = appendOutput(dst, OutputBurst, t.due)
 		t.header(o)
 		t.due += slotPeriod
-		return out
+		return dst
 	}
 	if t.state == TransmitterVoice && t.stopping {
 		t.state = TransmitterEnding
@@ -484,16 +486,16 @@ func (t *Transmitter) Tick(now time.Duration, out []Output) []Output {
 	case TransmitterVoice, TransmitterEnding:
 		if t.state == TransmitterEnding && t.pos == 0 && (t.ownSlots() == 0 || t.timedOut) {
 			t.dropOwn()
-			out, o = appendOutput(out, OutputBurst, t.due)
-			out = t.terminator(o, out)
+			dst, o = appendOutput(dst, OutputBurst, t.due)
+			dst = t.terminator(o, dst)
 		} else {
-			out, o = appendOutput(out, OutputBurst, t.due)
+			dst, o = appendOutput(dst, OutputBurst, t.due)
 			t.voice(o)
 		}
 	case TransmitterIdle, TransmitterHeader, TransmitterTimedOut:
 	}
 	t.due += slotPeriod
-	return out
+	return dst
 }
 
 // ownSlots returns the number of queued slots of the current call. The
