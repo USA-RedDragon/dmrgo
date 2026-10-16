@@ -133,7 +133,6 @@ type tier struct {
 	RAMBytes     int     `json:"ram_bytes"`
 	Allocs       float64 `json:"allocs"`
 	FalsePerHour float64 `json:"false_per_hour"`
-	Cycles       float64 `json:"m4f_cycles_per_sample"`
 }
 
 // bench is testdata/rxbench.json.
@@ -250,23 +249,20 @@ func renderBlock(d data) []byte {
 	var b strings.Builder
 	b.WriteString("\n")
 	b.WriteString("Loss is the Eb/N0 in dB above the ideal receiver at 90% frame recovery. The ideal receiver has perfect timing and carrier, detects the symbols with a coherent BCJR over the exact CPM phase trellis and decodes each FEC field by soft-decision maximum likelihood; for voice it also detects each burst again with its decoded C0, C1, EMB and embedded LC bits.\n\n")
-	b.WriteString("| Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | Cortex-M4F cycles per sample | RAM | Allocs |\n")
-	b.WriteString("|------|-------|---------------|------|---------------|-------------------------|------------------------------|-----|--------|\n")
+	b.WriteString("| Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | RAM | Allocs |\n")
+	b.WriteString("|------|-------|---------------|------|---------------|-------------------------|-----|--------|\n")
 	for _, t := range d.bench.Tiers {
-		row := make([]string, 0, 9)
+		row := make([]string, 0, 8)
 		row = append(row, tierName(t.Tier))
 		for _, k := range []string{keyAMBE, keyRate12, keyCSBK, keyRate34} {
 			row = append(row, lossCell(d, t, k))
 		}
-		cycles := strconv.FormatFloat(math.Round(t.Cycles), 'f', 0, 64)
-		if t.Tier >= 2 {
-			cycles = "n/a (PC only)"
-		}
-		row = append(row, grouped(int64(math.Round(t.NsPerSecond/1e6)*1e6)), cycles,
+		row = append(row, grouped(int64(math.Round(t.NsPerSecond/1e6)*1e6)),
 			strconv.Itoa((t.RAMBytes+1023)/1024)+" KiB", strconv.FormatFloat(t.Allocs, 'f', -1, 64))
 		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
-	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ". The Cortex-M4F figure is an estimate from the operation count. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
+	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
+	b.WriteString(" RAM is the heap that NewReceiver keeps for input at 48 kHz with ReceiverConfig.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
 	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
 	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. A tier can be under the floor where it uses more than one burst: it combines the embedded LC over superframes, its second pass puts priors on the EMB, and the stream gives each burst its neighbors, while the floor detects one MS burst alone.")
 	if d.floor.SyncPfa != "" {
