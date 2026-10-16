@@ -59,6 +59,11 @@ const (
 	// presenceFactor is the ratio of the mean power of a slot to the noise
 	// power at which the carrier counts as on.
 	presenceFactor = 1.5
+	// bsPresence is the share of the carrier power above the noise power
+	// at which a slot of a BS stream counts as on. The carrier of a BS
+	// stream is on in every slot, and below 0 dB Eb/N0 the test of
+	// presenceFactor dropped most of its bursts.
+	bsPresence = 0.5
 	// lockSpanHz is the carrier error, in Hz, that the receiver searches
 	// at lock: the spectrum estimate is no closer than that.
 	lockSpanHz = 300.0
@@ -883,6 +888,9 @@ func (r *Receiver) measure(s *slotState) {
 		expect = r.amp * r.amp / (r.amp*r.amp + r.noise)
 	}
 	s.present = energy > max(presenceFactor*r.noise, r.noise+0.25*r.amp*r.amp)
+	if r.bs {
+		s.present = energy > r.noise+bsPresence*r.amp*r.amp
+	}
 	s.anchor = best.metric >= anchorMetric*expect && best.metric >= 4.0/float64(r.search.span)
 	s.present = s.present || s.anchor
 	if !s.anchor {
