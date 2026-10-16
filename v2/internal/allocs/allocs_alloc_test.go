@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -79,6 +80,25 @@ func TestAllocsPacketAssembly(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestAllocsPacketRetry builds the retry of two blocks of a confirmed packet
+// with a reused Builder.
+func TestAllocsPacketRetry(t *testing.T) {
+	var b packet.Builder
+	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
+		SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}}
+	p, err := b.Segment(h, make([]byte, 100), enums.DataTypeRate12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rd packet.ResponseData
+	rd.Retry[2], rd.Retry[5] = true, true
+	assertZero(t, "retry", func() {
+		if r, err := b.Retry(&p, &rd); err != nil || len(r.Blocks) != 2 {
+			t.Fatalf("retry: %v", err)
+		}
+	})
 }
 
 // TestAllocsVoiceSuperframe sends a superframe of the voice frames of the parrot

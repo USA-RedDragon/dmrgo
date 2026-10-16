@@ -91,7 +91,8 @@ func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet
 // Builder builds packets into storage that it keeps, so that it does not
 // allocate once the storage has grown to the largest packet. A Packet that a
 // Builder returns points into this storage, through its sub-header and its
-// Blocks, and is valid until the next call on the Builder. The zero value is
+// Blocks, and is valid until the next call on the Builder, except that
+// Retry leaves a Packet from Segment as it is. The zero value is
 // ready to use. A Builder is not safe for concurrent use.
 type Builder struct {
 	unconfirmed pdu.UnconfirmedDataHeader
@@ -104,6 +105,17 @@ type Builder struct {
 	rate34      []pdu.Rate34Data
 	rate1       []pdu.Rate1Data
 	blocks      []layer2.Data
+	retry       retryStore
+}
+
+// retryStore holds the header and block list of the Packet that
+// Builder.Retry returns, apart from the storage of Segment, so that a
+// retry does not change the packet it resends.
+type retryStore struct {
+	confirmed pdu.ConfirmedDataHeader
+	defined   pdu.DefinedDataHeader
+	raw       pdu.RawDataHeader
+	blocks    []layer2.Data
 }
 
 // Segment does what the package function Segment does, into the storage of
@@ -133,6 +145,57 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 		b.blocks[i] = b.block(i, b.buf[i*per:(i+1)*per], confirmed)
 	}
 	return Packet{Header: header, Blocks: b.blocks}, nil
+}
+
+// Retry builds the later try of the confirmed packet p that a SACK with
+// response data rd asks for: a copy of the header of p with the Full
+// Message Flag clear and the block count set to the number of blocks it
+// resends, then block i of p for each DBSN i that rd flags, in DBSN order.
+// A nil rd resends every block, as after a NACK or a missing response. The
+// header keeps N(S) and the other fields of the first try (ETSI TS 102
+// 361-1 clause 9.3.20, ETSI TS 102 361-3 clause 5.4). p is a C_HEAD, or a
+// DD_HEAD or R_HEAD with SARQ set, with the blocks Segment makes. Retry
+// returns an error that wraps ErrFormat for another header, and
+// ErrNoRetryBlocks when rd flags no block of p. The Packet points to the
+// blocks of p and to storage of b, apart from that of Segment and
+// NewResponse, and is valid until the next Retry. It does not allocate
+// once the storage has room for the blocks.
+func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
+	h := p.Header
+	n := 0
+	for i := range p.Blocks {
+		if rd == nil || i < len(rd.Retry) && rd.Retry[i] {
+			n++
+		}
+	}
+	count := uint8(n & 0x7F)
+	switch confirmed, _ := isConfirmed(&h); {
+	case !confirmed:
+		return Packet{}, errRetryFormat
+	case n == 0:
+		return Packet{}, ErrNoRetryBlocks
+	case h.Format == pdu.FormatConfirmed:
+		b.retry.confirmed = *h.ConfirmedDataHeader
+		b.retry.confirmed.FullMessageFlag, b.retry.confirmed.BlocksToFollow = false, count
+		h.ConfirmedDataHeader = &b.retry.confirmed
+	case h.Format == pdu.FormatShortDataDefined:
+		b.retry.defined = *h.DefinedDataHeader
+		b.retry.defined.FullMessageFlag, b.retry.defined.AppendedBlocks = false, count
+		h.DefinedDataHeader, h.AppendedBlocks = &b.retry.defined, count
+	default:
+		b.retry.raw = *h.RawDataHeader
+		b.retry.raw.FullMessageFlag, b.retry.raw.AppendedBlocks = false, count
+		h.RawDataHeader, h.AppendedBlocks = &b.retry.raw, count
+	}
+	b.retry.blocks = appendLen(b.retry.blocks, n)
+	j := 0
+	for i, blk := range p.Blocks {
+		if rd == nil || i < len(rd.Retry) && rd.Retry[i] {
+			b.retry.blocks[j] = blk
+			j++
+		}
+	}
+	return Packet{Header: h, Blocks: b.retry.blocks}, nil
 }
 
 // appendLen returns s with length n. Like append, it allocates a new array
