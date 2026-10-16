@@ -106,6 +106,44 @@ func CRCCCITT() [256]uint16 {
 	return table
 }
 
+// CRC7Table computes the byte-at-a-time CRC-7 lookup table for polynomial
+// x⁷ + x⁵ + x² + x + 1 (ETSI TS 102 361-1 clause B.3.13), for a register
+// that holds the 7 CRC bits in its top bits.
+func CRC7Table() [256]uint8 {
+	const poly = 0x27 << 1
+	var table [256]uint8
+	for i := 0; i < 256; i++ {
+		crc := uint8(i)
+		for j := 0; j < 8; j++ {
+			if crc&0x80 != 0 {
+				crc = (crc << 1) ^ poly
+			} else {
+				crc <<= 1
+			}
+		}
+		table[i] = crc
+	}
+	return table
+}
+
+// CRC8Table computes the byte-at-a-time CRC-8 lookup table for polynomial
+// x⁸ + x² + x + 1 (ETSI TS 102 361-1 clause B.3.7).
+func CRC8Table() [256]uint8 {
+	var table [256]uint8
+	for i := 0; i < 256; i++ {
+		crc := uint8(i)
+		for j := 0; j < 8; j++ {
+			if crc&0x80 != 0 {
+				crc = (crc << 1) ^ 0x07
+			} else {
+				crc <<= 1
+			}
+		}
+		table[i] = crc
+	}
+	return table
+}
+
 // CRC9Table computes the byte-at-a-time CRC-9 lookup table for polynomial
 // x⁹ + x⁶ + x⁴ + x³ + 1 (ETSI TS 102 361-1 clause B.3.10), for a register
 // that holds the 9 CRC bits in its top bits.
