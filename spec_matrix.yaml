@@ -59,6 +59,8 @@ documents:
               - TestAMBE72CorrectsErrors
               - TestAMBEVoice_IPSCCapture
               - TestAMBEVoice_RoundTrip
+              - TestAMBEVoiceFlags_BadBits
+              - TestAMBEVoiceFlags_RoundTrip
               - TestAMBEVoice_VoiceBurst
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
