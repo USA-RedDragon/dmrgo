@@ -35,6 +35,10 @@ const (
 	// softOSDNibbles is the number of cost tables of a softOSDCode codeword,
 	// one per 4 bits.
 	softOSDNibbles = 49
+	// softTabLen is the length of the cost tables of one decode: three
+	// tables of 8 bits for a softSmallCode or the tables of 4 bits for a
+	// softOSDCode. The decodes run one at a time and share the tables.
+	softTabLen = max(3*256, softOSDNibbles*16)
 	// softListMax is the largest candidate list of a decode.
 	softListMax = 8
 	// softChaseMax is the largest number of bits that the Chase decode flips.
@@ -176,9 +180,9 @@ func softMask[T int | int16](img []bit.Bit, pos []T) uint32 {
 	return m
 }
 
-// softTables fills tab[b][m] with the sum of l[8b+i] over the set bits i of
-// m, for the tables that cover l.
-func softTables(tab [][256]int32, l []int32) {
+// softTables fills tab[256b+m] with the sum of l[8b+i] over the set bits i
+// of m, for the tables that cover l.
+func softTables(tab *[softTabLen]int32, l []int32) {
 	at := func(j int) int32 {
 		if j < len(l) {
 			return l[j]
@@ -192,18 +196,19 @@ func softTables(tab [][256]int32, l []int32) {
 			lo[m] = lo[m&(m-1)] + at(b*8+z)
 			hi[m] = hi[m&(m-1)] + at(b*8+4+z)
 		}
-		t := &tab[b]
+		t := (*[256]int32)(tab[256*b:])
 		for m := range t {
 			t[m] = lo[m&15] + hi[m>>4]
 		}
 	}
 }
 
-// softNibbleTables fills tab[b][m] with the sum of l[4b+i] over the set
+// softNibbleTables fills tab[16b+m] with the sum of l[4b+i] over the set
 // bits i of m, for the tables that cover l.
-func softNibbleTables(tab [][16]int32, l []int32) {
+func softNibbleTables(tab *[softTabLen]int32, l []int32) {
 	for b := 0; b*4 < len(l); b++ {
-		t := &tab[b]
+		t := (*[16]int32)(tab[16*b:])
+		t[0] = 0
 		for m := 1; m < 16; m++ {
 			if j := b*4 + bits.TrailingZeros(uint(m)); j < len(l) {
 				t[m] = t[m&(m-1)] + l[j]
@@ -231,7 +236,7 @@ func (c *softSmallCode) gather(llr []int16, l *[softSmallMaxN]int32) uint32 {
 // search scores every codeword whose info bits under fixed equal want, with
 // off XORed into the codeword, and keeps the lowest costs in top. The cost of
 // a codeword is the sum of the LLRs of its 1 bits, from tab.
-func (c *softSmallCode) search(tab *[3][256]int32, off, fixed, want uint32, top *softTop) {
+func (c *softSmallCode) search(tab *[softTabLen]int32, off, fixed, want uint32, top *softTop) {
 	var free [16]int
 	nf := 0
 	info := want & fixed
@@ -244,14 +249,13 @@ func (c *softSmallCode) search(tab *[3][256]int32, off, fixed, want uint32, top 
 			cw ^= c.rows[i]
 		}
 	}
-	t0, t1, t2 := &tab[0], &tab[1], &tab[2]
-	top.add(t0[cw&0xff]+t1[cw>>8&0xff]+t2[cw>>16&0xff], info, cw)
+	top.add(tab[cw&0xff]+tab[256+cw>>8&0xff]+tab[512+cw>>16&0xff], info, cw)
 	worst := top.worst()
 	for g := uint32(1); g < uint32(1)<<nf; g++ {
 		i := free[bits.TrailingZeros32(g)&15]
 		info ^= 1 << i
 		cw ^= c.rows[i]
-		if cost := t0[cw&0xff] + t1[cw>>8&0xff] + t2[cw>>16&0xff]; cost < worst {
+		if cost := tab[cw&0xff] + tab[256+cw>>8&0xff] + tab[512+cw>>16&0xff]; cost < worst {
 			top.add(cost, info, cw)
 			worst = top.worst()
 		}
@@ -263,7 +267,7 @@ type softSmallScratch struct {
 	// l holds the LLRs of the code bits.
 	l [softSmallMaxN]int32
 	// tab holds the cost tables of the code bits.
-	tab [3][256]int32
+	tab *[softTabLen]int32
 	// top and top1 hold candidate lists.
 	top, top1 softTop
 }
@@ -272,9 +276,9 @@ type softSmallScratch struct {
 // of bits where it differs from the hard decisions.
 func (s *softSmallScratch) decode(c *softSmallCode, llr []int16, fixed, want uint32) (info, cw uint32, errs int) {
 	hard := c.gather(llr, &s.l)
-	softTables(s.tab[:], s.l[:c.n])
+	softTables(s.tab, s.l[:c.n])
 	s.top.reset(1)
-	c.search(&s.tab, 0, fixed, want, &s.top)
+	c.search(s.tab, 0, fixed, want, &s.top)
 	return s.top.info[0], s.top.cw[0], bits.OnesCount32(s.top.cw[0] ^ hard)
 }
 
@@ -526,7 +530,7 @@ type softOSDScratch struct {
 	pivot [softOSDMaxK]int16
 	// tab holds the tables of the LLR magnitudes of the code bits, 4 bits
 	// per table.
-	tab [softOSDNibbles][16]int32
+	tab *[softTabLen]int32
 	// list holds the best candidates.
 	list softOSDList
 	// accept is the check of the decode, nil for none.
@@ -575,9 +579,9 @@ func (s *softOSDScratch) prepare(n int) {
 func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, bound int32) int32 {
 	sum := s.floor
 	for x := range s.nw {
-		t := s.tab[16*x:]
-		for i, e := 0, cw[x]^s.hard[x]; e != 0; i, e = i+1, e>>4 {
-			sum += t[i][e&0xf]
+		t := s.tab[256*x:]
+		for i, e := 0, cw[x]^s.hard[x]; e != 0; i, e = i+16, e>>4 {
+			sum += t[i+int(e&0xf)]
 		}
 		if sum >= bound {
 			break
@@ -596,7 +600,7 @@ func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, bound int32) int32 {
 // accepted codeword of the list, so it is skipped.
 func (c *softOSDCode) osd(s *softOSDScratch, order, window, listMax int) {
 	s.prepare(c.n)
-	softNibbleTables(s.tab[:], s.mag[:c.n])
+	softNibbleTables(s.tab, s.mag[:c.n])
 	c.basis(s)
 	c.reprocess(s, order, window, listMax)
 }
@@ -1094,10 +1098,11 @@ type softDecoder struct {
 	// no R(3).
 	info     [softTrellisBits]int16
 	bptcInfo [softOSDMaxN]uint8
-	// small and osd hold the scratch of the decodes, and prev the Viterbi
-	// survivors.
+	// small and osd hold the scratch of the decodes, tab their cost tables,
+	// and prev the Viterbi survivors.
 	small softSmallScratch
 	osd   softOSDScratch
+	tab   [softTabLen]int32
 	prev  [softTrellisSteps][softTrellisStates]uint8
 	// check is the BPTC check of the current decode, and acceptBPTC,
 	// acceptShortLC and acceptEmbLC are the checks of the OSD codewords.
@@ -1109,6 +1114,7 @@ type softDecoder struct {
 // returns an error only when a library encoder changes its layout.
 func newSoftDecoder() (*softDecoder, error) {
 	d := &softDecoder{AMBECandidates: 4, ChaseBits: 6, OSDOrder: 2, BPTCList: softListMax, ShortLCList: 4, EmbLCList: 2}
+	d.small.tab, d.osd.tab = &d.tab, &d.tab
 	var err error
 	if d.ambe, err = newSoftAMBE(); err != nil {
 		return nil, err
@@ -1229,11 +1235,11 @@ func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst
 	for i := range frames {
 		sl := &d.ambe.slot[i]
 		hard0 := sl.c0.gather(llr[:], &s.l)
-		softTables(s.tab[:], s.l[:sl.c0.n])
+		softTables(s.tab, s.l[:sl.c0.n])
 		s.top.reset(d.AMBECandidates)
-		sl.c0.search(&s.tab, 0, 0, 0, &s.top)
+		sl.c0.search(s.tab, 0, 0, 0, &s.top)
 		hard1 := sl.c1.gather(llr[:], &s.l)
-		softTables(s.tab[:], s.l[:sl.c1.n])
+		softTables(s.tab, s.l[:sl.c1.n])
 		var bound int32
 		for j := range sl.c1.n {
 			bound += min(0, s.l[j])
@@ -1245,7 +1251,7 @@ func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst
 				break
 			}
 			s.top1.reset(1)
-			sl.c1.search(&s.tab, d.ambe.pn(s.top.info[c]), 0, 0, &s.top1)
+			sl.c1.search(s.tab, d.ambe.pn(s.top.info[c]), 0, 0, &s.top1)
 			if total := s.top.cost[c] + s.top1.cost[0]; total < best {
 				best = total
 				info0, cw0 = s.top.info[c], s.top.cw[c]
