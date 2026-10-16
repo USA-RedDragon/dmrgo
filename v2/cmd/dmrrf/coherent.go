@@ -307,6 +307,7 @@ func (t *trellis) best() float32 {
 // share of the step h*pi reached i-half samples from the symbol center.
 type phasePulse struct {
 	q    []float64
+	q32  []float32
 	half int
 	span int
 }
@@ -314,9 +315,10 @@ type phasePulse struct {
 // newPhasePulse returns the phase pulse at sps samples per symbol.
 func newPhasePulse(sps int) phasePulse {
 	taps := rrcTapsAt(float64(sps))
-	p := phasePulse{q: make([]float64, len(taps)+1), half: len(taps) / 2}
+	p := phasePulse{q: make([]float64, len(taps)+1), q32: make([]float32, len(taps)+1), half: len(taps) / 2}
 	for i, v := range taps {
 		p.q[i+1] = p.q[i] + v
+		p.q32[i+1] = float32(p.q[i+1])
 	}
 	p.span = p.half/sps + 1
 	return p

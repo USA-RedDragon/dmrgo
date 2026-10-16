@@ -84,12 +84,10 @@ type syncSearch struct {
 	rot   [searchFreqs][]complex64
 	x     []complex64
 	full  []float64
-	// pats and phases hold the waveform phase of every SYNC pattern over the
-	// correlated span.
-	pats   [2*numSources + 1]enums.SyncPattern
-	phases [2*numSources + 1][]float64
-	// conj holds e^-j*phase of each pattern over the correlated span.
-	conj [2*numSources + 1][]complex128
+	// pats holds every SYNC pattern, and conj e^-j*phase of the waveform
+	// of each over the correlated span.
+	pats [2*numSources + 1]enums.SyncPattern
+	conj [2*numSources + 1][]complex64
 }
 
 // newSyncSearch returns a search with the symbols of the voice SYNC of each
@@ -133,31 +131,23 @@ func newSyncSearch(coherent bool, dec int) *syncSearch {
 		ph := refPhase(syms, sps, 0.27)
 		_, d, _ := sourceAt(i).SyncPatterns()
 		s.pats[2*i], s.pats[2*i+1] = v, d
-		s.phases[2*i] = ph[syncEdge*sps : syncEdge*sps+span]
-		s.phases[2*i+1] = make([]float64, span)
-		for j, x := range s.phases[2*i] {
-			s.phases[2*i+1][j] = -x
-		}
 		s.tpl[i] = make([]complex64, span)
 		for j := range span {
 			p := ph[syncEdge*sps+j]
 			s.tpl[i][j] = complex(float32(math.Cos(p)), float32(-math.Sin(p)))
 		}
 	}
-	var rc [syncSymbols]int8
-	syncSyms(enums.SyncMSSourcedRC, &rc)
-	syms := make([]int, syncSymbols)
-	for k, a := range rc {
-		syms[k] = int(a)
-	}
 	s.pats[2*numSources] = enums.SyncMSSourcedRC
-	s.phases[2*numSources] = refPhase(syms, sps, 0.27)[syncEdge*sps : syncEdge*sps+span]
-	s.setConj()
+	for i := range s.conj {
+		s.conj[i] = make([]complex64, span)
+	}
+	pulse := newPhasePulse(sps)
+	s.setH(0.27, &pulse)
 	return s
 }
 
-// setH recomputes the waveform phases of the SYNC patterns for modulation
-// index h with the phase pulse p.
+// setH recomputes the waveforms of the SYNC patterns for modulation index h
+// with the phase pulse p.
 func (s *syncSearch) setH(h float64, p *phasePulse) {
 	var syms [syncSymbols]int8
 	var in [syncSymbols]int
@@ -167,26 +157,15 @@ func (s *syncSearch) setH(h float64, p *phasePulse) {
 			in[k] = int(a)
 		}
 		p.refPhaseInto(in[:], s.sps, h, s.full)
-		copy(s.phases[i], s.full[syncEdge*s.sps:syncEdge*s.sps+s.span])
-	}
-	s.setConj()
-}
-
-// setConj computes conj from phases.
-func (s *syncSearch) setConj() {
-	for i, ph := range s.phases {
-		if s.conj[i] == nil {
-			s.conj[i] = make([]complex128, s.span)
-		}
-		for j, p := range ph {
-			s.conj[i][j] = complex(math.Cos(p), -math.Sin(p))
+		for j, ph := range s.full[syncEdge*s.sps : syncEdge*s.sps+s.span] {
+			s.conj[i][j] = complex(float32(math.Cos(ph)), float32(-math.Sin(ph)))
 		}
 	}
 }
 
 // conjOf returns e^-j*phase of SYNC pattern p over the correlated span, or
 // nil for an unknown pattern.
-func (s *syncSearch) conjOf(p enums.SyncPattern) []complex128 {
+func (s *syncSearch) conjOf(p enums.SyncPattern) []complex64 {
 	for i, q := range s.pats {
 		if q == p {
 			return s.conj[i]
