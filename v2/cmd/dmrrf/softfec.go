@@ -413,8 +413,8 @@ type softOSDCode struct {
 	t int
 	// pos holds the image index of codeword bit j, in increasing order.
 	pos [softOSDMaxN]int16
-	// rows holds the codeword of info bit i.
-	rows [softOSDMaxK][softOSDWords]uint64
+	// rows holds the codeword of each of the k info bits.
+	rows [][softOSDWords]uint64
 	// sys holds a codeword bit that equals info bit i.
 	sys [softOSDMaxK]int16
 }
@@ -423,7 +423,7 @@ type softOSDCode struct {
 // zero info word, which must give the zero codeword, and enc(i+1) encodes
 // unit vector i.
 func newSoftOSDCode(k, t int, enc softEncoder) (*softOSDCode, error) {
-	c := &softOSDCode{k: k, t: t}
+	c := &softOSDCode{k: k, t: t, rows: make([][softOSDWords]uint64, k)}
 	zero, err := enc(0)
 	if err != nil {
 		return nil, err
