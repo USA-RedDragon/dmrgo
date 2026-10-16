@@ -27,9 +27,6 @@ func TestSysCode_PackUnpack(t *testing.T) {
 		if back.Unpack(got); back != tt.code {
 			t.Errorf("Unpack(%016b) = %+v", got, back)
 		}
-		if pdu.UnpackSysCode(got) != back {
-			t.Errorf("UnpackSysCode(%016b) differs from Unpack", got)
-		}
 		got14, err := tt.code.Pack14()
 		if err != nil || got14 != tt.want>>2 {
 			t.Errorf("%+v: Pack14 = %014b, %v", tt.code, got14, err)
@@ -38,9 +35,6 @@ func TestSysCode_PackUnpack(t *testing.T) {
 		noPar.Par = 0
 		if back.Unpack14(got14); back != noPar {
 			t.Errorf("Unpack14(%014b) = %+v", got14, back)
-		}
-		if pdu.UnpackSysCode14(got14) != back {
-			t.Errorf("UnpackSysCode14(%014b) differs from Unpack14", got14)
 		}
 	}
 }
