@@ -78,6 +78,13 @@ type spectrum struct {
 	ready  bool
 }
 
+// reset drops the frames of the estimate in progress, so that the next
+// estimate holds only frames after the reset.
+func (s *spectrum) reset() {
+	clear(s.power)
+	s.frames, s.fill, s.ready = 0, 0, false
+}
+
 // newSpectrum returns an estimator with no frames yet.
 func newSpectrum() *spectrum {
 	s := &spectrum{f: newFFT(fftSize), win: make([]float32, fftSize/2+1), hist: make([]complex64, fftSize),
