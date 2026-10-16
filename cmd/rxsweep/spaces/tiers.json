@@ -1,0 +1,9 @@
+{
+ "variants": [
+  {"name": "t0-lean", "tier": 0},
+  {"name": "t0-lean-24k", "tier": 0, "hz": 24000},
+  {"name": "t0-buffered", "tier": 0, "lookback": 8},
+  {"name": "t1", "tier": 1},
+  {"name": "t2", "tier": 2}
+ ]
+}
