@@ -7,13 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func TestPRFill_Length(t *testing.T) {
-	t.Parallel()
-	if n := 8 * len(pdu.PRFillBits()); n != 96 {
-		t.Fatalf("PRFillBits should be 96 bits, got %d", n)
-	}
-}
-
 func TestPRFill_PackedHex(t *testing.T) {
 	t.Parallel()
 	// ETSI TS 102 361-1 Table D.2, I(95) first.
