@@ -223,3 +223,79 @@ func TestEncodeRejectsOutOfRangeValues(t *testing.T) {
 		t.Errorf("Burst.Encode with BPTCReserved 7: %v", err)
 	}
 }
+
+// TestSettersRejectOutOfRangeValues checks that each setter returns the
+// *dmrgo.FieldRangeError of a value that does not fit its bits, or of a set
+// padding bit, and leaves its target as it was.
+func TestSettersRejectOutOfRangeValues(t *testing.T) {
+	t.Parallel()
+
+	idle := must(layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, 1, layer2.SyncSourceBS))
+	var padded [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
+	padded[1][6] = 0x01
+	type setterCase struct {
+		name       string
+		typ, field string
+		bits       int
+		run        func() (unchanged bool, err error)
+	}
+	raw := func(set func(r *layer2.RawBurst) error) func() (bool, error) {
+		return func() (bool, error) {
+			r := idle
+			err := set(&r)
+			return r == idle, err
+		}
+	}
+	cases := []setterCase{
+		{"RawBurst.SetBPTCReserved", "RawBurst", "BPTCReserved", 3, raw(func(r *layer2.RawBurst) error { return r.SetBPTCReserved(8) })},
+		{"RawBurst.SetSlotType", "SlotType", "ColorCode", 4, raw(func(r *layer2.RawBurst) error {
+			return r.SetSlotType(pdu.SlotType{ColorCode: 16})
+		})},
+		{"RawBurst.SetEMB", "EmbeddedSignalling", "LCSS", 2, raw(func(r *layer2.RawBurst) error {
+			return r.SetEMB(pdu.EmbeddedSignalling{LCSS: 4})
+		})},
+		{"RawBurst.SetStandaloneRCEMB", "EmbeddedSignalling", "ColorCode", 4, raw(func(r *layer2.RawBurst) error {
+			return r.SetStandaloneRCEMB(pdu.EmbeddedSignalling{ColorCode: 16})
+		})},
+		{"RawBurst.SetAMBEFrames", "vocoder", "AMBEFrame", 49, raw(func(r *layer2.RawBurst) error { return r.SetAMBEFrames(padded) })},
+		{"Burst.SetAMBEFrames", "vocoder", "AMBEFrame", 49, func() (bool, error) {
+			var b layer2.Burst
+			b.VoiceSlots[0][0] = 0x5A
+			want := b.VoiceSlots
+			err := b.SetAMBEFrames(padded)
+			return b.VoiceSlots == want, err
+		}},
+		{"Rate12Data.SetConfirmed", "Rate12Data", "DBSN", 7, func() (bool, error) {
+			var d pdu.Rate12Data
+			err := d.SetConfirmed(128, [10]byte{1})
+			return d == pdu.Rate12Data{}, err
+		}},
+		{"Rate34Data.SetConfirmed", "Rate34Data", "DBSN", 7, func() (bool, error) {
+			var d pdu.Rate34Data
+			err := d.SetConfirmed(128, [16]byte{1})
+			return d == pdu.Rate34Data{}, err
+		}},
+		{"Rate1Data.SetConfirmed", "Rate1Data", "DBSN", 7, func() (bool, error) {
+			var d pdu.Rate1Data
+			err := d.SetConfirmed(128, [22]byte{1})
+			return d == pdu.Rate1Data{}, err
+		}},
+		{"vocoder.PackAMBEVoice", "vocoder", "AMBEFrame", 49, func() (bool, error) {
+			p, err := vocoder.PackAMBEVoice(padded)
+			return p == [19]byte{}, err
+		}},
+		{"vocoder.PackAMBEVoiceFlags", "vocoder", "AMBEFrame", 49, func() (bool, error) {
+			p, err := vocoder.PackAMBEVoiceFlags(padded, [3]bool{false, true, true})
+			return p == [19]byte{}, err
+		}},
+	}
+	for _, c := range cases {
+		unchanged, err := c.run()
+		if !isRangeError(err, c.typ, c.field, c.bits) {
+			t.Errorf("%s: error %v, want the FieldRangeError of %s.%s in %d bits", c.name, err, c.typ, c.field, c.bits)
+		}
+		if !unchanged {
+			t.Errorf("%s: changed its target on an error", c.name)
+		}
+	}
+}

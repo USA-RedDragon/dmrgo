@@ -110,7 +110,7 @@ func TestRate34Data_Confirmed_RoundTrip(t *testing.T) {
 		user[i] = byte(i*7 + 1)
 	}
 	var rt pdu.Rate34Data
-	rt.SetConfirmed(0x55, user)
+	noErr(rt.SetConfirmed(0x55, user))
 	if rt.ConfirmedDBSN() != 0x55 {
 		t.Errorf("ConfirmedDBSN() = %d, want %d", rt.ConfirmedDBSN(), 0x55)
 	}
@@ -138,7 +138,7 @@ func TestRate34Data_Confirmed_CRC9Layout(t *testing.T) {
 	var user [16]byte
 	user[0] = 0x80
 	var rt pdu.Rate34Data
-	rt.SetConfirmed(3, user)
+	noErr(rt.SetConfirmed(3, user))
 
 	want := (crc.CRC9(append(user[:], 3<<1), len(user)*8+7) ^ 0x1FF) & 0x1FF
 	if got := rt.ConfirmedCRC9(); got != want {

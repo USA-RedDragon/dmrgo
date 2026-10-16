@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -492,7 +493,7 @@ func TestAssembler_SelectiveRetry(t *testing.T) {
 		t.Fatal(err)
 	}
 	rh := resp.Header.ResponsePacketHeader
-	if packet.ResponseOf(rh) != packet.ResponseSACK || rh.ResponseStatus != 5 || rh.LLIDDestination != 3120001 || rh.LLIDSource != 3120002 || len(resp.Blocks) != 1 {
+	if r, err := packet.ResponseOf(rh); err != nil || r != packet.ResponseSACK || rh.ResponseStatus != 5 || rh.LLIDDestination != 3120001 || rh.LLIDSource != 3120002 || len(resp.Blocks) != 1 {
 		t.Fatalf("response %+v", rh)
 	}
 
@@ -530,8 +531,11 @@ func retryAndACK(t *testing.T, rx, tx *packet.Assembler, p packet.Packet, data [
 		t.Fatal(err)
 	}
 	am, err := add(tx, encodeHeader(t, &ack.Header))
-	if err != nil || am == nil || packet.ResponseOf(am.Header.ResponsePacketHeader) != packet.ResponseACK {
+	if err != nil || am == nil {
 		t.Fatalf("ACK: %v %+v", err, am)
+	}
+	if r, err := packet.ResponseOf(am.Header.ResponsePacketHeader); err != nil || r != packet.ResponseACK {
+		t.Fatalf("ACK: %v %v", err, r)
 	}
 }
 
@@ -655,12 +659,23 @@ func TestResponseCodes(t *testing.T) {
 		{packet.ResponseSACK, 2, 0, "SACK"},
 	}
 	for _, tt := range tests {
-		if tt.r.Class() != tt.class || tt.r.Type() != tt.typ || packet.NewResponseCode(tt.class, tt.typ) != tt.r || tt.r.String() != tt.name {
+		r, err := packet.NewResponseCode(tt.class, tt.typ)
+		if tt.r.Class() != tt.class || tt.r.Type() != tt.typ || err != nil || r != tt.r || tt.r.String() != tt.name {
 			t.Errorf("%s: class %d type %d", tt.name, tt.r.Class(), tt.r.Type())
 		}
 	}
-	if (packet.NewResponseCode(3, 7)).String() != "Unknown Response (class 3, type 7)" {
+	if r, err := packet.NewResponseCode(3, 7); err != nil || r.String() != "Unknown Response (class 3, type 7)" {
 		t.Error("unknown name")
+	}
+	var rangeErr *dmrgo.FieldRangeError
+	if _, err := packet.NewResponseCode(4, 0); !errors.As(err, &rangeErr) || rangeErr.Field != "Class" || rangeErr.Bits != 2 {
+		t.Errorf("class 4: error %v, want the FieldRangeError of Class", err)
+	}
+	if _, err := packet.NewResponseCode(0, 8); !errors.As(err, &rangeErr) || rangeErr.Field != "Type" || rangeErr.Bits != 3 {
+		t.Errorf("type 8: error %v, want the FieldRangeError of Type", err)
+	}
+	if _, err := packet.ResponseOf(&pdu.ResponsePacketHeader{ResponseType: 8}); !errors.As(err, &rangeErr) || rangeErr.Field != "Type" {
+		t.Errorf("ResponseOf with type 8: error %v, want the FieldRangeError of Type", err)
 	}
 	h := confirmed()
 	r, err := packet.NewResponse(h.ConfirmedDataHeader, packet.ResponseNACKFSNOutOfSequence, nil)

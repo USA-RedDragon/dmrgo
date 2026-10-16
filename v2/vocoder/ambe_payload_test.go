@@ -30,7 +30,7 @@ func TestAMBEVoice_IPSCCapture(t *testing.T) {
 			t.Errorf("frame %d: % X, want the AMBE+2 silence frame", k, f)
 		}
 	}
-	if got := vocoder.PackAMBEVoice(frames); got != data {
+	if got := must(vocoder.PackAMBEVoice(frames)); got != data {
 		t.Errorf("pack % X, want % X", got, data)
 	}
 }
@@ -46,7 +46,7 @@ func TestAMBEVoice_RoundTrip(t *testing.T) {
 				bits.SetBit(frames[k][:], i, byte(r.Intn(2)))
 			}
 		}
-		data := vocoder.PackAMBEVoice(frames)
+		data := must(vocoder.PackAMBEVoice(frames))
 		for _, i := range []int{49, 99, 149, 150, 151} {
 			if bits.Bit(data[:], i) != 0 {
 				t.Fatalf("bit %d is set", i)
@@ -79,10 +79,10 @@ func TestAMBEVoiceFlags_BadBits(t *testing.T) {
 	if frames != ([3]vocoder.AMBEFrame{}) {
 		t.Fatal("the flag bits changed the frames")
 	}
-	if got := vocoder.PackAMBEVoiceFlags(frames, bad); got != data {
+	if got := must(vocoder.PackAMBEVoiceFlags(frames, bad)); got != data {
 		t.Fatalf("pack % X, want % X", got, data)
 	}
-	if got := vocoder.PackAMBEVoiceFlags(frames, [3]bool{true, false, false}); got != ([19]byte{}) {
+	if got := must(vocoder.PackAMBEVoiceFlags(frames, [3]bool{true, false, false})); got != ([19]byte{}) {
 		t.Fatalf("bad[0] set bits % X", got)
 	}
 }
@@ -97,7 +97,7 @@ func TestAMBEVoiceFlags_RoundTrip(t *testing.T) {
 	frames := vocoder.UnpackAMBEVoice([19]byte(raw))
 	for n := range 4 {
 		want := [3]bool{false, n&1 != 0, n&2 != 0}
-		data := vocoder.PackAMBEVoiceFlags(frames, want)
+		data := must(vocoder.PackAMBEVoiceFlags(frames, want))
 		gotFrames, got := vocoder.UnpackAMBEVoiceFlags(data)
 		if got != want || gotFrames != frames {
 			t.Errorf("flags %v: got %v", want, got)
@@ -124,7 +124,7 @@ func TestAMBEVoice_VoiceBurst(t *testing.T) {
 		t.Fatalf("voice burst: %v", err)
 	}
 	frames, _ := burst.AMBEFrames()
-	payload := vocoder.PackAMBEVoice(frames)
+	payload := must(vocoder.PackAMBEVoice(frames))
 	if got := hex.EncodeToString(payload[:]); got != "f813d9918ca7be04f6314102af81329c504fb8" {
 		t.Errorf("AMBE payload %s", got)
 	}

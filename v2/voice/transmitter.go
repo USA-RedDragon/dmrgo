@@ -693,7 +693,7 @@ func (t *Transmitter) Relay(now time.Duration, e *Event) error {
 // Transmitter.
 func (t *Transmitter) recolor(b *layer2.RawBurst) layer2.RawBurst {
 	r := *b
-	r.SetSlotType(pdu.SlotType{ColorCode: t.cc, DataType: enums.DataTypePIHeader})
+	_ = r.SetSlotType(pdu.SlotType{ColorCode: t.cc, DataType: enums.DataTypePIHeader})
 	_, data, _ := t.source.SyncPatterns()
 	_ = r.SetSync(data)
 	return r

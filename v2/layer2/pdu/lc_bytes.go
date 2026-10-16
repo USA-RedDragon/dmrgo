@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
@@ -39,12 +40,21 @@ func (l LCBytes) FLCO() enums.FLCO {
 	return enums.FLCO(l[0] & 0x3F)
 }
 
-// SetFLCO writes the low 6 bits of f into the FLCO and keeps the PF and
-// Reserved bits. DMRGateway clears the Reserved bit when it rewrites the
-// FLCO; to do the same, call SetReserved(false) as well.
-func (l *LCBytes) SetFLCO(f enums.FLCO) {
-	l[0] = l[0]&0xC0 | byte(f)&0x3F
+// SetFLCO writes f into the FLCO and keeps the PF and Reserved bits. It
+// returns a *dmrgo.FieldRangeError, and changes nothing, when f does not fit
+// in 6 bits. DMRGateway clears the Reserved bit when it rewrites the FLCO;
+// to do the same, call SetReserved(false) as well.
+func (l *LCBytes) SetFLCO(f enums.FLCO) error {
+	if f>>6 != 0 {
+		return errLCBytesFLCORange
+	}
+	l[0] = l[0]&0xC0 | byte(f)
+	return nil
 }
+
+// errLCBytesFLCORange is the error of a SetFLCO whose FLCO does not fit in
+// 6 bits.
+var errLCBytesFLCORange = &dmrgo.FieldRangeError{Type: "LCBytes", Field: "FLCO", Bits: 6}
 
 // ProtectFlag returns the PF bit, bit 0 of octet 0.
 func (l LCBytes) ProtectFlag() bool {
@@ -145,10 +155,10 @@ func (l *LCBytes) SetGroup(group bool) bool {
 	if !l.isVoiceChannelUser() {
 		return false
 	}
+	f := enums.FLCOUnitToUnitVoiceChannelUser
 	if group {
-		l.SetFLCO(enums.FLCOGroupVoiceChannelUser)
-	} else {
-		l.SetFLCO(enums.FLCOUnitToUnitVoiceChannelUser)
+		f = enums.FLCOGroupVoiceChannelUser
 	}
+	l[0] = l[0]&0xC0 | byte(f)
 	return true
 }

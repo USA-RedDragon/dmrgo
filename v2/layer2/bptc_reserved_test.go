@@ -58,11 +58,11 @@ func TestBPTCReserved_CapacityMaxRoundTrip(t *testing.T) {
 		}
 		p, _ := r.BPTCPayload()
 		built := must(layer2.BuildDataBurst(p, enums.DataTypeCSBK, b.SlotType.ColorCode, layer2.SyncSourceBS))
-		built.SetBPTCReserved(ras)
+		noErr(built.SetBPTCReserved(ras))
 		if built != r {
 			t.Errorf("%s: BuildDataBurst and SetBPTCReserved\ngot  %x\nwant %x", s, built, frame)
 		}
-		built.SetBPTCReserved(0)
+		noErr(built.SetBPTCReserved(0))
 		if zero := must(layer2.BuildDataBurst(p, enums.DataTypeCSBK, b.SlotType.ColorCode, layer2.SyncSourceBS)); built != zero {
 			t.Errorf("%s: SetBPTCReserved to zero\ngot  %x\nwant %x", s, built, zero)
 		}
@@ -84,7 +84,7 @@ func TestBPTCReserved_CapacityMaxVoiceLCHeader(t *testing.T) {
 	}
 	got := must(b.Encode())
 	want := layer2.RawBurst(frame)
-	want.SetSlotType(pdu.SlotType{ColorCode: b.SlotType.ColorCode, DataType: b.SlotType.DataType})
+	noErr(want.SetSlotType(pdu.SlotType{ColorCode: b.SlotType.ColorCode, DataType: b.SlotType.DataType}))
 	if got != want {
 		t.Errorf("Encode\ngot  %x\nwant %x", got, want)
 	}
@@ -108,7 +108,7 @@ func TestBPTCReserved_EncodeWritesField(t *testing.T) {
 			t.Errorf("R %#x: decoded %#x with %d corrections", res, d.BPTCReserved, d.FEC.Payload.ErrorsCorrected)
 		}
 		r := layer2.RawBurst(frame)
-		r.SetBPTCReserved(res)
+		noErr(r.SetBPTCReserved(res))
 		if r != enc {
 			t.Errorf("R %#x: SetBPTCReserved\ngot  %x\nwant %x", res, r, enc)
 		}
@@ -120,7 +120,7 @@ func TestBPTCReserved_SetKeepsBitErrors(t *testing.T) {
 	frame := hexBurst(t, capMaxCSBKAloha)
 	r := layer2.RawBurst(flipBurstBits(frame, 3, 40, 200))
 	p, before := r.BPTCPayload()
-	r.SetBPTCReserved(0x3)
+	noErr(r.SetBPTCReserved(0x3))
 	q, after := r.BPTCPayload()
 	if p != q || before != after {
 		t.Errorf("payload %x %+v, after SetBPTCReserved %x %+v", p, before, q, after)

@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
@@ -46,7 +47,16 @@ func (s *Rate34Data) ConfirmedCRC9OK() bool {
 }
 
 // SetConfirmed fills Data as a confirmed block (Table 9.11) and computes
-// the masked CRC-9. Only the low 7 bits of dbsn are used.
-func (s *Rate34Data) SetConfirmed(dbsn uint8, userData [16]byte) {
+// the masked CRC-9. It returns a *dmrgo.FieldRangeError, and changes
+// nothing, when dbsn does not fit in 7 bits.
+func (s *Rate34Data) SetConfirmed(dbsn uint8, userData [16]byte) error {
+	if dbsn>>7 != 0 {
+		return errRate34DataDBSNRange
+	}
 	setConfirmed(s.Data[:], dbsn, userData[:], crc9MaskRate34)
+	return nil
 }
+
+// errRate34DataDBSNRange is the error of a SetConfirmed whose DBSN does
+// not fit in 7 bits.
+var errRate34DataDBSNRange = &dmrgo.FieldRangeError{Type: "Rate34Data", Field: fieldDBSN, Bits: 7}

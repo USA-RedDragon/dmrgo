@@ -85,7 +85,7 @@ func ipscInputs(t *testing.T, packets []string, noEMB bool) []input {
 			if in.raw, err = layer2.BuildVoiceBurst(frames, enums.VoiceBurstB, emb, [4]byte(d[52:56]), layer2.SyncSourceBS); err != nil {
 				t.Fatal(err)
 			}
-			in.raw.SetEMB(emb)
+			noErr(in.raw.SetEMB(emb))
 			if noEMB {
 				b := new(layer2.Burst)
 				if err := b.DecodeFromBytesWith(in.raw, &layer2.DecodeOptions{Kind: layer2.KindVoice, VoiceBurst: in.hint.VoiceBurst}); err != nil {

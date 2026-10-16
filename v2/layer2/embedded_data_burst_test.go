@@ -64,7 +64,7 @@ func TestDataBurstWithEMB_ASELSAN(t *testing.T) {
 		r := layer2.RawBurst(frame)
 		p, _ := r.BPTCPayload()
 		built := must(layer2.BuildDataBurst(p, v.dt, aselsanColorCode, layer2.SyncSourceBS))
-		built.SetEMB(r.EMB())
+		noErr(built.SetEMB(r.EMB()))
 		built.SetEmbeddedData(r.EmbeddedData())
 		if built != r {
 			t.Errorf("%s: BuildDataBurst, SetEMB and SetEmbeddedData\ngot  %x\nwant %x", v.dt, built, frame)
@@ -101,7 +101,7 @@ func TestDataBurstWithEMB_SameDataAsWithSync(t *testing.T) {
 	}
 
 	r := must(layer2.BuildBurst(withSync.Data, aselsanColorCode, layer2.SyncSourceBS))
-	r.SetEMB(b.EmbeddedSignalling)
+	noErr(r.SetEMB(b.EmbeddedSignalling))
 	r.SetEmbeddedData([4]byte{})
 	if r != hexBurst(t, aselsanCSBKEMB) {
 		t.Errorf("BuildBurst with SetEMB\ngot  %x\nwant %s", r, aselsanCSBKEMB)
@@ -178,7 +178,7 @@ func TestDataBurstWithEMB_VoiceStaysVoice(t *testing.T) {
 		for e := range 128 {
 			var r layer2.RawBurst
 			r.SetVoiceSlots(slots)
-			r.SetEMB(pdu.EmbeddedSignalling{ColorCode: enums.ColorCode(e & 15), PreemptionAndPowerControlIndicator: e&16 != 0, LCSS: enums.LCSS(e >> 5)})
+			noErr(r.SetEMB(pdu.EmbeddedSignalling{ColorCode: enums.ColorCode(e & 15), PreemptionAndPowerControlIndicator: e&16 != 0, LCSS: enums.LCSS(e >> 5)}))
 			if b := must(layer2.NewBurstFromBytes(r)); b.Kind != layer2.KindVoice {
 				t.Errorf("voice burst %x decodes as %s", r, b.String())
 			}
@@ -192,7 +192,7 @@ func TestDataBurstWithEMB_VoiceStaysVoice(t *testing.T) {
 			r[i] = byte(rng.UintN(256))
 		}
 		v := rng.UintN(128)
-		r.SetEMB(pdu.EmbeddedSignalling{ColorCode: enums.ColorCode(v & 15), PreemptionAndPowerControlIndicator: v&16 != 0, LCSS: enums.LCSS(v >> 5)})
+		noErr(r.SetEMB(pdu.EmbeddedSignalling{ColorCode: enums.ColorCode(v & 15), PreemptionAndPowerControlIndicator: v&16 != 0, LCSS: enums.LCSS(v >> 5)}))
 		var b layer2.Burst
 		_ = b.DecodeFromBytes(r)
 		if b.Kind == layer2.KindData && b.SyncPattern == enums.SyncNone {

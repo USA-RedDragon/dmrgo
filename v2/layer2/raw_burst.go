@@ -62,10 +62,15 @@ func (r RawBurst) SlotType() pdu.SlotType {
 	return st
 }
 
-// SetSlotType encodes st into the slot type bits: the low 4 bits of its
-// color code and of its data type, as SlotType.Info returns them.
-func (r *RawBurst) SetSlotType(st pdu.SlotType) {
-	r.setField(slotTypeFirstStart, 10, slotTypeSecondStart, 10, uint64(st.Info().Codeword()))
+// SetSlotType encodes st into the slot type bits. It returns the errors of
+// st.Encode and then changes nothing.
+func (r *RawBurst) SetSlotType(st pdu.SlotType) error {
+	cw, err := st.Encode()
+	if err != nil {
+		return err
+	}
+	r.setField(slotTypeFirstStart, 10, slotTypeSecondStart, 10, uint64(cw[0])<<12|uint64(cw[1])<<4|uint64(cw[2])>>4)
+	return nil
 }
 
 // info returns the 196 information bits, burst bits 0 to 97 and 166 to 263,
@@ -111,18 +116,23 @@ func (r RawBurst) BPTCReserved() (uint8, fec.Result) {
 	return res, result
 }
 
-// SetBPTCReserved sets the BPTC(196,96) reserved bits R(0) to R(2) to the
-// low 3 bits of res, R(i) in bit i, and updates the Hamming parity bits that
-// cover them. The data bits and any bit errors stay as they are, so
-// BPTCPayload returns the same data and FEC result as before.
-func (r *RawBurst) SetBPTCReserved(res uint8) {
+// SetBPTCReserved sets the BPTC(196,96) reserved bits R(0) to R(2) to res,
+// R(i) in bit i, and updates the Hamming parity bits that cover them. The
+// data bits and any bit errors stay as they are, so BPTCPayload returns the
+// same data and FEC result as before. It returns a *dmrgo.FieldRangeError,
+// and changes nothing, when res does not fit in 3 bits.
+func (r *RawBurst) SetBPTCReserved(res uint8) error {
+	if res>>3 != 0 {
+		return errRawBurstBPTCReservedRange
+	}
 	info := r.info()
 	_, cur, _ := bptc.Decode196(info)
-	delta := bptc.Encode196([12]byte{}, res&0x7^cur)
+	delta := bptc.Encode196([12]byte{}, res^cur)
 	for i := range info {
 		info[i] ^= delta[i]
 	}
 	r.setInfo(&info)
+	return nil
 }
 
 // Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis
@@ -164,10 +174,10 @@ func (r RawBurst) EMB() pdu.EmbeddedSignalling {
 }
 
 // SetEMB encodes e into the EMB bits of a voice burst B to F or a data
-// burst without a SYNC pattern: the low 4 bits of the color code, the PI
-// and the low 2 bits of the LCSS, as EmbeddedSignalling.Info returns them.
-func (r *RawBurst) SetEMB(e pdu.EmbeddedSignalling) {
-	r.setEMB(e, embFirstStart, embSecondStart)
+// burst without a SYNC pattern. It returns the errors of e.Encode and then
+// changes nothing.
+func (r *RawBurst) SetEMB(e pdu.EmbeddedSignalling) error {
+	return r.setEMB(e, embFirstStart, embSecondStart)
 }
 
 // EmbeddedData returns the 32-bit embedded signalling field, burst bits 116
@@ -190,9 +200,9 @@ func (r RawBurst) StandaloneRCEMB() pdu.EmbeddedSignalling {
 }
 
 // SetStandaloneRCEMB encodes e into the EMB bits of a standalone RC burst,
-// as SetEMB does.
-func (r *RawBurst) SetStandaloneRCEMB(e pdu.EmbeddedSignalling) {
-	r.setEMB(e, rcembFirstStart, rcembSecondStart)
+// as SetEMB does, with the errors of SetEMB.
+func (r *RawBurst) SetStandaloneRCEMB(e pdu.EmbeddedSignalling) error {
+	return r.setEMB(e, rcembFirstStart, rcembSecondStart)
 }
 
 // StandaloneRCData returns the 32 FEC coded RC bits of a standalone RC
@@ -214,8 +224,13 @@ func (r RawBurst) emb(first, second int) pdu.EmbeddedSignalling {
 	return e
 }
 
-func (r *RawBurst) setEMB(e pdu.EmbeddedSignalling, first, second int) {
-	r.setField(first, 8, second, 8, uint64(e.Info().Codeword()))
+func (r *RawBurst) setEMB(e pdu.EmbeddedSignalling, first, second int) error {
+	cw, err := e.Encode()
+	if err != nil {
+		return err
+	}
+	r.setField(first, 8, second, 8, uint64(cw[0])<<8|uint64(cw[1]))
+	return nil
 }
 
 func (r RawBurst) word32(first, second int) [4]byte {
@@ -266,13 +281,18 @@ func (r RawBurst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Resul
 }
 
 // SetAMBEFrames writes the AMBE+2 coding of frames (vocoder.EncodeAMBE72)
-// into the three voice slots.
-func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
+// into the three voice slots. It returns the errors of EncodeAMBE72 and
+// then changes nothing.
+func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) error {
 	var s [VoiceSlotsPerBurst][9]byte
 	for i := range frames {
-		s[i] = ambe.Encode(frames[i])
+		var err error
+		if s[i], err = vocoder.EncodeAMBE72(frames[i]); err != nil {
+			return err
+		}
 	}
 	r.SetVoiceSlots(s)
+	return nil
 }
 
 // BuildVoiceBurst returns voice burst pos of a superframe that carries the
@@ -289,14 +309,9 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 	if !ok {
 		return r, errSyncSource
 	}
-	var slots [VoiceSlotsPerBurst][9]byte
-	for i := range frames {
-		var err error
-		if slots[i], err = vocoder.EncodeAMBE72(frames[i]); err != nil {
-			return RawBurst{}, err
-		}
+	if err := r.SetAMBEFrames(frames); err != nil {
+		return RawBurst{}, err
 	}
-	r.SetVoiceSlots(slots)
 	if pos == enums.VoiceBurstA {
 		// Go does not specify whether "return r, r.SetSync(voice)" reads r
 		// before or after the call.
@@ -308,10 +323,9 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 		return RawBurst{}, errNotAToF
 	}
 	emb.LCSS = lcss
-	if _, err := emb.Encode(); err != nil {
+	if err := r.SetEMB(emb); err != nil {
 		return RawBurst{}, err
 	}
-	r.SetEMB(emb)
 	r.SetEmbeddedData(embedded)
 	return r, nil
 }
@@ -403,10 +417,8 @@ func dataBurstFrame(dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawB
 	if err := r.SetSync(sync); err != nil {
 		return r, err
 	}
-	st := pdu.SlotType{ColorCode: cc, DataType: dt}
-	if _, err := st.Encode(); err != nil {
+	if err := r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt}); err != nil {
 		return RawBurst{}, err
 	}
-	r.SetSlotType(st)
 	return r, nil
 }

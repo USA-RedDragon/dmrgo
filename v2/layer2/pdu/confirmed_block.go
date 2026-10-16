@@ -33,7 +33,7 @@ func checkConfirmedCRC9(block []byte, mask uint16) bool {
 
 func setConfirmed(block []byte, dbsn uint8, userData []byte, mask uint16) {
 	c := computeConfirmedCRC9(dbsn, userData, mask)
-	block[0] = (dbsn&0x7F)<<1 | byte((c>>8)&0x01)
+	block[0] = dbsn<<1 | byte((c>>8)&0x01)
 	block[1] = byte(c & 0xFF)
 	copy(block[2:], userData)
 }

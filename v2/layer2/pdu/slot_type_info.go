@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -9,7 +10,8 @@ import (
 // Golay(20,8) parity, as IPSC carries them: the color code in the high 4
 // bits and the Data Type in the low 4 bits (ETSI TS 102 361-1 clause 9.1.3,
 // Table 9.4). For example, CC 1 with a CSBK is 0x13, whose codeword is
-// 0x132b2.
+// 0x132b2. A setter returns a *dmrgo.FieldRangeError, and changes nothing,
+// when its value does not fit its bits.
 type SlotTypeInfo byte
 
 // ColorCode returns the 4-bit color code, the high 4 bits.
@@ -17,9 +19,13 @@ func (s SlotTypeInfo) ColorCode() enums.ColorCode {
 	return enums.ColorCode(s >> 4)
 }
 
-// SetColorCode writes the low 4 bits of cc into the high 4 bits.
-func (s *SlotTypeInfo) SetColorCode(cc enums.ColorCode) {
+// SetColorCode writes cc into the high 4 bits.
+func (s *SlotTypeInfo) SetColorCode(cc enums.ColorCode) error {
+	if cc>>4 != 0 {
+		return errSlotTypeInfoColorCodeRange
+	}
 	*s = *s&0x0F | SlotTypeInfo(cc<<4)
+	return nil
 }
 
 // DataType returns the Data Type, the low 4 bits.
@@ -27,14 +33,13 @@ func (s SlotTypeInfo) DataType() enums.DataType {
 	return enums.DataType(s & 0x0F)
 }
 
-// SetDataType writes dt into the low 4 bits. It returns false, and changes
-// nothing, when dt does not fit in 4 bits.
-func (s *SlotTypeInfo) SetDataType(dt enums.DataType) bool {
+// SetDataType writes dt into the low 4 bits.
+func (s *SlotTypeInfo) SetDataType(dt enums.DataType) error {
 	if dt>>4 != 0 {
-		return false
+		return errSlotTypeInfoDataTypeRange
 	}
 	*s = *s&0xF0 | SlotTypeInfo(dt)
-	return true
+	return nil
 }
 
 // SlotType returns the fields of s as a SlotType with a zero FEC result.
@@ -42,13 +47,11 @@ func (s SlotTypeInfo) SlotType() SlotType {
 	return SlotType{ColorCode: s.ColorCode(), DataType: s.DataType()}
 }
 
-// Info returns the information bits of s as a SlotTypeInfo: the low 4 bits
-// of the color code and of the data type.
-func (s *SlotType) Info() SlotTypeInfo {
-	var i SlotTypeInfo
-	i.SetColorCode(s.ColorCode)
-	i.SetDataType(s.DataType & 0x0F)
-	return i
+// Info returns the information bits of s as a SlotTypeInfo: the color code
+// and the data type. It returns the errors of Encode.
+func (s *SlotType) Info() (SlotTypeInfo, error) {
+	cw, err := s.Encode()
+	return SlotTypeInfo(cw[0]), err
 }
 
 // Codeword returns the 20-bit Golay(20,8) codeword of s in the low 20 bits:
@@ -66,5 +69,11 @@ func (s SlotTypeInfo) Codeword() uint32 {
 // corrected when the result is not Uncorrectable, and the FEC result.
 func DecodeSlotTypeCodeword(cw uint32) (SlotTypeInfo, fec.Result) {
 	st := DecodeSlotType([3]byte{byte(cw >> 12 & 0xFF), byte(cw >> 4 & 0xFF), byte(cw << 4 & 0xF0)})
-	return st.Info(), st.FEC
+	return SlotTypeInfo(st.ColorCode<<4) | SlotTypeInfo(st.DataType), st.FEC
 }
+
+// The errors of the SlotTypeInfo setters.
+var (
+	errSlotTypeInfoColorCodeRange = &dmrgo.FieldRangeError{Type: "SlotTypeInfo", Field: fieldColorCode, Bits: 4}
+	errSlotTypeInfoDataTypeRange  = &dmrgo.FieldRangeError{Type: "SlotTypeInfo", Field: "DataType", Bits: 4}
+)
