@@ -149,25 +149,3 @@ func Pack96(bits [96]Bit) [12]byte {
 	}
 	return data
 }
-
-// Unpack264 returns the 264 bits of a 33-byte burst, as Unpack does.
-func Unpack264(data [33]byte) [264]Bit {
-	var bits [264]Bit
-	for i := 0; i < 264; i++ {
-		if (data[i/8]>>(7-(i%8)))&1 != 0 {
-			bits[i] = 1
-		}
-	}
-	return bits
-}
-
-// Pack264 packs the 264 bits of a burst into 33 bytes, as Pack does.
-func Pack264(bits [264]Bit) [33]byte {
-	var data [33]byte
-	for i := 0; i < 264; i++ {
-		if bits[i]&1 == 1 {
-			data[i/8] |= 1 << (7 - (i % 8))
-		}
-	}
-	return data
-}

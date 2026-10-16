@@ -22,7 +22,7 @@ func buildDataBurst(dataType enums.DataType, payload [196]bit.Bit) [33]byte {
 	for i := 0; i < 48; i++ {
 		bits[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
-	return bit.Pack264(bits)
+	return [33]byte(bit.Pack(bits[:]))
 }
 
 func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {

@@ -13,12 +13,6 @@ func TestReadersUseOnlyTheLowBit(t *testing.T) {
 	if Uint(raw) != Uint(low) || Pack(raw)[0] != Pack(low)[0] {
 		t.Error("a reader used more than the low bit")
 	}
-	var raw264, low264 [264]Bit
-	copy(raw264[:], raw)
-	copy(low264[:], low)
-	if Pack264(raw264) != Pack264(low264) {
-		t.Error("Pack264 used more than the low bit")
-	}
 	var raw96, low96 [96]Bit
 	copy(raw96[:], raw)
 	copy(low96[:], low)
@@ -106,18 +100,6 @@ func TestAppendPackAppendUnpack(t *testing.T) {
 	}
 	if got := AppendPack(nil, nil); len(got) != 0 {
 		t.Errorf("AppendPack(nil, nil) = %x", got)
-	}
-}
-
-func TestPack264Unpack264(t *testing.T) {
-	t.Parallel()
-
-	var data [33]byte
-	for i := range data {
-		data[i] = byte(i * 7)
-	}
-	if got := Pack264(Unpack264(data)); got != data {
-		t.Errorf("Pack264(Unpack264) = %x, want %x", got, data)
 	}
 }
 

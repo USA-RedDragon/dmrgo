@@ -95,7 +95,7 @@ func TestRC_BurstDetection_PI1_LCSS0(t *testing.T) {
 	rcData := buildRCEmbeddedData(9)
 	copy(bitData[116:148], rcData[:])
 
-	packed := bit.Pack264(bitData)
+	packed := [33]byte(bit.Pack(bitData[:]))
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -126,7 +126,7 @@ func TestRC_BurstDetection_PI0_NoRC(t *testing.T) {
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
-	packed := bit.Pack264(bitData)
+	packed := [33]byte(bit.Pack(bitData[:]))
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -151,7 +151,7 @@ func TestRC_BurstDetection_PI1_LCSS_NonSingle_NoRC(t *testing.T) {
 	copy(bitData[108:116], embBits[:8])
 	copy(bitData[148:156], embBits[8:16])
 
-	packed := bit.Pack264(bitData)
+	packed := [33]byte(bit.Pack(bitData[:]))
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -172,7 +172,7 @@ func TestRC_MsSourcedRcSync_HasEmbeddedSignalling(t *testing.T) {
 		bitData[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
 	}
 
-	packed := bit.Pack264(bitData)
+	packed := [33]byte(bit.Pack(bitData[:]))
 
 	burst, err := layer2.NewBurstFromBytes(packed)
 	if err != nil {
@@ -200,7 +200,7 @@ func TestRC_BurstFECStats_RC(t *testing.T) {
 	rcData := buildRCEmbeddedData(0)
 	copy(bitData[116:148], rcData[:])
 
-	packed := bit.Pack264(bitData)
+	packed := [33]byte(bit.Pack(bitData[:]))
 	burst, _ := layer2.NewBurstFromBytes(packed)
 
 	if burst.FEC.RC.BitsChecked == 0 {
@@ -228,7 +228,7 @@ func TestRC_String(t *testing.T) {
 	rcData := buildRCEmbeddedData(5)
 	copy(bitData[116:148], rcData[:])
 
-	packed := bit.Pack264(bitData)
+	packed := [33]byte(bit.Pack(bitData[:]))
 	burst, _ := layer2.NewBurstFromBytes(packed)
 
 	s := burst.String()
@@ -258,7 +258,7 @@ func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	}
 	copy(bitData[156:172], rcData[16:])
 	copy(bitData[172:180], embBits[8:])
-	return bit.Pack264(bitData)
+	return [33]byte(bit.Pack(bitData[:]))
 }
 
 func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {

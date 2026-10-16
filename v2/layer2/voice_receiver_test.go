@@ -133,11 +133,11 @@ func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 	t.Parallel()
 
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
-	all := bit.Unpack264(raws[3])
+	all := [264]bit.Bit(bit.Unpack(raws[3][:]))
 	for i := layer2.EmbeddedDataStart; i < layer2.EmbeddedDataStart+12; i++ {
 		all[i] ^= 1
 	}
-	raws[3] = bit.Pack264(all)
+	raws[3] = [33]byte(bit.Pack(all[:]))
 	got := receiveAll(t, raws)
 	checkPositions(t, got.positions, "-ABCDEF-")
 	if !errors.Is(got.errs[5], layer2.ErrEmbeddedLCUncorrectable) || !errors.Is(got.errs[5], fec.ErrUncorrectable) || len(got.lcs) != 0 {
@@ -156,9 +156,9 @@ func TestVoiceReceiver_Strict(t *testing.T) {
 
 	lc := groupLC(enums.FIDStandardized)
 	raws := transmission(t, lc, 6)
-	all := bit.Unpack264(raws[2])
+	all := [264]bit.Bit(bit.Unpack(raws[2][:]))
 	all[layer2.EmbeddedDataStart+7] ^= 1
-	raws[2] = bit.Pack264(all)
+	raws[2] = [33]byte(bit.Pack(all[:]))
 	for _, strict := range []bool{false, true} {
 		r := layer2.VoiceReceiver{Strict: strict}
 		r.Reset()
@@ -197,11 +197,11 @@ func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
 	t.Parallel()
 
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
-	all := bit.Unpack264(raws[5])
+	all := [264]bit.Bit(bit.Unpack(raws[5][:]))
 	for i := layer2.EMBFirstStart; i < layer2.EMBFirstStart+3; i++ {
 		all[i] ^= 1
 	}
-	raws[5] = bit.Pack264(all)
+	raws[5] = [33]byte(bit.Pack(all[:]))
 	if b := must(layer2.NewBurstFromBytes(raws[5])); !b.HasEmbeddedSignalling() || !b.EmbeddedSignalling.FEC.Uncorrectable {
 		t.Fatalf("corrupted EMB decodes as %s", b.String())
 	}
