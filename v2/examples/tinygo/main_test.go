@@ -7,11 +7,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestRun checks the decode and re-encode results, and logs the heap garbage
-// of a run. Under TinyGo, run it with -stack-size=8KB, the default of the
+// TestRun checks the decode and re-encode results, and that a run makes no
+// heap garbage. Under TinyGo, run it with -stack-size=8KB, the default of the
 // pico and esp32c3 targets, because TinyGo puts a local on the heap when it
-// is larger than 256 bytes at that stack size. t.Skip does not work under
-// TinyGo, so the garbage check logs until it can pass.
+// is larger than 256 bytes at that stack size.
 func TestRun(t *testing.T) {
 	t.Parallel()
 
@@ -27,7 +26,7 @@ func TestRun(t *testing.T) {
 	run(&b, capture)
 	runtime.ReadMemStats(&after)
 	if garbage := after.TotalAlloc - before.TotalAlloc; garbage != 0 {
-		t.Logf("not checked: run allocates %d bytes until data burst decode and encode allocate nothing and layer2 keeps packed bits", garbage)
+		t.Errorf("run allocates %d bytes, want 0", garbage)
 	}
 }
 
