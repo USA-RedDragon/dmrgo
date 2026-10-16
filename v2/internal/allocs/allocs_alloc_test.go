@@ -139,6 +139,22 @@ func TestAllocsVoiceSuperframe(t *testing.T) {
 	})
 }
 
+// TestAllocsVoiceTransmitterReset starts a new call on a reused
+// VoiceTransmitter, with a PI header.
+func TestAllocsVoiceTransmitterReset(t *testing.T) {
+	lc, err := pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	opts := &layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), PIHeader: &pdu.PIHeader{AlgorithmID: 1}}
+	var tx layer2.VoiceTransmitter
+	assertZero(t, "reset", func() {
+		if err := tx.Reset(opts); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 // TestAllocsVocoder decodes and encodes the AMBE+2 frames of the voice capture and
 // packs and unpacks them as IPSC voice payloads.
 func TestAllocsVocoder(t *testing.T) {

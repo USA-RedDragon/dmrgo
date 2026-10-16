@@ -1,8 +1,6 @@
 package layer2
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -36,42 +34,63 @@ type VoiceTransmitterOptions struct {
 // the zero VoiceTransmitterOptions. It returns an error when Source is
 // unknown, or LC or PIHeader does not encode.
 func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, error) {
+	t := new(VoiceTransmitter)
+	if err := t.Reset(opts); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+// Reset starts a new transmission with opts, as NewVoiceTransmitter does,
+// in the storage of t, so that a caller can keep one VoiceTransmitter for
+// many calls. A nil opts means the zero VoiceTransmitterOptions. On an
+// error t is left as it was. It does not allocate.
+func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 	if opts == nil {
 		opts = &VoiceTransmitterOptions{}
 	}
-	var silence [9]byte
-	packBits(silence[:], opts.Silence[:])
 	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {
-		return nil, fmt.Errorf("unknown sync source %d", opts.Source)
+		return newSyncSourceError(opts.Source)
 	}
-
-	t := &VoiceTransmitter{
-		colorCode: opts.ColorCode & 0x0F,
-		voiceSync: voiceSync,
-		outbound:  opts.Source == SyncSourceBS,
-		silence:   silence,
-		lcHook:    opts.EmbeddedLC,
+	header, err := lcDataBurst(&opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, opts.Source)
+	if err != nil {
+		return err
 	}
-	var err error
-	if t.header, err = newLCDataBurst(opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, opts.Source); err != nil {
-		return nil, err
+	terminator, err := lcDataBurst(&opts.LC, enums.DataTypeTerminatorWithLC, opts.ColorCode, opts.Source)
+	if err != nil {
+		return err
 	}
-	if t.terminator, err = newLCDataBurst(opts.LC, enums.DataTypeTerminatorWithLC, opts.ColorCode, opts.Source); err != nil {
-		return nil, err
+	callLC, err := encodeEmbeddedFullLinkControl(&opts.LC)
+	if err != nil {
+		return err
 	}
-	if t.callLC, err = encodeEmbeddedFullLinkControl(&opts.LC); err != nil {
-		return nil, err
-	}
-	t.embedded = t.callLC
+	var piHeader RawBurst
 	if opts.PIHeader != nil {
-		pi := *opts.PIHeader
-		if t.piHeader, err = BuildBurst(&pi, opts.ColorCode, opts.Source); err != nil {
-			return nil, fmt.Errorf("cannot encode PI header: %w", err)
+		coded, err := opts.PIHeader.Encode()
+		if err != nil {
+			return newWrappedError("cannot encode PI header", err)
 		}
-		t.hasPI = true
+		var p [12]byte
+		packBits(p[:], coded[:])
+		if piHeader, err = BuildDataBurst(p, enums.DataTypePIHeader, opts.ColorCode, opts.Source); err != nil {
+			return err
+		}
 	}
-	return t, nil
+	*t = VoiceTransmitter{
+		colorCode:  opts.ColorCode & 0x0F,
+		voiceSync:  voiceSync,
+		outbound:   opts.Source == SyncSourceBS,
+		header:     header,
+		terminator: terminator,
+		embedded:   callLC,
+		callLC:     callLC,
+		lcHook:     opts.EmbeddedLC,
+		piHeader:   piHeader,
+		hasPI:      opts.PIHeader != nil,
+	}
+	packBits(t.silence[:], opts.Silence[:])
+	return nil
 }
 
 // Headers returns the bursts sent before the first voice burst: the Voice
