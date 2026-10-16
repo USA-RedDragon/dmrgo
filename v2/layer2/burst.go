@@ -47,7 +47,9 @@ func (k Kind) String() string {
 	return fmt.Sprintf("Kind(%d)", uint8(k))
 }
 
-// Burst represents a DMR burst.
+// Burst represents a DMR burst. A decode stores the PDU of a data burst, and
+// the payload struct that it points to, in the Burst, so a Burst must not be
+// copied after its first decode; go vet reports a copy.
 type Burst struct {
 	// Kind is the kind of the burst.
 	Kind Kind
@@ -91,9 +93,8 @@ type Burst struct {
 	ReverseChannel pdu.ReverseChannel
 
 	// Data is the decoded PDU of a data burst, nil only for a reserved data
-	// type. The Burst reuses the PDU and its payload struct: the next decode
-	// into the Burst or a copy of it overwrites them, so copy them to keep
-	// them, and do not decode a Burst and its copies concurrently.
+	// type. It points into the Burst, which reuses the PDU and its payload
+	// struct: the next decode overwrites them, so copy them to keep them.
 	Data Data
 	// FEC reports the FEC and CRC results of the decode.
 	FEC fec.BurstFECStats
@@ -111,6 +112,7 @@ type Burst struct {
 	decodedCoded    [12]byte
 	hasDecodedCoded bool
 	store           decodeStore
+	noCopy          noCopy
 }
 
 // decodeStore holds the PDUs that a Burst decodes into, and the payload

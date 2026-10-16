@@ -49,7 +49,8 @@ func TestBurstReset(t *testing.T) {
 	var data RawBurst
 	data[0] = 0xA5
 	b.reset(data)
-	v, typ := reflect.ValueOf(&b).Elem(), reflect.TypeOf(b)
+	v := reflect.ValueOf(&b).Elem()
+	typ := v.Type()
 	for i := range typ.NumField() {
 		name := typ.Field(i).Name
 		f := v.Field(i)

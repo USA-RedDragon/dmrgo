@@ -47,7 +47,7 @@ type ReceiverConfig struct {
 
 // Receiver turns the bursts of one logical channel into call events, as
 // the package doc describes. Make it with NewReceiver. A Receiver is not
-// safe for concurrent use and must not be copied.
+// safe for concurrent use and must not be copied; go vet reports a copy.
 type Receiver struct {
 	lostAfter time.Duration
 	hang      time.Duration
@@ -79,6 +79,7 @@ type Receiver struct {
 	lcp      pdu.FullLinkControlPayloads
 	alias    pdu.TalkerAliasAssembler
 	text     [talkerAliasText]byte
+	noCopy   noCopy
 }
 
 // talkerAliasText is the size of the talker alias buffer: 31 UTF-16 code
