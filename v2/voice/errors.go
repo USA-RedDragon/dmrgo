@@ -10,6 +10,7 @@ type ConfigError struct {
 	Field string
 }
 
+// Error returns the message of e. It allocates the message.
 func (e *ConfigError) Error() string {
 	return "voice: " + e.Field + " is out of range"
 }

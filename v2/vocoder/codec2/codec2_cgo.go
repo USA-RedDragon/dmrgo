@@ -64,7 +64,8 @@ func (s states) destroy() {
 
 // New creates a Codec2 codec with the given configuration. It returns
 // ErrUnsupportedMode for a Mode other than zero, Mode2400 or Mode3200, and an
-// error when libcodec2 cannot create a codec state.
+// error when libcodec2 cannot create a codec state. It allocates the Codec,
+// and libcodec2 allocates its states.
 func New(cfg Config) (*Codec, error) {
 	cfg, err := cfg.withDefaults()
 	if err != nil {
@@ -187,7 +188,9 @@ func (c *Codec) AppendDecode(dst []int16, slot [72]bit.Bit) ([]int16, error) {
 }
 
 // Close frees the libcodec2 states. Later Encode and Decode calls return
-// ErrClosed. Close is idempotent.
+// ErrClosed. Close is idempotent. A Close that waits for a libcodec2 call of
+// another Codec can allocate once, for the runtime record of the waiting
+// goroutine.
 func (c *Codec) Close() error {
 	if c.enc == nil {
 		return nil

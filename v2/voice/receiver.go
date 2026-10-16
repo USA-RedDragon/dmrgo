@@ -87,8 +87,8 @@ type Receiver struct {
 const talkerAliasText = 96
 
 // NewReceiver returns a Receiver for cfg. A nil cfg means the zero
-// ReceiverConfig. It returns a *ConfigError when the color code is above
-// 15.
+// ReceiverConfig. It returns a *ConfigError when the color code is above 15.
+// It allocates the Receiver, and its Burst unless cfg.Scratch is set.
 func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
 	if cfg == nil {
 		cfg = &ReceiverConfig{}

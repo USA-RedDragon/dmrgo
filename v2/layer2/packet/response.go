@@ -51,7 +51,8 @@ func (r Response) Class() uint8 { return uint8(r) >> 3 & 0b11 }
 // Type returns the 3-bit Type.
 func (r Response) Type() uint8 { return uint8(r) & 0b111 }
 
-// String returns the Table 8.3 name of r.
+// String returns the Table 8.3 name of r. It allocates only for a value
+// without a name.
 func (r Response) String() string {
 	switch r {
 	case ResponseACK:

@@ -30,6 +30,8 @@ const (
 	FIDVertexStandard      FeatureSetID = 0x77 // Vertex Standard
 )
 
+// String returns the name of the FeatureSetID. It allocates only for a value
+// without a name.
 func (fsid FeatureSetID) String() string {
 	switch fsid {
 	case FIDStandardized:

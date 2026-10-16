@@ -38,8 +38,9 @@ type Config struct {
 
 var _ vocoder.AppendDecoder = (*Codec)(nil)
 
-// NewFactory returns a vocoder codec factory that creates a Codec with cfg,
-// for vocoder.Register:
+// NewFactory returns a vocoder codec factory that creates a Codec with cfg.
+// It allocates the factory, and the factory allocates each Codec as New
+// does. Pass it to vocoder.Register:
 //
 //	if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil {
 //		return err

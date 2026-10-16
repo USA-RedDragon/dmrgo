@@ -47,6 +47,8 @@ func (s *Rate1Data) Encode() ([192]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *Rate1Data) String() string {
 	return fmt.Sprintf("Rate1Data{ Data: %v }", s.Data)
 }

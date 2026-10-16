@@ -29,16 +29,18 @@
 // without a full decode: the SYNC pattern, slot type, BPTC, rate 3/4 and rate
 // 1 payloads, EMB, embedded data and voice slots.
 //
-// After construction (NewBurstFromBytes, NewVoiceTransmitter, framer.New and
-// the like) decode, encode, build, check and assemble calls do not allocate,
-// except a decode that returns two joined errors and errors for programmer
-// mistakes. A call that returns a fresh slice, string or payload struct by
-// contract has a form that does not allocate, such as pdu.DecodeCSBKInto for
-// pdu.DecodeCSBK and the Append forms. A reused
-// layer2.Burst, or a copy of it, keeps its decoded Data and the payload
-// structs that Data points to until the next decode into it. This holds
-// with gc and with TinyGo at the default stack size of a microcontroller
-// target, and the tests in internal/allocgate and internal/allocs check it.
+// After construction (NewBurstFromBytes, NewVoiceTransmitter, framer.New,
+// packet.NewAssembler and the like), the hot path allocates nothing: decode,
+// encode, build, receive and assemble calls, with gc and with TinyGo at the
+// default stack size of a microcontroller target. Errors are static values,
+// so a call that fails does not allocate either. A call that returns a fresh
+// slice, string or payload struct allocates it, and its doc says so. Each has
+// a form that writes into storage of the caller, such as pdu.DecodeCSBKInto
+// for pdu.DecodeCSBK and the Append forms. A layer2.Burst keeps its decoded
+// Data and the payload structs that Data points to until the next decode
+// into it, so it must not be copied after its first decode. The README lists
+// every place where the library can allocate, and the tests in
+// internal/allocgate and internal/allocs check it.
 //
 // The PDUs of package pdu decode with pdu.DecodeX and encode with the Encode
 // method of the PDU. A PDU with its own FEC or CRC, such as a CSBK, Full LC,

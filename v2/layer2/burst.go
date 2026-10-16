@@ -32,7 +32,8 @@ const (
 	KindReverseChannel
 )
 
-// String returns the name of the kind.
+// String returns the name of the kind. It allocates only for a value without
+// a name.
 func (k Kind) String() string {
 	switch k {
 	case KindUnknown:
@@ -176,13 +177,14 @@ func (b *Burst) HasReverseChannel() bool {
 }
 
 // NewBurst returns a new Burst. A Burst holds the storage of every PDU that
-// a decode fills, so no decode into it allocates.
+// a decode fills, so no decode into it allocates. It allocates the Burst.
 func NewBurst() *Burst {
 	return new(Burst)
 }
 
-// NewBurstFromBytes decodes data into a new Burst from NewBurst, as
-// DecodeFromBytes does. It returns the burst also when it returns an error.
+// NewBurstFromBytes decodes data into a new Burst, as DecodeFromBytes does.
+// It returns the burst also when it returns an error. It allocates the
+// Burst.
 func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 	burst := NewBurst()
 	err := burst.DecodeFromBytes(data)
@@ -544,7 +546,8 @@ func rate1Info(data *[25]byte) [25]byte {
 	return info
 }
 
-// String returns a string representation of the burst.
+// String returns a string representation of the burst. It allocates the
+// string.
 func (b *Burst) String() string {
 	ret := fmt.Sprintf("{ Kind: %s, SyncPattern: %s, ", b.Kind, b.SyncPattern)
 	if b.HasEmbeddedSignalling() {
@@ -634,9 +637,11 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 }
 
 // Encode returns the burst in transmit bit order, as the package doc
-// describes. It returns an error for KindUnknown, a SyncPattern that does not
-// fit the kind, a missing Data, a Data whose data type is not
-// SlotType.DataType, or a field value that does not fit its bits.
+// describes. It returns an error for KindUnknown, a SyncPattern that does
+// not fit the kind, a missing Data, a Data whose data type is not
+// SlotType.DataType, or a field value that does not fit its bits. For a data
+// burst, its type switch on the Encode method of Data can allocate once for
+// each type of Data, to fill the runtime cache of the switch.
 func (b *Burst) Encode() (RawBurst, error) {
 	if b.Kind == KindReverseChannel {
 		return b.encodeStandaloneRC()

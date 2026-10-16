@@ -164,7 +164,8 @@ func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4]uint32, error) {
 // DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded
 // signalling fields f of bursts B to E, as DecodeEmbeddedLC(f, strict) does.
 // The LC has BurstDataType DataTypeVoiceLCHeader, and its FEC field combines
-// the DecodeEmbeddedLC result and the field decode.
+// the DecodeEmbeddedLC result and the field decode. It allocates the payload
+// struct of the LC; DecodeEmbeddedFullLinkControlInto does not.
 func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkControl {
 	lc, result := decodeEmbeddedLC(fragmentWords(f), strict)
 	flc := pdu.DecodeFullLinkControl(embeddedFullLCCodeword(lc), enums.DataTypeVoiceLCHeader)

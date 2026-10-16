@@ -63,7 +63,8 @@ const (
 	EndStrong
 )
 
-// String returns the name of the hint.
+// String returns the name of the hint. It allocates only for a value without
+// a name.
 func (e EndHint) String() string {
 	switch e {
 	case EndNone:

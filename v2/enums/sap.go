@@ -18,7 +18,8 @@ const (
 	SAPShortData                 ServiceAccessPointID = 0b1010 // short data
 )
 
-// String returns the name of the SAP.
+// String returns the name of the SAP. It allocates only for a value without
+// a name.
 func (s ServiceAccessPointID) String() string {
 	switch s {
 	case SAPUnifiedDataTransport:
