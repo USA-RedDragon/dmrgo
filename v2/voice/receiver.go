@@ -260,7 +260,7 @@ func (r *Receiver) receive(now time.Duration, b *layer2.Burst, raw *layer2.RawBu
 		case layer2.KindVoice:
 			out = r.voice(now, b, raw, h, out)
 		case layer2.KindData:
-			out = r.data(now, b, raw, out)
+			out = r.data(now, b, raw, h, out)
 		case layer2.KindUnknown, layer2.KindReverseChannel:
 		}
 	}
@@ -277,7 +277,7 @@ func (r *Receiver) receive(now time.Duration, b *layer2.Burst, raw *layer2.RawBu
 }
 
 // data handles a data burst.
-func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst, out []Event) []Event {
+func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, out []Event) []Event {
 	if b.SyncPattern == enums.SyncNone || b.SlotType.FEC.Uncorrectable {
 		return out
 	}
@@ -291,7 +291,11 @@ func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst
 		if !ok {
 			return out
 		}
-		return r.callLC(now, &c, out)
+		out = r.callLC(now, &c, out)
+		if h.HasSeq && r.state == StateInCall {
+			r.track.afterHeader(h)
+		}
+		return out
 	case enums.DataTypeTerminatorWithLC:
 		return r.terminator(now, b, out)
 	case enums.DataTypePIHeader:
@@ -300,6 +304,9 @@ func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst
 			var e *Event
 			out, e = appendEvent(out, EventPIHeader, &r.call)
 			e.Burst = rawOf(b, raw)
+			if h.HasSeq {
+				r.track.afterHeader(h)
+			}
 		}
 		return out
 	case enums.DataTypeIdle:
