@@ -228,8 +228,7 @@ type exemptRule struct {
 }
 
 // exemptRules lists every rule that lets a function allocate, one rule per
-// entry, so that removing a rule is removing its entry. The owner set the
-// first two; the others wait for the owner's decision.
+// entry, so that removing a rule is removing its entry.
 var exemptRules = []exemptRule{
 	// A constructor, a function or method named New* or new*, allocates the
 	// value it returns.
@@ -262,14 +261,10 @@ var exemptRules = []exemptRule{
 	{"append", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
 		return fd != nil && (strings.HasPrefix(fd.Name.Name, "Append") || strings.HasPrefix(fd.Name.Name, "append"))
 	}},
-	// A deprecated function forwards to the API that replaces it.
-	{"deprecated", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
-		return fd != nil && fd.Doc != nil && strings.Contains("\n"+fd.Doc.Text(), "\nDeprecated: ")
-	}},
-	// A package-level declaration or an init function runs once, when the
-	// program starts.
-	{"package level or init", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
-		return fd == nil || fd.Name.Name == "init" && fd.Recv == nil
+	// A package-level declaration, such as a lookup table or a sentinel
+	// error, is built once, when the program starts.
+	{"package level", func(_ *pkgFuncs, fd *ast.FuncDecl) bool {
+		return fd == nil
 	}},
 }
 
