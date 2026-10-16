@@ -103,15 +103,19 @@ type VoiceTransmitter struct {
 	terminated bool
 }
 
-// newLCDataBurst returns the Voice LC Header or Terminator with LC burst of
-// lc for a VoiceTransmitter.
-func newLCDataBurst(lc pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
-	lc.BurstDataType = dataType
-	r, err := BuildBurst(&lc, colorCode, src)
+// lcDataBurst returns the Voice LC Header or Terminator with LC burst of
+// lc for a VoiceTransmitter. It calls the Encode method of the concrete
+// type, so that lc does not escape to the heap.
+func lcDataBurst(lc *pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
+	l := *lc
+	l.BurstDataType = dataType
+	coded, err := l.Encode()
 	if err != nil {
 		return RawBurst{}, newWrappedError("cannot encode full link control", err)
 	}
-	return r, nil
+	var p [12]byte
+	packBits(p[:], coded[:])
+	return BuildDataBurst(p, dataType, colorCode, src)
 }
 
 // Header returns the Voice LC Header burst, sent before the first voice
