@@ -17,10 +17,11 @@ const (
 	talkerAliasMaxUnits  = 31
 	// talkerAliasStreamBits is the 49-bit header data and three blocks.
 	talkerAliasStreamBits = 49 + talkerAliasMaxBlocks*talkerAliasBlockBits
-	// talkerAliasMaxText is the longest UTF-8 text of an alias: 31 UTF-16
-	// Code Units of 3 bytes each.
-	talkerAliasMaxText = 3 * talkerAliasMaxUnits
 )
+
+// TalkerAliasMaxText is the length of the longest UTF-8 text of an alias:
+// 31 UTF-16 Code Units of 3 bytes each.
+const TalkerAliasMaxText = 3 * talkerAliasMaxUnits
 
 func talkerAliasUnitBits(format layer3.TalkerAliasDataFormat) int {
 	switch format {
@@ -59,9 +60,9 @@ func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
 // alias, when the Code Units of the UTF-8 format are not valid UTF-8. It
 // allocates the string; AppendTalkerAlias does not.
 func TalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (string, error) {
-	var buf [talkerAliasMaxText]byte
-	b, err := AppendTalkerAlias(buf[:0], header, blocks...)
-	return string(b), err
+	var buf [TalkerAliasMaxText]byte
+	n, err := talkerAliasText(&buf, header, blocks...)
+	return string(buf[:n]), err
 }
 
 // AppendTalkerAlias appends the alias that TalkerAlias returns to dst as
@@ -69,10 +70,18 @@ func TalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (
 // ErrTalkerAliasIncomplete it returns dst unchanged. It allocates only when
 // dst has no room.
 func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) ([]byte, error) {
+	var buf [TalkerAliasMaxText]byte
+	n, err := talkerAliasText(&buf, header, blocks...)
+	return append(dst, buf[:n]...), err
+}
+
+// talkerAliasText writes the alias that TalkerAlias returns to dst and
+// returns its length, with the errors of TalkerAlias.
+func talkerAliasText(dst *[TalkerAliasMaxText]byte, header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (int, error) {
 	format := header.TalkerAliasDataFormat
 	n := TalkerAliasBlocks(format, header.TalkerAliasDataLength)
 	if len(blocks) < n {
-		return dst, ErrTalkerAliasIncomplete
+		return 0, ErrTalkerAliasIncomplete
 	}
 	var stream [talkerAliasStreamBits]bit.Bit
 	used := talkerAliasHeaderBits(layer3.TalkerAliasSevenBit)
@@ -82,7 +91,7 @@ func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCT
 	}
 	for _, b := range blocks[:n] {
 		if b == nil {
-			return dst, ErrTalkerAliasIncomplete
+			return 0, ErrTalkerAliasIncomplete
 		}
 		unpackBits(stream[used:used+talkerAliasBlockBits], b.TalkerAliasData[:])
 		used += talkerAliasBlockBits
@@ -93,22 +102,25 @@ func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCT
 	for i := range length {
 		units[i] = uint16(bit.Uint(stream[i*unit:(i+1)*unit]) & 0xFFFF)
 	}
-	return appendTalkerAliasText(dst, format, units[:length])
+	return writeTalkerAliasText(dst, format, units[:length])
 }
 
-// appendTalkerAliasText appends the Code Units of format to dst as UTF-8.
-// An unpaired UTF-16 surrogate becomes U+FFFD, as in utf16.Decode.
-func appendTalkerAliasText(dst []byte, format layer3.TalkerAliasDataFormat, units []uint16) ([]byte, error) {
+// writeTalkerAliasText writes the at most 31 Code Units of format to dst as
+// UTF-8 and returns the length of the text. Each unit takes at most 3
+// bytes, and a surrogate pair 4, so the text fits. An unpaired UTF-16
+// surrogate becomes U+FFFD, as in utf16.Decode.
+func writeTalkerAliasText(dst *[TalkerAliasMaxText]byte, format layer3.TalkerAliasDataFormat, units []uint16) (int, error) {
+	n := 0
 	switch format {
 	case layer3.TalkerAliasUTF8:
-		start := len(dst)
 		for _, u := range units {
-			dst = append(dst, byte(u&0xFF))
+			dst[n] = byte(u & 0xFF)
+			n++
 		}
-		if !utf8.Valid(dst[start:]) {
-			return dst, ErrTalkerAliasInvalidUTF8
+		if !utf8.Valid(dst[:n]) {
+			return n, ErrTalkerAliasInvalidUTF8
 		}
-		return dst, nil
+		return n, nil
 	case layer3.TalkerAliasUTF16:
 		for i := 0; i < len(units); i++ {
 			r := rune(units[i])
@@ -121,15 +133,15 @@ func appendTalkerAliasText(dst []byte, format layer3.TalkerAliasDataFormat, unit
 					}
 				}
 			}
-			dst = utf8.AppendRune(dst, r)
+			n += utf8.EncodeRune(dst[n:], r)
 		}
-		return dst, nil
+		return n, nil
 	case layer3.TalkerAliasSevenBit, layer3.TalkerAliasISOEightBit:
 	}
 	for _, u := range units {
-		dst = utf8.AppendRune(dst, rune(u))
+		n += utf8.EncodeRune(dst[n:], rune(u))
 	}
-	return dst, nil
+	return n, nil
 }
 
 // talkerAliasUnits writes the first Code Units of alias in format into
@@ -270,15 +282,24 @@ func (a *TalkerAliasAssembler) Reset() {
 // once for each new alias. err is set when a complete alias does not
 // decode. It allocates the string; AppendAdd does not.
 func (a *TalkerAliasAssembler) Add(lc *FullLinkControl) (alias string, ok bool, err error) {
-	var buf [talkerAliasMaxText]byte
-	b, ok, err := a.AppendAdd(buf[:0], lc)
-	return string(b), ok, err
+	var buf [TalkerAliasMaxText]byte
+	n, ok, err := a.AddInto(&buf, lc)
+	return string(buf[:n]), ok, err
 }
 
 // AppendAdd adds lc as Add does, and appends the alias that Add returns to
 // dst as UTF-8 instead of returning it as a string. It returns dst unchanged
 // when Add returns an empty alias. It allocates only when dst has no room.
 func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias []byte, ok bool, err error) {
+	var buf [TalkerAliasMaxText]byte
+	n, ok, err := a.AddInto(&buf, lc)
+	return append(dst, buf[:n]...), ok, err
+}
+
+// AddInto adds lc as Add does, and writes the alias that Add returns to dst
+// as UTF-8 instead of returning it as a string. It returns the length of
+// the alias, 0 when Add returns an empty alias.
+func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLinkControl) (n int, ok bool, err error) {
 	switch {
 	case lc.FLCO == enums.FLCOTalkerAliasHeader && lc.TalkerAliasHeader != nil:
 		h := *lc.TalkerAliasHeader
@@ -299,22 +320,22 @@ func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias
 			a.completed = false
 		}
 	default:
-		return dst, false, nil
+		return 0, false, nil
 	}
 	if !a.hasHeader || a.completed {
-		return dst, false, nil
+		return 0, false, nil
 	}
-	n := TalkerAliasBlocks(a.header.TalkerAliasDataFormat, a.header.TalkerAliasDataLength)
+	nb := TalkerAliasBlocks(a.header.TalkerAliasDataFormat, a.header.TalkerAliasDataLength)
 	var blocks [talkerAliasMaxBlocks]*FLCTalkerAliasBlock
-	for i := range n {
+	for i := range nb {
 		if !a.hasBlock[i] {
-			return dst, false, nil
+			return 0, false, nil
 		}
 		blocks[i] = &a.blocks[i]
 	}
-	out, err := AppendTalkerAlias(dst, &a.header, blocks[:n]...)
+	n, err = talkerAliasText(dst, &a.header, blocks[:nb]...)
 	a.completed = true
-	return out, err == nil, err
+	return n, err == nil, err
 }
 
 // The errors of EncodeTalkerAlias for an alias that its format cannot carry.
