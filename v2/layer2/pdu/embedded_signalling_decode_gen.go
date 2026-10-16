@@ -8,6 +8,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 )
 
@@ -42,24 +43,14 @@ func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
 func (s *EmbeddedSignalling) encodeBytes() ([2]byte, error) {
 	var data [2]byte
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [2]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ColorCode",
-			Type:  "EmbeddedSignalling",
-			Value: s.ColorCode,
-		}
+		return [2]byte{}, errs.NewFieldRange("EmbeddedSignalling", "ColorCode", s.ColorCode, 4, false)
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.ColorCode)<<4)&0xF0
 	if s.PreemptionAndPowerControlIndicator {
 		data[0] |= 0x08
 	}
 	if uint64(s.LCSS)>>2 != 0 {
-		return [2]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "LCSS",
-			Type:  "EmbeddedSignalling",
-			Value: s.LCSS,
-		}
+		return [2]byte{}, errs.NewFieldRange("EmbeddedSignalling", "LCSS", s.LCSS, 2, false)
 	}
 	data[0] = data[0]&^0x06 | byte(uint64(s.LCSS)<<1)&0x06
 	_cw := quadraticresidue.Encode(uint8(uint64(data[0]) >> 1))
@@ -82,8 +73,8 @@ func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *EmbeddedSignalling) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

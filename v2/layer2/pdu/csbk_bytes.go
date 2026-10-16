@@ -1,8 +1,8 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst, as
@@ -137,9 +137,10 @@ func (c *CSBKBytes) Reseal() {
 }
 
 // DecodeCSBKBytes decodes the 12-octet payload b of a CSBK burst as
-// DecodeCSBK does. The FEC field reports the CRC check.
+// DecodeCSBK does. The FEC field reports the CRC check. It allocates the
+// payload struct; DecodeCSBKBytesInto does not.
 func DecodeCSBKBytes(b [12]byte) CSBK {
-	return decodeCSBKBytes(b)
+	return newCSBKBytes(b)
 }
 
 // DecodeCSBKBytesInto decodes the 12-octet payload b of a CSBK burst into
@@ -162,7 +163,7 @@ func checkAddresses(typ string, target, source uint32) error {
 		v     uint32
 	}{{"target", target}, {"source", source}} {
 		if a.v>>24 != 0 {
-			return &bit.FieldRangeError{Type: typ, Field: a.field, Value: a.v, Bits: 24}
+			return errs.NewFieldRange(typ, a.field, a.v, 24, false)
 		}
 	}
 	return nil

@@ -9,6 +9,7 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodePIHeaderBytes decodes a PIHeader (ETSI TS 102 361-1 clause 6.2).
@@ -40,12 +41,7 @@ func (s *PIHeader) encodeBytes() ([12]byte, error) {
 	var data [12]byte
 	data[0] = byte(uint64(s.AlgorithmID))
 	if uint64(s.MFID)>>8 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  8,
-			Field: "MFID",
-			Type:  "PIHeader",
-			Value: s.MFID,
-		}
+		return [12]byte{}, errs.NewFieldRange("PIHeader", "MFID", s.MFID, 8, false)
 	}
 	data[1] = byte(uint64(s.MFID))
 	data[2] = byte(uint64(s.KeyID))
@@ -55,12 +51,7 @@ func (s *PIHeader) encodeBytes() ([12]byte, error) {
 	data[5] = byte(_valMessageIndicator >> 8)
 	data[6] = byte(_valMessageIndicator)
 	if uint64(s.Destination)>>24 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "Destination",
-			Type:  "PIHeader",
-			Value: s.Destination,
-		}
+		return [12]byte{}, errs.NewFieldRange("PIHeader", "Destination", s.Destination, 24, false)
 	}
 	_valDestination := uint64(s.Destination)
 	data[7] = byte(_valDestination >> 16)
@@ -85,8 +76,8 @@ func (s *PIHeader) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *PIHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

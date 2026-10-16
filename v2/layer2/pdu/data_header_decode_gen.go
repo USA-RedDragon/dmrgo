@@ -17,6 +17,7 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeUnconfirmedDataHeaderBytes decodes an UnconfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.6).
@@ -55,44 +56,24 @@ func (s *UnconfirmedDataHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x20
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "PadOctetCount",
-			Type:  "UnconfirmedDataHeader",
-			Value: s.PadOctetCount,
-		}
+		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "PadOctetCount", s.PadOctetCount, 5, false)
 	}
 	_valPadOctetCount := uint64(s.PadOctetCount)
 	data[0] = data[0]&^0x10 | byte(_valPadOctetCount>>4<<4)&0x10
 	data[1] = data[1]&^0x0F | byte(_valPadOctetCount)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAP",
-			Type:  "UnconfirmedDataHeader",
-			Value: s.SAP,
-		}
+		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "SAP", s.SAP, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDDestination",
-			Type:  "UnconfirmedDataHeader",
-			Value: s.LLIDDestination,
-		}
+		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "LLIDDestination", s.LLIDDestination, 24, false)
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDSource",
-			Type:  "UnconfirmedDataHeader",
-			Value: s.LLIDSource,
-		}
+		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "LLIDSource", s.LLIDSource, 24, false)
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
@@ -102,30 +83,15 @@ func (s *UnconfirmedDataHeader) encodeBytes() ([10]byte, error) {
 		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "BlocksToFollow",
-			Type:  "UnconfirmedDataHeader",
-			Value: s.BlocksToFollow,
-		}
+		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "BlocksToFollow", s.BlocksToFollow, 7, false)
 	}
 	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if uint64(s.Reserved2)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Reserved2",
-			Type:  "UnconfirmedDataHeader",
-			Value: s.Reserved2,
-		}
+		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "Reserved2", s.Reserved2, 4, false)
 	}
 	data[9] = data[9]&^0xF0 | byte(uint64(s.Reserved2)<<4)&0xF0
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "FragmentSequenceNumber",
-			Type:  "UnconfirmedDataHeader",
-			Value: s.FragmentSequenceNumber,
-		}
+		return [10]byte{}, errs.NewFieldRange("UnconfirmedDataHeader", "FragmentSequenceNumber", s.FragmentSequenceNumber, 4, false)
 	}
 	data[9] = data[9]&^0x0F | byte(uint64(s.FragmentSequenceNumber))&0x0F
 	data[0] = data[0]&^0x0F | byte(uint64(FormatUnconfirmed))&0x0F
@@ -145,8 +111,8 @@ func (s *UnconfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *UnconfirmedDataHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -159,9 +125,10 @@ func (s *UnconfirmedDataHeader) String() string {
 	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
 
-// decodeDataHeaderBytes decodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
+// newDataHeaderBytes decodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
 // data holds its bits packed, the first bit most significant.
-func decodeDataHeaderBytes(data [12]byte) DataHeader {
+// It allocates the payload struct that the dispatch field points to.
+func newDataHeaderBytes(data [12]byte) DataHeader {
 	var result DataHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
 	result.Format = Format(uint64(data[0]) & 0xF)
@@ -206,12 +173,14 @@ func decodeDataHeaderBytes(data [12]byte) DataHeader {
 }
 
 // DecodeDataHeader decodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
+// It allocates the payload struct that the dispatch field points to;
+// DecodeDataHeaderInto does not.
 func DecodeDataHeader(data [96]bit.Bit) DataHeader {
 	var _b [12]byte
 	for _i := range 96 {
 		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
 	}
-	return decodeDataHeaderBytes(_b)
+	return newDataHeaderBytes(_b)
 }
 
 // DataHeaderPayloads holds one payload struct of each type that
@@ -228,8 +197,9 @@ type DataHeaderPayloads struct {
 	proprietaryHeader     ProprietaryHeader
 }
 
-// decodeDataHeaderBytesInto decodes data into dst as decodeDataHeaderBytes does, and
-// points the dispatch field of dst into p.
+// decodeDataHeaderBytesInto decodes a DataHeader (ETSI TS 102 361-1 clause 9.2).
+// data holds its bits packed, the first bit most significant. It decodes
+// into dst and points the dispatch field of dst into p.
 func decodeDataHeaderBytesInto(dst *DataHeader, p *DataHeaderPayloads, data [12]byte) {
 	*dst = DataHeader{}
 	result := dst
@@ -296,43 +266,43 @@ func (s *DataHeader) encodeBytes() ([12]byte, error) {
 	}
 	if s.ConfirmedDataHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "ConfirmedDataHeader")
+			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "ConfirmedDataHeader")
 		}
 		_payload = "ConfirmedDataHeader"
 	}
 	if s.ResponsePacketHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "ResponsePacketHeader")
+			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "ResponsePacketHeader")
 		}
 		_payload = "ResponsePacketHeader"
 	}
 	if s.DefinedDataHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "DefinedDataHeader")
+			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "DefinedDataHeader")
 		}
 		_payload = "DefinedDataHeader"
 	}
 	if s.StatusPrecodedHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "StatusPrecodedHeader")
+			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "StatusPrecodedHeader")
 		}
 		_payload = "StatusPrecodedHeader"
 	}
 	if s.RawDataHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "RawDataHeader")
+			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "RawDataHeader")
 		}
 		_payload = "RawDataHeader"
 	}
 	if s.UDTHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "UDTHeader")
+			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "UDTHeader")
 		}
 		_payload = "UDTHeader"
 	}
 	if s.ProprietaryHeader != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("DataHeader: %s and %s are both set", _payload, "ProprietaryHeader")
+			return [12]byte{}, errs.NewBothSet("DataHeader", _payload, "ProprietaryHeader")
 		}
 		_payload = "ProprietaryHeader"
 	}
@@ -340,61 +310,56 @@ func (s *DataHeader) encodeBytes() ([12]byte, error) {
 	case s.UnconfirmedDataHeader != nil:
 		_pduBytes, err := s.UnconfirmedDataHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("DataHeader.UnconfirmedDataHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("DataHeader.UnconfirmedDataHeader", err)
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.ConfirmedDataHeader != nil:
 		_pduBytes, err := s.ConfirmedDataHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("DataHeader.ConfirmedDataHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("DataHeader.ConfirmedDataHeader", err)
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.ResponsePacketHeader != nil:
 		_pduBytes, err := s.ResponsePacketHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("DataHeader.ResponsePacketHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("DataHeader.ResponsePacketHeader", err)
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.DefinedDataHeader != nil:
 		_pduBytes, err := s.DefinedDataHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("DataHeader.DefinedDataHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("DataHeader.DefinedDataHeader", err)
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.StatusPrecodedHeader != nil:
 		_pduBytes, err := s.StatusPrecodedHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("DataHeader.StatusPrecodedHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("DataHeader.StatusPrecodedHeader", err)
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.RawDataHeader != nil:
 		_pduBytes, err := s.RawDataHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("DataHeader.RawDataHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("DataHeader.RawDataHeader", err)
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.UDTHeader != nil:
 		_pduBytes, err := s.UDTHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("DataHeader.UDTHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("DataHeader.UDTHeader", err)
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	case s.ProprietaryHeader != nil:
 		_pduBytes, err := s.ProprietaryHeader.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("DataHeader.ProprietaryHeader: %w", err)
+			return [12]byte{}, errs.NewWrapped("DataHeader.ProprietaryHeader", err)
 		}
 		copy(data[0:10], _pduBytes[0:10])
 	default:
 		copy(data[0:10], s.RawPayload[0:10])
 	}
 	if uint64(s.Format)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Format",
-			Type:  "DataHeader",
-			Value: s.Format,
-		}
+		return [12]byte{}, errs.NewFieldRange("DataHeader", "Format", s.Format, 4, false)
 	}
 	data[0] = data[0]&^0x0F | byte(uint64(s.Format))&0x0F
 	if _payload != "" {
@@ -427,7 +392,7 @@ func (s *DataHeader) encodeBytes() ([12]byte, error) {
 			_want = "ProprietaryHeader"
 		}
 		if _payload != _want {
-			return [12]byte{}, fmt.Errorf("DataHeader.%s is set, but Format and AppendedBlocks select %s", _payload, _want)
+			return [12]byte{}, errs.NewWrongPayload("DataHeader", _payload, "Format and AppendedBlocks select ", _want)
 		}
 	}
 	_crcVal := crc.CCITT(data[:10])
@@ -449,8 +414,8 @@ func (s *DataHeader) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *DataHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -523,44 +488,24 @@ func (s *ConfirmedDataHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x20
 	}
 	if uint64(s.PadOctetCount)>>5 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "PadOctetCount",
-			Type:  "ConfirmedDataHeader",
-			Value: s.PadOctetCount,
-		}
+		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "PadOctetCount", s.PadOctetCount, 5, false)
 	}
 	_valPadOctetCount := uint64(s.PadOctetCount)
 	data[0] = data[0]&^0x10 | byte(_valPadOctetCount>>4<<4)&0x10
 	data[1] = data[1]&^0x0F | byte(_valPadOctetCount)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAP",
-			Type:  "ConfirmedDataHeader",
-			Value: s.SAP,
-		}
+		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "SAP", s.SAP, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDDestination",
-			Type:  "ConfirmedDataHeader",
-			Value: s.LLIDDestination,
-		}
+		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "LLIDDestination", s.LLIDDestination, 24, false)
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDSource",
-			Type:  "ConfirmedDataHeader",
-			Value: s.LLIDSource,
-		}
+		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "LLIDSource", s.LLIDSource, 24, false)
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
@@ -570,33 +515,18 @@ func (s *ConfirmedDataHeader) encodeBytes() ([10]byte, error) {
 		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "BlocksToFollow",
-			Type:  "ConfirmedDataHeader",
-			Value: s.BlocksToFollow,
-		}
+		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "BlocksToFollow", s.BlocksToFollow, 7, false)
 	}
 	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if s.ReSynchronizeFlag {
 		data[9] |= 0x80
 	}
 	if uint64(s.SendSequenceNumber)>>3 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "SendSequenceNumber",
-			Type:  "ConfirmedDataHeader",
-			Value: s.SendSequenceNumber,
-		}
+		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "SendSequenceNumber", s.SendSequenceNumber, 3, false)
 	}
 	data[9] = data[9]&^0x70 | byte(uint64(s.SendSequenceNumber)<<4)&0x70
 	if uint64(s.FragmentSequenceNumber)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "FragmentSequenceNumber",
-			Type:  "ConfirmedDataHeader",
-			Value: s.FragmentSequenceNumber,
-		}
+		return [10]byte{}, errs.NewFieldRange("ConfirmedDataHeader", "FragmentSequenceNumber", s.FragmentSequenceNumber, 4, false)
 	}
 	data[9] = data[9]&^0x0F | byte(uint64(s.FragmentSequenceNumber))&0x0F
 	data[0] = data[0]&^0x0F | byte(uint64(FormatConfirmed))&0x0F
@@ -616,8 +546,8 @@ func (s *ConfirmedDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ConfirmedDataHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -660,51 +590,26 @@ func (s *ResponsePacketHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "Reserved2",
-			Type:  "ResponsePacketHeader",
-			Value: s.Reserved2,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "Reserved2", s.Reserved2, 2, false)
 	}
 	data[0] = data[0]&^0x30 | byte(uint64(s.Reserved2)<<4)&0x30
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAP",
-			Type:  "ResponsePacketHeader",
-			Value: s.SAP,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "SAP", s.SAP, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.Reserved3)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Reserved3",
-			Type:  "ResponsePacketHeader",
-			Value: s.Reserved3,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "Reserved3", s.Reserved3, 4, false)
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.Reserved3))&0x0F
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDDestination",
-			Type:  "ResponsePacketHeader",
-			Value: s.LLIDDestination,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "LLIDDestination", s.LLIDDestination, 24, false)
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDSource",
-			Type:  "ResponsePacketHeader",
-			Value: s.LLIDSource,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "LLIDSource", s.LLIDSource, 24, false)
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
@@ -714,39 +619,19 @@ func (s *ResponsePacketHeader) encodeBytes() ([10]byte, error) {
 		data[8] |= 0x80
 	}
 	if uint64(s.BlocksToFollow)>>7 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "BlocksToFollow",
-			Type:  "ResponsePacketHeader",
-			Value: s.BlocksToFollow,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "BlocksToFollow", s.BlocksToFollow, 7, false)
 	}
 	data[8] = data[8]&^0x7F | byte(uint64(s.BlocksToFollow))&0x7F
 	if uint64(s.ResponseClass)>>2 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "ResponseClass",
-			Type:  "ResponsePacketHeader",
-			Value: s.ResponseClass,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "ResponseClass", s.ResponseClass, 2, false)
 	}
 	data[9] = data[9]&^0xC0 | byte(uint64(s.ResponseClass)<<6)&0xC0
 	if uint64(s.ResponseType)>>3 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "ResponseType",
-			Type:  "ResponsePacketHeader",
-			Value: s.ResponseType,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "ResponseType", s.ResponseType, 3, false)
 	}
 	data[9] = data[9]&^0x38 | byte(uint64(s.ResponseType)<<3)&0x38
 	if uint64(s.ResponseStatus)>>3 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "ResponseStatus",
-			Type:  "ResponsePacketHeader",
-			Value: s.ResponseStatus,
-		}
+		return [10]byte{}, errs.NewFieldRange("ResponsePacketHeader", "ResponseStatus", s.ResponseStatus, 3, false)
 	}
 	data[9] = data[9]&^0x07 | byte(uint64(s.ResponseStatus))&0x07
 	data[0] = data[0]&^0x0F | byte(uint64(FormatResponsePacket))&0x0F
@@ -766,8 +651,8 @@ func (s *ResponsePacketHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ResponsePacketHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -812,56 +697,31 @@ func (s *DefinedDataHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>6 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "AppendedBlocks",
-			Type:  "DefinedDataHeader",
-			Value: s.AppendedBlocks,
-		}
+		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "AppendedBlocks", s.AppendedBlocks, 6, false)
 	}
 	_valAppendedBlocks := uint64(s.AppendedBlocks)
 	data[0] = data[0]&^0x30 | byte(_valAppendedBlocks>>4<<4)&0x30
 	data[1] = data[1]&^0x0F | byte(_valAppendedBlocks)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAP",
-			Type:  "DefinedDataHeader",
-			Value: s.SAP,
-		}
+		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "SAP", s.SAP, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDDestination",
-			Type:  "DefinedDataHeader",
-			Value: s.LLIDDestination,
-		}
+		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "LLIDDestination", s.LLIDDestination, 24, false)
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDSource",
-			Type:  "DefinedDataHeader",
-			Value: s.LLIDSource,
-		}
+		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "LLIDSource", s.LLIDSource, 24, false)
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
 	data[6] = byte(_valLLIDSource >> 8)
 	data[7] = byte(_valLLIDSource)
 	if uint64(s.DefinedData)>>6 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "DefinedData",
-			Type:  "DefinedDataHeader",
-			Value: s.DefinedData,
-		}
+		return [10]byte{}, errs.NewFieldRange("DefinedDataHeader", "DefinedData", s.DefinedData, 6, false)
 	}
 	data[8] = data[8]&^0xFC | byte(uint64(s.DefinedData)<<2)&0xFC
 	if s.SARQ {
@@ -888,8 +748,8 @@ func (s *DefinedDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *DefinedDataHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -935,65 +795,35 @@ func (s *RawDataHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>6 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "AppendedBlocks",
-			Type:  "RawDataHeader",
-			Value: s.AppendedBlocks,
-		}
+		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "AppendedBlocks", s.AppendedBlocks, 6, false)
 	}
 	_valAppendedBlocks := uint64(s.AppendedBlocks)
 	data[0] = data[0]&^0x30 | byte(_valAppendedBlocks>>4<<4)&0x30
 	data[1] = data[1]&^0x0F | byte(_valAppendedBlocks)&0x0F
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAP",
-			Type:  "RawDataHeader",
-			Value: s.SAP,
-		}
+		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "SAP", s.SAP, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDDestination",
-			Type:  "RawDataHeader",
-			Value: s.LLIDDestination,
-		}
+		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "LLIDDestination", s.LLIDDestination, 24, false)
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDSource",
-			Type:  "RawDataHeader",
-			Value: s.LLIDSource,
-		}
+		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "LLIDSource", s.LLIDSource, 24, false)
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
 	data[6] = byte(_valLLIDSource >> 8)
 	data[7] = byte(_valLLIDSource)
 	if uint64(s.SourcePort)>>3 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "SourcePort",
-			Type:  "RawDataHeader",
-			Value: s.SourcePort,
-		}
+		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "SourcePort", s.SourcePort, 3, false)
 	}
 	data[8] = data[8]&^0xE0 | byte(uint64(s.SourcePort)<<5)&0xE0
 	if uint64(s.DestinationPort)>>3 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "DestinationPort",
-			Type:  "RawDataHeader",
-			Value: s.DestinationPort,
-		}
+		return [10]byte{}, errs.NewFieldRange("RawDataHeader", "DestinationPort", s.DestinationPort, 3, false)
 	}
 	data[8] = data[8]&^0x1C | byte(uint64(s.DestinationPort)<<2)&0x1C
 	if s.SARQ {
@@ -1020,8 +850,8 @@ func (s *RawDataHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *RawDataHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1060,63 +890,33 @@ func (s *StatusPrecodedHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAP",
-			Type:  "StatusPrecodedHeader",
-			Value: s.SAP,
-		}
+		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "SAP", s.SAP, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDDestination",
-			Type:  "StatusPrecodedHeader",
-			Value: s.LLIDDestination,
-		}
+		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "LLIDDestination", s.LLIDDestination, 24, false)
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDSource",
-			Type:  "StatusPrecodedHeader",
-			Value: s.LLIDSource,
-		}
+		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "LLIDSource", s.LLIDSource, 24, false)
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
 	data[6] = byte(_valLLIDSource >> 8)
 	data[7] = byte(_valLLIDSource)
 	if uint64(s.SourcePort)>>3 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "SourcePort",
-			Type:  "StatusPrecodedHeader",
-			Value: s.SourcePort,
-		}
+		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "SourcePort", s.SourcePort, 3, false)
 	}
 	data[8] = data[8]&^0xE0 | byte(uint64(s.SourcePort)<<5)&0xE0
 	if uint64(s.DestinationPort)>>3 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "DestinationPort",
-			Type:  "StatusPrecodedHeader",
-			Value: s.DestinationPort,
-		}
+		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "DestinationPort", s.DestinationPort, 3, false)
 	}
 	data[8] = data[8]&^0x1C | byte(uint64(s.DestinationPort)<<2)&0x1C
 	if uint64(s.StatusPrecoded)>>10 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  10,
-			Field: "StatusPrecoded",
-			Type:  "StatusPrecodedHeader",
-			Value: s.StatusPrecoded,
-		}
+		return [10]byte{}, errs.NewFieldRange("StatusPrecodedHeader", "StatusPrecoded", s.StatusPrecoded, 10, false)
 	}
 	_valStatusPrecoded := uint64(s.StatusPrecoded)
 	data[8] = data[8]&^0x03 | byte(_valStatusPrecoded>>8)&0x03
@@ -1141,8 +941,8 @@ func (s *StatusPrecodedHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *StatusPrecodedHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1193,66 +993,36 @@ func (s *UDTHeader) encodeBytes() ([10]byte, error) {
 		data[0] |= 0x10
 	}
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAP",
-			Type:  "UDTHeader",
-			Value: s.SAP,
-		}
+		return [10]byte{}, errs.NewFieldRange("UDTHeader", "SAP", s.SAP, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.UDTFormat)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "UDTFormat",
-			Type:  "UDTHeader",
-			Value: s.UDTFormat,
-		}
+		return [10]byte{}, errs.NewFieldRange("UDTHeader", "UDTFormat", s.UDTFormat, 4, false)
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.UDTFormat))&0x0F
 	if uint64(s.LLIDDestination)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDDestination",
-			Type:  "UDTHeader",
-			Value: s.LLIDDestination,
-		}
+		return [10]byte{}, errs.NewFieldRange("UDTHeader", "LLIDDestination", s.LLIDDestination, 24, false)
 	}
 	_valLLIDDestination := uint64(s.LLIDDestination)
 	data[2] = byte(_valLLIDDestination >> 16)
 	data[3] = byte(_valLLIDDestination >> 8)
 	data[4] = byte(_valLLIDDestination)
 	if uint64(s.LLIDSource)>>24 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "LLIDSource",
-			Type:  "UDTHeader",
-			Value: s.LLIDSource,
-		}
+		return [10]byte{}, errs.NewFieldRange("UDTHeader", "LLIDSource", s.LLIDSource, 24, false)
 	}
 	_valLLIDSource := uint64(s.LLIDSource)
 	data[5] = byte(_valLLIDSource >> 16)
 	data[6] = byte(_valLLIDSource >> 8)
 	data[7] = byte(_valLLIDSource)
 	if uint64(s.PadNibble)>>5 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "PadNibble",
-			Type:  "UDTHeader",
-			Value: s.PadNibble,
-		}
+		return [10]byte{}, errs.NewFieldRange("UDTHeader", "PadNibble", s.PadNibble, 5, false)
 	}
 	data[8] = data[8]&^0xF8 | byte(uint64(s.PadNibble)<<3)&0xF8
 	if s.Reserved {
 		data[8] |= 0x04
 	}
 	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "AppendedBlocks",
-			Type:  "UDTHeader",
-			Value: s.AppendedBlocks,
-		}
+		return [10]byte{}, errs.NewFieldRange("UDTHeader", "AppendedBlocks", s.AppendedBlocks, 2, false)
 	}
 	data[8] = data[8]&^0x03 | byte(uint64(s.AppendedBlocks))&0x03
 	if s.SupplementaryFlag {
@@ -1262,12 +1032,7 @@ func (s *UDTHeader) encodeBytes() ([10]byte, error) {
 		data[9] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "Opcode",
-			Type:  "UDTHeader",
-			Value: s.Opcode,
-		}
+		return [10]byte{}, errs.NewFieldRange("UDTHeader", "Opcode", s.Opcode, 6, false)
 	}
 	data[9] = data[9]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	data[0] = data[0]&^0x0F | byte(uint64(FormatUnifiedDataTransport))&0x0F
@@ -1287,8 +1052,8 @@ func (s *UDTHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *UDTHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1316,21 +1081,11 @@ func decodeProprietaryHeaderBytes(data [10]byte) ProprietaryHeader {
 func (s *ProprietaryHeader) encodeBytes() ([10]byte, error) {
 	var data [10]byte
 	if uint64(s.SAP)>>4 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAP",
-			Type:  "ProprietaryHeader",
-			Value: s.SAP,
-		}
+		return [10]byte{}, errs.NewFieldRange("ProprietaryHeader", "SAP", s.SAP, 4, false)
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.SAP)<<4)&0xF0
 	if uint64(s.MFID)>>8 != 0 {
-		return [10]byte{}, &bit.FieldRangeError{
-			Bits:  8,
-			Field: "MFID",
-			Type:  "ProprietaryHeader",
-			Value: s.MFID,
-		}
+		return [10]byte{}, errs.NewFieldRange("ProprietaryHeader", "MFID", s.MFID, 8, false)
 	}
 	data[1] = byte(uint64(s.MFID))
 	copy(data[2:10], s.ManufacturerData[0:8])
@@ -1351,8 +1106,8 @@ func (s *ProprietaryHeader) Encode() ([80]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ProprietaryHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

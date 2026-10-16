@@ -8,6 +8,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeUDPIPv4CompressedHeaderBytes decodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3, Table 7.14).
@@ -46,50 +47,25 @@ func (s *UDPIPv4CompressedHeader) encodeBytes() ([9]byte, error) {
 	data[0] = byte(_valIPv4Identification >> 8)
 	data[1] = byte(_valIPv4Identification)
 	if uint64(s.SAID)>>4 != 0 {
-		return [9]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SAID",
-			Type:  "UDPIPv4CompressedHeader",
-			Value: s.SAID,
-		}
+		return [9]byte{}, errs.NewFieldRange("UDPIPv4CompressedHeader", "SAID", s.SAID, 4, false)
 	}
 	data[2] = data[2]&^0xF0 | byte(uint64(s.SAID)<<4)&0xF0
 	if uint64(s.DAID)>>4 != 0 {
-		return [9]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "DAID",
-			Type:  "UDPIPv4CompressedHeader",
-			Value: s.DAID,
-		}
+		return [9]byte{}, errs.NewFieldRange("UDPIPv4CompressedHeader", "DAID", s.DAID, 4, false)
 	}
 	data[2] = data[2]&^0x0F | byte(uint64(s.DAID))&0x0F
 	if uint64(s.HeaderCompressionOpcode)>>2 != 0 {
-		return [9]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "HeaderCompressionOpcode",
-			Type:  "UDPIPv4CompressedHeader",
-			Value: s.HeaderCompressionOpcode,
-		}
+		return [9]byte{}, errs.NewFieldRange("UDPIPv4CompressedHeader", "HeaderCompressionOpcode", s.HeaderCompressionOpcode, 2, false)
 	}
 	_valHeaderCompressionOpcode := uint64(s.HeaderCompressionOpcode)
 	data[3] = data[3]&^0x80 | byte(_valHeaderCompressionOpcode>>1<<7)&0x80
 	data[4] = data[4]&^0x80 | byte(_valHeaderCompressionOpcode<<7)&0x80
 	if uint64(s.SPID)>>7 != 0 {
-		return [9]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "SPID",
-			Type:  "UDPIPv4CompressedHeader",
-			Value: s.SPID,
-		}
+		return [9]byte{}, errs.NewFieldRange("UDPIPv4CompressedHeader", "SPID", s.SPID, 7, false)
 	}
 	data[3] = data[3]&^0x7F | byte(uint64(s.SPID))&0x7F
 	if uint64(s.DPID)>>7 != 0 {
-		return [9]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "DPID",
-			Type:  "UDPIPv4CompressedHeader",
-			Value: s.DPID,
-		}
+		return [9]byte{}, errs.NewFieldRange("UDPIPv4CompressedHeader", "DPID", s.DPID, 7, false)
 	}
 	data[4] = data[4]&^0x7F | byte(uint64(s.DPID))&0x7F
 	_valExtendedHeader1 := uint64(s.ExtendedHeader1)
@@ -114,8 +90,8 @@ func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *UDPIPv4CompressedHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

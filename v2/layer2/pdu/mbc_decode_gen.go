@@ -14,12 +14,14 @@ import (
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// decodeMBCHeaderBytes decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
+// newMBCHeaderBytes decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
 // data holds its bits packed, the first bit most significant.
-func decodeMBCHeaderBytes(data [12]byte) MBCHeader {
+// It allocates the payload struct that the dispatch field points to.
+func newMBCHeaderBytes(data [12]byte) MBCHeader {
 	var result MBCHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xAAAA)
 	result.LastBlock = data[0]&0x80 != 0
@@ -70,12 +72,14 @@ func decodeMBCHeaderBytes(data [12]byte) MBCHeader {
 }
 
 // DecodeMBCHeader decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
+// It allocates the payload struct that the dispatch field points to;
+// DecodeMBCHeaderInto does not.
 func DecodeMBCHeader(data [96]bit.Bit) MBCHeader {
 	var _b [12]byte
 	for _i := range 96 {
 		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
 	}
-	return decodeMBCHeaderBytes(_b)
+	return newMBCHeaderBytes(_b)
 }
 
 // MBCHeaderPayloads holds one payload struct of each type that
@@ -94,8 +98,9 @@ type MBCHeaderPayloads struct {
 	broadcastPDU                    BroadcastPDU
 }
 
-// decodeMBCHeaderBytesInto decodes data into dst as decodeMBCHeaderBytes does, and
-// points the dispatch field of dst into p.
+// decodeMBCHeaderBytesInto decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
+// data holds its bits packed, the first bit most significant. It decodes
+// into dst and points the dispatch field of dst into p.
 func decodeMBCHeaderBytesInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byte) {
 	*dst = MBCHeader{}
 	result := dst
@@ -168,55 +173,55 @@ func (s *MBCHeader) encodeBytes() ([12]byte, error) {
 	}
 	if s.TalkgroupVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "TalkgroupVoiceGrantPDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "TalkgroupVoiceGrantPDU")
 		}
 		_payload = "TalkgroupVoiceGrantPDU"
 	}
 	if s.BroadcastTalkgroupVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "BroadcastTalkgroupVoiceGrantPDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "BroadcastTalkgroupVoiceGrantPDU")
 		}
 		_payload = "BroadcastTalkgroupVoiceGrantPDU"
 	}
 	if s.PrivateDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "PrivateDataGrantPDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "PrivateDataGrantPDU")
 		}
 		_payload = "PrivateDataGrantPDU"
 	}
 	if s.TalkgroupDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "TalkgroupDataGrantPDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "TalkgroupDataGrantPDU")
 		}
 		_payload = "TalkgroupDataGrantPDU"
 	}
 	if s.DuplexPrivateVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "DuplexPrivateVoiceGrantPDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "DuplexPrivateVoiceGrantPDU")
 		}
 		_payload = "DuplexPrivateVoiceGrantPDU"
 	}
 	if s.DuplexPrivateDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "DuplexPrivateDataGrantPDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "DuplexPrivateDataGrantPDU")
 		}
 		_payload = "DuplexPrivateDataGrantPDU"
 	}
 	if s.PrivateDataGrantMultiItemPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "PrivateDataGrantMultiItemPDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "PrivateDataGrantMultiItemPDU")
 		}
 		_payload = "PrivateDataGrantMultiItemPDU"
 	}
 	if s.MovePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "MovePDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "MovePDU")
 		}
 		_payload = "MovePDU"
 	}
 	if s.BroadcastPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("MBCHeader: %s and %s are both set", _payload, "BroadcastPDU")
+			return [12]byte{}, errs.NewBothSet("MBCHeader", _payload, "BroadcastPDU")
 		}
 		_payload = "BroadcastPDU"
 	}
@@ -224,61 +229,61 @@ func (s *MBCHeader) encodeBytes() ([12]byte, error) {
 	case s.PrivateVoiceGrantPDU != nil:
 		_pduBytes, err := s.PrivateVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.PrivateVoiceGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.PrivateVoiceGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupVoiceGrantPDU != nil:
 		_pduBytes, err := s.TalkgroupVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.TalkgroupVoiceGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.TalkgroupVoiceGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
 		_pduBytes, err := s.BroadcastTalkgroupVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.BroadcastTalkgroupVoiceGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.BroadcastTalkgroupVoiceGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantPDU != nil:
 		_pduBytes, err := s.PrivateDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.PrivateDataGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.PrivateDataGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupDataGrantPDU != nil:
 		_pduBytes, err := s.TalkgroupDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.TalkgroupDataGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.TalkgroupDataGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateVoiceGrantPDU != nil:
 		_pduBytes, err := s.DuplexPrivateVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.DuplexPrivateVoiceGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.DuplexPrivateVoiceGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateDataGrantPDU != nil:
 		_pduBytes, err := s.DuplexPrivateDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.DuplexPrivateDataGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.DuplexPrivateDataGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantMultiItemPDU != nil:
 		_pduBytes, err := s.PrivateDataGrantMultiItemPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.PrivateDataGrantMultiItemPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.PrivateDataGrantMultiItemPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.MovePDU != nil:
 		_pduBytes, err := s.MovePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.MovePDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.MovePDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastPDU != nil:
 		_pduBytes, err := s.BroadcastPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("MBCHeader.BroadcastPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("MBCHeader.BroadcastPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	default:
@@ -291,21 +296,11 @@ func (s *MBCHeader) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "Opcode",
-			Type:  "MBCHeader",
-			Value: s.Opcode,
-		}
+		return [12]byte{}, errs.NewFieldRange("MBCHeader", "Opcode", s.Opcode, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	if uint64(s.FID)>>8 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  8,
-			Field: "FID",
-			Type:  "MBCHeader",
-			Value: s.FID,
-		}
+		return [12]byte{}, errs.NewFieldRange("MBCHeader", "FID", s.FID, 8, false)
 	}
 	data[1] = byte(uint64(s.FID))
 	if _payload != "" {
@@ -338,7 +333,7 @@ func (s *MBCHeader) encodeBytes() ([12]byte, error) {
 			}
 		}
 		if _payload != _want {
-			return [12]byte{}, fmt.Errorf("MBCHeader.%s is set, but Opcode and FID select %s", _payload, _want)
+			return [12]byte{}, errs.NewWrongPayload("MBCHeader", _payload, "Opcode and FID select ", _want)
 		}
 	}
 	_crcVal := crc.CCITT(data[:10])
@@ -360,8 +355,8 @@ func (s *MBCHeader) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *MBCHeader) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -427,12 +422,7 @@ func (s *MBCContinuation) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x80
 	}
 	if s.Data[11]&1 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  95,
-			Field: "Data",
-			Type:  "MBCContinuation",
-			Value: s.Data,
-		}
+		return [12]byte{}, errs.NewFieldRange("MBCContinuation", "Data", s.Data, 95, false)
 	}
 	bits.Copy(data[:], 1, s.Data[:], 0, 95)
 	return data, nil
@@ -451,8 +441,8 @@ func (s *MBCContinuation) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *MBCContinuation) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -494,53 +484,28 @@ func (s *CGAPContinuation) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "Opcode",
-			Type:  "CGAPContinuation",
-			Value: s.Opcode,
-		}
+		return [12]byte{}, errs.NewFieldRange("CGAPContinuation", "Opcode", s.Opcode, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	if uint64(s.Reserved1)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Reserved1",
-			Type:  "CGAPContinuation",
-			Value: s.Reserved1,
-		}
+		return [12]byte{}, errs.NewFieldRange("CGAPContinuation", "Reserved1", s.Reserved1, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.Reserved1)<<4)&0xF0
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ColorCode",
-			Type:  "CGAPContinuation",
-			Value: s.ColorCode,
-		}
+		return [12]byte{}, errs.NewFieldRange("CGAPContinuation", "ColorCode", s.ColorCode, 4, false)
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ColorCode))&0x0F
 	if uint64(s.Cdeftype)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Cdeftype",
-			Type:  "CGAPContinuation",
-			Value: s.Cdeftype,
-		}
+		return [12]byte{}, errs.NewFieldRange("CGAPContinuation", "Cdeftype", s.Cdeftype, 4, false)
 	}
 	data[2] = data[2]&^0xF0 | byte(uint64(s.Cdeftype)<<4)&0xF0
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "Reserved2",
-			Type:  "CGAPContinuation",
-			Value: s.Reserved2,
-		}
+		return [12]byte{}, errs.NewFieldRange("CGAPContinuation", "Reserved2", s.Reserved2, 2, false)
 	}
 	data[2] = data[2]&^0x0C | byte(uint64(s.Reserved2)<<2)&0x0C
 	_cdefParmsBits, err := s.CdefParms.Encode()
 	if err != nil {
-		return [12]byte{}, fmt.Errorf("CGAPContinuation.CdefParms: %w", err)
+		return [12]byte{}, errs.NewWrapped("CGAPContinuation.CdefParms", err)
 	}
 	bits.Pack(data[:], 22, _cdefParmsBits[:])
 	_crcVal := crc.CCITT(data[:10])
@@ -562,8 +527,8 @@ func (s *CGAPContinuation) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *CGAPContinuation) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -605,53 +570,28 @@ func (s *MVAPContinuation) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "Opcode",
-			Type:  "MVAPContinuation",
-			Value: s.Opcode,
-		}
+		return [12]byte{}, errs.NewFieldRange("MVAPContinuation", "Opcode", s.Opcode, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	if uint64(s.Reserved1)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Reserved1",
-			Type:  "MVAPContinuation",
-			Value: s.Reserved1,
-		}
+		return [12]byte{}, errs.NewFieldRange("MVAPContinuation", "Reserved1", s.Reserved1, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.Reserved1)<<4)&0xF0
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ColorCode",
-			Type:  "MVAPContinuation",
-			Value: s.ColorCode,
-		}
+		return [12]byte{}, errs.NewFieldRange("MVAPContinuation", "ColorCode", s.ColorCode, 4, false)
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ColorCode))&0x0F
 	if uint64(s.Cdeftype)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Cdeftype",
-			Type:  "MVAPContinuation",
-			Value: s.Cdeftype,
-		}
+		return [12]byte{}, errs.NewFieldRange("MVAPContinuation", "Cdeftype", s.Cdeftype, 4, false)
 	}
 	data[2] = data[2]&^0xF0 | byte(uint64(s.Cdeftype)<<4)&0xF0
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "Reserved2",
-			Type:  "MVAPContinuation",
-			Value: s.Reserved2,
-		}
+		return [12]byte{}, errs.NewFieldRange("MVAPContinuation", "Reserved2", s.Reserved2, 2, false)
 	}
 	data[2] = data[2]&^0x0C | byte(uint64(s.Reserved2)<<2)&0x0C
 	_cdefParmsBits, err := s.CdefParms.Encode()
 	if err != nil {
-		return [12]byte{}, fmt.Errorf("MVAPContinuation.CdefParms: %w", err)
+		return [12]byte{}, errs.NewWrapped("MVAPContinuation.CdefParms", err)
 	}
 	bits.Pack(data[:], 22, _cdefParmsBits[:])
 	_crcVal := crc.CCITT(data[:10])
@@ -673,8 +613,8 @@ func (s *MVAPContinuation) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *MVAPContinuation) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -715,36 +655,21 @@ func (s *BCAPContinuation) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "Opcode",
-			Type:  "BCAPContinuation",
-			Value: s.Opcode,
-		}
+		return [12]byte{}, errs.NewFieldRange("BCAPContinuation", "Opcode", s.Opcode, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	data[1] = byte(uint64(s.Reserved1))
 	if uint64(s.Cdeftype)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Cdeftype",
-			Type:  "BCAPContinuation",
-			Value: s.Cdeftype,
-		}
+		return [12]byte{}, errs.NewFieldRange("BCAPContinuation", "Cdeftype", s.Cdeftype, 4, false)
 	}
 	data[2] = data[2]&^0xF0 | byte(uint64(s.Cdeftype)<<4)&0xF0
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "Reserved2",
-			Type:  "BCAPContinuation",
-			Value: s.Reserved2,
-		}
+		return [12]byte{}, errs.NewFieldRange("BCAPContinuation", "Reserved2", s.Reserved2, 2, false)
 	}
 	data[2] = data[2]&^0x0C | byte(uint64(s.Reserved2)<<2)&0x0C
 	_cdefParmsBits, err := s.CdefParms.Encode()
 	if err != nil {
-		return [12]byte{}, fmt.Errorf("BCAPContinuation.CdefParms: %w", err)
+		return [12]byte{}, errs.NewWrapped("BCAPContinuation.CdefParms", err)
 	}
 	bits.Pack(data[:], 22, _cdefParmsBits[:])
 	_crcVal := crc.CCITT(data[:10])
@@ -766,8 +691,8 @@ func (s *BCAPContinuation) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *BCAPContinuation) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -809,53 +734,28 @@ func (s *VNAPContinuation) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "Opcode",
-			Type:  "VNAPContinuation",
-			Value: s.Opcode,
-		}
+		return [12]byte{}, errs.NewFieldRange("VNAPContinuation", "Opcode", s.Opcode, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	if uint64(s.Reserved1)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Reserved1",
-			Type:  "VNAPContinuation",
-			Value: s.Reserved1,
-		}
+		return [12]byte{}, errs.NewFieldRange("VNAPContinuation", "Reserved1", s.Reserved1, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.Reserved1)<<4)&0xF0
 	if uint64(s.ColorCode)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ColorCode",
-			Type:  "VNAPContinuation",
-			Value: s.ColorCode,
-		}
+		return [12]byte{}, errs.NewFieldRange("VNAPContinuation", "ColorCode", s.ColorCode, 4, false)
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ColorCode))&0x0F
 	if uint64(s.Cdeftype)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Cdeftype",
-			Type:  "VNAPContinuation",
-			Value: s.Cdeftype,
-		}
+		return [12]byte{}, errs.NewFieldRange("VNAPContinuation", "Cdeftype", s.Cdeftype, 4, false)
 	}
 	data[2] = data[2]&^0xF0 | byte(uint64(s.Cdeftype)<<4)&0xF0
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "Reserved2",
-			Type:  "VNAPContinuation",
-			Value: s.Reserved2,
-		}
+		return [12]byte{}, errs.NewFieldRange("VNAPContinuation", "Reserved2", s.Reserved2, 2, false)
 	}
 	data[2] = data[2]&^0x0C | byte(uint64(s.Reserved2)<<2)&0x0C
 	_cdefParmsBits, err := s.CdefParms.Encode()
 	if err != nil {
-		return [12]byte{}, fmt.Errorf("VNAPContinuation.CdefParms: %w", err)
+		return [12]byte{}, errs.NewWrapped("VNAPContinuation.CdefParms", err)
 	}
 	bits.Pack(data[:], 22, _cdefParmsBits[:])
 	_crcVal := crc.CCITT(data[:10])
@@ -877,8 +777,8 @@ func (s *VNAPContinuation) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *VNAPContinuation) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

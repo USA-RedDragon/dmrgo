@@ -14,6 +14,7 @@ import (
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeShortLCNullMessageBytes decodes a ShortLCNullMessage (ETSI TS 102 361-2 clause 7.1.3.1).
@@ -29,12 +30,7 @@ func decodeShortLCNullMessageBytes(data [3]byte) ShortLCNullMessage {
 func (s *ShortLCNullMessage) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.Reserved)>>24 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "Reserved",
-			Type:  "ShortLCNullMessage",
-			Value: s.Reserved,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCNullMessage", "Reserved", s.Reserved, 24, false)
 	}
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 16)
@@ -56,8 +52,8 @@ func (s *ShortLCNullMessage) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ShortLCNullMessage) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -86,21 +82,11 @@ func decodeShortLCActivityUpdateBytes(data [3]byte) ShortLCActivityUpdate {
 func (s *ShortLCActivityUpdate) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.TS1ActivityID)>>4 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "TS1ActivityID",
-			Type:  "ShortLCActivityUpdate",
-			Value: s.TS1ActivityID,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCActivityUpdate", "TS1ActivityID", s.TS1ActivityID, 4, false)
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.TS1ActivityID)<<4)&0xF0
 	if uint64(s.TS2ActivityID)>>4 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "TS2ActivityID",
-			Type:  "ShortLCActivityUpdate",
-			Value: s.TS2ActivityID,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCActivityUpdate", "TS2ActivityID", s.TS2ActivityID, 4, false)
 	}
 	data[0] = data[0]&^0x0F | byte(uint64(s.TS2ActivityID))&0x0F
 	data[1] = byte(uint64(s.HashTS1))
@@ -121,8 +107,8 @@ func (s *ShortLCActivityUpdate) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ShortLCActivityUpdate) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -151,21 +137,11 @@ func decodeShortLCCSysParmsBytes(data [3]byte) ShortLCCSysParms {
 func (s *ShortLCCSysParms) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.MODEL)>>2 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "MODEL",
-			Type:  "ShortLCCSysParms",
-			Value: s.MODEL,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCCSysParms", "MODEL", s.MODEL, 2, false)
 	}
 	data[0] = data[0]&^0xC0 | byte(uint64(s.MODEL)<<6)&0xC0
 	if uint64(s.NetSiteRaw)>>12 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "NetSiteRaw",
-			Type:  "ShortLCCSysParms",
-			Value: s.NetSiteRaw,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCCSysParms", "NetSiteRaw", s.NetSiteRaw, 12, false)
 	}
 	_valNetSiteRaw := uint64(s.NetSiteRaw)
 	data[0] = data[0]&^0x3F | byte(_valNetSiteRaw>>6)&0x3F
@@ -174,12 +150,7 @@ func (s *ShortLCCSysParms) encodeBytes() ([3]byte, error) {
 		data[1] |= 0x02
 	}
 	if uint64(s.CommonSlotCounter)>>9 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  9,
-			Field: "CommonSlotCounter",
-			Type:  "ShortLCCSysParms",
-			Value: s.CommonSlotCounter,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCCSysParms", "CommonSlotCounter", s.CommonSlotCounter, 9, false)
 	}
 	_valCommonSlotCounter := uint64(s.CommonSlotCounter)
 	data[1] = data[1]&^0x01 | byte(_valCommonSlotCounter>>8)&0x01
@@ -200,8 +171,8 @@ func (s *ShortLCCSysParms) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ShortLCCSysParms) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -230,21 +201,11 @@ func decodeShortLCPSysParmsBytes(data [3]byte) ShortLCPSysParms {
 func (s *ShortLCPSysParms) encodeBytes() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.MODEL)>>2 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "MODEL",
-			Type:  "ShortLCPSysParms",
-			Value: s.MODEL,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCPSysParms", "MODEL", s.MODEL, 2, false)
 	}
 	data[0] = data[0]&^0xC0 | byte(uint64(s.MODEL)<<6)&0xC0
 	if uint64(s.NetSiteRaw)>>12 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "NetSiteRaw",
-			Type:  "ShortLCPSysParms",
-			Value: s.NetSiteRaw,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCPSysParms", "NetSiteRaw", s.NetSiteRaw, 12, false)
 	}
 	_valNetSiteRaw := uint64(s.NetSiteRaw)
 	data[0] = data[0]&^0x3F | byte(_valNetSiteRaw>>6)&0x3F
@@ -253,12 +214,7 @@ func (s *ShortLCPSysParms) encodeBytes() ([3]byte, error) {
 		data[1] |= 0x02
 	}
 	if uint64(s.CommonSlotCounter)>>9 != 0 {
-		return [3]byte{}, &bit.FieldRangeError{
-			Bits:  9,
-			Field: "CommonSlotCounter",
-			Type:  "ShortLCPSysParms",
-			Value: s.CommonSlotCounter,
-		}
+		return [3]byte{}, errs.NewFieldRange("ShortLCPSysParms", "CommonSlotCounter", s.CommonSlotCounter, 9, false)
 	}
 	_valCommonSlotCounter := uint64(s.CommonSlotCounter)
 	data[1] = data[1]&^0x01 | byte(_valCommonSlotCounter>>8)&0x01
@@ -279,8 +235,8 @@ func (s *ShortLCPSysParms) Encode() ([24]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ShortLCPSysParms) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -293,9 +249,10 @@ func (s *ShortLCPSysParms) String() string {
 	return fmt.Sprintf("ShortLCPSysParms{ MODEL: %d, NetSiteRaw: %d, PayloadChannelType: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.PayloadChannelType, s.CommonSlotCounter)
 }
 
-// decodeShortLCBytes decodes a ShortLC (ETSI TS 102 361-1 clause 9.1.7).
+// newShortLCBytes decodes a ShortLC (ETSI TS 102 361-1 clause 9.1.7).
 // data holds its bits packed, the first bit most significant.
-func decodeShortLCBytes(data [5]byte) ShortLC {
+// It allocates the payload struct that the dispatch field points to.
+func newShortLCBytes(data [5]byte) ShortLC {
 	var result ShortLC
 	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:], 28, uint8((uint64(data[3])<<8|uint64(data[4]))>>4&0xFF))
 	result.SLCO = enums.SLCO(uint64(data[0]) >> 4)
@@ -321,12 +278,14 @@ func decodeShortLCBytes(data [5]byte) ShortLC {
 }
 
 // DecodeShortLC decodes a ShortLC (ETSI TS 102 361-1 clause 9.1.7).
+// It allocates the payload struct that the dispatch field points to;
+// DecodeShortLCInto does not.
 func DecodeShortLC(data [36]bit.Bit) ShortLC {
 	var _b [5]byte
 	for _i := range 36 {
 		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
 	}
-	return decodeShortLCBytes(_b)
+	return newShortLCBytes(_b)
 }
 
 // ShortLCPayloads holds one payload struct of each type that
@@ -339,8 +298,9 @@ type ShortLCPayloads struct {
 	shortLCPSysParms      ShortLCPSysParms
 }
 
-// decodeShortLCBytesInto decodes data into dst as decodeShortLCBytes does, and
-// points the dispatch field of dst into p.
+// decodeShortLCBytesInto decodes a ShortLC (ETSI TS 102 361-1 clause 9.1.7).
+// data holds its bits packed, the first bit most significant. It decodes
+// into dst and points the dispatch field of dst into p.
 func decodeShortLCBytesInto(dst *ShortLC, p *ShortLCPayloads, data [5]byte) {
 	*dst = ShortLC{}
 	result := dst
@@ -388,19 +348,19 @@ func (s *ShortLC) encodeBytes() ([5]byte, error) {
 	}
 	if s.ActivityUpdate != nil {
 		if _payload != "" {
-			return [5]byte{}, fmt.Errorf("ShortLC: %s and %s are both set", _payload, "ActivityUpdate")
+			return [5]byte{}, errs.NewBothSet("ShortLC", _payload, "ActivityUpdate")
 		}
 		_payload = "ActivityUpdate"
 	}
 	if s.CSysParms != nil {
 		if _payload != "" {
-			return [5]byte{}, fmt.Errorf("ShortLC: %s and %s are both set", _payload, "CSysParms")
+			return [5]byte{}, errs.NewBothSet("ShortLC", _payload, "CSysParms")
 		}
 		_payload = "CSysParms"
 	}
 	if s.PSysParms != nil {
 		if _payload != "" {
-			return [5]byte{}, fmt.Errorf("ShortLC: %s and %s are both set", _payload, "PSysParms")
+			return [5]byte{}, errs.NewBothSet("ShortLC", _payload, "PSysParms")
 		}
 		_payload = "PSysParms"
 	}
@@ -408,37 +368,32 @@ func (s *ShortLC) encodeBytes() ([5]byte, error) {
 	case s.NullMessage != nil:
 		_pduBytes, err := s.NullMessage.encodeBytes()
 		if err != nil {
-			return [5]byte{}, fmt.Errorf("ShortLC.NullMessage: %w", err)
+			return [5]byte{}, errs.NewWrapped("ShortLC.NullMessage", err)
 		}
 		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
 	case s.ActivityUpdate != nil:
 		_pduBytes, err := s.ActivityUpdate.encodeBytes()
 		if err != nil {
-			return [5]byte{}, fmt.Errorf("ShortLC.ActivityUpdate: %w", err)
+			return [5]byte{}, errs.NewWrapped("ShortLC.ActivityUpdate", err)
 		}
 		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
 	case s.CSysParms != nil:
 		_pduBytes, err := s.CSysParms.encodeBytes()
 		if err != nil {
-			return [5]byte{}, fmt.Errorf("ShortLC.CSysParms: %w", err)
+			return [5]byte{}, errs.NewWrapped("ShortLC.CSysParms", err)
 		}
 		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
 	case s.PSysParms != nil:
 		_pduBytes, err := s.PSysParms.encodeBytes()
 		if err != nil {
-			return [5]byte{}, fmt.Errorf("ShortLC.PSysParms: %w", err)
+			return [5]byte{}, errs.NewWrapped("ShortLC.PSysParms", err)
 		}
 		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
 	default:
 		bits.Copy(data[:], 4, s.RawPayload[:], 0, 24)
 	}
 	if uint64(s.SLCO)>>4 != 0 {
-		return [5]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "SLCO",
-			Type:  "ShortLC",
-			Value: s.SLCO,
-		}
+		return [5]byte{}, errs.NewFieldRange("ShortLC", "SLCO", s.SLCO, 4, false)
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.SLCO)<<4)&0xF0
 	if _payload != "" {
@@ -456,7 +411,7 @@ func (s *ShortLC) encodeBytes() ([5]byte, error) {
 			_want = "PSysParms"
 		}
 		if _payload != _want {
-			return [5]byte{}, fmt.Errorf("ShortLC.%s is set, but SLCO selects %s", _payload, _want)
+			return [5]byte{}, errs.NewWrongPayload("ShortLC", _payload, "SLCO selects ", _want)
 		}
 	}
 	_crcVal := uint64(crc.CRC8(data[:], 28))
@@ -478,8 +433,8 @@ func (s *ShortLC) Encode() ([36]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ShortLC) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
