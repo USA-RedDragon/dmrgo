@@ -107,7 +107,9 @@ func NewPacket(header pdu.DataHeader, payload []byte, rate enums.DataType) (Pack
 // call of the same method on the Builder, except that Retry leaves a Packet
 // from Segment as it is. The zero value has no storage for blocks: Segment
 // and Retry return ErrTooLong for a packet with blocks, and NewResponse
-// works. A Builder is not safe for concurrent use.
+// works. A Packet points into the Builder, so a Builder must not be copied
+// after first use; go vet reports a copy. A Builder is not safe for
+// concurrent use.
 type Builder struct {
 	unconfirmed pdu.UnconfirmedDataHeader
 	confirmed   pdu.ConfirmedDataHeader
@@ -120,6 +122,7 @@ type Builder struct {
 	blocks      []layer2.Data
 	retry       retryStore
 	resp        responseStore
+	noCopy      noCopy
 }
 
 // NewBuilder returns a Builder for packets of up to maxBlocks data blocks of

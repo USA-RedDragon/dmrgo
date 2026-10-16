@@ -449,7 +449,7 @@ func TestAssembler_Bursts(t *testing.T) {
 	if m, err := addBurst(a, &layer2.Burst{}); m != nil || err != nil {
 		t.Errorf("voice burst: %v %v", m, err)
 	}
-	bad := *bursts[2]
+	bad := layer2.Burst{Kind: bursts[2].Kind, Data: bursts[2].Data, FEC: bursts[2].FEC}
 	bad.FEC.PDU.Uncorrectable = true
 	a.Reset()
 	var last error

@@ -53,7 +53,7 @@ func TestDecodeFromBytesWith_DefaultMatchesDecodeFromBytes(t *testing.T) {
 		for _, opts := range []layer2.DecodeOptions{{}, {SyncThreshold: layer2.DefaultSyncThreshold}} {
 			var got layer2.Burst
 			err := got.DecodeFromBytesWith(frame, &opts)
-			if errString(err) != errString(wantErr) || !reflect.DeepEqual(got, want) {
+			if errString(err) != errString(wantErr) || !reflect.DeepEqual(&got, &want) {
 				t.Fatalf("%x opts %+v: got %s (%v), want %s (%v)", frame, opts, got.String(), err, want.String(), wantErr)
 			}
 		}
