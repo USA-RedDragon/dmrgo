@@ -27,7 +27,7 @@ var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecre
 
 // pendingDirs are library directories that the gate does not check yet,
 // because their code still allocates. Empty it when they are clean.
-var pendingDirs = []string{"layer2", "layer2/framer", "layer2/packet"}
+var pendingDirs = []string{"layer2", "layer2/framer"}
 
 // makeRE matches a make call that -gcflags=-m reports as not escaping. The
 // runtime puts such a slice on the stack only when its size is a constant
@@ -203,10 +203,10 @@ func (p *pkgFuncs) enclosing(file string, line int) *ast.FuncDecl {
 	return nil
 }
 
-// twinOK reports whether twin names a function of the package, or a
-// method of the receiver of fd, other than fd.
+// twinOK reports whether twin names a function or a Type.Method of the
+// package, or a method of the receiver of fd, other than fd.
 func twinOK(p *pkgFuncs, fd *ast.FuncDecl, twin string) bool {
-	if twin == fd.Name.Name {
+	if twin == fd.Name.Name || twin == funcKey(fd) {
 		return false
 	}
 	if r := recvName(fd); r != "" && p.names[r+"."+twin] {
@@ -217,7 +217,7 @@ func twinOK(p *pkgFuncs, fd *ast.FuncDecl, twin string) bool {
 
 // twinRE matches the doc sentence of an allocating convenience wrapper, such
 // as "It allocates the slice; AppendPack does not.", and captures the twin.
-var twinRE = regexp.MustCompile(`allocates[^.;]*; (\w+) does not`)
+var twinRE = regexp.MustCompile(`allocates[^.;]*; ((?:\w+\.)?\w+) does not`)
 
 // exemptReason returns why the function fd may allocate, or "" when it may
 // not. The rules are:
@@ -230,9 +230,9 @@ var twinRE = regexp.MustCompile(`allocates[^.;]*; (\w+) does not`)
 //   - An Append* or append* function grows the slice it appends to, which
 //     allocates only when the caller's slice lacks the capacity.
 //   - A convenience wrapper whose doc comment says "allocates ...; Twin does
-//     not.", where Twin is a function of the package, or a method of the same
-//     receiver, such as AppendPack for Pack or DecodeCSBKInto for
-//     DecodeCSBK.
+//     not.", where Twin is a function or a Type.Method of the package, or a
+//     method of the same receiver, such as AppendPack for Pack or
+//     DecodeCSBKInto for DecodeCSBK.
 //   - A deprecated function forwards to the API that replaces it.
 func exemptReason(p *pkgFuncs, fd *ast.FuncDecl) string {
 	if fd == nil {
