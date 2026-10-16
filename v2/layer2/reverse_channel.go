@@ -11,7 +11,9 @@ import (
 // the odd parity Single Burst BPTC and the CRC-7 (ETSI TS 102 361-1 clause
 // B.2.2, clause B.3.13).
 func DecodeEmbeddedRC(embeddedData [32]bit.Bit) pdu.ReverseChannel {
-	infoBits, bptcResult := bptc.DecodeSingleBurst(embeddedData, true)
+	info, bptcResult := bptc.DecodeSingleBurst(uint32(bit.Uint(embeddedData[:])&0xFFFFFFFF), true)
+	var infoBits [11]bit.Bit
+	bit.PutUint(infoBits[:], uint64(info))
 	rc := pdu.DecodeReverseChannel(infoBits)
 	rc.FEC = bptcResult.Combine(rc.FEC)
 	return rc
@@ -25,5 +27,7 @@ func EncodeEmbeddedRC(rc *pdu.ReverseChannel) ([32]bit.Bit, error) {
 	if err != nil {
 		return [32]bit.Bit{}, err
 	}
-	return bptc.EncodeSingleBurst(infoBits, true), nil
+	var tx [32]bit.Bit
+	bit.PutUint(tx[:], uint64(bptc.EncodeSingleBurst(uint16(bit.Uint(infoBits[:])&0x7FF), true)))
+	return tx, nil
 }
