@@ -26,7 +26,7 @@ func TestEmbeddedLC_CapturedSuperframe(t *testing.T) {
 		{0x09, 0x0C, 0x35, 0x95},
 		{0x84, 0xAA, 0x2B, 0xA5},
 	})
-	info, res := bptc.DecodeEmbedded(fr)
+	info, res := decodeEmbedded(fr)
 	if res.Uncorrectable || res.ErrorsCorrected != 0 {
 		t.Fatalf("captured superframe: result=%+v, want clean", res)
 	}
@@ -75,10 +75,10 @@ func flipEmbedded(fr [4][32]bit.Bit, pos ...int) [4][32]bit.Bit {
 func TestEmbeddedLC_UpToThreeErrorsCorrected(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()
-	fr := bptc.EncodeEmbedded(info)
+	fr := encodeEmbedded(info)
 	for k := 1; k <= 3; k++ {
 		forEachErrorPattern(128, k, func(pos []int) {
-			got, res := bptc.DecodeEmbedded(flipEmbedded(fr, pos...))
+			got, res := decodeEmbedded(flipEmbedded(fr, pos...))
 			if got != info || res.Uncorrectable || res.ErrorsCorrected != k {
 				t.Fatalf("errors at %v: data match=%v result=%+v", pos, got == info, res)
 			}
@@ -89,10 +89,10 @@ func TestEmbeddedLC_UpToThreeErrorsCorrected(t *testing.T) {
 func TestEmbeddedLC_ParityRowErrorCorrected(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()
-	fr := bptc.EncodeEmbedded(info)
+	fr := encodeEmbedded(info)
 	for col := 0; col < 16; col++ {
 		// Stream index col*8+7 is row 7 (the column parity row) of that column.
-		got, res := bptc.DecodeEmbedded(flipEmbedded(fr, col*8+7))
+		got, res := decodeEmbedded(flipEmbedded(fr, col*8+7))
 		if got != info || res.Uncorrectable || res.ErrorsCorrected != 1 {
 			t.Fatalf("PC row col %d: data match=%v result=%+v", col, got == info, res)
 		}
@@ -106,17 +106,17 @@ func TestEmbeddedLC_ParityRowErrorCorrected(t *testing.T) {
 func TestEmbeddedLC_TieResolvedByCheck(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()
-	rx := flipEmbedded(bptc.EncodeEmbedded(info), 0*8, 11*8, 14*8, 15*8)
-	if _, res := bptc.DecodeEmbedded(rx); !res.Uncorrectable {
+	rx := flipEmbedded(encodeEmbedded(info), 0*8, 11*8, 14*8, 15*8)
+	if _, res := decodeEmbedded(rx); !res.Uncorrectable {
 		t.Fatalf("tie accepted: %+v", res)
 	}
-	got, res := bptc.DecodeEmbeddedWithCheck(rx, func(i [77]bit.Bit) bool { return i == info })
+	got, res := decodeEmbeddedWithCheck(rx, func(i [77]bit.Bit) bool { return i == info })
 	if got != info || res.Uncorrectable || res.ErrorsCorrected != 4 {
 		t.Fatalf("data match=%v result=%+v", got == info, res)
 	}
 	other := info
 	other[0] ^= 1
-	got, res = bptc.DecodeEmbeddedWithCheck(rx, func(i [77]bit.Bit) bool { return i == other })
+	got, res = decodeEmbeddedWithCheck(rx, func(i [77]bit.Bit) bool { return i == other })
 	if got != other || res.Uncorrectable || res.ErrorsCorrected != 4 {
 		t.Fatalf("other codeword: data match=%v result=%+v", got == other, res)
 	}
@@ -133,7 +133,7 @@ func TestEmbeddedLC_RandomWordsRejected(t *testing.T) {
 		for i := 0; i < 128; i++ {
 			rx[i/32][i%32] = bit.Bit(r.Intn(2))
 		}
-		if _, res := bptc.DecodeEmbedded(rx); !res.Uncorrectable {
+		if _, res := decodeEmbedded(rx); !res.Uncorrectable {
 			if res.ErrorsCorrected > bptc.EmbeddedMaxErrors {
 				t.Fatalf("corrected %d errors", res.ErrorsCorrected)
 			}
@@ -151,9 +151,9 @@ func TestEmbeddedLC_RandomWordsRejected(t *testing.T) {
 func TestEmbeddedLCStrict_RowErrors(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()
-	fr := bptc.EncodeEmbedded(info)
+	fr := encodeEmbedded(info)
 	for p := 0; p < 128; p++ {
-		got, res := bptc.DecodeEmbeddedStrict(flipEmbedded(fr, p))
+		got, res := decodeEmbeddedStrict(flipEmbedded(fr, p))
 		if p%8 == 7 {
 			if !res.Uncorrectable {
 				t.Fatalf("row 7 error at %d accepted", p)
@@ -164,11 +164,11 @@ func TestEmbeddedLCStrict_RowErrors(t *testing.T) {
 			t.Fatalf("error at %d: data match=%v result=%+v", p, got == info, res)
 		}
 	}
-	got, res := bptc.DecodeEmbeddedStrict(flipEmbedded(fr, 0, 9, 18, 27, 36, 45, 54))
+	got, res := decodeEmbeddedStrict(flipEmbedded(fr, 0, 9, 18, 27, 36, 45, 54))
 	if got != info || res.Uncorrectable || res.ErrorsCorrected != 7 {
 		t.Fatalf("one error per row: data match=%v result=%+v", got == info, res)
 	}
-	if _, res := bptc.DecodeEmbeddedStrict(flipEmbedded(fr, 0, 8)); !res.Uncorrectable {
+	if _, res := decodeEmbeddedStrict(flipEmbedded(fr, 0, 8)); !res.Uncorrectable {
 		t.Fatal("two errors in row 0 accepted")
 	}
 }

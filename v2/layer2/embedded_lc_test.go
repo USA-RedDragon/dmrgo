@@ -150,9 +150,17 @@ func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 	t.Parallel()
 
 	fr := capturedFragments()
-	info, _ := bptc.DecodeEmbedded(fr)
-	info[2*11+10] ^= 1
-	_, res := decodeLCBits(bptc.EncodeEmbedded(info))
+	var words [4]uint32
+	for i := range fr {
+		words[i] = uint32(bit.Uint(fr[i][:]) & 0xFFFFFFFF)
+	}
+	info, _ := bptc.DecodeEmbedded(words)
+	const checksumBit = 2*11 + 10
+	info[checksumBit/8] ^= 0x80 >> (checksumBit % 8)
+	for i, w := range bptc.EncodeEmbedded(info) {
+		bit.PutUint(fr[i][:], uint64(w))
+	}
+	_, res := decodeLCBits(fr)
 	if !res.Uncorrectable || res.ErrorsCorrected != 0 {
 		t.Errorf("FEC = %+v, want uncorrectable from the checksum alone", res)
 	}

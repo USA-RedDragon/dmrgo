@@ -3,6 +3,7 @@ package bptc_test
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	packed "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 )
 
@@ -40,4 +41,49 @@ func decodeCACH(fragments [4][17]bit.Bit) ([36]bit.Bit, fec.Result) {
 	var out [36]bit.Bit
 	bit.PutUint(out[:], info)
 	return out, res
+}
+
+func embeddedWords(fragments [4][32]bit.Bit) [4]uint32 {
+	var w [4]uint32
+	for i := range fragments {
+		w[i] = uint32(bit.Uint(fragments[i][:]) & 0xFFFFFFFF)
+	}
+	return w
+}
+
+func unpackEmbeddedInfo(p [10]byte) [77]bit.Bit {
+	var info [77]bit.Bit
+	packed.Unpack(info[:], p[:], 0)
+	return info
+}
+
+// encodeEmbedded calls bptc.EncodeEmbedded with one bit.Bit per bit.
+func encodeEmbedded(info [77]bit.Bit) [4][32]bit.Bit {
+	var p [10]byte
+	packed.Pack(p[:], 0, info[:])
+	var out [4][32]bit.Bit
+	for i, w := range bptc.EncodeEmbedded(p) {
+		bit.PutUint(out[i][:], uint64(w))
+	}
+	return out
+}
+
+// decodeEmbedded calls bptc.DecodeEmbedded with one bit.Bit per bit.
+func decodeEmbedded(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
+	info, res := bptc.DecodeEmbedded(embeddedWords(fragments))
+	return unpackEmbeddedInfo(info), res
+}
+
+// decodeEmbeddedStrict calls bptc.DecodeEmbeddedStrict with one bit.Bit per
+// bit.
+func decodeEmbeddedStrict(fragments [4][32]bit.Bit) ([77]bit.Bit, fec.Result) {
+	info, res := bptc.DecodeEmbeddedStrict(embeddedWords(fragments))
+	return unpackEmbeddedInfo(info), res
+}
+
+// decodeEmbeddedWithCheck calls bptc.DecodeEmbeddedWithCheck with one
+// bit.Bit per bit.
+func decodeEmbeddedWithCheck(fragments [4][32]bit.Bit, check func([77]bit.Bit) bool) ([77]bit.Bit, fec.Result) {
+	info, res := bptc.DecodeEmbeddedWithCheck(embeddedWords(fragments), func(p [10]byte) bool { return check(unpackEmbeddedInfo(p)) })
+	return unpackEmbeddedInfo(info), res
 }

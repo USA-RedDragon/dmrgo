@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 )
 
 func TestEmbeddedLC_EncodeDecodeRoundTrip(t *testing.T) {
@@ -14,8 +13,8 @@ func TestEmbeddedLC_EncodeDecodeRoundTrip(t *testing.T) {
 		info[i] = bit.Bit(i % 2)
 	}
 
-	fragments := bptc.EncodeEmbedded(info)
-	decoded, result := bptc.DecodeEmbedded(fragments)
+	fragments := encodeEmbedded(info)
+	decoded, result := decodeEmbedded(fragments)
 
 	if result.Uncorrectable {
 		t.Fatal("DecodeEmbedded reported uncorrectable errors on clean encode")
@@ -31,7 +30,7 @@ func TestEmbeddedLC_EncodeDecodeRoundTrip(t *testing.T) {
 func TestEmbeddedLC_BitsChecked(t *testing.T) {
 	t.Parallel()
 	var fragments [4][32]bit.Bit
-	_, result := bptc.DecodeEmbedded(fragments)
+	_, result := decodeEmbedded(fragments)
 	if result.BitsChecked != 128 {
 		t.Errorf("BitsChecked = %d, want 128", result.BitsChecked)
 	}
@@ -41,8 +40,8 @@ func TestEmbeddedLC_AllZero(t *testing.T) {
 	t.Parallel()
 	var info [77]bit.Bit
 
-	fragments := bptc.EncodeEmbedded(info)
-	decoded, result := bptc.DecodeEmbedded(fragments)
+	fragments := encodeEmbedded(info)
+	decoded, result := decodeEmbedded(fragments)
 
 	if result.Uncorrectable {
 		t.Fatal("uncorrectable error on all-zero input")
@@ -59,8 +58,8 @@ func TestEmbeddedLC_AllOnes(t *testing.T) {
 		info[i] = 1
 	}
 
-	fragments := bptc.EncodeEmbedded(info)
-	decoded, result := bptc.DecodeEmbedded(fragments)
+	fragments := encodeEmbedded(info)
+	decoded, result := decodeEmbedded(fragments)
 
 	if result.Uncorrectable {
 		t.Fatal("uncorrectable error on all-ones input")
@@ -77,11 +76,11 @@ func TestEmbeddedLC_SingleBitErrorCorrection(t *testing.T) {
 		info[i] = bit.Bit((i * 7) % 2)
 	}
 
-	fragments := bptc.EncodeEmbedded(info)
+	fragments := encodeEmbedded(info)
 
 	fragments[0][5] ^= 1
 
-	decoded, result := bptc.DecodeEmbedded(fragments)
+	decoded, result := decodeEmbedded(fragments)
 
 	if result.Uncorrectable {
 		t.Fatal("single bit error should be correctable")
@@ -97,12 +96,12 @@ func TestEmbeddedLC_SingleBitErrorCorrection(t *testing.T) {
 func TestEmbeddedLC_FragmentCount(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()
-	fragments := bptc.EncodeEmbedded(info)
+	fragments := encodeEmbedded(info)
 
 	for i := range fragments {
 		rx := fragments
 		rx[i][31] ^= 1
-		if got, res := bptc.DecodeEmbedded(rx); got != info || res.ErrorsCorrected != 1 {
+		if got, res := decodeEmbedded(rx); got != info || res.ErrorsCorrected != 1 {
 			t.Errorf("fragment %d: data match=%v result=%+v", i, got == info, res)
 		}
 	}
@@ -115,7 +114,7 @@ func TestEmbeddedLC_FragmentBitsAreValid(t *testing.T) {
 	info[10] = 1
 	info[76] = 1
 
-	fragments := bptc.EncodeEmbedded(info)
+	fragments := encodeEmbedded(info)
 
 	for i, f := range fragments {
 		for j, b := range f {
@@ -133,9 +132,9 @@ func TestEmbeddedLC_StabilityEncodeDecode(t *testing.T) {
 		info[i] = bit.Bit((i*3 + 1) % 2)
 	}
 
-	fragments1 := bptc.EncodeEmbedded(info)
-	decoded, _ := bptc.DecodeEmbedded(fragments1)
-	fragments2 := bptc.EncodeEmbedded(decoded)
+	fragments1 := encodeEmbedded(info)
+	decoded, _ := decodeEmbedded(fragments1)
+	fragments2 := encodeEmbedded(decoded)
 
 	for i := 0; i < 4; i++ {
 		if fragments1[i] != fragments2[i] {
@@ -148,12 +147,12 @@ func TestEmbeddedLC_ColumnParityErrorDetection(t *testing.T) {
 	t.Parallel()
 	var info [77]bit.Bit
 
-	fragments := bptc.EncodeEmbedded(info)
+	fragments := encodeEmbedded(info)
 
 	fragments[0][0] ^= 1
 	fragments[0][1] ^= 1
 
-	_, result := bptc.DecodeEmbedded(fragments)
+	_, result := decodeEmbedded(fragments)
 
 	if result.ErrorsCorrected == 0 && !result.Uncorrectable {
 		t.Error("expected error detection for 2-bit error")
@@ -166,8 +165,8 @@ func TestEmbeddedLC_DifferentPatterns(t *testing.T) {
 	info1[0] = 1
 	info2[0] = 0
 
-	fragments1 := bptc.EncodeEmbedded(info1)
-	fragments2 := bptc.EncodeEmbedded(info2)
+	fragments1 := encodeEmbedded(info1)
+	fragments2 := encodeEmbedded(info2)
 
 	allSame := true
 	for i := 0; i < 4; i++ {

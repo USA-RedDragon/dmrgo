@@ -24,15 +24,21 @@ func tableB16() [11]string {
 }
 
 func hamming16_11Codeword(d int) [16]bit.Bit {
-	var data [11]bit.Bit
-	for i := range data {
-		data[i] = bit.Bit((d >> i) & 1)
-	}
+	row := rowParity16_11(uint16(d & 0x7FF))
 	var cw [16]bit.Bit
-	copy(cw[:11], data[:])
-	p := parityHamming16_11(data)
-	copy(cw[11:], p[:])
+	for i := range cw {
+		cw[i] = bit.Bit(row >> i & 1)
+	}
 	return cw
+}
+
+// syndrome16_11 returns the syndrome of a row given one bit.Bit per column.
+func syndrome16_11(cw [16]bit.Bit) int {
+	var row uint16
+	for i, b := range cw {
+		row |= uint16(b&1) << i
+	}
+	return rowSyndrome16_11(row)
 }
 
 func TestHamming16_11_GeneratorMatchesTableB16(t *testing.T) {
@@ -46,7 +52,7 @@ func TestHamming16_11_GeneratorMatchesTableB16(t *testing.T) {
 				break
 			}
 		}
-		if s := calculateSyndrome16_11(cw); s != 0 {
+		if s := syndrome16_11(cw); s != 0 {
 			t.Errorf("row %d: syndrome %d, want 0", row, s)
 		}
 	}
@@ -58,7 +64,7 @@ func TestHamming16_11_MinimumDistance(t *testing.T) {
 	minWeight := 16
 	for d := 1; d < 1<<11; d++ {
 		cw := hamming16_11Codeword(d)
-		if s := calculateSyndrome16_11(cw); s != 0 {
+		if s := syndrome16_11(cw); s != 0 {
 			t.Fatalf("data %011b: syndrome %d, want 0", d, s)
 		}
 		w := 0
@@ -79,7 +85,7 @@ func TestHamming16_11_SyndromeTableLocatesSingleErrors(t *testing.T) {
 		for pos := 0; pos < 16; pos++ {
 			cw := hamming16_11Codeword(d)
 			cw[pos] ^= 1
-			s := calculateSyndrome16_11(cw)
+			s := syndrome16_11(cw)
 			if got := hamming16_11_syndrome_table[s]; got != pos {
 				t.Fatalf("data %011b error at %d: syndrome %d maps to %d", d, pos, s, got)
 			}
