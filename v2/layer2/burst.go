@@ -8,6 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	pbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -505,9 +506,11 @@ func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
 func (b *Burst) deinterleave(bits [196]bit.Bit, dataType enums.DataType) (int, fec.Result) {
 	switch dataType {
 	case enums.DataTypeRate34:
-		decoded, result := trellis.Decode(bits)
-		copy(b.deinterleavedInfoBits[:], decoded[:])
-		return len(decoded), result
+		var info [25]byte
+		pbits.Pack(info[:], 0, bits[:])
+		decoded, result := trellis.Decode(info)
+		pbits.Unpack(b.deinterleavedInfoBits[:144], decoded[:], 0)
+		return 144, result
 	case enums.DataTypeRate1:
 		// Rate 1 transmit bit order (ETSI TS 102 361-1 Table B.10B).
 		for i := 0; i < 96; i++ {
@@ -851,9 +854,12 @@ func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
 	dt := b.SlotType.DataType
 	switch {
 	case dt == enums.DataTypeRate34:
-		var data [144]bit.Bit
-		copy(data[:], info[:144])
-		return trellis.Encode(data), nil
+		var data [18]byte
+		pbits.Pack(data[:], 0, info[:144])
+		enc := trellis.Encode(data)
+		var bits [196]bit.Bit
+		pbits.Unpack(bits[:], enc[:], 0)
+		return bits, nil
 	case dt == enums.DataTypeRate1:
 		// Rate 1 transmit bit order (ETSI TS 102 361-1 Table B.10B).
 		var bits [196]bit.Bit

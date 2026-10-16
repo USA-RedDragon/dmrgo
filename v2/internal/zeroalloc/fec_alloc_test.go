@@ -191,11 +191,13 @@ func fecEntries(t testing.TB) []entry {
 		t.Fatalf("d-sms message % X: bad CRC-32", message)
 	}
 
-	var rate34 [144]bit.Bit
-	patternBits(rate34[:], 5)
+	var rate34Bits [144]bit.Bit
+	patternBits(rate34Bits[:], 5)
+	rate34 := [18]byte(bit.Pack(rate34Bits[:]))
 	trellisCW := trellis.Encode(rate34)
 	trellisBad := trellisCW
-	flip(trellisBad[:], 11, 100)
+	trellisBad[1] ^= 0x10
+	trellisBad[12] ^= 0x08
 
 	var cachInfo [36]bit.Bit
 	patternBits(cachInfo[:], 3)
@@ -223,28 +225,29 @@ func fecEntries(t testing.TB) []entry {
 	patternBits(rcCRCBits[:], 3)
 
 	var (
-		bits96  [96]bit.Bit
-		bits196 [196]bit.Bit
-		bits144 [144]bit.Bit
-		bits77  [77]bit.Bit
-		bits36  [36]bit.Bit
-		bits11  [11]bit.Bit
-		bits20  [20]bit.Bit
-		bits16  [16]bit.Bit
-		bits7   [7]bit.Bit
-		frags   [4][32]bit.Bit
-		cachOut [4][17]bit.Bit
-		bits32  [32]bit.Bit
-		rsData  [9]byte
-		rsCW    [12]byte
-		u16     uint16
-		u32     uint32
-		u8      uint8
-		ok      bool
-		r       fec.Result
-		err     error
-		ber     float64
-		n       int
+		bits96     [96]bit.Bit
+		bits196    [196]bit.Bit
+		rate34Out  [18]byte
+		trellisOut [25]byte
+		bits77     [77]bit.Bit
+		bits36     [36]bit.Bit
+		bits11     [11]bit.Bit
+		bits20     [20]bit.Bit
+		bits16     [16]bit.Bit
+		bits7      [7]bit.Bit
+		frags      [4][32]bit.Bit
+		cachOut    [4][17]bit.Bit
+		bits32     [32]bit.Bit
+		rsData     [9]byte
+		rsCW       [12]byte
+		u16        uint16
+		u32        uint32
+		u8         uint8
+		ok         bool
+		r          fec.Result
+		err        error
+		ber        float64
+		n          int
 	)
 	var stats fec.BurstFECStats
 	stats.SlotType = fec.Result{BitsChecked: 20, ErrorsCorrected: 1}
@@ -306,9 +309,9 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/fec/reedsolomon.Check", "voice LC header", 0, func() { ok = reedsolomon.Check(lc) }},
 		{"internal/fec/reedsolomon.Encode", "voice LC header", 0, func() { rsCW = reedsolomon.Encode([9]byte(lc[:9])) }},
 
-		{"internal/fec/trellis.Decode", "", 0, func() { bits144, r = trellis.Decode(trellisCW) }},
-		{"internal/fec/trellis.Decode", "2 errors", 0, func() { bits144, r = trellis.Decode(trellisBad) }},
-		{"internal/fec/trellis.Encode", "", 0, func() { bits196 = trellis.Encode(rate34) }},
+		{"internal/fec/trellis.Decode", "", 0, func() { rate34Out, r = trellis.Decode(trellisCW) }},
+		{"internal/fec/trellis.Decode", "2 errors", 0, func() { rate34Out, r = trellis.Decode(trellisBad) }},
+		{"internal/fec/trellis.Encode", "", 0, func() { trellisOut = trellis.Encode(rate34) }},
 
 		{"internal/crc.CCITT", "CSBK", 0, func() { u16 = crc.CCITT(csbkBytes[:10]) }},
 		{"internal/crc.CheckCCITT", "CSBK", 0, func() { ok = crc.CheckCCITT(csbkBytes[:10], csbkCRC) }},
@@ -323,7 +326,7 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/crc.CRC9", "rate 1/2 block", 0, func() { u16 = crc.CRC9(rate12[:80]) }},
 		{"internal/crc.CheckCRC9", "rate 1/2 block", 0, func() { ok = crc.CheckCRC9(rate12[:80], uint16(bit.Uint(rcCRCBits[:]))) }},
 	}
-	_, _, _, _, _, _, _, _, _, _, _ = bits96, bits196, bits144, bits77, bits36, bits11, bits20, bits16, bits7, frags, cachOut
+	_, _, _, _, _, _, _, _, _, _, _, _ = bits96, bits196, rate34Out, trellisOut, bits77, bits36, bits11, bits20, bits16, bits7, frags, cachOut
 	_, _, _, _, _, _, _, _, _, _, _, _ = bits32, rsData, rsCW, u16, u32, u8, ok, r, err, ber, n, reserved
 	return out
 }

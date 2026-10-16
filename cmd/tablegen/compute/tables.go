@@ -34,7 +34,9 @@ type Tables struct {
 	EncoderStateTransition []byte       // trellis 3/4 encoder symbol at index state*8+tribit
 	InterleaveMatrix       []byte       // trellis 3/4 dibit interleave order
 
-	Trellis34Transition [][]byte // trellis 3/4 tribit per [state][symbol], 0xFF if invalid
+	Trellis34Transition   [][]byte   // trellis 3/4 tribit per [state][symbol], 0xFF if invalid
+	Trellis34BranchDibits []byte     // trellis 3/4 dibit pair per branch state*8+tribit
+	Trellis34BranchMetric [][]uint64 // trellis 3/4 Viterbi cost per [received dibit pair][state], tribit t in byte t
 
 	PRFillBits             [96]uint8 // PR FILL information bits of an idle burst
 	EmbeddedLCPatterns     []uint16  // embedded LC row error patterns of weight up to 4, by syndrome and weight
@@ -170,6 +172,8 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.Trellis34Transition = Trellis34Transition(t.EncoderStateTransition)
+		t.Trellis34BranchDibits = Trellis34BranchDibits(t.EncoderStateTransition, t.ReverseConstellation)
+		t.Trellis34BranchMetric = Trellis34BranchMetric(t.Trellis34BranchDibits)
 		wg.Done()
 	}()
 

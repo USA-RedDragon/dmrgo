@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	reftrellis "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/trellis"
 )
 
 // tableB7 returns ETSI TS 102 361-1 Table B.7, indexed by [FSM state][input tribit].
@@ -29,113 +30,241 @@ func tableB8() [16][2]int8 {
 	}
 }
 
-func TestTrellis34_EncoderTablesMatchSpec(t *testing.T) {
+// symbolBits maps a ±1/±3 dibit symbol to its two bits (ETSI TS 102 361-1
+// Table 10.3).
+func symbolBits(d int8) byte {
+	return map[int8]byte{3: 0b01, 1: 0b00, -1: 0b10, -3: 0b11}[d]
+}
+
+// level returns the deviation level of a 2-bit dibit value.
+func level(d byte) int {
+	return [4]int{1, 3, -1, -3}[d&3]
+}
+
+func TestTrellis34_TablesMatchSpec(t *testing.T) {
 	t.Parallel()
 
-	b7 := tableB7()
+	b7, b8 := tableB7(), tableB8()
 	for s := range b7 {
 		for in := range b7[s] {
 			if got := encoder_state_transition_table[s*8+in]; got != b7[s][in] {
 				t.Errorf("state %d input %d: point %d, want %d", s, in, got, b7[s][in])
 			}
+			pair := b8[b7[s][in]]
+			if got, want := trellis34BranchDibits[s*8+in], symbolBits(pair[0])<<2|symbolBits(pair[1]); got != want {
+				t.Errorf("state %d input %d: dibits %04b, want %04b", s, in, got, want)
+			}
 		}
 	}
-	if trellis34_reverse_constellation != tableB8() {
-		t.Errorf("constellation table %v, want %v", trellis34_reverse_constellation, tableB8())
+	if trellis34_reverse_constellation != b8 {
+		t.Errorf("constellation table %v, want %v", trellis34_reverse_constellation, b8)
 	}
 }
 
-func randomTrellisBlock(r *rand.Rand) ([144]bit.Bit, [196]bit.Bit) {
-	var data [144]bit.Bit
-	for i := range data {
-		data[i] = bit.Bit(r.Intn(2))
-	}
+func randomBlock(r *rand.Rand) ([18]byte, [25]byte) {
+	var data [18]byte
+	r.Read(data[:])
 	return data, Encode(data)
+}
+
+func dibitAt(info *[25]byte, i int) byte {
+	return info[i/4] >> (6 - 2*(i%4)) & 3
+}
+
+func setDibit(info *[25]byte, i int, d byte) {
+	sh := 6 - 2*(i%4)
+	info[i/4] = info[i/4]&^(3<<sh) | d<<sh
+}
+
+// cost returns the path metric of the block sent as info if rx was
+// received: the sum over the 98 dibits of the cost of the deviation steps
+// between them, as the decoder's branch metric counts them.
+func cost(rx, sent *[25]byte) int {
+	stepCost := [4]int{0, 7, 10, 9}
+	total := 0
+	for i := range 98 {
+		d := level(dibitAt(rx, i)) - level(dibitAt(sent, i))
+		if d < 0 {
+			d = -d
+		}
+		total += stepCost[d/2]
+	}
+	return total
+}
+
+func bitErrors(a, b *[25]byte) int {
+	n := 0
+	for i := range a {
+		x := a[i] ^ b[i]
+		for ; x != 0; x &= x - 1 {
+			n++
+		}
+	}
+	return n
+}
+
+func TestTrellis34_EncodeMatchesReference(t *testing.T) {
+	t.Parallel()
+
+	r := rand.New(rand.NewSource(1))
+	for range 20000 {
+		data, got := randomBlock(r)
+		var in [144]bit.Bit
+		copy(in[:], bit.Unpack(data[:]))
+		want := reftrellis.Encode(in)
+		if [25]byte(bit.Pack(want[:])) != got {
+			t.Fatalf("Encode(%x) = %x, want %x", data, got, bit.Pack(want[:]))
+		}
+	}
 }
 
 func TestTrellis34_CleanDecode(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewSource(1))
-	for n := 0; n < 200; n++ {
-		data, enc := randomTrellisBlock(r)
+	r := rand.New(rand.NewSource(2))
+	for range 2000 {
+		data, enc := randomBlock(r)
 		got, res := Decode(enc)
-		if got != data || res.ErrorsCorrected != 0 || res.Uncorrectable {
-			t.Fatalf("clean block: data match=%v result=%+v", got == data, res)
+		if got != data || res.ErrorsCorrected != 0 || res.Uncorrectable || res.BitsChecked != 196 {
+			t.Fatalf("clean block %x: got %x, result %+v", data, got, res)
 		}
 	}
 }
 
-func TestTrellis34_SingleBitErrorsCorrected(t *testing.T) {
+// A 1-step error, such as +1 received as +3 or -1, is the most likely
+// symbol error of a 4FSK receiver, and changes one bit. The decoder corrects
+// every single 1-step error.
+func TestTrellis34_SingleOneStepErrorsCorrected(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewSource(2))
-	for n := 0; n < 20; n++ {
-		data, enc := randomTrellisBlock(r)
-		for pos := range enc {
-			rx := enc
-			rx[pos] ^= 1
-			got, res := Decode(rx)
-			if got != data || res.ErrorsCorrected != 1 || res.Uncorrectable {
-				t.Fatalf("bit %d: data match=%v result=%+v", pos, got == data, res)
+	r := rand.New(rand.NewSource(3))
+	for range 200 {
+		data, enc := randomBlock(r)
+		for i := range 98 {
+			for d := range byte(4) {
+				diff := level(d) - level(dibitAt(&enc, i))
+				if diff != 2 && diff != -2 {
+					continue
+				}
+				rx := enc
+				setDibit(&rx, i, d)
+				got, res := Decode(rx)
+				if got != data || res.ErrorsCorrected != 1 || res.Uncorrectable {
+					t.Fatalf("dibit %d set to %02b: got %x, want %x, result %+v", i, d, got, data, res)
+				}
 			}
 		}
 	}
 }
 
-// The code has a free distance of 3 under the bit Hamming metric, so two bit
-// errors are only guaranteed to be corrected when they fall in constellation
-// points far enough apart (after deinterleaving) to be separate error events.
-func TestTrellis34_SeparatedDoubleBitErrorsCorrected(t *testing.T) {
+// The decoder returns a block with the least path metric: no block, the
+// sent one included, has a lower metric, and an equal one sets
+// Uncorrectable.
+func TestTrellis34_MaximumLikelihood(t *testing.T) {
 	t.Parallel()
 
-	var pointOf [196]int
-	for i, j := range interleave_matrix {
-		pointOf[2*i] = int(j) / 2
-		pointOf[2*i+1] = int(j) / 2
-	}
 	r := rand.New(rand.NewSource(4))
-	for n := 0; n < 20000; n++ {
-		data, enc := randomTrellisBlock(r)
-		a, b := r.Intn(196), r.Intn(196)
-		if d := pointOf[a] - pointOf[b]; d > -6 && d < 6 {
-			continue
-		}
+	for n := range 200000 {
+		data, enc := randomBlock(r)
 		rx := enc
-		rx[a] ^= 1
-		rx[b] ^= 1
-		got, res := Decode(rx)
-		if got != data || res.ErrorsCorrected != 2 || res.Uncorrectable {
-			t.Fatalf("bits %d,%d: data match=%v result=%+v", a, b, got == data, res)
+		for range 1 + n%8 {
+			setDibit(&rx, r.Intn(98), byte(r.Intn(4)))
 		}
+		got, res := Decode(rx)
+		dec := Encode(got)
+		if res.ErrorsCorrected != bitErrors(&rx, &dec) {
+			t.Fatalf("ErrorsCorrected %d, want %d bits between received and decoded block", res.ErrorsCorrected, bitErrors(&rx, &dec))
+		}
+		mDec, mSent := cost(&rx, &dec), cost(&rx, &enc)
+		switch {
+		case mDec > mSent:
+			t.Fatalf("block %x: decoded metric %d is above the sent block's %d", data, mDec, mSent)
+		case got != data && mDec == mSent && !res.Uncorrectable:
+			t.Fatalf("block %x: decoded block %x has the sent block's metric %d but no Uncorrectable", data, got, mDec)
+		}
+	}
+}
+
+// Two blocks can differ in only 2 dibits, so a single dibit error that is
+// not a 1-step error can make the received block as close to another block,
+// or closer. The decoder flags the ties and decodes the rest to the block
+// with the lower metric.
+func TestTrellis34_SingleDibitErrors(t *testing.T) {
+	t.Parallel()
+
+	r := rand.New(rand.NewSource(5))
+	var ok, flagged, closer int
+	for range 300 {
+		data, enc := randomBlock(r)
+		for i := range 98 {
+			for d := range byte(4) {
+				if d == dibitAt(&enc, i) {
+					continue
+				}
+				rx := enc
+				setDibit(&rx, i, d)
+				got, res := Decode(rx)
+				dec := Encode(got)
+				switch {
+				case got == data && !res.Uncorrectable:
+					ok++
+				case res.Uncorrectable:
+					flagged++
+				case cost(&rx, &dec) < cost(&rx, &enc):
+					closer++
+				default:
+					t.Fatalf("dibit %d set to %02b: got %x, want %x, result %+v", i, d, got, data, res)
+				}
+			}
+		}
+	}
+	t.Logf("single dibit errors: %d corrected, %d flagged, %d decoded to a closer block", ok, flagged, closer)
+}
+
+// Two blocks that differ in exactly 2 dibits: from state 0, tribits 0 then 0
+// send the points (1,-1) (1,-1), and tribits 2 then 0 send (-3,-1) (-1,-1).
+// A received (-3,-1) (1,-1) is one dibit from each.
+func TestTrellis34_TwoDibitDistance(t *testing.T) {
+	t.Parallel()
+
+	var a, b [18]byte
+	b[0] = 0b010_00000
+	ea, eb := Encode(a), Encode(b)
+	diff := 0
+	for i := range 98 {
+		if dibitAt(&ea, i) != dibitAt(&eb, i) {
+			diff++
+		}
+	}
+	if diff != 2 {
+		t.Fatalf("blocks differ in %d dibits, want 2", diff)
 	}
 }
 
 func TestTrellis34_NonzeroFinalStateFlagged(t *testing.T) {
 	t.Parallel()
 
-	r := rand.New(rand.NewSource(5))
-	for n := 0; n < 200; n++ {
+	r := rand.New(rand.NewSource(6))
+	for range 200 {
 		var tribits [49]byte
 		for i := range tribits {
 			tribits[i] = byte(r.Intn(8))
 		}
 		tribits[48] = byte(r.Intn(7) + 1)
 
-		var dibits [98]int8
+		var d [98]byte
 		state := byte(0)
 		for i, tb := range tribits {
-			point := encoder_state_transition_table[state*8+tb]
-			dibits[2*i] = trellis34_reverse_constellation[point][0]
-			dibits[2*i+1] = trellis34_reverse_constellation[point][1]
+			pair := trellis34BranchDibits[state*8+tb]
+			d[2*i], d[2*i+1] = pair>>2, pair&3
 			state = tb
 		}
-		var interleaved [98]int8
-		for i := range interleaved {
-			interleaved[i] = dibits[interleave_matrix[i]]
+		var info [25]byte
+		for i, j := range interleave_matrix {
+			setDibit(&info, i, d[j])
 		}
 
-		if _, res := Decode(dibitsToBits(interleaved)); !res.Uncorrectable {
+		if _, res := Decode(info); !res.Uncorrectable {
 			t.Fatalf("block ending in state %d not flagged: %+v", tribits[48], res)
 		}
 	}
