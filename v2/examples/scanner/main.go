@@ -60,10 +60,13 @@ func run(w io.Writer, dataDir string) error {
 	cc := enums.ColorCode(colorCode)
 	opts := layer2.DecodeOptions{ColorCode: &cc}
 	var b layer2.Burst
+	left := n
 	n, first := 0, int64(-1)
 	for len(stream) > 0 {
 		chunk := min(len(stream), 1+int(r.next()%63))
-		for _, fb := range f.Write(stream[:chunk], 8*chunk) {
+		k := min(8*chunk, left)
+		left -= k
+		for _, fb := range f.Write(stream[:chunk], k) {
 			if first < 0 {
 				first = fb.Offset
 			}

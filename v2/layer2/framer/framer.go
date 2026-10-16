@@ -60,8 +60,8 @@ func nearest(window uint64) (enums.SyncPattern, int) {
 // starts at or after bit start and is within threshold bits of a SYNC
 // pattern. stream holds the bits packed, the first bit in the most
 // significant bit of stream[0], and start and Match.Offset are bit indexes.
-// The bits of stream after the first nbits are ignored, and an nbits over
-// 8*len(stream) means 8*len(stream). A negative threshold means
+// The bits of stream after the first nbits are ignored, and nbits is
+// clamped to [0, 8*len(stream)]. A negative threshold means
 // layer2.DefaultSyncThreshold. ok is false when there is none.
 func Search(stream []byte, nbits, start, threshold int) (m Match, ok bool) {
 	return search(stream, clampBits(stream, nbits), start, threshold)
@@ -183,15 +183,16 @@ func (f *Framer) Locked() bool {
 // most significant bit of stream[0], and returns the bursts they complete,
 // or nil when they complete none. The next write continues at the bit after
 // them, so a piece can end inside a byte. The bits of stream after the
-// first nbits are ignored, and an nbits over 8*len(stream) means
-// 8*len(stream). It allocates the slice; AppendBursts does not.
+// first nbits are ignored, and nbits is clamped to [0, 8*len(stream)]. It
+// allocates the slice; AppendBursts does not.
 func (f *Framer) Write(stream []byte, nbits int) []Burst {
 	return f.AppendBursts(nil, stream, nbits)
 }
 
-// AppendBursts adds the first nbits bits of stream as Write does, appends
-// the bursts they complete to dst and returns the extended slice. It
-// allocates only when dst has no room for the bursts.
+// AppendBursts adds the first nbits bits of stream as Write does, with
+// nbits clamped to [0, 8*len(stream)], appends the bursts they complete to
+// dst and returns the extended slice. It allocates only when dst has no
+// room for the bursts.
 func (f *Framer) AppendBursts(dst []Burst, stream []byte, nbits int) []Burst {
 	nbits = clampBits(stream, nbits)
 	// Fewer than f.pre+layer2.BurstBits+8 bits stay in f.buf between

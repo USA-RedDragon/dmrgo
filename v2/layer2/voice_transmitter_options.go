@@ -32,8 +32,8 @@ type VoiceTransmitterOptions struct {
 
 // NewVoiceTransmitter returns a VoiceTransmitter for opts. A nil opts means
 // the zero VoiceTransmitterOptions. It returns an error when Source is
-// unknown, or LC or PIHeader does not encode. It allocates the
-// VoiceTransmitter.
+// unknown, or LC or PIHeader does not encode, and a *bit.FieldRangeError
+// when ColorCode does not fit in 4 bits. It allocates the VoiceTransmitter.
 func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, error) {
 	t := new(VoiceTransmitter)
 	if err := t.Reset(opts); err != nil {
@@ -49,8 +49,9 @@ var noVoiceTransmitterOptions VoiceTransmitterOptions
 
 // Reset starts a new transmission with opts, as NewVoiceTransmitter does,
 // in the storage of t, so that a caller can keep one VoiceTransmitter for
-// many calls. A nil opts means the zero VoiceTransmitterOptions. On an
-// error t is left as it was. It does not allocate.
+// many calls. A nil opts means the zero VoiceTransmitterOptions. It returns
+// the errors of NewVoiceTransmitter. On an error t is left as it was. It
+// does not allocate.
 func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 	if opts == nil {
 		opts = &noVoiceTransmitterOptions
