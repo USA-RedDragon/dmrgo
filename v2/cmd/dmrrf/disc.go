@@ -10,7 +10,45 @@ const (
 	discAnchor = 0.6
 	// levelForget weighs the old level estimates per anchor.
 	levelForget = 0.8
+	// discAnchorBits is the most bits of the sliced SYNC field of an
+	// anchor that differ from its pattern, so that a field such as the
+	// embedded signalling of a voice burst E that correlates with the
+	// pattern through noise does not count as an anchor.
+	discAnchorBits = 12
 )
+
+// discSyncErrors returns the number of bits where the sliced symbols of
+// the SYNC field of slot s, tau samples off, differ from syms.
+func (r *Receiver) discSyncErrors(s *slotState, tau float64, syms *[syncSymbols]int8) int {
+	step := r.devScale * deviationHz
+	n := 0
+	for k, want := range syms {
+		x := (float64(r.chz.sym.lerp(r.symLag(r.symTime(s.index, syncFirstSym+k)+tau))) - r.dcHz) / step
+		var got int8
+		switch {
+		case x >= 2:
+			got = 3
+		case x >= 0:
+			got = 1
+		case x >= -2:
+			got = -1
+		default:
+			got = -3
+		}
+		if got != want {
+			n += symbolBitErrors(got, want)
+		}
+	}
+	return n
+}
+
+// symbolBitErrors returns the number of bits where the dibits of symbols a
+// and b differ.
+func symbolBitErrors(a, b int8) int {
+	a0, a1 := dibitOfDigit(int(a+3) / 2)
+	b0, b1 := dibitOfDigit(int(b+3) / 2)
+	return int(a0^b0) + int(a1^b1)
+}
 
 // symLag returns the discriminator sample that matches channel sample t.
 func (r *Receiver) symLag(t float64) float64 {
@@ -42,9 +80,13 @@ func (r *Receiver) measureDisc(s *slotState) {
 	if data {
 		s.a.pattern = dp
 	}
-	r.timing(s, bestTau)
 	var syms [syncSymbols]int8
 	syncSyms(s.a.pattern, &syms)
+	if r.amp != 0 && r.discSyncErrors(s, bestTau, &syms) > discAnchorBits {
+		s.anchor = false
+		return
+	}
+	r.timing(s, bestTau)
 	var mp, mx float64
 	var x [syncSymbols]float64
 	for k := range syncSymbols {
