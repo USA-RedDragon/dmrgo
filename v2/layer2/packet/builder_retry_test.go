@@ -17,13 +17,13 @@ func TestBuilder_RetrySACK(t *testing.T) {
 	t.Parallel()
 
 	data := payload(70)
-	var tx packet.Builder
+	tx := packet.NewBuilder(127)
 	p, err := tx.Segment(confirmed(), data, enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var rx packet.Assembler
-	if _, err := add(&rx, encodeHeader(t, &p.Header)); err != nil {
+	rx := packet.NewAssembler(127)
+	if _, err := add(rx, encodeHeader(t, &p.Header)); err != nil {
 		t.Fatal(err)
 	}
 	var last error
@@ -32,7 +32,7 @@ func TestBuilder_RetrySACK(t *testing.T) {
 		if i == 1 || i == 3 {
 			b = corrupt(t, p, i)
 		}
-		_, last = add(&rx, b)
+		_, last = add(rx, b)
 	}
 	if !errors.Is(last, packet.ErrBlocksMissing) {
 		t.Fatalf("first try: %v", last)
@@ -41,8 +41,8 @@ func TestBuilder_RetrySACK(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var back packet.Assembler
-	sack, err := feed(t, &back, resp)
+	back := packet.NewAssembler(127)
+	sack, err := feed(t, back, resp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func TestBuilder_RetrySACK(t *testing.T) {
 			t.Errorf("retry block %d: %v, want DBSN %d", i, r.Blocks[i], want)
 		}
 	}
-	m, err := feed(t, &rx, r)
+	m, err := feed(t, rx, r)
 	if err != nil || m == nil || !bytes.Equal(m.Data, data) {
 		t.Fatalf("after retry: %v %+v", err, m)
 	}
@@ -75,7 +75,7 @@ func TestBuilder_RetryAll(t *testing.T) {
 	t.Parallel()
 
 	data := payload(48)
-	var tx packet.Builder
+	tx := packet.NewBuilder(127)
 	p, err := tx.Segment(confirmed(), data, enums.DataTypeRate34)
 	if err != nil {
 		t.Fatal(err)
@@ -84,8 +84,8 @@ func TestBuilder_RetryAll(t *testing.T) {
 	if err != nil || len(r.Blocks) != len(p.Blocks) || r.Header.ConfirmedDataHeader.FullMessageFlag {
 		t.Fatalf("retry all: %v, %d blocks", err, len(r.Blocks))
 	}
-	var rx packet.Assembler
-	m, err := feed(t, &rx, r)
+	rx := packet.NewAssembler(127)
+	m, err := feed(t, rx, r)
 	if err != nil || m == nil || !bytes.Equal(m.Data[:len(data)], data) {
 		t.Fatalf("got %v %+v", err, m)
 	}
@@ -98,7 +98,7 @@ func TestBuilder_RetryShortData(t *testing.T) {
 		{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, SARQ: true, FullMessageFlag: true}},
 		{Format: pdu.FormatShortDataRawOrStatusPrecoded, RawDataHeader: &pdu.RawDataHeader{SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, SARQ: true, FullMessageFlag: true}},
 	} {
-		var tx packet.Builder
+		tx := packet.NewBuilder(127)
 		p, err := tx.Segment(h, payload(30), enums.DataTypeRate12)
 		if err != nil {
 			t.Fatal(err)
@@ -119,8 +119,8 @@ func TestBuilder_RetryShortData(t *testing.T) {
 func TestBuilder_RetryErrors(t *testing.T) {
 	t.Parallel()
 
-	var b packet.Builder
-	u, err := packet.Segment(unconfirmed(), payload(10), enums.DataTypeRate12)
+	b := packet.NewBuilder(127)
+	u, err := packet.NewPacket(unconfirmed(), payload(10), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,14 +128,14 @@ func TestBuilder_RetryErrors(t *testing.T) {
 		t.Errorf("unconfirmed: %v, want ErrFormat", err)
 	}
 	h := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{SAP: enums.SAPShortData, FullMessageFlag: true}}
-	d, err := packet.Segment(h, payload(10), enums.DataTypeRate12)
+	d, err := packet.NewPacket(h, payload(10), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := b.Retry(&d, nil); !errors.Is(err, packet.ErrFormat) {
 		t.Errorf("DD_HEAD without SARQ: %v, want ErrFormat", err)
 	}
-	c, err := packet.Segment(confirmed(), payload(10), enums.DataTypeRate12)
+	c, err := packet.NewPacket(confirmed(), payload(10), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}

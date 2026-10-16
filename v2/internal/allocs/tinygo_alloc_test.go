@@ -200,7 +200,7 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	gps := pdu.FLCGPSInfo{Latitude: 41.75}
 	callOpts := &voice.CallOptions{TalkerAlias: "KI5VMF JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
 
-	var b packet.Builder
+	b := packet.NewBuilder(127)
 	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}}
 	p := tinyOK(b.Segment(h, make([]byte, 100), enums.DataTypeRate12))
 	var rd packet.ResponseData

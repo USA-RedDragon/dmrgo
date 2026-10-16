@@ -40,8 +40,7 @@ func deepCopy(h pdu.DataHeader) pdu.DataHeader {
 }
 
 // TestAssembler_ReusedBurst decodes each capture twice into one Burst and
-// checks that the first Message keeps its data and header when the
-// Assembler does not reuse its storage.
+// checks that both packets come out the same from the reused storage.
 func TestAssembler_ReusedBurst(t *testing.T) {
 	t.Parallel()
 
@@ -51,33 +50,24 @@ func TestAssembler_ReusedBurst(t *testing.T) {
 
 			raws := loadRaw(t, "../testdata/"+file+".bin")
 			raws = append(raws, raws...)
-			for _, reuse := range []bool{false, true} {
-				a := packet.Assembler{Reuse: reuse}
-				var burst layer2.Burst
-				var msgs []packet.Message
-				var copies []packet.Message
-				for _, raw := range raws {
-					if err := burst.DecodeFromBytes(raw); err != nil {
-						t.Fatal(err)
-					}
-					m, done, err := a.AddBurst(&burst)
-					if err != nil {
-						t.Fatal(err)
-					}
-					if done {
-						msgs = append(msgs, m)
-						copies = append(copies, packet.Message{Data: bytes.Clone(m.Data), Header: deepCopy(m.Header)})
-					}
+			a := packet.NewAssembler(127)
+			var burst layer2.Burst
+			var copies []packet.Message
+			for _, raw := range raws {
+				if err := burst.DecodeFromBytes(raw); err != nil {
+					t.Fatal(err)
 				}
-				if len(msgs) != 2 || !bytes.Contains(copies[0].Data, utf16le("TEST KI5VMF")) || !bytes.Equal(copies[0].Data, copies[1].Data) {
-					t.Fatalf("reuse %v: %d messages", reuse, len(msgs))
+				m, done, err := a.AddBurst(&burst)
+				if err != nil {
+					t.Fatal(err)
 				}
-				if reuse {
-					continue
+				if done {
+					copies = append(copies, packet.Message{Data: bytes.Clone(m.Data), Header: deepCopy(m.Header)})
 				}
-				if !bytes.Equal(msgs[0].Data, copies[0].Data) || !reflect.DeepEqual(deepCopy(msgs[0].Header), copies[0].Header) {
-					t.Errorf("first Message changed after the second packet")
-				}
+			}
+			if len(copies) != 2 || !bytes.Contains(copies[0].Data, utf16le("TEST KI5VMF")) || !bytes.Equal(copies[0].Data, copies[1].Data) ||
+				!reflect.DeepEqual(copies[0].Header, copies[1].Header) {
+				t.Fatalf("%d messages", len(copies))
 			}
 		})
 	}
@@ -88,43 +78,41 @@ func TestAssembler_ReusedBurst(t *testing.T) {
 func TestAssembler_HeaderInPlace(t *testing.T) {
 	t.Parallel()
 
-	for _, reuse := range []bool{false, true} {
-		p, err := packet.Segment(confirmed(), payload(40), enums.DataTypeRate12)
-		if err != nil {
-			t.Fatal(err)
-		}
-		a := packet.Assembler{Reuse: reuse}
-		h := p.Header
-		c := *h.ConfirmedDataHeader
-		h.ConfirmedDataHeader = &c
-		if _, _, err := a.Add(&h); err != nil {
-			t.Fatal(err)
-		}
-		first, ok := p.Blocks[0].(*pdu.Rate12Data)
-		if !ok {
-			t.Fatalf("block 0 is %T", p.Blocks[0])
-		}
-		bad := *first
-		bad.Data[5] ^= 1
-		var last error
-		for _, b := range append([]layer2.Data{&bad}, p.Blocks[1:]...) {
-			_, _, last = a.Add(b)
-		}
-		if !errors.Is(last, packet.ErrBlocksMissing) {
-			t.Fatalf("reuse %v: %v", reuse, last)
-		}
-		c.LLIDSource++
-		c.BlocksToFollow = 2
-		if _, _, err := a.Add(&h); err != nil {
-			t.Fatal(err)
-		}
-		if got := a.Missing(); len(got) != 2 {
-			t.Errorf("reuse %v: header of another source taken as a retry, missing %v", reuse, got)
-		}
-		resp, err := a.Response()
-		if err != nil || resp.Header.ResponsePacketHeader.LLIDDestination != c.LLIDSource {
-			t.Errorf("reuse %v: response %v %+v", reuse, err, resp.Header.ResponsePacketHeader)
-		}
+	p, err := packet.NewPacket(confirmed(), payload(40), enums.DataTypeRate12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := packet.NewAssembler(127)
+	h := p.Header
+	c := *h.ConfirmedDataHeader
+	h.ConfirmedDataHeader = &c
+	if _, _, err := a.Add(&h); err != nil {
+		t.Fatal(err)
+	}
+	first, ok := p.Blocks[0].(*pdu.Rate12Data)
+	if !ok {
+		t.Fatalf("block 0 is %T", p.Blocks[0])
+	}
+	bad := *first
+	bad.Data[5] ^= 1
+	var last error
+	for _, b := range append([]layer2.Data{&bad}, p.Blocks[1:]...) {
+		_, _, last = a.Add(b)
+	}
+	if !errors.Is(last, packet.ErrBlocksMissing) {
+		t.Fatalf("%v", last)
+	}
+	c.LLIDSource++
+	c.BlocksToFollow = 2
+	if _, _, err := a.Add(&h); err != nil {
+		t.Fatal(err)
+	}
+	if got := a.Missing(); len(got) != 2 {
+		t.Errorf("header of another source taken as a retry, missing %v", got)
+	}
+	resp, err := a.Response()
+	if err != nil || resp.Header.ResponsePacketHeader.LLIDDestination != c.LLIDSource {
+		t.Errorf("response %v %+v", err, resp.Header.ResponsePacketHeader)
 	}
 }
 
@@ -132,12 +120,12 @@ func TestAssembler_ReuseRetry(t *testing.T) {
 	t.Parallel()
 
 	data := []byte("LIP: 41.878,-87.629,hdg=90,v=12 and some more text")
-	p, err := packet.Segment(confirmed(), data, enums.DataTypeRate34)
+	p, err := packet.NewPacket(confirmed(), data, enums.DataTypeRate34)
 	if err != nil {
 		t.Fatal(err)
 	}
-	rx := packet.Assembler{Reuse: true}
-	tx := packet.Assembler{Reuse: true}
+	rx := packet.NewAssembler(127)
+	tx := packet.NewAssembler(127)
 	for range 2 {
 		if _, _, err := rx.Add(encodeHeader(t, &p.Header)); err != nil {
 			t.Fatal(err)
@@ -170,19 +158,19 @@ func TestAssembler_ReuseRetry(t *testing.T) {
 			t.Fatalf("SACK: %v %v", done, err)
 		}
 		retry := sack.Response.AppendRetryBlocks(nil)
-		retryAndACK(t, &rx, &tx, p, data, retry)
+		retryAndACK(t, rx, tx, p, data, retry)
 	}
 }
 
 func TestBuilder(t *testing.T) {
 	t.Parallel()
 
-	var b packet.Builder
+	b := packet.NewBuilder(127)
 	for range 2 {
 		for _, rate := range []enums.DataType{enums.DataTypeRate1, enums.DataTypeRate12, enums.DataTypeRate34} {
 			for _, h := range []pdu.DataHeader{unconfirmed(), confirmed()} {
 				for _, n := range []int{0, 30, 300} {
-					want, err := packet.Segment(h, payload(n), rate)
+					want, err := packet.NewPacket(h, payload(n), rate)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -221,7 +209,7 @@ func TestBuilder(t *testing.T) {
 func TestAppendBursts(t *testing.T) {
 	t.Parallel()
 
-	p, err := packet.Segment(confirmed(), payload(50), enums.DataTypeRate1)
+	p, err := packet.NewPacket(confirmed(), payload(50), enums.DataTypeRate1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +256,7 @@ func TestResponseData_Append(t *testing.T) {
 	if err == nil || err.Error() != "invalid response data blocks: fec: uncorrectable" {
 		t.Errorf("bad CRC: %v", err)
 	}
-	var a packet.Assembler
+	a := packet.NewAssembler(127)
 	if _, err := a.Response(); err == nil || err.Error() != "header format does not carry segmented data: no confirmed packet in progress" {
 		t.Errorf("Response: %v", err)
 	}
@@ -280,7 +268,7 @@ func TestAssembler_ResponseLength(t *testing.T) {
 	t.Parallel()
 
 	h := pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: &pdu.ResponsePacketHeader{BlocksToFollow: 3, ResponseClass: 2}}
-	var a packet.Assembler
+	a := packet.NewAssembler(127)
 	if _, _, err := a.Add(encodeHeader(t, &h)); err != nil {
 		t.Fatal(err)
 	}

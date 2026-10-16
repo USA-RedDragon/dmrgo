@@ -52,15 +52,15 @@ func TestAssembler_LostConfirmedBlock(t *testing.T) {
 	t.Parallel()
 
 	data := payload(60)
-	p, err := packet.Segment(confirmed(), data, enums.DataTypeRate12)
+	p, err := packet.NewPacket(confirmed(), data, enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(p.Blocks) != 7 {
 		t.Fatalf("%d blocks, want 7", len(p.Blocks))
 	}
-	var rx packet.Assembler
-	if m, err := sendLosing(t, &rx, p, 2); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
+	rx := packet.NewAssembler(127)
+	if m, err := sendLosing(t, rx, p, 2); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
 		t.Fatalf("last block: %v %v, want ErrBlocksMissing", m, err)
 	}
 	if got := rx.Missing(); !slices.Equal(got, []int{2}) {
@@ -70,8 +70,8 @@ func TestAssembler_LostConfirmedBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var tx packet.Assembler
-	sack, err := feed(t, &tx, resp)
+	tx := packet.NewAssembler(127)
+	sack, err := feed(t, tx, resp)
 	if err != nil || sack.Response == nil || !slices.Equal(sack.Response.RetryBlocks(), []int{2}) {
 		t.Fatalf("SACK %v %+v", err, sack)
 	}
@@ -80,10 +80,10 @@ func TestAssembler_LostConfirmedBlock(t *testing.T) {
 	c := *h.ConfirmedDataHeader
 	c.BlocksToFollow = 1
 	h.ConfirmedDataHeader = &c
-	if m, err := add(&rx, encodeHeader(t, &h)); m != nil || err != nil {
+	if m, err := add(rx, encodeHeader(t, &h)); m != nil || err != nil {
 		t.Fatalf("retry header: %v %v", m, err)
 	}
-	m, err := add(&rx, encodeBlock(t, p.Blocks[2]))
+	m, err := add(rx, encodeBlock(t, p.Blocks[2]))
 	if err != nil || m == nil || !bytes.Equal(m.Data, data) {
 		t.Fatalf("after retry: %v %+v", err, m)
 	}
@@ -95,13 +95,13 @@ func TestAssembler_LostConfirmedBlock(t *testing.T) {
 func TestAssembler_LostUnconfirmedBlock(t *testing.T) {
 	t.Parallel()
 
-	p, err := packet.Segment(unconfirmed(), payload(40), enums.DataTypeRate12)
+	p, err := packet.NewPacket(unconfirmed(), payload(40), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, drop := range []int{1, len(p.Blocks) - 1} {
-		var a packet.Assembler
-		m, err := sendLosing(t, &a, p, drop)
+		a := packet.NewAssembler(127)
+		m, err := sendLosing(t, a, p, drop)
 		if m == nil || !errors.Is(err, packet.ErrMessageCRC) {
 			t.Fatalf("lose %d: %v %v, want the Message with ErrMessageCRC", drop, m, err)
 		}
@@ -114,21 +114,21 @@ func TestAssembler_LostUnconfirmedBlock(t *testing.T) {
 func TestAssembler_LostWithoutPacket(t *testing.T) {
 	t.Parallel()
 
-	var a packet.Assembler
-	if m, err := lost(&a); m != nil || err != nil {
+	a := packet.NewAssembler(127)
+	if m, err := lost(a); m != nil || err != nil {
 		t.Fatalf("idle: %v %v", m, err)
 	}
-	p, err := packet.Segment(confirmed(), payload(30), enums.DataTypeRate12)
+	p, err := packet.NewPacket(confirmed(), payload(30), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
 	b := encodeBlock(t, p.Blocks[0])
 	r, _ := b.(*pdu.Rate12Data)
 	r.Data[5] ^= 0x01
-	if m, err := sendLosing(t, &a, packet.Packet{Header: p.Header, Blocks: append([]layer2.Data{b}, p.Blocks[1:]...)}); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
+	if m, err := sendLosing(t, a, packet.Packet{Header: p.Header, Blocks: append([]layer2.Data{b}, p.Blocks[1:]...)}); m != nil || !errors.Is(err, packet.ErrBlocksMissing) {
 		t.Fatalf("bad block: %v %v", m, err)
 	}
-	if m, err := lost(&a); m != nil || err != nil || !a.InProgress() {
+	if m, err := lost(a); m != nil || err != nil || !a.InProgress() {
 		t.Fatalf("waiting for the retry: %v %v", m, err)
 	}
 }
