@@ -257,7 +257,7 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 | 7.1.3 | Embedded signalling | verified | 26/26 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go`, `v2/layer2/voice_transmitter_options.go` |
 | 7.1.4 | Short Link Control in CACH | verified | 12/12 passed | `v2/layer2/short_lc_assembler.go`, `v2/layer2/short_lc_cach.go`, `v2/internal/fec/bptc/bptc_cach.go` |
 | 7.2.1 | Control Signalling BlocK (CSBK) | verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
-| 7.3 | Idle message | verified | 7/7 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
+| 7.3 | Idle message | verified | 6/6 passed | `v2/layer2/idle.go`, `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |
 | 7.4.1 | Multi Block Control (MBC) | verified | 17/17 passed | `v2/layer2/pdu/mbc.go`, `v2/layer2/burst.go` |
 | 8.2.1 | Header block structure | verified | 7/7 passed | `v2/layer2/pdu/data_header.go`, `v2/layer2/pdu/data_header_bytes.go` |
 | 8.2.2 | Data block structure | verified | 13/13 passed | `v2/layer2/packet/packet.go`, `v2/layer2/packet/assembler.go`, `v2/layer2/packet/bursts.go` |
@@ -310,7 +310,7 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 | B.3.12 | Data Type CRC Mask | verified | 26/26 passed | `v2/internal/crc/crc_ccitt.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/mmdvmhost.go`, `v2/layer2/pdu/codeword_bytes.go`, `v2/layer2/mmdvmhost_seal.go` |
 | B.3.13 | 7-bit CRC calculation | verified | 7/7 passed | `v2/internal/crc/crc7.go` |
 | B.4 | Interleaving | verified | 8/8 passed | `v2/layer2/cach_interleave.go` |
-| D | Idle and Null message bit definition | verified | 10/10 passed | `v2/layer2/idle.go` |
+| D | Idle and Null message bit definition | verified | 9/9 passed | `v2/layer2/idle.go` |
 | E | Transmit bit order | verified | 14/14 passed | `v2/layer2/transmit_order.go`, `v2/layer2/raw_burst.go` |
 
 ### ETSI TS 102 361-2: DMR Voice and Generic Services and Facilities

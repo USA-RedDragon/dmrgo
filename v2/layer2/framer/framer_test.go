@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -142,10 +143,11 @@ func TestFramer_OutboundCACH(t *testing.T) {
 				data = v
 			}
 			c := layer2.CACH{TACT: pdu.TACT{AccessType: true, TDMAChannel: ch == 2}}
-			c.Payload[i%17] = 1
-			logical := must(c.Encode())
-			tx := layer2.CACHInterleave(logical)
-			stream = append(stream, tx[:]...)
+			bits.SetBit(c.Payload[:], i%17, 1)
+			tx := layer2.CACHInterleave(must(c.Encode()))
+			var txBits [layer2.CACHBits]bit.Bit
+			bits.Unpack(txBits[:], tx[:], 0)
+			stream = append(stream, txBits[:]...)
 			stream = append(stream, burstBits(data)...)
 			want = append(want, sent{data, ch})
 		}
@@ -160,7 +162,7 @@ func TestFramer_OutboundCACH(t *testing.T) {
 		if g.Data != w.data || g.Channel != w.channel || !g.HasCACH || !g.CACH.TACT.AccessType {
 			t.Fatalf("burst %d: channel %d, want %d, CACH %+v", i, g.Channel, w.channel, g.CACH)
 		}
-		if g.CACH.Payload[(i/2)%17] != 1 {
+		if bits.Bit(g.CACH.Payload[:], (i/2)%17) != 1 {
 			t.Errorf("burst %d: CACH payload", i)
 		}
 		if wantOff := int64(1234 + layer2.CACHBits + i*framer.OutboundPeriod); g.Offset != wantOff {

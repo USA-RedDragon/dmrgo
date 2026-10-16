@@ -22,6 +22,7 @@ ignore_files:
   - v2/cmd/dmrrf/main.go
   - v2/cmd/dmrrf/modem.go
   - v2/cmd/dmrrf/options.go
+  - v2/cmd/dmrrf/packed.go
   - v2/cmd/dmrrf/receiver.go
   - v2/cmd/dmrrf/repair.go
   - v2/cmd/dmrrf/report.go
@@ -322,7 +323,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestIdleMessageInfo_PackedHex
-              - TestIdleMessageInfo_BitsAreOnlyZeroOrOne
               - TestIdleMessageInfo_ReturnsCopy
               - TestIsIdleMessage_Match
               - TestIsIdleMessage_NoMatch
@@ -1221,7 +1221,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestIdleMessageInfo_PackedHex
-              - TestIdleMessageInfo_BitsAreOnlyZeroOrOne
               - TestIdleMessageInfo_EqualsPRFill
               - TestIdleMessageInfo_ReturnsCopy
               - TestIsIdleMessage_Match

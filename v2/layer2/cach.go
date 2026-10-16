@@ -2,7 +2,6 @@ package layer2
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -22,49 +21,46 @@ type CACH struct {
 	TACT pdu.TACT
 
 	// Payload contains the 17-bit CACH signalling payload, which is one row
-	// of the Short LC BPTC transmit matrix.
-	Payload [CACHPayloadBits]bit.Bit
+	// of the Short LC BPTC transmit matrix, packed, the first bit in the most
+	// significant bit of byte 0. The low 7 bits of byte 2 are 0.
+	Payload [3]byte
 }
 
-// DecodeCACH decodes a 24-bit CACH field into its TACT and signalling payload.
-// The input is in logical order; use CACHDeinterleave on bits as received.
-func DecodeCACH(bits [CACHBits]bit.Bit) CACH {
-	lowbit.Mask(bits[:])
-	var result CACH
-
-	var tact [1]byte
-	for i := range TACTBits {
-		tact[0] |= byte(bits[i]) << (7 - i)
+// DecodeCACH decodes a 24-bit CACH field into its TACT and signalling
+// payload. bits holds the field in logical order, packed, the first bit in
+// the most significant bit of byte 0; use CACHDeinterleave on a field as
+// received.
+func DecodeCACH(bits [3]byte) CACH {
+	v := uint32(bits[0])<<16 | uint32(bits[1])<<8 | uint32(bits[2])
+	p := v << 7
+	return CACH{
+		TACT:    pdu.DecodeTACT([1]byte{bits[0]}),
+		Payload: [3]byte{byte(p >> 16 & 0xFF), byte(p >> 8 & 0xFF), byte(p & 0x80)},
 	}
-	result.TACT = pdu.DecodeTACT(tact)
-
-	copy(result.Payload[:], bits[TACTBits:CACHBits])
-
-	return result
 }
 
 // DecodeCACHField decodes a 24-bit CACH field in transmit order, as it is
-// received, into its TACT and signalling payload.
-func DecodeCACHField(onAir [CACHBits]bit.Bit) CACH {
+// received, into its TACT and signalling payload. onAir holds the bits
+// packed as DecodeCACH takes them.
+func DecodeCACHField(onAir [3]byte) CACH {
 	return DecodeCACH(CACHDeinterleave(onAir))
 }
 
-// Encode encodes a CACH struct into a 24-bit field in logical order.
-// Use CACHInterleave to get the bits in transmit order.
-func (c *CACH) Encode() ([CACHBits]bit.Bit, error) {
-	var bits [CACHBits]bit.Bit
+// errCACHPayloadRange is the error of an Encode whose Payload has a padding
+// bit set.
+var errCACHPayloadRange = &bit.FieldRangeError{Type: "CACH", Field: "Payload", Bits: CACHPayloadBits}
 
+// Encode encodes a CACH struct into a 24-bit field in logical order, packed
+// as DecodeCACH takes it. Use CACHInterleave to get the bits in transmit
+// order. It returns an error when a TACT field does not fit, or when one of
+// the low 7 bits of Payload[2] is set.
+func (c *CACH) Encode() ([3]byte, error) {
 	tact, err := c.TACT.Encode()
 	if err != nil {
-		return bits, err
+		return [3]byte{}, err
 	}
-	for i := range TACTBits {
-		bits[i] = bit.Bit(tact[0] >> (7 - i) & 1)
+	if c.Payload[2]&0x7F != 0 {
+		return [3]byte{}, errCACHPayloadRange
 	}
-
-	for i, b := range c.Payload {
-		bits[TACTBits+i] = b & 1
-	}
-
-	return bits, nil
+	return [3]byte{tact[0] | c.Payload[0]>>7, c.Payload[0]<<1 | c.Payload[1]>>7, c.Payload[1]<<1 | c.Payload[2]>>7}, nil
 }

@@ -1,20 +1,19 @@
 package layer2_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 func TestCACH_DecodeTACT(t *testing.T) {
 	t.Parallel()
-	tactData := [4]bit.Bit{1, 0, 0, 1}
-	tactCodeword := hamming743Bits(tactData)
-
-	var cachBits [layer2.CACHBits]bit.Bit
-	copy(cachBits[:layer2.TACTBits], tactCodeword[:])
+	cachBits := [3]byte{hamming.Encode743(0b1001) << 1}
 
 	cach := layer2.DecodeCACH(cachBits)
 	if cach.TACT.FEC.Uncorrectable {
@@ -33,30 +32,27 @@ func TestCACH_DecodeTACT(t *testing.T) {
 
 func TestCACH_PayloadExtraction(t *testing.T) {
 	t.Parallel()
-	var cachBits [layer2.CACHBits]bit.Bit
+	var cachBits [3]byte
 	for i := layer2.TACTBits; i < layer2.CACHBits; i++ {
-		cachBits[i] = bit.Bit((i - layer2.TACTBits) % 2)
+		bits.SetBit(cachBits[:], i, byte((i-layer2.TACTBits)%2))
 	}
 
 	cach := layer2.DecodeCACH(cachBits)
 	for i := 0; i < layer2.CACHPayloadBits; i++ {
-		expected := bit.Bit(i % 2)
-		if cach.Payload[i] != expected {
-			t.Errorf("payload bit %d: expected %d, got %d", i, expected, cach.Payload[i])
+		expected := byte(i % 2)
+		if got := bits.Bit(cach.Payload[:], i); got != expected {
+			t.Errorf("payload bit %d: expected %d, got %d", i, expected, got)
 		}
+	}
+	if cach.Payload[2]&0x7F != 0 {
+		t.Errorf("payload padding bits = %#02x, want 0", cach.Payload[2]&0x7F)
 	}
 }
 
 func TestCACH_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	tactData := [4]bit.Bit{0, 1, 1, 0}
-	tactCodeword := hamming743Bits(tactData)
-
-	var cachBits [layer2.CACHBits]bit.Bit
-	copy(cachBits[:layer2.TACTBits], tactCodeword[:])
-	for i := layer2.TACTBits; i < layer2.CACHBits; i++ {
-		cachBits[i] = 1
-	}
+	cachBits := [3]byte{hamming.Encode743(0b0110) << 1}
+	bits.SetField(cachBits[:], layer2.TACTBits, layer2.CACHPayloadBits, 1<<layer2.CACHPayloadBits-1)
 
 	cach := layer2.DecodeCACH(cachBits)
 	encoded := must(cach.Encode())
@@ -84,13 +80,9 @@ func TestCACH_Constants(t *testing.T) {
 
 func TestCACH_TACTErrorCorrection(t *testing.T) {
 	t.Parallel()
-	tactData := [4]bit.Bit{1, 1, 0, 0}
-	tactCodeword := hamming743Bits(tactData)
+	cachBits := [3]byte{hamming.Encode743(0b1100) << 1}
 
-	var cachBits [layer2.CACHBits]bit.Bit
-	copy(cachBits[:layer2.TACTBits], tactCodeword[:])
-
-	cachBits[2] ^= 1
+	cachBits[0] ^= 0x20
 
 	cach := layer2.DecodeCACH(cachBits)
 	if cach.TACT.FEC.Uncorrectable {
@@ -101,5 +93,20 @@ func TestCACH_TACTErrorCorrection(t *testing.T) {
 	}
 	if !cach.TACT.AccessType || !cach.TACT.TDMAChannel {
 		t.Error("corrected TACT should have AT=1, TC=1")
+	}
+}
+
+// TestCACH_EncodeRejectsPayloadPadding checks that Encode returns a
+// *bit.FieldRangeError when one of the padding bits of Payload is set.
+func TestCACH_EncodeRejectsPayloadPadding(t *testing.T) {
+	t.Parallel()
+	for i := layer2.CACHPayloadBits; i < 8*len(layer2.CACH{}.Payload); i++ {
+		var c layer2.CACH
+		bits.SetBit(c.Payload[:], i, 1)
+		_, err := c.Encode()
+		var fre *bit.FieldRangeError
+		if !errors.As(err, &fre) {
+			t.Errorf("padding bit %d: err = %v, want *bit.FieldRangeError", i, err)
+		}
 	}
 }

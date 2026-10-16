@@ -39,10 +39,6 @@ var bitFuncs = map[string]any{
 	"layer2/framer.Framer.AppendBursts": func(stream [1200]bit.Bit) []framer.Burst {
 		return framer.New(framer.Config{}).AppendBursts(nil, stream[:]...)
 	},
-	"layer2.ShortLCAssembler.AddFragment": func(payload [layer2.CACHPayloadBits]bit.Bit) (bool, error) {
-		var a layer2.ShortLCAssembler
-		return a.AddFragment(enums.LCSSFirstFragment, payload)
-	},
 	"layer2.VoiceTransmitter.AddSlots": func(slots ...[72]bit.Bit) ([]layer2.RawBurst, error) {
 		return voiceTransmitter().AddSlots(slots...)
 	},
@@ -80,10 +76,6 @@ var bitFuncs = map[string]any{
 	"layer2.BuildVoiceBurst": func(frames [3]vocoder.AMBEFrame) (layer2.RawBurst, error) {
 		return layer2.BuildVoiceBurst(frames, enums.VoiceBurstB, pdu.EmbeddedSignalling{ColorCode: 1}, [4]byte{1, 2, 3, 4}, layer2.SyncSourceBS)
 	},
-	"layer2.RawBurst.SetBPTCReserved": func(r layer2.RawBurst, res [3]bit.Bit) layer2.RawBurst {
-		r.SetBPTCReserved(res)
-		return r
-	},
 	"vocoder.PackAMBEVoice": vocoder.PackAMBEVoice,
 	"vocoder.PackAMBEVoiceFlags": func(frames [3]vocoder.AMBEFrame) [19]byte {
 		return vocoder.PackAMBEVoiceFlags(frames, [3]bool{true, true, true})
@@ -100,15 +92,8 @@ var bitFuncs = map[string]any{
 		bits.Unpack(dst[:], []byte{0xA5, 0x3C}, 0)
 		return dst
 	},
-	"layer2.CACHDeinterleave": layer2.CACHDeinterleave,
-	"layer2.CACHInterleave":   layer2.CACHInterleave,
-	"layer2.DecodeCACH":       layer2.DecodeCACH,
-	"layer2.DecodeEmbeddedRC": layer2.DecodeEmbeddedRC,
-	"layer2.DecodeCACHField":  layer2.DecodeCACHField,
-	"layer2.IsIdleMessage":    layer2.IsIdleMessage,
-	"layer2.IsNullEmbeddedLC": layer2.IsNullEmbeddedLC,
-	"vocoder.DecodeAMBE72":    vocoder.DecodeAMBE72,
-	"vocoder.EncodeAMBE72":    vocoder.EncodeAMBE72,
+	"vocoder.DecodeAMBE72": vocoder.DecodeAMBE72,
+	"vocoder.EncodeAMBE72": vocoder.EncodeAMBE72,
 }
 
 // transmitVoice sends a call whose voice add queues with a voice.Transmitter

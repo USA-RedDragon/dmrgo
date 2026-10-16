@@ -1,31 +1,23 @@
 package layer2
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-)
+import "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 
 // IdleMessageInfo returns a copy of the 96 information bits of the idle
-// message, the same value as pdu.PRFillBits (ETSI TS 102 361-1 Table D.2).
-func IdleMessageInfo() [96]bit.Bit {
-	var b [96]bit.Bit
-	p := pdu.PRFillBits()
-	unpackBits(b[:], p[:])
-	return b
+// message, packed, the same value as pdu.PRFillBits (ETSI TS 102 361-1 Table
+// D.2).
+func IdleMessageInfo() [12]byte {
+	return pdu.PRFillBits()
 }
 
-// IsIdleMessage reports whether infoBits is the idle message, as
-// pdu.IsPRFill does (ETSI TS 102 361-1 Table D.2).
-func IsIdleMessage(infoBits [96]bit.Bit) bool {
-	var p [12]byte
-	packBits(p[:], infoBits[:])
-	return pdu.IsPRFill(p)
+// IsIdleMessage reports whether the 96 packed information bits info are the
+// idle message, as pdu.IsPRFill does (ETSI TS 102 361-1 Table D.2).
+func IsIdleMessage(info [12]byte) bool {
+	return pdu.IsPRFill(info)
 }
 
-// IsNullEmbeddedLC reports whether the 32 transmit bits are the Null
-// embedded message, which is all zero (ETSI TS 102 361-1 Table D.1).
-func IsNullEmbeddedLC(bits [32]bit.Bit) bool {
-	lowbit.Mask(bits[:])
-	return bits == [32]bit.Bit{}
+// IsNullEmbeddedLC reports whether the 32-bit embedded signalling field
+// data, packed as RawBurst.EmbeddedData returns it, is the Null embedded
+// message, which is all zero (ETSI TS 102 361-1 Table D.1).
+func IsNullEmbeddedLC(data [4]byte) bool {
+	return data == [4]byte{}
 }

@@ -51,8 +51,8 @@ func TestDataBurstWithEMB_ASELSAN(t *testing.T) {
 			}
 			emb := b.EmbeddedSignalling
 			emb.FEC = pdu.EmbeddedSignalling{}.FEC
-			if emb != wantEMB || b.EmbeddedSignallingData != [32]bit.Bit{} {
-				t.Errorf("%s: EMB %s, embedded data %v", v.dt, b.EmbeddedSignalling.String(), b.EmbeddedSignallingData)
+			if emb != wantEMB || b.EmbeddedSignallingData != [4]byte{} {
+				t.Errorf("%s: EMB %s, embedded data %x", v.dt, b.EmbeddedSignalling.String(), b.EmbeddedSignallingData)
 			}
 			if agg := b.FEC.Aggregate(); agg.ErrorsCorrected != 0 || agg.Uncorrectable {
 				t.Errorf("%s: FEC %+v", v.dt, agg)

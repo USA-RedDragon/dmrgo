@@ -144,7 +144,7 @@ func controlStream(bursts []layer2.RawBurst, cc enums.ColorCode) ([]BSSlot, erro
 			if err != nil {
 				return nil, err
 			}
-			s.CACH = cach[len(out)%4]
+			s.CACH = cachBits(cach[len(out)%4])
 			out = append(out, s)
 		}
 	}

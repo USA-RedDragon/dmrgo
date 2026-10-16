@@ -251,7 +251,7 @@ func TestSoftBPTC(t *testing.T) {
 		p := softBPTCPayload(t, rng)
 		var r layer2.RawBurst
 		r.SetBPTCPayload(p)
-		res3 := [3]bit.Bit{bit.Bit(i & 1), bit.Bit(i >> 1 & 1), bit.Bit(i >> 2 & 1)}
+		res3 := uint8(i & 7)
 		r.SetBPTCReserved(res3)
 		bits := [264]bit.Bit(bit.Unpack(r[:]))
 		var llr [softBurstBits]int16
@@ -489,12 +489,12 @@ func softCACH(t testing.TB, rng *rand.Rand, info [softShortLCInfo]bit.Bit) ([4][
 	for i, f := range bptc.EncodeCACH(bit.Uint(info[:])) {
 		tacts[i] = softTACT(uint32(rng.IntN(16)))
 		c := layer2.CACH{TACT: tacts[i]}
-		bit.PutUint(c.Payload[:], uint64(f))
+		c.Payload = cachPayload(f)
 		logical, err := c.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
-		out[i] = layer2.CACHInterleave(logical)
+		out[i] = cachBits(layer2.CACHInterleave(logical))
 	}
 	return out, tacts
 }
@@ -550,7 +550,7 @@ func TestSoftCACH(t *testing.T) {
 		info := softShortLCInfoBits(ch.rng)
 		cach, tacts := softCACH(t, ch.rng, info)
 		var llr [4][layer2.CACHBits]int16
-		var frags [4][layer2.CACHPayloadBits]bit.Bit
+		var frags [4][3]byte
 		var hardTACT pdu.TACT
 		for i := range cach {
 			ch.llrs(cach[i][:], llr[i][:])
@@ -558,7 +558,7 @@ func TestSoftCACH(t *testing.T) {
 			for j, v := range llr[i] {
 				hard[j] = bit.Bit(softBool(v < 0))
 			}
-			c := layer2.DecodeCACHField(hard)
+			c := layer2.DecodeCACHField(cachBytes(hard))
 			frags[i] = c.Payload
 			if i == 0 {
 				hardTACT = c.TACT
@@ -566,7 +566,7 @@ func TestSoftCACH(t *testing.T) {
 		}
 		var words [4]uint32
 		for i := range frags {
-			words[i] = uint32(bit.Uint(frags[i][:]))
+			words[i] = cachPayloadWord(frags[i])
 		}
 		hv, _ := bptc.DecodeCACH(words)
 		var hinfo [softShortLCInfo]bit.Bit

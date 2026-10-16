@@ -76,10 +76,12 @@
 // 361-1 clause 6.3). CACHDeinterleave puts the received bits in logical
 // order: the 7-bit TACT, then a 17-bit payload that is one row of the Short
 // LC BPTC matrix (ETSI TS 102 361-1 clause B.4.1, Figure B.9). Figure B.9
-// numbers the bits from TX(23), sent first, to TX(0). This package indexes
-// bits in the order sent, so TX(n) is index 23-n. ShortLCAssembler decodes a
-// Short LC from the payloads of four CACHs with LCSS First, Continuation,
-// Continuation and Last (ETSI TS 102 361-1 clause 7.1.4).
+// numbers the bits from TX(23), sent first, to TX(0). This package packs
+// the 24 bits in the order sent in 3 bytes, so TX(23) is the most
+// significant bit of byte 0 and TX(0) the least significant bit of byte 2.
+// ShortLCAssembler decodes a Short LC from the payloads of four CACHs with
+// LCSS First, Continuation, Continuation and Last (ETSI TS 102 361-1 clause
+// 7.1.4).
 //
 // # Errors
 //

@@ -63,6 +63,18 @@ func unpack(p []byte, n int) []bit.Bit {
 	return b
 }
 
+// reserved returns the BPTC reserved bits res, R(i) in bit i, as the digests
+// print them: R(i) at index i.
+func reserved(res uint8) [3]bit.Bit {
+	return [3]bit.Bit{bit.Bit(res & 1), bit.Bit(res >> 1 & 1), bit.Bit(res >> 2 & 1)}
+}
+
+// cachString returns c in the form that %+v printed when CACH.Payload held
+// one bit.Bit per bit.
+func cachString(c layer2.CACH) string {
+	return fmt.Sprintf("{TACT:%+v Payload:%v}", c.TACT, unpack(c.Payload[:], layer2.CACHPayloadBits))
+}
+
 // corrupt flips up to max random bits of b.
 func corrupt(r *rand.Rand, b []byte, maxFlips int) {
 	for range r.Intn(maxFlips + 1) {
@@ -116,8 +128,8 @@ func encodeData(d layer2.Data) ([]byte, error) {
 func burstString(b *layer2.Burst) string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "k=%v sp=%v ns=%v sd=%d vb=%v vs=%v st=%+v rsv=%v emb=%+v ed=%v rc=%+v fec=%+v hes=%v hrc=%v ",
-		b.Kind, b.SyncPattern, b.NearestSync, b.SyncDistance, b.VoiceBurst, b.VoiceSlots, b.SlotType, b.BPTCReserved,
-		b.EmbeddedSignalling, b.EmbeddedSignallingData, b.ReverseChannel, b.FEC, b.HasEmbeddedSignalling(), b.HasReverseChannel())
+		b.Kind, b.SyncPattern, b.NearestSync, b.SyncDistance, b.VoiceBurst, b.VoiceSlots, b.SlotType, reserved(b.BPTCReserved),
+		b.EmbeddedSignalling, unpack(b.EmbeddedSignallingData[:], 32), b.ReverseChannel, b.FEC, b.HasEmbeddedSignalling(), b.HasReverseChannel())
 	sb.WriteString(dataString(b.Data))
 	out, err := b.Encode()
 	fmt.Fprintf(&sb, " out=%x err=%s", out, errString(err))
@@ -134,7 +146,7 @@ func rawBurstString(rb layer2.RawBurst) string {
 	p, res := rb.BPTCPayload()
 	fmt.Fprintf(&sb, "bptc=%x %+v ", p, res)
 	rsv, res := rb.BPTCReserved()
-	fmt.Fprintf(&sb, "rsv=%v %+v ", rsv, res)
+	fmt.Fprintf(&sb, "rsv=%v %+v ", reserved(rsv), res)
 	p34, res := rb.Rate34Payload()
 	fmt.Fprintf(&sb, "r34=%x %+v ", p34, res)
 	p1, res := rb.Rate1Payload()
@@ -243,7 +255,7 @@ func collectBuild(d digests) {
 			out, err := layer2.BuildBurst(b.Data, b.SlotType.ColorCode, layer2.SyncSourceMS)
 			d.add("build/"+dt.String(), "%x %x %s", rb, out, errString(err))
 			var set layer2.RawBurst
-			rsv := [3]bit.Bit{bit.Bit(r.Intn(2)), bit.Bit(r.Intn(2)), bit.Bit(r.Intn(2))}
+			rsv := uint8(r.Intn(2) | r.Intn(2)<<1 | r.Intn(2)<<2)
 			set = rb
 			set.SetBPTCReserved(rsv)
 			p, _ := rb.BPTCPayload()
@@ -421,11 +433,12 @@ func collectEmbedded(d digests) {
 		}
 		var e32 [32]bit.Bit
 		randBits(r, e32[:])
-		rc := layer2.DecodeEmbeddedRC(e32)
-		d.add("emb/rc", "%v %+v %v", e32, rc, layer2.IsNullEmbeddedLC(e32))
+		p32 := [4]byte(pack(e32[:]))
+		rc := layer2.DecodeEmbeddedRC(p32)
+		d.add("emb/rc", "%v %+v %v", e32, rc, layer2.IsNullEmbeddedLC(p32))
 		rc.RCCommand = enums.RCCommand(r.Intn(16))
 		enc, err := layer2.EncodeEmbeddedRC(&rc)
-		d.add("emb/rcenc", "%v %s", enc, errString(err))
+		d.add("emb/rcenc", "%v %s", unpack(enc[:], 32), errString(err))
 	}
 }
 
@@ -435,9 +448,11 @@ func collectCACH(d digests) {
 	for n := range 4000 {
 		var b [layer2.CACHBits]bit.Bit
 		randBits(r, b[:])
-		c := layer2.DecodeCACH(b)
-		cf := layer2.DecodeCACHField(b)
-		d.add("cach/decode", "%v %+v %+v %v %v", b, c, cf, layer2.CACHDeinterleave(b), layer2.CACHInterleave(b))
+		p := [3]byte(pack(b[:]))
+		c := layer2.DecodeCACH(p)
+		cf := layer2.DecodeCACHField(p)
+		de, in := layer2.CACHDeinterleave(p), layer2.CACHInterleave(p)
+		d.add("cach/decode", "%v %s %s %v %v", b, cachString(c), cachString(cf), unpack(de[:], 24), unpack(in[:], 24))
 		slc, done, err := asm.Add(cf)
 		d.add("cach/asm", "%s %v %s", slc.String(), done, errString(err))
 		var s36 [36]bit.Bit
@@ -445,10 +460,15 @@ func collectCACH(d digests) {
 		sl := pdu.DecodeShortLC([5]byte(pack(s36[:])))
 		ta := pdu.TACT{AccessType: r.Intn(2) == 1, TDMAChannel: r.Intn(2) == 1}
 		frags, err := layer2.EncodeShortLCToCACH(&sl, ta)
-		d.add("cach/encode", "%v %s", frags, errString(err))
+		var fragBits [4][]bit.Bit
+		for i := range frags {
+			fragBits[i] = unpack(frags[i][:], layer2.CACHBits)
+		}
+		d.add("cach/encode", "%v %s", fragBits, errString(err))
 		for i := range frags {
 			if n%3 == 0 {
-				frags[i][r.Intn(layer2.CACHBits)] ^= 1
+				j := r.Intn(layer2.CACHBits)
+				frags[i][j/8] ^= 0x80 >> (j % 8)
 			}
 			s, done, err := asm.Add(layer2.DecodeCACHField(frags[i]))
 			d.add("cach/asm2", "%s %v %s", s.String(), done, errString(err))
@@ -498,7 +518,8 @@ func collectFramer(d digests) {
 	for i := 0; i < len(stream); i += 101 {
 		out = f.AppendBursts(out[:0], stream[i:min(i+101, len(stream))]...)
 		for _, b := range out {
-			d.add("framer/write", "%+v", b)
+			d.add("framer/write", "{Data:%v Offset:%v Sync:%v Distance:%v HasCACH:%v CACH:%s Channel:%v}",
+				b.Data, b.Offset, b.Sync, b.Distance, b.HasCACH, cachString(b.CACH), b.Channel)
 		}
 	}
 }

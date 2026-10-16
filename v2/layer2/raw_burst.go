@@ -117,12 +117,6 @@ func (r *RawBurst) setInfo(p *[25]byte) {
 	bits.Copy(r[:], infoSecondStart, p[:], infoFirstEnd, infoSecondEnd-infoSecondStart)
 }
 
-// reservedBits returns the BPTC reserved bits R(0) to R(2), R(i) in bit i of
-// res, as BPTCReserved holds them.
-func reservedBits(res uint8) [3]bit.Bit {
-	return [3]bit.Bit{bit.Bit(res & 1), bit.Bit(res >> 1 & 1), bit.Bit(res >> 2 & 1)}
-}
-
 // BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns
 // the 96 data bits packed most significant bit first, before any CRC or
 // RS(12,9) check. It is meaningful only for the BPTC data types; a Rate 3/4
@@ -141,23 +135,22 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 }
 
 // BPTCReserved decodes the 196 information bits as BPTC(196,96) and returns
-// the reserved bits R(0) to R(2), R(i) at index i, after FEC correction, with
-// the BPTC result. Motorola Capacity Max sets R(2) to flag RAS (ETSI TS 102
-// 361-1 clause B.1.1).
-func (r RawBurst) BPTCReserved() ([3]bit.Bit, fec.Result) {
+// the reserved bits R(0) to R(2) after FEC correction, R(i) in bit i as
+// Burst.BPTCReserved holds them, with the BPTC result. Motorola Capacity Max
+// sets R(2) to flag RAS (ETSI TS 102 361-1 clause B.1.1).
+func (r RawBurst) BPTCReserved() (uint8, fec.Result) {
 	_, res, result := bptc.Decode196(r.info())
-	return reservedBits(res), result
+	return res, result
 }
 
-// SetBPTCReserved sets the BPTC(196,96) reserved bits R(0) to R(2) to res,
-// R(i) at index i, and updates the Hamming parity bits that cover them. The
-// data bits and any bit errors stay as they are, so BPTCPayload returns the
-// same data and FEC result as before.
-func (r *RawBurst) SetBPTCReserved(res [3]bit.Bit) {
+// SetBPTCReserved sets the BPTC(196,96) reserved bits R(0) to R(2) to the
+// low 3 bits of res, R(i) in bit i, and updates the Hamming parity bits that
+// cover them. The data bits and any bit errors stay as they are, so
+// BPTCPayload returns the same data and FEC result as before.
+func (r *RawBurst) SetBPTCReserved(res uint8) {
 	info := r.info()
 	_, cur, _ := bptc.Decode196(info)
-	want := uint8(res[0]&1 | res[1]&1<<1 | res[2]&1<<2)
-	delta := bptc.Encode196([12]byte{}, want^cur)
+	delta := bptc.Encode196([12]byte{}, res&0x7^cur)
 	for i := range info {
 		info[i] ^= delta[i]
 	}

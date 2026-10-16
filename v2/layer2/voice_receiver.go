@@ -86,9 +86,7 @@ func (r *VoiceReceiver) receive(b *Burst) (lc [9]byte, res fec.Result, done bool
 		return lc, res, false, r.lc.discard()
 	}
 	r.lc.Strict = r.Strict
-	var frag [4]byte
-	packBits(frag[:], b.EmbeddedSignallingData[:])
-	return r.lc.add(fragmentWord(frag), lcss)
+	return r.lc.add(fragmentWord(b.EmbeddedSignallingData), lcss)
 }
 
 func (r *VoiceReceiver) embeddedPosition(b *Burst) enums.VoiceBurstType {

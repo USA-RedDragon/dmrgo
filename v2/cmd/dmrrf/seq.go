@@ -554,7 +554,7 @@ func BSStream(bursts []layer2.RawBurst, cfg SeqConfig, activity enums.ActivityID
 			if err != nil {
 				return nil, err
 			}
-			s.CACH = cach[len(out)%4]
+			s.CACH = cachBits(cach[len(out)%4])
 			out = append(out, s)
 		}
 	}

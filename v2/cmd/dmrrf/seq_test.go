@@ -367,13 +367,13 @@ func TestReportChannelFromTiming(t *testing.T) {
 	l := runLoop(t, "voice", cfg)
 	for i := 3; i < len(l.d.Bursts); i += 5 {
 		r := &l.d.Bursts[i]
-		c := layer2.DecodeCACH(layer2.CACHDeinterleave(r.CACH))
+		c := layer2.DecodeCACH(layer2.CACHDeinterleave(cachBytes(r.CACH)))
 		c.TACT.TDMAChannel = !c.TACT.TDMAChannel
 		bits, err := c.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
-		r.CACH = layer2.CACHInterleave(bits)
+		r.CACH = cachBits(layer2.CACHInterleave(bits))
 	}
 	var buf bytes.Buffer
 	rep := NewReporter(&buf)

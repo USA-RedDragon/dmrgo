@@ -583,11 +583,7 @@ func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 		r.fragNext = 0
 		return pdu.LCBytes{}, false
 	}
-	var f [4]byte
-	for i, v := range b.EmbeddedSignallingData {
-		f[i/8] |= byte(v&1) << (7 - i%8)
-	}
-	r.frags[idx-1] = f
+	r.frags[idx-1] = b.EmbeddedSignallingData
 	r.fragNext = idx
 	if idx < 4 {
 		return pdu.LCBytes{}, false
