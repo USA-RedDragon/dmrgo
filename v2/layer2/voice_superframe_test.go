@@ -104,7 +104,7 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][9]byte, voiceS
 	if emb.LCSS != wantLCSS {
 		t.Errorf("burst %d: LCSS %s, want %s", i, emb.LCSS.String(), wantLCSS.String())
 	}
-	if pos == 5 && (!layer2.IsNullEmbeddedLC(b.EmbeddedSignallingData) || b.HasReverseChannel()) {
+	if pos == 5 && (b.EmbeddedSignallingData != [4]byte{} || b.HasReverseChannel()) {
 		t.Errorf("burst %d: burst F carries %x, want the Null embedded message", i, b.EmbeddedSignallingData)
 	}
 	return b
@@ -312,7 +312,7 @@ func TestVoiceTransmitter_ReverseChannel(t *testing.T) {
 		t.Errorf("RC %s", f.ReverseChannel.String())
 	}
 	next := must(layer2.NewBurstFromBytes(bursts[11]))
-	if next.HasReverseChannel() || !layer2.IsNullEmbeddedLC(next.EmbeddedSignallingData) {
+	if next.HasReverseChannel() || next.EmbeddedSignallingData != [4]byte{} {
 		t.Errorf("second burst F: %s", next.String())
 	}
 
