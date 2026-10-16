@@ -358,7 +358,7 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 	sps, dec := r.search.sps, r.search.dec
 	p := &r.pulse
 	hpi := float32(r.h * math.Pi)
-	nq := len(p.q) - 1
+	nq, q32 := p.n, &pulseQ32[p.row]
 	ch := &r.chz.ch
 	var z, prev complex64
 	var done float32
@@ -399,7 +399,7 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 					case idx >= nq:
 						ph += decs[m-m0]
 					case idx >= 0:
-						ph += decs[m-m0] * p.q32[idx+1]
+						ph += decs[m-m0] * q32[idx+1]
 					}
 				}
 				rs, rc := sincosf(wHz * (ti + float32((j-sps/2)*dec)))

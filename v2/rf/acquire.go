@@ -74,23 +74,20 @@ func symbolOf(b0, b1 unpacked.Bit) int8 {
 // with the waveform of the voice SYNC of each source over syncBlocks blocks,
 // combined without phase. The data SYNC of a source has the negated symbols
 // of its voice SYNC, so its waveform is the conjugate and the same products
-// give both correlations.
+// give both correlations. syncDev holds the voice SYNC symbols of each
+// source less their mean, and syncDevSq the sum of their squares, for the
+// discriminator correlation. syncTemplates holds, at row dec-1, the
+// conjugate waveform of the voice SYNC of source src at the nominal
+// modulation index, sampled every dec channel samples and turned by search
+// offset fi, at index fi*numSources+src. syncPatterns holds every SYNC
+// pattern.
 type syncSearch struct {
 	// dec is the number of channel samples per sample of the channel ring,
 	// sps the ring samples per symbol and span the ring samples that the
 	// search correlates.
 	dec, sps, span int
-	voice          [numSources][syncSymbols]int8
-	// dev holds the voice SYNC symbols of each source less their mean, and
-	// devSq the sum of their squares, for the discriminator correlation.
-	dev   [numSources][syncSymbols]float32
-	devSq [numSources]float32
 	// dx holds the discriminator symbols that discAt correlates.
 	dx [syncSymbols]float32
-	// tplRot holds the conjugate waveform of the voice SYNC of source src
-	// turned by search offset fi at tplRot[fi*numSources+src], for the
-	// sources that the receiver searches.
-	tplRot [searchFreqs * numSources][]complex64
 	// xs holds the window of the last search twice, from xs[xh], and
 	// xFirst its first ring sample, when xOK.
 	xs     []complex64
@@ -98,77 +95,26 @@ type syncSearch struct {
 	xFirst int64
 	xOK    bool
 	full   []float64
-	// pats holds every SYNC pattern, and conj e^-j*phase of the waveform
-	// of each over the correlated span.
-	pats [2*numSources + 1]enums.SyncPattern
+	// conj holds e^-j*phase of the waveform of each pattern of
+	// syncPatterns over the correlated span.
 	conj [2*numSources + 1][]complex64
 }
 
-// newSyncSearch returns a search with the symbols of the voice SYNC of each
-// source, and when coherent the waveforms of every SYNC pattern at the
-// nominal modulation index, sampled at every dec channel samples, and the
-// search templates of nsrc sources.
-func newSyncSearch(coherent bool, dec, nsrc int) *syncSearch {
+// newSyncSearch returns a search for the discriminator, or when coherent
+// for the channel ring at every dec channel samples, 1 or 2, with the
+// waveforms of every SYNC pattern at the nominal modulation index.
+func newSyncSearch(coherent bool, dec int) *syncSearch {
 	s := &syncSearch{}
-	for i := range numSources {
-		v, _, _ := sourceAt(i).SyncPatterns()
-		syncSyms(v, &s.voice[i])
-		var mp float32
-		for _, a := range s.voice[i] {
-			mp += float32(a)
-		}
-		mp /= syncSymbols
-		for k, a := range s.voice[i] {
-			s.dev[i][k] = float32(a) - mp
-			s.devSq[i] += s.dev[i][k] * s.dev[i][k]
-		}
-	}
 	if !coherent {
 		return s
 	}
 	s.dec, s.sps, s.span = dec, samplesPerSy/dec, syncSpan/dec
-	sps, span := s.sps, s.span
-	s.full = make([]float64, syncSymbols*sps)
-	s.xs = make([]complex64, 2*span)
-	var rot [searchFreqs][]complex64
-	for i := range searchFreqs {
-		f := searchHzAt(i)
-		rot[i] = make([]complex64, span)
-		for j := range span {
-			p := -2 * math.Pi * f * float64(j*dec) / basebandRate
-			rot[i][j] = complex(float32(math.Cos(p)), float32(math.Sin(p)))
-		}
-	}
-	tpl := make([]complex64, span)
-	for i := range numSources {
-		v, _, _ := sourceAt(i).SyncPatterns()
-		_, d, _ := sourceAt(i).SyncPatterns()
-		s.pats[2*i], s.pats[2*i+1] = v, d
-		if i >= nsrc {
-			continue
-		}
-		syms := make([]int, syncSymbols)
-		for k, a := range s.voice[i] {
-			syms[k] = int(a)
-		}
-		ph := refPhase(syms, sps, 0.27)
-		for j := range span {
-			p := ph[syncEdge*sps+j]
-			tpl[j] = complex(float32(math.Cos(p)), float32(-math.Sin(p)))
-		}
-		for fi := range searchFreqs {
-			t := make([]complex64, span)
-			for j := range t {
-				t[j] = tpl[j] * rot[fi][j]
-			}
-			s.tplRot[fi*numSources+i] = t
-		}
-	}
-	s.pats[2*numSources] = enums.SyncMSSourcedRC
+	s.full = make([]float64, syncSymbols*s.sps)
+	s.xs = make([]complex64, 2*s.span)
 	for i := range s.conj {
-		s.conj[i] = make([]complex64, span)
+		s.conj[i] = make([]complex64, s.span)
 	}
-	pulse := newPhasePulse(sps)
+	pulse := newPhasePulse(s.sps)
 	s.setH(0.27, &pulse)
 	return s
 }
@@ -178,7 +124,7 @@ func newSyncSearch(coherent bool, dec, nsrc int) *syncSearch {
 func (s *syncSearch) setH(h float64, p *phasePulse) {
 	var syms [syncSymbols]int8
 	var in [syncSymbols]int
-	for i, q := range s.pats {
+	for i, q := range &syncPatterns {
 		syncSyms(q, &syms)
 		for k, a := range syms {
 			in[k] = int(a)
@@ -193,7 +139,7 @@ func (s *syncSearch) setH(h float64, p *phasePulse) {
 // conjOf returns e^-j*phase of SYNC pattern p over the correlated span, or
 // nil for an unknown pattern.
 func (s *syncSearch) conjOf(p enums.SyncPattern) []complex64 {
-	for i, q := range s.pats {
+	for i, q := range &syncPatterns {
 		if q == p {
 			return s.conj[i]
 		}
@@ -229,7 +175,7 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 	bestFi := 0
 	for fi := range searchFreqs {
 		for src := range nsrc {
-			t := s.tplRot[fi*numSources+src]
+			t := &syncTemplates[s.dec-1][fi*numSources+src]
 			var ac, bd, bc, ad float32
 			for j, v := range x {
 				w := t[j]
@@ -263,7 +209,7 @@ func (s *syncSearch) screen(x []complex64, etot float32, nsrc int) float32 {
 	n := len(x) / preBlocks
 	var best float32
 	for src := range nsrc {
-		t := s.tplRot[searchFreqs/2*numSources+src]
+		t := &syncTemplates[s.dec-1][searchFreqs/2*numSources+src]
 		var mv, md float32
 		for b := range preBlocks {
 			var ac, bd, bc, ad float32
@@ -321,7 +267,7 @@ func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rh
 		mx += v
 		xx += v * v
 		for i := range sxy {
-			sxy[i] += s.dev[i][k] * v
+			sxy[i] += syncDev[i][k] * v
 		}
 	}
 	sxx := xx - mx*mx/syncSymbols
@@ -330,7 +276,7 @@ func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rh
 	}
 	var best float32
 	for i := range nsrc {
-		if q := sxy[i] * sxy[i] / s.devSq[i]; q > best {
+		if q := sxy[i] * sxy[i] / syncDevSq[i]; q > best {
 			best, src = q, i
 		}
 	}

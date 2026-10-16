@@ -19,19 +19,14 @@ type cpmModel struct {
 	// tpl[w*sps+j]. The newest symbol is the least significant base-4 digit.
 	tpl  []complex64
 	step [4]complex64
-	q    []float64
+	pp   phasePulse
 	h    float64
 }
 
 // newCPMModel returns the model with a window of d symbols on each side, at
-// sps samples per symbol and modulation index h (0.27 nominal).
+// sps samples per symbol, 5 or 10, and modulation index h (0.27 nominal).
 func newCPMModel(d, sps int, h float64) *cpmModel {
-	m := &cpmModel{d: d, sps: sps, states: 1 << (4 * d), windows: 1 << (4*d + 2)}
-	taps := rrcTapsAt(float64(sps))
-	m.q = make([]float64, len(taps)+1)
-	for i, v := range taps {
-		m.q[i+1] = m.q[i] + v
-	}
+	m := &cpmModel{d: d, sps: sps, states: 1 << (4 * d), windows: 1 << (4*d + 2), pp: newPhasePulse(sps)}
 	m.tpl = make([]complex64, m.windows*sps)
 	m.setH(h)
 	return m
@@ -61,7 +56,7 @@ func (m *cpmModel) setH(h float64) {
 // pulse returns the phase of the frequency pulse at modulation index h, j
 // samples from its center.
 func (m *cpmModel) pulse(j int, h float64) float64 {
-	n := len(m.q) - 1
+	n := m.pp.n
 	i := j + n/2
 	switch {
 	case i < 0:
@@ -69,37 +64,7 @@ func (m *cpmModel) pulse(j int, h float64) float64 {
 	case i >= n:
 		return h * math.Pi
 	}
-	return h * math.Pi * m.q[i+1]
-}
-
-// rrcTapsAt returns rrcTaps for sps samples per symbol.
-func rrcTapsAt(sps float64) []float64 {
-	return rrcTapsSpan(sps, rrcSpan)
-}
-
-// rrcTapsSpan returns rrcTaps for sps samples per symbol, span symbols on
-// each side.
-func rrcTapsSpan(sps float64, span int) []float64 {
-	n := int(2*float64(span)*sps) + 1
-	h := make([]float64, n)
-	var c float64
-	for i := range h {
-		t := float64(i-n/2) / sps
-		switch {
-		case t == 0:
-			h[i] = 1 - rrcAlpha + 4*rrcAlpha/math.Pi
-		case math.Abs(math.Abs(4*rrcAlpha*t)-1) < 1e-9:
-			h[i] = rrcAlpha / math.Sqrt2 * ((1+2/math.Pi)*math.Sin(math.Pi/(4*rrcAlpha)) + (1-2/math.Pi)*math.Cos(math.Pi/(4*rrcAlpha)))
-		default:
-			h[i] = (math.Sin(math.Pi*t*(1-rrcAlpha)) + 4*rrcAlpha*t*math.Cos(math.Pi*t*(1+rrcAlpha))) /
-				(math.Pi * t * (1 - (4*rrcAlpha*t)*(4*rrcAlpha*t)))
-		}
-		c += h[i]
-	}
-	for i := range h {
-		h[i] /= c
-	}
-	return h
+	return h * math.Pi * pulseQ[m.pp.row][i+1]
 }
 
 // trellisSource feeds a trellis run and takes its output, interval by
@@ -310,32 +275,34 @@ func (t *trellis) best() float32 {
 	return b
 }
 
-// phasePulse holds the phase response of one symbol of value 1: q[i] is the
-// share of the step h*pi reached i-half samples from the symbol center.
+// phasePulse holds the phase response of one symbol of value 1 at a number
+// of samples per symbol. Element i of the row of pulseQ that row names (and
+// of pulseQ32 in single precision) is the share of the step h*pi reached
+// i-half samples from the symbol center, for the n taps of the RRC pulse of
+// rrcSpan symbols on each side.
 type phasePulse struct {
-	q    []float64
-	q32  []float32
+	row  int
+	n    int
 	half int
 	span int
 }
 
-// newPhasePulse returns the phase pulse at sps samples per symbol.
+// newPhasePulse returns the phase pulse at sps samples per symbol, 10 or 5.
 func newPhasePulse(sps int) phasePulse {
-	taps := rrcTapsAt(float64(sps))
-	p := phasePulse{q: make([]float64, len(taps)+1), q32: make([]float32, len(taps)+1), half: len(taps) / 2}
-	for i, v := range taps {
-		p.q[i+1] = p.q[i] + v
-		p.q32[i+1] = float32(p.q[i+1])
-	}
+	p := phasePulse{row: samplesPerSy/sps - 1, n: 2*rrcSpan*sps + 1}
+	p.half = p.n / 2
 	p.span = p.half/sps + 1
 	return p
 }
 
-// refPhaseInto writes the phase at each sample of the symbols syms, as
-// refPhase, into out using the pulse p.
+// refPhaseInto writes the phase at each sample of the symbols syms, when
+// symbols before and after them are 0, into out using the pulse p: n*sps
+// samples, sample j of symbol k at offset j-sps/2 from its center, phase 0
+// before the first symbol.
 func (p *phasePulse) refPhaseInto(syms []int, sps int, h float64, out []float64) {
 	var done float64
-	n := len(p.q) - 1
+	n := p.n
+	q := &pulseQ[p.row]
 	for k := range syms {
 		if i := k - p.span - 1; i >= 0 {
 			done += h * math.Pi * float64(syms[i])
@@ -349,47 +316,12 @@ func (p *phasePulse) refPhaseInto(syms []int, sps int, h float64, out []float64)
 				case idx >= n:
 					ph += h * math.Pi * float64(syms[i])
 				case idx >= 0:
-					ph += h * math.Pi * float64(syms[i]) * p.q[idx+1]
-				}
-			}
-			out[k*sps+j] = ph
-		}
-	}
-}
-
-// refPhase returns the phase at each sample of the symbols syms when
-// symbols before and after them are 0: n*sps samples, sample j of symbol k
-// at offset j-sps/2 from its center, phase 0 before the first symbol.
-func refPhase(syms []int, sps int, h float64) []float64 {
-	taps := rrcTapsAt(float64(sps))
-	half := len(taps) / 2
-	q := make([]float64, len(taps)+1)
-	for i, v := range taps {
-		q[i+1] = q[i] + v
-	}
-	span := half/sps + 1
-	out := make([]float64, len(syms)*sps)
-	var done float64
-	for k := range syms {
-		if i := k - span - 1; i >= 0 {
-			done += h * math.Pi * float64(syms[i])
-		}
-		for j := range sps {
-			t := k*sps + j - sps/2
-			ph := done
-			for i := max(k-span, 0); i <= min(k+span, len(syms)-1); i++ {
-				idx := t - i*sps + half
-				switch {
-				case idx >= len(taps):
-					ph += h * math.Pi * float64(syms[i])
-				case idx >= 0:
 					ph += h * math.Pi * float64(syms[i]) * q[idx+1]
 				}
 			}
 			out[k*sps+j] = ph
 		}
 	}
-	return out
 }
 
 // dibitOfDigit returns the dibit of symbol digit v (symbol 2v-3).

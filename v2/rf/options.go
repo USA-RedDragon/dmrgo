@@ -11,14 +11,15 @@ type options struct {
 	// trellis models, 1 or 2.
 	Window int
 	// TrellisSPS is the number of samples per symbol that the trellis
-	// correlates, such as 5 or 10.
+	// correlates, 5 or 10.
 	TrellisSPS int
 	// ExactPhase carries the carrier phase in the trellis state, so that
 	// paths merge only with the same phase, instead of with each survivor.
 	ExactPhase bool
 	// PhaseStates is the number of carrier phases of the ExactPhase
-	// trellis; 0 means 200, the exact count for h = 0.27. Fewer phases
-	// round the phase turn of each symbol and cost proportionally less.
+	// trellis, 52 or 200; 0 means 200, the exact count for h = 0.27. Fewer
+	// phases round the phase turn of each symbol and cost proportionally
+	// less.
 	PhaseStates int
 	// PSPGain is the gain of the phase tracking of each trellis survivor.
 	PSPGain float32
@@ -59,8 +60,6 @@ type options struct {
 	TrackCarrier bool
 	// TrackH estimates the modulation index of each stream.
 	TrackH bool
-	// DiscCutHz is the cutoff of the discriminator prefilter.
-	DiscCutHz float64
 	// ChanDecimation is the factor, 1 or 2, by which the channel ring of
 	// the coherent tiers runs below basebandRate; 0 means 1.
 	ChanDecimation int
@@ -79,7 +78,7 @@ type options struct {
 
 // tierOptions returns the settings of tier t.
 func tierOptions(t Tier) options {
-	o := options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 4500, DiscOutlier: 0.01, Sources: 2}
+	o := options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscOutlier: 0.01, Sources: 2}
 	o.SoftFEC, o.GridBPTC = true, true
 	if t != TierDisc {
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
@@ -94,4 +93,18 @@ func tierOptions(t Tier) options {
 		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 2, true, true, 7, 0.35
 	}
 	return o
+}
+
+// tabled reports whether tables_gen.go holds the tables that the settings
+// select, as it does for the settings that the comments of options give.
+func (o *options) tabled() bool {
+	switch {
+	case !o.Coherent:
+		return true
+	case o.ChanDecimation != 0 && o.ChanDecimation != 1 && o.ChanDecimation != 2:
+		return false
+	case o.TrellisSPS != 5 && o.TrellisSPS != 10:
+		return false
+	}
+	return !o.ExactPhase || o.PhaseStates == 0 || o.PhaseStates == 52 || o.PhaseStates == phaseStates
 }

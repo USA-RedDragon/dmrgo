@@ -34,7 +34,9 @@ type xtrellis struct {
 	corr     []complex64
 	top      []float32
 	beam     []float32
-	cos, sin []float32
+	// row is the row of the cosine and sine of each phase in phaseCos and
+	// phaseSin: 0 for phaseStates phases and 1 for 52.
+	row int
 	// off holds the phase states that each leaving symbol digit turns.
 	off [4]int
 	// lp and slp hold the digit priors as in trellis.
@@ -43,19 +45,17 @@ type xtrellis struct {
 }
 
 // newXTrellis returns an exact-phase trellis over model m with np carrier
-// phases for runs of up to maxSteps symbol intervals.
+// phases, phaseStates or 52, for runs of up to maxSteps symbol intervals.
 func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 	n := m.states * np
 	t := &xtrellis{
 		m: m, maxSteps: maxSteps, np: np, step: int(math.Round(0.135 * float64(np))),
 		alpha: make([]float32, (maxSteps+1)*n), beta: make([]float32, n), next: make([]float32, n),
 		corr: make([]complex64, maxSteps*m.windows), top: make([]float32, maxSteps+1), beam: make([]float32, maxSteps),
-		cos: make([]float32, np), sin: make([]float32, np),
 		lp: make([]float32, 4*maxSteps), slp: make([]float32, 8*m.d),
 	}
-	for p := range np {
-		t.cos[p] = float32(math.Cos(2 * math.Pi * float64(p) / float64(np)))
-		t.sin[p] = float32(math.Sin(2 * math.Pi * float64(p) / float64(np)))
+	if np != phaseStates {
+		t.row = 1
 	}
 	for v := range t.off {
 		t.off[v] = t.phaseAfter(0, v)
@@ -63,12 +63,12 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 	return t
 }
 
-// forward relaxes dst[i] with src[i] plus the branch metric at phase cos[i],
-// sin[i], skipping sources under thr, and returns top raised to the best
-// value it wrote.
-func (t *xtrellis) forward(src, dst, cos, sin []float32, re, im, bonus, thr, top float32) float32 {
+// forward relaxes dst[i] with src[i] plus the branch metric at phase lo+i,
+// skipping sources under thr, and returns top raised to the best value it
+// wrote.
+func (t *xtrellis) forward(src, dst []float32, lo int, re, im, bonus, thr, top float32) float32 {
 	dst = dst[:len(src)]
-	cos, sin = cos[:len(src)], sin[:len(src)]
+	cos, sin := phaseCos[t.row][lo:lo+len(src)], phaseSin[t.row][lo:lo+len(src)]
 	for i, a := range src {
 		if a < thr {
 			continue
@@ -84,9 +84,9 @@ func (t *xtrellis) forward(src, dst, cos, sin []float32, re, im, bonus, thr, top
 // backward relaxes dst[i] with the branch metric plus beta[i], and returns
 // best raised to the highest src[i] plus that, skipping the states whose
 // forward metric src[i] is under thr, as no likely path passes them.
-func (t *xtrellis) backward(src, beta, dst, cos, sin []float32, re, im, bonus, thr, best float32) float32 {
+func (t *xtrellis) backward(src, beta, dst []float32, lo int, re, im, bonus, thr, best float32) float32 {
 	beta, dst = beta[:len(src)], dst[:len(src)]
-	cos, sin = cos[:len(src)], sin[:len(src)]
+	cos, sin := phaseCos[t.row][lo:lo+len(src)], phaseSin[t.row][lo:lo+len(src)]
 	for i, a := range src {
 		if a < thr {
 			continue
@@ -126,7 +126,7 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			a += t.slp[4*i+(s>>(2*(2*m.d-1-i)))&3]
 		}
 		for p := range np {
-			alpha[s*np+p] = a - kappa*(1-t.cos[p])
+			alpha[s*np+p] = a - kappa*(1-phaseCos[t.row][p])
 		}
 		t.top[0] = max(t.top[0], a)
 	}
@@ -159,8 +159,8 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			src := alpha[s*np : (s+1)*np]
 			dst := next[s2*np : (s2+1)*np]
 			off := t.off[w>>shift]
-			top = t.forward(src[:np-off], dst[off:], t.cos[:np-off], t.sin[:np-off], re, im, bonus, thr, top)
-			top = t.forward(src[np-off:], dst[:off], t.cos[np-off:], t.sin[np-off:], re, im, bonus, thr, top)
+			top = t.forward(src[:np-off], dst[off:], 0, re, im, bonus, thr, top)
+			top = t.forward(src[np-off:], dst[:off], np-off, re, im, bonus, thr, top)
 		}
 		t.top[k+1] = top
 		t.drift(next, ns)
@@ -190,8 +190,9 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			dst := t.next[s*np : (s+1)*np]
 			off := t.off[w>>shift]
 			best := a[w&3]
-			best = t.backward(src[:np-off], bsrc[off:], dst[:np-off], t.cos[:np-off], t.sin[:np-off], re, im, bonus, thr, best)
-			best = t.backward(src[np-off:], bsrc[:off], dst[np-off:], t.cos[np-off:], t.sin[np-off:], re, im, bonus, thr, best)
+			best = t.backward(src[:np-off], bsrc[off:], dst[:np-off], 0, re, im, bonus, thr, best)
+			best = t.backward(src[np-off:], bsrc[:off], dst[np-off:], np-off, re, im, bonus, thr, best)
+
 			a[w&3] = best
 		}
 		beta, t.next = t.next, beta

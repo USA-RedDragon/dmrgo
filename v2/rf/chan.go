@@ -6,12 +6,14 @@ import (
 
 // Limits of the channel stage.
 const (
-	// chanTaps is the length of the channel filter.
+	// chanTaps is the length of the channel filter, chanFilterTaps.
 	chanTaps = 95
 	// chanPassHz is the edge of the passband of the channel filter.
 	chanPassHz = 7500.0
 	// chanStopHz is the edge of its stopband.
 	chanStopHz = 11000.0
+	// discCutHz is the cutoff of the discriminator prefilter.
+	discCutHz = 4500.0
 )
 
 // ring is a ring of complex samples addressed by absolute sample number,
@@ -31,15 +33,17 @@ type ring struct {
 	ex    []int8
 	stage [qBlock]complex64
 	w     int
-	// tab holds the interpolator taps for phases+1 fractional delays.
-	tab    []float32
-	phases int
+	// phases is the number of fractional delays of the interpolator, rows
+	// apart in interpTaps.
+	phases, rows int
 }
 
 // Layout of the rings.
 const (
 	// interpPhases is the number of fractional delays the interpolator of
 	// a float ring has taps for, and compactPhases that of a compact ring.
+	// interpTaps holds the taps of fractional delay p/interpPhases at row
+	// p, so the delays of a compact ring are every fourth row.
 	interpPhases  = 256
 	compactPhases = 64
 	// qBlock is the number of samples of a compact ring that share an
@@ -50,28 +54,17 @@ const (
 // newRing returns a float ring of at least size samples, or a compact ring
 // of size rounded up to whole blocks, one sample every dec channel samples.
 func newRing(size, dec int, compact bool) ring {
-	r := ring{dec: dec, phases: interpPhases}
+	r := ring{dec: dec, phases: interpPhases, rows: 1}
 	if compact {
 		size = (size + qBlock - 1) / qBlock * qBlock
-		r.q, r.ex, r.phases = make([]int8, 2*size), make([]int8, size/qBlock), compactPhases
+		r.q, r.ex = make([]int8, 2*size), make([]int8, size/qBlock)
+		r.phases, r.rows = compactPhases, interpPhases/compactPhases
 	} else {
 		n := 1
 		for n < size {
 			n <<= 1
 		}
 		r.buf, r.mask = make([]complex64, n), int64(n-1)
-	}
-	r.tab = make([]float32, (r.phases+1)*sincTaps)
-	for p := range r.phases + 1 {
-		fr := float64(p) / float64(r.phases)
-		for k := range sincTaps {
-			u := float64(k-sincTaps/2+1) - fr
-			w := 0.42 + 0.5*math.Cos(math.Pi*u/(sincTaps/2)) + 0.08*math.Cos(2*math.Pi*u/(sincTaps/2))
-			if u != 0 {
-				w *= math.Sin(math.Pi*u) / (math.Pi * u)
-			}
-			r.tab[p*sincTaps+k] = float32(w)
-		}
 	}
 	return r
 }
@@ -215,7 +208,7 @@ func (r *ring) interpIn(x []complex64, u float32) complex64 {
 		iu--
 	}
 	p := int((u-float32(iu))*float32(r.phases) + 0.5)
-	taps := r.tab[p*sincTaps : (p+1)*sincTaps]
+	taps := &interpTaps[p*r.rows]
 	lo := iu - sincTaps/2 + 1
 	var re, im float32
 	if lo >= 0 && lo+sincTaps <= len(x) {
@@ -443,7 +436,6 @@ type channelizer struct {
 	wide    ring
 	hist    []complex64
 	head    int
-	chTaps  []float32
 	ch      ring
 	chDec   int
 	compact bool
@@ -459,10 +451,10 @@ type channelizer struct {
 }
 
 // newChannelizer returns a channelizer whose rings hold size channel
-// samples, with the discriminator path when disc, its prefilter cut off at
-// cutHz and its input at discRate when half, and the coherent channel ring
-// at basebandRate/dec otherwise, compact when compact.
-func newChannelizer(size int, disc bool, cutHz float64, dec int, compact, half bool) *channelizer {
+// samples, with the discriminator path when disc, its input at discRate
+// when half, and the coherent channel ring at basebandRate/dec otherwise,
+// compact when compact.
+func newChannelizer(size int, disc bool, dec int, compact, half bool) *channelizer {
 	c := &channelizer{disc: disc, ncoRot: 1, ncoStep: 1, delayCh: chanTaps / 2, step: 1}
 	if !disc {
 		c.chDec, c.compact = dec, compact
@@ -470,11 +462,10 @@ func newChannelizer(size int, disc bool, cutHz float64, dec int, compact, half b
 			c.wide = newRing(size, 1, false)
 		}
 		c.hist = make([]complex64, 2*chanTaps)
-		c.chTaps = kaiserLowpass(chanTaps, (chanPassHz+chanStopHz)/2/basebandRate, 7)
 		c.ch = newRing((size+dec-1)/dec, dec, compact)
 		return c
 	}
-	c.df = newDiscFront(half, cutHz)
+	c.df = newDiscFront(half)
 	if half {
 		c.step = 2
 	}
@@ -526,28 +517,6 @@ func (c *channelizer) slotEnergyAt(a float64, n int) float64 {
 		e += float64(c.energy.at(b))
 	}
 	return e / float64(max(b1-b0, 1)*energyBin/2)
-}
-
-// kaiserLowpass returns a Kaiser windowed sinc low-pass of n taps with
-// cutoff fc (a fraction of the sample rate) and unity DC gain.
-func kaiserLowpass(n int, fc, beta float64) []float32 {
-	h := make([]float32, n)
-	var sum float64
-	v := make([]float64, n)
-	for i := range n {
-		m := float64(i) - float64(n-1)/2
-		x := 2 * fc
-		if m != 0 {
-			x = math.Sin(2*math.Pi*fc*m) / (math.Pi * m)
-		}
-		r := 2*float64(i)/float64(n-1) - 1
-		v[i] = x * bessel0(beta*math.Sqrt(max(0, 1-r*r))) / bessel0(beta)
-		sum += v[i]
-	}
-	for i := range h {
-		h[i] = float32(v[i] / sum)
-	}
-	return h
 }
 
 // tune sets the oscillator to hz, the carrier offset to remove. The coherent
@@ -633,7 +602,7 @@ func (c *channelizer) filter(v complex64, n int64) {
 	c.hist[c.head+chanTaps] = v
 	c.head = (c.head + 1) % chanTaps
 	if n&int64(c.chDec-1) == 0 {
-		c.ch.push(fir(c.hist[c.head:c.head+chanTaps], c.chTaps))
+		c.ch.push(fir(c.hist[c.head:c.head+chanTaps], chanFilterTaps[:]))
 	}
 }
 

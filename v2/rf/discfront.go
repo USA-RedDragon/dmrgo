@@ -19,6 +19,8 @@ const (
 	discSpan = 4
 	// discSPS is the number of discriminator samples per symbol.
 	discSPS = samplesPerSy / 2
+	// rrcTaps is the length of the matched filter of the discriminator.
+	rrcTaps = 2*discSpan*discSPS + 1
 )
 
 // discFront turns complex baseband at basebandRate, or at discRate when
@@ -29,37 +31,23 @@ const (
 type discFront struct {
 	half    bool
 	odd     bool
-	hbMid   float32
-	hb      [halfSide]float32
 	hbHist  [2 * halfTaps]complex64
 	hbHead  int
 	ncoStep complex64
 	ncoRot  complex64
 	ncoN    int
-	pre     [preTaps/2 + 1]float32
 	preHist [2 * preTaps]complex64
 	preHead int
 	prev    complex64
-	rrc     [2*discSpan*discSPS + 1]float32
-	fHist   [2 * (2*discSpan*discSPS + 1)]float32
+	fHist   [2 * rrcTaps]float32
 	fHead   int
 }
 
 // newDiscFront returns a front end for input at discRate when half, at
-// basebandRate otherwise, with the prefilter cut off at cutHz.
-func newDiscFront(half bool, cutHz float64) *discFront {
-	f := &discFront{half: half, ncoRot: 1, ncoStep: 1}
-	hb := kaiserLowpass(halfTaps, 0.25, halfBeta)
-	f.hbMid = hb[halfTaps/2]
-	for k := range f.hb {
-		f.hb[k] = hb[halfTaps/2-(2*k+1)]
-	}
-	p := kaiserLowpass(preTaps, cutHz/discRate, 5)
-	copy(f.pre[:], p)
-	for i, v := range rrcTapsSpan(discSPS, discSpan) {
-		f.rrc[i] = float32(v)
-	}
-	return f
+// basebandRate otherwise. Its taps are discHalfTaps, discPreTaps, with the
+// cutoff discCutHz, and discRRCTaps.
+func newDiscFront(half bool) *discFront {
+	return &discFront{half: half, ncoRot: 1, ncoStep: 1}
 }
 
 // center returns the input sample, at basebandRate, at the center of
@@ -98,8 +86,9 @@ func (f *discFront) push(v complex64) (s, power float32, ok bool) {
 		}
 		x := f.hbHist[f.hbHead : f.hbHead+halfTaps]
 		c := halfTaps / 2
-		v = x[c] * complex(f.hbMid, 0)
-		for k, h := range f.hb {
+		v = x[c] * complex(discHalfTaps[c], 0)
+		for k := range halfSide {
+			h := discHalfTaps[c-2*k-1]
 			a, b := x[c-2*k-1], x[c+2*k+1]
 			v += complex((real(a)+real(b))*h, (imag(a)+imag(b))*h)
 		}
@@ -118,15 +107,15 @@ func (f *discFront) push(v complex64) (s, power float32, ok bool) {
 	}
 	x := f.preHist[f.preHead : f.preHead+preTaps]
 	c := preTaps / 2
-	y := x[c] * complex(f.pre[c], 0)
-	for k, h := range f.pre[:c] {
+	y := x[c] * complex(discPreTaps[c], 0)
+	for k, h := range discPreTaps[:c] {
 		a, b := x[k], x[preTaps-1-k]
 		y += complex((real(a)+real(b))*h, (imag(a)+imag(b))*h)
 	}
 	d := y * complex(real(f.prev), -imag(f.prev))
 	f.prev = y
 	fr := atan2f(imag(d), real(d)) * (discRate / (2 * math.Pi))
-	const nr = len(f.rrc)
+	const nr = rrcTaps
 	f.fHist[f.fHead] = fr
 	f.fHist[f.fHead+nr] = fr
 	if f.fHead++; f.fHead == nr {
@@ -134,8 +123,8 @@ func (f *discFront) push(v complex64) (s, power float32, ok bool) {
 	}
 	h := f.fHist[f.fHead : f.fHead+nr]
 	m := nr / 2
-	s = h[m] * f.rrc[m]
-	for k, t := range f.rrc[:m] {
+	s = h[m] * discRRCTaps[m]
+	for k, t := range discRRCTaps[:m] {
 		s += (h[k] + h[nr-1-k]) * t
 	}
 	return s, real(y)*real(y) + imag(y)*imag(y), true

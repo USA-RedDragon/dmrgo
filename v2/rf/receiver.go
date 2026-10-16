@@ -306,6 +306,9 @@ func New(cfg Config) (*Receiver, error) {
 	if cfg.opt != nil {
 		opt = *cfg.opt
 	}
+	if !opt.tabled() {
+		return nil, &ConfigError{Field: "opt"}
+	}
 	if cfg.LookbackSlots == 0 {
 		cfg.LookbackSlots = 16
 		if !opt.Coherent {
@@ -326,9 +329,9 @@ func New(cfg Config) (*Receiver, error) {
 	if r.opt.Coherent {
 		dec = max(r.opt.ChanDecimation, 1)
 	}
-	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, dec, r.opt.CompactChannel, half)
+	r.chz = newChannelizer(size, !r.opt.Coherent, dec, r.opt.CompactChannel, half)
 	r.spec = newSpectrum(float64(cfg.BasebandHz))
-	r.search = newSyncSearch(r.opt.Coherent, dec, r.nsrc)
+	r.search = newSyncSearch(r.opt.Coherent, dec)
 	if r.opt.Coherent {
 		d := r.opt.Window
 		r.model = newCPMModel(d, r.opt.TrellisSPS, 0.27)

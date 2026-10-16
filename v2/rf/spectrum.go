@@ -8,43 +8,30 @@ import (
 
 // Limits of the spectrum estimator.
 const (
-	// fftSize is the length of the transform of the spectrum estimator.
-	fftSize = 256
+	// fftSize is the length of the transform of the spectrum estimator, 2
+	// to the power fftBits.
+	fftSize = 1 << fftBits
+	fftBits = 8
 	// specFrames is the number of half-overlapped frames in one estimate.
 	specFrames = 96
 	// channelHz is the occupied bandwidth that the estimator looks for.
 	channelHz = 12500.0
 )
 
-// fft is an in-place radix-2 FFT of a fixed power-of-two size.
-type fft struct {
-	n     int
-	shift int
-	tw    []complex64
-}
-
-// newFFT returns a transform of n points.
-func newFFT(n int) *fft {
-	f := &fft{n: n, shift: bits.UintSize - bits.Len(uint(n-1)), tw: make([]complex64, n/2)}
-	for i := range f.tw {
-		p := -2 * math.Pi * float64(i) / float64(n)
-		f.tw[i] = complex(float32(math.Cos(p)), float32(math.Sin(p)))
-	}
-	return f
-}
-
-// transform replaces x by its discrete Fourier transform.
-func (f *fft) transform(x []complex64) {
-	for i := range f.n {
-		if r := int(bits.Reverse(uint(i)) >> f.shift); i < r {
+// fftTransform replaces x, fftSize samples, by its discrete Fourier
+// transform, in place by radix 2 with the twiddles fftTwiddles,
+// e^(-2*pi*j*i/fftSize) at index i.
+func fftTransform(x []complex64) {
+	for i := range fftSize {
+		if r := int(bits.Reverse(uint(i)) >> (bits.UintSize - fftBits)); i < r {
 			x[i], x[r] = x[r], x[i]
 		}
 	}
-	for size := 2; size <= f.n; size <<= 1 {
-		half, step := size/2, f.n/size
-		for start := 0; start < f.n; start += size {
+	for size := 2; size <= fftSize; size <<= 1 {
+		half, step := size/2, fftSize/size
+		for start := 0; start < fftSize; start += size {
 			for k := range half {
-				t := f.tw[k*step] * x[start+k+half]
+				t := fftTwiddles[k*step] * x[start+k+half]
 				x[start+k+half] = x[start+k] - t
 				x[start+k] += t
 			}
@@ -54,15 +41,13 @@ func (f *fft) transform(x []complex64) {
 
 // spectrum estimates the carrier frequency and the C/N of the strongest
 // channel-wide signal in the wide baseband from a Welch power spectrum.
+// specWindow holds the window from its middle out: sample i and fftSize-i
+// take specWindow[min(i, fftSize-i)].
 type spectrum struct {
-	f *fft
 	// rate is the sample rate, and pass the number of bins on each side of
 	// 0 Hz in the passband of the front end.
 	rate float64
 	pass int
-	// win holds the window from its middle out: sample i and fftSize-i
-	// take win[min(i, fftSize-i)].
-	win []float32
 	// hist holds the samples of the frame, and save the second half while
 	// the transform runs in hist.
 	hist   []complex64
@@ -89,12 +74,8 @@ func (s *spectrum) reset() {
 // newSpectrum returns an estimator of samples at rate with no frames yet.
 func newSpectrum(rate float64) *spectrum {
 	pass := int(wideHz*rate/basebandRate) * fftSize / int(rate)
-	s := &spectrum{f: newFFT(fftSize), rate: rate, pass: pass, win: make([]float32, fftSize/2+1), hist: make([]complex64, fftSize),
-		save: make([]complex64, fftSize/2), power: make([]float32, fftSize), sorted: make([]float32, 2*pass+1)}
-	for i := range s.win {
-		s.win[i] = float32(0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/fftSize))
-	}
-	return s
+	return &spectrum{rate: rate, pass: pass, hist: make([]complex64, fftSize), save: make([]complex64, fftSize/2),
+		power: make([]float32, fftSize), sorted: make([]float32, 2*pass+1)}
 }
 
 // push adds one wide baseband sample and reports whether a new estimate is
@@ -107,9 +88,10 @@ func (s *spectrum) push(v complex64) bool {
 	}
 	copy(s.save, s.hist[fftSize/2:])
 	for i := range s.hist {
-		s.hist[i] *= complex(s.win[min(i, fftSize-i)], 0)
+		s.hist[i] *= complex(specWindow[min(i, fftSize-i)], 0)
 	}
-	s.f.transform(s.hist)
+	fftTransform(s.hist)
+
 	for i, x := range s.hist {
 		s.power[i] += real(x)*real(x) + imag(x)*imag(x)
 	}
