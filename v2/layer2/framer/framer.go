@@ -3,9 +3,8 @@ package framer
 import (
 	"math/bits"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
+	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -39,7 +38,7 @@ var syncPatterns = [...]enums.SyncPattern{
 
 // Match is a SYNC field found in a bit stream.
 type Match struct {
-	// Offset is the index of the first SYNC bit.
+	// Offset is the bit index of the first SYNC bit.
 	Offset int
 	// Pattern is the matched SYNC pattern.
 	Pattern enums.SyncPattern
@@ -57,29 +56,28 @@ func nearest(window uint64) (enums.SyncPattern, int) {
 	return best, bestDistance
 }
 
-func window(stream []bit.Bit, offset int) uint64 {
-	var w uint64
-	for _, b := range stream[offset : offset+SyncBits] {
-		w = w<<1 | uint64(b&1)
-	}
-	return w
+// Search returns the first SYNC field in stream that starts at or after bit
+// start and is within threshold bits of a SYNC pattern. stream holds the
+// bits packed, the first bit in the most significant bit of stream[0], and
+// start and Match.Offset are bit indexes. A negative threshold means
+// layer2.DefaultSyncThreshold. ok is false when there is none.
+func Search(stream []byte, start, threshold int) (m Match, ok bool) {
+	return search(stream, len(stream)*8, start, threshold)
 }
 
-// Search returns the first SYNC field in stream that starts at or after
-// start and is within threshold bits of a SYNC pattern. A negative
-// threshold means layer2.DefaultSyncThreshold. ok is false when there is none.
-func Search(stream []bit.Bit, start, threshold int) (m Match, ok bool) {
+// search is Search on the first n bits of stream.
+func search(stream []byte, n, start, threshold int) (m Match, ok bool) {
 	if threshold < 0 {
 		threshold = layer2.DefaultSyncThreshold
 	}
 	start = max(start, 0)
-	if start+SyncBits > len(stream) {
+	if start+SyncBits > n {
 		return Match{}, false
 	}
 	const mask = 1<<SyncBits - 1
-	w := window(stream, start) >> 1
-	for i := start; i+SyncBits <= len(stream); i++ {
-		w = (w<<1 | uint64(stream[i+SyncBits-1]&1)) & mask
+	w := ibits.Field64(stream, start, SyncBits) >> 1
+	for i := start; i+SyncBits <= n; i++ {
+		w = (w<<1 | uint64(ibits.Bit(stream, i+SyncBits-1))) & mask
 		if p, d := nearest(w); d <= threshold {
 			return Match{Offset: i, Pattern: p, Distance: d}, true
 		}
@@ -130,12 +128,13 @@ type Config struct {
 }
 
 // Framer cuts bursts out of a bit stream written to it in pieces of any
-// size, as the package doc describes. Make one with New: a zero Framer has
-// no buffer and drops every bit. A Framer is not safe for concurrent use.
+// number of bytes, as the package doc describes. Make one with New: a zero
+// Framer has no buffer and drops every bit. A Framer is not safe for
+// concurrent use.
 type Framer struct {
 	cfg     Config
 	pre     int
-	buf     []bit.Bit
+	buf     []byte
 	base    int64
 	locked  bool
 	next    int
@@ -145,7 +144,7 @@ type Framer struct {
 }
 
 // New returns a Framer with the given configuration. It allocates the
-// stream buffer, which holds fewer than a CACH and a burst between writes,
+// stream buffer, which holds at most a CACH and a burst between writes,
 // with room for one more Period of bits.
 func New(cfg Config) *Framer {
 	if cfg.Threshold < 0 {
@@ -162,7 +161,7 @@ func New(cfg Config) *Framer {
 		f.pre = layer2.CACHBits
 	}
 	f.search = f.pre + SyncOffset
-	f.buf = make([]bit.Bit, 0, f.pre+layer2.BurstBits+cfg.Period)
+	f.buf = make([]byte, 0, (f.pre+layer2.BurstBits+cfg.Period)/8+2)
 	return f
 }
 
@@ -171,18 +170,19 @@ func (f *Framer) Locked() bool {
 	return f.locked
 }
 
-// Write adds bits to the stream and returns the bursts they complete, or nil
+// Write adds the bits of stream, packed, the first bit in the most
+// significant bit of stream[0], and returns the bursts they complete, or nil
 // when they complete none. It allocates the slice; AppendBursts does not.
-func (f *Framer) Write(stream ...bit.Bit) []Burst {
-	return f.AppendBursts(nil, stream...)
+func (f *Framer) Write(stream []byte) []Burst {
+	return f.AppendBursts(nil, stream)
 }
 
-// AppendBursts adds bits to the stream as Write does, appends the bursts they
-// complete to dst and returns the extended slice. It allocates only when dst
-// has no room for the bursts.
-func (f *Framer) AppendBursts(dst []Burst, stream ...bit.Bit) []Burst {
-	// Fewer than f.pre+layer2.BurstBits bits stay in f.buf between pieces,
-	// so New leaves room for at least Period more.
+// AppendBursts adds the bits of stream as Write does, appends the bursts
+// they complete to dst and returns the extended slice. It allocates only
+// when dst has no room for the bursts.
+func (f *Framer) AppendBursts(dst []Burst, stream []byte) []Burst {
+	// Fewer than f.pre+layer2.BurstBits+8 bits stay in f.buf between
+	// pieces, so New leaves room for at least one more byte.
 	for len(stream) > 0 && len(f.buf) < cap(f.buf) {
 		k := min(len(stream), cap(f.buf)-len(f.buf))
 		dst = f.appendPiece(dst, stream[:k])
@@ -193,21 +193,21 @@ func (f *Framer) AppendBursts(dst []Burst, stream ...bit.Bit) []Burst {
 
 // appendPiece adds stream, which fits in the room of f.buf, and appends the
 // bursts it completes to dst.
-func (f *Framer) appendPiece(dst []Burst, stream []bit.Bit) []Burst {
-	n := len(f.buf)
-	f.buf = f.buf[:n+len(stream)]
-	copy(f.buf[n:], stream)
-	lowbit.Mask(f.buf[n:])
+func (f *Framer) appendPiece(dst []Burst, stream []byte) []Burst {
+	k := len(f.buf)
+	f.buf = f.buf[:k+len(stream)]
+	copy(f.buf[k:], stream)
+	n := len(f.buf) * 8
 	for {
 		if !f.locked {
-			m, ok := Search(f.buf, f.search, f.cfg.Threshold)
+			m, ok := search(f.buf, n, f.search, f.cfg.Threshold)
 			if !ok {
-				f.search = max(f.search, len(f.buf)-SyncBits+1)
+				f.search = max(f.search, n-SyncBits+1)
 				break
 			}
 			f.locked, f.next, f.misses, f.channel = true, m.Offset-SyncOffset, 0, 0
 		}
-		if f.next+layer2.BurstBits > len(f.buf) {
+		if f.next+layer2.BurstBits > n {
 			break
 		}
 		dst = append(dst, f.cut())
@@ -219,10 +219,8 @@ func (f *Framer) appendPiece(dst []Burst, stream []bit.Bit) []Burst {
 func (f *Framer) cut() Burst {
 	start := f.next
 	b := Burst{Offset: f.base + int64(start)}
-	for i, x := range f.buf[start : start+layer2.BurstBits] {
-		b.Data[i>>3] |= byte(x&1) << (7 - i&7)
-	}
-	b.Sync, b.Distance = nearest(window(f.buf, start+SyncOffset))
+	ibits.Copy(b.Data[:], 0, f.buf, start, layer2.BurstBits)
+	b.Sync, b.Distance = nearest(ibits.Field64(f.buf, start+SyncOffset, SyncBits))
 	if b.Distance > f.cfg.Threshold {
 		b.Sync = enums.SyncNone
 		f.misses++
@@ -245,9 +243,7 @@ func (f *Framer) cut() Burst {
 	}
 	if f.cfg.CACH && start >= layer2.CACHBits {
 		var c [3]byte
-		for i, x := range f.buf[start-layer2.CACHBits : start] {
-			c[i>>3] |= byte(x) << (7 - i&7)
-		}
+		ibits.Copy(c[:], 0, f.buf, start-layer2.CACHBits, layer2.CACHBits)
 		b.CACH, b.HasCACH = layer2.DecodeCACHField(c), true
 		if !b.CACH.TACT.FEC.Uncorrectable {
 			f.channel = 1
@@ -265,6 +261,8 @@ func (f *Framer) cut() Burst {
 	return b
 }
 
+// trim drops the whole bytes of f.buf before the next burst or SYNC search,
+// so that the bits it keeps keep their place in their byte.
 func (f *Framer) trim() {
 	keep := f.search - f.pre - SyncOffset
 	if f.locked {
@@ -273,9 +271,9 @@ func (f *Framer) trim() {
 	if keep <= 0 {
 		return
 	}
-	keep = min(keep, len(f.buf))
-	f.buf = f.buf[:copy(f.buf, f.buf[keep:])]
-	f.base += int64(keep)
-	f.next -= keep
-	f.search -= keep
+	drop := min(keep>>3, len(f.buf))
+	f.buf = f.buf[:copy(f.buf, f.buf[drop:])]
+	f.base += int64(drop) * 8
+	f.next -= drop * 8
+	f.search -= drop * 8
 }
