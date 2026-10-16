@@ -83,10 +83,19 @@ type syncSearch struct {
 	conj [2*numSources + 1][]complex128
 }
 
-// newSyncSearch returns a search with the waveforms of every SYNC pattern
-// at the nominal modulation index.
-func newSyncSearch() *syncSearch {
-	s := &syncSearch{x: make([]complex64, syncSpan), full: make([]float64, syncSymbols*samplesPerSy)}
+// newSyncSearch returns a search with the symbols of the voice SYNC of each
+// source, and when coherent the waveforms of every SYNC pattern at the
+// nominal modulation index.
+func newSyncSearch(coherent bool) *syncSearch {
+	s := &syncSearch{}
+	for i := range numSources {
+		v, _, _ := sourceAt(i).SyncPatterns()
+		syncSyms(v, &s.voice[i])
+	}
+	if !coherent {
+		return s
+	}
+	s.x, s.full = make([]complex64, syncSpan), make([]float64, syncSymbols*samplesPerSy)
 	for i := range searchFreqs {
 		f := searchHzAt(i)
 		s.rot[i] = make([]complex64, syncSpan)
@@ -97,7 +106,6 @@ func newSyncSearch() *syncSearch {
 	}
 	for i := range numSources {
 		v, _, _ := sourceAt(i).SyncPatterns()
-		syncSyms(v, &s.voice[i])
 		syms := make([]int, syncSymbols)
 		for k, a := range s.voice[i] {
 			syms[k] = int(a)

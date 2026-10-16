@@ -218,7 +218,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	size := (cfg.LookbackSlots + maxGapSlots + 4) * slotSamplesN
 	r.chz = newChannelizer(size, !r.opt.Coherent, r.opt.DiscCutHz, max(r.opt.DiscDecimation, 1))
 	r.spec = newSpectrum()
-	r.search = newSyncSearch()
+	r.search = newSyncSearch(r.opt.Coherent)
 	if r.opt.Coherent {
 		d := r.opt.Window
 		r.model = newCPMModel(d, r.opt.TrellisSPS, 0.27)
@@ -240,8 +240,10 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 		r.ddSyms = make([]int, (maxGapSlots+1)*slotSymbols)
 		r.ddPh = make([]float64, (maxGapSlots+1)*slotSymbols*samplesPerSy)
 	}
-	r.pulse = newPhasePulse(samplesPerSy)
-	r.corrX = make([]complex128, syncSpan)
+	if r.opt.Coherent {
+		r.pulse = newPhasePulse(samplesPerSy)
+		r.corrX = make([]complex128, syncSpan)
+	}
 	r.slots = make([]slotState, cfg.LookbackSlots+maxGapSlots+4)
 	if r.opt.Coherent {
 		r.apps = make([]float32, len(r.slots)*slotSymbols*4)
