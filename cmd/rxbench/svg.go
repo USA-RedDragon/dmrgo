@@ -15,16 +15,17 @@ const (
 	xMin, xMax, xStep    = -8.0, 14.0, 2.0
 	yMinExp              = -4
 	plotW, plotH         = chartW - padL - padR, chartH - padT - padB
-	chartStyle           = `text{font-family:sans-serif;font-size:12px;fill:#57606a}.ax{stroke:#57606a;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.s0{stroke:#6e7781}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}@media (prefers-color-scheme:dark){text{fill:#c9d1d9}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.s0{stroke:#8b949e}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}}`
+	chartStyle           = `text{font-family:sans-serif;font-size:12px;fill:#57606a}.ax{stroke:#57606a;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.s0{stroke:#6e7781}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#8250df}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}@media (prefers-color-scheme:dark){text{fill:#c9d1d9}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.s0{stroke:#8b949e}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d2a8ff}}`
 	legendX, legendStepY = chartW - padR + 16, 22
 )
 
 // svgSeries is one line of a chart. A y value of zero or under 10^yMinExp
-// breaks the line.
+// breaks the line. A series with a dash pattern is a reference curve, drawn
+// without point marks.
 type svgSeries struct {
 	name  string
 	x, y  []float64
-	dash  bool
+	dash  string
 	class string
 }
 
@@ -95,12 +96,12 @@ func svgChart(title, yTitle string, series []svgSeries) []byte {
 			marks.WriteString(`<circle class="p ` + s.class + `" cx="` + x + `" cy="` + y + `" r="2"/>`)
 		}
 		dash := ""
-		if s.dash {
-			dash = ` stroke-dasharray="6 4"`
+		if s.dash != "" {
+			dash = ` stroke-dasharray="` + s.dash + `"`
 		}
 		if path.Len() > 0 {
 			b.WriteString(`<path class="l ` + s.class + `"` + dash + ` d="` + strings.TrimSpace(path.String()) + `"/>` + "\n")
-			if !s.dash {
+			if s.dash == "" {
 				b.WriteString(marks.String() + "\n")
 			}
 		}

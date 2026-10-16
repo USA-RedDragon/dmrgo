@@ -161,34 +161,34 @@ The example prints its counts on the serial console once a second.
 [v2/cmd/dmrrf](v2/cmd/dmrrf/README.md) receives DMR from RTL-SDR captures with one of four tiers, from a discriminator that fits a microcontroller to a coherent trellis detector with soft-decision decoding of each FEC field. The tables below come from a sweep over synthetic noise and from captures of a repeater.
 
 <!-- rxbench:begin -->
-Loss is the Eb/N0 in dB above the floor at 90% frame recovery. The floor is a lower bound for any receiver: a genie gives it the timing, the carrier, the noise level and every transmitted bit outside the payload (see the sensitivity details). For the data payloads it is the bound for any code with as many values over the same symbols, so their loss includes what a stronger code than the DMR one would gain, which no receiver can.
+Loss is the Eb/N0 in dB above the code-aware receiver at 90% frame recovery. The code-aware receiver detects and decodes as the coherent tiers do, but a genie gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and it detects the payload symbols exactly: it shows what the DMR codes give with the decoders of the tiers. The sensitivity details also give the floor, a lower bound for any receiver with that knowledge.
 
 | Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | RAM | Allocs |
 |------|-------|---------------|------|---------------|-------------------------|-----|--------|
-| 0: discriminator | 8.2 dB | 9.2 dB | 10.2 dB | 8.4 dB | 4,000,000 | 68 KiB | 0 |
-| 1: coherent, two pass | 2.5 dB | 6.2 dB | 7.2 dB | 4.9 dB | 20,000,000 | 183 KiB | 0 |
-| 2: phase trellis, two pass | 1.2 dB | 5.1 dB | 6.2 dB | 4.4 dB | 196,000,000 | 2878 KiB | 0 |
+| 0: discriminator | 7.6 dB | 5.8 dB | 5.7 dB | 4.0 dB | 4,000,000 | 68 KiB | 0 |
+| 1: coherent, two pass | 1.9 dB | 2.8 dB | 2.7 dB | 0.5 dB | 20,000,000 | 183 KiB | 0 |
+| 2: phase trellis, two pass | 0.5 dB | 1.6 dB | 1.7 dB | 0.0 dB | 196,000,000 | 2878 KiB | 0 |
 
 Cost is the CPU time on AMD Ryzen 9 7950X 16-Core Processor. RAM is the heap that NewReceiver keeps for input at 48 kHz with ReceiverConfig.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.
 
 <details><summary>Sensitivity per payload type</summary>
 
-Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a payload is a lower bound on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call. Its error rate is the larger of two bounds. In the first, the payload is in error when a candidate value is more likely than the transmitted one, by the exact likelihood of the whole stream, so maximum likelihood decoding would pick it; for the EMB, the slot type and the SYNC the candidates are all values, so this is the error rate of the best receiver. The second is the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values, which no code of that size and no decoder can beat. Both take the error rate as the same for every message. The floor runs on the stream and noise seeds of the tiers; its generator is v2/cmd/dmrrf/floor_gen_test.go and testdata/rxbench_floor.json names the bound of each payload.
+Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a payload is a lower bound on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call. Its error rate is the larger of two bounds. In the first, the payload is in error when a candidate value is more likely than the transmitted one, by the exact likelihood of the whole stream, so maximum likelihood decoding would pick it; for the EMB, the slot type and the SYNC the candidates are all values, so this is the error rate of the best receiver. The second is the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values, which no code of that size and no decoder can beat. Both take the error rate as the same for every message. The floor runs on the stream and noise seeds of the tiers; its generator is v2/cmd/dmrrf/floor_gen_test.go and testdata/rxbench_floor.json names the bound of each payload. The code-aware receiver has the knowledge of the floor's genie and detects the bits of the payload exactly, bit by bit, then decodes them with the decoders of the coherent tiers and their passes of detection again: for a voice frame with the C0 and C1 codewords of the first decode as priors, and for a BPTC block with the extrinsic information of its grid decode. It is a receiver, not a bound, on the same seeds; its generator is v2/cmd/dmrrf/floor_aware_test.go.
 
-| Payload | Floor | Tier 0: discriminator | Tier 1: coherent, two pass | Tier 2: phase trellis, two pass |
-|---------|-------|------|------|------|
-| Voice frame (AMBE+2, 49 bits) | 1.3 (0.1) | 9.5 (8.4) | 3.8 (2.7) | 2.5 (1.3) |
-| Voice frame, protected bits (C0 and C1) | -5.3 (-6.5) | 6.6 (5.5) | 2.7 (1.6) | 1.6 (0.5) |
-| Data block, rate 1/2 | -3.0 (-4.2) | 6.2 (5.1) | 3.2 (2.1) | 2.1 (1.0) |
-| Data block, rate 3/4 | 0.2 (-1.0) | 8.5 (7.4) | 5.1 (4.0) | 4.6 (3.5) |
-| Data block, rate 1 | 6.5 (5.4) | 10.9 (9.7) | 7.2 (6.1) | 7.2 (6.1) |
-| CSBK | -4.1 (-5.3) | 6.1 (4.9) | 3.0 (1.9) | 2.1 (0.9) |
-| Voice LC header and terminator | -4.3 (-5.4) | 6.0 (4.9) | 2.9 (1.8) | 1.7 (0.6) |
-| Data header | -3.9 (-5.1) | 6.2 (5.1) | 3.2 (2.1) | 2.3 (1.2) |
-| Embedded LC | < -6.9 (< -8.0) | 6.7 (5.6) | 1.5 (0.4) | 1.4 (0.2) |
-| EMB | < -6.9 (< -8.0) | 4.7 (3.5) | 1.2 (0.1) | 1.0 (-0.1) |
-| Slot type | < -6.9 (< -8.0) | 4.5 (3.3) | -0.0 (-1.2) | -0.4 (-1.5) |
-| SYNC detection | < -6.9 (< -8.0) | 2.4 (1.3) | < -0.9 (< -2.0) | -0.6 (-1.8) |
+| Payload | Floor | Code-aware | Tier 0: discriminator | Tier 1: coherent, two pass | Tier 2: phase trellis, two pass |
+|---------|-------|------------|------|------|------|
+| Voice frame (AMBE+2, 49 bits) | 1.3 (0.1) | 1.9 (0.8) | 9.5 (8.4) | 3.8 (2.7) | 2.5 (1.3) |
+| Voice frame, protected bits (C0 and C1) | -5.3 (-6.5) | -0.7 (-1.9) | 6.6 (5.5) | 2.7 (1.6) | 1.6 (0.5) |
+| Data block, rate 1/2 | -3.0 (-4.2) | 0.5 (-0.7) | 6.2 (5.1) | 3.2 (2.1) | 2.1 (1.0) |
+| Data block, rate 3/4 | 0.2 (-1.0) | 4.6 (3.4) | 8.5 (7.4) | 5.1 (4.0) | 4.6 (3.5) |
+| Data block, rate 1 | 6.5 (5.4) | 6.6 (5.4) | 10.9 (9.7) | 7.2 (6.1) | 7.2 (6.1) |
+| CSBK | -4.1 (-5.3) | 0.3 (-0.8) | 6.1 (4.9) | 3.0 (1.9) | 2.1 (0.9) |
+| Voice LC header and terminator | -4.3 (-5.4) | 0.7 (-0.4) | 6.0 (4.9) | 2.9 (1.8) | 1.7 (0.6) |
+| Data header | -3.9 (-5.1) | 0.5 (-0.7) | 6.2 (5.1) | 3.2 (2.1) | 2.3 (1.2) |
+| Embedded LC | < -6.9 (< -8.0) | -2.0 (-3.1) | 6.7 (5.6) | 1.5 (0.4) | 1.4 (0.3) |
+| EMB | < -6.9 (< -8.0) | -3.4 (-4.6) | 4.7 (3.5) | 1.2 (0.1) | 1.0 (-0.1) |
+| Slot type | < -6.9 (< -8.0) | -2.5 (-3.7) | 4.5 (3.3) | 0.0 (-1.2) | -0.4 (-1.5) |
+| SYNC detection | < -6.9 (< -8.0) | < -6.9 (< -8.0) | 2.4 (1.3) | < -0.9 (< -2.0) | -0.6 (-1.8) |
 
 </details>
 
@@ -214,14 +214,14 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 
 <details><summary>Error rate graphs</summary>
 
-Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the floor and each tier. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.
+Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the floor (dashed), the code-aware receiver (dotted) and each tier. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.
 
-![Voice frame: frame error rate against Eb/N0, floor and tiers](docs/rx/ambe.svg)
-![Data rate 1/2: frame error rate against Eb/N0, floor and tiers](docs/rx/rate12.svg)
-![Data rate 3/4: frame error rate against Eb/N0, floor and tiers](docs/rx/rate34.svg)
-![CSBK: frame error rate against Eb/N0, floor and tiers](docs/rx/csbk.svg)
-![Embedded LC: frame error rate against Eb/N0, floor and tiers](docs/rx/elc.svg)
-![Data rate 1 payload bits: bit error rate against Eb/N0, floor and tiers](docs/rx/rate1_bit.svg)
+![Voice frame: frame error rate against Eb/N0, references and tiers](docs/rx/ambe.svg)
+![Data rate 1/2: frame error rate against Eb/N0, references and tiers](docs/rx/rate12.svg)
+![Data rate 3/4: frame error rate against Eb/N0, references and tiers](docs/rx/rate34.svg)
+![CSBK: frame error rate against Eb/N0, references and tiers](docs/rx/csbk.svg)
+![Embedded LC: frame error rate against Eb/N0, references and tiers](docs/rx/elc.svg)
+![Data rate 1 payload bits: bit error rate against Eb/N0, references and tiers](docs/rx/rate1_bit.svg)
 
 </details>
 

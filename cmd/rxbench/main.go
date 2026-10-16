@@ -161,7 +161,8 @@ func (c curve) recovery() []float64 {
 	return y
 }
 
-// floor is testdata/rxbench_floor.json.
+// floor is testdata/rxbench_floor.json, or testdata/rxbench_aware.json
+// for the code-aware receiver.
 type floor struct {
 	Source   string           `json:"source"`
 	Payloads map[string]curve `json:"payloads"`
@@ -179,12 +180,13 @@ type recording struct {
 type data struct {
 	bench      bench
 	floor      floor
+	aware      floor
 	recordings []recording
 }
 
 func load(dir string) (data, error) {
 	var d data
-	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_recordings.json": &d.recordings} {
+	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_aware.json": &d.aware, "rxbench_recordings.json": &d.recordings} {
 		b, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			return d, err
@@ -263,12 +265,13 @@ func grouped(n int64) string {
 	return s
 }
 
-func f1(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) }
+// f1 formats v with one decimal, with no sign on a value that rounds to 0.
+func f1(v float64) string { return strconv.FormatFloat(math.Round(v*10)/10+0, 'f', 1, 64) }
 
 func renderBlock(d data) []byte {
 	var b strings.Builder
 	b.WriteString("\n")
-	b.WriteString("Loss is the Eb/N0 in dB above the floor at 90% frame recovery. The floor is a lower bound for any receiver: a genie gives it the timing, the carrier, the noise level and every transmitted bit outside the payload (see the sensitivity details). For the data payloads it is the bound for any code with as many values over the same symbols, so their loss includes what a stronger code than the DMR one would gain, which no receiver can.\n\n")
+	b.WriteString("Loss is the Eb/N0 in dB above the code-aware receiver at 90% frame recovery. The code-aware receiver detects and decodes as the coherent tiers do, but a genie gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and it detects the payload symbols exactly: it shows what the DMR codes give with the decoders of the tiers. The sensitivity details also give the floor, a lower bound for any receiver with that knowledge.\n\n")
 	b.WriteString("| Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | RAM | Allocs |\n")
 	b.WriteString("|------|-------|---------------|------|---------------|-------------------------|-----|--------|\n")
 	for _, t := range d.bench.Tiers {
@@ -284,22 +287,27 @@ func renderBlock(d data) []byte {
 	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
 	b.WriteString(" RAM is the heap that NewReceiver keeps for input at 48 kHz with ReceiverConfig.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
 	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
-	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a payload is a lower bound on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call. Its error rate is the larger of two bounds. In the first, the payload is in error when a candidate value is more likely than the transmitted one, by the exact likelihood of the whole stream, so maximum likelihood decoding would pick it; for the EMB, the slot type and the SYNC the candidates are all values, so this is the error rate of the best receiver. The second is the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values, which no code of that size and no decoder can beat. Both take the error rate as the same for every message. The floor runs on the stream and noise seeds of the tiers; its generator is v2/cmd/dmrrf/floor_gen_test.go and testdata/rxbench_floor.json names the bound of each payload.")
-	b.WriteString("\n\n| Payload | Floor |")
+	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a payload is a lower bound on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call. Its error rate is the larger of two bounds. In the first, the payload is in error when a candidate value is more likely than the transmitted one, by the exact likelihood of the whole stream, so maximum likelihood decoding would pick it; for the EMB, the slot type and the SYNC the candidates are all values, so this is the error rate of the best receiver. The second is the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values, which no code of that size and no decoder can beat. Both take the error rate as the same for every message. The floor runs on the stream and noise seeds of the tiers; its generator is v2/cmd/dmrrf/floor_gen_test.go and testdata/rxbench_floor.json names the bound of each payload. The code-aware receiver has the knowledge of the floor's genie and detects the bits of the payload exactly, bit by bit, then decodes them with the decoders of the coherent tiers and their passes of detection again: for a voice frame with the C0 and C1 codewords of the first decode as priors, and for a BPTC block with the extrinsic information of its grid decode. It is a receiver, not a bound, on the same seeds; its generator is v2/cmd/dmrrf/floor_aware_test.go.")
+	b.WriteString("\n\n| Payload | Floor | Code-aware |")
 	for _, t := range d.bench.Tiers {
 		b.WriteString(" Tier " + tierName(t.Tier) + " |")
 	}
-	b.WriteString("\n|---------|-------|")
+	b.WriteString("\n|---------|-------|------------|")
 	for range d.bench.Tiers {
 		b.WriteString("------|")
 	}
 	b.WriteString("\n")
 	for _, p := range payloadNames() {
 		b.WriteString("| " + p[1] + " | ")
-		if c, ok := d.floor.Payloads[p[0]]; ok {
-			b.WriteString(ebCell(at90(c.EbN0, c.recovery())))
-		} else {
-			b.WriteString("-")
+		for i, f := range []floor{d.floor, d.aware} {
+			if i > 0 {
+				b.WriteString(" | ")
+			}
+			if c, ok := f.Payloads[p[0]]; ok {
+				b.WriteString(ebCell(at90(c.EbN0, c.recovery())))
+			} else {
+				b.WriteString("-")
+			}
 		}
 		for _, t := range d.bench.Tiers {
 			b.WriteString(" | " + ebCell(at90(tierCurve(t, p[0]))))
@@ -338,17 +346,18 @@ func renderBlock(d data) []byte {
 	}
 	b.WriteString("\n</details>\n\n")
 	b.WriteString("<details><summary>Error rate graphs</summary>\n\n")
-	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the floor and each tier. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
+	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the floor (dashed), the code-aware receiver (dotted) and each tier. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
 	for _, g := range graphs() {
-		b.WriteString("![" + g.title + ": " + strings.ToLower(g.rate) + " against Eb/N0, floor and tiers](docs/rx/" + g.key + ".svg)\n")
+		b.WriteString("![" + g.title + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](docs/rx/" + g.key + ".svg)\n")
 	}
 	b.WriteString("\n</details>\n\n")
 	return []byte(b.String())
 }
 
-// lossCell returns the loss of payload k of tier t against the floor.
+// lossCell returns the loss of payload k of tier t against the code-aware
+// receiver.
 func lossCell(d data, t tier, k string) string {
-	c, ok := d.floor.Payloads[k]
+	c, ok := d.aware.Payloads[k]
 	if !ok {
 		return "-"
 	}
@@ -400,13 +409,17 @@ func errorRate(y []float64) []float64 {
 }
 
 // renderGraphs returns one SVG per graph: the error rate against Eb/N0 on
-// a log scale, the floor dashed and each tier solid.
+// a log scale, the floor dashed, the code-aware receiver dotted and each
+// tier solid.
 func renderGraphs(d data) map[string][]byte {
 	out := map[string][]byte{}
 	for _, g := range graphs() {
 		var series []svgSeries
 		if c, ok := d.floor.Payloads[g.key]; ok {
-			series = append(series, svgSeries{name: "Floor", x: c.EbN0, y: errorRate(c.recovery()), dash: true, class: "s0"})
+			series = append(series, svgSeries{name: "Floor", x: c.EbN0, y: errorRate(c.recovery()), dash: "6 4", class: "s0"})
+		}
+		if c, ok := d.aware.Payloads[g.key]; ok {
+			series = append(series, svgSeries{name: "Code-aware", x: c.EbN0, y: errorRate(c.recovery()), dash: "2 3", class: "s4"})
 		}
 		for _, t := range d.bench.Tiers {
 			x, y := tierCurve(t, g.key)
