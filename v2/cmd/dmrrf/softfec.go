@@ -7,10 +7,8 @@ import (
 	"math"
 	"math/bits"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	pbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -79,7 +77,7 @@ var errSoftDerive = errors.New("soft FEC: cannot derive code tables")
 
 // softEncoder returns the field image of info word info: the bits of the
 // burst, or of the fields, that carry its codeword.
-type softEncoder func(info uint32) ([]bit.Bit, error)
+type softEncoder func(info uint32) ([]unpacked.Bit, error)
 
 // softTop is a list of the lowest-cost candidates of a softSmallCode search,
 // in increasing cost order.
@@ -142,7 +140,7 @@ func newSoftSmallCode(k, t int, enc softEncoder, skip []bool) (softSmallCode, er
 	if err != nil {
 		return c, err
 	}
-	imgs := make([][]bit.Bit, k)
+	imgs := make([][]unpacked.Bit, k)
 	for i := range k {
 		if imgs[i], err = enc(uint32(1) << i); err != nil {
 			return c, err
@@ -172,7 +170,7 @@ func newSoftSmallCode(k, t int, enc softEncoder, skip []bool) (softSmallCode, er
 }
 
 // softMask returns the bits of img at pos, pos[j] at 1<<j.
-func softMask[T int | int16](img []bit.Bit, pos []T) uint32 {
+func softMask[T int | int16](img []unpacked.Bit, pos []T) uint32 {
 	var m uint32
 	for j, p := range pos {
 		if img[p]&1 != 0 {
@@ -310,9 +308,9 @@ func softPutSmall(r *layer2.RawBurst, c *softSmallCode, cw uint32) {
 }
 
 // softBurstImage returns the bits of r as a field image.
-func softBurstImage(r *layer2.RawBurst) []bit.Bit {
-	var b [264]bit.Bit
-	pbits.Unpack(b[:], r[:], 0)
+func softBurstImage(r *layer2.RawBurst) []unpacked.Bit {
+	var b [264]unpacked.Bit
+	unpacked.UnpackAt(b[:], r[:], 0)
 	return b[:]
 }
 
@@ -334,7 +332,7 @@ type softAMBE struct {
 // softAMBEEncoder returns the encoder of a frame in voice slot s whose bits
 // at from to from+11 hold info word info, with frame bit from at bit 11.
 func softAMBEEncoder(s, from int) softEncoder {
-	return func(info uint32) ([]bit.Bit, error) {
+	return func(info uint32) ([]unpacked.Bit, error) {
 		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 		for i := range softAMBEC0 {
 			if info>>(softAMBEC0-1-i)&1 != 0 {
@@ -435,7 +433,7 @@ func newSoftOSDCode(k, t int, enc softEncoder) (*softOSDCode, error) {
 	if err != nil {
 		return nil, err
 	}
-	imgs := make([][]bit.Bit, k)
+	imgs := make([][]unpacked.Bit, k)
 	for i := range k {
 		if imgs[i], err = enc(uint32(i) + 1); err != nil {
 			return nil, err
@@ -549,7 +547,7 @@ type softOSDScratch struct {
 	// chase holds the Chase test pattern bits and bits the hard decisions of
 	// the 196 information bits.
 	chase [softChaseMax]int16
-	bits  [softTrellisBits]bit.Bit
+	bits  [softTrellisBits]unpacked.Bit
 }
 
 // first returns the index of the first candidate in the list that s.accept
@@ -750,7 +748,7 @@ type softBPTCResult struct {
 // softBPTCEncoder encodes info bit i of BPTC(196,96) into a burst: data bit
 // i for i below 96 and R(i-96) above. The info word is the bit number plus
 // one, and 0 encodes the zero block.
-func softBPTCEncoder(info uint32) ([]bit.Bit, error) {
+func softBPTCEncoder(info uint32) ([]unpacked.Bit, error) {
 	var r layer2.RawBurst
 	if info == 0 {
 		r.SetBPTCPayload([12]byte{})
@@ -786,13 +784,13 @@ func (c *softOSDCode) bptcResult(cw *[softOSDWords]uint64) softBPTCResult {
 
 // softShortLCEncoder encodes Short LC info word info (0 or unit vector
 // info-1) into the 96 bits of four CACH fields in transmit order.
-func softShortLCEncoder(info uint32) ([]bit.Bit, error) {
-	var in [softShortLCInfo]bit.Bit
+func softShortLCEncoder(info uint32) ([]unpacked.Bit, error) {
+	var in [softShortLCInfo]unpacked.Bit
 	if i := int(info) - 1; i >= 0 && i < len(in) {
 		in[i] = 1
 	}
 	frags := bptc.EncodeCACH(unpacked.Uint(in[:]))
-	img := make([]bit.Bit, 0, 4*layer2.CACHBits)
+	img := make([]unpacked.Bit, 0, 4*layer2.CACHBits)
 	for _, f := range frags {
 		var c layer2.CACH
 		c.Payload = cachPayload(f)
@@ -808,8 +806,8 @@ func softShortLCEncoder(info uint32) ([]bit.Bit, error) {
 
 // softEmbFragments returns the image of four embedded signalling fields in
 // four bursts, burst i at 264i.
-func softEmbFragments(frags [4][4]byte) []bit.Bit {
-	img := make([]bit.Bit, 0, 4*softBurstBits)
+func softEmbFragments(frags [4][4]byte) []unpacked.Bit {
+	img := make([]unpacked.Bit, 0, 4*softBurstBits)
 	for _, f := range frags {
 		var r layer2.RawBurst
 		r.SetEmbeddedData(f)
@@ -820,8 +818,8 @@ func softEmbFragments(frags [4][4]byte) []bit.Bit {
 
 // softEmbLCEncoder encodes embedded LC info word info (0 or unit vector
 // info-1 of the 77 BPTC info bits) into the image of four bursts.
-func softEmbLCEncoder(info uint32) ([]bit.Bit, error) {
-	var in [softEmbLCInfo]bit.Bit
+func softEmbLCEncoder(info uint32) ([]unpacked.Bit, error) {
+	var in [softEmbLCInfo]unpacked.Bit
 	if i := int(info) - 1; i >= 0 && i < len(in) {
 		in[i] = 1
 	}
@@ -917,7 +915,7 @@ type softTrellis struct {
 
 // softTrellisImage returns the burst image of the 48 tribits t, tribit k
 // holding data bits 3k to 3k+2 most significant bit first.
-func softTrellisImage(t *[softTrellisSteps - 1]int) []bit.Bit {
+func softTrellisImage(t *[softTrellisSteps - 1]int) []unpacked.Bit {
 	var p [18]byte
 	for k, v := range t {
 		for b := range 3 {
@@ -1135,21 +1133,21 @@ func newSoftDecoder() (*softDecoder, error) {
 	if d.shortLC, err = newSoftOSDCode(softShortLCInfo, 2, softShortLCEncoder); err != nil {
 		return nil, err
 	}
-	if d.slotType, err = newSoftSmallCode(8, 3, func(info uint32) ([]bit.Bit, error) {
+	if d.slotType, err = newSoftSmallCode(8, 3, func(info uint32) ([]unpacked.Bit, error) {
 		var r layer2.RawBurst
 		r.SetSlotType(pdu.SlotTypeInfo(info & 0xff).SlotType())
 		return softBurstImage(&r), nil
 	}, nil); err != nil {
 		return nil, err
 	}
-	if d.emb, err = newSoftSmallCode(7, 2, func(info uint32) ([]bit.Bit, error) {
+	if d.emb, err = newSoftSmallCode(7, 2, func(info uint32) ([]unpacked.Bit, error) {
 		var r layer2.RawBurst
 		r.SetEMB(pdu.EMBInfo(info << 1 & 0xfe).EmbeddedSignalling())
 		return softBurstImage(&r), nil
 	}, nil); err != nil {
 		return nil, err
 	}
-	if d.tact, err = newSoftSmallCode(4, 1, func(info uint32) ([]bit.Bit, error) {
+	if d.tact, err = newSoftSmallCode(4, 1, func(info uint32) ([]unpacked.Bit, error) {
 		c := layer2.CACH{TACT: softTACT(info)}
 		logical, err := c.Encode()
 		if err != nil {
@@ -1314,11 +1312,11 @@ func (d *softDecoder) decodeEMB(llr *[softBurstBits]int16, cc enums.ColorCode, c
 // decodeTACT decodes the Hamming(7,4) TACT of a CACH from its 24 LLRs in
 // transmit order by scoring all 16 codewords. When out is not nil, the
 // corrected TACT bits are written into it.
-func (d *softDecoder) decodeTACT(llr *[layer2.CACHBits]int16, out *[layer2.CACHBits]bit.Bit) (pdu.TACT, fec.Result) {
+func (d *softDecoder) decodeTACT(llr *[layer2.CACHBits]int16, out *[layer2.CACHBits]unpacked.Bit) (pdu.TACT, fec.Result) {
 	info, cw, errs := d.small.decode(&d.tact, llr[:], 0, 0)
 	if out != nil {
 		for j := range d.tact.n {
-			out[d.tact.pos[j]] = bit.Bit(cw >> j & 1)
+			out[d.tact.pos[j]] = unpacked.Bit(cw >> j & 1)
 		}
 	}
 	t := softTACT(info)
@@ -1542,7 +1540,7 @@ func softBPTCCheck(dt enums.DataType) func([12]byte) bool {
 // returns the 36 info bits (28 data bits and the CRC-8) of the best one
 // whose CRC-8 matches, with Uncorrectable set when none does. When out is
 // not nil, the corrected payload bits are written into it.
-func (d *softDecoder) decodeShortLC(llr *[4][layer2.CACHBits]int16, out *[4][layer2.CACHBits]bit.Bit) ([softShortLCInfo]bit.Bit, fec.Result) {
+func (d *softDecoder) decodeShortLC(llr *[4][layer2.CACHBits]int16, out *[4][layer2.CACHBits]unpacked.Bit) ([softShortLCInfo]unpacked.Bit, fec.Result) {
 	c, s := d.shortLC, &d.osd
 	for j := range c.n {
 		p := c.pos[j]
@@ -1566,8 +1564,8 @@ func (d *softDecoder) decodeShortLC(llr *[4][layer2.CACHBits]int16, out *[4][lay
 }
 
 // shortLCInfo returns the 36 Short LC info bits of codeword cw.
-func (c *softOSDCode) shortLCInfo(cw *[softOSDWords]uint64) [softShortLCInfo]bit.Bit {
-	var info [softShortLCInfo]bit.Bit
+func (c *softOSDCode) shortLCInfo(cw *[softOSDWords]uint64) [softShortLCInfo]unpacked.Bit {
+	var info [softShortLCInfo]unpacked.Bit
 	for b := range info {
 		if softBit(cw, c.sys[b]) {
 			info[b] = 1

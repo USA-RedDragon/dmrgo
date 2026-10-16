@@ -3,8 +3,8 @@ package main
 import (
 	"math"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -1103,7 +1103,7 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 				if b == 1 {
 					v = b1
 				}
-				if v == bit.Bit(fixed[i/8]>>(7-i%8)&1) {
+				if v == unpacked.Bit(fixed[i/8]>>(7-i%8)&1) {
 					lp[d] += r.opt.RefinePrior
 				}
 			}

@@ -4,8 +4,8 @@ import (
 	"math"
 	"math/bits"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
@@ -34,7 +34,7 @@ type slotRec struct {
 	data    layer2.RawBurst
 	llr     llr8
 	cachLLR [layer2.CACHBits]int16
-	cach    [layer2.CACHBits]bit.Bit
+	cach    [layer2.CACHBits]unpacked.Bit
 	anchor  enums.SyncPattern
 	stream  int
 }
