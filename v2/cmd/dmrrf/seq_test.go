@@ -437,7 +437,8 @@ func TestLoopbackTier3(t *testing.T) {
 	if fmt.Sprint(got) != want {
 		t.Errorf("got %v\nwant %s", got, want)
 	}
-	l.expect(t, "slc", fmt.Sprintf("activity ts1=0x%x hash1=0x%02x ts2=0x0", uint8(enums.ActivityIndividualCSBK), pdu.AddressHash(cfg.Dest)), activeBlocks(l, cfg))
+	hash, _ := pdu.AddressHash(cfg.Dest)
+	l.expect(t, "slc", fmt.Sprintf("activity ts1=0x%x hash1=0x%02x ts2=0x0", uint8(enums.ActivityIndividualCSBK), hash), activeBlocks(l, cfg))
 	l.expect(t, "slc", "activity ts1=0x0 hash1=0x00 ts2=0x0 hash2=0x00 fec=ok", len(l.built.Slots)/4-activeBlocks(l, cfg))
 }
 
@@ -466,7 +467,7 @@ func TestLoopbackBSSourced(t *testing.T) {
 			l.expect(t, "cach", fmt.Sprintf("lcss=%q", lcss.String()), n/4)
 		}
 		l.expect(t, "cach", fmt.Sprintf("lcss=%q", enums.LCSSContinuationFragment.String()), n/2)
-		hash := pdu.AddressHash(cfg.Dest)
+		hash, _ := pdu.AddressHash(cfg.Dest)
 		au := fmt.Sprintf("slco=1 activity ts1=0x0 hash1=0x00 ts2=0x8 hash2=0x%02x fec=ok", hash)
 		if slot == 0 {
 			au = fmt.Sprintf("slco=1 activity ts1=0x8 hash1=0x%02x ts2=0x0 hash2=0x00 fec=ok", hash)
