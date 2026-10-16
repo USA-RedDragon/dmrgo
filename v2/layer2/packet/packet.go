@@ -2,7 +2,6 @@ package packet
 
 import (
 	"encoding/binary"
-	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -41,9 +40,9 @@ func blockOctets(rate enums.DataType, confirmed bool) (int, error) {
 		enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation,
 		enums.DataTypeDataHeader, enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock,
 		enums.DataTypeReserved:
-		return 0, fmt.Errorf("%w: %s", ErrRate, rate.String())
+		return 0, newRateError(rate)
 	default:
-		return 0, fmt.Errorf("%w: %s", ErrRate, rate.String())
+		return 0, newRateError(rate)
 	}
 	if confirmed {
 		n -= 2
@@ -80,8 +79,10 @@ func layout(n, per int) (blocks, pad int) {
 // rate and returns them with a copy of header. It sets the block count and
 // pad fields of the header, gives confirmed blocks DBSN 0, 1, 2 and so on,
 // and keeps the other header fields. It returns an error that wraps
-// ErrRate, ErrFormat or ErrTooLong. The Packet has its own storage;
-// Builder.Segment builds into reused storage.
+// ErrRate, ErrFormat or ErrTooLong. It allocates the storage of the Packet;
+// Builder.Segment does not.
+//
+//go:noinline
 func Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
 	var b Builder
 	return b.Segment(header, payload, rate)
@@ -115,18 +116,18 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 	per, _ := blockOctets(rate, confirmed)
 	n := blocksOf(&header)
 	size := n*per - crcOctets
-	b.buf = resize(b.buf, n*per)[:size]
-	clear(b.buf[copy(b.buf, payload):])
-	b.buf = appendMessageCRC(b.buf)
+	b.buf = appendLen(b.buf, n*per)
+	clear(b.buf[copy(b.buf[:size], payload):size])
+	binary.LittleEndian.PutUint32(b.buf[size:], crc.CRC32(b.buf[:size]))
 
-	b.blocks = resize(b.blocks, n)
+	b.blocks = appendLen(b.blocks, n)
 	switch per {
 	case 16, 18:
-		b.rate34 = resize(b.rate34, n)
+		b.rate34 = appendLen(b.rate34, n)
 	case 22, 24:
-		b.rate1 = resize(b.rate1, n)
+		b.rate1 = appendLen(b.rate1, n)
 	default:
-		b.rate12 = resize(b.rate12, n)
+		b.rate12 = appendLen(b.rate12, n)
 	}
 	for i := range n {
 		b.blocks[i] = b.block(i, b.buf[i*per:(i+1)*per], confirmed)
@@ -134,8 +135,11 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 	return Packet{Header: header, Blocks: b.blocks}, nil
 }
 
-// resize returns s with length n, in a new array when s has no room.
-func resize[T any](s []T, n int) []T {
+// appendLen returns s with length n. Like append, it allocates a new array
+// only when s lacks the capacity.
+//
+//go:noinline
+func appendLen[T any](s []T, n int) []T {
 	if cap(s) < n {
 		return make([]T, n)
 	}
@@ -179,7 +183,7 @@ func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
 func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	confirmed, ok := isConfirmed(h)
 	if !ok {
-		return false, fmt.Errorf("%w: %s", ErrFormat, h.Format.String())
+		return false, newFormatError(h.Format)
 	}
 	per, err := blockOctets(rate, confirmed)
 	if err != nil {
@@ -212,7 +216,7 @@ func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool
 		limit = 63
 	}
 	if blocks > limit {
-		return false, fmt.Errorf("%w: %d blocks, at most %d", ErrTooLong, blocks, limit)
+		return false, newTooLongError(blocks, limit)
 	}
 	return confirmed, nil
 }

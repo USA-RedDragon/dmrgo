@@ -217,13 +217,13 @@ func (a *Assembler) finishIfEmpty() (Message, bool, error) {
 	}
 	m := a.msg
 	a.Reset()
-	a.own(&m)
+	a.newStore(&m)
 	return m, true, nil
 }
 
-// own gives m its own copies of the storage it points to, unless the
+// newStore gives m its own copies of the storage it points to, unless the
 // Assembler reuses its storage.
-func (a *Assembler) own(m *Message) {
+func (a *Assembler) newStore(m *Message) {
 	if a.Reuse {
 		return
 	}
@@ -250,7 +250,7 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 				return Message{}, false, err
 			}
 			a.per, a.msg.DataType, a.hasBlocks = per, b.dataType, true
-			a.blocks = resize(a.blocks, a.total*per)
+			a.blocks = appendLen(a.blocks, a.total*per)
 		} else if b.dataType != a.msg.DataType {
 			a.Reset()
 			return Message{}, false, ErrRateChange
@@ -302,7 +302,7 @@ func (a *Assembler) allValid() bool {
 }
 
 // Missing returns the DBSNs of the current confirmed packet that have not
-// arrived with a good CRC-9.
+// arrived with a good CRC-9. It allocates the slice; AppendMissing does not.
 func (a *Assembler) Missing() []int {
 	n := a.total
 	if a.hasBlocks {
@@ -364,7 +364,7 @@ func (a *Assembler) finish() (Message, bool, error) {
 	}
 	a.Reset()
 	err := a.fill(&m, buf, complete)
-	a.own(&m)
+	a.newStore(&m)
 	return m, true, err
 }
 

@@ -84,7 +84,8 @@ type ResponseData struct {
 	Retry [127]bool // Retry[i] is set to ask for the block with DBSN i again
 }
 
-// RetryBlocks returns the DBSNs flagged for retry in ascending order.
+// RetryBlocks returns the DBSNs flagged for retry in ascending order. It
+// allocates the slice; AppendRetryBlocks does not.
 func (r *ResponseData) RetryBlocks() []int {
 	n := 0
 	for _, retry := range r.Retry {
@@ -112,7 +113,8 @@ func (r *ResponseData) AppendRetryBlocks(dst []int) []int {
 
 // Encode returns the rate 1/2 C_RDATA blocks for a packet of the given
 // number of blocks: one block with 64 flags, or two blocks with 127 flags
-// when blocks is over 64. Flags for blocks past the packet are 1.
+// when blocks is over 64. Flags for blocks past the packet are 1. It
+// allocates the blocks; AppendEncode does not.
 func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 	data, err := r.AppendEncode(make([]pdu.Rate12Data, 0, 2), blocks)
 	if err != nil {
@@ -130,7 +132,7 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 // blocks. On error it returns dst unchanged.
 func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rate12Data, error) {
 	if blocks < 0 || blocks > maxBlocks {
-		return dst, fmt.Errorf("%w: %d blocks", ErrTooLong, blocks)
+		return dst, newCountError(ErrTooLong, blocks)
 	}
 	n, flags := 1, 64
 	if blocks > 64 {
@@ -159,7 +161,7 @@ func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rat
 func DecodeResponseData(blocks ...*pdu.Rate12Data) (ResponseData, error) {
 	var r ResponseData
 	if len(blocks) != 1 && len(blocks) != 2 {
-		return r, fmt.Errorf("%w: %d blocks", ErrResponseData, len(blocks))
+		return r, newCountError(ErrResponseData, len(blocks))
 	}
 	var buf [2 * 12]byte
 	for i, b := range blocks {
@@ -195,6 +197,8 @@ func decodeResponseData(r *ResponseData, buf []byte) error {
 // ResponseSACK carries data as C_RDATA blocks; data is ignored otherwise.
 // The Packet has its own storage; Builder.NewResponse builds into reused
 // storage.
+//
+//go:noinline
 func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
 	var b Builder
 	return b.NewResponse(to, r, data)
@@ -224,11 +228,11 @@ func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *Res
 			data = &none
 		}
 		var err error
-		b.rate12, err = data.AppendEncode(resize(b.rate12, 2)[:0], int(to.BlocksToFollow))
+		b.rate12, err = data.AppendEncode(appendLen(b.rate12, 2)[:0], int(to.BlocksToFollow))
 		if err != nil {
 			return Packet{}, err
 		}
-		b.blocks = resize(b.blocks, len(b.rate12))
+		b.blocks = appendLen(b.blocks, len(b.rate12))
 		for i := range b.rate12 {
 			b.blocks[i] = &b.rate12[i]
 		}
