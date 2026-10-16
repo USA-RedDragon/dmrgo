@@ -76,9 +76,9 @@ jobs:
 
       - name: Build the example
         run: |
-          tinygo build -target=pico -stack-size=16KB -size short -o tinygo-pico.uf2 ./examples/tinygo
+          tinygo build -target=pico -size short -o tinygo-pico.uf2 ./examples/tinygo
           for target in pico2 esp32c3-generic wasip1; do
-            tinygo build -target="$target" -stack-size=16KB -o "tinygo-$target.elf" ./examples/tinygo
+            tinygo build -target="$target" -o "tinygo-$target.elf" ./examples/tinygo
           done
 
       - name: Test the library

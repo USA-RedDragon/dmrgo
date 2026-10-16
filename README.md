@@ -112,10 +112,10 @@ The library builds with TinyGo 0.41 for microcontrollers (for example RP2040, RP
 
 ```sh
 cd v2
-tinygo flash -target=pico -stack-size=16KB ./examples/tinygo
+tinygo flash -target=pico ./examples/tinygo
 ```
 
-- Use `-stack-size=16KB` or more. With a smaller stack TinyGo puts each local variable larger than 256 bytes on the heap, and a decode and encode then make about 1.5 KB of garbage per burst.
+- Decode and encode make no heap garbage at the default stack size of these targets (8 KB), where TinyGo puts each local variable larger than 256 bytes on the heap. The library has no such local on those paths.
 - `vocoder/codec2` always uses its stub, so `codec2.New` returns `codec2.ErrUnavailable`.
 
 The example prints its counts on the serial console once a second.

@@ -20,60 +20,6 @@ import (
 // tinyRuns is the number of measured calls of each operation.
 const tinyRuns = 20
 
-// knownTinyGoAllocs lists the operations that still allocate under TinyGo.
-// TestTinyGoAllocs logs them instead of failing. An operation allocates at
-// a small stack size (-stack-size=8KB) when it has a local larger than 256
-// bytes, so some of them allocate only there.
-var knownTinyGoAllocs = map[string]bool{
-	"layer2.BuildBurst CSBK":                            true,
-	"layer2.BuildBurst Data Header":                     true,
-	"layer2.BuildBurst Idle":                            true,
-	"layer2.BuildBurst MBC Continuation":                true,
-	"layer2.BuildBurst MBC Header":                      true,
-	"layer2.BuildBurst PI Header":                       true,
-	"layer2.BuildBurst Rate 1":                          true,
-	"layer2.BuildBurst Rate 1/2":                        true,
-	"layer2.BuildBurst Rate 3/4":                        true,
-	"layer2.BuildBurst Terminator With LC":              true,
-	"layer2.BuildBurst Unified Single Block":            true,
-	"layer2.BuildBurst Voice LC Header":                 true,
-	"layer2.Burst.DecodeFromBytes CSBK":                 true,
-	"layer2.Burst.DecodeFromBytes Data Header":          true,
-	"layer2.Burst.DecodeFromBytes Idle":                 true,
-	"layer2.Burst.DecodeFromBytes MBC Continuation":     true,
-	"layer2.Burst.DecodeFromBytes MBC Header":           true,
-	"layer2.Burst.DecodeFromBytes PI Header":            true,
-	"layer2.Burst.DecodeFromBytes Rate 1":               true,
-	"layer2.Burst.DecodeFromBytes Rate 1/2":             true,
-	"layer2.Burst.DecodeFromBytes Rate 3/4":             true,
-	"layer2.Burst.DecodeFromBytes Terminator With LC":   true,
-	"layer2.Burst.DecodeFromBytes Unified Single Block": true,
-	"layer2.Burst.DecodeFromBytes voice A":              true,
-	"layer2.Burst.DecodeFromBytes voice C":              true,
-	"layer2.Burst.DecodeFromBytes Voice LC Header":      true,
-	"layer2.Burst.Encode CSBK":                          true,
-	"layer2.Burst.Encode Data Header":                   true,
-	"layer2.Burst.Encode Idle":                          true,
-	"layer2.Burst.Encode MBC Continuation":              true,
-	"layer2.Burst.Encode MBC Header":                    true,
-	"layer2.Burst.Encode PI Header":                     true,
-	"layer2.Burst.Encode Rate 1":                        true,
-	"layer2.Burst.Encode Rate 1/2":                      true,
-	"layer2.Burst.Encode Rate 3/4":                      true,
-	"layer2.Burst.Encode Terminator With LC":            true,
-	"layer2.Burst.Encode Unified Single Block":          true,
-	"layer2.Burst.Encode voice A":                       true,
-	"layer2.Burst.Encode voice C":                       true,
-	"layer2.Burst.Encode Voice LC Header":               true,
-	"layer2.DecodeEmbeddedLC":                           true,
-	"layer2.EmbeddedLCAssembler.Add":                    true,
-	"layer2/framer.Framer.AppendBursts":                 true,
-	"layer2/pdu.CSBK.Encode":                            true,
-	"layer2.RawBurst.Rate34Payload":                     true,
-	"layer2.VoiceReceiver.ReceiveInto":                  true,
-	"layer2.VoiceTransmitter.AppendFrames":              true,
-}
-
 // tinyOp is one operation that TestTinyGoAllocs measures.
 type tinyOp struct {
 	name string
@@ -367,11 +313,7 @@ func TestTinyGoAllocs(t *testing.T) {
 
 	for _, op := range ops {
 		b, n := tinyAlloc(op.run)
-		switch {
-		case b == 0:
-		case knownTinyGoAllocs[op.name]:
-			t.Logf("known: %s: %.0f bytes, %.1f allocs per call", op.name, b, n)
-		default:
+		if b != 0 {
 			t.Errorf("%s: %.0f bytes, %.1f allocs per call, want 0", op.name, b, n)
 		}
 	}
