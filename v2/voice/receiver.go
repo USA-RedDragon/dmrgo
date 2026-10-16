@@ -145,11 +145,12 @@ func (r *Receiver) Expect(now time.Duration, c Call, until time.Duration) {
 }
 
 // Burst decodes the burst raw with what the Hint h says about it, runs it
-// through the Receiver as Decoded does, and appends the events to out. A
+// through the Receiver as Decoded does, and appends the events to dst. A
 // burst that does not decode, or has another color code than
 // ReceiverConfig.ColorCode, is dropped, but its Hint still applies, so an
-// IPSC "sync not detected" burst with Hint.SyncLost still ends the call.
-func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, out []Event) []Event {
+// IPSC "sync not detected" burst with Hint.SyncLost still ends the call. It
+// allocates only when dst has no room for MaxEvents events.
+func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Event) []Event {
 	r.opts.Kind, r.opts.VoiceBurst, r.opts.DataType = h.Kind, enums.VoiceBurstUnknown, nil
 	if h.Kind == layer2.KindVoice {
 		r.opts.VoiceBurst = h.VoiceBurst
@@ -159,31 +160,34 @@ func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 		r.opts.DataType = &r.dataType
 	}
 	if r.b.DecodeFromBytesWith(*raw, &r.opts) != nil {
-		return r.receive(now, nil, nil, &h, out)
+		return r.receive(now, nil, nil, &h, dst)
 	}
-	return r.receive(now, r.b, raw, &h, out)
+	return r.receive(now, r.b, raw, &h, dst)
 }
 
 // Decoded runs the decoded burst b through the Receiver and appends the
-// events to out. ReceiverConfig.ColorCode does not apply: b was decoded
+// events to dst. ReceiverConfig.ColorCode does not apply: b was decoded
 // with the options of the caller. For a transport event without a burst,
-// such as an MMDVM TAG_LOST, call Lost.
-func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, out []Event) []Event {
-	return r.receive(now, b, nil, &h, out)
+// such as an MMDVM TAG_LOST, call Lost. It allocates only when dst has no
+// room for MaxEvents events.
+func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, dst []Event) []Event {
+	return r.receive(now, b, nil, &h, dst)
 }
 
 // Lost tells the Receiver that the transport lost the signal, such as an
-// MMDVM TAG_LOST. A call ends with EndSyncLost.
-func (r *Receiver) Lost(now time.Duration, out []Event) []Event {
-	out = r.timers(now, out)
-	return r.syncLost(now, out)
+// MMDVM TAG_LOST. A call ends with EndSyncLost. It appends the events to
+// dst, and allocates only when dst has no room for MaxEvents events.
+func (r *Receiver) Lost(now time.Duration, dst []Event) []Event {
+	dst = r.timers(now, dst)
+	return r.syncLost(now, dst)
 }
 
-// Tick runs the timers that are due at now and appends their events: the
-// end of a call after ReceiverConfig.Lost without a burst, and the end of
-// the hang time. A Tick before Deadline does nothing.
-func (r *Receiver) Tick(now time.Duration, out []Event) []Event {
-	return r.timers(now, out)
+// Tick runs the timers that are due at now and appends their events to dst:
+// the end of a call after ReceiverConfig.Lost without a burst, and the end
+// of the hang time. A Tick before Deadline does nothing. It allocates only
+// when dst has no room for MaxEvents events.
+func (r *Receiver) Tick(now time.Duration, dst []Event) []Event {
+	return r.timers(now, dst)
 }
 
 // Deadline returns the time at which the Receiver needs a Tick. ok is
