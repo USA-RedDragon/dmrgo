@@ -6,7 +6,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -89,7 +88,7 @@ func TestBurst_PIHeader_Decode(t *testing.T) {
 
 	var info [96]bit.Bit
 	copy(info[:], bit.Unpack([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
-	raw := buildDataBurst(enums.DataTypePIHeader, bptc.Encode196(info))
+	raw := buildDataBurst(enums.DataTypePIHeader, encode196Bits(info))
 
 	b, err := layer2.NewBurstFromBytes(raw)
 	if err != nil {

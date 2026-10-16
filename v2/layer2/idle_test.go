@@ -109,7 +109,7 @@ func TestIdleMessageFECMatrix_MatchesInfoBits(t *testing.T) {
 func TestIdleMessageFECMatrix_MatchesBPTCEncode(t *testing.T) {
 	t.Parallel()
 
-	encoded := bptc.Encode196(layer2.IdleMessageInfo())
+	encoded := encode196Bits(layer2.IdleMessageInfo())
 	for r := range idleMessageFECMatrix {
 		for c := range idleMessageFECMatrix[r] {
 			i := 1 + r*15 + c

@@ -15,7 +15,8 @@ import (
 func layer3Entries(t testing.TB) []entry {
 	t.Helper()
 	header := splitBurst(captureRawBursts(t, "voice")[0])
-	lcBits, _ := bptc.Decode196(header.info)
+	lcPacked, _, _ := bptc.Decode196(packInfo196(header.info))
+	lcBits := bit.Unpack96(lcPacked)
 	soBits := [8]bit.Bit(lcBits[8:16])
 	soByte := byte(bit.Uint(soBits[:]))
 	so := layer3.DecodeServiceOptions(soBits)

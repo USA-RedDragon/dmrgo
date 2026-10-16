@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	packedbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -95,6 +96,30 @@ func (r *RawBurst) SetSlotType(st pdu.SlotType) {
 	r.writeBits(bits[10:], slotTypeSecondStart)
 }
 
+// packInfo packs the 196 information bits as bptc takes them.
+func packInfo(bits [196]bit.Bit) [25]byte {
+	var p [25]byte
+	packedbits.Pack(p[:], 0, bits[:])
+	return p
+}
+
+// unpackInfo unpacks the 196 information bits that bptc returns.
+func unpackInfo(p [25]byte) [196]bit.Bit {
+	var bits [196]bit.Bit
+	packedbits.Unpack(bits[:], p[:], 0)
+	return bits
+}
+
+// reservedByte returns the BPTC reserved bits R(0) to R(2), R(i) in bit i.
+func reservedByte(res [3]bit.Bit) uint8 {
+	return uint8(res[0]&1 | res[1]&1<<1 | res[2]&1<<2)
+}
+
+// reservedBits returns the BPTC reserved bits that reservedByte packs.
+func reservedBits(res uint8) [3]bit.Bit {
+	return [3]bit.Bit{bit.Bit(res & 1), bit.Bit(res >> 1 & 1), bit.Bit(res >> 2 & 1)}
+}
+
 func (r RawBurst) info() [196]bit.Bit {
 	var bits [196]bit.Bit
 	r.readBits(bits[:98], infoFirstStart)
@@ -112,15 +137,15 @@ func (r *RawBurst) setInfo(bits [196]bit.Bit) {
 // RS(12,9) check. It is meaningful only for the BPTC data types; a Rate 3/4
 // or Rate 1 burst needs Rate34Payload or Rate1Payload.
 func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
-	bits, res := bptc.Decode196(r.info())
-	return bit.Pack96(bits), res
+	p, _, res := bptc.Decode196(packInfo(r.info()))
+	return p, res
 }
 
 // SetBPTCPayload encodes p with BPTC(196,96) into the 196 information bits,
 // with the reserved bits R(0) to R(3) zero, and keeps the slot type and
 // SYNC. p must already carry its CRC or RS(12,9) parity (see pdu.Seal).
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
-	r.setInfo(bptc.Encode196(bit.Unpack96(p)))
+	r.setInfo(unpackInfo(bptc.Encode196(p, 0)))
 }
 
 // BPTCReserved decodes the 196 information bits as BPTC(196,96) and returns
@@ -128,8 +153,8 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 // the BPTC result. Motorola Capacity Max sets R(2) to flag RAS (ETSI TS 102
 // 361-1 clause B.1.1).
 func (r RawBurst) BPTCReserved() ([3]bit.Bit, fec.Result) {
-	_, res, result := bptc.Decode196WithReserved(r.info())
-	return res, result
+	_, res, result := bptc.Decode196(packInfo(r.info()))
+	return reservedBits(res), result
 }
 
 // SetBPTCReserved sets the BPTC(196,96) reserved bits R(0) to R(2) to res,
@@ -138,11 +163,8 @@ func (r RawBurst) BPTCReserved() ([3]bit.Bit, fec.Result) {
 // same data and FEC result as before.
 func (r *RawBurst) SetBPTCReserved(res [3]bit.Bit) {
 	info := r.info()
-	_, cur, _ := bptc.Decode196WithReserved(info)
-	for i := range res {
-		res[i] = (res[i] ^ cur[i]) & 1
-	}
-	delta := bptc.Encode196WithReserved([96]bit.Bit{}, res)
+	_, cur, _ := bptc.Decode196(packInfo(info))
+	delta := unpackInfo(bptc.Encode196([12]byte{}, reservedByte(res)^cur))
 	for i := range info {
 		info[i] ^= delta[i]
 	}
@@ -382,7 +404,7 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	case enums.DataTypePIHeader, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeCSBK,
 		enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation, enums.DataTypeDataHeader, enums.DataTypeRate12,
 		enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
-		r.setInfo(bptc.Encode196([96]bit.Bit(info[:96])))
+		r.setInfo(unpackInfo(bptc.Encode196(bit.Pack96([96]bit.Bit(info[:96])), 0)))
 	}
 	return r, nil
 }

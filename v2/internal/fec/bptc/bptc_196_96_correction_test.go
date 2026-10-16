@@ -1,20 +1,20 @@
 package bptc
 
 import (
+	"math/bits"
 	"math/rand"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
-func gridSyndromesZero(g *[196]bit.Bit) bool {
-	for c := 0; c < 15; c++ {
-		if columnSyndrome(g, c) != 0 {
-			return false
-		}
+func gridSyndromesZero(rows *[13]uint16) bool {
+	s := columnSyndromes(rows)
+	if (s[0]|s[1]|s[2]|s[3])&gridRowMask != 0 {
+		return false
 	}
-	for r := 0; r < 13; r++ {
-		if rowSyndrome(g, r) != 0 {
+	for r := range rows {
+		if rowSyndrome15_11(rows[r]) != 0 {
 			return false
 		}
 	}
@@ -26,7 +26,7 @@ func randomBPTC19696(r *rand.Rand) ([96]bit.Bit, [196]bit.Bit) {
 	for i := range data {
 		data[i] = bit.Bit(r.Intn(2))
 	}
-	return data, Encode196(data)
+	return data, encode196Bits(data)
 }
 
 func TestBPTC19696_EncodedGridIsProductCodeword(t *testing.T) {
@@ -39,7 +39,7 @@ func TestBPTC19696_EncodedGridIsProductCodeword(t *testing.T) {
 		for i := range g {
 			g[i] = enc[dm[i]]
 		}
-		if !gridSyndromesZero(&g) {
+		if rows := gridRows(&g); !gridSyndromesZero(&rows) {
 			t.Fatalf("encoded grid has a nonzero row or column syndrome")
 		}
 	}
@@ -55,7 +55,7 @@ func TestBPTC19696_AllDoubleErrorsCorrected(t *testing.T) {
 			rx := enc
 			rx[dm[p]] ^= 1
 			rx[dm[q]] ^= 1
-			got, res := Decode196(rx)
+			got, res := decode196Bits(rx)
 			if got != data || res.Uncorrectable || res.ErrorsCorrected != 2 {
 				t.Fatalf("grid bits %d,%d: data match=%v result=%+v", p, q, got == data, res)
 			}
@@ -77,16 +77,17 @@ func TestBPTC19696_AcceptedOutputIsCodeword(t *testing.T) {
 		for i := range g {
 			g[i] = rx[dm[i]]
 		}
-		corrected, flips, unc := hammingCorrect(g)
-		if !unc && !gridSyndromesZero(&corrected) {
+		received := gridRows(&g)
+		rows := received
+		if unc := hammingCorrect(&rows); !unc && !gridSyndromesZero(&rows) {
 			t.Fatalf("accepted a grid with nonzero syndromes")
 		}
 		diff := 0
-		for i := range g {
-			diff += int(g[i] ^ corrected[i])
+		for r := range rows {
+			diff += bits.OnesCount16(rows[r] ^ received[r])
 		}
-		if flips != diff {
-			t.Fatalf("ErrorsCorrected %d, but %d bits changed", flips, diff)
+		if _, res := decode196Bits(rx); res.ErrorsCorrected != diff {
+			t.Fatalf("ErrorsCorrected %d, but %d bits changed", res.ErrorsCorrected, diff)
 		}
 	}
 }
@@ -102,7 +103,7 @@ func TestBPTC19696_ColumnsFirstCorrection(t *testing.T) {
 	for _, p := range []int{124, 128, 172, 173} {
 		enc[dm[p]] ^= 1
 	}
-	got, res := Decode196(enc)
+	got, res := decode196Bits(enc)
 	if got != data || res.Uncorrectable || res.ErrorsCorrected != 4 {
 		t.Fatalf("data match=%v result=%+v", got == data, res)
 	}
