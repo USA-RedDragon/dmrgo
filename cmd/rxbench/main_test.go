@@ -13,6 +13,26 @@ import (
 // above 1e-4.
 func TestNoTierUnderFloor(t *testing.T) {
 	t.Parallel()
+	checkUnder(t, func(d data) floor { return d.floor }, 0)
+}
+
+// awareMargin is the Eb/N0, in dB, by which TestNoTierUnderAware shifts
+// the code-aware curve to lower error rates: the code-aware receiver is
+// measured, not a bound, on as few seeds as the tiers.
+const awareMargin = 0.25
+
+// TestNoTierUnderAware checks, as TestNoTierUnderFloor, that no tier makes
+// fewer errors than the code-aware receiver at awareMargin dB more Eb/N0.
+func TestNoTierUnderAware(t *testing.T) {
+	t.Parallel()
+	checkUnder(t, func(d data) floor { return d.aware }, awareMargin)
+}
+
+// checkUnder fails when a tier makes fewer errors at some point of the
+// sweep data than the reference curves of ref allow at margin dB more
+// Eb/N0, with a binomial tail chance under 1e-4.
+func checkUnder(t *testing.T, ref func(data) floor, margin float64) {
+	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("cannot find the rxbench source directory")
@@ -21,19 +41,19 @@ func TestNoTierUnderFloor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for k, c := range d.floor.Payloads {
+	for k, c := range ref(d).Payloads {
 		for _, tr := range d.bench.Tiers {
 			for _, p := range tr.Full {
 				s := p.Payloads[k]
 				if s == nil || s.Truth == 0 {
 					continue
 				}
-				pf, ok := floorAt(c, cnToEbN0(p.CN))
+				pf, ok := floorAt(c, cnToEbN0(p.CN)+margin)
 				if !ok {
 					continue
 				}
 				if q := binomialAtMost(s.Truth-s.Exact, s.Truth, pf); q < 1e-4 {
-					t.Errorf("tier %d, %s at C/N %.1f dB: %d errors in %d, floor error rate %.3g (chance %.2g)",
+					t.Errorf("tier %d, %s at C/N %.1f dB: %d errors in %d, reference error rate %.3g (chance %.2g)",
 						tr.Tier, k, p.CN, s.Truth-s.Exact, s.Truth, pf, q)
 				}
 			}
