@@ -60,7 +60,7 @@ func ExampleNew() {
 	fmt.Println(err)
 	// Output:
 	// Standardized FID [1 0 1 0]
-	// vocoder: unknown codec: "no-such-codec"
+	// vocoder: unknown codec
 }
 
 // ExampleDecodeAMBE72 corrects a bit error in an AMBE+2 silence slot.

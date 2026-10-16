@@ -2,8 +2,8 @@ package vocoder_test
 
 import (
 	"errors"
-	"fmt"
 	"slices"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
@@ -20,28 +20,28 @@ func (fakeCodec) Silence() [72]bit.Bit                { return [72]bit.Bit{} }
 func (c fakeCodec) FID() enums.FeatureSetID           { return c.fid }
 func (fakeCodec) Close() error                        { return nil }
 
-// uniqueName returns a codec name not yet registered, so tests stay
-// repeatable under -count because the registry is process-global.
-func uniqueName(base string) string {
-	names := vocoder.Names()
-	for i := 0; ; i++ {
-		if name := fmt.Sprintf("%s-%d", base, i); !slices.Contains(names, name) {
-			return name
+// errFactory is the error of the failing test factory.
+var errFactory = errors.New("factory failed")
+
+// registerTestCodecs registers the test codecs once per process, since the
+// registry is process-global and holds vocoder.MaxCodecs codecs.
+var registerTestCodecs = sync.OnceValue(func() error {
+	factory := func() (vocoder.Codec, error) { return fakeCodec{fid: 0x7F}, nil }
+	for _, name := range []string{"test-fake-b", "test-fake-a"} {
+		if err := vocoder.Register(name, factory); err != nil {
+			return err
 		}
 	}
-}
+	return vocoder.Register("test-fake-err", func() (vocoder.Codec, error) { return nil, errFactory })
+})
 
 func TestCodecRegistry(t *testing.T) {
 	t.Parallel()
 
-	factory := func() (vocoder.Codec, error) { return fakeCodec{fid: 0x7F}, nil }
-	a, b := uniqueName("test-fake-a"), uniqueName("test-fake-b")
-	for _, name := range []string{b, a} {
-		if err := vocoder.Register(name, factory); err != nil {
-			t.Fatalf("Register(%q): %v", name, err)
-		}
+	if err := registerTestCodecs(); err != nil {
+		t.Fatalf("Register: %v", err)
 	}
-
+	a, b := "test-fake-a", "test-fake-b"
 	names := vocoder.Names()
 	if !slices.IsSorted(names) {
 		t.Errorf("Names not sorted: %v", names)
@@ -69,10 +69,11 @@ func TestCodecRegistry(t *testing.T) {
 		t.Errorf("New(missing) error = %v, want ErrUnknownCodec", err)
 	}
 
+	factory := func() (vocoder.Codec, error) { return fakeCodec{}, nil }
 	if err := vocoder.Register(a, factory); !errors.Is(err, vocoder.ErrDuplicateCodec) {
 		t.Errorf("Register(duplicate) error = %v, want ErrDuplicateCodec", err)
 	}
-	if err := vocoder.Register(uniqueName("test-fake-nil"), nil); !errors.Is(err, vocoder.ErrNilFactory) {
+	if err := vocoder.Register("test-fake-nil", nil); !errors.Is(err, vocoder.ErrNilFactory) {
 		t.Errorf("Register(nil) error = %v, want ErrNilFactory", err)
 	}
 }
@@ -80,12 +81,10 @@ func TestCodecRegistry(t *testing.T) {
 func TestCodecRegistryFactoryError(t *testing.T) {
 	t.Parallel()
 
-	want := errors.New("factory failed")
-	name := uniqueName("test-fake-err")
-	if err := vocoder.Register(name, func() (vocoder.Codec, error) { return nil, want }); err != nil {
+	if err := registerTestCodecs(); err != nil {
 		t.Fatalf("Register: %v", err)
 	}
-	if _, err := vocoder.New(name); !errors.Is(err, want) {
-		t.Errorf("New error = %v, want %v", err, want)
+	if _, err := vocoder.New("test-fake-err"); !errors.Is(err, errFactory) {
+		t.Errorf("New error = %v, want %v", err, errFactory)
 	}
 }
