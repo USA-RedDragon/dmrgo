@@ -89,6 +89,7 @@ func DecodeFullLCCodeword(cw [12]byte, dt enums.DataType) ([9]byte, fec.Result, 
 // LC. It is a one-byte value, so that returning it does not allocate.
 type noFullLCError enums.DataType
 
+// Error returns the message of e. It allocates the message.
 func (e noFullLCError) Error() string {
 	return fmt.Sprintf("data type %s carries no RS(12,9) Full LC", enums.DataType(e).String())
 }
@@ -97,6 +98,7 @@ func (e noFullLCError) Error() string {
 // CRC-CCITT, a one-byte value as noFullLCError is.
 type noBlockCRCError enums.DataType
 
+// Error returns the message of e. It allocates the message.
 func (e noBlockCRCError) Error() string {
 	return fmt.Sprintf("data type %s has no single-block CRC-CCITT", enums.DataType(e).String())
 }

@@ -82,6 +82,8 @@ func (s *CdefParms) Encode() ([58]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *CdefParms) String() string {
 	return fmt.Sprintf("CdefParms{ Channel: %d, TXMHz: %d, TXKHz: %d, RXMHz: %d, RXKHz: %d }", s.Channel, s.TXMHz, s.TXKHz, s.RXMHz, s.RXKHz)
 }

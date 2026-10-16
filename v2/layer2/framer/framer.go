@@ -173,7 +173,7 @@ func (f *Framer) Locked() bool {
 }
 
 // Write adds bits to the stream and returns the bursts they complete, or nil
-// when they complete none.
+// when they complete none. It allocates the slice; AppendBursts does not.
 func (f *Framer) Write(stream ...bit.Bit) []Burst {
 	return f.AppendBursts(nil, stream...)
 }

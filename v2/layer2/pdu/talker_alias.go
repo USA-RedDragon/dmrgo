@@ -64,9 +64,10 @@ func TalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (
 	return string(b), err
 }
 
-// AppendTalkerAlias appends the alias that TalkerAlias returns to dst
-// as UTF-8 and returns the extended slice, with the errors of
-// TalkerAlias. With ErrTalkerAliasIncomplete it returns dst unchanged.
+// AppendTalkerAlias appends the alias that TalkerAlias returns to dst as
+// UTF-8 and returns the extended slice, with the errors of TalkerAlias. With
+// ErrTalkerAliasIncomplete it returns dst unchanged. It allocates only when
+// dst has no room.
 func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) ([]byte, error) {
 	format := header.TalkerAliasDataFormat
 	n := TalkerAliasBlocks(format, header.TalkerAliasDataLength)
@@ -275,8 +276,8 @@ func (a *TalkerAliasAssembler) Add(lc *FullLinkControl) (alias string, ok bool, 
 }
 
 // AppendAdd adds lc as Add does, and appends the alias that Add returns to
-// dst as UTF-8 instead of returning it as a string. It returns dst
-// unchanged when Add returns an empty alias.
+// dst as UTF-8 instead of returning it as a string. It returns dst unchanged
+// when Add returns an empty alias. It allocates only when dst has no room.
 func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias []byte, ok bool, err error) {
 	switch {
 	case lc.FLCO == enums.FLCOTalkerAliasHeader && lc.TalkerAliasHeader != nil:

@@ -25,7 +25,8 @@ const (
 	ServiceTypeManufacturerSpecific8 ServiceType = 0b1111 // manufacturer specific service 8
 )
 
-// String returns a human-readable name for a ServiceType.
+// String returns a human-readable name for a ServiceType. It allocates only
+// for a value without a name.
 func (st ServiceType) String() string {
 	switch st {
 	case ServiceTypeLIP:

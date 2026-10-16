@@ -28,7 +28,8 @@ func (r *VoiceReceiver) Reset() {
 // sets b.VoiceBurst to its superframe position as the package doc describes.
 // When burst E completes an embedded LC, Receive returns it with ok set, or
 // with ErrEmbeddedLCUncorrectable. It returns ErrEmbeddedLCSequence when the
-// burst discards a partial embedded LC.
+// burst discards a partial embedded LC. It allocates the payload struct of a
+// completed LC; ReceiveInto does not.
 func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err error) {
 	bits, res, done, err := r.receive(b)
 	if !done {

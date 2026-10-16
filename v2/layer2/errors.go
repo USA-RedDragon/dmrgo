@@ -48,6 +48,7 @@ type reservedDataTypeError struct {
 	dt enums.DataType
 }
 
+// Error returns the message of e. It allocates the message.
 func (e reservedDataTypeError) Error() string {
 	return ErrReservedDataType.Error() + " " + strconv.Itoa(int(e.dt))
 }
@@ -72,6 +73,7 @@ func colorCodeMismatch(got, want enums.ColorCode) error {
 	return colorCodeMismatchError{gotWant: uint8(got)<<4 | uint8(want)}
 }
 
+// Error returns the message of e. It allocates the message.
 func (e colorCodeMismatchError) Error() string {
 	return ErrColorCodeMismatch.Error() + ": burst has " + strconv.Itoa(int(e.gotWant>>4)) +
 		", want " + strconv.Itoa(int(e.gotWant&0x0F))

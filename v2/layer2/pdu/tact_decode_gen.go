@@ -67,6 +67,8 @@ func (s *TACT) Encode() ([7]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *TACT) String() string {
 	return fmt.Sprintf("TACT{ AccessType: %t, TDMAChannel: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.AccessType, s.TDMAChannel, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

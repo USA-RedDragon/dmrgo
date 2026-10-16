@@ -79,7 +79,8 @@ const (
 	OriginExpected
 )
 
-// String returns the name of the origin.
+// String returns the name of the origin. It allocates only for a value
+// without a name.
 func (o Origin) String() string {
 	switch o {
 	case OriginUnknown:
@@ -122,7 +123,8 @@ const (
 	EndTimeout
 )
 
-// String returns the name of the reason.
+// String returns the name of the reason. It allocates only for a value
+// without a name.
 func (r EndReason) String() string {
 	switch r {
 	case EndTerminator:
@@ -204,7 +206,8 @@ const (
 	EventSessionEnd
 )
 
-// String returns the name of the kind.
+// String returns the name of the kind. It allocates only for a value without
+// a name.
 func (k EventKind) String() string {
 	switch k {
 	case EventCallStart:
@@ -272,7 +275,8 @@ const (
 	StateHang
 )
 
-// String returns the name of the state.
+// String returns the name of the state. It allocates only for a value
+// without a name.
 func (s State) String() string {
 	switch s {
 	case StateIdle:

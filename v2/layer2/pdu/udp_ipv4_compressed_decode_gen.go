@@ -89,6 +89,8 @@ func (s *UDPIPv4CompressedHeader) Encode() ([72]bit.Bit, error) {
 	return data, nil
 }
 
+// String returns the fields of s as text, for printing. It allocates the
+// string.
 func (s *UDPIPv4CompressedHeader) String() string {
 	return fmt.Sprintf("UDPIPv4CompressedHeader{ IPv4Identification: %d, SAID: %d, DAID: %d, HeaderCompressionOpcode: %d, SPID: %d, DPID: %d, ExtendedHeader1: %d, ExtendedHeader2: %d }", s.IPv4Identification, s.SAID, s.DAID, s.HeaderCompressionOpcode, s.SPID, s.DPID, s.ExtendedHeader1, s.ExtendedHeader2)
 }

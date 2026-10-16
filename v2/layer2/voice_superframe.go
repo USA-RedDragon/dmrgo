@@ -143,8 +143,9 @@ func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 	return nil
 }
 
-// AddSlots adds 72-bit vocoder slots in transmit order and returns the
-// voice bursts they complete, as AppendSlots does with a nil dst.
+// AddSlots adds 72-bit vocoder slots in transmit order and returns the voice
+// bursts they complete, as AppendSlots does with a nil dst. It allocates the
+// slice; AppendSlots does not.
 func (t *VoiceTransmitter) AddSlots(slots ...[72]bit.Bit) ([]RawBurst, error) {
 	return t.AppendSlots(nil, slots...)
 }
@@ -170,14 +171,16 @@ func (t *VoiceTransmitter) AppendSlots(dst []RawBurst, slots ...[72]bit.Bit) ([]
 
 // AddFrames adds AMBE+2 frames in transmit order, each as the slot
 // vocoder.EncodeAMBE72 returns, and returns the voice bursts they complete,
-// as AppendFrames does with a nil dst.
+// as AppendFrames does with a nil dst. It allocates the slice; AppendFrames
+// does not.
 func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([]RawBurst, error) {
 	return t.AppendFrames(nil, frames...)
 }
 
 // AppendFrames adds AMBE+2 frames in transmit order, each as the slot
-// vocoder.EncodeAMBE72 returns, appends the voice bursts they complete to dst
-// and returns the extended slice, as AppendSlots does.
+// vocoder.EncodeAMBE72 returns, appends the voice bursts they complete to
+// dst and returns the extended slice, as AppendSlots does. It allocates only
+// when dst has no room.
 func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFrame) ([]RawBurst, error) {
 	if t.terminated {
 		return dst, ErrVoiceTerminated

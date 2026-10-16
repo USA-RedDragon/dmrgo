@@ -348,7 +348,9 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 // BuildBurst returns the data burst that carries d, with a slot type of
 // color code cc and data type d.DataType() and the data SYNC pattern of src.
 // The BPTC reserved bits are zero. It returns an error when d is nil or does
-// not encode, or src is unknown.
+// not encode, or src is unknown. Its type switch on the Encode method of d
+// can allocate once for each type of d, to fill the runtime cache of the
+// switch.
 func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if d == nil {
 		return RawBurst{}, errNilData

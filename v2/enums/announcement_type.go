@@ -22,6 +22,8 @@ const (
 	AnnouncementManufacturerSpecific2 AnnouncementType = 0b11111 // manufacturer specific
 )
 
+// String returns the name of the AnnouncementType. It allocates only for a
+// value without a name.
 func (a AnnouncementType) String() string {
 	switch a {
 	case AnnouncementAnnWDTSCC:

@@ -932,6 +932,8 @@ func emitStringSprintf(f *File, pdu parse.PDUStruct) {
 	formatStr := pdu.Name + "{ " + strings.Join(formatParts, ", ") + " }"
 	allArgs := append([]Code{Lit(formatStr)}, args...)
 
+	f.Comment("String returns the fields of s as text, for printing. It allocates the")
+	f.Comment("string.")
 	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("String").Params().String().Block(
 		Return(Qual("fmt", "Sprintf").Call(allArgs...)),
 	)
@@ -939,6 +941,8 @@ func emitStringSprintf(f *File, pdu parse.PDUStruct) {
 
 // emitStringConcat generates a String method using string concatenation for dispatch/stride fields.
 func emitStringConcat(f *File, pdu parse.PDUStruct) {
+	f.Comment("String returns the fields of s as text, for printing. It allocates the")
+	f.Comment("string.")
 	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("String").Params().String().BlockFunc(func(g *Group) {
 		g.Id("_ret").Op(":=").Lit(pdu.Name + "{ ")
 

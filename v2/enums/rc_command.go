@@ -12,6 +12,8 @@ const (
 	RCCeaseTransmissionRequest RCCommand = 0b0101 // cease transmission request
 )
 
+// String returns the name of the RCCommand. It allocates only for a value
+// without a name.
 func (rc RCCommand) String() string {
 	switch rc {
 	case RCCeaseTransmissionCommand:
