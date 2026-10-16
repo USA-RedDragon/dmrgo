@@ -42,7 +42,8 @@ func newRepairer(osd bool) *repairer {
 }
 
 // repair rewrites the fields of the burst of entry e by its kind, with the
-// color code cc of the stream when ccOK.
+// color code cc of the stream when ccOK. The payload of an idle burst
+// carries nothing, so only its slot type is decoded.
 func (p *repairer) repair(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	if p == nil {
 		return
@@ -67,7 +68,7 @@ func (p *repairer) repair(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		switch dt := st.DataType(); dt {
 		case enums.DataTypeRate34:
 			p.soft.decodeRate34(llr, &out.Fixed)
-		case enums.DataTypeRate1, enums.DataTypeReserved:
+		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
 		default:
 			if p.osd {
 				p.soft.decodeBPTCOSD(llr, p.checks[dt&0xF], &out.Fixed)
