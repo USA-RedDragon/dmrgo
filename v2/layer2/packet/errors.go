@@ -22,6 +22,11 @@ var (
 	// ErrRateChange is returned when the data type changes within a packet
 	// (ETSI TS 102 361-1 clause 8.2.2.1). The partial packet is discarded.
 	ErrRateChange = errors.New("data type changed within a packet")
+	// ErrHeaderCRC is returned for a data header whose CRC-CCITT failed
+	// (ETSI TS 102 361-1 clause B.3.8). The Assembler drops the header and
+	// keeps the packet in progress, as MMDVMHost does. It wraps
+	// fec.ErrUncorrectable.
+	ErrHeaderCRC = fmt.Errorf("data header CRC does not match: %w", fec.ErrUncorrectable)
 	// ErrMessageCRC is returned with the Message whose message CRC failed.
 	// It wraps fec.ErrUncorrectable.
 	ErrMessageCRC = fmt.Errorf("message CRC-32 does not match: %w", fec.ErrUncorrectable)

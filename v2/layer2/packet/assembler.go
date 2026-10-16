@@ -141,7 +141,9 @@ func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 // Add adds a decoded PDU: a *pdu.DataHeader, *pdu.Rate12Data,
 // *pdu.Rate34Data or *pdu.Rate1Data, and ignores other PDUs. done is true
 // when the packet is complete, with its Message; on ErrMessageCRC the
-// Message is returned too. The package doc gives the rules for headers.
+// Message is returned too. A header with FEC.Uncorrectable set returns
+// ErrHeaderCRC and changes nothing. The package doc gives the rules for
+// headers.
 func (a *Assembler) Add(d layer2.Data) (Message, bool, error) {
 	switch v := d.(type) {
 	case *pdu.DataHeader:
@@ -156,6 +158,9 @@ func (a *Assembler) Add(d layer2.Data) (Message, bool, error) {
 }
 
 func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
+	if h.FEC.Uncorrectable {
+		return Message{}, false, ErrHeaderCRC
+	}
 	if h.Format == pdu.FormatProprietary && h.ProprietaryHeader != nil {
 		if !a.active || a.count != 0 || a.msg.Proprietary != nil || a.expect == 0 {
 			return Message{}, false, ErrNoHeader

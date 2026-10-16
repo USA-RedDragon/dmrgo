@@ -104,6 +104,73 @@ func TestAssembler_CaptureCRCFailure(t *testing.T) {
 	}
 }
 
+// badHeader returns the U_HEAD of d-sms.bin (burst 5) with 24 bits flipped.
+// It decodes as a C_HEAD whose CRC fails.
+func badHeader(t *testing.T) *layer2.Burst {
+	t.Helper()
+	data, err := os.ReadFile("../testdata/d-sms.bin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw := [33]byte(data[5*33:])
+	raw[2] ^= 0xFF
+	raw[3] ^= 0xFF
+	raw[4] ^= 0xFF
+	b, err := layer2.NewBurstFromBytes(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, ok := b.Data.(*pdu.DataHeader)
+	if !ok || !h.FEC.Uncorrectable || h.Format != pdu.FormatConfirmed {
+		t.Fatalf("corrupt header decodes as %T %+v", b.Data, b.Data)
+	}
+	return b
+}
+
+func TestAssembler_HeaderCRCFailure(t *testing.T) {
+	t.Parallel()
+
+	var a packet.Assembler
+	for i, b := range loadBursts(t, "../testdata/d-sms.bin") {
+		if i == 5 {
+			b = badHeader(t)
+		}
+		m, done, err := a.AddBurst(b)
+		switch {
+		case done:
+			t.Fatalf("burst %d: message %+v", i, m)
+		case i == 5 && (!errors.Is(err, packet.ErrHeaderCRC) || !errors.Is(err, fec.ErrUncorrectable)):
+			t.Fatalf("header: %v, want ErrHeaderCRC", err)
+		case i > 5 && !errors.Is(err, packet.ErrNoHeader):
+			t.Fatalf("block %d: %v, want ErrNoHeader", i, err)
+		}
+	}
+}
+
+func TestAssembler_HeaderCRCFailureKeepsPacket(t *testing.T) {
+	t.Parallel()
+
+	var a packet.Assembler
+	var msg *packet.Message
+	for i, b := range loadBursts(t, "../testdata/d-sms.bin") {
+		m, err := addBurst(&a, b)
+		if err != nil || m != nil && msg != nil {
+			t.Fatalf("burst %d: %v", i, err)
+		}
+		if m != nil {
+			msg = m
+		}
+		if i == 7 {
+			if _, err := addBurst(&a, badHeader(t)); !errors.Is(err, packet.ErrHeaderCRC) {
+				t.Fatalf("header: %v, want ErrHeaderCRC", err)
+			}
+		}
+	}
+	if msg == nil || !bytes.Contains(msg.Data, utf16le("TEST KI5VMF")) {
+		t.Fatalf("message %+v", msg)
+	}
+}
+
 func encodeBlock(t *testing.T, d layer2.Data) layer2.Data {
 	t.Helper()
 	switch b := d.(type) {
