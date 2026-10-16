@@ -348,7 +348,7 @@ func (c *channelizer) discFilter(v complex64) {
 	}
 	d := y * complex(real(c.prev), -imag(c.prev))
 	c.prev = y
-	f := float32(math.Atan2(float64(imag(d)), float64(real(d)))) * c.discHz
+	f := atan2f(imag(d), real(d)) * c.discHz
 	nr := len(c.rrc)
 	c.fHist[c.fHead] = f
 	c.fHist[c.fHead+nr] = f
