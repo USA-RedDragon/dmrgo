@@ -82,8 +82,11 @@ type syncSearch struct {
 	devSq [numSources]float32
 	tpl   [numSources][]complex64
 	rot   [searchFreqs][]complex64
-	x     []complex64
-	full  []float64
+	// tplRot holds tpl of source src turned by rot of offset fi at
+	// tplRot[fi*numSources+src].
+	tplRot [searchFreqs * numSources][]complex64
+	x      []complex64
+	full   []float64
 	// pats holds every SYNC pattern, and conj e^-j*phase of the waveform
 	// of each over the correlated span.
 	pats [2*numSources + 1]enums.SyncPattern
@@ -135,6 +138,15 @@ func newSyncSearch(coherent bool, dec int) *syncSearch {
 		for j := range span {
 			p := ph[syncEdge*sps+j]
 			s.tpl[i][j] = complex(float32(math.Cos(p)), float32(-math.Sin(p)))
+		}
+	}
+	for fi := range searchFreqs {
+		for src := range numSources {
+			t := make([]complex64, span)
+			for j := range t {
+				t[j] = s.tpl[src][j] * s.rot[fi][j]
+			}
+			s.tplRot[fi*numSources+src] = t
 		}
 	}
 	s.pats[2*numSources] = enums.SyncMSSourcedRC
@@ -192,21 +204,19 @@ type syncHit struct {
 func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 	var best syncHit
 	var etot float32
-	first := start/int64(s.dec) - int64(s.sps/2)
-	for j := range s.span {
-		v := r.at(first + int64(j))
-		s.x[j] = v
+	r.gather(start/int64(s.dec)-int64(s.sps/2), s.x)
+	for _, v := range s.x {
 		etot += real(v)*real(v) + imag(v)*imag(v)
 	}
 	if etot == 0 {
 		return best
 	}
-	for fi, rot := range s.rot {
+	for fi := range s.rot {
 		for src := range nsrc {
-			t := s.tpl[src]
+			t := s.tplRot[fi*numSources+src]
 			var ac, bd, bc, ad float32
 			for j, v := range s.x {
-				w := t[j] * rot[j]
+				w := t[j]
 				ac += real(v) * real(w)
 				bd += imag(v) * imag(w)
 				bc += imag(v) * real(w)

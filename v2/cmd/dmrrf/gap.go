@@ -104,16 +104,18 @@ func (r *Receiver) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 		t0 += sp
 	}
 	symRot, symStep := complex64(r.rotAt(t0)), complex64(r.rotAt(float64(dir)*r.period/slotSymbols))
+	pad := 0
+	if rev {
+		pad = (i1-i0)*samplesPerSy/ch.dec + sincTaps
+	}
+	base, u0 := ch.ringAt(t0, pad)
+	du, su := float32(float64(dir)*r.period/slotSymbols/float64(ch.dec)), float32(sp/float64(ch.dec))
 	for i := i0; i < i1; i++ {
-		h := g.add(dir * i)
-		t := r.symTime(h.slot, h.k) - float64(sps/2)*sp
-		if rev {
-			t += sp
-		}
+		u := u0 + float32(i-i0)*du
 		rot := symRot
 		symRot *= symStep
 		for j := range sps {
-			v := ch.interp(t+float64(j)*sp) * rot
+			v := ch.interpAt(base, u+float32(j)*su) * rot
 			rot *= step
 			if rev {
 				v = complex(real(v), -imag(v))
@@ -351,15 +353,17 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 		tw := r.symTime(h0.slot, h0.k)
 		rotW := complex64(r.rotAt(tw))
 		wHz := float32(-2 * math.Pi * r.freq / basebandRate)
+		base, uw := ch.ringAt(tw, sps)
+		du := float32(r.period / slotSymbols / float64(dec))
+		dt := float32(r.period / slotSymbols)
 		var c complex64
 		for i := w; i < w+ddWindow; i++ {
 			for ; doneK <= i-p.span-1; doneK++ {
 				done += hpi * float32(r.decision(lo.add(doneK)))
 			}
-			h := lo.add(i)
-			t := r.symTime(h.slot, h.k)
+			ui := uw + float32(i-w)*du
+			ti := float32(i-w) * dt
 			for j := range sps {
-				ts := t + float64((j-sps/2)*dec)
 				tt := i*sps + j - sps/2
 				ph := done
 				for m := max(i-p.span, 0); m <= min(i+p.span, n-1); m++ {
@@ -370,9 +374,9 @@ func (r *Receiver) trackCarrier(lo, hi symRef) {
 						ph += decs[m-m0] * p.q32[idx+1]
 					}
 				}
-				rs, rc := sincosf(wHz * float32(ts-tw))
+				rs, rc := sincosf(wHz * (ti + float32((j-sps/2)*dec)))
 				ps, pc := sincosf(ph)
-				c += ch.interp(ts) * rotW * complex(rc, rs) * complex(pc, -ps)
+				c += ch.interpAt(base, ui+float32(j-sps/2)) * rotW * complex(rc, rs) * complex(pc, -ps)
 			}
 		}
 		z += c * complex(real(prev), -imag(prev))

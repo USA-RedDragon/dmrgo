@@ -540,9 +540,10 @@ func (r *Receiver) syncSamples(s *slotState, tau float64) float64 {
 	dec := r.search.dec
 	t0 := r.symTime(s.index, syncFirstSym+syncEdge) + tau - float64(r.search.sps/2*dec)
 	rot, step := complex64(r.rotAt(t0)), complex64(r.rotAt(float64(dec)))
+	base, u := ch.ringAt(t0, 0)
 	var e float32
 	for j := range r.search.span {
-		v := ch.interp(t0+float64(j*dec)) * rot
+		v := ch.interpAt(base, u+float32(j)) * rot
 		rot *= step
 		r.corrX[j] = v
 		e += real(v)*real(v) + imag(v)*imag(v)
