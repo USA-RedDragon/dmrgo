@@ -10,11 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// BurstBits is the length of a burst.
-//
-// Deprecated: use layer2.BurstBits.
-const BurstBits = layer2.BurstBits
-
 const (
 	// SyncOffset is the burst bit at which the SYNC field starts.
 	SyncOffset = 108
