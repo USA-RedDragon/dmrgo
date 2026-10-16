@@ -14,6 +14,10 @@ const (
 	wideHz = 17000.0
 	// dcSeconds is the time constant of the DC offset removal.
 	dcSeconds = 0.05
+	// dcStartSeconds is the shortest time that the DC offset estimate
+	// averages over at the start of a stream, so that it does not take a
+	// carrier near 0 Hz for the offset.
+	dcStartSeconds = 0.01
 )
 
 // frontEnd turns interleaved 8-bit I/Q at the input rate into complex
@@ -22,20 +26,21 @@ const (
 // baseband rate, and a polyphase resampler to the baseband rate. It keeps
 // its state between calls and allocates only in newFrontEnd.
 type frontEnd struct {
-	signed bool
-	dec    int
-	gain   float32
-	integ  [cicOrder][2]int64
-	comb   [cicOrder][2]int64
-	phase  int
-	coef   []float32
-	hist   []complex64
-	head   int
-	t      float64
-	step   float64
-	n      int64
-	dc     complex64
-	dcGain float32
+	signed  bool
+	dec     int
+	gain    float32
+	integ   [cicOrder][2]int64
+	comb    [cicOrder][2]int64
+	phase   int
+	coef    []float32
+	hist    []complex64
+	head    int
+	t       float64
+	step    float64
+	n       int64
+	dc      complex64
+	dcGain  float32
+	dcStart float32
 }
 
 // newFrontEnd returns a front end for input at rate, signed (HackRF) or
@@ -46,6 +51,7 @@ func newFrontEnd(rate float64, signed bool) *frontEnd {
 	f := &frontEnd{signed: signed, dec: dec, step: mid / basebandRate}
 	f.gain = float32(1 / (255 * math.Pow(float64(dec), cicOrder)))
 	f.dcGain = float32(1 / (dcSeconds * mid))
+	f.dcStart = float32(dcStartSeconds * mid)
 	f.hist = make([]complex64, 2*resampleTaps)
 	f.coef = make([]float32, resamplePhases*resampleTaps)
 	fc := (wideHz + (basebandRate - wideHz)) / 2 / mid
@@ -104,7 +110,7 @@ func (f *frontEnd) process(in []byte, out []complex64) int {
 			re, im, f.comb[s][0], f.comb[s][1] = re-f.comb[s][0], im-f.comb[s][1], re, im
 		}
 		v := complex(float32(re)*f.gain, float32(im)*f.gain)
-		g := max(f.dcGain, 1/float32(f.n+1))
+		g := max(f.dcGain, 1/(float32(f.n)+f.dcStart))
 		f.dc += (v - f.dc) * complex(g, 0)
 		v -= f.dc
 		f.hist[f.head] = v
