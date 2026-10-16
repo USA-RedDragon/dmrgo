@@ -1,6 +1,9 @@
 package main
 
-import "math"
+import (
+	"math"
+	"math/bits"
+)
 
 // Limits of the channel stage.
 const (
@@ -178,6 +181,28 @@ func (r *qring) at(i int64) float32 {
 	return float32(r.buf[k]) * r.step
 }
 
+// gather writes samples base, base+stride, ... into x, 0 outside the
+// samples the ring holds.
+func (r *qring) gather(base int64, stride int, x []float32) {
+	last := base + int64(stride*(len(x)-1))
+	if base < 0 || base < r.n-int64(len(r.buf)) || last >= r.n {
+		for k := range x {
+			x[k] = r.at(base + int64(k*stride))
+		}
+		return
+	}
+	k0 := r.w - int(r.n-base)
+	if k0 < 0 {
+		k0 += len(r.buf)
+	}
+	for k := range x {
+		x[k] = float32(r.buf[k0]) * r.step
+		if k0 += stride; k0 >= len(r.buf) {
+			k0 -= len(r.buf)
+		}
+	}
+}
+
 // add adds v to every sample the ring holds.
 func (r *qring) add(v float32) {
 	for i, q := range r.buf {
@@ -244,6 +269,10 @@ type channelizer struct {
 	energy  fring
 	eAcc    float32
 	discHz  float32
+	// decLeft and binLeft count the input samples to the next prefilter
+	// output and to the end of the next energy bin.
+	decLeft int
+	binLeft int
 }
 
 // newChannelizer returns a channelizer whose rings hold size channel
@@ -270,6 +299,8 @@ func newChannelizer(size int, disc bool, cutHz float64, dec int) *channelizer {
 	c.sym = newQring(size/dec+1, discStepHz)
 	c.energy = newFring(size/energyBin + 2)
 	c.discHz = float32(basebandRate / float64(dec) / (2 * math.Pi))
+	c.decLeft = dec
+	c.binLeft = (energyBin-(1+c.delayCh-discTaps/2)%energyBin)%energyBin + 1
 	return c
 }
 
@@ -290,6 +321,16 @@ func (c *channelizer) oldest() int64 {
 	return c.ch.n - int64(len(c.ch.buf))
 }
 
+// symAt returns the sym sample of channel sample t as base+u, u from 0 to
+// 1, from the integers of symIndex: twice the index is q over 2*discDec, a
+// power of two.
+func (c *channelizer) symAt(t int64) (base int64, u float32) {
+	d2 := 2 * c.discDec
+	q := 2*(t-int64(c.delayCh)+discTaps/2+discSpan*samplesPerSy+1) - int64(c.discDec)
+	sh := uint(bits.TrailingZeros(uint(d2)))
+	return q >> sh, float32(q&int64(d2-1)) / float32(d2)
+}
+
 // symIndex returns the fractional sym sample of channel sample t: the
 // prefilter output of input sample m*dec+dec-1 has its center discTaps/2
 // samples earlier, the discriminator output half a step before that, and
@@ -297,6 +338,11 @@ func (c *channelizer) oldest() int64 {
 func (c *channelizer) symIndex(t float64) float64 {
 	d := float64(c.discDec)
 	return (t - float64(c.delayCh) + discTaps/2 + discSpan*samplesPerSy + 1 - d/2) / d
+}
+
+// symStep returns the number of sym samples per symbol.
+func (c *channelizer) symStep() float32 {
+	return float32(samplesPerSy) / float32(c.discDec)
 }
 
 // slotEnergyAt returns the mean power of the discriminator prefilter output
@@ -392,6 +438,7 @@ func (c *channelizer) filter(v complex64, n int64) {
 func (c *channelizer) discFilter(v complex64) {
 	n := c.n
 	c.n++
+	c.binLeft--
 	if n&1023 == 0 {
 		g := (3 - real(c.ncoRot)*real(c.ncoRot) - imag(c.ncoRot)*imag(c.ncoRot)) / 2
 		c.ncoRot *= complex(g, 0)
@@ -400,15 +447,19 @@ func (c *channelizer) discFilter(v complex64) {
 	c.ncoRot *= c.ncoStep
 	c.dHist[c.dHead] = v
 	c.dHist[c.dHead+discTaps] = v
-	c.dHead = (c.dHead + 1) % discTaps
-	if (n+1)%int64(c.discDec) != 0 {
+	if c.dHead++; c.dHead == discTaps {
+		c.dHead = 0
+	}
+	if c.decLeft--; c.decLeft > 0 {
 		return
 	}
+	c.decLeft = c.discDec
 	y := fir(c.dHist[c.dHead:c.dHead+discTaps], c.dTaps)
 	c.eAcc += real(y)*real(y) + imag(y)*imag(y)
-	if (n+1+int64(c.delayCh)-discTaps/2)%energyBin == 0 {
+	if c.binLeft <= 0 {
 		c.energy.push(c.eAcc)
 		c.eAcc = 0
+		c.binLeft += energyBin
 	}
 	d := y * complex(real(c.prev), -imag(c.prev))
 	c.prev = y
@@ -416,7 +467,9 @@ func (c *channelizer) discFilter(v complex64) {
 	nr := len(c.rrc)
 	c.fHist[c.fHead] = f
 	c.fHist[c.fHead+nr] = f
-	c.fHead = (c.fHead + 1) % nr
+	if c.fHead++; c.fHead == nr {
+		c.fHead = 0
+	}
 	var s float32
 	for k, h := range c.rrc {
 		s += c.fHist[c.fHead+k] * h
