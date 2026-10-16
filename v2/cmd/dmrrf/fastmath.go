@@ -40,3 +40,33 @@ func atan2f(y, x float32) float32 {
 func sqrtf(x float32) float32 {
 	return float32(math.Sqrt(float64(x)))
 }
+
+// abs32 returns the absolute value of x.
+func abs32(x float32) float32 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+// pow2 returns 2 to the power e, for e from -126 to 127, and 0 below.
+func pow2(e int32) float32 {
+	b := e + 127
+	if b <= 0 || b > 254 {
+		return 0
+	}
+	return math.Float32frombits(uint32(b) << 23)
+}
+
+// sat8 returns x rounded to the nearest integer and saturated to int8.
+func sat8(x float32) int8 {
+	switch {
+	case x >= math.MaxInt8:
+		return math.MaxInt8
+	case x <= math.MinInt8:
+		return math.MinInt8
+	case x < 0:
+		return int8(x - 0.5)
+	}
+	return int8(x + 0.5)
+}

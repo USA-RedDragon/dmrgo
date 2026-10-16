@@ -20,31 +20,56 @@ const (
 	discSpan = 4
 )
 
-// ring is a power-of-two ring of complex samples addressed by absolute
-// sample number, one sample every dec channel samples.
+// ring is a ring of complex samples addressed by absolute sample number,
+// one sample every dec channel samples. It holds float samples in a
+// power-of-two buffer, or, when compact, an exact number of 8-bit samples
+// in blocks of qBlock with one exponent each, and the newest partial block
+// as floats.
 type ring struct {
 	buf  []complex64
 	mask int64
 	n    int64
 	dec  int
-	// tab holds the interpolator taps for interpPhases fractional delays.
-	tab []float32
+	// q holds the real and imaginary parts of each compact sample, ex the
+	// exponent of each block, stage the samples of the partial block and w
+	// the position in q of the first sample of the partial block.
+	q     []int8
+	ex    []int8
+	stage [qBlock]complex64
+	w     int
+	// tab holds the interpolator taps for phases+1 fractional delays.
+	tab    []float32
+	phases int
 }
 
-// interpPhases is the number of fractional delays the interpolator has
-// taps for.
-const interpPhases = 256
+// Layout of the rings.
+const (
+	// interpPhases is the number of fractional delays the interpolator of
+	// a float ring has taps for, and compactPhases that of a compact ring.
+	interpPhases  = 256
+	compactPhases = 64
+	// qBlock is the number of samples of a compact ring that share an
+	// exponent.
+	qBlock = 8
+)
 
-// newRing returns a ring of at least size samples, one every dec channel
-// samples.
-func newRing(size, dec int) ring {
-	n := 1
-	for n < size {
-		n <<= 1
+// newRing returns a float ring of at least size samples, or a compact ring
+// of size rounded up to whole blocks, one sample every dec channel samples.
+func newRing(size, dec int, compact bool) ring {
+	r := ring{dec: dec, phases: interpPhases}
+	if compact {
+		size = (size + qBlock - 1) / qBlock * qBlock
+		r.q, r.ex, r.phases = make([]int8, 2*size), make([]int8, size/qBlock), compactPhases
+	} else {
+		n := 1
+		for n < size {
+			n <<= 1
+		}
+		r.buf, r.mask = make([]complex64, n), int64(n-1)
 	}
-	r := ring{buf: make([]complex64, n), mask: int64(n - 1), dec: dec, tab: make([]float32, (interpPhases+1)*sincTaps)}
-	for p := range interpPhases + 1 {
-		fr := float64(p) / interpPhases
+	r.tab = make([]float32, (r.phases+1)*sincTaps)
+	for p := range r.phases + 1 {
+		fr := float64(p) / float64(r.phases)
 		for k := range sincTaps {
 			u := float64(k-sincTaps/2+1) - fr
 			w := 0.42 + 0.5*math.Cos(math.Pi*u/(sincTaps/2)) + 0.08*math.Cos(2*math.Pi*u/(sincTaps/2))
@@ -57,31 +82,139 @@ func newRing(size, dec int) ring {
 	return r
 }
 
+// size returns the number of samples the ring holds when full.
+func (r *ring) size() int {
+	if r.q != nil {
+		return len(r.q) / 2
+	}
+	return len(r.buf)
+}
+
 // push appends sample v.
 func (r *ring) push(v complex64) {
-	r.buf[r.n&r.mask] = v
+	if r.q == nil {
+		r.buf[r.n&r.mask] = v
+		r.n++
+		return
+	}
+	r.stage[r.n&(qBlock-1)] = v
 	r.n++
+	if r.n&(qBlock-1) == 0 {
+		r.commit(r.w, &r.stage)
+		if r.w += qBlock; r.w == len(r.ex)*qBlock {
+			r.w = 0
+		}
+	}
+}
+
+// commit quantizes the block b into the compact block at position pos:
+// the largest part of a sample gets 7 significant bits.
+func (r *ring) commit(pos int, b *[qBlock]complex64) {
+	var m float32
+	for _, v := range b {
+		m = max(m, abs32(real(v)), abs32(imag(v)))
+	}
+	e := int32(-64)
+	if m > 0 {
+		e = max(int32(math.Float32bits(m)>>23&0xff)-127-6, -64)
+	}
+	inv := pow2(-e)
+	r.ex[pos/qBlock] = int8(e)
+	for k, v := range b {
+		r.q[2*(pos+k)] = sat8(real(v) * inv)
+		r.q[2*(pos+k)+1] = sat8(imag(v) * inv)
+	}
+}
+
+// pos returns the position in q of committed sample i, or -1 when the ring
+// does not hold it.
+func (r *ring) pos(i int64) int {
+	end := r.n &^ (qBlock - 1)
+	d := end - i
+	if i < 0 || d <= 0 || d > int64(len(r.ex)*qBlock) {
+		return -1
+	}
+	k := r.w - int(d)
+	if k < 0 {
+		k += len(r.ex) * qBlock
+	}
+	return k
+}
+
+// sample returns the compact sample at position k of q.
+func (r *ring) sample(k int) complex64 {
+	g := pow2(int32(r.ex[k/qBlock]))
+	return complex(float32(r.q[2*k])*g, float32(r.q[2*k+1])*g)
 }
 
 // at returns sample i, or 0 outside the samples the ring holds.
 func (r *ring) at(i int64) complex64 {
+	if r.q != nil {
+		if i >= r.n&^(qBlock-1) && i < r.n {
+			return r.stage[i&(qBlock-1)]
+		}
+		if k := r.pos(i); k >= 0 {
+			return r.sample(k)
+		}
+		return 0
+	}
 	if i < 0 || i >= r.n || i < r.n-int64(len(r.buf)) {
 		return 0
 	}
 	return r.buf[i&r.mask]
 }
 
+// rotate multiplies every sample the ring holds, sample i by
+// rot*step^(i-first) where first is the oldest sample it holds, and
+// returns the product after the newest sample.
+func (r *ring) rotate(rot, step complex64) complex64 {
+	first := max(r.n-int64(r.size()), 0)
+	end := r.n &^ (qBlock - 1)
+	if r.q == nil {
+		for i := first; i < r.n; i++ {
+			r.buf[i&r.mask] *= rot
+			rot *= step
+		}
+		return rot
+	}
+	var b [qBlock]complex64
+	for i := first; i < end; i += qBlock {
+		k := r.pos(i)
+		for j := range b {
+			b[j] = r.sample(k+j) * rot
+			rot *= step
+		}
+		r.commit(k, &b)
+		g := (3 - real(rot)*real(rot) - imag(rot)*imag(rot)) / 2
+		rot *= complex(g, 0)
+	}
+	for i := end; i < r.n; i++ {
+		r.stage[i&(qBlock-1)] *= rot
+		rot *= step
+	}
+	return rot
+}
+
 // interp returns the ring at the fractional channel sample t by a Blackman
-// windowed sinc of sincTaps samples, at the nearest of interpPhases
+// windowed sinc of sincTaps samples, at the nearest of the phases
 // fractional delays.
 func (r *ring) interp(t float64) complex64 {
 	t /= float64(r.dec)
 	i0 := int64(math.Floor(t))
-	p := int((t-float64(i0))*interpPhases + 0.5)
+	p := int((t-float64(i0))*float64(r.phases) + 0.5)
 	taps := r.tab[p*sincTaps : (p+1)*sincTaps]
 	lo := i0 - sincTaps/2 + 1
 	var re, im float32
-	if lo >= 0 && lo >= r.n-int64(len(r.buf)) && lo+sincTaps <= r.n {
+	if r.q != nil {
+		if k := r.pos(lo); k >= 0 && lo+sincTaps <= r.n&^(qBlock-1) && k+sincTaps <= len(r.ex)*qBlock {
+			for j, w := range taps {
+				v := r.sample(k + j)
+				re += real(v) * w
+				im += imag(v) * w
+			}
+			return complex(re, im)
+		}
+	} else if lo >= 0 && lo >= r.n-int64(len(r.buf)) && lo+sincTaps <= r.n {
 		for k, w := range taps {
 			v := r.buf[(lo+int64(k))&r.mask]
 			re += real(v) * w
@@ -254,12 +387,13 @@ type channelizer struct {
 	ncoRot  complex64
 	delayCh int
 
-	wide   ring
-	hist   []complex64
-	head   int
-	chTaps []float32
-	ch     ring
-	chDec  int
+	wide    ring
+	hist    []complex64
+	head    int
+	chTaps  []float32
+	ch      ring
+	chDec   int
+	compact bool
 
 	discDec int
 	dTaps   []float32
@@ -282,15 +416,17 @@ type channelizer struct {
 // newChannelizer returns a channelizer whose rings hold size channel
 // samples, with the discriminator path at basebandRate/dec when disc, its
 // prefilter cut off at cutHz, and the coherent channel ring at
-// basebandRate/dec otherwise.
-func newChannelizer(size int, disc bool, cutHz float64, dec int) *channelizer {
+// basebandRate/dec otherwise, compact when compact.
+func newChannelizer(size int, disc bool, cutHz float64, dec int, compact bool) *channelizer {
 	c := &channelizer{disc: disc, ncoRot: 1, ncoStep: 1, delayCh: chanTaps / 2}
 	if !disc {
-		c.chDec = dec
-		c.wide = newRing(size, 1)
+		c.chDec, c.compact = dec, compact
+		if !compact {
+			c.wide = newRing(size, 1, false)
+		}
 		c.hist = make([]complex64, 2*chanTaps)
 		c.chTaps = kaiserLowpass(chanTaps, (chanPassHz+chanStopHz)/2/basebandRate, 7)
-		c.ch = newRing((size+dec-1)/dec, dec)
+		c.ch = newRing((size+dec-1)/dec, dec, compact)
 		return c
 	}
 	c.discDec = dec
@@ -321,7 +457,7 @@ func (c *channelizer) oldest() int64 {
 	if c.disc {
 		return c.n - int64(min(len(c.sym.buf)*c.discDec, (len(c.energy.buf)-1)*energyBin))
 	}
-	return (c.ch.n - int64(len(c.ch.buf))) * int64(c.chDec)
+	return (c.ch.n - int64(c.ch.size())) * int64(c.chDec)
 }
 
 // symAt returns the sym sample of channel sample t as base+u, u from 0 to
@@ -384,9 +520,11 @@ func kaiserLowpass(n int, fc, beta float64) []float32 {
 
 // tune sets the oscillator to hz, the carrier offset to remove. The coherent
 // path filters again the wide samples the ring still holds, so that every
-// sample of the channel ring has the same carrier. The discriminator path
-// keeps the phase of the oscillator and shifts the discriminator samples it
-// holds by the change of frequency.
+// sample of the channel ring has the same carrier; a compact one instead
+// rotates the samples of the channel ring and the filter history by the
+// change of frequency. The discriminator path keeps the phase of the
+// oscillator and shifts the discriminator samples it holds by the change of
+// frequency.
 func (c *channelizer) tune(hz float64) {
 	p := -2 * math.Pi * hz / basebandRate
 	c.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
@@ -399,6 +537,10 @@ func (c *channelizer) tune(hz float64) {
 		}
 		return
 	}
+	if c.compact {
+		c.retune(hz)
+		return
+	}
 	c.ncoHz = hz
 	n := c.wide.n
 	from := max(n-int64(len(c.wide.buf)), 0)
@@ -409,15 +551,39 @@ func (c *channelizer) tune(hz float64) {
 	}
 }
 
+// retune moves the compact coherent path to the oscillator at hz: input
+// sample i, mixed at the old frequency, turns by -2*pi*(hz-ncoHz)*i, and a
+// channel sample by the turn at the center of its filter.
+func (c *channelizer) retune(hz float64) {
+	w := -2 * math.Pi * (hz - c.ncoHz) / basebandRate
+	turn := func(i int64) complex64 {
+		p := math.Mod(w*float64(i), 2*math.Pi)
+		return complex(float32(math.Cos(p)), float32(math.Sin(p)))
+	}
+	first := max(c.ch.n-int64(c.ch.size()), 0)
+	c.ch.rotate(turn(first*int64(c.chDec)-int64(c.delayCh)), turn(int64(c.chDec)))
+	for k := range chanTaps {
+		j := (c.head + k) % chanTaps
+		r := turn(c.n - chanTaps + int64(k))
+		c.hist[j] *= r
+		c.hist[j+chanTaps] = c.hist[j]
+	}
+	c.ncoHz = hz
+	p := math.Mod(-2*math.Pi*hz*float64(c.n)/basebandRate, 2*math.Pi)
+	c.ncoRot = complex(float32(math.Cos(p)), float32(math.Sin(p)))
+}
+
 // push filters one wide baseband sample.
 func (c *channelizer) push(v complex64) {
 	if c.disc {
 		c.discFilter(v)
 		return
 	}
-	n := c.wide.n
+	n := c.n
 	c.n++
-	c.wide.push(v)
+	if !c.compact {
+		c.wide.push(v)
+	}
 	c.filter(v, n)
 }
 
