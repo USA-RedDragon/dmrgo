@@ -87,6 +87,11 @@ jobs:
       - name: Test the example at the pico stack size
         run: tinygo test -stack-size=8KB ./examples/tinygo
 
+      - name: Test the allocations at the pico stack size and collector
+        run: |
+          tinygo test -gc=conservative ./internal/zeroalloc
+          tinygo test -stack-size=8KB -gc=conservative ./internal/zeroalloc
+
   unit-tests:
     uses: ./.github/workflows/unit-test.yaml
     secrets:
