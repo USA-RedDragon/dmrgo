@@ -22,6 +22,12 @@ const TTO = 180 * time.Second
 // (ETSI TS 102 361-2 clause A.1, clause 6.1).
 const TTOMax = 180 * time.Second
 
+// TCallHang is the default call hang time (T_CallHt). After a voice call
+// ends, a BS keeps the channel for this time, so that a new call to the
+// same target continues the session (ETSI TS 102 361-1 clause F.1, clause
+// 5.2.1.4).
+const TCallHang = 3 * time.Second
+
 // CTRHOTMax is the upper bound of the CT_CSBK transmission Random HoldOff
 // Timer (CT_RHOT) when leader timing is unknown: a uniform distribution from
 // 0 to 3.24 s. When leader timing is known, the range after a CT_CSBK

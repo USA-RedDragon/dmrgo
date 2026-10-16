@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -15,6 +16,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
+	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
 const testdata = "../../layer2/testdata"
@@ -153,6 +155,29 @@ func TestAllocsVoiceTransmitterReset(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+}
+
+// TestAllocsVoiceReceiver runs the voice captures through a Receiver, with
+// the hang time ended by Tick.
+func TestAllocsVoiceReceiver(t *testing.T) {
+	all := captures(t)
+	rx, err := voice.NewReceiver(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := make([]voice.Event, 0, voice.MaxEvents)
+	var now time.Duration
+	for _, name := range []string{"voice.bin", "parrot_kerchunk.bin"} {
+		bursts := all[name]
+		assertZero(t, name, func() {
+			for i := range bursts {
+				now += 60 * time.Millisecond
+				out = rx.Burst(now, &bursts[i], layer2.Hint{}, out[:0])
+			}
+			now += 10 * time.Second
+			out = rx.Tick(now, out[:0])
+		})
+	}
 }
 
 // TestAllocsVocoder decodes and encodes the AMBE+2 frames of the voice capture and
