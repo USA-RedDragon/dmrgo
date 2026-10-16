@@ -253,6 +253,23 @@ func blocksOf(h *pdu.DataHeader) int {
 	return 0
 }
 
+// fullMessage reports whether h has its Full Message Flag set, or has no
+// such flag: true for the first try of a packet, false for a later try
+// (ETSI TS 102 361-1 clause 9.3.20).
+func fullMessage(h *pdu.DataHeader) bool {
+	switch {
+	case h.UnconfirmedDataHeader != nil && h.Format == pdu.FormatUnconfirmed:
+		return h.UnconfirmedDataHeader.FullMessageFlag
+	case h.ConfirmedDataHeader != nil && h.Format == pdu.FormatConfirmed:
+		return h.ConfirmedDataHeader.FullMessageFlag
+	case h.DefinedDataHeader != nil && h.Format == pdu.FormatShortDataDefined:
+		return h.DefinedDataHeader.FullMessageFlag
+	case h.RawDataHeader != nil && h.Format == pdu.FormatShortDataRawOrStatusPrecoded:
+		return h.RawDataHeader.FullMessageFlag
+	}
+	return true
+}
+
 func padOf(h *pdu.DataHeader) int {
 	switch {
 	case h.UnconfirmedDataHeader != nil && h.Format == pdu.FormatUnconfirmed:
