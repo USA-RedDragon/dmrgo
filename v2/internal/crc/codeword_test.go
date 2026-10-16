@@ -5,6 +5,21 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 )
 
+func crc7Of(bits []bit.Bit) uint8  { return crc.CRC7(bit.Pack(bits), len(bits)) }
+func crc8Of(bits []bit.Bit) uint8  { return crc.CRC8(bit.Pack(bits), len(bits)) }
+func crc9Of(bits []bit.Bit) uint16 { return crc.CRC9(bit.Pack(bits), len(bits)) }
+func checkCRC7Of(bits []bit.Bit, want uint8) bool {
+	return crc.CheckCRC7(bit.Pack(bits), len(bits), want)
+}
+
+func checkCRC8Of(bits []bit.Bit, want uint8) bool {
+	return crc.CheckCRC8(bit.Pack(bits), len(bits), want)
+}
+
+func checkCRC9Of(bits []bit.Bit, want uint16) bool {
+	return crc.CheckCRC9(bit.Pack(bits), len(bits), want)
+}
+
 // The helpers check a codeword whose last bits hold the CRC XORed with mask.
 
 func checkCRC7Codeword(bits []bit.Bit, mask uint8) bool {
@@ -12,7 +27,7 @@ func checkCRC7Codeword(bits []bit.Bit, mask uint8) bool {
 	if n < 8 {
 		return false
 	}
-	return crc.CheckCRC7(bits[:n-7], uint8(bit.Uint(bits[n-7:]))^mask)
+	return checkCRC7Of(bits[:n-7], uint8(bit.Uint(bits[n-7:]))^mask)
 }
 
 func checkCRC8Codeword(bits []bit.Bit) bool {
@@ -20,7 +35,7 @@ func checkCRC8Codeword(bits []bit.Bit) bool {
 	if n < 9 {
 		return false
 	}
-	return crc.CheckCRC8(bits[:n-8], uint8(bit.Uint(bits[n-8:])))
+	return checkCRC8Of(bits[:n-8], uint8(bit.Uint(bits[n-8:])))
 }
 
 func checkCRC9Codeword(bits []bit.Bit, mask uint16) bool {
@@ -28,7 +43,7 @@ func checkCRC9Codeword(bits []bit.Bit, mask uint16) bool {
 	if n < 10 {
 		return false
 	}
-	return crc.CheckCRC9(bits[:n-9], uint16(bit.Uint(bits[n-9:]))^mask)
+	return checkCRC9Of(bits[:n-9], uint16(bit.Uint(bits[n-9:]))^mask)
 }
 
 func checkCCITTCodeword(data []byte) bool {

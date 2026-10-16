@@ -714,7 +714,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue
             names:
-              - TestQuadraticResidue1676Decode
+              - TestQR1676MatchesReferenceOnEveryWord
+              - TestQR1676CorrectsUpToTwoErrors
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestEmbeddedSignalling_EncodeDecodeRoundTrip
@@ -949,7 +950,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay
             names:
-              - TestGolay2087Decode
+              - TestGolay2087MatchesReferenceOnEveryWord
+              - TestGolay2087CorrectsUpToThreeErrors
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestSlotType_SingleBitError
@@ -961,7 +963,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue
             names:
-              - TestQuadraticResidue1676Decode
+              - TestQR1676MatchesReferenceOnEveryWord
+              - TestQR1676CorrectsUpToTwoErrors
 
       - section: "B.3.3"
         title: "Hamming (17,12,3)"
@@ -992,14 +995,8 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming
             names:
-              - TestHamming743_Parity
-              - TestHamming743_Check
-              - TestHamming743_Encode
-              - TestHamming743_DecodeNoError
-              - TestHamming743_DecodeSingleError
-              - TestHamming743_DecodeRandom
-              - TestHamming743_EncodeDecode_AllCodewords
-              - TestHamming743_BitsChecked
+              - TestHamming743MatchesReferenceOnEveryWord
+              - TestHamming743CorrectsOneError
 
       - section: "B.3.6"
         title: "Reed-Solomon (12,9)"

@@ -5,14 +5,13 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 func TestCACH_DecodeTACT(t *testing.T) {
 	t.Parallel()
 	tactData := [4]bit.Bit{1, 0, 0, 1}
-	tactCodeword := hamming.Encode743(tactData)
+	tactCodeword := hamming743Bits(tactData)
 
 	var cachBits [layer2.CACHBits]bit.Bit
 	copy(cachBits[:layer2.TACTBits], tactCodeword[:])
@@ -51,7 +50,7 @@ func TestCACH_PayloadExtraction(t *testing.T) {
 func TestCACH_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
 	tactData := [4]bit.Bit{0, 1, 1, 0}
-	tactCodeword := hamming.Encode743(tactData)
+	tactCodeword := hamming743Bits(tactData)
 
 	var cachBits [layer2.CACHBits]bit.Bit
 	copy(cachBits[:layer2.TACTBits], tactCodeword[:])
@@ -86,7 +85,7 @@ func TestCACH_Constants(t *testing.T) {
 func TestCACH_TACTErrorCorrection(t *testing.T) {
 	t.Parallel()
 	tactData := [4]bit.Bit{1, 1, 0, 0}
-	tactCodeword := hamming.Encode743(tactData)
+	tactCodeword := hamming743Bits(tactData)
 
 	var cachBits [layer2.CACHBits]bit.Bit
 	copy(cachBits[:layer2.TACTBits], tactCodeword[:])

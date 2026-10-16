@@ -1,77 +1,76 @@
 package quadraticresidue
 
 import (
-	"math/rand"
+	"math/bits"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/quadraticresidue"
 )
 
-func TestQuadraticResidue1676Decode(t *testing.T) {
+func bits16(cw uint16) [16]bit.Bit {
+	var b [16]bit.Bit
+	bit.PutUint(b[:], uint64(cw))
+	return b
+}
+
+func TestQR1676MatchesReferenceOnEveryWord(t *testing.T) {
 	t.Parallel()
 
-	for i := 0; i < 1000; i++ {
-		var data [7]bit.Bit
-		for j := 0; j < 7; j++ {
-			if rand.Intn(2) == 1 {
-				data[j] = 1
-			}
+	for v := range 1 << 16 {
+		cw := uint16(v)
+		got, res := Decode(cw)
+		want, wantRes := ref.Decode(bits16(cw))
+		if got != uint16(bit.Uint(want[:])) || res != wantRes {
+			t.Fatalf("Decode(%#04x) = %#04x %+v, want %#04x %+v", cw, got, res, bit.Uint(want[:]), wantRes)
 		}
-
-		parity := parityBits(data)
-		var cw [16]bit.Bit
-		copy(cw[:], data[:])
-		copy(cw[7:], parity[:])
-
-		decoded, result := Decode(cw)
-		if result.Uncorrectable || result.ErrorsCorrected != 0 {
-			t.Errorf("Failed to decode clean codeword")
-		}
-		if decoded != cw {
-			t.Errorf("Decoded clean codeword mismatch")
-		}
-
-		cwErr1 := cw
-		pos := rand.Intn(16)
-		cwErr1[pos] ^= 1
-		decoded, result = Decode(cwErr1)
-		if result.Uncorrectable || result.ErrorsCorrected != 1 {
-			t.Errorf("Failed to correct 1 error")
-		}
-		correctedData := decoded
-		if correctedData != cw {
-			t.Errorf("Decoded 1-error codeword mismatch")
-		}
-
-		cwErr2 := cw
-		p1, p2 := rand.Intn(16), rand.Intn(16)
-		for p1 == p2 {
-			p2 = rand.Intn(16)
-		}
-		cwErr2[p1] ^= 1
-		cwErr2[p2] ^= 1
-		decoded, result = Decode(cwErr2)
-		if result.Uncorrectable || result.ErrorsCorrected != 2 {
-			t.Errorf("Failed to correct 2 errors")
-		}
-		if decoded != cw {
-			t.Errorf("Decoded 2-error codeword mismatch")
-		}
-
-		cwErr3 := cw
-		p1, p2, p3 := rand.Intn(16), rand.Intn(16), rand.Intn(16)
-		for p1 == p2 {
-			p2 = rand.Intn(16)
-		}
-		for p3 == p1 || p3 == p2 {
-			p3 = rand.Intn(16)
-		}
-		cwErr3[p1] ^= 1
-		cwErr3[p2] ^= 1
-		cwErr3[p3] ^= 1
-		decoded, result = Decode(cwErr3)
-		if !result.Uncorrectable && decoded == cw {
-			t.Errorf("Appeared to correct 3 errors (impossible d=6)")
+		if Check(cw) != ref.Check(bits16(cw)) {
+			t.Fatalf("Check(%#04x) differs from the reference", cw)
 		}
 	}
+	for d := range 128 {
+		data := bits16(uint16(d) << 9)
+		want := ref.Encode([7]bit.Bit(data[:7]))
+		if got := Encode(uint8(d)); got != uint16(bit.Uint(want[:])) {
+			t.Fatalf("Encode(%#02x) = %#04x, want %#04x", d, got, bit.Uint(want[:]))
+		}
+	}
+}
+
+func TestQR1676CorrectsUpToTwoErrors(t *testing.T) {
+	t.Parallel()
+
+	patterns := []uint16{0}
+	for i := range 16 {
+		patterns = append(patterns, 1<<i)
+		for j := range i {
+			patterns = append(patterns, 1<<i|1<<j)
+		}
+	}
+	for d := range 128 {
+		cw := Encode(uint8(d))
+		for _, e := range patterns {
+			got, res := Decode(cw ^ e)
+			if got != cw || res.ErrorsCorrected != bits.OnesCount16(e) || res.Uncorrectable {
+				t.Fatalf("data %#02x error %#04x: %#04x %+v", d, e, got, res)
+			}
+		}
+	}
+}
+
+func BenchmarkQR1676(b *testing.B) {
+	cw := Encode(0x5A) ^ 0x20
+	b.Run("Decode", func(b *testing.B) {
+		for b.Loop() {
+			cw ^= 1 << 3
+			_, _ = Decode(cw)
+		}
+	})
+	b.Run("Encode", func(b *testing.B) {
+		d := uint8(0)
+		for b.Loop() {
+			d++
+			_ = Encode(d)
+		}
+	})
 }

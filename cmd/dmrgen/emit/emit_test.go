@@ -375,9 +375,9 @@ type P struct {
 }`)
 	assertContains(t, out,
 		"func DecodeG(data [20]bit.Bit) G {",
-		"corrected, result.FEC = golay.Decode2087(data)",
+		"_cw, result.FEC = golay.Decode2087(uint32(bit.Uint(data[:])))",
 		"func DecodeC(data [16]bit.Bit) C {",
-		"result.FEC.Uncorrectable = !crc.CheckCRC8(data[:8], _crc)",
+		"result.FEC.Uncorrectable = !crc.CheckCRC8(_crcBytes[:], 8, _crc)",
 		"func DecodeP(data [8]bit.Bit) P {",
 	)
 	if strings.Contains(out, "fecResult") {

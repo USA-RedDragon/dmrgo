@@ -5,7 +5,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -131,7 +130,7 @@ func TestRate12Data_Confirmed_CRC9Layout(t *testing.T) {
 
 	bits := append(bit.Unpack(user[:]), make([]bit.Bit, 7)...)
 	bit.PutUint(bits[len(bits)-7:], 3)
-	want := (crc.CRC9(bits) ^ 0x0F0) & 0x1FF
+	want := (crc9Bits(bits) ^ 0x0F0) & 0x1FF
 	if got := rt.ConfirmedCRC9(); got != want {
 		t.Errorf("ConfirmedCRC9() = 0x%03X, want 0x%03X", got, want)
 	}

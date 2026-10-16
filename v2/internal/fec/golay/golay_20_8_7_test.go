@@ -1,79 +1,78 @@
 package golay
 
 import (
-	"math/rand"
+	"math/bits"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/golay"
 )
 
-func TestGolay2087Decode(t *testing.T) {
+func bits20(cw uint32) [20]bit.Bit {
+	var b [20]bit.Bit
+	bit.PutUint(b[:], uint64(cw))
+	return b
+}
+
+func TestGolay2087MatchesReferenceOnEveryWord(t *testing.T) {
 	t.Parallel()
 
-	for i := 0; i < 100; i++ {
-		var data [8]bit.Bit
-		for j := 0; j < 8; j++ {
-			if rand.Intn(2) == 1 {
-				data[j] = 1
-			}
+	for cw := range uint32(1 << 20) {
+		got, res := Decode2087(cw)
+		want, wantRes := ref.Decode2087(bits20(cw))
+		if got != uint32(bit.Uint(want[:])) || res != wantRes {
+			t.Fatalf("Decode2087(%#05x) = %#05x %+v, want %#05x %+v", cw, got, res, bit.Uint(want[:]), wantRes)
 		}
-
-		parity := parity2087(data)
-		var cw [20]bit.Bit
-		copy(cw[:], data[:])
-		copy(cw[8:], parity[:])
-
-		decoded, result := Decode2087(cw)
-		if result.Uncorrectable || result.ErrorsCorrected != 0 {
-			t.Errorf("Failed to decode clean codeword")
-		}
-		if decoded != cw {
-			t.Errorf("Decoded clean codeword mismatch")
-		}
-
-		cwErr1 := cw
-		pos := rand.Intn(20)
-		cwErr1[pos] ^= 1
-		decoded, result = Decode2087(cwErr1)
-		if result.Uncorrectable || result.ErrorsCorrected != 1 {
-			t.Errorf("Failed to correct 1 error")
-		}
-		if decoded != cw {
-			t.Errorf("Decoded 1-error codeword mismatch")
-		}
-
-		cwErr2 := cw
-		p1, p2 := rand.Intn(20), rand.Intn(20)
-		for p1 == p2 {
-			p2 = rand.Intn(20)
-		}
-		cwErr2[p1] ^= 1
-		cwErr2[p2] ^= 1
-		decoded, result = Decode2087(cwErr2)
-		if result.Uncorrectable || result.ErrorsCorrected != 2 {
-			t.Errorf("Failed to correct 2 errors")
-		}
-		if decoded != cw {
-			t.Errorf("Decoded 2-error codeword mismatch")
-		}
-
-		cwErr3 := cw
-		p1, p2, p3 := rand.Intn(20), rand.Intn(20), rand.Intn(20)
-		for p1 == p2 {
-			p2 = rand.Intn(20)
-		}
-		for p3 == p1 || p3 == p2 {
-			p3 = rand.Intn(20)
-		}
-		cwErr3[p1] ^= 1
-		cwErr3[p2] ^= 1
-		cwErr3[p3] ^= 1
-		decoded, result = Decode2087(cwErr3)
-		if result.Uncorrectable || result.ErrorsCorrected != 3 {
-			t.Errorf("Failed to correct 3 errors")
-		}
-		if decoded != cw {
-			t.Errorf("Decoded 3-error codeword mismatch")
+		if Check2087(cw) != ref.Check2087(bits20(cw)) {
+			t.Fatalf("Check2087(%#05x) differs from the reference", cw)
 		}
 	}
+	for d := range 256 {
+		data := bits20(uint32(d) << 12)
+		want := ref.Encode2087([8]bit.Bit(data[:8]))
+		if got := Encode2087(uint8(d)); got != uint32(bit.Uint(want[:])) {
+			t.Fatalf("Encode2087(%#02x) = %#05x, want %#05x", d, got, bit.Uint(want[:]))
+		}
+	}
+}
+
+func TestGolay2087CorrectsUpToThreeErrors(t *testing.T) {
+	t.Parallel()
+
+	patterns := []uint32{0}
+	for i := range 20 {
+		patterns = append(patterns, 1<<i)
+		for j := range i {
+			patterns = append(patterns, 1<<i|1<<j)
+			for k := range j {
+				patterns = append(patterns, 1<<i|1<<j|1<<k)
+			}
+		}
+	}
+	for d := range 256 {
+		cw := Encode2087(uint8(d))
+		for _, e := range patterns {
+			got, res := Decode2087(cw ^ e)
+			if got != cw || res.ErrorsCorrected != bits.OnesCount32(e) || res.Uncorrectable {
+				t.Fatalf("data %#02x error %#05x: %#05x %+v", d, e, got, res)
+			}
+		}
+	}
+}
+
+func BenchmarkGolay2087(b *testing.B) {
+	cw := Encode2087(0x5A) ^ 0x10
+	b.Run("Decode", func(b *testing.B) {
+		for b.Loop() {
+			cw ^= 1 << 7
+			_, _ = Decode2087(cw)
+		}
+	})
+	b.Run("Encode", func(b *testing.B) {
+		d := uint8(0)
+		for b.Loop() {
+			d++
+			_ = Encode2087(d)
+		}
+	})
 }

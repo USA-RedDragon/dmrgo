@@ -6,7 +6,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -16,7 +15,7 @@ func buildRCInfoBits(payload byte) [11]bit.Bit {
 	// Payload: bits 0-3 (MSB-first)
 	bit.PutUint(bits[0:4], uint64(payload&0x0F))
 	// CRC-7 with mask 0x7A
-	crcVal := crc.CRC7(bits[:4]) ^ pdu.CRC7MaskRC
+	crcVal := crc7Bits(bits[:4]) ^ pdu.CRC7MaskRC
 	for i := 0; i < 7; i++ {
 		bits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)
 	}

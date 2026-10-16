@@ -6,7 +6,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -38,7 +37,7 @@ func TestSlotTypeInfo_AllValues(t *testing.T) {
 		s := pdu.SlotTypeInfo(v)
 		var data [8]bit.Bit
 		bit.PutUint(data[:], uint64(v))
-		cw := golay.Encode2087(data)
+		cw := golay2087Bits(data)
 		want := uint32(bit.Uint(cw[:]))
 		if got := s.Codeword(); got != want {
 			t.Fatalf("%#02x: Codeword %#05x, want %#05x", v, got, want)

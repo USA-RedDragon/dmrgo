@@ -106,6 +106,26 @@ func CRCCCITT() [256]uint16 {
 	return table
 }
 
+// CRC9Table computes the byte-at-a-time CRC-9 lookup table for polynomial
+// x⁹ + x⁶ + x⁴ + x³ + 1 (ETSI TS 102 361-1 clause B.3.10), for a register
+// that holds the 9 CRC bits in its top bits.
+func CRC9Table() [256]uint16 {
+	const poly = 0x59 << 7
+	var table [256]uint16
+	for i := 0; i < 256; i++ {
+		crc := uint16(i) << 8
+		for j := 0; j < 8; j++ {
+			if crc&0x8000 != 0 {
+				crc = (crc << 1) ^ poly
+			} else {
+				crc <<= 1
+			}
+		}
+		table[i] = crc
+	}
+	return table
+}
+
 // ConstellationPoints computes the 4-bit rate 3/4 trellis symbol
 // index of each pair of dibit symbol values (ETSI TS 102 361-1 clause B.2.4).
 func ConstellationPoints() map[[2]int8]byte {

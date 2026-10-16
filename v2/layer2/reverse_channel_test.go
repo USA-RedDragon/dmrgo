@@ -5,7 +5,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -16,7 +15,7 @@ import (
 func buildRCEmbeddedData(payload byte) [32]bit.Bit {
 	var infoBits [11]bit.Bit
 	bit.PutUint(infoBits[0:4], uint64(payload&0x0F))
-	crcVal := crc.CRC7(infoBits[:4]) ^ pdu.CRC7MaskRC
+	crcVal := crc7Bits(infoBits[:4]) ^ pdu.CRC7MaskRC
 	for i := 0; i < 7; i++ {
 		infoBits[4+i] = bit.Bit((crcVal >> (6 - i)) & 1)
 	}

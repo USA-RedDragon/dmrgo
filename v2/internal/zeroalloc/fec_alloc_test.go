@@ -70,10 +70,10 @@ func splitBurst(b [33]byte) burstFields {
 	return f
 }
 
-// dataType returns the data type of a slot type that golay.Decode2087
-// corrected.
-func dataType(slotType [20]bit.Bit) enums.DataType {
-	return enums.DataType(bit.Uint(slotType[4:8]))
+// dataType returns the data type of a slot type codeword that
+// golay.Decode2087 corrected.
+func dataType(slotType uint32) enums.DataType {
+	return enums.DataType(slotType >> 12 & 0xF)
 }
 
 // embeddedLC returns the 72 LC bits and the 5 checksum bits of the 77
@@ -126,7 +126,8 @@ func fecEntries(t testing.TB) []entry {
 	if res.HasErrors() {
 		t.Fatalf("voice LC header BPTC: %+v", res)
 	}
-	headerST, res := golay.Decode2087(header.slotType)
+	headerSTCW := uint32(bit.Uint(header.slotType[:]))
+	headerST, res := golay.Decode2087(headerSTCW)
 	if res.HasErrors() || dataType(headerST) != enums.DataTypeVoiceLCHeader {
 		t.Fatalf("voice LC header slot type: %v %+v", dataType(headerST), res)
 	}
@@ -141,15 +142,14 @@ func fecEntries(t testing.TB) []entry {
 	lcBad[4] ^= 0x81
 	infoBad := header.info
 	flip(infoBad[:], 7, 120)
-	stBad := header.slotType
-	flip(stBad[:], 2, 15)
+	stBad := headerSTCW ^ 1<<17 ^ 1<<4
 
 	voiceB := splitBurst(voice[2])
-	if _, res := quadraticresidue.Decode(voiceB.emb); res.HasErrors() {
+	embCW := uint16(bit.Uint(voiceB.emb[:]))
+	if _, res := quadraticresidue.Decode(embCW); res.HasErrors() {
 		t.Fatalf("voice B EMB: %+v", res)
 	}
-	embBad := voiceB.emb
-	flip(embBad[:], 3)
+	embBad := embCW ^ 1<<12
 	var fragments [4][32]bit.Bit
 	for i := range fragments {
 		fragments[i] = splitBurst(voice[2+i]).embedded
@@ -177,7 +177,7 @@ func fecEntries(t testing.TB) []entry {
 	var rate12 [196]bit.Bit
 	for _, b := range sms {
 		f := splitBurst(b)
-		st, _ := golay.Decode2087(f.slotType)
+		st, _ := golay.Decode2087(uint32(bit.Uint(f.slotType[:])))
 		if dataType(st) != enums.DataTypeRate12 {
 			continue
 		}
@@ -214,11 +214,9 @@ func fecEntries(t testing.TB) []entry {
 	rcBad := rc
 	flip(rcBad[:], 4, 20)
 
-	var tact [4]bit.Bit
-	patternBits(tact[:], 3)
+	tact := uint8(0b1010)
 	tactCW := hamming.Encode743(tact)
-	tactBad := tactCW
-	flip(tactBad[:], 6)
+	tactBad := tactCW ^ 1
 
 	ambeA := golay.Encode24128(0xA5C)
 	ambeB := golay.Encode23127(0x3B1)
@@ -226,6 +224,9 @@ func fecEntries(t testing.TB) []entry {
 	var reserved [3]bit.Bit
 	var rcCRCBits [4]bit.Bit
 	patternBits(rcCRCBits[:], 3)
+	rcInfoBytes := bit.Pack(rcInfo[:])
+	lcBytes := bit.Pack96(lcBits)
+	rate12Bytes := bit.Pack(rate12[:])
 
 	var (
 		bits96     [96]bit.Bit
@@ -290,23 +291,23 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/fec/bptc.DecodeSingleBurst", "reverse channel, 2 errors", 0, func() { bits11, r = bptc.DecodeSingleBurst(rcBad, true) }},
 		{"internal/fec/bptc.EncodeSingleBurst", "reverse channel", 0, func() { bits32 = bptc.EncodeSingleBurst(rcInfo, true) }},
 
-		{"internal/fec/golay.Decode2087", "voice LC header slot type", 0, func() { bits20, r = golay.Decode2087(header.slotType) }},
-		{"internal/fec/golay.Decode2087", "voice LC header slot type, 2 errors", 0, func() { bits20, r = golay.Decode2087(stBad) }},
-		{"internal/fec/golay.Check2087", "voice LC header slot type", 0, func() { ok = golay.Check2087(header.slotType) }},
-		{"internal/fec/golay.Encode2087", "voice LC header slot type", 0, func() { bits20 = golay.Encode2087([8]bit.Bit(headerST[:8])) }},
+		{"internal/fec/golay.Decode2087", "voice LC header slot type", 0, func() { u32, r = golay.Decode2087(headerSTCW) }},
+		{"internal/fec/golay.Decode2087", "voice LC header slot type, 2 errors", 0, func() { u32, r = golay.Decode2087(stBad) }},
+		{"internal/fec/golay.Check2087", "voice LC header slot type", 0, func() { ok = golay.Check2087(headerSTCW) }},
+		{"internal/fec/golay.Encode2087", "voice LC header slot type", 0, func() { u32 = golay.Encode2087(uint8(headerST >> 12)) }},
 		{"internal/fec/golay.Decode24128", "1 error", 0, func() { u16, r = golay.Decode24128(ambeA ^ 0x10) }},
 		{"internal/fec/golay.Encode24128", "", 0, func() { u32 = golay.Encode24128(0xA5C) }},
 		{"internal/fec/golay.Decode23127", "1 error", 0, func() { u16, r = golay.Decode23127(ambeB ^ 0x400) }},
 		{"internal/fec/golay.Encode23127", "", 0, func() { u32 = golay.Encode23127(0x3B1) }},
 
-		{"internal/fec/hamming.Decode743", "1 error", 0, func() { bits7, r = hamming.Decode743(tactBad) }},
+		{"internal/fec/hamming.Decode743", "1 error", 0, func() { u8, r = hamming.Decode743(tactBad) }},
 		{"internal/fec/hamming.Check743", "", 0, func() { ok = hamming.Check743(tactCW) }},
-		{"internal/fec/hamming.Encode743", "", 0, func() { bits7 = hamming.Encode743(tact) }},
+		{"internal/fec/hamming.Encode743", "", 0, func() { u8 = hamming.Encode743(tact) }},
 
-		{"internal/fec/quadraticresidue.Decode", "voice B EMB", 0, func() { bits16, r = quadraticresidue.Decode(voiceB.emb) }},
-		{"internal/fec/quadraticresidue.Decode", "voice B EMB, 1 error", 0, func() { bits16, r = quadraticresidue.Decode(embBad) }},
-		{"internal/fec/quadraticresidue.Check", "voice B EMB", 0, func() { ok = quadraticresidue.Check(voiceB.emb) }},
-		{"internal/fec/quadraticresidue.Encode", "voice B EMB", 0, func() { bits16 = quadraticresidue.Encode([7]bit.Bit(voiceB.emb[:7])) }},
+		{"internal/fec/quadraticresidue.Decode", "voice B EMB", 0, func() { u16, r = quadraticresidue.Decode(embCW) }},
+		{"internal/fec/quadraticresidue.Decode", "voice B EMB, 1 error", 0, func() { u16, r = quadraticresidue.Decode(embBad) }},
+		{"internal/fec/quadraticresidue.Check", "voice B EMB", 0, func() { ok = quadraticresidue.Check(embCW) }},
+		{"internal/fec/quadraticresidue.Encode", "voice B EMB", 0, func() { u16 = quadraticresidue.Encode(uint8(embCW >> 9)) }},
 
 		{"internal/fec/reedsolomon.Decode", "voice LC header", 0, func() { rsData, r = reedsolomon.Decode(lc) }},
 		{"internal/fec/reedsolomon.Decode", "voice LC header, 1 symbol error", 0, func() { rsData, r = reedsolomon.Decode(lcBad) }},
@@ -326,12 +327,12 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/crc.CheckCRC32", "d-sms message", 0, func() { ok = crc.CheckCRC32(message, msgCRC) }},
 		{"internal/crc.Checksum5", "embedded LC", 0, func() { u8 = crc.Checksum5(embLC) }},
 		{"internal/crc.CheckChecksum5", "embedded LC", 0, func() { ok = crc.CheckChecksum5(embLC, embCS) }},
-		{"internal/crc.CRC7", "reverse channel", 0, func() { u8 = crc.CRC7(rcInfo[:7]) }},
-		{"internal/crc.CheckCRC7", "reverse channel", 0, func() { ok = crc.CheckCRC7(rcInfo[:7], 0x2A) }},
-		{"internal/crc.CRC8", "", 0, func() { u8 = crc.CRC8(lcBits[:72]) }},
-		{"internal/crc.CheckCRC8", "", 0, func() { ok = crc.CheckCRC8(lcBits[:72], 0x5A) }},
-		{"internal/crc.CRC9", "rate 1/2 block", 0, func() { u16 = crc.CRC9(rate12[:80]) }},
-		{"internal/crc.CheckCRC9", "rate 1/2 block", 0, func() { ok = crc.CheckCRC9(rate12[:80], uint16(bit.Uint(rcCRCBits[:]))) }},
+		{"internal/crc.CRC7", "reverse channel", 0, func() { u8 = crc.CRC7(rcInfoBytes, 7) }},
+		{"internal/crc.CheckCRC7", "reverse channel", 0, func() { ok = crc.CheckCRC7(rcInfoBytes, 7, 0x2A) }},
+		{"internal/crc.CRC8", "", 0, func() { u8 = crc.CRC8(lcBytes[:], 72) }},
+		{"internal/crc.CheckCRC8", "", 0, func() { ok = crc.CheckCRC8(lcBytes[:], 72, 0x5A) }},
+		{"internal/crc.CRC9", "rate 1/2 block", 0, func() { u16 = crc.CRC9(rate12Bytes, 80) }},
+		{"internal/crc.CheckCRC9", "rate 1/2 block", 0, func() { ok = crc.CheckCRC9(rate12Bytes, 80, uint16(bit.Uint(rcCRCBits[:]))) }},
 	}
 	_ = ambeFrame
 	_, _, _, _, _, _, _, _, _, _, _, _ = bits96, bits196, rate34Out, trellisOut, bits77, bits36, bits11, bits20, bits16, bits7, frags, cachOut

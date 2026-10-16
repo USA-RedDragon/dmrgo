@@ -18,11 +18,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -91,12 +87,6 @@ var bitFuncs = map[string]any{
 		bits.Unpack(dst[:], []byte{0xA5, 0x3C}, 0)
 		return dst
 	},
-	"internal/crc.CRC7":                         crc.CRC7,
-	"internal/crc.CRC8":                         crc.CRC8,
-	"internal/crc.CRC9":                         crc.CRC9,
-	"internal/crc.CheckCRC7":                    crc.CheckCRC7,
-	"internal/crc.CheckCRC8":                    crc.CheckCRC8,
-	"internal/crc.CheckCRC9":                    crc.CheckCRC9,
 	"internal/fec/bptc.Decode196WithReserved":   bptc.Decode196WithReserved,
 	"internal/fec/bptc.DecodeCACH":              bptc.DecodeCACH,
 	"internal/fec/bptc.DecodeEmbedded":          bptc.DecodeEmbedded,
@@ -108,15 +98,6 @@ var bitFuncs = map[string]any{
 	"internal/fec/bptc.EncodeCACH":              bptc.EncodeCACH,
 	"internal/fec/bptc.EncodeEmbedded":          bptc.EncodeEmbedded,
 	"internal/fec/bptc.EncodeSingleBurst":       bptc.EncodeSingleBurst,
-	"internal/fec/golay.Decode2087":             golay.Decode2087,
-	"internal/fec/golay.Encode2087":             golay.Encode2087,
-	"internal/fec/golay.Check2087":              golay.Check2087,
-	"internal/fec/hamming.Check743":             hamming.Check743,
-	"internal/fec/hamming.Decode743":            hamming.Decode743,
-	"internal/fec/hamming.Encode743":            hamming.Encode743,
-	"internal/fec/quadraticresidue.Check":       quadraticresidue.Check,
-	"internal/fec/quadraticresidue.Decode":      quadraticresidue.Decode,
-	"internal/fec/quadraticresidue.Encode":      quadraticresidue.Encode,
 	"layer2.CACHDeinterleave":                   layer2.CACHDeinterleave,
 	"layer2.CACHInterleave":                     layer2.CACHInterleave,
 	"layer2.DecodeCACH":                         layer2.DecodeCACH,
