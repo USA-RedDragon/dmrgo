@@ -12,14 +12,14 @@ func TestFLC_SetAddresses(t *testing.T) {
 
 	for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
 		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: flco}
-		if lc.SetAddresses(91, 3191868) {
+		if lc.SetAddresses(91, 3191868) == nil {
 			t.Fatalf("FLCO %s: SetAddresses without a payload field succeeded", flco)
 		}
 		lc.GroupVoice, lc.UnitToUnit = &pdu.FLCGroupVoice{}, nil
 		if flco == enums.FLCOUnitToUnitVoiceChannelUser {
 			lc.GroupVoice, lc.UnitToUnit = nil, &pdu.FLCUnitToUnit{}
 		}
-		if !lc.SetAddresses(91, 3191868) {
+		if lc.SetAddresses(91, 3191868) != nil {
 			t.Fatalf("FLCO %s: SetAddresses failed", flco)
 		}
 		decoded := pdu.DecodeFullLinkControl(must(lc.Encode()), enums.DataTypeVoiceLCHeader)
@@ -28,11 +28,11 @@ func TestFLC_SetAddresses(t *testing.T) {
 		}
 	}
 	lc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo}
-	if lc.SetAddresses(1, 2) {
+	if lc.SetAddresses(1, 2) == nil {
 		t.Error("SetAddresses of a GPS Info LC succeeded")
 	}
 	lc = pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser}
-	if lc.SetAddresses(1<<24, 2) || lc.GroupVoice != nil {
+	if lc.SetAddresses(1<<24, 2) == nil || lc.GroupVoice != nil {
 		t.Error("SetAddresses of a 25-bit target succeeded")
 	}
 }
@@ -43,7 +43,7 @@ func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
 	for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
 		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeTerminatorWithLC, FLCO: flco, FID: 0xC2}
 		lc.RawPayload[0] = 1
-		if !lc.SetAddresses(3120101, 3120001) {
+		if lc.SetAddresses(3120101, 3120001) != nil {
 			t.Fatalf("FLCO %s: SetAddresses failed", flco)
 		}
 		decoded := pdu.DecodeFullLinkControl(must(lc.Encode()), enums.DataTypeTerminatorWithLC)
@@ -59,7 +59,7 @@ func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
 		}
 	}
 	lc := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, FID: 0xC2}
-	if lc.SetAddresses(1, 2) {
+	if lc.SetAddresses(1, 2) == nil {
 		t.Error("SetAddresses of a manufacturer FLCO 8 LC succeeded")
 	}
 }
@@ -68,7 +68,7 @@ func TestDataHeader_Addresses(t *testing.T) {
 	t.Parallel()
 
 	dh := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{}}
-	if !dh.SetAddresses(3120002, 3120001) {
+	if dh.SetAddresses(3120002, 3120001) != nil {
 		t.Fatal("SetAddresses failed")
 	}
 	decoded := pdu.DecodeDataHeader(must(dh.Encode()))
@@ -76,7 +76,7 @@ func TestDataHeader_Addresses(t *testing.T) {
 		t.Errorf("Addresses = %d %d %v", dst, src, ok)
 	}
 	var empty pdu.DataHeader
-	if _, _, ok := empty.Addresses(); ok || empty.SetAddresses(1, 2) {
+	if _, _, ok := empty.Addresses(); ok || empty.SetAddresses(1, 2) == nil {
 		t.Error("an empty header has addresses")
 	}
 }

@@ -29,13 +29,13 @@ func TestNewBSOutboundActivation(t *testing.T) {
 	if tgt, src, ok := got.Addresses(); !ok || tgt != 310123 || src != 3191868 {
 		t.Fatalf("CSBK.Addresses %d %d %t", tgt, src, ok)
 	}
-	if !got.SetAddresses(9, 3120001) {
+	if got.SetAddresses(9, 3120001) != nil {
 		t.Fatal("SetAddresses on opcode 0x38")
 	}
 	if p, _ := got.AsBSOutboundActivation(); p.BSAddress != 9 || p.SourceAddress != 3120001 {
 		t.Fatalf("after SetAddresses %+v", p)
 	}
-	if !cb.SetAddresses(9, 3120001) {
+	if cb.SetAddresses(9, 3120001) != nil {
 		t.Fatal("CSBKBytes.SetAddresses on opcode 0x38")
 	}
 	cb.Reseal()

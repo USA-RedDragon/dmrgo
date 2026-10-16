@@ -418,7 +418,8 @@ func collectPDU(d digests) {
 			lc, res, err := pdu.DecodeFullLCCodeword(x, dt)
 			d.add("pdu/flccw", "%x %x %+v %s %v", x, lc, res, errString(err), pdu.FullLCParityOK(x, dt))
 		}
-		d.add("pdu/hash", "%d", pdu.AddressHash(uint32(r.Intn(1<<24))))
+		hash, _ := pdu.AddressHash(uint32(r.Intn(1 << 24)))
+		d.add("pdu/hash", "%d", hash)
 	}
 }
 

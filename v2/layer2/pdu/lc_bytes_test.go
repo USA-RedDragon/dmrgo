@@ -24,7 +24,7 @@ func TestLCBytes_Capture(t *testing.T) {
 		t.Fatalf("Addresses %d -> %d %t, want 3191868 -> 9990", src, tgt, ok)
 	}
 
-	if !l.SetGroup(true) || !l.SetAddresses(91, 3100999) {
+	if !l.SetGroup(true) || l.SetAddresses(91, 3100999) != nil {
 		t.Fatal("edit refused")
 	}
 	if got := hex.EncodeToString(l[:]); got != "00000000005b2f5147" {
@@ -43,7 +43,7 @@ func TestLCBytes_Capture(t *testing.T) {
 	}
 
 	orig := pdu.LCBytes(hex9(t, "03000000270630b43c"))
-	if back := pdu.LCBytes([9]byte(cw[:9])); !back.SetGroup(false) || !back.SetAddresses(9990, 3191868) || back != orig {
+	if back := pdu.LCBytes([9]byte(cw[:9])); !back.SetGroup(false) || back.SetAddresses(9990, 3191868) != nil || back != orig {
 		t.Fatalf("edit back gives %x", back)
 	}
 	vlc, tlc := must(orig.Codeword(enums.DataTypeVoiceLCHeader)), must(orig.Codeword(enums.DataTypeTerminatorWithLC))
@@ -159,7 +159,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 
 		l = orig
 		tgt, src := uint32(rng.Intn(1<<24)), uint32(rng.Intn(1<<24))
-		if l.SetAddresses(tgt, src) != voice {
+		if (l.SetAddresses(tgt, src) == nil) != voice {
 			t.Fatalf("%x: SetAddresses ok %t for FLCO %d", orig, !voice, orig.FLCO())
 		}
 		if !voice {
@@ -177,7 +177,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 		if gt, gs, ok := l.Addresses(); !ok || gt != tgt || gs != src || !within(diffMask(l, orig), addrBits) {
 			t.Fatalf("%x: SetAddresses %d %d gives %x", orig, tgt, src, l)
 		}
-		if l.SetAddresses(1<<24, 0) || l.SetAddresses(0, 1<<24) {
+		if l.SetAddresses(1<<24, 0) == nil || l.SetAddresses(0, 1<<24) == nil {
 			t.Fatalf("%x: SetAddresses accepts 25 bits", orig)
 		}
 
@@ -185,7 +185,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want.SetAddresses(tgt, src)
+		noErr(want.SetAddresses(tgt, src))
 		if must(want.Bytes()) != [9]byte(l) {
 			t.Fatalf("%x: LCBytes.SetAddresses %x, FullLinkControl.SetAddresses %x", orig, l, must(want.Bytes()))
 		}

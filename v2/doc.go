@@ -54,9 +54,8 @@
 // and an encode sets them to 0. An encoder that takes such a field, such as
 // CACH.Encode, UnifiedSingleBlockData.Encode or vocoder.EncodeAMBE72,
 // returns a *FieldRangeError when a padding bit is set, as it does for a
-// value that does not fit its bits. So do the setters of RawBurst, LCBytes,
-// EMBInfo and SlotTypeInfo, which then change nothing. The SetAddresses
-// methods return false for an address over 24 bits.
+// value that does not fit its bits. So do the setters, which then change
+// nothing, and the SetAddresses methods for an address over 24 bits.
 //
 // # Packages
 //
@@ -98,6 +97,8 @@
 //     by packet segmentation and reassembly.
 //   - pdu.ErrTalkerAliasIncomplete, pdu.ErrTalkerAliasLength: returned by
 //     the talker alias functions.
+//   - pdu.ErrNoAddresses: returned by the SetAddresses methods for a PDU
+//     without address fields.
 //   - vocoder.ErrUnknownCodec, codec2.ErrUnavailable,
 //     codec2.ErrUnsupportedMode, codec2.ErrFrameLength, codec2.ErrClosed:
 //     returned by the vocoders.

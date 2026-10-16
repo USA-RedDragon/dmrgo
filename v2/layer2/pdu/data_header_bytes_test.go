@@ -29,7 +29,7 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 			t.Fatalf("%s: Addresses %d %d %t", dh.Format, gotT, gotS, ok)
 		}
 		group := dh.Format != pdu.FormatResponsePacket
-		if !h.SetAddresses(0xABCDEF, 0x123456) || h.SetGroup(true) != group {
+		if h.SetAddresses(0xABCDEF, 0x123456) != nil || h.SetGroup(true) != group {
 			t.Fatalf("%s: SetAddresses or SetGroup refused", dh.Format)
 		}
 		h.Reseal()
@@ -39,7 +39,7 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 			t.Fatalf("%s: edited header %+v", dh.Format, res)
 		}
 		want := dh
-		want.SetAddresses(0xABCDEF, 0x123456)
+		noErr(want.SetAddresses(0xABCDEF, 0x123456))
 		switch {
 		case want.UnconfirmedDataHeader != nil:
 			want.UnconfirmedDataHeader.Group = group

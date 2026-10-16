@@ -299,3 +299,105 @@ func TestSettersRejectOutOfRangeValues(t *testing.T) {
 		}
 	}
 }
+
+// TestSetAddressesErrors checks that each SetAddresses returns the
+// *dmrgo.FieldRangeError of a target or source over 24 bits and
+// pdu.ErrNoAddresses for a PDU without address fields, and leaves the PDU
+// as it was.
+func TestSetAddressesErrors(t *testing.T) {
+	t.Parallel()
+
+	type setter struct {
+		name string
+		typ  string
+		dst  string
+		set  func(target, source uint32) (unchanged bool, err error)
+		none func() error
+	}
+	lcb := must(pdu.NewVoiceLCBytes(true, 91, 3191868, layer3.ServiceOptions{}))
+	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
+	pre := pdu.CSBK{Opcode: pdu.CSBKPreamble, PreamblePDU: &pdu.PreamblePDU{TargetAddress: 1, SourceAddress: 2}}
+	csbkb := pdu.CSBKBytes(must(pre.Encode()))
+	hdr := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{LLIDDestination: 1, LLIDSource: 2}}
+	hdrb := pdu.DataHeaderBytes(must(hdr.Encode()))
+	setters := []setter{
+		{"LCBytes", "LCBytes", "target", func(a, b uint32) (bool, error) {
+			l := lcb
+			err := l.SetAddresses(a, b)
+			return l == lcb, err
+		}, func() error {
+			l := lcb
+			noErr(l.SetFLCO(enums.FLCOTerminatorDataLinkControl))
+			return l.SetAddresses(1, 2)
+		}},
+		{"FullLinkControl", "FullLinkControl", "target", func(a, b uint32) (bool, error) {
+			l := lc
+			gv := *lc.GroupVoice
+			l.GroupVoice = &gv
+			err := l.SetAddresses(a, b)
+			return gv == *lc.GroupVoice, err
+		}, func() error {
+			l := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser}
+			return l.SetAddresses(1, 2)
+		}},
+		{"CSBK", "CSBK", "target", func(a, b uint32) (bool, error) {
+			c := pre
+			p := *pre.PreamblePDU
+			c.PreamblePDU = &p
+			err := c.SetAddresses(a, b)
+			return p == *pre.PreamblePDU, err
+		}, func() error {
+			c := pdu.CSBK{Opcode: pdu.CSBKPreamble}
+			return c.SetAddresses(1, 2)
+		}},
+		{"CSBKBytes", "CSBKBytes", "target", func(a, b uint32) (bool, error) {
+			c := csbkb
+			err := c.SetAddresses(a, b)
+			return c == csbkb, err
+		}, func() error {
+			var c pdu.CSBKBytes
+			c[1] = 0x10
+			return c.SetAddresses(1, 2)
+		}},
+		{"DataHeader", "DataHeader", "destination", func(a, b uint32) (bool, error) {
+			h := hdr
+			u := *hdr.UnconfirmedDataHeader
+			h.UnconfirmedDataHeader = &u
+			err := h.SetAddresses(a, b)
+			return u == *hdr.UnconfirmedDataHeader, err
+		}, func() error {
+			var h pdu.DataHeader
+			return h.SetAddresses(1, 2)
+		}},
+		{"DataHeaderBytes", "DataHeaderBytes", "target", func(a, b uint32) (bool, error) {
+			h := hdrb
+			err := h.SetAddresses(a, b)
+			return h == hdrb, err
+		}, func() error {
+			h := hdrb
+			h[0] = h[0]&0xF0 | byte(pdu.FormatProprietary)
+			return h.SetAddresses(1, 2)
+		}},
+	}
+	for _, s := range setters {
+		if unchanged, err := s.set(1<<24, 2); !isRangeError(err, s.typ, s.dst, 24) || !unchanged {
+			t.Errorf("%s: target over 24 bits: %v, unchanged %t", s.name, err, unchanged)
+		}
+		if unchanged, err := s.set(1, 1<<24); !isRangeError(err, s.typ, "source", 24) || !unchanged {
+			t.Errorf("%s: source over 24 bits: %v, unchanged %t", s.name, err, unchanged)
+		}
+		if _, err := s.set(5, 6); err != nil {
+			t.Errorf("%s: %v", s.name, err)
+		}
+		if err := s.none(); !errors.Is(err, pdu.ErrNoAddresses) {
+			t.Errorf("%s without address fields: %v, want pdu.ErrNoAddresses", s.name, err)
+		}
+	}
+}
+
+// noErr panics when err is not nil.
+func noErr(err error) {
+	if err != nil {
+		panic(err)
+	}
+}

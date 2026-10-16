@@ -91,20 +91,36 @@ func (s *SysCode) Unpack(v uint16) {
 }
 
 // Unpack14 sets s to the fields of the 14-bit CACH form v of a C_SYScode,
-// with Par 0. It is the inverse of Pack14.
-func (s *SysCode) Unpack14(v uint16) {
-	s.Unpack((v & 0x3FFF) << 2)
+// with Par 0. It is the inverse of Pack14. It returns a
+// *dmrgo.FieldRangeError, and changes nothing, when v does not fit in 14
+// bits.
+func (s *SysCode) Unpack14(v uint16) error {
+	if v>>14 != 0 {
+		return errSysCode14Range
+	}
+	s.Unpack(v << 2)
+	return nil
 }
 
-func sysCodeFromShortLC(model uint8, netSite uint16) SysCode {
+// sysCodeFromShortLC returns the SysCode of the MODEL and NET and SITE
+// fields of a Short LC, or modelErr or netSiteErr when one does not fit.
+func sysCodeFromShortLC(model uint8, netSite uint16, modelErr, netSiteErr error) (SysCode, error) {
 	var s SysCode
-	s.Unpack14(uint16(model&3)<<12 | netSite&0xFFF)
-	return s
+	switch {
+	case model>>2 != 0:
+		return s, modelErr
+	case netSite>>12 != 0:
+		return s, netSiteErr
+	}
+	s.Unpack(uint16(model)<<14 | netSite<<2)
+	return s, nil
 }
 
-// SysCode returns the MODEL, NET and SITE carried in the C_SYS_Parms.
-func (s *ShortLCCSysParms) SysCode() SysCode {
-	return sysCodeFromShortLC(s.MODEL, s.NetSiteRaw)
+// SysCode returns the MODEL, NET and SITE carried in the C_SYS_Parms. It
+// returns a *dmrgo.FieldRangeError when MODEL or NetSiteRaw does not fit
+// its bits.
+func (s *ShortLCCSysParms) SysCode() (SysCode, error) {
+	return sysCodeFromShortLC(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange)
 }
 
 // SetSysCode sets MODEL and NetSiteRaw from c. c.Par is ignored.
@@ -117,9 +133,10 @@ func (s *ShortLCCSysParms) SetSysCode(c SysCode) error {
 	return nil
 }
 
-// SysCode returns the MODEL, NET and SITE carried in the P_SYS_Parms.
-func (s *ShortLCPSysParms) SysCode() SysCode {
-	return sysCodeFromShortLC(s.MODEL, s.NetSiteRaw)
+// SysCode returns the MODEL, NET and SITE carried in the P_SYS_Parms, with
+// the errors of ShortLCCSysParms.SysCode.
+func (s *ShortLCPSysParms) SysCode() (SysCode, error) {
+	return sysCodeFromShortLC(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange)
 }
 
 // SetSysCode sets MODEL and NetSiteRaw from c. c.Par is ignored.
@@ -172,6 +189,7 @@ const (
 // The errors of a SYSCODE field whose value does not fit in its bits. NET
 // and SITE have one for each network model, which sets their widths.
 var (
+	errSysCode14Range        = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Pack14", Bits: 14}
 	errSysCodeModelRange     = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Model", Bits: 2}
 	errSysCodeParRange       = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Par", Bits: 2}
 	errSysCodeNetRangeTiny   = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 9}
