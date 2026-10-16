@@ -1079,14 +1079,20 @@ func dibitLLR(a []float32) (int16, int16) {
 	return satLLR(b0), satLLR(b1)
 }
 
-// satLLR returns v in units of 1/8, saturated to the int16 range.
+// satLLR returns v in units of 1/8, saturated to the int16 range, and at
+// least one unit from 0 with the sign of v, so that the decoders that read
+// a hard decision from the sign keep it.
 func satLLR(v float32) int16 {
 	v *= 8
-	if v > 32000 {
+	switch {
+	case v > 32000:
 		return 32000
-	}
-	if v < -32000 {
+	case v < -32000:
 		return -32000
+	case v > 0 && v < 1:
+		return 1
+	case v < 0 && v > -1:
+		return -1
 	}
 	return int16(v)
 }

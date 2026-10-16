@@ -45,10 +45,16 @@ type slotRec struct {
 // the bytes.
 type llr8 [layer2.BurstBits]int8
 
-// set stores the ratios of v.
+// set stores the ratios of v, rounded half away from 0 and saturated at
+// +-127, so that a ratio keeps its sign and the store leans to neither bit
+// value.
 func (l *llr8) set(v *[layer2.BurstBits]int16) {
 	for i, x := range v {
-		l[i] = int8(max(min((int32(x)+1)>>1, math.MaxInt8), math.MinInt8))
+		h := (int32(x) + 1) >> 1
+		if x < 0 {
+			h = -((1 - int32(x)) >> 1)
+		}
+		l[i] = int8(max(min(h, math.MaxInt8), -math.MaxInt8))
 	}
 }
 
