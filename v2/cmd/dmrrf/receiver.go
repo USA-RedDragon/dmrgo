@@ -64,7 +64,7 @@ const (
 	lockSpanHz = 300.0
 	// wideChunk is the number of baseband samples that the receiver filters
 	// before it searches or follows the stream again.
-	wideChunk = 256
+	wideChunk = 128
 	// trellisWin is the number of symbols of a block of the trellis of the
 	// coherent tiers, and trellisLook the symbols of lookahead of its
 	// backward pass. Eight symbols of lookahead give the same sweep as
