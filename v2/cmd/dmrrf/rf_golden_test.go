@@ -144,8 +144,8 @@ func TestRFRelayedPayloads(t *testing.T) {
 		{"pi header", bptc("pi", 2), "21100112345678000009246e"},
 		{"pi terminator", bptc("pi", len(got["pi"])-1), "00004000000930b43cee7ae3"},
 		{"data header answered by a response", bptc("resp-data", 1), "43a62febf630b43c8200a5eb"},
-		{"ACK response header", bptc("ack", 0), "01a030b43c2febf6800829e3"},
-		{"SACK response header", bptc("sr", 0), "01a030b43c2febf681800a52"},
+		{"ACK response header", bptc("ack", 0), "01a030b43c2febf60008327b"},
+		{"SACK response header", bptc("sr", 0), "01a030b43c2febf6018011ca"},
 		{"SACK retry bitmap", bptc("sr", 1), "adffffffffffffff25b85442"},
 	} {
 		if c.got != c.want {

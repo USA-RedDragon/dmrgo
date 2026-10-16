@@ -243,7 +243,6 @@ func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *Res
 		SAP:             to.SAP,
 		LLIDDestination: to.LLIDSource,
 		LLIDSource:      to.LLIDDestination,
-		FullMessageFlag: true,
 		ResponseClass:   r.Class(),
 		ResponseType:    r.Type(),
 		ResponseStatus:  status,
