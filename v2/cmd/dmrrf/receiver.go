@@ -736,7 +736,9 @@ func (r *Receiver) followStep(end bool) bool {
 	j := r.next
 	r.next++
 	s := r.resetSlot(j)
-	r.measure(s)
+	if r.symTime(j, syncFirstSym) >= float64(r.chz.delayCh) {
+		r.measure(s)
+	}
 	switch {
 	case j < 0:
 	case s.present && (s.anchor || r.lastAnch != math.MinInt64 && j-r.lastAnch < lostSlots):
