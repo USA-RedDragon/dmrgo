@@ -166,7 +166,7 @@ func TestBurstEncode_FullLCDataTypeMustMatchSlotType(t *testing.T) {
 	lc := groupLC(enums.FIDStandardized)
 	lc.BurstDataType = enums.DataTypeVoiceLCHeader
 	b := dataBurst(enums.DataTypeTerminatorWithLC, &lc)
-	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "with data type Voice LC Header") {
+	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "Data of another data type") {
 		t.Errorf("Encode of a Voice LC Header LC in a terminator burst: %v, want a data type error", err)
 	}
 }
@@ -208,7 +208,7 @@ func TestBurstEncode_CustomData(t *testing.T) {
 		t.Errorf("custom Rate 1/2 Data decoded as %+v, want %x", got.Data, want)
 	}
 	b.Data = customRate34{}
-	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "carries 96 information bits") {
+	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "number of information bits") {
 		t.Errorf("Encode of 144 bits in a Rate 1/2 burst: %v, want a length error", err)
 	}
 	b.Data = customNoEncode{}
@@ -249,7 +249,7 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 		want  string
 	}{
 		{"NilData", dataBurst(enums.DataTypeCSBK, nil), "no Data"},
-		{"CSBKAsRate34", dataBurst(enums.DataTypeRate34, csbk), "cannot carry Data of type *pdu.CSBK"},
+		{"CSBKAsRate34", dataBurst(enums.DataTypeRate34, csbk), "cannot carry Data of another data type"},
 		{"LCAsCSBK", dataBurst(enums.DataTypeCSBK, &pdu.FullLinkControl{}), "cannot carry"},
 		{"TypedNil", dataBurst(enums.DataTypeCSBK, (*pdu.CSBK)(nil)), "cannot carry"},
 		{"ReservedType", dataBurst(enums.DataTypeReserved, csbk), "cannot carry"},
