@@ -2,13 +2,17 @@ package dmrgo
 
 import "fmt"
 
-// FieldRangeError is the error of an encoder when a field value does not
-// fit in its on-air bits, when a padding bit of a packed field is set, or
-// for a coordinate when it is outside [Min, Max]. Each field has one static
-// FieldRangeError, so an encoder that fails does not allocate; it does not
-// hold the value that failed.
+// FieldRangeError is the error of an encoder or setter when a field value
+// does not fit in its on-air bits, when a padding bit of a packed field is
+// set, or for a coordinate when it is outside [Min, Max]. Each field has one
+// static FieldRangeError, so a call that fails does not allocate; it does
+// not hold the value that failed.
 type FieldRangeError struct {
-	// Type and Field name the PDU type and its field.
+	// Type and Field name the PDU type and its field, such as
+	// "FLCGroupVoice" and "GroupAddress". For a value that a method takes,
+	// Field is the method, such as "SysCode" and "Unpack14". For a value
+	// that a package-level function or type takes, Type is the package and
+	// Field the function or type, such as "vocoder" and "AMBEFrame".
 	Type, Field string
 	// Bits is the width of the field in bits.
 	Bits int

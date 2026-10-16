@@ -16,5 +16,5 @@ var (
 	// ErrNoAddresses is returned by the SetAddresses methods when the PDU
 	// has no address fields: its FLCO, opcode or format has none, or the
 	// payload field that holds them is nil.
-	ErrNoAddresses = errors.New("the PDU has no address fields")
+	ErrNoAddresses = errors.New("PDU has no address fields")
 )

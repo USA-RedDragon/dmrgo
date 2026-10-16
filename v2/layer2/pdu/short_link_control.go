@@ -48,16 +48,23 @@ const netSiteLen = 12
 
 // NetID returns the network ID based on the MODEL field
 // (ETSI TS 102 361-4 Table 6.5): Tiny 9 bits, Small 7 bits,
-// Large 4 bits, Huge 2 bits.
-func (s *ShortLCCSysParms) NetID() uint16 {
-	return netID(s.MODEL, s.NetSiteRaw)
+// Large 4 bits, Huge 2 bits. It returns a *dmrgo.FieldRangeError when MODEL
+// or NetSiteRaw does not fit its bits.
+func (s *ShortLCCSysParms) NetID() (uint16, error) {
+	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
+		return 0, err
+	}
+	return netID(s.MODEL, s.NetSiteRaw), nil
 }
 
 // SiteID returns the site ID based on the MODEL field
 // (ETSI TS 102 361-4 Table 6.5): Tiny 3 bits, Small 5 bits,
-// Large 8 bits, Huge 10 bits.
-func (s *ShortLCCSysParms) SiteID() uint16 {
-	return siteID(s.MODEL, s.NetSiteRaw)
+// Large 8 bits, Huge 10 bits. It returns the errors of NetID.
+func (s *ShortLCCSysParms) SiteID() (uint16, error) {
+	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
+		return 0, err
+	}
+	return siteID(s.MODEL, s.NetSiteRaw), nil
 }
 
 func netID(model uint8, netSite uint16) uint16 {
@@ -78,15 +85,21 @@ type ShortLCPSysParms struct {
 }
 
 // NetID returns the network ID based on the MODEL field
-// (ETSI TS 102 361-4 Table 6.5).
-func (s *ShortLCPSysParms) NetID() uint16 {
-	return netID(s.MODEL, s.NetSiteRaw)
+// (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID.
+func (s *ShortLCPSysParms) NetID() (uint16, error) {
+	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange); err != nil {
+		return 0, err
+	}
+	return netID(s.MODEL, s.NetSiteRaw), nil
 }
 
 // SiteID returns the site ID based on the MODEL field
-// (ETSI TS 102 361-4 Table 6.5).
-func (s *ShortLCPSysParms) SiteID() uint16 {
-	return siteID(s.MODEL, s.NetSiteRaw)
+// (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID.
+func (s *ShortLCPSysParms) SiteID() (uint16, error) {
+	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange); err != nil {
+		return 0, err
+	}
+	return siteID(s.MODEL, s.NetSiteRaw), nil
 }
 
 // ShortLC is the Short Link Control (Short LC) PDU (ETSI TS 102 361-1 clause
