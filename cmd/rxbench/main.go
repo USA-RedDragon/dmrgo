@@ -1,0 +1,377 @@
+// Command rxbench writes the receiver sensitivity block of the README and
+// its graphs from the sweep data of dmrrf. With -update-readme it first runs
+// the long sweep (DMRRF_RXBENCH=full go test -run TestRxBench in
+// v2/cmd/dmrrf), then rewrites the block between the rxbench markers and the
+// SVG files. With -check-readme it renders the committed data and fails when
+// the README block or a graph differs.
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"math"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"runtime"
+	"slices"
+	"strconv"
+	"strings"
+)
+
+const (
+	beginMarker = "<!-- rxbench:begin -->"
+	endMarker   = "<!-- rxbench:end -->"
+)
+
+// Keys of the payload types in the sweep data.
+const (
+	keyAMBE   = "ambe"
+	keyRate12 = "rate12"
+	keyRate34 = "rate34"
+	keyCSBK   = "csbk"
+)
+
+func main() {
+	update := flag.Bool("update-readme", false, "run the long sweep, then rewrite the README block and the graphs")
+	check := flag.Bool("check-readme", false, "fail when the README block or a graph differs from the committed data")
+	noSweep := flag.Bool("no-sweep", false, "with -update-readme, render the committed data without the sweep")
+	flag.Parse()
+	if *update == *check {
+		fmt.Fprintln(os.Stderr, "rxbench: give -update-readme or -check-readme")
+		os.Exit(2)
+	}
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		fmt.Fprintln(os.Stderr, "rxbench: cannot find the rxbench source directory")
+		os.Exit(1)
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	err := run(ctx, filepath.Join(filepath.Dir(thisFile), "..", ".."), *update, *update && !*noSweep)
+	stop()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "rxbench:", err)
+		os.Exit(1)
+	}
+}
+
+// errStale reports a README block or graph that differs from the data.
+var errStale = errors.New("out of date: run go run -C cmd/rxbench . -update-readme")
+
+func run(ctx context.Context, root string, update, sweep bool) error {
+	if sweep {
+		cmd := exec.CommandContext(ctx, "go", "test", "-C", filepath.Join(root, "v2"), "-run", "^TestRxBench$", "-timeout", "6h", "./cmd/dmrrf")
+		cmd.Env = append(os.Environ(), "DMRRF_RXBENCH=full")
+		cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("sweep: %w", err)
+		}
+	}
+	d, err := load(filepath.Join(root, "v2/cmd/dmrrf/testdata"))
+	if err != nil {
+		return err
+	}
+	block := renderBlock(d)
+	graphs := renderGraphs(d)
+	readmePath := filepath.Join(root, "README.md")
+	readme, err := os.ReadFile(readmePath)
+	if err != nil {
+		return err
+	}
+	i, j := bytes.Index(readme, []byte(beginMarker)), bytes.Index(readme, []byte(endMarker))
+	if i < 0 || j < i {
+		return errors.New("README.md has no rxbench markers")
+	}
+	next := append(append(append([]byte{}, readme[:i+len(beginMarker)]...), block...), readme[j:]...)
+	stale := !bytes.Equal(next, readme)
+	for name, svg := range graphs {
+		p := filepath.Join(root, "docs/rx", name)
+		old, err := os.ReadFile(p)
+		if err != nil || !bytes.Equal(old, svg) {
+			stale = true
+			if update {
+				if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+					return err
+				}
+				if err := os.WriteFile(p, svg, 0o600); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	if !update {
+		if stale {
+			return errStale
+		}
+		return nil
+	}
+	return os.WriteFile(readmePath, next, 0o600)
+}
+
+// score counts the frames of one payload type at one C/N.
+type score struct {
+	Truth int `json:"truth"`
+	Exact int `json:"exact"`
+}
+
+// point is the score of every payload type at one C/N.
+type point struct {
+	CN       float64           `json:"cn"`
+	Payloads map[string]*score `json:"payloads"`
+}
+
+// tier is the sweep of one receiver tier.
+type tier struct {
+	Tier         int     `json:"tier"`
+	Full         []point `json:"full"`
+	NsPerSecond  float64 `json:"ns_per_second"`
+	RAMBytes     int     `json:"ram_bytes"`
+	Allocs       float64 `json:"allocs"`
+	FalsePerHour float64 `json:"false_per_hour"`
+	Cycles       float64 `json:"m4f_cycles_per_sample"`
+}
+
+// bench is testdata/rxbench.json.
+type bench struct {
+	Machine string `json:"machine"`
+	Tiers   []tier `json:"tiers"`
+}
+
+// curve is a floor curve: frame recovery against Eb/N0.
+type curve struct {
+	EbN0     []float64 `json:"ebn0"`
+	Recovery []float64 `json:"recovery"`
+}
+
+// floor is testdata/rxbench_floor.json.
+type floor struct {
+	Source   string           `json:"source"`
+	Payloads map[string]curve `json:"payloads"`
+	SyncPfa  string           `json:"sync_pfa"`
+}
+
+// recording is one real capture of testdata/rxbench_recordings.json.
+type recording struct {
+	Name  string  `json:"name"`
+	CN    float64 `json:"cn"`
+	Truth int     `json:"truth"`
+	Exact []int   `json:"exact"`
+}
+
+// data is everything a block renders.
+type data struct {
+	bench      bench
+	floor      floor
+	recordings []recording
+}
+
+func load(dir string) (data, error) {
+	var d data
+	for name, v := range map[string]any{"rxbench.json": &d.bench, "rxbench_floor.json": &d.floor, "rxbench_recordings.json": &d.recordings} {
+		b, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil {
+			return d, err
+		}
+		if err := json.Unmarshal(b, v); err != nil {
+			return d, fmt.Errorf("%s: %w", name, err)
+		}
+	}
+	return d, nil
+}
+
+// cnToEbN0 converts C/N in 12.5 kHz to Eb/N0 per channel bit at 9600 bit/s.
+func cnToEbN0(cn float64) float64 { return cn + 10*math.Log10(12500.0/9600) }
+
+// payloadNames lists the rows of the sensitivity table: data key and name.
+func payloadNames() [][2]string {
+	return [][2]string{
+		{keyAMBE, "Voice frame (AMBE+2, 49 bits)"},
+		{"ambe_c0c1", "Voice frame, protected bits (C0 and C1)"},
+		{keyRate12, "Data block, rate 1/2"},
+		{keyRate34, "Data block, rate 3/4"},
+		{"rate1", "Data block, rate 1"},
+		{keyCSBK, "CSBK"},
+		{"lc", "Voice LC header and terminator"},
+		{"header", "Data header"},
+		{"elc", "Embedded LC"},
+		{"emb", "EMB"},
+		{"slottype", "Slot type"},
+		{"sync", "SYNC detection"},
+	}
+}
+
+// tierName returns the README name of tier i.
+func tierName(i int) string {
+	return [...]string{"0: discriminator", "1: coherent, two pass", "2: phase trellis, two pass"}[i]
+}
+
+// at90 returns the Eb/N0 where the curve first reaches 90% recovery, by
+// linear interpolation, and false when it never does.
+func at90(x, y []float64) (float64, bool) {
+	for i := 1; i < len(x); i++ {
+		if y[i-1] < 0.9 && y[i] >= 0.9 {
+			return x[i-1] + (0.9-y[i-1])/(y[i]-y[i-1])*(x[i]-x[i-1]), true
+		}
+	}
+	if len(y) > 0 && y[0] >= 0.9 {
+		return x[0], true
+	}
+	return 0, false
+}
+
+// tierCurve returns the Eb/N0 and recovery of payload k of tier t.
+func tierCurve(t tier, k string) (x, y []float64) {
+	for _, p := range t.Full {
+		if s := p.Payloads[k]; s != nil && s.Truth > 0 {
+			x = append(x, cnToEbN0(p.CN))
+			y = append(y, float64(s.Exact)/float64(s.Truth))
+		}
+	}
+	return x, y
+}
+
+// grouped returns n with a comma between each group of three digits.
+func grouped(n int64) string {
+	s := strconv.FormatInt(n, 10)
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "," + s[i:]
+	}
+	return s
+}
+
+func f1(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) }
+
+func renderBlock(d data) []byte {
+	var b strings.Builder
+	b.WriteString("\n")
+	b.WriteString("Loss is the Eb/N0 in dB above the ideal receiver at 90% frame recovery. The ideal receiver has perfect timing and carrier, detects the symbols with a coherent BCJR over the exact CPM phase trellis and decodes each FEC field by soft-decision maximum likelihood; for voice it also detects each burst again with its decoded C0, C1, EMB and embedded LC bits.\n\n")
+	b.WriteString("| Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | Cortex-M4F cycles per sample | RAM | Allocs |\n")
+	b.WriteString("|------|-------|---------------|------|---------------|-------------------------|------------------------------|-----|--------|\n")
+	for _, t := range d.bench.Tiers {
+		row := make([]string, 0, 9)
+		row = append(row, tierName(t.Tier))
+		for _, k := range []string{keyAMBE, keyRate12, keyCSBK, keyRate34} {
+			row = append(row, lossCell(d, t, k))
+		}
+		cycles := strconv.FormatFloat(math.Round(t.Cycles), 'f', 0, 64)
+		if t.Tier >= 2 {
+			cycles = "n/a (PC only)"
+		}
+		row = append(row, grouped(int64(math.Round(t.NsPerSecond/1e6)*1e6)), cycles,
+			strconv.Itoa((t.RAMBytes+1023)/1024)+" KiB", strconv.FormatFloat(t.Allocs, 'f', -1, 64))
+		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
+	}
+	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ". The Cortex-M4F figure is an estimate from the operation count. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
+	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
+	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. A tier can be under the floor where it uses more than one burst: it combines the embedded LC over superframes, its second pass puts priors on the EMB, and the stream gives each burst its neighbors, while the floor detects one MS burst alone.")
+	if d.floor.SyncPfa != "" {
+		b.WriteString(" SYNC detection is at " + d.floor.SyncPfa + ".")
+	}
+	b.WriteString("\n\n| Payload | Floor |")
+	for _, t := range d.bench.Tiers {
+		b.WriteString(" Tier " + tierName(t.Tier) + " |")
+	}
+	b.WriteString("\n|---------|-------|")
+	for range d.bench.Tiers {
+		b.WriteString("------|")
+	}
+	b.WriteString("\n")
+	for _, p := range payloadNames() {
+		b.WriteString("| " + p[1] + " | ")
+		if c, ok := d.floor.Payloads[p[0]]; ok {
+			b.WriteString(ebCell(at90(c.EbN0, c.Recovery)))
+		} else {
+			b.WriteString("-")
+		}
+		for _, t := range d.bench.Tiers {
+			b.WriteString(" | " + ebCell(at90(tierCurve(t, p[0]))))
+		}
+		b.WriteString(" |\n")
+	}
+	b.WriteString("\n</details>\n\n")
+	b.WriteString("<details><summary>Real recordings</summary>\n\n")
+	b.WriteString("Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR, by tier.")
+	for _, r := range d.recordings {
+		if slices.Min(r.Exact) < 0 {
+			b.WriteString(" n/a marks a long recording that the slowest tier did not run.")
+			break
+		}
+	}
+	b.WriteString("\n\n")
+	b.WriteString("| Recording | Frames |")
+	for _, t := range d.bench.Tiers {
+		b.WriteString(" Tier " + strconv.Itoa(t.Tier) + " |")
+	}
+	b.WriteString("\n|-----------|--------|")
+	for range d.bench.Tiers {
+		b.WriteString("--------|")
+	}
+	b.WriteString("\n")
+	for _, r := range d.recordings {
+		b.WriteString("| " + r.Name + " (" + f1(r.CN) + " dB C/N) | " + strconv.Itoa(r.Truth) + " |")
+		for _, n := range r.Exact {
+			if n < 0 {
+				b.WriteString(" n/a |")
+				continue
+			}
+			b.WriteString(" " + strconv.Itoa(n) + " |")
+		}
+		b.WriteString("\n")
+	}
+	b.WriteString("\n</details>\n\n")
+	for _, p := range graphPayloads() {
+		b.WriteString("![" + p[1] + ": frame recovery against Eb/N0, floor and tiers](docs/rx/" + p[0] + ".svg)\n")
+	}
+	b.WriteString("\n")
+	return []byte(b.String())
+}
+
+// lossCell returns the loss of payload k of tier t against the floor.
+func lossCell(d data, t tier, k string) string {
+	c, ok := d.floor.Payloads[k]
+	if !ok {
+		return "-"
+	}
+	f, ok1 := at90(c.EbN0, c.Recovery)
+	v, ok2 := at90(tierCurve(t, k))
+	if !ok1 || !ok2 {
+		return "-"
+	}
+	return f1(v-f) + " dB"
+}
+
+// ebCell formats an Eb/N0 at 90% with its C/N.
+func ebCell(v float64, ok bool) string {
+	if !ok {
+		return "-"
+	}
+	return f1(v) + " (" + f1(v-10*math.Log10(12500.0/9600)) + ")"
+}
+
+// graphPayloads lists the payload types with a graph: data key and title.
+func graphPayloads() [][2]string {
+	return [][2]string{{keyAMBE, "Voice frame"}, {keyRate12, "Data rate 1/2"}, {keyRate34, "Data rate 3/4"}, {keyCSBK, "CSBK"}, {"elc", "Embedded LC"}}
+}
+
+// renderGraphs returns one SVG per graph payload: frame recovery against
+// Eb/N0, the floor dashed and each tier solid.
+func renderGraphs(d data) map[string][]byte {
+	out := map[string][]byte{}
+	for _, p := range graphPayloads() {
+		var series []svgSeries
+		if c, ok := d.floor.Payloads[p[0]]; ok {
+			series = append(series, svgSeries{name: "Floor", x: c.EbN0, y: c.Recovery, dash: true, class: "s0"})
+		}
+		for _, t := range d.bench.Tiers {
+			x, y := tierCurve(t, p[0])
+			series = append(series, svgSeries{name: "Tier " + strconv.Itoa(t.Tier), x: x, y: y, class: "s" + strconv.Itoa(t.Tier+1)})
+		}
+		out[p[0]+".svg"] = svgChart(p[1], series)
+	}
+	return out
+}

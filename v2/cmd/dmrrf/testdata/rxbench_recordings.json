@@ -1,0 +1,112 @@
+[
+ {
+  "name": "MS voice relayed, HackRF on the uplink",
+  "cn": 9.3,
+  "truth": 2013,
+  "exact": [
+   1392,
+   1728,
+   1765
+  ]
+ },
+ {
+  "name": "Late entry voice relayed, HackRF on the uplink",
+  "cn": 11.1,
+  "truth": 1890,
+  "exact": [
+   1431,
+   1611,
+   1613
+  ]
+ },
+ {
+  "name": "Voice with PI header relayed, HackRF on the uplink",
+  "cn": 17.3,
+  "truth": 1818,
+  "exact": [
+   1818,
+   1818,
+   1818
+  ]
+ },
+ {
+  "name": "Mixed voice and data, network to air, run 1",
+  "cn": 9.7,
+  "truth": 144,
+  "exact": [
+   109,
+   119,
+   120
+  ]
+ },
+ {
+  "name": "Mixed voice and data, network to air, run 2",
+  "cn": 10.6,
+  "truth": 144,
+  "exact": [
+   114,
+   120,
+   120
+  ]
+ },
+ {
+  "name": "Voice, network to air",
+  "cn": 10.0,
+  "truth": 90,
+  "exact": [
+   89,
+   90,
+   90
+  ]
+ },
+ {
+  "name": "Voice, network to air",
+  "cn": 11.6,
+  "truth": 90,
+  "exact": [
+   84,
+   90,
+   90
+  ]
+ },
+ {
+  "name": "Gain sweep, RTL gain 0 dB",
+  "cn": 9.9,
+  "truth": 51,
+  "exact": [
+   19,
+   50,
+   50
+  ]
+ },
+ {
+  "name": "Gain sweep, RTL gain 9.7 dB",
+  "cn": 7.3,
+  "truth": 54,
+  "exact": [
+   35,
+   48,
+   48
+  ]
+ },
+ {
+  "name": "Gain sweep, RTL gain 19.7 dB",
+  "cn": 10.4,
+  "truth": 51,
+  "exact": [
+   51,
+   51,
+   51
+  ]
+ },
+ {
+  "name": "Gain sweep, RTL gain 29.7 dB",
+  "cn": 11.2,
+  "truth": 54,
+  "exact": [
+   50,
+   50,
+   50
+  ]
+ }
+]

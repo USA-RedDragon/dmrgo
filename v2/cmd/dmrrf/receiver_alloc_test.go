@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 )
 
@@ -37,6 +39,25 @@ func TestAllocsReceiver(t *testing.T) {
 		})
 		if n != 0 || bursts == 0 {
 			t.Errorf("tier %d: %v allocations per WriteBaseband, %d bursts", tier, n, bursts)
+		}
+	}
+}
+
+// TestAllocsReceiverRAM checks that NewReceiver of each tier in
+// rxbenchPath keeps at most 10 percent more heap than the baseline. It
+// reads the heap of the whole process, so it does not run in parallel.
+func TestAllocsReceiverRAM(t *testing.T) {
+	b, err := os.ReadFile(rxbenchPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var base benchData
+	if err := json.Unmarshal(b, &base); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range base.Tiers {
+		if got := receiverRAM(Tier(want.Tier)); got > want.RAMBytes*11/10 {
+			t.Errorf("tier %d: NewReceiver keeps %d bytes, baseline %d", want.Tier, got, want.RAMBytes)
 		}
 	}
 }
