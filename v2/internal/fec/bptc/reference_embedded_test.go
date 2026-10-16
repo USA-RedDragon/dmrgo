@@ -9,6 +9,7 @@ import (
 	packed "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // evenInfo accepts the information bits whose first 72 bits have even
@@ -44,7 +45,7 @@ func TestEmbeddedMatchesReference(t *testing.T) {
 		frags := bptc.EncodeEmbedded(info)
 		refFrags := ref.EncodeEmbedded(refInfo)
 		for k := range frags {
-			if uint64(frags[k]) != bit.Uint(refFrags[k][:]) {
+			if uint64(frags[k]) != unpacked.Uint(refFrags[k][:]) {
 				t.Fatalf("EncodeEmbedded(%x) = %08x, want %v", info, frags, refFrags)
 			}
 		}
@@ -59,7 +60,7 @@ func TestEmbeddedMatchesReference(t *testing.T) {
 			}
 		}
 		for k := range frags {
-			bit.PutUint(refFrags[k][:], uint64(frags[k]))
+			unpacked.PutUint(refFrags[k][:], uint64(frags[k]))
 		}
 		cmp := func(name string, got [10]byte, gotRes, wantRes any, want [77]bit.Bit) {
 			t.Helper()

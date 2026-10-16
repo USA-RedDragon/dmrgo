@@ -9,17 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ExampleUnpack converts packed bytes to bits, most significant bit first,
-// and back.
-func ExampleUnpack() {
-	bits := bit.Unpack([]byte{0xA5})
-	fmt.Printf("%v %d\n", bits, bit.Uint(bits[:4]))
-	fmt.Printf("%x\n", bit.Pack(bits))
-	// Output:
-	// [1 0 1 0 0 1 0 1] 10
-	// a5
-}
-
 // ExampleFieldRangeError finds the field that an Encode method rejected.
 func ExampleFieldRangeError() {
 	lc := pdu.FullLinkControl{

@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	reftrellis "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // tableB7 returns ETSI TS 102 361-1 Table B.7, indexed by [FSM state][input tribit].
@@ -110,10 +111,10 @@ func TestTrellis34_EncodeMatchesReference(t *testing.T) {
 	for range 20000 {
 		data, got := randomBlock(r)
 		var in [144]bit.Bit
-		copy(in[:], bit.Unpack(data[:]))
+		copy(in[:], unpacked.Unpack(data[:]))
 		want := reftrellis.Encode(in)
-		if [25]byte(bit.Pack(want[:])) != got {
-			t.Fatalf("Encode(%x) = %x, want %x", data, got, bit.Pack(want[:]))
+		if [25]byte(unpacked.Pack(want[:])) != got {
+			t.Fatalf("Encode(%x) = %x, want %x", data, got, unpacked.Pack(want[:]))
 		}
 	}
 }

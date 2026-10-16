@@ -1,19 +1,21 @@
-package bit
+package unpacked
 
 import (
 	"slices"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 )
 
 func TestReadersUseOnlyTheLowBit(t *testing.T) {
 	t.Parallel()
 
-	raw := []Bit{0xFF, 2, 3, 0x30, 7, 0xFE, 1, 0}
-	low := []Bit{1, 0, 1, 0, 1, 0, 1, 0}
+	raw := []bit.Bit{0xFF, 2, 3, 0x30, 7, 0xFE, 1, 0}
+	low := []bit.Bit{1, 0, 1, 0, 1, 0, 1, 0}
 	if Uint(raw) != Uint(low) || Pack(raw)[0] != Pack(low)[0] {
 		t.Error("a reader used more than the low bit")
 	}
-	var raw96, low96 [96]Bit
+	var raw96, low96 [96]bit.Bit
 	copy(raw96[:], raw)
 	copy(low96[:], low)
 	if Pack96(raw96) != Pack96(low96) {
@@ -24,7 +26,7 @@ func TestReadersUseOnlyTheLowBit(t *testing.T) {
 func TestUint(t *testing.T) {
 	t.Parallel()
 
-	bits := []Bit{1, 0, 1, 1, 0, 0, 1, 0}
+	bits := []bit.Bit{1, 0, 1, 1, 0, 0, 1, 0}
 	if got := Uint(bits); got != 0b10110010 {
 		t.Errorf("Uint = %#b, want 0b10110010", got)
 	}
@@ -34,7 +36,7 @@ func TestUint(t *testing.T) {
 	if got := Uint(nil); got != 0 {
 		t.Errorf("Uint(nil) = %d", got)
 	}
-	all := make([]Bit, 64)
+	all := make([]bit.Bit, 64)
 	for i := range all {
 		all[i] = 1
 	}
@@ -46,17 +48,17 @@ func TestUint(t *testing.T) {
 func TestPutUint(t *testing.T) {
 	t.Parallel()
 
-	dst := make([]Bit, 10)
+	dst := make([]bit.Bit, 10)
 	PutUint(dst[2:8], 0b101101)
-	if want := []Bit{0, 0, 1, 0, 1, 1, 0, 1, 0, 0}; !slices.Equal(dst, want) {
+	if want := []bit.Bit{0, 0, 1, 0, 1, 1, 0, 1, 0, 0}; !slices.Equal(dst, want) {
 		t.Errorf("PutUint = %v, want %v", dst, want)
 	}
 	PutUint(dst[:4], 0xFFF5)
-	if want := []Bit{0, 1, 0, 1}; !slices.Equal(dst[:4], want) {
+	if want := []bit.Bit{0, 1, 0, 1}; !slices.Equal(dst[:4], want) {
 		t.Errorf("PutUint truncation = %v, want %v", dst[:4], want)
 	}
 	for _, v := range []uint64{0, 1, 0xDEADBEEF, ^uint64(0)} {
-		b := make([]Bit, 64)
+		b := make([]bit.Bit, 64)
 		PutUint(b, v)
 		if Uint(b) != v {
 			t.Errorf("Uint(PutUint(%#x)) = %#x", v, Uint(b))
@@ -75,7 +77,7 @@ func TestPackUnpack(t *testing.T) {
 	if got := Pack(bits); !slices.Equal(got, data) {
 		t.Errorf("Pack(Unpack) = %x, want %x", got, data)
 	}
-	if got := Pack([]Bit{1, 0, 1}); !slices.Equal(got, []byte{0xA0}) {
+	if got := Pack([]bit.Bit{1, 0, 1}); !slices.Equal(got, []byte{0xA0}) {
 		t.Errorf("Pack of a partial byte = %x, want a0", got)
 	}
 }
@@ -87,15 +89,15 @@ func TestAppendPackAppendUnpack(t *testing.T) {
 	dst[0] = 0x77
 	spare := dst[:cap(dst)]
 	spare[1], spare[2] = 0xFF, 0xFF
-	got := AppendPack(dst, []Bit{1, 0, 1, 0, 0, 1, 0, 1, 1})
+	got := AppendPack(dst, []bit.Bit{1, 0, 1, 0, 0, 1, 0, 1, 1})
 	if want := []byte{0x77, 0xA5, 0x80}; !slices.Equal(got, want) {
 		t.Errorf("AppendPack = %x, want %x", got, want)
 	}
 	if &got[0] != &dst[0] {
 		t.Error("AppendPack allocated with spare capacity")
 	}
-	bits := AppendUnpack([]Bit{1}, []byte{0x81})
-	if want := []Bit{1, 1, 0, 0, 0, 0, 0, 0, 1}; !slices.Equal(bits, want) {
+	bits := AppendUnpack([]bit.Bit{1}, []byte{0x81})
+	if want := []bit.Bit{1, 1, 0, 0, 0, 0, 0, 0, 1}; !slices.Equal(bits, want) {
 		t.Errorf("AppendUnpack = %v, want %v", bits, want)
 	}
 	if got := AppendPack(nil, nil); len(got) != 0 {
@@ -114,7 +116,7 @@ func TestPack32Unpack32(t *testing.T) {
 	if got := Pack32(bits); got != data {
 		t.Errorf("Pack32(Unpack32) = %x, want %x", got, data)
 	}
-	var raw [32]Bit
+	var raw [32]bit.Bit
 	for i := range raw {
 		raw[i] = bits[i] | 0x30
 	}

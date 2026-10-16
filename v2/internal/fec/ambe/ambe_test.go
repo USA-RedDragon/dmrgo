@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	refambe "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/ambe"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func TestEncodeMatchesReference(t *testing.T) {
@@ -20,10 +21,10 @@ func TestEncodeMatchesReference(t *testing.T) {
 			frame[0], frame[1] = byte(n>>4), byte(n<<4)|frame[1]&0x0F
 		}
 		var info [49]bit.Bit
-		copy(info[:], bit.Unpack(frame[:]))
+		copy(info[:], unpacked.Unpack(frame[:]))
 		want := refambe.Encode(info)
-		if got := Encode(frame); got != [9]byte(bit.Pack(want[:])) {
-			t.Fatalf("Encode(%x) = %x, want %x", frame, got, bit.Pack(want[:]))
+		if got := Encode(frame); got != [9]byte(unpacked.Pack(want[:])) {
+			t.Fatalf("Encode(%x) = %x, want %x", frame, got, unpacked.Pack(want[:]))
 		}
 	}
 }
@@ -47,11 +48,11 @@ func TestDecodeMatchesReference(t *testing.T) {
 			}
 		}
 		var in [72]bit.Bit
-		copy(in[:], bit.Unpack(slot[:]))
+		copy(in[:], unpacked.Unpack(slot[:]))
 		wantInfo, wantRes := refambe.Decode(in)
 		got, res := Decode(slot)
-		if got != [7]byte(bit.Pack(wantInfo[:])) || res != wantRes {
-			t.Fatalf("Decode(%x) = %x %+v, want %x %+v", slot, got, res, bit.Pack(wantInfo[:]), wantRes)
+		if got != [7]byte(unpacked.Pack(wantInfo[:])) || res != wantRes {
+			t.Fatalf("Decode(%x) = %x %+v, want %x %+v", slot, got, res, unpacked.Pack(wantInfo[:]), wantRes)
 		}
 	}
 }
