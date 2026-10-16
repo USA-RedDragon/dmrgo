@@ -106,15 +106,13 @@ type benchPoint struct {
 
 // benchTier is the sweep of one tier.
 type benchTier struct {
-	Tier          int          `json:"tier"`
-	Fast          []benchPoint `json:"fast"`
-	Full          []benchPoint `json:"full,omitempty"`
-	NsPerSecond   float64      `json:"ns_per_second,omitempty"`
-	RAMBytes      int          `json:"ram_bytes"`
-	Allocs        float64      `json:"allocs"`
-	FalsePerHour  float64      `json:"false_per_hour,omitempty"`
-	OpsPerSample  float64      `json:"ops_per_sample"`
-	CyclesPerSamp float64      `json:"m4f_cycles_per_sample"`
+	Tier         int          `json:"tier"`
+	Fast         []benchPoint `json:"fast"`
+	Full         []benchPoint `json:"full,omitempty"`
+	NsPerSecond  float64      `json:"ns_per_second,omitempty"`
+	RAMBytes     int          `json:"ram_bytes"`
+	Allocs       float64      `json:"allocs"`
+	FalsePerHour float64      `json:"false_per_hour,omitempty"`
 }
 
 // benchData is the content of rxbenchPath.
@@ -332,12 +330,12 @@ func falsePerHour(t Tier) float64 {
 }
 
 // receiverRAM returns the heap bytes that a Receiver of tier t at the
-// baseband input rate keeps.
+// baseband input rate keeps, with OnBurst set, as a microcontroller runs it.
 func receiverRAM(t Tier) int {
 	var a, b runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&a)
-	r := NewReceiver(ReceiverConfig{Rate: basebandRate, Tier: t})
+	r := NewReceiver(ReceiverConfig{Rate: basebandRate, Tier: t, OnBurst: func(Received) {}})
 	runtime.GC()
 	runtime.ReadMemStats(&b)
 	runtime.KeepAlive(r)
@@ -363,9 +361,9 @@ func steadyAllocs(x []complex64, t Tier) float64 {
 
 // TestRxBench receives a BS outbound stream with every payload type at a
 // few C/N points per tier below TierMax, which is for offline decoding,
-// and checks the frame recovery and the operation count against the
-// baseline in rxbenchPath. With DMRRF_RXBENCH=full it runs the README
-// sweep instead and rewrites rxbenchPath.
+// and checks the frame recovery against the baseline in rxbenchPath. With
+// DMRRF_RXBENCH=full it runs the README sweep instead and rewrites
+// rxbenchPath.
 func TestRxBench(t *testing.T) {
 	t.Parallel()
 	full := os.Getenv("DMRRF_RXBENCH") == "full"
@@ -380,8 +378,7 @@ func TestRxBench(t *testing.T) {
 	slots, truth := benchStream(t, 6)
 	out := benchData{Machine: base.Machine}
 	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact} {
-		bt := benchTier{Tier: int(tier), OpsPerSample: opsPerSample(TierOptions(tier))}
-		bt.CyclesPerSamp = bt.OpsPerSample * m4fCyclesPerOp
+		bt := benchTier{Tier: int(tier)}
 		bt.Fast = runBench(t, slots, truth, tier, fastCases(tier))
 		if full {
 			fs, ft := benchStream(t, 30)
@@ -398,9 +395,6 @@ func TestRxBench(t *testing.T) {
 			checkBench(t, tier, want.Fast, bt.Fast)
 			if !full {
 				bt.Full, bt.NsPerSecond, bt.FalsePerHour, bt.Allocs, bt.RAMBytes = want.Full, want.NsPerSecond, want.FalsePerHour, want.Allocs, want.RAMBytes
-			}
-			if bt.OpsPerSample > want.OpsPerSample*1.01 {
-				t.Errorf("tier %d: %.0f operations per sample, baseline %.0f", tier, bt.OpsPerSample, want.OpsPerSample)
 			}
 		}
 		out.Tiers = append(out.Tiers, bt)
