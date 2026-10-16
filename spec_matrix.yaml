@@ -1010,7 +1010,7 @@ documents:
               - TestReedSolomon1294SyndromeWithError
               - TestReedSolomon1294GaloisMul
               - TestReedSolomon1294GaloisMulAssociativity
-              - TestReedSolomon1294FindRootsEmpty
+              - TestDecodeMatchesReferenceForEverySyndrome
               - TestReedSolomon1294DecodeResultFields
               - TestReedSolomon1294SyndromeHasErrors
               - TestEncodeDecodeRoundTrip
@@ -1023,7 +1023,7 @@ documents:
               - TestEncodeMatchesGeneratorMatrix
               - TestEncodeKnownVector
               - TestReedSolomon1294GaloisMulExhaustive
-              - TestReedSolomon1294GaloisInv
+              - TestDecodeMatchesReferenceRandom
               - TestPublicEncodeDecodeRoundTrip
               - TestSyndromeCleanForValidCodeword
               - TestEncodePreservesData
