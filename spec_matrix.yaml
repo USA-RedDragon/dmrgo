@@ -33,7 +33,11 @@ ignore_files:
   - v2/bit/bit.go
   - v2/internal/lowbit/lowbit.go
   - v2/internal/bits/bits.go
+  - v2/internal/allocgate/apigen/apigen.go
+  - v2/internal/allocgate/apigen/gen/main.go
+  - v2/internal/allocgate/testdata/cases/cases.go
   - v2/internal/allocgate/testdata/copies/copies.go
+  - v2/internal/allocgate/testdata/growth/growth.go
   - v2/layer2/nocopy.go
   - v2/layer2/packet/nocopy.go
   - v2/voice/nocopy.go

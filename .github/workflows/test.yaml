@@ -61,6 +61,9 @@ jobs:
       - name: Race tests
         run: go test -C v2 ./... -race
 
+      - name: Check the allocation table of the README against the gate
+        run: DMRGO_README=check go test -C v2 -run TestHeapAllocations ./internal/allocgate
+
   tinygo:
     runs-on: ubuntu-24.04
     container:
@@ -92,7 +95,7 @@ jobs:
           tinygo test -gc=conservative ./internal/allocs
           tinygo test -stack-size=8KB -gc=conservative ./internal/allocs
 
-      - name: Check the heap allocation sites of the pico build
+      - name: Check the heap allocation sites of the whole API for the pico and riscv-qemu
         run: DMRGO_TINYGO_ALLOCS=1 go test -run TestTinyGoHeapAllocations -v ./internal/allocgate
 
   unit-tests:
