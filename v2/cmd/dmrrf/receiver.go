@@ -465,6 +465,7 @@ func (r *Receiver) alignSearch(t int64) int64 {
 // symbol) at channel sample t.
 func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
 	r.locked = true
+	r.spec.reset()
 	r.streams++
 	r.lockAt = r.searchAt
 	r.src = src
