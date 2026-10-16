@@ -23,7 +23,7 @@ import (
 const moduleRoot = "../.."
 
 // skipDirs are the module directories that are not library code.
-var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/zeroalloc"}
+var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest"}
 
 // makeRE matches a make call that -gcflags=-m reports as not escaping. The
 // runtime puts such a slice on the stack only when its size is a constant
