@@ -1,7 +1,7 @@
 package pdu
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -22,7 +22,7 @@ func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 		return FullLinkControl{}, err
 	}
 	if got != lc {
-		return FullLinkControl{}, newRoundTripError(lc, got)
+		return FullLinkControl{}, errRoundTrip
 	}
 	return f, nil
 }
@@ -38,7 +38,7 @@ func DecodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayl
 	dst.FEC = fec.Result{}
 	got, err := dst.Bytes()
 	if err == nil && got != lc {
-		err = newRoundTripError(lc, got)
+		err = errRoundTrip
 	}
 	if err != nil {
 		*dst = FullLinkControl{}
@@ -72,10 +72,6 @@ func (s *FullLinkControl) Bytes() ([9]byte, error) {
 	return [9]byte(cw[:9]), nil
 }
 
-// newRoundTripError returns the error of a full LC lc that encodes back as
-// got.
-//
-//go:noinline
-func newRoundTripError(lc, got [9]byte) error {
-	return fmt.Errorf("full LC %x encodes back as %x", lc, got)
-}
+// errRoundTrip is the error of a full LC that does not encode back to the
+// same octets.
+var errRoundTrip = errors.New("the full LC does not encode back to the same octets")
