@@ -74,13 +74,6 @@ func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, erro
 	return t, nil
 }
 
-// NewVoiceTransmitterWithOptions returns NewVoiceTransmitter(&opts).
-//
-// Deprecated: use NewVoiceTransmitter.
-func NewVoiceTransmitterWithOptions(opts VoiceTransmitterOptions) (*VoiceTransmitter, error) {
-	return NewVoiceTransmitter(&opts)
-}
-
 // Headers returns the bursts sent before the first voice burst: the Voice
 // LC Header, then the PI Header when the options set one. It allocates the
 // slice; AppendHeaders does not.
