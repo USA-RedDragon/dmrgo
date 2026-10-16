@@ -169,7 +169,7 @@ func TestDataBurstWithEMB_VoiceStaysVoice(t *testing.T) {
 		t.Fatal("no voice bursts with an EMB")
 	}
 
-	silence := vocoder.EncodeAMBE72(vocoder.AMBESilence())
+	silence := must(vocoder.EncodeAMBE72(vocoder.AMBESilence()))
 	for _, slot := range [][9]byte{silence, {}} {
 		var slots [layer2.VoiceSlotsPerBurst][9]byte
 		for i := range slots {

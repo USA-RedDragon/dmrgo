@@ -41,7 +41,7 @@ func TestBurstEncode_KeepsNonAMBEVoiceSlots(t *testing.T) {
 			}
 			frames, _ := b.AMBEFrames()
 			for i, f := range frames {
-				if vocoder.EncodeAMBE72(f) != b.VoiceSlots[i] {
+				if must(vocoder.EncodeAMBE72(f)) != b.VoiceSlots[i] {
 					changed++
 				}
 			}

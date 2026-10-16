@@ -278,7 +278,9 @@ func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
 // BuildVoiceBurst returns voice burst pos of a superframe that carries the
 // AMBE+2 frames. Burst A carries the voice SYNC pattern of src; bursts B to
 // F carry emb, with its LCSS set from pos, and the embedded signalling field
-// embedded. It returns an error when pos is not A to F or src is unknown.
+// embedded. It returns an error when pos is not A to F or src is unknown,
+// and a *bit.FieldRangeError when a padding bit of a frame is set or a
+// field of emb does not fit its bits.
 func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.VoiceBurstType, emb pdu.EmbeddedSignalling,
 	embedded [4]byte, src SyncSource,
 ) (RawBurst, error) {
@@ -287,7 +289,14 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 	if !ok {
 		return r, errSyncSource
 	}
-	r.SetAMBEFrames(frames)
+	var slots [VoiceSlotsPerBurst][9]byte
+	for i := range frames {
+		var err error
+		if slots[i], err = vocoder.EncodeAMBE72(frames[i]); err != nil {
+			return RawBurst{}, err
+		}
+	}
+	r.SetVoiceSlots(slots)
 	if pos == enums.VoiceBurstA {
 		// Go does not specify whether "return r, r.SetSync(voice)" reads r
 		// before or after the call.
@@ -299,6 +308,9 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 		return RawBurst{}, errNotAToF
 	}
 	emb.LCSS = lcss
+	if _, err := emb.Encode(); err != nil {
+		return RawBurst{}, err
+	}
 	r.SetEMB(emb)
 	r.SetEmbeddedData(embedded)
 	return r, nil
@@ -307,7 +319,8 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 // BuildBurst returns the data burst that carries d, with a slot type of
 // color code cc and data type d.DataType() and the data SYNC pattern of src.
 // The BPTC reserved bits are zero. It returns an error when d is nil or does
-// not encode, or src is unknown. Its type switch on the Encode method of d
+// not encode, or src is unknown, and a *bit.FieldRangeError when cc does
+// not fit in 4 bits. Its type switch on the Encode method of d
 // can allocate once for each type of d, to fill the runtime cache of the
 // switch.
 func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
@@ -341,7 +354,8 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 // BuildDataBurst returns a data burst that carries the BPTC(196,96) payload
 // p, which must already carry its CRC or parity (see pdu.Seal), with a slot
 // type of color code cc and data type dt and the data SYNC pattern of src.
-// It returns an error when dt is not BPTC coded or src is unknown.
+// It returns an error when dt is not BPTC coded or src is unknown, and a
+// *bit.FieldRangeError when cc does not fit in 4 bits.
 func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if !dt.IsBPTC() {
 		return RawBurst{}, errNotBPTC
@@ -356,7 +370,8 @@ func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncS
 
 // BuildRate34DataBurst returns a Rate 3/4 data burst that carries p, with
 // a slot type of color code cc and the data SYNC pattern of src. It returns
-// an error when src is unknown.
+// an error when src is unknown, and a *bit.FieldRangeError when cc does not
+// fit in 4 bits.
 func BuildRate34DataBurst(p [18]byte, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	r, err := dataBurstFrame(enums.DataTypeRate34, cc, src)
 	if err != nil {
@@ -368,7 +383,8 @@ func BuildRate34DataBurst(p [18]byte, cc enums.ColorCode, src SyncSource) (RawBu
 
 // BuildRate1DataBurst returns a Rate 1 data burst that carries p, with a
 // slot type of color code cc and the data SYNC pattern of src. Information
-// bits 96 to 99 are zero. It returns an error when src is unknown.
+// bits 96 to 99 are zero. It returns an error when src is unknown, and a
+// *bit.FieldRangeError when cc does not fit in 4 bits.
 func BuildRate1DataBurst(p [24]byte, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	r, err := dataBurstFrame(enums.DataTypeRate1, cc, src)
 	if err != nil {
@@ -387,6 +403,10 @@ func dataBurstFrame(dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawB
 	if err := r.SetSync(sync); err != nil {
 		return r, err
 	}
-	r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt})
+	st := pdu.SlotType{ColorCode: cc, DataType: dt}
+	if _, err := st.Encode(); err != nil {
+		return RawBurst{}, err
+	}
+	r.SetSlotType(st)
 	return r, nil
 }

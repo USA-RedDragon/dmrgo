@@ -14,13 +14,18 @@ type LCBytes [9]byte
 
 // NewVoiceLCBytes returns the LC octets of the voice call LC that NewVoiceLC
 // returns: octet 0 holds the FLCO with PF and Reserved clear, octet 1 the
-// standard FID, octet 2 so.Byte() and octets 3 to 8 the addresses. It
-// returns a *bit.FieldRangeError when an address does not fit in 24 bits.
+// standard FID, octet 2 the octet of so.Encode and octets 3 to 8 the
+// addresses. It returns a *bit.FieldRangeError when an address does not fit
+// in 24 bits or a field of so does not fit its bits.
 func NewVoiceLCBytes(group bool, target, source uint32, so layer3.ServiceOptions) (LCBytes, error) {
 	if err := checkAddresses(target, source, errLCBytesTargetRange, errLCBytesSourceRange); err != nil {
 		return LCBytes{}, err
 	}
-	l := LCBytes{byte(enums.FLCOUnitToUnitVoiceChannelUser), byte(enums.FIDStandardized), so.Byte()}
+	octet, err := so.Encode()
+	if err != nil {
+		return LCBytes{}, err
+	}
+	l := LCBytes{byte(enums.FLCOUnitToUnitVoiceChannelUser), byte(enums.FIDStandardized), octet[0]}
 	if group {
 		l[0] = byte(enums.FLCOGroupVoiceChannelUser)
 	}

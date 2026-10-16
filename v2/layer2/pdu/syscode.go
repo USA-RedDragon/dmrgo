@@ -1,8 +1,6 @@
 package pdu
 
-import (
-	"errors"
-)
+import "github.com/USA-RedDragon/dmrgo/v2/bit"
 
 // NetworkModel is the MODEL field of a System Identity Code
 // (ETSI TS 102 361-4 Table 6.5).
@@ -43,10 +41,10 @@ func (s SysCode) check() error {
 		return errSysCodeModelRange
 	}
 	if s.Net>>s.Model.NetBits() != 0 {
-		return errSysCodeNetRange
+		return sysCodeNetRange(s.Model)
 	}
 	if s.Site>>s.Model.SiteBits() != 0 {
-		return errSysCodeSiteRange
+		return sysCodeSiteRange(s.Model)
 	}
 	if s.Par > 3 {
 		return errSysCodeParRange
@@ -55,7 +53,8 @@ func (s SysCode) check() error {
 }
 
 // Pack returns the 16-bit C_SYScode, as in the SysIdentCode field of
-// C_ALOHA and C_BCAST. It returns an error when a field does not fit.
+// C_ALOHA and C_BCAST. It returns a *bit.FieldRangeError when a field does
+// not fit its bits.
 func (s SysCode) Pack() (uint16, error) {
 	if err := s.check(); err != nil {
 		return 0, err
@@ -133,10 +132,54 @@ func (s *ShortLCPSysParms) SetSysCode(c SysCode) error {
 	return nil
 }
 
-// The errors of a SYSCODE field whose value does not fit in its bits.
+// sysCodeNetRange returns the error of a NET that does not fit in the NET
+// bits of model m.
+func sysCodeNetRange(m NetworkModel) error {
+	switch m {
+	case NetworkModelTiny:
+		return errSysCodeNetRangeTiny
+	case NetworkModelSmall:
+		return errSysCodeNetRangeSmall
+	case NetworkModelLarge:
+		return errSysCodeNetRangeLarge
+	default:
+		return errSysCodeNetRangeHuge
+	}
+}
+
+// sysCodeSiteRange returns the error of a SITE that does not fit in the
+// SITE bits of model m.
+func sysCodeSiteRange(m NetworkModel) error {
+	switch m {
+	case NetworkModelTiny:
+		return errSysCodeSiteRangeTiny
+	case NetworkModelSmall:
+		return errSysCodeSiteRangeSmall
+	case NetworkModelLarge:
+		return errSysCodeSiteRangeLarge
+	default:
+		return errSysCodeSiteRangeHuge
+	}
+}
+
+// The Type of the SYSCODE errors, and the Field of NET and SITE.
+const (
+	sysCodeType = "SysCode"
+	sysCodeNet  = "Net"
+	sysCodeSite = "Site"
+)
+
+// The errors of a SYSCODE field whose value does not fit in its bits. NET
+// and SITE have one for each network model, which sets their widths.
 var (
-	errSysCodeModelRange = errors.New("network model does not fit in 2 bits")
-	errSysCodeNetRange   = errors.New("NET does not fit in the bits of the network model")
-	errSysCodeSiteRange  = errors.New("SITE does not fit in the bits of the network model")
-	errSysCodeParRange   = errors.New("PAR does not fit in 2 bits")
+	errSysCodeModelRange     = &bit.FieldRangeError{Type: sysCodeType, Field: "Model", Bits: 2}
+	errSysCodeParRange       = &bit.FieldRangeError{Type: sysCodeType, Field: "Par", Bits: 2}
+	errSysCodeNetRangeTiny   = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 9}
+	errSysCodeNetRangeSmall  = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 7}
+	errSysCodeNetRangeLarge  = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 4}
+	errSysCodeNetRangeHuge   = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 2}
+	errSysCodeSiteRangeTiny  = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 3}
+	errSysCodeSiteRangeSmall = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 5}
+	errSysCodeSiteRangeLarge = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 8}
+	errSysCodeSiteRangeHuge  = &bit.FieldRangeError{Type: sysCodeType, Field: sysCodeSite, Bits: 10}
 )

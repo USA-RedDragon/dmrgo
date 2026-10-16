@@ -1,13 +1,15 @@
 package vocoder
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 )
 
 // AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame,
 // without the frame FEC, packed, the first bit in the most significant bit
-// of byte 0. The low 7 bits of byte 6 are 0, and EncodeAMBE72 ignores them.
+// of byte 0. The low 7 bits of byte 6 are padding: DecodeAMBE72 sets them to
+// 0, and EncodeAMBE72 returns an error when one of them is set.
 type AMBEFrame [7]byte
 
 // AMBESilence returns the AMBE+2 frame of silence that MMDVMHost sends to
@@ -28,10 +30,18 @@ func AMBESilenceSlot() [9]byte {
 // and returns the 72 on-air bits of one vocoder frame, packed, the first bit
 // in the most significant bit of byte 0: Golay(24,12) on the first 12 bits,
 // PN-scrambled Golay(23,12) on the next 12, the last 25 bits unprotected,
-// interleaved into the slot.
-func EncodeAMBE72(info AMBEFrame) [9]byte {
-	return ambe.Encode(info)
+// interleaved into the slot. It returns a *bit.FieldRangeError when a
+// padding bit of info is set.
+func EncodeAMBE72(info AMBEFrame) ([9]byte, error) {
+	if info[6]&0x7F != 0 {
+		return [9]byte{}, errAMBEFrameRange
+	}
+	return ambe.Encode(info), nil
 }
+
+// errAMBEFrameRange is the error of an EncodeAMBE72 whose frame has a
+// padding bit set.
+var errAMBEFrameRange = &bit.FieldRangeError{Type: "vocoder", Field: "AMBEFrame", Bits: 49}
 
 // DecodeAMBE72 reverses EncodeAMBE72 and corrects the bit errors that the
 // Golay codes allow. Uncorrectable reflects only the overall parity check of

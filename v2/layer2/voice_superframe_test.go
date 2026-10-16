@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -185,7 +186,7 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 		for j := range 49 {
 			bits.SetBit(frames[i][:], j, byte((i+j*j)&1))
 		}
-		slots[i] = vocoder.EncodeAMBE72(frames[i])
+		slots[i] = must(vocoder.EncodeAMBE72(frames[i]))
 	}
 	a := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
 	b := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
@@ -362,13 +363,10 @@ func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
 	t.Parallel()
 
 	lc := groupLC(enums.FIDStandardized)
-	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 0x17, Source: layer2.SyncSourceBS, Silence: silenceSlot()}))
-	bursts := append([]layer2.RawBurst{tx.Header()}, must(tx.AddSlots(make([][9]byte, 6)...))...)
-	if st := bursts[0].SlotType(); st.ColorCode != 7 {
-		t.Errorf("color code 0x17: header carries %d, want the low 4 bits 7", st.ColorCode)
-	}
-	if emb := bursts[2].EMB(); emb.ColorCode != 7 {
-		t.Errorf("color code 0x17: burst B carries %d, want the low 4 bits 7", emb.ColorCode)
+	_, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 0x17, Source: layer2.SyncSourceBS, Silence: silenceSlot()})
+	var rangeErr *bit.FieldRangeError
+	if !errors.As(err, &rangeErr) || rangeErr.Field != "ColorCode" {
+		t.Errorf("color code 0x17: error %v, want the FieldRangeError of ColorCode", err)
 	}
 	if _, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSource(4), Silence: silenceSlot()}); err == nil {
 		t.Error("sync source 4 accepted")

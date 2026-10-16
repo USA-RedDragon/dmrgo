@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
-	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // paddingCase is a field of bits that is not a whole number of bytes: run
@@ -68,11 +67,6 @@ func TestPaddingBits(t *testing.T) {
 			e, _ := c.Encode()
 			back := layer2.DecodeCACH(e)
 			return [2]any{sa.String(), errA}, [2]any{sb.String(), errB}, back.Payload[:]
-		}},
-		{"vocoder.AMBEFrame", 49, func(p, q []byte) (any, any, []byte) {
-			a, b := vocoder.EncodeAMBE72(vocoder.AMBEFrame(p)), vocoder.EncodeAMBE72(vocoder.AMBEFrame(q))
-			f, _ := vocoder.DecodeAMBE72(a)
-			return a, b, f[:]
 		}},
 	}
 	r := rand.New(rand.NewPCG(1, 2))

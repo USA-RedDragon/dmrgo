@@ -158,7 +158,7 @@ func tinyVoiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 		err    error
 	)
 	_ = err
-	slot := vocoder.EncodeAMBE72(frames[0])
+	slot, _ := vocoder.EncodeAMBE72(frames[0])
 	frame := frames[0]
 	return []tinyOp{
 		{"layer2.VoiceTransmitter.AppendFrames", func() { _, err = tx.AppendFrames(buf[:0], frames[:layer2.VoiceSlotsPerBurst]...) }},
@@ -176,7 +176,7 @@ func tinyVoiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 			}
 		}},
 		{"vocoder.DecodeAMBE72", func() { frame, _ = vocoder.DecodeAMBE72(slot) }},
-		{"vocoder.EncodeAMBE72", func() { slot = vocoder.EncodeAMBE72(frame) }},
+		{"vocoder.EncodeAMBE72", func() { slot, err = vocoder.EncodeAMBE72(frame) }},
 	}
 }
 
