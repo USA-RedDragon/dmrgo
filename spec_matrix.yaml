@@ -69,6 +69,9 @@ ignore_files:
   - v2/layer2/packet/errors.go
   - v2/layer2/pdu/errors.go
   - v2/vocoder/codec2/errors.go
+  - v2/enums/access.go
+  - v2/enums/slot.go
+  - v2/layer2/hint.go
 
 documents:
   - id: "TS-102-361-1"
