@@ -154,7 +154,7 @@ func EncodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][4]byte, error) 
 }
 
 func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4]uint32, error) {
-	octets, err := fullLCOctets(lc)
+	octets, err := lc.Bytes()
 	if err != nil {
 		return [4]uint32{}, err
 	}
@@ -199,13 +199,4 @@ func combineEmbeddedFEC(result, field fec.Result) fec.Result {
 	result.ErrorsCorrected += field.ErrorsCorrected
 	result.Uncorrectable = result.Uncorrectable || field.Uncorrectable
 	return result
-}
-
-// fullLCOctets returns the 9 LC octets of lc, without RS(12,9) parity.
-func fullLCOctets(lc *pdu.FullLinkControl) ([9]byte, error) {
-	octets, err := lc.Bytes()
-	if err != nil {
-		return [9]byte{}, newWrappedError("cannot encode full link control", err)
-	}
-	return octets, nil
 }
