@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -24,10 +24,10 @@ func TestAMBEVoice_IPSCCapture(t *testing.T) {
 	var data [19]byte
 	copy(data[:], raw)
 	frames := vocoder.UnpackAMBEVoice(data)
-	silence := bit.Unpack([]byte{0xF8, 0x01, 0xA9, 0x9F, 0x8C, 0xE0, 0x80})[:49]
+	silence := vocoder.AMBEFrame{0xF8, 0x01, 0xA9, 0x9F, 0x8C, 0xE0, 0x80}
 	for k, f := range frames {
-		if string(bit.Pack(f[:])) != string(bit.Pack(silence)) {
-			t.Errorf("frame %d: % X, want the AMBE+2 silence frame", k, bit.Pack(f[:]))
+		if f != silence {
+			t.Errorf("frame %d: % X, want the AMBE+2 silence frame", k, f)
 		}
 	}
 	if got := vocoder.PackAMBEVoice(frames); got != data {
@@ -42,14 +42,13 @@ func TestAMBEVoice_RoundTrip(t *testing.T) {
 	for n := 0; n < 1000; n++ {
 		var frames [3]vocoder.AMBEFrame
 		for k := range frames {
-			for i := range frames[k] {
-				frames[k][i] = bit.Bit(r.Intn(2))
+			for i := range 49 {
+				bits.SetBit(frames[k][:], i, byte(r.Intn(2)))
 			}
 		}
 		data := vocoder.PackAMBEVoice(frames)
-		bits := bit.Unpack(data[:])
 		for _, i := range []int{49, 99, 149, 150, 151} {
-			if bits[i] != 0 {
+			if bits.Bit(data[:], i) != 0 {
 				t.Fatalf("bit %d is set", i)
 			}
 		}

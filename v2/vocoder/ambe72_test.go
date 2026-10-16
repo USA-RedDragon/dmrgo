@@ -6,18 +6,18 @@ import (
 	"os"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-func voiceSlots(t *testing.T) [][72]bit.Bit {
+func voiceSlots(t *testing.T) [][9]byte {
 	t.Helper()
 	data, err := os.ReadFile("../layer2/testdata/voice.bin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var slots [][72]bit.Bit
+	var slots [][9]byte
 	for off := 0; off+33 <= len(data); off += 33 {
 		var raw [33]byte
 		copy(raw[:], data[off:off+33])
@@ -28,14 +28,11 @@ func voiceSlots(t *testing.T) [][72]bit.Bit {
 		if burst.Kind == layer2.KindData {
 			continue
 		}
-		bits := [264]bit.Bit(bit.Unpack(raw[:]))
-		var voice [216]bit.Bit
-		copy(voice[:108], bits[:108])
-		copy(voice[108:], bits[156:])
+		var voice [27]byte
+		bits.Copy(voice[:], 0, raw[:], 0, 108)
+		bits.Copy(voice[:], 108, raw[:], 156, 108)
 		for i := range 3 {
-			var slot [72]bit.Bit
-			copy(slot[:], voice[i*72:(i+1)*72])
-			slots = append(slots, slot)
+			slots = append(slots, [9]byte(voice[i*9:(i+1)*9]))
 		}
 	}
 	if len(slots) == 0 {
@@ -80,13 +77,13 @@ func TestAMBE72CorrectsErrors(t *testing.T) {
 	aPos := []int{0, 4, 8}
 	bPos := []int{25, 29, 33}
 	for range 200 {
-		var info [49]bit.Bit
-		for i := range info {
-			info[i] = bit.Bit(rng.Intn(2))
+		var info vocoder.AMBEFrame
+		for i := range 49 {
+			bits.SetBit(info[:], i, byte(rng.Intn(2)))
 		}
 		slot := vocoder.EncodeAMBE72(info)
 		for _, p := range append(aPos, bPos...) {
-			slot[p] ^= 1
+			slot[p/8] ^= 0x80 >> (p % 8)
 		}
 		got, res := vocoder.DecodeAMBE72(slot)
 		if got != info || res.Uncorrectable || res.ErrorsCorrected != 6 {
@@ -102,7 +99,7 @@ func TestAMBESilence(t *testing.T) {
 	if slot != vocoder.AMBESilenceSlot() {
 		t.Fatal("AMBESilenceSlot differs from EncodeAMBE72(AMBESilence())")
 	}
-	if got := hex.EncodeToString(bit.Pack(slot[:])); got != "b9e881526173002a6b" {
+	if got := hex.EncodeToString(slot[:]); got != "b9e881526173002a6b" {
 		t.Fatalf("EncodeAMBE72(AMBESilence()) = %s, want b9e881526173002a6b", got)
 	}
 	if f, res := vocoder.DecodeAMBE72(slot); f != vocoder.AMBESilence() || res.HasErrors() {

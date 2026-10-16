@@ -16,13 +16,8 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
-	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
 // bitFuncs holds every exported function and method of the v2 module that
@@ -39,50 +34,6 @@ var bitFuncs = map[string]any{
 	"layer2/framer.Framer.AppendBursts": func(stream [1200]bit.Bit) []framer.Burst {
 		return framer.New(framer.Config{}).AppendBursts(nil, stream[:]...)
 	},
-	"layer2.VoiceTransmitter.AddSlots": func(slots ...[72]bit.Bit) ([]layer2.RawBurst, error) {
-		return voiceTransmitter().AddSlots(slots...)
-	},
-	"layer2.VoiceTransmitter.AddBurst": func(slots [layer2.VoiceSlotsPerBurst][72]bit.Bit) (layer2.RawBurst, error) {
-		return voiceTransmitter().AddBurst(&slots)
-	},
-	"layer2.VoiceTransmitter.AppendSlots": func(slots ...[72]bit.Bit) ([]layer2.RawBurst, error) {
-		return voiceTransmitter().AppendSlots(nil, slots...)
-	},
-	"layer2.VoiceTransmitter.AppendFrames": func(frames ...vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
-		return voiceTransmitter().AppendFrames(nil, frames...)
-	},
-	"voice.Transmitter.Slot": func(s [72]bit.Bit) []layer2.RawBurst {
-		return transmitVoice(func(tx *voice.Transmitter) error { return tx.Slot(s) })
-	},
-	"voice.Transmitter.Slots": func(s ...[72]bit.Bit) []layer2.RawBurst {
-		return transmitVoice(func(tx *voice.Transmitter) error { return tx.Slots(s...) })
-	},
-	"voice.Transmitter.Frame": func(f vocoder.AMBEFrame) []layer2.RawBurst {
-		return transmitVoice(func(tx *voice.Transmitter) error { return tx.Frame(f) })
-	},
-	"voice.Transmitter.Frames": func(f ...vocoder.AMBEFrame) []layer2.RawBurst {
-		return transmitVoice(func(tx *voice.Transmitter) error { return tx.Frames(f...) })
-	},
-	"layer2.Burst.SetAMBEFrames": func(frames [3]vocoder.AMBEFrame) [3][72]bit.Bit {
-		var b layer2.Burst
-		b.SetAMBEFrames(frames)
-		return b.VoiceSlots
-	},
-	"layer2.RawBurst.SetAMBEFrames": func(frames [3]vocoder.AMBEFrame) layer2.RawBurst {
-		var r layer2.RawBurst
-		r.SetAMBEFrames(frames)
-		return r
-	},
-	"layer2.BuildVoiceBurst": func(frames [3]vocoder.AMBEFrame) (layer2.RawBurst, error) {
-		return layer2.BuildVoiceBurst(frames, enums.VoiceBurstB, pdu.EmbeddedSignalling{ColorCode: 1}, [4]byte{1, 2, 3, 4}, layer2.SyncSourceBS)
-	},
-	"vocoder.PackAMBEVoice": vocoder.PackAMBEVoice,
-	"vocoder.PackAMBEVoiceFlags": func(frames [3]vocoder.AMBEFrame) [19]byte {
-		return vocoder.PackAMBEVoiceFlags(frames, [3]bool{true, true, true})
-	},
-	"layer2.VoiceTransmitter.AddFrames": func(frames ...vocoder.AMBEFrame) ([]layer2.RawBurst, error) {
-		return voiceTransmitter().AddFrames(frames...)
-	},
 	"internal/bits.Pack": func(src [96]bit.Bit) [12]byte {
 		var dst [12]byte
 		bits.Pack(dst[:], 0, src[:])
@@ -92,37 +43,6 @@ var bitFuncs = map[string]any{
 		bits.Unpack(dst[:], []byte{0xA5, 0x3C}, 0)
 		return dst
 	},
-	"vocoder.DecodeAMBE72": vocoder.DecodeAMBE72,
-	"vocoder.EncodeAMBE72": vocoder.EncodeAMBE72,
-}
-
-// transmitVoice sends a call whose voice add queues with a voice.Transmitter
-// and returns its bursts.
-func transmitVoice(add func(tx *voice.Transmitter) error) []layer2.RawBurst {
-	tx := must(voice.NewTransmitter(&voice.TransmitterConfig{Queue: voice.MaxQueue}))
-	if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
-		panic(err)
-	}
-	if err := add(tx); err != nil {
-		panic(err)
-	}
-	tx.Stop()
-	var out []layer2.RawBurst
-	for {
-		at, ok := tx.Deadline()
-		if !ok {
-			return out
-		}
-		for _, o := range tx.Tick(at, nil) {
-			if o.Kind == voice.OutputBurst {
-				out = append(out, o.Burst)
-			}
-		}
-	}
-}
-
-func voiceTransmitter() *layer2.VoiceTransmitter {
-	return must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: groupLC(enums.FIDStandardized), ColorCode: 1, Source: layer2.SyncSourceMS, Silence: [72]bit.Bit{}}))
 }
 
 // bitFuncNames lists the exported functions and methods of the v2 module
@@ -173,13 +93,10 @@ func takesBits(params *ast.FieldList) bool {
 	found := false
 	for _, p := range params.List {
 		ast.Inspect(p.Type, func(n ast.Node) bool {
-			switch n := n.(type) {
-			case *ast.SelectorExpr:
-				if x, ok := n.X.(*ast.Ident); ok && (x.Name == "bit" && n.Sel.Name == "Bit" || x.Name == "vocoder" && n.Sel.Name == "AMBEFrame") {
+			if sel, ok := n.(*ast.SelectorExpr); ok {
+				if x, ok := sel.X.(*ast.Ident); ok && x.Name == "bit" && sel.Sel.Name == "Bit" {
 					found = true
 				}
-			case *ast.Ident:
-				found = found || n.Name == "AMBEFrame"
 			}
 			return !found
 		})

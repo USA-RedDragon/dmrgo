@@ -3,7 +3,6 @@ package layer2_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -266,7 +265,7 @@ func TestRC_StandaloneBurst_RoundTrip(t *testing.T) {
 	if burst.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest || burst.FEC.RC.Uncorrectable {
 		t.Errorf("RC: %s", burst.ReverseChannel.String())
 	}
-	if burst.VoiceSlots != ([3][72]bit.Bit{}) {
+	if burst.VoiceSlots != ([3][9]byte{}) {
 		t.Error("standalone RC burst should not parse voice")
 	}
 

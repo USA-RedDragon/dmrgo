@@ -69,6 +69,26 @@ func reserved(res uint8) [3]bit.Bit {
 	return [3]bit.Bit{bit.Bit(res & 1), bit.Bit(res >> 1 & 1), bit.Bit(res >> 2 & 1)}
 }
 
+// slotBits returns the three voice slots s as the digests print them: 72
+// bit.Bit values each.
+func slotBits(s [layer2.VoiceSlotsPerBurst][9]byte) [layer2.VoiceSlotsPerBurst][]bit.Bit {
+	var out [layer2.VoiceSlotsPerBurst][]bit.Bit
+	for i := range s {
+		out[i] = unpack(s[i][:], 72)
+	}
+	return out
+}
+
+// frameBits returns the three AMBE+2 frames f as the digests print them: 49
+// bit.Bit values each.
+func frameBits(f [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) [layer2.VoiceSlotsPerBurst][]bit.Bit {
+	var out [layer2.VoiceSlotsPerBurst][]bit.Bit
+	for i := range f {
+		out[i] = unpack(f[i][:], 49)
+	}
+	return out
+}
+
 // cachString returns c in the form that %+v printed when CACH.Payload held
 // one bit.Bit per bit.
 func cachString(c layer2.CACH) string {
@@ -128,13 +148,13 @@ func encodeData(d layer2.Data) ([]byte, error) {
 func burstString(b *layer2.Burst) string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "k=%v sp=%v ns=%v sd=%d vb=%v vs=%v st=%+v rsv=%v emb=%+v ed=%v rc=%+v fec=%+v hes=%v hrc=%v ",
-		b.Kind, b.SyncPattern, b.NearestSync, b.SyncDistance, b.VoiceBurst, b.VoiceSlots, b.SlotType, reserved(b.BPTCReserved),
+		b.Kind, b.SyncPattern, b.NearestSync, b.SyncDistance, b.VoiceBurst, slotBits(b.VoiceSlots), b.SlotType, reserved(b.BPTCReserved),
 		b.EmbeddedSignalling, unpack(b.EmbeddedSignallingData[:], 32), b.ReverseChannel, b.FEC, b.HasEmbeddedSignalling(), b.HasReverseChannel())
 	sb.WriteString(dataString(b.Data))
 	out, err := b.Encode()
 	fmt.Fprintf(&sb, " out=%x err=%s", out, errString(err))
 	frames, res := b.AMBEFrames()
-	fmt.Fprintf(&sb, " ambe=%v %+v", frames, res)
+	fmt.Fprintf(&sb, " ambe=%v %+v", frameBits(frames), res)
 	return sb.String()
 }
 
@@ -152,7 +172,7 @@ func rawBurstString(rb layer2.RawBurst) string {
 	p1, res := rb.Rate1Payload()
 	fmt.Fprintf(&sb, "r1=%x %+v ", p1, res)
 	frames, res := rb.AMBEFrames()
-	fmt.Fprintf(&sb, "ambe=%v %+v", frames, res)
+	fmt.Fprintf(&sb, "ambe=%v %+v", frameBits(frames), res)
 	return sb.String()
 }
 
@@ -188,7 +208,9 @@ func builtBurst(r *rand.Rand, dt enums.DataType, src layer2.SyncSource) layer2.R
 func voiceBurst(r *rand.Rand, src layer2.SyncSource) layer2.RawBurst {
 	var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	for i := range frames {
-		randBits(r, frames[i][:])
+		var b [49]bit.Bit
+		randBits(r, b[:])
+		frames[i] = vocoder.AMBEFrame(pack(b[:]))
 	}
 	var embedded [4]byte
 	r.Read(embedded[:])
@@ -481,17 +503,18 @@ func collectVocoder(d digests) {
 	for n := range 20000 {
 		var slot [72]bit.Bit
 		randBits(r, slot[:])
-		f, res := vocoder.DecodeAMBE72(slot)
-		d.add("ambe/decode", "%v %v %+v", slot, f, res)
-		var fr vocoder.AMBEFrame
+		f, res := vocoder.DecodeAMBE72([9]byte(pack(slot[:])))
+		d.add("ambe/decode", "%v %v %+v", slot, unpack(f[:], 49), res)
+		var fr [49]bit.Bit
 		randBits(r, fr[:])
-		enc := vocoder.EncodeAMBE72(fr)
+		enc := vocoder.EncodeAMBE72(vocoder.AMBEFrame(pack(fr[:])))
 		corrupt2 := enc
 		for range n % 6 {
-			corrupt2[r.Intn(72)] ^= 1
+			j := r.Intn(72)
+			corrupt2[j/8] ^= 0x80 >> (j % 8)
 		}
 		g, res2 := vocoder.DecodeAMBE72(corrupt2)
-		d.add("ambe/encode", "%v %v %v %+v", fr, enc, g, res2)
+		d.add("ambe/encode", "%v %v %v %+v", fr, unpack(enc[:], 72), unpack(g[:], 49), res2)
 	}
 }
 

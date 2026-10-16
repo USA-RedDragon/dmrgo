@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -136,10 +136,10 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 	t.Parallel()
 
-	var voice [3][72]bit.Bit
+	var voice [3][9]byte
 	for i := range voice {
-		for j := range voice[i] {
-			voice[i][j] = bit.Bit((i + j) & 1)
+		for j := range 72 {
+			bits.SetBit(voice[i][:], j, byte((i+j)&1))
 		}
 	}
 	for _, sync := range []enums.SyncPattern{enums.SyncBSSourcedVoice, enums.SyncReserved, enums.SyncNone} {

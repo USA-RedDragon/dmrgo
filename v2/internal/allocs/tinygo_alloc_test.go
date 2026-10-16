@@ -11,6 +11,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -59,8 +60,8 @@ func tinyDataBurst(t *testing.T, r *rand.Rand, dt enums.DataType) layer2.RawBurs
 func tinyFrames(r *rand.Rand) [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame {
 	var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	for i := range frames {
-		for j := range frames[i] {
-			frames[i][j] = bit.Bit(r.Intn(2))
+		for j := range 49 {
+			bits.SetBit(frames[i][:], j, byte(r.Intn(2)))
 		}
 	}
 	return frames

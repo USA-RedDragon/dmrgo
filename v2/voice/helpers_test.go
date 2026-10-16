@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -156,8 +155,8 @@ func transmission(t *testing.T, lc pdu.FullLinkControl, superframes int, opts fu
 	}
 	out := tx.AppendHeaders(nil)
 	for i := range superframes * layer2.VoiceBurstsPerSuperframe * layer2.VoiceSlotsPerBurst {
-		var s [72]bit.Bit
-		s[i%72] = 1
+		var s [9]byte
+		s[i%72/8] = 0x80 >> (i % 8)
 		if out, err = tx.AppendSlots(out, s); err != nil {
 			t.Fatal(err)
 		}

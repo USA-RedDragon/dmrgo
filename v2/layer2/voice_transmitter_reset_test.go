@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -17,8 +17,8 @@ func transmit(t *testing.T, tx *layer2.VoiceTransmitter, n int) []layer2.RawBurs
 	t.Helper()
 	out := tx.AppendHeaders(nil)
 	for i := range n {
-		var slot [72]bit.Bit
-		slot[i%72] = 1
+		var slot [9]byte
+		bits.SetBit(slot[:], i%72, 1)
 		var err error
 		if out, err = tx.AppendSlots(out, slot); err != nil {
 			t.Fatal(err)
@@ -49,7 +49,7 @@ func TestVoiceTransmitter_Reset(t *testing.T) {
 		if slots == 40 {
 			transmit(t, tx, slots)
 		} else {
-			var slot [72]bit.Bit
+			var slot [9]byte
 			for range slots {
 				if _, err := tx.AppendSlots(nil, slot); err != nil {
 					t.Fatal(err)

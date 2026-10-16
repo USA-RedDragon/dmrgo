@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -16,9 +15,10 @@ type VoiceTransmitterOptions struct {
 	ColorCode enums.ColorCode
 	// Source selects the SYNC patterns. The zero value is SyncSourceBS.
 	Source SyncSource
-	// Silence is the 72-bit slot that pads the last superframe. It is codec
-	// specific: for AMBE+2 it is vocoder.AMBESilenceSlot().
-	Silence [72]bit.Bit
+	// Silence is the 72-bit slot that pads the last superframe, packed as
+	// RawBurst.VoiceSlots returns it. It is codec specific: for AMBE+2 it is
+	// vocoder.AMBESilenceSlot().
+	Silence [9]byte
 	// PIHeader, when set, adds a PI Header burst after the Voice LC Header
 	// (ETSI TS 102 361-1 clause 5.1.2.2, clause 6.2).
 	PIHeader *pdu.PIHeader
@@ -92,8 +92,8 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 		lcHook:     opts.EmbeddedLC,
 		piHeader:   piHeader,
 		hasPI:      opts.PIHeader != nil,
+		silence:    opts.Silence,
 	}
-	packBits(t.silence[:], opts.Silence[:])
 	return nil
 }
 

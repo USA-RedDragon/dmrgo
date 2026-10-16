@@ -1,7 +1,6 @@
 package codec2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -72,20 +71,4 @@ func (cfg Config) withDefaults() (Config, error) {
 
 func (m Mode) frameBytes() int {
 	return int(m) / 50 / 8
-}
-
-func packSlot(frame []byte) [72]bit.Bit {
-	var slot [72]bit.Bit
-	for i := 0; i < len(frame)*8 && i < len(slot); i++ {
-		slot[i] = bit.Bit((frame[i/8] >> (7 - i%8)) & 1)
-	}
-	return slot
-}
-
-// unpackSlot fills frame with the first len(frame)*8 bits of slot.
-func unpackSlot(frame []byte, slot [72]bit.Bit) {
-	clear(frame)
-	for i := 0; i < len(frame)*8; i++ {
-		frame[i/8] |= byte(slot[i]&1) << (7 - i%8)
-	}
 }

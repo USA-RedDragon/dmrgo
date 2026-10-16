@@ -8,6 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -25,14 +26,6 @@ func captureFrames(t *testing.T) []layer2.RawBurst {
 		frames = append(frames, loadBursts(t, f)...)
 	}
 	return frames
-}
-
-func packSlots(s [layer2.VoiceSlotsPerBurst][72]bit.Bit) [layer2.VoiceSlotsPerBurst][9]byte {
-	var out [layer2.VoiceSlotsPerBurst][9]byte
-	for i := range s {
-		copy(out[i][:], bit.Pack(s[i][:]))
-	}
-	return out
 }
 
 func isBPTC(dt enums.DataType) bool {
@@ -113,7 +106,7 @@ func TestRawBurst_GettersMatchBurst(t *testing.T) {
 		}
 		if b.SyncPattern != enums.SyncMSSourcedRC {
 			counts["voice"]++
-			if got := r.VoiceSlots(); got != packSlots(b.VoiceSlots) {
+			if got := r.VoiceSlots(); got != b.VoiceSlots {
 				t.Errorf("%x: VoiceSlots %x", frame, got)
 			}
 		}
@@ -508,7 +501,7 @@ func TestBuildVoiceBurst_MatchesVoiceTransmitter(t *testing.T) {
 		tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 5, Source: src, Silence: silenceSlot()}))
 		var frames [18]vocoder.AMBEFrame
 		for i := range frames {
-			bit.PutUint(frames[i][:], uint64(i)*0x1F2E3D4C5B)
+			bits.SetField64(frames[i][:], 0, 49, uint64(i)*0x1F2E3D4C5B)
 		}
 		sent := must(tx.AddFrames(frames[:]...))
 		if len(sent) != 6 {

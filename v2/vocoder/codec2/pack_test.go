@@ -4,81 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
-
-func bitsFromString(t *testing.T, s string) [72]bit.Bit {
-	t.Helper()
-	var out [72]bit.Bit
-	n := 0
-	for _, r := range s {
-		switch r {
-		case '0', '1':
-			out[n] = bit.Bit(r - '0')
-			n++
-		case ' ':
-		default:
-			t.Fatalf("bad bit %q", r)
-		}
-	}
-	if n != 72 {
-		t.Fatalf("got %d bits, want 72", n)
-	}
-	return out
-}
-
-func TestPackSlotLayout(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name  string
-		frame []byte
-		want  string
-	}{
-		{
-			name:  "2400",
-			frame: []byte{0xA5, 0x01, 0x80, 0xFF, 0x00, 0x3C},
-			want: "10100101 00000001 10000000 11111111 00000000 00111100 " +
-				"00000000 00000000 00000000",
-		},
-		{
-			name:  "3200",
-			frame: []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1},
-			want: "00010010 00110100 01010110 01111000 10011010 10111100 " +
-				"11011110 11110001 00000000",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			want := bitsFromString(t, tt.want)
-			got := packSlot(tt.frame)
-			if got != want {
-				t.Fatalf("packSlot = %v, want %v", got, want)
-			}
-			back := make([]byte, len(tt.frame))
-			unpackSlot(back, got)
-			if string(back) != string(tt.frame) {
-				t.Fatalf("unpackSlot = %x, want %x", back, tt.frame)
-			}
-		})
-	}
-}
-
-func TestUnpackSlotIgnoresPadBits(t *testing.T) {
-	t.Parallel()
-
-	frame := []byte{0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02}
-	slot := packSlot(frame)
-	for i := 48; i < 72; i++ {
-		slot[i] = 1
-	}
-	got := make([]byte, 6)
-	if unpackSlot(got, slot); string(got) != string(frame) {
-		t.Fatalf("unpackSlot = %x, want %x", got, frame)
-	}
-}
 
 // TestQRadioLinkBurstLayout rebuilds a voice burst the way QRadioLink does
 // (DMRControl::getTxAudio and DMRFrame::setVoice) and checks that the three
@@ -101,19 +28,11 @@ func TestQRadioLinkBurstLayout(t *testing.T) {
 	burst[19] = audio[13] & 0x0F
 	copy(burst[20:], audio[14:])
 
-	bits := [264]bit.Bit(bit.Unpack(burst[:]))
-	var voice [216]bit.Bit
-	copy(voice[:108], bits[:108])
-	copy(voice[108:], bits[156:])
-	for i, f := range codecFrames {
-		var got [72]bit.Bit
-		copy(got[:], voice[i*72:(i+1)*72])
-		if want := packSlot(f); got != want {
-			t.Errorf("frame %d: burst bits %v, want %v", i, got, want)
-		}
-		back := make([]byte, 6)
-		if unpackSlot(back, got); string(back) != string(f) {
-			t.Errorf("frame %d: unpacked %x, want %x", i, back, f)
+	for i, got := range layer2.RawBurst(burst).VoiceSlots() {
+		var want [9]byte
+		copy(want[:], codecFrames[i])
+		if got != want {
+			t.Errorf("frame %d: burst slot % X, want % X", i, got, want)
 		}
 	}
 }

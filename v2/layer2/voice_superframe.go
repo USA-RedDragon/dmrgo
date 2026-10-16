@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -156,7 +155,7 @@ func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 // AddSlots adds 72-bit vocoder slots in transmit order and returns the voice
 // bursts they complete, as AppendSlots does with a nil dst. It allocates the
 // slice; AppendSlots does not.
-func (t *VoiceTransmitter) AddSlots(slots ...[72]bit.Bit) ([]RawBurst, error) {
+func (t *VoiceTransmitter) AddSlots(slots ...[9]byte) ([]RawBurst, error) {
 	return t.AppendSlots(nil, slots...)
 }
 
@@ -164,15 +163,13 @@ func (t *VoiceTransmitter) AddSlots(slots ...[72]bit.Bit) ([]RawBurst, error) {
 // bursts they complete to dst and returns the extended slice. On an error it
 // returns dst with the bursts completed before the error. It does not
 // allocate when dst has room for the bursts.
-func (t *VoiceTransmitter) AppendSlots(dst []RawBurst, slots ...[72]bit.Bit) ([]RawBurst, error) {
+func (t *VoiceTransmitter) AppendSlots(dst []RawBurst, slots ...[9]byte) ([]RawBurst, error) {
 	if t.terminated {
 		return dst, ErrVoiceTerminated
 	}
 	var err error
 	for i := range slots {
-		var slot [9]byte
-		packBits(slot[:], slots[i][:])
-		if dst, err = t.appendSlot(dst, &slot); err != nil {
+		if dst, err = t.appendSlot(dst, &slots[i]); err != nil {
 			return dst, err
 		}
 	}
@@ -197,9 +194,7 @@ func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFr
 	}
 	var err error
 	for i := range frames {
-		var f [7]byte
-		packBits(f[:], frames[i][:])
-		slot := ambe.Encode(f)
+		slot := ambe.Encode(frames[i])
 		if dst, err = t.appendSlot(dst, &slot); err != nil {
 			return dst, err
 		}
@@ -212,15 +207,13 @@ func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFr
 // burst holds VoiceSlotsPerBurst slots, so they complete exactly one: the
 // burst of the slots that wait from an earlier call, if any, and the first
 // slots.
-func (t *VoiceTransmitter) AddBurst(slots *[VoiceSlotsPerBurst][72]bit.Bit) (RawBurst, error) {
+func (t *VoiceTransmitter) AddBurst(slots [VoiceSlotsPerBurst][9]byte) (RawBurst, error) {
 	if t.terminated {
 		return RawBurst{}, ErrVoiceTerminated
 	}
 	var burst RawBurst
 	for i := range slots {
-		var slot [9]byte
-		packBits(slot[:], slots[i][:])
-		b, done, err := t.addSlot(&slot)
+		b, done, err := t.addSlot(&slots[i])
 		if err != nil {
 			return RawBurst{}, err
 		}

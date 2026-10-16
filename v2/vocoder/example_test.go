@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -15,23 +14,23 @@ type lsbCodec struct{}
 func (lsbCodec) Close() error      { return nil }
 func (lsbCodec) FrameSamples() int { return 160 }
 
-func (lsbCodec) Encode(pcm []int16) ([72]bit.Bit, error) {
-	var s [72]bit.Bit
-	for i := range s {
-		s[i] = bit.Bit(pcm[i] & 1)
+func (lsbCodec) Encode(pcm []int16) ([9]byte, error) {
+	var s [9]byte
+	for i := range 72 {
+		s[i/8] |= byte(pcm[i]&1) << (7 - i%8)
 	}
 	return s, nil
 }
 
-func (lsbCodec) Decode(slot [72]bit.Bit) ([]int16, error) {
+func (lsbCodec) Decode(slot [9]byte) ([]int16, error) {
 	pcm := make([]int16, 160)
-	for i, b := range slot {
-		pcm[i] = int16(b)
+	for i := range 72 {
+		pcm[i] = int16(slot[i/8] >> (7 - i%8) & 1)
 	}
 	return pcm, nil
 }
 
-func (lsbCodec) Silence() [72]bit.Bit    { return [72]bit.Bit{} }
+func (lsbCodec) Silence() [9]byte        { return [9]byte{} }
 func (lsbCodec) FID() enums.FeatureSetID { return enums.FIDStandardized }
 
 // ExampleNew registers a toy codec, opens it by name, and shows the error
@@ -66,7 +65,7 @@ func ExampleNew() {
 // ExampleDecodeAMBE72 corrects a bit error in an AMBE+2 silence slot.
 func ExampleDecodeAMBE72() {
 	slot := vocoder.EncodeAMBE72(vocoder.AMBESilence())
-	slot[5] ^= 1
+	slot[0] ^= 0x80 >> 5
 	frame, res := vocoder.DecodeAMBE72(slot)
 	fmt.Println(frame == vocoder.AMBESilence(), res.ErrorsCorrected)
 	// Output:
