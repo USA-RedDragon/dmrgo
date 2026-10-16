@@ -194,12 +194,12 @@ func TestEncodeRejectsOutOfRangeValues(t *testing.T) {
 	}
 	for _, m := range []pdu.NetworkModel{pdu.NetworkModelTiny, pdu.NetworkModelSmall, pdu.NetworkModelLarge, pdu.NetworkModelHuge} {
 		cases = append(cases,
-			rangeCase{"pdu.SysCode.Pack", "SysCode", "Net", m.NetBits(), func() error {
-				_, err := pdu.SysCode{Model: m, Net: 1 << m.NetBits()}.Pack()
+			rangeCase{"pdu.SysCode.Pack", "SysCode", "Net", must(m.NetBits()), func() error {
+				_, err := pdu.SysCode{Model: m, Net: 1 << must(m.NetBits())}.Pack()
 				return err
 			}},
-			rangeCase{"pdu.SysCode.Pack", "SysCode", "Site", m.SiteBits(), func() error {
-				_, err := pdu.SysCode{Model: m, Site: 1 << m.SiteBits()}.Pack()
+			rangeCase{"pdu.SysCode.Pack", "SysCode", "Site", must(m.SiteBits()), func() error {
+				_, err := pdu.SysCode{Model: m, Site: 1 << must(m.SiteBits())}.Pack()
 				return err
 			}},
 		)
@@ -311,6 +311,7 @@ func TestSetAddressesErrors(t *testing.T) {
 		name string
 		typ  string
 		dst  string
+		src  string
 		set  func(target, source uint32) (unchanged bool, err error)
 		none func() error
 	}
@@ -321,7 +322,7 @@ func TestSetAddressesErrors(t *testing.T) {
 	hdr := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{LLIDDestination: 1, LLIDSource: 2}}
 	hdrb := pdu.DataHeaderBytes(must(hdr.Encode()))
 	setters := []setter{
-		{"LCBytes", "LCBytes", "target", func(a, b uint32) (bool, error) {
+		{"LCBytes", "LCBytes", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
 			l := lcb
 			err := l.SetAddresses(a, b)
 			return l == lcb, err
@@ -330,7 +331,7 @@ func TestSetAddressesErrors(t *testing.T) {
 			noErr(l.SetFLCO(enums.FLCOTerminatorDataLinkControl))
 			return l.SetAddresses(1, 2)
 		}},
-		{"FullLinkControl", "FullLinkControl", "target", func(a, b uint32) (bool, error) {
+		{"FullLinkControl", "FullLinkControl", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
 			l := lc
 			gv := *lc.GroupVoice
 			l.GroupVoice = &gv
@@ -340,7 +341,7 @@ func TestSetAddressesErrors(t *testing.T) {
 			l := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser}
 			return l.SetAddresses(1, 2)
 		}},
-		{"CSBK", "CSBK", "target", func(a, b uint32) (bool, error) {
+		{"CSBK", "CSBK", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
 			c := pre
 			p := *pre.PreamblePDU
 			c.PreamblePDU = &p
@@ -350,7 +351,7 @@ func TestSetAddressesErrors(t *testing.T) {
 			c := pdu.CSBK{Opcode: pdu.CSBKPreamble}
 			return c.SetAddresses(1, 2)
 		}},
-		{"CSBKBytes", "CSBKBytes", "target", func(a, b uint32) (bool, error) {
+		{"CSBKBytes", "CSBKBytes", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
 			c := csbkb
 			err := c.SetAddresses(a, b)
 			return c == csbkb, err
@@ -359,7 +360,7 @@ func TestSetAddressesErrors(t *testing.T) {
 			c[1] = 0x10
 			return c.SetAddresses(1, 2)
 		}},
-		{"DataHeader", "DataHeader", "destination", func(a, b uint32) (bool, error) {
+		{"DataHeader", "DataHeader", "LLIDDestination", "LLIDSource", func(a, b uint32) (bool, error) {
 			h := hdr
 			u := *hdr.UnconfirmedDataHeader
 			h.UnconfirmedDataHeader = &u
@@ -369,7 +370,7 @@ func TestSetAddressesErrors(t *testing.T) {
 			var h pdu.DataHeader
 			return h.SetAddresses(1, 2)
 		}},
-		{"DataHeaderBytes", "DataHeaderBytes", "target", func(a, b uint32) (bool, error) {
+		{"DataHeaderBytes", "DataHeaderBytes", "LLIDDestination", "LLIDSource", func(a, b uint32) (bool, error) {
 			h := hdrb
 			err := h.SetAddresses(a, b)
 			return h == hdrb, err
@@ -383,7 +384,7 @@ func TestSetAddressesErrors(t *testing.T) {
 		if unchanged, err := s.set(1<<24, 2); !isRangeError(err, s.typ, s.dst, 24) || !unchanged {
 			t.Errorf("%s: target over 24 bits: %v, unchanged %t", s.name, err, unchanged)
 		}
-		if unchanged, err := s.set(1, 1<<24); !isRangeError(err, s.typ, "source", 24) || !unchanged {
+		if unchanged, err := s.set(1, 1<<24); !isRangeError(err, s.typ, s.src, 24) || !unchanged {
 			t.Errorf("%s: source over 24 bits: %v, unchanged %t", s.name, err, unchanged)
 		}
 		if _, err := s.set(5, 6); err != nil {

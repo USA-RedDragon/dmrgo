@@ -37,7 +37,7 @@ func TestSysCode_PackUnpack(t *testing.T) {
 			t.Errorf("Unpack14(%014b) = %+v, %v", got14, back, err)
 		}
 		before := back
-		if err := back.Unpack14(got14 | 0x4000); !isRangeError(err, "SysCode", "Pack14", 14) || back != before {
+		if err := back.Unpack14(got14 | 0x4000); !isRangeError(err, "SysCode", "Unpack14", 14) || back != before {
 			t.Errorf("Unpack14 of 15 bits: %+v, %v", back, err)
 		}
 	}
@@ -68,8 +68,8 @@ func TestSysCode_ShortLCSysParms(t *testing.T) {
 	if err := c.SetSysCode(code); err != nil {
 		t.Fatal(err)
 	}
-	if c.NetID() != code.Net || c.SiteID() != code.Site || must(c.SysCode()) != code {
-		t.Errorf("C_SYS_Parms: net %d site %d code %+v", c.NetID(), c.SiteID(), must(c.SysCode()))
+	if must(c.NetID()) != code.Net || must(c.SiteID()) != code.Site || must(c.SysCode()) != code {
+		t.Errorf("C_SYS_Parms: net %d site %d code %+v", must(c.NetID()), must(c.SiteID()), must(c.SysCode()))
 	}
 	slc := pdu.ShortLC{SLCO: enums.SLCOCSysParms, CSysParms: &c}
 	bits, err := slc.Encode()
@@ -85,8 +85,8 @@ func TestSysCode_ShortLCSysParms(t *testing.T) {
 	if err := p.SetSysCode(pdu.SysCode{Model: pdu.NetworkModelHuge, Net: 3, Site: 0x2AA, Par: 3}); err != nil {
 		t.Fatal(err)
 	}
-	if p.NetID() != 3 || p.SiteID() != 0x2AA || must(p.SysCode()).Par != 0 {
-		t.Errorf("P_SYS_Parms: net %d site %d", p.NetID(), p.SiteID())
+	if must(p.NetID()) != 3 || must(p.SiteID()) != 0x2AA || must(p.SysCode()).Par != 0 {
+		t.Errorf("P_SYS_Parms: net %d site %d", must(p.NetID()), must(p.SiteID()))
 	}
 	if err := p.SetSysCode(pdu.SysCode{Model: pdu.NetworkModelHuge, Net: 4}); err == nil {
 		t.Error("expected error")
@@ -108,7 +108,7 @@ func TestSysCode_AlohaField(t *testing.T) {
 	if got.Unpack(a.SysIdentCode); got != code {
 		t.Errorf("got %+v", got)
 	}
-	if pdu.NetworkModelTiny.NetBits() != 9 || pdu.NetworkModelHuge.SiteBits() != 10 {
+	if must(pdu.NetworkModelTiny.NetBits()) != 9 || must(pdu.NetworkModelHuge.SiteBits()) != 10 {
 		t.Error("model widths")
 	}
 }
@@ -128,5 +128,29 @@ func TestSysCode_ShortLCGettersRejectOutOfRange(t *testing.T) {
 		if _, err := tt.get(); !isRangeError(err, tt.typ, tt.field, tt.bits) {
 			t.Errorf("%s: %v, want the FieldRangeError of %s.%s", tt.name, err, tt.typ, tt.field)
 		}
+	}
+}
+
+func TestSysCode_NetSiteGettersRejectOutOfRange(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		name, typ, field string
+		bits             int
+		get              func() (uint16, error)
+	}{
+		{"C NetID MODEL", "ShortLCCSysParms", "MODEL", 2, (&pdu.ShortLCCSysParms{MODEL: 4}).NetID},
+		{"C SiteID NetSiteRaw", "ShortLCCSysParms", "NetSiteRaw", 12, (&pdu.ShortLCCSysParms{NetSiteRaw: 0x1FFF}).SiteID},
+		{"P NetID NetSiteRaw", "ShortLCPSysParms", "NetSiteRaw", 12, (&pdu.ShortLCPSysParms{NetSiteRaw: 0x1FFF}).NetID},
+		{"P SiteID MODEL", "ShortLCPSysParms", "MODEL", 2, (&pdu.ShortLCPSysParms{MODEL: 7}).SiteID},
+	} {
+		if _, err := tt.get(); !isRangeError(err, tt.typ, tt.field, tt.bits) {
+			t.Errorf("%s: %v, want the FieldRangeError of %s.%s", tt.name, err, tt.typ, tt.field)
+		}
+	}
+	if _, err := pdu.NetworkModel(4).NetBits(); !isRangeError(err, "pdu", "NetworkModel", 2) {
+		t.Errorf("NetBits of model 4: %v", err)
+	}
+	if _, err := pdu.NetworkModel(7).SiteBits(); !isRangeError(err, "pdu", "NetworkModel", 2) {
+		t.Errorf("SiteBits of model 7: %v", err)
 	}
 }

@@ -790,10 +790,10 @@ func TestShortLC_CSysParms_NetSite_Models(t *testing.T) {
 			t.Parallel()
 
 			cs := &pdu.ShortLCCSysParms{MODEL: tt.model, NetSiteRaw: netSitePattern()}
-			if got := cs.NetID(); got != tt.wantNetID {
+			if got := must(cs.NetID()); got != tt.wantNetID {
 				t.Errorf("NetID() = %b, want %b", got, tt.wantNetID)
 			}
-			if got := cs.SiteID(); got != tt.wantSite {
+			if got := must(cs.SiteID()); got != tt.wantSite {
 				t.Errorf("SiteID() = %b, want %b", got, tt.wantSite)
 			}
 		})
@@ -808,10 +808,10 @@ func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
 			t.Parallel()
 
 			ps := &pdu.ShortLCPSysParms{MODEL: tt.model, NetSiteRaw: netSitePattern()}
-			if got := ps.NetID(); got != tt.wantNetID {
+			if got := must(ps.NetID()); got != tt.wantNetID {
 				t.Errorf("NetID() = %b, want %b", got, tt.wantNetID)
 			}
-			if got := ps.SiteID(); got != tt.wantSite {
+			if got := must(ps.SiteID()); got != tt.wantSite {
 				t.Errorf("SiteID() = %b, want %b", got, tt.wantSite)
 			}
 		})

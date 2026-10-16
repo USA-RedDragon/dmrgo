@@ -59,7 +59,8 @@ func (c CSBKBytes) Addresses() (target, source uint32, ok bool) {
 
 // SetAddresses writes target and source into the address octets of a CSBK
 // for which Addresses returns ok. It does not update the CRC; call Reseal.
-// It returns the errors of CSBK.SetAddresses and then changes nothing.
+// It returns ErrNoAddresses for other CSBKs and a *dmrgo.FieldRangeError
+// when an address does not fit in 24 bits, and then changes nothing.
 func (c *CSBKBytes) SetAddresses(target, source uint32) error {
 	if err := checkAddresses(target, source, errCSBKBytesTargetRange, errCSBKBytesSourceRange); err != nil {
 		return err
@@ -138,21 +139,30 @@ func (c *CSBKBytes) Reseal() {
 	_ = Seal((*[12]byte)(c), enums.DataTypeCSBK)
 }
 
-// The *dmrgo.FieldRangeError values of the addresses of NewVoiceLCBytes and
-// NewVoiceLC.
+// The *dmrgo.FieldRangeError values of the 24-bit addresses of the
+// SetAddresses methods, NewVoiceLCBytes and NewVoiceLC. The fields are those
+// of the payload structs that hold the addresses.
 var (
-	errLCBytesTargetRange         = addressRangeError("LCBytes", "target")
-	errLCBytesSourceRange         = addressRangeError("LCBytes", "source")
-	errFullLinkControlTargetRange = addressRangeError("FullLinkControl", "target")
-	errFullLinkControlSourceRange = addressRangeError("FullLinkControl", "source")
-	errCSBKTargetRange            = addressRangeError("CSBK", "target")
-	errCSBKSourceRange            = addressRangeError("CSBK", "source")
-	errCSBKBytesTargetRange       = addressRangeError("CSBKBytes", "target")
-	errCSBKBytesSourceRange       = addressRangeError("CSBKBytes", "source")
-	errDataHeaderTargetRange      = addressRangeError("DataHeader", "destination")
-	errDataHeaderSourceRange      = addressRangeError("DataHeader", "source")
-	errDataHeaderBytesTargetRange = addressRangeError("DataHeaderBytes", "target")
-	errDataHeaderBytesSourceRange = addressRangeError("DataHeaderBytes", "source")
+	errLCBytesTargetRange         = addressRangeError("LCBytes", fieldTargetAddress)
+	errLCBytesSourceRange         = addressRangeError("LCBytes", fieldSourceAddress)
+	errFullLinkControlTargetRange = addressRangeError("FullLinkControl", fieldTargetAddress)
+	errFullLinkControlSourceRange = addressRangeError("FullLinkControl", fieldSourceAddress)
+	errCSBKTargetRange            = addressRangeError("CSBK", fieldTargetAddress)
+	errCSBKSourceRange            = addressRangeError("CSBK", fieldSourceAddress)
+	errCSBKBytesTargetRange       = addressRangeError("CSBKBytes", fieldTargetAddress)
+	errCSBKBytesSourceRange       = addressRangeError("CSBKBytes", fieldSourceAddress)
+	errDataHeaderTargetRange      = addressRangeError("DataHeader", fieldLLIDDestination)
+	errDataHeaderSourceRange      = addressRangeError("DataHeader", fieldLLIDSource)
+	errDataHeaderBytesTargetRange = addressRangeError("DataHeaderBytes", fieldLLIDDestination)
+	errDataHeaderBytesSourceRange = addressRangeError("DataHeaderBytes", fieldLLIDSource)
+)
+
+// The Field of the address errors.
+const (
+	fieldTargetAddress   = "TargetAddress"
+	fieldSourceAddress   = "SourceAddress"
+	fieldLLIDDestination = "LLIDDestination"
+	fieldLLIDSource      = "LLIDSource"
 )
 
 // addressRangeError returns the *dmrgo.FieldRangeError of a 24-bit address
