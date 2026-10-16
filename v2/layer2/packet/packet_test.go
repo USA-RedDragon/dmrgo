@@ -147,6 +147,49 @@ func TestAssembler_HeaderCRCFailure(t *testing.T) {
 	}
 }
 
+func TestAssembler_InProgress(t *testing.T) {
+	t.Parallel()
+
+	var a packet.Assembler
+	if a.InProgress() {
+		t.Fatal("new Assembler in progress")
+	}
+	bursts := loadBursts(t, "../testdata/d-sms.bin")
+	started, finished := false, false
+	for i, b := range bursts {
+		_, done, err := a.AddBurst(b)
+		if err != nil {
+			t.Fatalf("burst %d: %v", i, err)
+		}
+		if a.InProgress() {
+			started = true
+		}
+		if done {
+			finished = true
+			if a.InProgress() {
+				t.Fatalf("burst %d: in progress after the message completed", i)
+			}
+		}
+	}
+	if !started || !finished {
+		t.Fatalf("started %v, finished %v", started, finished)
+	}
+
+	for i, b := range bursts {
+		if _, _, err := a.AddBurst(b); err != nil {
+			t.Fatalf("burst %d: %v", i, err)
+		}
+		if a.InProgress() {
+			a.Reset()
+			if a.InProgress() {
+				t.Fatal("in progress after Reset")
+			}
+			return
+		}
+	}
+	t.Fatal("no packet started on the second pass")
+}
+
 func TestAssembler_HeaderCRCFailureKeepsPacket(t *testing.T) {
 	t.Parallel()
 
