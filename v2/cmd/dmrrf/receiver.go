@@ -19,7 +19,9 @@ const (
 	TierDisc Tier = iota
 	// TierCoherent detects the symbols coherently with a trellis over a
 	// window of three symbols that carries the carrier phase with each
-	// survivor. It fits a Cortex-M4F class microcontroller.
+	// survivor, at 5 samples per symbol, and detects each voice burst
+	// again with the bits that its FEC fixed. It fits a Cortex-M4F class
+	// microcontroller.
 	TierCoherent
 	// TierExact detects over a window of three symbols with the carrier
 	// phase in the trellis state, and detects each voice burst again with
