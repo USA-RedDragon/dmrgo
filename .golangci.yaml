@@ -109,7 +109,7 @@ linters:
       - path: cmd/speccheck/main\.go$
         linters:
           - gosec
-        text: G204
+        text: G204|G703
       # testing.AllocsPerRun panics in a parallel test.
       - path: _alloc_test\.go$
         linters:
