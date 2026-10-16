@@ -98,7 +98,9 @@ type ReceiverConfig struct {
 	// MaxWrite is the largest number of bytes in one Write. 0 means 1 << 16.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
-	// locks to that the receiver keeps and decodes. 0 means 16.
+	// locks to that the receiver keeps and decodes. 0 means 8 for the
+	// discriminator detection, which fits 64 KB of RAM that way, and 16
+	// for the coherent tiers.
 	LookbackSlots int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
 	// in place of the slice that Write, WriteBaseband and Flush return,
@@ -231,14 +233,17 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 	if cfg.MaxWrite == 0 {
 		cfg.MaxWrite = 1 << 16
 	}
+	opt := TierOptions(cfg.Tier)
+	if cfg.Options != nil {
+		opt = *cfg.Options
+	}
 	if cfg.LookbackSlots == 0 {
 		cfg.LookbackSlots = 16
+		if !opt.Coherent {
+			cfg.LookbackSlots = 8
+		}
 	}
-	r := &Receiver{cfg: cfg, candAt: -1, h: 0.27, doneAt: math.MinInt64}
-	r.opt = TierOptions(cfg.Tier)
-	if cfg.Options != nil {
-		r.opt = *cfg.Options
-	}
+	r := &Receiver{cfg: cfg, opt: opt, candAt: -1, h: 0.27, doneAt: math.MinInt64}
 	r.nsrc = r.opt.Sources
 	r.fe = newFrontEnd(cfg.Rate, cfg.Signed)
 	r.wide = make([]complex64, wideChunk)
