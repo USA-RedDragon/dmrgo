@@ -21,9 +21,7 @@ func DecodeEmbeddedRC(embeddedData [32]bit.Bit) pdu.ReverseChannel {
 func decodeRC(d [4]byte) pdu.ReverseChannel {
 	tx := uint32(d[0])<<24 | uint32(d[1])<<16 | uint32(d[2])<<8 | uint32(d[3])
 	info, bptcResult := bptc.DecodeSingleBurst(tx, true)
-	var infoBits [11]bit.Bit
-	bit.PutUint(infoBits[:], uint64(info))
-	rc := pdu.DecodeReverseChannel(infoBits)
+	rc := pdu.DecodeReverseChannel([2]byte{byte(info >> 3 & 0xFF), byte(info << 5 & 0xE0)})
 	rc.FEC = bptcResult.Combine(rc.FEC)
 	return rc
 }
@@ -44,10 +42,10 @@ func EncodeEmbeddedRC(rc *pdu.ReverseChannel) ([32]bit.Bit, error) {
 // encodeRC encodes rc as EncodeEmbeddedRC does and returns the 32 bits
 // packed.
 func encodeRC(rc *pdu.ReverseChannel) ([4]byte, error) {
-	infoBits, err := rc.Encode()
+	info, err := rc.Encode()
 	if err != nil {
 		return [4]byte{}, err
 	}
-	tx := bptc.EncodeSingleBurst(uint16(bit.Uint(infoBits[:])&0x7FF), true)
+	tx := bptc.EncodeSingleBurst(uint16(info[0])<<3|uint16(info[1])>>5, true)
 	return [4]byte{byte(tx >> 24), byte(tx >> 16 & 0xFF), byte(tx >> 8 & 0xFF), byte(tx & 0xFF)}, nil
 }

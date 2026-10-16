@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -182,16 +181,14 @@ func DecodeEmbeddedFullLinkControlInto(dst *pdu.FullLinkControl, p *pdu.FullLink
 	dst.FEC = combineEmbeddedFEC(result, dst.FEC)
 }
 
-// embeddedFullLCCodeword returns the 96 bits of the masked RS(12,9) voice LC
-// header codeword of the LC octets lc.
-func embeddedFullLCCodeword(lc [9]byte) [96]bit.Bit {
+// embeddedFullLCCodeword returns the masked RS(12,9) voice LC header
+// codeword of the LC octets lc.
+func embeddedFullLCCodeword(lc [9]byte) [12]byte {
 	codeword := reedsolomon.Encode(lc)
 	for i := 9; i < 12; i++ {
 		codeword[i] ^= voiceLCHeaderMask
 	}
-	var data [96]bit.Bit
-	unpackBits(data[:], codeword[:])
-	return data
+	return codeword
 }
 
 // combineEmbeddedFEC returns the embedded LC result with the corrections and

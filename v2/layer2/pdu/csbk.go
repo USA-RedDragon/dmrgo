@@ -506,7 +506,7 @@ func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
 		return p, false
 	}
-	return decodeBSOutboundActivationPDUBytes(s.RawPayload), true
+	return decodeBSOutboundActivationPDU(s.RawPayload), true
 }
 
 // AsTalkgroupDataGrantMultiItem decodes the RawPayload of a standard FID
@@ -516,7 +516,7 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
 		return p, false
 	}
-	return decodeTalkgroupDataGrantMultiItemPDUBytes(s.RawPayload), true
+	return decodeTalkgroupDataGrantMultiItemPDU(s.RawPayload), true
 }
 
 // SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that
@@ -524,7 +524,7 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 // payload fields and keeps LastBlock and ProtectFlag. It returns the error
 // of p.Encode and leaves s as it is on an error.
 func (s *CSBK) SetBSOutboundActivation(p BSOutboundActivationPDU) error {
-	payload, err := p.encodeBytes()
+	payload, err := p.Encode()
 	if err != nil {
 		return err
 	}
@@ -535,7 +535,7 @@ func (s *CSBK) SetBSOutboundActivation(p BSOutboundActivationPDU) error {
 // SetTalkgroupDataGrantMultiItem makes s a standard FID TD_GRANT_MI CSBK
 // that carries p, as SetBSOutboundActivation does.
 func (s *CSBK) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) error {
-	payload, err := p.encodeBytes()
+	payload, err := p.Encode()
 	if err != nil {
 		return err
 	}

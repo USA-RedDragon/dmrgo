@@ -3,7 +3,6 @@ package layer2_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -39,11 +38,7 @@ func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
 		},
 	}
 
-	encBits := must(flc.Encode())
-	encoded := bit.Pack(encBits[:])
-
-	var lcBytes [12]byte
-	copy(lcBytes[:], encoded)
+	lcBytes := must(flc.Encode())
 
 	result := [33]byte(must(layer2.BuildDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1, layer2.SyncSourceBS)))
 	if len(result) != 33 {
@@ -72,11 +67,7 @@ func TestBuildDataBurst_Terminator(t *testing.T) {
 		},
 	}
 
-	encBits := must(flc.Encode())
-	encoded := bit.Pack(encBits[:])
-
-	var lcBytes [12]byte
-	copy(lcBytes[:], encoded)
+	lcBytes := must(flc.Encode())
 
 	result := [33]byte(must(layer2.BuildDataBurst(lcBytes, enums.DataTypeTerminatorWithLC, 0, layer2.SyncSourceBS)))
 	burst, err := layer2.NewBurstFromBytes(result)
@@ -101,11 +92,7 @@ func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
 		},
 	}
 
-	encBits := must(flc.Encode())
-	encoded := bit.Pack(encBits[:])
-
-	var lcBytes [12]byte
-	copy(lcBytes[:], encoded)
+	lcBytes := must(flc.Encode())
 
 	for cc := enums.ColorCode(0); cc < 16; cc++ {
 		result := [33]byte(must(layer2.BuildDataBurst(lcBytes, enums.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS)))

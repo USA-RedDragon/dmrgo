@@ -3,64 +3,52 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // buildMBCHeaderBits returns the 96 information bits of an MBC header with
 // the CRC-CCITT and the MBC header mask 0xAAAA (ETSI TS 102 361-1 Table B.21).
-func buildMBCHeaderBits(lb bool, pf bool, opcode byte, fid byte, data [64]bit.Bit) [96]bit.Bit {
-	var bits [96]bit.Bit
+func buildMBCHeaderBits(lb bool, pf bool, opcode byte, fid byte, data [8]byte) [12]byte {
+	var info [12]byte
 
 	if lb {
-		bits[0] = 1
+		bits.SetBit(info[:], 0, 1)
 	}
 	if pf {
-		bits[1] = 1
+		bits.SetBit(info[:], 1, 1)
 	}
-	bit.PutUint(bits[2:8], uint64(opcode))
-	bit.PutUint(bits[8:16], uint64(fid))
-	copy(bits[16:80], data[:])
+	bits.SetField(info[:], 2, 6, uint64(opcode))
+	info[1] = fid
+	copy(info[2:10], data[:])
 
-	var dataBytes [10]byte
-	for i := range 10 {
-		for j := range 8 {
-			dataBytes[i] <<= 1
-			dataBytes[i] |= byte(bits[i*8+j])
-		}
-	}
+	crcVal := crc.CCITT(info[:10])
+	info[10] = byte(crcVal>>8) ^ 0xAA
+	info[11] = byte(crcVal) ^ 0xAA
 
-	crcVal := crc.CCITT(dataBytes[:])
-	crcHigh := byte(crcVal>>8) ^ 0xAA
-	crcLow := byte(crcVal) ^ 0xAA
-	for b := 7; b >= 0; b-- {
-		bits[80+(7-b)] = bit.Bit((crcHigh >> b) & 1)
-		bits[88+(7-b)] = bit.Bit((crcLow >> b) & 1)
-	}
-
-	return bits
+	return info
 }
 
 // buildMBCContinuationBits returns the 96 information bits of an MBC
 // continuation block, without a CRC.
-func buildMBCContinuationBits(lb bool, data [95]bit.Bit) [96]bit.Bit {
-	var bits [96]bit.Bit
+func buildMBCContinuationBits(lb bool, data [12]byte) [12]byte {
+	var info [12]byte
 	if lb {
-		bits[0] = 1
+		bits.SetBit(info[:], 0, 1)
 	}
-	copy(bits[1:96], data[:])
-	return bits
+	bits.Copy(info[:], 1, data[:], 0, 95)
+	return info
 }
 
 func TestMBCHeader_Decode(t *testing.T) {
 	t.Parallel()
 
-	var data [64]bit.Bit
-	data[0] = 1
-	data[10] = 1
-	data[63] = 1
+	var data [8]byte
+	setRawBit(data[:], 0)
+	setRawBit(data[:], 10)
+	setRawBit(data[:], 63)
 
 	infoBits := buildMBCHeaderBits(false, true, 0b00111101, 0x00, data)
 
@@ -83,17 +71,16 @@ func TestMBCHeader_Decode(t *testing.T) {
 		t.Errorf("FID = %d, want 0", hdr.FID)
 	}
 
-	dataBits := bit.Unpack(hdr.RawPayload[:])
-	if dataBits[0] != 1 {
+	if rawBit(hdr.RawPayload[:], 0) != 1 {
 		t.Error("Data[0] should be 1")
 	}
-	if dataBits[10] != 1 {
+	if rawBit(hdr.RawPayload[:], 10) != 1 {
 		t.Error("Data[10] should be 1")
 	}
-	if dataBits[63] != 1 {
+	if rawBit(hdr.RawPayload[:], 63) != 1 {
 		t.Error("Data[63] should be 1")
 	}
-	if dataBits[1] != 0 {
+	if rawBit(hdr.RawPayload[:], 1) != 0 {
 		t.Error("Data[1] should be 0")
 	}
 }
@@ -101,7 +88,7 @@ func TestMBCHeader_Decode(t *testing.T) {
 func TestMBCHeader_DecodeLastBlock(t *testing.T) {
 	t.Parallel()
 
-	var data [64]bit.Bit
+	var data [8]byte
 	infoBits := buildMBCHeaderBits(true, false, 0b00000001, 0x10, data)
 
 	hdr := pdu.DecodeMBCHeader(infoBits)
@@ -145,9 +132,9 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var data [64]bit.Bit
+			var data [8]byte
 			for i := 0; i < 64; i += 3 {
-				data[i] = 1
+				setRawBit(data[:], i)
 			}
 
 			orig := pdu.MBCHeader{
@@ -155,7 +142,7 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 				ProtectFlag: tt.pf,
 				Opcode:      pdu.CSBKOpcode(tt.opcode),
 				FID:         enums.FeatureSetID(tt.fid),
-				RawPayload:  [8]byte(bit.Pack(data[:])),
+				RawPayload:  data,
 			}
 
 			encoded := must(orig.Encode())
@@ -199,17 +186,15 @@ func TestMBCHeader_EncodeStability(t *testing.T) {
 	dec1 := pdu.DecodeMBCHeader(enc1)
 	enc2 := must(dec1.Encode())
 
-	for i := 0; i < 96; i++ {
-		if enc1[i] != enc2[i] {
-			t.Errorf("Encode stability failed at bit %d: first=%d, second=%d", i, enc1[i], enc2[i])
-		}
+	if enc1 != enc2 {
+		t.Errorf("Encode stability failed: first=%x, second=%x", enc1, enc2)
 	}
 }
 
 func TestMBCHeader_CRCFailure(t *testing.T) {
 	t.Parallel()
 
-	var infoBits [96]bit.Bit
+	var infoBits [12]byte
 	fecResult := pdu.DecodeMBCHeader(infoBits).FEC
 	if !fecResult.Uncorrectable {
 		t.Error("DecodeMBCHeader should return uncorrectable for invalid CRC")
@@ -219,11 +204,11 @@ func TestMBCHeader_CRCFailure(t *testing.T) {
 func TestMBCHeader_CRCBitFlip(t *testing.T) {
 	t.Parallel()
 
-	var data [64]bit.Bit
-	data[0] = 1
+	var data [8]byte
+	setRawBit(data[:], 0)
 	infoBits := buildMBCHeaderBits(true, true, 0b00111101, 0x00, data)
 
-	infoBits[20] ^= 1
+	infoBits[2] ^= 0x08
 
 	fecResult := pdu.DecodeMBCHeader(infoBits).FEC
 	if !fecResult.Uncorrectable {
@@ -243,7 +228,7 @@ func TestMBCHeader_DataType(t *testing.T) {
 func TestMBCHeader_String(t *testing.T) {
 	t.Parallel()
 
-	var data [64]bit.Bit
+	var data [8]byte
 	infoBits := buildMBCHeaderBits(true, false, 0b00111101, 0x00, data)
 	hdr := pdu.DecodeMBCHeader(infoBits)
 
@@ -256,10 +241,10 @@ func TestMBCHeader_String(t *testing.T) {
 func TestMBCContinuation_DecodeIntermediate(t *testing.T) {
 	t.Parallel()
 
-	var data [95]bit.Bit
-	data[0] = 1
-	data[50] = 1
-	data[94] = 1
+	var data [12]byte
+	setRawBit(data[:], 0)
+	setRawBit(data[:], 50)
+	setRawBit(data[:], 94)
 
 	infoBits := buildMBCContinuationBits(false, data)
 
@@ -285,9 +270,9 @@ func TestMBCContinuation_DecodeIntermediate(t *testing.T) {
 func TestMBCContinuation_DecodeLastBlock(t *testing.T) {
 	t.Parallel()
 
-	var data [95]bit.Bit
-	data[0] = 1
-	data[78] = 1
+	var data [12]byte
+	setRawBit(data[:], 0)
+	setRawBit(data[:], 78)
 
 	infoBits := buildMBCContinuationBits(true, data)
 
@@ -319,14 +304,14 @@ func TestMBCContinuation_EncodeDecodeRoundTrip(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var data [95]bit.Bit
+			var data [12]byte
 			for i := 0; i < 95; i += 2 {
-				data[i] = 1
+				setRawBit(data[:], i)
 			}
 
 			orig := pdu.MBCContinuation{
 				LastBlock: tt.lb,
-				Data:      [12]byte(bit.Pack(data[:])),
+				Data:      data,
 			}
 
 			encoded := must(orig.Encode())
@@ -356,10 +341,8 @@ func TestMBCContinuation_EncodeStability(t *testing.T) {
 	dec1 := pdu.DecodeMBCContinuation(enc1)
 	enc2 := must(dec1.Encode())
 
-	for i := 0; i < 96; i++ {
-		if enc1[i] != enc2[i] {
-			t.Errorf("Encode stability failed at bit %d: first=%d, second=%d", i, enc1[i], enc2[i])
-		}
+	if enc1 != enc2 {
+		t.Errorf("Encode stability failed: first=%x, second=%x", enc1, enc2)
 	}
 }
 
@@ -375,8 +358,8 @@ func TestMBCContinuation_DataType(t *testing.T) {
 func TestMBCContinuation_String(t *testing.T) {
 	t.Parallel()
 
-	var data [95]bit.Bit
-	data[0] = 1
+	var data [12]byte
+	setRawBit(data[:], 0)
 
 	infoBits := buildMBCContinuationBits(false, data)
 	cont := pdu.DecodeMBCContinuation(infoBits)
@@ -390,9 +373,9 @@ func TestMBCContinuation_String(t *testing.T) {
 func TestMBCContinuation_NoCRCCheck(t *testing.T) {
 	t.Parallel()
 
-	var infoBits [96]bit.Bit
+	var infoBits [12]byte
 	for i := 0; i < 96; i += 3 {
-		infoBits[i] = 1
+		setRawBit(infoBits[:], i)
 	}
 
 	cont := pdu.DecodeMBCContinuation(infoBits)

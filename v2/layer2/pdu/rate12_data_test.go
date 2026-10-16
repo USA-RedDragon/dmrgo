@@ -3,8 +3,9 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -12,21 +13,21 @@ func TestRate12Data_DecodeFromBits(t *testing.T) {
 	t.Parallel()
 
 	// Build 96 info bits representing known packed data
-	var infoBits [96]bit.Bit
+	var infoBits [12]byte
 
 	// Set byte 0 = 0xAB: 10101011
-	infoBits[0] = 1
-	infoBits[2] = 1
-	infoBits[4] = 1
-	infoBits[6] = 1
-	infoBits[7] = 1
+	bits.SetBit(infoBits[:], 0, 1)
+	bits.SetBit(infoBits[:], 2, 1)
+	bits.SetBit(infoBits[:], 4, 1)
+	bits.SetBit(infoBits[:], 6, 1)
+	bits.SetBit(infoBits[:], 7, 1)
 
 	// Set byte 1 = 0xCD: 11001101
-	infoBits[8] = 1
-	infoBits[9] = 1
-	infoBits[12] = 1
-	infoBits[13] = 1
-	infoBits[15] = 1
+	bits.SetBit(infoBits[:], 8, 1)
+	bits.SetBit(infoBits[:], 9, 1)
+	bits.SetBit(infoBits[:], 12, 1)
+	bits.SetBit(infoBits[:], 13, 1)
+	bits.SetBit(infoBits[:], 15, 1)
 
 	rt := pdu.DecodeRate12Data(infoBits)
 	if rt.Data[0] != 0xAB {
@@ -46,7 +47,7 @@ func TestRate12Data_DecodeFromBits(t *testing.T) {
 func TestRate12Data_DataType(t *testing.T) {
 	t.Parallel()
 
-	rt := pdu.DecodeRate12Data([96]bit.Bit{})
+	rt := pdu.DecodeRate12Data([12]byte{})
 	if rt.DataType() != enums.DataTypeRate12 {
 		t.Errorf("DataType() = %d, want DataTypeRate12", rt.DataType())
 	}
@@ -55,7 +56,7 @@ func TestRate12Data_DataType(t *testing.T) {
 func TestRate12Data_String(t *testing.T) {
 	t.Parallel()
 
-	rt := pdu.DecodeRate12Data([96]bit.Bit{})
+	rt := pdu.DecodeRate12Data([12]byte{})
 	s := rt.String()
 	if s == "" {
 		t.Error("String() should not be empty")
@@ -65,9 +66,9 @@ func TestRate12Data_String(t *testing.T) {
 func TestRate12Data_AllOnes(t *testing.T) {
 	t.Parallel()
 
-	var infoBits [96]bit.Bit
+	var infoBits [12]byte
 	for i := range infoBits {
-		infoBits[i] = 1
+		infoBits[i] = 0xFF
 	}
 	rt := pdu.DecodeRate12Data(infoBits)
 	for i := 0; i < 12; i++ {
@@ -128,9 +129,7 @@ func TestRate12Data_Confirmed_CRC9Layout(t *testing.T) {
 	var rt pdu.Rate12Data
 	rt.SetConfirmed(3, user)
 
-	bits := append(bit.Unpack(user[:]), make([]bit.Bit, 7)...)
-	bit.PutUint(bits[len(bits)-7:], 3)
-	want := (crc9Bits(bits) ^ 0x0F0) & 0x1FF
+	want := (crc.CRC9(append(user[:], 3<<1), len(user)*8+7) ^ 0x0F0) & 0x1FF
 	if got := rt.ConfirmedCRC9(); got != want {
 		t.Errorf("ConfirmedCRC9() = 0x%03X, want 0x%03X", got, want)
 	}

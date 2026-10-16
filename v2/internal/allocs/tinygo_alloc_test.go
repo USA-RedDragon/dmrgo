@@ -284,17 +284,17 @@ func tinyFramerOps(t *testing.T, r *rand.Rand) []tinyOp {
 
 func tinyPDUOps(t *testing.T, r *rand.Rand) []tinyOp {
 	t.Helper()
-	payload := func(dt enums.DataType) [96]bit.Bit {
+	payload := func(dt enums.DataType) [12]byte {
 		var p [12]byte
 		r.Read(p[:])
 		_ = pdu.Seal(&p, dt)
-		return bit.Unpack96(p)
+		return p
 	}
 	csbkBits := payload(enums.DataTypeCSBK)
 	lcBits := payload(enums.DataTypeVoiceLCHeader)
 	dhBits := payload(enums.DataTypeDataHeader)
 	mbcBits := payload(enums.DataTypeMBCHeader)
-	var slcBits [36]bit.Bit
+	var slcBits [5]byte
 	var (
 		csbk   pdu.CSBK
 		csbkP  pdu.CSBKPayloads
@@ -311,9 +311,9 @@ func tinyPDUOps(t *testing.T, r *rand.Rand) []tinyOp {
 		usbd   = pdu.DecodeUnifiedSingleBlockData(payload(enums.DataTypeUnifiedSingleBlock))
 		st     = pdu.SlotType{ColorCode: 1, DataType: enums.DataTypeCSBK}
 		emb    = pdu.EmbeddedSignalling{ColorCode: 1}
-		enc96  [96]bit.Bit
-		stBits [20]bit.Bit
-		eBits  [16]bit.Bit
+		enc96  [12]byte
+		stBits [3]byte
+		eBits  [2]byte
 	)
 	_ = err
 	pdu.DecodeCSBKInto(&csbk, &csbkP, csbkBits)

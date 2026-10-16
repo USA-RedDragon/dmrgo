@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -413,8 +412,8 @@ func TestAssembler_Bursts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pack := func(bits [96]bit.Bit, dt enums.DataType) *layer2.Burst {
-		raw, err := layer2.BuildDataBurst([12]byte(bit.Pack(bits[:])), dt, 1, layer2.SyncSourceBS)
+	pack := func(info [12]byte, dt enums.DataType) *layer2.Burst {
+		raw, err := layer2.BuildDataBurst(info, dt, 1, layer2.SyncSourceBS)
 		if err != nil {
 			t.Fatal(err)
 		}

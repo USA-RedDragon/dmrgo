@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -37,10 +36,7 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 
 			lc := groupLC(enums.FIDStandardized)
 			lc.BurstDataType = dt
-			lcBits := must(lc.Encode())
-			var lcBytes [12]byte
-			copy(lcBytes[:], bit.Pack(lcBits[:]))
-			frame := must(lcBurst(lcBytes, dt, 1))
+			frame := must(lcBurst(must(lc.Encode()), dt, 1))
 
 			b := must(layer2.NewBurstFromBytes(frame))
 			flc, ok := b.Data.(*pdu.FullLinkControl)
@@ -180,17 +176,17 @@ var _ = []layer2.Data{
 	(*pdu.Rate1Data)(nil), (*pdu.PRFill)(nil),
 }
 
-type customData struct{ bits [96]bit.Bit }
+type customData struct{ info [12]byte }
 
-func (c *customData) String() string               { return "custom" }
-func (c *customData) DataType() enums.DataType     { return enums.DataTypeRate12 }
-func (c *customData) Encode() ([96]bit.Bit, error) { return c.bits, nil }
+func (c *customData) String() string            { return "custom" }
+func (c *customData) DataType() enums.DataType  { return enums.DataTypeRate12 }
+func (c *customData) Encode() ([12]byte, error) { return c.info, nil }
 
 type customRate34 struct{}
 
-func (customRate34) String() string                { return "custom 3/4" }
-func (customRate34) DataType() enums.DataType      { return enums.DataTypeRate12 }
-func (customRate34) Encode() ([144]bit.Bit, error) { return [144]bit.Bit{}, nil }
+func (customRate34) String() string            { return "custom 3/4" }
+func (customRate34) DataType() enums.DataType  { return enums.DataTypeRate12 }
+func (customRate34) Encode() ([18]byte, error) { return [18]byte{}, nil }
 
 type customNoEncode struct{}
 
@@ -203,7 +199,7 @@ func TestBurstEncode_CustomData(t *testing.T) {
 	t.Parallel()
 
 	want := [12]byte{0xDE, 0xAD, 0xBE, 0xEF}
-	b := dataBurst(enums.DataTypeRate12, &customData{bits: bit.Unpack96(want)})
+	b := dataBurst(enums.DataTypeRate12, &customData{info: want})
 	got := reencode(t, &b)
 	if r, ok := got.Data.(*pdu.Rate12Data); !ok || r.Data != want {
 		t.Errorf("custom Rate 1/2 Data decoded as %+v, want %x", got.Data, want)
@@ -229,15 +225,9 @@ func TestBurstEncode_IdleKeepsDecodedPayload(t *testing.T) {
 	}
 	fresh := layer2.Burst{Kind: layer2.KindData, SyncPattern: b.SyncPattern, SlotType: b.SlotType, Data: &pdu.PRFill{}}
 	raw := must(fresh.Encode())
-	if p, _ := raw.BPTCPayload(); !pdu.IsPRFill(bitsOf(p)) {
+	if p, _ := raw.BPTCPayload(); !pdu.IsPRFill(p) {
 		t.Errorf("new PR FILL encoded %x, want Table D.2", p)
 	}
-}
-
-func bitsOf(p [12]byte) [96]bit.Bit {
-	var bits [96]bit.Bit
-	copy(bits[:], bit.Unpack(p[:]))
-	return bits
 }
 
 func TestBurstEncode_DataErrors(t *testing.T) {

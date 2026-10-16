@@ -1,7 +1,5 @@
 package layer3
 
-import "github.com/USA-RedDragon/dmrgo/v2/bit"
-
 // ServiceOptions is the Service Options information element (ETSI TS 102 361-2
 // clause 7.2.1).
 type ServiceOptions struct {
@@ -24,9 +22,7 @@ func MotorolaServiceOptions() ServiceOptions {
 // ServiceOptionsFromByte decodes the Service Options octet b, as
 // LCBytes.ServiceOptions returns it.
 func ServiceOptionsFromByte(b byte) ServiceOptions {
-	var bits [8]bit.Bit
-	bit.PutUint(bits[:], uint64(b))
-	return DecodeServiceOptions(bits)
+	return DecodeServiceOptions([1]byte{b})
 }
 
 // Byte returns s as the Service Options octet, with the low 2 bits of

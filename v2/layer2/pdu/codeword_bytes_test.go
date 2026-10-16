@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -139,14 +138,13 @@ func TestLCBytesCodeword_RealCapture(t *testing.T) {
 		if got := hex.EncodeToString(cw[:]); got != tt.want {
 			t.Errorf("dt %d: got %s, want %s", tt.dt, got, tt.want)
 		}
-		bits := hexBits96(t, tt.want)
-		flc := pdu.DecodeFullLinkControl(bits, tt.dt)
+		flc := pdu.DecodeFullLinkControl(hex12(t, tt.want), tt.dt)
 		res := flc.FEC
 		if res.HasErrors() {
 			t.Errorf("dt %d: generated decoder reports %+v", tt.dt, res)
 		}
 		enc := must(flc.Encode())
-		if hex.EncodeToString(bit.Pack(enc[:])) != tt.want {
+		if hex.EncodeToString(enc[:]) != tt.want {
 			t.Errorf("dt %d: generated encoder disagrees", tt.dt)
 		}
 		other := enums.DataTypeVoiceLCHeader
@@ -159,7 +157,7 @@ func TestLCBytesCodeword_RealCapture(t *testing.T) {
 	}
 }
 
-func TestFullLinkControlCodeword(t *testing.T) {
+func TestFullLinkControlEncode(t *testing.T) {
 	t.Parallel()
 
 	lc := hex9(t, "03000000270630b43c")
@@ -169,9 +167,9 @@ func TestFullLinkControlCodeword(t *testing.T) {
 		enums.DataTypeTerminatorWithLC: "03000000270630b43c52c0ce",
 	} {
 		f.BurstDataType = dt
-		cw := must(f.Codeword())
+		cw := must(f.Encode())
 		if got := hex.EncodeToString(cw[:]); got != want {
-			t.Errorf("dt %s: FullLinkControl.Codeword %s, want %s", dt, got, want)
+			t.Errorf("dt %s: FullLinkControl.Encode %s, want %s", dt, got, want)
 		}
 		p := must(pdu.LCBytes(lc).Codeword(dt))
 		p[9], p[10], p[11] = 0, 0, 0
@@ -180,13 +178,13 @@ func TestFullLinkControlCodeword(t *testing.T) {
 		}
 	}
 	f.BurstDataType = enums.DataTypeCSBK
-	if _, err := f.Codeword(); err == nil {
-		t.Error("FullLinkControl.Codeword accepts a CSBK data type")
+	if _, err := f.Encode(); err == nil {
+		t.Error("FullLinkControl.Encode accepts a CSBK data type")
 	}
 	f.BurstDataType = enums.DataTypeVoiceLCHeader
 	f.FLCO = 64
-	if _, err := f.Codeword(); err == nil {
-		t.Error("FullLinkControl.Codeword accepts FLCO 64")
+	if _, err := f.Encode(); err == nil {
+		t.Error("FullLinkControl.Encode accepts FLCO 64")
 	}
 }
 
@@ -237,7 +235,7 @@ func TestSeal_MatchesGeneratedEncoders(t *testing.T) {
 	usbd := must((&pdu.UnifiedSingleBlockData{}).Encode())
 	tests := []struct {
 		dt   enums.DataType
-		bits [96]bit.Bit
+		bits [12]byte
 	}{
 		{enums.DataTypeCSBK, csbk},
 		{enums.DataTypeMBCHeader, mbc},
@@ -245,8 +243,7 @@ func TestSeal_MatchesGeneratedEncoders(t *testing.T) {
 		{enums.DataTypeUnifiedSingleBlock, usbd},
 	}
 	for _, tt := range tests {
-		var b [12]byte
-		copy(b[:], bit.Pack(tt.bits[:]))
+		b := tt.bits
 		if !pdu.BlockCRCOK(b, tt.dt) {
 			t.Errorf("dt %d: BlockCRCOK rejects generated block %x", tt.dt, b)
 		}

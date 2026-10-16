@@ -580,7 +580,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestPRFill_Length
-              - TestPRFill_BitsAreOnlyZeroOrOne
               - TestPRFill_PackedHex
               - TestPRFill_IsPRFill_Match
               - TestPRFill_IsPRFill_NoMatch
@@ -1140,7 +1139,7 @@ documents:
               - TestCRCMask_TableB21
               - TestLCBytesCodeword_MatchesTableB18
               - TestLCBytesCodeword_RealCapture
-              - TestFullLinkControlCodeword
+              - TestFullLinkControlEncode
               - TestLCBytesCodeword_RejectsOtherDataTypes
               - TestDecodeFullLCCodeword_CorrectsAndStrictRejects
               - TestSeal_MatchesGeneratedEncoders

@@ -128,16 +128,15 @@ func (a *ShortLCAssembler) AddInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads, c C
 	return err == nil, err
 }
 
-// decode returns the 36 Short LC bits of the 4 fragments and the BPTC
-// result, and resets the assembler.
-func (a *ShortLCAssembler) decode() ([36]bit.Bit, fec.Result) {
+// decode returns the 36 Short LC bits of the 4 fragments, packed, and the
+// BPTC result, and resets the assembler.
+func (a *ShortLCAssembler) decode() ([5]byte, fec.Result) {
 	defer a.Reset()
 	var fragments [4]uint32
 	for i := range fragments {
 		fragments[i] = uint32(bit.Uint(a.fragments[i][:]) & 0x1FFFF)
 	}
 	info, res := bptc.DecodeCACH(fragments)
-	var bits [36]bit.Bit
-	bit.PutUint(bits[:], info)
-	return bits, res
+	v := info << 4
+	return [5]byte{byte(v >> 32 & 0xFF), byte(v >> 24 & 0xFF), byte(v >> 16 & 0xFF), byte(v >> 8 & 0xFF), byte(v & 0xF0)}, res
 }

@@ -4,21 +4,21 @@ import (
 	"math"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 func TestCdefParms_NewFromBits(t *testing.T) {
 	t.Parallel()
 
-	var bits [58]bit.Bit
+	var data [8]byte
 
-	setBitsFromUint16(bits[:], 0, 12, 291)
-	setBitsFromUint16(bits[:], 12, 10, 440)
-	setBitsFromUint16(bits[:], 22, 13, 4000)
-	setBitsFromUint16(bits[:], 35, 10, 445)
+	bits.SetField(data[:], 0, 12, 291)
+	bits.SetField(data[:], 12, 10, 440)
+	bits.SetField(data[:], 22, 13, 4000)
+	bits.SetField(data[:], 35, 10, 445)
 
-	parmsValue := layer3.DecodeCdefParms(bits)
+	parmsValue := layer3.DecodeCdefParms(data)
 	parms := &parmsValue
 
 	if parms.Channel != 291 {
@@ -86,8 +86,8 @@ func TestCdefParms_String(t *testing.T) {
 func TestCdefParms_ZeroValues(t *testing.T) {
 	t.Parallel()
 
-	var bits [58]bit.Bit
-	parmsValue := layer3.DecodeCdefParms(bits)
+	var data [8]byte
+	parmsValue := layer3.DecodeCdefParms(data)
 	parms := &parmsValue
 
 	if parms.Channel != 0 {
@@ -98,16 +98,5 @@ func TestCdefParms_ZeroValues(t *testing.T) {
 	}
 	if parms.RXFrequencyMHz() != 0 {
 		t.Errorf("RXFrequencyMHz() = %f, want 0", parms.RXFrequencyMHz())
-	}
-}
-
-// setBitsFromUint16 writes a value into a bit slice at the given offset and width.
-func setBitsFromUint16(bits []bit.Bit, offset, width int, val uint16) {
-	for i := 0; i < width; i++ {
-		if (val>>(width-1-i))&1 == 1 {
-			bits[offset+i] = 1
-		} else {
-			bits[offset+i] = 0
-		}
 	}
 }

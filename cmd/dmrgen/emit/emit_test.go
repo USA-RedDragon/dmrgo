@@ -303,14 +303,14 @@ type T struct {
 	Kid  Sub    `+"`dmr:\"bits:52-59,delegate\"`"+`
 }`)
 	assertContains(t, out,
-		"func (s *T) Encode() ([60]bit.Bit, error) {",
+		"func (s *T) Encode() ([8]byte, error) {",
 		"if uint64(s.Part)>>12 != 0 {",
 		`return [8]byte{}, errTPartRange`,
 		"errTPartRange = &bit.FieldRangeError{\n\t\tBits:  12,\n\t\tField: \"Part\",\n\t\tType:  \"T\",\n\t}",
 		"errTOffRange = &bit.FieldRangeError{\n\t\tBits:   8,\n\t\tField:  \"Off\",\n\t\tSigned: true,\n\t\tType:   \"T\",\n\t}",
 		"if uint64(s.Addr)>>24 != 0 {",
 		"if int64(s.Off) < -128 || int64(s.Off) > 127 {",
-		"_kidBytes, err := s.Kid.encodeBytes()",
+		"_kidBytes, err := s.Kid.Encode()",
 		"if err != nil {\n\t\treturn [8]byte{}, err\n\t}",
 		"return data, nil",
 	)
@@ -355,9 +355,8 @@ type T struct {
 	B    *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`"+`
 }`)
 	assertContains(t, out,
-		"func DecodeT(data [16]bit.Bit, mode bool) T {",
-		"return newTBytes(_b, mode)",
-		"_decoded := decodeSubBytes(_dispatchBytes)",
+		"func DecodeT(data [2]byte, mode bool) T {",
+		"_decoded := DecodeSub(_dispatchBytes)",
 		"result.Mode = mode",
 		"if !result.Mode {",
 		"} else if result.Mode {",
@@ -384,11 +383,11 @@ type P struct {
 	A uint8 `+"`dmr:\"bits:0-7\"`"+`
 }`)
 	assertContains(t, out,
-		"func DecodeG(data [20]bit.Bit) G {",
+		"func DecodeG(data [3]byte) G {",
 		"_cw, result.FEC = golay.Decode2087(uint32((uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2])) >> 4))",
-		"func DecodeC(data [16]bit.Bit) C {",
+		"func DecodeC(data [2]byte) C {",
 		"result.FEC.Uncorrectable = !crc.CheckCRC8(data[:], 8, uint8(uint64(data[1])))",
-		"func DecodeP(data [8]bit.Bit) P {",
+		"func DecodeP(data [1]byte) P {",
 	)
 	if strings.Contains(out, "fecResult") {
 		t.Errorf("generated code has a separate FEC result:\n%s", out)
@@ -435,7 +434,7 @@ type Top struct {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertContains(t, out, "func decodeSubBytes(", "func decodeMarkedBytes(", "func DecodeTop(", "= decodeSubBytes(")
+	assertContains(t, out, "func decodeSub(", "func decodeMarked(", "func DecodeTop(", "= decodeSub(")
 	if strings.Contains(out, "func DecodeSub(") || strings.Contains(out, "func DecodeMarked(") {
 		t.Errorf("sub-PDU Decode is exported\n%s", out)
 	}
@@ -457,8 +456,8 @@ type EmbeddedSignalling struct {
 		t.Errorf("header is not a Go generated-code line:\n%s", out)
 	}
 	assertContains(t, out,
-		"// DecodeUDTHeader decodes a UDTHeader (ETSI TS 102 361-1 Table 9.17D).\n",
-		"// Encode encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).\n",
+		"// DecodeUDTHeader decodes a UDTHeader (ETSI TS 102 361-1 Table 9.17D).",
+		"// Encode encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).",
 		"// ETSI TS 102 361-1 clause 9.1.2\n",
 	)
 }
@@ -483,16 +482,14 @@ type T struct {
 }`)
 	assertContains(t, out,
 		"// TPayloads holds one payload struct of each type that\n// a T dispatch field points to, for DecodeTInto.\n// The zero value is ready to use.\ntype TPayloads struct {\n\tsub   Sub\n\tbspdu BSPDU\n}",
-		"func DecodeTInto(dst *T, p *TPayloads, data [16]bit.Bit, mode bool) {",
-		"decodeTBytesInto(dst, p, _b, mode)",
-		"func decodeTBytesInto(dst *T, p *TPayloads, data [2]byte, mode bool) {\n\t*dst = T{}\n\tresult := dst\n\tresult.Mode = mode\n",
-		"p.sub = decodeSubBytes(_dispatchBytes)\n\t\t\tresult.A = &p.sub",
-		"p.sub = decodeSubBytes(_dispatchBytes)\n\t\t\tresult.B = &p.sub",
-		"p.bspdu = decodeBSPDUBytes(_dispatchBytes)\n\t\tresult.C = &p.bspdu",
-		"func newTBytes(data [2]byte, mode bool) T {",
-		"_decoded := decodeSubBytes(_dispatchBytes)\n\t\t\tresult.A = &_decoded",
+		"func DecodeTInto(dst *T, p *TPayloads, data [2]byte, mode bool) {\n\t*dst = T{}\n\tresult := dst\n\tresult.Mode = mode\n",
+		"p.sub = DecodeSub(_dispatchBytes)\n\t\t\tresult.A = &p.sub",
+		"p.sub = DecodeSub(_dispatchBytes)\n\t\t\tresult.B = &p.sub",
+		"p.bspdu = DecodeBSPDU(_dispatchBytes)\n\t\tresult.C = &p.bspdu",
+		"func DecodeT(data [2]byte, mode bool) T {",
+		"_decoded := DecodeSub(_dispatchBytes)\n\t\t\tresult.A = &_decoded",
 	)
-	_, into, _ := strings.Cut(out, "func decodeTBytesInto(")
+	_, into, _ := strings.Cut(out, "func DecodeTInto(")
 	into, _, _ = strings.Cut(into, "\n}\n")
 	if strings.Contains(into, "return") || strings.Contains(into, "_decoded") {
 		t.Errorf("DecodeTInto returns or allocates a payload:\n%s", into)
@@ -524,8 +521,8 @@ type T struct {
 	A  *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1\"`"+`
 }`)
 	assertContains(t, out,
-		"func DecodeT(data [16]bit.Bit, _p bool) T {",
-		"func DecodeTInto(dst *T, p *TPayloads, data [16]bit.Bit, _p bool) {",
+		"func DecodeT(data [2]byte, _p bool) T {",
+		"func DecodeTInto(dst *T, p *TPayloads, data [2]byte, _p bool) {",
 		"result.P = _p",
 	)
 }

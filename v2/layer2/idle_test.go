@@ -60,7 +60,8 @@ func TestIdleMessageInfo_BitsAreOnlyZeroOrOne(t *testing.T) {
 func TestIdleMessageInfo_EqualsPRFill(t *testing.T) {
 	t.Parallel()
 
-	if layer2.IdleMessageInfo() != pdu.PRFillBits() {
+	info := layer2.IdleMessageInfo()
+	if [12]byte(bit.Pack(info[:])) != pdu.PRFillBits() {
 		t.Error("IdleMessageInfo() should equal pdu.PRFillBits()")
 	}
 }
@@ -71,10 +72,10 @@ func TestIdleMessageInfo_ReturnsCopy(t *testing.T) {
 	info := layer2.IdleMessageInfo()
 	info[0] ^= 1
 	idle := layer2.IdleMessageInfo()
-	if !layer2.IsIdleMessage(idle) || !pdu.IsPRFill(idle) {
+	if !layer2.IsIdleMessage(idle) || !pdu.IsPRFill([12]byte(bit.Pack(idle[:]))) {
 		t.Fatal("changing the returned bits changed the idle message constant")
 	}
-	if layer2.IsIdleMessage(info) || pdu.IsPRFill(info) {
+	if layer2.IsIdleMessage(info) || pdu.IsPRFill([12]byte(bit.Pack(info[:]))) {
 		t.Fatal("IsIdleMessage and IsPRFill should reject the changed bits")
 	}
 }

@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"slices"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -113,12 +112,12 @@ func utf16Text(p []byte) string {
 // unconfirmed rate 1/2 packet and reassembles it from the coded bursts.
 func unconfirmed(w io.Writer) error {
 	udp := pdu.UDPIPv4CompressedHeader{IPv4Identification: 0x1234, SPID: enums.SPIDTextMessage, DPID: enums.DPIDTextMessage}
-	udpBits, err := udp.Encode()
+	udpHeader, err := udp.Encode()
 	if err != nil {
 		return err
 	}
 	text := "Hello from dmrgo, unconfirmed SMS test"
-	payload := append(bit.Pack(udpBits[:]), text...)
+	payload := append(udpHeader[:], text...)
 
 	h := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: dst, LLIDSource: src, FullMessageFlag: true}}
@@ -138,7 +137,7 @@ func unconfirmed(w io.Writer) error {
 	if !bytes.Equal(m.Data, payload) {
 		return fmt.Errorf("payload %x, want %x", m.Data, payload)
 	}
-	got := pdu.DecodeUDPIPv4CompressedHeader([72]bit.Bit(bit.Unpack(m.Data[:9])))
+	got := pdu.DecodeUDPIPv4CompressedHeader([9]byte(m.Data[:9]))
 	u := m.Header.UnconfirmedDataHeader
 	fmt.Fprintf(w, "unconfirmed: %d bursts, BF=%d POC=%d, port %d, text %q: ok\n",
 		len(bursts), u.BlocksToFollow, u.PadOctetCount, enums.DPIDToPort(got.DPID), m.Data[9:])

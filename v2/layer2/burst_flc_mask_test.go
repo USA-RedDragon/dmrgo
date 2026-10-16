@@ -9,12 +9,13 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func burstInfoBits(raw [33]byte) [96]bit.Bit {
+func burstInfoBits(raw [33]byte) [12]byte {
 	all := [264]bit.Bit(bit.Unpack(raw[:]))
 	var dataBits [196]bit.Bit
 	copy(dataBits[:98], all[:98])
 	copy(dataBits[98:], all[166:])
-	return decode196Bits(dataBits)
+	info := decode196Bits(dataBits)
+	return [12]byte(bit.Pack(info[:]))
 }
 
 // Real Voice LC Headers and Terminators carry the Data Type CRC Mask in their
@@ -49,7 +50,7 @@ func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 			info := burstInfoBits(raw)
 			if got := must(flc.Encode()); got != info {
 				t.Errorf("%s burst %d (%s): re-encoded LC %x, captured %x",
-					file, i, dt.String(), bit.Pack(got[:]), bit.Pack(info[:]))
+					file, i, dt.String(), got, info)
 			}
 		}
 	}

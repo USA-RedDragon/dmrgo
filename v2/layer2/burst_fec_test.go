@@ -3,7 +3,6 @@ package layer2_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -17,10 +16,7 @@ func lcHeaderFrame(t *testing.T) [33]byte {
 		FLCO:          enums.FLCOGroupVoiceChannelUser,
 		GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101},
 	}
-	var lcBytes [12]byte
-	lcBits := must(lc.Encode())
-	copy(lcBytes[:], bit.Pack(lcBits[:]))
-	return must(lcBurst(lcBytes, enums.DataTypeVoiceLCHeader, 1))
+	return must(lcBurst(must(lc.Encode()), enums.DataTypeVoiceLCHeader, 1))
 }
 
 func TestBurstFEC_LCHeaderCountsPayloadBitsOnce(t *testing.T) {
@@ -46,10 +42,7 @@ func TestBurstFEC_CSBKCountsNoCRCBits(t *testing.T) {
 	t.Parallel()
 
 	csbk := pdu.CSBK{Opcode: 0x3F}
-	var lcBytes [12]byte
-	csbkBits := must(csbk.Encode())
-	copy(lcBytes[:], bit.Pack(csbkBits[:]))
-	frame := must(lcBurst(lcBytes, enums.DataTypeCSBK, 1))
+	frame := must(lcBurst(must(csbk.Encode()), enums.DataTypeCSBK, 1))
 
 	b := must(layer2.NewBurstFromBytes(frame))
 	want := fec.Result{BitsChecked: 20 + 196}

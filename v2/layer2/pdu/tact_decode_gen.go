@@ -11,9 +11,10 @@ import (
 	hamming "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 )
 
-// decodeTACTBytes decodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
-// data holds its bits packed, the first bit most significant.
-func decodeTACTBytes(data [1]byte) TACT {
+// DecodeTACT decodes a TACT (ETSI TS 102 361-1 clause 9.1.4). data holds the
+// 7 bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. The least significant bit of data[0] is ignored.
+func DecodeTACT(data [1]byte) TACT {
 	var result TACT
 	var _cw uint8
 	_cw, result.FEC = hamming.Decode743(uint8(uint64(data[0]) >> 1))
@@ -26,18 +27,10 @@ func decodeTACTBytes(data [1]byte) TACT {
 	return result
 }
 
-// DecodeTACT decodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
-func DecodeTACT(data [7]bit.Bit) TACT {
-	var _b [1]byte
-	for _i := range 7 {
-		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
-	}
-	return decodeTACTBytes(_b)
-}
-
-// encodeBytes encodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
-// It returns the bits of Encode packed, the first bit most significant.
-func (s *TACT) encodeBytes() ([1]byte, error) {
+// Encode encodes a TACT (ETSI TS 102 361-1 clause 9.1.4). It returns the 7
+// bits packed, the first bit in the most significant bit of byte 0. The
+// least significant bit of byte 0 is 0.
+func (s *TACT) Encode() ([1]byte, error) {
 	var data [1]byte
 	if s.AccessType {
 		data[0] |= 0x80
@@ -51,19 +44,6 @@ func (s *TACT) encodeBytes() ([1]byte, error) {
 	data[0] = data[0]&^0x30 | byte(uint64(s.LCSS)<<4)&0x30
 	_cw := hamming.Encode743(uint8(uint64(data[0]) >> 4))
 	data[0] = data[0]&^0xFE | byte(uint64(_cw)<<1)&0xFE
-	return data, nil
-}
-
-// Encode encodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
-func (s *TACT) Encode() ([7]bit.Bit, error) {
-	_b, err := s.encodeBytes()
-	if err != nil {
-		return [7]bit.Bit{}, err
-	}
-	var data [7]bit.Bit
-	for _i := range 7 {
-		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
-	}
 	return data, nil
 }
 

@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -36,15 +36,15 @@ func TestFLCGPSInfo_CoordinatesRoundTrip(t *testing.T) {
 			t.Parallel()
 
 			in := pdu.FLCGPSInfo{Longitude: tt.lon, Latitude: tt.lat}
-			bits := must(in.Encode())
-			out := pdu.DecodeFLCGPSInfo(bits)
+			enc := must(in.Encode())
+			out := pdu.DecodeFLCGPSInfo(enc)
 			if math.Abs(out.Longitude-tt.lon) > lonStep/2 {
 				t.Errorf("Longitude = %v, want %v", out.Longitude, tt.lon)
 			}
 			if math.Abs(out.Latitude-tt.lat) > latStep/2 {
 				t.Errorf("Latitude = %v, want %v", out.Latitude, tt.lat)
 			}
-			if again := must(out.Encode()); again != bits {
+			if again := must(out.Encode()); again != enc {
 				t.Error("re-encoding the decoded value changed the bits")
 			}
 		})
@@ -54,14 +54,12 @@ func TestFLCGPSInfo_CoordinatesRoundTrip(t *testing.T) {
 func TestFLCGPSInfo_DecodeTwosComplement(t *testing.T) {
 	t.Parallel()
 
-	var bits [56]bit.Bit
+	var data [7]byte
 	// Longitude bits 7-31: 1 followed by zeros = -2^24 steps = -180 degrees.
-	bits[7] = 1
+	bits.SetBit(data[:], 7, 1)
 	// Latitude bits 32-55: all ones = -1 step.
-	for i := 32; i < 56; i++ {
-		bits[i] = 1
-	}
-	out := pdu.DecodeFLCGPSInfo(bits)
+	bits.SetField(data[:], 32, 24, 1<<24-1)
+	out := pdu.DecodeFLCGPSInfo(data)
 	if out.Longitude != -180 {
 		t.Errorf("Longitude = %v, want -180", out.Longitude)
 	}
@@ -74,18 +72,18 @@ func TestFLCGPSInfo_EncodeTwosComplement(t *testing.T) {
 	t.Parallel()
 
 	in := pdu.FLCGPSInfo{Longitude: -lonStep, Latitude: -90}
-	bits := must(in.Encode())
+	enc := must(in.Encode())
 	for i := 7; i < 32; i++ {
-		if bits[i] != 1 {
-			t.Fatalf("longitude bit %d = %d, want all ones for -1 step", i, bits[i])
+		if b := bits.Bit(enc[:], i); b != 1 {
+			t.Fatalf("longitude bit %d = %d, want all ones for -1 step", i, b)
 		}
 	}
-	if bits[32] != 1 {
+	if bits.Bit(enc[:], 32) != 1 {
 		t.Error("latitude MSB should be set for -90")
 	}
 	for i := 33; i < 56; i++ {
-		if bits[i] != 0 {
-			t.Fatalf("latitude bit %d = %d, want 0 for -90", i, bits[i])
+		if b := bits.Bit(enc[:], i); b != 0 {
+			t.Fatalf("latitude bit %d = %d, want 0 for -90", i, b)
 		}
 	}
 }

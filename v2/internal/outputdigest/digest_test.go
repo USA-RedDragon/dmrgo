@@ -18,6 +18,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -47,6 +48,21 @@ func randBits(r *rand.Rand, dst []bit.Bit) {
 	}
 }
 
+// pack returns b packed, the first bit in the most significant bit of byte 0.
+func pack(b []bit.Bit) []byte {
+	p := make([]byte, (len(b)+7)/8)
+	bits.Pack(p, 0, b)
+	return p
+}
+
+// unpack returns the first n bits of p, one bit.Bit per bit, the form that
+// the digests print.
+func unpack(p []byte, n int) []bit.Bit {
+	b := make([]bit.Bit, n)
+	bits.Unpack(b, p, 0)
+	return b
+}
+
 // corrupt flips up to max random bits of b.
 func corrupt(r *rand.Rand, b []byte, maxFlips int) {
 	for range r.Intn(maxFlips + 1) {
@@ -66,35 +82,35 @@ func dataString(d layer2.Data) string {
 	if d == nil {
 		return "<nil>"
 	}
-	bits, err := encodeBits(d)
-	return fmt.Sprintf("%T %s enc=%x err=%s", d, d.String(), bit.Pack(bits), errString(err))
+	enc, err := encodeData(d)
+	return fmt.Sprintf("%T %s enc=%x err=%s", d, d.String(), enc, errString(err))
 }
 
-// encodeBits returns the bits of the Encode method of d as a slice, or nil
-// and the error of Encode.
-func encodeBits(d layer2.Data) ([]bit.Bit, error) {
-	var bits []bit.Bit
+// encodeData returns the packed bits of the Encode method of d as a slice,
+// or nil and the error of Encode.
+func encodeData(d layer2.Data) ([]byte, error) {
+	var enc []byte
 	var err error
 	switch e := d.(type) {
-	case interface{ Encode() ([96]bit.Bit, error) }:
-		var a [96]bit.Bit
+	case interface{ Encode() ([12]byte, error) }:
+		var a [12]byte
 		a, err = e.Encode()
-		bits = a[:]
-	case interface{ Encode() ([144]bit.Bit, error) }:
-		var a [144]bit.Bit
+		enc = a[:]
+	case interface{ Encode() ([18]byte, error) }:
+		var a [18]byte
 		a, err = e.Encode()
-		bits = a[:]
-	case interface{ Encode() ([192]bit.Bit, error) }:
-		var a [192]bit.Bit
+		enc = a[:]
+	case interface{ Encode() ([24]byte, error) }:
+		var a [24]byte
 		a, err = e.Encode()
-		bits = a[:]
+		enc = a[:]
 	default:
 		return nil, fmt.Errorf("%T has no Encode method", d)
 	}
 	if err != nil {
 		return nil, err
 	}
-	return bits, nil
+	return enc, nil
 }
 
 func burstString(b *layer2.Burst) string {
@@ -268,93 +284,90 @@ func collectPDU(d digests) {
 	for n := range 4000 {
 		var b96 [96]bit.Bit
 		randBits(r, b96[:])
+		p96 := [12]byte(pack(b96[:]))
 		if n%2 == 0 {
-			p := bit.Pack96(b96)
-			_ = pdu.Seal(&p, enums.DataTypeCSBK)
-			b96 = bit.Unpack96(p)
+			_ = pdu.Seal(&p96, enums.DataTypeCSBK)
 		}
-		c := pdu.DecodeCSBK(b96)
+		c := pdu.DecodeCSBK(p96)
 		enc, err := c.Encode()
-		d.add("pdu/csbk", "%v %s %v %s %+v", b96, c.String(), enc, errString(err), c.FEC)
+		d.add("pdu/csbk", "%v %s %v %s %+v", unpack(p96[:], 96), c.String(), unpack(enc[:], 96), errString(err), c.FEC)
 		for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
-			x := b96
+			x := p96
 			if n%2 == 0 {
-				p := bit.Pack96(x)
-				_ = pdu.Seal(&p, dt)
-				x = bit.Unpack96(p)
+				_ = pdu.Seal(&x, dt)
 			}
 			lc := pdu.DecodeFullLinkControl(x, dt)
 			enc, err := lc.Encode()
-			d.add("pdu/flc", "%v %s %v %s %+v", x, lc.String(), enc, errString(err), lc.FEC)
+			d.add("pdu/flc", "%v %s %v %s %+v", unpack(x[:], 96), lc.String(), unpack(enc[:], 96), errString(err), lc.FEC)
 		}
-		pi := pdu.DecodePIHeader(b96)
+		pi := pdu.DecodePIHeader(p96)
 		enc, err = pi.Encode()
-		d.add("pdu/pi", "%v %s %v %s", b96, pi.String(), enc, errString(err))
-		dh := pdu.DecodeDataHeader(b96)
+		d.add("pdu/pi", "%v %s %v %s", unpack(p96[:], 96), pi.String(), unpack(enc[:], 96), errString(err))
+		dh := pdu.DecodeDataHeader(p96)
 		enc, err = dh.Encode()
-		d.add("pdu/dh", "%v %s %v %s %+v", b96, dh.String(), enc, errString(err), dh.FEC)
-		mh := pdu.DecodeMBCHeader(b96)
+		d.add("pdu/dh", "%v %s %v %s %+v", unpack(p96[:], 96), dh.String(), unpack(enc[:], 96), errString(err), dh.FEC)
+		mh := pdu.DecodeMBCHeader(p96)
 		enc, err = mh.Encode()
-		d.add("pdu/mbch", "%v %s %v %s %+v", b96, mh.String(), enc, errString(err), mh.FEC)
-		mc := pdu.DecodeMBCContinuation(b96)
+		d.add("pdu/mbch", "%v %s %v %s %+v", unpack(p96[:], 96), mh.String(), unpack(enc[:], 96), errString(err), mh.FEC)
+		mc := pdu.DecodeMBCContinuation(p96)
 		enc, err = mc.Encode()
-		d.add("pdu/mbcc", "%v %s %v %s", b96, mc.String(), enc, errString(err))
-		u := pdu.DecodeUnifiedSingleBlockData(b96)
+		d.add("pdu/mbcc", "%v %s %v %s", unpack(p96[:], 96), mc.String(), unpack(enc[:], 96), errString(err))
+		u := pdu.DecodeUnifiedSingleBlockData(p96)
 		enc, err = u.Encode()
-		d.add("pdu/usbd", "%v %s %v %s %+v", b96, u.String(), enc, errString(err), u.FEC)
-		r12 := pdu.DecodeRate12Data(b96)
+		d.add("pdu/usbd", "%v %s %v %s %+v", unpack(p96[:], 96), u.String(), unpack(enc[:], 96), errString(err), u.FEC)
+		r12 := pdu.DecodeRate12Data(p96)
 		enc, err = r12.Encode()
-		d.add("pdu/r12", "%v %s %v %s", b96, r12.String(), enc, errString(err))
+		d.add("pdu/r12", "%v %s %v %s", unpack(p96[:], 96), r12.String(), unpack(enc[:], 96), errString(err))
 		var b144 [144]bit.Bit
 		randBits(r, b144[:])
-		r34 := pdu.DecodeRate34Data(b144)
+		r34 := pdu.DecodeRate34Data([18]byte(pack(b144[:])))
 		e144, err := r34.Encode()
-		d.add("pdu/r34", "%s %v %s", r34.String(), e144, errString(err))
+		d.add("pdu/r34", "%s %v %s", r34.String(), unpack(e144[:], 144), errString(err))
 		var b192 [192]bit.Bit
 		randBits(r, b192[:])
-		r1 := pdu.DecodeRate1Data(b192)
+		r1 := pdu.DecodeRate1Data([24]byte(pack(b192[:])))
 		e192, err := r1.Encode()
-		d.add("pdu/r1", "%s %v %s", r1.String(), e192, errString(err))
+		d.add("pdu/r1", "%s %v %s", r1.String(), unpack(e192[:], 192), errString(err))
 		var b20 [20]bit.Bit
 		randBits(r, b20[:])
-		st := pdu.DecodeSlotType(b20)
+		st := pdu.DecodeSlotType([3]byte(pack(b20[:])))
 		e20, err := st.Encode()
-		d.add("pdu/st", "%v %+v %v %s", b20, st, e20, errString(err))
+		d.add("pdu/st", "%v %+v %v %s", b20, st, unpack(e20[:], 20), errString(err))
 		var b16 [16]bit.Bit
 		randBits(r, b16[:])
-		es := pdu.DecodeEmbeddedSignalling(b16)
+		es := pdu.DecodeEmbeddedSignalling([2]byte(pack(b16[:])))
 		e16, err := es.Encode()
-		d.add("pdu/emb", "%v %+v %v %s", b16, es, e16, errString(err))
+		d.add("pdu/emb", "%v %+v %v %s", b16, es, unpack(e16[:], 16), errString(err))
 		var b7 [7]bit.Bit
 		randBits(r, b7[:])
-		ta := pdu.DecodeTACT(b7)
+		ta := pdu.DecodeTACT([1]byte(pack(b7[:])))
 		e7, err := ta.Encode()
-		d.add("pdu/tact", "%v %+v %v %s", b7, ta, e7, errString(err))
+		d.add("pdu/tact", "%v %+v %v %s", b7, ta, unpack(e7[:], 7), errString(err))
 		var b36 [36]bit.Bit
 		randBits(r, b36[:])
-		sl := pdu.DecodeShortLC(b36)
+		sl := pdu.DecodeShortLC([5]byte(pack(b36[:])))
 		e36, err := sl.Encode()
-		d.add("pdu/slc", "%v %s %v %s %+v", b36, sl.String(), e36, errString(err), sl.FEC)
+		d.add("pdu/slc", "%v %s %v %s %+v", b36, sl.String(), unpack(e36[:], 36), errString(err), sl.FEC)
 		var b72 [72]bit.Bit
 		randBits(r, b72[:])
-		udp := pdu.DecodeUDPIPv4CompressedHeader(b72)
+		udp := pdu.DecodeUDPIPv4CompressedHeader([9]byte(pack(b72[:])))
 		e72, err := udp.Encode()
-		d.add("pdu/udp", "%v %s %v %s", b72, udp.String(), e72, errString(err))
+		d.add("pdu/udp", "%v %s %v %s", b72, udp.String(), unpack(e72[:], 72), errString(err))
 		var b11 [11]bit.Bit
 		randBits(r, b11[:])
-		rc := pdu.DecodeReverseChannel(b11)
+		rc := pdu.DecodeReverseChannel([2]byte(pack(b11[:])))
 		e11, err := rc.Encode()
-		d.add("pdu/rc", "%v %+v %v %s", b11, rc, e11, errString(err))
+		d.add("pdu/rc", "%v %+v %v %s", b11, rc, unpack(e11[:], 11), errString(err))
 		var b8 [8]bit.Bit
 		randBits(r, b8[:])
-		so := layer3.DecodeServiceOptions(b8)
+		so := layer3.DecodeServiceOptions([1]byte(pack(b8[:])))
 		e8, err := so.Encode()
-		d.add("pdu/so", "%v %s %v %s", b8, so.String(), e8, errString(err))
+		d.add("pdu/so", "%v %s %v %s", b8, so.String(), unpack(e8[:], 8), errString(err))
 		var b58 [58]bit.Bit
 		randBits(r, b58[:])
-		cp := layer3.DecodeCdefParms(b58)
+		cp := layer3.DecodeCdefParms([8]byte(pack(b58[:])))
 		e58, err := cp.Encode()
-		d.add("pdu/cdef", "%v %+v %v %s", b58, cp, e58, errString(err))
+		d.add("pdu/cdef", "%v %+v %v %s", b58, cp, unpack(e58[:], 58), errString(err))
 		cw := uint32(r.Intn(1 << 20))
 		sti, res := pdu.DecodeSlotTypeCodeword(cw)
 		d.add("pdu/stcw", "%x %+v %+v", cw, sti, res)
@@ -429,7 +442,7 @@ func collectCACH(d digests) {
 		d.add("cach/asm", "%s %v %s", slc.String(), done, errString(err))
 		var s36 [36]bit.Bit
 		randBits(r, s36[:])
-		sl := pdu.DecodeShortLC(s36)
+		sl := pdu.DecodeShortLC([5]byte(pack(s36[:])))
 		ta := pdu.TACT{AccessType: r.Intn(2) == 1, TDMAChannel: r.Intn(2) == 1}
 		frags, err := layer2.EncodeShortLCToCACH(&sl, ta)
 		d.add("cach/encode", "%v %s", frags, errString(err))
