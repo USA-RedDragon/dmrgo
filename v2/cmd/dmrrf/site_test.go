@@ -8,18 +8,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // siteLoop demodulates one channel of a multi-channel I/Q file at offsetHz,
 // checks that every slot of want comes back bit for bit, and reports it.
-func siteLoop(t *testing.T, built Built, iq []byte, rate, offsetHz float64, want []BSSlot) loop {
+func siteLoop(t *testing.T, built rftx.Built, iq []byte, rate, offsetHz float64, want []rftx.BSSlot) loop {
 	t.Helper()
-	x := FromHackRF(iq)
+	x := rftx.FromHackRF(iq)
 	for i := range x {
 		x[i] *= cmplx.Exp(complex(0, -2*math.Pi*offsetHz*float64(i)/rate))
 	}
-	d := Demodulate(x, rate)
+	d := demodulate(t, x, rate)
 	if len(d.Bursts) != len(want) {
 		t.Fatalf("channel at %+.0f Hz: %d bursts, want %d", offsetHz, len(d.Bursts), len(want))
 	}
@@ -41,7 +42,7 @@ func TestLoopbackT3Site(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Superframes = true, 2
-	built, err := Sequence("t3site", cfg)
+	built, err := rftx.Sequence("t3site", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,8 +50,8 @@ func TestLoopbackT3Site(t *testing.T) {
 		t.Fatalf("%d extra carriers, want 1", len(built.Carriers))
 	}
 	const rate = 2e6
-	fm, env := ModulateBS(built.Slots)
-	iq := MixIQ(built.carriers(fm, env, 0), rate, 0.9)
+	fm, env := rftx.ModulateBS(built.Slots)
+	iq := rftx.MixIQ(built.Signals(fm, env, 0), rate, 0.9)
 
 	var got []string
 	for _, b := range decodeAll(t, siteLoop(t, built, iq, rate, 0, built.Slots)) {

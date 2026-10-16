@@ -14,6 +14,8 @@ import (
 	"strings"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 func main() {
@@ -55,7 +57,7 @@ func idFlag(fs *flag.FlagSet, name, usage string) *uint32 {
 func runTX(args []string, w io.Writer) error {
 	fs := flag.NewFlagSet("tx", flag.ContinueOnError)
 	out := fs.String("o", "dmr.iq", "output file (signed 8-bit I/Q for hackrf_transfer -t)")
-	seq := fs.String("seq", "data12", strings.Join(Sequences(), ", "))
+	seq := fs.String("seq", "data12", strings.Join(rftx.Sequences(), ", "))
 	cw := fs.Float64("cw", 0, "write an unmodulated carrier of this many seconds instead")
 	freq := fs.Float64("freq", 0, "carrier frequency in Hz, printed in the hackrf_transfer command")
 	rate := fs.Float64("rate", 2e6, "sample rate in Hz (HackRF minimum is 2e6)")
@@ -94,12 +96,12 @@ func runTX(args []string, w io.Writer) error {
 	}
 	var iq []byte
 	if *cw > 0 {
-		iq = CW(*cw, *rate, corr, *level)
+		iq = rftx.CW(*cw, *rate, corr, *level)
 		fmt.Fprintf(w, "carrier: %.1f s, offset %+.0f Hz\n", *cw, corr)
 	} else {
-		cfg := SeqConfig{ColorCode: cc, Source: *src, Dest: *dst, BS: *bs, Group: *group, Wakeups: *wakeups, Message: *msg,
+		cfg := rftx.SeqConfig{ColorCode: cc, Source: *src, Dest: *dst, BS: *bs, Group: *group, Wakeups: *wakeups, Message: *msg,
 			Superframes: *superframes, AMBESilence: *silence, LateEntry: *lateEntry, Preambles: *preambles, BSSourced: *bsSourced, Slot: *slot}
-		built, err := Sequence(*seq, cfg)
+		built, err := rftx.Sequence(*seq, cfg)
 		if err != nil {
 			return err
 		}
@@ -110,19 +112,19 @@ func runTX(args []string, w io.Writer) error {
 		if *bsSourced {
 			slots := built.Slots
 			if *repeat > 0 {
-				n := max(1, int(*repeat/(float64(len(slots))*slotSeconds)))
+				n := max(1, int(*repeat/(float64(len(slots))*rftx.SlotSeconds)))
 				for range n - 1 {
 					slots = append(slots, built.Slots...)
 				}
 				fmt.Fprintf(w, "repeated %d times in one continuous stream\n", n)
 			}
-			fm, env = ModulateBS(slots)
+			fm, env = rftx.ModulateBS(slots)
 			fmt.Fprintf(w, "sequence %s (BS-sourced): %d bursts on slot %d in %d slots, %.2f s, cc %d, %d -> %d, offset %+.0f Hz\n",
 				*seq, len(built.Bursts), *slot, len(slots), float64(len(fm))/basebandRate, cc, *src, *dst, corr)
 		} else {
-			fm, env = Modulate(built.Bursts, Schedule{Slot: *slot})
+			fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: *slot})
 			if *repeat > 0 {
-				fm, env = padToFrames(fm, env)
+				fm, env = rftx.PadToFrames(fm, env)
 			}
 			fmt.Fprintf(w, "sequence %s: %d bursts, %.2f s, slot %d, cc %d, %d -> %d, offset %+.0f Hz\n",
 				*seq, len(built.Bursts), float64(len(fm))/basebandRate, *slot, cc, *src, *dst, corr)
@@ -131,9 +133,9 @@ func runTX(args []string, w io.Writer) error {
 			return fmt.Errorf("-repeat does not apply to the multi-channel sequence %s", *seq)
 		}
 		for _, c := range built.Carriers {
-			fmt.Fprintf(w, "carrier at %+.0f Hz: %d slots from %.2f s\n", c.OffsetHz, len(c.Slots), float64(c.LeadFrames)*2*slotSeconds)
+			fmt.Fprintf(w, "carrier at %+.0f Hz: %d slots from %.2f s\n", c.OffsetHz, len(c.Slots), float64(c.LeadFrames)*2*rftx.SlotSeconds)
 		}
-		iq = MixIQ(built.carriers(fm, env, corr), *rate*(1+*stretch*1e-6), *level)
+		iq = rftx.MixIQ(built.Signals(fm, env, corr), *rate*(1+*stretch*1e-6), *level)
 		if *repeat > 0 && !*bsSourced {
 			n := max(1, int(*repeat**rate*2/float64(len(iq))))
 			iq = bytes.Repeat(iq, n)
@@ -158,9 +160,9 @@ func readIQ(path string, signed bool) ([]complex128, error) {
 		return nil, err
 	}
 	if signed {
-		return FromHackRF(b), nil
+		return rftx.FromHackRF(b), nil
 	}
-	return FromRTL(b), nil
+	return rftx.FromRTL(b), nil
 }
 
 func runRX(args []string, w io.Writer) error {
@@ -169,18 +171,18 @@ func runRX(args []string, w io.Writer) error {
 	rate := fs.Float64("rate", 2.048e6, "sample rate in Hz")
 	freq := fs.Float64("freq", 0, "tuned frequency in Hz, for the ppm figure")
 	signed := fs.Bool("signed", false, "input is signed 8-bit (HackRF) instead of rtl_sdr unsigned")
-	tier := fs.Int("tier", int(TierExact), "receiver tier: 0 discriminator, 1 coherent, 2 coherent with the phase in the trellis state, 3 as 2 over a longer window")
+	tier := fs.Int("tier", int(rf.TierExact), "receiver tier: 0 discriminator, 1 coherent, 2 coherent with the phase in the trellis state, 3 as 2 over a longer window")
 	if err := fs.Parse(args); err != nil {
 		return err
-	}
-	if *tier < int(TierDisc) || *tier > int(TierMax) {
-		return fmt.Errorf("unknown tier %d", *tier)
 	}
 	b, err := os.ReadFile(*in)
 	if err != nil {
 		return err
 	}
-	d := DemodulateBytes(b, *rate, *signed, Tier(*tier))
+	d, err := DemodulateBytes(b, *rate, *signed, rf.Tier(*tier))
+	if err != nil {
+		return err
+	}
 	ppm := ""
 	if *freq > 0 {
 		ppm = fmt.Sprintf(" (%+.2f ppm)", d.OffsetHz / *freq * 1e6)

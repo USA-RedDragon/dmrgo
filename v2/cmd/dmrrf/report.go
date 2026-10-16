@@ -10,9 +10,11 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/rf"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
@@ -87,9 +89,9 @@ func (p *Reporter) printf(format string, a ...any) {
 }
 
 // Burst reports one received burst.
-func (p *Reporter) Burst(r Received) {
+func (p *Reporter) Burst(r rf.Burst) {
 	t := fmt.Sprintf("t=%.2fms", r.Seconds*1000)
-	data, cach := r.decoded()
+	data, cach := r.Decoded()
 	fixed := ""
 	if n := bitDiff(data, r.Data); n > 0 {
 		fixed = fmt.Sprintf("  fixed %d", n)
@@ -102,11 +104,11 @@ func (p *Reporter) Burst(r Received) {
 	ts := "-"
 	key := 0
 	if r.BS && r.HasCACH {
-		c := layer2.DecodeCACHField(cachBytes(cach))
+		c := layer2.DecodeCACHField(cach)
 		if !p.ref || r.Stream != p.stream {
 			p.t0, p.ref, p.stream, p.votes = r.Seconds, true, r.Stream, [2]int{}
 		}
-		parity := int(math.Round((r.Seconds-p.t0)/slotSeconds)) & 1
+		parity := int(math.Round((r.Seconds-p.t0)/rftx.SlotSeconds)) & 1
 		if r.Stream != 0 {
 			parity = int(r.Slot & 1)
 		}
@@ -153,7 +155,7 @@ func (p *Reporter) Burst(r Received) {
 	if b.Kind == layer2.KindVoice {
 		for i, slot := range b.VoiceSlots {
 			f, res := vocoder.DecodeAMBE72(slot)
-			p.printf("ambe %s pos=%s seq=%d n=%d 0x%013x fec=%s", t, b.VoiceBurst, ch.ambe, i, ambeValue(f), fecString(res))
+			p.printf("ambe %s pos=%s seq=%d n=%d 0x%013x fec=%s", t, b.VoiceBurst, ch.ambe, i, rftx.AMBEValue(f), fecString(res))
 			ch.ambe++
 		}
 	}
@@ -202,14 +204,10 @@ func slcFields(s *pdu.ShortLC) string {
 	return fmt.Sprintf("slco=%d %s", s.SLCO, s.String())
 }
 
-// ambeValue returns the 49 bits of an AMBE+2 frame as a number, the form
-// that tx and rx print.
-func ambeValue(f vocoder.AMBEFrame) uint64 {
-	var v uint64
-	for _, b := range f {
-		v = v<<8 | uint64(b)
-	}
-	return v >> 7
+// cachPayloadWord returns the 17-bit CACH payload p, packed as
+// layer2.CACH.Payload holds it, as a number.
+func cachPayloadWord(p [3]byte) uint32 {
+	return uint32(p[0])<<9 | uint32(p[1])<<1 | uint32(p[2])>>7
 }
 
 func intList(v []int) string {

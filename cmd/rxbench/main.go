@@ -1,9 +1,9 @@
 // Command rxbench writes the receiver sensitivity block of the README and
-// its graphs from the sweep data of dmrrf. With -update-readme it first runs
-// the long sweep (DMRRF_RXBENCH=full go test -run TestRxBench in
-// v2/cmd/dmrrf), then rewrites the block between the rxbench markers and the
-// SVG files. With -check-readme it renders the committed data and fails when
-// the README block or a graph differs.
+// its graphs from the sweep data of the receiver in v2/rf. With
+// -update-readme it first runs the long sweep (DMRRF_RXBENCH=full go test
+// -run TestRxBench in v2/rf), then rewrites the block between the rxbench
+// markers and the SVG files. With -check-readme it renders the committed
+// data and fails when the README block or a graph differs.
 package main
 
 import (
@@ -65,14 +65,14 @@ var errStale = errors.New("out of date: run go run -C cmd/rxbench . -update-read
 
 func run(ctx context.Context, root string, update, sweep bool) error {
 	if sweep {
-		cmd := exec.CommandContext(ctx, "go", "test", "-C", filepath.Join(root, "v2"), "-run", "^TestRxBench$", "-timeout", "6h", "./cmd/dmrrf")
+		cmd := exec.CommandContext(ctx, "go", "test", "-C", filepath.Join(root, "v2"), "-run", "^TestRxBench$", "-timeout", "6h", "./rf")
 		cmd.Env = append(os.Environ(), "DMRRF_RXBENCH=full")
 		cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("sweep: %w", err)
 		}
 	}
-	d, err := load(filepath.Join(root, "v2/cmd/dmrrf/testdata"))
+	d, err := load(filepath.Join(root, "v2/rf/testdata"))
 	if err != nil {
 		return err
 	}
@@ -285,9 +285,9 @@ func renderBlock(d data) []byte {
 		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
 	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
-	b.WriteString(" RAM is the heap that NewReceiver keeps for input at 48 kHz with ReceiverConfig.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
+	b.WriteString(" RAM is the heap that rf.New keeps for input at 48 kHz with Config.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
 	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
-	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a payload is a lower bound on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call. Its error rate is the larger of two bounds. In the first, the payload is in error when a candidate value is more likely than the transmitted one, by the exact likelihood of the whole stream, so maximum likelihood decoding would pick it; for the EMB, the slot type and the SYNC the candidates are all values, so this is the error rate of the best receiver. The second is the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values, which no code of that size and no decoder can beat. Both take the error rate as the same for every message. The floor runs on the stream and noise seeds of the tiers; its generator is v2/cmd/dmrrf/floor_gen_test.go and testdata/rxbench_floor.json names the bound of each payload. The code-aware receiver has the knowledge of the floor's genie and detects the bits of the payload exactly, bit by bit, then decodes them with the decoders of the coherent tiers and their passes of detection again: for a voice frame with the C0 and C1 codewords of the first decode as priors, and for a BPTC block with the extrinsic information of its grid decode. It is a receiver, not a bound, on the same seeds; its generator is v2/cmd/dmrrf/floor_aware_test.go.")
+	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor of a payload is a lower bound on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level and every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call. Its error rate is the larger of two bounds. In the first, the payload is in error when a candidate value is more likely than the transmitted one, by the exact likelihood of the whole stream, so maximum likelihood decoding would pick it; for the EMB, the slot type and the SYNC the candidates are all values, so this is the error rate of the best receiver. The second is the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values, which no code of that size and no decoder can beat. Both take the error rate as the same for every message. The floor runs on the stream and noise seeds of the tiers; its generator is v2/rf/floor_gen_test.go and testdata/rxbench_floor.json names the bound of each payload. The code-aware receiver has the knowledge of the floor's genie and detects the bits of the payload exactly, bit by bit, then decodes them with the decoders of the coherent tiers and their passes of detection again: for a voice frame with the C0 and C1 codewords of the first decode as priors, and for a BPTC block with the extrinsic information of its grid decode. It is a receiver, not a bound, on the same seeds; its generator is v2/rf/floor_aware_test.go.")
 	b.WriteString("\n\n| Payload | Floor | Code-aware |")
 	for _, t := range d.bench.Tiers {
 		b.WriteString(" Tier " + tierName(t.Tier) + " |")

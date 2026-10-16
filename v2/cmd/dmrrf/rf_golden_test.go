@@ -8,34 +8,35 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 type rfRun struct {
 	name, seq string
-	cfg       func(*SeqConfig)
+	cfg       func(*rftx.SeqConfig)
 }
 
 // rfRuns returns the sequences a Motorola XPR 8400 (CC 7, ID 314926)
 // received over the air and relayed on IPSC on 2026-10-15.
 func rfRuns() []rfRun {
 	return []rfRun{
-		{"wakeup", "wakeup", func(c *SeqConfig) { c.Wakeups = 1 }},
-		{"data12", "data12", func(c *SeqConfig) { c.Dest = 3191868 }},
-		{"data34", "data34", func(c *SeqConfig) { c.Dest = 3191868 }},
-		{"data34u", "data34u", func(c *SeqConfig) { c.Dest, c.Group = 9, true }},
-		{"preamble", "preamble", func(c *SeqConfig) { c.Dest, c.Preambles = 3191868, 2 }},
-		{"voice", "voice", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
-		{"voice-late", "voice", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes, c.LateEntry = 91, true, 2, true }},
-		{"pi", "pi", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
-		{"resp-data", "data12", func(c *SeqConfig) { c.Dest = 3140598 }},
-		{"ack", "ack", func(c *SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }},
-		{"sr", "sr", func(c *SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }},
+		{"wakeup", "wakeup", func(c *rftx.SeqConfig) { c.Wakeups = 1 }},
+		{"data12", "data12", func(c *rftx.SeqConfig) { c.Dest = 3191868 }},
+		{"data34", "data34", func(c *rftx.SeqConfig) { c.Dest = 3191868 }},
+		{"data34u", "data34u", func(c *rftx.SeqConfig) { c.Dest, c.Group = 9, true }},
+		{"preamble", "preamble", func(c *rftx.SeqConfig) { c.Dest, c.Preambles = 3191868, 2 }},
+		{"voice", "voice", func(c *rftx.SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
+		{"voice-late", "voice", func(c *rftx.SeqConfig) { c.Dest, c.Group, c.Superframes, c.LateEntry = 91, true, 2, true }},
+		{"pi", "pi", func(c *rftx.SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
+		{"resp-data", "data12", func(c *rftx.SeqConfig) { c.Dest = 3140598 }},
+		{"ack", "ack", func(c *rftx.SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }},
+		{"sr", "sr", func(c *rftx.SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }},
 	}
 }
 
-func rfConfig() SeqConfig {
-	return SeqConfig{ColorCode: 7, Source: 3191868, BS: 314926, Wakeups: 1, Message: "DMRGO TEST", Superframes: 3, Preambles: 4}
+func rfConfig() rftx.SeqConfig {
+	return rftx.SeqConfig{ColorCode: 7, Source: 3191868, BS: 314926, Wakeups: 1, Message: "DMRGO TEST", Superframes: 3, Preambles: 4}
 }
 
 func rfBursts(t *testing.T) map[string][]string {
@@ -44,7 +45,7 @@ func rfBursts(t *testing.T) map[string][]string {
 	for _, r := range rfRuns() {
 		cfg := rfConfig()
 		r.cfg(&cfg)
-		built, err := Sequence(r.seq, cfg)
+		built, err := rftx.Sequence(r.seq, cfg)
 		if err != nil {
 			t.Fatalf("%s: %v", r.name, err)
 		}

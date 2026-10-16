@@ -3,38 +3,15 @@ package main
 import (
 	"math"
 	"math/cmplx"
-	"math/rand/v2"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 )
 
-func testConfig() SeqConfig {
-	return SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
-}
-
-// channel resamples signed 8-bit I/Q from txRate to rxRate, adds a carrier
-// offset and white noise at snrDB, and returns rtl_sdr style unsigned bytes.
-func channel(iq []byte, txRate, rxRate, offsetHz, snrDB float64, seed uint64) []byte {
-	x := FromHackRF(iq)
-	n := int(float64(len(x)) * rxRate / txRate)
-	rng := rand.New(rand.NewPCG(seed, seed+1))
-	sigma := math.Sqrt(0.81/math.Pow(10, snrDB/10)) / math.Sqrt2
-	out := make([]byte, 2*n)
-	for i := range n {
-		pos := float64(i) * txRate / rxRate
-		k := int(pos)
-		v := x[k]
-		if k+1 < len(x) {
-			v += (x[k+1] - x[k]) * complex(pos-float64(k), 0)
-		}
-		v *= cmplx.Exp(complex(0, 2*math.Pi*offsetHz*float64(i)/rxRate))
-		v += complex(rng.NormFloat64()*sigma, rng.NormFloat64()*sigma)
-		clip := func(f float64) byte { return byte(math.Max(0, math.Min(255, math.Round(f*127.5+127.5)))) }
-		out[2*i], out[2*i+1] = clip(real(v)*0.8), clip(imag(v)*0.8)
-	}
-	return out
+func testConfig() rftx.SeqConfig {
+	return rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
 }
 
 func TestLoopbackDecodesEverySequence(t *testing.T) {
@@ -42,15 +19,15 @@ func TestLoopbackDecodesEverySequence(t *testing.T) {
 
 	for _, seq := range []string{"data12", "data34", "data1", "data12u", "data34u", "data1u"} {
 		cfg := testConfig()
-		built, err := Sequence(seq, cfg)
+		built, err := rftx.Sequence(seq, cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
 		bursts := built.Bursts
-		fm, env := Modulate(bursts, Schedule{Slot: 0})
-		iq := ToIQ(fm, env, 2e6, 0, 0.9)
-		rx := channel(iq, 2e6, 2.048e6, 3000, 25, 1)
-		d := Demodulate(FromRTL(rx), 2.048e6)
+		fm, env := rftx.Modulate(bursts, rftx.Schedule{Slot: 0})
+		iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
+		rx := rftx.Channel(iq, 2e6, 2.048e6, 3000, 25, 1)
+		d := demodulate(t, rftx.FromRTL(rx), 2.048e6)
 		if len(d.Bursts) != len(bursts) {
 			t.Fatalf("%s: got %d bursts, want %d", seq, len(d.Bursts), len(bursts))
 		}
@@ -87,15 +64,15 @@ func TestBitErrorRateBySNR(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.Wakeups = 40
-	built, err := Sequence("wakeup", cfg)
+	built, err := rftx.Sequence("wakeup", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	bursts := built.Bursts
-	fm, env := Modulate(bursts, Schedule{Slot: -1})
-	iq := ToIQ(fm, env, 2e6, 0, 0.9)
+	fm, env := rftx.Modulate(bursts, rftx.Schedule{Slot: -1})
+	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 	for _, snr := range []float64{30, 20, 15} {
-		d := Demodulate(FromRTL(channel(iq, 2e6, 2.048e6, -2500, snr, 7)), 2.048e6)
+		d := demodulate(t, rftx.FromRTL(rftx.Channel(iq, 2e6, 2.048e6, -2500, snr, 7)), 2.048e6)
 		var errs, total int
 		for _, r := range d.Bursts {
 			for i := range r.Data {
@@ -119,14 +96,14 @@ func TestBitErrorRateWeakBS(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Superframes = true, 2
-	built, err := Sequence("voice", cfg)
+	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fm, env := ModulateBS(built.Slots)
-	iq := ToIQ(fm, env, 2e6, 0, 0.9)
+	fm, env := rftx.ModulateBS(built.Slots)
+	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 	for seed := range uint64(3) {
-		d := Demodulate(FromRTL(channel(iq, 2e6, 2.4e6, 3000, -10, seed)), 2.4e6)
+		d := demodulate(t, rftx.FromRTL(rftx.Channel(iq, 2e6, 2.4e6, 3000, -10, seed)), 2.4e6)
 		if len(d.Bursts) != len(built.Slots) {
 			t.Errorf("seed %d: %d bursts, want %d", seed, len(d.Bursts), len(built.Slots))
 			continue
@@ -156,17 +133,17 @@ func TestOccupiedBandwidth(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.Wakeups = 30
-	built, err := Sequence("wakeup", cfg)
+	built, err := rftx.Sequence("wakeup", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	bursts := built.Bursts
-	fm, _ := Modulate(bursts, Schedule{Slot: -1})
+	fm, _ := rftx.Modulate(bursts, rftx.Schedule{Slot: -1})
 	env := make([]float64, len(fm))
 	for i := range env {
 		env[i] = 1
 	}
-	x := FromHackRF(ToIQ(fm, env, basebandRate, 0, 0.9))
+	x := rftx.FromHackRF(rftx.ToIQ(fm, env, basebandRate, 0, 0.9))
 	const n = 4096
 	psd := make([]float64, n)
 	{
@@ -201,9 +178,9 @@ func TestOccupiedBandwidth(t *testing.T) {
 func TestCalMeasuresCarrier(t *testing.T) {
 	t.Parallel()
 
-	iq := CW(0.2, 2e6, 0, 0.9)
-	rx := channel(iq, 2e6, 2.048e6, -1234, 30, 3)
-	off := carrierOffset(decimate(FromRTL(rx), 2.048e6))
+	iq := rftx.CW(0.2, 2e6, 0, 0.9)
+	rx := rftx.Channel(iq, 2e6, 2.048e6, -1234, 30, 3)
+	off := carrierOffset(decimate(rftx.FromRTL(rx), 2.048e6))
 	if math.Abs(off+1234) > 20 {
 		t.Errorf("offset %.1f Hz, want -1234", off)
 	}
@@ -220,8 +197,8 @@ func TestSteadySymbolsHoldSpecDeviation(t *testing.T) {
 		for i := range b {
 			b[i] = tc.fill
 		}
-		fm, _ := Modulate([]layer2.RawBurst{b}, Schedule{Slot: 0})
-		mid := int((slotSeconds/2 - 0.005) * basebandRate)
+		fm, _ := rftx.Modulate([]layer2.RawBurst{b}, rftx.Schedule{Slot: 0})
+		mid := int((rftx.SlotSeconds/2 - 0.005) * basebandRate)
 		for i := mid; i < mid+int(0.01*basebandRate); i++ {
 			if math.Abs(fm[i]-tc.want) > 0.01*math.Abs(tc.want) {
 				t.Fatalf("fill %#x: %.1f Hz at sample %d, want %.0f", tc.fill, fm[i], i, tc.want)

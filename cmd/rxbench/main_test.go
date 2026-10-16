@@ -37,7 +37,7 @@ func checkUnder(t *testing.T, ref func(data) floor, margin float64) {
 	if !ok {
 		t.Fatal("cannot find the rxbench source directory")
 	}
-	d, err := load(filepath.Join(filepath.Dir(thisFile), "..", "..", "v2/cmd/dmrrf/testdata"))
+	d, err := load(filepath.Join(filepath.Dir(thisFile), "..", "..", "v2/rf/testdata"))
 	if err != nil {
 		t.Fatal(err)
 	}

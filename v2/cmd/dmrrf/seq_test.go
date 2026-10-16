@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -15,21 +16,21 @@ import (
 )
 
 type loop struct {
-	built Built
+	built rftx.Built
 	d     Demodulated
 	lines []string
 }
 
-// runLoop builds a sequence, sends it through Modulate (or ModulateBS),
-// ToIQ, channel and Demodulate, and reports the bursts.
-func runLoop(t *testing.T, seq string, cfg SeqConfig) loop {
+// runLoop builds a sequence, sends it through rftx.Modulate (or rftx.ModulateBS),
+// rftx.ToIQ, channel and Demodulate, and reports the bursts.
+func runLoop(t *testing.T, seq string, cfg rftx.SeqConfig) loop {
 	t.Helper()
 	return runLoopStretch(t, seq, cfg, 0)
 }
 
-func runLoopStretch(t *testing.T, seq string, cfg SeqConfig, ppm float64) loop {
+func runLoopStretch(t *testing.T, seq string, cfg rftx.SeqConfig, ppm float64) loop {
 	t.Helper()
-	built, err := Sequence(seq, cfg)
+	built, err := rftx.Sequence(seq, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,25 +38,25 @@ func runLoopStretch(t *testing.T, seq string, cfg SeqConfig, ppm float64) loop {
 }
 
 // runBuilt is runLoopStretch for a built sequence.
-func runBuilt(t *testing.T, seq string, built Built, cfg SeqConfig, ppm float64) loop {
+func runBuilt(t *testing.T, seq string, built rftx.Built, cfg rftx.SeqConfig, ppm float64) loop {
 	t.Helper()
 	var fm, env []float64
 	want := built.Bursts
 	if cfg.BSSourced {
-		fm, env = ModulateBS(built.Slots)
+		fm, env = rftx.ModulateBS(built.Slots)
 		want = nil
 		for _, s := range built.Slots {
 			want = append(want, s.Burst)
 		}
 	} else {
-		fm, env = Modulate(built.Bursts, Schedule{Slot: 0})
+		fm, env = rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 0})
 	}
-	iq := ToIQ(fm, env, 2e6, 0, 0.9)
+	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 	rx := 2.048e6
 	if cfg.BSSourced {
 		rx = 2.4e6
 	}
-	d := Demodulate(FromRTL(channel(iq, 2e6/(1+ppm*1e-6), rx, 3000, 25, 5)), rx)
+	d := demodulate(t, rftx.FromRTL(rftx.Channel(iq, 2e6/(1+ppm*1e-6), rx, 3000, 25, 5)), rx)
 	if len(d.Bursts) != len(want) {
 		t.Fatalf("%s: got %d bursts, want %d", seq, len(d.Bursts), len(want))
 	}
@@ -105,11 +106,11 @@ func checkAMBE(t *testing.T, l loop, frames int, silence bool) {
 		t.Fatalf("%d ambe lines, want %d", len(got), frames)
 	}
 	for i, s := range got {
-		f := TestAMBEFrame(i)
+		f := rftx.TestAMBEFrame(i)
 		if silence {
 			f = vocoder.AMBESilence()
 		}
-		want := fmt.Sprintf("seq=%d n=%d 0x%013x fec=ok", i, i%3, ambeValue(f))
+		want := fmt.Sprintf("seq=%d n=%d 0x%013x fec=ok", i, i%3, rftx.AMBEValue(f))
 		if !strings.Contains(s, want) {
 			t.Errorf("ambe line %q, want %q", s, want)
 		}
@@ -128,9 +129,9 @@ func checkAMBE(t *testing.T, l loop, frames int, silence bool) {
 func TestTestAMBEFramesAreDistinct(t *testing.T) {
 	t.Parallel()
 
-	seen := map[uint64]bool{ambeValue(vocoder.AMBESilence()): true}
+	seen := map[uint64]bool{rftx.AMBEValue(vocoder.AMBESilence()): true}
 	for i := range 1000 {
-		v := ambeValue(TestAMBEFrame(i))
+		v := rftx.AMBEValue(rftx.TestAMBEFrame(i))
 		if seen[v] {
 			t.Fatalf("frame %d repeats 0x%013x", i, v)
 		}
@@ -192,7 +193,7 @@ func TestLoopbackVoiceDamagedSync(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Superframes = true, 4
-	built, err := Sequence("voice", cfg)
+	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +229,7 @@ func TestLoopbackMSVoiceDamagedSync(t *testing.T) {
 
 	cfg := testConfig()
 	cfg.Superframes = 3
-	built, err := Sequence("voice", cfg)
+	built, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +246,7 @@ func TestLoopbackMSVoiceDamagedSync(t *testing.T) {
 	l.expect(t, "elc", "checksum=ok fec=ok", 3)
 	l.expect(t, "lc", "terminator", 1)
 
-	built, err = Sequence("voice", cfg)
+	built, err = rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +327,7 @@ func TestLoopbackPreamble(t *testing.T) {
 			cbf = append(cbf, int(p.CSBKBlocksToFollow))
 		}
 	}
-	data, err := dataBursts("data12", cfg)
+	data, err := rftx.DataBursts("data12", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -345,7 +346,7 @@ func TestLoopbackPreamble(t *testing.T) {
 
 // activeBlocks counts the Short LCs of a BS-sourced stream whose four slots
 // carry part of the sequence.
-func activeBlocks(l loop, cfg SeqConfig) int {
+func activeBlocks(l loop, cfg rftx.SeqConfig) int {
 	busy := func(f int) bool { return f >= cfg.Wakeups && f-cfg.Wakeups < len(l.built.Bursts) }
 	var n int
 	for f := 0; f < len(l.built.Slots)/2; f += 2 {
@@ -367,13 +368,13 @@ func TestReportChannelFromTiming(t *testing.T) {
 	l := runLoop(t, "voice", cfg)
 	for i := 3; i < len(l.d.Bursts); i += 5 {
 		r := &l.d.Bursts[i]
-		c := layer2.DecodeCACH(layer2.CACHDeinterleave(cachBytes(r.CACH)))
+		c := layer2.DecodeCACH(layer2.CACHDeinterleave(r.CACH))
 		c.TACT.TDMAChannel = !c.TACT.TDMAChannel
 		bits, err := c.Encode()
 		if err != nil {
 			t.Fatal(err)
 		}
-		r.CACH = cachBits(layer2.CACHInterleave(bits))
+		r.CACH = layer2.CACHInterleave(bits)
 	}
 	var buf bytes.Buffer
 	rep := NewReporter(&buf)
@@ -485,11 +486,11 @@ func TestLoopbackBSSourced(t *testing.T) {
 	if !done {
 		t.Error("BS-sourced data packet not complete")
 	}
-	if _, err := Sequence("wakeup", cfg); err == nil {
+	if _, err := rftx.Sequence("wakeup", cfg); err == nil {
 		t.Error("BS-sourced wakeup accepted")
 	}
 	cfg.Slot = -1
-	if _, err := Sequence("voice", cfg); err == nil {
+	if _, err := rftx.Sequence("voice", cfg); err == nil {
 		t.Error("BS-sourced stream with slot -1 accepted")
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
 // TestCaptureXPR8400GainSweep decodes a voice call from the weakest capture
@@ -38,12 +40,12 @@ func TestCaptureXPR8400GainSweep(t *testing.T) {
 	}
 	ambe := regexp.MustCompile(`^ambe .* 0x([0-9a-f]+) fec=`)
 	for _, c := range []struct {
-		tier Tier
+		tier rf.Tier
 		min  int
-	}{{TierDisc, 31}, {TierCoherent, 47}, {TierExact, 47}, {TierMax, 47}} {
+	}{{rf.TierDisc, 31}, {rf.TierCoherent, 47}, {rf.TierExact, 47}, {rf.TierMax, 47}} {
 		var buf bytes.Buffer
 		rep := NewReporter(&buf)
-		for _, r := range DemodulateBytes(iq, 256e3, false, c.tier).Bursts {
+		for _, r := range demodulateBytes(t, iq, 256e3, false, c.tier).Bursts {
 			rep.Burst(r)
 		}
 		n, next := 0, 0
