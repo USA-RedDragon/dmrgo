@@ -185,15 +185,16 @@ func (b *Burst) DecodeFromBytes(data RawBurst) error {
 // ErrColorCodeMismatch, an error for invalid options, or a join of these,
 // and the burst is populated also when an error is returned.
 func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
-	if opts == nil {
-		opts = &DecodeOptions{}
+	var o DecodeOptions
+	if opts != nil {
+		o = *opts
 	}
 	store := b.store
 	*b = Burst{}
 	b.store, b.raw = store, data
 	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
-	err := b.decode(opts)
-	ccErr := b.checkColorCode(opts.ColorCode)
+	err := b.decode(o)
+	ccErr := b.checkColorCode(o.ColorCode)
 	switch {
 	case err == nil:
 		return ccErr
@@ -203,7 +204,10 @@ func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
 	return newJoinedError(err, ccErr)
 }
 
-func (b *Burst) decode(opts *DecodeOptions) error {
+// decode takes the options by value: under TinyGo a pointer to options
+// that DecodeFromBytes makes would otherwise go to the heap when decode is
+// not inlined.
+func (b *Burst) decode(opts DecodeOptions) error {
 	threshold := opts.SyncThreshold
 	switch {
 	case threshold == 0:
