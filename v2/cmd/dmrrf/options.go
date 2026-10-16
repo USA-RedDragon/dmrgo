@@ -52,7 +52,7 @@ func TierOptions(t Tier) Options {
 	switch t {
 	case TierDisc:
 	case TierCoherent:
-		o.Coherent, o.Window = true, 1
+		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior = true, 1, 5, 0.12, true, 20
 	case TierExact:
 		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior = true, 1, true, true, 20
 	case TierMax:
