@@ -44,7 +44,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 				EmbeddedSignalling: pdu.EmbeddedSignalling{PreemptionAndPowerControlIndicator: true},
 				ReverseChannel:     pdu.ReverseChannel{RCCommand: enums.RCCommand(16)},
 			},
-			want: "reverse channel",
+			want: "ReverseChannel.RCCommand",
 		},
 		{
 			name: "StandaloneReverseChannel",
@@ -53,7 +53,7 @@ func TestBurstEncode_ReturnsErrorForOutOfRangeFields(t *testing.T) {
 				SyncPattern:    enums.SyncMSSourcedRC,
 				ReverseChannel: pdu.ReverseChannel{RCCommand: enums.RCCommand(16)},
 			},
-			want: "reverse channel",
+			want: "ReverseChannel.RCCommand",
 		},
 	}
 	for _, tt := range tests {

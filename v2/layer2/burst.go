@@ -216,7 +216,7 @@ func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
 	case ccErr == nil:
 		return err
 	}
-	return newJoinedError(err, ccErr)
+	return joinColorCode(err)
 }
 
 // decode takes the options by value: under TinyGo a pointer to options
@@ -242,7 +242,7 @@ func (b *Burst) decode(opts DecodeOptions) error {
 		return nil
 	case KindUnknown:
 	default:
-		return newUnknownKindError(opts.Kind)
+		return errUnknownKind
 	}
 
 	switch {
@@ -276,7 +276,7 @@ func (b *Burst) decodeVoiceKind(pos enums.VoiceBurstType, nearest enums.SyncPatt
 			b.decodeVoice(pos, enums.SyncNone)
 		}
 	default:
-		return newVoicePositionError(pos)
+		return errVoicePosition
 	}
 	return nil
 }
@@ -458,7 +458,7 @@ func (b *Burst) encodeStandaloneRC() (RawBurst, error) {
 func (b *Burst) embCodeword() (uint16, error) {
 	embBits, err := b.EmbeddedSignalling.Encode()
 	if err != nil {
-		return 0, newWrappedError("cannot encode embedded signalling", err)
+		return 0, err
 	}
 	return uint16(bit.Uint(embBits[:]) & 0xFFFF), nil
 }
@@ -474,7 +474,7 @@ func (b *Burst) embeddedData() ([4]byte, error) {
 	}
 	d, err := encodeRC(&b.ReverseChannel)
 	if err != nil {
-		return d, newWrappedError("cannot encode reverse channel", err)
+		return d, err
 	}
 	return d, nil
 }
@@ -574,7 +574,7 @@ func (b *Burst) String() string {
 // the data blocks, whose only code is the payload code.
 func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync enums.SyncPattern) (Data, fec.Result, error) {
 	if dt.IsReserved() {
-		return nil, fec.Result{}, newReservedDataTypeError(dt)
+		return nil, fec.Result{}, reservedDataTypeError{dt}
 	}
 	var bits96 [96]bit.Bit
 	if dt != enums.DataTypeCSBK && dt != enums.DataTypeRate34 && dt != enums.DataTypeRate1 {
@@ -630,7 +630,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 		return d, d.FEC, nil
 	case enums.DataTypeReserved:
 	}
-	return nil, fec.Result{}, newReservedDataTypeError(dt)
+	return nil, fec.Result{}, reservedDataTypeError{dt}
 }
 
 // Encode returns the burst in transmit bit order, as the package doc
@@ -650,7 +650,7 @@ func (b *Burst) Encode() (RawBurst, error) {
 	if b.Kind == KindData {
 		slotBits, err := b.SlotType.Encode()
 		if err != nil {
-			return RawBurst{}, newWrappedError("cannot encode slot type", err)
+			return RawBurst{}, err
 		}
 		r.setField(slotTypeFirstStart, 10, slotTypeSecondStart, 10, bit.Uint(slotBits[:]))
 
@@ -696,17 +696,17 @@ func (b *Burst) checkCentre() error {
 			return errDataBurstNoSync
 		}
 		if b.SyncPattern == enums.SyncNone && b.EmbeddedSignalling.ColorCode != b.SlotType.ColorCode {
-			return newEMBColorCodeError(b.EmbeddedSignalling.ColorCode, b.SlotType.ColorCode)
+			return errEMBColorCode
 		}
 		if b.SyncPattern == enums.SyncNone || isDataSync(b.SyncPattern) {
 			return nil
 		}
 	case KindUnknown, KindReverseChannel:
-		return newKindError(b.Kind)
+		return errKindNoEncode
 	default:
-		return newUnknownKindError(b.Kind)
+		return errUnknownKind
 	}
-	return newKindSyncError(b.Kind, b.SyncPattern)
+	return errKindSync
 }
 
 // dataInfoBits returns, packed, Data coded for the slot type data type or,
@@ -728,7 +728,7 @@ func (b *Burst) dataInfoBits() ([25]byte, error) {
 	case b.payloadBits == 0:
 		return [25]byte{}, errNoData
 	case !decoded:
-		return [25]byte{}, newPayloadTypeError(b.decodedDataType, dt)
+		return [25]byte{}, errPayloadType
 	default:
 		return b.payload, nil
 	}
@@ -780,7 +780,7 @@ type (
 // dataType, packed.
 func encodeData(d Data, dataType enums.DataType) ([25]byte, error) {
 	var info [25]byte
-	if err := newDataError(d, dataType); err != nil {
+	if err := checkData(d, dataType); err != nil {
 		return info, err
 	}
 	var n int
@@ -805,10 +805,10 @@ func encodeData(d Data, dataType enums.DataType) ([25]byte, error) {
 		return info, errNoEncode
 	}
 	if err != nil {
-		return info, newWrappedError("cannot encode data", err)
+		return info, err
 	}
 	if want := infoBitsLen(dataType); n != want {
-		return info, newInfoBitsError(dataType, want, d, n)
+		return info, errInfoBits
 	}
 	return info, nil
 }
