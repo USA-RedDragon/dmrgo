@@ -22,7 +22,10 @@ type Message struct {
 	// DataType is the rate of the data blocks, or 0 without blocks.
 	DataType enums.DataType
 	// Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are
-	// removed. A short data packet keeps all octets before the CRC; its Bit
+	// removed when the header is a first try (Full Message Flag set). A
+	// packet that a later try started, because the first header was lost,
+	// keeps them, as only a first try counts them (ETSI TS 102 361-1 clause
+	// 9.3.20). A short data packet keeps all octets before the CRC; its Bit
 	// Padding is in the header.
 	Data []byte
 	// CRC is the received message CRC.
@@ -194,8 +197,11 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 		return a.finishIfEmpty()
 	}
 	if a.isRetry(h) {
-		a.expect, a.count = int(h.ConfirmedDataHeader.BlocksToFollow), 0
+		a.expect, a.count = blocksOf(h), 0
 		return Message{}, false, nil
+	}
+	if !fullMessage(h) && a.active {
+		return Message{}, false, ErrUnexpectedRetry
 	}
 	a.Reset()
 	confirmed, ok := isConfirmed(h)
@@ -212,17 +218,31 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 	return a.finishIfEmpty()
 }
 
+// isRetry reports whether h starts a retry of the confirmed or SARQ packet
+// in progress: the same format, SAP and LLIDs, the same N(S) for a C_HEAD,
+// and the same Defined Data format or ports for short data. A header with F
+// set, the first try of a packet, is a retry only after all blocks of the
+// attempt arrived, as a sender may mark a full resend as a first try.
 func (a *Assembler) isRetry(h *pdu.DataHeader) bool {
-	if !a.active || !a.confirmed || h.Format != pdu.FormatConfirmed || h.ConfirmedDataHeader == nil {
+	if !a.active || !a.confirmed || h.Format != a.msg.Header.Format || fullMessage(h) && a.count < a.expect {
 		return false
 	}
-	prev := a.msg.Header.ConfirmedDataHeader
-	if prev == nil || a.count < a.expect {
-		return false
+	prev := &a.msg.Header
+	switch {
+	case h.Format == pdu.FormatConfirmed && h.ConfirmedDataHeader != nil && prev.ConfirmedDataHeader != nil:
+		c, p := h.ConfirmedDataHeader, prev.ConfirmedDataHeader
+		return c.SAP == p.SAP && c.LLIDSource == p.LLIDSource &&
+			c.LLIDDestination == p.LLIDDestination && c.SendSequenceNumber == a.ns
+	case h.Format == pdu.FormatShortDataDefined && h.DefinedDataHeader != nil && prev.DefinedDataHeader != nil:
+		c, p := h.DefinedDataHeader, prev.DefinedDataHeader
+		return c.SARQ && c.SAP == p.SAP && c.LLIDSource == p.LLIDSource &&
+			c.LLIDDestination == p.LLIDDestination && c.DefinedData == p.DefinedData
+	case h.Format == pdu.FormatShortDataRawOrStatusPrecoded && h.RawDataHeader != nil && prev.RawDataHeader != nil:
+		c, p := h.RawDataHeader, prev.RawDataHeader
+		return c.SARQ && c.SAP == p.SAP && c.LLIDSource == p.LLIDSource && c.LLIDDestination == p.LLIDDestination &&
+			c.SourcePort == p.SourcePort && c.DestinationPort == p.DestinationPort
 	}
-	c := h.ConfirmedDataHeader
-	return c.SAP == prev.SAP && c.LLIDSource == prev.LLIDSource &&
-		c.LLIDDestination == prev.LLIDDestination && c.SendSequenceNumber == a.ns
+	return false
 }
 
 func (a *Assembler) finishIfEmpty() (Message, bool, error) {
@@ -399,7 +419,10 @@ func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 	}
 	n := len(buf) - crcOctets
 	m.CRC = binary.LittleEndian.Uint32(buf[n:])
-	m.Data = buf[:max(n-padOf(&m.Header), 0)]
+	m.Data = buf[:n]
+	if fullMessage(&m.Header) {
+		m.Data = buf[:max(n-padOf(&m.Header), 0)]
+	}
 	if !complete || !checkMessageCRC(buf) {
 		return ErrMessageCRC
 	}
