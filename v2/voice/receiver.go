@@ -40,8 +40,8 @@ type ReceiverConfig struct {
 	Strict bool
 	// Scratch, when set, is the Burst that Burst decodes into. Receivers
 	// that run on one goroutine can share one, because a Receiver is done
-	// with it when its method returns. Nil means the Receiver makes its
-	// own (about 1 KB).
+	// with it when its method returns. Make it with layer2.NewBurst, so
+	// that no decode allocates. Nil means the Receiver makes its own.
 	Scratch *layer2.Burst
 }
 
@@ -107,7 +107,7 @@ func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
 		r.hang = constants.TCallHang
 	}
 	if r.b == nil {
-		r.b = new(layer2.Burst)
+		r.b = layer2.NewBurst()
 	}
 	return r, nil
 }
