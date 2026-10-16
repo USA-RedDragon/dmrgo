@@ -103,6 +103,40 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 	}
 }
 
+// TestReceiverOnBurst checks that a receiver with OnBurst hands it the
+// bursts that the returned slices hold without it, and returns none.
+func TestReceiverOnBurst(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig()
+	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 2, 1
+	built, err := Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	x := noisyBaseband(built.Slots, 1200, 10, 4)
+	for _, tier := range []Tier{TierDisc, TierCoherent} {
+		want := receiveBaseband(x, tier)
+		var got []Received
+		r := NewReceiver(ReceiverConfig{Rate: basebandRate, Tier: tier, OnBurst: func(b Received) { got = append(got, b) }})
+		for k := 0; k < len(x); k += 4096 {
+			if out := r.WriteBaseband(x[k:min(k+4096, len(x))]); len(out) != 0 {
+				t.Fatalf("tier %d: WriteBaseband returned %d bursts", tier, len(out))
+			}
+		}
+		if out := r.Flush(); len(out) != 0 {
+			t.Fatalf("tier %d: Flush returned %d bursts", tier, len(out))
+		}
+		if len(got) != len(want) || len(want) == 0 {
+			t.Fatalf("tier %d: %d bursts to OnBurst, %d returned", tier, len(got), len(want))
+		}
+		for i := range want {
+			if got[i].Data != want[i].Data || got[i].Fixed != want[i].Fixed || got[i].Seconds != want[i].Seconds {
+				t.Errorf("tier %d: burst %d differs", tier, i)
+			}
+		}
+	}
+}
+
 // BenchmarkReceiver times each tier on a BS outbound voice call at 6 dB
 // C/N, in nanoseconds per second of signal, with its allocations.
 func BenchmarkReceiver(b *testing.B) {
