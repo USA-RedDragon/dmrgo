@@ -73,7 +73,7 @@ func (r *Receiver) symPrior(g symRef, lp []float32) {
 		return
 	}
 	for d := range 4 {
-		lp[d] += r.prior[4*g.k+d]
+		lp[d] += r.prior[4*g.k+d] / r.llrScale
 	}
 }
 

@@ -45,6 +45,12 @@ type Options struct {
 	// RefinePrior, when above 0, detects each voice burst again with the
 	// bits that soft-decision decoding fixed as priors of that many nats.
 	RefinePrior float32
+	// LLRScale scales the log-likelihood ratios of the coherent detection
+	// so that they match the error rates of the bits: the trellis takes
+	// the noise as white, but the channel filter colors it, and that makes
+	// its ratios too confident. The priors that a detection again adds
+	// enter the trellis divided by it. 0 means 1.
+	LLRScale float32
 	// WarmUp detects the first slots of a stream twice, the first time
 	// only to settle the carrier, timing and modulation index estimates.
 	WarmUp bool
@@ -85,12 +91,12 @@ func TierOptions(t Tier) Options {
 	case TierDisc:
 		o.DiscDecimation = 2
 	case TierCoherent:
-		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior = true, 1, 5, 0.12, true, 20
+		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, 5, 0.12, true, 10, 0.5
 		o.ChanDecimation, o.CompactChannel = 2, true
 	case TierExact:
-		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior = true, 1, true, 52, true, 20
+		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, true, 52, true, 7, 0.35
 	case TierMax:
-		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior = true, 2, true, true, 20
+		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 2, true, true, 7, 0.35
 	}
 	return o
 }
