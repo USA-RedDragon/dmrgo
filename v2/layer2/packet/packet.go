@@ -40,9 +40,9 @@ func blockOctets(rate enums.DataType, confirmed bool) (int, error) {
 		enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation,
 		enums.DataTypeDataHeader, enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock,
 		enums.DataTypeReserved:
-		return 0, newRateError(rate)
+		return 0, ErrRate
 	default:
-		return 0, newRateError(rate)
+		return 0, ErrRate
 	}
 	if confirmed {
 		n -= 2
@@ -246,7 +246,7 @@ func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
 func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	confirmed, ok := isConfirmed(h)
 	if !ok {
-		return false, newFormatError(h.Format)
+		return false, ErrFormat
 	}
 	per, err := blockOctets(rate, confirmed)
 	if err != nil {
@@ -279,7 +279,7 @@ func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool
 		limit = 63
 	}
 	if blocks > limit {
-		return false, newTooLongError(blocks, limit)
+		return false, ErrTooLong
 	}
 	return confirmed, nil
 }

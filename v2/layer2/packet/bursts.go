@@ -24,13 +24,13 @@ func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, s
 	n := len(dst)
 	raw, err := layer2.BuildBurst(&p.Header, colorCode, src)
 	if err != nil {
-		return dst, newHeaderError(err)
+		return dst, err
 	}
 	dst = append(dst, raw)
-	for i, d := range p.Blocks {
+	for _, d := range p.Blocks {
 		raw, err = blockBurst(d, colorCode, src)
 		if err != nil {
-			return dst[:n], newBlockError(i, err)
+			return dst[:n], err
 		}
 		dst = append(dst, raw)
 	}
@@ -39,7 +39,7 @@ func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, s
 
 func blockBurst(d layer2.Data, colorCode enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, error) {
 	if dt := d.DataType(); dt != enums.DataTypeRate12 && dt != enums.DataTypeRate34 && dt != enums.DataTypeRate1 {
-		return layer2.RawBurst{}, newBlockRateError(d, dt)
+		return layer2.RawBurst{}, ErrRate
 	}
 	return layer2.BuildBurst(d, colorCode, src)
 }
