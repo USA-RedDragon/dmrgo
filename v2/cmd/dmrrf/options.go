@@ -31,6 +31,9 @@ type Options struct {
 	// BPTCOSD decodes BPTC(196,96) by ordered statistics; otherwise by
 	// Chase-II around the hard decoder.
 	BPTCOSD bool
+	// GridBPTC decodes a BPTC(196,96) block whose CRC or Reed-Solomon
+	// check fails again by iterative row and column decoding of its grid.
+	GridBPTC bool
 	// RefinePrior, when above 0, detects each voice burst again with the
 	// bits that soft-decision decoding fixed as priors of that many nats.
 	RefinePrior float32
@@ -62,7 +65,7 @@ type Options struct {
 // TierOptions returns the settings of tier t.
 func TierOptions(t Tier) Options {
 	o := Options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscCutHz: 6000, Sources: 2}
-	o.SoftFEC = true
+	o.SoftFEC, o.GridBPTC = true, true
 	switch t {
 	case TierDisc:
 		o.DiscDecimation = 2
