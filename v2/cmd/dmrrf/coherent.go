@@ -4,7 +4,7 @@ import (
 	"math"
 	"math/cmplx"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // cpmModel holds the DMR 4FSK waveform over one symbol interval for every
@@ -391,7 +391,7 @@ func refPhase(syms []int, sps int, h float64) []float64 {
 }
 
 // dibitOfDigit returns the dibit of symbol digit v (symbol 2v-3).
-func dibitOfDigit(v int) (bit.Bit, bit.Bit) {
+func dibitOfDigit(v int) (unpacked.Bit, unpacked.Bit) {
 	switch v {
 	case 3:
 		return 0, 1

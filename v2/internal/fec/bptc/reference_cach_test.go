@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
@@ -16,7 +15,7 @@ func TestCACHMatchesReference(t *testing.T) {
 	r := rand.New(rand.NewSource(2))
 	for n := range 2_000_000 {
 		info := r.Uint64() & (1<<36 - 1)
-		var refInfo [36]bit.Bit
+		var refInfo [36]unpacked.Bit
 		unpacked.PutUint(refInfo[:], info)
 		frags := bptc.EncodeCACH(info)
 		refFrags := ref.EncodeCACH(refInfo)
@@ -53,7 +52,7 @@ func BenchmarkCACH(b *testing.B) {
 	clean := bptc.EncodeCACH(info)
 	bad := clean
 	bad[1] ^= 1 << 3
-	var refInfo [36]bit.Bit
+	var refInfo [36]unpacked.Bit
 	unpacked.PutUint(refInfo[:], info)
 	refClean := ref.EncodeCACH(refInfo)
 	refBad := refClean

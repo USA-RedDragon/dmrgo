@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
@@ -99,10 +98,10 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	t.Parallel()
 
-	var targetAddr [24]bit.Bit
+	var targetAddr [24]unpacked.Bit
 	targetAddr[0] = 1
 	targetAddr[23] = 1
-	var sourceAddr [24]bit.Bit
+	var sourceAddr [24]unpacked.Bit
 	sourceAddr[12] = 1
 
 	original := &pdu.CSBK{
@@ -579,10 +578,10 @@ func TestCSBK_Ackvitation_Decode(t *testing.T) {
 func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	t.Parallel()
 
-	var targetAddr [24]bit.Bit
+	var targetAddr [24]unpacked.Bit
 	targetAddr[0] = 1
 	targetAddr[23] = 1
-	var sourceAddr [24]bit.Bit
+	var sourceAddr [24]unpacked.Bit
 	sourceAddr[12] = 1
 
 	original := &pdu.CSBK{
@@ -636,7 +635,7 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	t.Parallel()
 
-	var msAddr [24]bit.Bit
+	var msAddr [24]unpacked.Bit
 	msAddr[0] = 1
 	msAddr[15] = 1
 	msAddr[23] = 1

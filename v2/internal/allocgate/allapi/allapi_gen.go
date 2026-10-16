@@ -18,7 +18,6 @@ import (
 	internal_fec_quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	internal_fec_reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	internal_fec_trellis "github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
-	internal_lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 	layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
 	layer2_framer "github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -82,11 +81,9 @@ var api = [...]any{
 	internal_bits.Copy,
 	internal_bits.Field,
 	internal_bits.Field64,
-	internal_bits.Pack,
 	internal_bits.SetBit,
 	internal_bits.SetField,
 	internal_bits.SetField64,
-	internal_bits.Unpack,
 	internal_crc.CCITT,
 	internal_crc.CCITTUpdate,
 	internal_crc.CRC32,
@@ -130,7 +127,6 @@ var api = [...]any{
 	internal_fec_reedsolomon.Encode,
 	internal_fec_trellis.Decode,
 	internal_fec_trellis.Encode,
-	internal_lowbit.Mask,
 	(*layer2.Burst).AMBEFrames,
 	(*layer2.Burst).DecodeFromBytes,
 	(*layer2.Burst).DecodeFromBytesWith,

@@ -3,26 +3,24 @@ package layer2_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func buildDataBurst(dataType enums.DataType, payload [196]bit.Bit) [33]byte {
-	var burst [264]bit.Bit
+func buildDataBurst(dataType enums.DataType, payload [196]unpacked.Bit) [33]byte {
+	var burst [264]unpacked.Bit
 	copy(burst[:98], payload[:98])
 	copy(burst[166:], payload[98:])
 	slot := must((&pdu.SlotType{ColorCode: 1, DataType: dataType}).Encode())
-	bits.Unpack(burst[98:108], slot[:], 0)
-	bits.Unpack(burst[156:166], slot[:], 10)
+	unpacked.UnpackAt(burst[98:108], slot[:], 0)
+	unpacked.UnpackAt(burst[156:166], slot[:], 10)
 	syncVal := int64(enums.SyncBSSourcedData)
 	for i := 0; i < 48; i++ {
-		burst[108+i] = bit.Bit((syncVal >> (47 - i)) & 1)
+		burst[108+i] = unpacked.Bit((syncVal >> (47 - i)) & 1)
 	}
 	return [33]byte(unpacked.Pack(burst[:]))
 }
@@ -34,7 +32,7 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	for i := range want {
 		want[i] = byte(0xA0 + i)
 	}
-	var info [144]bit.Bit
+	var info [144]unpacked.Bit
 	copy(info[:], unpacked.Unpack(want[:]))
 	raw := buildDataBurst(enums.DataTypeRate34, trellisInfo(info))
 
@@ -60,9 +58,9 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 func TestBurst_Rate34Data_FEC(t *testing.T) {
 	t.Parallel()
 
-	var info [144]bit.Bit
+	var info [144]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit(i % 3 % 2)
+		info[i] = unpacked.Bit(i % 3 % 2)
 	}
 	raw := buildDataBurst(enums.DataTypeRate34, trellisInfo(info))
 	raw[2] ^= 0x10
@@ -88,7 +86,7 @@ func TestBurst_Rate34Data_FEC(t *testing.T) {
 func TestBurst_PIHeader_Decode(t *testing.T) {
 	t.Parallel()
 
-	var info [96]bit.Bit
+	var info [96]unpacked.Bit
 	copy(info[:], unpacked.Unpack([]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}))
 	raw := buildDataBurst(enums.DataTypePIHeader, encode196Bits(info))
 
@@ -119,7 +117,7 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 		want[i] = byte(0x30 + i)
 	}
 	info := unpacked.Unpack(want[:])
-	var payload [196]bit.Bit
+	var payload [196]unpacked.Bit
 	copy(payload[:96], info[:96])
 	copy(payload[100:], info[96:])
 	raw := buildDataBurst(enums.DataTypeRate1, payload)
@@ -141,9 +139,9 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 }
 
 // trellisInfo returns the 196 rate 3/4 trellis coded bits of info.
-func trellisInfo(info [144]bit.Bit) [196]bit.Bit {
+func trellisInfo(info [144]unpacked.Bit) [196]unpacked.Bit {
 	enc := trellis.Encode([18]byte(unpacked.Pack(info[:])))
-	var bits [196]bit.Bit
+	var bits [196]unpacked.Bit
 	copy(bits[:], unpacked.Unpack(enc[:]))
 	return bits
 }

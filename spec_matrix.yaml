@@ -32,7 +32,6 @@ ignore_files:
   - v2/cmd/dmrrf/spectrum.go
   - v2/cmd/dmrrf/track.go
   - v2/bit/bit.go
-  - v2/internal/lowbit/lowbit.go
   - v2/internal/bits/bits.go
   - v2/internal/unpacked/unpacked.go
   - v2/internal/allocgate/apigen/apigen.go

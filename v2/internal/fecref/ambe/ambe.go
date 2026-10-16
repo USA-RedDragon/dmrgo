@@ -3,14 +3,14 @@
 package ambe
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fecref/golay"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 // Encode takes the decoded 49 bits and encodes them into a 72 bit AMBE frame.
-func Encode(ambe49 [49]bit.Bit) [72]bit.Bit {
-	var ambe72 [72]bit.Bit
+func Encode(ambe49 [49]unpacked.Bit) [72]unpacked.Bit {
+	var ambe72 [72]unpacked.Bit
 
 	var aOrig uint32
 	var bOrig uint32
@@ -79,8 +79,8 @@ func Encode(ambe49 [49]bit.Bit) [72]bit.Bit {
 // Decode decodes a 72-bit AMBE frame into its 49 information bits.
 // Section A is Golay (24,12,8), section B is scrambled Golay (23,12,7), and
 // section C has no FEC.
-func Decode(bits [72]bit.Bit) ([49]bit.Bit, fec.Result) {
-	var ambe49 [49]bit.Bit
+func Decode(bits [72]unpacked.Bit) ([49]unpacked.Bit, fec.Result) {
+	var ambe49 [49]unpacked.Bit
 	result := fec.Result{BitsChecked: 47}
 
 	var a uint32

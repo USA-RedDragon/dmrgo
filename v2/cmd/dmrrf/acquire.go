@@ -3,7 +3,6 @@ package main
 import (
 	"math"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -51,7 +50,7 @@ func sourceAt(i int) layer2.SyncSource {
 
 // syncSyms returns the 24 symbols of the SYNC pattern p.
 func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {
-	var b [framer.SyncBits]bit.Bit
+	var b [framer.SyncBits]unpacked.Bit
 	unpacked.PutUint(b[:], uint64(p))
 	for k := range syncSymbols {
 		out[k] = symbolOf(b[2*k], b[2*k+1])
@@ -59,7 +58,7 @@ func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {
 }
 
 // symbolOf returns the symbol of a dibit (ETSI TS 102 361-1 Table 10.3).
-func symbolOf(b0, b1 bit.Bit) int8 {
+func symbolOf(b0, b1 unpacked.Bit) int8 {
 	switch b0<<1 | b1 {
 	case 0b01:
 		return 3

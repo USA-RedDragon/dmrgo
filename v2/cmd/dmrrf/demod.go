@@ -3,8 +3,8 @@ package main
 import (
 	"math"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -22,7 +22,7 @@ type Received struct {
 	Voice enums.VoiceBurstType
 	// CACH is the 24 bits before the burst in transmit order. BS is set
 	// when the burst is BS-sourced, so that those bits are a CACH.
-	CACH    [layer2.CACHBits]bit.Bit
+	CACH    [layer2.CACHBits]unpacked.Bit
 	HasCACH bool
 	BS      bool
 	// Stream numbers the transmissions a Receiver locked to, from 1, and
@@ -33,13 +33,13 @@ type Received struct {
 	// Fixed and FixedCACH hold Data and CACH with each FEC field replaced
 	// by the codeword that soft-decision decoding picked, when HasFixed.
 	Fixed     layer2.RawBurst
-	FixedCACH [layer2.CACHBits]bit.Bit
+	FixedCACH [layer2.CACHBits]unpacked.Bit
 	HasFixed  bool
 }
 
 // decoded returns the burst and CACH bits to decode: Fixed and FixedCACH
 // when the burst has them, Data and CACH otherwise.
-func (r Received) decoded() (layer2.RawBurst, [layer2.CACHBits]bit.Bit) {
+func (r Received) decoded() (layer2.RawBurst, [layer2.CACHBits]unpacked.Bit) {
 	if r.HasFixed {
 		return r.Fixed, r.FixedCACH
 	}

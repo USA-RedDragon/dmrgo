@@ -3,14 +3,14 @@ package bptc_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func TestCACHBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	var info [36]bit.Bit
+	var info [36]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit(i % 2)
+		info[i] = unpacked.Bit(i % 2)
 	}
 
 	fragments := encodeCACH(info)
@@ -26,7 +26,7 @@ func TestCACHBPTC_EncodeDecodeRoundTrip(t *testing.T) {
 
 func TestCACHBPTC_BitsChecked(t *testing.T) {
 	t.Parallel()
-	var fragments [4][17]bit.Bit
+	var fragments [4][17]unpacked.Bit
 	_, fecResult := decodeCACH(fragments)
 	if fecResult.BitsChecked != 68 {
 		t.Errorf("expected BitsChecked=68, got %d", fecResult.BitsChecked)
@@ -35,7 +35,7 @@ func TestCACHBPTC_BitsChecked(t *testing.T) {
 
 func TestCACHBPTC_AllZero(t *testing.T) {
 	t.Parallel()
-	var info [36]bit.Bit
+	var info [36]unpacked.Bit
 	fragments := encodeCACH(info)
 	decoded, fecResult := decodeCACH(fragments)
 
@@ -51,7 +51,7 @@ func TestCACHBPTC_AllZero(t *testing.T) {
 
 func TestCACHBPTC_AllOnes(t *testing.T) {
 	t.Parallel()
-	var info [36]bit.Bit
+	var info [36]unpacked.Bit
 	for i := range info {
 		info[i] = 1
 	}
@@ -85,7 +85,7 @@ func TestCACHBPTC_FragmentSize(t *testing.T) {
 
 func TestCACHBPTC_FragmentBitsValid(t *testing.T) {
 	t.Parallel()
-	var info [36]bit.Bit
+	var info [36]unpacked.Bit
 	info[0] = 1
 	info[15] = 1
 	info[35] = 1
@@ -102,7 +102,7 @@ func TestCACHBPTC_FragmentBitsValid(t *testing.T) {
 
 func TestCACHBPTC_SingleBitErrorCorrection(t *testing.T) {
 	t.Parallel()
-	var info [36]bit.Bit
+	var info [36]unpacked.Bit
 	info[0] = 1
 	info[5] = 1
 	info[10] = 1
@@ -127,9 +127,9 @@ func TestCACHBPTC_SingleBitErrorCorrection(t *testing.T) {
 
 func TestCACHBPTC_StabilityEncodeDecode(t *testing.T) {
 	t.Parallel()
-	var info [36]bit.Bit
+	var info [36]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit((i * 7) % 2)
+		info[i] = unpacked.Bit((i * 7) % 2)
 	}
 
 	fragments1 := encodeCACH(info)
@@ -146,11 +146,11 @@ func TestCACHBPTC_StabilityEncodeDecode(t *testing.T) {
 
 func TestCACHBPTC_DifferentPatterns(t *testing.T) {
 	t.Parallel()
-	patterns := [][36]bit.Bit{}
+	patterns := [][36]unpacked.Bit{}
 	for p := 0; p < 4; p++ {
-		var info [36]bit.Bit
+		var info [36]unpacked.Bit
 		for i := range info {
-			info[i] = bit.Bit((i + p) % 2)
+			info[i] = unpacked.Bit((i + p) % 2)
 		}
 		patterns = append(patterns, info)
 	}
@@ -169,7 +169,7 @@ func TestCACHBPTC_DifferentPatterns(t *testing.T) {
 
 func TestCACHBPTC_ColumnParityError(t *testing.T) {
 	t.Parallel()
-	var info [36]bit.Bit
+	var info [36]unpacked.Bit
 	fragments := encodeCACH(info)
 
 	fragments[0][0] ^= 1

@@ -1,7 +1,7 @@
 package crc
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 const crc8Poly = 0x07 // x² + x + 1 (low 8 bits of G₈(x))
@@ -9,7 +9,7 @@ const crc8Poly = 0x07 // x² + x + 1 (low 8 bits of G₈(x))
 // CRC8 computes the CRC-8 of bits with the generator polynomial
 // x⁸ + x² + x + 1, initial value 0 and no final inversion (ETSI TS 102 361-1
 // clause B.3.7).
-func CRC8(bits []bit.Bit) uint8 {
+func CRC8(bits []unpacked.Bit) uint8 {
 	var crc uint8
 
 	for _, b := range bits {
@@ -24,6 +24,6 @@ func CRC8(bits []bit.Bit) uint8 {
 }
 
 // CheckCRC8 reports whether want is the CRC-8 of bits.
-func CheckCRC8(bits []bit.Bit, want uint8) bool {
+func CheckCRC8(bits []unpacked.Bit, want uint8) bool {
 	return CRC8(bits) == want
 }

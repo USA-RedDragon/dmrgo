@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -27,26 +27,26 @@ func loadVoice(t *testing.T) [][33]byte {
 	return out
 }
 
-func noise(r *rand.Rand, n int) []bit.Bit {
-	out := make([]bit.Bit, n)
+func noise(r *rand.Rand, n int) []unpacked.Bit {
+	out := make([]unpacked.Bit, n)
 	for i := range out {
-		out[i] = bit.Bit(r.Intn(2))
+		out[i] = unpacked.Bit(r.Intn(2))
 	}
 	return out
 }
 
-func burstBits(b [33]byte) []bit.Bit {
-	out := make([]bit.Bit, layer2.BurstBits)
-	bits.Unpack(out, b[:], 0)
+func burstBits(b [33]byte) []unpacked.Bit {
+	out := make([]unpacked.Bit, layer2.BurstBits)
+	unpacked.UnpackAt(out, b[:], 0)
 	return out
 }
 
 // pack returns stream packed, the first bit in the most significant bit of
 // byte 0, the form that Search and Framer take. The last byte is padded
 // with 0 bits.
-func pack(stream []bit.Bit) []byte {
+func pack(stream []unpacked.Bit) []byte {
 	out := make([]byte, (len(stream)+7)/8)
-	bits.Pack(out, 0, stream)
+	unpacked.PackAt(out, 0, stream)
 	return out
 }
 
@@ -57,7 +57,7 @@ func flip(b [33]byte, positions ...int) [33]byte {
 	return b
 }
 
-func writeChunks(r *rand.Rand, f *framer.Framer, stream []bit.Bit) []framer.Burst {
+func writeChunks(r *rand.Rand, f *framer.Framer, stream []unpacked.Bit) []framer.Burst {
 	var out []framer.Burst
 	for p := pack(stream); len(p) > 0; {
 		n := min(1+r.Intn(50), len(p))
@@ -167,8 +167,8 @@ func TestFramer_OutboundCACH(t *testing.T) {
 			c := layer2.CACH{TACT: pdu.TACT{AccessType: true, TDMAChannel: ch == 2}}
 			bits.SetBit(c.Payload[:], i%17, 1)
 			tx := layer2.CACHInterleave(must(c.Encode()))
-			var txBits [layer2.CACHBits]bit.Bit
-			bits.Unpack(txBits[:], tx[:], 0)
+			var txBits [layer2.CACHBits]unpacked.Bit
+			unpacked.UnpackAt(txBits[:], tx[:], 0)
 			stream = append(stream, txBits[:]...)
 			stream = append(stream, burstBits(data)...)
 			want = append(want, sent{data, ch})
@@ -196,7 +196,7 @@ func TestFramer_OutboundCACH(t *testing.T) {
 func TestFramer_DirectChannel(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(4))
-	stream := make([]bit.Bit, 0, 500+3*framer.SlotPeriod)
+	stream := make([]unpacked.Bit, 0, 500+3*framer.SlotPeriod)
 	ts2 := [33]byte(must(layer2.BuildDataBurst([12]byte{}, enums.DataTypeIdle, 1, layer2.SyncSourceBS)))
 	bits.SetField64(ts2[:], framer.SyncOffset, framer.SyncBits, uint64(enums.SyncTDMA2Data))
 	stream = append(stream, noise(r, 500)...)

@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/bptc"
@@ -12,7 +11,7 @@ import (
 )
 
 func refDecodeSingleBurst(tx uint32, oddParity bool) (uint16, fec.Result) {
-	var b [32]bit.Bit
+	var b [32]unpacked.Bit
 	unpacked.PutUint(b[:], uint64(tx))
 	info, res := ref.DecodeSingleBurst(b, oddParity)
 	return uint16(unpacked.Uint(info[:])), res
@@ -30,7 +29,7 @@ func TestSingleBurstMatchesReference(t *testing.T) {
 	}
 	for _, odd := range []bool{false, true} {
 		for info := range uint16(1 << 11) {
-			var b [11]bit.Bit
+			var b [11]unpacked.Bit
 			unpacked.PutUint(b[:], uint64(info))
 			refTx := ref.EncodeSingleBurst(b, odd)
 			tx := bptc.EncodeSingleBurst(info, odd)

@@ -5,13 +5,12 @@
 package bptc
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-func calculateSyndrome1511(bits [15]bit.Bit) int {
-	var errs [4]bit.Bit
+func calculateSyndrome1511(bits [15]unpacked.Bit) int {
+	var errs [4]unpacked.Bit
 	errs[0] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
 	errs[1] = bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[12]
 	errs[2] = bits[2] ^ bits[3] ^ bits[4] ^ bits[5] ^ bits[7] ^ bits[9] ^ bits[10] ^ bits[13]
@@ -19,8 +18,8 @@ func calculateSyndrome1511(bits [15]bit.Bit) int {
 	return int(errs[0]) | int(errs[1])<<1 | int(errs[2])<<2 | int(errs[3])<<3
 }
 
-func calculateSyndrome139(bits [13]bit.Bit) int {
-	var errs [4]bit.Bit
+func calculateSyndrome139(bits [13]unpacked.Bit) int {
+	var errs [4]unpacked.Bit
 	errs[0] = bits[0] ^ bits[1] ^ bits[3] ^ bits[5] ^ bits[6] ^ bits[9]
 	errs[1] = bits[0] ^ bits[1] ^ bits[2] ^ bits[4] ^ bits[6] ^ bits[7] ^ bits[10]
 	errs[2] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
@@ -31,7 +30,7 @@ func calculateSyndrome139(bits [13]bit.Bit) int {
 // Decode196 deinterleaves a BPTC(196,96) block, corrects it with the row and
 // column Hamming codes and returns the 96 data bits and a fec.Result
 // (ETSI TS 102 361-1 clause B.1.1).
-func Decode196(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
+func Decode196(bits [196]unpacked.Bit) ([96]unpacked.Bit, fec.Result) {
 	data, _, result := Decode196WithReserved(bits)
 	return data, result
 }
@@ -39,11 +38,11 @@ func Decode196(bits [196]bit.Bit) ([96]bit.Bit, fec.Result) {
 // Decode196WithReserved decodes a BPTC(196,96) block as Decode196 does and
 // also returns the corrected reserved bits R(0) to R(2), with R(i) at index
 // i. R(3) has no FEC and is not returned.
-func Decode196WithReserved(bits [196]bit.Bit) ([96]bit.Bit, [3]bit.Bit, fec.Result) {
-	lowbit.Mask(bits[:])
+func Decode196WithReserved(bits [196]unpacked.Bit) ([96]unpacked.Bit, [3]unpacked.Bit, fec.Result) {
+	unpacked.Mask(bits[:])
 	result := fec.Result{BitsChecked: 196}
-	var deinterleavedBits [196]bit.Bit
-	var temp [96]bit.Bit
+	var deinterleavedBits [196]unpacked.Bit
+	var temp [96]unpacked.Bit
 
 	var i, j, k uint
 
@@ -62,7 +61,7 @@ func Decode196WithReserved(bits [196]bit.Bit) ([96]bit.Bit, [3]bit.Bit, fec.Resu
 		}
 	}
 
-	reserved := [3]bit.Bit{deinterleavedBits[3], deinterleavedBits[2], deinterleavedBits[1]}
+	reserved := [3]unpacked.Bit{deinterleavedBits[3], deinterleavedBits[2], deinterleavedBits[1]}
 	return temp, reserved, result
 }
 
@@ -71,7 +70,7 @@ func Decode196WithReserved(bits [196]bit.Bit) ([96]bit.Bit, [3]bit.Bit, fec.Resu
 // as MMDVMHost does. The column parity rows are also row codewords, so all
 // 13 rows are row-decoded. It returns the corrected grid, the number of
 // flipped bits, and whether a row or column syndrome is still nonzero.
-func hammingCorrect(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
+func hammingCorrect(bits [196]unpacked.Bit) ([196]unpacked.Bit, int, bool) {
 	corrected := bits
 
 	for pass := 0; pass < 5; pass++ {
@@ -112,32 +111,32 @@ func hammingCorrect(bits [196]bit.Bit) ([196]bit.Bit, int, bool) {
 	return corrected, flips, uncorrectable
 }
 
-func columnSyndrome(grid *[196]bit.Bit, c int) int {
-	var col [13]bit.Bit
+func columnSyndrome(grid *[196]unpacked.Bit, c int) int {
+	var col [13]unpacked.Bit
 	for a := range col {
 		col[a] = grid[c+1+a*15]
 	}
 	return calculateSyndrome139(col)
 }
 
-func rowSyndrome(grid *[196]bit.Bit, r int) int {
-	var row [15]bit.Bit
+func rowSyndrome(grid *[196]unpacked.Bit, r int) int {
+	var row [15]unpacked.Bit
 	copy(row[:], grid[r*15+1:r*15+16])
 	return calculateSyndrome1511(row)
 }
 
 // Encode196 encodes 96 data bits using BPTC(196,96) interleaving with
 // Hamming FEC. The reserved bits R(0) to R(3) are zero.
-func Encode196(data [96]bit.Bit) [196]bit.Bit {
-	return Encode196WithReserved(data, [3]bit.Bit{})
+func Encode196(data [96]unpacked.Bit) [196]unpacked.Bit {
+	return Encode196WithReserved(data, [3]unpacked.Bit{})
 }
 
 // Encode196WithReserved encodes 96 data bits as Encode196 does, with the
 // reserved bits R(0) to R(2) from reserved, R(i) at index i. R(3) is zero.
-func Encode196WithReserved(data [96]bit.Bit, reserved [3]bit.Bit) [196]bit.Bit {
-	lowbit.Mask(data[:])
-	lowbit.Mask(reserved[:])
-	grid := [196]bit.Bit{1: reserved[2], 2: reserved[1], 3: reserved[0]}
+func Encode196WithReserved(data [96]unpacked.Bit, reserved [3]unpacked.Bit) [196]unpacked.Bit {
+	unpacked.Mask(data[:])
+	unpacked.Mask(reserved[:])
+	grid := [196]unpacked.Bit{1: reserved[2], 2: reserved[1], 3: reserved[0]}
 
 	dataIdx := 0
 	for i := 4; i <= 11; i++ {
@@ -160,7 +159,7 @@ func Encode196WithReserved(data [96]bit.Bit, reserved [3]bit.Bit) [196]bit.Bit {
 		calculateColParity(&grid, c)
 	}
 
-	var encoded [196]bit.Bit
+	var encoded [196]unpacked.Bit
 	for i := 0; i < 196; i++ {
 		encoded[dm[i]] = grid[i]
 	}
@@ -168,9 +167,9 @@ func Encode196WithReserved(data [96]bit.Bit, reserved [3]bit.Bit) [196]bit.Bit {
 	return encoded
 }
 
-func calculateRowParity(grid *[196]bit.Bit, r int) {
+func calculateRowParity(grid *[196]unpacked.Bit, r int) {
 	k := r*15 + 1
-	var bits [15]bit.Bit
+	var bits [15]unpacked.Bit
 	for a := 0; a < 11; a++ {
 		bits[a] = grid[k+a]
 	}
@@ -185,9 +184,9 @@ func calculateRowParity(grid *[196]bit.Bit, r int) {
 	}
 }
 
-func calculateColParity(grid *[196]bit.Bit, c int) {
+func calculateColParity(grid *[196]unpacked.Bit, c int) {
 	k := c + 1
-	var bits [13]bit.Bit
+	var bits [13]unpacked.Bit
 
 	for a := 0; a < 9; a++ {
 		bits[a] = grid[k+a*15]

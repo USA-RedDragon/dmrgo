@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -178,7 +177,7 @@ func TestLoopbackVoiceSlowClock(t *testing.T) {
 
 // flipSync inverts the first n bits of the SYNC field of b.
 func flipSync(b layer2.RawBurst, n int) layer2.RawBurst {
-	bits := [264]bit.Bit(unpacked.Unpack(b[:]))
+	bits := [264]unpacked.Bit(unpacked.Unpack(b[:]))
 	for k := framer.SyncOffset; k < framer.SyncOffset+n; k++ {
 		bits[k] ^= 1
 	}

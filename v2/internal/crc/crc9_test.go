@@ -3,13 +3,13 @@ package crc_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func TestCRC9_ZeroInput(t *testing.T) {
 	t.Parallel()
 
-	bits := make([]bit.Bit, 87)
+	bits := make([]unpacked.Bit, 87)
 	result := crc9Of(bits)
 	if result != 0x1FF {
 		t.Errorf("CRC9 of 87 zero bits = 0x%03X, want 0x1FF", result)
@@ -19,7 +19,7 @@ func TestCRC9_ZeroInput(t *testing.T) {
 func TestCRC9_SingleBit(t *testing.T) {
 	t.Parallel()
 
-	bits := []bit.Bit{1}
+	bits := []unpacked.Bit{1}
 	result := crc9Of(bits)
 	if result == 0x1FF {
 		t.Error("CRC9 of single 1-bit should differ from all-zero CRC")
@@ -32,7 +32,7 @@ func TestCRC9_SingleBit(t *testing.T) {
 func TestCRC9_CheckValid_NoMask(t *testing.T) {
 	t.Parallel()
 
-	data := make([]bit.Bit, 87)
+	data := make([]unpacked.Bit, 87)
 	data[0] = 1
 	data[10] = 1
 	data[40] = 1
@@ -40,10 +40,10 @@ func TestCRC9_CheckValid_NoMask(t *testing.T) {
 
 	c := crc9Of(data)
 
-	withCRC := make([]bit.Bit, 96)
+	withCRC := make([]unpacked.Bit, 96)
 	copy(withCRC, data)
 	for i := 0; i < 9; i++ {
-		withCRC[87+i] = bit.Bit((c >> (8 - i)) & 1)
+		withCRC[87+i] = unpacked.Bit((c >> (8 - i)) & 1)
 	}
 
 	if !checkCRC9Codeword(withCRC, 0x000) {
@@ -54,7 +54,7 @@ func TestCRC9_CheckValid_NoMask(t *testing.T) {
 func TestCRC9_CheckValid_WithMask(t *testing.T) {
 	t.Parallel()
 
-	data := make([]bit.Bit, 135)
+	data := make([]unpacked.Bit, 135)
 	data[0] = 1
 	data[50] = 1
 	data[100] = 1
@@ -63,10 +63,10 @@ func TestCRC9_CheckValid_WithMask(t *testing.T) {
 	// B.3.12).
 	c := crc9Of(data) ^ 0x1FF
 
-	withCRC := make([]bit.Bit, 144)
+	withCRC := make([]unpacked.Bit, 144)
 	copy(withCRC, data)
 	for i := 0; i < 9; i++ {
-		withCRC[135+i] = bit.Bit((c >> (8 - i)) & 1)
+		withCRC[135+i] = unpacked.Bit((c >> (8 - i)) & 1)
 	}
 
 	if !checkCRC9Codeword(withCRC, 0x1FF) {
@@ -77,15 +77,15 @@ func TestCRC9_CheckValid_WithMask(t *testing.T) {
 func TestCRC9_CheckInvalid(t *testing.T) {
 	t.Parallel()
 
-	data := make([]bit.Bit, 87)
+	data := make([]unpacked.Bit, 87)
 	data[0] = 1
 
 	c := crc9Of(data)
 
-	withCRC := make([]bit.Bit, 96)
+	withCRC := make([]unpacked.Bit, 96)
 	copy(withCRC, data)
 	for i := 0; i < 9; i++ {
-		withCRC[87+i] = bit.Bit((c >> (8 - i)) & 1)
+		withCRC[87+i] = unpacked.Bit((c >> (8 - i)) & 1)
 	}
 
 	withCRC[0] ^= 1
@@ -97,7 +97,7 @@ func TestCRC9_CheckInvalid(t *testing.T) {
 func TestCRC9_CheckTooShort(t *testing.T) {
 	t.Parallel()
 
-	if checkCRC9Codeword(make([]bit.Bit, 9), 0) {
+	if checkCRC9Codeword(make([]unpacked.Bit, 9), 0) {
 		t.Error("CheckCRC9 should return false for data shorter than 10 bits")
 	}
 }
@@ -105,9 +105,9 @@ func TestCRC9_CheckTooShort(t *testing.T) {
 func TestCRC9_Deterministic(t *testing.T) {
 	t.Parallel()
 
-	data := make([]bit.Bit, 135)
+	data := make([]unpacked.Bit, 135)
 	for i := range data {
-		data[i] = bit.Bit(i % 2)
+		data[i] = unpacked.Bit(i % 2)
 	}
 	crc1 := crc9Of(data)
 	crc2 := crc9Of(data)
@@ -119,9 +119,9 @@ func TestCRC9_Deterministic(t *testing.T) {
 func TestCRC9_ValueRange(t *testing.T) {
 	t.Parallel()
 
-	data := make([]bit.Bit, 183)
+	data := make([]unpacked.Bit, 183)
 	for i := range data {
-		data[i] = bit.Bit(i % 3)
+		data[i] = unpacked.Bit(i % 3)
 	}
 	c := crc9Of(data)
 	if c > 0x1FF {
@@ -132,7 +132,7 @@ func TestCRC9_ValueRange(t *testing.T) {
 func TestCRC9_Rate12_DataSize(t *testing.T) {
 	t.Parallel()
 
-	data := make([]bit.Bit, 87)
+	data := make([]unpacked.Bit, 87)
 	data[0] = 1
 	data[86] = 1
 	c := crc9Of(data)

@@ -3,7 +3,6 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
@@ -185,10 +184,10 @@ func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 	t.Parallel()
 
-	var bsAddr [24]bit.Bit
+	var bsAddr [24]unpacked.Bit
 	bsAddr[0] = 1
 	bsAddr[23] = 1
-	var srcAddr [24]bit.Bit
+	var srcAddr [24]unpacked.Bit
 	srcAddr[12] = 1
 
 	original := &pdu.CSBK{
@@ -255,10 +254,10 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 	t.Parallel()
 
-	var targetAddr [24]bit.Bit
+	var targetAddr [24]unpacked.Bit
 	targetAddr[0] = 1
 	targetAddr[23] = 1
-	var sourceAddr [24]bit.Bit
+	var sourceAddr [24]unpacked.Bit
 	sourceAddr[12] = 1
 
 	original := &pdu.CSBK{
@@ -331,10 +330,10 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.T) {
 	t.Parallel()
 
-	var targetAddr [24]bit.Bit
+	var targetAddr [24]unpacked.Bit
 	targetAddr[5] = 1
 	targetAddr[10] = 1
-	var sourceAddr [24]bit.Bit
+	var sourceAddr [24]unpacked.Bit
 	sourceAddr[0] = 1
 	sourceAddr[23] = 1
 
@@ -425,20 +424,20 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 	t.Parallel()
 
-	var syncAge [11]bit.Bit
+	var syncAge [11]unpacked.Bit
 	syncAge[0] = 1
 	syncAge[5] = 1
-	var generation [5]bit.Bit
+	var generation [5]unpacked.Bit
 	generation[0] = 1
 	generation[4] = 1
-	var leaderID [20]bit.Bit
+	var leaderID [20]unpacked.Bit
 	leaderID[0] = 1
 	leaderID[19] = 1
-	var leaderDynID [2]bit.Bit
+	var leaderDynID [2]unpacked.Bit
 	leaderDynID[0] = 1
-	var sourceID [20]bit.Bit
+	var sourceID [20]unpacked.Bit
 	sourceID[10] = 1
-	var sourceDynID [2]bit.Bit
+	var sourceDynID [2]unpacked.Bit
 	sourceDynID[1] = 1
 
 	original := &pdu.CSBK{

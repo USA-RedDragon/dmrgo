@@ -4,8 +4,7 @@ import (
 	"math"
 	"math/cmplx"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
-	pbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -70,7 +69,7 @@ func convolve(x, h []float64) []float64 {
 
 // symbolsFromBits maps bits to symbols using the dibit map of ETSI TS 102
 // 361-1 Table 10.3: 01 +3, 00 +1, 10 -1, 11 -3.
-func symbolsFromBits(bits []bit.Bit) []int {
+func symbolsFromBits(bits []unpacked.Bit) []int {
 	s := make([]int, len(bits)/2)
 	for i := range s {
 		switch bits[2*i]<<1 | bits[2*i+1] {
@@ -89,8 +88,8 @@ func symbolsFromBits(bits []bit.Bit) []int {
 
 // symbolsFromBurst maps the 264 bits of a burst to 132 symbols.
 func symbolsFromBurst(b [33]byte) []int {
-	var bits [264]bit.Bit
-	pbits.Unpack(bits[:], b[:], 0)
+	var bits [264]unpacked.Bit
+	unpacked.UnpackAt(bits[:], b[:], 0)
 	return symbolsFromBits(bits[:])
 }
 
@@ -145,7 +144,7 @@ func Modulate(bursts []layer2.RawBurst, sched Schedule) (freq, env []float64) {
 // BSSlot is one 30 ms slot of a BS outbound stream: the CACH in transmit
 // order and the burst that follows it.
 type BSSlot struct {
-	CACH  [layer2.CACHBits]bit.Bit
+	CACH  [layer2.CACHBits]unpacked.Bit
 	Burst layer2.RawBurst
 }
 
@@ -170,8 +169,8 @@ func ModulateBS(slots []BSSlot) (freq, env []float64) {
 	for i, s := range slots {
 		t0 := ramp + float64(i)*slotSeconds
 		put(t0, symbolsFromBits(s.CACH[:]))
-		var b [264]bit.Bit
-		pbits.Unpack(b[:], s.Burst[:], 0)
+		var b [264]unpacked.Bit
+		unpacked.UnpackAt(b[:], s.Burst[:], 0)
 		put(t0+float64(cachSymbols)/symbolRate, symbolsFromBits(b[:]))
 	}
 	env = make([]float64, n)

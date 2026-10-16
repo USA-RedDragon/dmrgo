@@ -3,13 +3,12 @@ package hamming
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/hamming"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-func bits7(cw uint8) [7]bit.Bit {
-	var b [7]bit.Bit
+func bits7(cw uint8) [7]unpacked.Bit {
+	var b [7]unpacked.Bit
 	unpacked.PutUint(b[:], uint64(cw))
 	return b
 }
@@ -30,7 +29,7 @@ func TestHamming743MatchesReferenceOnEveryWord(t *testing.T) {
 	}
 	for d := range 16 {
 		data := bits7(uint8(d) << 3)
-		want := ref.Encode743([4]bit.Bit(data[:4]))
+		want := ref.Encode743([4]unpacked.Bit(data[:4]))
 		if got := Encode743(uint8(d)); got != uint8(unpacked.Uint(want[:])) {
 			t.Fatalf("Encode743(%#x) = %#02x, want %#02x", d, got, unpacked.Uint(want[:]))
 		}

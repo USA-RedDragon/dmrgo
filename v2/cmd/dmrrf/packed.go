@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// cachBytes packs the 24 bits of a CACH field, one bit.Bit per bit, in the
+// cachBytes packs the 24 bits of a CACH field, one unpacked.Bit per bit, in the
 // form that the layer2 CACH functions take.
-func cachBytes(b [layer2.CACHBits]bit.Bit) [3]byte {
+func cachBytes(b [layer2.CACHBits]unpacked.Bit) [3]byte {
 	var p [3]byte
 	for i, v := range b {
 		p[i>>3] |= byte(v&1) << (7 - i&7)
@@ -16,10 +16,10 @@ func cachBytes(b [layer2.CACHBits]bit.Bit) [3]byte {
 }
 
 // cachBits is the inverse of cachBytes.
-func cachBits(p [3]byte) [layer2.CACHBits]bit.Bit {
-	var b [layer2.CACHBits]bit.Bit
+func cachBits(p [3]byte) [layer2.CACHBits]unpacked.Bit {
+	var b [layer2.CACHBits]unpacked.Bit
 	for i := range b {
-		b[i] = bit.Bit(p[i>>3] >> (7 - i&7) & 1)
+		b[i] = unpacked.Bit(p[i>>3] >> (7 - i&7) & 1)
 	}
 	return b
 }

@@ -3,7 +3,6 @@ package layer2_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -12,7 +11,7 @@ import (
 )
 
 func talkerAliasLC() pdu.FullLinkControl {
-	var data [48]bit.Bit
+	var data [48]unpacked.Bit
 	copy(data[:], unpacked.Unpack([]byte("KI5VMF")))
 	return pdu.FullLinkControl{
 		FLCO: enums.FLCOTalkerAliasHeader,

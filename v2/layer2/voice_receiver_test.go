@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
@@ -134,7 +133,7 @@ func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 	t.Parallel()
 
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
-	all := [264]bit.Bit(unpacked.Unpack(raws[3][:]))
+	all := [264]unpacked.Bit(unpacked.Unpack(raws[3][:]))
 	for i := layer2.EmbeddedDataStart; i < layer2.EmbeddedDataStart+12; i++ {
 		all[i] ^= 1
 	}
@@ -157,7 +156,7 @@ func TestVoiceReceiver_Strict(t *testing.T) {
 
 	lc := groupLC(enums.FIDStandardized)
 	raws := transmission(t, lc, 6)
-	all := [264]bit.Bit(unpacked.Unpack(raws[2][:]))
+	all := [264]unpacked.Bit(unpacked.Unpack(raws[2][:]))
 	all[layer2.EmbeddedDataStart+7] ^= 1
 	raws[2] = [33]byte(unpacked.Pack(all[:]))
 	for _, strict := range []bool{false, true} {
@@ -198,7 +197,7 @@ func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
 	t.Parallel()
 
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
-	all := [264]bit.Bit(unpacked.Unpack(raws[5][:]))
+	all := [264]unpacked.Bit(unpacked.Unpack(raws[5][:]))
 	for i := layer2.EMBFirstStart; i < layer2.EMBFirstStart+3; i++ {
 		all[i] ^= 1
 	}

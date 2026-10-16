@@ -3,14 +3,14 @@ package bptc_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
 func TestEmbeddedLC_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit
+	var info [77]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit(i % 2)
+		info[i] = unpacked.Bit(i % 2)
 	}
 
 	fragments := encodeEmbedded(info)
@@ -29,7 +29,7 @@ func TestEmbeddedLC_EncodeDecodeRoundTrip(t *testing.T) {
 
 func TestEmbeddedLC_BitsChecked(t *testing.T) {
 	t.Parallel()
-	var fragments [4][32]bit.Bit
+	var fragments [4][32]unpacked.Bit
 	_, result := decodeEmbedded(fragments)
 	if result.BitsChecked != 128 {
 		t.Errorf("BitsChecked = %d, want 128", result.BitsChecked)
@@ -38,7 +38,7 @@ func TestEmbeddedLC_BitsChecked(t *testing.T) {
 
 func TestEmbeddedLC_AllZero(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit
+	var info [77]unpacked.Bit
 
 	fragments := encodeEmbedded(info)
 	decoded, result := decodeEmbedded(fragments)
@@ -53,7 +53,7 @@ func TestEmbeddedLC_AllZero(t *testing.T) {
 
 func TestEmbeddedLC_AllOnes(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit
+	var info [77]unpacked.Bit
 	for i := range info {
 		info[i] = 1
 	}
@@ -71,9 +71,9 @@ func TestEmbeddedLC_AllOnes(t *testing.T) {
 
 func TestEmbeddedLC_SingleBitErrorCorrection(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit
+	var info [77]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit((i * 7) % 2)
+		info[i] = unpacked.Bit((i * 7) % 2)
 	}
 
 	fragments := encodeEmbedded(info)
@@ -109,7 +109,7 @@ func TestEmbeddedLC_FragmentCount(t *testing.T) {
 
 func TestEmbeddedLC_FragmentBitsAreValid(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit
+	var info [77]unpacked.Bit
 	info[0] = 1
 	info[10] = 1
 	info[76] = 1
@@ -127,9 +127,9 @@ func TestEmbeddedLC_FragmentBitsAreValid(t *testing.T) {
 
 func TestEmbeddedLC_StabilityEncodeDecode(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit
+	var info [77]unpacked.Bit
 	for i := range info {
-		info[i] = bit.Bit((i*3 + 1) % 2)
+		info[i] = unpacked.Bit((i*3 + 1) % 2)
 	}
 
 	fragments1 := encodeEmbedded(info)
@@ -145,7 +145,7 @@ func TestEmbeddedLC_StabilityEncodeDecode(t *testing.T) {
 
 func TestEmbeddedLC_ColumnParityErrorDetection(t *testing.T) {
 	t.Parallel()
-	var info [77]bit.Bit
+	var info [77]unpacked.Bit
 
 	fragments := encodeEmbedded(info)
 
@@ -161,7 +161,7 @@ func TestEmbeddedLC_ColumnParityErrorDetection(t *testing.T) {
 
 func TestEmbeddedLC_DifferentPatterns(t *testing.T) {
 	t.Parallel()
-	var info1, info2 [77]bit.Bit
+	var info1, info2 [77]unpacked.Bit
 	info1[0] = 1
 	info2[0] = 0
 
