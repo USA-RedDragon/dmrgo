@@ -5,6 +5,7 @@ package allocs_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -63,6 +64,36 @@ func TestAllocsDecodeEncodeCaptures(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestAllocsNewBurstFirstDecode decodes every capture into Bursts from
+// layer2.NewBurst, one per capture, and counts the allocations of the first
+// decodes, which testing.AllocsPerRun would hide behind its warm-up run.
+func TestAllocsNewBurstFirstDecode(t *testing.T) {
+	all := captures(t)
+	streams := make([][]layer2.RawBurst, 0, len(all))
+	for _, c := range all {
+		streams = append(streams, c)
+	}
+	bursts := make([]*layer2.Burst, len(streams))
+	best := ^uint64(0)
+	for range 5 {
+		for i := range bursts {
+			bursts[i] = layer2.NewBurst()
+		}
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
+		for i, c := range streams {
+			for _, raw := range c {
+				_ = bursts[i].DecodeFromBytes(raw)
+			}
+		}
+		runtime.ReadMemStats(&after)
+		best = min(best, after.Mallocs-before.Mallocs)
+	}
+	if best != 0 {
+		t.Errorf("first decodes into NewBurst: %d allocations, want 0", best)
 	}
 }
 
