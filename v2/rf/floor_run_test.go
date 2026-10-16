@@ -25,10 +25,26 @@ type floorPoint struct {
 	Conv   map[string][]float64   `json:"conv"`
 }
 
-// fer returns the lower bound on the error rate of payload k at p: the
-// larger of the likelihood test and the converse, and of the slot type
-// for a data payload that needs it. ok is false when p has no items of k.
-func (p *floorPoint) fer(k string) (float64, int, bool) {
+// anyFER returns the 4FSK floor of payload k at p: the converse bound on
+// the information densities of k, or Fano's inequality on those of the
+// rate 1 block for the rate 1 bits, and the number of items it counts. ok
+// is false when p has no densities of k.
+func (p *floorPoint) anyFER(k string) (float64, int, bool) {
+	u := p.Conv[k]
+	if len(u) == 0 {
+		return 0, 0, false
+	}
+	if k == "rate1_bit" {
+		return fanoBound(u, 192), 192 * len(u), true
+	}
+	return convBound(u), len(u), true
+}
+
+// dmrFER returns the DMR floor of payload k at p: the larger of the error
+// rate of the likelihood test, that of the slot type for a data payload
+// that needs it, and the 4FSK floor, which bounds every code. ok is false
+// when p has no items of k.
+func (p *floorPoint) dmrFER(k string) (float64, int, bool) {
 	var v float64
 	n := 0
 	for _, key := range []string{k, k + "/st"} {
@@ -37,14 +53,14 @@ func (p *floorPoint) fer(k string) (float64, int, bool) {
 			n = max(n, s.Truth)
 		}
 	}
-	if u := p.Conv[k]; len(u) > 0 {
-		v = max(v, convBound(u))
-		n = max(n, len(u))
+	if a, m, ok := p.anyFER(k); ok {
+		v = max(v, a)
+		n = max(n, m)
 	}
 	return v, n, n > 0
 }
 
-// floorRun computes the floor of the sweep stream at each case on workers
+// floorRun computes the floors of the sweep stream at each case on workers
 // goroutines, with a genie trellis of window d, or the error rates of the
 // code-aware receiver when aware, and returns the points summed over
 // seeds.
@@ -105,9 +121,10 @@ func floorRun(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, cases []benc
 	return out
 }
 
-// TestFloorProbe prints the floor of the payloads on a grid, for the
-// settings in DMRRF_FLOOR_PROBE: window, tail (A or B), seeds, the C/N
-// grid lo:hi:step and optionally the payloads joined by +. With
+// TestFloorProbe prints the error rate of the likelihood test of the
+// payloads and their 4FSK floor on a grid, for the settings in
+// DMRRF_FLOOR_PROBE: window, tail (A or B), seeds, the C/N grid
+// lo:hi:step and optionally the payloads joined by +. With
 // DMRRF_FLOOR_AWARE set it prints the code-aware receiver instead.
 func TestFloorProbe(t *testing.T) {
 	t.Parallel()
@@ -158,8 +175,8 @@ func TestFloorProbe(t *testing.T) {
 				continue
 			}
 			cell := fmt.Sprintf("%s %.4f", k, 1-float64(s.Exact)/float64(s.Truth))
-			if u := p.Conv[k]; len(u) > 0 {
-				cell += fmt.Sprintf("/%.4f", convBound(u))
+			if v, _, ok := p.anyFER(k); ok {
+				cell += fmt.Sprintf("/%.4f", v)
 			}
 			row = append(row, cell)
 		}

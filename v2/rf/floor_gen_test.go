@@ -17,19 +17,19 @@ const floorPath = "testdata/rxbench_floor.json"
 func floorBounds() map[string]string {
 	const conv = "the converse bound for any code with as many values over the same symbols"
 	return map[string]string{
-		"ambe":      "the larger of maximum likelihood over the uncoded C2 and C3 bits, the genie also giving C0 and C1, maximum likelihood over C0 and C1 candidates, and " + conv,
-		"ambe_c0c1": "the larger of maximum likelihood over C0 and C1 candidates, the genie also giving C2 and C3, and " + conv,
+		"ambe":      "the larger of maximum likelihood over the uncoded C2 and C3 bits, the genie also giving C0 and C1, maximum likelihood over the C0 and C1 values of c0c1Search, and " + conv,
+		"ambe_c0c1": "the larger of maximum likelihood over the C0 and C1 values of c0c1Search, the genie also giving C2 and C3, and " + conv,
 		"rate12":    "the larger of maximum likelihood over OSD candidates and " + conv,
-		"rate34":    "the larger of maximum likelihood over the Viterbi candidate and " + conv,
+		"rate34":    "the larger of maximum likelihood over the Viterbi candidate and the paths of rate34Search, and " + conv,
 		"rate1":     "the larger of maximum likelihood over the Viterbi candidate and " + conv,
 		"csbk":      "the larger of maximum likelihood over OSD candidates that pass the CRC, " + conv + ", and the slot type bound",
 		"lc":        "the larger of maximum likelihood over OSD candidates that pass the Reed-Solomon check, " + conv + ", and the slot type bound",
 		"header":    "the larger of maximum likelihood over OSD candidates that pass the CRC, " + conv + ", and the slot type bound",
 		"elc":       "over the embedded LC of every superframe of the call so far, the larger of maximum likelihood over OSD candidates that pass the checksum and " + conv,
-		"emb":       "maximum likelihood over the 8 EMB values of the stream's color code",
-		"slottype":  "maximum likelihood over the 16 slot types of the stream's color code",
-		"sync":      "maximum likelihood between the voice and the data SYNC",
-		"rate1_bit": "bitwise MAP detection of the rate 1 payload bits",
+		"emb":       "the larger of maximum likelihood over the 8 EMB values of the stream's color code and " + conv,
+		"slottype":  "the larger of maximum likelihood over the 16 slot types of the stream's color code and " + conv,
+		"sync":      "the larger of maximum likelihood between the voice and the data SYNC and " + conv,
+		"rate1_bit": "the larger of bitwise MAP detection of the rate 1 payload bits and Fano's inequality on the information density of the rate 1 block",
 	}
 }
 
@@ -109,7 +109,7 @@ func genCurves(t *testing.T, aware bool, path, source string, bounds map[string]
 		for batch := 0; ; batch++ {
 			only := map[string]bool{}
 			for _, k := range floorDeep() {
-				v, n, ok := p.fer(k)
+				v, n, ok := p.dmrFER(k)
 				if !ok || done[k] || v == 0 && n >= floorLimit(k)/4 || v > 0.2 || v*float64(n) >= 20 || n >= floorLimit(k) {
 					continue
 				}
@@ -138,7 +138,7 @@ func genCurves(t *testing.T, aware bool, path, source string, bounds map[string]
 			}
 		}
 		for _, k := range floorDeep() {
-			if v, n, ok := p.fer(k); ok && v == 0 && n >= floorLimit(k)/4 {
+			if v, n, ok := p.dmrFER(k); ok && v == 0 && n >= floorLimit(k)/4 {
 				done[k] = true
 			}
 		}
@@ -148,7 +148,7 @@ func genCurves(t *testing.T, aware bool, path, source string, bounds map[string]
 	for _, k := range floorPayloads() {
 		c := &floorCurve{Bound: bounds[k]}
 		for i := range pts {
-			v, n, ok := pts[i].fer(k)
+			v, n, ok := pts[i].dmrFER(k)
 			if !ok {
 				continue
 			}

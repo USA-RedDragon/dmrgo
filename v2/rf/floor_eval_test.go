@@ -14,13 +14,15 @@ import (
 // adds on each side of the free symbols, past its window.
 const floorMargin = 2
 
-// floorEval computes the floor of one stream. For each scored field a genie
-// gives the receiver every transmitted bit outside the field, the timing,
-// the carrier and the noise level. It bounds the field's error in two
-// ways, both valid for any receiver that knows less: a field is in error
-// when some candidate value has a higher likelihood than the transmitted
-// one, which maximum likelihood would then pick, and the meta-converse
-// bound of the information density of the field (see convBound).
+// floorEval computes the two floors of one stream. For each scored field
+// a genie gives the receiver every transmitted bit outside the field, the
+// timing, the carrier and the noise level. The 4FSK floor is the
+// meta-converse bound on the information density of the field's symbols
+// for its number of values (see convBound), which no code of that size can
+// beat. The DMR floor is the error rate of maximum likelihood decoding of
+// the DMR code of the field, or a lower bound on it: the field is in error
+// when a search finds a value with a higher likelihood than the
+// transmitted one. Both are valid for any receiver that knows less.
 type floorEval struct {
 	f     *floorSignal
 	g     *genieTrellis
@@ -269,6 +271,21 @@ func (e *floorEval) syncOK(i int, p enums.SyncPattern) bool {
 	return !e.beats(i, &cand)
 }
 
+// syncFirstBit is the first burst bit of the SYNC, and syncBits its
+// length.
+const (
+	syncFirstBit = 108
+	syncBits     = 48
+)
+
+// sync scores the SYNC p of slot i against the other SYNC of the BS
+// source, and stores the information density of its bits for two values.
+func (e *floorEval) sync(i int, p enums.SyncPattern) {
+	e.add("sync", e.syncOK(i, p))
+	e.setFree(seqInts(syncFirstBit, syncBits))
+	e.addInfo("sync", e.detect(i, false)-math.Ln2)
+}
+
 // voice scores the fields of voice burst i.
 func (e *floorEval) voice(i int, cc enums.ColorCode) {
 	ts := e.truth[i]
@@ -280,12 +297,14 @@ func (e *floorEval) voice(i int, cc enums.ColorCode) {
 	}
 	if ts.pos == enums.VoiceBurstA {
 		if e.want("sync") {
-			e.add("sync", e.syncOK(i, voice))
+			e.sync(i, voice)
 		}
 		return
 	}
 	if e.want("emb") {
 		e.add("emb", !e.smallBeats(i, softEMBCode, 0x78, uint32(cc&0x0f)<<3))
+		e.setFree(softSmallCodes[softEMBCode].pos[:softSmallCodes[softEMBCode].n])
+		e.addInfo("emb", e.detect(i, false)-3*math.Ln2)
 	}
 	if ts.pos >= enums.VoiceBurstB && ts.pos <= enums.VoiceBurstE && e.want("elc") {
 		e.elcFragment(i, ts)
@@ -439,9 +458,11 @@ func (e *floorEval) data(i int, cc enums.ColorCode) {
 	okST := !e.smallBeats(i, softSlotTypeCode, 0xf0, uint32(cc&0x0f)<<4)
 	if e.want("slottype") {
 		e.add("slottype", okST)
+		e.setFree(softSmallCodes[softSlotTypeCode].pos[:softSmallCodes[softSlotTypeCode].n])
+		e.addInfo("slottype", e.detect(i, false)-4*math.Ln2)
 	}
 	if e.want("sync") {
-		e.add("sync", e.syncOK(i, dsync))
+		e.sync(i, dsync)
 	}
 	if k == "" || !e.want(k) && (k != "rate1" || !e.want("rate1_bit")) {
 		return
@@ -557,7 +578,9 @@ func (e *floorEval) rate34(i int) bool {
 
 // rate1 scores the rate 1 payload of data burst i, and its bits with the
 // exact bitwise MAP detection, with a genie trellis of window 2: the long
-// runs of free symbols of a rate 1 block need the wider window.
+// runs of free symbols of a rate 1 block need the wider window. It stores
+// the information density of the block for both, as fanoBound reads it for
+// the bits.
 func (e *floorEval) rate1(i int) bool {
 	if e.g2 == nil {
 		e.g2 = newGenieTrellis(2, 2*slotSymbols)
@@ -566,7 +589,9 @@ func (e *floorEval) rate1(i int) bool {
 	defer func() { e.g = e.g1 }()
 	tb := e.truth[i].burst
 	e.setFree(e.r1pos[:])
-	e.addInfo("rate1", e.detect(i, false)-192*math.Ln2)
+	u := e.detect(i, false) - 192*math.Ln2
+	e.addInfo("rate1", u)
+	e.addInfo("rate1_bit", u)
 	for _, p := range e.r1pos {
 		one := tb[p/8]&(0x80>>(p%8)) != 0
 		e.add("rate1_bit", (e.llr[p] < 0) == one)
@@ -577,6 +602,34 @@ func (e *floorEval) rate1(i int) bool {
 		softPut(&cand, p, e.llr[p] < 0)
 	}
 	return !e.beats(i, &cand)
+}
+
+// fanoBound returns the lower bound on the bit error rate of any code with
+// 2^k equally likely values over the symbols of a field, from the
+// information densities u of the field less k ln 2: Fano's inequality on
+// each bit gives h(Pb) >= 1 - I/k for the mutual information I in bits,
+// and the mean density is at least I, because the output density of the
+// trellis is a sub-probability.
+func fanoBound(u []float64, k int) float64 {
+	var mean float64
+	for _, v := range u {
+		mean += v
+	}
+	mean = mean/float64(len(u))/math.Ln2 + float64(k)
+	h := 1 - mean/float64(k)
+	if h <= 0 {
+		return 0
+	}
+	lo, hi := 0.0, 0.5
+	for range 60 {
+		m := (lo + hi) / 2
+		if -m*math.Log2(m)-(1-m)*math.Log2(1-m) < h {
+			lo = m
+		} else {
+			hi = m
+		}
+	}
+	return lo
 }
 
 // convBound returns the converse lower bound on the error rate of any
