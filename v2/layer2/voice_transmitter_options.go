@@ -42,13 +42,18 @@ func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, erro
 	return t, nil
 }
 
+// noVoiceTransmitterOptions is the zero VoiceTransmitterOptions, which Reset
+// uses for a nil opts and only reads. A composite literal would be on the
+// heap under TinyGo.
+var noVoiceTransmitterOptions VoiceTransmitterOptions
+
 // Reset starts a new transmission with opts, as NewVoiceTransmitter does,
 // in the storage of t, so that a caller can keep one VoiceTransmitter for
 // many calls. A nil opts means the zero VoiceTransmitterOptions. On an
 // error t is left as it was. It does not allocate.
 func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 	if opts == nil {
-		opts = &VoiceTransmitterOptions{}
+		opts = &noVoiceTransmitterOptions
 	}
 	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {

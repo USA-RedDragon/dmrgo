@@ -220,6 +220,11 @@ func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *Res
 	return b.resp.build(to, r, data)
 }
 
+// noResponseData is the response data of a SACK without data, which
+// NewResponse only reads. A local would be on the heap under TinyGo, as its
+// address goes to encodeInto.
+var noResponseData ResponseData
+
 // responseStore holds the header and the C_RDATA blocks of a response
 // packet.
 type responseStore struct {
@@ -245,9 +250,8 @@ func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *Res
 	}
 	var blocks []layer2.Data
 	if r == ResponseSACK {
-		var none ResponseData
 		if data == nil {
-			data = &none
+			data = &noResponseData
 		}
 		n, err := data.encodeInto(&s.rate12, int(to.BlocksToFollow))
 		if err != nil {
