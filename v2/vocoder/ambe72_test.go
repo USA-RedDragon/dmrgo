@@ -50,7 +50,10 @@ func TestAMBE72RoundTrip(t *testing.T) {
 		if res.Uncorrectable {
 			continue
 		}
-		reencoded := vocoder.EncodeAMBE72(info)
+		reencoded, err := vocoder.EncodeAMBE72(info)
+		if err != nil {
+			t.Fatalf("slot %d: %v", i, err)
+		}
 		if res.ErrorsCorrected == 0 {
 			clean++
 			if reencoded != slot {
@@ -81,7 +84,10 @@ func TestAMBE72CorrectsErrors(t *testing.T) {
 		for i := range 49 {
 			bits.SetBit(info[:], i, byte(rng.Intn(2)))
 		}
-		slot := vocoder.EncodeAMBE72(info)
+		slot, err := vocoder.EncodeAMBE72(info)
+		if err != nil {
+			t.Fatal(err)
+		}
 		for _, p := range append(aPos, bPos...) {
 			slot[p/8] ^= 0x80 >> (p % 8)
 		}
@@ -95,7 +101,10 @@ func TestAMBE72CorrectsErrors(t *testing.T) {
 func TestAMBESilence(t *testing.T) {
 	t.Parallel()
 
-	slot := vocoder.EncodeAMBE72(vocoder.AMBESilence())
+	slot, err := vocoder.EncodeAMBE72(vocoder.AMBESilence())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if slot != vocoder.AMBESilenceSlot() {
 		t.Fatal("AMBESilenceSlot differs from EncodeAMBE72(AMBESilence())")
 	}

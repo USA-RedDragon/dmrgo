@@ -82,7 +82,7 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 		}
 	}
 	*t = VoiceTransmitter{
-		colorCode:  opts.ColorCode & 0x0F,
+		colorCode:  opts.ColorCode,
 		voiceSync:  voiceSync,
 		outbound:   opts.Source == SyncSourceBS,
 		header:     header,

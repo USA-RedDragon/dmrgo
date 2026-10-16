@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -80,7 +81,8 @@ type Burst struct {
 	// BPTCReserved holds the reserved bits R(0) to R(2) of the BPTC(196,96)
 	// payload of a data burst after FEC correction, R(i) in bit i, so that
 	// it reads R(2), R(1), R(0) in the order of the BPTC matrix, the first
-	// most significant. Encode ignores bits 3 to 7. The spec sets them to
+	// most significant. Encode returns a *bit.FieldRangeError for a data
+	// burst when one of bits 3 to 7 is set. The spec sets R(0) to R(2) to
 	// zero, and Motorola Capacity Max sets R(2), 0x4, to flag RAS (ETSI TS
 	// 102 361-1 clause B.1.1).
 	BPTCReserved uint8
@@ -490,11 +492,12 @@ func (b *Burst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result)
 	return frames, result
 }
 
-// SetAMBEFrames sets the three voice slots to the AMBE+2 coding of frames
-// (vocoder.EncodeAMBE72).
+// SetAMBEFrames sets the three voice slots to the AMBE+2 coding of frames,
+// as vocoder.EncodeAMBE72 returns it. It ignores the low 7 bits of byte 6
+// of each frame, as RawBurst.SetAMBEFrames does.
 func (b *Burst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
-	for i, f := range frames {
-		b.VoiceSlots[i] = vocoder.EncodeAMBE72(f)
+	for i := range frames {
+		b.VoiceSlots[i] = ambe.Encode(frames[i])
 	}
 }
 
@@ -626,8 +629,9 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 
 // Encode returns the burst in transmit bit order, as the package doc
 // describes. It returns an error for KindUnknown, a SyncPattern that does
-// not fit the kind, a missing Data, a Data whose data type is not
-// SlotType.DataType, or a field value that does not fit its bits. For a data
+// not fit the kind, a missing Data, or a Data whose data type is not
+// SlotType.DataType, and a *bit.FieldRangeError for a field value that does
+// not fit its bits or a padding bit that is set. For a data
 // burst, its type switch on the Encode method of Data can allocate once for
 // each type of Data, to fill the runtime cache of the switch.
 func (b *Burst) Encode() (RawBurst, error) {
@@ -641,6 +645,9 @@ func (b *Burst) Encode() (RawBurst, error) {
 	var r RawBurst
 
 	if b.Kind == KindData {
+		if b.BPTCReserved>>3 != 0 {
+			return RawBurst{}, errBurstBPTCReservedRange
+		}
 		st, err := b.SlotType.Encode()
 		if err != nil {
 			return RawBurst{}, err
@@ -828,7 +835,7 @@ func (b *Burst) encodeDataBits() ([25]byte, error) {
 	case dt == enums.DataTypeRate1:
 		return rate1Info(&info), nil
 	case dt.IsBPTC():
-		return bptc.Encode196([12]byte(info[:12]), b.BPTCReserved&0x7), nil
+		return bptc.Encode196([12]byte(info[:12]), b.BPTCReserved), nil
 	default:
 		return info, nil
 	}

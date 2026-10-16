@@ -130,14 +130,17 @@ func ambe(w io.Writer, dataDir string) (*pdu.FullLinkControl, error) {
 		if res.Uncorrectable {
 			bad++
 		}
-		if vocoder.EncodeAMBE72(info) == slot {
+		if s, err := vocoder.EncodeAMBE72(info); err == nil && s == slot {
 			clean++
 		}
 	}
 	_, _ = fmt.Fprintf(w, "AMBE72 FEC: %d bits corrected, %d uncorrectable frames, %d of %d frames re-encode unchanged\n",
 		corrected, bad, clean, len(c.slots))
 
-	slot := vocoder.EncodeAMBE72(c.frames[0])
+	slot, err := vocoder.EncodeAMBE72(c.frames[0])
+	if err != nil {
+		return nil, err
+	}
 	for _, k := range []int{0, 30, 60} {
 		slot[k/8] ^= 0x80 >> (k % 8)
 	}

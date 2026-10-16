@@ -1,16 +1,18 @@
-// Package bit holds FieldRangeError, the error of the PDU Encode methods.
-// The API of dmrgo takes and returns bits packed in bytes, the first bit in
-// the most significant bit of byte 0.
+// Package bit holds FieldRangeError, the error of an encoder for a value
+// that does not fit its bits or a padding bit that is set. The API of dmrgo
+// takes and returns bits packed in bytes, the first bit in the most
+// significant bit of byte 0.
 package bit
 
 import (
 	"fmt"
 )
 
-// FieldRangeError is the error of a PDU Encode method when a field value
-// does not fit in its on-air bits, or for a coordinate when it is outside
-// [Min, Max]. Each field has one static FieldRangeError, so an Encode that
-// fails does not allocate; it does not hold the value that failed.
+// FieldRangeError is the error of an encoder when a field value does not
+// fit in its on-air bits, when a padding bit of a packed field is set, or
+// for a coordinate when it is outside [Min, Max]. Each field has one static
+// FieldRangeError, so an encoder that fails does not allocate; it does not
+// hold the value that failed.
 type FieldRangeError struct {
 	// Type and Field name the PDU type and its field.
 	Type, Field string

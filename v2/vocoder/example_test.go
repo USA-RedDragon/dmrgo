@@ -64,7 +64,7 @@ func ExampleNew() {
 
 // ExampleDecodeAMBE72 corrects a bit error in an AMBE+2 silence slot.
 func ExampleDecodeAMBE72() {
-	slot := vocoder.EncodeAMBE72(vocoder.AMBESilence())
+	slot := vocoder.AMBESilenceSlot()
 	slot[0] ^= 0x80 >> 5
 	frame, res := vocoder.DecodeAMBE72(slot)
 	fmt.Println(frame == vocoder.AMBESilence(), res.ErrorsCorrected)
