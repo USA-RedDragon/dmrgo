@@ -16,7 +16,7 @@ Sequences for `tx -seq`. An MS-sourced sequence starts with `-wakeups` BS_Dwn_Ac
 | `data1`  | wakeups, then a confirmed data packet at rate 1 |
 | `data12u`, `data34u`, `data1u` | wakeups, then the same message as an unconfirmed packet at rate 1/2, 3/4 or 1 |
 | `ack` | wakeups, then an ACK response packet from `-src` to `-dst` |
-| `sr` | wakeups, then a selective retry (SACK) response from `-src` to `-dst` for an 8-block packet, asking again for blocks 1, 4 and 6 (C_RDATA `b5ffffffffffffff` plus CRC) |
+| `sr` | wakeups, then a selective retry (SACK) response from `-src` to `-dst` for an 8-block packet, asking again for blocks 1, 4 and 6 (C_RDATA `adffffffffffffff` plus CRC, in the bit order of ETSI TS 102 361-1 Figure 8.17) |
 | `preamble` | wakeups, `-preambles` Pre_CSBKs (opcode 0x3D, TS 102 361-2 clause 7.1.2.5, CSBK Blocks to Follow counting down to the data), then a confirmed rate 1/2 packet |
 | `voice` | wakeups, voice LC header, `-superframes` superframes of bursts A to F with EMB and embedded LC, terminator with LC |
 | `pi` | as `voice`, with a PI header after the voice LC header (ALGID 0x21, MFID 0x10, key ID 0x01, MI 0x12345678) and the privacy service option set; the voice is not encrypted |

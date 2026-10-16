@@ -604,7 +604,7 @@ func TestResponseData(t *testing.T) {
 	if err != nil || len(blocks) != 1 {
 		t.Fatal(err)
 	}
-	if blocks[0].Data[0] != 0x7B || blocks[0].Data[7] != 0xFE {
+	if blocks[0].Data[0] != 0xDE || blocks[0].Data[7] != 0x7F {
 		t.Errorf("flags %x", blocks[0].Data)
 	}
 	got, err := packet.DecodeResponseData(blocks...)
@@ -624,7 +624,7 @@ func TestResponseData(t *testing.T) {
 	if err != nil || got != rd || len(got.RetryBlocks()) != 4 {
 		t.Fatalf("two blocks: %v %v", err, got.RetryBlocks())
 	}
-	two[0].Data[0] ^= 0x80
+	two[0].Data[0] ^= 0x01
 	bad, err := packet.DecodeResponseData(two...)
 	if !errors.Is(err, packet.ErrResponseData) || !errors.Is(err, fec.ErrUncorrectable) || bad.Retry[0] == rd.Retry[0] || bad.Retry[126] != rd.Retry[126] {
 		t.Errorf("bad CRC: %v, flags %v; want the decoded flags and an uncorrectable error", err, bad.RetryBlocks())

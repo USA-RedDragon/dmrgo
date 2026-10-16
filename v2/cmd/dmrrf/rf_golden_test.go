@@ -30,7 +30,7 @@ func rfRuns() []rfRun {
 		{"pi", "pi", func(c *SeqConfig) { c.Dest, c.Group, c.Superframes = 9, true, 1 }},
 		{"resp-data", "data12", func(c *SeqConfig) { c.Dest = 3140598 }},
 		{"ack", "ack", func(c *SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }},
-		{"sr", "sr", func(c *SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }},
+		{"sr", "sr", func(c *SeqConfig) { c.Source, c.Dest, c.Wakeups = 3140598, 3191868, 0 }}, // burst 1 is pending an over-the-air re-capture, see TestRFRelayedPayloads
 	}
 }
 
@@ -146,7 +146,13 @@ func TestRFRelayedPayloads(t *testing.T) {
 		{"data header answered by a response", bptc("resp-data", 1), "43a62febf630b43c8200a5eb"},
 		{"ACK response header", bptc("ack", 0), "01a030b43c2febf6800829e3"},
 		{"SACK response header", bptc("sr", 0), "01a030b43c2febf681800a52"},
-		{"SACK retry bitmap", bptc("sr", 1), "b5ffffffffffffff0f341fd7"},
+		// Pending an over-the-air re-capture: the repeater relayed
+		// b5ffffffffffffff0f341fd7, which dmrgo built with the C_RDATA flags
+		// in the reverse bit order. Commit "packet: put the C_RDATA retry
+		// flags in the bit order of Figure 8.17" changed the expected value
+		// and the sr burst 1 line of testdata/rf_golden.txt, which no radio
+		// has sent yet.
+		{"SACK retry bitmap", bptc("sr", 1), "adffffffffffffff25b85442"},
 	} {
 		if c.got != c.want {
 			t.Errorf("%s: %s, repeater relayed %s", c.what, c.got, c.want)
