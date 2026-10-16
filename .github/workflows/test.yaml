@@ -92,6 +92,11 @@ jobs:
           tinygo test -gc=conservative ./internal/zeroalloc
           tinygo test -stack-size=8KB -gc=conservative ./internal/zeroalloc
 
+      - name: Check the heap allocation sites of the pico build
+        # layer2 still allocates under TinyGo; remove continue-on-error when it does not.
+        continue-on-error: true
+        run: DMRGO_TINYGO_ALLOCS=1 go test -run TestTinyGoHeapAllocations -v ./internal/allocgate
+
   unit-tests:
     uses: ./.github/workflows/unit-test.yaml
     secrets:
