@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -8,7 +9,9 @@ import (
 // EMBInfo is the 7 information bits of an EMB PDU without the QR(16,7,6)
 // parity, in bits 7 to 1 of one octet as IPSC carries them (ETSI TS 102
 // 361-1 clause 9.1.2, Table 9.3). Bit 0 is not an EMB bit: the getters and
-// Codeword ignore it and the setters keep it. For example, CC 1 with LCSS 1
+// Codeword ignore it and the setters keep it. A setter returns a
+// *dmrgo.FieldRangeError, and changes nothing, when its value does not fit
+// its bits. For example, CC 1 with LCSS 1
 // is 0x12.
 type EMBInfo byte
 
@@ -17,9 +20,13 @@ func (e EMBInfo) ColorCode() enums.ColorCode {
 	return enums.ColorCode(e >> 4)
 }
 
-// SetColorCode writes the low 4 bits of cc into bits 7 to 4.
-func (e *EMBInfo) SetColorCode(cc enums.ColorCode) {
+// SetColorCode writes cc into bits 7 to 4.
+func (e *EMBInfo) SetColorCode(cc enums.ColorCode) error {
+	if cc>>4 != 0 {
+		return errEMBInfoColorCodeRange
+	}
 	*e = *e&0x0F | EMBInfo(cc<<4)
+	return nil
 }
 
 // PI returns the Pre-emption and power control Indicator, bit 3.
@@ -41,14 +48,13 @@ func (e EMBInfo) LCSS() enums.LCSS {
 	return enums.LCSS(e >> 1 & 0x03)
 }
 
-// SetLCSS writes l into bits 2 and 1. It returns false, and changes
-// nothing, when l does not fit in 2 bits.
-func (e *EMBInfo) SetLCSS(l enums.LCSS) bool {
+// SetLCSS writes l into bits 2 and 1.
+func (e *EMBInfo) SetLCSS(l enums.LCSS) error {
 	if l>>2 != 0 {
-		return false
+		return errEMBInfoLCSSRange
 	}
 	*e = *e&^0x06 | EMBInfo(l<<1)
-	return true
+	return nil
 }
 
 // EmbeddedSignalling returns the fields of e as an EmbeddedSignalling with
@@ -62,13 +68,10 @@ func (e EMBInfo) EmbeddedSignalling() EmbeddedSignalling {
 }
 
 // Info returns the information bits of s as an EMBInfo with bit 0 clear:
-// the low 4 bits of the color code, the PI and the low 2 bits of the LCSS.
-func (s *EmbeddedSignalling) Info() EMBInfo {
-	var e EMBInfo
-	e.SetColorCode(s.ColorCode)
-	e.SetPI(s.PreemptionAndPowerControlIndicator)
-	e.SetLCSS(s.LCSS & 0x03)
-	return e
+// the color code, the PI and the LCSS. It returns the errors of Encode.
+func (s *EmbeddedSignalling) Info() (EMBInfo, error) {
+	cw, err := s.Encode()
+	return EMBInfo(cw[0] & 0xFE), err
 }
 
 // Codeword returns the 16-bit QR(16,7,6) codeword of e, the 7 information
@@ -86,5 +89,23 @@ func (e EMBInfo) Codeword() uint16 {
 // Uncorrectable, and the FEC result.
 func DecodeEMBCodeword(cw uint16) (EMBInfo, fec.Result) {
 	s := DecodeEmbeddedSignalling([2]byte{byte(cw >> 8), byte(cw & 0xFF)})
-	return s.Info(), s.FEC
+	info := EMBInfo(s.ColorCode<<4) | EMBInfo(s.LCSS<<1)
+	if s.PreemptionAndPowerControlIndicator {
+		info |= 0x08
+	}
+	return info, s.FEC
 }
+
+// The Field of the FieldRangeErrors of the setters of EMBInfo, SlotTypeInfo
+// and the confirmed data blocks.
+const (
+	fieldColorCode = "ColorCode"
+	fieldLCSS      = "LCSS"
+	fieldDBSN      = "DBSN"
+)
+
+// The errors of the EMBInfo setters.
+var (
+	errEMBInfoColorCodeRange = &dmrgo.FieldRangeError{Type: "EMBInfo", Field: fieldColorCode, Bits: 4}
+	errEMBInfoLCSSRange      = &dmrgo.FieldRangeError{Type: "EMBInfo", Field: fieldLCSS, Bits: 2}
+)

@@ -6,7 +6,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -493,12 +492,18 @@ func (b *Burst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result)
 }
 
 // SetAMBEFrames sets the three voice slots to the AMBE+2 coding of frames,
-// as vocoder.EncodeAMBE72 returns it. It ignores the low 7 bits of byte 6
-// of each frame, as RawBurst.SetAMBEFrames does.
-func (b *Burst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
+// as vocoder.EncodeAMBE72 returns it. It returns the errors of
+// EncodeAMBE72 and then changes nothing.
+func (b *Burst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) error {
+	var s [VoiceSlotsPerBurst][9]byte
 	for i := range frames {
-		b.VoiceSlots[i] = ambe.Encode(frames[i])
+		var err error
+		if s[i], err = vocoder.EncodeAMBE72(frames[i]); err != nil {
+			return err
+		}
 	}
+	b.VoiceSlots = s
+	return nil
 }
 
 // deinterleave decodes the packed information bits info of a data burst of

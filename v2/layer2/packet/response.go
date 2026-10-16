@@ -35,13 +35,21 @@ const (
 	ResponseSACK Response = 0b10_000
 )
 
-// NewResponseCode returns the Response of a Class and Type.
-func NewResponseCode(class, typ uint8) Response {
-	return Response((class&0b11)<<3 | typ&0b111)
+// NewResponseCode returns the Response of a Class and Type. It returns a
+// *dmrgo.FieldRangeError when class does not fit in 2 bits or typ in 3.
+func NewResponseCode(class, typ uint8) (Response, error) {
+	if class>>2 != 0 {
+		return 0, errResponseClassRange
+	}
+	if typ>>3 != 0 {
+		return 0, errResponseTypeRange
+	}
+	return Response(class<<3 | typ), nil
 }
 
-// ResponseOf returns the Response of a C_RHEAD.
-func ResponseOf(h *pdu.ResponsePacketHeader) Response {
+// ResponseOf returns the Response of a C_RHEAD, with the errors of
+// NewResponseCode.
+func ResponseOf(h *pdu.ResponsePacketHeader) (Response, error) {
 	return NewResponseCode(h.ResponseClass, h.ResponseType)
 }
 

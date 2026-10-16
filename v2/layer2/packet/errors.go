@@ -60,4 +60,5 @@ var (
 	errRetryFormat    = fmt.Errorf("%w: only a confirmed or SARQ packet has a later try", ErrFormat)
 
 	errResponseClassRange = &dmrgo.FieldRangeError{Type: "Response", Field: "Class", Bits: 2}
+	errResponseTypeRange  = &dmrgo.FieldRangeError{Type: "Response", Field: "Type", Bits: 3}
 )

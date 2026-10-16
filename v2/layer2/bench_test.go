@@ -202,7 +202,7 @@ func BenchmarkRawBurst(b *testing.B) {
 		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 		for b.Loop() {
 			frames[0][0] ^= 0x80
-			rb.SetAMBEFrames(frames)
+			noErr(rb.SetAMBEFrames(frames))
 		}
 	})
 }

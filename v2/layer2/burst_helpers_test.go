@@ -17,7 +17,7 @@ func lcBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode) ([33]byte, error
 	if err := r.SetSync(enums.SyncBSSourcedData); err != nil {
 		return r, err
 	}
-	r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt})
+	noErr(r.SetSlotType(pdu.SlotType{ColorCode: cc, DataType: dt}))
 	r.SetBPTCPayload(p)
 	return r, nil
 }

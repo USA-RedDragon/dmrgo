@@ -278,7 +278,7 @@ func collectBuild(d digests) {
 			var set layer2.RawBurst
 			rsv := uint8(r.Intn(2) | r.Intn(2)<<1 | r.Intn(2)<<2)
 			set = rb
-			set.SetBPTCReserved(rsv)
+			_ = set.SetBPTCReserved(rsv)
 			p, _ := rb.BPTCPayload()
 			set2 := rb
 			set2.SetBPTCPayload(p)
@@ -290,7 +290,7 @@ func collectBuild(d digests) {
 			set4.SetRate1Payload(p1)
 			st := rb.SlotType()
 			set5 := rb
-			set5.SetSlotType(st)
+			_ = set5.SetSlotType(st)
 			d.add("set/"+dt.String(), "%x %x %x %x %x", set, set2, set3, set4, set5)
 		}
 	}
@@ -300,11 +300,11 @@ func collectBuild(d digests) {
 		s.SetVoiceSlots(rb.VoiceSlots())
 		frames, _ := rb.AMBEFrames()
 		var s2 layer2.RawBurst
-		s2.SetAMBEFrames(frames)
+		_ = s2.SetAMBEFrames(frames)
 		var s3 layer2.RawBurst
-		s3.SetEMB(rb.EMB())
+		_ = s3.SetEMB(rb.EMB())
 		s3.SetEmbeddedData(rb.EmbeddedData())
-		s3.SetStandaloneRCEMB(rb.EMB())
+		_ = s3.SetStandaloneRCEMB(rb.EMB())
 		s3.SetStandaloneRCData(rb.EmbeddedData())
 		sync, _ := rb.Sync()
 		err := s3.SetSync(sync)

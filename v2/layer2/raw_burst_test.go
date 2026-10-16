@@ -165,7 +165,7 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 		b, _ := layer2.NewBurstFromBytes(frame)
 		if b.Kind == layer2.KindData {
 			if !stRes.HasErrors() {
-				w.SetSlotType(st)
+				noErr(w.SetSlotType(st))
 			}
 			switch dt := b.SlotType.DataType; {
 			case dt == enums.DataTypeRate34:
@@ -184,7 +184,7 @@ func TestRawBurst_SettersRoundTripCaptures(t *testing.T) {
 			w.SetVoiceSlots(r.VoiceSlots())
 			if b.HasEmbeddedSignalling() && b.SyncPattern != enums.SyncMSSourcedRC {
 				if e := r.EMB(); !e.FEC.HasErrors() {
-					w.SetEMB(e)
+					noErr(w.SetEMB(e))
 				}
 				w.SetEmbeddedData(r.EmbeddedData())
 			}
@@ -245,7 +245,7 @@ func TestRawBurst_SettersTouchOnlyTheirField(t *testing.T) {
 		}
 		w = r
 		e := pdu.EmbeddedSignalling{ColorCode: enums.ColorCode(rng.Intn(16)), LCSS: enums.LCSS(rng.Intn(4))}
-		w.SetEMB(e)
+		noErr(w.SetEMB(e))
 		if got := w.EMB(); got.ColorCode != e.ColorCode || got.LCSS != e.LCSS || got.FEC.HasErrors() || !sameBits(w, r, [2]int{108, 116}, [2]int{148, 156}) {
 			t.Fatalf("SetEMB: %+v", got)
 		}
@@ -294,7 +294,7 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 	if err := w.SetSync(enums.SyncMSSourcedRC); err != nil {
 		t.Fatal(err)
 	}
-	w.SetStandaloneRCEMB(emb)
+	noErr(w.SetStandaloneRCEMB(emb))
 	w.SetStandaloneRCData(data)
 	if w != r {
 		t.Fatalf("rebuilt RC burst\ngot  %x\nwant %x", w, r)

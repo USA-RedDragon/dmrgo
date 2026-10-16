@@ -192,8 +192,12 @@ func confirmed(w io.Writer) error {
 		return errors.New("SACK carries no response data")
 	}
 	retry := rm.Response.RetryBlocks()
+	sackCode, err := packet.ResponseOf(rm.Header.ResponsePacketHeader)
+	if err != nil {
+		return err
+	}
 	fmt.Fprintf(w, "confirmed: %d bursts, missing %v, %s asks for %v\n",
-		len(bursts), rx.Missing(), packet.ResponseOf(rm.Header.ResponsePacketHeader), retry)
+		len(bursts), rx.Missing(), sackCode, retry)
 	if !slices.Equal(retry, []int{1}) {
 		return fmt.Errorf("retry %v, want [1]", retry)
 	}
@@ -218,8 +222,12 @@ func confirmed(w io.Writer) error {
 		return err
 	}
 	ackDst, ackSrc, _ := am.Header.Addresses()
+	ackCode, err := packet.ResponseOf(am.Header.ResponsePacketHeader)
+	if err != nil {
+		return err
+	}
 	fmt.Fprintf(w, "confirmed: retry done, %q, %s %d -> %d: ok\n",
-		m.Data, packet.ResponseOf(am.Header.ResponsePacketHeader), ackSrc, ackDst)
+		m.Data, ackCode, ackSrc, ackDst)
 	return nil
 }
 

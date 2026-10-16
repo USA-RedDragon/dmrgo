@@ -19,18 +19,9 @@ func MotorolaServiceOptions() ServiceOptions {
 	return ServiceOptions{Reserved: 2}
 }
 
-// Byte returns s as the Service Options octet, with the low 2 bits of
-// Reserved and of PriorityLevel. It is the inverse of
-// DecodeServiceOptions.
-func (s ServiceOptions) Byte() byte {
-	var b byte
-	for _, f := range [...]struct {
-		set  bool
-		mask byte
-	}{{s.IsEmergency, 0x80}, {s.IsPrivacy, 0x40}, {s.IsBroadcast, 0x08}, {s.IsOpenVoiceCallMode, 0x04}} {
-		if f.set {
-			b |= f.mask
-		}
-	}
-	return b | (s.Reserved&0x03)<<4 | s.PriorityLevel&0x03
+// Byte returns s as the Service Options octet, the octet of Encode, with
+// the errors of Encode. It is the inverse of DecodeServiceOptions.
+func (s ServiceOptions) Byte() (byte, error) {
+	b, err := s.Encode()
+	return b[0], err
 }

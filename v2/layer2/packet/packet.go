@@ -232,7 +232,7 @@ func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
 	case 16, 18:
 		blk := &b.rate34[i]
 		if confirmed {
-			blk.SetConfirmed(dbsn, [16]byte(chunk))
+			_ = blk.SetConfirmed(dbsn, [16]byte(chunk))
 		} else {
 			blk.Data = [18]byte(chunk)
 		}
@@ -240,7 +240,7 @@ func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
 	case 22, 24:
 		blk := &b.rate1[i]
 		if confirmed {
-			blk.SetConfirmed(dbsn, [22]byte(chunk))
+			_ = blk.SetConfirmed(dbsn, [22]byte(chunk))
 		} else {
 			blk.Data = [24]byte(chunk)
 		}
@@ -248,7 +248,7 @@ func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
 	default:
 		blk := &b.rate12[i]
 		if confirmed {
-			blk.SetConfirmed(dbsn, [10]byte(chunk))
+			_ = blk.SetConfirmed(dbsn, [10]byte(chunk))
 		} else {
 			blk.Data = [12]byte(chunk)
 		}
