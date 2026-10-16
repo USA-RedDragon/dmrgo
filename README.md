@@ -142,7 +142,7 @@ The example prints its counts on the serial console once a second.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| 6.1 | Vocoder socket | verified | 19/19 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/internal/fec/golay/golay_23_12_7.go`, `v2/internal/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
+| 6.1 | Vocoder socket | verified | 21/21 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/internal/fec/golay/golay_23_12_7.go`, `v2/internal/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
 | 6.2 | Data and control | verified | 6/6 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/pi_header.go`, `v2/layer2/voice_transmitter_options.go` |
 | 6.3 | Common Announcement Channel burst | verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
 | 6.4 | Reverse Channel | verified | 17/17 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
