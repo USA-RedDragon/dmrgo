@@ -9,6 +9,7 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 )
 
 // decodeUnifiedSingleBlockDataBytes decodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause 8.2.3.1).
@@ -35,21 +36,11 @@ func DecodeUnifiedSingleBlockData(data [96]bit.Bit) UnifiedSingleBlockData {
 func (s *UnifiedSingleBlockData) encodeBytes() ([12]byte, error) {
 	var data [12]byte
 	if uint64(s.ServiceType)>>4 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ServiceType",
-			Type:  "UnifiedSingleBlockData",
-			Value: s.ServiceType,
-		}
+		return [12]byte{}, errs.NewFieldRange("UnifiedSingleBlockData", "ServiceType", s.ServiceType, 4, false)
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.ServiceType)<<4)&0xF0
 	if s.Payload[9]&15 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  76,
-			Field: "Payload",
-			Type:  "UnifiedSingleBlockData",
-			Value: s.Payload,
-		}
+		return [12]byte{}, errs.NewFieldRange("UnifiedSingleBlockData", "Payload", s.Payload, 76, false)
 	}
 	bits.Copy(data[:], 4, s.Payload[:], 0, 76)
 	_crcVal := crc.CCITT(data[:10])
@@ -71,8 +62,8 @@ func (s *UnifiedSingleBlockData) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *UnifiedSingleBlockData) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

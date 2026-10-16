@@ -8,6 +8,7 @@ import (
 	"fmt"
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	hamming "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
 )
 
@@ -46,12 +47,7 @@ func (s *TACT) encodeBytes() ([1]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.LCSS)>>2 != 0 {
-		return [1]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "LCSS",
-			Type:  "TACT",
-			Value: s.LCSS,
-		}
+		return [1]byte{}, errs.NewFieldRange("TACT", "LCSS", s.LCSS, 2, false)
 	}
 	data[0] = data[0]&^0x30 | byte(uint64(s.LCSS)<<4)&0x30
 	_cw := hamming.Encode743(uint8(uint64(data[0]) >> 4))
@@ -72,8 +68,8 @@ func (s *TACT) Encode() ([7]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *TACT) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

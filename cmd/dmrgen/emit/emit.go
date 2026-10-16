@@ -28,6 +28,7 @@ const (
 
 	bitPkg  = "github.com/USA-RedDragon/dmrgo/v2/bit"
 	bitsPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	errsPkg = "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	crcPkg  = "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	rsPkg   = "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 )
@@ -233,6 +234,16 @@ func bytesDecodeName(typeName string, into bool) string {
 	return name
 }
 
+// ownDecodeName returns the name of the packed decode function of pdu. The
+// function of a PDU with dispatch fields that is not the Into form
+// allocates the payload struct, so it is named as a constructor.
+func ownDecodeName(pdu parse.PDUStruct, into bool) string {
+	if !into && len(dispatchPayloads(pdu)) > 0 {
+		return "new" + pdu.Name + "Bytes"
+	}
+	return bytesDecodeName(pdu.Name, into)
+}
+
 // emitDecodeAdapter generates DecodeXxx (or DecodeXxxInto), which packs its
 // bit.Bit values and calls the packed decode function.
 func emitDecodeAdapter(f *File, pdu parse.PDUStruct, into bool, inputSize int) {
@@ -244,6 +255,10 @@ func emitDecodeAdapter(f *File, pdu parse.PDUStruct, into bool, inputSize int) {
 		f.Comment("not be nil.")
 	} else {
 		f.Comment(funcName + " decodes " + docObject(pdu))
+		if len(dispatchPayloads(pdu)) > 0 {
+			f.Comment("It allocates the payload struct that the dispatch field points to;")
+			f.Comment(funcName + "Into does not.")
+		}
 	}
 	var params, args []Code
 	if into {
@@ -263,7 +278,7 @@ func emitDecodeAdapter(f *File, pdu parse.PDUStruct, into bool, inputSize int) {
 				Op("<<").Parens(Lit(7).Op("-").Id("_i").Op("%").Lit(8)),
 		),
 	}
-	call := Id(bytesDecodeName(pdu.Name, into)).Call(args...)
+	call := Id(ownDecodeName(pdu, into)).Call(args...)
 	if into {
 		f.Func().Id(funcName + "Into").Params(params...).Block(append(body, call)...)
 		return
@@ -275,13 +290,17 @@ func emitDecodeAdapter(f *File, pdu parse.PDUStruct, into bool, inputSize int) {
 // which reads data, the inputSize bits of the PDU packed most significant
 // bit first.
 func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInfo, inputSize int) error {
-	name := bytesDecodeName(pdu.Name, into)
+	name := ownDecodeName(pdu, into)
 	if into {
-		f.Comment(name + " decodes data into dst as " + bytesDecodeName(pdu.Name, false) + " does, and")
-		f.Comment("points the dispatch field of dst into p.")
+		f.Comment(name + " decodes " + docObject(pdu))
+		f.Comment("data holds its bits packed, the first bit most significant. It decodes")
+		f.Comment("into dst and points the dispatch field of dst into p.")
 	} else {
 		f.Comment(name + " decodes " + docObject(pdu))
 		f.Comment("data holds its bits packed, the first bit most significant.")
+		if len(dispatchPayloads(pdu)) > 0 {
+			f.Comment("It allocates the payload struct that the dispatch field points to.")
+		}
 	}
 
 	var params []Code
@@ -1178,8 +1197,8 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 // codeword of Encode as a slice, so that PDUs of different sizes share an
 // interface such as layer2.Data.
 func emitEncodeBits(f *File, pdu parse.PDUStruct) {
-	f.Comment("EncodeBits returns the bits that Encode returns as a slice, or nil and")
-	f.Comment("the error of Encode.")
+	f.Comment("EncodeBits returns the bits that Encode returns as a fresh slice, or nil")
+	f.Comment("and the error of Encode. It allocates the slice; Encode does not.")
 	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id("EncodeBits").Params().Params(
 		Index().Qual(bitPkg, "Bit"),
 		Error(),
@@ -1203,21 +1222,14 @@ func (e encoder) fail(err Code) *Statement {
 }
 
 // failRange returns a statement that returns a zero codeword and a
-// *bit.FieldRangeError for field. extra adds Min and Max for a range check.
-func (e encoder) failRange(field parse.Field, extra Dict) *Statement {
-	d := Dict{
-		Id("Type"):  Lit(e.pdu.Name),
-		Id("Field"): Lit(field.Name),
-		Id("Value"): Id("s").Dot(field.Name),
-		Id("Bits"):  Lit(field.BitWidth),
+// *bit.FieldRangeError for field. lo and hi, when not nil, are the range of a
+// coordinate field.
+func (e encoder) failRange(field parse.Field, lo, hi Code) *Statement {
+	if lo != nil {
+		return e.fail(Qual(errsPkg, "NewCoordinateRange").Call(Lit(e.pdu.Name), Lit(field.Name), Id("s").Dot(field.Name), Lit(field.BitWidth), lo, hi))
 	}
-	if field.Signed || field.Kind == parse.FieldLongitude || field.Kind == parse.FieldLatitude {
-		d[Id("Signed")] = True()
-	}
-	for k, v := range extra {
-		d[k] = v
-	}
-	return e.fail(Op("&").Qual(bitPkg, "FieldRangeError").Values(d))
+	signed := field.Signed || field.Kind == parse.FieldLongitude || field.Kind == parse.FieldLatitude
+	return e.fail(Qual(errsPkg, "NewFieldRange").Call(Lit(e.pdu.Name), Lit(field.Name), Id("s").Dot(field.Name), Lit(field.BitWidth), Lit(signed)))
 }
 
 // fields emits the encoding of all fields. It encodes the dispatch fields
@@ -1265,7 +1277,7 @@ func (e encoder) payload(g *Group, fields []parse.Field) {
 		set := []Code{Id("_payload").Op("=").Lit(field.Name)}
 		if i > 0 {
 			set = append([]Code{If(Id("_payload").Op("!=").Lit("")).Block(
-				e.fail(Qual("fmt", "Errorf").Call(Lit(e.pdu.Name+": %s and %s are both set"), Id("_payload"), Lit(field.Name))),
+				e.fail(Qual(errsPkg, "NewBothSet").Call(Lit(e.pdu.Name), Id("_payload"), Lit(field.Name))),
 			)}, set...)
 		}
 		g.If(Id("s").Dot(field.Name).Op("!=").Nil()).Block(set...)
@@ -1303,9 +1315,8 @@ func (e encoder) checkPayload(g *Group, fields []parse.Field) error {
 		b.Id("_want").Op(":=").Lit(none)
 		b.Add(sel)
 		b.If(Id("_payload").Op("!=").Id("_want")).Block(
-			e.fail(Qual("fmt", "Errorf").Call(
-				Lit(e.pdu.Name+".%s is set, but "+joinNames(selectors)+verb+"%s"),
-				Id("_payload"), Id("_want"),
+			e.fail(Qual(errsPkg, "NewWrongPayload").Call(
+				Lit(e.pdu.Name), Id("_payload"), Lit(joinNames(selectors)+verb), Id("_want"),
 			)),
 		)
 	})
@@ -1355,7 +1366,7 @@ func (e encoder) dispatch(g *Group, fields []parse.Field) {
 			body = append(body,
 				List(Id("_pduBytes"), Err()).Op(":=").Id("s").Dot(field.Name).Dot("encodeBytes").Call(),
 				If(Err().Op("!=").Nil()).Block(
-					e.fail(Qual("fmt", "Errorf").Call(Lit(e.pdu.Name+"."+field.Name+": %w"), Err())),
+					e.fail(Qual(errsPkg, "NewWrapped").Call(Lit(e.pdu.Name+"."+field.Name), Err())),
 				),
 			)
 			body = append(body, store...)
@@ -1403,8 +1414,8 @@ func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 
 	var noMask Code
 	if pdu.FECMask != nil {
-		noMask = enc.fail(Qual("fmt", "Errorf").Call(
-			Lit(pdu.Name+"."+pdu.FECMask.Field+": no FEC mask for value %d"), Id("s").Dot(pdu.FECMask.Field)))
+		noMask = enc.fail(Qual(errsPkg, "NewNoFECMask").Call(
+			Lit(pdu.Name), Lit(pdu.FECMask.Field), Id("uint64").Call(Id("s").Dot(pdu.FECMask.Field))))
 	}
 	if err := emitFECMask(g, pdu, codec, Id("s"), "_encoded", noMask); err != nil {
 		return err
@@ -1442,7 +1453,7 @@ func (e encoder) field(g *Group, field parse.Field) {
 		limit := coordSpan(field) / 2
 		// Negated form also rejects NaN.
 		g.If(Op("!").Parens(source.Clone().Op(">=").Lit(-limit).Op("&&").Add(source.Clone()).Op("<=").Lit(limit))).Block(
-			e.failRange(field, Dict{Id("Min"): Lit(-limit), Id("Max"): Lit(limit)}),
+			e.failRange(field, Lit(-limit), Lit(limit)),
 		)
 		g.Id(raw).Op(":=").Add(coordRaw(field, source.Clone()))
 		// +180 degrees longitude rounds to 2^(width-1), which the two's
@@ -1479,7 +1490,7 @@ func (e encoder) delegate(g *Group, field parse.Field) {
 		g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
 			List(Id("_elem"+suffix), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot(method).Call(),
 			If(Err().Op("!=").Nil()).Block(
-				e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+"[%d]: %w"), Id("_i"), Err())),
+				e.fail(Qual(errsPkg, "NewWrappedIndex").Call(Lit(pdu.Name+"."+field.Name), Id("_i"), Err())),
 			),
 			store,
 		)
@@ -1488,7 +1499,7 @@ func (e encoder) delegate(g *Group, field parse.Field) {
 	tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + suffix
 	g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot(method).Call()
 	g.If(Err().Op("!=").Nil()).Block(
-		e.fail(Qual("fmt", "Errorf").Call(Lit(pdu.Name+"."+field.Name+": %w"), Err())),
+		e.fail(Qual(errsPkg, "NewWrapped").Call(Lit(pdu.Name+"."+field.Name), Err())),
 	)
 	if field.IsQualified {
 		g.Qual(bitsPkg, "Pack").Call(Id("data").Index(Empty(), Empty()), Lit(field.BitStart), Id(tmpVar).Index(Empty(), Empty()))
@@ -1503,7 +1514,7 @@ func (e encoder) raw(g *Group, field parse.Field) {
 	n := parse.RawBytes(field.BitWidth)
 	if pad := n*8 - field.BitWidth; pad > 0 {
 		g.If(Id("s").Dot(field.Name).Index(Lit(n - 1)).Op("&").Lit(1<<pad - 1).Op("!=").Lit(0)).Block(
-			e.failRange(field, nil),
+			e.failRange(field, nil, nil),
 		)
 	}
 	addAll(g, copyBits(dataBuf, field.BitStart, fieldOf("s", field.Name), 0, field.BitWidth))
@@ -1518,11 +1529,11 @@ func (e encoder) integer(g *Group, field parse.Field) {
 	case field.Signed:
 		lo, hi := -(1 << (w - 1)), (1<<(w-1))-1
 		g.If(Int64().Call(source.Clone()).Op("<").Lit(lo).Op("||").Int64().Call(source.Clone()).Op(">").Lit(hi)).Block(
-			e.failRange(field, nil),
+			e.failRange(field, nil, nil),
 		)
 	case needsRangeCheck(field):
 		g.If(Uint64().Call(source.Clone()).Op(">>").Lit(w).Op("!=").Lit(0)).Block(
-			e.failRange(field, nil),
+			e.failRange(field, nil, nil),
 		)
 	}
 

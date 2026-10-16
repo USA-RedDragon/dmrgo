@@ -11,9 +11,10 @@ import (
 // parity, as a FullLinkControl. FEC and BurstDataType are left at their
 // zero values; set BurstDataType before Encode. It returns an error when
 // the decoded LC does not encode back to lc, so that no bit of lc is lost.
+// It allocates the payload struct; DecodeFullLinkControlBytesInto does not.
 func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
-	f := decodeFullLinkControlBytes(cw, enums.DataTypeVoiceLCHeader)
+	f := newFullLinkControlBytes(cw, enums.DataTypeVoiceLCHeader)
 	f.BurstDataType = 0
 	f.FEC = fec.Result{}
 	got, err := f.Bytes()
@@ -21,7 +22,7 @@ func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 		return FullLinkControl{}, err
 	}
 	if got != lc {
-		return FullLinkControl{}, fmt.Errorf("full LC %x encodes back as %x", lc, got)
+		return FullLinkControl{}, newRoundTripError(lc, got)
 	}
 	return f, nil
 }
@@ -37,7 +38,7 @@ func DecodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayl
 	dst.FEC = fec.Result{}
 	got, err := dst.Bytes()
 	if err == nil && got != lc {
-		err = fmt.Errorf("full LC %x encodes back as %x", lc, got)
+		err = newRoundTripError(lc, got)
 	}
 	if err != nil {
 		*dst = FullLinkControl{}
@@ -69,4 +70,12 @@ func (s *FullLinkControl) Bytes() ([9]byte, error) {
 		return [9]byte{}, err
 	}
 	return [9]byte(cw[:9]), nil
+}
+
+// newRoundTripError returns the error of a full LC lc that encodes back as
+// got.
+//
+//go:noinline
+func newRoundTripError(lc, got [9]byte) error {
+	return fmt.Errorf("full LC %x encodes back as %x", lc, got)
 }

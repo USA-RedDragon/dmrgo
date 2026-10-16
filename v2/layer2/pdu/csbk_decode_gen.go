@@ -30,6 +30,7 @@ import (
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
@@ -51,24 +52,14 @@ func (s *BSOutboundActivationPDU) encodeBytes() ([8]byte, error) {
 	data[0] = byte(_valReserved >> 8)
 	data[1] = byte(_valReserved)
 	if uint64(s.BSAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "BSAddress",
-			Type:  "BSOutboundActivationPDU",
-			Value: s.BSAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("BSOutboundActivationPDU", "BSAddress", s.BSAddress, 24, false)
 	}
 	_valBSAddress := uint64(s.BSAddress)
 	data[2] = byte(_valBSAddress >> 16)
 	data[3] = byte(_valBSAddress >> 8)
 	data[4] = byte(_valBSAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "BSOutboundActivationPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("BSOutboundActivationPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -90,8 +81,8 @@ func (s *BSOutboundActivationPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *BSOutboundActivationPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -123,29 +114,19 @@ func (s *UnitToUnitVoiceServiceRequestPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [8]byte{}, fmt.Errorf("UnitToUnitVoiceServiceRequestPDU.ServiceOptions: %w", err)
+		return [8]byte{}, errs.NewWrapped("UnitToUnitVoiceServiceRequestPDU.ServiceOptions", err)
 	}
 	bits.Pack(data[:], 0, _serviceOptionsBits[:])
 	data[1] = byte(uint64(s.Reserved))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "UnitToUnitVoiceServiceRequestPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("UnitToUnitVoiceServiceRequestPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "UnitToUnitVoiceServiceRequestPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("UnitToUnitVoiceServiceRequestPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -167,8 +148,8 @@ func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *UnitToUnitVoiceServiceRequestPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -200,29 +181,19 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) encodeBytes() ([8]byte, error)
 	var data [8]byte
 	_serviceOptionsBits, err := s.ServiceOptions.Encode()
 	if err != nil {
-		return [8]byte{}, fmt.Errorf("UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions: %w", err)
+		return [8]byte{}, errs.NewWrapped("UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions", err)
 	}
 	bits.Pack(data[:], 0, _serviceOptionsBits[:])
 	data[1] = byte(uint64(s.AnswerResponse))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("UnitToUnitVoiceServiceAnswerResponsePDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "UnitToUnitVoiceServiceAnswerResponsePDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("UnitToUnitVoiceServiceAnswerResponsePDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -244,8 +215,8 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([64]bit.Bit, error) 
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -276,52 +247,27 @@ func decodeNegativeAcknowledgementPDUBytes(data [8]byte) NegativeAcknowledgement
 func (s *NegativeAcknowledgementPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AdditionalInfo)>>1 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  1,
-			Field: "AdditionalInfo",
-			Type:  "NegativeAcknowledgementPDU",
-			Value: s.AdditionalInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "AdditionalInfo", s.AdditionalInfo, 1, false)
 	}
 	data[0] = data[0]&^0x80 | byte(uint64(s.AdditionalInfo)<<7)&0x80
 	if uint64(s.SourceType)>>1 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  1,
-			Field: "SourceType",
-			Type:  "NegativeAcknowledgementPDU",
-			Value: s.SourceType,
-		}
+		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "SourceType", s.SourceType, 1, false)
 	}
 	data[0] = data[0]&^0x40 | byte(uint64(s.SourceType)<<6)&0x40
 	if uint64(s.ServiceType)>>6 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "ServiceType",
-			Type:  "NegativeAcknowledgementPDU",
-			Value: s.ServiceType,
-		}
+		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "ServiceType", s.ServiceType, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.ServiceType))&0x3F
 	data[1] = byte(uint64(s.ReasonCode))
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "NegativeAcknowledgementPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[2] = byte(_valSourceAddress >> 16)
 	data[3] = byte(_valSourceAddress >> 8)
 	data[4] = byte(_valSourceAddress)
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "NegativeAcknowledgementPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("NegativeAcknowledgementPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[5] = byte(_valTargetAddress >> 16)
@@ -343,8 +289,8 @@ func (s *NegativeAcknowledgementPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *NegativeAcknowledgementPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -381,34 +327,19 @@ func (s *PreamblePDU) encodeBytes() ([8]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Reserved)>>6 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "Reserved",
-			Type:  "PreamblePDU",
-			Value: s.Reserved,
-		}
+		return [8]byte{}, errs.NewFieldRange("PreamblePDU", "Reserved", s.Reserved, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Reserved))&0x3F
 	data[1] = byte(uint64(s.CSBKBlocksToFollow))
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "PreamblePDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("PreamblePDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "PreamblePDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("PreamblePDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -430,8 +361,8 @@ func (s *PreamblePDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *PreamblePDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -466,32 +397,17 @@ func decodeChannelTimingPDUBytes(data [8]byte) ChannelTimingPDU {
 func (s *ChannelTimingPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.SyncAge)>>11 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  11,
-			Field: "SyncAge",
-			Type:  "ChannelTimingPDU",
-			Value: s.SyncAge,
-		}
+		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "SyncAge", s.SyncAge, 11, false)
 	}
 	_valSyncAge := uint64(s.SyncAge)
 	data[0] = byte(_valSyncAge >> 3)
 	data[1] = data[1]&^0xE0 | byte(_valSyncAge<<5)&0xE0
 	if uint64(s.Generation)>>5 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "Generation",
-			Type:  "ChannelTimingPDU",
-			Value: s.Generation,
-		}
+		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "Generation", s.Generation, 5, false)
 	}
 	data[1] = data[1]&^0x1F | byte(uint64(s.Generation))&0x1F
 	if uint64(s.LeaderIdentifier)>>20 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  20,
-			Field: "LeaderIdentifier",
-			Type:  "ChannelTimingPDU",
-			Value: s.LeaderIdentifier,
-		}
+		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "LeaderIdentifier", s.LeaderIdentifier, 20, false)
 	}
 	_valLeaderIdentifier := uint64(s.LeaderIdentifier)
 	data[2] = byte(_valLeaderIdentifier >> 12)
@@ -501,24 +417,14 @@ func (s *ChannelTimingPDU) encodeBytes() ([8]byte, error) {
 		data[4] |= 0x08
 	}
 	if uint64(s.LeaderDynamicIdentifier)>>2 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "LeaderDynamicIdentifier",
-			Type:  "ChannelTimingPDU",
-			Value: s.LeaderDynamicIdentifier,
-		}
+		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "LeaderDynamicIdentifier", s.LeaderDynamicIdentifier, 2, false)
 	}
 	data[4] = data[4]&^0x06 | byte(uint64(s.LeaderDynamicIdentifier)<<1)&0x06
 	if s.ChannelTimingOp1 {
 		data[4] |= 0x01
 	}
 	if uint64(s.SourceIdentifier)>>20 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  20,
-			Field: "SourceIdentifier",
-			Type:  "ChannelTimingPDU",
-			Value: s.SourceIdentifier,
-		}
+		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "SourceIdentifier", s.SourceIdentifier, 20, false)
 	}
 	_valSourceIdentifier := uint64(s.SourceIdentifier)
 	data[5] = byte(_valSourceIdentifier >> 12)
@@ -528,12 +434,7 @@ func (s *ChannelTimingPDU) encodeBytes() ([8]byte, error) {
 		data[7] |= 0x08
 	}
 	if uint64(s.SourceDynamicIdentifier)>>2 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "SourceDynamicIdentifier",
-			Type:  "ChannelTimingPDU",
-			Value: s.SourceDynamicIdentifier,
-		}
+		return [8]byte{}, errs.NewFieldRange("ChannelTimingPDU", "SourceDynamicIdentifier", s.SourceDynamicIdentifier, 2, false)
 	}
 	data[7] = data[7]&^0x06 | byte(uint64(s.SourceDynamicIdentifier)<<1)&0x06
 	if s.ChannelTimingOp0 {
@@ -555,8 +456,8 @@ func (s *ChannelTimingPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ChannelTimingPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -588,12 +489,7 @@ func decodePrivateVoiceGrantPDUBytes(data [8]byte) PrivateVoiceGrantPDU {
 func (s *PrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "PrivateVoiceGrantPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateVoiceGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -611,24 +507,14 @@ func (s *PrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "PrivateVoiceGrantPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateVoiceGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "PrivateVoiceGrantPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateVoiceGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -650,8 +536,8 @@ func (s *PrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *PrivateVoiceGrantPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -683,12 +569,7 @@ func decodeTalkgroupVoiceGrantPDUBytes(data [8]byte) TalkgroupVoiceGrantPDU {
 func (s *TalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "TalkgroupVoiceGrantPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupVoiceGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -706,24 +587,14 @@ func (s *TalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "TalkgroupVoiceGrantPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupVoiceGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "TalkgroupVoiceGrantPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupVoiceGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -745,8 +616,8 @@ func (s *TalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *TalkgroupVoiceGrantPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -778,12 +649,7 @@ func decodeBroadcastTalkgroupVoiceGrantPDUBytes(data [8]byte) BroadcastTalkgroup
 func (s *BroadcastTalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "BroadcastTalkgroupVoiceGrantPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("BroadcastTalkgroupVoiceGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -801,24 +667,14 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "BroadcastTalkgroupVoiceGrantPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("BroadcastTalkgroupVoiceGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "BroadcastTalkgroupVoiceGrantPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("BroadcastTalkgroupVoiceGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -840,8 +696,8 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *BroadcastTalkgroupVoiceGrantPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -873,12 +729,7 @@ func decodePrivateDataGrantPDUBytes(data [8]byte) PrivateDataGrantPDU {
 func (s *PrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "PrivateDataGrantPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -896,24 +747,14 @@ func (s *PrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "PrivateDataGrantPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "PrivateDataGrantPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -935,8 +776,8 @@ func (s *PrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *PrivateDataGrantPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -968,12 +809,7 @@ func decodeTalkgroupDataGrantPDUBytes(data [8]byte) TalkgroupDataGrantPDU {
 func (s *TalkgroupDataGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "TalkgroupDataGrantPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -991,24 +827,14 @@ func (s *TalkgroupDataGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "TalkgroupDataGrantPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "TalkgroupDataGrantPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1030,8 +856,8 @@ func (s *TalkgroupDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *TalkgroupDataGrantPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1063,12 +889,7 @@ func decodeDuplexPrivateVoiceGrantPDUBytes(data [8]byte) DuplexPrivateVoiceGrant
 func (s *DuplexPrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "DuplexPrivateVoiceGrantPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("DuplexPrivateVoiceGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -1086,24 +907,14 @@ func (s *DuplexPrivateVoiceGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "DuplexPrivateVoiceGrantPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("DuplexPrivateVoiceGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "DuplexPrivateVoiceGrantPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("DuplexPrivateVoiceGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1125,8 +936,8 @@ func (s *DuplexPrivateVoiceGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *DuplexPrivateVoiceGrantPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1158,12 +969,7 @@ func decodeDuplexPrivateDataGrantPDUBytes(data [8]byte) DuplexPrivateDataGrantPD
 func (s *DuplexPrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "DuplexPrivateDataGrantPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("DuplexPrivateDataGrantPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -1181,24 +987,14 @@ func (s *DuplexPrivateDataGrantPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "DuplexPrivateDataGrantPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("DuplexPrivateDataGrantPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "DuplexPrivateDataGrantPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("DuplexPrivateDataGrantPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1220,8 +1016,8 @@ func (s *DuplexPrivateDataGrantPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *DuplexPrivateDataGrantPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1253,12 +1049,7 @@ func decodePrivateDataGrantMultiItemPDUBytes(data [8]byte) PrivateDataGrantMulti
 func (s *PrivateDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "PrivateDataGrantMultiItemPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantMultiItemPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -1276,24 +1067,14 @@ func (s *PrivateDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "PrivateDataGrantMultiItemPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantMultiItemPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "PrivateDataGrantMultiItemPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("PrivateDataGrantMultiItemPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1315,8 +1096,8 @@ func (s *PrivateDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *PrivateDataGrantMultiItemPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1348,12 +1129,7 @@ func decodeTalkgroupDataGrantMultiItemPDUBytes(data [8]byte) TalkgroupDataGrantM
 func (s *TalkgroupDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "TalkgroupDataGrantMultiItemPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantMultiItemPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -1371,24 +1147,14 @@ func (s *TalkgroupDataGrantMultiItemPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "TalkgroupDataGrantMultiItemPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantMultiItemPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "TalkgroupDataGrantMultiItemPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("TalkgroupDataGrantMultiItemPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1410,8 +1176,8 @@ func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *TalkgroupDataGrantMultiItemPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1444,32 +1210,17 @@ func decodeMovePDUBytes(data [8]byte) MovePDU {
 func (s *MovePDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved1)>>9 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  9,
-			Field: "Reserved1",
-			Type:  "MovePDU",
-			Value: s.Reserved1,
-		}
+		return [8]byte{}, errs.NewFieldRange("MovePDU", "Reserved1", s.Reserved1, 9, false)
 	}
 	_valReserved1 := uint64(s.Reserved1)
 	data[0] = byte(_valReserved1 >> 1)
 	data[1] = data[1]&^0x80 | byte(_valReserved1<<7)&0x80
 	if uint64(s.Mask)>>5 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "Mask",
-			Type:  "MovePDU",
-			Value: s.Mask,
-		}
+		return [8]byte{}, errs.NewFieldRange("MovePDU", "Mask", s.Mask, 5, false)
 	}
 	data[1] = data[1]&^0x7C | byte(uint64(s.Mask)<<2)&0x7C
 	if uint64(s.Reserved2)>>5 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "Reserved2",
-			Type:  "MovePDU",
-			Value: s.Reserved2,
-		}
+		return [8]byte{}, errs.NewFieldRange("MovePDU", "Reserved2", s.Reserved2, 5, false)
 	}
 	_valReserved2 := uint64(s.Reserved2)
 	data[1] = data[1]&^0x03 | byte(_valReserved2>>3)&0x03
@@ -1478,41 +1229,21 @@ func (s *MovePDU) encodeBytes() ([8]byte, error) {
 		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Backoff",
-			Type:  "MovePDU",
-			Value: s.Backoff,
-		}
+		return [8]byte{}, errs.NewFieldRange("MovePDU", "Backoff", s.Backoff, 4, false)
 	}
 	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
 	if uint64(s.Reserved3)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Reserved3",
-			Type:  "MovePDU",
-			Value: s.Reserved3,
-		}
+		return [8]byte{}, errs.NewFieldRange("MovePDU", "Reserved3", s.Reserved3, 4, false)
 	}
 	data[3] = data[3]&^0xF0 | byte(uint64(s.Reserved3)<<4)&0xF0
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "MovePDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("MovePDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[3] = data[3]&^0x0F | byte(_valPhysicalChannel>>8)&0x0F
 	data[4] = byte(_valPhysicalChannel)
 	if uint64(s.MSAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "MSAddress",
-			Type:  "MovePDU",
-			Value: s.MSAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("MovePDU", "MSAddress", s.MSAddress, 24, false)
 	}
 	_valMSAddress := uint64(s.MSAddress)
 	data[5] = byte(_valMSAddress >> 16)
@@ -1534,8 +1265,8 @@ func (s *MovePDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *MovePDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1582,12 +1313,7 @@ func (s *AlohaPDU) encodeBytes() ([8]byte, error) {
 		data[0] |= 0x20
 	}
 	if uint64(s.Version)>>3 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "Version",
-			Type:  "AlohaPDU",
-			Value: s.Version,
-		}
+		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "Version", s.Version, 3, false)
 	}
 	data[0] = data[0]&^0x1C | byte(uint64(s.Version)<<2)&0x1C
 	if s.Offset {
@@ -1597,30 +1323,15 @@ func (s *AlohaPDU) encodeBytes() ([8]byte, error) {
 		data[0] |= 0x01
 	}
 	if uint64(s.Mask)>>5 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "Mask",
-			Type:  "AlohaPDU",
-			Value: s.Mask,
-		}
+		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "Mask", s.Mask, 5, false)
 	}
 	data[1] = data[1]&^0xF8 | byte(uint64(s.Mask)<<3)&0xF8
 	if uint64(s.ServiceFunc)>>2 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "ServiceFunc",
-			Type:  "AlohaPDU",
-			Value: s.ServiceFunc,
-		}
+		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "ServiceFunc", s.ServiceFunc, 2, false)
 	}
 	data[1] = data[1]&^0x06 | byte(uint64(s.ServiceFunc)<<1)&0x06
 	if uint64(s.NRandWait)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "NRandWait",
-			Type:  "AlohaPDU",
-			Value: s.NRandWait,
-		}
+		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "NRandWait", s.NRandWait, 4, false)
 	}
 	_valNRandWait := uint64(s.NRandWait)
 	data[1] = data[1]&^0x01 | byte(_valNRandWait>>3)&0x01
@@ -1629,24 +1340,14 @@ func (s *AlohaPDU) encodeBytes() ([8]byte, error) {
 		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Backoff",
-			Type:  "AlohaPDU",
-			Value: s.Backoff,
-		}
+		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "Backoff", s.Backoff, 4, false)
 	}
 	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
 	_valSysIdentCode := uint64(s.SysIdentCode)
 	data[3] = byte(_valSysIdentCode >> 8)
 	data[4] = byte(_valSysIdentCode)
 	if uint64(s.MSAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "MSAddress",
-			Type:  "AlohaPDU",
-			Value: s.MSAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AlohaPDU", "MSAddress", s.MSAddress, 24, false)
 	}
 	_valMSAddress := uint64(s.MSAddress)
 	data[5] = byte(_valMSAddress >> 16)
@@ -1668,8 +1369,8 @@ func (s *AlohaPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *AlohaPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1700,21 +1401,11 @@ func decodeBroadcastPDUBytes(data [8]byte) BroadcastPDU {
 func (s *BroadcastPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  5,
-			Field: "AnnouncementType",
-			Type:  "BroadcastPDU",
-			Value: s.AnnouncementType,
-		}
+		return [8]byte{}, errs.NewFieldRange("BroadcastPDU", "AnnouncementType", s.AnnouncementType, 5, false)
 	}
 	data[0] = data[0]&^0xF8 | byte(uint64(s.AnnouncementType)<<3)&0xF8
 	if uint64(s.BroadcastParms1)>>14 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  14,
-			Field: "BroadcastParms1",
-			Type:  "BroadcastPDU",
-			Value: s.BroadcastParms1,
-		}
+		return [8]byte{}, errs.NewFieldRange("BroadcastPDU", "BroadcastParms1", s.BroadcastParms1, 14, false)
 	}
 	_valBroadcastParms1 := uint64(s.BroadcastParms1)
 	data[0] = data[0]&^0x07 | byte(_valBroadcastParms1>>11)&0x07
@@ -1724,24 +1415,14 @@ func (s *BroadcastPDU) encodeBytes() ([8]byte, error) {
 		data[2] |= 0x10
 	}
 	if uint64(s.Backoff)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Backoff",
-			Type:  "BroadcastPDU",
-			Value: s.Backoff,
-		}
+		return [8]byte{}, errs.NewFieldRange("BroadcastPDU", "Backoff", s.Backoff, 4, false)
 	}
 	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
 	_valSysIdentCode := uint64(s.SysIdentCode)
 	data[3] = byte(_valSysIdentCode >> 8)
 	data[4] = byte(_valSysIdentCode)
 	if uint64(s.BroadcastParms2)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "BroadcastParms2",
-			Type:  "BroadcastPDU",
-			Value: s.BroadcastParms2,
-		}
+		return [8]byte{}, errs.NewFieldRange("BroadcastPDU", "BroadcastParms2", s.BroadcastParms2, 24, false)
 	}
 	_valBroadcastParms2 := uint64(s.BroadcastParms2)
 	data[5] = byte(_valBroadcastParms2 >> 16)
@@ -1763,8 +1444,8 @@ func (s *BroadcastPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *BroadcastPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1795,12 +1476,7 @@ func decodeClearPDUBytes(data [8]byte) ClearPDU {
 func (s *ClearPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "PhysicalChannel",
-			Type:  "ClearPDU",
-			Value: s.PhysicalChannel,
-		}
+		return [8]byte{}, errs.NewFieldRange("ClearPDU", "PhysicalChannel", s.PhysicalChannel, 12, false)
 	}
 	_valPhysicalChannel := uint64(s.PhysicalChannel)
 	data[0] = byte(_valPhysicalChannel >> 4)
@@ -1809,36 +1485,21 @@ func (s *ClearPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x08
 	}
 	if uint64(s.Reserved2)>>2 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "Reserved2",
-			Type:  "ClearPDU",
-			Value: s.Reserved2,
-		}
+		return [8]byte{}, errs.NewFieldRange("ClearPDU", "Reserved2", s.Reserved2, 2, false)
 	}
 	data[1] = data[1]&^0x06 | byte(uint64(s.Reserved2)<<1)&0x06
 	if s.GroupIndividual {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "ClearPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("ClearPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "ClearPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("ClearPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1860,8 +1521,8 @@ func (s *ClearPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ClearPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1891,47 +1552,27 @@ func decodeProtectPDUBytes(data [8]byte) ProtectPDU {
 func (s *ProtectPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "Reserved",
-			Type:  "ProtectPDU",
-			Value: s.Reserved,
-		}
+		return [8]byte{}, errs.NewFieldRange("ProtectPDU", "Reserved", s.Reserved, 12, false)
 	}
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 4)
 	data[1] = data[1]&^0xF0 | byte(_valReserved<<4)&0xF0
 	if uint64(s.ProtectKind)>>3 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "ProtectKind",
-			Type:  "ProtectPDU",
-			Value: s.ProtectKind,
-		}
+		return [8]byte{}, errs.NewFieldRange("ProtectPDU", "ProtectKind", s.ProtectKind, 3, false)
 	}
 	data[1] = data[1]&^0x0E | byte(uint64(s.ProtectKind)<<1)&0x0E
 	if s.GroupIndividual {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "ProtectPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("ProtectPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "ProtectPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("ProtectPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -1953,8 +1594,8 @@ func (s *ProtectPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *ProtectPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -1987,12 +1628,7 @@ func decodeAhoyPDUBytes(data [8]byte) AhoyPDU {
 func (s *AhoyPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "ServiceOptsMirror",
-			Type:  "AhoyPDU",
-			Value: s.ServiceOptsMirror,
-		}
+		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "ServiceOptsMirror", s.ServiceOptsMirror, 7, false)
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptsMirror)<<1)&0xFE
 	if s.ServiceKindFlag {
@@ -2005,42 +1641,22 @@ func (s *AhoyPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x40
 	}
 	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "AppendedBlocks",
-			Type:  "AhoyPDU",
-			Value: s.AppendedBlocks,
-		}
+		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "AppendedBlocks", s.AppendedBlocks, 2, false)
 	}
 	data[1] = data[1]&^0x30 | byte(uint64(s.AppendedBlocks)<<4)&0x30
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ServiceKind",
-			Type:  "AhoyPDU",
-			Value: s.ServiceKind,
-		}
+		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "ServiceKind", s.ServiceKind, 4, false)
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "AhoyPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "AhoyPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AhoyPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -2062,8 +1678,8 @@ func (s *AhoyPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *AhoyPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -2093,12 +1709,7 @@ func decodeAckOutboundPDUBytes(data [8]byte) AckOutboundPDU {
 func (s *AckOutboundPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "ResponseInfo",
-			Type:  "AckOutboundPDU",
-			Value: s.ResponseInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckOutboundPDU", "ResponseInfo", s.ResponseInfo, 7, false)
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
 	_valReasonCode := uint64(s.ReasonCode)
@@ -2108,24 +1719,14 @@ func (s *AckOutboundPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "AckOutboundPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckOutboundPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "AdditionalInfo",
-			Type:  "AckOutboundPDU",
-			Value: s.AdditionalInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckOutboundPDU", "AdditionalInfo", s.AdditionalInfo, 24, false)
 	}
 	_valAdditionalInfo := uint64(s.AdditionalInfo)
 	data[5] = byte(_valAdditionalInfo >> 16)
@@ -2147,8 +1748,8 @@ func (s *AckOutboundPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *AckOutboundPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -2178,12 +1779,7 @@ func decodeAckInboundPDUBytes(data [8]byte) AckInboundPDU {
 func (s *AckInboundPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "ResponseInfo",
-			Type:  "AckInboundPDU",
-			Value: s.ResponseInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckInboundPDU", "ResponseInfo", s.ResponseInfo, 7, false)
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
 	_valReasonCode := uint64(s.ReasonCode)
@@ -2193,24 +1789,14 @@ func (s *AckInboundPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "AckInboundPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckInboundPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "AdditionalInfo",
-			Type:  "AckInboundPDU",
-			Value: s.AdditionalInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckInboundPDU", "AdditionalInfo", s.AdditionalInfo, 24, false)
 	}
 	_valAdditionalInfo := uint64(s.AdditionalInfo)
 	data[5] = byte(_valAdditionalInfo >> 16)
@@ -2232,8 +1818,8 @@ func (s *AckInboundPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *AckInboundPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -2263,12 +1849,7 @@ func decodeAckOutboundPayloadPDUBytes(data [8]byte) AckOutboundPayloadPDU {
 func (s *AckOutboundPayloadPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "ResponseInfo",
-			Type:  "AckOutboundPayloadPDU",
-			Value: s.ResponseInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckOutboundPayloadPDU", "ResponseInfo", s.ResponseInfo, 7, false)
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
 	_valReasonCode := uint64(s.ReasonCode)
@@ -2278,24 +1859,14 @@ func (s *AckOutboundPayloadPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "AckOutboundPayloadPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckOutboundPayloadPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "AdditionalInfo",
-			Type:  "AckOutboundPayloadPDU",
-			Value: s.AdditionalInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckOutboundPayloadPDU", "AdditionalInfo", s.AdditionalInfo, 24, false)
 	}
 	_valAdditionalInfo := uint64(s.AdditionalInfo)
 	data[5] = byte(_valAdditionalInfo >> 16)
@@ -2317,8 +1888,8 @@ func (s *AckOutboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *AckOutboundPayloadPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -2348,12 +1919,7 @@ func decodeAckInboundPayloadPDUBytes(data [8]byte) AckInboundPayloadPDU {
 func (s *AckInboundPayloadPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "ResponseInfo",
-			Type:  "AckInboundPayloadPDU",
-			Value: s.ResponseInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckInboundPayloadPDU", "ResponseInfo", s.ResponseInfo, 7, false)
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ResponseInfo)<<1)&0xFE
 	_valReasonCode := uint64(s.ReasonCode)
@@ -2363,24 +1929,14 @@ func (s *AckInboundPayloadPDU) encodeBytes() ([8]byte, error) {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "AckInboundPayloadPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckInboundPayloadPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.AdditionalInfo)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "AdditionalInfo",
-			Type:  "AckInboundPayloadPDU",
-			Value: s.AdditionalInfo,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckInboundPayloadPDU", "AdditionalInfo", s.AdditionalInfo, 24, false)
 	}
 	_valAdditionalInfo := uint64(s.AdditionalInfo)
 	data[5] = byte(_valAdditionalInfo >> 16)
@@ -2402,8 +1958,8 @@ func (s *AckInboundPayloadPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *AckInboundPayloadPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -2434,54 +1990,29 @@ func decodeRandomAccessPDUBytes(data [8]byte) RandomAccessPDU {
 func (s *RandomAccessPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptions)>>7 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "ServiceOptions",
-			Type:  "RandomAccessPDU",
-			Value: s.ServiceOptions,
-		}
+		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "ServiceOptions", s.ServiceOptions, 7, false)
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptions)<<1)&0xFE
 	if s.ProxyFlag {
 		data[0] |= 0x01
 	}
 	if uint64(s.Reserved)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "Reserved",
-			Type:  "RandomAccessPDU",
-			Value: s.Reserved,
-		}
+		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "Reserved", s.Reserved, 4, false)
 	}
 	data[1] = data[1]&^0xF0 | byte(uint64(s.Reserved)<<4)&0xF0
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ServiceKind",
-			Type:  "RandomAccessPDU",
-			Value: s.ServiceKind,
-		}
+		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "ServiceKind", s.ServiceKind, 4, false)
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "RandomAccessPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "RandomAccessPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("RandomAccessPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -2503,8 +2034,8 @@ func (s *RandomAccessPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *RandomAccessPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -2536,63 +2067,33 @@ func decodeAckvitationPDUBytes(data [8]byte) AckvitationPDU {
 func (s *AckvitationPDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  7,
-			Field: "ServiceOptsMirror",
-			Type:  "AckvitationPDU",
-			Value: s.ServiceOptsMirror,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "ServiceOptsMirror", s.ServiceOptsMirror, 7, false)
 	}
 	data[0] = data[0]&^0xFE | byte(uint64(s.ServiceOptsMirror)<<1)&0xFE
 	if s.ServiceKindFlag {
 		data[0] |= 0x01
 	}
 	if uint64(s.Reserved)>>2 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "Reserved",
-			Type:  "AckvitationPDU",
-			Value: s.Reserved,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "Reserved", s.Reserved, 2, false)
 	}
 	data[1] = data[1]&^0xC0 | byte(uint64(s.Reserved)<<6)&0xC0
 	if uint64(s.UAB)>>2 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  2,
-			Field: "UAB",
-			Type:  "AckvitationPDU",
-			Value: s.UAB,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "UAB", s.UAB, 2, false)
 	}
 	data[1] = data[1]&^0x30 | byte(uint64(s.UAB)<<4)&0x30
 	if uint64(s.ServiceKind)>>4 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  4,
-			Field: "ServiceKind",
-			Type:  "AckvitationPDU",
-			Value: s.ServiceKind,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "ServiceKind", s.ServiceKind, 4, false)
 	}
 	data[1] = data[1]&^0x0F | byte(uint64(s.ServiceKind))&0x0F
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "AckvitationPDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "AckvitationPDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("AckvitationPDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -2614,8 +2115,8 @@ func (s *AckvitationPDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *AckvitationPDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -2645,47 +2146,27 @@ func decodeMaintenancePDUBytes(data [8]byte) MaintenancePDU {
 func (s *MaintenancePDU) encodeBytes() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved)>>12 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  12,
-			Field: "Reserved",
-			Type:  "MaintenancePDU",
-			Value: s.Reserved,
-		}
+		return [8]byte{}, errs.NewFieldRange("MaintenancePDU", "Reserved", s.Reserved, 12, false)
 	}
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 4)
 	data[1] = data[1]&^0xF0 | byte(_valReserved<<4)&0xF0
 	if uint64(s.MaintKind)>>3 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  3,
-			Field: "MaintKind",
-			Type:  "MaintenancePDU",
-			Value: s.MaintKind,
-		}
+		return [8]byte{}, errs.NewFieldRange("MaintenancePDU", "MaintKind", s.MaintKind, 3, false)
 	}
 	data[1] = data[1]&^0x0E | byte(uint64(s.MaintKind)<<1)&0x0E
 	if s.Reserved2 {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "TargetAddress",
-			Type:  "MaintenancePDU",
-			Value: s.TargetAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("MaintenancePDU", "TargetAddress", s.TargetAddress, 24, false)
 	}
 	_valTargetAddress := uint64(s.TargetAddress)
 	data[2] = byte(_valTargetAddress >> 16)
 	data[3] = byte(_valTargetAddress >> 8)
 	data[4] = byte(_valTargetAddress)
 	if uint64(s.SourceAddress)>>24 != 0 {
-		return [8]byte{}, &bit.FieldRangeError{
-			Bits:  24,
-			Field: "SourceAddress",
-			Type:  "MaintenancePDU",
-			Value: s.SourceAddress,
-		}
+		return [8]byte{}, errs.NewFieldRange("MaintenancePDU", "SourceAddress", s.SourceAddress, 24, false)
 	}
 	_valSourceAddress := uint64(s.SourceAddress)
 	data[5] = byte(_valSourceAddress >> 16)
@@ -2707,8 +2188,8 @@ func (s *MaintenancePDU) Encode() ([64]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *MaintenancePDU) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {
@@ -2721,9 +2202,10 @@ func (s *MaintenancePDU) String() string {
 	return fmt.Sprintf("MaintenancePDU{ Reserved: %d, MaintKind: %d, Reserved2: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.MaintKind, s.Reserved2, s.TargetAddress, s.SourceAddress)
 }
 
-// decodeCSBKBytes decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
+// newCSBKBytes decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
 // data holds its bits packed, the first bit most significant.
-func decodeCSBKBytes(data [12]byte) CSBK {
+// It allocates the payload struct that the dispatch field points to.
+func newCSBKBytes(data [12]byte) CSBK {
 	var result CSBK
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xA5A5)
 	result.LastBlock = data[0]&0x80 != 0
@@ -2822,12 +2304,14 @@ func decodeCSBKBytes(data [12]byte) CSBK {
 }
 
 // DecodeCSBK decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
+// It allocates the payload struct that the dispatch field points to;
+// DecodeCSBKInto does not.
 func DecodeCSBK(data [96]bit.Bit) CSBK {
 	var _b [12]byte
 	for _i := range 96 {
 		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
 	}
-	return decodeCSBKBytes(_b)
+	return newCSBKBytes(_b)
 }
 
 // CSBKPayloads holds one payload struct of each type that
@@ -2862,8 +2346,9 @@ type CSBKPayloads struct {
 	maintenancePDU                          MaintenancePDU
 }
 
-// decodeCSBKBytesInto decodes data into dst as decodeCSBKBytes does, and
-// points the dispatch field of dst into p.
+// decodeCSBKBytesInto decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8).
+// data holds its bits packed, the first bit most significant. It decodes
+// into dst and points the dispatch field of dst into p.
 func decodeCSBKBytesInto(dst *CSBK, p *CSBKPayloads, data [12]byte) {
 	*dst = CSBK{}
 	result := dst
@@ -2984,151 +2469,151 @@ func (s *CSBK) encodeBytes() ([12]byte, error) {
 	}
 	if s.UnitToUnitVoiceServiceAnswerResponsePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "UnitToUnitVoiceServiceAnswerResponsePDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "UnitToUnitVoiceServiceAnswerResponsePDU")
 		}
 		_payload = "UnitToUnitVoiceServiceAnswerResponsePDU"
 	}
 	if s.NegativeAcknowledgementPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "NegativeAcknowledgementPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "NegativeAcknowledgementPDU")
 		}
 		_payload = "NegativeAcknowledgementPDU"
 	}
 	if s.PreamblePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "PreamblePDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "PreamblePDU")
 		}
 		_payload = "PreamblePDU"
 	}
 	if s.ChannelTimingPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "ChannelTimingPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "ChannelTimingPDU")
 		}
 		_payload = "ChannelTimingPDU"
 	}
 	if s.PrivateVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "PrivateVoiceGrantPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "PrivateVoiceGrantPDU")
 		}
 		_payload = "PrivateVoiceGrantPDU"
 	}
 	if s.TalkgroupVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "TalkgroupVoiceGrantPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "TalkgroupVoiceGrantPDU")
 		}
 		_payload = "TalkgroupVoiceGrantPDU"
 	}
 	if s.BroadcastTalkgroupVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "BroadcastTalkgroupVoiceGrantPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "BroadcastTalkgroupVoiceGrantPDU")
 		}
 		_payload = "BroadcastTalkgroupVoiceGrantPDU"
 	}
 	if s.PrivateDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "PrivateDataGrantPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "PrivateDataGrantPDU")
 		}
 		_payload = "PrivateDataGrantPDU"
 	}
 	if s.TalkgroupDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "TalkgroupDataGrantPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "TalkgroupDataGrantPDU")
 		}
 		_payload = "TalkgroupDataGrantPDU"
 	}
 	if s.DuplexPrivateVoiceGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "DuplexPrivateVoiceGrantPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "DuplexPrivateVoiceGrantPDU")
 		}
 		_payload = "DuplexPrivateVoiceGrantPDU"
 	}
 	if s.DuplexPrivateDataGrantPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "DuplexPrivateDataGrantPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "DuplexPrivateDataGrantPDU")
 		}
 		_payload = "DuplexPrivateDataGrantPDU"
 	}
 	if s.PrivateDataGrantMultiItemPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "PrivateDataGrantMultiItemPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "PrivateDataGrantMultiItemPDU")
 		}
 		_payload = "PrivateDataGrantMultiItemPDU"
 	}
 	if s.MovePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "MovePDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "MovePDU")
 		}
 		_payload = "MovePDU"
 	}
 	if s.AlohaPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AlohaPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AlohaPDU")
 		}
 		_payload = "AlohaPDU"
 	}
 	if s.BroadcastPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "BroadcastPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "BroadcastPDU")
 		}
 		_payload = "BroadcastPDU"
 	}
 	if s.ClearPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "ClearPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "ClearPDU")
 		}
 		_payload = "ClearPDU"
 	}
 	if s.ProtectPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "ProtectPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "ProtectPDU")
 		}
 		_payload = "ProtectPDU"
 	}
 	if s.AhoyPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AhoyPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AhoyPDU")
 		}
 		_payload = "AhoyPDU"
 	}
 	if s.AckOutboundPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckOutboundPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckOutboundPDU")
 		}
 		_payload = "AckOutboundPDU"
 	}
 	if s.AckInboundPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckInboundPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckInboundPDU")
 		}
 		_payload = "AckInboundPDU"
 	}
 	if s.AckOutboundPayloadPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckOutboundPayloadPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckOutboundPayloadPDU")
 		}
 		_payload = "AckOutboundPayloadPDU"
 	}
 	if s.AckInboundPayloadPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckInboundPayloadPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckInboundPayloadPDU")
 		}
 		_payload = "AckInboundPayloadPDU"
 	}
 	if s.RandomAccessPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "RandomAccessPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "RandomAccessPDU")
 		}
 		_payload = "RandomAccessPDU"
 	}
 	if s.AckvitationPDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "AckvitationPDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "AckvitationPDU")
 		}
 		_payload = "AckvitationPDU"
 	}
 	if s.MaintenancePDU != nil {
 		if _payload != "" {
-			return [12]byte{}, fmt.Errorf("CSBK: %s and %s are both set", _payload, "MaintenancePDU")
+			return [12]byte{}, errs.NewBothSet("CSBK", _payload, "MaintenancePDU")
 		}
 		_payload = "MaintenancePDU"
 	}
@@ -3136,157 +2621,157 @@ func (s *CSBK) encodeBytes() ([12]byte, error) {
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
 		_pduBytes, err := s.UnitToUnitVoiceServiceRequestPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.UnitToUnitVoiceServiceRequestPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.UnitToUnitVoiceServiceRequestPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
 		_pduBytes, err := s.UnitToUnitVoiceServiceAnswerResponsePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.UnitToUnitVoiceServiceAnswerResponsePDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.UnitToUnitVoiceServiceAnswerResponsePDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.NegativeAcknowledgementPDU != nil:
 		_pduBytes, err := s.NegativeAcknowledgementPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.NegativeAcknowledgementPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.NegativeAcknowledgementPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PreamblePDU != nil:
 		_pduBytes, err := s.PreamblePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.PreamblePDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.PreamblePDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.ChannelTimingPDU != nil:
 		_pduBytes, err := s.ChannelTimingPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.ChannelTimingPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.ChannelTimingPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateVoiceGrantPDU != nil:
 		_pduBytes, err := s.PrivateVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.PrivateVoiceGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.PrivateVoiceGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupVoiceGrantPDU != nil:
 		_pduBytes, err := s.TalkgroupVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.TalkgroupVoiceGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.TalkgroupVoiceGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
 		_pduBytes, err := s.BroadcastTalkgroupVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.BroadcastTalkgroupVoiceGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.BroadcastTalkgroupVoiceGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantPDU != nil:
 		_pduBytes, err := s.PrivateDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.PrivateDataGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.PrivateDataGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.TalkgroupDataGrantPDU != nil:
 		_pduBytes, err := s.TalkgroupDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.TalkgroupDataGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.TalkgroupDataGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateVoiceGrantPDU != nil:
 		_pduBytes, err := s.DuplexPrivateVoiceGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.DuplexPrivateVoiceGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.DuplexPrivateVoiceGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.DuplexPrivateDataGrantPDU != nil:
 		_pduBytes, err := s.DuplexPrivateDataGrantPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.DuplexPrivateDataGrantPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.DuplexPrivateDataGrantPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.PrivateDataGrantMultiItemPDU != nil:
 		_pduBytes, err := s.PrivateDataGrantMultiItemPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.PrivateDataGrantMultiItemPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.PrivateDataGrantMultiItemPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.MovePDU != nil:
 		_pduBytes, err := s.MovePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.MovePDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.MovePDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AlohaPDU != nil:
 		_pduBytes, err := s.AlohaPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.AlohaPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.AlohaPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.BroadcastPDU != nil:
 		_pduBytes, err := s.BroadcastPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.BroadcastPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.BroadcastPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.ClearPDU != nil:
 		_pduBytes, err := s.ClearPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.ClearPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.ClearPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.ProtectPDU != nil:
 		_pduBytes, err := s.ProtectPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.ProtectPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.ProtectPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AhoyPDU != nil:
 		_pduBytes, err := s.AhoyPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.AhoyPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.AhoyPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckOutboundPDU != nil:
 		_pduBytes, err := s.AckOutboundPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.AckOutboundPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.AckOutboundPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckInboundPDU != nil:
 		_pduBytes, err := s.AckInboundPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.AckInboundPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.AckInboundPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckOutboundPayloadPDU != nil:
 		_pduBytes, err := s.AckOutboundPayloadPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.AckOutboundPayloadPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.AckOutboundPayloadPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckInboundPayloadPDU != nil:
 		_pduBytes, err := s.AckInboundPayloadPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.AckInboundPayloadPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.AckInboundPayloadPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.RandomAccessPDU != nil:
 		_pduBytes, err := s.RandomAccessPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.RandomAccessPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.RandomAccessPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.AckvitationPDU != nil:
 		_pduBytes, err := s.AckvitationPDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.AckvitationPDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.AckvitationPDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	case s.MaintenancePDU != nil:
 		_pduBytes, err := s.MaintenancePDU.encodeBytes()
 		if err != nil {
-			return [12]byte{}, fmt.Errorf("CSBK.MaintenancePDU: %w", err)
+			return [12]byte{}, errs.NewWrapped("CSBK.MaintenancePDU", err)
 		}
 		copy(data[2:10], _pduBytes[0:8])
 	default:
@@ -3299,21 +2784,11 @@ func (s *CSBK) encodeBytes() ([12]byte, error) {
 		data[0] |= 0x40
 	}
 	if uint64(s.Opcode)>>6 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  6,
-			Field: "Opcode",
-			Type:  "CSBK",
-			Value: s.Opcode,
-		}
+		return [12]byte{}, errs.NewFieldRange("CSBK", "Opcode", s.Opcode, 6, false)
 	}
 	data[0] = data[0]&^0x3F | byte(uint64(s.Opcode))&0x3F
 	if uint64(s.FID)>>8 != 0 {
-		return [12]byte{}, &bit.FieldRangeError{
-			Bits:  8,
-			Field: "FID",
-			Type:  "CSBK",
-			Value: s.FID,
-		}
+		return [12]byte{}, errs.NewFieldRange("CSBK", "FID", s.FID, 8, false)
 	}
 	data[1] = byte(uint64(s.FID))
 	if _payload != "" {
@@ -3378,7 +2853,7 @@ func (s *CSBK) encodeBytes() ([12]byte, error) {
 			}
 		}
 		if _payload != _want {
-			return [12]byte{}, fmt.Errorf("CSBK.%s is set, but Opcode and FID select %s", _payload, _want)
+			return [12]byte{}, errs.NewWrongPayload("CSBK", _payload, "Opcode and FID select ", _want)
 		}
 	}
 	_crcVal := crc.CCITT(data[:10])
@@ -3400,8 +2875,8 @@ func (s *CSBK) Encode() ([96]bit.Bit, error) {
 	return data, nil
 }
 
-// EncodeBits returns the bits that Encode returns as a slice, or nil and
-// the error of Encode.
+// EncodeBits returns the bits that Encode returns as a fresh slice, or nil
+// and the error of Encode. It allocates the slice; Encode does not.
 func (s *CSBK) EncodeBits() ([]bit.Bit, error) {
 	bits, err := s.Encode()
 	if err != nil {

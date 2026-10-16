@@ -13,6 +13,7 @@ ignore_files:
   - v2/bit/bit.go
   - v2/internal/lowbit/lowbit.go
   - v2/internal/bits/bits.go
+  - v2/internal/errs/errs.go
   - v2/internal/fecref/ambe/ambe.go
   - v2/internal/fecref/bptc/bptc_196_96.go
   - v2/internal/fecref/bptc/bptc_cach.go
