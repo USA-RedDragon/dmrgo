@@ -388,7 +388,7 @@ func (r *Receiver) lock(t float64, src int, data bool, hz float64) {
 	}
 	r.first = -back
 	r.next = -back
-	r.warm, r.warmStart = true, -back
+	r.warm, r.warmStart = r.opt.WarmUp, -back
 	r.lastAnch = math.MinInt64
 	r.tk.reset(r.bs)
 	if r.opt.Coherent {
@@ -547,7 +547,7 @@ func (r *Receiver) followStep(end bool) bool {
 		r.finishStream()
 		return true
 	}
-	if r.warm && (j >= warmSlots || !r.opt.WarmUp) {
+	if r.warm && j >= warmSlots {
 		r.warmFreq(j)
 		r.warm = false
 		r.next, r.first = r.warmStart, r.warmStart
