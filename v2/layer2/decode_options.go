@@ -4,6 +4,7 @@ import (
 	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	pbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 )
 
 // DefaultSyncThreshold is the largest Hamming distance, in bits, at which a
@@ -52,16 +53,8 @@ var (
 	dataSyncPatterns  = []enums.SyncPattern{enums.SyncBSSourcedData, enums.SyncMSSourcedData, enums.SyncTDMA1Data, enums.SyncTDMA2Data}
 )
 
-func (b *Burst) syncField() uint64 {
-	var v uint64
-	for _, x := range b.bitData[syncStart:syncEnd] {
-		v = v<<1 | uint64(x&1)
-	}
-	return v
-}
-
 func (b *Burst) nearestSync(candidates []enums.SyncPattern) (enums.SyncPattern, int) {
-	field := b.syncField()
+	field := pbits.Field(b.raw[:], syncStart, syncEnd-syncStart)
 	best, bestDistance := candidates[0], 49
 	for _, p := range candidates {
 		if d := bits.OnesCount64(field ^ uint64(p)); d < bestDistance {

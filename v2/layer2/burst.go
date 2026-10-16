@@ -8,7 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	pbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -100,15 +100,17 @@ type Burst struct {
 	// FEC reports the FEC and CRC results of the decode.
 	FEC fec.BurstFECStats
 
-	bitData               [264]bit.Bit
-	decodedDataType       enums.DataType
-	decodedEMB            bool
-	deinterleavedInfoBits [196]bit.Bit
-	deinterleavedInfoLen  int
+	raw             RawBurst
+	decodedDataType enums.DataType
+	decodedEMB      bool
+	// payload holds the payloadBits information bits that the payload code
+	// of a decoded data burst returned, packed.
+	payload     [25]byte
+	payloadBits int
 	// decodedCoded is the coding of the decoded CSBK, Full LC, data header or
 	// MBC header, for Encode, which must not decode these again: their
 	// payload structs would allocate.
-	decodedCoded    [96]bit.Bit
+	decodedCoded    [12]byte
 	hasDecodedCoded bool
 	store           decodeStore
 }
@@ -184,8 +186,9 @@ func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
 	if opts == nil {
 		opts = &DecodeOptions{}
 	}
-	*b = Burst{store: b.store}
-	b.bitData = bit.Unpack264(data)
+	store := b.store
+	*b = Burst{}
+	b.store, b.raw = store, data
 	b.NearestSync, b.SyncDistance = b.nearestSync(allSyncPatterns)
 	err := b.decode(opts)
 	ccErr := b.checkColorCode(opts.ColorCode)
@@ -260,18 +263,22 @@ func (b *Burst) decodeVoiceKind(pos enums.VoiceBurstType, nearest enums.SyncPatt
 func (b *Burst) decodeVoice(pos enums.VoiceBurstType, sync enums.SyncPattern) {
 	b.Kind, b.SyncPattern, b.VoiceBurst = KindVoice, sync, pos
 	if sync == enums.SyncNone {
-		b.setEmbedded(parseEmbedded(b.bitData))
+		b.setEmbedded(b.raw.EMB())
 	}
-	b.VoiceSlots = parseVoiceSlots(b.bitData)
+	for i, slot := range b.raw.VoiceSlots() {
+		unpackBits(b.VoiceSlots[i][:], slot[:])
+	}
 }
 
-// setEmbedded sets the EMB and embedded data field of a burst with
+// setEmbedded sets the EMB emb and the embedded data field of a burst with
 // HasEmbeddedSignalling, and the RC PDU when the field carries one.
-func (b *Burst) setEmbedded(emb pdu.EmbeddedSignalling, data [32]bit.Bit) {
-	b.EmbeddedSignalling, b.EmbeddedSignallingData = emb, data
+func (b *Burst) setEmbedded(emb pdu.EmbeddedSignalling) {
+	data := b.raw.EmbeddedData()
+	b.EmbeddedSignalling = emb
+	unpackBits(b.EmbeddedSignallingData[:], data[:])
 	b.FEC.EMB = emb.FEC
 	if b.HasReverseChannel() {
-		b.ReverseChannel = DecodeEmbeddedRC(data)
+		b.ReverseChannel = decodeRC(data)
 		b.FEC.RC = b.ReverseChannel.FEC
 	}
 }
@@ -282,31 +289,31 @@ func (b *Burst) setEmbedded(emb pdu.EmbeddedSignalling, data [32]bit.Bit) {
 // type: then the burst carries embedded signalling.
 func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	b.Kind = KindData
-	b.SlotType = parseSlotType(b.bitData)
+	b.SlotType = b.raw.SlotType()
 	b.FEC.SlotType = b.SlotType.FEC
 	var distance int
 	b.SyncPattern, distance = b.nearestSync(dataSyncPatterns)
 	if distance > threshold && distance > damagedSyncDistance {
-		emb, data := parseEmbedded(b.bitData)
+		emb := b.raw.EMB()
 		if !emb.FEC.Uncorrectable && emb.ColorCode == b.SlotType.ColorCode {
 			b.SyncPattern = enums.SyncNone
 			b.decodedEMB = true
-			b.setEmbedded(emb, data)
+			b.setEmbedded(emb)
 		}
 	}
 	if dataType != nil {
 		b.SlotType.DataType = *dataType
 	}
-	b.deinterleavedInfoLen, b.FEC.Payload = b.deinterleave(extractDataBits(b.bitData), b.SlotType.DataType)
+	b.payloadBits, b.FEC.Payload = b.deinterleave(b.raw.info(), b.SlotType.DataType)
 	var err error
-	b.Data, b.FEC.PDU, err = decodePayload(&b.store, b.SlotType.DataType, b.deinterleavedInfoBits[:b.deinterleavedInfoLen], b.SyncPattern)
+	b.Data, b.FEC.PDU, err = decodePayload(&b.store, b.SlotType.DataType, &b.payload, b.SyncPattern)
 	b.decodedDataType = b.SlotType.DataType
 	switch b.decodedDataType {
 	case enums.DataTypeCSBK, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeDataHeader,
 		enums.DataTypeMBCHeader:
 		if enc, ok := b.Data.(encoder96); ok {
-			var encErr error
-			b.decodedCoded, encErr = enc.Encode()
+			coded, encErr := enc.Encode()
+			packBits(b.decodedCoded[:], coded[:])
 			b.hasDecodedCoded = encErr == nil
 		}
 	default:
@@ -336,14 +343,14 @@ func (b *Burst) isEmbeddedDataBurst() bool {
 	if _, d := b.nearestSync(dataSyncPatterns); d <= damagedSyncDistance {
 		return false
 	}
-	st := parseSlotType(b.bitData)
+	st := b.raw.SlotType()
 	if st.FEC.Uncorrectable || st.FEC.ErrorsCorrected > embeddedDataMaxSlotTypeErrors || !st.DataType.IsBPTC() {
 		return false
 	}
-	if emb, _ := parseEmbedded(b.bitData); emb.FEC.Uncorrectable || emb.ColorCode != st.ColorCode {
+	if emb := b.raw.EMB(); emb.FEC.Uncorrectable || emb.ColorCode != st.ColorCode {
 		return false
 	}
-	p, _, res := bptc.Decode196(packInfo(extractDataBits(b.bitData)))
+	p, _, res := bptc.Decode196(b.raw.info())
 	if res.Uncorrectable || res.ErrorsCorrected > embeddedDataMaxBPTCErrors {
 		return false
 	}
@@ -394,83 +401,55 @@ func isSyncPattern(sync enums.SyncPattern) bool {
 // 361-1 clause 6.4.1, Table E.12).
 func (b *Burst) decodeStandaloneRC() {
 	b.Kind, b.SyncPattern = KindReverseChannel, enums.SyncMSSourcedRC
-	var embBits [16]bit.Bit
-	copy(embBits[:8], b.bitData[rcembFirstStart:rcembFirstEnd])
-	copy(embBits[8:], b.bitData[rcembSecondStart:rcembSecondEnd])
-	b.EmbeddedSignalling = pdu.DecodeEmbeddedSignalling(embBits)
+	b.EmbeddedSignalling = b.raw.StandaloneRCEMB()
 	b.FEC.EMB = b.EmbeddedSignalling.FEC
 
-	copy(b.EmbeddedSignallingData[:16], b.bitData[rcDataFirstStart:rcDataFirstEnd])
-	copy(b.EmbeddedSignallingData[16:], b.bitData[rcDataSecondStart:rcDataSecondEnd])
-	b.ReverseChannel = DecodeEmbeddedRC(b.EmbeddedSignallingData)
+	data := b.raw.StandaloneRCData()
+	unpackBits(b.EmbeddedSignallingData[:], data[:])
+	b.ReverseChannel = decodeRC(data)
 	b.FEC.RC = b.ReverseChannel.FEC
 }
 
-func (b *Burst) encodeStandaloneRC() ([264]bit.Bit, error) {
-	var bitData [264]bit.Bit
+func (b *Burst) encodeStandaloneRC() (RawBurst, error) {
+	var r RawBurst
 	data, err := b.embeddedData()
 	if err != nil {
-		return bitData, err
+		return r, err
 	}
+	emb, err := b.embCodeword()
+	if err != nil {
+		return r, err
+	}
+	r.setField(rcembFirstStart, 8, rcembSecondStart, 8, uint64(emb))
+	r.setWord32(data, rcDataFirstStart, rcDataSecondStart)
+	r.setSync(enums.SyncMSSourcedRC)
+	return r, nil
+}
+
+// embCodeword returns the QR(16,7) codeword of EmbeddedSignalling, or an
+// error when one of its fields does not fit.
+func (b *Burst) embCodeword() (uint16, error) {
 	embBits, err := b.EmbeddedSignalling.Encode()
 	if err != nil {
-		return bitData, fmt.Errorf("cannot encode embedded signalling: %w", err)
+		return 0, fmt.Errorf("cannot encode embedded signalling: %w", err)
 	}
-	copy(bitData[rcembFirstStart:rcembFirstEnd], embBits[:8])
-	copy(bitData[rcDataFirstStart:rcDataFirstEnd], data[:16])
-	writeSync(&bitData, enums.SyncMSSourcedRC)
-	copy(bitData[rcDataSecondStart:rcDataSecondEnd], data[16:])
-	copy(bitData[rcembSecondStart:rcembSecondEnd], embBits[8:])
-	return bitData, nil
+	return uint16(bit.Uint(embBits[:]) & 0xFFFF), nil
 }
 
-// embeddedData returns the 32 bits of the embedded signalling data field:
-// the coded ReverseChannel when HasReverseChannel reports true, and
+// embeddedData returns the 32 bits of the embedded signalling data field,
+// packed: the coded ReverseChannel when HasReverseChannel reports true, and
 // EmbeddedSignallingData otherwise.
-func (b *Burst) embeddedData() ([32]bit.Bit, error) {
+func (b *Burst) embeddedData() ([4]byte, error) {
+	var d [4]byte
 	if !b.HasReverseChannel() {
-		return b.EmbeddedSignallingData, nil
+		packBits(d[:], b.EmbeddedSignallingData[:])
+		return d, nil
 	}
-	rcBits, err := EncodeEmbeddedRC(&b.ReverseChannel)
+	d, err := encodeRC(&b.ReverseChannel)
 	if err != nil {
-		return [32]bit.Bit{}, fmt.Errorf("cannot encode reverse channel: %w", err)
+		return d, fmt.Errorf("cannot encode reverse channel: %w", err)
 	}
-	return rcBits, nil
-}
-
-func writeSync(bitData *[264]bit.Bit, sync enums.SyncPattern) {
-	for i := 0; i < 48; i++ {
-		bitData[syncStart+i] = bit.Bit((sync >> (47 - i)) & 1)
-	}
-}
-
-func parseEmbedded(bitData [264]bit.Bit) (pdu.EmbeddedSignalling, [32]bit.Bit) {
-	var embeddedBits [16]bit.Bit
-	copy(embeddedBits[:8], bitData[108:116])
-	copy(embeddedBits[8:], bitData[148:156])
-
-	embedded := pdu.DecodeEmbeddedSignalling(embeddedBits)
-	var embeddedData [32]bit.Bit
-	copy(embeddedData[:], bitData[116:148])
-	return embedded, embeddedData
-}
-
-func parseSlotType(bitData [264]bit.Bit) pdu.SlotType {
-	var slotBits [20]bit.Bit
-	copy(slotBits[:10], bitData[98:108])
-	copy(slotBits[10:], bitData[156:166])
-	return pdu.DecodeSlotType(slotBits)
-}
-
-func parseVoiceSlots(bitData [264]bit.Bit) [VoiceSlotsPerBurst][72]bit.Bit {
-	var voice [216]bit.Bit
-	copy(voice[:108], bitData[:108])
-	copy(voice[108:], bitData[156:264])
-	var slots [VoiceSlotsPerBurst][72]bit.Bit
-	for i := range slots {
-		copy(slots[i][:], voice[i*72:(i+1)*72])
-	}
-	return slots
+	return d, nil
 }
 
 // AMBEFrames decodes the three voice slots as AMBE+2 frames with
@@ -495,29 +474,18 @@ func (b *Burst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
 	}
 }
 
-func extractDataBits(bitData [264]bit.Bit) [196]bit.Bit {
-	var bits [196]bit.Bit
-	copy(bits[:98], bitData[:98])
-	copy(bits[98:], bitData[166:264])
-	return bits
-}
-
-func (b *Burst) deinterleave(bits [196]bit.Bit, dataType enums.DataType) (int, fec.Result) {
+// deinterleave decodes the packed information bits info of a data burst of
+// dataType into b.payload with the payload code, and returns the number of
+// payload bits and the code's result.
+func (b *Burst) deinterleave(info [25]byte, dataType enums.DataType) (int, fec.Result) {
 	switch dataType {
 	case enums.DataTypeRate34:
-		var info [25]byte
-		pbits.Pack(info[:], 0, bits[:])
 		decoded, result := trellis.Decode(info)
-		pbits.Unpack(b.deinterleavedInfoBits[:144], decoded[:], 0)
+		copy(b.payload[:], decoded[:])
 		return 144, result
 	case enums.DataTypeRate1:
-		// Rate 1 transmit bit order (ETSI TS 102 361-1 Table B.10B).
-		for i := 0; i < 96; i++ {
-			b.deinterleavedInfoBits[i] = bits[i]
-		}
-		for i := 0; i < 96; i++ {
-			b.deinterleavedInfoBits[96+i] = bits[100+i]
-		}
+		copy(b.payload[:12], info[:12])
+		bits.Copy(b.payload[:], 96, info[:], 100, 96)
 		return 192, fec.Result{}
 	case enums.DataTypePIHeader,
 		enums.DataTypeVoiceLCHeader,
@@ -529,17 +497,24 @@ func (b *Burst) deinterleave(bits [196]bit.Bit, dataType enums.DataType) (int, f
 		enums.DataTypeRate12,
 		enums.DataTypeIdle,
 		enums.DataTypeUnifiedSingleBlock:
-		decoded, reserved, result := bptc.Decode196(packInfo(bits))
-		pbits.Unpack(b.deinterleavedInfoBits[:96], decoded[:], 0)
+		decoded, reserved, result := bptc.Decode196(info)
+		copy(b.payload[:], decoded[:])
 		b.BPTCReserved = reservedBits(reserved)
 		return 96, result
 	case enums.DataTypeReserved:
-		copy(b.deinterleavedInfoBits[:], bits[:])
-		return len(bits), fec.Result{}
-	default:
-		copy(b.deinterleavedInfoBits[:], bits[:])
-		return len(bits), fec.Result{}
 	}
+	b.payload = info
+	return 196, fec.Result{}
+}
+
+// rate1Info returns the 196 information bits of a Rate 1 burst that carries
+// the 192 data bits of data, with bits 96 to 99 zero (ETSI TS 102 361-1
+// Table B.10B).
+func rate1Info(data *[25]byte) [25]byte {
+	var info [25]byte
+	copy(info[:12], data[:12])
+	bits.Copy(info[:], 100, data[:], 96, 96)
+	return info
 }
 
 // String returns a string representation of the burst.
@@ -567,19 +542,21 @@ func (b *Burst) String() string {
 	return ret + " }"
 }
 
-// decodePayload decodes the information bits of a data burst of data type dt
-// and SYNC pattern sync into st. The fec.Result is zero for the data blocks,
-// whose only code is the payload code.
-func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync enums.SyncPattern) (Data, fec.Result, error) {
+// decodePayload decodes the packed information bits payload of a data burst
+// of data type dt and SYNC pattern sync into st. The fec.Result is zero for
+// the data blocks, whose only code is the payload code.
+func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync enums.SyncPattern) (Data, fec.Result, error) {
 	if dt.IsReserved() {
 		return nil, fec.Result{}, reservedDataTypeError{dt}
 	}
 	var bits96 [96]bit.Bit
-	copy(bits96[:], infoBits)
+	if dt != enums.DataTypeCSBK && dt != enums.DataTypeRate34 && dt != enums.DataTypeRate1 {
+		unpackBits(bits96[:], payload[:12])
+	}
 	switch dt {
 	case enums.DataTypeCSBK:
 		d := storeSlot(&st.csbk)
-		pdu.DecodeCSBKInto(d, storeSlot(&st.csbkPayloads), bits96)
+		pdu.DecodeCSBKBytesInto(d, storeSlot(&st.csbkPayloads), [12]byte(payload[:12]))
 		d.Hint0x38 = opcode0x38Hint(sync)
 		return d, d.FEC, nil
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
@@ -596,7 +573,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync 
 		return d, d.FEC, nil
 	case enums.DataTypeRate34:
 		var sizedBits [144]bit.Bit
-		copy(sizedBits[:], infoBits)
+		unpackBits(sizedBits[:], payload[:18])
 		d := storeSlot(&st.rate34)
 		*d = pdu.DecodeRate34Data(sizedBits)
 		return d, fec.Result{}, nil
@@ -606,7 +583,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync 
 		return d, fec.Result{}, nil
 	case enums.DataTypeRate1:
 		var sizedBits [192]bit.Bit
-		copy(sizedBits[:], infoBits)
+		unpackBits(sizedBits[:], payload[:24])
 		d := storeSlot(&st.rate1)
 		*d = pdu.DecodeRate1Data(sizedBits)
 		return d, fec.Result{}, nil
@@ -635,36 +612,32 @@ func decodePayload(st *decodeStore, dt enums.DataType, infoBits []bit.Bit, sync 
 // SlotType.DataType, or a field value that does not fit its bits.
 func (b *Burst) Encode() (RawBurst, error) {
 	if b.Kind == KindReverseChannel {
-		bitData, err := b.encodeStandaloneRC()
-		if err != nil {
-			return RawBurst{}, err
-		}
-		return bit.Pack264(bitData), nil
+		return b.encodeStandaloneRC()
 	}
 	if err := b.checkCentre(); err != nil {
 		return RawBurst{}, err
 	}
 
-	var bitData [264]bit.Bit
+	var r RawBurst
 
 	if b.Kind == KindData {
 		slotBits, err := b.SlotType.Encode()
 		if err != nil {
 			return RawBurst{}, fmt.Errorf("cannot encode slot type: %w", err)
 		}
-		copy(bitData[98:108], slotBits[:10])
-		copy(bitData[156:166], slotBits[10:20])
+		r.setField(slotTypeFirstStart, 10, slotTypeSecondStart, 10, bit.Uint(slotBits[:]))
 
-		dataBits, err := b.encodeDataBits()
+		info, err := b.encodeDataBits()
 		if err != nil {
 			return RawBurst{}, err
 		}
-		copy(bitData[:98], dataBits[:98])
-		copy(bitData[166:264], dataBits[98:196])
+		r.setInfo(&info)
 	} else {
-		voiceBits := b.voiceBits()
-		copy(bitData[:108], voiceBits[:108])
-		copy(bitData[156:264], voiceBits[108:216])
+		var slots [VoiceSlotsPerBurst][9]byte
+		for i := range slots {
+			packBits(slots[i][:], b.VoiceSlots[i][:])
+		}
+		r.SetVoiceSlots(slots)
 	}
 
 	if b.HasEmbeddedSignalling() {
@@ -672,27 +645,17 @@ func (b *Burst) Encode() (RawBurst, error) {
 		if err != nil {
 			return RawBurst{}, err
 		}
-		esBits, err := b.EmbeddedSignalling.Encode()
+		emb, err := b.embCodeword()
 		if err != nil {
-			return RawBurst{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
+			return RawBurst{}, err
 		}
-		copy(bitData[108:116], esBits[0:8])
-		copy(bitData[116:148], data[:])
-		copy(bitData[148:156], esBits[8:16])
+		r.setField(embFirstStart, 8, embSecondStart, 8, uint64(emb))
+		r.SetEmbeddedData(data)
 	} else {
-		writeSync(&bitData, b.SyncPattern)
+		r.setSync(b.SyncPattern)
 	}
 
-	return bit.Pack264(bitData), nil
-}
-
-// voiceBits returns the 216 voice bits of VoiceSlots.
-func (b *Burst) voiceBits() [216]bit.Bit {
-	var voice [216]bit.Bit
-	for i, slot := range b.VoiceSlots {
-		copy(voice[i*72:(i+1)*72], slot[:])
-	}
-	return voice
+	return r, nil
 }
 
 func (b *Burst) checkCentre() error {
@@ -720,44 +683,49 @@ func (b *Burst) checkCentre() error {
 	return fmt.Errorf("a %s burst cannot carry SYNC pattern %s", b.Kind, b.SyncPattern)
 }
 
-// dataInfoBits writes into info Data coded for the slot type data type or,
+// dataInfoBits returns, packed, Data coded for the slot type data type or,
 // when Data is nil or codes to the same bits as the PDU that DecodeFromBytes
 // decoded, the payload that DecodeFromBytes decoded.
-func (b *Burst) dataInfoBits(info *[196]bit.Bit) error {
+func (b *Burst) dataInfoBits() ([25]byte, error) {
 	dt := b.SlotType.DataType
-	decoded := b.deinterleavedInfoLen > 0 && dt == b.decodedDataType
+	decoded := b.payloadBits > 0 && dt == b.decodedDataType
 	switch {
 	case b.Data != nil:
-		if err := encodeData(info, b.Data, dt); err != nil {
-			return err
+		info, err := encodeData(b.Data, dt)
+		if err != nil {
+			return info, err
 		}
-		if decoded && *info != b.deinterleavedInfoBits && b.decodedCodesTo(info) {
-			*info = b.deinterleavedInfoBits
+		if decoded && info != b.payload && b.decodedCodesTo([12]byte(info[:12])) {
+			return b.payload, nil
 		}
-		return nil
-	case b.deinterleavedInfoLen == 0:
-		return fmt.Errorf("data burst has no Data")
+		return info, nil
+	case b.payloadBits == 0:
+		return [25]byte{}, fmt.Errorf("data burst has no Data")
 	case !decoded:
-		return fmt.Errorf("decoded payload is a %s but the slot type data type is %s; set Data",
+		return [25]byte{}, fmt.Errorf("decoded payload is a %s but the slot type data type is %s; set Data",
 			b.decodedDataType.String(), dt.String())
 	default:
-		*info = b.deinterleavedInfoBits
-		return nil
+		return b.payload, nil
 	}
 }
 
 // decodedCodesTo reports whether the PDU that DecodeFromBytes decoded from
-// the payload codes to the 96 information bits info. A Rate 1/2, Rate 3/4 or
-// Rate 1 PDU keeps every information bit, so it codes to the payload, which
-// the caller compares.
-func (b *Burst) decodedCodesTo(info *[196]bit.Bit) bool {
-	var payload, coded [96]bit.Bit
-	copy(payload[:], b.deinterleavedInfoBits[:])
-	var err error
-	switch dt := b.decodedDataType; dt {
+// the payload codes to the 96 packed information bits want. A Rate 1/2,
+// Rate 3/4 or Rate 1 PDU keeps every information bit, so it codes to the
+// payload, which the caller compares.
+func (b *Burst) decodedCodesTo(want [12]byte) bool {
+	switch b.decodedDataType {
 	case enums.DataTypeCSBK, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeDataHeader,
 		enums.DataTypeMBCHeader:
-		return b.hasDecodedCoded && [96]bit.Bit(info[:96]) == b.decodedCoded
+		return b.hasDecodedCoded && want == b.decodedCoded
+	case enums.DataTypePIHeader, enums.DataTypeMBCContinuation, enums.DataTypeUnifiedSingleBlock, enums.DataTypeIdle:
+	default:
+		return false
+	}
+	var payload, coded [96]bit.Bit
+	unpackBits(payload[:], b.payload[:12])
+	var err error
+	switch b.decodedDataType {
 	case enums.DataTypePIHeader:
 		d := pdu.DecodePIHeader(payload)
 		coded, err = d.Encode()
@@ -767,12 +735,12 @@ func (b *Burst) decodedCodesTo(info *[196]bit.Bit) bool {
 	case enums.DataTypeUnifiedSingleBlock:
 		d := pdu.DecodeUnifiedSingleBlockData(payload)
 		coded, err = d.Encode()
-	case enums.DataTypeIdle:
-		coded = pdu.PRFillBits()
 	default:
-		return false
+		coded = pdu.PRFillBits()
 	}
-	return err == nil && [96]bit.Bit(info[:96]) == coded
+	var got [12]byte
+	packBits(got[:], coded[:])
+	return err == nil && want == got
 }
 
 // encoder96, encoder144 and encoder192 are the PDUs whose Encode returns
@@ -783,48 +751,53 @@ type (
 	encoder192 interface{ Encode() ([192]bit.Bit, error) }
 )
 
-// encodeData writes the information bits of d in a data burst of dataType
-// into info, which must be zero.
-func encodeData(info *[196]bit.Bit, d Data, dataType enums.DataType) error {
+// encodeData returns the information bits of d in a data burst of
+// dataType, packed.
+func encodeData(d Data, dataType enums.DataType) ([25]byte, error) {
+	var info [25]byte
 	if rv := reflect.ValueOf(d); rv.Kind() == reflect.Pointer && rv.IsNil() {
-		return fmt.Errorf("data type %s cannot carry a nil %T", dataType.String(), d)
+		return info, fmt.Errorf("data type %s cannot carry a nil %T", dataType.String(), d)
 	}
 	if d.DataType() != dataType {
-		return fmt.Errorf("data type %s cannot carry Data of type %T with data type %s",
+		return info, fmt.Errorf("data type %s cannot carry Data of type %T with data type %s",
 			dataType.String(), d, d.DataType().String())
 	}
 	var n int
 	var err error
 	switch e := d.(type) {
 	case encoder96:
-		var bits [96]bit.Bit
-		bits, err = e.Encode()
-		n = copy(info[:], bits[:])
+		var coded [96]bit.Bit
+		coded, err = e.Encode()
+		packBits(info[:], coded[:])
+		n = len(coded)
 	case encoder144:
-		var bits [144]bit.Bit
-		bits, err = e.Encode()
-		n = copy(info[:], bits[:])
+		var coded [144]bit.Bit
+		coded, err = e.Encode()
+		packBits(info[:], coded[:])
+		n = len(coded)
 	case encoder192:
-		var bits [192]bit.Bit
-		bits, err = e.Encode()
-		n = copy(info[:], bits[:])
+		var coded [192]bit.Bit
+		coded, err = e.Encode()
+		packBits(info[:], coded[:])
+		n = len(coded)
 	case *pdu.PRFill:
-		bits := pdu.PRFillBits()
-		n = copy(info[:], bits[:])
+		coded := pdu.PRFillBits()
+		packBits(info[:], coded[:])
+		n = len(coded)
 	default:
-		var bits []bit.Bit
-		bits, err = d.EncodeBits()
-		n = len(bits)
-		copy(info[:], bits)
+		var coded []bit.Bit
+		coded, err = d.EncodeBits()
+		n = len(coded)
+		packBits(info[:], coded[:min(n, 196)])
 	}
 	if err != nil {
-		return fmt.Errorf("cannot encode data: %w", err)
+		return info, fmt.Errorf("cannot encode data: %w", err)
 	}
 	if want := infoBitsLen(dataType); n != want {
-		return fmt.Errorf("data type %s carries %d information bits, but %T encodes %d",
+		return info, fmt.Errorf("data type %s carries %d information bits, but %T encodes %d",
 			dataType.String(), want, d, n)
 	}
-	return nil
+	return info, nil
 }
 
 // infoBitsLen returns the number of information bits that a data burst of
@@ -844,31 +817,22 @@ func infoBitsLen(dataType enums.DataType) int {
 
 // encodeDataBits codes the information bits of a data burst with
 // BPTC(196,96), the Rate 3/4 trellis or Rate 1 as the slot type data type
-// selects. R(3) and the Rate 1 pad bits are zero.
-func (b *Burst) encodeDataBits() ([196]bit.Bit, error) {
-	var info [196]bit.Bit
-	if err := b.dataInfoBits(&info); err != nil {
-		return [196]bit.Bit{}, err
+// selects, and returns the 196 coded bits packed. R(3) and the Rate 1 pad
+// bits are zero.
+func (b *Burst) encodeDataBits() ([25]byte, error) {
+	info, err := b.dataInfoBits()
+	if err != nil {
+		return [25]byte{}, err
 	}
 	dt := b.SlotType.DataType
 	switch {
 	case dt == enums.DataTypeRate34:
-		var data [18]byte
-		pbits.Pack(data[:], 0, info[:144])
-		enc := trellis.Encode(data)
-		var bits [196]bit.Bit
-		pbits.Unpack(bits[:], enc[:], 0)
-		return bits, nil
+		return trellis.Encode([18]byte(info[:18])), nil
 	case dt == enums.DataTypeRate1:
-		// Rate 1 transmit bit order (ETSI TS 102 361-1 Table B.10B).
-		var bits [196]bit.Bit
-		copy(bits[:96], info[:96])
-		copy(bits[100:], info[96:192])
-		return bits, nil
+		return rate1Info(&info), nil
 	case dt.IsBPTC():
-		var data [12]byte
-		pbits.Pack(data[:], 0, info[:96])
-		return unpackInfo(bptc.Encode196(data, reservedByte(b.BPTCReserved))), nil
+		r := b.BPTCReserved
+		return bptc.Encode196([12]byte(info[:12]), uint8(r[0]&1|r[1]&1<<1|r[2]&1<<2)), nil
 	default:
 		return info, nil
 	}

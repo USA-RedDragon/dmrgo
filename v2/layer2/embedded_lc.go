@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	packedbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
@@ -28,9 +28,7 @@ const voiceLCHeaderMask = 0x96
 // burst order B to E, that carry the 9-octet LC lc, in the form
 // RawBurst.SetEmbeddedData takes.
 func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
-	var bits [72]bit.Bit
-	unpackBits(bits[:], lc[:])
-	return fragmentOctets(encodeEmbeddedLC(bits))
+	return fragmentOctets(encodeEmbeddedLC(lc))
 }
 
 // DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling
@@ -39,15 +37,16 @@ func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
 // has a 5-bit checksum that matches its LC. With strict set, it corrects the
 // BPTC as MMDVMHost does (CDMREmbeddedData::decodeEmbeddedData).
 func DecodeEmbeddedLC(f [4][4]byte, strict bool) ([9]byte, fec.Result) {
-	lc, res := decodeEmbeddedLCBits(fragmentBits(f), strict)
-	return lcOctets(lc), res
+	return decodeEmbeddedLC(fragmentWords(f), strict)
 }
 
-func decodeEmbeddedLCBits(fragments [4][32]bit.Bit, strict bool) ([72]bit.Bit, fec.Result) {
+// decodeEmbeddedLC decodes the LC octets from the four fragment words, as
+// DecodeEmbeddedLC does.
+func decodeEmbeddedLC(fragments [4]uint32, strict bool) ([9]byte, fec.Result) {
 	if strict {
-		return decodeEmbeddedLCStrict(fragments)
+		return embeddedLCChecksum(bptc.DecodeEmbeddedStrict(fragments))
 	}
-	return decodeEmbeddedLC(fragments)
+	return embeddedLCChecksum(bptc.DecodeEmbeddedWithCheck(fragments, embeddedLCChecksumValid))
 }
 
 // EmbeddedLCAssembler collects the four embedded LC fragments of voice
@@ -59,7 +58,7 @@ type EmbeddedLCAssembler struct {
 	// Strict selects the strict decode of DecodeEmbeddedLC. Reset keeps it.
 	Strict bool
 
-	fragments [4][32]bit.Bit
+	fragments [4]uint32
 	count     int
 }
 
@@ -74,42 +73,38 @@ func (a *EmbeddedLCAssembler) Reset() {
 // FEC result is uncorrectable. Add returns ErrEmbeddedLCSequence when a
 // fragment out of that order discards a partial LC.
 func (a *EmbeddedLCAssembler) Add(frag [4]byte, lcss enums.LCSS) (lc [9]byte, res fec.Result, done bool, err error) {
-	bits, res, done, err := a.add(bit.Unpack32(frag), lcss)
-	if !done {
-		return lc, res, false, err
-	}
-	return lcOctets(bits), res, true, err
+	return a.add(fragmentWord(frag), lcss)
 }
 
-func (a *EmbeddedLCAssembler) add(frag [32]bit.Bit, lcss enums.LCSS) ([72]bit.Bit, fec.Result, bool, error) {
+func (a *EmbeddedLCAssembler) add(frag uint32, lcss enums.LCSS) ([9]byte, fec.Result, bool, error) {
 	var want int
 	switch lcss {
 	case enums.LCSSFirstFragment:
 		err := a.discard()
 		a.fragments[0], a.count = frag, 1
-		return [72]bit.Bit{}, fec.Result{}, false, err
+		return [9]byte{}, fec.Result{}, false, err
 	case enums.LCSSContinuationFragment:
 		want = a.count
 		if want != 1 && want != 2 {
-			return [72]bit.Bit{}, fec.Result{}, false, a.discard()
+			return [9]byte{}, fec.Result{}, false, a.discard()
 		}
 	case enums.LCSSLastFragment:
 		want = 3
 	case enums.LCSSSingleFragment:
-		return [72]bit.Bit{}, fec.Result{}, false, a.discard()
+		return [9]byte{}, fec.Result{}, false, a.discard()
 	default:
-		return [72]bit.Bit{}, fec.Result{}, false, a.discard()
+		return [9]byte{}, fec.Result{}, false, a.discard()
 	}
 	if a.count != want {
-		return [72]bit.Bit{}, fec.Result{}, false, a.discard()
+		return [9]byte{}, fec.Result{}, false, a.discard()
 	}
 	a.fragments[a.count] = frag
 	a.count++
 	if a.count < 4 {
-		return [72]bit.Bit{}, fec.Result{}, false, nil
+		return [9]byte{}, fec.Result{}, false, nil
 	}
 	a.count = 0
-	lc, res := decodeEmbeddedLCBits(a.fragments, a.Strict)
+	lc, res := decodeEmbeddedLC(a.fragments, a.Strict)
 	if res.Uncorrectable {
 		return lc, res, true, ErrEmbeddedLCUncorrectable
 	}
@@ -124,75 +119,37 @@ func (a *EmbeddedLCAssembler) discard() error {
 	return ErrEmbeddedLCSequence
 }
 
-func encodeEmbeddedLC(lc [72]bit.Bit) [4][32]bit.Bit {
-	cs := crc.Checksum5(lcOctets(lc))
-	var info [77]bit.Bit
-	n := 0
-	for row := 0; row < 7; row++ {
-		if row < 2 {
-			copy(info[row*11:row*11+11], lc[n:n+11])
-			n += 11
-			continue
-		}
-		copy(info[row*11:row*11+10], lc[n:n+10])
-		n += 10
-		info[row*11+10] = bit.Bit((cs >> (6 - row)) & 1)
+// encodeEmbeddedLC returns the four BPTC(128,77) fragment words of the LC
+// octets lc and their 5-bit checksum: info rows 0 and 1 carry 11 LC bits,
+// rows 2 to 6 carry 10 LC bits and one checksum bit each (ETSI TS 102 361-1
+// clause B.2.1).
+func encodeEmbeddedLC(lc [9]byte) [4]uint32 {
+	cs := crc.Checksum5(lc)
+	var info [10]byte
+	bits.SetField(info[:], 0, 22, bits.Field(lc[:], 0, 22))
+	for row := 2; row < 7; row++ {
+		bits.SetField(info[:], row*11, 10, bits.Field(lc[:], 22+10*(row-2), 10))
+		bits.SetBit(info[:], row*11+10, cs>>(6-row))
 	}
-	var p [10]byte
-	packedbits.Pack(p[:], 0, info[:])
-	var fragments [4][32]bit.Bit
-	for i, w := range bptc.EncodeEmbedded(p) {
-		bit.PutUint(fragments[i][:], uint64(w))
-	}
-	return fragments
-}
-
-// embeddedWords returns the fragments as bptc takes them.
-func embeddedWords(fragments *[4][32]bit.Bit) [4]uint32 {
-	var w [4]uint32
-	for i := range fragments {
-		w[i] = uint32(bit.Uint(fragments[i][:]) & 0xFFFFFFFF)
-	}
-	return w
-}
-
-// embeddedInfoBits unpacks the 77 information bits that bptc returns.
-func embeddedInfoBits(p *[10]byte) [77]bit.Bit {
-	var info [77]bit.Bit
-	packedbits.Unpack(info[:], p[:], 0)
-	return info
-}
-
-func decodeEmbeddedLC(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
-	info, res := bptc.DecodeEmbeddedWithCheck(embeddedWords(&fragments), embeddedLCChecksumValid)
-	return embeddedLCChecksum(embeddedInfoBits(&info), res)
+	return bptc.EncodeEmbedded(info)
 }
 
 func embeddedLCChecksumValid(info [10]byte) bool {
-	_, result := embeddedLCChecksum(embeddedInfoBits(&info), fec.Result{})
+	_, result := embeddedLCChecksum(info, fec.Result{})
 	return !result.Uncorrectable
 }
 
-func decodeEmbeddedLCStrict(fragments [4][32]bit.Bit) ([72]bit.Bit, fec.Result) {
-	info, res := bptc.DecodeEmbeddedStrict(embeddedWords(&fragments))
-	return embeddedLCChecksum(embeddedInfoBits(&info), res)
-}
-
-func embeddedLCChecksum(info [77]bit.Bit, result fec.Result) ([72]bit.Bit, fec.Result) {
-	var lc [72]bit.Bit
+// embeddedLCChecksum returns the LC octets of the 77 information bits info
+// and result, with Uncorrectable set when their checksum does not match.
+func embeddedLCChecksum(info [10]byte, result fec.Result) ([9]byte, fec.Result) {
+	var lc [9]byte
 	var cs uint8
-	n := 0
-	for row := 0; row < 7; row++ {
-		if row < 2 {
-			copy(lc[n:n+11], info[row*11:row*11+11])
-			n += 11
-			continue
-		}
-		copy(lc[n:n+10], info[row*11:row*11+10])
-		n += 10
-		cs = cs<<1 | uint8(info[row*11+10])
+	bits.SetField(lc[:], 0, 22, bits.Field(info[:], 0, 22))
+	for row := 2; row < 7; row++ {
+		bits.SetField(lc[:], 22+10*(row-2), 10, bits.Field(info[:], row*11, 10))
+		cs = cs<<1 | bits.Bit(info[:], row*11+10)
 	}
-	if !crc.CheckChecksum5(lcOctets(lc), cs) {
+	if !crc.CheckChecksum5(lc, cs) {
 		result.Uncorrectable = true
 	}
 	return lc, result
@@ -205,12 +162,12 @@ func EncodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][4]byte, error) 
 	return fragmentOctets(frags), err
 }
 
-func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, error) {
-	bits, err := fullLCBits(lc)
+func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4]uint32, error) {
+	octets, err := fullLCOctets(lc)
 	if err != nil {
-		return [4][32]bit.Bit{}, err
+		return [4]uint32{}, err
 	}
-	return encodeEmbeddedLC(bits), nil
+	return encodeEmbeddedLC(octets), nil
 }
 
 // DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded
@@ -218,8 +175,8 @@ func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][32]bit.Bit, err
 // The LC has BurstDataType DataTypeVoiceLCHeader, and its FEC field combines
 // the DecodeEmbeddedLC result and the field decode.
 func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkControl {
-	bits, result := decodeEmbeddedLCBits(fragmentBits(f), strict)
-	flc := pdu.DecodeFullLinkControl(embeddedFullLCCodeword(bits), enums.DataTypeVoiceLCHeader)
+	lc, result := decodeEmbeddedLC(fragmentWords(f), strict)
+	flc := pdu.DecodeFullLinkControl(embeddedFullLCCodeword(lc), enums.DataTypeVoiceLCHeader)
 	flc.FEC = combineEmbeddedFEC(result, flc.FEC)
 	return flc
 }
@@ -228,16 +185,15 @@ func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkContro
 // DecodeEmbeddedFullLinkControl does, with the payload struct of dst in p as
 // pdu.DecodeFullLinkControlInto places it. It does not allocate.
 func DecodeEmbeddedFullLinkControlInto(dst *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, f [4][4]byte, strict bool) {
-	bits, result := decodeEmbeddedLCBits(fragmentBits(f), strict)
-	pdu.DecodeFullLinkControlInto(dst, p, embeddedFullLCCodeword(bits), enums.DataTypeVoiceLCHeader)
+	lc, result := decodeEmbeddedLC(fragmentWords(f), strict)
+	pdu.DecodeFullLinkControlInto(dst, p, embeddedFullLCCodeword(lc), enums.DataTypeVoiceLCHeader)
 	dst.FEC = combineEmbeddedFEC(result, dst.FEC)
 }
 
 // embeddedFullLCCodeword returns the 96 bits of the masked RS(12,9) voice LC
-// header codeword of the 72 LC bits lc.
-func embeddedFullLCCodeword(lc [72]bit.Bit) [96]bit.Bit {
-	octets := lcOctets(lc)
-	codeword := reedsolomon.Encode(octets)
+// header codeword of the LC octets lc.
+func embeddedFullLCCodeword(lc [9]byte) [96]bit.Bit {
+	codeword := reedsolomon.Encode(lc)
 	for i := 9; i < 12; i++ {
 		codeword[i] ^= voiceLCHeaderMask
 	}
@@ -254,21 +210,11 @@ func combineEmbeddedFEC(result, field fec.Result) fec.Result {
 	return result
 }
 
-// fullLCBits returns the 72 LC bits of lc, without RS(12,9) parity.
-func fullLCBits(lc *pdu.FullLinkControl) ([72]bit.Bit, error) {
-	header := *lc
-	header.BurstDataType = enums.DataTypeVoiceLCHeader
-	data, err := header.Encode()
+// fullLCOctets returns the 9 LC octets of lc, without RS(12,9) parity.
+func fullLCOctets(lc *pdu.FullLinkControl) ([9]byte, error) {
+	octets, err := lc.Bytes()
 	if err != nil {
-		return [72]bit.Bit{}, fmt.Errorf("cannot encode full link control: %w", err)
+		return [9]byte{}, fmt.Errorf("cannot encode full link control: %w", err)
 	}
-	var bits [72]bit.Bit
-	copy(bits[:], data[:72])
-	return bits, nil
-}
-
-func lcOctets(lc [72]bit.Bit) [9]byte {
-	var octets [9]byte
-	packBits(octets[:], lc[:])
-	return octets
+	return octets, nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -88,19 +89,19 @@ type VoiceTransmitter struct {
 	outbound   bool
 	header     RawBurst
 	terminator RawBurst
-	embedded   [4][32]bit.Bit
-	callLC     [4][32]bit.Bit
-	nextLC     [4][32]bit.Bit
+	embedded   [4]uint32
+	callLC     [4]uint32
+	nextLC     [4]uint32
 	hasNextLC  bool
 	lcHook     func(superframe int) *pdu.FullLinkControl
 	superframe int
 	piHeader   RawBurst
 	hasPI      bool
-	silence    [72]bit.Bit
-	slots      [VoiceSlotsPerBurst][72]bit.Bit
+	silence    [9]byte
+	slots      [VoiceSlotsPerBurst][9]byte
 	pending    int
 	position   int
-	rc         [32]bit.Bit
+	rc         [4]byte
 	hasRC      bool
 	terminated bool
 }
@@ -131,11 +132,11 @@ func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
 	if !t.outbound {
 		return errors.New("only a BS-sourced voice burst F carries a reverse channel")
 	}
-	bits, err := EncodeEmbeddedRC(&rc)
+	d, err := encodeRC(&rc)
 	if err != nil {
 		return err
 	}
-	t.rc, t.hasRC = bits, true
+	t.rc, t.hasRC = d, true
 	return nil
 }
 
@@ -155,7 +156,9 @@ func (t *VoiceTransmitter) AppendSlots(dst []RawBurst, slots ...[72]bit.Bit) ([]
 	}
 	var err error
 	for i := range slots {
-		if dst, err = t.addSlot(dst, &slots[i]); err != nil {
+		var slot [9]byte
+		packBits(slot[:], slots[i][:])
+		if dst, err = t.addSlot(dst, &slot); err != nil {
 			return dst, err
 		}
 	}
@@ -177,8 +180,10 @@ func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFr
 		return dst, ErrVoiceTerminated
 	}
 	var err error
-	for _, frame := range frames {
-		slot := vocoder.EncodeAMBE72(frame)
+	for i := range frames {
+		var f [7]byte
+		packBits(f[:], frames[i][:])
+		slot := ambe.Encode(f)
 		if dst, err = t.addSlot(dst, &slot); err != nil {
 			return dst, err
 		}
@@ -187,7 +192,7 @@ func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFr
 }
 
 // addSlot adds one slot and appends the burst that it completes to dst.
-func (t *VoiceTransmitter) addSlot(dst []RawBurst, slot *[72]bit.Bit) ([]RawBurst, error) {
+func (t *VoiceTransmitter) addSlot(dst []RawBurst, slot *[9]byte) ([]RawBurst, error) {
 	t.slots[t.pending] = *slot
 	t.pending++
 	if t.pending < VoiceSlotsPerBurst {
@@ -239,23 +244,18 @@ func (t *VoiceTransmitter) AppendTerminate(dst []RawBurst) ([]RawBurst, error) {
 }
 
 func (t *VoiceTransmitter) flush() (RawBurst, error) {
-	var bits [264]bit.Bit
-	var voice [216]bit.Bit
-	for i, slot := range t.slots {
-		copy(voice[i*72:], slot[:])
-	}
-	copy(bits[:108], voice[:108])
-	copy(bits[156:], voice[108:])
+	var r RawBurst
+	r.SetVoiceSlots(t.slots)
 
 	if t.position == 0 {
 		if err := t.startSuperframe(); err != nil {
 			t.pending = 0
 			return RawBurst{}, err
 		}
-		writeSync(&bits, t.voiceSync)
+		r.setSync(t.voiceSync)
 	} else {
 		emb := pdu.EmbeddedSignalling{ColorCode: t.colorCode}
-		var data [32]bit.Bit
+		var data uint32
 		switch t.position {
 		case 1:
 			emb.LCSS, data = enums.LCSSFirstFragment, t.embedded[0]
@@ -266,7 +266,7 @@ func (t *VoiceTransmitter) flush() (RawBurst, error) {
 		default:
 			emb.LCSS = enums.LCSSSingleFragment
 			if t.hasRC {
-				emb.PreemptionAndPowerControlIndicator, data = true, t.rc
+				emb.PreemptionAndPowerControlIndicator, data = true, fragmentWord(t.rc)
 				t.hasRC = false
 			}
 		}
@@ -274,12 +274,11 @@ func (t *VoiceTransmitter) flush() (RawBurst, error) {
 		if err != nil {
 			return RawBurst{}, fmt.Errorf("cannot encode embedded signalling: %w", err)
 		}
-		copy(bits[embFirstStart:embFirstEnd], embBits[:8])
-		copy(bits[embeddedDataStart:embeddedDataEnd], data[:])
-		copy(bits[embSecondStart:embSecondEnd], embBits[8:])
+		r.setField(embFirstStart, 8, embSecondStart, 8, bit.Uint(embBits[:]))
+		r.setField(embeddedDataStart, 16, embeddedDataStart+16, 16, uint64(data))
 	}
 
 	t.pending = 0
 	t.position = (t.position + 1) % VoiceBurstsPerSuperframe
-	return bit.Pack264(bits), nil
+	return r, nil
 }

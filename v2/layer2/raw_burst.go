@@ -6,7 +6,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
-	packedbits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -23,47 +24,52 @@ type RawBurst [33]byte
 // unpackBits writes the first len(dst) bits of src into dst in the order of
 // bit.Unpack, without the slice that bit.Unpack allocates.
 func unpackBits(dst []bit.Bit, src []byte) {
-	for i := range dst {
-		dst[i] = bit.Bit(src[i/8] >> (7 - i%8) & 1)
+	n := len(dst) &^ 7
+	for i := 0; i < n; i += 8 {
+		b, d := src[i>>3], dst[i:i+8:i+8]
+		d[0], d[1], d[2], d[3] = bit.Bit(b>>7), bit.Bit(b>>6&1), bit.Bit(b>>5&1), bit.Bit(b>>4&1)
+		d[4], d[5], d[6], d[7] = bit.Bit(b>>3&1), bit.Bit(b>>2&1), bit.Bit(b>>1&1), bit.Bit(b&1)
+	}
+	for i := n; i < len(dst); i++ {
+		dst[i] = bit.Bit(src[i>>3] >> (7 - i&7) & 1)
 	}
 }
 
 // packBits packs src into the first (len(src)+7)/8 bytes of dst in the order
 // of bit.Pack, without the slice that bit.Pack allocates.
 func packBits(dst []byte, src []bit.Bit) {
-	clear(dst[:(len(src)+7)/8])
-	for i, b := range src {
-		dst[i/8] |= byte(b&1) << (7 - i%8)
+	n := len(src) &^ 7
+	for i := 0; i < n; i += 8 {
+		b := src[i : i+8 : i+8]
+		dst[i>>3] = byte(b[0]&1)<<7 | byte(b[1]&1)<<6 | byte(b[2]&1)<<5 | byte(b[3]&1)<<4 |
+			byte(b[4]&1)<<3 | byte(b[5]&1)<<2 | byte(b[6]&1)<<1 | byte(b[7]&1)
 	}
-}
-
-func (r RawBurst) readBits(dst []bit.Bit, start int) {
-	for i := range dst {
-		p := start + i
-		dst[i] = bit.Bit(r[p/8] >> (7 - p%8) & 1)
-	}
-}
-
-func (r *RawBurst) writeBits(src []bit.Bit, start int) {
-	for i, b := range src {
-		p := start + i
-		m := byte(1) << (7 - p%8)
-		if b&1 != 0 {
-			r[p/8] |= m
-		} else {
-			r[p/8] &^= m
+	if n < len(src) {
+		dst[n>>3] = 0
+		for i := n; i < len(src); i++ {
+			dst[i>>3] |= byte(src[i]&1) << (7 - i&7)
 		}
 	}
+}
+
+// field returns the a-bit field at first and the b-bit field at second as
+// one value, the first field most significant.
+func (r *RawBurst) field(first, a, second, b int) uint64 {
+	return bits.Field(r[:], first, a)<<b | bits.Field(r[:], second, b)
+}
+
+// setField writes the high a bits of the a+b-bit value v at first and the
+// low b bits at second.
+func (r *RawBurst) setField(first, a, second, b int, v uint64) {
+	bits.SetField(r[:], first, a, v>>b)
+	bits.SetField(r[:], second, b, v)
 }
 
 // Sync returns the SYNC pattern nearest to burst bits 108 to 155 and its
 // Hamming distance, as enums.NearestSyncPattern does.
 func (r RawBurst) Sync() (enums.SyncPattern, int) {
-	var bits [48]bit.Bit
-	r.readBits(bits[:], syncStart)
-	var s [6]byte
-	packBits(s[:], bits[:])
-	return enums.NearestSyncPattern(s)
+	v := bits.Field(r[:], syncStart, syncEnd-syncStart)
+	return enums.NearestSyncPattern([6]byte{byte(v >> 40 & 0xFF), byte(v >> 32 & 0xFF), byte(v >> 24 & 0xFF), byte(v >> 16 & 0xFF), byte(v >> 8 & 0xFF), byte(v & 0xFF)})
 }
 
 // SetSync writes the SYNC pattern p into burst bits 108 to 155. It returns
@@ -72,64 +78,51 @@ func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 	if !isSyncPattern(p) {
 		return fmt.Errorf("%#x is not a Table 9.2 SYNC pattern", uint64(p))
 	}
-	var bits [264]bit.Bit
-	writeSync(&bits, p)
-	r.writeBits(bits[syncStart:syncEnd], syncStart)
+	r.setSync(p)
 	return nil
+}
+
+// setSync writes the 48 bits of p into the burst center.
+func (r *RawBurst) setSync(p enums.SyncPattern) {
+	bits.SetField(r[:], syncStart, syncEnd-syncStart, uint64(p))
 }
 
 // SlotType decodes the Golay(20,8) slot type in burst bits 98 to 107 and
 // 156 to 165. Its FEC field reports the Golay result.
 func (r RawBurst) SlotType() pdu.SlotType {
-	var bits [20]bit.Bit
-	r.readBits(bits[:10], slotTypeFirstStart)
-	r.readBits(bits[10:], slotTypeSecondStart)
-	return pdu.DecodeSlotType(bits)
+	info, res := pdu.DecodeSlotTypeCodeword(uint32(r.field(slotTypeFirstStart, 10, slotTypeSecondStart, 10) & 0xFFFFF))
+	st := info.SlotType()
+	st.FEC = res
+	return st
 }
 
 // SetSlotType encodes st into the slot type bits: the low 4 bits of its
 // color code and of its data type, as SlotType.Info returns them.
 func (r *RawBurst) SetSlotType(st pdu.SlotType) {
-	var bits [20]bit.Bit
-	bit.PutUint(bits[:], uint64(st.Info().Codeword()))
-	r.writeBits(bits[:10], slotTypeFirstStart)
-	r.writeBits(bits[10:], slotTypeSecondStart)
+	r.setField(slotTypeFirstStart, 10, slotTypeSecondStart, 10, uint64(st.Info().Codeword()))
 }
 
-// packInfo packs the 196 information bits as bptc takes them.
-func packInfo(bits [196]bit.Bit) [25]byte {
+// info returns the 196 information bits, burst bits 0 to 97 and 166 to 263,
+// packed.
+func (r *RawBurst) info() [25]byte {
 	var p [25]byte
-	packedbits.Pack(p[:], 0, bits[:])
+	copy(p[:12], r[:12])
+	bits.Copy(p[:], 96, r[:], 96, 2)
+	bits.Copy(p[:], infoFirstEnd, r[:], infoSecondStart, infoSecondEnd-infoSecondStart)
 	return p
 }
 
-// unpackInfo unpacks the 196 information bits that bptc returns.
-func unpackInfo(p [25]byte) [196]bit.Bit {
-	var bits [196]bit.Bit
-	packedbits.Unpack(bits[:], p[:], 0)
-	return bits
+// setInfo writes the 196 packed information bits p.
+func (r *RawBurst) setInfo(p *[25]byte) {
+	copy(r[:12], p[:12])
+	bits.Copy(r[:], 96, p[:], 96, 2)
+	bits.Copy(r[:], infoSecondStart, p[:], infoFirstEnd, infoSecondEnd-infoSecondStart)
 }
 
-// reservedByte returns the BPTC reserved bits R(0) to R(2), R(i) in bit i.
-func reservedByte(res [3]bit.Bit) uint8 {
-	return uint8(res[0]&1 | res[1]&1<<1 | res[2]&1<<2)
-}
-
-// reservedBits returns the BPTC reserved bits that reservedByte packs.
+// reservedBits returns the BPTC reserved bits R(0) to R(2), R(i) in bit i of
+// res, as BPTCReserved holds them.
 func reservedBits(res uint8) [3]bit.Bit {
 	return [3]bit.Bit{bit.Bit(res & 1), bit.Bit(res >> 1 & 1), bit.Bit(res >> 2 & 1)}
-}
-
-func (r RawBurst) info() [196]bit.Bit {
-	var bits [196]bit.Bit
-	r.readBits(bits[:98], infoFirstStart)
-	r.readBits(bits[98:], infoSecondStart)
-	return bits
-}
-
-func (r *RawBurst) setInfo(bits [196]bit.Bit) {
-	r.writeBits(bits[:98], infoFirstStart)
-	r.writeBits(bits[98:], infoSecondStart)
 }
 
 // BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns
@@ -137,7 +130,7 @@ func (r *RawBurst) setInfo(bits [196]bit.Bit) {
 // RS(12,9) check. It is meaningful only for the BPTC data types; a Rate 3/4
 // or Rate 1 burst needs Rate34Payload or Rate1Payload.
 func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
-	p, _, res := bptc.Decode196(packInfo(r.info()))
+	p, _, res := bptc.Decode196(r.info())
 	return p, res
 }
 
@@ -145,7 +138,8 @@ func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 // with the reserved bits R(0) to R(3) zero, and keeps the slot type and
 // SYNC. p must already carry its CRC or RS(12,9) parity (see pdu.Seal).
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
-	r.setInfo(unpackInfo(bptc.Encode196(p, 0)))
+	info := bptc.Encode196(p, 0)
+	r.setInfo(&info)
 }
 
 // BPTCReserved decodes the 196 information bits as BPTC(196,96) and returns
@@ -153,7 +147,7 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 // the BPTC result. Motorola Capacity Max sets R(2) to flag RAS (ETSI TS 102
 // 361-1 clause B.1.1).
 func (r RawBurst) BPTCReserved() ([3]bit.Bit, fec.Result) {
-	_, res, result := bptc.Decode196(packInfo(r.info()))
+	_, res, result := bptc.Decode196(r.info())
 	return reservedBits(res), result
 }
 
@@ -163,30 +157,26 @@ func (r RawBurst) BPTCReserved() ([3]bit.Bit, fec.Result) {
 // same data and FEC result as before.
 func (r *RawBurst) SetBPTCReserved(res [3]bit.Bit) {
 	info := r.info()
-	_, cur, _ := bptc.Decode196(packInfo(info))
-	delta := unpackInfo(bptc.Encode196([12]byte{}, reservedByte(res)^cur))
+	_, cur, _ := bptc.Decode196(info)
+	want := uint8(res[0]&1 | res[1]&1<<1 | res[2]&1<<2)
+	delta := bptc.Encode196([12]byte{}, want^cur)
 	for i := range info {
 		info[i] ^= delta[i]
 	}
-	r.setInfo(info)
+	r.setInfo(&info)
 }
 
 // Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis
 // code and returns the 144 data bits packed most significant bit first
 // (ETSI TS 102 361-1 clause B.1.1).
 func (r RawBurst) Rate34Payload() ([18]byte, fec.Result) {
-	info := r.info()
-	var packed [25]byte
-	packBits(packed[:], info[:])
-	return trellis.Decode(packed)
+	return trellis.Decode(r.info())
 }
 
 // SetRate34Payload trellis encodes p into the 196 information bits.
 func (r *RawBurst) SetRate34Payload(p [18]byte) {
-	enc := trellis.Encode(p)
-	var info [196]bit.Bit
-	unpackBits(info[:], enc[:])
-	r.setInfo(info)
+	info := trellis.Encode(p)
+	r.setInfo(&info)
 }
 
 // Rate1Payload returns the 192 uncoded data bits of a Rate 1 burst packed
@@ -194,21 +184,17 @@ func (r *RawBurst) SetRate34Payload(p [18]byte) {
 // fec.Result is zero (ETSI TS 102 361-1 Table B.10B).
 func (r RawBurst) Rate1Payload() ([24]byte, fec.Result) {
 	info := r.info()
-	var bits [192]bit.Bit
-	copy(bits[:96], info[:96])
-	copy(bits[96:], info[100:])
 	var p [24]byte
-	packBits(p[:], bits[:])
+	copy(p[:12], info[:12])
+	bits.Copy(p[:], 96, info[:], 100, 96)
 	return p, fec.Result{}
 }
 
 // SetRate1Payload writes p into the 192 data bits of a Rate 1 burst.
 // Information bits 96 to 99, between the two halves, stay as they are.
 func (r *RawBurst) SetRate1Payload(p [24]byte) {
-	var bits [192]bit.Bit
-	unpackBits(bits[:], p[:])
-	r.writeBits(bits[:96], infoFirstStart)
-	r.writeBits(bits[96:], infoSecondStart+2)
+	copy(r[:12], p[:12])
+	bits.Copy(r[:], infoSecondStart+2, p[:], 96, 96)
 }
 
 // EMB decodes the QR(16,7) embedded signalling in burst bits 108 to 115 and
@@ -263,30 +249,23 @@ func (r *RawBurst) SetStandaloneRCData(d [4]byte) {
 }
 
 func (r RawBurst) emb(first, second int) pdu.EmbeddedSignalling {
-	var bits [16]bit.Bit
-	r.readBits(bits[:8], first)
-	r.readBits(bits[8:], second)
-	return pdu.DecodeEmbeddedSignalling(bits)
+	info, res := pdu.DecodeEMBCodeword(uint16(r.field(first, 8, second, 8) & 0xFFFF))
+	e := info.EmbeddedSignalling()
+	e.FEC = res
+	return e
 }
 
 func (r *RawBurst) setEMB(e pdu.EmbeddedSignalling, first, second int) {
-	var bits [16]bit.Bit
-	bit.PutUint(bits[:], uint64(e.Info().Codeword()))
-	r.writeBits(bits[:8], first)
-	r.writeBits(bits[8:], second)
+	r.setField(first, 8, second, 8, uint64(e.Info().Codeword()))
 }
 
 func (r RawBurst) word32(first, second int) [4]byte {
-	var bits [32]bit.Bit
-	r.readBits(bits[:16], first)
-	r.readBits(bits[16:], second)
-	return bit.Pack32(bits)
+	v := r.field(first, 16, second, 16)
+	return [4]byte{byte(v >> 24 & 0xFF), byte(v >> 16 & 0xFF), byte(v >> 8 & 0xFF), byte(v & 0xFF)}
 }
 
 func (r *RawBurst) setWord32(d [4]byte, first, second int) {
-	bits := bit.Unpack32(d)
-	r.writeBits(bits[:16], first)
-	r.writeBits(bits[16:], second)
+	r.setField(first, 16, second, 16, uint64(d[0])<<24|uint64(d[1])<<16|uint64(d[2])<<8|uint64(d[3]))
 }
 
 // VoiceSlots returns the three 72-bit vocoder slots of a voice burst as
@@ -294,24 +273,22 @@ func (r *RawBurst) setWord32(d [4]byte, first, second int) {
 // voice bits 0 to 107 are burst bits 0 to 107 and voice bits 108 to 215 are
 // burst bits 156 to 263.
 func (r RawBurst) VoiceSlots() [VoiceSlotsPerBurst][9]byte {
-	var voice [216]bit.Bit
-	r.readBits(voice[:108], 0)
-	r.readBits(voice[108:], syncEnd)
 	var s [VoiceSlotsPerBurst][9]byte
-	for i := range s {
-		packBits(s[i][:], voice[i*72:(i+1)*72])
-	}
+	copy(s[0][:], r[:9])
+	copy(s[1][:4], r[9:13])
+	bits.Copy(s[1][:], 32, r[:], 104, 4)
+	bits.Copy(s[1][:], 36, r[:], syncEnd, 36)
+	copy(s[2][:], r[24:])
 	return s
 }
 
 // SetVoiceSlots writes the three vocoder slots s into the voice bits.
 func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
-	var voice [216]bit.Bit
-	for i := range s {
-		unpackBits(voice[i*72:(i+1)*72], s[i][:])
-	}
-	r.writeBits(voice[:108], 0)
-	r.writeBits(voice[108:], syncEnd)
+	copy(r[:9], s[0][:])
+	copy(r[9:13], s[1][:4])
+	bits.Copy(r[:], 104, s[1][:], 32, 4)
+	bits.Copy(r[:], syncEnd, s[1][:], 36, 36)
+	copy(r[24:], s[2][:])
 }
 
 // AMBEFrames decodes the three voice slots as AMBE+2 frames with
@@ -319,14 +296,12 @@ func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
 // combined FEC result. The result is meaningful only for a burst that
 // carries AMBE+2 voice.
 func (r RawBurst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result) {
-	var voice [216]bit.Bit
-	r.readBits(voice[:108], 0)
-	r.readBits(voice[108:], syncEnd)
 	var frames [VoiceSlotsPerBurst]vocoder.AMBEFrame
 	var result fec.Result
-	for i := range frames {
-		f, res := vocoder.DecodeAMBE72([72]bit.Bit(voice[i*72 : (i+1)*72]))
-		frames[i], result = f, result.Combine(res)
+	for i, slot := range r.VoiceSlots() {
+		f, res := ambe.Decode(slot)
+		unpackBits(frames[i][:], f[:])
+		result = result.Combine(res)
 	}
 	return frames, result
 }
@@ -334,13 +309,13 @@ func (r RawBurst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Resul
 // SetAMBEFrames writes the AMBE+2 coding of frames (vocoder.EncodeAMBE72)
 // into the three voice slots.
 func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) {
-	var voice [216]bit.Bit
-	for i, f := range frames {
-		slot := vocoder.EncodeAMBE72(f)
-		copy(voice[i*72:(i+1)*72], slot[:])
+	var s [VoiceSlotsPerBurst][9]byte
+	for i := range frames {
+		var f [7]byte
+		packBits(f[:], frames[i][:])
+		s[i] = ambe.Encode(f)
 	}
-	r.writeBits(voice[:108], 0)
-	r.writeBits(voice[108:], syncEnd)
+	r.SetVoiceSlots(s)
 }
 
 // BuildVoiceBurst returns voice burst pos of a superframe that carries the
@@ -381,31 +356,26 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 		return RawBurst{}, fmt.Errorf("cannot build a burst from nil Data")
 	}
 	dt := d.DataType()
-	var info [196]bit.Bit
-	if err := encodeData(&info, d, dt); err != nil {
+	info, err := encodeData(d, dt)
+	if err != nil {
 		return RawBurst{}, err
 	}
 	r, err := dataBurstFrame(dt, cc, src)
 	if err != nil {
 		return RawBurst{}, err
 	}
+	var coded [25]byte
 	switch dt {
 	case enums.DataTypeRate34:
-		var data [18]byte
-		packBits(data[:], info[:144])
-		enc := trellis.Encode(data)
-		unpackBits(info[:], enc[:])
-		r.setInfo(info)
+		coded = trellis.Encode([18]byte(info[:18]))
 	case enums.DataTypeRate1:
-		var bits [196]bit.Bit
-		copy(bits[:96], info[:96])
-		copy(bits[100:], info[96:192])
-		r.setInfo(bits)
+		coded = rate1Info(&info)
 	case enums.DataTypePIHeader, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeCSBK,
 		enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation, enums.DataTypeDataHeader, enums.DataTypeRate12,
 		enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
-		r.setInfo(unpackInfo(bptc.Encode196(bit.Pack96([96]bit.Bit(info[:96])), 0)))
+		coded = bptc.Encode196([12]byte(info[:12]), 0)
 	}
+	r.setInfo(&coded)
 	return r, nil
 }
 
