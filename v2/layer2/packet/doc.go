@@ -5,7 +5,9 @@
 // delivery with a DBSN and a CRC-9 per block, and the response packets
 // (ETSI TS 102 361-1 clause 8.2.2.3).
 //
-// An Assembler takes one packet at a time. A header other than a P_HEAD
+// An Assembler takes one packet at a time. It drops a header whose CRC failed
+// and returns ErrHeaderCRC, and the packet in progress stays as it was. A
+// header other than a P_HEAD
 // second header discards any partial packet. The exception is a C_HEAD with
 // the same SAP, LLIDs and N(S) as a confirmed packet that still has blocks
 // missing: it starts the retry of those blocks. A header with no blocks to

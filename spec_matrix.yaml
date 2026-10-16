@@ -329,6 +329,8 @@ documents:
               - TestBursts
               - TestAssembler_Captures
               - TestAssembler_CaptureCRCFailure
+              - TestAssembler_HeaderCRCFailure
+              - TestAssembler_HeaderCRCFailureKeepsPacket
               - TestSegment_RoundTrip
               - TestSegment_HeaderFields
               - TestSegment_Errors
