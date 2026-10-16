@@ -3,6 +3,7 @@ package framer
 import (
 	"math/rand"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
@@ -10,8 +11,8 @@ import (
 )
 
 // TestFramer_BufferBound checks that fewer than a CACH and a burst stay in
-// the buffer between writes, and that the buffer grows only for a stream
-// longer than Period and than every earlier stream.
+// the buffer between writes, that the buffer never grows, and that a write
+// finds the bursts that the same bits written one at a time find.
 func TestFramer_BufferBound(t *testing.T) {
 	t.Parallel()
 	data, err := os.ReadFile("../testdata/voice.bin")
@@ -32,20 +33,29 @@ func TestFramer_BufferBound(t *testing.T) {
 		{Threshold: 0, MaxMisses: 1},
 	} {
 		f := New(cfg)
-		longest := f.cfg.Period
-		var dst []Burst
+		c := cap(f.buf)
+		var got []Burst
 		for rest := stream; len(rest) > 0; {
 			n := min(1+r.Intn(3*f.cfg.Period), len(rest))
-			c := cap(f.buf)
-			dst = f.AppendBursts(dst[:0], rest[:n]...)
+			got = f.AppendBursts(got, rest[:n]...)
 			rest = rest[n:]
 			if len(f.buf) >= f.pre+layer2.BurstBits {
 				t.Fatalf("%+v: %d bits stay in the buffer", cfg, len(f.buf))
 			}
-			if cap(f.buf) != c && n <= longest {
-				t.Fatalf("%+v: buffer grew for %d bits, longest earlier %d", cfg, n, longest)
+			if cap(f.buf) != c {
+				t.Fatalf("%+v: buffer grew from %d to %d for %d bits", cfg, c, cap(f.buf), n)
 			}
-			longest = max(longest, n)
+		}
+		one := New(cfg)
+		var want []Burst
+		for i := range stream {
+			want = one.AppendBursts(want, stream[i])
+		}
+		if len(got) == 0 || !slices.Equal(got, want) {
+			t.Errorf("%+v: %d bursts, want the %d of single bits", cfg, len(got), len(want))
+		}
+		if all := New(cfg).AppendBursts(nil, stream...); !slices.Equal(all, want) {
+			t.Errorf("%+v: %d bursts from one write of the stream, want %d", cfg, len(all), len(want))
 		}
 	}
 }
