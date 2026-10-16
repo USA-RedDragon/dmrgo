@@ -76,12 +76,17 @@ func (r *Receiver) symPrior(g symRef, lp []float32) {
 	}
 }
 
-// fill aligns n symbols from g into r.buf, forward in time or backward (time
-// reversed and conjugated, which is the waveform of the reversed symbols).
-// The discrete phase of the model sums the frequency up to and including
-// each sample, so the reversed waveform matches it one model sample
-// earlier, and fill takes the reversed samples there.
+// fill aligns n symbols from g into r.buf, as fillRange.
 func (r *Receiver) fill(g symRef, n int, rev bool) {
+	r.fillRange(g, 0, n, rev, r.buf)
+}
+
+// fillRange aligns the symbols i0 to i1-1 from g into x, forward in time or
+// backward (time reversed and conjugated, which is the waveform of the
+// reversed symbols). The discrete phase of the model sums the frequency up
+// to and including each sample, so the reversed waveform matches it one
+// model sample earlier, and fillRange takes the reversed samples there.
+func (r *Receiver) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 	ch := &r.chz.ch
 	dir := 1
 	if rev {
@@ -90,7 +95,7 @@ func (r *Receiver) fill(g symRef, n int, rev bool) {
 	sps := r.model.sps
 	sp := float64(dir*samplesPerSy) / float64(sps)
 	step := complex64(r.rotAt(sp))
-	for i := range n {
+	for i := i0; i < i1; i++ {
 		h := g.add(dir * i)
 		t := r.symTime(h.slot, h.k) - float64(sps/2)*sp
 		if rev {
@@ -103,9 +108,53 @@ func (r *Receiver) fill(g symRef, n int, rev bool) {
 			if rev {
 				v = complex(real(v), -imag(v))
 			}
-			r.buf[i*sps+j] = v
+			x[(i-i0)*sps+j] = v
 		}
 	}
+}
+
+// runSamples writes the samples of the intervals k0 to k1-1 of the current
+// trellis run into x.
+func (r *Receiver) runSamples(k0, k1 int, x []complex64) {
+	d := r.model.d
+	r.fillRange(r.runG, k0+d, k1+d, r.runDir < 0, x)
+}
+
+// runPrior writes the log priors of the newest symbol of interval k of the
+// current trellis run.
+func (r *Receiver) runPrior(k int, lp []float32) {
+	r.symPrior(r.runG.add(r.runDir*(k+2*r.model.d)), lp)
+}
+
+// runKeep keeps the log-APPs of interval k of the current trellis run for
+// its symbol when no run nearer that symbol set them.
+func (r *Receiver) runKeep(k int, app []float32) {
+	r.keepAPP(r.runG, r.runDir, k, r.runSteps, app, r.runLo, r.runHi)
+}
+
+// keepAPP keeps app, the log-APPs of interval k of a run of steps
+// intervals from g in direction dir, for its symbol between lo and hi when
+// no run nearer that symbol set them.
+func (r *Receiver) keepAPP(g symRef, dir, k, steps int, app []float32, lo, hi symRef) {
+	d := r.model.d
+	if k >= steps-d {
+		return
+	}
+	h := g.add(dir * (k + 2*d))
+	if h.diff(lo) < 0 || h.diff(hi) > 0 {
+		return
+	}
+	s := r.slot(h.slot)
+	if s.index != h.slot {
+		return
+	}
+	dist := k + 2*d
+	have := r.haveOf(s)
+	if dist < 0 || dist >= int(have[h.k]) || dist > math.MaxInt16 {
+		return
+	}
+	copy(r.appOf(s)[4*h.k:4*h.k+4], app)
+	have[h.k] = int16(dist)
 }
 
 // run detects n symbols from g (forward or backward) with the trellis,
@@ -118,7 +167,6 @@ func (r *Receiver) run(g symRef, n int, rev bool, lo, hi symRef) {
 	if n <= 2*d+1 {
 		return
 	}
-	r.fill(g, n, rev)
 	dir := 1
 	if rev {
 		dir = -1
@@ -134,37 +182,41 @@ func (r *Receiver) run(g symRef, n int, rev bool, lo, hi symRef) {
 		nk++
 	}
 	steps := n - 2*d
-	for k := range steps {
-		r.symPrior(g.add(dir*(k+2*d)), r.lp[4*k:4*k+4])
-	}
 	for i := range 2 * d {
 		r.symPrior(g.add(dir*i), r.slp[4*i:4*i+4])
 	}
 	scale := float32(2 * r.amp / r.noise)
+	if r.xt == nil {
+		r.runG, r.runDir, r.runSteps, r.runLo, r.runHi = g, dir, steps, lo, hi
+		if nk >= 2*d+2 {
+			r.fillRange(g, 0, nk, rev, r.buf)
+			rot := m.anchor(r.buf, syms[:nk])
+			r.tr.run(r, steps, rot, scale, r.opt.PSPGain)
+		} else {
+			r.bankRun(steps, scale)
+		}
+		return
+	}
+	r.fill(g, n, rev)
+	for k := range steps {
+		r.symPrior(g.add(dir*(k+2*d)), r.lp[4*k:4*k+4])
+	}
 	if nk >= 2*d+2 {
-		rot, _, _ := m.anchor(r.buf, syms[:nk])
-		r.detect(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
+		rot := m.anchor(r.buf, syms[:nk])
+		r.xt.run(r.buf[d*sps:], steps, rot, scale, anchorKappa, r.tapp)
 	} else {
 		r.bankRun(steps, scale)
 	}
-	for k := range steps - d {
-		h := g.add(dir * (k + 2*d))
-		if h.diff(lo) < 0 || h.diff(hi) > 0 {
-			continue
-		}
-		s := r.slot(h.slot)
-		if s.index != h.slot {
-			continue
-		}
-		dist := k + 2*d
-		have := r.haveOf(s)
-		if dist < 0 || dist >= int(have[h.k]) || dist > math.MaxInt16 {
-			continue
-		}
-		copy(r.appOf(s)[4*h.k:4*h.k+4], r.tapp[4*k:4*k+4])
-		have[h.k] = int16(dist)
+	for k := range steps {
+		r.keepAPP(g, dir, k, steps, r.tapp[4*k:4*k+4], lo, hi)
 	}
 }
+
+// discard drops the log-APPs of a trellis run.
+type discard struct{ *Receiver }
+
+// runKeep drops app.
+func (discard) runKeep(int, []float32) {}
 
 // bankRun runs the trellis from an unknown state with phaseBank carrier
 // phases and keeps the APPs of the run whose best path scores highest. The
@@ -179,13 +231,13 @@ func (r *Receiver) bankRun(steps int, scale float32) {
 	bestP := 0
 	for p := range phaseBank {
 		rot := complex64(cmplx.Exp(complex(0, -2*math.Pi*float64(p)/phaseBank)))
-		r.detect(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
-		if v := r.detBest(steps); v > best {
+		r.tr.run(discard{r}, steps, rot, scale, r.opt.PSPGain)
+		if v := r.tr.best(); v > best {
 			best, bestP = v, p
 		}
 	}
 	rot := complex64(cmplx.Exp(complex(0, -2*math.Pi*float64(bestP)/phaseBank)))
-	r.detect(r.buf[d*sps:], steps, rot, scale, r.opt.PSPGain, r.tapp)
+	r.tr.run(r, steps, rot, scale, r.opt.PSPGain)
 }
 
 // coherentGap detects the symbols of slots first to j: forward from the
