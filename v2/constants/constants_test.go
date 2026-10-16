@@ -17,6 +17,7 @@ func TestTimers_AnnexA1(t *testing.T) {
 		{"TAckWait", constants.TAckWait, 360 * time.Millisecond},
 		{"TAckWaitSimulcast", constants.TAckWaitSimulcast, 2 * time.Second},
 		{"TTO", constants.TTO, 180 * time.Second},
+		{"TCallHang", constants.TCallHang, 3 * time.Second},
 		{"TTOMax", constants.TTOMax, 180 * time.Second},
 		{"CTRHOTMax", constants.CTRHOTMax, 3240 * time.Millisecond},
 		{"CTRHOTIncrement", constants.CTRHOTIncrement, 60 * time.Millisecond},

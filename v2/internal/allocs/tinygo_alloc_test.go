@@ -7,14 +7,17 @@ import (
 	"runtime"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
+	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
 // tinyRuns is the number of measured calls of each operation.
@@ -177,6 +180,42 @@ func tinyVoiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	}
 }
 
+func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
+	t.Helper()
+	call := tinyOK(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
+	opts := &layer2.VoiceTransmitterOptions{LC: call, ColorCode: 1, Silence: vocoder.AMBESilenceSlot()}
+	tx := tinyOK(layer2.NewVoiceTransmitter(opts))
+	bursts := tx.AppendHeaders(nil)
+	for range 2 * layer2.VoiceBurstsPerSuperframe {
+		f := tinyFrames(r)
+		bursts = tinyOK(tx.AppendFrames(bursts, f[:]...))
+	}
+	bursts = tinyOK(tx.AppendTerminate(bursts))
+	rx := tinyOK(voice.NewReceiver(nil))
+	events := make([]voice.Event, 0, voice.MaxEvents)
+	var now time.Duration
+
+	var b packet.Builder
+	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}}
+	p := tinyOK(b.Segment(h, make([]byte, 100), enums.DataTypeRate12))
+	var rd packet.ResponseData
+	rd.Retry[2], rd.Retry[5] = true, true
+	var err error
+	_ = err
+	return []tinyOp{
+		{"voice.Receiver.Burst", func() {
+			for i := range bursts {
+				now += 60 * time.Millisecond
+				events = rx.Burst(now, &bursts[i], layer2.Hint{}, events[:0])
+			}
+			now += 10 * time.Second
+			events = rx.Tick(now, events[:0])
+		}},
+		{"layer2.VoiceTransmitter.Reset", func() { err = tx.Reset(opts) }},
+		{"packet.Builder.Retry", func() { _, err = b.Retry(&p, &rd) }},
+	}
+}
+
 func tinyCACHOps(t *testing.T) []tinyOp {
 	t.Helper()
 	slc := pdu.ShortLC{SLCO: enums.SLCOActivityUpdate, ActivityUpdate: &pdu.ShortLCActivityUpdate{}}
@@ -302,7 +341,7 @@ func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r))
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {
