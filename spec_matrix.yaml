@@ -16,6 +16,7 @@ ignore_files:
   - v2/cmd/dmrrf/demod.go
   - v2/cmd/dmrrf/disc.go
   - v2/cmd/dmrrf/exact.go
+  - v2/cmd/dmrrf/fastmath.go
   - v2/cmd/dmrrf/frontend.go
   - v2/cmd/dmrrf/gap.go
   - v2/cmd/dmrrf/main.go
