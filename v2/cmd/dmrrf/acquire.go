@@ -84,7 +84,12 @@ type syncSearch struct {
 	// turned by search offset fi at tplRot[fi*numSources+src], for the
 	// sources that the receiver searches.
 	tplRot [searchFreqs * numSources][]complex64
-	x      []complex64
+	// xs holds the window of the last search twice, from xs[xh], and
+	// xFirst its first ring sample, when xOK.
+	xs     []complex64
+	xh     int
+	xFirst int64
+	xOK    bool
 	full   []float64
 	// pats holds every SYNC pattern, and conj e^-j*phase of the waveform
 	// of each over the correlated span.
@@ -116,7 +121,8 @@ func newSyncSearch(coherent bool, dec, nsrc int) *syncSearch {
 	}
 	s.dec, s.sps, s.span = dec, samplesPerSy/dec, syncSpan/dec
 	sps, span := s.sps, s.span
-	s.x, s.full = make([]complex64, span), make([]float64, syncSymbols*sps)
+	s.full = make([]float64, syncSymbols*sps)
+	s.xs = make([]complex64, 2*span)
 	var rot [searchFreqs][]complex64
 	for i := range searchFreqs {
 		f := searchHzAt(i)
@@ -205,19 +211,20 @@ type syncHit struct {
 // nsrc sources at each search frequency.
 func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 	var best syncHit
+	x := s.window(r, start/int64(s.dec)-int64(s.sps/2))
 	var etot float32
-	r.gather(start/int64(s.dec)-int64(s.sps/2), s.x)
-	for _, v := range s.x {
+	for _, v := range x {
 		etot += real(v)*real(v) + imag(v)*imag(v)
 	}
 	if etot == 0 {
 		return best
 	}
+	bestFi := 0
 	for fi := range searchFreqs {
 		for src := range nsrc {
 			t := s.tplRot[fi*numSources+src]
 			var ac, bd, bc, ad float32
-			for j, v := range s.x {
+			for j, v := range x {
 				w := t[j]
 				ac += real(v) * real(w)
 				bd += imag(v) * imag(w)
@@ -225,18 +232,38 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 				ad += real(v) * imag(w)
 			}
 			for k, c := range [2]complex64{complex(ac-bd, bc+ad), complex(ac+bd, bc-ad)} {
-				metric := (real(c)*real(c) + imag(c)*imag(c)) / (etot * float32(s.span))
-				if metric > best.Metric {
-					hz := searchHzAt(fi)
-					if k == 1 {
-						hz = -hz
-					}
-					best = syncHit{Metric: metric, Data: k == 1, Source: src, Hz: hz}
+				if metric := (real(c)*real(c) + imag(c)*imag(c)) / (etot * float32(s.span)); metric > best.Metric {
+					best, bestFi = syncHit{Metric: metric, Data: k == 1, Source: src}, fi
 				}
 			}
 		}
 	}
+	best.Hz = searchHzAt(bestFi)
+	if best.Data {
+		best.Hz = -best.Hz
+	}
 	return best
+}
+
+// window returns the span ring samples from first. The search steps one
+// ring sample at a time, so the window of the last search less its first
+// sample, and the next ring sample, give the window of the next.
+func (s *syncSearch) window(r *ring, first int64) []complex64 {
+	n := s.span
+	if s.xOK && first == s.xFirst+1 {
+		v := r.at(first + int64(n) - 1)
+		s.xs[s.xh], s.xs[s.xh+n] = v, v
+		s.xh++
+		if s.xh == n {
+			s.xh = 0
+		}
+	} else {
+		r.gather(first, s.xs[:n])
+		copy(s.xs[n:], s.xs[:n])
+		s.xh, s.xOK = 0, true
+	}
+	s.xFirst = first
+	return s.xs[s.xh : s.xh+n]
 }
 
 // discAt returns the correlation coefficient of the discriminator symbols

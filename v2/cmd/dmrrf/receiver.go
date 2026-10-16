@@ -326,6 +326,7 @@ func (r *Receiver) push(x []complex64) {
 	for _, v := range x {
 		if !r.locked && r.spec.push(v) && r.spec.OK && math.Abs(r.spec.Hz-r.chz.ncoHz) > 50 {
 			r.chz.tune(r.spec.Hz)
+			r.search.xOK = false
 			r.searchAt, r.candAt = 0, -1
 		}
 		r.chz.push(v)
