@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"math/bits"
 	"slices"
 )
 
@@ -13,42 +14,32 @@ const (
 	specFrames = 96
 	// channelHz is the occupied bandwidth that the estimator looks for.
 	channelHz = 12500.0
+	// passBins is the number of bins on each side of 0 Hz in the passband
+	// of the front end.
+	passBins = int(wideHz) * fftSize / basebandRate
 )
 
 // fft is an in-place radix-2 FFT of a fixed power-of-two size.
 type fft struct {
-	n   int
-	tw  []complex64
-	rev []int
+	n     int
+	shift int
+	tw    []complex64
 }
 
 // newFFT returns a transform of n points.
 func newFFT(n int) *fft {
-	f := &fft{n: n, tw: make([]complex64, n/2), rev: make([]int, n)}
+	f := &fft{n: n, shift: bits.UintSize - bits.Len(uint(n-1)), tw: make([]complex64, n/2)}
 	for i := range f.tw {
 		p := -2 * math.Pi * float64(i) / float64(n)
 		f.tw[i] = complex(float32(math.Cos(p)), float32(math.Sin(p)))
-	}
-	bitsN := 0
-	for 1<<bitsN < n {
-		bitsN++
-	}
-	for i := range f.rev {
-		r := 0
-		for b := range bitsN {
-			if i&(1<<b) != 0 {
-				r |= 1 << (bitsN - 1 - b)
-			}
-		}
-		f.rev[i] = r
 	}
 	return f
 }
 
 // transform replaces x by its discrete Fourier transform.
 func (f *fft) transform(x []complex64) {
-	for i, r := range f.rev {
-		if i < r {
+	for i := range f.n {
+		if r := int(bits.Reverse(uint(i)) >> f.shift); i < r {
 			x[i], x[r] = x[r], x[i]
 		}
 	}
@@ -85,7 +76,7 @@ type spectrum struct {
 // newSpectrum returns an estimator with no frames yet.
 func newSpectrum() *spectrum {
 	s := &spectrum{f: newFFT(fftSize), win: make([]float32, fftSize), frame: make([]complex64, fftSize),
-		hist: make([]complex64, fftSize), power: make([]float64, fftSize), sorted: make([]float64, fftSize)}
+		hist: make([]complex64, fftSize), power: make([]float64, fftSize), sorted: make([]float64, 2*passBins+1)}
 	for i := range s.win {
 		s.win[i] = float32(0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/fftSize))
 	}
