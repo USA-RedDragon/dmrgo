@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"math"
+	"math/bits"
 	"os"
 	"runtime"
 	"slices"
@@ -18,9 +19,10 @@ import (
 const rxbenchPath = "testdata/rxbench.json"
 
 // benchPayloads lists the payload types of a sweep, in the order of the
-// README tables.
+// README tables. rate1_bit counts the payload bits of the rate 1 blocks
+// instead of frames, each bit of a block that the receiver misses as wrong.
 func benchPayloads() []string {
-	return []string{"ambe", "ambe_c0c1", "rate12", "rate34", "rate1", "csbk", "lc", "header", "elc", "emb", "slottype", "sync"}
+	return []string{"ambe", "ambe_c0c1", "rate12", "rate34", "rate1", "csbk", "lc", "header", "elc", "emb", "slottype", "sync", "rate1_bit"}
 }
 
 // benchSlot is one slot of the sweep stream and what a receiver should
@@ -101,6 +103,7 @@ type benchScore struct {
 // benchPoint is the score of all payload types at one C/N.
 type benchPoint struct {
 	CN       float64                `json:"cn"`
+	Seeds    int                    `json:"seeds,omitempty"`
 	Payloads map[string]*benchScore `json:"payloads"`
 }
 
@@ -211,6 +214,12 @@ func (s *benchScorer) data(ts benchSlot, r Received, data layer2.RawBurst, have 
 		a, _ := data.Rate1Payload()
 		b, _ := ts.burst.Rate1Payload()
 		ok = ok && a == b
+		s.sc["rate1_bit"].Truth += 8 * len(b)
+		if have {
+			for i := range b {
+				s.sc["rate1_bit"].Exact += 8 - bits.OnesCount8(a[i]^b[i])
+			}
+		}
 	default:
 		a, _ := data.BPTCPayload()
 		b, _ := ts.burst.BPTCPayload()
@@ -270,7 +279,9 @@ func runBench(t testing.TB, slots []BSSlot, truth []benchSlot, tier Tier, cases 
 	}
 	wg.Wait()
 	byCN := map[float64]map[string]*benchScore{}
+	seeds := map[float64]int{}
 	for i, c := range cases {
+		seeds[c.cn]++
 		if byCN[c.cn] == nil {
 			byCN[c.cn] = map[string]*benchScore{}
 		}
@@ -286,7 +297,7 @@ func runBench(t testing.TB, slots []BSSlot, truth []benchSlot, tier Tier, cases 
 	}
 	out := make([]benchPoint, 0, len(byCN))
 	for cn, p := range byCN {
-		out = append(out, benchPoint{CN: cn, Payloads: p})
+		out = append(out, benchPoint{CN: cn, Seeds: seeds[cn], Payloads: p})
 	}
 	slices.SortFunc(out, func(a, b benchPoint) int { return int(math.Copysign(1, a.CN-b.CN)) })
 	return out
@@ -312,6 +323,82 @@ func fullCases() []benchCase {
 		}
 	}
 	return out
+}
+
+// deepPayloads lists the payload types of the README graphs, which the
+// generator sweep follows down to low error rates.
+func deepPayloads() []string {
+	return []string{"ambe", "rate12", "rate34", "csbk", "elc", "rate1_bit"}
+}
+
+// Limits of the deep points of the generator sweep.
+const (
+	// deepErrors is the number of errors at which a payload type of a point
+	// needs no more seeds.
+	deepErrors = 20
+	// deepBatch is the number of seeds that each round of a deep point adds.
+	deepBatch = 32
+	// deepFirstSeed is the first seed of the deep rounds, after the seeds of
+	// fullCases.
+	deepFirstSeed = 1000
+)
+
+// deepStreams returns the most streams that a deep point of tier t runs,
+// set by its compute cost.
+func deepStreams(t Tier) int {
+	return map[Tier]int{TierDisc: 4096, TierCoherent: 2048, TierExact: 1024}[t]
+}
+
+// deepen adds seeds to the points of a full sweep where a graphed payload
+// type has fewer than deepErrors errors, so that the error rate curves
+// reach about 1e-4. It adds rounds of deepBatch seeds to a point until each
+// such payload type has deepErrors errors or the point has run
+// deepStreams streams. A payload type that ends a point with no errors
+// needs no deeper points above it.
+func deepen(t testing.TB, slots []BSSlot, truth []benchSlot, tier Tier, pts []benchPoint) []benchPoint {
+	t.Helper()
+	done := map[string]bool{}
+	for i := range pts {
+		p := &pts[i]
+		seed := uint64(deepFirstSeed) + uint64(i)<<20
+		for {
+			need := false
+			for _, k := range deepPayloads() {
+				sc := p.Payloads[k]
+				if sc == nil || done[k] || sc.Truth == 0 || sc.Truth-sc.Exact >= deepErrors {
+					continue
+				}
+				if i == 0 || pts[i-1].Payloads[k] == nil || pts[i-1].Payloads[k].Exact < pts[i-1].Payloads[k].Truth || sc.Exact < sc.Truth {
+					need = true
+				}
+			}
+			if !need || p.Seeds >= deepStreams(tier) {
+				break
+			}
+			cases := make([]benchCase, deepBatch)
+			for j := range cases {
+				cases[j] = benchCase{p.CN, seed}
+				seed++
+			}
+			add := runBench(t, slots, truth, tier, cases)[0]
+			p.Seeds += add.Seeds
+			for k, v := range add.Payloads {
+				a := p.Payloads[k]
+				if a == nil {
+					a = &benchScore{}
+					p.Payloads[k] = a
+				}
+				a.Truth += v.Truth
+				a.Exact += v.Exact
+			}
+		}
+		for _, k := range deepPayloads() {
+			if sc := p.Payloads[k]; sc != nil && sc.Truth > 0 && sc.Exact == sc.Truth {
+				done[k] = true
+			}
+		}
+	}
+	return pts
 }
 
 // falsePerHour returns the bursts that tier t reports from 5 minutes of
@@ -382,7 +469,7 @@ func TestRxBench(t *testing.T) {
 		bt.Fast = runBench(t, slots, truth, tier, fastCases(tier))
 		if full {
 			fs, ft := benchStream(t, 30)
-			bt.Full = runBench(t, fs, ft, tier, fullCases())
+			bt.Full = deepen(t, fs, ft, tier, runBench(t, fs, ft, tier, fullCases()))
 			x := noisyBaseband(fs, 1400, 6, 1)
 			bt.Allocs = steadyAllocs(x, tier)
 			bt.RAMBytes = receiverRAM(tier)
