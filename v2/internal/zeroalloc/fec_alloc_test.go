@@ -210,9 +210,8 @@ func fecEntries(t testing.TB) []entry {
 
 	var rcInfo [11]bit.Bit
 	patternBits(rcInfo[:], 7)
-	rc := bptc.EncodeSingleBurst(rcInfo, true)
-	rcBad := rc
-	flip(rcBad[:], 4, 20)
+	rcWord := uint16(bit.Uint(rcInfo[:]))
+	rcBad := bptc.EncodeSingleBurst(rcWord, true) ^ (1<<(31-4) | 1<<(31-20))
 
 	tact := uint8(0b1010)
 	tactCW := hamming.Encode743(tact)
@@ -288,8 +287,8 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/fec/bptc.EncodeEmbedded", "voice B to E", 0, func() { frags = bptc.EncodeEmbedded(embInfo) }},
 		{"internal/fec/bptc.DecodeCACH", "1 error", 0, func() { bits36, r = bptc.DecodeCACH(cachBad) }},
 		{"internal/fec/bptc.EncodeCACH", "", 0, func() { cachOut = bptc.EncodeCACH(cachInfo) }},
-		{"internal/fec/bptc.DecodeSingleBurst", "reverse channel, 2 errors", 0, func() { bits11, r = bptc.DecodeSingleBurst(rcBad, true) }},
-		{"internal/fec/bptc.EncodeSingleBurst", "reverse channel", 0, func() { bits32 = bptc.EncodeSingleBurst(rcInfo, true) }},
+		{"internal/fec/bptc.DecodeSingleBurst", "reverse channel, 2 errors", 0, func() { u16, r = bptc.DecodeSingleBurst(rcBad, true) }},
+		{"internal/fec/bptc.EncodeSingleBurst", "reverse channel", 0, func() { u32 = bptc.EncodeSingleBurst(rcWord, true) }},
 
 		{"internal/fec/golay.Decode2087", "voice LC header slot type", 0, func() { u32, r = golay.Decode2087(headerSTCW) }},
 		{"internal/fec/golay.Decode2087", "voice LC header slot type, 2 errors", 0, func() { u32, r = golay.Decode2087(stBad) }},
