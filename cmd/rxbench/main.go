@@ -141,17 +141,30 @@ type bench struct {
 	Tiers   []tier `json:"tiers"`
 }
 
-// curve is a floor curve: frame recovery against Eb/N0.
+// curve is a floor curve: the frames and the frames recovered exactly at
+// each Eb/N0, and the kind of bound it is.
 type curve struct {
-	EbN0     []float64 `json:"ebn0"`
-	Recovery []float64 `json:"recovery"`
+	EbN0  []float64 `json:"ebn0"`
+	Truth []int     `json:"truth"`
+	Exact []int     `json:"exact"`
+	Bound string    `json:"bound"`
+}
+
+// recovery returns the frame recovery at each Eb/N0 of c.
+func (c curve) recovery() []float64 {
+	y := make([]float64, len(c.EbN0))
+	for i := range y {
+		if i < len(c.Truth) && c.Truth[i] > 0 {
+			y[i] = float64(c.Exact[i]) / float64(c.Truth[i])
+		}
+	}
+	return y
 }
 
 // floor is testdata/rxbench_floor.json.
 type floor struct {
 	Source   string           `json:"source"`
 	Payloads map[string]curve `json:"payloads"`
-	SyncPfa  string           `json:"sync_pfa"`
 }
 
 // recording is one real capture of testdata/rxbench_recordings.json.
@@ -264,10 +277,7 @@ func renderBlock(d data) []byte {
 	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
 	b.WriteString(" RAM is the heap that NewReceiver keeps for input at 48 kHz with ReceiverConfig.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
 	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
-	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. A tier can be under the floor where it uses more than one burst: it combines the embedded LC over superframes, its second pass puts priors on the EMB, and the stream gives each burst its neighbors, while the floor detects one MS burst alone.")
-	if d.floor.SyncPfa != "" {
-		b.WriteString(" SYNC detection is at " + d.floor.SyncPfa + ".")
-	}
+	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. The floor is described in testdata/rxbench_floor.json.")
 	b.WriteString("\n\n| Payload | Floor |")
 	for _, t := range d.bench.Tiers {
 		b.WriteString(" Tier " + tierName(t.Tier) + " |")
@@ -280,7 +290,7 @@ func renderBlock(d data) []byte {
 	for _, p := range payloadNames() {
 		b.WriteString("| " + p[1] + " | ")
 		if c, ok := d.floor.Payloads[p[0]]; ok {
-			b.WriteString(ebCell(at90(c.EbN0, c.Recovery)))
+			b.WriteString(ebCell(at90(c.EbN0, c.recovery())))
 		} else {
 			b.WriteString("-")
 		}
@@ -333,7 +343,7 @@ func lossCell(d data, t tier, k string) string {
 	if !ok {
 		return "-"
 	}
-	f, ok1 := at90(c.EbN0, c.Recovery)
+	f, ok1 := at90(c.EbN0, c.recovery())
 	v, ok2 := at90(tierCurve(t, k))
 	if !ok1 || !ok2 {
 		return "-"
@@ -361,7 +371,7 @@ func renderGraphs(d data) map[string][]byte {
 	for _, p := range graphPayloads() {
 		var series []svgSeries
 		if c, ok := d.floor.Payloads[p[0]]; ok {
-			series = append(series, svgSeries{name: "Floor", x: c.EbN0, y: c.Recovery, dash: true, class: "s0"})
+			series = append(series, svgSeries{name: "Floor", x: c.EbN0, y: c.recovery(), dash: true, class: "s0"})
 		}
 		for _, t := range d.bench.Tiers {
 			x, y := tierCurve(t, p[0])
