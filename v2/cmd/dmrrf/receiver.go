@@ -1021,7 +1021,7 @@ func (r *Receiver) finish(s *slotState) {
 // fill264 sets the hard bits and log-likelihood ratios of rec, burst and
 // CACH, from the detected symbols of slot s.
 func (r *Receiver) fill264(s *slotState, rec *slotRec) {
-	var bits [layer2.BurstBits]bit.Bit
+	rec.data = layer2.RawBurst{}
 	st, p := r.symsOf(s)
 	for k := range slotSymbols {
 		b0, b1 := dibitOfDigit(int(st.digit[p+k]))
@@ -1031,12 +1031,11 @@ func (r *Receiver) fill264(s *slotState, rec *slotRec) {
 			rec.cachLLR[2*k], rec.cachLLR[2*k+1] = l0, l1
 		} else {
 			i := 2 * (k - cachSymbols)
-			bits[i], bits[i+1] = b0, b1
+			rec.data[i/8] |= byte(b0<<1|b1) << (6 - i%8)
 			r.llrBuf[i], r.llrBuf[i+1] = l0, l1
 		}
 	}
 	rec.llr.set(&r.llrBuf)
-	rec.data = bit.Pack264(bits)
 }
 
 // dibitLLR returns the log-likelihood ratios of the two bits of a symbol
@@ -1088,7 +1087,7 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	if r.opt.RefinePrior == 0 || !r.opt.Coherent || s.index != j || !r.rep.voiceBits(e, r.known) {
 		return
 	}
-	bits := bit.Unpack264(e.out.Fixed)
+	fixed := &e.out.Fixed
 	clear(r.prior)
 	for k := range burstSymbols {
 		lp := r.prior[4*(cachSymbols+k) : 4*(cachSymbols+k)+4]
@@ -1103,7 +1102,7 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 				if b == 1 {
 					v = b1
 				}
-				if v == bits[i] {
+				if v == bit.Bit(fixed[i/8]>>(7-i%8)&1) {
 					lp[d] += r.opt.RefinePrior
 				}
 			}
