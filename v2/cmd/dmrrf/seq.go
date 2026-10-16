@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strings"
 
@@ -61,13 +62,15 @@ const (
 	seqMBC      = "mbc"
 	seqTier3    = "tier3"
 	seqSite     = "t3site"
+	seqRadioChk = "radiocheck"
+	seqAlert    = "callalert"
 )
 
 // Sequences returns the names Sequence accepts.
 func Sequences() []string {
 	return []string{
 		seqWakeup, "data12", "data34", "data1", "data12u", "data34u", "data1u",
-		seqACK, seqSR, seqPreamble, seqVoice, seqPI, seqRC, seqMBC, seqTier3, seqSite,
+		seqACK, seqSR, seqPreamble, seqVoice, seqPI, seqRC, seqMBC, seqTier3, seqSite, seqRadioChk, seqAlert,
 	}
 }
 
@@ -227,6 +230,53 @@ func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 		blocks--
 	}
 	return append(out, data...), nil
+}
+
+// Motorola FID 0x10 CSBK opcodes, as an AnyTone sends them through an XPR
+// 8400 (capture runs/moto-rc-1).
+const (
+	motoFID        = 0x10
+	motoRadioCheck = 0x24
+	motoCallAlert  = 0x1F
+)
+
+// motorolaCSBKBursts returns Preambles Pre_CSBKs and a FID 0x10 radio check
+// or call alert. The radio check carries the source before the target, the
+// call alert the target before the source.
+func motorolaCSBKBursts(alert bool, cfg SeqConfig) ([]layer2.RawBurst, error) {
+	if cfg.Preambles < 0 || cfg.Preambles > 0xFF {
+		return nil, fmt.Errorf("%d preambles, want 0 to 255", cfg.Preambles)
+	}
+	var out []layer2.RawBurst
+	for i := range cfg.Preambles {
+		c := &pdu.CSBK{
+			LastBlock: true,
+			Opcode:    pdu.CSBKPreamble,
+			PreamblePDU: &pdu.PreamblePDU{
+				Group:              cfg.Group,
+				CSBKBlocksToFollow: byte(cfg.Preambles - i),
+				TargetAddress:      cfg.Dest,
+				SourceAddress:      cfg.Source,
+			},
+		}
+		b, err := layer2.BuildBurst(c, cfg.ColorCode, cfg.source())
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, b)
+	}
+	first, second, op := cfg.Source, cfg.Dest, pdu.CSBKOpcode(motoRadioCheck)
+	if alert {
+		first, second, op = cfg.Dest, cfg.Source, motoCallAlert
+	}
+	c := &pdu.CSBK{LastBlock: true, Opcode: op, FID: motoFID}
+	binary.BigEndian.PutUint32(c.RawPayload[4:], second)
+	binary.BigEndian.PutUint32(c.RawPayload[1:5], first)
+	b, err := layer2.BuildBurst(c, cfg.ColorCode, cfg.source())
+	if err != nil {
+		return nil, err
+	}
+	return append(out, b), nil
 }
 
 // TestAMBEFrame returns frame i of the voice test pattern: a distinct,
@@ -389,6 +439,9 @@ func payload(name string, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 		}
 		b, err := rcBurst(cfg)
 		return []layer2.RawBurst{b}, []string{"rc command=" + enums.RCCeaseTransmissionCommand.String()}, err
+	case seqRadioChk, seqAlert:
+		b, err := motorolaCSBKBursts(name == seqAlert, cfg)
+		return b, []string{name + " fid=0x10"}, err
 	case seqMBC, seqTier3:
 		if !cfg.BSSourced {
 			return nil, nil, fmt.Errorf("%s sends outbound Tier III PDUs and needs -bs-sourced", name)
