@@ -64,17 +64,8 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "vocoder", "vocoder",
+	if err := writeFile(dmrRoot, "internal/fec/ambe", "ambe",
 		writeTable("ambeScrambleTable", tables.AMBEScrambleTable[:]),
-		jen.Line(),
-		jen.Line(),
-		writeTable("aTable", tables.ATable),
-		jen.Line(),
-		jen.Line(),
-		writeTable("bTable", tables.BTable),
-		jen.Line(),
-		jen.Line(),
-		writeTable("cTable", tables.CTable),
 	); err != nil {
 		return err
 	}

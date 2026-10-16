@@ -11,6 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
@@ -191,6 +192,8 @@ func fecEntries(t testing.TB) []entry {
 		t.Fatalf("d-sms message % X: bad CRC-32", message)
 	}
 
+	ambeSlot := [9]byte(voice[2][:9])
+
 	var rate34Bits [144]bit.Bit
 	patternBits(rate34Bits[:], 5)
 	rate34 := [18]byte(bit.Pack(rate34Bits[:]))
@@ -228,6 +231,7 @@ func fecEntries(t testing.TB) []entry {
 		bits96     [96]bit.Bit
 		bits196    [196]bit.Bit
 		rate34Out  [18]byte
+		ambeFrame  [7]byte
 		trellisOut [25]byte
 		bits77     [77]bit.Bit
 		bits36     [36]bit.Bit
@@ -313,6 +317,9 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/fec/trellis.Decode", "2 errors", 0, func() { rate34Out, r = trellis.Decode(trellisBad) }},
 		{"internal/fec/trellis.Encode", "", 0, func() { trellisOut = trellis.Encode(rate34) }},
 
+		{"internal/fec/ambe.Decode", "voice B slot 0", 0, func() { ambeFrame, r = ambe.Decode(ambeSlot) }},
+		{"internal/fec/ambe.Encode", "voice B slot 0", 0, func() { ambeSlot = ambe.Encode(ambeFrame) }},
+
 		{"internal/crc.CCITT", "CSBK", 0, func() { u16 = crc.CCITT(csbkBytes[:10]) }},
 		{"internal/crc.CheckCCITT", "CSBK", 0, func() { ok = crc.CheckCCITT(csbkBytes[:10], csbkCRC) }},
 		{"internal/crc.CRC32", "d-sms message", 0, func() { u32 = crc.CRC32(message) }},
@@ -326,6 +333,7 @@ func fecEntries(t testing.TB) []entry {
 		{"internal/crc.CRC9", "rate 1/2 block", 0, func() { u16 = crc.CRC9(rate12[:80]) }},
 		{"internal/crc.CheckCRC9", "rate 1/2 block", 0, func() { ok = crc.CheckCRC9(rate12[:80], uint16(bit.Uint(rcCRCBits[:]))) }},
 	}
+	_ = ambeFrame
 	_, _, _, _, _, _, _, _, _, _, _, _ = bits96, bits196, rate34Out, trellisOut, bits77, bits36, bits11, bits20, bits16, bits7, frags, cachOut
 	_, _, _, _, _, _, _, _, _, _, _, _ = bits32, rsData, rsCW, u16, u32, u8, ok, r, err, ber, n, reserved
 	return out

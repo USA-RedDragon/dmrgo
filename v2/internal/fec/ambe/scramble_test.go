@@ -1,4 +1,4 @@
-package vocoder
+package ambe
 
 import "testing"
 
