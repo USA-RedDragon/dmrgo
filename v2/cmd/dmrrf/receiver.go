@@ -196,6 +196,8 @@ type Receiver struct {
 	// is emit as a func value made once.
 	finRec slotRec
 	emitFn func(Received)
+	// llrBuf holds the ratios of a burst that fill264 sets.
+	llrBuf [layer2.BurstBits]int16
 	// syms holds the detection of the slots on their way to the tracker,
 	// as many as the gap that the first detection after a lock spans, and
 	// refined that of the slots that a refinement detects again, from
@@ -1025,9 +1027,10 @@ func (r *Receiver) fill264(s *slotState, rec *slotRec) {
 		} else {
 			i := 2 * (k - cachSymbols)
 			bits[i], bits[i+1] = b0, b1
-			rec.llr[i], rec.llr[i+1] = l0, l1
+			r.llrBuf[i], r.llrBuf[i+1] = l0, l1
 		}
 	}
+	rec.llr.set(&r.llrBuf)
 	rec.data = bit.Pack264(bits)
 }
 
