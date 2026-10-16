@@ -51,7 +51,7 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 	}
 	voiceSync, _, ok := opts.Source.SyncPatterns()
 	if !ok {
-		return errUnknownSyncSource
+		return errSyncSource
 	}
 	header, err := lcDataBurst(&opts.LC, enums.DataTypeVoiceLCHeader, opts.ColorCode, opts.Source)
 	if err != nil {
@@ -146,7 +146,7 @@ func (t *VoiceTransmitter) startSuperframe() error {
 		if lc := t.lcHook(n); lc != nil {
 			var err error
 			if frags, err = encodeEmbeddedFullLinkControl(lc); err != nil {
-				return newSuperframeLCError(n, err)
+				return err
 			}
 		}
 	}

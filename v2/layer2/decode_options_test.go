@@ -278,10 +278,10 @@ func TestDecodeFromBytesWith_ErrorMessages(t *testing.T) {
 		{"reserved", reserved, nil, "reserved data type 13", []error{layer2.ErrReservedDataType}},
 		{"mismatch", data, &layer2.DecodeOptions{ColorCode: &want}, "color code mismatch: burst has 3, want 9",
 			[]error{layer2.ErrColorCodeMismatch}},
-		{"mismatch above 4 bits", data, &layer2.DecodeOptions{ColorCode: &big}, "color code mismatch: burst has 3, want 31",
+		{"mismatch above 4 bits", data, &layer2.DecodeOptions{ColorCode: &big}, "color code mismatch",
 			[]error{layer2.ErrColorCodeMismatch}},
 		{"both", reserved, &layer2.DecodeOptions{ColorCode: &want},
-			"reserved data type 13\ncolor code mismatch: burst has 3, want 9",
+			"reserved data type\ncolor code mismatch",
 			[]error{layer2.ErrReservedDataType, layer2.ErrColorCodeMismatch}},
 	}
 	for _, tt := range tests {

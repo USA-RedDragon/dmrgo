@@ -74,7 +74,7 @@ func (r RawBurst) Sync() (enums.SyncPattern, int) {
 // an error unless p is a SYNC pattern (ETSI TS 102 361-1 Table 9.2).
 func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 	if !isSyncPattern(p) {
-		return newSyncPatternError(p)
+		return errSyncPattern
 	}
 	r.setSync(p)
 	return nil
@@ -326,7 +326,7 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 	var r RawBurst
 	voice, _, ok := src.SyncPatterns()
 	if !ok {
-		return r, newSyncSourceError(src)
+		return r, errSyncSource
 	}
 	r.SetAMBEFrames(frames)
 	if pos == enums.VoiceBurstA {
@@ -337,7 +337,7 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 	}
 	lcss, ok := pos.LCSS()
 	if !ok {
-		return RawBurst{}, newNotAToFError(pos)
+		return RawBurst{}, errNotAToF
 	}
 	emb.LCSS = lcss
 	r.SetEMB(emb)
@@ -383,7 +383,7 @@ func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 // It returns an error when dt is not BPTC coded or src is unknown.
 func BuildDataBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
 	if !dt.IsBPTC() {
-		return RawBurst{}, newNotBPTCError(dt)
+		return RawBurst{}, errNotBPTC
 	}
 	r, err := dataBurstFrame(dt, cc, src)
 	if err != nil {
@@ -421,7 +421,7 @@ func dataBurstFrame(dt enums.DataType, cc enums.ColorCode, src SyncSource) (RawB
 	var r RawBurst
 	_, sync, ok := src.SyncPatterns()
 	if !ok {
-		return r, newSyncSourceError(src)
+		return r, errSyncSource
 	}
 	if err := r.SetSync(sync); err != nil {
 		return r, err

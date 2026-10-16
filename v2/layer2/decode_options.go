@@ -78,7 +78,7 @@ func (b *Burst) checkColorCode(want *enums.ColorCode) error {
 		return nil
 	}
 	if got != *want {
-		return newColorCodeMismatch(got, *want)
+		return colorCodeMismatch(got, *want)
 	}
 	return nil
 }

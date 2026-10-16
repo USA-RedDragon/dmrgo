@@ -276,7 +276,7 @@ func (t *VoiceTransmitter) flush() (RawBurst, error) {
 		}
 		embBits, err := emb.Encode()
 		if err != nil {
-			return RawBurst{}, newWrappedError("cannot encode embedded signalling", err)
+			return RawBurst{}, err
 		}
 		r.setField(embFirstStart, 8, embSecondStart, 8, bit.Uint(embBits[:]))
 		r.setField(embeddedDataStart, 16, embeddedDataStart+16, 16, uint64(data))

@@ -24,8 +24,8 @@ func MMDVMHostSeal(dataType enums.DataType, p *[12]byte) error {
 	case enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1:
 		return nil
 	case enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
-		return newMMDVMHostDiscardsError(dataType)
+		return errMMDVMHostData
 	default:
-		return newMMDVMHostDiscardsError(dataType)
+		return errMMDVMHostData
 	}
 }

@@ -22,7 +22,7 @@ func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][CACHBits]bit.Bit,
 	var out [4][CACHBits]bit.Bit
 	info, err := slc.Encode()
 	if err != nil {
-		return out, newWrappedError("cannot encode short LC", err)
+		return out, err
 	}
 	fragments := bptc.EncodeCACH(bit.Uint(info[:]))
 	for i, fragment := range fragments {
