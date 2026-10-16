@@ -8,12 +8,18 @@ import (
 )
 
 // TestNoTierUnderFloor checks that at every Eb/N0 of the sweep data no tier
-// makes fewer errors than its floor allows: the chance of seeing so few
+// makes fewer errors than its DMR floor allows: the chance of seeing so few
 // errors from a tier as good as the floor, by the binomial tail, must stay
 // above 1e-4.
 func TestNoTierUnderFloor(t *testing.T) {
 	t.Parallel()
-	checkUnder(t, func(d data) floor { return d.floor }, 0)
+	checkUnder(t, func(d data) map[string]curve {
+		out := map[string]curve{}
+		for k, f := range d.floor.Payloads {
+			out[k] = f.DMR
+		}
+		return out
+	}, 0)
 }
 
 // awareMargin is the Eb/N0, in dB, by which TestNoTierUnderAware shifts
@@ -25,13 +31,13 @@ const awareMargin = 0.25
 // fewer errors than the code-aware receiver at awareMargin dB more Eb/N0.
 func TestNoTierUnderAware(t *testing.T) {
 	t.Parallel()
-	checkUnder(t, func(d data) floor { return d.aware }, awareMargin)
+	checkUnder(t, func(d data) map[string]curve { return d.aware.Payloads }, awareMargin)
 }
 
 // checkUnder fails when a tier makes fewer errors at some point of the
 // sweep data than the reference curves of ref allow at margin dB more
 // Eb/N0, with a binomial tail chance under 1e-4.
-func checkUnder(t *testing.T, ref func(data) floor, margin float64) {
+func checkUnder(t *testing.T, ref func(data) map[string]curve, margin float64) {
 	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -41,7 +47,7 @@ func checkUnder(t *testing.T, ref func(data) floor, margin float64) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for k, c := range ref(d).Payloads {
+	for k, c := range ref(d) {
 		for _, tr := range d.bench.Tiers {
 			for _, p := range tr.Full {
 				s := p.Payloads[k]
