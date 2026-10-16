@@ -143,7 +143,7 @@ func TestReceiver_Ends(t *testing.T) {
 	t.Parallel()
 
 	bursts := transmission(t, groupLC(t, 91, 3191868), 1, nil)
-	idle, err := layer2.BuildDataBurst(layer2.IdleMessageInfo(), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
+	idle, err := layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
 	if err != nil {
 		t.Fatal(err)
 	}

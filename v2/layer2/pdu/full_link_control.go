@@ -118,7 +118,7 @@ func (s *FullLinkControl) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
 	case s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser && s.UnitToUnit != nil:
 		return s.UnitToUnit.ServiceOptions, true
 	case s.FLCO == enums.FLCOGroupVoiceChannelUser, s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser:
-		return layer3.ServiceOptionsFromByte(s.RawPayload[0]), true
+		return layer3.DecodeServiceOptions([1]byte{s.RawPayload[0]}), true
 	}
 	return so, false
 }

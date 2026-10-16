@@ -456,7 +456,7 @@ func collectEmbedded(d digests) {
 		randBits(r, e32[:])
 		p32 := [4]byte(pack(e32[:]))
 		rc := layer2.DecodeEmbeddedRC(p32)
-		d.add("emb/rc", "%v %+v %v", e32, rc, layer2.IsNullEmbeddedLC(p32))
+		d.add("emb/rc", "%v %+v %v", e32, rc, p32 == [4]byte{})
 		rc.RCCommand = enums.RCCommand(r.Intn(16))
 		enc, err := layer2.EncodeEmbeddedRC(&rc)
 		d.add("emb/rcenc", "%v %s", unpack(enc[:], 32), errString(err))

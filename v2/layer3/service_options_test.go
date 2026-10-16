@@ -177,9 +177,9 @@ func TestServiceOptionsByte(t *testing.T) {
 	t.Parallel()
 
 	for v := range 256 {
-		so := ServiceOptionsFromByte(byte(v))
+		so := DecodeServiceOptions([1]byte{byte(v)})
 		if got := so.Byte(); got != byte(v) {
-			t.Errorf("ServiceOptionsFromByte(%#02x).Byte() = %#02x", v, got)
+			t.Errorf("DecodeServiceOptions(%#02x).Byte() = %#02x", v, got)
 		}
 		bits := must(so.Encode())
 		if got := bits[0]; got != byte(v) {
