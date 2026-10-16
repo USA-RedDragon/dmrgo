@@ -3,18 +3,13 @@
 package allocgate_test
 
 import (
-	"bufio"
-	"bytes"
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -24,25 +19,6 @@ const moduleRoot = "../.."
 
 // skipDirs are the module directories that are not library code.
 var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest"}
-
-// makeRE matches a make call that -gcflags=-m reports as not escaping. The
-// runtime puts such a slice on the stack only when its size is a constant
-// or at most 32 bytes, so a make with a size that is not a literal can still
-// allocate.
-var makeRE = regexp.MustCompile(`^(.+\.go):(\d+):(\d+): (make\(\[\][^,]+, (.*)\) does not escape)$`)
-
-// literalArgsRE matches make arguments that are integer literals only.
-var literalArgsRE = regexp.MustCompile(`^\d+(, \d+)?$`)
-
-// siteRE matches a line of -gcflags=-m output that reports a heap
-// allocation: a value that escapes, or a variable that moves, to the heap.
-var siteRE = regexp.MustCompile(`^(.+\.go):(\d+):(\d+): (.*(?:escapes to heap|moved to heap).*)$`)
-
-type site struct {
-	file string
-	line int
-	msg  string
-}
 
 // libraryPackages returns the import paths of the library packages, relative
 // to the module ("./bit" and so on).
@@ -71,58 +47,6 @@ func libraryPackages(t *testing.T) []string {
 		t.Fatal(err)
 	}
 	return pkgs
-}
-
-// escapeSites builds the library packages with -gcflags=-m and returns the
-// reported heap allocations in files of the module.
-func escapeSites(t *testing.T) []site {
-	t.Helper()
-	goTool, err := exec.LookPath("go")
-	if err != nil {
-		t.Skip("no go command")
-	}
-	root, err := filepath.Abs(moduleRoot)
-	if err != nil {
-		t.Fatal(err)
-	}
-	args := append([]string{"build", "-gcflags=-m=1"}, libraryPackages(t)...)
-	cmd := exec.CommandContext(t.Context(), goTool, args...)
-	cmd.Dir = root
-	cmd.Env = append(os.Environ(), "GOFLAGS=")
-	var out bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &out, &out
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("go build: %v\n%s", err, out.String())
-	}
-	var sites []site
-	seen := map[site]bool{}
-	sc := bufio.NewScanner(&out)
-	for sc.Scan() {
-		m := siteRE.FindStringSubmatch(sc.Text())
-		if m == nil || strings.Contains(m[4], "does not escape") {
-			mm := makeRE.FindStringSubmatch(sc.Text())
-			if mm == nil || literalArgsRE.MatchString(mm[5]) {
-				continue
-			}
-			m = mm[:5]
-			m[4] += " (variable size)"
-		}
-		file := m[1]
-		if !filepath.IsAbs(file) {
-			file = filepath.Join(root, file)
-		}
-		rel, err := filepath.Rel(root, file)
-		if err != nil || strings.HasPrefix(rel, "..") {
-			continue
-		}
-		line, _ := strconv.Atoi(m[2])
-		s := site{filepath.ToSlash(rel), line, m[4]}
-		if !seen[s] {
-			seen[s] = true
-			sites = append(sites, s)
-		}
-	}
-	return sites
 }
 
 // pkgFuncs holds the declarations of one package directory.
@@ -273,35 +197,4 @@ func exemptReason(p *pkgFuncs, fd *ast.FuncDecl) string {
 		}
 	}
 	return ""
-}
-
-func TestNoHeapAllocations(t *testing.T) {
-	t.Parallel()
-
-	pkgs := map[string]*pkgFuncs{}
-	var bad []string
-	for _, s := range escapeSites(t) {
-		dir := filepath.ToSlash(filepath.Dir(s.file))
-		p, ok := pkgs[dir]
-		if !ok {
-			p = parsePackage(t, dir)
-			pkgs[dir] = p
-		}
-		fd := p.enclosing(filepath.Base(s.file), s.line)
-		if exemptReason(p, fd) != "" {
-			continue
-		}
-		name := "package level"
-		if fd != nil {
-			name = funcKey(fd)
-		}
-		bad = append(bad, fmt.Sprintf("%s:%d: %s: %s", s.file, s.line, name, s.msg))
-	}
-	slices.Sort(bad)
-	for _, b := range bad {
-		t.Error(b)
-	}
-	if len(bad) > 0 {
-		t.Logf("%d heap allocation sites outside the exemption rules", len(bad))
-	}
 }

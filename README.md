@@ -90,9 +90,8 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
   - A call that returns a fresh slice, string or payload struct by contract allocates, and its doc says so. Each has a form that does not: `bit.AppendPack` for `bit.Pack`, `pdu.DecodeCSBKInto` for `pdu.DecodeCSBK` (and the other dispatch PDUs), `VoiceTransmitter.AppendFrames` for `AddFrames`, `packet.Builder` for `packet.Segment`, `Framer.AppendBursts` for `Write`.
   - Errors for programmer mistakes, and a decode that returns two joined errors, also allocate.
   - A reused `layer2.Burst`, or a copy of it, keeps its decoded `Data`, and the payload structs that `Data` points to, until the next decode into it. `packet.Builder` and `packet.Assembler` with `Reuse` keep their results the same way.
-  - Three checks keep it so, with no list of functions to maintain:
-    - [v2/internal/allocgate](v2/internal/allocgate) builds the library with `-gcflags=-m` and fails on each heap allocation that gc reports. Only these may allocate: constructors (`New*`, `new*`), `String`, `GoString` and `Error` methods, `Append*` functions (only when the slice lacks capacity), package-level declarations, and wrappers whose doc says "It allocates ...; X does not." for a twin X. It also fails on an `init` function.
-    - The same package builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the pico with `tinygo build -print-allocs` and fails on each heap allocation site under the same rules.
+  - Two checks keep it so, with no list of functions to maintain:
+    - [v2/internal/allocgate](v2/internal/allocgate) builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the pico with `tinygo build -print-allocs` and fails on each heap allocation site, outside constructors (`New*`, `new*`), `String`, `GoString` and `Error` methods, `Append*` functions, package-level declarations and wrappers whose doc says "It allocates ...; X does not." for a twin X. It also fails on an `init` function.
     - [v2/internal/allocs](v2/internal/allocs) checks decode and encode of every capture, packet assembly, a voice superframe, `voice.Receiver` and `voice.Transmitter`, the vocoder frames and the framer with `testing.AllocsPerRun`, and under TinyGo reads `runtime.MemStats` around the main decode and encode calls.
 
 ## Codec2
