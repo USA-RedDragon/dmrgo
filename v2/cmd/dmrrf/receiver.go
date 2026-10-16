@@ -1109,6 +1109,25 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 			}
 		}
 	}
+	if !r.redetect(j) {
+		return
+	}
+	rec := r.scratchRec
+	e.rec.llr, e.rec.cachLLR = rec.llr, rec.cachLLR
+	elc := e.out.Fixed.EmbeddedData()
+	e.out.Data, e.out.Fixed, e.out.FixedCACH = rec.data, rec.data, rec.cach
+	if e.elcOK {
+		e.out.Fixed.SetEmbeddedData(elc)
+	}
+	r.rep.repair(e, cc, ccOK)
+}
+
+// redetect detects slot j again with the priors in r.prior, between the
+// anchors on either side of it in a BS stream, into r.scratchRec, and
+// reports whether it could. The carrier estimate stays as it is, as the
+// priors would bias it.
+func (r *Receiver) redetect(j int64) bool {
+	s := r.slot(j)
 	s.hasPrior = true
 	if r.bs {
 		la, ra := j, j
@@ -1120,7 +1139,7 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		}
 		if r.slot(la).index != la || r.slot(ra).index != ra {
 			s.hasPrior = false
-			return
+			return false
 		}
 		r.refine(la)
 		r.coherentGap(la, ra, false)
@@ -1129,14 +1148,7 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		r.coherentBurst(j)
 	}
 	s.hasPrior = false
-	rec := r.scratchRec
-	r.fill264(s, rec)
+	r.fill264(s, r.scratchRec)
 	r.refining = false
-	e.rec.llr, e.rec.cachLLR = rec.llr, rec.cachLLR
-	elc := e.out.Fixed.EmbeddedData()
-	e.out.Data, e.out.Fixed, e.out.FixedCACH = rec.data, rec.data, rec.cach
-	if e.elcOK {
-		e.out.Fixed.SetEmbeddedData(elc)
-	}
-	r.rep.repair(e, cc, ccOK)
+	return true
 }
