@@ -73,7 +73,9 @@
 //   - fec.ErrUncorrectable: an FEC or CRC check failed. It is wrapped by
 //     layer2.ErrEmbeddedLCUncorrectable, packet.ErrMessageCRC and
 //     packet.ErrBlocksMissing, which layer2.VoiceReceiver and
-//     packet.Assembler return together with what they decoded.
+//     packet.Assembler return together with what they decoded, and by
+//     packet.ErrHeaderCRC, which packet.Assembler returns for a data header
+//     that it drops.
 //   - layer2.ErrReservedDataType, layer2.ErrColorCodeMismatch: returned by
 //     the burst decoders.
 //   - layer2.ErrVoiceTerminated, layer2.ErrEmbeddedLCSequence,
