@@ -187,9 +187,17 @@ func (r *qring) add(v float32) {
 
 // lerp returns the ring at the fractional sample t by linear interpolation.
 func (r *qring) lerp(t float64) float32 {
-	i0 := int64(math.Floor(t))
-	fr := float32(t - float64(i0))
-	return r.at(i0)*(1-fr) + r.at(i0+1)*fr
+	base := int64(math.Floor(t))
+	return r.lerpFrom(base, float32(t-float64(base)))
+}
+
+// lerpFrom returns the ring at the fractional sample base+u, u at least 0,
+// by linear interpolation, in single precision.
+func (r *qring) lerpFrom(base int64, u float32) float32 {
+	iu := int32(u)
+	fr := u - float32(iu)
+	i := base + int64(iu)
+	return r.at(i)*(1-fr) + r.at(i+1)*fr
 }
 
 // Layout of the discriminator path.

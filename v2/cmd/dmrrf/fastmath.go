@@ -35,3 +35,8 @@ func atan2f(y, x float32) float32 {
 	}
 	return r
 }
+
+// sqrtf returns the square root of x in single precision.
+func sqrtf(x float32) float32 {
+	return float32(math.Sqrt(float64(x)))
+}
