@@ -2,10 +2,8 @@ package packet
 
 import (
 	"encoding/binary"
-	"errors"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -428,7 +426,7 @@ func (a *Assembler) finish() (Message, bool, error) {
 	accept := a.acceptBadCRC()
 	a.Reset()
 	err := a.fill(&m, buf, complete)
-	if errors.Is(err, ErrMessageCRC) && complete && accept {
+	if err != nil && m.Header.Format != pdu.FormatResponsePacket && complete && accept {
 		err = nil
 	}
 	return m, true, err
@@ -438,10 +436,10 @@ func (a *Assembler) finish() (Message, bool, error) {
 // checks the message CRC, or the CRC of the response data.
 func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 	if m.Header.Format == pdu.FormatResponsePacket {
-		err := decodeResponseData(&a.store.responseData, buf)
-		if err != nil && !errors.Is(err, fec.ErrUncorrectable) {
-			return err
+		if len(buf) != 12 && len(buf) != 24 {
+			return errResponseLength
 		}
+		err := decodeResponseData(&a.store.responseData, buf)
 		m.Response = &a.store.responseData
 		m.Data = buf[:len(buf)-crcOctets]
 		return err
