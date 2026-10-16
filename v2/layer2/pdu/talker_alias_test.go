@@ -143,16 +143,16 @@ func TestTalkerAlias_Errors(t *testing.T) {
 		t.Error("unknown format accepted")
 	}
 	lcs, _ := pdu.EncodeTalkerAlias("KI5VMF Jacob", layer3.TalkerAliasUTF8)
-	if _, err := pdu.DecodeTalkerAlias(lcs[0].TalkerAliasHeader); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
+	if _, err := pdu.TalkerAlias(lcs[0].TalkerAliasHeader); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
 		t.Errorf("missing block: %v", err)
 	}
-	if _, err := pdu.DecodeTalkerAlias(lcs[0].TalkerAliasHeader, nil); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
+	if _, err := pdu.TalkerAlias(lcs[0].TalkerAliasHeader, nil); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
 		t.Errorf("nil block: %v", err)
 	}
 	bad := *lcs[0].TalkerAliasHeader
 	bad.TalkerAliasDataLength = 1
 	bad.TalkerAliasData = 0xC3 << 40
-	if _, err := pdu.DecodeTalkerAlias(&bad); err == nil {
+	if _, err := pdu.TalkerAlias(&bad); err == nil {
 		t.Error("invalid UTF-8 accepted")
 	}
 	var a pdu.TalkerAliasAssembler

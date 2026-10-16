@@ -11,8 +11,8 @@ import (
 func TestTalkerAliasNegativeLength(t *testing.T) {
 	t.Parallel()
 
-	got, err := pdu.DecodeTalkerAlias(&pdu.FLCTalkerAliasHeader{TalkerAliasDataLength: -1})
+	got, err := pdu.TalkerAlias(&pdu.FLCTalkerAliasHeader{TalkerAliasDataLength: -1})
 	if err != nil || got != "" {
-		t.Errorf("DecodeTalkerAlias = %q, %v; want empty", got, err)
+		t.Errorf("TalkerAlias = %q, %v; want empty", got, err)
 	}
 }
