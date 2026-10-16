@@ -68,7 +68,7 @@ func TestTinyGoHeapAllocations(t *testing.T) {
 		}
 		rel = filepath.ToSlash(rel)
 		dir := filepath.ToSlash(filepath.Dir(rel))
-		if slices.Contains(pendingDirs, dir) || slices.ContainsFunc(skipDirs, func(s string) bool { return dir == s || strings.HasPrefix(dir, s+"/") }) {
+		if slices.ContainsFunc(skipDirs, func(s string) bool { return dir == s || strings.HasPrefix(dir, s+"/") }) {
 			continue
 		}
 		p, ok := pkgs[dir]

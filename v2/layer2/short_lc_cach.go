@@ -1,8 +1,6 @@
 package layer2
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -24,7 +22,7 @@ func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][CACHBits]bit.Bit,
 	var out [4][CACHBits]bit.Bit
 	info, err := slc.Encode()
 	if err != nil {
-		return out, fmt.Errorf("cannot encode short LC: %w", err)
+		return out, newWrappedError("cannot encode short LC", err)
 	}
 	fragments := bptc.EncodeCACH(bit.Uint(info[:]))
 	for i, fragment := range fragments {

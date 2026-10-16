@@ -1,8 +1,6 @@
 package layer2
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -214,7 +212,7 @@ func combineEmbeddedFEC(result, field fec.Result) fec.Result {
 func fullLCOctets(lc *pdu.FullLinkControl) ([9]byte, error) {
 	octets, err := lc.Bytes()
 	if err != nil {
-		return [9]byte{}, fmt.Errorf("cannot encode full link control: %w", err)
+		return [9]byte{}, newWrappedError("cannot encode full link control", err)
 	}
 	return octets, nil
 }
