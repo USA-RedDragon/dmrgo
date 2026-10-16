@@ -524,7 +524,8 @@ type softOSDScratch struct {
 	// work holds the generator rows in systematic form on pivot[i].
 	work  [softOSDMaxK][softOSDWords]uint64
 	pivot [softOSDMaxK]int16
-	// tab holds the cost tables of the code bits.
+	// tab holds the tables of the LLR magnitudes of the code bits, 4 bits
+	// per table.
 	tab [softOSDNibbles][16]int32
 	// list holds the best candidates.
 	list softOSDList
@@ -535,9 +536,9 @@ type softOSDScratch struct {
 	cand [4][softOSDWords]uint64
 	pmag [softOSDMaxK]int32
 	// pass is the cost of the best accepted codeword, floor the cost of the
-	// hard decisions, and nw and nb the words and nibbles of a codeword.
+	// hard decisions, and nw the words of a codeword.
 	pass, floor int32
-	nw, nb      int
+	nw          int
 	// chase holds the Chase test pattern bits and bits the hard decisions of
 	// the 196 information bits.
 	chase [softChaseMax]int16
@@ -568,11 +569,19 @@ func (s *softOSDScratch) prepare(n int) {
 	}
 }
 
-// cost returns the sum of the LLRs of the 1 bits of cw, from s.tab.
-func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, nb int) int32 {
-	var sum int32
-	for b := range nb {
-		sum += s.tab[b][cw[b>>4]>>((b&15)*4)&0xf]
+// cost returns the sum of the LLRs of the 1 bits of cw: s.floor plus the
+// LLR magnitudes of the bits where cw differs from the hard decisions, from
+// s.tab. It stops once the sum reaches bound and returns the partial sum.
+func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, bound int32) int32 {
+	sum := s.floor
+	for x := range s.nw {
+		t := s.tab[16*x:]
+		for i, e := 0, cw[x]^s.hard[x]; e != 0; i, e = i+1, e>>4 {
+			sum += t[i][e&0xf]
+		}
+		if sum >= bound {
+			break
+		}
 	}
 	return sum
 }
@@ -587,7 +596,7 @@ func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, nb int) int32 {
 // accepted codeword of the list, so it is skipped.
 func (c *softOSDCode) osd(s *softOSDScratch, order, window, listMax int) {
 	s.prepare(c.n)
-	softNibbleTables(s.tab[:], s.l[:c.n])
+	softNibbleTables(s.tab[:], s.mag[:c.n])
 	c.basis(s)
 	c.reprocess(s, order, window, listMax)
 }
@@ -634,7 +643,7 @@ func (c *softOSDCode) basis(s *softOSDScratch) {
 // into s.list.
 func (c *softOSDCode) reprocess(s *softOSDScratch, order, window, listMax int) {
 	k := c.k
-	s.nw, s.nb = (c.n+63)/64, (c.n+3)/4
+	s.nw = (c.n + 63) / 64
 	c0, ci, cj, cw := &s.cand[0], &s.cand[1], &s.cand[2], &s.cand[3]
 	*c0 = [softOSDWords]uint64{}
 	for i := range k {
@@ -644,10 +653,10 @@ func (c *softOSDCode) reprocess(s *softOSDScratch, order, window, listMax int) {
 	}
 	s.list.reset(listMax)
 	s.pass, s.floor = math.MaxInt32, 0
-	s.try(c0)
 	for j := range c.n {
 		s.floor += min(0, s.l[j])
 	}
+	s.try(c0)
 	m := &s.pmag
 	for i := range k {
 		m[i] = s.mag[s.pivot[i]]
@@ -686,7 +695,11 @@ func (s *softOSDScratch) flip(dst, src *[softOSDWords]uint64, i int) {
 // try scores cw, adds it to the list and checks it when it beats the best
 // accepted codeword.
 func (s *softOSDScratch) try(cw *[softOSDWords]uint64) {
-	cost := s.cost(cw, s.nb)
+	bound := int32(math.MaxInt32)
+	if s.list.n == s.list.max {
+		bound = s.list.cost[s.list.n-1]
+	}
+	cost := s.cost(cw, bound)
 	if s.list.add(cost, cw) && s.accept != nil && cost < s.pass && s.accept(cw) {
 		s.pass = cost
 	}
