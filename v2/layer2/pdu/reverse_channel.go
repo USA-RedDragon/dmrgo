@@ -7,6 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	errs "github.com/USA-RedDragon/dmrgo/v2/internal/errs"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
@@ -44,7 +45,7 @@ func (rc *ReverseChannel) Encode() ([11]bit.Bit, error) {
 	var bits [11]bit.Bit
 
 	if rc.RCCommand > 0x0F {
-		return bits, &bit.FieldRangeError{Type: "ReverseChannel", Field: "RCCommand", Value: uint8(rc.RCCommand), Bits: 4}
+		return bits, errs.NewFieldRange("ReverseChannel", "RCCommand", uint8(rc.RCCommand), 4, false)
 	}
 
 	bit.PutUint(bits[0:4], uint64(uint8(rc.RCCommand)))

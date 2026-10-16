@@ -14,6 +14,9 @@ import (
 // ErrUnknownCodec is returned by New when no codec is registered under the name.
 var ErrUnknownCodec = errors.New("vocoder: unknown codec")
 
+// errNilFactory is the panic value of Register with a nil factory.
+var errNilFactory = errors.New("vocoder: Register factory is nil")
+
 // Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of
 // one of the three vocoder frames of a DMR voice burst (ETSI TS 102 361-1
 // clause 6.1). The implementation applies any FEC, scrambling or interleaving
@@ -61,10 +64,10 @@ func Register(name string, factory func() (Codec, error)) {
 	registryMu.Lock()
 	defer registryMu.Unlock()
 	if factory == nil {
-		panic("vocoder: Register factory is nil")
+		panic(errNilFactory)
 	}
 	if _, dup := registry[name]; dup {
-		panic("vocoder: Register called twice for codec " + name)
+		panic(newDuplicateCodecError(name))
 	}
 	registry[name] = factory
 }
@@ -81,7 +84,8 @@ func New(name string) (Codec, error) {
 	return factory()
 }
 
-// Names returns the sorted names of the registered codecs.
+// Names returns the sorted names of the registered codecs. It allocates the
+// slice; AppendNames does not.
 func Names() []string {
 	registryMu.RLock()
 	n := len(registry)
@@ -101,4 +105,12 @@ func AppendNames(dst []string) []string {
 	}
 	slices.Sort(dst[n:])
 	return dst
+}
+
+// newDuplicateCodecError returns the panic value of a second Register of
+// name.
+//
+//go:noinline
+func newDuplicateCodecError(name string) error {
+	return errors.New("vocoder: Register called twice for codec " + name)
 }
