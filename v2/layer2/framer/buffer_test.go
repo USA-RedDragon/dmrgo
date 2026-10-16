@@ -6,19 +6,18 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestFramer_BufferBound checks that fewer than a CACH, a burst and a byte
-// stay in the buffer between writes, that the buffer never grows, and that a
-// write finds the bursts that the same bytes written one at a time find.
-func TestFramer_BufferBound(t *testing.T) {
-	t.Parallel()
+// testStream returns the bursts of voice.bin with random bits between them,
+// packed. The last byte is padded with 0 bits.
+func testStream(t *testing.T, r *rand.Rand) []byte {
+	t.Helper()
 	data, err := os.ReadFile("../testdata/voice.bin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := rand.New(rand.NewSource(5))
 	var stream []byte
 	n := 0
 	put := func(v int) {
@@ -36,20 +35,33 @@ func TestFramer_BufferBound(t *testing.T) {
 			put(r.Intn(2))
 		}
 	}
-	for _, cfg := range []Config{
-		{Threshold: -1, Period: SlotPeriod},
-		{Threshold: -1, CACH: true},
-		{Threshold: 0, MaxMisses: 1},
-	} {
+	return stream
+}
+
+// testConfigs are the Framer configurations of the buffer tests.
+var testConfigs = []Config{
+	{Threshold: -1, Period: SlotPeriod},
+	{Threshold: -1, CACH: true},
+	{Threshold: 0, MaxMisses: 1},
+}
+
+// TestFramer_BufferBound checks that fewer than a CACH, a burst and a byte
+// stay in the buffer between writes, that the buffer never grows, and that a
+// write finds the bursts that the same bytes written one at a time find.
+func TestFramer_BufferBound(t *testing.T) {
+	t.Parallel()
+	r := rand.New(rand.NewSource(5))
+	stream := testStream(t, r)
+	for _, cfg := range testConfigs {
 		f := New(cfg)
 		c := cap(f.buf)
 		var got []Burst
 		for rest := stream; len(rest) > 0; {
 			n := min(1+r.Intn(3*f.cfg.Period/8), len(rest))
-			got = f.AppendBursts(got, rest[:n])
+			got = f.AppendBursts(got, rest[:n], 8*n)
 			rest = rest[n:]
-			if len(f.buf)*8 >= f.pre+layer2.BurstBits+8 {
-				t.Fatalf("%+v: %d bytes stay in the buffer", cfg, len(f.buf))
+			if f.n >= f.pre+layer2.BurstBits+8 {
+				t.Fatalf("%+v: %d bits stay in the buffer", cfg, f.n)
 			}
 			if cap(f.buf) != c {
 				t.Fatalf("%+v: buffer grew from %d to %d for %d bytes", cfg, c, cap(f.buf), n)
@@ -58,13 +70,54 @@ func TestFramer_BufferBound(t *testing.T) {
 		one := New(cfg)
 		var want []Burst
 		for i := range stream {
-			want = one.AppendBursts(want, stream[i:i+1])
+			want = one.AppendBursts(want, stream[i:i+1], 8)
 		}
 		if len(got) == 0 || !slices.Equal(got, want) {
 			t.Errorf("%+v: %d bursts, want the %d of single bytes", cfg, len(got), len(want))
 		}
-		if all := New(cfg).AppendBursts(nil, stream); !slices.Equal(all, want) {
+		if all := New(cfg).AppendBursts(nil, stream, 8*len(stream)); !slices.Equal(all, want) {
 			t.Errorf("%+v: %d bursts from one write of the stream, want %d", cfg, len(all), len(want))
+		}
+	}
+}
+
+// TestFramer_BitPieces writes the stream in pieces of any number of bits,
+// with random bits after the nbits of each piece, and cut at each bit of
+// its last byte. It checks that the Framer finds the bursts that a write of
+// the whole bytes finds, up to the end of the stream, and that the buffer
+// keeps its bound.
+func TestFramer_BitPieces(t *testing.T) {
+	t.Parallel()
+	r := rand.New(rand.NewSource(6))
+	stream := testStream(t, r)
+	for _, cfg := range testConfigs {
+		all := New(cfg).AppendBursts(nil, stream, 8*len(stream))
+		for end := 8*len(stream) - 8; end <= 8*len(stream); end++ {
+			var want []Burst
+			for _, b := range all {
+				if b.Offset+layer2.BurstBits <= int64(end) {
+					want = append(want, b)
+				}
+			}
+			f := New(cfg)
+			c := cap(f.buf)
+			var got []Burst
+			for from := 0; from < end; {
+				k := min(1+r.Intn(3*f.cfg.Period), end-from)
+				piece := make([]byte, (k+7)/8+r.Intn(2))
+				for i := range piece {
+					piece[i] = byte(r.Intn(256))
+				}
+				bits.Copy(piece, 0, stream, from, k)
+				got = f.AppendBursts(got, piece, k)
+				from += k
+				if f.n >= f.pre+layer2.BurstBits+8 || cap(f.buf) != c {
+					t.Fatalf("%+v: %d bits stay in the buffer of %d bytes", cfg, f.n, cap(f.buf))
+				}
+			}
+			if len(want) == 0 || !slices.Equal(got, want) {
+				t.Fatalf("%+v, stream of %d bits: %d bursts, want the %d of the whole bytes", cfg, end, len(got), len(want))
+			}
 		}
 	}
 }

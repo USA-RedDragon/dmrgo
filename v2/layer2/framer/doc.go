@@ -8,8 +8,9 @@
 // burst that follows it (ETSI TS 102 361-1 clause 6.3, Table 9.24).
 //
 // Search and Framer take the stream packed in bytes, the first bit in the
-// most significant bit of byte 0, and give positions as bit indexes, so a
-// burst can start at any bit of a byte. Search finds a SYNC at any bit
+// most significant bit of byte 0, with its length in bits, and give
+// positions as bit indexes, so a burst can start at any bit of a byte and a
+// piece of the stream can end inside a byte. Search finds a SYNC at any bit
 // offset. A Framer locks on a SYNC and then emits a burst every Period bits
 // whether or not it carries a SYNC, so that voice bursts B to F are emitted
 // too. A SYNC found at its expected place restarts the miss count. After
