@@ -215,7 +215,7 @@ func TestLoopbackVoiceDamagedSync(t *testing.T) {
 	for _, pos := range []string{"A", "B", "C", "D", "E", "F"} {
 		l.expect(t, "ambe", " pos="+pos+" ", 4*3)
 	}
-	l.expect(t, "emb", "fec=ok", 4*5-1)
+	l.expect(t, "emb", "fec=ok", 4*5)
 	l.expect(t, "elc", "checksum=ok fec=ok", 4)
 }
 

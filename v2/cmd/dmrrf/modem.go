@@ -67,22 +67,6 @@ func convolve(x, h []float64) []float64 {
 	return out
 }
 
-func filter(x, h []float64) []float64 {
-	out := make([]float64, len(x))
-	half := len(h) / 2
-	for i := range out {
-		var s float64
-		for j, v := range h {
-			k := i - j + half
-			if k >= 0 && k < len(x) {
-				s += x[k] * v
-			}
-		}
-		out[i] = s
-	}
-	return out
-}
-
 // symbolsFromBits maps bits to symbols using the dibit map of ETSI TS 102
 // 361-1 Table 10.3: 01 +3, 00 +1, 10 -1, 11 -3.
 func symbolsFromBits(bits []bit.Bit) []int {
@@ -106,19 +90,6 @@ func symbolsFromBits(bits []bit.Bit) []int {
 func symbolsFromBurst(b [33]byte) []int {
 	bits := bit.Unpack264(b)
 	return symbolsFromBits(bits[:])
-}
-
-func dibitFromSymbol(v float64) (bit.Bit, bit.Bit) {
-	switch {
-	case v >= 2*deviationHz:
-		return 0, 1
-	case v >= 0:
-		return 0, 0
-	case v >= -2*deviationHz:
-		return 1, 0
-	default:
-		return 1, 1
-	}
 }
 
 // Schedule places bursts on the air: slot is 0 or 1 for TDMA (one burst per
@@ -332,32 +303,6 @@ func FromHackRF(b []byte) []complex128 {
 	return out
 }
 
-// channelize removes the receiver's DC offset and resamples x from rate to the
-// baseband rate. A boxcar to four times the baseband rate folds only noise
-// from near its nulls into the channel; a FIR low-pass then removes the rest
-// of the out-of-channel noise before the final decimation.
-func channelize(x []complex128, rate float64) []complex128 {
-	var dc complex128
-	for _, v := range x {
-		dc += v
-	}
-	if len(x) > 0 {
-		dc /= complex(float64(len(x)), 0)
-	}
-	y := make([]complex128, len(x))
-	for i, v := range x {
-		y[i] = v - dc
-	}
-	const over = 4
-	mid := boxcar(y, rate, over*basebandRate)
-	f := firLowpass(mid, 8000.0/(over*basebandRate), 127)
-	out := make([]complex128, len(f)/over)
-	for i := range out {
-		out[i] = f[i*over]
-	}
-	return out
-}
-
 // decimate low-pass filters with a boxcar and resamples x from rate to the
 // baseband rate.
 func decimate(x []complex128, rate float64) []complex128 {
@@ -376,56 +321,6 @@ func boxcar(x []complex128, rate, to float64) []complex128 {
 			s += v
 		}
 		out[i] = s / complex(float64(max(hi-lo, 1)), 0)
-	}
-	return out
-}
-
-func lowpass(x []complex128, cutoff float64) []complex128 {
-	return firLowpass(x, cutoff/basebandRate, 63)
-}
-
-// firLowpass applies a Hamming-windowed sinc low-pass with cutoff fc as a
-// fraction of the sample rate.
-func firLowpass(x []complex128, fc float64, taps int) []complex128 {
-	h := make([]float64, taps)
-	var sum float64
-	for i := range h {
-		m := float64(i - taps/2)
-		w := 0.54 - 0.46*math.Cos(2*math.Pi*float64(i)/float64(taps-1))
-		if m == 0 {
-			h[i] = 2 * fc
-		} else {
-			h[i] = math.Sin(2*math.Pi*fc*m) / (math.Pi * m)
-		}
-		h[i] *= w
-		sum += h[i]
-	}
-	out := make([]complex128, len(x))
-	for i := range x {
-		var s complex128
-		for j, v := range h {
-			k := i - j + taps/2
-			if k >= 0 && k < len(x) {
-				s += x[k] * complex(v/sum, 0)
-			}
-		}
-		out[i] = s
-	}
-	return out
-}
-
-func discriminate(x []complex128) []float64 {
-	out := make([]float64, len(x))
-	for i := 1; i < len(x); i++ {
-		out[i] = cmplx.Phase(x[i]*cmplx.Conj(x[i-1])) * basebandRate / (2 * math.Pi)
-	}
-	return out
-}
-
-func shift(x []complex128, hz float64) []complex128 {
-	out := make([]complex128, len(x))
-	for i, v := range x {
-		out[i] = v * cmplx.Exp(complex(0, -2*math.Pi*hz*float64(i)/basebandRate))
 	}
 	return out
 }

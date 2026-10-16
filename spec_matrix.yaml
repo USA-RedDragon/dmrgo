@@ -10,13 +10,24 @@
 # Every other non-test, non-generated Go file except doc.go must appear in a section's source_files.
 
 ignore_files:
+  - v2/cmd/dmrrf/acquire.go
+  - v2/cmd/dmrrf/chan.go
+  - v2/cmd/dmrrf/coherent.go
   - v2/cmd/dmrrf/demod.go
+  - v2/cmd/dmrrf/disc.go
+  - v2/cmd/dmrrf/frontend.go
+  - v2/cmd/dmrrf/gap.go
   - v2/cmd/dmrrf/main.go
   - v2/cmd/dmrrf/modem.go
+  - v2/cmd/dmrrf/options.go
+  - v2/cmd/dmrrf/receiver.go
+  - v2/cmd/dmrrf/repair.go
   - v2/cmd/dmrrf/report.go
   - v2/cmd/dmrrf/seq.go
   - v2/cmd/dmrrf/site.go
   - v2/cmd/dmrrf/softfec.go
+  - v2/cmd/dmrrf/spectrum.go
+  - v2/cmd/dmrrf/track.go
   - v2/bit/bit.go
   - v2/internal/lowbit/lowbit.go
   - v2/internal/bits/bits.go
