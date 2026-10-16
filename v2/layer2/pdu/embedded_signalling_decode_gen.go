@@ -16,10 +16,10 @@ import (
 func DecodeEmbeddedSignalling(data [16]bit.Bit) EmbeddedSignalling {
 	var result EmbeddedSignalling
 	lowbit.Mask(data[:])
-	var corrected [16]bit.Bit
-	corrected, result.FEC = quadraticresidue.Decode(data)
+	var _cw uint16
+	_cw, result.FEC = quadraticresidue.Decode(uint16(bit.Uint(data[:])))
 	if !result.FEC.Uncorrectable {
-		data = corrected
+		bit.PutUint(data[:], uint64(_cw))
 	}
 	result.ColorCode = enums.ColorCode(bit.Uint(data[0:4]))
 	result.PreemptionAndPowerControlIndicator = data[4] == 1
@@ -51,7 +51,9 @@ func (s *EmbeddedSignalling) Encode() ([16]bit.Bit, error) {
 		}
 	}
 	bit.PutUint(data[5:7], uint64(s.LCSS))
-	return quadraticresidue.Encode(data), nil
+	var _cw [16]bit.Bit
+	bit.PutUint(_cw[:], uint64(quadraticresidue.Encode(uint8(bit.Uint(data[:])))))
+	return _cw, nil
 }
 
 // EncodeBits returns the bits that Encode returns as a slice, or nil and

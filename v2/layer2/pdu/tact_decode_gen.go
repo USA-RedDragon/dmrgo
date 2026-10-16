@@ -16,10 +16,10 @@ import (
 func DecodeTACT(data [7]bit.Bit) TACT {
 	var result TACT
 	lowbit.Mask(data[:])
-	var corrected [7]bit.Bit
-	corrected, result.FEC = hamming.Decode743(data)
+	var _cw uint8
+	_cw, result.FEC = hamming.Decode743(uint8(bit.Uint(data[:])))
 	if !result.FEC.Uncorrectable {
-		data = corrected
+		bit.PutUint(data[:], uint64(_cw))
 	}
 	result.AccessType = data[0] == 1
 	result.TDMAChannel = data[1] == 1
@@ -45,7 +45,9 @@ func (s *TACT) Encode() ([7]bit.Bit, error) {
 		}
 	}
 	bit.PutUint(data[2:4], uint64(s.LCSS))
-	return hamming.Encode743(data), nil
+	var _cw [7]bit.Bit
+	bit.PutUint(_cw[:], uint64(hamming.Encode743(uint8(bit.Uint(data[:])))))
+	return _cw, nil
 }
 
 // EncodeBits returns the bits that Encode returns as a slice, or nil and

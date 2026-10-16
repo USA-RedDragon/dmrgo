@@ -1,183 +1,71 @@
 package hamming
 
 import (
-	"math/rand"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bit"
+	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/hamming"
 )
 
-func TestHamming743_Parity(t *testing.T) {
-	t.Parallel()
-
-	data := [4]bit.Bit{1, 0, 0, 0}
-	p := parity743(data)
-	if p != [3]bit.Bit{1, 0, 1} {
-		t.Errorf("Parity([1,0,0,0]) = %v, want [1,0,1]", p)
-	}
-
-	data = [4]bit.Bit{0, 1, 0, 0}
-	p = parity743(data)
-	if p != [3]bit.Bit{1, 1, 1} {
-		t.Errorf("Parity([0,1,0,0]) = %v, want [1,1,1]", p)
-	}
-
-	data = [4]bit.Bit{0, 0, 1, 0}
-	p = parity743(data)
-	if p != [3]bit.Bit{1, 1, 0} {
-		t.Errorf("Parity([0,0,1,0]) = %v, want [1,1,0]", p)
-	}
-
-	data = [4]bit.Bit{0, 0, 0, 1}
-	p = parity743(data)
-	if p != [3]bit.Bit{0, 1, 1} {
-		t.Errorf("Parity([0,0,0,1]) = %v, want [0,1,1]", p)
-	}
-
-	data = [4]bit.Bit{0, 0, 0, 0}
-	p = parity743(data)
-	if p != [3]bit.Bit{0, 0, 0} {
-		t.Errorf("Parity([0,0,0,0]) = %v, want [0,0,0]", p)
-	}
+func bits7(cw uint8) [7]bit.Bit {
+	var b [7]bit.Bit
+	bit.PutUint(b[:], uint64(cw))
+	return b
 }
 
-func TestHamming743_Check(t *testing.T) {
+func TestHamming743MatchesReferenceOnEveryWord(t *testing.T) {
 	t.Parallel()
 
-	if !Check743([7]bit.Bit{1, 0, 0, 0, 1, 0, 1}) {
-		t.Error("Check743 should accept valid codeword [1,0,0,0, 1,0,1]")
+	for v := range 1 << 7 {
+		cw := uint8(v)
+		got, res := Decode743(cw)
+		want, wantRes := ref.Decode743(bits7(cw))
+		if got != uint8(bit.Uint(want[:])) || res != wantRes {
+			t.Fatalf("Decode743(%#02x) = %#02x %+v, want %#02x %+v", cw, got, res, bit.Uint(want[:]), wantRes)
+		}
+		if Check743(cw) != ref.Check743(bits7(cw)) {
+			t.Fatalf("Check743(%#02x) differs from the reference", cw)
+		}
 	}
-
-	if Check743([7]bit.Bit{0, 0, 0, 0, 1, 0, 1}) {
-		t.Error("Check743 should reject invalid codeword [0,0,0,0, 1,0,1]")
-	}
-}
-
-func TestHamming743_Encode(t *testing.T) {
-	t.Parallel()
-
-	cw := Encode743([4]bit.Bit{1, 0, 1, 1})
-	if !Check743(cw) {
-		t.Errorf("Encode743 produced invalid codeword: %v", cw)
-	}
-
-	if cw[0] != 1 || cw[1] != 0 || cw[2] != 1 || cw[3] != 1 {
-		t.Errorf("Encode743 data bits mismatch: got %v", cw[:4])
-	}
-}
-
-func TestHamming743_DecodeNoError(t *testing.T) {
-	t.Parallel()
-
-	cw := Encode743([4]bit.Bit{1, 1, 0, 1})
-	decoded, result := Decode743(cw)
-	if result.ErrorsCorrected != 0 || result.Uncorrectable {
-		t.Errorf("Expected no errors, got corrected=%d uncorrectable=%v",
-			result.ErrorsCorrected, result.Uncorrectable)
-	}
-	if decoded != cw {
-		t.Errorf("Decode mismatch: got %v, want %v", decoded, cw)
-	}
-}
-
-func TestHamming743_DecodeSingleError(t *testing.T) {
-	t.Parallel()
-
-	for _, data := range [][4]bit.Bit{
-		{0, 0, 0, 0},
-		{1, 0, 0, 0},
-		{0, 1, 0, 1},
-		{1, 1, 1, 0},
-		{1, 1, 1, 1},
-	} {
-		cw := Encode743(data)
-		for errPos := 0; errPos < 7; errPos++ {
-			corrupted := cw
-			corrupted[errPos] ^= 1
-
-			decoded, result := Decode743(corrupted)
-			if result.Uncorrectable {
-				t.Errorf("data=%v errPos=%d: got uncorrectable", data, errPos)
-				continue
-			}
-			if result.ErrorsCorrected != 1 {
-				t.Errorf("data=%v errPos=%d: ErrorsCorrected=%d, want 1",
-					data, errPos, result.ErrorsCorrected)
-			}
-			if decoded != cw {
-				t.Errorf("data=%v errPos=%d: decoded=%v, want %v",
-					data, errPos, decoded, cw)
-			}
+	for d := range 16 {
+		data := bits7(uint8(d) << 3)
+		want := ref.Encode743([4]bit.Bit(data[:4]))
+		if got := Encode743(uint8(d)); got != uint8(bit.Uint(want[:])) {
+			t.Fatalf("Encode743(%#x) = %#02x, want %#02x", d, got, bit.Uint(want[:]))
 		}
 	}
 }
 
-func TestHamming743_DecodeRandom(t *testing.T) {
+func TestHamming743CorrectsOneError(t *testing.T) {
 	t.Parallel()
 
-	for i := 0; i < 200; i++ {
-		var data [4]bit.Bit
-		for j := 0; j < 4; j++ {
-			if rand.Intn(2) == 1 {
-				data[j] = 1
-			}
-		}
-		cw := Encode743(data)
-
-		decoded, result := Decode743(cw)
-		if result.ErrorsCorrected != 0 || result.Uncorrectable {
-			t.Fatalf("iteration %d no-error: unexpected result %+v", i, result)
-		}
-		if decoded != cw {
-			t.Fatalf("iteration %d no-error: decoded mismatch", i)
-		}
-
-		errPos := rand.Intn(7)
-		corrupted := cw
-		corrupted[errPos] ^= 1
-		decoded, result = Decode743(corrupted)
-		if result.Uncorrectable {
-			t.Fatalf("iteration %d single-error pos %d: got uncorrectable", i, errPos)
-		}
-		if result.ErrorsCorrected != 1 {
-			t.Fatalf("iteration %d single-error pos %d: ErrorsCorrected=%d", i, errPos, result.ErrorsCorrected)
-		}
-		if decoded != cw {
-			t.Fatalf("iteration %d single-error pos %d: decoded mismatch", i, errPos)
-		}
-	}
-}
-
-func TestHamming743_EncodeDecode_AllCodewords(t *testing.T) {
-	t.Parallel()
-
-	for val := 0; val < 16; val++ {
-		data := [4]bit.Bit{
-			bit.Bit((val >> 3) & 1),
-			bit.Bit((val >> 2) & 1),
-			bit.Bit((val >> 1) & 1),
-			bit.Bit(val & 1),
-		}
-		cw := Encode743(data)
+	for d := range 16 {
+		cw := Encode743(uint8(d))
 		if !Check743(cw) {
-			t.Errorf("val=%d: encoded codeword fails check", val)
+			t.Fatalf("Encode743(%#x) = %#02x is not a codeword", d, cw)
 		}
-		decoded, result := Decode743(cw)
-		if result.HasErrors() {
-			t.Errorf("val=%d: clean decode has errors", val)
-		}
-		if decoded != cw {
-			t.Errorf("val=%d: clean decode mismatch", val)
+		for i := range 7 {
+			got, res := Decode743(cw ^ 1<<i)
+			if got != cw || res.ErrorsCorrected != 1 || res.Uncorrectable || res.BitsChecked != 7 {
+				t.Fatalf("data %#x error bit %d: %#02x %+v", d, i, got, res)
+			}
 		}
 	}
 }
 
-func TestHamming743_BitsChecked(t *testing.T) {
-	t.Parallel()
-
-	cw := Encode743([4]bit.Bit{0, 0, 0, 0})
-	_, result := Decode743(cw)
-	if result.BitsChecked != 7 {
-		t.Errorf("BitsChecked = %d, want 7", result.BitsChecked)
-	}
+func BenchmarkHamming743(b *testing.B) {
+	cw := Encode743(0x5) ^ 0x04
+	b.Run("Decode", func(b *testing.B) {
+		for b.Loop() {
+			cw ^= 1 << 5
+			_, _ = Decode743(cw)
+		}
+	})
+	b.Run("Encode", func(b *testing.B) {
+		d := uint8(0)
+		for b.Loop() {
+			d++
+			_ = Encode743(d)
+		}
+	})
 }

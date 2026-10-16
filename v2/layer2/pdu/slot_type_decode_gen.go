@@ -16,10 +16,10 @@ import (
 func DecodeSlotType(data [20]bit.Bit) SlotType {
 	var result SlotType
 	lowbit.Mask(data[:])
-	var corrected [20]bit.Bit
-	corrected, result.FEC = golay.Decode2087(data)
+	var _cw uint32
+	_cw, result.FEC = golay.Decode2087(uint32(bit.Uint(data[:])))
 	if !result.FEC.Uncorrectable {
-		data = corrected
+		bit.PutUint(data[:], uint64(_cw))
 	}
 	result.ColorCode = enums.ColorCode(bit.Uint(data[0:4]))
 	result.DataType = enums.DataType(bit.Uint(data[4:8]))
@@ -47,7 +47,9 @@ func (s *SlotType) Encode() ([20]bit.Bit, error) {
 		}
 	}
 	bit.PutUint(data[4:8], uint64(s.DataType))
-	return golay.Encode2087(data), nil
+	var _cw [20]bit.Bit
+	bit.PutUint(_cw[:], uint64(golay.Encode2087(uint8(bit.Uint(data[:])))))
+	return _cw, nil
 }
 
 // EncodeBits returns the bits that Encode returns as a slice, or nil and

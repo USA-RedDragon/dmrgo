@@ -35,10 +35,7 @@ func TestEMBInfo_AllValues(t *testing.T) {
 
 	for v := range 128 {
 		e := pdu.EMBInfo(v << 1)
-		var data [7]bit.Bit
-		bit.PutUint(data[:], uint64(v))
-		cw := quadraticresidue.Encode(data)
-		want := uint16(bit.Uint(cw[:]))
+		want := quadraticresidue.Encode(uint8(v))
 		if got := e.Codeword(); got != want {
 			t.Fatalf("%#02x: Codeword %#04x, want %#04x", byte(e), got, want)
 		}

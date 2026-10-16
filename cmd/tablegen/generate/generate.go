@@ -60,6 +60,9 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		jen.Line(),
 		jen.Line(),
 		writeTable("crc32_0x04C11DB7", tables.CRC32[:]),
+		jen.Line(),
+		jen.Line(),
+		writeTable("crc9_0x259", tables.CRC9[:]),
 	); err != nil {
 		return err
 	}

@@ -62,6 +62,7 @@ type FECCodecInfo struct {
 	EncodeFn    string // e.g. "Encode2087", func([DataBits]bit.Bit) [InputSize]bit.Bit
 	InputSize   int    // full FEC codeword size in bits, e.g. 20
 	DataBits    int    // data-only bits before FEC, e.g. 8
+	WordType    string // for a bit-level codec: the unsigned type of a codeword, e.g. "uint32"
 	PackedBytes bool   // true if codec operates on packed bytes (e.g. RS)
 	TotalBytes  int    // for PackedBytes: total byte count (e.g. 12)
 	DataBytes   int    // for PackedBytes: data byte count (e.g. 9)
@@ -72,6 +73,7 @@ var fecCodecs = map[string]FECCodecInfo{
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay",
 		DecodeFn:   "Decode2087",
 		EncodeFn:   "Encode2087",
+		WordType:   typUint32,
 		InputSize:  20,
 		DataBits:   8,
 	},
@@ -79,6 +81,7 @@ var fecCodecs = map[string]FECCodecInfo{
 		ImportPath: qrPkg,
 		DecodeFn:   "Decode",
 		EncodeFn:   encodeFnName,
+		WordType:   typUint16,
 		InputSize:  16,
 		DataBits:   7,
 	},
@@ -95,6 +98,7 @@ var fecCodecs = map[string]FECCodecInfo{
 		ImportPath: "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming",
 		DecodeFn:   "Decode743",
 		EncodeFn:   "Encode743",
+		WordType:   typUint8,
 		InputSize:  7,
 		DataBits:   4,
 	},
@@ -281,10 +285,11 @@ func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 			}
 			emitPackedFECDecode(g, codec)
 		case hasBitFEC:
-			g.Var().Id("corrected").Index(Lit(codec.InputSize)).Qual(bitPkg, "Bit")
-			g.List(Id("corrected"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(Id("data"))
+			g.Var().Id("_cw").Id(codec.WordType)
+			g.List(Id("_cw"), Id("result").Dot(fecFieldName)).Op("=").Qual(codec.ImportPath, codec.DecodeFn).Call(
+				Id(codec.WordType).Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Empty(), Empty()))))
 			g.If(Op("!").Id("result").Dot(fecFieldName).Dot("Uncorrectable")).Block(
-				Id("data").Op("=").Id("corrected"),
+				Qual(bitPkg, "PutUint").Call(Id("data").Index(Empty(), Empty()), Uint64().Call(Id("_cw"))),
 			)
 		}
 
@@ -371,8 +376,9 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	if algo.BitLevel {
 		dataBits := inputSize - algo.CRCBits
 		g.Id("_crc").Op(":=").Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Lit(dataBits), Empty())))
+		emitCRCBytes(g, dataBits)
 		g.Id("result").Dot(fecFieldName).Dot("Uncorrectable").Op("=").
-			Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("data").Index(Empty(), Lit(dataBits)), Id("_crc"))
+			Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_crcBytes").Index(Empty(), Empty()), Lit(dataBits), Id("_crc"))
 		return nil
 	}
 
@@ -390,6 +396,13 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 	g.Id("result").Dot(fecFieldName).Dot("Uncorrectable").Op("=").
 		Op("!").Qual(crcPkg, algo.CheckFn).Call(Id("_packedBytes").Index(Empty(), Lit(totalBytes-2)), Id("_crc"))
 	return nil
+}
+
+// emitCRCBytes packs the first n bits of data into _crcBytes for a CRC
+// that works on packed bits.
+func emitCRCBytes(g *Group, n int) {
+	g.Var().Id("_crcBytes").Index(Lit((n + 7) / 8)).Byte()
+	g.Add(packRaw(Id("_crcBytes"), Id("data"), 0, n))
 }
 
 // emitFECMask XORs the FEC parity bytes of buf with the mask selected by the
@@ -999,7 +1012,11 @@ func emitEncode(f *File, pdu parse.PDUStruct) error {
 				genErr = err
 				return
 			}
-			g.Return(Qual(codec.ImportPath, codec.EncodeFn).Call(Id("data")), Nil())
+			g.Var().Id("_cw").Index(Lit(codec.InputSize)).Qual(bitPkg, "Bit")
+			g.Qual(bitPkg, "PutUint").Call(Id("_cw").Index(Empty(), Empty()), Uint64().Call(
+				Qual(codec.ImportPath, codec.EncodeFn).Call(Uint8().Call(Qual(bitPkg, "Uint").Call(Id("data").Index(Empty(), Empty())))),
+			))
+			g.Return(Id("_cw"), Nil())
 		case hasCRC || hasPackedFEC:
 			g.Var().Id("data").Index(Lit(outputSize)).Qual(bitPkg, "Bit")
 			if err := enc.fields(g); err != nil {
@@ -1231,7 +1248,8 @@ func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
 	algo := crcAlgorithms[pdu.CRC.Algorithm]
 	if algo.BitLevel {
 		dataBits := outputSize - algo.CRCBits
-		g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("data").Index(Empty(), Lit(dataBits)))
+		emitCRCBytes(g, dataBits)
+		g.Id("_crcVal").Op(":=").Qual(crcPkg, algo.CalcFn).Call(Id("_crcBytes").Index(Empty(), Empty()), Lit(dataBits))
 		g.For(Id("j").Op(":=").Range().Lit(algo.CRCBits)).Block(
 			Id("data").Index(Lit(dataBits).Op("+").Id("j")).Op("=").
 				Qual(bitPkg, "Bit").Call(
