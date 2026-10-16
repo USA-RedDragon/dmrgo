@@ -73,13 +73,13 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) bool {
 	}
 	if s.FLCO == enums.FLCOGroupVoiceChannelUser {
 		if s.GroupVoice == nil {
-			s.GroupVoice = &FLCGroupVoice{}
+			s.GroupVoice = newFLCGroupVoice()
 		}
 		s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress = target, source
 		return true
 	}
 	if s.UnitToUnit == nil {
-		s.UnitToUnit = &FLCUnitToUnit{}
+		s.UnitToUnit = newFLCUnitToUnit()
 	}
 	s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress = target, source
 	return true
@@ -178,4 +178,18 @@ type FLCTerminatorDataLinkControl struct {
 // DataType returns BurstDataType.
 func (s *FullLinkControl) DataType() enums.DataType {
 	return s.BurstDataType
+}
+
+// newFLCGroupVoice returns a new FLCGroupVoice for SetAddresses.
+//
+//go:noinline
+func newFLCGroupVoice() *FLCGroupVoice {
+	return &FLCGroupVoice{}
+}
+
+// newFLCUnitToUnit returns a new FLCUnitToUnit for SetAddresses.
+//
+//go:noinline
+func newFLCUnitToUnit() *FLCUnitToUnit {
+	return &FLCUnitToUnit{}
 }

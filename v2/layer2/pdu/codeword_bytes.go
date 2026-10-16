@@ -104,7 +104,7 @@ func (e noBlockCRCError) Error() string {
 func fullLCMask(dt enums.DataType) ([3]byte, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 24 {
-		return [3]byte{}, noFullLCError(dt)
+		return [3]byte{}, newNoFullLCError(dt)
 	}
 	return [3]byte{byte(mask >> 16 & 0xFF), byte(mask >> 8 & 0xFF), byte(mask & 0xFF)}, nil
 }
@@ -150,7 +150,23 @@ func BlockCRCOK(b [12]byte, dt enums.DataType) bool {
 func blockMask(dt enums.DataType) (uint16, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 16 {
-		return 0, noBlockCRCError(dt)
+		return 0, newNoBlockCRCError(dt)
 	}
 	return uint16(mask & 0xFFFF), nil
+}
+
+// newNoFullLCError returns the error of a data type dt that carries no Full
+// LC.
+//
+//go:noinline
+func newNoFullLCError(dt enums.DataType) error {
+	return noFullLCError(dt)
+}
+
+// newNoBlockCRCError returns the error of a data type dt that has no
+// single-block CRC-CCITT.
+//
+//go:noinline
+func newNoBlockCRCError(dt enums.DataType) error {
+	return noBlockCRCError(dt)
 }

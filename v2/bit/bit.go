@@ -63,7 +63,8 @@ func PutUint(dst []Bit, v uint64) {
 }
 
 // Pack packs bits into bytes, the first bit in the most significant bit of
-// the first byte. The last byte is padded with 0 bits.
+// the first byte. The last byte is padded with 0 bits. It allocates the
+// slice; AppendPack does not.
 func Pack(bits []Bit) []byte {
 	return AppendPack(make([]byte, 0, (len(bits)+7)/8), bits)
 }
@@ -84,6 +85,7 @@ func AppendPack(dst []byte, bits []Bit) []byte {
 }
 
 // Unpack is the reverse of Pack: it returns the len(data)*8 bits of data.
+// It allocates the slice; AppendUnpack does not.
 func Unpack(data []byte) []Bit {
 	return AppendUnpack(make([]Bit, 0, len(data)*8), data)
 }
