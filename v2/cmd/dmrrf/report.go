@@ -8,7 +8,6 @@ import (
 	"math/bits"
 	"strings"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -204,7 +203,13 @@ func slcFields(s *pdu.ShortLC) string {
 
 // ambeValue returns the 49 bits of an AMBE+2 frame as a number, the form
 // that tx and rx print.
-func ambeValue(f vocoder.AMBEFrame) uint64 { return bit.Uint(f[:]) }
+func ambeValue(f vocoder.AMBEFrame) uint64 {
+	var v uint64
+	for _, b := range f {
+		v = v<<8 | uint64(b)
+	}
+	return v >> 7
+}
 
 func intList(v []int) string {
 	s := make([]string, len(v))

@@ -146,7 +146,7 @@ func (s *benchScorer) voice(truth []benchSlot, i int, r Received, data layer2.Ra
 	gotF, _ := data.AMBEFrames()
 	for k := range want {
 		s.add("ambe", have && gotF[k] == want[k])
-		s.add("ambe_c0c1", have && slices.Equal(gotF[k][:24], want[k][:24]))
+		s.add("ambe_c0c1", have && slices.Equal(gotF[k][:3], want[k][:3]))
 	}
 	if ts.pos != enums.VoiceBurstA {
 		e, w := data.EMB(), ts.burst.EMB()

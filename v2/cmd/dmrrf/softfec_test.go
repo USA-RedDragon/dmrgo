@@ -151,8 +151,10 @@ func softBool(b bool) int {
 func softRandomFrames(rng *rand.Rand) [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame {
 	var f [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	for i := range f {
-		for b := range f[i] {
-			f[i][b] = bit.Bit(rng.IntN(2))
+		for b := range 49 {
+			if rng.IntN(2) == 1 {
+				f[i][b/8] |= 0x80 >> (b % 8)
+			}
 		}
 	}
 	return f
@@ -162,7 +164,7 @@ func softRandomFrames(rng *rand.Rand) [layer2.VoiceSlotsPerBurst]vocoder.AMBEFra
 func softFrameErrors(got, want *[layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) int {
 	n := 0
 	for i := range got {
-		if [24]bit.Bit(got[i][:24]) != [24]bit.Bit(want[i][:24]) {
+		if [3]byte(got[i][:3]) != [3]byte(want[i][:3]) {
 			n++
 		}
 	}

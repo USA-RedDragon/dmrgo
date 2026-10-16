@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -290,8 +289,11 @@ func TestAMBEFrame(i int) vocoder.AMBEFrame {
 	z = (z ^ z>>30) * 0xBF58476D1CE4E5B9
 	z = (z ^ z>>27) * 0x94D049BB133111EB
 	z ^= z >> 31
+	v := z & (1<<49 - 1) << 7
 	var f vocoder.AMBEFrame
-	bit.PutUint(f[:], z&(1<<49-1))
+	for k := range f {
+		f[k] = byte(v >> (48 - 8*k) & 0xFF)
+	}
 	return f
 }
 
