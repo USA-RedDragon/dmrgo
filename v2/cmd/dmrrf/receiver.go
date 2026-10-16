@@ -145,12 +145,16 @@ type Receiver struct {
 	slp     []float32
 	buf     []complex64
 	tapp    []float32
-	tk      *tracker
-	out     []Received
-	pulse   phasePulse
-	ddSyms  []int
-	ddPh    []float64
-	corrX   []complex128
+	// runG, runDir, runSteps, runLo and runHi describe the trellis run
+	// that runSamples, runPrior and runKeep serve.
+	runG, runLo, runHi symRef
+	runDir, runSteps   int
+	tk                 *tracker
+	out                []Received
+	pulse              phasePulse
+	ddSyms             []int
+	ddPh               []float64
+	corrX              []complex128
 
 	nsrc      int
 	searchAt  int64
@@ -241,12 +245,13 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 			}
 			r.xt = newXTrellis(r.model, np, r.maxRun)
 			r.lp, r.slp = r.xt.lp, r.xt.slp
+			r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)
+			r.tapp = make([]float32, 4*r.maxRun)
 		} else {
 			r.tr = newTrellis(r.model, r.maxRun, trellisWin, trellisLook)
-			r.lp, r.slp = r.tr.lp, r.tr.slp
+			r.slp = r.tr.slp
+			r.buf = make([]complex64, syncSymbols*r.opt.TrellisSPS)
 		}
-		r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)
-		r.tapp = make([]float32, 4*r.maxRun)
 		r.ddSyms = make([]int, r.maxRun)
 		r.ddPh = make([]float64, r.maxRun*samplesPerSy/dec)
 	}
@@ -964,21 +969,4 @@ func (r *Receiver) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		e.out.Fixed.SetEmbeddedData(elc)
 	}
 	r.rep.repair(e, cc, ccOK)
-}
-
-// detect runs the trellis of the receiver, exact-phase or per-survivor.
-func (r *Receiver) detect(x []complex64, steps int, rot complex64, scale, mu float32, app []float32) {
-	if r.xt != nil {
-		r.xt.run(x, steps, rot, scale, anchorKappa, app)
-		return
-	}
-	r.tr.run(x, steps, rot, scale, mu, app)
-}
-
-// detBest returns the best path metric of the last detect run.
-func (r *Receiver) detBest(steps int) float32 {
-	if r.xt != nil {
-		return r.xt.best(steps)
-	}
-	return r.tr.best(steps)
 }

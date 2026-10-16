@@ -100,6 +100,20 @@ func rrcTapsSpan(sps float64, span int) []float64 {
 	return h
 }
 
+// trellisSource feeds a trellis run and takes its output, interval by
+// interval.
+type trellisSource interface {
+	// runSamples writes the samples of intervals k0 to k1-1 into x, sps per
+	// interval.
+	runSamples(k0, k1 int, x []complex64)
+	// runPrior writes the log priors of the digits of the newest symbol of the
+	// window of interval k into lp.
+	runPrior(k int, lp []float32)
+	// runKeep takes the log-APPs of the newest symbol of the window of
+	// interval k, four digits.
+	runKeep(k int, app []float32)
+}
+
 // trellis is a max-log BCJR detector over the windows of a cpmModel, with
 // the phase of the symbols before the window carried per survivor (per
 // survivor processing). It runs in blocks of win symbol intervals: the
@@ -107,11 +121,13 @@ func rrcTapsSpan(sps float64, span int) []float64 {
 // pass starts there, so its buffers hold win+look intervals, and the
 // forward pass of the next block repeats the look intervals from the state
 // at the end of the block. With win at least the run, it is the whole-run
-// BCJR. lp holds up to maxSteps intervals.
+// BCJR.
 type trellis struct {
 	m         *cpmModel
 	maxSteps  int
 	win, look int
+	x         []complex64
+	lp        []float32
 	alpha     []float32
 	beta      []float32
 	next      []float32
@@ -124,10 +140,10 @@ type trellis struct {
 	saveA []float32
 	saveR []complex64
 	last  []float32
-	// lp holds, per step, the log prior of each digit of the newest symbol
-	// of the window, and slp the log priors of the digits of the first
-	// window state, oldest first. Zero means no prior.
-	lp  []float32
+	// app holds the log-APPs of one interval for runKeep.
+	app [4]float32
+	// slp holds the log priors of the digits of the first window state,
+	// oldest first. Zero means no prior.
 	slp []float32
 }
 
@@ -138,24 +154,23 @@ func newTrellis(m *cpmModel, maxSteps, win, look int) *trellis {
 	look = min(look, maxSteps-win)
 	n := win + look
 	return &trellis{
-		m: m, maxSteps: maxSteps, win: win, look: look,
+		m: m, maxSteps: maxSteps, win: win, look: look, x: make([]complex64, n*m.sps), lp: make([]float32, 4*n),
 		alpha: make([]float32, (n+1)*m.states), beta: make([]float32, m.states), next: make([]float32, m.states),
 		rot: make([]complex64, m.states), nrot: make([]complex64, m.states),
 		bm: make([]float32, n*m.windows), corr: make([]complex64, m.windows),
 		saveA: make([]float32, m.states), saveR: make([]complex64, m.states), last: make([]float32, m.states),
-		lp: make([]float32, 4*maxSteps), slp: make([]float32, 8*m.d),
+		slp: make([]float32, 8*m.d),
 	}
 }
 
 const negInf = float32(-1e30)
 
-// run detects the symbols of steps intervals of x, whose interval k is
-// x[k*sps:(k+1)*sps], the samples of symbol k+d centered on it, from the
-// carried phase rot0 (e^-j*phase) before symbol 0, with the priors of lp
-// and slp. scale is 2A/sigma^2 and mu the gain of the per-survivor phase
-// tracking. The symbol log-APPs of symbols 2d to steps+2d-1 go to app, four
-// per symbol.
-func (t *trellis) run(x []complex64, steps int, rot0 complex64, scale, mu float32, app []float32) {
+// run detects the symbols of steps intervals of src, whose interval k holds
+// the samples of symbol k+d centered on it, from the carried phase rot0
+// (e^-j*phase) before symbol 0, with the priors of src and slp. scale is
+// 2A/sigma^2 and mu the gain of the per-survivor phase tracking. The
+// log-APPs of symbols 2d to steps+2d-1 go to src.runKeep.
+func (t *trellis) run(src trellisSource, steps int, rot0 complex64, scale, mu float32) {
 	m := t.m
 	ns := m.states
 	alpha := t.alpha[:ns]
@@ -170,17 +185,20 @@ func (t *trellis) run(x []complex64, steps int, rot0 complex64, scale, mu float3
 	for b0 := 0; b0 < steps; b0 += t.win {
 		b1 := min(b0+t.win, steps)
 		e := min(b1+t.look, steps)
+		src.runSamples(b0, e, t.x)
 		for k := b0; k < e; k++ {
 			if k == b1 {
 				copy(t.saveA, t.alpha[(k-b0)*ns:(k-b0+1)*ns])
 				copy(t.saveR, t.rot)
 			}
-			t.forward(x, k, k-b0, scale, mu)
+			lp := t.lp[4*(k-b0) : 4*(k-b0)+4]
+			src.runPrior(k, lp)
+			t.forward(k-b0, lp, scale, mu)
 		}
 		if e == steps {
 			copy(t.last, t.alpha[(e-b0)*ns:(e-b0+1)*ns])
 		}
-		t.backward(b0, b1, e, app)
+		t.backward(src, b0, b1, e)
 		if b1 < e {
 			copy(t.alpha[:ns], t.saveA)
 			copy(t.rot, t.saveR)
@@ -188,13 +206,13 @@ func (t *trellis) run(x []complex64, steps int, rot0 complex64, scale, mu float3
 	}
 }
 
-// forward runs the forward pass over interval k into row j of the block
-// buffers.
-func (t *trellis) forward(x []complex64, k, j int, scale, mu float32) {
+// forward runs the forward pass over row j of the block buffers with the
+// log priors lp.
+func (t *trellis) forward(j int, lp []float32, scale, mu float32) {
 	m := t.m
 	sps, ns := m.sps, m.states
 	shift := 4 * m.d
-	seg := x[k*sps : (k+1)*sps]
+	seg := t.x[j*sps : (j+1)*sps]
 	for w := range m.windows {
 		tp := m.tpl[w*sps : (w+1)*sps]
 		var c complex64
@@ -206,7 +224,6 @@ func (t *trellis) forward(x []complex64, k, j int, scale, mu float32) {
 	alpha := t.alpha[j*ns : (j+1)*ns]
 	next := t.alpha[(j+1)*ns : (j+2)*ns]
 	bm := t.bm[j*m.windows : (j+1)*m.windows]
-	lp := t.lp[4*k : 4*k+4]
 	for s2 := range ns {
 		bonus := lp[s2&3]
 		best, bd := negInf, 0
@@ -234,9 +251,9 @@ func (t *trellis) forward(x []complex64, k, j int, scale, mu float32) {
 }
 
 // backward runs the backward pass of the block from interval b0, whose
-// forward pass reaches e, from equal metrics after e, and writes the
+// forward pass reaches e, from equal metrics after e, and keeps the
 // log-APPs of the intervals before b1.
-func (t *trellis) backward(b0, b1, e int, app []float32) {
+func (t *trellis) backward(src trellisSource, b0, b1, e int) {
 	m := t.m
 	ns := m.states
 	mask := ns - 1
@@ -244,15 +261,11 @@ func (t *trellis) backward(b0, b1, e int, app []float32) {
 	for s := range ns {
 		beta[s] = 0
 	}
-	var dummy [4]float32
+	a := t.app[:]
 	for k := e - 1; k >= b0; k-- {
 		j := k - b0
 		alpha := t.alpha[j*ns : (j+1)*ns]
 		bm := t.bm[j*m.windows : (j+1)*m.windows]
-		a := dummy[:]
-		if k < b1 {
-			a = app[4*k : 4*k+4]
-		}
 		for v := range a {
 			a[v] = negInf
 		}
@@ -274,12 +287,15 @@ func (t *trellis) backward(b0, b1, e int, app []float32) {
 			}
 		}
 		beta, t.next = t.next, beta
+		if k < b1 {
+			src.runKeep(k, a)
+		}
 	}
 	t.beta = beta
 }
 
 // best returns the highest path metric at the end of the last run.
-func (t *trellis) best(int) float32 {
+func (t *trellis) best() float32 {
 	b := negInf
 	for _, v := range t.last {
 		b = max(b, v)
@@ -381,9 +397,8 @@ func dibitOfDigit(v int) (bit.Bit, bit.Bit) {
 }
 
 // anchor estimates the carried phase before known symbols syms (values
-// -3..3) at the start of aligned samples x, with the amplitude and the noise
-// variance per sample.
-func (m *cpmModel) anchor(x []complex64, syms []int) (rot complex64, amp, noise float64) {
+// -3..3) at the start of aligned samples x.
+func (m *cpmModel) anchor(x []complex64, syms []int) complex64 {
 	sps, d := m.sps, m.d
 	steps := len(syms) - 2*d
 	var c complex128
@@ -400,23 +415,5 @@ func (m *cpmModel) anchor(x []complex64, syms []int) (rot complex64, amp, noise 
 		c += s * cmplx.Exp(complex(0, -ph))
 		ph += m.h * math.Pi * float64(syms[k])
 	}
-	n := float64(steps * sps)
-	amp = cmplx.Abs(c) / n
-	rot = complex64(cmplx.Conj(c) / complex(cmplx.Abs(c), 0))
-	var e float64
-	ph = 0
-	for k := range steps {
-		w := 0
-		for i := range 2*d + 1 {
-			w = w<<2 | (syms[k+i]+3)/2
-		}
-		for j := range sps {
-			ref := complex128(m.tpl[w*sps+j])
-			want := complex(amp, 0) * cmplx.Conj(ref) * cmplx.Exp(complex(0, ph)) / complex128(rot)
-			diff := complex128(x[(k+d)*sps+j]) - want
-			e += real(diff)*real(diff) + imag(diff)*imag(diff)
-		}
-		ph += m.h * math.Pi * float64(syms[k])
-	}
-	return rot, amp, e / n
+	return complex64(cmplx.Conj(c) / complex(cmplx.Abs(c), 0))
 }

@@ -218,14 +218,3 @@ func (t *xtrellis) drift(m []float32, ns int) {
 		}
 	}
 }
-
-// best returns the highest path metric at the end of the last run of that
-// many steps.
-func (t *xtrellis) best(steps int) float32 {
-	n := t.m.states * t.np
-	b := negInf
-	for _, v := range t.alpha[steps*n : (steps+1)*n] {
-		b = max(b, v)
-	}
-	return b
-}
