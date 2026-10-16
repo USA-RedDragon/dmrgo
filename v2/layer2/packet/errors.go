@@ -39,9 +39,15 @@ var (
 	// retry. It wraps fec.ErrUncorrectable.
 	ErrBlocksMissing = fmt.Errorf("confirmed blocks failed CRC-9: %w", fec.ErrUncorrectable)
 	// ErrUnexpectedRetry is returned for a header of a later try (Full
-	// Message Flag 0) that is not a retry of the packet in progress. The
-	// Assembler drops the header and keeps the packet in progress.
+	// Message Flag 0) that is not a retry of the packet in progress, while
+	// that packet still waits for blocks of its attempt. The Assembler drops
+	// the header and keeps the packet in progress.
 	ErrUnexpectedRetry = errors.New("later try of a packet that is not in progress")
+	// ErrNoFirstTry is returned by Assembler.Response for a packet that a
+	// later try started, because its first header was lost. The size of
+	// the packet is not known, so a SACK cannot name its blocks; answer
+	// with a NACK instead, which asks for the whole packet again.
+	ErrNoFirstTry = errors.New("packet started from a later try")
 	// ErrNoRetryBlocks is returned by Builder.Retry when the response data
 	// flags no block of the packet.
 	ErrNoRetryBlocks = errors.New("response data flags no block to resend")
