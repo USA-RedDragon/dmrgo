@@ -78,8 +78,8 @@ func (r Response) String() string {
 
 // ResponseData is the selective retry bitmap of the C_RDATA PDU (ETSI TS
 // 102 361-1 clause 8.2.2.3, Table 9.14). The zero value retries nothing. On
-// air flag i is octet i/8, bit 7-i%8, and is 1 for a received block; the
-// spec does not state this bit order, so it follows the other DMR PDUs.
+// air flag i is bit i%8 of octet i/8, where bit 0 is the least significant,
+// and is 1 for a received block (ETSI TS 102 361-1 Figure 8.17).
 type ResponseData struct {
 	Retry [127]bool // Retry[i] is set to ask for the block with DBSN i again
 }
@@ -145,7 +145,7 @@ func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rat
 	}
 	for i := 0; i < flags; i++ {
 		if i < blocks && r.Retry[i] {
-			buf[i/8] &^= 0x80 >> (i % 8)
+			buf[i/8] &^= 1 << (i % 8)
 		}
 	}
 	binary.LittleEndian.PutUint32(buf[size-crcOctets:], crc.CRC32(buf[:size-crcOctets]))
@@ -182,7 +182,7 @@ func decodeResponseData(r *ResponseData, buf []byte) error {
 		flags = maxBlocks
 	}
 	for i := 0; i < flags; i++ {
-		r.Retry[i] = buf[i/8]&(0x80>>(i%8)) == 0
+		r.Retry[i] = buf[i/8]&(1<<(i%8)) == 0
 	}
 	if !checkMessageCRC(buf) {
 		return errResponseCRC
