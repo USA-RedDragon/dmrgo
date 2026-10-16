@@ -25,6 +25,11 @@ const (
 	// around the estimate of the spectrum, at which the search correlates.
 	searchFreqs  = 3
 	searchStepHz = 200.0
+	// preBlocks is the number of blocks that the screen of the coherent
+	// search combines without phase, and preMetric the screen metric under
+	// which the search skips a position.
+	preBlocks = 4
+	preMetric = 0.25
 )
 
 // searchHzAt returns search offset i.
@@ -218,7 +223,7 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 	for _, v := range x {
 		etot += real(v)*real(v) + imag(v)*imag(v)
 	}
-	if etot == 0 {
+	if etot == 0 || s.screen(x, etot, nsrc) < preMetric {
 		return best
 	}
 	bestFi := 0
@@ -245,6 +250,36 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 		best.Hz = -best.Hz
 	}
 	return best
+}
+
+// screen returns the best metric over nsrc sources of the window x of
+// energy etot at the middle search offset, its preBlocks blocks combined
+// without phase. The combined metric is at least the coherent one at the
+// same offset, and an offset turns a block less than the whole span. That
+// does not bound it for every window, but on DMR signals from -3 to 40 dB
+// C/N at offsets to 450 Hz no position whose coherent metric reached
+// lockMetric at any search offset screened under 0.31.
+func (s *syncSearch) screen(x []complex64, etot float32, nsrc int) float32 {
+	n := len(x) / preBlocks
+	var best float32
+	for src := range nsrc {
+		t := s.tplRot[searchFreqs/2*numSources+src]
+		var mv, md float32
+		for b := range preBlocks {
+			var ac, bd, bc, ad float32
+			for j := b * n; j < (b+1)*n; j++ {
+				v, w := x[j], t[j]
+				ac += real(v) * real(w)
+				bd += imag(v) * imag(w)
+				bc += imag(v) * real(w)
+				ad += real(v) * imag(w)
+			}
+			mv += (ac-bd)*(ac-bd) + (bc+ad)*(bc+ad)
+			md += (ac+bd)*(ac+bd) + (bc-ad)*(bc-ad)
+		}
+		best = max(best, mv, md)
+	}
+	return best / (etot * float32(n))
 }
 
 // window returns the span ring samples from first. The search steps one
