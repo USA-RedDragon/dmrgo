@@ -9,45 +9,67 @@ import (
 	bit "github.com/USA-RedDragon/dmrgo/v2/bit"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	hamming "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
-	lowbit "github.com/USA-RedDragon/dmrgo/v2/internal/lowbit"
 )
 
-// DecodeTACT decodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
-func DecodeTACT(data [7]bit.Bit) TACT {
+// decodeTACTBytes decodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
+// data holds its bits packed, the first bit most significant.
+func decodeTACTBytes(data [1]byte) TACT {
 	var result TACT
-	lowbit.Mask(data[:])
 	var _cw uint8
-	_cw, result.FEC = hamming.Decode743(uint8(bit.Uint(data[:])))
+	_cw, result.FEC = hamming.Decode743(uint8(uint64(data[0]) >> 1))
 	if !result.FEC.Uncorrectable {
-		bit.PutUint(data[:], uint64(_cw))
+		data[0] = data[0]&^0xFE | byte(uint64(_cw)<<1)&0xFE
 	}
-	result.AccessType = data[0] == 1
-	result.TDMAChannel = data[1] == 1
-	result.LCSS = enums.LCSS(bit.Uint(data[2:4]))
+	result.AccessType = data[0]&0x80 != 0
+	result.TDMAChannel = data[0]&0x40 != 0
+	result.LCSS = enums.LCSS(uint64(data[0]) >> 4 & 0x3)
 	return result
 }
 
-// Encode encodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
-func (s *TACT) Encode() ([7]bit.Bit, error) {
-	var data [4]bit.Bit
+// DecodeTACT decodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
+func DecodeTACT(data [7]bit.Bit) TACT {
+	var _b [1]byte
+	for _i := range 7 {
+		_b[_i/8] |= byte(data[_i]&1) << (7 - _i%8)
+	}
+	return decodeTACTBytes(_b)
+}
+
+// encodeBytes encodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
+// It returns the bits of Encode packed, the first bit most significant.
+func (s *TACT) encodeBytes() ([1]byte, error) {
+	var data [1]byte
 	if s.AccessType {
-		data[0] = 1
+		data[0] |= 0x80
 	}
 	if s.TDMAChannel {
-		data[1] = 1
+		data[0] |= 0x40
 	}
 	if uint64(s.LCSS)>>2 != 0 {
-		return [7]bit.Bit{}, &bit.FieldRangeError{
+		return [1]byte{}, &bit.FieldRangeError{
 			Bits:  2,
 			Field: "LCSS",
 			Type:  "TACT",
 			Value: s.LCSS,
 		}
 	}
-	bit.PutUint(data[2:4], uint64(s.LCSS))
-	var _cw [7]bit.Bit
-	bit.PutUint(_cw[:], uint64(hamming.Encode743(uint8(bit.Uint(data[:])))))
-	return _cw, nil
+	data[0] = data[0]&^0x30 | byte(uint64(s.LCSS)<<4)&0x30
+	_cw := hamming.Encode743(uint8(uint64(data[0]) >> 4))
+	data[0] = data[0]&^0xFE | byte(uint64(_cw)<<1)&0xFE
+	return data, nil
+}
+
+// Encode encodes a TACT (ETSI TS 102 361-1 clause 9.1.4).
+func (s *TACT) Encode() ([7]bit.Bit, error) {
+	_b, err := s.encodeBytes()
+	if err != nil {
+		return [7]bit.Bit{}, err
+	}
+	var data [7]bit.Bit
+	for _i := range 7 {
+		data[_i] = bit.Bit(_b[_i/8] >> (7 - _i%8) & 1)
+	}
+	return data, nil
 }
 
 // EncodeBits returns the bits that Encode returns as a slice, or nil and

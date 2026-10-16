@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/bit"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -57,8 +56,8 @@ func (s *SlotType) Info() SlotTypeInfo {
 // significant (ETSI TS 102 361-1 clause B.3.1).
 func (s SlotTypeInfo) Codeword() uint32 {
 	st := s.SlotType()
-	bits, _ := st.Encode()
-	return uint32(bit.Uint(bits[:]) & 0xFFFFFFFF)
+	cw, _ := st.encodeBytes()
+	return uint32(cw[0])<<12 | uint32(cw[1])<<4 | uint32(cw[2]>>4)
 }
 
 // DecodeSlotTypeCodeword decodes the 20-bit Golay(20,8) codeword in the low
@@ -66,8 +65,6 @@ func (s SlotTypeInfo) Codeword() uint32 {
 // ignores the high 12 bits of cw. It returns the information bits,
 // corrected when the result is not Uncorrectable, and the FEC result.
 func DecodeSlotTypeCodeword(cw uint32) (SlotTypeInfo, fec.Result) {
-	var bits [20]bit.Bit
-	bit.PutUint(bits[:], uint64(cw))
-	st := DecodeSlotType(bits)
+	st := decodeSlotTypeBytes([3]byte{byte(cw >> 12 & 0xFF), byte(cw >> 4 & 0xFF), byte(cw << 4 & 0xF0)})
 	return st.Info(), st.FEC
 }

@@ -139,23 +139,19 @@ func (c *CSBKBytes) Reseal() {
 // DecodeCSBKBytes decodes the 12-octet payload b of a CSBK burst as
 // DecodeCSBK does. The FEC field reports the CRC check.
 func DecodeCSBKBytes(b [12]byte) CSBK {
-	return DecodeCSBK(bit.Unpack96(b))
+	return decodeCSBKBytes(b)
 }
 
 // DecodeCSBKBytesInto decodes the 12-octet payload b of a CSBK burst into
 // dst as DecodeCSBKInto does.
 func DecodeCSBKBytesInto(dst *CSBK, p *CSBKPayloads, b [12]byte) {
-	DecodeCSBKInto(dst, p, bit.Unpack96(b))
+	decodeCSBKBytesInto(dst, p, b)
 }
 
 // Bytes returns the 12-octet payload of s with its CRC, as Encode returns
 // it packed most significant bit first, and the errors that Encode returns.
 func (s *CSBK) Bytes() ([12]byte, error) {
-	bits, err := s.Encode()
-	if err != nil {
-		return [12]byte{}, err
-	}
-	return bit.Pack96(bits), nil
+	return s.encodeBytes()
 }
 
 // checkAddresses returns a *bit.FieldRangeError of type typ when target or
