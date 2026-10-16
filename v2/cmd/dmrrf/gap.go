@@ -310,7 +310,7 @@ func (r *Receiver) coherentGap(first, j int64, final bool) {
 	if !left && !right {
 		r.run(lo, hi.diff(lo)+1+margin, false, lo, hi)
 	}
-	if r.opt.TrackCarrier && !r.refining {
+	if r.opt.TrackCarrier && !r.refining && !r.warm {
 		r.trackCarrier(lo, hi)
 	}
 }
@@ -338,7 +338,7 @@ func (r *Receiver) coherentBurst(j int64) {
 	} else {
 		r.run(lo.add(-margin), hi.diff(lo)+1+2*margin, false, lo, hi)
 	}
-	if r.opt.TrackCarrier && !r.refining {
+	if r.opt.TrackCarrier && !r.refining && !r.warm {
 		r.trackCarrier(lo, hi)
 	}
 }
