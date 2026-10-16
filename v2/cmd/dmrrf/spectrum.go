@@ -63,9 +63,12 @@ type spectrum struct {
 	frame  []complex64
 	hist   []complex64
 	fill   int
-	power  []float64
+	power  []float32
 	frames int
-	sorted []float64
+	// pass holds the power of the passband bins from -passBins to
+	// passBins, and sorted the same in increasing order.
+	pass   []float32
+	sorted []float32
 	// Hz, CN and OK hold the last estimate: carrier offset, C/N in dB in
 	// 12.5 kHz, and whether a signal stands above the noise.
 	Hz, CN float64
@@ -76,7 +79,8 @@ type spectrum struct {
 // newSpectrum returns an estimator with no frames yet.
 func newSpectrum() *spectrum {
 	s := &spectrum{f: newFFT(fftSize), win: make([]float32, fftSize), frame: make([]complex64, fftSize),
-		hist: make([]complex64, fftSize), power: make([]float64, fftSize), sorted: make([]float64, 2*passBins+1)}
+		hist: make([]complex64, fftSize), power: make([]float32, fftSize),
+		pass: make([]float32, 2*passBins+1), sorted: make([]float32, 2*passBins+1)}
 	for i := range s.win {
 		s.win[i] = float32(0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/fftSize))
 	}
@@ -98,7 +102,7 @@ func (s *spectrum) push(v complex64) bool {
 	s.fill = fftSize / 2
 	s.f.transform(s.frame)
 	for i, x := range s.frame {
-		s.power[i] += float64(real(x)*real(x) + imag(x)*imag(x))
+		s.power[i] += real(x)*real(x) + imag(x)*imag(x)
 	}
 	s.frames++
 	switch {
@@ -119,31 +123,31 @@ func (s *spectrum) push(v complex64) bool {
 // passband bins away from that span, and the centroid of the excess.
 func (s *spectrum) estimate() {
 	bin := float64(basebandRate) / fftSize
-	pass := int(wideHz / bin)
-	m := 0
-	for k := -pass; k <= pass; k++ {
-		s.sorted[m] = s.power[(k+fftSize)%fftSize]
-		m++
+	pass := s.pass
+	for k := -passBins; k <= passBins; k++ {
+		pass[k+passBins] = s.power[(k+fftSize)%fftSize]
 	}
-	slices.Sort(s.sorted[:m])
-	floor := s.sorted[m/4]
+	copy(s.sorted, pass)
+	slices.Sort(s.sorted)
+	floor := float64(s.sorted[len(s.sorted)/4])
 	half := int(channelHz / 2 / bin)
-	limit := pass - half
-	best, center := math.Inf(-1), 0
-	for c := -limit; c <= limit; c++ {
-		var e float64
-		for k := c - half; k <= c+half; k++ {
-			e += s.power[(k+fftSize)%fftSize] - floor
-		}
+	limit := passBins - half
+	var e float64
+	for k := -limit - half; k <= -limit+half; k++ {
+		e += float64(pass[k+passBins]) - floor
+	}
+	best, center := e, -limit
+	for c := -limit + 1; c <= limit; c++ {
+		e += float64(pass[c+half+passBins]) - float64(pass[c-half-1+passBins])
 		if e > best {
 			best, center = e, c
 		}
 	}
 	var sum float64
 	var n int
-	for k := -pass; k <= pass; k++ {
+	for k := -passBins; k <= passBins; k++ {
 		if k < center-half-8 || k > center+half+8 {
-			sum += s.power[(k+fftSize)%fftSize]
+			sum += float64(pass[k+passBins])
 			n++
 		}
 	}
@@ -152,7 +156,7 @@ func (s *spectrum) estimate() {
 	}
 	var num, den float64
 	for k := center - half; k <= center+half; k++ {
-		e := s.power[(k+fftSize)%fftSize] - floor
+		e := float64(pass[k+passBins]) - floor
 		num += e * float64(k)
 		den += e
 	}
