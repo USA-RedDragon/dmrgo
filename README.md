@@ -198,17 +198,17 @@ Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater wit
 
 | Recording | Frames | Tier 0 | Tier 1 | Tier 2 |
 |-----------|--------|--------|--------|--------|
-| MS voice relayed, HackRF on the uplink (9.3 dB C/N) | 2013 | 1389 | 1730 | 1765 |
-| Late entry voice relayed, HackRF on the uplink (11.1 dB C/N) | 1890 | 1423 | 1610 | 1613 |
+| MS voice relayed, HackRF on the uplink (9.3 dB C/N) | 2013 | 1407 | 1746 | 1780 |
+| Late entry voice relayed, HackRF on the uplink (11.1 dB C/N) | 1890 | 1449 | 1610 | 1613 |
 | Voice with PI header relayed, HackRF on the uplink (17.3 dB C/N) | 1818 | 1818 | 1818 | 1818 |
-| Mixed voice and data, network to air, run 1 (9.7 dB C/N) | 144 | 108 | 120 | 120 |
-| Mixed voice and data, network to air, run 2 (10.6 dB C/N) | 144 | 115 | 120 | 120 |
+| Mixed voice and data, network to air, run 1 (9.7 dB C/N) | 144 | 109 | 120 | 120 |
+| Mixed voice and data, network to air, run 2 (10.6 dB C/N) | 144 | 117 | 120 | 120 |
 | Voice, network to air (10.0 dB C/N) | 90 | 90 | 90 | 90 |
 | Voice, network to air (11.6 dB C/N) | 90 | 86 | 90 | 90 |
-| Gain sweep, RTL gain 0 dB (9.9 dB C/N) | 51 | 17 | 48 | 48 |
-| Gain sweep, RTL gain 9.7 dB (7.3 dB C/N) | 54 | 32 | 42 | 42 |
-| Gain sweep, RTL gain 19.7 dB (10.4 dB C/N) | 51 | 47 | 51 | 51 |
-| Gain sweep, RTL gain 29.7 dB (11.2 dB C/N) | 54 | 47 | 50 | 50 |
+| Gain sweep, RTL gain 0 dB (9.9 dB C/N) | 51 | 19 | 44 | 44 |
+| Gain sweep, RTL gain 9.7 dB (7.3 dB C/N) | 54 | 36 | 48 | 48 |
+| Gain sweep, RTL gain 19.7 dB (10.4 dB C/N) | 51 | 50 | 51 | 51 |
+| Gain sweep, RTL gain 29.7 dB (11.2 dB C/N) | 54 | 49 | 50 | 50 |
 
 </details>
 
