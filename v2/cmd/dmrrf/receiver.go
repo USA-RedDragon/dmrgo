@@ -191,6 +191,11 @@ type Receiver struct {
 	// doneAt is the channel sample where the last stream ended, before
 	// which the search does not go again.
 	doneAt int64
+	// finRec holds the record of the slot that finish hands the tracker,
+	// which TinyGo puts on the heap for every slot as a local, and emitFn
+	// is emit as a func value made once.
+	finRec slotRec
+	emitFn func(Received)
 	// syms holds the detection of the slots on their way to the tracker,
 	// as many as the gap that the first detection after a lock spans, and
 	// refined that of the slots that a refinement detects again, from
@@ -282,6 +287,7 @@ func NewReceiver(cfg ReceiverConfig) *Receiver {
 		r.syms = newSymStore(1)
 	}
 	r.tk = newTracker()
+	r.emitFn = r.emit
 	if r.opt.SoftFEC {
 		r.rep = newRepairer(r.opt.BPTCOSD)
 		r.tk.repair = r.repairEntry
@@ -348,7 +354,7 @@ func (r *Receiver) Flush() []Received {
 		r.finishStream()
 		r.step(true)
 	}
-	r.tk.flush(r.emit)
+	r.tk.flush(r.emitFn)
 	return r.out
 }
 
@@ -820,7 +826,7 @@ func (r *Receiver) finishStream() {
 	if r.opt.Coherent {
 		r.searchAt = r.alignSearch(r.searchAt)
 	}
-	r.tk.flush(r.emit)
+	r.tk.flush(r.emitFn)
 }
 
 // measure classifies the SYNC field of slot s, measures its timing,
@@ -995,17 +1001,14 @@ func (r *Receiver) finish(s *slotState) {
 			}
 		}
 	}
-	var rec slotRec
-	rec.index = s.index
-	rec.bs = r.bs
-	rec.src = sourceAt(r.src)
-	rec.stream = r.streams
+	rec := &r.finRec
+	*rec = slotRec{index: s.index, bs: r.bs, src: sourceAt(r.src), stream: r.streams}
 	rec.seconds = (r.symTime(s.index, cachSymbols) - float64(r.chz.delayCh)) / basebandRate
-	r.fill264(s, &rec)
+	r.fill264(s, rec)
 	if s.anchor {
 		rec.anchor = s.a.pattern
 	}
-	r.tk.add(&rec, r.emit)
+	r.tk.add(rec, r.emitFn)
 }
 
 // fill264 sets the hard bits and log-likelihood ratios of rec, burst and
