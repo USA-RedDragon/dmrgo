@@ -57,3 +57,14 @@ func TestCRCCCITT_EmptyInput(t *testing.T) {
 		t.Errorf("CRC of empty = 0x%04X, want 0xFFFF", crc)
 	}
 }
+
+func TestCCITTUpdate_Split(t *testing.T) {
+	t.Parallel()
+
+	data := []byte("123456789 and more octets than one MBC block holds")
+	for i := range len(data) + 1 {
+		if got, want := ^crc.CCITTUpdate(crc.CCITTUpdate(0, data[:i]), data[i:]), crc.CCITT(data); got != want {
+			t.Errorf("split at %d: 0x%04X, want 0x%04X", i, got, want)
+		}
+	}
+}
