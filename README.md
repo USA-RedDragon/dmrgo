@@ -58,7 +58,7 @@ func main() {
 
 The program prints `Voice LC Header: call from 3191868 to 9990` and `re-encoded unchanged: true`. An FEC or CRC error does not make `NewBurstFromBytes` fail: `burst.FEC` reports it and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match.
 
-More in [v2/examples](v2/examples), which run offline on the captures in `v2/layer2/testdata` (`go run -C v2 ./examples/<name>`): [hotspot](v2/examples/hotspot/main.go) (MMDVMHost check and regenerated bursts), [bridge](v2/examples/bridge/main.go) (rewrite a call's talkgroup and source), [scanner](v2/examples/scanner/main.go) (find bursts in a bit stream), [trunking](v2/examples/trunking/main.go) (Tier III CSBKs, MBC and CACH), [data](v2/examples/data/main.go) (packet data and selective retry), [transcoder](v2/examples/transcoder/main.go) (AMBE+2 FEC and Codec2) and [conformance](v2/examples/conformance/main.go) (byte-for-byte re-encode of every capture). [tinygo](v2/examples/tinygo/main.go) decodes and re-encodes a call on a microcontroller (see [TinyGo](#tinygo)).
+More in [v2/examples](v2/examples), which run offline on the captures in `v2/layer2/testdata` (`go run -C v2 ./examples/<name>`): [hotspot](v2/examples/hotspot/main.go) (MMDVMHost check and regenerated bursts), [bridge](v2/examples/bridge/main.go) (rewrite a call's talkgroup and source), [scanner](v2/examples/scanner/main.go) (find bursts in a bit stream), [trunking](v2/examples/trunking/main.go) (Tier III CSBKs, MBC and CACH), [data](v2/examples/data/main.go) (packet data and selective retry), [transcoder](v2/examples/transcoder/main.go) (AMBE+2 FEC and Codec2) and [conformance](v2/examples/conformance/main.go) (byte-for-byte re-encode of every capture). [tinygo](v2/examples/tinygo/main.go) decodes and re-encodes a call on a microcontroller and follows it with `voice.Receiver` (see [TinyGo](#tinygo)).
 
 ## Features
 
@@ -69,12 +69,15 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
   - Receive calls with `VoiceReceiver`, the embedded LC assembler and the CACH Short LC assembler.
   - Check and reseal bursts the way MMDVMHost does.
 - PDUs (`layer2/pdu`), generated from struct tags by `dmrgen`:
-  - CSBK and MBC, with the Tier II and Tier III payloads.
+  - CSBK and MBC, with the Tier II and Tier III payloads, and the Motorola radio check and call alert.
   - Full LC and Short LC, with their payloads.
   - Data headers, data blocks at rate 1/2, 3/4 and 1, USBD and the compressed UDP/IPv4 header.
   - Slot type, EMB, TACT, PI header, Reverse Channel and PR FILL.
   - Byte-level editors for LC, CSBK and data header octets, and `Seal` to recompute parity or CRC.
-- Packet data (`layer2/packet`): segmentation and reassembly of confirmed and unconfirmed packets, with response packets and selective retry.
+- Packet data (`layer2/packet`): segmentation and reassembly of confirmed and unconfirmed packets, with response packets and selective retry:
+  - `Builder.Retry` builds the later try that a SACK asks for.
+  - The `Assembler` counts a block burst lost on air with `Lost`, reads the Full Message Flag, takes later tries of confirmed and short data packets, and with `AcceptBadCRC` delivers a packet whose CRC failed, as the "skip CRC" setting of some radios does.
+- Voice call receive (`voice`): `Receiver` turns the bursts of one logical channel into call events: call start with where the call came from, voice bursts with their superframe position, lost count and frame quality, embedded GPS and talker alias, and call end with a reason. It handles late entry, duplicate and lost bursts, transport hints (`layer2.Hint`) and the call hang time, without I/O or goroutines.
 - FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
 - Burst finding in a demodulated bit stream (`layer2/framer`).
 - Vocoders (`vocoder`):
@@ -88,7 +91,7 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
   - Three checks keep it so, with no list of functions to maintain:
     - [v2/internal/allocgate](v2/internal/allocgate) builds the library with `-gcflags=-m` and fails on each heap allocation that gc reports. Only these may allocate: constructors (`New*`, `new*`), `String`, `GoString` and `Error` methods, `Append*` functions (only when the slice lacks capacity), package-level declarations, and wrappers whose doc says "It allocates ...; X does not." for a twin X. It also fails on an `init` function.
     - The same package builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the pico with `tinygo build -print-allocs` and fails on each heap allocation site under the same rules.
-    - [v2/internal/allocs](v2/internal/allocs) checks decode and encode of every capture, packet assembly, a voice superframe, the vocoder frames and the framer with `testing.AllocsPerRun`, and under TinyGo reads `runtime.MemStats` around the main decode and encode calls.
+    - [v2/internal/allocs](v2/internal/allocs) checks decode and encode of every capture, packet assembly, a voice superframe, `voice.Receiver`, the vocoder frames and the framer with `testing.AllocsPerRun`, and under TinyGo reads `runtime.MemStats` around the main decode and encode calls.
 
 ## Codec2
 
