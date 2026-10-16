@@ -241,16 +241,20 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 }
 
 // discAt returns the correlation coefficient of the discriminator symbols
-// at t, t+step, ... with the voice SYNC of each source, the best source and
-// whether its sign shows the data SYNC.
-func (s *syncSearch) discAt(r *qring, t, step float64, nsrc int) (rho float32, src int, data bool) {
-	base := int64(math.Floor(t))
-	u, du := float32(t-float64(base)), float32(step)
+// at base+u, base+u+step, ... with the voice SYNC of each source, the best
+// source and whether its sign shows the data SYNC.
+func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rho float32, src int, data bool) {
 	var x [syncSymbols]float32
+	if stride := int(step); u == 0 && float32(stride) == step {
+		r.gather(base, stride, x[:])
+	} else {
+		for k := range syncSymbols {
+			x[k] = r.lerpFrom(base, u+float32(k)*step)
+		}
+	}
 	var mx float32
-	for k := range syncSymbols {
-		x[k] = r.lerpFrom(base, u+float32(k)*du)
-		mx += x[k]
+	for _, v := range x {
+		mx += v
 	}
 	mx /= syncSymbols
 	var sxx float32

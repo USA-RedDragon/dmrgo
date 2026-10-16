@@ -348,16 +348,17 @@ func (r *Receiver) searchStep() bool {
 	}
 	for {
 		if !r.opt.Coherent {
-			t := r.symLag(float64(r.searchAt))
-			step := float64(samplesPerSy) / float64(r.chz.discDec)
-			if int64(t+syncSymbols*step)+2 >= r.chz.sym.n {
+			base, u := r.chz.symAt(r.searchAt)
+			step := r.chz.symStep()
+			if base+int64(syncSymbols*step)+2 >= r.chz.sym.n {
 				return false
 			}
-			rho, src, data := r.search.discAt(&r.chz.sym, t, step, r.nsrc)
+			rho, src, data := r.search.discAt(&r.chz.sym, base, u, step, r.nsrc)
 			if rho >= discLock {
 				best := r.searchAt
 				for k := int64(1); k < 6; k++ {
-					if q, s2, d2 := r.search.discAt(&r.chz.sym, r.symLag(float64(r.searchAt+k)), step, r.nsrc); q > rho {
+					b, v := r.chz.symAt(r.searchAt + k)
+					if q, s2, d2 := r.search.discAt(&r.chz.sym, b, v, step, r.nsrc); q > rho {
 						rho, src, data, best = q, s2, d2, r.searchAt+k
 					}
 				}

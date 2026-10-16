@@ -26,7 +26,8 @@ func (r *Receiver) measureDisc(s *slotState) {
 	data := false
 	for tau := -3.0; tau <= 3; tau += 0.5 {
 		t := r.symLag(r.symTime(s.index, syncFirstSym) + tau)
-		rho, src, d := r.search.discAt(&r.chz.sym, t, float64(samplesPerSy)/float64(r.chz.discDec), r.nsrc)
+		base := int64(math.Floor(t))
+		rho, src, d := r.search.discAt(&r.chz.sym, base, float32(t-float64(base)), r.chz.symStep(), r.nsrc)
 		if src == r.src && rho > best {
 			best, bestTau, data = rho, tau, d
 		}
@@ -83,7 +84,7 @@ func (r *Receiver) discDetect(s *slotState) {
 	dc, dev := float32(r.dcHz), float32(r.devScale*deviationHz)
 	t0 := r.symLag(r.symTime(s.index, 0))
 	base := int64(math.Floor(t0))
-	u, du := float32(t0-float64(base)), float32(r.symLag(r.symTime(s.index, 1))-r.symLag(r.symTime(s.index, 0)))
+	u, du := float32(t0-float64(base)), float32(r.period/slotSymbols/float64(r.chz.discDec))
 	app := r.appOf(s)
 	for k := range slotSymbols {
 		x := r.chz.sym.lerpFrom(base, u+float32(k)*du) - dc
