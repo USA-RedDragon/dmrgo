@@ -116,6 +116,7 @@ func TestNew(t *testing.T) {
 func TestRegistered(t *testing.T) {
 	t.Parallel()
 
+	vocoder.Register(Name, NewFactory(Config{}))
 	c, err := vocoder.New(Name)
 	if err != nil {
 		t.Fatal(err)
