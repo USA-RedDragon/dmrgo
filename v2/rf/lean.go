@@ -81,7 +81,7 @@ func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
 	tm.last, tm.mid = v, true
 	tm.t += tm.step
 	if !tm.hold && tm.pow > 0 {
-		tm.t += max(min(tm.gain*e/tm.pow, 0.5), -0.5)
+		tm.t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
 	}
 	return v, at, true
 }
@@ -587,7 +587,7 @@ func (r *leanCore) symLLR(k int64) (int16, int16) {
 	var a [4]float32
 	for d := range a {
 		e := x - r.dev*float32(2*d-3)
-		a[d] = max(e*e*r.ll, r.lfloor)
+		a[d] = max32(e*e*r.ll, r.lfloor)
 	}
 	l0, l1 := dibitLLR(a[:], 1)
 	return even8(l0), even8(l1)

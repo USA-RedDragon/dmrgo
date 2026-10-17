@@ -41,6 +41,23 @@ func sqrtf(x float32) float32 {
 	return float32(math.Sqrt(float64(x)))
 }
 
+// max32 and min32 return the larger and the smaller of a and b, for
+// operands that are not NaN. Unlike the builtins they ignore NaN and the
+// sign of zero, which makes them a few instructions on a microcontroller.
+func max32(a, b float32) float32 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func min32(a, b float32) float32 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // abs32 returns the absolute value of x.
 func abs32(x float32) float32 {
 	if x < 0 {

@@ -1202,8 +1202,8 @@ func (r *engine) fill264(s *slotState, rec *slotRec) {
 // 11, 10, 00, 01), positive for bit 0, times scale, in units of 1/8,
 // saturated.
 func dibitLLR(a []float32, scale float32) (int16, int16) {
-	b0 := max(a[2], a[3]) - max(a[0], a[1])
-	b1 := max(a[1], a[2]) - max(a[0], a[3])
+	b0 := max32(a[2], a[3]) - max32(a[0], a[1])
+	b1 := max32(a[1], a[2]) - max32(a[0], a[3])
 	return satLLR(scale * b0), satLLR(scale * b1)
 }
 
@@ -1211,18 +1211,17 @@ func dibitLLR(a []float32, scale float32) (int16, int16) {
 // least one unit from 0 with the sign of v, so that the decoders that read
 // a hard decision from the sign keep it.
 func satLLR(v float32) int16 {
-	v *= 8
-	switch {
-	case v > 32000:
-		return 32000
-	case v < -32000:
-		return -32000
-	case v > 0 && v < 1:
-		return 1
-	case v < 0 && v > -1:
-		return -1
+	v = max32(min32(8*v, 32000), -32000)
+	i := int16(v)
+	if i == 0 {
+		switch {
+		case v > 0:
+			return 1
+		case v < 0:
+			return -1
+		}
 	}
-	return int16(v)
+	return i
 }
 
 // refine starts a refinement of the slots from lo, which detects them into

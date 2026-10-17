@@ -216,7 +216,7 @@ func (f *audioFront) retuneFront(hz, d float32) {
 
 // sat16 rounds v to the nearest int16, saturated.
 func sat16(v float32) int16 {
-	return int16(max(min(v+0.5*sign32(v), 32767), -32768))
+	return int16(max32(min32(v+0.5*sign32(v), 32767), -32768))
 }
 
 // sign32 returns 1 for v >= 0 and -1 otherwise.
