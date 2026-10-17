@@ -10,18 +10,17 @@ const (
 	// hands the DiscReceiver.
 	iqUnitsPerHz = 2
 	// iqAFCBlock is the number of baseband samples between the moves of
-	// the oscillator, and iqAFCSearchHz and iqAFCLockHz the least carrier
-	// offset that moves it while the core searches and while it is
-	// locked.
-	iqAFCBlock    = basebandRate / 20
-	iqAFCSearchHz = 30
-	iqAFCLockHz   = 100
-	// iqAFCPullHz is the carrier offset below which the oscillator moves
-	// by iqAFCSearchGain of it while the core searches: the symbols of a
-	// block of iqAFCBlock samples spread its mean frequency by about
-	// 100 Hz.
-	iqAFCPullHz     = 300
-	iqAFCSearchGain = 0.25
+	// the oscillator, and iqAFCLockHz the least carrier offset that moves
+	// it while the core is locked.
+	iqAFCBlock  = basebandRate / 20
+	iqAFCLockHz = 100
+	// While the core searches, an offset of at least iqAFCPullHz in one
+	// block moves the oscillator. The symbols of a block spread its mean
+	// frequency by about 100 Hz, so below that the oscillator moves when
+	// the mean over the blocks, by iqAFCAvgGain, is iqAFCFineHz off.
+	iqAFCPullHz  = 300
+	iqAFCFineHz  = 60
+	iqAFCAvgGain = 0.25
 )
 
 // iqDisc is the FM discriminator of the I/Q tiers: an oscillator that
@@ -147,7 +146,10 @@ type iqRx struct {
 	d       DiscReceiver
 	audio   []int16
 	afcN    int
-	out     []Burst
+	// afcAvg is the mean of the sums of iqDisc over the blocks since the
+	// oscillator last moved, while the core searches.
+	afcAvg complex64
+	out    []Burst
 	// yHist holds the last cohHist channel filter samples for the
 	// coherent stage, yN of them so far; nil without it.
 	yHist []complex64
@@ -234,27 +236,40 @@ func (r *iqRx) follow() {
 	scale := f.gain * iqUnitsPerHz
 	acc := r.conv.acc
 	r.conv.acc = 0
+	// Below the FM threshold the clicks pull the mean of the
+	// discriminator toward 0 Hz. The phase of the sum of the products is
+	// the mean frequency of the carrier, which noise pulls toward the
+	// oscillator only by its share of the power. The symbols of a block
+	// do not average to 0 Hz, so its mean over the blocks, avg, spreads
+	// less.
+	est := r.conv.hzOf(acc)
+	if r.afcAvg == 0 {
+		r.afcAvg = acc
+	} else {
+		r.afcAvg += complex(iqAFCAvgGain, 0) * (acc - r.afcAvg)
+	}
+	avg := r.conv.hzOf(r.afcAvg)
 	if r.d.locked {
-		if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCLockHz {
+		// The SYNC fits of a false lock measure any offset, so the mean
+		// frequency must agree with them.
+		if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < iqAFCPullHz {
 			r.tune(hz, f.dc-hz*scale)
 		}
 		return
 	}
-	// Below the FM threshold the clicks pull the mean of the
-	// discriminator toward 0 Hz. The phase of the sum of the products is
-	// the mean frequency of the carrier, which noise pulls toward the
-	// oscillator only by its share of the power.
-	est := atan2f(imag(acc), real(acc)) * (float32(basebandRate/r.conv.decim) / (2 * math.Pi))
-	if abs32(est) < iqAFCSearchHz {
-		return
+	switch {
+	case abs32(est) >= iqAFCPullHz:
+		r.afcAvg = 0
+		r.tune(est, 0)
+	case abs32(avg) >= iqAFCFineHz:
+		r.tune(avg, 0)
 	}
-	// The symbols of a block do not average to 0 Hz: near the carrier the
-	// oscillator moves by part of the offset, to average them.
-	hz := est
-	if abs32(est) < iqAFCPullHz {
-		hz *= iqAFCSearchGain
-	}
-	r.tune(hz, (est-hz)*scale)
+}
+
+// hzOf returns the frequency of the phase of a sum of the products of
+// output samples with the conjugate of the ones before.
+func (d *iqDisc) hzOf(acc complex64) float32 {
+	return atan2f(imag(acc), real(acc)) * (float32(basebandRate/d.decim) / (2 * math.Pi))
 }
 
 // tune moves the oscillator by hz, and sets the DC offset that the
@@ -269,6 +284,9 @@ func (r *iqRx) tune(hz, dc float32) {
 	r.conv.tune(r.conv.hz + hz)
 	r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
 	r.nTunes++
+	// The mean of the blocks moves with the oscillator.
+	p := -2 * math.Pi * float64(hz) / float64(basebandRate/r.conv.decim)
+	r.afcAvg *= complex(float32(math.Cos(p)), float32(math.Sin(p)))
 	f.mean += dc - f.dc
 	f.dc = dc
 	r.d.tuneHz -= hz * scale
