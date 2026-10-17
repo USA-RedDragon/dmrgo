@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="660" height="420" viewBox="0 0 660 420">
-<style>text{font-family:sans-serif;font-size:12px;fill:#57606a}.ax{stroke:#57606a;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.s0{stroke:#6e7781}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#8250df}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}@media (prefers-color-scheme:dark){text{fill:#c9d1d9}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.s0{stroke:#8b949e}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d2a8ff}}</style>
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="420" viewBox="0 0 700 420">
+<style>text{font-family:sans-serif;font-size:12px;fill:#57606a}.ax{stroke:#57606a;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}@media (prefers-color-scheme:dark){text{fill:#c9d1d9}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}}</style>
 <text x="76.0" y="24">Data rate 1/2: frame error rate</text>
 <line class="mi" x1="76.0" y1="96.6" x2="510.0" y2="96.6"/>
 <line class="mi" x1="76.0" y1="82.4" x2="510.0" y2="82.4"/>
@@ -70,12 +70,12 @@
 <rect class="ax" x="76.0" y="40.0" width="434.0" height="324.0"/>
 <text x="293.0" y="408.0" text-anchor="middle">Eb/N0 (dB)</text>
 <text x="18" y="202.0" text-anchor="middle" transform="rotate(-90 18 202.0)">Frame error rate</text>
-<path class="l s0" stroke-dasharray="6 4" d="M98.6,40.2 L108.5,40.6 L118.3,41.5 L128.2,45.4 L138.1,52.2 L147.9,59.8 L157.8,80.7 L167.7,99.3 L177.5,138.8 L187.4,172.1 L197.2,267.2"/>
-<line class="l s0" stroke-dasharray="6 4" x1="526.0" y1="50.0" x2="550.0" y2="50.0"/>
-<text x="556.0" y="54.0">Floor</text>
-<path class="l s4" stroke-dasharray="2 3" d="M98.6,40.0 L108.5,40.0 L118.3,40.0 L128.2,40.0 L138.1,40.0 L147.9,40.0 L157.8,40.2 L167.7,40.2 L177.5,40.3 L187.4,41.5 L197.2,45.4 L207.1,51.4 L217.0,63.8 L226.8,82.7 L236.7,106.5 L246.6,134.7 L256.4,182.8 L266.3,233.0 L276.2,278.2 L286.0,325.3"/>
-<line class="l s4" stroke-dasharray="2 3" x1="526.0" y1="72.0" x2="550.0" y2="72.0"/>
-<text x="556.0" y="76.0">Code-aware</text>
+<path class="l r0" stroke-dasharray="6 4" d="M98.6,40.2 L108.5,40.6 L118.3,41.5 L128.2,45.4 L138.1,52.2 L147.9,59.8 L157.8,80.7 L167.7,99.3 L177.5,138.8 L187.4,172.1 L197.2,267.2"/>
+<line class="l r0" stroke-dasharray="6 4" x1="526.0" y1="50.0" x2="550.0" y2="50.0"/>
+<text x="556.0" y="54.0">4FSK floor (any code)</text>
+<path class="l r1" stroke-dasharray="2 3" d="M98.6,40.0 L108.5,40.0 L118.3,40.0 L128.2,40.0 L138.1,40.0 L147.9,40.0 L157.8,40.2 L167.7,40.2 L177.5,40.3 L187.4,41.5 L197.2,45.4 L207.1,51.4 L217.0,63.8 L226.8,82.7 L236.7,106.5 L246.6,134.7 L256.4,182.8 L266.3,233.0 L276.2,278.2 L286.0,325.3"/>
+<line class="l r1" stroke-dasharray="2 3" x1="526.0" y1="72.0" x2="550.0" y2="72.0"/>
+<text x="556.0" y="76.0">DMR floor, upper bound</text>
 <path class="l s1" d="M217.0,40.0 L226.8,40.0 L236.7,40.0 L246.6,40.0 L256.4,40.0 L266.3,40.0 L276.2,40.0 L286.0,40.9 L295.9,45.2 L305.8,52.5 L315.6,66.9 L325.5,88.9 L335.3,114.8 L345.2,148.3 L355.1,186.3 L364.9,229.5 L374.8,273.3 L384.7,314.2 L394.5,360.9"/>
 <circle class="p s1" cx="217.0" cy="40.0" r="2"/><circle class="p s1" cx="226.8" cy="40.0" r="2"/><circle class="p s1" cx="236.7" cy="40.0" r="2"/><circle class="p s1" cx="246.6" cy="40.0" r="2"/><circle class="p s1" cx="256.4" cy="40.0" r="2"/><circle class="p s1" cx="266.3" cy="40.0" r="2"/><circle class="p s1" cx="276.2" cy="40.0" r="2"/><circle class="p s1" cx="286.0" cy="40.9" r="2"/><circle class="p s1" cx="295.9" cy="45.2" r="2"/><circle class="p s1" cx="305.8" cy="52.5" r="2"/><circle class="p s1" cx="315.6" cy="66.9" r="2"/><circle class="p s1" cx="325.5" cy="88.9" r="2"/><circle class="p s1" cx="335.3" cy="114.8" r="2"/><circle class="p s1" cx="345.2" cy="148.3" r="2"/><circle class="p s1" cx="355.1" cy="186.3" r="2"/><circle class="p s1" cx="364.9" cy="229.5" r="2"/><circle class="p s1" cx="374.8" cy="273.3" r="2"/><circle class="p s1" cx="384.7" cy="314.2" r="2"/><circle class="p s1" cx="394.5" cy="360.9" r="2"/>
 <line class="l s1" x1="526.0" y1="94.0" x2="550.0" y2="94.0"/>

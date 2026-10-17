@@ -342,7 +342,7 @@ func renderBlock(d data) []byte {
 	}
 	b.WriteString("\n</details>\n\n")
 	b.WriteString("<details><summary>Error rate graphs</summary>\n\n")
-	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the 4FSK floor and the DMR floor (dashed), the code-aware receiver (dotted) and each tier. The graphs of the rate 1/2 block, the CSBK and the embedded LC have no DMR floor, because it is not computed; it lies between the 4FSK floor and the code-aware receiver. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
+	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the 4FSK floor and the DMR floor (dashed), the code-aware receiver (dotted) and each tier. Where the DMR floor is not exact, its upper bound (dotted) is the code-aware receiver: it is a real decoder of the DMR code, and maximum likelihood decoding does at least as well. The DMR floor of the rate 1/2 block, the CSBK and the embedded LC is not computed, so the code-aware receiver is their only DMR curve. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
 	for _, g := range graphs() {
 		b.WriteString("![" + g.title + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](docs/rx/" + g.key + ".svg)\n")
 	}
@@ -548,7 +548,11 @@ func renderGraphs(d data) map[string][]byte {
 			}
 		}
 		if c, ok := d.aware.Payloads[g.key]; ok {
-			series = append(series, svgSeries{name: "Code-aware", x: c.EbN0, y: errorRate(c.recovery()), dash: "2 3", class: "r2"})
+			name, class := "DMR floor, upper bound", "r1"
+			if f, ok := d.floor.Payloads[g.key]; ok && f.Status == statusExact {
+				name, class = "Code-aware", "r2"
+			}
+			series = append(series, svgSeries{name: name, x: c.EbN0, y: errorRate(c.recovery()), dash: "2 3", class: class})
 		}
 		for _, t := range d.bench.Tiers {
 			x, y := tierCurve(t, g.key)
