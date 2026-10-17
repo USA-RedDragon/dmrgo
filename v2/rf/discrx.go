@@ -93,7 +93,9 @@ func (r *DiscReceiver) Write(x []int16) []Burst {
 			r.levels()
 		}
 		if s, ok := f.filter(v); ok {
-			r.power(1)
+			// A discriminator gives no carrier power, so the core takes
+			// a burst as present from its anchors.
+			r.n++
 			r.push(s)
 		}
 	}
@@ -138,7 +140,7 @@ func (r *DiscReceiver) sample(v int16) {
 		r.levels()
 	}
 	if s, ok := f.filter(v); ok {
-		r.power(1)
+		r.n++
 		r.push(s)
 	}
 }

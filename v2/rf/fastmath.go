@@ -41,6 +41,26 @@ func sqrtf(x float32) float32 {
 	return float32(math.Sqrt(float64(x)))
 }
 
+// roundf returns x rounded to the nearest integer, halves away from zero.
+func roundf(x float32) float32 {
+	if x < 0 {
+		return float32(int32(x - 0.5))
+	}
+	return float32(int32(x + 0.5))
+}
+
+// log32 returns the natural logarithm of x > 0, within about 1e-5, in
+// single precision: the exponent of x, and the series of atanh for its
+// mantissa.
+func log32(x float32) float32 {
+	b := math.Float32bits(x)
+	e := float32(int32(b>>23&0xff) - 127)
+	m := math.Float32frombits(b&0x7fffff | 0x3f800000)
+	t := (m - 1) / (m + 1)
+	t2 := t * t
+	return e*math.Ln2 + 2*t*(1+t2*(1.0/3+t2*(1.0/5+t2*(1.0/7))))
+}
+
 // max32 and min32 return the larger and the smaller of a and b, for
 // operands that are not NaN. Unlike the builtins they ignore NaN and the
 // sign of zero, which makes them a few instructions on a microcontroller.

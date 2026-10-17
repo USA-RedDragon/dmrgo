@@ -46,6 +46,10 @@ const (
 	// a source for the search to correlate the field. The SYNC symbols are
 	// all outer symbols, so a field that passes discLock differs in few.
 	leanSignMiss = 6
+	// llrStepHz is the resolution of the symbols in symLLR, and llrShift
+	// the fixed point of its likelihood scale.
+	llrStepHz = 4
+	llrShift  = 24
 )
 
 // leanTiming recovers the symbol timing from the matched filter output at
@@ -189,12 +193,21 @@ type leanCore struct {
 	// SYNC pattern when it is an anchor, and ll, lfloor and dev the factor
 	// and the floor of the symbol log-likelihoods and the deviation of
 	// level 1, as discDetect has them.
-	base    int64
-	anchor  enums.SyncPattern
-	ll      float32
-	lfloor  float32
-	dev     float32
-	outlier float32
+	base   int64
+	anchor enums.SyncPattern
+	ll     float32
+	lfloor float32
+	// floorC is the part of lfloor that does not depend on the noise.
+	floorC float32
+	// llrOff, llrDev, llrK and llrFloor are the settings of symLLR in
+	// fixed point: the offset and the deviation in units of llrStepHz,
+	// -ll for distances in those units in units of 1/8 in Q llrShift, and
+	// lfloor in units of 1/8.
+	llrOff, llrDev int32
+	llrK           int64
+	llrFloor       int32
+	dev            float32
+	outlier        float32
 
 	offsetHz float32
 	devHz    float32
@@ -247,6 +260,9 @@ func newLean(cfg Config, opt options) *leanRx {
 func (c *leanCore) init(onBurst func(Burst), opt options, keep int, sps float32) {
 	c.onBurst, c.lastAnch, c.softFEC = onBurst, leanNoSlot, opt.SoftFEC
 	c.sources, c.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
+	if po := opt.DiscOutlier; po > 0 {
+		c.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
+	}
 	c.mfScale = float64(samplesPerSy) / float64(sps)
 	c.acqGain, c.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
 	c.tm.step = sps / 2
@@ -623,25 +639,55 @@ func (r *leanCore) unlock() {
 // discDetect and llr8 make them for the soft decoders: in units of 1/8,
 // rounded to an even number, saturated at 254.
 func (r *leanCore) symLLR(k int64) (int16, int16) {
-	x := r.sym(k) - r.dcHz
-	// The log-likelihood of level 2d-3 is max(e*e*ll, lfloor), with e the
+	// x is the symbol less the DC offset in units of llrStepHz. The
+	// log-likelihood of level 2d-3 is max(e*e*ll, lfloor), with e the
 	// distance of x to it, and each ratio is the best of two levels less
 	// the best of the other two. By the symmetry of the levels, the best
 	// of each pair is the nearer level, and three distances cover them.
-	ax := abs32(x)
-	en, ef, eo := ax-r.dev, ax-3*r.dev, ax+r.dev
-	near := max32(en*en*r.ll, r.lfloor)
-	far := max32(ef*ef*r.ll, r.lfloor)
-	opp := max32(eo*eo*r.ll, r.lfloor)
+	x := int32(r.ring[uint32(k)%leanRing])*(discStepHz/llrStepHz) + r.llrOff
+	ax := x
+	if ax < 0 {
+		ax = -ax
+	}
+	d := r.llrDev
+	near, far, opp := r.llrTerm(ax-d), r.llrTerm(ax-3*d), r.llrTerm(ax+d)
 	same := near
-	if ax > 2*r.dev {
+	if ax > 2*d {
 		same = far
 	}
 	b0 := same - opp
 	if x < 0 {
 		b0 = -b0
 	}
-	return even8(satLLR(b0)), even8(satLLR(near - far))
+	return evenLLR(b0), evenLLR(near - far)
+}
+
+// llrTerm returns the log-likelihood, in units of 1/8, of a symbol at
+// distance e, in units of llrStepHz, from a level: max(e*e*ll, lfloor).
+func (r *leanCore) llrTerm(e int32) int32 {
+	return max(-int32(int64(e*e)*r.llrK>>llrShift), r.llrFloor)
+}
+
+// evenLLR returns the log-likelihood ratio v, in units of 1/8, as even8
+// stores it.
+func evenLLR(v int32) int16 {
+	h := (v + 1) >> 1
+	if v < 0 {
+		h = -((1 - v) >> 1)
+	}
+	return int16(max(min(h, 127), -127)) * 2
+}
+
+// setLLR sets the fixed point settings of symLLR from dcHz, off, dev, ll
+// and lfloor.
+func (r *leanCore) setLLR() {
+	r.llrOff = int32(roundf((r.off - r.dcHz) / llrStepHz))
+	r.llrDev = int32(roundf(r.dev / llrStepHz))
+	r.llrK = int64(-r.ll*8*llrStepHz*llrStepHz*(1<<llrShift) + 0.5)
+	r.llrFloor = math.MinInt32 / 2
+	if !math.IsInf(float64(r.lfloor), -1) {
+		r.llrFloor = int32(roundf(r.lfloor * 8))
+	}
 }
 
 // even8 rounds an LLR in units of 1/8 as llr8 stores it.
@@ -681,9 +727,10 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	r.ll = -1 / (2 * v)
 	r.dev = r.devScale * deviationHz
 	r.lfloor = float32(math.Inf(-1))
-	if po := float64(r.outlier); po > 0 {
-		r.lfloor = float32(math.Log(po/basebandRate) - math.Log((1-po)/math.Sqrt(2*math.Pi*float64(v))))
+	if r.outlier > 0 {
+		r.lfloor = r.floorC + 0.5*log32(v)
 	}
+	r.setLLR()
 	b := &r.cb
 	*b = Burst{Distance: -1, BS: r.bs, HasCACH: r.bs, Stream: int(r.streams), Slot: int64(j)}
 	now := r.mfScale*(float64(r.lastN)+float64(r.lastAt)) + float64(r.center)
