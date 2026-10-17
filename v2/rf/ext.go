@@ -165,6 +165,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		} else {
 			x.dataPasses(c, b, cc, ccOK)
 		}
+		x.coh.trackBurst(&b.Fixed)
 		hold := false
 		if _, kind, known := layer2.SyncSourceOf(b.Sync); b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice {
 			hold = x.fragment(ch, b)

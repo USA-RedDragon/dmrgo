@@ -345,16 +345,17 @@ func (s *cohStage) fineTime(k0, k1 int) float64 {
 	return bestD
 }
 
-// cohFreqGain is the least weight of the carrier offset that each SYNC
-// fits, and cohFreqSpan the most, in Hz, that the fits move it from the
-// mean frequency of the I/Q samples. The first fit may move it by up to
-// cohFreqFirst: a lock can come while the oscillator still pulls in, so
-// that the mean is far off. The fits weigh by their variance against that
-// of the offset, as a Kalman filter: cohFreqVar, in Hz squared, for the
-// mean frequency, and cohFitVar over the square of the SNR of the SYNC for
-// a fit, which the sweep measured from -0.5 to 4.5 dB Eb/N0.
+// cohFreqGain is the least weight of each fit of the carrier offset, from
+// a SYNC or from the detected symbols of a burst, and cohFreqSpan the
+// most, in Hz, that the fits move it from the mean frequency of the I/Q
+// samples. The first fit may move it by up to cohFreqFirst: a lock can
+// come while the oscillator still pulls in, so that the mean is far off.
+// The fits weigh by their variance against that of the offset, as a
+// Kalman filter: cohFreqVar, in Hz squared, for the mean frequency, and
+// cohFitVar over the square of the SNR of the SYNC for the fit of 24
+// symbols, which the sweep measured from -0.5 to 4.5 dB Eb/N0.
 const (
-	cohFreqGain  = 0.1
+	cohFreqGain  = 0.03
 	cohFreqSpan  = 200
 	cohFreqFirst = 1000
 	cohFreqVar   = 80 * 80
@@ -379,6 +380,17 @@ func (s *cohStage) track() {
 // the known symbols k0 to k1: the phase step from symbol to symbol of
 // their correlations with their waveform, less the phase of the symbols.
 func (s *cohStage) freqFit(k0, k1 int) float64 {
+	acc := s.freqAcc(k0, k1)
+	if acc == 0 {
+		return 0
+	}
+	return cmplx.Phase(acc) * symbolRate / (2 * math.Pi)
+}
+
+// freqAcc returns the sum of the products of the correlations of the
+// known symbols k0 to k1 with the conjugate of the one before, whose phase
+// freqFit takes.
+func (s *cohStage) freqAcc(k0, k1 int) complex128 {
 	m := s.model
 	s.g0, s.dir = k0, 1
 	n := min(k1-k0+1, syncSymbols)
@@ -405,10 +417,42 @@ func (s *cohStage) freqFit(k0, k1 int) float64 {
 		prev = c
 		ph += m.h * math.Pi * float64(syms[k])
 	}
-	if acc == 0 {
-		return 0
+	return acc
+}
+
+// trackBurst fits the carrier offset again from every symbol of the burst
+// that detect detected last, whose bits fixed holds after its FEC, as
+// TierCoherent tracks the carrier from the symbols it detected: the SYNC
+// of one burst fits it too coarsely for the trellis.
+func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
+	for k := range burstSymbols {
+		p := 2 * k
+		b0 := fixed[p/8] >> (7 - p%8) & 1
+		b1 := fixed[(p+1)/8] >> (7 - (p+1)%8) & 1
+		s.known[cachSymbols+k] = symbolOf(unpacked.Bit(b0), unpacked.Bit(b1))
 	}
-	return cmplx.Phase(acc) * symbolRate / (2 * math.Pi)
+	var acc complex128
+	var snr float64
+	n := 0
+	for k0 := cachSymbols; k0+syncSymbols <= slotSymbols; k0 += syncSymbols {
+		acc += s.freqAcc(k0, k0+syncSymbols-1)
+		if amp, noise := s.levels(k0, k0+syncSymbols-1); noise > 0 {
+			snr += amp * amp / noise
+			n++
+		}
+	}
+	if acc == 0 || n == 0 {
+		return
+	}
+	snr /= float64(n)
+	fit := cmplx.Phase(acc) * symbolRate / (2 * math.Pi)
+	if math.Abs(fit) >= cohFreqSpan {
+		return
+	}
+	g := s.fitVar / (s.fitVar + cohFitVar/(snr*snr)/float64(n))
+	s.fitVar *= 1 - g
+	s.freq += max(cohFreqGain, g) * fit
+	s.totalHz = s.freq
 }
 
 // cohKnownPrior is the log prior, in nats, of a known symbol, and
