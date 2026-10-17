@@ -219,6 +219,9 @@ type leanCore struct {
 	// DiscReceiver; a method value would allocate.
 	audio *audioFront
 	iq    leanTuner
+	// ext is the stage of a higher tier that decodes and emits each burst
+	// in place of repair, nil for Tier 0.
+	ext leanExt
 	// center is the input sample at the center of matched filter sample 0,
 	// in baseband samples, and mfStep the baseband samples per matched
 	// filter sample, a whole number at every input rate.
@@ -363,6 +366,9 @@ func newLean(cfg Config, opt options) *leanRx {
 	}
 	r.df.init(cfg.BasebandHz == discRate)
 	r.iq, r.center = &r.df, r.df.center()
+	if opt.SoftExt {
+		r.ext = newSoftExt()
+	}
 	return r
 }
 
@@ -1128,6 +1134,9 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 //
 //go:noinline
 func (r *leanCore) unlock() {
+	if r.ext != nil {
+		r.ext.end(r)
+	}
 	r.locked = false
 	r.acqFrom = r.n
 	r.rebuildSigns()
@@ -1292,10 +1301,19 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	if !r.classify(b, j) {
 		return
 	}
+	if r.ext != nil {
+		r.ext.burst(r, b)
+		return
+	}
 	if r.softFEC {
 		cc, ok := r.colorCode()
 		r.repair(&r.fec, b, cc, ok)
 	}
+	r.emit(b)
+}
+
+// emit hands burst b to onBurst, or appends it to out while it has room.
+func (r *leanCore) emit(b *Burst) {
 	if r.onBurst != nil {
 		r.onBurst(b)
 	} else if len(r.out) < cap(r.out) {

@@ -74,6 +74,9 @@ type options struct {
 	// Sources is the number of SYNC sources the search tries: 2 for BS
 	// and MS, 4 with both direct mode slots.
 	Sources int
+	// SoftExt decodes the bursts of the streaming core with softExt, the
+	// soft decoders of the coherent tiers.
+	SoftExt bool
 }
 
 // tierOptions returns the settings of tier t.
