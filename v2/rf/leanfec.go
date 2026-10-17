@@ -17,6 +17,10 @@ const (
 	// leanChase is the number of least reliable bits that the BPTC(196,96)
 	// decode flips, 2^leanChase hard decodes.
 	leanChase = 4
+	// leanBPTCBits is the number of bits of a BPTC(196,96) block, and
+	// leanBPTCHalf the number on each side of the slot type and SYNC.
+	leanBPTCBits = 196
+	leanBPTCHalf = leanBPTCBits / 2
 	// leanNibbles is the number of nibble cost tables of a small code.
 	leanNibbles = softSmallMaxN / 4
 	// leanCandSize is the number of values of leanFEC.s that hold one
@@ -65,30 +69,23 @@ type leanFEC struct {
 	// a small code, the Viterbi survivors of the rate 3/4 decode, or the
 	// candidates of the BPTC(196,96) decode.
 	s [leanShared]int16
-	// l holds the LLRs of a small code, or the hard decisions of a
-	// BPTC(196,96) block in four words of four values, then its leanChase
-	// least reliable bits and their magnitudes.
+	// l holds the LLRs of a small code, or the leanChase least reliable
+	// bits of a BPTC(196,96) block and their magnitudes.
 	l     [leanLocal]int16
 	top   leanBest
 	nlist int
 }
 
 // leanLocal is the number of values of leanFEC.l.
-const leanLocal = max(softSmallMaxN, 4*softOSDWords+2*leanChase)
-
-// hard returns word x of the hard decisions of the BPTC(196,96) block.
-func (f *leanFEC) hard(x int) uint64 {
-	h := f.l[4*x : 4*x+4]
-	return uint64(uint16(h[0])) | uint64(uint16(h[1]))<<16 | uint64(uint16(h[2]))<<32 | uint64(uint16(h[3]))<<48
-}
+const leanLocal = max(softSmallMaxN, 2*leanChase)
 
 // chase returns the codeword bits of the leanChase least reliable bits of
 // the BPTC(196,96) block, the least reliable first.
-func (f *leanFEC) chase() []int16 { return f.l[4*softOSDWords : 4*softOSDWords+leanChase] }
+func (f *leanFEC) chase() []int16 { return f.l[:leanChase] }
 
 // cmag returns the magnitudes of the bits of chase.
 func (f *leanFEC) cmag() []int16 {
-	return f.l[4*softOSDWords+leanChase : 4*softOSDWords+2*leanChase]
+	return f.l[leanChase : 2*leanChase]
 }
 
 // setPrev sets the survivor of state in at step k of the rate 3/4 decode.
@@ -227,23 +224,13 @@ func bptcCheck(dt enums.DataType, p [12]byte) (ok, checked bool) {
 	return false, false
 }
 
-// bptcCodeword sets cw to the BPTC(196,96) codeword of data and reserved.
-func bptcCodeword(cw *[softOSDWords]uint64, data *[12]byte, reserved uint8) {
-	c := &softOSDCodes[softBPTCCode]
-	*cw = [softOSDWords]uint64{}
-	for i := range softBPTCData + 3 {
-		var b byte
-		if i < softBPTCData {
-			b = data[i/8] >> (7 - i%8) & 1
-		} else {
-			b = reserved >> (i - softBPTCData) & 1
-		}
-		if b != 0 {
-			for x := range cw {
-				cw[x] ^= c.rows[i][x]
-			}
-		}
+// bptcPos returns the burst bit of BPTC(196,96) information bit p: 98
+// bits before the slot type and SYNC, and 98 after.
+func bptcPos(p int) int {
+	if p < leanBPTCHalf {
+		return p
 	}
+	return p + softBurstBits - 2*leanBPTCHalf
 }
 
 // addCand adds a candidate to the list of the BPTC decode, which holds the
@@ -274,33 +261,35 @@ func (f *leanFEC) addCand(cost int32, data [12]byte, reserved uint8, max int) {
 
 // fixBPTC decodes the BPTC(196,96) block of the burst of data type dt with
 // the Chase-II decode of softDecoder.decodeBPTCChase into out, and reports
-// whether a block with a check failed it.
+// whether a block with a check failed it. It scores each candidate on the
+// grid against the hard decisions, so that it needs no codeword table.
 func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) bool {
-	c := &softOSDCodes[softBPTCCode]
-	clear(f.l[:4*softOSDWords])
 	chase, cmag := f.chase(), f.cmag()
 	for i := range chase {
 		chase[i], cmag[i] = -1, 0
 	}
-	for j := range c.n {
-		v := r.llrAt(int(c.pos[j]))
+	var packed [25]byte
+	var base int32
+	for p := range leanBPTCBits {
+		v := r.llrAt(bptcPos(p))
 		if v < 0 {
-			f.l[j>>4] |= int16(uint16(1) << (j & 15))
+			packed[p/8] |= 0x80 >> (p % 8)
 			v = -v
+		}
+		// R(3), bit 0, is outside the grid and 0 in every codeword.
+		if p == 0 {
+			if packed[0] != 0 {
+				base = int32(v)
+			}
+			continue
 		}
 		for i := range chase {
 			if chase[i] < 0 || v < cmag[i] {
 				copy(chase[i+1:], chase[i:leanChase-1])
 				copy(cmag[i+1:], cmag[i:leanChase-1])
-				chase[i], cmag[i] = int16(j), v
+				chase[i], cmag[i] = int16(p), v
 				break
 			}
-		}
-	}
-	var packed [25]byte
-	for i, q := range &softInfoPos {
-		if r.llrAt(int(q)) < 0 {
-			packed[i/8] |= 0x80 >> (i % 8)
 		}
 	}
 	_, checked := bptcCheck(dt, [12]byte{})
@@ -310,25 +299,25 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 	}
 	f.nlist = 0
 	// The grid is deinterleaved once; each pattern flips one grid bit.
-	rows := bptc.Rows(packed)
+	hard := bptc.Rows(packed)
+	rows := hard
 	var flipRow [leanChase]int8
 	var flipCol [leanChase]uint16
-	for i, j := range chase {
-		r, c, _ := bptc.GridPos(int(softBPTCInfoBit[j]))
+	for i, p := range chase {
+		r, c, _ := bptc.GridPos(int(p))
 		flipRow[i], flipCol[i] = int8(r), 1<<c
 	}
-	var cw [softOSDWords]uint64
 	for g := 0; g < 1<<leanChase; g++ {
 		if g > 0 {
 			i := bits.TrailingZeros(uint(g))
 			rows[flipRow[i]] ^= flipCol[i]
 		}
 		data, reserved, _ := bptc.DecodeRows(rows)
-		bptcCodeword(&cw, &data, reserved)
-		var cost int32
-		for x := range cw {
-			for e := cw[x] ^ f.hard(x); e != 0; e &= e - 1 {
-				l := r.llrAt(int(c.pos[x<<6|bits.TrailingZeros64(e)]))
+		cw := bptc.EncodeRows(data, reserved)
+		cost := base
+		for row := range cw {
+			for e := cw[row] ^ hard[row]; e != 0; e &= e - 1 {
+				l := r.llrAt(bptcPos(bptc.GridBit(row, bits.TrailingZeros16(e))))
 				cost += int32(max(l, -l))
 			}
 		}
@@ -348,9 +337,9 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		}
 	}
 	_, data, reserved := f.cand(pick)
-	bptcCodeword(&cw, &data, reserved)
-	for j := range c.n {
-		softPut(out, c.pos[j], softBit(&cw, j))
+	cw := bptc.Encode196(data, reserved)
+	for p := range leanBPTCBits {
+		softPut(out, bptcPos(p), cw[p/8]&(0x80>>(p%8)) != 0)
 	}
 	return failed
 }
