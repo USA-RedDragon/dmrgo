@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"unsafe"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
@@ -482,23 +483,18 @@ func falsePerHour(t Tier) float64 {
 	return float64(n) * 3600 * basebandRate / float64(total)
 }
 
-// receiverRAM returns the heap bytes that a receiver of tier t keeps, with
-// OnBurst set, as a microcontroller runs it: for TierDisc a DiscReceiver at
-// benchAudioHz, for the other tiers a Receiver at the baseband input rate.
+// receiverRAM returns the bytes that a receiver of tier t keeps, with
+// OnBurst set, as a microcontroller runs it: for TierDisc the size of a
+// DiscReceiver, all of its state, which needs no heap; for the other
+// tiers the heap of a Receiver at the baseband input rate.
 func receiverRAM(t Tier) int {
+	if t == TierDisc {
+		return int(unsafe.Sizeof(DiscReceiver{}))
+	}
 	var a, b runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&a)
-	var r any
-	if t == TierDisc {
-		d, err := NewDisc(DiscConfig{Hz: benchAudioHz, OnBurst: func(*Burst) {}})
-		if err != nil {
-			panic(err)
-		}
-		r = d
-	} else {
-		r = mustNew(Config{Rate: basebandRate, Tier: t, OnBurst: func(*Burst) {}})
-	}
+	r := mustNew(Config{Rate: basebandRate, Tier: t, OnBurst: func(*Burst) {}})
 	runtime.GC()
 	runtime.ReadMemStats(&b)
 	runtime.KeepAlive(r)

@@ -319,6 +319,14 @@ func tierCurve(t tier, k string) (x, y []float64) {
 }
 
 // grouped returns n with a comma between each group of three digits.
+// ramCell formats n bytes: in bytes below 10 KiB, in KiB above.
+func ramCell(n int) string {
+	if n < 10<<10 {
+		return grouped(int64(n)) + " B"
+	}
+	return strconv.Itoa((n+1023)/1024) + " KiB"
+}
+
 // sig2 rounds v to two significant digits.
 func sig2(v float64) int64 {
 	if v < 1 {
@@ -352,11 +360,11 @@ func renderBlock(d data) []byte {
 			row = append(row, lossCell(d, t, k))
 		}
 		row = append(row, grouped(sig2(t.NsPerSecond)),
-			strconv.Itoa((t.RAMBytes+1023)/1024)+" KiB", strconv.FormatFloat(t.Allocs, 'f', -1, 64))
+			ramCell(t.RAMBytes), strconv.FormatFloat(t.Allocs, 'f', -1, 64))
 		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
 	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
-	b.WriteString(" The audio tiers take the audio of an FM discriminator at 9.6 kHz, which the sweep makes from the same noisy signal with the IF filter of a 12.5 kHz radio, so their Eb/N0 is that of the signal at the antenna. Audio tier 0 is rf.DiscReceiver. The I/Q tiers are rf.Receiver on I/Q samples at 48 kHz. RAM is the heap that the receiver keeps with OnBurst set: for audio tier 0 its whole state, which rf.DiscReceiver.Init can also place in static memory; for the I/Q tiers the slice of bursts that Write returns without OnBurst adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
+	b.WriteString(" The audio tiers take the audio of an FM discriminator at 9.6 kHz, which the sweep makes from the same noisy signal with the IF filter of a 12.5 kHz radio, so their Eb/N0 is that of the signal at the antenna. Audio tier 0 is rf.DiscReceiver. The I/Q tiers are rf.Receiver on I/Q samples at 48 kHz. RAM is what the receiver keeps with OnBurst set: for audio tier 0 the size of rf.DiscReceiver on a 64-bit host, its whole state, which rf.DiscReceiver.Init can also place in static memory (1,040 B on a Cortex-M4F); for the I/Q tiers the heap, to which the slice of bursts that Write returns without OnBurst adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
 	renderSensitivity(&b, d)
 	b.WriteString("<details><summary>Real recordings</summary>\n\n")
 	b.WriteString("Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR, by tier.")
