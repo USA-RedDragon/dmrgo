@@ -16,10 +16,21 @@ func CCITT(data []byte) uint16 {
 // reg, before the inversion. CCITT(data) is ^CCITTUpdate(0, data), so a CRC
 // over several slices is ^CCITTUpdate(CCITTUpdate(0, a), b).
 func CCITTUpdate(reg uint16, data []byte) uint16 {
+	t := ccittNibbles()
 	for _, b := range data {
-		reg = (reg&0xFF)<<8 ^ ccitt16_0x1021[uint8(reg>>8)^b]
+		reg = reg<<4 ^ t[reg>>12^uint16(b>>4)]
+		reg = reg<<4 ^ t[reg>>12^uint16(b&0x0F)]
 	}
 	return reg
+}
+
+// ccittNibbles returns the CRC-CCITT register change of each 4-bit value
+// shifted out, which takes 32 bytes where a byte table takes 512.
+func ccittNibbles() [16]uint16 {
+	return [16]uint16{
+		0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
+		0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
+	}
 }
 
 // CheckCCITT reports whether want is the CRC-CCITT of data.
