@@ -73,19 +73,16 @@
 <path class="l r0" stroke-dasharray="6 4" d="M98.6,41.3 L108.5,43.3 L118.3,47.3 L128.2,58.6 L138.1,80.9 L147.9,108.8 L157.8,152.5 L167.7,202.0 L177.5,291.1"/>
 <line class="l r0" stroke-dasharray="6 4" x1="526.0" y1="50.0" x2="550.0" y2="50.0"/>
 <text x="556.0" y="54.0">4FSK floor (any code)</text>
-<path class="l r1" stroke-dasharray="10 3" d="M98.6,40.0 L108.5,40.0 L118.3,40.0 L128.2,40.0 L138.1,40.0 L147.9,40.0 L157.8,40.0 L167.7,40.0 L177.5,40.3 L187.4,41.3 L197.2,43.6 L207.1,48.9 L217.0,57.6 L226.8,85.2 L236.7,109.4 L246.6,153.6 L256.4,197.8 L266.3,239.9 L276.2,282.3 L286.0,333.8"/>
-<line class="l r1" stroke-dasharray="10 3" x1="526.0" y1="72.0" x2="550.0" y2="72.0"/>
-<text x="556.0" y="76.0">DMR floor (ETSI codes)</text>
 <path class="l s1" d="M217.0,40.0 L226.8,40.0 L236.7,40.0 L246.6,40.0 L256.4,40.0 L266.3,40.3 L276.2,41.9 L286.0,45.1 L295.9,51.8 L305.8,72.1 L315.6,94.8 L325.5,133.3 L335.3,182.7 L345.2,214.7 L355.1,262.0 L364.9,297.9 L374.8,315.9"/>
 <circle class="p s1" cx="217.0" cy="40.0" r="2"/><circle class="p s1" cx="226.8" cy="40.0" r="2"/><circle class="p s1" cx="236.7" cy="40.0" r="2"/><circle class="p s1" cx="246.6" cy="40.0" r="2"/><circle class="p s1" cx="256.4" cy="40.0" r="2"/><circle class="p s1" cx="266.3" cy="40.3" r="2"/><circle class="p s1" cx="276.2" cy="41.9" r="2"/><circle class="p s1" cx="286.0" cy="45.1" r="2"/><circle class="p s1" cx="295.9" cy="51.8" r="2"/><circle class="p s1" cx="305.8" cy="72.1" r="2"/><circle class="p s1" cx="315.6" cy="94.8" r="2"/><circle class="p s1" cx="325.5" cy="133.3" r="2"/><circle class="p s1" cx="335.3" cy="182.7" r="2"/><circle class="p s1" cx="345.2" cy="214.7" r="2"/><circle class="p s1" cx="355.1" cy="262.0" r="2"/><circle class="p s1" cx="364.9" cy="297.9" r="2"/><circle class="p s1" cx="374.8" cy="315.9" r="2"/>
-<line class="l s1" x1="526.0" y1="94.0" x2="550.0" y2="94.0"/>
-<text x="556.0" y="98.0">Tier 0</text>
+<line class="l s1" x1="526.0" y1="72.0" x2="550.0" y2="72.0"/>
+<text x="556.0" y="76.0">Tier 0</text>
 <path class="l s2" d="M217.0,40.3 L226.8,41.6 L236.7,45.0 L246.6,53.1 L256.4,63.8 L266.3,86.0 L276.2,111.0 L286.0,139.3 L295.9,164.6 L305.8,201.4 L315.6,243.8 L325.5,291.2 L335.3,344.5"/>
 <circle class="p s2" cx="217.0" cy="40.3" r="2"/><circle class="p s2" cx="226.8" cy="41.6" r="2"/><circle class="p s2" cx="236.7" cy="45.0" r="2"/><circle class="p s2" cx="246.6" cy="53.1" r="2"/><circle class="p s2" cx="256.4" cy="63.8" r="2"/><circle class="p s2" cx="266.3" cy="86.0" r="2"/><circle class="p s2" cx="276.2" cy="111.0" r="2"/><circle class="p s2" cx="286.0" cy="139.3" r="2"/><circle class="p s2" cx="295.9" cy="164.6" r="2"/><circle class="p s2" cx="305.8" cy="201.4" r="2"/><circle class="p s2" cx="315.6" cy="243.8" r="2"/><circle class="p s2" cx="325.5" cy="291.2" r="2"/><circle class="p s2" cx="335.3" cy="344.5" r="2"/>
-<line class="l s2" x1="526.0" y1="116.0" x2="550.0" y2="116.0"/>
-<text x="556.0" y="120.0">Tier 1</text>
+<line class="l s2" x1="526.0" y1="94.0" x2="550.0" y2="94.0"/>
+<text x="556.0" y="98.0">Tier 1</text>
 <path class="l s3" d="M217.0,40.3 L226.8,44.0 L236.7,53.7 L246.6,69.5 L256.4,87.1 L266.3,117.0 L276.2,139.7 L286.0,166.0 L295.9,213.1 L305.8,270.0 L315.6,316.8 L325.5,338.2"/>
 <circle class="p s3" cx="217.0" cy="40.3" r="2"/><circle class="p s3" cx="226.8" cy="44.0" r="2"/><circle class="p s3" cx="236.7" cy="53.7" r="2"/><circle class="p s3" cx="246.6" cy="69.5" r="2"/><circle class="p s3" cx="256.4" cy="87.1" r="2"/><circle class="p s3" cx="266.3" cy="117.0" r="2"/><circle class="p s3" cx="276.2" cy="139.7" r="2"/><circle class="p s3" cx="286.0" cy="166.0" r="2"/><circle class="p s3" cx="295.9" cy="213.1" r="2"/><circle class="p s3" cx="305.8" cy="270.0" r="2"/><circle class="p s3" cx="315.6" cy="316.8" r="2"/><circle class="p s3" cx="325.5" cy="338.2" r="2"/>
-<line class="l s3" x1="526.0" y1="138.0" x2="550.0" y2="138.0"/>
-<text x="556.0" y="142.0">Tier 2</text>
+<line class="l s3" x1="526.0" y1="116.0" x2="550.0" y2="116.0"/>
+<text x="556.0" y="120.0">Tier 2</text>
 </svg>

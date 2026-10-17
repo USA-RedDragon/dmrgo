@@ -342,7 +342,7 @@ func renderBlock(d data) []byte {
 	}
 	b.WriteString("\n</details>\n\n")
 	b.WriteString("<details><summary>Error rate graphs</summary>\n\n")
-	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the 4FSK floor and the DMR floor (dashed) and each tier. The DMR floor is exact for the fields small enough to test every value (rate 1 bits, EMB, slot type, SYNC). For the voice frame and the BPTC, rate 3/4 and embedded LC codes, which have 2^49 to 2^96 values, the graphs draw the code-aware receiver as the DMR floor: the best decoding of the ETSI code that the library knows, with the genie. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
+	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the 4FSK floor (dashed) and each tier. The graphs leave out the DMR floor: for the voice frame and the BPTC, rate 3/4 and embedded LC codes, which have 2^49 to 2^96 values, the phase memory of the 4FSK modulation keeps the searches from bounding it, and the sensitivity details give what is known. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
 	for _, g := range graphs() {
 		b.WriteString("![" + g.title + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](docs/rx/" + g.key + ".svg)\n")
 	}
@@ -538,15 +538,8 @@ func renderGraphs(d data) map[string][]byte {
 	out := map[string][]byte{}
 	for _, g := range graphs() {
 		var series []svgSeries
-		f, hasFloor := d.floor.Payloads[g.key]
-		if hasFloor {
+		if f, ok := d.floor.Payloads[g.key]; ok {
 			series = append(series, svgSeries{name: "4FSK floor (any code)", x: f.Any.EbN0, y: errorRate(f.Any.recovery()), dash: "6 4", class: "r0"})
-		}
-		switch c, ok := d.aware.Payloads[g.key]; {
-		case hasFloor && f.Status == statusExact:
-			series = append(series, svgSeries{name: "DMR floor (ETSI codes)", x: f.DMR.EbN0, y: errorRate(f.DMR.recovery()), dash: "10 3", class: "r1"})
-		case ok:
-			series = append(series, svgSeries{name: "DMR floor (ETSI codes)", x: c.EbN0, y: errorRate(c.recovery()), dash: "10 3", class: "r1"})
 		}
 		for _, t := range d.bench.Tiers {
 			x, y := tierCurve(t, g.key)
