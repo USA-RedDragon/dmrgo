@@ -457,7 +457,9 @@ func (r *leanCore) symbol(x, at float32) {
 	}
 	r.ns++
 	if !r.locked {
-		r.searchSym()
+		if r.ns >= leanRing && r.signsMatch() {
+			r.searchSym()
+		}
 		return
 	}
 	if r.ns == r.slotEnd {
@@ -526,7 +528,10 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 
 // signsMatch reports whether the signs of the last syncSymbols symbols
 // differ from the voice or the data SYNC of a source in at most
-// leanSignMiss symbols.
+// leanSignMiss symbols. It is not inlined, so that symbol keeps a small
+// frame.
+//
+//go:noinline
 func (r *leanCore) signsMatch() bool {
 	for i := range r.sources {
 		m := bits.OnesCount32((r.signs ^ syncSigns[i]) & (1<<syncSymbols - 1))
@@ -537,13 +542,11 @@ func (r *leanCore) signsMatch() bool {
 	return false
 }
 
-// searchSym tests whether the last symbols end a SYNC and locks to it.
+// searchSym tests whether the last symbols, whose signs match a SYNC, end
+// a SYNC and locks to it.
 //
 //go:noinline
 func (r *leanCore) searchSym() {
-	if r.ns < leanRing || !r.signsMatch() {
-		return
-	}
 	rho2, src, data := r.syncAt(r.ns - 1)
 	if rho2 < discLock*discLock {
 		return
