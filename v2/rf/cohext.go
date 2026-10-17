@@ -61,6 +61,8 @@ type cohStage struct {
 	// The burst under detection: the scale of the trellis metric, its
 	// known runs, and the bit priors of its detection again.
 	scale    float32
+	ampAvg   float64
+	noiseAvg float64
 	segs     [2][2]int
 	nseg     int
 	prior    [slotSymbols][4]float32
@@ -617,7 +619,20 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if amp <= 0 || noise <= 0 {
 		return false
 	}
-	s.scale = float32(2 * amp / noise)
+	// The levels of a few known symbols are noisy at a low C/N: they
+	// average over the bursts, each by its known symbols.
+	n := float64(segs[nseg-1][1] - segs[0][0] + 1)
+	if nseg == 2 {
+		n = float64(segs[0][1] - segs[0][0] + 1 + segs[1][1] - segs[1][0] + 1)
+	}
+	if s.ampAvg == 0 {
+		s.ampAvg, s.noiseAvg = amp, noise
+	} else {
+		g := n / (n + cohLevelSyms)
+		s.ampAvg += g * (amp - s.ampAvg)
+		s.noiseAvg += g * (noise - s.noiseAvg)
+	}
+	s.scale = float32(2 * s.ampAvg / s.noiseAvg)
 	s.segs, s.nseg, s.hasPrior = segs, nseg, false
 	// The carrier of a BS stream stays on, so the first half of a burst
 	// after one with a SYNC runs again from that SYNC.
@@ -635,6 +650,10 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	return s.runAll(llr)
 }
+
+// cohLevelSyms is the number of known symbols that the levels of the
+// trellis average over.
+const cohLevelSyms = 48
 
 // cohShift is the most symbols by which the timing of the core may move
 // the slot before.
