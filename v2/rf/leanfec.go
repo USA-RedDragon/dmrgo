@@ -337,9 +337,12 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		}
 	}
 	_, data, reserved := f.cand(pick)
-	cw := bptc.Encode196(data, reserved)
-	for p := range leanBPTCBits {
-		softPut(out, bptcPos(p), cw[p/8]&(0x80>>(p%8)) != 0)
+	cw := bptc.EncodeRows(data, reserved)
+	softPut(out, bptcPos(0), false)
+	for row, w := range &cw {
+		for col := range 15 {
+			softPut(out, bptcPos(bptc.GridBit(row, col)), w>>col&1 != 0)
+		}
 	}
 	return failed
 }
@@ -352,7 +355,7 @@ func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 	var next [softTrellisStates]int32
 	for k := range softTrellisSteps {
 		var l [4]int16
-		for b, j := range tr.step[k] {
+		for b, j := range &tr.step[k] {
 			l[b] = r.llrAt(int(tr.pos[j]))
 		}
 		var bc [16]int32
@@ -381,7 +384,7 @@ func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 	for k := range softTrellisSteps {
 		lab := tr.label[state][t[k]]
 		state = int(t[k])
-		for b, j := range tr.step[k] {
+		for b, j := range &tr.step[k] {
 			softPut(out, tr.pos[j], lab>>(3-b)&1 != 0)
 		}
 	}

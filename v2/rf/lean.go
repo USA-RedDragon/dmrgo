@@ -175,13 +175,6 @@ type leanChan struct {
 // leanNoSlot marks an unset slot of leanChan.
 const leanNoSlot = math.MinInt32
 
-// leanTuner is the front end of a leanCore: it moves the carrier that it
-// removes to hz, d Hz from the last, and adds -d to the discriminator
-// samples that it holds.
-type leanTuner interface {
-	retuneFront(hz, d float32)
-}
-
 // leanCore is the streaming receiver after the discriminator: it takes the
 // matched filter samples at discSPS samples per symbol, keeps the symbols of
 // one slot and the state of the stream, and decodes each burst as its slot
@@ -189,7 +182,11 @@ type leanTuner interface {
 type leanCore struct {
 	onBurst func(Burst)
 	out     []Burst
-	front   leanTuner
+	// retuneFront moves the carrier that the front end removes to hz, d Hz
+	// from the last, and adds -d to the discriminator samples that it
+	// holds. It is a method value and not an interface, so that TinyGo
+	// does not link the type data of the front end.
+	retuneFront func(hz, d float32)
 	// center is the input sample at the center of matched filter sample 0,
 	// in baseband samples, and mfStep the baseband samples per matched
 	// filter sample, a whole number at every input rate.
@@ -319,7 +316,7 @@ func newLean(cfg Config, opt options) *leanRx {
 		r.inChunk = max(2*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), 2)
 	}
 	r.df.init(cfg.BasebandHz == discRate)
-	r.front, r.center = &r.df, r.df.center()
+	r.retuneFront, r.center = r.df.retuneFront, r.df.center()
 	return r
 }
 
@@ -714,7 +711,7 @@ func (r *leanCore) slot() {
 // been there.
 func (r *leanCore) retune(d float32) {
 	r.tuneHz += d
-	r.front.retuneFront(r.tuneHz, d)
+	r.retuneFront(r.tuneHz, d)
 	r.off -= d
 	r.dcHz -= d
 	r.tm.s1 -= d
@@ -815,7 +812,9 @@ func evenLLR(v int32) int16 {
 func (r *leanCore) setLLR() {
 	r.llrOff = int32(roundf((r.off - r.dcHz) / llrStepHz))
 	r.llrDev = int32(roundf(r.dev / llrStepHz))
-	r.llrK = int64(-r.ll*8*llrStepHz*llrStepHz*(1<<llrShift) + 0.5)
+	// ll is at least -1/2, so int32 holds llrK, and the conversion needs
+	// no 64-bit helper in TinyGo.
+	r.llrK = int64(int32(-r.ll*8*llrStepHz*llrStepHz*(1<<llrShift) + 0.5))
 	r.llrFloor = math.MinInt32 / 2
 	if r.lfloor >= -math.MaxFloat32 {
 		r.llrFloor = int32(roundf(r.lfloor * 8))
@@ -868,7 +867,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	// The time in 1/256 baseband samples, in integers but for the place of
 	// the last symbol, so that the MCU build needs one float64 multiply.
 	ticks := (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
-		int64(int32(roundf(float32(r.mfStep)*r.lastAt*256)))
+		int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256)))
 	b.Seconds = float64(ticks) * (1.0 / (basebandRate * 256))
 	// The hard decisions are the signs of the ratios of symLLR: the first
 	// bit is set below 0, the second beyond the midpoint between the
@@ -916,7 +915,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 // colorCode returns the color code most clean data bursts carried.
 func (r *leanCore) colorCode() (enums.ColorCode, bool) {
 	best := 0
-	for i, v := range r.votes {
+	for i, v := range &r.votes {
 		if v > r.votes[best] {
 			best = i
 		}

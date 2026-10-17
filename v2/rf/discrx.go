@@ -76,7 +76,7 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 	r.init(cfg.OnBurst, opt, 4*cfg.MaxWrite*symbolRate/(slotSymbols*cfg.Hz)+16, sps)
 	r.f.gain = 1
 	r.f.refresh()
-	r.front, r.center = &r.f, -int64(discSpan*samplesPerSy)
+	r.retuneFront, r.center = r.f.retuneFront, -int64(discSpan*samplesPerSy)
 	if r.f.slow {
 		r.center = -int64(audio96Span * samplesPerSy)
 	}
@@ -187,7 +187,9 @@ func (r *DiscReceiver) DeviationHz() float64 {
 func (r *DiscReceiver) levels() {
 	f := &r.f
 	m := float32(f.sum) / frontBlock
-	v := float32(f.sq)/frontBlock - m*m
+	// sq is not negative; the halves convert without a 64-bit helper.
+	sq := float32(uint32(f.sq>>32))*(1<<32) + float32(uint32(f.sq))
+	v := sq/frontBlock - m*m
 	f.sum, f.sq, f.n = 0, 0, 0
 	if r.locked {
 		return
@@ -250,10 +252,10 @@ func (f *audioFront) refresh() {
 
 // scale multiplies the samples that the filters hold by g.
 func (f *audioFront) scale(g float32) {
-	for i, h := range f.rrcHist {
+	for i, h := range &f.rrcHist {
 		f.rrcHist[i] = sat8(float32(h) * g)
 	}
-	for i, h := range f.hbHist {
+	for i, h := range &f.hbHist {
 		f.hbHist[i] = sat8(float32(h) * g)
 	}
 }
@@ -263,10 +265,10 @@ func (f *audioFront) scale(g float32) {
 func (f *audioFront) retuneFront(hz, d float32) {
 	f.dc = hz
 	f.refresh()
-	for i, v := range f.rrcHist {
+	for i, v := range &f.rrcHist {
 		f.rrcHist[i] = sat8(float32(v) - d/rrcStepHz)
 	}
-	for i, v := range f.hbHist {
+	for i, v := range &f.hbHist {
 		f.hbHist[i] = sat8(float32(v) - d/rrcStepHz)
 	}
 }

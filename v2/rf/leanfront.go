@@ -65,7 +65,7 @@ func (f *leanFront) tune(hz float64) {
 // shift adds d Hz to the discriminator samples that the matched filter
 // holds.
 func (f *leanFront) shift(d float32) {
-	for i, v := range f.rrcHist {
+	for i, v := range &f.rrcHist {
 		f.rrcHist[i] = sat8(float32(v) + d/rrcStepHz)
 	}
 }
