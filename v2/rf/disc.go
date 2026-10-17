@@ -39,7 +39,7 @@ func (r *engine) discSyncErrors(s *slotState, tau float64, syms *[syncSymbols]in
 
 // sliceSymbol returns the symbol level nearest to x, in units of the
 // deviation of level 1.
-func sliceSymbol(x float64) int8 {
+func sliceSymbol[T float32 | float64](x T) int8 {
 	switch {
 	case x >= 2:
 		return 3

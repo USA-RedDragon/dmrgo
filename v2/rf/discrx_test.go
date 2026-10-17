@@ -129,4 +129,13 @@ func TestNewDiscConfig(t *testing.T) {
 	if _, err := NewDisc(DiscConfig{MaxWrite: -1}); err == nil {
 		t.Error("NewDisc took a negative MaxWrite")
 	}
+	for _, hz := range []int{24000, 12000, 9600} {
+		r, err := NewDisc(DiscConfig{Hz: hz})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if sps := 2 * r.tm.step; float32(r.mfStep)*sps != samplesPerSy {
+			t.Errorf("%d Hz: %d baseband samples per matched filter sample at %v samples per symbol", hz, r.mfStep, sps)
+		}
+	}
 }

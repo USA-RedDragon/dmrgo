@@ -191,10 +191,10 @@ type leanCore struct {
 	out     []Burst
 	front   leanTuner
 	// center is the input sample at the center of matched filter sample 0,
-	// in baseband samples, and mfScale the baseband samples per matched
-	// filter sample.
-	center  int64
-	mfScale float64
+	// in baseband samples, and mfStep the baseband samples per matched
+	// filter sample, a whole number at every input rate.
+	center int64
+	mfStep int64
 	// acqGain and trackGain are leanAcqGain and leanTrackGain for the
 	// samples per symbol of the matched filter, and mmOK selects Mueller
 	// and Muller while a stream is locked.
@@ -332,7 +332,7 @@ func (c *leanCore) init(onBurst func(Burst), opt options, keep int, sps float32)
 	if po := opt.DiscOutlier; po > 0 {
 		c.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
 	}
-	c.mfScale = float64(samplesPerSy) / float64(sps)
+	c.mfStep = int64(samplesPerSy / sps)
 	c.acqGain, c.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
 	c.tm.step = sps / 2
 	c.tm.cubic = sps <= leanCubicSPS
@@ -720,7 +720,7 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 	step := r.devScale * deviationHz
 	n := 0
 	for k, want := range syms {
-		if got := sliceSymbol(float64((r.sym(end-syncSymbols+1+int64(k)) - r.dcHz) / step)); got != want {
+		if got := sliceSymbol((r.sym(end-syncSymbols+1+int64(k)) - r.dcHz) / step); got != want {
 			n += symbolBitErrors(got, want)
 		}
 	}
@@ -801,7 +801,7 @@ func (r *leanCore) setLLR() {
 	r.llrDev = int32(roundf(r.dev / llrStepHz))
 	r.llrK = int64(-r.ll*8*llrStepHz*llrStepHz*(1<<llrShift) + 0.5)
 	r.llrFloor = math.MinInt32 / 2
-	if !math.IsInf(float64(r.lfloor), -1) {
+	if r.lfloor >= -math.MaxFloat32 {
 		r.llrFloor = int32(roundf(r.lfloor * 8))
 	}
 }
@@ -849,8 +849,11 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	r.setLLR()
 	b := &r.cb
 	*b = Burst{Distance: -1, BS: r.bs, HasCACH: r.bs, Stream: int(r.streams), Slot: int64(j)}
-	now := r.mfScale*(float64(r.n-1)+float64(r.lastAt)) + float64(r.center)
-	b.Seconds = (now - float64(r.ns-1-(base+cachSymbols))*float64(samplesPerSy)) / basebandRate
+	// The time in 1/256 baseband samples, in integers but for the place of
+	// the last symbol, so that the MCU build needs one float64 multiply.
+	ticks := (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
+		int64(int32(roundf(float32(r.mfStep)*r.lastAt*256)))
+	b.Seconds = float64(ticks) * (1.0 / (basebandRate * 256))
 	// The hard decisions are the signs of the ratios of symLLR: the first
 	// bit is set below 0, the second beyond the midpoint between the
 	// levels, ±2 dev.
