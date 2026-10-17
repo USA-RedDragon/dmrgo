@@ -29,6 +29,9 @@ func TestPackedCRCsMatchReference(t *testing.T) {
 		if got, want := crc.CRC9(data, n), ref.CRC9(bits); got != want {
 			t.Fatalf("CRC9 of %d bits = %#x, want %#x", n, got, want)
 		}
+		if got, want := crc.CCITT(data), ref.CCITT(data); got != want {
+			t.Fatalf("CCITT of %x = %#x, want %#x", data, got, want)
+		}
 		w7, w8, w9 := uint8(r.Intn(256)), uint8(r.Intn(256)), uint16(r.Intn(1<<16))
 		if got, want := crc.CheckCRC7(data, n, w7), ref.CheckCRC7(bits, w7); got != want {
 			t.Fatalf("CheckCRC7 of %d bits = %v, want %v", n, got, want)

@@ -88,24 +88,6 @@ func Hamming13_9Syndrome() [16]int {
 	return table
 }
 
-// CRCCCITT computes the byte-at-a-time CRC-CCITT lookup table for
-// polynomial 0x1021 (ETSI TS 102 361-1 clause B.3.8).
-func CRCCCITT() [256]uint16 {
-	var table [256]uint16
-	for i := 0; i < 256; i++ {
-		crc := uint16(i) << 8
-		for j := 0; j < 8; j++ {
-			if crc&0x8000 != 0 {
-				crc = (crc << 1) ^ 0x1021
-			} else {
-				crc <<= 1
-			}
-		}
-		table[i] = crc
-	}
-	return table
-}
-
 // CRC7Table computes the byte-at-a-time CRC-7 lookup table for polynomial
 // x⁷ + x⁵ + x² + x + 1 (ETSI TS 102 361-1 clause B.3.13), for a register
 // that holds the 7 CRC bits in its top bits.

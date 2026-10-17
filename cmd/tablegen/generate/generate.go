@@ -56,9 +56,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 	}
 
 	if err := writeFile(dmrRoot, "internal/crc", "crc",
-		writeTable("ccitt16_0x1021", tables.CRCCCITT[:]),
-		jen.Line(),
-		jen.Line(),
 		writeTable("crc32_0x04C11DB7", tables.CRC32[:]),
 		jen.Line(),
 		jen.Line(),
