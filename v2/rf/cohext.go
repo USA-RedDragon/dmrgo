@@ -344,11 +344,14 @@ func (s *cohStage) fineTime(k0, k1 int) float64 {
 }
 
 // cohFreqGain is the weight of the carrier offset that each SYNC fits,
-// and cohFreqSpan the most, in Hz, that the fits move it from the offset
-// that the oscillator and the core give.
+// and cohFreqSpan the most, in Hz, that the fits move it from the mean
+// frequency of the I/Q samples. The first fit may move it by up to
+// cohFreqFirst: a lock can come while the oscillator still pulls in, so
+// that the mean is far off.
 const (
-	cohFreqGain = 0.1
-	cohFreqSpan = 200
+	cohFreqGain  = 0.1
+	cohFreqSpan  = 200
+	cohFreqFirst = 1000
 )
 
 // track sets the carrier offset of the runs from that of the SYNC fits of
@@ -463,7 +466,11 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		s.dt += cohDTGain * s.fineTime(segs[0][0], segs[0][1])
 		// The mean of the first fits, then a slow average: the offset that
 		// the fits start from is no fit.
-		if fit := s.freqFit(segs[0][0], segs[0][1]); math.Abs(fit) < cohFreqSpan {
+		lim := float64(cohFreqSpan)
+		if s.nFit == 0 {
+			lim = cohFreqFirst
+		}
+		if fit := s.freqFit(segs[0][0], segs[0][1]); math.Abs(fit) < lim {
 			s.nFit++
 			s.freq += max(cohFreqGain, 1/float64(s.nFit)) * fit
 			s.totalHz = s.freq
