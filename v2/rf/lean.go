@@ -53,6 +53,13 @@ const (
 	// leanCubicSPS is the most samples per symbol at which the symbol
 	// timing interpolates by Catmull-Rom instead of linearly.
 	leanCubicSPS = 2.5
+	// leanMMSPS is the most samples per symbol at which a locked stream
+	// detects the timing error by Mueller and Muller, at the symbols only,
+	// with the sign leanMMSign and the gain leanMMGain over the Gardner
+	// gain.
+	leanMMSPS  = 2.0
+	leanMMSign = 1
+	leanMMGain = 2
 )
 
 // leanTiming recovers the symbol timing from the matched filter output at
@@ -75,6 +82,12 @@ type leanTiming struct {
 	// hold stops the loop, while the carrier of a burst stream is off.
 	hold bool
 	gain float32
+	// mm, set while a stream is locked at few samples per symbol, strobes
+	// only the symbols and detects the timing error by Mueller and Muller
+	// from the decisions of the levels at dc ± dev and ± 3 dev; half then
+	// holds the last decision.
+	mm      bool
+	dc, dev float32
 }
 
 // push takes one matched filter sample and returns the symbol value when
@@ -106,6 +119,24 @@ func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
 // the next strobe and reports whether the strobe was of a symbol, whose
 // value is then last.
 func (tm *leanTiming) strobe(x float32) bool {
+	if tm.mm {
+		y := x - tm.dc
+		d := tm.dev
+		if abs32(y) > 2*tm.dev {
+			d = 3 * tm.dev
+		}
+		if y < 0 {
+			d = -d
+		}
+		e := leanMMSign * (tm.half*y - d*(tm.last-tm.dc))
+		tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*y*y
+		tm.last, tm.half = x, d
+		tm.t += 2 * tm.step
+		if !tm.hold && tm.pow > 0 {
+			tm.t += max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
+		}
+		return true
+	}
 	if tm.mid {
 		tm.half, tm.mid = x, false
 		tm.t += tm.step
@@ -165,8 +196,10 @@ type leanCore struct {
 	center  int64
 	mfScale float64
 	// acqGain and trackGain are leanAcqGain and leanTrackGain for the
-	// samples per symbol of the matched filter.
+	// samples per symbol of the matched filter, and mmOK selects Mueller
+	// and Muller while a stream is locked.
 	acqGain, trackGain float32
+	mmOK               bool
 	tm                 leanTiming
 	// n counts the matched filter samples and ns the symbols. ring holds
 	// the last symbols in units of discStepHz, plus off.
@@ -303,6 +336,7 @@ func (c *leanCore) init(onBurst func(Burst), opt options, keep int, sps float32)
 	c.acqGain, c.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
 	c.tm.step = sps / 2
 	c.tm.cubic = sps <= leanCubicSPS
+	c.mmOK = sps <= leanMMSPS
 	c.tm.t, c.tm.gain = c.tm.step, c.acqGain
 	c.resetChans()
 	if onBurst == nil {
@@ -528,6 +562,13 @@ func (r *leanCore) searchSym() {
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain = false, r.trackGain
+	if r.mmOK {
+		// The next strobe of the Gardner loop after a symbol is a midpoint,
+		// which Mueller and Muller skips.
+		r.tm.mm, r.tm.mid = true, false
+		r.tm.t += r.tm.step
+		r.tm.half = 0
+	}
 	r.resetChans()
 	r.eAcc, r.eSyms = 0, 0
 }
@@ -565,11 +606,13 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first bool) bool {
 			return false
 		}
 		r.devScale, r.dcHz, r.discVar = g, dc, res
+		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 		return true
 	}
 	r.devScale = levelForget*r.devScale + (1-levelForget)*g
 	r.dcHz = levelForget*r.dcHz + (1-levelForget)*dc
 	r.discVar = levelForget*r.discVar + (1-levelForget)*res
+	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 	return true
 }
 
@@ -648,7 +691,10 @@ func (r *leanCore) retune(d float32) {
 	r.tm.s0 -= d
 	r.tm.s3 -= d
 	r.tm.last -= d
-	r.tm.half -= d
+	r.tm.dc -= d
+	if !r.tm.mm {
+		r.tm.half -= d
+	}
 }
 
 // syncErrors returns the number of bits where the sliced symbols of the
@@ -670,6 +716,12 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 func (r *leanCore) unlock() {
 	r.locked = false
 	r.tm.hold, r.tm.gain = false, r.acqGain
+	if r.tm.mm {
+		// The next strobe is a symbol, so the Gardner loop takes the
+		// midpoint before it.
+		r.tm.mm, r.tm.mid = false, true
+		r.tm.t -= r.tm.step
+	}
 	r.offsetHz = int16(max32(min32(roundf(r.tuneHz+r.dcHz), math.MaxInt16), math.MinInt16))
 	r.devHz = int16(max32(min32(roundf(3*deviationHz*r.devScale), math.MaxInt16), math.MinInt16))
 }
