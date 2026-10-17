@@ -133,7 +133,10 @@ type Config struct {
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
 	// in place of the slice that Write, WriteBaseband and Flush return,
 	// which are then empty. The receiver then keeps no buffer of bursts.
-	OnBurst func(Burst)
+	// The burst is valid only during the call; copy it to keep it. A
+	// pointer and not a value, because TinyGo passes a struct value one
+	// element per stack slot.
+	OnBurst func(*Burst)
 	// opt, when not nil, replaces the settings of the tier.
 	opt *options
 }
@@ -507,7 +510,7 @@ func (r *engine) flush() []Burst {
 func (r *engine) emit(x *received) {
 	if r.cfg.OnBurst != nil {
 		x.put(&r.cb)
-		r.cfg.OnBurst(r.cb)
+		r.cfg.OnBurst(&r.cb)
 		return
 	}
 	if len(r.out) < cap(r.out) {

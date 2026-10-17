@@ -425,7 +425,7 @@ func receiverRAM(t Tier) int {
 	var a, b runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&a)
-	r := mustNew(Config{Rate: basebandRate, Tier: t, OnBurst: func(Burst) {}})
+	r := mustNew(Config{Rate: basebandRate, Tier: t, OnBurst: func(*Burst) {}})
 	runtime.GC()
 	runtime.ReadMemStats(&b)
 	runtime.KeepAlive(r)

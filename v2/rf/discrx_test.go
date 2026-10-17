@@ -87,7 +87,7 @@ func lowpassTaps(n int, fc float64) []float64 {
 func receiveAudio(t testing.TB, a []int16, hz int, opt *options) []Burst {
 	t.Helper()
 	var out []Burst
-	r, err := NewDisc(DiscConfig{Hz: hz, OnBurst: func(b Burst) { out = append(out, b) }, opt: opt})
+	r, err := NewDisc(DiscConfig{Hz: hz, OnBurst: func(b *Burst) { out = append(out, *b) }, opt: opt})
 	if err != nil {
 		t.Fatal(err)
 	}

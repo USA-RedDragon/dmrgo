@@ -175,20 +175,25 @@ type leanChan struct {
 // leanNoSlot marks an unset slot of leanChan.
 const leanNoSlot = math.MinInt32
 
+// leanTuner is the I/Q front end of a leanCore.
+type leanTuner interface {
+	retuneFront(hz, d float32)
+}
+
 // leanCore is the streaming receiver after the discriminator: it takes the
 // matched filter samples at discSPS samples per symbol, keeps the symbols of
 // one slot and the state of the stream, and decodes each burst as its slot
 // ends, without waiting for later slots.
 type leanCore struct {
-	onBurst func(Burst)
+	onBurst func(*Burst)
 	out     []Burst
 	// audio or iq is the front end, whose retuneFront moves the carrier
 	// that it removes to hz, d Hz from the last, and adds -d to the
-	// discriminator samples that it holds. They are pointers and not an
-	// interface, so that TinyGo does not link type data, and not a method
-	// value, which allocates.
+	// discriminator samples that it holds. audio is a pointer, so that
+	// TinyGo links neither type data nor the I/Q front end for a
+	// DiscReceiver; a method value would allocate.
 	audio *audioFront
-	iq    *leanFront
+	iq    leanTuner
 	// center is the input sample at the center of matched filter sample 0,
 	// in baseband samples, and mfStep the baseband samples per matched
 	// filter sample, a whole number at every input rate.
@@ -328,7 +333,7 @@ func newLean(cfg Config, opt options) *leanRx {
 // init sets up c for matched filter samples at sps samples per symbol with
 // the settings opt, to emit bursts to onBurst, or, when it is nil, to
 // append them to out while it has room.
-func (c *leanCore) init(onBurst func(Burst), opt options, sps float32) {
+func (c *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	c.onBurst, c.lastAnch, c.softFEC = onBurst, leanNoSlot, opt.SoftFEC
 	c.sources, c.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	if po := opt.DiscOutlier; po > 0 {
@@ -849,6 +854,11 @@ func (r *leanCore) cachAt(p int) int16 {
 
 // burst detects the burst of slot j, whose first symbol is base and whose
 // SYNC is anchor, an anchor pattern or 0, places it and emits it.
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs.
+//
+//go:noinline
 func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	r.base, r.anchor = base, anchor
 	v := max(r.discVar, 1)
@@ -902,7 +912,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		r.repair(&r.fec, b, cc, ok)
 	}
 	if r.onBurst != nil {
-		r.onBurst(*b)
+		r.onBurst(b)
 	} else if len(r.out) < cap(r.out) {
 		r.out = r.out[:len(r.out)+1]
 		r.out[len(r.out)-1] = *b
@@ -924,6 +934,11 @@ func (r *leanCore) colorCode() (enums.ColorCode, bool) {
 // channel, as tracker.classify does but without later slots: a burst B to
 // F without a burst A before it is placed by its EMB alone. It reports
 // whether the burst is kept.
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs.
+//
+//go:noinline
 func (r *leanCore) classify(b *Burst, j int32) bool {
 	c := &r.ch[j&1]
 	voice, data, _ := sourceAt(int(r.src)).SyncPatterns()

@@ -43,7 +43,7 @@ func TestAllocsReceiver(t *testing.T) {
 			t.Errorf("tier %d: %v allocations per WriteBaseband, %d bursts", tier, n, bursts)
 		}
 		bursts = 0
-		r = mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(Burst) { bursts++ }})
+		r = mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(*Burst) { bursts++ }})
 		pos = 0
 		n = testing.AllocsPerRun(len(x)/chunk-2, func() {
 			r.WriteBaseband(x[pos : pos+chunk])

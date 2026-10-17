@@ -154,7 +154,7 @@ func TestReceiverOnBurst(t *testing.T) {
 	for _, tier := range []Tier{TierDisc, TierCoherent} {
 		want := receiveBaseband(x, tier)
 		var got []Burst
-		r := mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(b Burst) { got = append(got, b) }})
+		r := mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
 		for k := 0; k < len(x); k += 4096 {
 			if out := r.WriteBaseband(x[k:min(k+4096, len(x))]); len(out) != 0 {
 				t.Fatalf("tier %d: WriteBaseband returned %d bursts", tier, len(out))

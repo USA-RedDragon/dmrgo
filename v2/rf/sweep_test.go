@@ -175,7 +175,7 @@ func (j *sweepJob) audioHz() int {
 // the bursts, the thread CPU time and the input seconds.
 func (j *sweepJob) receive(cfg Config, x []complex64) ([]Burst, float64, float64) {
 	var out []Burst
-	cfg.OnBurst = func(b Burst) { out = append(out, b) }
+	cfg.OnBurst = func(b *Burst) { out = append(out, *b) }
 	r := j.newRx(cfg)
 	in := r.convert(j, x)
 	cpu := threadCPUSeconds(func() {
@@ -241,7 +241,7 @@ func sweepCosts(t testing.TB, j *sweepJob, cfg Config) *sweepCost {
 	var c sweepCost
 	var a, b runtime.MemStats
 	count := 0
-	cfg.OnBurst = func(Burst) { count++ }
+	cfg.OnBurst = func(*Burst) { count++ }
 	runtime.ReadMemStats(&a)
 	r := j.newRx(cfg)
 	runtime.ReadMemStats(&b)

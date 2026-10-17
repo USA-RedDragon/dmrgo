@@ -209,7 +209,8 @@ func (r *leanCore) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, wan
 // bptcCheck reports whether the BPTC(196,96) payload p of data type dt
 // passes its check, as the function of softBPTCCheck does, and whether dt
 // has one.
-func bptcCheck(dt enums.DataType, p [12]byte) (ok, checked bool) {
+func bptcCheck(dt enums.DataType, data *[12]byte) (ok, checked bool) {
+	p := *data
 	switch {
 	case dt.CarriesFullLC():
 		mask, _, _ := pdu.CRCMask(dt)
@@ -235,9 +236,14 @@ func bptcPos(p int) int {
 
 // addCand adds a candidate to the list of the BPTC decode, which holds the
 // lowest costs in increasing order, up to max.
-func (f *leanFEC) addCand(cost int32, data [12]byte, reserved uint8, max int) {
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs.
+//
+//go:noinline
+func (f *leanFEC) addCand(cost int32, data *[12]byte, reserved uint8, max int) {
 	for i := range f.nlist {
-		if c, d, r := f.cand(i); c == cost && d == data && r == reserved {
+		if c, d, r := f.cand(i); c == cost && d == *data && r == reserved {
 			return
 		}
 	}
@@ -255,7 +261,7 @@ func (f *leanFEC) addCand(cost int32, data [12]byte, reserved uint8, max int) {
 		f.setCand(i, c, &d, r)
 		i--
 	}
-	f.setCand(i, cost, &data, reserved)
+	f.setCand(i, cost, data, reserved)
 	f.nlist = min(f.nlist+1, max)
 }
 
@@ -263,54 +269,56 @@ func (f *leanFEC) addCand(cost int32, data [12]byte, reserved uint8, max int) {
 // the Chase-II decode of softDecoder.decodeBPTCChase into out, and reports
 // whether a block with a check failed it. It scores each candidate on the
 // grid against the hard decisions, so that it needs no codeword table.
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs.
+//
+//go:noinline
 func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) bool {
 	chase, cmag := f.chase(), f.cmag()
 	for i := range chase {
 		chase[i], cmag[i] = -1, 0
 	}
-	var packed [25]byte
+	// The hard decisions go straight into the grid, and chase holds grid
+	// cells, row*15+col; each pattern then flips one grid bit.
+	var hard [13]uint16
 	var base int32
-	for p := range leanBPTCBits {
+	if v := r.llrAt(bptcPos(0)); v < 0 {
+		// R(3), bit 0, is outside the grid and 0 in every codeword.
+		base = -int32(v)
+	}
+	// The least reliable bits, ties to the first information bit, as a scan
+	// in information bit order picks them.
+	var bit [leanChase]int16
+	for cell := range 13 * 15 {
+		row, col := cell/15, cell%15
+		p := bptc.GridBit(row, col)
 		v := r.llrAt(bptcPos(p))
 		if v < 0 {
-			packed[p/8] |= 0x80 >> (p % 8)
+			hard[row] |= 1 << col
 			v = -v
 		}
-		// R(3), bit 0, is outside the grid and 0 in every codeword.
-		if p == 0 {
-			if packed[0] != 0 {
-				base = int32(v)
-			}
-			continue
-		}
 		for i := range chase {
-			if chase[i] < 0 || v < cmag[i] {
+			if chase[i] < 0 || v < cmag[i] || v == cmag[i] && int16(p) < bit[i] {
 				copy(chase[i+1:], chase[i:leanChase-1])
 				copy(cmag[i+1:], cmag[i:leanChase-1])
-				chase[i], cmag[i] = int16(p), v
+				copy(bit[i+1:], bit[i:leanChase-1])
+				chase[i], cmag[i], bit[i] = int16(cell), v, int16(p)
 				break
 			}
 		}
 	}
-	_, checked := bptcCheck(dt, [12]byte{})
+	_, checked := bptcCheck(dt, &[12]byte{})
 	size := 1
 	if checked {
 		size = softListMax
 	}
 	f.nlist = 0
-	// The grid is deinterleaved once; each pattern flips one grid bit.
-	hard := bptc.Rows(packed)
 	rows := hard
-	var flipRow [leanChase]int8
-	var flipCol [leanChase]uint16
-	for i, p := range chase {
-		r, c, _ := bptc.GridPos(int(p))
-		flipRow[i], flipCol[i] = int8(r), 1<<c
-	}
 	for g := 0; g < 1<<leanChase; g++ {
 		if g > 0 {
-			i := bits.TrailingZeros(uint(g))
-			rows[flipRow[i]] ^= flipCol[i]
+			cell := chase[bits.TrailingZeros(uint(g))]
+			rows[cell/15] ^= 1 << (cell % 15)
 		}
 		data, reserved, _ := bptc.DecodeRows(rows)
 		cw := bptc.EncodeRows(data, reserved)
@@ -322,16 +330,16 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 			}
 		}
 		if g == 0 && cost == 0 {
-			if ok, _ := bptcCheck(dt, data); ok || !checked {
+			if ok, _ := bptcCheck(dt, &data); ok || !checked {
 				return false
 			}
 		}
-		f.addCand(cost, data, reserved, size)
+		f.addCand(cost, &data, reserved, size)
 	}
 	pick, failed := 0, checked
 	for i := 0; checked && i < f.nlist; i++ {
 		_, d, _ := f.cand(i)
-		if ok, _ := bptcCheck(dt, d); ok {
+		if ok, _ := bptcCheck(dt, &d); ok {
 			pick, failed = i, false
 			break
 		}
@@ -349,6 +357,11 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 
 // fixRate34 decodes the rate 3/4 trellis of the burst, as
 // softDecoder.decodeRate34, into out.
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs.
+//
+//go:noinline
 func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 	tr := &softTrellisTables
 	metric := [softTrellisStates]int32{0, softInf, softInf, softInf, softInf, softInf, softInf, softInf}
@@ -410,6 +423,11 @@ func (r *leanCore) fixTACT(f *leanFEC, b *Burst) {
 // soft-decision decoding picks, with the scratch f, as repairer.repair does
 // for TierDisc, with the color code cc of the stream when ccOK. The payload
 // of an idle burst carries nothing, so only its slot type is decoded.
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs.
+//
+//go:noinline
 func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 	b.Fixed, b.FixedCACH, b.HasFixed = b.Data, b.CACH, true
 	out := &b.Fixed

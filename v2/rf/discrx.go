@@ -30,8 +30,9 @@ type DiscConfig struct {
 	MaxWrite int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
 	// in place of the slices that Write, AppendBursts and Flush return,
-	// which then return no bursts.
-	OnBurst func(Burst)
+	// which then return no bursts. The burst is valid only during the call;
+	// copy it to keep it.
+	OnBurst func(*Burst)
 	// opt, when not nil, replaces the settings of TierDisc.
 	opt *options
 }
