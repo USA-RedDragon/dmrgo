@@ -257,7 +257,7 @@ func bptcPos(p int) int {
 // runs.
 //
 //go:noinline
-func (f *leanFEC) addCand(cost int32, data *[12]byte, reserved uint8, max int) {
+func (f *leanFEC) addCand(cost int32, data *[12]byte, reserved uint8, limit int) {
 	var e [leanCandSize]int16
 	packCand(&e, cost, data, reserved)
 	for i := range f.nlist {
@@ -265,16 +265,16 @@ func (f *leanFEC) addCand(cost int32, data *[12]byte, reserved uint8, max int) {
 			return
 		}
 	}
-	if f.nlist == max && cost >= f.candCost(f.nlist-1) {
+	if f.nlist == limit && cost >= f.candCost(f.nlist-1) {
 		return
 	}
-	i := min(f.nlist, max-1)
+	i := min(f.nlist, limit-1)
 	for i > 0 && f.candCost(i-1) > cost {
 		copy(f.s[i*leanCandSize:(i+1)*leanCandSize], f.s[(i-1)*leanCandSize:])
 		i--
 	}
 	copy(f.s[i*leanCandSize:], e[:])
-	f.nlist = min(f.nlist+1, max)
+	f.nlist = min(f.nlist+1, limit)
 }
 
 // fixBPTC decodes the BPTC(196,96) block of the burst of data type dt with

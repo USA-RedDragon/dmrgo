@@ -385,23 +385,23 @@ func newLean(cfg Config, opt options) *leanRx {
 	return r
 }
 
-// init sets up c for matched filter samples at sps samples per symbol with
+// init sets up r for matched filter samples at sps samples per symbol with
 // the settings opt, to emit bursts to onBurst, or, when it is nil, to
 // append them to out while it has room.
-func (c *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
-	c.onBurst, c.lastAnch, c.softFEC = onBurst, leanNoSlot, opt.SoftFEC
-	c.sources, c.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
-	c.clickSpan = float32(opt.ClickSpan)
+func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
+	r.onBurst, r.lastAnch, r.softFEC = onBurst, leanNoSlot, opt.SoftFEC
+	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
+	r.clickSpan = float32(opt.ClickSpan)
 	if po := opt.DiscOutlier; po > 0 {
-		c.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
+		r.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
 	}
-	c.mfStep = int64(samplesPerSy / sps)
-	c.acqGain, c.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
-	c.tm.step = sps / 2
-	c.tm.cubic = sps <= leanCubicSPS
-	c.mmOK = sps <= leanMMSPS
-	c.tm.t, c.tm.gain = c.tm.step, c.acqGain
-	c.resetChans()
+	r.mfStep = int64(samplesPerSy / sps)
+	r.acqGain, r.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
+	r.tm.step = sps / 2
+	r.tm.cubic = sps <= leanCubicSPS
+	r.mmOK = sps <= leanMMSPS
+	r.tm.t, r.tm.gain = r.tm.step, r.acqGain
+	r.resetChans()
 }
 
 // resetChans clears the superframe state of the stream.
@@ -578,17 +578,6 @@ func (r *leanCore) keptAt(t float32) float32 {
 		p0 = p1
 	}
 	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0))) - r.off*(1.0/discStepHz)
-}
-
-// keptLin returns the stored samples interpolated linearly at t samples
-// after the last one, t at most 0, as keptAt does but with less work, for
-// the coarse timing search of resample.
-func (r *leanCore) keptLin(t float32) float32 {
-	b := -t
-	i := int32(b)
-	mu := b - float32(i)
-	a, c := r.kept(i), r.kept(i+1)
-	return a + mu*(c-a)
 }
 
 // coarseSync reports whether the kept samples of win nearest the SYNC
@@ -1240,16 +1229,6 @@ func (r *leanCore) setLLR() {
 // r.base.
 func (r *leanCore) llrAt(p int) int16 {
 	l0, l1 := r.symLLR(r.base + cachSymbols + int64(p>>1))
-	if p&1 == 0 {
-		return l0
-	}
-	return l1
-}
-
-// cachAt returns the log-likelihood ratio of CACH bit p of the slot at
-// r.base.
-func (r *leanCore) cachAt(p int) int16 {
-	l0, l1 := r.symLLR(r.base + int64(p>>1))
 	if p&1 == 0 {
 		return l0
 	}

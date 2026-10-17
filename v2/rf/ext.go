@@ -95,10 +95,9 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
 		default:
 			check := x.checks[dt&0xF]
-			saved := *out
 			var r fec.Result
 			if _, r = x.soft.decodeBPTCOSD(&x.llr, check, out); check != nil && r.Uncorrectable {
-				saved = *out
+				saved := *out
 				if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
 					*out = saved
 				}

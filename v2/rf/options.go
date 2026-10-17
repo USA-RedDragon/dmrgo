@@ -91,6 +91,8 @@ func tierOptions(t Tier) options {
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 	}
 	switch t {
+	case TierDisc:
+		// TierDisc keeps the settings above.
 	case TierCoherent:
 		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, 5, 0.12, true, 10, 0.5
 		o.ChanDecimation, o.CompactChannel = 2, true
