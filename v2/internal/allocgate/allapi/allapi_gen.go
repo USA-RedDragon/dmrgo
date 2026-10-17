@@ -18,6 +18,7 @@ import (
 	internal_fec_quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	internal_fec_reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	internal_fec_trellis "github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
+	internal_text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
 	layer2_framer "github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -104,11 +105,16 @@ var api = [...]any{
 	internal_fec_bptc.DecodeEmbedded,
 	internal_fec_bptc.DecodeEmbeddedStrict,
 	internal_fec_bptc.DecodeEmbeddedWithCheck,
+	internal_fec_bptc.DecodeRows,
 	internal_fec_bptc.DecodeSingleBurst,
 	internal_fec_bptc.Encode196,
 	internal_fec_bptc.EncodeCACH,
 	internal_fec_bptc.EncodeEmbedded,
+	internal_fec_bptc.EncodeRows,
 	internal_fec_bptc.EncodeSingleBurst,
+	internal_fec_bptc.GridBit,
+	internal_fec_bptc.GridPos,
+	internal_fec_bptc.Rows,
 	internal_fec_golay.Check2087,
 	internal_fec_golay.Decode2087,
 	internal_fec_golay.Decode23127,
@@ -127,6 +133,14 @@ var api = [...]any{
 	internal_fec_reedsolomon.Encode,
 	internal_fec_trellis.Decode,
 	internal_fec_trellis.Encode,
+	internal_text.Bool,
+	internal_text.Bytes,
+	internal_text.Digits,
+	internal_text.Fixed,
+	internal_text.Float,
+	internal_text.Hex,
+	internal_text.Int,
+	internal_text.Uint,
 	(*layer2.Burst).AMBEFrames,
 	(*layer2.Burst).DecodeFromBytes,
 	(*layer2.Burst).DecodeFromBytesWith,
