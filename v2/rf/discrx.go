@@ -325,23 +325,33 @@ func ringAt(h, k int) int {
 }
 
 // fir12 returns the matched filter output in Q15 of the samples w at
-// 12 kHz, oldest first.
+// 12 kHz, oldest first. The taps are written out, so that TinyGo folds
+// them into the code at every -opt.
 func fir12(w *[audio12Taps]int8) int32 {
-	const mid = audio12Taps / 2
-	acc := int32(audioRRCQ15[mid]) * int32(w[mid])
-	for k := range mid {
-		acc += int32(audioRRCQ15[k]) * (int32(w[k]) + int32(w[audio12Taps-1-k]))
-	}
-	return acc
+	return int32(audioRRCQ15[10])*int32(w[10]) +
+		int32(audioRRCQ15[0])*(int32(w[0])+int32(w[20])) +
+		int32(audioRRCQ15[1])*(int32(w[1])+int32(w[19])) +
+		int32(audioRRCQ15[2])*(int32(w[2])+int32(w[18])) +
+		int32(audioRRCQ15[3])*(int32(w[3])+int32(w[17])) +
+		int32(audioRRCQ15[4])*(int32(w[4])+int32(w[16])) +
+		int32(audioRRCQ15[5])*(int32(w[5])+int32(w[15])) +
+		int32(audioRRCQ15[6])*(int32(w[6])+int32(w[14])) +
+		int32(audioRRCQ15[7])*(int32(w[7])+int32(w[13])) +
+		int32(audioRRCQ15[8])*(int32(w[8])+int32(w[12])) +
+		int32(audioRRCQ15[9])*(int32(w[9])+int32(w[11]))
 }
 
 // fir96 returns the matched filter output in Q15 of the samples w at
-// 9.6 kHz, oldest first.
+// 9.6 kHz, oldest first. The taps are written out, so that TinyGo folds
+// them into the code at every -opt.
 func fir96(w *[audio96Taps]int8) int32 {
-	const mid = audio96Taps / 2
-	acc := int32(audio96RRCQ15[mid]) * int32(w[mid])
-	for k := range mid {
-		acc += int32(audio96RRCQ15[k]) * (int32(w[k]) + int32(w[audio96Taps-1-k]))
-	}
-	return acc
+	return int32(audio96RRCQ15[8])*int32(w[8]) +
+		int32(audio96RRCQ15[0])*(int32(w[0])+int32(w[16])) +
+		int32(audio96RRCQ15[1])*(int32(w[1])+int32(w[15])) +
+		int32(audio96RRCQ15[2])*(int32(w[2])+int32(w[14])) +
+		int32(audio96RRCQ15[3])*(int32(w[3])+int32(w[13])) +
+		int32(audio96RRCQ15[4])*(int32(w[4])+int32(w[12])) +
+		int32(audio96RRCQ15[5])*(int32(w[5])+int32(w[11])) +
+		int32(audio96RRCQ15[6])*(int32(w[6])+int32(w[10])) +
+		int32(audio96RRCQ15[7])*(int32(w[7])+int32(w[9]))
 }

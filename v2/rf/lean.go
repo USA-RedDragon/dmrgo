@@ -448,7 +448,18 @@ func (r *leanCore) push(s float32) {
 //go:noinline
 func (r *leanCore) symbol(x, at float32) {
 	r.lastAt = at
-	q := sat8((x - r.off) / discStepHz)
+	// sat8 written out, which TinyGo does not inline at -opt s or z.
+	var q int8
+	switch v := (x - r.off) / discStepHz; {
+	case v >= math.MaxInt8:
+		q = math.MaxInt8
+	case v <= math.MinInt8:
+		q = math.MinInt8
+	case v < 0:
+		q = int8(v - 0.5)
+	default:
+		q = int8(v + 0.5)
+	}
 	r.ring[uint32(r.ns)%leanRing] = q
 	if !r.locked {
 		// Only the search reads the signs; unlock rebuilds them.
