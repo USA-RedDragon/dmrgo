@@ -63,8 +63,8 @@ func (d *iqDisc) tune(hz float32) {
 }
 
 // push takes baseband sample v and reports whether it completed an output
-// sample, which it returns in Hz.
-func (d *iqDisc) push(v complex64) (float32, bool) {
+// sample, whose frequency in Hz and channel filter sample it returns.
+func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	if d.ncoN++; d.ncoN == 512 {
 		d.ncoN = 0
 		g := (3 - real(d.ncoRot)*real(d.ncoRot) - imag(d.ncoRot)*imag(d.ncoRot)) / 2
@@ -78,19 +78,48 @@ func (d *iqDisc) push(v complex64) (float32, bool) {
 		d.head = 0
 	}
 	if d.phase++; d.phase < d.decim {
-		return 0, false
+		return 0, 0, false
 	}
 	d.phase = 0
+	h := d.hist[d.head : d.head+iqTaps]
 	var re, im float32
 	for k, t := range d.taps {
-		s := d.hist[d.head+k]
-		re += t * real(s)
-		im += t * imag(s)
+		re += t * real(h[k])
+		im += t * imag(h[k])
 	}
 	y := complex(re, im)
 	p := y * complex(real(d.prev), -imag(d.prev))
 	d.prev = y
-	return atan2f(imag(p), real(p)) * (float32(basebandRate/d.decim) / (2 * math.Pi)), true
+	return atan2f(imag(p), real(p)) * (float32(basebandRate/d.decim) / (2 * math.Pi)), y, true
+}
+
+// iqTunes is the number of moves of the oscillator that iqRx keeps.
+const iqTunes = 16
+
+// iqTune is a move of the oscillator of iqRx: the channel filter sample
+// from which it holds, and the frequency it removes.
+type iqTune struct {
+	n  int64
+	hz float32
+}
+
+// ncoAt returns the frequency that the oscillator removed at channel
+// filter sample n, as far back as the moves that r keeps.
+func (r *iqRx) ncoAt(n int64) float32 {
+	hz := r.conv.hz
+	for i := 0; i < min(r.nTunes, iqTunes); i++ {
+		t := r.tunes[(r.nTunes-1-i)%iqTunes]
+		if t.n <= n {
+			return hz
+		}
+		// Before this move, the oscillator was at the frequency of the
+		// move before it, or 0.
+		hz = 0
+		if j := r.nTunes - 2 - i; j >= 0 && i+1 < iqTunes {
+			hz = r.tunes[j%iqTunes].hz
+		}
+	}
+	return hz
 }
 
 // iqRx is the receiver of Tier 1 on I/Q: iqDisc before the DiscReceiver
@@ -110,6 +139,15 @@ type iqRx struct {
 	audio   []int16
 	afcN    int
 	out     []Burst
+	// yHist holds the last cohHist channel filter samples for the
+	// coherent stage, yN of them so far; nil without it.
+	yHist []complex64
+	yN    int64
+	// tunes holds the last moves of the oscillator, the channel filter
+	// sample from which each holds and its frequency, for the coherent
+	// stage; nTunes counts them.
+	tunes  [iqTunes]iqTune
+	nTunes int
 }
 
 // newIQRx returns the receiver of cfg with the settings opt.
@@ -134,7 +172,12 @@ func newIQRx(cfg Config, opt options) *iqRx {
 		panic(err)
 	}
 	if opt.SoftExt {
-		r.d.ext = softExtOf(&opt, 2*r.d.tm.step)
+		x := softExtOf(&opt, 2*r.d.tm.step)
+		if opt.CohExt && hz == discRate {
+			r.yHist = make([]complex64, cohHist)
+			x.coh = newCohStage(r, &opt)
+		}
+		r.d.ext = x
 	}
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
@@ -151,9 +194,13 @@ func (r *iqRx) sample(v complex64) {
 		r.afcN = 0
 		r.follow()
 	}
-	f, ok := r.conv.push(v)
+	f, y, ok := r.conv.push(v)
 	if !ok {
 		return
+	}
+	if r.yHist != nil {
+		r.yHist[r.yN&(cohHist-1)] = y
+		r.yN++
 	}
 	r.audio = append(r.audio, int16(max(min(roundf(f*iqUnitsPerHz), math.MaxInt16), math.MinInt16)))
 	if len(r.audio) == cap(r.audio) {
@@ -179,8 +226,15 @@ func (r *iqRx) follow() {
 	if abs32(hz) < lim {
 		return
 	}
+	// The samples that the DiscReceiver has not taken yet carry the old
+	// offset.
+	r.d.write(r.audio)
+	r.audio = r.audio[:0]
 	r.conv.tune(r.conv.hz + hz)
+	r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
+	r.nTunes++
 	f.dc -= hz * scale
+	f.mean -= hz * scale
 	r.d.tuneHz -= hz * scale
 	f.refresh()
 }

@@ -98,6 +98,9 @@ type options struct {
 	// 24000.
 	IQDisc bool
 	IQHz   int
+	// CohExt adds to softExt on iqRx at 24 kHz the coherent detection of
+	// each burst again, with the trellis settings PSPGain and LLRScale.
+	CohExt bool
 }
 
 // tierOptions returns the settings of tier t.

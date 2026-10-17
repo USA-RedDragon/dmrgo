@@ -76,8 +76,14 @@ type softExt struct {
 	// lockAt its time from the last kept sample, in samples.
 	lockSym int64
 	lockAt  float32
-	// stages selects the decodes that replace those of Tier 0.
+	// stages selects the decodes that replace those of Tier 0, and coh,
+	// when not nil, detects each burst again coherently, in place of the
+	// ratios of the core.
 	stages uint8
+	coh    *cohStage
+	// known marks the bits of a voice burst that its FEC fixed, for the
+	// detection again of coh.
+	known [layer2.BurstBits]bool
 }
 
 // The stages of a softExt.
@@ -139,6 +145,25 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	c.repair(&c.fec, b, cc, ccOK)
 	out := &b.Fixed
 	ch := &x.ch[b.Slot&1]
+	if x.coh != nil && x.coh.detect(c, b, &x.llr) {
+		x.repairAll(c, b, cc, ccOK)
+		if x.voiceKnown(b) && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
+			x.repairAll(c, b, cc, ccOK)
+		}
+		hold := false
+		if _, kind, known := layer2.SyncSourceOf(b.Sync); b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice {
+			hold = x.fragment(ch, b)
+		} else {
+			ch.have, ch.accN = 0, 0
+		}
+		x.push(c, b, hold)
+		if b.Voice == enums.VoiceBurstE && ch.have == 0xf {
+			x.embeddedLC(ch, b.Slot)
+			ch.have = 0
+		}
+		x.drain(c, false)
+		return
+	}
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
 	hold := false
 	switch {
@@ -185,6 +210,73 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		ch.have = 0
 	}
 	x.drain(c, false)
+}
+
+// voiceKnown marks in known the bits of voice burst b that its FEC fixed:
+// C0 and C1 of its three frames, its EMB but in burst A, and its SYNC in
+// burst A. It reports false for a burst that is not voice.
+func (x *softExt) voiceKnown(b *Burst) bool {
+	_, kind, ok := layer2.SyncSourceOf(b.Sync)
+	if b.Voice == enums.VoiceBurstUnknown && (!ok || kind != layer2.KindVoice) {
+		return false
+	}
+	clear(x.known[:])
+	for id := softAMBECode; id < softSmallCount; id++ {
+		c := &softSmallCodes[id]
+		for _, q := range c.pos[:c.n] {
+			x.known[q] = true
+		}
+	}
+	if b.Voice != enums.VoiceBurstUnknown && b.Voice != enums.VoiceBurstA {
+		c := &softSmallCodes[softEMBCode]
+		for _, q := range c.pos[:c.n] {
+			x.known[q] = true
+		}
+	}
+	return true
+}
+
+// repairAll sets the bits of burst b to the hard decisions of llr and
+// decodes every FEC field from llr with the soft decoders, with the color
+// code cc of the stream when ccOK; the CACH keeps the decode of the core.
+func (x *softExt) repairAll(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool) {
+	out := &b.Fixed
+	*out = layer2.RawBurst{}
+	for p, v := range x.llr {
+		if v < 0 {
+			out[p/8] |= 0x80 >> (p % 8)
+		}
+	}
+	b.Data = *out
+	_, kind, known := layer2.SyncSourceOf(b.Sync)
+	switch {
+	case b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
+		x.soft.decodeAMBE(&x.llr, out)
+		if b.Voice != enums.VoiceBurstUnknown && b.Voice != enums.VoiceBurstA {
+			x.soft.decodeEMB(&x.llr, cc, ccOK, out)
+		}
+	case known && kind == layer2.KindData:
+		st, res := x.soft.decodeSlotType(&x.llr, cc, ccOK, out)
+		if res.Uncorrectable {
+			break
+		}
+		switch dt := st.DataType(); dt {
+		case enums.DataTypeRate34:
+			x.soft.decodeRate34(&x.llr, out)
+		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
+		default:
+			check := x.checks[dt&0xF]
+			if _, r := x.soft.decodeBPTCOSD(&x.llr, check, out); check != nil && r.Uncorrectable {
+				saved := *out
+				if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
+					*out = saved
+				}
+			}
+		}
+	}
+	if known && c.anchor == b.Sync {
+		_ = out.SetSync(b.Sync)
+	}
 }
 
 // fill sets llr to the log-likelihood ratios of the burst under detection.
