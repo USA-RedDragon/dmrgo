@@ -90,6 +90,10 @@ type softExt struct {
 	// known marks the bits of a voice burst that its FEC fixed, for the
 	// detection again of coh.
 	known [layer2.BurstBits]bool
+	// ext and next hold the extrinsic ratios and the new channel ratios of
+	// a data pass.
+	ext  [layer2.BurstBits]float32
+	next [layer2.BurstBits]int16
 }
 
 // The stages of a softExt.
@@ -155,6 +159,8 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		x.repairAll(c, b, cc, ccOK)
 		if x.voiceKnown(b) && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
 			x.repairAll(c, b, cc, ccOK)
+		} else {
+			x.dataPasses(c, b, cc, ccOK)
 		}
 		hold := false
 		if _, kind, known := layer2.SyncSourceOf(b.Sync); b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice {
@@ -216,6 +222,62 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		ch.have = 0
 	}
 	x.drain(c, false)
+}
+
+// Settings of dataPasses: the number of passes and the weight of the
+// extrinsic ratios in the priors, as TierCoherent has them.
+const (
+	cohDataPasses = 2
+	cohDataPrior  = 0.7
+)
+
+// dataPasses detects a BPTC(196,96) data burst b whose block fails its
+// check, or without one needed corrections, again with the extrinsic
+// ratios of its grid decode as priors, up to cohDataPasses times, as
+// TierCoherent does, and decodes it from the new ratios.
+func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool) {
+	ch := x.llr
+	for range cohDataPasses {
+		if !x.bptcRetry(b) {
+			return
+		}
+		x.soft.bptcExtrinsic(&ch, &x.ext)
+		if !x.coh.refineData(&x.ext, cohDataPrior, &x.next) {
+			return
+		}
+		x.llr = x.next
+		bp := &softOSDCodes[softBPTCCode]
+		for _, i := range bp.pos[:bp.n] {
+			v := float32(x.next[i])/8 - cohDataPrior*x.ext[i]
+			ch[i] = satLLR(v)
+			x.llr[i] = satLLR(v + x.ext[i])
+		}
+		x.repairAll(c, b, cc, ccOK)
+	}
+}
+
+// bptcRetry reports whether burst b is a BPTC(196,96) data burst whose
+// block fails its check, or has none and differs from its hard decisions.
+func (x *softExt) bptcRetry(b *Burst) bool {
+	_, kind, known := layer2.SyncSourceOf(b.Sync)
+	if !known || kind != layer2.KindData {
+		return false
+	}
+	st := b.Fixed.SlotType()
+	if st.FEC.Uncorrectable {
+		return false
+	}
+	switch dt := st.DataType; dt {
+	case enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
+		return false
+	default:
+		p, _ := b.Fixed.BPTCPayload()
+		if check := x.checks[dt&0xF]; check != nil {
+			return !check(p)
+		}
+		h, _ := b.Data.BPTCPayload()
+		return h != p
+	}
 }
 
 // voiceKnown marks in known the bits of voice burst b that its FEC fixed:

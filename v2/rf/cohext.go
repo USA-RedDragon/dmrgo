@@ -62,8 +62,11 @@ type cohStage struct {
 	nseg     int
 	prior    [slotSymbols][4]float32
 	hasPrior bool
-	sps      float64
-	base     int64
+	// priorK gives the known symbols their prior: for a SYNC, not for an
+	// EMB that the core decoded.
+	priorK bool
+	sps    float64
+	base   int64
 }
 
 // newCohStage returns the coherent stage of iqRx r, with the settings
@@ -168,7 +171,7 @@ func (s *cohStage) runPrior(k int, lp []float32) {
 	if j < 0 || j >= slotSymbols {
 		return
 	}
-	if s.isK[j] {
+	if s.isK[j] && s.priorK {
 		lp[(s.known[j]+3)/2] = cohKnownPrior
 	}
 	if s.hasPrior {
@@ -295,7 +298,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 			s.known[syncFirstSym+i], s.isK[syncFirstSym+i] = v, true
 		}
 		segs[0] = [2]int{syncFirstSym, syncFirstSym + syncSymbols - 1}
-		nseg = 1
+		nseg, s.priorK = 1, true
 	} else if b.Voice != enums.VoiceBurstUnknown && b.HasFixed {
 		for _, k := range [...]int{syncFirstSym, syncFirstSym + 1, syncFirstSym + 2, syncFirstSym + 3,
 			syncFirstSym + syncSymbols - 4, syncFirstSym + syncSymbols - 3, syncFirstSym + syncSymbols - 2, syncFirstSym + syncSymbols - 1} {
@@ -306,7 +309,10 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		}
 		segs[0] = [2]int{syncFirstSym, syncFirstSym + 3}
 		segs[1] = [2]int{syncFirstSym + syncSymbols - 4, syncFirstSym + syncSymbols - 1}
-		nseg = 2
+		// The EMB that the core decoded sets the phase of the runs, but
+		// gives no priors, so that the decode of the EMB from the new
+		// ratios does not repeat a wrong one.
+		nseg, s.priorK = 2, false
 	} else {
 		return false
 	}
@@ -433,6 +439,24 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 		llr[p], llr[p+1] = dibitLLR(s.app[k][:], s.llrK)
 	}
 	return true
+}
+
+// refineData detects the data burst again with the bit priors w*ext, the
+// extrinsic ratios of its grid decode weighed by w, and writes the new
+// ratios into llr.
+func (s *cohStage) refineData(ext *[layer2.BurstBits]float32, w float32, llr *[layer2.BurstBits]int16) bool {
+	clear(s.prior[:])
+	for k := range burstSymbols {
+		lp := &s.prior[cachSymbols+k]
+		for d := range 4 {
+			b0, b1 := dibitOfDigit(d)
+			lp[d] = bitPrior(w*ext[2*k], b0) + bitPrior(w*ext[2*k+1], b1)
+		}
+	}
+	s.hasPrior = true
+	ok := s.runAll(llr)
+	s.hasPrior = false
+	return ok
 }
 
 // refine detects the voice burst again with the bits of fixed that known
