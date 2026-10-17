@@ -99,6 +99,11 @@ func GridBit(row, col int) int {
 
 // DecodeRows corrects the rows of a BPTC(196,96) grid that Rows returns
 // and returns what Decode196 returns for the block.
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs, for microcontrollers.
+//
+//go:noinline
 func DecodeRows(rows [13]uint16) ([12]byte, uint8, fec.Result) {
 	received := rows
 	result := fec.Result{BitsChecked: 196, Uncorrectable: hammingCorrect(&rows)}
