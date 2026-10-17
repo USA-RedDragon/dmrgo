@@ -74,6 +74,10 @@ type options struct {
 	// Sources is the number of SYNC sources the search tries: 2 for BS
 	// and MS, 4 with both direct mode slots.
 	Sources int
+	// ClickSpan, when above 0, sets the floor of the discriminator symbol
+	// likelihoods from the share of clicks that the bursts show, spread
+	// over ClickSpan Hz, in place of DiscOutlier.
+	ClickSpan float64
 	// SoftExt decodes the bursts of the streaming core with softExt, the
 	// soft decoders of the coherent tiers.
 	SoftExt bool
@@ -81,7 +85,7 @@ type options struct {
 
 // tierOptions returns the settings of tier t.
 func tierOptions(t Tier) options {
-	o := options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscOutlier: 0.01, Sources: 2}
+	o := options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscOutlier: 0.01, ClickSpan: 500, Sources: 2}
 	o.SoftFEC, o.GridBPTC = true, true
 	if t != TierDisc {
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true

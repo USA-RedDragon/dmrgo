@@ -75,6 +75,14 @@ const (
 	// the fixed point of its likelihood scale.
 	llrStepHz = 4
 	llrShift  = 24
+	// leanClickGain is the weight of each burst in the share of clicks, and
+	// leanMinClicks the least share that the floor takes.
+	leanClickGain = 0.1
+	leanMinClicks = 1e-3
+	// leanClickOut is twice the distance from the DC offset, in multiples of
+	// the deviation of level 1, beyond which a symbol counts as a click:
+	// beyond the outer levels at 3 by more than the noise of a weak signal.
+	leanClickOut = 9
 	// leanCubicSPS is the most samples per symbol at which the symbol
 	// timing interpolates by Catmull-Rom instead of linearly.
 	leanCubicSPS = 2.5
@@ -311,6 +319,11 @@ type leanCore struct {
 	llrFloor       int32
 	dev            float32
 	outlier        float32
+	// clickSpan, when above 0, sets the floor of the symbol likelihoods from
+	// clicks, the share of symbols beyond the outer levels that the bursts
+	// show, spread over clickSpan Hz, instead of from outlier.
+	clickSpan float32
+	clicks    float32
 
 	offsetHz int16
 	devHz    int16
@@ -378,6 +391,7 @@ func newLean(cfg Config, opt options) *leanRx {
 func (c *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	c.onBurst, c.lastAnch, c.softFEC = onBurst, leanNoSlot, opt.SoftFEC
 	c.sources, c.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
+	c.clickSpan = float32(opt.ClickSpan)
 	if po := opt.DiscOutlier; po > 0 {
 		c.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
 	}
@@ -1273,9 +1287,10 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	// The hard decisions are the signs of the ratios of symLLR: the first
 	// bit is set below 0, the second beyond the midpoint between the
 	// levels, ±2 dev.
-	thr := 2 * r.llrDev
+	thr, out := 2*r.llrDev, r.llrDev*leanClickOut/2
 	h := uint32(base) % leanRing
 	var acc byte
+	beyond := 0
 	for k := range slotSymbols {
 		x := int32(r.ring[h])*(discStepHz/llrStepHz) + r.llrOff
 		if h++; h == leanRing {
@@ -1289,6 +1304,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		if x > thr {
 			acc |= 1
 		}
+		if x > out {
+			beyond++
+		}
 		// Four symbols fill a byte; the CACH is three bytes.
 		switch {
 		case k&3 != 3:
@@ -1297,6 +1315,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		default:
 			b.Data[(k-cachSymbols)/4] = acc
 		}
+	}
+	if r.clickSpan > 0 {
+		r.clickFloor(beyond, v)
 	}
 	if !r.classify(b, j) {
 		return
@@ -1320,6 +1341,21 @@ func (r *leanCore) emit(b *Burst) {
 		r.out = r.out[:len(r.out)+1]
 		r.out[len(r.out)-1] = *b
 	}
+}
+
+// clickFloor sets the floor of the symbol likelihoods from the share of
+// clicks: beyond symbols of the slot lie beyond the outer levels, and v is
+// the noise variance. Below the FM threshold the discriminator turns a
+// slip of the carrier phase into a pulse that moves a symbol by more than
+// the span of the levels, so most clicks land beyond them, and their share
+// measures the density of the clicks that land between them. A fixed
+// floor makes the ratios of a weak signal too confident there: the error
+// rate of a large ratio then rises instead of falling.
+func (r *leanCore) clickFloor(beyond int, v float32) {
+	r.clicks += leanClickGain * (float32(beyond)/slotSymbols - r.clicks)
+	po := max(r.clicks, leanMinClicks)
+	lf := log32(po/r.clickSpan) - log32(1-po) + 0.5*log32(2*math.Pi*v)
+	r.llrFloor = int32(roundf(lf * 8))
 }
 
 // colorCode returns the color code most clean data bursts carried.
