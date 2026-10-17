@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -77,12 +76,52 @@ type softExt struct {
 	// lockAt its time from the last kept sample, in samples.
 	lockSym int64
 	lockAt  float32
+	// stages selects the decodes that replace those of Tier 0.
+	stages uint8
 }
 
-// newSoftExt returns a softExt that decodes lookback slots before the
-// SYNC of each lock, at sps matched filter samples per symbol.
+// The stages of a softExt.
+const (
+	// extAMBE decodes C0 and C1 of each voice frame by soft ML.
+	extAMBE = 1 << iota
+	// extOSD decodes a BPTC(196,96) block whose check fails by ordered
+	// statistics, and again over its grid.
+	extOSD
+	// extELC decodes the embedded LC of each superframe over its four
+	// fragments, summed with the earlier superframes of the call.
+	extELC
+	// extAll is every stage.
+	extAll = extAMBE | extOSD | extELC
+)
+
+// newSoftExt returns a softExt with every stage that decodes lookback
+// slots before the SYNC of each lock, at sps matched filter samples per
+// symbol.
 func newSoftExt(lookback int, sps float32) *softExt {
-	x := &softExt{soft: newSoftDecoder(), lookback: lookback}
+	return newSoftExtStages(extAll, lookback, sps)
+}
+
+// softExtOf returns the softExt of the settings opt at sps matched filter
+// samples per symbol.
+func softExtOf(opt *options, sps float32) *softExt {
+	var st uint8
+	if opt.ExtAMBE {
+		st |= extAMBE
+	}
+	if opt.ExtOSD {
+		st |= extOSD
+	}
+	if opt.ExtELC {
+		st |= extELC
+	}
+	return newSoftExtStages(st, opt.ExtLookback, sps)
+}
+
+// newSoftExtStages returns a softExt with the stages st that decodes
+// lookback slots before the SYNC of each lock, at sps matched filter
+// samples per symbol.
+func newSoftExtStages(st uint8, lookback int, sps float32) *softExt {
+	x := &softExt{soft: newSoftDecoder(), lookback: lookback, stages: st}
 	if lookback > 0 {
 		n := int(float32((lookback+1)*slotSymbols)*sps) + leanAcqSamples
 		x.acq = make([]int16, (n+1)/2)
@@ -94,53 +133,51 @@ func newSoftExt(lookback int, sps float32) *softExt {
 }
 
 func (x *softExt) burst(c *leanCore, b *Burst) {
-	for p := range x.llr {
-		x.llr[p] = c.llrAt(p)
-	}
+	// The decode of Tier 0 first; the stages then replace the fields that
+	// they decode better.
 	cc, ccOK := c.colorCode()
-	b.Fixed, b.FixedCACH, b.HasFixed = b.Data, b.CACH, true
+	c.repair(&c.fec, b, cc, ccOK)
 	out := &b.Fixed
 	ch := &x.ch[b.Slot&1]
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
 	hold := false
 	switch {
 	case b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
-		x.soft.decodeAMBE(&x.llr, out)
-		if b.Voice != enums.VoiceBurstUnknown && b.Voice != enums.VoiceBurstA {
-			x.soft.decodeEMB(&x.llr, cc, ccOK, out)
+		if x.stages&(extAMBE|extELC) != 0 {
+			x.fill(c)
 		}
-		hold = x.fragment(ch, b)
+		if x.stages&extAMBE != 0 {
+			x.soft.decodeAMBE(&x.llr, out)
+		}
+		if x.stages&extELC != 0 {
+			hold = x.fragment(ch, b)
+		}
 	case known && kind == layer2.KindData:
 		ch.have, ch.accN = 0, 0
-		st, res := x.soft.decodeSlotType(&x.llr, cc, ccOK, out)
-		if res.Uncorrectable {
+		if x.stages&extOSD == 0 {
 			break
 		}
-		switch dt := st.DataType(); dt {
-		case enums.DataTypeRate34:
-			x.soft.decodeRate34(&x.llr, out)
-		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
-		default:
-			check := x.checks[dt&0xF]
-			if !c.fixBPTC(&c.fec, dt, out) {
-				break
-			}
-			var r fec.Result
-			if _, r = x.soft.decodeBPTCOSD(&x.llr, check, out); check != nil && r.Uncorrectable {
-				saved := *out
-				if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
-					*out = saved
-				}
+		st := out.SlotType()
+		if st.FEC.Uncorrectable {
+			break
+		}
+		dt := st.DataType
+		check := x.checks[dt&0xF]
+		if check == nil {
+			break
+		}
+		if p, _ := out.BPTCPayload(); check(p) {
+			break
+		}
+		x.fill(c)
+		saved := *out
+		if _, r := x.soft.decodeBPTCOSD(&x.llr, check, out); r.Uncorrectable {
+			if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
+				*out = saved
 			}
 		}
 	default:
 		ch.have = 0
-	}
-	if known && c.anchor == b.Sync {
-		_ = out.SetSync(b.Sync)
-	}
-	if b.HasCACH {
-		c.fixTACT(&c.fec, b)
 	}
 	x.push(c, b, hold)
 	if b.Voice == enums.VoiceBurstE && ch.have == 0xf {
@@ -148,6 +185,13 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		ch.have = 0
 	}
 	x.drain(c, false)
+}
+
+// fill sets llr to the log-likelihood ratios of the burst under detection.
+func (x *softExt) fill(c *leanCore) {
+	for p := range x.llr {
+		x.llr[p] = c.llrAt(p)
+	}
 }
 
 // fragment keeps the embedded signalling fragment of voice burst b of

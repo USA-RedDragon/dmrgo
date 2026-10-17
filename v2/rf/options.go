@@ -78,9 +78,18 @@ type options struct {
 	// likelihoods from the share of clicks that the bursts show, spread
 	// over ClickSpan Hz, in place of DiscOutlier.
 	ClickSpan float64
-	// SoftExt decodes the bursts of the streaming core with softExt, the
-	// soft decoders of the coherent tiers.
+	// SoftExt adds softExt after the streaming core: the stages that
+	// ExtAMBE, ExtOSD and ExtELC select, and the ExtLookback slots before
+	// the SYNC of a lock.
 	SoftExt bool
+	// ExtAMBE decodes C0 and C1 of each voice frame by soft ML.
+	ExtAMBE bool
+	// ExtOSD decodes a BPTC(196,96) block whose check fails after the
+	// decode of the core by ordered statistics, and again over its grid.
+	ExtOSD bool
+	// ExtELC decodes the embedded LC of each superframe over its four
+	// fragments, summed with the earlier superframes of the call.
+	ExtELC bool
 	// ExtLookback is the number of slots before the SYNC of a lock that
 	// softExt decodes.
 	ExtLookback int

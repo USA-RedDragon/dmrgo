@@ -118,6 +118,9 @@ func (j *sweepJob) newRx(cfg Config) sweepRx {
 		if err != nil {
 			panic(err)
 		}
+		if cfg.opt.SoftExt {
+			d.ext = softExtOf(cfg.opt, 2*d.tm.step)
+		}
 		return sweepRx{d: d}
 	}
 	return sweepRx{r: mustNew(cfg)}

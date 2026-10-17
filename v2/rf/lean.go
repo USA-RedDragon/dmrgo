@@ -383,7 +383,7 @@ func newLean(cfg Config, opt options) *leanRx {
 	r.df.init(cfg.BasebandHz == discRate)
 	r.iq, r.center = &r.df, r.df.center()
 	if opt.SoftExt {
-		r.ext = newSoftExt(opt.ExtLookback, discSPS)
+		r.ext = softExtOf(&opt, discSPS)
 	}
 	return r
 }
