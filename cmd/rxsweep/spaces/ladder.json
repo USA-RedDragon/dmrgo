@@ -1,37 +1,158 @@
 {
  "superframes": 30,
  "offset": 1400,
- "coarse": {"lo": -2, "hi": 12, "step": 1, "seeds": 4},
- "fine": {"lo": -1.5, "hi": 1.5, "step": 0.25, "seeds": 16},
+ "coarse": {
+  "lo": -2,
+  "hi": 12,
+  "step": 1,
+  "seeds": 4
+ },
+ "fine": {
+  "lo": -1.5,
+  "hi": 1.5,
+  "step": 0.25,
+  "seeds": 16
+ },
  "variants": [
-  {"name": "a-t0", "tier": 0, "disc": true, "hz": 9600},
-  {"name": "a-t0-fixedfloor", "tier": 0, "disc": true, "hz": 9600, "opt": {"ClickSpan": 0}},
-  {"name": "q-t0", "tier": 0},
-  {"name": "q-buffered", "tier": 0, "lookback": 8},
-  {"name": "q-coherent", "tier": 1},
-  {"name": "q-trellis", "tier": 2}
+  {
+   "name": "a-t0",
+   "tier": 0,
+   "disc": true,
+   "hz": 9600
+  },
+  {
+   "name": "a-t0-fixedfloor",
+   "tier": 0,
+   "disc": true,
+   "hz": 9600,
+   "opt": {
+    "ClickSpan": 0
+   }
+  },
+  {
+   "name": "q-t0",
+   "tier": 0
+  },
+  {
+   "name": "q-buffered",
+   "tier": 0,
+   "lookback": 8
+  },
+  {
+   "name": "q-coherent",
+   "tier": 1
+  },
+  {
+   "name": "q-trellis",
+   "tier": 2
+  },
+  {
+   "name": "q-disc12-t0",
+   "tier": 0,
+   "opt": {
+    "IQDisc": true,
+    "IQHz": 12000
+   }
+  },
+  {
+   "name": "q-disc24-t0",
+   "tier": 0,
+   "opt": {
+    "IQDisc": true,
+    "IQHz": 24000
+   }
+  }
  ],
  "families": [
   {
    "name": "a-soft",
-   "base": {"tier": 0, "disc": true, "hz": 9600, "opt": {"SoftExt": true}},
+   "base": {
+    "tier": 0,
+    "disc": true,
+    "hz": 9600,
+    "opt": {
+     "SoftExt": true
+    }
+   },
    "mode": "product",
    "vary": {
-    "opt.ExtAMBE": [false, true],
-    "opt.ExtOSD": [false, true],
-    "opt.ExtELC": [false, true],
-    "opt.ExtLookback": [0, 8]
+    "opt.ExtAMBE": [
+     false,
+     true
+    ],
+    "opt.ExtOSD": [
+     false,
+     true
+    ],
+    "opt.ExtELC": [
+     false,
+     true
+    ],
+    "opt.ExtLookback": [
+     0,
+     8
+    ]
    }
   },
   {
    "name": "q-soft",
-   "base": {"tier": 0, "opt": {"SoftExt": true}},
+   "base": {
+    "tier": 0,
+    "opt": {
+     "SoftExt": true
+    }
+   },
    "mode": "product",
    "vary": {
-    "opt.ExtAMBE": [false, true],
-    "opt.ExtOSD": [false, true],
-    "opt.ExtELC": [false, true],
-    "opt.ExtLookback": [0, 8]
+    "opt.ExtAMBE": [
+     false,
+     true
+    ],
+    "opt.ExtOSD": [
+     false,
+     true
+    ],
+    "opt.ExtELC": [
+     false,
+     true
+    ],
+    "opt.ExtLookback": [
+     0,
+     8
+    ]
+   }
+  },
+  {
+   "name": "q-disc",
+   "base": {
+    "tier": 0,
+    "opt": {
+     "IQDisc": true,
+     "SoftExt": true
+    }
+   },
+   "mode": "product",
+   "vary": {
+    "opt.IQHz": [
+     12000,
+     24000
+    ],
+    "opt.ExtAMBE": [
+     false,
+     true
+    ],
+    "opt.ExtOSD": [
+     false,
+     true
+    ],
+    "opt.ExtELC": [
+     false,
+     true
+    ],
+    "opt.ExtLookback": [
+     0,
+     8
+    ]
    }
   }
  ]
