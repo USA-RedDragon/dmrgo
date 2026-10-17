@@ -68,6 +68,7 @@ func deriveDSP() *dspTables {
 	for i, v := range rrcTapsSpan(2, discSpan)[:len(t.audio96)] {
 		t.audio96[i] = q15(float32(v))
 	}
+
 	for i := range t.twiddles {
 		p := -2 * math.Pi * float64(i) / fftSize
 		im := float32(math.Sin(p))
@@ -156,22 +157,25 @@ func rrcTapsSpan(sps float64, span int) []float64 {
 	h := make([]float64, n)
 	var c float64
 	for i := range h {
-		t := float64(i-n/2) / sps
-		switch {
-		case t == 0:
-			h[i] = 1 - rrcAlpha + 4*rrcAlpha/math.Pi
-		case math.Abs(math.Abs(4*rrcAlpha*t)-1) < 1e-9:
-			h[i] = rrcAlpha / math.Sqrt2 * ((1+2/math.Pi)*math.Sin(math.Pi/(4*rrcAlpha)) + (1-2/math.Pi)*math.Cos(math.Pi/(4*rrcAlpha)))
-		default:
-			h[i] = (math.Sin(math.Pi*t*(1-rrcAlpha)) + 4*rrcAlpha*t*math.Cos(math.Pi*t*(1+rrcAlpha))) /
-				(math.Pi * t * (1 - (4*rrcAlpha*t)*(4*rrcAlpha*t)))
-		}
+		h[i] = rrcPulse(float64(i-n/2) / sps)
 		c += h[i]
 	}
 	for i := range h {
 		h[i] /= c
 	}
 	return h
+}
+
+// rrcPulse returns the root raised cosine pulse at t symbols.
+func rrcPulse(t float64) float64 {
+	switch {
+	case t == 0:
+		return 1 - rrcAlpha + 4*rrcAlpha/math.Pi
+	case math.Abs(math.Abs(4*rrcAlpha*t)-1) < 1e-9:
+		return rrcAlpha / math.Sqrt2 * ((1+2/math.Pi)*math.Sin(math.Pi/(4*rrcAlpha)) + (1-2/math.Pi)*math.Cos(math.Pi/(4*rrcAlpha)))
+	}
+	return (math.Sin(math.Pi*t*(1-rrcAlpha)) + 4*rrcAlpha*t*math.Cos(math.Pi*t*(1+rrcAlpha))) /
+		(math.Pi * t * (1 - (4*rrcAlpha*t)*(4*rrcAlpha*t)))
 }
 
 // refPhase returns the phase at each sample of the symbols syms when

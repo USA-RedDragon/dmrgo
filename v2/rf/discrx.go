@@ -119,13 +119,13 @@ func (r *DiscReceiver) Flush() []Burst {
 // the input samples. It is the carrier offset times the gain of the
 // discriminator, plus the offset of its converter.
 func (r *DiscReceiver) OffsetHz() float64 {
-	return float64(r.offsetHz / r.f.gain)
+	return float64(float32(r.offsetHz) / r.f.gain)
 }
 
 // DeviationHz returns the outer deviation of the last locked stream, in
 // units of the input samples.
 func (r *DiscReceiver) DeviationHz() float64 {
-	return float64(r.devHz / r.f.gain)
+	return float64(float32(r.devHz) / r.f.gain)
 }
 
 // sample runs one input sample through the front end and the core. While
@@ -239,10 +239,16 @@ func (f *audioFront) retuneFront(hz, d float32) {
 	}
 }
 
+// quantize returns the input sample u in Hz less the DC offset, in units
+// of rrcStepHz.
+func (f *audioFront) quantize(u int16) int8 {
+	return int8(max(min(int32((int64(u)*f.k-f.off)>>16), 127), -128))
+}
+
 // filter takes one input sample u and returns the matched filter sample,
 // in Hz, of u in Hz less the DC offset, when the sample completes one.
 func (f *audioFront) filter(u int16) (float32, bool) {
-	v := int8(max(min(int32((int64(u)*f.k-f.off)>>16), 127), -128))
+	v := f.quantize(u)
 	if f.half {
 		h := f.hbHead
 		f.hbHist[h] = v

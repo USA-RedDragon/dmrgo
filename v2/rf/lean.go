@@ -50,6 +50,9 @@ const (
 	// the fixed point of its likelihood scale.
 	llrStepHz = 4
 	llrShift  = 24
+	// leanCubicSPS is the most samples per symbol at which the symbol
+	// timing interpolates by Catmull-Rom instead of linearly.
+	leanCubicSPS = 2.5
 )
 
 // leanTiming recovers the symbol timing from the matched filter output at
@@ -58,6 +61,10 @@ const (
 type leanTiming struct {
 	step   float32
 	s1, s2 float32
+	// cubic interpolates the strobes between s1 and s2 by Catmull-Rom with
+	// s0 and s3, one sample late, for few samples per symbol.
+	cubic  bool
+	s0, s3 float32
 	// t is the time of the next strobe, in samples after the last one.
 	// The strobes alternate between symbols and the midpoints between them.
 	t    float32
@@ -72,28 +79,58 @@ type leanTiming struct {
 
 // push takes one matched filter sample and returns the symbol value when
 // a symbol strobe falls between the last two samples, with the time of the
-// strobe from the last sample, from -1 to 0.
+// strobe from the last sample, from -1 to 0. It takes every strobe that
+// falls there, so that at few samples per symbol a midpoint after a symbol
+// strobe is not left for the next sample to extrapolate.
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
-	tm.s1, tm.s2 = tm.s2, s
+	if tm.cubic {
+		tm.s0, tm.s1, tm.s2, tm.s3 = tm.s1, tm.s2, tm.s3, s
+	} else {
+		tm.s1, tm.s2 = tm.s2, s
+	}
 	tm.t--
-	if tm.t > 0 {
-		return 0, 0, false
+	for tm.t <= 0 {
+		t := tm.t
+		if tm.strobe(tm.at(t)) {
+			v, at, ok = tm.last, t, true
+		}
 	}
-	at = tm.t
-	v = tm.s2 + at*(tm.s2-tm.s1)
+	if ok && tm.cubic {
+		// The cubic strobes are one sample late.
+		at--
+	}
+	return v, at, ok
+}
+
+// strobe takes the matched filter value x of the strobe at t, moves t to
+// the next strobe and reports whether the strobe was of a symbol, whose
+// value is then last.
+func (tm *leanTiming) strobe(x float32) bool {
 	if tm.mid {
-		tm.half, tm.mid = v, false
+		tm.half, tm.mid = x, false
 		tm.t += tm.step
-		return 0, 0, false
+		return false
 	}
-	tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*v*v
-	e := tm.half * (tm.last - v)
-	tm.last, tm.mid = v, true
+	tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*x*x
+	e := tm.half * (tm.last - x)
+	tm.last, tm.mid = x, true
 	tm.t += tm.step
 	if !tm.hold && tm.pow > 0 {
 		tm.t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
 	}
-	return v, at, true
+	return true
+}
+
+// at returns the matched filter output at time t, from -1 to 0, from the
+// last sample: by Catmull-Rom between the two samples before the last when
+// cubic, one sample late, and linearly between the last two otherwise.
+func (tm *leanTiming) at(t float32) float32 {
+	if !tm.cubic {
+		return tm.s2 + t*(tm.s2-tm.s1)
+	}
+	p0, p1, p2, p3 := tm.s0, tm.s1, tm.s2, tm.s3
+	mu := 1 + t
+	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0)))
 }
 
 // leanChan is the superframe state of one TDMA channel of the streaming
@@ -199,8 +236,8 @@ type leanCore struct {
 	dev            float32
 	outlier        float32
 
-	offsetHz float32
-	devHz    float32
+	offsetHz int16
+	devHz    int16
 	// cb holds the burst under detection and fec the scratch of its
 	// decode, which as locals TinyGo puts on the heap.
 	cb  Burst
@@ -265,6 +302,7 @@ func (c *leanCore) init(onBurst func(Burst), opt options, keep int, sps float32)
 	c.mfScale = float64(samplesPerSy) / float64(sps)
 	c.acqGain, c.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
 	c.tm.step = sps / 2
+	c.tm.cubic = sps <= leanCubicSPS
 	c.tm.t, c.tm.gain = c.tm.step, c.acqGain
 	c.resetChans()
 	if onBurst == nil {
@@ -607,6 +645,8 @@ func (r *leanCore) retune(d float32) {
 	r.dcHz -= d
 	r.tm.s1 -= d
 	r.tm.s2 -= d
+	r.tm.s0 -= d
+	r.tm.s3 -= d
 	r.tm.last -= d
 	r.tm.half -= d
 }
@@ -630,8 +670,8 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 func (r *leanCore) unlock() {
 	r.locked = false
 	r.tm.hold, r.tm.gain = false, r.acqGain
-	r.offsetHz = r.tuneHz + r.dcHz
-	r.devHz = 3 * deviationHz * r.devScale
+	r.offsetHz = int16(max32(min32(roundf(r.tuneHz+r.dcHz), math.MaxInt16), math.MinInt16))
+	r.devHz = int16(max32(min32(roundf(3*deviationHz*r.devScale), math.MaxInt16), math.MinInt16))
 }
 
 // symLLR returns the log-likelihood ratios of the two bits of symbol k, as
