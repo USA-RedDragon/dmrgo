@@ -83,12 +83,18 @@ func Rows(info [25]byte) [13]uint16 {
 // GridPos returns the row and column of the grid that information bit p of
 // a block, 0 to 195, lands in, and false for a bit outside the grid.
 func GridPos(p int) (row, col int, ok bool) {
-	for i := 1; i < len(dm); i++ {
+	for i := 1; i < 196; i++ {
 		if int(dm[i]) == p {
 			return (i - 1) / 15, (i - 1) % 15, true
 		}
 	}
 	return 0, 0, false
+}
+
+// GridBit returns the information bit of a block, 1 to 195, that lands in
+// row and col of the grid.
+func GridBit(row, col int) int {
+	return int(dm[1+15*row+col])
 }
 
 // DecodeRows corrects the rows of a BPTC(196,96) grid that Rows returns
@@ -163,6 +169,27 @@ func hammingCorrect(rows *[13]uint16) bool {
 // reserved bits R(0) to R(2) come from bits 0 to 2 of reserved, and R(3) is
 // zero.
 func Encode196(data [12]byte, reserved uint8) [25]byte {
+	rows := EncodeRows(data, reserved)
+	var words [4]uint64
+	i := 1
+	for _, row := range rows {
+		for c := range 15 {
+			p := dm[i]
+			words[p>>6&3] |= uint64(row>>c&1) << (63 - p&63)
+			i++
+		}
+	}
+	var info [25]byte
+	for k := range 3 {
+		binary.BigEndian.PutUint64(info[8*k:], words[k])
+	}
+	info[24] = byte(words[3] >> 56)
+	return info
+}
+
+// EncodeRows returns the 13 grid rows of the BPTC(196,96) codeword of data
+// and reserved, which Rows returns for the block of Encode196.
+func EncodeRows(data [12]byte, reserved uint8) [13]uint16 {
 	head := binary.BigEndian.Uint64(data[:8])
 	tail := uint64(binary.BigEndian.Uint32(data[8:]))
 	var rows [13]uint16
@@ -179,20 +206,5 @@ func Encode196(data [12]byte, reserved uint8) [25]byte {
 	}
 	s := columnSyndromes(&rows)
 	rows[9], rows[10], rows[11], rows[12] = s[0], s[1], s[2], s[3]
-
-	var words [4]uint64
-	i := 1
-	for _, row := range rows {
-		for c := range 15 {
-			p := dm[i]
-			words[p>>6&3] |= uint64(row>>c&1) << (63 - p&63)
-			i++
-		}
-	}
-	var info [25]byte
-	for k := range 3 {
-		binary.BigEndian.PutUint64(info[8*k:], words[k])
-	}
-	info[24] = byte(words[3] >> 56)
-	return info
+	return rows
 }
