@@ -65,6 +65,16 @@ type cohStage struct {
 	nseg     int
 	prior    [slotSymbols][4]float32
 	hasPrior bool
+	// prevOK marks a burst whose first half runs again from the SYNC of
+	// the slot before, prevSyms at slot symbol prevK0, and cross that run;
+	// lastT0 and lastSync are the time of symbol 0 and the SYNC of the last
+	// burst, 0 for none.
+	prevOK   bool
+	cross    bool
+	prevK0   int
+	prevSyms [syncSymbols]int8
+	lastT0   float64
+	lastSync enums.SyncPattern
 	// priorK gives the known symbols their prior: for a SYNC, not for an
 	// EMB that the core decoded.
 	priorK bool
@@ -92,7 +102,7 @@ func newCohStage(r *iqRx, opt *options) *cohStage {
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
-	s.tr = newTrellis(m, slotSymbols+2*runMargin, slotSymbols+2*runMargin, 0)
+	s.tr = newTrellis(m, 2*slotSymbols+2*runMargin, 2*slotSymbols+2*runMargin, 0)
 	s.buf = make([]complex64, (syncSymbols+2)*cohSPS)
 	s.nsrc = min(opt.Sources, len(s.scanTpl))
 	for i := range s.nsrc {
@@ -292,6 +302,9 @@ func (s *cohStage) runSamples(k0, k1 int, x []complex64) {
 func (s *cohStage) runPrior(k int, lp []float32) {
 	clear(lp)
 	j := s.g0 + s.dir*(k+2*s.model.d)
+	if v, ok := s.prevAt(j); ok {
+		lp[(v+3)/2] = cohKnownPrior
+	}
 	if j < 0 || j >= slotSymbols {
 		return
 	}
@@ -312,7 +325,26 @@ func (s *cohStage) runKeep(k int, app []float32) {
 	}
 	dist := k + 2*d
 	j := s.g0 + s.dir*dist
-	if j < cachSymbols || j >= slotSymbols || dist >= s.dist[j] {
+	if j < cachSymbols || j >= slotSymbols {
+		return
+	}
+	// The run from the SYNC of the slot before and the backward run of
+	// the burst detect the first half from both sides of it: their mean
+	// log-APPs spread less than either, as TierCoherent detects across the
+	// slots.
+	if s.cross {
+		if j >= syncFirstSym || s.dist[j] == math.MaxInt {
+			return
+		}
+		ma, mb := app[0], s.app[j][0]
+		for i := 1; i < 4; i++ {
+			ma, mb = max(ma, app[i]), max(mb, s.app[j][i])
+		}
+		for i := range 4 {
+			s.app[j][i] = 0.5 * ((app[i] - ma) + (s.app[j][i] - mb))
+		}
+		return
+	} else if dist >= s.dist[j] {
 		return
 	}
 	copy(s.app[j][:], app)
@@ -548,7 +580,35 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	s.scale = float32(2 * amp / noise)
 	s.segs, s.nseg, s.hasPrior = segs, nseg, false
+	// The carrier of a BS stream stays on, so the first half of a burst
+	// after one with a SYNC runs again from that SYNC.
+	s.prevOK = false
+	if c.bs && s.lastSync != 0 {
+		k := int(math.Round((s.lastT0-s.t0)/s.sps)) + syncFirstSym
+		if k > syncFirstSym-slotSymbols-cohShift && k < syncFirstSym-slotSymbols+cohShift {
+			s.prevOK, s.prevK0 = true, k
+			syncSyms(s.lastSync, &s.prevSyms)
+		}
+	}
+	s.lastT0, s.lastSync = s.t0, 0
+	if nseg == 1 {
+		s.lastSync = b.Sync
+	}
 	return s.runAll(llr)
+}
+
+// cohShift is the most symbols by which the timing of the core may move
+// the slot before.
+const cohShift = 3
+
+// prevAt returns the symbol of the SYNC of the slot before at slot symbol
+// j, and whether it is one.
+func (s *cohStage) prevAt(j int) (int8, bool) {
+	i := j - s.prevK0
+	if !s.prevOK || i < 0 || i >= syncSymbols {
+		return 0, false
+	}
+	return s.prevSyms[i], true
 }
 
 // cohPlaceRho is the least share of the power of the SYNC field that its
@@ -649,6 +709,11 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	g0, g1 := s.segs[0][0], s.segs[s.nseg-1][1]
 	s.run(g0, hi-g0+1+runMargin, 1, s.scale)
 	s.run(g1, g1-lo+1+runMargin, -1, s.scale)
+	if s.prevOK {
+		s.cross = true
+		s.run(s.prevK0, syncFirstSym-s.prevK0+runMargin, 1, s.scale)
+		s.cross = false
+	}
 	for k := lo; k <= hi; k++ {
 		if s.dist[k] == math.MaxInt {
 			return false
@@ -719,7 +784,11 @@ func (s *cohStage) run(g, n, dir int, scale float32) {
 	s.steps = n - 2*d
 	var syms [cohKnown]int
 	for i := range cohKnown {
-		syms[i] = int(s.known[g+dir*i])
+		if v, ok := s.prevAt(g + dir*i); ok {
+			syms[i] = int(v)
+		} else {
+			syms[i] = int(s.known[g+dir*i])
+		}
 	}
 	s.fill(0, cohKnown, s.buf)
 	rot := m.anchor(s.buf, syms[:])
