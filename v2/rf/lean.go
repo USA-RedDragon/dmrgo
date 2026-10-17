@@ -71,6 +71,10 @@ const (
 	// a source for the search to correlate the field. The SYNC symbols are
 	// all outer symbols, so a field that passes discLock differs in few.
 	leanSignMiss = 5
+	// leanExtSignMiss and leanExtRho are the sign misses and the least
+	// SYNC correlation of a SYNC that a stage verifies.
+	leanExtSignMiss = 9
+	leanExtRho      = 0.3
 	// llrStepHz is the resolution of the symbols in symLLR, and llrShift
 	// the fixed point of its likelihood scale.
 	llrStepHz = 4
@@ -227,6 +231,9 @@ type leanCore struct {
 	// DiscReceiver; a method value would allocate.
 	audio *audioFront
 	iq    leanTuner
+	// signMiss is the most SYNC symbols whose sign may miss before the
+	// search tests them: leanSignMiss, more with a stage that verifies.
+	signMiss uint8
 	// ext is the stage of a higher tier that decodes and emits each burst
 	// in place of repair, nil for Tier 0, and replaying is set while it
 	// runs the slots before a lock through slot; with replayDry the slots
@@ -395,6 +402,7 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.onBurst, r.lastAnch, r.softFEC = onBurst, leanNoSlot, opt.SoftFEC
 	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	r.clickSpan = float32(opt.ClickSpan)
+	r.signMiss = leanSignMiss
 	if po := opt.DiscOutlier; po > 0 {
 		r.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
 	}
@@ -897,7 +905,7 @@ func (r *leanCore) signsMatch() bool {
 		// instructions on the M4.
 		x := r.signs ^ syncSigns[i]
 		m := ones8[x&0xff] + ones8[x>>8&0xff] + ones8[x>>16&0xff]
-		if m <= leanSignMiss || m >= syncSymbols-leanSignMiss {
+		if m <= r.signMiss || m >= syncSymbols-r.signMiss {
 			return true
 		}
 	}
@@ -910,7 +918,8 @@ func (r *leanCore) signsMatch() bool {
 //go:noinline
 func (r *leanCore) searchSym() {
 	rho2, src, data := r.syncAt(r.ns - 1)
-	if rho2 < leanResample*leanResample {
+	weak := rho2 < leanResample*leanResample
+	if weak && (r.ext == nil || rho2 < leanExtRho*leanExtRho) {
 		return
 	}
 	voice, dp, _ := sourceAt(src).SyncPatterns()
@@ -923,11 +932,11 @@ func (r *leanCore) searchSym() {
 	// they are.
 	ok := false
 	var d float32
-	if r.ns >= r.acqNext {
+	if !weak && r.ns >= r.acqNext {
 		var saved [syncSymbols]int8
 		var sampled bool
 		if d, sampled = r.resample(p, &saved); sampled {
-			if ok = r.fitLevels(r.ns-1, p, true); ok {
+			if ok = r.fitLevels(r.ns-1, p, true, true); ok {
 				r.resampleStart(d)
 			} else {
 				// Back to the SYNC as the loop sampled it.
@@ -941,8 +950,12 @@ func (r *leanCore) searchSym() {
 			d = 0
 		}
 	}
-	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true)) {
-		return
+	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
+		// A stage may find the SYNC that the discriminator does not.
+		if r.ext == nil || !r.ext.verify(r, p) {
+			return
+		}
+		r.fitLevels(r.ns-1, p, true, false)
 	}
 	r.locked, r.src, r.bs = true, uint8(src), sourceAt(src) == layer2.SyncSourceBS
 	r.streams++
@@ -967,8 +980,8 @@ func (r *leanCore) searchSym() {
 // fitLevels fits the discriminator offset, the deviation scale and the
 // noise variance to the SYNC field that ends at symbol end with pattern p,
 // and reports whether they make sense for the first anchor of a stream
-// when first.
-func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first bool) bool {
+// when first; with check false it takes them as they come.
+func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) bool {
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
 	k0 := end - syncSymbols + 1
@@ -993,9 +1006,10 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first bool) bool {
 	}
 	res /= syncSymbols
 	if first {
-		if g <= 0 || sqrtf(res) > discFirstSpread*2*g*deviationHz {
+		if check && (g <= 0 || sqrtf(res) > discFirstSpread*2*g*deviationHz) {
 			return false
 		}
+		g = max(g, 0.1)
 		r.devScale, r.dcHz, r.discVar = g, dc, res
 		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 		return true
@@ -1042,7 +1056,7 @@ func (r *leanCore) slot() {
 		isAnchor = false
 	}
 	if isAnchor {
-		r.fitLevels(base+leanSyncEnd+shift, anchor, false)
+		r.fitLevels(base+leanSyncEnd+shift, anchor, false, true)
 		if abs32(r.dcHz) > leanRetuneHz && !r.replaying {
 			r.retune(r.dcHz)
 		}
@@ -1327,7 +1341,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	if r.clickSpan > 0 {
 		r.clickFloor(beyond, v)
 	}
-	if !r.classify(b, j) {
+	if !r.classify(b, j) && (r.ext == nil || !r.ext.place(r, b, j)) {
 		return
 	}
 	if r.ext != nil {

@@ -26,6 +26,12 @@ type leanExt interface {
 	// firstSlot runs as the first slot of a stream ends, before the core
 	// handles it.
 	firstSlot(c *leanCore)
+	// place places burst b of slot j, which the core could not, and
+	// reports whether it did.
+	place(c *leanCore, b *Burst, j int32) bool
+	// verify reports whether the last symbols of the core end SYNC p,
+	// which the discriminator alone does not show.
+	verify(c *leanCore, p enums.SyncPattern) bool
 }
 
 // extQueue is the most bursts that a softExt holds: the bursts B to D of a
@@ -390,6 +396,14 @@ func (x *softExt) drain(c *leanCore, one bool) {
 }
 
 func (x *softExt) kept() []int16 { return x.acq }
+
+func (x *softExt) place(c *leanCore, b *Burst, j int32) bool {
+	return x.coh != nil && x.coh.place(c, b, j)
+}
+
+func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
+	return x.coh != nil && x.coh.verify(c, p)
+}
 
 // locked notes the time of the SYNC that the core locked to, d samples
 // from the timing loop, in the kept samples, which the core stops keeping.

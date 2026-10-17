@@ -176,6 +176,7 @@ func newIQRx(cfg Config, opt options) *iqRx {
 		if opt.CohExt && hz == discRate {
 			r.yHist = make([]complex64, cohHist)
 			x.coh = newCohStage(r, &opt)
+			r.d.signMiss = leanExtSignMiss
 		}
 		r.d.ext = x
 	}

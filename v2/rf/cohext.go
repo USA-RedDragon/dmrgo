@@ -332,6 +332,87 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	return s.runAll(llr)
 }
 
+// cohPlaceRho is the least share of the power of the SYNC field that its
+// waveform must explain for place to take it as a SYNC.
+const cohPlaceRho = 0.4
+
+// place tests the SYNC field of burst b of slot j, which the core could
+// not place, coherently against the voice and the data SYNC of the
+// stream, and places it as the burst of the one whose waveform explains
+// most of its power, when that is at least cohPlaceRho of it.
+func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
+	r := s.rx
+	if r.d.f.gain <= 0 || !s.freqOK {
+		return false
+	}
+	s.sps = float64(samplesPerSy) / 2
+	t0 := symTime(c, c.base) + s.dt
+	if t0-float64(cohSPS) < float64(r.yN-cohHist) {
+		return false
+	}
+	s.totalHz = s.freq
+	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
+	best, bestP := 0.0, enums.SyncPattern(0)
+	for _, p := range [...]enums.SyncPattern{voice, data} {
+		var syms [syncSymbols]int8
+		syncSyms(p, &syms)
+		for i, v := range syms {
+			s.known[syncFirstSym+i] = v
+		}
+		s.t0 = t0
+		s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
+		amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
+		if rho := amp * amp / (amp*amp + max(noise, 0)); amp > 0 && rho > best {
+			best, bestP = rho, p
+		}
+	}
+	if best < cohPlaceRho {
+		return false
+	}
+	ch := &c.ch[j&1]
+	b.Sync, b.Distance = bestP, syncDist(b.Data, bestP)
+	if bestP == voice {
+		ch.sf = j
+	} else {
+		ch.sf = leanNoSlot
+	}
+	return true
+}
+
+// cohVerifyRho is the least share of the power of a SYNC field that its
+// waveform must explain for verify.
+const cohVerifyRho = 0.35
+
+// verify reports whether the last symbols of the core c end SYNC p by
+// the coherent test of place: the ring samples of the SYNC field against
+// its waveform, at the carrier offset that the oscillator and the core
+// give, or that the stream had.
+func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
+	r := s.rx
+	f := &r.d.f
+	if f.gain <= 0 {
+		return false
+	}
+	s.sps = float64(samplesPerSy) / 2
+	base := c.ns - 1 - leanSyncEnd
+	s.t0 = symTime(c, base) + s.dt
+	if s.t0-float64(cohSPS) < float64(r.yN-cohHist) {
+		return false
+	}
+	s.totalHz = s.freq
+	if !s.freqOK {
+		s.totalHz = float64(r.conv.hz) + float64(f.dc/(f.gain*iqUnitsPerHz))
+	}
+	var syms [syncSymbols]int8
+	syncSyms(p, &syms)
+	for i, v := range syms {
+		s.known[syncFirstSym+i] = v
+	}
+	s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
+	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
+	return amp > 0 && amp*amp/(amp*amp+max(noise, 0)) >= cohVerifyRho
+}
+
 // runAll runs the trellis forward from the start of the first known run
 // of the burst to its end, and backward from the end of the last to its
 // start, and writes the log-likelihood ratios into llr. It reports false
