@@ -286,17 +286,10 @@ func (f *audioFront) filter(u int16) (float32, bool) {
 		if f.odd = !f.odd; f.odd {
 			return 0, false
 		}
-		// at returns sample k of the ring, oldest first.
-		at := func(k int) int32 {
-			if k += h; k >= halfTaps {
-				k -= halfTaps
-			}
-			return int32(f.hbHist[k])
-		}
 		const c = halfTaps / 2
-		acc := int32(discHalfQ15[0]) * at(c)
+		acc := int32(discHalfQ15[0]) * int32(f.hbHist[ringAt(h, c)])
 		for k, t := range discHalfQ15[1:] {
-			acc += int32(t) * (at(c-2*k-1) + at(c+2*k+1))
+			acc += int32(t) * (int32(f.hbHist[ringAt(h, c-2*k-1)]) + int32(f.hbHist[ringAt(h, c+2*k+1)]))
 		}
 		v = int8(max(min((acc+1<<14)>>15, 127), -128))
 	}
@@ -319,6 +312,16 @@ func (f *audioFront) filter(u int16) (float32, bool) {
 		acc = fir12((*[audio12Taps]int8)(f.rrcHist[h : h+audio12Taps]))
 	}
 	return float32(acc) * (rrcStepHz / 32768.0), true
+}
+
+// ringAt returns the index of sample k, oldest first, of the half-band ring
+// whose oldest sample is at h. It is not a closure, which TinyGo would
+// allocate on every call when it does not inline it.
+func ringAt(h, k int) int {
+	if k += h; k >= halfTaps {
+		k -= halfTaps
+	}
+	return k
 }
 
 // fir12 returns the matched filter output in Q15 of the samples w at
