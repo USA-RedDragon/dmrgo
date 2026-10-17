@@ -119,10 +119,12 @@ func (r *DiscReceiver) hz() int {
 	return discRate / 2
 }
 
-// growBursts returns dst with room for n more bursts, as slices.Grow.
+// growBursts returns dst with room for n more bursts. It grows dst by
+// append alone, which the allocation gate follows as growth of dst; each
+// append at least doubles the capacity.
 func growBursts(dst []Burst, n int) []Burst {
-	if cap(dst)-len(dst) < n {
-		dst = append(dst[:cap(dst)], make([]Burst, n)...)[:len(dst)]
+	for cap(dst)-len(dst) < n {
+		dst = append(dst[:cap(dst)], Burst{})[:len(dst)]
 	}
 	return dst
 }
