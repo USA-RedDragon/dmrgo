@@ -13,7 +13,7 @@ func TestEncodeRowsAndGridBit(t *testing.T) {
 		var data [12]byte
 		r.Read(data[:])
 		reserved := uint8(r.Intn(8))
-		if got, want := EncodeRows(data, reserved), Rows(Encode196(data, reserved)); got != want {
+		if got, want := EncodeRows(&data, reserved), Rows(Encode196(data, reserved)); got != want {
 			t.Fatalf("EncodeRows(%x, %d) = %x, want %x", data, reserved, got, want)
 		}
 	}
