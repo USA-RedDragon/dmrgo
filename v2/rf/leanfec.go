@@ -199,6 +199,89 @@ func nibbleCost(tab []int16, cw uint32, n int) int32 {
 	return c
 }
 
+// osdSmall searches code id, with off XORed into its codewords, by ordered
+// statistics of order 2 over the LLRs l: it reduces the generator onto the
+// most reliable independent code bits, and scores with the cost tables tab
+// the codeword of their hard decisions and those with one or two of them
+// flipped, a few dozen in place of every codeword. For Golay(24,12) and
+// Golay(23,12) it decodes as maximum likelihood does but for rare words.
+func osdSmall[L leanList](id softSmallID, l, tab []int16, off uint32, top L) {
+	c := &softSmallCodes[id]
+	n, k := c.n, c.k
+	var y uint32
+	var ord [softSmallMaxN]int8
+	for j := range n {
+		if l[j] < 0 {
+			y |= 1 << j
+		}
+		mj := abs16(l[j])
+		i := j
+		for ; i > 0 && abs16(l[ord[i-1]]) < mj; i-- {
+			ord[i] = ord[i-1]
+		}
+		ord[i] = int8(j)
+	}
+	y ^= c.base ^ off
+	rows := c.rows
+	var info [softSmallMaxK]uint16
+	var piv [softSmallMaxK]int8
+	for i := range k {
+		info[i] = 1 << i
+	}
+	rank := 0
+	for _, j := range ord[:n] {
+		if rank == k {
+			break
+		}
+		b := uint32(1) << j
+		r := rank
+		for r < k && rows[r]&b == 0 {
+			r++
+		}
+		if r == k {
+			continue
+		}
+		rows[r], rows[rank] = rows[rank], rows[r]
+		info[r], info[rank] = info[rank], info[r]
+		for i := range k {
+			if i != rank && rows[i]&b != 0 {
+				rows[i] ^= rows[rank]
+				info[i] ^= info[rank]
+			}
+		}
+		piv[rank] = int8(j)
+		rank++
+	}
+	var c0 uint32
+	var i0 uint16
+	for r := range rank {
+		if y>>piv[r]&1 != 0 {
+			c0 ^= rows[r]
+			i0 ^= info[r]
+		}
+	}
+	add := func(cw uint32, inf uint16) {
+		cw ^= c.base ^ off
+		top.add(nibbleCost(tab, cw, n), uint32(inf), cw)
+	}
+	add(c0, i0)
+	for a := range rank {
+		ca, ia := c0^rows[a], i0^info[a]
+		add(ca, ia)
+		for b := a + 1; b < rank; b++ {
+			add(ca^rows[b], ia^info[b])
+		}
+	}
+}
+
+// abs16 returns the magnitude of v.
+func abs16(v int16) int16 {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
 // searchNibble is softSmallID.search with nibble tables.
 func searchNibble[L leanList](id softSmallID, tab []int16, off, fixed, want uint32, top L) {
 	c := &softSmallCodes[id]
@@ -272,7 +355,7 @@ func (r *leanCore) fixAMBE(f *leanFEC, b *Burst) {
 		r.gather(f, id0, false)
 		nibbleTables(f.s[:leanNibbles*16], f.l[:softSmallCodes[id0].n])
 		f.top.reset(leanAMBECandidates)
-		searchNibble(id0, f.s[:leanNibbles*16], 0, 0, 0, &f.top)
+		osdSmall(id0, f.l[:softSmallCodes[id0].n], f.s[:leanNibbles*16], 0, &f.top)
 		r.gather(f, id1, false)
 		nibbleTables(f.s[:leanNibbles*16], f.l[:c1.n])
 		var bound int32
@@ -286,7 +369,7 @@ func (r *leanCore) fixAMBE(f *leanFEC, b *Burst) {
 				break
 			}
 			f.top1.reset()
-			searchNibble(id1, f.s[:leanNibbles*16], softAMBEPN(uint32(f.top.info[c])), 0, 0, &f.top1)
+			osdSmall(id1, f.l[:c1.n], f.s[:leanNibbles*16], softAMBEPN(uint32(f.top.info[c])), &f.top1)
 			if total := int32(f.top.cost[c]) + int32(f.top1.cost); total < best {
 				best, cw0, cw1 = total, f.top.cw[c], f.top1.cw
 			}

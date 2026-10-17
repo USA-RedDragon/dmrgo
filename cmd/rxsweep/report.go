@@ -125,7 +125,7 @@ type row struct {
 	ram      int
 	// mhz and mhzSearch are the Cortex-M4F MHz, locked and on noise, and
 	// flash the code bytes, from the -m4 command; 0 when none.
-	mhz, mhzSearch float64
+	mhz, mhzSearch, mhzWeak float64
 	flash          int
 	worst          float64 // worst loss over the space payloads, dB
 }
@@ -243,7 +243,7 @@ func loadRows(out, floorPath string) ([]*row, map[string]floorRef, error) {
 			r.searchMS = r.cost.SearchNsPerSecond / 1e6
 			r.ram = r.cost.RAMBytes
 		}
-		for k, p := range map[string]any{"mhz_locked": &r.mhz, "mhz_search": &r.mhzSearch, "text": &r.flash, "heap_onburst": &r.ram} {
+		for k, p := range map[string]any{"mhz_locked": &r.mhz, "mhz_search": &r.mhzSearch, "mhz_weak": &r.mhzWeak, "text": &r.flash, "heap_onburst": &r.ram} {
 			if v, ok := r.m4[k]; ok {
 				if err := json.Unmarshal(v, p); err != nil {
 					return nil, nil, fmt.Errorf("m4 %s of %s: %w", k, r.rec.Name, err)
@@ -304,7 +304,7 @@ func (k costKind) value(r *row) float64 {
 	case costRAM:
 		return float64(r.ram)
 	case costM4:
-		return r.mhz
+		return max(r.mhz, r.mhzWeak, r.mhzSearch)
 	case costCPU:
 	}
 	return r.cpuMS
@@ -315,7 +315,7 @@ func (k costKind) title() string {
 	case costRAM:
 		return "RAM, bytes (heap of New with OnBurst; on the M4F when measured)"
 	case costM4:
-		return "Cortex-M4F MHz, locked at 10 dB"
+		return "Cortex-M4F MHz, worst of 10 dB, 6 dB and search"
 	case costCPU:
 	}
 	return "Host CPU, ms per second of signal, locked at 10 dB"
@@ -496,20 +496,20 @@ func summary(rows []*row, floors map[string]floorRef, keys []string) string {
 		onFront[i] = true
 	}
 	fmt.Fprintf(&b, "# rxsweep report\n\nEb/N0 in dB at 90%% recovery. Loss is the Eb/N0 above the DMR floor (ETSI codes), or above the 4FSK floor (any code) where the DMR floor is not computed. Worst loss is the largest loss over %s. A * marks the Pareto front of worst loss against host CPU.\n\n", strings.Join(keys, ", "))
-	b.WriteString("| | Variant | CPU ms/s | Search ms/s | RAM B | M4F MHz | M4F search MHz | Flash KiB | Worst loss |")
+	b.WriteString("| | Variant | CPU ms/s | Search ms/s | RAM B | M4F MHz | M4F weak MHz | M4F search MHz | Flash KiB | Worst loss |")
 	for _, k := range keys {
 		b.WriteString(" " + k + " |")
 	}
-	b.WriteString("\n|---|---|---|---|---|---|---|---|---|")
+	b.WriteString("\n|---|---|---|---|---|---|---|---|---|---|")
 	for range keys {
 		b.WriteString("---|")
 	}
 	b.WriteString("\n")
-	b.WriteString("| | 4FSK floor (any code) | | | | | | | |")
+	b.WriteString("| | 4FSK floor (any code) | | | | | | | | |")
 	for _, k := range keys {
 		b.WriteString(" " + fmtCross(floors[k].any) + " |")
 	}
-	b.WriteString("\n| | DMR floor (ETSI codes) | | | | | | | |")
+	b.WriteString("\n| | DMR floor (ETSI codes) | | | | | | | | |")
 	for _, k := range keys {
 		b.WriteString(" " + fmtCross(floors[k].dmr) + " |")
 	}
@@ -519,9 +519,12 @@ func summary(rows []*row, floors map[string]floorRef, keys []string) string {
 		if onFront[i] {
 			mark = "*"
 		}
-		m4, m4s, flash := "-", "-", "-"
+		m4, m4w, m4s, flash := "-", "-", "-", "-"
 		if r.mhz > 0 {
 			m4, m4s = strconv.FormatFloat(r.mhz, 'f', 1, 64), strconv.FormatFloat(r.mhzSearch, 'f', 1, 64)
+		}
+		if r.mhzWeak > 0 {
+			m4w = strconv.FormatFloat(r.mhzWeak, 'f', 1, 64)
 		}
 		if r.flash > 0 {
 			flash = strconv.Itoa(r.flash / 1024)
@@ -530,7 +533,7 @@ func summary(rows []*row, floors map[string]floorRef, keys []string) string {
 		if r.ram > 0 {
 			ram = strconv.Itoa(r.ram)
 		}
-		fmt.Fprintf(&b, "| %s | %s | %.2f | %.2f | %s | %s | %s | %s | %s |", mark, r.rec.Name, r.cpuMS, r.searchMS, ram, m4, m4s, flash, lossCell(r.worst))
+		fmt.Fprintf(&b, "| %s | %s | %.2f | %.2f | %s | %s | %s | %s | %s | %s |", mark, r.rec.Name, r.cpuMS, r.searchMS, ram, m4, m4w, m4s, flash, lossCell(r.worst))
 		for _, k := range keys {
 			b.WriteString(" " + fmtCross(r.ebn0[k]) + " |")
 		}
