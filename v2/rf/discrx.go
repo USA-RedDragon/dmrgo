@@ -12,6 +12,10 @@ const (
 	audio96Span = discSpan
 	audio12Taps = discSpan*discSPS + 1
 	audio96Taps = 4*audio96Span + 1
+	// audioMaxK and audioMaxOff limit audioFront.k and off, to gains of
+	// 64 Hz per input unit and offsets of 2 MHz.
+	audioMaxK   = 1<<15 - 1
+	audioMaxOff = 1<<30 - 1<<16
 )
 
 // DiscConfig sets up a DiscReceiver.
@@ -115,7 +119,7 @@ func (r *DiscReceiver) Flush() []Burst {
 // the last, and the linear interpolation runs between s2 and s3.
 func (r *DiscReceiver) write(x []int16) {
 	f, tm := &r.f, &r.tm
-	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+	s0, s1, s2, s3, t, n := tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.n
 	for _, v := range x {
 		if !r.locked {
 			f.sum += int32(v)
@@ -132,7 +136,7 @@ func (r *DiscReceiver) write(x []int16) {
 		}
 		// A discriminator gives no carrier power, so the core takes a
 		// burst as present from its anchors.
-		r.n++
+		n++
 		s0, s1, s2, s3 = s1, s2, s3, y
 		t--
 		for t <= 0 {
@@ -150,13 +154,13 @@ func (r *DiscReceiver) write(x []int16) {
 			sym := tm.strobe(xv)
 			t = tm.t
 			if sym {
-				tm.s0, tm.s1, tm.s2, tm.s3 = s0, s1, s2, s3
+				tm.s0, tm.s1, tm.s2, tm.s3, r.n = s0, s1, s2, s3, n
 				r.symbol(tm.last, at)
 				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 			}
 		}
 	}
-	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+	tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.n = s0, s1, s2, s3, t, n
 }
 
 // OffsetHz returns the DC offset of the last locked stream, in units of
@@ -212,13 +216,14 @@ func (r *DiscReceiver) levels() {
 // discHalfQ15 for 24 kHz input, and the matched filter.
 type audioFront struct {
 	// gain is Hz per input unit and dc the offset in Hz that the front end
-	// removes, and k and off them in units of rrcStepHz, in Q16. sum, sq
-	// and n accumulate the input samples of the block of levels, and mean
-	// is the mean input in Hz.
+	// removes, and k and off them in units of rrcStepHz, in Q16, limited
+	// so that int32 holds u*k-off for every input u. sum, sq and n
+	// accumulate the input samples of the block of levels, and mean is the
+	// mean input in Hz.
 	gain float32
 	dc   float32
-	k    int64
-	off  int64
+	k    int32
+	off  int32
 	sum  int32
 	sq   int64
 	n    int
@@ -239,8 +244,8 @@ type audioFront struct {
 
 // refresh sets k and off from gain and dc.
 func (f *audioFront) refresh() {
-	f.k = int64(f.gain/rrcStepHz*65536 + 0.5)
-	f.off = int64(f.dc/rrcStepHz*65536) - 32768
+	f.k = int32(max(min(f.gain/rrcStepHz*65536+0.5, audioMaxK), 0))
+	f.off = int32(max(min(f.dc/rrcStepHz*65536, audioMaxOff), -audioMaxOff)) - 32768
 }
 
 // scale multiplies the samples that the filters hold by g.
@@ -269,7 +274,7 @@ func (f *audioFront) retuneFront(hz, d float32) {
 // quantize returns the input sample u in Hz less the DC offset, in units
 // of rrcStepHz.
 func (f *audioFront) quantize(u int16) int8 {
-	return int8(max(min(int32((int64(u)*f.k-f.off)>>16), 127), -128))
+	return int8(max(min((int32(u)*f.k-f.off)>>16, 127), -128))
 }
 
 // filter takes one input sample u and returns the matched filter sample,
@@ -296,6 +301,11 @@ func (f *audioFront) filter(u int16) (float32, bool) {
 	var acc int32
 	if f.slow {
 		h := f.rrcHead
+		if h >= audio96Taps {
+			// Never; it bounds h, so that the compiler drops the index
+			// checks.
+			h = 0
+		}
 		f.rrcHist[h], f.rrcHist[h+audio96Taps] = v, v
 		if h++; h == audio96Taps {
 			h = 0
@@ -304,6 +314,10 @@ func (f *audioFront) filter(u int16) (float32, bool) {
 		acc = fir96((*[audio96Taps]int8)(f.rrcHist[h : h+audio96Taps]))
 	} else {
 		h := f.rrcHead
+		if h >= audio12Taps {
+			// Never; as above.
+			h = 0
+		}
 		f.rrcHist[h], f.rrcHist[h+audio12Taps] = v, v
 		if h++; h == audio12Taps {
 			h = 0

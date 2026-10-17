@@ -456,14 +456,19 @@ func (r *leanCore) symbol(x, at float32) {
 	case v <= math.MinInt8:
 		q = math.MinInt8
 	case v < 0:
-		q = int8(v - 0.5)
+		q = int8(int32(v - 0.5))
 	default:
-		q = int8(v + 0.5)
+		q = int8(int32(v + 0.5))
 	}
-	r.ring[uint32(r.ns)%leanRing] = q
+	h := uint32(r.ns) % leanRing
+	r.ring[h] = q
 	if !r.locked {
 		// Only the search reads the signs; unlock rebuilds them.
-		r.ringSum += int32(q) - int32(r.ring[uint32(r.ns-syncSymbols+leanRing)%leanRing])
+		old := h + leanRing - syncSymbols
+		if old >= leanRing {
+			old -= leanRing
+		}
+		r.ringSum += int32(q) - int32(r.ring[old])
 		r.signs <<= 1
 		if int32(q)*syncSymbols > r.ringSum {
 			r.signs |= 1
