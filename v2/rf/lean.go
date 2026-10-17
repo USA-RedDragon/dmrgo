@@ -679,6 +679,12 @@ func (r *leanCore) slot() {
 	if isAnchor && r.syncErrors(base+leanSyncEnd+shift, anchor) > discAnchorBits {
 		isAnchor = false
 	}
+	// An MS sends in one slot of two: the slots between hold no burst of
+	// the stream, so a SYNC there is noise.
+	ms := !r.bs && r.lastAnch != leanNoSlot
+	if ms && (j-r.lastAnch)&1 != 0 {
+		isAnchor = false
+	}
 	if isAnchor {
 		r.fitLevels(base+leanSyncEnd+shift, anchor, false)
 		if abs32(r.dcHz) > leanRetuneHz {
@@ -695,7 +701,14 @@ func (r *leanCore) slot() {
 		r.lastAnch = j
 	}
 	present := isAnchor || r.noise == 0 || energy > 1.5*r.noise
+	// Nor do they carry a burst, and the timing loop holds through them.
+	if ms && (j-r.lastAnch)&1 != 0 {
+		present = false
+	}
 	r.tm.hold = !r.bs && !present
+	if ms {
+		r.tm.hold = (j+1-r.lastAnch)&1 != 0
+	}
 	switch {
 	case present && (isAnchor || r.lastAnch != leanNoSlot && j-r.lastAnch < lostSlots):
 		r.lost = 0
