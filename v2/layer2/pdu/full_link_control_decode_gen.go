@@ -12,10 +12,10 @@ package pdu
 
 import (
 	"errors"
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"math"
 )
@@ -287,7 +287,7 @@ func (s *FullLinkControl) Encode() ([12]byte, error) {
 // string.
 func (s *FullLinkControl) String() string {
 	_ret := "FullLinkControl{ "
-	_ret += fmt.Sprintf("BurstDataType: %v, ProtectFlag: %t, Reserved: %t, FLCO: %s, FID: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.BurstDataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	_ret += "BurstDataType: " + s.BurstDataType.String() + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", FLCO: " + s.FLCO.String() + ", FID: " + s.FID.String() + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	switch {
 	case s.GroupVoice != nil:
 		_ret += s.GroupVoice.String()
@@ -302,7 +302,7 @@ func (s *FullLinkControl) String() string {
 	case s.TerminatorDataLinkControl != nil:
 		_ret += s.TerminatorDataLinkControl.String()
 	default:
-		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
+		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
 	_ret += " }"
 	return _ret
@@ -351,7 +351,7 @@ func (s *FLCGroupVoice) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCGroupVoice) String() string {
-	return fmt.Sprintf("FLCGroupVoice{ ServiceOptions: %s, GroupAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.GroupAddress, s.SourceAddress)
+	return "FLCGroupVoice{ ServiceOptions: " + s.ServiceOptions.String() + ", GroupAddress: " + text.Int(s.GroupAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
 }
 
 // decodeFLCUnitToUnit decodes an FLCUnitToUnit (ETSI TS 102 361-2 clause
@@ -397,7 +397,7 @@ func (s *FLCUnitToUnit) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCUnitToUnit) String() string {
-	return fmt.Sprintf("FLCUnitToUnit{ ServiceOptions: %s, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.TargetAddress, s.SourceAddress)
+	return "FLCUnitToUnit{ ServiceOptions: " + s.ServiceOptions.String() + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
 }
 
 // decodeFLCGPSInfo decodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3,
@@ -449,7 +449,7 @@ func (s *FLCGPSInfo) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCGPSInfo) String() string {
-	return fmt.Sprintf("FLCGPSInfo{ Reserved: %d, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, s.PositionError, s.Longitude, s.Latitude)
+	return "FLCGPSInfo{ Reserved: " + text.Int(s.Reserved) + ", PositionError: " + s.PositionError.String() + ", Longitude: " + text.Fixed(s.Longitude) + ", Latitude: " + text.Fixed(s.Latitude) + " }"
 }
 
 // decodeFLCTalkerAliasHeader decodes an FLCTalkerAliasHeader (ETSI TS 102
@@ -493,7 +493,7 @@ func (s *FLCTalkerAliasHeader) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCTalkerAliasHeader) String() string {
-	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasData: %d }", s.TalkerAliasDataFormat, s.TalkerAliasDataLength, s.TalkerAliasData)
+	return "FLCTalkerAliasHeader{ TalkerAliasDataFormat: " + s.TalkerAliasDataFormat.String() + ", TalkerAliasDataLength: " + text.Int(s.TalkerAliasDataLength) + ", TalkerAliasData: " + text.Int(s.TalkerAliasData) + " }"
 }
 
 // decodeFLCTalkerAliasBlock decodes an FLCTalkerAliasBlock (ETSI TS 102
@@ -517,7 +517,7 @@ func (s *FLCTalkerAliasBlock) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCTalkerAliasBlock) String() string {
-	return fmt.Sprintf("FLCTalkerAliasBlock{ TalkerAliasData: %v }", s.TalkerAliasData)
+	return "FLCTalkerAliasBlock{ TalkerAliasData: " + text.Bytes(s.TalkerAliasData[:]) + " }"
 }
 
 // decodeFLCTerminatorDataLinkControl decodes an FLCTerminatorDataLinkControl
@@ -580,7 +580,7 @@ func (s *FLCTerminatorDataLinkControl) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCTerminatorDataLinkControl) String() string {
-	return fmt.Sprintf("FLCTerminatorDataLinkControl{ LLIDDestination: %d, LLIDSource: %d, GroupOrIndividual: %t, ResponseRequested: %t, FullMessageFlag: %t, Reserved: %t, ReSynchronizeFlag: %t, SendSequenceNumber: %d }", s.LLIDDestination, s.LLIDSource, s.GroupOrIndividual, s.ResponseRequested, s.FullMessageFlag, s.Reserved, s.ReSynchronizeFlag, s.SendSequenceNumber)
+	return "FLCTerminatorDataLinkControl{ LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", GroupOrIndividual: " + text.Bool(s.GroupOrIndividual) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(s.SendSequenceNumber) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

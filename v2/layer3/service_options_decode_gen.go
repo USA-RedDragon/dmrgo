@@ -5,8 +5,8 @@
 package layer3
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // DecodeServiceOptions decodes a ServiceOptions (ETSI TS 102 361-2 clause
@@ -54,7 +54,7 @@ func (s *ServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ServiceOptions) String() string {
-	return fmt.Sprintf("ServiceOptions{ IsEmergency: %t, IsPrivacy: %t, Reserved: %d, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.Reserved, s.IsBroadcast, s.IsOpenVoiceCallMode, s.PriorityLevel)
+	return "ServiceOptions{ IsEmergency: " + text.Bool(s.IsEmergency) + ", IsPrivacy: " + text.Bool(s.IsPrivacy) + ", Reserved: " + text.Int(s.Reserved) + ", IsBroadcast: " + text.Bool(s.IsBroadcast) + ", IsOpenVoiceCallMode: " + text.Bool(s.IsOpenVoiceCallMode) + ", PriorityLevel: " + text.Int(s.PriorityLevel) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

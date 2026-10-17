@@ -3,8 +3,8 @@
 package pdu
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // decodeMotorolaRadioCheckPDU decodes a MotorolaRadioCheckPDU. data holds
@@ -52,7 +52,7 @@ func (s *MotorolaRadioCheckPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaRadioCheckPDU) String() string {
-	return fmt.Sprintf("MotorolaRadioCheckPDU{ Reserved: %d, Answer: %t, Reserved2: %d, RequesterAddress: %d, CheckedAddress: %d }", s.Reserved, s.Answer, s.Reserved2, s.RequesterAddress, s.CheckedAddress)
+	return "MotorolaRadioCheckPDU{ Reserved: " + text.Int(s.Reserved) + ", Answer: " + text.Bool(s.Answer) + ", Reserved2: " + text.Int(s.Reserved2) + ", RequesterAddress: " + text.Int(s.RequesterAddress) + ", CheckedAddress: " + text.Int(s.CheckedAddress) + " }"
 }
 
 // decodeMotorolaCallAlertPDU decodes a MotorolaCallAlertPDU. data holds the
@@ -93,7 +93,7 @@ func (s *MotorolaCallAlertPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaCallAlertPDU) String() string {
-	return fmt.Sprintf("MotorolaCallAlertPDU{ Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.TargetAddress, s.SourceAddress)
+	return "MotorolaCallAlertPDU{ Reserved: " + text.Int(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
 }
 
 // decodeMotorolaCallAlertAckPDU decodes a MotorolaCallAlertAckPDU. data
@@ -134,7 +134,7 @@ func (s *MotorolaCallAlertAckPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaCallAlertAckPDU) String() string {
-	return fmt.Sprintf("MotorolaCallAlertAckPDU{ Request: %d, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Request, s.Reserved, s.TargetAddress, s.SourceAddress)
+	return "MotorolaCallAlertAckPDU{ Request: " + text.Int(s.Request) + ", Reserved: " + text.Int(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

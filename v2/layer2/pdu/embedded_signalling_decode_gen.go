@@ -5,10 +5,10 @@
 package pdu
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // DecodeEmbeddedSignalling decodes an EmbeddedSignalling (ETSI TS 102 361-1
@@ -55,7 +55,7 @@ func (s *EmbeddedSignalling) Encode() ([2]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *EmbeddedSignalling) String() string {
-	return fmt.Sprintf("EmbeddedSignalling{ ColorCode: %d, PreemptionAndPowerControlIndicator: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.PreemptionAndPowerControlIndicator, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	return "EmbeddedSignalling{ ColorCode: " + text.Int(s.ColorCode) + ", PreemptionAndPowerControlIndicator: " + text.Bool(s.PreemptionAndPowerControlIndicator) + ", LCSS: " + s.LCSS.String() + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

@@ -5,10 +5,10 @@
 package pdu
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData (ETSI TS 102
@@ -44,7 +44,7 @@ func (s *UnifiedSingleBlockData) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UnifiedSingleBlockData) String() string {
-	return fmt.Sprintf("UnifiedSingleBlockData{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
+	return "UnifiedSingleBlockData{ FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, ServiceType: " + text.Int(s.ServiceType) + ", Payload: " + text.Hex(s.Payload[:]) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

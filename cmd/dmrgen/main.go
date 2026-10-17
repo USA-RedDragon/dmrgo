@@ -85,6 +85,10 @@ func run(v2Root string) error {
 		if saveErr := f.Save(outPath); saveErr != nil {
 			return fmt.Errorf("writing %s: %w", outPath, saveErr)
 		}
+		testPath := filepath.Join(filepath.Dir(sf.path), base+"_string_gen_test.go")
+		if saveErr := emit.GenerateTestFile(pdus, pdus[0].Package).Save(testPath); saveErr != nil {
+			return fmt.Errorf("writing %s: %w", testPath, saveErr)
+		}
 		fmt.Printf("dmrgen: generated %s (%d structs)\n", filepath.Base(outPath), len(pdus))
 	}
 	return nil

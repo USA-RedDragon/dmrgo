@@ -5,10 +5,10 @@
 package pdu
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	golay "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // DecodeSlotType decodes a SlotType (ETSI TS 102 361-1 clause 9.1.3). data
@@ -53,7 +53,7 @@ func (s *SlotType) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *SlotType) String() string {
-	return fmt.Sprintf("SlotType{ ColorCode: %d, DataType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	return "SlotType{ ColorCode: " + text.Int(s.ColorCode) + ", DataType: " + s.DataType.String() + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

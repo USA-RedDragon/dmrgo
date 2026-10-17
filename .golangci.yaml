@@ -88,6 +88,11 @@ linters:
           - gochecknoglobals
           - goconst
           - gosec
+      # texttest fills test values from math/rand, for tests only.
+      - path: v2/internal/text/texttest/
+        linters:
+          - gosec
+        text: ^G404
       # Read-only lookup tables of enum values and bit positions, which Go
       # cannot declare as constants.
       - path: v2/(enums/sync_patterns|layer2/cach_interleave|layer2/decode_options|layer2/framer/framer|layer2/short_lc_cach)\.go$

@@ -5,10 +5,10 @@
 package pdu
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	hamming "github.com/USA-RedDragon/dmrgo/v2/internal/fec/hamming"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // DecodeTACT decodes a TACT (ETSI TS 102 361-1 clause 9.1.4). data holds the
@@ -50,7 +50,7 @@ func (s *TACT) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TACT) String() string {
-	return fmt.Sprintf("TACT{ AccessType: %t, TDMAChannel: %t, LCSS: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.AccessType, s.TDMAChannel, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	return "TACT{ AccessType: " + text.Bool(s.AccessType) + ", TDMAChannel: " + text.Bool(s.TDMAChannel) + ", LCSS: " + s.LCSS.String() + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

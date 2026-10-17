@@ -5,9 +5,9 @@
 package pdu
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader (ETSI TS
@@ -72,7 +72,7 @@ func (s *UDPIPv4CompressedHeader) Encode() ([9]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UDPIPv4CompressedHeader) String() string {
-	return fmt.Sprintf("UDPIPv4CompressedHeader{ IPv4Identification: %d, SAID: %d, DAID: %d, HeaderCompressionOpcode: %d, SPID: %d, DPID: %d, ExtendedHeader1: %d, ExtendedHeader2: %d }", s.IPv4Identification, s.SAID, s.DAID, s.HeaderCompressionOpcode, s.SPID, s.DPID, s.ExtendedHeader1, s.ExtendedHeader2)
+	return "UDPIPv4CompressedHeader{ IPv4Identification: " + text.Int(s.IPv4Identification) + ", SAID: " + text.Int(s.SAID) + ", DAID: " + text.Int(s.DAID) + ", HeaderCompressionOpcode: " + text.Int(s.HeaderCompressionOpcode) + ", SPID: " + text.Int(s.SPID) + ", DPID: " + text.Int(s.DPID) + ", ExtendedHeader1: " + text.Int(s.ExtendedHeader1) + ", ExtendedHeader2: " + text.Int(s.ExtendedHeader2) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an
