@@ -326,10 +326,16 @@ func (r *leanCore) power(p float32) {
 // push runs matched filter sample s through the symbol timing and handles
 // each symbol.
 func (r *leanCore) push(s float32) {
-	x, at, ok := r.tm.push(s)
-	if !ok {
-		return
+	if x, at, ok := r.tm.push(s); ok {
+		r.symbol(x, at)
 	}
+}
+
+// symbol handles symbol value x, at samples after the last matched filter
+// sample. It is not inlined, so that the code of every sample stays small.
+//
+//go:noinline
+func (r *leanCore) symbol(x, at float32) {
 	r.lastN, r.lastAt = r.n-1, at
 	r.ring[uint32(r.ns)%leanRing] = sat8((x - r.off) / discStepHz)
 	r.ns++

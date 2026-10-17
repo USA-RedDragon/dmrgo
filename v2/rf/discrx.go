@@ -6,6 +6,11 @@ const (
 	// input, and discMeanGain the weight of each block in its mean.
 	discInputRMSHz = 2000
 	discMeanGain   = 0.1
+	// audioBox, when above 0, replaces the matched filter of the front end
+	// with the mean of the last audioBox samples, and audioBoxStepHz is the
+	// resolution of the samples that it holds.
+	audioBox       = 0
+	audioBoxStepHz = 8
 )
 
 // DiscConfig sets up a DiscReceiver.
@@ -58,6 +63,9 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 	r.init(cfg.OnBurst, opt, 4*cfg.MaxWrite/(slotSymbols*discSPS)+16)
 	r.f.gain = 1
 	r.front, r.center = &r.f, -int64(discSpan*samplesPerSy)
+	if audioBox > 0 {
+		r.center = -int64(audioBox - 1)
+	}
 	return r, nil
 }
 
@@ -133,6 +141,11 @@ func (r *DiscReceiver) levels() {
 			for i, h := range f.rrcHist {
 				f.rrcHist[i] = sat8(float32(h) * g)
 			}
+			f.boxSum = 0
+			for i, h := range f.box {
+				f.box[i] = sat16(float32(h) * g)
+				f.boxSum += int32(f.box[i])
+			}
 		}
 	}
 	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
@@ -147,14 +160,20 @@ type audioFront struct {
 	// gain is Hz per input unit and dc the offset in Hz that the front end
 	// removes. sum, sq and n accumulate the block of levels, and mean is
 	// the mean input.
-	gain    float32
-	dc      float32
-	sum     float32
-	sq      float32
-	n       int
-	mean    float32
-	rrcHist [rrcTaps]int8
+	gain float32
+	dc   float32
+	sum  float32
+	sq   float32
+	n    int
+	mean float32
+	// rrcHist holds the matched filter history twice, so that the last
+	// rrcTaps samples are rrcHist[rrcHead:rrcHead+rrcTaps], oldest first.
+	rrcHist [2 * rrcTaps]int8
 	rrcHead int
+	// box and boxSum hold the samples of the audioBox mean and their sum,
+	// in units of audioBoxStepHz.
+	box    [max(audioBox, 1)]int16
+	boxSum int32
 }
 
 // retuneFront moves the offset that f removes to hz and adds -d to the
@@ -164,33 +183,52 @@ func (f *audioFront) retuneFront(hz, d float32) {
 	for i, v := range f.rrcHist {
 		f.rrcHist[i] = sat8(float32(v) - d/rrcStepHz)
 	}
+	f.boxSum = 0
+	for i, v := range f.box {
+		f.box[i] = sat16(float32(v) - d/audioBoxStepHz)
+		f.boxSum += int32(f.box[i])
+	}
+}
+
+// sat16 rounds v to the nearest int16, saturated.
+func sat16(v float32) int16 {
+	return int16(max(min(v+0.5*sign32(v), 32767), -32768))
+}
+
+// sign32 returns 1 for v >= 0 and -1 otherwise.
+func sign32(v float32) float32 {
+	if v < 0 {
+		return -1
+	}
+	return 1
 }
 
 // filter takes one input sample x in Hz and returns the matched filter
 // sample, in Hz, of x less the DC offset.
 func (f *audioFront) filter(x float32) float32 {
-	f.rrcHist[f.rrcHead] = sat8((x - f.dc) / rrcStepHz)
-	if f.rrcHead++; f.rrcHead == rrcTaps {
-		f.rrcHead = 0
+	if audioBox > 0 {
+		v := sat16((x - f.dc) / audioBoxStepHz)
+		h := f.rrcHead
+		f.boxSum += int32(v) - int32(f.box[h])
+		f.box[h] = v
+		if h++; h == audioBox {
+			h = 0
+		}
+		f.rrcHead = h
+		return float32(f.boxSum) * (audioBoxStepHz / float32(max(audioBox, 1)))
 	}
+	v := sat8((x - f.dc) / rrcStepHz)
+	h := f.rrcHead
+	f.rrcHist[h], f.rrcHist[h+rrcTaps] = v, v
+	if h++; h == rrcTaps {
+		h = 0
+	}
+	f.rrcHead = h
+	w := (*[rrcTaps]int8)(f.rrcHist[h : h+rrcTaps])
 	const mid = rrcTaps / 2
-	k0 := f.rrcHead + mid
-	if k0 >= rrcTaps {
-		k0 -= rrcTaps
-	}
-	acc := int32(discRRCQ15[mid]) * int32(f.rrcHist[k0])
-	i, j := f.rrcHead, f.rrcHead-1
-	if j < 0 {
-		j += rrcTaps
-	}
-	for _, t := range discRRCQ15[:mid] {
-		acc += int32(t) * (int32(f.rrcHist[i]) + int32(f.rrcHist[j]))
-		if i++; i == rrcTaps {
-			i = 0
-		}
-		if j--; j < 0 {
-			j = rrcTaps - 1
-		}
+	acc := int32(discRRCQ15[mid]) * int32(w[mid])
+	for k := range mid {
+		acc += int32(discRRCQ15[k]) * (int32(w[k]) + int32(w[rrcTaps-1-k]))
 	}
 	return float32(acc) * (rrcStepHz / 32768.0)
 }

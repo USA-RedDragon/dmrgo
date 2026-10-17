@@ -41,9 +41,9 @@ type discFront struct {
 	prev    complex64
 	// lag is the product of the last prefilter output and the conjugate
 	// of the one before, whose phase the discriminator turns into Hz.
-	lag     complex64
-	fHist   [2 * rrcTaps]float32
-	fHead   int
+	lag   complex64
+	fHist [2 * rrcTaps]float32
+	fHead int
 }
 
 // newDiscFront returns a front end for input at discRate when half, at
