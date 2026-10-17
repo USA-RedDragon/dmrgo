@@ -11,6 +11,14 @@ const (
 	// resolution of the samples that it holds.
 	audioBox       = 0
 	audioBoxStepHz = 8
+	// audioDecimate is 2 to run the matched filter and the symbol timing
+	// at half the input rate, after the half-band filter of discHalfQ15,
+	// and 1 to run them at the input rate.
+	audioDecimate = 2
+	// audioTaps is the length of the matched filter at the rate of
+	// audioDecimate, and audioRRCTaps its length at half the input rate.
+	audioTaps    = 2*discSpan*discSPS/audioDecimate + 1
+	audioRRCTaps = discSpan*discSPS + 1
 )
 
 // DiscConfig sets up a DiscReceiver.
@@ -60,9 +68,12 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 		opt = *cfg.opt
 	}
 	r := &DiscReceiver{}
-	r.init(cfg.OnBurst, opt, 4*cfg.MaxWrite/(slotSymbols*discSPS)+16)
+	r.init(cfg.OnBurst, opt, 4*cfg.MaxWrite/(slotSymbols*discSPS)+16, float32(discSPS)/audioDecimate)
 	r.f.gain = 1
 	r.front, r.center = &r.f, -int64(discSpan*samplesPerSy)
+	if audioDecimate == 2 {
+		r.center -= halfTaps - 1
+	}
 	if audioBox > 0 {
 		r.center = -int64(audioBox - 1)
 	}
@@ -113,8 +124,10 @@ func (r *DiscReceiver) sample(v float32) {
 	if f.n++; f.n == frontBlock {
 		r.levels()
 	}
-	r.power(1)
-	r.push(f.filter(x))
+	if s, ok := f.filter(x); ok {
+		r.power(1)
+		r.push(s)
+	}
 }
 
 // levels ends a block of frontBlock samples. While the receiver searches,
@@ -140,6 +153,9 @@ func (r *DiscReceiver) levels() {
 			r.off *= g
 			for i, h := range f.rrcHist {
 				f.rrcHist[i] = sat8(float32(h) * g)
+			}
+			for i, h := range f.hbHist {
+				f.hbHist[i] = sat8(float32(h) * g)
 			}
 			f.boxSum = 0
 			for i, h := range f.box {
@@ -167,9 +183,14 @@ type audioFront struct {
 	n    int
 	mean float32
 	// rrcHist holds the matched filter history twice, so that the last
-	// rrcTaps samples are rrcHist[rrcHead:rrcHead+rrcTaps], oldest first.
-	rrcHist [2 * rrcTaps]int8
+	// audioTaps samples are rrcHist[rrcHead:rrcHead+audioTaps], oldest
+	// first, and hbHist the history of the half-band filter of
+	// audioDecimate, with odd set between its outputs.
+	rrcHist [2 * audioTaps]int8
 	rrcHead int
+	hbHist  [2 * halfTaps]int8
+	hbHead  int
+	odd     bool
 	// box and boxSum hold the samples of the audioBox mean and their sum,
 	// in units of audioBoxStepHz.
 	box    [max(audioBox, 1)]int16
@@ -182,6 +203,9 @@ func (f *audioFront) retuneFront(hz, d float32) {
 	f.dc = hz
 	for i, v := range f.rrcHist {
 		f.rrcHist[i] = sat8(float32(v) - d/rrcStepHz)
+	}
+	for i, v := range f.hbHist {
+		f.hbHist[i] = sat8(float32(v) - d/rrcStepHz)
 	}
 	f.boxSum = 0
 	for i, v := range f.box {
@@ -204,8 +228,8 @@ func sign32(v float32) float32 {
 }
 
 // filter takes one input sample x in Hz and returns the matched filter
-// sample, in Hz, of x less the DC offset.
-func (f *audioFront) filter(x float32) float32 {
+// sample, in Hz, of x less the DC offset, when the sample completes one.
+func (f *audioFront) filter(x float32) (float32, bool) {
 	if audioBox > 0 {
 		v := sat16((x - f.dc) / audioBoxStepHz)
 		h := f.rrcHead
@@ -215,20 +239,48 @@ func (f *audioFront) filter(x float32) float32 {
 			h = 0
 		}
 		f.rrcHead = h
-		return float32(f.boxSum) * (audioBoxStepHz / float32(max(audioBox, 1)))
+		return float32(f.boxSum) * (audioBoxStepHz / float32(max(audioBox, 1))), true
 	}
 	v := sat8((x - f.dc) / rrcStepHz)
+	if audioDecimate == 2 {
+		h := f.hbHead
+		f.hbHist[h], f.hbHist[h+halfTaps] = v, v
+		if h++; h == halfTaps {
+			h = 0
+		}
+		f.hbHead = h
+		if f.odd = !f.odd; f.odd {
+			return 0, false
+		}
+		w := (*[halfTaps]int8)(f.hbHist[h : h+halfTaps])
+		const c = halfTaps / 2
+		acc := int32(discHalfQ15[0]) * int32(w[c])
+		for k, t := range discHalfQ15[1:] {
+			acc += int32(t) * (int32(w[c-2*k-1]) + int32(w[c+2*k+1]))
+		}
+		v = int8(max(min((acc+1<<14)>>15, 127), -128))
+	}
 	h := f.rrcHead
-	f.rrcHist[h], f.rrcHist[h+rrcTaps] = v, v
-	if h++; h == rrcTaps {
+	f.rrcHist[h], f.rrcHist[h+audioTaps] = v, v
+	if h++; h == audioTaps {
 		h = 0
 	}
 	f.rrcHead = h
-	w := (*[rrcTaps]int8)(f.rrcHist[h : h+rrcTaps])
-	const mid = rrcTaps / 2
-	acc := int32(discRRCQ15[mid]) * int32(w[mid])
-	for k := range mid {
-		acc += int32(discRRCQ15[k]) * (int32(w[k]) + int32(w[rrcTaps-1-k]))
+	taps := discRRCQ15[:]
+	if audioDecimate == 2 {
+		taps = audioRRCQ15[:]
 	}
-	return float32(acc) * (rrcStepHz / 32768.0)
+	return float32(symFIR(taps, f.rrcHist[h:h+audioTaps])) * (rrcStepHz / 32768.0), true
+}
+
+// symFIR returns the output of the symmetric filter whose taps up to its
+// center tap are taps over the samples w, oldest first, in Q15.
+func symFIR(taps []int16, w []int8) int32 {
+	n := len(w)
+	mid := n / 2
+	acc := int32(taps[mid]) * int32(w[mid])
+	for k := range mid {
+		acc += int32(taps[k]) * (int32(w[k]) + int32(w[n-1-k]))
+	}
+	return acc
 }

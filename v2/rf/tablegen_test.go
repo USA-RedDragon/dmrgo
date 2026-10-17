@@ -67,6 +67,7 @@ func derivedTables() ([]genTable, error) {
 		{"discHalfQ15", d.halfQ15},
 		{"discPreQ15", d.preQ15},
 		{"discRRCQ15", d.rrcQ15},
+		{"audioRRCQ15", d.audioQ15},
 		{"fftTwiddles", d.twiddles},
 		{"specWindow", d.window},
 		{"syncDev", d.dev},

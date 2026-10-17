@@ -43,9 +43,10 @@ const (
 )
 
 // leanTiming recovers the symbol timing from the matched filter output at
-// discSPS samples per symbol, with a Gardner timing error detector, and
+// 2*step samples per symbol, with a Gardner timing error detector, and
 // samples each symbol by linear interpolation.
 type leanTiming struct {
+	step   float32
 	s1, s2 float32
 	// t is the time of the next strobe, in samples after the last one.
 	// The strobes alternate between symbols and the midpoints between them.
@@ -72,13 +73,13 @@ func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
 	v = tm.s2 + at*(tm.s2-tm.s1)
 	if tm.mid {
 		tm.half, tm.mid = v, false
-		tm.t += discSPS / 2.0
+		tm.t += tm.step
 		return 0, 0, false
 	}
 	tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*v*v
 	e := tm.half * (tm.last - v)
 	tm.last, tm.mid = v, true
-	tm.t += discSPS / 2.0
+	tm.t += tm.step
 	if !tm.hold && tm.pow > 0 {
 		tm.t += max(min(tm.gain*e/tm.pow, 0.5), -0.5)
 	}
@@ -112,9 +113,14 @@ type leanCore struct {
 	out     []Burst
 	front   leanTuner
 	// center is the input sample at the center of matched filter sample 0,
-	// in baseband samples.
-	center int64
-	tm     leanTiming
+	// in baseband samples, and mfScale the baseband samples per matched
+	// filter sample.
+	center  int64
+	mfScale float64
+	// acqGain and trackGain are leanAcqGain and leanTrackGain for the
+	// samples per symbol of the matched filter.
+	acqGain, trackGain float32
+	tm                 leanTiming
 	// n counts the matched filter samples and ns the symbols. ring holds
 	// the last symbols in units of discStepHz, plus off.
 	n    int64
@@ -210,7 +216,7 @@ func (f *leanFront) retuneFront(hz, d float32) {
 // newLean returns the streaming receiver of cfg with the settings opt.
 func newLean(cfg Config, opt options) *leanRx {
 	r := &leanRx{signed: cfg.Signed}
-	r.leanCore.init(cfg.OnBurst, opt, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
+	r.leanCore.init(cfg.OnBurst, opt, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16, discSPS)
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
 		r.wide = make([]complex64, leanChunk)
@@ -221,12 +227,16 @@ func newLean(cfg Config, opt options) *leanRx {
 	return r
 }
 
-// init sets up c with the settings opt, to emit bursts to onBurst, or, when
-// it is nil, to hold up to keep bursts for the methods to return.
-func (c *leanCore) init(onBurst func(Burst), opt options, keep int) {
+// init sets up c for matched filter samples at sps samples per symbol with
+// the settings opt, to emit bursts to onBurst, or, when it is nil, to hold
+// up to keep bursts for the methods to return.
+func (c *leanCore) init(onBurst func(Burst), opt options, keep int, sps float32) {
 	c.onBurst, c.lastAnch, c.softFEC = onBurst, leanNoSlot, opt.SoftFEC
 	c.sources, c.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
-	c.tm.t, c.tm.gain = discSPS/2.0, leanAcqGain
+	c.mfScale = float64(samplesPerSy) / float64(sps)
+	c.acqGain, c.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
+	c.tm.step = sps / 2
+	c.tm.t, c.tm.gain = c.tm.step, c.acqGain
 	c.resetChans()
 	if onBurst == nil {
 		c.out = make([]Burst, 0, keep)
@@ -428,7 +438,7 @@ func (r *leanCore) searchSym() {
 	r.streams++
 	r.first = r.ns - 1 - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
-	r.tm.hold, r.tm.gain = false, leanTrackGain
+	r.tm.hold, r.tm.gain = false, r.trackGain
 	r.resetChans()
 	r.eAcc, r.eSyms = 0, 0
 }
@@ -564,7 +574,7 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 // unlock ends the stream.
 func (r *leanCore) unlock() {
 	r.locked = false
-	r.tm.hold, r.tm.gain = false, leanAcqGain
+	r.tm.hold, r.tm.gain = false, r.acqGain
 	r.offsetHz = r.tuneHz + r.dcHz
 	r.devHz = 3 * deviationHz * r.devScale
 }
@@ -625,7 +635,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	}
 	b := &r.cb
 	*b = Burst{Distance: -1, BS: r.bs, HasCACH: r.bs, Stream: int(r.streams), Slot: int64(j)}
-	now := 2*(float64(r.lastN)+float64(r.lastAt)) + float64(r.center)
+	now := r.mfScale*(float64(r.lastN)+float64(r.lastAt)) + float64(r.center)
 	b.Seconds = (now - float64(r.ns-1-(base+cachSymbols))*float64(samplesPerSy)) / basebandRate
 	for k := range slotSymbols {
 		l0, l1 := r.symLLR(base + int64(k))

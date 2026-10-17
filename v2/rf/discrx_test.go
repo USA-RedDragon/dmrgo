@@ -12,10 +12,10 @@ const (
 	audioOffset = 300
 )
 
-// audioTaps returns the taps of the IF filter of discAudio at basebandRate:
+// audioIFTaps returns the taps of the IF filter of discAudio at basebandRate:
 // a Hamming-windowed low pass with its cutoff at 6.25 kHz, half a 12.5 kHz
 // channel.
-func audioTaps() []float64 {
+func audioIFTaps() []float64 {
 	const n = 31
 	h := make([]float64, n)
 	fc := 6250.0 / basebandRate
@@ -31,11 +31,11 @@ func audioTaps() []float64 {
 }
 
 // discAudio returns the output of an FM receiver for the baseband x at
-// basebandRate: the IF filter of audioTaps, a limiter and discriminator,
+// basebandRate: the IF filter of audioIFTaps, a limiter and discriminator,
 // and a converter at discRate with gain audioGain and offset audioOffset.
 // Below the FM threshold its output has the clicks of a real one.
 func discAudio(x []complex64) []int16 {
-	h := audioTaps()
+	h := audioIFTaps()
 	out := make([]int16, 0, len(x)/2)
 	var prev complex128
 	for i := 0; i+len(h) <= len(x); i += 2 {
