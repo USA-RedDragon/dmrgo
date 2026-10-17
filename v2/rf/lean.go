@@ -734,13 +734,18 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	*b = Burst{Distance: -1, BS: r.bs, HasCACH: r.bs, Stream: int(r.streams), Slot: int64(j)}
 	now := r.mfScale*(float64(r.n-1)+float64(r.lastAt)) + float64(r.center)
 	b.Seconds = (now - float64(r.ns-1-(base+cachSymbols))*float64(samplesPerSy)) / basebandRate
+	// The hard decisions are the signs of the ratios of symLLR: the first
+	// bit is set below 0, the second beyond the midpoint between the
+	// levels, ±2 dev.
+	thr := 2 * r.llrDev
 	for k := range slotSymbols {
-		l0, l1 := r.symLLR(base + int64(k))
+		x := int32(r.ring[uint32(base+int64(k))%leanRing])*(discStepHz/llrStepHz) + r.llrOff
 		var d byte
-		if l0 < 0 {
+		if x < 0 {
 			d = 2
+			x = -x
 		}
-		if l1 < 0 {
+		if x > thr {
 			d |= 1
 		}
 		if k < cachSymbols {
