@@ -264,7 +264,7 @@ func (s *cohStage) freqFit(k0, k1 int) float64 {
 // its detection again.
 const (
 	cohKnownPrior  = 4
-	cohRefinePrior = 10
+	cohRefinePrior = 20
 )
 
 // detect detects burst b of the core c, whose fields the core decoded,
@@ -453,7 +453,9 @@ func (s *cohStage) refineData(ext *[layer2.BurstBits]float32, w float32, llr *[l
 		lp := &s.prior[cachSymbols+k]
 		for d := range 4 {
 			b0, b1 := dibitOfDigit(d)
-			lp[d] = bitPrior(w*ext[2*k], b0) + bitPrior(w*ext[2*k+1], b1)
+			// The ratios of the trellis are llrK times its metric, as
+			// TierCoherent divides its priors by its LLRScale.
+			lp[d] = (bitPrior(w*ext[2*k], b0) + bitPrior(w*ext[2*k+1], b1)) / s.llrK
 		}
 	}
 	s.hasPrior = true
