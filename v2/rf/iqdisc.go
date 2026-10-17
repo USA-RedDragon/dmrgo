@@ -163,8 +163,9 @@ func newIQRx(cfg Config, opt options) *iqRx {
 	if on == nil {
 		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
 		on = func(b *Burst) {
-			if len(r.out) < cap(r.out) {
-				r.out = append(r.out, *b)
+			if n := len(r.out); n < cap(r.out) {
+				r.out = r.out[:n+1]
+				r.out[n] = *b
 			}
 		}
 	}
@@ -203,8 +204,10 @@ func (r *iqRx) sample(v complex64) {
 		r.yHist[r.yN&(cohHist-1)] = y
 		r.yN++
 	}
-	r.audio = append(r.audio, int16(max(min(roundf(f*iqUnitsPerHz), math.MaxInt16), math.MinInt16)))
-	if len(r.audio) == cap(r.audio) {
+	n := len(r.audio)
+	r.audio = r.audio[:n+1]
+	r.audio[n] = int16(max(min(roundf(f*iqUnitsPerHz), math.MaxInt16), math.MinInt16))
+	if n+1 == cap(r.audio) {
 		r.d.write(r.audio)
 		r.audio = r.audio[:0]
 	}
