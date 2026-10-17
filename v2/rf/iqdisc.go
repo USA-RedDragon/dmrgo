@@ -16,6 +16,12 @@ const (
 	iqAFCBlock    = basebandRate / 20
 	iqAFCSearchHz = 30
 	iqAFCLockHz   = 100
+	// iqAFCPullHz is the carrier offset below which the oscillator moves
+	// by iqAFCSearchGain of it while the core searches: the symbols of a
+	// block of iqAFCBlock samples spread its mean frequency by about
+	// 100 Hz.
+	iqAFCPullHz     = 300
+	iqAFCSearchGain = 0.25
 )
 
 // iqDisc is the FM discriminator of the I/Q tiers: an oscillator that
@@ -33,6 +39,9 @@ type iqDisc struct {
 	ncoRot  complex64
 	ncoN    int
 	hz      float32
+	// acc sums the products of the output samples with the conjugate of
+	// the ones before since the last move of the oscillator.
+	acc complex64
 }
 
 // init sets up d to decimate by decim, with the oscillator at 0 Hz.
@@ -90,6 +99,7 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	y := complex(re, im)
 	p := y * complex(real(d.prev), -imag(d.prev))
 	d.prev = y
+	d.acc += p
 	return atan2f(imag(p), real(p)) * (float32(basebandRate/d.decim) / (2 * math.Pi)), y, true
 }
 
@@ -124,9 +134,8 @@ func (r *iqRx) ncoAt(n int64) float32 {
 
 // iqRx is the receiver of Tier 1 on I/Q: iqDisc before the DiscReceiver
 // of Tier 0, so that I/Q runs the same core as discriminator audio. The
-// oscillator follows the carrier offset that the DiscReceiver measures,
-// its DC offset, so that the channel filter holds the carrier, and the
-// DC offset that the DiscReceiver removes moves with it.
+// oscillator follows the carrier, so that the channel filter holds it, and
+// the DC offset that the DiscReceiver removes moves with it.
 type iqRx struct {
 	fe      *frontEnd
 	wide    []complex64
@@ -213,23 +222,46 @@ func (r *iqRx) sample(v complex64) {
 	}
 }
 
-// follow moves the oscillator to the carrier offset that the DiscReceiver
-// measures, and the DC offset that it removes by as much.
+// follow moves the oscillator to the carrier offset: the mean frequency
+// of the channel filter samples while the core searches, and the DC
+// offset that the DiscReceiver measures while it is locked.
 func (r *iqRx) follow() {
 	f := &r.d.f
 	if f.gain <= 0 {
 		return
 	}
-	dc, lim := f.dc, float32(iqAFCSearchHz)
-	if r.d.locked {
-		dc, lim = dc+r.d.dcHz, iqAFCLockHz
-	}
 	// The DiscReceiver counts f.gain of its Hz per input unit.
 	scale := f.gain * iqUnitsPerHz
-	hz := dc / scale
-	if abs32(hz) < lim {
+	acc := r.conv.acc
+	r.conv.acc = 0
+	if r.d.locked {
+		if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCLockHz {
+			r.tune(hz, f.dc-hz*scale)
+		}
 		return
 	}
+	// Below the FM threshold the clicks pull the mean of the
+	// discriminator toward 0 Hz. The phase of the sum of the products is
+	// the mean frequency of the carrier, which noise pulls toward the
+	// oscillator only by its share of the power.
+	est := atan2f(imag(acc), real(acc)) * (float32(basebandRate/r.conv.decim) / (2 * math.Pi))
+	if abs32(est) < iqAFCSearchHz {
+		return
+	}
+	// The symbols of a block do not average to 0 Hz: near the carrier the
+	// oscillator moves by part of the offset, to average them.
+	hz := est
+	if abs32(est) < iqAFCPullHz {
+		hz *= iqAFCSearchGain
+	}
+	r.tune(hz, (est-hz)*scale)
+}
+
+// tune moves the oscillator by hz, and sets the DC offset that the
+// DiscReceiver removes to dc, in its units.
+func (r *iqRx) tune(hz, dc float32) {
+	f := &r.d.f
+	scale := f.gain * iqUnitsPerHz
 	// The samples that the DiscReceiver has not taken yet carry the old
 	// offset.
 	r.d.write(r.audio)
@@ -237,8 +269,8 @@ func (r *iqRx) follow() {
 	r.conv.tune(r.conv.hz + hz)
 	r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
 	r.nTunes++
-	f.dc -= hz * scale
-	f.mean -= hz * scale
+	f.mean += dc - f.dc
+	f.dc = dc
 	r.d.tuneHz -= hz * scale
 	f.refresh()
 }
