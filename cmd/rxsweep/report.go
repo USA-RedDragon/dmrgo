@@ -126,8 +126,8 @@ type row struct {
 	// mhz and mhzSearch are the Cortex-M4F MHz, locked and on noise, and
 	// flash the code bytes, from the -m4 command; 0 when none.
 	mhz, mhzSearch, mhzWeak float64
-	flash          int
-	worst          float64 // worst loss over the space payloads, dB
+	flash                   int
+	worst                   float64 // worst loss over the space payloads, dB
 }
 
 func report(out, floorPath string) error {
@@ -226,7 +226,7 @@ func loadRows(out, floorPath string) ([]*row, map[string]floorRef, error) {
 			continue
 		}
 		r := &row{rec: latest[id], pts: curveOf(cs), ebn0: map[string]crossing{}, cost: costBy[id], m4: m4By[id]}
-		for _, p := range reportPayloads() {
+		for _, p := range append(reportPayloads(), [2]string{keyC0C1, "Voice frame, C0 and C1"}) {
 			cn, y := recovery(r.pts, p[0])
 			c := at90(cn, y)
 			c.X = cnToEbN0(c.X)
@@ -319,6 +319,108 @@ func (k costKind) title() string {
 	case costCPU:
 	}
 	return "Host CPU, ms per second of signal, locked at 10 dB"
+}
+
+// Tolerances of the multi-objective front: a variant dominates another
+// only when it is better by more than the noise of the sweep.
+const (
+	// frontCPUTol is the share of the CPU time within which two variants
+	// cost the same.
+	frontCPUTol = 0.1
+	// frontEbN0Tol is the Eb/N0 difference, in dB, within which two
+	// variants are as sensitive.
+	frontEbN0Tol = 0.1
+	// frontRAMFactor is the ratio of RAM within which two variants cost
+	// the same: 19 and 22 KB are the same cost to a PC, 1 and 19 KB are
+	// not to a microcontroller.
+	frontRAMFactor = 2
+	// keyC0C1 is the payload type of C0 and C1 of the voice frames.
+	keyC0C1 = keyAMBE + "_c0c1"
+)
+
+// objectiveKeys returns the payload types of the multi-objective front:
+// those of the report and C0 and C1 of the voice frames, where any row
+// has a 90% crossing.
+func objectiveKeys(rows []*row) []string {
+	var keys []string
+	for _, k := range append([]string{keyC0C1}, payloadKeys()...) {
+		for _, r := range rows {
+			if c, ok := r.ebn0[k]; ok && c.OK {
+				keys = append(keys, k)
+				break
+			}
+		}
+	}
+	return keys
+}
+
+// payloadKeys returns the keys of reportPayloads.
+func payloadKeys() []string {
+	var out []string
+	for _, p := range reportPayloads() {
+		out = append(out, p[0])
+	}
+	return out
+}
+
+// objectives returns the values of r to minimize: host CPU, RAM, and the
+// 90% Eb/N0 of each payload of keys, +Inf where r has none. A crossing
+// below the first C/N counts at that C/N.
+func objectives(r *row, keys []string) []float64 {
+	v := []float64{r.cpuMS, float64(r.ram)}
+	for _, k := range keys {
+		c, ok := r.ebn0[k]
+		if !ok || !c.OK {
+			v = append(v, math.Inf(1))
+			continue
+		}
+		v = append(v, c.X)
+	}
+	return v
+}
+
+// dominates reports whether the objectives a are no worse than b in each
+// and better in one, beyond the tolerances: a share of the CPU time, a
+// factor of RAM, a fixed Eb/N0.
+func dominates(a, b []float64) bool {
+	better := false
+	for i := range a {
+		x, y, tol := a[i], b[i], frontEbN0Tol
+		switch i {
+		case 0:
+			tol = frontCPUTol * y
+		case 1:
+			x, y, tol = math.Log(max(x, 1)), math.Log(max(y, 1)), math.Log(frontRAMFactor)
+		}
+		switch {
+		case x > y+tol:
+			return false
+		case x < y-tol:
+			better = true
+		}
+	}
+	return better
+}
+
+// multiFront returns, for each row, the index of the cheapest row in host
+// CPU that dominates it, or -1 for a row on the multi-objective front. A
+// row competes only with the rows of its input, discriminator audio or
+// I/Q: a radio gives one or the other.
+func multiFront(rows []*row, keys []string) []int {
+	obj := make([][]float64, len(rows))
+	for i, r := range rows {
+		obj[i] = objectives(r, keys)
+	}
+	out := make([]int, len(rows))
+	for i := range rows {
+		out[i] = -1
+		for j := range rows {
+			if j != i && rows[j].rec.Variant.Disc == rows[i].rec.Variant.Disc && dominates(obj[j], obj[i]) && (out[i] < 0 || rows[j].cpuMS < rows[out[i]].cpuMS) {
+				out[i] = j
+			}
+		}
+	}
+	return out
 }
 
 // front returns the indexes of the points of xs and ys that no other point
@@ -487,29 +589,36 @@ func summary(rows []*row, floors map[string]floorRef, keys []string) string {
 	for _, i := range front(xs, ys) {
 		onFront[i] = true
 	}
-	fmt.Fprintf(&b, "# rxsweep report\n\nEb/N0 in dB at 90%% recovery. Loss is the Eb/N0 above the DMR floor (ETSI codes), or above the 4FSK floor (any code) where the DMR floor is not computed. Worst loss is the largest loss over %s. A * marks the Pareto front of worst loss against host CPU.\n\n", strings.Join(keys, ", "))
-	b.WriteString("| | Variant | CPU ms/s | Search ms/s | RAM B | M4F MHz | M4F weak MHz | M4F search MHz | Flash KiB | Worst loss |")
+	obj := objectiveKeys(sorted)
+	by := multiFront(sorted, obj)
+	fmt.Fprintf(&b, "# rxsweep report\n\nEb/N0 in dB at 90%% recovery. Loss is the Eb/N0 above the DMR floor (ETSI codes), or above the 4FSK floor (any code) where the DMR floor is not computed. Worst loss is the largest loss over %s; W marks the Pareto front of worst loss against host CPU. A * marks the multi-objective Pareto front of each input, audio or I/Q: no other variant of that input is as good in host CPU, RAM and the 90%% Eb/N0 of each of %s, and better in one, by more than %.0f%% of the CPU, a factor of %d of RAM or %.1f dB, the noise of the sweep. Dominated by names the cheapest variant that dominates the row.\n\n", strings.Join(keys, ", "), strings.Join(obj, ", "), 100*frontCPUTol, frontRAMFactor, frontEbN0Tol)
+	b.WriteString("| | Variant | Dominated by | CPU ms/s | Search ms/s | RAM B | M4F MHz | M4F weak MHz | M4F search MHz | Flash KiB | Worst loss |")
 	for _, k := range keys {
 		b.WriteString(" " + k + " |")
 	}
-	b.WriteString("\n|---|---|---|---|---|---|---|---|---|---|")
+	b.WriteString("\n|---|---|---|---|---|---|---|---|---|---|---|")
 	for range keys {
 		b.WriteString("---|")
 	}
 	b.WriteString("\n")
-	b.WriteString("| | 4FSK floor (any code) | | | | | | | | |")
+	b.WriteString("| | 4FSK floor (any code) | | | | | | | | | |")
 	for _, k := range keys {
 		b.WriteString(" " + fmtCross(floors[k].any) + " |")
 	}
-	b.WriteString("\n| | DMR floor (ETSI codes) | | | | | | | | |")
+	b.WriteString("\n| | DMR floor (ETSI codes) | | | | | | | | | |")
 	for _, k := range keys {
 		b.WriteString(" " + fmtCross(floors[k].dmr) + " |")
 	}
 	b.WriteString("\n")
 	for i, r := range sorted {
-		mark := ""
-		if onFront[i] {
+		mark, dom := "", ""
+		if by[i] < 0 {
 			mark = "*"
+		} else {
+			dom = sorted[by[i]].rec.Name
+		}
+		if onFront[i] {
+			mark += "W"
 		}
 		m4, m4w, m4s, flash := "-", "-", "-", "-"
 		if r.mhz > 0 {
@@ -525,7 +634,7 @@ func summary(rows []*row, floors map[string]floorRef, keys []string) string {
 		if r.ram > 0 {
 			ram = strconv.Itoa(r.ram)
 		}
-		fmt.Fprintf(&b, "| %s | %s | %.2f | %.2f | %s | %s | %s | %s | %s | %s |", mark, r.rec.Name, r.cpuMS, r.searchMS, ram, m4, m4w, m4s, flash, lossCell(r.worst))
+		fmt.Fprintf(&b, "| %s | %s | %s | %.2f | %.2f | %s | %s | %s | %s | %s | %s |", mark, r.rec.Name, dom, r.cpuMS, r.searchMS, ram, m4, m4w, m4s, flash, lossCell(r.worst))
 		for _, k := range keys {
 			b.WriteString(" " + fmtCross(r.ebn0[k]) + " |")
 		}
