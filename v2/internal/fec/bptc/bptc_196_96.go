@@ -55,6 +55,12 @@ func columnSyndromes(rows *[13]uint16) [4]uint16 {
 // and a fec.Result (ETSI TS 102 361-1 clause B.1.1). R(3) has no FEC and is
 // not returned. Bits 196 to 199 of info are ignored.
 func Decode196(info [25]byte) ([12]byte, uint8, fec.Result) {
+	return DecodeRows(Rows(info))
+}
+
+// Rows deinterleaves a BPTC(196,96) block of 196 packed information bits
+// into the 13 rows of its grid, as Decode196 does before it corrects them.
+func Rows(info [25]byte) [13]uint16 {
 	var words [4]uint64
 	for k := range 3 {
 		words[k] = binary.BigEndian.Uint64(info[8*k:])
@@ -71,7 +77,23 @@ func Decode196(info [25]byte) ([12]byte, uint8, fec.Result) {
 		}
 		rows[r] = row
 	}
+	return rows
+}
 
+// GridPos returns the row and column of the grid that information bit p of
+// a block, 0 to 195, lands in, and false for a bit outside the grid.
+func GridPos(p int) (row, col int, ok bool) {
+	for i := 1; i < len(dm); i++ {
+		if int(dm[i]) == p {
+			return (i - 1) / 15, (i - 1) % 15, true
+		}
+	}
+	return 0, 0, false
+}
+
+// DecodeRows corrects the rows of a BPTC(196,96) grid that Rows returns
+// and returns what Decode196 returns for the block.
+func DecodeRows(rows [13]uint16) ([12]byte, uint8, fec.Result) {
 	received := rows
 	result := fec.Result{BitsChecked: 196, Uncorrectable: hammingCorrect(&rows)}
 	for r := range rows {
