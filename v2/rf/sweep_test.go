@@ -28,6 +28,8 @@ type sweepJob struct {
 	Cases []sweepCase `json:"cases"`
 	// Cost also measures the RAM, the allocations and the false bursts.
 	Cost bool `json:"cost,omitempty"`
+	// Disc receives the stream through discAudio with a DiscReceiver.
+	Disc bool `json:"disc,omitempty"`
 }
 
 // sweepCase is one stream of a job.
@@ -92,19 +94,82 @@ func (j *sweepJob) input(x []complex64) []complex64 {
 	return y
 }
 
-// sweepReceive runs x through a receiver of cfg and returns the bursts and the
-// thread CPU time.
-func sweepReceive(cfg Config, x []complex64) ([]Burst, float64) {
+// sweepRx is the receiver of a job: a Receiver that takes baseband, or a
+// DiscReceiver that takes its discAudio.
+type sweepRx struct {
+	r *Receiver
+	d *DiscReceiver
+}
+
+// sweepInput is a stream converted for a sweepRx.
+type sweepInput struct {
+	x []complex64
+	a []int16
+}
+
+// newRx returns the receiver of the job with the settings of cfg.
+func (j *sweepJob) newRx(cfg Config) sweepRx {
+	if j.Disc {
+		d, err := NewDisc(DiscConfig{OnBurst: cfg.OnBurst, opt: cfg.opt})
+		if err != nil {
+			panic(err)
+		}
+		return sweepRx{d: d}
+	}
+	return sweepRx{r: mustNew(cfg)}
+}
+
+// convert returns the input of the receiver for the baseband x of the job.
+func (s sweepRx) convert(j *sweepJob, x []complex64) sweepInput {
+	if s.d != nil {
+		return sweepInput{a: discAudio(x)}
+	}
+	return sweepInput{x: j.input(x)}
+}
+
+// len returns the number of samples of in.
+func (in sweepInput) len() int { return len(in.x) + len(in.a) }
+
+// write feeds samples lo to hi of in to the receiver in writes of 4096.
+func (s sweepRx) write(in sweepInput, lo, hi int) {
+	for k := lo; k < hi; k += 4096 {
+		e := min(k+4096, hi)
+		if s.d != nil {
+			s.d.Write(in.a[k:e])
+		} else {
+			s.r.WriteBaseband(in.x[k:e])
+		}
+	}
+}
+
+func (s sweepRx) flush() {
+	if s.d != nil {
+		s.d.Flush()
+	} else {
+		s.r.Flush()
+	}
+}
+
+// rate returns the sample rate of the input of the receiver of the job.
+func (j *sweepJob) rate() int {
+	if j.Disc {
+		return discRate
+	}
+	return j.hz()
+}
+
+// receive runs the baseband x through the receiver of the job and returns
+// the bursts, the thread CPU time and the input seconds.
+func (j *sweepJob) receive(cfg Config, x []complex64) ([]Burst, float64, float64) {
 	var out []Burst
 	cfg.OnBurst = func(b Burst) { out = append(out, b) }
-	r := mustNew(cfg)
+	r := j.newRx(cfg)
+	in := r.convert(j, x)
 	cpu := threadCPUSeconds(func() {
-		for k := 0; k < len(x); k += 4096 {
-			r.WriteBaseband(x[k:min(k+4096, len(x))])
-		}
-		r.Flush()
+		r.write(in, 0, in.len())
+		r.flush()
 	})
-	return out, cpu
+	return out, cpu, float64(in.len()) / float64(j.rate())
 }
 
 // TestSweepWorker runs the job in the file DMRRF_SWEEP_JOB and writes the
@@ -141,9 +206,8 @@ func TestSweepWorker(t *testing.T) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			x := j.input(noisyBaseband(slots, j.Offset, c.CN, c.Seed))
-			got, cpu := sweepReceive(cfg, x)
-			res.Cases[i] = sweepCaseResult{sweepCase: c, Payloads: scoreBench(truth, got), CPUSeconds: cpu, Seconds: float64(len(x)) / float64(j.hz())}
+			got, cpu, sec := j.receive(cfg, noisyBaseband(slots, j.Offset, c.CN, c.Seed))
+			res.Cases[i] = sweepCaseResult{sweepCase: c, Payloads: scoreBench(truth, got), CPUSeconds: cpu, Seconds: sec}
 		}()
 	}
 	wg.Wait()
@@ -156,42 +220,39 @@ func TestSweepWorker(t *testing.T) {
 	}
 }
 
-// sweepCosts measures the RAM of cfg (the bytes that New allocates), its allocations per write on a
-// locked stream at 10 dB, and its false bursts and CPU time on 5 minutes
-// of noise. It runs before anything else, alone.
+// sweepCosts measures the RAM of the receiver of the job (the bytes that
+// its constructor allocates), its allocations per write on a locked stream
+// at 10 dB, and its false bursts and CPU time on 5 minutes of noise. It
+// runs before anything else, alone.
 func sweepCosts(t testing.TB, j *sweepJob, cfg Config) *sweepCost {
 	var c sweepCost
 	var a, b runtime.MemStats
 	count := 0
 	cfg.OnBurst = func(Burst) { count++ }
 	runtime.ReadMemStats(&a)
-	r := mustNew(cfg)
+	r := j.newRx(cfg)
 	runtime.ReadMemStats(&b)
 	c.RAMBytes = int(b.TotalAlloc - a.TotalAlloc)
 	const seconds = 300
 	n := 0
 	var cpu float64
-	for seed := uint64(1); n < seconds*j.hz(); seed++ {
-		x := j.input(noisyBaseband(nil, 0, 0, seed))
-		cpu += threadCPUSeconds(func() {
-			for k := 0; k < len(x); k += 4096 {
-				r.WriteBaseband(x[k:min(k+4096, len(x))])
-			}
-		})
-		n += len(x)
+	for seed := uint64(1); n < seconds*j.rate(); seed++ {
+		in := r.convert(j, noisyBaseband(nil, 0, 0, seed))
+		cpu += threadCPUSeconds(func() { r.write(in, 0, in.len()) })
+		n += in.len()
 	}
-	r.Flush()
-	c.FalsePerHour = float64(count) * 3600 * float64(j.hz()) / float64(n)
-	c.SearchNsPerSecond = cpu * 1e9 * float64(j.hz()) / float64(n)
+	r.flush()
+	c.FalsePerHour = float64(count) * 3600 * float64(j.rate()) / float64(n)
+	c.SearchNsPerSecond = cpu * 1e9 * float64(j.rate()) / float64(n)
 	slots, _ := benchStream(t, 6)
-	x := j.input(noisyBaseband(slots, j.Offset, 10, 1))
+	ar := j.newRx(cfg)
+	in := ar.convert(j, noisyBaseband(slots, j.Offset, 10, 1))
 	const chunk = 1 << 12
-	ar := mustNew(cfg)
-	ar.WriteBaseband(x[:chunk])
-	k := len(x)/chunk - 1
+	ar.write(in, 0, chunk)
+	k := in.len()/chunk - 1
 	runtime.ReadMemStats(&a)
 	for i := 1; i <= k; i++ {
-		ar.WriteBaseband(x[i*chunk : (i+1)*chunk])
+		ar.write(in, i*chunk, (i+1)*chunk)
 	}
 	runtime.ReadMemStats(&b)
 	c.Allocs = float64(b.Mallocs-a.Mallocs) / float64(k)

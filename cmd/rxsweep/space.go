@@ -25,6 +25,9 @@ type variant struct {
 	Tier     int `json:"tier"`
 	Lookback int `json:"lookback,omitempty"`
 	Hz       int `json:"hz,omitempty"`
+	// Disc receives the stream as FM discriminator audio with
+	// rf.DiscReceiver, which runs the TierDisc settings.
+	Disc bool `json:"disc,omitempty"`
 	// Opt holds options fields of package rf that replace those of the
 	// tier, by field name.
 	Opt map[string]json.RawMessage `json:"opt,omitempty"`
@@ -42,7 +45,7 @@ type family struct {
 	Name string  `json:"name"`
 	Base variant `json:"base"`
 	Mode string  `json:"mode"`
-	// Vary lists the values of each key: "tier", "lookback", "hz",
+	// Vary lists the values of each key: "tier", "lookback", "hz", "disc",
 	// "opt.<Field>" or "consts.<file>.<Name>".
 	Vary map[string][]json.RawMessage `json:"vary"`
 }
@@ -181,6 +184,8 @@ func (v *variant) set(k string, val json.RawMessage) error {
 		return json.Unmarshal(val, &v.Lookback)
 	case k == "hz":
 		return json.Unmarshal(val, &v.Hz)
+	case k == "disc":
+		return json.Unmarshal(val, &v.Disc)
 	case strings.HasPrefix(k, "opt."):
 		if v.Opt == nil {
 			v.Opt = map[string]json.RawMessage{}
