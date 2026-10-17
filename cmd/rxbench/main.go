@@ -127,6 +127,7 @@ type point struct {
 
 // tier is the sweep of one receiver tier.
 type tier struct {
+	Mode         string  `json:"mode"`
 	Tier         int     `json:"tier"`
 	Full         []point `json:"full"`
 	NsPerSecond  float64 `json:"ns_per_second"`
@@ -243,9 +244,46 @@ func payloadNames() [][2]string {
 	}
 }
 
-// tierName returns the README name of tier i.
-func tierName(i int) string {
-	return [...]string{"0: FM audio, 9.6 kHz", "1: coherent, two pass", "2: phase trellis, two pass"}[i]
+// The input modes of a tier: FM discriminator audio, or I/Q samples.
+const (
+	modeAudio = "audio"
+	modeIQ    = "iq"
+)
+
+// modes lists the input modes in the order of the README: the mode, the
+// title of its graphs, and its short name.
+func modes() [][3]string {
+	return [][3]string{{modeAudio, "FM discriminator audio", "Audio"}, {modeIQ, "I/Q", "I/Q"}}
+}
+
+// modeLabel returns the short README name of mode m.
+func modeLabel(m string) string {
+	for _, v := range modes() {
+		if v[0] == m {
+			return v[2]
+		}
+	}
+	return m
+}
+
+// tierName returns the README name of tier t, with its input mode.
+func tierName(t tier) string {
+	desc := map[string]string{
+		modeAudio + "0": "discriminator core, 9.6 kHz",
+		modeIQ + "1":    "coherent, two pass",
+		modeIQ + "2":    "phase trellis, two pass",
+	}[t.Mode+strconv.Itoa(t.Tier)]
+	name := modeLabel(t.Mode) + " " + strconv.Itoa(t.Tier)
+	if desc == "" {
+		return name
+	}
+	return name + ": " + desc
+}
+
+// shortName returns the name of tier t in the recordings table and the
+// graphs.
+func shortName(t tier) string {
+	return modeLabel(t.Mode) + " tier " + strconv.Itoa(t.Tier)
 }
 
 // crossing is the Eb/N0 where a curve first reaches 90% recovery. below
@@ -309,7 +347,7 @@ func renderBlock(d data) []byte {
 	b.WriteString("|------|-------|---------------|------|---------------|-------------------------|-----|--------|\n")
 	for _, t := range d.bench.Tiers {
 		row := make([]string, 0, 8)
-		row = append(row, tierName(t.Tier))
+		row = append(row, tierName(t))
 		for _, k := range []string{keyAMBE, keyRate12, keyCSBK, keyRate34} {
 			row = append(row, lossCell(d, t, k))
 		}
@@ -318,20 +356,20 @@ func renderBlock(d data) []byte {
 		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
 	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
-	b.WriteString(" Tier 0 is rf.DiscReceiver on the audio of an FM discriminator at 9.6 kHz, which the sweep makes from the same noisy signal, so its Eb/N0 is that of the signal at the antenna. Tiers 1 and 2 are rf.Receiver on I/Q samples at 48 kHz. RAM is the heap that the receiver keeps with OnBurst set: for Tier 0 its whole state, which rf.DiscReceiver.Init can also place in static memory; for Tiers 1 and 2 the slice of bursts that Write returns without OnBurst adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
+	b.WriteString(" The audio tiers take the audio of an FM discriminator at 9.6 kHz, which the sweep makes from the same noisy signal with the IF filter of a 12.5 kHz radio, so their Eb/N0 is that of the signal at the antenna. Audio tier 0 is rf.DiscReceiver. The I/Q tiers are rf.Receiver on I/Q samples at 48 kHz. RAM is the heap that the receiver keeps with OnBurst set: for audio tier 0 its whole state, which rf.DiscReceiver.Init can also place in static memory; for the I/Q tiers the slice of bursts that Write returns without OnBurst adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
 	renderSensitivity(&b, d)
 	b.WriteString("<details><summary>Real recordings</summary>\n\n")
 	b.WriteString("Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR, by tier.")
 	for _, r := range d.recordings {
 		if slices.Min(r.Exact) < 0 {
-			b.WriteString(" n/a marks a long recording that the slowest tier did not run.")
+			b.WriteString(" n/a marks a tier that has not run on the recording.")
 			break
 		}
 	}
 	b.WriteString("\n\n")
 	b.WriteString("| Recording | Frames |")
 	for _, t := range d.bench.Tiers {
-		b.WriteString(" Tier " + strconv.Itoa(t.Tier) + " |")
+		b.WriteString(" " + shortName(t) + " |")
 	}
 	b.WriteString("\n|-----------|--------|")
 	for range d.bench.Tiers {
@@ -352,8 +390,12 @@ func renderBlock(d data) []byte {
 	b.WriteString("\n</details>\n\n")
 	b.WriteString("<details><summary>Error rate graphs</summary>\n\n")
 	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the 4FSK floor (dashed) and each tier. The graphs leave out the DMR floor: for the voice frame and the BPTC, rate 3/4 and embedded LC codes, which have 2^49 to 2^96 values, the phase memory of the 4FSK modulation keeps the searches from bounding it, and the sensitivity details give what is known. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
-	for _, g := range graphs() {
-		b.WriteString("![" + g.title + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](docs/rx/" + g.key + ".svg)\n")
+	for _, m := range modes() {
+		b.WriteString("#### " + m[1] + "\n\n")
+		for _, g := range graphs() {
+			b.WriteString("![" + g.title + ", " + m[1] + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](docs/rx/" + m[0] + "/" + g.key + ".svg)\n")
+		}
+		b.WriteString("\n")
 	}
 	b.WriteString("\n</details>\n\n")
 	return []byte(b.String())
@@ -372,7 +414,7 @@ func renderSensitivity(b *strings.Builder, d data) {
 	b.WriteString("Where the DMR floor is a lower bound, the table gives it as \"at least\", and the code cost as a range up to the code-aware receiver. The floors run on the stream and noise seeds of the tiers. Their generator is v2/rf/floor_gen_test.go, and testdata/rxbench_floor.json names the bound of each payload. The code-aware receiver is in v2/rf/floor_aware_test.go.")
 	b.WriteString("\n\n| Payload | 4FSK floor | DMR floor | Code cost | Code-aware |")
 	for _, t := range d.bench.Tiers {
-		b.WriteString(" Tier " + tierName(t.Tier) + " |")
+		b.WriteString(" " + tierName(t) + " |")
 	}
 	b.WriteString("\n|---------|------------|-----------|-----------|------------|")
 	for range d.bench.Tiers {
@@ -540,21 +582,30 @@ func errorRate(y []float64) []float64 {
 	return out
 }
 
-// renderGraphs returns one SVG per graph: the error rate against Eb/N0 on
-// a log scale, the floors dashed, the code-aware receiver dotted and each
-// tier solid. A DMR floor that is not computed is left out.
+// renderGraphs returns one SVG per graph and input mode, by its path under
+// docs/rx: the error rate against Eb/N0 on a log scale, the 4FSK floor
+// dashed and each tier of the mode solid.
 func renderGraphs(d data) map[string][]byte {
 	out := map[string][]byte{}
-	for _, g := range graphs() {
-		var series []svgSeries
-		if f, ok := d.floor.Payloads[g.key]; ok {
-			series = append(series, svgSeries{name: "4FSK floor (any code)", x: f.Any.EbN0, y: errorRate(f.Any.recovery()), dash: "6 4", class: "r0"})
+	for _, m := range modes() {
+		for _, g := range graphs() {
+			out[m[0]+"/"+g.key+".svg"] = renderGraph(d, g, m[0])
 		}
-		for _, t := range d.bench.Tiers {
+	}
+	return out
+}
+
+// renderGraph returns the SVG of graph g for the tiers of mode m.
+func renderGraph(d data, g graph, m string) []byte {
+	var series []svgSeries
+	if f, ok := d.floor.Payloads[g.key]; ok {
+		series = append(series, svgSeries{name: "4FSK floor (any code)", x: f.Any.EbN0, y: errorRate(f.Any.recovery()), dash: "6 4", class: "r0"})
+	}
+	for _, t := range d.bench.Tiers {
+		if t.Mode == m {
 			x, y := tierCurve(t, g.key)
 			series = append(series, svgSeries{name: "Tier " + strconv.Itoa(t.Tier), x: x, y: errorRate(y), class: "s" + strconv.Itoa(t.Tier+1)})
 		}
-		out[g.key+".svg"] = svgChart(g.title, g.rate, series)
 	}
-	return out
+	return svgChart(g.title+", "+modeLabel(m), g.rate, series)
 }

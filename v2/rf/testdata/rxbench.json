@@ -2,6 +2,7 @@
  "machine": "AMD Ryzen 9 7950X 16-Core Processor",
  "tiers": [
   {
+   "mode": "audio",
    "tier": 0,
    "fast": [
     {
@@ -1868,6 +1869,7 @@
    "allocs": 0
   },
   {
+   "mode": "iq",
    "tier": 1,
    "fast": [
     {
@@ -3734,6 +3736,7 @@
    "allocs": 0
   },
   {
+   "mode": "iq",
    "tier": 2,
    "fast": [
     {

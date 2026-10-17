@@ -112,6 +112,7 @@ type benchPoint struct {
 
 // benchTier is the sweep of one tier.
 type benchTier struct {
+	Mode         string       `json:"mode"`
 	Tier         int          `json:"tier"`
 	Fast         []benchPoint `json:"fast"`
 	Full         []benchPoint `json:"full,omitempty"`
@@ -125,6 +126,16 @@ type benchTier struct {
 type benchData struct {
 	Machine string      `json:"machine"`
 	Tiers   []benchTier `json:"tiers"`
+}
+
+// find returns the sweep of the receiver e, and whether d has it.
+func (d *benchData) find(e benchEntry) (benchTier, bool) {
+	for _, t := range d.Tiers {
+		if t.Mode == e.mode && t.Tier == int(e.tier) {
+			return t, true
+		}
+	}
+	return benchTier{}, false
 }
 
 // benchPad is the noise before and after the stream, in seconds.
@@ -264,23 +275,48 @@ type benchCase struct {
 	seed uint64
 }
 
+// The input modes of the sweep.
+const (
+	// benchAudio runs a receiver on the FM discriminator audio of the
+	// noisy signal.
+	benchAudio = "audio"
+	// benchIQ runs a receiver on the noisy I/Q samples.
+	benchIQ = "iq"
+)
+
+// benchEntry is one receiver of the sweep: an input mode and a tier.
+type benchEntry struct {
+	mode string
+	tier Tier
+}
+
+// name returns the name of e in DMRRF_RXBENCH_TIERS, such as audio0.
+func (e benchEntry) name() string { return e.mode + strconv.Itoa(int(e.tier)) }
+
+// benchEntries lists the receivers of the sweep, in the order of the
+// README.
+func benchEntries() []benchEntry {
+	return []benchEntry{{benchAudio, TierDisc}, {benchIQ, TierCoherent}, {benchIQ, TierExact}}
+}
+
 // benchAudioHz is the sample rate of the discriminator audio of Tier 0,
 // which the sweep runs through a DiscReceiver.
 const benchAudioHz = 9600
 
-// benchReceive runs the baseband x through the receiver of tier t: for
-// TierDisc a DiscReceiver on the FM discriminator audio of x at
-// benchAudioHz, for the other tiers a Receiver on x.
-func benchReceive(t testing.TB, x []complex64, tier Tier) []Burst {
-	if tier == TierDisc {
+// benchReceive runs the baseband x through the receiver of e: in audio
+// mode a DiscReceiver on the FM discriminator audio of x at benchAudioHz,
+// in I/Q mode a Receiver of its tier on x.
+func benchReceive(t testing.TB, x []complex64, e benchEntry) []Burst {
+	tier := e.tier
+	if e.mode == benchAudio {
 		return receiveAudio(t, discAudio(x, benchAudioHz), benchAudioHz, nil)
 	}
 	return receiveBaseband(x, tier)
 }
 
-// runBench receives the stream at each case with tier t on all cores and
+// runBench receives the stream at each case with the receiver e on all cores and
 // returns the points, summed over seeds.
-func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, tier Tier, cases []benchCase) []benchPoint {
+func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, cases []benchCase) []benchPoint {
 	t.Helper()
 	res := make([]map[string]*benchScore, len(cases))
 	var wg sync.WaitGroup
@@ -291,7 +327,7 @@ func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, tier Tier, c
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			res[i] = scoreBench(truth, benchReceive(t, noisyBaseband(slots, 1400, c.cn, c.seed), tier))
+			res[i] = scoreBench(truth, benchReceive(t, noisyBaseband(slots, 1400, c.cn, c.seed), e))
 		}()
 	}
 	wg.Wait()
@@ -372,7 +408,7 @@ func deepStreams(t Tier) int {
 // such payload type has deepErrors errors or the point has run
 // deepStreams streams. A payload type that ends a point with no errors
 // needs no deeper points above it.
-func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, tier Tier, pts []benchPoint) []benchPoint {
+func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, pts []benchPoint) []benchPoint {
 	t.Helper()
 	done := map[string]bool{}
 	for i := range pts {
@@ -389,7 +425,7 @@ func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, tier Tier, pts
 					need = true
 				}
 			}
-			if !need || p.Seeds >= deepStreams(tier) {
+			if !need || p.Seeds >= deepStreams(e.tier) {
 				break
 			}
 			cases := make([]benchCase, deepBatch)
@@ -397,7 +433,7 @@ func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, tier Tier, pts
 				cases[j] = benchCase{p.CN, seed}
 				seed++
 			}
-			add := runBench(t, slots, truth, tier, cases)[0]
+			add := runBench(t, slots, truth, e, cases)[0]
 			p.Seeds += add.Seeds
 			for k, v := range add.Payloads {
 				a := p.Payloads[k]
@@ -528,21 +564,23 @@ func TestRxBench(t *testing.T) {
 	}
 	slots, truth := benchStream(t, 6)
 	out := benchData{Machine: base.Machine}
-	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact} {
-		bt := benchTier{Tier: int(tier)}
-		bt.Fast = runBench(t, slots, truth, tier, fastCases(tier))
-		if full && !benchTierSelected(tier) {
-			out.Tiers = append(out.Tiers, base.Tiers[tier])
+	for _, e := range benchEntries() {
+		tier := e.tier
+		bt := benchTier{Mode: e.mode, Tier: int(tier)}
+		want, have := base.find(e)
+		bt.Fast = runBench(t, slots, truth, e, fastCases(tier))
+		if full && !benchTierSelected(e) && have {
+			out.Tiers = append(out.Tiers, want)
 			continue
 		}
 		if full {
 			fs, ft := benchStream(t, 30)
-			bt.Full = deepen(t, fs, ft, tier, runBench(t, fs, ft, tier, fullCases()))
+			bt.Full = deepen(t, fs, ft, e, runBench(t, fs, ft, e, fullCases()))
 			x := noisyBaseband(fs, 1400, 6, 1)
 			bt.Allocs = steadyAllocs(x, tier)
 			bt.RAMBytes = receiverRAM(tier)
 			var cpu float64
-			if tier == TierDisc {
+			if e.mode == benchAudio {
 				a := discAudio(x, benchAudioHz)
 				cpu = cpuSeconds(func() { receiveAudio(t, a, benchAudioHz, nil) })
 			} else {
@@ -551,8 +589,7 @@ func TestRxBench(t *testing.T) {
 			bt.NsPerSecond = cpu * 1e9 / (float64(len(x)) / basebandRate)
 			bt.FalsePerHour = falsePerHour(tier)
 		}
-		if int(tier) < len(base.Tiers) {
-			want := base.Tiers[tier]
+		if have {
 			if !fast {
 				checkBench(t, tier, want.Fast, bt.Fast)
 			}
@@ -574,10 +611,10 @@ func TestRxBench(t *testing.T) {
 }
 
 // benchTierSelected reports whether DMRRF_RXBENCH_TIERS, a comma-separated
-// list of tier numbers, names tier t, or is empty.
-func benchTierSelected(t Tier) bool {
+// list of names such as audio0 and iq1, names e, or is empty.
+func benchTierSelected(e benchEntry) bool {
 	v := os.Getenv("DMRRF_RXBENCH_TIERS")
-	return v == "" || slices.Contains(strings.Split(v, ","), strconv.Itoa(int(t)))
+	return v == "" || slices.Contains(strings.Split(v, ","), e.name())
 }
 
 // checkBench fails when the recovery of a payload type at a C/N of the CI
