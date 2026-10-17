@@ -9,7 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // Limits of the decoders of the streaming receiver, as the defaults of
@@ -18,9 +17,6 @@ const (
 	// leanChase is the number of least reliable bits that the BPTC(196,96)
 	// decode flips, 2^leanChase hard decodes.
 	leanChase = 4
-	// leanAMBECandidates is the number of best C0 codewords that the
-	// AMBE+2 decode tries with their C1.
-	leanAMBECandidates = 1
 	// leanNibbles is the number of nibble cost tables of a small code.
 	leanNibbles = softSmallMaxN / 4
 	// leanCandSize is the number of values of leanFEC.s that hold one
@@ -32,43 +28,6 @@ const (
 	// states a value, and the BPTC(196,96) candidates.
 	leanShared = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize)
 )
-
-// leanTop is softTop with room for the leanAMBECandidates of the AMBE+2
-// decode. A cost is at most softSmallMaxN LLRs of at most 254, and an info
-// word of a small code has at most 12 bits.
-type leanTop struct {
-	n, max int8
-	cost   [leanAMBECandidates]int16
-	info   [leanAMBECandidates]uint16
-	cw     [leanAMBECandidates]uint32
-}
-
-// reset empties the list and sets its size, at least 1.
-func (t *leanTop) reset(size int) {
-	t.n, t.max = 0, int8(max(1, min(size, leanAMBECandidates)))
-}
-
-// worst returns the highest cost in a full list, or MaxInt32.
-func (t *leanTop) worst() int32 {
-	if t.n < t.max {
-		return math.MaxInt32
-	}
-	return int32(t.cost[t.n-1])
-}
-
-// add inserts a candidate in cost order when it beats the worst.
-func (t *leanTop) add(cost int32, info, cw uint32) {
-	if t.n == t.max && cost >= int32(t.cost[t.n-1]) {
-		return
-	}
-	i := min(t.n, t.max-1)
-	for i > 0 && int32(t.cost[i-1]) > cost {
-		t.cost[i], t.info[i], t.cw[i] = t.cost[i-1], t.info[i-1], t.cw[i-1]
-		i--
-	}
-	t.cost[i], t.info[i], t.cw[i] = int16(cost), uint16(info), cw
-	t.n = min(t.n+1, t.max)
-}
 
 // leanBest is a candidate list of searchNibble that keeps the best one.
 type leanBest struct {
@@ -97,13 +56,6 @@ func (b *leanBest) add(cost int32, info, cw uint32) {
 	b.set, b.cost, b.info, b.cw = true, int16(cost), uint16(info), cw
 }
 
-// leanList is a candidate list of searchNibble.
-type leanList interface {
-	*leanTop | *leanBest
-	add(cost int32, info, cw uint32)
-	worst() int32
-}
-
 // leanFEC is the decode scratch of the streaming receiver. Its decoders
 // take the log-likelihood ratios of the bits of a burst from leanRx.llrAt,
 // so that it needs no copy of them, and write the corrected codewords into
@@ -117,8 +69,7 @@ type leanFEC struct {
 	// BPTC(196,96) block in four words of four values, then its leanChase
 	// least reliable bits and their magnitudes.
 	l     [leanLocal]int16
-	top   leanTop
-	top1  leanBest
+	top   leanBest
 	nlist int
 }
 
@@ -199,91 +150,8 @@ func nibbleCost(tab []int16, cw uint32, n int) int32 {
 	return c
 }
 
-// osdSmall searches code id, with off XORed into its codewords, by ordered
-// statistics of order 2 over the LLRs l: it reduces the generator onto the
-// most reliable independent code bits, and scores with the cost tables tab
-// the codeword of their hard decisions and those with one or two of them
-// flipped, a few dozen in place of every codeword. For Golay(24,12) and
-// Golay(23,12) it decodes as maximum likelihood does but for rare words.
-func osdSmall[L leanList](id softSmallID, l, tab []int16, off uint32, top L) {
-	c := &softSmallCodes[id]
-	n, k := c.n, c.k
-	var y uint32
-	var ord [softSmallMaxN]int8
-	for j := range n {
-		if l[j] < 0 {
-			y |= 1 << j
-		}
-		mj := abs16(l[j])
-		i := j
-		for ; i > 0 && abs16(l[ord[i-1]]) < mj; i-- {
-			ord[i] = ord[i-1]
-		}
-		ord[i] = int8(j)
-	}
-	y ^= c.base ^ off
-	rows := c.rows
-	var info [softSmallMaxK]uint16
-	var piv [softSmallMaxK]int8
-	for i := range k {
-		info[i] = 1 << i
-	}
-	rank := 0
-	for _, j := range ord[:n] {
-		if rank == k {
-			break
-		}
-		b := uint32(1) << j
-		r := rank
-		for r < k && rows[r]&b == 0 {
-			r++
-		}
-		if r == k {
-			continue
-		}
-		rows[r], rows[rank] = rows[rank], rows[r]
-		info[r], info[rank] = info[rank], info[r]
-		for i := range k {
-			if i != rank && rows[i]&b != 0 {
-				rows[i] ^= rows[rank]
-				info[i] ^= info[rank]
-			}
-		}
-		piv[rank] = int8(j)
-		rank++
-	}
-	var c0 uint32
-	var i0 uint16
-	for r := range rank {
-		if y>>piv[r]&1 != 0 {
-			c0 ^= rows[r]
-			i0 ^= info[r]
-		}
-	}
-	add := func(cw uint32, inf uint16) {
-		cw ^= c.base ^ off
-		top.add(nibbleCost(tab, cw, n), uint32(inf), cw)
-	}
-	add(c0, i0)
-	for a := range rank {
-		ca, ia := c0^rows[a], i0^info[a]
-		add(ca, ia)
-		for b := a + 1; b < rank; b++ {
-			add(ca^rows[b], ia^info[b])
-		}
-	}
-}
-
-// abs16 returns the magnitude of v.
-func abs16(v int16) int16 {
-	if v < 0 {
-		return -v
-	}
-	return v
-}
-
 // searchNibble is softSmallID.search with nibble tables.
-func searchNibble[L leanList](id softSmallID, tab []int16, off, fixed, want uint32, top L) {
+func searchNibble(id softSmallID, tab []int16, off, fixed, want uint32, top *leanBest) {
 	c := &softSmallCodes[id]
 	var free [16]int
 	nf := 0
@@ -336,47 +204,9 @@ func (r *leanCore) gather(f *leanFEC, id softSmallID, cach bool) uint32 {
 func (r *leanCore) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, want uint32) (info, cw uint32, errs int) {
 	hard := r.gather(f, id, cach)
 	nibbleTables(f.s[:leanNibbles*16], f.l[:softSmallCodes[id].n])
-	f.top.reset(1)
+	f.top.reset()
 	searchNibble(id, f.s[:leanNibbles*16], 0, fixed, want, &f.top)
-	return uint32(f.top.info[0]), f.top.cw[0], bits.OnesCount32(f.top.cw[0] ^ hard)
-}
-
-// fixAMBE decodes the three AMBE+2 frames of burst b, as
-// softDecoder.decodeAMBE, into its Fixed bits.
-func (r *leanCore) fixAMBE(f *leanFEC, b *Burst) {
-	out := &b.Fixed
-	slots := b.Data.VoiceSlots()
-	for i := range layer2.VoiceSlotsPerBurst {
-		id0, id1 := softAMBECode+2*softSmallID(i), softAMBECode+2*softSmallID(i)+1
-		c1 := &softSmallCodes[id1]
-		if _, res := vocoder.DecodeAMBE72(slots[i]); res.ErrorsCorrected == 0 && !res.Uncorrectable {
-			continue
-		}
-		r.gather(f, id0, false)
-		nibbleTables(f.s[:leanNibbles*16], f.l[:softSmallCodes[id0].n])
-		f.top.reset(leanAMBECandidates)
-		osdSmall(id0, f.l[:softSmallCodes[id0].n], f.s[:leanNibbles*16], 0, &f.top)
-		r.gather(f, id1, false)
-		nibbleTables(f.s[:leanNibbles*16], f.l[:c1.n])
-		var bound int32
-		for j := range c1.n {
-			bound += int32(min(0, f.l[j]))
-		}
-		best := int32(softInf)
-		var cw0, cw1 uint32
-		for c := range f.top.n {
-			if int32(f.top.cost[c])+bound >= best {
-				break
-			}
-			f.top1.reset()
-			osdSmall(id1, f.l[:c1.n], f.s[:leanNibbles*16], softAMBEPN(uint32(f.top.info[c])), &f.top1)
-			if total := int32(f.top.cost[c]) + int32(f.top1.cost); total < best {
-				best, cw0, cw1 = total, f.top.cw[c], f.top1.cw
-			}
-		}
-		softPutSmall(out, id0, cw0)
-		softPutSmall(out, id1, cw1)
-	}
+	return uint32(f.top.info), f.top.cw, bits.OnesCount32(f.top.cw ^ hard)
 }
 
 // bptcCheck reports whether the BPTC(196,96) payload p of data type dt
@@ -594,7 +424,6 @@ func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
 	switch {
 	case b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
-		r.fixAMBE(f, b)
 		if b.Voice != enums.VoiceBurstUnknown && b.Voice != enums.VoiceBurstA {
 			var fixed, want uint32
 			if ccOK {
