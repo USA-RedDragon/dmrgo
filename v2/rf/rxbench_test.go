@@ -264,6 +264,20 @@ type benchCase struct {
 	seed uint64
 }
 
+// benchAudioHz is the sample rate of the discriminator audio of Tier 0,
+// which the sweep runs through a DiscReceiver.
+const benchAudioHz = 9600
+
+// benchReceive runs the baseband x through the receiver of tier t: for
+// TierDisc a DiscReceiver on the FM discriminator audio of x at
+// benchAudioHz, for the other tiers a Receiver on x.
+func benchReceive(t testing.TB, x []complex64, tier Tier) []Burst {
+	if tier == TierDisc {
+		return receiveAudio(t, discAudio(x, benchAudioHz), benchAudioHz, nil)
+	}
+	return receiveBaseband(x, tier)
+}
+
 // runBench receives the stream at each case with tier t on all cores and
 // returns the points, summed over seeds.
 func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, tier Tier, cases []benchCase) []benchPoint {
@@ -277,7 +291,7 @@ func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, tier Tier, c
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			res[i] = scoreBench(truth, receiveBaseband(noisyBaseband(slots, 1400, c.cn, c.seed), tier))
+			res[i] = scoreBench(truth, benchReceive(t, noisyBaseband(slots, 1400, c.cn, c.seed), tier))
 		}()
 	}
 	wg.Wait()
@@ -409,6 +423,19 @@ func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, tier Tier, pts
 func falsePerHour(t Tier) float64 {
 	const seconds = 300
 	n, total := 0, 0
+	if t == TierDisc {
+		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, OnBurst: func(*Burst) { n++ }})
+		if err != nil {
+			panic(err)
+		}
+		for seed := uint64(1); total < seconds*benchAudioHz; seed++ {
+			a := discAudio(noisyBaseband(nil, 0, 0, seed), benchAudioHz)
+			r.Write(a)
+			total += len(a)
+		}
+		r.Flush()
+		return float64(n) * 3600 * benchAudioHz / float64(total)
+	}
 	r := mustNew(Config{Rate: basebandRate, Tier: t})
 	for seed := uint64(1); total < seconds*basebandRate; seed++ {
 		x := noisyBaseband(nil, 0, 0, seed)
@@ -419,13 +446,23 @@ func falsePerHour(t Tier) float64 {
 	return float64(n) * 3600 * basebandRate / float64(total)
 }
 
-// receiverRAM returns the heap bytes that a Receiver of tier t at the
-// baseband input rate keeps, with OnBurst set, as a microcontroller runs it.
+// receiverRAM returns the heap bytes that a receiver of tier t keeps, with
+// OnBurst set, as a microcontroller runs it: for TierDisc a DiscReceiver at
+// benchAudioHz, for the other tiers a Receiver at the baseband input rate.
 func receiverRAM(t Tier) int {
 	var a, b runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&a)
-	r := mustNew(Config{Rate: basebandRate, Tier: t, OnBurst: func(*Burst) {}})
+	var r any
+	if t == TierDisc {
+		d, err := NewDisc(DiscConfig{Hz: benchAudioHz, OnBurst: func(*Burst) {}})
+		if err != nil {
+			panic(err)
+		}
+		r = d
+	} else {
+		r = mustNew(Config{Rate: basebandRate, Tier: t, OnBurst: func(*Burst) {}})
+	}
 	runtime.GC()
 	runtime.ReadMemStats(&b)
 	runtime.KeepAlive(r)
@@ -437,6 +474,9 @@ func receiverRAM(t Tier) int {
 // process, so the full sweep calls it while nothing else runs.
 func steadyAllocs(x []complex64, t Tier) float64 {
 	const chunk = 1 << 14
+	if t == TierDisc {
+		return discSteadyAllocs(discAudio(x, benchAudioHz))
+	}
 	r := mustNew(Config{Rate: basebandRate, Tier: t})
 	r.WriteBaseband(x[:chunk])
 	n := len(x)/chunk - 1
@@ -447,6 +487,25 @@ func steadyAllocs(x []complex64, t Tier) float64 {
 	}
 	runtime.ReadMemStats(&b)
 	return float64(b.Mallocs-a.Mallocs) / float64(n)
+}
+
+// discSteadyAllocs returns the allocations per Write of 4 KiB of the audio
+// a with a DiscReceiver at benchAudioHz, after the first chunk.
+func discSteadyAllocs(a []int16) float64 {
+	const chunk = 1 << 11
+	r, err := NewDisc(DiscConfig{Hz: benchAudioHz, OnBurst: func(*Burst) {}})
+	if err != nil {
+		panic(err)
+	}
+	r.Write(a[:chunk])
+	n := len(a)/chunk - 1
+	var m0, m1 runtime.MemStats
+	runtime.ReadMemStats(&m0)
+	for i := 1; i <= n; i++ {
+		r.Write(a[i*chunk : (i+1)*chunk])
+	}
+	runtime.ReadMemStats(&m1)
+	return float64(m1.Mallocs-m0.Mallocs) / float64(n)
 }
 
 // TestRxBench receives a BS outbound stream with every payload type at a
@@ -482,7 +541,13 @@ func TestRxBench(t *testing.T) {
 			x := noisyBaseband(fs, 1400, 6, 1)
 			bt.Allocs = steadyAllocs(x, tier)
 			bt.RAMBytes = receiverRAM(tier)
-			cpu := cpuSeconds(func() { receiveBaseband(x, tier) })
+			var cpu float64
+			if tier == TierDisc {
+				a := discAudio(x, benchAudioHz)
+				cpu = cpuSeconds(func() { receiveAudio(t, a, benchAudioHz, nil) })
+			} else {
+				cpu = cpuSeconds(func() { receiveBaseband(x, tier) })
+			}
 			bt.NsPerSecond = cpu * 1e9 / (float64(len(x)) / basebandRate)
 			bt.FalsePerHour = falsePerHour(tier)
 		}

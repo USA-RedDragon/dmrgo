@@ -245,7 +245,7 @@ func payloadNames() [][2]string {
 
 // tierName returns the README name of tier i.
 func tierName(i int) string {
-	return [...]string{"0: discriminator", "1: coherent, two pass", "2: phase trellis, two pass"}[i]
+	return [...]string{"0: FM audio, 9.6 kHz", "1: coherent, two pass", "2: phase trellis, two pass"}[i]
 }
 
 // crossing is the Eb/N0 where a curve first reaches 90% recovery. below
@@ -281,6 +281,15 @@ func tierCurve(t tier, k string) (x, y []float64) {
 }
 
 // grouped returns n with a comma between each group of three digits.
+// sig2 rounds v to two significant digits.
+func sig2(v float64) int64 {
+	if v < 1 {
+		return 0
+	}
+	p := math.Pow(10, math.Floor(math.Log10(v))-1)
+	return int64(math.Round(v/p) * p)
+}
+
 func grouped(n int64) string {
 	s := strconv.FormatInt(n, 10)
 	for i := len(s) - 3; i > 0; i -= 3 {
@@ -304,12 +313,12 @@ func renderBlock(d data) []byte {
 		for _, k := range []string{keyAMBE, keyRate12, keyCSBK, keyRate34} {
 			row = append(row, lossCell(d, t, k))
 		}
-		row = append(row, grouped(int64(math.Round(t.NsPerSecond/1e6)*1e6)),
+		row = append(row, grouped(sig2(t.NsPerSecond)),
 			strconv.Itoa((t.RAMBytes+1023)/1024)+" KiB", strconv.FormatFloat(t.Allocs, 'f', -1, 64))
 		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
 	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
-	b.WriteString(" RAM is the heap that rf.New keeps for input at 48 kHz with Config.OnBurst set; without it the slice of bursts that Write returns adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
+	b.WriteString(" Tier 0 is rf.DiscReceiver on the audio of an FM discriminator at 9.6 kHz, which the sweep makes from the same noisy signal, so its Eb/N0 is that of the signal at the antenna. Tiers 1 and 2 are rf.Receiver on I/Q samples at 48 kHz. RAM is the heap that the receiver keeps with OnBurst set: for Tier 0 its whole state, which rf.DiscReceiver.Init can also place in static memory; for Tiers 1 and 2 the slice of bursts that Write returns without OnBurst adds 28 KiB. Tier 3, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
 	renderSensitivity(&b, d)
 	b.WriteString("<details><summary>Real recordings</summary>\n\n")
 	b.WriteString("Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR, by tier.")
