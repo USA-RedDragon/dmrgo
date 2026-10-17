@@ -43,7 +43,26 @@ func reportPayloads() [][2]string {
 		{"slottype", "Slot type"},
 		{keySync, "SYNC detection"},
 		{"rate1_bit", "Rate 1 payload bits"},
+		{keyAMBEU, "Voice bits u2 and u3, at 1% BER"},
 	}
+}
+
+// keyAMBEU is the payload of the bits u2 and u3 of the AMBE+2 frames,
+// which no FEC protects, and levelAMBEU the share of them that its
+// Eb/N0 is at: an exact frame needs all 25, so the 90% of the frames
+// gives the bursty errors of a receiver the edge over its bit errors.
+const (
+	keyAMBEU   = "ambe_u"
+	levelAMBEU = 0.99
+)
+
+// level returns the recovery at which the report takes the Eb/N0 of
+// payload k.
+func level(k string) float64 {
+	if k == keyAMBEU {
+		return levelAMBEU
+	}
+	return 0.9
 }
 
 // The targets of the smallest tier.
@@ -228,7 +247,7 @@ func loadRows(out, floorPath string) ([]*row, map[string]floorRef, error) {
 		r := &row{rec: latest[id], pts: curveOf(cs), ebn0: map[string]crossing{}, cost: costBy[id], m4: m4By[id]}
 		for _, p := range append(reportPayloads(), [2]string{keyC0C1, "Voice frame, C0 and C1"}) {
 			cn, y := recovery(r.pts, p[0])
-			c := at90(cn, y)
+			c := atLevel(cn, y, level(p[0]))
 			c.X = cnToEbN0(c.X)
 			r.ebn0[p[0]] = c
 		}

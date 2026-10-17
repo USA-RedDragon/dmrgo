@@ -171,7 +171,11 @@ type crossing struct {
 // at90 returns the x where the recovery y first reaches 90%, by linear
 // interpolation.
 func at90(x, y []float64) crossing {
-	const lvl = 0.9
+	return atLevel(x, y, 0.9)
+}
+
+// atLevel returns the x at which y first reaches lvl, as at90.
+func atLevel(x, y []float64, lvl float64) crossing {
 	if len(y) > 0 && y[0] >= lvl {
 		return crossing{x[0], true, true}
 	}

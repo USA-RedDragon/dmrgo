@@ -24,9 +24,11 @@ const rxbenchPath = "testdata/rxbench.json"
 
 // benchPayloads lists the payload types of a sweep, in the order of the
 // README tables. rate1_bit counts the payload bits of the rate 1 blocks
-// instead of frames, each bit of a block that the receiver misses as wrong.
+// instead of frames, and ambe_u the bits u2 and u3 of each AMBE+2 frame,
+// which no FEC protects, each bit of a burst that the receiver misses as
+// wrong.
 func benchPayloads() []string {
-	return []string{"ambe", "ambe_c0c1", "rate12", "rate34", "rate1", "csbk", "lc", "header", "elc", "emb", "slottype", "sync", "rate1_bit"}
+	return []string{"ambe", "ambe_c0c1", "ambe_u", "rate12", "rate34", "rate1", "csbk", "lc", "header", "elc", "emb", "slottype", "sync", "rate1_bit"}
 }
 
 // benchSlot is one slot of the sweep stream and what a receiver should
@@ -165,6 +167,11 @@ func (s *benchScorer) voice(truth []benchSlot, i int, r Burst, data layer2.RawBu
 	for k := range want {
 		s.add("ambe", have && gotF[k] == want[k])
 		s.add("ambe_c0c1", have && slices.Equal(gotF[k][:3], want[k][:3]))
+		// u2 and u3 are bits 24 to 48 of the 49 of the frame.
+		for q := 24; q < 49; q++ {
+			m := byte(0x80) >> (q % 8)
+			s.add("ambe_u", have && gotF[k][q/8]&m == want[k][q/8]&m)
+		}
 	}
 	if ts.pos != enums.VoiceBurstA {
 		e, w := data.EMB(), ts.burst.EMB()

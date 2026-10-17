@@ -69,9 +69,10 @@ func newFloorEval(d int) *floorEval {
 	return e
 }
 
-// floorPayloads lists the payload keys of a floor.
+// floorPayloads lists the payload keys of a floor: every payload of the
+// sweep but ambe_u, whose floor is not computed.
 func floorPayloads() []string {
-	return benchPayloads()
+	return slices.DeleteFunc(benchPayloads(), func(k string) bool { return k == "ambe_u" })
 }
 
 // want reports whether the evaluation scores payload k.
