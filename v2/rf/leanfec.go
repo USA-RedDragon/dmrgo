@@ -20,7 +20,7 @@ const (
 	leanChase = 6
 	// leanAMBECandidates is the number of best C0 codewords that the
 	// AMBE+2 decode tries with their C1.
-	leanAMBECandidates = 4
+	leanAMBECandidates = 1
 	// leanNibbles is the number of nibble cost tables of a small code.
 	leanNibbles = softSmallMaxN / 4
 	// leanCandSize is the number of values of leanFEC.s that hold one
