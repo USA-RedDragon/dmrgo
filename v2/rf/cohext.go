@@ -592,15 +592,23 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		// The mean of the first fits, then a slow average: the offset that
 		// the fits start from is no fit.
 		// The noise of a fit falls with the square of the SNR of the SYNC
-		// at the offset that it fits. A far first fit counts when the SYNC
-		// fits that offset: at a low C/N the fit of one SYNC is noise.
+		// at the offset that it fits. A far fit counts when the SYNC fits
+		// that offset, and better than the offset before: at a low C/N the
+		// fit of one SYNC is noise, but a lock can come while the
+		// oscillator still pulls in, so that the offset is far off. It
+		// starts the fits again.
+		a0, n0 := s.levels(segs[0][0], segs[0][1])
 		fit := s.freqFit(segs[0][0], segs[0][1])
 		s.totalHz = s.freq + fit
 		amp, noise := s.levels(segs[0][0], segs[0][1])
 		s.totalHz = s.freq
 		ok := amp > 0 && noise > 0 && math.Abs(fit) < cohFreqFirst
-		if math.Abs(fit) >= cohFreqSpan {
-			ok = ok && s.nFit == 0 && amp*amp/(amp*amp+noise) >= cohPlaceRho
+		if ok && math.Abs(fit) >= cohFreqSpan {
+			rho := amp * amp / (amp*amp + noise)
+			ok = rho >= cohPlaceRho && rho > a0*a0/(a0*a0+max(n0, 0))
+			if ok {
+				s.nFit, s.fitVar = 0, cohFreqVar
+			}
 		}
 		if ok {
 			snr := amp * amp / noise
