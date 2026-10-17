@@ -202,6 +202,9 @@ func (r *DiscReceiver) flush() {
 func (r *DiscReceiver) write(x []int16) {
 	f, tm := &r.f, &r.tm
 	s0, s1, s2, s3, t, n := tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.n
+	// kh and kq are the head of the ring of kept samples and the sample
+	// whose pair is not stored yet: the loop stores two samples at once.
+	kh, kq := r.acqHead, r.acqLow
 	for _, v := range x {
 		if !r.locked {
 			f.sum += int32(v)
@@ -209,17 +212,35 @@ func (r *DiscReceiver) write(x []int16) {
 		}
 		if f.n++; f.n == frontBlock {
 			tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+			r.acqHead, r.acqLow = kh, kq
 			r.levels()
 			s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+			kq = r.acqLow
 		}
-		y, ok := f.filter(v)
+		acc, ok := f.filter(v)
 		if !ok {
 			continue
 		}
+		y := float32(acc) * (rrcStepHz / 32768.0)
 		// A discriminator gives no carrier power, so the core takes a
 		// burst as present from its anchors.
 		n++
 		s0, s1, s2, s3 = s1, s2, s3, y
+		if !r.locked {
+			// acc is in Q15 of rrcStepHz, twice discStepHz, so this is y
+			// in units of discStepHz, rounded.
+			// Samples beyond int8 wrap: they are noise without a carrier,
+			// which no SYNC follows.
+			q := int16(int8((acc + 1<<13) >> 14))
+			if kh&1 == 0 {
+				kq = q
+			} else if i := kh >> 1; i < int32(len(r.fec.s)) {
+				r.fec.s[i] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+			}
+			if kh++; kh == leanAcqSamples {
+				kh = 0
+			}
+		}
 		t--
 		for t <= 0 {
 			at := t
@@ -237,12 +258,14 @@ func (r *DiscReceiver) write(x []int16) {
 			t = tm.t
 			if sym {
 				tm.s0, tm.s1, tm.s2, tm.s3, r.n = s0, s1, s2, s3, n
+				r.acqHead, r.acqLow = kh, kq
 				r.symbol(tm.last, at)
-				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+				s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
 			}
 		}
 	}
 	tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.n = s0, s1, s2, s3, t, n
+	r.acqHead, r.acqLow = kh, kq
 }
 
 // OffsetHz returns the DC offset of the last locked stream, in units of
@@ -288,6 +311,7 @@ func (r *DiscReceiver) levels() {
 			r.off *= g
 			f.scale(g)
 			f.refresh()
+			r.rescale(g)
 		}
 	}
 	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
@@ -363,7 +387,7 @@ func (f *audioFront) quantize(u int16) int8 {
 
 // filter takes one input sample u and returns the matched filter sample,
 // in Hz, of u in Hz less the DC offset, when the sample completes one.
-func (f *audioFront) filter(u int16) (float32, bool) {
+func (f *audioFront) filter(u int16) (int32, bool) {
 	v := f.quantize(u)
 	if f.half {
 		h := f.hbHead
@@ -409,7 +433,7 @@ func (f *audioFront) filter(u int16) (float32, bool) {
 		f.rrcHead = h
 		acc = fir12((*[audio12Taps]int8)(f.rrcHist[h : h+audio12Taps]))
 	}
-	return float32(acc) * (rrcStepHz / 32768.0), true
+	return acc, true
 }
 
 // ringAt returns the index of sample k, oldest first, of the half-band ring

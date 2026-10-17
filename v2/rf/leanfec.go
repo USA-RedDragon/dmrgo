@@ -29,8 +29,9 @@ const (
 	leanCandSize = 9
 	// leanShared is the number of values of leanFEC.s: the most of the
 	// nibble tables of a small code, the rate 3/4 survivors at four 4-bit
-	// states a value, and the BPTC(196,96) candidates.
-	leanShared = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize)
+	// states a value, the BPTC(196,96) candidates, and, while the receiver
+	// searches, the ring of matched filter samples, two in a value.
+	leanShared = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize, (leanAcqSamples+1)/2)
 )
 
 // leanBest is a candidate list of searchNibble that keeps the best one.
@@ -184,13 +185,23 @@ func searchNibble(id softSmallID, tab []int16, off, fixed, want uint32, top *lea
 // cach, from the CACH of the slot of r, and returns the hard decisions.
 func (r *leanCore) gather(f *leanFEC, id softSmallID, cach bool) uint32 {
 	c := &softSmallCodes[id]
+	base := r.base + cachSymbols
+	if cach {
+		base = r.base
+	}
+	// Both bits of a symbol come from one symLLR, so the last is kept.
 	var hard uint32
+	last := int64(-1)
+	var l0, l1 int16
 	for j := range c.n {
-		var v int16
-		if cach {
-			v = r.cachAt(int(c.pos[j]))
-		} else {
-			v = r.llrAt(int(c.pos[j]))
+		p := int(c.pos[j])
+		if k := base + int64(p>>1); k != last {
+			l0, l1 = r.symLLR(k)
+			last = k
+		}
+		v := l0
+		if p&1 != 0 {
+			v = l1
 		}
 		f.l[j] = v
 		if v < 0 {

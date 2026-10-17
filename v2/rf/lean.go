@@ -19,6 +19,27 @@ const (
 	leanChunk = 6
 	// leanSyncEnd is the slot symbol of the last SYNC symbol.
 	leanSyncEnd = syncFirstSym + syncSymbols - 1
+	// leanAcqSymbols is the number of symbols from the start of a burst to
+	// the end of its SYNC, which the receiver samples again from the
+	// matched filter samples when it locks, and leanAcqSamples the length
+	// of their ring, for up to 2.5 samples a symbol, even for the pairs of
+	// leanFEC.s.
+	leanAcqSymbols = leanSyncEnd + 1 - cachSymbols
+	leanAcqSamples = (leanAcqSymbols*5/2 + 7) &^ 1
+	// leanResample is the SYNC correlation from which searchSym samples a
+	// burst again before it tests the SYNC for lock with discLock.
+	leanResample = 0.7
+	// leanCoarse is the SYNC correlation on whole kept samples from which
+	// resample interpolates.
+	leanCoarse = 0.75
+	// leanAcqWait is the number of symbols after a SYNC that failed in
+	// which searchSym does not sample a burst again, which near the
+	// noise floor would otherwise cost more than the search.
+	leanAcqWait = 48
+	// leanSyncWindow is the number of kept samples around a SYNC that
+	// resample interpolates: the SYNC at up to 2.5 samples a symbol, half
+	// a symbol either way, and the taps of the interpolation.
+	leanSyncWindow = (syncSymbols-1)*5/2 + 3 + 6
 	// leanAcqGain is the gain of the symbol timing loop, in samples per
 	// unit of normalized timing error, while the receiver searches, and
 	// leanTrackGain while it follows a stream.
@@ -45,7 +66,7 @@ const (
 	// the mean of the field, may differ from the voice or the data SYNC of
 	// a source for the search to correlate the field. The SYNC symbols are
 	// all outer symbols, so a field that passes discLock differs in few.
-	leanSignMiss = 6
+	leanSignMiss = 5
 	// llrStepHz is the resolution of the symbols in symLLR, and llrShift
 	// the fixed point of its likelihood scale.
 	llrStepHz = 4
@@ -210,7 +231,18 @@ type leanCore struct {
 	n    int64
 	ns   int64
 	ring [leanRing]int8
-	off  float32
+	// acqHead is the index in the ring of samples of leanFEC.s of the next
+	// matched filter sample, and acqFrom the matched filter sample from
+	// which the receiver searches, and keeps them.
+	acqHead int32
+	acqFrom int64
+	// acqLow is the last kept sample while acqHead is odd, whose pair the
+	// ring does not hold yet.
+	acqLow int16
+	// acqNext is the first symbol at which searchSym samples a burst
+	// again after a SYNC that failed.
+	acqNext int64
+	off     float32
 	// slotEnd is the symbol after the slot that ends next, first plus next
 	// plus 1 slots.
 	slotEnd int64
@@ -427,6 +459,7 @@ func (r *leanRx) sample(v complex64) {
 	r.power(p)
 	if !r.locked {
 		r.block(p)
+		r.keep(s)
 	}
 	r.push(s)
 }
@@ -436,6 +469,239 @@ func (r *leanCore) power(p float32) {
 	r.n++
 	r.eAcc += p
 	r.eSyms++
+}
+
+// keep stores matched filter sample s, in Hz, in the ring of samples while
+// the receiver searches, so that searchSym can sample the start of a burst
+// again at the timing of its SYNC.
+func (r *leanCore) keep(s float32) {
+	r.keepQ(int32(roundf(s * (1.0 / discStepHz))))
+}
+
+// keepQ stores a matched filter sample in units of discStepHz, as keep
+// does, without a float conversion, which TinyGo checks for range.
+func (r *leanCore) keepQ(q int32) {
+	v := int16(max(min(q, math.MaxInt8), math.MinInt8))
+	h := r.acqHead
+	if h&1 == 0 {
+		r.acqLow = v
+	} else if i := h >> 1; i < int32(len(r.fec.s)) {
+		r.fec.s[i] = int16(uint16(uint8(r.acqLow)) | uint16(uint8(v))<<8)
+	}
+	if h++; h == leanAcqSamples {
+		h = 0
+	}
+	r.acqHead = h
+}
+
+// rescale multiplies the symbols of the ring and the kept samples by g,
+// as the front end scales its input while the receiver searches.
+func (r *leanCore) rescale(g float32) {
+	for i, v := range &r.ring {
+		r.ring[i] = sat8(float32(v) * g)
+	}
+	r.rescaleKept(g, 0)
+}
+
+// rescaleKept sets each kept sample x to x*g+a.
+func (r *leanCore) rescaleKept(g, a float32) {
+	for i, w := range r.fec.s[:(leanAcqSamples+1)/2] {
+		lo, hi := sat8(float32(int8(uint8(w)))*g+a), sat8(float32(int8(uint8(uint16(w)>>8)))*g+a)
+		r.fec.s[i] = int16(uint16(uint8(lo)) | uint16(uint8(hi))<<8)
+	}
+	r.acqLow = int16(sat8(float32(r.acqLow)*g + a))
+}
+
+// acqKept returns the number of samples in the ring of samples.
+func (r *leanCore) acqKept() int32 {
+	return int32(min(r.n-r.acqFrom, leanAcqSamples))
+}
+
+// kept returns the stored sample back samples before the last one.
+func (r *leanCore) kept(back int32) float32 {
+	h := r.acqHead - 1 - back
+	if h < 0 {
+		h += leanAcqSamples
+	}
+	if h == r.acqHead-1 && h&1 == 0 {
+		// Its pair is not stored yet.
+		return float32(r.acqLow)
+	}
+	w := uint16(r.fec.s[h>>1])
+	if h&1 != 0 {
+		w >>= 8
+	}
+	return float32(int8(uint8(w)))
+}
+
+// keptAt returns the stored samples interpolated by Catmull-Rom at t
+// samples after the last one, t at most 0, in units of discStepHz less
+// off, as the ring holds the symbols.
+func (r *leanCore) keptAt(t float32) float32 {
+	b := -t
+	i := int32(b)
+	mu := 1 - (b - float32(i))
+	// p1 and p2 are the samples i+1 and i back, around t.
+	p0, p1, p2, p3 := r.kept(i+2), r.kept(i+1), r.kept(i), r.kept(max(i-1, 0))
+	if i+3 >= r.acqKept() {
+		p0 = p1
+	}
+	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0))) - r.off*(1.0/discStepHz)
+}
+
+// keptLin returns the stored samples interpolated linearly at t samples
+// after the last one, t at most 0, as keptAt does but with less work, for
+// the coarse timing search of resample.
+func (r *leanCore) keptLin(t float32) float32 {
+	b := -t
+	i := int32(b)
+	mu := b - float32(i)
+	a, c := r.kept(i), r.kept(i+1)
+	return a + mu*(c-a)
+}
+
+// coarseSync reports whether the kept samples nearest the SYNC symbols
+// syms, which ends end samples after the last sample, one sample early,
+// on time or one sample late, correlate with them as a SYNC may: a cheap
+// test, in integers, before the interpolation of resample, which noise
+// would otherwise run often.
+func (r *leanCore) coarseSync(syms *[syncSymbols]int8, end, sps float32) bool {
+	// Sample positions back from the last, in Q8.
+	e, step := int32(-end*256+0.5), int32(sps*256+0.5)
+	var best int32
+	var bv [syncSymbols]int32
+	for d := int32(-256); d <= 256; d += 256 {
+		var c int32
+		var v [syncSymbols]int32
+		for i, s := range syms {
+			b := (e - d + int32(syncSymbols-1-i)*step + 128) >> 8
+			v[i] = int32(r.kept(max(b, 0)))
+			c += int32(s) * v[i]
+		}
+		if c > best {
+			best, bv = c, v
+		}
+	}
+	if best <= 0 {
+		return false
+	}
+	// rho² from the sums, with the SYNC symbols ±3 of mean ms.
+	var sv, svv, sp, spv int32
+	for i, s := range syms {
+		sv += bv[i]
+		svv += bv[i] * bv[i]
+		sp += int32(s)
+		spv += int32(s) * bv[i]
+	}
+	n := float32(syncSymbols)
+	cov := float32(spv) - float32(sp)*float32(sv)/n
+	vv := float32(svv) - float32(sv)*float32(sv)/n
+	pp := 9*n - float32(sp)*float32(sp)/n
+	return cov > 0 && cov*cov >= leanCoarse*leanCoarse*vv*pp
+}
+
+// syncWindow holds kept samples around a SYNC for resample: w[k] is the
+// sample b0+k back from the last, and off the offset of the ring in units
+// of discStepHz. It is a type and not a closure, which TinyGo would
+// allocate.
+type syncWindow struct {
+	w   [leanSyncWindow]int8
+	b0  int32
+	off float32
+}
+
+// at returns the samples of w interpolated by Catmull-Rom at t samples
+// after the last one, in units of discStepHz less off, as keptAt does.
+func (win *syncWindow) at(t float32) float32 {
+	b := -t
+	i := int32(b)
+	mu := 1 - (b - float32(i))
+	k := min(max(i-win.b0, 0), leanSyncWindow-3)
+	p0, p1, p2, p3 := float32(win.w[k+2]), float32(win.w[k+1]), float32(win.w[k]), float32(win.w[max(k-1, 0)])
+	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0))) - win.off
+}
+
+// resample samples the SYNC p that ends at the last symbol again from the
+// kept samples: it finds the strobe offset that best correlates with it
+// and, when the SYNC there passes the lock test, writes its symbols at it
+// into the ring, with the ones they replace in saved, and returns the
+// offset and true; resampleStart then samples the start of the burst. It
+// reports false when the SYNC fails or the ring holds too few samples.
+func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (float32, bool) {
+	sps := 2 * r.tm.step
+	// The SYNC end is lastAt samples after the last sample.
+	end := r.lastAt
+	if float32(leanAcqSymbols)*sps+4-end > float32(r.acqKept()) {
+		return 0, false
+	}
+	var syms [syncSymbols]int8
+	syncSyms(p, &syms)
+	if !r.coarseSync(&syms, end, sps) {
+		return 0, false
+	}
+	// The kept samples around the SYNC, so that the interpolations below
+	// read an array: w[k] is the sample b0+k back from the last.
+	var win syncWindow
+	win.b0 = max(int32(-end-sps/2)-2, 0)
+	for k := range win.w {
+		win.w[k] = int8(r.kept(win.b0 + int32(k)))
+	}
+	win.off = r.off * (1.0 / discStepHz)
+	// The correlations from half a symbol early to half a symbol late in
+	// quarter symbols, and the peak of the parabola around the best.
+	var c [5]float32
+	best := 0
+	for k := range c {
+		d := float32(k-2) * sps / 4
+		for i, s := range syms {
+			c[k] += float32(s) * win.at(min(end+d, 0)-float32(syncSymbols-1-i)*sps)
+		}
+		if c[k] > c[best] {
+			best = k
+		}
+	}
+	bestD := float32(best-2) * sps / 4
+	lo, hi := c[max(best-1, 0)], c[min(best+1, len(c)-1)]
+	if den := lo - 2*c[best] + hi; best > 0 && best < len(c)-1 && den < 0 {
+		bestD += max32(min32(0.5*(lo-hi)/den, 0.5), -0.5) * sps / 4
+	}
+	bestD = min(bestD, -end)
+	var v [syncSymbols]float32
+	var mv, mp float32
+	for i := range syms {
+		v[i] = win.at(end + bestD - float32(syncSymbols-1-i)*sps)
+		mv += v[i]
+		mp += float32(syms[i])
+	}
+	mv /= syncSymbols
+	mp /= syncSymbols
+	var sxy, sxx, spp float32
+	for i, s := range syms {
+		dp, dv := float32(s)-mp, v[i]-mv
+		sxy += dp * dv
+		sxx += dv * dv
+		spp += dp * dp
+	}
+	if sxy <= 0 || sxy*sxy < discLock*discLock*sxx*spp {
+		return 0, false
+	}
+	for i := range int64(syncSymbols) {
+		j := uint32(r.ns-syncSymbols+i) % leanRing
+		saved[i], r.ring[j] = r.ring[j], int8(max(min(roundf(v[i]), math.MaxInt8), math.MinInt8))
+	}
+	return bestD, true
+}
+
+// resampleStart writes the symbols of the burst before the SYNC that
+// resample sampled again at the strobe offset d into the ring, and moves
+// the timing loop by d.
+func (r *leanCore) resampleStart(d float32) {
+	sps := 2 * r.tm.step
+	for i := range int64(leanAcqSymbols - syncSymbols) {
+		x := r.keptAt(r.lastAt + d - float32(leanAcqSymbols-1-i)*sps)
+		r.ring[uint32(r.ns-leanAcqSymbols+i)%leanRing] = int8(max(min(roundf(x), math.MaxInt8), math.MinInt8))
+	}
+	r.tm.t += d
 }
 
 // push runs matched filter sample s through the symbol timing and handles
@@ -560,10 +826,7 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 
 // signsMatch reports whether the signs of the last syncSymbols symbols
 // differ from the voice or the data SYNC of a source in at most
-// leanSignMiss symbols. It is not inlined, so that symbol keeps a small
-// frame.
-//
-//go:noinline
+// leanSignMiss symbols.
 func (r *leanCore) signsMatch() bool {
 	for i := range r.sources {
 		m := bits.OnesCount32((r.signs ^ syncSigns[i]) & (1<<syncSymbols - 1))
@@ -580,7 +843,7 @@ func (r *leanCore) signsMatch() bool {
 //go:noinline
 func (r *leanCore) searchSym() {
 	rho2, src, data := r.syncAt(r.ns - 1)
-	if rho2 < discLock*discLock {
+	if rho2 < leanResample*leanResample {
 		return
 	}
 	voice, dp, _ := sourceAt(src).SyncPatterns()
@@ -588,7 +851,27 @@ func (r *leanCore) searchSym() {
 	if data {
 		p = dp
 	}
-	if !r.fitLevels(r.ns-1, p, true) {
+	// The timing loop may not have settled on the burst yet: sample its
+	// start again at the timing of the SYNC, or else test the symbols as
+	// they are.
+	ok := false
+	if r.ns >= r.acqNext {
+		var saved [syncSymbols]int8
+		if d, sampled := r.resample(p, &saved); sampled {
+			if ok = r.fitLevels(r.ns-1, p, true); ok {
+				r.resampleStart(d)
+			} else {
+				// Back to the SYNC as the loop sampled it.
+				for i, q := range &saved {
+					r.ring[uint32(r.ns-syncSymbols+int64(i))%leanRing] = q
+				}
+			}
+		}
+		if !ok {
+			r.acqNext = r.ns + leanAcqWait
+		}
+	}
+	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true)) {
 		return
 	}
 	r.locked, r.src, r.bs = true, uint8(src), sourceAt(src) == layer2.SyncSourceBS
@@ -730,6 +1013,10 @@ func (r *leanCore) slot() {
 // the receiver holds by -d, so that they read as if the oscillator had
 // been there.
 func (r *leanCore) retune(d float32) {
+	if !r.locked && r.acqKept() > 0 {
+		// The kept samples follow the front end, which removes d more.
+		r.rescaleKept(1, -d/discStepHz)
+	}
 	r.tuneHz += d
 	if r.audio != nil {
 		r.audio.retuneFront(r.tuneHz, d)
@@ -757,13 +1044,43 @@ func (r *leanCore) retune(d float32) {
 //
 //go:noinline
 func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
-	var syms [syncSymbols]int8
-	syncSyms(p, &syms)
+	// The slicer thresholds at dcHz and ±2 steps, in ring units, so that
+	// each symbol takes compares and no division.
 	step := r.devScale * deviationHz
+	t0 := (r.dcHz - r.off) / discStepHz
+	hi, lo := t0+2*step/discStepHz, t0-2*step/discStepHz
 	n := 0
-	for k, want := range syms {
-		if got := sliceSymbol((r.sym(end-syncSymbols+1+int64(k)) - r.dcHz) / step); got != want {
-			n += symbolBitErrors(got, want)
+	j := uint32(end-syncSymbols+1) % leanRing
+	for k := range syncSymbols {
+		q := float32(r.ring[j])
+		if j++; j == leanRing {
+			j = 0
+		}
+		// SYNC symbols are ±3: a symbol of the same sign off by one level
+		// and one of the other sign beyond it is one bit error, the other
+		// level of the other sign two.
+		want := uint64(p)>>(2*(syncSymbols-1-k))&2 == 0
+		switch {
+		case q >= hi:
+			if !want {
+				n++
+			}
+		case q >= t0:
+			if want {
+				n++
+			} else {
+				n += 2
+			}
+		case q >= lo:
+			if want {
+				n += 2
+			} else {
+				n++
+			}
+		default:
+			if want {
+				n++
+			}
 		}
 	}
 	return n
@@ -777,6 +1094,21 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 //go:noinline
 func (r *leanCore) unlock() {
 	r.locked = false
+	r.acqFrom = r.n
+	r.rebuildSigns()
+	r.tm.hold, r.tm.gain = false, r.acqGain
+	if r.tm.mm {
+		// The next strobe is a symbol, so the Gardner loop takes the
+		// midpoint before it.
+		r.tm.mm, r.tm.mid = false, true
+		r.tm.t -= r.tm.step
+	}
+	r.offsetHz = int16(max32(min32(roundf(r.tuneHz+r.dcHz), math.MaxInt16), math.MinInt16))
+	r.devHz = int16(max32(min32(roundf(3*deviationHz*r.devScale), math.MaxInt16), math.MinInt16))
+}
+
+// rebuildSigns sets ringSum and signs from the last symbols of the ring.
+func (r *leanCore) rebuildSigns() {
 	r.ringSum, r.signs = 0, 0
 	for k := int64(syncSymbols); k > 0; k-- {
 		r.ringSum += int32(r.ring[uint32(r.ns-k)%leanRing])
@@ -787,15 +1119,6 @@ func (r *leanCore) unlock() {
 			r.signs |= 1
 		}
 	}
-	r.tm.hold, r.tm.gain = false, r.acqGain
-	if r.tm.mm {
-		// The next strobe is a symbol, so the Gardner loop takes the
-		// midpoint before it.
-		r.tm.mm, r.tm.mid = false, true
-		r.tm.t -= r.tm.step
-	}
-	r.offsetHz = int16(max32(min32(roundf(r.tuneHz+r.dcHz), math.MaxInt16), math.MinInt16))
-	r.devHz = int16(max32(min32(roundf(3*deviationHz*r.devScale), math.MaxInt16), math.MinInt16))
 }
 
 // symLLR returns the log-likelihood ratios of the two bits of symbol k, as
@@ -893,7 +1216,11 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	}
 	r.setLLR()
 	b := &r.cb
-	*b = Burst{Distance: -1, BS: r.bs, HasCACH: r.bs, Stream: int(r.streams), Slot: int64(j)}
+	// Field by field: the hard decisions below write all of Data and
+	// CACH, and TinyGo clears a whole Burst with a slow memset.
+	b.Distance, b.BS, b.HasCACH, b.Stream, b.Slot = -1, r.bs, r.bs, int(r.streams), int64(j)
+	b.Sync, b.Voice, b.HasFixed = 0, 0, false
+	b.Fixed, b.FixedCACH = layer2.RawBurst{}, [3]byte{}
 	// The time in 1/256 baseband samples, in integers but for the place of
 	// the last symbol, so that the MCU build needs one float64 multiply.
 	ticks := (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
