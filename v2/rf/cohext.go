@@ -241,8 +241,8 @@ func symTime(c *leanCore, k int64) float64 {
 	return t / 2
 }
 
-// sample returns the ring sample at time t, interpolated by Catmull-Rom,
-// rotated by the carrier residual.
+// sample returns the ring sample at time t, interpolated by Catmull-Rom;
+// fill rotates it by the carrier residual.
 func (s *cohStage) sample(t float64) complex64 {
 	r := s.rx
 	i := int64(math.Floor(t))
@@ -255,8 +255,7 @@ func (s *cohStage) sample(t float64) complex64 {
 	}
 	p0, p1, p2, p3 := at(i-1), at(i), at(i+1), at(i+2)
 	c := complex(mu, 0)
-	v := p1 + 0.5*c*(p2-p0+c*(2*p0-5*p1+4*p2-p3+c*(3*(p1-p2)+p3-p0)))
-	return v * complex64(cmplx.Exp(complex(0, s.phaseAt(t))))
+	return p1 + 0.5*c*(p2-p0+c*(2*p0-5*p1+4*p2-p3+c*(3*(p1-p2)+p3-p0)))
 }
 
 // phaseAt returns the phase, in radians, that removes the carrier left in
@@ -301,8 +300,17 @@ func (s *cohStage) fill(k0, k1 int, x []complex64) {
 			start = tc + float64(sps/2) - 1
 			step = -1
 		}
+		// The carrier phase moves linearly over the samples of a symbol,
+		// but across a move of the oscillator.
+		ph0 := s.phaseAt(start)
+		dph := (s.phaseAt(start+float64(sps-1)*step) - ph0) / float64(sps-1)
+		sn, cs := math.Sincos(ph0)
+		rot := complex64(complex(cs, sn))
+		sn, cs = math.Sincos(dph)
+		rs := complex64(complex(cs, sn))
 		for j := range sps {
-			v := s.sample(start + float64(j)*step)
+			v := s.sample(start+float64(j)*step) * rot
+			rot *= rs
 			if s.dir < 0 {
 				v = complex(real(v), -imag(v))
 			}
