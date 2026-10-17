@@ -1,13 +1,12 @@
 package layer2
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
@@ -44,7 +43,7 @@ func (k Kind) String() string {
 	case KindReverseChannel:
 		return "Reverse Channel"
 	}
-	return fmt.Sprintf("Kind(%d)", uint8(k))
+	return "Kind(" + text.Int(k) + ")"
 }
 
 // Burst represents a DMR burst. A decode stores the PDU of a data burst, and
@@ -552,25 +551,27 @@ func rate1Info(data *[25]byte) [25]byte {
 // String returns a string representation of the burst. It allocates the
 // string.
 func (b *Burst) String() string {
-	ret := fmt.Sprintf("{ Kind: %s, SyncPattern: %s, ", b.Kind, b.SyncPattern)
+	ret := "{ Kind: " + b.Kind.String() + ", SyncPattern: " + b.SyncPattern.String() + ", "
 	if b.HasEmbeddedSignalling() {
-		ret += fmt.Sprintf("EmbeddedSignalling: %s, ", b.EmbeddedSignalling.String())
+		ret += "EmbeddedSignalling: " + b.EmbeddedSignalling.String() + ", "
 		if b.HasReverseChannel() {
-			ret += fmt.Sprintf("ReverseChannel: %s, ", b.ReverseChannel.String())
+			ret += "ReverseChannel: " + b.ReverseChannel.String() + ", "
 		}
 	}
 	switch b.Kind {
 	case KindData:
 		agg := b.FEC.Aggregate()
-		ret += fmt.Sprintf("SlotType: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}",
-			b.SlotType.String(), agg.BitsChecked, agg.ErrorsCorrected, agg.Uncorrectable)
+		ret += "SlotType: " + b.SlotType.String() +
+			", FEC: {BitsChecked: " + text.Int(agg.BitsChecked) +
+			", ErrorsCorrected: " + text.Int(agg.ErrorsCorrected) +
+			", Uncorrectable: " + text.Bool(agg.Uncorrectable) + "}"
 		if b.Data != nil {
-			ret += fmt.Sprintf(", Data: %s", b.Data.String())
+			ret += ", Data: " + b.Data.String()
 		}
 	case KindVoice:
-		ret += fmt.Sprintf("VoiceBurst: %s", b.VoiceBurst.String())
+		ret += "VoiceBurst: " + b.VoiceBurst.String()
 	case KindUnknown, KindReverseChannel:
-		ret += fmt.Sprintf("NearestSync: %s, SyncDistance: %d", b.NearestSync, b.SyncDistance)
+		ret += "NearestSync: " + b.NearestSync.String() + ", SyncDistance: " + text.Int(b.SyncDistance)
 	}
 	return ret + " }"
 }

@@ -1,6 +1,6 @@
 package enums
 
-import "fmt"
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // FeatureSetID is the 8-bit Feature set ID (FID) of a full LC or CSBK. 0 is
 // the standardized feature set and 4 to 127 identify a manufacturer (ETSI TS
@@ -72,7 +72,7 @@ func (fsid FeatureSetID) String() string {
 		return "Vertex Standard UK"
 	}
 
-	return fmt.Sprintf("Unknown FeatureSetID: %d", fsid)
+	return "Unknown FeatureSetID: " + text.Int(fsid)
 }
 
 // Valid reports whether fsid is a value that ETSI TS 102 361 defines.

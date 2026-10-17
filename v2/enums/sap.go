@@ -1,6 +1,6 @@
 package enums
 
-import "fmt"
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // ServiceAccessPointID is the 4-bit Service Access Point (SAP) identifier of
 // a data header. Values that have no constant are reserved (ETSI TS 102 361-1
@@ -37,5 +37,5 @@ func (s ServiceAccessPointID) String() string {
 	case SAPShortData:
 		return "Short Data"
 	}
-	return fmt.Sprintf("Reserved SAP(%d)", uint8(s))
+	return "Reserved SAP(" + text.Int(s) + ")"
 }

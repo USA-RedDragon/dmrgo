@@ -1,6 +1,6 @@
 package enums
 
-import "fmt"
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // ColorCode is the 4-bit color code of a slot type or EMB (ETSI TS 102 361-1
 // clause 9.3.1). A ColorCode from NewColorCode is 0 to 15. The encoders,
@@ -35,5 +35,5 @@ type ColorCodeError struct {
 
 // Error returns the message of e. It allocates the message.
 func (e *ColorCodeError) Error() string {
-	return fmt.Sprintf("color code %d does not fit in 4 bits", e.Value)
+	return "color code " + text.Int(e.Value) + " does not fit in 4 bits"
 }

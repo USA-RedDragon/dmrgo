@@ -1,6 +1,6 @@
 package dmrgo
 
-import "fmt"
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // FieldRangeError is the error of an encoder or setter when a field value
 // does not fit in its on-air bits, when a padding bit of a packed field is
@@ -26,11 +26,11 @@ type FieldRangeError struct {
 // Error returns the message of e. It allocates the message.
 func (e *FieldRangeError) Error() string {
 	if e.Min != e.Max {
-		return fmt.Sprintf("%s.%s: value is outside [%v, %v]", e.Type, e.Field, e.Min, e.Max)
+		return e.Type + "." + e.Field + ": value is outside [" + text.Float(e.Min) + ", " + text.Float(e.Max) + "]"
 	}
 	signed := ""
 	if e.Signed {
 		signed = "signed "
 	}
-	return fmt.Sprintf("%s.%s: value does not fit in %d %sbits", e.Type, e.Field, e.Bits, signed)
+	return e.Type + "." + e.Field + ": value does not fit in " + text.Int(e.Bits) + " " + signed + "bits"
 }

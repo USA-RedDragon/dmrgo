@@ -1,6 +1,6 @@
 package enums
 
-import "fmt"
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // RCCommand is the 4-bit Tier 2 Reverse Channel (RC) command. Values that
 // have no constant are reserved (ETSI TS 102 361-2 clause 7.2.20).
@@ -21,5 +21,5 @@ func (rc RCCommand) String() string {
 	case RCCeaseTransmissionRequest:
 		return "Cease Transmission Request"
 	}
-	return fmt.Sprintf("Reserved RCCommand(%d)", int(rc))
+	return "Reserved RCCommand(" + text.Int(rc) + ")"
 }

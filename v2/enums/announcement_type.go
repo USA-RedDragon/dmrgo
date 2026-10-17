@@ -1,6 +1,6 @@
 package enums
 
-import "fmt"
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // AnnouncementType is the 5-bit announcement type of a C_BCAST PDU. Values
 // that have no constant are reserved (ETSI TS 102 361-4 clause 7.2.19,
@@ -45,6 +45,6 @@ func (a AnnouncementType) String() string {
 	case AnnouncementManufacturerSpecific1, AnnouncementManufacturerSpecific2:
 		return manufacturerSpecificName
 	default:
-		return fmt.Sprintf("Reserved AnnouncementType(%d)", int(a))
+		return "Reserved AnnouncementType(" + text.Int(a) + ")"
 	}
 }

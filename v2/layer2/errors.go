@@ -2,13 +2,12 @@ package layer2
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
-	"strconv"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // Errors returned by the package. Match them with errors.Is.
@@ -24,7 +23,7 @@ var (
 	// ErrEmbeddedLCUncorrectable is returned by VoiceReceiver.Receive and
 	// EmbeddedLCAssembler.Add when the embedded LC of bursts B to E fails
 	// its FEC or its checksum. It wraps fec.ErrUncorrectable.
-	ErrEmbeddedLCUncorrectable = fmt.Errorf("embedded LC: %w", fec.ErrUncorrectable)
+	ErrEmbeddedLCUncorrectable error = &wrapError{"embedded LC: " + fec.ErrUncorrectable.Error(), fec.ErrUncorrectable}
 	// ErrShortLCSequence is returned by ShortLCAssembler.Add and AddFragment
 	// when a CACH fragment arrives out of sequence or has an LCSS that is not
 	// valid for Short LC. The partial Short LC is discarded.
@@ -43,6 +42,20 @@ var (
 	errNoEncode = errors.New("data has no Encode method that returns 96, 144 or 192 information bits")
 )
 
+// wrapError is an error with its own message that wraps err.
+type wrapError struct {
+	msg string
+	err error
+}
+
+func (e *wrapError) Error() string {
+	return e.msg
+}
+
+func (e *wrapError) Unwrap() error {
+	return e.err
+}
+
 // reservedDataTypeError is ErrReservedDataType for a burst of data type dt.
 // It is one byte, so it converts to an error without allocating.
 type reservedDataTypeError struct {
@@ -51,7 +64,7 @@ type reservedDataTypeError struct {
 
 // Error returns the message of e. It allocates the message.
 func (e reservedDataTypeError) Error() string {
-	return ErrReservedDataType.Error() + " " + strconv.Itoa(int(e.dt))
+	return ErrReservedDataType.Error() + " " + text.Int(e.dt)
 }
 
 func (e reservedDataTypeError) Unwrap() error {
@@ -76,8 +89,8 @@ func colorCodeMismatch(got, want enums.ColorCode) error {
 
 // Error returns the message of e. It allocates the message.
 func (e colorCodeMismatchError) Error() string {
-	return ErrColorCodeMismatch.Error() + ": burst has " + strconv.Itoa(int(e.gotWant>>4)) +
-		", want " + strconv.Itoa(int(e.gotWant&0x0F))
+	return ErrColorCodeMismatch.Error() + ": burst has " + text.Int(e.gotWant>>4) +
+		", want " + text.Int(e.gotWant&0x0F)
 }
 
 func (e colorCodeMismatchError) Unwrap() error {
