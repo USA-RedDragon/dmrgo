@@ -70,6 +70,40 @@ func (t *leanTop) add(cost int32, info, cw uint32) {
 	t.n = min(t.n+1, t.max)
 }
 
+// leanBest is a candidate list of searchNibble that keeps the best one.
+type leanBest struct {
+	set  bool
+	cost int16
+	info uint16
+	cw   uint32
+}
+
+// reset empties b.
+func (b *leanBest) reset() { b.set = false }
+
+// worst returns the cost of the kept candidate, or MaxInt32.
+func (b *leanBest) worst() int32 {
+	if !b.set {
+		return math.MaxInt32
+	}
+	return int32(b.cost)
+}
+
+// add keeps a candidate when it beats the kept one.
+func (b *leanBest) add(cost int32, info, cw uint32) {
+	if b.set && cost >= int32(b.cost) {
+		return
+	}
+	b.set, b.cost, b.info, b.cw = true, int16(cost), uint16(info), cw
+}
+
+// leanList is a candidate list of searchNibble.
+type leanList interface {
+	*leanTop | *leanBest
+	add(cost int32, info, cw uint32)
+	worst() int32
+}
+
 // leanFEC is the decode scratch of the streaming receiver. Its decoders
 // take the log-likelihood ratios of the bits of a burst from leanRx.llrAt,
 // so that it needs no copy of them, and write the corrected codewords into
@@ -84,7 +118,7 @@ type leanFEC struct {
 	// least reliable bits and their magnitudes.
 	l     [leanLocal]int16
 	top   leanTop
-	top1  leanTop
+	top1  leanBest
 	nlist int
 }
 
@@ -166,7 +200,7 @@ func nibbleCost(tab []int16, cw uint32, n int) int32 {
 }
 
 // searchNibble is softSmallID.search with nibble tables.
-func (id softSmallID) searchNibble(tab []int16, off, fixed, want uint32, top *leanTop) {
+func searchNibble[L leanList](id softSmallID, tab []int16, off, fixed, want uint32, top L) {
 	c := &softSmallCodes[id]
 	var free [16]int
 	nf := 0
@@ -220,7 +254,7 @@ func (r *leanCore) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, wan
 	hard := r.gather(f, id, cach)
 	nibbleTables(f.s[:leanNibbles*16], f.l[:softSmallCodes[id].n])
 	f.top.reset(1)
-	id.searchNibble(f.s[:leanNibbles*16], 0, fixed, want, &f.top)
+	searchNibble(id, f.s[:leanNibbles*16], 0, fixed, want, &f.top)
 	return uint32(f.top.info[0]), f.top.cw[0], bits.OnesCount32(f.top.cw[0] ^ hard)
 }
 
@@ -238,7 +272,7 @@ func (r *leanCore) fixAMBE(f *leanFEC, b *Burst) {
 		r.gather(f, id0, false)
 		nibbleTables(f.s[:leanNibbles*16], f.l[:softSmallCodes[id0].n])
 		f.top.reset(leanAMBECandidates)
-		id0.searchNibble(f.s[:leanNibbles*16], 0, 0, 0, &f.top)
+		searchNibble(id0, f.s[:leanNibbles*16], 0, 0, 0, &f.top)
 		r.gather(f, id1, false)
 		nibbleTables(f.s[:leanNibbles*16], f.l[:c1.n])
 		var bound int32
@@ -251,10 +285,10 @@ func (r *leanCore) fixAMBE(f *leanFEC, b *Burst) {
 			if int32(f.top.cost[c])+bound >= best {
 				break
 			}
-			f.top1.reset(1)
-			id1.searchNibble(f.s[:leanNibbles*16], softAMBEPN(uint32(f.top.info[c])), 0, 0, &f.top1)
-			if total := int32(f.top.cost[c]) + int32(f.top1.cost[0]); total < best {
-				best, cw0, cw1 = total, f.top.cw[c], f.top1.cw[0]
+			f.top1.reset()
+			searchNibble(id1, f.s[:leanNibbles*16], softAMBEPN(uint32(f.top.info[c])), 0, 0, &f.top1)
+			if total := int32(f.top.cost[c]) + int32(f.top1.cost); total < best {
+				best, cw0, cw1 = total, f.top.cw[c], f.top1.cw
 			}
 		}
 		softPutSmall(out, id0, cw0)

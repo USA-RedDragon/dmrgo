@@ -201,11 +201,11 @@ type audioFront struct {
 	half bool
 	slow bool
 	// rrcHist holds the matched filter history twice, so that the last
-	// taps are rrcHist[rrcHead:], oldest first, and hbHist the history of
-	// the half-band filter, with odd set between its outputs.
+	// taps are rrcHist[rrcHead:], oldest first, and hbHist the ring of the
+	// half-band filter, with odd set between its outputs.
 	rrcHist [2 * audio12Taps]int8
 	rrcHead int
-	hbHist  [2 * halfTaps]int8
+	hbHist  [halfTaps]int8
 	hbHead  int
 	odd     bool
 }
@@ -245,7 +245,7 @@ func (f *audioFront) filter(u int16) (float32, bool) {
 	v := int8(max(min(int32((int64(u)*f.k-f.off)>>16), 127), -128))
 	if f.half {
 		h := f.hbHead
-		f.hbHist[h], f.hbHist[h+halfTaps] = v, v
+		f.hbHist[h] = v
 		if h++; h == halfTaps {
 			h = 0
 		}
@@ -253,11 +253,17 @@ func (f *audioFront) filter(u int16) (float32, bool) {
 		if f.odd = !f.odd; f.odd {
 			return 0, false
 		}
-		w := (*[halfTaps]int8)(f.hbHist[h : h+halfTaps])
+		// at returns sample k of the ring, oldest first.
+		at := func(k int) int32 {
+			if k += h; k >= halfTaps {
+				k -= halfTaps
+			}
+			return int32(f.hbHist[k])
+		}
 		const c = halfTaps / 2
-		acc := int32(discHalfQ15[0]) * int32(w[c])
+		acc := int32(discHalfQ15[0]) * at(c)
 		for k, t := range discHalfQ15[1:] {
-			acc += int32(t) * (int32(w[c-2*k-1]) + int32(w[c+2*k+1]))
+			acc += int32(t) * (at(c-2*k-1) + at(c+2*k+1))
 		}
 		v = int8(max(min((acc+1<<14)>>15, 127), -128))
 	}

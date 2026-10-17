@@ -147,9 +147,8 @@ type leanCore struct {
 	signs   uint32
 	// tuneHz is the carrier offset that the front end removes.
 	tuneHz float32
-	// lastN and lastAt place the last symbol: lastAt samples after matched
-	// filter sample lastN.
-	lastN  int64
+	// lastAt places the last symbol, lastAt samples after matched filter
+	// sample n-1: the slots end at a symbol, so n-1 is then its sample.
 	lastAt float32
 
 	locked  bool
@@ -176,15 +175,6 @@ type leanCore struct {
 	// next, eSyms counts them.
 	eAcc  float32
 	eSyms int32
-	// bPow and bLag sum the prefilter power and the lag products of the
-	// block of the carrier estimate before lock, bN counts its samples,
-	// floor is the noise floor estimate and noiseLag the mean lag product
-	// of the noise.
-	bPow     float32
-	bLag     complex64
-	bN       int32
-	floor    float32
-	noiseLag complex64
 
 	ch      [2]leanChan
 	votes   [16]uint8
@@ -231,6 +221,15 @@ type leanRx struct {
 	dcN     int32
 	signed  bool
 	df      leanFront
+	// bPow and bLag sum the prefilter power and the lag products of the
+	// block of the carrier estimate before lock, bN counts its samples,
+	// floor is the noise floor estimate and noiseLag the mean lag product
+	// of the noise.
+	bPow     float32
+	bLag     complex64
+	bN       int32
+	floor    float32
+	noiseLag complex64
 }
 
 // retuneFront moves the oscillator of f to hz and adds -d to the
@@ -376,7 +375,7 @@ func (r *leanCore) push(s float32) {
 //
 //go:noinline
 func (r *leanCore) symbol(x, at float32) {
-	r.lastN, r.lastAt = r.n-1, at
+	r.lastAt = at
 	q := sat8((x - r.off) / discStepHz)
 	r.ring[uint32(r.ns)%leanRing] = q
 	r.ringSum += int32(q) - int32(r.ring[uint32(r.ns-syncSymbols+leanRing)%leanRing])
@@ -733,7 +732,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	r.setLLR()
 	b := &r.cb
 	*b = Burst{Distance: -1, BS: r.bs, HasCACH: r.bs, Stream: int(r.streams), Slot: int64(j)}
-	now := r.mfScale*(float64(r.lastN)+float64(r.lastAt)) + float64(r.center)
+	now := r.mfScale*(float64(r.n-1)+float64(r.lastAt)) + float64(r.center)
 	b.Seconds = (now - float64(r.ns-1-(base+cachSymbols))*float64(samplesPerSy)) / basebandRate
 	for k := range slotSymbols {
 		l0, l1 := r.symLLR(base + int64(k))
