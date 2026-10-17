@@ -17,7 +17,7 @@ import (
 const (
 	// leanChase is the number of least reliable bits that the BPTC(196,96)
 	// decode flips, 2^leanChase hard decodes.
-	leanChase = 6
+	leanChase = 4
 	// leanAMBECandidates is the number of best C0 codewords that the
 	// AMBE+2 decode tries with their C1.
 	leanAMBECandidates = 1
@@ -479,13 +479,21 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		size = softListMax
 	}
 	f.nlist = 0
+	// The grid is deinterleaved once; each pattern flips one grid bit.
+	rows := bptc.Rows(packed)
+	var flipRow [leanChase]int8
+	var flipCol [leanChase]uint16
+	for i, j := range chase {
+		r, c, _ := bptc.GridPos(int(softBPTCInfoBit[j]))
+		flipRow[i], flipCol[i] = int8(r), 1<<c
+	}
 	var cw [softOSDWords]uint64
 	for g := 0; g < 1<<leanChase; g++ {
 		if g > 0 {
-			b := softBPTCInfoBit[chase[bits.TrailingZeros(uint(g))]]
-			packed[b/8] ^= 0x80 >> (b % 8)
+			i := bits.TrailingZeros(uint(g))
+			rows[flipRow[i]] ^= flipCol[i]
 		}
-		data, reserved, _ := bptc.Decode196(packed)
+		data, reserved, _ := bptc.DecodeRows(rows)
 		bptcCodeword(&cw, &data, reserved)
 		var cost int32
 		for x := range cw {
