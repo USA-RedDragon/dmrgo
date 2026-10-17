@@ -93,6 +93,11 @@ type options struct {
 	// ExtLookback is the number of slots before the SYNC of a lock that
 	// softExt decodes.
 	ExtLookback int
+	// IQDisc runs the streaming receiver on I/Q as iqRx, iqDisc before a
+	// DiscReceiver at IQHz, 12000 or 24000, in place of leanRx. 0 means
+	// 24000.
+	IQDisc bool
+	IQHz   int
 }
 
 // tierOptions returns the settings of tier t.

@@ -184,6 +184,7 @@ type slotState struct {
 type Receiver struct {
 	e    *engine
 	lean *leanRx
+	iqd  *iqRx
 }
 
 // engine is the receiver of every tier. It keeps the samples of a number
@@ -326,6 +327,9 @@ func New(cfg Config) (*Receiver, error) {
 		return nil, &ConfigError{Field: "opt"}
 	}
 	if !opt.Coherent && cfg.LookbackSlots == 0 && (cfg.Streaming || cfg.BasebandHz == discRate) {
+		if opt.IQDisc && cfg.BasebandHz == basebandRate {
+			return &Receiver{iqd: newIQRx(cfg, opt)}, nil
+		}
 		return &Receiver{lean: newLean(cfg, opt)}, nil
 	}
 	if cfg.LookbackSlots == 0 {
@@ -411,6 +415,9 @@ func newEngine(cfg Config, opt options) *engine {
 
 // OffsetHz returns the carrier offset of the last stream that ended, in Hz.
 func (r *Receiver) OffsetHz() float64 {
+	if r.iqd != nil {
+		return float64(r.iqd.conv.hz) + r.iqd.d.OffsetHz()/iqUnitsPerHz
+	}
 	if r.lean != nil {
 		return float64(r.lean.offsetHz)
 	}
@@ -419,6 +426,9 @@ func (r *Receiver) OffsetHz() float64 {
 
 // DeviationHz returns the outer deviation of the last locked stream, in Hz.
 func (r *Receiver) DeviationHz() float64 {
+	if r.iqd != nil {
+		return r.iqd.d.DeviationHz() / iqUnitsPerHz
+	}
 	if r.lean != nil {
 		return float64(r.lean.devHz)
 	}
@@ -429,6 +439,9 @@ func (r *Receiver) DeviationHz() float64 {
 // bursts that are complete. The returned slice is valid until the next
 // call.
 func (r *Receiver) Write(iq []byte) []Burst {
+	if r.iqd != nil {
+		return r.iqd.write(iq)
+	}
 	if r.lean != nil {
 		return r.lean.write(iq)
 	}
@@ -439,6 +452,9 @@ func (r *Receiver) Write(iq []byte) []Burst {
 // a radio front end delivers them, in place of Write. The returned slice is
 // valid until the next call.
 func (r *Receiver) WriteBaseband(x []complex64) []Burst {
+	if r.iqd != nil {
+		return r.iqd.writeBaseband(x)
+	}
 	if r.lean != nil {
 		return r.lean.writeBaseband(x)
 	}
@@ -447,6 +463,9 @@ func (r *Receiver) WriteBaseband(x []complex64) []Burst {
 
 // Flush finishes the stream at its end and returns the remaining bursts.
 func (r *Receiver) Flush() []Burst {
+	if r.iqd != nil {
+		return r.iqd.flush()
+	}
 	if r.lean != nil {
 		return r.lean.flush()
 	}
