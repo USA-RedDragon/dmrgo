@@ -5,6 +5,7 @@ import (
 	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -202,11 +203,7 @@ func (t *tracker) resolveLeftover(e *trackEntry) {
 
 // syncDist returns the Hamming distance of the SYNC field of b from p.
 func syncDist(b layer2.RawBurst, p enums.SyncPattern) int {
-	var v uint64
-	for i := framer.SyncOffset; i < framer.SyncOffset+framer.SyncBits; i++ {
-		v = v<<1 | uint64(b[i/8]>>(7-i%8)&1)
-	}
-	return bits.OnesCount64(v ^ uint64(p))
+	return bits.OnesCount64(ibits.Field(b[:], framer.SyncOffset, framer.SyncBits) ^ uint64(p))
 }
 
 // setA makes entry e a burst A at SYNC distance d and starts a superframe.

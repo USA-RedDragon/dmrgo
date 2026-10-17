@@ -2,6 +2,7 @@ package rf
 
 import (
 	"math"
+	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
@@ -24,6 +25,7 @@ type dspTables struct {
 	dev       [numSources][syncSymbols]float32
 	devSq     [numSources]float32
 	signs     [numSources]uint32
+	ones8     [256]uint8
 	syms8     [numSources][syncSymbols]int8
 	mean      [numSources]float32
 	patterns  [2*numSources + 1]enums.SyncPattern
@@ -36,6 +38,9 @@ type dspTables struct {
 // deriveDSP derives the tables of dspTables.
 func deriveDSP() *dspTables {
 	t := &dspTables{}
+	for i := range t.ones8 {
+		t.ones8[i] = uint8(bits.OnesCount8(uint8(i)))
+	}
 	for p := range interpPhases + 1 {
 		fr := float64(p) / interpPhases
 		for k := range sincTaps {

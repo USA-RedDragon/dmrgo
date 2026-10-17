@@ -2,7 +2,6 @@ package rf
 
 import (
 	"math"
-	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -36,6 +35,11 @@ const (
 	// which searchSym does not sample a burst again, which near the
 	// noise floor would otherwise cost more than the search.
 	leanAcqWait = 48
+	// leanVoteErrors is the most slot type errors of a burst whose color
+	// code votes: the vote takes the most common color code, and a known
+	// color code makes the soft decodes of the EMB and the slot type
+	// search 16 times fewer codewords.
+	leanVoteErrors = 2
 	// leanSyncWindow is the number of kept samples around a SYNC that
 	// resample interpolates: the SYNC at up to 2.5 samples a symbol, half
 	// a symbol either way, and the taps of the interpolation.
@@ -497,19 +501,26 @@ func (r *leanCore) keepQ(q int32) {
 // rescale multiplies the symbols of the ring and the kept samples by g,
 // as the front end scales its input while the receiver searches.
 func (r *leanCore) rescale(g float32) {
+	// In integers, Q8: TinyGo checks each float conversion for range.
+	g8 := int32(g*256 + 0.5)
 	for i, v := range &r.ring {
-		r.ring[i] = sat8(float32(v) * g)
+		r.ring[i] = int8(scale8(int32(v), g8, 0))
 	}
-	r.rescaleKept(g, 0)
+	r.rescaleKept(g8, 0)
 }
 
-// rescaleKept sets each kept sample x to x*g+a.
-func (r *leanCore) rescaleKept(g, a float32) {
+// rescaleKept sets each kept sample x to x*g8/256+a8/256, rounded.
+func (r *leanCore) rescaleKept(g8, a8 int32) {
 	for i, w := range r.fec.s[:(leanAcqSamples+1)/2] {
-		lo, hi := sat8(float32(int8(uint8(w)))*g+a), sat8(float32(int8(uint8(uint16(w)>>8)))*g+a)
+		lo, hi := scale8(int32(int8(uint8(w))), g8, a8), scale8(int32(int8(uint8(uint16(w)>>8))), g8, a8)
 		r.fec.s[i] = int16(uint16(uint8(lo)) | uint16(uint8(hi))<<8)
 	}
-	r.acqLow = int16(sat8(float32(r.acqLow)*g + a))
+	r.acqLow = int16(scale8(int32(r.acqLow), g8, a8))
+}
+
+// scale8 returns x*g8/256+a8/256, rounded and saturated to int8.
+func scale8(x, g8, a8 int32) int32 {
+	return max(min((x*g8+a8+128)>>8, math.MaxInt8), math.MinInt8)
 }
 
 // acqKept returns the number of samples in the ring of samples.
@@ -560,44 +571,68 @@ func (r *leanCore) keptLin(t float32) float32 {
 	return a + mu*(c-a)
 }
 
-// coarseSync reports whether the kept samples nearest the SYNC symbols
-// syms, which ends end samples after the last sample, one sample early,
-// on time or one sample late, correlate with them as a SYNC may: a cheap
-// test, in integers, before the interpolation of resample, which noise
-// would otherwise run often.
-func (r *leanCore) coarseSync(syms *[syncSymbols]int8, end, sps float32) bool {
+// coarseSync reports whether the kept samples of win nearest the SYNC
+// symbols syms, which ends end samples after the last sample, one sample
+// early, on time or one sample late, correlate with them as a SYNC may,
+// a cheap test, in integers, before the interpolations of resample, which
+// noise would otherwise run often.
+func coarseSync(win *syncWindow, syms *[syncSymbols]int8, end, sps float32) bool {
 	// Sample positions back from the last, in Q8.
 	e, step := int32(-end*256+0.5), int32(sps*256+0.5)
-	var best int32
-	var bv [syncSymbols]int32
-	for d := int32(-256); d <= 256; d += 256 {
-		var c int32
-		var v [syncSymbols]int32
+	// The sums of the best offset: of the samples, their squares and
+	// their products with the SYNC symbols. sp is the sum of the symbols.
+	var best, bsv, bsvv, sp int32
+	for _, s := range syms {
+		sp += int32(s)
+	}
+	for d := int32(-1); d <= 1; d++ {
+		if end+float32(d) > 0 {
+			// Its last symbol is after the last sample.
+			break
+		}
+		var c, sv, svv int32
 		for i, s := range syms {
-			b := (e - d + int32(syncSymbols-1-i)*step + 128) >> 8
-			v[i] = int32(r.kept(max(b, 0)))
-			c += int32(s) * v[i]
+			b := (e-d*256+int32(syncSymbols-1-i)*step+128)>>8 - win.b0
+			v := int32(win.w[min(max(b, 0), leanSyncWindow-1)])
+			c += int32(s) * v
+			sv += v
+			svv += v * v
 		}
 		if c > best {
-			best, bv = c, v
+			best, bsv, bsvv = c, sv, svv
 		}
 	}
 	if best <= 0 {
 		return false
 	}
-	// rho² from the sums, with the SYNC symbols ±3 of mean ms.
-	var sv, svv, sp, spv int32
-	for i, s := range syms {
-		sv += bv[i]
-		svv += bv[i] * bv[i]
-		sp += int32(s)
-		spv += int32(s) * bv[i]
-	}
+	// rho² from the sums, with the SYNC symbols ±3.
 	n := float32(syncSymbols)
-	cov := float32(spv) - float32(sp)*float32(sv)/n
-	vv := float32(svv) - float32(sv)*float32(sv)/n
+	cov := float32(best) - float32(sp)*float32(bsv)/n
+	vv := float32(bsvv) - float32(bsv)*float32(bsv)/n
 	pp := 9*n - float32(sp)*float32(sp)/n
 	return cov > 0 && cov*cov >= leanCoarse*leanCoarse*vv*pp
+}
+
+// fillWindow copies the kept samples from b0 back from the last into win.
+func (r *leanCore) fillWindow(win *syncWindow, b0 int32) {
+	win.b0, win.off = b0, r.off*(1.0/discStepHz)
+	h := r.acqHead - 1 - b0
+	for k := range win.w {
+		if h < 0 {
+			h += leanAcqSamples
+		}
+		if h == r.acqHead-1 && h&1 == 0 {
+			// Its pair is not stored yet.
+			win.w[k] = int8(r.acqLow)
+		} else if i := h >> 1; i < int32(len(r.fec.s)) {
+			w := uint16(r.fec.s[i])
+			if h&1 != 0 {
+				w >>= 8
+			}
+			win.w[k] = int8(uint8(w))
+		}
+		h--
+	}
 }
 
 // syncWindow holds kept samples around a SYNC for resample: w[k] is the
@@ -636,25 +671,26 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 	}
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
-	if !r.coarseSync(&syms, end, sps) {
+	// The kept samples around the SYNC, so that the tests below read an
+	// array.
+	var win syncWindow
+	r.fillWindow(&win, max(int32(-end-sps/2)-2, 0))
+	if !coarseSync(&win, &syms, end, sps) {
 		return 0, false
 	}
-	// The kept samples around the SYNC, so that the interpolations below
-	// read an array: w[k] is the sample b0+k back from the last.
-	var win syncWindow
-	win.b0 = max(int32(-end-sps/2)-2, 0)
-	for k := range win.w {
-		win.w[k] = int8(r.kept(win.b0 + int32(k)))
-	}
-	win.off = r.off * (1.0 / discStepHz)
 	// The correlations from half a symbol early to half a symbol late in
 	// quarter symbols, and the peak of the parabola around the best.
 	var c [5]float32
-	best := 0
+	best := 2
 	for k := range c {
 		d := float32(k-2) * sps / 4
+		if end+d > 0 {
+			// Its last symbol is after the last sample.
+			c[k] = float32(math.Inf(-1))
+			continue
+		}
 		for i, s := range syms {
-			c[k] += float32(s) * win.at(min(end+d, 0)-float32(syncSymbols-1-i)*sps)
+			c[k] += float32(s) * win.at(end+d-float32(syncSymbols-1-i)*sps)
 		}
 		if c[k] > c[best] {
 			best = k
@@ -662,32 +698,32 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 	}
 	bestD := float32(best-2) * sps / 4
 	lo, hi := c[max(best-1, 0)], c[min(best+1, len(c)-1)]
-	if den := lo - 2*c[best] + hi; best > 0 && best < len(c)-1 && den < 0 {
+	if den := lo - 2*c[best] + hi; best > 0 && best < len(c)-1 && den < 0 && !math.IsInf(float64(lo+hi), 0) {
 		bestD += max32(min32(0.5*(lo-hi)/den, 0.5), -0.5) * sps / 4
 	}
 	bestD = min(bestD, -end)
-	var v [syncSymbols]float32
-	var mv, mp float32
-	for i := range syms {
-		v[i] = win.at(end + bestD - float32(syncSymbols-1-i)*sps)
-		mv += v[i]
-		mp += float32(syms[i])
-	}
-	mv /= syncSymbols
-	mp /= syncSymbols
-	var sxy, sxx, spp float32
+	// rho² from the sums of the samples, their squares and their products
+	// with the symbols; the samples are interpolated again for the ring
+	// only when the SYNC passes.
+	var sv, svv, sxv, sp float32
 	for i, s := range syms {
-		dp, dv := float32(s)-mp, v[i]-mv
-		sxy += dp * dv
-		sxx += dv * dv
-		spp += dp * dp
+		v := win.at(end + bestD - float32(syncSymbols-1-i)*sps)
+		sv += v
+		svv += v * v
+		sxv += float32(s) * v
+		sp += float32(s)
 	}
+	const n = syncSymbols
+	sxy := sxv - sp*sv/n
+	sxx := svv - sv*sv/n
+	spp := 9*n - sp*sp/n
 	if sxy <= 0 || sxy*sxy < discLock*discLock*sxx*spp {
 		return 0, false
 	}
 	for i := range int64(syncSymbols) {
+		v := win.at(end + bestD - float32(syncSymbols-1-i)*sps)
 		j := uint32(r.ns-syncSymbols+i) % leanRing
-		saved[i], r.ring[j] = r.ring[j], int8(max(min(roundf(v[i]), math.MaxInt8), math.MinInt8))
+		saved[i], r.ring[j] = r.ring[j], int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
 	}
 	return bestD, true
 }
@@ -712,24 +748,20 @@ func (r *leanCore) push(s float32) {
 	}
 }
 
+// roundBits returns v rounded to the nearest integer, ties to even, for
+// |v| below 2^22: v plus 1.5·2^23 holds it in the low bits of its
+// mantissa. It needs no float conversion, which TinyGo checks for range.
+func roundBits(v float32) int32 {
+	return int32(math.Float32bits(v+0x1.8p23)) - 0x4B400000
+}
+
 // symbol handles symbol value x, at samples after the last matched filter
 // sample. It is not inlined, so that the code of every sample stays small.
 //
 //go:noinline
 func (r *leanCore) symbol(x, at float32) {
 	r.lastAt = at
-	// sat8 written out, which TinyGo does not inline at -opt s or z.
-	var q int8
-	switch v := (x - r.off) / discStepHz; {
-	case v >= math.MaxInt8:
-		q = math.MaxInt8
-	case v <= math.MinInt8:
-		q = math.MinInt8
-	case v < 0:
-		q = int8(int32(v - 0.5))
-	default:
-		q = int8(int32(v + 0.5))
-	}
+	q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
 	h := uint32(r.ns) % leanRing
 	r.ring[h] = q
 	if !r.locked {
@@ -829,7 +861,10 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 // leanSignMiss symbols.
 func (r *leanCore) signsMatch() bool {
 	for i := range r.sources {
-		m := bits.OnesCount32((r.signs ^ syncSigns[i]) & (1<<syncSymbols - 1))
+		// A byte table: TinyGo counts the bits of a word in 11
+		// instructions on the M4.
+		x := r.signs ^ syncSigns[i]
+		m := ones8[x&0xff] + ones8[x>>8&0xff] + ones8[x>>16&0xff]
 		if m <= leanSignMiss || m >= syncSymbols-leanSignMiss {
 			return true
 		}
@@ -1015,7 +1050,7 @@ func (r *leanCore) slot() {
 func (r *leanCore) retune(d float32) {
 	if !r.locked && r.acqKept() > 0 {
 		// The kept samples follow the front end, which removes d more.
-		r.rescaleKept(1, -d/discStepHz)
+		r.rescaleKept(256, int32(roundf(-d*(256.0/discStepHz))))
 	}
 	r.tuneHz += d
 	if r.audio != nil {
@@ -1359,14 +1394,15 @@ func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
 	}
 }
 
-// noteData records the color code of data burst b when it is clean, and
-// the slot j of a voice LC or PI header.
+// noteData records the color code of data burst b when its slot type has
+// at most leanVoteErrors errors, and the slot j of a voice LC or PI
+// header.
 func (r *leanCore) noteData(b *Burst, j int32, c *leanChan) {
 	st := b.Data.SlotType()
 	if st.FEC.Uncorrectable {
 		return
 	}
-	if st.FEC.ErrorsCorrected == 0 && r.votes[st.ColorCode&0xF] < math.MaxUint8 {
+	if st.FEC.ErrorsCorrected <= leanVoteErrors && r.votes[st.ColorCode&0xF] < math.MaxUint8 {
 		r.votes[st.ColorCode&0xF]++
 	}
 	if dt := st.DataType; dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypePIHeader {
