@@ -82,37 +82,77 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 // are complete. The returned slice is valid until the next call.
 func (r *DiscReceiver) Write(x []int16) []Burst {
 	r.out = r.out[:0]
-	f := &r.f
-	for _, v := range x {
-		// The body of sample, which the compiler does not inline.
-		if !r.locked {
-			f.sum += int32(v)
-			f.sq += int64(v) * int64(v)
-		}
-		if f.n++; f.n == frontBlock {
-			r.levels()
-		}
-		if s, ok := f.filter(v); ok {
-			// A discriminator gives no carrier power, so the core takes
-			// a burst as present from its anchors.
-			r.n++
-			r.push(s)
-		}
-	}
+	r.write(x)
 	return r.out
 }
 
 // Flush finishes the stream at its end and returns the remaining bursts.
 func (r *DiscReceiver) Flush() []Burst {
 	r.out = r.out[:0]
-	idle := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
-	for range slotSymbols * discSPS {
-		r.sample(idle)
+	var idle [64]int16
+	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
+	for i := range idle {
+		idle[i] = v
+	}
+	for range slotSymbols * discSPS / len(idle) {
+		r.write(idle[:])
 	}
 	if r.locked {
 		r.unlock()
 	}
 	return r.out
+}
+
+// write runs the samples x through the front end, the symbol timing and
+// the core. It is the leanTiming.push of the matched filter samples, fused
+// into one loop that keeps the last four samples and the time of the next
+// strobe in locals: the core sees them only around levels and symbol,
+// which can retune or lock. The samples are kept as cubic takes them, s3
+// the last, and the linear interpolation runs between s2 and s3.
+func (r *DiscReceiver) write(x []int16) {
+	f, tm := &r.f, &r.tm
+	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+	for _, v := range x {
+		if !r.locked {
+			f.sum += int32(v)
+			f.sq += int64(v) * int64(v)
+		}
+		if f.n++; f.n == frontBlock {
+			tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+			r.levels()
+			s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+		}
+		y, ok := f.filter(v)
+		if !ok {
+			continue
+		}
+		// A discriminator gives no carrier power, so the core takes a
+		// burst as present from its anchors.
+		r.n++
+		s0, s1, s2, s3 = s1, s2, s3, y
+		t--
+		for t <= 0 {
+			at := t
+			var xv float32
+			if tm.cubic {
+				mu := 1 + at
+				xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+				// The cubic strobes are one sample late.
+				at--
+			} else {
+				xv = s3 + at*(s3-s2)
+			}
+			tm.t = t
+			sym := tm.strobe(xv)
+			t = tm.t
+			if sym {
+				tm.s0, tm.s1, tm.s2, tm.s3 = s0, s1, s2, s3
+				r.symbol(tm.last, at)
+				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+			}
+		}
+	}
+	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
 }
 
 // OffsetHz returns the DC offset of the last locked stream, in units of
@@ -126,23 +166,6 @@ func (r *DiscReceiver) OffsetHz() float64 {
 // units of the input samples.
 func (r *DiscReceiver) DeviationHz() float64 {
 	return float64(float32(r.devHz) / r.f.gain)
-}
-
-// sample runs one input sample through the front end and the core. While
-// the receiver searches, it sums the samples for levels.
-func (r *DiscReceiver) sample(v int16) {
-	f := &r.f
-	if !r.locked {
-		f.sum += int32(v)
-		f.sq += int64(v) * int64(v)
-	}
-	if f.n++; f.n == frontBlock {
-		r.levels()
-	}
-	if s, ok := f.filter(v); ok {
-		r.n++
-		r.push(s)
-	}
 }
 
 // levels ends a block of frontBlock samples. While the receiver searches,
