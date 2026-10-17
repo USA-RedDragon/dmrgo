@@ -371,14 +371,6 @@ func scatter(rows []*row, floors map[string]floorRef, p [2]string, k costKind) *
 		ch.refs = append(ch.refs, refLine{name: "4FSK floor (any code)", at: f.any.X, dash: "6 4", color: "#555"})
 		ylo = min(ylo, f.any.X)
 	}
-	if f.dmr.OK {
-		name := "DMR floor (ETSI codes)"
-		if f.status != "exact" {
-			name = "DMR floor, lower bound"
-		}
-		ch.refs = append(ch.refs, refLine{name: name, at: f.dmr.X, dash: "10 3", color: "#111"})
-		ylo = min(ylo, f.dmr.X)
-	}
 	switch k {
 	case costRAM:
 		ch.refs = append(ch.refs, refLine{name: "1 KiB target", at: targetRAM, vertical: true, dash: "3 3", color: "#c92a2a"})
@@ -388,7 +380,7 @@ func scatter(rows []*row, floors map[string]floorRef, p [2]string, k costKind) *
 		lo = min(lo, targetMHz)
 	case costCPU:
 	}
-	ch.x.lo, ch.x.hi = lo/1.3, hi*1.3
+	ch.x.lo, ch.x.hi = lo/1.3, hi*2
 	ch.y.lo, ch.y.hi = math.Floor(ylo-0.5), math.Ceil(yhi+0.5)
 	fr := front(xs, ys)
 	onFront := map[int]bool{}
