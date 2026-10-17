@@ -67,7 +67,19 @@ type cohStage struct {
 	// EMB that the core decoded.
 	priorK bool
 	sps    float64
-	base   int64
+	// The SYNC scan: the templates of the voice and the data SYNC of each
+	// of nsrc sources, and the ring samples under test.
+	scanTpl [4][2][cohScanLen]complex64
+	scanX   [cohScanLen]complex64
+	nsrc    int
+	// peakOK marks a SYNC that scan found ending at core symbol peakAt,
+	// of source peakSrc, whose share peakRho a later symbol may top.
+	peakOK   bool
+	peakAt   int64
+	peakRho  float64
+	peakSrc  int
+	peakData bool
+	base     int64
 }
 
 // newCohStage returns the coherent stage of iqRx r, with the settings
@@ -80,7 +92,116 @@ func newCohStage(r *iqRx, opt *options) *cohStage {
 	}
 	s.tr = newTrellis(m, slotSymbols+2*runMargin, slotSymbols+2*runMargin, 0)
 	s.buf = make([]complex64, (syncSymbols+2)*cohSPS)
+	s.nsrc = min(opt.Sources, len(s.scanTpl))
+	for i := range s.nsrc {
+		voice, data, _ := sourceAt(i).SyncPatterns()
+		s.scanTemplate(voice, &s.scanTpl[i][0])
+		s.scanTemplate(data, &s.scanTpl[i][1])
+	}
 	return s
+}
+
+// Layout of the coherent SYNC scan: the samples of the waveform of a SYNC
+// that it correlates, without the first and last symbol, in segments that
+// it adds without their phase, so that a carrier offset of a few hundred
+// Hz does not cancel them, and the sample offsets it tries around the
+// timing of the core.
+const (
+	cohScanLen  = (syncSymbols - 2) * cohSPS
+	cohScanSegs = 4
+	cohScanOff  = 2
+	// cohScanRho is the least share of the power of the samples that the
+	// waveform of a SYNC must explain for scan.
+	cohScanRho = 0.45
+	// cohScanWait is the number of symbols after a peak that scan waits
+	// for a higher one.
+	cohScanWait = 3
+)
+
+// scanTemplate writes the conjugate waveform of SYNC p, symbols 1 to 22,
+// at cohSPS samples per symbol, into tpl.
+func (s *cohStage) scanTemplate(p enums.SyncPattern, tpl *[cohScanLen]complex64) {
+	m := s.model
+	var syms [syncSymbols]int8
+	syncSyms(p, &syms)
+	ph := 0.0
+	for k := 1; k < syncSymbols-1; k++ {
+		w := 0
+		for i := -1; i <= 1; i++ {
+			w = w<<2 | (int(syms[k+i])+3)/2
+		}
+		rot := complex64(cmplx.Exp(complex(0, -ph)))
+		for j := range m.sps {
+			tpl[(k-1)*m.sps+j] = m.tpl[w*m.sps+j] * rot
+		}
+		ph += m.h * math.Pi * float64(syms[k])
+	}
+}
+
+// scan tests whether the last symbols of the core c end the SYNC of a
+// source, at a few sample offsets around the timing of the core, by the
+// share of the power of the ring samples that its waveform explains.
+func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
+	r := s.rx
+	if r.yN < cohHist/2 {
+		return 0, false, 0, false
+	}
+	sps := float64(samplesPerSy) / 2
+	// The first sample of symbol 1 of the SYNC that ends at the last
+	// symbol.
+	t := symTime(c, c.ns-1) + s.dt - float64(syncSymbols-2)*sps - float64(cohSPS/2)
+	b0 := int64(math.Round(t))
+	if b0-cohScanOff < r.yN-cohHist || b0+cohScanOff+cohScanLen > r.yN {
+		return 0, false, 0, false
+	}
+	best, bestSrc, bestData := 0.0, 0, false
+	for o := -cohScanOff; o <= cohScanOff; o++ {
+		var e float64
+		x := s.scanX[:]
+		for i := range x {
+			v := r.yHist[(b0+int64(o)+int64(i))&(cohHist-1)]
+			x[i] = v
+			e += float64(real(v)*real(v) + imag(v)*imag(v))
+		}
+		if e == 0 {
+			continue
+		}
+		for i := range s.nsrc {
+			for d := range 2 {
+				tpl := &s.scanTpl[i][d]
+				var m float64
+				const seg = cohScanLen / cohScanSegs
+				for g := range cohScanSegs {
+					var c complex64
+					for j := g * seg; j < (g+1)*seg; j++ {
+						c += x[j] * tpl[j]
+					}
+					m += float64(real(c)*real(c) + imag(c)*imag(c))
+				}
+				// Each segment explains at most its share of the power.
+				m *= cohScanSegs / (e * cohScanLen)
+				if m > best {
+					best, bestSrc, bestData = m, i, d == 1
+				}
+			}
+		}
+	}
+	// The SYNC ends at the symbol where the share peaks over cohScanWait
+	// symbols: a side lobe a symbol off falls short of it.
+	// A peak older than that is from before the core last locked.
+	if s.peakOK && c.ns-1-s.peakAt > 2*cohScanWait {
+		s.peakOK = false
+	}
+	if best >= cohScanRho && (!s.peakOK || best > s.peakRho) {
+		s.peakOK, s.peakAt = true, c.ns-1
+		s.peakRho, s.peakSrc, s.peakData = best, bestSrc, bestData
+	}
+	back := c.ns - 1 - s.peakAt
+	if !s.peakOK || back < cohScanWait {
+		return 0, false, 0, false
+	}
+	s.peakOK = false
+	return s.peakSrc, s.peakData, back, true
 }
 
 // symTime returns the time of symbol k of the core, in samples of the

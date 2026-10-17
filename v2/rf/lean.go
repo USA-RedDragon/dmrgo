@@ -815,8 +815,14 @@ func (r *leanCore) symbol(x, at float32) {
 	}
 	r.ns++
 	if !r.locked {
-		if r.ns >= leanRing && r.signsMatch() {
-			r.searchSym()
+		if r.ns >= leanRing {
+			if r.signsMatch() {
+				r.searchSym()
+			} else if r.ext != nil {
+				if src, data, back, ok := r.ext.scan(r); ok {
+					r.forceLock(src, data, back)
+				}
+			}
 		}
 		return
 	}
@@ -957,9 +963,28 @@ func (r *leanCore) searchSym() {
 		}
 		r.fitLevels(r.ns-1, p, true, false)
 	}
+	r.lockStream(src, d, 0)
+}
+
+// forceLock locks to the SYNC of source src, data or voice, that ends
+// back symbols before the last, which a stage found coherently: it fits
+// the levels to it however they spread.
+func (r *leanCore) forceLock(src int, data bool, back int64) {
+	voice, dp, _ := sourceAt(src).SyncPatterns()
+	p := voice
+	if data {
+		p = dp
+	}
+	r.fitLevels(r.ns-1-back, p, true, false)
+	r.lockStream(src, 0, back)
+}
+
+// lockStream locks to a stream of source src whose SYNC ends back symbols
+// before the last, which the timing loop sampled d samples early.
+func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.locked, r.src, r.bs = true, uint8(src), sourceAt(src) == layer2.SyncSourceBS
 	r.streams++
-	r.first = r.ns - 1 - leanSyncEnd
+	r.first = r.ns - 1 - back - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain = false, r.trackGain

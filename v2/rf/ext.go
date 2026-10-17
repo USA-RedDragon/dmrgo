@@ -32,6 +32,9 @@ type leanExt interface {
 	// verify reports whether the last symbols of the core end SYNC p,
 	// which the discriminator alone does not show.
 	verify(c *leanCore, p enums.SyncPattern) bool
+	// scan reports whether a SYNC of source src, data or voice, ended back
+	// symbols before the last of the core, while the core searches.
+	scan(c *leanCore) (src int, data bool, back int64, ok bool)
 }
 
 // extQueue is the most bursts that a softExt holds: the bursts B to D of a
@@ -461,6 +464,13 @@ func (x *softExt) kept() []int16 { return x.acq }
 
 func (x *softExt) place(c *leanCore, b *Burst, j int32) bool {
 	return x.coh != nil && x.coh.place(c, b, j)
+}
+
+func (x *softExt) scan(c *leanCore) (int, bool, int64, bool) {
+	if x.coh == nil {
+		return 0, false, 0, false
+	}
+	return x.coh.scan(c)
 }
 
 func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
