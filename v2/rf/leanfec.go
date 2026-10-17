@@ -101,19 +101,24 @@ func (f *leanFEC) prev(k, st int) int {
 	return int(uint16(f.s[q>>2]) >> (4 * uint(q&3)) & 0xf)
 }
 
-// cand returns candidate i of the BPTC(196,96) decode.
-func (f *leanFEC) cand(i int) (cost int32, data [12]byte, reserved uint8) {
+// cand sets data to candidate i of the BPTC(196,96) decode and returns its
+// reserved bits.
+func (f *leanFEC) cand(i int, data *[12]byte) uint8 {
 	c := f.s[i*leanCandSize:][:leanCandSize]
-	cost = int32(uint32(uint16(c[0])) | uint32(uint16(c[1]))<<16)
 	for k := range 6 {
 		data[2*k], data[2*k+1] = byte(uint16(c[2+k])>>8), byte(c[2+k])
 	}
-	return cost, data, uint8(c[8])
+	return uint8(c[8])
 }
 
-// setCand sets candidate i of the BPTC(196,96) decode.
-func (f *leanFEC) setCand(i int, cost int32, data *[12]byte, reserved uint8) {
-	c := f.s[i*leanCandSize:][:leanCandSize]
+// candCost returns the cost of candidate i.
+func (f *leanFEC) candCost(i int) int32 {
+	c := f.s[i*leanCandSize:][:2]
+	return int32(uint32(uint16(c[0])) | uint32(uint16(c[1]))<<16)
+}
+
+// packCand stores a candidate in c as the list holds it.
+func packCand(c *[leanCandSize]int16, cost int32, data *[12]byte, reserved uint8) {
 	c[0], c[1] = int16(uint16(cost)), int16(uint16(uint32(cost)>>16))
 	for k := range 6 {
 		c[2+k] = int16(uint16(data[2*k])<<8 | uint16(data[2*k+1]))
@@ -242,26 +247,22 @@ func bptcPos(p int) int {
 //
 //go:noinline
 func (f *leanFEC) addCand(cost int32, data *[12]byte, reserved uint8, max int) {
+	var e [leanCandSize]int16
+	packCand(&e, cost, data, reserved)
 	for i := range f.nlist {
-		if c, d, r := f.cand(i); c == cost && d == *data && r == reserved {
+		if [leanCandSize]int16(f.s[i*leanCandSize:]) == e {
 			return
 		}
 	}
-	if f.nlist == max {
-		if c, _, _ := f.cand(f.nlist - 1); cost >= c {
-			return
-		}
+	if f.nlist == max && cost >= f.candCost(f.nlist-1) {
+		return
 	}
 	i := min(f.nlist, max-1)
-	for i > 0 {
-		c, d, r := f.cand(i - 1)
-		if c <= cost {
-			break
-		}
-		f.setCand(i, c, &d, r)
+	for i > 0 && f.candCost(i-1) > cost {
+		copy(f.s[i*leanCandSize:(i+1)*leanCandSize], f.s[(i-1)*leanCandSize:])
 		i--
 	}
-	f.setCand(i, cost, data, reserved)
+	copy(f.s[i*leanCandSize:], e[:])
 	f.nlist = min(f.nlist+1, max)
 }
 
@@ -320,8 +321,8 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 			cell := chase[bits.TrailingZeros(uint(g))]
 			rows[cell/15] ^= 1 << (cell % 15)
 		}
-		data, reserved, _ := bptc.DecodeRows(rows)
-		cw := bptc.EncodeRows(data, reserved)
+		data, reserved, _ := bptc.DecodeRows(&rows)
+		cw := bptc.EncodeRows(&data, reserved)
 		cost := base
 		for row := range cw {
 			for e := cw[row] ^ hard[row]; e != 0; e &= e - 1 {
@@ -337,15 +338,16 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		f.addCand(cost, &data, reserved, size)
 	}
 	pick, failed := 0, checked
+	var data [12]byte
 	for i := 0; checked && i < f.nlist; i++ {
-		_, d, _ := f.cand(i)
-		if ok, _ := bptcCheck(dt, &d); ok {
+		f.cand(i, &data)
+		if ok, _ := bptcCheck(dt, &data); ok {
 			pick, failed = i, false
 			break
 		}
 	}
-	_, data, reserved := f.cand(pick)
-	cw := bptc.EncodeRows(data, reserved)
+	reserved := f.cand(pick, &data)
+	cw := bptc.EncodeRows(&data, reserved)
 	softPut(out, bptcPos(0), false)
 	for row, w := range &cw {
 		for col := range 15 {

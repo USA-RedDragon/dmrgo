@@ -738,6 +738,11 @@ func (r *leanCore) retune(d float32) {
 
 // syncErrors returns the number of bits where the sliced symbols of the
 // SYNC field that ends at symbol end differ from pattern p.
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs.
+//
+//go:noinline
 func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
@@ -752,6 +757,11 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 }
 
 // unlock ends the stream.
+//
+// It is not inlined, so that its locals are on the stack only while it
+// runs.
+//
+//go:noinline
 func (r *leanCore) unlock() {
 	r.locked = false
 	r.ringSum, r.signs = 0, 0
