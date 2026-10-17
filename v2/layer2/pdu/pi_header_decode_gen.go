@@ -5,10 +5,10 @@
 package pdu
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // DecodePIHeader decodes a PIHeader (ETSI TS 102 361-1 clause 6.2). data
@@ -57,7 +57,7 @@ func (s *PIHeader) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *PIHeader) String() string {
-	return fmt.Sprintf("PIHeader{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
+	return "PIHeader{ FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, AlgorithmID: " + text.Int(s.AlgorithmID) + ", MFID: " + text.Int(s.MFID) + ", KeyID: " + text.Int(s.KeyID) + ", MessageIndicator: " + text.Int(s.MessageIndicator) + ", Destination: " + text.Int(s.Destination) + ", Raw: " + text.Hex(s.Raw[:]) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

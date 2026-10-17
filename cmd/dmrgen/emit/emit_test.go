@@ -227,7 +227,7 @@ type T struct {
 		"\tdefault:\n\t\t\tresult.Raw[0] = data[2]",
 		"} else {\n\t\tresult.Raw[0] = data[2]",
 		"\tdefault:\n\t\tdata[2] = s.Raw[0]",
-		`_ret += fmt.Sprintf("Raw: %x", s.Raw)`,
+		`_ret += "Raw: " + text.Hex(s.Raw[:])`,
 	)
 	if strings.Count(out, "data[2] = s.Raw[0]") != 1 {
 		t.Error("fallback should only be encoded in the dispatch default branch")
@@ -402,7 +402,7 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 		"if s.R[1]&15 != 0 {",
 		"return [2]byte{}, errTRRange",
 		"bits.Copy(data[:], 4, s.R[:], 0, 12)",
-		`fmt.Sprintf("T{ A: %d, R: %x }", s.A, s.R)`,
+		`return "T{ A: " + text.Int(s.A) + ", R: " + text.Hex(s.R[:]) + " }"`,
 	)
 }
 

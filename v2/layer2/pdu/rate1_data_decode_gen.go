@@ -4,7 +4,7 @@
 
 package pdu
 
-import "fmt"
+import text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // DecodeRate1Data decodes a Rate1Data (ETSI TS 102 361-1 clause 9.2.15).
 // data holds the 192 bits of the PDU packed, the first bit in the most
@@ -26,5 +26,5 @@ func (s *Rate1Data) Encode() ([24]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Rate1Data) String() string {
-	return fmt.Sprintf("Rate1Data{ Data: %v }", s.Data)
+	return "Rate1Data{ Data: " + text.Bytes(s.Data[:]) + " }"
 }

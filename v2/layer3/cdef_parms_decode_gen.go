@@ -5,8 +5,8 @@
 package layer3
 
 import (
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // DecodeCdefParms decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42,
@@ -66,7 +66,7 @@ func (s *CdefParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CdefParms) String() string {
-	return fmt.Sprintf("CdefParms{ Channel: %d, TXMHz: %d, TXKHz: %d, RXMHz: %d, RXKHz: %d }", s.Channel, s.TXMHz, s.TXKHz, s.RXMHz, s.RXKHz)
+	return "CdefParms{ Channel: " + text.Int(s.Channel) + ", TXMHz: " + text.Int(s.TXMHz) + ", TXKHz: " + text.Int(s.TXKHz) + ", RXMHz: " + text.Int(s.RXMHz) + ", RXKHz: " + text.Int(s.RXKHz) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

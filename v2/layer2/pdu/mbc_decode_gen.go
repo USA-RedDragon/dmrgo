@@ -10,11 +10,11 @@ package pdu
 
 import (
 	"errors"
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
@@ -325,7 +325,7 @@ func (s *MBCHeader) Encode() ([12]byte, error) {
 // string.
 func (s *MBCHeader) String() string {
 	_ret := "MBCHeader{ "
-	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.FID)
+	_ret += "FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(s.Opcode) + ", FID: " + text.Int(s.FID) + ", "
 	switch {
 	case s.PrivateVoiceGrantPDU != nil:
 		_ret += s.PrivateVoiceGrantPDU.String()
@@ -348,7 +348,7 @@ func (s *MBCHeader) String() string {
 	case s.BroadcastPDU != nil:
 		_ret += s.BroadcastPDU.String()
 	default:
-		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
+		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
 	_ret += " }"
 	return _ret
@@ -382,7 +382,7 @@ func (s *MBCContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MBCContinuation) String() string {
-	return fmt.Sprintf("MBCContinuation{ LastBlock: %t, Data: %x }", s.LastBlock, s.Data)
+	return "MBCContinuation{ LastBlock: " + text.Bool(s.LastBlock) + ", Data: " + text.Hex(s.Data[:]) + " }"
 }
 
 // decodeCGAPContinuation decodes a CGAPContinuation (ETSI TS 102 361-4
@@ -449,7 +449,7 @@ func (s *CGAPContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CGAPContinuation) String() string {
-	return fmt.Sprintf("CGAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
+	return "CGAPContinuation{ FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(s.Opcode) + ", Reserved1: " + text.Int(s.Reserved1) + ", ColorCode: " + text.Int(s.ColorCode) + ", Cdeftype: " + text.Int(s.Cdeftype) + ", Reserved2: " + text.Int(s.Reserved2) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
 // decodeMVAPContinuation decodes an MVAPContinuation (ETSI TS 102 361-4
@@ -516,7 +516,7 @@ func (s *MVAPContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MVAPContinuation) String() string {
-	return fmt.Sprintf("MVAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
+	return "MVAPContinuation{ FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(s.Opcode) + ", Reserved1: " + text.Int(s.Reserved1) + ", ColorCode: " + text.Int(s.ColorCode) + ", Cdeftype: " + text.Int(s.Cdeftype) + ", Reserved2: " + text.Int(s.Reserved2) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
 // decodeBCAPContinuation decodes a BCAPContinuation (ETSI TS 102 361-4
@@ -575,7 +575,7 @@ func (s *BCAPContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *BCAPContinuation) String() string {
-	return fmt.Sprintf("BCAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.Cdeftype, s.Reserved2, s.CdefParms.String())
+	return "BCAPContinuation{ FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(s.Opcode) + ", Reserved1: " + text.Int(s.Reserved1) + ", Cdeftype: " + text.Int(s.Cdeftype) + ", Reserved2: " + text.Int(s.Reserved2) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
 // decodeVNAPContinuation decodes a VNAPContinuation (ETSI TS 102 361-4
@@ -642,7 +642,7 @@ func (s *VNAPContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *VNAPContinuation) String() string {
-	return fmt.Sprintf("VNAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
+	return "VNAPContinuation{ FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(s.Opcode) + ", Reserved1: " + text.Int(s.Reserved1) + ", ColorCode: " + text.Int(s.ColorCode) + ", Cdeftype: " + text.Int(s.Cdeftype) + ", Reserved2: " + text.Int(s.Reserved2) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

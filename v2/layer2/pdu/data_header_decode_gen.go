@@ -14,10 +14,10 @@ package pdu
 
 import (
 	"errors"
-	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // decodeUnconfirmedDataHeader decodes an UnconfirmedDataHeader (ETSI TS 102
@@ -103,7 +103,7 @@ func (s *UnconfirmedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UnconfirmedDataHeader) String() string {
-	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
+	return "UnconfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(s.PadOctetCount) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(s.BlocksToFollow) + ", Reserved2: " + text.Int(s.Reserved2) + ", FragmentSequenceNumber: " + text.Int(s.FragmentSequenceNumber) + " }"
 }
 
 // DecodeDataHeader decodes a DataHeader (ETSI TS 102 361-1 clause 9.2). data
@@ -365,7 +365,7 @@ func (s *DataHeader) Encode() ([12]byte, error) {
 // string.
 func (s *DataHeader) String() string {
 	_ret := "DataHeader{ "
-	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
+	_ret += "FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(s.Format) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", "
 	switch {
 	case s.UnconfirmedDataHeader != nil:
 		_ret += s.UnconfirmedDataHeader.String()
@@ -384,7 +384,7 @@ func (s *DataHeader) String() string {
 	case s.ProprietaryHeader != nil:
 		_ret += s.ProprietaryHeader.String()
 	default:
-		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
+		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
 	_ret += " }"
 	return _ret
@@ -477,7 +477,7 @@ func (s *ConfirmedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ConfirmedDataHeader) String() string {
-	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
+	return "ConfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(s.PadOctetCount) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(s.BlocksToFollow) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(s.SendSequenceNumber) + ", FragmentSequenceNumber: " + text.Int(s.FragmentSequenceNumber) + " }"
 }
 
 // decodeResponsePacketHeader decodes a ResponsePacketHeader (ETSI TS 102
@@ -563,7 +563,7 @@ func (s *ResponsePacketHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ResponsePacketHeader) String() string {
-	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %d, SAP: %d, Reserved3: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
+	return "ResponsePacketHeader{ Reserved: " + text.Bool(s.Reserved) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved2: " + text.Int(s.Reserved2) + ", SAP: " + text.Int(s.SAP) + ", Reserved3: " + text.Int(s.Reserved3) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(s.BlocksToFollow) + ", ResponseClass: " + text.Int(s.ResponseClass) + ", ResponseType: " + text.Int(s.ResponseType) + ", ResponseStatus: " + text.Int(s.ResponseStatus) + " }"
 }
 
 // decodeDefinedDataHeader decodes a DefinedDataHeader (ETSI TS 102 361-1
@@ -641,7 +641,7 @@ func (s *DefinedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DefinedDataHeader) String() string {
-	return fmt.Sprintf("DefinedDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, DefinedData: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.DefinedData, s.SARQ, s.FullMessageFlag, s.BitPadding)
+	return "DefinedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", DefinedData: " + text.Int(s.DefinedData) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(s.BitPadding) + " }"
 }
 
 // decodeRawDataHeader decodes a RawDataHeader (ETSI TS 102 361-1 clause
@@ -724,7 +724,7 @@ func (s *RawDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *RawDataHeader) String() string {
-	return fmt.Sprintf("RawDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.SARQ, s.FullMessageFlag, s.BitPadding)
+	return "RawDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", SourcePort: " + text.Int(s.SourcePort) + ", DestinationPort: " + text.Int(s.DestinationPort) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(s.BitPadding) + " }"
 }
 
 // decodeStatusPrecodedHeader decodes a StatusPrecodedHeader (ETSI TS 102
@@ -796,7 +796,7 @@ func (s *StatusPrecodedHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *StatusPrecodedHeader) String() string {
-	return fmt.Sprintf("StatusPrecodedHeader{ Group: %t, ResponseRequested: %t, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, StatusPrecoded: %d }", s.Group, s.ResponseRequested, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.StatusPrecoded)
+	return "StatusPrecodedHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", SourcePort: " + text.Int(s.SourcePort) + ", DestinationPort: " + text.Int(s.DestinationPort) + ", StatusPrecoded: " + text.Int(s.StatusPrecoded) + " }"
 }
 
 // decodeUDTHeader decodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13,
@@ -888,7 +888,7 @@ func (s *UDTHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UDTHeader) String() string {
-	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
+	return "UDTHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Emergency: " + text.Bool(s.Emergency) + ", OptionFlag: " + text.Bool(s.OptionFlag) + ", SAP: " + text.Int(s.SAP) + ", UDTFormat: " + text.Int(s.UDTFormat) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", PadNibble: " + text.Int(s.PadNibble) + ", Reserved: " + text.Bool(s.Reserved) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", SupplementaryFlag: " + text.Bool(s.SupplementaryFlag) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(s.Opcode) + " }"
 }
 
 // decodeProprietaryHeader decodes a ProprietaryHeader (ETSI TS 102 361-1
@@ -923,7 +923,7 @@ func (s *ProprietaryHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ProprietaryHeader) String() string {
-	return fmt.Sprintf("ProprietaryHeader{ SAP: %d, MFID: %d, ManufacturerData: %v }", s.SAP, s.MFID, s.ManufacturerData)
+	return "ProprietaryHeader{ SAP: " + text.Int(s.SAP) + ", MFID: " + text.Int(s.MFID) + ", ManufacturerData: " + text.Bytes(s.ManufacturerData[:]) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an
