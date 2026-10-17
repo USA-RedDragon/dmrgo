@@ -1,6 +1,6 @@
 package enums
 
-import "fmt"
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // SLCO is the 4-bit Short Link Control Opcode of a short LC. Values 12 to 15
 // are manufacturer selectable, and other values that have no constant are
@@ -29,7 +29,7 @@ func (slco SLCO) String() string {
 		return "P_SYS_Parms"
 	}
 	if slco >= 0b1100 && slco <= 0b1111 {
-		return fmt.Sprintf("Manufacturer Selectable SLCO(%d)", int(slco))
+		return "Manufacturer Selectable SLCO(" + text.Int(slco) + ")"
 	}
-	return fmt.Sprintf("Reserved SLCO(%d)", int(slco))
+	return "Reserved SLCO(" + text.Int(slco) + ")"
 }

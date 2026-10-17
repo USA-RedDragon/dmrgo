@@ -1,10 +1,9 @@
 package pdu
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // ServiceType is the higher layer service that a USBD carries (ETSI TS 102
@@ -48,7 +47,7 @@ func (st ServiceType) String() string {
 	case ServiceTypeManufacturerSpecific8:
 		return "Manufacturer Specific Service 8"
 	default:
-		return fmt.Sprintf("Reserved (%04b)", uint8(st))
+		return "Reserved (" + text.Digits(uint64(st), 4, 1) + ")"
 	}
 }
 

@@ -1,6 +1,6 @@
 package enums
 
-import "fmt"
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // ActivityID is the 4-bit activity of one BS time slot in an Activity Update
 // short LC. Values that have no constant are reserved (ETSI TS 102 361-2
@@ -43,5 +43,5 @@ func (a ActivityID) String() string {
 	case ActivityEmergencyIndividualVoice:
 		return "Emergency Individual Voice"
 	}
-	return fmt.Sprintf("Reserved ActivityID(%d)", int(a))
+	return "Reserved ActivityID(" + text.Int(a) + ")"
 }

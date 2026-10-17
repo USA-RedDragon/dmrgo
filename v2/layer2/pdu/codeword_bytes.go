@@ -1,8 +1,6 @@
 package pdu
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -91,7 +89,7 @@ type noFullLCError enums.DataType
 
 // Error returns the message of e. It allocates the message.
 func (e noFullLCError) Error() string {
-	return fmt.Sprintf("data type %s carries no RS(12,9) Full LC", enums.DataType(e).String())
+	return "data type " + enums.DataType(e).String() + " carries no RS(12,9) Full LC"
 }
 
 // noBlockCRCError is the error for a data type that has no single-block
@@ -100,7 +98,7 @@ type noBlockCRCError enums.DataType
 
 // Error returns the message of e. It allocates the message.
 func (e noBlockCRCError) Error() string {
-	return fmt.Sprintf("data type %s has no single-block CRC-CCITT", enums.DataType(e).String())
+	return "data type " + enums.DataType(e).String() + " has no single-block CRC-CCITT"
 }
 
 func fullLCMask(dt enums.DataType) ([3]byte, error) {

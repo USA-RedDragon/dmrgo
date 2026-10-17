@@ -1,10 +1,9 @@
 package pdu
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
@@ -105,7 +104,7 @@ func (opcode CSBKOpcode) String() string {
 	case CSBKMove:
 		return "C_MOVE PDU"
 	default:
-		return fmt.Sprintf("Unknown CSBKOpcode: %08b", byte(opcode))
+		return "Unknown CSBKOpcode: " + text.Digits(uint64(opcode), 8, 1)
 	}
 }
 

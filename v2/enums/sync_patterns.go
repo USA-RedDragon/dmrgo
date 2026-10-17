@@ -1,8 +1,9 @@
 package enums
 
 import (
-	"fmt"
 	"math/bits"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // SyncPattern is the 48-bit SYNC pattern in the center of a burst, as an
@@ -86,6 +87,6 @@ func (sync SyncPattern) String() string {
 	case SyncReserved:
 		return reservedName
 	default:
-		return fmt.Sprintf("Unknown SyncPattern %#012x", uint64(sync))
+		return "Unknown SyncPattern 0x" + text.Digits(uint64(sync), 12, 4)
 	}
 }

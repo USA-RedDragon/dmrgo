@@ -1,9 +1,8 @@
 package layer2
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // Hint is what a transport knows about a burst besides its 264 bits, such
@@ -74,5 +73,5 @@ func (e EndHint) String() string {
 	case EndStrong:
 		return "Strong"
 	}
-	return fmt.Sprintf("EndHint(%d)", uint8(e))
+	return "EndHint(" + text.Int(e) + ")"
 }

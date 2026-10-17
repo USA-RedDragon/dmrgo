@@ -1,12 +1,11 @@
 package pdu
 
 import (
-	"fmt"
-
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
 // CRC7MaskRC is the CRC-7 data type mask for Reverse Channel PDUs (ETSI TS
@@ -57,6 +56,8 @@ func (rc *ReverseChannel) Encode() ([2]byte, error) {
 // String returns a human-readable string representation of the RC PDU. It
 // allocates the string.
 func (rc *ReverseChannel) String() string {
-	return fmt.Sprintf("ReverseChannel{ RCCommand: %s, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }",
-		rc.RCCommand.String(), rc.FEC.BitsChecked, rc.FEC.ErrorsCorrected, rc.FEC.Uncorrectable)
+	return "ReverseChannel{ RCCommand: " + rc.RCCommand.String() +
+		", FEC: {BitsChecked: " + text.Int(rc.FEC.BitsChecked) +
+		", ErrorsCorrected: " + text.Int(rc.FEC.ErrorsCorrected) +
+		", Uncorrectable: " + text.Bool(rc.FEC.Uncorrectable) + "} }"
 }
