@@ -874,21 +874,28 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	// bit is set below 0, the second beyond the midpoint between the
 	// levels, ±2 dev.
 	thr := 2 * r.llrDev
+	h := uint32(base) % leanRing
+	var acc byte
 	for k := range slotSymbols {
-		x := int32(r.ring[uint32(base+int64(k))%leanRing])*(discStepHz/llrStepHz) + r.llrOff
-		var d byte
+		x := int32(r.ring[h])*(discStepHz/llrStepHz) + r.llrOff
+		if h++; h == leanRing {
+			h = 0
+		}
+		acc <<= 2
 		if x < 0 {
-			d = 2
+			acc |= 2
 			x = -x
 		}
 		if x > thr {
-			d |= 1
+			acc |= 1
 		}
-		if k < cachSymbols {
-			b.CACH[k/4] |= d << (6 - 2*(k%4))
-		} else {
-			i := 2 * (k - cachSymbols)
-			b.Data[i/8] |= d << (6 - i%8)
+		// Four symbols fill a byte; the CACH is three bytes.
+		switch {
+		case k&3 != 3:
+		case k < cachSymbols:
+			b.CACH[k/4] = acc
+		default:
+			b.Data[(k-cachSymbols)/4] = acc
 		}
 	}
 	if !r.classify(b, j) {
