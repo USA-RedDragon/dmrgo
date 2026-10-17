@@ -55,6 +55,7 @@ type cohStage struct {
 	// the bursts fits, from the DC offset of the core at the first.
 	freq   float64
 	freqOK bool
+	nFit   int
 	// The burst under detection: the scale of the trellis metric, its
 	// known runs, and the bit priors of its detection again.
 	scale    float32
@@ -220,7 +221,7 @@ func (s *cohStage) fineTime(k0, k1 int) {
 }
 
 // cohFreqGain is the weight of the carrier offset that each SYNC fits.
-const cohFreqGain = 0.3
+const cohFreqGain = 0.1
 
 // freqFit returns the carrier offset, in Hz, left in the ring samples of
 // the known symbols k0 to k1: the phase step from symbol to symbol of
@@ -321,7 +322,9 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	if nseg == 1 {
 		s.fineTime(segs[0][0], segs[0][1])
-		s.freq += cohFreqGain * s.freqFit(segs[0][0], segs[0][1])
+		// The mean of the first fits, then a slow average.
+		s.nFit++
+		s.freq += max(cohFreqGain, 1/float64(s.nFit+1)) * s.freqFit(segs[0][0], segs[0][1])
 		s.totalHz = s.freq
 	}
 	var amp, noise float64

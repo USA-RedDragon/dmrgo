@@ -13,7 +13,7 @@ func TestCohExtVoice(t *testing.T) {
 	ambe := func(coh bool) float64 {
 		o := tierOptions(TierDisc)
 		o.IQDisc, o.IQHz, o.SoftExt, o.ExtAMBE, o.ExtOSD, o.ExtELC = true, discRate, true, true, true, true
-		o.CohExt, o.PSPGain, o.LLRScale = coh, 0.3, 0.5
+		o.CohExt, o.PSPGain, o.LLRScale = coh, 0.2, 0.5
 		var out []Burst
 		r := mustNew(Config{Rate: basebandRate, Tier: TierDisc, Streaming: true, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
 		for k := 0; k < len(x); k += 4096 {
