@@ -461,10 +461,11 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	if nseg == 1 {
 		s.dt += cohDTGain * s.fineTime(segs[0][0], segs[0][1])
-		// The mean of the first fits, then a slow average.
+		// The mean of the first fits, then a slow average: the offset that
+		// the fits start from is no fit.
 		if fit := s.freqFit(segs[0][0], segs[0][1]); math.Abs(fit) < cohFreqSpan {
 			s.nFit++
-			s.freq += max(cohFreqGain, 1/float64(s.nFit+1)) * fit
+			s.freq += max(cohFreqGain, 1/float64(s.nFit)) * fit
 			s.totalHz = s.freq
 		}
 	}
