@@ -50,10 +50,9 @@ func sourceAt(i int) layer2.SyncSource {
 
 // syncSyms returns the 24 symbols of the SYNC pattern p.
 func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {
-	var b [framer.SyncBits]unpacked.Bit
-	unpacked.PutUint(b[:], uint64(p))
 	for k := range syncSymbols {
-		out[k] = symbolOf(b[2*k], b[2*k+1])
+		d := uint8(uint64(p) >> (2 * (syncSymbols - 1 - k)) & 3)
+		out[k] = symbolOf(unpacked.Bit(d>>1), unpacked.Bit(d&1))
 	}
 }
 

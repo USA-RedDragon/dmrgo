@@ -150,13 +150,13 @@ func nibbleCost(tab []int16, cw uint32, n int) int32 {
 // searchNibble is softSmallID.search with nibble tables.
 func searchNibble(id softSmallID, tab []int16, off, fixed, want uint32, top *leanBest) {
 	c := &softSmallCodes[id]
-	var free [16]int
+	var free [16]uint8
 	nf := 0
 	info := want & fixed
 	cw := c.base ^ off
 	for i := range c.k {
 		if fixed>>i&1 == 0 {
-			free[nf] = i
+			free[nf] = uint8(i)
 			nf++
 		} else if info>>i&1 != 0 {
 			cw ^= c.rows[i]
