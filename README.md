@@ -145,7 +145,6 @@ Both ends must agree on the mode, because the FID does not identify it.
 
 ## TinyGo
 
-The library builds with TinyGo 0.41 for microcontrollers (for example RP2040, RP2350, ESP32-C3) and for WebAssembly. CI builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the Raspberry Pi Pico and runs the library tests with TinyGo.
 
 ```sh
 cd v2
