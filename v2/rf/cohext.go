@@ -464,7 +464,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 
 // cohPlaceRho is the least share of the power of the SYNC field that its
 // waveform must explain for place to take it as a SYNC.
-const cohPlaceRho = 0.4
+const cohPlaceRho = 0.3
 
 // place tests the SYNC field of burst b of slot j, which the core could
 // not place, coherently against the voice and the data SYNC of the
