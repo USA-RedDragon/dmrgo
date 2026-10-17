@@ -55,7 +55,8 @@ func columnSyndromes(rows *[13]uint16) [4]uint16 {
 // and a fec.Result (ETSI TS 102 361-1 clause B.1.1). R(3) has no FEC and is
 // not returned. Bits 196 to 199 of info are ignored.
 func Decode196(info [25]byte) ([12]byte, uint8, fec.Result) {
-	return DecodeRows(Rows(info))
+	rows := Rows(info)
+	return DecodeRows(&rows)
 }
 
 // Rows deinterleaves a BPTC(196,96) block of 196 packed information bits
@@ -97,15 +98,15 @@ func GridBit(row, col int) int {
 	return int(dm[1+15*row+col])
 }
 
-// DecodeRows corrects the rows of a BPTC(196,96) grid that Rows returns
-// and returns what Decode196 returns for the block.
+// DecodeRows corrects a copy of the rows of a BPTC(196,96) grid that Rows
+// returns and returns what Decode196 returns for the block.
 //
 // It is not inlined, so that its locals are on the stack only while it
 // runs, for microcontrollers.
 //
 //go:noinline
-func DecodeRows(rows [13]uint16) ([12]byte, uint8, fec.Result) {
-	received := rows
+func DecodeRows(grid *[13]uint16) ([12]byte, uint8, fec.Result) {
+	rows, received := *grid, *grid
 	result := fec.Result{BitsChecked: 196, Uncorrectable: hammingCorrect(&rows)}
 	for r := range rows {
 		result.ErrorsCorrected += bits.OnesCount16(rows[r] ^ received[r])
@@ -174,7 +175,7 @@ func hammingCorrect(rows *[13]uint16) bool {
 // reserved bits R(0) to R(2) come from bits 0 to 2 of reserved, and R(3) is
 // zero.
 func Encode196(data [12]byte, reserved uint8) [25]byte {
-	rows := EncodeRows(data, reserved)
+	rows := EncodeRows(&data, reserved)
 	var words [4]uint64
 	i := 1
 	for _, row := range rows {
@@ -194,7 +195,7 @@ func Encode196(data [12]byte, reserved uint8) [25]byte {
 
 // EncodeRows returns the 13 grid rows of the BPTC(196,96) codeword of data
 // and reserved, which Rows returns for the block of Encode196.
-func EncodeRows(data [12]byte, reserved uint8) [13]uint16 {
+func EncodeRows(data *[12]byte, reserved uint8) [13]uint16 {
 	head := binary.BigEndian.Uint64(data[:8])
 	tail := uint64(binary.BigEndian.Uint32(data[8:]))
 	var rows [13]uint16
