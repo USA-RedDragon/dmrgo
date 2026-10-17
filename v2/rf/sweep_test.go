@@ -76,7 +76,7 @@ func (j *sweepJob) config(t testing.TB) Config {
 	if j.Disc {
 		hz = basebandRate
 	}
-	return Config{Rate: basebandRate, Tier: Tier(j.Tier), LookbackSlots: j.Lookback, BasebandHz: hz, opt: &o}
+	return Config{Rate: basebandRate, Tier: Tier(j.Tier), LookbackSlots: j.Lookback, Streaming: j.Lookback == 0, BasebandHz: hz, opt: &o}
 }
 
 func (j *sweepJob) hz() int {

@@ -119,17 +119,21 @@ type Config struct {
 	Tier Tier
 	// BasebandHz is the sample rate of the complex baseband that
 	// WriteBaseband takes and that the front end of Write makes: 0 or
-	// BasebandRate, or BasebandRate/2 with TierDisc, which halves the cost
-	// of its front end. 0 means BasebandRate.
+	// BasebandRate, or BasebandRate/2 with TierDisc, which selects the
+	// streaming receiver of TierDisc at half the cost of its front end, as
+	// LookbackSlots 0 with Streaming does. 0 means BasebandRate.
 	BasebandHz int
 	// MaxWrite is the largest number of bytes in one Write. 0 means 1 << 16.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
-	// locks to that the receiver keeps and decodes. For TierDisc, 0 means
-	// none: the receiver then streams, keeps one slot of symbols and fits
-	// in about 1 KB of RAM, and above 0 it keeps that many slots of
-	// samples. For the coherent tiers, 0 means 16.
+	// locks to that the receiver keeps and decodes. 0 means 16, or none
+	// with Streaming.
 	LookbackSlots int
+	// Streaming selects, with TierDisc and LookbackSlots 0, the receiver
+	// that keeps one slot of symbols and fits in about 1 KB of RAM. It
+	// decodes no slot before the first SYNC that it locks to, so it loses
+	// the start of a stream that it enters late.
+	Streaming bool
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
 	// in place of the slice that Write, WriteBaseband and Flush return,
 	// which are then empty. The receiver then keeps no buffer of bursts.
@@ -321,7 +325,7 @@ func New(cfg Config) (*Receiver, error) {
 	if !opt.tabled() {
 		return nil, &ConfigError{Field: "opt"}
 	}
-	if !opt.Coherent && cfg.LookbackSlots == 0 {
+	if !opt.Coherent && cfg.LookbackSlots == 0 && (cfg.Streaming || cfg.BasebandHz == discRate) {
 		return &Receiver{lean: newLean(cfg, opt)}, nil
 	}
 	if cfg.LookbackSlots == 0 {
