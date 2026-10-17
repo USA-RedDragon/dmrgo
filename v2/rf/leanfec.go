@@ -195,7 +195,7 @@ func (id softSmallID) searchNibble(tab []int16, off, fixed, want uint32, top *le
 
 // gather loads the LLRs of small code id into f.l from the burst or, when
 // cach, from the CACH of the slot of r, and returns the hard decisions.
-func (r *leanRx) gather(f *leanFEC, id softSmallID, cach bool) uint32 {
+func (r *leanCore) gather(f *leanFEC, id softSmallID, cach bool) uint32 {
 	c := &softSmallCodes[id]
 	var hard uint32
 	for j := range c.n {
@@ -216,7 +216,7 @@ func (r *leanRx) gather(f *leanFEC, id softSmallID, cach bool) uint32 {
 // decodeSmall returns the lowest-cost codeword of small code id among those
 // whose info bits under fixed equal want, its info word and the number of
 // bits where it differs from the hard decisions.
-func (r *leanRx) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, want uint32) (info, cw uint32, errs int) {
+func (r *leanCore) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, want uint32) (info, cw uint32, errs int) {
 	hard := r.gather(f, id, cach)
 	nibbleTables(f.s[:leanNibbles*16], f.l[:softSmallCodes[id].n])
 	f.top.reset(1)
@@ -226,7 +226,7 @@ func (r *leanRx) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, want 
 
 // fixAMBE decodes the three AMBE+2 frames of burst b, as
 // softDecoder.decodeAMBE, into its Fixed bits.
-func (r *leanRx) fixAMBE(f *leanFEC, b *Burst) {
+func (r *leanCore) fixAMBE(f *leanFEC, b *Burst) {
 	out := &b.Fixed
 	slots := b.Data.VoiceSlots()
 	for i := range layer2.VoiceSlotsPerBurst {
@@ -328,7 +328,7 @@ func (f *leanFEC) addCand(cost int32, data [12]byte, reserved uint8, max int) {
 // fixBPTC decodes the BPTC(196,96) block of the burst of data type dt with
 // the Chase-II decode of softDecoder.decodeBPTCChase into out, and reports
 // whether a block with a check failed it.
-func (r *leanRx) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) bool {
+func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) bool {
 	c := &softOSDCodes[softBPTCCode]
 	clear(f.l[:4*softOSDWords])
 	chase, cmag := f.chase(), f.cmag()
@@ -402,7 +402,7 @@ func (r *leanRx) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) bo
 
 // fixRate34 decodes the rate 3/4 trellis of the burst, as
 // softDecoder.decodeRate34, into out.
-func (r *leanRx) fixRate34(f *leanFEC, out *layer2.RawBurst) {
+func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 	tr := &softTrellisTables
 	metric := [softTrellisStates]int32{0, softInf, softInf, softInf, softInf, softInf, softInf, softInf}
 	var next [softTrellisStates]int32
@@ -445,7 +445,7 @@ func (r *leanRx) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 
 // fixTACT decodes the Hamming(7,4) TACT of the CACH of burst b into its
 // FixedCACH bits.
-func (r *leanRx) fixTACT(f *leanFEC, b *Burst) {
+func (r *leanCore) fixTACT(f *leanFEC, b *Burst) {
 	_, cw, _ := r.decodeSmall(f, softTACTCode, true, 0, 0)
 	c := &softSmallCodes[softTACTCode]
 	for j := range c.n {
@@ -463,7 +463,7 @@ func (r *leanRx) fixTACT(f *leanFEC, b *Burst) {
 // soft-decision decoding picks, with the scratch f, as repairer.repair does
 // for TierDisc, with the color code cc of the stream when ccOK. The payload
 // of an idle burst carries nothing, so only its slot type is decoded.
-func (r *leanRx) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
+func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 	b.Fixed, b.FixedCACH, b.HasFixed = b.Data, b.CACH, true
 	out := &b.Fixed
 	_, kind, known := layer2.SyncSourceOf(b.Sync)

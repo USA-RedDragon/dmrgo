@@ -96,31 +96,33 @@ type leanChan struct {
 // leanNoSlot marks an unset slot of leanChan.
 const leanNoSlot = math.MinInt32
 
-// leanRx is the receiver of TierDisc without lookback. It keeps the filter
-// state, the symbols of one slot and the state of the stream, and decodes
-// each burst as its slot ends, without waiting for later slots.
-type leanRx struct {
+// leanTuner is the front end of a leanCore: it moves the carrier that it
+// removes to hz, d Hz from the last, and adds -d to the discriminator
+// samples that it holds.
+type leanTuner interface {
+	retuneFront(hz, d float32)
+}
+
+// leanCore is the streaming receiver after the discriminator: it takes the
+// matched filter samples at discSPS samples per symbol, keeps the symbols of
+// one slot and the state of the stream, and decodes each burst as its slot
+// ends, without waiting for later slots.
+type leanCore struct {
 	onBurst func(Burst)
 	out     []Burst
-	// fe and wide convert the bytes of Write at another rate than the
-	// baseband, and dc and dcN remove the DC offset of the bytes of Write
-	// at the baseband rate.
-	fe      *frontEnd
-	wide    []complex64
-	inChunk int
-	dc      complex64
-	dcN     int32
-	signed  bool
-	df      leanFront
-	tm      leanTiming
+	front   leanTuner
+	// center is the input sample at the center of matched filter sample 0,
+	// in baseband samples.
+	center int64
+	tm     leanTiming
 	// n counts the matched filter samples and ns the symbols. ring holds
 	// the last symbols in units of discStepHz, plus off.
 	n    int64
 	ns   int64
 	ring [leanRing]int8
 	off  float32
-	// ncoHz is the carrier offset that the oscillator removes.
-	ncoHz float32
+	// tuneHz is the carrier offset that the front end removes.
+	tuneHz float32
 	// lastN and lastAt place the last symbol: lastAt samples after matched
 	// filter sample lastN.
 	lastN  int64
@@ -182,26 +184,57 @@ type leanRx struct {
 	fec leanFEC
 }
 
+// leanRx is the receiver of TierDisc without lookback: the complex front
+// end leanFront before a leanCore.
+type leanRx struct {
+	leanCore
+	// fe and wide convert the bytes of Write at another rate than the
+	// baseband, and dc and dcN remove the DC offset of the bytes of Write
+	// at the baseband rate.
+	fe      *frontEnd
+	wide    []complex64
+	inChunk int
+	dc      complex64
+	dcN     int32
+	signed  bool
+	df      leanFront
+}
+
+// retuneFront moves the oscillator of f to hz and adds -d to the
+// discriminator samples that it holds.
+func (f *leanFront) retuneFront(hz, d float32) {
+	f.tune(float64(hz))
+	f.shift(-d)
+}
+
 // newLean returns the streaming receiver of cfg with the settings opt.
 func newLean(cfg Config, opt options) *leanRx {
-	r := &leanRx{onBurst: cfg.OnBurst, lastAnch: leanNoSlot, signed: cfg.Signed, softFEC: opt.SoftFEC,
-		sources: uint8(opt.Sources), outlier: float32(opt.DiscOutlier)}
+	r := &leanRx{signed: cfg.Signed}
+	r.leanCore.init(cfg.OnBurst, opt, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
 		r.wide = make([]complex64, leanChunk)
 		r.inChunk = max(2*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), 2)
 	}
 	r.df.init(cfg.BasebandHz == discRate)
-	r.tm.t, r.tm.gain = discSPS/2.0, leanAcqGain
-	r.resetChans()
-	if cfg.OnBurst == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
-	}
+	r.front, r.center = &r.df, r.df.center()
 	return r
 }
 
+// init sets up c with the settings opt, to emit bursts to onBurst, or, when
+// it is nil, to hold up to keep bursts for the methods to return.
+func (c *leanCore) init(onBurst func(Burst), opt options, keep int) {
+	c.onBurst, c.lastAnch, c.softFEC = onBurst, leanNoSlot, opt.SoftFEC
+	c.sources, c.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
+	c.tm.t, c.tm.gain = discSPS/2.0, leanAcqGain
+	c.resetChans()
+	if onBurst == nil {
+		c.out = make([]Burst, 0, keep)
+	}
+}
+
 // resetChans clears the superframe state of the stream.
-func (r *leanRx) resetChans() {
+func (r *leanCore) resetChans() {
 	for i := range r.ch {
 		r.ch[i] = leanChan{sf: leanNoSlot, hdr: leanNoSlot}
 	}
@@ -276,12 +309,23 @@ func (r *leanRx) sample(v complex64) {
 	if !ok {
 		return
 	}
-	r.n++
-	r.eAcc += p
-	r.eSyms++
+	r.power(p)
 	if !r.locked {
 		r.block(p)
 	}
+	r.push(s)
+}
+
+// power counts one matched filter sample, whose prefilter power is p.
+func (r *leanCore) power(p float32) {
+	r.n++
+	r.eAcc += p
+	r.eSyms++
+}
+
+// push runs matched filter sample s through the symbol timing and handles
+// each symbol.
+func (r *leanCore) push(s float32) {
 	x, at, ok := r.tm.push(s)
 	if !ok {
 		return
@@ -327,13 +371,13 @@ func (r *leanRx) block(p float32) {
 }
 
 // sym returns symbol k in Hz.
-func (r *leanRx) sym(k int64) float32 {
+func (r *leanCore) sym(k int64) float32 {
 	return float32(r.ring[uint32(k)%leanRing])*discStepHz + r.off
 }
 
 // syncAt returns the correlation of the SYNC field that ends at symbol end
 // with the voice SYNC of each source, as discAt.
-func (r *leanRx) syncAt(end int64) (rho2 float32, src int, data bool) {
+func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 	var mx, xx float32
 	var sxy [numSources]float32
 	for k := range syncSymbols {
@@ -358,7 +402,7 @@ func (r *leanRx) syncAt(end int64) (rho2 float32, src int, data bool) {
 }
 
 // searchSym tests whether the last symbols end a SYNC and locks to it.
-func (r *leanRx) searchSym() {
+func (r *leanCore) searchSym() {
 	if r.ns < leanRing {
 		return
 	}
@@ -387,7 +431,7 @@ func (r *leanRx) searchSym() {
 // noise variance to the SYNC field that ends at symbol end with pattern p,
 // and reports whether they make sense for the first anchor of a stream
 // when first.
-func (r *leanRx) fitLevels(end int64, p enums.SyncPattern, first bool) bool {
+func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first bool) bool {
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
 	k0 := end - syncSymbols + 1
@@ -426,7 +470,7 @@ func (r *leanRx) fitLevels(end int64, p enums.SyncPattern, first bool) bool {
 
 // slot handles the slot that just ended: it tests its SYNC field, updates
 // the levels at an anchor, and detects, places and decodes its burst.
-func (r *leanRx) slot() {
+func (r *leanCore) slot() {
 	j := r.next
 	r.next++
 	base := r.first + int64(j)*slotSymbols
@@ -485,12 +529,11 @@ func (r *leanRx) slot() {
 // retune moves the oscillator by d Hz and the discriminator values that
 // the receiver holds by -d, so that they read as if the oscillator had
 // been there.
-func (r *leanRx) retune(d float32) {
-	r.ncoHz += d
-	r.df.tune(float64(r.ncoHz))
+func (r *leanCore) retune(d float32) {
+	r.tuneHz += d
+	r.front.retuneFront(r.tuneHz, d)
 	r.off -= d
 	r.dcHz -= d
-	r.df.shift(-d)
 	r.tm.s1 -= d
 	r.tm.s2 -= d
 	r.tm.last -= d
@@ -499,7 +542,7 @@ func (r *leanRx) retune(d float32) {
 
 // syncErrors returns the number of bits where the sliced symbols of the
 // SYNC field that ends at symbol end differ from pattern p.
-func (r *leanRx) syncErrors(end int64, p enums.SyncPattern) int {
+func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
 	step := r.devScale * deviationHz
@@ -513,17 +556,17 @@ func (r *leanRx) syncErrors(end int64, p enums.SyncPattern) int {
 }
 
 // unlock ends the stream.
-func (r *leanRx) unlock() {
+func (r *leanCore) unlock() {
 	r.locked = false
 	r.tm.hold, r.tm.gain = false, leanAcqGain
-	r.offsetHz = r.ncoHz + r.dcHz
+	r.offsetHz = r.tuneHz + r.dcHz
 	r.devHz = 3 * deviationHz * r.devScale
 }
 
 // symLLR returns the log-likelihood ratios of the two bits of symbol k, as
 // discDetect and llr8 make them for the soft decoders: in units of 1/8,
 // rounded to an even number, saturated at 254.
-func (r *leanRx) symLLR(k int64) (int16, int16) {
+func (r *leanCore) symLLR(k int64) (int16, int16) {
 	x := r.sym(k) - r.dcHz
 	var a [4]float32
 	for d := range a {
@@ -545,7 +588,7 @@ func even8(x int16) int16 {
 
 // llrAt returns the log-likelihood ratio of burst bit p of the slot at
 // r.base.
-func (r *leanRx) llrAt(p int) int16 {
+func (r *leanCore) llrAt(p int) int16 {
 	l0, l1 := r.symLLR(r.base + cachSymbols + int64(p>>1))
 	if p&1 == 0 {
 		return l0
@@ -555,7 +598,7 @@ func (r *leanRx) llrAt(p int) int16 {
 
 // cachAt returns the log-likelihood ratio of CACH bit p of the slot at
 // r.base.
-func (r *leanRx) cachAt(p int) int16 {
+func (r *leanCore) cachAt(p int) int16 {
 	l0, l1 := r.symLLR(r.base + int64(p>>1))
 	if p&1 == 0 {
 		return l0
@@ -565,7 +608,7 @@ func (r *leanRx) cachAt(p int) int16 {
 
 // burst detects the burst of slot j, whose first symbol is base and whose
 // SYNC is anchor, an anchor pattern or 0, places it and emits it.
-func (r *leanRx) burst(j int32, base int64, anchor enums.SyncPattern) {
+func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	r.base, r.anchor = base, anchor
 	v := max(r.discVar, 1)
 	r.ll = -1 / (2 * v)
@@ -576,7 +619,7 @@ func (r *leanRx) burst(j int32, base int64, anchor enums.SyncPattern) {
 	}
 	b := &r.cb
 	*b = Burst{Distance: -1, BS: r.bs, HasCACH: r.bs, Stream: int(r.streams), Slot: int64(j)}
-	now := 2*(float64(r.lastN)+float64(r.lastAt)) + float64(r.df.center())
+	now := 2*(float64(r.lastN)+float64(r.lastAt)) + float64(r.center)
 	b.Seconds = (now - float64(r.ns-1-(base+cachSymbols))*float64(samplesPerSy)) / basebandRate
 	for k := range slotSymbols {
 		l0, l1 := r.symLLR(base + int64(k))
@@ -610,7 +653,7 @@ func (r *leanRx) burst(j int32, base int64, anchor enums.SyncPattern) {
 }
 
 // colorCode returns the color code most clean data bursts carried.
-func (r *leanRx) colorCode() (enums.ColorCode, bool) {
+func (r *leanCore) colorCode() (enums.ColorCode, bool) {
 	best := 0
 	for i, v := range r.votes {
 		if v > r.votes[best] {
@@ -624,7 +667,7 @@ func (r *leanRx) colorCode() (enums.ColorCode, bool) {
 // channel, as tracker.classify does but without later slots: a burst B to
 // F without a burst A before it is placed by its EMB alone. It reports
 // whether the burst is kept.
-func (r *leanRx) classify(b *Burst, j int32) bool {
+func (r *leanCore) classify(b *Burst, j int32) bool {
 	c := &r.ch[j&1]
 	voice, data, _ := sourceAt(int(r.src)).SyncPatterns()
 	dv, dd := syncDist(b.Data, voice), syncDist(b.Data, data)
@@ -675,7 +718,7 @@ func (r *leanRx) classify(b *Burst, j int32) bool {
 // SYNC, when its EMB decodes with at most one correction and the color code
 // of the stream: B for the first fragment of the embedded LC and E for the
 // last.
-func (r *leanRx) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
+func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
 	cc, ok := r.colorCode()
 	if !ok {
 		return 0, false
@@ -696,7 +739,7 @@ func (r *leanRx) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
 
 // noteData records the color code of data burst b when it is clean, and
 // the slot j of a voice LC or PI header.
-func (r *leanRx) noteData(b *Burst, j int32, c *leanChan) {
+func (r *leanCore) noteData(b *Burst, j int32, c *leanChan) {
 	st := b.Data.SlotType()
 	if st.FEC.Uncorrectable {
 		return
