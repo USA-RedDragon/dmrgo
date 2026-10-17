@@ -187,7 +187,7 @@ func GenerateTestFile(pdus []parse.PDUStruct, pkgName string) *File {
 	for _, pdu := range pdus {
 		emitString(f, pdu, true)
 		f.Line()
-		f.Func().Id("Test" + strings.ToUpper(pdu.Name[:1]) + pdu.Name[1:] + "StringMatchesFmt").
+		f.Func().Id("Test"+strings.ToUpper(pdu.Name[:1])+pdu.Name[1:]+"StringMatchesFmt").
 			Params(Id("t").Op("*").Qual("testing", "T")).Block(
 			Id("t").Dot("Parallel").Call(),
 			Qual(textPkg+"/texttest", "Check").Call(Id("t"),
