@@ -139,3 +139,35 @@ func TestNewDiscConfig(t *testing.T) {
 		}
 	}
 }
+
+func TestDiscReceiverInitAppend(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 3)
+	a := discAudio(noisyBaseband(slots, 1400, 12, 1), 9600)
+	r, err := NewDisc(DiscConfig{Hz: 9600, MaxWrite: 1024})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want []Burst
+	for k := 0; k < len(a); k += 1024 {
+		want = append(want, r.Write(a[k:min(k+1024, len(a))])...)
+	}
+	want = append(want, r.Flush()...)
+	var s DiscReceiver
+	if err := s.Init(DiscConfig{Hz: 9600}); err != nil {
+		t.Fatal(err)
+	}
+	var got []Burst
+	for k := 0; k < len(a); k += 1024 {
+		got = s.AppendBursts(got, a[k:min(k+1024, len(a))])
+	}
+	got = s.AppendFlush(got)
+	if len(want) == 0 || len(got) != len(want) {
+		t.Fatalf("AppendBursts returned %d bursts, Write %d", len(got), len(want))
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Fatalf("burst %d differs", i)
+		}
+	}
+}

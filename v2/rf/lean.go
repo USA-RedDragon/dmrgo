@@ -182,11 +182,13 @@ const leanNoSlot = math.MinInt32
 type leanCore struct {
 	onBurst func(Burst)
 	out     []Burst
-	// retuneFront moves the carrier that the front end removes to hz, d Hz
-	// from the last, and adds -d to the discriminator samples that it
-	// holds. It is a method value and not an interface, so that TinyGo
-	// does not link the type data of the front end.
-	retuneFront func(hz, d float32)
+	// audio or iq is the front end, whose retuneFront moves the carrier
+	// that it removes to hz, d Hz from the last, and adds -d to the
+	// discriminator samples that it holds. They are pointers and not an
+	// interface, so that TinyGo does not link type data, and not a method
+	// value, which allocates.
+	audio *audioFront
+	iq    *leanFront
 	// center is the input sample at the center of matched filter sample 0,
 	// in baseband samples, and mfStep the baseband samples per matched
 	// filter sample, a whole number at every input rate.
@@ -309,21 +311,24 @@ func (f *leanFront) retuneFront(hz, d float32) {
 // newLean returns the streaming receiver of cfg with the settings opt.
 func newLean(cfg Config, opt options) *leanRx {
 	r := &leanRx{signed: cfg.Signed}
-	r.leanCore.init(cfg.OnBurst, opt, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16, discSPS)
+	r.init(cfg.OnBurst, opt, discSPS)
+	if cfg.OnBurst == nil {
+		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
+	}
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
 		r.wide = make([]complex64, leanChunk)
 		r.inChunk = max(2*int(float64(leanChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), 2)
 	}
 	r.df.init(cfg.BasebandHz == discRate)
-	r.retuneFront, r.center = r.df.retuneFront, r.df.center()
+	r.iq, r.center = &r.df, r.df.center()
 	return r
 }
 
 // init sets up c for matched filter samples at sps samples per symbol with
-// the settings opt, to emit bursts to onBurst, or, when it is nil, to hold
-// up to keep bursts for the methods to return.
-func (c *leanCore) init(onBurst func(Burst), opt options, keep int, sps float32) {
+// the settings opt, to emit bursts to onBurst, or, when it is nil, to
+// append them to out while it has room.
+func (c *leanCore) init(onBurst func(Burst), opt options, sps float32) {
 	c.onBurst, c.lastAnch, c.softFEC = onBurst, leanNoSlot, opt.SoftFEC
 	c.sources, c.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	if po := opt.DiscOutlier; po > 0 {
@@ -336,9 +341,6 @@ func (c *leanCore) init(onBurst func(Burst), opt options, keep int, sps float32)
 	c.mmOK = sps <= leanMMSPS
 	c.tm.t, c.tm.gain = c.tm.step, c.acqGain
 	c.resetChans()
-	if onBurst == nil {
-		c.out = make([]Burst, 0, keep)
-	}
 }
 
 // resetChans clears the superframe state of the stream.
@@ -711,7 +713,11 @@ func (r *leanCore) slot() {
 // been there.
 func (r *leanCore) retune(d float32) {
 	r.tuneHz += d
-	r.retuneFront(r.tuneHz, d)
+	if r.audio != nil {
+		r.audio.retuneFront(r.tuneHz, d)
+	} else {
+		r.iq.retuneFront(r.tuneHz, d)
+	}
 	r.off -= d
 	r.dcHz -= d
 	r.tm.s1 -= d
@@ -797,8 +803,8 @@ func (r *leanCore) llrTerm(e int32) int32 {
 	return max(-int32(int64(e*e)*r.llrK>>llrShift), r.llrFloor)
 }
 
-// evenLLR returns the log-likelihood ratio v, in units of 1/8, as even8
-// stores it.
+// evenLLR returns the log-likelihood ratio v, in units of 1/8, rounded to
+// an even value and limited to ±254.
 func evenLLR(v int32) int16 {
 	h := (v + 1) >> 1
 	if v < 0 {
@@ -819,15 +825,6 @@ func (r *leanCore) setLLR() {
 	if r.lfloor >= -math.MaxFloat32 {
 		r.llrFloor = int32(roundf(r.lfloor * 8))
 	}
-}
-
-// even8 rounds an LLR in units of 1/8 as llr8 stores it.
-func even8(x int16) int16 {
-	h := (int32(x) + 1) >> 1
-	if x < 0 {
-		h = -((1 - int32(x)) >> 1)
-	}
-	return int16(max(min(h, 127), -127)) * 2
 }
 
 // llrAt returns the log-likelihood ratio of burst bit p of the slot at

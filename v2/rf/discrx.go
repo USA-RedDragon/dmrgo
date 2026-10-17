@@ -25,12 +25,12 @@ type DiscConfig struct {
 	// costs less: the receiver halves 24 kHz with a half-band filter before
 	// its matched filter, which runs at 12 kHz or 9.6 kHz.
 	Hz int
-	// MaxWrite is the largest number of samples in one Write. 0 means
-	// 1 << 12.
+	// MaxWrite is the largest number of samples in one Write, for the
+	// burst buffer that NewDisc allocates. 0 means 1 << 12.
 	MaxWrite int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
-	// in place of the slice that Write and Flush return, which are then
-	// empty. The receiver then keeps no buffer of bursts.
+	// in place of the slices that Write, AppendBursts and Flush return,
+	// which then return no bursts.
 	OnBurst func(Burst)
 	// opt, when not nil, replaces the settings of TierDisc.
 	opt *options
@@ -40,63 +40,145 @@ type DiscConfig struct {
 // as the radio chips of hotspots and MMDVM modems give it: real samples in
 // any units, with any gain and DC offset, which the receiver measures
 // itself. It detects as TierDisc does, without lookback, and keeps about
-// 1 KiB of state, for microcontrollers. A DiscReceiver does not allocate
-// after NewDisc and is not safe for concurrent use.
+// 1 KiB of state, for microcontrollers. A DiscReceiver that Init sets up in
+// memory of the caller, such as a package variable, uses no heap with
+// OnBurst or AppendBursts. A DiscReceiver is not safe for concurrent use.
 type DiscReceiver struct {
 	leanCore
 	f audioFront
 }
 
+// The errors of Init. Each is a static value, so that Init does not
+// allocate.
+var (
+	errDiscHz       = &ConfigError{Field: "Hz"}
+	errDiscMaxWrite = &ConfigError{Field: "MaxWrite"}
+)
+
 // NewDisc returns a DiscReceiver of cfg. It allocates the receiver, and
-// the burst buffer when cfg.OnBurst is nil.
+// the burst buffer of Write when cfg.OnBurst is nil.
 func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
+	r := &DiscReceiver{}
+	if err := r.Init(cfg); err != nil {
+		return nil, err
+	}
+	if cfg.OnBurst == nil {
+		if cfg.MaxWrite == 0 {
+			cfg.MaxWrite = 1 << 12
+		}
+		r.out = make([]Burst, 0, r.maxBursts(cfg.MaxWrite))
+	}
+	return r, nil
+}
+
+// Init sets up r for cfg, in place of any state it holds. It does not
+// allocate, so that r can live in memory of the caller.
+func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	if cfg.Hz == 0 {
 		cfg.Hz = discRate
 	}
 	if cfg.Hz != discRate && cfg.Hz != discRate/2 && cfg.Hz != 2*symbolRate {
-		return nil, &ConfigError{Field: "Hz"}
-	}
-	if cfg.MaxWrite == 0 {
-		cfg.MaxWrite = 1 << 12
+		return errDiscHz
 	}
 	if cfg.MaxWrite < 0 {
-		return nil, &ConfigError{Field: "MaxWrite"}
+		return errDiscMaxWrite
 	}
 	opt := tierOptions(TierDisc)
 	if cfg.opt != nil {
 		opt = *cfg.opt
 	}
-	r := &DiscReceiver{}
+	*r = DiscReceiver{}
 	r.f.half = cfg.Hz == discRate
 	r.f.slow = cfg.Hz == 2*symbolRate
 	sps := float32(discSPS) / 2
 	if r.f.slow {
 		sps = 2
 	}
-	r.init(cfg.OnBurst, opt, 4*cfg.MaxWrite*symbolRate/(slotSymbols*cfg.Hz)+16, sps)
+	r.init(cfg.OnBurst, opt, sps)
 	r.f.gain = 1
 	r.f.refresh()
-	r.retuneFront, r.center = r.f.retuneFront, -int64(discSpan*samplesPerSy)
+	r.audio, r.center = &r.f, -int64(discSpan*samplesPerSy)
 	if r.f.slow {
 		r.center = -int64(audio96Span * samplesPerSy)
 	}
 	if r.f.half {
 		r.center -= halfTaps - 1
 	}
-	return r, nil
+	return nil
+}
+
+// hz returns the input rate of r.
+func (r *DiscReceiver) hz() int {
+	switch {
+	case r.f.half:
+		return discRate
+	case r.f.slow:
+		return 2 * symbolRate
+	}
+	return discRate / 2
+}
+
+// growBursts returns dst with room for n more bursts, as slices.Grow.
+func growBursts(dst []Burst, n int) []Burst {
+	if cap(dst)-len(dst) < n {
+		dst = append(dst[:cap(dst)], make([]Burst, n)...)[:len(dst)]
+	}
+	return dst
+}
+
+// maxBursts returns the most bursts that n input samples complete.
+func (r *DiscReceiver) maxBursts(n int) int {
+	return 4*n*symbolRate/(slotSymbols*r.hz()) + 16
+}
+
+// AppendBursts processes the discriminator samples x, appends the bursts
+// that are complete to dst and returns the extended slice. It allocates
+// only when dst has no room for the bursts that x could complete.
+func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
+	dst = growBursts(dst, r.maxBursts(len(x)))
+	keep, n := r.out, len(dst)
+	// The core fills the room after dst.
+	r.out = dst[n:n]
+	r.write(x)
+	m := len(r.out)
+	r.out = keep[:0]
+	return dst[:n+m]
 }
 
 // Write processes the discriminator samples x and returns the bursts that
-// are complete. The returned slice is valid until the next call.
+// are complete, in the buffer that NewDisc allocates. The returned slice
+// is valid until the next call. On a DiscReceiver that Init set up without
+// OnBurst, Write allocates its buffer; use AppendBursts.
 func (r *DiscReceiver) Write(x []int16) []Burst {
 	r.out = r.out[:0]
 	r.write(x)
 	return r.out
 }
 
-// Flush finishes the stream at its end and returns the remaining bursts.
+// Flush finishes the stream at its end and returns the remaining bursts,
+// as Write does.
 func (r *DiscReceiver) Flush() []Burst {
 	r.out = r.out[:0]
+	r.flush()
+	return r.out
+}
+
+// AppendFlush finishes the stream at its end, appends the remaining bursts
+// to dst and returns the extended slice. It allocates only when dst has no
+// room for the bursts of one slot.
+func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
+	dst = growBursts(dst, r.maxBursts(slotSymbols*discSPS))
+	keep, n := r.out, len(dst)
+	// The core fills the room after dst.
+	r.out = dst[n:n]
+	r.flush()
+	m := len(r.out)
+	r.out = keep[:0]
+	return dst[:n+m]
+}
+
+// flush writes a slot of idle input and ends the stream.
+func (r *DiscReceiver) flush() {
 	var idle [64]int16
 	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
 	for i := range idle {
@@ -108,7 +190,6 @@ func (r *DiscReceiver) Flush() []Burst {
 	if r.locked {
 		r.unlock()
 	}
-	return r.out
 }
 
 // write runs the samples x through the front end, the symbol timing and
