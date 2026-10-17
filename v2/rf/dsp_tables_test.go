@@ -24,6 +24,8 @@ type dspTables struct {
 	dev       [numSources][syncSymbols]float32
 	devSq     [numSources]float32
 	signs     [numSources]uint32
+	syms8     [numSources][syncSymbols]int8
+	mean      [numSources]float32
 	patterns  [2*numSources + 1]enums.SyncPattern
 	templates [2][searchFreqs * numSources][syncSpan]complex64
 	pulse     [2][2*rrcSpan*samplesPerSy + 2]float64
@@ -65,7 +67,7 @@ func deriveDSP() *dspTables {
 	for i, v := range rrcTapsSpan(discSPS/2.0, discSpan)[:len(t.audioQ15)] {
 		t.audioQ15[i] = q15(float32(v))
 	}
-	for i, v := range rrcTapsSpan(2, discSpan)[:len(t.audio96)] {
+	for i, v := range rrcTapsSpan(2, audio96Span)[:len(t.audio96)] {
 		t.audio96[i] = q15(float32(v))
 	}
 
@@ -92,6 +94,7 @@ func deriveDSP() *dspTables {
 			mp += float32(a)
 		}
 		mp /= syncSymbols
+		t.syms8[i], t.mean[i] = voice, mp
 		for k, a := range voice {
 			t.dev[i][k] = float32(a) - mp
 			t.devSq[i] += t.dev[i][k] * t.dev[i][k]

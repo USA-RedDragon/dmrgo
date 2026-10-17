@@ -7,10 +7,11 @@ const (
 	discInputRMSHz = 2000
 	discMeanGain   = 0.1
 	// audio12Taps and audio96Taps are the lengths of the matched filters at
-	// 12 kHz (2.5 samples per symbol) and 9.6 kHz (2 samples per symbol),
-	// discSpan symbols on each side.
+	// 12 kHz (2.5 samples per symbol), discSpan symbols on each side, and
+	// 9.6 kHz (2 samples per symbol), audio96Span symbols on each side.
+	audio96Span = discSpan
 	audio12Taps = discSpan*discSPS + 1
-	audio96Taps = 4*discSpan + 1
+	audio96Taps = 4*audio96Span + 1
 )
 
 // DiscConfig sets up a DiscReceiver.
@@ -72,6 +73,9 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 	r.f.gain = 1
 	r.f.refresh()
 	r.front, r.center = &r.f, -int64(discSpan*samplesPerSy)
+	if r.f.slow {
+		r.center = -int64(audio96Span * samplesPerSy)
+	}
 	if r.f.half {
 		r.center -= halfTaps - 1
 	}

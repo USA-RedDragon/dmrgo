@@ -74,6 +74,8 @@ func derivedTables() ([]genTable, error) {
 		{"syncDev", d.dev},
 		{"syncDevSq", d.devSq},
 		{"syncSigns", d.signs},
+		{"syncSyms8", d.syms8},
+		{"syncMean", d.mean},
 		{"syncPatterns", d.patterns},
 		{"syncTemplates", d.templates},
 		{"pulseQ", d.pulse},

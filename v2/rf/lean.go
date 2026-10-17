@@ -450,10 +450,13 @@ func (r *leanCore) symbol(x, at float32) {
 	r.lastAt = at
 	q := sat8((x - r.off) / discStepHz)
 	r.ring[uint32(r.ns)%leanRing] = q
-	r.ringSum += int32(q) - int32(r.ring[uint32(r.ns-syncSymbols+leanRing)%leanRing])
-	r.signs <<= 1
-	if int32(q)*syncSymbols > r.ringSum {
-		r.signs |= 1
+	if !r.locked {
+		// Only the search reads the signs; unlock rebuilds them.
+		r.ringSum += int32(q) - int32(r.ring[uint32(r.ns-syncSymbols+leanRing)%leanRing])
+		r.signs <<= 1
+		if int32(q)*syncSymbols > r.ringSum {
+			r.signs |= 1
+		}
 	}
 	r.ns++
 	if !r.locked {
@@ -503,27 +506,36 @@ func (r *leanCore) sym(k int64) float32 {
 // syncAt returns the correlation of the SYNC field that ends at symbol end
 // with the voice SYNC of each source, as discAt.
 func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
-	var mx, xx float32
-	var sxy [numSources]float32
+	// The sums run over the ring values: the offset and the step of the
+	// ring cancel in the correlation, and the voice SYNC of a source less
+	// its mean is syncSyms8 less syncMean.
+	var mx, xx int32
+	var sr [numSources]int32
+	j := uint32(end-syncSymbols+1) % leanRing
 	for k := range syncSymbols {
-		v := r.sym(end - syncSymbols + 1 + int64(k))
-		mx += v
-		xx += v * v
+		q := int32(r.ring[j])
+		if j++; j == leanRing {
+			j = 0
+		}
+		mx += q
+		xx += q * q
 		for i := range r.sources {
-			sxy[i] += syncDev[i][k] * v
+			sr[i] += int32(syncSyms8[i][k]) * q
 		}
 	}
-	sxx := xx - mx*mx/syncSymbols
+	fm := float32(mx)
+	sxx := float32(xx) - fm*fm/syncSymbols
 	if sxx <= 0 {
 		return 0, 0, false
 	}
-	var best float32
+	var best, sxyBest float32
 	for i := range int(r.sources) {
-		if q := sxy[i] * sxy[i] / syncDevSq[i]; q > best {
-			best, src = q, i
+		sxy := float32(sr[i]) - syncMean[i]*fm
+		if q := sxy * sxy / syncDevSq[i]; q > best {
+			best, src, sxyBest = q, i, sxy
 		}
 	}
-	return best / sxx, src, sxy[src] < 0
+	return best / sxx, src, sxyBest < 0
 }
 
 // signsMatch reports whether the signs of the last syncSymbols symbols
@@ -718,6 +730,16 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 // unlock ends the stream.
 func (r *leanCore) unlock() {
 	r.locked = false
+	r.ringSum, r.signs = 0, 0
+	for k := int64(syncSymbols); k > 0; k-- {
+		r.ringSum += int32(r.ring[uint32(r.ns-k)%leanRing])
+	}
+	for k := int64(syncSymbols); k > 0; k-- {
+		r.signs <<= 1
+		if int32(r.ring[uint32(r.ns-k)%leanRing])*syncSymbols > r.ringSum {
+			r.signs |= 1
+		}
+	}
 	r.tm.hold, r.tm.gain = false, r.acqGain
 	if r.tm.mm {
 		// The next strobe is a symbol, so the Gardner loop takes the
