@@ -56,6 +56,8 @@ type cohStage struct {
 	freq   float64
 	freqOK bool
 	nFit   int
+	// fitVar is the variance of freq, in Hz squared.
+	fitVar float64
 	// The burst under detection: the scale of the trellis metric, its
 	// known runs, and the bit priors of its detection again.
 	scale    float32
@@ -343,15 +345,20 @@ func (s *cohStage) fineTime(k0, k1 int) float64 {
 	return bestD
 }
 
-// cohFreqGain is the weight of the carrier offset that each SYNC fits,
-// and cohFreqSpan the most, in Hz, that the fits move it from the mean
-// frequency of the I/Q samples. The first fit may move it by up to
+// cohFreqGain is the least weight of the carrier offset that each SYNC
+// fits, and cohFreqSpan the most, in Hz, that the fits move it from the
+// mean frequency of the I/Q samples. The first fit may move it by up to
 // cohFreqFirst: a lock can come while the oscillator still pulls in, so
-// that the mean is far off.
+// that the mean is far off. The fits weigh by their variance against that
+// of the offset, as a Kalman filter: cohFreqVar, in Hz squared, for the
+// mean frequency, and cohFitVar over the square of the SNR of the SYNC for
+// a fit, which the sweep measured from -0.5 to 4.5 dB Eb/N0.
 const (
 	cohFreqGain  = 0.1
 	cohFreqSpan  = 200
 	cohFreqFirst = 1000
+	cohFreqVar   = 80 * 80
+	cohFitVar    = 5000
 )
 
 // track sets the carrier offset of the runs from that of the SYNC fits of
@@ -363,7 +370,7 @@ func (s *cohStage) track() {
 	r := s.rx
 	hz := float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
 	if !s.freqOK || math.Abs(s.freq-hz) > cohFreqSpan {
-		s.freq, s.freqOK, s.nFit = hz, true, 0
+		s.freq, s.freqOK, s.nFit, s.fitVar = hz, true, 0, cohFreqVar
 	}
 	s.totalHz = s.freq
 }
@@ -466,13 +473,23 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		s.dt += cohDTGain * s.fineTime(segs[0][0], segs[0][1])
 		// The mean of the first fits, then a slow average: the offset that
 		// the fits start from is no fit.
-		lim := float64(cohFreqSpan)
-		if s.nFit == 0 {
-			lim = cohFreqFirst
+		// The noise of a fit falls with the square of the SNR of the SYNC
+		// at the offset that it fits. A far first fit counts when the SYNC
+		// fits that offset: at a low C/N the fit of one SYNC is noise.
+		fit := s.freqFit(segs[0][0], segs[0][1])
+		s.totalHz = s.freq + fit
+		amp, noise := s.levels(segs[0][0], segs[0][1])
+		s.totalHz = s.freq
+		ok := amp > 0 && noise > 0 && math.Abs(fit) < cohFreqFirst
+		if math.Abs(fit) >= cohFreqSpan {
+			ok = ok && s.nFit == 0 && amp*amp/(amp*amp+noise) >= cohPlaceRho
 		}
-		if fit := s.freqFit(segs[0][0], segs[0][1]); math.Abs(fit) < lim {
+		if ok {
+			snr := amp * amp / noise
+			g := s.fitVar / (s.fitVar + cohFitVar/(snr*snr))
+			s.fitVar *= 1 - g
 			s.nFit++
-			s.freq += max(cohFreqGain, 1/float64(s.nFit)) * fit
+			s.freq += max(cohFreqGain, g) * fit
 			s.totalHz = s.freq
 		}
 	}
