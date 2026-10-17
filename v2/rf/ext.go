@@ -276,13 +276,17 @@ const (
 // TierCoherent does, and decodes it from the new ratios.
 func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool) {
 	ch := x.llr
+	// The passes take their priors from the BPTC block alone, so the slot
+	// type keeps the decode of the first detection: the priors of a block
+	// that does not decode mislead the detection of the bits beside it.
+	fixed, data, st := b.Fixed, b.Data, ch
 	for range cohDataPasses {
 		if !x.bptcRetry(b) {
-			return
+			break
 		}
 		x.soft.bptcExtrinsic(&ch, &x.ext)
 		if !x.coh.refineData(&x.ext, cohDataPrior, &x.next) {
-			return
+			break
 		}
 		x.llr = x.next
 		bp := &softOSDCodes[softBPTCCode]
@@ -292,6 +296,19 @@ func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK boo
 			x.llr[i] = satLLR(v + x.ext[i])
 		}
 		x.repairAll(c, b, cc, ccOK)
+	}
+	// Nor do the priors of a block that does not decode carry into the
+	// runs of the next burst.
+	if x.bptcRetry(b) {
+		x.coh.mineOK = false
+	}
+	// The 20 bits of the slot type are the 10 on each side of the SYNC.
+	for i := range 20 {
+		q := 98 + i + i/10*48
+		m := byte(0x80) >> (q % 8)
+		b.Fixed[q/8] = b.Fixed[q/8]&^m | fixed[q/8]&m
+		b.Data[q/8] = b.Data[q/8]&^m | data[q/8]&m
+		x.llr[q] = st[q]
 	}
 }
 
