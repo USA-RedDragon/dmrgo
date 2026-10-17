@@ -342,7 +342,7 @@ func renderBlock(d data) []byte {
 	}
 	b.WriteString("\n</details>\n\n")
 	b.WriteString("<details><summary>Error rate graphs</summary>\n\n")
-	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the 4FSK floor and the DMR floor (dashed), the code-aware receiver (dotted) and each tier. Where the DMR floor is not exact, its upper bound (dotted) is the code-aware receiver: it is a real decoder of the DMR code, and maximum likelihood decoding does at least as well. The DMR floor of the rate 1/2 block, the CSBK and the embedded LC is not computed, so the code-aware receiver is their only DMR curve. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
+	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the 4FSK floor and the DMR floor (dashed) and each tier. The DMR floor is exact for the fields small enough to test every value (rate 1 bits, EMB, slot type, SYNC). For the voice frame and the BPTC, rate 3/4 and embedded LC codes, which have 2^49 to 2^96 values, the graphs draw the code-aware receiver as the DMR floor: the best decoding of the ETSI code that the library knows, with the genie. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
 	for _, g := range graphs() {
 		b.WriteString("![" + g.title + ": " + strings.ToLower(g.rate) + " against Eb/N0, references and tiers](docs/rx/" + g.key + ".svg)\n")
 	}
@@ -538,21 +538,15 @@ func renderGraphs(d data) map[string][]byte {
 	out := map[string][]byte{}
 	for _, g := range graphs() {
 		var series []svgSeries
-		if f, ok := d.floor.Payloads[g.key]; ok {
+		f, hasFloor := d.floor.Payloads[g.key]
+		if hasFloor {
 			series = append(series, svgSeries{name: "4FSK floor (any code)", x: f.Any.EbN0, y: errorRate(f.Any.recovery()), dash: "6 4", class: "r0"})
-			switch f.Status {
-			case statusExact:
-				series = append(series, svgSeries{name: "DMR floor (ETSI codes)", x: f.DMR.EbN0, y: errorRate(f.DMR.recovery()), dash: "10 3", class: "r1"})
-			case statusLower:
-				series = append(series, svgSeries{name: "DMR floor, lower bound", x: f.DMR.EbN0, y: errorRate(f.DMR.recovery()), dash: "10 3", class: "r1"})
-			}
 		}
-		if c, ok := d.aware.Payloads[g.key]; ok {
-			name, class := "DMR floor, upper bound", "r1"
-			if f, ok := d.floor.Payloads[g.key]; ok && f.Status == statusExact {
-				name, class = "Code-aware", "r2"
-			}
-			series = append(series, svgSeries{name: name, x: c.EbN0, y: errorRate(c.recovery()), dash: "2 3", class: class})
+		switch c, ok := d.aware.Payloads[g.key]; {
+		case hasFloor && f.Status == statusExact:
+			series = append(series, svgSeries{name: "DMR floor (ETSI codes)", x: f.DMR.EbN0, y: errorRate(f.DMR.recovery()), dash: "10 3", class: "r1"})
+		case ok:
+			series = append(series, svgSeries{name: "DMR floor (ETSI codes)", x: c.EbN0, y: errorRate(c.recovery()), dash: "10 3", class: "r1"})
 		}
 		for _, t := range d.bench.Tiers {
 			x, y := tierCurve(t, g.key)
