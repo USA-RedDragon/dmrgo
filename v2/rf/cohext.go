@@ -327,9 +327,11 @@ const (
 	cohDTGain = 0.2
 )
 
-// fineTime moves t0 and dt to the offset of the symbol timing, within
-// cohDTSpan of dt, at which the known symbols k0 to k1 correlate best.
-func (s *cohStage) fineTime(k0, k1 int) {
+// fineTime moves t0 to the offset of the symbol timing, within cohDTSpan
+// of dt, at which the known symbols k0 to k1 correlate best, and returns
+// the move. The caller moves dt by it when the symbols are a SYNC: the
+// move of a field that holds none is noise.
+func (s *cohStage) fineTime(k0, k1 int) float64 {
 	t0, best, bestD := s.t0, -1.0, 0.0
 	for d := -cohDTSpan; d <= cohDTSpan+1e-9; d += cohDTStep {
 		s.t0 = t0 + d
@@ -338,7 +340,7 @@ func (s *cohStage) fineTime(k0, k1 int) {
 		}
 	}
 	s.t0 = t0 + bestD
-	s.dt += cohDTGain * bestD
+	return bestD
 }
 
 // cohFreqGain is the weight of the carrier offset that each SYNC fits.
@@ -442,7 +444,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		s.dist[i] = math.MaxInt
 	}
 	if nseg == 1 {
-		s.fineTime(segs[0][0], segs[0][1])
+		s.dt += cohDTGain * s.fineTime(segs[0][0], segs[0][1])
 		// The mean of the first fits, then a slow average.
 		s.nFit++
 		s.freq += max(cohFreqGain, 1/float64(s.nFit+1)) * s.freqFit(segs[0][0], segs[0][1])
@@ -482,7 +484,7 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	}
 	s.totalHz = s.freq
 	voice, data, _ := sourceAt(int(c.src)).SyncPatterns()
-	best, bestP := 0.0, enums.SyncPattern(0)
+	best, bestP, bestD := 0.0, enums.SyncPattern(0), 0.0
 	for _, p := range [...]enums.SyncPattern{voice, data} {
 		var syms [syncSymbols]int8
 		syncSyms(p, &syms)
@@ -490,15 +492,16 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 			s.known[syncFirstSym+i] = v
 		}
 		s.t0 = t0
-		s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
+		d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 		amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
 		if rho := amp * amp / (amp*amp + max(noise, 0)); amp > 0 && rho > best {
-			best, bestP = rho, p
+			best, bestP, bestD = rho, p, d
 		}
 	}
 	if best < cohPlaceRho {
 		return false
 	}
+	s.dt += cohDTGain * bestD
 	ch := &c.ch[j&1]
 	b.Sync, b.Distance = bestP, syncDist(b.Data, bestP)
 	if bestP == voice {
@@ -538,9 +541,13 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	for i, v := range syms {
 		s.known[syncFirstSym+i] = v
 	}
-	s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
+	d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
-	return amp > 0 && amp*amp/(amp*amp+max(noise, 0)) >= cohVerifyRho
+	if amp <= 0 || amp*amp/(amp*amp+max(noise, 0)) < cohVerifyRho {
+		return false
+	}
+	s.dt += cohDTGain * d
+	return true
 }
 
 // runAll runs the trellis forward from the start of the first known run
