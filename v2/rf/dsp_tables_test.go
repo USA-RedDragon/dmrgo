@@ -22,6 +22,7 @@ type dspTables struct {
 	window    [fftSize/2 + 1]float32
 	dev       [numSources][syncSymbols]float32
 	devSq     [numSources]float32
+	signs     [numSources]uint32
 	patterns  [2*numSources + 1]enums.SyncPattern
 	templates [2][searchFreqs * numSources][syncSpan]complex64
 	pulse     [2][2*rrcSpan*samplesPerSy + 2]float64
@@ -89,6 +90,9 @@ func deriveDSP() *dspTables {
 		for k, a := range voice {
 			t.dev[i][k] = float32(a) - mp
 			t.devSq[i] += t.dev[i][k] * t.dev[i][k]
+			if t.dev[i][k] > 0 {
+				t.signs[i] |= 1 << (syncSymbols - 1 - k)
+			}
 		}
 		for row, dec := range []int{1, 2} {
 			t.syncTemplates(row, dec, i, &voice)

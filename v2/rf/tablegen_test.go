@@ -72,6 +72,7 @@ func derivedTables() ([]genTable, error) {
 		{"specWindow", d.window},
 		{"syncDev", d.dev},
 		{"syncDevSq", d.devSq},
+		{"syncSigns", d.signs},
 		{"syncPatterns", d.patterns},
 		{"syncTemplates", d.templates},
 		{"pulseQ", d.pulse},

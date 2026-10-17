@@ -70,6 +70,7 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 	r := &DiscReceiver{}
 	r.init(cfg.OnBurst, opt, 4*cfg.MaxWrite/(slotSymbols*discSPS)+16, float32(discSPS)/audioDecimate)
 	r.f.gain = 1
+	r.f.refresh()
 	r.front, r.center = &r.f, -int64(discSpan*samplesPerSy)
 	if audioDecimate == 2 {
 		r.center -= halfTaps - 1
@@ -85,7 +86,7 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 func (r *DiscReceiver) Write(x []int16) []Burst {
 	r.out = r.out[:0]
 	for _, v := range x {
-		r.sample(float32(v))
+		r.sample(v)
 	}
 	return r.out
 }
@@ -93,8 +94,9 @@ func (r *DiscReceiver) Write(x []int16) []Burst {
 // Flush finishes the stream at its end and returns the remaining bursts.
 func (r *DiscReceiver) Flush() []Burst {
 	r.out = r.out[:0]
+	idle := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
 	for range slotSymbols * discSPS {
-		r.sample(r.f.dc / r.f.gain)
+		r.sample(idle)
 	}
 	if r.locked {
 		r.unlock()
@@ -115,16 +117,18 @@ func (r *DiscReceiver) DeviationHz() float64 {
 	return float64(r.devHz / r.f.gain)
 }
 
-// sample runs one input sample through the front end and the core.
-func (r *DiscReceiver) sample(v float32) {
+// sample runs one input sample through the front end and the core. While
+// the receiver searches, it sums the samples for levels.
+func (r *DiscReceiver) sample(v int16) {
 	f := &r.f
-	x := v * f.gain
-	f.sum += x
-	f.sq += x * x
+	if !r.locked {
+		f.sum += int32(v)
+		f.sq += int64(v) * int64(v)
+	}
 	if f.n++; f.n == frontBlock {
 		r.levels()
 	}
-	if s, ok := f.filter(x); ok {
+	if s, ok := f.filter(v); ok {
 		r.power(1)
 		r.push(s)
 	}
@@ -137,12 +141,14 @@ func (r *DiscReceiver) sample(v float32) {
 // keeps both, and the SYNC fits of the core follow it.
 func (r *DiscReceiver) levels() {
 	f := &r.f
-	m := f.sum / frontBlock
-	v := f.sq/frontBlock - m*m
+	m := float32(f.sum) / frontBlock
+	v := float32(f.sq)/frontBlock - m*m
 	f.sum, f.sq, f.n = 0, 0, 0
 	if r.locked {
 		return
 	}
+	m *= f.gain
+	v *= f.gain * f.gain
 	f.mean += discMeanGain * (m - f.mean)
 	if rms := sqrtf(max(v, 0)); rms > 0 {
 		if g := discInputRMSHz / rms; g > 2 || g < 0.5 {
@@ -162,6 +168,7 @@ func (r *DiscReceiver) levels() {
 				f.box[i] = sat16(float32(h) * g)
 				f.boxSum += int32(f.box[i])
 			}
+			f.refresh()
 		}
 	}
 	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
@@ -174,12 +181,15 @@ func (r *DiscReceiver) levels() {
 // leanFront.
 type audioFront struct {
 	// gain is Hz per input unit and dc the offset in Hz that the front end
-	// removes. sum, sq and n accumulate the block of levels, and mean is
-	// the mean input.
+	// removes, and k and off them in units of rrcStepHz, in Q16. sum, sq
+	// and n accumulate the input samples of the block of levels, and mean
+	// is the mean input in Hz.
 	gain float32
 	dc   float32
-	sum  float32
-	sq   float32
+	k    int64
+	off  int64
+	sum  int32
+	sq   int64
 	n    int
 	mean float32
 	// rrcHist holds the matched filter history twice, so that the last
@@ -201,6 +211,7 @@ type audioFront struct {
 // samples that its filter holds.
 func (f *audioFront) retuneFront(hz, d float32) {
 	f.dc = hz
+	f.refresh()
 	for i, v := range f.rrcHist {
 		f.rrcHist[i] = sat8(float32(v) - d/rrcStepHz)
 	}
@@ -227,11 +238,17 @@ func sign32(v float32) float32 {
 	return 1
 }
 
-// filter takes one input sample x in Hz and returns the matched filter
-// sample, in Hz, of x less the DC offset, when the sample completes one.
-func (f *audioFront) filter(x float32) (float32, bool) {
+// refresh sets k and off from gain and dc.
+func (f *audioFront) refresh() {
+	f.k = int64(f.gain/rrcStepHz*65536 + 0.5)
+	f.off = int64(f.dc/rrcStepHz*65536) - 32768
+}
+
+// filter takes one input sample u and returns the matched filter sample,
+// in Hz, of u in Hz less the DC offset, when the sample completes one.
+func (f *audioFront) filter(u int16) (float32, bool) {
 	if audioBox > 0 {
-		v := sat16((x - f.dc) / audioBoxStepHz)
+		v := sat16((float32(u)*f.gain - f.dc) / audioBoxStepHz)
 		h := f.rrcHead
 		f.boxSum += int32(v) - int32(f.box[h])
 		f.box[h] = v
@@ -241,7 +258,7 @@ func (f *audioFront) filter(x float32) (float32, bool) {
 		f.rrcHead = h
 		return float32(f.boxSum) * (audioBoxStepHz / float32(max(audioBox, 1))), true
 	}
-	v := sat8((x - f.dc) / rrcStepHz)
+	v := int8(max(min((int64(u)*f.k-f.off)>>16, 127), -128))
 	if audioDecimate == 2 {
 		h := f.hbHead
 		f.hbHist[h], f.hbHist[h+halfTaps] = v, v

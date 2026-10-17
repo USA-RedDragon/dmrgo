@@ -2,6 +2,7 @@ package rf
 
 import (
 	"math"
+	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -40,6 +41,11 @@ const (
 	// oscillator.
 	leanPresent  = 2
 	leanSearchHz = 200
+	// leanSignMiss is the most symbols of a SYNC field whose sign, against
+	// the mean of the field, may differ from the voice or the data SYNC of
+	// a source for the search to correlate the field. The SYNC symbols are
+	// all outer symbols, so a field that passes discLock differs in few.
+	leanSignMiss = 6
 )
 
 // leanTiming recovers the symbol timing from the matched filter output at
@@ -127,6 +133,11 @@ type leanCore struct {
 	ns   int64
 	ring [leanRing]int8
 	off  float32
+	// ringSum is the sum of the last syncSymbols ring values, and signs
+	// holds the sign of each against ringSum as it entered, the last in
+	// bit 0.
+	ringSum int32
+	signs   uint32
 	// tuneHz is the carrier offset that the front end removes.
 	tuneHz float32
 	// lastN and lastAt place the last symbol: lastAt samples after matched
@@ -347,7 +358,13 @@ func (r *leanCore) push(s float32) {
 //go:noinline
 func (r *leanCore) symbol(x, at float32) {
 	r.lastN, r.lastAt = r.n-1, at
-	r.ring[uint32(r.ns)%leanRing] = sat8((x - r.off) / discStepHz)
+	q := sat8((x - r.off) / discStepHz)
+	r.ring[uint32(r.ns)%leanRing] = q
+	r.ringSum += int32(q) - int32(r.ring[uint32(r.ns-syncSymbols+leanRing)%leanRing])
+	r.signs <<= 1
+	if int32(q)*syncSymbols > r.ringSum {
+		r.signs |= 1
+	}
 	r.ns++
 	if !r.locked {
 		r.searchSym()
@@ -417,9 +434,22 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 	return best / sxx, src, sxy[src] < 0
 }
 
+// signsMatch reports whether the signs of the last syncSymbols symbols
+// differ from the voice or the data SYNC of a source in at most
+// leanSignMiss symbols.
+func (r *leanCore) signsMatch() bool {
+	for i := range r.sources {
+		m := bits.OnesCount32((r.signs ^ syncSigns[i]) & (1<<syncSymbols - 1))
+		if m <= leanSignMiss || m >= syncSymbols-leanSignMiss {
+			return true
+		}
+	}
+	return false
+}
+
 // searchSym tests whether the last symbols end a SYNC and locks to it.
 func (r *leanCore) searchSym() {
-	if r.ns < leanRing {
+	if r.ns < leanRing || !r.signsMatch() {
 		return
 	}
 	rho2, src, data := r.syncAt(r.ns - 1)
