@@ -103,15 +103,6 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
-	if err := writeFile(dmrRoot, "internal/fec/quadraticresidue", "quadraticresidue",
-		writeTable("qr16_7_6_encoding_table", tables.QR16_7_6Encoding),
-		jen.Line(),
-		jen.Line(),
-		writeTable("qr16_7_6_syndrome_table", tables.QR16_7_6Syndrome[:]),
-	); err != nil {
-		return err
-	}
-
 	if err := writeFile(dmrRoot, "internal/fec/trellis", "trellis",
 		writeTable("encoder_state_transition_table", tables.EncoderStateTransition),
 		jen.Line(),

@@ -27,8 +27,6 @@ type Tables struct {
 	Golay23_12_7Syndrome   [4096]uint32 // Golay(23,12,7) error pattern per syndrome, 0xFFFFFFFF if uncorrectable
 	Golay24_12_8Encoding   []uint32     // Golay(24,12,8) codeword per 12-bit data value
 	Golay24_12_8Syndrome   [4096]uint32 // Golay(24,12,8) error pattern per syndrome, 0xFFFFFFFF if uncorrectable
-	QR16_7_6Encoding       []uint16     // QR(16,7,6) codeword per 7-bit data value
-	QR16_7_6Syndrome       [512]uint16  // QR(16,7,6) error pattern per syndrome, 0xFFFF if uncorrectable
 	EncoderStateTransition []byte       // trellis 3/4 encoder symbol at index state*8+tribit
 	InterleaveMatrix       []byte       // trellis 3/4 dibit interleave order
 
@@ -129,16 +127,6 @@ func All() *Tables {
 	wg.Add(1)
 	go func() {
 		t.Golay24_12_8Encoding = Golay24_12_8Encoding()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.QR16_7_6Encoding = QR16_7_6Encoding()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		t.QR16_7_6Syndrome = QR16_7_6Syndrome()
 		wg.Done()
 	}()
 	wg.Add(1)
