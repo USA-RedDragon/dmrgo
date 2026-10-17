@@ -133,6 +133,9 @@ type leanCore struct {
 	ns   int64
 	ring [leanRing]int8
 	off  float32
+	// slotEnd is the symbol after the slot that ends next, first plus next
+	// plus 1 slots.
+	slotEnd int64
 	// ringSum is the sum of the last syncSymbols ring values, and signs
 	// holds the sign of each against ringSum as it entered, the last in
 	// bit 0.
@@ -370,7 +373,7 @@ func (r *leanCore) symbol(x, at float32) {
 		r.searchSym()
 		return
 	}
-	if r.ns == r.first+int64(r.next+1)*slotSymbols {
+	if r.ns == r.slotEnd {
 		r.slot()
 	}
 }
@@ -448,6 +451,8 @@ func (r *leanCore) signsMatch() bool {
 }
 
 // searchSym tests whether the last symbols end a SYNC and locks to it.
+//
+//go:noinline
 func (r *leanCore) searchSym() {
 	if r.ns < leanRing || !r.signsMatch() {
 		return
@@ -468,6 +473,7 @@ func (r *leanCore) searchSym() {
 	r.streams++
 	r.first = r.ns - 1 - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
+	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain = false, r.trackGain
 	r.resetChans()
 	r.eAcc, r.eSyms = 0, 0
@@ -516,9 +522,12 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first bool) bool {
 
 // slot handles the slot that just ended: it tests its SYNC field, updates
 // the levels at an anchor, and detects, places and decodes its burst.
+//
+//go:noinline
 func (r *leanCore) slot() {
 	j := r.next
 	r.next++
+	r.slotEnd += slotSymbols
 	base := r.first + int64(j)*slotSymbols
 	energy := r.eAcc / float32(max(r.eSyms, 1))
 	r.eAcc, r.eSyms = 0, 0
@@ -545,6 +554,7 @@ func (r *leanCore) slot() {
 			r.retune(r.dcHz)
 		}
 		r.first += shift
+		r.slotEnd += shift
 		base += shift
 		if r.amp == 0 {
 			r.amp, r.noise = energy, energy/4
@@ -614,13 +624,24 @@ func (r *leanCore) unlock() {
 // rounded to an even number, saturated at 254.
 func (r *leanCore) symLLR(k int64) (int16, int16) {
 	x := r.sym(k) - r.dcHz
-	var a [4]float32
-	for d := range a {
-		e := x - r.dev*float32(2*d-3)
-		a[d] = max32(e*e*r.ll, r.lfloor)
+	// The log-likelihood of level 2d-3 is max(e*e*ll, lfloor), with e the
+	// distance of x to it, and each ratio is the best of two levels less
+	// the best of the other two. By the symmetry of the levels, the best
+	// of each pair is the nearer level, and three distances cover them.
+	ax := abs32(x)
+	en, ef, eo := ax-r.dev, ax-3*r.dev, ax+r.dev
+	near := max32(en*en*r.ll, r.lfloor)
+	far := max32(ef*ef*r.ll, r.lfloor)
+	opp := max32(eo*eo*r.ll, r.lfloor)
+	same := near
+	if ax > 2*r.dev {
+		same = far
 	}
-	l0, l1 := dibitLLR(a[:], 1)
-	return even8(l0), even8(l1)
+	b0 := same - opp
+	if x < 0 {
+		b0 = -b0
+	}
+	return even8(satLLR(b0)), even8(satLLR(near - far))
 }
 
 // even8 rounds an LLR in units of 1/8 as llr8 stores it.
