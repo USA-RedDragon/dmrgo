@@ -50,7 +50,7 @@ func (s *TACT) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TACT) String() string {
-	return "TACT{ AccessType: " + text.Bool(s.AccessType) + ", TDMAChannel: " + text.Bool(s.TDMAChannel) + ", LCSS: " + s.LCSS.String() + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
+	return "TACT{ AccessType: " + text.Bool(s.AccessType) + ", TDMAChannel: " + text.Bool(s.TDMAChannel) + ", LCSS: " + s.LCSS.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

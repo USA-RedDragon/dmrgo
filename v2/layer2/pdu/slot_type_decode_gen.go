@@ -53,7 +53,7 @@ func (s *SlotType) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *SlotType) String() string {
-	return "SlotType{ ColorCode: " + text.Int(s.ColorCode) + ", DataType: " + s.DataType.String() + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
+	return "SlotType{ ColorCode: " + text.Int(int64(s.ColorCode)) + ", DataType: " + s.DataType.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

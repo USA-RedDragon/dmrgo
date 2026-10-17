@@ -64,7 +64,7 @@ type reservedDataTypeError struct {
 
 // Error returns the message of e. It allocates the message.
 func (e reservedDataTypeError) Error() string {
-	return ErrReservedDataType.Error() + " " + text.Int(e.dt)
+	return ErrReservedDataType.Error() + " " + text.Int(int64(e.dt))
 }
 
 func (e reservedDataTypeError) Unwrap() error {
@@ -89,8 +89,8 @@ func colorCodeMismatch(got, want enums.ColorCode) error {
 
 // Error returns the message of e. It allocates the message.
 func (e colorCodeMismatchError) Error() string {
-	return ErrColorCodeMismatch.Error() + ": burst has " + text.Int(e.gotWant>>4) +
-		", want " + text.Int(e.gotWant&0x0F)
+	return ErrColorCodeMismatch.Error() + ": burst has " + text.Int(int64(e.gotWant>>4)) +
+		", want " + text.Int(int64(e.gotWant&0x0F))
 }
 
 func (e colorCodeMismatchError) Unwrap() error {

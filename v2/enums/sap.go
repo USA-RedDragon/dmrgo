@@ -37,5 +37,5 @@ func (s ServiceAccessPointID) String() string {
 	case SAPShortData:
 		return "Short Data"
 	}
-	return "Reserved SAP(" + text.Int(s) + ")"
+	return "Reserved SAP(" + text.Int(int64(s)) + ")"
 }

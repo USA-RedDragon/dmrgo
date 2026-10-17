@@ -88,6 +88,12 @@ linters:
           - gochecknoglobals
           - goconst
           - gosec
+      # text.Int converts the magnitude of a negative int64, which uint64
+      # always holds.
+      - path: v2/internal/text/text\.go$
+        linters:
+          - gosec
+        text: ^G115
       # texttest fills test values from math/rand, for tests only.
       - path: v2/internal/text/texttest/
         linters:

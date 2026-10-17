@@ -971,9 +971,9 @@ func (t *stringText) field(field parse.Field, pdu parse.PDUStruct, sep string) b
 		case field.Name == fecFieldName:
 			fec := func(name string) *Statement { return src().Dot(name) }
 			t.str(sep + field.Name + ": {BitsChecked: ")
-			t.value("%d", fec("BitsChecked"), text("Int", fec("BitsChecked")))
+			t.value("%d", fec("BitsChecked"), text("Int", Int64().Call(fec("BitsChecked"))))
 			t.str(", ErrorsCorrected: ")
-			t.value("%d", fec("ErrorsCorrected"), text("Int", fec("ErrorsCorrected")))
+			t.value("%d", fec("ErrorsCorrected"), text("Int", Int64().Call(fec("ErrorsCorrected"))))
 			t.str(", Uncorrectable: ")
 			t.value("%t", fec("Uncorrectable"), text("Bool", fec("Uncorrectable")))
 			t.str("}")
@@ -993,7 +993,12 @@ func (t *stringText) field(field parse.Field, pdu parse.PDUStruct, sep string) b
 	case parse.FieldBool:
 		t.value("%t", src(), text("Bool", src()))
 	case parse.FieldUint, parse.FieldInt:
-		t.value("%d", src(), text("Int", src()))
+		// Only these types can hold values beyond int64.
+		if field.GoType == "uint64" || field.GoType == "uint" {
+			t.value("%d", src(), text("Uint", Uint64().Call(src())))
+		} else {
+			t.value("%d", src(), text("Int", Int64().Call(src())))
+		}
 	case parse.FieldRaw:
 		t.value("%x", src(), text("Hex", src().Index(Empty(), Empty())))
 	case parse.FieldPacked:

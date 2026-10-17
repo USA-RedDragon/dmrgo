@@ -66,7 +66,7 @@ func (s *CdefParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CdefParms) String() string {
-	return "CdefParms{ Channel: " + text.Int(s.Channel) + ", TXMHz: " + text.Int(s.TXMHz) + ", TXKHz: " + text.Int(s.TXKHz) + ", RXMHz: " + text.Int(s.RXMHz) + ", RXKHz: " + text.Int(s.RXKHz) + " }"
+	return "CdefParms{ Channel: " + text.Int(int64(s.Channel)) + ", TXMHz: " + text.Int(int64(s.TXMHz)) + ", TXKHz: " + text.Int(int64(s.TXKHz)) + ", RXMHz: " + text.Int(int64(s.RXMHz)) + ", RXKHz: " + text.Int(int64(s.RXKHz)) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

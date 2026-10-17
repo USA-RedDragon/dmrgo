@@ -57,7 +57,7 @@ func (s *PIHeader) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *PIHeader) String() string {
-	return "PIHeader{ FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, AlgorithmID: " + text.Int(s.AlgorithmID) + ", MFID: " + text.Int(s.MFID) + ", KeyID: " + text.Int(s.KeyID) + ", MessageIndicator: " + text.Int(s.MessageIndicator) + ", Destination: " + text.Int(s.Destination) + ", Raw: " + text.Hex(s.Raw[:]) + " }"
+	return "PIHeader{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, AlgorithmID: " + text.Int(int64(s.AlgorithmID)) + ", MFID: " + text.Int(int64(s.MFID)) + ", KeyID: " + text.Int(int64(s.KeyID)) + ", MessageIndicator: " + text.Int(int64(s.MessageIndicator)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Raw: " + text.Hex(s.Raw[:]) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

@@ -35,5 +35,5 @@ type ColorCodeError struct {
 
 // Error returns the message of e. It allocates the message.
 func (e *ColorCodeError) Error() string {
-	return "color code " + text.Int(e.Value) + " does not fit in 4 bits"
+	return "color code " + text.Int(int64(e.Value)) + " does not fit in 4 bits"
 }

@@ -21,5 +21,5 @@ func (rc RCCommand) String() string {
 	case RCCeaseTransmissionRequest:
 		return "Cease Transmission Request"
 	}
-	return "Reserved RCCommand(" + text.Int(rc) + ")"
+	return "Reserved RCCommand(" + text.Int(int64(rc)) + ")"
 }

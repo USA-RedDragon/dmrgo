@@ -103,7 +103,7 @@ func (s *UnconfirmedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UnconfirmedDataHeader) String() string {
-	return "UnconfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(s.PadOctetCount) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(s.BlocksToFollow) + ", Reserved2: " + text.Int(s.Reserved2) + ", FragmentSequenceNumber: " + text.Int(s.FragmentSequenceNumber) + " }"
+	return "UnconfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(int64(s.PadOctetCount)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", FragmentSequenceNumber: " + text.Int(int64(s.FragmentSequenceNumber)) + " }"
 }
 
 // DecodeDataHeader decodes a DataHeader (ETSI TS 102 361-1 clause 9.2). data
@@ -365,7 +365,7 @@ func (s *DataHeader) Encode() ([12]byte, error) {
 // string.
 func (s *DataHeader) String() string {
 	_ret := "DataHeader{ "
-	_ret += "FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(s.Format) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", "
+	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(int64(s.Format)) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", "
 	switch {
 	case s.UnconfirmedDataHeader != nil:
 		_ret += s.UnconfirmedDataHeader.String()
@@ -477,7 +477,7 @@ func (s *ConfirmedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ConfirmedDataHeader) String() string {
-	return "ConfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(s.PadOctetCount) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(s.BlocksToFollow) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(s.SendSequenceNumber) + ", FragmentSequenceNumber: " + text.Int(s.FragmentSequenceNumber) + " }"
+	return "ConfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(int64(s.PadOctetCount)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + ", FragmentSequenceNumber: " + text.Int(int64(s.FragmentSequenceNumber)) + " }"
 }
 
 // decodeResponsePacketHeader decodes a ResponsePacketHeader (ETSI TS 102
@@ -563,7 +563,7 @@ func (s *ResponsePacketHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ResponsePacketHeader) String() string {
-	return "ResponsePacketHeader{ Reserved: " + text.Bool(s.Reserved) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved2: " + text.Int(s.Reserved2) + ", SAP: " + text.Int(s.SAP) + ", Reserved3: " + text.Int(s.Reserved3) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(s.BlocksToFollow) + ", ResponseClass: " + text.Int(s.ResponseClass) + ", ResponseType: " + text.Int(s.ResponseType) + ", ResponseStatus: " + text.Int(s.ResponseStatus) + " }"
+	return "ResponsePacketHeader{ Reserved: " + text.Bool(s.Reserved) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", SAP: " + text.Int(int64(s.SAP)) + ", Reserved3: " + text.Int(int64(s.Reserved3)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", ResponseClass: " + text.Int(int64(s.ResponseClass)) + ", ResponseType: " + text.Int(int64(s.ResponseType)) + ", ResponseStatus: " + text.Int(int64(s.ResponseStatus)) + " }"
 }
 
 // decodeDefinedDataHeader decodes a DefinedDataHeader (ETSI TS 102 361-1
@@ -641,7 +641,7 @@ func (s *DefinedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DefinedDataHeader) String() string {
-	return "DefinedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", DefinedData: " + text.Int(s.DefinedData) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(s.BitPadding) + " }"
+	return "DefinedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", DefinedData: " + text.Int(int64(s.DefinedData)) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
 // decodeRawDataHeader decodes a RawDataHeader (ETSI TS 102 361-1 clause
@@ -724,7 +724,7 @@ func (s *RawDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *RawDataHeader) String() string {
-	return "RawDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", SourcePort: " + text.Int(s.SourcePort) + ", DestinationPort: " + text.Int(s.DestinationPort) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(s.BitPadding) + " }"
+	return "RawDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", SourcePort: " + text.Int(int64(s.SourcePort)) + ", DestinationPort: " + text.Int(int64(s.DestinationPort)) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
 // decodeStatusPrecodedHeader decodes a StatusPrecodedHeader (ETSI TS 102
@@ -796,7 +796,7 @@ func (s *StatusPrecodedHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *StatusPrecodedHeader) String() string {
-	return "StatusPrecodedHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", SAP: " + text.Int(s.SAP) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", SourcePort: " + text.Int(s.SourcePort) + ", DestinationPort: " + text.Int(s.DestinationPort) + ", StatusPrecoded: " + text.Int(s.StatusPrecoded) + " }"
+	return "StatusPrecodedHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", SourcePort: " + text.Int(int64(s.SourcePort)) + ", DestinationPort: " + text.Int(int64(s.DestinationPort)) + ", StatusPrecoded: " + text.Int(int64(s.StatusPrecoded)) + " }"
 }
 
 // decodeUDTHeader decodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13,
@@ -888,7 +888,7 @@ func (s *UDTHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UDTHeader) String() string {
-	return "UDTHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Emergency: " + text.Bool(s.Emergency) + ", OptionFlag: " + text.Bool(s.OptionFlag) + ", SAP: " + text.Int(s.SAP) + ", UDTFormat: " + text.Int(s.UDTFormat) + ", LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", PadNibble: " + text.Int(s.PadNibble) + ", Reserved: " + text.Bool(s.Reserved) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", SupplementaryFlag: " + text.Bool(s.SupplementaryFlag) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(s.Opcode) + " }"
+	return "UDTHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Emergency: " + text.Bool(s.Emergency) + ", OptionFlag: " + text.Bool(s.OptionFlag) + ", SAP: " + text.Int(int64(s.SAP)) + ", UDTFormat: " + text.Int(int64(s.UDTFormat)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", PadNibble: " + text.Int(int64(s.PadNibble)) + ", Reserved: " + text.Bool(s.Reserved) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SupplementaryFlag: " + text.Bool(s.SupplementaryFlag) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + " }"
 }
 
 // decodeProprietaryHeader decodes a ProprietaryHeader (ETSI TS 102 361-1
@@ -923,7 +923,7 @@ func (s *ProprietaryHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ProprietaryHeader) String() string {
-	return "ProprietaryHeader{ SAP: " + text.Int(s.SAP) + ", MFID: " + text.Int(s.MFID) + ", ManufacturerData: " + text.Bytes(s.ManufacturerData[:]) + " }"
+	return "ProprietaryHeader{ SAP: " + text.Int(int64(s.SAP)) + ", MFID: " + text.Int(int64(s.MFID)) + ", ManufacturerData: " + text.Bytes(s.ManufacturerData[:]) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

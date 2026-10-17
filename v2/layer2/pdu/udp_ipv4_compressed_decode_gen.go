@@ -72,7 +72,7 @@ func (s *UDPIPv4CompressedHeader) Encode() ([9]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UDPIPv4CompressedHeader) String() string {
-	return "UDPIPv4CompressedHeader{ IPv4Identification: " + text.Int(s.IPv4Identification) + ", SAID: " + text.Int(s.SAID) + ", DAID: " + text.Int(s.DAID) + ", HeaderCompressionOpcode: " + text.Int(s.HeaderCompressionOpcode) + ", SPID: " + text.Int(s.SPID) + ", DPID: " + text.Int(s.DPID) + ", ExtendedHeader1: " + text.Int(s.ExtendedHeader1) + ", ExtendedHeader2: " + text.Int(s.ExtendedHeader2) + " }"
+	return "UDPIPv4CompressedHeader{ IPv4Identification: " + text.Int(int64(s.IPv4Identification)) + ", SAID: " + text.Int(int64(s.SAID)) + ", DAID: " + text.Int(int64(s.DAID)) + ", HeaderCompressionOpcode: " + text.Int(int64(s.HeaderCompressionOpcode)) + ", SPID: " + text.Int(int64(s.SPID)) + ", DPID: " + text.Int(int64(s.DPID)) + ", ExtendedHeader1: " + text.Int(int64(s.ExtendedHeader1)) + ", ExtendedHeader2: " + text.Int(int64(s.ExtendedHeader2)) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an
