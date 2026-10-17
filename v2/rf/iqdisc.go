@@ -250,9 +250,17 @@ func (r *iqRx) follow() {
 	}
 	avg := r.conv.hzOf(r.afcAvg)
 	if r.d.locked {
-		// The SYNC fits of a false lock measure any offset, so the mean
-		// frequency must agree with them.
-		if hz := (f.dc + r.d.dcHz) / scale; abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < iqAFCPullHz {
+		// A lock can come while the oscillator still pulls in, and the
+		// channel filter then pulls both the mean frequency and the SYNC
+		// fits toward the oscillator, by different shares, so that they
+		// disagree: the mean, which the symbols do not move, pulls in.
+		// Otherwise the SYNC fits of a false lock measure any offset, so
+		// the mean frequency must agree with them.
+		hz := (f.dc + r.d.dcHz) / scale
+		switch {
+		case abs32(avg) >= iqAFCPullHz:
+			r.tune(avg, f.dc-avg*scale)
+		case abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < iqAFCPullHz:
 			r.tune(hz, f.dc-hz*scale)
 		}
 		return
