@@ -343,8 +343,27 @@ func (s *cohStage) fineTime(k0, k1 int) float64 {
 	return bestD
 }
 
-// cohFreqGain is the weight of the carrier offset that each SYNC fits.
-const cohFreqGain = 0.1
+// cohFreqGain is the weight of the carrier offset that each SYNC fits,
+// and cohFreqSpan the most, in Hz, that the fits move it from the offset
+// that the oscillator and the core give.
+const (
+	cohFreqGain = 0.1
+	cohFreqSpan = 200
+)
+
+// track sets the carrier offset of the runs from that of the SYNC fits of
+// the stream, or from the mean frequency of the I/Q samples when the fits
+// are more than cohFreqSpan from it: the fits of the bursts that the ring
+// took while the oscillator pulled in can be far off, and a wrong offset
+// makes the next fits wrong.
+func (s *cohStage) track() {
+	r := s.rx
+	hz := float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
+	if !s.freqOK || math.Abs(s.freq-hz) > cohFreqSpan {
+		s.freq, s.freqOK, s.nFit = hz, true, 0
+	}
+	s.totalHz = s.freq
+}
 
 // freqFit returns the carrier offset, in Hz, left in the ring samples of
 // the known symbols k0 to k1: the phase step from symbol to symbol of
@@ -406,10 +425,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if s.t0-float64(cohSPS) < float64(r.yN-cohHist) {
 		return false
 	}
-	if !s.freqOK {
-		s.freq, s.freqOK = float64(r.conv.hz)+float64((f.dc+c.dcHz)/(f.gain*iqUnitsPerHz)), true
-	}
-	s.totalHz = s.freq
+	s.track()
 	// The known symbols: the SYNC, or the two halves of the EMB that the
 	// core decoded.
 	clear(s.isK[:])
@@ -446,9 +462,11 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if nseg == 1 {
 		s.dt += cohDTGain * s.fineTime(segs[0][0], segs[0][1])
 		// The mean of the first fits, then a slow average.
-		s.nFit++
-		s.freq += max(cohFreqGain, 1/float64(s.nFit+1)) * s.freqFit(segs[0][0], segs[0][1])
-		s.totalHz = s.freq
+		if fit := s.freqFit(segs[0][0], segs[0][1]); math.Abs(fit) < cohFreqSpan {
+			s.nFit++
+			s.freq += max(cohFreqGain, 1/float64(s.nFit+1)) * fit
+			s.totalHz = s.freq
+		}
 	}
 	var amp, noise float64
 	for _, sg := range segs[:nseg] {
