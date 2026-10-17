@@ -18,7 +18,7 @@ type sweepJob struct {
 	// Lookback is Config.LookbackSlots.
 	Lookback int `json:"lookback"`
 	// Hz is Config.BasebandHz: 48000, or 24000 for the mean of each pair
-	// of samples. 0 means 48000.
+	// of samples, or with Disc DiscConfig.Hz. 0 means the default rate.
 	Hz int `json:"hz,omitempty"`
 	// Superframes is the length of the voice call of the stream.
 	Superframes int `json:"superframes"`
@@ -72,7 +72,11 @@ func (j *sweepJob) config(t testing.TB) Config {
 			t.Fatalf("opt: %v", err)
 		}
 	}
-	return Config{Rate: basebandRate, Tier: Tier(j.Tier), LookbackSlots: j.Lookback, BasebandHz: j.hz(), opt: &o}
+	hz := j.hz()
+	if j.Disc {
+		hz = basebandRate
+	}
+	return Config{Rate: basebandRate, Tier: Tier(j.Tier), LookbackSlots: j.Lookback, BasebandHz: hz, opt: &o}
 }
 
 func (j *sweepJob) hz() int {
@@ -110,7 +114,7 @@ type sweepInput struct {
 // newRx returns the receiver of the job with the settings of cfg.
 func (j *sweepJob) newRx(cfg Config) sweepRx {
 	if j.Disc {
-		d, err := NewDisc(DiscConfig{OnBurst: cfg.OnBurst, opt: cfg.opt})
+		d, err := NewDisc(DiscConfig{Hz: j.audioHz(), OnBurst: cfg.OnBurst, opt: cfg.opt})
 		if err != nil {
 			panic(err)
 		}
@@ -122,7 +126,7 @@ func (j *sweepJob) newRx(cfg Config) sweepRx {
 // convert returns the input of the receiver for the baseband x of the job.
 func (s sweepRx) convert(j *sweepJob, x []complex64) sweepInput {
 	if s.d != nil {
-		return sweepInput{a: discAudio(x)}
+		return sweepInput{a: discAudio(x, j.audioHz())}
 	}
 	return sweepInput{x: j.input(x)}
 }
@@ -153,9 +157,18 @@ func (s sweepRx) flush() {
 // rate returns the sample rate of the input of the receiver of the job.
 func (j *sweepJob) rate() int {
 	if j.Disc {
-		return discRate
+		return j.audioHz()
 	}
 	return j.hz()
+}
+
+// audioHz returns the sample rate of the discriminator samples of a Disc
+// job: Hz, or 24000 when it is 0.
+func (j *sweepJob) audioHz() int {
+	if j.Hz == 0 {
+		return discRate
+	}
+	return j.Hz
 }
 
 // receive runs the baseband x through the receiver of the job and returns

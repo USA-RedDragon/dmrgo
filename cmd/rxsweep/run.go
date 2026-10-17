@@ -210,6 +210,13 @@ func (r *runner) prepare(ctx context.Context, v variant) (*prepared, error) {
 		if err := v.apply(dir); err != nil {
 			return nil, err
 		}
+		// The tables of package rf are generated from its constants.
+		gen := exec.CommandContext(ctx, "go", "test", "./rf", "-run", "^TestTablesGenerated$", "-update", "-count", "1")
+		gen.Dir = dir
+		gen.Env = append(os.Environ(), "GOFLAGS=-buildvcs=false")
+		if out, err := gen.CombinedOutput(); err != nil {
+			return nil, fmt.Errorf("generate tables: %w: %s", err, out)
+		}
 	}
 	tree, err := treeHash(dir)
 	if err != nil {

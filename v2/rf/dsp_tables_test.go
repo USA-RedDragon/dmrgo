@@ -17,7 +17,8 @@ type dspTables struct {
 	halfQ15   [halfSide + 1]int16
 	preQ15    [preTaps/2 + 1]int16
 	rrcQ15    [rrcTaps/2 + 1]int16
-	audioQ15  [audioRRCTaps/2 + 1]int16
+	audioQ15  [audio12Taps/2 + 1]int16
+	audio96   [audio96Taps/2 + 1]int16
 	twiddles  [fftSize / 2]complex64
 	window    [fftSize/2 + 1]float32
 	dev       [numSources][syncSymbols]float32
@@ -63,6 +64,9 @@ func deriveDSP() *dspTables {
 	}
 	for i, v := range rrcTapsSpan(discSPS/2.0, discSpan)[:len(t.audioQ15)] {
 		t.audioQ15[i] = q15(float32(v))
+	}
+	for i, v := range rrcTapsSpan(2, discSpan)[:len(t.audio96)] {
+		t.audio96[i] = q15(float32(v))
 	}
 	for i := range t.twiddles {
 		p := -2 * math.Pi * float64(i) / fftSize
