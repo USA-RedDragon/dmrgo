@@ -61,8 +61,6 @@ type cohStage struct {
 	// The burst under detection: the scale of the trellis metric, its
 	// known runs, and the bit priors of its detection again.
 	scale    float32
-	snr      float64
-	final    bool
 	segs     [2][2]int
 	nseg     int
 	prior    [slotSymbols][4]float32
@@ -500,16 +498,19 @@ func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 		s.known[cachSymbols+k] = symbolOf(unpacked.Bit(b0), unpacked.Bit(b1))
 	}
 	var acc complex128
+	var snr float64
 	n := 0
 	for k0 := cachSymbols; k0+syncSymbols <= slotSymbols; k0 += syncSymbols {
 		acc += s.freqAcc(k0, k0+syncSymbols-1)
-		n++
+		if amp, noise := s.levels(k0, k0+syncSymbols-1); noise > 0 {
+			snr += amp * amp / noise
+			n++
+		}
 	}
-	// The SNR of the known symbols of the burst stands for that of all.
-	snr := s.snr
-	if acc == 0 || snr <= 0 {
+	if acc == 0 || n == 0 {
 		return
 	}
+	snr /= float64(n)
 	fit := cmplx.Phase(acc) * symbolRate / (2 * math.Pi)
 	if math.Abs(fit) >= cohFreqSpan {
 		return
@@ -616,11 +617,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if amp <= 0 || noise <= 0 {
 		return false
 	}
-	s.scale, s.snr = float32(2*amp/noise), amp*amp/noise
-	// A voice burst detects again with the bits that its FEC fixed, so
-	// only that detection runs on into the slot before.
-	_, kind, known := layer2.SyncSourceOf(b.Sync)
-	s.final = b.Voice == enums.VoiceBurstUnknown && (!known || kind != layer2.KindVoice)
+	s.scale = float32(2 * amp / noise)
 	s.segs, s.nseg, s.hasPrior = segs, nseg, false
 	// The carrier of a BS stream stays on, so the first half of a burst
 	// after one with a SYNC runs again from that SYNC.
@@ -766,7 +763,7 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	lo, hi := cachSymbols, slotSymbols-1
 	g0, g1 := s.segs[0][0], s.segs[s.nseg-1][1]
 	s.run(g0, hi-g0+1+runMargin, 1, s.scale)
-	if s.bs && s.nseg == 1 && (s.final || s.hasPrior) {
+	if s.bs && s.nseg == 1 {
 		s.nextOK = true
 		s.run(g1, g1+cohNext+1+runMargin, -1, s.scale)
 	} else {
