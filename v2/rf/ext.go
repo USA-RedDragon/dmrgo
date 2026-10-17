@@ -90,6 +90,8 @@ type softExt struct {
 	// ratios of the core.
 	stages uint8
 	coh    *cohStage
+	// qcoh marks the bursts of q that coh detected.
+	qcoh [extQueue]bool
 	// known marks the bits of a voice burst that its FEC fixed, for the
 	// detection again of coh.
 	known [layer2.BurstBits]bool
@@ -172,12 +174,17 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		} else {
 			ch.have, ch.accN = 0, 0
 		}
-		x.push(c, b, hold)
+		i := x.push(c, b, hold)
+		x.coh.qllr[i], x.qcoh[i] = x.llr, true
+		if x.coh.nextOK {
+			x.back(c, b.Slot-1)
+		}
 		if b.Voice == enums.VoiceBurstE && ch.have == 0xf {
 			x.embeddedLC(ch, b.Slot)
 			ch.have = 0
 		}
-		x.drain(c, false)
+		// The last burst waits for the run from the SYNC of the next.
+		x.drain(c, false, 1)
 		return
 	}
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
@@ -225,7 +232,35 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		x.embeddedLC(ch, b.Slot)
 		ch.have = 0
 	}
-	x.drain(c, false)
+	x.drain(c, false, 0)
+}
+
+// back decodes burst j of the queue again, when coh detected it, with the
+// ratios of its second half averaged with those of the run from the SYNC
+// of the burst after it. The embedded LC that its superframe decoded
+// stays.
+func (x *softExt) back(c *leanCore, j int64) {
+	for k := range x.n {
+		i := (x.head + k) % extQueue
+		b := &x.q[i]
+		if b.Slot != j || !x.qcoh[i] {
+			continue
+		}
+		cur, lc := x.llr, b.Fixed
+		x.llr = x.coh.qllr[i]
+		x.coh.nextInto(&x.llr)
+		x.coh.qllr[i] = x.llr
+		cc, ccOK := c.colorCode()
+		x.repairAll(c, b, cc, ccOK)
+		if b.Voice >= enums.VoiceBurstB && b.Voice <= enums.VoiceBurstE {
+			for q := embFirstBit; q < embFirstBit+embBits; q++ {
+				m := byte(0x80) >> (q % 8)
+				b.Fixed[q/8] = b.Fixed[q/8]&^m | lc[q/8]&m
+			}
+		}
+		x.llr = cur
+		return
+	}
 }
 
 // Settings of dataPasses: the number of passes and the weight of the
@@ -438,20 +473,21 @@ func (x *softExt) release(ch *extChan) {
 
 // push adds burst b to the queue, held when hold, emitting the oldest
 // burst when the queue is full.
-func (x *softExt) push(c *leanCore, b *Burst, hold bool) {
+func (x *softExt) push(c *leanCore, b *Burst, hold bool) int {
 	if x.n == extQueue {
 		x.held[x.head] = false
-		x.drain(c, true)
+		x.drain(c, true, 0)
 	}
 	i := (x.head + x.n) % extQueue
-	x.q[i], x.held[i] = *b, hold
+	x.q[i], x.held[i], x.qcoh[i] = *b, hold, false
 	x.n++
+	return i
 }
 
 // drain emits the bursts at the head of the queue that wait for nothing,
 // or only the head when one is true.
-func (x *softExt) drain(c *leanCore, one bool) {
-	for x.n > 0 && !x.held[x.head] {
+func (x *softExt) drain(c *leanCore, one bool, keep int) {
+	for x.n > keep && !x.held[x.head] {
 		c.emit(&x.q[x.head])
 		x.head = (x.head + 1) % extQueue
 		x.n--
@@ -558,5 +594,5 @@ func (x *softExt) end(c *leanCore) {
 	}
 	x.ch[0].have, x.ch[1].have = 0, 0
 	x.ch[0].accN, x.ch[1].accN = 0, 0
-	x.drain(c, false)
+	x.drain(c, false, 0)
 }
