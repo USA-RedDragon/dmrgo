@@ -52,7 +52,7 @@ func (s *MotorolaRadioCheckPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaRadioCheckPDU) String() string {
-	return "MotorolaRadioCheckPDU{ Reserved: " + text.Int(s.Reserved) + ", Answer: " + text.Bool(s.Answer) + ", Reserved2: " + text.Int(s.Reserved2) + ", RequesterAddress: " + text.Int(s.RequesterAddress) + ", CheckedAddress: " + text.Int(s.CheckedAddress) + " }"
+	return "MotorolaRadioCheckPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", Answer: " + text.Bool(s.Answer) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", RequesterAddress: " + text.Int(int64(s.RequesterAddress)) + ", CheckedAddress: " + text.Int(int64(s.CheckedAddress)) + " }"
 }
 
 // decodeMotorolaCallAlertPDU decodes a MotorolaCallAlertPDU. data holds the
@@ -93,7 +93,7 @@ func (s *MotorolaCallAlertPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaCallAlertPDU) String() string {
-	return "MotorolaCallAlertPDU{ Reserved: " + text.Int(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "MotorolaCallAlertPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeMotorolaCallAlertAckPDU decodes a MotorolaCallAlertAckPDU. data
@@ -134,7 +134,7 @@ func (s *MotorolaCallAlertAckPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaCallAlertAckPDU) String() string {
-	return "MotorolaCallAlertAckPDU{ Request: " + text.Int(s.Request) + ", Reserved: " + text.Int(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "MotorolaCallAlertAckPDU{ Request: " + text.Int(int64(s.Request)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

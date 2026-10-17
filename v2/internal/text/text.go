@@ -8,22 +8,25 @@ import (
 	"math/bits"
 )
 
-// Integer is the set of integer types that Int formats.
-type Integer interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
-}
-
 const hexDigits = "0123456789abcdef"
 
 // Int returns v in decimal, as the %d verb.
-func Int[T Integer](v T) string {
+//
+// It allocates the string.
+func Int(v int64) string {
 	var b [20]byte
-	u := uint64(v)
 	if v < 0 {
-		return "-" + string(b[putUint(b[:], -u):])
+		return "-" + string(b[putUint(b[:], uint64(^v)+1):])
 	}
-	return string(b[putUint(b[:], u):])
+	return string(b[putUint(b[:], uint64(v)):])
+}
+
+// Uint returns v in decimal, as the %d verb.
+//
+// It allocates the string.
+func Uint(v uint64) string {
+	var b [20]byte
+	return string(b[putUint(b[:], v):])
 }
 
 // putUint writes v in decimal at the end of b and returns the index of the
@@ -41,6 +44,8 @@ func putUint(b []byte, v uint64) int {
 }
 
 // Bool returns "true" or "false", as the %t verb.
+//
+// It allocates the string.
 func Bool(v bool) string {
 	if v {
 		return "true"
@@ -49,6 +54,8 @@ func Bool(v bool) string {
 }
 
 // Hex returns b as lowercase hex, two digits per byte, as the %x verb.
+//
+// It allocates the string.
 func Hex(b []byte) string {
 	s := make([]byte, 2*len(b))
 	for i, c := range b {
@@ -59,6 +66,8 @@ func Hex(b []byte) string {
 }
 
 // Bytes returns b as decimal bytes in brackets, as the %v verb.
+//
+// It allocates the string.
 func Bytes(b []byte) string {
 	s := make([]byte, 1, 2+4*len(b))
 	s[0] = '['
@@ -74,6 +83,8 @@ func Bytes(b []byte) string {
 
 // Digits returns v in base 1<<shift, lowercase, with leading zeros to at
 // least n digits. With shift 1 and 4 it is the %0nb and %0nx verbs.
+//
+// It allocates the string.
 func Digits(v uint64, n int, shift uint) string {
 	for x := v >> (uint(n) * shift); x != 0 && n < 64; x >>= shift {
 		n++
@@ -87,6 +98,8 @@ func Digits(v uint64, n int, shift uint) string {
 }
 
 // Fixed returns v with six decimals, as the %f verb.
+//
+// It allocates the string.
 func Fixed(v float64) string {
 	switch {
 	case v != v:
@@ -180,6 +193,8 @@ func shiftDecimal(mant uint64, e int) string {
 
 // Float returns Fixed(v) without trailing zeros. It is the %v verb for a v
 // with at most six decimals that is 0 or between 1e-4 and 1e6 in magnitude.
+//
+// It allocates the string.
 func Float(v float64) string {
 	s := Fixed(v)
 	if len(s) < 8 || s[len(s)-7] != '.' {

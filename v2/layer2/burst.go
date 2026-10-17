@@ -43,7 +43,7 @@ func (k Kind) String() string {
 	case KindReverseChannel:
 		return "Reverse Channel"
 	}
-	return "Kind(" + text.Int(k) + ")"
+	return "Kind(" + text.Int(int64(k)) + ")"
 }
 
 // Burst represents a DMR burst. A decode stores the PDU of a data burst, and
@@ -562,8 +562,8 @@ func (b *Burst) String() string {
 	case KindData:
 		agg := b.FEC.Aggregate()
 		ret += "SlotType: " + b.SlotType.String() +
-			", FEC: {BitsChecked: " + text.Int(agg.BitsChecked) +
-			", ErrorsCorrected: " + text.Int(agg.ErrorsCorrected) +
+			", FEC: {BitsChecked: " + text.Int(int64(agg.BitsChecked)) +
+			", ErrorsCorrected: " + text.Int(int64(agg.ErrorsCorrected)) +
 			", Uncorrectable: " + text.Bool(agg.Uncorrectable) + "}"
 		if b.Data != nil {
 			ret += ", Data: " + b.Data.String()
@@ -571,7 +571,7 @@ func (b *Burst) String() string {
 	case KindVoice:
 		ret += "VoiceBurst: " + b.VoiceBurst.String()
 	case KindUnknown, KindReverseChannel:
-		ret += "NearestSync: " + b.NearestSync.String() + ", SyncDistance: " + text.Int(b.SyncDistance)
+		ret += "NearestSync: " + b.NearestSync.String() + ", SyncDistance: " + text.Int(int64(b.SyncDistance))
 	}
 	return ret + " }"
 }

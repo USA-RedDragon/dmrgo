@@ -44,7 +44,7 @@ func (s *ShortLCNullMessage) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLCNullMessage) String() string {
-	return "ShortLCNullMessage{ Reserved: " + text.Int(s.Reserved) + " }"
+	return "ShortLCNullMessage{ Reserved: " + text.Int(int64(s.Reserved)) + " }"
 }
 
 // decodeShortLCActivityUpdate decodes a ShortLCActivityUpdate (ETSI TS 102
@@ -80,7 +80,7 @@ func (s *ShortLCActivityUpdate) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLCActivityUpdate) String() string {
-	return "ShortLCActivityUpdate{ TS1ActivityID: " + s.TS1ActivityID.String() + ", TS2ActivityID: " + s.TS2ActivityID.String() + ", HashTS1: " + text.Int(s.HashTS1) + ", HashTS2: " + text.Int(s.HashTS2) + " }"
+	return "ShortLCActivityUpdate{ TS1ActivityID: " + s.TS1ActivityID.String() + ", TS2ActivityID: " + s.TS2ActivityID.String() + ", HashTS1: " + text.Int(int64(s.HashTS1)) + ", HashTS2: " + text.Int(int64(s.HashTS2)) + " }"
 }
 
 // decodeShortLCCSysParms decodes a ShortLCCSysParms (ETSI TS 102 361-4
@@ -125,7 +125,7 @@ func (s *ShortLCCSysParms) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLCCSysParms) String() string {
-	return "ShortLCCSysParms{ MODEL: " + text.Int(s.MODEL) + ", NetSiteRaw: " + text.Int(s.NetSiteRaw) + ", Reg: " + text.Bool(s.Reg) + ", CommonSlotCounter: " + text.Int(s.CommonSlotCounter) + " }"
+	return "ShortLCCSysParms{ MODEL: " + text.Int(int64(s.MODEL)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", Reg: " + text.Bool(s.Reg) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
 }
 
 // decodeShortLCPSysParms decodes a ShortLCPSysParms (ETSI TS 102 361-4
@@ -170,7 +170,7 @@ func (s *ShortLCPSysParms) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLCPSysParms) String() string {
-	return "ShortLCPSysParms{ MODEL: " + text.Int(s.MODEL) + ", NetSiteRaw: " + text.Int(s.NetSiteRaw) + ", PayloadChannelType: " + text.Bool(s.PayloadChannelType) + ", CommonSlotCounter: " + text.Int(s.CommonSlotCounter) + " }"
+	return "ShortLCPSysParms{ MODEL: " + text.Int(int64(s.MODEL)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", PayloadChannelType: " + text.Bool(s.PayloadChannelType) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
 }
 
 // DecodeShortLC decodes a ShortLC (ETSI TS 102 361-1 clause 9.1.7). data
@@ -329,7 +329,7 @@ func (s *ShortLC) Encode() ([5]byte, error) {
 // string.
 func (s *ShortLC) String() string {
 	_ret := "ShortLC{ "
-	_ret += "SLCO: " + s.SLCO.String() + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
+	_ret += "SLCO: " + s.SLCO.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	switch {
 	case s.NullMessage != nil:
 		_ret += s.NullMessage.String()

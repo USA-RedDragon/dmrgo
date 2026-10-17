@@ -57,7 +57,7 @@ func (rc *ReverseChannel) Encode() ([2]byte, error) {
 // allocates the string.
 func (rc *ReverseChannel) String() string {
 	return "ReverseChannel{ RCCommand: " + rc.RCCommand.String() +
-		", FEC: {BitsChecked: " + text.Int(rc.FEC.BitsChecked) +
-		", ErrorsCorrected: " + text.Int(rc.FEC.ErrorsCorrected) +
+		", FEC: {BitsChecked: " + text.Int(int64(rc.FEC.BitsChecked)) +
+		", ErrorsCorrected: " + text.Int(int64(rc.FEC.ErrorsCorrected)) +
 		", Uncorrectable: " + text.Bool(rc.FEC.Uncorrectable) + "} }"
 }

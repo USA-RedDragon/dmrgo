@@ -32,5 +32,5 @@ func (e *FieldRangeError) Error() string {
 	if e.Signed {
 		signed = "signed "
 	}
-	return e.Type + "." + e.Field + ": value does not fit in " + text.Int(e.Bits) + " " + signed + "bits"
+	return e.Type + "." + e.Field + ": value does not fit in " + text.Int(int64(e.Bits)) + " " + signed + "bits"
 }

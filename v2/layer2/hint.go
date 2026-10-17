@@ -73,5 +73,5 @@ func (e EndHint) String() string {
 	case EndStrong:
 		return "Strong"
 	}
-	return "EndHint(" + text.Int(e) + ")"
+	return "EndHint(" + text.Int(int64(e)) + ")"
 }

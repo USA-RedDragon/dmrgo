@@ -402,7 +402,7 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 		"if s.R[1]&15 != 0 {",
 		"return [2]byte{}, errTRRange",
 		"bits.Copy(data[:], 4, s.R[:], 0, 12)",
-		`return "T{ A: " + text.Int(s.A) + ", R: " + text.Hex(s.R[:]) + " }"`,
+		`return "T{ A: " + text.Int(int64(s.A)) + ", R: " + text.Hex(s.R[:]) + " }"`,
 	)
 }
 

@@ -72,7 +72,7 @@ func (s *BSOutboundActivationPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *BSOutboundActivationPDU) String() string {
-	return "BSOutboundActivationPDU{ Reserved: " + text.Int(s.Reserved) + ", BSAddress: " + text.Int(s.BSAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "BSOutboundActivationPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", BSAddress: " + text.Int(int64(s.BSAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeUnitToUnitVoiceServiceRequestPDU decodes a
@@ -121,7 +121,7 @@ func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
-	return "UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: " + s.ServiceOptions.String() + ", Reserved: " + text.Int(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: " + s.ServiceOptions.String() + ", Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a
@@ -170,7 +170,7 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
-	return "UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: " + s.ServiceOptions.String() + ", AnswerResponse: " + text.Int(s.AnswerResponse) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: " + s.ServiceOptions.String() + ", AnswerResponse: " + text.Int(int64(s.AnswerResponse)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU
@@ -225,7 +225,7 @@ func (s *NegativeAcknowledgementPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *NegativeAcknowledgementPDU) String() string {
-	return "NegativeAcknowledgementPDU{ AdditionalInfo: " + s.AdditionalInfo.String() + ", SourceType: " + s.SourceType.String() + ", ServiceType: " + text.Int(s.ServiceType) + ", ReasonCode: " + text.Int(s.ReasonCode) + ", SourceAddress: " + text.Int(s.SourceAddress) + ", TargetAddress: " + text.Int(s.TargetAddress) + " }"
+	return "NegativeAcknowledgementPDU{ AdditionalInfo: " + s.AdditionalInfo.String() + ", SourceType: " + s.SourceType.String() + ", ServiceType: " + text.Int(int64(s.ServiceType)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + " }"
 }
 
 // decodePreamblePDU decodes a PreamblePDU (ETSI TS 102 361-2 clause
@@ -278,7 +278,7 @@ func (s *PreamblePDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *PreamblePDU) String() string {
-	return "PreamblePDU{ Data: " + text.Bool(s.Data) + ", Group: " + text.Bool(s.Group) + ", Reserved: " + text.Int(s.Reserved) + ", CSBKBlocksToFollow: " + text.Int(s.CSBKBlocksToFollow) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "PreamblePDU{ Data: " + text.Bool(s.Data) + ", Group: " + text.Bool(s.Group) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", CSBKBlocksToFollow: " + text.Int(int64(s.CSBKBlocksToFollow)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeChannelTimingPDU decodes a ChannelTimingPDU (ETSI TS 102 361-2
@@ -354,7 +354,7 @@ func (s *ChannelTimingPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ChannelTimingPDU) String() string {
-	return "ChannelTimingPDU{ SyncAge: " + text.Int(s.SyncAge) + ", Generation: " + text.Int(s.Generation) + ", LeaderIdentifier: " + text.Int(s.LeaderIdentifier) + ", NewLeader: " + text.Bool(s.NewLeader) + ", LeaderDynamicIdentifier: " + text.Int(s.LeaderDynamicIdentifier) + ", ChannelTimingOp1: " + text.Bool(s.ChannelTimingOp1) + ", SourceIdentifier: " + text.Int(s.SourceIdentifier) + ", Reserved: " + text.Bool(s.Reserved) + ", SourceDynamicIdentifier: " + text.Int(s.SourceDynamicIdentifier) + ", ChannelTimingOp0: " + text.Bool(s.ChannelTimingOp0) + " }"
+	return "ChannelTimingPDU{ SyncAge: " + text.Int(int64(s.SyncAge)) + ", Generation: " + text.Int(int64(s.Generation)) + ", LeaderIdentifier: " + text.Int(int64(s.LeaderIdentifier)) + ", NewLeader: " + text.Bool(s.NewLeader) + ", LeaderDynamicIdentifier: " + text.Int(int64(s.LeaderDynamicIdentifier)) + ", ChannelTimingOp1: " + text.Bool(s.ChannelTimingOp1) + ", SourceIdentifier: " + text.Int(int64(s.SourceIdentifier)) + ", Reserved: " + text.Bool(s.Reserved) + ", SourceDynamicIdentifier: " + text.Int(int64(s.SourceDynamicIdentifier)) + ", ChannelTimingOp0: " + text.Bool(s.ChannelTimingOp0) + " }"
 }
 
 // decodePrivateVoiceGrantPDU decodes a PrivateVoiceGrantPDU (ETSI TS 102
@@ -415,7 +415,7 @@ func (s *PrivateVoiceGrantPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *PrivateVoiceGrantPDU) String() string {
-	return "PrivateVoiceGrantPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", Reserved: " + text.Bool(s.Reserved) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "PrivateVoiceGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", Reserved: " + text.Bool(s.Reserved) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeTalkgroupVoiceGrantPDU decodes a TalkgroupVoiceGrantPDU (ETSI TS 102
@@ -476,7 +476,7 @@ func (s *TalkgroupVoiceGrantPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TalkgroupVoiceGrantPDU) String() string {
-	return "TalkgroupVoiceGrantPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", LateEntry: " + text.Bool(s.LateEntry) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "TalkgroupVoiceGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", LateEntry: " + text.Bool(s.LateEntry) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeBroadcastTalkgroupVoiceGrantPDU decodes a
@@ -538,7 +538,7 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
-	return "BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", LateEntry: " + text.Bool(s.LateEntry) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", LateEntry: " + text.Bool(s.LateEntry) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodePrivateDataGrantPDU decodes a PrivateDataGrantPDU (ETSI TS 102 361-4
@@ -599,7 +599,7 @@ func (s *PrivateDataGrantPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *PrivateDataGrantPDU) String() string {
-	return "PrivateDataGrantPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "PrivateDataGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeTalkgroupDataGrantPDU decodes a TalkgroupDataGrantPDU (ETSI TS 102
@@ -660,7 +660,7 @@ func (s *TalkgroupDataGrantPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TalkgroupDataGrantPDU) String() string {
-	return "TalkgroupDataGrantPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "TalkgroupDataGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeDuplexPrivateVoiceGrantPDU decodes a DuplexPrivateVoiceGrantPDU
@@ -721,7 +721,7 @@ func (s *DuplexPrivateVoiceGrantPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DuplexPrivateVoiceGrantPDU) String() string {
-	return "DuplexPrivateVoiceGrantPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", Reserved: " + text.Bool(s.Reserved) + ", Emergency: " + text.Bool(s.Emergency) + ", CallDirection: " + text.Bool(s.CallDirection) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "DuplexPrivateVoiceGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", Reserved: " + text.Bool(s.Reserved) + ", Emergency: " + text.Bool(s.Emergency) + ", CallDirection: " + text.Bool(s.CallDirection) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeDuplexPrivateDataGrantPDU decodes a DuplexPrivateDataGrantPDU (ETSI
@@ -782,7 +782,7 @@ func (s *DuplexPrivateDataGrantPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DuplexPrivateDataGrantPDU) String() string {
-	return "DuplexPrivateDataGrantPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", CallDirection: " + text.Bool(s.CallDirection) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "DuplexPrivateDataGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", CallDirection: " + text.Bool(s.CallDirection) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodePrivateDataGrantMultiItemPDU decodes a PrivateDataGrantMultiItemPDU
@@ -843,7 +843,7 @@ func (s *PrivateDataGrantMultiItemPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *PrivateDataGrantMultiItemPDU) String() string {
-	return "PrivateDataGrantMultiItemPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "PrivateDataGrantMultiItemPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeTalkgroupDataGrantMultiItemPDU decodes a
@@ -905,7 +905,7 @@ func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TalkgroupDataGrantMultiItemPDU) String() string {
-	return "TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeMovePDU decodes a MovePDU (ETSI TS 102 361-4 clause 7.1.1.1.3). data
@@ -974,7 +974,7 @@ func (s *MovePDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MovePDU) String() string {
-	return "MovePDU{ Reserved1: " + text.Int(s.Reserved1) + ", Mask: " + text.Int(s.Mask) + ", Reserved2: " + text.Int(s.Reserved2) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(s.Backoff) + ", Reserved3: " + text.Int(s.Reserved3) + ", PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", MSAddress: " + text.Int(s.MSAddress) + " }"
+	return "MovePDU{ Reserved1: " + text.Int(int64(s.Reserved1)) + ", Mask: " + text.Int(int64(s.Mask)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", Reserved3: " + text.Int(int64(s.Reserved3)) + ", PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", MSAddress: " + text.Int(int64(s.MSAddress)) + " }"
 }
 
 // decodeAlohaPDU decodes an AlohaPDU (ETSI TS 102 361-4 clause 7.1.1.1.4).
@@ -1059,7 +1059,7 @@ func (s *AlohaPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AlohaPDU) String() string {
-	return "AlohaPDU{ Reserved1: " + text.Bool(s.Reserved1) + ", TSCCAS: " + text.Bool(s.TSCCAS) + ", SiteTSSync: " + text.Bool(s.SiteTSSync) + ", Version: " + text.Int(s.Version) + ", Offset: " + text.Bool(s.Offset) + ", ActiveConn: " + text.Bool(s.ActiveConn) + ", Mask: " + text.Int(s.Mask) + ", ServiceFunc: " + text.Int(s.ServiceFunc) + ", NRandWait: " + text.Int(s.NRandWait) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(s.Backoff) + ", SysIdentCode: " + text.Int(s.SysIdentCode) + ", MSAddress: " + text.Int(s.MSAddress) + " }"
+	return "AlohaPDU{ Reserved1: " + text.Bool(s.Reserved1) + ", TSCCAS: " + text.Bool(s.TSCCAS) + ", SiteTSSync: " + text.Bool(s.SiteTSSync) + ", Version: " + text.Int(int64(s.Version)) + ", Offset: " + text.Bool(s.Offset) + ", ActiveConn: " + text.Bool(s.ActiveConn) + ", Mask: " + text.Int(int64(s.Mask)) + ", ServiceFunc: " + text.Int(int64(s.ServiceFunc)) + ", NRandWait: " + text.Int(int64(s.NRandWait)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", MSAddress: " + text.Int(int64(s.MSAddress)) + " }"
 }
 
 // decodeBroadcastPDU decodes a BroadcastPDU (ETSI TS 102 361-4 clause
@@ -1115,7 +1115,7 @@ func (s *BroadcastPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *BroadcastPDU) String() string {
-	return "BroadcastPDU{ AnnouncementType: " + s.AnnouncementType.String() + ", BroadcastParms1: " + text.Int(s.BroadcastParms1) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(s.Backoff) + ", SysIdentCode: " + text.Int(s.SysIdentCode) + ", BroadcastParms2: " + text.Int(s.BroadcastParms2) + " }"
+	return "BroadcastPDU{ AnnouncementType: " + s.AnnouncementType.String() + ", BroadcastParms1: " + text.Int(int64(s.BroadcastParms1)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", BroadcastParms2: " + text.Int(int64(s.BroadcastParms2)) + " }"
 }
 
 // decodeClearPDU decodes a ClearPDU (ETSI TS 102 361-4 clause 7.1.1.3.2).
@@ -1172,7 +1172,7 @@ func (s *ClearPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ClearPDU) String() string {
-	return "ClearPDU{ PhysicalChannel: " + text.Int(s.PhysicalChannel) + ", Reserved1: " + text.Bool(s.Reserved1) + ", Reserved2: " + text.Int(s.Reserved2) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "ClearPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", Reserved1: " + text.Bool(s.Reserved1) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeProtectPDU decodes a ProtectPDU (ETSI TS 102 361-4 clause
@@ -1226,7 +1226,7 @@ func (s *ProtectPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ProtectPDU) String() string {
-	return "ProtectPDU{ Reserved: " + text.Int(s.Reserved) + ", ProtectKind: " + text.Int(s.ProtectKind) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "ProtectPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", ProtectKind: " + text.Int(int64(s.ProtectKind)) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeAhoyPDU decodes an AhoyPDU (ETSI TS 102 361-4 clauses 7.1.1.1.6 and
@@ -1291,7 +1291,7 @@ func (s *AhoyPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AhoyPDU) String() string {
-	return "AhoyPDU{ ServiceOptsMirror: " + text.Int(s.ServiceOptsMirror) + ", ServiceKindFlag: " + text.Bool(s.ServiceKindFlag) + ", ALS: " + text.Bool(s.ALS) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", AppendedBlocks: " + text.Int(s.AppendedBlocks) + ", ServiceKind: " + text.Int(s.ServiceKind) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "AhoyPDU{ ServiceOptsMirror: " + text.Int(int64(s.ServiceOptsMirror)) + ", ServiceKindFlag: " + text.Bool(s.ServiceKindFlag) + ", ALS: " + text.Bool(s.ALS) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", ServiceKind: " + text.Int(int64(s.ServiceKind)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeAckOutboundPDU decodes an AckOutboundPDU (ETSI TS 102 361-4 clause
@@ -1342,7 +1342,7 @@ func (s *AckOutboundPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AckOutboundPDU) String() string {
-	return "AckOutboundPDU{ ResponseInfo: " + text.Int(s.ResponseInfo) + ", ReasonCode: " + text.Int(s.ReasonCode) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", AdditionalInfo: " + text.Int(s.AdditionalInfo) + " }"
+	return "AckOutboundPDU{ ResponseInfo: " + text.Int(int64(s.ResponseInfo)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", AdditionalInfo: " + text.Int(int64(s.AdditionalInfo)) + " }"
 }
 
 // decodeAckInboundPDU decodes an AckInboundPDU (ETSI TS 102 361-4 clause
@@ -1393,7 +1393,7 @@ func (s *AckInboundPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AckInboundPDU) String() string {
-	return "AckInboundPDU{ ResponseInfo: " + text.Int(s.ResponseInfo) + ", ReasonCode: " + text.Int(s.ReasonCode) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", AdditionalInfo: " + text.Int(s.AdditionalInfo) + " }"
+	return "AckInboundPDU{ ResponseInfo: " + text.Int(int64(s.ResponseInfo)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", AdditionalInfo: " + text.Int(int64(s.AdditionalInfo)) + " }"
 }
 
 // decodeAckOutboundPayloadPDU decodes an AckOutboundPayloadPDU (ETSI TS 102
@@ -1444,7 +1444,7 @@ func (s *AckOutboundPayloadPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AckOutboundPayloadPDU) String() string {
-	return "AckOutboundPayloadPDU{ ResponseInfo: " + text.Int(s.ResponseInfo) + ", ReasonCode: " + text.Int(s.ReasonCode) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", AdditionalInfo: " + text.Int(s.AdditionalInfo) + " }"
+	return "AckOutboundPayloadPDU{ ResponseInfo: " + text.Int(int64(s.ResponseInfo)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", AdditionalInfo: " + text.Int(int64(s.AdditionalInfo)) + " }"
 }
 
 // decodeAckInboundPayloadPDU decodes an AckInboundPayloadPDU (ETSI TS 102
@@ -1495,7 +1495,7 @@ func (s *AckInboundPayloadPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AckInboundPayloadPDU) String() string {
-	return "AckInboundPayloadPDU{ ResponseInfo: " + text.Int(s.ResponseInfo) + ", ReasonCode: " + text.Int(s.ReasonCode) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", AdditionalInfo: " + text.Int(s.AdditionalInfo) + " }"
+	return "AckInboundPayloadPDU{ ResponseInfo: " + text.Int(int64(s.ResponseInfo)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", AdditionalInfo: " + text.Int(int64(s.AdditionalInfo)) + " }"
 }
 
 // decodeRandomAccessPDU decodes a RandomAccessPDU (ETSI TS 102 361-4 clause
@@ -1552,7 +1552,7 @@ func (s *RandomAccessPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *RandomAccessPDU) String() string {
-	return "RandomAccessPDU{ ServiceOptions: " + text.Int(s.ServiceOptions) + ", ProxyFlag: " + text.Bool(s.ProxyFlag) + ", Reserved: " + text.Int(s.Reserved) + ", ServiceKind: " + text.Int(s.ServiceKind) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "RandomAccessPDU{ ServiceOptions: " + text.Int(int64(s.ServiceOptions)) + ", ProxyFlag: " + text.Bool(s.ProxyFlag) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", ServiceKind: " + text.Int(int64(s.ServiceKind)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeAckvitationPDU decodes an AckvitationPDU (ETSI TS 102 361-4 clause
@@ -1614,7 +1614,7 @@ func (s *AckvitationPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AckvitationPDU) String() string {
-	return "AckvitationPDU{ ServiceOptsMirror: " + text.Int(s.ServiceOptsMirror) + ", ServiceKindFlag: " + text.Bool(s.ServiceKindFlag) + ", Reserved: " + text.Int(s.Reserved) + ", UAB: " + text.Int(s.UAB) + ", ServiceKind: " + text.Int(s.ServiceKind) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "AckvitationPDU{ ServiceOptsMirror: " + text.Int(int64(s.ServiceOptsMirror)) + ", ServiceKindFlag: " + text.Bool(s.ServiceKindFlag) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", UAB: " + text.Int(int64(s.UAB)) + ", ServiceKind: " + text.Int(int64(s.ServiceKind)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeMaintenancePDU decodes a MaintenancePDU (ETSI TS 102 361-4 clause
@@ -1668,7 +1668,7 @@ func (s *MaintenancePDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MaintenancePDU) String() string {
-	return "MaintenancePDU{ Reserved: " + text.Int(s.Reserved) + ", MaintKind: " + text.Int(s.MaintKind) + ", Reserved2: " + text.Bool(s.Reserved2) + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "MaintenancePDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", MaintKind: " + text.Int(int64(s.MaintKind)) + ", Reserved2: " + text.Bool(s.Reserved2) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // DecodeCSBK decodes a CSBK (ETSI TS 102 361-1 clause 9.1.8). data holds the
@@ -2314,7 +2314,7 @@ func (s *CSBK) Encode() ([12]byte, error) {
 // string.
 func (s *CSBK) String() string {
 	_ret := "CSBK{ "
-	_ret += "LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(s.Opcode) + ", FID: " + text.Int(s.FID) + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
+	_ret += "LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", FID: " + text.Int(int64(s.FID)) + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	switch {
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
 		_ret += s.UnitToUnitVoiceServiceRequestPDU.String()

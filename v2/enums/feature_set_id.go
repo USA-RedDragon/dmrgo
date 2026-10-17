@@ -72,7 +72,7 @@ func (fsid FeatureSetID) String() string {
 		return "Vertex Standard UK"
 	}
 
-	return "Unknown FeatureSetID: " + text.Int(fsid)
+	return "Unknown FeatureSetID: " + text.Int(int64(fsid))
 }
 
 // Valid reports whether fsid is a value that ETSI TS 102 361 defines.

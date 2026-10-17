@@ -287,7 +287,7 @@ func (s *FullLinkControl) Encode() ([12]byte, error) {
 // string.
 func (s *FullLinkControl) String() string {
 	_ret := "FullLinkControl{ "
-	_ret += "BurstDataType: " + s.BurstDataType.String() + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", FLCO: " + s.FLCO.String() + ", FID: " + s.FID.String() + ", FEC: {BitsChecked: " + text.Int(s.FEC.BitsChecked) + ", ErrorsCorrected: " + text.Int(s.FEC.ErrorsCorrected) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
+	_ret += "BurstDataType: " + s.BurstDataType.String() + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", FLCO: " + s.FLCO.String() + ", FID: " + s.FID.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	switch {
 	case s.GroupVoice != nil:
 		_ret += s.GroupVoice.String()
@@ -351,7 +351,7 @@ func (s *FLCGroupVoice) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCGroupVoice) String() string {
-	return "FLCGroupVoice{ ServiceOptions: " + s.ServiceOptions.String() + ", GroupAddress: " + text.Int(s.GroupAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "FLCGroupVoice{ ServiceOptions: " + s.ServiceOptions.String() + ", GroupAddress: " + text.Int(int64(s.GroupAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeFLCUnitToUnit decodes an FLCUnitToUnit (ETSI TS 102 361-2 clause
@@ -397,7 +397,7 @@ func (s *FLCUnitToUnit) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCUnitToUnit) String() string {
-	return "FLCUnitToUnit{ ServiceOptions: " + s.ServiceOptions.String() + ", TargetAddress: " + text.Int(s.TargetAddress) + ", SourceAddress: " + text.Int(s.SourceAddress) + " }"
+	return "FLCUnitToUnit{ ServiceOptions: " + s.ServiceOptions.String() + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // decodeFLCGPSInfo decodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3,
@@ -449,7 +449,7 @@ func (s *FLCGPSInfo) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCGPSInfo) String() string {
-	return "FLCGPSInfo{ Reserved: " + text.Int(s.Reserved) + ", PositionError: " + s.PositionError.String() + ", Longitude: " + text.Fixed(s.Longitude) + ", Latitude: " + text.Fixed(s.Latitude) + " }"
+	return "FLCGPSInfo{ Reserved: " + text.Int(int64(s.Reserved)) + ", PositionError: " + s.PositionError.String() + ", Longitude: " + text.Fixed(s.Longitude) + ", Latitude: " + text.Fixed(s.Latitude) + " }"
 }
 
 // decodeFLCTalkerAliasHeader decodes an FLCTalkerAliasHeader (ETSI TS 102
@@ -493,7 +493,7 @@ func (s *FLCTalkerAliasHeader) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCTalkerAliasHeader) String() string {
-	return "FLCTalkerAliasHeader{ TalkerAliasDataFormat: " + s.TalkerAliasDataFormat.String() + ", TalkerAliasDataLength: " + text.Int(s.TalkerAliasDataLength) + ", TalkerAliasData: " + text.Int(s.TalkerAliasData) + " }"
+	return "FLCTalkerAliasHeader{ TalkerAliasDataFormat: " + s.TalkerAliasDataFormat.String() + ", TalkerAliasDataLength: " + text.Int(int64(s.TalkerAliasDataLength)) + ", TalkerAliasData: " + text.Uint(uint64(s.TalkerAliasData)) + " }"
 }
 
 // decodeFLCTalkerAliasBlock decodes an FLCTalkerAliasBlock (ETSI TS 102
@@ -580,7 +580,7 @@ func (s *FLCTerminatorDataLinkControl) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCTerminatorDataLinkControl) String() string {
-	return "FLCTerminatorDataLinkControl{ LLIDDestination: " + text.Int(s.LLIDDestination) + ", LLIDSource: " + text.Int(s.LLIDSource) + ", GroupOrIndividual: " + text.Bool(s.GroupOrIndividual) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(s.SendSequenceNumber) + " }"
+	return "FLCTerminatorDataLinkControl{ LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", GroupOrIndividual: " + text.Bool(s.GroupOrIndividual) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + " }"
 }
 
 // The errors of the Encode methods. Each is a static value, so that an

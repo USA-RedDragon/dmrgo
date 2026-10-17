@@ -22,7 +22,7 @@ import (
 const moduleRoot = "../.."
 
 // skipDirs are the module directories that are not library code.
-var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/unpacked"}
+var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/text/texttest", "internal/unpacked"}
 
 // libraryPackages returns the import paths of the library packages, relative
 // to the module ("./enums" and so on).
@@ -59,6 +59,9 @@ type root struct {
 	sym  string
 	decl *declFunc
 }
+
+// textPkgPath is the package of the formatting helpers of String and Error.
+const textPkgPath = "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // rule is one pattern that lets a root allocate.
 type rule struct {
@@ -486,6 +489,9 @@ func (gt *gate) rules() []*rule {
 				return false, "a String, GoString or Error method must have the signature func() string"
 			}
 			return true, ""
+		}},
+		{name: "text", what: "A function of internal/text, which formats the values of String and Error methods", when: "When the text is built, for a person to read.", match: func(r root) (bool, string) {
+			return r.decl != nil && r.decl.fn.Pkg() != nil && r.decl.fn.Pkg().Path() == textPkgPath, ""
 		}},
 		{name: "constructor", what: "An exported package-level New function", when: "Once, at construction: it allocates what it returns, sized up front.", match: func(r root) (bool, string) {
 			if r.decl == nil || !hasPrefixWord(r.decl.fn.Name(), "New") {

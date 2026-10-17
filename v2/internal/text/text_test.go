@@ -17,11 +17,8 @@ func TestInt(t *testing.T) {
 	}
 	for range 10000 {
 		v := r.Uint64() >> r.Intn(64)
-		if got, want := Int(v), fmt.Sprintf("%d", v); got != want {
-			t.Fatalf("Int(%d) = %q", v, got)
-		}
-		if got, want := Int(int8(v)), fmt.Sprintf("%d", int8(v)); got != want {
-			t.Fatalf("Int(int8(%d)) = %q", int8(v), got)
+		if got, want := Uint(v), fmt.Sprintf("%d", v); got != want {
+			t.Fatalf("Uint(%d) = %q", v, got)
 		}
 		if got, want := Int(int64(v)), fmt.Sprintf("%d", int64(v)); got != want {
 			t.Fatalf("Int(%d) = %q", int64(v), got)
