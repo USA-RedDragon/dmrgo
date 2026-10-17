@@ -67,10 +67,10 @@ type cohStage struct {
 	nseg     int
 	prior    [slotSymbols][4]float32
 	hasPrior bool
-	// prevOK marks a burst whose first half runs again from the SYNC of
-	// the slot before, prevSyms at slot symbol prevK0, and cross that run;
-	// lastT0 and lastSync are the time of symbol 0 and the SYNC of the last
-	// burst, 0 for none.
+	// prevOK marks a burst whose first half and SYNC field run again from
+	// the SYNC of the slot before, prevSyms at slot symbol prevK0, and
+	// cross that run; lastT0 and lastSync are the time of symbol 0 and the
+	// SYNC of the last burst, 0 for none.
 	prevOK   bool
 	cross    bool
 	prevK0   int
@@ -365,11 +365,12 @@ func (s *cohStage) runKeep(k int, app []float32) {
 		return
 	}
 	// The run from the SYNC of the slot before and the backward run of
-	// the burst detect the first half from both sides of it: their mean
-	// log-APPs spread less than either, as TierCoherent detects across the
-	// slots.
+	// the burst detect the first half and the SYNC field from both sides:
+	// their mean log-APPs spread less than either, as TierCoherent detects
+	// across the slots. The EMB of a burst B to F, where its own runs
+	// start, gains the most.
 	if s.cross {
-		if j >= syncFirstSym || s.dist[j] == math.MaxInt {
+		if j >= syncFirstSym+syncSymbols || s.dist[j] == math.MaxInt {
 			return
 		}
 		ma, mb := app[0], s.app[j][0]
@@ -634,8 +635,8 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	s.scale = float32(2 * s.ampAvg / s.noiseAvg)
 	s.segs, s.nseg, s.hasPrior = segs, nseg, false
-	// The carrier of a BS stream stays on, so the first half of a burst
-	// after one with a SYNC runs again from that SYNC.
+	// The carrier of a BS stream stays on, so the first half and the SYNC
+	// field of a burst after one with a SYNC run again from that SYNC.
 	s.prevOK = false
 	if c.bs && s.lastSync != 0 {
 		k := int(math.Round((s.lastT0-s.t0)/s.sps)) + syncFirstSym
@@ -790,7 +791,7 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	}
 	if s.prevOK {
 		s.cross = true
-		s.run(s.prevK0, syncFirstSym-s.prevK0+runMargin, 1, s.scale)
+		s.run(s.prevK0, syncFirstSym+syncSymbols-s.prevK0+runMargin, 1, s.scale)
 		s.cross = false
 	}
 	for k := lo; k <= hi; k++ {
