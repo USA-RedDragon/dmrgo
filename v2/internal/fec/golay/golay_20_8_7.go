@@ -9,17 +9,21 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// reverse20 reverses the order of the low 20 bits of x. The Golay (20,8,7)
-// tables hold codeword bit i in bit i, and a packed codeword holds it in bit
-// 19-i.
-func reverse20(x uint32) uint32 {
-	return bits.Reverse32(x) >> 12
+// generator2087 returns the Golay (20,8,7) codeword of each data bit:
+// element k for bit k of the data, packed the first bit most significant.
+func generator2087() [8]uint32 {
+	return [8]uint32{0x018eb, 0x0293e, 0x04a97, 0x08dc6, 0x10367, 0x206cd, 0x40d99, 0x803da}
 }
 
 // Encode2087 returns the Golay (20,8,7) codeword of 8 data bits: the data
 // bits followed by 12 parity bits, the first bit most significant.
 func Encode2087(data uint8) uint32 {
-	return reverse20(golay_20_8_7_table[bits.Reverse8(data)])
+	g := generator2087()
+	var cw uint32
+	for k := range g {
+		cw ^= g[k] & -uint32(data>>k&1)
+	}
+	return cw
 }
 
 // Decode2087 corrects up to 3 bit errors in the 20-bit Golay (20,8,7)
@@ -29,17 +33,27 @@ func Encode2087(data uint8) uint32 {
 func Decode2087(cw uint32) (uint32, fec.Result) {
 	cw &= 0xFFFFF
 	result := fec.Result{BitsChecked: 20}
-	diff := (Encode2087(uint8(cw>>12)) ^ cw) & 0xFFF
-	if diff == 0 {
-		return cw, result
+	if c := Encode2087(uint8(cw >> 12)); bits.OnesCount32(c^cw) <= 3 {
+		result.ErrorsCorrected = bits.OnesCount32(c ^ cw)
+		return c, result
 	}
-	errPattern := golay_20_8_7_syndrome_table[bits.Reverse16(uint16(diff))>>4]
-	if errPattern == 0xFFFFFFFF {
-		result.Uncorrectable = true
-		return cw, result
+	// The code has distance 7, so at most one codeword is within 3 bits of
+	// cw. Search the 256 codewords, one data bit change per step in Gray
+	// code order, instead of a 16 KiB syndrome table.
+	g := generator2087()
+	var c uint32
+	for i := 1; ; i++ {
+		if e := bits.OnesCount32(c ^ cw); e <= 3 {
+			result.ErrorsCorrected = e
+			return c, result
+		}
+		if i == 256 {
+			break
+		}
+		c ^= g[bits.TrailingZeros(uint(i))]
 	}
-	result.ErrorsCorrected = bits.OnesCount32(errPattern)
-	return cw ^ reverse20(errPattern), result
+	result.Uncorrectable = true
+	return cw, result
 }
 
 // Check2087 reports whether the low 20 bits of cw are a Golay (20,8,7)

@@ -89,16 +89,10 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 	}
 
 	if err := writeFile(dmrRoot, "internal/fec/golay", "golay",
-		writeTable("golay_20_8_7_table", tables.Golay20_8_7Encoding),
-		jen.Line(),
-		jen.Line(),
 		writeTable("golay_23_12_7_table", tables.Golay23_12_7Encoding),
 		jen.Line(),
 		jen.Line(),
 		writeTable("golay_24_12_8_table", tables.Golay24_12_8Encoding),
-		jen.Line(),
-		jen.Line(),
-		writeTable("golay_20_8_7_syndrome_table", tables.Golay20_8_7Syndrome[:]),
 		jen.Line(),
 		jen.Line(),
 		writeTable("golay_23_12_7_syndrome_table", tables.Golay23_12_7Syndrome[:]),
