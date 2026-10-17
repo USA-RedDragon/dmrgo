@@ -1,6 +1,8 @@
 package rf
 
 import (
+	"math"
+
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -16,6 +18,15 @@ type leanExt interface {
 	burst(c *leanCore, b *Burst)
 	// end emits the bursts that the stage holds, at the end of a stream.
 	end(c *leanCore)
+	// kept returns the ring of kept samples that the stage keeps in place
+	// of the scratch of the core, or nil.
+	kept() []int16
+	// locked runs when the core locks to a stream, at a SYNC that it
+	// sampled again d samples from its timing.
+	locked(c *leanCore, d float32)
+	// firstSlot runs as the first slot of a stream ends, before the core
+	// handles it.
+	firstSlot(c *leanCore)
 }
 
 // extQueue is the most bursts that a softExt holds: the bursts B to D of a
@@ -55,11 +66,27 @@ type softExt struct {
 	n    int
 	sum  [4][embBits]int16
 	out  [4]layer2.RawBurst
+	// acq is the ring of matched filter samples that the core keeps while
+	// it searches, two to an element, long enough for lookback slots
+	// before the burst of the SYNC that it locks to, and ring holds the
+	// symbols of the core while those slots run.
+	acq      []int16
+	lookback int
+	ring     [leanRing]int8
+	// lockSym is the last symbol at the lock, the end of its SYNC, and
+	// lockAt its time from the last kept sample, in samples.
+	lockSym int64
+	lockAt  float32
 }
 
-// newSoftExt returns a softExt.
-func newSoftExt() *softExt {
-	x := &softExt{soft: newSoftDecoder()}
+// newSoftExt returns a softExt that decodes lookback slots before the
+// SYNC of each lock, at sps matched filter samples per symbol.
+func newSoftExt(lookback int, sps float32) *softExt {
+	x := &softExt{soft: newSoftDecoder(), lookback: lookback}
+	if lookback > 0 {
+		n := int(float32((lookback+1)*slotSymbols)*sps) + leanAcqSamples
+		x.acq = make([]int16, (n+1)/2)
+	}
 	for dt := range x.checks {
 		x.checks[dt] = softBPTCCheck(enums.DataType(dt))
 	}
@@ -221,6 +248,82 @@ func (x *softExt) drain(c *leanCore, one bool) {
 			return
 		}
 	}
+}
+
+func (x *softExt) kept() []int16 { return x.acq }
+
+// locked notes the time of the SYNC that the core locked to, d samples
+// from the timing loop, in the kept samples, which the core stops keeping.
+func (x *softExt) locked(c *leanCore, d float32) {
+	x.lockSym, x.lockAt = c.ns-1, c.lastAt+d
+}
+
+// firstSlot decodes the lookback slots before the burst of the SYNC that
+// the core locked to, as that burst ends: it samples their symbols from
+// the kept samples at the timing of the SYNC and runs each through the
+// slot handling of the core, as if the core had been locked there. A
+// first run only votes for the color code, with the burst of the SYNC
+// too, so that the voice bursts without a SYNC place by their EMB; the
+// second decodes. The slots of the stream count from the first of them.
+func (x *softExt) firstSlot(c *leanCore) {
+	if x.lookback == 0 {
+		return
+	}
+	sps := 2 * c.tm.step
+	last := x.lockSym
+	// The oldest symbol that a slot reads, one before it for the SYNC
+	// search, must lie in the kept samples with the four of the
+	// interpolation.
+	room := float32(c.acqKept()-4) - x.lockAt
+	n := 0
+	for n < x.lookback {
+		oldest := c.first - int64(n+1)*slotSymbols - 1
+		if oldest < 0 || float32(last-oldest)*sps > room {
+			break
+		}
+		n++
+	}
+	if n == 0 {
+		return
+	}
+	x.ring = c.ring
+	first, eAcc, eSyms, hold, slotEnd := c.first, c.eAcc, c.eSyms, c.tm.hold, c.slotEnd
+	levels := [3]float32{c.dcHz, c.devScale, c.discVar}
+	c.replaying = true
+	for _, dry := range [2]bool{true, false} {
+		votes := c.votes
+		c.resetChans()
+		c.votes = votes
+		c.dcHz, c.devScale, c.discVar = levels[0], levels[1], levels[2]
+		c.next, c.lastAnch, c.lost = 0, leanNoSlot, 0
+		c.first = first - int64(n)*slotSymbols
+		c.slotEnd = c.first + slotSymbols
+		c.replayDry = dry
+		// The first run also votes with the slot of the SYNC, whose
+		// symbols the ring holds.
+		m := n
+		if dry {
+			m++
+		}
+		for j := range m {
+			if j == n {
+				c.ring = x.ring
+			} else {
+				base := c.first + int64(j)*slotSymbols
+				for k := base - 1; k <= base+slotSymbols; k++ {
+					v := c.keptAt(x.lockAt - float32(last-k)*sps)
+					c.ring[k%leanRing] = int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
+				}
+			}
+			c.eAcc, c.eSyms = 0, 0
+			c.slot()
+		}
+	}
+	c.replaying, c.replayDry = false, false
+	c.ring = x.ring
+	c.first = first - int64(n)*slotSymbols
+	c.slotEnd = slotEnd
+	c.eAcc, c.eSyms, c.tm.hold = eAcc, eSyms, hold
 }
 
 func (x *softExt) end(c *leanCore) {

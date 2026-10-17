@@ -81,6 +81,9 @@ type options struct {
 	// SoftExt decodes the bursts of the streaming core with softExt, the
 	// soft decoders of the coherent tiers.
 	SoftExt bool
+	// ExtLookback is the number of slots before the SYNC of a lock that
+	// softExt decodes.
+	ExtLookback int
 }
 
 // tierOptions returns the settings of tier t.

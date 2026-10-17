@@ -228,8 +228,11 @@ type leanCore struct {
 	audio *audioFront
 	iq    leanTuner
 	// ext is the stage of a higher tier that decodes and emits each burst
-	// in place of repair, nil for Tier 0.
-	ext leanExt
+	// in place of repair, nil for Tier 0, and replaying is set while it
+	// runs the slots before a lock through slot; with replayDry the slots
+	// only collect the color code and emit nothing.
+	ext                  leanExt
+	replaying, replayDry bool
 	// center is the input sample at the center of matched filter sample 0,
 	// in baseband samples, and mfStep the baseband samples per matched
 	// filter sample, a whole number at every input rate.
@@ -380,7 +383,7 @@ func newLean(cfg Config, opt options) *leanRx {
 	r.df.init(cfg.BasebandHz == discRate)
 	r.iq, r.center = &r.df, r.df.center()
 	if opt.SoftExt {
-		r.ext = newSoftExt()
+		r.ext = newSoftExt(opt.ExtLookback, discSPS)
 	}
 	return r
 }
@@ -505,17 +508,30 @@ func (r *leanCore) keep(s float32) {
 // keepQ stores a matched filter sample in units of discStepHz, as keep
 // does, without a float conversion, which TinyGo checks for range.
 func (r *leanCore) keepQ(q int32) {
+	buf, an := r.acqBuf()
 	v := int16(max(min(q, math.MaxInt8), math.MinInt8))
 	h := r.acqHead
 	if h&1 == 0 {
 		r.acqLow = v
-	} else if i := h >> 1; i < int32(len(r.fec.s)) {
-		r.fec.s[i] = int16(uint16(uint8(r.acqLow)) | uint16(uint8(v))<<8)
+	} else if i := h >> 1; i < int32(len(buf)) {
+		buf[i] = int16(uint16(uint8(r.acqLow)) | uint16(uint8(v))<<8)
 	}
-	if h++; h == leanAcqSamples {
+	if h++; h == an {
 		h = 0
 	}
 	r.acqHead = h
+}
+
+// acqBuf returns the ring of kept samples, two to an element, and its
+// length in samples: the FEC scratch, or the longer ring of a stage that
+// decodes the slots before a lock.
+func (r *leanCore) acqBuf() ([]int16, int32) {
+	if r.ext != nil {
+		if b := r.ext.kept(); b != nil {
+			return b, int32(2 * len(b))
+		}
+	}
+	return r.fec.s[:leanAcqSamples/2], leanAcqSamples
 }
 
 // rescale multiplies the symbols of the ring and the kept samples by g,
@@ -531,9 +547,10 @@ func (r *leanCore) rescale(g float32) {
 
 // rescaleKept sets each kept sample x to x*g8/256+a8/256, rounded.
 func (r *leanCore) rescaleKept(g8, a8 int32) {
-	for i, w := range r.fec.s[:(leanAcqSamples+1)/2] {
+	buf, _ := r.acqBuf()
+	for i, w := range buf {
 		lo, hi := scale8(int32(int8(uint8(w))), g8, a8), scale8(int32(int8(uint8(uint16(w)>>8))), g8, a8)
-		r.fec.s[i] = int16(uint16(uint8(lo)) | uint16(uint8(hi))<<8)
+		buf[i] = int16(uint16(uint8(lo)) | uint16(uint8(hi))<<8)
 	}
 	r.acqLow = int16(scale8(int32(r.acqLow), g8, a8))
 }
@@ -545,20 +562,22 @@ func scale8(x, g8, a8 int32) int32 {
 
 // acqKept returns the number of samples in the ring of samples.
 func (r *leanCore) acqKept() int32 {
-	return int32(min(r.n-r.acqFrom, leanAcqSamples))
+	_, an := r.acqBuf()
+	return int32(min(r.n-r.acqFrom, int64(an)))
 }
 
 // kept returns the stored sample back samples before the last one.
 func (r *leanCore) kept(back int32) float32 {
+	buf, an := r.acqBuf()
 	h := r.acqHead - 1 - back
 	if h < 0 {
-		h += leanAcqSamples
+		h += an
 	}
 	if h == r.acqHead-1 && h&1 == 0 {
 		// Its pair is not stored yet.
 		return float32(r.acqLow)
 	}
-	w := uint16(r.fec.s[h>>1])
+	w := uint16(buf[h>>1])
 	if h&1 != 0 {
 		w >>= 8
 	}
@@ -625,16 +644,17 @@ func coarseSync(win *syncWindow, syms *[syncSymbols]int8, end, sps float32) bool
 // fillWindow copies the kept samples from b0 back from the last into win.
 func (r *leanCore) fillWindow(win *syncWindow, b0 int32) {
 	win.b0, win.off = b0, r.off*(1.0/discStepHz)
+	buf, an := r.acqBuf()
 	h := r.acqHead - 1 - b0
 	for k := range win.w {
 		if h < 0 {
-			h += leanAcqSamples
+			h += an
 		}
 		if h == r.acqHead-1 && h&1 == 0 {
 			// Its pair is not stored yet.
 			win.w[k] = int8(r.acqLow)
-		} else if i := h >> 1; i < int32(len(r.fec.s)) {
-			w := uint16(r.fec.s[i])
+		} else if i := h >> 1; i < int32(len(buf)) {
+			w := uint16(buf[i])
 			if h&1 != 0 {
 				w >>= 8
 			}
@@ -793,6 +813,9 @@ func (r *leanCore) symbol(x, at float32) {
 		return
 	}
 	if r.ns == r.slotEnd {
+		if r.ext != nil && r.next == 0 {
+			r.ext.firstSlot(r)
+		}
 		r.slot()
 	}
 }
@@ -899,9 +922,11 @@ func (r *leanCore) searchSym() {
 	// start again at the timing of the SYNC, or else test the symbols as
 	// they are.
 	ok := false
+	var d float32
 	if r.ns >= r.acqNext {
 		var saved [syncSymbols]int8
-		if d, sampled := r.resample(p, &saved); sampled {
+		var sampled bool
+		if d, sampled = r.resample(p, &saved); sampled {
 			if ok = r.fitLevels(r.ns-1, p, true); ok {
 				r.resampleStart(d)
 			} else {
@@ -913,6 +938,7 @@ func (r *leanCore) searchSym() {
 		}
 		if !ok {
 			r.acqNext = r.ns + leanAcqWait
+			d = 0
 		}
 	}
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true)) {
@@ -933,6 +959,9 @@ func (r *leanCore) searchSym() {
 	}
 	r.resetChans()
 	r.eAcc, r.eSyms = 0, 0
+	if r.ext != nil {
+		r.ext.locked(r, d)
+	}
 }
 
 // fitLevels fits the discriminator offset, the deviation scale and the
@@ -1014,7 +1043,7 @@ func (r *leanCore) slot() {
 	}
 	if isAnchor {
 		r.fitLevels(base+leanSyncEnd+shift, anchor, false)
-		if abs32(r.dcHz) > leanRetuneHz {
+		if abs32(r.dcHz) > leanRetuneHz && !r.replaying {
 			r.retune(r.dcHz)
 		}
 		r.first += shift
@@ -1048,7 +1077,7 @@ func (r *leanCore) slot() {
 		}
 		r.burst(j, base, anchor)
 	}
-	if r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6 {
+	if !r.replaying && (r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6) {
 		r.unlock()
 	}
 }
@@ -1302,7 +1331,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		return
 	}
 	if r.ext != nil {
-		r.ext.burst(r, b)
+		if !r.replayDry {
+			r.ext.burst(r, b)
+		}
 		return
 	}
 	if r.softFEC {

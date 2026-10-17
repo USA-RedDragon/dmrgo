@@ -207,6 +207,7 @@ func (r *DiscReceiver) write(x []int16) {
 	// kh and kq are the head of the ring of kept samples and the sample
 	// whose pair is not stored yet: the loop stores two samples at once.
 	kh, kq := r.acqHead, r.acqLow
+	buf, an := r.acqBuf()
 	for _, v := range x {
 		if !r.locked {
 			f.sum += int32(v)
@@ -236,10 +237,10 @@ func (r *DiscReceiver) write(x []int16) {
 			q := int16(int8((acc + 1<<13) >> 14))
 			if kh&1 == 0 {
 				kq = q
-			} else if i := kh >> 1; i < int32(len(r.fec.s)) {
-				r.fec.s[i] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+			} else if i := kh >> 1; i < int32(len(buf)) {
+				buf[i] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
 			}
-			if kh++; kh == leanAcqSamples {
+			if kh++; kh == an {
 				kh = 0
 			}
 		}
