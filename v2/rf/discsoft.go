@@ -33,7 +33,9 @@ func (r *DiscReceiver) addExt(opt *options) {
 		if ph.lazy {
 			x.coh.dt = lazyDT(r.hz())
 		}
-		r.signMiss = leanExtSignMiss
+		if !opt.CohLocked {
+			r.signMiss = opt.signMiss()
+		}
 	}
 	r.ext = x
 }

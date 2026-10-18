@@ -736,7 +736,7 @@ func (x *softExt) scan(c *leanCore) (int, bool, int64, bool) {
 }
 
 func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
-	return x.coh != nil && x.coh.verify(c, p)
+	return x.coh != nil && !x.coh.locked && x.coh.verify(c, p)
 }
 
 // locked notes the time of the SYNC that the core locked to, d samples

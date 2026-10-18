@@ -113,6 +113,18 @@ type options struct {
 	// reads from the input as it reads it, instead of a ring of channel
 	// filter samples for both.
 	CohLazy bool
+	// CohSkipSNR, when above 0, is the SNR of the levels of the coherent
+	// detection, the power of the signal over that of the noise, from
+	// which it leaves a burst to the ratios of the core.
+	CohSkipSNR float64
+	// CohLocked leaves the SYNC search to the core: the coherent stage
+	// tests no SYNC that the discriminator does not show, which costs the
+	// most on noise.
+	CohLocked bool
+	// CohSignMiss is the most SYNC symbols whose sign may miss for a
+	// candidate of the search that the coherent stage verifies; 0 means
+	// leanExtSignMiss.
+	CohSignMiss uint8
 }
 
 // discOptions returns the settings of the FM discriminator core alone:
@@ -179,6 +191,15 @@ func tierOptions(t Tier) options {
 		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 2, true, true, 7, 0.35
 	}
 	return o
+}
+
+// signMiss returns the sign misses of the SYNC candidates of the search
+// that the coherent stage verifies.
+func (o *options) signMiss() uint8 {
+	if o.CohSignMiss > 0 {
+		return o.CohSignMiss
+	}
+	return leanExtSignMiss
 }
 
 // tabled reports whether tables_gen.go holds the tables that the settings

@@ -43,6 +43,11 @@ type cohStage struct {
 	// easySNR is the SNR of the levels from which a burst is easy:
 	// cohEasySNR, or discEasySNR on an audio ring.
 	easySNR float64
+	// skipSNR, when above 0, is the SNR of the levels from which detect
+	// leaves a burst to the ratios of the core, and locked marks a stage
+	// that verifies no SYNC of the search.
+	skipSNR float64
+	locked  bool
 	model   *cpmModel
 	tr      *trellis
 	mu      float32
@@ -165,7 +170,7 @@ func newCohStageOf(opt *options) *cohStage {
 		sps = opt.CohSPS
 	}
 	m := newCPMModel(1, sps, 0.27)
-	s := &cohStage{model: m, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR}
+	s := &cohStage{model: m, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
@@ -671,6 +676,9 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	for i := range s.dist {
 		s.dist[i] = math.MaxInt
 	}
+	if s.quiet(segs[0], nseg) {
+		return false
+	}
 	if nseg == 1 {
 		s.dt += cohDTGain * s.fineTime(segs[0][0], segs[0][1])
 		// The mean of the first fits, then a slow average: the offset that
@@ -759,6 +767,31 @@ func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 	}
 	return true
 }
+
+// quiet reports whether the stream is clear enough, by the levels of the
+// bursts before, that detect leaves the burst to the ratios of the core,
+// once cohQuietFits SYNC fits set its carrier and timing. The levels then
+// follow the SYNC seg of a burst at the timing and the carrier offset of
+// the stream, and the fits wait, as they move little at that SNR; nseg is
+// 2 for the EMB of a burst without a SYNC.
+func (s *cohStage) quiet(seg [2]int, nseg int) bool {
+	if s.skipSNR <= 0 || s.nFit < cohQuietFits || s.ampAvg*s.ampAvg/s.noiseAvg < s.skipSNR {
+		return false
+	}
+	if nseg == 1 {
+		if amp, noise := s.levels(seg[0], seg[1]); amp > 0 && noise > 0 {
+			g := float64(syncSymbols) / (syncSymbols + cohLevelSyms)
+			s.ampAvg += g * (amp - s.ampAvg)
+			s.noiseAvg += g * (noise - s.noiseAvg)
+		}
+	}
+	s.lastSync = 0
+	return true
+}
+
+// cohQuietFits is the number of SYNC fits of the carrier after which a
+// clear stream leaves its bursts to the core.
+const cohQuietFits = 4
 
 // cohLevelSyms is the number of known symbols that the levels of the
 // trellis average over.

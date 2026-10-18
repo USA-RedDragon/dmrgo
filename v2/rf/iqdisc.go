@@ -189,7 +189,9 @@ func newIQRx(cfg Config, opt options) *iqRx {
 		if opt.CohExt {
 			r.yHist = make([]complex64, cohHist)
 			x.coh = newCohStage(r, &opt)
-			r.d.signMiss = leanExtSignMiss
+			if !opt.CohLocked {
+				r.d.signMiss = opt.signMiss()
+			}
 		}
 		r.d.ext = x
 	}
