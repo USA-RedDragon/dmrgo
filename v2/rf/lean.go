@@ -31,6 +31,9 @@ const (
 	// leanCoarse is the SYNC correlation on whole kept samples from which
 	// resample interpolates.
 	leanCoarse = 0.75
+	// leanOverScale is the deviation scale of a lock of a DiscReceiver
+	// above which fitScale scales its input down.
+	leanOverScale = 2
 	// leanAcqWait is the number of symbols after a SYNC that failed in
 	// which searchSym does not sample a burst again, which near the
 	// noise floor would otherwise cost more than the search.
@@ -907,11 +910,28 @@ func (r *leanCore) symbol(x, at float32) {
 		}
 	}
 	if r.ns == r.slotEnd {
-		if r.ext != nil && r.next == 0 {
+		first := r.next == 0
+		if r.ext != nil && first {
 			r.ext.firstSlot(r)
 		}
 		r.slot()
+		if first && r.locked && r.audio != nil && r.devScale > leanOverScale {
+			r.fitScale()
+		}
 	}
+}
+
+// fitScale scales the input of a DiscReceiver to the deviation of the
+// stream that it locked to, after the first slot of the lock, whose
+// slots before it a stage decodes at the scale of their kept samples. The
+// front end scaled the input for another one, such as the distorted start
+// of a call after a carrier, and the outer symbols of the stream would
+// clip near the threshold between the levels.
+func (r *leanCore) fitScale() {
+	g := 1 / r.devScale
+	r.scaleAudio(g)
+	r.devScale, r.dcHz, r.discVar = 1, r.dcHz*g, r.discVar*g*g
+	r.tm.dc, r.tm.dev = r.dcHz, deviationHz
 }
 
 // block adds the prefilter power p and the last lag product to the

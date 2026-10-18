@@ -329,19 +329,26 @@ func (r *DiscReceiver) levels() {
 	f.mean += discMeanGain * (m - f.mean)
 	if rms := sqrtf(max(v, 0)); rms > 0 {
 		if g := discInputRMSHz / rms; g > 2 || g < 0.5 {
-			f.gain *= g
-			f.mean *= g
-			f.dc *= g
-			r.tuneHz *= g
-			r.off *= g
-			f.scale(g)
-			f.refresh()
-			r.rescale(g)
+			r.scaleAudio(g)
 		}
 	}
 	if d := f.mean - f.dc; abs32(d) > leanSearchHz {
 		r.retune(d)
 	}
+}
+
+// scaleAudio multiplies the gain of the audio front end by g, with the
+// offsets in Hz and the samples that the front end and the core hold.
+func (r *leanCore) scaleAudio(g float32) {
+	f := r.audio
+	f.gain *= g
+	f.mean *= g
+	f.dc *= g
+	r.tuneHz *= g
+	r.off *= g
+	f.scale(g)
+	f.refresh()
+	r.rescale(g)
 }
 
 // audioFront is the front end of a DiscReceiver: the gain that scales the
