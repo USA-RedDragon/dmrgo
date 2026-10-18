@@ -65,8 +65,10 @@ type cohStage struct {
 	steps int
 	t0    float64
 	// dt is the offset of the core's symbol timing that the SYNC of the
-	// bursts finds, in ring samples, followed from burst to burst.
+	// bursts finds, in ring samples, followed from burst to burst, and
+	// relock marks a stream whose first SYNC sets it.
 	dt      float64
+	relock  bool
 	totalHz float64
 	// freq is the carrier offset of the stream, in Hz, that the SYNC of
 	// the bursts fits, from the DC offset of the core at the first.
@@ -460,12 +462,14 @@ func (s *cohStage) runKeep(k int, app []float32) {
 
 // Settings of the fine timing of cohStage: the offset of the symbol
 // timing of the core that it starts from, in ring samples, on a ring at
-// 24 kHz and at 12 kHz, the offsets it tries around the last, in samples
-// at 24 kHz, and the weight of each SYNC in it.
+// 24 kHz and at 12 kHz, the offsets it tries around the last, and at the
+// first SYNC of a stream, in samples at 24 kHz, and the weight of each
+// SYNC in it.
 const (
 	cohDT     = 1.0
 	cohDT12   = -0.4
 	cohDTSpan = 0.6
+	cohDTWide = 2.4
 	cohDTStep = 0.2
 	cohDTGain = 0.2
 )
@@ -475,8 +479,42 @@ const (
 // the move. The caller moves dt by it when the symbols are a SYNC: the
 // move of a field that holds none is noise.
 func (s *cohStage) fineTime(k0, k1 int) float64 {
+	return s.timeIn(k0, k1, cohDTSpan)
+}
+
+// syncTime returns the move of dt that the SYNC of a burst, the known
+// symbols k0 to k1, fits, and moves t0 by its fine timing. The timing of
+// the core relative to the ring can jump at a lock: when the first SYNC of
+// a stream does not fit at dt, the offset within cohDTWide at which it
+// fits best sets it, if the SYNC fits there.
+func (s *cohStage) syncTime(k0, k1 int) float64 {
+	relock := s.relock
+	s.relock = false
+	rho := func() float64 {
+		a, n := s.levels(k0, k1)
+		return a * a / (a*a + max(n, 0))
+	}
+	if t0 := s.t0; relock {
+		if r0 := rho(); r0 < cohRelockRho {
+			d := s.timeIn(k0, k1, cohDTWide)
+			if r := rho(); r >= cohPlaceRho && r > r0 {
+				return d
+			}
+			s.t0 = t0
+		}
+	}
+	return cohDTGain * s.fineTime(k0, k1)
+}
+
+// cohRelockRho is the least share of the power of the first SYNC of a
+// stream that its waveform explains at dt for the fine timing to follow
+// it from there.
+const cohRelockRho = 0.5
+
+// timeIn is fineTime within span samples at 24 kHz of dt.
+func (s *cohStage) timeIn(k0, k1 int, span float64) float64 {
 	t0, best, bestD := s.t0, -1.0, 0.0
-	for d := -cohDTSpan; d <= cohDTSpan+1e-9; d += cohDTStep {
+	for d := -span; d <= span+1e-9; d += cohDTStep {
 		s.t0 = t0 + d*2/s.div
 		if a, _ := s.levels(k0, k1); a > best {
 			best, bestD = a, d
@@ -534,6 +572,13 @@ func (s *cohStage) track() {
 	}
 	s.fitVar += cohFreqWalk
 	s.totalHz = s.freq
+}
+
+// lock forgets the bursts of the stream before a lock: the runs from the
+// SYNC of the slot before and the priors of its second half are of a
+// stream with another timing.
+func (s *cohStage) lock() {
+	s.lastT0, s.lastSync, s.mineOK, s.relock = 0, 0, false, true
 }
 
 // freqFit returns the carrier offset, in Hz, left in the ring samples of
@@ -680,7 +725,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		return false
 	}
 	if nseg == 1 {
-		s.dt += cohDTGain * s.fineTime(segs[0][0], segs[0][1])
+		s.dt += s.syncTime(segs[0][0], segs[0][1])
 		// The mean of the first fits, then a slow average: the offset that
 		// the fits start from is no fit.
 		// The noise of a fit falls with the square of the SNR of the SYNC

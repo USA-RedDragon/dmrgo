@@ -761,6 +761,7 @@ func (x *softExt) locked(c *leanCore, d float32) {
 		// A new stream may come from another transmitter, at another
 		// carrier offset.
 		x.coh.freqOK = false
+		x.coh.lock()
 	}
 	if x.ph != nil {
 		x.ph.lock()
