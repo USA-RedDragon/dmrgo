@@ -225,3 +225,32 @@ func TestReceiverWithoutWarmUp(t *testing.T) {
 		t.Errorf("%d of %d frames exact", exact, total)
 	}
 }
+
+// TestReceiverKeyUp receives two BS outbound streams at 15 dB C/N with
+// 0.75 s of noise and a new slot timing between them, as a repeater that
+// keys up again sends, and checks that each tier detects a burst of the
+// second within 150 ms of its start.
+func TestReceiverKeyUp(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 2)
+	pad := int(0.3 * basebandRate)
+	a := noisyBaseband(slots, 1400, 15, 1)
+	gap := noisyBaseband(nil, 1400, 15, 2)[:int(0.15*basebandRate)+137]
+	b := noisyBaseband(slots, 1100, 15, 3)
+	x := append(append(append([]complex64(nil), a...), gap...), b...)
+	start := float64(len(a)+len(gap)+pad) / basebandRate
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+		t.Run(strconv.Itoa(int(tier-Tier0)), func(t *testing.T) {
+			t.Parallel()
+			first := math.Inf(1)
+			for _, bu := range receiveBaseband(x, tier) {
+				if bu.Seconds >= start-0.03 {
+					first = min(first, bu.Seconds)
+				}
+			}
+			if first > start+0.15 {
+				t.Errorf("first burst of the second stream at %.3f s, %.3f s after its start", first, first-start)
+			}
+		})
+	}
+}

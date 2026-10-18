@@ -1116,7 +1116,10 @@ func (r *leanCore) slot() {
 		}
 		r.burst(j, base, anchor)
 	}
-	if !r.replaying && (r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6) {
+	// The carrier of a BS stream stays on, with a SYNC in most slots, so
+	// lostSlots without one end it: its noise keeps the energy of the
+	// slots up, and a repeater that keys up again has a new timing.
+	if !r.replaying && (r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6 || r.bs && j-r.lastAnch >= lostSlots) {
 		r.unlock()
 	}
 }
