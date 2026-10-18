@@ -1,0 +1,5 @@
+go test fuzz v1
+int(24080)
+int(1076)
+int(2048)
+int8(0)

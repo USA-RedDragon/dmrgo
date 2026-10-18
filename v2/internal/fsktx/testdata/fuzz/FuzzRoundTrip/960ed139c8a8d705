@@ -1,0 +1,8 @@
+go test fuzz v1
+byte('\x0f')
+uint32(1)
+uint32(16777181)
+bool(false)
+byte('V')
+int16(-3000)
+uint16(84)
