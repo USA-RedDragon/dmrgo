@@ -42,18 +42,45 @@ func newCPMModel(d, sps int, h float64) *cpmModel {
 
 // setH recomputes the templates for modulation index h.
 func (m *cpmModel) setH(h float64) {
-	sps, d := m.sps, m.d
 	for w := range m.windows {
-		for j := range sps {
-			off := (j - sps/2) * (m.res / sps)
-			var ph float64
-			for i := -d; i <= d; i++ {
-				digit := (w >> (2 * (d - i))) & 3
-				ph += float64(2*digit-3) * m.pulse(off-i*m.res, h)
+		m.setWindow(w, h)
+	}
+	m.setStep(h)
+}
+
+// setOuterH recomputes for modulation index h only the templates of the
+// windows of outer symbols, -3 and 3, which are those of a SYNC.
+func (m *cpmModel) setOuterH(h float64) {
+	for w := range m.windows {
+		outer := true
+		for i := range 2*m.d + 1 {
+			if digit := (w >> (2 * i)) & 3; digit != 0 && digit != 3 {
+				outer = false
 			}
-			m.tpl[w*sps+j] = complex64(complex(math.Cos(ph), -math.Sin(ph)))
+		}
+		if outer {
+			m.setWindow(w, h)
 		}
 	}
+	m.setStep(h)
+}
+
+// setWindow recomputes the template of window w for modulation index h.
+func (m *cpmModel) setWindow(w int, h float64) {
+	sps, d := m.sps, m.d
+	for j := range sps {
+		off := (j - sps/2) * (m.res / sps)
+		var ph float64
+		for i := -d; i <= d; i++ {
+			digit := (w >> (2 * (d - i))) & 3
+			ph += float64(2*digit-3) * m.pulse(off-i*m.res, h)
+		}
+		m.tpl[w*sps+j] = complex64(complex(math.Cos(ph), -math.Sin(ph)))
+	}
+}
+
+// setStep sets the phase steps of the symbols, and the index, to h.
+func (m *cpmModel) setStep(h float64) {
 	for v := range 4 {
 		ph := h * math.Pi * float64(2*v-3)
 		m.step[v] = complex64(complex(math.Cos(ph), -math.Sin(ph)))

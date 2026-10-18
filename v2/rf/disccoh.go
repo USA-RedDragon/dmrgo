@@ -597,8 +597,8 @@ func (s *cohStage) seedDeviation(c *leanCore, k0, k1 int) bool {
 // which the waveform of the known symbols k0 to k1 at t0 explains the most
 // of the samples, on a grid of step to span either way, by a parabola
 // through the best, and the share of the power that it explains there. On
-// I/Q it scales the modulation index hFit of the model instead, and leaves
-// the model at the last index of the grid.
+// I/Q it scales the modulation index hFit of the model instead, for the
+// windows of a SYNC, and leaves them at the last index of the grid.
 func (s *cohStage) scaleFit(k0, k1 int, span, step float64) (float64, float64) {
 	// The far grid has the most scales, 2*ln(3)/0.05+1 of them.
 	var ampBuf, noiseBuf [48]float64
@@ -608,7 +608,7 @@ func (s *cohStage) scaleFit(k0, k1 int, span, step float64) (float64, float64) {
 	s.trialing = s.ph != nil
 	for i := range amp {
 		if s.ph == nil {
-			s.model.setH(s.hFit * math.Exp(-span+float64(i)*step))
+			s.model.setOuterH(s.hFit * math.Exp(-span+float64(i)*step))
 		} else {
 			s.trial = math.Exp(-span+float64(i)*step) - 1
 		}
@@ -660,8 +660,9 @@ func (s *cohStage) fitIndex(k0, k1 int, fit float64) {
 		s.hFit *= math.Exp(g * e)
 		s.hNew = false
 		if f := s.hFit / cohSyncIndex; math.Abs(f/h-1) >= cohIndexMove {
-			h = f
+			s.model.setH(f)
+			return
 		}
 	}
-	s.model.setH(h)
+	s.model.setOuterH(h)
 }
