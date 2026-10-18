@@ -211,6 +211,11 @@ type options struct {
 	// shrinks its buffers to CohWin+cohLook symbols, instead of over the
 	// whole run.
 	CohWin int
+	// MidTiming takes the signs halfway between the symbols of a hunting
+	// lock from the samples of the timing loop, interpolated linearly, in
+	// place of the kept samples by Catmull-Rom, which costs more. It
+	// applies at up to leanCubicSPS samples per symbol.
+	MidTiming bool
 }
 
 // discOptions returns the settings of the FM discriminator core alone:

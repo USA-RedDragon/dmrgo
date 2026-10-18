@@ -227,6 +227,19 @@ func (tm *leanTiming) at(t float32) float32 {
 	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0)))
 }
 
+// linearAt returns the matched filter output at t samples after the last
+// sample, from -3 on, interpolated linearly between the last four samples
+// of a cubic timing.
+func (tm *leanTiming) linearAt(t float32) float32 {
+	switch {
+	case t >= -1:
+		return tm.s3 + t*(tm.s3-tm.s2)
+	case t >= -2:
+		return tm.s2 + (t+1)*(tm.s2-tm.s1)
+	}
+	return tm.s1 + (t+2)*(tm.s1-tm.s0)
+}
+
 // leanChan is the superframe state of one TDMA channel of the streaming
 // tracker: the slot of the last burst A and of the last voice LC or PI
 // header.
@@ -272,8 +285,9 @@ type leanCore struct {
 	suspect, hunt bool
 	dataAnch      [2]bool
 	// again marks a SYNC that resample found to end after the last
-	// sample, which midSync samples at the next symbol.
-	again bool
+	// sample, which midSync samples at the next symbol. midTiming is
+	// options.MidTiming.
+	again, midTiming bool
 	// ext is the stage of a higher tier that decodes and emits each burst
 	// in place of repair, nil for Tier 0, and replaying is set while it
 	// runs the slots before a lock through slot; with replayDry the slots
@@ -455,6 +469,7 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.onBurst, r.lastAnch, r.softFEC = onBurst, leanNoSlot, opt.SoftFEC
 	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	r.clickSpan = float32(opt.ClickSpan)
+	r.midTiming = opt.MidTiming && sps <= leanCubicSPS
 	r.signMiss = leanSignMiss
 	if po := opt.DiscOutlier; po > 0 {
 		r.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
@@ -1025,7 +1040,11 @@ func (r *leanCore) symbol(x, at float32) {
 func (r *leanCore) huntSym(at float32) {
 	if r.acqKept() > 4 {
 		r.midSigns <<= 1
-		if r.keptAt(at-r.tm.step)*syncSymbols > float32(r.ringSum) {
+		if r.midTiming {
+			if (r.tm.linearAt(at-r.tm.step)-r.off)*syncSymbols > float32(r.ringSum)*discStepHz {
+				r.midSigns |= 1
+			}
+		} else if r.keptAt(at-r.tm.step)*syncSymbols > float32(r.ringSum) {
 			r.midSigns |= 1
 		}
 	}
