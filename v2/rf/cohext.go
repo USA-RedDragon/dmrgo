@@ -966,13 +966,13 @@ const (
 )
 
 // cohResidual is the most share of the power of a SYNC field that its
-// waveform may leave for verify and scan, in multiples of the share of the
-// noise in the power of its samples. A SYNC leaves the noise and the error
-// of the model: from -2 to 4 dB C/N, at most 3 times the noise. The data of
-// a burst whose symbols match a SYNC in most signs leaves half of the
-// signal or more: from 8 dB C/N, over 4 times the noise. The share of the
-// power alone passes such data once the carrier offset is known, as after
-// an unmodulated carrier or at the start of a stream.
+// waveform may leave for verify and scan on I/Q, in multiples of the share
+// of the noise in the power of its samples. A SYNC leaves the noise and
+// the error of the model: from -2 to 4 dB C/N, at most 3 times the noise.
+// The data of a burst whose symbols match a SYNC in most signs leaves half
+// of the signal or more: from 8 dB C/N, over 4 times the noise. The share
+// of the power alone passes such data once the carrier offset is known, as
+// after an unmodulated carrier or at the start of a stream.
 const cohResidual = 4
 
 // noiseShare returns the share of the noise in the power of the samples x,
@@ -1025,8 +1025,10 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	}
 	d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
+	// The ring of audio holds phasors of unit power, whose envelope shows
+	// no noise.
 	rho := amp * amp / (amp*amp + max(noise, 0))
-	if amp <= 0 || rho < cohVerifyRho || 1-rho > cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps]) {
+	if amp <= 0 || rho < cohVerifyRho || s.ph == nil && 1-rho > cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps]) {
 		return false
 	}
 	s.dt += cohDTGain * d

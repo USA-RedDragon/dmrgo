@@ -127,7 +127,7 @@ type tierOrderCase struct {
 // bursts differently by chance, so a tier may fall short by 1% of the
 // truth, or 2 items. The order on direct mode traffic whose transmissions
 // start between symbol boundaries, which a fix of the timing of such starts
-// is due to improve, and that of audio Tier2 over Tier1 are only logged.
+// is due to improve, is only logged.
 func TestTierOrder(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
@@ -217,10 +217,7 @@ func TestTierOrder(t *testing.T) {
 					}
 					msg := "%s %s %s: Tier%d recovers %d of %d, Tier%d %d"
 					args := []any{sc.name, mode, p, tier - Tier0, hi.Exact, hi.Truth, tier - 1 - Tier0, lo.Exact}
-					// The core of audio Tier2, which runs on its ring of
-					// phasors, locks to some weak streams later than that of
-					// Tier1, which runs on the input.
-					if sc.strict && (mode != benchAudio || tier != Tier2) {
+					if sc.strict {
 						t.Errorf(msg, args...)
 					} else {
 						t.Logf("expected to improve: "+msg, args...)
