@@ -1061,7 +1061,7 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
 	r.slotEnd = r.first + slotSymbols
 	r.tm.hold, r.tm.gain = false, r.trackGain
-	if r.mmOK {
+	if r.mmOK && !r.tm.mm {
 		// The next strobe of the Gardner loop after a symbol is a midpoint,
 		// which Mueller and Muller skips.
 		r.tm.mm, r.tm.mid = true, false
