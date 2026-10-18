@@ -250,7 +250,7 @@ func (r *DiscReceiver) write(x []int16) {
 		// burst as present from its anchors.
 		n++
 		s0, s1, s2, s3 = s1, s2, s3, y
-		if !r.locked {
+		if !r.locked || r.hunt {
 			// acc is in Q15 of rrcStepHz, twice discStepHz, so this is y
 			// in units of discStepHz, rounded.
 			// Samples beyond int8 wrap: they are noise without a carrier,

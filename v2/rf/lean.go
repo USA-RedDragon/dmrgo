@@ -234,6 +234,17 @@ type leanCore struct {
 	// signMiss is the most SYNC symbols whose sign may miss before the
 	// search tests them: leanSignMiss, more with a stage that verifies.
 	signMiss uint8
+	// suspect marks a lock whose last slot that should have anchored did
+	// not: after a data burst, or where a superframe expects burst A, or
+	// whose burst B to F has an EMB that does not decode. hunt marks a
+	// lock that was stale at the end of its last slot: the receiver then
+	// keeps the matched filter samples and searches for a SYNC off the
+	// slots, as it does while unlocked. dataAnch marks each TDMA channel
+	// whose last slot anchored with the data SYNC, after which every
+	// burst has a SYNC. They fill the room before ext, so that the
+	// receiver keeps its size.
+	suspect, hunt bool
+	dataAnch      [2]bool
 	// ext is the stage of a higher tier that decodes and emits each burst
 	// in place of repair, nil for Tier 0, and replaying is set while it
 	// runs the slots before a lock through slot; with replayDry the slots
@@ -284,8 +295,8 @@ type leanCore struct {
 
 	locked bool
 	// forced marks a lock that a stage forced, or that a search while
-	// locked took, and no SYNC after the one of the lock has anchored
-	// yet; lockNs is the symbol of the lock.
+	// locked took, and that no later SYNC or EMB has confirmed yet; lockNs
+	// is the symbol of the lock.
 	forced  bool
 	softFEC bool
 	src     uint8
@@ -426,6 +437,7 @@ func (r *leanCore) resetChans() {
 	for i := range r.ch {
 		r.ch[i] = leanChan{sf: leanNoSlot, hdr: leanNoSlot}
 	}
+	r.dataAnch = [2]bool{}
 	r.votes = [16]uint8{}
 }
 
@@ -507,6 +519,8 @@ func (r *leanRx) sample(v complex64) {
 	r.power(p)
 	if !r.locked {
 		r.block(p)
+	}
+	if !r.locked || r.hunt {
 		r.keep(s)
 	}
 	r.push(s)
@@ -720,12 +734,13 @@ func (win *syncWindow) at(t float32) float32 {
 // and, when the SYNC there passes the lock test, writes its symbols at it
 // into the ring, with the ones they replace in saved, and returns the
 // offset and true; resampleStart then samples the start of the burst. It
-// reports false when the SYNC fails or the ring holds too few samples.
+// reports false when the SYNC fails or the ring holds too few samples: for
+// the burst from its start, or while locked for the SYNC alone.
 func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (float32, bool) {
 	sps := 2 * r.tm.step
 	// The SYNC end is lastAt samples after the last sample.
 	end := r.lastAt
-	if float32(leanAcqSymbols)*sps+4-end > float32(r.acqKept()) {
+	if !r.burstKept() && (!r.locked || max(int32(-end-sps/2)-2, 0)+leanSyncWindow > r.acqKept()) {
 		return 0, false
 	}
 	var syms [syncSymbols]int8
@@ -787,11 +802,21 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 	return bestD, true
 }
 
+// burstKept reports whether the kept samples hold the burst whose SYNC
+// ends at the last symbol from its start.
+func (r *leanCore) burstKept() bool {
+	return float32(leanAcqSymbols)*2*r.tm.step+4-r.lastAt <= float32(r.acqKept())
+}
+
 // resampleStart writes the symbols of the burst before the SYNC that
-// resample sampled again at the strobe offset d into the ring, and moves
-// the timing loop by d.
+// resample sampled again at the strobe offset d into the ring, when the
+// kept samples hold them, and moves the timing loop by d.
 func (r *leanCore) resampleStart(d float32) {
 	sps := 2 * r.tm.step
+	if !r.burstKept() {
+		r.tm.t += d
+		return
+	}
 	for i := range int64(leanAcqSymbols - syncSymbols) {
 		x := r.keptAt(r.lastAt + d - float32(leanAcqSymbols-1-i)*sps)
 		r.ring[uint32(r.ns-leanAcqSymbols+i)%leanRing] = int8(max(min(roundf(x), math.MaxInt8), math.MinInt8))
@@ -823,18 +848,14 @@ func (r *leanCore) symbol(x, at float32) {
 	q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
 	h := uint32(r.ns) % leanRing
 	r.ring[h] = q
-	if !r.locked || r.ext != nil {
-		// Only the search reads the signs, and with a stage the search
-		// while locked; unlock rebuilds them.
-		old := h + leanRing - syncSymbols
-		if old >= leanRing {
-			old -= leanRing
-		}
-		r.ringSum += int32(q) - int32(r.ring[old])
-		r.signs <<= 1
-		if int32(q)*syncSymbols > r.ringSum {
-			r.signs |= 1
-		}
+	old := h + leanRing - syncSymbols
+	if old >= leanRing {
+		old -= leanRing
+	}
+	r.ringSum += int32(q) - int32(r.ring[old])
+	r.signs <<= 1
+	if int32(q)*syncSymbols > r.ringSum {
+		r.signs |= 1
 	}
 	r.ns++
 	if !r.locked {
@@ -849,10 +870,9 @@ func (r *leanCore) symbol(x, at float32) {
 		}
 		return
 	}
-	if r.ext != nil && r.stale() && r.ns >= leanRing && r.signsMatch() && r.offGrid() {
+	if r.hunt && r.ns >= leanRing && r.signsMatch() && r.offGrid() {
 		if r.searchSym(true); r.lockNs == r.ns {
-			// The samples kept while it searched are of the stream before.
-			r.forced, r.acqFrom = true, math.MaxInt64
+			r.forced = true
 		}
 	}
 	if r.ns == r.slotEnd {
@@ -957,7 +977,14 @@ func (r *leanCore) searchSym(strict bool) {
 		return
 	}
 	rho2, src, data := r.syncAt(r.ns - 1)
-	weak := rho2 < leanResample*leanResample
+	// The timing loop of a lock samples a stream at another symbol
+	// timing poorly, so that the search while locked samples a SYNC again
+	// from a weaker correlation.
+	gate := float32(leanResample)
+	if strict {
+		gate = leanExtRho
+	}
+	weak := rho2 < gate*gate
 	if weak && (strict || r.ext == nil || rho2 < leanExtRho*leanExtRho) {
 		return
 	}
@@ -971,7 +998,7 @@ func (r *leanCore) searchSym(strict bool) {
 	// they are.
 	ok := false
 	var d float32
-	if !weak && !strict && r.ns >= r.acqNext {
+	if !weak && (strict || r.ns >= r.acqNext) {
 		var saved [syncSymbols]int8
 		var sampled bool
 		if d, sampled = r.resample(p, &saved); sampled {
@@ -985,7 +1012,9 @@ func (r *leanCore) searchSym(strict bool) {
 			}
 		}
 		if !ok {
-			r.acqNext = r.ns + leanAcqWait
+			if !strict {
+				r.acqNext = r.ns + leanAcqWait
+			}
 			d = 0
 		}
 	}
@@ -1020,11 +1049,18 @@ func (r *leanCore) clipped(end int64) bool {
 // which a tier with a stage searches again while it stays locked.
 const staleSlots = 6
 
-// stale reports whether the lock may be lost: a lock that a stage forced
-// and no SYNC anchored yet, or a BS stream without a SYNC for staleSlots,
-// whose repeater may have keyed up again with a new timing.
+// stale reports whether the lock may be lost: a lock that a stage or a
+// search while locked forced and nothing confirmed yet, a suspect lock, a
+// lock whose first slot did not anchor, or a BS stream without a SYNC for
+// staleSlots, whose repeater may have keyed up again with a new timing.
 func (r *leanCore) stale() bool {
-	return r.forced || r.bs && r.lastAnch != leanNoSlot && r.next-r.lastAnch > staleSlots
+	if r.forced || r.suspect {
+		return true
+	}
+	if r.lastAnch == leanNoSlot {
+		return r.next > 0
+	}
+	return r.bs && r.next-r.lastAnch > staleSlots
 }
 
 // offGrid reports whether the last symbol ends a SYNC field off the slots
@@ -1058,7 +1094,7 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 // lockStream locks to a stream of source src whose SYNC ends back symbols
 // before the last, which the timing loop sampled d samples early.
 func (r *leanCore) lockStream(src int, d float32, back int64) {
-	r.locked, r.forced, r.src, r.bs = true, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
+	r.locked, r.forced, r.suspect, r.hunt, r.src, r.bs = true, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
 	r.lockNs = r.ns
 	r.streams++
 	r.first = r.ns - 1 - back - leanSyncEnd
@@ -1154,6 +1190,8 @@ func (r *leanCore) slot() {
 	if ms && (j-r.lastAnch)&1 != 0 {
 		isAnchor = false
 	}
+	c := &r.ch[j&1]
+	sf := c.sf
 	if isAnchor {
 		r.fitLevels(base+leanSyncEnd+shift, anchor, false, true)
 		if abs32(r.dcHz) > leanRetuneHz && !r.replaying {
@@ -1192,6 +1230,25 @@ func (r *leanCore) slot() {
 			anchor = 0
 		}
 		r.burst(j, base, anchor)
+	}
+	if !r.replaying {
+		switch {
+		case isAnchor:
+			r.suspect = false
+		case r.dataAnch[j&1], sf != leanNoSlot && j-sf == 2*layer2.VoiceBurstsPerSuperframe && c.sf != j:
+			r.suspect = true
+		}
+		r.dataAnch[j&1] = isAnchor && anchor == dp
+	}
+	if hunt := r.stale(); hunt {
+		if !r.hunt || r.ext == nil {
+			// Tier 0 keeps the samples in the FEC scratch, which the
+			// decode of the burst overwrote.
+			r.acqFrom = r.n
+		}
+		r.hunt = true
+	} else {
+		r.hunt = false
 	}
 	if !r.replaying && r.ended(j, base) {
 		r.unlock()
@@ -1330,7 +1387,7 @@ func (r *leanCore) unlock() {
 	if r.ext != nil {
 		r.ext.end(r)
 	}
-	r.locked, r.forced = false, false
+	r.locked, r.forced, r.hunt = false, false, false
 	r.acqFrom = r.n
 	if a := r.audio; a != nil {
 		// The input summed before the lock is of the signal before it.
@@ -1595,6 +1652,12 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 		switch n := (j - c.sf) / 2; {
 		case n >= 1 && n <= 5 && (j-c.sf)%2 == 0:
 			b.Voice = enums.VoiceBurstA + enums.VoiceBurstType(n)
+			if !r.replaying {
+				// The EMB tests the timing of a lock as a SYNC does.
+				ok := r.embOK(b)
+				r.suspect = r.suspect || !ok
+				r.forced = r.forced && !ok
+			}
 			return true
 		case n == 6 && dv <= voiceSyncDistance:
 			b.Distance, b.Sync, b.Voice = dv, voice, enums.VoiceBurstA
@@ -1641,6 +1704,14 @@ func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
 	default:
 		return 0, false
 	}
+}
+
+// embOK reports whether the EMB of burst b decodes, with the color code
+// of the stream when it is known.
+func (r *leanCore) embOK(b *Burst) bool {
+	emb := b.Data.EMB()
+	cc, ok := r.colorCode()
+	return !emb.FEC.Uncorrectable && (!ok || emb.ColorCode == cc)
 }
 
 // noteData records the color code of data burst b when its slot type has
