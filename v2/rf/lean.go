@@ -1810,10 +1810,15 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 		case n >= 1 && n <= 5 && (j-c.sf)%2 == 0:
 			b.Voice = enums.VoiceBurstA + enums.VoiceBurstType(n)
 			if !r.replaying {
-				// The EMB tests the timing of a lock as a SYNC does.
+				// The EMB tests the timing of a lock as a SYNC does, and an
+				// EMB without errors votes for the color code of a stream
+				// that no data burst gave.
 				ok := r.embOK(b)
 				r.suspect = r.suspect || !ok
 				r.forced = r.forced && !ok
+				if emb := b.Data.EMB(); ok && emb.FEC.ErrorsCorrected == 0 && r.votes[emb.ColorCode&0xF] < math.MaxUint8 {
+					r.votes[emb.ColorCode&0xF]++
+				}
 			}
 			return true
 		case n == 6 && dv <= voiceSyncDistance:
