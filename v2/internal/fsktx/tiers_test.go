@@ -113,6 +113,17 @@ func TestDibits(t *testing.T) {
 			t.Fatalf("symbol %d is %d, want %d", i, got[i], want[i])
 		}
 	}
+	for n := range 132 {
+		got := Dibits(make([]int8, n, 132), b[:])
+		if len(got) != n/4*4 {
+			t.Fatalf("a dst of %d takes %d symbols", n, len(got))
+		}
+		for i := range got {
+			if int(got[i]) != want[i] {
+				t.Fatalf("a dst of %d: symbol %d is %d, want %d", n, i, got[i], want[i])
+			}
+		}
+	}
 }
 
 // TestAudioRoundTrip feeds the output of each audio tier, as the
