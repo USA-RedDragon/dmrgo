@@ -225,7 +225,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	switch {
 	case b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
 		if x.stages&(extAMBE|extELC) != 0 {
-			x.fill(c)
+			x.fill(c, &b.Data)
 		}
 		if x.stages&extAMBE != 0 {
 			x.soft.decodeAMBE(&x.llr, out)
@@ -236,7 +236,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	case known && kind == layer2.KindData:
 		ch.have, ch.accN = 0, 0
 		if x.stages&extOSD != 0 {
-			x.data(c, out)
+			x.data(c, b)
 		}
 	default:
 		ch.have = 0
@@ -253,14 +253,15 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 // whose check fails by ordered statistics and over its grid, and with np a
 // rate 3/4 block from its ratios, which the core decodes from those of
 // each symbol alone.
-func (x *softExt) data(c *leanCore, out *layer2.RawBurst) {
+func (x *softExt) data(c *leanCore, b *Burst) {
+	out := &b.Fixed
 	st := out.SlotType()
 	if st.FEC.Uncorrectable {
 		return
 	}
 	dt := st.DataType
 	if dt == enums.DataTypeRate34 && x.np != nil {
-		x.fill(c)
+		x.fill(c, &b.Data)
 		x.soft.decodeRate34(&x.llr, out)
 		return
 	}
@@ -271,7 +272,7 @@ func (x *softExt) data(c *leanCore, out *layer2.RawBurst) {
 	if p, _ := out.BPTCPayload(); check(p) {
 		return
 	}
-	x.fill(c)
+	x.fill(c, &b.Data)
 	saved := *out
 	if _, r := x.soft.decodeBPTCOSD(&x.llr, check, out); r.Uncorrectable {
 		if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
@@ -448,14 +449,22 @@ func (x *softExt) repairAll(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool
 	}
 }
 
-// fill sets llr to the log-likelihood ratios of the burst under detection.
-func (x *softExt) fill(c *leanCore) {
+// fill sets llr to the log-likelihood ratios of the burst under detection,
+// whose hard decisions are hard. A ratio of 0, where the floor of the
+// likelihoods holds both sides, takes the sign of the hard decision: the
+// decoders read the bits that no code covers from the signs.
+func (x *softExt) fill(c *leanCore, hard *layer2.RawBurst) {
 	if x.np != nil {
 		x.np.fill(c, &x.llr)
-		return
+	} else {
+		for p := range x.llr {
+			x.llr[p] = c.llrAt(p)
+		}
 	}
-	for p := range x.llr {
-		x.llr[p] = c.llrAt(p)
+	for p, v := range x.llr {
+		if v == 0 {
+			x.llr[p] = 1 - 2*int16(hard[p/8]>>(7-p%8)&1)
+		}
 	}
 }
 
@@ -624,7 +633,7 @@ func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCo
 			_ = lb.Fixed.SetEMB(pdu.EmbeddedSignalling{ColorCode: cc, PreemptionAndPowerControlIndicator: pi, LCSS: lateLCSS(lb.Voice)})
 		}
 		if x.coh == nil || !x.cohLate(c, lb) {
-			x.fill(c)
+			x.fill(c, &lb.Data)
 		}
 		c.ring, c.base = ring, base
 		x.repairAll(c, lb, cc, ccOK)
