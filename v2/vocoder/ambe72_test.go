@@ -11,7 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-func voiceSlots(t *testing.T) [][9]byte {
+func voiceSlots(t testing.TB) [][9]byte {
 	t.Helper()
 	data, err := os.ReadFile("../layer2/testdata/voice.bin")
 	if err != nil {
