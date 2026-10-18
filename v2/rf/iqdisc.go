@@ -140,8 +140,7 @@ type iqRx struct {
 	wide    []complex64
 	inChunk int
 	carry   byteCarry
-	dc      complex64
-	dcN     int32
+	dc      dcBlock
 	signed  bool
 	conv    iqDisc
 	d       DiscReceiver
@@ -165,6 +164,7 @@ type iqRx struct {
 // newIQRx returns the receiver of cfg with the settings opt.
 func newIQRx(cfg Config, opt options) *iqRx {
 	r := &iqRx{signed: cfg.Signed}
+	r.dc.init(float64(cfg.BasebandHz))
 	hz := opt.IQHz
 	if hz == 0 {
 		hz = discRate
@@ -385,12 +385,7 @@ func (r *iqRx) byteSample(i, q byte) complex64 {
 	} else {
 		v = complex((float32(i)-127.5)/127.5, (float32(q)-127.5)/127.5)
 	}
-	if r.dcN < math.MaxInt32 {
-		r.dcN++
-	}
-	g := max(1/(dcSeconds*discRate*2), 1/(float32(r.dcN)+dcStartSeconds*discRate*2))
-	r.dc += (v - r.dc) * complex(g, 0)
-	return v - r.dc
+	return r.dc.remove(v)
 }
 
 // flush finishes the stream at its end and returns the remaining bursts.

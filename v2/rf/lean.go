@@ -375,14 +375,13 @@ type leanCore struct {
 type leanRx struct {
 	leanCore
 	// fe and wide convert the bytes of Write at another rate than the
-	// baseband, and dc and dcN remove the DC offset of the bytes of Write
+	// baseband, and dc removes the DC offset of the bytes of Write
 	// at the baseband rate.
 	fe      *frontEnd
 	wide    []complex64
 	inChunk int
 	carry   byteCarry
-	dc      complex64
-	dcN     int32
+	dc      dcBlock
 	signed  bool
 	df      leanFront
 	// bPow and bLag sum the prefilter power and the lag products of the
@@ -406,6 +405,7 @@ func (f *leanFront) retuneFront(hz, d float32) {
 // newLean returns the streaming receiver of cfg with the settings opt.
 func newLean(cfg Config, opt options) *leanRx {
 	r := &leanRx{signed: cfg.Signed}
+	r.dc.init(float64(cfg.BasebandHz))
 	r.init(cfg.OnBurst, opt, float32(discSPS)/2)
 	if cfg.OnBurst == nil {
 		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
@@ -491,12 +491,7 @@ func (r *leanRx) byteSample(i, q byte) complex64 {
 	} else {
 		v = complex((float32(i)-127.5)/127.5, (float32(q)-127.5)/127.5)
 	}
-	if r.dcN < math.MaxInt32 {
-		r.dcN++
-	}
-	g := max(1/(dcSeconds*discRate*2), 1/(float32(r.dcN)+dcStartSeconds*discRate*2))
-	r.dc += (v - r.dc) * complex(g, 0)
-	return v - r.dc
+	return r.dc.remove(v)
 }
 
 // writeBaseband processes the samples of Receiver.WriteBaseband.

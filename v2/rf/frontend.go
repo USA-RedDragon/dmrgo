@@ -12,13 +12,60 @@ const (
 	resampleTaps = 72
 	// wideHz is the edge of the passband of the front end.
 	wideHz = 17000.0
-	// dcSeconds is the time constant of the DC offset removal.
+	// dcSeconds is the time constant of the DC offset removal, long against
+	// the mean of the complex envelope of a burst.
 	dcSeconds = 1
 	// dcStartSeconds is the shortest time that the DC offset estimate
 	// averages over at the start of a stream, so that it does not take a
 	// carrier near 0 Hz for the offset.
 	dcStartSeconds = 0.01
+	// dcFastSeconds is the time constant of the short estimate of the DC
+	// offset that tells the long one when the mean of the input moves.
+	dcFastSeconds = 0.05
+	// dcMove is the ratio of the squared distance of the two estimates to
+	// the power of the input less the offset at which the long estimate
+	// starts again from the short one. The mean of a burst puts the short
+	// estimate up to about 0.22 of the amplitude off.
+	dcMove = 0.1
 )
+
+// dcBlock removes the DC offset of the I/Q of a receiver: the mean of the
+// input over dcSeconds. A carrier at 0 Hz is DC too, and the mean of a
+// carrier without modulation holds its value for a long time after the
+// modulation starts, so the mean starts again from the short estimate
+// over dcFastSeconds when the two move apart by dcMove of the power of the
+// input.
+type dcBlock struct {
+	dc, fast    complex64
+	pow         float32
+	n, m        float32
+	slow, quick float32
+	start, cap  float32
+}
+
+// init sets d for input at rate.
+func (d *dcBlock) init(rate float64) {
+	d.slow = float32(1 / (dcSeconds * rate))
+	d.quick = float32(1 / (dcFastSeconds * rate))
+	d.start = float32(dcStartSeconds * rate)
+	d.cap = float32(dcSeconds * rate)
+}
+
+// remove returns v less the DC offset estimate, after it adds v to it.
+func (d *dcBlock) remove(v complex64) complex64 {
+	d.n = min(d.n+1, d.cap)
+	d.m = min(d.m+1, d.cap)
+	g := max(d.slow, 1/(d.n+d.start))
+	q := max(d.quick, 1/(d.m+d.start))
+	d.dc += (v - d.dc) * complex(g, 0)
+	d.fast += (v - d.fast) * complex(q, 0)
+	e := v - d.fast
+	d.pow += (real(e)*real(e) + imag(e)*imag(e) - d.pow) * q
+	if x := d.fast - d.dc; real(x)*real(x)+imag(x)*imag(x) > dcMove*d.pow {
+		d.dc, d.n = d.fast, min(d.m, 1/d.quick-d.start)
+	}
+	return v - d.dc
+}
 
 // byteCarry holds the I byte of a pair that the bytes of a Write end
 // within, for the Write after it.
@@ -51,21 +98,19 @@ func (c *byteCarry) split(iq []byte) (pair, rest []byte) {
 // output rate, which input at the output rate skips. It keeps its state between calls and
 // allocates only in newFrontEnd.
 type frontEnd struct {
-	signed  bool
-	dec     int
-	gain    float32
-	integ   [cicOrder][2]int64
-	comb    [cicOrder][2]int64
-	phase   int
-	coef    []float32
-	hist    []complex64
-	head    int
-	t       float64
-	step    float64
-	n       int64
-	dc      complex64
-	dcGain  float32
-	dcStart float32
+	signed bool
+	dec    int
+	gain   float32
+	integ  [cicOrder][2]int64
+	comb   [cicOrder][2]int64
+	phase  int
+	coef   []float32
+	hist   []complex64
+	head   int
+	t      float64
+	step   float64
+	n      int64
+	dc     dcBlock
 }
 
 // newFrontEnd returns a front end for input at rate, signed (HackRF) or
@@ -75,8 +120,7 @@ func newFrontEnd(rate float64, signed bool, out float64) *frontEnd {
 	mid := rate / float64(dec)
 	f := &frontEnd{signed: signed, dec: dec, step: mid / out}
 	f.gain = float32(1 / (255 * math.Pow(float64(dec), cicOrder)))
-	f.dcGain = float32(1 / (dcSeconds * mid))
-	f.dcStart = float32(dcStartSeconds * mid)
+	f.dc.init(mid)
 	if f.step == 1 {
 		return f
 	}
@@ -138,9 +182,7 @@ func (f *frontEnd) process(in []byte, out []complex64) int {
 			re, im, f.comb[s][0], f.comb[s][1] = re-f.comb[s][0], im-f.comb[s][1], re, im
 		}
 		v := complex(float32(re)*f.gain, float32(im)*f.gain)
-		g := max(f.dcGain, 1/(float32(f.n)+f.dcStart))
-		f.dc += (v - f.dc) * complex(g, 0)
-		v -= f.dc
+		v = f.dc.remove(v)
 		if f.coef == nil {
 			out[w] = v
 			w++
