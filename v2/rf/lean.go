@@ -94,6 +94,14 @@ const (
 	// the deviation of level 1, beyond which a symbol counts as a click:
 	// beyond the outer levels at 3 by more than the noise of a weak signal.
 	leanClickOut = 9
+	// leanNoCarrierClicks is the least number of the symbols of a slot
+	// beyond the outer levels, and leanNoCarrierSpread the least RMS
+	// residual of its SYNC field, in steps between the levels that fit it,
+	// at which noCarrier takes a slot as noise without a carrier. A slot of
+	// such noise has about 50 such symbols of 132 and a spread from 1.3 to
+	// 2; a burst near the floor of Tier 0 rarely has more than 30.
+	leanNoCarrierClicks = 36
+	leanNoCarrierSpread = 1.2
 	// leanCubicSPS is the most samples per symbol at which the symbol
 	// timing interpolates by Catmull-Rom instead of linearly.
 	leanCubicSPS = 2.5
@@ -1310,6 +1318,27 @@ func (r *leanCore) lockStream(src int, d float32, back int64) {
 // and reports whether they make sense for the first anchor of a stream
 // when first; with check false it takes them as they come.
 func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) bool {
+	g, dc, res := r.fitSync(end, p)
+	if first {
+		if check && (g <= 0 || sqrtf(res) > discFirstSpread*2*g*deviationHz) {
+			return false
+		}
+		g = max(g, 0.1)
+		r.devScale, r.dcHz, r.discVar = g, dc, res
+		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+		return true
+	}
+	r.devScale = levelForget*r.devScale + (1-levelForget)*g
+	r.dcHz = levelForget*r.dcHz + (1-levelForget)*dc
+	r.discVar = levelForget*r.discVar + (1-levelForget)*res
+	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
+	return true
+}
+
+// fitSync returns the deviation scale, the discriminator offset and the
+// mean squared residual of the levels that fit the SYNC field that ends at
+// symbol end with pattern p best.
+func (r *leanCore) fitSync(end int64, p enums.SyncPattern) (g, dc, res float32) {
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
 	k0 := end - syncSymbols + 1
@@ -1325,28 +1354,13 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 		sxy += (float32(syms[k]) - mp) * (r.sym(k0+int64(k)) - mx)
 		spp += (float32(syms[k]) - mp) * (float32(syms[k]) - mp)
 	}
-	g := sxy / spp / deviationHz
-	dc := mx - g*deviationHz*mp
-	var res float32
+	g = sxy / spp / deviationHz
+	dc = mx - g*deviationHz*mp
 	for k := range syncSymbols {
 		e := r.sym(k0+int64(k)) - dc - g*deviationHz*float32(syms[k])
 		res += e * e
 	}
-	res /= syncSymbols
-	if first {
-		if check && (g <= 0 || sqrtf(res) > discFirstSpread*2*g*deviationHz) {
-			return false
-		}
-		g = max(g, 0.1)
-		r.devScale, r.dcHz, r.discVar = g, dc, res
-		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-		return true
-	}
-	r.devScale = levelForget*r.devScale + (1-levelForget)*g
-	r.dcHz = levelForget*r.dcHz + (1-levelForget)*dc
-	r.discVar = levelForget*r.discVar + (1-levelForget)*res
-	r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
-	return true
+	return g, dc, res / syncSymbols
 }
 
 // slot handles the slot that just ended: it tests its SYNC field, updates
@@ -1473,10 +1487,34 @@ func (r *leanCore) setHunt() {
 // searched, which can be at the scale before the last rescale, and the
 // signs of a clipped carrier match a SYNC as well as a weak one does.
 func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
-	if r.syncErrors(end, p) > discAnchorBits {
+	if r.syncErrors(end, p) > discAnchorBits || r.noCarrier(end, p) {
 		return false
 	}
 	return !r.replaying || !r.clipped(end)
+}
+
+// noCarrier reports whether the slot whose SYNC field of pattern p ends at
+// symbol end holds the noise of a discriminator without a carrier, such as
+// the gaps between the transmissions of an MS: at least
+// leanNoCarrierClicks of its symbols lie beyond the outer levels as
+// leanClickOut counts them, and the levels that fit the SYNC field best
+// leave it spread by more than leanNoCarrierSpread steps between them. That
+// noise matches a SYNC now and then, and an anchor there would move the
+// slots, the levels and the oscillator of the stream to it, and hold off
+// the search of a lock that should hunt for the next transmission.
+func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
+	out := float32(leanClickOut) / 2 * r.devScale * deviationHz
+	n := int32(0)
+	for k := max(end-leanSyncEnd, r.ns-leanRing); k < min(end-leanSyncEnd+slotSymbols, r.ns); k++ {
+		if abs32(r.sym(k)-r.dcHz) > out {
+			n++
+		}
+	}
+	if n < leanNoCarrierClicks {
+		return false
+	}
+	g, _, res := r.fitSync(end, p)
+	return g <= 0 || sqrtf(res) > leanNoCarrierSpread*2*g*deviationHz
 }
 
 // ended reports whether the stream ends at slot j, whose first symbol is

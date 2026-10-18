@@ -18,7 +18,8 @@ type strongCase struct {
 // at a C/N of 30 dB bit exact, among them the first burst after the carrier
 // comes up, which the symbol timing can sample about half a symbol off, and
 // the first burst of a transmission of an MS on the slots of the lock of
-// the one before, whose SYNC can end between two of its symbols.
+// the one before, whose SYNC can end between two of its symbols, or after
+// the noise of a discriminator without a carrier matched a SYNC there.
 func TestStrongSignalExact(t *testing.T) {
 	t.Parallel()
 	const cn = 30
@@ -26,7 +27,7 @@ func TestStrongSignalExact(t *testing.T) {
 	freq, env, msTruth := msStream(t, 2, 0.37)
 	cases := []strongCase{
 		{mode: benchAudio, seeds: []uint64{101, 103, 104, 108, 128, 147, 162}},
-		{mode: benchAudio, ms: true, seeds: []uint64{113, 118, 128, 149}},
+		{mode: benchAudio, ms: true, seeds: []uint64{113, 118, 125, 128, 149, 150}},
 		{mode: benchIQ, seeds: []uint64{111, 112, 128, 138, 152}},
 		{mode: benchIQ, ms: true, seeds: []uint64{100, 106, 111, 112, 115, 120, 124, 126, 131, 133, 145, 148, 158, 161}},
 	}
