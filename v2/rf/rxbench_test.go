@@ -529,11 +529,22 @@ func falsePerHour(e benchEntry) float64 {
 // OnBurst set, as a microcontroller runs it: for audio Tier0 the size of a
 // DiscReceiver, all of its state, which needs no heap; for audio Tier1 that
 // and the heap of its soft stages; for the I/Q tiers the heap of a
-// Receiver at the baseband input rate.
+// Receiver at the baseband input rate. The heap is that of the whole
+// process, so it takes the least of a few tries.
 func receiverRAM(e benchEntry) int {
 	if e.mode == benchAudio && e.tier == Tier0 {
 		return int(unsafe.Sizeof(DiscReceiver{}))
 	}
+	least := math.MaxInt
+	for range 5 {
+		least = min(least, heapOfNew(e))
+	}
+	return least
+}
+
+// heapOfNew returns the growth of the heap of the process across a New of
+// the receiver of e.
+func heapOfNew(e benchEntry) int {
 	var a, b runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&a)
