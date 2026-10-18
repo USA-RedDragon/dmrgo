@@ -39,10 +39,10 @@ func TestDiscTier2Loopback(t *testing.T) {
 }
 
 // TestDiscTier2Weak receives a stream at 4.2 dB Eb/N0, below the 90%
-// points of Tier1, and checks that Tier2, which detects each burst again
+// points of Tier0, and checks that Tier2, which detects each burst again
 // on the carrier phase that it rebuilds from the audio, recovers far more
-// C0 and C1 of the voice frames and rate 1/2 blocks than Tier1 at each
-// input rate.
+// C0 and C1 of the voice frames and rate 1/2 blocks than Tier0, which has
+// no coherent stage, at each input rate.
 func TestDiscTier2Weak(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)
@@ -57,10 +57,10 @@ func TestDiscTier2Weak(t *testing.T) {
 			k    string
 			gain float64
 		}{{"ambe_c0c1", 0.15}, {"rate12", 0.5}} {
-			t1, t2 := rate(Tier1, c.k), rate(Tier2, c.k)
-			t.Logf("%d Hz, %s: %.2f Tier1, %.2f Tier2", hz, c.k, t1, t2)
-			if t2 < 0.8 || t2 < t1+c.gain {
-				t.Errorf("%d Hz, %s: %.2f Tier2, %.2f Tier1", hz, c.k, t2, t1)
+			t0, t2 := rate(Tier0, c.k), rate(Tier2, c.k)
+			t.Logf("%d Hz, %s: %.2f Tier0, %.2f Tier2", hz, c.k, t0, t2)
+			if t2 < 0.8 || t2 < t0+c.gain {
+				t.Errorf("%d Hz, %s: %.2f Tier2, %.2f Tier0", hz, c.k, t2, t0)
 			}
 		}
 	}

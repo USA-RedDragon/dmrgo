@@ -29,14 +29,18 @@ const (
 	// over its four fragments and the earlier superframes of the call, and
 	// LookbackSlots slots before the first lock decoded again. It detects
 	// the bursts that they decode, and each rate 3/4 block, from the
-	// symbols of the discriminator with the correlation of their noise. It
-	// costs about the CPU of Tier0.
+	// symbols of the discriminator with the correlation of their noise.
+	// Each burst of a stream that is not clear it detects again as Tier2
+	// does, on audio from the carrier phase that it sums from the
+	// discriminator samples. It costs about the CPU of Tier0 on a clear
+	// stream and of Tier2 on a weak one.
 	Tier1
 	// Tier2 adds to the soft decoders of Tier1, on I/Q at BasebandRate, the
-	// detection again of each burst with a trellis over three symbols that
+	// detection again of every burst with a trellis over three symbols that
 	// carries the carrier phase with each survivor, from the SYNC or EMB of
-	// the burst and from the SYNC of the slots beside it. It holds each
-	// burst one slot longer, and runs on a PC.
+	// the burst and from the SYNC of the slots beside it, and the coherent
+	// test of the SYNC candidates of the search. It holds each burst one
+	// slot longer, and runs on a PC.
 	Tier2
 	// Tier3 detects over a window of three symbols with one of 52 carrier
 	// phases in the trellis state, and detects each voice burst again with

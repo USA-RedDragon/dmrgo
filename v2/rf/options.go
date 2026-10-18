@@ -144,24 +144,28 @@ func softOptions(o options) options {
 }
 
 // tier1Options adds to o the stages of Tier1: the soft stages, the decode
-// of C0 and C1 of each voice frame by soft ML, and the detection of each
-// burst that they decode with the correlation of the noise of its symbols.
+// of C0 and C1 of each voice frame by soft ML, the detection of each burst
+// that they decode with the correlation of the noise of its symbols, and
+// the coherent detection again of each burst that is not clear.
 func tier1Options(o options) options {
 	o = softOptions(o)
 	o.ExtAMBE, o.ExtNPML = true, true
+	o.CohExt, o.PSPGain, o.LLRScale = true, 0.2, 0.5
 	return o
 }
 
 // discTierOptions returns the settings of tier t on discriminator audio:
-// Tier1 adds the stages of tier1Options, and Tier2 the soft stages, the
-// decode of C0 and C1 by soft ML and the coherent stage on the phase that
-// discPhase rebuilds.
+// Tier1 adds the stages of tier1Options, with the coherent stage at 2
+// samples per symbol on the phase that discPhase builds from the input as
+// it reads it, on the bursts of a lock only; Tier2 the soft stages, the
+// decode of C0 and C1 by soft ML and the coherent stage on the ring of
+// phasors that discPhase rebuilds, which its core runs on.
 func discTierOptions(t Tier) options {
 	o := discOptions()
 	switch t {
 	case Tier1:
 		o = tier1Options(o)
-		o.ExtLookback = 8
+		o.ExtLookback, o.CohLazy, o.CohSPS, o.CohSkipSNR, o.CohLocked = 8, true, 2, 20, true
 	case Tier2:
 		o = softOptions(o)
 		o.ExtLookback, o.ExtAMBE, o.CohExt, o.PSPGain, o.LLRScale = 8, true, true, 0.2, 0.5
@@ -179,7 +183,7 @@ func tierOptions(t Tier) options {
 		o.IQDisc, o.IQHz = true, 12000
 	case Tier1:
 		o = tier1Options(o)
-		o.IQDisc, o.IQHz = true, 12000
+		o.IQDisc, o.IQHz, o.CohSkipSNR, o.CohSignMiss = true, 12000, 9, leanSignMiss
 	case Tier2:
 		o = softOptions(o)
 		o.IQDisc, o.IQHz, o.ExtAMBE, o.CohExt, o.PSPGain, o.LLRScale = true, 24000, true, true, 0.2, 0.5
