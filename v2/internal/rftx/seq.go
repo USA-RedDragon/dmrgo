@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -32,8 +33,11 @@ type SeqConfig struct {
 	// LateEntry leaves out the voice LC and PI headers, so a receiver learns
 	// the call only from the embedded LC.
 	LateEntry bool
-	// Preambles is the number of preamble CSBKs of the preamble sequence.
+	// Preambles is the number of preamble CSBKs of the preamble and sms
+	// sequences.
 	Preambles int
+	// DefinedData is the Defined Data format of the sms sequence.
+	DefinedData uint8
 	// BSSourced builds a continuous BS outbound stream with the sequence on
 	// Slot and idle bursts on the other slot.
 	BSSourced bool
@@ -64,13 +68,14 @@ const (
 	seqSite     = "t3site"
 	seqRadioChk = "radiocheck"
 	seqAlert    = "callalert"
+	seqSMS      = "sms"
 )
 
 // Sequences returns the names Sequence accepts.
 func Sequences() []string {
 	return []string{
 		seqWakeup, "data12", "data34", "data1", "data12u", "data34u", "data1u",
-		seqACK, seqSR, seqPreamble, seqVoice, seqPI, seqRC, seqMBC, seqTier3, seqSite, seqRadioChk, seqAlert,
+		seqACK, seqSR, seqPreamble, seqVoice, seqPI, seqRC, seqMBC, seqTier3, seqSite, seqRadioChk, seqAlert, seqSMS,
 	}
 }
 
@@ -205,6 +210,44 @@ func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
+	return withPreambles(cfg, data)
+}
+
+// smsBursts returns Preambles Pre_CSBKs and a DMR-format SMS: an
+// unconfirmed short data defined packet (DD_HEAD, ETSI TS 102 361-3 clause
+// 9.2.8) to SAP short data, with the message in UTF-16LE and a zero
+// terminator at rate 1/2, in the Defined Data format DefinedData.
+func smsBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
+	h := pdu.DataHeader{
+		Format: pdu.FormatShortDataDefined,
+		DefinedDataHeader: &pdu.DefinedDataHeader{
+			Group:           cfg.Group,
+			SAP:             enums.SAPShortData,
+			LLIDDestination: cfg.Dest,
+			LLIDSource:      cfg.Source,
+			DefinedData:     cfg.DefinedData,
+			FullMessageFlag: true,
+		},
+	}
+	u := utf16.Encode([]rune(cfg.Message))
+	text := make([]byte, 0, 2*len(u)+2)
+	for _, r := range u {
+		text = binary.LittleEndian.AppendUint16(text, r)
+	}
+	p, err := packet.NewPacket(h, append(text, 0, 0), enums.DataTypeRate12)
+	if err != nil {
+		return nil, err
+	}
+	data, err := packet.Bursts(p, cfg.ColorCode, cfg.source())
+	if err != nil {
+		return nil, err
+	}
+	return withPreambles(cfg, data)
+}
+
+// withPreambles returns Preambles Pre_CSBKs that count down to the bursts of
+// data, then data.
+func withPreambles(cfg SeqConfig, data []layer2.RawBurst) ([]layer2.RawBurst, error) {
 	toFollow := cfg.Preambles - 1 + len(data)
 	if toFollow < 0 || toFollow > 0xFF {
 		return nil, fmt.Errorf("%d preambles and %d data bursts do not fit in CSBK Blocks to Follow", cfg.Preambles, len(data))
@@ -443,6 +486,9 @@ func payload(name string, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 		}
 		b, err := rcBurst(cfg)
 		return []layer2.RawBurst{b}, []string{"rc command=" + enums.RCCeaseTransmissionCommand.String()}, err
+	case seqSMS:
+		b, err := smsBursts(cfg)
+		return b, []string{fmt.Sprintf("sms dd=%d", cfg.DefinedData)}, err
 	case seqRadioChk, seqAlert:
 		b, err := motorolaCSBKBursts(name == seqAlert, cfg)
 		return b, []string{name + " fid=0x10"}, err

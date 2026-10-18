@@ -85,7 +85,13 @@ func runTX(args []string, w io.Writer) error {
 	superframes := fs.Int("superframes", 3, "voice superframes (bursts A to F) of the voice and pi sequences")
 	silence := fs.Bool("ambe-silence", false, "send AMBE+2 silence instead of the AMBE test pattern")
 	lateEntry := fs.Bool("late-entry", false, "leave out the voice LC and PI headers, so the call is known only from the embedded LC")
-	preambles := fs.Int("preambles", 4, "preamble CSBKs of the preamble sequence")
+	preambles := fs.Int("preambles", 4, "preamble CSBKs of the preamble and sms sequences")
+	dd := uint8(7)
+	fs.Func("dd", "Defined Data format of the sms sequence, 0 to 63 (default 7, UTF-16)", func(s string) error {
+		v, err := strconv.ParseUint(s, 10, 6)
+		dd = uint8(v)
+		return err
+	})
 	bsSourced := fs.Bool("bs-sourced", false, "send a continuous BS outbound stream (CACH, Short LC, idle bursts on the other slot) like a repeater")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -100,7 +106,7 @@ func runTX(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "carrier: %.1f s, offset %+.0f Hz\n", *cw, corr)
 	} else {
 		cfg := rftx.SeqConfig{ColorCode: cc, Source: *src, Dest: *dst, BS: *bs, Group: *group, Wakeups: *wakeups, Message: *msg,
-			Superframes: *superframes, AMBESilence: *silence, LateEntry: *lateEntry, Preambles: *preambles, BSSourced: *bsSourced, Slot: *slot}
+			Superframes: *superframes, AMBESilence: *silence, LateEntry: *lateEntry, Preambles: *preambles, DefinedData: dd, BSSourced: *bsSourced, Slot: *slot}
 		built, err := rftx.Sequence(*seq, cfg)
 		if err != nil {
 			return err

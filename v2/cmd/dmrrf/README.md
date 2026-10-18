@@ -21,6 +21,7 @@ Sequences for `tx -seq`. An MS-sourced sequence starts with `-wakeups` BS_Dwn_Ac
 | `voice` | wakeups, voice LC header, `-superframes` superframes of bursts A to F with EMB and embedded LC, terminator with LC |
 | `pi` | as `voice`, with a PI header after the voice LC header (ALGID 0x21, MFID 0x10, key ID 0x01, MI 0x12345678) and the privacy service option set; the voice is not encrypted |
 | `rc` | wakeups, then a standalone MS-sourced reverse channel burst with the Cease Transmission command |
+| `sms` | wakeups, `-preambles` Pre_CSBKs, then a DMR-format SMS: an unconfirmed short data defined packet (DD_HEAD) to SAP short data, with `-msg` in UTF-16LE and a zero terminator at rate 1/2, in the Defined Data format `-dd` (default 7, UTF-16) |
 | `mbc` | `-bs-sourced` only: TV_GRANT as an MBC: header with physical channel 0xFFF, then a CG_AP continuation (channel 1, 446 MHz + 50 x 125 Hz) |
 | `tier3` | C_ALOHA (system code 0x1234), TV_GRANT and C_MOVE CSBKs, then the `mbc` grant; `-bs-sourced` only, for a Tier III decoder such as dsd-fme |
 | `t3site` | `-bs-sourced` only: a simulated Tier III site in one file with two carriers (see below) |
