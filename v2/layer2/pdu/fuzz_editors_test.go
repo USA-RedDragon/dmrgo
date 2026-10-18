@@ -51,34 +51,43 @@ func setDataHeaderGroup(h *pdu.DataHeader, group bool) {
 // nothing, and an edit in place gives the octets that the same edit of the
 // decoded PDU encodes to.
 func FuzzPDUEditors(f *testing.F) {
-	for _, b := range captureBursts(f) {
+	editorSeeds(f, func(kind uint8, data []byte, target, source uint32, group bool, v uint8) {
+		f.Add(kind, data, target, source, group, v)
+	})
+	f.Fuzz(fuzzPDUEditors)
+}
+
+// editorSeeds calls add with each seed of FuzzPDUEditors.
+func editorSeeds(tb testing.TB, add func(kind uint8, data []byte, target, source uint32, group bool, v uint8)) {
+	for _, b := range captureBursts(tb) {
 		if p, _ := b.Sync(); !isDataSync(p) {
 			continue
 		}
 		payload, _ := b.BPTCPayload()
 		switch b.SlotType().DataType {
 		case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
-			f.Add(uint8(0), payload[:], uint32(9), uint32(3120101), true, uint8(3))
+			add(uint8(0), payload[:], uint32(9), uint32(3120101), true, uint8(3))
 		case enums.DataTypeCSBK:
-			f.Add(uint8(1), payload[:], uint32(9), uint32(3120101), false, uint8(0))
+			add(uint8(1), payload[:], uint32(9), uint32(3120101), false, uint8(0))
 		case enums.DataTypeDataHeader:
-			f.Add(uint8(2), payload[:], uint32(1<<24), uint32(3120101), true, uint8(0))
+			add(uint8(2), payload[:], uint32(1<<24), uint32(3120101), true, uint8(0))
 		default:
 		}
 	}
+}
 
-	f.Fuzz(func(t *testing.T, kind uint8, data []byte, target, source uint32, group bool, v uint8) {
-		var in [12]byte
-		copy(in[:], data)
-		switch kind % 3 {
-		case 0:
-			checkLCBytes(t, pdu.LCBytes(in[:9]), target, source, group, v)
-		case 1:
-			checkCSBKBytes(t, pdu.CSBKBytes(in), target, source, group)
-		case 2:
-			checkDataHeaderBytes(t, pdu.DataHeaderBytes(in), target, source, group)
-		}
-	})
+// fuzzPDUEditors is the body of FuzzPDUEditors.
+func fuzzPDUEditors(t *testing.T, kind uint8, data []byte, target, source uint32, group bool, v uint8) {
+	var in [12]byte
+	copy(in[:], data)
+	switch kind % 3 {
+	case 0:
+		checkLCBytes(t, pdu.LCBytes(in[:9]), target, source, group, v)
+	case 1:
+		checkCSBKBytes(t, pdu.CSBKBytes(in), target, source, group)
+	case 2:
+		checkDataHeaderBytes(t, pdu.DataHeaderBytes(in), target, source, group)
+	}
 }
 
 // checkLCBytes runs the LCBytes properties of FuzzPDUEditors on l, with the

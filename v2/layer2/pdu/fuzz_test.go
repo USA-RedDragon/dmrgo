@@ -14,17 +14,17 @@ import (
 )
 
 // captureBursts returns the bursts of the captures in layer2/testdata.
-func captureBursts(f *testing.F) []layer2.RawBurst {
-	f.Helper()
+func captureBursts(tb testing.TB) []layer2.RawBurst {
+	tb.Helper()
 	files, err := filepath.Glob("../testdata/*.bin")
 	if err != nil || len(files) == 0 {
-		f.Fatalf("no captures: %v", err)
+		tb.Fatalf("no captures: %v", err)
 	}
 	var out []layer2.RawBurst
 	for _, file := range files {
 		data, err := os.ReadFile(file)
 		if err != nil {
-			f.Fatal(err)
+			tb.Fatal(err)
 		}
 		for i := 0; i+33 <= len(data); i += 33 {
 			out = append(out, layer2.RawBurst(data[i:i+33]))
@@ -148,7 +148,13 @@ const sealFlag = 0x80
 // octets 12 and 13 of data, is corrected or detected. The Idle kind checks
 // the Full LC octets of DecodeFullLinkControlBytes and IsPRFill.
 func FuzzBPTCPDU(f *testing.F) {
-	for _, b := range captureBursts(f) {
+	bptcSeeds(f, func(kind uint8, data []byte) { f.Add(kind, data) })
+	f.Fuzz(fuzzBPTCPDU)
+}
+
+// bptcSeeds calls add with each seed of FuzzBPTCPDU.
+func bptcSeeds(tb testing.TB, add func(kind uint8, data []byte)) {
+	for _, b := range captureBursts(tb) {
 		if p, _ := b.Sync(); !isDataSync(p) {
 			continue
 		}
@@ -156,85 +162,86 @@ func FuzzBPTCPDU(f *testing.F) {
 		payload, _ := b.BPTCPayload()
 		for i, dt := range bptcKinds {
 			if dt == st.DataType {
-				f.Add(uint8(i), payload[:])
+				add(uint8(i), payload[:])
 			}
 		}
 	}
 	prfill := pdu.PRFillBits()
-	f.Add(uint8(9), prfill[:])
+	add(uint8(9), prfill[:])
 	for op := range byte(64) {
 		for _, k := range []uint8{0, 2, 3} {
-			f.Add(k|sealFlag, []byte{op, 0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE})
+			add(k|sealFlag, []byte{op, 0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE})
 		}
-		f.Add(uint8(2)|sealFlag, []byte{op, byte(enums.FIDMotorola), 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE})
+		add(uint8(2)|sealFlag, []byte{op, byte(enums.FIDMotorola), 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE})
 	}
 	for k := range uint8(len(bptcKinds)) {
-		f.Add(k|sealFlag, []byte{0x85, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0, 0, 0xFF, k})
+		add(k|sealFlag, []byte{0x85, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0, 0, 0xFF, k})
 	}
 	for format := range byte(16) {
-		f.Add(uint8(5)|sealFlag, []byte{0x40 | format, 0x01, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0})
-		f.Add(uint8(5)|sealFlag, []byte{format, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0})
+		add(uint8(5)|sealFlag, []byte{0x40 | format, 0x01, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0})
+		add(uint8(5)|sealFlag, []byte{format, 0x00, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0})
 	}
+}
 
-	f.Fuzz(func(t *testing.T, kind uint8, data []byte) {
-		var in [12]byte
-		copy(in[:], data)
-		k := int(kind&^sealFlag) % len(bptcKinds)
-		dt := bptcKinds[k]
-		sealed := kind&sealFlag != 0 && sealBPTC(t, &in, dt)
-		var out [12]byte
-		switch k {
-		case 0, 1:
-			out = checkCodec(t, dt.String(), in,
-				func(b [12]byte) pdu.FullLinkControl { return pdu.DecodeFullLinkControl(b, dt) },
-				(*pdu.FullLinkControl).Encode, (*pdu.FullLinkControl).String)
-			checkInto(t, dt.String(), in, invert(in),
-				func(b [12]byte) pdu.FullLinkControl { return pdu.DecodeFullLinkControl(b, dt) },
-				func(d *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, b [12]byte) {
-					pdu.DecodeFullLinkControlInto(d, p, b, dt)
-				})
-		case 2:
-			out = checkCodec(t, "CSBK", in, pdu.DecodeCSBK, (*pdu.CSBK).Encode, (*pdu.CSBK).String)
-			checkInto(t, "CSBK", in, invert(in), pdu.DecodeCSBK, pdu.DecodeCSBKInto)
-			checkCSBKViews(t, out)
-		case 3:
-			out = checkCodec(t, "MBCHeader", in, pdu.DecodeMBCHeader, (*pdu.MBCHeader).Encode, (*pdu.MBCHeader).String)
-			checkInto(t, "MBCHeader", in, invert(in), pdu.DecodeMBCHeader, pdu.DecodeMBCHeaderInto)
-		case 4:
-			out = checkCodec(t, "MBCContinuation", in, pdu.DecodeMBCContinuation, (*pdu.MBCContinuation).Encode, (*pdu.MBCContinuation).String)
-			checkMBCViews(t, in, out)
-		case 5:
-			out = checkCodec(t, "DataHeader", in, pdu.DecodeDataHeader, (*pdu.DataHeader).Encode, (*pdu.DataHeader).String)
-			checkInto(t, "DataHeader", in, invert(in), pdu.DecodeDataHeader, pdu.DecodeDataHeaderInto)
-		case 6:
-			out = checkCodec(t, "USBD", in, pdu.DecodeUnifiedSingleBlockData, (*pdu.UnifiedSingleBlockData).Encode, (*pdu.UnifiedSingleBlockData).String)
-		case 7:
-			out = checkCodec(t, "PIHeader", in, pdu.DecodePIHeader, (*pdu.PIHeader).Encode, (*pdu.PIHeader).String)
-		case 8:
-			out = checkCodec(t, "Rate12Data", in, pdu.DecodeRate12Data, (*pdu.Rate12Data).Encode, (*pdu.Rate12Data).String)
-			checkConfirmed(t, in)
-		case 9:
-			checkFullLCBytes(t, [9]byte(in[:9]))
-			if pdu.IsPRFill(in) != (in == pdu.PRFillBits()) {
-				t.Fatalf("IsPRFill(%x) = %t", in, pdu.IsPRFill(in))
-			}
-			return
-		case 10:
-			out = checkCodec(t, "CGAPContinuation", in, pdu.DecodeCGAPContinuation, (*pdu.CGAPContinuation).Encode, (*pdu.CGAPContinuation).String)
-		case 11:
-			out = checkCodec(t, "MVAPContinuation", in, pdu.DecodeMVAPContinuation, (*pdu.MVAPContinuation).Encode, (*pdu.MVAPContinuation).String)
-		case 12:
-			out = checkCodec(t, "BCAPContinuation", in, pdu.DecodeBCAPContinuation, (*pdu.BCAPContinuation).Encode, (*pdu.BCAPContinuation).String)
-		case 13:
-			out = checkCodec(t, "VNAPContinuation", in, pdu.DecodeVNAPContinuation, (*pdu.VNAPContinuation).Encode, (*pdu.VNAPContinuation).String)
+// fuzzBPTCPDU is the body of FuzzBPTCPDU.
+func fuzzBPTCPDU(t *testing.T, kind uint8, data []byte) {
+	var in [12]byte
+	copy(in[:], data)
+	k := int(kind&^sealFlag) % len(bptcKinds)
+	dt := bptcKinds[k]
+	sealed := kind&sealFlag != 0 && sealBPTC(t, &in, dt)
+	var out [12]byte
+	switch k {
+	case 0, 1:
+		out = checkCodec(t, dt.String(), in,
+			func(b [12]byte) pdu.FullLinkControl { return pdu.DecodeFullLinkControl(b, dt) },
+			(*pdu.FullLinkControl).Encode, (*pdu.FullLinkControl).String)
+		checkInto(t, dt.String(), in, invert(in),
+			func(b [12]byte) pdu.FullLinkControl { return pdu.DecodeFullLinkControl(b, dt) },
+			func(d *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, b [12]byte) {
+				pdu.DecodeFullLinkControlInto(d, p, b, dt)
+			})
+	case 2:
+		out = checkCodec(t, "CSBK", in, pdu.DecodeCSBK, (*pdu.CSBK).Encode, (*pdu.CSBK).String)
+		checkInto(t, "CSBK", in, invert(in), pdu.DecodeCSBK, pdu.DecodeCSBKInto)
+		checkCSBKViews(t, out)
+	case 3:
+		out = checkCodec(t, "MBCHeader", in, pdu.DecodeMBCHeader, (*pdu.MBCHeader).Encode, (*pdu.MBCHeader).String)
+		checkInto(t, "MBCHeader", in, invert(in), pdu.DecodeMBCHeader, pdu.DecodeMBCHeaderInto)
+	case 4:
+		out = checkCodec(t, "MBCContinuation", in, pdu.DecodeMBCContinuation, (*pdu.MBCContinuation).Encode, (*pdu.MBCContinuation).String)
+		checkMBCViews(t, in, out)
+	case 5:
+		out = checkCodec(t, "DataHeader", in, pdu.DecodeDataHeader, (*pdu.DataHeader).Encode, (*pdu.DataHeader).String)
+		checkInto(t, "DataHeader", in, invert(in), pdu.DecodeDataHeader, pdu.DecodeDataHeaderInto)
+	case 6:
+		out = checkCodec(t, "USBD", in, pdu.DecodeUnifiedSingleBlockData, (*pdu.UnifiedSingleBlockData).Encode, (*pdu.UnifiedSingleBlockData).String)
+	case 7:
+		out = checkCodec(t, "PIHeader", in, pdu.DecodePIHeader, (*pdu.PIHeader).Encode, (*pdu.PIHeader).String)
+	case 8:
+		out = checkCodec(t, "Rate12Data", in, pdu.DecodeRate12Data, (*pdu.Rate12Data).Encode, (*pdu.Rate12Data).String)
+		checkConfirmed(t, in)
+	case 9:
+		checkFullLCBytes(t, [9]byte(in[:9]))
+		if pdu.IsPRFill(in) != (in == pdu.PRFillBits()) {
+			t.Fatalf("IsPRFill(%x) = %t", in, pdu.IsPRFill(in))
 		}
-		if sealed && out != in {
-			t.Fatalf("%s: Encode(Decode(%x)) = %x drops bits", dt, in, out)
-		}
-		if sealed && len(data) > 13 && data[12] != 0 {
-			checkOctetError(t, k, in, int(data[13])%len(in), data[12])
-		}
-	})
+		return
+	case 10:
+		out = checkCodec(t, "CGAPContinuation", in, pdu.DecodeCGAPContinuation, (*pdu.CGAPContinuation).Encode, (*pdu.CGAPContinuation).String)
+	case 11:
+		out = checkCodec(t, "MVAPContinuation", in, pdu.DecodeMVAPContinuation, (*pdu.MVAPContinuation).Encode, (*pdu.MVAPContinuation).String)
+	case 12:
+		out = checkCodec(t, "BCAPContinuation", in, pdu.DecodeBCAPContinuation, (*pdu.BCAPContinuation).Encode, (*pdu.BCAPContinuation).String)
+	case 13:
+		out = checkCodec(t, "VNAPContinuation", in, pdu.DecodeVNAPContinuation, (*pdu.VNAPContinuation).Encode, (*pdu.VNAPContinuation).String)
+	}
+	if sealed && out != in {
+		t.Fatalf("%s: Encode(Decode(%x)) = %x drops bits", dt, in, out)
+	}
+	if sealed && len(data) > 13 && data[12] != 0 {
+		checkOctetError(t, k, in, int(data[13])%len(in), data[12])
+	}
 }
 
 // sealBPTC rewrites the check bits of the payload p of a burst of dt and

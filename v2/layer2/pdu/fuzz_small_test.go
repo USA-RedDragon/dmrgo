@@ -31,67 +31,74 @@ const (
 // data blocks and GPS Info, and the EMB and slot type codeword decoders and
 // setters.
 func FuzzSmallPDU(f *testing.F) {
-	for _, b := range captureBursts(f) {
+	smallSeeds(f, func(kind uint8, data []byte) { f.Add(kind, data) })
+	f.Fuzz(fuzzSmallPDU)
+}
+
+// smallSeeds calls add with each seed of FuzzSmallPDU.
+func smallSeeds(tb testing.TB, add func(kind uint8, data []byte)) {
+	for _, b := range captureBursts(tb) {
 		p, _ := b.Sync()
 		switch {
 		case p == enums.SyncNone:
 			emb := b.EMB()
 			cw := must(emb.Encode())
-			f.Add(uint8(smallEMB), cw[:])
-			f.Add(uint8(smallEMBCodeword), cw[:])
+			add(uint8(smallEMB), cw[:])
+			add(uint8(smallEMBCodeword), cw[:])
 		case isDataSync(p):
 			st := b.SlotType()
 			cw := must(st.Encode())
-			f.Add(uint8(smallSlotType), cw[:])
-			f.Add(uint8(smallSlotTypeCodeword), cw[:])
+			add(uint8(smallSlotType), cw[:])
+			add(uint8(smallSlotTypeCodeword), cw[:])
 			switch st.DataType {
 			case enums.DataTypeRate34:
 				d, _ := b.Rate34Payload()
-				f.Add(uint8(smallRate34), d[:])
+				add(uint8(smallRate34), d[:])
 			case enums.DataTypeRate1:
 				d, _ := b.Rate1Payload()
-				f.Add(uint8(smallRate1), d[:])
+				add(uint8(smallRate1), d[:])
 			default:
 			}
 		}
 	}
 	for slco := range byte(16) {
-		f.Add(uint8(smallShortLC), []byte{slco<<4 | 0x05, 0xA5, 0x5A, 0x3C, 0x00, 0x96})
+		add(uint8(smallShortLC), []byte{slco<<4 | 0x05, 0xA5, 0x5A, 0x3C, 0x00, 0x96})
 	}
 	for k := range smallKinds {
-		f.Add(uint8(k), []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x0F})
+		add(uint8(k), []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x0F})
 	}
+}
 
-	f.Fuzz(func(t *testing.T, kind uint8, data []byte) {
-		var in [24]byte
-		copy(in[:], data)
-		switch kind % smallKinds {
-		case smallEMB:
-			checkCodec(t, "EmbeddedSignalling", [2]byte(in[:2]), pdu.DecodeEmbeddedSignalling, (*pdu.EmbeddedSignalling).Encode, (*pdu.EmbeddedSignalling).String)
-		case smallSlotType:
-			checkCodec(t, "SlotType", [3]byte(in[:3]), pdu.DecodeSlotType, (*pdu.SlotType).Encode, (*pdu.SlotType).String)
-		case smallShortLC:
-			b := [5]byte(in[:5])
-			checkCodec(t, "ShortLC", b, pdu.DecodeShortLC, (*pdu.ShortLC).Encode, (*pdu.ShortLC).String)
-			checkInto(t, "ShortLC", b, [5]byte(in[5:10]), pdu.DecodeShortLC, pdu.DecodeShortLCInto)
-		case smallTACT:
-			checkCodec(t, "TACT", [1]byte(in[:1]), pdu.DecodeTACT, (*pdu.TACT).Encode, (*pdu.TACT).String)
-		case smallReverseChannel:
-			checkCodec(t, "ReverseChannel", [2]byte(in[:2]), pdu.DecodeReverseChannel, (*pdu.ReverseChannel).Encode, (*pdu.ReverseChannel).String)
-		case smallUDPIPv4:
-			checkCodec(t, "UDPIPv4CompressedHeader", [9]byte(in[:9]), pdu.DecodeUDPIPv4CompressedHeader, (*pdu.UDPIPv4CompressedHeader).Encode, (*pdu.UDPIPv4CompressedHeader).String)
-		case smallRate34:
-			checkRate34(t, [18]byte(in[:18]))
-		case smallRate1:
-			checkRate1(t, in)
-		case smallGPS:
-			checkCodec(t, "FLCGPSInfo", [7]byte(in[:7]), pdu.DecodeFLCGPSInfo, (*pdu.FLCGPSInfo).Encode, (*pdu.FLCGPSInfo).String)
-		case smallEMBCodeword:
-			checkEMBCodeword(t, uint16(in[0])<<8|uint16(in[1]), in[2])
-		case smallSlotTypeCodeword:
-			checkSlotTypeCodeword(t, uint32(in[0])<<16|uint32(in[1])<<8|uint32(in[2]), in[3], in[4])
-		}
-	})
+// fuzzSmallPDU is the body of FuzzSmallPDU.
+func fuzzSmallPDU(t *testing.T, kind uint8, data []byte) {
+	var in [24]byte
+	copy(in[:], data)
+	switch kind % smallKinds {
+	case smallEMB:
+		checkCodec(t, "EmbeddedSignalling", [2]byte(in[:2]), pdu.DecodeEmbeddedSignalling, (*pdu.EmbeddedSignalling).Encode, (*pdu.EmbeddedSignalling).String)
+	case smallSlotType:
+		checkCodec(t, "SlotType", [3]byte(in[:3]), pdu.DecodeSlotType, (*pdu.SlotType).Encode, (*pdu.SlotType).String)
+	case smallShortLC:
+		b := [5]byte(in[:5])
+		checkCodec(t, "ShortLC", b, pdu.DecodeShortLC, (*pdu.ShortLC).Encode, (*pdu.ShortLC).String)
+		checkInto(t, "ShortLC", b, [5]byte(in[5:10]), pdu.DecodeShortLC, pdu.DecodeShortLCInto)
+	case smallTACT:
+		checkCodec(t, "TACT", [1]byte(in[:1]), pdu.DecodeTACT, (*pdu.TACT).Encode, (*pdu.TACT).String)
+	case smallReverseChannel:
+		checkCodec(t, "ReverseChannel", [2]byte(in[:2]), pdu.DecodeReverseChannel, (*pdu.ReverseChannel).Encode, (*pdu.ReverseChannel).String)
+	case smallUDPIPv4:
+		checkCodec(t, "UDPIPv4CompressedHeader", [9]byte(in[:9]), pdu.DecodeUDPIPv4CompressedHeader, (*pdu.UDPIPv4CompressedHeader).Encode, (*pdu.UDPIPv4CompressedHeader).String)
+	case smallRate34:
+		checkRate34(t, [18]byte(in[:18]))
+	case smallRate1:
+		checkRate1(t, in)
+	case smallGPS:
+		checkCodec(t, "FLCGPSInfo", [7]byte(in[:7]), pdu.DecodeFLCGPSInfo, (*pdu.FLCGPSInfo).Encode, (*pdu.FLCGPSInfo).String)
+	case smallEMBCodeword:
+		checkEMBCodeword(t, uint16(in[0])<<8|uint16(in[1]), in[2])
+	case smallSlotTypeCodeword:
+		checkSlotTypeCodeword(t, uint32(in[0])<<16|uint32(in[1])<<8|uint32(in[2]), in[3], in[4])
+	}
 }
 
 // checkEMBCodeword fails t unless DecodeEMBCodeword of cw corrects to a

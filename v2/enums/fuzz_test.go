@@ -22,27 +22,34 @@ var tableSyncPatterns = []enums.SyncPattern{
 // are inverses, the Valid methods agree with the names, and no String
 // panics or returns an empty name.
 func FuzzEnums(f *testing.F) {
-	f.Add(uint64(enums.SyncBSSourcedVoice), 3)
-	f.Add(uint64(enums.SyncMSSourcedData^0x100401), 0)
-	f.Add(uint64(0xFFFFFFFFFFFFFFFF), -1)
+	enumSeeds(func(v uint64, i int) { f.Add(v, i) })
+	f.Fuzz(fuzzEnums)
+}
 
-	f.Fuzz(func(t *testing.T, v uint64, i int) {
-		field := [6]byte{byte(v >> 40), byte(v >> 32), byte(v >> 24), byte(v >> 16), byte(v >> 8), byte(v)}
-		p, d := enums.NearestSyncPattern(field)
-		best := 49
-		for _, q := range tableSyncPatterns {
-			best = min(best, bits.OnesCount64(v&0xFFFFFFFFFFFF^uint64(q)))
-		}
-		if d != best || bits.OnesCount64(v&0xFFFFFFFFFFFF^uint64(p)) != d {
-			t.Fatalf("NearestSyncPattern(%012x) = %s at %d, least distance %d", v&0xFFFFFFFFFFFF, p, d, best)
-		}
-		if enums.SyncPattern(v).String() == "" || p.String() == "" {
-			t.Fatalf("empty SyncPattern name for %x", v)
-		}
-		checkVoiceBursts(t, uint8(v), i)
-		checkByteEnums(t, uint8(v))
-		checkNames(t, uint8(v))
-	})
+// enumSeeds calls add with each seed of FuzzEnums.
+func enumSeeds(add func(v uint64, i int)) {
+	add(uint64(enums.SyncBSSourcedVoice), 3)
+	add(uint64(enums.SyncMSSourcedData^0x100401), 0)
+	add(uint64(0xFFFFFFFFFFFFFFFF), -1)
+}
+
+// fuzzEnums is the body of FuzzEnums.
+func fuzzEnums(t *testing.T, v uint64, i int) {
+	field := [6]byte{byte(v >> 40), byte(v >> 32), byte(v >> 24), byte(v >> 16), byte(v >> 8), byte(v)}
+	p, d := enums.NearestSyncPattern(field)
+	best := 49
+	for _, q := range tableSyncPatterns {
+		best = min(best, bits.OnesCount64(v&0xFFFFFFFFFFFF^uint64(q)))
+	}
+	if d != best || bits.OnesCount64(v&0xFFFFFFFFFFFF^uint64(p)) != d {
+		t.Fatalf("NearestSyncPattern(%012x) = %s at %d, least distance %d", v&0xFFFFFFFFFFFF, p, d, best)
+	}
+	if enums.SyncPattern(v).String() == "" || p.String() == "" {
+		t.Fatalf("empty SyncPattern name for %x", v)
+	}
+	checkVoiceBursts(t, uint8(v), i)
+	checkByteEnums(t, uint8(v))
+	checkNames(t, uint8(v))
 }
 
 // checkVoiceBursts fails t unless VoiceBurstAt of i and Index are inverses
