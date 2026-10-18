@@ -1135,10 +1135,7 @@ func (r *leanCore) slot() {
 			}
 		}
 	}
-	isAnchor := best >= discAnchor*discAnchor
-	if isAnchor && r.syncErrors(base+leanSyncEnd+shift, anchor) > discAnchorBits {
-		isAnchor = false
-	}
+	isAnchor := best >= discAnchor*discAnchor && r.anchors(base+leanSyncEnd+shift, anchor)
 	// An MS sends in one slot of two: the slots between hold no burst of
 	// the stream, so a SYNC there is noise.
 	ms := !r.bs && r.lastAnch != leanNoSlot
@@ -1187,6 +1184,20 @@ func (r *leanCore) slot() {
 	if !r.replaying && r.ended(j, base) {
 		r.unlock()
 	}
+}
+
+// anchors reports whether the SYNC field of pattern p that ends at symbol
+// end, which correlates as an anchor, anchors the stream: its sliced
+// symbols differ from p in at most discAnchorBits bits, and in a slot
+// before the lock that a stage decodes again, the front end did not clip
+// it. Those slots hold the samples that the receiver kept while it
+// searched, which can be at the scale before the last rescale, and the
+// signs of a clipped carrier match a SYNC as well as a weak one does.
+func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
+	if r.syncErrors(end, p) > discAnchorBits {
+		return false
+	}
+	return !r.replaying || !r.clipped(end)
 }
 
 // ended reports whether the stream ends at slot j, whose first symbol is

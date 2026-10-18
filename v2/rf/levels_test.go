@@ -200,3 +200,48 @@ func TestCoherentStart(t *testing.T) {
 		})
 	}
 }
+
+// TestCarrierLeadInMS receives an MS voice call that follows an unmodulated
+// carrier, without a dip of its power, as TestCarrierLeadIn does, and checks
+// that the parts C0 and C1 of every voice frame decode. The slots before
+// the lock that Tier2 decodes again hold the clipped carrier: a SYNC there
+// must not anchor the stream, whose bursts would then fall between the
+// slots of the call.
+func TestCarrierLeadInMS(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig()
+	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
+	built, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 1})
+	for i := 0; env[i] < 1; i++ {
+		env[i] = 1
+	}
+	want := make([]uint64, 0, 18*cfg.Superframes)
+	for k := range 18 * cfg.Superframes {
+		want = append(want, rftx.AMBEValue(rftx.TestAMBEFrame(k)))
+	}
+	for _, cn := range []float64{math.Inf(1), 40} {
+		for _, lr := range []levelsReceiver{{24000, Tier0}, {0, Tier2}} {
+			t.Run(fmt.Sprintf("%s/%.0f", lr.name(), cn), func(t *testing.T) {
+				t.Parallel()
+				for _, base := range []float64{0.01, 0.1, 0.5, 2} {
+					for k := range 30 {
+						lead := base + float64(k)*0.001
+						start := benchPad + lead
+						carrier := make([]float64, int(lead*basebandRate))
+						for i := range carrier {
+							carrier[i] = 1
+						}
+						x := signalBaseband([]signalPart{{benchPad, nil, carrier}, {start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, uint64(k)+1)
+						if n := c0c1InOrder(want, voiceFrames(lr.receive(t, x))); n < len(want) {
+							t.Errorf("%.3f s of carrier: C0 and C1 of %d of %d voice frames exact", lead, n, len(want))
+						}
+					}
+				}
+			})
+		}
+	}
+}
