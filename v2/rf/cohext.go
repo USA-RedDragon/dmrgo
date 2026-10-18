@@ -442,6 +442,11 @@ const (
 func (s *cohStage) track() {
 	r := s.rx
 	hz := float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
+	if f := &r.d.f; r.afcAvg == 0 && r.d.locked {
+		// No block has ended since the oscillator moved: the SYNC fits of
+		// the core give the offset.
+		hz = float64(r.conv.hz) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
+	}
 	if !s.freqOK || math.Abs(s.freq-hz) > cohFreqSpan {
 		s.freq, s.freqOK, s.nFit, s.fitVar = hz, true, 0, cohFreqVar
 	}

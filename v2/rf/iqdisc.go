@@ -264,6 +264,10 @@ func (r *iqRx) follow() {
 		hz := (f.dc + r.d.dcHz) / scale
 		switch {
 		case abs32(avg) >= iqAFCPullHz:
+			// The channel filter pulled the mean of the blocks before
+			// toward the oscillator by more than it pulls the mean after
+			// the move: the mean starts again, as while the core searches.
+			r.afcAvg = 0
 			r.tune(avg, f.dc-avg*scale)
 		case abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < iqAFCPullHz:
 			r.tune(hz, f.dc-hz*scale)
