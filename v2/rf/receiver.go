@@ -206,6 +206,7 @@ type engine struct {
 	wide []complex64
 	// inChunk is the most input bytes whose baseband samples fit in wide.
 	inChunk int
+	carry   byteCarry
 	chz     *channelizer
 	spec    *spectrum
 	search  *syncSearch
@@ -494,6 +495,14 @@ func (r *Receiver) Flush() []Burst {
 // write processes the I/Q bytes of Receiver.Write.
 func (r *engine) write(iq []byte) []Burst {
 	r.out = r.out[:0]
+	pair, iq := r.carry.split(iq)
+	r.bytes(pair)
+	r.bytes(iq)
+	return r.out
+}
+
+// bytes processes whole I/Q pairs of bytes.
+func (r *engine) bytes(iq []byte) {
 	for len(iq) > 0 {
 		n := min(len(iq), r.cfg.MaxWrite, r.inChunk) &^ 1
 		if n == 0 {
@@ -503,7 +512,6 @@ func (r *engine) write(iq []byte) []Burst {
 		iq = iq[n:]
 		r.push(r.wide[:w])
 	}
-	return r.out
 }
 
 // writeBaseband processes the samples of Receiver.WriteBaseband.

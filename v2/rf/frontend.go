@@ -20,6 +20,29 @@ const (
 	dcStartSeconds = 0.01
 )
 
+// byteCarry holds the I byte of a pair that the bytes of a Write end
+// within, for the Write after it.
+type byteCarry struct {
+	pair [2]byte
+	odd  byte
+	held bool
+}
+
+// split returns the pair that completes the byte that c holds, empty
+// without one, and the whole pairs of iq after it, and holds the last byte
+// of iq when they leave it over.
+func (c *byteCarry) split(iq []byte) (pair, rest []byte) {
+	if c.held && len(iq) > 0 {
+		c.pair, c.held = [2]byte{c.odd, iq[0]}, false
+		pair, iq = c.pair[:], iq[1:]
+	}
+	if len(iq)&1 != 0 {
+		c.odd, c.held = iq[len(iq)-1], true
+		iq = iq[:len(iq)-1]
+	}
+	return pair, iq
+}
+
 // frontEnd turns interleaved 8-bit I/Q at the input rate into complex
 // baseband at the output rate, basebandRate or discRate, flat to wideHz
 // times the share of basebandRate that the output rate is: a removal of

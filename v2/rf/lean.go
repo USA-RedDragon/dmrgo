@@ -358,6 +358,7 @@ type leanRx struct {
 	fe      *frontEnd
 	wide    []complex64
 	inChunk int
+	carry   byteCarry
 	dc      complex64
 	dcN     int32
 	signed  bool
@@ -431,11 +432,19 @@ func (r *leanCore) resetChans() {
 // write processes the I/Q bytes of Receiver.Write.
 func (r *leanRx) write(iq []byte) []Burst {
 	r.out = r.out[:0]
+	pair, iq := r.carry.split(iq)
+	r.bytes(pair)
+	r.bytes(iq)
+	return r.out
+}
+
+// bytes processes whole I/Q pairs of bytes.
+func (r *leanRx) bytes(iq []byte) {
 	if r.fe == nil {
 		for i := 0; i+1 < len(iq); i += 2 {
 			r.sample(r.byteSample(iq[i], iq[i+1]))
 		}
-		return r.out
+		return
 	}
 	for len(iq) > 0 {
 		n := min(len(iq), r.inChunk) &^ 1
@@ -448,7 +457,6 @@ func (r *leanRx) write(iq []byte) []Burst {
 			r.sample(v)
 		}
 	}
-	return r.out
 }
 
 // byteSample converts one I/Q pair of bytes at the baseband rate to a

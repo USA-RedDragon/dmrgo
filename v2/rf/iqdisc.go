@@ -139,6 +139,7 @@ type iqRx struct {
 	fe      *frontEnd
 	wide    []complex64
 	inChunk int
+	carry   byteCarry
 	dc      complex64
 	dcN     int32
 	signed  bool
@@ -347,25 +348,32 @@ func (r *iqRx) drain() {
 // write processes the I/Q bytes of Receiver.Write.
 func (r *iqRx) write(iq []byte) []Burst {
 	r.out = r.out[:0]
+	pair, iq := r.carry.split(iq)
+	r.bytes(pair)
+	r.bytes(iq)
+	r.drain()
+	return r.out
+}
+
+// bytes processes whole I/Q pairs of bytes.
+func (r *iqRx) bytes(iq []byte) {
 	if r.fe == nil {
 		for i := 0; i+1 < len(iq); i += 2 {
 			r.sample(r.byteSample(iq[i], iq[i+1]))
 		}
-	} else {
-		for len(iq) > 0 {
-			n := min(len(iq), r.inChunk) &^ 1
-			if n == 0 {
-				break
-			}
-			w := r.fe.process(iq[:n], r.wide)
-			iq = iq[n:]
-			for _, v := range r.wide[:w] {
-				r.sample(v)
-			}
+		return
+	}
+	for len(iq) > 0 {
+		n := min(len(iq), r.inChunk) &^ 1
+		if n == 0 {
+			break
+		}
+		w := r.fe.process(iq[:n], r.wide)
+		iq = iq[n:]
+		for _, v := range r.wide[:w] {
+			r.sample(v)
 		}
 	}
-	r.drain()
-	return r.out
 }
 
 // byteSample returns the I/Q bytes i and q at the baseband rate as a
