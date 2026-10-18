@@ -94,7 +94,7 @@ const (
 	// detects the timing error by Mueller and Muller, at the symbols only,
 	// with the sign leanMMSign and the gain leanMMGain over the Gardner
 	// gain.
-	leanMMSPS  = 2.0
+	leanMMSPS  = 2.5
 	leanMMSign = 1
 	leanMMGain = 2
 )
