@@ -293,8 +293,8 @@ func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst
 			return out
 		}
 		out = r.callLC(now, &c, out)
-		if h.HasSeq && r.state == StateInCall {
-			r.track.afterHeader(h)
+		if r.state == StateInCall {
+			r.track.afterHeader(h, now)
 		}
 		return out
 	case enums.DataTypeTerminatorWithLC:
@@ -305,9 +305,7 @@ func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst
 			var e *Event
 			out, e = appendEvent(out, EventPIHeader, &r.call)
 			e.Burst = rawOf(b, raw)
-			if h.HasSeq {
-				r.track.afterHeader(h)
-			}
+			r.track.afterHeader(h, now)
 		}
 		return out
 	case enums.DataTypeIdle:

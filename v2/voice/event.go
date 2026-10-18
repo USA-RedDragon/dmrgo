@@ -247,7 +247,8 @@ type Event struct {
 	// Frames is the FEC result of each vocoder slot of a voice burst.
 	Frames [layer2.VoiceSlotsPerBurst]FrameQuality
 	// Lost is the number of voice bursts lost just before this one, at most
-	// 255.
+	// 255. For the first voice burst after a Voice LC Header or PI Header,
+	// it is the number lost after the header.
 	Lost uint8
 	// LC is the embedded LC of an EventEmbedded.
 	LC pdu.FullLinkControl

@@ -811,6 +811,7 @@ func deliver(t *testing.T, rt *roundTrip, bursts []sent) delivery {
 	events := make([]voice.Event, 0, voice.MaxEvents)
 	d := delivery{segments: make([]segment, 1)}
 	loose, first, started := false, true, false
+	header, anchored := false, false
 	var last time.Duration
 	relay := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Queue: voice.MaxQueue})
 	outs := make([]voice.Output, 0, voice.MaxOutputs)
@@ -849,12 +850,13 @@ func deliver(t *testing.T, rt *roundTrip, bursts []sent) delivery {
 		b := &bursts[i]
 		if rt.dropped(i) {
 			loose = loose || rt.seq && b.voice < 0
+			anchored = anchored && b.voice >= 0
 			continue
 		}
 		if started && b.out.Due-last >= voice.DefaultLost {
 			run(last+voice.DefaultLost, nil, layer2.Hint{})
 			d.segments = append(d.segments, segment{})
-			first = true
+			first, header, anchored = true, false, false
 		}
 		seg := &d.segments[len(d.segments)-1]
 		h := layer2.Hint{}
@@ -866,10 +868,14 @@ func deliver(t *testing.T, rt *roundTrip, bursts []sent) delivery {
 			if p := b.out.Position; p != enums.VoiceBurstC && p != enums.VoiceBurstD {
 				loose = false
 			}
-			d.arrived = append(d.arrived, arrival{sent: b, raw: rt.damage(i, b), loose: loose, first: first})
+			d.arrived = append(d.arrived, arrival{sent: b, raw: rt.damage(i, b), loose: loose, first: first,
+				afterHeader: first && anchored})
 			first = false
 		case b.out.DataType == enums.DataTypeVoiceLCHeader:
 			seg.headers++
+			header, anchored = true, true
+		case b.out.DataType == enums.DataTypePIHeader:
+			anchored = header
 		case b.out.DataType == enums.DataTypeTerminatorWithLC:
 			seg.terminators++
 		}
@@ -963,12 +969,16 @@ func checkSegment(t *testing.T, rt *roundTrip, seg *segment, last bool, starts, 
 // D: the Receiver cannot know that the header took a number. raw is the
 // burst as received, with its bit error. first reports
 // the first voice burst after a gap that ended the call, whose lost bursts
-// the Receiver cannot count.
+// the Receiver cannot count, unless afterHeader reports that a Voice LC
+// Header, or a PI Header after one, arrived before it and no data burst
+// after that header was lost: then the Receiver counts the voice bursts
+// lost since the header.
 type arrival struct {
 	*sent
-	raw   layer2.RawBurst
-	loose bool
-	first bool
+	raw         layer2.RawBurst
+	loose       bool
+	first       bool
+	afterHeader bool
 }
 
 // checkVoice checks voice event k against arrived[k], the k-th voice burst
@@ -999,7 +1009,12 @@ func checkVoice(t *testing.T, k int, e *voice.Event, arrived []arrival) {
 			t.Fatalf("voice event %d: position %v, sent %v", k, e.Position, b.out.Position)
 		}
 	}
-	if k > 0 && !b.first {
+	switch {
+	case b.afterHeader:
+		if int(e.Lost) != b.voice {
+			t.Fatalf("voice event %d: Lost %d, %d voice bursts lost after the header", k, e.Lost, b.voice)
+		}
+	case k > 0 && !b.first:
 		if lost := b.voice - arrived[k-1].voice - 1; int(e.Lost) != lost {
 			t.Fatalf("voice event %d: Lost %d, %d voice bursts lost", k, e.Lost, lost)
 		}
