@@ -673,6 +673,11 @@ func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
 // from the timing loop, in the kept samples, which the core stops keeping.
 func (x *softExt) locked(c *leanCore, d float32) {
 	x.lockSym, x.lockAt = c.ns-1, c.lastAt+d
+	if x.coh != nil {
+		// A new stream may come from another transmitter, at another
+		// carrier offset.
+		x.coh.freqOK = false
+	}
 }
 
 // firstSlot decodes the lookback slots before the burst of the SYNC that
