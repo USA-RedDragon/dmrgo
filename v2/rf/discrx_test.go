@@ -196,3 +196,28 @@ func TestRescaleSigns(t *testing.T) {
 		t.Errorf("signs %06x, want %06x", got, syncSigns[0])
 	}
 }
+
+// TestRescaleTiming runs a searching DiscReceiver on matched filter samples
+// of the outer deviation, scales its input down by 16, as levels does when
+// a strong signal follows a weak one, and checks that the power that
+// normalizes the timing error follows the scaled samples at once.
+func TestRescaleTiming(t *testing.T) {
+	t.Parallel()
+	var r DiscReceiver
+	if err := r.Init(DiscConfig{Hz: 9600}); err != nil {
+		t.Fatal(err)
+	}
+	const g = 1.0 / 16
+	x := func(i int) float32 { return 3 * deviationHz * float32(math.Sin(math.Pi*float64(i)/2+0.3)) }
+	for i := range 2000 {
+		r.push(x(i))
+	}
+	want := g * g * r.tm.pow
+	r.rescale(g)
+	for i := 2000; i < 2010; i++ {
+		r.push(g * x(i))
+	}
+	if p := r.tm.pow; p > 2*want || p < want/2 {
+		t.Errorf("timing power %.0f, want about %.0f", p, want)
+	}
+}

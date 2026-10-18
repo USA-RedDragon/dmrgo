@@ -547,8 +547,9 @@ func (r *leanCore) acqBuf() ([]int16, int32) {
 	return r.fec.s[:leanAcqSamples/2], leanAcqSamples
 }
 
-// rescale multiplies the symbols of the ring and the kept samples by g,
-// as the front end scales its input while the receiver searches.
+// rescale multiplies the symbols of the ring, the kept samples and the
+// samples and power of the timing loop by g, as the front end scales its
+// input while the receiver searches.
 func (r *leanCore) rescale(g float32) {
 	// In integers, Q8: TinyGo checks each float conversion for range.
 	g8 := int32(g*256 + 0.5)
@@ -557,6 +558,9 @@ func (r *leanCore) rescale(g float32) {
 	}
 	r.rebuildSigns()
 	r.rescaleKept(g8, 0)
+	tm := &r.tm
+	tm.s0, tm.s1, tm.s2, tm.s3 = tm.s0*g, tm.s1*g, tm.s2*g, tm.s3*g
+	tm.last, tm.half, tm.pow = tm.last*g, tm.half*g, tm.pow*g*g
 }
 
 // rescaleKept sets each kept sample x to x*g8/256+a8/256, rounded.
