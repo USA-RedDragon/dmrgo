@@ -168,7 +168,7 @@ func transmission(t *testing.T, lc pdu.FullLinkControl, superframes int, opts fu
 }
 
 // loadBin returns the bursts of a capture in layer2/testdata.
-func loadBin(t *testing.T, name string) []layer2.RawBurst {
+func loadBin(t testing.TB, name string) []layer2.RawBurst {
 	t.Helper()
 	data, err := os.ReadFile("../layer2/testdata/" + name)
 	if err != nil || len(data)%33 != 0 {
@@ -210,7 +210,7 @@ func loadGolden(t *testing.T, name string) []layer2.RawBurst {
 
 // loadWeak returns the TS2 bursts of testdata/xpr8400_bs_voice_weak.txt
 // with their times.
-func loadWeak(t *testing.T) []input {
+func loadWeak(t testing.TB) []input {
 	t.Helper()
 	f, err := os.Open("testdata/xpr8400_bs_voice_weak.txt")
 	if err != nil {
