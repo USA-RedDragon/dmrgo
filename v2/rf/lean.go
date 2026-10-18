@@ -933,9 +933,11 @@ func (r *leanCore) symbol(x, at float32) {
 		switch {
 		case again && mid && r.offGrid():
 			r.midSync()
+		case again && mid:
+			r.retime(true)
 		case mid || r.signsMatch(r.signs):
 			if !r.offGrid() {
-				r.retime()
+				r.retime(false)
 			} else if r.searchSym(true); r.lockNs == r.ns {
 				r.forced = true
 			}
@@ -1165,9 +1167,17 @@ func (r *leanCore) clipped(end int64) bool {
 // the slots of a stale lock, again from the kept samples at its timing, as
 // the search does before a lock, and moves the timing loop to it: a call
 // that starts on the slots of the lock but between its symbols needs it.
-func (r *leanCore) retime() {
+// With mid, the SYNC is one that resample put off to this symbol, whose
+// signs the kept samples halfway between the last symbols show, and the
+// symbols of the lock, a symbol off, do not gate it.
+func (r *leanCore) retime(mid bool) {
 	rho2, src, data := r.syncAt(r.ns - 1)
-	if src != int(r.src) || rho2 < leanExtRho*leanExtRho || r.clipped(r.ns-1) {
+	if mid {
+		src, data = r.signsSource(r.midSigns)
+	} else if rho2 < leanExtRho*leanExtRho {
+		return
+	}
+	if src != int(r.src) || r.clipped(r.ns-1) {
 		return
 	}
 	voice, dp, _ := sourceAt(src).SyncPatterns()
