@@ -1292,12 +1292,13 @@ func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
 }
 
 // ended reports whether the stream ends at slot j, whose first symbol is
-// base. The carrier of a BS stream stays on, with a SYNC in most slots,
-// so lostSlots without one end it: its noise keeps the energy of the
-// slots up, and a repeater that keys up again has a new timing. A forced
-// lock that no later SYNC confirms is false.
+// base. lostSlots without a SYNC end it: the carrier of a BS stream stays
+// on, and the noise of a discriminator keeps the energy of the slots up,
+// so that a repeater that keys up again with a new timing, or an MS that
+// stops, would keep it. A forced lock that no later SYNC confirms is
+// false.
 func (r *leanCore) ended(j int32, base int64) bool {
-	return r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6 || r.bs && j-r.lastAnch >= lostSlots ||
+	return r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6 || j-r.lastAnch >= lostSlots ||
 		r.forced && base-r.lockNs > 6*slotSymbols
 }
 
