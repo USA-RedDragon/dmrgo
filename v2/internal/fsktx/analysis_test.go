@@ -197,10 +197,10 @@ func resampleBand(x []complex128, rateIn, rateOut int, pass, stop float64) []com
 			taps[p][j] /= sum
 		}
 	}
-	out := make([]complex128, 0, len(x)*l/m+1)
+	out := make([]complex128, 0, int(int64(len(x))*int64(l)/int64(m))+1)
 	for nOut := 0; ; nOut++ {
-		pos := nOut * m
-		base, p := pos/l, pos%l
+		pos := int64(nOut) * int64(m)
+		base, p := int(pos/int64(l)), int(pos%int64(l))
 		if base >= len(x) {
 			break
 		}
