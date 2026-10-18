@@ -31,13 +31,13 @@ type MCUIQ struct {
 // Init sets up m for I/Q at rate, 48000, 96000 or 192000 Hz, with the
 // carrier offsetHz from 0 Hz, within a quarter of rate. rampSamples is the
 // length of the power ramp of Key at rate, from 1 to 32768. m starts
-// keyed down.
+// keyed down. On an error m stays as it was.
 func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 	t := tableIQ()
 	switch {
 	case rate != 2*t.hz && rate != 4*t.hz && rate != 8*t.hz:
 		return errRate
-	case rampSamples < 1 || rampSamples > 1<<15 || 4*offsetHz >= rate || -4*offsetHz >= rate:
+	case rampSamples < 1 || rampSamples > 1<<15 || offsetHz >= rate/4 || offsetHz <= -rate/4:
 		return errLevel
 	}
 	*m = MCUIQ{ramp: int32(rampSamples)}
