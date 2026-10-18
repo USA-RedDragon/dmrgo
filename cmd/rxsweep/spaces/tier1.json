@@ -1,0 +1,18 @@
+{
+ "coarse": {"lo": -2, "hi": 12, "step": 1, "seeds": 4},
+ "fine": {"lo": -1.5, "hi": 1.5, "step": 0.25, "seeds": 16},
+ "payloads": ["ambe", "ambe_c0c1", "rate12", "rate34", "csbk", "elc", "sync"],
+ "variants": [
+  {"name": "q-t0", "tier": 0, "opt": {"IQDisc": true, "IQHz": 12000}},
+  {"name": "q-t1-soft", "tier": 1, "opt": {"ExtAMBE": false, "ExtNPML": false}},
+  {"name": "q-t1-ambe", "tier": 1, "opt": {"ExtNPML": false}},
+  {"name": "q-t1", "tier": 1},
+  {"name": "q-t1-24k", "tier": 1, "opt": {"IQHz": 24000}},
+  {"name": "q-t2", "tier": 2},
+  {"name": "a-t0", "tier": 0, "disc": true, "hz": 9600},
+  {"name": "a-t1-soft", "tier": 0, "disc": true, "hz": 9600, "opt": {"SoftExt": true, "ExtOSD": true, "ExtELC": true, "ExtLookback": 8}},
+  {"name": "a-t1-ambe", "tier": 0, "disc": true, "hz": 9600, "opt": {"SoftExt": true, "ExtOSD": true, "ExtELC": true, "ExtAMBE": true, "ExtLookback": 8}},
+  {"name": "a-t1", "tier": 0, "disc": true, "hz": 9600, "opt": {"SoftExt": true, "ExtOSD": true, "ExtELC": true, "ExtAMBE": true, "ExtNPML": true, "ExtLookback": 8}},
+  {"name": "a-t2", "tier": 0, "disc": true, "hz": 9600, "opt": {"SoftExt": true, "ExtOSD": true, "ExtELC": true, "ExtAMBE": true, "ExtLookback": 8, "CohExt": true, "PSPGain": 0.2, "LLRScale": 0.5}}
+ ]
+}
