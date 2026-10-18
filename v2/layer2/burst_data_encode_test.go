@@ -182,35 +182,17 @@ func (c *customData) String() string            { return "custom" }
 func (c *customData) DataType() enums.DataType  { return enums.DataTypeRate12 }
 func (c *customData) Encode() ([12]byte, error) { return c.info, nil }
 
-type customRate34 struct{}
-
-func (customRate34) String() string            { return "custom 3/4" }
-func (customRate34) DataType() enums.DataType  { return enums.DataTypeRate12 }
-func (customRate34) Encode() ([18]byte, error) { return [18]byte{}, nil }
-
-type customNoEncode struct{}
-
-func (customNoEncode) String() string           { return "custom" }
-func (customNoEncode) DataType() enums.DataType { return enums.DataTypeRate12 }
-
-// TestBurstEncode_CustomData checks that Burst.Encode takes a Data type from
-// outside package pdu and checks the number of bits it encodes.
+// TestBurstEncode_CustomData checks that Burst.Encode and BuildBurst reject
+// a Data type from outside package pdu, even one with an Encode method.
 func TestBurstEncode_CustomData(t *testing.T) {
 	t.Parallel()
 
-	want := [12]byte{0xDE, 0xAD, 0xBE, 0xEF}
-	b := dataBurst(enums.DataTypeRate12, &customData{info: want})
-	got := reencode(t, &b)
-	if r, ok := got.Data.(*pdu.Rate12Data); !ok || r.Data != want {
-		t.Errorf("custom Rate 1/2 Data decoded as %+v, want %x", got.Data, want)
+	b := dataBurst(enums.DataTypeRate12, &customData{info: [12]byte{0xDE, 0xAD}})
+	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "not a PDU type") {
+		t.Errorf("Encode of a custom Data: %v, want a not a PDU type error", err)
 	}
-	b.Data = customRate34{}
-	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "number of information bits") {
-		t.Errorf("Encode of 144 bits in a Rate 1/2 burst: %v, want a length error", err)
-	}
-	b.Data = customNoEncode{}
-	if _, err := b.Encode(); err == nil || !strings.Contains(err.Error(), "no Encode method") {
-		t.Errorf("Encode of Data without Encode: %v, want a no Encode error", err)
+	if _, err := layer2.BuildBurst(b.Data, 1, layer2.SyncSourceBS); err == nil || !strings.Contains(err.Error(), "not a PDU type") {
+		t.Errorf("BuildBurst of a custom Data: %v, want a not a PDU type error", err)
 	}
 }
 

@@ -332,17 +332,15 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 
 // BuildBurst returns the data burst that carries d, with a slot type of
 // color code cc and data type d.DataType() and the data SYNC pattern of src.
-// The BPTC reserved bits are zero. It returns an error when d is nil or does
-// not encode, or src is unknown, and a *dmrgo.FieldRangeError when cc does
-// not fit in 4 bits. Its type switch on the Encode method of d
-// can allocate once for each type of d, to fill the runtime cache of the
-// switch.
+// The BPTC reserved bits are zero. d must be a non-nil pointer to one of the
+// Data types of package pdu: FullLinkControl, CSBK, PIHeader, DataHeader,
+// MBCHeader, MBCContinuation, CGAPContinuation, MVAPContinuation,
+// BCAPContinuation, VNAPContinuation, UnifiedSingleBlockData, Rate12Data,
+// Rate34Data, Rate1Data or PRFill. It returns an error for any other d, when
+// d does not encode or src is unknown, and a *dmrgo.FieldRangeError when cc
+// does not fit in 4 bits. d does not escape to the heap.
 func BuildBurst(d Data, cc enums.ColorCode, src SyncSource) (RawBurst, error) {
-	if d == nil {
-		return RawBurst{}, errNilData
-	}
-	dt := d.DataType()
-	info, err := encodeData(d, dt)
+	dt, info, err := encodeData(d, 0, true)
 	if err != nil {
 		return RawBurst{}, err
 	}
