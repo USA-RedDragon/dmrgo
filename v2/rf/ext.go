@@ -721,6 +721,11 @@ func (x *softExt) firstSlot(c *leanCore) {
 		c.votes = votes
 		c.dcHz, c.devScale, c.discVar, c.clicks = levels[0], levels[1], levels[2], clicks
 		c.next, c.lastAnch, c.lost = 0, leanNoSlot, 0
+		if !c.bs {
+			// An MS sends in the slots of the SYNC of the lock, two
+			// apart: a SYNC that noise shows in another would take them.
+			c.lastAnch = int32(n)
+		}
 		c.first = first - int64(n)*slotSymbols
 		c.slotEnd = c.first + slotSymbols
 		c.replayDry = dry
@@ -745,6 +750,10 @@ func (x *softExt) firstSlot(c *leanCore) {
 		}
 	}
 	c.replaying, c.replayDry = false, false
+	if c.lastAnch == int32(n) {
+		// No slot before the lock anchored.
+		c.lastAnch = leanNoSlot
+	}
 	c.clicks = clicks
 	c.ring = x.ring
 	c.first = first - int64(n)*slotSymbols
