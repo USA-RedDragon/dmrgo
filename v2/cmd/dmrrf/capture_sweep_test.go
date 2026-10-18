@@ -42,7 +42,7 @@ func TestCaptureXPR8400GainSweep(t *testing.T) {
 	for _, c := range []struct {
 		tier rf.Tier
 		min  int
-	}{{rf.Tier0, 25}, {rf.Tier1, 25}, {rf.Tier2, 37}, {rf.Tier3, 47}, {rf.Tier4, 47}} {
+	}{{rf.Tier0, 25}, {rf.Tier1, 27}, {rf.Tier2, 46}, {rf.Tier3, 47}, {rf.Tier4, 47}} {
 		var buf bytes.Buffer
 		rep := NewReporter(&buf)
 		for _, r := range demodulateBytes(t, iq, 256e3, false, c.tier).Bursts {

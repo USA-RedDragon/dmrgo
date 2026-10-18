@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // leanExt is a stage that a tier above Tier 0 adds after the detection of
@@ -29,6 +30,9 @@ type leanExt interface {
 	// place places burst b of slot j, which the core could not, and
 	// reports whether it did.
 	place(c *leanCore, b *Burst, j int32) bool
+	// unplaced keeps burst b, which neither the core nor place placed,
+	// for a later burst of its channel to place.
+	unplaced(c *leanCore, b *Burst)
 	// verify reports whether the last symbols of the core end SYNC p,
 	// which the discriminator alone does not show.
 	verify(c *leanCore, p enums.SyncPattern) bool
@@ -40,6 +44,18 @@ type leanExt interface {
 // extQueue is the most bursts that a softExt holds: the bursts B to D of a
 // superframe and the bursts of the other channel between them.
 const extQueue = 8
+
+// extLate is the most bursts of a channel that a softExt keeps unplaced:
+// the bursts B to F of a superframe before the burst A of the next.
+const extLate = 5
+
+// lateBurst is a burst that the core could not place, with the ring of
+// symbols of the core and the first symbol of its slot.
+type lateBurst struct {
+	b    Burst
+	ring [leanRing]int8
+	base int64
+}
 
 // extChan is the embedded LC state of one channel of a softExt.
 type extChan struct {
@@ -53,6 +69,10 @@ type extChan struct {
 	// the call that decoded, accN of them.
 	acc  [4][embBits]int16
 	accN int
+	// late holds the lateN bursts of the channel since its last placed
+	// burst, oldest first, that the core could not place.
+	late  [extLate]lateBurst
+	lateN int
 }
 
 // softExt decodes every FEC field of a burst with the soft decoders of the
@@ -157,9 +177,10 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	// The decode of Tier 0 first; the stages then replace the fields that
 	// they decode better.
 	cc, ccOK := c.colorCode()
+	ch := &x.ch[b.Slot&1]
+	x.placeLate(c, ch, b, cc, ccOK)
 	c.repair(&c.fec, b, cc, ccOK)
 	out := &b.Fixed
-	ch := &x.ch[b.Slot&1]
 	if x.coh != nil && x.coh.detect(c, b, &x.llr) {
 		x.repairAll(c, b, cc, ccOK)
 		if x.voiceKnown(b) && !x.coh.easy && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
@@ -516,6 +537,123 @@ func (x *softExt) drain(c *leanCore, one bool, keep int) {
 
 func (x *softExt) kept() []int16 { return x.acq }
 
+// unplaced keeps burst b with the symbols of the core, the last extLate
+// of its channel, so that a voice burst of the channel after it places it:
+// a receiver that comes into a call in its superframe places by its EMB
+// only the bursts B and E, and the bursts before them would be lost.
+func (x *softExt) unplaced(c *leanCore, b *Burst) {
+	ch := &x.ch[b.Slot&1]
+	if ch.lateN == extLate {
+		copy(ch.late[:], ch.late[1:])
+		ch.lateN--
+	}
+	l := &ch.late[ch.lateN]
+	ch.lateN++
+	l.b, l.ring, l.base = *b, c.ring, c.base
+}
+
+// placeLate places the bursts of ch that the core could not place before
+// burst b, which it placed: when b is a voice burst, each as the burst of
+// the superframe of b, or of the one before for a burst A, that its slot
+// gives. It detects each again, with coh from its SYNC or the EMB of its
+// place, or from its symbols with the levels of the core now, decodes it
+// and emits it after the bursts of the other channel that came since.
+// The emitted bursts carry no CACH, which would come out of order.
+func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCode, ccOK bool) {
+	n := ch.lateN
+	ch.lateN = 0
+	_, kind, known := layer2.SyncSourceOf(b.Sync)
+	pos := b.Voice
+	if pos == enums.VoiceBurstUnknown {
+		if !known || kind != layer2.KindVoice {
+			return
+		}
+		pos = enums.VoiceBurstA
+	}
+	// The bursts of a superframe whose burst A is b are those of the
+	// superframe before.
+	if pos == enums.VoiceBurstA {
+		pos += 6
+	}
+	voice, _, _ := sourceAt(int(c.src)).SyncPatterns()
+	cur, ring, base := x.llr, c.ring, c.base
+	pi := b.Data.EMB().PreemptionAndPowerControlIndicator
+	for i := range n {
+		l := &ch.late[i]
+		v, ok := latePos(pos, b.Slot, l.b.Slot)
+		if !ok {
+			continue
+		}
+		lb := &l.b
+		lb.Voice = v
+		if v == enums.VoiceBurstA {
+			lb.Voice, lb.Sync, lb.Distance = enums.VoiceBurstUnknown, voice, syncDist(lb.Data, voice)
+		}
+		lb.HasCACH = false
+		c.ring, c.base = l.ring, l.base
+		c.repair(&c.fec, lb, cc, ccOK)
+		if lb.Voice != enums.VoiceBurstUnknown && ccOK {
+			_ = lb.Fixed.SetEMB(pdu.EmbeddedSignalling{ColorCode: cc, PreemptionAndPowerControlIndicator: pi, LCSS: lateLCSS(lb.Voice)})
+		}
+		if x.coh == nil || !x.cohLate(c, lb) {
+			x.fill(c)
+		}
+		c.ring, c.base = ring, base
+		x.repairAll(c, lb, cc, ccOK)
+		hold := false
+		if x.stages&extELC != 0 {
+			hold = x.fragment(ch, lb)
+		}
+		x.push(c, lb, hold)
+		if lb.Voice == enums.VoiceBurstE && ch.have == 0xf {
+			x.embeddedLC(ch, lb.Slot)
+			ch.have = 0
+		}
+	}
+	x.llr = cur
+}
+
+// latePos returns the place of the burst of slot s in the superframe of
+// the voice burst at place pos of slot j, A to F, or past F for the one
+// before a burst A, and whether it has one.
+func latePos(pos enums.VoiceBurstType, j, s int64) (enums.VoiceBurstType, bool) {
+	for v, k := pos-1, j-2; v >= enums.VoiceBurstA && k >= s; v, k = v-1, k-2 {
+		if k == s {
+			return v, true
+		}
+	}
+	return 0, false
+}
+
+// lateLCSS returns the LCSS of the EMB of voice burst v, B to F, in a
+// call whose embedded signalling carries the LC.
+func lateLCSS(v enums.VoiceBurstType) enums.LCSS {
+	switch v {
+	case enums.VoiceBurstB:
+		return enums.LCSSFirstFragment
+	case enums.VoiceBurstE:
+		return enums.LCSSLastFragment
+	case enums.VoiceBurstF:
+		return enums.LCSSSingleFragment
+	case enums.VoiceBurstUnknown, enums.VoiceBurstA, enums.VoiceBurstC, enums.VoiceBurstD:
+	}
+	return enums.LCSSContinuationFragment
+}
+
+// cohLate detects late burst lb with coh into llr, and keeps the state of
+// coh, which follows the bursts in order.
+//
+// It is not inlined, so that the copy of the state is on the stack only
+// while it runs.
+//
+//go:noinline
+func (x *softExt) cohLate(c *leanCore, lb *Burst) bool {
+	saved := *x.coh
+	ok := x.coh.detect(c, lb, &x.llr)
+	*x.coh = saved
+	return ok
+}
+
 func (x *softExt) place(c *leanCore, b *Burst, j int32) bool {
 	return x.coh != nil && x.coh.place(c, b, j)
 }
@@ -611,5 +749,6 @@ func (x *softExt) end(c *leanCore) {
 	}
 	x.ch[0].have, x.ch[1].have = 0, 0
 	x.ch[0].accN, x.ch[1].accN = 0, 0
+	x.ch[0].lateN, x.ch[1].lateN = 0, 0
 	x.drain(c, false, 0)
 }

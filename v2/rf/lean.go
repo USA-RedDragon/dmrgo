@@ -1417,6 +1417,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		r.clickFloor(beyond, v)
 	}
 	if !r.classify(b, j) && (r.ext == nil || !r.ext.place(r, b, j)) {
+		if r.ext != nil && !r.replayDry {
+			r.ext.unplaced(r, b)
+		}
 		return
 	}
 	if r.ext != nil {
