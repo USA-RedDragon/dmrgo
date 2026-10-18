@@ -111,6 +111,10 @@ type discPhase struct {
 	fitUnit float64
 	fitN    int
 	coh     *cohStage
+	// clipAt holds, for each block of discClipBlock input samples that the
+	// sums hold, its number when an input sample in it lies at a limit of
+	// int16.
+	clipAt [discPhaseRaw / discClipBlock]int64
 	// lazy marks a phase that keeps only the sums: the core runs on the
 	// input, and the coherent stage builds each phasor from the sums as it
 	// reads it.
@@ -139,6 +143,9 @@ func lazyDT(hz int) float64 {
 // input when lazy.
 func newDiscPhase(r *DiscReceiver, hz int, lazy bool) *discPhase {
 	p := &discPhase{c: &r.leanCore, sum: make([]int64, discPhaseRaw), lazy: lazy}
+	for i := range p.clipAt {
+		p.clipAt[i] = -1
+	}
 	if !lazy {
 		p.hist = make([]complex64, cohHist)
 	}
@@ -184,6 +191,7 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 	p.update()
 	if p.lazy {
 		for _, u := range x[:n] {
+			p.clip(u)
 			p.last += int64(u)
 			p.sum[p.sumN&(discPhaseRaw-1)] = p.last
 			p.sumN++
@@ -200,6 +208,7 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 	scale := float32(float64(p.num) / (float64(p.den) * p.a))
 	off := float32(p.b * float64(p.den) / float64(p.num))
 	for _, u := range x[:n] {
+		p.clip(u)
 		i := p.sumN
 		s := p.last + int64(u)
 		p.sum[i&(discPhaseRaw-1)] = s
@@ -218,7 +227,9 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 			y, z := p.hist[m&(cohHist-1)], p.hist[(m-1)&(cohHist-1)]
 			d := y * complex(real(z), -imag(z))
 			v := p.rawAt(m)
-			if p.cal {
+			// Where the input clipped, its phase is lost, and the core
+			// takes the input.
+			if p.cal && !p.clipped(float64(m-discPhaseLag), float64(m+discPhaseLag)) {
 				v = int16(max(min(roundf((atan2f(imag(d), real(d))+off)*scale), math.MaxInt16), math.MinInt16))
 			}
 			p.acc += d
@@ -236,6 +247,31 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 		}
 	}
 	return n, p.out[:k]
+}
+
+// discClipBlock is the number of input samples of a block of clipAt.
+const discClipBlock = 32
+
+// clip notes input sample u, the next of the sums, when it lies at a limit
+// of int16.
+func (p *discPhase) clip(u int16) {
+	if u == math.MaxInt16 || u == math.MinInt16 {
+		b := p.sumN / discClipBlock
+		p.clipAt[b%int64(len(p.clipAt))] = b
+	}
+}
+
+// clipped reports whether an input sample from ring time t0 to t1 lies at
+// a limit of int16: the input clipped there, and its phase is lost.
+func (p *discPhase) clipped(t0, t1 float64) bool {
+	b0 := int64(max(t0, 0)*float64(p.den)/float64(p.num)) / discClipBlock
+	b1 := int64(max(t1, 0)*float64(p.den)/float64(p.num)) / discClipBlock
+	for b := b0; b <= b1; b++ {
+		if p.clipAt[b%int64(len(p.clipAt))] == b {
+			return true
+		}
+	}
+	return false
 }
 
 // rawAt returns the input at ring sample m, in input units: the mean of

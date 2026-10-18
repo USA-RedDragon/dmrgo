@@ -574,6 +574,14 @@ func (s *cohStage) track() {
 	s.totalHz = s.freq
 }
 
+// lost reports whether the ring, whose oldest sample is lo, no longer
+// holds the burst at t0, or holds audio that clipped there, whose phase is
+// lost: the core detects the burst.
+func (s *cohStage) lost(lo int64) bool {
+	p := s.ph
+	return s.t0-s.sps < float64(lo) || p != nil && p.clipped(s.t0-s.sps, s.t0+slotSymbols*s.sps)
+}
+
 // lock forgets the bursts of the stream before a lock: the runs from the
 // SYNC of the slot before and the priors of its second half are of a
 // stream with another timing.
@@ -684,7 +692,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	s.mineOK, s.mineSlot = false, b.Slot
 	s.t0 = s.ringTime(c, c.base) + s.dt
-	if s.t0-s.sps < float64(lo) {
+	if s.lost(lo) {
 		return false
 	}
 	s.track()
