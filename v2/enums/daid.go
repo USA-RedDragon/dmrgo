@@ -29,7 +29,7 @@ func (daid DAID) String() string {
 		return "Group Network"
 	case daid >= 3 && daid <= 11:
 		return reservedName
-	case daid >= 12:
+	case daid >= 12 && daid <= 15:
 		return manufacturerSpecificName
 	}
 	return unknownName

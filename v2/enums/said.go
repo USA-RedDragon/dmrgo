@@ -20,7 +20,7 @@ func (said SAID) String() string {
 		return "USB/Ethernet Network"
 	case said >= 2 && said <= 11:
 		return reservedName
-	case said >= 12:
+	case said >= 12 && said <= 15:
 		return manufacturerSpecificName
 	}
 	return unknownName
