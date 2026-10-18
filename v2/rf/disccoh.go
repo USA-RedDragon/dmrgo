@@ -531,10 +531,15 @@ func (p *discPhase) coreHz() float32 {
 // stream after that tries discFitWide around the scale of the last, for a
 // transmitter with another deviation; the later ones try discFitNear and
 // move it by discFitGain. It builds the ring again when the fit moves it.
-// It does nothing on I/Q, or for a SYNC whose carrier is far off.
+// On I/Q it fits the modulation index of the model by fitIndex instead. It
+// does nothing for a SYNC whose carrier is far off.
 func (s *cohStage) fitDeviation(k0, k1 int, fit float64) {
+	if math.Abs(fit) >= cohFreqFirst {
+		return
+	}
 	p := s.ph
-	if p == nil || math.Abs(fit) >= cohFreqFirst {
+	if p == nil {
+		s.fitIndex(k0, k1, fit)
 		return
 	}
 	span, step := discFitNear, discFitStep
@@ -591,16 +596,22 @@ func (s *cohStage) seedDeviation(c *leanCore, k0, k1 int) bool {
 // scaleFit returns the log of the factor of the scale of the audio ring at
 // which the waveform of the known symbols k0 to k1 at t0 explains the most
 // of the samples, on a grid of step to span either way, by a parabola
-// through the best, and the share of the power that it explains there.
+// through the best, and the share of the power that it explains there. On
+// I/Q it scales the modulation index hFit of the model instead, and leaves
+// the model at the last index of the grid.
 func (s *cohStage) scaleFit(k0, k1 int, span, step float64) (float64, float64) {
 	// The far grid has the most scales, 2*ln(3)/0.05+1 of them.
 	var ampBuf, noiseBuf [48]float64
 	n := min(int(math.Round(2*span/step))+1, len(ampBuf))
 	amp, noise := ampBuf[:n], noiseBuf[:n]
 	best := 0
-	s.trialing = true
+	s.trialing = s.ph != nil
 	for i := range amp {
-		s.trial = math.Exp(-span+float64(i)*step) - 1
+		if s.ph == nil {
+			s.model.setH(s.hFit * math.Exp(-span+float64(i)*step))
+		} else {
+			s.trial = math.Exp(-span+float64(i)*step) - 1
+		}
 		amp[i], noise[i] = s.levels(k0, k1)
 		if amp[i] > amp[best] {
 			best = i
@@ -619,4 +630,38 @@ func (s *cohStage) scaleFit(k0, k1 int, span, step float64) (float64, float64) {
 		}
 	}
 	return e, a2 / (a2 + max(noise[best], 0))
+}
+
+// fitIndex fits the modulation index of the model on I/Q to the known
+// symbols k0 to k1 of the burst at t0, whose SYNC fits the carrier offset
+// fit from that of the stream, as fitDeviation fits the scale of an audio
+// ring: a transmitter whose deviation strays from the nominal by a few
+// percent turns the phase of the model away from that of the signal over
+// the runs, which the trellis takes for symbol errors. The first fit of
+// each stream tries discFitWide around the fit of the last, the later
+// ones discFitNear. The fits weigh by their variance against that of the
+// index, as a Kalman filter, in the log of the index: cohIndexVar0 plus
+// cohIndexVar over the SNR of the SYNC for a fit, which the sweep
+// measured from 1 to 12 dB C/N. The model takes the fit over
+// cohSyncIndex.
+func (s *cohStage) fitIndex(k0, k1 int, fit float64) {
+	span := discFitNear
+	if s.hNew {
+		span = discFitWide
+	}
+	h := s.model.h
+	s.totalHz += fit
+	e, rho := s.scaleFit(k0, k1, span, discFitStep)
+	s.totalHz = s.freq
+	if rho >= discFitRho && rho < 1 {
+		v := cohIndexVar0 + cohIndexVar*(1-rho)/rho
+		g := s.hVar / (s.hVar + v)
+		s.hVar *= 1 - g
+		s.hFit *= math.Exp(g * e)
+		s.hNew = false
+		if f := s.hFit / cohSyncIndex; math.Abs(f/h-1) >= cohIndexMove {
+			h = f
+		}
+	}
+	s.model.setH(h)
 }

@@ -136,7 +136,33 @@ type cohStage struct {
 	peakSrc  int
 	peakData bool
 	base     int64
+	// hFit is the modulation index that the SYNC fits of the streams
+	// measured on I/Q, hVar the variance of its log, and hNew marks a
+	// stream that no fit measured yet.
+	hFit float64
+	hVar float64
+	hNew bool
 }
+
+// Settings of cohStage.fitIndex. cohSyncIndex is the share of the
+// modulation index of a signal that the fit of its SYNC measures: the
+// channel filter rounds the phase of the outer symbols of the SYNC, so that
+// a model of a lower index fits it best, by 2.3% from 1 to 12 dB C/N in
+// the sweep. The variance of the log of the index starts at cohIndexStart,
+// a deviation 5% off, and grows by cohIndexWalk at each stream, which may
+// come from another transmitter. A fit of a SYNC whose waveform explains
+// the share rho of the power of its samples has the variance cohIndexVar0
+// plus cohIndexVar times (1-rho)/rho, the noise over the signal, as the
+// sweep measured from 1 to 12 dB C/N. The model takes the fit when it
+// moves by cohIndexMove, as a share.
+const (
+	cohSyncIndex  = 0.977
+	cohIndexStart = 0.05 * 0.05
+	cohIndexWalk  = 0.03 * 0.03
+	cohIndexVar0  = 1e-4
+	cohIndexVar   = 2e-3
+	cohIndexMove  = 0.002
+)
 
 // newCohStage returns the coherent stage of iqRx r, with the settings
 // opt.
@@ -172,7 +198,7 @@ func newCohStageOf(opt *options) *cohStage {
 		sps = opt.CohSPS
 	}
 	m := newCPMModel(1, sps, 0.27)
-	s := &cohStage{model: m, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked}
+	s := &cohStage{model: m, hFit: 0.27 * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
@@ -586,7 +612,8 @@ func (s *cohStage) lost(lo int64) bool {
 // SYNC of the slot before and the priors of its second half are of a
 // stream with another timing.
 func (s *cohStage) lock() {
-	s.lastT0, s.lastSync, s.mineOK, s.relock = 0, 0, false, true
+	s.lastT0, s.lastSync, s.mineOK, s.relock, s.hNew = 0, 0, false, true, true
+	s.hVar += cohIndexWalk
 }
 
 // freqFit returns the carrier offset, in Hz, left in the ring samples of
