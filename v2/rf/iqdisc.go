@@ -228,12 +228,6 @@ func (r *iqRx) sample(v complex64) {
 // of the channel filter samples while the core searches, and the DC
 // offset that the DiscReceiver measures while it is locked.
 func (r *iqRx) follow() {
-	f := &r.d.f
-	if f.gain <= 0 {
-		return
-	}
-	// The DiscReceiver counts f.gain of its Hz per input unit.
-	scale := f.gain * iqUnitsPerHz
 	acc := r.conv.acc
 	r.conv.acc = 0
 	// Below the FM threshold the clicks pull the mean of the
@@ -249,6 +243,17 @@ func (r *iqRx) follow() {
 		r.afcAvg += complex(iqAFCAvgGain, 0) * (acc - r.afcAvg)
 	}
 	avg := r.conv.hzOf(r.afcAvg)
+	// The samples that the DiscReceiver has not taken yet can scale its
+	// input, move its offset or lock it, and the move must see that. The
+	// bursts that they complete see the mean of their block.
+	r.d.write(r.audio)
+	r.audio = r.audio[:0]
+	f := &r.d.f
+	if f.gain <= 0 {
+		return
+	}
+	// The DiscReceiver counts f.gain of its Hz per input unit.
+	scale := f.gain * iqUnitsPerHz
 	if r.d.locked {
 		// A lock can come while the oscillator still pulls in, and the
 		// channel filter then pulls both the mean frequency and the SYNC
@@ -281,24 +286,36 @@ func (d *iqDisc) hzOf(acc complex64) float32 {
 }
 
 // tune moves the oscillator by hz, and sets the DC offset that the
-// DiscReceiver removes to dc, in its units.
+// DiscReceiver removes to dc, in its units. The caller hands the
+// DiscReceiver the samples before the move first.
 func (r *iqRx) tune(hz, dc float32) {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
-	// The samples that the DiscReceiver has not taken yet carry the old
-	// offset.
-	r.d.write(r.audio)
-	r.audio = r.audio[:0]
 	r.conv.tune(r.conv.hz + hz)
 	r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
 	r.nTunes++
 	// The mean of the blocks moves with the oscillator.
 	p := -2 * math.Pi * float64(hz) / float64(basebandRate/r.conv.decim)
 	r.afcAvg *= complex(float32(math.Cos(p)), float32(math.Sin(p)))
-	f.mean += dc - f.dc
-	f.dc = dc
-	r.d.tuneHz -= hz * scale
+	// A move while locked keeps the input of the core. A move while it
+	// searches moves the input by -d, and the values that the core holds
+	// move with it, so that the front end removes tuneHz from all of
+	// them. The mean frequency of the block measured the carrier, which
+	// the move takes out, so that the mean input is then dc: the mean of
+	// the blocks before does not move with the oscillator, as most of
+	// them are noise, whose mean does not follow the oscillator.
+	d := hz*scale + dc - f.dc
+	if r.d.locked {
+		f.mean += dc - f.dc
+	} else {
+		f.mean = dc
+	}
+	f.dc, r.d.tuneHz = dc, dc
 	f.refresh()
+	if !r.d.locked {
+		f.shiftHist(d)
+		r.d.shift(d)
+	}
 }
 
 // writeBaseband processes the samples of Receiver.WriteBaseband.

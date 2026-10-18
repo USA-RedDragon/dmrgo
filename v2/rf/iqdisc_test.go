@@ -1,6 +1,89 @@
 package rf
 
-import "testing"
+import (
+	"strconv"
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+)
+
+// TestIQDiscBurstyOffset receives MS voice calls, whose carrier is on in
+// one slot of two, at a carrier offset of 900 Hz through the I/Q tiers
+// that run iqRx, and checks that the parts C0 and C1 of every voice frame
+// of every call decode: the oscillator moves while the core searches,
+// often right before the first SYNC of a call, and the core must follow
+// the move.
+func TestIQDiscBurstyOffset(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig()
+	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
+	built, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 1})
+	const calls = 3
+	gap := make([]float64, int(0.3*basebandRate))
+	var fmAll, envAll []float64
+	want := make([]uint64, 0, calls*18*cfg.Superframes)
+	for c := range calls {
+		if c > 0 {
+			fmAll, envAll = append(fmAll, gap...), append(envAll, gap...)
+		}
+		fmAll, envAll = append(fmAll, fm...), append(envAll, env...)
+		for i := range 18 * cfg.Superframes {
+			want = append(want, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
+		}
+	}
+	for _, tier := range []Tier{Tier0, Tier1} {
+		for seed := range uint64(4) {
+			t.Run(strconv.Itoa(int(tier-Tier0))+"/"+strconv.Itoa(int(seed)), func(t *testing.T) {
+				t.Parallel()
+				x := msBaseband(fmAll, envAll, 0.3, 900, 30, 100+seed)
+				if n := c0c1InOrder(want, voiceFrames(receiveBaseband(x, tier))); n < len(want) {
+					t.Errorf("C0 and C1 of %d of %d voice frames exact", n, len(want))
+				}
+			})
+		}
+	}
+}
+
+// voiceFrames returns the AMBE+2 frames of the voice bursts of bs.
+func voiceFrames(bs []Burst) []uint64 {
+	var out []uint64
+	for i := range bs {
+		var opts layer2.DecodeOptions
+		if bs[i].Voice != 0 {
+			opts.Kind, opts.VoiceBurst = layer2.KindVoice, bs[i].Voice
+		}
+		data, _ := bs[i].Decoded()
+		var b layer2.Burst
+		if err := b.DecodeFromBytesWith(data, &opts); err != nil || b.Kind != layer2.KindVoice {
+			continue
+		}
+		frames, _ := data.AMBEFrames()
+		for _, f := range frames {
+			out = append(out, rftx.AMBEValue(f))
+		}
+	}
+	return out
+}
+
+// c0c1InOrder returns the number of frames of want whose parts C0 and C1,
+// the first 24 bits, which the Golay codes protect, got holds in order.
+func c0c1InOrder(want, got []uint64) int {
+	n, next := 0, 0
+	for _, v := range got {
+		for k := next; k < len(want); k++ {
+			if want[k]>>25 == v>>25 {
+				n, next = n+1, k+1
+				break
+			}
+		}
+	}
+	return n
+}
 
 // iqDiscReceive runs the baseband x through iqRx at hz with OnBurst.
 func iqDiscReceive(x []complex64, hz int) []Burst {

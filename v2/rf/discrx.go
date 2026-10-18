@@ -393,6 +393,11 @@ func (f *audioFront) scale(g float32) {
 func (f *audioFront) retuneFront(hz, d float32) {
 	f.dc = hz
 	f.refresh()
+	f.shiftHist(d)
+}
+
+// shiftHist adds -d to the samples that the filters of f hold.
+func (f *audioFront) shiftHist(d float32) {
 	for i, v := range &f.rrcHist {
 		f.rrcHist[i] = sat8(float32(v) - d/rrcStepHz)
 	}
