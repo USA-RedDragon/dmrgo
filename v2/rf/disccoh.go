@@ -335,7 +335,7 @@ func (p *discPhase) follow() {
 	case c.locked:
 		// As iqRx.follow: the mean, which the symbols do not move, when it
 		// is far off, or else the DC offset of the core, when it agrees.
-		hz := float32((float64(c.audio.dc+c.dcHz)/float64(c.audio.gain) - p.dcU) * p.unit)
+		hz := p.coreHz()
 		switch {
 		case abs32(avg) >= iqAFCPullHz:
 			// The channel filter pulled the mean of the blocks before
@@ -422,9 +422,20 @@ func rescaleTurn(v complex64, k, d float64) complex64 {
 }
 
 // offsetHz returns the carrier offset left in the ring, in Hz: the mean
-// of follow.
+// of follow, or on a direct mode stream, whose noise pulls the mean, the
+// DC offset of the core.
 func (p *discPhase) offsetHz() float64 {
+	if c := p.c; c.locked && !c.bs {
+		return float64(p.coreHz())
+	}
 	return float64(ringHz(p.avg))
+}
+
+// coreHz returns the carrier offset left in the ring that the DC offset of
+// the core gives, in Hz.
+func (p *discPhase) coreHz() float32 {
+	c := p.c
+	return float32((float64(c.audio.dc+c.dcHz)/float64(c.audio.gain) - p.dcU) * p.unit)
 }
 
 // fitDeviation fits the deviation scale of the audio ring to the known
