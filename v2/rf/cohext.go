@@ -845,7 +845,10 @@ func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int) bool {
 // clear reports whether the levels of the bursts before and of the core c
 // show a clear stream, whose bursts the core detects and places.
 func (s *cohStage) clear(c *leanCore) bool {
-	return s.skipSNR > 0 && s.nFit >= cohQuietFits && s.ampAvg*s.ampAvg >= s.skipSNR*s.noiseAvg && c.dev*c.dev >= cohQuietCore*c.discVar
+	if s.skipSNR <= 0 {
+		return false
+	}
+	return c.dev*c.dev >= cohClearCore*c.discVar || s.nFit >= cohQuietFits && s.ampAvg*s.ampAvg >= s.skipSNR*s.noiseAvg && c.dev*c.dev >= cohQuietCore*c.discVar
 }
 
 // cohQuietFits is the number of SYNC fits of the carrier after which a
@@ -853,9 +856,13 @@ func (s *cohStage) clear(c *leanCore) bool {
 // SNR of the levels of the core, the square of the deviation of level 1
 // over the noise variance, for it: the core detects and places the bursts
 // by its own levels, which can take some bursts to settle after a lock.
+// From cohClearCore the core alone shows a clear stream: a transmitter
+// whose phase strays from the model, as one whose modulator passes no low
+// frequencies, then loses no burst to the coherent detection.
 const (
 	cohQuietFits = 4
 	cohQuietCore = 4
+	cohClearCore = 16
 )
 
 // cohLevelSyms is the number of known symbols that the levels of the
