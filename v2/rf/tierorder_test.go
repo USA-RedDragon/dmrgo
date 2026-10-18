@@ -125,24 +125,22 @@ type tierOrderCase struct {
 // points around the 90% points and over seeds: on the BS stream of the
 // sweep and on direct mode traffic. Tiers that share a stage decide some
 // bursts differently by chance, so a tier may fall short by 1% of the
-// truth, or 2 items. The order on direct mode traffic whose transmissions
-// start between symbol boundaries, which a fix of the timing of such starts
-// is due to improve, is only logged.
+// truth, or 2 items. The direct mode traffic is also checked with
+// transmissions that start between symbol boundaries.
 func TestTierOrder(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
 		t.Skip("receives 54 streams with 6 receivers")
 	}
 	type scenario struct {
-		name   string
-		cns    []float64
-		seeds  int
-		strict bool
+		name  string
+		cns   []float64
+		seeds int
 	}
 	scenarios := []scenario{
-		{"bs", []float64{3, 5, 7}, 8, true},
-		{"ms", []float64{4, 6, 8, 10}, 6, true},
-		{"ms-jitter", []float64{6, 10}, 3, false},
+		{"bs", []float64{3, 5, 7}, 8},
+		{"ms", []float64{4, 6, 8, 10}, 6},
+		{"ms-jitter", []float64{6, 10}, 3},
 	}
 	slots, bsTruth := benchStream(t, 6)
 	fm, env, msTruth := msStream(t, 3, 0)
@@ -215,13 +213,7 @@ func TestTierOrder(t *testing.T) {
 					if hi.Exact >= lo.Exact-max(2, lo.Truth/100) {
 						continue
 					}
-					msg := "%s %s %s: Tier%d recovers %d of %d, Tier%d %d"
-					args := []any{sc.name, mode, p, tier - Tier0, hi.Exact, hi.Truth, tier - 1 - Tier0, lo.Exact}
-					if sc.strict {
-						t.Errorf(msg, args...)
-					} else {
-						t.Logf("expected to improve: "+msg, args...)
-					}
+					t.Errorf("%s %s %s: Tier%d recovers %d of %d, Tier%d %d", sc.name, mode, p, tier-Tier0, hi.Exact, hi.Truth, tier-1-Tier0, lo.Exact)
 				}
 			}
 		}
