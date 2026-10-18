@@ -3,6 +3,7 @@
 package fsktx
 
 import (
+	"errors"
 	"math"
 	"slices"
 	"testing"
@@ -283,6 +284,47 @@ func TestTxMatrixZero(t *testing.T) {
 		}
 		if !slices.Equal(x, y) {
 			t.Errorf("%s: a short dst changed the output", c.name)
+		}
+	}
+}
+
+// TestTxMatrixErrors checks that each config out of range returns the
+// error that names it.
+func TestTxMatrixErrors(t *testing.T) {
+	t.Parallel()
+	var m MCUAudio
+	var q MCUIQ
+	_, audioHz := NewAudio(AudioConfig{Hz: 7999})
+	_, audioLevel := NewAudio(AudioConfig{Level: 16001})
+	_, audioOffset := NewAudio(AudioConfig{Offset: 5000})
+	_, audioTier := NewAudio(AudioConfig{Tier: Tier2 + 1})
+	_, iqHz := NewIQ(IQConfig{Rate: 47999})
+	_, iqCarrier := NewIQ(IQConfig{Rate: 48000, OffsetHz: 12000})
+	_, iqRound := NewIQ(IQConfig{Rate: 48000, OffsetHz: 11999.6, Tier: Tier0})
+	_, iqRamp := NewIQ(IQConfig{RampSeconds: 0.02})
+	_, iqRate := NewIQ(IQConfig{Rate: 2400000, Tier: Tier0})
+	for _, c := range []struct {
+		name      string
+		got, want error
+	}{
+		{"NewAudio Hz", audioHz, errHz},
+		{"NewAudio Level", audioLevel, errLevel},
+		{"NewAudio Offset", audioOffset, errOffset},
+		{"NewAudio Tier", audioTier, errTier},
+		{"NewIQ Rate", iqHz, errHz},
+		{"NewIQ OffsetHz", iqCarrier, errCarrier},
+		{"NewIQ OffsetHz of Tier0", iqRound, errCarrier},
+		{"NewIQ RampSeconds", iqRamp, errRamp},
+		{"NewIQ Rate of Tier0", iqRate, errRate},
+		{"MCUAudio.Init table", m.Init(AudioTable{}, tableUnits, 0), errTable},
+		{"MCUAudio.Init level", m.Init(Table24k(), 0, 0), errLevel},
+		{"MCUAudio.Init offset", m.Init(Table24k(), tableUnits, 5000), errOffset},
+		{"MCUIQ.Init rate", q.Init(24000, 0, 48), errRate},
+		{"MCUIQ.Init offset", q.Init(48000, 12000, 48), errCarrier},
+		{"MCUIQ.Init ramp", q.Init(48000, 0, 0), errRamp},
+	} {
+		if !errors.Is(c.got, c.want) {
+			t.Errorf("%s: %v, want %v", c.name, c.got, c.want)
 		}
 	}
 }

@@ -98,10 +98,12 @@ func shapeIQ(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 // The errors of the Init methods. Each is a static value, so that Init
 // does not allocate.
 var (
-	errTable  = errors.New("fsktx: no table")
-	errLevel  = errors.New("fsktx: level out of range")
-	errOffset = errors.New("fsktx: level and offset pass the range of int16")
-	errRate   = errors.New("fsktx: rate is not a multiple of the table rate")
+	errTable   = errors.New("fsktx: no table")
+	errLevel   = errors.New("fsktx: level out of range")
+	errOffset  = errors.New("fsktx: level and offset pass the range of int16")
+	errRate    = errors.New("fsktx: rate is not a multiple of the table rate")
+	errCarrier = errors.New("fsktx: carrier offset out of range")
+	errRamp    = errors.New("fsktx: ramp out of range")
 )
 
 // shaperMAC is the shaping state of the Tier0 modulators: the last

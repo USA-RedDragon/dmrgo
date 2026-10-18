@@ -235,6 +235,8 @@ type IQConfig struct {
 	// 2.4e6. Tier0 takes 48000, 96000 or 192000.
 	Rate int
 	// OffsetHz is the carrier offset from 0 Hz, within a quarter of Rate.
+	// Tier0 rounds it to whole Hz, which must be within a quarter of Rate
+	// too.
 	OffsetHz float64
 	// RampSeconds is the length of the power ramp of Key, up to 10 ms; 0
 	// means 1 ms.
@@ -286,12 +288,14 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	switch {
 	case cfg.Rate < iqShaperHz || cfg.Rate > 20e6:
 		return nil, errHz
-	case !(4*math.Abs(cfg.OffsetHz) < float64(cfg.Rate)) || !(cfg.RampSeconds > 0 && cfg.RampSeconds <= 0.01):
-		return nil, errLevel
+	case !(4*math.Abs(cfg.OffsetHz) < float64(cfg.Rate)):
+		return nil, errCarrier
+	case !(cfg.RampSeconds > 0 && cfg.RampSeconds <= 0.01):
+		return nil, errRamp
 	}
 	ramp := int(math.Round(cfg.RampSeconds * float64(cfg.Rate)))
 	if ramp < 1 {
-		return nil, errLevel
+		return nil, errRamp
 	}
 	q := &IQ{ramp: ramp}
 	switch cfg.Tier {

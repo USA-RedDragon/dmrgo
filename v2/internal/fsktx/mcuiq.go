@@ -37,8 +37,10 @@ func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 	switch {
 	case rate != 2*t.hz && rate != 4*t.hz && rate != 8*t.hz:
 		return errRate
-	case rampSamples < 1 || rampSamples > 1<<15 || offsetHz >= rate/4 || offsetHz <= -rate/4:
-		return errLevel
+	case offsetHz >= rate/4 || offsetHz <= -rate/4:
+		return errCarrier
+	case rampSamples < 1 || rampSamples > 1<<15:
+		return errRamp
 	}
 	*m = MCUIQ{ramp: int32(rampSamples)}
 	for rate > t.hz<<m.upShift {
