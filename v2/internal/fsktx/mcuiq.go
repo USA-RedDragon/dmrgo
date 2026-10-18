@@ -61,10 +61,14 @@ func (m *MCUIQ) Key(on bool) { m.on = on }
 
 // Symbol shapes the symbol s, -3, -1, +1, +3 or 0 for no modulation, and
 // writes the I/Q of the symbol period that it completes to dst,
-// interleaved, which needs room for 2*Samples values. It returns the
-// number of values it wrote. The output lags the symbols by four symbol
+// interleaved. It returns the number of values it wrote. A dst shorter
+// than 2*Samples takes nothing, and Symbol returns 0 without the symbol;
+// so does an m without Init. The output lags the symbols by four symbol
 // periods and one sample at 24 kHz.
 func (m *MCUIQ) Symbol(dst []int16, s int8) int {
+	if len(dst) < 2*m.Samples() {
+		return 0
+	}
 	l := m.k.symbol(s)
 	n := 2 * l << m.upShift
 	dst = dst[:n]

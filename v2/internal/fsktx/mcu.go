@@ -120,9 +120,12 @@ func (k *shaperMAC) reset(t AudioTable) {
 
 // symbol puts the symbol s in the ring and writes the deviation of the
 // samples of the symbol period that it completes to buf, in output units.
-// It returns the number of samples. A symbol other than -3, -1, +1 and +3
-// counts as 0.
+// It returns the number of samples, 0 before reset. A symbol other than
+// -3, -1, +1 and +3 counts as 0.
 func (k *shaperMAC) symbol(s int8) int {
+	if k.t.shape == nil {
+		return 0
+	}
 	switch s {
 	case -3, -1, 1, 3:
 	default:
@@ -184,14 +187,17 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 func (m *MCUAudio) Samples() int { return m.k.t.hz / SymbolRate }
 
 // Symbol shapes the symbol s, -3, -1, +1, +3 or 0 for no modulation, and
-// writes the samples of the symbol period that it completes to dst, which
-// needs room for Samples of them. It returns the number it wrote. The
-// output lags the symbols by the Span of the table: twice that many
+// writes the samples of the symbol period that it completes to dst. It
+// returns the number it wrote. A dst shorter than Samples takes nothing,
+// and Symbol returns 0 without the symbol; so does an m without Init.
+// The output lags the symbols by the Span of the table: twice that many
 // symbols 0 after the last bring its tail to rest.
 func (m *MCUAudio) Symbol(dst []int16, s int8) int {
+	if len(dst) < m.Samples() {
+		return 0
+	}
 	n := m.k.symbol(s)
-	dst = dst[:n]
-	for p := range dst {
+	for p := range dst[:n] {
 		dst[p] = int16((m.k.buf[p]*m.scale+1<<14)>>15 + m.offset)
 	}
 	return n
