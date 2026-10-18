@@ -1223,7 +1223,9 @@ func (r *leanCore) slot() {
 		r.first += shift
 		r.slotEnd += shift
 		base += shift
-		if r.amp == 0 {
+		if r.amp == 0 || energy > levelJump*r.amp || levelJump*energy < r.amp {
+			// The first anchor, or the gain of the input moved: the
+			// levels start from the anchor.
 			r.amp, r.noise = energy, energy/4
 		} else {
 			r.amp = levelForget*r.amp + (1-levelForget)*energy
@@ -1237,6 +1239,8 @@ func (r *leanCore) slot() {
 	// Nor do they carry a burst, and the timing loop holds through them.
 	if ms && (j-r.lastAnch)&1 != 0 {
 		present = false
+		// They hold the noise, at any gain of the input.
+		r.noise = min(r.noise, energy)
 	}
 	r.tm.hold = !r.bs && !present
 	if ms {
