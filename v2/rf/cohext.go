@@ -144,7 +144,7 @@ func newCohStageOf(opt *options) *cohStage {
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
-	s.tr = newTrellis(m, 2*slotSymbols+2*runMargin, 2*slotSymbols+2*runMargin, 0)
+	s.tr = newTrellis(m, cohMaxRun, cohMaxRun, 0)
 	s.buf = make([]complex64, (syncSymbols+2)*cohSPS)
 	s.nsrc = min(opt.Sources, len(s.scanTpl))
 	for i := range s.nsrc {
@@ -733,6 +733,10 @@ const cohEasySNR = 6
 // cohShift is the most symbols by which the timing of the core may move
 // the slot before.
 const cohShift = 3
+
+// cohMaxRun is the most intervals of a run of the trellis: the run from
+// the SYNC of the slot before across the first half of the burst.
+const cohMaxRun = slotSymbols + syncSymbols + cohShift + runMargin
 
 // cohNext is the number of symbols of the second half of a slot, after
 // its SYNC field.
