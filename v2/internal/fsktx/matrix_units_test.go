@@ -89,7 +89,8 @@ func nominal(full bool) []txUnit {
 
 // levelUnits returns the audio units at the levels and offsets of the
 // matrix: the least, nominal and most level, the 12-bit DAC of the
-// documentation, and the most and least offset that each level takes. The
+// documentation of each tier, and the most and least offset that each
+// level takes. The
 // subset of CI takes the Tier1 and Tier2 rates of 8000, 44100, 48000 and
 // 65536 Hz.
 func levelUnits(full bool) []txUnit {
@@ -110,8 +111,12 @@ func levelUnits(full bool) []txUnit {
 				}
 			}
 			u := k
-			u.level, u.offset = 1080, 2048
+			u.level, u.offset = 1040, 2048
 			out = append(out, u)
+			if k.mcu || k.tier == Tier0 {
+				u.level = 1080
+				out = append(out, u)
+			}
 		}
 	}
 	return out

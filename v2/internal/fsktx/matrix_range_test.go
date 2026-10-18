@@ -60,6 +60,9 @@ func checkAudioRange(t *testing.T, u txUnit, p int, raw []int16) {
 	if most > hi+tol || least < lo-tol {
 		t.Errorf("%s: output %v to %v, bounds %v to %v", patternName(p), least, most, lo, hi)
 	}
+	if dac12 := u.offset == 2048 && (u.level == 1040 || u.level == 1080 && (u.mcu || u.tier == Tier0)); dac12 && (most > 4095 || least < 0) {
+		t.Errorf("%s: output %v to %v at level %d, beyond a 12-bit DAC", patternName(p), least, most, u.level)
+	}
 	if p == patWorst {
 		if most < hi-tol || least > lo+tol {
 			t.Errorf("worst: output %v to %v, short of the bounds %v to %v", least, most, lo, hi)

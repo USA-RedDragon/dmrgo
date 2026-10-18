@@ -143,9 +143,9 @@ type AudioConfig struct {
 	Hz int
 	// Level is the output for a run of symbol +3, 1944 Hz of deviation,
 	// from 1 to 16000; 0 means 15000. Offset is added to each sample, as an
-	// unsigned DAC needs. The worst run of symbols reaches 1.9 times Level
-	// from Offset, and NewAudio returns an error when that passes the
-	// range of int16.
+	// unsigned DAC needs. The worst run of symbols reaches up to 1.96 times
+	// Level from Offset, which must fit int16. A 12-bit DAC takes Level
+	// 1040 and Offset 2048 at any tier.
 	Level, Offset int
 	// Tier selects the modulator. The zero value TierDefault is Tier1.
 	Tier Tier
