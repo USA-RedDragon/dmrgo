@@ -266,27 +266,21 @@ func modeLabel(m string) string {
 	return m
 }
 
-// tierName returns the README name of tier t, with its input mode.
-func tierName(t tier) string {
-	desc := map[string]string{
-		modeAudio + "0": "discriminator core, 9.6 kHz",
-		modeAudio + "1": "with the soft stages",
-		modeIQ + "0":    "discriminator core, 12 kHz",
-		modeIQ + "1":    "with the soft stages",
-		modeIQ + "2":    "coherent stage",
-		modeIQ + "3":    "phase trellis, two pass",
-	}[t.Mode+strconv.Itoa(t.Tier)]
-	name := modeLabel(t.Mode) + " " + strconv.Itoa(t.Tier)
-	if desc == "" {
-		return name
-	}
-	return name + ": " + desc
-}
-
-// shortName returns the name of tier t in the recordings table and the
-// graphs.
+// shortName returns the name of tier t in the tables and the graphs.
 func shortName(t tier) string {
 	return modeLabel(t.Mode) + " tier " + strconv.Itoa(t.Tier)
+}
+
+// inputName returns the input and the stages of tier t.
+func inputName(t tier) string {
+	return map[string]string{
+		modeAudio + "0": "FM audio, 9.6 kHz, core",
+		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding",
+		modeIQ + "0":    "I/Q, discriminator core",
+		modeIQ + "1":    "I/Q, soft decoding",
+		modeIQ + "2":    "I/Q, coherent detection",
+		modeIQ + "3":    "I/Q, phase trellis",
+	}[t.Mode+strconv.Itoa(t.Tier)]
 }
 
 // crossing is the Eb/N0 where a curve first reaches 90% recovery. below
@@ -324,19 +318,13 @@ func tierCurve(t tier, k string) (x, y []float64) {
 // grouped returns n with a comma between each group of three digits.
 // ramCell formats n bytes: in bytes below 10 KiB, in KiB above.
 func ramCell(n int) string {
-	if n < 10<<10 {
+	switch {
+	case n < 10<<10:
 		return grouped(int64(n)) + " B"
+	case n < 1<<20:
+		return strconv.Itoa((n+1023)/1024) + " KiB"
 	}
-	return strconv.Itoa((n+1023)/1024) + " KiB"
-}
-
-// sig2 rounds v to two significant digits.
-func sig2(v float64) int64 {
-	if v < 1 {
-		return 0
-	}
-	p := math.Pow(10, math.Floor(math.Log10(v))-1)
-	return int64(math.Round(v/p) * p)
+	return f1(float64(n)/(1<<20)) + " MiB"
 }
 
 func grouped(n int64) string {
@@ -352,55 +340,68 @@ func f1(v float64) string { return strconv.FormatFloat(math.Round(v*10)/10+0, 'f
 
 func renderBlock(d data) []byte {
 	var b strings.Builder
-	b.WriteString("\n")
-	b.WriteString("Loss is the Eb/N0 in dB above the DMR floor at 90% frame recovery. The DMR floor is the error rate of maximum likelihood decoding of the DMR code of the payload, for a receiver that a genie gives the timing, the carrier, the noise level and every transmitted bit outside the payload. Where the floor is only bounded, the loss is a range: its high end is against the lower bound of the DMR floor, and its low end is against the code-aware receiver, which has the same genie and the decoders of the tiers. The sensitivity details give the floors and the cost of the DMR codes.\n\n")
-	b.WriteString("| Tier | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | ns per second of signal | RAM | Allocs |\n")
-	b.WriteString("|------|-------|---------------|------|---------------|-------------------------|-----|--------|\n")
-	for _, t := range d.bench.Tiers {
-		row := make([]string, 0, 8)
-		row = append(row, tierName(t))
-		for _, k := range []string{keyAMBE, keyRate12, keyCSBK, keyRate34} {
-			row = append(row, lossCell(d, t, k))
+	b.WriteString("\n| Tier | Input | Voice | Data rate 1/2 | CSBK | Data rate 3/4 | CPU per second of signal | RAM |\n")
+	b.WriteString("|------|-------|-------|---------------|------|---------------|--------------------------|-----|\n")
+	keys := []string{keyAMBE, keyRate12, keyCSBK, keyRate34}
+	row := make([]string, 0, 2+len(keys)+2)
+	row = append(row, "Best possible (4FSK floor)", "-")
+	for _, k := range keys {
+		cell := "-"
+		if f, ok := d.floor.Payloads[k]; ok {
+			cell = dbCell(at90(f.Any.EbN0, f.Any.recovery()))
 		}
-		row = append(row, grouped(sig2(t.NsPerSecond)),
-			ramCell(t.RAMBytes), strconv.FormatFloat(t.Allocs, 'f', -1, 64))
+		row = append(row, cell)
+	}
+	b.WriteString("| " + strings.Join(append(row, "-", "-"), " | ") + " |\n")
+	for _, t := range d.bench.Tiers {
+		row := make([]string, 0, 2+len(keys)+2)
+		row = append(row, shortName(t), inputName(t))
+		for _, k := range keys {
+			row = append(row, dbCell(at90(tierCurve(t, k))))
+		}
+		row = append(row, msCell(t.NsPerSecond), ramCell(t.RAMBytes))
 		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
-	b.WriteString("\nCost is the CPU time on " + d.bench.Machine + ".")
-	b.WriteString(" The audio tiers take the audio of an FM discriminator at 9.6 kHz, which the sweep makes from the same noisy signal with the IF filter of a 12.5 kHz radio, so their Eb/N0 is that of the signal at the antenna. The audio tiers are rf.DiscReceiver. The I/Q tiers are rf.Receiver on I/Q samples at 48 kHz. RAM is what the receiver keeps with OnBurst set: for audio tier 0 the size of rf.DiscReceiver on a 64-bit host, its whole state, which rf.DiscReceiver.Init can also place in static memory (1,056 B on a Cortex-M4F); for audio tier 1 that and the heap of its soft stages; for the I/Q tiers the heap, to which the slice of bursts that Write returns without OnBurst adds 28 KiB. Tier 4, a five-symbol window with all 200 carrier phases, is for offline decoding and is not in these tables.\n\n")
+	b.WriteString("\n- Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.\n")
+	b.WriteString("- CPU is measured on an " + d.bench.Machine + ". RAM is the state of the receiver. Audio tier 0 needs 1,056 B on a Cortex-M4F.")
+	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return t.Allocs > 0 }) {
+		b.WriteString(" No tier allocates after it starts.")
+	}
+	b.WriteString("\n")
+	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. I/Q tiers take samples at 48 kHz from a software radio. Tier 4 is for offline decoding and is not shown.\n")
+	b.WriteString("- [docs/rx](docs/rx/README.md) tells how the sweep measures and what the floors are.\n\n")
 	renderSensitivity(&b, d)
-	b.WriteString("<details><summary>Real recordings</summary>\n\n")
-	b.WriteString("Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR, by tier.")
-	for _, r := range d.recordings {
-		if slices.Min(r.Exact) < 0 {
-			b.WriteString(" n/a marks a tier that has not run on the recording.")
-			break
+	var rec []tier
+	var cols []int
+	for i, t := range d.bench.Tiers {
+		for _, r := range d.recordings {
+			if i < len(r.Exact) && r.Exact[i] >= 0 {
+				rec, cols = append(rec, t), append(cols, i)
+				break
+			}
 		}
 	}
-	b.WriteString("\n\n")
-	b.WriteString("| Recording | Frames |")
-	for _, t := range d.bench.Tiers {
+	b.WriteString("<details><summary>Real recordings</summary>\n\n")
+	b.WriteString("Voice frames recovered exactly from captures of a Motorola XPR 8400 repeater with an RTL-SDR.\n\n")
+	b.WriteString("| Recording | C/N | Frames |")
+	for _, t := range rec {
 		b.WriteString(" " + shortName(t) + " |")
 	}
-	b.WriteString("\n|-----------|--------|")
-	for range d.bench.Tiers {
-		b.WriteString("--------|")
+	b.WriteString("\n|-----------|-----|--------|")
+	for range rec {
+		b.WriteString("------|")
 	}
 	b.WriteString("\n")
 	for _, r := range d.recordings {
-		b.WriteString("| " + r.Name + " (" + f1(r.CN) + " dB C/N) | " + strconv.Itoa(r.Truth) + " |")
-		for _, n := range r.Exact {
-			if n < 0 {
-				b.WriteString(" n/a |")
-				continue
-			}
-			b.WriteString(" " + strconv.Itoa(n) + " |")
+		b.WriteString("| " + r.Name + " | " + f1(r.CN) + " dB | " + strconv.Itoa(r.Truth) + " |")
+		for _, i := range cols {
+			b.WriteString(" " + strconv.Itoa(r.Exact[i]) + " |")
 		}
 		b.WriteString("\n")
 	}
 	b.WriteString("\n</details>\n\n")
 	b.WriteString("<details><summary>Error rate graphs</summary>\n\n")
-	b.WriteString("Frame error rate per payload type, and the bit error rate of the uncoded rate 1 payload bits, against Eb/N0, for the 4FSK floor (dashed) and each tier. The graphs leave out the DMR floor: for the voice frame and the BPTC, rate 3/4 and embedded LC codes, which have 2^49 to 2^96 values, the phase memory of the 4FSK modulation keeps the searches from bounding it, and the sensitivity details give what is known. A rate 1 block that a tier misses counts all of its bits as wrong. Points with no errors are left out.\n\n")
+	b.WriteString("Error rate against Eb/N0 for each tier, with the 4FSK floor dashed. Points with no errors are left out.\n\n")
 	for _, m := range modes() {
 		b.WriteString("#### " + m[1] + "\n\n")
 		for _, g := range graphs() {
@@ -408,7 +409,7 @@ func renderBlock(d data) []byte {
 		}
 		b.WriteString("\n")
 	}
-	b.WriteString("\n</details>\n\n")
+	b.WriteString("</details>\n\n")
 	return []byte(b.String())
 }
 
@@ -417,38 +418,35 @@ func renderBlock(d data) []byte {
 // each tier.
 func renderSensitivity(b *strings.Builder, d data) {
 	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
-	b.WriteString("Eb/N0 in dB for 90% recovery, C/N in 12.5 kHz in parentheses. Both floors are lower bounds on the error rate of any receiver that knows less than a genie, which gives it the timing, the carrier, the noise level, every transmitted bit outside the payload, and the side information that the tiers use: the color code of the stream for the EMB and the slot type, and the embedded LC of every earlier superframe of the call.\n\n")
-	b.WriteString("- 4FSK floor (any code): the converse bound of Verdu and Han on the information density of the payload's symbols for its number of values. No code of that size on those symbols and no decoder can do better. For the rate 1 payload bits it is Fano's inequality on the same densities.\n")
-	b.WriteString("- DMR floor (ETSI codes): maximum likelihood decoding of the DMR code of the payload. The payload is in error when a value is more likely than the transmitted one, by the exact likelihood of the whole stream. For the EMB, the slot type, the SYNC and the rate 1 payload the test covers all values. For the voice frame and the rate 3/4 block a search finds the values, so the DMR floor is a lower bound. For the BPTC payloads (rate 1/2, CSBK, LC and data header) and the embedded LC it is not computed: maximum likelihood over 2^72 to 2^96 values is out of reach, and the search finds no value more likely than the transmitted one where the 4FSK floor allows errors. The DMR floor of a data payload also counts its slot type.\n")
-	b.WriteString("- Code cost: the DMR floor less the 4FSK floor, which the DMR code costs against the best code of its size. It includes the slack of the converse bound: every code of the size of the rate 1 payload is the same code, so its cost is that slack only.\n")
-	b.WriteString("- Code-aware: a receiver with the knowledge of the genie that detects the bits of the payload exactly, bit by bit, then decodes them with the decoders of the coherent tiers and their passes of detection again: for a voice frame with the C0 and C1 codewords of the first decode as priors, and for a BPTC block with the extrinsic information of its grid decode. It is a receiver, not a bound, so the DMR floor is at or under it.\n\n")
-	b.WriteString("Where the DMR floor is a lower bound, the table gives it as \"at least\", and the code cost as a range up to the code-aware receiver. The floors run on the stream and noise seeds of the tiers. Their generator is v2/rf/floor_gen_test.go, and testdata/rxbench_floor.json names the bound of each payload. The code-aware receiver is in v2/rf/floor_aware_test.go.")
-	b.WriteString("\n\n| Payload | 4FSK floor | DMR floor | Code cost | Code-aware |")
-	for _, t := range d.bench.Tiers {
-		b.WriteString(" " + tierName(t) + " |")
+	b.WriteString("Eb/N0 in dB for 90% recovery. [docs/rx](docs/rx/README.md) defines the floors.\n\n")
+	b.WriteString("| Payload | 4FSK floor | DMR floor | Code cost | Code-aware |\n")
+	b.WriteString("|---------|------------|-----------|-----------|------------|\n")
+	for _, p := range payloadNames() {
+		cells := []string{p[1], "-", "-", "-", "-"}
+		if f, ok := d.floor.Payloads[p[0]]; ok {
+			cells[1] = dbCell(at90(f.Any.EbN0, f.Any.recovery()))
+			cells[2] = dmrCell(f)
+			cells[3] = costCell(d, p[0])
+		}
+		if c, ok := d.aware.Payloads[p[0]]; ok {
+			cells[4] = dbCell(at90(c.EbN0, c.recovery()))
+		}
+		b.WriteString("| " + strings.Join(cells, " | ") + " |\n")
 	}
-	b.WriteString("\n|---------|------------|-----------|-----------|------------|")
+	b.WriteString("\n| Payload |")
+	for _, t := range d.bench.Tiers {
+		b.WriteString(" " + shortName(t) + " |")
+	}
+	b.WriteString("\n|---------|")
 	for range d.bench.Tiers {
 		b.WriteString("------|")
 	}
 	b.WriteString("\n")
 	for _, p := range payloadNames() {
-		f, ok := d.floor.Payloads[p[0]]
-		cells := make([]string, 5, 5+len(d.bench.Tiers))
-		cells[0] = p[1]
-		for i := 1; i < 5; i++ {
-			cells[i] = "-"
-		}
-		if ok {
-			cells[1] = ebCell(at90(f.Any.EbN0, f.Any.recovery()))
-			cells[2] = dmrCell(f)
-			cells[3] = costCell(d, p[0])
-		}
-		if c, ok := d.aware.Payloads[p[0]]; ok {
-			cells[4] = ebCell(at90(c.EbN0, c.recovery()))
-		}
+		cells := make([]string, 0, 1+len(d.bench.Tiers))
+		cells = append(cells, p[1])
 		for _, t := range d.bench.Tiers {
-			cells = append(cells, ebCell(at90(tierCurve(t, p[0]))))
+			cells = append(cells, dbCell(at90(tierCurve(t, p[0]))))
 		}
 		b.WriteString("| " + strings.Join(cells, " | ") + " |\n")
 	}
@@ -460,9 +458,9 @@ func dmrCell(f floorPair) string {
 	c := at90(f.DMR.EbN0, f.DMR.recovery())
 	switch {
 	case f.Status == statusExact:
-		return ebCell(c)
+		return dbCell(c)
 	case f.Status == statusLower && c.ok && !c.below:
-		return "at least " + ebCell(c)
+		return "at least " + dbCell(c)
 	}
 	return "-"
 }
@@ -511,30 +509,6 @@ func referenceCrossings(d data, k string) (dmr, anyCode, aware crossing, status 
 	return at90(f.DMR.EbN0, f.DMR.recovery()), at90(f.Any.EbN0, f.Any.recovery()), aware, f.Status, true
 }
 
-// lossCell returns the loss of payload k of tier t against the DMR floor:
-// a range from the loss against the code-aware receiver to that against
-// the lower bound when the DMR floor is not exact.
-func lossCell(d data, t tier, k string) string {
-	v := at90(tierCurve(t, k))
-	dmr, _, aware, status, ok := referenceCrossings(d, k)
-	if !ok || !v.ok || v.below {
-		return "-"
-	}
-	if status == statusExact {
-		if !dmr.ok {
-			return "-"
-		}
-		if dmr.below {
-			return "> " + f1(v.ebn0-dmr.ebn0) + " dB"
-		}
-		return f1(v.ebn0-dmr.ebn0) + " dB"
-	}
-	var s span
-	s.hi, s.hiOK = gap(v, dmr)
-	s.lo, s.loOK = gap(v, aware)
-	return s.text(" dB")
-}
-
 // costCell returns the code cost of payload k: the DMR floor less the 4FSK
 // floor, a range up to the code-aware receiver when the DMR floor is not
 // exact.
@@ -557,17 +531,29 @@ func costCell(d data, k string) string {
 	return s.text("")
 }
 
-// ebCell formats an Eb/N0 at 90% with its C/N, as an upper limit for a
-// curve that starts above 90%.
-func ebCell(c crossing) string {
+// dbCell formats an Eb/N0 at 90%, as an upper limit for a curve that
+// starts above 90%.
+func dbCell(c crossing) string {
 	if !c.ok {
 		return "-"
 	}
-	cn := f1(c.ebn0 - 10*math.Log10(12500.0/9600))
 	if c.below {
-		return "< " + f1(c.ebn0) + " (< " + cn + ")"
+		return "< " + f1(c.ebn0) + " dB"
 	}
-	return f1(c.ebn0) + " (" + cn + ")"
+	return f1(c.ebn0) + " dB"
+}
+
+// msCell formats a CPU time per second of signal, in ns, in milliseconds
+// with two significant digits.
+func msCell(ns float64) string {
+	ms := ns / 1e6
+	switch {
+	case ms >= 10:
+		return strconv.FormatFloat(math.Round(ms), 'f', 0, 64) + " ms"
+	case ms >= 1:
+		return strconv.FormatFloat(math.Round(ms*10)/10, 'f', 1, 64) + " ms"
+	}
+	return strconv.FormatFloat(math.Round(ms*100)/100, 'f', 2, 64) + " ms"
 }
 
 // graph is a README graph: data key, title and error rate name.
