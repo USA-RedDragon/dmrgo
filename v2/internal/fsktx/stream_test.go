@@ -4,6 +4,7 @@ package fsktx
 
 import (
 	"math"
+	"math/bits"
 	"slices"
 	"testing"
 
@@ -39,7 +40,13 @@ const streamLead = 6
 // modulation.
 func newTestStream(t testing.TB, n, tail int) *testStream {
 	t.Helper()
-	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1, Superframes: n, BSSourced: true, Slot: 1}
+	return newStreamOf(t, rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1, Superframes: n, BSSourced: true, Slot: 1}, tail)
+}
+
+// newStreamOf is newTestStream for the BS-sourced voice call of cfg, on
+// slot 1.
+func newStreamOf(t testing.TB, cfg rftx.SeqConfig, tail int) *testStream {
+	t.Helper()
 	voice, err := rftx.Sequence("voice", cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -127,23 +134,7 @@ type score struct {
 }
 
 func (s *testStream) score(got []rf.Burst, pad float64) score {
-	first := pad + float64(s.lead+12)/SymbolRate
-	res := make([]float64, 0, len(got))
-	for _, r := range got {
-		d := r.Seconds - first
-		res = append(res, d-math.Round(d/0.030)*0.030)
-	}
-	slices.Sort(res)
-	if len(res) > 0 {
-		first += res[len(res)/2]
-	}
-	byIndex := map[int]rf.Burst{}
-	for _, r := range got {
-		i := int(math.Round((r.Seconds - first) / 0.030))
-		if i >= 0 && i < len(s.slots) && math.Abs(r.Seconds-first-float64(i)*0.030) < 0.002 {
-			byIndex[i] = r
-		}
-	}
+	byIndex := s.align(got, pad)
 	var sc score
 	for i, k := range s.kind {
 		r, have := byIndex[i]
@@ -166,6 +157,69 @@ func (s *testStream) score(got []rf.Burst, pad float64) score {
 			if have && data.SlotType() == want.SlotType() && a == b {
 				sc.dataOK++
 			}
+		}
+	}
+	return sc
+}
+
+// align returns the bursts of got by the index of their slot in s, with s
+// at its start pad seconds after the first sample, and a delay of less
+// than half a slot, which it takes from the median of the bursts.
+func (s *testStream) align(got []rf.Burst, pad float64) map[int]rf.Burst {
+	first := pad + float64(s.lead+12)/SymbolRate
+	res := make([]float64, 0, len(got))
+	for _, r := range got {
+		d := r.Seconds - first
+		res = append(res, d-math.Round(d/0.030)*0.030)
+	}
+	slices.Sort(res)
+	if len(res) > 0 {
+		first += res[len(res)/2]
+	}
+	byIndex := map[int]rf.Burst{}
+	for _, r := range got {
+		i := int(math.Round((r.Seconds - first) / 0.030))
+		if i >= 0 && i < len(s.slots) && math.Abs(r.Seconds-first-float64(i)*0.030) < 0.002 {
+			byIndex[i] = r
+		}
+	}
+	return byIndex
+}
+
+// rawScore is the detection of s in got, bit for bit, before any FEC:
+// the number of bursts that s sends, the number that got holds without a
+// bit error in the burst or its CACH, and the bit errors of all of them,
+// a burst that got misses counting as half its bits.
+type rawScore struct {
+	bursts, exact, errs, bits int
+}
+
+func (s *testStream) rawScore(got []rf.Burst, pad float64) rawScore {
+	byIndex := s.align(got, pad)
+	var sc rawScore
+	for i, slot := range s.slots {
+		if slot.Burst == (layer2.RawBurst{}) {
+			continue
+		}
+		sc.bursts++
+		sc.bits += 8 * len(slot.Burst)
+		r, have := byIndex[i]
+		if !have {
+			sc.errs += 4 * len(slot.Burst)
+			continue
+		}
+		n := 0
+		for k := range slot.Burst {
+			n += bits.OnesCount8(r.Data[k] ^ slot.Burst[k])
+		}
+		sc.errs += n
+		if r.HasCACH {
+			for k := range slot.CACH {
+				n += bits.OnesCount8(r.CACH[k] ^ slot.CACH[k])
+			}
+		}
+		if n == 0 {
+			sc.exact++
 		}
 	}
 	return sc
