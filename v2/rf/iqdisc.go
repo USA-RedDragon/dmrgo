@@ -55,10 +55,13 @@ type iqDisc struct {
 	// power of the output samples.
 	acc complex64
 	pw  float32
-	// With afc set, acc sums the products of the sums of the last len(afc)
-	// output samples instead, a moving average that keeps out of the
-	// estimate the edges of the channel, where another channel leaks in;
-	// afcSum is the sum, afcPrev the one before, afcHead the oldest.
+	// With afc set, accAvg sums the products of the sums of the last
+	// len(afc) output samples, a moving average that keeps out of the
+	// estimate the edges of the channel, where another channel leaks in,
+	// and pwAvg their power; afcSum is the sum, afcPrev the one before,
+	// afcHead the oldest.
+	accAvg  complex64
+	pwAvg   float32
 	afc     []complex64
 	afcSum  complex64
 	afcPrev complex64
@@ -222,10 +225,9 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	y := complex(re, im)
 	p := y * complex(real(d.prev), -imag(d.prev))
 	d.prev = y
-	if d.afc == nil {
-		d.acc += p
-		d.pw += re*re + im*im
-	} else {
+	d.acc += p
+	d.pw += re*re + im*im
+	if d.afc != nil {
 		d.afcSum += y - d.afc[d.afcHead]
 		d.afc[d.afcHead] = y
 		if d.afcHead++; d.afcHead == len(d.afc) {
@@ -236,9 +238,9 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 				d.afcSum += a
 			}
 		}
-		d.acc += d.afcSum * complex(real(d.afcPrev), -imag(d.afcPrev))
+		d.accAvg += d.afcSum * complex(real(d.afcPrev), -imag(d.afcPrev))
 		d.afcPrev = d.afcSum
-		d.pw += real(d.afcSum)*real(d.afcSum) + imag(d.afcSum)*imag(d.afcSum)
+		d.pwAvg += real(d.afcSum)*real(d.afcSum) + imag(d.afcSum)*imag(d.afcSum)
 	}
 	return atan2f(imag(p), real(p)) * (float32(basebandRate/d.decim) / (2 * math.Pi)), y, true
 }
@@ -380,7 +382,14 @@ func (r *iqRx) sample(v complex64) {
 // offset that the DiscReceiver measures while it is locked.
 func (r *iqRx) follow() {
 	acc, pw := r.conv.acc, r.conv.pw
-	r.conv.acc, r.conv.pw = 0, 0
+	if r.conv.afc != nil && !r.d.locked {
+		// While the core searches, the moving average keeps the edges of
+		// the channel out of the estimate. It pulls the estimate of an
+		// offset toward 0, so the SYNC fits of a lock check it against
+		// the mean of the samples themselves.
+		acc, pw = r.conv.accAvg, r.conv.pwAvg
+	}
+	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
 	// Below the FM threshold the clicks pull the mean of the
 	// discriminator toward 0 Hz. The phase of the sum of the products is
 	// the mean frequency of the carrier, which noise pulls toward the
