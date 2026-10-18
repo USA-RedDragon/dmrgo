@@ -49,15 +49,17 @@ func impairedFM(freq, env []float64, offsetHz, dev, fd, cn float64, seed uint64)
 // TestTierImpaired checks that the coherent tiers on I/Q recover at least
 // what Tier0 does, for each payload, summed over seeds, on direct mode
 // traffic whose transmissions start between symbol boundaries, from a
-// transmitter whose deviation is 10% off either way, at C/N points from
-// the 90% point of Tier0 for exact voice frames up. The coherent stage
-// then has to fit the modulation index of the stream. Tiers decide some
+// transmitter whose deviation is 10% off either way, and through Rayleigh
+// fading of 50 Hz Doppler, at C/N points from the 90% point of Tier0 for
+// exact voice frames up. The coherent stage then has to fit the
+// modulation index of the stream, and to leave the uncoded bits to the
+// core where the FEC shows that it makes fewer errors. Tiers decide some
 // bursts differently by chance, so a tier may fall short by 1% of the
 // truth, or 2 items, as in TestTierOrder.
 func TestTierImpaired(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
-		t.Skip("receives 12 streams with 3 receivers")
+		t.Skip("receives 56 streams with 3 receivers")
 	}
 	type scenario struct {
 		name    string
@@ -67,8 +69,9 @@ func TestTierImpaired(t *testing.T) {
 	scenarios := []scenario{
 		{"dev-10", -0.1, 0, []float64{8, 12}},
 		{"dev+10", 0.1, 0, []float64{8, 12}},
+		{"fade50", 0, 50, []float64{18, 24, 30}},
 	}
-	const seeds = 3
+	const seeds = 8
 	fm, env, truth := msStream(t, 3, 0.37)
 	tiers := []Tier{Tier0, Tier1, Tier2}
 	type key struct {

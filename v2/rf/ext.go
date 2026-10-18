@@ -115,8 +115,14 @@ type softExt struct {
 	// np, when not nil, detects the bursts from the symbols of the core
 	// with the correlation of their noise, in place of symbol by symbol.
 	np *npml
-	// qcoh marks the bursts of q that coh detected.
-	qcoh [extQueue]bool
+	// qcoh marks the bursts of q that coh detected, and qcore holds the
+	// hard decisions of the core of each.
+	qcoh  [extQueue]bool
+	qcore [extQueue]layer2.RawBurst
+	// errCore and errCoh are the mean numbers of bits of C0 and C1 of the
+	// voice frames that coh detected whose hard decisions of the core and
+	// of coh differ from their decode, for uncoded.
+	errCore, errCoh float32
 	// known marks the bits of a voice burst that its FEC fixed, for the
 	// detection again of coh.
 	known [layer2.BurstBits]bool
@@ -196,11 +202,13 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	if x.coh != nil && x.coh.detect(c, b, &x.llr) {
 		fixed, data := b.Fixed, b.Data
 		x.repairAll(c, b, cc, ccOK)
+		coh := b.Data
 		if x.voiceKnown(b) && !x.coh.easy && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
 			x.repairAll(c, b, cc, ccOK)
 		} else {
 			x.dataPasses(c, b, cc, ccOK)
 		}
+		x.uncoded(b, &data, &coh, true)
 		if x.bptcRetry(b) {
 			x.coreData(c, b, fixed, data)
 		}
@@ -212,7 +220,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 			ch.have, ch.accN = 0, 0
 		}
 		i := x.push(c, b, hold)
-		x.coh.qllr[i], x.qcoh[i] = x.llr, true
+		x.coh.qllr[i], x.qcoh[i], x.qcore[i] = x.llr, true, data
 		if x.coh.nextOK {
 			x.back(c, b.Slot-1)
 		}
@@ -303,6 +311,8 @@ func (x *softExt) back(c *leanCore, j int64) {
 		cc, ccOK := c.colorCode()
 		ok := !x.bptcRetry(b)
 		x.repairAll(c, b, cc, ccOK)
+		coh := b.Data
+		x.uncoded(b, &x.qcore[i], &coh, false)
 		// A data block that passed its check keeps that decode.
 		if ok && x.bptcRetry(b) {
 			b.Fixed, b.Data = lc, data
@@ -662,11 +672,17 @@ func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCo
 		if lb.Voice != enums.VoiceBurstUnknown && ccOK {
 			_ = lb.Fixed.SetEMB(pdu.EmbeddedSignalling{ColorCode: cc, PreemptionAndPowerControlIndicator: pi, LCSS: lateLCSS(lb.Voice)})
 		}
-		if x.coh == nil || !x.cohLate(c, lb) {
+		data := lb.Data
+		late := x.coh != nil && x.cohLate(c, lb)
+		if !late {
 			x.fill(c, &lb.Data)
 		}
 		c.ring, c.base = ring, base
 		x.repairAll(c, lb, cc, ccOK)
+		if late {
+			coh := lb.Data
+			x.uncoded(lb, &data, &coh, false)
+		}
 		hold := false
 		if x.stages&extELC != 0 {
 			hold = x.fragment(ch, lb)
@@ -861,3 +877,69 @@ func (x *softExt) end(c *leanCore) {
 	x.ch[0].lateN, x.ch[1].lateN = 0, 0
 	x.drain(c, false, 0)
 }
+
+// extErrGain is the weight of each voice frame in the mean numbers of bit
+// errors of uncoded.
+const extErrGain = 1.0 / 16
+
+// uncoded sets the bits without FEC of burst b, which coh detected, to the
+// hard decisions of the core where the FEC shows that the core makes fewer
+// errors: the core detects each symbol from the frequency alone, while coh
+// follows the phase of the carrier, which a fast fade turns too quickly
+// for it, so that it makes errors that FEC corrects in C0 and C1 of a
+// voice frame but not in its uncoded bits C2 and C3, or in a rate 1 data
+// block. While the hard decisions of C0 and C1 of the core differ less
+// from their decode than those of coh do over the frames before, a voice
+// frame takes C2 and C3 of the core, unless its own C0 and C1 of the core
+// differ more, and a rate 1 data burst takes its payload of the core. The
+// counts of one frame alone do not decide: in noise the errors of each
+// frame are a draw of the same rate, so that they say little of those in
+// C2 and C3. core and coh hold the hard decisions of the core and of coh;
+// update adds the frames of b to the means.
+func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
+	_, kind, known := layer2.SyncSourceOf(b.Sync)
+	if known && kind == layer2.KindData {
+		if x.errCore < x.errCoh && b.Fixed.SlotType().DataType == enums.DataTypeRate1 {
+			for i := range 2 * extPayloadHalf {
+				p := i
+				if i >= extPayloadHalf {
+					p += layer2.BurstBits - 2*extPayloadHalf
+				}
+				q, m := p/8, byte(0x80)>>(p%8)
+				b.Fixed[q] = b.Fixed[q]&^m | core[q]&m
+			}
+		}
+		return
+	}
+	if b.Voice == enums.VoiceBurstUnknown && (!known || kind != layer2.KindVoice) {
+		return
+	}
+	var nCore, nCoh [layer2.VoiceSlotsPerBurst]int
+	for i := range layer2.VoiceSlotsPerBurst {
+		for id := softAMBECode + 2*softSmallID(i); id <= softAMBECode+2*softSmallID(i)+1; id++ {
+			c := &softSmallCodes[id]
+			for _, p := range c.pos[:c.n] {
+				q, m := p/8, byte(0x80)>>(p%8)
+				nCore[i] += int((b.Fixed[q] ^ core[q]) & m >> (7 - p%8))
+				nCoh[i] += int((b.Fixed[q] ^ coh[q]) & m >> (7 - p%8))
+			}
+		}
+		if update {
+			x.errCore += extErrGain * (float32(nCore[i]) - x.errCore)
+			x.errCoh += extErrGain * (float32(nCoh[i]) - x.errCoh)
+		}
+	}
+	for i := range layer2.VoiceSlotsPerBurst {
+		if x.errCore >= x.errCoh || nCore[i] > nCoh[i] {
+			continue
+		}
+		for _, p := range &softAMBEC2Pos[i] {
+			q, m := p/8, byte(0x80)>>(p%8)
+			b.Fixed[q] = b.Fixed[q]&^m | core[q]&m
+		}
+	}
+}
+
+// extPayloadHalf is the number of payload bits of a data burst on each
+// side of its slot type and SYNC.
+const extPayloadHalf = 98
