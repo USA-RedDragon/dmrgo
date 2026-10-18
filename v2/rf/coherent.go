@@ -147,6 +147,10 @@ type trellis struct {
 	// slp holds the log priors of the digits of the first window state,
 	// oldest first. Zero means no prior.
 	slp []float32
+	// rows, when not nil, holds the correlations of the intervals of the
+	// run, which forward computes into it, or takes from it when rowsOK.
+	rows   []complex64
+	rowsOK bool
 }
 
 // newTrellis returns a trellis over model m for runs of up to maxSteps
@@ -212,8 +216,51 @@ func (t *trellis) run(src trellisSource, steps int, rot0 complex64, scale, mu fl
 // log priors lp.
 func (t *trellis) forward(j int, lp []float32, scale, mu float32) {
 	m := t.m
-	sps, ns := m.sps, m.states
+	ns := m.states
 	shift := 4 * m.d
+	corr := t.corr[:m.windows]
+	if t.rows != nil {
+		corr = t.rows[j*m.windows : (j+1)*m.windows]
+	}
+	if t.rows == nil || !t.rowsOK {
+		t.correlate(j, corr)
+	}
+	alpha := t.alpha[j*ns : (j+1)*ns]
+	next := t.alpha[(j+1)*ns : (j+2)*ns]
+	bm := t.bm[j*m.windows : (j+1)*m.windows]
+	rot, nrot, lp4 := t.rot[:ns], t.nrot[:ns], lp[:4]
+	for s2 := range next {
+		bonus := lp4[s2&3]
+		best, bd := negInf, 0
+		var bro, bc complex64
+		for d0 := range 4 {
+			w := d0<<shift | s2
+			ro, c := rot[w>>2], corr[w]
+			v := scale*(real(ro)*real(c)-imag(ro)*imag(c)) + bonus
+			bm[w] = v
+			if a := alpha[w>>2] + v; a > best {
+				best, bd, bro, bc = a, d0, ro, c
+			}
+		}
+		next[s2] = best
+		r := bro * m.step[bd&3]
+		if mu != 0 && best > negInf {
+			c := bro * bc
+			if a := sqrtf(real(c)*real(c) + imag(c)*imag(c)); a > 0 {
+				e := mu * imag(c) / a
+				r *= complex(1, -e)
+			}
+		}
+		nrot[s2] = r
+	}
+	t.rot, t.nrot = t.nrot, t.rot
+}
+
+// correlate sets corr to the correlations of the samples of row j of the
+// block buffers with the templates of the windows.
+func (t *trellis) correlate(j int, corr []complex64) {
+	m := t.m
+	sps := m.sps
 	seg := t.x[j*sps : (j+1)*sps]
 	for w := range m.windows / 2 {
 		tp := m.tpl[w*sps : (w+1)*sps]
@@ -224,37 +271,9 @@ func (t *trellis) forward(j int, lp []float32, scale, mu float32) {
 			ad += real(v) * imag(tp[i])
 			bc += imag(v) * real(tp[i])
 		}
-		t.corr[w] = complex(ac-bd, ad+bc)
-		t.corr[m.windows-1-w] = complex(ac+bd, bc-ad)
+		corr[w] = complex(ac-bd, ad+bc)
+		corr[m.windows-1-w] = complex(ac+bd, bc-ad)
 	}
-	alpha := t.alpha[j*ns : (j+1)*ns]
-	next := t.alpha[(j+1)*ns : (j+2)*ns]
-	bm := t.bm[j*m.windows : (j+1)*m.windows]
-	for s2 := range ns {
-		bonus := lp[s2&3]
-		best, bd := negInf, 0
-		for d0 := range 4 {
-			w := d0<<shift | s2
-			ro, c := t.rot[w>>2], t.corr[w]
-			v := scale*(real(ro)*real(c)-imag(ro)*imag(c)) + bonus
-			bm[w] = v
-			if a := alpha[w>>2] + v; a > best {
-				best, bd = a, d0
-			}
-		}
-		next[s2] = best
-		w := bd<<shift | s2
-		r := t.rot[w>>2] * m.step[bd]
-		if mu != 0 && best > negInf {
-			c := t.rot[w>>2] * t.corr[w]
-			if a := sqrtf(real(c)*real(c) + imag(c)*imag(c)); a > 0 {
-				e := mu * imag(c) / a
-				r *= complex(1, -e)
-			}
-		}
-		t.nrot[s2] = r
-	}
-	t.rot, t.nrot = t.nrot, t.rot
 }
 
 // backward runs the backward pass of the block from interval b0, whose
@@ -273,26 +292,18 @@ func (t *trellis) backward(src trellisSource, b0, b1, e int) {
 		j := k - b0
 		alpha := t.alpha[j*ns : (j+1)*ns]
 		bm := t.bm[j*m.windows : (j+1)*m.windows]
-		for v := range a {
-			a[v] = negInf
+		a0, a1, a2, a3 := negInf, negInf, negInf, negInf
+		next := t.next[:ns]
+		for s := range next {
+			w := s << 2
+			q := bm[w : w+4 : w+4]
+			bt := beta[w&mask : w&mask+4 : w&mask+4]
+			b0, b1, b2, b3 := q[0]+bt[0], q[1]+bt[1], q[2]+bt[2], q[3]+bt[3]
+			next[s] = max(max(b0, b1), max(b2, b3))
+			as := alpha[s]
+			a0, a1, a2, a3 = max(a0, as+b0), max(a1, as+b1), max(a2, as+b2), max(a3, as+b3)
 		}
-		for s := range ns {
-			t.next[s] = negInf
-		}
-		for w := range m.windows {
-			v := bm[w]
-			if v == negInf {
-				continue
-			}
-			s, s2 := w>>2, w&mask
-			b := v + beta[s2]
-			if b > t.next[s] {
-				t.next[s] = b
-			}
-			if p := alpha[s] + b; p > a[w&3] {
-				a[w&3] = p
-			}
-		}
+		a[0], a[1], a[2], a[3] = a0, a1, a2, a3
 		beta, t.next = t.next, beta
 		if k < b1 {
 			src.runKeep(k, a)

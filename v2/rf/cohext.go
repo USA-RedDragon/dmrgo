@@ -53,10 +53,23 @@ type cohStage struct {
 	mu      float32
 	llrK    float32
 	buf     []complex64
-	known   [slotSymbols]int8
-	isK     [slotSymbols]bool
-	app     [slotSymbols][4]float32
-	dist    [slotSymbols]int
+	// runs holds the samples of the runs of the burst under detection, which
+	// its detections again with priors repeat, runAt the one under way and
+	// gen the detection.
+	runs  [cohRuns]cohRunSamples
+	runAt int
+	gen   int
+	// symX holds the samples of slot symbols -slotSymbols on that fill
+	// made forward in time, symbol k where symAt[k+slotSymbols] is
+	// symStamp, for symKey.
+	symX     []complex64
+	symAt    []uint32
+	symStamp uint32
+	symKey   cohSymKey
+	known    [slotSymbols]int8
+	isK      [slotSymbols]bool
+	app      [slotSymbols][4]float32
+	dist     [slotSymbols]int
 	// The run under way: its first symbol in the slot, its direction and
 	// steps, the time of slot symbol 0 in samples of the ring and the
 	// carrier rotation per sample.
@@ -211,6 +224,12 @@ func newCohStageOf(opt *options) *cohStage {
 	s.tr = newTrellis(m, cohMaxRun, cohMaxRun, 0)
 	s.setRing(2)
 	s.buf = make([]complex64, (syncSymbols+2)*sps)
+	s.symX = make([]complex64, cohSymN*sps)
+	s.symAt = make([]uint32, cohSymN)
+	for i := range s.runs {
+		s.runs[i].x = make([]complex64, cohMaxRun*sps)
+		s.runs[i].corr = make([]complex64, cohMaxRun*m.windows)
+	}
 	s.nsrc = min(opt.Sources, len(s.scanTpl))
 	for i := range s.nsrc {
 		voice, data, _ := sourceAt(i).SyncPatterns()
@@ -395,39 +414,119 @@ func (s *cohStage) phaseAt(t float64) float64 {
 
 // fill writes the samples of slot symbols k0 to k1-1 of the run into x,
 // as engine.fillRange: time reversed and conjugated for a backward run.
+// The samples of a symbol forward in time are the same for every run and
+// level of a burst, so it keeps them while the ring and the timing and
+// carrier of the burst stay.
 func (s *cohStage) fill(k0, k1 int, x []complex64) {
 	sps := s.model.sps
+	if s.dir < 0 || s.trialing || s.ph != nil && s.ph.lazy {
+		for i := k0; i < k1; i++ {
+			s.fillSym(s.g0+s.dir*i, x[(i-k0)*sps:(i-k0+1)*sps])
+		}
+		return
+	}
+	_, n, lo := s.ring()
+	key := cohSymKey{gen: s.gen, t0: s.t0, hz: s.totalHz, n: n, lo: lo}
+	if p := s.ph; p != nil {
+		key.unit, key.dc = p.unit, p.dcU
+	}
+	if r := s.rx; r != nil {
+		key.tunes, key.unit = r.nTunes, float64(r.conv.hz)
+	}
+	if key != s.symKey {
+		s.symKey = key
+		s.symStamp++
+	}
 	for i := k0; i < k1; i++ {
-		k := s.g0 + s.dir*i
-		tc := s.t0 + float64(k)*s.sps
-		step := s.step
-		start := tc - float64(sps/2)*step
+		k := s.g0 + i
+		out := x[(i-k0)*sps : (i-k0+1)*sps]
+		j := k + slotSymbols
+		if j < 0 || j >= len(s.symAt) {
+			s.fillSym(k, out)
+			continue
+		}
+		c := s.symX[j*sps : (j+1)*sps]
+		if s.symAt[j] != s.symStamp {
+			s.fillSym(k, c)
+			s.symAt[j] = s.symStamp
+		}
+		copy(out, c)
+	}
+}
+
+// cohSymKey is what the samples of a symbol that fill keeps depend on:
+// the detection, the time of slot symbol 0 and the carrier offset, the
+// samples of the ring, the scale and DC offset of an audio ring, and the
+// moves of the oscillator of an I/Q ring and its frequency, in unit.
+type cohSymKey struct {
+	gen      int
+	t0, hz   float64
+	n, lo    int64
+	unit, dc float64
+	tunes    int
+}
+
+// fillSym writes the sps samples of slot symbol k of the run into x.
+func (s *cohStage) fillSym(k int, x []complex64) {
+	sps := s.model.sps
+	tc := s.t0 + float64(k)*s.sps
+	step := s.step
+	start := tc - float64(sps/2)*step
+	if s.dir < 0 {
+		start = tc + float64(sps/2)*step - 2/s.div
+		step = -step
+	}
+	// The carrier phase moves linearly over the samples of a symbol,
+	// but across a move of the oscillator.
+	ph0 := s.phaseAt(start)
+	dph := (s.phaseAt(start+float64(sps-1)*step) - ph0) / float64(sps-1)
+	sn, cs := math.Sincos(ph0)
+	rot := complex64(complex(cs, sn))
+	sn, cs = math.Sincos(dph)
+	rs := complex64(complex(cs, sn))
+	for j := range sps {
+		v := s.sample(start+float64(j)*step) * rot
+		rot *= rs
 		if s.dir < 0 {
-			start = tc + float64(sps/2)*step - 2/s.div
-			step = -step
+			v = complex(real(v), -imag(v))
 		}
-		// The carrier phase moves linearly over the samples of a symbol,
-		// but across a move of the oscillator.
-		ph0 := s.phaseAt(start)
-		dph := (s.phaseAt(start+float64(sps-1)*step) - ph0) / float64(sps-1)
-		sn, cs := math.Sincos(ph0)
-		rot := complex64(complex(cs, sn))
-		sn, cs = math.Sincos(dph)
-		rs := complex64(complex(cs, sn))
-		for j := range sps {
-			v := s.sample(start+float64(j)*step) * rot
-			rot *= rs
-			if s.dir < 0 {
-				v = complex(real(v), -imag(v))
-			}
-			x[(i-k0)*sps+j] = v
-		}
+		x[j] = v
 	}
 }
 
 func (s *cohStage) runSamples(k0, k1 int, x []complex64) {
-	d := s.model.d
-	s.fill(k0+d, k1+d, x)
+	d, sps := s.model.d, s.model.sps
+	r := &s.runs[s.runAt]
+	if !r.holds(s, k0, k1) {
+		s.fill(k0+d, k1+d, r.x)
+		r.gen, r.g0, r.dir, r.t0, r.hz, r.k0, r.k1 = s.gen, s.g0, s.dir, s.t0, s.totalHz, k0, k1
+	}
+	copy(x[:(k1-k0)*sps], r.x)
+}
+
+// cohRuns is the most runs of the trellis that detect makes for a burst,
+// and cohSymN the number of slot symbols, from -slotSymbols, whose samples
+// fill keeps.
+const (
+	cohRuns = 3
+	cohSymN = 2*slotSymbols + cohShift + 4*runMargin
+)
+
+// cohRunSamples holds the samples of a run from runSamples, and the run,
+// detection and carrier that they are of.
+type cohRunSamples struct {
+	x, corr []complex64
+	gen     int
+	g0      int
+	dir     int
+	t0, hz  float64
+	k0, k1  int
+}
+
+// holds reports whether r holds the samples of intervals k0 to k1-1 of the
+// run of s under way.
+func (r *cohRunSamples) holds(s *cohStage, k0, k1 int) bool {
+	return r.gen == s.gen && r.g0 == s.g0 && r.dir == s.dir && r.t0 == s.t0 && r.hz == s.totalHz && r.k0 == k0 && r.k1 >= k1
 }
 
 func (s *cohStage) runPrior(k int, lp []float32) {
@@ -718,6 +817,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		return false
 	}
 	_, _, lo := s.ring()
+	s.gen++
 	s.base, s.bs, s.nextOK = c.base, c.bs, false
 	s.carryOK = s.mineOK && s.mineSlot == b.Slot-1
 	if s.carryOK {
@@ -1092,7 +1192,9 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	}
 	lo, hi := cachSymbols, slotSymbols-1
 	g0, g1 := s.segs[0][0], s.segs[s.nseg-1][1]
+	s.runAt = 0
 	s.run(g0, hi-g0+1+runMargin, 1, s.scale)
+	s.runAt = 1
 	if s.bs && s.nseg == 1 && !s.easy {
 		s.nextOK = true
 		s.run(g1, g1+cohNext+1+runMargin, -1, s.scale)
@@ -1100,7 +1202,7 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 		s.run(g1, g1-lo+1+runMargin, -1, s.scale)
 	}
 	if s.prevOK && !s.easy {
-		s.cross = true
+		s.cross, s.runAt = true, 2
 		s.run(s.prevK0, syncFirstSym+syncSymbols-s.prevK0+runMargin, 1, s.scale)
 		s.cross = false
 	}
@@ -1189,6 +1291,8 @@ func (s *cohStage) run(g, n, dir int, scale float32) {
 	for i := range 2 * d {
 		s.runPrior(i-2*d, s.tr.slp[4*i:4*i+4])
 	}
+	r := &s.runs[s.runAt]
+	s.tr.rows, s.tr.rowsOK = r.corr, r.holds(s, 0, s.steps)
 	s.tr.run(s, s.steps, rot, scale, s.mu)
 }
 
