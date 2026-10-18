@@ -275,10 +275,10 @@ func shortName(t tier) string {
 func inputName(t tier) string {
 	return map[string]string{
 		modeAudio + "0": "FM audio, 9.6 kHz, core",
-		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding",
+		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding, noise prediction",
 		modeAudio + "2": "FM audio, 9.6 kHz, coherent detection",
 		modeIQ + "0":    "I/Q, discriminator core",
-		modeIQ + "1":    "I/Q, soft decoding",
+		modeIQ + "1":    "I/Q, soft decoding, noise prediction",
 		modeIQ + "2":    "I/Q, coherent detection",
 		modeIQ + "3":    "I/Q, phase trellis",
 	}[t.Mode+strconv.Itoa(t.Tier)]
