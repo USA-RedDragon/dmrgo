@@ -84,3 +84,76 @@ func TestGolden(t *testing.T) {
 		}
 	}
 }
+
+// TestGoldenLimits is TestGolden at the limits of the Tier0 modulators:
+// the least and most level with the most offset either way, the carrier
+// just within a quarter of the rate with the shortest and longest ramp,
+// invalid symbols, short dst and keying at every symbol, so that a
+// difference of the integer arithmetic between compilers shows where it
+// is closest to its bounds.
+func TestGoldenLimits(t *testing.T) {
+	t.Parallel()
+	syms := goldenSymbols(3000)
+	for i := range syms {
+		switch i % 41 {
+		case 7:
+			syms[i] = int8(i)
+		case 19:
+			syms[i] = -128
+		}
+	}
+	audio := func(tab AudioTable, level, offset int) func() uint32 {
+		return func() uint32 {
+			var m MCUAudio
+			if err := m.Init(tab, level, offset); err != nil {
+				t.Fatal(err)
+			}
+			var buf [maxSamples]int16
+			h := uint32(2166136261)
+			for i, s := range syms {
+				if i%13 == 5 {
+					m.Symbol(buf[:m.Samples()-1], s)
+				}
+				for _, v := range buf[:m.Symbol(buf[:], s)] {
+					h = fnv(h, v)
+				}
+			}
+			return h
+		}
+	}
+	iq := func(rate, off, ramp int, key func(i int) bool) func() uint32 {
+		return func() uint32 {
+			var m MCUIQ
+			if err := m.Init(rate, off, ramp); err != nil {
+				t.Fatal(err)
+			}
+			var buf [2 * maxSamples << 3]int16
+			h := uint32(2166136261)
+			for i, s := range syms {
+				m.Key(key(i))
+				for _, v := range buf[:m.Symbol(buf[:], s)] {
+					h = fnv(h, v)
+				}
+			}
+			return h
+		}
+	}
+	cases := []struct {
+		name string
+		run  func() uint32
+		want uint32
+	}{
+		{"audio 24k 16000 high", audio(Table24k(), 16000, 2603), 0x6d32f347},
+		{"audio 48k 16000 low", audio(Table48k(), 16000, -2482), 0xb07d0f48},
+		{"audio 24k 1 high", audio(Table24k(), 1, 32765), 0xd48c999d},
+		{"audio 48k 1 low", audio(Table48k(), 1, -32766), 0x2296d741},
+		{"iq 48k high step", iq(48000, 11999, 1, func(i int) bool { return i%9 < 5 }), 0xbe1382f7},
+		{"iq 192k low ramp", iq(192000, -47999, 1<<15, func(i int) bool { return i < 2000 }), 0x8f64b885},
+		{"iq 96k every symbol", iq(96000, 23999, 7, func(i int) bool { return i&1 == 0 }), 0x20a76fe2},
+	}
+	for _, c := range cases {
+		if got := c.run(); got != c.want {
+			t.Errorf("%s: digest %#x, want %#x", c.name, got, c.want)
+		}
+	}
+}
