@@ -102,6 +102,13 @@ func BenchmarkEmbedded(b *testing.B) {
 			_, _ = bptc.DecodeEmbedded(bad)
 		}
 	})
+	noise := [4]uint32{0x9e3779b9, 0x7f4a7c15, 0xf39cc060, 0x5ced2a4b}
+	b.Run("Decode/noise", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			_, _ = bptc.DecodeEmbedded(noise)
+		}
+	})
 	b.Run("DecodeStrict/1error", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {

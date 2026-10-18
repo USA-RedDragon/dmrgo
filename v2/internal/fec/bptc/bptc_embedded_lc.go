@@ -48,10 +48,10 @@ func DecodeEmbeddedWithCheck(fragments [4]uint32, check func(info [10]byte) bool
 		result.Uncorrectable = check != nil && !check(info)
 		return info, result
 	}
-	for row := 7; row >= 0; row-- {
-		s.minRemaining[row] = s.minRemaining[row+1] + embeddedLCMinWeight[s.syndromes[row]]
+	s.run(7)
+	for derived := 6; derived >= 0 && s.best >= 5; derived-- {
+		s.run(derived)
 	}
-	s.search(0, 0, 0)
 
 	if !s.found || s.ambiguous {
 		result.Uncorrectable = true
@@ -62,14 +62,21 @@ func DecodeEmbeddedWithCheck(fragments [4]uint32, check func(info [10]byte) bool
 }
 
 // embeddedLCSearch is a branch and bound search for the error patterns of
-// least weight, with up to 4 errors in each of rows 0 to 6. The errors of
-// rows 0 to 6 fix the errors of row 7, because the column parity of the
-// errors must equal the column parity of the received rows.
+// least weight. The errors of 7 rows fix the errors of the eighth, the
+// derived row, because the column parity of the errors must equal the column
+// parity of the received rows. A pattern of up to EmbeddedMaxErrors errors
+// has more than 4 errors in at most one row, so a run takes up to 4 errors in
+// each row but the derived one. The run with row 7 derived keeps every
+// pattern, and a run with another row derived keeps only the patterns with 5
+// or more errors in that row, so that no pattern is found twice. Those runs
+// find nothing once the least weight is below 5.
 type embeddedLCSearch struct {
 	rows         [8]uint16
 	syndromes    [8]int
 	parity       uint16
-	minRemaining [9]int
+	order        [7]int
+	derived      int
+	minRemaining [8]int
 	errors       [8]uint16
 	check        func([10]byte) bool
 	best         int
@@ -78,20 +85,47 @@ type embeddedLCSearch struct {
 	info         [10]byte
 }
 
-func (s *embeddedLCSearch) search(row int, sum uint16, weight int) {
-	if row == 7 {
-		s.errors[7] = s.parity ^ sum
-		s.leaf(weight + bits.OnesCount16(s.errors[7]))
+// run searches the error patterns whose errors in row derived the errors of
+// the other rows fix.
+func (s *embeddedLCSearch) run(derived int) {
+	s.derived = derived
+	k := 0
+	for row := range s.rows {
+		if row != derived {
+			s.order[k] = row
+			k++
+		}
+	}
+	s.minRemaining[7] = 5
+	if derived == 7 {
+		s.minRemaining[7] = embeddedLCMinWeight[s.syndromes[7]]
+	}
+	for i := 6; i >= 0; i-- {
+		s.minRemaining[i] = s.minRemaining[i+1] + embeddedLCMinWeight[s.syndromes[s.order[i]]]
+	}
+	s.search(0, 0, 0)
+}
+
+func (s *embeddedLCSearch) search(depth int, sum uint16, weight int) {
+	if depth == 7 {
+		e := s.parity ^ sum
+		w := bits.OnesCount16(e)
+		if s.derived != 7 && w < 5 {
+			return
+		}
+		s.errors[s.derived] = e
+		s.leaf(weight + w)
 		return
 	}
+	row := s.order[depth]
 	syndrome := s.syndromes[row]
 	for w := embeddedLCMinWeight[syndrome]; w < 5; w += 2 {
-		if weight+w+s.minRemaining[row+1] > s.best {
+		if weight+w+s.minRemaining[depth+1] > s.best {
 			return
 		}
 		for _, e := range embeddedLCPatterns[embeddedLCPatternStart[syndrome*5+w]:embeddedLCPatternStart[syndrome*5+w+1]] {
 			s.errors[row] = e
-			s.search(row+1, sum^e, weight+w)
+			s.search(depth+1, sum^e, weight+w)
 		}
 	}
 }
