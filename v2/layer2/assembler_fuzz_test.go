@@ -1,0 +1,451 @@
+package layer2_test
+
+import (
+	"errors"
+	"math/bits"
+	"reflect"
+	"slices"
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+)
+
+// distance returns the number of bits in which a and b differ.
+func distance(a, b []byte) int {
+	n := 0
+	for i := range a {
+		n += bits.OnesCount8(a[i] ^ b[i])
+	}
+	return n
+}
+
+// cachSeeds are the seeds of FuzzCACH.
+var cachSeeds = [][]byte{{0x00, 0x00, 0x00}, {0xff, 0xff, 0xff}, {0x5c, 0x3a, 0x81}}
+
+// checkCACH is the property of FuzzCACH.
+func checkCACH(t *testing.T, v []byte) {
+	if len(v) != 3 {
+		return
+	}
+	x := [3]byte(v)
+	if got := layer2.CACHDeinterleave(layer2.CACHInterleave(x)); got != x {
+		t.Fatalf("CACHDeinterleave(CACHInterleave(%x)) = %x", x, got)
+	}
+	if got := layer2.CACHInterleave(layer2.CACHDeinterleave(x)); got != x {
+		t.Fatalf("CACHInterleave(CACHDeinterleave(%x)) = %x", x, got)
+	}
+	if a, b := layer2.DecodeCACHField(x), layer2.DecodeCACH(layer2.CACHDeinterleave(x)); a != b {
+		t.Fatalf("DecodeCACHField(%x) = %+v, want %+v", x, a, b)
+	}
+	c := layer2.DecodeCACH(x)
+	if c.Payload[2]&0x7F != 0 {
+		t.Fatalf("DecodeCACH(%x) payload %x has padding bits set", x, c.Payload)
+	}
+	enc, err := c.Encode()
+	if err != nil {
+		t.Fatalf("Encode of DecodeCACH(%x) = %+v: %v", x, c, err)
+	}
+	d := layer2.DecodeCACH(enc)
+	if d.Payload != c.Payload || d.TACT.AccessType != c.TACT.AccessType || d.TACT.TDMAChannel != c.TACT.TDMAChannel ||
+		d.TACT.LCSS != c.TACT.LCSS || !clean(d.TACT.FEC) {
+		t.Fatalf("CACH %+v encodes to %x, which decodes to %+v", c, enc, d)
+	}
+	if clean(c.TACT.FEC) && enc != x {
+		t.Fatalf("clean CACH %x encodes to %x", x, enc)
+	}
+	if !c.TACT.FEC.Uncorrectable && distance(enc[:1], x[:1]) != c.TACT.FEC.ErrorsCorrected {
+		t.Fatalf("TACT of %x corrected to %x reports %d corrections", x, enc, c.TACT.FEC.ErrorsCorrected)
+	}
+}
+
+// FuzzCACH checks that CACHInterleave and CACHDeinterleave invert each
+// other, that DecodeCACHField is DecodeCACH of the deinterleaved field, and
+// that a decoded CACH encodes to a field that decodes clean to the same
+// TACT and payload, and to the field itself when the TACT had no errors.
+func FuzzCACH(f *testing.F) {
+	for _, s := range cachSeeds {
+		f.Add(s)
+	}
+	f.Fuzz(checkCACH)
+}
+
+// shortLCModel is the state that ShortLCAssembler must keep: the number of
+// fragments of the partial Short LC.
+type shortLCModel struct {
+	count int
+}
+
+// add returns whether c completes a Short LC and whether it discards a
+// partial one, as the ShortLCAssembler docs describe.
+func (m *shortLCModel) add(c layer2.CACH) (done, discard bool) {
+	if c.TACT.FEC.Uncorrectable {
+		discard, m.count = m.count > 0, 0
+		return false, discard
+	}
+	switch c.TACT.LCSS {
+	case enums.LCSSFirstFragment:
+		m.count = 1
+		return false, false
+	case enums.LCSSContinuationFragment:
+		if m.count == 1 || m.count == 2 {
+			m.count++
+			return false, false
+		}
+	case enums.LCSSLastFragment:
+		if m.count == 3 {
+			m.count = 0
+			return true, false
+		}
+	case enums.LCSSSingleFragment:
+		discard, m.count = m.count > 0, 0
+		return false, discard
+	}
+	m.count = 0
+	return false, true
+}
+
+// shortLCSeed is one seed of FuzzShortLCAssembler.
+type shortLCSeed struct {
+	seq, slc []byte
+	at, tact byte
+}
+
+// shortLCSeeds are the seeds of FuzzShortLCAssembler.
+var shortLCSeeds = []shortLCSeed{
+	{[]byte{0x00, 0x34, 0x56, 0x78, 0x9a, 0xbc}, []byte{0x12, 0x34, 0x56, 0x78, 0x90}, 0, 0},
+	{[]byte{}, []byte{0x2a, 0x00, 0x00, 0x01, 0x20}, 1, 3},
+	{[]byte{0xff, 0xff, 0xff, 0x10, 0x00, 0x00, 0x20, 0x00, 0x00}, []byte{0x00, 0x00, 0x00, 0x00, 0x00}, 2, 1},
+}
+
+// checkShortLCAssembler is the property of FuzzShortLCAssembler.
+func checkShortLCAssembler(t *testing.T, seq, slcv []byte, at, tactv byte) {
+	var info [5]byte
+	copy(info[:], slcv)
+	want := pdu.DecodeShortLC(info)
+	tact := pdu.TACT{AccessType: tactv&1 != 0, TDMAChannel: tactv&2 != 0}
+	fields := make([][3]byte, 0, len(seq)/3+4)
+	for i := 0; i+3 <= len(seq) && i < 3*64; i += 3 {
+		fields = append(fields, [3]byte(seq[i:i+3]))
+	}
+	valid, err := layer2.EncodeShortLCToCACH(&want, tact)
+	first := -1
+	if err == nil {
+		first = int(at) % (len(fields) + 1)
+		fields = slices.Insert(fields, first, valid[:]...)
+	}
+
+	var a, b layer2.ShortLCAssembler
+	var m shortLCModel
+	var dst pdu.ShortLC
+	var p pdu.ShortLCPayloads
+	for i, field := range fields {
+		c := layer2.DecodeCACHField(field)
+		wantDone, wantDiscard := m.add(c)
+		slc, done, err := a.Add(c)
+		done2, err2 := b.AddInto(&dst, &p, c)
+		if done != wantDone || errors.Is(err, layer2.ErrShortLCSequence) != wantDiscard || (err != nil) != wantDiscard {
+			t.Fatalf("field %d (%+v): done %v, %v, want %v, discard %v", i, c.TACT, done, err, wantDone, wantDiscard)
+		}
+		if done2 != done || (err2 == nil) != (err == nil) || a.Count() != m.count || b.Count() != m.count {
+			t.Fatalf("field %d: AddInto %v, %v, counts %d, %d, want %v, %v, %d", i, done2, err2, a.Count(), b.Count(), done, err, m.count)
+		}
+		if !done {
+			continue
+		}
+		if !reflect.DeepEqual(slc, dst) {
+			t.Fatalf("field %d: Add gives %s, AddInto %s", i, slc.String(), dst.String())
+		}
+		if i == first+3 {
+			if !clean(slc.FEC) || !reflect.DeepEqual(withoutFEC(&slc), withoutFEC(&want)) {
+				t.Fatalf("Short LC %s comes back as %s, FEC %+v", want.String(), slc.String(), slc.FEC)
+			}
+		}
+		if slc.FEC.Uncorrectable {
+			continue
+		}
+		coded, err := layer2.EncodeShortLCToCACH(&slc, tact)
+		if err != nil {
+			continue
+		}
+		n := 0
+		for k := range 4 {
+			got, want := layer2.DecodeCACHField(fields[i-3+k]).Payload, layer2.DecodeCACHField(coded[k]).Payload
+			n += distance(got[:], want[:])
+		}
+		if n != slc.FEC.ErrorsCorrected {
+			t.Fatalf("field %d: Short LC %s is %d bits from its fields, FEC reports %+v", i, slc.String(), n, slc.FEC)
+		}
+	}
+}
+
+// FuzzShortLCAssembler feeds any CACH fields, with the 4 fields of a Short
+// LC at any place among them, to Add and AddInto. Both follow the LCSS
+// sequence rules, agree with each other, give the Short LC of the 4 fields
+// with a clean result, and report as corrected the bits in which the fields
+// of a completed Short LC differ from its coding.
+func FuzzShortLCAssembler(f *testing.F) {
+	for _, s := range shortLCSeeds {
+		f.Add(s.seq, s.slc, s.at, s.tact)
+	}
+	f.Fuzz(checkShortLCAssembler)
+}
+
+// embeddedLCModel is the state that EmbeddedLCAssembler must keep.
+type embeddedLCModel struct {
+	count int
+}
+
+// add returns whether a fragment with lcss completes an LC and whether it
+// discards a partial one, as the EmbeddedLCAssembler docs describe.
+func (m *embeddedLCModel) add(lcss enums.LCSS) (done, discard bool) {
+	switch lcss {
+	case enums.LCSSFirstFragment:
+		discard, m.count = m.count > 0, 1
+		return false, discard
+	case enums.LCSSContinuationFragment:
+		if m.count == 1 || m.count == 2 {
+			m.count++
+			return false, false
+		}
+	case enums.LCSSLastFragment:
+		if m.count == 3 {
+			m.count = 0
+			return true, false
+		}
+	case enums.LCSSSingleFragment:
+	}
+	discard, m.count = m.count > 0, 0
+	return false, discard
+}
+
+// embeddedLCSeed is one seed of FuzzEmbeddedLCAssembler.
+type embeddedLCSeed struct {
+	seq, lc []byte
+	at      byte
+	strict  bool
+}
+
+// embeddedLCSeeds returns the seeds of FuzzEmbeddedLCAssembler: the LC of a
+// group voice call among fragments in and out of sequence.
+func embeddedLCSeeds() []embeddedLCSeed {
+	lc := groupLC(enums.FIDStandardized)
+	octets := must(lc.Bytes())
+	return []embeddedLCSeed{
+		{[]byte{1, 2, 3, 4, 0, 5, 6, 7, 8, 2}, octets[:], 1, false},
+		{[]byte{}, octets[:], 0, true},
+		{[]byte{0xff, 0xff, 0xff, 0xff, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 2}, []byte{}, 3, false},
+	}
+}
+
+// checkEmbeddedLCAssembler is the property of FuzzEmbeddedLCAssembler.
+func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte, strict bool) {
+	var lc [9]byte
+	copy(lc[:], lcv)
+	type frag struct {
+		data [4]byte
+		lcss enums.LCSS
+	}
+	frags := make([]frag, 0, len(seq)/5+4)
+	for i := 0; i+5 <= len(seq) && i < 5*64; i += 5 {
+		frags = append(frags, frag{[4]byte(seq[i : i+4]), enums.LCSS(seq[i+4] & 3)})
+	}
+	valid := layer2.EncodeEmbeddedLC(lc)
+	lcss := [4]enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}
+	first := int(at) % (len(frags) + 1)
+	for k := 3; k >= 0; k-- {
+		frags = slices.Insert(frags, first, frag{valid[k], lcss[k]})
+	}
+
+	a := layer2.EmbeddedLCAssembler{Strict: strict}
+	var m embeddedLCModel
+	for i, fr := range frags {
+		wantDone, wantDiscard := m.add(fr.lcss)
+		got, res, done, err := a.Add(fr.data, fr.lcss)
+		if done != wantDone || errors.Is(err, layer2.ErrEmbeddedLCSequence) != wantDiscard {
+			t.Fatalf("fragment %d (%v): done %v, %v, want %v, discard %v", i, fr.lcss, done, err, wantDone, wantDiscard)
+		}
+		if !done {
+			if err != nil && !wantDiscard {
+				t.Fatalf("fragment %d: %v", i, err)
+			}
+			continue
+		}
+		if errors.Is(err, layer2.ErrEmbeddedLCUncorrectable) != res.Uncorrectable || err != nil && !res.Uncorrectable {
+			t.Fatalf("fragment %d: %v with result %+v", i, err, res)
+		}
+		var in [4][4]byte
+		for k := range in {
+			in[k] = frags[i-3+k].data
+		}
+		if lc2, res2 := layer2.DecodeEmbeddedLC(in, strict); lc2 != got || res2 != res {
+			t.Fatalf("fragment %d: assembler gives %x, %+v, DecodeEmbeddedLC %x, %+v", i, got, res, lc2, res2)
+		}
+		if i == first+3 && (got != lc || !clean(res)) {
+			t.Fatalf("LC %x comes back as %x, %+v", lc, got, res)
+		}
+		if res.Uncorrectable {
+			continue
+		}
+		coded := layer2.EncodeEmbeddedLC(got)
+		n := 0
+		for k := range coded {
+			n += distance(coded[k][:], in[k][:])
+		}
+		if n != res.ErrorsCorrected {
+			t.Fatalf("fragment %d: LC %x is %d bits from its fragments, FEC reports %+v", i, got, n, res)
+		}
+	}
+}
+
+// FuzzEmbeddedLCAssembler feeds any fragments with any LCSS, with the 4
+// fragments of an LC at any place among them, to an EmbeddedLCAssembler. It
+// follows the LCSS sequence rules, returns what DecodeEmbeddedLC returns
+// for the 4 fragments of a completed LC, gives the LC of the 4 fragments
+// clean, and reports as corrected the bits in which the fragments of a
+// correctable LC differ from its coding.
+func FuzzEmbeddedLCAssembler(f *testing.F) {
+	for _, s := range embeddedLCSeeds() {
+		f.Add(s.seq, s.lc, s.at, s.strict)
+	}
+	f.Fuzz(checkEmbeddedLCAssembler)
+}
+
+// embeddedLCCodeSeed is one seed of FuzzEmbeddedLC.
+type embeddedLCCodeSeed struct {
+	lc, flc, flips []byte
+	strict         bool
+}
+
+// embeddedLCCodeSeeds returns the seeds of FuzzEmbeddedLC: the LC of a group
+// voice call with no, one and four bit errors.
+func embeddedLCCodeSeeds() []embeddedLCCodeSeed {
+	lc := groupLC(enums.FIDStandardized)
+	lc.BurstDataType = enums.DataTypeVoiceLCHeader
+	cw := must(lc.Encode())
+	octets := must(lc.Bytes())
+	return []embeddedLCCodeSeed{
+		{octets[:], cw[:], []byte{}, false},
+		{octets[:], cw[:], []byte{17}, true},
+		{octets[:], cw[:], []byte{1, 40, 77, 127}, false},
+	}
+}
+
+// checkEmbeddedLCCode is the property of FuzzEmbeddedLC.
+func checkEmbeddedLCCode(t *testing.T, lcv, flcv, flips []byte, strict bool) {
+	var lc [9]byte
+	copy(lc[:], lcv)
+	frags := layer2.EncodeEmbeddedLC(lc)
+	if got, res := layer2.DecodeEmbeddedLC(frags, strict); got != lc || !clean(res) {
+		t.Fatalf("LC %x comes back as %x, %+v", lc, got, res)
+	}
+	rx := frags
+	seen := map[int]bool{}
+	parityRow := false
+	for _, fl := range flips[:min(len(flips), 16)] {
+		pos := int(fl) % 128
+		if seen[pos] {
+			continue
+		}
+		seen[pos] = true
+		parityRow = pos%8 == 7
+		rx[pos/32][pos%32/8] ^= 0x80 >> (pos % 8)
+	}
+	got, res := layer2.DecodeEmbeddedLC(rx, strict)
+	if len(seen) == 1 && (!strict || !parityRow) && (got != lc || res.Uncorrectable || res.ErrorsCorrected != 1) {
+		t.Fatalf("LC %x with bit error %v comes back as %x, %+v", lc, seen, got, res)
+	}
+	if !res.Uncorrectable {
+		coded := layer2.EncodeEmbeddedLC(got)
+		n := 0
+		for k := range coded {
+			n += distance(coded[k][:], rx[k][:])
+		}
+		if n != res.ErrorsCorrected {
+			t.Fatalf("LC %x with bit errors %v: %x is %d bits away, FEC reports %+v", lc, seen, got, n, res)
+		}
+	}
+
+	var cw [12]byte
+	copy(cw[:], flcv)
+	flc := pdu.DecodeFullLinkControl(cw, enums.DataTypeVoiceLCHeader)
+	ef, err := layer2.EncodeEmbeddedFullLinkControl(&flc)
+	if _, bErr := flc.Bytes(); (err != nil) != (bErr != nil) {
+		t.Fatalf("EncodeEmbeddedFullLinkControl(%s): %v, Bytes: %v", flc.String(), err, bErr)
+	}
+	if err != nil {
+		return
+	}
+	back := layer2.DecodeEmbeddedFullLinkControl(ef, strict)
+	var into pdu.FullLinkControl
+	var p pdu.FullLinkControlPayloads
+	layer2.DecodeEmbeddedFullLinkControlInto(&into, &p, ef, strict)
+	if !reflect.DeepEqual(back, into) {
+		t.Fatalf("DecodeEmbeddedFullLinkControl gives %s, the Into form %s", back.String(), into.String())
+	}
+	if back.FEC.HasErrors() || !reflect.DeepEqual(withoutFEC(&back), withoutFEC(&flc)) {
+		t.Fatalf("Full LC %s comes back as %s, FEC %+v", flc.String(), back.String(), back.FEC)
+	}
+}
+
+// FuzzEmbeddedLC checks that any 9 LC octets and any Full LC that encodes
+// come back from their embedded fragments, also with one bit error, which
+// the result reports, except that the strict decode, as MMDVMHost, does not
+// correct the column parity row 7 (bit 7 of each fragment octet). Any
+// number of bit errors gives either an uncorrectable result or an LC whose
+// coding is as many bits from the fragments as the result reports
+// corrected.
+func FuzzEmbeddedLC(f *testing.F) {
+	for _, s := range embeddedLCCodeSeeds() {
+		f.Add(s.lc, s.flc, s.flips, s.strict)
+	}
+	f.Fuzz(checkEmbeddedLCCode)
+}
+
+// rcSeed is one seed of FuzzEmbeddedRC.
+type rcSeed struct {
+	field []byte
+	cmd   byte
+}
+
+// rcSeeds are the seeds of FuzzEmbeddedRC.
+var rcSeeds = []rcSeed{{[]byte{0, 0, 0, 0}, 0}, {[]byte{0x12, 0x34, 0x56, 0x78}, 7}, {[]byte{0xff, 0xff, 0xff, 0xff}, 16}}
+
+// checkEmbeddedRC is the property of FuzzEmbeddedRC.
+func checkEmbeddedRC(t *testing.T, v []byte, cmd byte) {
+	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(cmd & 0x1F)}
+	data, err := layer2.EncodeEmbeddedRC(&rc)
+	if (err != nil) != (rc.RCCommand > 15) {
+		t.Fatalf("EncodeEmbeddedRC(%v): %v", rc.RCCommand, err)
+	}
+	if err == nil {
+		if back := layer2.DecodeEmbeddedRC(data); back.RCCommand != rc.RCCommand || !clean(back.FEC) {
+			t.Fatalf("RC %v comes back as %+v", rc.RCCommand, back)
+		}
+	}
+	var field [4]byte
+	copy(field[:], v)
+	got := layer2.DecodeEmbeddedRC(field)
+	enc, err := layer2.EncodeEmbeddedRC(&got)
+	if err != nil {
+		t.Fatalf("decoded RC %+v does not encode: %v", got, err)
+	}
+	if clean(got.FEC) && enc != field {
+		t.Fatalf("clean RC field %x encodes to %x", field, enc)
+	}
+	if !got.FEC.Uncorrectable && distance(enc[:], field[:]) != got.FEC.ErrorsCorrected {
+		t.Fatalf("RC field %x is %d bits from %x, FEC reports %+v", field, distance(enc[:], field[:]), enc, got.FEC)
+	}
+}
+
+// FuzzEmbeddedRC checks that any RC command comes back from its embedded
+// coding, that any decoded RC encodes, to the field itself when the decode
+// was clean, and that a correctable field is as many bits from the coding
+// of its RC as the result reports corrected.
+func FuzzEmbeddedRC(f *testing.F) {
+	for _, s := range rcSeeds {
+		f.Add(s.field, s.cmd)
+	}
+	f.Fuzz(checkEmbeddedRC)
+}
