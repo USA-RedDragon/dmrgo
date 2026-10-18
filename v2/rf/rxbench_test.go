@@ -314,12 +314,12 @@ func benchEntries() []benchEntry {
 	}
 }
 
-// receiveAudioTier runs the discriminator audio a at hz through a
+// receiveAudioTier runs the discriminator audio a at benchAudioHz through a
 // DiscReceiver of tier t.
-func receiveAudioTier(t testing.TB, a []int16, hz int, tier Tier) []Burst {
+func receiveAudioTier(t testing.TB, a []int16, tier Tier) []Burst {
 	t.Helper()
 	var out []Burst
-	r, err := NewDisc(DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +339,7 @@ const benchAudioHz = 9600
 // in I/Q mode a Receiver of its tier on x.
 func benchReceive(t testing.TB, x []complex64, e benchEntry) []Burst {
 	if e.mode == benchAudio {
-		return receiveAudioTier(t, discAudio(x, benchAudioHz), benchAudioHz, e.tier)
+		return receiveAudioTier(t, discAudio(x, benchAudioHz), e.tier)
 	}
 	return receiveBaseband(x, e.tier)
 }
@@ -640,7 +640,7 @@ func TestRxBench(t *testing.T) {
 			var cpu float64
 			if e.mode == benchAudio {
 				a := discAudio(x, benchAudioHz)
-				cpu = cpuSeconds(func() { receiveAudioTier(t, a, benchAudioHz, e.tier) })
+				cpu = cpuSeconds(func() { receiveAudioTier(t, a, e.tier) })
 			} else {
 				cpu = cpuSeconds(func() { receiveBaseband(x, e.tier) })
 			}

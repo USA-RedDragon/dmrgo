@@ -17,7 +17,7 @@ func TestSoftExtEmbeddedLC(t *testing.T) {
 	a := discAudio(x, benchAudioHz)
 	elc := func(soft bool) float64 {
 		var out []Burst
-		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, OnBurst: func(b *Burst) { out = append(out, *b) }})
+		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(b *Burst) { out = append(out, *b) }})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -33,6 +33,22 @@ func TestSoftExtEmbeddedLC(t *testing.T) {
 	t.Logf("embedded LC recovered: %.2f hard, %.2f with softExt", hard, soft)
 	if soft < 0.8 || soft <= hard {
 		t.Errorf("embedded LC recovered %.2f with softExt, %.2f without", soft, hard)
+	}
+}
+
+// TestSoftExtLookbackClicks receives a BS stream through DiscReceivers of
+// Tier0 and Tier1 at 10.2 dB Eb/N0 and checks that Tier1 recovers every
+// rate 1/2 block that Tier0 does: the clicks of the noise before the lock,
+// which the lookback slots run through, must not floor the ratios of the
+// first bursts of the stream.
+func TestSoftExtLookbackClicks(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 30)
+	a := discAudio(noisyBaseband(slots, 1400, 9, 604), benchAudioHz)
+	t0 := scoreBench(truth, receiveAudioTier(t, a, Tier0))["rate12"]
+	t1 := scoreBench(truth, receiveAudioTier(t, a, Tier1))["rate12"]
+	if t1.Exact < t0.Exact {
+		t.Errorf("rate 1/2 blocks recovered: %d of %d with Tier1, %d with Tier0", t1.Exact, t1.Truth, t0.Exact)
 	}
 }
 
@@ -59,7 +75,7 @@ func TestSoftExtLookback(t *testing.T) {
 	// burst B.
 	first := func(lookback int) (start, b float64) {
 		start, b = -1, -1
-		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, OnBurst: func(x *Burst) {
+		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(x *Burst) {
 			if start < 0 {
 				start = x.Seconds
 			}

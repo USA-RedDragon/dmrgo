@@ -706,12 +706,15 @@ func (x *softExt) firstSlot(c *leanCore) {
 	x.ring = c.ring
 	first, eAcc, eSyms, hold, slotEnd := c.first, c.eAcc, c.eSyms, c.tm.hold, c.slotEnd
 	levels := [3]float32{c.dcHz, c.devScale, c.discVar}
+	// The slots before the lock are mostly noise, whose clicks would floor
+	// the ratios of the bursts of the stream.
+	clicks := c.clicks
 	c.replaying = true
 	for _, dry := range [2]bool{true, false} {
 		votes := c.votes
 		c.resetChans()
 		c.votes = votes
-		c.dcHz, c.devScale, c.discVar = levels[0], levels[1], levels[2]
+		c.dcHz, c.devScale, c.discVar, c.clicks = levels[0], levels[1], levels[2], clicks
 		c.next, c.lastAnch, c.lost = 0, leanNoSlot, 0
 		c.first = first - int64(n)*slotSymbols
 		c.slotEnd = c.first + slotSymbols
@@ -737,6 +740,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 		}
 	}
 	c.replaying, c.replayDry = false, false
+	c.clicks = clicks
 	c.ring = x.ring
 	c.first = first - int64(n)*slotSymbols
 	c.slotEnd = slotEnd
