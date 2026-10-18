@@ -17,7 +17,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-func captureFrames(t *testing.T) []layer2.RawBurst {
+func captureFrames(t testing.TB) []layer2.RawBurst {
 	t.Helper()
 	files, err := filepath.Glob("testdata/*.bin")
 	if err != nil || len(files) == 0 {
