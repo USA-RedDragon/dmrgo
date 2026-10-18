@@ -283,11 +283,14 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	if cfg.RampSeconds == 0 {
 		cfg.RampSeconds = 1e-3
 	}
-	ramp := int(math.Round(cfg.RampSeconds * float64(cfg.Rate)))
 	switch {
 	case cfg.Rate < iqShaperHz || cfg.Rate > 20e6:
 		return nil, errHz
-	case 4*math.Abs(cfg.OffsetHz) >= float64(cfg.Rate) || ramp < 1 || cfg.RampSeconds > 0.01:
+	case !(4*math.Abs(cfg.OffsetHz) < float64(cfg.Rate)) || !(cfg.RampSeconds > 0 && cfg.RampSeconds <= 0.01):
+		return nil, errLevel
+	}
+	ramp := int(math.Round(cfg.RampSeconds * float64(cfg.Rate)))
+	if ramp < 1 {
 		return nil, errLevel
 	}
 	q := &IQ{ramp: ramp}
