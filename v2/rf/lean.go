@@ -282,7 +282,11 @@ type leanCore struct {
 	// sample n-1: the slots end at a symbol, so n-1 is then its sample.
 	lastAt float32
 
-	locked  bool
+	locked bool
+	// forced marks a lock that a stage forced, or that a search while
+	// locked took, and no SYNC after the one of the lock has anchored
+	// yet; lockNs is the symbol of the lock.
+	forced  bool
 	softFEC bool
 	src     uint8
 	sources uint8
@@ -291,6 +295,7 @@ type leanCore struct {
 	// slot that ends next, lastAnch the last slot with a SYNC, lost the
 	// slots since the last slot with carrier.
 	first    int64
+	lockNs   int64
 	next     int32
 	lastAnch int32
 	lost     int32
@@ -801,8 +806,9 @@ func (r *leanCore) symbol(x, at float32) {
 	q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
 	h := uint32(r.ns) % leanRing
 	r.ring[h] = q
-	if !r.locked {
-		// Only the search reads the signs; unlock rebuilds them.
+	if !r.locked || r.ext != nil {
+		// Only the search reads the signs, and with a stage the search
+		// while locked; unlock rebuilds them.
 		old := h + leanRing - syncSymbols
 		if old >= leanRing {
 			old -= leanRing
@@ -817,7 +823,7 @@ func (r *leanCore) symbol(x, at float32) {
 	if !r.locked {
 		if r.ns >= leanRing {
 			if r.signsMatch() {
-				r.searchSym()
+				r.searchSym(false)
 			} else if r.ext != nil {
 				if src, data, back, ok := r.ext.scan(r); ok {
 					r.forceLock(src, data, back)
@@ -825,6 +831,12 @@ func (r *leanCore) symbol(x, at float32) {
 			}
 		}
 		return
+	}
+	if r.ext != nil && r.stale() && r.ns >= leanRing && r.signsMatch() && r.offGrid() {
+		if r.searchSym(true); r.lockNs == r.ns {
+			// The samples kept while it searched are of the stream before.
+			r.forced, r.acqFrom = true, math.MaxInt64
+		}
 	}
 	if r.ns == r.slotEnd {
 		if r.ext != nil && r.next == 0 {
@@ -919,13 +931,14 @@ func (r *leanCore) signsMatch() bool {
 }
 
 // searchSym tests whether the last symbols, whose signs match a SYNC, end
-// a SYNC and locks to it.
+// a SYNC and locks to it: when strict, only to one that the discriminator
+// shows clearly, in place of a lock.
 //
 //go:noinline
-func (r *leanCore) searchSym() {
+func (r *leanCore) searchSym(strict bool) {
 	rho2, src, data := r.syncAt(r.ns - 1)
 	weak := rho2 < leanResample*leanResample
-	if weak && (r.ext == nil || rho2 < leanExtRho*leanExtRho) {
+	if weak && (strict || r.ext == nil || rho2 < leanExtRho*leanExtRho) {
 		return
 	}
 	voice, dp, _ := sourceAt(src).SyncPatterns()
@@ -938,7 +951,7 @@ func (r *leanCore) searchSym() {
 	// they are.
 	ok := false
 	var d float32
-	if !weak && r.ns >= r.acqNext {
+	if !weak && !strict && r.ns >= r.acqNext {
 		var saved [syncSymbols]int8
 		var sampled bool
 		if d, sampled = r.resample(p, &saved); sampled {
@@ -957,13 +970,35 @@ func (r *leanCore) searchSym() {
 		}
 	}
 	if !ok && (rho2 < discLock*discLock || !r.fitLevels(r.ns-1, p, true, true)) {
-		// A stage may find the SYNC that the discriminator does not.
-		if r.ext == nil || !r.ext.verify(r, p) {
+		// A stage may find the SYNC that the discriminator does not, but
+		// not in place of a lock.
+		if strict || r.ext == nil || !r.ext.verify(r, p) {
 			return
 		}
 		r.fitLevels(r.ns-1, p, true, false)
 	}
 	r.lockStream(src, d, 0)
+}
+
+// staleSlots is the number of slots of a BS stream without a SYNC after
+// which a tier with a stage searches again while it stays locked.
+const staleSlots = 6
+
+// stale reports whether the lock may be lost: a lock that a stage forced
+// and no SYNC anchored yet, or a BS stream without a SYNC for staleSlots,
+// whose repeater may have keyed up again with a new timing.
+func (r *leanCore) stale() bool {
+	return r.forced || r.bs && r.lastAnch != leanNoSlot && r.next-r.lastAnch > staleSlots
+}
+
+// offGrid reports whether the last symbol ends a SYNC field off the slots
+// of the stream by more than the anchors of slot test.
+func (r *leanCore) offGrid() bool {
+	k := (r.ns - 1 - leanSyncEnd - r.first) % slotSymbols
+	if k < 0 {
+		k += slotSymbols
+	}
+	return k > 2 && k < slotSymbols-2
 }
 
 // forceLock locks to the SYNC of source src, data or voice, that ends
@@ -977,12 +1012,14 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 	}
 	r.fitLevels(r.ns-1-back, p, true, false)
 	r.lockStream(src, 0, back)
+	r.forced = true
 }
 
 // lockStream locks to a stream of source src whose SYNC ends back symbols
 // before the last, which the timing loop sampled d samples early.
 func (r *leanCore) lockStream(src int, d float32, back int64) {
-	r.locked, r.src, r.bs = true, uint8(src), sourceAt(src) == layer2.SyncSourceBS
+	r.locked, r.forced, r.src, r.bs = true, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
+	r.lockNs = r.ns
 	r.streams++
 	r.first = r.ns - 1 - back - leanSyncEnd
 	r.next, r.lastAnch, r.lost = 0, leanNoSlot, 0
@@ -1094,6 +1131,9 @@ func (r *leanCore) slot() {
 			r.amp = levelForget*r.amp + (1-levelForget)*energy
 		}
 		r.lastAnch = j
+		if base > r.lockNs {
+			r.forced = false
+		}
 	}
 	present := isAnchor || r.noise == 0 || energy > 1.5*r.noise
 	// Nor do they carry a burst, and the timing loop holds through them.
@@ -1116,12 +1156,19 @@ func (r *leanCore) slot() {
 		}
 		r.burst(j, base, anchor)
 	}
-	// The carrier of a BS stream stays on, with a SYNC in most slots, so
-	// lostSlots without one end it: its noise keeps the energy of the
-	// slots up, and a repeater that keys up again has a new timing.
-	if !r.replaying && (r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6 || r.bs && j-r.lastAnch >= lostSlots) {
+	if !r.replaying && r.ended(j, base) {
 		r.unlock()
 	}
+}
+
+// ended reports whether the stream ends at slot j, whose first symbol is
+// base. The carrier of a BS stream stays on, with a SYNC in most slots,
+// so lostSlots without one end it: its noise keeps the energy of the
+// slots up, and a repeater that keys up again has a new timing. A forced
+// lock that no later SYNC confirms is false.
+func (r *leanCore) ended(j int32, base int64) bool {
+	return r.lost >= lostSlots || r.lastAnch == leanNoSlot && j >= 6 || r.bs && j-r.lastAnch >= lostSlots ||
+		r.forced && base-r.lockNs > 6*slotSymbols
 }
 
 // retune moves the oscillator by d Hz and the discriminator values that
@@ -1211,7 +1258,7 @@ func (r *leanCore) unlock() {
 	if r.ext != nil {
 		r.ext.end(r)
 	}
-	r.locked = false
+	r.locked, r.forced = false, false
 	r.acqFrom = r.n
 	r.rebuildSigns()
 	r.tm.hold, r.tm.gain = false, r.acqGain
