@@ -333,6 +333,10 @@ type leanCore struct {
 	// huntBuf is the ring of the samples that a lock keeps while it
 	// searches, in place of the FEC scratch.
 	huntBuf [leanHuntSamples / 2]int16
+	// midSigns holds the signs of the kept samples halfway between the
+	// last symbols, as signs holds those of the symbols, while the lock
+	// hunts: a stream at another symbol timing shows its SYNC there.
+	midSigns uint32
 	// base is the first symbol of the slot under detection, anchor its
 	// SYNC pattern when it is an anchor, and ll, lfloor and dev the factor
 	// and the floor of the symbol log-likelihoods and the deviation of
@@ -656,11 +660,11 @@ func (r *leanCore) keptAt(t float32) float32 {
 }
 
 // coarseSync reports whether the kept samples of win nearest the SYNC
-// symbols syms, which ends end samples after the last sample, one sample
-// early, on time or one sample late, correlate with them as a SYNC may,
-// a cheap test, in integers, before the interpolations of resample, which
-// noise would otherwise run often.
-func coarseSync(win *syncWindow, syms *[syncSymbols]int8, end, sps float32) bool {
+// symbols syms, which ends end samples after the last sample, up to reach
+// samples early or late, correlate with them as a SYNC may, a cheap test,
+// in integers, before the interpolations of resample, which noise would
+// otherwise run often.
+func coarseSync(win *syncWindow, syms *[syncSymbols]int8, end, sps float32, reach int32) bool {
 	// Sample positions back from the last, in Q8.
 	e, step := int32(-end*256+0.5), int32(sps*256+0.5)
 	// The sums of the best offset: of the samples, their squares and
@@ -669,7 +673,7 @@ func coarseSync(win *syncWindow, syms *[syncSymbols]int8, end, sps float32) bool
 	for _, s := range syms {
 		sp += int32(s)
 	}
-	for d := int32(-1); d <= 1; d++ {
+	for d := -reach; d <= reach; d++ {
 		if end+float32(d) > 0 {
 			// Its last symbol is after the last sample.
 			break
@@ -761,7 +765,13 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 	// array.
 	var win syncWindow
 	r.fillWindow(&win, max(int32(-end-sps/2)-2, 0))
-	if !coarseSync(&win, &syms, end, sps) {
+	// The timing loop follows the stream while the receiver searches, but
+	// not one at another symbol timing while it is locked: half a symbol.
+	reach := int32(1)
+	if r.locked {
+		reach = 2
+	}
+	if !coarseSync(&win, &syms, end, sps, reach) {
 		return 0, false
 	}
 	// The correlations from half a symbol early to half a symbol late in
@@ -781,6 +791,11 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 		if c[k] > c[best] {
 			best = k
 		}
+	}
+	if r.locked && best < len(c)-1 && math.IsInf(float64(c[best+1]), -1) {
+		// The SYNC ends after the last sample: a lock samples it again
+		// at the next symbol, where its end lies inside the offsets.
+		return 0, false
 	}
 	bestD := float32(best-2) * sps / 4
 	lo, hi := c[max(best-1, 0)], c[min(best+1, len(c)-1)]
@@ -874,7 +889,7 @@ func (r *leanCore) symbol(x, at float32) {
 		// The search starts at the first SYNC that can end the first
 		// slot, so that a receiver that starts in a call finds it.
 		switch {
-		case r.ns > leanSyncEnd+1 && r.signsMatch():
+		case r.ns > leanSyncEnd+1 && r.signsMatch(r.signs):
 			r.searchSym(false)
 		case r.ns >= leanRing && r.ext != nil:
 			if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
@@ -883,7 +898,13 @@ func (r *leanCore) symbol(x, at float32) {
 		}
 		return
 	}
-	if r.hunt && r.ns >= leanRing && r.signsMatch() {
+	if r.hunt && r.acqKept() > 4 {
+		r.midSigns <<= 1
+		if r.keptAt(at-r.tm.step)*syncSymbols > float32(r.ringSum) {
+			r.midSigns |= 1
+		}
+	}
+	if r.hunt && r.ns >= leanRing && (r.signsMatch(r.signs) || r.signsMatch(r.midSigns)) {
 		if !r.offGrid() {
 			r.retime()
 		} else if r.searchSym(true); r.lockNs == r.ns {
@@ -969,11 +990,11 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 // signsMatch reports whether the signs of the last syncSymbols symbols
 // differ from the voice or the data SYNC of a source in at most
 // leanSignMiss symbols.
-func (r *leanCore) signsMatch() bool {
+func (r *leanCore) signsMatch(signs uint32) bool {
 	for i := range r.sources {
 		// A byte table: TinyGo counts the bits of a word in 11
 		// instructions on the M4.
-		x := r.signs ^ syncSigns[i]
+		x := signs ^ syncSigns[i]
 		m := ones8[x&0xff] + ones8[x>>8&0xff] + ones8[x>>16&0xff]
 		if m <= r.signMiss || m >= syncSymbols-r.signMiss {
 			return true
