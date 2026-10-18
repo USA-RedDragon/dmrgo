@@ -35,9 +35,12 @@ type DiscConfig struct {
 	// which then return no bursts. The burst is valid only during the call;
 	// copy it to keep it.
 	OnBurst func(*Burst)
-	// Tier is Tier0 or Tier1. The zero value TierDefault is Tier1 for
-	// NewDisc, and Tier0 under TinyGo and for Init, which does not
-	// allocate the soft stages of Tier1.
+	// Tier is Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1
+	// for NewDisc, and Tier0 for Init, which does not allocate the stages
+	// of the higher tiers, and under TinyGo, which has neither. Tier2 adds
+	// to Tier1 the decode of C0 and C1 of each voice frame by soft ML and
+	// the coherent detection of each burst again, on the carrier phase
+	// that it rebuilds from the samples, at about 25 times the CPU time.
 	Tier Tier
 	// opt, when not nil, replaces the settings of the tier.
 	opt *options
@@ -69,7 +72,8 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 		cfg.Tier = discDefaultTier
 	}
 	r := &DiscReceiver{}
-	soft := cfg.Tier == Tier1 && cfg.opt == nil
+	tier := cfg.Tier
+	soft := (tier == Tier1 || tier == Tier2) && cfg.opt == nil
 	if soft {
 		cfg.Tier = Tier0
 	}
@@ -77,7 +81,7 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 		return nil, err
 	}
 	if soft {
-		if err := r.addSoft(); err != nil {
+		if err := r.addSoft(tier); err != nil {
 			return nil, err
 		}
 	}
@@ -152,7 +156,7 @@ func growBursts(dst []Burst, n int) []Burst {
 
 // maxBursts returns the most bursts that n input samples complete.
 func (r *DiscReceiver) maxBursts(n int) int {
-	return 4*n*symbolRate/(slotSymbols*r.hz()) + 16
+	return 4*n*symbolRate/(slotSymbols*r.inputHz()) + 16
 }
 
 // AppendBursts processes the discriminator samples x, appends the bursts
@@ -216,13 +220,13 @@ func (r *DiscReceiver) flush() {
 	}
 }
 
-// write runs the samples x through the front end, the symbol timing and
+// run runs the samples x through the front end, the symbol timing and
 // the core. It is the leanTiming.push of the matched filter samples, fused
 // into one loop that keeps the last four samples and the time of the next
 // strobe in locals: the core sees them only around levels and symbol,
 // which can retune or lock. The samples are kept as cubic takes them, s3
 // the last, and the linear interpolation runs between s2 and s3.
-func (r *DiscReceiver) write(x []int16) {
+func (r *DiscReceiver) run(x []int16) {
 	f, tm := &r.f, &r.tm
 	s0, s1, s2, s3, t, n := tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.n
 	// kh and kq are the head of the ring of kept samples and the sample

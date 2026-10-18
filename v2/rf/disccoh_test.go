@@ -1,0 +1,64 @@
+package rf
+
+import "testing"
+
+// receiveDisc runs the discriminator audio a at hz through a DiscReceiver
+// of tier t.
+func receiveDisc(t testing.TB, a []int16, hz int, tier Tier) []Burst {
+	t.Helper()
+	var out []Burst
+	r, err := NewDisc(DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for k := 0; k < len(a); k += 1024 {
+		r.Write(a[k:min(k+1024, len(a))])
+	}
+	r.Flush()
+	return out
+}
+
+// TestDiscTier2Loopback checks that Tier2 recovers every burst of a stream
+// at 30 dB at each input rate.
+func TestDiscTier2Loopback(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 6)
+	x := noisyBaseband(slots, 1400, 30, 1)
+	for _, hz := range []int{24000, 12000, 9600} {
+		sc := scoreBench(truth, receiveDisc(t, discAudio(x, hz), hz, Tier2))
+		for _, k := range []string{"ambe", "csbk", "rate12", "rate34", "elc", "sync", "emb", "slottype"} {
+			miss := 0
+			if k == "sync" || k == "slottype" {
+				miss = 1
+			}
+			if s := sc[k]; s.Truth == 0 || s.Exact < s.Truth-miss {
+				t.Errorf("%d Hz, %s: %d of %d recovered at 30 dB", hz, k, s.Exact, s.Truth)
+			}
+		}
+	}
+}
+
+// TestDiscTier2Weak receives a stream at 4.2 dB Eb/N0, below the 90%
+// points of Tier1, and checks that Tier2, which detects each burst again
+// on the carrier phase that it rebuilds from the audio, recovers far more
+// C0 and C1 of the voice frames and rate 1/2 blocks than Tier1 at each
+// input rate.
+func TestDiscTier2Weak(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 10)
+	x := noisyBaseband(slots, 1400, 3, 5)
+	for _, hz := range []int{24000, 12000, 9600} {
+		a := discAudio(x, hz)
+		rate := func(tier Tier, k string) float64 {
+			s := scoreBench(truth, receiveDisc(t, a, hz, tier))[k]
+			return float64(s.Exact) / float64(max(s.Truth, 1))
+		}
+		for _, k := range []string{"ambe_c0c1", "rate12"} {
+			t1, t2 := rate(Tier1, k), rate(Tier2, k)
+			t.Logf("%d Hz, %s: %.2f Tier1, %.2f Tier2", hz, k, t1, t2)
+			if t2 < 0.8 || t2 < t1+0.25 {
+				t.Errorf("%d Hz, %s: %.2f Tier2, %.2f Tier1", hz, k, t2, t1)
+			}
+		}
+	}
+}

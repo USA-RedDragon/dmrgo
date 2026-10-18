@@ -128,7 +128,7 @@ func (j *sweepJob) newRx(cfg Config) sweepRx {
 			panic(err)
 		}
 		if cfg.opt.SoftExt {
-			d.ext = softExtOf(cfg.opt, 2*d.tm.step)
+			d.addExt(cfg.opt)
 		}
 		return sweepRx{d: d}
 	}

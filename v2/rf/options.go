@@ -98,8 +98,9 @@ type options struct {
 	// 24000.
 	IQDisc bool
 	IQHz   int
-	// CohExt adds to softExt on iqRx at 24 kHz the coherent detection of
-	// each burst again, with the trellis settings PSPGain and LLRScale.
+	// CohExt adds to softExt on iqRx at 24 kHz, or on a DiscReceiver, the
+	// coherent detection of each burst again, with the trellis settings
+	// PSPGain and LLRScale.
 	CohExt bool
 }
 
@@ -115,6 +116,23 @@ func discOptions() options {
 // decode of BPTC(196,96) and the embedded LC over each superframe.
 func softOptions(o options) options {
 	o.SoftExt, o.ExtOSD, o.ExtELC = true, true, true
+	return o
+}
+
+// discTierOptions returns the settings of tier t on discriminator audio:
+// Tier1 adds the soft stages, and Tier2 the decode of C0 and C1 by soft ML
+// and the coherent stage on the phase that discPhase rebuilds.
+func discTierOptions(t Tier) options {
+	o := discOptions()
+	switch t {
+	case Tier1:
+		o = softOptions(o)
+		o.ExtLookback = 8
+	case Tier2:
+		o = softOptions(o)
+		o.ExtLookback, o.ExtAMBE, o.CohExt, o.PSPGain, o.LLRScale = 8, true, true, 0.2, 0.5
+	case TierDefault, Tier0, Tier3, Tier4:
+	}
 	return o
 }
 

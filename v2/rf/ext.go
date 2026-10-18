@@ -110,6 +110,8 @@ type softExt struct {
 	// ratios of the core.
 	stages uint8
 	coh    *cohStage
+	// ph rebuilds the ring of coh from the samples of a DiscReceiver.
+	ph *discPhase
 	// qcoh marks the bursts of q that coh detected.
 	qcoh [extQueue]bool
 	// known marks the bits of a voice burst that its FEC fixed, for the
@@ -658,8 +660,11 @@ func (x *softExt) place(c *leanCore, b *Burst, j int32) bool {
 	return x.coh != nil && x.coh.place(c, b, j)
 }
 
+// scan scans with coh on I/Q. On audio the scan finds no SYNC that the
+// search of the core with verify misses, at about a tenth of the time of
+// the search.
 func (x *softExt) scan(c *leanCore) (int, bool, int64, bool) {
-	if x.coh == nil {
+	if x.coh == nil || x.ph != nil {
 		return 0, false, 0, false
 	}
 	return x.coh.scan(c)
@@ -677,6 +682,9 @@ func (x *softExt) locked(c *leanCore, d float32) {
 		// A new stream may come from another transmitter, at another
 		// carrier offset.
 		x.coh.freqOK = false
+	}
+	if x.ph != nil {
+		x.ph.lock()
 	}
 }
 
