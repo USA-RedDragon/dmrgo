@@ -21,10 +21,10 @@ const (
 	// leanAcqSymbols is the number of symbols from the start of a burst to
 	// the end of its SYNC, which the receiver samples again from the
 	// matched filter samples when it locks, and leanAcqSamples the length
-	// of their ring, for up to 2.5 samples a symbol, even for the pairs of
-	// leanFEC.s.
+	// of their ring, for up to 2.5 samples a symbol and a SYNC that ends
+	// half a symbol before the last one, even for the pairs of leanFEC.s.
 	leanAcqSymbols = leanSyncEnd + 1 - cachSymbols
-	leanAcqSamples = (leanAcqSymbols*5/2 + 7) &^ 1
+	leanAcqSamples = (leanAcqSymbols*5/2 + 7 + 2) &^ 1
 	// leanResample is the SYNC correlation from which searchSym samples a
 	// burst again before it tests the SYNC for lock with discLock.
 	leanResample = 0.7
@@ -50,7 +50,7 @@ const (
 	// leanHuntSamples is the length of the ring of samples that a lock
 	// keeps while it searches for a SYNC: the window of a SYNC that
 	// resample reads, from half a symbol after its end.
-	leanHuntSamples = leanAcqSamples
+	leanHuntSamples = (leanAcqSymbols*5/2 + 7) &^ 1
 	// leanAcqGain is the gain of the symbol timing loop, in samples per
 	// unit of normalized timing error, while the receiver searches, and
 	// leanTrackGain while it follows a stream.
@@ -897,6 +897,14 @@ func (r *leanCore) symbol(x, at float32) {
 	}
 	r.ns++
 	if !r.locked {
+		// The Gardner loop strobed the midpoint before the symbol in half.
+		// The loop pulls in slowly, so that it can sample the first bursts
+		// of a stream about half a symbol off, and their SYNC then shows in
+		// the signs of the midpoints instead.
+		r.midSigns <<= 1
+		if (r.tm.half-r.off)*(float32(syncSymbols)/discStepHz) > float32(r.ringSum) {
+			r.midSigns |= 1
+		}
 		// The search starts at the first SYNC that can end the first
 		// slot, so that a receiver that starts in a call finds it.
 		switch {
@@ -906,6 +914,9 @@ func (r *leanCore) symbol(x, at float32) {
 			if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
 				r.forceLock(src, data, back)
 			}
+		}
+		if !r.locked && r.ns > leanSyncEnd+2 && r.signsMatch(r.midSigns) {
+			r.searchMid()
 		}
 		return
 	}
@@ -1098,6 +1109,39 @@ func (r *leanCore) searchSym(strict bool) {
 		}
 		r.fitLevels(r.ns-1, p, true, false)
 	}
+	r.lockStream(src, d, 0)
+}
+
+// searchMid tests whether the midpoints before the last symbols, whose
+// signs match a SYNC, end a SYNC, and locks to it: it samples the burst
+// again from the kept samples around the midpoint before the last symbol,
+// as searchSym does around the last symbol, and moves the timing loop by
+// the half symbol and the offset that it finds.
+//
+//go:noinline
+func (r *leanCore) searchMid() {
+	src, data := r.signsSource(r.midSigns)
+	voice, dp, _ := sourceAt(src).SyncPatterns()
+	p := voice
+	if data {
+		p = dp
+	}
+	at := r.lastAt
+	r.lastAt = at - r.tm.step
+	var saved [syncSymbols]int8
+	d, ok := r.resample(p, &saved, false)
+	r.lastAt = at
+	if !ok {
+		return
+	}
+	d -= r.tm.step
+	if r.clipped(r.ns-1) || !r.fitLevels(r.ns-1, p, true, true) {
+		for i, q := range &saved {
+			r.ring[uint32(r.ns-syncSymbols+int64(i))%leanRing] = q
+		}
+		return
+	}
+	r.resampleStart(d)
 	r.lockStream(src, d, 0)
 }
 
