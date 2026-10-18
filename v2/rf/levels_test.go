@@ -138,3 +138,42 @@ func TestDiscLevelsAfterUnlock(t *testing.T) {
 		})
 	}
 }
+
+// TestCarrierLeadIn receives a BS stream that follows an unmodulated
+// carrier, without a dip of its power, noise-free and at 40 dB. The level
+// control of the DiscReceiver scales the noise of the carrier up to
+// discInputRMSHz, so that the front end clips the stream until the next
+// block of the level control: the receiver must not lock to a SYNC that
+// it clipped. The length of the carrier moves the start of the stream
+// across a block, at 0.1, 0.5 and 2 s.
+func TestCarrierLeadIn(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 2)
+	fm, env := rftx.ModulateBS(slots)
+	// The ramp of the stream holds the carrier.
+	for i := 0; env[i] < 1; i++ {
+		env[i] = 1
+	}
+	for _, cn := range []float64{math.Inf(1), 40} {
+		for _, lr := range levelsReceivers() {
+			t.Run(fmt.Sprintf("%s/%.0f", lr.name(), cn), func(t *testing.T) {
+				t.Parallel()
+				for _, base := range []float64{0.1, 0.5, 2} {
+					for k := range 30 {
+						lead := base + float64(k)*0.001
+						start := benchPad + lead
+						carrier := make([]float64, int(lead*basebandRate))
+						for i := range carrier {
+							carrier[i] = 1
+						}
+						x := signalBaseband([]signalPart{{benchPad, nil, carrier}, {start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, 1)
+						// The first burst may clip.
+						if ex, tot := exactFrom(truth, lr.receive(t, x), start, 1); ex < tot-2 {
+							t.Errorf("%.3f s of carrier: %d of %d payloads exact", lead, ex, tot)
+						}
+					}
+				}
+			})
+		}
+	}
+}

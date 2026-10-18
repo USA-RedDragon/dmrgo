@@ -569,8 +569,12 @@ func (r *leanCore) rescaleKept(g8, a8 int32) {
 	r.acqLow = int16(scale8(int32(r.acqLow), g8, a8))
 }
 
-// scale8 returns x*g8/256+a8/256, rounded and saturated to int8.
+// scale8 returns x*g8/256+a8/256, rounded and saturated to int8. An x at
+// a limit of int8 was clipped and stays there.
 func scale8(x, g8, a8 int32) int32 {
+	if x == math.MaxInt8 || x == math.MinInt8 {
+		return x
+	}
 	return max(min((x*g8+a8+128)>>8, math.MaxInt8), math.MinInt8)
 }
 
@@ -826,7 +830,7 @@ func (r *leanCore) symbol(x, at float32) {
 			if r.signsMatch() {
 				r.searchSym(false)
 			} else if r.ext != nil {
-				if src, data, back, ok := r.ext.scan(r); ok {
+				if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
 					r.forceLock(src, data, back)
 				}
 			}
@@ -937,6 +941,9 @@ func (r *leanCore) signsMatch() bool {
 //
 //go:noinline
 func (r *leanCore) searchSym(strict bool) {
+	if r.clipped(r.ns - 1) {
+		return
+	}
 	rho2, src, data := r.syncAt(r.ns - 1)
 	weak := rho2 < leanResample*leanResample
 	if weak && (strict || r.ext == nil || rho2 < leanExtRho*leanExtRho) {
@@ -979,6 +986,22 @@ func (r *leanCore) searchSym(strict bool) {
 		r.fitLevels(r.ns-1, p, true, false)
 	}
 	r.lockStream(src, d, 0)
+}
+
+// clipped reports whether most symbols of the SYNC field that ends at
+// symbol end lie at the limits of the ring. A DMR SYNC that the front end
+// scales to discInputRMSHz lies well within them, and noise clips only a
+// few: the front end scaled the field for a weaker input, such as the noise
+// of an unmodulated carrier, and its levels are lost. A lock to it would
+// keep that scale, as the front end keeps it for a locked stream.
+func (r *leanCore) clipped(end int64) bool {
+	n := 0
+	for k := end - syncSymbols + 1; k <= end; k++ {
+		if q := r.ring[uint32(k)%leanRing]; q == math.MaxInt8 || q == math.MinInt8 {
+			n++
+		}
+	}
+	return 2*n > syncSymbols
 }
 
 // staleSlots is the number of slots of a BS stream without a SYNC after

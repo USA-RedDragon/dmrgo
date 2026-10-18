@@ -1,5 +1,7 @@
 package rf
 
+import "math"
+
 // Layout of the discriminator front end.
 const (
 	// discInputRMSHz is the RMS, in Hz, to which a DiscReceiver scales its
@@ -375,14 +377,23 @@ func (f *audioFront) refresh() {
 	f.off = int32(max(min(f.dc/rrcStepHz*65536, audioMaxOff), -audioMaxOff)) - 32768
 }
 
-// scale multiplies the samples that the filters hold by g.
+// scale multiplies the samples that the filters hold by g. A sample that
+// the quantizer clipped stays clipped.
 func (f *audioFront) scale(g float32) {
 	for i, h := range &f.rrcHist {
-		f.rrcHist[i] = sat8(float32(h) * g)
+		f.rrcHist[i] = scaleSat8(h, g)
 	}
 	for i, h := range &f.hbHist {
-		f.hbHist[i] = sat8(float32(h) * g)
+		f.hbHist[i] = scaleSat8(h, g)
 	}
+}
+
+// scaleSat8 returns h*g as sat8 does, and h at a limit of int8 as it is.
+func scaleSat8(h int8, g float32) int8 {
+	if h == math.MaxInt8 || h == math.MinInt8 {
+		return h
+	}
+	return sat8(float32(h) * g)
 }
 
 // retuneFront moves the offset that f removes to hz and adds -d to the
