@@ -156,16 +156,12 @@ type MCUAudio struct {
 	offset int32
 }
 
-// Init sets up m for the samples of table t, at level units of the output
-// for a run of symbol +3 (1944 Hz), from 1 to 16000, around offset units,
-// as an unsigned DAC needs: an output of level 15000 and offset 0 spans
-// about -28500 to 28500, and a 12-bit DAC takes level 1080 and offset
-// 2048, which stay within 4 to 4092. The worst run of symbols reaches 1.9
-// times level from offset, and Init returns an error when that passes the
-// range of int16. Level sets the deviation of the radio together with its
-// gain; the deviation test of ETSI TS 102 361-1 clause 10.2.2.3, the
-// symbols +3 +3 -3 -3 repeated, should give 2749 Hz peak. m starts as
-// after symbols 0, no modulation. On an error m stays as it was.
+// Init sets up m for table t at level units for a run of symbol +3 (1944
+// Hz), from 1 to 16000, around offset units: the worst run of symbols
+// reaches 1.9 times level from offset, which must fit int16. A 12-bit DAC
+// takes level 1080 and offset 2048. The deviation test of ETSI TS 102
+// 361-1 clause 10.2.2.3 should give 2749 Hz peak through the radio. On an
+// error m stays as it was; otherwise it starts with no modulation.
 func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	switch {
 	case t.shape == nil:
@@ -190,8 +186,8 @@ func (m *MCUAudio) Samples() int { return m.k.t.hz / SymbolRate }
 
 // Symbol shapes the symbol s, -3, -1, +1, +3 or 0 for no modulation, and
 // writes the samples of the symbol period that it completes to dst. It
-// returns the number it wrote. A dst shorter than Samples takes nothing,
-// and Symbol returns 0 without the symbol; so does an m without Init.
+// returns the number it wrote. With a dst shorter than Samples, or before
+// Init, it writes nothing, does not take the symbol and returns 0.
 // The output lags the symbols by the Span of the table: twice that many
 // symbols 0 after the last bring its tail to rest.
 func (m *MCUAudio) Symbol(dst []int16, s int8) int {
