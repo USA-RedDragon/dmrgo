@@ -1,0 +1,36 @@
+{
+ "coarse": {"lo": -2, "hi": 12, "step": 1, "seeds": 4},
+ "fine": {"lo": -1.5, "hi": 1.5, "step": 0.25, "seeds": 16},
+ "payloads": ["ambe", "ambe_c0c1", "rate12", "rate34", "csbk", "elc", "sync"],
+ "variants": [
+  {"name": "a-t0", "tier": 0, "disc": true, "hz": 9600},
+  {"name": "q-t2", "tier": 2},
+  {"name": "a-t2-scan", "tier": 0, "disc": true, "hz": 9600, "opt": {"SoftExt": true, "ExtOSD": true, "ExtELC": true, "ExtAMBE": true, "ExtLookback": 8, "CohExt": true, "PSPGain": 0.2, "LLRScale": 0.5},
+   "edits": {"ext.go": [["if x.coh == nil || x.ph != nil {", "if x.coh == nil {"]]}}
+ ],
+ "families": [
+  {
+   "name": "a-t1",
+   "base": {"tier": 0, "disc": true, "hz": 9600, "opt": {"SoftExt": true, "ExtOSD": true, "ExtELC": true, "ExtLookback": 8}},
+   "mode": "each",
+   "vary": {
+    "opt.ExtAMBE": [true],
+    "opt.ExtLookback": [0, 16],
+    "hz": [12000, 24000]
+   }
+  },
+  {
+   "name": "a-t2",
+   "base": {"tier": 0, "disc": true, "hz": 9600, "opt": {"SoftExt": true, "ExtOSD": true, "ExtELC": true, "ExtAMBE": true, "ExtLookback": 8, "CohExt": true, "PSPGain": 0.2, "LLRScale": 0.5}},
+   "mode": "each",
+   "vary": {
+    "hz": [12000, 24000],
+    "opt.PSPGain": [0.12, 0.3],
+    "opt.LLRScale": [0.35, 0.7],
+    "opt.ExtLookback": [0, 4],
+    "consts.ext.go.cohDataPasses": [0, 1],
+    "consts.disccoh.go.discEasySNR": [6, 40]
+   }
+  }
+ ]
+}
