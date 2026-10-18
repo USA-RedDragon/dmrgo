@@ -63,4 +63,12 @@ func TestBursts(t *testing.T) {
 	if _, err := packet.Bursts(p, 1, layer2.SyncSourceBS); !errors.Is(err, packet.ErrRate) {
 		t.Errorf("CSBK block: %v", err)
 	}
+	p.Blocks[len(p.Blocks)-1] = nil
+	if _, err := packet.Bursts(p, 1, layer2.SyncSourceBS); err == nil {
+		t.Error("Bursts accepted a nil block")
+	}
+	p.Blocks[len(p.Blocks)-1] = (*pdu.Rate12Data)(nil)
+	if _, err := packet.Bursts(p, 1, layer2.SyncSourceBS); err == nil {
+		t.Error("Bursts accepted a nil *pdu.Rate12Data")
+	}
 }

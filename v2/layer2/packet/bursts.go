@@ -40,6 +40,9 @@ func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, s
 }
 
 func blockBurst(d layer2.Data, colorCode enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, error) {
+	if d == nil {
+		return layer2.BuildBurst(d, colorCode, src)
+	}
 	if dt := d.DataType(); dt != enums.DataTypeRate12 && dt != enums.DataTypeRate34 && dt != enums.DataTypeRate1 {
 		return layer2.RawBurst{}, ErrRate
 	}
