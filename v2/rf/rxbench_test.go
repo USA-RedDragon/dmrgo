@@ -309,7 +309,7 @@ func (e benchEntry) name() string { return e.mode + strconv.Itoa(e.number()) }
 // trellis of Tier3. Tier4 is for offline decoding.
 func benchEntries() []benchEntry {
 	return []benchEntry{
-		{benchAudio, Tier0}, {benchAudio, Tier1},
+		{benchAudio, Tier0}, {benchAudio, Tier1}, {benchAudio, Tier2},
 		{benchIQ, Tier0}, {benchIQ, Tier1}, {benchIQ, Tier2}, {benchIQ, Tier3},
 	}
 }

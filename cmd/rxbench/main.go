@@ -276,6 +276,7 @@ func inputName(t tier) string {
 	return map[string]string{
 		modeAudio + "0": "FM audio, 9.6 kHz, core",
 		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding",
+		modeAudio + "2": "FM audio, 9.6 kHz, coherent detection",
 		modeIQ + "0":    "I/Q, discriminator core",
 		modeIQ + "1":    "I/Q, soft decoding",
 		modeIQ + "2":    "I/Q, coherent detection",
