@@ -189,14 +189,17 @@ func (s *testStream) align(got []rf.Burst, pad float64) map[int]rf.Burst {
 // rawScore is the detection of s in got, bit for bit, before any FEC:
 // the number of bursts that s sends, the number that got holds without a
 // bit error in the burst or its CACH, and the bit errors of all of them,
-// a burst that got misses counting as half its bits.
+// a burst that got misses counting as half its bits. lastBad is the index
+// of the last slot whose burst got misses or holds with an error, or -1,
+// and stray the number of bursts of got outside the slots of s.
 type rawScore struct {
 	bursts, exact, errs, bits int
+	lastBad, stray            int
 }
 
 func (s *testStream) rawScore(got []rf.Burst, pad float64) rawScore {
 	byIndex := s.align(got, pad)
-	var sc rawScore
+	sc := rawScore{lastBad: -1, stray: len(got) - len(byIndex)}
 	for i, slot := range s.slots {
 		if slot.Burst == (layer2.RawBurst{}) {
 			continue
@@ -206,6 +209,7 @@ func (s *testStream) rawScore(got []rf.Burst, pad float64) rawScore {
 		r, have := byIndex[i]
 		if !have {
 			sc.errs += 4 * len(slot.Burst)
+			sc.lastBad = i
 			continue
 		}
 		n := 0
@@ -220,6 +224,8 @@ func (s *testStream) rawScore(got []rf.Burst, pad float64) rawScore {
 		}
 		if n == 0 {
 			sc.exact++
+		} else {
+			sc.lastBad = i
 		}
 	}
 	return sc

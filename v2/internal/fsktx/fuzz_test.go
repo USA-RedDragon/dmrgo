@@ -380,12 +380,14 @@ func FuzzRoundTrip(f *testing.F) {
 		d := fsk(x, ts.syms).Delay
 		sh := ref.shift(d, rxRate)
 		p := rxPath{"rx1", rf.Tier1, false, 6}
-		checkDetect(t, "rx1", func(k int, isRef bool) rawScore {
+		var notes []string
+		defer func() { skipRF(t, notes) }()
+		notes = append(notes, checkDetect(t, "rx1", func(k int, isRef bool) rawScore {
 			if isRef {
 				return ts.rawScore(p.run(noisy(ref.x48, sh+timing(k, rxRate), ref.n, 30, uint64(lead))), rxPad)
 			}
 			return ts.rawScore(p.run(noisy(x, timing(k, rxRate), ref.n, 30, uint64(lead))), rxPad)
-		})
+		}))
 		if u.audio() {
 			return
 		}
@@ -393,7 +395,7 @@ func FuzzRoundTrip(f *testing.F) {
 		refLead := newRefSig(lt)
 		b := u.s8Bytes(u.run(t, lt.syms, keyedOn()))
 		var rb []byte
-		checkDetect(t, "native", func(k int, isRef bool) rawScore {
+		notes = append(notes, checkDetect(t, "native", func(k int, isRef bool) rawScore {
 			if !isRef {
 				return lt.rawScore(nativeBursts(moved(b, timing(k, u.rate)), u.rate), 0)
 			}
@@ -401,6 +403,6 @@ func FuzzRoundTrip(f *testing.F) {
 				rb = refLead.native(u, d+(refLead.delay-ref.delay))
 			}
 			return lt.rawScore(nativeBursts(moved(rb, timing(k, u.rate)), u.rate), 0)
-		})
+		}))
 	})
 }
