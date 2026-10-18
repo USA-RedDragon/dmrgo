@@ -965,9 +965,10 @@ func (s *cohStage) levels(k0, k1 int) (amp, noise float64) {
 		for i := range 2*m.d + 1 {
 			w = w<<2 | (syms[k+i]+3)/2
 		}
+		rot := cmplx.Exp(complex(0, -ph))
 		for j := range m.sps {
 			x := complex128(s.buf[(k+m.d)*m.sps+j])
-			c += x * complex128(m.tpl[w*m.sps+j]) * cmplx.Exp(complex(0, -ph))
+			c += x * complex128(m.tpl[w*m.sps+j]) * rot
 			e += real(x)*real(x) + imag(x)*imag(x)
 			cnt++
 		}
