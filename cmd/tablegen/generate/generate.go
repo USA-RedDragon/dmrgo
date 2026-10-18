@@ -49,6 +49,12 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
+	if err := writeFile(dmrRoot, "enums", "enums",
+		writeColorCodeErrors("colorCodeErrors", tables.ColorCodeErrorValues[:]),
+	); err != nil {
+		return err
+	}
+
 	if err := writeFile(dmrRoot, "internal/fec/hamming", "hamming",
 		writeTable("hamming743_syndrome_table", tables.Hamming743Syndrome[:]),
 	); err != nil {
@@ -177,6 +183,16 @@ func writePackedBits(name string, data []uint8) jen.Code {
 		literals[i] = jen.Id(fmt.Sprintf("0x%02X", b))
 	}
 	return jen.Var().Id(name).Op("=").Index(jen.Lit(len(packed))).Byte().Values(literals...)
+}
+
+// writeColorCodeErrors writes a ColorCodeError array with one element for
+// each value of values.
+func writeColorCodeErrors(name string, values []uint8) jen.Code {
+	elems := make([]jen.Code, len(values))
+	for i, v := range values {
+		elems[i] = jen.Values(jen.Dict{jen.Id("Value"): jen.Lit(int(v))})
+	}
+	return jen.Var().Id(name).Op("=").Index(jen.Lit(len(values))).Id("ColorCodeError").Values(elems...)
 }
 
 func writeTable2D[T ~byte | ~int | ~int8 | ~uint16 | ~uint32 | ~uint64](name string, data [][]T) jen.Code {

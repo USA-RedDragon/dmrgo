@@ -16,6 +16,16 @@ func PRFillBits() [96]uint8 {
 	return out
 }
 
+// ColorCodeErrorValues returns the values above 15 that NewColorCode
+// refuses, in increasing order (ETSI TS 102 361-1 clause 9.3.1).
+func ColorCodeErrorValues() [240]uint8 {
+	var out [240]uint8
+	for i := range out {
+		out[i] = uint8(i + 16)
+	}
+	return out
+}
+
 // EmbeddedLCPatterns returns the 16-bit row error patterns of weight up to 4
 // of the embedded LC BPTC, grouped by Hamming(16,11,4) syndrome and weight,
 // with bit c for column c. The patterns of syndrome s and weight w are
