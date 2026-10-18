@@ -68,6 +68,7 @@ type workerJob struct {
 	Cases       []workerCase    `json:"cases"`
 	Cost        bool            `json:"cost,omitempty"`
 	Disc        bool            `json:"disc,omitempty"`
+	Stream      string          `json:"stream,omitempty"`
 }
 
 type workerResult struct {
@@ -241,7 +242,8 @@ func (r *runner) prepare(ctx context.Context, v variant) (*prepared, error) {
 		SF       int
 		Off      float64
 		Disc     bool
-	}{tree, v.Tier, v.Lookback, v.Hz, v.jobOpt(), r.space.Superframes, r.space.Offset, v.Disc})
+		Stream   string `json:",omitempty"`
+	}{tree, v.Tier, v.Lookback, v.Hz, v.jobOpt(), r.space.Superframes, r.space.Offset, v.Disc, r.space.Stream})
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +253,7 @@ func (r *runner) prepare(ctx context.Context, v variant) (*prepared, error) {
 
 // work runs the test binary of p on the cases with GOMAXPROCS procs.
 func (r *runner) work(ctx context.Context, p *prepared, cases []workerCase, cost bool, procs int) (*workerResult, error) {
-	job := workerJob{Tier: p.v.Tier, Opt: p.v.jobOpt(), Lookback: p.v.Lookback, Hz: p.v.Hz, Superframes: r.space.Superframes, Offset: r.space.Offset, Cases: cases, Cost: cost, Disc: p.v.Disc}
+	job := workerJob{Tier: p.v.Tier, Opt: p.v.jobOpt(), Lookback: p.v.Lookback, Hz: p.v.Hz, Superframes: r.space.Superframes, Offset: r.space.Offset, Cases: cases, Cost: cost, Disc: p.v.Disc, Stream: r.space.Stream}
 	b, err := json.Marshal(job)
 	if err != nil {
 		return nil, err

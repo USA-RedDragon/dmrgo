@@ -66,6 +66,9 @@ type space struct {
 	// carrier offset in Hz.
 	Superframes int     `json:"superframes"`
 	Offset      float64 `json:"offset"`
+	// Stream is the traffic of the stream: "" for the BS stream of the
+	// sweep, "ms" for direct mode traffic of Superframes/3 rounds.
+	Stream string `json:"stream,omitempty"`
 	// Coarse is the first grid of every variant. Fine is a grid of
 	// relative C/N, Lo to Hi around the 90% point of each of Payloads.
 	Coarse   grid      `json:"coarse"`

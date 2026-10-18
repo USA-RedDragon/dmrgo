@@ -30,6 +30,9 @@ type sweepJob struct {
 	Cost bool `json:"cost,omitempty"`
 	// Disc receives the stream through discAudio with a DiscReceiver.
 	Disc bool `json:"disc,omitempty"`
+	// Stream is "ms" for the direct mode traffic of msStream, of
+	// Superframes/3 rounds, in place of the BS stream of benchStream.
+	Stream string `json:"stream,omitempty"`
 }
 
 // sweepCase is one stream of a job.
@@ -222,6 +225,10 @@ func TestSweepWorker(t *testing.T) {
 		res.Cost = sweepCosts(t, &j, cfg)
 	}
 	slots, truth := benchStream(t, j.Superframes)
+	var fm, env []float64
+	if j.Stream == "ms" {
+		fm, env, truth = msStream(t, max(j.Superframes/3, 1), 0)
+	}
 	res.Cases = make([]sweepCaseResult, len(j.Cases))
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, runtime.GOMAXPROCS(0))
@@ -231,8 +238,18 @@ func TestSweepWorker(t *testing.T) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			got, cpu, sec := j.receive(cfg, noisyBaseband(slots, j.Offset, c.CN, c.Seed))
-			res.Cases[i] = sweepCaseResult{sweepCase: c, Payloads: scoreBench(truth, got), CPUSeconds: cpu, Seconds: sec}
+			var x []complex64
+			if fm != nil {
+				x = noisyFM(fm, env, j.Offset, c.CN, c.Seed)
+			} else {
+				x = noisyBaseband(slots, j.Offset, c.CN, c.Seed)
+			}
+			got, cpu, sec := j.receive(cfg, x)
+			sc := scoreBench(truth, got)
+			if fm != nil {
+				sc = scoreMS(truth, got)
+			}
+			res.Cases[i] = sweepCaseResult{sweepCase: c, Payloads: sc, CPUSeconds: cpu, Seconds: sec}
 		}()
 	}
 	wg.Wait()
