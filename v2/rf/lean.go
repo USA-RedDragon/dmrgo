@@ -1721,13 +1721,20 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 		}
 	}
 	if r.clickSpan > 0 {
-		r.clickFloor(beyond, v)
+		r.clickFloor(v)
 	}
 	if !r.classify(b, j) && (r.ext == nil || !r.ext.place(r, b, j)) {
 		if r.ext != nil && !r.replayDry {
 			r.ext.unplaced(r, b)
 		}
 		return
+	}
+	// Only the slots of the stream count: the clicks of a slot without a
+	// burst of it, such as the free slot of direct mode, are those of the
+	// noise alone.
+	if r.clickSpan > 0 {
+		r.clicks += leanClickGain * (float32(beyond)/slotSymbols - r.clicks)
+		r.clickFloor(v)
 	}
 	if r.ext != nil {
 		if !r.replayDry {
@@ -1752,16 +1759,15 @@ func (r *leanCore) emit(b *Burst) {
 	}
 }
 
-// clickFloor sets the floor of the symbol likelihoods from the share of
-// clicks: beyond symbols of the slot lie beyond the outer levels, and v is
-// the noise variance. Below the FM threshold the discriminator turns a
+// clickFloor sets the floor of the symbol likelihoods from clicks, the
+// share of the symbols of the bursts beyond the outer levels, and the
+// noise variance v. Below the FM threshold the discriminator turns a
 // slip of the carrier phase into a pulse that moves a symbol by more than
 // the span of the levels, so most clicks land beyond them, and their share
 // measures the density of the clicks that land between them. A fixed
 // floor makes the ratios of a weak signal too confident there: the error
 // rate of a large ratio then rises instead of falling.
-func (r *leanCore) clickFloor(beyond int, v float32) {
-	r.clicks += leanClickGain * (float32(beyond)/slotSymbols - r.clicks)
+func (r *leanCore) clickFloor(v float32) {
 	po := max(r.clicks, leanMinClicks)
 	lf := log32(po/r.clickSpan) - log32(1-po) + 0.5*log32(2*math.Pi*v)
 	r.llrFloor = int32(roundf(lf * 8))
