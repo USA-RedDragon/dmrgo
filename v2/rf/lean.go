@@ -1028,13 +1028,17 @@ func (r *leanCore) stale() bool {
 }
 
 // offGrid reports whether the last symbol ends a SYNC field off the slots
-// of the stream by more than the anchors of slot test.
+// of the stream by more than the anchors of slot test: for an MS, which
+// sends in one slot of two, off the slots of its bursts.
 func (r *leanCore) offGrid() bool {
-	k := (r.ns - 1 - leanSyncEnd - r.first) % slotSymbols
-	if k < 0 {
-		k += slotSymbols
+	k, n := r.ns-1-leanSyncEnd-r.first, int64(slotSymbols)
+	if !r.bs && r.lastAnch != leanNoSlot {
+		k, n = k-int64(r.lastAnch)*slotSymbols, 2*slotSymbols
 	}
-	return k > 2 && k < slotSymbols-2
+	if k %= n; k < 0 {
+		k += n
+	}
+	return k > 1 && k < n-1
 }
 
 // forceLock locks to the SYNC of source src, data or voice, that ends
