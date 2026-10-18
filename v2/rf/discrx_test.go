@@ -171,3 +171,28 @@ func TestDiscReceiverInitAppend(t *testing.T) {
 		}
 	}
 }
+
+// TestRescaleSigns fills the ring of a searching DiscReceiver with strong
+// symbols, scales its input down by 64, as levels does when a strong signal
+// follows a weak one, and checks that the signs of the SYNC symbols that
+// follow match the BS voice SYNC.
+func TestRescaleSigns(t *testing.T) {
+	t.Parallel()
+	var r DiscReceiver
+	if err := r.Init(DiscConfig{Hz: 9600}); err != nil {
+		t.Fatal(err)
+	}
+	for range leanRing {
+		r.symbol(120*discStepHz, 0)
+	}
+	r.rescale(1.0 / 64)
+	voice, _, _ := sourceAt(0).SyncPatterns()
+	var syms [syncSymbols]int8
+	syncSyms(voice, &syms)
+	for _, s := range syms {
+		r.symbol(float32(s)*deviationHz, 0)
+	}
+	if got := r.signs & (1<<syncSymbols - 1); got != syncSigns[0] {
+		t.Errorf("signs %06x, want %06x", got, syncSigns[0])
+	}
+}

@@ -555,6 +555,7 @@ func (r *leanCore) rescale(g float32) {
 	for i, v := range &r.ring {
 		r.ring[i] = int8(scale8(int32(v), g8, 0))
 	}
+	r.rebuildSigns()
 	r.rescaleKept(g8, 0)
 }
 
