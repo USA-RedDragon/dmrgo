@@ -85,6 +85,12 @@ type extChan struct {
 type softExt struct {
 	soft   *softDecoder
 	checks [16]func([12]byte) bool
+	// work is the cost of the decodes from ratios that the stages ran, in
+	// trellis steps of the coherent stage, for its budget, and work0 the
+	// work of both before the burst under decode.
+	work, work0 int64
+	// passes is the most detections again of a data burst.
+	passes int
 	llr    [layer2.BurstBits]int16
 	ch     [2]extChan
 	q      [extQueue]Burst
@@ -173,6 +179,9 @@ func softExtOf(opt *options, sps float32) *softExt {
 	if opt.ExtNPML {
 		x.np = &npml{}
 	}
+	if opt.CohDataPasses != 0 {
+		x.passes = max(opt.CohDataPasses, 0)
+	}
 	return x
 }
 
@@ -180,7 +189,7 @@ func softExtOf(opt *options, sps float32) *softExt {
 // lookback slots before the SYNC of each lock, at sps matched filter
 // samples per symbol.
 func newSoftExtStages(st uint8, lookback int, sps float32) *softExt {
-	x := &softExt{soft: newSoftDecoder(), lookback: lookback, stages: st}
+	x := &softExt{soft: newSoftDecoder(), lookback: lookback, stages: st, passes: cohDataPasses}
 	if lookback > 0 {
 		n := int(float32((lookback+1)*slotSymbols)*sps) + leanAcqSamples
 		x.acq = make([]int16, (n+1)/2)
@@ -202,38 +211,19 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	x.placeLate(c, ch, b, cc, ccOK)
 	c.repair(&c.fec, b, cc, ccOK)
 	out := &b.Fixed
-	if x.coh != nil && x.coh.detect(c, b, &x.llr) {
-		fixed, data := b.Fixed, b.Data
-		x.repairAll(c, b, cc, ccOK)
-		coh := b.Data
-		if x.voiceKnown(b) && !x.coh.easy && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
-			x.repairAll(c, b, cc, ccOK)
-		} else {
-			x.dataPasses(c, b, cc, ccOK)
+	if x.coh != nil {
+		// With a budget, a data block that passes its check from the core
+		// takes none of it.
+		s := x.coh
+		s.fitOnly = s.budget > 0 && x.checked(b)
+		x.work0 = s.work + x.work
+		done := x.cohBurst(c, b, ch, cc, ccOK)
+		if s.budget > 0 && done {
+			s.credit -= float64(s.work + x.work - x.work0)
 		}
-		x.uncoded(b, &data, &coh, true)
-		if x.bptcRetry(b) {
-			x.coreData(c, b, fixed, data)
+		if done {
+			return
 		}
-		x.coh.trackBurst(&b.Fixed)
-		hold := false
-		if _, kind, known := layer2.SyncSourceOf(b.Sync); b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice {
-			hold = x.fragment(ch, b)
-		} else {
-			ch.have, ch.accN = 0, 0
-		}
-		i := x.push(c, b, hold)
-		x.coh.qllr[i], x.qcoh[i], x.qcore[i] = x.llr, true, data
-		if x.coh.nextOK {
-			x.back(c, b.Slot-1)
-		}
-		if b.Voice == enums.VoiceBurstE && ch.have == 0xf {
-			x.embeddedLC(ch, b.Slot)
-			ch.have = 0
-		}
-		// The last burst waits for the run from the SYNC of the next.
-		x.drain(c, false, 1)
-		return
 	}
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
 	hold := false
@@ -262,6 +252,49 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		ch.have = 0
 	}
 	x.drain(c, false, 0)
+	if x.coh != nil && x.coh.budget > 0 {
+		x.coh.credit -= float64(x.coh.work + x.work - x.work0)
+	}
+}
+
+// cohBurst decodes burst b of the core c from its coherent detection, with
+// the color code cc of the stream when ccOK, and reports whether the stage
+// detected it.
+func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCode, ccOK bool) bool {
+	if !x.coh.detect(c, b, &x.llr) {
+		return false
+	}
+	fixed, data := b.Fixed, b.Data
+	x.repairAll(c, b, cc, ccOK)
+	coh := b.Data
+	if x.voiceKnown(b) && !x.coh.easy && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
+		x.repairAll(c, b, cc, ccOK)
+	} else {
+		x.dataPasses(c, b, cc, ccOK)
+	}
+	x.uncoded(b, &data, &coh, true)
+	if x.bptcRetry(b) && x.affords(extCoreCredit) {
+		x.coreData(c, b, fixed, data)
+	}
+	x.coh.trackBurst(&b.Fixed)
+	hold := false
+	if _, kind, known := layer2.SyncSourceOf(b.Sync); b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice {
+		hold = x.fragment(ch, b)
+	} else {
+		ch.have, ch.accN = 0, 0
+	}
+	i := x.push(c, b, hold)
+	x.coh.qllr[i], x.qcoh[i], x.qcore[i] = x.llr, true, data
+	if x.coh.nextOK {
+		x.back(c, b.Slot-1)
+	}
+	if b.Voice == enums.VoiceBurstE && ch.have == 0xf {
+		x.embeddedLC(ch, b.Slot)
+		ch.have = 0
+	}
+	// The last burst waits for the run from the SYNC of the next.
+	x.drain(c, false, 1)
+	return true
 }
 
 // data decodes the data burst out of core c again: a BPTC(196,96) block
@@ -289,12 +322,42 @@ func (x *softExt) data(c *leanCore, b *Burst) {
 	}
 	x.fill(c, &b.Data)
 	saved := *out
-	if _, r := x.soft.decodeBPTCOSD(&x.llr, check, out); r.Uncorrectable {
-		if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
-			*out = saved
-		}
+	if !x.decodeBPTC(dt, out) {
+		*out = saved
 	}
 }
+
+// decodeBPTC decodes the BPTC(196,96) block of data type dt of out from
+// x.llr by ordered statistics and, when its check fails, again over its
+// grid, which leaves the decode by ordered statistics when it fails too.
+// It reports false when both fail, and adds their cost to x.work.
+func (x *softExt) decodeBPTC(dt enums.DataType, out *layer2.RawBurst) bool {
+	check := x.checks[dt&0xF]
+	_, r := x.soft.decodeBPTCOSD(&x.llr, check, out)
+	if r.Uncorrectable || r.ErrorsCorrected > 0 {
+		x.work += extWorkOSD
+	}
+	if check == nil || !r.Uncorrectable {
+		return true
+	}
+	saved := *out
+	x.work += extWorkGrid + extWorkOSD
+	if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
+		*out = saved
+		return false
+	}
+	return true
+}
+
+// The costs of the decodes from ratios, in trellis steps of the coherent
+// stage, that the profile of a weak stream measures: the AMBE+2 decode of
+// a voice burst, the ordered statistics decode of a BPTC(196,96) block
+// that its hard decisions do not decode, and the grid decode of one.
+const (
+	extWorkAMBE = 70
+	extWorkOSD  = 300
+	extWorkGrid = 120
+)
 
 // back decodes burst j of the queue again, when coh detected it, with the
 // ratios of its second half averaged with those of the run from the SYNC
@@ -340,7 +403,7 @@ const (
 
 // dataPasses detects a BPTC(196,96) data burst b whose block fails its
 // check, or without one needed corrections, again with the extrinsic
-// ratios of its grid decode as priors, up to cohDataPasses times, as
+// ratios of its grid decode as priors, up to x.passes times, as
 // the engine of Tier3 does, and decodes it from the new ratios.
 func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool) {
 	ch := x.llr
@@ -348,11 +411,12 @@ func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK boo
 	// type keeps the decode of the first detection: the priors of a block
 	// that does not decode mislead the detection of the bits beside it.
 	fixed, data, st := b.Fixed, b.Data, ch
-	for range cohDataPasses {
-		if !x.bptcRetry(b) {
+	for range x.passes {
+		if !x.bptcRetry(b) || !x.affords(extPassCredit) {
 			break
 		}
 		x.soft.bptcExtrinsic(&ch, &x.ext)
+		x.work += extWorkGrid
 		if !x.coh.refineData(&x.ext, cohDataPrior, &x.next) {
 			break
 		}
@@ -399,6 +463,42 @@ func (x *softExt) coreData(c *leanCore, b *Burst, fixed, data layer2.RawBurst) {
 		b.Fixed, b.Data = cohFixed, cohData
 	}
 	x.llr = coh
+}
+
+// affords reports whether the credit of the coherent stage, less the work
+// of the burst under decode so far, holds n slots of its budget, or the
+// stage has no budget. A weak stream that spends its credit decodes each
+// data burst once from its coherent detection: the detections again and
+// the decode from the ratios of the core cost the most, for the least.
+func (x *softExt) affords(n float64) bool {
+	s := x.coh
+	return s.budget <= 0 || s.credit-float64(s.work+x.work-x.work0) >= n*s.budget
+}
+
+// The credit, in slots of budget, that a detection again of a data burst
+// and a decode from the ratios of the core need.
+const (
+	extPassCredit = 2
+	extCoreCredit = 3
+)
+
+// checked reports whether burst b is a BPTC(196,96) data burst whose block
+// passes its check.
+func (x *softExt) checked(b *Burst) bool {
+	_, kind, known := layer2.SyncSourceOf(b.Sync)
+	if !known || kind != layer2.KindData {
+		return false
+	}
+	st := b.Fixed.SlotType()
+	if st.FEC.Uncorrectable {
+		return false
+	}
+	check := x.checks[st.DataType&0xF]
+	if check == nil {
+		return false
+	}
+	p, _ := b.Fixed.BPTCPayload()
+	return check(p)
 }
 
 // bptcRetry reports whether burst b is a BPTC(196,96) data burst whose
@@ -465,6 +565,7 @@ func (x *softExt) repairAll(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool
 	switch {
 	case b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
 		x.soft.decodeAMBE(&x.llr, out)
+		x.work += extWorkAMBE
 		if b.Voice != enums.VoiceBurstUnknown && b.Voice != enums.VoiceBurstA {
 			x.soft.decodeEMB(&x.llr, cc, ccOK, out)
 		}
@@ -478,13 +579,7 @@ func (x *softExt) repairAll(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool
 			x.soft.decodeRate34(&x.llr, out)
 		case enums.DataTypeRate1, enums.DataTypeReserved, enums.DataTypeIdle:
 		default:
-			check := x.checks[dt&0xF]
-			if _, r := x.soft.decodeBPTCOSD(&x.llr, check, out); check != nil && r.Uncorrectable {
-				saved := *out
-				if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
-					*out = saved
-				}
-			}
+			_ = x.decodeBPTC(dt, out)
 		}
 	}
 	if known && c.anchor == b.Sync {

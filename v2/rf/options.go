@@ -155,6 +155,22 @@ type options struct {
 	// tests no SYNC that the discriminator does not show, which costs the
 	// most on noise.
 	CohLocked bool
+	// CohBudget, when above 0, is the work that the coherent stage may
+	// spend for each slot of a stream that is not clear, in trellis steps,
+	// with each decode of a burst from its ratios counted by the steps that
+	// cost as much; the bursts that the credit does not hold keep the
+	// ratios of the core.
+	CohBudget float64
+	// CohNoNext leaves out the run of the coherent stage from the SYNC of a
+	// BS burst into the second half of the slot before, CohNoCross its run
+	// from the SYNC of the slot before into a burst, and CohCrossVoice
+	// that run for all but the voice bursts B to F, which have no SYNC of
+	// their own.
+	CohNoNext, CohNoCross, CohCrossVoice bool
+	// CohDataPasses is the most times that the coherent stage detects a
+	// BPTC(196,96) data burst that fails its check again; 0 means
+	// cohDataPasses, below 0 none.
+	CohDataPasses int
 	// CohSignMiss is the most SYNC symbols whose sign may miss for a
 	// candidate of the search that the coherent stage verifies; 0 means
 	// leanExtSignMiss.

@@ -80,9 +80,25 @@ type cohStage struct {
 	// dt is the offset of the core's symbol timing that the SYNC of the
 	// bursts finds, in ring samples, followed from burst to burst, and
 	// relock marks a stream whose first SYNC sets it.
-	dt      float64
-	relock  bool
-	totalHz float64
+	dt     float64
+	relock bool
+	// budget is the work, in trellis steps, that the stage may spend for
+	// each slot on a stream that is not clear, 0 for any, credit the work
+	// that it holds at slot budgetSlot, and work the trellis steps that
+	// it ran.
+	budget     float64
+	credit     float64
+	budgetSlot int64
+	work       int64
+	// fitOnly marks a burst whose SYNC only fits the carrier, the timing
+	// and the levels, which the core decodes.
+	fitOnly bool
+	// noNext leaves out the run of a BS burst from its SYNC into the slot
+	// before, noCross the run from the SYNC of the slot before into the
+	// burst, and crossVoice runs it only into the voice bursts B to F,
+	// which have no SYNC.
+	noNext, noCross, crossVoice bool
+	totalHz                     float64
 	// freq is the carrier offset of the stream, in Hz, that the SYNC of
 	// the bursts fits, from the DC offset of the core at the first.
 	freq   float64
@@ -217,7 +233,8 @@ func newCohStageOf(opt *options) *cohStage {
 		sps = opt.CohSPS
 	}
 	m := newCPMModel(1, sps, cohIndex)
-	s := &cohStage{model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked}
+	s := &cohStage{model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
+		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
@@ -863,7 +880,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	for i := range s.dist {
 		s.dist[i] = math.MaxInt
 	}
-	if s.quiet(c, segs[0], nseg) {
+	if s.quiet(c, segs[0], nseg, b) {
 		return false
 	}
 	if nseg == 1 {
@@ -924,7 +941,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	if nseg == 1 {
 		s.lastSync = b.Sync
 	}
-	return s.runAll(llr)
+	return !s.fitOnly && s.runAll(llr)
 }
 
 // average adds the levels of the known runs segs[:nseg] of the burst to
@@ -961,9 +978,13 @@ func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 // follow the SYNC seg of a burst at the timing and the carrier offset of
 // the stream, and the fits wait, as they move little at that SNR; nseg is
 // 2 for the EMB of a burst without a SYNC.
-func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int) bool {
+func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int, b *Burst) bool {
 	if !s.clear(c) {
-		return false
+		if s.fitOnly || s.spend(b.Slot) {
+			return false
+		}
+		s.lastSync = 0
+		return true
 	}
 	if nseg == 1 {
 		if amp, noise := s.levels(seg[0], seg[1]); amp > 0 && noise > 0 {
@@ -975,6 +996,26 @@ func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int) bool {
 	s.lastSync = 0
 	return true
 }
+
+// spend reports whether the credit of the stage holds a coherent
+// detection of the burst of slot j: the credit grows by budget for each
+// slot, up to cohBudgetMax slots of it, and the caller takes the work of
+// each burst from it, so that a weak stream costs at most budget for each
+// slot. A budget of 0 holds every burst.
+func (s *cohStage) spend(j int64) bool {
+	if s.budget <= 0 {
+		return true
+	}
+	if d := j - s.budgetSlot; d > 0 {
+		s.credit = min(s.credit+s.budget*float64(d), cohBudgetMax*s.budget)
+	}
+	s.budgetSlot = j
+	return s.credit > 0
+}
+
+// cohBudgetMax is the most slots of budget that the credit of a stage
+// holds.
+const cohBudgetMax = 6
 
 // clear reports whether the levels of the bursts before and of the core c
 // show a clear stream, whose bursts the core detects and places.
@@ -1196,13 +1237,13 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	s.runAt = 0
 	s.run(g0, hi-g0+1+runMargin, 1, s.scale)
 	s.runAt = 1
-	if s.bs && s.nseg == 1 && !s.easy {
+	if s.bs && s.nseg == 1 && !s.easy && !s.noNext {
 		s.nextOK = true
 		s.run(g1, g1+cohNext+1+runMargin, -1, s.scale)
 	} else {
 		s.run(g1, g1-lo+1+runMargin, -1, s.scale)
 	}
-	if s.prevOK && !s.easy {
+	if s.prevOK && !s.easy && !s.noCross && (!s.crossVoice || s.nseg == 2) {
 		s.cross, s.runAt = true, 2
 		s.run(s.prevK0, syncFirstSym+syncSymbols-s.prevK0+runMargin, 1, s.scale)
 		s.cross = false
@@ -1292,6 +1333,7 @@ func (s *cohStage) run(g, n, dir int, scale float32) {
 	for i := range 2 * d {
 		s.runPrior(i-2*d, s.tr.slp[4*i:4*i+4])
 	}
+	s.work += int64(s.steps)
 	r := &s.runs[s.runAt]
 	s.tr.rows, s.tr.rowsOK = r.corr, r.holds(s, 0, s.steps)
 	s.tr.run(s, s.steps, rot, scale, s.mu)
