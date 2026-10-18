@@ -124,7 +124,8 @@ func TestAssembler_AcceptBadCRCHeader(t *testing.T) {
 	}
 }
 
-// TestAssembler_AllBlocksLost loses every block of an unconfirmed packet.
+// TestAssembler_AllBlocksLost loses every block of an unconfirmed packet,
+// with and without AcceptBadCRC, which does not deliver lost blocks.
 func TestAssembler_AllBlocksLost(t *testing.T) {
 	t.Parallel()
 
@@ -132,13 +133,16 @@ func TestAssembler_AllBlocksLost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a := packet.NewAssembler(127)
 	all := make([]int, len(p.Blocks))
 	for i := range all {
 		all[i] = i
 	}
-	m, err := sendLosing(t, a, p, all...)
-	if m == nil || !m.BadCRC || !errors.Is(err, packet.ErrMessageCRC) {
-		t.Fatalf("got %v %+v", err, m)
+	for _, accept := range []bool{false, true} {
+		a := packet.NewAssembler(127)
+		a.AcceptBadCRC = accept
+		m, err := sendLosing(t, a, p, all...)
+		if m == nil || !m.BadCRC || !errors.Is(err, packet.ErrMessageCRC) {
+			t.Fatalf("AcceptBadCRC %v: got %v %+v", accept, err, m)
+		}
 	}
 }

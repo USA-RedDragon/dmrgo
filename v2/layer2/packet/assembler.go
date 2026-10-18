@@ -410,7 +410,7 @@ func (a *Assembler) Response() (Packet, error) {
 func (a *Assembler) finish() (Message, bool, error) {
 	m := a.msg
 	buf := a.blocks[:0]
-	complete := true
+	complete := a.hasBlocks
 	if a.hasBlocks {
 		buf = a.blocks[:a.total*a.per]
 		for i, ok := range a.valid[:a.total] {
