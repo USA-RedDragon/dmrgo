@@ -33,13 +33,18 @@ const (
 // iqDisc is the FM discriminator of the I/Q tiers: an oscillator that
 // removes the carrier, a channel filter to discCutHz that decimates the
 // baseband by decim, and the frequency of each output sample, from the
-// phase of its product with the conjugate of the one before.
+// phase of its product with the conjugate of the one before. With a
+// half-band stage, the channel filter runs at half the baseband rate.
 type iqDisc struct {
-	decim   int
-	taps    [iqTaps]float32
-	hist    [2 * iqTaps]complex64
+	decim int
+	// step is the decimation of the channel filter, decim without the
+	// half-band stage and decim/2 with it.
+	step    int
+	taps    []float32
+	hist    []complex64
 	head    int
 	phase   int
+	half    iqHalf
 	prev    complex64
 	ncoStep complex64
 	ncoRot  complex64
@@ -50,25 +55,127 @@ type iqDisc struct {
 	// power of the output samples.
 	acc complex64
 	pw  float32
+	// With afc set, acc sums the products of the sums of the last len(afc)
+	// output samples instead, a moving average that keeps out of the
+	// estimate the edges of the channel, where another channel leaks in;
+	// afcSum is the sum, afcPrev the one before, afcHead the oldest.
+	afc     []complex64
+	afcSum  complex64
+	afcPrev complex64
+	afcHead int
 }
 
-// init sets up d to decimate by decim, with the oscillator at 0 Hz.
-func (d *iqDisc) init(decim int) {
-	*d = iqDisc{decim: decim, ncoRot: 1, ncoStep: 1}
-	fc := discCutHz / basebandRate
+// iqFilter is the design of the filters of iqDisc: the length, Kaiser
+// window and cutoff of the channel filter, and the length of the
+// half-band stage. The zero value is the Hamming window of iqTaps taps to
+// discCutHz at the baseband rate.
+type iqFilter struct {
+	taps  int
+	beta  float64
+	cutHz float64
+	half  int
+	afc   int
+}
+
+// iqHalf is a half-band filter that decimates by 2: every other tap but
+// the center one is 0, so it holds only the center tap and the others of
+// one side.
+type iqHalf struct {
+	center float32
+	side   []float32
+	hist   []complex64
+	head   int
+	phase  int
+}
+
+// init sets up h with n taps, n+1 a multiple of 4; n 0 leaves it off.
+func (h *iqHalf) init(n int) {
+	*h = iqHalf{}
+	if n == 0 {
+		return
+	}
+	h.side = make([]float32, (n+1)/4)
+	h.hist = make([]complex64, 2*n)
+	w := windowTaps(n, 0.25, 7)
 	var sum float64
-	for i := range d.taps {
-		k := float64(i - iqTaps/2)
+	for _, v := range w {
+		sum += v
+	}
+	h.center = float32(w[n/2] / sum)
+	for j := range h.side {
+		h.side[j] = float32(w[n/2+2*j+1] / sum)
+	}
+}
+
+// push takes sample v and reports whether it completed an output sample,
+// which it returns.
+func (h *iqHalf) push(v complex64) (complex64, bool) {
+	n := len(h.hist) / 2
+	h.hist[h.head], h.hist[h.head+n] = v, v
+	if h.head++; h.head == n {
+		h.head = 0
+	}
+	if h.phase ^= 1; h.phase == 1 {
+		return 0, false
+	}
+	x := h.hist[h.head : h.head+n]
+	c := n / 2
+	y := complex(h.center, 0) * x[c]
+	for j, t := range h.side {
+		o := 2*j + 1
+		y += complex(t, 0) * (x[c-o] + x[c+o])
+	}
+	return y, true
+}
+
+// windowTaps returns n taps of a windowed sinc low pass with cutoff fc, a
+// fraction of the sample rate: a Kaiser window of beta, or Hamming with
+// beta 0. They are not normalized.
+func windowTaps(n int, fc, beta float64) []float64 {
+	h := make([]float64, n)
+	for i := range h {
+		k := float64(i - n/2)
 		s := 2 * fc
 		if k != 0 {
 			s = math.Sin(2*math.Pi*fc*k) / (math.Pi * k)
 		}
-		w := 0.54 - 0.46*math.Cos(2*math.Pi*float64(i)/(iqTaps-1))
-		d.taps[i] = float32(s * w)
-		sum += s * w
+		w := 0.54 - 0.46*math.Cos(2*math.Pi*float64(i)/float64(n-1))
+		if beta > 0 {
+			r := 2*float64(i)/float64(n-1) - 1
+			w = bessel0(beta*math.Sqrt(max(0, 1-r*r))) / bessel0(beta)
+		}
+		h[i] = s * w
 	}
-	for i := range d.taps {
-		d.taps[i] /= float32(sum)
+	return h
+}
+
+// init sets up d to decimate by decim with the filters of f, with the
+// oscillator at 0 Hz.
+func (d *iqDisc) init(decim int, f iqFilter) {
+	*d = iqDisc{decim: decim, step: decim, ncoRot: 1, ncoStep: 1}
+	n, fc, rate := iqTaps, discCutHz, float64(basebandRate)
+	if f.taps > 0 {
+		n = f.taps
+	}
+	if f.cutHz > 0 {
+		fc = f.cutHz
+	}
+	if f.half > 0 && decim%2 == 0 {
+		d.half.init(f.half)
+		d.step, rate = decim/2, rate/2
+	}
+	if f.afc > 1 {
+		d.afc = make([]complex64, f.afc)
+	}
+	d.taps = make([]float32, n)
+	d.hist = make([]complex64, 2*n)
+	w := windowTaps(n, fc/rate, f.beta)
+	var sum float64
+	for _, v := range w {
+		sum += v
+	}
+	for i, v := range w {
+		d.taps[i] = float32(v / sum)
 	}
 }
 
@@ -89,29 +196,50 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	}
 	w := v * d.ncoRot
 	d.ncoRot *= d.ncoStep
+	if d.half.side != nil {
+		var ok bool
+		if w, ok = d.half.push(w); !ok {
+			return 0, 0, false
+		}
+	}
 	// The history is held twice, so that the taps read one run.
-	d.hist[d.head], d.hist[d.head+iqTaps] = w, w
-	if d.head++; d.head == iqTaps {
+	n := len(d.taps)
+	d.hist[d.head], d.hist[d.head+n] = w, w
+	if d.head++; d.head == n {
 		d.head = 0
 	}
-	if d.phase++; d.phase < d.decim {
+	if d.phase++; d.phase < d.step {
 		return 0, 0, false
 	}
 	d.phase = 0
-	// The taps and the history are read through pointers: a range over
-	// the array d.taps copies it, and TinyGo copies it again on every
-	// pass of the loop.
-	h := (*[iqTaps]complex64)(d.hist[d.head : d.head+iqTaps])
+	h := d.hist[d.head : d.head+n]
+	h = h[:len(d.taps)]
 	var re, im float32
-	for k, t := range &d.taps {
+	for k, t := range d.taps {
 		re += t * real(h[k])
 		im += t * imag(h[k])
 	}
 	y := complex(re, im)
 	p := y * complex(real(d.prev), -imag(d.prev))
 	d.prev = y
-	d.acc += p
-	d.pw += re*re + im*im
+	if d.afc == nil {
+		d.acc += p
+		d.pw += re*re + im*im
+	} else {
+		d.afcSum += y - d.afc[d.afcHead]
+		d.afc[d.afcHead] = y
+		if d.afcHead++; d.afcHead == len(d.afc) {
+			// The sum starts again from the samples, so that the rounding
+			// of its updates does not add up.
+			d.afcHead, d.afcSum = 0, 0
+			for _, a := range d.afc {
+				d.afcSum += a
+			}
+		}
+		d.acc += d.afcSum * complex(real(d.afcPrev), -imag(d.afcPrev))
+		d.afcPrev = d.afcSum
+		d.pw += real(d.afcSum)*real(d.afcSum) + imag(d.afcSum)*imag(d.afcSum)
+	}
 	return atan2f(imag(p), real(p)) * (float32(basebandRate/d.decim) / (2 * math.Pi)), y, true
 }
 
@@ -172,6 +300,12 @@ type iqRx struct {
 	// stage; nTunes counts them.
 	tunes  [iqTunes]iqTune
 	nTunes int
+	// maxHz, when above 0, bounds the oscillator to the carrier offsets
+	// within it, so that it does not follow a carrier of another channel.
+	maxHz float32
+	// syncOnly moves the oscillator while the core is locked only by the
+	// carrier offset of its SYNC fits, not by the mean frequency.
+	syncOnly bool
 }
 
 // newIQRx returns the receiver of cfg with the settings opt.
@@ -182,7 +316,8 @@ func newIQRx(cfg Config, opt options) *iqRx {
 	if hz == 0 {
 		hz = discRate
 	}
-	r.conv.init(basebandRate / hz)
+	r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
+	r.maxHz, r.syncOnly = opt.IQTuneMaxHz, opt.IQTuneSyncOnly
 	r.audio = make([]int16, 0, 1024)
 	on := cfg.OnBurst
 	if on == nil {
@@ -279,7 +414,7 @@ func (r *iqRx) follow() {
 		// the mean frequency must agree with them.
 		hz := (f.dc + r.d.dcHz) / scale
 		switch {
-		case abs32(avg) >= iqAFCPullHz:
+		case abs32(avg) >= iqAFCPullHz && !r.syncOnly:
 			// The channel filter pulled the mean of the blocks before
 			// toward the oscillator by more than it pulls the mean after
 			// the move: the mean starts again, as while the core searches.
@@ -316,6 +451,9 @@ func (d *iqDisc) hzOf(acc complex64) float32 {
 func (r *iqRx) tune(hz, dc float32) {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
+	if r.maxHz > 0 && abs32(r.conv.hz+hz) > r.maxHz {
+		return
+	}
 	r.conv.tune(r.conv.hz + hz)
 	r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
 	r.nTunes++

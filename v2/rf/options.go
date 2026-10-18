@@ -105,6 +105,31 @@ type options struct {
 	// 24000.
 	IQDisc bool
 	IQHz   int
+	// IQTaps, IQKaiser and IQCutHz set the channel filter of iqDisc: its
+	// length, the beta of its Kaiser window and its cutoff. 0 means
+	// iqTaps, a Hamming window and discCutHz.
+	IQTaps   int
+	IQKaiser float64
+	IQCutHz  float64
+	// IQHalfband, when above 0, is the length of a half-band filter that
+	// decimates the baseband by 2 before the channel filter of iqDisc, so
+	// that the channel filter runs at half the rate with twice the span
+	// for its taps. Its length plus 1 must be a multiple of 4.
+	IQHalfband int
+	// IQTuneMaxHz, when above 0, keeps the oscillator of iqRx within that
+	// many Hz of 0, so that it does not follow a carrier of another
+	// channel.
+	IQTuneMaxHz float32
+	// IQTuneSyncOnly moves the oscillator of iqRx while the core is
+	// locked only by the carrier offset of the SYNC fits, not by the mean
+	// frequency of the channel filter samples, which the gaps between the
+	// bursts, where another channel can leak in, also move.
+	IQTuneSyncOnly bool
+	// IQAFCAvg, when above 1, is the length of a moving average of the
+	// channel filter samples that the carrier estimate of iqRx reads, so
+	// that the edges of the channel, where another channel leaks in, move
+	// it less.
+	IQAFCAvg int
 	// CohExt adds to softExt on iqRx, or on a DiscReceiver, the coherent
 	// detection of each burst again, with the trellis settings PSPGain and
 	// LLRScale.
