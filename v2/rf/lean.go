@@ -859,13 +859,14 @@ func (r *leanCore) symbol(x, at float32) {
 	}
 	r.ns++
 	if !r.locked {
-		if r.ns >= leanRing {
-			if r.signsMatch() {
-				r.searchSym(false)
-			} else if r.ext != nil {
-				if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
-					r.forceLock(src, data, back)
-				}
+		// The search starts at the first SYNC that can end the first
+		// slot, so that a receiver that starts in a call finds it.
+		switch {
+		case r.ns > leanSyncEnd+1 && r.signsMatch():
+			r.searchSym(false)
+		case r.ns >= leanRing && r.ext != nil:
+			if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
+				r.forceLock(src, data, back)
 			}
 		}
 		return
