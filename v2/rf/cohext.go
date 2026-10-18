@@ -25,7 +25,7 @@ const (
 // cohStage detects each burst again coherently from the channel filter
 // samples of iqRx, at the symbol timing of the core: a trellis over a
 // window of three symbols that carries the carrier phase with each
-// survivor, as TierCoherent detects, run forward and backward from the
+// survivor, as the engine of Tier3 detects, run forward and backward from the
 // known symbols of the burst, its SYNC or the EMB that the core decoded.
 // It replaces the log-likelihood ratios of the core for the decoders of
 // softExt.
@@ -369,7 +369,7 @@ func (s *cohStage) runKeep(k int, app []float32) {
 	}
 	// The run from the SYNC of the slot before and the backward run of
 	// the burst detect the first half and the SYNC field from both sides:
-	// their mean log-APPs spread less than either, as TierCoherent detects
+	// their mean log-APPs spread less than either, as the engine of Tier3 detects
 	// across the slots. The EMB of a burst B to F, where its own runs
 	// start, gains the most.
 	if s.cross {
@@ -493,9 +493,9 @@ func (s *cohStage) freqAcc(k0, k1 int) complex128 {
 }
 
 // trackBurst fits the carrier offset again from every symbol of the burst
-// that detect detected last, whose bits fixed holds after its FEC, as
-// TierCoherent tracks the carrier from the symbols it detected: the SYNC
-// of one burst fits it too coarsely for the trellis.
+// that detect detected last, whose bits fixed holds after its FEC, as the
+// engine of Tier3 tracks the carrier from the symbols it detected: the
+// SYNC of one burst fits it too coarsely for the trellis.
 func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 	for k := range burstSymbols {
 		p := 2 * k
@@ -832,7 +832,7 @@ func (s *cohStage) refineData(ext *[layer2.BurstBits]float32, w float32, llr *[l
 		for d := range 4 {
 			b0, b1 := dibitOfDigit(d)
 			// The ratios of the trellis are llrK times its metric, as
-			// TierCoherent divides its priors by its LLRScale.
+			// the engine of Tier3 divides its priors by its LLRScale.
 			lp[d] = (bitPrior(w*ext[2*k], b0) + bitPrior(w*ext[2*k+1], b1)) / s.llrK
 		}
 	}

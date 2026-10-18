@@ -19,7 +19,7 @@ func Example() {
 		return
 	}
 	fm, env := rftx.ModulateBS(built.Slots)
-	rx, err := rf.New(rf.Config{Tier: rf.TierDisc})
+	rx, err := rf.New(rf.Config{Tier: rf.Tier0})
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -8,7 +8,7 @@
 // takes complex baseband at BasebandRate. Both return the bursts that are
 // complete, or hand each one to Config.OnBurst. Flush ends the stream.
 //
-//	rx, err := rf.New(rf.Config{Rate: 2.048e6, Tier: rf.TierCoherent})
+//	rx, err := rf.New(rf.Config{Rate: 2.048e6, Tier: rf.Tier2})
 //	if err != nil {
 //		return err
 //	}
@@ -18,8 +18,8 @@
 //		...
 //	}
 //
-// The Tier of the Config sets the detection and its cost, from TierDisc,
-// which fits a microcontroller, to TierMax, for offline decoding. New
+// The Tier of the Config sets the detection and its cost, from Tier0,
+// which fits a microcontroller, to Tier4, for offline decoding. New
 // allocates every buffer of the Receiver, and Write, WriteBaseband and Flush
 // allocate nothing. The README gives the sensitivity, compute and RAM of
 // each tier.

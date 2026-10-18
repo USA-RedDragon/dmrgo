@@ -34,17 +34,8 @@
    "tier": 0
   },
   {
-   "name": "q-buffered",
-   "tier": 0,
-   "lookback": 8
-  },
-  {
-   "name": "q-coherent",
-   "tier": 1
-  },
-  {
    "name": "q-trellis",
-   "tier": 2
+   "tier": 3
   },
   {
    "name": "q-disc12-t0",

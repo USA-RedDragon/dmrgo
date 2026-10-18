@@ -33,12 +33,12 @@ func DemodulateBytes(iq []byte, rate float64, signed bool, tier rf.Tier) (Demodu
 }
 
 // Demodulate recovers DMR bursts from complex samples at rate, as rtl_sdr
-// unsigned 8-bit I/Q scaled by rftx.FromRTL, with rf.TierExact.
+// unsigned 8-bit I/Q scaled by rftx.FromRTL, with rf.Tier3.
 func Demodulate(x []complex128, rate float64) (Demodulated, error) {
 	b := make([]byte, 2*len(x))
 	for i, v := range x {
 		b[2*i] = byte(math.Max(0, math.Min(255, math.Round(real(v)*127.5+127.5))))
 		b[2*i+1] = byte(math.Max(0, math.Min(255, math.Round(imag(v)*127.5+127.5))))
 	}
-	return DemodulateBytes(b, rate, false, rf.TierExact)
+	return DemodulateBytes(b, rate, false, rf.Tier3)
 }

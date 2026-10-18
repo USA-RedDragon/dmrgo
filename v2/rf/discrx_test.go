@@ -144,7 +144,7 @@ func TestDiscReceiverInitAppend(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
 	a := discAudio(noisyBaseband(slots, 1400, 12, 1), 9600)
-	r, err := NewDisc(DiscConfig{Hz: 9600, MaxWrite: 1024})
+	r, err := NewDisc(DiscConfig{Hz: 9600, Tier: Tier0, MaxWrite: 1024})
 	if err != nil {
 		t.Fatal(err)
 	}

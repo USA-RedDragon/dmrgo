@@ -22,7 +22,7 @@ func TestAllocsReceiver(t *testing.T) {
 	fm, env := rftx.ModulateBS(built.Slots)
 	iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 1500, 25, 0)
 	const chunk = 1 << 14
-	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact, TierMax} {
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3, Tier4} {
 		r := mustNew(Config{Rate: 2.048e6, Tier: tier, MaxWrite: chunk})
 		pos, bursts := 0, 0
 		n := testing.AllocsPerRun(len(iq)/chunk-2, func() {
@@ -68,8 +68,9 @@ func TestAllocsReceiverRAM(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range base.Tiers {
-		if got := receiverRAM(Tier(want.Tier)); got > want.RAMBytes*11/10 {
-			t.Errorf("tier %d: New keeps %d bytes, baseline %d", want.Tier, got, want.RAMBytes)
+		e := benchEntry{want.Mode, Tier0 + Tier(want.Tier)}
+		if got := receiverRAM(e); got > want.RAMBytes*11/10 {
+			t.Errorf("%s: New keeps %d bytes, baseline %d", e.name(), got, want.RAMBytes)
 		}
 	}
 }

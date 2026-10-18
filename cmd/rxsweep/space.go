@@ -20,13 +20,15 @@ import (
 type variant struct {
 	// Name labels the variant in the tables and graphs.
 	Name string `json:"name"`
-	// Tier is the base tier, Lookback Config.LookbackSlots and Hz
+	// Tier is the base tier, the discriminator core for 0 and Tier0+n of
+	// package rf for n above it, Lookback Config.LookbackSlots and Hz
 	// Config.BasebandHz (0 means 48000).
 	Tier     int `json:"tier"`
 	Lookback int `json:"lookback,omitempty"`
 	Hz       int `json:"hz,omitempty"`
 	// Disc receives the stream as FM discriminator audio with
-	// rf.DiscReceiver, which runs the TierDisc settings.
+	// rf.DiscReceiver, which runs the settings of the discriminator core
+	// and the opt of the variant.
 	Disc bool `json:"disc,omitempty"`
 	// Opt holds options fields of package rf that replace those of the
 	// tier, by field name.

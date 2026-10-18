@@ -134,7 +134,7 @@ type benchData struct {
 // find returns the sweep of the receiver e, and whether d has it.
 func (d *benchData) find(e benchEntry) (benchTier, bool) {
 	for _, t := range d.Tiers {
-		if t.Mode == e.mode && t.Tier == int(e.tier) {
+		if t.Mode == e.mode && t.Tier == e.number() {
 			return t, true
 		}
 	}
@@ -298,13 +298,36 @@ type benchEntry struct {
 	tier Tier
 }
 
+// number returns n for the tier of e, TierN.
+func (e benchEntry) number() int { return int(e.tier - Tier0) }
+
 // name returns the name of e in DMRRF_RXBENCH_TIERS, such as audio0.
-func (e benchEntry) name() string { return e.mode + strconv.Itoa(int(e.tier)) }
+func (e benchEntry) name() string { return e.mode + strconv.Itoa(e.number()) }
 
 // benchEntries lists the receivers of the sweep, in the order of the
-// README.
+// README: the tiers of the Pareto front of each input, and the phase
+// trellis of Tier3. Tier4 is for offline decoding.
 func benchEntries() []benchEntry {
-	return []benchEntry{{benchAudio, TierDisc}, {benchIQ, TierCoherent}, {benchIQ, TierExact}}
+	return []benchEntry{
+		{benchAudio, Tier0}, {benchAudio, Tier1},
+		{benchIQ, Tier0}, {benchIQ, Tier1}, {benchIQ, Tier2}, {benchIQ, Tier3},
+	}
+}
+
+// receiveAudioTier runs the discriminator audio a at hz through a
+// DiscReceiver of tier t.
+func receiveAudioTier(t testing.TB, a []int16, hz int, tier Tier) []Burst {
+	t.Helper()
+	var out []Burst
+	r, err := NewDisc(DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for k := 0; k < len(a); k += 1024 {
+		r.Write(a[k:min(k+1024, len(a))])
+	}
+	r.Flush()
+	return out
 }
 
 // benchAudioHz is the sample rate of the discriminator audio of Tier 0,
@@ -315,11 +338,10 @@ const benchAudioHz = 9600
 // mode a DiscReceiver on the FM discriminator audio of x at benchAudioHz,
 // in I/Q mode a Receiver of its tier on x.
 func benchReceive(t testing.TB, x []complex64, e benchEntry) []Burst {
-	tier := e.tier
 	if e.mode == benchAudio {
-		return receiveAudio(t, discAudio(x, benchAudioHz), benchAudioHz, nil)
+		return receiveAudioTier(t, discAudio(x, benchAudioHz), benchAudioHz, e.tier)
 	}
-	return receiveBaseband(x, tier)
+	return receiveBaseband(x, e.tier)
 }
 
 // runBench receives the stream at each case with the receiver e on all cores and
@@ -364,10 +386,16 @@ func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry
 	return out
 }
 
-// fastCases returns the cases of the CI sweep of tier t: a few C/N points
-// near where its voice frames start to decode.
-func fastCases(t Tier) []benchCase {
-	cns := map[Tier][]float64{TierDisc: {5, 7, 9}, TierCoherent: {1, 3, 5}, TierExact: {0, 2, 4}}[t]
+// fastCases returns the cases of the CI sweep of e: a few C/N points near
+// where its voice frames start to decode.
+func fastCases(e benchEntry) []benchCase {
+	cns := []float64{5, 7, 9}
+	switch {
+	case e.mode == benchIQ && e.tier == Tier2:
+		cns = []float64{1, 3, 5}
+	case e.mode == benchIQ && e.tier == Tier3:
+		cns = []float64{0, 2, 4}
+	}
 	out := make([]benchCase, len(cns))
 	for i, cn := range cns {
 		out[i] = benchCase{cn, 11}
@@ -404,10 +432,16 @@ const (
 	deepFirstSeed = 1000
 )
 
-// deepStreams returns the most streams that a deep point of tier t runs,
-// set by its compute cost.
-func deepStreams(t Tier) int {
-	return map[Tier]int{TierDisc: 4096, TierCoherent: 2048, TierExact: 1024}[t]
+// deepStreams returns the most streams that a deep point of e runs, set by
+// its compute cost.
+func deepStreams(e benchEntry) int {
+	switch {
+	case e.mode == benchIQ && e.tier == Tier2:
+		return 2048
+	case e.mode == benchIQ && e.tier == Tier3:
+		return 1024
+	}
+	return 4096
 }
 
 // deepen adds seeds to the points of a full sweep where a graphed payload
@@ -433,7 +467,7 @@ func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, 
 					need = true
 				}
 			}
-			if !need || p.Seeds >= deepStreams(e.tier) {
+			if !need || p.Seeds >= deepStreams(e) {
 				break
 			}
 			cases := make([]benchCase, deepBatch)
@@ -462,13 +496,14 @@ func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, 
 	return pts
 }
 
-// falsePerHour returns the bursts that tier t reports from 5 minutes of
-// noise, per hour.
-func falsePerHour(t Tier) float64 {
+// falsePerHour returns the bursts that e reports from 5 minutes of noise,
+// per hour.
+func falsePerHour(e benchEntry) float64 {
 	const seconds = 300
 	n, total := 0, 0
-	if t == TierDisc {
-		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, OnBurst: func(*Burst) { n++ }})
+	t := e.tier
+	if e.mode == benchAudio {
+		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: t, OnBurst: func(*Burst) { n++ }})
 		if err != nil {
 			panic(err)
 		}
@@ -490,18 +525,28 @@ func falsePerHour(t Tier) float64 {
 	return float64(n) * 3600 * basebandRate / float64(total)
 }
 
-// receiverRAM returns the bytes that a receiver of tier t keeps, with
-// OnBurst set, as a microcontroller runs it: for TierDisc the size of a
-// DiscReceiver, all of its state, which needs no heap; for the other
-// tiers the heap of a Receiver at the baseband input rate.
-func receiverRAM(t Tier) int {
-	if t == TierDisc {
+// receiverRAM returns the bytes that the receiver of e keeps, with
+// OnBurst set, as a microcontroller runs it: for audio Tier0 the size of a
+// DiscReceiver, all of its state, which needs no heap; for audio Tier1 that
+// and the heap of its soft stages; for the I/Q tiers the heap of a
+// Receiver at the baseband input rate.
+func receiverRAM(e benchEntry) int {
+	if e.mode == benchAudio && e.tier == Tier0 {
 		return int(unsafe.Sizeof(DiscReceiver{}))
 	}
 	var a, b runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&a)
-	r := mustNew(Config{Rate: basebandRate, Tier: t, OnBurst: func(*Burst) {}})
+	var r any
+	if e.mode == benchAudio {
+		d, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: e.tier, OnBurst: func(*Burst) {}})
+		if err != nil {
+			panic(err)
+		}
+		r = d
+	} else {
+		r = mustNew(Config{Rate: basebandRate, Tier: e.tier, OnBurst: func(*Burst) {}})
+	}
 	runtime.GC()
 	runtime.ReadMemStats(&b)
 	runtime.KeepAlive(r)
@@ -509,14 +554,14 @@ func receiverRAM(t Tier) int {
 }
 
 // steadyAllocs returns the allocations per WriteBaseband of 16 KiB of x
-// with tier t, after the first chunk. It counts the mallocs of the whole
+// with e, after the first chunk. It counts the mallocs of the whole
 // process, so the full sweep calls it while nothing else runs.
-func steadyAllocs(x []complex64, t Tier) float64 {
+func steadyAllocs(x []complex64, e benchEntry) float64 {
 	const chunk = 1 << 14
-	if t == TierDisc {
-		return discSteadyAllocs(discAudio(x, benchAudioHz))
+	if e.mode == benchAudio {
+		return discSteadyAllocs(discAudio(x, benchAudioHz), e.tier)
 	}
-	r := mustNew(Config{Rate: basebandRate, Tier: t})
+	r := mustNew(Config{Rate: basebandRate, Tier: e.tier})
 	r.WriteBaseband(x[:chunk])
 	n := len(x)/chunk - 1
 	var a, b runtime.MemStats
@@ -530,9 +575,9 @@ func steadyAllocs(x []complex64, t Tier) float64 {
 
 // discSteadyAllocs returns the allocations per Write of 4 KiB of the audio
 // a with a DiscReceiver at benchAudioHz, after the first chunk.
-func discSteadyAllocs(a []int16) float64 {
+func discSteadyAllocs(a []int16, tier Tier) float64 {
 	const chunk = 1 << 11
-	r, err := NewDisc(DiscConfig{Hz: benchAudioHz, OnBurst: func(*Burst) {}})
+	r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(*Burst) {}})
 	if err != nil {
 		panic(err)
 	}
@@ -548,7 +593,7 @@ func discSteadyAllocs(a []int16) float64 {
 }
 
 // TestRxBench receives a BS outbound stream with every payload type at a
-// few C/N points per tier below TierMax, which is for offline decoding,
+// few C/N points per tier below Tier4, which is for offline decoding,
 // and checks the frame recovery against the baseline in rxbenchPath. With
 // DMRRF_RXBENCH=full it runs the README sweep instead and rewrites
 // rxbenchPath, only for the tiers in DMRRF_RXBENCH_TIERS when it is set,
@@ -568,10 +613,9 @@ func TestRxBench(t *testing.T) {
 	slots, truth := benchStream(t, 6)
 	out := benchData{Machine: base.Machine}
 	for _, e := range benchEntries() {
-		tier := e.tier
-		bt := benchTier{Mode: e.mode, Tier: int(tier)}
+		bt := benchTier{Mode: e.mode, Tier: e.number()}
 		want, have := base.find(e)
-		bt.Fast = runBench(t, slots, truth, e, fastCases(tier))
+		bt.Fast = runBench(t, slots, truth, e, fastCases(e))
 		if full && !benchTierSelected(e) && have {
 			out.Tiers = append(out.Tiers, want)
 			continue
@@ -580,21 +624,21 @@ func TestRxBench(t *testing.T) {
 			fs, ft := benchStream(t, 30)
 			bt.Full = deepen(t, fs, ft, e, runBench(t, fs, ft, e, fullCases()))
 			x := noisyBaseband(fs, 1400, 6, 1)
-			bt.Allocs = steadyAllocs(x, tier)
-			bt.RAMBytes = receiverRAM(tier)
+			bt.Allocs = steadyAllocs(x, e)
+			bt.RAMBytes = receiverRAM(e)
 			var cpu float64
 			if e.mode == benchAudio {
 				a := discAudio(x, benchAudioHz)
-				cpu = cpuSeconds(func() { receiveAudio(t, a, benchAudioHz, nil) })
+				cpu = cpuSeconds(func() { receiveAudioTier(t, a, benchAudioHz, e.tier) })
 			} else {
-				cpu = cpuSeconds(func() { receiveBaseband(x, tier) })
+				cpu = cpuSeconds(func() { receiveBaseband(x, e.tier) })
 			}
 			bt.NsPerSecond = cpu * 1e9 / (float64(len(x)) / basebandRate)
-			bt.FalsePerHour = falsePerHour(tier)
+			bt.FalsePerHour = falsePerHour(e)
 		}
 		if have {
 			if !fast {
-				checkBench(t, tier, want.Fast, bt.Fast)
+				checkBench(t, e, want.Fast, bt.Fast)
 			}
 			if !full {
 				bt.Full, bt.NsPerSecond, bt.FalsePerHour, bt.Allocs, bt.RAMBytes = want.Full, want.NsPerSecond, want.FalsePerHour, want.Allocs, want.RAMBytes
@@ -622,7 +666,7 @@ func benchTierSelected(e benchEntry) bool {
 
 // checkBench fails when the recovery of a payload type at a C/N of the CI
 // sweep falls more than 5 percent under the baseline.
-func checkBench(t *testing.T, tier Tier, want, got []benchPoint) {
+func checkBench(t *testing.T, e benchEntry, want, got []benchPoint) {
 	t.Helper()
 	for _, w := range want {
 		for _, g := range got {
@@ -636,7 +680,7 @@ func checkBench(t *testing.T, tier Tier, want, got []benchPoint) {
 				}
 				wr, gr := float64(ws.Exact)/float64(ws.Truth), float64(gs.Exact)/float64(max(gs.Truth, 1))
 				if gr < wr-0.05 {
-					t.Errorf("tier %d, %s at C/N %.1f dB: %.3f recovered, baseline %.3f", tier, k, w.CN, gr, wr)
+					t.Errorf("%s, %s at C/N %.1f dB: %.3f recovered, baseline %.3f", e.name(), k, w.CN, gr, wr)
 				}
 			}
 		}

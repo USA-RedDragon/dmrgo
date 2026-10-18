@@ -84,7 +84,7 @@ func exactFrames(slots []rftx.BSSlot, got []Burst) (exact, total int) {
 type AMBEFrameValue = uint64
 
 // TestReceiverTiersAtLowSNR receives a BS outbound voice call at 3 dB C/N
-// and checks that TierDisc, TierCoherent and TierExact each recover more
+// and checks that Tier0, Tier2 and Tier3 each recover more
 // AMBE+2 frames exactly than the tier below.
 func TestReceiverTiersAtLowSNR(t *testing.T) {
 	t.Parallel()
@@ -96,7 +96,7 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 	}
 	x := noisyBaseband(built.Slots, 1200, 3, 3)
 	prev := -1
-	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact} {
+	for _, tier := range []Tier{Tier0, Tier2, Tier3} {
 		exact, total := exactFrames(built.Slots, receiveBaseband(x, tier))
 		t.Logf("tier %d: %d of %d frames exact", tier, exact, total)
 		if exact <= prev {
@@ -108,7 +108,7 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 
 // TestReceiverHalfRate receives a BS outbound voice call at 12 dB C/N as
 // baseband at BasebandRate and, averaged over pairs of samples, at half
-// that rate, and checks that TierDisc recovers about as many AMBE+2 frames
+// that rate, and checks that Tier0 recovers about as many AMBE+2 frames
 // from each.
 func TestReceiverHalfRate(t *testing.T) {
 	t.Parallel()
@@ -119,12 +119,12 @@ func TestReceiverHalfRate(t *testing.T) {
 		t.Fatal(err)
 	}
 	x := noisyBaseband(built.Slots, 1200, 12, 6)
-	full, total := exactFrames(built.Slots, receiveBaseband(x, TierDisc))
+	full, total := exactFrames(built.Slots, receiveBaseband(x, Tier0))
 	h := make([]complex64, len(x)/2)
 	for i := range h {
 		h[i] = (x[2*i] + x[2*i+1]) / 2
 	}
-	r := mustNew(Config{Tier: TierDisc, BasebandHz: BasebandRate / 2})
+	r := mustNew(Config{Tier: Tier0, BasebandHz: BasebandRate / 2})
 	var got []Burst
 	for k := 0; k < len(h); k += 2048 {
 		got = append(got, r.WriteBaseband(h[k:min(k+2048, len(h))])...)
@@ -135,8 +135,8 @@ func TestReceiverHalfRate(t *testing.T) {
 	if full < total*9/10 || half < full-total/20 {
 		t.Errorf("%d of %d frames exact at %d Hz, %d at %d Hz", full, total, BasebandRate, half, BasebandRate/2)
 	}
-	if _, err := New(Config{Tier: TierCoherent, BasebandHz: BasebandRate / 2}); err == nil {
-		t.Error("TierCoherent takes input at half rate")
+	if _, err := New(Config{Tier: Tier2, BasebandHz: BasebandRate / 2}); err == nil {
+		t.Error("Tier2 takes input at half rate")
 	}
 }
 
@@ -151,7 +151,7 @@ func TestReceiverOnBurst(t *testing.T) {
 		t.Fatal(err)
 	}
 	x := noisyBaseband(built.Slots, 1200, 10, 4)
-	for _, tier := range []Tier{TierDisc, TierCoherent} {
+	for _, tier := range []Tier{Tier0, Tier2} {
 		want := receiveBaseband(x, tier)
 		var got []Burst
 		r := mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
@@ -184,7 +184,7 @@ func BenchmarkReceiver(b *testing.B) {
 		b.Fatal(err)
 	}
 	x := noisyBaseband(built.Slots, 1200, 6, 3)
-	for _, tier := range []Tier{TierDisc, TierCoherent, TierExact, TierMax} {
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3, Tier4} {
 		b.Run(strconv.Itoa(int(tier)), func(b *testing.B) {
 			r := mustNew(Config{Rate: basebandRate, Tier: tier})
 			b.ReportAllocs()
@@ -212,7 +212,7 @@ func TestReceiverWithoutWarmUp(t *testing.T) {
 		t.Fatal(err)
 	}
 	x := noisyBaseband(built.Slots, 1200, 20, 5)
-	o := tierOptions(TierCoherent)
+	o := tierOptions(Tier3)
 	o.WarmUp = false
 	r := mustNew(Config{Rate: basebandRate, opt: &o})
 	var got []Burst

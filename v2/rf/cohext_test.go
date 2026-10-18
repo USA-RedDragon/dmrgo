@@ -11,11 +11,11 @@ func TestCohExtVoice(t *testing.T) {
 	slots, truth := benchStream(t, 10)
 	x := noisyBaseband(slots, 1400, 4, 21)
 	ambe := func(coh bool) float64 {
-		o := tierOptions(TierDisc)
+		o := discOptions()
 		o.IQDisc, o.IQHz, o.SoftExt, o.ExtAMBE, o.ExtOSD, o.ExtELC = true, discRate, true, true, true, true
 		o.CohExt, o.PSPGain, o.LLRScale = coh, 0.2, 0.5
 		var out []Burst
-		r := mustNew(Config{Rate: basebandRate, Tier: TierDisc, Streaming: true, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
+		r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
 		for k := 0; k < len(x); k += 4096 {
 			r.WriteBaseband(x[k:min(k+4096, len(x))])
 		}

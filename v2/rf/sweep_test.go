@@ -66,7 +66,16 @@ type sweepResult struct {
 // config returns the Config of the job.
 func (j *sweepJob) config(t testing.TB) Config {
 	t.Helper()
-	o := tierOptions(Tier(j.Tier))
+	// Tier 0 of a space is the discriminator core alone, which the opt of
+	// a variant builds on; tier n above it is Tier0+n.
+	tier := Tier0 + Tier(j.Tier)
+	o := discOptions()
+	if j.Tier > 0 {
+		o = tierOptions(tier)
+		if tier == Tier1 || tier == Tier2 {
+			o.ExtLookback = 8
+		}
+	}
 	if len(j.Opt) > 0 {
 		if err := json.Unmarshal(j.Opt, &o); err != nil {
 			t.Fatalf("opt: %v", err)
@@ -76,7 +85,7 @@ func (j *sweepJob) config(t testing.TB) Config {
 	if j.Disc {
 		hz = basebandRate
 	}
-	return Config{Rate: basebandRate, Tier: Tier(j.Tier), LookbackSlots: j.Lookback, Streaming: j.Lookback == 0, BasebandHz: hz, opt: &o}
+	return Config{Rate: basebandRate, Tier: tier, LookbackSlots: j.Lookback, BasebandHz: hz, opt: &o}
 }
 
 func (j *sweepJob) hz() int {

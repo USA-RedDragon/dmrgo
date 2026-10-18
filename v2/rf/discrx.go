@@ -33,15 +33,18 @@ type DiscConfig struct {
 	// which then return no bursts. The burst is valid only during the call;
 	// copy it to keep it.
 	OnBurst func(*Burst)
-	// opt, when not nil, replaces the settings of TierDisc.
+	// Tier is Tier0 or Tier1. The zero value TierDefault is Tier1 for
+	// NewDisc, and Tier0 under TinyGo and for Init, which does not
+	// allocate the soft stages of Tier1.
+	Tier Tier
+	// opt, when not nil, replaces the settings of the tier.
 	opt *options
 }
 
 // DiscReceiver recovers DMR bursts from the output of an FM discriminator,
 // as the radio chips of hotspots and MMDVM modems give it: real samples in
 // any units, with any gain and DC offset, which the receiver measures
-// itself. It detects as TierDisc does, without lookback, and keeps about
-// 1 KiB of state, for microcontrollers. A DiscReceiver that Init sets up in
+// itself. With Tier0 it keeps about 1 KiB of state, for microcontrollers. A DiscReceiver that Init sets up in
 // memory of the caller, such as a package variable, uses no heap with
 // OnBurst or AppendBursts. A DiscReceiver is not safe for concurrent use.
 type DiscReceiver struct {
@@ -54,14 +57,27 @@ type DiscReceiver struct {
 var (
 	errDiscHz       = &ConfigError{Field: "Hz"}
 	errDiscMaxWrite = &ConfigError{Field: "MaxWrite"}
+	errDiscTier     = &ConfigError{Field: "Tier"}
 )
 
 // NewDisc returns a DiscReceiver of cfg. It allocates the receiver, and
 // the burst buffer of Write when cfg.OnBurst is nil.
 func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
+	if cfg.Tier == TierDefault {
+		cfg.Tier = discDefaultTier
+	}
 	r := &DiscReceiver{}
+	soft := cfg.Tier == Tier1 && cfg.opt == nil
+	if soft {
+		cfg.Tier = Tier0
+	}
 	if err := r.Init(cfg); err != nil {
 		return nil, err
+	}
+	if soft {
+		if err := r.addSoft(); err != nil {
+			return nil, err
+		}
 	}
 	if cfg.OnBurst == nil {
 		if cfg.MaxWrite == 0 {
@@ -84,7 +100,10 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	if cfg.MaxWrite < 0 {
 		return errDiscMaxWrite
 	}
-	opt := tierOptions(TierDisc)
+	if cfg.Tier != TierDefault && cfg.Tier != Tier0 && cfg.opt == nil {
+		return errDiscTier
+	}
+	opt := discOptions()
 	if cfg.opt != nil {
 		opt = *cfg.opt
 	}

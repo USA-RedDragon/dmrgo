@@ -11,26 +11,40 @@ import (
 // Tier selects how a Receiver detects symbols, by compute budget.
 type Tier int
 
-// The tiers, from the least compute to the most. Every tier decodes each
-// FEC field with soft decisions.
+// The tiers, from the least compute to the most. The README gives the
+// sensitivity, compute and RAM of each; Tier0 to Tier2 are its Pareto front
+// of compute, RAM and sensitivity, and every tier decodes each FEC field
+// with soft decisions.
 const (
-	// TierDisc slices the output of an FM discriminator and its matched
-	// filter. It fits a microcontroller.
-	TierDisc Tier = iota
-	// TierCoherent detects the symbols coherently with a trellis over a
-	// window of three symbols that carries the carrier phase with each
-	// survivor, at 5 samples per symbol, and detects each voice burst
-	// again with the bits that its FEC fixed. It needs about three times
-	// the cycles of a 168 MHz Cortex-M4F.
-	TierCoherent
-	// TierExact detects over a window of three symbols with one of 52
-	// carrier phases in the trellis state, and detects each voice burst
-	// again with the bits that its FEC fixed. It is for a PC.
-	TierExact
-	// TierMax is TierExact over a window of five symbols with 200 carrier
-	// phases, the exact count for h = 0.27, at about 50 times the compute.
-	// It is for offline decoding on a PC and needs about 100 MB.
-	TierMax
+	// TierDefault is the zero value: Tier0 in a Config, and in a DiscConfig
+	// Tier1 for NewDisc, or Tier0 under TinyGo and for Init.
+	TierDefault Tier = iota
+	// Tier0 slices the output of an FM discriminator and its matched
+	// filter. On I/Q an FM discriminator at 12 kHz comes before it, or at
+	// BasebandRate/2 the complex front end. It fits a microcontroller.
+	Tier0
+	// Tier1 adds to Tier0 the soft decoders of the coherent tiers: a
+	// BPTC(196,96) block whose check fails by ordered statistics, the
+	// embedded LC of each superframe over its four fragments and the
+	// earlier superframes of the call, and LookbackSlots slots before the
+	// first lock decoded again. It costs about the CPU of Tier0.
+	Tier1
+	// Tier2 adds to Tier1, on I/Q at BasebandRate, the detection again of
+	// each burst with a trellis over three symbols that carries the
+	// carrier phase with each survivor, from the SYNC or EMB of the burst
+	// and from the SYNC of the slots beside it, and soft ML decoding of C0
+	// and C1 of each voice frame. It holds each burst one slot longer, and
+	// runs on a PC.
+	Tier2
+	// Tier3 detects over a window of three symbols with one of 52 carrier
+	// phases in the trellis state, and detects each voice burst again with
+	// the bits that its FEC fixed, at about 20 times the compute of Tier2.
+	// It is for offline decoding on a PC.
+	Tier3
+	// Tier4 is Tier3 over a window of five symbols with 200 carrier
+	// phases, the exact count for h = 0.27, at about 50 times the compute
+	// of Tier3. It is for offline decoding on a PC and needs about 100 MB.
+	Tier4
 )
 
 // Parameters of the DMR 4FSK signal (ETSI TS 102 361-1 clause 10.2).
@@ -61,7 +75,7 @@ const (
 	// lockMetric is the coherent SYNC metric at which the search locks.
 	lockMetric = 0.4
 	// discLock is the discriminator SYNC correlation at which the search of
-	// TierDisc locks.
+	// the engine without the trellis locks.
 	discLock = 0.9
 	// anchorMetric is the share of the expected SYNC metric at which a slot
 	// counts as an anchor.
@@ -115,25 +129,21 @@ type Config struct {
 	// Signed selects signed 8-bit I/Q (HackRF) for Write instead of
 	// unsigned (rtl_sdr).
 	Signed bool
-	// Tier selects the detection. The zero value is TierDisc.
+	// Tier selects the detection. The zero value TierDefault is Tier0.
 	Tier Tier
 	// BasebandHz is the sample rate of the complex baseband that
 	// WriteBaseband takes and that the front end of Write makes: 0 or
-	// BasebandRate, or BasebandRate/2 with TierDisc, which selects the
-	// streaming receiver of TierDisc at half the cost of its front end, as
-	// LookbackSlots 0 with Streaming does. 0 means BasebandRate.
+	// BasebandRate, or BasebandRate/2 with Tier0 or Tier1, which selects
+	// their receiver with a complex front end in place of the FM
+	// discriminator, in about 1 KB of RAM for Tier0. 0 means BasebandRate.
 	BasebandHz int
 	// MaxWrite is the largest number of bytes in one Write. 0 means 1 << 16.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
-	// locks to that the receiver keeps and decodes. 0 means 16, or none
-	// with Streaming.
-	LookbackSlots int
-	// Streaming selects, with TierDisc and LookbackSlots 0, the receiver
-	// that keeps one slot of symbols and fits in about 1 KB of RAM. It
-	// decodes no slot before the first SYNC that it locks to, so it loses
+	// locks to that the receiver keeps and decodes: 0 means 8 for Tier1
+	// and Tier2, and 16 for Tier3 and Tier4. Tier0 keeps none, and loses
 	// the start of a stream that it enters late.
-	Streaming bool
+	LookbackSlots int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
 	// in place of the slice that Write, WriteBaseband and Flush return,
 	// which are then empty. The receiver then keeps no buffer of bursts.
@@ -294,13 +304,16 @@ type engine struct {
 // New returns a Receiver sized by cfg. It allocates every buffer of the
 // Receiver. It returns a *ConfigError when a field of cfg is out of range.
 func New(cfg Config) (*Receiver, error) {
-	if cfg.Tier < TierDisc || cfg.Tier > TierMax {
+	if cfg.Tier == TierDefault {
+		cfg.Tier = Tier0
+	}
+	if cfg.Tier < Tier0 || cfg.Tier > Tier4 {
 		return nil, &ConfigError{Field: "Tier"}
 	}
 	switch {
 	case cfg.BasebandHz == 0:
 		cfg.BasebandHz = basebandRate
-	case cfg.BasebandHz == discRate && cfg.Tier == TierDisc, cfg.BasebandHz == basebandRate:
+	case cfg.BasebandHz == discRate && cfg.Tier <= Tier1, cfg.BasebandHz == basebandRate:
 	default:
 		return nil, &ConfigError{Field: "BasebandHz"}
 	}
@@ -313,20 +326,26 @@ func New(cfg Config) (*Receiver, error) {
 	if cfg.MaxWrite < 0 {
 		return nil, &ConfigError{Field: "MaxWrite"}
 	}
-	if cfg.LookbackSlots < 0 {
+	if cfg.LookbackSlots < 0 || cfg.Tier == Tier0 && cfg.LookbackSlots > 0 {
 		return nil, &ConfigError{Field: "LookbackSlots"}
 	}
 	if cfg.MaxWrite == 0 {
 		cfg.MaxWrite = 1 << 16
 	}
 	opt := tierOptions(cfg.Tier)
+	if cfg.Tier == Tier1 || cfg.Tier == Tier2 {
+		opt.ExtLookback = cfg.LookbackSlots
+		if opt.ExtLookback == 0 {
+			opt.ExtLookback = 8
+		}
+	}
 	if cfg.opt != nil {
 		opt = *cfg.opt
 	}
 	if !opt.tabled() {
 		return nil, &ConfigError{Field: "opt"}
 	}
-	if !opt.Coherent && cfg.LookbackSlots == 0 && (cfg.Streaming || cfg.BasebandHz == discRate) {
+	if !opt.Coherent {
 		if opt.IQDisc && cfg.BasebandHz == basebandRate {
 			return &Receiver{iqd: newIQRx(cfg, opt)}, nil
 		}

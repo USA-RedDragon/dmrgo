@@ -103,22 +103,39 @@ type options struct {
 	CohExt bool
 }
 
-// tierOptions returns the settings of tier t.
-func tierOptions(t Tier) options {
+// discOptions returns the settings of the FM discriminator core alone:
+// those of Tier0 on discriminator audio and with the complex front end.
+func discOptions() options {
 	o := options{TrellisSPS: 10, KnownPrior: 4, PSPGain: 0.02, WarmUp: true, TrackCarrier: true, DiscOutlier: 0.01, ClickSpan: 500, Sources: 2}
 	o.SoftFEC, o.GridBPTC = true, true
-	if t != TierDisc {
-		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
-	}
+	return o
+}
+
+// softOptions adds to o the soft stages of Tier1: the ordered statistics
+// decode of BPTC(196,96) and the embedded LC over each superframe.
+func softOptions(o options) options {
+	o.SoftExt, o.ExtOSD, o.ExtELC = true, true, true
+	return o
+}
+
+// tierOptions returns the settings of tier t on I/Q at BasebandRate; New
+// sets the lookback of Tier1 and Tier2 from the Config.
+func tierOptions(t Tier) options {
+	o := discOptions()
 	switch t {
-	case TierDisc:
-		// TierDisc keeps the settings above.
-	case TierCoherent:
-		o.Coherent, o.Window, o.TrellisSPS, o.PSPGain, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, 5, 0.12, true, 10, 0.5
-		o.ChanDecimation, o.CompactChannel = 2, true
-	case TierExact:
+	case TierDefault, Tier0:
+		o.IQDisc, o.IQHz = true, 12000
+	case Tier1:
+		o = softOptions(o)
+		o.IQDisc, o.IQHz = true, 12000
+	case Tier2:
+		o = softOptions(o)
+		o.IQDisc, o.IQHz, o.ExtAMBE, o.CohExt, o.PSPGain, o.LLRScale = true, 24000, true, true, 0.2, 0.5
+	case Tier3:
+		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, true, 52, true, 7, 0.35
-	case TierMax:
+	case Tier4:
+		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 2, true, true, 7, 0.35
 	}
 	return o

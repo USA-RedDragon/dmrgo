@@ -264,7 +264,7 @@ func (x *softExt) back(c *leanCore, j int64) {
 }
 
 // Settings of dataPasses: the number of passes and the weight of the
-// extrinsic ratios in the priors, as TierCoherent has them.
+// extrinsic ratios in the priors, as the engine of Tier3 has them.
 const (
 	cohDataPasses = 2
 	cohDataPrior  = 0.7
@@ -273,7 +273,7 @@ const (
 // dataPasses detects a BPTC(196,96) data burst b whose block fails its
 // check, or without one needed corrections, again with the extrinsic
 // ratios of its grid decode as priors, up to cohDataPasses times, as
-// TierCoherent does, and decodes it from the new ratios.
+// the engine of Tier3 does, and decodes it from the new ratios.
 func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool) {
 	ch := x.llr
 	// The passes take their priors from the BPTC block alone, so the slot

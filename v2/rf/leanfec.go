@@ -434,7 +434,7 @@ func (r *leanCore) fixTACT(f *leanFEC, b *Burst) {
 
 // repair rewrites the FEC fields of burst b with the codewords that
 // soft-decision decoding picks, with the scratch f, as repairer.repair does
-// for TierDisc, with the color code cc of the stream when ccOK. The payload
+// for Tier0, with the color code cc of the stream when ccOK. The payload
 // of an idle burst carries nothing, so only its slot type is decoded.
 //
 // It is not inlined, so that its locals are on the stack only while it

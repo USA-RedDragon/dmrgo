@@ -177,7 +177,7 @@ func runRX(args []string, w io.Writer) error {
 	rate := fs.Float64("rate", 2.048e6, "sample rate in Hz")
 	freq := fs.Float64("freq", 0, "tuned frequency in Hz, for the ppm figure")
 	signed := fs.Bool("signed", false, "input is signed 8-bit (HackRF) instead of rtl_sdr unsigned")
-	tier := fs.Int("tier", int(rf.TierExact), "receiver tier: 0 discriminator, 1 coherent, 2 coherent with the phase in the trellis state, 3 as 2 over a longer window")
+	tier := fs.Int("tier", 3, "receiver tier 0 to 4: 0 discriminator, 1 with the soft stages, 2 coherent, 3 with the phase in the trellis state, 4 as 3 over a longer window")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -185,7 +185,10 @@ func runRX(args []string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	d, err := DemodulateBytes(b, *rate, *signed, rf.Tier(*tier))
+	if *tier < 0 || *tier > 4 {
+		return fmt.Errorf("-tier %d, want 0 to 4", *tier)
+	}
+	d, err := DemodulateBytes(b, *rate, *signed, rf.Tier0+rf.Tier(*tier))
 	if err != nil {
 		return err
 	}

@@ -42,7 +42,7 @@ func TestCaptureXPR8400GainSweep(t *testing.T) {
 	for _, c := range []struct {
 		tier rf.Tier
 		min  int
-	}{{rf.TierDisc, 31}, {rf.TierCoherent, 47}, {rf.TierExact, 47}, {rf.TierMax, 47}} {
+	}{{rf.Tier0, 25}, {rf.Tier1, 25}, {rf.Tier2, 37}, {rf.Tier3, 47}, {rf.Tier4, 47}} {
 		var buf bytes.Buffer
 		rep := NewReporter(&buf)
 		for _, r := range demodulateBytes(t, iq, 256e3, false, c.tier).Bursts {
@@ -62,9 +62,9 @@ func TestCaptureXPR8400GainSweep(t *testing.T) {
 				}
 			}
 		}
-		t.Logf("tier %d: %d of %d frames exact", c.tier, n, len(want))
+		t.Logf("tier %d: %d of %d frames exact", c.tier-rf.Tier0, n, len(want))
 		if n < c.min {
-			t.Errorf("tier %d: %d of %d frames exact, want at least %d", c.tier, n, len(want), c.min)
+			t.Errorf("tier %d: %d of %d frames exact, want at least %d", c.tier-rf.Tier0, n, len(want), c.min)
 		}
 	}
 }

@@ -343,8 +343,8 @@ type leanCore struct {
 	fec leanFEC
 }
 
-// leanRx is the receiver of TierDisc without lookback: the complex front
-// end leanFront before a leanCore.
+// leanRx is the receiver of Tier0 and Tier1 at BasebandRate/2: the
+// complex front end leanFront before a leanCore.
 type leanRx struct {
 	leanCore
 	// fe and wide convert the bytes of Write at another rate than the

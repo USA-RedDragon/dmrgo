@@ -4,10 +4,10 @@ import "testing"
 
 // iqDiscReceive runs the baseband x through iqRx at hz with OnBurst.
 func iqDiscReceive(x []complex64, hz int) []Burst {
-	o := tierOptions(TierDisc)
+	o := discOptions()
 	o.IQDisc, o.IQHz = true, hz
 	var out []Burst
-	r := mustNew(Config{Rate: basebandRate, Tier: TierDisc, Streaming: true, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	for k := 0; k < len(x); k += 4096 {
 		r.WriteBaseband(x[k:min(k+4096, len(x))])
 	}
@@ -33,9 +33,9 @@ func TestIQDiscLoopback(t *testing.T) {
 			}
 		}
 	}
-	o := tierOptions(TierDisc)
+	o := discOptions()
 	o.IQDisc = true
-	r := mustNew(Config{Rate: basebandRate, Tier: TierDisc, Streaming: true, opt: &o, OnBurst: func(*Burst) {}})
+	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(*Burst) {}})
 	r.WriteBaseband(x)
 	if got := float64(r.iqd.conv.hz); got < 1300 || got > 1500 {
 		t.Errorf("oscillator at %.0f Hz, want about 1400", got)
