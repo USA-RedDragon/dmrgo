@@ -212,7 +212,7 @@ func genPoints(t *testing.T, aware bool) []floorPoint {
 			cases = append(cases, benchCase{cn, 100 + seed})
 		}
 	}
-	pts := floorRun(t, slots, truth, cases, 1, true, nil, workers, aware)
+	pts := floorRun(t, slots, truth, cases, 1, true, nil, workers, aware, 0)
 	done := map[string]bool{}
 	for pi := range pts {
 		p := &pts[pi]
@@ -232,7 +232,7 @@ func genPoints(t *testing.T, aware bool) []floorPoint {
 			for j := range deep {
 				deep[j] = benchCase{p.CN, 1000 + uint64(pi)<<20 + uint64(batch*workers+j)}
 			}
-			more := floorRun(t, slots, truth, deep, 1, true, only, workers, aware)
+			more := floorRun(t, slots, truth, deep, 1, true, only, workers, aware, 0)
 			for k, v := range more[0].Counts {
 				if !only[k] && !only[strings.TrimSuffix(k, "/st")] {
 					continue

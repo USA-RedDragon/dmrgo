@@ -62,9 +62,10 @@ func (p *floorPoint) dmrFER(k string) (float64, int, bool) {
 
 // floorRun computes the floors of the sweep stream at each case on workers
 // goroutines, with a genie trellis of window d, or the error rates of the
-// code-aware receiver when aware, and returns the points summed over
+// code-aware receiver when aware, on the I/Q or, when audioHz is not 0, on
+// the discriminator audio at that rate, and returns the points summed over
 // seeds.
-func floorRun(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, cases []benchCase, d int, tail bool, only map[string]bool, workers int, aware bool) []floorPoint {
+func floorRun(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, cases []benchCase, d int, tail bool, only map[string]bool, workers int, aware bool, audioHz int) []floorPoint {
 	t.Helper()
 	type result struct {
 		sc   map[string]*benchScore
@@ -83,6 +84,9 @@ func floorRun(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, cases []benc
 			for i := range next {
 				c := cases[i]
 				e.f = newFloorSignal(slots, c.cn, c.seed)
+				if audioHz != 0 {
+					e.f.useAudio(slots, audioHz)
+				}
 				e.stream()
 				res[i] = result{e.sc, e.conv}
 			}
@@ -125,7 +129,9 @@ func floorRun(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, cases []benc
 // payloads and their 4FSK floor on a grid, for the settings in
 // DMRRF_FLOOR_PROBE: window, tail (A or B), seeds, the C/N grid
 // lo:hi:step and optionally the payloads joined by +. With
-// DMRRF_FLOOR_AWARE set it prints the code-aware receiver instead.
+// DMRRF_FLOOR_AWARE set it prints the code-aware receiver instead, and
+// with DMRRF_FLOOR_AUDIO set to a rate it gives the genie the
+// discriminator audio at that rate in place of the I/Q, as useAudio does.
 func TestFloorProbe(t *testing.T) {
 	t.Parallel()
 	spec := os.Getenv("DMRRF_FLOOR_PROBE")
@@ -156,7 +162,8 @@ func TestFloorProbe(t *testing.T) {
 		}
 	}
 	start := time.Now()
-	pts := floorRun(t, slots, truth, cases, d, tail, only, runtime.NumCPU()*3/4, os.Getenv("DMRRF_FLOOR_AWARE") != "")
+	audioHz, _ := strconv.Atoi(os.Getenv("DMRRF_FLOOR_AUDIO"))
+	pts := floorRun(t, slots, truth, cases, d, tail, only, runtime.NumCPU()*3/4, os.Getenv("DMRRF_FLOOR_AWARE") != "", audioHz)
 	fmt.Printf("%d streams in %v\n", len(cases), time.Since(start))
 	if out := os.Getenv("DMRRF_FLOOR_OUT"); out != "" {
 		b, err := json.Marshal(pts)
