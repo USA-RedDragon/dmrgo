@@ -426,13 +426,16 @@ func (s *cohStage) fineTime(k0, k1 int) float64 {
 // The fits weigh by their variance against that of the offset, as a
 // Kalman filter: cohFreqVar, in Hz squared, for the mean frequency, and
 // cohFitVar over the square of the SNR of the SYNC for the fit of 24
-// symbols, which the sweep measured from -0.5 to 4.5 dB Eb/N0.
+// symbols, which the sweep measured from -0.5 to 4.5 dB Eb/N0. The
+// variance of the offset grows by cohFreqWalk before each burst, as its
+// carrier drifts: a crystal that warms by 100 Hz/s.
 const (
 	cohFreqGain  = 0.03
 	cohFreqSpan  = 200
 	cohFreqFirst = 1000
 	cohFreqVar   = 80 * 80
 	cohFitVar    = 5000
+	cohFreqWalk  = 10
 )
 
 // track sets the carrier offset of the runs from that of the SYNC fits of
@@ -453,6 +456,7 @@ func (s *cohStage) track() {
 	if !s.freqOK || s.nFit == 0 && math.Abs(s.freq-hz) > cohFreqSpan {
 		s.freq, s.freqOK, s.nFit, s.fitVar = hz, true, 0, cohFreqVar
 	}
+	s.fitVar += cohFreqWalk
 	s.totalHz = s.freq
 }
 
