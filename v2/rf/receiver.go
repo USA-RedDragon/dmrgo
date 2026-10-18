@@ -81,8 +81,11 @@ const (
 	// counts as an anchor.
 	anchorMetric = 0.45
 	// levelGain is the weight of each anchor in the level and noise
-	// estimates, high enough to follow a receiver gain that settles.
+	// estimates, high enough to follow a receiver gain that settles, and
+	// levelJump the ratio of the power of an anchor to the level at which
+	// the estimates start again from the anchor.
 	levelGain = 0.5
+	levelJump = 4.0
 	// presenceFactor is the ratio of the mean power of a slot to the noise
 	// power at which the carrier counts as on.
 	presenceFactor = 1.5
@@ -1148,7 +1151,9 @@ func (r *engine) measure(s *slotState) {
 	}
 	s.a = best
 	r.timing(s, bestTau)
-	if r.amp == 0 {
+	if g := (best.amp / r.amp) * (best.amp / r.amp); r.amp == 0 || g > levelJump || g < 1/levelJump {
+		// The first anchor, or the gain of the input moved: the levels
+		// start from the anchor.
 		r.amp, r.noise = best.amp, best.noise
 	} else {
 		r.amp = (1-levelGain)*r.amp + levelGain*best.amp
