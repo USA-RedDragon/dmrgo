@@ -3,6 +3,7 @@ package packet
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // Bursts returns the on-air data bursts of p: the Data Header burst, then
@@ -24,7 +25,11 @@ func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer
 // dst has no room.
 func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
 	n := len(dst)
-	raw, err := layer2.BuildBurst(&p.Header, colorCode, src)
+	coded, err := p.Header.Encode()
+	if err != nil {
+		return dst, err
+	}
+	raw, err := layer2.BuildDataBurst(coded, enums.DataTypeDataHeader, colorCode, src)
 	if err != nil {
 		return dst, err
 	}
@@ -39,7 +44,36 @@ func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, s
 	return dst, nil
 }
 
+// blockBurst returns the burst of the data block d. It encodes the block
+// types of the pdu package without a call through an interface, so that
+// escape analysis keeps the Packet of AppendBursts off the heap.
 func blockBurst(d layer2.Data, colorCode enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, error) {
+	switch b := d.(type) {
+	case *pdu.Rate12Data:
+		if b != nil {
+			coded, err := b.Encode()
+			if err != nil {
+				return layer2.RawBurst{}, err
+			}
+			return layer2.BuildDataBurst(coded, enums.DataTypeRate12, colorCode, src)
+		}
+	case *pdu.Rate34Data:
+		if b != nil {
+			coded, err := b.Encode()
+			if err != nil {
+				return layer2.RawBurst{}, err
+			}
+			return layer2.BuildRate34DataBurst(coded, colorCode, src)
+		}
+	case *pdu.Rate1Data:
+		if b != nil {
+			coded, err := b.Encode()
+			if err != nil {
+				return layer2.RawBurst{}, err
+			}
+			return layer2.BuildRate1DataBurst(coded, colorCode, src)
+		}
+	}
 	if d == nil {
 		return layer2.BuildBurst(d, colorCode, src)
 	}
