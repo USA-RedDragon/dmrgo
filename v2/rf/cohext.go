@@ -439,21 +439,23 @@ const (
 )
 
 // track sets the carrier offset of the runs from that of the SYNC fits of
-// the stream, or, until a SYNC fits it, from the mean frequency of the I/Q
-// samples when it is more than cohFreqSpan away: the fits of the bursts
-// that the ring took while the oscillator pulled in can be far off, and a
-// wrong offset makes the next fits wrong. After a fit the mean does not
-// count: the symbols of a burst move it, by hundreds of Hz for the bursts
-// of a voice call or of rate 1 data.
+// the stream, or, until a SYNC fits it, from the offset of the stream when
+// it is more than cohFreqSpan away: the fits of the bursts that the ring
+// took while the oscillator pulled in can be far off, and a wrong offset
+// makes the next fits wrong. The offset of a locked stream is that of the
+// SYNC fits of the core, and of another the mean frequency of the I/Q
+// samples, which the symbols of a burst move by hundreds of Hz for the
+// bursts of a voice call or of rate 1 data, and noise pulls toward the
+// oscillator. After a fit the offset of the stream counts only when it is
+// more than cohFreqFirst away, which no fit moves: the oscillator was far
+// off at the lock.
 func (s *cohStage) track() {
 	r := s.rx
 	hz := float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
-	if f := &r.d.f; r.afcAvg == 0 && r.d.locked {
-		// No block has ended since the oscillator moved: the SYNC fits of
-		// the core give the offset.
+	if f := &r.d.f; r.d.locked {
 		hz = float64(r.conv.hz) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
 	}
-	if !s.freqOK || s.nFit == 0 && math.Abs(s.freq-hz) > cohFreqSpan {
+	if d := math.Abs(s.freq - hz); !s.freqOK || s.nFit == 0 && d > cohFreqSpan || r.d.locked && d > cohFreqFirst {
 		s.freq, s.freqOK, s.nFit, s.fitVar = hz, true, 0, cohFreqVar
 	}
 	s.fitVar += cohFreqWalk
