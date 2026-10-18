@@ -328,9 +328,20 @@ func (r *iqRx) writeBaseband(x []complex64) []Burst {
 	for _, v := range x {
 		r.sample(v)
 	}
+	r.drain()
+	return r.out
+}
+
+// drain hands the core the samples that it has not taken yet, at the end
+// of a Write. With the coherent stage it keeps them until the buffer
+// fills or the oscillator moves, so that the samples that the stage sees
+// ahead of the core do not depend on how the input splits into Writes.
+func (r *iqRx) drain() {
+	if r.yHist != nil {
+		return
+	}
 	r.d.write(r.audio)
 	r.audio = r.audio[:0]
-	return r.out
 }
 
 // write processes the I/Q bytes of Receiver.Write.
@@ -353,8 +364,7 @@ func (r *iqRx) write(iq []byte) []Burst {
 			}
 		}
 	}
-	r.d.write(r.audio)
-	r.audio = r.audio[:0]
+	r.drain()
 	return r.out
 }
 
