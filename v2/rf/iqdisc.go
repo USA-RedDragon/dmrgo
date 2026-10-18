@@ -21,6 +21,13 @@ const (
 	iqAFCPullHz  = 300
 	iqAFCFineHz  = 60
 	iqAFCAvgGain = 0.25
+	// iqAFCCoherence is the least magnitude of the sum of the products of
+	// a block, over the power of its channel filter samples, at which it
+	// moves the oscillator while the core searches. Noise alone gives 0.33
+	// to 0.47, and its mean frequency is noise that would walk the
+	// oscillator away from where the next carrier comes; a DMR carrier
+	// gives 0.73 to 0.82, and 0.49 to 0.62 at a C/N of -3 dB.
+	iqAFCCoherence = 0.48
 )
 
 // iqDisc is the FM discriminator of the I/Q tiers: an oscillator that
@@ -39,8 +46,10 @@ type iqDisc struct {
 	ncoN    int
 	hz      float32
 	// acc sums the products of the output samples with the conjugate of
-	// the ones before since the last move of the oscillator.
+	// the ones before since the last move of the oscillator, and pw the
+	// power of the output samples.
 	acc complex64
+	pw  float32
 }
 
 // init sets up d to decimate by decim, with the oscillator at 0 Hz.
@@ -99,6 +108,7 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	p := y * complex(real(d.prev), -imag(d.prev))
 	d.prev = y
 	d.acc += p
+	d.pw += re*re + im*im
 	return atan2f(imag(p), real(p)) * (float32(basebandRate/d.decim) / (2 * math.Pi)), y, true
 }
 
@@ -231,8 +241,8 @@ func (r *iqRx) sample(v complex64) {
 // of the channel filter samples while the core searches, and the DC
 // offset that the DiscReceiver measures while it is locked.
 func (r *iqRx) follow() {
-	acc := r.conv.acc
-	r.conv.acc = 0
+	acc, pw := r.conv.acc, r.conv.pw
+	r.conv.acc, r.conv.pw = 0, 0
 	// Below the FM threshold the clicks pull the mean of the
 	// discriminator toward 0 Hz. The phase of the sum of the products is
 	// the mean frequency of the carrier, which noise pulls toward the
@@ -275,6 +285,11 @@ func (r *iqRx) follow() {
 		case abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < iqAFCPullHz:
 			r.tune(hz, f.dc-hz*scale)
 		}
+		return
+	}
+	if real(acc)*real(acc)+imag(acc)*imag(acc) < iqAFCCoherence*iqAFCCoherence*pw*pw {
+		// No carrier: the mean starts again with the next one.
+		r.afcAvg = 0
 		return
 	}
 	switch {
