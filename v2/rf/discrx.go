@@ -231,13 +231,13 @@ func (r *DiscReceiver) write(x []int16) {
 		if !r.locked {
 			f.sum += int32(v)
 			f.sq += int64(v) * int64(v)
-		}
-		if f.n++; f.n == frontBlock {
-			tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
-			r.acqHead, r.acqLow = kh, kq
-			r.levels()
-			s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-			kq = r.acqLow
+			if f.n++; f.n == frontBlock {
+				tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+				r.acqHead, r.acqLow = kh, kq
+				r.levels()
+				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+				kq = r.acqLow
+			}
 		}
 		acc, ok := f.filter(v)
 		if !ok {
@@ -303,12 +303,12 @@ func (r *DiscReceiver) DeviationHz() float64 {
 	return float64(float32(r.devHz) / r.f.gain)
 }
 
-// levels ends a block of frontBlock samples. While the receiver searches,
-// it scales the input to discInputRMSHz when it is off by more than a
-// factor of 2, and moves the DC offset that the front end removes to the
-// mean input when they differ by more than leanSearchHz. A locked stream
-// keeps both, and the SYNC fits of the core follow it. It is not inlined,
-// so that the code of every sample stays small.
+// levels ends a block of frontBlock samples that came while the receiver
+// searched. It scales the input to discInputRMSHz when it is off by more
+// than a factor of 2, and moves the DC offset that the front end removes
+// to the mean input when they differ by more than leanSearchHz. A locked
+// stream keeps both, and the SYNC fits of the core follow it. It is not
+// inlined, so that the code of every sample stays small.
 //
 //go:noinline
 func (r *DiscReceiver) levels() {
@@ -318,9 +318,6 @@ func (r *DiscReceiver) levels() {
 	sq := float32(uint32(f.sq>>32))*(1<<32) + float32(uint32(f.sq))
 	v := sq/frontBlock - m*m
 	f.sum, f.sq, f.n = 0, 0, 0
-	if r.locked {
-		return
-	}
 	m *= f.gain
 	v *= f.gain * f.gain
 	f.mean += discMeanGain * (m - f.mean)

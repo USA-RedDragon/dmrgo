@@ -1281,6 +1281,10 @@ func (r *leanCore) unlock() {
 	}
 	r.locked, r.forced = false, false
 	r.acqFrom = r.n
+	if a := r.audio; a != nil {
+		// The input summed before the lock is of the signal before it.
+		a.sum, a.sq, a.n = 0, 0, 0
+	}
 	r.rebuildSigns()
 	r.tm.hold, r.tm.gain = false, r.acqGain
 	if r.tm.mm {
