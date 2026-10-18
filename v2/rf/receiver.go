@@ -504,7 +504,7 @@ func (r *engine) write(iq []byte) []Burst {
 // bytes processes whole I/Q pairs of bytes.
 func (r *engine) bytes(iq []byte) {
 	for len(iq) > 0 {
-		n := min(len(iq), r.cfg.MaxWrite, r.inChunk) &^ 1
+		n := min(len(iq), r.inChunk) &^ 1
 		if n == 0 {
 			break
 		}
