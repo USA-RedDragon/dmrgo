@@ -48,6 +48,7 @@ func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 	// The phase step of one output unit, 1944/15000 Hz, in 2^-32 turns.
 	m.step = int32((uint64(1944)<<32/tableUnits + uint64(rate/2)) / uint64(rate))
 	m.off = int32((int64(offsetHz)<<32 + int64(rate/2)) / int64(rate))
+	m.prev = m.off
 	return nil
 }
 

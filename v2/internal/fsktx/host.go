@@ -317,7 +317,7 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	q.k, q.buf, q.l, q.m = k, make([]float64, k.l/k.m+1), cfg.Rate/g, iqShaperHz/g
 	q.out = make([]int16, 2*(q.l/q.m+1)*len(q.buf))
 	q.step = (1 << 32) / float64(cfg.Rate)
-	q.off = cfg.OffsetHz
+	q.off, q.prev = cfg.OffsetHz, cfg.OffsetHz
 	if cfg.Tier != Tier2 {
 		q.tab = make([]float32, 1<<iqTableBits+1)
 		for i := range q.tab {

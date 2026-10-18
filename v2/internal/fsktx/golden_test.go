@@ -76,7 +76,7 @@ func TestGolden(t *testing.T) {
 				}
 			}
 			return h
-		}, 0xad77a3b6},
+		}, 0x010328d9},
 	}
 	for _, c := range cases {
 		if got := c.run(); got != c.want {
