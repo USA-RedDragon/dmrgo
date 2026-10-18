@@ -35,7 +35,8 @@ const polyMaxPhases = 1024
 
 // poly shapes symbols by multiply and accumulate over polyphase taps, in
 // float32 when taps32 is set and in float64 otherwise, into the deviation
-// in Hz of each output sample.
+// in Hz of each output sample. peak is the most deviation of any run of
+// symbols, in Hz.
 type poly struct {
 	taps32 []float32
 	taps64 []float64
@@ -45,6 +46,7 @@ type poly struct {
 	pos    int
 	l, m   int
 	acc    int
+	peak   float64
 }
 
 // newPoly returns a poly of the pulse pu at hz samples per second.
@@ -62,11 +64,19 @@ func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 		k.taps32 = make([]float32, len(h))
 		for i, v := range h {
 			k.taps32[i] = float32(v)
+			h[i] = float64(k.taps32[i])
 		}
 		k.ring32 = make([]float32, 2*k.n)
 	} else {
 		k.taps64 = h
 		k.ring64 = make([]float64, 2*k.n)
+	}
+	for p := range l {
+		var sum float64
+		for _, v := range h[p*k.n : p*k.n+k.n] {
+			sum += math.Abs(v)
+		}
+		k.peak = max(k.peak, 3*sum)
 	}
 	return k, nil
 }
@@ -134,7 +144,8 @@ type AudioConfig struct {
 	// Level is the output for a run of symbol +3, 1944 Hz of deviation,
 	// from 1 to 16000; 0 means 15000. Offset is added to each sample, as an
 	// unsigned DAC needs. The worst run of symbols reaches 1.9 times Level
-	// from Offset, and the output saturates beyond int16.
+	// from Offset, and NewAudio returns an error when that passes the
+	// range of int16.
 	Level, Offset int
 	// Tier selects the modulator. The zero value TierDefault is Tier1.
 	Tier Tier
@@ -187,6 +198,9 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		k, err := newPoly(pu, cfg.Hz, cfg.Tier != Tier2)
 		if err != nil {
 			return nil, err
+		}
+		if x := k.peak * a.scale; a.offset+x > math.MaxInt16 || a.offset-x < math.MinInt16 {
+			return nil, errOffset
 		}
 		a.k = k
 		a.buf = make([]float64, k.l/k.m+1)

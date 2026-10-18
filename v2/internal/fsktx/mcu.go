@@ -1,6 +1,9 @@
 package fsktx
 
-import "errors"
+import (
+	"errors"
+	"math"
+)
 
 // tableUnits is the output of an AudioTable for a run of symbol +3, the
 // 1944 Hz of its deviation.
@@ -22,6 +25,7 @@ type AudioTable struct {
 	shape func(dst *[maxSamples]int32, r *[maxTaps]int8) int
 	hz    int
 	span  int
+	peak  int32
 }
 
 // Hz returns the sample rate of t.
@@ -34,15 +38,21 @@ func (t AudioTable) Span() int { return t.span }
 
 // Table24k returns the table for samples at 24 kHz, as MMDVM modems use:
 // a pulse of 8 symbols on each side, 160 bytes.
-func Table24k() AudioTable { return AudioTable{shape: shape24k, hz: 24000, span: len(taps24k[0]) / 2} }
+func Table24k() AudioTable {
+	return AudioTable{shape: shape24k, hz: 24000, span: len(taps24k[0]) / 2, peak: taps24kPeak}
+}
 
 // Table48k returns the table for samples at 48 kHz: a pulse of 6 symbols
 // on each side, 240 bytes.
-func Table48k() AudioTable { return AudioTable{shape: shape48k, hz: 48000, span: len(taps48k[0]) / 2} }
+func Table48k() AudioTable {
+	return AudioTable{shape: shape48k, hz: 48000, span: len(taps48k[0]) / 2, peak: taps48kPeak}
+}
 
 // tableIQ returns the table of MCUIQ, at 24 kHz with a pulse of 4 symbols
 // on each side.
-func tableIQ() AudioTable { return AudioTable{shape: shapeIQ, hz: 24000, span: len(tapsIQ[0]) / 2} }
+func tableIQ() AudioTable {
+	return AudioTable{shape: shapeIQ, hz: 24000, span: len(tapsIQ[0]) / 2, peak: tapsIQPeak}
+}
 
 // shape24k writes the deviation of the samples of a symbol period at 24
 // kHz to dst, in output units, for the symbols r, newest first, and
@@ -88,9 +98,10 @@ func shapeIQ(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 // The errors of the Init methods. Each is a static value, so that Init
 // does not allocate.
 var (
-	errTable = errors.New("fsktx: no table")
-	errLevel = errors.New("fsktx: level out of range")
-	errRate  = errors.New("fsktx: rate is not a multiple of the table rate")
+	errTable  = errors.New("fsktx: no table")
+	errLevel  = errors.New("fsktx: level out of range")
+	errOffset = errors.New("fsktx: level and offset pass the range of int16")
+	errRate   = errors.New("fsktx: rate is not a multiple of the table rate")
 )
 
 // shaperMAC is the shaping state of the Tier0 modulators: the last
@@ -144,10 +155,12 @@ type MCUAudio struct {
 // for a run of symbol +3 (1944 Hz), from 1 to 16000, around offset units,
 // as an unsigned DAC needs: an output of level 15000 and offset 0 spans
 // about -28500 to 28500, and a 12-bit DAC takes level 1100 and offset
-// 2048. Level sets the deviation of the radio together with its gain; the
-// deviation test of ETSI TS 102 361-1 clause 10.2.2.3, the symbols +3 +3
-// -3 -3 repeated, should give 2749 Hz peak. m starts as after symbols 0,
-// no modulation.
+// 2048. The worst run of symbols reaches 1.9 times level from offset, and
+// Init returns an error when that passes the range of int16. Level sets
+// the deviation of the radio together with its gain; the deviation test
+// of ETSI TS 102 361-1 clause 10.2.2.3, the symbols +3 +3 -3 -3 repeated,
+// should give 2749 Hz peak. m starts as after symbols 0, no modulation.
+// On an error m stays as it was.
 func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	switch {
 	case t.shape == nil:
@@ -155,8 +168,14 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	case level < 1 || level > 16000:
 		return errLevel
 	}
+	scale := int32((level<<15 + tableUnits/2) / tableUnits)
+	hi := int((3*t.peak*scale + 1<<14) >> 15)
+	lo := int((-3*t.peak*scale + 1<<14) >> 15)
+	if offset > math.MaxInt16-hi || offset < math.MinInt16-lo {
+		return errOffset
+	}
 	m.k.reset(t)
-	m.scale = int32((level<<15 + tableUnits/2) / tableUnits)
+	m.scale = scale
 	m.offset = int32(offset)
 	return nil
 }
@@ -173,8 +192,7 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	n := m.k.symbol(s)
 	dst = dst[:n]
 	for p := range dst {
-		y := (m.k.buf[p]*m.scale+1<<14)>>15 + m.offset
-		dst[p] = int16(min(max(y, -32768), 32767))
+		dst[p] = int16((m.k.buf[p]*m.scale+1<<14)>>15 + m.offset)
 	}
 	return n
 }

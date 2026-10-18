@@ -67,15 +67,21 @@ func renderTables() ([]byte, error) {
 		l := t.hz / SymbolRate
 		h := t.p.taps(l, 1)
 		n := 2 * t.p.span
+		peak := 0
 		fmt.Fprintf(&b, "var %s = [%d][%d]int16{\n", t.name, l, n)
 		for p := range l {
 			b.WriteString("{")
+			sum := 0
 			for i := range n {
-				fmt.Fprintf(&b, "%d,", int16(math.Round(h[p*n+i]*tableUnits/3)))
+				v := int16(math.Round(h[p*n+i] * tableUnits / 3))
+				sum += max(int(v), -int(v))
+				fmt.Fprintf(&b, "%d,", v)
 			}
+			peak = max(peak, sum)
 			b.WriteString("},\n")
 		}
 		b.WriteString("}\n\n")
+		fmt.Fprintf(&b, "const %sPeak = %d\n\n", t.name, peak)
 	}
 	fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+1)
 	for i := range 1<<cosTableBits + 1 {
