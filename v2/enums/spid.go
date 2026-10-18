@@ -38,7 +38,7 @@ func (spid SPID) String() string {
 		return "Location Protocol (5017)"
 	case spid >= 3 && spid <= 94:
 		return reservedName
-	case spid >= 95:
+	case spid >= 95 && spid <= 127:
 		return manufacturerSpecificName
 	}
 	return unknownName

@@ -38,7 +38,7 @@ func (dpid DPID) String() string {
 		return "Location Protocol (5017)"
 	case dpid >= 3 && dpid <= 94:
 		return reservedName
-	case dpid >= 95:
+	case dpid >= 95 && dpid <= 127:
 		return manufacturerSpecificName
 	}
 	return unknownName
