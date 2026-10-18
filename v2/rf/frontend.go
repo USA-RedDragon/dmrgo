@@ -13,7 +13,7 @@ const (
 	// wideHz is the edge of the passband of the front end.
 	wideHz = 17000.0
 	// dcSeconds is the time constant of the DC offset removal.
-	dcSeconds = 0.05
+	dcSeconds = 1
 	// dcStartSeconds is the shortest time that the DC offset estimate
 	// averages over at the start of a stream, so that it does not take a
 	// carrier near 0 Hz for the offset.
