@@ -63,6 +63,9 @@ type cohStage struct {
 	scale    float32
 	ampAvg   float64
 	noiseAvg float64
+	// easy marks a burst whose levels are clear enough that it runs only
+	// from its own known symbols.
+	easy     bool
 	segs     [2][2]int
 	nseg     int
 	prior    [slotSymbols][4]float32
@@ -642,6 +645,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		s.noiseAvg += g * (noise - s.noiseAvg)
 	}
 	s.scale = float32(2 * s.ampAvg / s.noiseAvg)
+	s.easy = s.ampAvg*s.ampAvg/s.noiseAvg >= cohEasySNR
 	s.segs, s.nseg, s.hasPrior = segs, nseg, false
 	// The carrier of a BS stream stays on, so the first half and the SYNC
 	// field of a burst after one with a SYNC run again from that SYNC.
@@ -663,6 +667,12 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 // cohLevelSyms is the number of known symbols that the levels of the
 // trellis average over.
 const cohLevelSyms = 48
+
+// cohEasySNR is the SNR of the levels, the power of the signal over that of
+// the noise, from which a burst runs only from its own known symbols and
+// detects no voice burst again: about 7 dB Eb/N0, 1.5 dB above the
+// Eb/N0 of 90% of every payload, where those runs gain nothing.
+const cohEasySNR = 6
 
 // cohShift is the most symbols by which the timing of the core may move
 // the slot before.
@@ -791,13 +801,13 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	lo, hi := cachSymbols, slotSymbols-1
 	g0, g1 := s.segs[0][0], s.segs[s.nseg-1][1]
 	s.run(g0, hi-g0+1+runMargin, 1, s.scale)
-	if s.bs && s.nseg == 1 {
+	if s.bs && s.nseg == 1 && !s.easy {
 		s.nextOK = true
 		s.run(g1, g1+cohNext+1+runMargin, -1, s.scale)
 	} else {
 		s.run(g1, g1-lo+1+runMargin, -1, s.scale)
 	}
-	if s.prevOK {
+	if s.prevOK && !s.easy {
 		s.cross = true
 		s.run(s.prevK0, syncFirstSym+syncSymbols-s.prevK0+runMargin, 1, s.scale)
 		s.cross = false

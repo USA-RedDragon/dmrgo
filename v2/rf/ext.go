@@ -162,7 +162,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	ch := &x.ch[b.Slot&1]
 	if x.coh != nil && x.coh.detect(c, b, &x.llr) {
 		x.repairAll(c, b, cc, ccOK)
-		if x.voiceKnown(b) && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
+		if x.voiceKnown(b) && !x.coh.easy && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
 			x.repairAll(c, b, cc, ccOK)
 		} else {
 			x.dataPasses(c, b, cc, ccOK)
