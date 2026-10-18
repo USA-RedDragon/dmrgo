@@ -26,7 +26,7 @@ func write(x []int16) {
 }
 
 func main() {
-	if err := mod.Init(fsktx.Table24k(), 1100, 2048); err != nil {
+	if err := mod.Init(fsktx.Table24k(), 1080, 2048); err != nil {
 		return
 	}
 	x := byte(1)

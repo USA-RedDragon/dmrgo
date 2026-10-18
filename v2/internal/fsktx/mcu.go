@@ -154,13 +154,13 @@ type MCUAudio struct {
 // Init sets up m for the samples of table t, at level units of the output
 // for a run of symbol +3 (1944 Hz), from 1 to 16000, around offset units,
 // as an unsigned DAC needs: an output of level 15000 and offset 0 spans
-// about -28500 to 28500, and a 12-bit DAC takes level 1100 and offset
-// 2048. The worst run of symbols reaches 1.9 times level from offset, and
-// Init returns an error when that passes the range of int16. Level sets
-// the deviation of the radio together with its gain; the deviation test
-// of ETSI TS 102 361-1 clause 10.2.2.3, the symbols +3 +3 -3 -3 repeated,
-// should give 2749 Hz peak. m starts as after symbols 0, no modulation.
-// On an error m stays as it was.
+// about -28500 to 28500, and a 12-bit DAC takes level 1080 and offset
+// 2048, which stay within 4 to 4092. The worst run of symbols reaches 1.9
+// times level from offset, and Init returns an error when that passes the
+// range of int16. Level sets the deviation of the radio together with its
+// gain; the deviation test of ETSI TS 102 361-1 clause 10.2.2.3, the
+// symbols +3 +3 -3 -3 repeated, should give 2749 Hz peak. m starts as
+// after symbols 0, no modulation. On an error m stays as it was.
 func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	switch {
 	case t.shape == nil:
