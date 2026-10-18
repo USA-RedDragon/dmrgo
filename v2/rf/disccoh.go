@@ -238,14 +238,26 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 	return n, p.out[:k]
 }
 
-// rawAt returns the input sample that ring sample m holds.
+// rawAt returns the input at ring sample m, in input units: the mean of
+// the input over the ring sample, from the sums linear between the input
+// samples. The input of an input sample over a ring sample would hold each
+// input sample over the ring samples that it spans, whose steps the
+// matched filter of the core at discRate takes for the signal.
 func (p *discPhase) rawAt(m int64) int16 {
-	i := (m*p.den + p.num - 1) / p.num
-	v := p.sum[i&(discPhaseRaw-1)]
-	if i > 0 {
-		v -= p.sum[(i-1)&(discPhaseRaw-1)]
+	r := float64(p.den) / float64(p.num)
+	at := func(x float64) float64 {
+		i := int64(math.Floor(x))
+		mu := x - float64(i)
+		s0 := float64(p.sum[i&(discPhaseRaw-1)] - p.sumO)
+		s1 := float64(p.sum[(i+1)&(discPhaseRaw-1)] - p.sumO)
+		return s0 + mu*(s1-s0)
 	}
-	return int16(max(min(v, math.MaxInt16), math.MinInt16))
+	x := float64(m) * r
+	if x-r < 0 {
+		return 0
+	}
+	v := (at(x) - at(x-r)) / r
+	return int16(max(min(math.Round(v), math.MaxInt16), math.MinInt16))
 }
 
 // emit sets phasor m from the sums.
