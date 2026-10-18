@@ -1,6 +1,7 @@
 package rf
 
 import (
+	"math"
 	"strconv"
 	"testing"
 
@@ -83,6 +84,70 @@ func c0c1InOrder(want, got []uint64) int {
 		}
 	}
 	return n
+}
+
+// TestIQDiscAdjacent receives MS voice calls, whose carrier is on in one
+// slot of two, next to a continuous BS stream 12.5 kHz above them and 40
+// dB stronger, through iqRx with its oscillator held within 2500 Hz and
+// moved only by the SYNC fits while locked, and checks that the parts C0
+// and C1 of every voice frame decode. In the gaps between the bursts the
+// edge of the channel filter holds only the other channel, which pulls an
+// oscillator that follows the mean frequency onto it.
+func TestIQDiscAdjacent(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig()
+	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
+	built, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 1})
+	const calls = 3
+	gap := make([]float64, int(0.3*basebandRate))
+	var fmAll, envAll []float64
+	want := make([]uint64, 0, calls*18*cfg.Superframes)
+	for c := range calls {
+		if c > 0 {
+			fmAll, envAll = append(fmAll, gap...), append(envAll, gap...)
+		}
+		fmAll, envAll = append(fmAll, fm...), append(envAll, env...)
+		for i := range 18 * cfg.Superframes {
+			want = append(want, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
+		}
+	}
+	ic := testConfig()
+	ic.ColorCode, ic.Superframes, ic.Wakeups, ic.Slot, ic.BSSourced = 5, 4, 0, 0, true
+	ib, err := rftx.Sequence("voice", ic)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fi, _ := rftx.ModulateBS(ib.Slots)
+	for _, held := range []bool{false, true} {
+		x := msBaseband(fmAll, envAll, 0.3, 0, 20, 7)
+		var ph float64
+		for i := range x {
+			ph += 2 * math.Pi * (fi[i%len(fi)] + 12500) / basebandRate
+			x[i] += complex(float32(100*math.Cos(ph)), float32(100*math.Sin(ph)))
+		}
+		o := discOptions()
+		o.IQDisc, o.IQHz = true, 12000
+		if held {
+			o.IQTuneMaxHz, o.IQTuneSyncOnly = 2500, true
+		}
+		var out []Burst
+		r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
+		for k := 0; k < len(x); k += 4096 {
+			r.WriteBaseband(x[k:min(k+4096, len(x))])
+		}
+		r.Flush()
+		n := c0c1InOrder(want, voiceFrames(out))
+		switch {
+		case held && n < len(want):
+			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, len(want))
+		case !held && n == len(want):
+			t.Errorf("not held: all %d voice frames exact; the test no longer shows the pull", n)
+		}
+	}
 }
 
 // iqDiscReceive runs the baseband x through iqRx at hz with OnBurst.
