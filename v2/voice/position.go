@@ -26,8 +26,13 @@ const (
 const lateWindow = 32
 
 // tracker keeps the superframe position of the last voice burst of a call.
+// header reports that pos is the position before burst A of a Voice LC
+// Header or PI Header without a sequence number that came at time at. Such
+// a header counts the lost bursts but predicts no position, because
+// headers after it can be lost too.
 type tracker struct {
 	known  bool
+	header bool
 	pos    int
 	at     time.Duration
 	hasAt  bool
@@ -37,15 +42,21 @@ type tracker struct {
 	hasRaw bool
 }
 
-// afterHeader anchors the sequence number of a Voice LC Header with Hint
-// h, as the position before burst A, when no voice burst of the call has
-// come yet.
-func (t *tracker) afterHeader(h *layer2.Hint) {
+// afterHeader anchors a Voice LC Header or PI Header that arrived at now
+// with Hint h as the position before burst A, when no voice burst of the
+// call has come yet. The first voice burst then counts the bursts lost
+// after the header from the sequence number of h or, without one, from the
+// time since now.
+func (t *tracker) afterHeader(h *layer2.Hint, now time.Duration) {
 	if t.hasRaw {
 		return
 	}
-	t.known, t.pos = true, layer2.VoiceBurstsPerSuperframe-1
-	t.seq, t.hasSeq = h.Seq, true
+	t.pos = layer2.VoiceBurstsPerSuperframe - 1
+	if h.HasSeq {
+		t.known, t.seq, t.hasSeq = true, h.Seq, true
+		return
+	}
+	t.header, t.at, t.hasAt = true, now, true
 }
 
 // place returns the superframe index of the voice burst b, whose bits are
@@ -87,7 +98,7 @@ func (t *tracker) place(b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, n
 		lost = gap
 	case gap > 0:
 		lost = gap - 1
-	case idx >= 0 && t.known:
+	case idx >= 0 && (t.known || t.header):
 		lost = (idx - t.pos - 1 + 2*layer2.VoiceBurstsPerSuperframe) % layer2.VoiceBurstsPerSuperframe
 		if !h.HasSeq {
 			lost = nearestLost(lost, steps-1)
@@ -96,7 +107,7 @@ func (t *tracker) place(b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, n
 		lost = steps - 1
 	}
 
-	t.known, t.pos = idx >= 0, idx
+	t.known, t.header, t.pos = idx >= 0, false, idx
 	t.at, t.hasAt = at, true
 	t.raw, t.hasRaw = *raw, true
 	if h.HasSeq {
