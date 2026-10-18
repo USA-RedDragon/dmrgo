@@ -621,7 +621,6 @@ const (
 var rxKnown = map[string]string{
 	"msj/40 dB/offset -3000 Hz/iq0": rxKnownAFC,
 	"msj/12 dB/offset -3000 Hz/iq0": rxKnownAFC,
-	"msj/12 dB/late C/iq0h":         rxKnownLate,
 	"ms/12 dB/late D/iq0h":          rxKnownLate,
 	"ms/12 dB/late D/iq1h":          rxKnownLate,
 	"ms/12 dB/late F/iq0h":          rxKnownLate,

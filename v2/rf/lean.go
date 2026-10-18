@@ -773,12 +773,18 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 		return 0, false
 	}
 	// The correlations from half a symbol early to half a symbol late in
-	// quarter symbols, and the peak of the parabola around the best.
-	var c [5]float32
-	best := 2
+	// quarter symbols, and the peak of the parabola around the best. A
+	// lock tests three quarters too: it samples the SYNC of a stream at
+	// another timing, whose end can lie between two of its symbols.
+	var c [7]float32
+	span := 2
+	if r.locked {
+		span = 3
+	}
+	best := 3
 	for k := range c {
-		d := float32(k-2) * sps / 4
-		if end+d > 0 {
+		d := float32(k-3) * sps / 4
+		if end+d > 0 || k < 3-span || k > 3+span {
 			// Its last symbol is after the last sample.
 			c[k] = float32(math.Inf(-1))
 			continue
@@ -795,7 +801,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 		// at the next symbol, where its end lies inside the offsets.
 		return 0, false
 	}
-	bestD := float32(best-2) * sps / 4
+	bestD := float32(best-3) * sps / 4
 	lo, hi := c[max(best-1, 0)], c[min(best+1, len(c)-1)]
 	if den := lo - 2*c[best] + hi; best > 0 && best < len(c)-1 && den < 0 && !math.IsInf(float64(lo+hi), 0) {
 		bestD += max32(min32(0.5*(lo-hi)/den, 0.5), -0.5) * sps / 4
