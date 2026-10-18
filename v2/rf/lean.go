@@ -1264,24 +1264,8 @@ func (r *leanCore) slot() {
 	c := &r.ch[j&1]
 	sf := c.sf
 	if isAnchor {
-		r.fitLevels(base+leanSyncEnd+shift, anchor, false, true)
-		if abs32(r.dcHz) > leanRetuneHz && !r.replaying {
-			r.retune(r.dcHz)
-		}
-		r.first += shift
-		r.slotEnd += shift
 		base += shift
-		if r.amp == 0 || energy > levelJump*r.amp || levelJump*energy < r.amp {
-			// The first anchor, or the gain of the input moved: the
-			// levels start from the anchor.
-			r.amp, r.noise = energy, energy/4
-		} else {
-			r.amp = levelForget*r.amp + (1-levelForget)*energy
-		}
-		r.lastAnch = j
-		if base > r.lockNs {
-			r.forced = false
-		}
+		r.anchorAt(j, base, shift, anchor, energy)
 	}
 	present := isAnchor || r.noise == 0 || energy > 1.5*r.noise
 	// Nor do they carry a burst, and the timing loop holds through them.
@@ -1315,21 +1299,51 @@ func (r *leanCore) slot() {
 		}
 		r.dataAnch[j&1] = isAnchor && anchor == dp
 	}
-	if hunt := r.stale(); hunt {
-		if !r.hunt {
-			r.acqFrom = r.n
-			if r.ext == nil || r.ext.kept() == nil {
-				// The ring of the search while locked.
-				r.acqHead, r.acqLow = 0, 0
-			}
-		}
-		r.hunt = true
-	} else {
-		r.hunt = false
-	}
+	r.setHunt()
 	if !r.replaying && r.ended(j, base) {
 		r.unlock()
 	}
+}
+
+// anchorAt takes the SYNC of pattern anchor of slot j, whose first symbol
+// is base, shift symbols from where the slots placed it, whose symbols
+// have the mean prefilter power energy, as an anchor of the stream: it
+// fits the levels to it and moves the slots by shift.
+func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern, energy float32) {
+	r.fitLevels(base+leanSyncEnd, anchor, false, true)
+	if abs32(r.dcHz) > leanRetuneHz && !r.replaying {
+		r.retune(r.dcHz)
+	}
+	r.first += shift
+	r.slotEnd += shift
+	if r.amp == 0 || energy > levelJump*r.amp || levelJump*energy < r.amp {
+		// The first anchor, or the gain of the input moved: the levels
+		// start from the anchor.
+		r.amp, r.noise = energy, energy/4
+	} else {
+		r.amp = levelForget*r.amp + (1-levelForget)*energy
+	}
+	r.lastAnch = j
+	if base > r.lockNs {
+		r.forced = false
+	}
+}
+
+// setHunt sets hunt from stale at the end of a slot. A lock that starts to
+// hunt keeps the matched filter samples from then on.
+func (r *leanCore) setHunt() {
+	if !r.stale() {
+		r.hunt = false
+		return
+	}
+	if !r.hunt {
+		r.acqFrom = r.n
+		if r.ext == nil || r.ext.kept() == nil {
+			// The ring of the search while locked.
+			r.acqHead, r.acqLow = 0, 0
+		}
+	}
+	r.hunt = true
 }
 
 // anchors reports whether the SYNC field of pattern p that ends at symbol
