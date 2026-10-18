@@ -113,6 +113,9 @@ type cohStage struct {
 	// EMB that the core decoded.
 	priorK bool
 	sps    float64
+	// div is the number of baseband samples per ring sample, rate the
+	// rate of the ring, and step the ring samples per sample of the model.
+	div, rate, step float64
 	// The SYNC scan: the templates of the voice and the data SYNC of each
 	// of nsrc sources, and the ring samples under test.
 	scanTpl [4][2][cohScanLen]complex64
@@ -133,19 +136,42 @@ type cohStage struct {
 func newCohStage(r *iqRx, opt *options) *cohStage {
 	s := newCohStageOf(opt)
 	s.rx, s.f = r, &r.d.f
+	s.setRing(float64(r.conv.decim))
 	return s
+}
+
+// setRing sets the ring of s to div baseband samples per ring sample.
+func (s *cohStage) setRing(div float64) {
+	s.div, s.rate = div, basebandRate/div
+	s.dt = cohDT
+	if div == 4 {
+		s.dt = cohDT12
+	}
+	s.sps = samplesPerSy / div
+	s.step = s.sps / float64(s.model.sps)
+}
+
+// ringTime returns the time of symbol k of the core, in samples of the
+// ring.
+func (s *cohStage) ringTime(c *leanCore, k int64) float64 {
+	return symTime(c, k) * 2 / s.div
 }
 
 // newCohStageOf returns a coherent stage with the settings opt, without
 // its ring.
 func newCohStageOf(opt *options) *cohStage {
-	m := newCPMModel(1, cohSPS, 0.27)
+	sps := cohSPS
+	if opt.CohSPS != 0 {
+		sps = opt.CohSPS
+	}
+	m := newCPMModel(1, sps, 0.27)
 	s := &cohStage{model: m, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
 	s.tr = newTrellis(m, cohMaxRun, cohMaxRun, 0)
-	s.buf = make([]complex64, (syncSymbols+2)*cohSPS)
+	s.setRing(2)
+	s.buf = make([]complex64, (syncSymbols+2)*sps)
 	s.nsrc = min(opt.Sources, len(s.scanTpl))
 	for i := range s.nsrc {
 		voice, data, _ := sourceAt(i).SyncPatterns()
@@ -197,7 +223,7 @@ func (s *cohStage) scanTemplate(p enums.SyncPattern, tpl *[cohScanLen]complex64)
 // share of the power of the ring samples that its waveform explains.
 func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 	hist, n, lo := s.ring()
-	if n < cohHist/2 {
+	if n < cohHist/2 || s.step != 1 || s.div != 2 {
 		return 0, false, 0, false
 	}
 	sps := float64(samplesPerSy) / 2
@@ -279,7 +305,7 @@ func (s *cohStage) ring() ([]complex64, int64, int64) {
 // sample returns the ring sample at time t, interpolated by Catmull-Rom;
 // fill rotates it by the carrier residual.
 func (s *cohStage) sample(t float64) complex64 {
-	if s.trialing {
+	if s.trialing || s.ph != nil && s.ph.lazy {
 		return s.ph.trialAt(t, s.t0, s.trial, s.totalHz)
 	}
 	hist, n, lo := s.ring()
@@ -309,7 +335,7 @@ func (s *cohStage) phaseAt(t float64) float64 {
 		a, b, sign = b, a, -1
 	}
 	if r == nil {
-		return -2 * math.Pi * sign * s.totalHz * (b - a) / discRate
+		return -2 * math.Pi * sign * s.totalHz * (b - a) / s.rate
 	}
 	var ph float64
 	for a < b {
@@ -325,7 +351,7 @@ func (s *cohStage) phaseAt(t float64) float64 {
 		ph += hz * (end - a)
 		a = end
 	}
-	return -2 * math.Pi * sign * ph / discRate
+	return -2 * math.Pi * sign * ph / s.rate
 }
 
 // fill writes the samples of slot symbols k0 to k1-1 of the run into x,
@@ -335,11 +361,11 @@ func (s *cohStage) fill(k0, k1 int, x []complex64) {
 	for i := k0; i < k1; i++ {
 		k := s.g0 + s.dir*i
 		tc := s.t0 + float64(k)*s.sps
-		start := tc - float64(sps/2)
-		step := 1.0
+		step := s.step
+		start := tc - float64(sps/2)*step
 		if s.dir < 0 {
-			start = tc + float64(sps/2) - 1
-			step = -1
+			start = tc + float64(sps/2)*step - 2/s.div
+			step = -step
 		}
 		// The carrier phase moves linearly over the samples of a symbol,
 		// but across a move of the oscillator.
@@ -428,10 +454,12 @@ func (s *cohStage) runKeep(k int, app []float32) {
 }
 
 // Settings of the fine timing of cohStage: the offset of the symbol
-// timing of the core that it starts from, the offsets it tries around the
-// last, and the weight of each SYNC in it.
+// timing of the core that it starts from, in ring samples, on a ring at
+// 24 kHz and at 12 kHz, the offsets it tries around the last, in samples
+// at 24 kHz, and the weight of each SYNC in it.
 const (
 	cohDT     = 1.0
+	cohDT12   = -0.4
 	cohDTSpan = 0.6
 	cohDTStep = 0.2
 	cohDTGain = 0.2
@@ -444,13 +472,13 @@ const (
 func (s *cohStage) fineTime(k0, k1 int) float64 {
 	t0, best, bestD := s.t0, -1.0, 0.0
 	for d := -cohDTSpan; d <= cohDTSpan+1e-9; d += cohDTStep {
-		s.t0 = t0 + d
+		s.t0 = t0 + d*2/s.div
 		if a, _ := s.levels(k0, k1); a > best {
 			best, bestD = a, d
 		}
 	}
-	s.t0 = t0 + bestD
-	return bestD
+	s.t0 = t0 + bestD*2/s.div
+	return bestD * 2 / s.div
 }
 
 // cohFreqGain is the least weight of each fit of the carrier offset, from
@@ -605,9 +633,8 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		s.carry = s.mine
 	}
 	s.mineOK, s.mineSlot = false, b.Slot
-	s.sps = float64(samplesPerSy) / 2
-	s.t0 = symTime(c, c.base) + s.dt
-	if s.t0-float64(cohSPS) < float64(lo) {
+	s.t0 = s.ringTime(c, c.base) + s.dt
+	if s.t0-s.sps < float64(lo) {
 		return false
 	}
 	s.track()
@@ -678,6 +705,36 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		}
 		s.fitDeviation(segs[0][0], segs[0][1], f0+fit-s.freq)
 	}
+	// The phase of a lazy audio ring is noise until a fit sets its scale.
+	if p := s.ph; p != nil && p.lazy && !p.cal {
+		return false
+	}
+	if !s.average(segs, nseg) {
+		return false
+	}
+	s.scale = float32(2 * s.ampAvg / s.noiseAvg)
+	s.easy = s.ampAvg*s.ampAvg/s.noiseAvg >= s.easySNR
+	s.segs, s.nseg, s.hasPrior = segs, nseg, false
+	// The carrier of a BS stream stays on, so the first half and the SYNC
+	// field of a burst after one with a SYNC run again from that SYNC.
+	s.prevOK = false
+	if c.bs && s.lastSync != 0 {
+		k := int(math.Round((s.lastT0-s.t0)/s.sps)) + syncFirstSym
+		if k > syncFirstSym-slotSymbols-cohShift && k < syncFirstSym-slotSymbols+cohShift {
+			s.prevOK, s.prevK0 = true, k
+			syncSyms(s.lastSync, &s.prevSyms)
+		}
+	}
+	s.lastT0, s.lastSync = s.t0, 0
+	if nseg == 1 {
+		s.lastSync = b.Sync
+	}
+	return s.runAll(llr)
+}
+
+// average adds the levels of the known runs segs[:nseg] of the burst to
+// their mean over the bursts, and reports false when they have none.
+func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 	var amp, noise float64
 	for _, sg := range segs[:nseg] {
 		a, v := s.levels(sg[0], sg[1])
@@ -700,24 +757,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		s.ampAvg += g * (amp - s.ampAvg)
 		s.noiseAvg += g * (noise - s.noiseAvg)
 	}
-	s.scale = float32(2 * s.ampAvg / s.noiseAvg)
-	s.easy = s.ampAvg*s.ampAvg/s.noiseAvg >= s.easySNR
-	s.segs, s.nseg, s.hasPrior = segs, nseg, false
-	// The carrier of a BS stream stays on, so the first half and the SYNC
-	// field of a burst after one with a SYNC run again from that SYNC.
-	s.prevOK = false
-	if c.bs && s.lastSync != 0 {
-		k := int(math.Round((s.lastT0-s.t0)/s.sps)) + syncFirstSym
-		if k > syncFirstSym-slotSymbols-cohShift && k < syncFirstSym-slotSymbols+cohShift {
-			s.prevOK, s.prevK0 = true, k
-			syncSyms(s.lastSync, &s.prevSyms)
-		}
-	}
-	s.lastT0, s.lastSync = s.t0, 0
-	if nseg == 1 {
-		s.lastSync = b.Sync
-	}
-	return s.runAll(llr)
+	return true
 }
 
 // cohLevelSyms is the number of known symbols that the levels of the
@@ -777,9 +817,8 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 		return false
 	}
 	_, _, lo := s.ring()
-	s.sps = float64(samplesPerSy) / 2
-	t0 := symTime(c, c.base) + s.dt
-	if t0-float64(cohSPS) < float64(lo) {
+	t0 := s.ringTime(c, c.base) + s.dt
+	if t0-s.sps < float64(lo) {
 		return false
 	}
 	s.totalHz = s.freq
@@ -859,10 +898,9 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 		return false
 	}
 	_, _, lo := s.ring()
-	s.sps = float64(samplesPerSy) / 2
 	base := c.ns - 1 - leanSyncEnd
-	s.t0 = symTime(c, base) + s.dt
-	if s.t0-float64(cohSPS) < float64(lo) {
+	s.t0 = s.ringTime(c, base) + s.dt
+	if s.t0-s.sps < float64(lo) {
 		return false
 	}
 	s.verifyHz()

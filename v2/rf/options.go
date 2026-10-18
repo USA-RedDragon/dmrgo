@@ -101,10 +101,18 @@ type options struct {
 	// 24000.
 	IQDisc bool
 	IQHz   int
-	// CohExt adds to softExt on iqRx at 24 kHz, or on a DiscReceiver, the
-	// coherent detection of each burst again, with the trellis settings
-	// PSPGain and LLRScale.
+	// CohExt adds to softExt on iqRx, or on a DiscReceiver, the coherent
+	// detection of each burst again, with the trellis settings PSPGain and
+	// LLRScale.
 	CohExt bool
+	// CohSPS is the number of samples per symbol that the coherent
+	// detection correlates, 2 or 5; 0 means 5.
+	CohSPS int
+	// CohLazy runs the core of a DiscReceiver with CohExt on its input,
+	// and builds the phase of each sample that the coherent detection
+	// reads from the input as it reads it, instead of a ring of channel
+	// filter samples for both.
+	CohLazy bool
 }
 
 // discOptions returns the settings of the FM discriminator core alone:

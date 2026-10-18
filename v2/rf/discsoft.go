@@ -15,18 +15,24 @@ func (r *DiscReceiver) addSoft(t Tier) error {
 // addExt adds to r the stages of opt after the core.
 func (r *DiscReceiver) addExt(opt *options) {
 	var ph *discPhase
-	if opt.CohExt {
+	switch {
+	case opt.CohExt && opt.CohLazy:
+		ph = newDiscPhase(r, r.hz(), true)
+	case opt.CohExt:
 		// The core runs at discRate on the discriminator of the ring.
 		hz, out := r.hz(), r.out
 		_ = r.Init(DiscConfig{Hz: discRate, OnBurst: r.onBurst, opt: opt})
 		r.out = out
-		ph = newDiscPhase(r, hz)
+		ph = newDiscPhase(r, hz, false)
 	}
 	x := softExtOf(opt, 2*r.tm.step)
 	if ph != nil {
 		x.ph, x.coh = ph, newCohStageOf(opt)
 		x.coh.ph, x.coh.f, ph.coh = ph, &r.f, x.coh
 		x.coh.easySNR = discEasySNR
+		if ph.lazy {
+			x.coh.dt = lazyDT(r.hz())
+		}
 		r.signMiss = leanExtSignMiss
 	}
 	r.ext = x
@@ -52,7 +58,7 @@ func (r *DiscReceiver) write(x []int16) {
 // inputHz returns the rate of the input of r: the core of Tier2 runs at
 // discRate on input at any rate.
 func (r *DiscReceiver) inputHz() int {
-	if e, _ := r.ext.(*softExt); e != nil && e.ph != nil {
+	if e, _ := r.ext.(*softExt); e != nil && e.ph != nil && !e.ph.lazy {
 		return e.ph.inputHz()
 	}
 	return r.hz()

@@ -186,7 +186,7 @@ func newIQRx(cfg Config, opt options) *iqRx {
 	}
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
-		if opt.CohExt && hz == discRate {
+		if opt.CohExt {
 			r.yHist = make([]complex64, cohHist)
 			x.coh = newCohStage(r, &opt)
 			r.d.signMiss = leanExtSignMiss

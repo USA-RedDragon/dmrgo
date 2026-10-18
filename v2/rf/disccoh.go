@@ -111,15 +111,37 @@ type discPhase struct {
 	fitUnit float64
 	fitN    int
 	coh     *cohStage
+	// lazy marks a phase that keeps only the sums: the core runs on the
+	// input, and the coherent stage builds each phasor from the sums as it
+	// reads it.
+	lazy bool
 	// out holds the discriminator samples of the ring for the core, in
 	// the units of the input.
 	out [discPhaseChunk + discPhaseLag + 4]int16
 }
 
+// lazyDT returns the offset of the symbol timing of the core of a
+// DiscReceiver at hz that a lazy phase starts from, in samples at
+// discRate: the delays of the front end of the core differ by its input
+// rate, and the fits of the bursts measure these.
+func lazyDT(hz int) float64 {
+	switch hz {
+	case discRate:
+		return 0.7
+	case discRate / 2:
+		return -0.8
+	}
+	return -0.9
+}
+
 // newDiscPhase returns the phase of the samples at hz for DiscReceiver r,
-// whose core runs at discRate on the discriminator of the ring.
-func newDiscPhase(r *DiscReceiver, hz int) *discPhase {
-	p := &discPhase{c: &r.leanCore, sum: make([]int64, discPhaseRaw), hist: make([]complex64, cohHist)}
+// whose core runs at discRate on the discriminator of the ring, or on its
+// input when lazy.
+func newDiscPhase(r *DiscReceiver, hz int, lazy bool) *discPhase {
+	p := &discPhase{c: &r.leanCore, sum: make([]int64, discPhaseRaw), lazy: lazy}
+	if !lazy {
+		p.hist = make([]complex64, cohHist)
+	}
 	fc := discCutHz / discRate
 	var sum float64
 	for i := range p.taps {
@@ -160,6 +182,18 @@ func (p *discPhase) inputHz() int {
 func (p *discPhase) input(x []int16) (int, []int16) {
 	n := min(len(x), int(discPhaseChunk*p.den/p.num))
 	p.update()
+	if p.lazy {
+		for _, u := range x[:n] {
+			p.last += int64(u)
+			p.sum[p.sumN&(discPhaseRaw-1)] = p.last
+			p.sumN++
+		}
+		// The ring samples that the sums hold with the two after them of
+		// the interpolation.
+		p.n = max((p.sumN-3)*p.num/p.den, 0)
+		p.lo = (max(p.sumN-discPhaseRaw, p.o)+2)*p.num/p.den + 1
+		return n, x[:n]
+	}
 	k := 0
 	// A ring sample moves the phase by a times the input sum over den/num
 	// input samples, less b for each input sample.
@@ -401,6 +435,9 @@ func (p *discPhase) build(unit, dc float64) {
 	if p.sumN > 0 {
 		p.sumO = p.sum[p.o&(discPhaseRaw-1)]
 	}
+	if p.lazy {
+		return
+	}
 	lo := max(((p.o+p.wait)*p.num+p.den-1)/p.den, p.rawN-cohHist)
 	p.lo = lo + discPhaseLag
 	for m := lo; m < p.rawN; m++ {
@@ -425,7 +462,7 @@ func rescaleTurn(v complex64, k, d float64) complex64 {
 // of follow, or on a direct mode stream, whose noise pulls the mean, the
 // DC offset of the core.
 func (p *discPhase) offsetHz() float64 {
-	if c := p.c; c.locked && !c.bs {
+	if c := p.c; p.lazy || c.locked && !c.bs {
 		return float64(p.coreHz())
 	}
 	return float64(ringHz(p.avg))

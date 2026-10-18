@@ -19,14 +19,22 @@ type cpmModel struct {
 	// tpl[w*sps+j]. The newest symbol is the least significant base-4 digit.
 	tpl  []complex64
 	step [4]complex64
-	pp   phasePulse
-	h    float64
+	// pp is the phase pulse at res samples per symbol, a multiple of sps.
+	pp  phasePulse
+	res int
+	h   float64
 }
 
 // newCPMModel returns the model with a window of d symbols on each side, at
-// sps samples per symbol, 5 or 10, and modulation index h (0.27 nominal).
+// sps samples per symbol, 2, 5 or 10, and modulation index h (0.27
+// nominal). The templates at 2 samples per symbol are those at 10 at every
+// fifth sample.
 func newCPMModel(d, sps int, h float64) *cpmModel {
-	m := &cpmModel{d: d, sps: sps, states: 1 << (4 * d), windows: 1 << (4*d + 2), pp: newPhasePulse(sps)}
+	res := sps
+	if sps == 2 {
+		res = samplesPerSy
+	}
+	m := &cpmModel{d: d, sps: sps, states: 1 << (4 * d), windows: 1 << (4*d + 2), pp: newPhasePulse(res), res: res}
 	m.tpl = make([]complex64, m.windows*sps)
 	m.setH(h)
 	return m
@@ -37,11 +45,11 @@ func (m *cpmModel) setH(h float64) {
 	sps, d := m.sps, m.d
 	for w := range m.windows {
 		for j := range sps {
-			off := j - sps/2
+			off := (j - sps/2) * (m.res / sps)
 			var ph float64
 			for i := -d; i <= d; i++ {
 				digit := (w >> (2 * (d - i))) & 3
-				ph += float64(2*digit-3) * m.pulse(off-i*sps, h)
+				ph += float64(2*digit-3) * m.pulse(off-i*m.res, h)
 			}
 			m.tpl[w*sps+j] = complex64(complex(math.Cos(ph), -math.Sin(ph)))
 		}
