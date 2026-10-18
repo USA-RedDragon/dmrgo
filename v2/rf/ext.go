@@ -194,11 +194,15 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 	c.repair(&c.fec, b, cc, ccOK)
 	out := &b.Fixed
 	if x.coh != nil && x.coh.detect(c, b, &x.llr) {
+		fixed, data := b.Fixed, b.Data
 		x.repairAll(c, b, cc, ccOK)
 		if x.voiceKnown(b) && !x.coh.easy && x.coh.refine(&b.Fixed, &x.known, &x.llr) {
 			x.repairAll(c, b, cc, ccOK)
 		} else {
 			x.dataPasses(c, b, cc, ccOK)
+		}
+		if x.bptcRetry(b) {
+			x.coreData(c, b, fixed, data)
 		}
 		x.coh.trackBurst(&b.Fixed)
 		hold := false
@@ -292,12 +296,17 @@ func (x *softExt) back(c *leanCore, j int64) {
 		if b.Slot != j || !x.qcoh[i] {
 			continue
 		}
-		cur, lc := x.llr, b.Fixed
+		cur, lc, data := x.llr, b.Fixed, b.Data
 		x.llr = x.coh.qllr[i]
 		x.coh.nextInto(&x.llr)
 		x.coh.qllr[i] = x.llr
 		cc, ccOK := c.colorCode()
+		ok := !x.bptcRetry(b)
 		x.repairAll(c, b, cc, ccOK)
+		// A data block that passed its check keeps that decode.
+		if ok && x.bptcRetry(b) {
+			b.Fixed, b.Data = lc, data
+		}
 		if b.Voice >= enums.VoiceBurstB && b.Voice <= enums.VoiceBurstE {
 			for q := embFirstBit; q < embFirstBit+embBits; q++ {
 				m := byte(0x80) >> (q % 8)
@@ -356,6 +365,27 @@ func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK boo
 		b.Data[q/8] = b.Data[q/8]&^m | data[q/8]&m
 		x.llr[q] = st[q]
 	}
+}
+
+// coreData decodes the data burst b, whose block failed its check after
+// the coherent detection, again from fixed and data, the decode of the
+// core, as a tier without the coherent stage does, and keeps that when its
+// block passes the check: the carrier and the timing of the coherent
+// detection start from the first SYNC fits of a stream. The ratios of the
+// coherent detection stay for the detection of the bursts after it.
+//
+// It is not inlined, so that its copies are on the stack only while it
+// runs.
+//
+//go:noinline
+func (x *softExt) coreData(c *leanCore, b *Burst, fixed, data layer2.RawBurst) {
+	coh, cohFixed, cohData := x.llr, b.Fixed, b.Data
+	b.Fixed, b.Data = fixed, data
+	x.data(c, b)
+	if x.bptcRetry(b) {
+		b.Fixed, b.Data = cohFixed, cohData
+	}
+	x.llr = coh
 }
 
 // bptcRetry reports whether burst b is a BPTC(196,96) data burst whose
