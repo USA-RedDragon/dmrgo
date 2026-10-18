@@ -86,6 +86,10 @@ const (
 	// the estimates start again from the anchor.
 	levelGain = 0.5
 	levelJump = 4.0
+	// msQuietSlots is the number of slots in a row without carrier that
+	// end the stream of an MS, which sends in every other slot: a radio
+	// that keys up again a moment later has a new timing.
+	msQuietSlots = 6
 	// msPresence is the ratio of the mean power of a slot of an MS to that
 	// of the slot before it, which it does not send in, at which the
 	// carrier counts as on.
@@ -256,6 +260,8 @@ type engine struct {
 	amp       float64
 	noise     float64
 	offEnergy float64
+	// quiet counts the slots in a row without carrier.
+	quiet     int
 	devScale  float64
 	dcHz      float64
 	discNoise float64
@@ -684,7 +690,7 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	r.freq = 0
 	_ = hz
 	r.fw = 0
-	r.amp, r.noise, r.offEnergy = 0, 0, 0
+	r.amp, r.noise, r.offEnergy, r.quiet = 0, 0, 0, 0
 	r.devScale = 1
 	r.dcHz = 0
 	r.lost = 0
@@ -991,6 +997,9 @@ func (r *engine) followStep(end bool) bool {
 	default:
 		r.lost++
 	}
+	if r.quiet++; s.present || j < 0 {
+		r.quiet = 0
+	}
 	switch {
 	case !r.bs:
 		r.detectBurst(s)
@@ -1003,7 +1012,7 @@ func (r *engine) followStep(end bool) bool {
 	case j >= 0 && j-r.first >= maxGapSlots-1:
 		r.detectUpTo(j)
 	}
-	if r.lost >= lostSlots || r.lastAnch == math.MinInt64 && j >= 6 {
+	if r.lost >= lostSlots || r.lastAnch == math.MinInt64 && j >= 6 || !r.bs && r.quiet >= msQuietSlots {
 		r.finishStream()
 		return true
 	}
