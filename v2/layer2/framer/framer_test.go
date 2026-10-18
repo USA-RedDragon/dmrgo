@@ -14,7 +14,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func loadVoice(t *testing.T) [][33]byte {
+func loadVoice(t testing.TB) [][33]byte {
 	t.Helper()
 	data, err := os.ReadFile("../testdata/voice.bin")
 	if err != nil {

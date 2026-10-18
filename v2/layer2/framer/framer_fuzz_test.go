@@ -1,0 +1,292 @@
+package framer_test
+
+import (
+	"math/bits"
+	"reflect"
+	"slices"
+	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
+)
+
+// syncAt returns the 48-bit field of stream that starts at bit i, read one
+// bit at a time.
+func syncAt(stream []byte, i int) uint64 {
+	var v uint64
+	for k := range framer.SyncBits {
+		v = v<<1 | uint64(ibits.Bit(stream, i+k))
+	}
+	return v
+}
+
+// nearestAt returns the distance of the field at bit i of stream from the
+// nearest SYNC pattern, as enums.NearestSyncPattern finds it.
+func nearestAt(stream []byte, i int) (enums.SyncPattern, int) {
+	v := syncAt(stream, i)
+	return enums.NearestSyncPattern([6]byte{byte(v >> 40), byte(v >> 32), byte(v >> 24), byte(v >> 16), byte(v >> 8), byte(v)})
+}
+
+// refSearch is Search done one bit position at a time.
+func refSearch(stream []byte, nbits, start, threshold int) (int, int, bool) {
+	n := max(0, min(nbits, 8*len(stream)))
+	if threshold < 0 {
+		threshold = layer2.DefaultSyncThreshold
+	}
+	for i := max(start, 0); i+framer.SyncBits <= n; i++ {
+		if _, d := nearestAt(stream, i); d <= threshold {
+			return i, d, true
+		}
+	}
+	return 0, 0, false
+}
+
+// searchSeed is one seed of FuzzSearch.
+type searchSeed struct {
+	stream       []byte
+	nbits, start int16
+	threshold    int8
+}
+
+// searchSeeds returns the seeds of FuzzSearch: bursts of the voice capture
+// after 16 bits, and bit counts and starts out of range.
+func searchSeeds(tb testing.TB) []searchSeed {
+	tb.Helper()
+	var seeds []searchSeed
+	for _, b := range loadVoice(tb)[:3] {
+		seeds = append(seeds, searchSeed{append([]byte{0x5a, 0x3c}, b[:]...), 8 * 35, 0, -1})
+	}
+	return append(seeds, searchSeed{[]byte{0xff}, -3, -9, 0})
+}
+
+// checkSearch is the property of FuzzSearch.
+func checkSearch(t *testing.T, stream []byte, nbits, start int16, threshold int8) {
+	m, ok := framer.Search(stream, int(nbits), int(start), int(threshold))
+	off, d, want := refSearch(stream, int(nbits), int(start), int(threshold))
+	if ok != want || ok && (m.Offset != off || m.Distance != d) {
+		t.Fatalf("Search = %+v, %v, want offset %d, distance %d, %v", m, ok, off, d, want)
+	}
+	if ok && bits.OnesCount64(syncAt(stream, m.Offset)^uint64(m.Pattern)) != m.Distance {
+		t.Fatalf("Search pattern %v is not %d bits from the field", m.Pattern, m.Distance)
+	}
+}
+
+// FuzzSearch checks Search against a search one bit position at a time,
+// for any stream, bit count, start and threshold.
+func FuzzSearch(f *testing.F) {
+	for _, s := range searchSeeds(f) {
+		f.Add(s.stream, s.nbits, s.start, s.threshold)
+	}
+	f.Fuzz(checkSearch)
+}
+
+// fuzzConfig returns the Framer configuration of the fuzz value c: a
+// threshold from -1 to 6, either period, CACH on or off, and up to 7
+// misses.
+func fuzzConfig(c byte) framer.Config {
+	cfg := framer.Config{Threshold: int(c&7) - 1, CACH: c&0x10 != 0, MaxMisses: int(c >> 5)}
+	if c&8 != 0 {
+		cfg.Period = framer.SlotPeriod
+	}
+	return cfg
+}
+
+// threshold returns the threshold that a Framer with cfg uses.
+func threshold(cfg framer.Config) int {
+	if cfg.Threshold < 0 {
+		return layer2.DefaultSyncThreshold
+	}
+	return cfg.Threshold
+}
+
+// checkBursts checks the bursts that a Framer with cfg cut from stream: each
+// holds the stream bits at its offset, its SYNC and CACH fields are those
+// of the stream, the offsets increase, and the first burst is at the first
+// SYNC that Search finds after the CACH.
+func checkBursts(t *testing.T, cfg framer.Config, stream []byte, got []framer.Burst) {
+	t.Helper()
+	pre := 0
+	if cfg.CACH {
+		pre = layer2.CACHBits
+	}
+	thr := threshold(cfg)
+	m, ok := framer.Search(stream, 8*len(stream), pre+framer.SyncOffset, cfg.Threshold)
+	if ok && m.Offset-framer.SyncOffset+layer2.BurstBits <= 8*len(stream) {
+		if len(got) == 0 || got[0].Offset != int64(m.Offset-framer.SyncOffset) {
+			t.Fatalf("SYNC at bit %d, but the first burst is %v", m.Offset, got[:min(len(got), 1)])
+		}
+	} else if len(got) != 0 {
+		t.Fatalf("no SYNC with a whole burst, but %d bursts", len(got))
+	}
+	last := int64(-1)
+	for i, b := range got {
+		off := int(b.Offset)
+		if b.Offset <= last || off+layer2.BurstBits > 8*len(stream) {
+			t.Fatalf("burst %d at %d after %d in %d bits", i, b.Offset, last, 8*len(stream))
+		}
+		last = b.Offset
+		var want layer2.RawBurst
+		ibits.Copy(want[:], 0, stream, off, layer2.BurstBits)
+		if b.Data != want {
+			t.Fatalf("burst %d at %d holds %x, stream has %x", i, off, b.Data, want)
+		}
+		p, d := nearestAt(stream, off+framer.SyncOffset)
+		if b.Distance != d || (d <= thr) != (b.Sync != enums.SyncNone) ||
+			b.Sync != enums.SyncNone && bits.OnesCount64(syncAt(stream, off+framer.SyncOffset)^uint64(b.Sync)) != d {
+			t.Fatalf("burst %d at %d: SYNC %v at %d, nearest %v at %d, threshold %d", i, off, b.Sync, b.Distance, p, d, thr)
+		}
+		if b.HasCACH != (cfg.CACH && off >= layer2.CACHBits) {
+			t.Fatalf("burst %d at %d: HasCACH %v", i, off, b.HasCACH)
+		}
+		if b.HasCACH {
+			var c [3]byte
+			ibits.Copy(c[:], 0, stream, off-layer2.CACHBits, layer2.CACHBits)
+			if layer2.DecodeCACHField(c) != b.CACH {
+				t.Fatalf("burst %d at %d: CACH %+v, stream has %x", i, off, b.CACH, c)
+			}
+		}
+		if b.Channel < 0 || b.Channel > 2 {
+			t.Fatalf("burst %d: channel %d", i, b.Channel)
+		}
+	}
+}
+
+// framerSeed is one seed of FuzzFramer.
+type framerSeed struct {
+	stream, cuts []byte
+	cfg          byte
+}
+
+// framerSeeds returns the seeds of FuzzFramer: 8 bursts of the voice
+// capture, each after 24 bits, in a few configurations and pieces.
+func framerSeeds(tb testing.TB) []framerSeed {
+	tb.Helper()
+	var stream []byte
+	for _, b := range loadVoice(tb)[:8] {
+		stream = append(append(stream, 0x12, 0x34, 0x56), b[:]...)
+	}
+	return []framerSeed{
+		{stream, []byte{}, 0x10},
+		{stream, []byte{1, 7, 200, 0, 13}, 0x01},
+		{stream[5:], []byte{255}, 0xe8},
+	}
+}
+
+// checkFramer is the property of FuzzFramer.
+func checkFramer(t *testing.T, stream, cuts []byte, c byte) {
+	cfg := fuzzConfig(c)
+	whole := framer.New(cfg).Write(stream, 8*len(stream))
+	checkBursts(t, cfg, stream, whole)
+	if !slices.ContainsFunc(cuts, func(b byte) bool { return b != 0 }) {
+		cuts = nil
+	}
+
+	fr := framer.New(cfg)
+	var pieces []framer.Burst
+	var piece []byte
+	for i, from := 0, 0; from < 8*len(stream); i++ {
+		n := 8*len(stream) - from
+		if len(cuts) > 0 {
+			n = min(n, int(cuts[i%len(cuts)]))
+		}
+		piece = append(piece[:0], make([]byte, (n+7)/8+1)...)
+		ibits.Copy(piece, 0, stream, from, n)
+		piece[len(piece)-1] = 0xA5
+		pieces = fr.AppendBursts(pieces, piece, n)
+		from += n
+	}
+	if !reflect.DeepEqual(whole, pieces) {
+		t.Fatalf("pieces %v give\n%+v\nat once\n%+v", cuts, pieces, whole)
+	}
+}
+
+// FuzzFramer writes any stream to a Framer with any configuration, at once
+// and in pieces of any number of bits. Both give the same bursts, and the
+// bursts hold the stream as checkBursts describes.
+func FuzzFramer(f *testing.F) {
+	for _, s := range framerSeeds(f) {
+		f.Add(s.stream, s.cuts, s.cfg)
+	}
+	f.Fuzz(checkFramer)
+}
+
+// findsBurstSeed is one seed of FuzzFramerFindsBurst.
+type findsBurstSeed struct {
+	noise  []byte
+	offset uint16
+	which  byte
+	flips  []byte
+	cfg    byte
+}
+
+// findsBurstSeeds are the seeds of FuzzFramerFindsBurst.
+var findsBurstSeeds = []findsBurstSeed{
+	{[]byte{0x01, 0x02, 0x03, 0x04}, 0, 0, []byte{}, 0},
+	{[]byte{0xff, 0x00, 0x77, 0x31, 0x99}, 37, 6, []byte{3, 40}, 0x13},
+	{[]byte{0xaa}, 300, 12, []byte{1}, 0x0a},
+}
+
+// findsBurst holds the bursts of the voice capture that carry a SYNC with
+// no bit errors.
+type findsBurst struct {
+	synced [][33]byte
+}
+
+// newFindsBurst returns the bursts of the voice capture with a SYNC.
+func newFindsBurst(tb testing.TB) *findsBurst {
+	tb.Helper()
+	fb := &findsBurst{}
+	for _, b := range loadVoice(tb) {
+		if _, d := layer2.RawBurst(b).Sync(); d == 0 {
+			fb.synced = append(fb.synced, b)
+		}
+	}
+	return fb
+}
+
+// check is the property of FuzzFramerFindsBurst.
+func (fb *findsBurst) check(t *testing.T, noise []byte, offset uint16, which byte, flips []byte, c byte) {
+	cfg := fuzzConfig(c)
+	burst := fb.synced[int(which)%len(fb.synced)]
+	thr := threshold(cfg)
+	for _, fl := range flips[:min(len(flips), thr)] {
+		i := framer.SyncOffset + int(fl)%framer.SyncBits
+		burst[i/8] ^= 0x80 >> (i % 8)
+	}
+	if _, d := layer2.RawBurst(burst).Sync(); d > thr {
+		return
+	}
+	off := int(offset) % 2048
+	n := off + layer2.BurstBits + 8*len(noise)
+	stream := make([]byte, (n+7)/8)
+	for i := range stream {
+		if len(noise) > 0 {
+			stream[i] = noise[i%len(noise)]
+		}
+	}
+	ibits.Copy(stream, off, burst[:], 0, layer2.BurstBits)
+	pre := 0
+	if cfg.CACH {
+		pre = layer2.CACHBits
+	}
+	m, ok := framer.Search(stream, n, pre+framer.SyncOffset, cfg.Threshold)
+	if !ok || m.Offset != off+framer.SyncOffset {
+		return
+	}
+	got := framer.New(cfg).Write(stream, n)
+	if len(got) == 0 || got[0].Offset != int64(off) || got[0].Data != layer2.RawBurst(burst) || got[0].Sync == enums.SyncNone {
+		t.Fatalf("burst at %d not found: %+v", off, got[:min(len(got), 1)])
+	}
+}
+
+// FuzzFramerFindsBurst puts a burst with a SYNC from the voice capture, with
+// up to the threshold of SYNC bit errors, at any offset in any noise. When
+// Search finds no SYNC before it, the Framer cuts the burst at its offset.
+func FuzzFramerFindsBurst(f *testing.F) {
+	for _, s := range findsBurstSeeds {
+		f.Add(s.noise, s.offset, s.which, s.flips, s.cfg)
+	}
+	f.Fuzz(newFindsBurst(f).check)
+}
