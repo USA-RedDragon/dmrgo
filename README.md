@@ -56,11 +56,22 @@ func main() {
 }
 ```
 
-The program prints `Voice LC Header: call from 3191868 to 9990` and `re-encoded unchanged: true`. An FEC or CRC error does not make `NewBurstFromBytes` fail: `burst.FEC` reports it and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match.
+The program prints `Voice LC Header: call from 3191868 to 9990` and `re-encoded unchanged: true`.
 
-Every field of bits is packed in bytes in transmit order, the first bit on air in the most significant bit of byte 0: a burst is a `[33]byte`, a CSBK a `[12]byte` and a vocoder slot a `[9]byte`.
+An FEC or CRC error does not make `NewBurstFromBytes` fail. `burst.FEC` reports it, and `burst.Data` still holds the decoded PDU. Change a field of `burst.Data` and `Encode` writes a new burst with new parity. The [package documentation](https://pkg.go.dev/github.com/USA-RedDragon/dmrgo/v2) has the package map and the errors to match.
 
-More in [v2/examples](v2/examples), which run offline on the captures in `v2/layer2/testdata` (`go run -C v2 ./examples/<name>`): [hotspot](v2/examples/hotspot/main.go) (MMDVMHost check and regenerated bursts), [bridge](v2/examples/bridge/main.go) (rewrite a call's talkgroup and source), [scanner](v2/examples/scanner/main.go) (find bursts in a bit stream), [trunking](v2/examples/trunking/main.go) (Tier III CSBKs, MBC and CACH), [data](v2/examples/data/main.go) (packet data and selective retry), [transcoder](v2/examples/transcoder/main.go) (AMBE+2 FEC and Codec2) and [conformance](v2/examples/conformance/main.go) (byte-for-byte re-encode of every capture). [tinygo](v2/examples/tinygo/main.go) decodes and re-encodes a call on a microcontroller follows it with `voice.Receiver` and relays it with `voice.Transmitter` (see [TinyGo](#tinygo)).
+Fields of bits are packed in bytes in transmit order, with the first bit on air in the most significant bit of byte 0. A burst is a `[33]byte`, a CSBK a `[12]byte` and a vocoder slot a `[9]byte`.
+
+The programs in [v2/examples](v2/examples) run offline on the captures in `v2/layer2/testdata` (`go run -C v2 ./examples/<name>`):
+
+- [hotspot](v2/examples/hotspot/main.go): the MMDVMHost check and regenerated bursts.
+- [bridge](v2/examples/bridge/main.go): rewrite the talkgroup and source of a call.
+- [scanner](v2/examples/scanner/main.go): find bursts in a bit stream.
+- [trunking](v2/examples/trunking/main.go): Tier III CSBKs, MBC and CACH.
+- [data](v2/examples/data/main.go): packet data and selective retry.
+- [transcoder](v2/examples/transcoder/main.go): AMBE+2 FEC and Codec2.
+- [conformance](v2/examples/conformance/main.go): byte-for-byte re-encode of every capture.
+- [tinygo](v2/examples/tinygo/main.go): decode, follow and relay a call on a microcontroller (see [TinyGo](#tinygo)).
 
 ## Features
 
@@ -92,9 +103,9 @@ More in [v2/examples](v2/examples), which run offline on the captures in `v2/lay
 
 ## Allocation
 
-The hot path allocates nothing. After construction, decoding, encoding, building, receiving and assembling bursts and packets do not allocate, with gc (Go 1.24 or later) and with TinyGo at the default stack size of a microcontroller target. This covers `Burst.DecodeFromBytes` and `Encode`, the `RawBurst` builders, `VoiceTransmitter`, `VoiceReceiver`, `voice.Receiver`, `voice.Transmitter`, `framer.Framer`, `packet.Assembler` and `packet.Builder`, the `Into` and `Append` forms of the PDU decoders, and the FEC. Errors are static values, so a call that fails does not allocate either; an error does not hold the value that failed.
+The hot path does not allocate. After construction, decoding, encoding, building, receiving and assembling bursts and packets make no heap allocations, with gc (Go 1.24 or later) and with TinyGo. Errors are static values, so a failed call does not allocate either.
 
-The rest allocates as little as it can. These are all the places where the library can allocate, and when. The gate in [v2/internal/allocgate](v2/internal/allocgate) generates this table from its rules and fails when the README differs:
+The table lists every place where the library can allocate. [v2/internal/allocgate](v2/internal/allocgate) generates it and fails when the README differs.
 
 <!-- allocgate:begin -->
 
@@ -114,13 +125,13 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 
 <!-- allocgate:end -->
 
-Each exported function that a rule covers says in its doc when it allocates, and the gate checks that the sentence is there. Some types keep pointers into their own storage, so they must not be copied after first use: `layer2.Burst`, `packet.Assembler`, `packet.Builder` and `voice.Receiver`. `go vet` reports a copy. A `layer2.Burst` keeps its decoded `Data` and the payload structs that `Data` points to until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
-
-Three checks keep this so, with no list of functions to maintain:
-
-- [v2/internal/allocgate](v2/internal/allocgate) reads the machine code that the compiler emits. It builds the library and its dependencies with `go list -export`, disassembles them with `go tool objdump`, and builds the call graph from the relocations: direct calls, the functions whose address the code takes, interface method calls resolved to the library types that implement the interface, and func value calls resolved by signature. The allocator is every runtime function that takes memory from the cache of the P. Paths that end in a panic, a throw or a goroutine switch do not count; the gate reads the functions that never return from the source of the compiler. The gate fails on each exported function that reaches the allocator outside the rules of the table, with the call chain. For the dst growth rule it also proves from the source that every append on the way grows dst, or a slice that the function derives from dst, also in the unexported helpers that take and return the slice, and that every function on a path to the growth is such a helper; when it cannot prove that, it fails. It fails when a function has the name or the shape of a rule but breaks the rule, when a rule covers nothing, when a doc sentence names the wrong twin, and when a tool it needs cannot run. It does not follow a call through the dictionary of a generic function, exported generic code, which has machine code only where a caller instantiates it, or a callback that package-level data holds and that the stdlib calls. The library has none of these. A test fails when the library gains generic code that the gate cannot follow, so the callbacks are the one known limit that no test checks. Its own test cases in `testdata/cases` allocate in ways that the escape analysis of their own body does not show, such as a map write, a call of `strconv.Itoa` and an interface call.
-- The same package builds a program that references every exported function and method (`go generate` writes it from the exports) with `tinygo build -print-allocs` for the pico and for `riscv-qemu`, and adds each allocation site that TinyGo reports to the same call graph and rules.
-- [v2/internal/allocs](v2/internal/allocs) checks decode and encode of every capture, packet assembly, a voice superframe, `voice.Receiver` and `voice.Transmitter`, the vocoder frames and the framer with `testing.AllocsPerRun`, and under TinyGo reads `runtime.MemStats` around the main decode and encode calls.
+- Each exported function that a rule covers says in its doc when it allocates.
+- Do not copy `layer2.Burst`, `packet.Assembler`, `packet.Builder` or `voice.Receiver` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
+- A `layer2.Burst` keeps its decoded `Data` until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
+- Three checks keep this true, with no list of functions to maintain:
+  - [v2/internal/allocgate](v2/internal/allocgate) follows the machine code of each exported function to the heap allocator.
+  - The same package adds each allocation site that `tinygo build -print-allocs` reports for the pico and for `riscv-qemu`.
+  - [v2/internal/allocs](v2/internal/allocs) measures allocations of the main calls with `testing.AllocsPerRun`, and under TinyGo with `runtime.MemStats`.
 
 ## Codec2
 
@@ -145,16 +156,18 @@ Both ends must agree on the mode, because the FID does not identify it.
 
 ## TinyGo
 
+The library builds with TinyGo 0.41 for microcontrollers (for example RP2040, RP2350, ESP32-C3) and for WebAssembly.
 
 ```sh
 cd v2
 tinygo flash -target=pico ./examples/tinygo
 ```
 
-- Decode and encode make no heap garbage at the default stack size of these targets (8 KB), where TinyGo puts each local variable larger than 256 bytes on the heap. The library has no such local on those paths.
-- `vocoder/codec2` always uses its stub, so `codec2.New` returns `codec2.ErrUnavailable`.
-
 The example prints its counts on the serial console once a second.
+
+- CI builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the Raspberry Pi Pico and runs the library tests with TinyGo.
+- Decode and encode make no heap garbage at the default stack size of these targets (8 KB). TinyGo puts each local variable larger than 256 bytes on the heap, and the library has no such local on those paths.
+- `vocoder/codec2` always uses its stub, so `codec2.New` returns `codec2.ErrUnavailable`.
 
 ## Tooling
 

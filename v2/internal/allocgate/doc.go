@@ -9,4 +9,9 @@
 // a function that takes a slice dst and allocates only to grow it, which
 // the gate proves from the source, and the README lists them with what
 // they allow.
+//
+// The gate does not follow a call through the dictionary of a generic
+// function, or a callback that package-level data holds and the standard
+// library calls. The library has neither, and a test fails when it gains
+// generic code that the gate cannot follow.
 package allocgate
