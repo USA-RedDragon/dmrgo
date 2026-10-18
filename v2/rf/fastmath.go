@@ -17,11 +17,14 @@ func atan2f(y, x float32) float32 {
 	if ax == 0 && ay == 0 {
 		return 0
 	}
+	// One division: the compiler computes both quotients when each
+	// branch has its own.
 	swap := ay > ax
-	a := ay / ax
+	n, d := ay, ax
 	if swap {
-		a = ax / ay
+		n, d = ax, ay
 	}
+	a := n / d
 	s := a * a
 	r := a * (0.99986633 + s*(-0.3303048+s*(0.18015937+s*(-0.08515649+s*0.020845189))))
 	if swap {
