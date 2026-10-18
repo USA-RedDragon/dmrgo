@@ -870,8 +870,10 @@ func (r *leanCore) symbol(x, at float32) {
 		}
 		return
 	}
-	if r.hunt && r.ns >= leanRing && r.signsMatch() && r.offGrid() {
-		if r.searchSym(true); r.lockNs == r.ns {
+	if r.hunt && r.ns >= leanRing && r.signsMatch() {
+		if !r.offGrid() {
+			r.retime()
+		} else if r.searchSym(true); r.lockNs == r.ns {
 			r.forced = true
 		}
 	}
@@ -1043,6 +1045,26 @@ func (r *leanCore) clipped(end int64) bool {
 		}
 	}
 	return 2*n > syncSymbols
+}
+
+// retime samples a SYNC of the stream that ends at the last symbol, on
+// the slots of a stale lock, again from the kept samples at its timing, as
+// the search does before a lock, and moves the timing loop to it: a call
+// that starts on the slots of the lock but between its symbols needs it.
+func (r *leanCore) retime() {
+	rho2, src, data := r.syncAt(r.ns - 1)
+	if src != int(r.src) || rho2 < leanExtRho*leanExtRho || r.clipped(r.ns-1) {
+		return
+	}
+	voice, dp, _ := sourceAt(src).SyncPatterns()
+	p := voice
+	if data {
+		p = dp
+	}
+	var saved [syncSymbols]int8
+	if d, ok := r.resample(p, &saved); ok {
+		r.resampleStart(d)
+	}
 }
 
 // staleSlots is the number of slots of a BS stream without a SYNC after
