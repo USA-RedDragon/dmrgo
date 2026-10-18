@@ -436,10 +436,12 @@ const (
 )
 
 // track sets the carrier offset of the runs from that of the SYNC fits of
-// the stream, or from the mean frequency of the I/Q samples when the fits
-// are more than cohFreqSpan from it: the fits of the bursts that the ring
-// took while the oscillator pulled in can be far off, and a wrong offset
-// makes the next fits wrong.
+// the stream, or, until a SYNC fits it, from the mean frequency of the I/Q
+// samples when it is more than cohFreqSpan away: the fits of the bursts
+// that the ring took while the oscillator pulled in can be far off, and a
+// wrong offset makes the next fits wrong. After a fit the mean does not
+// count: the symbols of a burst move it, by hundreds of Hz for the bursts
+// of a voice call or of rate 1 data.
 func (s *cohStage) track() {
 	r := s.rx
 	hz := float64(r.conv.hz) + float64(r.conv.hzOf(r.afcAvg))
@@ -448,7 +450,7 @@ func (s *cohStage) track() {
 		// the core give the offset.
 		hz = float64(r.conv.hz) + float64((f.dc+r.d.dcHz)/(f.gain*iqUnitsPerHz))
 	}
-	if !s.freqOK || math.Abs(s.freq-hz) > cohFreqSpan {
+	if !s.freqOK || s.nFit == 0 && math.Abs(s.freq-hz) > cohFreqSpan {
 		s.freq, s.freqOK, s.nFit, s.fitVar = hz, true, 0, cohFreqVar
 	}
 	s.totalHz = s.freq
