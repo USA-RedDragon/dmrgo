@@ -285,6 +285,10 @@ func (r *DiscReceiver) write(x []int16) {
 				r.acqHead, r.acqLow = kh, kq
 				r.symbol(tm.last, at)
 				s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+				// A slot can start or end the search of a lock, which
+				// keeps the samples in another ring.
+				kh = r.acqHead
+				buf, an = r.acqBuf()
 			}
 		}
 	}

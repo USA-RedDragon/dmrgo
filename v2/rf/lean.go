@@ -44,6 +44,10 @@ const (
 	// resample interpolates: the SYNC at up to 2.5 samples a symbol, half
 	// a symbol either way, and the taps of the interpolation.
 	leanSyncWindow = (syncSymbols-1)*5/2 + 3 + 6
+	// leanHuntSamples is the length of the ring of samples that a lock
+	// keeps while it searches for a SYNC: the window of a SYNC that
+	// resample reads, from half a symbol after its end.
+	leanHuntSamples = leanAcqSamples
 	// leanAcqGain is the gain of the symbol timing loop, in samples per
 	// unit of normalized timing error, while the receiver searches, and
 	// leanTrackGain while it follows a stream.
@@ -326,6 +330,9 @@ type leanCore struct {
 	ch      [2]leanChan
 	votes   [16]uint8
 	streams int32
+	// huntBuf is the ring of the samples that a lock keeps while it
+	// searches, in place of the FEC scratch.
+	huntBuf [leanHuntSamples / 2]int16
 	// base is the first symbol of the slot under detection, anchor its
 	// SYNC pattern when it is an anchor, and ll, lfloor and dev the factor
 	// and the floor of the symbol log-likelihoods and the deviation of
@@ -558,13 +565,18 @@ func (r *leanCore) keepQ(q int32) {
 }
 
 // acqBuf returns the ring of kept samples, two to an element, and its
-// length in samples: the FEC scratch, or the longer ring of a stage that
-// decodes the slots before a lock.
+// length in samples: the FEC scratch, the ring of the SYNC fields that a
+// lock searches, which the decode of each burst would overwrite in the
+// FEC scratch, or the longer ring of a stage that decodes the slots before
+// a lock.
 func (r *leanCore) acqBuf() ([]int16, int32) {
 	if r.ext != nil {
 		if b := r.ext.kept(); b != nil {
 			return b, int32(2 * len(b))
 		}
+	}
+	if r.locked {
+		return r.huntBuf[:], leanHuntSamples
 	}
 	return r.fec.s[:leanAcqSamples/2], leanAcqSamples
 }
@@ -1268,10 +1280,12 @@ func (r *leanCore) slot() {
 		r.dataAnch[j&1] = isAnchor && anchor == dp
 	}
 	if hunt := r.stale(); hunt {
-		if !r.hunt || r.ext == nil {
-			// Tier 0 keeps the samples in the FEC scratch, which the
-			// decode of the burst overwrote.
+		if !r.hunt {
 			r.acqFrom = r.n
+			if r.ext == nil || r.ext.kept() == nil {
+				// The ring of the search while locked.
+				r.acqHead, r.acqLow = 0, 0
+			}
 		}
 		r.hunt = true
 	} else {
