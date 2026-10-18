@@ -7,14 +7,25 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
+// captureStarts is the number of starts from which
+// TestCaptureXPR8400GainSweep decodes the capture, captureStep apart in
+// seconds. One start is one draw of the noise against the acquisition, and
+// at 7.3 dB C/N the frames that one start recovers spread widely.
+const (
+	captureStarts = 8
+	captureStep   = 0.0073
+)
+
 // TestCaptureXPR8400GainSweep decodes a voice call from the weakest capture
-// of the RTL-SDR gain sweep, about 7.3 dB C/N, and checks how many of its
-// AMBE+2 frames each tier recovers exactly, in order.
+// of the RTL-SDR gain sweep, about 7.3 dB C/N, from captureStarts starts,
+// and checks how many of its AMBE+2 frames each tier recovers exactly, in
+// order, over all starts.
 func TestCaptureXPR8400GainSweep(t *testing.T) {
 	t.Parallel()
 	iq, err := os.ReadFile("testdata/xpr8400_gain_sweep.cu8")
@@ -38,33 +49,62 @@ func TestCaptureXPR8400GainSweep(t *testing.T) {
 		}
 		want = append(want, v)
 	}
-	ambe := regexp.MustCompile(`^ambe .* 0x([0-9a-f]+) fec=`)
 	for _, c := range []struct {
 		tier rf.Tier
 		min  int
-	}{{rf.Tier0, 25}, {rf.Tier1, 27}, {rf.Tier2, 46}, {rf.Tier3, 47}, {rf.Tier4, 47}} {
-		var buf bytes.Buffer
-		rep := NewReporter(&buf)
-		for _, r := range demodulateBytes(t, iq, 256e3, false, c.tier).Bursts {
-			rep.Burst(r)
-		}
-		n, next := 0, 0
-		for _, line := range strings.Split(buf.String(), "\n") {
-			m := ambe.FindStringSubmatch(line)
-			if m == nil {
-				continue
-			}
-			v, _ := strconv.ParseUint(m[1], 16, 64)
-			for k := next; k < len(want); k++ {
-				if want[k] == v {
-					n, next = n+1, k+1
-					break
+	}{{rf.Tier0, 181}, {rf.Tier1, 220}, {rf.Tier2, 342}, {rf.Tier3, 374}, {rf.Tier4, 374}} {
+		var got [captureStarts]int
+		var wg sync.WaitGroup
+		for k := range got {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				skip := 2 * int(float64(k)*captureStep*256e3)
+				var err error
+				if got[k], err = exactInOrder(iq[skip:], c.tier, want); err != nil {
+					t.Error(err)
 				}
-			}
+			}()
 		}
-		t.Logf("tier %d: %d of %d frames exact", c.tier-rf.Tier0, n, len(want))
+		wg.Wait()
+		n := 0
+		for _, v := range got {
+			n += v
+		}
+		t.Logf("tier %d: %d of %d frames exact, %v", c.tier-rf.Tier0, n, captureStarts*len(want), got)
 		if n < c.min {
-			t.Errorf("tier %d: %d of %d frames exact, want at least %d", c.tier-rf.Tier0, n, len(want), c.min)
+			t.Errorf("tier %d: %d of %d frames exact, want at least %d", c.tier-rf.Tier0, n, captureStarts*len(want), c.min)
 		}
 	}
+}
+
+// exactInOrder decodes the capture iq with tier and returns the number of
+// the frames of want that it recovers exactly, in order. It runs on any
+// goroutine.
+func exactInOrder(iq []byte, tier rf.Tier, want []uint64) (int, error) {
+	d, err := DemodulateBytes(iq, 256e3, false, tier)
+	if err != nil {
+		return 0, err
+	}
+	ambe := regexp.MustCompile(`^ambe .* 0x([0-9a-f]+) fec=`)
+	var buf bytes.Buffer
+	rep := NewReporter(&buf)
+	for _, r := range d.Bursts {
+		rep.Burst(r)
+	}
+	n, next := 0, 0
+	for _, line := range strings.Split(buf.String(), "\n") {
+		m := ambe.FindStringSubmatch(line)
+		if m == nil {
+			continue
+		}
+		v, _ := strconv.ParseUint(m[1], 16, 64)
+		for k := next; k < len(want); k++ {
+			if want[k] == v {
+				n, next = n+1, k+1
+				break
+			}
+		}
+	}
+	return n, nil
 }
