@@ -58,7 +58,7 @@ const (
 	// leanBlock is the number of matched filter samples of a block of the
 	// carrier estimate before lock, a quarter slot, and leanFloorRise the
 	// factor by which the noise floor estimate rises per block.
-	leanBlock     = slotSymbols * discSPS / 4
+	leanBlock     = slotSymbols * discSPS / 8
 	leanFloorRise = 1.01
 	// leanPresent is the ratio of the power of a block to the noise floor
 	// at which the estimate before lock takes it as carrier, and
@@ -395,7 +395,7 @@ func (f *leanFront) retuneFront(hz, d float32) {
 // newLean returns the streaming receiver of cfg with the settings opt.
 func newLean(cfg Config, opt options) *leanRx {
 	r := &leanRx{signed: cfg.Signed}
-	r.init(cfg.OnBurst, opt, discSPS)
+	r.init(cfg.OnBurst, opt, float32(discSPS)/2)
 	if cfg.OnBurst == nil {
 		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
 	}
@@ -407,7 +407,7 @@ func newLean(cfg Config, opt options) *leanRx {
 	r.df.init(cfg.BasebandHz == discRate)
 	r.iq, r.center = &r.df, r.df.center()
 	if opt.SoftExt {
-		r.ext = softExtOf(&opt, discSPS)
+		r.ext = softExtOf(&opt, float32(discSPS)/2)
 	}
 	return r
 }

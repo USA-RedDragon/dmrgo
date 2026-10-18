@@ -20,8 +20,11 @@ const (
 // gain control scales the input to frontRMS. It returns the powers and lag
 // products in units of the input.
 type leanFront struct {
-	half    bool
-	odd     bool
+	half bool
+	odd  bool
+	// skip is set after an output of the discriminator that the matched
+	// filter does not follow.
+	skip    bool
 	gain    float32
 	inv2    float32
 	gAcc    float32
@@ -136,6 +139,12 @@ func (f *leanFront) push(v complex64) (s, power float32, ok bool) {
 	f.rrcHist[f.rrcHead] = sat8(atan2f(imag(d), real(d)) * (discRate / (2 * math.Pi) / rrcStepHz))
 	if f.rrcHead++; f.rrcHead == rrcTaps {
 		f.rrcHead = 0
+	}
+	// The matched filter keeps the discriminator samples at discRate and
+	// gives every other output, at half of it: as at the 12 kHz of
+	// iqRx, the core samples the SYNC again from few enough of them.
+	if f.skip = !f.skip; f.skip {
+		return 0, 0, false
 	}
 	const mid = rrcTaps / 2
 	k0 := f.rrcHead + mid
