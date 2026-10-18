@@ -1,0 +1,95 @@
+name: Fuzz
+
+on:
+  schedule:
+    - cron: '23 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      fuzztime:
+        type: string
+        description: 'Time to run each fuzzer, as go test -fuzztime takes it'
+        required: false
+        default: '10m'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  list:
+    runs-on: ubuntu-24.04
+    outputs:
+      fuzzers: ${{ steps.list.outputs.fuzzers }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install libcodec2
+        run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config
+
+      - run: go generate ./...
+
+      - name: List the fuzzers
+        id: list
+        shell: bash
+        run: |
+          fuzzers=$(go test -C v2 -list '^Fuzz' ./... | awk '
+            /^Fuzz/ { names[n++] = $1; next }
+            /^ok/ { for (i = 0; i < n; i++) print $2, names[i]; n = 0 }
+          ' | jq -R -s -c 'split("\n") | map(select(length > 0) | split(" ") | (.[0] | sub(".*/v2/?"; "")) as $dir | {pkg: .[0], name: .[1], dir: $dir, id: ($dir | gsub("/"; "-")) + "-" + .[1]})')
+          echo "fuzzers=$fuzzers" >> "$GITHUB_OUTPUT"
+
+  fuzz:
+    name: fuzz (${{ matrix.id }})
+    needs: list
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.list.outputs.fuzzers) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install libcodec2
+        run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config
+
+      - run: go generate ./...
+
+      - name: Fuzz
+        env:
+          FUZZTIME: ${{ inputs.fuzztime || '10m' }}
+          PKG: ${{ matrix.pkg }}
+          NAME: ${{ matrix.name }}
+        run: go test -C v2 -run '^$' -fuzz "^${NAME}\$" -fuzztime "$FUZZTIME" "$PKG"
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: failure()
+        with:
+          name: fuzz-${{ matrix.id }}
+          path: v2/${{ matrix.dir }}/testdata/fuzz/${{ matrix.name }}/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  fuzzed:
+    if: always()
+    needs: fuzz
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check fuzz results
+        run: test "${{ needs.fuzz.result }}" = success
