@@ -1175,17 +1175,38 @@ func (r *leanCore) ended(j int32, base int64) bool {
 // the receiver holds by -d, so that they read as if the oscillator had
 // been there.
 func (r *leanCore) retune(d float32) {
-	if !r.locked && r.acqKept() > 0 {
-		// The kept samples follow the front end, which removes d more.
-		r.rescaleKept(256, int32(roundf(-d*(256.0/discStepHz))))
-	}
 	r.tuneHz += d
 	if r.audio != nil {
 		r.audio.retuneFront(r.tuneHz, d)
 	} else {
 		r.iq.retuneFront(r.tuneHz, d)
 	}
-	r.off -= d
+	r.shift(d)
+}
+
+// shift moves the discriminator values that the core holds by -d, as a
+// front end that removes d Hz more gives them.
+func (r *leanCore) shift(d float32) {
+	if r.locked {
+		r.off -= d
+	} else {
+		if r.acqKept() > 0 {
+			r.rescaleKept(256, int32(roundf(-d*(256.0/discStepHz))))
+		}
+		// The moves of a search add up, and the ring would clip its
+		// symbols against an offset that drifts: it moves the symbols by
+		// whole steps instead, and off keeps the rest.
+		off := r.off - d
+		k := roundf(off / discStepHz)
+		r.off = off - k*discStepHz
+		if k != 0 {
+			a8 := int32(k) * 256
+			for i, v := range &r.ring {
+				r.ring[i] = int8(scale8(int32(v), 256, a8))
+			}
+			r.rebuildSigns()
+		}
+	}
 	r.dcHz -= d
 	r.tm.s1 -= d
 	r.tm.s2 -= d
