@@ -1350,9 +1350,13 @@ func (r *leanCore) rebuildSigns() {
 	}
 }
 
-// symLLR returns the log-likelihood ratios of the two bits of symbol k, as
-// discDetect and llr8 make them for the soft decoders: in units of 1/8,
-// rounded to an even number, saturated at 254.
+// symLLR returns the log-likelihood ratios of the two bits of symbol k for
+// the soft decoders: in units of 1/8, rounded to an even number, saturated
+// at 254. A ratio of 0, as a symbol gets when both levels of a pair are at
+// the outlier floor, becomes ±1 with the sign of the hard decision that
+// burst makes: the decoders take the hard decisions from the signs, so
+// that they start from the bits of Data, and ±1 is below every other
+// magnitude, so that such a bit still counts as the least reliable.
 func (r *leanCore) symLLR(k int64) (int16, int16) {
 	// x is the symbol less the DC offset in units of llrStepHz. The
 	// log-likelihood of level 2d-3 is max(e*e*ll, lfloor), with e the
@@ -1374,7 +1378,20 @@ func (r *leanCore) symLLR(k int64) (int16, int16) {
 	if x < 0 {
 		b0 = -b0
 	}
-	return evenLLR(b0), evenLLR(near - far)
+	l0, l1 := evenLLR(b0), evenLLR(near-far)
+	if l0 == 0 {
+		l0 = 1
+		if x < 0 {
+			l0 = -1
+		}
+	}
+	if l1 == 0 {
+		l1 = 1
+		if ax > 2*d {
+			l1 = -1
+		}
+	}
+	return l0, l1
 }
 
 // llrTerm returns the log-likelihood, in units of 1/8, of a symbol at
