@@ -98,9 +98,12 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 		return 0, 0, false
 	}
 	d.phase = 0
-	h := d.hist[d.head : d.head+iqTaps]
+	// The taps and the history are read through pointers: a range over
+	// the array d.taps copies it, and TinyGo copies it again on every
+	// pass of the loop.
+	h := (*[iqTaps]complex64)(d.hist[d.head : d.head+iqTaps])
 	var re, im float32
-	for k, t := range d.taps {
+	for k, t := range &d.taps {
 		re += t * real(h[k])
 		im += t * imag(h[k])
 	}
