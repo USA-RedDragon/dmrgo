@@ -14,6 +14,13 @@ const (
 	fftBits = 8
 	// specFrames is the number of half-overlapped frames in one estimate.
 	specFrames = 96
+	// specBlocks is the most estimates of specFrames frames, the newest,
+	// that a longer estimate sums when the newest alone finds no signal: a
+	// weak signal that is on part of the time, as an MS in direct mode,
+	// stands above the noise of one estimate only at a few dB C/N. It
+	// tries the newest 2, 4 and so on, so that a signal that starts is not
+	// summed with the noise before it.
+	specBlocks = 8
 	// channelHz is the occupied bandwidth that the estimator looks for.
 	channelHz = 12500.0
 )
@@ -55,6 +62,11 @@ type spectrum struct {
 	fill   int
 	power  []float32
 	frames int
+	// blocks holds the power of the last nblocks estimates of specFrames
+	// frames, the newest at blocks[head-1].
+	blocks  [specBlocks][]float32
+	head    int
+	nblocks int
 	// sorted holds the power of the passband bins in increasing order.
 	sorted []float32
 	// Hz, CN and OK hold the last estimate: carrier offset, C/N in dB in
@@ -69,13 +81,18 @@ type spectrum struct {
 func (s *spectrum) reset() {
 	clear(s.power)
 	s.frames, s.fill, s.ready = 0, 0, false
+	s.nblocks = 0
 }
 
 // newSpectrum returns an estimator of samples at rate with no frames yet.
 func newSpectrum(rate float64) *spectrum {
 	pass := int(wideHz*rate/basebandRate) * fftSize / int(rate)
-	return &spectrum{rate: rate, pass: pass, hist: make([]complex64, fftSize), save: make([]complex64, fftSize/2),
+	s := &spectrum{rate: rate, pass: pass, hist: make([]complex64, fftSize), save: make([]complex64, fftSize/2),
 		power: make([]float32, fftSize), sorted: make([]float32, 2*pass+1)}
+	for i := range s.blocks {
+		s.blocks[i] = make([]float32, fftSize)
+	}
+	return s
 }
 
 // push adds one wide baseband sample and reports whether a new estimate is
@@ -100,7 +117,7 @@ func (s *spectrum) push(v complex64) bool {
 	s.frames++
 	switch {
 	case s.frames == specFrames:
-		s.estimate()
+		s.estimateBlocks()
 		clear(s.power)
 		s.frames = 0
 		return true
@@ -109,6 +126,27 @@ func (s *spectrum) push(v complex64) bool {
 		return true
 	}
 	return false
+}
+
+// estimateBlocks keeps the power of the estimate of specFrames frames that
+// just ended and estimates from it, and while no signal shows, from the
+// sum of it and the blocks before it, 2, 4 and so on up to specBlocks.
+func (s *spectrum) estimateBlocks() {
+	copy(s.blocks[s.head], s.power)
+	s.head = (s.head + 1) % specBlocks
+	s.nblocks = min(s.nblocks+1, specBlocks)
+	s.estimate()
+	for w := 2; w <= s.nblocks && !s.OK; w *= 2 {
+		clear(s.power)
+		for i := range w {
+			for k, v := range s.blocks[(s.head-1-i+specBlocks)%specBlocks] {
+				s.power[k] += v
+			}
+		}
+		s.frames = w * specFrames
+		s.estimate()
+	}
+	s.ready = true
 }
 
 // estimate finds the channel-wide span with the most power above a low
