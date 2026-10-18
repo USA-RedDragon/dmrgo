@@ -258,8 +258,10 @@ type engine struct {
 	first    int64
 	lastAnch int64
 	// doneAt is the channel sample where the last stream ended, before
-	// which the search does not go again.
+	// which the search does not go again, nor the lookback of a lock.
 	doneAt int64
+	// scanAt is the next channel sample that scanStale tries.
+	scanAt int64
 	// finRec holds the record of the slot that finish hands the tracker,
 	// which TinyGo puts on the heap for every slot as a local, and emitFn
 	// is emit as a func value made once.
@@ -662,7 +664,7 @@ func (r *engine) alignSearch(t int64) int64 {
 // lock starts following a stream whose SYNC starts (center of its first
 // symbol) at channel sample t.
 func (r *engine) lock(t float64, src int, data bool, hz float64) {
-	r.locked = true
+	r.locked, r.scanAt = true, 0
 	r.spec.reset()
 	r.streams++
 	r.lockAt = r.searchAt
@@ -679,7 +681,7 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	r.dcHz = 0
 	r.lost = 0
 	back := int64(0)
-	for back < int64(r.cfg.LookbackSlots) && r.slotTime(-back-1)-2*slotSamplesN > float64(r.chz.oldest()) {
+	for back < int64(r.cfg.LookbackSlots) && r.slotTime(-back-1)-2*slotSamplesN > float64(r.chz.oldest()) && r.slotTime(-back-1) >= float64(r.doneAt) {
 		back++
 	}
 	r.first = -back
@@ -997,6 +999,9 @@ func (r *engine) followStep(end bool) bool {
 		r.finishStream()
 		return true
 	}
+	if r.opt.Coherent && !r.warm && r.stale(j) && r.scanStale(j) {
+		return true
+	}
 	if r.warm && j >= warmSlots {
 		r.warmFreq(j)
 		r.warm = false
@@ -1004,6 +1009,65 @@ func (r *engine) followStep(end bool) bool {
 		r.lastAnch, r.lost = math.MinInt64, 0
 	}
 	return true
+}
+
+// stale reports whether the stream may have moved by slot j: a BS stream
+// without a SYNC for staleSlots, or an MS stream without one for more than
+// a superframe, as a repeater or a radio that keys up again with a new
+// timing sends, or one whose timing jumps.
+func (r *engine) stale(j int64) bool {
+	if r.lastAnch == math.MinInt64 || j < 0 {
+		return false
+	}
+	if r.bs {
+		return j-r.lastAnch > staleSlots
+	}
+	return j-r.lastAnch > 2*layer2.VoiceBurstsPerSuperframe+1
+}
+
+// scanStale searches the slots of a stale stream up to slot j for a SYNC
+// off its slots, and when it finds one, ends the stream and moves the
+// search there. It reports whether it ended the stream.
+func (r *engine) scanStale(j int64) bool {
+	ch := &r.chz.ch
+	from := max(r.scanAt, int64(r.slotTime(r.lastAnch+1)), r.chz.oldest()+slotSamplesN)
+	from = r.alignSearch(from)
+	to := int64(r.slotTime(j + 1))
+	var best syncHit
+	at := int64(-1)
+	t := from
+	for ; t < to && t+syncSpan+3*samplesPerSy < r.chz.count(); t += searchStep {
+		if at >= 0 && t >= at+slotSamplesN {
+			break
+		}
+		if h := r.search.at(ch, t, r.nsrc); h.Metric >= lockMetric && h.Metric > best.Metric && r.offGrid(t) {
+			best, at = h, t
+		}
+	}
+	r.scanAt = t
+	if at < 0 {
+		return false
+	}
+	done := int64(r.slotTime(r.lastAnch + 1))
+	r.finishStream()
+	r.searchAt, r.doneAt, r.candAt = r.alignSearch(at-searchStep), done, -1
+	return true
+}
+
+// offGrid reports whether a SYNC that the search finds at channel sample
+// t lies off the slots of the stream by more than a symbol: for an MS,
+// which sends in one slot of two, off the slots of its bursts.
+func (r *engine) offGrid(t int64) bool {
+	k := float64(t-syncEdge*samplesPerSy) - float64(syncFirstSym*samplesPerSy) - r.slotTime(r.lastAnch)
+	n := r.period
+	if !r.bs {
+		n *= 2
+	}
+	k = math.Mod(k, n)
+	if k < 0 {
+		k += n
+	}
+	return k > samplesPerSy && k < n-samplesPerSy
 }
 
 // finishStream detects the slots that are still pending and unlocks.
