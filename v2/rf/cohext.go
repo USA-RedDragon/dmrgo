@@ -721,7 +721,7 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	for i := range s.dist {
 		s.dist[i] = math.MaxInt
 	}
-	if s.quiet(segs[0], nseg) {
+	if s.quiet(c, segs[0], nseg) {
 		return false
 	}
 	if nseg == 1 {
@@ -819,8 +819,8 @@ func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 // follow the SYNC seg of a burst at the timing and the carrier offset of
 // the stream, and the fits wait, as they move little at that SNR; nseg is
 // 2 for the EMB of a burst without a SYNC.
-func (s *cohStage) quiet(seg [2]int, nseg int) bool {
-	if s.skipSNR <= 0 || s.nFit < cohQuietFits || s.ampAvg*s.ampAvg/s.noiseAvg < s.skipSNR {
+func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int) bool {
+	if !s.clear(c) {
 		return false
 	}
 	if nseg == 1 {
@@ -834,9 +834,21 @@ func (s *cohStage) quiet(seg [2]int, nseg int) bool {
 	return true
 }
 
+// clear reports whether the levels of the bursts before and of the core c
+// show a clear stream, whose bursts the core detects and places.
+func (s *cohStage) clear(c *leanCore) bool {
+	return s.skipSNR > 0 && s.nFit >= cohQuietFits && s.ampAvg*s.ampAvg >= s.skipSNR*s.noiseAvg && c.dev*c.dev >= cohQuietCore*c.discVar
+}
+
 // cohQuietFits is the number of SYNC fits of the carrier after which a
-// clear stream leaves its bursts to the core.
-const cohQuietFits = 4
+// clear stream leaves its bursts to the core, and cohQuietCore the least
+// SNR of the levels of the core, the square of the deviation of level 1
+// over the noise variance, for it: the core detects and places the bursts
+// by its own levels, which can take some bursts to settle after a lock.
+const (
+	cohQuietFits = 4
+	cohQuietCore = 4
+)
 
 // cohLevelSyms is the number of known symbols that the levels of the
 // trellis average over.
@@ -889,9 +901,10 @@ const cohPlaceRho = 0.3
 // place tests the SYNC field of burst b of slot j, which the core could
 // not place, coherently against the voice and the data SYNC of the
 // stream, and places it as the burst of the one whose waveform explains
-// most of its power, when that is at least cohPlaceRho of it.
+// most of its power, when that is at least cohPlaceRho of it. On a clear
+// stream a burst that the core does not place has no SYNC.
 func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
-	if s.f.gain <= 0 || !s.freqOK {
+	if s.f.gain <= 0 || !s.freqOK || s.clear(c) {
 		return false
 	}
 	_, _, lo := s.ring()
