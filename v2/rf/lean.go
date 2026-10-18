@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // Layout of the streaming discriminator receiver.
@@ -678,23 +679,14 @@ func coarseSync(win *syncWindow, syms *[syncSymbols]int8, end, sps float32, reac
 	e, step := int32(-end*256+0.5), int32(sps*256+0.5)
 	// The sums of the best offset: of the samples, their squares and
 	// their products with the SYNC symbols. sp is the sum of the symbols.
-	var best, bsv, bsvv, sp int32
-	for _, s := range syms {
-		sp += int32(s)
-	}
+	var best, bsv, bsvv int32
+	sp := symSum(syms)
 	for d := -reach; d <= reach; d++ {
 		if end+float32(d) > 0 {
 			// Its last symbol is after the last sample.
 			break
 		}
-		var c, sv, svv int32
-		for i, s := range syms {
-			b := (e-d*256+int32(syncSymbols-1-i)*step+128)>>8 - win.b0
-			v := int32(win.w[min(max(b, 0), leanSyncWindow-1)])
-			c += int32(s) * v
-			sv += v
-			svv += v * v
-		}
+		c, sv, svv := win.coarseAt(syms, e-d*256, step)
 		if c > best {
 			best, bsv, bsvv = c, sv, svv
 		}
@@ -708,6 +700,36 @@ func coarseSync(win *syncWindow, syms *[syncSymbols]int8, end, sps float32, reac
 	vv := float32(bsvv) - float32(bsv)*float32(bsv)/n
 	pp := 9*n - float32(sp)*float32(sp)/n
 	return cov > 0 && cov*cov >= leanCoarse*leanCoarse*vv*pp
+}
+
+// symSum returns the sum of the SYNC symbols syms. It is not inlined, as
+// coarseAt.
+//
+//go:noinline
+func symSum(syms *[syncSymbols]int8) int32 {
+	var sp int32
+	for _, s := range syms {
+		sp += int32(s)
+	}
+	return sp
+}
+
+// coarseAt returns the sums of coarseSync of the kept samples of win
+// nearest the SYNC symbols syms, whose last symbol is e back from the last
+// sample, step apart, both in Q8. It is not inlined: inlined in the loop
+// over the offsets, the symbols would stay in registers, and spill to the
+// stack.
+//
+//go:noinline
+func (win *syncWindow) coarseAt(syms *[syncSymbols]int8, e, step int32) (c, sv, svv int32) {
+	for i, s := range syms {
+		b := (e+int32(syncSymbols-1-i)*step+128)>>8 - win.b0
+		v := int32(win.w[min(max(b, 0), leanSyncWindow-1)])
+		c += int32(s) * v
+		sv += v
+		svv += v * v
+	}
+	return c, sv, svv
 }
 
 // fillWindow copies the kept samples from b0 back from the last into win.
@@ -754,6 +776,36 @@ func (win *syncWindow) at(t float32) float32 {
 	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0))) - win.off
 }
 
+// corr returns the correlation of the samples of win with the SYNC
+// symbols syms, whose last symbol is at t, sps samples apart. It is not
+// inlined, as coarseAt.
+//
+//go:noinline
+func (win *syncWindow) corr(syms *[syncSymbols]int8, t, sps float32) float32 {
+	var c float32
+	for i, s := range syms {
+		c += float32(s) * win.at(t-float32(syncSymbols-1-i)*sps)
+	}
+	return c
+}
+
+// sums returns the sums of the samples of win at the SYNC symbols syms,
+// whose last symbol is at t, sps samples apart, of their squares and of
+// their products with the symbols, and the sum of the symbols. It is not
+// inlined, as coarseAt.
+//
+//go:noinline
+func (win *syncWindow) sums(syms *[syncSymbols]int8, t, sps float32) (sv, svv, sxv, sp float32) {
+	for i, s := range syms {
+		v := win.at(t - float32(syncSymbols-1-i)*sps)
+		sv += v
+		svv += v * v
+		sxv += float32(s) * v
+		sp += float32(s)
+	}
+	return sv, svv, sxv, sp
+}
+
 // resample samples the SYNC p that ends at the last symbol again from the
 // kept samples: it finds the strobe offset that best correlates with it
 // and, when the SYNC there passes the lock test, writes its symbols at it
@@ -789,6 +841,9 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	// The correlations from half a symbol early to half a symbol late in
 	// quarter symbols, or three quarters when wide, and the peak of the
 	// parabola around the best.
+	// ninf marks an offset that is not tested, in float32: the float64
+	// tests of math.IsInf take soft-float calls on a microcontroller.
+	ninf := float32(math.Inf(-1))
 	var c [7]float32
 	span := 2
 	if wide {
@@ -799,17 +854,15 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 		d := float32(k-3) * sps / 4
 		if end+d > 0 || k < 3-span || k > 3+span {
 			// Its last symbol is after the last sample.
-			c[k] = float32(math.Inf(-1))
+			c[k] = ninf
 			continue
 		}
-		for i, s := range syms {
-			c[k] += float32(s) * win.at(end+d-float32(syncSymbols-1-i)*sps)
-		}
+		c[k] = win.corr(&syms, end+d, sps)
 		if c[k] > c[best] {
 			best = k
 		}
 	}
-	if r.locked && best < len(c)-1 && math.IsInf(float64(c[best+1]), -1) {
+	if r.locked && best < len(c)-1 && c[best+1] == ninf {
 		// The SYNC ends after the last sample: a lock samples it again
 		// at the next symbol, where its end lies inside the offsets and
 		// the kept samples halfway between the symbols show its signs.
@@ -818,21 +871,14 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	}
 	bestD := float32(best-3) * sps / 4
 	lo, hi := c[max(best-1, 0)], c[min(best+1, len(c)-1)]
-	if den := lo - 2*c[best] + hi; best > 0 && best < len(c)-1 && den < 0 && !math.IsInf(float64(lo+hi), 0) {
+	if den, lh := lo-2*c[best]+hi, lo+hi; best > 0 && best < len(c)-1 && den < 0 && lh != ninf && lh != -ninf {
 		bestD += max32(min32(0.5*(lo-hi)/den, 0.5), -0.5) * sps / 4
 	}
 	bestD = min(bestD, -end)
 	// rho² from the sums of the samples, their squares and their products
 	// with the symbols; the samples are interpolated again for the ring
 	// only when the SYNC passes.
-	var sv, svv, sxv, sp float32
-	for i, s := range syms {
-		v := win.at(end + bestD - float32(syncSymbols-1-i)*sps)
-		sv += v
-		svv += v * v
-		sxv += float32(s) * v
-		sp += float32(s)
-	}
+	sv, svv, sxv, sp := win.sums(&syms, end+bestD, sps)
 	const n = syncSymbols
 	sxy := sxv - sp*sv/n
 	sxx := svv - sv*sv/n
@@ -840,12 +886,24 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	if sxy <= 0 || sxy*sxy < discLock*discLock*sxx*spp {
 		return 0, false
 	}
-	for i := range int64(syncSymbols) {
-		v := win.at(end + bestD - float32(syncSymbols-1-i)*sps)
-		j := uint32(r.ns-syncSymbols+i) % leanRing
-		saved[i], r.ring[j] = r.ring[j], int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
-	}
+	r.ringSync(&win, end+bestD, sps, saved)
 	return bestD, true
+}
+
+// ringSync writes the samples of win at the SYNC symbols whose last
+// symbol is at t, sps samples apart, into the ring at the last symbols,
+// with the ones they replace in saved. It is not inlined, as coarseAt.
+//
+//go:noinline
+func (r *leanCore) ringSync(win *syncWindow, t, sps float32, saved *[syncSymbols]int8) {
+	j := uint32(r.ns-syncSymbols) % leanRing
+	for i := range syncSymbols {
+		v := win.at(t - float32(syncSymbols-1-i)*sps)
+		saved[i], r.ring[j] = r.ring[j], int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
+		if j++; j == leanRing {
+			j = 0
+		}
+	}
 }
 
 // burstKept reports whether the kept samples hold the burst whose SYNC
@@ -863,9 +921,13 @@ func (r *leanCore) resampleStart(d float32) {
 		r.tm.t += d
 		return
 	}
-	for i := range int64(leanAcqSymbols - syncSymbols) {
+	j := uint32(r.ns-leanAcqSymbols) % leanRing
+	for i := range leanAcqSymbols - syncSymbols {
 		x := r.keptAt(r.lastAt + d - float32(leanAcqSymbols-1-i)*sps)
-		r.ring[uint32(r.ns-leanAcqSymbols+i)%leanRing] = int8(max(min(roundf(x), math.MaxInt8), math.MinInt8))
+		r.ring[j] = int8(max(min(roundf(x), math.MaxInt8), math.MinInt8))
+		if j++; j == leanRing {
+			j = 0
+		}
 	}
 	r.tm.t += d
 }
@@ -928,28 +990,8 @@ func (r *leanCore) symbol(x, at float32) {
 		}
 		return
 	}
-	if r.hunt && r.acqKept() > 4 {
-		r.midSigns <<= 1
-		if r.keptAt(at-r.tm.step)*syncSymbols > float32(r.ringSum) {
-			r.midSigns |= 1
-		}
-	}
-	if r.hunt && r.ns >= leanRing {
-		again := r.again
-		r.again = false
-		mid := r.signsMatch(r.midSigns)
-		switch {
-		case again && mid && r.offGrid():
-			r.midSync()
-		case again && mid:
-			r.retime(true)
-		case mid || r.signsMatch(r.signs):
-			if !r.offGrid() {
-				r.retime(false)
-			} else if r.searchSym(true); r.lockNs == r.ns {
-				r.forced = true
-			}
-		}
+	if r.hunt {
+		r.huntSym(at)
 	}
 	if r.ns == r.slotEnd {
 		first := r.next == 0
@@ -959,6 +1001,39 @@ func (r *leanCore) symbol(x, at float32) {
 		r.slot()
 		if first && r.locked && r.audio != nil && r.devScale > leanOverScale {
 			r.fitScale()
+		}
+	}
+}
+
+// huntSym searches the symbols of a hunting lock, the last at samples
+// after the last matched filter sample, for a SYNC off its slots or at
+// another symbol timing. It is not inlined, so that the locals of the
+// search are not on the stack while a slot decodes.
+//
+//go:noinline
+func (r *leanCore) huntSym(at float32) {
+	if r.acqKept() > 4 {
+		r.midSigns <<= 1
+		if r.keptAt(at-r.tm.step)*syncSymbols > float32(r.ringSum) {
+			r.midSigns |= 1
+		}
+	}
+	if r.ns < leanRing {
+		return
+	}
+	again := r.again
+	r.again = false
+	mid := r.signsMatch(r.midSigns)
+	switch {
+	case again && mid && r.offGrid():
+		r.midSync()
+	case again && mid:
+		r.retime(true)
+	case mid || r.signsMatch(r.signs):
+		if !r.offGrid() {
+			r.retime(false)
+		} else if r.searchSym(true); r.lockNs == r.ns {
+			r.forced = true
 		}
 	}
 }
@@ -1911,10 +1986,11 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 				// The EMB tests the timing of a lock as a SYNC does, and an
 				// EMB without errors votes for the color code of a stream
 				// that no data burst gave.
-				ok := r.embOK(b)
+				emb := embOf(&b.Data)
+				ok := r.embOK(&emb)
 				r.suspect = r.suspect || !ok
 				r.forced = r.forced && !ok
-				if emb := b.Data.EMB(); ok && emb.FEC.ErrorsCorrected == 0 && r.votes[emb.ColorCode&0xF] < math.MaxUint8 {
+				if ok && emb.FEC.ErrorsCorrected == 0 && r.votes[emb.ColorCode&0xF] < math.MaxUint8 {
 					r.votes[emb.ColorCode&0xF]++
 				}
 			}
@@ -1952,7 +2028,7 @@ func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
 	if !ok {
 		return 0, false
 	}
-	emb := b.Data.EMB()
+	emb := embOf(&b.Data)
 	if emb.FEC.Uncorrectable || emb.FEC.ErrorsCorrected > 1 || emb.ColorCode != cc {
 		return 0, false
 	}
@@ -1966,12 +2042,23 @@ func (r *leanCore) embPosition(b *Burst) (enums.VoiceBurstType, bool) {
 	}
 }
 
-// embOK reports whether the EMB of burst b decodes, with the color code
-// of the stream when it is known.
-func (r *leanCore) embOK(b *Burst) bool {
-	emb := b.Data.EMB()
+// embOK reports whether the EMB emb of a burst decodes, with the color
+// code of the stream when it is known.
+func (r *leanCore) embOK(emb *pdu.EmbeddedSignalling) bool {
 	cc, ok := r.colorCode()
 	return !emb.FEC.Uncorrectable && (!ok || emb.ColorCode == cc)
+}
+
+// embOf returns the EMB of the burst bits d, as RawBurst.EMB does,
+// without the copy of the burst that its value receiver makes, which
+// TinyGo holds on the stack as a word for each byte.
+func embOf(d *layer2.RawBurst) pdu.EmbeddedSignalling {
+	// The halves of the EMB are burst bits 108 to 115 and 148 to 155.
+	cw := uint16(d[13]&0xf)<<12 | uint16(d[14]>>4)<<8 | uint16(d[18]&0xf)<<4 | uint16(d[19]>>4)
+	info, res := pdu.DecodeEMBCodeword(cw)
+	e := info.EmbeddedSignalling()
+	e.FEC = res
+	return e
 }
 
 // noteData records the color code of data burst b when its slot type has

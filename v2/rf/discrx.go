@@ -205,14 +205,16 @@ func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
 	return dst[:n+m]
 }
 
-// flush writes a slot of idle input and ends the stream.
+// flush writes a slot of idle input, in whole parts of 64 samples, and
+// ends the stream. It writes them 16 at a time, which keeps the stack of
+// a microcontroller small.
 func (r *DiscReceiver) flush() {
-	var idle [64]int16
+	var idle [16]int16
 	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
 	for i := range idle {
 		idle[i] = v
 	}
-	for range slotSymbols * discSPS / len(idle) {
+	for range slotSymbols * discSPS &^ 63 / len(idle) {
 		r.write(idle[:])
 	}
 	if r.locked {
@@ -222,19 +224,26 @@ func (r *DiscReceiver) flush() {
 
 // run runs the samples x through the front end, the symbol timing and
 // the core. It is the leanTiming.push of the matched filter samples, fused
-// into one loop that keeps the last four samples and the time of the next
-// strobe in locals: the core sees them only around levels and symbol,
-// which can retune or lock. The samples are kept as cubic takes them, s3
-// the last, and the linear interpolation runs between s2 and s3.
+// into one loop that keeps the last four samples, the time of the next
+// strobe and the state of the lock in locals: the core sees them only
+// around levels and symbol, which can retune or lock. The samples are kept
+// as cubic takes them, s3 the last, and the linear interpolation runs
+// between s2 and s3.
 func (r *DiscReceiver) run(x []int16) {
 	f, tm := &r.f, &r.tm
-	s0, s1, s2, s3, t, n := tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.n
+	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+	// dn counts the matched filter samples after r.n.
+	var dn int32
 	// kh and kq are the head of the ring of kept samples and the sample
 	// whose pair is not stored yet: the loop stores two samples at once.
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
+	cubic, half, slow := tm.cubic, f.half, f.slow
+	// search is set while the receiver searches, and keep while it keeps
+	// the matched filter samples.
+	search, keep := !r.locked, !r.locked || r.hunt
 	for _, v := range x {
-		if !r.locked {
+		if search {
 			f.sum += int32(v)
 			f.sq += int64(v) * int64(v)
 			if f.n++; f.n == frontBlock {
@@ -245,16 +254,25 @@ func (r *DiscReceiver) run(x []int16) {
 				kq = r.acqLow
 			}
 		}
-		acc, ok := f.filter(v)
-		if !ok {
-			continue
+		var acc int32
+		switch u := f.quantize(v); {
+		case slow:
+			acc = f.mf96(u)
+		case half:
+			w, ok := f.halfBand(u)
+			if !ok {
+				continue
+			}
+			acc = f.mf12(w)
+		default:
+			acc = f.mf12(u)
 		}
 		y := float32(acc) * (rrcStepHz / 32768.0)
 		// A discriminator gives no carrier power, so the core takes a
 		// burst as present from its anchors.
-		n++
+		dn++
 		s0, s1, s2, s3 = s1, s2, s3, y
-		if !r.locked || r.hunt {
+		if keep {
 			// acc is in Q15 of rrcStepHz, twice discStepHz, so this is y
 			// in units of discStepHz, rounded.
 			// Samples beyond int8 wrap: they are noise without a carrier,
@@ -273,7 +291,7 @@ func (r *DiscReceiver) run(x []int16) {
 		for t <= 0 {
 			at := t
 			var xv float32
-			if tm.cubic {
+			if cubic {
 				mu := 1 + at
 				xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
 				// The cubic strobes are one sample late.
@@ -285,7 +303,9 @@ func (r *DiscReceiver) run(x []int16) {
 			sym := tm.strobe(xv)
 			t = tm.t
 			if sym {
-				tm.s0, tm.s1, tm.s2, tm.s3, r.n = s0, s1, s2, s3, n
+				tm.s0, tm.s1, tm.s2, tm.s3 = s0, s1, s2, s3
+				r.n += int64(dn)
+				dn = 0
 				r.acqHead, r.acqLow = kh, kq
 				r.symbol(tm.last, at)
 				s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
@@ -293,10 +313,12 @@ func (r *DiscReceiver) run(x []int16) {
 				// keeps the samples in another ring.
 				kh = r.acqHead
 				buf, an = r.acqBuf()
+				search, keep = !r.locked, !r.locked || r.hunt
 			}
 		}
 	}
-	tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.n = s0, s1, s2, s3, t, n
+	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+	r.n += int64(dn)
 	r.acqHead, r.acqLow = kh, kq
 }
 
@@ -435,55 +457,57 @@ func (f *audioFront) quantize(u int16) int8 {
 	return int8(max(min((int32(u)*f.k-f.off)>>16, 127), -128))
 }
 
-// filter takes one input sample u and returns the matched filter sample,
-// in Hz, of u in Hz less the DC offset, when the sample completes one.
-func (f *audioFront) filter(u int16) (int32, bool) {
-	v := f.quantize(u)
-	if f.half {
-		h := f.hbHead
-		f.hbHist[h] = v
-		if h++; h == halfTaps {
-			h = 0
-		}
-		f.hbHead = h
-		if f.odd = !f.odd; f.odd {
-			return 0, false
-		}
-		const c = halfTaps / 2
-		acc := int32(discHalfQ15[0]) * int32(f.hbHist[ringAt(h, c)])
-		for k, t := range discHalfQ15[1:] {
-			acc += int32(t) * (int32(f.hbHist[ringAt(h, c-2*k-1)]) + int32(f.hbHist[ringAt(h, c+2*k+1)]))
-		}
-		v = int8(max(min((acc+1<<14)>>15, 127), -128))
+// halfBand takes one quantized sample v at 24 kHz and returns the
+// half-band filter sample at 12 kHz when v completes one.
+func (f *audioFront) halfBand(v int8) (int8, bool) {
+	h := f.hbHead
+	f.hbHist[h] = v
+	if h++; h == halfTaps {
+		h = 0
 	}
-	var acc int32
-	if f.slow {
-		h := f.rrcHead
-		if h >= audio96Taps {
-			// Never; it bounds h, so that the compiler drops the index
-			// checks.
-			h = 0
-		}
-		f.rrcHist[h], f.rrcHist[h+audio96Taps] = v, v
-		if h++; h == audio96Taps {
-			h = 0
-		}
-		f.rrcHead = h
-		acc = fir96((*[audio96Taps]int8)(f.rrcHist[h : h+audio96Taps]))
-	} else {
-		h := f.rrcHead
-		if h >= audio12Taps {
-			// Never; as above.
-			h = 0
-		}
-		f.rrcHist[h], f.rrcHist[h+audio12Taps] = v, v
-		if h++; h == audio12Taps {
-			h = 0
-		}
-		f.rrcHead = h
-		acc = fir12((*[audio12Taps]int8)(f.rrcHist[h : h+audio12Taps]))
+	f.hbHead = h
+	if f.odd = !f.odd; f.odd {
+		return 0, false
 	}
-	return acc, true
+	const c = halfTaps / 2
+	acc := int32(discHalfQ15[0]) * int32(f.hbHist[ringAt(h, c)])
+	for k, t := range discHalfQ15[1:] {
+		acc += int32(t) * (int32(f.hbHist[ringAt(h, c-2*k-1)]) + int32(f.hbHist[ringAt(h, c+2*k+1)]))
+	}
+	return int8(max(min((acc+1<<14)>>15, 127), -128)), true
+}
+
+// mf96 takes one sample v at 9.6 kHz and returns the matched filter
+// sample in Q15.
+func (f *audioFront) mf96(v int8) int32 {
+	h := f.rrcHead
+	if h >= audio96Taps {
+		// Never; it bounds h, so that the compiler drops the index
+		// checks.
+		h = 0
+	}
+	f.rrcHist[h], f.rrcHist[h+audio96Taps] = v, v
+	if h++; h == audio96Taps {
+		h = 0
+	}
+	f.rrcHead = h
+	return fir96((*[audio96Taps]int8)(f.rrcHist[h : h+audio96Taps]))
+}
+
+// mf12 takes one sample v at 12 kHz and returns the matched filter sample
+// in Q15.
+func (f *audioFront) mf12(v int8) int32 {
+	h := f.rrcHead
+	if h >= audio12Taps {
+		// Never; as in mf96.
+		h = 0
+	}
+	f.rrcHist[h], f.rrcHist[h+audio12Taps] = v, v
+	if h++; h == audio12Taps {
+		h = 0
+	}
+	f.rrcHead = h
+	return fir12((*[audio12Taps]int8)(f.rrcHist[h : h+audio12Taps]))
 }
 
 // ringAt returns the index of sample k, oldest first, of the half-band ring
