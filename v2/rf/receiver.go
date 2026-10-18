@@ -86,6 +86,10 @@ const (
 	// the estimates start again from the anchor.
 	levelGain = 0.5
 	levelJump = 4.0
+	// msPresence is the ratio of the mean power of a slot of an MS to that
+	// of the slot before it, which it does not send in, at which the
+	// carrier counts as on.
+	msPresence = 4.0
 	// presenceFactor is the ratio of the mean power of a slot to the noise
 	// power at which the carrier counts as on.
 	presenceFactor = 1.5
@@ -251,6 +255,7 @@ type engine struct {
 	fw        float64
 	amp       float64
 	noise     float64
+	offEnergy float64
 	devScale  float64
 	dcHz      float64
 	discNoise float64
@@ -679,7 +684,7 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	r.freq = 0
 	_ = hz
 	r.fw = 0
-	r.amp, r.noise = 0, 0
+	r.amp, r.noise, r.offEnergy = 0, 0, 0
 	r.devScale = 1
 	r.dcHz = 0
 	r.lost = 0
@@ -1143,6 +1148,15 @@ func (r *engine) measure(s *slotState) {
 	s.present = energy > max(presenceFactor*r.noise, r.noise+0.25*r.amp*r.amp)
 	if r.bs {
 		s.present = energy > r.noise+bsPresence*r.amp*r.amp
+	}
+	if !r.bs && r.lastAnch != math.MinInt64 {
+		// The slots between the bursts of an MS hold its noise, which a
+		// burst stands above at any gain of the input.
+		if (s.index-r.lastAnch)&1 != 0 {
+			r.offEnergy = energy
+		} else if r.offEnergy > 0 && energy > msPresence*r.offEnergy {
+			s.present = true
+		}
 	}
 	s.anchor = best.metric >= anchorMetric*expect && best.metric >= 4.0/float64(r.search.span)
 	s.present = s.present || s.anchor
