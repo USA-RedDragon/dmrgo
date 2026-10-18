@@ -735,8 +735,22 @@ func (x *softExt) scan(c *leanCore) (int, bool, int64, bool) {
 	return x.coh.scan(c)
 }
 
+// verify tests the SYNC that the core does not find coherently, but not
+// one with more than a quarter of its symbols at the limits of the ring:
+// the front end scaled it for a weaker input, as clipped finds, and the
+// stream that the core then locks to keeps that scale. The coherent test
+// sees the phase, which the clipping keeps.
 func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
-	return x.coh != nil && !x.coh.locked && x.coh.verify(c, p)
+	if x.coh == nil || x.coh.locked {
+		return false
+	}
+	n := 0
+	for k := c.ns - syncSymbols; k < c.ns; k++ {
+		if q := c.ring[k%leanRing]; q == math.MaxInt8 || q == math.MinInt8 {
+			n++
+		}
+	}
+	return 4*n <= syncSymbols && x.coh.verify(c, p)
 }
 
 // locked notes the time of the SYNC that the core locked to, d samples
