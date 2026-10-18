@@ -9,6 +9,10 @@ const (
 	// samples of each of its measurements.
 	frontRMS   = 24
 	frontBlock = 256
+	// frontRelease is the number of blocks that the input must stay weak
+	// before the gain control raises the gain: more than the slot between
+	// two bursts of an MS at the input rate of discRate.
+	frontRelease = 4
 	// rrcStepHz is the resolution of the discriminator samples that the
 	// matched filter holds.
 	rrcStepHz = 128
@@ -22,6 +26,9 @@ const (
 type leanFront struct {
 	half bool
 	odd  bool
+	// quiet counts the blocks in a row whose input calls for a higher
+	// gain.
+	quiet uint8
 	// skip is set after an output of the discriminator that the matched
 	// filter does not follow.
 	skip    bool
@@ -88,9 +95,17 @@ func (f *leanFront) push(v complex64) (s, power float32, ok bool) {
 	f.gAcc += real(v)*real(v) + imag(v)*imag(v)
 	if f.gN++; f.gN == frontBlock {
 		if rms := sqrtf(f.gAcc / frontBlock); rms > 0 {
-			if g := frontRMS / rms; g > 2*f.gain || g < f.gain/2 {
-				f.gain = g
+			// The gain falls at once, but rises only after the input stays
+			// weak for frontRelease blocks: the noise between the
+			// bursts of an MS would clip the start of the next burst.
+			switch g := frontRMS / rms; {
+			case g < f.gain/2, g > 2*f.gain && f.quiet+1 >= frontRelease:
+				f.gain, f.quiet = g, 0
 				f.inv2 = 1 / (g * g)
+			case g > 2*f.gain:
+				f.quiet++
+			default:
+				f.quiet = 0
 			}
 		}
 		f.gAcc, f.gN = 0, 0
