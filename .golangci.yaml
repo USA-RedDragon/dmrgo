@@ -112,12 +112,12 @@ linters:
           - gochecknoglobals
         text: ^(codecs is a global variable|libMu is a global variable)
       # Read-only static values that a call returns or points to, so that it
-      # does not allocate: the errors of NewColorCode, and the zero options
-      # and response data for a nil argument.
-      - path: v2/(enums/color_code|layer2/voice_transmitter_options|layer2/packet/response)\.go$
+      # does not allocate: the zero options and response data for a nil
+      # argument.
+      - path: v2/(layer2/voice_transmitter_options|layer2/packet/response)\.go$
         linters:
           - gochecknoglobals
-        text: ^(colorCodeErrors|noVoiceTransmitterOptions|noResponseData) is a global variable
+        text: ^(noVoiceTransmitterOptions|noResponseData) is a global variable
       # joinColorCode tells the static decode errors apart by identity:
       # errors.Is would reach a type assertion of the runtime, whose cache
       # allocates.
