@@ -93,6 +93,9 @@ type options struct {
 	// ExtLookback is the number of slots before the SYNC of a lock that
 	// softExt decodes.
 	ExtLookback int
+	// ExtNPML detects the bursts that softExt decodes from the symbols of
+	// the core by npml, with the correlation of their noise.
+	ExtNPML bool
 	// IQDisc runs the streaming receiver on I/Q as iqRx, iqDisc before a
 	// DiscReceiver at IQHz, 12000 or 24000, in place of leanRx. 0 means
 	// 24000.
@@ -120,11 +123,12 @@ func softOptions(o options) options {
 	return o
 }
 
-// tier1Options adds to o the stages of Tier1: the soft stages and the
-// decode of C0 and C1 of each voice frame by soft ML.
+// tier1Options adds to o the stages of Tier1: the soft stages, the decode
+// of C0 and C1 of each voice frame by soft ML, and the detection of each
+// burst that they decode with the correlation of the noise of its symbols.
 func tier1Options(o options) options {
 	o = softOptions(o)
-	o.ExtAMBE = true
+	o.ExtAMBE, o.ExtNPML = true, true
 	return o
 }
 

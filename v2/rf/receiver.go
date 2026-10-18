@@ -27,8 +27,10 @@ const (
 	// BPTC(196,96) block whose check fails by ordered statistics, C0 and C1
 	// of each voice frame by soft ML, the embedded LC of each superframe
 	// over its four fragments and the earlier superframes of the call, and
-	// LookbackSlots slots before the first lock decoded again. It costs
-	// about the CPU of Tier0.
+	// LookbackSlots slots before the first lock decoded again. It detects
+	// the bursts that they decode, and each rate 3/4 block, from the
+	// symbols of the discriminator with the correlation of their noise. It
+	// costs about the CPU of Tier0.
 	Tier1
 	// Tier2 adds to the soft decoders of Tier1, on I/Q at BasebandRate, the
 	// detection again of each burst with a trellis over three symbols that

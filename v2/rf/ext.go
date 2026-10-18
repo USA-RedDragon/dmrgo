@@ -112,6 +112,9 @@ type softExt struct {
 	coh    *cohStage
 	// ph rebuilds the ring of coh from the samples of a DiscReceiver.
 	ph *discPhase
+	// np, when not nil, detects the bursts from the symbols of the core
+	// with the correlation of their noise, in place of symbol by symbol.
+	np *npml
 	// qcoh marks the bursts of q that coh detected.
 	qcoh [extQueue]bool
 	// known marks the bits of a voice burst that its FEC fixed, for the
@@ -157,7 +160,11 @@ func softExtOf(opt *options, sps float32) *softExt {
 	if opt.ExtELC {
 		st |= extELC
 	}
-	return newSoftExtStages(st, opt.ExtLookback, sps)
+	x := newSoftExtStages(st, opt.ExtLookback, sps)
+	if opt.ExtNPML {
+		x.np = &npml{}
+	}
+	return x
 }
 
 // newSoftExtStages returns a softExt with the stages st that decodes
@@ -176,6 +183,9 @@ func newSoftExtStages(st uint8, lookback int, sps float32) *softExt {
 }
 
 func (x *softExt) burst(c *leanCore, b *Burst) {
+	if x.np != nil && c.anchor != 0 {
+		x.np.fitSync(c, c.anchor, c.base)
+	}
 	// The decode of Tier 0 first; the stages then replace the fields that
 	// they decode better.
 	cc, ccOK := c.colorCode()
@@ -225,27 +235,8 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		}
 	case known && kind == layer2.KindData:
 		ch.have, ch.accN = 0, 0
-		if x.stages&extOSD == 0 {
-			break
-		}
-		st := out.SlotType()
-		if st.FEC.Uncorrectable {
-			break
-		}
-		dt := st.DataType
-		check := x.checks[dt&0xF]
-		if check == nil {
-			break
-		}
-		if p, _ := out.BPTCPayload(); check(p) {
-			break
-		}
-		x.fill(c)
-		saved := *out
-		if _, r := x.soft.decodeBPTCOSD(&x.llr, check, out); r.Uncorrectable {
-			if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
-				*out = saved
-			}
+		if x.stages&extOSD != 0 {
+			x.data(c, out)
 		}
 	default:
 		ch.have = 0
@@ -256,6 +247,37 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		ch.have = 0
 	}
 	x.drain(c, false, 0)
+}
+
+// data decodes the data burst out of core c again: a BPTC(196,96) block
+// whose check fails by ordered statistics and over its grid, and with np a
+// rate 3/4 block from its ratios, which the core decodes from those of
+// each symbol alone.
+func (x *softExt) data(c *leanCore, out *layer2.RawBurst) {
+	st := out.SlotType()
+	if st.FEC.Uncorrectable {
+		return
+	}
+	dt := st.DataType
+	if dt == enums.DataTypeRate34 && x.np != nil {
+		x.fill(c)
+		x.soft.decodeRate34(&x.llr, out)
+		return
+	}
+	check := x.checks[dt&0xF]
+	if check == nil {
+		return
+	}
+	if p, _ := out.BPTCPayload(); check(p) {
+		return
+	}
+	x.fill(c)
+	saved := *out
+	if _, r := x.soft.decodeBPTCOSD(&x.llr, check, out); r.Uncorrectable {
+		if _, r = x.soft.decodeBPTCGrid(&x.llr, check, out); r.Uncorrectable {
+			*out = saved
+		}
+	}
 }
 
 // back decodes burst j of the queue again, when coh detected it, with the
@@ -428,6 +450,10 @@ func (x *softExt) repairAll(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool
 
 // fill sets llr to the log-likelihood ratios of the burst under detection.
 func (x *softExt) fill(c *leanCore) {
+	if x.np != nil {
+		x.np.fill(c, &x.llr)
+		return
+	}
 	for p := range x.llr {
 		x.llr[p] = c.llrAt(p)
 	}
@@ -685,6 +711,9 @@ func (x *softExt) locked(c *leanCore, d float32) {
 	}
 	if x.ph != nil {
 		x.ph.lock()
+	}
+	if x.np != nil {
+		x.np.end()
 	}
 }
 
