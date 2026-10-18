@@ -1,0 +1,411 @@
+package fsktx
+
+import (
+	"errors"
+	"math"
+)
+
+// Tier selects a modulator and its cost. The zero value TierDefault is
+// Tier1.
+type Tier int
+
+// The tiers, from the Pareto front of the transmit sweep.
+const (
+	TierDefault Tier = iota
+	// Tier0 shapes by a fixed-point multiply and accumulate over taps in
+	// read-only memory, the modulators MCUAudio and MCUIQ, for a
+	// microcontroller.
+	Tier0
+	// Tier1 shapes by multiply and accumulate in float32 over eight
+	// symbols on each side.
+	Tier1
+	// Tier2 shapes in float64 over sixteen symbols on each side.
+	Tier2
+)
+
+// The errors of the constructors.
+var (
+	errTier = errors.New("fsktx: unknown tier")
+	errHz   = errors.New("fsktx: sample rate out of range")
+)
+
+// polyMaxPhases is the most phases of a polyphase shaper: the output rate
+// in samples per symbol is l/m in lowest terms with l at most this.
+const polyMaxPhases = 1024
+
+// poly shapes symbols by multiply and accumulate over polyphase taps, in
+// float32 when taps32 is set and in float64 otherwise, into the deviation
+// in Hz of each output sample.
+type poly struct {
+	taps32 []float32
+	taps64 []float64
+	ring32 []float32
+	ring64 []float64
+	n      int
+	pos    int
+	l, m   int
+	acc    int
+}
+
+// newPoly returns a poly of the pulse pu at hz samples per second.
+func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
+	l, m := ratio(hz)
+	if l > polyMaxPhases || hz < 8000 {
+		return nil, errHz
+	}
+	k := &poly{n: 2 * pu.span, l: l, m: m}
+	h := pu.taps(l, m)
+	for i := range h {
+		h[i] *= DeviationHz
+	}
+	if f32 {
+		k.taps32 = make([]float32, len(h))
+		for i, v := range h {
+			k.taps32[i] = float32(v)
+		}
+		k.ring32 = make([]float32, 2*k.n)
+	} else {
+		k.taps64 = h
+		k.ring64 = make([]float64, 2*k.n)
+	}
+	return k, nil
+}
+
+// push puts the symbol s in the ring.
+func (k *poly) push(s int8) {
+	switch s {
+	case -3, -1, 1, 3:
+	default:
+		s = 0
+	}
+	k.pos--
+	if k.pos < 0 {
+		k.pos = k.n - 1
+	}
+	if k.taps32 != nil {
+		k.ring32[k.pos] = float32(s)
+		k.ring32[k.pos+k.n] = float32(s)
+	} else {
+		k.ring64[k.pos] = float64(s)
+		k.ring64[k.pos+k.n] = float64(s)
+	}
+}
+
+// symbol puts s in the ring and writes the deviation of the samples of the
+// symbol period that it completes to dst, which has room for count of
+// them, and returns their number.
+func (k *poly) symbol(dst []float64, s int8) int {
+	k.push(s)
+	n := 0
+	if k.taps32 != nil {
+		w := k.ring32[k.pos : k.pos+k.n]
+		for ; k.acc < k.l; k.acc += k.m {
+			t := k.taps32[k.acc*k.n : k.acc*k.n+k.n]
+			var y float32
+			for i, c := range t {
+				y += c * w[i]
+			}
+			dst[n] = float64(y)
+			n++
+		}
+	} else {
+		w := k.ring64[k.pos : k.pos+k.n]
+		for ; k.acc < k.l; k.acc += k.m {
+			t := k.taps64[k.acc*k.n : k.acc*k.n+k.n]
+			var y float64
+			for i, c := range t {
+				y += c * w[i]
+			}
+			dst[n] = y
+			n++
+		}
+	}
+	k.acc -= k.l
+	return n
+}
+
+// AudioConfig sets up an Audio.
+type AudioConfig struct {
+	// Hz is the sample rate of the output. Tier0 takes 24000 or 48000;
+	// Tier1 and Tier2 take any rate from 8000 whose ratio to 4800 has a
+	// numerator of at most 1024 in lowest terms, such as 8000 or 44100.
+	// 0 means 48000.
+	Hz int
+	// Level is the output for a run of symbol +3, 1944 Hz of deviation,
+	// from 1 to 16000; 0 means 15000. Offset is added to each sample, as an
+	// unsigned DAC needs. The worst run of symbols reaches 1.9 times Level
+	// from Offset, and the output saturates beyond int16.
+	Level, Offset int
+	// Tier selects the modulator. The zero value TierDefault is Tier1.
+	Tier Tier
+}
+
+// Audio modulates the deviation signal that drives the modulator input of
+// an FM radio, as int16 samples. NewAudio allocates its state, and its
+// methods allocate nothing but the growth of dst. An Audio is not safe
+// for concurrent use.
+type Audio struct {
+	mcu    MCUAudio
+	k      *poly
+	buf    []float64
+	tmp    [maxSamples]int16
+	scale  float64
+	offset float64
+}
+
+// NewAudio returns an Audio for cfg. It allocates the Audio, once.
+func NewAudio(cfg AudioConfig) (*Audio, error) {
+	if cfg.Hz == 0 {
+		cfg.Hz = 48000
+	}
+	if cfg.Level == 0 {
+		cfg.Level = tableUnits
+	}
+	if cfg.Level < 1 || cfg.Level > 16000 {
+		return nil, errLevel
+	}
+	a := &Audio{scale: float64(cfg.Level) / (3 * DeviationHz), offset: float64(cfg.Offset)}
+	switch cfg.Tier {
+	case Tier0:
+		t := Table24k()
+		switch cfg.Hz {
+		case 24000:
+		case 48000:
+			t = Table48k()
+		default:
+			return nil, errHz
+		}
+		if err := a.mcu.Init(t, cfg.Level, cfg.Offset); err != nil {
+			return nil, err
+		}
+		return a, nil
+	case TierDefault, Tier1, Tier2:
+		pu := pulse{span: 8}
+		if cfg.Tier == Tier2 {
+			pu.span = 16
+		}
+		k, err := newPoly(pu, cfg.Hz, cfg.Tier != Tier2)
+		if err != nil {
+			return nil, err
+		}
+		a.k = k
+		a.buf = make([]float64, k.l/k.m+1)
+		return a, nil
+	default:
+		return nil, errTier
+	}
+}
+
+// AppendSymbol shapes the symbol s, -3, -1, +1, +3 or 0 for no
+// modulation, and appends the samples of the symbol period that it
+// completes to dst. A symbol other than these counts as 0. The output lags
+// the symbols by the half-length of the pulse: 8 symbol periods at 24 kHz
+// and 6 at 48 kHz for Tier0, 8 for Tier1 and 16 for Tier2. Twice that many
+// symbols 0 after the last bring its tail to rest. It allocates only to
+// grow dst.
+func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
+	if a.k == nil {
+		n := a.mcu.Symbol(a.tmp[:], s)
+		return append(dst, a.tmp[:n]...)
+	}
+	n := a.k.symbol(a.buf, s)
+	for _, v := range a.buf[:n] {
+		dst = append(dst, sat16(v*a.scale+a.offset))
+	}
+	return dst
+}
+
+// IQConfig sets up an IQ.
+type IQConfig struct {
+	// Rate is the sample rate of the I/Q, from 48000 to 20e6 Hz; 0 means
+	// 2.4e6. Tier0 takes 48000, 96000 or 192000.
+	Rate int
+	// OffsetHz is the carrier offset from 0 Hz, within a quarter of Rate.
+	OffsetHz float64
+	// RampSeconds is the length of the power ramp of Key, up to 10 ms; 0
+	// means 1 ms.
+	RampSeconds float64
+	// Tier selects the modulator. The zero value TierDefault is Tier1.
+	Tier Tier
+}
+
+// IQ modulates complex I/Q for a software radio: it FM-modulates the
+// shaped deviation at 48 kHz, interpolated linearly to the output rate,
+// onto a carrier, with a raised-cosine power ramp for TDMA bursts. Tier0
+// is MCUIQ; Tier1 turns a 32-bit phase into I/Q by a cosine table of 1024
+// entries with linear interpolation; Tier2 by float64 sine and cosine.
+// NewIQ allocates its state, and its methods allocate nothing but the
+// growth of dst. An IQ is not safe for concurrent use.
+type IQ struct {
+	mcu   MCUIQ
+	out   []int16
+	k     *poly
+	buf   []float64
+	l, m  int
+	acc   int
+	prev  float64
+	step  float64
+	off   float64
+	phase uint32
+	ph64  float64
+	tab   []float32
+	env   int
+	ramp  int
+	on    bool
+}
+
+// iqShaperHz is the rate of the shaper of the IQ tiers above Tier0.
+const iqShaperHz = 48000
+
+// iqTableBits is the log2 of the number of entries of the cosine table of
+// Tier1.
+const iqTableBits = 10
+
+// NewIQ returns an IQ for cfg. It allocates the IQ, once.
+func NewIQ(cfg IQConfig) (*IQ, error) {
+	if cfg.Rate == 0 {
+		cfg.Rate = 2400000
+	}
+	if cfg.RampSeconds == 0 {
+		cfg.RampSeconds = 1e-3
+	}
+	ramp := int(math.Round(cfg.RampSeconds * float64(cfg.Rate)))
+	switch {
+	case cfg.Rate < iqShaperHz || cfg.Rate > 20e6:
+		return nil, errHz
+	case 4*math.Abs(cfg.OffsetHz) >= float64(cfg.Rate) || ramp < 1 || cfg.RampSeconds > 0.01:
+		return nil, errLevel
+	}
+	q := &IQ{ramp: ramp}
+	switch cfg.Tier {
+	case Tier0:
+		if err := q.mcu.Init(cfg.Rate, int(math.Round(cfg.OffsetHz)), min(ramp, 1<<15)); err != nil {
+			return nil, err
+		}
+		q.out = make([]int16, 2*q.mcu.Samples())
+		return q, nil
+	case TierDefault, Tier1, Tier2:
+	default:
+		return nil, errTier
+	}
+	pu := pulse{span: 8}
+	if cfg.Tier == Tier2 {
+		pu.span = 16
+	}
+	k, err := newPoly(pu, iqShaperHz, cfg.Tier != Tier2)
+	if err != nil {
+		return nil, err
+	}
+	g := gcd(cfg.Rate, iqShaperHz)
+	q.k, q.buf, q.l, q.m = k, make([]float64, k.l/k.m+1), cfg.Rate/g, iqShaperHz/g
+	q.out = make([]int16, 2*(q.l/q.m+1)*len(q.buf))
+	q.step = (1 << 32) / float64(cfg.Rate)
+	q.off = cfg.OffsetHz
+	if cfg.Tier != Tier2 {
+		q.tab = make([]float32, 1<<iqTableBits+1)
+		for i := range q.tab {
+			q.tab[i] = float32(math.Cos(2 * math.Pi * float64(i) / (1 << iqTableBits)))
+		}
+	}
+	return q, nil
+}
+
+// Key keys the carrier up or down: the power ramps over RampSeconds from
+// where it is. An IQ starts keyed down.
+func (q *IQ) Key(on bool) {
+	q.on = on
+	q.mcu.Key(on)
+}
+
+// AppendS8 shapes the symbol s, -3, -1, +1, +3 or 0 for no modulation,
+// and appends the I/Q of the symbol period that it completes to dst as
+// signed 8-bit interleaved I/Q, as hackrf_transfer reads it, at 0.9 of
+// full scale. The noise of 8 bits spreads over the rate, so this format
+// meets the adjacent channel power limit only from about 1 MHz; AppendS16
+// has 48 dB more room. The output lags the symbols by the half-length of
+// the pulse and the interpolation. It allocates only to grow dst.
+func (q *IQ) AppendS8(dst []byte, s int8) []byte {
+	n := q.symbol(s)
+	for _, v := range q.out[:n] {
+		dst = append(dst, byte(int8((int32(v)+1<<7)>>8)))
+	}
+	return dst
+}
+
+// AppendS16 is AppendS8 with signed 16-bit interleaved I/Q, at 0.9 of
+// full scale. It allocates only to grow dst.
+func (q *IQ) AppendS16(dst []int16, s int8) []int16 {
+	n := q.symbol(s)
+	return append(dst, q.out[:n]...)
+}
+
+// symbol writes the 16-bit I/Q of the symbol s to out and returns the
+// number of values.
+func (q *IQ) symbol(s int8) int {
+	if q.k == nil {
+		return q.mcu.Symbol(q.out, s)
+	}
+	j := 0
+	n := q.k.symbol(q.buf, s)
+	for _, f := range q.buf[:n] {
+		w := f + q.off
+		dw := (w - q.prev) * float64(q.m) / float64(q.l)
+		v := q.prev + (w-q.prev)*float64(q.acc)/float64(q.l)
+		for ; q.acc < q.l; q.acc += q.m {
+			q.out[j], q.out[j+1] = q.sample(v)
+			j += 2
+			v += dw
+		}
+		q.acc -= q.l
+		q.prev = w
+	}
+	return j
+}
+
+// sample returns the I/Q of one output sample, with the carrier at hz.
+func (q *IQ) sample(hz float64) (i, qd int16) {
+	a := 0.9 * 32767.0
+	if q.on && q.env < q.ramp || !q.on && q.env > 0 {
+		if q.on {
+			q.env++
+		} else {
+			q.env--
+		}
+		a *= 0.5 - 0.5*math.Cos(math.Pi*float64(q.env)/float64(q.ramp))
+	} else if !q.on {
+		a = 0
+	}
+	var c, s float64
+	if q.tab == nil {
+		q.ph64 += 2 * math.Pi * hz * q.step / (1 << 32)
+		if q.ph64 > math.Pi {
+			q.ph64 -= 2 * math.Pi
+		} else if q.ph64 < -math.Pi {
+			q.ph64 += 2 * math.Pi
+		}
+		s, c = math.Sincos(q.ph64)
+	} else {
+		q.phase += uint32(int32(math.Round(hz * q.step)))
+		const sh = 32 - iqTableBits
+		i := q.phase >> sh
+		j := (i - 1<<iqTableBits/4) & (1<<iqTableBits - 1)
+		fr := float32(q.phase<<iqTableBits>>iqTableBits) / (1 << sh)
+		c = float64(q.tab[i] + (q.tab[i+1]-q.tab[i])*fr)
+		s = float64(q.tab[j] + (q.tab[j+1]-q.tab[j])*fr)
+	}
+	return sat16(c * a), sat16(s * a)
+}
+
+// sat16 rounds x to the nearest int16, saturated.
+func sat16(x float64) int16 {
+	switch {
+	case x >= math.MaxInt16:
+		return math.MaxInt16
+	case x <= math.MinInt16:
+		return math.MinInt16
+	case x >= 0:
+		return int16(x + 0.5)
+	default:
+		return int16(x - 0.5)
+	}
+}
