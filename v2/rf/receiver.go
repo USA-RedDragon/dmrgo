@@ -131,6 +131,20 @@ const (
 	// fit and the carrier estimate per anchor.
 	timingForget = 0.97
 	freqForget   = 0.9
+	// timingSigma is the standard deviation, in samples, of the timing
+	// of one anchor that the timing fit assumes, and periodSigma that of
+	// the slot period of a stream about slotSamplesN, about 200 ppm: the
+	// fit weighs the period of its anchors against slotSamplesN with
+	// them, so that two anchors close together do not set a period that
+	// misses the next anchor.
+	timingSigma = 0.5
+	periodSigma = 0.3
+	// timingPrior is the weight of slotSamplesN in the period of the fit,
+	// in anchors one slot from the mean slot of the fit.
+	timingPrior = timingSigma * timingSigma / (periodSigma * periodSigma)
+	// maxTauSpan is the most samples that measure searches the SYNC of
+	// a slot around where the timing fit puts it.
+	maxTauSpan = 5.0
 )
 
 // BasebandRate is the sample rate of the complex baseband that
@@ -1026,12 +1040,22 @@ func (r *engine) followStep(end bool) bool {
 		return true
 	}
 	if r.warm && j >= warmSlots {
-		r.warmFreq(j)
-		r.warm = false
-		r.next, r.first = r.warmStart, r.warmStart
-		r.lastAnch, r.lost = math.MinInt64, 0
+		r.endWarm(j)
 	}
 	return true
+}
+
+// endWarm ends the warm pass at slot j: it sets the carrier estimate from
+// the slots up to j and starts the detection again from the first slot.
+// The timing fit starts again too, as the detection measures the anchors
+// of the warm pass again, and the same anchor twice in the fit made a
+// period from two anchors two slots apart.
+func (r *engine) endWarm(j int64) {
+	r.warmFreq(j)
+	r.warm = false
+	r.next, r.first = r.warmStart, r.warmStart
+	r.lastAnch, r.lost = math.MinInt64, 0
+	r.fit = [5]float64{}
 }
 
 // stale reports whether the stream may have moved by slot j: a BS stream
@@ -1096,10 +1120,7 @@ func (r *engine) offGrid(t int64) bool {
 // finishStream detects the slots that are still pending and unlocks.
 func (r *engine) finishStream() {
 	if r.warm {
-		r.warmFreq(r.next - 1)
-		r.warm = false
-		r.next, r.first = r.warmStart, r.warmStart
-		r.lastAnch, r.lost = math.MinInt64, 0
+		r.endWarm(r.next - 1)
 		return
 	}
 	if r.bs {
@@ -1147,7 +1168,8 @@ func (r *engine) measure(s *slotState) {
 	}
 	var best anchorInfo
 	bestTau := 0.0
-	for tau := -1.5; tau <= 1.5; tau += 0.25 {
+	span := r.tauSpan(s.index)
+	for tau := -span; tau <= span; tau += 0.25 {
 		e := r.syncSamples(s, tau)
 		for _, p := range pats[:np] {
 			if a := r.syncCorr(p, e); a.metric > best.metric {
@@ -1190,8 +1212,25 @@ func (r *engine) measure(s *slotState) {
 	}
 }
 
+// tauSpan returns how far, in channel samples, measure searches the SYNC
+// of slot j around where the timing fit puts it: three standard
+// deviations of the prediction of the fit, up to the step of 0.25 samples
+// of the search, at least 1.5 and at most maxTauSpan samples.
+func (r *engine) tauSpan(j int64) float64 {
+	f0, f1, f2 := r.fit[0], r.fit[1], r.fit[2]+timingPrior
+	det := f0*f2 - f1*f1
+	if f0 == 0 || det <= 1e-9 {
+		return 1.5
+	}
+	k := float64(j)
+	v := timingSigma * timingSigma * (f2 - 2*k*f1 + k*k*f0) / det
+	return min(max(1.5, math.Ceil(4*3*math.Sqrt(v))/4), maxTauSpan)
+}
+
 // timing adds the SYNC of anchor slot s, tau samples from where the fit
-// put it, to the fit of the slot timing.
+// put it, to the fit of the slot timing: a line through the anchors, with
+// old anchors forgotten and the period weighed against slotSamplesN by
+// timingPrior. The first anchor moves the timing halfway to it.
 func (r *engine) timing(s *slotState, tau float64) {
 	k := s.index
 	r.fit[0] = timingForget*r.fit[0] + 1
@@ -1199,11 +1238,12 @@ func (r *engine) timing(s *slotState, tau float64) {
 	r.fit[2] = timingForget*r.fit[2] + float64(k*k)
 	r.fit[3] = timingForget*r.fit[3] + (s.start + tau)
 	r.fit[4] = timingForget*r.fit[4] + float64(k)*(s.start+tau)
-	if det := r.fit[0]*r.fit[2] - r.fit[1]*r.fit[1]; r.fit[0] > 3 && det > 1e-9 {
-		b := (r.fit[0]*r.fit[4] - r.fit[1]*r.fit[3]) / det
+	s2, s4 := r.fit[2]+timingPrior, r.fit[4]+timingPrior*slotSamplesN
+	if det := r.fit[0]*s2 - r.fit[1]*r.fit[1]; r.fit[0] > 1.5 && det > 1e-9 {
+		b := (r.fit[0]*s4 - r.fit[1]*r.fit[3]) / det
 		if math.Abs(b-slotSamplesN) < 2 {
 			r.period = b
-			r.t0 = (r.fit[3] - b*r.fit[1]) / r.fit[0]
+			r.t0 = (r.fit[3]*s2 - r.fit[1]*s4) / det
 		}
 	} else {
 		r.t0 += tau * 0.5

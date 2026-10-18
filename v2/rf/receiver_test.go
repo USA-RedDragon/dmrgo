@@ -7,7 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 // noisyBaseband modulates a BS outbound stream at basebandRate with a
@@ -250,6 +252,96 @@ func TestReceiverKeyUp(t *testing.T) {
 			}
 			if first > start+0.15 {
 				t.Errorf("first burst of the second stream at %.3f s, %.3f s after its start", first, first-start)
+			}
+		})
+	}
+}
+
+// resampleFM returns the deviation freq and the envelope env of a
+// transmitter whose clock runs ppm parts per million fast, by linear
+// interpolation.
+func resampleFM(freq, env []float64, ppm float64) ([]float64, []float64) {
+	r := 1 + ppm*1e-6
+	n := int(float64(len(freq)-1) / r)
+	f, e := make([]float64, n), make([]float64, n)
+	for i := range n {
+		p := float64(i) * r
+		k := int(p)
+		u := p - float64(k)
+		f[i] = freq[k]*(1-u) + freq[k+1]*u
+		e[i] = env[k]*(1-u) + env[k+1]*u
+	}
+	return f, e
+}
+
+// directCalls builds n direct mode voice calls of two superframes on TS2
+// without wakeup bursts, each its own transmission from 0 to 9 samples
+// after a slot boundary, with 0.3 s of no carrier after it, and returns
+// them as msStream does.
+func directCalls(t testing.TB, n int) ([]float64, []float64, []benchSlot) {
+	t.Helper()
+	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Superframes: 2, Slot: 1}
+	b, err := rftx.Sequence("voice", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, e := rftx.Modulate(b.Bursts, rftx.Schedule{Slot: 1})
+	tail := make([]float64, int(0.3*basebandRate))
+	var freq, env []float64
+	var truth []benchSlot
+	for c := range n {
+		first := len(freq) / slotSamplesN
+		lead := make([]float64, c*37%100*samplesPerSy/100)
+		freq = append(append(append(freq, lead...), f...), tail...)
+		env = append(append(append(env, lead...), e...), tail...)
+		for len(freq)%slotSamplesN != 0 {
+			freq, env = append(freq, 0), append(env, 0)
+		}
+		pos := enums.VoiceBurstUnknown
+		for i, raw := range b.Bursts {
+			x, err := layer2.NewBurstFromBytes(raw)
+			switch {
+			case err == nil && x.Kind == layer2.KindVoice && x.SyncPattern == enums.SyncMSSourcedVoice:
+				pos = enums.VoiceBurstA
+			case pos != enums.VoiceBurstUnknown && pos < enums.VoiceBurstF && (err != nil || x.Kind != layer2.KindData):
+				pos++
+			default:
+				continue
+			}
+			j := first + 2*i + 1
+			for len(truth) <= j {
+				truth = append(truth, benchSlot{kind: "idle"})
+			}
+			truth[j] = benchSlot{burst: raw, kind: "voice", pos: pos}
+		}
+	}
+	return freq, env, truth
+}
+
+// TestReceiverDirectModeTiming receives direct mode voice calls at 5 dB
+// C/N, which have a SYNC in the header and in every sixth voice burst,
+// from transmitters whose clocks are off by 0 and 200 ppm, and checks that
+// Tier3 recovers C0 and C1 of nearly every voice frame. The coherent tier
+// added the anchors of the warm pass to its timing fit twice and fit the
+// period from four of them, two slots apart: the period missed by a few
+// tenths of a sample per slot, the timing by samples at the next SYNC, and
+// it recovered 98% and 85% of the frames.
+func TestReceiverDirectModeTiming(t *testing.T) {
+	t.Parallel()
+	fm, env, truth := directCalls(t, 4)
+	for _, c := range []struct{ ppm, share float64 }{{0, 0.995}, {200, 0.94}, {-200, 0.94}} {
+		t.Run(strconv.FormatFloat(c.ppm, 'f', -1, 64), func(t *testing.T) {
+			t.Parallel()
+			f, e := resampleFM(fm, env, c.ppm)
+			var exact, total int
+			for seed := range uint64(6) {
+				sc := scoreMS(truth, receiveBaseband(noisyFM(f, e, 1400, 5, 40+seed), Tier3))
+				exact += sc["ambe_c0c1"].Exact
+				total += sc["ambe_c0c1"].Truth
+			}
+			t.Logf("%d of %d frames with C0 and C1 exact", exact, total)
+			if float64(exact) < c.share*float64(total) {
+				t.Errorf("%d of %d frames with C0 and C1 exact", exact, total)
 			}
 		})
 	}
