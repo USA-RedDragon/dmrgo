@@ -10,15 +10,15 @@ import (
 // Settings of npml: the weight of each SYNC field in the noise correlation,
 // its bound, and the SYNC fields before it counts; and the noise variance,
 // over the square of the deviation of level 1, under which it detects
-// symbol by symbol. There a level has 4 times the noise as its margin, so
-// that the symbol errors are rare, and the residual of the SYNC fits is
-// mostly the distortion of the transmitter and the radio, which the noise
-// prediction does not model.
+// symbol by symbol. There a level has 2.8 times the noise as its margin,
+// so that the symbol errors are rare, and the residual of the SYNC fits
+// holds much of the distortion of the transmitter and the radio, which the
+// noise prediction does not model.
 const (
 	npmlGain  = 0.1
 	npmlMax   = 0.9
 	npmlMin   = 4
-	npmlQuiet = 1.0 / 16
+	npmlQuiet = 1.0 / 8
 )
 
 // npml detects the symbols of a burst from the discriminator samples of
