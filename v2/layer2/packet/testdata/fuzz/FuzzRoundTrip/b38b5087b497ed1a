@@ -1,0 +1,7 @@
+go test fuzz v1
+byte('f')
+uint64(3592)
+uint32(10161)
+uint32(3191746)
+[]byte("0")
+[]byte("0C")
