@@ -53,11 +53,14 @@ func TestDiscTier2Weak(t *testing.T) {
 			s := scoreBench(truth, receiveDisc(t, a, hz, tier))[k]
 			return float64(s.Exact) / float64(max(s.Truth, 1))
 		}
-		for _, k := range []string{"ambe_c0c1", "rate12"} {
-			t1, t2 := rate(Tier1, k), rate(Tier2, k)
-			t.Logf("%d Hz, %s: %.2f Tier1, %.2f Tier2", hz, k, t1, t2)
-			if t2 < 0.8 || t2 < t1+0.25 {
-				t.Errorf("%d Hz, %s: %.2f Tier2, %.2f Tier1", hz, k, t2, t1)
+		for _, c := range []struct {
+			k    string
+			gain float64
+		}{{"ambe_c0c1", 0.15}, {"rate12", 0.5}} {
+			t1, t2 := rate(Tier1, c.k), rate(Tier2, c.k)
+			t.Logf("%d Hz, %s: %.2f Tier1, %.2f Tier2", hz, c.k, t1, t2)
+			if t2 < 0.8 || t2 < t1+c.gain {
+				t.Errorf("%d Hz, %s: %.2f Tier2, %.2f Tier1", hz, c.k, t2, t1)
 			}
 		}
 	}

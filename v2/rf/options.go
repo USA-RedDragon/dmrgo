@@ -112,21 +112,31 @@ func discOptions() options {
 	return o
 }
 
-// softOptions adds to o the soft stages of Tier1: the ordered statistics
-// decode of BPTC(196,96) and the embedded LC over each superframe.
+// softOptions adds to o the soft stages of the tiers above Tier0: the
+// ordered statistics decode of BPTC(196,96) and the embedded LC over each
+// superframe.
 func softOptions(o options) options {
 	o.SoftExt, o.ExtOSD, o.ExtELC = true, true, true
 	return o
 }
 
+// tier1Options adds to o the stages of Tier1: the soft stages and the
+// decode of C0 and C1 of each voice frame by soft ML.
+func tier1Options(o options) options {
+	o = softOptions(o)
+	o.ExtAMBE = true
+	return o
+}
+
 // discTierOptions returns the settings of tier t on discriminator audio:
-// Tier1 adds the soft stages, and Tier2 the decode of C0 and C1 by soft ML
-// and the coherent stage on the phase that discPhase rebuilds.
+// Tier1 adds the stages of tier1Options, and Tier2 the soft stages, the
+// decode of C0 and C1 by soft ML and the coherent stage on the phase that
+// discPhase rebuilds.
 func discTierOptions(t Tier) options {
 	o := discOptions()
 	switch t {
 	case Tier1:
-		o = softOptions(o)
+		o = tier1Options(o)
 		o.ExtLookback = 8
 	case Tier2:
 		o = softOptions(o)
@@ -144,7 +154,7 @@ func tierOptions(t Tier) options {
 	case TierDefault, Tier0:
 		o.IQDisc, o.IQHz = true, 12000
 	case Tier1:
-		o = softOptions(o)
+		o = tier1Options(o)
 		o.IQDisc, o.IQHz = true, 12000
 	case Tier2:
 		o = softOptions(o)

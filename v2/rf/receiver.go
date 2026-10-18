@@ -24,17 +24,17 @@ const (
 	// BasebandRate/2 the complex front end. It fits a microcontroller.
 	Tier0
 	// Tier1 adds to Tier0 the soft decoders of the coherent tiers: a
-	// BPTC(196,96) block whose check fails by ordered statistics, the
-	// embedded LC of each superframe over its four fragments and the
-	// earlier superframes of the call, and LookbackSlots slots before the
-	// first lock decoded again. It costs about the CPU of Tier0.
+	// BPTC(196,96) block whose check fails by ordered statistics, C0 and C1
+	// of each voice frame by soft ML, the embedded LC of each superframe
+	// over its four fragments and the earlier superframes of the call, and
+	// LookbackSlots slots before the first lock decoded again. It costs
+	// about the CPU of Tier0.
 	Tier1
-	// Tier2 adds to Tier1, on I/Q at BasebandRate, the detection again of
-	// each burst with a trellis over three symbols that carries the
-	// carrier phase with each survivor, from the SYNC or EMB of the burst
-	// and from the SYNC of the slots beside it, and soft ML decoding of C0
-	// and C1 of each voice frame. It holds each burst one slot longer, and
-	// runs on a PC.
+	// Tier2 adds to the soft decoders of Tier1, on I/Q at BasebandRate, the
+	// detection again of each burst with a trellis over three symbols that
+	// carries the carrier phase with each survivor, from the SYNC or EMB of
+	// the burst and from the SYNC of the slots beside it. It holds each
+	// burst one slot longer, and runs on a PC.
 	Tier2
 	// Tier3 detects over a window of three symbols with one of 52 carrier
 	// phases in the trellis state, and detects each voice burst again with

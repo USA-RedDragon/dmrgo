@@ -37,10 +37,10 @@ type DiscConfig struct {
 	OnBurst func(*Burst)
 	// Tier is Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1
 	// for NewDisc, and Tier0 for Init, which does not allocate the stages
-	// of the higher tiers, and under TinyGo, which has neither. Tier2 adds
-	// to Tier1 the decode of C0 and C1 of each voice frame by soft ML and
-	// the coherent detection of each burst again, on the carrier phase
-	// that it rebuilds from the samples, at about 25 times the CPU time.
+	// of the higher tiers, and under TinyGo, which has neither. Tier2
+	// detects each burst again coherently, on the carrier phase that it
+	// rebuilds from the samples, in place of the detection of Tier1, at
+	// about 15 times its CPU time.
 	Tier Tier
 	// opt, when not nil, replaces the settings of the tier.
 	opt *options
