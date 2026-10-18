@@ -200,6 +200,7 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 		if e == 0 {
 			continue
 		}
+		ns := noiseShare(x)
 		for i := range s.nsrc {
 			for d := range 2 {
 				tpl := &s.scanTpl[i][d]
@@ -214,7 +215,7 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 				}
 				// Each segment explains at most its share of the power.
 				m *= cohScanSegs / (e * cohScanLen)
-				if m > best {
+				if m > best && 1-m <= cohResidual*ns {
 					best, bestSrc, bestData = m, i, d == 1
 				}
 			}
@@ -761,6 +762,35 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 // waveform must explain for verify.
 const cohVerifyRho = 0.35
 
+// cohResidual is the most share of the power of a SYNC field that its
+// waveform may leave for verify and scan, in multiples of the share of the
+// noise in the power of its samples. A SYNC leaves the noise and the error
+// of the model: from -2 to 4 dB C/N, at most 3 times the noise. The data of
+// a burst whose symbols match a SYNC in most signs leaves half of the
+// signal or more: from 8 dB C/N, over 4 times the noise. The share of the
+// power alone passes such data once the carrier offset is known, as after
+// an unmodulated carrier or at the start of a stream.
+const cohResidual = 4
+
+// noiseShare returns the share of the noise in the power of the samples x,
+// by the M2M4 estimate: the FM carrier has a constant envelope, so that the
+// mean square of its power is the square of the mean, while that of noise
+// is twice it.
+func noiseShare(x []complex64) float64 {
+	var p, p2 float64
+	for _, v := range x {
+		q := float64(real(v)*real(v) + imag(v)*imag(v))
+		p += q
+		p2 += q * q
+	}
+	if p <= 0 {
+		return 1
+	}
+	p /= float64(len(x))
+	p2 /= float64(len(x))
+	return 1 - math.Sqrt(max(2*p*p-p2, 0))/p
+}
+
 // verify reports whether the last symbols of the core c end SYNC p by
 // the coherent test of place: the ring samples of the SYNC field against
 // its waveform, at the carrier offset that the oscillator and the core
@@ -788,7 +818,8 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	}
 	d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
-	if amp <= 0 || amp*amp/(amp*amp+max(noise, 0)) < cohVerifyRho {
+	rho := amp * amp / (amp*amp + max(noise, 0))
+	if amp <= 0 || rho < cohVerifyRho || 1-rho > cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps]) {
 		return false
 	}
 	s.dt += cohDTGain * d

@@ -154,8 +154,9 @@ func TestCarrierLeadIn(t *testing.T) {
 	for i := 0; env[i] < 1; i++ {
 		env[i] = 1
 	}
+	rxs := append(levelsReceivers(), levelsReceiver{0, Tier2})
 	for _, cn := range []float64{math.Inf(1), 40} {
-		for _, lr := range levelsReceivers() {
+		for _, lr := range rxs {
 			t.Run(fmt.Sprintf("%s/%.0f", lr.name(), cn), func(t *testing.T) {
 				t.Parallel()
 				for _, base := range []float64{0.1, 0.5, 2} {
@@ -175,5 +176,27 @@ func TestCarrierLeadIn(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// TestCoherentStart receives a BS stream after noise with Tier2 at 20 and
+// 40 dB, from 60 starts 0.5 ms apart, and checks that the bursts after the
+// first decode: the coherent stage must not take the data of the first
+// burst for a SYNC, which the strong signal shows that it is not.
+func TestCoherentStart(t *testing.T) {
+	t.Parallel()
+	slots, truth := benchStream(t, 2)
+	fm, env := rftx.ModulateBS(slots)
+	for _, cn := range []float64{20, 40} {
+		t.Run(fmt.Sprint(cn), func(t *testing.T) {
+			t.Parallel()
+			for k := range 60 {
+				start := benchPad + float64(k)*0.0005
+				x := signalBaseband([]signalPart{{start, fm, env}}, start+float64(len(fm))/basebandRate+0.3, cn, uint64(k)+1)
+				if ex, tot := exactFrom(truth, levelsReceiver{0, Tier2}.receive(t, x), start, 1); ex < tot-2 {
+					t.Errorf("start at %.4f s: %d of %d payloads exact", start, ex, tot)
+				}
+			}
+		})
 	}
 }
