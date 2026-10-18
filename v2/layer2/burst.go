@@ -637,9 +637,8 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 // describes. It returns an error for KindUnknown, a SyncPattern that does
 // not fit the kind, a missing Data, or a Data whose data type is not
 // SlotType.DataType, and a *dmrgo.FieldRangeError for a field value that does
-// not fit its bits or a padding bit that is set. For a data
-// burst, its type switch on the Encode method of Data can allocate once for
-// each type of Data, to fill the runtime cache of the switch.
+// not fit its bits or a padding bit that is set. A data burst takes only
+// the Data types that BuildBurst takes.
 func (b *Burst) Encode() (RawBurst, error) {
 	if b.Kind == KindReverseChannel {
 		return b.encodeStandaloneRC()
@@ -719,7 +718,7 @@ func (b *Burst) dataInfoBits() ([25]byte, error) {
 	decoded := b.payloadBits > 0 && dt == b.decodedDataType
 	switch {
 	case b.Data != nil:
-		info, err := encodeData(b.Data, dt)
+		_, info, err := encodeData(b.Data, dt, false)
 		if err != nil {
 			return info, err
 		}
@@ -768,61 +767,143 @@ func (b *Burst) decodedCodesTo(want [12]byte) bool {
 	return err == nil && want == coded
 }
 
-// encoder96, encoder144 and encoder192 are the PDUs whose Encode returns
-// their information bits as an array, which does not allocate.
-type (
-	encoder96  interface{ Encode() ([12]byte, error) }
-	encoder144 interface{ Encode() ([18]byte, error) }
-	encoder192 interface{ Encode() ([24]byte, error) }
-)
-
-// encodeData returns the information bits of d in a data burst of
-// dataType, packed.
-func encodeData(d Data, dataType enums.DataType) ([25]byte, error) {
+// encodeData returns the data type of d and its information bits, packed.
+// d must be a non-nil pointer to a Data type of package pdu. Unless anyType
+// is set, it returns errDataType when the data type of d is not dataType.
+func encodeData(d Data, dataType enums.DataType, anyType bool) (enums.DataType, [25]byte, error) {
 	var info [25]byte
-	if err := checkData(d, dataType); err != nil {
-		return info, err
+	dt, ok, err := pduInfo(d, &info)
+	switch {
+	case !ok:
+		return 0, info, err
+	case !anyType && dt != dataType:
+		return dt, [25]byte{}, errDataType
+	case err != nil:
+		return dt, [25]byte{}, err
 	}
-	var n int
-	var err error
-	switch e := d.(type) {
-	case encoder96:
-		var coded [12]byte
-		coded, err = e.Encode()
-		n = copy(info[:], coded[:]) * 8
-	case encoder144:
-		var coded [18]byte
-		coded, err = e.Encode()
-		n = copy(info[:], coded[:]) * 8
-	case encoder192:
-		var coded [24]byte
-		coded, err = e.Encode()
-		n = copy(info[:], coded[:]) * 8
-	default:
-		return info, errNoEncode
-	}
-	if err != nil {
-		return info, err
-	}
-	if want := infoBitsLen(dataType); n != want {
-		return info, errInfoBits
-	}
-	return info, nil
+	return dt, info, nil
 }
 
-// infoBitsLen returns the number of information bits that a data burst of
-// dataType carries.
-func infoBitsLen(dataType enums.DataType) int {
-	switch {
-	case dataType == enums.DataTypeRate34:
-		return 144
-	case dataType == enums.DataTypeRate1:
-		return 192
-	case dataType.IsBPTC():
-		return 96
+// pduInfo writes the information bits of d, packed, to info and returns the
+// data type of d and the error of its Encode method. ok is false, and err
+// says why, when d is nil, a nil pointer or not a Data type of package pdu.
+// The type switches of pduInfo and bptcInfo call no method of another type,
+// so d does not escape.
+func pduInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
+	switch p := d.(type) {
+	case nil:
+		return 0, false, errNilData
+	case *pdu.Rate34Data:
+		if p != nil {
+			var c [18]byte
+			dt := p.DataType()
+			c, err := p.Encode()
+			copy(info[:], c[:])
+			return dt, true, err
+		}
+	case *pdu.Rate1Data:
+		if p != nil {
+			var c [24]byte
+			dt := p.DataType()
+			c, err := p.Encode()
+			copy(info[:], c[:])
+			return dt, true, err
+		}
 	default:
-		return 0
+		return bptcInfo(d, info)
 	}
+	return 0, false, errNilPointerData
+}
+
+// bptcInfo is pduInfo for the BPTC(196,96) coded Data types.
+func bptcInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
+	var dt enums.DataType
+	var c [12]byte
+	var err error
+	switch p := d.(type) {
+	case *pdu.FullLinkControl:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.CSBK:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.PIHeader:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.DataHeader:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.MBCHeader:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.MBCContinuation:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.CGAPContinuation:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.MVAPContinuation:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.BCAPContinuation:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.VNAPContinuation:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.UnifiedSingleBlockData:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.Rate12Data:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	case *pdu.PRFill:
+		if p == nil {
+			return 0, false, errNilPointerData
+		}
+		dt = p.DataType()
+		c, err = p.Encode()
+	default:
+		return 0, false, errNotPDU
+	}
+	copy(info[:], c[:])
+	return dt, true, err
 }
 
 // encodeDataBits codes the information bits of a data burst with

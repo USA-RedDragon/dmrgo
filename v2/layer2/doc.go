@@ -31,11 +31,12 @@
 // Burst.Encode writes a voice burst with a voice SYNC pattern, the reserved
 // pattern, or embedded signalling, and a data burst with its slot type and a
 // data SYNC pattern. A data burst carries the bits that the Encode method of
-// Data returns, coded for SlotType.DataType, so the BurstDataType of a Full
-// LC, which selects its RS(12,9) mask, must match the slot type. A data burst
-// has SyncPattern enums.SyncNone only when DecodeFromBytes found an EMB in
-// place of its SYNC. To build a new data burst with an EMB, use BuildBurst
-// and then RawBurst.SetEMB and RawBurst.SetEmbeddedData. A data burst from
+// Data returns, coded for SlotType.DataType. Data must be a PDU type of
+// package pdu. The BurstDataType of a Full LC selects its RS(12,9) mask, so
+// it must match the slot type. A data burst has SyncPattern enums.SyncNone
+// only when DecodeFromBytes found an EMB in place of its SYNC. To build a
+// new data burst with an EMB, use BuildBurst and then RawBurst.SetEMB and
+// RawBurst.SetEmbeddedData. A data burst from
 // DecodeFromBytes whose Data is nil, or codes to the same bits as the
 // decoded payload, goes out with the payload as it was decoded after FEC
 // correction. A burst whose CRC failed can thus be forwarded. The embedded

@@ -2,7 +2,6 @@ package layer2
 
 import (
 	"errors"
-	"reflect"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -37,9 +36,9 @@ var (
 	// ErrVoiceTerminated is returned by VoiceTransmitter methods called after
 	// Terminate.
 	ErrVoiceTerminated = errors.New("voice transmission already terminated")
-	// errNoEncode is returned by Burst.Encode and BuildBurst for Data without
-	// an Encode method that returns 96, 144 or 192 information bits.
-	errNoEncode = errors.New("data has no Encode method that returns 96, 144 or 192 information bits")
+	// errNotPDU is returned by Burst.Encode and BuildBurst for Data of a type
+	// that package pdu does not define.
+	errNotPDU = errors.New("data is not a PDU type of package pdu")
 )
 
 // wrapError is an error with its own message that wraps err.
@@ -113,7 +112,6 @@ var (
 	errPayloadType     = errors.New("the decoded payload has another data type than the slot type; set Data")
 	errNilPointerData  = errors.New("the data burst cannot carry a nil Data pointer")
 	errDataType        = errors.New("the data burst cannot carry Data of another data type")
-	errInfoBits        = errors.New("the Data encodes another number of information bits than its data type carries")
 	errNotBPTC         = errors.New("the data type is not BPTC(196,96) coded")
 	errSyncSource      = errors.New("unknown sync source")
 	errSyncPattern     = errors.New("not a Table 9.2 SYNC pattern")
@@ -144,16 +142,4 @@ func joinColorCode(err error) error {
 		return errVoicePositionColorCode
 	}
 	return err
-}
-
-// checkData returns the error for Data d that a data burst of dataType
-// cannot carry, a nil pointer or Data of another data type, or nil.
-func checkData(d Data, dataType enums.DataType) error {
-	if rv := reflect.ValueOf(d); rv.Kind() == reflect.Pointer && rv.IsNil() {
-		return errNilPointerData
-	}
-	if d.DataType() != dataType {
-		return errDataType
-	}
-	return nil
 }
