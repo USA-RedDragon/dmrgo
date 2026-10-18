@@ -1023,16 +1023,28 @@ func (r *leanCore) huntSym(at float32) {
 	}
 	again := r.again
 	r.again = false
-	mid := r.signsMatch(r.midSigns)
+	if mid := r.signsMatch(r.midSigns); mid || r.signsMatch(r.signs) {
+		r.huntMatch(again, mid)
+	}
+}
+
+// huntMatch tests the symbols of a hunting lock whose signs match a SYNC,
+// at the symbols or halfway between them when mid, and again when the
+// last symbol put off a SYNC halfway between them to this one. It is not
+// inlined, so that huntSym, which runs at every symbol of the hunt, keeps
+// a small frame.
+//
+//go:noinline
+func (r *leanCore) huntMatch(again, mid bool) {
 	switch {
 	case again && mid && r.offGrid():
 		r.midSync()
 	case again && mid:
 		r.retime(true)
-	case mid || r.signsMatch(r.signs):
-		if !r.offGrid() {
-			r.retime(false)
-		} else if r.searchSym(true); r.lockNs == r.ns {
+	case !r.offGrid():
+		r.retime(false)
+	default:
+		if r.searchSym(true); r.lockNs == r.ns {
 			r.forced = true
 		}
 	}
