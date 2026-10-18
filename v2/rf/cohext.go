@@ -809,8 +809,12 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 }
 
 // cohVerifyRho is the least share of the power of a SYNC field that its
-// waveform must explain for verify.
-const cohVerifyRho = 0.35
+// waveform must explain for verify, and cohVerifyPre the least at the
+// timing of the core, before the fine timing.
+const (
+	cohVerifyRho = 0.35
+	cohVerifyPre = 0.2
+)
 
 // cohResidual is the most share of the power of a SYNC field that its
 // waveform may leave for verify and scan, in multiples of the share of the
@@ -865,6 +869,11 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	}
 	if s.seedDeviation(c, syncFirstSym, syncFirstSym+syncSymbols-1) {
 		s.verifyHz()
+	}
+	// Most candidates of the search on noise fail at the timing of the
+	// core already, which the fine timing would test six times more.
+	if amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); amp <= 0 || amp*amp/(amp*amp+max(noise, 0)) < cohVerifyPre {
+		return false
 	}
 	d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
