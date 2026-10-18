@@ -252,6 +252,9 @@ type leanCore struct {
 	// receiver keeps its size.
 	suspect, hunt bool
 	dataAnch      [2]bool
+	// again marks a SYNC that resample found to end after the last
+	// sample, which midSync samples at the next symbol.
+	again bool
 	// ext is the stage of a higher tier that decodes and emits each burst
 	// in place of repair, nil for Tier 0, and replaying is set while it
 	// runs the slots before a lock through slot; with replayDry the slots
@@ -749,8 +752,11 @@ func (win *syncWindow) at(t float32) float32 {
 // into the ring, with the ones they replace in saved, and returns the
 // offset and true; resampleStart then samples the start of the burst. It
 // reports false when the SYNC fails or the ring holds too few samples: for
-// the burst from its start, or while locked for the SYNC alone.
-func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (float32, bool) {
+// the burst from its start, or while locked for the SYNC alone. It tests
+// the offsets up to half a symbol off, and up to three quarters when wide:
+// a lock samples the SYNC of a stream at another timing, whose end can lie
+// between two of its symbols.
+func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide bool) (float32, bool) {
 	sps := 2 * r.tm.step
 	// The SYNC end is lastAt samples after the last sample.
 	end := r.lastAt
@@ -773,12 +779,11 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 		return 0, false
 	}
 	// The correlations from half a symbol early to half a symbol late in
-	// quarter symbols, and the peak of the parabola around the best. A
-	// lock tests three quarters too: it samples the SYNC of a stream at
-	// another timing, whose end can lie between two of its symbols.
+	// quarter symbols, or three quarters when wide, and the peak of the
+	// parabola around the best.
 	var c [7]float32
 	span := 2
-	if r.locked {
+	if wide {
 		span = 3
 	}
 	best := 3
@@ -798,7 +803,9 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8) (floa
 	}
 	if r.locked && best < len(c)-1 && math.IsInf(float64(c[best+1]), -1) {
 		// The SYNC ends after the last sample: a lock samples it again
-		// at the next symbol, where its end lies inside the offsets.
+		// at the next symbol, where its end lies inside the offsets and
+		// the kept samples halfway between the symbols show its signs.
+		r.again = true
 		return 0, false
 	}
 	bestD := float32(best-3) * sps / 4
@@ -908,11 +915,19 @@ func (r *leanCore) symbol(x, at float32) {
 			r.midSigns |= 1
 		}
 	}
-	if r.hunt && r.ns >= leanRing && (r.signsMatch(r.signs) || r.signsMatch(r.midSigns)) {
-		if !r.offGrid() {
-			r.retime()
-		} else if r.searchSym(true); r.lockNs == r.ns {
-			r.forced = true
+	if r.hunt && r.ns >= leanRing {
+		again := r.again
+		r.again = false
+		mid := r.signsMatch(r.midSigns)
+		switch {
+		case again && mid && r.offGrid():
+			r.midSync()
+		case mid || r.signsMatch(r.signs):
+			if !r.offGrid() {
+				r.retime()
+			} else if r.searchSym(true); r.lockNs == r.ns {
+				r.forced = true
+			}
 		}
 	}
 	if r.ns == r.slotEnd {
@@ -1058,7 +1073,7 @@ func (r *leanCore) searchSym(strict bool) {
 	if !weak && (strict || r.ns >= r.acqNext) {
 		var saved [syncSymbols]int8
 		var sampled bool
-		if d, sampled = r.resample(p, &saved); sampled {
+		if d, sampled = r.resample(p, &saved, r.locked); sampled {
 			if ok = r.fitLevels(r.ns-1, p, true, true); ok {
 				r.resampleStart(d)
 			} else {
@@ -1117,9 +1132,53 @@ func (r *leanCore) retime() {
 		p = dp
 	}
 	var saved [syncSymbols]int8
-	if d, ok := r.resample(p, &saved); ok {
+	if d, ok := r.resample(p, &saved, true); ok {
 		r.resampleStart(d)
 	}
+}
+
+// midSync samples the SYNC off the slots of a hunting lock that resample
+// put off to the next symbol, whose signs the kept samples halfway between
+// the last symbols show, again at its timing, and locks to it as the
+// search while locked does: the symbols of the lock sample it a symbol
+// off, and their correlation does not gate it.
+func (r *leanCore) midSync() {
+	src, data := r.signsSource(r.midSigns)
+	voice, dp, _ := sourceAt(src).SyncPatterns()
+	p := voice
+	if data {
+		p = dp
+	}
+	var saved [syncSymbols]int8
+	d, ok := r.resample(p, &saved, true)
+	if !ok {
+		return
+	}
+	if !r.clipped(r.ns-1) && r.fitLevels(r.ns-1, p, true, true) {
+		r.resampleStart(d)
+		r.lockStream(src, d, 0)
+		r.forced = true
+		return
+	}
+	for i, q := range &saved {
+		r.ring[uint32(r.ns-syncSymbols+int64(i))%leanRing] = q
+	}
+}
+
+// signsSource returns the source whose SYNC signs, voice or inverted for
+// data, signs matches as signsMatch does.
+func (r *leanCore) signsSource(signs uint32) (src int, data bool) {
+	for i := range int(r.sources) {
+		x := signs ^ syncSigns[i]
+		m := ones8[x&0xff] + ones8[x>>8&0xff] + ones8[x>>16&0xff]
+		switch {
+		case m <= r.signMiss:
+			return i, false
+		case m >= syncSymbols-r.signMiss:
+			return i, true
+		}
+	}
+	return 0, false
 }
 
 // staleSlots is the number of slots of a BS stream without a SYNC after

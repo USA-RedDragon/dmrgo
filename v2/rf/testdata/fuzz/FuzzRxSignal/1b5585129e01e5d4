@@ -1,0 +1,12 @@
+go test fuzz v1
+byte('3')
+byte('N')
+int16(-44)
+int8(0)
+int8(-102)
+int8(3)
+byte('\x19')
+byte('2')
+byte('v')
+int8(-17)
+uint64(82)
