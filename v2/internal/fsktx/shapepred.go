@@ -17,6 +17,19 @@ const (
 	predSPS  = iqShaperHz / SymbolRate
 )
 
+// predPulse is the pulse, with IQConfig.Exact, that the kernels fit: the
+// correction depends on the pulse, and the kernels of a sample start
+// predLo samples after its symbol, past the half-length of the pulse only
+// with a span of 16 symbols.
+var predPulse = PulseConfig{Span: 16, Window: 3, Beta: 17, Flat: true}
+
+// predFits reports whether the kernels fit the pulse c of the tier t.
+func predFits(t Tier, c PulseConfig) bool {
+	p := pulseOf(t, c)
+	return p.span == predPulse.Span && c.Window == predPulse.Window && c.Beta == predPulse.Beta &&
+		c.Flat == predPulse.Flat && c.Comp == 0 && (c.Gain == 0 || c.Gain == 1) && c.Shape == nil
+}
+
 // predFeatures returns the products of the symbol x[0] and the next three
 // that weigh the kernels of x[0].
 func predFeatures(x [predSpan + 1]float64) [predF]float64 {

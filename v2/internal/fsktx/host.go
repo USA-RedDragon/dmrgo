@@ -25,6 +25,7 @@ const (
 
 var (
 	errTier = errors.New("fsktx: unknown tier")
+	errPred = errors.New("fsktx: ShapePred needs Exact and the pulse of its kernels")
 	errHz   = errors.New("fsktx: sample rate out of range")
 )
 
@@ -353,7 +354,8 @@ type IQConfig struct {
 	Shape int
 	// ShapePred adds to Tier1 and Tier2 a fixed phase correction above
 	// 3 kHz, a polynomial function of the symbols fitted to that of Shape;
-	// it adds nothing to the lag. Shape wins over it.
+	// it adds nothing to the lag. Shape wins over it. It needs Exact and
+	// the pulse Span 16, Window 3, Beta 17, Flat.
 	ShapePred bool
 	// NoiseShape is the noise shaping of the rounding to 8 bits of
 	// AppendS8: 0 rounds each value, 1 to 4 feed the rounding error of I
@@ -456,10 +458,10 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	if cfg.Shape > 0 && cfg.Tier == Tier2 {
 		q.opt = newOptimizer(cfg.Shape)
 	} else if cfg.ShapePred {
-		q.pred = &predictor{kern: &shapeKern}
-		if cfg.Tier != Tier2 {
-			q.pred.kern = &shapeKern1
+		if !cfg.Exact || !predFits(cfg.Tier, cfg.Pulse) {
+			return nil, errPred
 		}
+		q.pred = &predictor{kern: &shapeKern}
 	}
 	if cfg.Tier != Tier2 {
 		q.tab = make([]float32, 1<<iqTableBits+1)
