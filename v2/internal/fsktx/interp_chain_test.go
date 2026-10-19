@@ -1,0 +1,25 @@
+package fsktx
+
+import (
+	"math"
+	"testing"
+)
+
+// TestInterpChainImages checks interpChain against the sum of the images
+// of the linear interpolation that fold onto f at the output rate.
+func TestInterpChainImages(t *testing.T) {
+	for _, rate := range []float64{48000, 96000, 192000, 1e6, 2.4e6} {
+		step := float64(iqShaperHz / gcd(int(rate), iqShaperHz))
+		for _, f := range []float64{300, 1200, 2400, 2880} {
+			var sum float64
+			for k := -100000 * step; k <= 100000*step; k += step {
+				s := sinc((f - k*rate) / iqShaperHz)
+				sum += s * s
+			}
+			want := sum / sinc(f/rate)
+			if got := interpChain(iqShaperHz, rate)(f); math.Abs(got-want) > 1e-7 {
+				t.Errorf("rate %g f %g: %.9f, images %.9f", rate, f, got, want)
+			}
+		}
+	}
+}

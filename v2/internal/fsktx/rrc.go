@@ -181,10 +181,23 @@ func holdChain(hz float64) func(f float64) float64 {
 
 // interpChain is the response from the frequency at hz to the phase at
 // rate: the linear interpolation by rate/hz and the sum of the phase steps
-// at rate, over the integral of FM.
+// at rate, over the integral of FM. The linear interpolation is sinc^2 at
+// f/hz, sampled at rate: the images at the multiples of the least common
+// multiple of hz and rate, P times hz, fold onto f, and their sum is
+// (sin(pi x) / (P sin(pi x/P)))^2 at x = f/hz. The sum of the phase steps
+// at rate is 1/sinc(f/rate) of the integral. An infinite rate leaves the
+// interpolation alone.
 func interpChain(hz, rate float64) func(f float64) float64 {
+	if math.IsInf(rate, 1) {
+		return func(f float64) float64 { s := sinc(f / hz); return s * s }
+	}
+	p := rate / float64(gcd(int(rate), int(hz)))
 	return func(f float64) float64 {
-		l := sinc(f/hz) / sinc(f/rate)
+		x := f / hz
+		l := 1.0
+		if x != 0 {
+			l = math.Sin(math.Pi*x) / (p * math.Sin(math.Pi*x/p))
+		}
 		return l * l / sinc(f/rate)
 	}
 }
