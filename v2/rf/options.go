@@ -98,7 +98,12 @@ type options struct {
 	// centered on the carrier by its weights (2), or a polyphase lowpass
 	// centered on the carrier (3), over IQPoly decimations, 2 or 3, to
 	// IQCutHz (0 means discCutHz). IQHz may then also be 9600. Without
-	// SoftExt, New builds it by newIQ0; it does not take CohExt.
+	// SoftExt, New builds it by newIQ0; it does not take CohExt. Front 4
+	// is iq0Rx, which keeps only the state of its front: the boxcar of
+	// front 1, or with IQPoly 2 or 3 a polyphase lowpass with real taps,
+	// not centered on the carrier; it subtracts the oscillator from the
+	// frequency of each output instead of turning the samples. IQBuf 0
+	// then means 32.
 	IQFront int
 	IQPoly  int
 	// IQBuf is the number of discriminator samples that iqRx hands the
