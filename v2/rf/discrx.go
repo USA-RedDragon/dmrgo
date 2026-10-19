@@ -443,7 +443,7 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 	// strobes of the first pass are those that the last sample of the
 	// call before left, when a slot ended there.
 	for i := i0; ; i++ {
-		if t <= 0 && st&st96Raw != 0 {
+		if st&st96Raw != 0 && t <= 0 {
 			// The search takes the samples as they come, the symbols and
 			// the midpoints in turn, without the timing loop: a lock samples
 			// its SYNC again. It runs before the loop below, so that the
@@ -637,16 +637,14 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 			}
 		}
 		u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
-		if h >= audio96Taps {
-			// Never; it bounds h, so that the compiler drops the index
-			// checks.
-			h = 0
-		}
-		hist[h], hist[h+audio96Taps] = u, u
+		// h is below audio96Taps: the ring stores and the window need no
+		// index checks.
+		p := unsafe.Add(unsafe.Pointer(hist), h)
+		*(*int8)(p), *(*int8)(unsafe.Add(p, audio96Taps)) = u, u
 		if h++; h >= audio96Taps {
 			h = 0
 		}
-		acc := fir96((*[audio96Taps]int8)(hist[h : h+audio96Taps]))
+		acc := fir96((*[audio96Taps]int8)(unsafe.Add(unsafe.Pointer(hist), h)))
 		y := float32(acc) * (rrcStepHz / 32768.0)
 		sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
 		if st&st96Keep != 0 {
