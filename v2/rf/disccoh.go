@@ -70,8 +70,10 @@ const (
 type discPhase struct {
 	c *leanCore
 	// sum holds the sums of the input samples, input sample i at
-	// i%discPhaseRaw, sumN of them so far, and last the last.
+	// i%size, sumN of them so far, and last the last. size is the length
+	// of the rings, discPhaseRaw unless options.CohRing sets it.
 	sum  []int64
+	size int64
 	sumN int64
 	last int64
 	// raw holds the last unit phasors of the phase at discRate, rawN of
@@ -139,15 +141,16 @@ func lazyDT(hz int) float64 {
 }
 
 // newDiscPhase returns the phase of the samples at hz for DiscReceiver r,
+// with rings of size samples,
 // whose core runs at discRate on the discriminator of the ring, or on its
 // input when lazy.
-func newDiscPhase(r *DiscReceiver, hz int, lazy bool) *discPhase {
-	p := &discPhase{c: &r.leanCore, sum: make([]int64, discPhaseRaw), lazy: lazy}
+func newDiscPhase(r *DiscReceiver, hz int, lazy bool, size int64) *discPhase {
+	p := &discPhase{c: &r.leanCore, sum: make([]int64, size), size: size, lazy: lazy}
 	for i := range p.clipAt {
 		p.clipAt[i] = -1
 	}
 	if !lazy {
-		p.hist = make([]complex64, cohHist)
+		p.hist = make([]complex64, size)
 	}
 	fc := discCutHz / discRate
 	var sum float64
@@ -193,13 +196,13 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 		for _, u := range x[:n] {
 			p.clip(u)
 			p.last += int64(u)
-			p.sum[p.sumN&(discPhaseRaw-1)] = p.last
+			p.sum[p.sumN&(p.size-1)] = p.last
 			p.sumN++
 		}
 		// The ring samples that the sums hold with the two after them of
 		// the interpolation.
 		p.n = max((p.sumN-3)*p.num/p.den, 0)
-		p.lo = (max(p.sumN-discPhaseRaw, p.o)+2)*p.num/p.den + 1
+		p.lo = (max(p.sumN-p.size, p.o)+2)*p.num/p.den + 1
 		return n, x[:n]
 	}
 	k := 0
@@ -211,7 +214,7 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 		p.clip(u)
 		i := p.sumN
 		s := p.last + int64(u)
-		p.sum[i&(discPhaseRaw-1)] = s
+		p.sum[i&(p.size-1)] = s
 		p.sumN++
 		p.last = s
 		// Ring samples between input samples wait for the one after.
@@ -224,7 +227,7 @@ func (p *discPhase) input(x []int16) (int, []int16) {
 			m := p.rawN - 1 - discPhaseLag
 			p.filter(m)
 			p.n = m + 1
-			y, z := p.hist[m&(cohHist-1)], p.hist[(m-1)&(cohHist-1)]
+			y, z := p.hist[m&(p.size-1)], p.hist[(m-1)&(p.size-1)]
 			d := y * complex(real(z), -imag(z))
 			v := p.rawAt(m)
 			// Where the input clipped, its phase is lost, and the core
@@ -284,8 +287,8 @@ func (p *discPhase) rawAt(m int64) int16 {
 	at := func(x float64) float64 {
 		i := int64(math.Floor(x))
 		mu := x - float64(i)
-		s0 := float64(p.sum[i&(discPhaseRaw-1)] - p.sumO)
-		s1 := float64(p.sum[(i+1)&(discPhaseRaw-1)] - p.sumO)
+		s0 := float64(p.sum[i&(p.size-1)] - p.sumO)
+		s1 := float64(p.sum[(i+1)&(p.size-1)] - p.sumO)
 		return s0 + mu*(s1-s0)
 	}
 	x := float64(m) * r
@@ -310,7 +313,7 @@ func (p *discPhase) filter(m int64) {
 		re += t * real(v)
 		im += t * imag(v)
 	}
-	p.hist[m&(cohHist-1)] = complex(re, im)
+	p.hist[m&(p.size-1)] = complex(re, im)
 }
 
 // phase returns the phase of ring sample m, which the sums must hold.
@@ -318,7 +321,7 @@ func (p *discPhase) phase(m int64) float64 {
 	q := m * p.den
 	i, r := q/p.num, q%p.num
 	if r == 0 {
-		return p.a*float64(p.sum[i&(discPhaseRaw-1)]-p.sumO) - p.b*float64(i-p.o)
+		return p.a*float64(p.sum[i&(p.size-1)]-p.sumO) - p.b*float64(i-p.o)
 	}
 	return p.between(i, float64(r)/float64(p.num))
 }
@@ -328,7 +331,7 @@ func (p *discPhase) phase(m int64) float64 {
 // those of a band-limited frequency, smooth over the samples, and their
 // line between i and i+1 errs twice as much.
 func (p *discPhase) between(i int64, mu float64) float64 {
-	at := func(k int64) float64 { return float64(p.sum[k&(discPhaseRaw-1)] - p.sumO) }
+	at := func(k int64) float64 { return float64(p.sum[k&(p.size-1)] - p.sumO) }
 	s0, s1, s2, s3 := at(i-1), at(i), at(i+1), at(i+2)
 	s := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
 	return p.a*s - p.b*(float64(i-p.o)+mu)
@@ -338,7 +341,7 @@ func (p *discPhase) between(i int64, mu float64) float64 {
 func (p *discPhase) phaseAt(t float64) (float64, bool) {
 	x := t * float64(p.den) / float64(p.num)
 	i := int64(math.Floor(x))
-	if i < 1 || i-1 < p.sumN-discPhaseRaw || i+2 >= p.sumN {
+	if i < 1 || i-1 < p.sumN-p.size || i+2 >= p.sumN {
 		return 0, false
 	}
 	return p.between(i, x-float64(i)), true
@@ -478,15 +481,15 @@ func (p *discPhase) build(unit, dc float64) {
 	p.unit, p.dcU = unit, dc
 	p.a = 2 * math.Pi * unit / (float64(discRate) * float64(p.den) / float64(p.num))
 	p.b = p.a * dc
-	p.o = max(p.sumN-discPhaseRaw, 0)
+	p.o = max(p.sumN-p.size, 0)
 	p.sumO = 0
 	if p.sumN > 0 {
-		p.sumO = p.sum[p.o&(discPhaseRaw-1)]
+		p.sumO = p.sum[p.o&(p.size-1)]
 	}
 	if p.lazy {
 		return
 	}
-	lo := max(((p.o+p.wait)*p.num+p.den-1)/p.den, p.rawN-cohHist)
+	lo := max(((p.o+p.wait)*p.num+p.den-1)/p.den, p.rawN-p.size)
 	p.lo = lo + discPhaseLag
 	for m := lo; m < p.rawN; m++ {
 		p.emit(m)

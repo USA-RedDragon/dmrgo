@@ -186,6 +186,15 @@ type options struct {
 	// candidate of the search that the coherent stage verifies; 0 means
 	// leanExtSignMiss.
 	CohSignMiss uint8
+	// CohRing is the log2 of the length of the ring of samples of the
+	// coherent stage, which must hold the oldest burst that softExt
+	// detects; 0 means cohHist.
+	CohRing int
+	// CohWin, when above 0, runs the trellis of the coherent stage in
+	// blocks of CohWin symbols with cohLook symbols of lookahead, which
+	// shrinks its buffers to CohWin+cohLook symbols, instead of over the
+	// whole run.
+	CohWin int
 }
 
 // discOptions returns the settings of the FM discriminator core alone:
@@ -265,6 +274,14 @@ func (o *options) signMiss() uint8 {
 		return o.CohSignMiss
 	}
 	return leanExtSignMiss
+}
+
+// cohRing returns the length of the ring of the coherent stage.
+func (o *options) cohRing() int64 {
+	if o.CohRing > 0 {
+		return 1 << o.CohRing
+	}
+	return cohHist
 }
 
 // tabled reports whether tables_gen.go holds the tables that the settings

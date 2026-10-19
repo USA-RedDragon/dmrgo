@@ -17,13 +17,13 @@ func (r *DiscReceiver) addExt(opt *options) {
 	var ph *discPhase
 	switch {
 	case opt.CohExt && opt.CohLazy:
-		ph = newDiscPhase(r, r.hz(), true)
+		ph = newDiscPhase(r, r.hz(), true, opt.cohRing())
 	case opt.CohExt:
 		// The core runs at discRate on the discriminator of the ring.
 		hz, out := r.hz(), r.out
 		_ = r.Init(DiscConfig{Hz: discRate, OnBurst: r.onBurst, opt: opt})
 		r.out = out
-		ph = newDiscPhase(r, hz, false)
+		ph = newDiscPhase(r, hz, false, opt.cohRing())
 	}
 	x := softExtOf(opt, 2*r.tm.step)
 	if ph != nil {

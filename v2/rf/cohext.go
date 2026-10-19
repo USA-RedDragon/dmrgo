@@ -20,6 +20,9 @@ const (
 	// cohKnown is the number of known symbols from which a run starts: the
 	// four of an EMB half, or the 24 of a SYNC.
 	cohKnown = 4
+	// cohLook is the lookahead of the trellis of a stage whose
+	// options.CohWin sets its blocks.
+	cohLook = 8
 )
 
 // cohStage detects each burst again coherently from the channel filter
@@ -155,8 +158,9 @@ type cohStage struct {
 	// rate of the ring, and step the ring samples per sample of the model.
 	div, rate, step float64
 	// The SYNC scan: the templates of the voice and the data SYNC of each
-	// of nsrc sources, and the ring samples under test.
-	scanTpl [4][2][cohScanLen]complex64
+	// of nsrc sources, nil on a ring that scan does not run on, and the
+	// ring samples under test.
+	scanTpl *[4][2][cohScanLen]complex64
 	scanX   [cohScanLen]complex64
 	nsrc    int
 	// peakOK marks a SYNC that scan found ending at core symbol peakAt,
@@ -173,6 +177,8 @@ type cohStage struct {
 	hFit float64
 	hVar float64
 	hNew bool
+	// size is the length of the ring, options.cohRing.
+	size int64
 }
 
 // Settings of cohStage.fitIndex. cohSyncIndex is the share of the
@@ -207,6 +213,15 @@ func newCohStage(r *iqRx, opt *options) *cohStage {
 	s := newCohStageOf(opt)
 	s.rx, s.f = r, &r.d.f
 	s.setRing(float64(r.conv.decim))
+	if s.div == 2 {
+		s.scanTpl = new([4][2][cohScanLen]complex64)
+		s.nsrc = min(opt.Sources, len(s.scanTpl))
+		for i := range s.nsrc {
+			voice, data, _ := sourceAt(i).SyncPatterns()
+			s.scanTemplate(voice, &s.scanTpl[i][0])
+			s.scanTemplate(data, &s.scanTpl[i][1])
+		}
+	}
 	return s
 }
 
@@ -240,19 +255,18 @@ func newCohStageOf(opt *options) *cohStage {
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
-	s.tr = newTrellis(m, cohMaxRun, cohMaxRun, 0)
+	win, look := cohMaxRun, 0
+	if opt.CohWin > 0 {
+		win, look = opt.CohWin, cohLook
+	}
+	s.tr = newTrellis(m, cohMaxRun, win, look)
+	s.size = opt.cohRing()
 	s.setRing(2)
 	s.buf = make([]complex64, (syncSymbols+2)*sps)
 	s.symX = make([]complex64, cohSymN*sps)
 	s.symAt = make([]uint32, cohSymN)
 	for i := range s.runs {
 		s.runs[i].corr = make([]complex64, cohMaxRun*m.windows)
-	}
-	s.nsrc = min(opt.Sources, len(s.scanTpl))
-	for i := range s.nsrc {
-		voice, data, _ := sourceAt(i).SyncPatterns()
-		s.scanTemplate(voice, &s.scanTpl[i][0])
-		s.scanTemplate(data, &s.scanTpl[i][1])
 	}
 	return s
 }
@@ -299,7 +313,7 @@ func (s *cohStage) scanTemplate(p enums.SyncPattern, tpl *[cohScanLen]complex64)
 // share of the power of the ring samples that its waveform explains.
 func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 	hist, n, lo := s.ring()
-	if n < cohHist/2 || s.step != 1 || s.div != 2 {
+	if s.scanTpl == nil || n < s.size/2 || s.step != 1 || s.div != 2 {
 		return 0, false, 0, false
 	}
 	sps := float64(samplesPerSy) / 2
@@ -315,7 +329,7 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 		var e float64
 		x := s.scanX[:]
 		for i := range x {
-			v := hist[(b0+int64(o)+int64(i))&(cohHist-1)]
+			v := hist[(b0+int64(o)+int64(i))&(s.size-1)]
 			x[i] = v
 			e += float64(real(v)*real(v) + imag(v)*imag(v))
 		}
@@ -373,9 +387,9 @@ func symTime(c *leanCore, k int64) float64 {
 // oldest that it holds.
 func (s *cohStage) ring() ([]complex64, int64, int64) {
 	if p := s.ph; p != nil {
-		return p.hist, p.n, max(p.lo, p.n-cohHist)
+		return p.hist, p.n, max(p.lo, p.n-s.size)
 	}
-	return s.rx.yHist, s.rx.yN, s.rx.yN - cohHist
+	return s.rx.yHist, s.rx.yN, s.rx.yN - s.size
 }
 
 // sample returns the ring sample at time t, interpolated by Catmull-Rom;
@@ -391,7 +405,7 @@ func (s *cohStage) sample(t float64) complex64 {
 		if k < 0 || k < lo || k >= n {
 			return 0
 		}
-		return hist[k&(cohHist-1)]
+		return hist[k&(s.size-1)]
 	}
 	p0, p1, p2, p3 := at(i-1), at(i), at(i+1), at(i+2)
 	c := complex(mu, 0)

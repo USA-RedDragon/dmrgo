@@ -293,7 +293,7 @@ type iqRx struct {
 	// oscillator last moved, while the core searches.
 	afcAvg complex64
 	out    []Burst
-	// yHist holds the last cohHist channel filter samples for the
+	// yHist holds the last options.cohRing channel filter samples for the
 	// coherent stage, yN of them so far; nil without it.
 	yHist []complex64
 	yN    int64
@@ -337,7 +337,7 @@ func newIQRx(cfg Config, opt options) *iqRx {
 	if opt.SoftExt {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		if opt.CohExt {
-			r.yHist = make([]complex64, cohHist)
+			r.yHist = make([]complex64, opt.cohRing())
 			x.coh = newCohStage(r, &opt)
 			if !opt.CohLocked {
 				r.d.signMiss = opt.signMiss()
@@ -365,7 +365,7 @@ func (r *iqRx) sample(v complex64) {
 		return
 	}
 	if r.yHist != nil {
-		r.yHist[r.yN&(cohHist-1)] = y
+		r.yHist[r.yN&int64(len(r.yHist)-1)] = y
 		r.yN++
 	}
 	n := len(r.audio)
