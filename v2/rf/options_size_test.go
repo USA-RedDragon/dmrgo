@@ -38,6 +38,7 @@ func tinyGoARMSize(tb testing.TB, t reflect.Type) int {
 // settings into its code: the Tier 0 microcontroller build then links the
 // float64 math.Log of the click floor and grows by 8 KiB of flash.
 func TestOptionsSize(t *testing.T) {
+	t.Parallel()
 	if n := tinyGoARMSize(t, reflect.TypeFor[options]()); n > tinyGoMaxStackAlloc {
 		t.Errorf("options takes %d bytes on 32-bit ARM, more than %d: keep its fields in order of size", n, tinyGoMaxStackAlloc)
 	}

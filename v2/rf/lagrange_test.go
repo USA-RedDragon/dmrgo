@@ -27,6 +27,7 @@ func rcPulse(t float64) float64 {
 // burst D at 2.61 s, C/N 14.5 dB) and lost the uncoded bits of its AMBE
 // frame.
 func TestLagrange6Strobes(t *testing.T) {
+	t.Parallel()
 	for k := range 6 {
 		// The polynomial through the six samples is exact for x^k.
 		p := func(x float32) float32 { return float32(math.Pow(float64(x), float64(k))) }
