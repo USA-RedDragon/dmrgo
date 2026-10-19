@@ -1,5 +1,7 @@
 package fsktx
 
+// The cosine table of MCUIQ: cosTableBits bits of phase index a turn, a
+// quarter turn more lets the sine be the negative cosine a quarter on, and
 const (
 	cosTableBits = 12
 	iqAmplitude  = 29491
@@ -25,7 +27,7 @@ const (
 // caller. An MCUIQ is not safe for concurrent use.
 type MCUIQ struct {
 	// hist holds a byte for each symbol of the pulse, the newest in the
-	// low byte of hist[0]: 8 times the code of the symbol plus the code
+	// low byte of hist[0]: 5 times the code of the symbol plus the code
 	// of the one before, the index of tapsIQLUT. The codes 0 to 4 are the
 	// symbols -3, -1, +1, +3 and 0.
 	hist    [iqWords]uint32
@@ -61,7 +63,7 @@ func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 	}
 	*m = MCUIQ{ramp: int32(rampSamples)}
 	for i := range &m.hist {
-		m.hist[i] = 0x24242424
+		m.hist[i] = 0x18181818
 	}
 	m.stepQ = int32(1 << cosTableBits / 2 / rampSamples)
 	m.stepR = int32(1 << cosTableBits / 2 % rampSamples)
@@ -110,7 +112,7 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	for i := iqWords - 1; i > 0; i-- {
 		m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
 	}
-	m.hist[0] = m.hist[0]<<8 | c<<3 | m.hist[0]>>3&7
+	m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255/5
 	m.shape()
 	dst = dst[:n]
 	switch {
@@ -142,16 +144,14 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 // phases, the sum of the words of tapsIQLUT of each two symbols. The sums
 // are those of tapsIQ.
 func (m *MCUIQ) shape() {
-	var q [len(tapsIQLUT[0])]uint32
-	for j := range q {
-		q[j] = m.hist[j/2] >> (16 * (j % 2)) & 63
-	}
-	for g := range tapsIQLUT {
-		t := &tapsIQLUT[g]
-		var y int32
-		for j := range t {
-			y += t[j][q[j]]
+	var acc [len(tapsIQLUT[0][0])]int32
+	for j := range tapsIQLUT {
+		t := &tapsIQLUT[j][m.hist[j/2]>>(16*(j%2))&31]
+		for g := range acc {
+			acc[g] += t[g]
 		}
+	}
+	for g, y := range acc {
 		y0 := int32(int16(y))
 		m.buf[2*g] = y0
 		if 2*g+1 < iqPhases {
@@ -172,17 +172,17 @@ const (
 // index, which leaves the phase error at the square of half an index.
 func cosSin(phase uint32) (int16, int16) {
 	i := phase >> cosShift
-	c, s := int32(cosTable[i]), int32(cosTable[(i-cosQuarter)&cosMask])
+	c, ns := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
 	if tier0IQFine {
-		// m is the phase below the index in 2^-20 radians.
-		m := int32(phase<<cosTableBits>>16) * cosFrac >> 16
-		c, s = c-s*m>>20, s+c*m>>20
+		// m is the phase below the index in 2^-24 radians.
+		m := int32(uint64(phase<<cosTableBits) * cosFrac >> 32)
+		return int16(c + ns*m>>24), int16(c*m>>24 - ns)
 	}
-	return int16(c), int16(s)
+	return int16(c), int16(-ns)
 }
 
-// cosFrac is 2 pi 2^20 over the entries of cosTable, rounded.
-const cosFrac = 1608
+// cosFrac is 2 pi 2^24 over the entries of cosTable, rounded.
+const cosFrac = 25736
 
 // steady0 writes the I/Q of the deviation samples of the shaper to dst at
 // full power and the shaper rate, the path of all but the samples of a

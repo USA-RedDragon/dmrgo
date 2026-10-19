@@ -91,12 +91,13 @@ func TestTablesGenerated(t *testing.T) {
 	}
 }
 
-// renderLUT writes tapsIQLUT: for each pair of phases 2g and 2g+1 of
-// tapsIQ and each pair of symbols, newer and older, at taps 2j and 2j+1,
-// their sum over those two taps, phase 2g in the low half of the word and
-// phase 2g+1 in the high half, at index 8 times the code of the newer
-// symbol plus the code of the older. The codes 0 to 4 are the symbols -3,
-// -1, +1, +3 and 0. Each sum over all taps is under 3*tapsIQPeak, within
+// renderLUT writes tapsIQLUT: for each pair of symbols, newer and older,
+// at taps 2j and 2j+1 of tapsIQ, each index 5 times the code of the newer
+// symbol plus the code of the older, and each pair of phases 2g and 2g+1,
+// the sum over those two taps, phase 2g in the low half of the word and
+// phase 2g+1 in the high half. The codes 0 to 4 are the symbols -3, -1,
+// +1, +3 and 0; the indexes 25 to 31 are zero, so that a mask of 5 bits
+// indexes the table. Each sum over all taps is under 3*tapsIQPeak, within
 // int16, so that the halves of the word sum stay apart.
 func renderLUT(b *bytes.Buffer, h []float64, l, n int) {
 	tap := func(p, i int) int32 {
@@ -106,16 +107,15 @@ func renderLUT(b *bytes.Buffer, h []float64, l, n int) {
 		return int32(int16(math.Round(h[p*n+i] * tableUnits / 3)))
 	}
 	val := [5]int32{-3, -1, 1, 3, 0}
-	fmt.Fprintf(b, "var tapsIQLUT = [%d][%d][64]int32{\n", (l+1)/2, n/2)
-	for g := range (l + 1) / 2 {
+	fmt.Fprintf(b, "var tapsIQLUT = [%d][32][%d]int32{\n", n/2, (l+1)/2)
+	for j := range n / 2 {
 		b.WriteString("{")
-		for j := range n / 2 {
+		for q := range 32 {
 			b.WriteString("{")
-			for q := range 64 {
-				cn, co := q>>3, q&7
+			for g := range (l + 1) / 2 {
 				var v int32
-				if cn < 5 && co < 5 {
-					for k, c := range [2]int{cn, co} {
+				if q < 25 {
+					for k, c := range [2]int{q / 5, q % 5} {
 						v += (tap(2*g, 2*j+k) + tap(2*g+1, 2*j+k)<<16) * val[c]
 					}
 				}
@@ -171,8 +171,8 @@ func renderTables() ([]byte, error) {
 		}
 	}
 	renderCorr(&b)
-	fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+1)
-	for i := range 1<<cosTableBits + 1 {
+	fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+cosQuarter+1)
+	for i := range 1<<cosTableBits + cosQuarter + 1 {
 		fmt.Fprintf(&b, "%d,", int16(math.Round(iqAmplitude*math.Cos(2*math.Pi*float64(i)/(1<<cosTableBits)))))
 	}
 	b.WriteString("}\n")
