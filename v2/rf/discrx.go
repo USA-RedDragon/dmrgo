@@ -122,7 +122,14 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	}
 	r.init(cfg.OnBurst, opt, sps)
 	r.front96 = opt.Front96 && r.f.slow && r.tm.cubic
-	r.linearMid = r.front96 && opt.LinearMid
+	switch {
+	case r.front96 && opt.RawSearch == 1:
+		r.mid96 = mid96Raw
+	case r.front96 && opt.RawSearch >= 2:
+		r.mid96 = mid96RawLock
+	case r.front96 && opt.LinearMid:
+		r.mid96 = mid96Linear
+	}
 	r.f.gain = 1
 	r.f.refresh()
 	r.audio, r.center = &r.f, -int64(discSpan*samplesPerSy)
@@ -361,7 +368,8 @@ func (r *DiscReceiver) run96(x []int16) int {
 	buf, an := r.acqBuf()
 	search, keep := !r.locked, !r.locked || r.hunt
 	k, off := f.k, f.off
-	linMid := r.linearMid
+	linMid, rawS, lockS := r.mid96 == mid96Linear, r.mid96 >= mid96Raw, r.mid96 == mid96RawLock
+	raw := search && rawS
 	hist := &f.rrcHist
 	h := f.rrcHead
 	if h >= audio96Taps {
@@ -375,6 +383,39 @@ func (r *DiscReceiver) run96(x []int16) int {
 			// The strobes, in a loop that the compiler does not enter for
 			// the samples without one.
 			for {
+				if raw {
+					// The search takes the samples as they come, the
+					// symbols and the midpoints in turn, without the
+					// timing loop: a lock samples its SYNC again.
+					t = tm.step
+					if tm.mid {
+						tm.half, tm.mid = s2, false
+						break
+					}
+					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*s2*s2
+					tm.last, tm.mid = s2, true
+					hit, sym, mid := r.rawSym(s2)
+					if !hit {
+						break
+					}
+					tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+					r.n += int64(i - i0)
+					i0 = i
+					r.acqHead, r.acqLow = kh, kq
+					f.rrcHead = h
+					r.lastAt = -1
+					r.searchHit(sym, mid)
+					s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+					kh = r.acqHead
+					buf, an = r.acqBuf()
+					search, keep = !r.locked, !r.locked || r.hunt
+					raw = search && rawS
+					k, off = f.k, f.off
+					if t > 0 {
+						break
+					}
+					continue
+				}
 				at := t
 				mu := 1 + at
 				var xv float32
@@ -422,8 +463,25 @@ func (r *DiscReceiver) run96(x []int16) int {
 					r.n += int64(i - i0)
 					i0 = i
 					r.acqHead, r.acqLow = kh, kq
-					f.rrcHead = h
-					r.symbol(tm.last, at)
+					if lockS && !search {
+						again, mid, match := r.lockSym(tm.last, at)
+						if !match && r.ns != r.slotEnd {
+							if t > 0 {
+								break
+							}
+							continue
+						}
+						f.rrcHead = h
+						if match {
+							r.huntMatch(again, mid)
+						}
+						if r.ns == r.slotEnd {
+							r.slotDue = true
+						}
+					} else {
+						f.rrcHead = h
+						r.symbol(tm.last, at)
+					}
 					if r.slotDue {
 						// Every local is in r: run decodes the slot and
 						// calls run96 again.
@@ -433,6 +491,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 					kh = r.acqHead
 					buf, an = r.acqBuf()
 					search, keep = !r.locked, !r.locked || r.hunt
+					raw = search && rawS
 					k, off = f.k, f.off
 				}
 				if t > 0 {

@@ -228,6 +228,13 @@ type options struct {
 	// Gardner loop of the timing uses before a lock, by linear in place
 	// of Catmull-Rom interpolation, with Front96.
 	LinearMid bool
+	// RawSearch takes the samples at 2 per symbol as the symbols and the
+	// midpoints before a lock, with Front96, in place of the strobes of
+	// the Gardner loop. A lock samples its SYNC again from the kept
+	// samples, and the loop starts there. 2 also handles the symbols of a
+	// lock in a call that leaves the locals of run96 alone, unless a SYNC
+	// of the hunt matches or the slot ends.
+	RawSearch uint8
 }
 
 // discOptions returns the settings of the FM discriminator core alone:
