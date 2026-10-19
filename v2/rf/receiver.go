@@ -442,6 +442,7 @@ func newEngine(cfg Config, opt options) *engine {
 				np = phaseStates
 			}
 			r.xt = newXTrellis(r.model, np, r.maxRun)
+			r.xt.logmap = r.opt.LogMAP
 			r.lp, r.slp = r.xt.lp, r.xt.slp
 			r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)
 			r.tapp = make([]float32, 4*r.maxRun)
@@ -463,8 +464,10 @@ func newEngine(cfg Config, opt options) *engine {
 	}
 	if r.opt.Coherent {
 		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots)+2, r.llrScale)
+		r.syms.logmap = r.xt != nil && r.opt.LogMAP
 		if r.opt.RefinePrior > 0 || r.opt.DataPasses > 0 {
 			r.refined = newSymStore(maxGapSlots+1, r.llrScale)
+			r.refined.logmap = r.xt != nil && r.opt.LogMAP
 			r.prior = make([]float32, slotSymbols*4)
 			r.scratchRec, r.known = new(slotRec), new([layer2.BurstBits]bool)
 		}
@@ -980,6 +983,8 @@ type symStore struct {
 	own []int64
 	// scale multiplies the ratios that set stores.
 	scale float32
+	// logmap sums the digits of each bit exactly.
+	logmap bool
 }
 
 // newSymStore returns a store of n slots whose ratios set scales by scale.
@@ -1012,7 +1017,19 @@ func (st *symStore) set(p int, a []float32) {
 		}
 	}
 	st.digit[p] = int8(best)
+	if st.logmap {
+		st.llr[2*p], st.llr[2*p+1] = dibitLLRExact(a, st.scale)
+		return
+	}
 	st.llr[2*p], st.llr[2*p+1] = dibitLLR(a, st.scale)
+}
+
+// dibitLLRExact is dibitLLR with the exact sum of the two digits of each
+// bit value.
+func dibitLLRExact(a []float32, scale float32) (int16, int16) {
+	b0 := logAdd(a[2], a[3]) - logAdd(a[0], a[1])
+	b1 := logAdd(a[1], a[2]) - logAdd(a[0], a[3])
+	return satLLR(scale * b0), satLLR(scale * b1)
 }
 
 // symsOf returns the store that holds slot s and the store index of its

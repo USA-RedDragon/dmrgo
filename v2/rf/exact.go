@@ -42,6 +42,20 @@ type xtrellis struct {
 	// lp and slp hold the digit priors as in trellis.
 	lp  []float32
 	slp []float32
+	// logmap sums the paths exactly instead of taking the best.
+	logmap bool
+}
+
+// logAdd returns log(exp(a)+exp(b)).
+func logAdd(a, b float32) float32 {
+	if a < b {
+		a, b = b, a
+	}
+	d := a - b
+	if d > 30 {
+		return a
+	}
+	return a + float32(math.Log1p(math.Exp(-float64(d))))
 }
 
 // newXTrellis returns an exact-phase trellis over model m with np carrier
@@ -69,6 +83,17 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 func (t *xtrellis) forward(src, dst []float32, lo int, re, im, bonus, thr, top float32) float32 {
 	dst = dst[:len(src)]
 	cos, sin := phaseCos[t.row][lo:lo+len(src)], phaseSin[t.row][lo:lo+len(src)]
+	if t.logmap {
+		for i, a := range src {
+			if a < thr {
+				continue
+			}
+			v := logAdd(dst[i], a+re*cos[i]+im*sin[i]+bonus)
+			dst[i] = v
+			top = max(top, v)
+		}
+		return top
+	}
 	for i, a := range src {
 		if a < thr {
 			continue
@@ -87,6 +112,17 @@ func (t *xtrellis) forward(src, dst []float32, lo int, re, im, bonus, thr, top f
 func (t *xtrellis) backward(src, beta, dst []float32, lo int, re, im, bonus, thr, best float32) float32 {
 	beta, dst = beta[:len(src)], dst[:len(src)]
 	cos, sin := phaseCos[t.row][lo:lo+len(src)], phaseSin[t.row][lo:lo+len(src)]
+	if t.logmap {
+		for i, a := range src {
+			if a < thr {
+				continue
+			}
+			v := re*cos[i] + im*sin[i] + bonus + beta[i]
+			dst[i] = logAdd(dst[i], v)
+			best = logAdd(best, a+v)
+		}
+		return best
+	}
 	for i, a := range src {
 		if a < thr {
 			continue
@@ -214,7 +250,11 @@ func (t *xtrellis) drift(m []float32, ns int) {
 			if p+1 < t.np {
 				nxt = b[p+1]
 			}
-			b[p] = max(cur, max(prev, nxt)-driftPenalty)
+			if t.logmap {
+				b[p] = logAdd(cur, logAdd(prev, nxt)-driftPenalty)
+			} else {
+				b[p] = max(cur, max(prev, nxt)-driftPenalty)
+			}
 			prev = cur
 		}
 	}
