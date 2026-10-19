@@ -100,6 +100,13 @@ type options struct {
 	// ExtNPML detects the bursts that softExt decodes from the symbols of
 	// the core by npml, with the correlation of their noise.
 	ExtNPML bool
+	// ExtAMBECandidates, ExtOSDOrder and ExtGridIters set AMBECandidates,
+	// OSDOrder and GridIters of the soft decoder of softExt; 0 keeps the
+	// value of newSoftDecoder. ExtOSDOrder is the order plus 1, so that 1
+	// selects order 0.
+	ExtAMBECandidates int
+	ExtOSDOrder       int
+	ExtGridIters      int
 	// IQDisc runs the streaming receiver on I/Q as iqRx, iqDisc before a
 	// DiscReceiver at IQHz, 12000 or 24000, in place of leanRx. 0 means
 	// 24000.

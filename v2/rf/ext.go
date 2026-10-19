@@ -176,6 +176,15 @@ func softExtOf(opt *options, sps float32) *softExt {
 	}
 	x := newSoftExtStages(st, opt.ExtLookback, sps)
 	x.soft.setBytes(opt)
+	if opt.ExtAMBECandidates > 0 {
+		x.soft.AMBECandidates = opt.ExtAMBECandidates
+	}
+	if opt.ExtOSDOrder > 0 {
+		x.soft.OSDOrder = opt.ExtOSDOrder - 1
+	}
+	if opt.ExtGridIters > 0 {
+		x.soft.GridIters = opt.ExtGridIters
+	}
 	if opt.ExtNPML {
 		x.np = &npml{}
 	}
