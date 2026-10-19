@@ -31,7 +31,9 @@ const (
 // tier0Corr adds to the samples of Table48k the correction of corr48k for
 // the context of corr48kSyms symbols that ends corr48kSkip symbols before
 // the newest, which cuts the power of the FM signal outside the channel.
-const tier0Corr = false
+const (
+	tier0Corr = false
+)
 
 const (
 	maxSamples = 10
