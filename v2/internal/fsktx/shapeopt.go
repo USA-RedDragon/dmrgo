@@ -12,7 +12,6 @@ const (
 	optRing = 4096
 	optLPN  = 161
 	optMem  = 8
-	optKeys = 64
 	optFree = optWin - optCtx
 	// optDelay is the delay of the optimizer: the lookahead of a block,
 	// a whole block, and the half-length of the high pass.
@@ -32,8 +31,8 @@ const (
 // the power outside the channel, weighted by Emission Mask D, with the
 // frequency below optInHz unchanged: a high pass removes everything below
 // it from the correction, so the receive filter and the deviation tests
-// see the same signal. It delays the deviation and the keying by optDelay
-// shaper samples.
+// see the same signal. It delays the deviation by optDelay shaper samples,
+// and not the keying: the caller keys by the lag, as for the pulse.
 type optimizer struct {
 	iters      int
 	f, psi     []float64
@@ -51,11 +50,6 @@ type optimizer struct {
 	rho        [optMem]float64
 	alpha      [optMem]float64
 	nIn, nBlk  int
-	keyAt      [optKeys]int
-	keyOn      [optKeys]bool
-	keyHead    int
-	keyTail    int
-	on         bool
 	jscale     float64
 	prevPsiH   float64
 }
@@ -143,18 +137,9 @@ func optMaskAttn(fd float64) float64 {
 	}
 }
 
-// key queues a keying change at the current input sample.
-func (o *optimizer) key(on bool) {
-	if o.keyTail-o.keyHead == optKeys {
-		o.keyHead++
-	}
-	o.keyAt[o.keyTail%optKeys], o.keyOn[o.keyTail%optKeys] = o.nIn, on
-	o.keyTail++
-}
-
-// process takes the shaped deviation in buf, replaces it with the delayed
-// corrected deviation, and sets keyed[i] to the key state of each sample.
-func (o *optimizer) process(buf []float64, keyed []bool) {
+// process takes the shaped deviation in buf and replaces it with the
+// delayed corrected deviation.
+func (o *optimizer) process(buf []float64) {
 	for i, v := range buf {
 		o.f[o.nIn&(optRing-1)] = v
 		o.psi[o.nIn&(optRing-1)] = 0
@@ -164,11 +149,6 @@ func (o *optimizer) process(buf []float64, keyed []bool) {
 			o.nBlk++
 		}
 		m := o.nIn - 1 - optDelay
-		for o.keyHead < o.keyTail && o.keyAt[o.keyHead%optKeys] <= m+1 {
-			o.on = o.keyOn[o.keyHead%optKeys]
-			o.keyHead++
-		}
-		keyed[i] = o.on
 		if m < 0 {
 			buf[i] = 0
 			continue

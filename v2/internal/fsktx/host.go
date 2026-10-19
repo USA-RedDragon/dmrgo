@@ -344,7 +344,7 @@ type IQConfig struct {
 	Amplitude float64
 	// Shape is the number of optimizer iterations per block of Tier2 that
 	// add a phase correction above 3 kHz to lower the power outside the
-	// channel; 0 means none. It delays the output by about 85 symbols.
+	// channel; 0 means none. It adds 85 symbols to the lag of the output.
 	Shape int
 }
 
@@ -373,7 +373,6 @@ type IQ struct {
 	ramp  int
 	on    bool
 	opt   *optimizer
-	keyed []bool
 }
 
 const iqShaperHz = 48000
@@ -432,7 +431,6 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	q.off, q.prev = cfg.OffsetHz, cfg.OffsetHz
 	if cfg.Shape > 0 && cfg.Tier == Tier2 {
 		q.opt = newOptimizer(cfg.Shape)
-		q.keyed = make([]bool, len(q.buf))
 	}
 	if cfg.Tier != Tier2 {
 		q.tab = make([]float32, 1<<iqTableBits+1)
@@ -446,10 +444,6 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 // Key keys the carrier up or down: the power ramps over RampSeconds from
 // where it is. An IQ starts keyed down.
 func (q *IQ) Key(on bool) {
-	if q.opt != nil {
-		q.opt.key(on)
-		return
-	}
 	q.on = on
 	q.mcu.Key(on)
 }
@@ -483,12 +477,9 @@ func (q *IQ) symbol(s int8) int {
 	j := 0
 	n := q.k.symbol(q.buf, s)
 	if q.opt != nil {
-		q.opt.process(q.buf[:n], q.keyed)
+		q.opt.process(q.buf[:n])
 	}
-	for i, f := range q.buf[:n] {
-		if q.opt != nil {
-			q.on = q.keyed[i]
-		}
+	for _, f := range q.buf[:n] {
 		w := f + q.off
 		dw := (w - q.prev) * float64(q.m) / float64(q.l)
 		v := q.prev + (w-q.prev)*float64(q.acc)/float64(q.l)
