@@ -977,15 +977,16 @@ func (r *leanCore) symbol(x, at float32) {
 		}
 		// The search starts at the first SYNC that can end the first
 		// slot, so that a receiver that starts in a call finds it.
+		sym, mid := r.signsMatch2(r.signs, r.midSigns)
 		switch {
-		case r.ns > leanSyncEnd+1 && r.signsMatch(r.signs):
+		case r.ns > leanSyncEnd+1 && sym:
 			r.searchSym(false)
 		case r.ns >= leanRing && r.ext != nil:
 			if src, data, back, ok := r.ext.scan(r); ok && !r.clipped(r.ns-1-back) {
 				r.forceLock(src, data, back)
 			}
 		}
-		if !r.locked && r.ns > leanSyncEnd+2 && r.signsMatch(r.midSigns) {
+		if mid && !r.locked && r.ns > leanSyncEnd+2 {
 			r.searchMid()
 		}
 		return
@@ -1023,7 +1024,7 @@ func (r *leanCore) huntSym(at float32) {
 	}
 	again := r.again
 	r.again = false
-	if mid := r.signsMatch(r.midSigns); mid || r.signsMatch(r.signs) {
+	if sym, mid := r.signsMatch2(r.signs, r.midSigns); mid || sym {
 		r.huntMatch(again, mid)
 	}
 }
@@ -1143,20 +1144,27 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 	return best / sxx, src, sxyBest < 0
 }
 
-// signsMatch reports whether the signs of the last syncSymbols symbols
-// differ from the voice or the data SYNC of a source in at most
-// leanSignMiss symbols.
-func (r *leanCore) signsMatch(signs uint32) bool {
+// signsMatch2 reports for the signs a and b of the last syncSymbols
+// symbols whether they differ from the voice or the data SYNC of a source
+// in at most signMiss symbols. A byte table counts the bits: TinyGo
+// counts the bits of a word in 11 instructions on the M4. It is not
+// inlined, so that its registers are not on the stack of symbol while a
+// slot decodes.
+//
+//go:noinline
+func (r *leanCore) signsMatch2(a, b uint32) (bool, bool) {
+	// A distance m matches when it is at most signMiss or at least
+	// syncSymbols-signMiss, so m-signMiss-1 wraps or reaches span.
+	lo := uint32(r.signMiss) + 1
+	span := syncSymbols + 1 - 2*lo
+	var ma, mb bool
 	for i := range r.sources {
-		// A byte table: TinyGo counts the bits of a word in 11
-		// instructions on the M4.
-		x := signs ^ syncSigns[i]
-		m := ones8[x&0xff] + ones8[x>>8&0xff] + ones8[x>>16&0xff]
-		if m <= r.signMiss || m >= syncSymbols-r.signMiss {
-			return true
-		}
+		p := syncSigns[i]
+		x, y := a^p, b^p
+		ma = ma || uint32(ones8[x&0xff]+ones8[x>>8&0xff]+ones8[x>>16&0xff])-lo >= span
+		mb = mb || uint32(ones8[y&0xff]+ones8[y>>8&0xff]+ones8[y>>16&0xff])-lo >= span
 	}
-	return false
+	return ma, mb
 }
 
 // searchSym tests whether the last symbols, whose signs match a SYNC, end
