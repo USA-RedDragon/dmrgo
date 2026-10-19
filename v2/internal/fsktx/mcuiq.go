@@ -11,7 +11,7 @@ const (
 	iqPhases = len(tapsIQ)
 	iqHz     = iqPhases * SymbolRate
 	iqSpan   = len(tapsIQ[0]) / 2
-	iqWords  = len(tapsIQ[0]) / 4
+	iqWords  = (len(tapsIQ[0]) + 3) / 4
 )
 
 // MCUIQ is the Tier0 I/Q modulator, for a software radio driven by a
