@@ -207,6 +207,13 @@ type options struct {
 	// ExactH turns the phase of the ExactPhase trellis by the nearest step
 	// to the modulation index that TrackH estimates instead of 0.27.
 	ExactH bool
+	// HGate, when above 0, estimates the modulation index of a stream from
+	// the SYNC fields of the anchors of the first pass of TwoPass, and sets
+	// it for the second pass only when the 95% bootstrap interval of the
+	// estimate is more than HGate away from 0.27. HGateMin is the fewest
+	// anchors for an estimate; 0 means hGateMin.
+	HGate    float64
+	HGateMin int
 	// DriftPenalty is the cost in nats of a step of one phase state of the
 	// ExactPhase trellis; 0 means driftPenalty. DriftSteps is the number
 	// of such steps a path can take after each symbol; 0 means 1.

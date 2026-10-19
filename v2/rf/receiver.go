@@ -332,6 +332,8 @@ type engine struct {
 	// freqTot holds the anchor scores of the carrier offsets of bestFreq.
 	freqTot []float64
 	h       float64
+	// hg holds the buffers of options.HGate.
+	hg *hGate
 	// llrScale is options.LLRScale, 1 for 0.
 	llrScale float32
 	// offsetHz and devHz are the carrier offset and the outer deviation
@@ -476,6 +478,9 @@ func newEngine(cfg Config, opt options) *engine {
 	r.slots = make([]slotState, cfg.LookbackSlots+opt.passSlots()+maxGapSlots+4)
 	if opt.passSlots() > 0 {
 		r.passRecs = make([]passRec, len(r.slots))
+		if opt.HGate > 0 && opt.Coherent {
+			r.hg = newHGate(len(r.slots), r.search)
+		}
 	}
 	if r.opt.Coherent {
 		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots)+2, r.llrScale)
@@ -794,6 +799,9 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	r.next = -back
 	r.warm, r.warmStart = r.opt.WarmUp, -back
 	r.scout, r.frozen, r.pend, r.passStart = r.opt.passSlots() > 0, false, false, -back
+	if r.hg != nil && r.h != cohIndex {
+		r.setH(cohIndex)
+	}
 	clear(r.passRecs)
 	r.lastAnch = math.MinInt64
 	r.tk.reset(r.bs)

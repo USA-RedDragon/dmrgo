@@ -133,6 +133,9 @@ func (r *engine) startPass(seg bool) {
 			p.smAmp, p.smNoise = r.levelsAround(j, lo, hi)
 		}
 	}
+	if r.hg != nil {
+		r.gateH(lo, hi)
+	}
 	r.next, r.first = lo, lo
 	r.lastAnch, r.lost, r.quiet, r.offEnergy = math.MinInt64, 0, 0, 0
 	r.passAt(lo)
