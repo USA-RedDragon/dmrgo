@@ -101,10 +101,12 @@ type softExt struct {
 	acq      []int16
 	lookback int
 	ring     [leanRing]int8
-	// lockSym is the last symbol at the lock, the end of its SYNC, and
-	// lockAt its time from the last kept sample, in samples.
+	// lockSym is the last symbol at the lock, the end of its SYNC, lockAt
+	// its time from the last kept sample, in samples, and lockN the matched
+	// filter samples of the core then.
 	lockSym int64
 	lockAt  float32
+	lockN   int64
 	// stages selects the decodes that replace those of Tier 0, and coh,
 	// when not nil, detects each burst again coherently, in place of the
 	// ratios of the core.
@@ -774,9 +776,10 @@ func (x *softExt) verify(c *leanCore, p enums.SyncPattern) bool {
 }
 
 // locked notes the time of the SYNC that the core locked to, d samples
-// from the timing loop, in the kept samples, which the core stops keeping.
+// from the timing loop, in the kept samples, which the core stops keeping
+// unless it hunts.
 func (x *softExt) locked(c *leanCore, d float32) {
-	x.lockSym, x.lockAt = c.ns-1, c.lastAt+d
+	x.lockSym, x.lockAt, x.lockN = c.ns-1, c.lastAt+d, c.n
 	if x.coh != nil {
 		// A new stream may come from another transmitter, at another
 		// carrier offset.
@@ -804,10 +807,16 @@ func (x *softExt) firstSlot(c *leanCore) {
 	}
 	sps := 2 * c.tm.step
 	last := x.lockSym
+	// A lock that a stage forced hunts from the start, and keeps the
+	// samples after the SYNC too.
+	at := x.lockAt
+	if c.hunt && c.acqFrom <= x.lockN {
+		at -= float32(c.n - x.lockN)
+	}
 	// The oldest symbol that a slot reads, one before it for the SYNC
 	// search, must lie in the kept samples with the four of the
 	// interpolation.
-	room := float32(c.acqKept()-4) - x.lockAt
+	room := float32(c.acqKept()-4) - at
 	n := 0
 	for n < x.lookback {
 		oldest := c.first - int64(n+1)*slotSymbols - 1
@@ -852,7 +861,7 @@ func (x *softExt) firstSlot(c *leanCore) {
 			} else {
 				base := c.first + int64(j)*slotSymbols
 				for k := base - 1; k <= base+slotSymbols; k++ {
-					v := c.keptAt(x.lockAt - float32(last-k)*sps)
+					v := c.keptAt(at - float32(last-k)*sps)
 					c.ring[k%leanRing] = int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
 				}
 			}

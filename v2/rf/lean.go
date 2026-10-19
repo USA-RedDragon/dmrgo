@@ -1410,7 +1410,10 @@ func (r *leanCore) offGrid() bool {
 
 // forceLock locks to the SYNC of source src, data or voice, that ends
 // back symbols before the last, which a stage found coherently: it fits
-// the levels to it however they spread.
+// the levels to it however they spread. The lock hunts at once and keeps
+// the samples: a stage can find a SYNC in the data at the start of a
+// carrier, and when that lock ends without an anchor, the search samples
+// the burst of the real SYNC again from them.
 func (r *leanCore) forceLock(src int, data bool, back int64) {
 	voice, dp, _ := sourceAt(src).SyncPatterns()
 	p := voice
@@ -1419,7 +1422,7 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 	}
 	r.fitLevels(r.ns-1-back, p, true, false)
 	r.lockStream(src, 0, back)
-	r.forced = true
+	r.forced, r.hunt = true, true
 }
 
 // lockStream locks to a stream of source src whose SYNC ends back symbols
@@ -1774,8 +1777,12 @@ func (r *leanCore) unlock() {
 	if r.ext != nil {
 		r.ext.end(r)
 	}
+	// A lock that hunts kept the samples in the ring of the stage, which
+	// the search keeps them in too.
+	if !r.hunt || r.ext == nil || r.ext.kept() == nil {
+		r.acqFrom = r.n
+	}
 	r.locked, r.forced, r.hunt = false, false, false
-	r.acqFrom = r.n
 	if a := r.audio; a != nil {
 		// The input summed before the lock is of the signal before it.
 		a.sum, a.sq, a.n = 0, 0, 0
