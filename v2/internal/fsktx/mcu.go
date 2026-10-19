@@ -28,6 +28,11 @@ const (
 	tapShift = 0
 )
 
+// tier0Corr adds to the samples of Table48k the correction of corr48k for
+// the context of corr48kSyms symbols that ends corr48kSkip symbols before
+// the newest, which cuts the power of the FM signal outside the channel.
+const tier0Corr = false
+
 const (
 	maxSamples = 10
 	maxTaps    = 16
@@ -138,6 +143,10 @@ type MCUAudio struct {
 	k      shaperMAC
 	scale  int32
 	offset int32
+	// codes holds 2 bits for each recent symbol, the newest lowest, and
+	// zeros a bit for each that is 0; corr is set for Table48k.
+	codes, zeros uint32
+	corr         bool
 }
 
 // Init sets up m for table t at level units for a run of symbol +3 (1944
@@ -162,6 +171,7 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	m.k.reset(t)
 	m.scale = scale
 	m.offset = int32(offset)
+	m.codes, m.zeros, m.corr = 0, ^uint32(0), tier0Corr && t.hz == 48000
 	return nil
 }
 
@@ -179,8 +189,31 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 		return 0
 	}
 	n := m.k.symbol(s)
+	if m.corr {
+		m.addCorr(s)
+	}
 	for p := range dst[:n] {
 		dst[p] = int16(int32((int64(m.k.buf[p])*int64(m.scale)+1<<(14+tapShift))>>(15+tapShift)) + m.offset)
 	}
 	return n
+}
+
+// addCorr takes the symbol s into the context and adds the correction of
+// its context to the samples of the shaper.
+func (m *MCUAudio) addCorr(s int8) {
+	z := uint32(0)
+	switch s {
+	case -3, -1, 1, 3:
+	default:
+		z, s = 1, -3
+	}
+	m.codes = m.codes<<2 | uint32(s+3)>>1
+	m.zeros = m.zeros<<1 | z
+	if m.zeros>>corr48kSkip&(1<<corr48kSyms-1) != 0 {
+		return
+	}
+	t := &corr48k[m.codes>>(2*corr48kSkip)&(1<<(2*corr48kSyms)-1)]
+	for p := range t {
+		m.k.buf[p] += int32(t[p])
+	}
 }

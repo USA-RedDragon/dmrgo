@@ -174,7 +174,10 @@ func renderTables() ([]byte, error) {
 			renderLUT(&b, h, l, n)
 		}
 	}
-	renderCorr(&b)
+	renderAudioCorr(&b)
+	if err := renderCorr(&b); err != nil {
+		return nil, err
+	}
 	if err := renderCorrIQ(&b); err != nil {
 		return nil, err
 	}
@@ -228,6 +231,47 @@ func renderCorrIQ(b *bytes.Buffer) error {
 			lo := int32(int16(math.Round(c.Hz[i*10+2*g] * tableUnits / 1944)))
 			hi := int32(int16(math.Round(c.Hz[i*10+2*g+1] * tableUnits / 1944)))
 			fmt.Fprintf(b, "%d,", lo+hi<<16)
+		}
+		b.WriteString("},\n")
+	}
+	b.WriteString("}\n\n")
+	return nil
+}
+
+// corrFile holds the correction of tier0Corr in Hz, fitted from the audio
+// optimizer of Tier3: C symbols of context ending K symbols before the
+// newest, for a pulse of 8 symbols on each side, 10 samples a symbol.
+const corrFile = "testdata/mcorr48k.json"
+
+// renderCorr writes corr48k and its context, or an empty table when
+// tier0Corr is off.
+func renderCorr(b *bytes.Buffer) error {
+	if !tier0Corr {
+		b.WriteString("const (\ncorr48kSyms = 1\ncorr48kSkip = 0\n)\n\nvar corr48k [4][10]int16\n\n")
+		return nil
+	}
+	raw, err := os.ReadFile(corrFile)
+	if err != nil {
+		return err
+	}
+	var c struct {
+		C, K int
+		Hz   []float64
+	}
+	if err := json.Unmarshal(raw, &c); err != nil {
+		return err
+	}
+	skip := c.K - 8 + 6
+	if skip < 0 || len(c.Hz) != 10<<(2*c.C) {
+		return fmt.Errorf("%s: bad context", corrFile)
+	}
+	fmt.Fprintf(b, "const (\ncorr48kSyms = %d\ncorr48kSkip = %d\n)\n\n", c.C, skip)
+	fmt.Fprintf(b, "var corr48k = [%d][10]int16{\n", 1<<(2*c.C))
+	u := tableUnits * (1 << tapShift) / 1944.0
+	for i := range 1 << (2 * c.C) {
+		b.WriteString("{")
+		for p := range 10 {
+			fmt.Fprintf(b, "%d,", int16(math.Round(c.Hz[i*10+p]*u)))
 		}
 		b.WriteString("},\n")
 	}

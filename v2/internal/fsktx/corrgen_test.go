@@ -222,10 +222,10 @@ func fitCorr(hz int, syms []int) []corrFit {
 	return out
 }
 
-// renderCorr writes the correction tables of AudioConfig.Corr: for each
+// renderAudioCorr writes the correction tables of AudioConfig.Corr: for each
 // rate and context length, the corrections at corrUnits per Hz and the
 // skip of the context.
-func renderCorr(b *bytes.Buffer) {
+func renderAudioCorr(b *bytes.Buffer) {
 	rates := []int{24000, 48000}
 	fits := make([][]corrFit, len(rates))
 	var wg sync.WaitGroup
