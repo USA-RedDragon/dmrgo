@@ -24,9 +24,10 @@ const (
 )
 
 var (
-	errTier = errors.New("fsktx: unknown tier")
-	errPred = errors.New("fsktx: ShapePred needs Exact and the pulse of its kernels")
-	errHz   = errors.New("fsktx: sample rate out of range")
+	errTier  = errors.New("fsktx: unknown tier")
+	errPred  = errors.New("fsktx: ShapePred needs Exact and the pulse of its kernels")
+	errHz    = errors.New("fsktx: sample rate out of range")
+	errDelay = errors.New("fsktx: Delay must be from 0 to 64 symbols")
 )
 
 const polyMaxPhases = 1024
@@ -389,7 +390,13 @@ type IQConfig struct {
 	// NoiseZerosHz are the frequencies of the zeros of the noise transfer
 	// function of NoiseShape, in Hz.
 	NoiseZerosHz [4]float64
+	// Delay holds the symbols back by that many symbols of no modulation,
+	// up to maxDelay, so the carrier runs longer before the first symbol.
+	Delay int
 }
+
+// maxDelay is the longest Delay of IQConfig, in symbols.
+const maxDelay = 64
 
 // IQ modulates complex I/Q for a software radio: it FM-modulates the
 // shaped deviation at 48 kHz, interpolated linearly to the output rate,
@@ -420,6 +427,9 @@ type IQ struct {
 	shape int
 	fb    [8]float64
 	err   [2][8]float64
+	dl    [maxDelay]int8
+	dn    int
+	di    int
 }
 
 const iqShaperHz = 48000
@@ -446,7 +456,10 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	if ramp < 1 {
 		return nil, errRamp
 	}
-	q := &IQ{ramp: ramp}
+	if cfg.Delay < 0 || cfg.Delay > maxDelay {
+		return nil, errDelay
+	}
+	q := &IQ{ramp: ramp, dn: cfg.Delay}
 	for q.shape = min(max(cfg.NoiseShape, 0), 4); q.shape > 0; q.shape-- {
 		q.fb = ntf(q.shape, cfg.NoiseZerosHz, float64(cfg.Rate))
 		if ntfPeak(q.fb[:2*q.shape]) <= ntfMaxGain {
@@ -549,6 +562,10 @@ func (q *IQ) AppendS16(dst []int16, s int8) []int16 {
 func (q *IQ) symbol(s int8) int {
 	if q.k == nil {
 		return q.mcu.Symbol(q.out, s)
+	}
+	if q.dn > 0 {
+		s, q.dl[q.di] = q.dl[q.di], s
+		q.di = (q.di + 1) % q.dn
 	}
 	j := 0
 	n := q.k.symbol(q.buf, s)
