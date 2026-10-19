@@ -536,7 +536,6 @@ func (r *DiscReceiver) run96(x []int16) int {
 					}
 					tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
 					r.n += int64(i - i0)
-					i0 = i
 					r.acqHead, r.acqLow = kh, kq
 					f.rrcHead = h
 					r.slotDue = true
@@ -594,7 +593,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 				r.acqHead, r.acqLow = kh, kq
 				f.rrcHead = h
 				r.levels()
-				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+				s1, s2, s3, t = tm.s1, tm.s2, tm.s3, tm.t
 				kq = r.acqLow
 				k, off = f.k, f.off
 			}
