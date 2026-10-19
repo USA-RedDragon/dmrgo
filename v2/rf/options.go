@@ -234,7 +234,7 @@ type options struct {
 	CohSignMiss uint8
 	// MidTiming takes the signs halfway between the symbols of a hunting
 	// lock from the samples of the timing loop, interpolated by lagrange6
-	// at up to leanSixSPS samples per symbol and linearly above, in place
+	// where the strobes take it (see leanSixSPS) and linearly otherwise, in place
 	// of the kept samples by Catmull-Rom, which costs more. It applies at
 	// up to leanCubicSPS samples per symbol.
 	MidTiming bool

@@ -117,9 +117,12 @@ const (
 	// timing interpolates by Catmull-Rom instead of linearly.
 	leanCubicSPS = 2.5
 	// leanSixSPS is the most samples per symbol at which the cubic
-	// strobes take lagrange6. At 2.5 samples per symbol Catmull-Rom misses
-	// the symbols by less, and the Lagrange polynomial passes more of the
-	// clicks below the FM threshold.
+	// strobes take lagrange6. Above it, up to leanCubicSPS, they take it
+	// only for the core alone, without softExt: at 2.5 samples per symbol
+	// the Lagrange polynomial passes more of the clicks below the FM
+	// threshold, which costs the coherent stage that reads the ratios of
+	// the core, but it misses the symbols by less than Catmull-Rom, which
+	// cuts the wrong uncoded voice bits of the core alone at a high C/N.
 	leanSixSPS = 2
 	// leanMMSPS is the most samples per symbol at which a locked stream
 	// detects the timing error by Mueller and Muller, at the symbols only,
@@ -539,7 +542,7 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.mfStep = int64(samplesPerSy / sps)
 	r.acqGain, r.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
 	r.tm.step = sps / 2
-	r.tm.cubic, r.tm.six = sps <= leanCubicSPS, sps <= leanSixSPS
+	r.tm.cubic, r.tm.six = sps <= leanCubicSPS, sps <= leanSixSPS || sps <= leanCubicSPS && !opt.SoftExt
 	r.mmOK = sps <= leanMMSPS
 	r.tm.t, r.tm.gain = r.tm.step, r.acqGain
 	r.resetChans()

@@ -4001,7 +4001,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 46
+       "exact": 44
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -4009,7 +4009,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2603
+       "exact": 2605
       },
       "csbk": {
        "truth": 6,
@@ -4041,7 +4041,7 @@
       },
       "rate1_bit": {
        "truth": 576,
-       "exact": 554
+       "exact": 552
       },
       "rate34": {
        "truth": 6,
@@ -4063,7 +4063,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 80
+       "exact": 83
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -4071,7 +4071,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2667
+       "exact": 2673
       },
       "csbk": {
        "truth": 6,
@@ -4079,7 +4079,7 @@
       },
       "elc": {
        "truth": 6,
-       "exact": 2
+       "exact": 3
       },
       "emb": {
        "truth": 30,
@@ -4125,7 +4125,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 96
+       "exact": 98
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -4133,7 +4133,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2687
+       "exact": 2689
       },
       "csbk": {
        "truth": 6,
@@ -4141,7 +4141,7 @@
       },
       "elc": {
        "truth": 6,
-       "exact": 5
+       "exact": 6
       },
       "emb": {
        "truth": 30,
