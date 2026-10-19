@@ -643,7 +643,7 @@ func (s *cohStage) scaleFit(k0, k1 int, span, step float64) (float64, float64) {
 // index, as a Kalman filter, in the log of the index: cohIndexVar0 plus
 // cohIndexVar over the SNR of the SYNC for a fit, which the sweep
 // measured from 1 to 12 dB C/N. The model takes the fit over
-// cohSyncIndex.
+// cohSyncIndex, or cohIndex while that is within cohIndexNear of it.
 func (s *cohStage) fitIndex(k0, k1 int, fit float64) {
 	span := discFitNear
 	if s.hNew {
@@ -659,7 +659,11 @@ func (s *cohStage) fitIndex(k0, k1 int, fit float64) {
 		s.hVar *= 1 - g
 		s.hFit *= math.Exp(g * e)
 		s.hNew = false
-		if f := s.hFit / cohSyncIndex; math.Abs(f/h-1) >= cohIndexMove {
+		f := s.hFit / cohSyncIndex
+		if math.Abs(f/cohIndex-1) < cohIndexNear {
+			f = cohIndex
+		}
+		if math.Abs(f/h-1) >= cohIndexMove {
 			s.model.setH(f)
 			return
 		}

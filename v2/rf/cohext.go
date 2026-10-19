@@ -154,8 +154,14 @@ type cohStage struct {
 // the share rho of the power of its samples has the variance cohIndexVar0
 // plus cohIndexVar times (1-rho)/rho, the noise over the signal, as the
 // sweep measured from 1 to 12 dB C/N. The model takes the fit when it
-// moves by cohIndexMove, as a share.
+// moves by cohIndexMove, as a share. The model keeps the nominal index
+// cohIndex while the fit is within cohIndexNear of it: on the XPR 8400
+// recordings, whose deviation the sweep cannot copy, the fit settles 1.5%
+// above the nominal index, and the model there decodes fewer exact voice
+// frames than at the nominal one.
 const (
+	cohIndex      = 0.27
+	cohIndexNear  = 0.03
 	cohSyncIndex  = 0.977
 	cohIndexStart = 0.05 * 0.05
 	cohIndexWalk  = 0.03 * 0.03
@@ -197,8 +203,8 @@ func newCohStageOf(opt *options) *cohStage {
 	if opt.CohSPS != 0 {
 		sps = opt.CohSPS
 	}
-	m := newCPMModel(1, sps, 0.27)
-	s := &cohStage{model: m, hFit: 0.27 * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked}
+	m := newCPMModel(1, sps, cohIndex)
+	s := &cohStage{model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
