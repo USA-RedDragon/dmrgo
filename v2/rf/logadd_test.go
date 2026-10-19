@@ -23,3 +23,20 @@ func TestLogAdd(t *testing.T) {
 		t.Fatalf("logAdd(negInf, negInf) = %g", v)
 	}
 }
+
+// TestJacobianSlope checks that jacobianSlope holds the float32 differences
+// of jacobian, so that logAdd interpolates as with the differences taken at
+// run time.
+func TestJacobianSlope(t *testing.T) {
+	t.Parallel()
+	for i := range 96 {
+		if d := jacobian[i+1] - jacobian[i]; jacobianSlope[i] != d {
+			t.Fatalf("jacobianSlope[%d] = %g, want %g", i, jacobianSlope[i], d)
+		}
+	}
+	for i := 97; i < len(jacobian); i++ {
+		if jacobian[i] != 0 || jacobianSlope[i] != 0 {
+			t.Fatalf("padding at %d is not zero", i)
+		}
+	}
+}
