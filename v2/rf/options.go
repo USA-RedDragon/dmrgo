@@ -171,6 +171,10 @@ type options struct {
 	// BPTC(196,96) data burst that fails its check again; 0 means
 	// cohDataPasses, below 0 none.
 	CohDataPasses int
+	// CohVoiceOnly leaves every burst but a voice burst to the ratios of
+	// the core: the coherent stage only fits the carrier and timing on
+	// the others.
+	CohVoiceOnly bool
 	// CohSignMiss is the most SYNC symbols whose sign may miss for a
 	// candidate of the search that the coherent stage verifies; 0 means
 	// leanExtSignMiss.

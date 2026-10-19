@@ -86,7 +86,9 @@ type cohStage struct {
 	// each slot on a stream that is not clear, 0 for any, credit the work
 	// that it holds at slot budgetSlot, and work the trellis steps that
 	// it ran.
-	budget     float64
+	budget float64
+	// voiceOnly detects only the voice bursts again.
+	voiceOnly  bool
 	credit     float64
 	budgetSlot int64
 	work       int64
@@ -234,7 +236,7 @@ func newCohStageOf(opt *options) *cohStage {
 	}
 	m := newCPMModel(1, sps, cohIndex)
 	s := &cohStage{model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
-		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice}
+		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}

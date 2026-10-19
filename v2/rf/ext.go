@@ -215,7 +215,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		// With a budget, a data block that passes its check from the core
 		// takes none of it.
 		s := x.coh
-		s.fitOnly = s.budget > 0 && x.checked(b)
+		s.fitOnly = s.budget > 0 && x.checked(b) || s.voiceOnly && !isVoiceBurst(b)
 		x.work0 = s.work + x.work
 		done := x.cohBurst(c, b, ch, cc, ccOK)
 		if s.budget > 0 && done {
@@ -523,6 +523,12 @@ func (x *softExt) bptcRetry(b *Burst) bool {
 		h, _ := b.Data.BPTCPayload()
 		return h != p
 	}
+}
+
+// isVoiceBurst reports whether b is a voice burst, by its SYNC or its EMB.
+func isVoiceBurst(b *Burst) bool {
+	_, kind, ok := layer2.SyncSourceOf(b.Sync)
+	return b.Voice != enums.VoiceBurstUnknown || ok && kind == layer2.KindVoice
 }
 
 // voiceKnown marks in known the bits of voice burst b that its FEC fixed:
