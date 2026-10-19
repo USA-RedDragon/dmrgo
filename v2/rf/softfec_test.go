@@ -823,12 +823,35 @@ func TestSoftOSDFast(t *testing.T) {
 				fast.setFast(&options{OSDFast: true, OSDBytes: bytes})
 				id.osd(&fast.osd, order, window, softListMax)
 				a, b := &ref.osd.list, &fast.osd.list
-				same := a.n == b.n && a.scored == b.scored && a.cost == b.cost
-				for i := range a.n {
-					same = same && [2]uint64(a.cw[i][:2]) == [2]uint64(b.cw[i][:2]) && (c.n <= 128 || a.cw[i] == b.cw[i])
+				if a.n != b.n || a.scored != b.scored || a.cost != b.cost || a.cw != b.cw {
+					t.Fatalf("code %d trial %d bytes %v: lists differ (n %d %d, scored %d %d)", id, trial, bytes, a.n, b.n, a.scored, b.scored)
 				}
-				if !same {
-					t.Fatalf("code %d trial %d bytes %v: lists differ (n %d %d, scored %d %d) %x\n%x", id, trial, bytes, a.n, b.n, a.scored, b.scored, a.cw, b.cw)
+			}
+		}
+	}
+}
+
+// TestSoftOSDCleanWords checks that an OSD decode of a short code after one
+// of BPTC(196,96) on the same scratch lists codewords with no bits past the
+// code: stale words of the longer code once counted in errors.
+func TestSoftOSDCleanWords(t *testing.T) {
+	t.Parallel()
+	rng := rand.New(rand.NewPCG(7, 8))
+	d := newSoftDecoder()
+	noisy := func(id softOSDID) {
+		for j := range softOSDCodes[id].n {
+			d.osd.l[j] = int32((1 + rng.NormFloat64()) * 40)
+		}
+		d.osd.accept = nil
+		id.osd(&d.osd, 2, 0, softListMax)
+	}
+	for range 4 {
+		noisy(softBPTCCode)
+		for _, id := range []softOSDID{softShortLCCode, softEmbLCCode} {
+			noisy(id)
+			for i := range d.osd.list.n {
+				if cw := &d.osd.list.cw[i]; cw[2] != 0 || cw[3] != 0 {
+					t.Fatalf("code %d candidate %d: bits past the code %x", id, i, *cw)
 				}
 			}
 		}

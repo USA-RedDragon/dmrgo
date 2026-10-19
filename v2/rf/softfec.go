@@ -648,7 +648,7 @@ func (id softOSDID) reprocess(s *softOSDScratch, order, window, listMax int) {
 	k := c.k
 	s.nw = (c.n + 63) / 64
 	c0, ci, cj, cw := &s.cand[0], &s.cand[1], &s.cand[2], &s.cand[3]
-	*c0 = [softOSDWords]uint64{}
+	s.cand = [4][softOSDWords]uint64{}
 	for i := range k {
 		if j := s.pivot[i]; s.hard[j>>6]>>(j&63)&1 != 0 {
 			s.flip(c0, c0, i)
