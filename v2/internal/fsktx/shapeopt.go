@@ -213,7 +213,9 @@ func (o *optimizer) eval(w0 int, x, g []float64) float64 {
 		pr[n], pi[n] = o.taper[n]*p, 0
 	}
 	o.fft(re, im, false)
-	o.fft(pr, pi, false)
+	if optPenalty > 0 {
+		o.fft(pr, pi, false)
+	}
 	var j, jp float64
 	for k := range optWin {
 		w := o.w2[k]
@@ -224,7 +226,9 @@ func (o *optimizer) eval(w0 int, x, g []float64) float64 {
 		pr[k], pi[k] = l*pr[k], l*pi[k]
 	}
 	o.fft(re, im, true)
-	o.fft(pr, pi, true)
+	if optPenalty > 0 {
+		o.fft(pr, pi, true)
+	}
 	sc := 1 / (o.jscale * optWin)
 	for n := optCtx; n < optWin; n++ {
 		p := x[n-optCtx]
