@@ -265,3 +265,26 @@ func TestDiscReceiverRingWrap(t *testing.T) {
 		}
 	}
 }
+
+// TestLevelUp checks that options.LevelUp scales up an input whose RMS is
+// between half of discInputRMSHz and discInputRMSHz/discLevelUp, which the
+// level control otherwise keeps.
+func TestLevelUp(t *testing.T) {
+	t.Parallel()
+	x := make([]int16, 8*frontBlock)
+	for i := range x {
+		x[i] = int16(math.Round(1200 * math.Sqrt2 * math.Sin(float64(i)*0.7)))
+	}
+	for _, up := range []bool{false, true} {
+		opt := discOptions()
+		opt.LevelUp = up
+		var r DiscReceiver
+		if err := r.Init(DiscConfig{Hz: discRate / 2, opt: &opt}); err != nil {
+			t.Fatal(err)
+		}
+		r.Write(x)
+		if g := r.f.gain; up != (g > 1.5) {
+			t.Errorf("LevelUp %v: gain %.3f", up, g)
+		}
+	}
+}
