@@ -144,7 +144,7 @@ func (u txUnit) lag() int {
 	case u.audio() && (u.mcu || u.tier == Tier0):
 		return Table24k().Span()
 	case u.mcu || u.tier == Tier0:
-		return tableIQ().Span()
+		return iqSpan
 	case u.tier == Tier2:
 		return 16
 	default:

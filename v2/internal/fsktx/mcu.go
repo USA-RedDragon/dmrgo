@@ -44,10 +44,6 @@ func Table48k() AudioTable {
 	return AudioTable{shape: shape48k, hz: 48000, span: len(taps48k[0]) / 2, peak: taps48kPeak}
 }
 
-func tableIQ() AudioTable {
-	return AudioTable{shape: shapeIQ, hz: 24000, span: len(tapsIQ[0]) / 2, peak: tapsIQPeak}
-}
-
 func shape24k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 	for p := range taps24k {
 		t := &taps24k[p]
@@ -70,18 +66,6 @@ func shape48k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 		dst[p] = y
 	}
 	return len(taps48k)
-}
-
-func shapeIQ(dst *[maxSamples]int32, r *[maxTaps]int8) int {
-	for p := range tapsIQ {
-		t := &tapsIQ[p]
-		var y int32
-		for i := range t {
-			y += int32(t[i]) * int32(r[i])
-		}
-		dst[p] = y
-	}
-	return len(tapsIQ)
 }
 
 var (
