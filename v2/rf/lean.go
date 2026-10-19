@@ -116,6 +116,11 @@ const (
 	// leanCubicSPS is the most samples per symbol at which the symbol
 	// timing interpolates by Catmull-Rom instead of linearly.
 	leanCubicSPS = 2.5
+	// leanSixSPS is the most samples per symbol at which the cubic
+	// strobes take lagrange6. At 2.5 samples per symbol Catmull-Rom misses
+	// the symbols by less, and the Lagrange polynomial passes more of the
+	// clicks below the FM threshold.
+	leanSixSPS = 2
 	// leanMMSPS is the most samples per symbol at which a locked stream
 	// detects the timing error by Mueller and Muller, at the symbols only,
 	// with the sign leanMMSign and the gain leanMMGain over the Gardner
@@ -139,10 +144,11 @@ const (
 type leanTiming struct {
 	step   float32
 	s1, s2 float32
-	// cubic interpolates the strobes between s1 and s2 by Catmull-Rom with
-	// s0 and s3, one sample late, for few samples per symbol.
-	cubic  bool
-	s0, s3 float32
+	// cubic interpolates the strobes between s1 and s2, one sample late,
+	// for few samples per symbol: by Catmull-Rom with s0 and s3, or with
+	// six by lagrange6 through sa, sb, s0 to s3, oldest first.
+	cubic, six     bool
+	sa, sb, s0, s3 float32
 	// t is the time of the next strobe, in samples after the last one.
 	// The strobes alternate between symbols and the midpoints between them.
 	t    float32
@@ -168,7 +174,7 @@ type leanTiming struct {
 // strobe is not left for the next sample to extrapolate.
 func (tm *leanTiming) push(s float32) (v, at float32, ok bool) {
 	if tm.cubic {
-		tm.s0, tm.s1, tm.s2, tm.s3 = tm.s1, tm.s2, tm.s3, s
+		tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3 = tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, s
 	} else {
 		tm.s1, tm.s2 = tm.s2, s
 	}
@@ -224,14 +230,22 @@ func (tm *leanTiming) strobe(x float32) bool {
 }
 
 // at returns the matched filter output at time t, from -1 to 0, from the
-// last sample: by Catmull-Rom between the two samples before the last when
+// last sample: by cubicAt between the two samples before the last when
 // cubic, one sample late, and linearly between the last two otherwise.
 func (tm *leanTiming) at(t float32) float32 {
 	if !tm.cubic {
 		return tm.s2 + t*(tm.s2-tm.s1)
 	}
-	p0, p1, p2, p3 := tm.s0, tm.s1, tm.s2, tm.s3
-	mu := 1 + t
+	return cubicAt(tm.six, tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, 1+t)
+}
+
+// cubicAt returns the value at mu, from 0 to 1, between p1 and p2 of the
+// samples a, b, p0, p1, p2 and p3: by lagrange6 when six, and by
+// Catmull-Rom through p0 to p3 otherwise.
+func cubicAt(six bool, a, b, p0, p1, p2, p3, mu float32) float32 {
+	if six {
+		return lagrange6(a, b, p0, p1, p2, p3, mu)
+	}
 	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0)))
 }
 
@@ -246,6 +260,35 @@ func (tm *leanTiming) linearAt(t float32) float32 {
 		return tm.s2 + (t+1)*(tm.s2-tm.s1)
 	}
 	return tm.s1 + (t+2)*(tm.s1-tm.s0)
+}
+
+// midAt returns the matched filter output at t samples after the last
+// sample, from -3 on, for the midpoints of a hunt: by lagrange6 through
+// the last six samples when six and t is from -3 to -2, where that
+// polynomial is centered, and by linearAt otherwise.
+func (tm *leanTiming) midAt(t float32) float32 {
+	if tm.six && t >= -3 && t <= -2 {
+		return lagrange6(tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, t+2)
+	}
+	return tm.linearAt(t)
+}
+
+// lagrange6 returns the value at mu, from 0 to 1, between p1 and p2 of the
+// polynomial through the samples a, b, p0, p1, p2 and p3. At 2 samples
+// per symbol, Catmull-Rom through p0 to p3 misses the matched filter
+// output halfway between two samples by about 0.09 of the distance from a
+// level to the threshold (RMS, over the patterns of the symbols), and this
+// polynomial by about 0.03, near the 0.07 that the matched filter itself
+// leaves on the samples.
+func lagrange6(a, b, p0, p1, p2, p3, mu float32) float32 {
+	d0, d1, d2, d3, d4, d5 := mu+3, mu+2, mu+1, mu, mu-1, mu-2
+	l01 := d0 * d1
+	l012 := l01 * d2
+	r45 := d4 * d5
+	r345 := d3 * r45
+	return (-a*(d1*d2*r345)+5*b*(d0*d2*r345))*(1.0/120) +
+		(-p0*(l01*r345)+p1*(l012*r45))*(1.0/12) +
+		(-p2*(l012*d3*d5)+p3*(l012*d3*d4)*(1.0/5))*(1.0/24)
 }
 
 // leanChan is the superframe state of one TDMA channel of the streaming
@@ -496,7 +539,7 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.mfStep = int64(samplesPerSy / sps)
 	r.acqGain, r.trackGain = leanAcqGain*(sps/discSPS), leanTrackGain*(sps/discSPS)
 	r.tm.step = sps / 2
-	r.tm.cubic = sps <= leanCubicSPS
+	r.tm.cubic, r.tm.six = sps <= leanCubicSPS, sps <= leanSixSPS
 	r.mmOK = sps <= leanMMSPS
 	r.tm.t, r.tm.gain = r.tm.step, r.acqGain
 	r.resetChans()
@@ -651,7 +694,7 @@ func (r *leanCore) rescale(g float32) {
 	r.rebuildSigns()
 	r.rescaleKept(g8, 0)
 	tm := &r.tm
-	tm.s0, tm.s1, tm.s2, tm.s3 = tm.s0*g, tm.s1*g, tm.s2*g, tm.s3*g
+	tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3 = tm.sa*g, tm.sb*g, tm.s0*g, tm.s1*g, tm.s2*g, tm.s3*g
 	tm.last, tm.half, tm.pow = tm.last*g, tm.half*g, tm.pow*g*g
 }
 
@@ -1165,7 +1208,7 @@ func (r *leanCore) huntMid(at float32) bool {
 	if r.acqKept() > 4 {
 		r.midSigns <<= 1
 		if r.midTiming {
-			if (r.tm.linearAt(at-r.tm.step)-r.off)*syncSymbols > float32(r.ringSum)*discStepHz {
+			if (r.tm.midAt(at-r.tm.step)-r.off)*syncSymbols > float32(r.ringSum)*discStepHz {
 				r.midSigns |= 1
 			}
 		} else if r.keptAt(at-r.tm.step)*syncSymbols > float32(r.ringSum) {
@@ -1863,6 +1906,8 @@ func (r *leanCore) shift(d float32) {
 	r.tm.s2 -= d
 	r.tm.s0 -= d
 	r.tm.s3 -= d
+	r.tm.sa -= d
+	r.tm.sb -= d
 	r.tm.last -= d
 	r.tm.dc -= d
 	if !r.tm.mm {

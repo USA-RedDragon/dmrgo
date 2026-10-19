@@ -233,7 +233,7 @@ func (r *DiscReceiver) flush() {
 
 // run runs the samples x through the front end, the symbol timing and
 // the core. It is the leanTiming.push of the matched filter samples, fused
-// into one loop that keeps the last four samples, the time of the next
+// into one loop that keeps the last six samples, the time of the next
 // strobe and the state of the lock in locals: the core sees them only
 // around levels and symbol, which can retune or lock. The samples are kept
 // as cubic takes them, s3 the last, and the linear interpolation runs
@@ -261,7 +261,7 @@ func (r *DiscReceiver) run(x []int16) {
 //go:noinline
 func (r *DiscReceiver) runAll(x []int16) {
 	f, tm := &r.f, &r.tm
-	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 	// dn counts the matched filter samples after r.n.
 	var dn int32
 	// kh and kq are the head of the ring of kept samples and the sample
@@ -277,10 +277,10 @@ func (r *DiscReceiver) runAll(x []int16) {
 			f.sum += int32(v)
 			f.sq += int64(v) * int64(v)
 			if f.n++; f.n == frontBlock {
-				tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 				r.acqHead, r.acqLow = kh, kq
 				r.levels()
-				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+				sa, sb, s0, s1, s2, s3, t = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 				kq = r.acqLow
 			}
 		}
@@ -301,7 +301,7 @@ func (r *DiscReceiver) runAll(x []int16) {
 		// A discriminator gives no carrier power, so the core takes a
 		// burst as present from its anchors.
 		dn++
-		s0, s1, s2, s3 = s1, s2, s3, y
+		sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
 		if keep {
 			// acc is in Q15 of rrcStepHz, twice discStepHz, so this is y
 			// in units of discStepHz, rounded.
@@ -322,8 +322,7 @@ func (r *DiscReceiver) runAll(x []int16) {
 			at := t
 			var xv float32
 			if cubic {
-				mu := 1 + at
-				xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+				xv = cubicAt(tm.six, sa, sb, s0, s1, s2, s3, 1+at)
 				// The cubic strobes are one sample late.
 				at--
 			} else {
@@ -333,12 +332,12 @@ func (r *DiscReceiver) runAll(x []int16) {
 			sym := tm.strobe(xv)
 			t = tm.t
 			if sym {
-				tm.s0, tm.s1, tm.s2, tm.s3 = s0, s1, s2, s3
+				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3 = sa, sb, s0, s1, s2, s3
 				r.n += int64(dn)
 				dn = 0
 				r.acqHead, r.acqLow = kh, kq
 				r.symbol(tm.last, at)
-				s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+				sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
 				// A slot can start or end the search of a lock, which
 				// keeps the samples in another ring.
 				kh = r.acqHead
@@ -347,7 +346,7 @@ func (r *DiscReceiver) runAll(x []int16) {
 			}
 		}
 	}
-	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+	tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 	r.n += int64(dn)
 	r.acqHead, r.acqLow = kh, kq
 }
@@ -403,7 +402,7 @@ func (r *DiscReceiver) state96() uint8 {
 //go:noinline
 func (r *DiscReceiver) run96(x []int16) int {
 	f, tm := &r.f, &r.tm
-	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 	// i0 is the sample after r.n.
 	i0 := 0
 	kh, kq := r.acqHead, r.acqLow
@@ -431,14 +430,14 @@ func (r *DiscReceiver) run96(x []int16) int {
 				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*s2*s2
 				tm.last, tm.mid = s2, true
 				if hit, sym, mid := r.rawSym(s2); hit {
-					tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 					r.n += int64(i - i0)
 					i0 = i
 					r.acqHead, r.acqLow = kh, kq
 					f.rrcHead = h
 					r.lastAt = -1
 					r.searchHit(sym, mid)
-					s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+					sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
 					kh = r.acqHead
 					buf, an = r.acqBuf()
 					st = r.state96()
@@ -465,14 +464,14 @@ func (r *DiscReceiver) run96(x []int16) int {
 					if !hit {
 						break
 					}
-					tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 					r.n += int64(i - i0)
 					i0 = i
 					r.acqHead, r.acqLow = kh, kq
 					f.rrcHead = h
 					r.lastAt = -1
 					r.searchHit(sym, mid)
-					s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+					sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
 					kh = r.acqHead
 					buf, an = r.acqBuf()
 					st = r.state96()
@@ -488,7 +487,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 				if tm.mid && st&st96LinMid != 0 {
 					xv = s1 + mu*(s2-s1)
 				} else {
-					xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+					xv = lagrange6(sa, sb, s0, s1, s2, s3, mu)
 				}
 				at--
 				// tm.strobe, written out: TinyGo does not inline it in two
@@ -534,7 +533,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 						}
 						continue
 					}
-					tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 					r.n += int64(i - i0)
 					r.acqHead, r.acqLow = kh, kq
 					f.rrcHead = h
@@ -542,7 +541,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 					return i
 				}
 				if sym {
-					tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 					r.n += int64(i - i0)
 					i0 = i
 					r.acqHead, r.acqLow = kh, kq
@@ -570,7 +569,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 						// calls run96 again.
 						return i
 					}
-					s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+					sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
 					kh = r.acqHead
 					buf, an = r.acqBuf()
 					st = r.state96()
@@ -589,11 +588,11 @@ func (r *DiscReceiver) run96(x []int16) int {
 			f.sum += int32(v)
 			f.sq += int64(v) * int64(v)
 			if f.n++; f.n == frontBlock {
-				tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 				r.acqHead, r.acqLow = kh, kq
 				f.rrcHead = h
 				r.levels()
-				s1, s2, s3, t = tm.s1, tm.s2, tm.s3, tm.t
+				sb, s0, s1, s2, s3, t = tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 				kq = r.acqLow
 				k, off = f.k, f.off
 			}
@@ -610,7 +609,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 		}
 		acc := fir96((*[audio96Taps]int8)(hist[h : h+audio96Taps]))
 		y := float32(acc) * (rrcStepHz / 32768.0)
-		s0, s1, s2, s3 = s1, s2, s3, y
+		sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
 		if st&st96Keep != 0 {
 			q := int16(int8((acc + 1<<13) >> 14))
 			if kh&1 == 0 {
@@ -625,7 +624,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 		t--
 	}
 	f.rrcHead = h
-	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+	tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
 	r.n += int64(len(x) - i0)
 	r.acqHead, r.acqLow = kh, kq
 	return len(x)

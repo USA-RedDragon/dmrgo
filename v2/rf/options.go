@@ -233,9 +233,10 @@ type options struct {
 	// leanExtSignMiss.
 	CohSignMiss uint8
 	// MidTiming takes the signs halfway between the symbols of a hunting
-	// lock from the samples of the timing loop, interpolated linearly, in
-	// place of the kept samples by Catmull-Rom, which costs more. It
-	// applies at up to leanCubicSPS samples per symbol.
+	// lock from the samples of the timing loop, interpolated by lagrange6
+	// at up to leanSixSPS samples per symbol and linearly above, in place
+	// of the kept samples by Catmull-Rom, which costs more. It applies at
+	// up to leanCubicSPS samples per symbol.
 	MidTiming bool
 	// Front96 runs the audio front end at 9.6 kHz in a loop of its own,
 	// with the filter state in locals. The output is the same.
