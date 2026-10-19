@@ -202,6 +202,9 @@ type options struct {
 	// square of the signal amplitude there over its mean, so that a path
 	// jumps in a deep fade.
 	PhaseJumpFade bool
+	// PhaseJumpBelow, when above 0, allows the fade jump only where the
+	// amplitude over its mean is under it.
+	PhaseJumpBelow float32
 	// CompactChannel holds the channel ring of the coherent tiers as 8-bit
 	// block floating point and keeps no copy of the wide input: a retune
 	// rotates the samples it holds instead of filtering the input again.

@@ -54,7 +54,10 @@ type xtrellis struct {
 	// symbols k and k+1 over their mean, held in jk.
 	jump float32
 	fade bool
-	jk   []float32
+	// below, when above 0, allows the fade jump only where the lesser
+	// correlation over the mean is under it.
+	below float32
+	jk    []float32
 }
 
 // jacobian holds log(1+exp(-i/8)) for i from 0 to 96.
@@ -294,7 +297,12 @@ func (t *xtrellis) jumpCosts(steps int, sum float32) {
 			a = min(a, jk[k+1])
 		}
 		a /= mean
-		jk[k] = t.jump * a * a
+		switch {
+		case t.below > 0 && a >= t.below:
+			jk[k] = 0
+		default:
+			jk[k] = max(t.jump*a*a, 1e-3)
+		}
 	}
 }
 

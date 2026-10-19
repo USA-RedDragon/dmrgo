@@ -39,6 +39,15 @@ func TestXTrellisJumpCosts(t *testing.T) {
 			t.Errorf("jk[%d] = %v, want %v", k, x.jk[k], w)
 		}
 	}
+	x.below = 0.75
+	copy(x.jk, []float32{2, 2, 1, 3})
+	x.jumpCosts(4, 8)
+	want = []float32{0, 2, 2, 0}
+	for k, w := range want {
+		if x.jk[k] != w {
+			t.Errorf("below: jk[%d] = %v, want %v", k, x.jk[k], w)
+		}
+	}
 	x.fade = false
 	x.jumpCosts(4, 8)
 	for k := range 4 {
