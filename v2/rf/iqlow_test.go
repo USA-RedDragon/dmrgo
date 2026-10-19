@@ -162,6 +162,17 @@ func TestIQLowHalfRun(t *testing.T) {
 	}
 }
 
+func TestLagrangeAt(t *testing.T) {
+	p := [6]float32{0.3, -1.2, 2.5, 0.7, -3, 1.1}
+	for i := 0; i <= lagrangeTabN; i++ {
+		mu := float32(i) / lagrangeTabN
+		want := lagrange6(p[0], p[1], p[2], p[3], p[4], p[5], mu)
+		if got := lagrangeAt(p[0], p[1], p[2], p[3], p[4], p[5], mu); math.Abs(float64(got-want)) > 1e-5 {
+			t.Errorf("mu %v: %v, want %v", mu, got, want)
+		}
+	}
+}
+
 func TestMod64(t *testing.T) {
 	for _, n := range []uint32{slotSymbols, 2 * slotSymbols} {
 		for _, k := range []int64{0, 1, -1, 143, 144, -144, -145, 287, 288, 1 << 32, -1 << 32, 1<<40 + 77, -(1<<40 + 77), 1<<62 + 5, -1 << 63, 1<<63 - 1} {

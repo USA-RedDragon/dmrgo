@@ -321,6 +321,9 @@ type options struct {
 	// against the mean of the SYNC window, and a SYNC holds only the outer
 	// levels.
 	HuntLinMid bool
+	// StrobeTab takes the strobes of run96 by lagrangeAt, lagrange6 with
+	// its weights from a table, in place of lagrange6.
+	StrobeTab bool
 	// Front96 runs the audio front end at 9.6 kHz in a loop of its own,
 	// with the filter state in locals. The output is the same.
 	Front96 bool

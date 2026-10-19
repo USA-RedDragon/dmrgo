@@ -142,6 +142,8 @@ const (
 	mid96Linear
 	mid96Raw
 	mid96RawLock
+	// mid96Tab is a flag of mid96 for options.StrobeTab.
+	mid96Tab = 4
 )
 
 // leanTiming recovers the symbol timing from the matched filter output at
@@ -355,7 +357,7 @@ type leanCore struct {
 	again, midTiming, front96, slotDue bool
 	// mid96 is how run96 takes the midpoints before a lock: mid96Cubic,
 	// mid96Linear for options.LinearMid, or mid96Raw or mid96RawLock for
-	// options.RawSearch 1 or 2.
+	// options.RawSearch 1 or 2, with the flag mid96Tab for options.StrobeTab.
 	mid96 uint8
 	// ext is the stage of a higher tier that decodes and emits each burst
 	// in place of repair, nil for Tier 0, and replaying is set while it

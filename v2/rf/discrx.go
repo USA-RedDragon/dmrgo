@@ -137,6 +137,9 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	case r.front96 && opt.LinearMid:
 		r.mid96 = mid96Linear
 	}
+	if r.front96 && opt.StrobeTab {
+		r.mid96 |= mid96Tab
+	}
 	r.f.gain, r.f.up = 1, opt.LevelUp
 	r.f.refresh()
 	r.audio, r.center = &r.f, -int64(discSpan*samplesPerSy)
@@ -371,20 +374,25 @@ const (
 	// hunt.
 	st96Lock
 	st96Quiet
-	// st96LinMid is LinearMid.
+	// st96LinMid is LinearMid, and st96Tab StrobeTab.
 	st96LinMid
+	st96Tab
 )
 
 // state96 returns the state of the receiver for run96, which keeps it in
 // one local in place of a local for each flag.
 func (r *DiscReceiver) state96() uint8 {
 	var st uint8
-	if r.mid96 == mid96Linear {
+	if r.mid96&mid96Tab != 0 {
+		st |= st96Tab
+	}
+	mode := r.mid96 &^ mid96Tab
+	if mode == mid96Linear {
 		st |= st96LinMid
 	}
 	if !r.locked {
 		st |= st96Search | st96Keep
-		if r.mid96 >= mid96Raw {
+		if mode >= mid96Raw {
 			st |= st96Raw
 		}
 		return st
@@ -392,7 +400,7 @@ func (r *DiscReceiver) state96() uint8 {
 	if r.hunt {
 		st |= st96Keep
 	}
-	if r.mid96 == mid96RawLock {
+	if mode == mid96RawLock {
 		st |= st96Lock
 		if !r.hunt {
 			st |= st96Quiet
@@ -503,6 +511,8 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 				var xv float32
 				if tm.mid && st&st96LinMid != 0 {
 					xv = s1 + mu*(s2-s1)
+				} else if st&st96Tab != 0 {
+					xv = lagrangeAt(sa, sb, s0, s1, s2, s3, mu)
 				} else {
 					xv = lagrange6(sa, sb, s0, s1, s2, s3, mu)
 				}
