@@ -27,3 +27,24 @@ func TestEncodeRowsAndGridBit(t *testing.T) {
 		}
 	}
 }
+
+func TestRecode(t *testing.T) {
+	t.Parallel()
+
+	r := rand.New(rand.NewSource(2))
+	for i := range 2000 {
+		var data [12]byte
+		r.Read(data[:])
+		grid := EncodeRows(&data, uint8(r.Intn(8)))
+		for range i % 12 {
+			grid[r.Intn(13)] ^= 1 << r.Intn(15)
+		}
+		wantData, wantReserved, _ := DecodeRows(&grid)
+		want := EncodeRows(&wantData, wantReserved)
+		var got [12]byte
+		rows := grid
+		if reserved := Recode(&rows, &got); got != wantData || reserved != wantReserved || rows != want {
+			t.Fatalf("Recode(%x) = %x, %d, %x, want %x, %d, %x", grid, got, reserved, rows, wantData, wantReserved, want)
+		}
+	}
+}

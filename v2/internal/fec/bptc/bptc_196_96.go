@@ -112,6 +112,28 @@ func DecodeRows(grid *[13]uint16) ([12]byte, uint8, fec.Result) {
 		result.ErrorsCorrected += bits.OnesCount16(rows[r] ^ received[r])
 	}
 
+	var data [12]byte
+	reserved := rowsData(&rows, &data)
+	return data, reserved, result
+}
+
+// Recode corrects the rows of a BPTC(196,96) grid in place as DecodeRows
+// does, writes the data bits that DecodeRows returns into data, puts the
+// codeword that EncodeRows returns for them in place of the rows and
+// returns the reserved bits. It needs no copy of the rows, for
+// microcontrollers.
+//
+//go:noinline
+func Recode(rows *[13]uint16, data *[12]byte) uint8 {
+	hammingCorrect(rows)
+	reserved := rowsData(rows, data)
+	encodeRows(rows, data, reserved)
+	return reserved
+}
+
+// rowsData writes the data bits of the rows of a BPTC(196,96) grid into
+// data and returns its reserved bits.
+func rowsData(rows *[13]uint16, data *[12]byte) uint8 {
 	var head, tail uint64
 	head = uint64(bits.Reverse16(rows[0]) >> 5 & 0xFF)
 	for r := 1; r <= 5; r++ {
@@ -120,12 +142,9 @@ func DecodeRows(grid *[13]uint16) ([12]byte, uint8, fec.Result) {
 	for r := 6; r <= 8; r++ {
 		tail = tail<<11 | uint64(bits.Reverse16(rows[r])>>5&0x7FF)
 	}
-	var data [12]byte
 	binary.BigEndian.PutUint64(data[:8], head<<1|tail>>32)
 	binary.BigEndian.PutUint32(data[8:], uint32(tail&0xFFFFFFFF))
-
-	reserved := uint8((rows[0]>>2&1 | rows[0]>>1&1<<1 | rows[0]&1<<2) & 0x7)
-	return data, reserved, result
+	return uint8((rows[0]>>2&1 | rows[0]>>1&1<<1 | rows[0]&1<<2) & 0x7)
 }
 
 // hammingCorrect corrects the BPTC(196,96) grid with the column
@@ -196,9 +215,15 @@ func Encode196(data [12]byte, reserved uint8) [25]byte {
 // EncodeRows returns the 13 grid rows of the BPTC(196,96) codeword of data
 // and reserved, which Rows returns for the block of Encode196.
 func EncodeRows(data *[12]byte, reserved uint8) [13]uint16 {
+	var rows [13]uint16
+	encodeRows(&rows, data, reserved)
+	return rows
+}
+
+// encodeRows writes the codeword of EncodeRows into rows.
+func encodeRows(rows *[13]uint16, data *[12]byte, reserved uint8) {
 	head := binary.BigEndian.Uint64(data[:8])
 	tail := uint64(binary.BigEndian.Uint32(data[8:]))
-	var rows [13]uint16
 	rows[0] = uint16(reserved>>2&1|reserved>>1&1<<1|reserved&1<<2) | bits.Reverse16(uint16(head>>56)<<5)
 	for r := 1; r <= 5; r++ {
 		rows[r] = bits.Reverse16(uint16(head>>(56-11*r)&0x7FF) << 5)
@@ -210,7 +235,7 @@ func EncodeRows(data *[12]byte, reserved uint8) [13]uint16 {
 	for r := range 9 {
 		rows[r] |= uint16(rowSyndrome15_11(rows[r])&0xF) << 11
 	}
-	s := columnSyndromes(&rows)
+	rows[9], rows[10], rows[11], rows[12] = 0, 0, 0, 0
+	s := columnSyndromes(rows)
 	rows[9], rows[10], rows[11], rows[12] = s[0], s[1], s[2], s[3]
-	return rows
 }
