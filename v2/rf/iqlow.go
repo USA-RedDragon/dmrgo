@@ -26,7 +26,32 @@ const (
 	// chip that decimates to 9.6 kHz cuts the band of a signal off its
 	// center, which spread each symbol into its neighbors.
 	iqLowISI = 0.04
+	// iqLowAtanNear takes the angle of halfRun from iqLowAtan64, without
+	// interpolation.
+	iqLowAtanNear = false
+	// iqLowRecip takes the ratio of halfRun by a multiply with
+	// iqLowRecip64 in place of a division, and its angle as
+	// iqLowAtanNear does.
+	iqLowRecip = false
 )
+
+// iqLowRecip64 holds, for i from 0 to 63, 2^21/(65+i) rounded down: 2^46
+// over the top of the step i of 2^25 above 2^31.
+var iqLowRecip64 = [64]uint16{
+	32263, 31775, 31300, 30840, 30393, 29959, 29537, 29127, 28728, 28339, 27962, 27594, 27235, 26886, 26546, 26214,
+	25890, 25575, 25266, 24966, 24672, 24385, 24105, 23831, 23563, 23301, 23045, 22795, 22550, 22310, 22075, 21845,
+	21620, 21399, 21183, 20971, 20763, 20560, 20360, 20164, 19972, 19784, 19599, 19418, 19239, 19065, 18893, 18724,
+	18558, 18396, 18236, 18078, 17924, 17772, 17623, 17476, 17331, 17189, 17050, 16912, 16777, 16644, 16513, 16384,
+}
+
+// iqLowAtan64 holds, for i from 0 to 63, the arctangent of (i+0.5)/64 in
+// units of 2^-16 of a turn.
+var iqLowAtan64 = [64]uint16{
+	81, 244, 407, 570, 732, 894, 1056, 1217, 1377, 1537, 1696, 1854, 2012, 2168, 2324, 2478,
+	2632, 2784, 2935, 3085, 3233, 3380, 3526, 3670, 3813, 3955, 4095, 4233, 4370, 4505, 4639, 4771,
+	4901, 5030, 5157, 5282, 5406, 5528, 5649, 5768, 5885, 6000, 6114, 6227, 6337, 6446, 6554, 6660,
+	6764, 6867, 6968, 7068, 7166, 7262, 7358, 7451, 7544, 7635, 7724, 7812, 7899, 7984, 8068, 8151,
+}
 
 // iqLowAtan holds, for i from 0 to 15, the arctangent of i/16 in units of
 // 2^-16 of a turn in the low half, and the step to that of (i+1)/16 in
@@ -264,9 +289,20 @@ func (r *iqLowRx) halfRun(x []uint32) {
 			ax, ay = ay, ax
 		}
 		z := uint(bits.LeadingZeros32(ax | 1))
-		t := (ay << z) / ((ax<<z)>>16 + 1)
-		w := iqLowAtan[t>>12&15]
-		a := int32(w&0xFFFF) + int32(w>>16)*int32(t&0xFFF)>>12
+		var a int32
+		if iqLowRecip {
+			// ax<<z is at least 2^31: its 6 bits below the top bit pick
+			// the reciprocal of the top of its step, so that the ratio
+			// stays below 1.
+			x := ax << z
+			t := ((ay << z) >> 16 * uint32(iqLowRecip64[x>>25&63])) >> 24
+			a = int32(iqLowAtan64[t&63])
+		} else if t := (ay << z) / ((ax<<z)>>16 + 1); iqLowAtanNear {
+			a = int32(iqLowAtan64[t>>10&63])
+		} else {
+			w := iqLowAtan[t>>12&15]
+			a = int32(w&0xFFFF) + int32(w>>16)*int32(t&0xFFF)>>12
+		}
 		if sw {
 			a = 1<<14 - a
 		}

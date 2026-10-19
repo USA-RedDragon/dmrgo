@@ -2,6 +2,7 @@ package rf
 
 import (
 	"math"
+	"math/bits"
 	"testing"
 )
 
@@ -183,6 +184,29 @@ func TestMod64(t *testing.T) {
 			if got := mod64(k, n); int64(got) != want {
 				t.Errorf("mod64(%d, %d) = %d, want %d", k, n, got, want)
 			}
+		}
+	}
+}
+
+// TestIQLowRecip checks the ratio and the angle of halfRun with
+// iqLowRecip: the step of iqLowAtan64 stays below 64 and the angle is
+// within 0.02 rad of the arctangent.
+func TestIQLowRecip(t *testing.T) {
+	seed := uint32(1)
+	for k := 0; k < 200000; k++ {
+		seed = seed*1664525 + 1013904223
+		ax := seed>>1 | 1
+		seed = seed*1664525 + 1013904223
+		ay := uint32(uint64(seed) * uint64(ax) >> 32)
+		z := uint(bits.LeadingZeros32(ax))
+		x := ax << z
+		r := ((ay << z) >> 16 * uint32(iqLowRecip64[x>>25&63])) >> 24
+		if r > 63 {
+			t.Fatalf("ax %d ay %d: step %d", ax, ay, r)
+		}
+		got := float64(iqLowAtan64[r]) * (2 * math.Pi / (1 << 16))
+		if d := math.Abs(got - math.Atan2(float64(ay), float64(ax))); d > 0.02 {
+			t.Fatalf("ax %d ay %d: angle off by %.4f rad", ax, ay, d)
 		}
 	}
 }
