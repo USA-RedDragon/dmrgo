@@ -522,15 +522,7 @@ func (c *channelizer) useAlt(on bool) bool {
 	if c.compact {
 		return true
 	}
-	n := c.wide.n
-	from := max(n-int64(len(c.wide.buf)), 0)
-	c.ch.n = (from + int64(c.chDec) - 1) / int64(c.chDec)
-	clear(c.hist)
-	p := -2 * math.Pi * c.ncoHz * float64(from) / basebandRate
-	c.ncoRot = complex(float32(math.Cos(p)), float32(math.Sin(p)))
-	for i := from; i < n; i++ {
-		c.filter(c.wide.at(i), i)
-	}
+	c.refilter()
 	return true
 }
 
@@ -604,10 +596,18 @@ func (c *channelizer) tune(hz float64) {
 		return
 	}
 	c.ncoHz = hz
+	c.refilter()
+}
+
+// refilter filters again the wide samples that the ring still holds, with
+// the oscillator at the phase of the first of them.
+func (c *channelizer) refilter() {
 	n := c.wide.n
 	from := max(n-int64(len(c.wide.buf)), 0)
 	c.ch.n = (from + int64(c.chDec) - 1) / int64(c.chDec)
 	clear(c.hist)
+	p := -2 * math.Pi * c.ncoHz * float64(from) / basebandRate
+	c.ncoRot = complex(float32(math.Cos(p)), float32(math.Sin(p)))
 	for i := from; i < n; i++ {
 		c.filter(c.wide.at(i), i)
 	}
