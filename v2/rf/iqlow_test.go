@@ -48,11 +48,11 @@ func lowIQ(x []complex64, hz int) []complex64 {
 
 // TestLowIQReceiver checks that a LowIQReceiver in caller memory allocates
 // nothing in Init and WriteBaseband and, with the settings of the audio
-// Tier 0 core, decodes every voice frame of a BS outbound call at 1200 Hz
-// offset at 20 dB, at 9.6 and 12 kHz.
+// Tier 0 core, decodes every voice frame of a BS outbound call at 1400 Hz
+// offset at 30 dB, at 9.6 and 12 kHz.
 func TestLowIQReceiver(t *testing.T) {
 	slots, _ := benchStream(t, 3)
-	x := noisyBaseband(slots, 1200, 20, 1)
+	x := noisyBaseband(slots, 1400, 30, 1)
 	o := discOptions()
 	o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, 2
 	for _, hz := range []int{9600, 12000} {

@@ -136,8 +136,11 @@ func recip(e float32) float32 {
 // halfRun appends the phase step of each sample of x to buf, which has
 // room for them: twice the arctangent of the half angle N/D, with N the
 // cross product and D the magnitude plus the dot product of the sample
-// and the one before, as N D / (D² + 0.28 N²), which needs one
-// reciprocal and holds for every N and D.
+// and the one before. D is not negative, and the half angle is within a
+// quarter turn: N D / (D² + 0.28 N²) while |N| <= D, and ±π/2 less
+// N D / (N² + 0.28 D²) above, so that it needs one reciprocal. The first
+// form alone folds steps beyond a quarter turn back toward 0: a step of
+// 125° reads as 108°, and one of 179° as 4°.
 //
 //go:noinline
 func (r *iqLowRx) halfRun(x []complex64) {
@@ -151,8 +154,14 @@ func (r *iqLowRx) halfRun(x []complex64) {
 		d := yr*qr - yi*qi
 		c := yr*qi + yi*qr
 		dd := sqrtf(c*c+d*d) + d
-		e := dd*dd + 0.28*c*c + 1e-30
-		out[i] = int16(roundBits(c * dd * recip(e) * k))
+		n, e, h := c*dd, dd*dd+0.28*c*c+1e-30, float32(0)
+		if abs32(c) > dd {
+			n, e, h = -n, c*c+0.28*dd*dd, math.Pi/2
+			if c < 0 {
+				h = -h
+			}
+		}
+		out[i] = int16(roundBits((h + n*recip(e)) * k))
 		ar += d
 		ai += c
 		pow += yr*yr + yi*yi
