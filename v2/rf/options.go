@@ -283,6 +283,12 @@ type options struct {
 	// that run for all but the voice bursts B to F, which have no SYNC of
 	// their own.
 	CohNoNext, CohNoCross, CohCrossVoice bool
+	// IQCutAuto, on a coherent tier, uses the channel filter of IQTaps,
+	// IQKaiser and IQCutHz only while the last spectrum estimate that found
+	// a signal found it beyond IQTuneMaxHz, a stronger channel next to the
+	// wanted one, and chanFilterTaps otherwise. IQTaps must then be 0 or
+	// chanTaps, so that the delay of the channel stays the same.
+	IQCutAuto bool
 	// CohVerifyScan, when above 0, is the least share of the power of the
 	// ring samples that the waveform of a SYNC must explain, in the
 	// segments of the coherent SYNC scan, at the timing of the core, for

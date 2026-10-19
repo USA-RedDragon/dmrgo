@@ -438,6 +438,10 @@ func newEngine(cfg Config, opt options) *engine {
 	r.chz = newChannelizer(size, !r.opt.Coherent, dec, r.opt.CompactChannel, half)
 	if r.opt.Coherent && (r.opt.IQTaps > 0 || r.opt.IQKaiser > 0 || r.opt.IQCutHz > 0) {
 		r.chz.setFilter(r.opt.IQTaps, r.opt.IQKaiser, r.opt.IQCutHz)
+		if r.opt.IQCutAuto && len(r.chz.taps) == chanTaps {
+			r.chz.alt = r.chz.taps
+			r.chz.useAlt(false)
+		}
 	}
 	r.spec = newSpectrum(float64(cfg.BasebandHz))
 	r.search = newSyncSearch(r.opt.Coherent, dec)
@@ -635,10 +639,16 @@ func (r *engine) writeBaseband(x []complex64) []Burst {
 // channel filters, then searches or follows the stream.
 func (r *engine) push(x []complex64) {
 	for _, v := range x {
-		if !r.locked && r.spec.push(v) && r.spec.OK && math.Abs(r.spec.Hz-r.chz.ncoHz) > 50 && r.tuneOK(r.spec.Hz) {
-			r.chz.tune(r.spec.Hz)
-			r.search.xOK = false
-			r.searchAt, r.candAt = 0, -1
+		if !r.locked && r.spec.push(v) && r.spec.OK {
+			moved := r.chz.alt != nil && r.chz.useAlt(!r.tuneOK(r.spec.Hz))
+			if math.Abs(r.spec.Hz-r.chz.ncoHz) > 50 && r.tuneOK(r.spec.Hz) {
+				r.chz.tune(r.spec.Hz)
+				moved = true
+			}
+			if moved {
+				r.search.xOK = false
+				r.searchAt, r.candAt = 0, -1
+			}
 		}
 		r.chz.push(v)
 	}

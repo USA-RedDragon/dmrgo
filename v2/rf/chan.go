@@ -437,7 +437,10 @@ type channelizer struct {
 	// taps is the coherent channel filter, chanFilterTaps unless the
 	// IQTaps, IQKaiser or IQCutHz knobs set another, and hist holds twice
 	// its length of samples.
-	taps    []float32
+	taps []float32
+	// alt, with options.IQCutAuto, is the filter of the IQ knobs, which
+	// useAlt swaps with chanFilterTaps.
+	alt     []float32
 	hist    []complex64
 	head    int
 	ch      ring
@@ -502,6 +505,33 @@ func (c *channelizer) setFilter(n int, beta, cutHz float64) {
 	}
 	c.hist = make([]complex64, 2*n)
 	c.head, c.delayCh = 0, n/2
+}
+
+// useAlt selects the channel filter alt when on and chanFilterTaps
+// otherwise, filters again the wide samples that the ring still holds,
+// and reports whether the filter changed.
+func (c *channelizer) useAlt(on bool) bool {
+	t := chanFilterTaps[:]
+	if on {
+		t = c.alt
+	}
+	if &t[0] == &c.taps[0] {
+		return false
+	}
+	c.taps = t
+	if c.compact {
+		return true
+	}
+	n := c.wide.n
+	from := max(n-int64(len(c.wide.buf)), 0)
+	c.ch.n = (from + int64(c.chDec) - 1) / int64(c.chDec)
+	clear(c.hist)
+	p := -2 * math.Pi * c.ncoHz * float64(from) / basebandRate
+	c.ncoRot = complex(float32(math.Cos(p)), float32(math.Sin(p)))
+	for i := from; i < n; i++ {
+		c.filter(c.wide.at(i), i)
+	}
+	return true
 }
 
 // count returns the number of channel samples so far.
