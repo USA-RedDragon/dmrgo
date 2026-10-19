@@ -447,7 +447,7 @@ func newEngine(cfg Config, opt options) *engine {
 			if r.opt.DriftPenalty > 0 {
 				r.xt.pen = r.opt.DriftPenalty
 			}
-			r.xt.jump = r.opt.PhaseJump
+			r.xt.jump, r.xt.fade = r.opt.PhaseJump, r.opt.PhaseJumpFade
 			if r.opt.DriftSteps > 0 {
 				r.xt.drifts = r.opt.DriftSteps
 			}

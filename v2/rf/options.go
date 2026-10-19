@@ -198,6 +198,10 @@ type options struct {
 	// to any carrier phase after a symbol at this cost in nats, so that it
 	// can follow the phase through a deep fade.
 	PhaseJump float32
+	// PhaseJumpFade scales the PhaseJump cost after each symbol by the
+	// square of the signal amplitude there over its mean, so that a path
+	// jumps in a deep fade.
+	PhaseJumpFade bool
 	// CompactChannel holds the channel ring of the coherent tiers as 8-bit
 	// block floating point and keeps no copy of the wide input: a retune
 	// rotates the samples it holds instead of filtering the input again.

@@ -49,8 +49,12 @@ type xtrellis struct {
 	pen    float32
 	drifts int
 	// jump, when above 0, is the cost of a step from the best phase of a
-	// state to any other phase.
+	// state to any other phase. With fade, the cost of the step after
+	// symbol k is jump times the square of the lesser correlation of
+	// symbols k and k+1 over their mean, held in jk.
 	jump float32
+	fade bool
+	jk   []float32
 }
 
 // jacobian holds log(1+exp(-i/8)) for i from 0 to 96.
@@ -80,7 +84,7 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 		alpha: make([]float32, (maxSteps+1)*n), beta: make([]float32, n), next: make([]float32, n),
 		corr: make([]complex64, maxSteps*m.windows), top: make([]float32, maxSteps+1), beam: make([]float32, maxSteps),
 		lp: make([]float32, 4*maxSteps), slp: make([]float32, 8*m.d),
-		pen: driftPenalty, drifts: 1,
+		pen: driftPenalty, drifts: 1, jk: make([]float32, maxSteps),
 	}
 	if np != phaseStates {
 		t.row = 1
@@ -189,6 +193,7 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		}
 		t.top[0] = max(t.top[0], a)
 	}
+	var mean float32
 	for k := range steps {
 		seg := x[k*sps : (k+1)*sps]
 		corr := t.corr[k*m.windows : (k+1)*m.windows]
@@ -202,12 +207,19 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			corr[w] = c * rot0 * complex(scale, 0)
 			cm = max(cm, real(corr[w])*real(corr[w])+imag(corr[w])*imag(corr[w]))
 		}
-		t.beam[k] = exactBeam * max(1, float32(math.Sqrt(float64(cm))))
+		a := float32(math.Sqrt(float64(cm)))
+		t.beam[k] = exactBeam * max(1, a)
+		t.jk[k] = a
+		mean += a
+	}
+	t.jumpCosts(steps, mean)
+	for k := range steps {
 		alpha := t.alpha[k*n : (k+1)*n]
 		next := t.alpha[(k+1)*n : (k+2)*n]
 		for i := range next {
 			next[i] = negInf
 		}
+		corr := t.corr[k*m.windows : (k+1)*m.windows]
 		thr := t.top[k] - t.beam[k]
 		top := negInf
 		lp := t.lp[4*k : 4*k+4]
@@ -223,7 +235,7 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		}
 		t.top[k+1] = top
 		for range t.drifts {
-			t.drift(next, ns)
+			t.drift(next, ns, t.jk[k])
 		}
 	}
 	beta := t.beta
@@ -258,16 +270,38 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 		}
 		beta, t.next = t.next, beta
 		for range t.drifts {
-			t.drift(beta, ns)
+			t.drift(beta, ns, t.jk[max(k-1, 0)])
 		}
 	}
 	t.beta = beta
 }
 
+// jumpCosts sets jk from the correlation magnitudes that it holds for the
+// steps symbols, whose sum is sum, to the cost of the phase jump after
+// each symbol.
+func (t *xtrellis) jumpCosts(steps int, sum float32) {
+	jk := t.jk[:steps]
+	if !t.fade || sum <= 0 {
+		for k := range jk {
+			jk[k] = t.jump
+		}
+		return
+	}
+	mean := sum / float32(steps)
+	for k := range jk {
+		a := jk[k]
+		if k+1 < steps {
+			a = min(a, jk[k+1])
+		}
+		a /= mean
+		jk[k] = t.jump * a * a
+	}
+}
+
 // drift lets each state take the metric of its neighbor phases at a cost
 // of driftPenalty, so that a path follows a carrier phase that drifts by up
 // to one phase state per symbol.
-func (t *xtrellis) drift(m []float32, ns int) {
+func (t *xtrellis) drift(m []float32, ns int, jump float32) {
 	for s := range ns {
 		b := m[s*t.np : (s+1)*t.np]
 		first, prev := b[0], b[t.np-1]
@@ -280,12 +314,12 @@ func (t *xtrellis) drift(m []float32, ns int) {
 			b[p] = max(cur, max(prev, nxt)-t.pen)
 			prev = cur
 		}
-		if t.jump > 0 {
+		if jump > 0 {
 			top := negInf
 			for _, v := range b {
 				top = max(top, v)
 			}
-			top -= t.jump
+			top -= jump
 			for p, v := range b {
 				b[p] = max(v, top)
 			}
