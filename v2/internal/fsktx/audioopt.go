@@ -19,6 +19,13 @@ const (
 	aoptH    = optLPN / 2
 )
 
+// Extra weight of the audio optimizer, in dB, on the power from aoptFarHz
+// from the carrier, which takes in the alternate channel.
+const (
+	aoptFarHz = 17000.0
+	aoptFarDb = 20.0
+)
+
 // aoptimizer is the optimizer of IQConfig.Shape for audio: it adds a
 // correction to the deviation that lowers the power of the FM signal of
 // the radio outside the channel, weighted by Emission Mask D. The
@@ -103,7 +110,11 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 			fk -= radioHz
 		}
 		if a := math.Abs(fk); a > optFromHz {
-			o.w2[k] = math.Pow(10, optMaskAttn(a)/10)
+			db := optMaskAttn(a)
+			if a > aoptFarHz {
+				db += aoptFarDb
+			}
+			o.w2[k] = math.Pow(10, db/10)
 		}
 		o.taper[k] = 0.5 - 0.5*math.Cos(2*math.Pi*(float64(k)+0.5)/float64(n))
 	}
