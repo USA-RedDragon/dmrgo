@@ -56,12 +56,11 @@ func (p *predictor) process(buf []float64, s int8) {
 		ft := predFeatures(p.x)
 		a := p.acc[:predK]
 		for t := range a {
-			kr := &shapeKern[t]
-			var v float64
-			for k, c := range ft {
-				v += c * kr[k]
-			}
-			a[t] += v
+			k := &shapeKern[t]
+			a[t] += ((ft[0]*k[0] + ft[1]*k[1]) + (ft[2]*k[2] + ft[3]*k[3])) +
+				((ft[4]*k[4] + ft[5]*k[5]) + (ft[6]*k[6] + ft[7]*k[7])) +
+				((ft[8]*k[8] + ft[9]*k[9]) + (ft[10]*k[10] + ft[11]*k[11])) +
+				((ft[12]*k[12] + ft[13]*k[13]) + ft[14]*k[14])
 		}
 	}
 	p.nSym++
