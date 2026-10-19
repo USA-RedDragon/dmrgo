@@ -149,6 +149,9 @@ type AudioConfig struct {
 	// symbol at the symbol times, through the zero-order hold of a DAC at
 	// Hz, which the pulse inverts.
 	Exact bool
+	// ExactPow, from 0 to 1, makes Exact invert only the response of the
+	// hold raised to ExactPow; 0 inverts all of it.
+	ExactPow float64
 	// Pulse sets the pulse of Tier1 and Tier2; its zero value is the
 	// pulse of the tier.
 	Pulse PulseConfig
@@ -288,7 +291,12 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		pu := pulseOf(cfg.Tier, cfg.Pulse)
 		if cfg.Exact {
 			pu.nyquist()
-			pu.invert(float64(cfg.Hz), holdChain(float64(cfg.Hz)))
+			chain := holdChain(float64(cfg.Hz))
+			if g := cfg.ExactPow; g > 0 && g < 1 {
+				h := chain
+				chain = func(f float64) float64 { return math.Pow(h(f), g) }
+			}
+			pu.invert(float64(cfg.Hz), chain)
 		}
 		k, err := newPoly(pu, cfg.Hz, cfg.Tier != Tier2)
 		if err != nil {
