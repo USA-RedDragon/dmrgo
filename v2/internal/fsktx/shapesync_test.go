@@ -40,7 +40,7 @@ func TestAudioShapeSync(t *testing.T) {
 	if n := diff(shapeSyncRun(t, 0, 0), shapeSyncRun(t, 0, age)); n == 0 {
 		t.Fatal("without ShapeSync an aged Audio gives the same codes; the test has no power")
 	}
-	for _, s := range []int{2, 3} {
+	for _, s := range []int{2, 3, 4} {
 		if n := diff(shapeSyncRun(t, s, 0), shapeSyncRun(t, s, age)); n != 0 {
 			t.Fatalf("ShapeSync %d: %d codes differ between a fresh and an aged Audio", s, n)
 		}
