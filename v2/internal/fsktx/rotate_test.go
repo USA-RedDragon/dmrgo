@@ -1,6 +1,7 @@
 package fsktx
 
 import (
+	"fmt"
 	"math/rand/v2"
 	"testing"
 )
@@ -65,21 +66,23 @@ func absInt(x int) int {
 }
 
 func BenchmarkRotate(b *testing.B) {
-	for _, rot := range []bool{false, true} {
-		for _, tier := range []Tier{Tier1, Tier2} {
-			q, err := NewIQ(IQConfig{Rate: 2400000, Tier: tier, Exact: true, Rotate: rot})
-			if err != nil {
-				b.Fatal(err)
-			}
-			q.Key(true)
-			var dst []int16
-			name := map[bool]string{false: "old", true: "rot"}[rot] + map[Tier]string{Tier1: "1", Tier2: "2"}[tier]
-			b.Run(name, func(b *testing.B) {
-				for i := 0; b.Loop(); i++ {
-					dst = q.AppendS16(dst[:0], int8(2*(i&3)-3))
+	for _, rate := range []int{48000, 96000, 2400000} {
+		for _, rot := range []bool{false, true} {
+			for _, tier := range []Tier{Tier1, Tier2} {
+				q, err := NewIQ(IQConfig{Rate: rate, Tier: tier, Exact: true, Rotate: rot})
+				if err != nil {
+					b.Fatal(err)
 				}
-				b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N)/500, "ns/sample")
-			})
+				q.Key(true)
+				var dst []int16
+				name := fmt.Sprint(rate, map[bool]string{false: "old", true: "rot"}[rot], map[Tier]string{Tier1: "1", Tier2: "2"}[tier])
+				b.Run(name, func(b *testing.B) {
+					for i := 0; b.Loop(); i++ {
+						dst = q.AppendS16(dst[:0], int8(2*(i&3)-3))
+					}
+					b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N)*4800/1e6, "ms/s")
+				})
+			}
 		}
 	}
 }

@@ -399,9 +399,9 @@ type IQConfig struct {
 	// up to maxDelay, so the carrier runs longer before the first symbol.
 	Delay int
 	// Rotate makes Tier1 and Tier2 turn the phase into I/Q by a complex
-	// rotation at each output sample, with one sine and cosine of a 64-bit
-	// phase for each shaper sample, in place of a table or a sine and
-	// cosine at each output sample. The phase is the same sum of steps.
+	// rotation at each output sample, with the sine and cosine of a 64-bit
+	// phase once per symbol, in place of a table or a sine and cosine at
+	// each output sample. The phase is the same sum of steps.
 	Rotate bool
 }
 
@@ -651,33 +651,46 @@ func (q *IQ) symbol(s int8) int {
 }
 
 // rotate writes the I/Q of the n shaper samples in buf to out by a complex
-// rotation and returns the number of values.
+// rotation and returns the number of values. The carrier phasor z and the
+// step r start from a sine and cosine once per call and when the carrier
+// comes back on; between shaper samples r takes the change of slope by a
+// small-angle rotation, and the frequency step d is one too.
 func (q *IQ) rotate(n int) int {
 	j := 0
 	l, m := float64(q.l), float64(q.m)
+	var zr, zi, rr, ri, last float64
+	seeded := false
 	for _, f := range q.buf[:n] {
 		w := f + q.off
 		dv := (w - q.prev) / l
-		v0 := q.prev + dv*float64(q.acc)
+		a0 := float64(q.acc)
+		v0 := q.prev + dv*a0
 		dw := dv * m
 		c := (q.l - q.acc + q.m - 1) / q.m
 		q.acc += c*q.m - q.l
 		q.prev = w
 		out := q.out[j : j+2*c]
 		j += 2 * c
-		steady := q.on && q.env >= q.ramp
 		if !q.on && q.env <= 0 {
 			clear(out)
+			seeded = false
 		} else {
-			zi, zr := math.Sincos(float64(q.ph>>11) * (2 * math.Pi / (1 << 53)))
-			ri, rr := math.Sincos(v0 * q.rad)
-			di, dr := math.Sincos(dw * q.rad)
-			if steady {
-				zr, zi = zr*q.amp, zi*q.amp
+			if seeded {
+				si, co := smallRot((dv - last) * a0 * q.rad)
+				rr, ri = rr*co-ri*si, rr*si+ri*co
+			} else {
+				zi, zr = math.Sincos(float64(q.ph>>11) * (2 * math.Pi / (1 << 53)))
+				ri, rr = math.Sincos(v0 * q.rad)
+				seeded = true
+			}
+			last = dv
+			di, dr := smallRot(dw * q.rad)
+			if q.on && q.env >= q.ramp {
+				a := q.amp
 				for k := 0; k+1 < len(out); k += 2 {
 					zr, zi = zr*rr-zi*ri, zr*ri+zi*rr
 					rr, ri = rr*dr-ri*di, rr*di+ri*dr
-					out[k], out[k+1] = round16(zr), round16(zi)
+					out[k], out[k+1] = round16(zr*a), round16(zi*a)
 				}
 			} else {
 				for k := 0; k+1 < len(out); k += 2 {
@@ -703,6 +716,15 @@ func (q *IQ) rotate(n int) int {
 		q.ph += uint64(x*(1<<62)) << 2
 	}
 	return j
+}
+
+// smallRot returns the sine and cosine of x by their Taylor series to the
+// 9th and 8th power; for |x| up to 0.5 the error is under 3e-10.
+func smallRot(x float64) (s, c float64) {
+	x2 := x * x
+	s = x * (1 - x2/6*(1-x2/20*(1-x2/42*(1-x2/72))))
+	c = 1 - x2/2*(1-x2/12*(1-x2/30*(1-x2/56)))
+	return s, c
 }
 
 func (q *IQ) sample(hz float64) (i, qd int16) {
