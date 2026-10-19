@@ -173,8 +173,8 @@ type AudioConfig struct {
 	Corr int
 	// CorrHiHz is the top of the band pass of Corr; 0 means none.
 	CorrHiHz float64
-	// CorrTaps is the length of the band pass of Corr, odd, under 512; 0
-	// means 161 at 48000 Hz, scaled by Hz.
+	// CorrTaps is the length of the band pass of Corr at 48000 Hz, odd,
+	// scaled by Hz to at most 511; 0 means 161.
 	CorrTaps int
 }
 
@@ -299,12 +299,10 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			}
 			if t != nil {
 				taps := cfg.CorrTaps
-				if taps <= 0 {
-					taps = (optLPN*cfg.Hz/48000)/2*2 + 1
-				}
-				if taps%2 == 0 || taps >= len(a.cc) {
+				if taps <= 0 || taps%2 == 0 {
 					taps = optLPN
 				}
+				taps = min((taps*cfg.Hz/48000)/2*2+1, len(a.cc)-1)
 				a.corr, a.corrC, a.corrK = t, cfg.Corr, skip
 				a.cbp = bandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz), taps)
 			}
