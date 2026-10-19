@@ -461,6 +461,7 @@ func newEngine(cfg Config, opt options) *engine {
 		r.rep = newRepairer(r.opt.BPTCOSD, r.opt.GridBPTC)
 		if r.rep != nil {
 			r.rep.retryUnchecked = r.opt.DataUnchecked
+			r.rep.soft.setFast(&r.opt)
 		}
 		r.tk.repair = r.repairEntry
 		r.tk.elc = r.rep.embeddedLC

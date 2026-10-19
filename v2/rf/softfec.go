@@ -186,6 +186,22 @@ func softNibbleTables(tab *[softTabLen]int32, l []int32) {
 	}
 }
 
+// softByteTables fills tab[256b+m] with the sum of l[8b+i] over the set
+// bits i of m, for the tables that cover l.
+func softByteTables(tab *[softParWords * 8 * 256]int32, l []int32) {
+	for b := 0; b*8 < len(l); b++ {
+		t := (*[256]int32)(tab[256*b:])
+		t[0] = 0
+		for m := 1; m < 256; m++ {
+			if j := b*8 + bits.TrailingZeros(uint(m)); j < len(l) {
+				t[m] = t[m&(m-1)] + l[j]
+			} else {
+				t[m] = t[m&(m-1)]
+			}
+		}
+	}
+}
+
 // gather copies the LLRs of the code bits into l and returns the hard
 // decision codeword.
 func (id softSmallID) gather(llr []int16, l *[softSmallMaxN]int32) uint32 {
@@ -376,7 +392,21 @@ type softOSDScratch struct {
 	// the 196 information bits.
 	chase [softChaseMax]int16
 	bits  [softTrellisBits]unpacked.Bit
+	// fast selects reprocessFast, and btab, when not nil, holds byte
+	// tables of the non-basis bits for it.
+	fast bool
+	btab *[softParWords * 8 * 256]int32
+	// par holds the non-basis code bits in reliability order, prow the
+	// work rows and phard the hard decisions on them, bit p for par[p].
+	par   [softOSDMaxN]int16
+	prow  [softOSDMaxK][softParWords]uint64
+	phard [softParWords]uint64
+	pcand [4][softParWords]uint64
 }
+
+// softParWords is the number of words that hold the non-basis bits of a
+// softOSDCode codeword.
+const softParWords = 2
 
 // first returns the index of the first candidate in the list that s.accept
 // accepts, and false with index 0 when s.accept is nil or accepts none.
@@ -430,9 +460,146 @@ func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, bound int32) int32 {
 func (id softOSDID) osd(s *softOSDScratch, order, window, listMax int) {
 	n := softOSDCodes[id].n
 	s.prepare(n)
+	if s.fast {
+		id.basis(s)
+		id.reprocessFast(s, order, window, listMax)
+		return
+	}
 	softNibbleTables(s.tab, s.mag[:n])
 	id.basis(s)
 	id.reprocess(s, order, window, listMax)
+}
+
+// reprocessFast scores the same patterns as reprocess and keeps the same
+// list. A pattern flips its basis bits and so costs their magnitudes, and
+// only the non-basis bits need the tables: it scores those, packed into
+// softParWords words with the most reliable first.
+func (id softOSDID) reprocessFast(s *softOSDScratch, order, window, listMax int) {
+	c := &softOSDCodes[id]
+	k, np := c.k, c.n-c.k
+	s.nw = (c.n + 63) / 64
+	var basis [softOSDWords]uint64
+	for i := range k {
+		j := s.pivot[i]
+		basis[j>>6] |= 1 << (j & 63)
+	}
+	p := 0
+	var pm [softOSDMaxN]int32
+	for _, j := range s.order[:c.n] {
+		if basis[j>>6]>>(j&63)&1 == 0 {
+			s.par[p], pm[p] = j, s.mag[j]
+			p++
+		}
+	}
+	if s.btab != nil {
+		softByteTables(s.btab, pm[:np])
+	} else {
+		softNibbleTables(s.tab, pm[:np])
+	}
+	s.phard = [softParWords]uint64{}
+	for q, j := range s.par[:np] {
+		if softBit(&s.hard, j) {
+			s.phard[q>>6] |= 1 << (q & 63)
+		}
+	}
+	for i := range k {
+		w := &s.work[i]
+		var r [softParWords]uint64
+		for q, j := range s.par[:np] {
+			r[q>>6] |= (w[j>>6] >> (j & 63) & 1) << (q & 63)
+		}
+		s.prow[i] = r
+	}
+	c0 := &s.cand[0]
+	*c0 = [softOSDWords]uint64{}
+	p0 := &s.pcand[0]
+	*p0 = [softParWords]uint64{}
+	for i := range k {
+		if j := s.pivot[i]; s.hard[j>>6]>>(j&63)&1 != 0 {
+			s.flip(c0, c0, i)
+			p0[0] ^= s.prow[i][0]
+			p0[1] ^= s.prow[i][1]
+		}
+	}
+	s.list.reset(listMax)
+	s.pass, s.floor = math.MaxInt32, 0
+	for j := range c.n {
+		s.floor += min(0, s.l[j])
+	}
+	s.tryFast(p0, 0, -1, -1, -1)
+	m := &s.pmag
+	for i := range k {
+		m[i] = s.mag[s.pivot[i]]
+	}
+	pi, pj, px := &s.pcand[1], &s.pcand[2], &s.pcand[3]
+	for i := k - 1; order >= 1 && i >= 0 && m[i] < s.thr(); i-- {
+		s.pflip(pi, p0, i)
+		s.tryFast(pi, m[i], i, -1, -1)
+	}
+	for j := k - 1; order >= 2 && j >= 1 && m[j]+m[j-1] < s.thr(); j-- {
+		s.pflip(pj, p0, j)
+		for i := j - 1; i >= 0 && m[i]+m[j] < s.thr(); i-- {
+			s.pflip(pi, pj, i)
+			s.tryFast(pi, m[i]+m[j], j, i, -1)
+		}
+	}
+	lo := max(0, k-window)
+	for a := k - 1; order >= 3 && a >= lo+2 && m[a]+m[a-1]+m[a-2] < s.thr(); a-- {
+		s.pflip(pj, p0, a)
+		for b := a - 1; b >= lo+1 && m[a]+m[b]+m[b-1] < s.thr(); b-- {
+			s.pflip(pi, pj, b)
+			for x := b - 1; x >= lo && m[a]+m[b]+m[x] < s.thr(); x-- {
+				s.pflip(px, pi, x)
+				s.tryFast(px, m[a]+m[b]+m[x], a, b, x)
+			}
+		}
+	}
+}
+
+// pflip sets dst to src with packed row i added.
+func (s *softOSDScratch) pflip(dst, src *[softParWords]uint64, i int) {
+	dst[0], dst[1] = src[0]^s.prow[i][0], src[1]^s.prow[i][1]
+}
+
+// tryFast scores the pattern of basis rows a, b and x (-1 for none), whose
+// non-basis bits are pc and whose basis bits cost flips, as try scores its
+// codeword.
+func (s *softOSDScratch) tryFast(pc *[softParWords]uint64, flips int32, a, b, x int) {
+	bound := int32(math.MaxInt32)
+	if s.list.n == s.list.max {
+		bound = s.list.cost[s.list.n-1]
+	}
+	sum := s.floor + flips
+	if bt := s.btab; bt != nil {
+		for w := 0; w < softParWords && sum < bound; w++ {
+			t := bt[2048*w:]
+			for i, e := 0, pc[w]^s.phard[w]; e != 0; i, e = i+256, e>>8 {
+				sum += t[i+int(e&0xff)]
+			}
+		}
+	}
+	for w := 0; s.btab == nil && w < softParWords && sum < bound; w++ {
+		t := s.tab[256*w:]
+		for i, e := 0, pc[w]^s.phard[w]; e != 0; i, e = i+16, e>>4 {
+			sum += t[i+int(e&0xf)]
+		}
+	}
+	if s.list.n == s.list.max && sum >= bound {
+		s.list.scored++
+		return
+	}
+	cw := &s.cand[1]
+	*cw = s.cand[0]
+	for _, r := range [3]int{a, b, x} {
+		if r >= 0 {
+			for y := range s.nw {
+				cw[y] ^= s.work[r][y]
+			}
+		}
+	}
+	if s.list.add(sum, cw) && s.accept != nil && sum < s.pass && s.accept(cw) {
+		s.pass = sum
+	}
 }
 
 // basis sorts the code bits by reliability and reduces the generator rows
@@ -654,6 +821,14 @@ type softDecoder struct {
 	// acceptShortLC are the checks of the OSD codewords.
 	check                     func([12]byte) bool
 	acceptBPTC, acceptShortLC func(cw *[softOSDWords]uint64) bool
+}
+
+// setFast sets the OSDFast and OSDBytes settings of opt.
+func (d *softDecoder) setFast(opt *options) {
+	d.osd.fast = opt.OSDFast
+	if opt.OSDFast && opt.OSDBytes {
+		d.osd.btab = new([softParWords * 8 * 256]int32)
+	}
 }
 
 // newSoftDecoder returns a decoder over the code tables that the library

@@ -788,3 +788,49 @@ func TestSoftAMBEScramble(t *testing.T) {
 		}
 	}
 }
+
+// TestSoftOSDFast checks that the OSDFast reprocessing keeps the same list,
+// costs and scored count as the reference one, with nibble and byte tables,
+// on noisy codewords of every OSD code.
+func TestSoftOSDFast(t *testing.T) {
+	t.Parallel()
+	rng := rand.New(rand.NewPCG(5, 6))
+	ref, fast := newSoftDecoder(), newSoftDecoder()
+	for _, id := range []softOSDID{softBPTCCode, softShortLCCode, softEmbLCCode} {
+		c := &softOSDCodes[id]
+		for trial := range 60 {
+			var cw [softOSDWords]uint64
+			for i := range c.k {
+				if rng.IntN(2) == 1 {
+					for x := range cw {
+						cw[x] ^= c.rows[i][x]
+					}
+				}
+			}
+			sigma := 0.6 + 0.02*float64(trial)
+			for j := range c.n {
+				v := 1.0
+				if softBit(&cw, j) {
+					v = -1
+				}
+				l := int32((v + rng.NormFloat64()*sigma) * 40)
+				ref.osd.l[j], fast.osd.l[j] = l, l
+			}
+			order, window := 1+trial%3, []int{0, 12, 40}[trial%3]
+			ref.osd.accept, fast.osd.accept = nil, nil
+			id.osd(&ref.osd, order, window, softListMax)
+			for _, bytes := range []bool{false, true} {
+				fast.setFast(&options{OSDFast: true, OSDBytes: bytes})
+				id.osd(&fast.osd, order, window, softListMax)
+				a, b := &ref.osd.list, &fast.osd.list
+				same := a.n == b.n && a.scored == b.scored && a.cost == b.cost
+				for i := range a.n {
+					same = same && [2]uint64(a.cw[i][:2]) == [2]uint64(b.cw[i][:2]) && (c.n <= 128 || a.cw[i] == b.cw[i])
+				}
+				if !same {
+					t.Fatalf("code %d trial %d bytes %v: lists differ (n %d %d, scored %d %d) %x\n%x", id, trial, bytes, a.n, b.n, a.scored, b.scored, a.cw, b.cw)
+				}
+			}
+		}
+	}
+}
