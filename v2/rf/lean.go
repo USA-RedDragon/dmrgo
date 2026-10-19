@@ -1410,8 +1410,8 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 
 // signsMatch2 reports for the signs a and b of the last syncSymbols
 // symbols whether they differ from the voice or the data SYNC of a source
-// in at most signMiss symbols. A byte table counts the bits: TinyGo
-// counts the bits of a word in 11 instructions on the M4. It is not
+// in at most signMiss symbols. syncNib counts the bits: TinyGo counts the
+// bits of a word in 11 instructions on the M4. It is not
 // inlined, so that its registers are not on the stack of symbol while a
 // slot decodes.
 //
@@ -1422,18 +1422,39 @@ func (r *leanCore) signsMatch2(a, b uint32) (bool, bool) {
 
 // signsMatch is signsMatch2 for the callers that inline it.
 func (r *leanCore) signsMatch(a, b uint32) (bool, bool) {
-	// A distance m matches when it is at most signMiss or at least
-	// syncSymbols-signMiss, so m-signMiss-1 wraps or reaches span.
-	lo := uint32(r.signMiss) + 1
-	span := syncSymbols + 1 - 2*lo
-	var ma, mb bool
-	for i := range r.sources {
-		p := syncSigns[i]
-		x, y := a^p, b^p
-		ma = ma || uint32(ones8[x&0xff]+ones8[x>>8&0xff]+ones8[x>>16&0xff])-lo >= span
-		mb = mb || uint32(ones8[y&0xff]+ones8[y>>8&0xff]+ones8[y>>16&0xff])-lo >= span
-	}
-	return ma, mb
+	lo := (uint32(r.signMiss) + 1) * 0x01010101
+	hi := (syncSymbols - uint32(r.signMiss)) * 0x01010101
+	m := uint32(0x80808080) >> (32 - 8*uint32(r.sources))
+	return syncHits(syncDists(a), lo, hi)&m != 0, syncHits(syncDists(b), lo, hi)&m != 0
+}
+
+// syncDists returns the number of the last syncSymbols signs s that
+// differ from the voice SYNC of source i in byte i, by syncNib.
+func syncDists(s uint32) uint32 {
+	return syncNib[0][s&15] + syncNib[1][s>>4&15] + syncNib[2][s>>8&15] +
+		syncNib[3][s>>12&15] + syncNib[4][s>>16&15] + syncNib[5][s>>20&15]
+}
+
+// syncHits returns the distances c of syncDists with the top bit of byte
+// i set where distance i is below lo or at least hi, which hold their
+// bound in each byte. The distances are at most syncSymbols, so that the
+// bytes of c with the top bit set do not borrow.
+func syncHits(c, lo, hi uint32) uint32 {
+	c |= 0x80808080
+	return (^(c - lo) | (c - hi)) & 0x80808080
+}
+
+// syncNib holds, for the nibble j of the signs of a SYNC and each value of
+// it, the number of its bits that differ from the voice SYNC of source i
+// in byte i: the sum over the nibbles counts the distances to the four
+// sources at once.
+var syncNib = [syncSymbols / 4][16]uint32{
+	{0x02000101, 0x03010002, 0x03010200, 0x04020101, 0x01010202, 0x02020103, 0x02020301, 0x03030202, 0x01010202, 0x02020103, 0x02020301, 0x03030202, 0x00020303, 0x01030204, 0x01030402, 0x02040303},
+	{0x03030203, 0x02040102, 0x04020302, 0x03030201, 0x02020304, 0x01030203, 0x03010403, 0x02020302, 0x02020102, 0x01030001, 0x03010201, 0x02020100, 0x01010203, 0x00020102, 0x02000302, 0x01010201},
+	{0x02020301, 0x01030202, 0x01010202, 0x00020103, 0x03030200, 0x02040101, 0x02020101, 0x01030002, 0x03010402, 0x02020303, 0x02000303, 0x01010204, 0x04020301, 0x03030202, 0x03010202, 0x02020103},
+	{0x03010302, 0x02020203, 0x02020401, 0x01030302, 0x02020201, 0x01030102, 0x01030300, 0x00040201, 0x04000203, 0x03010104, 0x03010302, 0x02020203, 0x03010102, 0x02020003, 0x02020201, 0x01030102},
+	{0x00030202, 0x01040103, 0x01020303, 0x02030204, 0x01020301, 0x02030202, 0x02010402, 0x03020303, 0x01020101, 0x02030002, 0x02010202, 0x03020103, 0x02010200, 0x03020101, 0x03000301, 0x04010202},
+	{0x02030103, 0x01020202, 0x03040202, 0x02030301, 0x03020204, 0x02010303, 0x04030303, 0x03020402, 0x01020002, 0x00010101, 0x02030101, 0x01020200, 0x02010103, 0x01000202, 0x03020202, 0x02010301},
 }
 
 // searchSym tests whether the last symbols, whose signs match a SYNC, end
@@ -1627,9 +1648,9 @@ func (r *leanCore) restoreSync(saved *[syncSymbols]int8) {
 // signsSource returns the source whose SYNC signs, voice or inverted for
 // data, signs matches as signsMatch does.
 func (r *leanCore) signsSource(signs uint32) (src int, data bool) {
+	c := syncDists(signs)
 	for i := range int(r.sources) {
-		x := signs ^ syncSigns[i]
-		m := ones8[x&0xff] + ones8[x>>8&0xff] + ones8[x>>16&0xff]
+		m := uint8(c >> (8 * i))
 		switch {
 		case m <= r.signMiss:
 			return i, false
