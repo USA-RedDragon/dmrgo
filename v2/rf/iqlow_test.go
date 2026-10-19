@@ -105,3 +105,32 @@ func TestLowIQConfig(t *testing.T) {
 		t.Errorf("default Hz: %v", err)
 	}
 }
+
+// TestIQLowHalfRun checks that iqLowRx.halfRun gives the frequency of a
+// tone within 2 units of iqUnitsPerHz and the error of the rounding of the
+// input, at frequencies up to 0.49 of the rate, at any phase and at
+// amplitudes from 64 to full scale.
+func TestIQLowHalfRun(t *testing.T) {
+	var r iqLowRx
+	if err := r.init(9600, func(*Burst) {}, nil); err != nil {
+		t.Fatal(err)
+	}
+	var x [iqLowBuf]uint32
+	for hz := -4700.0; hz <= 4700; hz += 37 {
+		for _, a := range []float64{64, 1000, 32767} {
+			for p := 0.0; p < 6.3; p += 0.7 {
+				for i := range x {
+					v := p + 2*math.Pi*hz/9600*float64(i)
+					x[i] = uint32(uint16(int16(math.Round(a*math.Cos(v))))) | uint32(int16(math.Round(a*math.Sin(v))))<<16
+				}
+				r.q, r.n = 0, 0
+				r.halfRun(x[:])
+				for i, v := range r.buf[1:] {
+					if d := float64(v) - hz*iqUnitsPerHz; math.Abs(d) > 2+6000/a {
+						t.Fatalf("%v Hz, amplitude %v, phase %v: sample %d is %d", hz, a, p, i+1, v)
+					}
+				}
+			}
+		}
+	}
+}
