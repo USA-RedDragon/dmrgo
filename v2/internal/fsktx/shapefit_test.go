@@ -149,7 +149,8 @@ func TestShapeKernFit(t *testing.T) {
 	h := optLPN / 2
 	var out [predK][predF]float64
 	for k := range predF {
-		for tp := range predK {
+		for o := range predK {
+			tp := o + predLo
 			v := 0.0
 			if i := tp - fitLo; i >= 0 && i < fitTaps {
 				v = kern[k][i]
@@ -159,7 +160,7 @@ func TestShapeKernFit(t *testing.T) {
 					v -= l * kern[k][i]
 				}
 			}
-			out[tp][k] = v
+			out[o][k] = v
 		}
 	}
 	var b bytes.Buffer

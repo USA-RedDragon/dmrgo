@@ -4,16 +4,17 @@ import "math"
 
 // Sizes of the out-of-band phase predictor of IQConfig.ShapePred, in
 // shaper samples at iqShaperHz: each symbol adds predF products of its
-// symbol and the next three, each times a kernel of predK samples from the
-// start of the symbol. The output lags by predDelay samples so that every
-// kernel of a sample is in.
+// symbol and the next three, each times a kernel of predK samples from
+// predLo samples after the start of the symbol. With predLo of at least
+// predSpan symbols the kernels of a sample are in before the sample, so
+// the predictor adds no lag.
 const (
-	predF     = 15
-	predK     = 320
-	predRing  = 64
-	predDelay = 30
-	predSpan  = 3
-	predSPS   = iqShaperHz / SymbolRate
+	predF    = 15
+	predLo   = 60
+	predK    = 200
+	predRing = 64
+	predSpan = 3
+	predSPS  = iqShaperHz / SymbolRate
 )
 
 // predFeatures returns the products of the symbol x[0] and the next three
@@ -34,16 +35,16 @@ func predFeatures(x [predSpan + 1]float64) [predF]float64 {
 // the optimizer of IQConfig.Shape (shapefit_test.go). The kernels have
 // nothing below 3 kHz, as the optimizer's correction.
 type predictor struct {
-	acc     [predK + predSPS]float64
-	f       [predRing]float64
-	x       [predSpan + 1]float64
-	nIn     int
-	nSym    int
-	prevAcc float64
+	acc  [predK + predSPS]float64
+	psi  [predRing]float64
+	x    [predSpan + 1]float64
+	nIn  int
+	nSym int
+	prev float64
 }
 
-// process takes the symbol s and its shaped deviation in buf and replaces
-// it with the delayed corrected deviation.
+// process takes the symbol s and its shaped deviation in buf and adds the
+// correction to it.
 func (p *predictor) process(buf []float64, s int8) {
 	copy(p.x[:], p.x[1:])
 	switch s {
@@ -62,22 +63,20 @@ func (p *predictor) process(buf []float64, s int8) {
 				((ft[8]*k[8] + ft[9]*k[9]) + (ft[10]*k[10] + ft[11]*k[11])) +
 				((ft[12]*k[12] + ft[13]*k[13]) + ft[14]*k[14])
 		}
-	}
-	p.nSym++
-	for i, v := range buf {
-		p.f[p.nIn&(predRing-1)] = v
-		p.nIn++
-		m := p.nIn - 1 - predDelay
-		if m < 0 || i >= predSPS {
-			buf[i] = 0
-			continue
+		m := (p.nSym-predSpan)*predSPS + predLo
+		for i, v := range p.acc[:predSPS] {
+			p.psi[(m+i)&(predRing-1)] = v
 		}
-		a := p.acc[i]
-		buf[i] = p.f[m&(predRing-1)] + (a-p.prevAcc)*iqShaperHz/(2*math.Pi)
-		p.prevAcc = a
-	}
-	if p.nSym > predSpan {
 		copy(p.acc[:], p.acc[predSPS:])
 		clear(p.acc[predK:])
+	}
+	p.nSym++
+	for i := range buf {
+		j := p.nIn & (predRing - 1)
+		v := p.psi[j]
+		p.psi[j] = 0
+		p.nIn++
+		buf[i] += (v - p.prev) * iqShaperHz / (2 * math.Pi)
+		p.prev = v
 	}
 }

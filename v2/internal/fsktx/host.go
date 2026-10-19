@@ -348,7 +348,7 @@ type IQConfig struct {
 	Shape int
 	// ShapePred adds to Tier1 and Tier2 a fixed phase correction above
 	// 3 kHz, a polynomial function of the symbols fitted to that of Shape;
-	// it adds 4 symbols to the lag of the output. Shape wins over it.
+	// it adds nothing to the lag. Shape wins over it.
 	ShapePred bool
 }
 
