@@ -182,6 +182,22 @@ type options struct {
 	// the core: the coherent stage only fits the carrier and timing on
 	// the others.
 	CohVoiceOnly bool
+	// TwoPass detects each stream of a coherent tier twice: a first pass
+	// measures the anchors and the carrier of up to TwoPassSlots slots (0
+	// means twoPassSlots), and a second pass detects them again with the
+	// timing fit to all of its anchors, the carrier of a line fit to the
+	// carrier estimates of the first pass over TwoPassSmooth slots on each
+	// side (0 means all of them), and the levels of TwoPassLevels: 0 the
+	// mean of the anchors over the same slots, 1 those of the first pass,
+	// 2 those of the anchors on each side interpolated. TwoPassKeepTiming
+	// and TwoPassKeepCarrier keep the timing at the end of the first pass
+	// and the carrier of the first pass in each slot instead.
+	TwoPass            bool
+	TwoPassSlots       int
+	TwoPassSmooth      int
+	TwoPassLevels      int
+	TwoPassKeepTiming  bool
+	TwoPassKeepCarrier bool
 	// CohSignMiss is the most SYNC symbols whose sign may miss for a
 	// candidate of the search that the coherent stage verifies; 0 means
 	// leanExtSignMiss.

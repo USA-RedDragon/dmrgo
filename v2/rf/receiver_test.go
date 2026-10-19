@@ -346,3 +346,34 @@ func TestReceiverDirectModeTiming(t *testing.T) {
 		})
 	}
 }
+
+// TestReceiverTwoPass receives the direct mode calls of
+// TestReceiverDirectModeTiming at 5 dB C/N from a transmitter whose clock
+// is 200 ppm fast with options.TwoPass, and checks that it recovers C0 and
+// C1 of every voice frame, and more frames whole than Tier3 does: the
+// second pass detects the first superframe of each call with the period
+// that the anchors of the whole call show.
+func TestReceiverTwoPass(t *testing.T) {
+	t.Parallel()
+	fm, env, truth := directCalls(t, 4)
+	f, e := resampleFM(fm, env, 200)
+	o := tierOptions(Tier3)
+	o.TwoPass = true
+	var one, two, total int
+	for seed := range uint64(6) {
+		x := noisyFM(f, e, 1400, 5, 40+seed)
+		one += scoreMS(truth, receiveBaseband(x, Tier3))["ambe_c0c1"].Exact
+		r := mustNew(Config{Rate: basebandRate, opt: &o})
+		var got []Burst
+		for k := 0; k < len(x); k += 4096 {
+			got = append(got, r.WriteBaseband(x[k:min(k+4096, len(x))])...)
+		}
+		sc := scoreMS(truth, append(got, r.Flush()...))["ambe_c0c1"]
+		two += sc.Exact
+		total += sc.Truth
+	}
+	t.Logf("%d of %d frames with C0 and C1 exact, %d in one pass", two, total, one)
+	if two < total || two <= one {
+		t.Errorf("%d of %d frames with C0 and C1 exact, %d in one pass", two, total, one)
+	}
+}

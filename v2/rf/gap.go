@@ -275,6 +275,7 @@ func (r *engine) bankRun(steps int, scale float32) {
 // has one. With both anchors, each run stops trellisLook symbols past the
 // middle, as each symbol keeps the APPs of the nearer run.
 func (r *engine) coherentGap(first, j int64, final bool) {
+	r.passAt(first + (j-first)/2)
 	if r.amp == 0 || r.noise == 0 {
 		return
 	}
@@ -310,7 +311,7 @@ func (r *engine) coherentGap(first, j int64, final bool) {
 	if !left && !right {
 		r.run(lo, hi.diff(lo)+1+margin, false, lo, hi)
 	}
-	if r.opt.TrackCarrier && !r.refining && !r.warm {
+	if r.opt.TrackCarrier && !r.refining && !r.warm && !r.frozen {
 		r.trackCarrier(lo, hi)
 	}
 }
@@ -319,6 +320,7 @@ func (r *engine) coherentGap(first, j int64, final bool) {
 // carrier is off between bursts: forward and backward from its SYNC, or
 // with phaseBank carrier phases when it has none.
 func (r *engine) coherentBurst(j int64) {
+	r.passAt(j)
 	if r.amp == 0 || r.noise == 0 {
 		return
 	}
@@ -338,7 +340,7 @@ func (r *engine) coherentBurst(j int64) {
 	} else {
 		r.run(lo.add(-margin), hi.diff(lo)+1+2*margin, false, lo, hi)
 	}
-	if r.opt.TrackCarrier && !r.refining && !r.warm {
+	if r.opt.TrackCarrier && !r.refining && !r.warm && !r.frozen {
 		r.trackCarrier(lo, hi)
 	}
 }
@@ -414,6 +416,7 @@ func (r *engine) trackCarrier(lo, hi symRef) {
 		return
 	}
 	hz := float64(atan2f(imag(z), real(z))) * basebandRate / (2 * math.Pi * ddWindow * samplesPerSy)
+	r.passCarrier(lo, hi, r.freq+hz)
 	g := 1 / (1 + r.fw)
 	r.fw = math.Min(freqForget*r.fw+1, 1/(1-freqForget))
 	r.freq += math.Max(g, 0.2) * hz

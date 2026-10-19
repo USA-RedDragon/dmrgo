@@ -338,6 +338,16 @@ type engine struct {
 	devHz    float64
 	// cb holds the burst that emit hands OnBurst.
 	cb Burst
+	// scout is set in the first pass of options.TwoPass and frozen in the
+	// second, which detects the slots from passStart to passEnd again with
+	// the estimates of passRecs; passSeg is set when the stream goes on
+	// after passEnd. pend is set when scanStale ended a stream whose
+	// second pass is to come, with the search position pendAt and the end
+	// pendDone to set when it ends.
+	scout, frozen, passSeg, pend bool
+	passStart, passEnd           int64
+	pendAt, pendDone             int64
+	passRecs                     []passRec
 }
 
 // New returns a Receiver sized by cfg. It allocates every buffer of the
@@ -407,7 +417,7 @@ func newEngine(cfg Config, opt options) *engine {
 	r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))
 	r.wide = make([]complex64, wideChunk)
 	r.inChunk = max(2*int(float64(wideChunk-4)*cfg.Rate/float64(cfg.BasebandHz)), 2)
-	size := (cfg.LookbackSlots + maxGapSlots + 4) * slotSamplesN
+	size := (cfg.LookbackSlots + opt.passSlots() + maxGapSlots + 4) * slotSamplesN
 	dec := 2
 	if r.opt.Coherent {
 		dec = max(r.opt.ChanDecimation, 1)
@@ -444,7 +454,10 @@ func newEngine(cfg Config, opt options) *engine {
 		r.pulse = newPhasePulse(samplesPerSy / dec)
 		r.corrX = make([]complex64, syncSpan/dec)
 	}
-	r.slots = make([]slotState, cfg.LookbackSlots+maxGapSlots+4)
+	r.slots = make([]slotState, cfg.LookbackSlots+opt.passSlots()+maxGapSlots+4)
+	if opt.passSlots() > 0 {
+		r.passRecs = make([]passRec, len(r.slots))
+	}
 	if r.opt.Coherent {
 		r.syms = newSymStore(max(cfg.LookbackSlots, maxGapSlots)+2, r.llrScale)
 		if r.opt.RefinePrior > 0 || r.opt.DataPasses > 0 {
@@ -734,6 +747,8 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	r.first = -back
 	r.next = -back
 	r.warm, r.warmStart = r.opt.WarmUp, -back
+	r.scout, r.frozen, r.pend, r.passStart = r.opt.passSlots() > 0, false, false, -back
+	clear(r.passRecs)
 	r.lastAnch = math.MinInt64
 	r.tk.reset(r.bs)
 	if r.opt.Coherent {
@@ -1010,6 +1025,10 @@ func (r *engine) symsOf(s *slotState) (*symStore, int) {
 // arrived, and detects the slots between anchors. It reports whether it
 // made progress.
 func (r *engine) followStep(end bool) bool {
+	if r.frozen && r.next >= r.passEnd {
+		r.endPass()
+		return true
+	}
 	need := r.symTime(r.next, slotSymbols) + float64(2*samplesPerSy+sincTaps)
 	if !end && need >= float64(r.chz.count()) {
 		return false
@@ -1020,6 +1039,10 @@ func (r *engine) followStep(end bool) bool {
 	j := r.next
 	r.next++
 	s := r.resetSlot(j)
+	if r.scout {
+		*r.pass(j) = passRec{}
+	}
+	r.passAt(j)
 	if r.symTime(j, syncFirstSym) >= float64(r.chz.delayCh) {
 		r.measure(s)
 	}
@@ -1045,17 +1068,26 @@ func (r *engine) followStep(end bool) bool {
 	case j >= 0 && j-r.first >= maxGapSlots-1:
 		r.detectUpTo(j)
 	}
-	if r.lost >= lostSlots || r.lastAnch == math.MinInt64 && j >= 6 || !r.bs && r.quiet >= msQuietSlots {
-		r.finishStream()
-		return true
-	}
-	if r.opt.Coherent && !r.warm && r.stale(j) && r.scanStale(j) {
-		return true
-	}
-	if r.warm && j >= warmSlots {
-		r.endWarm(j)
+	r.passKeep(j)
+	if !r.frozen {
+		r.checkStream(j)
 	}
 	return true
+}
+
+// checkStream ends the stream after slot j when its carrier is gone, or
+// moves the search to a SYNC off its slots, or ends the warm pass or the
+// first pass of options.TwoPass when they are done.
+func (r *engine) checkStream(j int64) {
+	switch {
+	case r.lost >= lostSlots || r.lastAnch == math.MinInt64 && j >= 6 || !r.bs && r.quiet >= msQuietSlots:
+		r.finishStream()
+	case r.opt.Coherent && !r.warm && r.stale(j) && r.scanStale(j):
+	case r.scout && !r.warm && r.next-r.passStart >= int64(r.opt.passSlots()):
+		r.startPass(true)
+	case r.warm && j >= warmSlots:
+		r.endWarm(j)
+	}
 }
 
 // endWarm ends the warm pass at slot j: it sets the carrier estimate from
@@ -1110,6 +1142,10 @@ func (r *engine) scanStale(j int64) bool {
 	}
 	done := int64(r.slotTime(r.lastAnch + 1))
 	r.finishStream()
+	if r.locked {
+		r.pend, r.pendAt, r.pendDone = true, r.alignSearch(at-searchStep), done
+		return true
+	}
 	r.searchAt, r.doneAt, r.candAt = r.alignSearch(at-searchStep), done, -1
 	return true
 }
@@ -1136,6 +1172,11 @@ func (r *engine) finishStream() {
 		r.endWarm(r.next - 1)
 		return
 	}
+	if r.scout {
+		r.startPass(false)
+		return
+	}
+	r.frozen = false
 	if r.bs {
 		r.detectUpTo(r.next - 1)
 	}
@@ -1147,7 +1188,7 @@ func (r *engine) finishStream() {
 			if !r.opt.Coherent {
 				r.discDetect(r.slot(k))
 			}
-			if !r.warm {
+			if r.emits() {
 				r.finish(r.slot(k))
 			}
 		}
@@ -1214,6 +1255,10 @@ func (r *engine) measure(s *slotState) {
 		return
 	}
 	s.a = best
+	if r.frozen {
+		return
+	}
+	r.passAnchor(s, bestTau)
 	r.timing(s, bestTau)
 	if g := (best.amp / r.amp) * (best.amp / r.amp); r.amp == 0 || g > levelJump || g < 1/levelJump {
 		// The first anchor, or the gain of the input moved: the levels
@@ -1334,7 +1379,7 @@ func (r *engine) detectUpTo(j int64) {
 		if !r.opt.Coherent {
 			r.discDetect(r.slot(k))
 		}
-		if !r.warm {
+		if r.emits() {
 			r.finish(r.slot(k))
 		}
 	}
@@ -1350,7 +1395,7 @@ func (r *engine) detectBurst(s *slotState) {
 		} else {
 			r.coherentBurst(s.index)
 		}
-		if !r.warm {
+		if r.emits() {
 			r.finish(s)
 		}
 	}
