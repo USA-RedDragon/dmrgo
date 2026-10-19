@@ -3,6 +3,7 @@ package rf
 import (
 	"math"
 	"math/bits"
+	"unsafe"
 )
 
 const (
@@ -99,6 +100,7 @@ func (r *LowIQReceiver) Flush() { r.r.flush() }
 // the phase step of each sample less the step of the oscillator, and the
 // DiscReceiver core.
 type iqLowRx struct {
+	// d is the first field: iqLowOf finds the receiver from its core.
 	d DiscReceiver
 	// q is the last sample.
 	q uint32
@@ -123,7 +125,7 @@ type iqLowRx struct {
 func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) error {
 	*r = iqLowRx{}
 	err := r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: opt})
-	r.d.dfe = hz == iq0LowHz && iqLowISI > 0
+	r.d.iqLow = hz == iq0LowHz
 	return err
 }
 
@@ -168,6 +170,19 @@ func q15(v float32) int32 {
 // run processes the samples x and adds the bursts they complete to d.out.
 func (r *iqLowRx) run(x []uint32) {
 	block := r.block()
+	if r.d.iqLow && r.d.front96 {
+		for len(x) > 0 {
+			m := min(len(x), block-int(r.afcN))
+			r.feed(x[:m])
+			x = x[m:]
+			r.afcN += int16(m)
+			if int(r.afcN) == block {
+				r.afcN = 0
+				r.follow()
+			}
+		}
+		return
+	}
 	for len(x) > 0 {
 		m := min(len(x), iqLowBuf-int(r.n), block-int(r.afcN))
 		r.halfRun(x[:m])
@@ -183,6 +198,39 @@ func (r *iqLowRx) run(x []uint32) {
 			r.follow()
 		}
 	}
+}
+
+// feed runs the core on x, which fill hands it through buf, and decodes
+// the slots that end, as DiscReceiver.run does.
+func (r *iqLowRx) feed(x []uint32) {
+	r.n = 0
+	j := 0
+	for {
+		i, m := r.d.run96(r.buf[:r.n], j, x)
+		if !r.d.slotDue {
+			r.n = 0
+			return
+		}
+		r.d.slotDue = false
+		r.d.endSlot()
+		x, j = x[m:], i
+	}
+}
+
+// iqLowOf returns the iqLowRx whose core is r, for a core with iqLow.
+func iqLowOf(r *DiscReceiver) *iqLowRx { return (*iqLowRx)(unsafe.Pointer(r)) }
+
+// fill puts the phase steps of the first samples of x into buf for
+// run96 and returns their number, 0 for no x. It is not inlined, so that
+// run96 keeps a small frame.
+//
+//go:noinline
+func (r *iqLowRx) fill(x []uint32) int {
+	m := min(len(x), iqLowBuf)
+	r.n = 0
+	r.halfRun(x[:m])
+	r.n = uint8(m)
+	return m
 }
 
 // halfRun appends the phase step of each sample of x, less the step of
@@ -311,7 +359,9 @@ func (r *iqLowRx) tune(hz, dc float32) {
 // flush finishes the stream at its end.
 func (r *iqLowRx) flush() []Burst {
 	r.d.out = r.d.out[:0]
-	r.d.write(r.buf[:r.n])
+	if !r.d.iqLow || !r.d.front96 {
+		r.d.write(r.buf[:r.n])
+	}
 	r.n = 0
 	r.d.flush()
 	return r.d.out

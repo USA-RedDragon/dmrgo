@@ -363,9 +363,11 @@ type leanCore struct {
 	// only collect the color code and emit nothing.
 	ext                  leanExt
 	replaying, replayDry bool
-	// dfe is set for iqLowRx at 9.6 kHz: burst runs cancelISI. linHunt
-	// is options.HuntLinMid. They fill the room before center.
-	dfe, linHunt bool
+	// iqLow is set for the core of an iqLowRx at 9.6 kHz: burst runs
+	// cancelISI when iqLowISI is above 0, and run96 takes the phase steps
+	// of the I/Q input as it needs them. linHunt is options.HuntLinMid.
+	// They fill the room before center.
+	iqLow, linHunt bool
 	// center is the input sample at the center of matched filter sample 0,
 	// in baseband samples, and mfStep the baseband samples per matched
 	// filter sample, a whole number at every input rate.
@@ -2227,7 +2229,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	// The hard decisions are the signs of the ratios of symLLR: the first
 	// bit is set below 0, the second beyond the midpoint between the
 	// levels, ±2 dev.
-	if r.dfe {
+	if r.iqLow && iqLowISI > 0 {
 		r.cancelISI(base)
 	}
 	thr, out := 2*r.llrDev, r.llrDev*leanClickOut/2

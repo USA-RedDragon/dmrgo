@@ -1,6 +1,9 @@
 package rf
 
-import "math"
+import (
+	"math"
+	"unsafe"
+)
 
 // Layout of the discriminator front end.
 const (
@@ -250,7 +253,8 @@ func (r *DiscReceiver) run(x []int16) {
 	// The slots decode here, so that the frame of run96 is not on the
 	// stack while they do.
 	for {
-		x = x[r.run96(x):]
+		i, _ := r.run96(x, 0, nil)
+		x = x[i:]
 		if !r.slotDue {
 			return
 		}
@@ -397,18 +401,27 @@ func (r *DiscReceiver) state96() uint8 {
 	return st
 }
 
-// run96 is run for the matched filter at 9.6 kHz with cubic strobes. It
-// keeps the gain, the offset and the head of the filter in locals, and
-// loads them again after the calls that can change them. It returns the
-// number of samples that it took: all of x, or those up to the symbol
-// that ends a slot, which it leaves to run. It is not inlined; see run.
+// run96 is run for the matched filter at 9.6 kHz with cubic strobes, from
+// sample i0 of x. It keeps the gain, the offset and the head of the
+// filter in locals, and loads them again after the calls that can change
+// them. It returns the end of the samples of x that it took: all of x, or
+// those up to the symbol that ends a slot, which it leaves to run. The
+// core of an iqLowRx has x in iqLowRx.buf, and run96 refills it from the
+// I/Q samples in when it ends, with fill: then the end is in the last
+// fill, and run96 also returns the samples of in that it filled. It is not
+// inlined; see run.
 //
 //go:noinline
-func (r *DiscReceiver) run96(x []int16) int {
+func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 	f, tm := &r.f, &r.tm
 	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-	// i0 is the sample after r.n.
-	i0 := 0
+	// i0 is the sample after r.n, and fed the samples of in that fill
+	// put into x.
+	fed := 0
+	// n is the end of the samples in x, which fill moves up to cap(x): x
+	// itself stays one value, so that the compiler sees that run96 keeps
+	// no pointer into it.
+	n := len(x)
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
 	st := r.state96()
@@ -419,9 +432,9 @@ func (r *DiscReceiver) run96(x []int16) int {
 		h = 0
 	}
 	// Pass i runs the strobes of sample i-1, then takes sample i. The
-	// strobes of pass 0 are those that the last sample of the call before
-	// left, when a slot ended there.
-	for i := 0; ; i++ {
+	// strobes of the first pass are those that the last sample of the
+	// call before left, when a slot ended there.
+	for i := i0; ; i++ {
 		if t <= 0 && st&st96Raw != 0 {
 			// The search takes the samples as they come, the symbols and
 			// the midpoints in turn, without the timing loop: a lock samples
@@ -542,7 +555,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 					r.acqHead, r.acqLow = kh, kq
 					f.rrcHead = h
 					r.slotDue = true
-					return i
+					return i, fed
 				}
 				if sym {
 					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
@@ -571,7 +584,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 					if r.slotDue {
 						// Every local is in r: run decodes the slot and
 						// calls run96 again.
-						return i
+						return i, fed
 					}
 					sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
 					kh = r.acqHead
@@ -584,10 +597,22 @@ func (r *DiscReceiver) run96(x []int16) int {
 				}
 			}
 		}
-		if i == len(x) {
-			break
+		if i == n {
+			if !r.iqLow {
+				break
+			}
+			r.n += int64(i - i0)
+			i0 = i
+			m := iqLowOf(r).fill(in)
+			if m == 0 {
+				break
+			}
+			in, fed = in[m:], fed+m
+			n, i, i0 = m, -1, 0
+			continue
 		}
-		v := x[i]
+		// i is below n, which is at most cap(x).
+		v := *(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(x)), 2*i))
 		if st&st96Search != 0 {
 			f.sum += int32(v)
 			f.sq += int64(v) * int64(v)
@@ -629,9 +654,9 @@ func (r *DiscReceiver) run96(x []int16) int {
 	}
 	f.rrcHead = h
 	tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
-	r.n += int64(len(x) - i0)
+	r.n += int64(n - i0)
 	r.acqHead, r.acqLow = kh, kq
-	return len(x)
+	return n, fed
 }
 
 // OffsetHz returns the DC offset of the last locked stream, in units of
