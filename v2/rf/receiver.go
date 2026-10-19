@@ -106,7 +106,9 @@ const (
 	// bsPresence is the share of the carrier power above the noise power
 	// at which a slot of a BS stream counts as on. The carrier of a BS
 	// stream is on in every slot, and below 0 dB Eb/N0 the test of
-	// presenceFactor dropped most of its bursts.
+	// presenceFactor dropped most of its bursts. A slot counts as on when
+	// it passes either test: r.amp follows only the anchors, and a burst
+	// in a fade far below that level but well above the noise is on.
 	bsPresence = 0.5
 	// lockSpanHz is the carrier error, in Hz, that the receiver searches
 	// at lock: the spectrum estimate is no closer than that.
@@ -1184,7 +1186,7 @@ func (r *engine) measure(s *slotState) {
 	}
 	s.present = energy > max(presenceFactor*r.noise, r.noise+0.25*r.amp*r.amp)
 	if r.bs {
-		s.present = energy > r.noise+bsPresence*r.amp*r.amp
+		s.present = energy > min(presenceFactor*r.noise, r.noise+bsPresence*r.amp*r.amp)
 	}
 	if !r.bs && r.lastAnch != math.MinInt64 {
 		// The slots between the bursts of an MS hold its noise, which a
