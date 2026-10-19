@@ -332,7 +332,8 @@ func (r *DiscReceiver) run(x []int16) {
 func (r *DiscReceiver) run96(x []int16) {
 	f, tm := &r.f, &r.tm
 	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-	var dn int32
+	// i0 is the sample after r.n.
+	i0 := 0
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
 	search, keep := !r.locked, !r.locked || r.hunt
@@ -342,8 +343,7 @@ func (r *DiscReceiver) run96(x []int16) {
 	if h >= audio96Taps {
 		h = 0
 	}
-	for i := 0; i < len(x); i++ {
-		v := x[i]
+	for i, v := range x {
 		if search {
 			f.sum += int32(v)
 			f.sq += int64(v) * int64(v)
@@ -358,13 +358,17 @@ func (r *DiscReceiver) run96(x []int16) {
 			}
 		}
 		u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
+		if h >= audio96Taps {
+			// Never; it bounds h, so that the compiler drops the index
+			// checks.
+			h = 0
+		}
 		hist[h], hist[h+audio96Taps] = u, u
-		if h++; h == audio96Taps {
+		if h++; h >= audio96Taps {
 			h = 0
 		}
 		acc := fir96((*[audio96Taps]int8)(hist[h : h+audio96Taps]))
 		y := float32(acc) * (rrcStepHz / 32768.0)
-		dn++
 		s0, s1, s2, s3 = s1, s2, s3, y
 		if keep {
 			q := int16(int8((acc + 1<<13) >> 14))
@@ -377,8 +381,12 @@ func (r *DiscReceiver) run96(x []int16) {
 				kh = 0
 			}
 		}
-		t--
-		for t <= 0 {
+		if t--; t > 0 {
+			continue
+		}
+		// The strobes of the sample, in a loop that the compiler does
+		// not enter for the samples without one.
+		for {
 			at := t
 			mu := 1 + at
 			xv := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
@@ -418,8 +426,8 @@ func (r *DiscReceiver) run96(x []int16) {
 			}
 			if sym {
 				tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
-				r.n += int64(dn)
-				dn = 0
+				r.n += int64(i + 1 - i0)
+				i0 = i + 1
 				r.acqHead, r.acqLow = kh, kq
 				f.rrcHead = h
 				r.symbol(tm.last, at)
@@ -429,11 +437,14 @@ func (r *DiscReceiver) run96(x []int16) {
 				search, keep = !r.locked, !r.locked || r.hunt
 				k, off = f.k, f.off
 			}
+			if t > 0 {
+				break
+			}
 		}
 	}
 	f.rrcHead = h
 	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
-	r.n += int64(dn)
+	r.n += int64(len(x) - i0)
 	r.acqHead, r.acqLow = kh, kq
 }
 
