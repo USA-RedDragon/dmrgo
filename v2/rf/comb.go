@@ -16,6 +16,29 @@ const combMatchSeconds = 0.003
 // combRx emits no more bursts.
 const combT2Hold = 1.0
 
+// combSide is the evidence of a burst that a receiver hands combRx beside
+// the burst.
+type combSide struct {
+	// flips, when hasFlips, is the number of bits of C0 and C1 of each
+	// voice slot that soft-decision decoding changed in the first
+	// detection of the coherent receiver, before a refinement detected the
+	// burst again.
+	flips    [layer2.VoiceSlotsPerBurst]uint8
+	hasFlips bool
+	// coreC2 has bit i set when voice slot i of a Tier2 burst took C2 and
+	// C3 of the discriminator core in place of the coherent detection, and
+	// coreN is the number of bits of C0 and C1 of each slot in which the
+	// core differs from the decode (softExt.uncoded).
+	coreC2 uint8
+	coreN  [layer2.VoiceSlotsPerBurst]uint8
+}
+
+// combBurst is a burst that combRx holds, with its evidence.
+type combBurst struct {
+	b Burst
+	s combSide
+}
+
 // combRx runs the coherent receiver of a tier and the Tier2 receiver on the
 // same input, and emits each slot once: the burst of the coherent receiver
 // with the AMBE frames that options.CombMode selects taken from Tier2, or
@@ -23,9 +46,10 @@ const combT2Hold = 1.0
 type combRx struct {
 	t3   *engine
 	t2   *iqRx
+	ext  *softExt
 	on   func(*Burst)
 	out  []Burst
-	pend [2][]Burst
+	pend [2][]combBurst
 	// now is the input time in seconds; perByte that of an input byte.
 	now, perByte float64
 	mode         int
@@ -58,31 +82,37 @@ func newComb(cfg Config, opt options) *combRx {
 	c := &combRx{last: math.Inf(-1), on: cfg.OnBurst, mode: opt.CombMode, perByte: 0.5 / cfg.Rate}
 	n := opt.passSlots() + 4*cfg.LookbackSlots + 512
 	for i := range c.pend {
-		c.pend[i] = make([]Burst, 0, 2*n)
+		c.pend[i] = make([]combBurst, 0, 2*n)
 	}
 	c.hold = float64(cfg.LookbackSlots+16) * slotSeconds
 	if c.on == nil {
 		c.out = make([]Burst, 0, 4*n)
 	}
-	o3 := opt
 	c3 := cfg
-	c3.OnBurst = func(b *Burst) { c.add(0, b) }
-	c.t3 = newEngine(c3, o3)
+	c3.OnBurst = func(b *Burst) { c.add(0, b, &c.t3.side) }
+	c.t3 = newEngine(c3, opt)
 	o2 := combT2Options(&opt)
 	c2 := cfg
-	c2.OnBurst = func(b *Burst) { c.add(1, b) }
+	c2.OnBurst = func(b *Burst) {
+		var s combSide
+		if c.ext != nil {
+			s = c.ext.side
+		}
+		c.add(1, b, &s)
+	}
 	c2.LookbackSlots = 8
 	c.t2 = newIQRx(c2, o2)
+	c.ext, _ = c.t2.d.ext.(*softExt)
 	return c
 }
 
-// add takes burst b of receiver s.
-func (c *combRx) add(s int, b *Burst) {
-	if len(c.pend[s]) == cap(c.pend[s]) {
-		c.release(c.pend[s][0].Seconds + slotSeconds)
+// add takes burst b of receiver i with its evidence s.
+func (c *combRx) add(i int, b *Burst, s *combSide) {
+	if len(c.pend[i]) == cap(c.pend[i]) {
+		c.release(c.pend[i][0].b.Seconds + slotSeconds)
 	}
-	if len(c.pend[s]) < cap(c.pend[s]) {
-		c.pend[s] = append(c.pend[s], *b)
+	if len(c.pend[i]) < cap(c.pend[i]) {
+		c.pend[i] = append(c.pend[i], combBurst{b: *b, s: *s})
 	}
 }
 
@@ -125,11 +155,11 @@ func (c *combRx) horizon() float64 {
 	return min(h, h3)
 }
 
-func bySeconds(a, b Burst) int {
+func bySeconds(a, b combBurst) int {
 	switch {
-	case a.Seconds < b.Seconds:
+	case a.b.Seconds < b.b.Seconds:
 		return -1
-	case a.Seconds > b.Seconds:
+	case a.b.Seconds > b.b.Seconds:
 		return 1
 	}
 	return 0
@@ -144,24 +174,24 @@ func (c *combRx) release(h float64) {
 	slices.SortFunc(b, bySeconds)
 	i, j := 0, 0
 	for {
-		ha := i < len(a) && a[i].Seconds < h
-		hb := j < len(b) && b[j].Seconds < h
+		ha := i < len(a) && a[i].b.Seconds < h
+		hb := j < len(b) && b[j].b.Seconds < h
 		switch {
-		case ha && a[i].Seconds < c.last+combMatchSeconds:
+		case ha && a[i].b.Seconds < c.last+combMatchSeconds:
 			i++
-		case hb && b[j].Seconds < c.last+combMatchSeconds:
+		case hb && b[j].b.Seconds < c.last+combMatchSeconds:
 			j++
-		case (ha || hb) && i < len(a) && j < len(b) && math.Abs(a[i].Seconds-b[j].Seconds) < combMatchSeconds:
+		case (ha || hb) && i < len(a) && j < len(b) && math.Abs(a[i].b.Seconds-b[j].b.Seconds) < combMatchSeconds:
 			c.emit(c.pick(&a[i], &b[j]))
-			c.last = max(a[i].Seconds, b[j].Seconds)
+			c.last = max(a[i].b.Seconds, b[j].b.Seconds)
 			i, j = i+1, j+1
-		case ha && (!hb || a[i].Seconds <= b[j].Seconds):
-			c.emit(&a[i])
-			c.last = a[i].Seconds
+		case ha && (!hb || a[i].b.Seconds <= b[j].b.Seconds):
+			c.emit(&a[i].b)
+			c.last = a[i].b.Seconds
 			i++
 		case hb:
-			c.emit(&b[j])
-			c.last = b[j].Seconds
+			c.emit(&b[j].b)
+			c.last = b[j].b.Seconds
 			j++
 		default:
 			c.pend[0] = a[:copy(a, a[i:])]
@@ -190,25 +220,25 @@ func isVoice(b *Burst) bool {
 	return known && kind == layer2.KindVoice && b.Distance >= 0
 }
 
-// slotFlips returns, for each voice slot, the bits that the soft decode of
-// b changed.
-func slotFlips(b *Burst) [layer2.VoiceSlotsPerBurst]int {
+// slotFlips returns, for each voice slot of x, the bits of C0 and C1 that
+// its soft decode changed.
+func slotFlips(x *combBurst) [layer2.VoiceSlotsPerBurst]int {
 	var f [layer2.VoiceSlotsPerBurst]int
 	switch {
-	case b.hasFlips:
+	case x.s.hasFlips:
 		for i := range f {
-			f[i] = int(b.flips[i])
+			f[i] = int(x.s.flips[i])
 		}
-	case b.HasFixed:
-		for i, n := range voiceFlips(&b.Data, &b.Fixed) {
+	case x.b.HasFixed:
+		for i, n := range voiceFlips(&x.b.Data, &x.b.Fixed) {
 			f[i] = int(n)
 		}
 	}
 	return f
 }
 
-// voiceFlips returns, for each voice slot, the bits in which d and x
-// differ.
+// voiceFlips returns, for each voice slot, the bits of C0 and C1 in which
+// d and x differ.
 func voiceFlips(d, x *layer2.RawBurst) [layer2.VoiceSlotsPerBurst]uint8 {
 	var f [layer2.VoiceSlotsPerBurst]uint8
 	for i := range f {
@@ -222,9 +252,10 @@ func voiceFlips(d, x *layer2.RawBurst) [layer2.VoiceSlotsPerBurst]uint8 {
 	return f
 }
 
-// pick returns the burst of slot that a, of the coherent receiver, and b,
-// of Tier2, both hold.
-func (c *combRx) pick(a, b *Burst) *Burst {
+// pick returns the burst of the slot that x, of the coherent receiver, and
+// y, of Tier2, both hold.
+func (c *combRx) pick(x, y *combBurst) *Burst {
+	a, b := &x.b, &y.b
 	switch c.mode {
 	case 1:
 		return b
@@ -234,7 +265,7 @@ func (c *combRx) pick(a, b *Burst) *Burst {
 	if !isVoice(a) || !isVoice(b) {
 		return a
 	}
-	fa, fb := slotFlips(a), slotFlips(b)
+	fa, fb := slotFlips(x), slotFlips(y)
 	c.cb = *a
 	if !c.cb.HasFixed {
 		c.cb.Fixed, c.cb.FixedCACH, c.cb.HasFixed = a.Data, a.CACH, true
@@ -251,51 +282,30 @@ func (c *combRx) pick(a, b *Burst) *Burst {
 	}
 	cleaner := c.err2 < extCoreShare*c.err3
 	for i := range fa {
+		core := y.s.coreC2>>i&1 != 0
+		take := false
 		switch c.mode {
-		case 5:
-			if cleaner && fb[i] <= fa[i] {
-				out[i] = bs[i]
-			}
-		case 6:
-			if cleaner && fb[i] <= fa[i] {
-				for _, p := range &softAMBEC2Pos[i] {
-					q, m := p/8, byte(0x80)>>(p%8)
-					c.cb.Fixed[q] = c.cb.Fixed[q]&^m | bd[q]&m
-				}
-				out[i] = c.cb.Fixed.VoiceSlots()[i]
-			}
-		case 7:
-			if cleaner {
-				out[i] = bs[i]
-			}
-		case 8:
-			if b.coreC2>>i&1 != 0 {
-				out[i] = bs[i]
-			}
-		case 10:
-			if b.coreC2>>i&1 != 0 || cleaner && fb[i] <= fa[i] {
-				out[i] = bs[i]
-			}
-		case 11:
-			if b.coreC2>>i&1 != 0 || fb[i] == 0 {
-				out[i] = bs[i]
-			}
-		case 9:
-			if b.coreC2>>i&1 != 0 && int(b.coreN[i]) <= fa[i] {
-				out[i] = bs[i]
-			}
 		case 0:
-			if fb[i] < fa[i] {
-				out[i] = bs[i]
-			}
+			take = fb[i] < fa[i]
 		case 3:
-			if fb[i] == 0 {
-				out[i] = bs[i]
-			}
+			take = fb[i] == 0
 		case 4:
-			if clean {
-				out[i] = bs[i]
-			}
+			take = clean
+		case 5:
+			take = cleaner && fb[i] <= fa[i]
+		case 7:
+			take = cleaner
+		case 8:
+			take = core
+		case 9:
+			take = core && int(y.s.coreN[i]) <= fa[i]
+		case 10:
+			take = core || cleaner && fb[i] <= fa[i]
+		case 11:
+			take = core || fb[i] == 0
+		}
+		if take {
+			out[i] = bs[i]
 		}
 	}
 	c.cb.Fixed.SetVoiceSlots(out)

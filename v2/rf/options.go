@@ -45,9 +45,9 @@ type options struct {
 	// decode of each changed (f2, f3), their means over the frames before
 	// (m2, m3), and whether Tier2 took C2 and C3 of its discriminator core
 	// (core): 0 f2 < f3; 1 all; 2 none; 3 f2 = 0; 4 f2 = 0 in all three
-	// frames of the burst; 5 m2 < 0.9 m3 and f2 <= f3; 6 as 5 but only C2
-	// and C3; 7 m2 < 0.9 m3; 8 core; 9 core and the f2 of the core <= f3;
-	// 10 core or 5; 11 core or 3.
+	// frames of the burst; 5 m2 < 0.9 m3 and f2 <= f3; 7 m2 < 0.9 m3; 8
+	// core; 9 core and the f2 of the core <= f3; 10 core or 5; 11 core or
+	// 3.
 	CombMode int
 	// Window is the number of symbols on each side of a symbol that the
 	// trellis models, 1 or 2.

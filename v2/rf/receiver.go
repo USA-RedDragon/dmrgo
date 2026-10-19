@@ -340,6 +340,8 @@ type engine struct {
 	devHz    float64
 	// cb holds the burst that emit hands OnBurst.
 	cb Burst
+	// side is the evidence of options.Comb of the burst that OnBurst takes.
+	side combSide
 	// scout is set in the first pass of options.TwoPass and frozen in the
 	// second, which detects the slots from passStart to passEnd again with
 	// the estimates of passRecs; passSeg is set when the stream goes on
@@ -663,6 +665,7 @@ func (r *engine) flush() []Burst {
 // emit hands burst x to OnBurst, or appends it to the bursts that Write
 // returns.
 func (r *engine) emit(x *received) {
+	r.side = x.side
 	if r.cfg.OnBurst != nil {
 		x.put(&r.cb)
 		r.cfg.OnBurst(&r.cb)
@@ -1587,7 +1590,7 @@ func (r *engine) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 		}
 	}
 	if r.opt.Comb {
-		e.out.flips, e.out.hasFlips = voiceFlips(&e.out.data, &e.out.fixed), true
+		e.out.side.flips, e.out.side.hasFlips = voiceFlips(&e.out.data, &e.out.fixed), true
 	}
 	if !r.redetect(j) {
 		return

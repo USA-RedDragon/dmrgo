@@ -127,6 +127,11 @@ type softExt struct {
 	// hard decisions of the core of each.
 	qcoh  [extQueue]bool
 	qcore [extQueue]layer2.RawBurst
+	// cur is the evidence of options.Comb that uncoded found for the burst
+	// under decode, qside that of each burst of q, and side that of the
+	// burst that the core emits.
+	cur, side combSide
+	qside     [extQueue]combSide
 	// errCore and errCoh are the mean numbers of bits of C0 and C1 of the
 	// voice frames that coh detected whose hard decisions of the core and
 	// of coh differ from their decode, for uncoded.
@@ -388,6 +393,7 @@ func (x *softExt) back(c *leanCore, j int64) {
 		x.repairAll(c, b, cc, ccOK)
 		coh := b.Data
 		x.uncoded(b, &x.qcore[i], &coh, false)
+		x.qside[i], x.cur = x.cur, combSide{}
 		// A data block that passed its check keeps that decode.
 		if ok && x.bptcRetry(b) {
 			b.Fixed, b.Data = lc, data
@@ -708,6 +714,7 @@ func (x *softExt) push(c *leanCore, b *Burst, hold bool) int {
 	}
 	i := (x.head + x.n) % extQueue
 	x.q[i], x.held[i], x.qcoh[i] = *b, hold, false
+	x.qside[i], x.cur = x.cur, combSide{}
 	x.n++
 	return i
 }
@@ -716,6 +723,7 @@ func (x *softExt) push(c *leanCore, b *Burst, hold bool) int {
 // or only the head when one is true.
 func (x *softExt) drain(c *leanCore, one bool, keep int) {
 	for x.n > keep && !x.held[x.head] {
+		x.side = x.qside[x.head]
 		c.emit(&x.q[x.head])
 		x.head = (x.head + 1) % extQueue
 		x.n--
@@ -1069,13 +1077,13 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 			x.errCoh += extErrGain * (float32(nCoh[i]) - x.errCoh)
 		}
 	}
-	b.coreC2 = 0
+	x.cur.coreC2 = 0
 	for i := range layer2.VoiceSlotsPerBurst {
-		b.coreN[i] = uint8(min(nCore[i], 255))
+		x.cur.coreN[i] = uint8(min(nCore[i], 255))
 		if !x.coreCleaner() || nCore[i] > nCoh[i] {
 			continue
 		}
-		b.coreC2 |= 1 << i
+		x.cur.coreC2 |= 1 << i
 		for _, p := range &softAMBEC2Pos[i] {
 			q, m := p/8, byte(0x80)>>(p%8)
 			b.Fixed[q] = b.Fixed[q]&^m | core[q]&m

@@ -36,17 +36,6 @@ type Burst struct {
 	Fixed     layer2.RawBurst
 	FixedCACH [3]byte
 	HasFixed  bool
-	// flips, when hasFlips, is the number of bits of each voice slot that
-	// soft-decision decoding changed in the first detection, before a
-	// refinement detected the burst again (options.Comb).
-	flips    [layer2.VoiceSlotsPerBurst]uint8
-	hasFlips bool
-	// coreC2 has bit i set when voice slot i took C2 and C3 of the
-	// discriminator core in place of the coherent detection, and coreN is
-	// the number of bits of C0 and C1 of each slot in which the core
-	// differs from the decode (softExt.uncoded).
-	coreC2 uint8
-	coreN  [layer2.VoiceSlotsPerBurst]uint8
 }
 
 // Decoded returns the burst and CACH bits to decode: Fixed and FixedCACH
@@ -77,12 +66,11 @@ type received struct {
 	fixed     layer2.RawBurst
 	fixedCACH [layer2.CACHBits]unpacked.Bit
 	hasFixed  bool
-	flips     [layer2.VoiceSlotsPerBurst]uint8
-	hasFlips  bool
+	side      combSide
 }
 
 // put writes x into b.
 func (x *received) put(b *Burst) {
 	*b = Burst{Data: x.data, Seconds: x.seconds, Distance: x.distance, Sync: x.sync, Voice: x.voice, CACH: cachBytes(x.cach), HasCACH: x.hasCACH,
-		BS: x.bs, Stream: x.stream, Slot: x.slot, Fixed: x.fixed, FixedCACH: cachBytes(x.fixedCACH), HasFixed: x.hasFixed, flips: x.flips, hasFlips: x.hasFlips}
+		BS: x.bs, Stream: x.stream, Slot: x.slot, Fixed: x.fixed, FixedCACH: cachBytes(x.fixedCACH), HasFixed: x.hasFixed}
 }
