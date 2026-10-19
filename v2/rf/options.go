@@ -3,24 +3,46 @@ package rf
 // options holds the stage settings of a Receiver. tierOptions returns the
 // settings of each tier; a sweep of the settings measures what each one
 // costs and gains.
+//
+// The fields go from the largest to the smallest, so that the struct has
+// little padding: TinyGo keeps a copy of it on the stack only up to
+// tinyGoMaxStackAlloc bytes, and a copy on the heap keeps the settings of
+// a DiscReceiver from folding into its code on a microcontroller.
 type options struct {
-	// Coherent selects the coherent trellis detector instead of the FM
-	// discriminator.
-	Coherent bool
+	// DiscOutlier is the share of discriminator samples that a click
+	// throws anywhere in the band. It puts a floor under the symbol
+	// log-likelihoods, so that a click does not make a confident error.
+	DiscOutlier float64
+	// ClickSpan, when above 0, sets the floor of the discriminator symbol
+	// likelihoods from the share of clicks that the bursts show, spread
+	// over ClickSpan Hz, in place of DiscOutlier.
+	ClickSpan float64
+	// CohSkipSNR, when above 0, is the SNR of the levels of the coherent
+	// detection, the power of the signal over that of the noise, from
+	// which it leaves a burst to the ratios of the core.
+	CohSkipSNR float64
+	// CohBudget, when above 0, is the work that the coherent stage may
+	// spend for each slot of a stream that is not clear, in trellis steps,
+	// with each decode of a burst from its ratios counted by the steps that
+	// cost as much; the bursts that the credit does not hold keep the
+	// ratios of the core.
+	CohBudget float64
+	// IQTaps, IQKaiser and IQCutHz set the channel filter of iqDisc: its
+	// length, the beta of its Kaiser window and its cutoff. 0 means
+	// iqTaps, a Hamming window and discCutHz. On the coherent tiers they
+	// set the channel filter of the channelizer instead, a windowed sinc
+	// in place of chanFilterTaps once any of them is set: 0 means
+	// chanTaps, a Hamming window and the middle of chanPassHz and
+	// chanStopHz.
+	IQKaiser float64
+	IQCutHz  float64
+	IQTaps   int
 	// Window is the number of symbols on each side of a symbol that the
 	// trellis models, 1 or 2.
 	Window int
 	// TrellisSPS is the number of samples per symbol that the trellis
 	// correlates, 5 or 10.
 	TrellisSPS int
-	// ExactPhase carries the carrier phase in the trellis state, so that
-	// paths merge only with the same phase, instead of with each survivor.
-	ExactPhase bool
-	// LogMAP makes the ExactPhase trellis sum the paths into each state and
-	// symbol exactly (log-sum-exp) instead of taking the best, and the bit
-	// ratios of a symbol sum its two digits likewise. The phase drift step
-	// keeps the best neighbor.
-	LogMAP bool
 	// PhaseStates is the number of carrier phases of the ExactPhase
 	// trellis, 52 or 200; 0 means 200, the exact count for h = 0.27. Fewer
 	// phases round the phase turn of each symbol and cost proportionally
@@ -31,27 +53,6 @@ type options struct {
 	// KnownPrior is the log prior, in nats, of the expected symbols of the
 	// SYNC of an anchor.
 	KnownPrior float32
-	// SoftFEC rewrites the FEC fields of each burst with the codeword that
-	// soft-decision decoding picks.
-	SoftFEC bool
-	// BPTCOSD decodes BPTC(196,96) by ordered statistics; otherwise by
-	// Chase-II around the hard decoder.
-	BPTCOSD bool
-	// GridBPTC decodes a BPTC(196,96) block whose CRC or Reed-Solomon
-	// check fails again by iterative row and column decoding of its grid.
-	GridBPTC bool
-	// OSDBytes scores the ordered statistics patterns with byte tables in
-	// place of nibble tables, 16 KiB more for each decoder. The decode is
-	// the same.
-	OSDBytes bool
-	// DataPasses is the number of times a coherent tier detects a
-	// BPTC(196,96) data burst that fails its check again, with the
-	// extrinsic information of its grid decode as priors weighed by
-	// DataPrior. DataUnchecked does so also for a burst without a check
-	// whose decode corrected bits.
-	DataPasses    int
-	DataPrior     float32
-	DataUnchecked bool
 	// RefinePrior, when above 0, detects each voice burst again with the
 	// bits that soft-decision decoding fixed as priors of that many nats.
 	RefinePrior float32
@@ -61,50 +62,15 @@ type options struct {
 	// its ratios too confident. The priors that a detection again adds
 	// enter the trellis divided by it. 0 means 1.
 	LLRScale float32
-	// WarmUp detects the first slots of a stream twice, the first time
-	// only to settle the carrier, timing and modulation index estimates.
-	WarmUp bool
-	// TrackCarrier follows the carrier between anchors with a
-	// decision-directed estimate, after the warm pass.
-	TrackCarrier bool
-	// TrackH estimates the modulation index of each stream.
-	TrackH bool
 	// ChanDecimation is the factor, 1 or 2, by which the channel ring of
 	// the coherent tiers runs below basebandRate; 0 means 1.
 	ChanDecimation int
-	// CompactChannel holds the channel ring of the coherent tiers as 8-bit
-	// block floating point and keeps no copy of the wide input: a retune
-	// rotates the samples it holds instead of filtering the input again.
-	CompactChannel bool
-	// DiscOutlier is the share of discriminator samples that a click
-	// throws anywhere in the band. It puts a floor under the symbol
-	// log-likelihoods, so that a click does not make a confident error.
-	DiscOutlier float64
 	// Sources is the number of SYNC sources the search tries: 2 for BS
 	// and MS, 4 with both direct mode slots.
 	Sources int
-	// ClickSpan, when above 0, sets the floor of the discriminator symbol
-	// likelihoods from the share of clicks that the bursts show, spread
-	// over ClickSpan Hz, in place of DiscOutlier.
-	ClickSpan float64
-	// SoftExt adds softExt after the streaming core: the stages that
-	// ExtAMBE, ExtOSD and ExtELC select, and the ExtLookback slots before
-	// the SYNC of a lock.
-	SoftExt bool
-	// ExtAMBE decodes C0 and C1 of each voice frame by soft ML.
-	ExtAMBE bool
-	// ExtOSD decodes a BPTC(196,96) block whose check fails after the
-	// decode of the core by ordered statistics, and again over its grid.
-	ExtOSD bool
-	// ExtELC decodes the embedded LC of each superframe over its four
-	// fragments, summed with the earlier superframes of the call.
-	ExtELC bool
 	// ExtLookback is the number of slots before the SYNC of a lock that
 	// softExt decodes.
 	ExtLookback int
-	// ExtNPML detects the bursts that softExt decodes from the symbols of
-	// the core by npml, with the correlation of their noise.
-	ExtNPML bool
 	// ExtAMBECandidates, ExtOSDOrder and ExtGridIters set AMBECandidates,
 	// OSDOrder and GridIters of the soft decoder of softExt; 0 keeps the
 	// value of newSoftDecoder. ExtOSDOrder is the order plus 1, so that 1
@@ -112,21 +78,6 @@ type options struct {
 	ExtAMBECandidates int
 	ExtOSDOrder       int
 	ExtGridIters      int
-	// IQDisc runs the streaming receiver on I/Q as iqRx, iqDisc before a
-	// DiscReceiver at IQHz, 12000 or 24000, in place of leanRx. 0 means
-	// 24000.
-	IQDisc bool
-	IQHz   int
-	// IQTaps, IQKaiser and IQCutHz set the channel filter of iqDisc: its
-	// length, the beta of its Kaiser window and its cutoff. 0 means
-	// iqTaps, a Hamming window and discCutHz. On the coherent tiers they
-	// set the channel filter of the channelizer instead, a windowed sinc
-	// in place of chanFilterTaps once any of them is set: 0 means
-	// chanTaps, a Hamming window and the middle of chanPassHz and
-	// chanStopHz.
-	IQTaps   int
-	IQKaiser float64
-	IQCutHz  float64
 	// IQHalfband, when above 0, is the length of a half-band filter that
 	// decimates the baseband by 2 before the channel filter of iqDisc, so
 	// that the channel filter runs at half the rate with twice the span
@@ -137,11 +88,6 @@ type options struct {
 	// channel. On the coherent tiers the channel moves only to the
 	// carrier offsets of the spectrum estimate within it.
 	IQTuneMaxHz float32
-	// IQTuneSyncOnly moves the oscillator of iqRx while the core is
-	// locked only by the carrier offset of the SYNC fits, not by the mean
-	// frequency of the channel filter samples, which the gaps between the
-	// bursts, where another channel can leak in, also move.
-	IQTuneSyncOnly bool
 	// IQAFCAvg, when above 1, is the length of a moving average of the
 	// channel filter samples that the carrier estimate of iqRx reads, so
 	// that the edges of the channel, where another channel leaks in, move
@@ -158,46 +104,35 @@ type options struct {
 	// IQBuf is the number of discriminator samples that iqRx hands the
 	// core at once; 0 means 1024.
 	IQBuf int
-	// CohExt adds to softExt on iqRx, or on a DiscReceiver, the coherent
-	// detection of each burst again, with the trellis settings PSPGain and
-	// LLRScale.
-	CohExt bool
 	// CohSPS is the number of samples per symbol that the coherent
 	// detection correlates, 2 or 5; 0 means 5.
 	CohSPS int
-	// CohLazy runs the core of a DiscReceiver with CohExt on its input,
-	// and builds the phase of each sample that the coherent detection
-	// reads from the input as it reads it, instead of a ring of channel
-	// filter samples for both.
-	CohLazy bool
-	// CohSkipSNR, when above 0, is the SNR of the levels of the coherent
-	// detection, the power of the signal over that of the noise, from
-	// which it leaves a burst to the ratios of the core.
-	CohSkipSNR float64
-	// CohLocked leaves the SYNC search to the core: the coherent stage
-	// tests no SYNC that the discriminator does not show, which costs the
-	// most on noise.
-	CohLocked bool
-	// CohBudget, when above 0, is the work that the coherent stage may
-	// spend for each slot of a stream that is not clear, in trellis steps,
-	// with each decode of a burst from its ratios counted by the steps that
-	// cost as much; the bursts that the credit does not hold keep the
-	// ratios of the core.
-	CohBudget float64
-	// CohNoNext leaves out the run of the coherent stage from the SYNC of a
-	// BS burst into the second half of the slot before, CohNoCross its run
-	// from the SYNC of the slot before into a burst, and CohCrossVoice
-	// that run for all but the voice bursts B to F, which have no SYNC of
-	// their own.
-	CohNoNext, CohNoCross, CohCrossVoice bool
 	// CohDataPasses is the most times that the coherent stage detects a
 	// BPTC(196,96) data burst that fails its check again; 0 means
 	// cohDataPasses, below 0 none.
 	CohDataPasses int
-	// CohVoiceOnly leaves every burst but a voice burst to the ratios of
-	// the core: the coherent stage only fits the carrier and timing on
-	// the others.
-	CohVoiceOnly bool
+	// CohRing is the log2 of the length of the ring of samples of the
+	// coherent stage, which must hold the oldest burst that softExt
+	// detects; 0 means cohHist.
+	CohRing int
+	// CohWin, when above 0, runs the trellis of the coherent stage in
+	// blocks of CohWin symbols with cohLook symbols of lookahead, which
+	// shrinks its buffers to CohWin+cohLook symbols, instead of over the
+	// whole run.
+	CohWin int
+	// DataPasses is the number of times a coherent tier detects a
+	// BPTC(196,96) data burst that fails its check again, with the
+	// extrinsic information of its grid decode as priors weighed by
+	// DataPrior. DataUnchecked does so also for a burst without a check
+	// whose decode corrected bits.
+	DataPasses    int
+	DataPrior     float32
+	DataUnchecked bool
+	// IQDisc runs the streaming receiver on I/Q as iqRx, iqDisc before a
+	// DiscReceiver at IQHz, 12000 or 24000, in place of leanRx. 0 means
+	// 24000.
+	IQHz   int
+	IQDisc bool
 	// TwoPass detects each stream of a coherent tier twice: a first pass
 	// measures the anchors and the carrier of up to TwoPassSlots slots (0
 	// means twoPassSlots), and a second pass detects them again with the
@@ -208,25 +143,95 @@ type options struct {
 	// 2 those of the anchors on each side interpolated. TwoPassKeepTiming
 	// and TwoPassKeepCarrier keep the timing at the end of the first pass
 	// and the carrier of the first pass in each slot instead.
-	TwoPass            bool
 	TwoPassSlots       int
 	TwoPassSmooth      int
 	TwoPassLevels      int
+	TwoPass            bool
 	TwoPassKeepTiming  bool
 	TwoPassKeepCarrier bool
+	// Coherent selects the coherent trellis detector instead of the FM
+	// discriminator.
+	Coherent bool
+	// ExactPhase carries the carrier phase in the trellis state, so that
+	// paths merge only with the same phase, instead of with each survivor.
+	ExactPhase bool
+	// LogMAP makes the ExactPhase trellis sum the paths into each state and
+	// symbol exactly (log-sum-exp) instead of taking the best, and the bit
+	// ratios of a symbol sum its two digits likewise. The phase drift step
+	// keeps the best neighbor.
+	LogMAP bool
+	// SoftFEC rewrites the FEC fields of each burst with the codeword that
+	// soft-decision decoding picks.
+	SoftFEC bool
+	// BPTCOSD decodes BPTC(196,96) by ordered statistics; otherwise by
+	// Chase-II around the hard decoder.
+	BPTCOSD bool
+	// GridBPTC decodes a BPTC(196,96) block whose CRC or Reed-Solomon
+	// check fails again by iterative row and column decoding of its grid.
+	GridBPTC bool
+	// OSDBytes scores the ordered statistics patterns with byte tables in
+	// place of nibble tables, 16 KiB more for each decoder. The decode is
+	// the same.
+	OSDBytes bool
+	// WarmUp detects the first slots of a stream twice, the first time
+	// only to settle the carrier, timing and modulation index estimates.
+	WarmUp bool
+	// TrackCarrier follows the carrier between anchors with a
+	// decision-directed estimate, after the warm pass.
+	TrackCarrier bool
+	// TrackH estimates the modulation index of each stream.
+	TrackH bool
+	// CompactChannel holds the channel ring of the coherent tiers as 8-bit
+	// block floating point and keeps no copy of the wide input: a retune
+	// rotates the samples it holds instead of filtering the input again.
+	CompactChannel bool
+	// SoftExt adds softExt after the streaming core: the stages that
+	// ExtAMBE, ExtOSD and ExtELC select, and the ExtLookback slots before
+	// the SYNC of a lock.
+	SoftExt bool
+	// ExtAMBE decodes C0 and C1 of each voice frame by soft ML.
+	ExtAMBE bool
+	// ExtOSD decodes a BPTC(196,96) block whose check fails after the
+	// decode of the core by ordered statistics, and again over its grid.
+	ExtOSD bool
+	// ExtELC decodes the embedded LC of each superframe over its four
+	// fragments, summed with the earlier superframes of the call.
+	ExtELC bool
+	// ExtNPML detects the bursts that softExt decodes from the symbols of
+	// the core by npml, with the correlation of their noise.
+	ExtNPML bool
+	// IQTuneSyncOnly moves the oscillator of iqRx while the core is
+	// locked only by the carrier offset of the SYNC fits, not by the mean
+	// frequency of the channel filter samples, which the gaps between the
+	// bursts, where another channel can leak in, also move.
+	IQTuneSyncOnly bool
+	// CohExt adds to softExt on iqRx, or on a DiscReceiver, the coherent
+	// detection of each burst again, with the trellis settings PSPGain and
+	// LLRScale.
+	CohExt bool
+	// CohLazy runs the core of a DiscReceiver with CohExt on its input,
+	// and builds the phase of each sample that the coherent detection
+	// reads from the input as it reads it, instead of a ring of channel
+	// filter samples for both.
+	CohLazy bool
+	// CohLocked leaves the SYNC search to the core: the coherent stage
+	// tests no SYNC that the discriminator does not show, which costs the
+	// most on noise.
+	CohLocked bool
+	// CohNoNext leaves out the run of the coherent stage from the SYNC of a
+	// BS burst into the second half of the slot before, CohNoCross its run
+	// from the SYNC of the slot before into a burst, and CohCrossVoice
+	// that run for all but the voice bursts B to F, which have no SYNC of
+	// their own.
+	CohNoNext, CohNoCross, CohCrossVoice bool
+	// CohVoiceOnly leaves every burst but a voice burst to the ratios of
+	// the core: the coherent stage only fits the carrier and timing on
+	// the others.
+	CohVoiceOnly bool
 	// CohSignMiss is the most SYNC symbols whose sign may miss for a
 	// candidate of the search that the coherent stage verifies; 0 means
 	// leanExtSignMiss.
 	CohSignMiss uint8
-	// CohRing is the log2 of the length of the ring of samples of the
-	// coherent stage, which must hold the oldest burst that softExt
-	// detects; 0 means cohHist.
-	CohRing int
-	// CohWin, when above 0, runs the trellis of the coherent stage in
-	// blocks of CohWin symbols with cohLook symbols of lookahead, which
-	// shrinks its buffers to CohWin+cohLook symbols, instead of over the
-	// whole run.
-	CohWin int
 	// MidTiming takes the signs halfway between the symbols of a hunting
 	// lock from the samples of the timing loop, interpolated linearly, in
 	// place of the kept samples by Catmull-Rom, which costs more. It
