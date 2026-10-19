@@ -78,6 +78,9 @@ type pulse struct {
 	gain float64
 	tab  []float64
 	per  int
+	// flat makes nyquist give the pulse the same gain at etsiHz as at 0
+	// Hz.
+	flat bool
 }
 
 // core is the pulse at t symbols before its taper and echoes: the sampled
@@ -149,6 +152,23 @@ func (p *pulse) invert(hz float64, chain func(f float64) float64) {
 	}
 	det := a11*a22 - a12*a12
 	p.inv = [2]float64{(b1*a22 - b2*a12) / det, (a11*b2 - a12*b1) / det}
+}
+
+// etsiHz is the tone of the deviation test pattern +3 +3 -3 -3 (ETSI TS
+// 102 361-1 10.2.2.3).
+const etsiHz = SymbolRate / 4.0
+
+// baseGain is the gain of base at f cycles per symbol over its gain at 0.
+func (p pulse) baseGain(f float64) float64 {
+	const grid = 64
+	var a, b float64
+	for j := -p.span * grid; j <= p.span*grid; j++ {
+		t := float64(j) / grid
+		v := p.base(t)
+		a += v * math.Cos(2*math.Pi*f*t)
+		b += v
+	}
+	return a / b
 }
 
 // rcSpectrum is the raised-cosine spectrum of roll-off 0.2 at f cycles per
@@ -236,6 +256,9 @@ const (
 	nyquistRidge = 1e-6
 )
 
+// nyquistFlat is the weight of the row of flat in nyquist.
+const nyquistFlat = 1e3
+
 // nyquist sets the echoes of p: the weights b_k, k from -span to span in
 // steps of 1/nyquistStep, of the pulses rrc(t-k) under the taper that,
 // added to the tapered pulse, make the pulse after the receive filter a
@@ -287,8 +310,9 @@ func (p *pulse) nyquist() {
 		}
 	}
 	// Rows r_m = resp_m - [m = 0] area, which the echoes take to -r_m of
-	// the pulse.
-	rows := make([][]float64, nm)
+	// the pulse; with flat, a last row of weight nyquistFlat for the gain
+	// at etsiHz less that at 0 Hz.
+	rows := make([][]float64, nm, nm+1)
 	for m := range nm {
 		rows[m] = make([]float64, n+1)
 		for k := range n + 1 {
@@ -297,6 +321,21 @@ func (p *pulse) nyquist() {
 				rows[m][k] -= a[nm][k]
 			}
 		}
+	}
+	if p.flat {
+		e := make([]float64, n+1)
+		for j := range ng {
+			t := tg(j)
+			w := p.taper(t) / nyquistGrid * nyquistFlat * (math.Cos(2*math.Pi*etsiHz/SymbolRate*t) - 1)
+			for k := range n + 1 {
+				if k == n {
+					e[k] += p.core(t) * w
+				} else {
+					e[k] += p.core(t-float64(k-nyquistStep*p.span)/nyquistStep) * w
+				}
+			}
+		}
+		rows = append(rows, e)
 	}
 	// Normal equations, solved by Gaussian elimination with pivoting.
 	g := make([][]float64, n)

@@ -177,6 +177,10 @@ type PulseConfig struct {
 	// root-raised-cosine.
 	Shape     []float64
 	PerSymbol int
+	// Flat, with Exact, makes the gain of the pulse and what follows it at
+	// 1200 Hz, the tone of the deviation test pattern, that at 0 Hz, so the
+	// pattern has the peak deviation of the specification.
+	Flat bool
 }
 
 // pulseOf returns the pulse of the tier t with c applied.
@@ -189,6 +193,7 @@ func pulseOf(t Tier, c PulseConfig) pulse {
 		pu.span = c.Span
 	}
 	pu.win, pu.beta, pu.comp, pu.gain = window(c.Window), c.Beta, c.Comp, c.Gain
+	pu.flat = c.Flat
 	if len(c.Shape) == 2*pu.span*c.PerSymbol+1 && c.PerSymbol > 0 {
 		pu.tab, pu.per = c.Shape, c.PerSymbol
 	}
