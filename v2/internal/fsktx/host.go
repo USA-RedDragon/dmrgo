@@ -137,6 +137,11 @@ type AudioConfig struct {
 	Level, Offset int
 	// Tier selects the modulator. The zero value TierDefault is Tier1.
 	Tier Tier
+	// Exact makes the pulse of Tier1 and Tier2 a Nyquist pulse after a
+	// receive root-raised-cosine filter, with the gain of a run of one
+	// symbol at the symbol times, through the zero-order hold of a DAC at
+	// Hz, which the pulse inverts.
+	Exact bool
 }
 
 // Audio modulates the deviation signal that drives the modulator input of
@@ -182,6 +187,10 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		pu := pulse{span: 8}
 		if cfg.Tier == Tier2 {
 			pu.span = 16
+		}
+		if cfg.Exact {
+			pu.nyquist()
+			pu.invert(float64(cfg.Hz), holdChain(float64(cfg.Hz)))
 		}
 		k, err := newPoly(pu, cfg.Hz, cfg.Tier != Tier2)
 		if err != nil {
@@ -231,6 +240,12 @@ type IQConfig struct {
 	RampSeconds float64
 	// Tier selects the modulator. The zero value TierDefault is Tier1.
 	Tier Tier
+	// Exact makes the pulse of Tier1 and Tier2 a Nyquist pulse after a
+	// receive root-raised-cosine filter, with the gain of a run of one
+	// symbol at the symbol times, and the phase of the I/Q that of FM by
+	// the shaped deviation: the pulse inverts the linear interpolation from
+	// the shaper to Rate and the sum of the phase steps at Rate.
+	Exact bool
 }
 
 // IQ modulates complex I/Q for a software radio: it FM-modulates the
@@ -297,6 +312,10 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	pu := pulse{span: 8}
 	if cfg.Tier == Tier2 {
 		pu.span = 16
+	}
+	if cfg.Exact {
+		pu.nyquist()
+		pu.invert(iqShaperHz, interpChain(iqShaperHz, float64(cfg.Rate)))
 	}
 	k, err := newPoly(pu, iqShaperHz, cfg.Tier != Tier2)
 	if err != nil {

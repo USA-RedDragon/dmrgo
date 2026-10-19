@@ -17,19 +17,57 @@ var updateTables = flag.Bool("update", false, "rewrite tables_gen.go from the ta
 const tablesFile = "tables_gen.go"
 
 func tier0Pulses() []struct {
-	name string
-	hz   int
-	p    pulse
+	name  string
+	hz    int
+	p     pulse
+	units float64
 } {
-	return []struct {
-		name string
-		hz   int
-		p    pulse
+	t := []struct {
+		name  string
+		hz    int
+		p     pulse
+		units float64
 	}{
-		{"taps24k", 24000, pulse{span: 8}},
-		{"taps48k", 48000, pulse{span: 6}},
-		{"tapsIQ", 24000, pulse{span: 4}},
+		{"taps24k", 24000, pulse{span: 8}, tableUnits},
+		{"taps48k", 48000, pulse{span: 6}, tableUnits},
+		{"tapsIQ", 24000, pulse{span: 4}, tableUnits},
 	}
+	if !tier0Exact {
+		return t
+	}
+	for i := range t {
+		t[i].p.nyquist()
+		hz := float64(t[i].hz)
+		if t[i].name == "tapsIQ" {
+			t[i].p.invert(hz, interpChain(hz, tier0IQRate))
+		} else {
+			t[i].p.invert(hz, holdChain(hz))
+		}
+	}
+	return t
+}
+
+// roundSum rounds the values of v to integers whose sum is the rounded
+// sum of v, by the largest remainders.
+func roundSum(v []float64) []int {
+	out := make([]int, len(v))
+	var sum float64
+	got := 0
+	for i, x := range v {
+		out[i] = int(math.Floor(x))
+		got += out[i]
+		sum += x
+	}
+	for want := int(math.Round(sum)); got < want; got++ {
+		best := -1
+		for i, x := range v {
+			if out[i] == int(math.Floor(x)) && (best < 0 || x-math.Floor(x) > v[best]-math.Floor(v[best])) {
+				best = i
+			}
+		}
+		out[best]++
+	}
+	return out
 }
 
 func TestTablesGenerated(t *testing.T) {
@@ -102,9 +140,25 @@ func renderTables() ([]byte, error) {
 		for p := range l {
 			b.WriteString("{")
 			sum := 0
+			row := make([]int, n)
 			for i := range n {
-				v := int16(math.Round(h[p*n+i] * tableUnits / 3))
-				sum += max(int(v), -int(v))
+				row[i] = int(int16(math.Round(h[p*n+i] * t.units / 3)))
+			}
+			if tier0Exact {
+				// Each phase passes a run of one symbol at exactly units.
+				x := make([]float64, n)
+				var s float64
+				for i := range n {
+					x[i] = h[p*n+i] * t.units / 3
+					s += x[i]
+				}
+				for i := range n {
+					x[i] += (t.units/3 - s) / float64(n)
+				}
+				row = roundSum(x)
+			}
+			for _, v := range row {
+				sum += max(v, -v)
 				fmt.Fprintf(&b, "%d,", v)
 			}
 			peak = max(peak, sum)

@@ -7,6 +7,15 @@ import (
 
 const tableUnits = 15000
 
+// tier0Exact makes the tables of the Tier0 modulators Nyquist pulses after
+// a receive root-raised-cosine filter, with the inverse of the hold of a
+// DAC or of the interpolation of MCUIQ at tier0IQRate, and each phase
+// exact for a run of one symbol.
+const (
+	tier0Exact  = false
+	tier0IQRate = 96000
+)
+
 const (
 	maxSamples = 10
 	maxTaps    = 16

@@ -70,14 +70,211 @@ type pulse struct {
 	win  window
 	beta float64
 	comp float64
+	// inv, when not zero, is the weights c1 and c2 of a five-tap
+	// symmetric filter that invert sets, in place of comp.
+	inv [2]float64
+	// echo, when set, holds the weights of the echoes of nyquist, which
+	// taps sets.
+	echo *[2*maxTaps + 1]float64
 }
 
 func (p pulse) at(t, d float64) float64 {
-	h := func(t float64) float64 { return rrc(t) * taper(p.win, p.beta, t/float64(p.span)) }
-	if p.comp == 0 {
-		return h(t)
+	if p.inv != [2]float64{} {
+		c1, c2 := p.inv[0], p.inv[1]
+		return (1-2*c1-2*c2)*p.base(t) + c1*(p.base(t-d)+p.base(t+d)) + c2*(p.base(t-2*d)+p.base(t+2*d))
 	}
-	return (1+2*p.comp)*h(t) - p.comp*h(t-d) - p.comp*h(t+d)
+	if p.comp == 0 {
+		return p.base(t)
+	}
+	return (1+2*p.comp)*p.base(t) - p.comp*p.base(t-d) - p.comp*p.base(t+d)
+}
+
+// invert sets p.inv to the five-tap symmetric filter at hz, with a gain of
+// 1 at 0 Hz, that comes closest to 1/chain(f) in least squares over the
+// band of the pulse, weighted by the raised-cosine spectrum: the inverse
+// of the response chain of what follows the pulse.
+func (p *pulse) invert(hz float64, chain func(f float64) float64) {
+	var a11, a12, a22, b1, b2 float64
+	const n = 512
+	for i := range n {
+		f := (float64(i) + 0.5) / n * (1 + rrcAlpha) * SymbolRate / 2
+		w := rcSpectrum(f / SymbolRate)
+		om := 2 * math.Pi * f / hz
+		x1, x2 := 2*(math.Cos(om)-1), 2*(math.Cos(2*om)-1)
+		y := 1/chain(f) - 1
+		a11 += w * x1 * x1
+		a12 += w * x1 * x2
+		a22 += w * x2 * x2
+		b1 += w * x1 * y
+		b2 += w * x2 * y
+	}
+	det := a11*a22 - a12*a12
+	p.inv = [2]float64{(b1*a22 - b2*a12) / det, (a11*b2 - a12*b1) / det}
+}
+
+// rcSpectrum is the raised-cosine spectrum of roll-off 0.2 at f cycles per
+// symbol.
+func rcSpectrum(f float64) float64 {
+	const a = rrcAlpha
+	f = math.Abs(f)
+	switch {
+	case f <= (1-a)/2:
+		return 1
+	case f >= (1+a)/2:
+		return 0
+	default:
+		return 0.5 * (1 + math.Cos(math.Pi/a*(f-(1-a)/2)))
+	}
+}
+
+// sinc is sin(pi x) / (pi x).
+func sinc(x float64) float64 {
+	if x == 0 {
+		return 1
+	}
+	return math.Sin(math.Pi*x) / (math.Pi * x)
+}
+
+// holdChain is the response of a zero-order hold at hz.
+func holdChain(hz float64) func(f float64) float64 {
+	return func(f float64) float64 { return sinc(f / hz) }
+}
+
+// interpChain is the response from the frequency at hz to the phase at
+// rate: the linear interpolation by rate/hz and the sum of the phase steps
+// at rate, over the integral of FM.
+func interpChain(hz, rate float64) func(f float64) float64 {
+	return func(f float64) float64 {
+		l := sinc(f/hz) / sinc(f/rate)
+		return l * l / sinc(f/rate)
+	}
+}
+
+// base is the pulse at t symbols before the inverse-sinc: the tapered
+// root-raised-cosine pulse and, with echo, its echoes.
+func (p pulse) base(t float64) float64 {
+	w := taper(p.win, p.beta, t/float64(p.span))
+	if w == 0 {
+		return 0
+	}
+	v := rrc(t)
+	if p.echo != nil {
+		for k, b := range p.echo[:2*p.span+1] {
+			if b != 0 {
+				v += b * rrc(t-float64(k-p.span))
+			}
+		}
+	}
+	return v * w
+}
+
+// nyquistGrid is the number of points per symbol of the integrals of
+// nyquist.
+const nyquistGrid = 64
+
+// nyquistRxSpan is the half-length in symbols of the receive filter of
+// nyquist, as a measuring receiver truncates it.
+const nyquistRxSpan = 32
+
+// nyquist sets the echoes of p: the weights b_k, k from -span to span, of
+// the pulses rrc(t-k) under the taper that, added to the tapered pulse,
+// make the pulse after a receive root-raised-cosine filter a Nyquist
+// pulse: 1 at its centre over its area, 0 at the other symbol times, in
+// least squares over the symbol times within 2 span of the centre. The
+// truncation of the pulse otherwise leaves intersymbol interference and a
+// gain at the symbol times other than the gain of a run of one symbol.
+func (p *pulse) nyquist() {
+	n := 2*p.span + 1
+	nm := 4*p.span + 1
+	ng := 2 * p.span * nyquistGrid
+	tg := func(j int) float64 { return float64(j)/nyquistGrid - float64(p.span) + 0.5/nyquistGrid }
+	// a[m][k]: the response at symbol m-2 span of basis k (k = n is the
+	// tapered pulse itself); dc[k] its area.
+	a := make([][]float64, nm+1)
+	for i := range a {
+		a[i] = make([]float64, n+1)
+	}
+	// rx[i] is the receive filter at i+0.5 grid points less 3 span
+	// symbols, the times m-2 span-t; it is the root-raised-cosine pulse
+	// over nyquistRxSpan symbols on each side, over its area there.
+	rx := make([]float64, 6*p.span*nyquistGrid)
+	var area float64
+	for i := -nyquistRxSpan * nyquistGrid; i < nyquistRxSpan*nyquistGrid; i++ {
+		area += rrc((float64(i)+0.5)/nyquistGrid) / nyquistGrid
+	}
+	for i := range rx {
+		if x := (float64(i)+0.5)/nyquistGrid - float64(3*p.span); math.Abs(x) < nyquistRxSpan {
+			rx[i] = rrc(x) / area
+		}
+	}
+	for j := range ng {
+		t := tg(j)
+		w := taper(p.win, p.beta, t/float64(p.span)) / nyquistGrid
+		for k := range n + 1 {
+			var f float64
+			if k == n {
+				f = rrc(t) * w
+			} else {
+				f = rrc(t-float64(k-p.span)) * w
+			}
+			for m := range nm {
+				a[m][k] += f * rx[(m+2*p.span)*nyquistGrid-j-1]
+			}
+			a[nm][k] += f
+		}
+	}
+	// Rows r_m = resp_m - [m = 0] area, which the echoes take to -r_m of
+	// the pulse.
+	rows := make([][]float64, nm)
+	for m := range nm {
+		rows[m] = make([]float64, n+1)
+		for k := range n + 1 {
+			rows[m][k] = a[m][k]
+			if m == 2*p.span {
+				rows[m][k] -= a[nm][k]
+			}
+		}
+	}
+	// Normal equations, solved by Gaussian elimination with pivoting.
+	g := make([][]float64, n)
+	for i := range g {
+		g[i] = make([]float64, n+1)
+		for j := range n {
+			for _, r := range rows {
+				g[i][j] += r[i] * r[j]
+			}
+		}
+		if i == p.span {
+			// The echo at 0 is the pulse itself, which stays.
+			clear(g[i])
+			g[i][i] = 1
+			continue
+		}
+		for _, r := range rows {
+			g[i][n] -= r[i] * r[n]
+		}
+	}
+	for c := range n {
+		pv := c
+		for r := c + 1; r < n; r++ {
+			if math.Abs(g[r][c]) > math.Abs(g[pv][c]) {
+				pv = r
+			}
+		}
+		g[c], g[pv] = g[pv], g[c]
+		for r := range n {
+			if r != c {
+				f := g[r][c] / g[c][c]
+				for j := c; j <= n; j++ {
+					g[r][j] -= f * g[c][j]
+				}
+			}
+		}
+	}
+	p.echo = new([2*maxTaps + 1]float64)
+	for k := range n {
+		p.echo[k] = g[k][n] / g[k][k]
+	}
 }
 
 func (p pulse) taps(l, m int) []float64 {
