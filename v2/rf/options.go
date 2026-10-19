@@ -18,7 +18,8 @@ type options struct {
 	ExactPhase bool
 	// LogMAP makes the ExactPhase trellis sum the paths into each state and
 	// symbol exactly (log-sum-exp) instead of taking the best, and the bit
-	// ratios of a symbol sum its two digits likewise.
+	// ratios of a symbol sum its two digits likewise. The phase drift step
+	// keeps the best neighbor.
 	LogMAP bool
 	// PhaseStates is the number of carrier phases of the ExactPhase
 	// trellis, 52 or 200; 0 means 200, the exact count for h = 0.27. Fewer

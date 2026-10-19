@@ -256,11 +256,7 @@ func (t *xtrellis) drift(m []float32, ns int) {
 			if p+1 < t.np {
 				nxt = b[p+1]
 			}
-			if t.logmap {
-				b[p] = logAdd(cur, logAdd(prev, nxt)-driftPenalty)
-			} else {
-				b[p] = max(cur, max(prev, nxt)-driftPenalty)
-			}
+			b[p] = max(cur, max(prev, nxt)-driftPenalty)
 			prev = cur
 		}
 	}
