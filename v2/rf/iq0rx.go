@@ -6,6 +6,10 @@ import "math"
 // from bytes at once, on the stack.
 const iq0Chunk = 40
 
+// iq0LowHz is the lowest I/Q rate that New takes for options.IQFront 4, as
+// the decimated output of a radio chip; discRate/2 is the other.
+const iq0LowHz = 9600
+
 // iq0Rx is the I/Q receiver of options.IQFront 4, for microcontrollers:
 // the boxcar of iq0Front over each decimation, without the oscillator, and
 // the DiscReceiver core. The oscillator does not turn the samples: it
@@ -33,6 +37,9 @@ type iq0Rx struct {
 	k, sub float32
 	afcN   int
 	decim  int
+	// unit is the number of samples at basebandRate per input sample, in
+	// which afcN counts: 1, or above 1 for I/Q below basebandRate.
+	unit int
 	// box sums the phase samples of the decimation that the last call
 	// did not end.
 	box   complex64
@@ -72,7 +79,7 @@ func newIQ0Rx(cfg Config, opt options) *iq0Rx {
 	if hz == 0 {
 		hz = discRate / 2
 	}
-	r := &iq0Rx{signed: cfg.Signed, decim: basebandRate / hz, step: 1}
+	r := &iq0Rx{signed: cfg.Signed, decim: cfg.BasebandHz / hz, unit: basebandRate / cfg.BasebandHz, step: 1}
 	r.dc.init(float64(cfg.BasebandHz))
 	r.k = float32(hz) / (2 * math.Pi) * iqUnitsPerHz
 	if opt.IQPoly > 1 {
@@ -157,14 +164,15 @@ func (r *iq0Rx) run(x []complex64) {
 			x = x[1:]
 			continue
 		}
-		n := min(len(x)/dec, (iqAFCBlock-r.afcN+dec-1)/dec, cap(r.audio)-len(r.audio))
+		du := dec * r.unit
+		n := min(len(x)/dec, (iqAFCBlock-r.afcN+du-1)/du, cap(r.audio)-len(r.audio))
 		if r.poly > 1 {
 			r.polyRun(x[:n*dec])
 		} else {
 			r.boxRun(x[:n*dec])
 		}
 		x = x[n*dec:]
-		r.afcN += n * dec
+		r.afcN += n * du
 		r.next()
 	}
 }
@@ -257,7 +265,7 @@ func (r *iq0Rx) one(y complex64) {
 	n := len(r.audio)
 	r.audio = r.audio[:n+1]
 	r.audio[n] = iq0Freq(c, d, r.k, r.sub, r.k*math.Pi)
-	r.afcN += r.decim
+	r.afcN += r.decim * r.unit
 	r.next()
 }
 
@@ -288,7 +296,18 @@ func (r *iq0Rx) boxRun(x []complex64) {
 	pr, pi := real(r.prev), imag(r.prev)
 	ar, ai, pow := real(r.acc), imag(r.acc), r.pow
 	k, sub, half := r.k, r.sub, r.k*math.Pi
-	if dec == 5 {
+	if dec == 1 {
+		for i, v := range x[:len(out)] {
+			yr, yi := real(v), imag(v)
+			c := yi*pr - yr*pi
+			d := yr*pr + yi*pi
+			pr, pi = yr, yi
+			ar += d
+			ai += c
+			pow += yr*yr + yi*yi
+			out[i] = iq0Freq(c, d, k, sub, half)
+		}
+	} else if dec == 5 {
 		for i := range out {
 			b := x[:5:5]
 			x = x[5:]
@@ -327,7 +346,7 @@ func (r *iq0Rx) follow() {
 	acc := r.acc * r.step
 	p := r.pow
 	r.acc, r.pow = 0, 0
-	rate := float32(basebandRate / r.decim)
+	rate := float32(basebandRate / (r.decim * r.unit))
 	est := atan2f(imag(acc), real(acc)) * (rate / (2 * math.Pi))
 	quiet := real(acc)*real(acc)+imag(acc)*imag(acc) < iq0Coherence*iq0Coherence*p*p
 	switch {
@@ -371,7 +390,7 @@ func (r *iq0Rx) tune(hz, dc float32) {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
 	r.hz += hz
-	rate := float32(basebandRate / r.decim)
+	rate := float32(basebandRate / (r.decim * r.unit))
 	w := -2 * math.Pi * r.hz / rate
 	s, c := sincosf(w)
 	r.step = complex(c, s)

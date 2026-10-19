@@ -230,6 +230,7 @@ type Receiver struct {
 	iqd  *iqRx
 	iq0  *iq0Rx
 	cb   *combRx
+	iql  *iqLowRx
 }
 
 // engine is the receiver of every tier. It keeps the samples of a number
@@ -365,10 +366,11 @@ func New(cfg Config) (*Receiver, error) {
 	if cfg.Tier < Tier0 || cfg.Tier > Tier4 {
 		return nil, &ConfigError{Field: "Tier"}
 	}
+	low := cfg.opt != nil && cfg.opt.IQFront == 4 && cfg.opt.IQDisc && (cfg.BasebandHz == iq0LowHz || cfg.BasebandHz == discRate/2)
 	switch {
 	case cfg.BasebandHz == 0:
 		cfg.BasebandHz = basebandRate
-	case cfg.BasebandHz == discRate && cfg.Tier <= Tier1, cfg.BasebandHz == basebandRate:
+	case cfg.BasebandHz == discRate && cfg.Tier <= Tier1, cfg.BasebandHz == basebandRate, low:
 	default:
 		return nil, &ConfigError{Field: "BasebandHz"}
 	}
@@ -399,6 +401,12 @@ func New(cfg Config) (*Receiver, error) {
 	}
 	if !opt.tabled() || opt.IQFront > 0 && opt.CohExt {
 		return nil, &ConfigError{Field: "opt"}
+	}
+	if low && opt.IQLow > 0 {
+		return &Receiver{iql: newIQLowRx(cfg, opt)}, nil
+	}
+	if low {
+		return &Receiver{iq0: newIQ0Rx(cfg, opt)}, nil
 	}
 	if !opt.Coherent {
 		if opt.IQDisc && cfg.BasebandHz == basebandRate {
@@ -520,6 +528,9 @@ func newEngine(cfg Config, opt options) *engine {
 
 // OffsetHz returns the carrier offset of the last stream that ended, in Hz.
 func (r *Receiver) OffsetHz() float64 {
+	if r.iql != nil {
+		return float64(r.iql.hz) + r.iql.d.OffsetHz()/iqUnitsPerHz
+	}
 	if r.iq0 != nil {
 		return float64(r.iq0.hz) + r.iq0.d.OffsetHz()/iqUnitsPerHz
 	}
@@ -534,6 +545,9 @@ func (r *Receiver) OffsetHz() float64 {
 
 // DeviationHz returns the outer deviation of the last locked stream, in Hz.
 func (r *Receiver) DeviationHz() float64 {
+	if r.iql != nil {
+		return r.iql.d.DeviationHz() / iqUnitsPerHz
+	}
 	if r.iq0 != nil {
 		return r.iq0.d.DeviationHz() / iqUnitsPerHz
 	}
@@ -552,6 +566,10 @@ func (r *Receiver) DeviationHz() float64 {
 func (r *Receiver) Write(iq []byte) []Burst {
 	if r.cb != nil {
 		return r.cb.write(iq)
+	}
+	if r.iql != nil {
+		// iqLowRx takes only WriteBaseband.
+		return nil
 	}
 	if r.iq0 != nil {
 		return r.iq0.write(iq)
@@ -572,6 +590,9 @@ func (r *Receiver) WriteBaseband(x []complex64) []Burst {
 	if r.cb != nil {
 		return r.cb.writeBaseband(x)
 	}
+	if r.iql != nil {
+		return r.iql.writeBaseband(x)
+	}
 	if r.iq0 != nil {
 		return r.iq0.writeBaseband(x)
 	}
@@ -588,6 +609,9 @@ func (r *Receiver) WriteBaseband(x []complex64) []Burst {
 func (r *Receiver) Flush() []Burst {
 	if r.cb != nil {
 		return r.cb.flush()
+	}
+	if r.iql != nil {
+		return r.iql.flush()
 	}
 	if r.iq0 != nil {
 		return r.iq0.flush()

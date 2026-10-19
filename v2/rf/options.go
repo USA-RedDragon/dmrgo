@@ -120,6 +120,12 @@ type options struct {
 	// then means 32.
 	IQFront int
 	IQPoly  int
+	// IQLow, above 0, makes New build the receiver of LowIQReceiver,
+	// iqLowRx, in place of iq0Rx for I/Q at the rate of the core
+	// (Config.BasebandHz iq0LowHz or discRate/2, with IQFront 4 and
+	// IQDisc), which a radio chip filtered and decimated. It takes only
+	// WriteBaseband.
+	IQLow int
 	// IQBuf is the number of discriminator samples that iqRx hands the
 	// core at once; 0 means 1024.
 	IQBuf int
