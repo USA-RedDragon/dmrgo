@@ -191,16 +191,18 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 		return 0
 	}
 	n := m.k.symbol(s)
-	if tier0Corr && m.corr {
+	sc, off, buf := int64(m.scale), m.offset, &m.k.buf
+	if tier0Corr && m.corr && n == len(corr48k[0]) {
 		if t := m.corrRow(s); t != nil {
-			for p := range dst[:n] {
-				dst[p] = int16(int32((int64(m.k.buf[p]+int32(t[p]))*int64(m.scale)+1<<(14+tapShift))>>(15+tapShift)) + m.offset)
+			d := (*[len(corr48k[0])]int16)(dst)
+			for p := range d {
+				d[p] = int16(int32((int64(buf[p]+int32(t[p]))*sc+1<<(14+tapShift))>>(15+tapShift)) + off)
 			}
 			return n
 		}
 	}
 	for p := range dst[:n] {
-		dst[p] = int16(int32((int64(m.k.buf[p])*int64(m.scale)+1<<(14+tapShift))>>(15+tapShift)) + m.offset)
+		dst[p] = int16(int32((int64(buf[p])*sc+1<<(14+tapShift))>>(15+tapShift)) + off)
 	}
 	return n
 }
