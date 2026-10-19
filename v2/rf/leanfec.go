@@ -333,7 +333,9 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 			cell := chase[bits.TrailingZeros(uint(g))]
 			rows[cell/15] ^= 1 << (cell % 15)
 		}
-		reserved, cost := r.bptcPattern(&rows, chase, g, &data)
+		// The loop flips one cell per pattern, so the cells flipped in
+		// pattern g are the set bits of its Gray code.
+		reserved, cost := r.bptcPattern(&rows, chase, g^g>>1, &data)
 		cost += base
 		if g == 0 && cost == 0 {
 			if ok, _ := bptcCheck(dt, &data); ok || !checked {
