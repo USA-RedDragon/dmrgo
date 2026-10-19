@@ -398,6 +398,11 @@ type IQConfig struct {
 	// Delay holds the symbols back by that many symbols of no modulation,
 	// up to maxDelay, so the carrier runs longer before the first symbol.
 	Delay int
+	// Rotate makes Tier1 and Tier2 turn the phase into I/Q by a complex
+	// rotation at each output sample, with one sine and cosine of a 64-bit
+	// phase for each shaper sample, in place of a table or a sine and
+	// cosine at each output sample. The phase is the same sum of steps.
+	Rotate bool
 }
 
 // maxDelay is the longest Delay of IQConfig, in symbols.
@@ -437,6 +442,10 @@ type IQ struct {
 	dl    [maxDelay]int8
 	dn    int
 	di    int
+	rot   bool
+	ph    uint64
+	rad   float64
+	inv   float64
 }
 
 const iqShaperHz = 48000
@@ -523,6 +532,7 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 		}
 		q.pred = &predictor{kern: &shapeKern}
 	}
+	q.rot, q.rad, q.inv = cfg.Rotate, 2*math.Pi/float64(cfg.Rate), 1/float64(cfg.Rate)
 	if cfg.Tier != Tier2 {
 		q.tab = make([]float32, 1<<iqTableBits+1)
 		for i := range q.tab {
@@ -615,13 +625,16 @@ func (q *IQ) symbol(s int8) int {
 		s, q.dl[q.di] = q.dl[q.di], s
 		q.di = (q.di + 1) % q.dn
 	}
-	j := 0
 	n := q.k.symbol(q.buf, s)
 	if q.opt != nil {
 		q.opt.process(q.buf[:n])
 	} else if q.pred != nil {
 		q.pred.process(q.buf[:n], s)
 	}
+	if q.rot {
+		return q.rotate(n)
+	}
+	j := 0
 	for _, f := range q.buf[:n] {
 		w := f + q.off
 		dw := (w - q.prev) * float64(q.m) / float64(q.l)
@@ -633,6 +646,61 @@ func (q *IQ) symbol(s int8) int {
 		}
 		q.acc -= q.l
 		q.prev = w
+	}
+	return j
+}
+
+// rotate writes the I/Q of the n shaper samples in buf to out by a complex
+// rotation and returns the number of values.
+func (q *IQ) rotate(n int) int {
+	j := 0
+	l, m := float64(q.l), float64(q.m)
+	for _, f := range q.buf[:n] {
+		w := f + q.off
+		dv := (w - q.prev) / l
+		v0 := q.prev + dv*float64(q.acc)
+		dw := dv * m
+		c := (q.l - q.acc + q.m - 1) / q.m
+		q.acc += c*q.m - q.l
+		q.prev = w
+		out := q.out[j : j+2*c]
+		j += 2 * c
+		steady := q.on && q.env >= q.ramp
+		if !q.on && q.env <= 0 {
+			clear(out)
+		} else {
+			zi, zr := math.Sincos(float64(q.ph>>11) * (2 * math.Pi / (1 << 53)))
+			ri, rr := math.Sincos(v0 * q.rad)
+			di, dr := math.Sincos(dw * q.rad)
+			if steady {
+				zr, zi = zr*q.amp, zi*q.amp
+				for k := 0; k+1 < len(out); k += 2 {
+					zr, zi = zr*rr-zi*ri, zr*ri+zi*rr
+					rr, ri = rr*dr-ri*di, rr*di+ri*dr
+					out[k], out[k+1] = round16(zr), round16(zi)
+				}
+			} else {
+				for k := 0; k+1 < len(out); k += 2 {
+					zr, zi = zr*rr-zi*ri, zr*ri+zi*rr
+					rr, ri = rr*dr-ri*di, rr*di+ri*dr
+					a := q.amp
+					if q.on && q.env < q.ramp || !q.on && q.env > 0 {
+						if q.on {
+							q.env++
+						} else {
+							q.env--
+						}
+						a *= 0.5 - 0.5*math.Cos(math.Pi*float64(q.env)/float64(q.ramp))
+					} else if !q.on {
+						a = 0
+					}
+					out[k], out[k+1] = sat16(zr*a), sat16(zi*a)
+				}
+			}
+		}
+		x := (float64(c)*v0 + dw*float64(c*(c-1)/2)) * q.inv
+		x -= math.Floor(x)
+		q.ph += uint64(x*(1<<62)) << 2
 	}
 	return j
 }
@@ -668,6 +736,13 @@ func (q *IQ) sample(hz float64) (i, qd int16) {
 		s = float64(q.tab[j] + (q.tab[j+1]-q.tab[j])*fr)
 	}
 	return sat16(c * a), sat16(s * a)
+}
+
+// round16 rounds x, which must be within the range of int16, to the
+// nearest int16, ties to even, by the rounding of an add of 1.5 times
+// 2**52.
+func round16(x float64) int16 {
+	return int16(math.Float64bits(x + 0x1.8p52))
 }
 
 func sat16(x float64) int16 {
