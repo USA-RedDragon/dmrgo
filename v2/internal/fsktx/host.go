@@ -437,7 +437,10 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	if cfg.Shape > 0 && cfg.Tier == Tier2 {
 		q.opt = newOptimizer(cfg.Shape)
 	} else if cfg.ShapePred {
-		q.pred = new(predictor)
+		q.pred = &predictor{kern: &shapeKern}
+		if cfg.Tier != Tier2 {
+			q.pred.kern = &shapeKern1
+		}
 	}
 	if cfg.Tier != Tier2 {
 		q.tab = make([]float32, 1<<iqTableBits+1)

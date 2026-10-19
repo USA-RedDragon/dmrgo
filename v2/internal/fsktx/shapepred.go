@@ -35,6 +35,7 @@ func predFeatures(x [predSpan + 1]float64) [predF]float64 {
 // the optimizer of IQConfig.Shape (shapefit_test.go). The kernels have
 // nothing below 3 kHz, as the optimizer's correction.
 type predictor struct {
+	kern *[predK][predF]float64
 	acc  [predK + predSPS]float64
 	psi  [predRing]float64
 	x    [predSpan + 1]float64
@@ -57,7 +58,7 @@ func (p *predictor) process(buf []float64, s int8) {
 		ft := predFeatures(p.x)
 		a := p.acc[:predK]
 		for t := range a {
-			k := &shapeKern[t]
+			k := &p.kern[t]
 			a[t] += ((ft[0]*k[0] + ft[1]*k[1]) + (ft[2]*k[2] + ft[3]*k[3])) +
 				((ft[4]*k[4] + ft[5]*k[5]) + (ft[6]*k[6] + ft[7]*k[7])) +
 				((ft[8]*k[8] + ft[9]*k[9]) + (ft[10]*k[10] + ft[11]*k[11])) +
