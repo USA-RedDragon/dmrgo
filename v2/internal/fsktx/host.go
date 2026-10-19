@@ -24,11 +24,12 @@ const (
 )
 
 var (
-	errTier  = errors.New("fsktx: unknown tier")
-	errPred  = errors.New("fsktx: ShapePred needs Exact and the pulse of its kernels")
-	errHz    = errors.New("fsktx: sample rate out of range")
-	errDelay = errors.New("fsktx: Delay must be from 0 to 64 symbols")
-	errNoise = errors.New("fsktx: NoisePoleR must be from 0 to below 1")
+	errTier    = errors.New("fsktx: unknown tier")
+	errPred    = errors.New("fsktx: ShapePred needs Exact and the pulse of its kernels")
+	errHz      = errors.New("fsktx: sample rate out of range")
+	errDelay   = errors.New("fsktx: Delay must be from 0 to 64 symbols")
+	errNoise   = errors.New("fsktx: NoisePoleR must be from 0 to below 1")
+	errPreEmph = errors.New("fsktx: PreEmphasisHz must be a zero above 0 and a pole above it, below half of Hz")
 )
 
 const polyMaxPhases = 1024
@@ -187,6 +188,11 @@ type AudioConfig struct {
 	// symbols, so that the output depends on a bounded span of symbols
 	// only and does not drift with the age of the Audio. 0 never clears.
 	ShapeSync int
+	// PreEmphasisHz are the corners, zero then pole, of a first-order
+	// pre-emphasis (1+s/wz)/(1+s/wp) that the radio applies to the
+	// modulator input, such as 300 and 3000; Tier1 and Tier2 apply its
+	// inverse first. Zeros mean a flat radio.
+	PreEmphasisHz [2]float64
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -259,6 +265,8 @@ type Audio struct {
 	cbp    []float64
 	cf, cc [512]float64
 	cn     int
+	de     [3]float64
+	dx, dy float64
 }
 
 // NewAudio returns an Audio for cfg. It allocates the Audio, once.
@@ -331,6 +339,15 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 				a.cbp = bandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz), taps)
 			}
 		}
+		if z, p := cfg.PreEmphasisHz[0], cfg.PreEmphasisHz[1]; z > 0 || p > 0 {
+			if !(z > 0 && p > z && 2*p < float64(cfg.Hz)) {
+				return nil, errPreEmph
+			}
+			tz := math.Tan(math.Pi * z / float64(cfg.Hz))
+			tp := math.Tan(math.Pi * p / float64(cfg.Hz))
+			a0 := 1 + 1/tz
+			a.de = [3]float64{(1 + 1/tp) / a0, (1 - 1/tp) / a0, (1 - 1/tz) / a0}
+		}
 		if cfg.Opt > 0 && aoptRate(cfg.Hz) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
 		}
@@ -358,6 +375,13 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 	}
 	if a.opt != nil {
 		a.opt.process(a.buf[:n])
+	}
+	if a.de[0] != 0 {
+		for i, x := range a.buf[:n] {
+			y := a.de[0]*x + a.de[1]*a.dx - a.de[2]*a.dy
+			a.dx, a.dy = x, y
+			a.buf[i] = y
+		}
 	}
 	if a.sync > 0 {
 		if s != -3 && s != -1 && s != 1 && s != 3 {
