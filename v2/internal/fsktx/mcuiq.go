@@ -2,6 +2,13 @@ package fsktx
 
 // The cosine table of MCUIQ: cosTableBits bits of phase index a turn, a
 // quarter turn more lets the sine be the negative cosine a quarter on, and
+// tier0IQCorr adds to the deviation of MCUIQ the correction of corrIQ
+// for the context of corrIQSyms symbols that ends corrIQSkip symbols
+// before the newest, which cuts the power outside the channel.
+const (
+	tier0IQCorr = false
+)
+
 const (
 	cosTableBits = 12
 	iqAmplitude  = 29491
@@ -45,6 +52,9 @@ type MCUIQ struct {
 	// stepQ and stepR those of one step of env.
 	envQ, envR   int32
 	stepQ, stepR int32
+	// codes holds 2 bits for each recent symbol, the newest lowest, and
+	// zeros a bit for each that is 0, for tier0IQCorr.
+	codes, zeros uint32
 	on           bool
 }
 
@@ -61,7 +71,7 @@ func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 	case rampSamples < 1 || rampSamples > 1<<15:
 		return errRamp
 	}
-	*m = MCUIQ{ramp: int32(rampSamples)}
+	*m = MCUIQ{ramp: int32(rampSamples), zeros: ^uint32(0)}
 	for i := range &m.hist {
 		m.hist[i] = 0x18181818
 	}
@@ -114,6 +124,9 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	}
 	m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255/5
 	m.shape()
+	if tier0IQCorr {
+		m.addCorr(c)
+	}
 	dst = dst[:n]
 	switch {
 	case m.on && m.env == m.ramp:
@@ -334,4 +347,22 @@ func (m *MCUIQ) ramping(dst []int16) {
 		}
 	}
 	m.phase, m.prev, m.env, m.envQ, m.envR = phase, prev, env, q, r
+}
+
+// addCorr takes the symbol of code c into the context and adds the
+// correction of its context to buf.
+func (m *MCUIQ) addCorr(c uint32) {
+	z := uint32(0)
+	if c == 4 {
+		z, c = 1, 0
+	}
+	m.codes = m.codes<<2 | c
+	m.zeros = m.zeros<<1 | z
+	if m.zeros>>corrIQSkip&(1<<corrIQSyms-1) != 0 {
+		return
+	}
+	t := &corrIQ[m.codes>>(2*corrIQSkip)&(1<<(2*corrIQSyms)-1)]
+	for p := range t {
+		m.buf[p] += int32(t[p])
+	}
 }

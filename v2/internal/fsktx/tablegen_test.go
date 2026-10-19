@@ -4,6 +4,7 @@ package fsktx
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/format"
@@ -171,10 +172,59 @@ func renderTables() ([]byte, error) {
 		}
 	}
 	renderCorr(&b)
+	if err := renderCorrIQ(&b); err != nil {
+		return nil, err
+	}
 	fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+cosQuarter+1)
 	for i := range 1<<cosTableBits + cosQuarter + 1 {
 		fmt.Fprintf(&b, "%d,", int16(math.Round(iqAmplitude*math.Cos(2*math.Pi*float64(i)/(1<<cosTableBits)))))
 	}
 	b.WriteString("}\n")
 	return format.Source(b.Bytes())
+}
+
+// corrIQFile holds the correction of tier0IQCorr in Hz, fitted from the
+// phase optimizer of Tier2: C symbols of context ending K symbols before
+// the newest, for a pulse of 16 symbols on each side, at 48 kHz.
+const corrIQFile = "testdata/mcorriq-c4.json"
+
+// renderCorrIQ writes corrIQ and its context, or an empty table when
+// tier0IQCorr is off. It needs tapsIQ at 48 kHz.
+func renderCorrIQ(b *bytes.Buffer) error {
+	var span, l int
+	for _, t := range tier0Pulses() {
+		if t.name == "tapsIQ" {
+			span, l = t.p.span, t.hz/SymbolRate
+		}
+	}
+	if !tier0IQCorr {
+		fmt.Fprintf(b, "const (\ncorrIQSyms = 1\ncorrIQSkip = 0\n)\n\nvar corrIQ [4][%d]int16\n\n", l)
+		return nil
+	}
+	raw, err := os.ReadFile(corrIQFile)
+	if err != nil {
+		return err
+	}
+	var c struct {
+		C, K int
+		Hz   []float64
+	}
+	if err := json.Unmarshal(raw, &c); err != nil {
+		return err
+	}
+	skip := c.K - 16 + span
+	if l != 10 || skip < 0 || len(c.Hz) != 10<<(2*c.C) {
+		return fmt.Errorf("%s: bad context or rate", corrIQFile)
+	}
+	fmt.Fprintf(b, "const (\ncorrIQSyms = %d\ncorrIQSkip = %d\n)\n\n", c.C, skip)
+	fmt.Fprintf(b, "var corrIQ = [%d][10]int16{\n", 1<<(2*c.C))
+	for i := range 1 << (2 * c.C) {
+		b.WriteString("{")
+		for p := range 10 {
+			fmt.Fprintf(b, "%d,", int16(math.Round(c.Hz[i*10+p]*tableUnits/1944)))
+		}
+		b.WriteString("},\n")
+	}
+	b.WriteString("}\n\n")
+	return nil
 }
