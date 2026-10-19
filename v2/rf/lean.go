@@ -273,6 +273,10 @@ type leanCore struct {
 	// signMiss is the most SYNC symbols whose sign may miss before the
 	// search tests them: leanSignMiss, more with a stage that verifies.
 	signMiss uint8
+	// suspectRun counts the slots in a row that ended suspect, and
+	// bsSuspectRun is options.BSSuspectRun: the run after which a suspect
+	// lock of a BS stream is stale.
+	suspectRun, bsSuspectRun uint8
 	// suspect marks a lock whose last slot that should have anchored did
 	// not: after a data burst, or where a superframe expects burst A, or
 	// whose burst B to F has an EMB that does not decode. hunt marks a
@@ -473,6 +477,7 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.clickSpan = float32(opt.ClickSpan)
 	r.midTiming = opt.MidTiming && sps <= leanCubicSPS
 	r.signMiss = leanSignMiss
+	r.bsSuspectRun = opt.BSSuspectRun
 	if po := opt.DiscOutlier; po > 0 {
 		r.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
 	}
@@ -1420,7 +1425,7 @@ const staleSlots = 6
 // lock whose first slot did not anchor, or a BS stream without a SYNC for
 // staleSlots, whose repeater may have keyed up again with a new timing.
 func (r *leanCore) stale() bool {
-	if r.forced || r.suspect {
+	if r.forced || r.suspect && (!r.bs || r.suspectRun >= r.bsSuspectRun) {
 		return true
 	}
 	if r.lastAnch == leanNoSlot {
@@ -1464,6 +1469,7 @@ func (r *leanCore) forceLock(src int, data bool, back int64) {
 // before the last, which the timing loop sampled d samples early.
 func (r *leanCore) lockStream(src int, d float32, back int64) {
 	r.locked, r.forced, r.suspect, r.hunt, r.src, r.bs = true, false, false, false, uint8(src), sourceAt(src) == layer2.SyncSourceBS
+	r.suspectRun = 0
 	r.lockNs = r.ns
 	r.streams++
 	r.first = r.ns - 1 - back - leanSyncEnd
@@ -1636,6 +1642,12 @@ func (r *leanCore) anchorAt(j int32, base, shift int64, anchor enums.SyncPattern
 // setHunt sets hunt from stale at the end of a slot. A lock that starts to
 // hunt keeps the matched filter samples from then on.
 func (r *leanCore) setHunt() {
+	switch {
+	case !r.suspect:
+		r.suspectRun = 0
+	case r.suspectRun < math.MaxUint8:
+		r.suspectRun++
+	}
 	if !r.stale() {
 		r.hunt = false
 		return

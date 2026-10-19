@@ -219,6 +219,11 @@ type options struct {
 	// Front96 runs the audio front end at 9.6 kHz in a loop of its own,
 	// with the filter state in locals. The output is the same.
 	Front96 bool
+	// BSSuspectRun is the number of slots in a row that must end suspect
+	// before a lock of a BS stream hunts for that reason. A BS keeps its
+	// timing through a missed SYNC or EMB, and its key-up after a gap
+	// shows as slots without a SYNC. 0 hunts at the first suspect slot.
+	BSSuspectRun uint8
 }
 
 // discOptions returns the settings of the FM discriminator core alone:
