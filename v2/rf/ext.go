@@ -879,8 +879,12 @@ func (x *softExt) end(c *leanCore) {
 }
 
 // extErrGain is the weight of each voice frame in the mean numbers of bit
-// errors of uncoded.
-const extErrGain = 1.0 / 16
+// errors of uncoded, and extCoreShare the most share of the mean of coh
+// that the mean of the core may reach for uncoded to take its bits.
+const (
+	extErrGain   = 1.0 / 16
+	extCoreShare = 0.9
+)
 
 // uncoded sets the bits without FEC of burst b, which coh detected, to the
 // hard decisions of the core where the FEC shows that the core makes fewer
@@ -889,9 +893,10 @@ const extErrGain = 1.0 / 16
 // for it, so that it makes errors that FEC corrects in C0 and C1 of a
 // voice frame but not in its uncoded bits C2 and C3, or in a rate 1 data
 // block. While the hard decisions of C0 and C1 of the core differ less
-// from their decode than those of coh do over the frames before, a voice
-// frame takes C2 and C3 of the core, unless its own C0 and C1 of the core
-// differ more, and a rate 1 data burst takes its payload of the core. The
+// from their decode than those of coh do over the frames before, by
+// coreCleaner, a voice frame takes C2 and C3 of the core, unless its own
+// C0 and C1 of the core differ more, and a rate 1 data burst takes its
+// payload of the core. The
 // counts of one frame alone do not decide: in noise the errors of each
 // frame are a draw of the same rate, so that they say little of those in
 // C2 and C3. core and coh hold the hard decisions of the core and of coh;
@@ -899,7 +904,7 @@ const extErrGain = 1.0 / 16
 func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
 	if known && kind == layer2.KindData {
-		if x.errCore < x.errCoh && b.Fixed.SlotType().DataType == enums.DataTypeRate1 {
+		if x.coreCleaner() && b.Fixed.SlotType().DataType == enums.DataTypeRate1 {
 			for i := range 2 * extPayloadHalf {
 				p := i
 				if i >= extPayloadHalf {
@@ -930,7 +935,7 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 		}
 	}
 	for i := range layer2.VoiceSlotsPerBurst {
-		if x.errCore >= x.errCoh || nCore[i] > nCoh[i] {
+		if !x.coreCleaner() || nCore[i] > nCoh[i] {
 			continue
 		}
 		for _, p := range &softAMBEC2Pos[i] {
@@ -938,6 +943,15 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 			b.Fixed[q] = b.Fixed[q]&^m | core[q]&m
 		}
 	}
+}
+
+// coreCleaner reports whether the mean number of errors of the core is
+// under extCoreShare of that of coh. On a clean signal both means hold the
+// same few errors: on the XPR 8400 recordings a core ahead by 3% took C2
+// and C3 wrong. Through a fade the mean of the core is mostly under a half
+// of that of coh.
+func (x *softExt) coreCleaner() bool {
+	return x.errCore < extCoreShare*x.errCoh
 }
 
 // extPayloadHalf is the number of payload bits of a data burst on each
