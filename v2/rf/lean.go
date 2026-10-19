@@ -363,6 +363,9 @@ type leanCore struct {
 	// only collect the color code and emit nothing.
 	ext                  leanExt
 	replaying, replayDry bool
+	// dfe is set for iqLowRx at 9.6 kHz: burst runs cancelISI. It fills
+	// the room before center.
+	dfe bool
 	// center is the input sample at the center of matched filter sample 0,
 	// in baseband samples, and mfStep the baseband samples per matched
 	// filter sample, a whole number at every input rate.
@@ -1080,6 +1083,57 @@ func (r *leanCore) pushSym(x float32) {
 		r.signs |= 1
 	}
 	r.ns++
+}
+
+// isiLevel returns the level, ±1 or ±3, of the value q in the ring, by
+// the offset off and the threshold thr of the levels in llrStepHz.
+func isiLevel(q int8, off, thr int32) int32 {
+	x := int32(q)*(discStepHz/llrStepHz) + off
+	l := int32(1)
+	if x > thr || x < -thr {
+		l = 3
+	}
+	if x < 0 {
+		l = -l
+	}
+	return l
+}
+
+// cancelISI takes iqLowISI of the levels of the symbols before and after
+// each symbol of the slot from base from it in the ring, by the decisions
+// on their values at the levels of the burst. It adds no noise, as a
+// filter that took the values themselves would. The last symbol of the
+// slot keeps its value: the next is not in the ring yet.
+//
+//go:noinline
+func (r *leanCore) cancelISI(base int64) {
+	k := roundBits(iqLowISI * llrStepHz / discStepHz * (1 << 16))
+	thr, off, dev := 2*r.llrDev, r.llrOff, r.llrDev*k
+	h := ringPos(base)
+	hp := h + leanRing - 1
+	if hp >= leanRing {
+		hp -= leanRing
+	}
+	lp, x := isiLevel(r.ring[hp], off, thr), int32(r.ring[h])
+	l := isiLevel(int8(x), off, thr)
+	// The symbols from start on are in ringSum.
+	start := int32(max(r.ns-syncSymbols-base, 0))
+	var d int32
+	for i := range int32(slotSymbols - 1) {
+		hn := h + 1
+		if hn == leanRing {
+			hn = 0
+		}
+		xn := r.ring[hn]
+		ln := isiLevel(xn, off, thr)
+		y := max(min(x-((lp+ln)*dev+1<<15)>>16, math.MaxInt8), math.MinInt8)
+		r.ring[h] = int8(y)
+		if i >= start {
+			d += y - x
+		}
+		h, x, lp, l = hn, int32(xn), l, ln
+	}
+	r.ringSum += d
 }
 
 // searchSigns takes the sign of the midpoint before the last symbol into
@@ -2165,6 +2219,9 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	// The hard decisions are the signs of the ratios of symLLR: the first
 	// bit is set below 0, the second beyond the midpoint between the
 	// levels, ±2 dev.
+	if r.dfe {
+		r.cancelISI(base)
+	}
 	thr, out := 2*r.llrDev, r.llrDev*leanClickOut/2
 	h := ringPos(base)
 	var acc byte

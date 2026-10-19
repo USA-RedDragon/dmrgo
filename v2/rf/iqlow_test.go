@@ -84,6 +84,33 @@ func TestLowIQReceiver(t *testing.T) {
 	}
 }
 
+// TestLowIQISI checks that a LowIQReceiver at 9.6 kHz decodes every voice
+// frame of a long BS outbound call at 1400 Hz offset at 25 dB. Without
+// cancelISI, a +1 between two +3 symbols, which the phase step at 9.6 kHz
+// and the filter of the chip near the signal spread, lost a frame or more
+// per call.
+func TestLowIQISI(t *testing.T) {
+	if testing.Short() {
+		t.Skip("long call")
+	}
+	slots, _ := benchStream(t, 30)
+	o := discOptions()
+	o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, 2
+	for seed := uint64(1); seed <= 3; seed++ {
+		y := lowIQ(noisyBaseband(slots, 1400, 25, seed), iq0LowHz)
+		var r LowIQReceiver
+		var got []Burst
+		if err := r.Init(LowIQConfig{OnBurst: func(b *Burst) { got = append(got, *b) }, opt: &o}); err != nil {
+			t.Fatal(err)
+		}
+		r.WriteBaseband(y)
+		r.Flush()
+		if exact, total := exactFrames(slots, got); exact != total || total == 0 {
+			t.Errorf("seed %d: %d of %d voice frames exact", seed, exact, total)
+		}
+	}
+}
+
 // TestLowIQConfig checks the errors of LowIQReceiver.Init.
 func TestLowIQConfig(t *testing.T) {
 	var r LowIQReceiver

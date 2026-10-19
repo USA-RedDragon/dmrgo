@@ -19,6 +19,12 @@ const (
 	// the block of the oscillator, so that a block at 12 kHz at full
 	// scale does not overflow.
 	iqLowShift = 10
+	// iqLowISI is the part of the levels of the symbols before and after
+	// that cancelISI takes from each symbol. The phase step over a sample
+	// at 9.6 kHz averages the frequency over half a symbol, and a radio
+	// chip that decimates to 9.6 kHz cuts the band of a signal off its
+	// center, which spread each symbol into its neighbors.
+	iqLowISI = 0.04
 )
 
 // iqLowAtan holds, for i from 0 to 15, the arctangent of i/16 in units of
@@ -116,7 +122,9 @@ type iqLowRx struct {
 // discOptions.
 func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) error {
 	*r = iqLowRx{}
-	return r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: opt})
+	err := r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: opt})
+	r.d.dfe = hz == iq0LowHz && iqLowISI > 0
+	return err
 }
 
 // newIQLowRx returns the receiver of New for cfg at a BasebandHz of the
