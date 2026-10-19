@@ -26,17 +26,17 @@ type cpmModel struct {
 }
 
 // newCPMModel returns the model with a window of d symbols on each side, at
-// sps samples per symbol, 2, 5 or 10, and modulation index h (0.27
-// nominal). The templates at 2 samples per symbol are those at 10 at every
-// fifth sample.
-func newCPMModel(d, sps int, h float64) *cpmModel {
+// sps samples per symbol, 2, 5 or 10, and the nominal modulation index
+// cohIndex; setH sets another. The templates at 2 samples per symbol are
+// those at 10 at every fifth sample.
+func newCPMModel(d, sps int) *cpmModel {
 	res := sps
 	if sps == 2 {
 		res = samplesPerSy
 	}
 	m := &cpmModel{d: d, sps: sps, states: 1 << (4 * d), windows: 1 << (4*d + 2), pp: newPhasePulse(res), res: res}
 	m.tpl = make([]complex64, m.windows*sps)
-	m.setH(h)
+	m.setH(cohIndex)
 	return m
 }
 

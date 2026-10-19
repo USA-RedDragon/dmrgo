@@ -434,7 +434,7 @@ func newEngine(cfg Config, opt options) *engine {
 	r.search = newSyncSearch(r.opt.Coherent, dec)
 	if r.opt.Coherent {
 		d := r.opt.Window
-		r.model = newCPMModel(d, r.opt.TrellisSPS, 0.27)
+		r.model = newCPMModel(d, r.opt.TrellisSPS)
 		r.maxRun = (maxGapSlots + 1) * slotSymbols
 		if r.opt.ExactPhase {
 			r.maxRun = exactGapSlots * slotSymbols

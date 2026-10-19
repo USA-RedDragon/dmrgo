@@ -10,7 +10,7 @@ import (
 // LogMAP trellis index with int(NaN) and panic.
 func TestAnchorZero(t *testing.T) {
 	t.Parallel()
-	m := newCPMModel(1, 5, cohIndex)
+	m := newCPMModel(1, 5)
 	syms := []int{1, -1, 3, -3, 1, 3, -1, -3}
 	x := make([]complex64, len(syms)*m.sps)
 	rot := m.anchor(x, syms)

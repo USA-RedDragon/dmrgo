@@ -249,7 +249,7 @@ func newCohStageOf(opt *options) *cohStage {
 	if opt.CohSPS != 0 {
 		sps = opt.CohSPS
 	}
-	m := newCPMModel(1, sps, cohIndex)
+	m := newCPMModel(1, sps)
 	s := &cohStage{model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
 		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly}
 	if s.llrK == 0 {

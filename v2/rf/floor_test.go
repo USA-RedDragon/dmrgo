@@ -190,7 +190,7 @@ type genieTrellis struct {
 // newGenieTrellis returns a genie trellis with a window of d symbols on
 // each side for spans of up to maxSteps symbols.
 func newGenieTrellis(d, maxSteps int) *genieTrellis {
-	m := newCPMModel(d, samplesPerSy, 0.27)
+	m := newCPMModel(d, samplesPerSy)
 	g := &genieTrellis{m: m, d: d, ns: m.states}
 	n := m.states * floorPhases
 	g.alpha = make([]float32, (maxSteps+1)*n)
