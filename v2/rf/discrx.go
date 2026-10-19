@@ -230,6 +230,10 @@ func (r *DiscReceiver) flush() {
 // as cubic takes them, s3 the last, and the linear interpolation runs
 // between s2 and s3.
 func (r *DiscReceiver) run(x []int16) {
+	if r.front96 && r.f.slow && !r.f.half && r.tm.cubic {
+		r.run96(x)
+		return
+	}
 	f, tm := &r.f, &r.tm
 	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 	// dn counts the matched filter samples after r.n.
@@ -317,6 +321,87 @@ func (r *DiscReceiver) run(x []int16) {
 			}
 		}
 	}
+	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+	r.n += int64(dn)
+	r.acqHead, r.acqLow = kh, kq
+}
+
+// run96 is run for the matched filter at 9.6 kHz with cubic strobes. It
+// keeps the gain, the offset and the head of the filter in locals, and
+// loads them again after the calls that can change them.
+func (r *DiscReceiver) run96(x []int16) {
+	f, tm := &r.f, &r.tm
+	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+	var dn int32
+	kh, kq := r.acqHead, r.acqLow
+	buf, an := r.acqBuf()
+	search, keep := !r.locked, !r.locked || r.hunt
+	k, off := f.k, f.off
+	hist := &f.rrcHist
+	h := f.rrcHead
+	if h >= audio96Taps {
+		h = 0
+	}
+	for i := 0; i < len(x); i++ {
+		v := x[i]
+		if search {
+			f.sum += int32(v)
+			f.sq += int64(v) * int64(v)
+			if f.n++; f.n == frontBlock {
+				tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+				r.acqHead, r.acqLow = kh, kq
+				f.rrcHead = h
+				r.levels()
+				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+				kq = r.acqLow
+				k, off = f.k, f.off
+			}
+		}
+		u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
+		hist[h], hist[h+audio96Taps] = u, u
+		if h++; h == audio96Taps {
+			h = 0
+		}
+		acc := fir96((*[audio96Taps]int8)(hist[h : h+audio96Taps]))
+		y := float32(acc) * (rrcStepHz / 32768.0)
+		dn++
+		s0, s1, s2, s3 = s1, s2, s3, y
+		if keep {
+			q := int16(int8((acc + 1<<13) >> 14))
+			if kh&1 == 0 {
+				kq = q
+			} else if j := kh >> 1; j < int32(len(buf)) {
+				buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+			}
+			if kh++; kh == an {
+				kh = 0
+			}
+		}
+		t--
+		for t <= 0 {
+			at := t
+			mu := 1 + at
+			xv := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+			at--
+			tm.t = t
+			sym := tm.strobe(xv)
+			t = tm.t
+			if sym {
+				tm.s0, tm.s1, tm.s2, tm.s3 = s0, s1, s2, s3
+				r.n += int64(dn)
+				dn = 0
+				r.acqHead, r.acqLow = kh, kq
+				f.rrcHead = h
+				r.symbol(tm.last, at)
+				s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+				kh = r.acqHead
+				buf, an = r.acqBuf()
+				search, keep = !r.locked, !r.locked || r.hunt
+				k, off = f.k, f.off
+			}
+		}
+	}
+	f.rrcHead = h
 	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
 	r.n += int64(dn)
 	r.acqHead, r.acqLow = kh, kq

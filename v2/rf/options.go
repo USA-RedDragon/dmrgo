@@ -216,6 +216,9 @@ type options struct {
 	// place of the kept samples by Catmull-Rom, which costs more. It
 	// applies at up to leanCubicSPS samples per symbol.
 	MidTiming bool
+	// Front96 runs the audio front end at 9.6 kHz in a loop of its own,
+	// with the filter state in locals. The output is the same.
+	Front96 bool
 }
 
 // discOptions returns the settings of the FM discriminator core alone:
