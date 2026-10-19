@@ -383,11 +383,41 @@ func (r *DiscReceiver) run96(x []int16) {
 			mu := 1 + at
 			xv := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
 			at--
-			tm.t = t
-			sym := tm.strobe(xv)
-			t = tm.t
+			// tm.strobe, written out: TinyGo does not inline it in two
+			// loops.
+			sym := true
+			switch {
+			case tm.mm:
+				yv := xv - tm.dc
+				d := tm.dev
+				if abs32(yv) > 2*tm.dev {
+					d = 3 * tm.dev
+				}
+				if yv < 0 {
+					d = -d
+				}
+				e := leanMMSign * (tm.half*yv - d*(tm.last-tm.dc))
+				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
+				tm.last, tm.half = xv, d
+				t += 2 * tm.step
+				if !tm.hold && tm.pow > 0 {
+					t += max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
+				}
+			case tm.mid:
+				tm.half, tm.mid = xv, false
+				t += tm.step
+				sym = false
+			default:
+				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*xv*xv
+				e := tm.half * (tm.last - xv)
+				tm.last, tm.mid = xv, true
+				t += tm.step
+				if !tm.hold && tm.pow > 0 {
+					t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
+				}
+			}
 			if sym {
-				tm.s0, tm.s1, tm.s2, tm.s3 = s0, s1, s2, s3
+				tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
 				r.n += int64(dn)
 				dn = 0
 				r.acqHead, r.acqLow = kh, kq
