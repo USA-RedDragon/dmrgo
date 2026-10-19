@@ -224,6 +224,10 @@ type options struct {
 	// timing through a missed SYNC or EMB, and its key-up after a gap
 	// shows as slots without a SYNC. 0 hunts at the first suspect slot.
 	BSSuspectRun uint8
+	// LinearMid takes the midpoints between the symbols, which the
+	// Gardner loop of the timing uses before a lock, by linear in place
+	// of Catmull-Rom interpolation, with Front96.
+	LinearMid bool
 }
 
 // discOptions returns the settings of the FM discriminator core alone:

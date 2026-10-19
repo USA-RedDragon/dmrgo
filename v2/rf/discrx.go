@@ -122,6 +122,7 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	}
 	r.init(cfg.OnBurst, opt, sps)
 	r.front96 = opt.Front96 && r.f.slow && r.tm.cubic
+	r.linearMid = r.front96 && opt.LinearMid
 	r.f.gain = 1
 	r.f.refresh()
 	r.audio, r.center = &r.f, -int64(discSpan*samplesPerSy)
@@ -360,6 +361,7 @@ func (r *DiscReceiver) run96(x []int16) int {
 	buf, an := r.acqBuf()
 	search, keep := !r.locked, !r.locked || r.hunt
 	k, off := f.k, f.off
+	linMid := r.linearMid
 	hist := &f.rrcHist
 	h := f.rrcHead
 	if h >= audio96Taps {
@@ -375,7 +377,12 @@ func (r *DiscReceiver) run96(x []int16) int {
 			for {
 				at := t
 				mu := 1 + at
-				xv := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+				var xv float32
+				if tm.mid && linMid {
+					xv = s1 + mu*(s2-s1)
+				} else {
+					xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+				}
 				at--
 				// tm.strobe, written out: TinyGo does not inline it in two
 				// loops.

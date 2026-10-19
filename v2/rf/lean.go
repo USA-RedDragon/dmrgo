@@ -293,7 +293,8 @@ type leanCore struct {
 	// options.MidTiming. front96 is options.Front96 of a DiscReceiver at
 	// 9.6 kHz: symbol then leaves the slot that it ends to endSlot, which
 	// run calls after run96 returns, with slotDue set until then.
-	again, midTiming, front96, slotDue bool
+	// linearMid is options.LinearMid for run96.
+	again, midTiming, front96, slotDue, linearMid bool
 	// ext is the stage of a higher tier that decodes and emits each burst
 	// in place of repair, nil for Tier 0, and replaying is set while it
 	// runs the slots before a lock through slot; with replayDry the slots
