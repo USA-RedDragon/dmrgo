@@ -2,6 +2,7 @@ package rf
 
 import (
 	"math"
+	"math/bits"
 	"slices"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -15,6 +16,14 @@ const combMatchSeconds = 0.003
 // combT2Hold is the time, in seconds, after which the Tier2 receiver of
 // combRx emits no more bursts.
 const combT2Hold = 1.0
+
+// combCleanGain is the weight of each frame in which the two receivers of
+// combRx differ in combRx.clean, and combCleanShare the share of clean
+// frames above which CombMode 12 takes a clean frame of Tier2.
+const (
+	combCleanGain  = 1.0 / 16
+	combCleanShare = 0.5
+)
 
 // combSide is the evidence of a burst that a receiver hands combRx beside
 // the burst.
@@ -59,7 +68,16 @@ type combRx struct {
 	// err3 and err2 are the mean numbers of bits of C0 and C1 of a voice
 	// frame that the soft decode of each receiver changed.
 	err3, err2 float32
-	cb         Burst
+	// clean is the mean, over the voice frames in which the two receivers
+	// differ, of the share that are clean: the frames differ in one bit
+	// and the frame of Tier2 equals its own hard decisions, so that its
+	// decode changed no bit. Noise puts errors in the frames of both, so
+	// that the frame of Tier2 then often has some or the frames differ in
+	// more bits; a coherent receiver that errs on a clean signal, as with a
+	// deviation off the nominal one, differs in one bit while Tier2 has no
+	// error.
+	clean float32
+	cb    Burst
 }
 
 // combT2Options returns the settings of the Tier2 receiver of combRx.
@@ -273,6 +291,10 @@ func (c *combRx) pick(x, y *combBurst) *Burst {
 	out := c.cb.Fixed.VoiceSlots()
 	bd, _ := b.Decoded()
 	bs := bd.VoiceSlots()
+	var raw [layer2.VoiceSlotsPerBurst][9]byte
+	if c.mode == 12 {
+		raw = b.Data.VoiceSlots()
+	}
 	clean := fb[0]+fb[1]+fb[2] == 0
 	for i := range fa {
 		if min(fa[i], fb[i]) <= extErrMax {
@@ -303,6 +325,16 @@ func (c *combRx) pick(x, y *combBurst) *Burst {
 			take = core || cleaner && fb[i] <= fa[i]
 		case 11:
 			take = core || fb[i] == 0
+		case 12:
+			if out[i] == bs[i] {
+				break
+			}
+			var v float32
+			if raw[i] == bs[i] && frameDist(&out[i], &bs[i]) == 1 {
+				v = 1
+			}
+			take = core || v == 1 && c.clean > combCleanShare
+			c.clean += combCleanGain * (v - c.clean)
 		}
 		if take {
 			out[i] = bs[i]
@@ -310,4 +342,14 @@ func (c *combRx) pick(x, y *combBurst) *Burst {
 	}
 	c.cb.Fixed.SetVoiceSlots(out)
 	return &c.cb
+}
+
+// frameDist returns the number of bits in which voice frames x and y
+// differ.
+func frameDist(x, y *[9]byte) int {
+	n := 0
+	for i := range x {
+		n += bits.OnesCount8(x[i] ^ y[i])
+	}
+	return n
 }

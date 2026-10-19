@@ -3,6 +3,8 @@ package rf
 import (
 	"math"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
 func TestCombReleaseOnce(t *testing.T) {
@@ -29,5 +31,35 @@ func TestCombReleaseOnce(t *testing.T) {
 		if got[i] != want[i] {
 			t.Fatalf("got %v, want %v", got, want)
 		}
+	}
+}
+
+func TestCombModeClean(t *testing.T) {
+	c := &combRx{mode: 12}
+	var x, y combBurst
+	x.b.Voice, x.b.HasFixed, x.s.hasFlips = enums.VoiceBurstA, true, true
+	y.b = x.b
+	f := y.b.Data.VoiceSlots()
+	f[0][5] ^= 0x10
+	y.b.Data.SetVoiceSlots(f)
+	y.b.Fixed = y.b.Data
+	took := func() bool {
+		return c.pick(&x, &y).Fixed.VoiceSlots()[0] == f[0]
+	}
+	n := 0
+	for !took() {
+		n++
+		if n > 100 {
+			t.Fatal("never takes the clean frame of Tier2")
+		}
+	}
+	if n < 10 {
+		t.Fatalf("takes the clean frame of Tier2 after %d frames, before its share grew", n)
+	}
+	g := f
+	g[0][6] ^= 0x01
+	y.b.Data.SetVoiceSlots(g)
+	if took() {
+		t.Fatal("takes a frame of Tier2 that its decode changed")
 	}
 }
