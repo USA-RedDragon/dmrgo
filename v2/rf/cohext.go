@@ -53,10 +53,10 @@ type cohStage struct {
 	mu      float32
 	llrK    float32
 	buf     []complex64
-	// runs holds the samples of the runs of the burst under detection, which
-	// its detections again with priors repeat, runAt the one under way and
-	// gen the detection.
-	runs  [cohRuns]cohRunSamples
+	// runs holds the correlations of the runs of the burst under detection,
+	// which its detections again with priors repeat, runAt the one under way
+	// and gen the detection.
+	runs  [cohRuns]cohRunCorr
 	runAt int
 	gen   int
 	// symX holds the samples of slot symbols -slotSymbols on that fill
@@ -227,7 +227,6 @@ func newCohStageOf(opt *options) *cohStage {
 	s.symX = make([]complex64, cohSymN*sps)
 	s.symAt = make([]uint32, cohSymN)
 	for i := range s.runs {
-		s.runs[i].x = make([]complex64, cohMaxRun*sps)
 		s.runs[i].corr = make([]complex64, cohMaxRun*m.windows)
 	}
 	s.nsrc = min(opt.Sources, len(s.scanTpl))
@@ -494,14 +493,16 @@ func (s *cohStage) fillSym(k int, x []complex64) {
 	}
 }
 
+// runSamples writes the samples of the run into x, unless the trellis
+// holds the correlations of the run, which are all it takes from them.
 func (s *cohStage) runSamples(k0, k1 int, x []complex64) {
-	d, sps := s.model.d, s.model.sps
-	r := &s.runs[s.runAt]
-	if !r.holds(s, k0, k1) {
-		s.fill(k0+d, k1+d, r.x)
-		r.gen, r.g0, r.dir, r.t0, r.hz, r.k0, r.k1 = s.gen, s.g0, s.dir, s.t0, s.totalHz, k0, k1
+	if s.tr.rowsOK {
+		return
 	}
-	copy(x[:(k1-k0)*sps], r.x)
+	d := s.model.d
+	s.fill(k0+d, k1+d, x)
+	r := &s.runs[s.runAt]
+	r.gen, r.g0, r.dir, r.t0, r.hz, r.k0, r.k1 = s.gen, s.g0, s.dir, s.t0, s.totalHz, k0, k1
 }
 
 // cohRuns is the most runs of the trellis that detect makes for a burst,
@@ -512,20 +513,20 @@ const (
 	cohSymN = 2*slotSymbols + cohShift + 4*runMargin
 )
 
-// cohRunSamples holds the samples of a run from runSamples, and the run,
-// detection and carrier that they are of.
-type cohRunSamples struct {
-	x, corr []complex64
-	gen     int
-	g0      int
-	dir     int
-	t0, hz  float64
-	k0, k1  int
+// cohRunCorr holds the template correlations of the samples of a run,
+// and the run, detection and carrier that they are of.
+type cohRunCorr struct {
+	corr   []complex64
+	gen    int
+	g0     int
+	dir    int
+	t0, hz float64
+	k0, k1 int
 }
 
-// holds reports whether r holds the samples of intervals k0 to k1-1 of the
-// run of s under way.
-func (r *cohRunSamples) holds(s *cohStage, k0, k1 int) bool {
+// holds reports whether r holds the correlations of intervals k0 to k1-1
+// of the run of s under way.
+func (r *cohRunCorr) holds(s *cohStage, k0, k1 int) bool {
 	return r.gen == s.gen && r.g0 == s.g0 && r.dir == s.dir && r.t0 == s.t0 && r.hz == s.totalHz && r.k0 == k0 && r.k1 >= k1
 }
 
