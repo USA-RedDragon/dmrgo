@@ -8,8 +8,8 @@ const (
 // The shaper of MCUIQ: iqHz is its rate, iqPhases its samples of a symbol
 // period and iqSpan the symbols of the pulse of tapsIQ on each side.
 const (
-	iqHz     = 24000
 	iqPhases = len(tapsIQ)
+	iqHz     = iqPhases * SymbolRate
 	iqSpan   = len(tapsIQ[0]) / 2
 	iqWords  = len(tapsIQ[0]) / 4
 )
@@ -50,7 +50,7 @@ type MCUIQ struct {
 // keyed down. On an error m stays as it was.
 func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 	switch {
-	case rate != 2*iqHz && rate != 4*iqHz && rate != 8*iqHz:
+	case rate != 48000 && rate != 96000 && rate != 192000, rate < iqHz:
 		return errRate
 	case offsetHz >= rate/4 || offsetHz <= -rate/4:
 		return errCarrier
@@ -83,7 +83,7 @@ func (m *MCUIQ) Key(on bool) { m.on = on }
 // interleaved. It returns the number of values it wrote. With a dst
 // shorter than 2*Samples, or before Init, it writes nothing, does not take
 // the symbol and returns 0. The output lags the symbols by four symbol
-// periods and one sample at 24 kHz.
+// periods and one sample of the shaper, at 24 kHz.
 func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	n := int(m.values)
 	if n == 0 || len(dst) < n {
@@ -103,6 +103,8 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	switch {
 	case m.on && m.env == m.ramp:
 		switch m.upShift {
+		case 0:
+			m.steady0(dst)
 		case 1:
 			m.steady1(dst)
 		case 2:
@@ -152,10 +154,23 @@ const (
 	cosMask    = 1<<cosTableBits - 1
 )
 
-// steady1 writes the I/Q of the l deviation samples of the shaper to dst
-// at full power and twice the shaper rate, the path of all but the
-// samples of a power ramp. steady2 and steady3 are steady1 at four and
-// eight times the shaper rate.
+// steady0 writes the I/Q of the deviation samples of the shaper to dst at
+// full power and the shaper rate, the path of all but the samples of a
+// power ramp. steady1, steady2 and steady3 are steady0 at two, four and
+// eight times the shaper rate, with the phase step interpolated linearly.
+func (m *MCUIQ) steady0(dst []int16) {
+	phase, step, off := m.phase, m.step, m.off
+	var w int32
+	for p, x := range m.buf {
+		w = x*step + off
+		d := dst[2*p : 2*p+2 : 2*p+2]
+		phase += uint32(w)
+		i := phase >> cosShift
+		d[0], d[1] = cosTable[i], cosTable[(i-cosQuarter)&cosMask]
+	}
+	m.phase, m.prev = phase, w
+}
+
 func (m *MCUIQ) steady1(dst []int16) {
 	phase, prev, step, off := m.phase, m.prev, m.step, m.off
 	for p, x := range m.buf {
