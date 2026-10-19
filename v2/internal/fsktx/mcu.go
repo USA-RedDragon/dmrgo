@@ -192,7 +192,12 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	}
 	n := m.k.symbol(s)
 	if tier0Corr && m.corr {
-		m.addCorr(s)
+		if t := m.corrRow(s); t != nil {
+			for p := range dst[:n] {
+				dst[p] = int16(int32((int64(m.k.buf[p]+int32(t[p]))*int64(m.scale)+1<<(14+tapShift))>>(15+tapShift)) + m.offset)
+			}
+			return n
+		}
 	}
 	for p := range dst[:n] {
 		dst[p] = int16(int32((int64(m.k.buf[p])*int64(m.scale)+1<<(14+tapShift))>>(15+tapShift)) + m.offset)
@@ -200,9 +205,9 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	return n
 }
 
-// addCorr takes the symbol s into the context and adds the correction of
-// its context to the samples of the shaper.
-func (m *MCUAudio) addCorr(s int8) {
+// corrRow takes the symbol s into the context and returns the correction
+// of the context, nil for a context with a symbol 0.
+func (m *MCUAudio) corrRow(s int8) *[10]int16 {
 	z := uint32(0)
 	switch s {
 	case -3, -1, 1, 3:
@@ -212,10 +217,7 @@ func (m *MCUAudio) addCorr(s int8) {
 	m.codes = m.codes<<2 | uint32(s+3)>>1
 	m.zeros = m.zeros<<1 | z
 	if m.zeros>>corr48kSkip&(1<<corr48kSyms-1) != 0 {
-		return
+		return nil
 	}
-	t := &corr48k[m.codes>>(2*corr48kSkip)&(1<<(2*corr48kSyms)-1)]
-	for p := range t {
-		m.k.buf[p] += int32(t[p])
-	}
+	return &corr48k[m.codes>>(2*corr48kSkip)&(1<<(2*corr48kSyms)-1)]
 }
