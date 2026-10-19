@@ -161,8 +161,9 @@ type AudioConfig struct {
 	NoiseZerosHz [4]float64
 	// Opt is the number of iterations per block of the out-of-band
 	// optimizer of Tier1 and Tier2, which models the radio as a DAC hold,
-	// a two-pole Butterworth low pass at 8 kHz and FM at 96 kHz; Hz must
-	// divide 96000. 0 turns it off.
+	// a two-pole Butterworth low pass at 8 kHz and FM at 96 kHz. It works
+	// where 96000 is Hz times a power of two, and is off at other rates
+	// and for 0.
 	Opt int
 }
 
@@ -268,10 +269,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		a.buf = make([]float64, k.l/k.m+1)
 		a.shape = min(max(cfg.Shape, 0), 4)
 		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
-		if cfg.Opt > 0 {
-			if radioHz%cfg.Hz != 0 {
-				return nil, errHz
-			}
+		if cfg.Opt > 0 && aoptRate(cfg.Hz) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
 		}
 		return a, nil

@@ -57,8 +57,18 @@ type aoptimizer struct {
 	jscale    float64
 }
 
-// newAudioOpt returns an aoptimizer for audio at hz, which must divide
-// radioHz, with iters iterations per block.
+// aoptRate reports whether the audio optimizer takes the rate hz: radioHz
+// is hz times a power of two.
+func aoptRate(hz int) bool {
+	if hz <= 0 || radioHz%hz != 0 {
+		return false
+	}
+	up := radioHz / hz
+	return up&(up-1) == 0
+}
+
+// newAudioOpt returns an aoptimizer for audio at hz, which aoptRate
+// takes, with iters iterations per block.
 func newAudioOpt(iters, hz int) *aoptimizer {
 	up := radioHz / hz
 	n := aoptWin * up
@@ -82,7 +92,8 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 			o.wts[p*o.settle+j] = (rise(t) - rise(t-1.0/radioHz)) * radioHz
 		}
 	}
-	o.delay = (aoptWin - aoptCtx - 1 + aoptH + 9) / 10 * 10
+	sym := hz / gcd(hz, 4800)
+	o.delay = (aoptWin - aoptCtx - 1 + aoptH + sym - 1) / sym * sym
 	o.f = make([]float64, optRing)
 	o.x = make([]float64, optRing)
 	o.lp = make([]float64, optLPN)
