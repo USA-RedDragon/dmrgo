@@ -43,10 +43,9 @@ func TestMMDVMCompare(t *testing.T) {
 		t.Fatal(err)
 	}
 	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 1})
-	const pad = 0.3
 	truth := make([]float64, len(built.Bursts))
 	for i := range truth {
-		truth[i] = pad + float64(2*i+1)*slotSeconds
+		truth[i] = msPad + float64(2*i+1)*slotSeconds
 	}
 	dir := t.TempDir()
 	seeds := 6
@@ -54,7 +53,7 @@ func TestMMDVMCompare(t *testing.T) {
 	for cn := 2.0; cn <= 16; cn++ {
 		tot := map[string][3]int{}
 		for seed := range seeds {
-			x := msBaseband(fm, env, pad, 400, cn, uint64(seed+1))
+			x := msBaseband(fm, env, 400, cn, uint64(seed+1))
 			a24 := discAudio(x, 24000)
 			path := filepath.Join(dir, "a.s16")
 			// MMDVM takes the discriminator with the other sign, as a
@@ -88,10 +87,14 @@ func TestMMDVMCompare(t *testing.T) {
 	}
 }
 
-// msBaseband returns the complex baseband of an MS transmission with pad
+// msPad is the length in seconds of the noise on each side of the
+// transmission of msBaseband.
+const msPad = 0.3
+
+// msBaseband returns the complex baseband of an MS transmission with msPad
 // seconds of noise on each side, at offsetHz and C/N cn in 12.5 kHz.
-func msBaseband(fm, env []float64, pad, offsetHz, cn float64, seed uint64) []complex64 {
-	p := int(pad * basebandRate)
+func msBaseband(fm, env []float64, offsetHz, cn float64, seed uint64) []complex64 {
+	p := int(msPad * basebandRate)
 	x := make([]complex64, len(fm)+2*p)
 	rng := rand.New(rand.NewPCG(seed, seed+1))
 	sigma := math.Sqrt(basebandRate/(math.Pow(10, cn/10)*12500)) / math.Sqrt2

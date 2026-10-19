@@ -42,7 +42,7 @@ func TestIQDiscBurstyOffset(t *testing.T) {
 		for seed := range uint64(4) {
 			t.Run(strconv.Itoa(int(tier-Tier0))+"/"+strconv.Itoa(int(seed)), func(t *testing.T) {
 				t.Parallel()
-				x := msBaseband(fmAll, envAll, 0.3, 900, 30, 100+seed)
+				x := msBaseband(fmAll, envAll, 900, 30, 100+seed)
 				if n := c0c1InOrder(want, voiceFrames(receiveBaseband(x, tier))); n < len(want) {
 					t.Errorf("C0 and C1 of %d of %d voice frames exact", n, len(want))
 				}
@@ -86,7 +86,7 @@ func TestIQDiscDataBias(t *testing.T) {
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		t.Run(strconv.Itoa(int(tier-Tier0)), func(t *testing.T) {
 			t.Parallel()
-			x := msBaseband(fmAll, envAll, 0.3, 0, 30, 7)
+			x := msBaseband(fmAll, envAll, 0, 30, 7)
 			r := mustNew(Config{Rate: basebandRate, Tier: tier})
 			var got []Burst
 			var worst float32
@@ -237,7 +237,7 @@ func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, 
 		t.Fatal(err)
 	}
 	fi, _ := rftx.ModulateBS(ib.Slots)
-	x := msBaseband(fmAll, envAll, 0.3, offsetHz, 20, 7)
+	x := msBaseband(fmAll, envAll, offsetHz, 20, 7)
 	var ph float64
 	for i := range x {
 		ph += 2 * math.Pi * (fi[i%len(fi)] + 12500) / basebandRate
