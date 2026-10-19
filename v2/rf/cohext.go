@@ -286,7 +286,38 @@ const (
 	// cohScanWait is the number of symbols after a peak that scan waits
 	// for a higher one.
 	cohScanWait = 3
+	// cohScanSeg is the length of a segment, and cohScanBound the margin
+	// over the bound of the power of a segment's correlation, for the
+	// rounding of its float32 sum.
+	cohScanSeg   = cohScanLen / cohScanSegs
+	cohScanBound = 1.001
 )
+
+// scanPair returns the summed powers of the segment correlations of x
+// with the template tpl of a voice SYNC and with its conjugate, which is
+// the template of the data SYNC of the same source. It reports false,
+// after three segments, when neither can reach thr with rest, a bound
+// of the power of the last segment.
+func scanPair(x []complex64, tpl *[cohScanLen]complex64, rest, thr float64) (mv, md float64, ok bool) {
+	for g := range cohScanSegs {
+		if g == cohScanSegs-1 && max(mv, md)+rest < thr {
+			return 0, 0, false
+		}
+		var cv, cd complex64
+		for j := g * cohScanSeg; j < (g+1)*cohScanSeg; j++ {
+			// The products in float64, as the compiler multiplies
+			// complex64, so that the sums are those of x*tpl.
+			a, b := float64(real(x[j])), float64(imag(x[j]))
+			p, q := float64(real(tpl[j])), float64(imag(tpl[j]))
+			ap, bq, aq, bp := a*p, b*q, a*q, b*p
+			cv += complex(float32(ap-bq), float32(aq+bp))
+			cd += complex(float32(ap+bq), float32(bp-aq))
+		}
+		mv += float64(real(cv)*real(cv) + imag(cv)*imag(cv))
+		md += float64(real(cd)*real(cd) + imag(cd)*imag(cd))
+	}
+	return mv, md, true
+}
 
 // scanTemplate writes the conjugate waveform of SYNC p, symbols 1 to 22,
 // at cohSPS samples per symbol, into tpl.
@@ -326,9 +357,12 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 	}
 	best, bestSrc, bestData := 0.0, 0, false
 	for o := -cohScanOff; o <= cohScanOff; o++ {
-		var e float64
 		x := s.scanX[:]
+		var e, e3 float64
 		for i := range x {
+			if i == 3*cohScanSeg {
+				e3 = e
+			}
 			v := hist[(b0+int64(o)+int64(i))&(s.size-1)]
 			x[i] = v
 			e += float64(real(v)*real(v) + imag(v)*imag(v))
@@ -336,22 +370,24 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 		if e == 0 {
 			continue
 		}
-		ns := noiseShare(x)
+		// A share under cohScanRho or best is not taken, so a source whose
+		// last segment cannot lift it there is left after three.
+		rest := (e - e3) * cohScanSeg * cohScanBound
+		k := cohScanSegs / (e * cohScanLen)
+		ns := -1.0
 		for i := range s.nsrc {
-			for d := range 2 {
-				tpl := &s.scanTpl[i][d]
-				var m float64
-				const seg = cohScanLen / cohScanSegs
-				for g := range cohScanSegs {
-					var c complex64
-					for j := g * seg; j < (g+1)*seg; j++ {
-						c += x[j] * tpl[j]
-					}
-					m += float64(real(c)*real(c) + imag(c)*imag(c))
+			mv, md, ok := scanPair(x, &s.scanTpl[i][0], rest, max(cohScanRho, best)/k)
+			if !ok {
+				continue
+			}
+			for d, m := range [2]float64{mv * k, md * k} {
+				if m < cohScanRho || m <= best {
+					continue
 				}
-				// Each segment explains at most its share of the power.
-				m *= cohScanSegs / (e * cohScanLen)
-				if m > best && 1-m <= cohResidual*ns {
+				if ns < 0 {
+					ns = noiseShare(x)
+				}
+				if 1-m <= cohResidual*ns {
 					best, bestSrc, bestData = m, i, d == 1
 				}
 			}
