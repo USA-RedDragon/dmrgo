@@ -896,7 +896,7 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 //
 //go:noinline
 func (r *leanCore) ringSync(win *syncWindow, t, sps float32, saved *[syncSymbols]int8) {
-	j := uint32(r.ns-syncSymbols) % leanRing
+	j := ringPos(r.ns - syncSymbols)
 	for i := range syncSymbols {
 		v := win.at(t - float32(syncSymbols-1-i)*sps)
 		saved[i], r.ring[j] = r.ring[j], int8(max(min(roundf(v), math.MaxInt8), math.MinInt8))
@@ -921,7 +921,7 @@ func (r *leanCore) resampleStart(d float32) {
 		r.tm.t += d
 		return
 	}
-	j := uint32(r.ns-leanAcqSymbols) % leanRing
+	j := ringPos(r.ns - leanAcqSymbols)
 	for i := range leanAcqSymbols - syncSymbols {
 		x := r.keptAt(r.lastAt + d - float32(leanAcqSymbols-1-i)*sps)
 		r.ring[j] = int8(max(min(roundf(x), math.MaxInt8), math.MinInt8))
@@ -954,7 +954,7 @@ func roundBits(v float32) int32 {
 func (r *leanCore) symbol(x, at float32) {
 	r.lastAt = at
 	q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
-	h := uint32(r.ns) % leanRing
+	h := ringPos(r.ns)
 	r.ring[h] = q
 	old := h + leanRing - syncSymbols
 	if old >= leanRing {
@@ -1091,9 +1091,21 @@ func (r *leanRx) block(p float32) {
 	}
 }
 
+// ringPos returns the position of symbol k in the ring, k modulo leanRing.
+// Symbols before 1<<32 take one 32-bit division; later ones, after about
+// 10 days of a lock, sum the remainders of the two halves of k, as
+// leanRing does not divide 1<<32.
+func ringPos(k int64) uint32 {
+	if uint64(k) < 1<<32 {
+		return uint32(k) % leanRing
+	}
+	hi := uint32(int32(k>>32)%leanRing + leanRing)
+	return (hi%leanRing*(1<<32%leanRing) + uint32(k)%leanRing) % leanRing
+}
+
 // sym returns symbol k in Hz.
 func (r *leanCore) sym(k int64) float32 {
-	return float32(r.ring[uint32(k)%leanRing])*discStepHz + r.off
+	return float32(r.ring[ringPos(k)])*discStepHz + r.off
 }
 
 // syncAt returns the correlation of the SYNC field that ends at symbol end
@@ -1104,7 +1116,7 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 	// its mean is syncSyms8 less syncMean.
 	var mx, xx int32
 	var sr [numSources]int32
-	j := uint32(end-syncSymbols+1) % leanRing
+	j := ringPos(end - syncSymbols + 1)
 	for k := range syncSymbols {
 		q := int32(r.ring[j])
 		if j++; j == leanRing {
@@ -1232,7 +1244,7 @@ func (r *leanCore) searchMid() {
 	d -= r.tm.step
 	if r.clipped(r.ns-1) || !r.fitLevels(r.ns-1, p, true, true) {
 		for i, q := range &saved {
-			r.ring[uint32(r.ns-syncSymbols+int64(i))%leanRing] = q
+			r.ring[ringPos(r.ns-syncSymbols+int64(i))] = q
 		}
 		return
 	}
@@ -1251,7 +1263,7 @@ func (r *leanCore) searchMid() {
 //go:noinline
 func (r *leanCore) clipped(end int64) bool {
 	n := 0
-	j := uint32(end-syncSymbols+1) % leanRing
+	j := ringPos(end - syncSymbols + 1)
 	for range syncSymbols {
 		if q := r.ring[j]; q == math.MaxInt8 || q == math.MinInt8 {
 			n++
@@ -1322,7 +1334,7 @@ func (r *leanCore) midSync() {
 //
 //go:noinline
 func (r *leanCore) restoreSync(saved *[syncSymbols]int8) {
-	j := uint32(r.ns-syncSymbols) % leanRing
+	j := ringPos(r.ns - syncSymbols)
 	for _, q := range saved {
 		r.ring[j] = q
 		if j++; j == leanRing {
@@ -1694,7 +1706,7 @@ func (r *leanCore) syncErrors(end int64, p enums.SyncPattern) int {
 	t0 := (r.dcHz - r.off) / discStepHz
 	hi, lo := t0+2*step/discStepHz, t0-2*step/discStepHz
 	n := 0
-	j := uint32(end-syncSymbols+1) % leanRing
+	j := ringPos(end - syncSymbols + 1)
 	for k := range syncSymbols {
 		q := float32(r.ring[j])
 		if j++; j == leanRing {
@@ -1762,11 +1774,11 @@ func (r *leanCore) unlock() {
 func (r *leanCore) rebuildSigns() {
 	r.ringSum, r.signs = 0, 0
 	for k := int64(syncSymbols); k > 0; k-- {
-		r.ringSum += int32(r.ring[uint32(r.ns-k)%leanRing])
+		r.ringSum += int32(r.ring[ringPos(r.ns-k)])
 	}
 	for k := int64(syncSymbols); k > 0; k-- {
 		r.signs <<= 1
-		if int32(r.ring[uint32(r.ns-k)%leanRing])*syncSymbols > r.ringSum {
+		if int32(r.ring[ringPos(r.ns-k)])*syncSymbols > r.ringSum {
 			r.signs |= 1
 		}
 	}
@@ -1785,7 +1797,7 @@ func (r *leanCore) symLLR(k int64) (int16, int16) {
 	// distance of x to it, and each ratio is the best of two levels less
 	// the best of the other two. By the symmetry of the levels, the best
 	// of each pair is the nearer level, and three distances cover them.
-	x := int32(r.ring[uint32(k)%leanRing])*(discStepHz/llrStepHz) + r.llrOff
+	x := int32(r.ring[ringPos(k)])*(discStepHz/llrStepHz) + r.llrOff
 	ax := x
 	if ax < 0 {
 		ax = -ax
@@ -1888,7 +1900,7 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	// bit is set below 0, the second beyond the midpoint between the
 	// levels, ±2 dev.
 	thr, out := 2*r.llrDev, r.llrDev*leanClickOut/2
-	h := uint32(base) % leanRing
+	h := ringPos(base)
 	var acc byte
 	beyond := 0
 	for k := range slotSymbols {

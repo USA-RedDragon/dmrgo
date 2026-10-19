@@ -221,3 +221,47 @@ func TestRescaleTiming(t *testing.T) {
 		t.Errorf("timing power %.0f, want about %.0f", p, want)
 	}
 }
+
+// TestRingPosWrap checks that the ring positions of the symbols run on
+// past 1<<32 symbols, about 10 days of a lock.
+func TestRingPosWrap(t *testing.T) {
+	t.Parallel()
+	for k := int64(1<<32 - 3*leanRing); k < 1<<32+3*leanRing; k++ {
+		if got, want := ringPos(k), uint32(k%leanRing); got != want {
+			t.Fatalf("ringPos(%d) = %d, want %d", k, got, want)
+		}
+	}
+	if got, want := ringPos(1<<40+5), uint32((1<<40+5)%leanRing); got != want {
+		t.Errorf("ringPos(1<<40+5) = %d, want %d", got, want)
+	}
+}
+
+// TestDiscReceiverRingWrap receives a stream whose symbol count passes
+// 1<<32 halfway through, and checks that each tier gives the bursts of a
+// receiver whose count starts at 0.
+func TestDiscReceiverRingWrap(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 6)
+	a := discAudio(noisyBaseband(slots, 1400, 12, 3), benchAudioHz)
+	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
+		want := receiveAudioTier(t, a, tier)
+		var got []Burst
+		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.ns = 1<<32 - int64(len(a)/benchAudioHz*symbolRate/2)
+		for k := 0; k < len(a); k += 1024 {
+			r.Write(a[k:min(k+1024, len(a))])
+		}
+		r.Flush()
+		if len(got) != len(want) || len(want) < 50 {
+			t.Fatalf("tier %d: %d bursts, want %d", tier-Tier0, len(got), len(want))
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Errorf("tier %d: burst %d at %.3f s differs", tier-Tier0, i, want[i].Seconds)
+			}
+		}
+	}
+}
