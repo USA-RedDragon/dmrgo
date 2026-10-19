@@ -327,20 +327,14 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 	}
 	f.nlist = 0
 	rows := hard
+	var data [12]byte
 	for g := 0; g < 1<<leanChase; g++ {
 		if g > 0 {
 			cell := chase[bits.TrailingZeros(uint(g))]
 			rows[cell/15] ^= 1 << (cell % 15)
 		}
-		data, reserved, _ := bptc.DecodeRows(&rows)
-		cw := bptc.EncodeRows(&data, reserved)
-		cost := base
-		for row := range cw {
-			for e := cw[row] ^ hard[row]; e != 0; e &= e - 1 {
-				l := r.llrAt(bptcPos(bptc.GridBit(row, bits.TrailingZeros16(e))))
-				cost += int32(max(l, -l))
-			}
-		}
+		reserved, cost := r.bptcPattern(&rows, &hard, &data)
+		cost += base
 		if g == 0 && cost == 0 {
 			if ok, _ := bptcCheck(dt, &data); ok || !checked {
 				return false
@@ -349,7 +343,6 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		f.addCand(cost, &data, reserved, size)
 	}
 	pick, failed := 0, checked
-	var data [12]byte
 	for i := 0; checked && i < f.nlist; i++ {
 		f.cand(i, &data)
 		if ok, _ := bptcCheck(dt, &data); ok {
@@ -357,15 +350,43 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 			break
 		}
 	}
-	reserved := f.cand(pick, &data)
-	cw := bptc.EncodeRows(&data, reserved)
+	putBPTC(out, &data, f.cand(pick, &data))
+	return failed
+}
+
+// bptcPattern decodes the BPTC(196,96) grid rows by rows into data and
+// returns its reserved bits and the cost of its codeword: the sum of the
+// LLR magnitudes of the bits where it differs from the hard decisions.
+// It is not inlined, so that the codeword is on the stack only while it
+// runs.
+//
+//go:noinline
+func (r *leanCore) bptcPattern(rows, hard *[13]uint16, data *[12]byte) (uint8, int32) {
+	var reserved uint8
+	*data, reserved, _ = bptc.DecodeRows(rows)
+	cw := bptc.EncodeRows(data, reserved)
+	var cost int32
+	for row := range cw {
+		for e := cw[row] ^ hard[row]; e != 0; e &= e - 1 {
+			l := r.llrAt(bptcPos(bptc.GridBit(row, bits.TrailingZeros16(e))))
+			cost += int32(max(l, -l))
+		}
+	}
+	return reserved, cost
+}
+
+// putBPTC writes the BPTC(196,96) codeword of data and reserved into out.
+// It is not inlined, as bptcPattern.
+//
+//go:noinline
+func putBPTC(out *layer2.RawBurst, data *[12]byte, reserved uint8) {
+	cw := bptc.EncodeRows(data, reserved)
 	softPut(out, bptcPos(0), false)
 	for row, w := range &cw {
 		for col := range 15 {
 			softPut(out, bptcPos(bptc.GridBit(row, col)), w>>col&1 != 0)
 		}
 	}
-	return failed
 }
 
 // fixRate34 decodes the rate 3/4 trellis of the burst, as

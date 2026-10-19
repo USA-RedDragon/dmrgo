@@ -1186,9 +1186,7 @@ func (r *leanCore) searchSym(strict bool) {
 				r.resampleStart(d)
 			} else {
 				// Back to the SYNC as the loop sampled it.
-				for i, q := range &saved {
-					r.ring[uint32(r.ns-syncSymbols+int64(i))%leanRing] = q
-				}
+				r.restoreSync(&saved)
 			}
 		}
 		if !ok {
@@ -1247,12 +1245,19 @@ func (r *leanCore) searchMid() {
 // scales to discInputRMSHz lies well within them, and noise clips only a
 // few: the front end scaled the field for a weaker input, such as the noise
 // of an unmodulated carrier, and its levels are lost. A lock to it would
-// keep that scale, as the front end keeps it for a locked stream.
+// keep that scale, as the front end keeps it for a locked stream. It is
+// not inlined, as coarseAt.
+//
+//go:noinline
 func (r *leanCore) clipped(end int64) bool {
 	n := 0
-	for k := end - syncSymbols + 1; k <= end; k++ {
-		if q := r.ring[uint32(k)%leanRing]; q == math.MaxInt8 || q == math.MinInt8 {
+	j := uint32(end-syncSymbols+1) % leanRing
+	for range syncSymbols {
+		if q := r.ring[j]; q == math.MaxInt8 || q == math.MinInt8 {
 			n++
+		}
+		if j++; j == leanRing {
+			j = 0
 		}
 	}
 	return 2*n > syncSymbols
@@ -1309,8 +1314,20 @@ func (r *leanCore) midSync() {
 		r.forced = true
 		return
 	}
-	for i, q := range &saved {
-		r.ring[uint32(r.ns-syncSymbols+int64(i))%leanRing] = q
+	r.restoreSync(&saved)
+}
+
+// restoreSync writes the symbols saved back into the ring at the last
+// symbols, where ringSync took them from. It is not inlined, as coarseAt.
+//
+//go:noinline
+func (r *leanCore) restoreSync(saved *[syncSymbols]int8) {
+	j := uint32(r.ns-syncSymbols) % leanRing
+	for _, q := range saved {
+		r.ring[j] = q
+		if j++; j == leanRing {
+			j = 0
+		}
 	}
 }
 
