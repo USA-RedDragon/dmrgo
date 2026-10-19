@@ -437,16 +437,19 @@ func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 		}
 		metric = next
 	}
-	var t [softTrellisSteps]uint8
+	// The traceback keeps the state of step k in the survivor of state 0
+	// of step k, which it has read, so that it needs no array of them.
 	state := 0
 	for k := softTrellisSteps - 1; k >= 0; k-- {
-		t[k] = uint8(state)
-		state = f.prev(k, state)
+		p := f.prev(k, state)
+		f.setPrev(k, 0, state)
+		state = p
 	}
 	state = 0
 	for k := range softTrellisSteps {
-		lab := tr.label[state][t[k]]
-		state = int(t[k])
+		tk := f.prev(k, 0)
+		lab := tr.label[state][tk]
+		state = tk
 		for b, j := range &tr.step[k] {
 			softPut(out, tr.pos[j], lab>>(3-b)&1 != 0)
 		}
