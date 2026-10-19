@@ -32,17 +32,19 @@ func (g *softGrid) component(col bool) {
 	if col {
 		h = softGridColH[:]
 	}
-	n := len(h)
+	in, out := g.in[:len(h)], g.out[:len(h)]
 	a := &g.alpha
 	for s := range gridStates {
 		a[0][s] = negInf
 	}
 	a[0][0] = 0
-	for k := range n {
-		m := g.in[k] / 2
-		x := h[k]
+	// The syndromes are below gridStates, so the masks change no state:
+	// they let the compiler drop the bounds checks.
+	for k, x := range h {
+		m := in[k] / 2
+		ak, an := &a[k], &a[k+1]
 		for s := range gridStates {
-			a[k+1][s] = max(a[k][s]+m, a[k][uint8(s)^x]-m)
+			an[s] = max(ak[s]+m, ak[(uint8(s)^x)&(gridStates-1)]-m)
 		}
 	}
 	var beta, nb [gridStates]float32
@@ -50,17 +52,18 @@ func (g *softGrid) component(col bool) {
 		beta[s] = negInf
 	}
 	beta[0] = 0
-	for k := n - 1; k >= 0; k-- {
-		m := g.in[k] / 2
+	for k := len(h) - 1; k >= 0; k-- {
+		m := in[k] / 2
 		x := h[k]
+		ak := &a[k]
 		b0, b1 := negInf, negInf
 		for s := range gridStates {
-			t := uint8(s) ^ x
-			b0 = max(b0, a[k][s]+m+beta[s])
-			b1 = max(b1, a[k][s]-m+beta[t])
+			t := (uint8(s) ^ x) & (gridStates - 1)
+			b0 = max(b0, ak[s]+m+beta[s])
+			b1 = max(b1, ak[s]-m+beta[t])
 			nb[s] = max(beta[s]+m, beta[t]-m)
 		}
-		g.out[k] = b0 - b1 - g.in[k]
+		out[k] = b0 - b1 - in[k]
 		beta = nb
 	}
 }
