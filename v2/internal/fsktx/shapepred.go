@@ -8,19 +8,34 @@ import "math"
 // start of the symbol. The output lags by predDelay samples so that every
 // kernel of a sample is in.
 const (
-	predF     = 9
+	predF     = 15
 	predK     = 320
-	predRing  = 1024
-	predDelay = 40
+	predRing  = 64
+	predDelay = 30
 	predSpan  = 3
+	predSPS   = iqShaperHz / SymbolRate
 )
+
+// predFeatures returns the products of the symbol x[0] and the next three
+// that weigh the kernels of x[0].
+func predFeatures(x [predSpan + 1]float64) [predF]float64 {
+	x0, x1, x2, x3 := x[0], x[1], x[2], x[3]
+	x00 := x0 * x0
+	return [predF]float64{
+		x0, x00, x0 * x1, x0 * x2, x0 * x3,
+		x00 * x0, x00 * x1, x00 * x2, x00 * x3,
+		x0 * x1 * x1, x0 * x1 * x2, x0 * x1 * x3,
+		x0 * x2 * x2, x0 * x2 * x3, x0 * x3 * x3,
+	}
+}
 
 // predictor adds to the shaped deviation a phase correction that is a
 // fixed polynomial function of the symbols, fitted to the corrections of
 // the optimizer of IQConfig.Shape (shapefit_test.go). The kernels have
 // nothing below 3 kHz, as the optimizer's correction.
 type predictor struct {
-	f, acc  [predRing]float64
+	acc     [predK + predSPS]float64
+	f       [predRing]float64
 	x       [predSpan + 1]float64
 	nIn     int
 	nSym    int
@@ -38,18 +53,15 @@ func (p *predictor) process(buf []float64, s int8) {
 		p.x[predSpan] = 0
 	}
 	if p.nSym >= predSpan {
-		x0, x1, x2, x3 := p.x[0], p.x[1], p.x[2], p.x[3]
-		x00 := x0 * x0
-		ft := [predF]float64{x0, x00, x00 * x0, x0 * x1, x0 * x2, x0 * x3, x00 * x1, x0 * x1 * x1, x0 * x1 * x2}
-		base := (p.nSym - predSpan) * iqShaperHz / SymbolRate
-		for k, c := range ft {
-			if c == 0 {
-				continue
+		ft := predFeatures(p.x)
+		a := p.acc[:predK]
+		for t := range a {
+			kr := &shapeKern[t]
+			var v float64
+			for k, c := range ft {
+				v += c * kr[k]
 			}
-			kr := &shapeKern[k]
-			for t, v := range kr {
-				p.acc[(base+t)&(predRing-1)] += c * v
-			}
+			a[t] += v
 		}
 	}
 	p.nSym++
@@ -57,13 +69,16 @@ func (p *predictor) process(buf []float64, s int8) {
 		p.f[p.nIn&(predRing-1)] = v
 		p.nIn++
 		m := p.nIn - 1 - predDelay
-		if m < 0 {
+		if m < 0 || i >= predSPS {
 			buf[i] = 0
 			continue
 		}
-		a := p.acc[m&(predRing-1)]
-		p.acc[m&(predRing-1)] = 0
+		a := p.acc[i]
 		buf[i] = p.f[m&(predRing-1)] + (a-p.prevAcc)*iqShaperHz/(2*math.Pi)
 		p.prevAcc = a
+	}
+	if p.nSym > predSpan {
+		copy(p.acc[:], p.acc[predSPS:])
+		clear(p.acc[predK:])
 	}
 }
