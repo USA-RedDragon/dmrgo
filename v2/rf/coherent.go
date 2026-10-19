@@ -402,5 +402,10 @@ func (m *cpmModel) anchor(x []complex64, syms []int) complex64 {
 		c += s * cmplx.Exp(complex(0, -ph))
 		ph += m.h * math.Pi * float64(syms[k])
 	}
+	if c == 0 {
+		// Samples outside the ring are zero, and 0/0 would make the
+		// trellis NaN, which log-MAP cannot index.
+		return 1
+	}
 	return complex64(cmplx.Conj(c) / complex(cmplx.Abs(c), 0))
 }
