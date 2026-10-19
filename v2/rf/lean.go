@@ -105,11 +105,12 @@ const (
 	leanNoCarrierSpread = 1.2
 	// leanGapSpread is the least ratio of the spread of a SYNC field to the
 	// spread at the anchors of the stream at which noCarrier takes a slot
-	// spread by more than leanNoCarrierSpread as noise with fewer clicks.
-	// In the gaps between the transmissions of an MS at 8 dB C/N and more,
-	// noise that matches a SYNC has 17 to 29 clicks and a spread from 1.3
-	// to 2, and the anchors of the stream a spread under 0.35.
+	// spread by more than leanGapFloor as noise with fewer clicks. In the
+	// gaps between the transmissions of an MS at 8 dB C/N and more, noise
+	// that matches a SYNC has 17 to 32 clicks and a spread from 1.05 to 2,
+	// and the anchors of the stream a spread under 0.35.
 	leanGapSpread = 4
+	leanGapFloor  = 0.9
 	// leanGapClicks is the least number of clicks of such a slot.
 	leanGapClicks = 16
 	// leanCubicSPS is the most samples per symbol at which the symbol
@@ -1636,7 +1637,7 @@ func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
 // leanClickOut counts them, and the levels that fit the SYNC field best
 // leave it spread by more than leanNoCarrierSpread steps between them; or,
 // in a stream with an anchor, it has at least leanGapClicks and a spread above
-// leanNoCarrierSpread and leanGapSpread times that of the anchors. That
+// leanGapFloor and leanGapSpread times that of the anchors. That
 // noise matches a SYNC now and then, and an anchor there would move the
 // slots, the levels and the oscillator of the stream to it, and hold off
 // the search of a lock that should hunt for the next transmission.
@@ -1652,7 +1653,7 @@ func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
 	if n >= leanNoCarrierClicks {
 		return g <= 0 || sqrtf(res) > leanNoCarrierSpread*2*g*deviationHz
 	}
-	if n < leanGapClicks || r.lastAnch == leanNoSlot || g <= 0 || sqrtf(res) <= leanNoCarrierSpread*2*g*deviationHz {
+	if n < leanGapClicks || r.lastAnch == leanNoSlot || g <= 0 || sqrtf(res) <= leanGapFloor*2*g*deviationHz {
 		return false
 	}
 	return res*r.devScale*r.devScale > leanGapSpread*leanGapSpread*r.discVar*g*g
