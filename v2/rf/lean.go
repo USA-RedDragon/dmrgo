@@ -286,8 +286,10 @@ type leanCore struct {
 	dataAnch      [2]bool
 	// again marks a SYNC that resample found to end after the last
 	// sample, which midSync samples at the next symbol. midTiming is
-	// options.MidTiming and front96 options.Front96.
-	again, midTiming, front96 bool
+	// options.MidTiming. front96 is options.Front96 of a DiscReceiver at
+	// 9.6 kHz: symbol then leaves the slot that it ends to endSlot, which
+	// run calls after run96 returns, with slotDue set until then.
+	again, midTiming, front96, slotDue bool
 	// ext is the stage of a higher tier that decodes and emits each burst
 	// in place of repair, nil for Tier 0, and replaying is set while it
 	// runs the slots before a lock through slot; with replayDry the slots
@@ -470,7 +472,6 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	r.clickSpan = float32(opt.ClickSpan)
 	r.midTiming = opt.MidTiming && sps <= leanCubicSPS
-	r.front96 = opt.Front96
 	r.signMiss = leanSignMiss
 	if po := opt.DiscOutlier; po > 0 {
 		r.floorC = float32(math.Log(po/basebandRate) - math.Log(1-po) + 0.5*math.Log(2*math.Pi))
@@ -1021,14 +1022,23 @@ func (r *leanCore) symbol(x, at float32) {
 		r.huntSym(at)
 	}
 	if r.ns == r.slotEnd {
-		first := r.next == 0
-		if r.ext != nil && first {
-			r.ext.firstSlot(r)
+		if r.front96 {
+			r.slotDue = true
+			return
 		}
-		r.slot()
-		if first && r.locked && r.audio != nil && r.devScale > leanOverScale {
-			r.fitScale()
-		}
+		r.endSlot()
+	}
+}
+
+// endSlot decodes the slot that the last symbol ended.
+func (r *leanCore) endSlot() {
+	first := r.next == 0
+	if r.ext != nil && first {
+		r.ext.firstSlot(r)
+	}
+	r.slot()
+	if first && r.locked && r.audio != nil && r.devScale > leanOverScale {
+		r.fitScale()
 	}
 }
 

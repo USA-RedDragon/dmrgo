@@ -121,6 +121,7 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 		sps = 2
 	}
 	r.init(cfg.OnBurst, opt, sps)
+	r.front96 = opt.Front96 && r.f.slow && r.tm.cubic
 	r.f.gain = 1
 	r.f.refresh()
 	r.audio, r.center = &r.f, -int64(discSpan*samplesPerSy)
@@ -230,10 +231,27 @@ func (r *DiscReceiver) flush() {
 // as cubic takes them, s3 the last, and the linear interpolation runs
 // between s2 and s3.
 func (r *DiscReceiver) run(x []int16) {
-	if r.front96 && r.f.slow && !r.f.half && r.tm.cubic {
-		r.run96(x)
+	if !r.front96 {
+		r.runAll(x)
 		return
 	}
+	// The slots decode here, so that the frame of run96 is not on the
+	// stack while they do.
+	for {
+		x = x[r.run96(x):]
+		if !r.slotDue {
+			return
+		}
+		r.slotDue = false
+		r.endSlot()
+	}
+}
+
+// runAll is run at every rate. It is not inlined, so that run keeps a
+// small frame.
+//
+//go:noinline
+func (r *DiscReceiver) runAll(x []int16) {
 	f, tm := &r.f, &r.tm
 	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 	// dn counts the matched filter samples after r.n.
@@ -328,8 +346,12 @@ func (r *DiscReceiver) run(x []int16) {
 
 // run96 is run for the matched filter at 9.6 kHz with cubic strobes. It
 // keeps the gain, the offset and the head of the filter in locals, and
-// loads them again after the calls that can change them.
-func (r *DiscReceiver) run96(x []int16) {
+// loads them again after the calls that can change them. It returns the
+// number of samples that it took: all of x, or those up to the symbol
+// that ends a slot, which it leaves to run. It is not inlined; see run.
+//
+//go:noinline
+func (r *DiscReceiver) run96(x []int16) int {
 	f, tm := &r.f, &r.tm
 	s0, s1, s2, s3, t := tm.s0, tm.s1, tm.s2, tm.s3, tm.t
 	// i0 is the sample after r.n.
@@ -343,49 +365,55 @@ func (r *DiscReceiver) run96(x []int16) {
 	if h >= audio96Taps {
 		h = 0
 	}
-	for i, v := range x {
-		if search {
-			f.sum += int32(v)
-			f.sq += int64(v) * int64(v)
-			if f.n++; f.n == frontBlock {
-				tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
-				r.acqHead, r.acqLow = kh, kq
-				f.rrcHead = h
-				r.levels()
-				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-				kq = r.acqLow
-				k, off = f.k, f.off
+	// The pass with i -1 runs the strobes that the last sample of the
+	// call before left, when a slot ended there.
+	for i := -1; i < len(x); i++ {
+		if i >= 0 {
+			v := x[i]
+			if search {
+				f.sum += int32(v)
+				f.sq += int64(v) * int64(v)
+				if f.n++; f.n == frontBlock {
+					tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+					r.acqHead, r.acqLow = kh, kq
+					f.rrcHead = h
+					r.levels()
+					s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+					kq = r.acqLow
+					k, off = f.k, f.off
+				}
 			}
-		}
-		u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
-		if h >= audio96Taps {
-			// Never; it bounds h, so that the compiler drops the index
-			// checks.
-			h = 0
-		}
-		hist[h], hist[h+audio96Taps] = u, u
-		if h++; h >= audio96Taps {
-			h = 0
-		}
-		acc := fir96((*[audio96Taps]int8)(hist[h : h+audio96Taps]))
-		y := float32(acc) * (rrcStepHz / 32768.0)
-		s0, s1, s2, s3 = s1, s2, s3, y
-		if keep {
-			q := int16(int8((acc + 1<<13) >> 14))
-			if kh&1 == 0 {
-				kq = q
-			} else if j := kh >> 1; j < int32(len(buf)) {
-				buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+			u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
+			if h >= audio96Taps {
+				// Never; it bounds h, so that the compiler drops the index
+				// checks.
+				h = 0
 			}
-			if kh++; kh == an {
-				kh = 0
+			hist[h], hist[h+audio96Taps] = u, u
+			if h++; h >= audio96Taps {
+				h = 0
 			}
+			acc := fir96((*[audio96Taps]int8)(hist[h : h+audio96Taps]))
+			y := float32(acc) * (rrcStepHz / 32768.0)
+			s0, s1, s2, s3 = s1, s2, s3, y
+			if keep {
+				q := int16(int8((acc + 1<<13) >> 14))
+				if kh&1 == 0 {
+					kq = q
+				} else if j := kh >> 1; j < int32(len(buf)) {
+					buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+				}
+				if kh++; kh == an {
+					kh = 0
+				}
+			}
+			t--
 		}
-		if t--; t > 0 {
+		if t > 0 {
 			continue
 		}
-		// The strobes of the sample, in a loop that the compiler does
-		// not enter for the samples without one.
+		// The strobes of the sample, in a loop that the compiler does not
+		// enter for the samples without one.
 		for {
 			at := t
 			mu := 1 + at
@@ -431,6 +459,11 @@ func (r *DiscReceiver) run96(x []int16) {
 				r.acqHead, r.acqLow = kh, kq
 				f.rrcHead = h
 				r.symbol(tm.last, at)
+				if r.slotDue {
+					// Every local is in r: run decodes the slot and calls
+					// run96 again.
+					return i + 1
+				}
 				s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
 				kh = r.acqHead
 				buf, an = r.acqBuf()
@@ -446,6 +479,7 @@ func (r *DiscReceiver) run96(x []int16) {
 	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
 	r.n += int64(len(x) - i0)
 	r.acqHead, r.acqLow = kh, kq
+	return len(x)
 }
 
 // OffsetHz returns the DC offset of the last locked stream, in units of

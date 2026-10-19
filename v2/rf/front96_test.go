@@ -24,6 +24,7 @@ func TestFront96Same(t *testing.T) {
 				}
 				r.Flush()
 			}
+			t.Logf("C/N %v, chunk %d: %d bursts", cn, chunk, len(got[0]))
 			if len(got[0]) == 0 && cn > 4 {
 				t.Errorf("C/N %v, chunk %d: no bursts", cn, chunk)
 			}
