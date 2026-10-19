@@ -25,6 +25,9 @@ const (
 	optPenalty = 0.0
 	optLPHz    = 3750.0
 	optLPBeta  = 8.0
+	// optNoChain makes each block start from no correction and see none in
+	// its context, so that the output depends on a finite span of symbols.
+	optNoChain = false
 )
 
 // optimizer adds a phase correction to the shaped deviation that lowers
@@ -205,6 +208,9 @@ func (o *optimizer) eval(w0 int, x, g []float64) float64 {
 	re, im, pr, pi := o.re, o.im, o.pr, o.pi
 	for n := range optWin {
 		p := o.psi[(w0+n)&(optRing-1)]
+		if optNoChain {
+			p = 0
+		}
 		if n >= optCtx {
 			p = x[n-optCtx]
 		}
@@ -249,6 +255,9 @@ func (o *optimizer) block(w0 int) {
 	}
 	for n := range optFree {
 		o.x[n] = o.psi[(w0+optCtx+n)&(optRing-1)]
+		if optNoChain {
+			o.x[n] = 0
+		}
 	}
 	o.jscale = 1
 	j := o.eval(w0, o.x, o.g)
