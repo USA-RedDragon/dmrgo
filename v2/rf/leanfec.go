@@ -364,9 +364,8 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 //
 //go:noinline
 func (r *leanCore) bptcPattern(rows *[13]uint16, chase []int16, g int, data *[12]byte) (uint8, int32) {
-	var reserved uint8
-	*data, reserved, _ = bptc.DecodeRows(rows)
-	cw := bptc.EncodeRows(data, reserved)
+	cw := *rows
+	reserved := bptc.Recode(&cw, data)
 	var cost int32
 	for row := range cw {
 		for e := cw[row] ^ rows[row]; e != 0; e &= e - 1 {
