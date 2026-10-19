@@ -316,6 +316,11 @@ type options struct {
 	// of the kept samples by Catmull-Rom, which costs more. It applies at
 	// up to leanCubicSPS samples per symbol.
 	MidTiming bool
+	// HuntLinMid takes the midpoints of MidTiming linearly between the two
+	// samples around them at every rate. The hunt needs only their signs,
+	// against the mean of the SYNC window, and a SYNC holds only the outer
+	// levels.
+	HuntLinMid bool
 	// Front96 runs the audio front end at 9.6 kHz in a loop of its own,
 	// with the filter state in locals. The output is the same.
 	Front96 bool

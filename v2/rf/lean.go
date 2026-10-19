@@ -363,9 +363,9 @@ type leanCore struct {
 	// only collect the color code and emit nothing.
 	ext                  leanExt
 	replaying, replayDry bool
-	// dfe is set for iqLowRx at 9.6 kHz: burst runs cancelISI. It fills
-	// the room before center.
-	dfe bool
+	// dfe is set for iqLowRx at 9.6 kHz: burst runs cancelISI. linHunt
+	// is options.HuntLinMid. They fill the room before center.
+	dfe, linHunt bool
 	// center is the input sample at the center of matched filter sample 0,
 	// in baseband samples, and mfStep the baseband samples per matched
 	// filter sample, a whole number at every input rate.
@@ -542,6 +542,7 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	r.clickSpan = float32(opt.ClickSpan)
 	r.midTiming = opt.MidTiming && sps <= leanCubicSPS
+	r.linHunt = opt.HuntLinMid
 	r.signMiss = leanSignMiss
 	r.bsSuspectRun = opt.BSSuspectRun
 	if po := opt.DiscOutlier; po > 0 {
@@ -1270,7 +1271,14 @@ func (r *leanCore) huntMid(at float32) bool {
 	if r.acqKept() > 4 {
 		r.midSigns <<= 1
 		if r.midTiming {
-			if (r.tm.midAt(at-r.tm.step)-r.off)*syncSymbols > float32(r.ringSum)*discStepHz {
+			t := at - r.tm.step
+			var x float32
+			if r.linHunt {
+				x = r.tm.linearAt(t)
+			} else {
+				x = r.tm.midAt(t)
+			}
+			if (x-r.off)*syncSymbols > float32(r.ringSum)*discStepHz {
 				r.midSigns |= 1
 			}
 		} else if r.keptAt(at-r.tm.step)*syncSymbols > float32(r.ringSum) {
