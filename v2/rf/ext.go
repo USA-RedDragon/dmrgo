@@ -1004,10 +1004,17 @@ func (x *softExt) end(c *leanCore) {
 
 // extErrGain is the weight of each voice frame in the mean numbers of bit
 // errors of uncoded, and extCoreShare the most share of the mean of coh
-// that the mean of the core may reach for uncoded to take its bits.
+// that the mean of the core may reach for uncoded to take its bits. A frame
+// counts in the means only when the hard decisions of the core or of coh
+// differ from its decode in at most extErrMax bits of C0 and C1, the
+// errors that their Golay codes correct together: otherwise the decode is
+// mostly wrong, as for a burst that the core placed by an EMB that noise
+// passed after the end of a transmission, and the counts are those of
+// noise against noise, in which the core made twice the errors of coh.
 const (
 	extErrGain   = 1.0 / 16
 	extCoreShare = 0.9
+	extErrMax    = 6
 )
 
 // uncoded sets the bits without FEC of burst b, which coh detected, to the
@@ -1053,7 +1060,7 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 				nCoh[i] += int((b.Fixed[q] ^ coh[q]) & m >> (7 - p%8))
 			}
 		}
-		if update {
+		if update && min(nCore[i], nCoh[i]) <= extErrMax {
 			x.errCore += extErrGain * (float32(nCore[i]) - x.errCore)
 			x.errCoh += extErrGain * (float32(nCoh[i]) - x.errCoh)
 		}
