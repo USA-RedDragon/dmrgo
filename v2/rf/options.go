@@ -213,6 +213,13 @@ type options struct {
 	// IQPullAgree pulls the oscillator of iqRx while the core searches by
 	// an offset below iqAFCJumpHz only when two blocks agree on it.
 	IQPullAgree bool
+	// LevelUp scales the input of a search up when its RMS is under
+	// discInputRMSHz by more than discLevelUp, not only by more than a
+	// factor of 2. A stream that the level control leaves near half of
+	// discInputRMSHz has its inner levels about 3 steps of rrcStepHz
+	// from 0, where the int8 samples of the matched filter and of the
+	// ring add a noise that sets the bit-exact point at a high C/N.
+	LevelUp bool
 	// CohExt adds to softExt on iqRx, or on a DiscReceiver, the coherent
 	// detection of each burst again, with the trellis settings PSPGain and
 	// LLRScale.

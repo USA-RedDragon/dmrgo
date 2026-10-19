@@ -14,6 +14,10 @@ const (
 	audio96Span = discSpan
 	audio12Taps = discSpan*discSPS + 1
 	audio96Taps = 4*audio96Span + 1
+	// discLevelUp is the least ratio of discInputRMSHz to the input RMS
+	// at which the level control scales the input up with
+	// options.LevelUp.
+	discLevelUp = 1.41
 	// audioMaxK and audioMaxOff limit audioFront.k and off, to gains of
 	// 64 Hz per input unit and offsets of 2 MHz.
 	audioMaxK   = 1<<15 - 1
@@ -130,7 +134,7 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	case r.front96 && opt.LinearMid:
 		r.mid96 = mid96Linear
 	}
-	r.f.gain = 1
+	r.f.gain, r.f.up = 1, opt.LevelUp
 	r.f.refresh()
 	r.audio, r.center = &r.f, -int64(discSpan*samplesPerSy)
 	if r.f.slow {
@@ -662,7 +666,7 @@ func (r *DiscReceiver) levels() {
 	v *= f.gain * f.gain
 	f.mean += discMeanGain * (m - f.mean)
 	if rms := sqrtf(max(v, 0)); rms > 0 {
-		if g := discInputRMSHz / rms; g > 2 || g < 0.5 {
+		if g := discInputRMSHz / rms; g > 2 || g < 0.5 || f.up && g > discLevelUp {
 			r.scaleAudio(g)
 		}
 	}
@@ -714,6 +718,8 @@ type audioFront struct {
 	hbHist  [halfTaps]int8
 	hbHead  int
 	odd     bool
+	// up is options.LevelUp.
+	up bool
 }
 
 // refresh sets k and off from gain and dc.
