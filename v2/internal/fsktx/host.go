@@ -28,6 +28,7 @@ var (
 	errPred  = errors.New("fsktx: ShapePred needs Exact and the pulse of its kernels")
 	errHz    = errors.New("fsktx: sample rate out of range")
 	errDelay = errors.New("fsktx: Delay must be from 0 to 64 symbols")
+	errNoise = errors.New("fsktx: NoisePoleR must be from 0 to below 1")
 )
 
 const polyMaxPhases = 1024
@@ -390,6 +391,10 @@ type IQConfig struct {
 	// NoiseZerosHz are the frequencies of the zeros of the noise transfer
 	// function of NoiseShape, in Hz.
 	NoiseZerosHz [4]float64
+	// NoisePoleR, from 0 to 1, puts a pole at NoisePoleR times each zero of
+	// NoiseShape, so that each pair of zeros is a notch with a gain near 1
+	// outside it; 0 means no poles.
+	NoisePoleR float64
 	// Delay holds the symbols back by that many symbols of no modulation,
 	// up to maxDelay, so the carrier runs longer before the first symbol.
 	Delay int
@@ -426,6 +431,8 @@ type IQ struct {
 	pred  *predictor
 	shape int
 	fb    [8]float64
+	fbp   [8]float64
+	pole  bool
 	err   [2][8]float64
 	dl    [maxDelay]int8
 	dn    int
@@ -464,6 +471,19 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 		q.fb = ntf(q.shape, cfg.NoiseZerosHz, float64(cfg.Rate))
 		if ntfPeak(q.fb[:2*q.shape]) <= ntfMaxGain {
 			break
+		}
+	}
+	if cfg.NoisePoleR < 0 || cfg.NoisePoleR >= 1 {
+		return nil, errNoise
+	}
+	if cfg.NoisePoleR > 0 && cfg.NoiseShape > 0 {
+		q.shape = min(cfg.NoiseShape, 4)
+		q.fb = ntf(q.shape, cfg.NoiseZerosHz, float64(cfg.Rate))
+		q.pole = true
+		r := cfg.NoisePoleR
+		for i := range q.fbp {
+			q.fbp[i] = q.fb[i] * r
+			r *= cfg.NoisePoleR
 		}
 	}
 	switch cfg.Tier {
@@ -534,6 +554,9 @@ func (q *IQ) AppendS8(dst []byte, s int8) []byte {
 		}
 		return dst
 	}
+	if q.pole {
+		return q.appendPole(dst, n)
+	}
 	for j, v := range q.out[:n] {
 		e := &q.err[j&1]
 		x := float64(v) / 256
@@ -544,6 +567,31 @@ func (q *IQ) AppendS8(dst []byte, s int8) []byte {
 		d := c - x
 		if d > 1 || d < -1 {
 			d = 0
+		}
+		copy(e[1:], e[:7])
+		e[0] = d
+		dst = append(dst, byte(int8(c)))
+	}
+	return dst
+}
+
+// appendPole is AppendS8 with the noise transfer function A(z)/A(z/r) of
+// IQConfig.NoisePoleR: e holds the rounding error filtered by 1/A(z/r).
+func (q *IQ) appendPole(dst []byte, n int) []byte {
+	m := 2 * q.shape
+	for j, v := range q.out[:n] {
+		e := &q.err[j&1]
+		u := float64(v) / 256
+		for i := range m {
+			u += (q.fb[i] - q.fbp[i]) * e[i]
+		}
+		c := min(max(math.Floor(u+0.5), -128), 127)
+		d := c - u
+		if d > 1 || d < -1 {
+			d = 0
+		}
+		for i := range m {
+			d -= q.fbp[i] * e[i]
 		}
 		copy(e[1:], e[:7])
 		e[0] = d
