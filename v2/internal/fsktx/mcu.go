@@ -157,8 +157,10 @@ type MCUAudio struct {
 	codes, zeros uint32
 	idx5         uint32
 	corr         bool
-	// rerr is the rounding residue of the last sample for tier0Shape.
-	rerr int64
+	// rerr is the rounding residue of the last sample for tier0Shape, and
+	// shape32 is set when every sum of the shaped loop fits 32 bits.
+	rerr    int32
+	shape32 bool
 }
 
 // Init sets up m for table t at level units for a run of symbol +3 (1944
@@ -185,6 +187,7 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	m.offset = int32(offset)
 	m.codes, m.zeros, m.corr = 0, ^uint32(0), tier0Corr && t.hz == 48000
 	m.rerr = 0
+	m.shape32 = tier0Shape && 4*int64(t.peak)*int64(scale)+1<<(15+tapShift) < math.MaxInt32
 	m.idx5 = uint32(len(corr48k) - 1)
 	return nil
 }
@@ -204,7 +207,7 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	}
 	n := m.k.symbol(s)
 	sc, off, buf := int64(m.scale), m.offset, &m.k.buf
-	if tier0Shape {
+	if tier0Shape && m.shape32 {
 		return m.shaped(dst[:n], n, s)
 	}
 	if tier0Corr && m.corr && n == len(corr48k[0]) {
@@ -222,23 +225,29 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	return n
 }
 
-// shaped is the output loop of Symbol for tier0Shape.
+// shaped is the output loop of Symbol for tier0Shape, in 32 bits, which
+// Init allows only when no sum can overflow. The residue of the rounding
+// is the low bits of the sum before the shift.
 func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
 	const sh = 15 + tapShift
-	sc, off, buf, e := int64(m.scale), m.offset, &m.k.buf, m.rerr
-	var t *[10]int16
+	const half = 1 << (sh - 1)
+	sc, off, buf, e := m.scale, m.offset, &m.k.buf, m.rerr
 	if tier0Corr && m.corr && n == len(corr48k[0]) {
-		t = m.corrRow(s)
+		if t := m.corrRow(s); t != nil {
+			d := (*[len(corr48k[0])]int16)(dst)
+			for p := range d {
+				v := (buf[p]+int32(t[p]))*sc - e + half
+				e = v&(1<<sh-1) - half
+				d[p] = int16(v>>sh + off)
+			}
+			m.rerr = e
+			return n
+		}
 	}
 	for p := range dst {
-		x := buf[p]
-		if t != nil {
-			x += int32(t[p])
-		}
-		v := int64(x)*sc - e
-		y := (v + 1<<(sh-1)) >> sh
-		e = v - y<<sh
-		dst[p] = int16(int32(y) + off)
+		v := buf[p]*sc - e + half
+		e = v&(1<<sh-1) - half
+		dst[p] = int16(v>>sh + off)
 	}
 	m.rerr = e
 	return n
