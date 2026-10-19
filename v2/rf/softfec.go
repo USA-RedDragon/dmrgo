@@ -382,7 +382,7 @@ type softOSDScratch struct {
 	accept func(cw *[softOSDWords]uint64) bool
 	// cand holds the candidate codewords of the reprocessing and pmag the
 	// LLR magnitudes of the basis bits.
-	cand [4][softOSDWords]uint64
+	cand [2][softOSDWords]uint64
 	pmag [softOSDMaxK]int32
 	// pass is the cost of the best accepted codeword, floor the cost of the
 	// hard decisions, and nw the words of a codeword.
@@ -392,9 +392,8 @@ type softOSDScratch struct {
 	// the 196 information bits.
 	chase [softChaseMax]int16
 	bits  [softTrellisBits]unpacked.Bit
-	// fast selects reprocessFast, and btab, when not nil, holds byte
-	// tables of the non-basis bits for it.
-	fast bool
+	// btab, when not nil, holds byte tables of the non-basis bits in place
+	// of the nibble tables in tab.
 	btab *[softParWords * 8 * 256]int32
 	// par holds the non-basis code bits in reliability order, prow the
 	// work rows and phard the hard decisions on them, bit p for par[p].
@@ -432,23 +431,6 @@ func (s *softOSDScratch) prepare(n int) {
 	}
 }
 
-// cost returns the sum of the LLRs of the 1 bits of cw: s.floor plus the
-// LLR magnitudes of the bits where cw differs from the hard decisions, from
-// s.tab. It stops once the sum reaches bound and returns the partial sum.
-func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, bound int32) int32 {
-	sum := s.floor
-	for x := range s.nw {
-		t := s.tab[256*x:]
-		for i, e := 0, cw[x]^s.hard[x]; e != 0; i, e = i+16, e>>4 {
-			sum += t[i+int(e&0xf)]
-		}
-		if sum >= bound {
-			break
-		}
-	}
-	return sum
-}
-
 // osd decodes the LLRs in s.l with ordered statistics decoding: it reduces
 // the generator to the most reliable basis and scores the hard decision of
 // the basis with every pattern of up to order flips, and order 3 within the
@@ -460,21 +442,15 @@ func (s *softOSDScratch) cost(cw *[softOSDWords]uint64, bound int32) int32 {
 func (id softOSDID) osd(s *softOSDScratch, order, window, listMax int) {
 	n := softOSDCodes[id].n
 	s.prepare(n)
-	if s.fast {
-		id.basis(s)
-		id.reprocessFast(s, order, window, listMax)
-		return
-	}
-	softNibbleTables(s.tab, s.mag[:n])
 	id.basis(s)
 	id.reprocess(s, order, window, listMax)
 }
 
-// reprocessFast scores the same patterns as reprocess and keeps the same
-// list. A pattern flips its basis bits and so costs their magnitudes, and
-// only the non-basis bits need the tables: it scores those, packed into
-// softParWords words with the most reliable first.
-func (id softOSDID) reprocessFast(s *softOSDScratch, order, window, listMax int) {
+// reprocess scores the hard decision of the basis and its flip patterns
+// into s.list. A pattern flips its basis bits and so costs their
+// magnitudes, and only the non-basis bits need the tables: it scores
+// those, packed into softParWords words with the most reliable first.
+func (id softOSDID) reprocess(s *softOSDScratch, order, window, listMax int) {
 	c := &softOSDCodes[id]
 	k, np := c.k, c.n-c.k
 	s.nw = (c.n + 63) / 64
@@ -526,7 +502,7 @@ func (id softOSDID) reprocessFast(s *softOSDScratch, order, window, listMax int)
 	for j := range c.n {
 		s.floor += min(0, s.l[j])
 	}
-	s.tryFast(p0, 0, -1, -1, -1)
+	s.try(p0, 0, -1, -1, -1)
 	m := &s.pmag
 	for i := range k {
 		m[i] = s.mag[s.pivot[i]]
@@ -534,13 +510,13 @@ func (id softOSDID) reprocessFast(s *softOSDScratch, order, window, listMax int)
 	pi, pj, px := &s.pcand[1], &s.pcand[2], &s.pcand[3]
 	for i := k - 1; order >= 1 && i >= 0 && m[i] < s.thr(); i-- {
 		s.pflip(pi, p0, i)
-		s.tryFast(pi, m[i], i, -1, -1)
+		s.try(pi, m[i], i, -1, -1)
 	}
 	for j := k - 1; order >= 2 && j >= 1 && m[j]+m[j-1] < s.thr(); j-- {
 		s.pflip(pj, p0, j)
 		for i := j - 1; i >= 0 && m[i]+m[j] < s.thr(); i-- {
 			s.pflip(pi, pj, i)
-			s.tryFast(pi, m[i]+m[j], j, i, -1)
+			s.try(pi, m[i]+m[j], j, i, -1)
 		}
 	}
 	lo := max(0, k-window)
@@ -550,7 +526,7 @@ func (id softOSDID) reprocessFast(s *softOSDScratch, order, window, listMax int)
 			s.pflip(pi, pj, b)
 			for x := b - 1; x >= lo && m[a]+m[b]+m[x] < s.thr(); x-- {
 				s.pflip(px, pi, x)
-				s.tryFast(px, m[a]+m[b]+m[x], a, b, x)
+				s.try(px, m[a]+m[b]+m[x], a, b, x)
 			}
 		}
 	}
@@ -561,10 +537,10 @@ func (s *softOSDScratch) pflip(dst, src *[softParWords]uint64, i int) {
 	dst[0], dst[1] = src[0]^s.prow[i][0], src[1]^s.prow[i][1]
 }
 
-// tryFast scores the pattern of basis rows a, b and x (-1 for none), whose
-// non-basis bits are pc and whose basis bits cost flips, as try scores its
-// codeword.
-func (s *softOSDScratch) tryFast(pc *[softParWords]uint64, flips int32, a, b, x int) {
+// try scores the pattern of basis rows a, b and x (-1 for none), whose
+// non-basis bits are pc and whose basis bits cost flips, adds its codeword
+// to the list and checks it when it beats the best accepted codeword.
+func (s *softOSDScratch) try(pc *[softParWords]uint64, flips int32, a, b, x int) {
 	bound := int32(math.MaxInt32)
 	if s.list.n == s.list.max {
 		bound = s.list.cost[s.list.n-1]
@@ -641,70 +617,10 @@ func (id softOSDID) basis(s *softOSDScratch) {
 	}
 }
 
-// reprocess scores the hard decision of the basis and its flip patterns
-// into s.list.
-func (id softOSDID) reprocess(s *softOSDScratch, order, window, listMax int) {
-	c := &softOSDCodes[id]
-	k := c.k
-	s.nw = (c.n + 63) / 64
-	c0, ci, cj, cw := &s.cand[0], &s.cand[1], &s.cand[2], &s.cand[3]
-	s.cand = [4][softOSDWords]uint64{}
-	for i := range k {
-		if j := s.pivot[i]; s.hard[j>>6]>>(j&63)&1 != 0 {
-			s.flip(c0, c0, i)
-		}
-	}
-	s.list.reset(listMax)
-	s.pass, s.floor = math.MaxInt32, 0
-	for j := range c.n {
-		s.floor += min(0, s.l[j])
-	}
-	s.try(c0)
-	m := &s.pmag
-	for i := range k {
-		m[i] = s.mag[s.pivot[i]]
-	}
-	for i := k - 1; order >= 1 && i >= 0 && m[i] < s.thr(); i-- {
-		s.flip(ci, c0, i)
-		s.try(ci)
-	}
-	for j := k - 1; order >= 2 && j >= 1 && m[j]+m[j-1] < s.thr(); j-- {
-		s.flip(cj, c0, j)
-		for i := j - 1; i >= 0 && m[i]+m[j] < s.thr(); i-- {
-			s.flip(ci, cj, i)
-			s.try(ci)
-		}
-	}
-	lo := max(0, k-window)
-	for a := k - 1; order >= 3 && a >= lo+2 && m[a]+m[a-1]+m[a-2] < s.thr(); a-- {
-		s.flip(cj, c0, a)
-		for b := a - 1; b >= lo+1 && m[a]+m[b]+m[b-1] < s.thr(); b-- {
-			s.flip(ci, cj, b)
-			for x := b - 1; x >= lo && m[a]+m[b]+m[x] < s.thr(); x-- {
-				s.flip(cw, ci, x)
-				s.try(cw)
-			}
-		}
-	}
-}
-
 // flip sets dst to src with work row i added.
 func (s *softOSDScratch) flip(dst, src *[softOSDWords]uint64, i int) {
 	for x := range s.nw {
 		dst[x] = src[x] ^ s.work[i][x]
-	}
-}
-
-// try scores cw, adds it to the list and checks it when it beats the best
-// accepted codeword.
-func (s *softOSDScratch) try(cw *[softOSDWords]uint64) {
-	bound := int32(math.MaxInt32)
-	if s.list.n == s.list.max {
-		bound = s.list.cost[s.list.n-1]
-	}
-	cost := s.cost(cw, bound)
-	if s.list.add(cost, cw) && s.accept != nil && cost < s.pass && s.accept(cw) {
-		s.pass = cost
 	}
 }
 
@@ -823,10 +739,9 @@ type softDecoder struct {
 	acceptBPTC, acceptShortLC func(cw *[softOSDWords]uint64) bool
 }
 
-// setFast sets the OSDFast and OSDBytes settings of opt.
-func (d *softDecoder) setFast(opt *options) {
-	d.osd.fast = opt.OSDFast
-	if opt.OSDFast && opt.OSDBytes {
+// setBytes gives the decoder the byte tables of opt.OSDBytes.
+func (d *softDecoder) setBytes(opt *options) {
+	if opt.OSDBytes {
 		d.osd.btab = new([softParWords * 8 * 256]int32)
 	}
 }

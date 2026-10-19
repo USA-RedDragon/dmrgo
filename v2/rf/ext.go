@@ -167,7 +167,7 @@ func softExtOf(opt *options, sps float32) *softExt {
 		st |= extELC
 	}
 	x := newSoftExtStages(st, opt.ExtLookback, sps)
-	x.soft.setFast(opt)
+	x.soft.setBytes(opt)
 	if opt.ExtNPML {
 		x.np = &npml{}
 	}

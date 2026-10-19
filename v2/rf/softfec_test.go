@@ -789,13 +789,14 @@ func TestSoftAMBEScramble(t *testing.T) {
 	}
 }
 
-// TestSoftOSDFast checks that the OSDFast reprocessing keeps the same list,
-// costs and scored count as the reference one, with nibble and byte tables,
-// on noisy codewords of every OSD code.
-func TestSoftOSDFast(t *testing.T) {
+// TestSoftOSDReprocess checks that the reprocessing keeps the same list,
+// costs and scored count as refOSD, with nibble and byte tables, on noisy
+// codewords of every OSD code.
+func TestSoftOSDReprocess(t *testing.T) {
 	t.Parallel()
 	rng := rand.New(rand.NewPCG(5, 6))
-	ref, fast := newSoftDecoder(), newSoftDecoder()
+	ref, nib, byt := newSoftDecoder(), newSoftDecoder(), newSoftDecoder()
+	byt.setBytes(&options{OSDBytes: true})
 	for _, id := range []softOSDID{softBPTCCode, softShortLCCode, softEmbLCCode} {
 		c := &softOSDCodes[id]
 		for trial := range 60 {
@@ -814,20 +815,91 @@ func TestSoftOSDFast(t *testing.T) {
 					v = -1
 				}
 				l := int32((v + rng.NormFloat64()*sigma) * 40)
-				ref.osd.l[j], fast.osd.l[j] = l, l
+				ref.osd.l[j], nib.osd.l[j], byt.osd.l[j] = l, l, l
 			}
 			order, window := 1+trial%3, []int{0, 12, 40}[trial%3]
-			ref.osd.accept, fast.osd.accept = nil, nil
-			id.osd(&ref.osd, order, window, softListMax)
-			for _, bytes := range []bool{false, true} {
-				fast.setFast(&options{OSDFast: true, OSDBytes: bytes})
-				id.osd(&fast.osd, order, window, softListMax)
-				a, b := &ref.osd.list, &fast.osd.list
+			ref.osd.accept, nib.osd.accept, byt.osd.accept = nil, nil, nil
+			id.refOSD(&ref.osd, order, window, softListMax)
+			for _, d := range []*softDecoder{nib, byt} {
+				id.osd(&d.osd, order, window, softListMax)
+				a, b := &ref.osd.list, &d.osd.list
 				if a.n != b.n || a.scored != b.scored || a.cost != b.cost || a.cw != b.cw {
-					t.Fatalf("code %d trial %d bytes %v: lists differ (n %d %d, scored %d %d)", id, trial, bytes, a.n, b.n, a.scored, b.scored)
+					t.Fatalf("code %d trial %d bytes %v: lists differ (n %d %d, scored %d %d)", id, trial, d.osd.btab != nil, a.n, b.n, a.scored, b.scored)
 				}
 			}
 		}
+	}
+}
+
+// refOSD is osd as it scored every pattern over all n code bits, the
+// reference of TestSoftOSDReprocess.
+func (id softOSDID) refOSD(s *softOSDScratch, order, window, listMax int) {
+	c := &softOSDCodes[id]
+	k := c.k
+	s.prepare(c.n)
+	softNibbleTables(s.tab, s.mag[:c.n])
+	id.basis(s)
+	s.nw = (c.n + 63) / 64
+	var cand [4][softOSDWords]uint64
+	c0, ci, cj, cw := &cand[0], &cand[1], &cand[2], &cand[3]
+	for i := range k {
+		if j := s.pivot[i]; s.hard[j>>6]>>(j&63)&1 != 0 {
+			s.flip(c0, c0, i)
+		}
+	}
+	s.list.reset(listMax)
+	s.pass, s.floor = math.MaxInt32, 0
+	for j := range c.n {
+		s.floor += min(0, s.l[j])
+	}
+	s.refTry(c0)
+	m := &s.pmag
+	for i := range k {
+		m[i] = s.mag[s.pivot[i]]
+	}
+	for i := k - 1; order >= 1 && i >= 0 && m[i] < s.thr(); i-- {
+		s.flip(ci, c0, i)
+		s.refTry(ci)
+	}
+	for j := k - 1; order >= 2 && j >= 1 && m[j]+m[j-1] < s.thr(); j-- {
+		s.flip(cj, c0, j)
+		for i := j - 1; i >= 0 && m[i]+m[j] < s.thr(); i-- {
+			s.flip(ci, cj, i)
+			s.refTry(ci)
+		}
+	}
+	lo := max(0, k-window)
+	for a := k - 1; order >= 3 && a >= lo+2 && m[a]+m[a-1]+m[a-2] < s.thr(); a-- {
+		s.flip(cj, c0, a)
+		for b := a - 1; b >= lo+1 && m[a]+m[b]+m[b-1] < s.thr(); b-- {
+			s.flip(ci, cj, b)
+			for x := b - 1; x >= lo && m[a]+m[b]+m[x] < s.thr(); x-- {
+				s.flip(cw, ci, x)
+				s.refTry(cw)
+			}
+		}
+	}
+}
+
+// refTry scores cw over all its bits from s.tab, adds it to the list and
+// checks it when it beats the best accepted codeword.
+func (s *softOSDScratch) refTry(cw *[softOSDWords]uint64) {
+	bound := int32(math.MaxInt32)
+	if s.list.n == s.list.max {
+		bound = s.list.cost[s.list.n-1]
+	}
+	cost := s.floor
+	for x := range s.nw {
+		t := s.tab[256*x:]
+		for i, e := 0, cw[x]^s.hard[x]; e != 0; i, e = i+16, e>>4 {
+			cost += t[i+int(e&0xf)]
+		}
+		if cost >= bound {
+			break
+		}
+	}
+	if s.list.add(cost, cw) && s.accept != nil && cost < s.pass && s.accept(cw) {
+		s.pass = cost
 	}
 }
 

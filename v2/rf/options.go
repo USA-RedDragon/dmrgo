@@ -35,10 +35,9 @@ type options struct {
 	// GridBPTC decodes a BPTC(196,96) block whose CRC or Reed-Solomon
 	// check fails again by iterative row and column decoding of its grid.
 	GridBPTC bool
-	// OSDFast scores the ordered statistics patterns on the non-basis bits
-	// alone. The decode is the same.
-	OSDFast bool
-	// OSDBytes makes OSDFast use byte tables, 16 KiB more for each decoder.
+	// OSDBytes scores the ordered statistics patterns with byte tables in
+	// place of nibble tables, 16 KiB more for each decoder. The decode is
+	// the same.
 	OSDBytes bool
 	// DataPasses is the number of times a coherent tier detects a
 	// BPTC(196,96) data burst that fails its check again, with the
