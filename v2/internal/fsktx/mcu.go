@@ -35,6 +35,13 @@ const (
 	tier0Corr = false
 )
 
+// tier0Shape feeds the rounding error of each MCUAudio sample into the
+// next, which puts a zero of the error at half the rate: it cuts the
+// rounding noise of a coarse DAC in the alternate channel.
+const (
+	tier0Shape = false
+)
+
 const (
 	maxSamples = 10
 	maxTaps    = 16
@@ -150,6 +157,8 @@ type MCUAudio struct {
 	codes, zeros uint32
 	idx5         uint32
 	corr         bool
+	// rerr is the rounding residue of the last sample for tier0Shape.
+	rerr int64
 }
 
 // Init sets up m for table t at level units for a run of symbol +3 (1944
@@ -175,6 +184,7 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	m.scale = scale
 	m.offset = int32(offset)
 	m.codes, m.zeros, m.corr = 0, ^uint32(0), tier0Corr && t.hz == 48000
+	m.rerr = 0
 	m.idx5 = uint32(len(corr48k) - 1)
 	return nil
 }
@@ -194,6 +204,9 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	}
 	n := m.k.symbol(s)
 	sc, off, buf := int64(m.scale), m.offset, &m.k.buf
+	if tier0Shape {
+		return m.shaped(dst[:n], n, s)
+	}
 	if tier0Corr && m.corr && n == len(corr48k[0]) {
 		if t := m.corrRow(s); t != nil {
 			d := (*[len(corr48k[0])]int16)(dst)
@@ -206,6 +219,28 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	for p := range dst[:n] {
 		dst[p] = int16(int32((int64(buf[p])*sc+1<<(14+tapShift))>>(15+tapShift)) + off)
 	}
+	return n
+}
+
+// shaped is the output loop of Symbol for tier0Shape.
+func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
+	const sh = 15 + tapShift
+	sc, off, buf, e := int64(m.scale), m.offset, &m.k.buf, m.rerr
+	var t *[10]int16
+	if tier0Corr && m.corr && n == len(corr48k[0]) {
+		t = m.corrRow(s)
+	}
+	for p := range dst {
+		x := buf[p]
+		if t != nil {
+			x += int32(t[p])
+		}
+		v := int64(x)*sc - e
+		y := (v + 1<<(sh-1)) >> sh
+		e = v - y<<sh
+		dst[p] = int16(int32(y) + off)
+	}
+	m.rerr = e
 	return n
 }
 
