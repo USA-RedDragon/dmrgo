@@ -22,6 +22,12 @@ const (
 	tier0IQFine = false
 )
 
+// tapShift is the number of extra fraction bits of the taps of an
+// AudioTable over its output units.
+const (
+	tapShift = 0
+)
+
 const (
 	maxSamples = 10
 	maxTaps    = 16
@@ -148,8 +154,8 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 		return errLevel
 	}
 	scale := int32((level<<15 + tableUnits/2) / tableUnits)
-	hi := int((3*t.peak*scale + 1<<14) >> 15)
-	lo := int((-3*t.peak*scale + 1<<14) >> 15)
+	hi := int((3*int64(t.peak)*int64(scale) + 1<<(14+tapShift)) >> (15 + tapShift))
+	lo := int((-3*int64(t.peak)*int64(scale) + 1<<(14+tapShift)) >> (15 + tapShift))
 	if offset > math.MaxInt16-hi || offset < math.MinInt16-lo {
 		return errOffset
 	}
@@ -174,7 +180,7 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	}
 	n := m.k.symbol(s)
 	for p := range dst[:n] {
-		dst[p] = int16((m.k.buf[p]*m.scale+1<<14)>>15 + m.offset)
+		dst[p] = int16(int32((int64(m.k.buf[p])*int64(m.scale)+1<<(14+tapShift))>>(15+tapShift)) + m.offset)
 	}
 	return n
 }
