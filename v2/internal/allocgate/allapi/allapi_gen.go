@@ -114,6 +114,7 @@ var api = [...]any{
 	internal_fec_bptc.EncodeSingleBurst,
 	internal_fec_bptc.GridBit,
 	internal_fec_bptc.GridPos,
+	internal_fec_bptc.Recode,
 	internal_fec_bptc.Rows,
 	internal_fec_golay.Check2087,
 	internal_fec_golay.Decode2087,
