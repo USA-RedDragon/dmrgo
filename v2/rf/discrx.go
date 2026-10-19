@@ -365,115 +365,116 @@ func (r *DiscReceiver) run96(x []int16) int {
 	if h >= audio96Taps {
 		h = 0
 	}
-	// The pass with i -1 runs the strobes that the last sample of the
-	// call before left, when a slot ended there.
-	for i := -1; i < len(x); i++ {
-		if i >= 0 {
-			v := x[i]
-			if search {
-				f.sum += int32(v)
-				f.sq += int64(v) * int64(v)
-				if f.n++; f.n == frontBlock {
+	// Pass i runs the strobes of sample i-1, then takes sample i. The
+	// strobes of pass 0 are those that the last sample of the call before
+	// left, when a slot ended there.
+	for i := 0; ; i++ {
+		if t <= 0 {
+			// The strobes, in a loop that the compiler does not enter for
+			// the samples without one.
+			for {
+				at := t
+				mu := 1 + at
+				xv := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+				at--
+				// tm.strobe, written out: TinyGo does not inline it in two
+				// loops.
+				sym := true
+				switch {
+				case tm.mm:
+					yv := xv - tm.dc
+					d := tm.dev
+					if abs32(yv) > 2*tm.dev {
+						d = 3 * tm.dev
+					}
+					if yv < 0 {
+						d = -d
+					}
+					e := leanMMSign * (tm.half*yv - d*(tm.last-tm.dc))
+					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
+					tm.last, tm.half = xv, d
+					t += 2 * tm.step
+					if !tm.hold && tm.pow > 0 {
+						t += max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
+					}
+				case tm.mid:
+					tm.half, tm.mid = xv, false
+					t += tm.step
+					sym = false
+				default:
+					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*xv*xv
+					e := tm.half * (tm.last - xv)
+					tm.last, tm.mid = xv, true
+					t += tm.step
+					if !tm.hold && tm.pow > 0 {
+						t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
+					}
+				}
+				if sym {
 					tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
+					r.n += int64(i - i0)
+					i0 = i
 					r.acqHead, r.acqLow = kh, kq
 					f.rrcHead = h
-					r.levels()
-					s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-					kq = r.acqLow
+					r.symbol(tm.last, at)
+					if r.slotDue {
+						// Every local is in r: run decodes the slot and
+						// calls run96 again.
+						return i
+					}
+					s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+					kh = r.acqHead
+					buf, an = r.acqBuf()
+					search, keep = !r.locked, !r.locked || r.hunt
 					k, off = f.k, f.off
 				}
-			}
-			u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
-			if h >= audio96Taps {
-				// Never; it bounds h, so that the compiler drops the index
-				// checks.
-				h = 0
-			}
-			hist[h], hist[h+audio96Taps] = u, u
-			if h++; h >= audio96Taps {
-				h = 0
-			}
-			acc := fir96((*[audio96Taps]int8)(hist[h : h+audio96Taps]))
-			y := float32(acc) * (rrcStepHz / 32768.0)
-			s0, s1, s2, s3 = s1, s2, s3, y
-			if keep {
-				q := int16(int8((acc + 1<<13) >> 14))
-				if kh&1 == 0 {
-					kq = q
-				} else if j := kh >> 1; j < int32(len(buf)) {
-					buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
-				}
-				if kh++; kh == an {
-					kh = 0
+				if t > 0 {
+					break
 				}
 			}
-			t--
 		}
-		if t > 0 {
-			continue
+		if i == len(x) {
+			break
 		}
-		// The strobes of the sample, in a loop that the compiler does not
-		// enter for the samples without one.
-		for {
-			at := t
-			mu := 1 + at
-			xv := s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
-			at--
-			// tm.strobe, written out: TinyGo does not inline it in two
-			// loops.
-			sym := true
-			switch {
-			case tm.mm:
-				yv := xv - tm.dc
-				d := tm.dev
-				if abs32(yv) > 2*tm.dev {
-					d = 3 * tm.dev
-				}
-				if yv < 0 {
-					d = -d
-				}
-				e := leanMMSign * (tm.half*yv - d*(tm.last-tm.dc))
-				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
-				tm.last, tm.half = xv, d
-				t += 2 * tm.step
-				if !tm.hold && tm.pow > 0 {
-					t += max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
-				}
-			case tm.mid:
-				tm.half, tm.mid = xv, false
-				t += tm.step
-				sym = false
-			default:
-				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*xv*xv
-				e := tm.half * (tm.last - xv)
-				tm.last, tm.mid = xv, true
-				t += tm.step
-				if !tm.hold && tm.pow > 0 {
-					t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
-				}
-			}
-			if sym {
+		v := x[i]
+		if search {
+			f.sum += int32(v)
+			f.sq += int64(v) * int64(v)
+			if f.n++; f.n == frontBlock {
 				tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
-				r.n += int64(i + 1 - i0)
-				i0 = i + 1
 				r.acqHead, r.acqLow = kh, kq
 				f.rrcHead = h
-				r.symbol(tm.last, at)
-				if r.slotDue {
-					// Every local is in r: run decodes the slot and calls
-					// run96 again.
-					return i + 1
-				}
-				s0, s1, s2, s3, t, kq = tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
-				kh = r.acqHead
-				buf, an = r.acqBuf()
-				search, keep = !r.locked, !r.locked || r.hunt
+				r.levels()
+				s0, s1, s2, s3, t = tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+				kq = r.acqLow
 				k, off = f.k, f.off
 			}
-			if t > 0 {
-				break
+		}
+		u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
+		if h >= audio96Taps {
+			// Never; it bounds h, so that the compiler drops the index
+			// checks.
+			h = 0
+		}
+		hist[h], hist[h+audio96Taps] = u, u
+		if h++; h >= audio96Taps {
+			h = 0
+		}
+		acc := fir96((*[audio96Taps]int8)(hist[h : h+audio96Taps]))
+		y := float32(acc) * (rrcStepHz / 32768.0)
+		s0, s1, s2, s3 = s1, s2, s3, y
+		if keep {
+			q := int16(int8((acc + 1<<13) >> 14))
+			if kh&1 == 0 {
+				kq = q
+			} else if j := kh >> 1; j < int32(len(buf)) {
+				buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+			}
+			if kh++; kh == an {
+				kh = 0
 			}
 		}
+		t--
 	}
 	f.rrcHead = h
 	tm.s0, tm.s1, tm.s2, tm.s3, tm.t = s0, s1, s2, s3, t
