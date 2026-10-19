@@ -1736,10 +1736,7 @@ func (r *leanCore) slot() {
 		// They hold the noise, at any gain of the input.
 		r.noise = min(r.noise, energy)
 	}
-	r.tm.hold = !r.bs && !present
-	if ms {
-		r.tm.hold = (j+1-r.lastAnch)&1 != 0
-	}
+	r.holdNext(j, present)
 	switch {
 	case present && (isAnchor || r.lastAnch != leanNoSlot && j-r.lastAnch < lostSlots):
 		r.lost = 0
@@ -1764,6 +1761,17 @@ func (r *leanCore) slot() {
 	r.setHunt()
 	if !r.replaying && r.ended(j, base) {
 		r.unlock()
+	}
+}
+
+// holdNext sets whether the timing loop holds through the slot after slot
+// j: the slot after one of an MS stream that holds its burst, or one
+// without a carrier. The first anchor of an MS stream sets lastAnch in
+// slot j, so that the loop holds through the slot after it too.
+func (r *leanCore) holdNext(j int32, present bool) {
+	r.tm.hold = !r.bs && !present
+	if !r.bs && r.lastAnch != leanNoSlot {
+		r.tm.hold = (j+1-r.lastAnch)&1 != 0
 	}
 }
 
