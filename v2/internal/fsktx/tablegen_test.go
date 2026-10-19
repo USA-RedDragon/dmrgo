@@ -53,22 +53,37 @@ func TestTablesGenerated(t *testing.T) {
 	}
 }
 
-// renderPairs writes tapsIQPairs: the taps of phases 2g and 2g+1 of
-// tapsIQ in one word, low and high half, for two multiply and accumulates
-// in one. Each sum is under 3*tapsIQPeak, within int16, so that the halves
-// of the word sum stay apart.
-func renderPairs(b *bytes.Buffer, h []float64, l, n int) {
+// renderLUT writes tapsIQLUT: for each pair of phases 2g and 2g+1 of
+// tapsIQ and each pair of symbols, newer and older, at taps 2j and 2j+1,
+// their sum over those two taps, phase 2g in the low half of the word and
+// phase 2g+1 in the high half, at index 8 times the code of the newer
+// symbol plus the code of the older. The codes 0 to 4 are the symbols -3,
+// -1, +1, +3 and 0. Each sum over all taps is under 3*tapsIQPeak, within
+// int16, so that the halves of the word sum stay apart.
+func renderLUT(b *bytes.Buffer, h []float64, l, n int) {
 	tap := func(p, i int) int32 {
 		if p >= l {
 			return 0
 		}
 		return int32(int16(math.Round(h[p*n+i] * tableUnits / 3)))
 	}
-	fmt.Fprintf(b, "var tapsIQPairs = [%d][%d]int32{\n", (l+1)/2, n)
+	val := [5]int32{-3, -1, 1, 3, 0}
+	fmt.Fprintf(b, "var tapsIQLUT = [%d][%d][64]int32{\n", (l+1)/2, n/2)
 	for g := range (l + 1) / 2 {
 		b.WriteString("{")
-		for i := range n {
-			fmt.Fprintf(b, "%d,", tap(2*g, i)+tap(2*g+1, i)<<16)
+		for j := range n / 2 {
+			b.WriteString("{")
+			for q := range 64 {
+				cn, co := q>>3, q&7
+				var v int32
+				if cn < 5 && co < 5 {
+					for k, c := range [2]int{cn, co} {
+						v += (tap(2*g, 2*j+k) + tap(2*g+1, 2*j+k)<<16) * val[c]
+					}
+				}
+				fmt.Fprintf(b, "%d,", v)
+			}
+			b.WriteString("},\n")
 		}
 		b.WriteString("},\n")
 	}
@@ -98,7 +113,7 @@ func renderTables() ([]byte, error) {
 		b.WriteString("}\n\n")
 		fmt.Fprintf(&b, "const %sPeak = %d\n\n", t.name, peak)
 		if t.name == "tapsIQ" {
-			renderPairs(&b, h, l, n)
+			renderLUT(&b, h, l, n)
 		}
 	}
 	fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+1)

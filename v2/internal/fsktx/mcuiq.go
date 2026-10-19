@@ -24,8 +24,10 @@ const (
 // nothing and fits a microcontroller: Init sets it up in memory of the
 // caller. An MCUIQ is not safe for concurrent use.
 type MCUIQ struct {
-	// hist holds the symbols of the pulse, a byte each, the newest in the
-	// low byte of hist[0].
+	// hist holds a byte for each symbol of the pulse, the newest in the
+	// low byte of hist[0]: 8 times the code of the symbol plus the code
+	// of the one before, the index of tapsIQLUT. The codes 0 to 4 are the
+	// symbols -3, -1, +1, +3 and 0.
 	hist    [iqWords]uint32
 	buf     [iqPhases]int32
 	values  int32
@@ -58,6 +60,9 @@ func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 		return errRamp
 	}
 	*m = MCUIQ{ramp: int32(rampSamples)}
+	for i := range m.hist {
+		m.hist[i] = 0x24242424
+	}
 	m.stepQ = int32(1 << cosTableBits / 2 / rampSamples)
 	m.stepR = int32(1 << cosTableBits / 2 % rampSamples)
 	for rate > iqHz<<m.upShift {
@@ -89,15 +94,23 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	if n == 0 || len(dst) < n {
 		return 0
 	}
+	var c uint32
 	switch s {
-	case -3, -1, 1, 3:
+	case -3:
+		c = 0
+	case -1:
+		c = 1
+	case 1:
+		c = 2
+	case 3:
+		c = 3
 	default:
-		s = 0
+		c = 4
 	}
 	for i := iqWords - 1; i > 0; i-- {
 		m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
 	}
-	m.hist[0] = m.hist[0]<<8 | uint32(uint8(s))
+	m.hist[0] = m.hist[0]<<8 | c<<3 | m.hist[0]>>3&7
 	m.shape()
 	dst = dst[:n]
 	switch {
@@ -125,19 +138,19 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 }
 
 // shape writes the deviation of the samples of the symbol period that
-// the symbols of hist complete to buf, in output units. It takes two
-// phases in each multiply and accumulate, with the taps of tapsIQPairs;
-// the sums are those of tapsIQ.
+// the symbols of hist complete to buf, in output units: for each two
+// phases, the sum of the words of tapsIQLUT of each two symbols. The sums
+// are those of tapsIQ.
 func (m *MCUIQ) shape() {
-	var r [4 * iqWords]int32
-	for i, w := range m.hist {
-		r[4*i], r[4*i+1], r[4*i+2], r[4*i+3] = int32(int8(w)), int32(int8(w>>8)), int32(int8(w>>16)), int32(int8(w>>24))
+	var q [len(tapsIQLUT[0])]uint32
+	for j := range q {
+		q[j] = m.hist[j/2] >> (16 * (j % 2)) & 63
 	}
-	for g := range tapsIQPairs {
-		t := &tapsIQPairs[g]
+	for g := range tapsIQLUT {
+		t := &tapsIQLUT[g]
 		var y int32
-		for i := range t {
-			y += t[i] * r[i]
+		for j := range t {
+			y += t[j][q[j]]
 		}
 		y0 := int32(int16(y))
 		m.buf[2*g] = y0
