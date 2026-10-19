@@ -17,6 +17,11 @@ const (
 	tier0Exact = false
 )
 
+// tier0IQFine makes MCUIQ interpolate cosTable to first order in the phase.
+const (
+	tier0IQFine = false
+)
+
 const (
 	maxSamples = 10
 	maxTaps    = 16

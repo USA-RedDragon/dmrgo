@@ -167,6 +167,23 @@ const (
 	cosMask    = 1<<cosTableBits - 1
 )
 
+// cosSin returns the cosine and sine of phase from cosTable; with
+// tier0IQFine, corrected to first order for the bits of phase below its
+// index, which leaves the phase error at the square of half an index.
+func cosSin(phase uint32) (int16, int16) {
+	i := phase >> cosShift
+	c, s := int32(cosTable[i]), int32(cosTable[(i-cosQuarter)&cosMask])
+	if tier0IQFine {
+		// m is the phase below the index in 2^-20 radians.
+		m := int32(phase<<cosTableBits>>16) * cosFrac >> 16
+		c, s = c-s*m>>20, s+c*m>>20
+	}
+	return int16(c), int16(s)
+}
+
+// cosFrac is 2 pi 2^20 over the entries of cosTable, rounded.
+const cosFrac = 1608
+
 // steady0 writes the I/Q of the deviation samples of the shaper to dst at
 // full power and the shaper rate, the path of all but the samples of a
 // power ramp. steady1, steady2 and steady3 are steady0 at two, four and
@@ -184,8 +201,7 @@ func (m *MCUIQ) steady0(dst []int16) {
 		prev = w
 		d := dst[2*p : 2*p+2 : 2*p+2]
 		phase += uint32(v)
-		i := phase >> cosShift
-		d[0], d[1] = cosTable[i], cosTable[(i-cosQuarter)&cosMask]
+		d[0], d[1] = cosSin(phase)
 	}
 	m.phase, m.prev = phase, prev
 }
@@ -202,11 +218,9 @@ func (m *MCUIQ) steady1(dst []int16) {
 		prev = w
 		d := dst[4*p : 4*p+4 : 4*p+4]
 		phase += uint32(v)
-		i := phase >> cosShift
-		d[0], d[1] = cosTable[i], cosTable[(i-cosQuarter)&cosMask]
+		d[0], d[1] = cosSin(phase)
 		phase += uint32(v + dw)
-		i = phase >> cosShift
-		d[2], d[3] = cosTable[i], cosTable[(i-cosQuarter)&cosMask]
+		d[2], d[3] = cosSin(phase)
 	}
 	m.phase, m.prev = phase, prev
 }
@@ -225,8 +239,7 @@ func (m *MCUIQ) steady2(dst []int16) {
 		for j := 0; j < 8; j += 2 {
 			v += dw
 			phase += uint32(v)
-			i := phase >> cosShift
-			d[j], d[j+1] = cosTable[i], cosTable[(i-cosQuarter)&cosMask]
+			d[j], d[j+1] = cosSin(phase)
 		}
 	}
 	m.phase, m.prev = phase, prev
@@ -246,8 +259,7 @@ func (m *MCUIQ) steady3(dst []int16) {
 		for j := 0; j < 16; j += 2 {
 			v += dw
 			phase += uint32(v)
-			i := phase >> cosShift
-			d[j], d[j+1] = cosTable[i], cosTable[(i-cosQuarter)&cosMask]
+			d[j], d[j+1] = cosSin(phase)
 		}
 	}
 	m.phase, m.prev = phase, prev
@@ -295,7 +307,6 @@ func (m *MCUIQ) ramping(dst []int16) {
 		for range 1 << us {
 			v += dw
 			phase += uint32(v)
-			i := phase >> cosShift
 			switch {
 			case on && env < ramp:
 				env++
@@ -316,8 +327,9 @@ func (m *MCUIQ) ramping(dst []int16) {
 			}
 			a := int32(uint32(iqAmplitude-int32(cosTable[q&cosMask])) * 32768 / (2 * iqAmplitude))
 			d := dst[j : j+2 : j+2]
-			d[0] = int16(int32(cosTable[i]) * a >> 15)
-			d[1] = int16(int32(cosTable[(i-cosQuarter)&cosMask]) * a >> 15)
+			c, sn := cosSin(phase)
+			d[0] = int16(int32(c) * a >> 15)
+			d[1] = int16(int32(sn) * a >> 15)
 			j += 2
 		}
 	}
