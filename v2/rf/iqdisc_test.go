@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -50,6 +51,71 @@ func TestIQDiscBurstyOffset(t *testing.T) {
 	}
 }
 
+// TestIQDiscDataBias receives MS rate 1 data calls on the carrier through
+// the I/Q tiers that run iqRx, and checks that the oscillator stays on the
+// carrier and that every rate 1 block is exact. Rate 1 data has no
+// whitening, and the ASCII of its payload moves the mean frequency of a
+// block by about 360 Hz: a move of the oscillator on that mean put a step
+// into the middle of a burst, where a block without FEC lost a bit.
+func TestIQDiscDataBias(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig()
+	cfg.ColorCode, cfg.Wakeups, cfg.Slot, cfg.Preambles = 1, 0, 1, 2
+	cfg.Message = "DMRGO SIMCMP CALL 11 THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789"
+	built, err := rftx.Sequence("data1", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[[24]byte]bool{}
+	wantN := 0
+	for _, b := range built.Bursts {
+		if x, err := layer2.NewBurstFromBytes(b); err == nil && x.Kind == layer2.KindData && x.SlotType.DataType == enums.DataTypeRate1 {
+			p, _ := b.Rate1Payload()
+			want[p] = true
+			wantN++
+		}
+	}
+	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 1})
+	const calls = 4
+	gap := make([]float64, int(0.3*basebandRate))
+	fmAll, envAll := make([]float64, 0, calls*(len(gap)+len(fm))), make([]float64, 0, calls*(len(gap)+len(env)))
+	for range calls {
+		fmAll, envAll = append(fmAll, gap...), append(envAll, gap...)
+		fmAll, envAll = append(fmAll, fm...), append(envAll, env...)
+	}
+	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
+		t.Run(strconv.Itoa(int(tier-Tier0)), func(t *testing.T) {
+			t.Parallel()
+			x := msBaseband(fmAll, envAll, 0.3, 0, 30, 7)
+			r := mustNew(Config{Rate: basebandRate, Tier: tier})
+			var got []Burst
+			var worst float32
+			for k := 0; k < len(x); k += 960 {
+				got = append(got, r.WriteBaseband(x[k:min(k+960, len(x))])...)
+				worst = max(worst, abs32(r.iqd.conv.hz))
+			}
+			got = append(got, r.Flush()...)
+			if worst > iqAFCLockHz {
+				t.Errorf("oscillator %.0f Hz off the carrier", worst)
+			}
+			n := 0
+			for i := range got {
+				d, _ := got[i].Decoded()
+				x, err := layer2.NewBurstFromBytes(d)
+				if err != nil || x.Kind != layer2.KindData || x.SlotType.DataType != enums.DataTypeRate1 {
+					continue
+				}
+				if p, _ := d.Rate1Payload(); want[p] {
+					n++
+				}
+			}
+			if total := calls * wantN; n != total {
+				t.Errorf("%d of %d rate 1 blocks exact", n, total)
+			}
+		})
+	}
+}
+
 // voiceFrames returns the AMBE+2 frames of the voice bursts of bs.
 func voiceFrames(bs []Burst) []uint64 {
 	var out []uint64
@@ -87,12 +153,14 @@ func c0c1InOrder(want, got []uint64) int {
 }
 
 // TestIQDiscAdjacent receives MS voice calls, whose carrier is on in one
-// slot of two, next to a continuous BS stream 12.5 kHz above them and 40
-// dB stronger, through iqRx with its oscillator held within 2500 Hz and
-// moved only by the SYNC fits while locked, and checks that the parts C0
-// and C1 of every voice frame decode. In the gaps between the bursts the
-// edge of the channel filter holds only the other channel, which pulls an
-// oscillator that follows the mean frequency onto it.
+// slot of two and 300 Hz above the channel, next to a continuous BS
+// stream 12.5 kHz above them and 40 dB stronger, through iqRx. In the gaps
+// between the bursts the edge of the channel filter holds only the other
+// channel, which pulls the mean frequency onto it. The test checks that
+// the parts C0 and C1 of every voice frame decode, that the oscillator,
+// held within 2500 Hz and moved only by the SYNC fits while locked, stays
+// within iqAFCLockHz of the carrier, and that without the hold the mean
+// moves it farther toward the other channel.
 func TestIQDiscAdjacent(t *testing.T) {
 	t.Parallel()
 	for _, held := range []bool{false, true} {
@@ -101,12 +169,15 @@ func TestIQDiscAdjacent(t *testing.T) {
 		if held {
 			o.IQTuneMaxHz, o.IQTuneSyncOnly = 2500, true
 		}
-		n, want := adjacentReceive(t, Tier0, &o)
+		n, want, off := adjacentReceive(t, Tier0, &o, 300)
+		if n < want {
+			t.Errorf("held %v: C0 and C1 of %d of %d voice frames exact", held, n, want)
+		}
 		switch {
-		case held && n < want:
-			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, want)
-		case !held && n == want:
-			t.Errorf("not held: all %d voice frames exact; the test no longer shows the pull", n)
+		case held && off > iqAFCLockHz:
+			t.Errorf("held: oscillator %.0f Hz off the carrier while locked", off)
+		case !held && off <= iqAFCLockHz:
+			t.Errorf("not held: oscillator at most %.0f Hz off the carrier; the test no longer shows the pull", off)
 		}
 	}
 }
@@ -122,7 +193,7 @@ func TestEngineAdjacent(t *testing.T) {
 		if held {
 			o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser = 2500, 6000, 6
 		}
-		n, want := adjacentReceive(t, Tier3, &o)
+		n, want, _ := adjacentReceive(t, Tier3, &o, 0)
 		switch {
 		case held && n < want:
 			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, want)
@@ -132,11 +203,12 @@ func TestEngineAdjacent(t *testing.T) {
 	}
 }
 
-// adjacentReceive receives the MS voice calls of TestIQDiscAdjacent next
-// to the stronger BS stream on tier with the settings o, and returns the
-// number of voice frames whose C0 and C1 decode in order and the number
-// sent.
-func adjacentReceive(t *testing.T, tier Tier, o *options) (n, want int) {
+// adjacentReceive receives the MS voice calls of TestIQDiscAdjacent at
+// offsetHz next to the stronger BS stream on tier with the settings o. It
+// returns the number of voice frames whose C0 and C1 decode in order, the
+// number sent, and the largest distance in Hz of the I/Q oscillator from
+// the carrier while the core is locked, 0 without iqRx.
+func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, want int, off float32) {
 	t.Helper()
 	cfg := testConfig()
 	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
@@ -165,7 +237,7 @@ func adjacentReceive(t *testing.T, tier Tier, o *options) (n, want int) {
 		t.Fatal(err)
 	}
 	fi, _ := rftx.ModulateBS(ib.Slots)
-	x := msBaseband(fmAll, envAll, 0.3, 0, 20, 7)
+	x := msBaseband(fmAll, envAll, 0.3, offsetHz, 20, 7)
 	var ph float64
 	for i := range x {
 		ph += 2 * math.Pi * (fi[i%len(fi)] + 12500) / basebandRate
@@ -173,11 +245,14 @@ func adjacentReceive(t *testing.T, tier Tier, o *options) (n, want int) {
 	}
 	var out []Burst
 	r := mustNew(Config{Rate: basebandRate, Tier: tier, opt: o, OnBurst: func(b *Burst) { out = append(out, *b) }})
-	for k := 0; k < len(x); k += 4096 {
-		r.WriteBaseband(x[k:min(k+4096, len(x))])
+	for k := 0; k < len(x); k += 960 {
+		r.WriteBaseband(x[k:min(k+960, len(x))])
+		if r.iqd != nil && r.iqd.d.locked {
+			off = max(off, abs32(r.iqd.conv.hz-float32(offsetHz)))
+		}
 	}
 	r.Flush()
-	return c0c1InOrder(frames, voiceFrames(out)), len(frames)
+	return c0c1InOrder(frames, voiceFrames(out)), len(frames), off
 }
 
 // iqDiscReceive runs the baseband x through iqRx at hz with OnBurst.

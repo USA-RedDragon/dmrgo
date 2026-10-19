@@ -455,12 +455,15 @@ func (r *iqRx) follow() {
 		// A lock can come while the oscillator still pulls in, and the
 		// channel filter then pulls both the mean frequency and the SYNC
 		// fits toward the oscillator, by different shares, so that they
-		// disagree: the mean, which the symbols do not move, pulls in.
-		// Otherwise the SYNC fits of a false lock measure any offset, so
-		// the mean frequency must agree with them.
+		// disagree: the mean pulls in. The payload of a data burst is not
+		// whitened, so its symbols can move the mean by more than
+		// iqAFCPullHz, as the ASCII of rate 1 data does: the SYNC fits
+		// must then show an offset the same way. Otherwise the SYNC fits
+		// of a false lock measure any offset, so the mean frequency must
+		// agree with them.
 		hz := (f.dc + r.d.dcHz) / scale
 		switch {
-		case abs32(avg) >= iqAFCPullHz && !r.syncOnly:
+		case abs32(avg) >= iqAFCPullHz && !r.syncOnly && abs32(hz) >= iqAFCLockHz && hz*avg > 0:
 			// The channel filter pulled the mean of the blocks before
 			// toward the oscillator by more than it pulls the mean after
 			// the move: the mean starts again, as while the core searches.
