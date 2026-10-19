@@ -123,10 +123,11 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 		m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
 	}
 	m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255/5
-	m.shape()
+	var r *[len(tapsIQLUT[0][0])]int32
 	if tier0IQCorr {
-		m.addCorr(c)
+		r = m.corrRow(c)
 	}
+	m.shape(r)
 	dst = dst[:n]
 	switch {
 	case m.on && m.env == m.ramp:
@@ -156,8 +157,11 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 // the symbols of hist complete to buf, in output units: for each two
 // phases, the sum of the words of tapsIQLUT of each two symbols. The sums
 // are those of tapsIQ.
-func (m *MCUIQ) shape() {
+func (m *MCUIQ) shape(r *[len(tapsIQLUT[0][0])]int32) {
 	var acc [len(tapsIQLUT[0][0])]int32
+	if r != nil {
+		acc = *r
+	}
 	for j := range tapsIQLUT {
 		t := &tapsIQLUT[j][m.hist[j/2]>>(16*(j%2))&31]
 		for g := range acc {
@@ -349,9 +353,10 @@ func (m *MCUIQ) ramping(dst []int16) {
 	m.phase, m.prev, m.env, m.envQ, m.envR = phase, prev, env, q, r
 }
 
-// addCorr takes the symbol of code c into the context and adds the
-// correction of its context to buf.
-func (m *MCUIQ) addCorr(c uint32) {
+// corrRow takes the symbol of code c into the context and returns the
+// correction of the context in the words of tapsIQLUT, nil for a context
+// with a symbol 0.
+func (m *MCUIQ) corrRow(c uint32) *[len(tapsIQLUT[0][0])]int32 {
 	z := uint32(0)
 	if c == 4 {
 		z, c = 1, 0
@@ -359,10 +364,7 @@ func (m *MCUIQ) addCorr(c uint32) {
 	m.codes = m.codes<<2 | c
 	m.zeros = m.zeros<<1 | z
 	if m.zeros>>corrIQSkip&(1<<corrIQSyms-1) != 0 {
-		return
+		return nil
 	}
-	t := &corrIQ[m.codes>>(2*corrIQSkip)&(1<<(2*corrIQSyms)-1)]
-	for p := range t {
-		m.buf[p] += int32(t[p])
-	}
+	return &corrIQ[m.codes>>(2*corrIQSkip)&(1<<(2*corrIQSyms)-1)]
 }

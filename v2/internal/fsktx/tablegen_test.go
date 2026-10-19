@@ -188,7 +188,8 @@ func renderTables() ([]byte, error) {
 // the newest, for a pulse of 16 symbols on each side, at 48 kHz.
 const corrIQFile = "testdata/mcorriq-c4.json"
 
-// renderCorrIQ writes corrIQ and its context, or an empty table when
+// renderCorrIQ writes corrIQ and its context, each two phases in a word
+// as tapsIQLUT, or an empty table when
 // tier0IQCorr is off. It needs tapsIQ at 48 kHz.
 func renderCorrIQ(b *bytes.Buffer) error {
 	var span, l int
@@ -198,7 +199,7 @@ func renderCorrIQ(b *bytes.Buffer) error {
 		}
 	}
 	if !tier0IQCorr {
-		fmt.Fprintf(b, "const (\ncorrIQSyms = 1\ncorrIQSkip = 0\n)\n\nvar corrIQ [4][%d]int16\n\n", l)
+		fmt.Fprintf(b, "const (\ncorrIQSyms = 1\ncorrIQSkip = 0\n)\n\nvar corrIQ [4][%d]int32\n\n", (l+1)/2)
 		return nil
 	}
 	raw, err := os.ReadFile(corrIQFile)
@@ -217,11 +218,13 @@ func renderCorrIQ(b *bytes.Buffer) error {
 		return fmt.Errorf("%s: bad context or rate", corrIQFile)
 	}
 	fmt.Fprintf(b, "const (\ncorrIQSyms = %d\ncorrIQSkip = %d\n)\n\n", c.C, skip)
-	fmt.Fprintf(b, "var corrIQ = [%d][10]int16{\n", 1<<(2*c.C))
+	fmt.Fprintf(b, "var corrIQ = [%d][5]int32{\n", 1<<(2*c.C))
 	for i := range 1 << (2 * c.C) {
 		b.WriteString("{")
-		for p := range 10 {
-			fmt.Fprintf(b, "%d,", int16(math.Round(c.Hz[i*10+p]*tableUnits/1944)))
+		for g := range 5 {
+			lo := int32(int16(math.Round(c.Hz[i*10+2*g] * tableUnits / 1944)))
+			hi := int32(int16(math.Round(c.Hz[i*10+2*g+1] * tableUnits / 1944)))
+			fmt.Fprintf(b, "%d,", lo+hi<<16)
 		}
 		b.WriteString("},\n")
 	}
