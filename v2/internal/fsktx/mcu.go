@@ -191,7 +191,7 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 		return 0
 	}
 	n := m.k.symbol(s)
-	if m.corr {
+	if tier0Corr && m.corr {
 		m.addCorr(s)
 	}
 	for p := range dst[:n] {
