@@ -73,9 +73,8 @@ type pulse struct {
 	// inv, when not zero, is the weights c1 and c2 of a five-tap
 	// symmetric filter that invert sets, in place of comp.
 	inv [2]float64
-	// echo, when set, holds the weights of the echoes of nyquist, which
-	// taps sets.
-	echo *[2*maxTaps + 1]float64
+	// echo, when set, holds the weights of the echoes of nyquist.
+	echo *[4*maxTaps + 1]float64
 }
 
 func (p pulse) at(t, d float64) float64 {
@@ -159,9 +158,9 @@ func (p pulse) base(t float64) float64 {
 	}
 	v := rrc(t)
 	if p.echo != nil {
-		for k, b := range p.echo[:2*p.span+1] {
+		for k, b := range p.echo[:nyquistStep*2*p.span+1] {
 			if b != 0 {
-				v += b * rrc(t-float64(k-p.span))
+				v += b * rrc(t-float64(k-nyquistStep*p.span)/nyquistStep)
 			}
 		}
 	}
@@ -176,15 +175,26 @@ const nyquistGrid = 64
 // nyquist, as a measuring receiver truncates it.
 const nyquistRxSpan = 32
 
-// nyquist sets the echoes of p: the weights b_k, k from -span to span, of
-// the pulses rrc(t-k) under the taper that, added to the tapered pulse,
-// make the pulse after a receive root-raised-cosine filter a Nyquist
-// pulse: 1 at its centre over its area, 0 at the other symbol times, in
-// least squares over the symbol times within 2 span of the centre. The
-// truncation of the pulse otherwise leaves intersymbol interference and a
-// gain at the symbol times other than the gain of a run of one symbol.
+// nyquistStep is the number of echoes of nyquist per symbol, and
+// nyquistRidge the ridge of its least squares, which keeps the echoes
+// small where the symbol times do not fix them.
+const (
+	nyquistStep  = 2
+	nyquistRidge = 1e-6
+)
+
+// nyquist sets the echoes of p: the weights b_k, k from -span to span in
+// steps of 1/nyquistStep, of the pulses rrc(t-k) under the taper that,
+// added to the tapered pulse, make the pulse after the receive filter a
+// Nyquist pulse: 1 at its centre over its area, 0 at the other symbol
+// times, in least squares over the symbol times within 2 span of the
+// centre. The receive filter is the root-raised-cosine pulse over
+// nyquistRxSpan symbols on each side, as the FSK error measurement takes
+// it. The truncation of the pulse otherwise leaves intersymbol
+// interference and a gain at the symbol times other than the gain of a
+// run of one symbol.
 func (p *pulse) nyquist() {
-	n := 2*p.span + 1
+	n := nyquistStep*2*p.span + 1
 	nm := 4*p.span + 1
 	ng := 2 * p.span * nyquistGrid
 	tg := func(j int) float64 { return float64(j)/nyquistGrid - float64(p.span) + 0.5/nyquistGrid }
@@ -215,7 +225,7 @@ func (p *pulse) nyquist() {
 			if k == n {
 				f = rrc(t) * w
 			} else {
-				f = rrc(t-float64(k-p.span)) * w
+				f = rrc(t-float64(k-nyquistStep*p.span)/nyquistStep) * w
 			}
 			for m := range nm {
 				a[m][k] += f * rx[(m+2*p.span)*nyquistGrid-j-1]
@@ -244,7 +254,8 @@ func (p *pulse) nyquist() {
 				g[i][j] += r[i] * r[j]
 			}
 		}
-		if i == p.span {
+		g[i][i] += nyquistRidge
+		if i == nyquistStep*p.span {
 			// The echo at 0 is the pulse itself, which stays.
 			clear(g[i])
 			g[i][i] = 1
@@ -271,7 +282,7 @@ func (p *pulse) nyquist() {
 			}
 		}
 	}
-	p.echo = new([2*maxTaps + 1]float64)
+	p.echo = new([4*maxTaps + 1]float64)
 	for k := range n {
 		p.echo[k] = g[k][n] / g[k][k]
 	}
