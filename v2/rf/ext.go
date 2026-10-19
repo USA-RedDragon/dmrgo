@@ -913,7 +913,11 @@ func (x *softExt) locked(c *leanCore, d float32) {
 // too, so that the voice bursts without a SYNC place by their EMB; the
 // second decodes. The slots of the stream count from the first of them.
 func (x *softExt) firstSlot(c *leanCore) {
-	if x.lookback == 0 {
+	// A lock that a stage forced on a SYNC field that the levels do not
+	// fit, at the least deviation scale, is mostly one on noise. Its slots
+	// would show the noise before it at that scale, all clicks, and the
+	// SYNC distance of noise passes a burst A now and then.
+	if x.lookback == 0 || c.forced && c.devScale <= leanMinScale {
 		return
 	}
 	sps := 2 * c.tm.step

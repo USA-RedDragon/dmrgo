@@ -35,6 +35,9 @@ const (
 	// leanOverScale is the deviation scale of a lock of a DiscReceiver
 	// above which fitScale scales its input down.
 	leanOverScale = 2
+	// leanMinScale is the least deviation scale that the first anchor of a
+	// stream sets.
+	leanMinScale = 0.1
 	// leanAcqWait is the number of symbols after a SYNC that failed in
 	// which searchSym does not sample a burst again, which near the
 	// noise floor would otherwise cost more than the search.
@@ -1654,7 +1657,7 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 		if check && (g <= 0 || sqrtf(res) > discFirstSpread*2*g*deviationHz) {
 			return false
 		}
-		g = max(g, 0.1)
+		g = max(g, leanMinScale)
 		r.devScale, r.dcHz, r.discVar = g, dc, res
 		r.tm.dc, r.tm.dev = r.dcHz, r.devScale*deviationHz
 		return true
