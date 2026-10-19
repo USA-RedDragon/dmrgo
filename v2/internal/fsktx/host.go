@@ -321,6 +321,29 @@ func ntf(n int, zs [4]float64, hz float64) [8]float64 {
 	return fb
 }
 
+// ntfMaxGain is the most gain of the noise transfer function of
+// IQConfig.NoiseShape: NewIQ drops the last zeros until the gain is at most
+// this, as more makes the rounding to 8 bits overload. Two pairs of zeros
+// have at most 16.
+const ntfMaxGain = 16
+
+// ntfPeak returns the most gain over frequency of the noise transfer
+// function 1 + sum of fb[i] z^-(i+1).
+func ntfPeak(fb []float64) float64 {
+	var top float64
+	for k := range 513 {
+		w := math.Pi * float64(k) / 512
+		re, im := 1.0, 0.0
+		for i, f := range fb {
+			s, c := math.Sincos(-w * float64(i+1))
+			re += f * c
+			im += f * s
+		}
+		top = max(top, math.Hypot(re, im))
+	}
+	return top
+}
+
 // IQConfig sets up an IQ.
 type IQConfig struct {
 	// Rate is the sample rate of the I/Q, from 48000 to 20e6 Hz; 0 means
@@ -360,7 +383,8 @@ type IQConfig struct {
 	// NoiseShape is the noise shaping of the rounding to 8 bits of
 	// AppendS8: 0 rounds each value, 1 to 4 feed the rounding error of I
 	// and of Q back so that its spectrum has that many pairs of zeros, at
-	// the frequencies of NoiseZerosHz.
+	// the frequencies of NoiseZerosHz, less the last ones while the gain
+	// of the noise is above 16.
 	NoiseShape int
 	// NoiseZerosHz are the frequencies of the zeros of the noise transfer
 	// function of NoiseShape, in Hz.
@@ -423,8 +447,11 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 		return nil, errRamp
 	}
 	q := &IQ{ramp: ramp}
-	if q.shape = min(max(cfg.NoiseShape, 0), 4); q.shape > 0 {
+	for q.shape = min(max(cfg.NoiseShape, 0), 4); q.shape > 0; q.shape-- {
 		q.fb = ntf(q.shape, cfg.NoiseZerosHz, float64(cfg.Rate))
+		if ntfPeak(q.fb[:2*q.shape]) <= ntfMaxGain {
+			break
+		}
 	}
 	switch cfg.Tier {
 	case Tier0:
