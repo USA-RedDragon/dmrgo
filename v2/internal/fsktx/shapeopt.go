@@ -22,7 +22,7 @@ const (
 const (
 	optInHz    = 3000.0
 	optFromHz  = 5000.0
-	optPenalty = 1e4
+	optPenalty = 0.0
 	optLPHz    = 3750.0
 	optLPBeta  = 8.0
 )

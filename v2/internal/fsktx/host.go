@@ -346,6 +346,10 @@ type IQConfig struct {
 	// add a phase correction above 3 kHz to lower the power outside the
 	// channel; 0 means none. It adds 85 symbols to the lag of the output.
 	Shape int
+	// ShapePred adds to Tier1 and Tier2 a fixed phase correction above
+	// 3 kHz, a polynomial function of the symbols fitted to that of Shape;
+	// it adds 4 symbols to the lag of the output. Shape wins over it.
+	ShapePred bool
 }
 
 // IQ modulates complex I/Q for a software radio: it FM-modulates the
@@ -373,6 +377,7 @@ type IQ struct {
 	ramp  int
 	on    bool
 	opt   *optimizer
+	pred  *predictor
 }
 
 const iqShaperHz = 48000
@@ -431,6 +436,8 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	q.off, q.prev = cfg.OffsetHz, cfg.OffsetHz
 	if cfg.Shape > 0 && cfg.Tier == Tier2 {
 		q.opt = newOptimizer(cfg.Shape)
+	} else if cfg.ShapePred {
+		q.pred = new(predictor)
 	}
 	if cfg.Tier != Tier2 {
 		q.tab = make([]float32, 1<<iqTableBits+1)
@@ -478,6 +485,8 @@ func (q *IQ) symbol(s int8) int {
 	n := q.k.symbol(q.buf, s)
 	if q.opt != nil {
 		q.opt.process(q.buf[:n])
+	} else if q.pred != nil {
+		q.pred.process(q.buf[:n], s)
 	}
 	for _, f := range q.buf[:n] {
 		w := f + q.off
