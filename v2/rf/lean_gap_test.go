@@ -17,6 +17,7 @@ import (
 // anchor moved the slots and the levels of the stream, and the first burst
 // of the next transmission was lost at 17 dB C/N.
 func TestLeanGapNoise(t *testing.T) {
+	t.Parallel()
 	cfg := testConfig()
 	cfg.ColorCode, cfg.Wakeups, cfg.Slot, cfg.Preambles = 1, 0, 1, 2
 	built, err := rftx.Sequence("preamble", cfg)
@@ -25,9 +26,10 @@ func TestLeanGapNoise(t *testing.T) {
 	}
 	fm, env := rftx.Modulate(built.Bursts, rftx.Schedule{Slot: 1})
 	want := map[string]int{}
-	var freq, amp []float64
 	jit := rand.New(rand.NewPCG(7, 8))
 	const calls = 120
+	freq := make([]float64, 0, calls*(int(0.3*basebandRate)+10+len(fm)))
+	amp := make([]float64, 0, cap(freq))
 	for range calls {
 		g := int(0.3*basebandRate) + jit.IntN(10)
 		freq = append(freq, make([]float64, g)...)
@@ -65,6 +67,7 @@ func TestLeanGapNoise(t *testing.T) {
 // anchored Tier0 on audio at 13 dB C/N, and the voice LC header and first
 // voice bursts of the next call were lost.
 func TestLeanGapNoiseSpread(t *testing.T) {
+	t.Parallel()
 	p := enums.SyncMSSourcedData
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)

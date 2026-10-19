@@ -14,6 +14,7 @@ import (
 // slot. The core kept no samples while it was locked, so that the search
 // could not sample the header again and found the call one burst late.
 func TestForcedLockHeader(t *testing.T) {
+	t.Parallel()
 	cfg := testConfig()
 	cfg.ColorCode, cfg.Wakeups, cfg.Slot = 1, 0, 1
 	built, err := rftx.Sequence("voice", cfg)
