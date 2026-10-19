@@ -44,6 +44,13 @@ type xtrellis struct {
 	slp []float32
 	// logmap sums the paths exactly instead of taking the best.
 	logmap bool
+	// pen is the cost of a drift step and drifts the number of drift
+	// steps after each symbol.
+	pen    float32
+	drifts int
+	// jump, when above 0, is the cost of a step from the best phase of a
+	// state to any other phase.
+	jump float32
 }
 
 // jacobian holds log(1+exp(-i/8)) for i from 0 to 96.
@@ -73,6 +80,7 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 		alpha: make([]float32, (maxSteps+1)*n), beta: make([]float32, n), next: make([]float32, n),
 		corr: make([]complex64, maxSteps*m.windows), top: make([]float32, maxSteps+1), beam: make([]float32, maxSteps),
 		lp: make([]float32, 4*maxSteps), slp: make([]float32, 8*m.d),
+		pen: driftPenalty, drifts: 1,
 	}
 	if np != phaseStates {
 		t.row = 1
@@ -81,6 +89,15 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 		t.off[v] = t.phaseAfter(0, v)
 	}
 	return t
+}
+
+// setH sets the phase turn of a symbol to the nearest step for
+// modulation index h.
+func (t *xtrellis) setH(h float64) {
+	t.step = int(math.Round(h / 2 * float64(t.np)))
+	for v := range t.off {
+		t.off[v] = t.phaseAfter(0, v)
+	}
 }
 
 // forward relaxes dst[i] with src[i] plus the branch metric at phase lo+i,
@@ -205,7 +222,9 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			top = t.forward(src[np-off:], dst[:off], np-off, re, im, bonus, thr, top)
 		}
 		t.top[k+1] = top
-		t.drift(next, ns)
+		for range t.drifts {
+			t.drift(next, ns)
+		}
 	}
 	beta := t.beta
 	for i := range beta {
@@ -238,7 +257,9 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 			a[w&3] = best
 		}
 		beta, t.next = t.next, beta
-		t.drift(beta, ns)
+		for range t.drifts {
+			t.drift(beta, ns)
+		}
 	}
 	t.beta = beta
 }
@@ -256,8 +277,18 @@ func (t *xtrellis) drift(m []float32, ns int) {
 			if p+1 < t.np {
 				nxt = b[p+1]
 			}
-			b[p] = max(cur, max(prev, nxt)-driftPenalty)
+			b[p] = max(cur, max(prev, nxt)-t.pen)
 			prev = cur
+		}
+		if t.jump > 0 {
+			top := negInf
+			for _, v := range b {
+				top = max(top, v)
+			}
+			top -= t.jump
+			for p, v := range b {
+				b[p] = max(v, top)
+			}
 		}
 	}
 }

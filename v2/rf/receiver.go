@@ -444,6 +444,13 @@ func newEngine(cfg Config, opt options) *engine {
 			}
 			r.xt = newXTrellis(r.model, np, r.maxRun)
 			r.xt.logmap = r.opt.LogMAP
+			if r.opt.DriftPenalty > 0 {
+				r.xt.pen = r.opt.DriftPenalty
+			}
+			r.xt.jump = r.opt.PhaseJump
+			if r.opt.DriftSteps > 0 {
+				r.xt.drifts = r.opt.DriftSteps
+			}
 			r.lp, r.slp = r.xt.lp, r.xt.slp
 			r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)
 			r.tapp = make([]float32, 4*r.maxRun)
@@ -895,6 +902,9 @@ func (r *engine) setH(h float64) {
 	r.search.setH(h, &r.pulse)
 	if r.model != nil {
 		r.model.setH(h)
+	}
+	if r.xt != nil && r.opt.ExactH {
+		r.xt.setH(h)
 	}
 	r.devHz = 3 * deviationHz * h / 0.27
 }

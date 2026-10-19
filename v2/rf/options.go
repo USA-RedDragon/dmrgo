@@ -186,6 +186,18 @@ type options struct {
 	TrackCarrier bool
 	// TrackH estimates the modulation index of each stream.
 	TrackH bool
+	// ExactH turns the phase of the ExactPhase trellis by the nearest step
+	// to the modulation index that TrackH estimates instead of 0.27.
+	ExactH bool
+	// DriftPenalty is the cost in nats of a step of one phase state of the
+	// ExactPhase trellis; 0 means driftPenalty. DriftSteps is the number
+	// of such steps a path can take after each symbol; 0 means 1.
+	DriftPenalty float32
+	DriftSteps   int
+	// PhaseJump, when above 0, lets a path of the ExactPhase trellis jump
+	// to any carrier phase after a symbol at this cost in nats, so that it
+	// can follow the phase through a deep fade.
+	PhaseJump float32
 	// CompactChannel holds the channel ring of the coherent tiers as 8-bit
 	// block floating point and keeps no copy of the wide input: a retune
 	// rotates the samples it holds instead of filtering the input again.
