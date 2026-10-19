@@ -411,7 +411,7 @@ func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 		}
 		for in := range softTrellisStates {
 			best, arg := int32(softInf), 0
-			for s, m := range metric {
+			for s, m := range &metric {
 				if c := m + bc[tr.label[s][in]]; c < best {
 					best, arg = c, s
 				}

@@ -142,7 +142,7 @@ func (t *tracker) find(index int64) *trackEntry {
 // colorCode returns the color code most clean data bursts carried.
 func (t *tracker) colorCode() (enums.ColorCode, bool) {
 	best := 0
-	for i, v := range t.votes {
+	for i, v := range &t.votes {
 		if v > t.votes[best] {
 			best = i
 		}

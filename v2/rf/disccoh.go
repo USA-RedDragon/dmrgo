@@ -305,7 +305,7 @@ func (p *discPhase) emit(m int64) {
 // filter sets ring sample m from the phasors around it.
 func (p *discPhase) filter(m int64) {
 	var re, im float32
-	for k, t := range p.taps {
+	for k, t := range &p.taps {
 		v := p.raw[(m-discPhaseLag+int64(k))&(discPhaseRing-1)]
 		re += t * real(v)
 		im += t * imag(v)

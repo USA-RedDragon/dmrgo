@@ -830,7 +830,7 @@ func softRate34Payload(t *[softTrellisSteps]int) [18]byte {
 func (d *softDecoder) decodeRate34(llr *[softBurstBits]int16, out *layer2.RawBurst) ([18]byte, fec.Result) {
 	tr := &softTrellisTables
 	l := &d.osd.l
-	for j, p := range tr.pos {
+	for j, p := range &tr.pos {
 		l[j] = int32(llr[p])
 	}
 	metric := [softTrellisStates]int32{0, softInf, softInf, softInf, softInf, softInf, softInf, softInf}
@@ -869,7 +869,7 @@ func (d *softDecoder) decodeRate34(llr *[softBurstBits]int16, out *layer2.RawBur
 	for k := range softTrellisSteps {
 		lab := tr.label[state][t[k]]
 		state = t[k]
-		for b, j := range tr.step[k] {
+		for b, j := range &tr.step[k] {
 			one := lab>>(3-b)&1 != 0
 			if one != (l[j] < 0) {
 				res.ErrorsCorrected++
@@ -1034,7 +1034,7 @@ func (d *softDecoder) decodeBPTCChase(llr *[softBurstBits]int16, check func([12]
 			s.bits[softBPTCInfoBit[s.chase[bits.TrailingZeros(uint(g))]]] ^= 1
 		}
 		var packed [25]byte
-		for i, v := range s.bits {
+		for i, v := range &s.bits {
 			packed[i/8] |= byte(v&1) << (7 - i%8)
 		}
 		data, reserved, _ := bptc.Decode196(packed)

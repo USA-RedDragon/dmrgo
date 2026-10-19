@@ -442,7 +442,7 @@ func (x *softExt) voiceKnown(b *Burst) bool {
 func (x *softExt) repairAll(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool) {
 	out := &b.Fixed
 	*out = layer2.RawBurst{}
-	for p, v := range x.llr {
+	for p, v := range &x.llr {
 		if v < 0 {
 			out[p/8] |= 0x80 >> (p % 8)
 		}
@@ -491,7 +491,7 @@ func (x *softExt) fill(c *leanCore, hard *layer2.RawBurst) {
 			x.llr[p] = c.llrAt(p)
 		}
 	}
-	for p, v := range x.llr {
+	for p, v := range &x.llr {
 		if v == 0 {
 			x.llr[p] = 1 - 2*int16(hard[p/8]>>(7-p%8)&1)
 		}
