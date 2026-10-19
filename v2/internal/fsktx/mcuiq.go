@@ -60,7 +60,7 @@ func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 		return errRamp
 	}
 	*m = MCUIQ{ramp: int32(rampSamples)}
-	for i := range m.hist {
+	for i := range &m.hist {
 		m.hist[i] = 0x24242424
 	}
 	m.stepQ = int32(1 << cosTableBits / 2 / rampSamples)
@@ -174,7 +174,7 @@ const (
 func (m *MCUIQ) steady0(dst []int16) {
 	phase, step, off := m.phase, m.step, m.off
 	var w int32
-	for p, x := range m.buf {
+	for p, x := range &m.buf {
 		w = x*step + off
 		d := dst[2*p : 2*p+2 : 2*p+2]
 		phase += uint32(w)
@@ -186,7 +186,7 @@ func (m *MCUIQ) steady0(dst []int16) {
 
 func (m *MCUIQ) steady1(dst []int16) {
 	phase, prev, step, off := m.phase, m.prev, m.step, m.off
-	for p, x := range m.buf {
+	for p, x := range &m.buf {
 		w := x*step + off
 		dw := (w - prev) >> 1
 		v := prev + dw
@@ -204,7 +204,7 @@ func (m *MCUIQ) steady1(dst []int16) {
 
 func (m *MCUIQ) steady2(dst []int16) {
 	phase, prev, step, off := m.phase, m.prev, m.step, m.off
-	for p, x := range m.buf {
+	for p, x := range &m.buf {
 		w := x*step + off
 		dw := (w - prev) >> 2
 		v := prev
@@ -222,7 +222,7 @@ func (m *MCUIQ) steady2(dst []int16) {
 
 func (m *MCUIQ) steady3(dst []int16) {
 	phase, prev, step, off := m.phase, m.prev, m.step, m.off
-	for p, x := range m.buf {
+	for p, x := range &m.buf {
 		w := x*step + off
 		dw := (w - prev) >> 3
 		v := prev
@@ -244,7 +244,7 @@ func (m *MCUIQ) steady3(dst []int16) {
 func (m *MCUIQ) silent() {
 	phase, prev, step, off, us := m.phase, m.prev, m.step, m.off, m.upShift&31
 	tri := uint32(1<<us) * (1<<us + 1) / 2
-	for _, x := range m.buf {
+	for _, x := range &m.buf {
 		w := x*step + off
 		dw := (w - prev) >> us
 		phase += uint32(prev)<<us + uint32(dw)*tri
@@ -253,46 +253,51 @@ func (m *MCUIQ) silent() {
 	m.phase, m.prev = phase, prev
 }
 
+// ramping is steady on the power ramp: it steps the ramp each sample, up
+// to ramp while keyed up and down to 0 while keyed down. The amplitude is
+// (1 - cos) / 2 in Q15 at env * (1 << cosTableBits / 2) / ramp, from
+// cosTable of amplitude iqAmplitude. It stays out of line, so that it does
+// not take the registers of the steady paths.
+//
+//go:noinline
 func (m *MCUIQ) ramping(dst []int16) {
 	us := m.upShift & 31
+	phase, prev, step, off := m.phase, m.prev, m.step, m.off
+	env, q, r, ramp, sq, sr, on := m.env, m.envQ, m.envR, m.ramp, m.stepQ, m.stepR, m.on
 	j := 0
-	for _, x := range m.buf {
-		w := x*m.step + m.off
-		dw := (w - m.prev) >> us
-		v := m.prev
-		m.prev = w
+	for _, x := range &m.buf {
+		w := x*step + off
+		dw := (w - prev) >> us
+		v := prev
+		prev = w
 		for range 1 << us {
 			v += dw
-			m.phase += uint32(v)
-			i := m.phase >> cosShift
-			a := m.envelope()
-			dst[j] = int16(int32(cosTable[i]) * a >> 15)
-			dst[j+1] = int16(int32(cosTable[(i-cosQuarter)&cosMask]) * a >> 15)
+			phase += uint32(v)
+			i := phase >> cosShift
+			switch {
+			case on && env < ramp:
+				env++
+				q += sq
+				r += sr
+				if r >= ramp {
+					r -= ramp
+					q++
+				}
+			case !on && env > 0:
+				env--
+				q -= sq
+				r -= sr
+				if r < 0 {
+					r += ramp
+					q--
+				}
+			}
+			a := int32(uint32(iqAmplitude-int32(cosTable[q&cosMask])) * 32768 / (2 * iqAmplitude))
+			d := dst[j : j+2 : j+2]
+			d[0] = int16(int32(cosTable[i]) * a >> 15)
+			d[1] = int16(int32(cosTable[(i-cosQuarter)&cosMask]) * a >> 15)
 			j += 2
 		}
 	}
-}
-
-func (m *MCUIQ) envelope() int32 {
-	switch {
-	case m.on && m.env < m.ramp:
-		m.env++
-		m.envQ += m.stepQ
-		m.envR += m.stepR
-		if m.envR >= m.ramp {
-			m.envR -= m.ramp
-			m.envQ++
-		}
-	case !m.on && m.env > 0:
-		m.env--
-		m.envQ -= m.stepQ
-		m.envR -= m.stepR
-		if m.envR < 0 {
-			m.envR += m.ramp
-			m.envQ--
-		}
-	}
-	// (1 - cos) / 2 in Q15, from a table of amplitude iqAmplitude, at
-	// env * (1 << cosTableBits / 2) / ramp.
-	return (iqAmplitude - int32(cosTable[m.envQ&cosMask])) * 32768 / (2 * iqAmplitude)
+	m.phase, m.prev, m.env, m.envQ, m.envR = phase, prev, env, q, r
 }
