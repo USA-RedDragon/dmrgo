@@ -229,6 +229,7 @@ type Receiver struct {
 	lean *leanRx
 	iqd  *iqRx
 	iq0  *iq0Rx
+	cb   *combRx
 }
 
 // engine is the receiver of every tier. It keeps the samples of a number
@@ -407,6 +408,10 @@ func New(cfg Config) (*Receiver, error) {
 	if cfg.LookbackSlots == 0 {
 		cfg.LookbackSlots = 16
 	}
+	if opt.Comb {
+		c := newComb(cfg, opt)
+		return &Receiver{e: c.t3, cb: c}, nil
+	}
 	return &Receiver{e: newEngine(cfg, opt)}, nil
 }
 
@@ -534,6 +539,9 @@ func (r *Receiver) DeviationHz() float64 {
 // bursts that are complete. The returned slice is valid until the next
 // call.
 func (r *Receiver) Write(iq []byte) []Burst {
+	if r.cb != nil {
+		return r.cb.write(iq)
+	}
 	if r.iq0 != nil {
 		return r.iq0.write(iq)
 	}
@@ -550,6 +558,9 @@ func (r *Receiver) Write(iq []byte) []Burst {
 // a radio front end delivers them, in place of Write. The returned slice is
 // valid until the next call.
 func (r *Receiver) WriteBaseband(x []complex64) []Burst {
+	if r.cb != nil {
+		return r.cb.writeBaseband(x)
+	}
 	if r.iq0 != nil {
 		return r.iq0.writeBaseband(x)
 	}
@@ -564,6 +575,9 @@ func (r *Receiver) WriteBaseband(x []complex64) []Burst {
 
 // Flush finishes the stream at its end and returns the remaining bursts.
 func (r *Receiver) Flush() []Burst {
+	if r.cb != nil {
+		return r.cb.flush()
+	}
 	if r.iq0 != nil {
 		return r.iq0.flush()
 	}
@@ -1571,6 +1585,9 @@ func (r *engine) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 				}
 			}
 		}
+	}
+	if r.opt.Comb {
+		e.out.flips, e.out.hasFlips = voiceFlips(&e.out.data, &e.out.fixed), true
 	}
 	if !r.redetect(j) {
 		return

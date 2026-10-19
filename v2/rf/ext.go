@@ -1069,10 +1069,13 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 			x.errCoh += extErrGain * (float32(nCoh[i]) - x.errCoh)
 		}
 	}
+	b.coreC2 = 0
 	for i := range layer2.VoiceSlotsPerBurst {
+		b.coreN[i] = uint8(min(nCore[i], 255))
 		if !x.coreCleaner() || nCore[i] > nCoh[i] {
 			continue
 		}
+		b.coreC2 |= 1 << i
 		for _, p := range &softAMBEC2Pos[i] {
 			q, m := p/8, byte(0x80)>>(p%8)
 			b.Fixed[q] = b.Fixed[q]&^m | core[q]&m

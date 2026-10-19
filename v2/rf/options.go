@@ -27,6 +27,9 @@ type options struct {
 	// cost as much; the bursts that the credit does not hold keep the
 	// ratios of the core.
 	CohBudget float64
+	// CombBudget sets the CohBudget of the Tier2 receiver of Comb: 0
+	// means 350, below 0 no limit.
+	CombBudget float64
 	// IQTaps, IQKaiser and IQCutHz set the channel filter of iqDisc: its
 	// length, the beta of its Kaiser window and its cutoff. 0 means
 	// iqTaps, a Hamming window and discCutHz. On the coherent tiers they
@@ -37,6 +40,15 @@ type options struct {
 	IQKaiser float64
 	IQCutHz  float64
 	IQTaps   int
+	// CombMode selects which voice frames Comb takes from Tier2 in place
+	// of the coherent receiver, by the bits of C0 and C1 that the soft
+	// decode of each changed (f2, f3), their means over the frames before
+	// (m2, m3), and whether Tier2 took C2 and C3 of its discriminator core
+	// (core): 0 f2 < f3; 1 all; 2 none; 3 f2 = 0; 4 f2 = 0 in all three
+	// frames of the burst; 5 m2 < 0.9 m3 and f2 <= f3; 6 as 5 but only C2
+	// and C3; 7 m2 < 0.9 m3; 8 core; 9 core and the f2 of the core <= f3;
+	// 10 core or 5; 11 core or 3.
+	CombMode int
 	// Window is the number of symbols on each side of a symbol that the
 	// trellis models, 1 or 2.
 	Window int
@@ -157,6 +169,10 @@ type options struct {
 	// Coherent selects the coherent trellis detector instead of the FM
 	// discriminator.
 	Coherent bool
+	// Comb runs the Tier2 receiver beside the coherent receiver on the
+	// same input and takes each AMBE frame from the one whose decode
+	// shows fewer errors (combRx).
+	Comb bool
 	// ExactPhase carries the carrier phase in the trellis state, so that
 	// paths merge only with the same phase, instead of with each survivor.
 	ExactPhase bool
