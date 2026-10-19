@@ -49,3 +49,22 @@ func TestIQShapeS8(t *testing.T) {
 		t.Errorf("mean error %.3f steps", m)
 	}
 }
+
+// TestNoiseShapeGain checks that NewIQ keeps the zeros of NoiseShape that
+// the gain bound allows: three pairs at 96 kHz, two at 2.4 MHz, where the
+// third pair takes the gain to 64 and the rounding overloads.
+func TestNoiseShapeGain(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct{ rate, want int }{{96000, 3}, {2400000, 2}} {
+		q, err := NewIQ(IQConfig{Rate: c.rate, Tier: Tier2, NoiseShape: 3, NoiseZerosHz: [4]float64{12500, 25000, 40000}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if q.shape != c.want {
+			t.Errorf("at %d Hz: %d pairs of zeros, want %d", c.rate, q.shape, c.want)
+		}
+		if g := ntfPeak(q.fb[:2*q.shape]); g > ntfMaxGain {
+			t.Errorf("at %d Hz: gain %.1f", c.rate, g)
+		}
+	}
+}
