@@ -9,11 +9,12 @@ const tableUnits = 15000
 
 // tier0Exact makes the tables of the Tier0 modulators Nyquist pulses after
 // a receive root-raised-cosine filter, with the inverse of the hold of a
-// DAC or of the interpolation of MCUIQ at tier0IQRate, and each phase
-// exact for a run of one symbol.
+// DAC or of the linear interpolation of MCUIQ, and each phase exact for a
+// run of one symbol. MCUIQ then sums the phase steps at the midpoints of
+// its output samples, so that its phase is the integral of the
+// interpolated deviation at every rate.
 const (
-	tier0Exact  = false
-	tier0IQRate = 96000
+	tier0Exact = false
 )
 
 const (

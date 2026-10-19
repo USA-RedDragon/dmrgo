@@ -39,7 +39,7 @@ func tier0Pulses() []struct {
 		t[i].p.nyquist()
 		hz := float64(t[i].hz)
 		if t[i].name == "tapsIQ" {
-			t[i].p.invert(hz, interpChain(hz, tier0IQRate))
+			t[i].p.invert(hz, interpChain(hz, math.Inf(1)))
 		} else {
 			t[i].p.invert(hz, holdChain(hz))
 		}

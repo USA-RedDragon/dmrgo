@@ -170,18 +170,24 @@ const (
 // steady0 writes the I/Q of the deviation samples of the shaper to dst at
 // full power and the shaper rate, the path of all but the samples of a
 // power ramp. steady1, steady2 and steady3 are steady0 at two, four and
-// eight times the shaper rate, with the phase step interpolated linearly.
+// eight times the shaper rate, with the phase step interpolated linearly;
+// with tier0Exact, at the midpoints of the output samples.
 func (m *MCUIQ) steady0(dst []int16) {
 	phase, step, off := m.phase, m.step, m.off
-	var w int32
+	prev := m.prev
 	for p, x := range &m.buf {
-		w = x*step + off
+		w := x*step + off
+		v := w
+		if tier0Exact {
+			v = prev + (w-prev)>>1
+		}
+		prev = w
 		d := dst[2*p : 2*p+2 : 2*p+2]
-		phase += uint32(w)
+		phase += uint32(v)
 		i := phase >> cosShift
 		d[0], d[1] = cosTable[i], cosTable[(i-cosQuarter)&cosMask]
 	}
-	m.phase, m.prev = phase, w
+	m.phase, m.prev = phase, prev
 }
 
 func (m *MCUIQ) steady1(dst []int16) {
@@ -190,6 +196,9 @@ func (m *MCUIQ) steady1(dst []int16) {
 		w := x*step + off
 		dw := (w - prev) >> 1
 		v := prev + dw
+		if tier0Exact {
+			v -= dw >> 1
+		}
 		prev = w
 		d := dst[4*p : 4*p+4 : 4*p+4]
 		phase += uint32(v)
@@ -208,6 +217,9 @@ func (m *MCUIQ) steady2(dst []int16) {
 		w := x*step + off
 		dw := (w - prev) >> 2
 		v := prev
+		if tier0Exact {
+			v -= dw >> 1
+		}
 		prev = w
 		d := (*[8]int16)(dst[8*p : 8*p+8])
 		for j := 0; j < 8; j += 2 {
@@ -226,6 +238,9 @@ func (m *MCUIQ) steady3(dst []int16) {
 		w := x*step + off
 		dw := (w - prev) >> 3
 		v := prev
+		if tier0Exact {
+			v -= dw >> 1
+		}
 		prev = w
 		d := (*[16]int16)(dst[16*p : 16*p+16])
 		for j := 0; j < 16; j += 2 {
@@ -247,7 +262,11 @@ func (m *MCUIQ) silent() {
 	for _, x := range &m.buf {
 		w := x*step + off
 		dw := (w - prev) >> us
-		phase += uint32(prev)<<us + uint32(dw)*tri
+		v := prev
+		if tier0Exact {
+			v -= dw >> 1
+		}
+		phase += uint32(v)<<us + uint32(dw)*tri
 		prev = w
 	}
 	m.phase, m.prev = phase, prev
@@ -269,6 +288,9 @@ func (m *MCUIQ) ramping(dst []int16) {
 		w := x*step + off
 		dw := (w - prev) >> us
 		v := prev
+		if tier0Exact {
+			v -= dw >> 1
+		}
 		prev = w
 		for range 1 << us {
 			v += dw
