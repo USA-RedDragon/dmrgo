@@ -247,7 +247,7 @@ const corrFile = "testdata/mcorr48k-c5.json"
 // tier0Corr is off.
 func renderCorr(b *bytes.Buffer) error {
 	if !tier0Corr {
-		b.WriteString("const (\ncorr48kSyms = 1\ncorr48kSkip = 0\n)\n\nvar corr48k [4][10]int16\n\n")
+		b.WriteString("const (\ncorr48kSyms = 1\ncorr48kSkip = 0\ncorr48kBase = 4\ncorr48kTop = 1\n)\n\nvar corr48k [4][10]int16\n\n")
 		return nil
 	}
 	raw, err := os.ReadFile(corrFile)
@@ -255,20 +255,28 @@ func renderCorr(b *bytes.Buffer) error {
 		return err
 	}
 	var c struct {
-		C, K int
-		Hz   []float64
+		C, K, Base int
+		Hz         []float64
 	}
 	if err := json.Unmarshal(raw, &c); err != nil {
 		return err
 	}
+	if c.Base == 0 {
+		c.Base = 4
+	}
+	rows, top := 1, 1
+	for range c.C {
+		rows *= c.Base
+	}
+	top = rows / c.Base
 	skip := c.K - 8 + 6
-	if skip < 0 || len(c.Hz) != 10<<(2*c.C) {
+	if skip < 0 || len(c.Hz) != 10*rows || c.Base != 4 && c.Base != 5 {
 		return fmt.Errorf("%s: bad context", corrFile)
 	}
-	fmt.Fprintf(b, "const (\ncorr48kSyms = %d\ncorr48kSkip = %d\n)\n\n", c.C, skip)
-	fmt.Fprintf(b, "var corr48k = [%d][10]int16{\n", 1<<(2*c.C))
+	fmt.Fprintf(b, "const (\ncorr48kSyms = %d\ncorr48kSkip = %d\ncorr48kBase = %d\ncorr48kTop = %d\n)\n\n", c.C, skip, c.Base, top)
+	fmt.Fprintf(b, "var corr48k = [%d][10]int16{\n", rows)
 	u := tableUnits * (1 << tapShift) / 1944.0
-	for i := range 1 << (2 * c.C) {
+	for i := range rows {
 		b.WriteString("{")
 		for p := range 10 {
 			fmt.Fprintf(b, "%d,", int16(math.Round(c.Hz[i*10+p]*u)))

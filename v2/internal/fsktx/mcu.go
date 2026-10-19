@@ -148,6 +148,7 @@ type MCUAudio struct {
 	// codes holds 2 bits for each recent symbol, the newest lowest, and
 	// zeros a bit for each that is 0; corr is set for Table48k.
 	codes, zeros uint32
+	idx5         uint32
 	corr         bool
 }
 
@@ -174,6 +175,7 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	m.scale = scale
 	m.offset = int32(offset)
 	m.codes, m.zeros, m.corr = 0, ^uint32(0), tier0Corr && t.hz == 48000
+	m.idx5 = uint32(len(corr48k) - 1)
 	return nil
 }
 
@@ -210,6 +212,13 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 // corrRow takes the symbol s into the context and returns the correction
 // of the context, nil for a context with a symbol 0.
 func (m *MCUAudio) corrRow(s int8) *[10]int16 {
+	if corr48kBase == 5 {
+		r := &m.k.ring
+		e := code5[(r[m.k.pos+corr48kSkip]+3)&7]
+		l := code5[(r[m.k.pos+corr48kSkip+corr48kSyms]+3)&7]
+		m.idx5 = (m.idx5-uint32(l)*corr48kTop)*5 + uint32(e)
+		return &corr48k[m.idx5]
+	}
 	z := uint32(0)
 	switch s {
 	case -3, -1, 1, 3:
@@ -223,3 +232,7 @@ func (m *MCUAudio) corrRow(s int8) *[10]int16 {
 	}
 	return &corr48k[m.codes>>(2*corr48kSkip)&(1<<(2*corr48kSyms)-1)]
 }
+
+// code5 is the digit of a symbol plus 3 in the index of corr48k in base
+// 5: -3, -1, +1, +3 as 0 to 3 and 0 as 4.
+var code5 = [8]uint8{0, 0, 1, 4, 2, 0, 3, 0}

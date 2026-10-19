@@ -4035,6 +4035,8 @@ var corr48k6 = [40960]int16{
 const (
 	corr48kSyms = 1
 	corr48kSkip = 0
+	corr48kBase = 4
+	corr48kTop  = 1
 )
 
 var corr48k [4][10]int16
