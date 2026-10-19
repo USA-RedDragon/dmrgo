@@ -118,3 +118,68 @@ func TestLeanGapNoiseSpread(t *testing.T) {
 		t.Error("a SYNC that spreads twice as much as the anchors does not anchor")
 	}
 }
+
+// TestLeanReplayNoise checks that noCarrier counts the clicks of a slot
+// before the lock that a stage decodes again, whose symbols lie far
+// before the last. It takes the slot as noise when its SYNC field spreads
+// by 1.6 steps, 7 times as much as the SYNC of the lock, with 50 clicks,
+// and as a weak SYNC when that is 1.5 times. The ring of the core then
+// holds only that slot, and noCarrier once counted no clicks there, so
+// that the noise before a transmission anchored.
+func TestLeanReplayNoise(t *testing.T) {
+	t.Parallel()
+	p := enums.SyncMSSourcedVoice
+	var syms [syncSymbols]int8
+	syncSyms(p, &syms)
+	end := int64(5000)
+	base := end - leanSyncEnd
+	r := &leanCore{devScale: 1, lastAnch: leanNoSlot, replaying: true}
+	r.first, r.next = base-3*slotSymbols, 4
+	r.ns = base + 10*slotSymbols
+	rng := rand.New(rand.NewPCG(3, 4))
+	for k := base - 1; k <= base+slotSymbols; k++ {
+		r.ring[ringPos(k)] = int8(rng.IntN(41) - 20)
+	}
+	var e [syncSymbols]float64
+	for k := range e {
+		e[k] = rng.NormFloat64()
+	}
+	sigma := 1.6 * 2 * deviationHz
+	spread := func() float32 {
+		g, _, res := r.fitSync(end, p)
+		return sqrtf(res) / (2 * g * deviationHz)
+	}
+	for range 8 {
+		for k := range syncSymbols {
+			v := deviationHz*float64(syms[k]) + sigma*e[k]
+			r.ring[ringPos(end-syncSymbols+1+int64(k))] = int8(max(min(math.Round(v/discStepHz), 127), -127))
+		}
+		sigma *= 1.6 / float64(spread())
+	}
+	if s := spread(); s < 1.55 || s > 1.65 {
+		t.Fatalf("spread %.3f", s)
+	}
+	clicks := func() int {
+		n := 0
+		for k := base; k < base+slotSymbols; k++ {
+			if abs32(r.sym(k)) > float32(leanClickOut)/2*deviationHz {
+				n++
+			}
+		}
+		return n
+	}
+	for k := base; clicks() < 50; k += 2 {
+		if k <= end-syncSymbols || k > end {
+			r.ring[ringPos(k)] = int8(100 * (1 - 2*(k&1)))
+		}
+	}
+	g, _, res := r.fitSync(end, p)
+	r.discVar = res / (7 * 7 * g * g)
+	if !r.noCarrier(end, p) {
+		t.Error("noise with 50 clicks and 7 times the spread of the lock anchors")
+	}
+	r.discVar = res / (1.5 * 1.5 * g * g)
+	if r.noCarrier(end, p) {
+		t.Error("a weak SYNC with 1.5 times the spread of the lock does not anchor")
+	}
+}

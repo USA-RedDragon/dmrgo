@@ -1852,21 +1852,44 @@ func (r *leanCore) anchors(end int64, p enums.SyncPattern) bool {
 // noise matches a SYNC now and then, and an anchor there would move the
 // slots, the levels and the oscillator of the stream to it, and hold off
 // the search of a lock that should hunt for the next transmission.
+//
+// A slot before the lock that a stage decodes again must pass both tests
+// to be noise. Its levels are those of the SYNC of the lock. A real SYNC
+// there at -1 to 4 dB C/N has up to 80 clicks and a spread up to 2, but
+// less than 2 times the spread of the lock. The noise before an MS
+// transmission at 6 dB and more has 7 times it or more.
 func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
 	out := float32(leanClickOut) / 2 * r.devScale * deviationHz
+	// The ring holds the last symbols, or in a slot before the lock that a
+	// stage decodes again, those of that slot, which lie far before the
+	// last.
+	top := r.ns
+	if r.replaying {
+		top = min(r.first+int64(r.next)*slotSymbols+1, r.ns)
+	}
 	n := int32(0)
-	for k := max(end-leanSyncEnd, r.ns-leanRing); k < min(end-leanSyncEnd+slotSymbols, r.ns); k++ {
+	for k := max(end-leanSyncEnd, top-leanRing); k < min(end-leanSyncEnd+slotSymbols, top); k++ {
 		if abs32(r.sym(k)-r.dcHz) > out {
 			n++
 		}
 	}
 	g, _, res := r.fitSync(end, p)
+	if r.replaying {
+		return n >= leanNoCarrierClicks && (g <= 0 || sqrtf(res) > leanNoCarrierSpread*2*g*deviationHz && r.gapSpread(g, res))
+	}
 	if n >= leanNoCarrierClicks {
 		return g <= 0 || sqrtf(res) > leanNoCarrierSpread*2*g*deviationHz
 	}
 	if n < leanGapClicks || r.lastAnch == leanNoSlot || g <= 0 || sqrtf(res) <= leanGapFloor*2*g*deviationHz {
 		return false
 	}
+	return r.gapSpread(g, res)
+}
+
+// gapSpread reports whether the levels of deviation scale g and mean
+// squared residual res that fit a SYNC field spread it by more than
+// leanGapSpread times the spread at the anchors of the stream.
+func (r *leanCore) gapSpread(g, res float32) bool {
 	return res*r.devScale*r.devScale > leanGapSpread*leanGapSpread*r.discVar*g*g
 }
 
