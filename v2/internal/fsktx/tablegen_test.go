@@ -241,7 +241,7 @@ func renderCorrIQ(b *bytes.Buffer) error {
 // corrFile holds the correction of tier0Corr in Hz, fitted from the audio
 // optimizer of Tier3: C symbols of context ending K symbols before the
 // newest, for a pulse of 8 symbols on each side, 10 samples a symbol.
-const corrFile = "testdata/mcorr48k.json"
+const corrFile = "testdata/mcorr48k-c5.json"
 
 // renderCorr writes corr48k and its context, or an empty table when
 // tier0Corr is off.
