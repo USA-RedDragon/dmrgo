@@ -142,6 +142,17 @@ type options struct {
 	// that the edges of the channel, where another channel leaks in, move
 	// it less.
 	IQAFCAvg int
+	// IQFront, above 0, runs iqDisc as the lean front of iq0Front: a
+	// boxcar over each decimation in place of the channel filter (1),
+	// centered on the carrier by its weights (2), or a polyphase lowpass
+	// centered on the carrier (3), over IQPoly decimations, 2 or 3, to
+	// IQCutHz (0 means discCutHz). IQHz may then also be 9600. Without
+	// SoftExt, New builds it by newIQ0; it does not take CohExt.
+	IQFront int
+	IQPoly  int
+	// IQBuf is the number of discriminator samples that iqRx hands the
+	// core at once; 0 means 1024.
+	IQBuf int
 	// CohExt adds to softExt on iqRx, or on a DiscReceiver, the coherent
 	// detection of each burst again, with the trellis settings PSPGain and
 	// LLRScale.

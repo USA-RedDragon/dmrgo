@@ -35,6 +35,8 @@ const (
 // baseband by decim, and the frequency of each output sample, from the
 // phase of its product with the conjugate of the one before. With a
 // half-band stage, the channel filter runs at half the baseband rate.
+// With options.IQFront above 0 it is the lean front of iq0Front in place
+// of the channel filter, and taps is nil.
 type iqDisc struct {
 	decim int
 	// step is the decimation of the channel filter, decim without the
@@ -66,6 +68,7 @@ type iqDisc struct {
 	afcSum  complex64
 	afcPrev complex64
 	afcHead int
+	iq0Front
 }
 
 // iqFilter is the design of the filters of iqDisc: the length, Kaiser
@@ -184,6 +187,10 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 
 // tune moves the oscillator to remove a carrier at hz.
 func (d *iqDisc) tune(hz float32) {
+	if d.taps == nil {
+		d.tuneLean(hz)
+		return
+	}
 	d.hz = hz
 	p := -2 * math.Pi * float64(hz) / basebandRate
 	d.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
@@ -192,6 +199,9 @@ func (d *iqDisc) tune(hz float32) {
 // push takes baseband sample v and reports whether it completed an output
 // sample, whose frequency in Hz and channel filter sample it returns.
 func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
+	if d.taps == nil {
+		return d.pushLean(v)
+	}
 	if d.ncoN++; d.ncoN == 512 {
 		d.ncoN = 0
 		g := (3 - real(d.ncoRot)*real(d.ncoRot) - imag(d.ncoRot)*imag(d.ncoRot)) / 2
@@ -215,12 +225,23 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 		return 0, 0, false
 	}
 	d.phase = 0
-	h := d.hist[d.head : d.head+n]
-	h = h[:len(d.taps)]
 	var re, im float32
-	for k, t := range d.taps {
-		re += t * real(h[k])
-		im += t * imag(h[k])
+	if n == iqTaps {
+		// The taps and the history are read through pointers: a range
+		// over an array copies it, and TinyGo copies it again on every
+		// pass of the loop.
+		h := (*[iqTaps]complex64)(d.hist[d.head : d.head+iqTaps])
+		for k, t := range (*[iqTaps]float32)(d.taps) {
+			re += t * real(h[k])
+			im += t * imag(h[k])
+		}
+	} else {
+		h := d.hist[d.head : d.head+n]
+		h = h[:n]
+		for k, t := range d.taps {
+			re += t * real(h[k])
+			im += t * imag(h[k])
+		}
 	}
 	y := complex(re, im)
 	p := y * complex(real(d.prev), -imag(d.prev))
@@ -299,8 +320,8 @@ type iqRx struct {
 	yN    int64
 	// tunes holds the last moves of the oscillator, the channel filter
 	// sample from which each holds and its frequency, for the coherent
-	// stage; nTunes counts them.
-	tunes  [iqTunes]iqTune
+	// stage, nil without it; nTunes counts them.
+	tunes  *[iqTunes]iqTune
 	nTunes int
 	// maxHz, when above 0, bounds the oscillator to the carrier offsets
 	// within it, so that it does not follow a carrier of another channel.
@@ -318,9 +339,17 @@ func newIQRx(cfg Config, opt options) *iqRx {
 	if hz == 0 {
 		hz = discRate
 	}
-	r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
+	if opt.IQFront > 0 {
+		r.conv.initLean(basebandRate/hz, &opt)
+	} else {
+		r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
+	}
 	r.maxHz, r.syncOnly = opt.IQTuneMaxHz, opt.IQTuneSyncOnly
-	r.audio = make([]int16, 0, 1024)
+	n := opt.IQBuf
+	if n == 0 {
+		n = 1024
+	}
+	r.audio = make([]int16, 0, n)
 	on := cfg.OnBurst
 	if on == nil {
 		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
@@ -338,6 +367,7 @@ func newIQRx(cfg Config, opt options) *iqRx {
 		x := softExtOf(&opt, 2*r.d.tm.step)
 		if opt.CohExt {
 			r.yHist = make([]complex64, opt.cohRing())
+			r.tunes = new([iqTunes]iqTune)
 			x.coh = newCohStage(r, &opt)
 			if !opt.CohLocked {
 				r.d.signMiss = opt.signMiss()
@@ -397,9 +427,14 @@ func (r *iqRx) follow() {
 	// do not average to 0 Hz, so its mean over the blocks, avg, spreads
 	// less.
 	est := r.conv.hzOf(acc)
-	if r.afcAvg == 0 {
+	// The lean front passes white noise, whose mean frequency is
+	// anywhere in its band: a block without a carrier moves nothing.
+	quiet := r.conv.taps == nil && r.conv.quiet(acc)
+	switch {
+	case quiet:
+	case r.afcAvg == 0:
 		r.afcAvg = acc
-	} else {
+	default:
 		r.afcAvg += complex(iqAFCAvgGain, 0) * (acc - r.afcAvg)
 	}
 	avg := r.conv.hzOf(r.afcAvg)
@@ -440,6 +475,7 @@ func (r *iqRx) follow() {
 		return
 	}
 	switch {
+	case quiet:
 	case abs32(est) >= iqAFCPullHz:
 		r.afcAvg = 0
 		r.tune(est, 0)
@@ -464,8 +500,10 @@ func (r *iqRx) tune(hz, dc float32) {
 		return
 	}
 	r.conv.tune(r.conv.hz + hz)
-	r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
-	r.nTunes++
+	if r.tunes != nil {
+		r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
+		r.nTunes++
+	}
 	// The mean of the blocks moves with the oscillator.
 	p := -2 * math.Pi * float64(hz) / float64(basebandRate/r.conv.decim)
 	r.afcAvg *= complex(float32(math.Cos(p)), float32(math.Sin(p)))
@@ -492,6 +530,9 @@ func (r *iqRx) tune(hz, dc float32) {
 
 // writeBaseband processes the samples of Receiver.WriteBaseband.
 func (r *iqRx) writeBaseband(x []complex64) []Burst {
+	if r.conv.taps == nil {
+		return r.writeLean(x)
+	}
 	r.out = r.out[:0]
 	for _, v := range x {
 		r.sample(v)

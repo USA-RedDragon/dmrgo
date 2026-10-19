@@ -391,11 +391,14 @@ func New(cfg Config) (*Receiver, error) {
 	if cfg.opt != nil {
 		opt = *cfg.opt
 	}
-	if !opt.tabled() {
+	if !opt.tabled() || opt.IQFront > 0 && opt.CohExt {
 		return nil, &ConfigError{Field: "opt"}
 	}
 	if !opt.Coherent {
 		if opt.IQDisc && cfg.BasebandHz == basebandRate {
+			if opt.IQFront > 0 && !opt.SoftExt && cfg.Rate == float64(cfg.BasebandHz) {
+				return &Receiver{iqd: newIQ0(cfg, opt)}, nil
+			}
 			return &Receiver{iqd: newIQRx(cfg, opt)}, nil
 		}
 		return &Receiver{lean: newLean(cfg, opt)}, nil
