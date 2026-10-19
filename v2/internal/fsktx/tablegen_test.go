@@ -170,6 +170,7 @@ func renderTables() ([]byte, error) {
 			renderLUT(&b, h, l, n)
 		}
 	}
+	renderCorr(&b)
 	fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+1)
 	for i := range 1<<cosTableBits + 1 {
 		fmt.Fprintf(&b, "%d,", int16(math.Round(iqAmplitude*math.Cos(2*math.Pi*float64(i)/(1<<cosTableBits)))))

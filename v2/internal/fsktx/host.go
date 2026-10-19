@@ -165,17 +165,17 @@ type AudioConfig struct {
 	// where 96000 is Hz times a power of two, and is off at other rates
 	// and for 0.
 	Opt int
-	// Corr is a table of deviation corrections in Hz, added to the
-	// samples of each symbol period by the context of CorrSyms symbols
-	// that ends CorrSkip symbols before the newest: CorrSyms base-4
-	// digits, oldest first, -3 as 0 to +3 as 3, times the samples per
-	// symbol, which Hz must make whole. A context with a symbol 0 gets no
-	// correction.
-	Corr     []float64
-	CorrSyms int
-	CorrSkip int
+	// Corr is the length in symbols, 5 or 6, of the symbol context of the
+	// generated table of deviation corrections of Tier1 and Tier2, fitted
+	// to the output of Opt at 30 iterations for the pulse corrPulse of
+	// corrgen_test.go at 24000 and 48000 Hz. Other rates interpolate the
+	// table of 48000 Hz linearly. 0 is off.
+	Corr int
 	// CorrHiHz is the top of the band pass of Corr; 0 means none.
 	CorrHiHz float64
+	// CorrTaps is the length of the band pass of Corr, odd, under 512; 0
+	// means 161 at 48000 Hz, scaled by Hz.
+	CorrTaps int
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -235,13 +235,15 @@ type Audio struct {
 	err    [8]float64
 	shape  int
 	opt    *aoptimizer
-	corr   []float64
+	corr   []int16
 	corrC  int
 	corrK  int
 	spp    int
+	step   float64
+	pos    float64
 	hist   [32]int8
 	cbp    []float64
-	cf, cc [256]float64
+	cf, cc [512]float64
 	cn     int
 }
 
@@ -288,10 +290,24 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		a.buf = make([]float64, k.l/k.m+1)
 		a.shape = min(max(cfg.Shape, 0), 4)
 		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
-		if cfg.Hz%4800 == 0 && cfg.CorrSyms > 0 && cfg.CorrSyms+cfg.CorrSkip <= len(a.hist) &&
-			len(cfg.Corr) == cfg.Hz/4800<<(2*cfg.CorrSyms) {
-			a.corr, a.corrC, a.corrK, a.spp = cfg.Corr, cfg.CorrSyms, cfg.CorrSkip, cfg.Hz/4800
-			a.cbp = bandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz))
+		if cfg.Corr > 0 {
+			t, skip := corrTable(cfg.Hz, cfg.Corr)
+			a.spp, a.step = cfg.Hz/SymbolRate, 1
+			if t == nil {
+				t, skip = corrTable(48000, cfg.Corr)
+				a.spp, a.step = 48000/SymbolRate, 48000/float64(cfg.Hz)
+			}
+			if t != nil {
+				taps := cfg.CorrTaps
+				if taps <= 0 {
+					taps = (optLPN*cfg.Hz/48000)/2*2 + 1
+				}
+				if taps%2 == 0 || taps >= len(a.cc) {
+					taps = optLPN
+				}
+				a.corr, a.corrC, a.corrK = t, cfg.Corr, skip
+				a.cbp = bandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz), taps)
+			}
 		}
 		if cfg.Opt > 0 && aoptRate(cfg.Hz) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
@@ -369,29 +385,58 @@ func (a *Audio) addCorr(s int8, n int) {
 		}
 		idx = idx<<2 | d
 	}
+	h := len(a.cbp) / 2
+	m := len(a.cc) - 1
 	for i := range n {
 		var c float64
-		if idx >= 0 && i < a.spp {
-			c = a.corr[idx*a.spp+i]
+		if p := a.pos; idx >= 0 && p < float64(a.spp) {
+			j := int(p)
+			v := float64(a.corr[idx*a.spp+j])
+			if f := p - float64(j); f > 0 {
+				v += f * (float64(a.corr[idx*a.spp+min(j+1, a.spp-1)]) - v)
+			}
+			c = v * (1.0 / corrUnits)
 		}
-		a.cf[a.cn&(len(a.cf)-1)] = a.buf[i]
-		a.cc[a.cn&(len(a.cc)-1)] = c
-		var acc float64
-		for k, h := range a.cbp {
-			acc += h * a.cc[(a.cn-k)&(len(a.cc)-1)]
+		a.pos += a.step
+		a.cf[a.cn&m] = a.buf[i]
+		a.cc[a.cn&m] = c
+		acc := a.cbp[h] * a.cc[(a.cn-h)&m]
+		for k, v := range a.cbp[:h] {
+			acc += v * (a.cc[(a.cn-k)&m] + a.cc[(a.cn-2*h+k)&m])
 		}
-		a.buf[i] = a.cf[(a.cn-optLPN/2)&(len(a.cf)-1)] + acc
+		a.buf[i] = a.cf[(a.cn-h)&m] + acc
 		a.cn++
 	}
+	a.pos = max(0, a.pos-float64(a.spp))
+}
+
+// corrUnits is the scale of the correction tables, in steps per Hz.
+const corrUnits = 128
+
+// corrTable returns the correction table of Corr for hz and syms context
+// symbols, and the symbols from its newest to the newest symbol; nil when
+// there is none.
+func corrTable(hz, syms int) ([]int16, int) {
+	switch {
+	case hz == 24000 && syms == 5:
+		return corr24k5[:], corr24k5Skip
+	case hz == 24000 && syms == 6:
+		return corr24k6[:], corr24k6Skip
+	case hz == 48000 && syms == 5:
+		return corr48k5[:], corr48k5Skip
+	case hz == 48000 && syms == 6:
+		return corr48k6[:], corr48k6Skip
+	}
+	return nil, 0
 }
 
 // bandPass returns the taps of a Kaiser-windowed band pass from lo to hi
-// Hz at hz, over optLPN taps; hi 0 means up to hz/2.
-func bandPass(lo, hi, hz float64) []float64 {
+// Hz at hz, over n taps, n odd; hi 0 means up to hz/2.
+func bandPass(lo, hi, hz float64, n int) []float64 {
 	lp := func(fc float64) []float64 {
-		h := make([]float64, optLPN)
+		h := make([]float64, n)
 		var sum float64
-		c := optLPN / 2
+		c := n / 2
 		for i := range h {
 			t := float64(i - c)
 			v := 2 * fc
@@ -417,7 +462,7 @@ func bandPass(lo, hi, hz float64) []float64 {
 			b[i] += v
 		}
 	} else {
-		b[optLPN/2]++
+		b[n/2]++
 	}
 	return b
 }
