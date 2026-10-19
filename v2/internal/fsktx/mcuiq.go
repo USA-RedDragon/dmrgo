@@ -11,6 +11,7 @@ const (
 	iqHz     = 24000
 	iqPhases = len(tapsIQ)
 	iqSpan   = len(tapsIQ[0]) / 2
+	iqWords  = len(tapsIQ[0]) / 4
 )
 
 // MCUIQ is the Tier0 I/Q modulator, for a software radio driven by a
@@ -23,9 +24,9 @@ const (
 // nothing and fits a microcontroller: Init sets it up in memory of the
 // caller. An MCUIQ is not safe for concurrent use.
 type MCUIQ struct {
-	// lo and hi hold the last 8 symbols, a byte each, the newest in the
-	// low byte of lo.
-	lo, hi  uint32
+	// hist holds the symbols of the pulse, a byte each, the newest in the
+	// low byte of hist[0].
+	hist    [iqWords]uint32
 	buf     [iqPhases]int32
 	values  int32
 	upShift uint32
@@ -93,8 +94,10 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	default:
 		s = 0
 	}
-	m.hi = m.hi<<8 | m.lo>>24
-	m.lo = m.lo<<8 | uint32(uint8(s))
+	for i := iqWords - 1; i > 0; i-- {
+		m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
+	}
+	m.hist[0] = m.hist[0]<<8 | uint32(uint8(s))
 	m.shape()
 	dst = dst[:n]
 	switch {
@@ -120,16 +123,20 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 }
 
 // shape writes the deviation of the samples of the symbol period that
-// the symbols of lo and hi complete to buf, in output units. It takes two
+// the symbols of hist complete to buf, in output units. It takes two
 // phases in each multiply and accumulate, with the taps of tapsIQPairs;
 // the sums are those of tapsIQ.
 func (m *MCUIQ) shape() {
-	lo, hi := m.lo, m.hi
-	s0, s1, s2, s3 := int32(int8(lo)), int32(int8(lo>>8)), int32(int8(lo>>16)), int32(int8(lo>>24))
-	s4, s5, s6, s7 := int32(int8(hi)), int32(int8(hi>>8)), int32(int8(hi>>16)), int32(int8(hi>>24))
+	var r [4 * iqWords]int32
+	for i, w := range m.hist {
+		r[4*i], r[4*i+1], r[4*i+2], r[4*i+3] = int32(int8(w)), int32(int8(w>>8)), int32(int8(w>>16)), int32(int8(w>>24))
+	}
 	for g := range tapsIQPairs {
 		t := &tapsIQPairs[g]
-		y := t[0]*s0 + t[1]*s1 + t[2]*s2 + t[3]*s3 + t[4]*s4 + t[5]*s5 + t[6]*s6 + t[7]*s7
+		var y int32
+		for i := range t {
+			y += t[i] * r[i]
+		}
 		y0 := int32(int16(y))
 		m.buf[2*g] = y0
 		if 2*g+1 < iqPhases {
