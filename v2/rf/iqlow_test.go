@@ -161,3 +161,17 @@ func TestIQLowHalfRun(t *testing.T) {
 		}
 	}
 }
+
+func TestMod64(t *testing.T) {
+	for _, n := range []uint32{slotSymbols, 2 * slotSymbols} {
+		for _, k := range []int64{0, 1, -1, 143, 144, -144, -145, 287, 288, 1 << 32, -1 << 32, 1<<40 + 77, -(1<<40 + 77), 1<<62 + 5, -1 << 63, 1<<63 - 1} {
+			want := k % int64(n)
+			if want < 0 {
+				want += int64(n)
+			}
+			if got := mod64(k, n); int64(got) != want {
+				t.Errorf("mod64(%d, %d) = %d, want %d", k, n, got, want)
+			}
+		}
+	}
+}

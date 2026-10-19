@@ -1659,14 +1659,27 @@ func (r *leanCore) stale() bool {
 // of the stream by more than the anchors of slot test: for an MS, which
 // sends in one slot of two, off the slots of its bursts.
 func (r *leanCore) offGrid() bool {
-	k, n := r.ns-1-leanSyncEnd-r.first, int64(slotSymbols)
+	k, n := r.ns-1-leanSyncEnd-r.first, uint32(slotSymbols)
 	if !r.bs && r.lastAnch != leanNoSlot {
 		k, n = k-int64(r.lastAnch)*slotSymbols, 2*slotSymbols
 	}
-	if k %= n; k < 0 {
-		k += n
+	m := mod64(k, n)
+	return m > 1 && m < n-1
+}
+
+// mod64 returns k modulo n, from 0 to n-1, in 32-bit divisions: a 64-bit
+// one links the division routines of the runtime into the MCU build.
+func mod64(k int64, n uint32) uint32 {
+	u := uint64(k)
+	if k < 0 {
+		u = -u
 	}
-	return k > 1 && k < n-1
+	w := (0xFFFFFFFF%n + 1) % n
+	m := (uint32(u>>32)%n*w + uint32(u)%n) % n
+	if k < 0 && m != 0 {
+		m = n - m
+	}
+	return m
 }
 
 // forceLock locks to the SYNC of source src, data or voice, that ends
