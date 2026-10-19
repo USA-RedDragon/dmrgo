@@ -1355,7 +1355,11 @@ func (r *leanCore) retime(mid bool) {
 // put off to the next symbol, whose signs the kept samples halfway between
 // the last symbols show, again at its timing, and locks to it as the
 // search while locked does: the symbols of the lock sample it a symbol
-// off, and their correlation does not gate it.
+// off, and their correlation does not gate it. It is not inlined, so that
+// its saved symbols are not on the stack of huntMatch while it calls
+// searchSym.
+//
+//go:noinline
 func (r *leanCore) midSync() {
 	src, data := r.signsSource(r.midSigns)
 	voice, dp, _ := sourceAt(src).SyncPatterns()
