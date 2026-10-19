@@ -296,10 +296,12 @@ func lagrange6(a, b, p0, p1, p2, p3, mu float32) float32 {
 
 // leanChan is the superframe state of one TDMA channel of the streaming
 // tracker: the slot of the last burst A and of the last voice LC or PI
-// header.
+// header, and whether the last burst that it placed in a stream of an MS
+// is a data burst other than such a header.
 type leanChan struct {
-	sf  int32
-	hdr int32
+	sf   int32
+	hdr  int32
+	data bool
 }
 
 // leanNoSlot marks an unset slot of leanChan.
@@ -2246,7 +2248,7 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 	switch {
 	case r.anchor == data || r.anchor == 0 && dd <= damagedSyncDistance && dd < dv:
 		b.Distance, b.Sync = dd, data
-		c.sf = leanNoSlot
+		c.sf, c.data = leanNoSlot, false
 		r.noteData(b, j, c)
 		return true
 	case r.anchor == enums.SyncMSSourcedRC:
@@ -2254,7 +2256,7 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 		return true
 	case r.anchor == voice || dv <= layer2.DefaultSyncThreshold:
 		b.Distance, b.Sync = dv, voice
-		c.sf = j
+		c.sf, c.data = j, false
 		return true
 	}
 	if c.sf != leanNoSlot {
@@ -2276,17 +2278,23 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 			return true
 		case n == 6 && dv <= voiceSyncDistance:
 			b.Distance, b.Sync, b.Voice = dv, voice, enums.VoiceBurstA
-			c.sf = j
+			c.sf, c.data = j, false
 			return true
 		}
 		c.sf = leanNoSlot
 	}
 	if c.hdr == j-2 && dv <= voiceSyncDistance || dv <= damagedSyncDistance {
 		b.Distance, b.Sync, b.Voice = dv, voice, enums.VoiceBurstA
-		c.sf = j
+		c.sf, c.data = j, false
 		return true
 	}
-	if pos, ok := r.embPosition(b); ok {
+	// An MS starts a voice transmission with a burst A after its header,
+	// so a data burst ends the voice of the channel until the next burst
+	// A. The EMB alone passes noise about once in a thousand bursts, and
+	// the noise after a transmission would start a superframe of four
+	// bursts. The carrier of a BS stays on, and a call can follow its idle
+	// bursts without a header or a burst A that the receiver sees.
+	if pos, ok := r.embPosition(b); ok && !c.data {
 		b.Voice = pos
 		c.sf = j - 2*int32(pos-enums.VoiceBurstA)
 		return true
@@ -2341,17 +2349,23 @@ func embOf(d *layer2.RawBurst) pdu.EmbeddedSignalling {
 }
 
 // noteData records the color code of data burst b when its slot type has
-// at most leanVoteErrors errors, and the slot j of a voice LC or PI
-// header.
+// at most leanVoteErrors errors, the slot j of a voice LC or PI header,
+// and whether b ends the voice of channel c.
 func (r *leanCore) noteData(b *Burst, j int32, c *leanChan) {
 	st := b.Data.SlotType()
 	if st.FEC.Uncorrectable {
 		return
 	}
+	c.data = !r.bs && !isHeader(st.DataType)
 	if st.FEC.ErrorsCorrected <= leanVoteErrors && r.votes[st.ColorCode&0xF] < math.MaxUint8 {
 		r.votes[st.ColorCode&0xF]++
 	}
-	if dt := st.DataType; dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypePIHeader {
+	if isHeader(st.DataType) {
 		c.hdr = j
 	}
+}
+
+// isHeader reports whether data type dt is that of a voice LC or PI header.
+func isHeader(dt enums.DataType) bool {
+	return dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypePIHeader
 }

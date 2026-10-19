@@ -1146,9 +1146,12 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	ch := &c.ch[j&1]
 	b.Sync, b.Distance = bestP, syncDist(b.Data, bestP)
 	if bestP == voice {
-		ch.sf = j
+		ch.sf, ch.data = j, false
 	} else {
-		ch.sf = leanNoSlot
+		ch.sf, ch.data = leanNoSlot, false
+		if st := b.Data.SlotType(); !st.FEC.Uncorrectable {
+			ch.data = !c.bs && !isHeader(st.DataType)
+		}
 	}
 	return true
 }
