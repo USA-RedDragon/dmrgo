@@ -338,6 +338,10 @@ type IQConfig struct {
 	// Pulse sets the pulse of Tier1 and Tier2; its zero value is the
 	// pulse of the tier.
 	Pulse PulseConfig
+	// Amplitude is the I/Q amplitude of Tier1 and Tier2 as a share of the
+	// full scale of 16 bits, up to 0.995 so that the rounding to 8 bits
+	// stays in range; 0 means 0.9.
+	Amplitude float64
 }
 
 // IQ modulates complex I/Q for a software radio: it FM-modulates the
@@ -348,6 +352,7 @@ type IQConfig struct {
 // NewIQ allocates its state, and its methods allocate nothing but the
 // growth of dst. An IQ is not safe for concurrent use.
 type IQ struct {
+	amp   float64
 	mcu   MCUIQ
 	out   []int16
 	k     *poly
@@ -414,6 +419,10 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	q.k, q.buf, q.l, q.m = k, make([]float64, k.l/k.m+1), cfg.Rate/g, iqShaperHz/g
 	q.out = make([]int16, 2*(q.l/q.m+1)*len(q.buf))
 	q.step = (1 << 32) / float64(cfg.Rate)
+	q.amp = 0.9 * 32767
+	if cfg.Amplitude > 0 {
+		q.amp = min(cfg.Amplitude, 0.995) * 32767
+	}
 	q.off, q.prev = cfg.OffsetHz, cfg.OffsetHz
 	if cfg.Tier != Tier2 {
 		q.tab = make([]float32, 1<<iqTableBits+1)
@@ -475,7 +484,7 @@ func (q *IQ) symbol(s int8) int {
 }
 
 func (q *IQ) sample(hz float64) (i, qd int16) {
-	a := 0.9 * 32767.0
+	a := q.amp
 	if q.on && q.env < q.ramp || !q.on && q.env > 0 {
 		if q.on {
 			q.env++
