@@ -863,34 +863,8 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		return false
 	}
 	s.track()
-	// The known symbols: the SYNC, or the two halves of the EMB that the
-	// core decoded.
-	clear(s.isK[:])
-	var segs [2][2]int
-	var nseg int
-	if _, _, ok := layer2.SyncSourceOf(b.Sync); ok && b.Distance >= 0 {
-		var syms [syncSymbols]int8
-		syncSyms(b.Sync, &syms)
-		for i, v := range syms {
-			s.known[syncFirstSym+i], s.isK[syncFirstSym+i] = v, true
-		}
-		segs[0] = [2]int{syncFirstSym, syncFirstSym + syncSymbols - 1}
-		nseg, s.priorK = 1, true
-	} else if b.Voice != enums.VoiceBurstUnknown && b.HasFixed {
-		for _, k := range [...]int{syncFirstSym, syncFirstSym + 1, syncFirstSym + 2, syncFirstSym + 3,
-			syncFirstSym + syncSymbols - 4, syncFirstSym + syncSymbols - 3, syncFirstSym + syncSymbols - 2, syncFirstSym + syncSymbols - 1} {
-			p := 2 * (k - cachSymbols)
-			b0 := b.Fixed[p/8] >> (7 - p%8) & 1
-			b1 := b.Fixed[(p+1)/8] >> (7 - (p+1)%8) & 1
-			s.known[k], s.isK[k] = symbolOf(unpacked.Bit(b0), unpacked.Bit(b1)), true
-		}
-		segs[0] = [2]int{syncFirstSym, syncFirstSym + 3}
-		segs[1] = [2]int{syncFirstSym + syncSymbols - 4, syncFirstSym + syncSymbols - 1}
-		// The EMB that the core decoded sets the phase of the runs, but
-		// gives no priors, so that the decode of the EMB from the new
-		// ratios does not repeat a wrong one.
-		nseg, s.priorK = 2, false
-	} else {
+	segs, nseg := s.knownSegs(b)
+	if nseg == 0 {
 		return false
 	}
 	for i := range s.dist {
@@ -958,6 +932,37 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		s.lastSync = b.Sync
 	}
 	return !s.fitOnly && s.runAll(llr)
+}
+
+// knownSegs sets the known symbols of burst b: its SYNC, or the two halves
+// of the EMB that the core decoded. It returns their runs and the number
+// of runs, 0 for a burst with neither.
+func (s *cohStage) knownSegs(b *Burst) (segs [2][2]int, nseg int) {
+	clear(s.isK[:])
+	if _, _, ok := layer2.SyncSourceOf(b.Sync); ok && b.Distance >= 0 {
+		var syms [syncSymbols]int8
+		syncSyms(b.Sync, &syms)
+		for i, v := range syms {
+			s.known[syncFirstSym+i], s.isK[syncFirstSym+i] = v, true
+		}
+		segs[0] = [2]int{syncFirstSym, syncFirstSym + syncSymbols - 1}
+		nseg, s.priorK = 1, true
+	} else if b.Voice != enums.VoiceBurstUnknown && b.HasFixed {
+		for _, k := range [...]int{syncFirstSym, syncFirstSym + 1, syncFirstSym + 2, syncFirstSym + 3,
+			syncFirstSym + syncSymbols - 4, syncFirstSym + syncSymbols - 3, syncFirstSym + syncSymbols - 2, syncFirstSym + syncSymbols - 1} {
+			p := 2 * (k - cachSymbols)
+			b0 := b.Fixed[p/8] >> (7 - p%8) & 1
+			b1 := b.Fixed[(p+1)/8] >> (7 - (p+1)%8) & 1
+			s.known[k], s.isK[k] = symbolOf(unpacked.Bit(b0), unpacked.Bit(b1)), true
+		}
+		segs[0] = [2]int{syncFirstSym, syncFirstSym + 3}
+		segs[1] = [2]int{syncFirstSym + syncSymbols - 4, syncFirstSym + syncSymbols - 1}
+		// The EMB that the core decoded sets the phase of the runs, but
+		// gives no priors, so that the decode of the EMB from the new
+		// ratios does not repeat a wrong one.
+		nseg, s.priorK = 2, false
+	}
+	return segs, nseg
 }
 
 // average adds the levels of the known runs segs[:nseg] of the burst to
