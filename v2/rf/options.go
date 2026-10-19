@@ -239,6 +239,13 @@ type options struct {
 	// that run for all but the voice bursts B to F, which have no SYNC of
 	// their own.
 	CohNoNext, CohNoCross, CohCrossVoice bool
+	// CohVerifyScan, when above 0, is the least share of the power of the
+	// ring samples that the waveform of a SYNC must explain, in the
+	// segments of the coherent SYNC scan, at the timing of the core, for
+	// the coherent stage to verify that SYNC. On noise it leaves most
+	// candidates of the search for a few correlations instead of the
+	// interpolation that the test of the levels takes.
+	CohVerifyScan float64
 	// CohVoiceOnly leaves every burst but a voice burst to the ratios of
 	// the core: the coherent stage only fits the carrier and timing on
 	// the others.

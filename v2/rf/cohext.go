@@ -103,6 +103,7 @@ type cohStage struct {
 	// burst, and crossVoice runs it only into the voice bursts B to F,
 	// which have no SYNC.
 	noNext, noCross, crossVoice bool
+	verifyScan                  float64
 	totalHz                     float64
 	// freq is the carrier offset of the stream, in Hz, that the SYNC of
 	// the bursts fits, from the DC offset of the core at the first.
@@ -251,7 +252,7 @@ func newCohStageOf(opt *options) *cohStage {
 	}
 	m := newCPMModel(1, sps)
 	s := &cohStage{model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
-		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly}
+		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
@@ -409,6 +410,51 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 	}
 	s.peakOK = false
 	return s.peakSrc, s.peakData, back, true
+}
+
+// scanShare returns the largest share of the power of the ring samples
+// that the waveform of SYNC p explains in the segments of scan, at the
+// sample offsets of scan around the timing of the core, for a SYNC that
+// ends at the last symbol of c. It returns 1 when it cannot test p.
+func (s *cohStage) scanShare(c *leanCore, p enums.SyncPattern) float64 {
+	hist, n, lo := s.ring()
+	if n < s.size/2 || s.step != 1 || s.div != 2 {
+		return 1
+	}
+	src, data := -1, false
+	for i := range s.nsrc {
+		voice, dp, _ := sourceAt(i).SyncPatterns()
+		if p == voice || p == dp {
+			src, data = i, p == dp
+			break
+		}
+	}
+	sps := float64(samplesPerSy) / 2
+	t := symTime(c, c.ns-1) + s.dt - float64(syncSymbols-2)*sps - float64(cohSPS/2)
+	b0 := int64(math.Round(t))
+	if src < 0 || b0-cohScanOff < lo || b0+cohScanOff+cohScanLen > n {
+		return 1
+	}
+	best := 0.0
+	for o := -cohScanOff; o <= cohScanOff; o++ {
+		x := s.scanX[:]
+		var e float64
+		for i := range x {
+			v := hist[(b0+int64(o)+int64(i))&(s.size-1)]
+			x[i] = v
+			e += float64(real(v)*real(v) + imag(v)*imag(v))
+		}
+		if e == 0 {
+			continue
+		}
+		mv, md, _ := scanPair(x, &s.scanTpl[src][0], 0, -1)
+		m := mv
+		if data {
+			m = md
+		}
+		best = max(best, m*cohScanSegs/(e*cohScanLen))
+	}
+	return best
 }
 
 // symTime returns the time of symbol k of the core, in samples of the
@@ -1242,6 +1288,9 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	base := c.ns - 1 - leanSyncEnd
 	s.t0 = s.ringTime(c, base) + s.dt
 	if s.t0-s.sps < float64(lo) {
+		return false
+	}
+	if s.verifyScan > 0 && s.scanTpl != nil && s.scanShare(c, p) < s.verifyScan {
 		return false
 	}
 	s.verifyHz()
