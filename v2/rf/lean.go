@@ -1039,11 +1039,17 @@ func (r *leanCore) searchSigns() (sym, mid bool) {
 	// The loop pulls in slowly, so that it can sample the first bursts
 	// of a stream about half a symbol off, and their SYNC then shows in
 	// the signs of the midpoints instead.
+	r.pushMidSign()
+	return r.signsMatch2(r.signs, r.midSigns)
+}
+
+// pushMidSign takes the sign of the midpoint in tm.half against ringSum
+// into midSigns.
+func (r *leanCore) pushMidSign() {
 	r.midSigns <<= 1
 	if (r.tm.half-r.off)*(float32(syncSymbols)/discStepHz) > float32(r.ringSum) {
 		r.midSigns |= 1
 	}
-	return r.signsMatch2(r.signs, r.midSigns)
 }
 
 // searchHit tests the last symbols of the search, whose signs match a
@@ -1073,7 +1079,10 @@ func (r *leanCore) searchHit(sym, mid bool) {
 //go:noinline
 func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 	r.pushSym(x)
-	sym, mid = r.searchSigns()
+	r.pushMidSign()
+	// signsMatch in place, which saves the call of signsMatch2 at each
+	// symbol of the search.
+	sym, mid = r.signsMatch(r.signs, r.midSigns)
 	hit = r.ns > leanSyncEnd+1 && sym || r.ns >= leanRing && r.ext != nil || mid && r.ns > leanSyncEnd+2
 	return hit, sym, mid
 }
@@ -1089,10 +1098,26 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
 	r.pushSym(x)
-	if r.hunt {
-		return r.huntSigns(at)
+	if !r.hunt || !r.huntMid(at) {
+		return false, false, false
 	}
-	return false, false, false
+	// huntSigns with signsMatch in place, which saves the call of
+	// signsMatch2 at each symbol of the hunt.
+	again = r.again
+	r.again = false
+	sym, mid := r.signsMatch(r.signs, r.midSigns)
+	return again, mid, mid || sym
+}
+
+// lockPush takes symbol value x of a lock of run96 with RawSearch 2 that
+// does not hunt, at samples after the last matched filter sample, as
+// lockSym does. It reads nothing that run96 keeps in locals, so that run96
+// stores them only at the end of a slot.
+//
+//go:noinline
+func (r *leanCore) lockPush(x, at float32) {
+	r.lastAt = at
+	r.pushSym(x)
 }
 
 // endSlot decodes the slot that the last symbol ended.
@@ -1124,6 +1149,19 @@ func (r *leanCore) huntSym(at float32) {
 // reports whether the signs match a SYNC, for huntMatch with again and
 // mid.
 func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
+	if !r.huntMid(at) {
+		return false, false, false
+	}
+	again = r.again
+	r.again = false
+	sym, mid := r.signsMatch2(r.signs, r.midSigns)
+	return again, mid, mid || sym
+}
+
+// huntMid takes the sign of the midpoint before the last symbol of a
+// hunting lock into midSigns, as huntSigns does, and reports whether the
+// ring holds enough symbols for a match.
+func (r *leanCore) huntMid(at float32) bool {
 	if r.acqKept() > 4 {
 		r.midSigns <<= 1
 		if r.midTiming {
@@ -1134,13 +1172,7 @@ func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
 			r.midSigns |= 1
 		}
 	}
-	if r.ns < leanRing {
-		return false, false, false
-	}
-	again = r.again
-	r.again = false
-	sym, mid := r.signsMatch2(r.signs, r.midSigns)
-	return again, mid, mid || sym
+	return r.ns >= leanRing
 }
 
 // huntMatch tests the symbols of a hunting lock whose signs match a SYNC,
@@ -1267,6 +1299,11 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 //
 //go:noinline
 func (r *leanCore) signsMatch2(a, b uint32) (bool, bool) {
+	return r.signsMatch(a, b)
+}
+
+// signsMatch is signsMatch2 for the callers that inline it.
+func (r *leanCore) signsMatch(a, b uint32) (bool, bool) {
 	// A distance m matches when it is at most signMiss or at least
 	// syncSymbols-signMiss, so m-signMiss-1 wraps or reaches span.
 	lo := uint32(r.signMiss) + 1
