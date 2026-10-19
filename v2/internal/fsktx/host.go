@@ -355,6 +355,14 @@ type IQConfig struct {
 	// 3 kHz, a polynomial function of the symbols fitted to that of Shape;
 	// it adds nothing to the lag. Shape wins over it.
 	ShapePred bool
+	// NoiseShape is the noise shaping of the rounding to 8 bits of
+	// AppendS8: 0 rounds each value, 1 to 4 feed the rounding error of I
+	// and of Q back so that its spectrum has that many pairs of zeros, at
+	// the frequencies of NoiseZerosHz.
+	NoiseShape int
+	// NoiseZerosHz are the frequencies of the zeros of the noise transfer
+	// function of NoiseShape, in Hz.
+	NoiseZerosHz [4]float64
 }
 
 // IQ modulates complex I/Q for a software radio: it FM-modulates the
@@ -383,6 +391,9 @@ type IQ struct {
 	on    bool
 	opt   *optimizer
 	pred  *predictor
+	shape int
+	fb    [8]float64
+	err   [2][8]float64
 }
 
 const iqShaperHz = 48000
@@ -410,6 +421,9 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 		return nil, errRamp
 	}
 	q := &IQ{ramp: ramp}
+	if q.shape = min(max(cfg.NoiseShape, 0), 4); q.shape > 0 {
+		q.fb = ntf(q.shape, cfg.NoiseZerosHz, float64(cfg.Rate))
+	}
 	switch cfg.Tier {
 	case Tier0:
 		if err := q.mcu.Init(cfg.Rate, int(math.Round(cfg.OffsetHz)), min(ramp, 1<<15)); err != nil {
@@ -472,8 +486,26 @@ func (q *IQ) Key(on bool) {
 // the pulse and the interpolation. It allocates only to grow dst.
 func (q *IQ) AppendS8(dst []byte, s int8) []byte {
 	n := q.symbol(s)
-	for _, v := range q.out[:n] {
-		dst = append(dst, byte(int8((int32(v)+1<<7)>>8)))
+	if q.shape == 0 {
+		for _, v := range q.out[:n] {
+			dst = append(dst, byte(int8((int32(v)+1<<7)>>8)))
+		}
+		return dst
+	}
+	for j, v := range q.out[:n] {
+		e := &q.err[j&1]
+		x := float64(v) / 256
+		for i, f := range q.fb[:2*q.shape] {
+			x += f * e[i]
+		}
+		c := min(max(math.Floor(x+0.5), -128), 127)
+		d := c - x
+		if d > 1 || d < -1 {
+			d = 0
+		}
+		copy(e[1:], e[:7])
+		e[0] = d
+		dst = append(dst, byte(int8(c)))
 	}
 	return dst
 }
