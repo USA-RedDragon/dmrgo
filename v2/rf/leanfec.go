@@ -292,8 +292,9 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		chase[i], cmag[i] = -1, 0
 	}
 	// The hard decisions go straight into the grid, and chase holds grid
-	// cells, row*15+col; each pattern then flips one grid bit.
-	var hard [13]uint16
+	// cells, row*15+col; each pattern then flips one grid bit, so that
+	// rows holds the hard decisions with the cells of the pattern flipped.
+	var rows [13]uint16
 	var base int32
 	if v := r.llrAt(bptcPos(0)); v < 0 {
 		// R(3), bit 0, is outside the grid and 0 in every codeword.
@@ -307,7 +308,7 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		p := bptc.GridBit(row, col)
 		v := r.llrAt(bptcPos(p))
 		if v < 0 {
-			hard[row] |= 1 << col
+			rows[row] |= 1 << col
 			v = -v
 		}
 		for i := range chase {
@@ -326,14 +327,13 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		size = softListMax
 	}
 	f.nlist = 0
-	rows := hard
 	var data [12]byte
 	for g := 0; g < 1<<leanChase; g++ {
 		if g > 0 {
 			cell := chase[bits.TrailingZeros(uint(g))]
 			rows[cell/15] ^= 1 << (cell % 15)
 		}
-		reserved, cost := r.bptcPattern(&rows, &hard, &data)
+		reserved, cost := r.bptcPattern(&rows, chase, g, &data)
 		cost += base
 		if g == 0 && cost == 0 {
 			if ok, _ := bptcCheck(dt, &data); ok || !checked {
@@ -357,18 +357,34 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 // bptcPattern decodes the BPTC(196,96) grid rows by rows into data and
 // returns its reserved bits and the cost of its codeword: the sum of the
 // LLR magnitudes of the bits where it differs from the hard decisions.
+// rows holds the hard decisions with the cells chase[j] of the set bits j
+// of g flipped, so that fixBPTC needs no copy of the hard decisions.
 // It is not inlined, so that the codeword is on the stack only while it
 // runs.
 //
 //go:noinline
-func (r *leanCore) bptcPattern(rows, hard *[13]uint16, data *[12]byte) (uint8, int32) {
+func (r *leanCore) bptcPattern(rows *[13]uint16, chase []int16, g int, data *[12]byte) (uint8, int32) {
 	var reserved uint8
 	*data, reserved, _ = bptc.DecodeRows(rows)
 	cw := bptc.EncodeRows(data, reserved)
 	var cost int32
 	for row := range cw {
-		for e := cw[row] ^ hard[row]; e != 0; e &= e - 1 {
+		for e := cw[row] ^ rows[row]; e != 0; e &= e - 1 {
 			l := r.llrAt(bptcPos(bptc.GridBit(row, bits.TrailingZeros16(e))))
+			cost += int32(max(l, -l))
+		}
+	}
+	// A flipped cell differs from the hard decision where it equals the
+	// codeword.
+	for j, cell := range chase {
+		if g>>j&1 == 0 {
+			continue
+		}
+		row, col := int(cell)/15, int(cell)%15
+		l := r.llrAt(bptcPos(bptc.GridBit(row, col)))
+		if (cw[row]^rows[row])>>col&1 != 0 {
+			cost -= int32(max(l, -l))
+		} else {
 			cost += int32(max(l, -l))
 		}
 	}
