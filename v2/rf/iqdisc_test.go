@@ -95,6 +95,49 @@ func c0c1InOrder(want, got []uint64) int {
 // oscillator that follows the mean frequency onto it.
 func TestIQDiscAdjacent(t *testing.T) {
 	t.Parallel()
+	for _, held := range []bool{false, true} {
+		o := discOptions()
+		o.IQDisc, o.IQHz = true, 12000
+		if held {
+			o.IQTuneMaxHz, o.IQTuneSyncOnly = 2500, true
+		}
+		n, want := adjacentReceive(t, Tier0, &o)
+		switch {
+		case held && n < want:
+			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, want)
+		case !held && n == want:
+			t.Errorf("not held: all %d voice frames exact; the test no longer shows the pull", n)
+		}
+	}
+}
+
+// TestEngineAdjacent receives the streams of TestIQDiscAdjacent on Tier3,
+// with its channel held within 2500 Hz and a channel filter to 6 kHz, and
+// checks that C0 and C1 of every voice frame decode; its own channel
+// filter, flat to 7.5 kHz, lets the other channel in.
+func TestEngineAdjacent(t *testing.T) {
+	t.Parallel()
+	for _, held := range []bool{false, true} {
+		o := tierOptions(Tier3)
+		if held {
+			o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser = 2500, 6000, 6
+		}
+		n, want := adjacentReceive(t, Tier3, &o)
+		switch {
+		case held && n < want:
+			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, want)
+		case !held && n == want:
+			t.Errorf("not held: all %d voice frames exact; the test no longer shows the other channel", n)
+		}
+	}
+}
+
+// adjacentReceive receives the MS voice calls of TestIQDiscAdjacent next
+// to the stronger BS stream on tier with the settings o, and returns the
+// number of voice frames whose C0 and C1 decode in order and the number
+// sent.
+func adjacentReceive(t *testing.T, tier Tier, o *options) (n, want int) {
+	t.Helper()
 	cfg := testConfig()
 	cfg.ColorCode, cfg.Superframes, cfg.Wakeups, cfg.Slot = 1, 2, 0, 1
 	built, err := rftx.Sequence("voice", cfg)
@@ -105,14 +148,14 @@ func TestIQDiscAdjacent(t *testing.T) {
 	const calls = 3
 	gap := make([]float64, int(0.3*basebandRate))
 	var fmAll, envAll []float64
-	want := make([]uint64, 0, calls*18*cfg.Superframes)
+	frames := make([]uint64, 0, calls*18*cfg.Superframes)
 	for c := range calls {
 		if c > 0 {
 			fmAll, envAll = append(fmAll, gap...), append(envAll, gap...)
 		}
 		fmAll, envAll = append(fmAll, fm...), append(envAll, env...)
 		for i := range 18 * cfg.Superframes {
-			want = append(want, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
+			frames = append(frames, rftx.AMBEValue(rftx.TestAMBEFrame(i)))
 		}
 	}
 	ic := testConfig()
@@ -122,32 +165,19 @@ func TestIQDiscAdjacent(t *testing.T) {
 		t.Fatal(err)
 	}
 	fi, _ := rftx.ModulateBS(ib.Slots)
-	for _, held := range []bool{false, true} {
-		x := msBaseband(fmAll, envAll, 0.3, 0, 20, 7)
-		var ph float64
-		for i := range x {
-			ph += 2 * math.Pi * (fi[i%len(fi)] + 12500) / basebandRate
-			x[i] += complex(float32(100*math.Cos(ph)), float32(100*math.Sin(ph)))
-		}
-		o := discOptions()
-		o.IQDisc, o.IQHz = true, 12000
-		if held {
-			o.IQTuneMaxHz, o.IQTuneSyncOnly = 2500, true
-		}
-		var out []Burst
-		r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
-		for k := 0; k < len(x); k += 4096 {
-			r.WriteBaseband(x[k:min(k+4096, len(x))])
-		}
-		r.Flush()
-		n := c0c1InOrder(want, voiceFrames(out))
-		switch {
-		case held && n < len(want):
-			t.Errorf("held: C0 and C1 of %d of %d voice frames exact", n, len(want))
-		case !held && n == len(want):
-			t.Errorf("not held: all %d voice frames exact; the test no longer shows the pull", n)
-		}
+	x := msBaseband(fmAll, envAll, 0.3, 0, 20, 7)
+	var ph float64
+	for i := range x {
+		ph += 2 * math.Pi * (fi[i%len(fi)] + 12500) / basebandRate
+		x[i] += complex(float32(100*math.Cos(ph)), float32(100*math.Sin(ph)))
 	}
+	var out []Burst
+	r := mustNew(Config{Rate: basebandRate, Tier: tier, opt: o, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	for k := 0; k < len(x); k += 4096 {
+		r.WriteBaseband(x[k:min(k+4096, len(x))])
+	}
+	r.Flush()
+	return c0c1InOrder(frames, voiceFrames(out)), len(frames)
 }
 
 // iqDiscReceive runs the baseband x through iqRx at hz with OnBurst.

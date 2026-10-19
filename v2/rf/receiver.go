@@ -413,6 +413,9 @@ func newEngine(cfg Config, opt options) *engine {
 		dec = max(r.opt.ChanDecimation, 1)
 	}
 	r.chz = newChannelizer(size, !r.opt.Coherent, dec, r.opt.CompactChannel, half)
+	if r.opt.Coherent && (r.opt.IQTaps > 0 || r.opt.IQKaiser > 0 || r.opt.IQCutHz > 0) {
+		r.chz.setFilter(r.opt.IQTaps, r.opt.IQKaiser, r.opt.IQCutHz)
+	}
 	r.spec = newSpectrum(float64(cfg.BasebandHz))
 	r.search = newSyncSearch(r.opt.Coherent, dec)
 	if r.opt.Coherent {
@@ -569,7 +572,7 @@ func (r *engine) writeBaseband(x []complex64) []Burst {
 // channel filters, then searches or follows the stream.
 func (r *engine) push(x []complex64) {
 	for _, v := range x {
-		if !r.locked && r.spec.push(v) && r.spec.OK && math.Abs(r.spec.Hz-r.chz.ncoHz) > 50 {
+		if !r.locked && r.spec.push(v) && r.spec.OK && math.Abs(r.spec.Hz-r.chz.ncoHz) > 50 && r.tuneOK(r.spec.Hz) {
 			r.chz.tune(r.spec.Hz)
 			r.search.xOK = false
 			r.searchAt, r.candAt = 0, -1
@@ -577,6 +580,13 @@ func (r *engine) push(x []complex64) {
 		r.chz.push(v)
 	}
 	r.step(false)
+}
+
+// tuneOK reports whether the channel may move to the carrier offset hz:
+// with the IQTuneMaxHz knob, only within it, so that the spectrum
+// estimate of a stronger channel next to the wanted one does not take it.
+func (r *engine) tuneOK(hz float64) bool {
+	return r.opt.IQTuneMaxHz <= 0 || math.Abs(hz) <= float64(r.opt.IQTuneMaxHz)
 }
 
 // flush finishes the stream at its end and returns the remaining bursts.

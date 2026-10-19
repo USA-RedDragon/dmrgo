@@ -107,7 +107,11 @@ type options struct {
 	IQHz   int
 	// IQTaps, IQKaiser and IQCutHz set the channel filter of iqDisc: its
 	// length, the beta of its Kaiser window and its cutoff. 0 means
-	// iqTaps, a Hamming window and discCutHz.
+	// iqTaps, a Hamming window and discCutHz. On the coherent tiers they
+	// set the channel filter of the channelizer instead, a windowed sinc
+	// in place of chanFilterTaps once any of them is set: 0 means
+	// chanTaps, a Hamming window and the middle of chanPassHz and
+	// chanStopHz.
 	IQTaps   int
 	IQKaiser float64
 	IQCutHz  float64
@@ -118,7 +122,8 @@ type options struct {
 	IQHalfband int
 	// IQTuneMaxHz, when above 0, keeps the oscillator of iqRx within that
 	// many Hz of 0, so that it does not follow a carrier of another
-	// channel.
+	// channel. On the coherent tiers the channel moves only to the
+	// carrier offsets of the spectrum estimate within it.
 	IQTuneMaxHz float32
 	// IQTuneSyncOnly moves the oscillator of iqRx while the core is
 	// locked only by the carrier offset of the SYNC fits, not by the mean

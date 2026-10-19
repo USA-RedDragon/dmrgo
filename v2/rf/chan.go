@@ -433,7 +433,11 @@ type channelizer struct {
 	ncoRot  complex64
 	delayCh int
 
-	wide    ring
+	wide ring
+	// taps is the coherent channel filter, chanFilterTaps unless the
+	// IQTaps, IQKaiser or IQCutHz knobs set another, and hist holds twice
+	// its length of samples.
+	taps    []float32
 	hist    []complex64
 	head    int
 	ch      ring
@@ -461,6 +465,7 @@ func newChannelizer(size int, disc bool, dec int, compact, half bool) *channeliz
 		if !compact {
 			c.wide = newRing(size, 1, false)
 		}
+		c.taps = chanFilterTaps[:]
 		c.hist = make([]complex64, 2*chanTaps)
 		c.ch = newRing((size+dec-1)/dec, dec, compact)
 		return c
@@ -472,6 +477,31 @@ func newChannelizer(size int, disc bool, dec int, compact, half bool) *channeliz
 	c.sym = newQring(size/2+1, discStepHz)
 	c.energy = newFring(size/energyBin + 2)
 	return c
+}
+
+// setFilter replaces the coherent channel filter by n taps of a windowed
+// sinc to cutHz at basebandRate, Kaiser with beta or Hamming with beta 0,
+// and moves the delay of the channel samples to its center. n 0 means
+// chanTaps and cutHz 0 the middle of chanPassHz and chanStopHz. Call it
+// before the first sample.
+func (c *channelizer) setFilter(n int, beta, cutHz float64) {
+	if n == 0 {
+		n = chanTaps
+	}
+	if cutHz == 0 {
+		cutHz = (chanPassHz + chanStopHz) / 2
+	}
+	w := windowTaps(n, cutHz/basebandRate, beta)
+	var sum float64
+	for _, v := range w {
+		sum += v
+	}
+	c.taps = make([]float32, n)
+	for i, v := range w {
+		c.taps[i] = float32(v / sum)
+	}
+	c.hist = make([]complex64, 2*n)
+	c.head, c.delayCh = 0, n/2
 }
 
 // count returns the number of channel samples so far.
@@ -564,11 +594,12 @@ func (c *channelizer) retune(hz float64) {
 	}
 	first := max(c.ch.first(), 0)
 	c.ch.rotate(turn(first*int64(c.chDec)-int64(c.delayCh)), turn(int64(c.chDec)))
-	for k := range chanTaps {
-		j := (c.head + k) % chanTaps
-		r := turn(c.n - chanTaps + int64(k))
+	nt := len(c.taps)
+	for k := range nt {
+		j := (c.head + k) % nt
+		r := turn(c.n - int64(nt) + int64(k))
 		c.hist[j] *= r
-		c.hist[j+chanTaps] = c.hist[j]
+		c.hist[j+nt] = c.hist[j]
 	}
 	c.ncoHz = hz
 	p := math.Mod(-2*math.Pi*hz*float64(c.n)/basebandRate, 2*math.Pi)
@@ -598,11 +629,14 @@ func (c *channelizer) filter(v complex64, n int64) {
 	}
 	v *= c.ncoRot
 	c.ncoRot *= c.ncoStep
+	nt := len(c.taps)
 	c.hist[c.head] = v
-	c.hist[c.head+chanTaps] = v
-	c.head = (c.head + 1) % chanTaps
+	c.hist[c.head+nt] = v
+	if c.head++; c.head == nt {
+		c.head = 0
+	}
 	if n&int64(c.chDec-1) == 0 {
-		c.ch.push(fir(c.hist[c.head:c.head+chanTaps], chanFilterTaps[:]))
+		c.ch.push(fir(c.hist[c.head:c.head+nt], c.taps))
 	}
 }
 
