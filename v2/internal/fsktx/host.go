@@ -431,7 +431,7 @@ func corrTable(hz, syms int) ([]int16, int) {
 }
 
 // bandPass returns the taps of a Kaiser-windowed band pass from lo to hi
-// Hz at hz, over n taps, n odd; hi 0 means up to hz/2.
+// Hz at hz, over n taps, n odd; hi 0 or from hz/2 means up to hz/2.
 func bandPass(lo, hi, hz float64, n int) []float64 {
 	lp := func(fc float64) []float64 {
 		h := make([]float64, n)
@@ -457,7 +457,7 @@ func bandPass(lo, hi, hz float64, n int) []float64 {
 	for i := range b {
 		b[i] = -b[i]
 	}
-	if hi > 0 {
+	if hi > 0 && hi < hz/2 {
 		for i, v := range lp(hi / hz) {
 			b[i] += v
 		}
