@@ -175,13 +175,15 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 	}
 	d.taps = make([]float32, n)
 	d.hist = make([]complex64, 2*n)
-	w := windowTaps(n, fc/rate, f.beta)
+	// The taps round to float32 before the division by their sum, as the
+	// filter of iqTaps always has.
 	var sum float64
-	for _, v := range w {
+	for i, v := range windowTaps(n, fc/rate, f.beta) {
+		d.taps[i] = float32(v)
 		sum += v
 	}
-	for i, v := range w {
-		d.taps[i] = float32(v / sum)
+	for i := range d.taps {
+		d.taps[i] /= float32(sum)
 	}
 }
 
