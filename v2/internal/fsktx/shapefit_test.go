@@ -23,7 +23,34 @@ const (
 	fitLo      = 80
 	fitTaps    = 160
 	fitGaps    = true
+	fitTopHz   = 16000.0
+	fitTopN    = 41
 )
+
+// fitLowPass is a Kaiser low pass at hz of n taps with unit gain at 0 Hz,
+// at iqShaperHz.
+func fitLowPass(hz float64, n int) []float64 {
+	if hz <= 0 {
+		return []float64{1}
+	}
+	h := make([]float64, n)
+	fc := hz / iqShaperHz
+	var sum float64
+	for i := range h {
+		t := float64(i - n/2)
+		v := 2 * fc
+		if t != 0 {
+			v = math.Sin(2*math.Pi*fc*t) / (math.Pi * t)
+		}
+		x := t / float64(n/2+1)
+		h[i] = v * besselI0(8*math.Sqrt(max(0, 1-x*x))) / besselI0(8)
+		sum += h[i]
+	}
+	for i := range h {
+		h[i] /= sum
+	}
+	return h
+}
 
 // TestShapeKernFit fits the predictor kernels to the corrections of the
 // optimizer on random symbols, and with -updatekern writes them.
@@ -176,10 +203,13 @@ func fitKern(t *testing.T, tier Tier) *[predK][predF]float64 {
 	t.Logf("%v fit: residual %.4f of the power of the correction, rms %.4g rad", tier, sse/sst, math.Sqrt(sst/float64(nm-2000)))
 	lp := newOptimizer(1).lp
 	h := optLPN / 2
+	full := fitTaps + optLPN - 1
+	hp := make([]float64, full)
+	top := fitLowPass(fitTopHz, fitTopN)
+	ht := fitTopN / 2
 	var out [predK][predF]float64
 	for k := range predF {
-		for o := range predK {
-			tp := o + predLo
+		for tp := range full {
 			v := 0.0
 			if i := tp - fitLo; i >= 0 && i < fitTaps {
 				v = kern[k][i]
@@ -187,6 +217,16 @@ func fitKern(t *testing.T, tier Tier) *[predK][predF]float64 {
 			for c, l := range lp {
 				if i := tp + h - c - fitLo; i >= 0 && i < fitTaps {
 					v -= l * kern[k][i]
+				}
+			}
+			hp[tp] = v
+		}
+		for o := range predK {
+			tp := o + predLo
+			v := 0.0
+			for c, l := range top {
+				if i := tp + ht - c; i >= 0 && i < full {
+					v += l * hp[i]
 				}
 			}
 			out[o][k] = v
