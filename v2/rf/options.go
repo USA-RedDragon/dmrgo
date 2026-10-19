@@ -205,6 +205,9 @@ type options struct {
 	// frequency of the channel filter samples, which the gaps between the
 	// bursts, where another channel can leak in, also move.
 	IQTuneSyncOnly bool
+	// IQPullAgree pulls the oscillator of iqRx while the core searches by
+	// an offset below iqAFCJumpHz only when two blocks agree on it.
+	IQPullAgree bool
 	// CohExt adds to softExt on iqRx, or on a DiscReceiver, the coherent
 	// detection of each burst again, with the trellis settings PSPGain and
 	// LLRScale.
@@ -312,7 +315,7 @@ func tierOptions(t Tier) options {
 	o := discOptions()
 	switch t {
 	case TierDefault, Tier0:
-		o.IQDisc, o.IQHz = true, 12000
+		o.IQDisc, o.IQHz, o.IQPullAgree = true, 12000, true
 	case Tier1:
 		o = tier1Options(o)
 		o.IQDisc, o.IQHz, o.CohSkipSNR, o.CohSignMiss = true, 12000, 9, leanSignMiss

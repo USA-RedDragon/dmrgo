@@ -21,6 +21,12 @@ const (
 	iqAFCPullHz  = 300
 	iqAFCFineHz  = 60
 	iqAFCAvgGain = 0.25
+	// The payload of one MS burst does not average to 0 Hz: it moved the
+	// mean of a block by 730 Hz on a carrier without offset. Below
+	// iqAFCJumpHz a pull needs two blocks that agree, as a carrier offset
+	// holds from block to block; a key-up onto a carrier further off
+	// pulls at once.
+	iqAFCJumpHz = 1000
 	// iqAFCCoherence is the least magnitude of the sum of the products of
 	// a block, over the power of its channel filter samples, at which it
 	// moves the oscillator while the core searches. Noise alone gives 0.33
@@ -315,7 +321,11 @@ type iqRx struct {
 	// afcAvg is the mean of the sums of iqDisc over the blocks since the
 	// oscillator last moved, while the core searches.
 	afcAvg complex64
-	out    []Burst
+	// afcPull is the carrier offset of the last block while the core
+	// searches, from the oscillator now, or 0 when that block moved
+	// nothing or had no carrier.
+	afcPull float32
+	out     []Burst
 	// yHist holds the last options.cohRing channel filter samples for the
 	// coherent stage, yN of them so far; nil without it.
 	yHist []complex64
@@ -331,6 +341,8 @@ type iqRx struct {
 	// syncOnly moves the oscillator while the core is locked only by the
 	// carrier offset of its SYNC fits, not by the mean frequency.
 	syncOnly bool
+	// pullAgree is options.IQPullAgree.
+	pullAgree bool
 }
 
 // newIQRx returns the receiver of cfg with the settings opt.
@@ -346,7 +358,7 @@ func newIQRx(cfg Config, opt options) *iqRx {
 	} else {
 		r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
 	}
-	r.maxHz, r.syncOnly = opt.IQTuneMaxHz, opt.IQTuneSyncOnly
+	r.maxHz, r.syncOnly, r.pullAgree = opt.IQTuneMaxHz, opt.IQTuneSyncOnly, opt.IQPullAgree
 	n := opt.IQBuf
 	if n == 0 {
 		n = 1024
@@ -452,6 +464,7 @@ func (r *iqRx) follow() {
 	// The DiscReceiver counts f.gain of its Hz per input unit.
 	scale := f.gain * iqUnitsPerHz
 	if r.d.locked {
+		r.afcPull = 0
 		// A lock can come while the oscillator still pulls in, and the
 		// channel filter then pulls both the mean frequency and the SYNC
 		// fits toward the oscillator, by different shares, so that they
@@ -476,15 +489,24 @@ func (r *iqRx) follow() {
 	}
 	if real(acc)*real(acc)+imag(acc)*imag(acc) < iqAFCCoherence*iqAFCCoherence*pw*pw {
 		// No carrier: the mean starts again with the next one.
-		r.afcAvg = 0
+		r.afcAvg, r.afcPull = 0, 0
 		return
+	}
+	prev := r.afcPull
+	r.afcPull = 0
+	if !quiet && abs32(est) >= iqAFCPullHz {
+		r.afcPull = est
 	}
 	switch {
 	case quiet:
-	case abs32(est) >= iqAFCPullHz:
+	case abs32(est) >= iqAFCPullHz && (!r.pullAgree || abs32(est) >= iqAFCJumpHz || abs32(prev) >= iqAFCPullHz && est*prev > 0):
 		r.afcAvg = 0
 		r.tune(est, 0)
 	case abs32(avg) >= iqAFCFineHz:
+		if r.pullAgree && abs32(avg) >= iqAFCPullHz {
+			// The first block of a carrier: a pull.
+			r.afcAvg = 0
+		}
 		r.tune(avg, 0)
 	}
 }
@@ -509,6 +531,7 @@ func (r *iqRx) tune(hz, dc float32) {
 		r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
 		r.nTunes++
 	}
+	r.afcPull -= hz
 	// The mean of the blocks moves with the oscillator.
 	p := -2 * math.Pi * float64(hz) / float64(basebandRate/r.conv.decim)
 	r.afcAvg *= complex(float32(math.Cos(p)), float32(math.Sin(p)))
