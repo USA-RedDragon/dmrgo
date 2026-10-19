@@ -49,8 +49,12 @@ func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 	}
 	k := &poly{n: 2 * pu.span, l: l, m: m}
 	h := pu.taps(l, m)
+	g := pu.gain
+	if g == 0 {
+		g = 1
+	}
 	for i := range h {
-		h[i] *= DeviationHz
+		h[i] *= DeviationHz * g
 	}
 	if f32 {
 		k.taps32 = make([]float32, len(h))
@@ -142,6 +146,53 @@ type AudioConfig struct {
 	// symbol at the symbol times, through the zero-order hold of a DAC at
 	// Hz, which the pulse inverts.
 	Exact bool
+	// Pulse sets the pulse of Tier1 and Tier2; its zero value is the
+	// pulse of the tier.
+	Pulse PulseConfig
+	// Shape is the noise shaping of the rounding to codes: 0 rounds each
+	// sample, 1 to 4 feed the rounding error back so that its spectrum has
+	// that many pairs of zeros, at the frequencies of NoiseZerosHz.
+	Shape int
+	// NoiseZerosHz are the frequencies of the zeros of the noise transfer
+	// function of Shape, in Hz.
+	NoiseZerosHz [4]float64
+}
+
+// PulseConfig sets the transmit pulse of Tier1 and Tier2.
+type PulseConfig struct {
+	// Span is the half-length of the pulse in symbols; 0 means that of the
+	// tier.
+	Span int
+	// Window is the taper: 0 none, 1 Hamming, 2 Blackman, 3 Kaiser of
+	// shape Beta.
+	Window int
+	Beta   float64
+	// Comp is the weight of the three-tap inverse-sinc for the zero-order
+	// hold of the DAC; 1/24 matches it at low frequency.
+	Comp float64
+	// Gain scales the pulse; 0 means 1.
+	Gain float64
+	// Shape, when set, is the pulse itself, sampled at PerSymbol points per
+	// symbol from -Span to Span symbols, in place of the tapered
+	// root-raised-cosine.
+	Shape     []float64
+	PerSymbol int
+}
+
+// pulseOf returns the pulse of the tier t with c applied.
+func pulseOf(t Tier, c PulseConfig) pulse {
+	pu := pulse{span: 8}
+	if t == Tier2 {
+		pu.span = 16
+	}
+	if c.Span > 0 {
+		pu.span = c.Span
+	}
+	pu.win, pu.beta, pu.comp, pu.gain = window(c.Window), c.Beta, c.Comp, c.Gain
+	if len(c.Shape) == 2*pu.span*c.PerSymbol+1 && c.PerSymbol > 0 {
+		pu.tab, pu.per = c.Shape, c.PerSymbol
+	}
+	return pu
 }
 
 // Audio modulates the deviation signal that drives the modulator input of
@@ -155,6 +206,9 @@ type Audio struct {
 	tmp    [maxSamples]int16
 	scale  float64
 	offset float64
+	fb     [8]float64
+	err    [8]float64
+	shape  int
 }
 
 // NewAudio returns an Audio for cfg. It allocates the Audio, once.
@@ -184,10 +238,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		}
 		return a, nil
 	case TierDefault, Tier1, Tier2:
-		pu := pulse{span: 8}
-		if cfg.Tier == Tier2 {
-			pu.span = 16
-		}
+		pu := pulseOf(cfg.Tier, cfg.Pulse)
 		if cfg.Exact {
 			pu.nyquist()
 			pu.invert(float64(cfg.Hz), holdChain(float64(cfg.Hz)))
@@ -201,6 +252,8 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		}
 		a.k = k
 		a.buf = make([]float64, k.l/k.m+1)
+		a.shape = min(max(cfg.Shape, 0), 4)
+		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
 		return a, nil
 	default:
 		return nil, errTier
@@ -220,10 +273,46 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 		return append(dst, a.tmp[:n]...)
 	}
 	n := a.k.symbol(a.buf, s)
+	if a.shape == 0 {
+		for _, v := range a.buf[:n] {
+			dst = append(dst, sat16(v*a.scale+a.offset))
+		}
+		return dst
+	}
 	for _, v := range a.buf[:n] {
-		dst = append(dst, sat16(v*a.scale+a.offset))
+		x := v*a.scale + a.offset
+		for i, f := range a.fb[:2*a.shape] {
+			x += f * a.err[i]
+		}
+		c := sat16(x)
+		e := float64(c) - x
+		if e > 1 || e < -1 {
+			e = 0
+		}
+		copy(a.err[1:], a.err[:7])
+		a.err[0] = e
+		dst = append(dst, c)
 	}
 	return dst
+}
+
+// ntf returns the feedback weights of the noise transfer function with n
+// pairs of zeros on the unit circle at the frequencies zs at rate hz.
+func ntf(n int, zs [4]float64, hz float64) [8]float64 {
+	p := [9]float64{1}
+	for k := range n {
+		a := -2 * math.Cos(2*math.Pi*zs[k]/hz)
+		for i := 2*k + 2; i >= 1; i-- {
+			v := p[i] + a*p[i-1]
+			if i >= 2 {
+				v += p[i-2]
+			}
+			p[i] = v
+		}
+	}
+	var fb [8]float64
+	copy(fb[:], p[1:])
+	return fb
 }
 
 // IQConfig sets up an IQ.
@@ -246,6 +335,9 @@ type IQConfig struct {
 	// the shaped deviation: the pulse inverts the linear interpolation from
 	// the shaper to Rate and the sum of the phase steps at Rate.
 	Exact bool
+	// Pulse sets the pulse of Tier1 and Tier2; its zero value is the
+	// pulse of the tier.
+	Pulse PulseConfig
 }
 
 // IQ modulates complex I/Q for a software radio: it FM-modulates the
@@ -309,10 +401,7 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 	default:
 		return nil, errTier
 	}
-	pu := pulse{span: 8}
-	if cfg.Tier == Tier2 {
-		pu.span = 16
-	}
+	pu := pulseOf(cfg.Tier, cfg.Pulse)
 	if cfg.Exact {
 		pu.nyquist()
 		pu.invert(iqShaperHz, interpChain(iqShaperHz, float64(cfg.Rate)))

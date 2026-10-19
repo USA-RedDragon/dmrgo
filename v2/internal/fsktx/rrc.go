@@ -75,6 +75,46 @@ type pulse struct {
 	inv [2]float64
 	// echo, when set, holds the weights of the echoes of nyquist.
 	echo *[4*maxTaps + 1]float64
+	gain float64
+	tab  []float64
+	per  int
+}
+
+// core is the pulse at t symbols before its taper and echoes: the sampled
+// shape of tab, or else the root-raised-cosine pulse.
+func (p pulse) core(t float64) float64 {
+	if p.tab != nil {
+		return p.shape(t)
+	}
+	return rrc(t)
+}
+
+// taper is the window of the pulse at t symbols; a sampled shape has its
+// own and takes none.
+func (p pulse) taper(t float64) float64 {
+	if p.tab != nil {
+		return taper(winRect, 0, t/float64(p.span))
+	}
+	return taper(p.win, p.beta, t/float64(p.span))
+}
+
+// shape returns the pulse of tab at t symbols by cubic interpolation.
+func (p pulse) shape(t float64) float64 {
+	x := (t + float64(p.span)) * float64(p.per)
+	n := len(p.tab)
+	if x < 0 || x > float64(n-1) {
+		return 0
+	}
+	i := int(x)
+	f := x - float64(i)
+	at := func(j int) float64 {
+		if j < 0 || j >= n {
+			return 0
+		}
+		return p.tab[j]
+	}
+	y0, y1, y2, y3 := at(i-1), at(i), at(i+1), at(i+2)
+	return y1 + 0.5*f*(y2-y0+f*(2*y0-5*y1+4*y2-y3+f*(3*(y1-y2)+y3-y0)))
 }
 
 func (p pulse) at(t, d float64) float64 {
@@ -150,17 +190,17 @@ func interpChain(hz, rate float64) func(f float64) float64 {
 }
 
 // base is the pulse at t symbols before the inverse-sinc: the tapered
-// root-raised-cosine pulse and, with echo, its echoes.
+// core pulse and, with echo, its echoes.
 func (p pulse) base(t float64) float64 {
-	w := taper(p.win, p.beta, t/float64(p.span))
+	w := p.taper(t)
 	if w == 0 {
 		return 0
 	}
-	v := rrc(t)
+	v := p.core(t)
 	if p.echo != nil {
 		for k, b := range p.echo[:nyquistStep*2*p.span+1] {
 			if b != 0 {
-				v += b * rrc(t-float64(k-nyquistStep*p.span)/nyquistStep)
+				v += b * p.core(t-float64(k-nyquistStep*p.span)/nyquistStep)
 			}
 		}
 	}
@@ -219,13 +259,13 @@ func (p *pulse) nyquist() {
 	}
 	for j := range ng {
 		t := tg(j)
-		w := taper(p.win, p.beta, t/float64(p.span)) / nyquistGrid
+		w := p.taper(t) / nyquistGrid
 		for k := range n + 1 {
 			var f float64
 			if k == n {
-				f = rrc(t) * w
+				f = p.core(t) * w
 			} else {
-				f = rrc(t-float64(k-nyquistStep*p.span)/nyquistStep) * w
+				f = p.core(t-float64(k-nyquistStep*p.span)/nyquistStep) * w
 			}
 			for m := range nm {
 				a[m][k] += f * rx[(m+2*p.span)*nyquistGrid-j-1]
