@@ -362,6 +362,14 @@ func (r *DiscReceiver) runAll(x []int16) {
 	r.acqHead, r.acqLow = kh, kq
 }
 
+const (
+	// run96Strobe picks the interpolator of the strobes of run96 that
+	// are not linear midpoints: 0 by the options, 1 Catmull-Rom and 3 the
+	// cubic Lagrange polynomial through s0 to s3, 2 linear between s1 and
+	// s2.
+	run96Strobe = 0
+)
+
 // The bits of the state of run96, which state96 returns.
 const (
 	// st96Search is set before a lock, and st96Keep while the receiver
@@ -511,6 +519,15 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 				var xv float32
 				if tm.mid && st&st96LinMid != 0 {
 					xv = s1 + mu*(s2-s1)
+				} else if run96Strobe == 1 {
+					xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+				} else if run96Strobe == 2 {
+					xv = s1 + mu*(s2-s1)
+				} else if run96Strobe == 3 {
+					c1 := s2 - (1.0/3)*s0 - 0.5*s1 - (1.0/6)*s3
+					c2 := 0.5*(s0+s2) - s1
+					c3 := (1.0/6)*(s3-s0) + 0.5*(s1-s2)
+					xv = s1 + mu*(c1+mu*(c2+mu*c3))
 				} else if st&st96Tab != 0 {
 					xv = lagrangeAt(sa, sb, s0, s1, s2, s3, mu)
 				} else {
