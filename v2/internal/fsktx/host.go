@@ -176,6 +176,14 @@ type AudioConfig struct {
 	// CorrTaps is the length of the band pass of Corr at 48000 Hz, odd,
 	// scaled by Hz to at most 511; 0 means 161.
 	CorrTaps int
+	// Corr48k makes every rate interpolate the table of 48000 Hz, also
+	// 24000 Hz, which has a table of its own.
+	Corr48k bool
+	// ShapeSync, from 1, clears the rounding error that Shape feeds back
+	// at the start of each symbol that completes a run of ShapeSync equal
+	// symbols, so that the output depends on a bounded span of symbols
+	// only and does not drift with the age of the Audio. 0 never clears.
+	ShapeSync int
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -234,6 +242,9 @@ type Audio struct {
 	fb     [8]float64
 	err    [8]float64
 	shape  int
+	sync   int
+	run    int
+	last   int8
 	opt    *aoptimizer
 	corr   []int16
 	corrC  int
@@ -290,8 +301,13 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		a.buf = make([]float64, k.l/k.m+1)
 		a.shape = min(max(cfg.Shape, 0), 4)
 		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
+		a.sync = max(cfg.ShapeSync, 0)
 		if cfg.Corr > 0 {
-			t, skip := corrTable(cfg.Hz, cfg.Corr)
+			var t []int16
+			var skip int
+			if !cfg.Corr48k {
+				t, skip = corrTable(cfg.Hz, cfg.Corr)
+			}
 			a.spp, a.step = cfg.Hz/SymbolRate, 1
 			if t == nil {
 				t, skip = corrTable(48000, cfg.Corr)
@@ -334,6 +350,17 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 	}
 	if a.opt != nil {
 		a.opt.process(a.buf[:n])
+	}
+	if a.sync > 0 {
+		if s != -3 && s != -1 && s != 1 && s != 3 {
+			s = 0
+		}
+		if s != a.last {
+			a.last, a.run = s, 0
+		}
+		if a.run++; a.run >= a.sync {
+			a.err, a.run = [8]float64{}, 0
+		}
 	}
 	if a.shape == 0 {
 		for _, v := range a.buf[:n] {
