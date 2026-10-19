@@ -2,6 +2,7 @@ package rf
 
 import (
 	"math"
+	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -2237,10 +2238,10 @@ func (r *leanCore) burst(j int32, base int64, anchor enums.SyncPattern) {
 	b.Sync, b.Voice, b.HasFixed = 0, 0, false
 	b.Fixed, b.FixedCACH = layer2.RawBurst{}, [3]byte{}
 	// The time in 1/256 baseband samples, in integers but for the place of
-	// the last symbol, so that the MCU build needs one float64 multiply.
+	// the last symbol, so that the MCU build needs no float64 code.
 	ticks := (r.mfStep*(r.n-1)+r.center-(r.ns-1-(base+cachSymbols))*samplesPerSy)<<8 +
 		int64(int32(roundf(float32(int32(r.mfStep))*r.lastAt*256)))
-	b.Seconds = float64(ticks) * (1.0 / (basebandRate * 256))
+	b.Seconds = tickSeconds(ticks)
 	// The hard decisions are the signs of the ratios of symLLR: the first
 	// bit is set below 0, the second beyond the midpoint between the
 	// levels, ±2 dev.
@@ -2476,4 +2477,50 @@ func (r *leanCore) noteData(b *Burst, j int32, c *leanChan) {
 // isHeader reports whether data type dt is that of a voice LC or PI header.
 func isHeader(dt enums.DataType) bool {
 	return dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypePIHeader
+}
+
+// tickMant and tickExp give 1.0/(basebandRate*256) as a float64:
+// tickMant * 2^tickExp.
+const (
+	tickMant = 0x15d867c3ece2a5
+	tickExp  = -76
+)
+
+// tickSeconds returns float64(t) * (1.0 / (basebandRate * 256)) with the
+// rounding of that multiply, for t below 2^53 in magnitude (some 23
+// years), in integer operations, so that a build for a chip without a
+// double precision FPU links no float64 multiply or conversion. It is not
+// inlined, so that its registers do not add to the frame of burst.
+//
+//go:noinline
+func tickSeconds(t int64) float64 {
+	if t == 0 {
+		return 0
+	}
+	var sign uint64
+	u := uint64(t)
+	if t < 0 {
+		sign, u = 1<<63, -u
+	}
+	hi, lo := bits.Mul64(u, tickMant)
+	n := 64 - bits.LeadingZeros64(lo)
+	if hi != 0 {
+		n = 128 - bits.LeadingZeros64(hi)
+	}
+	// s is the shift that leaves the top 53 bits of the product, below 64
+	// as u is below 2^63 and tickMant below 2^53.
+	s := n - 53
+	var m uint64
+	if s <= 0 {
+		m = lo << uint(-s)
+	} else {
+		m = lo>>uint(s) | hi<<uint(64-s)
+		rem, half := lo&(1<<uint(s)-1), uint64(1)<<uint(s-1)
+		if rem > half || rem == half && m&1 != 0 {
+			if m++; m == 1<<53 {
+				m, s = m>>1, s+1
+			}
+		}
+	}
+	return math.Float64frombits(sign | uint64(s+tickExp+52+1023)<<52 | m&(1<<52-1))
 }
