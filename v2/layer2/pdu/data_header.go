@@ -32,7 +32,7 @@ type DataHeader struct {
 	FEC fec.Result `dmr:"-"` // result of the header CRC check
 	// Format is the Data Packet Format; Encode returns an error unless Format and the encoded AB select the one header field that is set.
 	Format         Format `dmr:"bits:4-7"`
-	AppendedBlocks uint8  `dmr:"bits:2-3+12-15,no_encode"` // decoded Appended Blocks (AB); Encode ignores it
+	AppendedBlocks uint8  `dmr:"bits:2-3+12-15,no_encode,only:Format=FormatShortDataDefined|FormatShortDataRawOrStatusPrecoded"` // decoded Appended Blocks (AB) of a DD_HEAD, R_HEAD or SP_HEAD, 0 for the other formats; Encode ignores it
 
 	UnconfirmedDataHeader *UnconfirmedDataHeader `dmr:"bits:0-79,dispatch:Format=FormatUnconfirmed"`                                         // U_HEAD
 	ConfirmedDataHeader   *ConfirmedDataHeader   `dmr:"bits:0-79,dispatch:Format=FormatConfirmed"`                                           // C_HEAD

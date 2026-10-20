@@ -789,6 +789,37 @@ type T struct {
 }`,
 			want: "must be true, false, or a decimal integer",
 		},
+		{
+			name: "only on bool",
+			src: `type T struct {
+	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+	B  bool  ` + "`dmr:\"bit:8,only:Op=1\"`" + `
+}`,
+			want: "only: requires an integer field",
+		},
+		{
+			name: "only without value",
+			src: `type T struct {
+	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+	K  uint8 ` + "`dmr:\"bits:8-15,only:Op=\"`" + `
+}`,
+			want: "only modifier must be",
+		},
+		{
+			name: "only on unknown field",
+			src: `type T struct {
+	K uint8 ` + "`dmr:\"bits:8-15,only:Op=1\"`" + `
+}`,
+			want: "unknown field",
+		},
+		{
+			name: "only on later field",
+			src: `type T struct {
+	K  uint8 ` + "`dmr:\"bits:8-15,only:Op=1\"`" + `
+	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "must come before it",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

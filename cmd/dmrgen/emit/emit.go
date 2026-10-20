@@ -402,6 +402,12 @@ func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInf
 			if field.Fallback {
 				continue
 			}
+			if field.OnlyField != "" {
+				g.If(onlyCondition(field, pdu)).BlockFunc(func(b *Group) {
+					emitFieldDecode(b, field, pdu)
+				})
+				continue
+			}
 			emitFieldDecode(g, field, pdu)
 		}
 
@@ -827,6 +833,14 @@ func emitGuardCondition(guard *parse.Guard) (*Statement, error) {
 	default:
 		return nil, fmt.Errorf("unsupported guard operator %q", guard.Op)
 	}
+}
+
+func onlyCondition(field parse.Field, pdu parse.PDUStruct) *Statement {
+	cond := Id("result").Dot(field.OnlyField).Op("==").Add(emitDispatchConstant(field.OnlyValues[0], pdu))
+	for _, v := range field.OnlyValues[1:] {
+		cond = cond.Op("||").Id("result").Dot(field.OnlyField).Op("==").Add(emitDispatchConstant(v, pdu))
+	}
+	return cond
 }
 
 func emitDispatchConstant(val string, pdu parse.PDUStruct) Code {

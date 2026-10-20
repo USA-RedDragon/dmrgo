@@ -112,11 +112,13 @@ func DecodeDataHeader(data [12]byte) DataHeader {
 	var result DataHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
 	result.Format = Format(uint64(data[0]) & 0xF)
-	var _tmpAppendedBlocks uint64
-	_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
-	_tmpAppendedBlocks <<= 4
-	_tmpAppendedBlocks |= uint64(data[1]) & 0xF
-	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
+	if result.Format == FormatShortDataDefined || result.Format == FormatShortDataRawOrStatusPrecoded {
+		var _tmpAppendedBlocks uint64
+		_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
+		_tmpAppendedBlocks <<= 4
+		_tmpAppendedBlocks |= uint64(data[1]) & 0xF
+		result.AppendedBlocks = uint8(_tmpAppendedBlocks)
+	}
 	var _dispatchBytes [10]byte
 	copy(_dispatchBytes[0:10], data[0:10])
 	switch result.Format {
@@ -175,11 +177,13 @@ func DecodeDataHeaderInto(dst *DataHeader, p *DataHeaderPayloads, data [12]byte)
 	result := dst
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
 	result.Format = Format(uint64(data[0]) & 0xF)
-	var _tmpAppendedBlocks uint64
-	_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
-	_tmpAppendedBlocks <<= 4
-	_tmpAppendedBlocks |= uint64(data[1]) & 0xF
-	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
+	if result.Format == FormatShortDataDefined || result.Format == FormatShortDataRawOrStatusPrecoded {
+		var _tmpAppendedBlocks uint64
+		_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
+		_tmpAppendedBlocks <<= 4
+		_tmpAppendedBlocks |= uint64(data[1]) & 0xF
+		result.AppendedBlocks = uint8(_tmpAppendedBlocks)
+	}
 	var _dispatchBytes [10]byte
 	copy(_dispatchBytes[0:10], data[0:10])
 	switch result.Format {

@@ -140,6 +140,21 @@ type T struct {
 	assertContains(t, out, "if result.K == 0 {", "} else {")
 }
 
+func TestOnlyFieldIsDecodedForItsValues(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, `const (
+	OpA uint8 = 1
+	OpB uint8 = 2
+)
+type T struct {
+	Op uint8 `+"`dmr:\"bits:0-7\"`"+`
+	K  uint8 `+"`dmr:\"bits:8-11+14-15,no_encode,only:Op=OpA|OpB\"`"+`
+	L  uint8 `+"`dmr:\"bits:12-13\"`"+`
+}`)
+	assertContains(t, out, "if result.Op == OpA || result.Op == OpB {\n\t\tvar _tmpK uint64")
+}
+
 func TestSignedFieldIsSignExtended(t *testing.T) {
 	t.Parallel()
 
