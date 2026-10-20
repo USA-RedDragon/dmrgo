@@ -319,7 +319,11 @@ func (g *gen) mapSliceParam(sm *sigmap, n string, sl *types.Slice, owner *tinfo,
 		sm.args = append(sm.args, a)
 		return nil
 	}
-	sm.cps = append(sm.cps, constDecl(ed), "size_t "+n+"_len")
+	if g.fillBuf && g.alias(e) {
+		sm.cps = append(sm.cps, ed, "size_t "+n+"_len")
+	} else {
+		sm.cps = append(sm.cps, constDecl(ed), "size_t "+n+"_len")
+	}
 	sm.gps = append(sm.gps, cn+" *"+ge, cn+"_len C.size_t")
 	lines(&sm.pre, "if "+cn+" == nil && "+cn+"_len > 0 {", "return fail(C.DMRGO_ERR_ARG)", "}", "var "+a+" "+g.goType(sl))
 	if err := g.inSlice(&sm.pre, sl, a, cn, cn+"_len"); err != nil {

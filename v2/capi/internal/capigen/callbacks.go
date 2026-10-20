@@ -390,7 +390,9 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 	for i := 0; i < iface.NumMethods(); i++ {
 		m := iface.Method(i)
 		sig := m.Signature()
+		g.fillBuf = isRead(m)
 		cps, err := g.cParams(sig)
+		g.fillBuf = false
 		if err != nil {
 			return "", "", fmt.Errorf("method %s: %w", m.Name(), err)
 		}
@@ -428,4 +430,17 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 	g.goConv.WriteString(gw.String())
 	proto := "/* " + cname + " makes a " + ti.obj.Name() + " whose methods call the functions of vt with vt->user. */\nint " + cname + "(const " + vt + " *vt, " + ti.c + " **out);\n"
 	return cname, proto, nil
+}
+
+func isRead(m *types.Func) bool {
+	sig := m.Signature()
+	if m.Name() != "Read" || sig.Params().Len() != 1 || sig.Results().Len() != 2 {
+		return false
+	}
+	sl, ok := sig.Params().At(0).Type().(*types.Slice)
+	if !ok || !types.Identical(sl.Elem(), types.Typ[types.Byte]) {
+		return false
+	}
+	n, ok := sig.Results().At(0).Type().(*types.Basic)
+	return ok && n.Kind() == types.Int && isError(sig.Results().At(1).Type())
 }
