@@ -161,7 +161,8 @@ func (r *DiscReceiver) maxBursts(n int) int {
 
 // AppendBursts processes the discriminator samples x, appends the bursts
 // that are complete to dst and returns the extended slice. It allocates
-// only when dst has no room for the bursts that x could complete.
+// only when dst has no room for len(x)/72+16 bursts, the most that x can
+// complete at the lowest input rate, 9600 Hz.
 func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
 	dst = growBursts(dst, r.maxBursts(len(x)))
 	keep, n := r.out, len(dst)
@@ -173,7 +174,8 @@ func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
 }
 
 // Write processes the discriminator samples x and returns the bursts that
-// are complete, in the buffer that NewDisc allocates. The returned slice
+// are complete, in the buffer that NewDisc allocates. It returns at most
+// len(x)/72+16 bursts, as AppendBursts does. The returned slice
 // is valid until the next call. On a DiscReceiver that Init set up without
 // OnBurst, Write allocates its buffer; use AppendBursts.
 func (r *DiscReceiver) Write(x []int16) []Burst {
@@ -183,7 +185,7 @@ func (r *DiscReceiver) Write(x []int16) []Burst {
 }
 
 // Flush finishes the stream at its end and returns the remaining bursts,
-// as Write does.
+// as Write does. It returns at most 26 bursts, as AppendFlush does.
 func (r *DiscReceiver) Flush() []Burst {
 	r.out = r.out[:0]
 	r.flush()
@@ -192,7 +194,7 @@ func (r *DiscReceiver) Flush() []Burst {
 
 // AppendFlush finishes the stream at its end, appends the remaining bursts
 // to dst and returns the extended slice. It allocates only when dst has no
-// room for the bursts of one slot.
+// room for 26 bursts, the most that one slot of samples can complete.
 func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
 	dst = growBursts(dst, r.maxBursts(slotSymbols*discSPS))
 	keep, n := r.out, len(dst)
