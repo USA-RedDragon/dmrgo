@@ -76,6 +76,9 @@
 //   - layer2/framer: finds bursts in a demodulated bit stream.
 //   - layer3: the layer 3 information elements that PDUs carry, such as
 //     service options and channel definitions.
+//   - csbk: the CSBK services of one logical channel, without I/O: a
+//     request with its answer and retries, the answers of a radio,
+//     Pre_CSBKs and the wakeup of a BS.
 //   - vocoder: the Codec interface and the AMBE+2 FEC of a voice slot.
 //   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
 //
@@ -101,6 +104,8 @@
 //     the talker alias functions.
 //   - pdu.ErrNoAddresses: returned by the SetAddresses methods for a PDU
 //     without address fields.
+//   - csbk.ErrBusy, csbk.ErrNoAddresses: returned by the requests of the
+//     csbk machines.
 //   - vocoder.ErrUnknownCodec, codec2.ErrUnavailable,
 //     codec2.ErrUnsupportedMode, codec2.ErrFrameLength, codec2.ErrClosed:
 //     returned by the vocoders.
@@ -111,6 +116,8 @@
 //     that does not fit in its bits, or a field with a padding bit set. It
 //     is the one type of this package.
 //   - *enums.ColorCodeError: enums.NewColorCode got a value over 15.
+//   - *csbk.ConfigError: a csbk constructor, request or wakeup got a field
+//     out of range.
 //
 // # More
 //

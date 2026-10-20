@@ -93,6 +93,10 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 - Voice calls (`voice`), without I/O or goroutines:
   - `Receiver` turns the bursts of one logical channel into call events: call start with where the call came from, voice bursts with their superframe position, lost count and frame quality, embedded GPS and talker alias, and call end with a reason. It handles late entry, duplicate and lost bursts, transport hints (`layer2.Hint`) and the call hang time.
   - `Transmitter` sends a call one burst per 60 ms slot: from AMBE+2 frames with the headers, embedded talker alias and GPS, padding, terminators and the transmit timeout, or as a relay of the events of a `Receiver`, with the local color code and SYNC.
+- CSBK services (`csbk`), without I/O or goroutines:
+  - `Requester` sends a CSBK request, after Pre_CSBKs when asked, with polite or impolite channel access, the random holdoff, T_AckWait and N_CSBKRetry, and reports the answer, a NACK_Rsp, or why none came. It knows the OACSU presence check (UU_V_Req) and the Motorola radio check and call alert.
+  - `Responder` answers the CSBKs that address a radio: UU_Ans_Rsp, the Motorola radio check answer and call alert acknowledgement, and the Feature Not Supported NACK_Rsp.
+  - `Preambles` joins Pre_CSBKs with the CSBK or data that they announce, and `Wakeup` sends BS_Dwn_Act until the BS outbound starts.
 - FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
 - Burst finding in a demodulated bit stream (`layer2/framer`).
 - Vocoders (`vocoder`):
