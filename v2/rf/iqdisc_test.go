@@ -255,6 +255,21 @@ func TestIQDiscLoopback(t *testing.T) {
 	}
 }
 
+func TestIQAFCAvgNoise(t *testing.T) {
+	t.Parallel()
+	for _, m := range []int{2, 3, 5} {
+		o := tierOptions(Tier0)
+		o.IQAFCAvg = m
+		r := mustNew(Config{opt: &o})
+		for seed := uint64(1); seed <= 20; seed++ {
+			must(r.WriteBaseband(noisyBaseband(nil, 0, 0, seed)))
+		}
+		if hz := r.iqd.conv.hz; hz != 0 {
+			t.Errorf("IQAFCAvg %d: oscillator at %.0f Hz after noise alone", m, hz)
+		}
+	}
+}
+
 func TestIQAFCAvgChunks(t *testing.T) {
 	t.Parallel()
 	x := fuzzSamples(fuzzSeedBaseband(t), 12, false)

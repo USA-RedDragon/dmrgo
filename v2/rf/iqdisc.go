@@ -369,8 +369,9 @@ func (r *iqRx) sample(v complex64) {
 
 func (r *iqRx) follow() {
 	acc, pw := r.conv.acc, r.conv.pw
+	incoherent := real(acc)*real(acc)+imag(acc)*imag(acc) < iqAFCCoherence*iqAFCCoherence*pw*pw
 	if r.conv.afc != nil && !r.d.locked {
-		acc, pw = r.conv.accAvg, r.conv.pwAvg
+		acc = r.conv.accAvg
 	}
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
 	est := r.conv.hzOf(acc)
@@ -402,7 +403,7 @@ func (r *iqRx) follow() {
 		}
 		return
 	}
-	if real(acc)*real(acc)+imag(acc)*imag(acc) < iqAFCCoherence*iqAFCCoherence*pw*pw {
+	if incoherent {
 		r.afcAvg, r.afcPull = 0, 0
 		return
 	}
