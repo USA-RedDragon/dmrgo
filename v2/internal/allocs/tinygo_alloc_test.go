@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -238,6 +239,63 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	}
 }
 
+func tinyCSBKOps(t *testing.T) []tinyOp {
+	t.Helper()
+	scratch := layer2.NewBurst()
+	q := tinyOK(csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Scratch: scratch}))
+	r := tinyOK(csbk.NewResponder(&csbk.ResponderConfig{Address: 2, ColorCode: 1, Source: layer2.SyncSourceMS, Scratch: scratch}))
+	p := csbk.NewPreambles(&csbk.PreamblesConfig{Scratch: scratch})
+	w := tinyOK(csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 1, Scratch: scratch}))
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+	out2 := make([]csbk.Output, 0, csbk.MaxOutputs)
+	opts := &csbk.RequestOptions{Preambles: 2}
+	var now time.Duration
+	var err error
+	_ = err
+	exchange := func() {
+		for range 8 {
+			at, ok := q.Deadline()
+			if !ok {
+				return
+			}
+			now = max(now, at)
+			out = q.Tick(now, out[:0])
+			for i := range out {
+				if out[i].Kind != csbk.OutputBurst {
+					continue
+				}
+				out2 = p.Burst(now, &out[i].Burst, layer2.Hint{}, out2[:0])
+				out2 = r.Burst(now, &out[i].Burst, layer2.Hint{}, out2[:0])
+				if at, ok := r.Deadline(); ok {
+					out2 = r.Tick(at, out2[:0])
+					for j := range out2 {
+						out = q.Burst(at, &out2[j].Burst, layer2.Hint{}, out[:0])
+					}
+				}
+			}
+		}
+	}
+	return []tinyOp{
+		{"csbk.Requester.RequestOACSU", func() {
+			err = q.RequestOACSU(now, 2, 1, layer3.ServiceOptions{}, opts)
+			exchange()
+		}},
+		{"csbk.Requester.RequestRadioCheck", func() {
+			err = q.RequestRadioCheck(now, 2, 1, opts)
+			exchange()
+		}},
+		{"csbk.Wakeup.Wake", func() {
+			err = w.Wake(now, 3, 1)
+			for range 4 {
+				if at, ok := w.Deadline(); ok {
+					now = max(now, at)
+					out = w.Tick(now, out[:0])
+				}
+			}
+		}},
+	}
+}
+
 func tinyCACHOps(t *testing.T) []tinyOp {
 	t.Helper()
 	slc := pdu.ShortLC{SLCO: enums.SLCOActivityUpdate, ActivityUpdate: &pdu.ShortLCActivityUpdate{}}
@@ -355,7 +413,7 @@ func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r))
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {
