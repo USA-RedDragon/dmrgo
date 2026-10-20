@@ -395,10 +395,12 @@ type leanCore struct {
 	// acqLow is the last kept sample while acqHead is odd, whose pair the
 	// ring does not hold yet.
 	acqLow int16
+	// off is the offset that ring adds to the symbols. It fills the room
+	// after acqLow.
+	off float32
 	// acqNext is the first symbol at which searchSym samples a burst
 	// again after a SYNC that failed.
 	acqNext int64
-	off     float32
 	// slotEnd is the symbol after the slot that ends next, first plus next
 	// plus 1 slots.
 	slotEnd int64
