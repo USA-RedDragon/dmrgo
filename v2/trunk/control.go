@@ -18,6 +18,7 @@ const (
 	pendingNone pendingKind = iota
 	pendingGrant
 	pendingChanFreq
+	pendingMove
 )
 
 type tsccEvent uint8
@@ -161,6 +162,9 @@ func (c *control) csbk(now time.Duration, d *pdu.CSBK) tsccEvent {
 	case d.BroadcastPDU != nil:
 		return c.broadcast(d.BroadcastPDU)
 	case d.MovePDU != nil:
+		if d.MovePDU.PhysicalChannel == ChannelAbsolute {
+			return eventTSCC
+		}
 		c.move = *d.MovePDU
 		return eventMove
 	}
@@ -242,6 +246,10 @@ func (c *control) annWD(ch uint16, cc enums.ColorCode, withdraw bool) {
 
 func (c *control) mbcHeader(h *pdu.MBCHeader, slot enums.Slot) tsccEvent {
 	c.pendSlot = slot
+	if h.MovePDU != nil {
+		c.move, c.pending = *h.MovePDU, pendingMove
+		return eventTSCC
+	}
 	if h.BroadcastPDU != nil {
 		ev := c.system(h.BroadcastPDU.SysIdentCode)
 		if v, ok := h.BroadcastPDU.AsChanFreq(); ok && ev != eventOther {
@@ -285,6 +293,14 @@ func (c *control) mbcContinuation(now time.Duration, m *pdu.MBCContinuation, slo
 		g.Channel = cg.CdefParms.Channel
 		g.ColorCode, g.HasColorCode = cg.ColorCode, true
 		return c.newGrant(now, &g)
+	case pendingMove:
+		mv := m.AsMVAP()
+		if mv.FEC.Uncorrectable || mv.Cdeftype != 0 {
+			return eventNone
+		}
+		_ = c.plan.AddCdef(&mv.CdefParms)
+		c.move.PhysicalChannel = mv.CdefParms.Channel
+		return eventMove
 	case pendingNone:
 	}
 	return eventNone

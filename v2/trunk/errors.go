@@ -27,6 +27,9 @@ var (
 	// ErrNotOnControl is returned by MS.Call when the MS is not on a
 	// confirmed TSCC.
 	ErrNotOnControl = errors.New("trunk: not on a TSCC")
+	// ErrNotRegistered is returned by MS.Call and MS.CallData when the
+	// TSCC asks for a registration that the MS does not hold.
+	ErrNotRegistered = errors.New("trunk: not registered")
 )
 
 var (
@@ -35,4 +38,5 @@ var (
 	errSysCode    error = &ConfigError{Field: "SysCode"}
 	errAddress    error = &ConfigError{Field: "Address"}
 	errTarget     error = &ConfigError{Field: "target"}
+	errDMRLA      error = &ConfigError{Field: "DMRLA"}
 )
