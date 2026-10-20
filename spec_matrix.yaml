@@ -6,8 +6,9 @@
 #
 # Out of scope: state machines, procedures, RF/physical layer, conformance testing.
 #
-# ignore_files lists Go source files under v2/ that implement no spec section.
+# ignore_files lists Go source files of the v2 module that implement no spec section.
 # Every other non-test, non-generated Go file except doc.go must appear in a section's source_files.
+# Nested modules under v2/, such as the C API in v2/capi, are not checked.
 
 ignore_files:
   - v2/errors.go
