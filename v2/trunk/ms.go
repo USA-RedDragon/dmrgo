@@ -327,7 +327,7 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 				}
 				m.pending = false
 			}
-		case OutputGrant, OutputCallEnd, OutputBurst, OutputRegistered, OutputRefused, OutputAhoy:
+		case OutputGrant, OutputCallEnd, OutputBurst, OutputRegistered, OutputRefused, OutputAhoy, OutputUDT, OutputProtect, OutputPowerOff:
 		}
 	}
 	return out
