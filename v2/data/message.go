@@ -26,6 +26,14 @@ type Message struct {
 	// BadCRC reports a packet whose CRC failed, which a Receiver delivers
 	// only with ReceiverConfig.AcceptBadCRC.
 	BadCRC bool
+	// Fragmented reports a packet that continues a message of several
+	// fragments, with an FSN of 1 to 7 in its low bits, and so is not a
+	// whole message. The first fragment, FSN 0000, is delivered as a whole
+	// message, because repeaters and radios also send single packets with
+	// FSN 0000; EventReassembled then carries the whole message.
+	Fragmented bool
+	// Fragments is the number of fragments of a reassembled message.
+	Fragments uint16
 }
 
 // Call is the parties of a data call.

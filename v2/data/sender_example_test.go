@@ -60,7 +60,7 @@ func ExampleSender() {
 						fmt.Printf("receiver sends %v\n", e.Response)
 					}
 					replies = append(replies, e)
-				case data.EventCallStart, data.EventResponse, data.EventCallEnd:
+				case data.EventCallStart, data.EventResponse, data.EventCallEnd, data.EventReassembled:
 				}
 			}
 		}

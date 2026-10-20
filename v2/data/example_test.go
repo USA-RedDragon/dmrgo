@@ -33,7 +33,7 @@ func ExampleReceiver() {
 				fmt.Printf("%v packet, %d octets\n", e.Message.Header.Format, len(e.Message.Payload))
 			case data.EventCallEnd:
 				fmt.Printf("end: %v after %v\n", e.Reason, e.Stats.Duration)
-			case data.EventResponse, data.EventRespond:
+			case data.EventResponse, data.EventRespond, data.EventReassembled:
 			}
 		}
 	}
@@ -68,7 +68,7 @@ func ExampleReceiver_respond() {
 				fmt.Printf("delivered %d octets at %v\n", len(e.Message.Payload), e.Message.Rate)
 			case data.EventRespond:
 				fmt.Printf("send %v at %v\n", e.Response, e.Due)
-			case data.EventCallStart, data.EventResponse, data.EventCallEnd:
+			case data.EventCallStart, data.EventResponse, data.EventCallEnd, data.EventReassembled:
 			}
 		}
 	}

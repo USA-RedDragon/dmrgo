@@ -32,6 +32,10 @@ const (
 	EventRespond
 	// EventCallEnd ends a data call. Call, Reason and Stats are set.
 	EventCallEnd
+	// EventReassembled is a confirmed message joined from its fragments,
+	// after the EventDelivered of its last fragment. Call and Message are
+	// set, with Message.Fragments.
+	EventReassembled
 )
 
 // String returns the name of the kind. It allocates only for a value
@@ -48,6 +52,8 @@ func (k EventKind) String() string {
 		return "Respond"
 	case EventCallEnd:
 		return "CallEnd"
+	case EventReassembled:
+		return "Reassembled"
 	}
 	return unnamed("EventKind", uint8(k))
 }

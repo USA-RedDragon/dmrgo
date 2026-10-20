@@ -126,7 +126,7 @@ func kinds(ev []data.Event) string {
 			b.WriteString("(" + e.Response.String() + ")")
 		case data.EventCallEnd:
 			b.WriteString("(" + e.Reason.String() + ")")
-		case data.EventCallStart, data.EventDelivered:
+		case data.EventCallStart, data.EventDelivered, data.EventReassembled:
 		}
 	}
 	return b.String()
