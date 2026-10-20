@@ -111,7 +111,36 @@ type Field struct {
 
 	// BaseType is the resolved underlying Go basic type (e.g. "uint8"), or "" if unknown.
 	BaseType string
+
+	// Encoding is how an integer field is stored in a dmr:frame or
+	// dmr:view struct: big-endian bits, little-endian octets, or ASCII
+	// decimal or hexadecimal digits.
+	Encoding Encoding
+
+	// Bias is added on decode and subtracted on encode (bias:N).
+	Bias uint64
+
+	// Swap16 marks a packed field whose octet pairs are swapped (swap16).
+	Swap16 bool
+
+	// Text marks a packed field of a dmr:view that holds ASCII text padded
+	// with spaces (text).
+	Text bool
+
+	// Doc is the doc comment of the field, for the methods of a dmr:view.
+	Doc string
 }
+
+// Encoding is how an integer field is stored.
+type Encoding int
+
+// The Encoding values, with the dmr tag modifier of each.
+const (
+	EncodingBits    Encoding = iota // big-endian bits (no modifier)
+	EncodingLE                      // le: little-endian octets
+	EncodingDecimal                 // dec: ASCII decimal digits, one per octet
+	EncodingHex                     // hex: ASCII hexadecimal digits, one per octet
+)
 
 // Ranges returns all bit ranges of the field, MSB-first.
 func (f *Field) Ranges() [][2]int {
@@ -151,6 +180,24 @@ type ConstDirective struct {
 	Value  string   // integer literal or constant name
 }
 
+// FrameDirective is a dmr:frame directive.
+type FrameDirective struct {
+	Sizes     []int  // allowed frame lengths in octets, ascending
+	SizeField string // the dmr:"-" field that holds the length, when there is more than one
+}
+
+// ViewDirective is a dmr:view directive.
+type ViewDirective struct {
+	Type string // the byte array type that gets the methods
+	Size int    // its length in octets
+}
+
+// MagicDirective is a dmr:magic directive: fixed octets at a byte offset.
+type MagicDirective struct {
+	Start int    // first bit, a multiple of 8
+	Bytes []byte // the octets
+}
+
 // PDUStruct represents a tagged DMR PDU struct ready for code generation.
 type PDUStruct struct {
 	Name         string            // struct name
@@ -168,6 +215,19 @@ type PDUStruct struct {
 	HasInputSize bool              // true if dmr:input_size was given
 	SubPDU       bool              // true if dmr:subpdu was given
 
+	// Frame is set by dmr:frame: the struct is a byte frame of one of
+	// Frame.Sizes octets, decoded from a slice with an error and encoded with
+	// AppendBinary.
+	Frame *FrameDirective
+
+	// View is set by dmr:view: the struct only describes the layout of the
+	// named byte array type, which gets a getter and setter per field.
+	View *ViewDirective
+
+	// Magic holds the dmr:magic directives: octets that decode checks and
+	// encode writes.
+	Magic []MagicDirective
+
 	// UnexportedDecode holds the names of the structs of the package whose
 	// Decode function is unexported: the dispatch field types and the
 	// dmr:subpdu structs. SetUnexportedDecode fills it.
@@ -177,6 +237,9 @@ type PDUStruct struct {
 // DecodeFuncName returns the name of the Decode function of the struct
 // typeName of the package of p: decodeX for a sub-PDU, DecodeX otherwise.
 func (p *PDUStruct) DecodeFuncName(typeName string) string {
+	if !token.IsExported(typeName) {
+		return "decode" + strings.ToUpper(typeName[:1]) + typeName[1:]
+	}
 	if p.UnexportedDecode[typeName] {
 		return "decode" + typeName
 	}
@@ -297,6 +360,10 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 			return pdu, false, fmt.Errorf("dmr tag on multi-name field %s", field.Names[0].Name)
 		}
 		fieldName := field.Names[0].Name
+		fieldDoc := ""
+		if field.Doc != nil {
+			fieldDoc = strings.TrimSpace(field.Doc.Text())
+		}
 		if dmrTag == "-" {
 			f := Field{Name: fieldName, Skip: true}
 			resolveType(&f, typeString(field.Type), baseTypes)
@@ -307,6 +374,7 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 		if err != nil {
 			return pdu, false, fmt.Errorf("field %s: %w", fieldName, err)
 		}
+		f.Doc = fieldDoc
 		pdu.Fields = append(pdu.Fields, f)
 	}
 	if !hasDMRTags {
@@ -347,6 +415,9 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 		}
 	}
 
+	if err := validateLayout(&pdu, maxBit); err != nil {
+		return pdu, false, err
+	}
 	if err := validateStruct(&pdu, maxBit); err != nil {
 		return pdu, false, err
 	}
@@ -422,6 +493,8 @@ func parseDirective(pdu *PDUStruct, text string) error {
 			return fmt.Errorf("dmr:const: %w", err)
 		}
 		pdu.Consts = append(pdu.Consts, c)
+	case directiveFrame, directiveView, directiveMagic:
+		return parseLayoutDirective(pdu, name, arg)
 	case "dmr:fec_mask":
 		if pdu.FECMask != nil {
 			return errors.New("duplicate dmr:fec_mask directive")
@@ -607,6 +680,12 @@ func applyModifier(f *Field, mod string, seen *modifierSet) error {
 			return fmt.Errorf("when modifier: %w", err)
 		}
 		f.When = g
+	case "bias":
+		bias, err := strconv.ParseUint(arg, 10, 32)
+		if err != nil || bias == 0 {
+			return fmt.Errorf("invalid bias: %q", mod)
+		}
+		f.Bias = bias
 	default:
 		return fmt.Errorf("unrecognized modifier: %q", mod)
 	}
@@ -631,6 +710,16 @@ func applyFlag(f *Field, mod string) error {
 		f.NoEncode = true
 	case "fallback":
 		f.Fallback = true
+	case "le":
+		f.Encoding = EncodingLE
+	case "dec":
+		f.Encoding = EncodingDecimal
+	case "hex":
+		f.Encoding = EncodingHex
+	case "swap16":
+		f.Swap16 = true
+	case "text":
+		f.Text = true
 	default:
 		return fmt.Errorf("unrecognized modifier: %q", mod)
 	}
@@ -676,6 +765,9 @@ func validateField(f *Field) error {
 	if err := validateModifiers(f); err != nil {
 		return err
 	}
+	if err := validateEncoding(f); err != nil {
+		return err
+	}
 	nonContiguous := len(f.ExtraBitRanges) > 0
 	if nonContiguous && !allowsNonContiguous(f) {
 		return fmt.Errorf("%s fields must be contiguous", kindName(f))
@@ -698,12 +790,7 @@ func validateField(f *Field) error {
 			return fmt.Errorf("raw field of %d bits must be [%d]byte, got %s", f.BitWidth, n, f.GoType)
 		}
 	case FieldPacked:
-		if !isArray || (f.GoType != fmt.Sprintf("[%d]byte", f.ArrayLen) && f.GoType != fmt.Sprintf("[%d]uint8", f.ArrayLen)) {
-			return fmt.Errorf("packed field must be [N]byte, got %s", f.GoType)
-		}
-		if f.ArrayLen*8 != f.BitWidth {
-			return fmt.Errorf("packed array of %d bytes does not match range width %d", f.ArrayLen, f.BitWidth)
-		}
+		return validatePacked(f)
 	case FieldDelegate:
 		return validateDelegate(f)
 	case FieldLongitude, FieldLatitude:
@@ -717,6 +804,20 @@ func validateField(f *Field) error {
 		if !f.IsPointer {
 			return fmt.Errorf("dispatch field must be a pointer, got %s", f.GoType)
 		}
+	}
+	return nil
+}
+
+func validatePacked(f *Field) error {
+	isArray := f.ArrayLen > 0
+	if !isArray && f.IsQualified && !f.IsPointer && f.BitWidth%8 == 0 {
+		return nil
+	}
+	if !isArray || (f.GoType != fmt.Sprintf("[%d]byte", f.ArrayLen) && f.GoType != fmt.Sprintf("[%d]uint8", f.ArrayLen)) {
+		return fmt.Errorf("packed field must be [N]byte, got %s", f.GoType)
+	}
+	if f.ArrayLen*8 != f.BitWidth && (f.Encoding != EncodingHex || f.ArrayLen*16 != f.BitWidth) {
+		return fmt.Errorf("packed array of %d bytes does not match range width %d", f.ArrayLen, f.BitWidth)
 	}
 	return nil
 }
@@ -807,6 +908,15 @@ func validateDelegate(f *Field) error {
 }
 
 func checkIntWidth(f *Field) error {
+	if f.Encoding == EncodingDecimal {
+		return nil
+	}
+	if f.Encoding == EncodingHex {
+		g := *f
+		g.BitWidth = f.DigitWidth()
+		g.Encoding = EncodingBits
+		return checkIntWidth(&g)
+	}
 	if f.BitWidth > 64 {
 		return fmt.Errorf("integer fields wider than 64 bits are not supported (%d)", f.BitWidth)
 	}
@@ -986,6 +1096,14 @@ func checkOverlap(pdu *PDUStruct) error {
 			}
 		}
 	}
+	for _, m := range pdu.Magic {
+		for b := m.Start; b < m.Start+8*len(m.Bytes); b++ {
+			if prev, ok := owner[b]; ok {
+				return fmt.Errorf("%s and dmr:magic overlap at bit %d", prev, b)
+			}
+			owner[b] = "dmr:magic"
+		}
+	}
 	return nil
 }
 
@@ -1011,6 +1129,9 @@ func checkCoverage(pdu *PDUStruct) error {
 	}
 	if pdu.CRC != nil {
 		mark([2]int{pdu.InputSize - CRCWidths[pdu.CRC.Algorithm], pdu.InputSize - 1})
+	}
+	for _, m := range pdu.Magic {
+		mark([2]int{m.Start, m.Start + 8*len(m.Bytes) - 1})
 	}
 	var gaps []string
 	for b := 0; b < len(covered); b++ {
