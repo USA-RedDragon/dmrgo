@@ -15,6 +15,7 @@ import (
 	hytera "github.com/USA-RedDragon/dmrgo/v2/hytera"
 	internal_bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	internal_crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	internal_digest "github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	internal_dvsisim "github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
 	internal_fec_ambe "github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	internal_fec_bptc "github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -270,6 +271,20 @@ var api = [...]any{
 	internal_crc.CheckCRC9,
 	internal_crc.CheckChecksum5,
 	internal_crc.Checksum5,
+	(*internal_digest.BLAKE2b).Init,
+	(*internal_digest.BLAKE2b).Reset,
+	(*internal_digest.BLAKE2b).Sum,
+	(*internal_digest.BLAKE2b).Write,
+	(*internal_digest.HMACSHA1).Init,
+	(*internal_digest.HMACSHA1).Reset,
+	(*internal_digest.HMACSHA1).Sum,
+	(*internal_digest.HMACSHA1).Write,
+	(*internal_digest.SHA1).Reset,
+	(*internal_digest.SHA1).Write,
+	(*internal_digest.SHA256).Reset,
+	(*internal_digest.SHA256).Write,
+	internal_digest.SHA1.Sum,
+	internal_digest.SHA256.Sum,
 	(*internal_dvsisim.Device).Configured,
 	(*internal_dvsisim.Device).Parity,
 	(*internal_dvsisim.Device).Read,
