@@ -1,0 +1,9 @@
+dmrgateway-master.txt and mmdvmhost-dmrgateway.txt were captured on 2026-10-20 on
+127.0.0.1 only. MMDVMHost 9384d68 ran with a fake modem over its UDP modem protocol,
+DMRGateway ee79d38 linked to it, and DMRGateway logged into a fake master that
+used the password passw0rd and sent the call back. The call is one superframe
+on slot 2 from 3191868 to talkgroup 91. Each line is: time, direction, length,
+packet in hex.
+
+dmrgateway-master.txt: r>m is DMRGateway to the master, m>r the master to DMRGateway.
+mmdvmhost-dmrgateway.txt: host>gw is MMDVMHost to DMRGateway, gw>host the reverse.
