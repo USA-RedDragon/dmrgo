@@ -180,7 +180,7 @@ blocks:
     input_type: complex
     samp_rate: '48000'
     tier: '2'
-    codec2_mode: '2400'
+    codec2_mode: '0'
     audio_slot: '0'
     lib_path: ''
     ambe_lib: ''

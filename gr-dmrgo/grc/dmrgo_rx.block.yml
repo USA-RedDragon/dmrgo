@@ -29,9 +29,9 @@ parameters:
 - id: codec2_mode
   label: Codec2 Mode
   dtype: enum
-  default: '2400'
-  options: ['2400', '3200', '-1']
-  option_labels: ['2400', '3200', 'Off']
+  default: '0'
+  options: ['0', '2400', '3200', '-1']
+  option_labels: [Auto, '2400', '3200', 'Off']
 - id: audio_slot
   label: Audio Timeslot
   dtype: enum
@@ -85,6 +85,8 @@ documentation: |-
   voice: one PDU per AMBE+2 frame, the 7 frame bytes and a dict with timeslot, voice_pos, index, bad, errors and the call LC.
 
   audio: 8 kHz audio of Codec2 calls (FID 0xC2), and of other calls when AMBE Decoder Library names a separately installed decoder. Silence between calls.
+
+  Codec2 Mode: Auto detects 2400 or 3200 for each call.
 
   The tier sets the detection and its compute, from Tier 0 to Tier 4.
 

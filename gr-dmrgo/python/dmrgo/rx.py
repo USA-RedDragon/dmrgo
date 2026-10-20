@@ -38,10 +38,11 @@ class rx(gr.basic_block):
     silence between calls. It plays the audio of each burst 0.3 s after
     the burst in the input, so that the receiver has the time to decode it.
     audio_slot selects the timeslot, 1 or 2, or 0 for both, which the block
-    adds.
+    adds. codec2_mode is the Codec2 bit rate, 2400 or 3200, or 0 to detect
+    it for each call, or -1 to turn the Codec2 decode off.
     """
 
-    def __init__(self, input_type="complex", samp_rate=48000, tier=2, codec2_mode=2400,
+    def __init__(self, input_type="complex", samp_rate=48000, tier=2, codec2_mode=0,
                  audio_slot=0, lib_path="", ambe_lib=""):
         iq = input_type == "complex"
         gr.basic_block.__init__(

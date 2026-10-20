@@ -222,7 +222,7 @@ blocks:
     alias: ''
     ambe_lib: ''
     audio_slot: '0'
-    codec2_mode: '2400'
+    codec2_mode: '0'
     comment: ''
     input_type: complex
     lib_path: ''

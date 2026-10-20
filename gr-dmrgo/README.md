@@ -10,7 +10,7 @@ GNU Radio 3.10 blocks of [dmrgo](../README.md). The module is licensed under the
 
 - `bursts`: one PDU per burst, with its timeslot, color code, kind, data type, superframe position, FEC results and call LC.
 - `voice`: one PDU per AMBE+2 frame, with its bad-frame flag.
-- `audio`: 8 kHz audio of Codec2 calls (FID 0xC2, as QRadioLink sends). This output is optional.
+- `audio`: 8 kHz audio of Codec2 calls (FID 0xC2, as QRadioLink sends). The block detects the Codec2 mode, 2400 or 3200, of each call. This output is optional.
 
 Put a resampler before the block for other sample rates, as `examples/dmrgo_rx_file.grc` does.
 
