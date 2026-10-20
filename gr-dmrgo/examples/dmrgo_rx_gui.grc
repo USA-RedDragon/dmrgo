@@ -1,0 +1,443 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Jacob McSwain
+
+options:
+  parameters:
+    author: Jacob McSwain
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    copyright: 2026 Jacob McSwain, GPL-3.0-or-later
+    description: Play a DMR recording of 8-bit I/Q in a loop and show what the dmrgo receiver decodes
+    generate_options: qt_gui
+    id: dmrgo_rx_gui
+    output_language: python
+    placement: (0,0)
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    title: dmrgo RX live view
+    window_size: (1000,1000)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    thread_safe_setters: ''
+    max_nouts: '0'
+    hier_block_src_path: '.:'
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    cmake_opt: ''
+    comment: ''
+  states:
+    coordinate:
+    - 8
+    - 8
+    rotation: 0
+    state: enabled
+blocks:
+- name: samp_rate
+  id: parameter
+  parameters:
+    label: Sample Rate
+    short_id: r
+    type: intx
+    value: '256000'
+    comment: Sample rate of the recording. The resampler makes 48 kHz of it.
+  states:
+    coordinate:
+    - 232
+    - 8
+    rotation: 0
+    state: enabled
+- name: recording
+  id: parameter
+  parameters:
+    label: Recording
+    short_id: i
+    type: str
+    value: ../../v2/cmd/dmrrf/testdata/xpr8400_bs_voice_weak.cu8
+  states:
+    coordinate:
+    - 392
+    - 8
+    rotation: 0
+    state: enabled
+- name: import_math
+  id: import
+  parameters:
+    imports: import math
+  states:
+    coordinate:
+    - 600
+    - 8
+    rotation: 0
+    state: enabled
+- name: blocks_file_source_0
+  id: blocks_file_source
+  parameters:
+    file: recording
+    type: byte
+    repeat: 'True'
+    vlen: '1'
+    offset: '0'
+    length: '0'
+    begin_tag: pmt.PMT_NIL
+  states:
+    coordinate:
+    - 8
+    - 220
+    rotation: 0
+    state: enabled
+- name: blocks_uchar_to_float_0
+  id: blocks_uchar_to_float
+  parameters: {}
+  states:
+    coordinate:
+    - 200
+    - 252
+    rotation: 0
+    state: enabled
+- name: blocks_add_const_vxx_0
+  id: blocks_add_const_vxx
+  parameters:
+    const: '-127.5'
+    type: float
+    vlen: '1'
+  states:
+    coordinate:
+    - 360
+    - 244
+    rotation: 0
+    state: enabled
+- name: blocks_multiply_const_vxx_0
+  id: blocks_multiply_const_vxx
+  parameters:
+    const: 1/128
+    type: float
+    vlen: '1'
+  states:
+    coordinate:
+    - 530
+    - 244
+    rotation: 0
+    state: enabled
+- name: blocks_deinterleave_0
+  id: blocks_deinterleave
+  parameters:
+    blocksize: '1'
+    num_streams: '2'
+    type: float
+    vlen: '1'
+  states:
+    coordinate:
+    - 720
+    - 240
+    rotation: 0
+    state: enabled
+- name: blocks_float_to_complex_0
+  id: blocks_float_to_complex
+  parameters:
+    vlen: '1'
+  states:
+    coordinate:
+    - 880
+    - 240
+    rotation: 0
+    state: enabled
+- name: blocks_throttle2_0
+  id: blocks_throttle2
+  parameters:
+    type: complex
+    samples_per_second: samp_rate
+    ignoretag: 'True'
+    vlen: '1'
+    limit: auto
+    maximum: '0.1'
+    comment: Play the recording in real time, in a loop.
+  states:
+    coordinate:
+    - 1060
+    - 244
+    rotation: 0
+    state: enabled
+- name: rational_resampler_xxx_0
+  id: rational_resampler_xxx
+  parameters:
+    type: ccc
+    interp: 48000 // math.gcd(samp_rate, 48000)
+    decim: samp_rate // math.gcd(samp_rate, 48000)
+    taps: '[]'
+    fbw: '0'
+    comment: Resample to the 48 kHz of the receiver.
+  states:
+    coordinate:
+    - 120
+    - 440
+    rotation: 0
+    state: enabled
+- name: dmrgo_rx_0
+  id: dmrgo_rx
+  parameters:
+    input_type: complex
+    samp_rate: '48000'
+    tier: '2'
+    codec2_mode: '2400'
+    audio_slot: '0'
+    lib_path: ''
+    ambe_lib: ''
+  states:
+    coordinate:
+    - 440
+    - 440
+    rotation: 0
+    state: enabled
+- name: qtgui_freq_sink_x_0
+  id: qtgui_freq_sink_x
+  parameters:
+    type: complex
+    name: '''Input I/Q at 48 kHz'''
+    fftsize: '2048'
+    bw: '48000'
+    fc: '0'
+    average: '0.2'
+    ymin: '-120'
+    ymax: '-20'
+    nconnections: '1'
+    gui_hint: 0,0,1,1
+    grid: 'True'
+    showports: 'False'
+    update_time: '0.1'
+    wintype: window.WIN_BLACKMAN_hARRIS
+  states:
+    coordinate:
+    - 440
+    - 640
+    rotation: 0
+    state: enabled
+- name: qtgui_waterfall_sink_x_0
+  id: qtgui_waterfall_sink_x
+  parameters:
+    type: complex
+    name: '''Input I/Q waterfall'''
+    fftsize: '2048'
+    bw: '48000'
+    fc: '0'
+    int_min: '-85'
+    int_max: '-35'
+    nconnections: '1'
+    gui_hint: 0,1,1,1
+    update_time: '0.05'
+    wintype: window.WIN_BLACKMAN_hARRIS
+  states:
+    coordinate:
+    - 760
+    - 640
+    rotation: 0
+    state: enabled
+- name: qtgui_time_sink_x_0
+  id: qtgui_time_sink_x
+  parameters:
+    type: float
+    name: '''Audio out (8 kHz)'''
+    size: '4000'
+    srate: '8000'
+    ymin: '-1'
+    ymax: '1'
+    nconnections: '1'
+    gui_hint: 1,0,1,1
+    grid: 'True'
+    update_time: '0.1'
+    autoscale: 'False'
+    ylabel: '''Amplitude'''
+    entags: 'False'
+  states:
+    coordinate:
+    - 780
+    - 420
+    rotation: 0
+    state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    idle_every: '50'
+    _source_code: |
+      """DMR call display: shows the calls and bursts that the dmrgo receiver decodes."""
+
+      import time
+
+      import pmt
+      from gnuradio import gr
+      from PyQt5 import QtCore, QtGui, QtWidgets
+
+      DATA_TYPES = ["PI Header", "Voice LC Header", "Terminator with LC", "CSBK", "MBC Header",
+                    "MBC Continuation", "Data Header", "Rate 1/2 Data", "Rate 3/4 Data", "Idle", "Rate 1 Data"]
+
+
+      class _Relay(QtCore.QObject):
+          line = QtCore.pyqtSignal(str)
+          call = QtCore.pyqtSignal(int, str)
+
+
+      class blk(gr.basic_block):
+          """DMR Call Display
+
+          Takes the bursts PDUs of the dmrgo receiver and shows the call on each
+          timeslot and a log of the bursts in a Qt widget. Add widget() to the
+          layout of the flowgraph."""
+
+          def __init__(self, idle_every=50):
+              gr.basic_block.__init__(self, name="DMR Call Display", in_sig=None, out_sig=None)
+              self.idle_every = idle_every
+              self.message_port_register_in(pmt.intern("bursts"))
+              self.set_msg_handler(pmt.intern("bursts"), self._handle)
+              self._relay = _Relay()
+              self._widget = None
+              self._idle = 0
+              self._count = 0
+
+          def widget(self):
+              if self._widget is not None:
+                  return self._widget
+              w = QtWidgets.QWidget()
+              lay = QtWidgets.QVBoxLayout(w)
+              title = QtWidgets.QLabel("dmrgo decoded calls")
+              title.setStyleSheet("font-size: 16pt; font-weight: bold;")
+              lay.addWidget(title)
+              self._calls = {}
+              row = QtWidgets.QHBoxLayout()
+              for ts in (1, 2):
+                  lab = QtWidgets.QLabel(f"TS{ts}: no call")
+                  lab.setStyleSheet("font-family: monospace; font-size: 13pt; padding: 6px;"
+                                    "border: 1px solid #888; background: #f4f4f4;")
+                  lab.setMinimumHeight(70)
+                  row.addWidget(lab)
+                  self._calls[ts] = lab
+              lay.addLayout(row)
+              log = QtWidgets.QPlainTextEdit()
+              log.setReadOnly(True)
+              log.setMaximumBlockCount(500)
+              log.setFont(QtGui.QFont("monospace", 10))
+              lay.addWidget(log)
+              self._relay.line.connect(log.appendPlainText)
+              self._relay.call.connect(lambda ts, s: self._calls[ts].setText(s) if ts in self._calls else None)
+              self._widget = w
+              return w
+
+          def _handle(self, msg):
+              meta = pmt.car(msg)
+
+              def get(k, d=None):
+                  v = pmt.dict_ref(meta, pmt.intern(k), pmt.PMT_NIL)
+                  if pmt.is_null(v):
+                      return d
+                  if pmt.is_symbol(v):
+                      return pmt.symbol_to_string(v)
+                  if pmt.is_bool(v):
+                      return pmt.to_bool(v)
+                  if pmt.is_real(v):
+                      return pmt.to_double(v)
+                  return pmt.to_long(v)
+
+              self._count += 1
+              kind = get("kind", "unknown")
+              dt = get("data_type", -1)
+              if kind == "data" and dt == 9:
+                  self._idle += 1
+                  if self._idle % self.idle_every != 1:
+                      return
+              ts = get("timeslot", 0)
+              cc = get("color_code", -1)
+              src = get("src")
+              dst = get("dst")
+              pos = get("voice_pos", -1)
+              if kind == "voice":
+                  what = "Voice " + ("ABCDEF"[pos] if 0 <= pos < 6 else "?")
+              elif kind == "data":
+                  what = DATA_TYPES[dt] if 0 <= dt < len(DATA_TYPES) else f"data type {dt}"
+                  if dt == 9:
+                      what += f" (1 of {self.idle_every} shown)"
+              else:
+                  what = kind
+              fec = "FEC bad" if get("fec_bad", False) else f"FEC ok, {get('fec_corrected', 0)} fixed"
+              sd = get("sync_distance", -1)
+              ccs = f"CC{cc}" if cc >= 0 else "CC-"
+              line = f"{get('seconds', 0.0):8.3f} s  TS{ts}  {ccs:<4} {what:<30} sync {sd if sd >= 0 else '-':<2} {fec}"
+              if src is not None:
+                  group = "TG" if get("group", False) else "ID"
+                  line += f"  {src} > {group} {dst}"
+                  self._relay.call.emit(ts, f"TS{ts}  {ccs}  {time.strftime('%H:%M:%S')}\nsrc {src}  ->  {group} {dst}\n"
+                                            f"FID 0x{get('fid', 0):02X}  {what}")
+              self._relay.line.emit(line)
+  states:
+    coordinate:
+    - 780
+    - 540
+    rotation: 0
+    state: enabled
+- name: snippet_0
+  id: snippet
+  parameters:
+    section: main_after_init
+    priority: '0'
+    code: self.top_grid_layout.addWidget(self.epy_block_0.widget(), 1, 1, 1, 1)
+  states:
+    coordinate:
+    - 760
+    - 8
+    rotation: 0
+    state: enabled
+connections:
+- - blocks_file_source_0
+  - '0'
+  - blocks_uchar_to_float_0
+  - '0'
+- - blocks_uchar_to_float_0
+  - '0'
+  - blocks_add_const_vxx_0
+  - '0'
+- - blocks_add_const_vxx_0
+  - '0'
+  - blocks_multiply_const_vxx_0
+  - '0'
+- - blocks_multiply_const_vxx_0
+  - '0'
+  - blocks_deinterleave_0
+  - '0'
+- - blocks_deinterleave_0
+  - '0'
+  - blocks_float_to_complex_0
+  - '0'
+- - blocks_deinterleave_0
+  - '1'
+  - blocks_float_to_complex_0
+  - '1'
+- - blocks_float_to_complex_0
+  - '0'
+  - blocks_throttle2_0
+  - '0'
+- - blocks_throttle2_0
+  - '0'
+  - rational_resampler_xxx_0
+  - '0'
+- - rational_resampler_xxx_0
+  - '0'
+  - dmrgo_rx_0
+  - '0'
+- - rational_resampler_xxx_0
+  - '0'
+  - qtgui_freq_sink_x_0
+  - '0'
+- - rational_resampler_xxx_0
+  - '0'
+  - qtgui_waterfall_sink_x_0
+  - '0'
+- - dmrgo_rx_0
+  - '0'
+  - qtgui_time_sink_x_0
+  - '0'
+- - dmrgo_rx_0
+  - bursts
+  - epy_block_0
+  - bursts
+metadata:
+  file_format: 1
+  grc_version: 3.10.12.0
