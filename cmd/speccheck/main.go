@@ -389,9 +389,16 @@ func findUntracked(repoRoot string, matrix specMatrix) ([]string, error) {
 	}
 
 	var untracked []string
-	err := filepath.WalkDir(filepath.Join(repoRoot, "v2"), func(path string, d os.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
+	v2 := filepath.Join(repoRoot, "v2")
+	err := filepath.WalkDir(v2, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
 			return err
+		}
+		if d.IsDir() {
+			if _, err := os.Stat(filepath.Join(path, "go.mod")); err == nil && path != v2 {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if !strings.HasSuffix(path, ".go") ||
 			strings.HasSuffix(path, "_test.go") ||
