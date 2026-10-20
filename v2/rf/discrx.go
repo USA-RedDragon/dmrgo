@@ -517,20 +517,21 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 				at := t
 				mu := 1 + at
 				var xv float32
-				if tm.mid && st&st96LinMid != 0 {
+				switch {
+				case tm.mid && st&st96LinMid != 0:
 					xv = s1 + mu*(s2-s1)
-				} else if run96Strobe == 1 {
+				case run96Strobe == 1:
 					xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
-				} else if run96Strobe == 2 {
+				case run96Strobe == 2:
 					xv = s1 + mu*(s2-s1)
-				} else if run96Strobe == 3 {
+				case run96Strobe == 3:
 					c1 := s2 - (1.0/3)*s0 - 0.5*s1 - (1.0/6)*s3
 					c2 := 0.5*(s0+s2) - s1
 					c3 := (1.0/6)*(s3-s0) + 0.5*(s1-s2)
 					xv = s1 + mu*(c1+mu*(c2+mu*c3))
-				} else if st&st96Tab != 0 {
+				case st&st96Tab != 0:
 					xv = lagrangeAt(sa, sb, s0, s1, s2, s3, mu)
-				} else {
+				default:
 					xv = lagrange6(sa, sb, s0, s1, s2, s3, mu)
 				}
 				at--

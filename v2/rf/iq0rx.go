@@ -296,7 +296,8 @@ func (r *iq0Rx) boxRun(x []complex64) {
 	pr, pi := real(r.prev), imag(r.prev)
 	ar, ai, pow := real(r.acc), imag(r.acc), r.pow
 	k, sub, half := r.k, r.sub, r.k*math.Pi
-	if dec == 1 {
+	switch dec {
+	case 1:
 		for i, v := range x[:len(out)] {
 			yr, yi := real(v), imag(v)
 			c := yi*pr - yr*pi
@@ -307,7 +308,7 @@ func (r *iq0Rx) boxRun(x []complex64) {
 			pow += yr*yr + yi*yi
 			out[i] = iq0Freq(c, d, k, sub, half)
 		}
-	} else if dec == 5 {
+	case 5:
 		for i := range out {
 			b := x[:5:5]
 			x = x[5:]
@@ -321,7 +322,7 @@ func (r *iq0Rx) boxRun(x []complex64) {
 			pow += yr*yr + yi*yi
 			out[i] = iq0Freq(c, d, k, sub, half)
 		}
-	} else {
+	default:
 		for i := range out {
 			var yr, yi float32
 			for _, v := range x[i*dec : i*dec+dec] {
