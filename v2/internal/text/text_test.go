@@ -46,6 +46,14 @@ func TestBytes(t *testing.T) {
 
 func TestDigits(t *testing.T) {
 	t.Parallel()
+	for _, n := range []int{-1, 0, 1} {
+		if got := Digits(0, n, 1); got != "0" {
+			t.Errorf("Digits(0, %d, 1) = %q, want %q", n, got, "0")
+		}
+		if got, want := Digits(5, n, 4), fmt.Sprintf("%0*x", n, 5); got != want {
+			t.Errorf("Digits(5, %d, 4) = %q, want %q", n, got, want)
+		}
+	}
 	r := rand.New(rand.NewSource(1))
 	for range 1000 {
 		v := r.Uint64()

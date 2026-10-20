@@ -82,10 +82,12 @@ func Bytes(b []byte) string {
 }
 
 // Digits returns v in base 1<<shift, lowercase, with leading zeros to at
-// least n digits. With shift 1 and 4 it is the %0nb and %0nx verbs.
+// least n digits and at least one digit. shift is 1 to 4. With shift 1 and
+// 4 it is the %0nb and %0nx verbs.
 //
 // It allocates the string.
 func Digits(v uint64, n int, shift uint) string {
+	n = max(n, 1)
 	for x := v >> (uint(n) * shift); x != 0 && n < 64; x >>= shift {
 		n++
 	}
