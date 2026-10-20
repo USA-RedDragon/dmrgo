@@ -181,9 +181,17 @@ func renderTables() ([]byte, error) {
 	if err := renderCorrIQ(&b); err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+cosQuarter+1)
-	for i := range 1<<cosTableBits + cosQuarter + 1 {
-		fmt.Fprintf(&b, "%d,", int16(math.Round(iqAmplitude*math.Cos(2*math.Pi*float64(i)/(1<<cosTableBits)))))
+	if tier0IQWide {
+		fmt.Fprintf(&b, "var cosTable = [%d]int32{", 1<<cosTableBits+cosQuarter+1)
+		for i := range 1<<cosTableBits + cosQuarter + 1 {
+			v := math.Round(iqAmplitude*65536*math.Cos(2*math.Pi*float64(i-cosQuarter)/(1<<cosTableBits))) + 32768
+			fmt.Fprintf(&b, "%d,", int32(v))
+		}
+	} else {
+		fmt.Fprintf(&b, "var cosTable = [%d]int16{", 1<<cosTableBits+cosQuarter+1)
+		for i := range 1<<cosTableBits + cosQuarter + 1 {
+			fmt.Fprintf(&b, "%d,", int16(math.Round(iqAmplitude*math.Cos(2*math.Pi*float64(i)/(1<<cosTableBits)))))
+		}
 	}
 	b.WriteString("}\n")
 	return format.Source(b.Bytes())

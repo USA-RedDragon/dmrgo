@@ -2,11 +2,17 @@ package fsktx
 
 // The cosine table of MCUIQ: cosTableBits bits of phase index a turn, a
 // quarter turn more lets the sine be the negative cosine a quarter on, and
+// tier0IQWide, with tier0IQFine, makes cosTable 32-bit: the cosine at 16
+// fraction bits plus a half for the rounding, starting a quarter turn
+// back so that the sine is the entry a quarter before the cosine. The
+// output then has one rounding, not the two of the 16-bit table and its
+// first-order term.
 // tier0IQCorr adds to the deviation of MCUIQ the correction of corrIQ
 // for the context of corrIQSyms symbols that ends corrIQSkip symbols
 // before the newest, which cuts the power outside the channel.
 const (
 	tier0IQCorr = false
+	tier0IQWide = false
 )
 
 const (
@@ -187,6 +193,14 @@ const (
 func cosSin(phase uint32) (int16, int16) {
 	i := phase >> cosShift
 	c, ns := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+	if tier0IQFine && tier0IQWide {
+		// m is the phase below the index in 2^-32 radians.
+		m := int32(uint64(phase<<cosTableBits) * cosFracWide >> 32)
+		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+		co := c - int32(int64(sn)*int64(m)>>32)
+		si := sn + int32(int64(c)*int64(m)>>32)
+		return int16(co >> 16), int16(si >> 16)
+	}
 	if tier0IQFine {
 		// m is the phase below the index in 2^-24 radians.
 		m := int32(uint64(phase<<cosTableBits) * cosFrac >> 32)
@@ -195,8 +209,12 @@ func cosSin(phase uint32) (int16, int16) {
 	return int16(c), int16(-ns)
 }
 
-// cosFrac is 2 pi 2^24 over the entries of cosTable, rounded.
-const cosFrac = 25736
+// cosFrac is 2 pi 2^24 over the entries of cosTable, rounded, and
+// cosFracWide 2 pi 2^32 over them, for a table of 2^10 entries or more.
+const (
+	cosFrac     = 25736
+	cosFracWide = 26353589 >> (cosTableBits - 10)
+)
 
 // steady0 writes the I/Q of the deviation samples of the shaper to dst at
 // full power and the shaper rate, the path of all but the samples of a
@@ -339,7 +357,11 @@ func (m *MCUIQ) ramping(dst []int16) {
 					q--
 				}
 			}
-			a := int32(uint32(iqAmplitude-int32(cosTable[q&cosMask])) * 32768 / (2 * iqAmplitude))
+			rc := int32(cosTable[q&cosMask])
+			if tier0IQFine && tier0IQWide {
+				rc = int32(cosTable[q&cosMask+cosQuarter]) >> 16
+			}
+			a := int32(uint32(iqAmplitude-rc) * 32768 / (2 * iqAmplitude))
 			d := dst[j : j+2 : j+2]
 			c, sn := cosSin(phase)
 			d[0] = int16(int32(c) * a >> 15)
