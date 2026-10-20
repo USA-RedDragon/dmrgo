@@ -184,7 +184,7 @@ func renderTables() ([]byte, error) {
 	if tier0IQWide {
 		fmt.Fprintf(&b, "var cosTable = [%d]int32{", 1<<cosTableBits+cosQuarter+1)
 		for i := range 1<<cosTableBits + cosQuarter + 1 {
-			v := math.Round(iqAmplitude*65536*math.Cos(2*math.Pi*float64(i-cosQuarter)/(1<<cosTableBits))) + 32768
+			v := math.Round(iqAmplitude*65536*math.Cos(2*math.Pi*(float64(i-cosQuarter)+0.5)/(1<<cosTableBits))) + 32768
 			fmt.Fprintf(&b, "%d,", int32(v))
 		}
 	} else {

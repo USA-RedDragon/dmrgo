@@ -3,8 +3,9 @@ package fsktx
 // The cosine table of MCUIQ: cosTableBits bits of phase index a turn, a
 // quarter turn more lets the sine be the negative cosine a quarter on, and
 // tier0IQWide, with tier0IQFine, makes cosTable 32-bit: the cosine at 16
-// fraction bits plus a half for the rounding, starting a quarter turn
-// back so that the sine is the entry a quarter before the cosine. The
+// fraction bits plus a half for the rounding, at the middle of each
+// entry, starting a quarter turn back so that the sine is the entry a
+// quarter before the cosine. The
 // output then has one rounding, not the two of the 16-bit table and its
 // first-order term.
 // tier0IQCorr adds to the deviation of MCUIQ the correction of corrIQ
@@ -194,8 +195,9 @@ func cosSin(phase uint32) (int16, int16) {
 	i := phase >> cosShift
 	c, ns := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
 	if tier0IQFine && tier0IQWide {
-		// m is the phase below the index in 2^-32 radians.
-		m := int32(uint64(phase<<cosTableBits) * cosFracWide >> 32)
+		// m is the phase from the middle of the entry in 2^-32 radians,
+		// signed so that the products are those of a signed multiply.
+		m := int32(uint64(phase<<cosTableBits)*cosFracWide>>32) - cosFracWide/2
 		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
 		co := c - int32(int64(sn)*int64(m)>>32)
 		si := sn + int32(int64(c)*int64(m)>>32)
