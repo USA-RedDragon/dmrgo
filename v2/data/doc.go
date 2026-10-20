@@ -21,5 +21,8 @@
 // confirmed packet to its own address with an ACK, a SACK for the blocks
 // that failed, or a NACK, and it drops a packet that repeats the one
 // before (the same N(S) and message CRC). A response heard on the channel
-// is an event too, so a bridge can forward it.
+// is an event too, so a bridge can forward it. The fragments of a
+// confirmed message are each delivered at once, and EventReassembled
+// follows the last one with the whole message (ETSI TS 102 361-1 clause
+// 9.3.25).
 package data

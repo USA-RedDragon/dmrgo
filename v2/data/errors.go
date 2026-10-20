@@ -24,6 +24,8 @@ var (
 	errSource       error = &ConfigError{Field: "Source"}
 	errMaxBlocks    error = &ConfigError{Field: "MaxBlocks"}
 	errPeers        error = &ConfigError{Field: "Peers"}
+	errMaxFragment  error = &ConfigError{Field: "MaxFragment"}
+	errMaxMessage   error = &ConfigError{Field: "MaxMessage"}
 	errAccess       error = &ConfigError{Field: "Access"}
 	errPreambles    error = &ConfigError{Field: "Preambles"}
 	errRetries      error = &ConfigError{Field: "Retries"}

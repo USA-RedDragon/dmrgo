@@ -114,7 +114,7 @@ func (l *link) run(m *data.Message, end time.Duration) {
 				if e.Burst.SlotType().DataType == enums.DataTypeDataHeader {
 					l.resp = append(l.resp, e.Response.String())
 				}
-			case data.EventCallStart, data.EventResponse, data.EventCallEnd:
+			case data.EventCallStart, data.EventResponse, data.EventCallEnd, data.EventReassembled:
 			}
 		}
 	}

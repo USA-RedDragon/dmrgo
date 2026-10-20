@@ -116,7 +116,7 @@ func TestReceiverAnyToneThroughXPR(t *testing.T) {
 			}
 		case data.EventCallEnd:
 			dups += int(e.Stats.Duplicates)
-		case data.EventCallStart, data.EventDelivered, data.EventResponse:
+		case data.EventCallStart, data.EventDelivered, data.EventResponse, data.EventReassembled:
 		}
 	}
 	if n != 4 || dups != 1 {

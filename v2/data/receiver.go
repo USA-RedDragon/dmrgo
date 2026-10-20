@@ -11,7 +11,7 @@ import (
 )
 
 // MaxEvents is the most events that one call of a Receiver method appends.
-const MaxEvents = 12
+const MaxEvents = 14
 
 // Defaults and limits of ReceiverConfig.
 const (
@@ -32,6 +32,16 @@ const (
 	// MaxBlocks is the most data blocks of one packet, the 7 bits of the
 	// Blocks To Follow element (ETSI TS 102 361-1 clause 9.3.21).
 	MaxBlocks = 127
+	// DefaultMaxFragment is the largest payload of one packet that a
+	// Receiver takes when ReceiverConfig.MaxFragment is 0, n_DFragMax
+	// (ETSI TS 102 361-1 clause F.2).
+	DefaultMaxFragment = 1500
+	// DefaultMaxMessage is the largest message that a Receiver joins from
+	// fragments when ReceiverConfig.MaxMessage is 0.
+	DefaultMaxMessage = 1500
+	// MaxMessage is the most octets of ReceiverConfig.MaxFragment and
+	// ReceiverConfig.MaxMessage.
+	MaxMessage = 65535
 )
 
 const maxUDTBlocks = 4
@@ -64,6 +74,14 @@ type ReceiverConfig struct {
 	// larger packet is dropped. Each block takes 24 bytes, so a
 	// microcontroller can set 16.
 	MaxBlocks int
+	// MaxFragment is the largest payload of one packet. 0 means
+	// DefaultMaxFragment; at most MaxMessage. A larger confirmed packet
+	// gets a NACK for memory full, and any larger packet is dropped.
+	MaxFragment int
+	// MaxMessage is the size of the buffer that joins the fragments of a
+	// confirmed message. 0 means DefaultMaxMessage; at most MaxMessage. A
+	// longer message is not joined; its fragments are still delivered.
+	MaxMessage int
 	// Peers is the number of links whose receive sequence number VI the
 	// Receiver keeps. 0 means DefaultPeers; at most MaxPeers. When the
 	// table is full, the link heard least recently is dropped (ETSI TS
@@ -108,6 +126,7 @@ type current struct {
 	full      bool
 	ns        uint8
 	resync    bool
+	fsn       uint8
 	blocks    uint8
 	pending   int
 	hasSeq    bool
@@ -135,20 +154,22 @@ type Receiver struct {
 	b            *layer2.Burst
 	opts         layer2.DecodeOptions
 
-	state  State
-	call   Call
-	stats  Stats
-	start  time.Duration
-	last   time.Duration
-	cur    current
-	asm    *packet.Assembler
-	build  packet.Builder
-	peers  peers
-	u      udt
-	hdr    pdu.UDTHeader
-	to     pdu.ConfirmedDataHeader
-	pkt    packet.Packet
-	noCopy noCopy
+	state   State
+	call    Call
+	stats   Stats
+	start   time.Duration
+	last    time.Duration
+	cur     current
+	asm     *packet.Assembler
+	build   packet.Builder
+	peers   peers
+	u       udt
+	chain   chain
+	maxFrag int
+	hdr     pdu.UDTHeader
+	to      pdu.ConfirmedDataHeader
+	pkt     packet.Packet
+	noCopy  noCopy
 }
 
 // NewReceiver returns a Receiver for cfg. A nil cfg means the zero
@@ -174,6 +195,14 @@ func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
 	if err != nil {
 		return nil, err
 	}
+	maxFrag, err := limit(cfg.MaxFragment, DefaultMaxFragment, MaxMessage, errMaxFragment)
+	if err != nil {
+		return nil, err
+	}
+	maxMsg, err := limit(cfg.MaxMessage, DefaultMaxMessage, MaxMessage, errMaxMessage)
+	if err != nil {
+		return nil, err
+	}
 	r := &Receiver{
 		address:      cfg.Address,
 		respond:      cfg.Respond,
@@ -185,6 +214,8 @@ func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
 		b:            cfg.Scratch,
 		asm:          packet.NewAssembler(blocks),
 		peers:        peers{list: make([]peer, n)},
+		chain:        chain{buf: make([]byte, maxMsg)},
+		maxFrag:      maxFrag,
 	}
 	r.asm.AcceptBadCRC = cfg.AcceptBadCRC
 	if cfg.ColorCode != nil {
@@ -222,6 +253,7 @@ func (r *Receiver) Reset() {
 	r.asm.Reset()
 	r.peers.reset()
 	r.u.active = false
+	r.chain.active = false
 }
 
 // State returns the state of the Receiver.
@@ -492,6 +524,7 @@ func (r *Receiver) readHeader(dh *pdu.DataHeader) {
 		c := dh.ConfirmedDataHeader
 		r.cur.sap, r.cur.blocks, r.cur.full = c.SAP, c.BlocksToFollow, c.FullMessageFlag
 		r.cur.answer, r.cur.ns, r.cur.resync = c.ResponseRequested, c.SendSequenceNumber, c.ReSynchronizeFlag
+		r.cur.fsn = c.FragmentSequenceNumber
 	case dh.DefinedDataHeader != nil:
 		d := dh.DefinedDataHeader
 		r.cur.sap, r.cur.blocks, r.cur.full = d.SAP, d.AppendedBlocks, d.FullMessageFlag
@@ -633,14 +666,67 @@ func (r *Receiver) complete(now time.Duration, m *packet.Message, done bool, err
 		case seqNext:
 		}
 	}
+	if len(m.Data) > r.maxFrag {
+		r.stats.Dropped++
+		return r.answer(now, packet.ResponseNACKMemoryFull, out)
+	}
+	fragmented, joined, ok := r.fragment(m)
+	if !ok && r.answers() {
+		r.stats.OutOfSequence++
+		return r.answer(now, packet.ResponseNACKFSNOutOfSequence, out)
+	}
 	var e *Event
 	out, e = appendEvent(out, EventDelivered, &r.call)
-	e.Message = Message{Header: m.Header, Proprietary: m.Proprietary, Rate: m.DataType, Payload: m.Data, BadCRC: m.BadCRC}
+	e.Message = Message{Header: m.Header, Proprietary: m.Proprietary, Rate: m.DataType, Payload: m.Data, BadCRC: m.BadCRC, Fragmented: fragmented}
 	r.stats.Delivered++
+	if joined {
+		out, e = appendEvent(out, EventReassembled, &r.call)
+		e.Message = Message{Header: m.Header, Rate: m.DataType, Payload: r.chain.buf[:r.chain.n], Fragments: r.chain.count}
+	}
 	if !m.BadCRC {
 		out = r.answer(now, packet.ResponseACK, out)
 	}
 	return out
+}
+
+type chain struct {
+	active         bool
+	source, target uint32
+	next           uint8
+	count          uint16
+	n              int
+	buf            []byte
+}
+
+func (r *Receiver) fragment(m *packet.Message) (fragmented, joined, ok bool) {
+	c := &r.chain
+	if r.cur.format != pdu.FormatConfirmed || r.cur.fsn == 0b1000 {
+		c.active = false
+		return false, false, true
+	}
+	low, last := r.cur.fsn&0b111, r.cur.fsn&0b1000 != 0
+	if low == 0 {
+		c.active = len(m.Data) <= len(c.buf) && !last
+		c.source, c.target, c.next, c.count = r.cur.call.Source, r.cur.call.Target, 1, 1
+		c.n = copy(c.buf, m.Data)
+		return false, false, true
+	}
+	if !c.active || c.source != r.cur.call.Source || c.target != r.cur.call.Target || low != c.next {
+		c.active = false
+		return true, false, false
+	}
+	if c.n+len(m.Data) > len(c.buf) {
+		c.active = false
+		return true, false, true
+	}
+	c.n += copy(c.buf[c.n:], m.Data)
+	c.count++
+	c.next = low%7 + 1
+	if last {
+		c.active = false
+		return true, true, true
+	}
+	return true, false, true
 }
 
 func (r *Receiver) missing() packet.Response {

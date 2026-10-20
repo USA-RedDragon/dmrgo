@@ -145,7 +145,7 @@ func checkRxScript(t *testing.T, in []byte, p []layer2.RawBurst) {
 			t.Fatalf("op %d: %d events, more than MaxEvents", i, len(ev))
 		}
 		for _, e := range ev {
-			if e.Kind < data.EventCallStart || e.Kind > data.EventCallEnd {
+			if e.Kind < data.EventCallStart || e.Kind > data.EventReassembled {
 				t.Fatalf("op %d: event kind %v", i, e.Kind)
 			}
 			if e.Kind == data.EventCallEnd && e.Reason == 0 {
