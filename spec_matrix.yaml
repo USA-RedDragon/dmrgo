@@ -1959,6 +1959,7 @@ documents:
           - v2/constants/constants.go
           - v2/enums/service_kind.go
           - v2/trunk/ms.go
+          - v2/trunk/ms_access.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -1976,6 +1977,9 @@ documents:
               - TestAccess_Applies
               - TestMS_NoAnswer
               - TestMS_RegisterAndCall
+              - TestMS_RandomTimeout
+              - TestMS_DataCallAndEmergency
+              - TestTSCC_EndToEnd
 
       - section: "6.3"
         title: "Control Channel Acquisition and Retention"
@@ -1988,22 +1992,42 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestFollower_RealTSCC
+              - TestFollower_RealCapacityMax
               - TestFollower_Hunt
+              - TestFollower_ClearToAnotherTSCC
               - TestHuntList
               - TestChannelPlan
+              - TestMS_Move
+              - TestMS_Quality
 
       - section: "6.4"
         title: "Registration, Power Save, and Authentication Procedures"
         source_files:
           - v2/trunk/ms.go
+          - v2/trunk/ms_access.go
+          - v2/trunk/tscc.go
           - v2/layer3/random_access_options.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestMS_RegisterAndCall
+              - TestMS_PowerOff
+              - TestMS_RegDeniedAndRefused
+              - TestMS_RadioCheck
+              - TestTSCC_EndToEnd
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestRegistrationServiceOptions_Table7_55
+
+      - section: "6.5"
+        title: "Unified Data Transport Mechanism"
+        source_files:
+          - v2/trunk/control.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestFollower_UDT
+              - TestFollower_RealUDT
 
       - section: "6.6"
         title: "Call Procedures"
@@ -2011,6 +2035,8 @@ documents:
           - v2/layer2/pdu/csbk.go
           - v2/trunk/follower.go
           - v2/trunk/ms.go
+          - v2/trunk/ms_access.go
+          - v2/trunk/tscc.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
@@ -2026,6 +2052,9 @@ documents:
               - TestMS_Called
               - TestMS_CallTimeout
               - TestMS_Refused
+              - TestMS_PayloadProtectAndAhoy
+              - TestTSCC_EndToEnd
+              - TestTSCC_NoAnswerAndBusy
 
       - section: "7.1.1"
         title: "Control Signalling Block (CSBK/MBC/UDT) PDUs"
@@ -2095,6 +2124,7 @@ documents:
           - v2/layer3/cdef_parms.go
           - v2/enums/announcement_type.go
           - v2/enums/ack_reason.go
+          - v2/enums/protect_kind.go
           - v2/layer3/random_access_options.go
           - v2/layer2/pdu/broadcast_parms.go
         test_functions:
@@ -2105,10 +2135,12 @@ documents:
               - TestCdefParms_String
               - TestCdefParms_ZeroValues
               - TestVoiceServiceOptions_Table7_52
+              - TestDataServiceOptions_Table7_53
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestAckReason_Tables7_42to7_45
               - TestServiceKind_Table7_49
+              - TestProtectKind_Table7_82
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestAnnouncementType_String
