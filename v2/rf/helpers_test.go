@@ -15,3 +15,10 @@ func mustNew(cfg Config) *Receiver {
 func testConfig() rftx.SeqConfig {
 	return rftx.SeqConfig{ColorCode: 1, Source: 3191868, Dest: 9990, BS: 310123, Wakeups: 2, Message: "DMRGO TEST MESSAGE"}
 }
+
+func must(b []Burst, err error) []Burst {
+	if err != nil {
+		panic(err)
+	}
+	return b
+}

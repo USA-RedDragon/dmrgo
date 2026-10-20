@@ -36,7 +36,7 @@ func TestMSKeyUpStrobes(t *testing.T) {
 			t.Fatal(err)
 		}
 		for k := 0; k < len(a); k += 1024 {
-			r.Write(a[k:min(k+1024, len(a))])
+			must(r.Write(a[k:min(k+1024, len(a))]))
 		}
 		r.Flush()
 	}

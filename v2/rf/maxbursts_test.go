@@ -1,6 +1,7 @@
 package rf
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -129,6 +130,9 @@ func runRxBounds(t *testing.T, s *rxBoundSignal, c rxBoundCase) (string, int) {
 	if most == 0 {
 		most = 1 << 16
 	}
+	if c.baseband && most < 2 {
+		return "", 0
+	}
 	var in []byte
 	n := len(x)
 	if !c.baseband {
@@ -143,16 +147,30 @@ func runRxBounds(t *testing.T, s *rxBoundSignal, c rxBoundCase) (string, int) {
 			k = 1 + v*v*v/16
 		}
 		k = min(k, n-off)
+		if i%5 == 0 {
+			var b []Burst
+			var err error
+			if long := most/2 + 1; c.baseband && off+long <= n {
+				b, err = r.WriteBaseband(x[off : off+long])
+			} else if long := most + 1; !c.baseband && off+long <= n {
+				b, err = r.Write(in[off : off+long])
+			} else {
+				err = ErrWriteTooLong
+			}
+			if b != nil || !errors.Is(err, ErrWriteTooLong) {
+				t.Fatalf("%+v: a call longer than MaxWrite gave %d bursts and %v", c, len(b), err)
+			}
+		}
 		var got []Burst
 		var bound int
 		if c.baseband {
 			k = min(k, max(most/2, 1))
-			got, bound = r.WriteBaseband(x[off:off+k]), r.MaxBursts(k)
-			ro.WriteBaseband(x[off : off+k])
+			got, bound = must(r.WriteBaseband(x[off:off+k])), r.MaxBursts(k)
+			must(ro.WriteBaseband(x[off : off+k]))
 		} else {
 			k = min(k, most)
-			got, bound = r.Write(in[off:off+k]), r.MaxBursts((k+1)/2)
-			ro.Write(in[off : off+k])
+			got, bound = must(r.Write(in[off:off+k])), r.MaxBursts((k+1)/2)
+			must(ro.Write(in[off : off+k]))
 		}
 		if len(got) > bound {
 			t.Fatalf("%+v: a call of %d gave %d bursts, MaxBursts %d", c, k, len(got), bound)

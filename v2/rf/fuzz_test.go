@@ -185,7 +185,7 @@ func FuzzReceiverWrite(f *testing.F) {
 			return mallocs(func() {
 				p := 0
 				for _, k := range chunks {
-					sink.add(r.Write(iq[p : p+k]))
+					sink.add(must(r.Write(iq[p : p+k])))
 					p += k
 				}
 				sink.add(r.Flush())
@@ -262,7 +262,7 @@ func FuzzReceiverBaseband(f *testing.F) {
 			return mallocs(func() {
 				p := 0
 				for _, k := range chunks {
-					sink.add(r.WriteBaseband(x[p : p+k]))
+					sink.add(must(r.WriteBaseband(x[p : p+k])))
 					p += k
 				}
 				sink.add(r.Flush())
@@ -338,7 +338,7 @@ func FuzzDiscReceiver(f *testing.F) {
 				for _, k := range chunks {
 					switch {
 					case mode%3 == 1 && !init:
-						sink.add(r.Write(x[p : p+k]))
+						sink.add(must(r.Write(x[p : p+k])))
 					default:
 						dst = r.AppendBursts(dst[:0], x[p:p+k])
 						sink.add(dst)

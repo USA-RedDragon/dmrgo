@@ -42,7 +42,7 @@ func discBursts(a []int16, hz int, tier rf.Tier) []rf.Burst {
 		panic(err)
 	}
 	for k := 0; k < len(a); k += 1024 {
-		r.Write(a[k:min(k+1024, len(a))])
+		check(r.Write(a[k:min(k+1024, len(a))]))
 	}
 	r.Flush()
 	return out
@@ -74,7 +74,7 @@ func nativeBursts(b []byte, rate int) []rf.Burst {
 		panic(err)
 	}
 	for k := 0; k < len(b); k += 1 << 16 {
-		r.Write(b[k:min(k+1<<16, len(b))])
+		check(r.Write(b[k:min(k+1<<16, len(b))]))
 	}
 	r.Flush()
 	return got

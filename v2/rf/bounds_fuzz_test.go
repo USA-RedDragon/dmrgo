@@ -1,6 +1,7 @@
 package rf
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -36,10 +37,18 @@ func runDiscBounds(t *testing.T, audio map[int][]int16, sel, tier byte, cuts []b
 			n = 1 + int(cuts[i%len(cuts)])*int(cuts[i%len(cuts)])
 		}
 		n = min(n, len(x)-off)
-		if i%2 == 0 {
+		w, err := []Burst(nil), error(nil)
+		if i%2 == 1 {
+			w, err = r.Write(x[off : off+n])
+		}
+		switch {
+		case i%2 == 0 || err != nil:
+			if err != nil && (!errors.Is(err, ErrWriteTooLong) || n <= 1<<12 || w != nil) {
+				t.Fatalf("%d Hz: a Write of %d samples: %v", hz, n, err)
+			}
 			dst = r.AppendBursts(dst[:0], x[off:off+n])
-		} else {
-			dst = r.Write(x[off : off+n])
+		default:
+			dst = w
 		}
 		if len(dst) > n/72+16 {
 			t.Fatalf("%d Hz: %d samples gave %d bursts", hz, n, len(dst))

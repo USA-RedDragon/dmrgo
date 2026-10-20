@@ -22,7 +22,7 @@ func TestAllocsReceiver(t *testing.T) {
 		r := mustNew(Config{Rate: 2.048e6, Tier: tier, MaxWrite: chunk})
 		pos, bursts := 0, 0
 		n := testing.AllocsPerRun(len(iq)/chunk-2, func() {
-			bursts += len(r.Write(iq[pos : pos+chunk]))
+			bursts += len(must(r.Write(iq[pos : pos+chunk])))
 			pos += chunk
 		})
 		if n != 0 || bursts == 0 {
@@ -32,7 +32,7 @@ func TestAllocsReceiver(t *testing.T) {
 		r = mustNew(Config{Rate: basebandRate, Tier: tier})
 		pos, bursts = 0, 0
 		n = testing.AllocsPerRun(len(x)/chunk-2, func() {
-			bursts += len(r.WriteBaseband(x[pos : pos+chunk]))
+			bursts += len(must(r.WriteBaseband(x[pos : pos+chunk])))
 			pos += chunk
 		})
 		if n != 0 || bursts == 0 {
@@ -42,7 +42,7 @@ func TestAllocsReceiver(t *testing.T) {
 		r = mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(*Burst) { bursts++ }})
 		pos = 0
 		n = testing.AllocsPerRun(len(x)/chunk-2, func() {
-			r.WriteBaseband(x[pos : pos+chunk])
+			must(r.WriteBaseband(x[pos : pos+chunk]))
 			pos += chunk
 		})
 		if n != 0 || bursts == 0 {

@@ -20,7 +20,7 @@ func TestFront96Same(t *testing.T) {
 					t.Fatal(err)
 				}
 				for k := 0; k < len(a); k += chunk {
-					r.Write(a[k:min(k+chunk, len(a))])
+					must(r.Write(a[k:min(k+chunk, len(a))]))
 				}
 				r.Flush()
 			}

@@ -10,10 +10,10 @@ func TestAllocsIQDisc(t *testing.T) {
 		o.IQDisc, o.SoftExt, o.ExtAMBE, o.ExtOSD, o.ExtELC, o.ExtLookback = true, true, true, true, true, 8
 		r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: on})
 		const chunk = 4096
-		r.WriteBaseband(x[:chunk])
+		must(r.WriteBaseband(x[:chunk]))
 		i := chunk
 		if n := testing.AllocsPerRun(20, func() {
-			r.WriteBaseband(x[i : i+chunk])
+			must(r.WriteBaseband(x[i : i+chunk]))
 			i += chunk
 		}); n != 0 {
 			t.Errorf("OnBurst %v: %v allocations per WriteBaseband", on != nil, n)

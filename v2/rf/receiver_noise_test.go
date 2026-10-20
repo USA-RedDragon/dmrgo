@@ -8,7 +8,7 @@ func TestReceiverNoiseOnly(t *testing.T) {
 		r := mustNew(Config{Rate: basebandRate, Tier: tier})
 		n := 0
 		for seed := uint64(1); seed <= 100; seed++ {
-			n += len(r.WriteBaseband(noisyBaseband(nil, 0, 0, seed)))
+			n += len(must(r.WriteBaseband(noisyBaseband(nil, 0, 0, seed))))
 		}
 		n += len(r.Flush())
 		if n != 0 {

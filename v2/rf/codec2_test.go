@@ -88,7 +88,7 @@ func TestReceiverCodec2Call(t *testing.T) {
 					}
 					r := mustNew(Config{Tier: rn.tier, BasebandHz: BasebandRate / 2})
 					for k := 0; k < len(h); k += 2048 {
-						got = append(got, r.WriteBaseband(h[k:min(k+2048, len(h))])...)
+						got = append(got, must(r.WriteBaseband(h[k:min(k+2048, len(h))]))...)
 					}
 					got = append(got, r.Flush()...)
 				} else {

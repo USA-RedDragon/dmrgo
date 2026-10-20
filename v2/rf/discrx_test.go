@@ -77,7 +77,7 @@ func receiveAudio(t testing.TB, a []int16, hz int, opt *options) []Burst {
 		t.Fatal(err)
 	}
 	for k := 0; k < len(a); k += 1024 {
-		r.Write(a[k:min(k+1024, len(a))])
+		must(r.Write(a[k:min(k+1024, len(a))]))
 	}
 	r.Flush()
 	return out
@@ -133,7 +133,7 @@ func TestDiscReceiverInitAppend(t *testing.T) {
 	}
 	var want []Burst
 	for k := 0; k < len(a); k += 1024 {
-		want = append(want, r.Write(a[k:min(k+1024, len(a))])...)
+		want = append(want, must(r.Write(a[k:min(k+1024, len(a))]))...)
 	}
 	want = append(want, r.Flush()...)
 	var s DiscReceiver
@@ -222,7 +222,7 @@ func TestDiscReceiverRingWrap(t *testing.T) {
 		}
 		r.ns = 1<<32 - int64(len(a)/benchAudioHz*symbolRate/2)
 		for k := 0; k < len(a); k += 1024 {
-			r.Write(a[k:min(k+1024, len(a))])
+			must(r.Write(a[k:min(k+1024, len(a))]))
 		}
 		r.Flush()
 		if len(got) != len(want) || len(want) < 50 {
@@ -249,7 +249,7 @@ func TestLevelUp(t *testing.T) {
 		if err := r.Init(DiscConfig{Hz: discRate / 2, opt: &opt}); err != nil {
 			t.Fatal(err)
 		}
-		r.Write(x)
+		_ = r.AppendBursts(nil, x)
 		if g := r.f.gain; up != (g > 1.5) {
 			t.Errorf("LevelUp %v: gain %.3f", up, g)
 		}

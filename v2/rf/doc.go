@@ -11,7 +11,11 @@
 //	if err != nil {
 //		return err
 //	}
-//	for _, b := range rx.Write(iq) {
+//	bursts, err := rx.Write(iq)
+//	if err != nil {
+//		return err
+//	}
+//	for _, b := range bursts {
 //		data, _ := b.Decoded()
 //		burst, err := layer2.NewBurstFromBytes(data)
 //		...

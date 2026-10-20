@@ -395,7 +395,7 @@ func rxReceive(t testing.TB, in rxInput, e rxRecv) []Burst {
 		r := mustNew(cfg)
 		var out []Burst
 		for k := 0; k < len(in.iq); k += 1 << 14 {
-			out = append(out, r.Write(in.iq[k:min(k+1<<14, len(in.iq))])...)
+			out = append(out, must(r.Write(in.iq[k:min(k+1<<14, len(in.iq))]))...)
 		}
 		return append(out, r.Flush()...)
 	case e.half:
@@ -406,7 +406,7 @@ func rxReceive(t testing.TB, in rxInput, e rxRecv) []Burst {
 		r := mustNew(cfg)
 		var out []Burst
 		for k := 0; k < len(h); k += 2048 {
-			out = append(out, r.WriteBaseband(h[k:min(k+2048, len(h))])...)
+			out = append(out, must(r.WriteBaseband(h[k:min(k+2048, len(h))]))...)
 		}
 		return append(out, r.Flush()...)
 	}

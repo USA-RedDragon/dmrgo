@@ -1,6 +1,7 @@
 package rf
 
 import (
+	"errors"
 	"math"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -96,6 +97,11 @@ const (
 	maxTauSpan     = 5.0
 )
 
+// ErrWriteTooLong reports a call of Write or WriteBaseband, on a Receiver
+// or DiscReceiver without OnBurst, that is too long for the burst buffer
+// that MaxWrite sizes. The call processes none of its samples.
+var ErrWriteTooLong = errors.New("rf: write longer than MaxWrite")
+
 // BasebandRate is the sample rate of the complex baseband that
 // WriteBaseband takes by default, in Hz.
 const BasebandRate = basebandRate
@@ -118,8 +124,8 @@ type Config struct {
 	// discriminator, in about 1 KB of RAM for Tier0. 0 means BasebandRate.
 	BasebandHz int
 	// MaxWrite is the largest number of bytes in one Write, and twice the
-	// largest number of samples in one WriteBaseband. 0 means 1 << 16. A
-	// longer call can lose bursts when OnBurst is nil.
+	// largest number of samples in one WriteBaseband. 0 means 1 << 16.
+	// When OnBurst is nil, a longer call returns ErrWriteTooLong.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
 	// locks to that the receiver keeps and decodes: 0 means 8 for Tier1
@@ -168,14 +174,14 @@ type slotState struct {
 // the slot timing of the first SYNC it finds, follows the timing and the
 // carrier through the transmission, and returns every burst it recovers.
 type Receiver struct {
-	e    *engine
-	lean *leanRx
-	iqd  *iqRx
-	iq0  *iq0Rx
-	cb   *combRx
-	iql  *iqLowRx
-	slot int
-	held int
+	e        *engine
+	lean     *leanRx
+	iqd      *iqRx
+	iq0      *iq0Rx
+	cb       *combRx
+	iql      *iqLowRx
+	slot     int
+	maxWrite int
 }
 
 type engine struct {
@@ -275,9 +281,9 @@ func New(cfg Config) (*Receiver, error) {
 	if hz == 0 {
 		hz = basebandRate
 	}
-	r.slot, r.held = hz*3/100, 16
-	if r.e != nil {
-		r.held += 2 * len(r.e.slots)
+	r.slot, r.maxWrite = hz*3/100, cfg.MaxWrite
+	if r.maxWrite == 0 {
+		r.maxWrite = 1 << 16
 	}
 	return r, nil
 }
@@ -500,7 +506,11 @@ func (r *Receiver) MaxBursts(samples int) int {
 	if r.cb != nil || c == 0 {
 		return c
 	}
-	return min(c, 4*(max(samples, 0)/r.slot+2)+r.held)
+	held := 16
+	if r.e != nil {
+		held += 2 * len(r.e.slots)
+	}
+	return min(c, 4*(max(samples, 0)/r.slot+2)+held)
 }
 
 func (r *Receiver) outBuf() []Burst {
@@ -522,8 +532,17 @@ func (r *Receiver) outBuf() []Burst {
 
 // Write processes interleaved 8-bit I/Q at Config.Rate and returns the
 // bursts that are complete. It returns at most r.MaxBursts((len(iq)+1)/2)
-// bursts. The returned slice is valid until the next call.
-func (r *Receiver) Write(iq []byte) []Burst {
+// bursts. The returned slice is valid until the next call. Without
+// OnBurst, it returns ErrWriteTooLong and processes nothing when iq is
+// longer than Config.MaxWrite.
+func (r *Receiver) Write(iq []byte) ([]Burst, error) {
+	if len(iq) > r.maxWrite && cap(r.outBuf()) > 0 {
+		return nil, ErrWriteTooLong
+	}
+	return r.write(iq), nil
+}
+
+func (r *Receiver) write(iq []byte) []Burst {
 	if r.cb != nil {
 		return r.cb.write(iq)
 	}
@@ -545,8 +564,16 @@ func (r *Receiver) Write(iq []byte) []Burst {
 // WriteBaseband processes complex baseband samples at Config.BasebandHz, as
 // a radio front end delivers them, in place of Write. It returns at most
 // r.MaxBursts(len(x)) bursts. The returned slice is valid until the next
-// call.
-func (r *Receiver) WriteBaseband(x []complex64) []Burst {
+// call. Without OnBurst, it returns ErrWriteTooLong and processes nothing
+// when x has more than Config.MaxWrite/2 samples.
+func (r *Receiver) WriteBaseband(x []complex64) ([]Burst, error) {
+	if 2*len(x) > r.maxWrite && cap(r.outBuf()) > 0 {
+		return nil, ErrWriteTooLong
+	}
+	return r.writeBaseband(x), nil
+}
+
+func (r *Receiver) writeBaseband(x []complex64) []Burst {
 	if r.cb != nil {
 		return r.cb.writeBaseband(x)
 	}

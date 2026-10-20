@@ -9,7 +9,7 @@ func iq0Receive(x []complex64, o options, chunk int) ([]Burst, float32) {
 	var out []Burst
 	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	for k := 0; k < len(x); k += chunk {
-		r.WriteBaseband(x[k:min(k+chunk, len(x))])
+		must(r.WriteBaseband(x[k:min(k+chunk, len(x))]))
 	}
 	var hz float32
 	if r.iq0 != nil {

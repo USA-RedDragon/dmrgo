@@ -68,7 +68,7 @@ func newComb(cfg Config, opt options) *combRx {
 	}
 	c.hold = float64(cfg.LookbackSlots+16) * slotSeconds
 	if c.on == nil {
-		c.out = make([]Burst, 0, 4*n)
+		c.out = make([]Burst, 0, 4*n+4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2))
 	}
 	c3 := cfg
 	c3.OnBurst = func(b *Burst) { c.add(0, b, &c.t3.side) }

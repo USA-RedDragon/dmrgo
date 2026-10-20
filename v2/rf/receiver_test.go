@@ -38,7 +38,7 @@ func receiveBaseband(x []complex64, t Tier) []Burst {
 	r := mustNew(Config{Rate: basebandRate, Tier: t})
 	var out []Burst
 	for k := 0; k < len(x); k += 4096 {
-		out = append(out, r.WriteBaseband(x[k:min(k+4096, len(x))])...)
+		out = append(out, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
 	}
 	return append(out, r.Flush()...)
 }
@@ -114,7 +114,7 @@ func TestReceiverHalfRate(t *testing.T) {
 	r := mustNew(Config{Tier: Tier0, BasebandHz: BasebandRate / 2})
 	var got []Burst
 	for k := 0; k < len(h); k += 2048 {
-		got = append(got, r.WriteBaseband(h[k:min(k+2048, len(h))])...)
+		got = append(got, must(r.WriteBaseband(h[k:min(k+2048, len(h))]))...)
 	}
 	got = append(got, r.Flush()...)
 	half, _ := exactFrames(built.Slots, got)
@@ -141,7 +141,7 @@ func TestReceiverOnBurst(t *testing.T) {
 		var got []Burst
 		r := mustNew(Config{Rate: basebandRate, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
 		for k := 0; k < len(x); k += 4096 {
-			if out := r.WriteBaseband(x[k:min(k+4096, len(x))]); len(out) != 0 {
+			if out := must(r.WriteBaseband(x[k:min(k+4096, len(x))])); len(out) != 0 {
 				t.Fatalf("tier %d: WriteBaseband returned %d bursts", tier, len(out))
 			}
 		}
@@ -175,7 +175,7 @@ func BenchmarkReceiver(b *testing.B) {
 			start := time.Now()
 			for b.Loop() {
 				for k := 0; k < len(x); k += 4096 {
-					r.WriteBaseband(x[k:min(k+4096, len(x))])
+					must(r.WriteBaseband(x[k:min(k+4096, len(x))]))
 				}
 				r.Flush()
 			}
@@ -198,7 +198,7 @@ func TestReceiverWithoutWarmUp(t *testing.T) {
 	r := mustNew(Config{Rate: basebandRate, opt: &o})
 	var got []Burst
 	for k := 0; k < len(x); k += 4096 {
-		got = append(got, r.WriteBaseband(x[k:min(k+4096, len(x))])...)
+		got = append(got, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
 	}
 	got = append(got, r.Flush()...)
 	exact, total := exactFrames(built.Slots, got)
@@ -320,7 +320,7 @@ func TestReceiverTwoPass(t *testing.T) {
 		r := mustNew(Config{Rate: basebandRate, opt: &o})
 		var got []Burst
 		for k := 0; k < len(x); k += 4096 {
-			got = append(got, r.WriteBaseband(x[k:min(k+4096, len(x))])...)
+			got = append(got, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
 		}
 		sc := scoreMS(truth, append(got, r.Flush()...))["ambe_c0c1"]
 		two += sc.Exact

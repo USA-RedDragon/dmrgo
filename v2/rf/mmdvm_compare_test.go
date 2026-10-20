@@ -141,7 +141,7 @@ func oursFrames(t *testing.T, a []int16, hz int) []cmpFrame {
 		t.Fatal(err)
 	}
 	for k := 0; k < len(a); k += 1024 {
-		r.Write(a[k:min(k+1024, len(a))])
+		must(r.Write(a[k:min(k+1024, len(a))]))
 	}
 	r.Flush()
 	return fr

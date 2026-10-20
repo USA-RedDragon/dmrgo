@@ -500,7 +500,7 @@ func receiveDisc(x []complex64) []rf.Burst {
 	}
 	a := discAudio(x)
 	for k := 0; k < len(a); k += 1024 {
-		r.Write(a[k:min(k+1024, len(a))])
+		check(r.Write(a[k:min(k+1024, len(a))]))
 	}
 	r.Flush()
 	return out
@@ -558,7 +558,7 @@ func receive(x []complex64, t rf.Tier) []rf.Burst {
 		panic(err)
 	}
 	for k := 0; k < len(x); k += 4096 {
-		r.WriteBaseband(x[k:min(k+4096, len(x))])
+		check(r.WriteBaseband(x[k:min(k+4096, len(x))]))
 	}
 	r.Flush()
 	return out

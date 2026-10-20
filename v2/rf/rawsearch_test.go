@@ -26,7 +26,7 @@ func TestRawSearchOffset(t *testing.T) {
 						t.Fatal(err)
 					}
 					for k := 0; k < len(in.audio); k += 1024 {
-						r.Write(in.audio[k:min(k+1024, len(in.audio))])
+						must(r.Write(in.audio[k:min(k+1024, len(in.audio))]))
 					}
 					r.Flush()
 				}

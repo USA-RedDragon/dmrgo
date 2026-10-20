@@ -122,9 +122,9 @@ func (s sweepRx) write(in sweepInput, lo, hi int) {
 	for k := lo; k < hi; k += 4096 {
 		e := min(k+4096, hi)
 		if s.d != nil {
-			s.d.Write(in.a[k:e])
+			must(s.d.Write(in.a[k:e]))
 		} else {
-			s.r.WriteBaseband(in.x[k:e])
+			must(s.r.WriteBaseband(in.x[k:e]))
 		}
 	}
 }

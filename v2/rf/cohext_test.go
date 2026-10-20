@@ -13,7 +13,7 @@ func TestCohExtVoice(t *testing.T) {
 		var out []Burst
 		r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
 		for k := 0; k < len(x); k += 4096 {
-			r.WriteBaseband(x[k:min(k+4096, len(x))])
+			must(r.WriteBaseband(x[k:min(k+4096, len(x))]))
 		}
 		r.Flush()
 		s := scoreBench(truth, out)["ambe"]

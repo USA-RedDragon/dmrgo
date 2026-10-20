@@ -20,7 +20,7 @@ func TestSoftExtEmbeddedLC(t *testing.T) {
 		if soft {
 			r.ext = newSoftExt(0, 2)
 		}
-		r.Write(a)
+		must(r.Write(a))
 		r.Flush()
 		s := scoreBench(truth, out)["elc"]
 		return float64(s.Exact) / float64(max(s.Truth, 1))
@@ -71,7 +71,7 @@ func TestSoftExtLookback(t *testing.T) {
 			t.Fatal(err)
 		}
 		r.ext = newSoftExt(lookback, 2)
-		r.Write(a)
+		must(r.Write(a))
 		r.Flush()
 		return start, b
 	}

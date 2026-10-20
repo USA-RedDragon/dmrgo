@@ -17,12 +17,17 @@ func Example() {
 		return
 	}
 	fm, env := rftx.ModulateBS(built.Slots)
-	rx, err := rf.New(rf.Config{Tier: rf.Tier0})
+	x := rftx.Baseband(fm, env, 800)
+	rx, err := rf.New(rf.Config{Tier: rf.Tier0, MaxWrite: 2 * len(x)})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	bursts := append([]rf.Burst(nil), rx.WriteBaseband(rftx.Baseband(fm, env, 800))...)
+	bursts, err := rx.WriteBaseband(x)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	bursts = append(bursts, rx.Flush()...)
 	var voice [enums.VoiceBurstF + 1]int
 	for _, b := range bursts {

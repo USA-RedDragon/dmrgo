@@ -9,10 +9,10 @@ func TestAllocsIQ0(t *testing.T) {
 		o := iq0Options(front, 2*symbolRate)
 		r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(*Burst) {}})
 		const chunk = 4096
-		r.WriteBaseband(x[:chunk])
+		must(r.WriteBaseband(x[:chunk]))
 		i := chunk
 		if n := testing.AllocsPerRun(20, func() {
-			r.WriteBaseband(x[i : i+chunk])
+			must(r.WriteBaseband(x[i : i+chunk]))
 			i += chunk
 		}); n != 0 {
 			t.Errorf("front %d: %v allocations per WriteBaseband", front, n)

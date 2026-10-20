@@ -24,7 +24,11 @@ func DemodulateBytes(iq []byte, rate float64, signed bool, tier rf.Tier) (Demodu
 	const chunk = 1 << 16
 	for len(iq) > 0 {
 		n := min(len(iq), chunk)
-		res.Bursts = append(res.Bursts, rx.Write(iq[:n])...)
+		b, err := rx.Write(iq[:n])
+		if err != nil {
+			return Demodulated{}, err
+		}
+		res.Bursts = append(res.Bursts, b...)
 		iq = iq[n:]
 	}
 	res.Bursts = append(res.Bursts, rx.Flush()...)

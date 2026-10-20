@@ -79,7 +79,7 @@ func TestIQDiscDataBias(t *testing.T) {
 			var got []Burst
 			var worst float32
 			for k := 0; k < len(x); k += 960 {
-				got = append(got, r.WriteBaseband(x[k:min(k+960, len(x))])...)
+				got = append(got, must(r.WriteBaseband(x[k:min(k+960, len(x))]))...)
 				worst = max(worst, abs32(r.iqd.conv.hz))
 			}
 			got = append(got, r.Flush()...)
@@ -213,7 +213,7 @@ func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, 
 	var out []Burst
 	r := mustNew(Config{Rate: basebandRate, Tier: tier, opt: o, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	for k := 0; k < len(x); k += 960 {
-		r.WriteBaseband(x[k:min(k+960, len(x))])
+		must(r.WriteBaseband(x[k:min(k+960, len(x))]))
 		if r.iqd != nil && r.iqd.d.locked {
 			off = max(off, abs32(r.iqd.conv.hz-float32(offsetHz)))
 		}
@@ -228,7 +228,7 @@ func iqDiscReceive(x []complex64, hz int) []Burst {
 	var out []Burst
 	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	for k := 0; k < len(x); k += 4096 {
-		r.WriteBaseband(x[k:min(k+4096, len(x))])
+		must(r.WriteBaseband(x[k:min(k+4096, len(x))]))
 	}
 	r.Flush()
 	return out
@@ -249,7 +249,7 @@ func TestIQDiscLoopback(t *testing.T) {
 	o := discOptions()
 	o.IQDisc = true
 	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(*Burst) {}})
-	r.WriteBaseband(x)
+	must(r.WriteBaseband(x))
 	if got := float64(r.iqd.conv.hz); got < 1300 || got > 1500 {
 		t.Errorf("oscillator at %.0f Hz, want about 1400", got)
 	}

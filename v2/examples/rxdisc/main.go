@@ -24,7 +24,9 @@ func main() {
 	}
 	for range 1000 {
 		read(buf[:])
-		rx.Write(buf[:])
+		if _, err := rx.Write(buf[:]); err != nil {
+			return
+		}
 	}
 	rx.Flush()
 	println("bursts", bursts)

@@ -285,7 +285,7 @@ func receiveAudioTier(t testing.TB, a []int16, tier Tier) []Burst {
 		t.Fatal(err)
 	}
 	for k := 0; k < len(a); k += 1024 {
-		r.Write(a[k:min(k+1024, len(a))])
+		must(r.Write(a[k:min(k+1024, len(a))]))
 	}
 	r.Flush()
 	return out
@@ -442,7 +442,7 @@ func falsePerHour(e benchEntry) float64 {
 		}
 		for seed := uint64(1); total < seconds*benchAudioHz; seed++ {
 			a := discAudio(noisyBaseband(nil, 0, 0, seed), benchAudioHz)
-			r.Write(a)
+			must(r.Write(a))
 			total += len(a)
 		}
 		r.Flush()
@@ -451,7 +451,7 @@ func falsePerHour(e benchEntry) float64 {
 	r := mustNew(Config{Rate: basebandRate, Tier: t})
 	for seed := uint64(1); total < seconds*basebandRate; seed++ {
 		x := noisyBaseband(nil, 0, 0, seed)
-		n += len(r.WriteBaseband(x))
+		n += len(must(r.WriteBaseband(x)))
 		total += len(x)
 	}
 	n += len(r.Flush())
@@ -495,12 +495,12 @@ func steadyAllocs(x []complex64, e benchEntry) float64 {
 		return discSteadyAllocs(discAudio(x, benchAudioHz), e.tier)
 	}
 	r := mustNew(Config{Rate: basebandRate, Tier: e.tier})
-	r.WriteBaseband(x[:chunk])
+	must(r.WriteBaseband(x[:chunk]))
 	n := len(x)/chunk - 1
 	var a, b runtime.MemStats
 	runtime.ReadMemStats(&a)
 	for i := 1; i <= n; i++ {
-		r.WriteBaseband(x[i*chunk : (i+1)*chunk])
+		must(r.WriteBaseband(x[i*chunk : (i+1)*chunk]))
 	}
 	runtime.ReadMemStats(&b)
 	return float64(b.Mallocs-a.Mallocs) / float64(n)
@@ -512,12 +512,12 @@ func discSteadyAllocs(a []int16, tier Tier) float64 {
 	if err != nil {
 		panic(err)
 	}
-	r.Write(a[:chunk])
+	must(r.Write(a[:chunk]))
 	n := len(a)/chunk - 1
 	var m0, m1 runtime.MemStats
 	runtime.ReadMemStats(&m0)
 	for i := 1; i <= n; i++ {
-		r.Write(a[i*chunk : (i+1)*chunk])
+		must(r.Write(a[i*chunk : (i+1)*chunk]))
 	}
 	runtime.ReadMemStats(&m1)
 	return float64(m1.Mallocs-m0.Mallocs) / float64(n)

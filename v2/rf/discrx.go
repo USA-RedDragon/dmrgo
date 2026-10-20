@@ -24,7 +24,8 @@ type DiscConfig struct {
 	// its matched filter, which runs at 12 kHz or 9.6 kHz.
 	Hz int
 	// MaxWrite is the largest number of samples in one Write, for the
-	// burst buffer that NewDisc allocates. 0 means 1 << 12.
+	// burst buffer that NewDisc allocates. 0 means 1 << 12. When OnBurst is
+	// nil, a longer Write can return ErrWriteTooLong.
 	MaxWrite int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
 	// in place of the slices that Write, AppendBursts and Flush return,
@@ -82,7 +83,7 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 		if cfg.MaxWrite == 0 {
 			cfg.MaxWrite = 1 << 12
 		}
-		r.out = make([]Burst, 0, r.maxBursts(cfg.MaxWrite))
+		r.out = make([]Burst, 0, max(r.maxBursts(cfg.MaxWrite), r.maxBursts(slotSymbols*discSPS)))
 	}
 	return r, nil
 }
@@ -176,17 +177,28 @@ func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
 // Write processes the discriminator samples x and returns the bursts that
 // are complete, in the buffer that NewDisc allocates. It returns at most
 // len(x)/72+16 bursts, as AppendBursts does. The returned slice
-// is valid until the next call. On a DiscReceiver that Init set up without
-// OnBurst, Write allocates its buffer; use AppendBursts.
-func (r *DiscReceiver) Write(x []int16) []Burst {
+// is valid until the next call. Without OnBurst, it returns
+// ErrWriteTooLong and processes nothing when its buffer has no room for
+// the bursts that x can complete. The buffer of NewDisc takes a Write of up
+// to DiscConfig.MaxWrite samples; a DiscReceiver that Init set up has none,
+// so use AppendBursts.
+func (r *DiscReceiver) Write(x []int16) ([]Burst, error) {
+	if r.onBurst == nil && r.maxBursts(len(x)) > cap(r.out) {
+		return nil, ErrWriteTooLong
+	}
 	r.out = r.out[:0]
 	r.write(x)
-	return r.out
+	return r.out, nil
 }
 
 // Flush finishes the stream at its end and returns the remaining bursts,
-// as Write does. It returns at most 26 bursts, as AppendFlush does.
+// as Write does. It returns at most 26 bursts, as AppendFlush does. A
+// DiscReceiver that Init set up without OnBurst has no buffer for them, so
+// there Flush changes nothing and returns nil; use AppendFlush.
 func (r *DiscReceiver) Flush() []Burst {
+	if r.onBurst == nil && cap(r.out) == 0 {
+		return nil
+	}
 	r.out = r.out[:0]
 	r.flush()
 	return r.out

@@ -126,7 +126,7 @@ func TestAudioRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			r.Write(a)
+			check(r.Write(a))
 			r.Flush()
 			checkAll(t, cfg, ts.score(got, 0), 1)
 		}
@@ -159,7 +159,7 @@ func TestIQRoundTrip(t *testing.T) {
 			t.Fatal(err)
 		}
 		for k := 0; k < len(b); k += 1 << 16 {
-			r.Write(b[k:min(k+1<<16, len(b))])
+			check(r.Write(b[k:min(k+1<<16, len(b))]))
 		}
 		r.Flush()
 		checkAll(t, cfg, ts.score(got, 0), 1)
