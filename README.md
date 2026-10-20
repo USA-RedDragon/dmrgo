@@ -102,8 +102,9 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - `CACH` makes the CACH and Short LC fragments alone.
 - Tier III trunking (`trunk`), without I/O or goroutines:
   - Channel plans, hunt lists and site tables, from the configuration and from CG_AP, Chan_Freq, Ann_WD_TSCC and Adjacent_Site.
-  - `Follower` hunts for a TSCC and follows its voice and data grants to the payload channels, as a scanner does, and returns on P_CLEAR, after the hang time or when the channel goes quiet.
-  - `MS` registers, makes talkgroup and individual voice calls by random access with backoff, answers C_AHOY, and ends its calls with P_MAINT.
+  - `Follower` hunts for a TSCC and follows its voice and data grants to the payload channels, as a scanner does, and returns on P_CLEAR, after the hang time or when the channel goes quiet. It reads UDT deliveries, and with `AcceptRAS` the CSBKs of Capacity Max sites whose CRC is a keyed MAC.
+  - `MS` registers and de-registers, makes voice and packet data calls by random access with backoff, also as emergency, answers C_AHOY and P_AHOY radio checks, follows C_MOVE, P_PROTECT and P_CLEAR, keeps a denied registration list, leaves a weak TSCC, and ends its calls with P_MAINT.
+  - `TSCC` runs a single site: C_ALOHA and C_SYS_Parms, AT reservation, registration, talkgroup and individual (OACSU) voice calls with grants, late entry grants, relay on the payload channels and P_CLEAR.
 - FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
 - Burst finding in a demodulated bit stream (`layer2/framer`).
 - Vocoders (`vocoder`):
@@ -123,10 +124,10 @@ The table lists every place where the library can allocate. [v2/internal/allocga
 | What may allocate | When | Functions |
 | --- | --- | ---: |
 | The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 2 |
-| A String, GoString or Error method | When the text is built, for a person to read. | 115 |
+| A String, GoString or Error method | When the text is built, for a person to read. | 124 |
 | A function of internal/text, which formats the values of String and Error methods | When the text is built, for a person to read. | 7 |
-| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 23 |
-| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 45 |
+| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 26 |
+| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 57 |
 | An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 21 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
 | A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 3 |
@@ -137,7 +138,7 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 <!-- allocgate:end -->
 
 - Each exported function that a rule covers says in its doc when it allocates.
-- Do not copy `layer2.Burst`, `packet.Assembler`, `packet.Builder`, `voice.Receiver`, `trunk.Follower` or `trunk.MS` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
+- Do not copy `layer2.Burst`, `packet.Assembler`, `packet.Builder`, `voice.Receiver`, `trunk.Follower`, `trunk.MS` or `trunk.TSCC` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
 - A `layer2.Burst` keeps its decoded `Data` until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
 - Three checks keep this true, with no list of functions to maintain:
   - [v2/internal/allocgate](v2/internal/allocgate) follows the machine code of each exported function to the heap allocator.
@@ -195,13 +196,13 @@ The example prints its counts on the serial console once a second.
 
 | Metric | Count |
 | --- | --- |
-| Total sections | 130 |
-| Verified (tests pass) | 130 |
+| Total sections | 133 |
+| Verified (tests pass) | 133 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 0 |
 | Unimplemented | 0 |
 
-**Overall: 130/130 verified (100.0%)**
+**Overall: 133/133 verified (100.0%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
@@ -343,7 +344,7 @@ The example prints its counts on the serial console once a second.
 
 ### ETSI TS 102 361-4: DMR Trunking Protocol
 
-15 sections: 15 verified, 0 failing, 0 untested, 0 unimplemented.
+16 sections: 16 verified, 0 failing, 0 untested, 0 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -351,14 +352,15 @@ The example prints its counts on the serial console once a second.
 | 5.2 | Tier III Signalling | verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/burst.go` |
 | 5.3 | Modes of Control Channel | verified | 2/2 passed | `v2/layer2/burst.go` |
 | 5.4 | CSBK/MBC/UDT/USBD Block Structure | verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go` |
-| 6.2 | Random Access Procedures | verified | 8/8 passed | `v2/layer2/pdu/csbk.go`, `v2/constants/constants.go`, `v2/enums/service_kind.go`, `v2/trunk/ms.go` |
-| 6.3 | Control Channel Acquisition and Retention | verified | 4/4 passed | `v2/trunk/control.go`, `v2/trunk/follower.go`, `v2/trunk/plan.go`, `v2/trunk/site.go` |
-| 6.4 | Registration, Power Save, and Authentication Procedures | verified | 2/2 passed | `v2/trunk/ms.go`, `v2/layer3/random_access_options.go` |
-| 6.6 | Call Procedures | verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/trunk/follower.go`, `v2/trunk/ms.go` |
+| 6.2 | Random Access Procedures | verified | 11/11 passed | `v2/layer2/pdu/csbk.go`, `v2/constants/constants.go`, `v2/enums/service_kind.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
+| 6.3 | Control Channel Acquisition and Retention | verified | 8/8 passed | `v2/trunk/control.go`, `v2/trunk/follower.go`, `v2/trunk/plan.go`, `v2/trunk/site.go` |
+| 6.4 | Registration, Power Save, and Authentication Procedures | verified | 6/6 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/tscc.go`, `v2/layer3/random_access_options.go` |
+| 6.5 | Unified Data Transport Mechanism | verified | 2/2 passed | `v2/trunk/control.go` |
+| 6.6 | Call Procedures | verified | 13/13 passed | `v2/layer2/pdu/csbk.go`, `v2/trunk/follower.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 7.1.1 | Control Signalling Block (CSBK/MBC/UDT) PDUs | verified | 17/17 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go`, `v2/enums/announcement_type.go` |
 | 7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/cdef_parms.go` |
 | 7.1.2 | Short Link Control PDUs | verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go` |
-| 7.2 | Layer 3 Information Element Coding | verified | 12/12 passed | `v2/layer3/cdef_parms.go`, `v2/enums/announcement_type.go`, `v2/enums/ack_reason.go`, `v2/layer3/random_access_options.go`, `v2/layer2/pdu/broadcast_parms.go` |
+| 7.2 | Layer 3 Information Element Coding | verified | 14/14 passed | `v2/layer3/cdef_parms.go`, `v2/enums/announcement_type.go`, `v2/enums/ack_reason.go`, `v2/enums/protect_kind.go`, `v2/layer3/random_access_options.go`, `v2/layer2/pdu/broadcast_parms.go` |
 | A | Timers, constants levels and addresses | verified | 5/5 passed | `v2/constants/constants.go` |
 | B.1 | CSBK/MBC/UDT Opcode List | verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | B.2 | Short Link Control Opcode List | verified | 1/1 passed | `v2/enums/slco.go` |
