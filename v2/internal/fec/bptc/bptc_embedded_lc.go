@@ -8,13 +8,7 @@ import (
 	packed "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 )
 
-// The embedded LC BPTC has an 8×16 encode matrix (ETSI TS 102 361-1 clause
-// B.2.1). Rows 0 to 6 hold 11 information bits and 5 Hamming(16,11,4) parity
-// bits, and row 7 holds the even parity of each column. The columns, top to
-// bottom and left to right, make 4 fragments of 32 bits for 4 voice bursts,
-// so byte k of the fragments, the first bit most significant, is column k,
-// and the matrix is the transpose of those bytes. A row is a uint16 with
-// column c in bit c.
+// ETSI TS 102 361-1 clause B.2.1
 
 // DecodeEmbedded decodes the 77 information bits (72 LC bits and a 5-bit
 // checksum) from the fragments of voice bursts B to E, in that order, each
@@ -61,17 +55,6 @@ func DecodeEmbeddedWithCheck(fragments [4]uint32, check func(info [10]byte) bool
 	return s.info, result
 }
 
-// embeddedLCSearch is a branch and bound search for the error patterns of
-// least weight. The errors of 7 rows fix the errors of the eighth, the
-// derived row, because the column parity of the errors must equal the column
-// parity of the received rows. A pattern of up to EmbeddedMaxErrors errors
-// has more than 4 errors in at most one row, so a run takes up to 4 errors in
-// each row but the derived one. The run with row 7 derived keeps every
-// pattern, and a run with another row derived keeps only the patterns with 5
-// or more errors in that row, so that no pattern is found twice. Those runs
-// find nothing once the least weight is below 5. order holds bytes, so that
-// the search is below 256 bytes, the largest local that TinyGo puts on a
-// stack of 32 KB or less.
 type embeddedLCSearch struct {
 	rows         [8]uint16
 	syndromes    [8]int
@@ -87,8 +70,6 @@ type embeddedLCSearch struct {
 	info         [10]byte
 }
 
-// run searches the error patterns whose errors in row derived the errors of
-// the other rows fix.
 func (s *embeddedLCSearch) run(derived int) {
 	s.derived = derived
 	k := 0
@@ -191,7 +172,6 @@ func DecodeEmbeddedStrict(fragments [4]uint32) ([10]byte, fec.Result) {
 	return embeddedLCInfo(&rows), result
 }
 
-// embeddedLCMatrix reassembles the 8×16 encode matrix from the 4 fragments.
 func embeddedLCMatrix(fragments [4]uint32) [8]uint16 {
 	left := transpose8(uint64(fragments[0])<<32 | uint64(fragments[1]))
 	right := transpose8(uint64(fragments[2])<<32 | uint64(fragments[3]))
@@ -203,9 +183,6 @@ func embeddedLCMatrix(fragments [4]uint32) [8]uint16 {
 	return rows
 }
 
-// transpose8 transposes the 8×8 bit matrix x, byte i from the most
-// significant holding row i with column 0 in its most significant bit
-// (Warren, "Hacker's Delight", 2nd ed., section 7-3).
 func transpose8(x uint64) uint64 {
 	t := (x ^ x>>7) & 0x00AA00AA00AA00AA
 	x ^= t ^ t<<7
@@ -215,8 +192,6 @@ func transpose8(x uint64) uint64 {
 	return x ^ t ^ t<<28
 }
 
-// embeddedLCInfo returns the 77 information bits, rows 0 to 6 and columns 0
-// to 10 of the matrix in row-major order, packed.
 func embeddedLCInfo(rows *[8]uint16) [10]byte {
 	var head, tail uint64
 	for row := range 5 {

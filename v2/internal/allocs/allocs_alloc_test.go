@@ -21,7 +21,6 @@ import (
 
 const testdata = "../../layer2/testdata"
 
-// captures returns the bursts of each capture in layer2/testdata, by name.
 func captures(t *testing.T) map[string][]layer2.RawBurst {
 	t.Helper()
 	files, err := filepath.Glob(filepath.Join(testdata, "*.bin"))
@@ -51,8 +50,6 @@ func assertZero(t *testing.T, name string, f func()) {
 	}
 }
 
-// TestAllocsDecodeEncodeCaptures decodes and encodes every burst of every capture
-// with one reused Burst.
 func TestAllocsDecodeEncodeCaptures(t *testing.T) {
 	for name, bursts := range captures(t) {
 		var b layer2.Burst
@@ -66,9 +63,6 @@ func TestAllocsDecodeEncodeCaptures(t *testing.T) {
 	}
 }
 
-// TestAllocsNewBurstFirstDecode decodes every capture into Bursts from
-// layer2.NewBurst, one per capture, and counts the allocations of the first
-// decodes, which testing.AllocsPerRun would hide behind its warm-up run.
 func TestAllocsNewBurstFirstDecode(t *testing.T) {
 	all := captures(t)
 	streams := make([][]layer2.RawBurst, 0, len(all))
@@ -96,8 +90,6 @@ func TestAllocsNewBurstFirstDecode(t *testing.T) {
 	}
 }
 
-// TestAllocsPacketAssembly reassembles the packets of the SMS captures with a
-// reused Burst and Assembler.
 func TestAllocsPacketAssembly(t *testing.T) {
 	all := captures(t)
 	for _, name := range []string{"d-sms.bin", "h-sms.bin", "m-sms.bin"} {
@@ -114,8 +106,6 @@ func TestAllocsPacketAssembly(t *testing.T) {
 	}
 }
 
-// TestAllocsPacketRetry builds the retry of two blocks of a confirmed packet
-// with a reused Builder.
 func TestAllocsPacketRetry(t *testing.T) {
 	b := packet.NewBuilder(127)
 	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
@@ -133,8 +123,6 @@ func TestAllocsPacketRetry(t *testing.T) {
 	})
 }
 
-// TestAllocsVoiceSuperframe sends a superframe of the voice frames of the parrot
-// capture with a VoiceTransmitter and receives it with a VoiceReceiver.
 func TestAllocsVoiceSuperframe(t *testing.T) {
 	var frames []vocoder.AMBEFrame
 	var b layer2.Burst
@@ -171,8 +159,6 @@ func TestAllocsVoiceSuperframe(t *testing.T) {
 	})
 }
 
-// TestAllocsVoiceTransmitterReset starts a new call on a reused
-// VoiceTransmitter, with a PI header.
 func TestAllocsVoiceTransmitterReset(t *testing.T) {
 	lc, err := pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{})
 	if err != nil {
@@ -193,8 +179,6 @@ func TestAllocsVoiceTransmitterReset(t *testing.T) {
 	})
 }
 
-// TestAllocsVoiceReceiver runs the voice captures through a Receiver, with
-// the hang time ended by Tick.
 func TestAllocsVoiceReceiver(t *testing.T) {
 	all := captures(t)
 	rx, err := voice.NewReceiver(nil)
@@ -216,8 +200,6 @@ func TestAllocsVoiceReceiver(t *testing.T) {
 	}
 }
 
-// TestAllocsVoiceTransmitter sends a call with a PI header, a talker alias
-// and GPS with a reused Transmitter, and relays the voice capture into it.
 func TestAllocsVoiceTransmitter(t *testing.T) {
 	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Queue: 3 * 20})
 	if err != nil {
@@ -272,8 +254,6 @@ func TestAllocsVoiceTransmitter(t *testing.T) {
 	})
 }
 
-// TestAllocsVocoder decodes and encodes the AMBE+2 frames of the voice capture and
-// packs and unpacks them as IPSC voice payloads.
 func TestAllocsVocoder(t *testing.T) {
 	var slots [][9]byte
 	var b layer2.Burst
@@ -295,8 +275,6 @@ func TestAllocsVocoder(t *testing.T) {
 	})
 }
 
-// TestAllocsFramer finds the bursts of the voice capture in its bit stream, fed in
-// chunks of 13 bytes.
 func TestAllocsFramer(t *testing.T) {
 	var stream []byte
 	for _, raw := range captures(t)["voice.bin"] {

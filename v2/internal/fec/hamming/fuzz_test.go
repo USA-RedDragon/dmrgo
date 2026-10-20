@@ -9,13 +9,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// hamming743Seed is one seed of FuzzHamming743.
 type hamming743Seed struct {
 	data uint8
 	mask uint8
 }
 
-// hamming743Seeds returns the seeds of FuzzHamming743.
 func hamming743Seeds() []hamming743Seed {
 	return []hamming743Seed{
 		{uint8(0x0), uint8(0)},
@@ -24,7 +22,6 @@ func hamming743Seeds() []hamming743Seed {
 	}
 }
 
-// checkHamming743 checks the properties of FuzzHamming743 for one input.
 func checkHamming743(t testing.TB, data uint8, mask uint8) {
 	t.Helper()
 	data &= 0xF
@@ -46,12 +43,6 @@ func checkHamming743(t testing.TB, data uint8, mask uint8) {
 	}
 }
 
-// FuzzHamming743 encodes fuzzed data with Hamming (7,4,3), adds the error
-// pattern mask and decodes. Up to 1 error decodes to the codeword with
-// ErrorsCorrected equal to the count. The code is perfect, so every decode
-// returns a codeword at most 1 bit from the received word and never sets
-// Uncorrectable. Bits above the 7th are ignored. Decode and Check agree with
-// the reference codec.
 func FuzzHamming743(f *testing.F) {
 	for _, s := range hamming743Seeds() {
 		f.Add(s.data, s.mask)

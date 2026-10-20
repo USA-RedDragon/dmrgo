@@ -26,8 +26,6 @@ func Decode24128(received uint32) (data uint16, result fec.Result) {
 		return data, result
 	}
 
-	// The syndrome is the Golay (23,12) syndrome of bits 23 to 1, then the
-	// overall parity bit.
 	err23 := received >> 1
 	polySyndrome := golay23ComputeSyndrome(err23)
 	parityErr := bits.OnesCount32(received) & 1

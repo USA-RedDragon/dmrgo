@@ -9,13 +9,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// golaySeed is one seed of FuzzGolay.
 type golaySeed struct {
 	data uint16
 	mask uint32
 }
 
-// golaySeeds returns the seeds of FuzzGolay.
 func golaySeeds() []golaySeed {
 	return []golaySeed{
 		{uint16(0x0A5), uint32(0)},
@@ -26,7 +24,6 @@ func golaySeeds() []golaySeed {
 	}
 }
 
-// checkGolay checks the properties of FuzzGolay for one input.
 func checkGolay(t testing.TB, data uint16, mask uint32) {
 	t.Helper()
 	data &= 0xFFF
@@ -87,13 +84,6 @@ func checkGolay(t testing.TB, data uint16, mask uint32) {
 	}
 }
 
-// FuzzGolay encodes fuzzed data with the Golay (20,8,7), (23,12,7) and
-// (24,12,8) codes, adds the error pattern mask and decodes. Up to 3 errors
-// decode to the data with ErrorsCorrected equal to their count, and 4
-// errors in a (24,12,8) word set Uncorrectable. A decode without
-// Uncorrectable returns a codeword at most 3 and exactly ErrorsCorrected
-// bits from the received word. (23,12,7) sets Uncorrectable only for bits
-// above the word. Each codec agrees with the reference codec.
 func FuzzGolay(f *testing.F) {
 	for _, s := range golaySeeds() {
 		f.Add(s.data, s.mask)

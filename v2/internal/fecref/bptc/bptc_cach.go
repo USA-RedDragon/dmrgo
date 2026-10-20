@@ -5,14 +5,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// The CACH BPTC spreads a 36-bit Short LC PDU over the 17-bit payloads of 4
-// CACH bursts (ETSI TS 102 361-1 clause B.2.3). Rows 0 to 2 of the 4×17
-// encode matrix hold 12 information bits and 5 Hamming(17,12,3) parity bits,
-// and row 3 holds the even parity of each column. The transmit stream reads
-// the encode matrix column by column, top to bottom.
+// ETSI TS 102 361-1 clause B.2.3
 
-// calculateSyndrome17_12 returns the 5-bit Hamming(17,12,3) syndrome of a
-// 17-bit row, from the parity check matrix H = [Pᵀ | I₅].
 func calculateSyndrome17_12(bits [17]unpacked.Bit) int {
 	var s [5]unpacked.Bit
 	s[0] = bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[6] ^ bits[7] ^ bits[9] ^ bits[12]
@@ -23,8 +17,7 @@ func calculateSyndrome17_12(bits [17]unpacked.Bit) int {
 	return int(s[0]) | int(s[1])<<1 | int(s[2])<<2 | int(s[3])<<3 | int(s[4])<<4
 }
 
-// parityHamming17_12 returns the 5 Hamming(17,12,3) parity bits of 12 data
-// bits (ETSI TS 102 361-1 Table B.13).
+// ETSI TS 102 361-1 Table B.13
 func parityHamming17_12(data [12]unpacked.Bit) [5]unpacked.Bit {
 	return [5]unpacked.Bit{
 		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[6] ^ data[7] ^ data[9],
@@ -74,9 +67,6 @@ func DecodeCACH(fragments [4][17]unpacked.Bit) ([36]unpacked.Bit, fec.Result) {
 	return info, result
 }
 
-// correctCACHMatrix corrects the 4×17 product code in place. When only one
-// row has a nonzero syndrome, the failing column parities give the error
-// positions in that row; otherwise each row is corrected for one error.
 func correctCACHMatrix(matrix *[4][17]unpacked.Bit) {
 	for pass := 0; pass < 3; pass++ {
 		var syndromes [4]int

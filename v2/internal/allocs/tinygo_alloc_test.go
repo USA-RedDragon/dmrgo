@@ -20,16 +20,13 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// tinyRuns is the number of measured calls of each operation.
 const tinyRuns = 20
 
-// tinyOp is one operation that TestTinyGoAllocs measures.
 type tinyOp struct {
 	name string
 	run  func()
 }
 
-// tinyOK returns v and panics on err, for setup calls that must succeed.
 func tinyOK[T any](v T, err error) T {
 	if err != nil {
 		panic(err)
@@ -342,11 +339,6 @@ func tinyPDUOps(t *testing.T, r *rand.Rand) []tinyOp {
 	}
 }
 
-// tinyAlloc returns the heap bytes and allocations per call of run, after
-// two warm-up calls. The host target of TinyGo uses the Boehm collector,
-// which leaves MemStats.Mallocs at 0, so only TotalAlloc decides; run with
-// -gc=conservative, the collector of the microcontroller targets, to count
-// allocations too.
 func tinyAlloc(run func()) (bytes, mallocs float64) {
 	run()
 	run()
@@ -359,9 +351,6 @@ func tinyAlloc(run func()) (bytes, mallocs float64) {
 	return float64(after.TotalAlloc-before.TotalAlloc) / tinyRuns, float64(after.Mallocs-before.Mallocs) / tinyRuns
 }
 
-// TestTinyGoAllocs checks that the decode and encode paths make no heap
-// garbage under TinyGo, whose testing.AllocsPerRun always reports 0. It
-// reads runtime.MemStats around the calls instead.
 func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 

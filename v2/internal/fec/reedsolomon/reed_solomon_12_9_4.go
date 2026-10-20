@@ -14,24 +14,15 @@ const (
 	checksumSize = 3
 )
 
-// syndromes holds the syndromes S1 to S3 of a codeword: the received
-// polynomial at alpha, alpha^2 and alpha^3, the first byte the coefficient of
-// the highest power.
 type syndromes [checksumSize]uint8
 
-// decodeResult is the result of a Reed-Solomon decode.
 type decodeResult struct {
-	Data          [dataSize]byte // Corrected data
-	ErrorsFound   int            // Number of symbol (byte) errors found and corrected
-	BitsCorrected int            // Number of bits the correction flipped
-	Uncorrectable bool           // True if errors could not be corrected
+	Data          [dataSize]byte
+	ErrorsFound   int
+	BitsCorrected int
+	Uncorrectable bool
 }
 
-// decode corrects a 12-byte codeword (9 data bytes and 3 parity bytes) and
-// returns the data bytes and the error counts. The code has distance 4, so it
-// corrects one symbol error: the syndromes of an error of value e at degree d
-// are e*alpha^d, e*alpha^2d and e*alpha^3d. Any other nonzero syndromes are
-// uncorrectable, and the received data comes back unchanged.
 func decode(data [dataSize + checksumSize]byte) decodeResult {
 	var result decodeResult
 	copy(result.Data[:], data[:dataSize])
@@ -66,8 +57,7 @@ func Encode(data [9]byte) [12]byte {
 	var codeword [12]byte
 	copy(codeword[:], data[:])
 
-	// Systematic encoding by division by g(x) = x^3 + 0x0E x^2 + 0x38 x + 0x40
-	// (ETSI TS 102 361-1 equation B.10).
+	// ETSI TS 102 361-1 equation B.10
 	var r0, r1, r2 uint8
 	for i := 0; i < dataSize; i++ {
 		fb := codeword[i] ^ r0
@@ -102,8 +92,6 @@ func Check(cw [12]byte) bool {
 	return !syndromeHasErrors(&s)
 }
 
-// calcSyndrome computes the 3 syndromes of a 12-byte codeword. Byte i is the
-// coefficient of x^(11-i), so it adds b*alpha^(j*(11-i)) to syndrome j.
 func calcSyndrome(data *[dataSize + checksumSize]byte, s *syndromes) {
 	var s1, s2, s3 uint8
 	for i, b := range data {
@@ -118,12 +106,10 @@ func calcSyndrome(data *[dataSize + checksumSize]byte, s *syndromes) {
 	*s = syndromes{s1, s2, s3}
 }
 
-// syndromeHasErrors reports whether any syndrome value is nonzero.
 func syndromeHasErrors(s *syndromes) bool {
 	return s[0]|s[1]|s[2] != 0
 }
 
-// galoisMul returns the product of a and b in GF(2^8).
 func galoisMul(a, b uint8) uint8 {
 	if a == 0 || b == 0 {
 		return 0
@@ -131,7 +117,6 @@ func galoisMul(a, b uint8) uint8 {
 	return expSum(int(galois_log_table[a]), int(galois_log_table[b]))
 }
 
-// expSum returns alpha^(a+b) for a and b from 0 to 254.
 func expSum(a, b int) uint8 {
 	if a += b; a >= 255 {
 		a -= 255

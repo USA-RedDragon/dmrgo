@@ -6,16 +6,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// The CACH BPTC spreads a 36-bit Short LC PDU over the 17-bit payloads of 4
-// CACH bursts (ETSI TS 102 361-1 clause B.2.3). Rows 0 to 2 of the 4×17
-// encode matrix hold 12 information bits and 5 Hamming(17,12,3) parity bits,
-// and row 3 holds the even parity of each column. The transmit stream reads
-// the encode matrix column by column, top to bottom, so row r is every
-// fourth bit of the stream from bit r. A row is a uint32 with column c in
-// bit c.
+// ETSI TS 102 361-1 clause B.2.3
 
-// Masks of the columns that each Hamming(17,12,3) parity check covers, from
-// the parity check matrix H = [Pᵀ | I₅] (ETSI TS 102 361-1 Table B.13).
+// ETSI TS 102 361-1 Table B.13
 const (
 	h1712Check0 = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<6 | 1<<7 | 1<<9 | 1<<12
 	h1712Check1 = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<7 | 1<<8 | 1<<10 | 1<<13
@@ -24,11 +17,8 @@ const (
 	h1712Check4 = 1<<0 | 1<<1 | 1<<2 | 1<<5 | 1<<6 | 1<<8 | 1<<11 | 1<<16
 )
 
-// cachRowMask covers the 17 columns of a row.
 const cachRowMask = 1<<17 - 1
 
-// rowSyndrome17_12 returns the 5-bit Hamming(17,12,3) syndrome of a row,
-// check k in bit k.
 func rowSyndrome17_12(row uint32) int {
 	return bits.OnesCount32(row&h1712Check0)&1 | bits.OnesCount32(row&h1712Check1)&1<<1 |
 		bits.OnesCount32(row&h1712Check2)&1<<2 | bits.OnesCount32(row&h1712Check3)&1<<3 |
@@ -66,9 +56,6 @@ func DecodeCACH(fragments [4]uint32) (uint64, fec.Result) {
 	return info, result
 }
 
-// correctCACHMatrix corrects the 4×17 product code in place. When only one
-// row has a nonzero syndrome, the failing column parities give the error
-// positions in that row; otherwise each row is corrected for one error.
 func correctCACHMatrix(rows *[4]uint32) {
 	for range 3 {
 		var syndromes [4]int
@@ -106,7 +93,6 @@ func correctCACHMatrix(rows *[4]uint32) {
 	}
 }
 
-// cachColumnParity returns the parity of each column over the 4 rows.
 func cachColumnParity(rows *[4]uint32) uint32 {
 	return (rows[0] ^ rows[1] ^ rows[2] ^ rows[3]) & cachRowMask
 }
@@ -143,7 +129,6 @@ func EncodeCACH(info uint64) [4]uint32 {
 	}
 }
 
-// compactFourth returns bits 0, 4, 8 and so on to 60 of x as bits 0 to 15.
 func compactFourth(x uint64) uint16 {
 	x &= 0x1111111111111111
 	x = (x | x>>3) & 0x0303030303030303
@@ -152,7 +137,6 @@ func compactFourth(x uint64) uint16 {
 	return uint16((x | x>>24) & 0xFFFF)
 }
 
-// spreadFourth returns bits 0 to 15 of x as bits 0, 4, 8 and so on to 60.
 func spreadFourth(x uint16) uint64 {
 	v := uint64(x)
 	v = (v | v<<24) & 0x000000FF000000FF

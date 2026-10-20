@@ -9,9 +9,6 @@ import (
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/reedsolomon"
 )
 
-// The decode decision is a function of the syndromes only, and the syndromes
-// of the words with zero data bytes cover all 2^24 values, so this test
-// compares Decode with the reference decoder for every syndrome.
 func TestDecodeMatchesReferenceForEverySyndrome(t *testing.T) {
 	t.Parallel()
 

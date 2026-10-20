@@ -94,7 +94,6 @@ func Decode(bits [196]unpacked.Bit) ([144]unpacked.Bit, fec.Result) {
 	return tribitsToBits(tribits), result
 }
 
-// dibitBits maps a ±1/±3 dibit symbol to its two transmitted bits.
 func dibitBits(d int8) byte {
 	switch d {
 	case 3:

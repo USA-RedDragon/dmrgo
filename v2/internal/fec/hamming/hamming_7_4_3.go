@@ -4,16 +4,13 @@ package hamming
 
 import "github.com/USA-RedDragon/dmrgo/v2/fec"
 
-// The parity checks of the Hamming (7,4,3) code over a codeword whose first
-// bit is bit 6, from the generator matrix [I₄ | P] of ETSI TS 102 361-1
-// clause B.3.5.
+// ETSI TS 102 361-1 clause B.3.5
 const (
 	check0 = 0b1110100
 	check1 = 0b0111010
 	check2 = 0b1101001
 )
 
-// parity returns 1 when x has an odd number of set bits, and 0 otherwise.
 func parity(x uint8) uint8 {
 	x ^= x >> 4
 	x ^= x >> 2
@@ -21,7 +18,6 @@ func parity(x uint8) uint8 {
 	return x & 1
 }
 
-// syndrome returns the 3-bit syndrome of the 7-bit codeword cw.
 func syndrome(cw uint8) uint8 {
 	return parity(cw&check0)<<2 | parity(cw&check1)<<1 | parity(cw&check2)
 }

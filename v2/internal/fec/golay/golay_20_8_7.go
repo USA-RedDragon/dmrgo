@@ -9,9 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// row2087 returns the Golay (20,8,7) codeword of data bit k, packed the
-// first bit most significant. A switch, not an array, so that no copy of
-// the rows goes on the stack.
 func row2087(k int) uint32 {
 	switch k {
 	case 0:
@@ -53,9 +50,6 @@ func Decode2087(cw uint32) (uint32, fec.Result) {
 		result.ErrorsCorrected = bits.OnesCount32(c ^ cw)
 		return c, result
 	}
-	// The code has distance 7, so at most one codeword is within 3 bits of
-	// cw. Search the 256 codewords, one data bit change per step in Gray
-	// code order, instead of a 16 KiB syndrome table.
 	var c uint32
 	for i := 1; ; i++ {
 		if e := bits.OnesCount32(c ^ cw); e <= 3 {

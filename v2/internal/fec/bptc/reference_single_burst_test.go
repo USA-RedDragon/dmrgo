@@ -49,8 +49,6 @@ func TestSingleBurstMatchesReference(t *testing.T) {
 	}
 }
 
-// flip32 returns the mask of transmit bit i of a 32-bit word, or 0 for i of
-// 32 or more.
 func flip32(i int) uint32 {
 	if i >= 32 {
 		return 0

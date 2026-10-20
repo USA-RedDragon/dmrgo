@@ -1,6 +1,6 @@
 package crc
 
-const crc7Poly = 0x27 // x⁵ + x² + x + 1 (low 7 bits of G₇(x))
+const crc7Poly = 0x27
 
 // CRC7 computes the CRC-7 of the first n bits of data, the first bit most
 // significant, with the generator polynomial x⁷ + x⁵ + x² + x + 1, initial
@@ -15,9 +15,6 @@ func CheckCRC7(data []byte, n int, want uint8) bool {
 	return CRC7(data, n) == want&0x7F
 }
 
-// crc8Reg runs the first n bits of data through a CRC register of up to 8
-// bits that holds the CRC in its top bits, with the byte table and the
-// polynomial of that register, and returns the register.
 func crc8Reg(data []byte, n int, table *[256]uint8, poly uint8) uint8 {
 	var reg uint8
 	for _, b := range data[:n>>3] {

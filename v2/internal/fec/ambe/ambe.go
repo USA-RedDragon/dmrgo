@@ -10,11 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 )
 
-// columns returns the four interleave columns of slot: column c holds slot
-// bits c, c+4, c+8, ..., c+68, the first of them most significant. The
-// codeword bits run down column 0, then column 1, and so on: A is the 18
-// bits of column 0 and the first 6 of column 1, B the other 12 of column 1
-// and the first 11 of column 2, and C the other 7 of column 2 and column 3.
 func columns(slot *[9]byte) (c0, c1, c2, c3 uint32) {
 	for _, b := range slot {
 		x := uint32(b)

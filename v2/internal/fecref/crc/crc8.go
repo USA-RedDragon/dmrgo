@@ -4,7 +4,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-const crc8Poly = 0x07 // x² + x + 1 (low 8 bits of G₈(x))
+const crc8Poly = 0x07
 
 // CRC8 computes the CRC-8 of bits with the generator polynomial
 // x⁸ + x² + x + 1, initial value 0 and no final inversion (ETSI TS 102 361-1

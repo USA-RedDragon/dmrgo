@@ -6,12 +6,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// golay23GenPoly is the generator polynomial for Golay(23,12,7):
-// g(x) = x^11 + x^10 + x^6 + x^5 + x^4 + x^2 + 1
 const golay23GenPoly = 0xC75
 
-// golay23ComputeSyndrome computes the 11-bit syndrome for a 23-bit received word
-// by polynomial division: syndrome = received(x) mod g(x).
 func golay23ComputeSyndrome(received uint32) int {
 	dividend := received
 	for i := 11; i >= 0; i-- {

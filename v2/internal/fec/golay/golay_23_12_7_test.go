@@ -74,8 +74,6 @@ func TestGolay23127(t *testing.T) {
 	}
 }
 
-// Golay (23,12,7) is perfect: each of the 2048 syndromes maps to one error
-// pattern of weight 3 or less, so no received word is uncorrectable.
 func TestGolay23127IsPerfect(t *testing.T) {
 	t.Parallel()
 

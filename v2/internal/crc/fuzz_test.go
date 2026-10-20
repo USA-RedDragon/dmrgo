@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// crcSeed is one seed of FuzzCRC.
 type crcSeed struct {
 	data  []byte
 	nbits uint16
@@ -16,7 +15,6 @@ type crcSeed struct {
 	wrong uint8
 }
 
-// crcSeeds returns the seeds of FuzzCRC.
 func crcSeeds() []crcSeed {
 	return []crcSeed{
 		{[]byte{0x00, 0x2e, 0x44, 0x4d, 0x52, 0x47, 0x4f, 0x20, 0x54, 0x45, 0x53, 0x54}, uint16(80), uint16(3), uint8(5)},
@@ -26,7 +24,6 @@ func crcSeeds() []crcSeed {
 	}
 }
 
-// checkCRC checks the properties of FuzzCRC for one input.
 func checkCRC(t testing.TB, data []byte, nbits, flip uint16, wrong uint8) {
 	t.Helper()
 	n := int(nbits) % (8*len(data) + 1)
@@ -73,11 +70,6 @@ func checkCRC(t testing.TB, data []byte, nbits, flip uint16, wrong uint8) {
 	}
 }
 
-// FuzzCRC computes each CRC and the 5-bit checksum of fuzzed data, over
-// the first n bits for the bit-length CRCs. Each agrees with the reference
-// codec, accepts its own value and rejects every other value of its width,
-// changes when one bit it covers flips, ignores the bits after n, and
-// CRC-CCITT gives the same value over the data split at any byte.
 func FuzzCRC(f *testing.F) {
 	for _, s := range crcSeeds() {
 		f.Add(s.data, s.nbits, s.flip, s.wrong)

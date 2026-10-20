@@ -25,8 +25,6 @@ func Check[T any](t *testing.T, str, ref func(*T) string) {
 	}
 }
 
-// fill sets the settable parts of v to random values. Pointers past depth
-// 3 stay nil.
 func fill(v reflect.Value, r *rand.Rand, depth int) {
 	switch v.Kind() {
 	case reflect.Bool:
@@ -71,6 +69,5 @@ func fill(v reflect.Value, r *rand.Rand, depth int) {
 			v.Set(p)
 		}
 	default:
-		// Strings, interfaces, maps, channels and funcs stay zero.
 	}
 }

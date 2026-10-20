@@ -213,7 +213,7 @@ func TestEncodePreservesData(t *testing.T) {
 	}
 }
 
-// tableB18Parity returns the parity columns of each row of ETSI TS 102 361-1 Table B.18.
+// ETSI TS 102 361-1 Table B.18
 func tableB18Parity() [dataSize][checksumSize]byte {
 	return [dataSize][checksumSize]byte{
 		{0x1C, 0xBC, 0xFD}, {0x89, 0x31, 0x08}, {0xAD, 0x41, 0x36},

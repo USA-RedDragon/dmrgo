@@ -10,8 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// parity2087 returns the 12 Golay (20,8,7) parity bits of 8 data bits
-// (ETSI TS 102 361-1 clause B.3.1).
+// ETSI TS 102 361-1 clause B.3.1
 func parity2087(bits [8]unpacked.Bit) [12]unpacked.Bit {
 	unpacked.Mask(bits[:])
 	var p [12]unpacked.Bit
@@ -91,9 +90,6 @@ func Encode2087(dataBits [8]unpacked.Bit) [20]unpacked.Bit {
 	var result [20]unpacked.Bit
 	data := uint8(unpacked.Uint(dataBits[:8]) & 0xFF)
 
-	// The encoding table uses LSB-first bit ordering (bits[i] = (d>>i)&1),
-	// but the codeword bit array uses MSB-first (bits[i] = (data>>(7-i))&1).
-	// Reverse the data byte to match the table's convention.
 	tableIdx := bits.Reverse8(data)
 	codeword := golay_20_8_7_table[tableIdx]
 

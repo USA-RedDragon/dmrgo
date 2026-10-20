@@ -92,9 +92,6 @@ func TestBPTC19696_AcceptedOutputIsCodeword(t *testing.T) {
 	}
 }
 
-// TestBPTC19696_ColumnsFirstCorrection checks a 4-error pattern that row
-// decoding first turns into a wrong codeword and column decoding first
-// corrects.
 func TestBPTC19696_ColumnsFirstCorrection(t *testing.T) {
 	t.Parallel()
 

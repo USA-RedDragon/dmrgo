@@ -109,7 +109,6 @@ func Decode(bits [72]unpacked.Bit) ([49]unpacked.Bit, fec.Result) {
 		}
 	}
 
-	// The section B scrambling sequence depends on the corrected section A data.
 	b ^= (ambeScrambleTable[a] >> 1)
 
 	dataB, fecB := golay.Decode23127(b)

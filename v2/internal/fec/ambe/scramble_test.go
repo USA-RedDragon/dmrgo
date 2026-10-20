@@ -2,7 +2,6 @@ package ambe
 
 import "testing"
 
-// TestAMBEScrambleTableValues verifies specific known values in the AMBE scramble table
 func TestAMBEScrambleTableValues(t *testing.T) {
 	t.Parallel()
 
@@ -31,7 +30,6 @@ func TestAMBEScrambleTableValues(t *testing.T) {
 	}
 }
 
-// TestScrambleTableBitWidth verifies all values fit within 24 bits (DMR constraint)
 func TestScrambleTableBitWidth(t *testing.T) {
 	t.Parallel()
 
@@ -43,7 +41,6 @@ func TestScrambleTableBitWidth(t *testing.T) {
 	}
 }
 
-// TestScrambleTableDistribution verifies statistical properties of the table
 func TestScrambleTableDistribution(t *testing.T) {
 	t.Parallel()
 
@@ -69,7 +66,6 @@ func TestScrambleTableDistribution(t *testing.T) {
 	}
 }
 
-// BenchmarkScrambleTableAccess measures random access performance
 func BenchmarkScrambleTableAccess(b *testing.B) {
 	tableLen := len(ambeScrambleTable)
 	for i := 0; i < b.N; i++ {
@@ -77,7 +73,6 @@ func BenchmarkScrambleTableAccess(b *testing.B) {
 	}
 }
 
-// BenchmarkScrambleXOR simulates typical DMR whitening operation
 func BenchmarkScrambleXOR(b *testing.B) {
 	data := make([]byte, 196)
 	for i := range data {
