@@ -1,7 +1,5 @@
 package fsktx
 
-// The cosine table of MCUIQ: cosTableBits bits of phase index it, and
-// iqAmplitude is its amplitude, 0.9 of the full scale of 16 bits.
 const (
 	cosTableBits = 12
 	iqAmplitude  = 29491
@@ -47,7 +45,6 @@ func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 		m.upShift++
 	}
 	m.k.reset(t)
-	// The phase step of one output unit, 1944/15000 Hz, in 2^-32 turns.
 	m.step = int32((uint64(1944)<<32/tableUnits + uint64(rate/2)) / uint64(rate))
 	m.off = int32((int64(offsetHz)<<32 + int64(rate/2)) / int64(rate))
 	m.prev = m.off
@@ -87,8 +84,6 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	return n
 }
 
-// steady writes the I/Q of the l deviation samples of the shaper to dst
-// at full power, the path of all but the samples of a power ramp.
 func (m *MCUIQ) steady(dst []int16, l int) {
 	const sh = 32 - cosTableBits
 	const quarter = 1 << cosTableBits / 4
@@ -113,7 +108,6 @@ func (m *MCUIQ) steady(dst []int16, l int) {
 	m.phase, m.prev = phase, prev
 }
 
-// ramping is steady on the power ramp: it steps the ramp each sample.
 func (m *MCUIQ) ramping(dst []int16, l int) {
 	const sh = 32 - cosTableBits
 	const quarter = 1 << cosTableBits / 4
@@ -137,8 +131,6 @@ func (m *MCUIQ) ramping(dst []int16, l int) {
 	}
 }
 
-// envelope steps the power ramp and returns the amplitude at its new
-// place, in Q15: a raised cosine from the cosine table.
 func (m *MCUIQ) envelope() int32 {
 	switch {
 	case m.on && m.env < m.ramp:
@@ -147,6 +139,5 @@ func (m *MCUIQ) envelope() int32 {
 		m.env--
 	}
 	i := m.env * (1 << cosTableBits / 2) / m.ramp
-	// (1 - cos) / 2 in Q15, from a table of amplitude iqAmplitude.
 	return (iqAmplitude - int32(cosTable[i])) * 32768 / (2 * iqAmplitude)
 }

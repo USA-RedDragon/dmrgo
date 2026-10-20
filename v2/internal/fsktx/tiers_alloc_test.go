@@ -4,8 +4,6 @@ package fsktx
 
 import "testing"
 
-// TestAllocs checks that the modulators allocate nothing per symbol once
-// dst has room.
 func TestAllocs(t *testing.T) {
 	syms := []int8{3, -1, 1, -3, 0, 3, 3, -3}
 	for _, cfg := range audioTiers() {

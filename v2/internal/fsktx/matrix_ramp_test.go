@@ -8,8 +8,6 @@ import (
 	"testing"
 )
 
-// rampUnits returns the I/Q units of the ramp test: each modulator and
-// format at each rate, with ramps from one sample to the most each takes.
 func rampUnits(full bool) []txUnit {
 	var out []txUnit
 	for _, k := range iqKinds() {
@@ -34,17 +32,7 @@ func rampUnits(full bool) []txUnit {
 	return out
 }
 
-// TestTxMatrixRamp keys an unmodulated carrier of each I/Q modulator up
-// and down with each ramp, and measures the power ramp as ETSI EN 300 113
-// clause 7.9.3.1 does: the adjacent channel transient power at 12.5 kHz
-// spacing, at most 50 dB below the carrier, and the attack time from 30
-// dB to 6 dB under the carrier, at least 0.1 ms; and checks that the
-// carrier reaches full power within the ramp, and within the 1.25 ms of
-// the guard time of a burst (ETSI TS 102 361-1 clause 10.2.3.1.1) for a
-// ramp that fits it. A ramp shorter than 0.25 ms is out of the test of
-// the transient, and one shorter than 0.5 ms out of the test of the
-// attack time: a raised cosine ramp of length T rises from 30 dB to 6 dB
-// under the carrier in about 0.39 T.
+// ETSI EN 300 113 clause 7.9.3.1; ETSI TS 102 361-1 clause 10.2.3.1.1
 func TestTxMatrixRamp(t *testing.T) {
 	t.Parallel()
 	full := txFull()

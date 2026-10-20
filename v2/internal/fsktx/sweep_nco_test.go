@@ -4,15 +4,8 @@ package fsktx
 
 import "math"
 
-// ncoBits is the log2 of the default number of entries of the cosine
-// table of nco.
 const ncoBits = 8
 
-// nco turns deviation samples into I/Q by a 32-bit phase accumulator and
-// a cosine table of 2^bits entries, with linear interpolation between
-// entries when interp is set. Each deviation sample steps the phase by
-// step units per deviation unit plus off, up times, with the step
-// interpolated linearly from the previous sample when up is above 1.
 type nco struct {
 	bits   uint
 	tab    []int16
@@ -24,8 +17,6 @@ type nco struct {
 	interp bool
 }
 
-// newNCO returns an nco for deviation samples of hzPerUnit Hz per unit at
-// rate/up, with output amplitude amp and a carrier offsetHz from 0 Hz.
 func newNCO(hzPerUnit float64, rate, up int, amp, offsetHz float64, bits uint, interp bool) *nco {
 	tab := make([]int16, 1<<bits+1)
 	for i := range tab {
@@ -34,8 +25,6 @@ func newNCO(hzPerUnit float64, rate, up int, amp, offsetHz float64, bits uint, i
 	return &nco{bits: bits, tab: tab, step: int32(math.Round(hzPerUnit / float64(rate) * (1 << 32))), off: int32(math.Round(offsetHz / float64(rate) * (1 << 32))), up: up, interp: interp}
 }
 
-// run writes the I/Q of the deviation samples f to dst, interleaved, which
-// has room for 2*up*len(f) values.
 func (o *nco) run(dst []int16, f []int16) {
 	sh := 32 - o.bits
 	quarter := uint32(1) << o.bits >> 2

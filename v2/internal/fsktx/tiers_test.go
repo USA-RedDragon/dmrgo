@@ -13,7 +13,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// audioTiers lists the audio modulators of the tier tests.
 func audioTiers() []AudioConfig {
 	return []AudioConfig{
 		{Hz: 24000, Tier: Tier0}, {Hz: 48000, Tier: Tier0},
@@ -22,7 +21,6 @@ func audioTiers() []AudioConfig {
 	}
 }
 
-// iqTiers lists the I/Q modulators of the tier tests.
 func iqTiers() []IQConfig {
 	return []IQConfig{
 		{Rate: 48000, Tier: Tier0}, {Rate: 96000, Tier: Tier0},
@@ -31,8 +29,6 @@ func iqTiers() []IQConfig {
 	}
 }
 
-// audioOf returns the output of the audio modulator of cfg for the
-// symbols.
 func audioOf(t *testing.T, cfg AudioConfig, syms []int8) []int16 {
 	t.Helper()
 	a, err := NewAudio(cfg)
@@ -46,9 +42,6 @@ func audioOf(t *testing.T, cfg AudioConfig, syms []int8) []int16 {
 	return out
 }
 
-// iqOf returns the output of the I/Q modulator of cfg for the symbols,
-// keyed up from symbol on, as 8-bit I/Q from 1 MHz and as 16-bit I/Q
-// below.
 func iqOf(t *testing.T, cfg IQConfig, syms []int8, on int) []complex128 {
 	t.Helper()
 	q, err := NewIQ(cfg)
@@ -73,8 +66,6 @@ func iqOf(t *testing.T, cfg IQConfig, syms []int8, on int) []complex128 {
 	return fromIQ(out16)
 }
 
-// toS8 returns x as signed 8-bit interleaved I/Q, scaled down from 16 bits
-// below 1 MHz.
 func toS8(x []complex128, rate int) []byte {
 	g := 1.0
 	if rate < 1e6 {
@@ -88,7 +79,6 @@ func toS8(x []complex128, rate int) []byte {
 	return b
 }
 
-// s8IQ returns the signed 8-bit interleaved I/Q b as complex samples.
 func s8IQ(b []byte) []complex128 {
 	x := make([]complex128, len(b)/2)
 	for i := range x {
@@ -97,7 +87,6 @@ func s8IQ(b []byte) []complex128 {
 	return x
 }
 
-// TestDibits checks the dibit map against rftx.
 func TestDibits(t *testing.T) {
 	t.Parallel()
 	var b [33]byte
@@ -126,10 +115,6 @@ func TestDibits(t *testing.T) {
 	}
 }
 
-// TestAudioRoundTrip feeds the output of each audio tier, as the
-// discriminator samples of a radio, to an rf.DiscReceiver, and through
-// the model of a DAC and an FM radio to an rf.Receiver, and checks that
-// both recover every burst.
 func TestAudioRoundTrip(t *testing.T) {
 	t.Parallel()
 	ts := newTestStream(t, 2, 20)
@@ -151,8 +136,6 @@ func TestAudioRoundTrip(t *testing.T) {
 	}
 }
 
-// checkAll fails unless sc recovered every voice frame and data block,
-// less miss bursts that a receiver needs to lock.
 func checkAll(t *testing.T, cfg any, sc score, miss int) {
 	t.Helper()
 	if sc.voice == 0 || sc.voiceOK < sc.voice || sc.dataOK < sc.data-miss {
@@ -160,9 +143,6 @@ func checkAll(t *testing.T, cfg any, sc score, miss int) {
 	}
 }
 
-// TestIQRoundTrip feeds the output of each I/Q tier, keyed up after 250
-// ms of silence, with noise of one unit, to an rf.Receiver at its rate as
-// HackRF bytes, and checks that it recovers every burst.
 func TestIQRoundTrip(t *testing.T) {
 	t.Parallel()
 	ts := newTestStream(t, 2, 20).withLead(1200)
@@ -186,12 +166,7 @@ func TestIQRoundTrip(t *testing.T) {
 	}
 }
 
-// TestSpectrum checks the adjacent and alternate channel power of each
-// tier at 12.5 kHz spacing against the limits of ETSI EN 300 113 clause
-// 7.4.3, 60 dB below the carrier, and the Emission Mask D of FCC 47 CFR
-// 90.210(d). The stream of the sweep puts the adjacent channel power of
-// the reference modulator at -58.4 dBc, so the test bounds each tier to
-// within 1 dB of it.
+// ETSI EN 300 113 clause 7.4.3
 func TestSpectrum(t *testing.T) {
 	t.Parallel()
 	ts := newTestStream(t, 3, 40)
@@ -205,8 +180,6 @@ func TestSpectrum(t *testing.T) {
 	}
 }
 
-// checkSpectrum fails when the spectrum breaks a limit. A rate too low
-// for the alternate channel, 48 kHz, gives no alternate channel power.
 func checkSpectrum(t *testing.T, cfg any, sp spectrum) {
 	t.Helper()
 	acp, alt, mask := sp.acp(12500), sp.acp(25000), sp.maskMargin()
@@ -218,9 +191,6 @@ func checkSpectrum(t *testing.T, cfg any, sp spectrum) {
 	}
 }
 
-// TestFidelity checks the FSK error and the deviation of each tier, with
-// an ideal DAC for the audio tiers, and the carrier offset of the I/Q
-// tiers.
 func TestFidelity(t *testing.T) {
 	t.Parallel()
 	ts := newTestStream(t, 2, 40)
@@ -242,12 +212,7 @@ func TestFidelity(t *testing.T) {
 	}
 }
 
-// TestRamp checks the power ramp of each I/Q tier as ETSI EN 300 113
-// clause 7.9 measures it, keying an unmodulated carrier up and down: the
-// adjacent channel transient power, at most 50 dB below the carrier at
-// 12.5 kHz spacing, an attack time from 30 dB to 6 dB under the carrier of
-// at least 0.1 ms, and full power within the 1.25 ms of the guard time of
-// a burst (ETSI TS 102 361-1 clause 10.2.3.1.1).
+// ETSI EN 300 113 clause 7.9; ETSI TS 102 361-1 clause 10.2.3.1.1
 func TestRamp(t *testing.T) {
 	t.Parallel()
 	for _, cfg := range iqTiers() {

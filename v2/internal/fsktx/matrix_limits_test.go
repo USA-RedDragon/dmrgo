@@ -9,9 +9,6 @@ import (
 	"testing"
 )
 
-// TestTxMatrixLimitsAudio checks that NewAudio takes its configs at the
-// least, nominal and most of each range, and returns an error just
-// outside each range.
 func TestTxMatrixLimitsAudio(t *testing.T) {
 	t.Parallel()
 	type audioCase struct {
@@ -65,8 +62,6 @@ func TestTxMatrixLimitsAudio(t *testing.T) {
 	}
 }
 
-// TestTxMatrixLimitsIQ is TestTxMatrixLimitsAudio for NewIQ, with NaN and
-// infinities too.
 func TestTxMatrixLimitsIQ(t *testing.T) {
 	t.Parallel()
 	type iqCase struct {
@@ -118,8 +113,6 @@ func TestTxMatrixLimitsIQ(t *testing.T) {
 	}
 }
 
-// TestTxMatrixLimitsMCU is TestTxMatrixLimitsAudio for the Init of the MCU
-// modulators, which keep their state on an error.
 func TestTxMatrixLimitsMCU(t *testing.T) {
 	t.Parallel()
 	for _, tab := range []AudioTable{Table24k(), Table48k()} {
@@ -157,9 +150,6 @@ func TestTxMatrixLimitsMCU(t *testing.T) {
 	}
 }
 
-// checkMCUAudioInit checks that MCUAudio.Init of t at level and offset
-// fails or not as ok says, and that a failed Init keeps the state of the
-// modulator: its output goes on as if Init had not been called.
 func checkMCUAudioInit(t *testing.T, tab AudioTable, level, offset int, ok bool) {
 	t.Helper()
 	syms := goldenSymbols(200)
@@ -188,7 +178,6 @@ func checkMCUAudioInit(t *testing.T, tab AudioTable, level, offset int, ok bool)
 	}
 }
 
-// checkMCUIQInit is checkMCUAudioInit for MCUIQ.
 func checkMCUIQInit(t *testing.T, rate, off, ramp int, ok bool) {
 	t.Helper()
 	syms := goldenSymbols(200)
@@ -218,8 +207,6 @@ func checkMCUIQInit(t *testing.T, rate, off, ramp int, ok bool) {
 	}
 }
 
-// TestTxMatrixZero checks that the zero value of each modulator, and a
-// dst too short for a symbol, write nothing and keep the state.
 func TestTxMatrixZero(t *testing.T) {
 	t.Parallel()
 	var a Audio
@@ -288,8 +275,6 @@ func TestTxMatrixZero(t *testing.T) {
 	}
 }
 
-// TestTxMatrixErrors checks that each config out of range returns the
-// error that names it.
 func TestTxMatrixErrors(t *testing.T) {
 	t.Parallel()
 	var m MCUAudio

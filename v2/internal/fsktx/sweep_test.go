@@ -16,40 +16,34 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// sweepResult is the measurement of one modulator.
 type sweepResult struct {
-	Name        string    `json:"name"`
-	Spec        spec      `json:"spec"`
-	NsPerSecond float64   `json:"ns_per_second"`
-	Tables      int       `json:"tables_bytes"`
-	State       int       `json:"state_bytes"`
-	ACP         float64   `json:"acp_dbc"`
-	ALT         float64   `json:"alt_dbc"`
-	Mask        float64   `json:"mask_margin_db"`
-	FSK         fskResult `json:"fsk"`
-	VoiceCN90   float64   `json:"voice_cn90"`
-	DataCN90    float64   `json:"data_cn90"`
-	VoicePen    float64   `json:"voice_penalty_db"`
-	DataPen     float64   `json:"data_penalty_db"`
-	Points      []point   `json:"points"`
-	// The same for the discriminator receiver.
-	DiscVoiceCN90 float64 `json:"disc_voice_cn90"`
-	DiscDataCN90  float64 `json:"disc_data_cn90"`
-	DiscVoicePen  float64 `json:"disc_voice_penalty_db"`
-	DiscDataPen   float64 `json:"disc_data_penalty_db"`
-	DiscPoints    []point `json:"disc_points"`
-	ETSIDev       float64 `json:"etsi_dev_pct"`
-	Peak          int     `json:"peak"`
-	// PenaltyFrom names the modulator whose receiver runs the result shares.
-	PenaltyFrom string `json:"penalty_from,omitempty"`
-	// IdealACP and IdealFSK are ACP and FSK of an audio modulator with an
-	// ideal DAC, which reconstructs the samples without hold or images.
-	IdealACP  float64   `json:"ideal_acp_dbc,omitempty"`
-	IdealMask float64   `json:"ideal_mask_margin_db,omitempty"`
-	IdealFSK  fskResult `json:"ideal_fsk"`
+	Name          string    `json:"name"`
+	Spec          spec      `json:"spec"`
+	NsPerSecond   float64   `json:"ns_per_second"`
+	Tables        int       `json:"tables_bytes"`
+	State         int       `json:"state_bytes"`
+	ACP           float64   `json:"acp_dbc"`
+	ALT           float64   `json:"alt_dbc"`
+	Mask          float64   `json:"mask_margin_db"`
+	FSK           fskResult `json:"fsk"`
+	VoiceCN90     float64   `json:"voice_cn90"`
+	DataCN90      float64   `json:"data_cn90"`
+	VoicePen      float64   `json:"voice_penalty_db"`
+	DataPen       float64   `json:"data_penalty_db"`
+	Points        []point   `json:"points"`
+	DiscVoiceCN90 float64   `json:"disc_voice_cn90"`
+	DiscDataCN90  float64   `json:"disc_data_cn90"`
+	DiscVoicePen  float64   `json:"disc_voice_penalty_db"`
+	DiscDataPen   float64   `json:"disc_data_penalty_db"`
+	DiscPoints    []point   `json:"disc_points"`
+	ETSIDev       float64   `json:"etsi_dev_pct"`
+	Peak          int       `json:"peak"`
+	PenaltyFrom   string    `json:"penalty_from,omitempty"`
+	IdealACP      float64   `json:"ideal_acp_dbc,omitempty"`
+	IdealMask     float64   `json:"ideal_mask_margin_db,omitempty"`
+	IdealFSK      fskResult `json:"ideal_fsk"`
 }
 
-// point is the recovery at one C/N.
 type point struct {
 	CN      float64 `json:"cn"`
 	Voice   int     `json:"voice"`
@@ -58,11 +52,8 @@ type point struct {
 	DataOK  int     `json:"data_ok"`
 }
 
-// sweepSeeds is the number of noise seeds at each C/N point.
 const sweepSeeds = 16
 
-// output runs the modulator of s over the symbols and returns its signal
-// at its analysis rate, and the largest sample magnitude.
 func output(s spec, syms []int8, r radio) ([]complex128, float64, int) {
 	peak := 0
 	if s.Kind == kindAudio {
@@ -84,8 +75,7 @@ func output(s spec, syms []int8, r radio) ([]complex128, float64, int) {
 	return fromIQ(b), float64(s.Rate), 0
 }
 
-// etsiSymbols returns the deviation test pattern of ETSI TS 102 361-1
-// clause 10.2.2.3, +3 +3 -3 -3 repeated.
+// ETSI TS 102 361-1 clause 10.2.2.3
 func etsiSymbols() []int8 {
 	out := make([]int8, 4000)
 	for i := range out {
@@ -97,14 +87,11 @@ func etsiSymbols() []int8 {
 	return out
 }
 
-// etsiSignal returns the signal of s for the deviation test at rxRate.
 func etsiSignal(s spec, r radio) []complex128 {
 	x, rate, _ := output(s, etsiSymbols(), r)
 	return resample(x, int(rate), rxRate)
 }
 
-// cpuNs returns the least CPU time over five runs that s takes to
-// modulate ten seconds of random symbols, per second.
 func cpuNs(s spec) float64 {
 	rng := rand.New(rand.NewPCG(5, 6))
 	syms := make([]int8, 10*SymbolRate)
@@ -136,7 +123,6 @@ func cpuNs(s spec) float64 {
 	return best
 }
 
-// penaltyJob receives one noisy run.
 type penaltyJob struct {
 	x     []complex128
 	shift int
@@ -147,7 +133,6 @@ type penaltyJob struct {
 	wg    *sync.WaitGroup
 }
 
-// sweepRunner runs the receivers on a pool of goroutines.
 type sweepRunner struct {
 	jobs chan penaltyJob
 	ts   *testStream
@@ -172,9 +157,6 @@ func newSweepRunner(ts *testStream, n int) *sweepRunner {
 	return r
 }
 
-// curve measures the recovery of the aligned signal x from C/N lo upwards
-// in steps of 0.5 dB until both payloads recover 98.5%, the top of the
-// fit of probit, with Tier3 or with the discriminator receiver.
 func (r *sweepRunner) curve(x []complex128, shift int, lo float64, disc bool) []point {
 	var pts []point
 	for cn := lo; cn <= 14; cn += 0.5 {
@@ -200,8 +182,6 @@ func (r *sweepRunner) curve(x []complex128, shift int, lo float64, disc bool) []
 	return pts
 }
 
-// cn90 returns the C/N of 90% recovery of the voice frames and the data
-// blocks of pts.
 func cn90(pts []point) (voice, data float64) {
 	cns := make([]float64, len(pts))
 	vo, vn, do, dn := make([]int, len(pts)), make([]int, len(pts)), make([]int, len(pts)), make([]int, len(pts))
@@ -212,7 +192,6 @@ func cn90(pts []point) (voice, data float64) {
 	return probit(cns, vo, vn), probit(cns, do, dn)
 }
 
-// measure returns the RF metrics of s.
 func measure(s spec, ts *testStream, run *sweepRunner, ref sweepResult, r radio, pc *penaltyCache) sweepResult {
 	res := sweepResult{Name: s.name(), Spec: s}
 	res.Tables, res.State = s.memory()
@@ -254,9 +233,6 @@ func measure(s spec, ts *testStream, run *sweepRunner, ref sweepResult, r radio,
 	return res
 }
 
-// penaltyCache holds the receiver runs of the modulators by rfKey, so that
-// modulators that differ only in how they compute the same samples, such
-// as the groups of a lookup table, share one run.
 type penaltyCache struct {
 	mu sync.Mutex
 	m  map[string]*penaltyEntry
@@ -282,12 +258,6 @@ func (c *penaltyCache) entry(key string) *penaltyEntry {
 	return e
 }
 
-// TestTxSweep measures every modulator of sweepSpecs when DMRGO_TXSWEEP
-// names an output directory, and writes sweep.json there.
-// DMRGO_TXSWEEP_MATCH selects modulators by a regular expression of their
-// names, DMRGO_TXSWEEP_SKIP names a sweep.json whose modulators it
-// skips, DMRGO_TXSWEEP_NORX=1 skips the receiver runs, and
-// DMRGO_TXSWEEP_CPUONLY=1 measures only the CPU time, into cpu.json.
 func TestTxSweep(t *testing.T) {
 	t.Parallel()
 	dir := os.Getenv("DMRGO_TXSWEEP")
@@ -409,7 +379,6 @@ func TestTxSweep(t *testing.T) {
 	}
 }
 
-// clean replaces the NaN values of r, which JSON cannot hold, by -999.
 func clean(r *sweepResult) {
 	for _, p := range []*float64{&r.ACP, &r.ALT, &r.Mask, &r.VoiceCN90, &r.DataCN90, &r.VoicePen, &r.DataPen, &r.DiscVoiceCN90, &r.DiscDataCN90, &r.DiscVoicePen, &r.DiscDataPen} {
 		if math.IsNaN(*p) || math.IsInf(*p, 0) {

@@ -8,9 +8,6 @@ import (
 	"unsafe"
 )
 
-// threadCPU returns the CPU time of the calling thread while f runs, in
-// nanoseconds, from CLOCK_THREAD_CPUTIME_ID, which counts in nanoseconds
-// where getrusage counts in scheduler ticks.
 func threadCPU(f func()) float64 {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()

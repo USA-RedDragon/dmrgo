@@ -15,8 +15,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// testStream is a BS outbound stream as symbols, and what a receiver
-// should recover from it.
 type testStream struct {
 	syms  []int8
 	lead  int
@@ -24,27 +22,19 @@ type testStream struct {
 	kind  []string
 }
 
-// Payload kinds of a slot of testStream.
 const (
 	kindVoice = "voice"
 	kindData  = "data"
 	kindIdle  = "idle"
 )
 
-// streamLead is the number of symbols of no modulation before the first
-// slot, as long as the ramp of rftx.ModulateBS.
 const streamLead = 6
 
-// newTestStream builds a BS outbound stream: a group voice call of n
-// superframes on TS2 and rate 1/2 data on TS1, then tail symbols of no
-// modulation.
 func newTestStream(t testing.TB, n, tail int) *testStream {
 	t.Helper()
 	return newStreamOf(t, rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1, Superframes: n, BSSourced: true, Slot: 1}, tail)
 }
 
-// newStreamOf is newTestStream for the BS-sourced voice call of cfg, on
-// slot 1.
 func newStreamOf(t testing.TB, cfg rftx.SeqConfig, tail int) *testStream {
 	t.Helper()
 	voice, err := rftx.Sequence("voice", cfg)
@@ -98,8 +88,6 @@ func newStreamOf(t testing.TB, cfg rftx.SeqConfig, tail int) *testStream {
 	return ts
 }
 
-// withLead returns s with n more symbols of no modulation before the first
-// slot, which give a receiver time to settle.
 func (s *testStream) withLead(n int) *testStream {
 	c := *s
 	c.lead += n
@@ -107,8 +95,7 @@ func (s *testStream) withLead(n int) *testStream {
 	return &c
 }
 
-// appendBits appends the symbols of bits by the dibit map of ETSI TS 102
-// 361-1 Table 10.3.
+// ETSI TS 102 361-1 Table 10.3
 func appendBits(dst []int8, bits []unpacked.Bit) []int8 {
 	for i := 0; i+1 < len(bits); i += 2 {
 		switch bits[i]<<1 | bits[i+1] {
@@ -125,10 +112,6 @@ func appendBits(dst []int8, bits []unpacked.Bit) []int8 {
 	return dst
 }
 
-// score counts the voice frames and rate 1/2 data blocks of s that got
-// exact, from bursts received from a signal with s at its start pad
-// seconds after the first sample, and a delay of less than half a slot,
-// which it takes from the median of the bursts.
 type score struct {
 	voice, voiceOK, data, dataOK int
 }
@@ -162,9 +145,6 @@ func (s *testStream) score(got []rf.Burst, pad float64) score {
 	return sc
 }
 
-// align returns the bursts of got by the index of their slot in s, with s
-// at its start pad seconds after the first sample, and a delay of less
-// than half a slot, which it takes from the median of the bursts.
 func (s *testStream) align(got []rf.Burst, pad float64) map[int]rf.Burst {
 	first := pad + float64(s.lead+12)/SymbolRate
 	res := make([]float64, 0, len(got))
@@ -186,12 +166,6 @@ func (s *testStream) align(got []rf.Burst, pad float64) map[int]rf.Burst {
 	return byIndex
 }
 
-// rawScore is the detection of s in got, bit for bit, before any FEC:
-// the number of bursts that s sends, the number that got holds without a
-// bit error in the burst or its CACH, and the bit errors of all of them,
-// a burst that got misses counting as half its bits. lastBad is the index
-// of the last slot whose burst got misses or holds with an error, or -1,
-// and stray the number of bursts of got outside the slots of s.
 type rawScore struct {
 	bursts, exact, errs, bits int
 	lastBad, stray            int

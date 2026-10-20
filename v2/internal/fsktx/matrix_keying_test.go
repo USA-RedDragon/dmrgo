@@ -10,9 +10,6 @@ import (
 	"testing"
 )
 
-// keyUnits returns the I/Q units of the keying tests: each modulator and
-// format at each rate, with a carrier offset, and a ramp of one sample,
-// of less than a symbol, of 1 ms and the most that it takes.
 func keyUnits(full bool) []txUnit {
 	var out []txUnit
 	for _, k := range iqKinds() {
@@ -34,9 +31,6 @@ func keyUnits(full bool) []txUnit {
 	return out
 }
 
-// envelope returns the amplitude of a carrier keyed by keys, sample by
-// sample, from the counts of samples before each symbol: the raised
-// cosine ramp of u from where it is at each key change.
 func (u txUnit) envelope(counts []int, keys []keying, n int) []float64 {
 	e := make([]float64, n)
 	env, on, k := 0, false, 0
@@ -56,12 +50,6 @@ func (u txUnit) envelope(counts []int, keys []keying, n int) []float64 {
 	return e
 }
 
-// TestTxMatrixKeying keys each I/Q modulator up and down at every symbol
-// of a cycle of its sample phases, for one symbol, for one burst, back to
-// back and in the middle of a ramp, and checks that the power follows the
-// raised cosine ramp from the first sample after each key change, with no
-// step, that it rests at 0 keyed down, and that the phase runs on without
-// a jump through each ramp.
 func TestTxMatrixKeying(t *testing.T) {
 	t.Parallel()
 	full := txFull()
@@ -114,16 +102,11 @@ func TestTxMatrixKeying(t *testing.T) {
 	}
 }
 
-// checkKeyed checks the I/Q x of u against the envelope e: its amplitude,
-// to within the error of the ramp and of the samples, and the steps of its
-// phase wherever the power is up.
 func checkKeyed(t *testing.T, u txUnit, name string, x []complex128, e []float64) {
 	t.Helper()
 	a := u.amplitude()
 	q := 1.5 / a
 	if u.mcu || u.tier == Tier0 {
-		// The ramp of Tier0 takes its raised cosine from the 2048 steps of
-		// the half-turn of the cosine table, and its Q15 amplitude.
 		q = 3/a + math.Pi/2/2048 + 1.0/32768
 	}
 	for i, v := range x {
@@ -150,11 +133,6 @@ func checkKeyed(t *testing.T, u txUnit, name string, x []complex128, e []float64
 	}
 }
 
-// TestTxMatrixChunking checks that the output of each modulator does not
-// depend on the dst it appends to: empty, of any capacity, or after other
-// data; that a second modulator of the same setup run beside it in turns
-// gives the same output, so they share no state; and that Init after use
-// of an MCU modulator, and NewAudio and NewIQ, start over as a new one.
 func TestTxMatrixChunking(t *testing.T) {
 	t.Parallel()
 	full := txFull()
@@ -253,14 +231,6 @@ func TestTxMatrixChunking(t *testing.T) {
 	}
 }
 
-// TestTxMatrixLongRun runs each modulator for a long stream of one period
-// of random symbols repeated, keyed up throughout, and checks that the
-// last period gives the output of the first: the same samples for audio,
-// and for I/Q the same up to one rotation of phase and the error of the
-// samples, so that no accumulator drifts, wraps or loses precision. It
-// runs 2 minutes of symbols, 20 seconds above 192 kHz, or with
-// DMRGO_TXMATRIX=full 3 hours, and 1 hour for the I/Q rates above 192
-// kHz.
 func TestTxMatrixLongRun(t *testing.T) {
 	t.Parallel()
 	full := txFull()
@@ -285,11 +255,8 @@ func TestTxMatrixLongRun(t *testing.T) {
 	}
 }
 
-// checkLongRun is TestTxMatrixLongRun for u over n symbols.
 func checkLongRun(t *testing.T, u txUnit, n int) {
 	t.Helper()
-	// The period is a whole number of output samples: 4800 symbols, one
-	// second.
 	const period = SymbolRate
 	rng := rand.New(rand.NewPCG(9, 9))
 	syms := make([]int8, period)

@@ -15,24 +15,16 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// txFull reports whether DMRGO_TXMATRIX is "full", which runs the full
-// robustness matrix: every rate through every receiver and hours of
-// symbols. The default is a subset that fits a CI run.
 func txFull() bool { return os.Getenv("DMRGO_TXMATRIX") == "full" }
 
-// txFormat is the output format of a modulator of the matrix.
 type txFormat int
 
-// The output formats.
 const (
 	fmtAudio txFormat = iota
 	fmtS16
 	fmtS8
 )
 
-// txUnit is one modulator setup of the robustness matrix: the modulator,
-// its output rate and format, and its level and offset or its carrier
-// offset and power ramp.
 type txUnit struct {
 	mcu           bool
 	tier          Tier
@@ -43,7 +35,6 @@ type txUnit struct {
 	ramp          int
 }
 
-// kind names the modulator of u, without its setup.
 func (u txUnit) kind() string {
 	switch {
 	case u.format == fmtAudio && u.mcu:
@@ -66,12 +57,8 @@ func (u txUnit) String() string {
 	return fmt.Sprintf("%s/%d/F%d/R%d", u.kind(), u.rate, u.offHz, u.ramp)
 }
 
-// audio reports whether u writes audio.
 func (u txUnit) audio() bool { return u.format == fmtAudio }
 
-// txMod is a modulator of the matrix behind one interface: key keys an
-// I/Q modulator up or down, and emit appends the output of one symbol,
-// audio samples or interleaved I/Q, with 8-bit I/Q widened to int16.
 type txMod interface {
 	key(on bool)
 	emit(dst []int16, s int8) []int16
@@ -120,7 +107,6 @@ func (m *mcuIQMod) emit(dst []int16, s int8) []int16 {
 	return append(dst, m.buf[:m.m.Symbol(m.buf[:], s)]...)
 }
 
-// mod returns a new modulator of u.
 func (u txUnit) mod() (txMod, error) {
 	switch {
 	case u.audio() && u.mcu:
@@ -142,7 +128,6 @@ func (u txUnit) mod() (txMod, error) {
 	}
 }
 
-// mustMod is mod that fails t on an error.
 func (u txUnit) mustMod(t testing.TB) txMod {
 	t.Helper()
 	m, err := u.mod()
@@ -152,8 +137,6 @@ func (u txUnit) mustMod(t testing.TB) txMod {
 	return m
 }
 
-// lag returns the delay of the output of u behind its symbols, in symbols:
-// the half-length of its pulse.
 func (u txUnit) lag() int {
 	switch {
 	case u.audio() && (u.mcu || u.tier == Tier0) && u.rate == 48000:
@@ -169,7 +152,6 @@ func (u txUnit) lag() int {
 	}
 }
 
-// amplitude returns the full-power I/Q amplitude of u in its own units.
 func (u txUnit) amplitude() float64 {
 	switch {
 	case u.format == fmtS8:
@@ -181,9 +163,6 @@ func (u txUnit) amplitude() float64 {
 	}
 }
 
-// phaseStep returns the most error of the phase of u between two samples,
-// in radians: the 12 bits of the cosine table of Tier0, which it does not
-// interpolate.
 func (u txUnit) phaseStep() float64 {
 	if u.mcu || u.tier == Tier0 {
 		return 2 * math.Pi / (1 << cosTableBits)
@@ -191,8 +170,6 @@ func (u txUnit) phaseStep() float64 {
 	return 0
 }
 
-// peakHz returns the most deviation of any run of symbols for u, from its
-// taps.
 func (u txUnit) peakHz() float64 {
 	switch {
 	case u.audio() && (u.mcu || u.tier == Tier0) && u.rate == 48000:
@@ -217,8 +194,6 @@ func (u txUnit) peakHz() float64 {
 	return k.peak
 }
 
-// audioBounds returns the least and the most output of the audio unit u
-// for any run of symbols.
 func (u txUnit) audioBounds() (lo, hi float64) {
 	if u.mcu || u.tier == Tier0 {
 		t := Table24k()
@@ -232,21 +207,17 @@ func (u txUnit) audioBounds() (lo, hi float64) {
 	return float64(u.offset) - x, float64(u.offset) + x
 }
 
-// keying is a change of the key of an I/Q modulator before the symbol at.
 type keying struct {
 	at int
 	on bool
 }
 
-// run returns the output of a new modulator of u for the symbols, keyed
-// by keys, which are in order.
 func (u txUnit) run(t testing.TB, syms []int8, keys []keying) []int16 {
 	t.Helper()
 	m := u.mustMod(t)
 	return runMod(m, syms, keys)
 }
 
-// runMod returns the output of m for the symbols, keyed by keys.
 func runMod(m txMod, syms []int8, keys []keying) []int16 {
 	var out []int16
 	k := 0
@@ -260,18 +231,12 @@ func runMod(m txMod, syms []int8, keys []keying) []int16 {
 	return out
 }
 
-// keyedOn returns the keying of a carrier keyed up from the start.
 func keyedOn() []keying { return []keying{{at: 0, on: true}} }
 
-// iqComplex returns the interleaved I/Q raw as complex samples.
 func iqComplex(raw []int16) []complex128 {
 	return fromIQ(raw)
 }
 
-// audioFM returns the FM signal at dacRate of the output raw of the audio
-// unit u through the radio r, with the offset of u taken out, as the bias
-// of the modulator input does, and the gain of r scaled for the level of
-// u.
 func (u txUnit) audioFM(raw []int16, r radio) []complex128 {
 	a := make([]int16, len(raw))
 	g := float64(tableUnits) / float64(u.level)
@@ -285,9 +250,6 @@ func (u txUnit) audioFM(raw []int16, r radio) []complex128 {
 	return dacFM(a, u.rate, r)
 }
 
-// signal48 returns the output raw of u as a unit-level baseband signal at
-// rxRate: the FM signal of an audio unit through the radio r, or the I/Q
-// of an I/Q unit moved to 0 Hz.
 func (u txUnit) signal48(raw []int16, r radio) []complex128 {
 	if u.audio() {
 		return resample(u.audioFM(raw, r), dacRate, rxRate)
@@ -296,7 +258,6 @@ func (u txUnit) signal48(raw []int16, r radio) []complex128 {
 	return resample(x, u.rate, rxRate)
 }
 
-// shift returns x at rate moved by hz.
 func shift(x []complex128, rate, hz float64) []complex128 {
 	if hz == 0 {
 		return x
@@ -309,7 +270,6 @@ func shift(x []complex128, rate, hz float64) []complex128 {
 	return y
 }
 
-// The symbol patterns of the matrix.
 const (
 	patPlus3 = iota
 	patMinus3
@@ -324,13 +284,10 @@ const (
 	patCount
 )
 
-// patternName names the pattern p.
 func patternName(p int) string {
 	return [...]string{"plus3", "minus3", "alt3", "runs1", "alt1", "worst", "longruns", "random", "sync", "etsi"}[p]
 }
 
-// pattern returns n symbols of the pattern p for u, between runs of 0 that
-// let the pulse settle.
 func (u txUnit) pattern(p, n int) []int8 {
 	lead := 2 * u.lag()
 	out := make([]int8, lead, 2*lead+n)
@@ -356,8 +313,6 @@ func (u txUnit) pattern(p, n int) []int8 {
 			out = append(out, int8(1-2*(i/7&1)))
 		}
 	case patWorst:
-		// Each copy of the worst symbols, of either sign, ends in a symbol
-		// period whose samples take the phase of the worst sum.
 		w, ph, l, m := u.worst()
 		acc, sign, free := 0, int8(1), lead
 		for k := 0; k < lead+n || sign < 0 || free == lead; k++ {
@@ -406,10 +361,6 @@ func (u txUnit) pattern(p, n int) []int8 {
 	return append(out, make([]int8, lead)...)
 }
 
-// worst returns the symbols, oldest first, that drive the output of u to
-// its most deviation: 3 times the sign of each tap of its phase ph of the
-// largest sum of tap magnitudes. l/m is the rate of its shaper in samples
-// per symbol.
 func (u txUnit) worst() (w []int8, ph, l, m int) {
 	m = 1
 	var taps [][]float64
@@ -480,10 +431,6 @@ func boolInt(b bool) int {
 	return 0
 }
 
-// newMSStream builds an MS outbound transmission of a group voice call of
-// n superframes on one slot: each burst keyed up and down within its slot,
-// as an MS transmits, with the slots between them silent, and the keying
-// that u needs for it, which leads the bursts by its lag.
 func newMSStream(t testing.TB, u txUnit, n int) (*testStream, []keying) {
 	t.Helper()
 	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Wakeups: 1, Superframes: n}
@@ -522,8 +469,6 @@ func newMSStream(t testing.TB, u txUnit, n int) (*testStream, []keying) {
 	return ts, keys
 }
 
-// cleanSymbol returns s as a modulator takes it: a symbol other than -3,
-// -1, +1 and +3 counts as 0.
 func cleanSymbol(s int8) int8 {
 	switch s {
 	case -3, -1, 1, 3:
@@ -532,8 +477,6 @@ func cleanSymbol(s int8) int8 {
 	return 0
 }
 
-// checkExact fails unless sc holds every burst bit for bit, less miss
-// bursts that a receiver needs to lock.
 func checkExact(t *testing.T, name string, sc rawScore, miss int) {
 	t.Helper()
 	if sc.bursts == 0 || sc.exact < sc.bursts-miss {

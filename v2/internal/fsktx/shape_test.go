@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-// TestShapersAgree checks that the fixed-point shapers give the samples of
-// the float64 shaper of the same pulse, to a few units, for symbols that
-// include runs of 0.
 func TestShapersAgree(t *testing.T) {
 	t.Parallel()
 	rng := rand.New(rand.NewPCG(1, 2))

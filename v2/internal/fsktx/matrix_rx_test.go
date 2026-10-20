@@ -14,10 +14,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// rxPath is a receiver of the matrix on the baseband at rxRate: an
-// rf.Receiver of a tier, or an rf.DiscReceiver of a tier behind the model
-// of an FM receiver of discAudio. cn is the C/N of its penalty test, where
-// the reference modulator loses about 2 percent of the bits.
 type rxPath struct {
 	name string
 	tier rf.Tier
@@ -32,7 +28,6 @@ func rxPaths() []rxPath {
 	}
 }
 
-// run returns the bursts that p recovers from the baseband y.
 func (p rxPath) run(y []complex64) []rf.Burst {
 	if !p.disc {
 		return receive(y, p.tier)
@@ -40,8 +35,6 @@ func (p rxPath) run(y []complex64) []rf.Burst {
 	return discBursts(discAudio(y), discHz, p.tier)
 }
 
-// discBursts returns the bursts that an rf.DiscReceiver of tier recovers
-// from the discriminator samples a at hz.
 func discBursts(a []int16, hz int, tier rf.Tier) []rf.Burst {
 	var out []rf.Burst
 	r, err := rf.NewDisc(rf.DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
@@ -55,8 +48,6 @@ func discBursts(a []int16, hz int, tier rf.Tier) []rf.Burst {
 	return out
 }
 
-// s8Bytes returns the I/Q raw of u as signed 8-bit I/Q, with a dither
-// of one unit.
 func (u txUnit) s8Bytes(raw []int16) []byte {
 	b := make([]byte, len(raw))
 	for i, v := range raw {
@@ -69,7 +60,6 @@ func (u txUnit) s8Bytes(raw []int16) []byte {
 	return b
 }
 
-// dither adds a dither of one unit to the signed 8-bit I/Q b.
 func dither(b []byte) {
 	rng := rand.New(rand.NewPCG(1, 2))
 	for i := range b {
@@ -77,8 +67,6 @@ func dither(b []byte) {
 	}
 }
 
-// nativeBursts returns the bursts that an rf.Receiver of Tier1 recovers
-// from the signed 8-bit I/Q b at rate.
 func nativeBursts(b []byte, rate int) []rf.Burst {
 	var got []rf.Burst
 	r, err := rf.New(rf.Config{Rate: float64(rate), Signed: true, Tier: rf.Tier1, MaxWrite: 1 << 16, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
@@ -92,10 +80,6 @@ func nativeBursts(b []byte, rate int) []rf.Burst {
 	return got
 }
 
-// refSig is the signal of the reference modulator for a stream, at
-// rxRate, and the time of its symbol 0 in samples. The tests compare a
-// modulator with it moved to the time of the modulator, so that both meet
-// a receiver at the same time.
 type refSig struct {
 	ts    *testStream
 	dev   []float64
@@ -112,16 +96,10 @@ func newRefSig(ts *testStream) *refSig {
 	return r
 }
 
-// shift returns the shift of the reference at rate that moves it to the
-// time d, in samples at rxRate.
 func (r *refSig) shift(d float64, rate int) int {
 	return int(math.Round((r.delay - d) * float64(rate) / rxRate))
 }
 
-// native returns the reference as dithered signed 8-bit I/Q at the rate
-// and carrier of u, moved to the time d: its deviation at dacRate taken
-// at each sample by a cubic interpolation, which is exact to about 1e-6
-// for the 2.9 kHz of the band of the pulse, and integrated into the phase.
 func (r *refSig) native(u txUnit, d float64) []byte {
 	n := int(float64(len(r.dev)) * float64(u.rate) / dacRate)
 	s := r.shift(d, u.rate)
@@ -151,8 +129,6 @@ func (r *refSig) native(u txUnit, d float64) []byte {
 	return b
 }
 
-// audio returns the reference as discriminator samples at hz, 15000 units
-// for the 1944 Hz of symbol +3, moved to the time d.
 func (r *refSig) audio(hz int, d float64) []int16 {
 	c := make([]complex128, len(r.dev))
 	for i, v := range r.dev {
@@ -169,7 +145,6 @@ func (r *refSig) audio(hz int, d float64) []int16 {
 	return out
 }
 
-// rxUnits returns the units of the receive tests.
 func rxUnits(full bool) []txUnit {
 	if full {
 		units := nominal(true)
@@ -195,8 +170,6 @@ func rxUnits(full bool) []txUnit {
 	}
 }
 
-// refRuns holds the bit errors of the reference modulator by receiver,
-// C/N and shift, for the penalty test.
 type refRuns struct {
 	mu   sync.Mutex
 	errs map[string]*refRun
@@ -207,8 +180,6 @@ type refRun struct {
 	errs int
 }
 
-// get returns the bit errors of the reference r through p at C/N cn,
-// moved by shift samples, over seeds, run once.
 func (rs *refRuns) get(r *refSig, p rxPath, cn float64, shift, seeds int) int {
 	k := fmt.Sprintf("%s/%v/%d", p.name, cn, shift)
 	rs.mu.Lock()
@@ -222,9 +193,6 @@ func (rs *refRuns) get(r *refSig, p rxPath, cn float64, shift, seeds int) int {
 	return e.errs
 }
 
-// berErrs returns the bit errors of the bursts of ts that p detects from
-// the baseband x moved by shift samples, n long, at C/N cn, summed over
-// seeds and over the times of rxTimings.
 func berErrs(ts *testStream, x []complex128, shift, n int, p rxPath, cn float64, seeds int) int {
 	e := 0
 	for s := range seeds {
@@ -235,9 +203,6 @@ func berErrs(ts *testStream, x []complex128, shift, n int, p rxPath, cn float64,
 	return e
 }
 
-// penaltyDB returns the most penalty of u at the receivers, in dB of C/N
-// against the reference modulator: twice the spread of the bit errors of
-// the receivers over the seeds and times of the test.
 func (u txUnit) penaltyDB() float64 {
 	if u.mcu || u.tier == Tier0 {
 		return 1.5
@@ -245,9 +210,6 @@ func (u txUnit) penaltyDB() float64 {
 	return 1
 }
 
-// keyedLike returns the I/Q b, signed 8-bit, keyed as the I/Q raw of
-// amplitude a: each sample scaled by the amplitude of raw, so that a
-// reference has the power ramps of the modulator.
 func keyedLike(b []byte, raw []int16, a float64) []byte {
 	out := make([]byte, len(b))
 	for i := 0; i+1 < len(b) && i+1 < len(raw); i += 2 {
@@ -258,39 +220,17 @@ func keyedLike(b []byte, raw []int16, a float64) []byte {
 	return out
 }
 
-// rxTimings is the number of times of the stream, timingStep samples
-// apart at rxRate, at which the receive tests detect it. The receivers
-// lose a stream at some times and not at the next sample, for the
-// reference modulator too, so a test at one time tests the receiver more
-// than the modulator.
 const (
 	rxTimings  = 5
 	timingStep = 17
 )
 
-// timing returns the shift of the time k of rxTimings, in samples at
-// rate.
 func timing(k, rate int) int {
 	return (k - rxTimings/2) * timingStep * rate / rxRate
 }
 
-// leadSlots is the number of slots at the start of a stream in which the
-// rf receivers lose bits while they lock, at some times of the stream and
-// not at others, for the reference modulator too (RF9 of the reproduction
-// of the receiver bugs).
 const leadSlots = 3
 
-// checkDetect fails unless a receiver detects every burst of the stream
-// but the first two bit for bit at a majority of rxTimings times, or at as
-// many of them as from the reference modulator less one, for a receiver
-// that loses the reference at some of them. score returns the
-// detection of the modulator, or with ref set of the reference, at the
-// time k. When the modulator falls short only in the first leadSlots
-// slots at every time, or the receiver loses bits of the reference after
-// those slots at some time, at a C/N where it should lose none, or it
-// reports bursts outside the stream at every time that the modulator
-// falls short, checkDetect does not fail but returns a note that the case
-// depends on that bug of the receiver, for skipRF.
 func checkDetect(t *testing.T, name string, score func(k int, ref bool) rawScore) string {
 	t.Helper()
 	lead, refBad, stray := true, false, true
@@ -331,10 +271,6 @@ func checkDetect(t *testing.T, name string, score func(k int, ref bool) rawScore
 	return ""
 }
 
-// skipRF marks t skipped when the notes of checkDetect say that it
-// depends on a bug of the rf receivers, RF9, RF10 or RF11 of the reproduction
-// of the receiver bugs, after its other checks ran, so that the case shows
-// as skipped with the reason and not as passed.
 func skipRF(t *testing.T, notes []string) {
 	t.Helper()
 	notes = slices.DeleteFunc(notes, func(s string) bool { return s == "" })
@@ -343,8 +279,6 @@ func skipRF(t *testing.T, notes []string) {
 	}
 }
 
-// moved returns b, interleaved I/Q, moved later by k samples, or earlier
-// for k below 0.
 func moved(b []byte, k int) []byte {
 	if k >= 0 {
 		return append(make([]byte, 2*k, 2*k+len(b)), b...)
@@ -352,7 +286,6 @@ func moved(b []byte, k int) []byte {
 	return b[-2*k:]
 }
 
-// movedAudio is moved for audio samples.
 func movedAudio(a []int16, k int) []int16 {
 	if k >= 0 {
 		return append(make([]int16, k, k+len(a)), a...)
@@ -360,16 +293,6 @@ func movedAudio(a []int16, k int) []int16 {
 	return a[-k:]
 }
 
-// TestTxMatrixReceive runs each modulator through the rf receivers: as
-// 8-bit I/Q at its rate into an rf.Receiver of Tier1 for an I/Q
-// modulator, a BS outbound stream after 250 ms of carrier, which that
-// receiver takes to settle, and MS bursts keyed in their slots; as
-// discriminator samples into an rf.DiscReceiver of Tier0 and Tier1 for an
-// audio modulator at a rate that it takes; and as baseband at a C/N of 30
-// dB into every receiver of rxPaths. Each detects the stream as
-// checkDetect says. At the C/N of the penalty test of each receiver, the
-// bit errors stay within those of the reference modulator, at the time of
-// the modulator, at a C/N lower by penaltyDB.
 func TestTxMatrixReceive(t *testing.T) {
 	t.Parallel()
 	full := txFull()

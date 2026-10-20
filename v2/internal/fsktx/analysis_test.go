@@ -11,16 +11,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// The analysis rates: dacRate is the rate of the model of a DAC and the
-// FM modulator of a radio, and rxRate that of the receivers.
 const (
 	dacRate = 96000
 	rxRate  = 48000
 )
 
-// refDeviation returns the deviation in Hz of the symbols at dacRate, from
-// the reference modulator: float64 taps of span 24 symbols on each side.
-// The symbol k is at time (k+24)/SymbolRate.
 func refDeviation(syms []int8) []float64 {
 	const rate = dacRate
 	k, err := newPoly(pulse{span: 24}, rate, false)
@@ -36,8 +31,6 @@ func refDeviation(syms []int8) []float64 {
 	return out
 }
 
-// fm returns the unit carrier frequency modulated by freq, in Hz at
-// dacRate.
 func fm(freq []float64) []complex128 {
 	const rate = dacRate
 	x := make([]complex128, len(freq))
@@ -54,28 +47,15 @@ func fm(freq []float64) []complex128 {
 	return x
 }
 
-// dacLowpassHz is the corner of the two-pole Butterworth low pass of the
-// DAC model: the reconstruction filter of the DAC and the modulator input
-// of the radio.
 const dacLowpassHz = 8000
 
-// radio is the model of the analog path from a DAC to the FM modulator of
-// a radio: the zero-order hold of the DAC, a two-pole Butterworth low
-// pass, and optionally an AC coupling high pass and a pre-emphasis.
 type radio struct {
-	// ideal reconstructs the samples of the DAC by a band-limited
-	// interpolation in place of the hold and the low pass.
-	ideal bool
-	// acHz is the corner of a one-pole high pass, 0 for none.
-	acHz float64
-	// preHz is the zero of a 6 dB per octave pre-emphasis, 0 for none; it
-	// rises up to preTopHz.
+	ideal           bool
+	acHz            float64
 	preHz, preTopHz float64
-	// gain multiplies the deviation; 0 means 1.
-	gain float64
+	gain            float64
 }
 
-// biquad is a second-order IIR section in direct form I.
 type biquad struct {
 	b0, b1, b2, a1, a2 float64
 	x1, x2, y1, y2     float64
@@ -87,15 +67,12 @@ func (q *biquad) step(x float64) float64 {
 	return y
 }
 
-// butter2 returns the bilinear two-pole Butterworth low pass at fc.
 func butter2(fc, rate float64) biquad {
 	k := math.Tan(math.Pi * fc / rate)
 	n := 1 / (1 + math.Sqrt2*k + k*k)
 	return biquad{b0: k * k * n, b1: 2 * k * k * n, b2: k * k * n, a1: 2 * (k*k - 1) * n, a2: (1 - math.Sqrt2*k + k*k) * n}
 }
 
-// shelf returns the bilinear section (1+s/wz)/(1+s/wp), or the high pass
-// s/(s+wp) when zHz is 0.
 func shelf(zHz, pHz, rate float64) biquad {
 	z := math.Tan(math.Pi * zHz / rate)
 	p := math.Tan(math.Pi * pHz / rate)
@@ -108,9 +85,6 @@ func shelf(zHz, pHz, rate float64) biquad {
 	return biquad{b0: b0 / a0, b1: b1 / a0, a1: a1 / a0}
 }
 
-// dacFM returns the FM signal at dacRate of the audio a at hz through the
-// radio model r, with 15000 units for the 1944 Hz of symbol +3. A rate
-// that does not divide dacRate gets the ideal DAC.
 func dacFM(a []int16, hz int, r radio) []complex128 {
 	hzPerUnit := 3 * DeviationHz / tableUnits
 	if r.gain != 0 {
@@ -154,7 +128,6 @@ func dacFM(a []int16, hz int, r radio) []complex128 {
 	return fm(f)
 }
 
-// fromIQ returns the interleaved I/Q b as complex samples.
 func fromIQ(b []int16) []complex128 {
 	x := make([]complex128, len(b)/2)
 	for i := range x {
@@ -163,13 +136,10 @@ func fromIQ(b []int16) []complex128 {
 	return x
 }
 
-// resample returns x at rateIn resampled to rateOut by a Kaiser windowed
-// sinc, flat to 10 kHz and 100 dB down from 38 kHz.
 func resample(x []complex128, rateIn, rateOut int) []complex128 {
 	return resampleBand(x, rateIn, rateOut, 10000, 38000)
 }
 
-// resampleBand is resample flat to pass Hz and 100 dB down from stop Hz.
 func resampleBand(x []complex128, rateIn, rateOut int, pass, stop float64) []complex128 {
 	g := gcd(rateIn, rateOut)
 	l, m := rateOut/g, rateIn/g
@@ -219,7 +189,6 @@ func resampleBand(x []complex128, rateIn, rateOut int, pass, stop float64) []com
 	return out
 }
 
-// fft replaces x, a power of 2 long, with its discrete Fourier transform.
 func fft(x []complex128) {
 	n := len(x)
 	b := bits.TrailingZeros(uint(n))
@@ -242,18 +211,12 @@ func fft(x []complex128) {
 	}
 }
 
-// spectrum is a power spectrum of a signal: avg and peak hold the mean and
-// the most of the power in each bin over the frames, as a share of the
-// mean power of the signal, with bin 0 at 0 Hz and the negative
-// frequencies in the second half.
 type spectrum struct {
 	avg, peak []float64
 	binHz     float64
 	rate      float64
 }
 
-// newSpectrum returns the Welch spectrum of x at rate with frames of about
-// 50 Hz bins, a 4-term Blackman-Harris window and half overlap.
 func newSpectrum(x []complex128, rate float64) spectrum {
 	n := 1
 	for float64(n) < rate/50 {
@@ -292,7 +255,6 @@ func newSpectrum(x []complex128, rate float64) spectrum {
 	return s
 }
 
-// freq returns the frequency of bin i.
 func (s spectrum) freq(i int) float64 {
 	if i >= len(s.avg)/2 {
 		i -= len(s.avg)
@@ -300,7 +262,6 @@ func (s spectrum) freq(i int) float64 {
 	return float64(i) * s.binHz
 }
 
-// band returns the share of the power in the bins from lo to hi Hz.
 func (s spectrum) band(lo, hi float64) float64 {
 	var p float64
 	for i, v := range s.avg {
@@ -311,11 +272,7 @@ func (s spectrum) band(lo, hi float64) float64 {
 	return p
 }
 
-// acp returns the adjacent channel power at 12.5 kHz spacing, the higher
-// of the two sides, in dBc: the power within 4.25 kHz of the centre of the
-// adjacent channel (ETSI EN 300 113 clause 7.4 and table C.1). offset 25
-// kHz gives the alternate channel. It returns NaN when the rate does not
-// cover the channel.
+// ETSI EN 300 113 clause 7.4 and table C.1
 func (s spectrum) acp(offset float64) float64 {
 	if offset+4250 > s.rate/2 {
 		return math.NaN()
@@ -325,9 +282,6 @@ func (s spectrum) acp(offset float64) float64 {
 	return 10 * math.Log10(max(up, down))
 }
 
-// maskAttn returns the attenuation that FCC 47 CFR 90.210(d), Emission
-// Mask D for 12.5 kHz channels, requires at fd Hz from the centre, for a
-// 10 W transmitter beyond 12.5 kHz.
 func maskAttn(fd float64) float64 {
 	fd = math.Abs(fd) / 1000
 	switch {
@@ -340,10 +294,6 @@ func maskAttn(fd float64) float64 {
 	}
 }
 
-// maskMargin returns the least margin in dB of the peak-hold power in 100
-// Hz to Mask D, from 5.625 kHz out to 62.5 kHz or the edge of the rate. It
-// sums the bins within 100 Hz, which holds the power of noise but up to
-// 1.3 dB less than all of a pure tone, whose window lobe is wider.
 func (s spectrum) maskMargin() float64 {
 	per := int(math.Round(100 / s.binHz))
 	n := len(s.peak)
@@ -363,7 +313,6 @@ func (s spectrum) maskMargin() float64 {
 	return margin
 }
 
-// demod returns the instantaneous frequency of x at rate, in Hz.
 func demod(x []complex128, rate float64) []float64 {
 	f := make([]float64, len(x))
 	for i := 1; i < len(x); i++ {
@@ -372,25 +321,15 @@ func demod(x []complex128, rate float64) []float64 {
 	return f
 }
 
-// fskResult is the modulation fidelity of a signal.
 type fskResult struct {
-	// Delay is the time of symbol 0 in samples at rxRate.
-	Delay float64
-	// FSKError is the RMS error of the deviation at the symbol centres
-	// after the receive filter, in percent of the 1944 Hz of symbol +3,
-	// after the best fit of deviation and carrier offset.
+	Delay    float64
 	FSKError float64
-	// DevError is the fitted deviation less the nominal, in percent.
 	DevError float64
-	// OffsetHz is the fitted carrier offset.
 	OffsetHz float64
 }
 
-// rxSpan is the half-length of the receive RRC filter of fsk, in symbols.
 const rxSpan = 16
 
-// fskAt returns the receive-filtered deviation at symbols lo to hi of f at
-// rxRate, with symbol 0 at sample delay.
 func fskAt(f []float64, delay float64, lo, hi int) []float64 {
 	sps := rxRate / SymbolRate
 	d0 := math.Floor(delay)
@@ -417,7 +356,6 @@ func fskAt(f []float64, delay float64, lo, hi int) []float64 {
 	return out
 }
 
-// fit returns the fidelity of z against the symbols syms.
 func fit(z []float64, syms []int8) (fe, gain, off float64) {
 	var sx, sy, sxx, sxy float64
 	n := float64(len(z))
@@ -438,9 +376,6 @@ func fit(z []float64, syms []int8) (fe, gain, off float64) {
 	return 100 * math.Sqrt(e/n) / (3 * DeviationHz * gain), gain, off
 }
 
-// fsk measures the fidelity of x at rxRate against the symbols syms: it
-// finds the delay of the symbols, then fits the receive-filtered deviation
-// at the symbol centres to the symbols.
 func fsk(x []complex128, syms []int8) fskResult {
 	f := demod(x, rxRate)
 	sps := rxRate / SymbolRate
@@ -482,13 +417,8 @@ func fsk(x []complex128, syms []int8) fskResult {
 	return fskResult{Delay: delay, FSKError: fe, DevError: 100 * (gain - 1), OffsetHz: off}
 }
 
-// rxPad is the noise before and after a signal of the penalty runs, in
-// seconds.
 const rxPad = 0.3
 
-// noisy returns x at rxRate scaled to unit power, shifted by shift
-// samples, with rxPad seconds before and after and white Gaussian noise
-// at C/N cn dB in 12.5 kHz, of length n.
 func noisy(x []complex128, shift, n int, cn float64, seed uint64) []complex64 {
 	pad := int(rxPad * rxRate)
 	var p float64
@@ -510,14 +440,8 @@ func noisy(x []complex128, shift, n int, cn float64, seed uint64) []complex64 {
 	return out
 }
 
-// discHz is the rate of the discriminator audio of discAudio.
 const discHz = 9600
 
-// discAudio returns the output of an FM receiver for the baseband x at
-// rxRate, sampled at discHz, as the rf receiver sweep makes it: a 31-tap
-// Hamming low pass at 6.25 kHz as the IF filter, a limiter and
-// discriminator, an anti-alias filter at 0.42 discHz and a converter of
-// gain 0.6 units per Hz.
 func discAudio(x []complex64) []int16 {
 	const n = 31
 	h := make([]float64, n)
@@ -568,8 +492,6 @@ func discAudio(x []complex64) []int16 {
 	return out
 }
 
-// receiveDisc runs x at rxRate through discAudio and an rf.DiscReceiver of
-// Tier0.
 func receiveDisc(x []complex64) []rf.Burst {
 	var out []rf.Burst
 	r, err := rf.NewDisc(rf.DiscConfig{Hz: discHz, Tier: rf.Tier0, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
@@ -584,11 +506,7 @@ func receiveDisc(x []complex64) []rf.Burst {
 	return out
 }
 
-// etsiDeviation returns the peak deviation of the FM signal x at rxRate,
-// the larger of the positive and the negative peak, less 2749 Hz, in
-// percent: the deviation test of ETSI TS 102 361-1 clause 10.2.2.3 with a
-// two-pole low pass at 4 kHz, which passes 1.2 kHz within 0.4 percent,
-// and whose limits are 10 percent.
+// ETSI TS 102 361-1 clause 10.2.2.3
 func etsiDeviation(x []complex128) float64 {
 	f := demod(x, rxRate)
 	lp := butter2(4000, rxRate)
@@ -602,10 +520,6 @@ func etsiDeviation(x []complex128) float64 {
 	return 100 * (max(hi, -lo)/2749 - 1)
 }
 
-// probit returns the C/N at which the recoveries ok of n at the C/N points
-// cns reach 0.9, from a fit of the probit of the recovery to a line, by
-// weighted least squares over the points between 50 and 98.5 percent. With
-// fewer than two such points it interpolates.
 func probit(cns []float64, ok, n []int) float64 {
 	var sw, sx, sy, sxx, sxy float64
 	pts := 0
@@ -637,7 +551,6 @@ func probit(cns []float64, ok, n []int) float64 {
 	return (math.Sqrt2*math.Erfinv(0.8) - a) / b
 }
 
-// receive runs x at rxRate through an rf.Receiver of tier t.
 func receive(x []complex64, t rf.Tier) []rf.Burst {
 	var out []rf.Burst
 	r, err := rf.New(rf.Config{Rate: rxRate, Tier: t, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
@@ -651,9 +564,6 @@ func receive(x []complex64, t rf.Tier) []rf.Burst {
 	return out
 }
 
-// crossing returns the C/N at which the share rec, measured at the
-// ascending C/N points cns, first reaches 0.9, by linear interpolation,
-// and false when it does not.
 func crossing(cns, rec []float64) (float64, bool) {
 	for i := range rec {
 		if rec[i] >= 0.9 {

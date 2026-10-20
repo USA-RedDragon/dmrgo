@@ -11,8 +11,6 @@ import (
 	"testing"
 )
 
-// filterStage runs the samples of a shaper at hz through a biquad, to
-// make up for the analog path of a radio.
 type filterStage struct {
 	in shaper
 	q  biquad
@@ -27,9 +25,7 @@ func (f *filterStage) appendSymbol(dst []int16, s int8) []int16 {
 	return dst
 }
 
-// rampResult is the transient adjacent channel power of one power ramp,
-// of an unmodulated carrier as ETSI EN 300 113 clause 7.9.3.1 measures
-// it, and of a modulated burst.
+// ETSI EN 300 113 clause 7.9.3.1
 type rampResult struct {
 	Shape     string  `json:"shape"`
 	Ms        float64 `json:"ms"`
@@ -37,8 +33,6 @@ type rampResult struct {
 	Modulated float64 `json:"modulated_dbc"`
 }
 
-// radioResult is the fidelity and the penalties of a modulator through
-// the analog path of a radio, with and without making up for it.
 type radioResult struct {
 	Name      string    `json:"name"`
 	FSK       fskResult `json:"fsk"`
@@ -49,9 +43,6 @@ type radioResult struct {
 	DiscData  float64   `json:"disc_data_penalty_db"`
 }
 
-// TestTxStudy measures the power ramps of a TDMA burst and the analog
-// paths of radios when DMRGO_TXSTUDY names an output directory, and
-// writes study.json there.
 func TestTxStudy(t *testing.T) {
 	t.Parallel()
 	dir := os.Getenv("DMRGO_TXSTUDY")
@@ -59,8 +50,6 @@ func TestTxStudy(t *testing.T) {
 		t.Skip("set DMRGO_TXSTUDY to an output directory")
 	}
 	ts := newTestStream(t, 6, 40)
-	// Ramps: one MS burst of 132 symbols between 20 symbols of no
-	// modulation on each side, at dacRate.
 	syms := make([]int8, 0, 400)
 	syms = append(syms, make([]int8, 30)...)
 	syms = append(syms, ts.syms[ts.lead+12+144:ts.lead+12+144+132]...)
@@ -91,7 +80,6 @@ func TestTxStudy(t *testing.T) {
 			ramps = append(ramps, r)
 		}
 	}
-	// Analog paths.
 	n := int((2*rxPad + float64(len(ts.syms))/SymbolRate) * rxRate)
 	run := newSweepRunner(ts, n)
 	ref48 := resample(fm(refDeviation(ts.syms)), dacRate, rxRate)
@@ -157,7 +145,6 @@ func TestTxStudy(t *testing.T) {
 	}
 }
 
-// hfUnity scales the first-order section q to gain 1 at the Nyquist rate.
 func hfUnity(q biquad) biquad {
 	g := (q.b0 - q.b1) / (1 - q.a1)
 	q.b0 /= g
@@ -165,14 +152,12 @@ func hfUnity(q biquad) biquad {
 	return q
 }
 
-// half scales the first-order section q by one half, for headroom.
 func half(q biquad) biquad {
 	q.b0 /= 2
 	q.b1 /= 2
 	return q
 }
 
-// ftoa formats v for a name.
 func ftoa(v float64) string {
 	return strconv.FormatFloat(v, 'g', -1, 64)
 }

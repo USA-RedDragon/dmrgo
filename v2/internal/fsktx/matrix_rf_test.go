@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-// fidelityLimit returns the most FSK error of u, in percent: about 1.5
-// times what the matrix measures for its modulator, which is the most at
-// the 24 kHz shaper of four symbols on each side of the Tier0 I/Q.
 func (u txUnit) fidelityLimit() float64 {
 	tier := u.tier
 	if u.mcu {
@@ -21,10 +18,6 @@ func (u txUnit) fidelityLimit() float64 {
 	return map[Tier]float64{Tier0: 2.2, Tier1: 0.7, Tier2: 0.45}[tier]
 }
 
-// fidelityUnits returns the units of the fidelity tests: every modulator
-// and rate at the nominal setup, the audio ones at the levels from 100 and
-// at the extreme offsets, and the I/Q ones at the extreme carrier
-// offsets.
 func fidelityUnits(full bool) []txUnit {
 	units := nominal(full)
 	for _, u := range levelUnits(full) {
@@ -41,10 +34,6 @@ func fidelityUnits(full bool) []txUnit {
 	return units
 }
 
-// eyeError returns the largest error of the receive-filtered deviation of
-// x at the centre of any symbol, after the fit f, as a share of the 1296
-// Hz between two levels: an error of 0.5 would decide a symbol wrong
-// without noise.
 func eyeError(x []complex128, syms []int8, f fskResult) float64 {
 	z := fskAt(demod(x, rxRate), f.Delay, 0, len(syms))
 	gain := 1 + f.DevError/100
@@ -56,13 +45,7 @@ func eyeError(x []complex128, syms []int8, f fskResult) float64 {
 	return worst
 }
 
-// TestTxMatrixFidelity checks for every modulator the deviation test of
-// ETSI TS 102 361-1 clause 10.2.2.3, 2749 Hz within 10 percent on +3 +3
-// -3 -3 repeated, and the FSK error, the deviation and the carrier
-// frequency on a BS outbound stream (clause 10.2.2), with an ideal DAC for
-// the audio modulators, and the eye: the error of the worst symbol stays
-// within 0.15 of the gap between two levels, so that an ideal
-// receiver decides every symbol right with a margin.
+// ETSI TS 102 361-1 clause 10.2.2.3; clause 10.2.2
 func TestTxMatrixFidelity(t *testing.T) {
 	t.Parallel()
 	full := txFull()
@@ -88,12 +71,6 @@ func TestTxMatrixFidelity(t *testing.T) {
 	}
 }
 
-// TestTxMatrixSpectrum checks the adjacent and alternate channel power and
-// the margin to Emission Mask D of every modulator, as TestSpectrum does,
-// about the carrier: the audio ones through the model of a DAC and a
-// radio, an ideal DAC below 24 kHz, and the I/Q ones at their rate. The
-// 8-bit I/Q below 1 MHz is out of the test: its noise spreads over too
-// narrow a rate to meet the limit, as AppendS8 says.
 func TestTxMatrixSpectrum(t *testing.T) {
 	t.Parallel()
 	full := txFull()

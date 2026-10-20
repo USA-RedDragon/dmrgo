@@ -4,7 +4,6 @@ package fsktx
 
 import "math"
 
-// sat16f is sat16 for float32.
 func sat16f(x float32) int16 {
 	switch {
 	case x >= math.MaxInt16:
@@ -18,7 +17,6 @@ func sat16f(x float32) int16 {
 	}
 }
 
-// sat16i saturates x to int16.
 func sat16i(x int32) int16 {
 	switch {
 	case x > math.MaxInt16:
@@ -30,15 +28,10 @@ func sat16i(x int32) int16 {
 	}
 }
 
-// phaser steps the output samples of a symbol: the output rate is l/m
-// samples per symbol, and acc counts the time of the next sample in units
-// of 1/l symbol.
 type phaser struct {
 	l, m, acc int
 }
 
-// polyF64 shapes symbols by multiply and accumulate in float64 over the
-// polyphase taps of a pulse, into int16 at gain units per symbol unit.
 type polyF64 struct {
 	phaser
 	taps []float64
@@ -73,7 +66,6 @@ func (k *polyF64) appendSymbol(dst []int16, s int8) []int16 {
 	return dst
 }
 
-// polyF32 is polyF64 in float32.
 type polyF32 struct {
 	phaser
 	taps []float32
@@ -112,8 +104,6 @@ func (k *polyF32) appendSymbol(dst []int16, s int8) []int16 {
 	return dst
 }
 
-// polyQ15 is polyF64 in fixed point: taps that hold gain units per symbol
-// unit, times 2^shift, and an int32 accumulator.
 type polyQ15 struct {
 	phaser
 	taps  []int32
@@ -138,7 +128,6 @@ func (k *polyQ15) appendSymbol(dst []int16, s int8) []int16 {
 	return k.emit(dst)
 }
 
-// push puts s in the ring.
 func (k *polyQ15) push(s int8) {
 	k.pos--
 	if k.pos < 0 {
@@ -148,7 +137,6 @@ func (k *polyQ15) push(s int8) {
 	k.ring[k.pos+k.n] = int32(s)
 }
 
-// emit appends the samples of the newest symbol period.
 func (k *polyQ15) emit(dst []int16) []int16 {
 	w := k.ring[k.pos : k.pos+k.n]
 	half := int32(1) << k.shift >> 1
@@ -164,17 +152,8 @@ func (k *polyQ15) emit(dst []int16) []int16 {
 	return dst
 }
 
-// symCode returns the 2-bit code of symbol s: -3 0, -1 1, +1 2, +3 3.
 func symCode(s int8) uint64 { return uint64(s+3) >> 1 }
 
-// lutQ15 shapes symbols by table lookup: the taps of each phase fall in
-// groups of g symbols, and the table holds, for each phase, group and the
-// 4^g values of its symbols, their summed contribution in output units.
-// Each sample then costs one lookup and add per group. With half set the
-// table holds only the values whose oldest symbol of the group is
-// positive and negates the others, which halves it. A symbol 0 has no
-// code, so while the ring holds one the kernel falls back to the
-// multiply and accumulate of slow.
 type lutQ15 struct {
 	phaser
 	tab    []int16

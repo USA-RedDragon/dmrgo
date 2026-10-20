@@ -9,27 +9,13 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// radioPath is an analog path from a DAC to the FM modulator of a radio,
-// and the filter at the output rate that makes up for it, if any. The
-// filters of comp are the ones of TestTxStudy; a modulator that makes up
-// for the path itself takes the place of comp.
 type radioPath struct {
-	name string
-	r    radio
-	comp func(hz int) biquad
-	// limit is the most FSK error of the path, in percent, over the limit
-	// of the modulator, or with abs set the most of any modulator. A path
-	// with neither is out of the tests of FSK error and detection.
+	name       string
+	r          radio
+	comp       func(hz int) biquad
 	limit, abs float64
 }
 
-// radioPaths returns the analog paths of the matrix: the hold and low
-// pass of a DAC, an ideal DAC, AC coupling at 2, 10 and 30 Hz and a
-// pre-emphasis from 300 Hz, each without and with a filter that makes up
-// for it. The hold of a DAC at 24 kHz leaves about 0.6 percent of FSK
-// error, the filter of a pre-emphasis 1.4 percent there, and the filter
-// of AC coupling about 2.2 percent, as AC coupling at 2 Hz does without
-// it.
 func radioPaths() []radioPath {
 	paths := []radioPath{
 		{name: "hold", r: radio{}, abs: 0.8},
@@ -45,8 +31,6 @@ func radioPaths() []radioPath {
 		radioPath{name: "pre300-comp", r: radio{preHz: 300, preTopHz: 3000}, comp: func(hz int) biquad { return shelf(3000, 300, float64(hz)) }, abs: 1.6})
 }
 
-// through returns the output raw of the audio unit u through the filter
-// of p at its rate, and the number of samples that the filter saturates.
 func (p radioPath) through(u txUnit, raw []int16) ([]int16, int) {
 	if p.comp == nil {
 		return raw, 0
@@ -64,12 +48,6 @@ func (p radioPath) through(u txUnit, raw []int16) ([]int16, int) {
 	return out, sat
 }
 
-// TestTxMatrixRadio runs each audio modulator through each analog path,
-// and checks that a filter that makes up for the path does not saturate,
-// that the FSK error stays within its bound where the path is in the
-// test, and that an rf.Receiver of Tier1 detects every burst but the
-// first two bit for bit at a high C/N. A path without its filter has no
-// bound on its FSK error: the matrix logs it.
 func TestTxMatrixRadio(t *testing.T) {
 	t.Parallel()
 	full := txFull()

@@ -5,12 +5,8 @@ import (
 	"math"
 )
 
-// tableUnits is the output of an AudioTable for a run of symbol +3, the
-// 1944 Hz of its deviation.
 const tableUnits = 15000
 
-// maxSamples is the most samples of a symbol period of an AudioTable, and
-// maxTaps the most symbols that its pulse spans.
 const (
 	maxSamples = 10
 	maxTaps    = 16
@@ -48,15 +44,10 @@ func Table48k() AudioTable {
 	return AudioTable{shape: shape48k, hz: 48000, span: len(taps48k[0]) / 2, peak: taps48kPeak}
 }
 
-// tableIQ returns the table of MCUIQ, at 24 kHz with a pulse of 4 symbols
-// on each side.
 func tableIQ() AudioTable {
 	return AudioTable{shape: shapeIQ, hz: 24000, span: len(tapsIQ[0]) / 2, peak: tapsIQPeak}
 }
 
-// shape24k writes the deviation of the samples of a symbol period at 24
-// kHz to dst, in output units, for the symbols r, newest first, and
-// returns the number of samples.
 func shape24k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 	for p := range taps24k {
 		t := &taps24k[p]
@@ -69,7 +60,6 @@ func shape24k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 	return len(taps24k)
 }
 
-// shape48k is shape24k at 48 kHz.
 func shape48k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 	for p := range taps48k {
 		t := &taps48k[p]
@@ -82,7 +72,6 @@ func shape48k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 	return len(taps48k)
 }
 
-// shapeIQ is shape24k for the table of MCUIQ.
 func shapeIQ(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 	for p := range tapsIQ {
 		t := &tapsIQ[p]
@@ -95,8 +84,6 @@ func shapeIQ(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 	return len(tapsIQ)
 }
 
-// The errors of the Init methods. Each is a static value, so that Init
-// does not allocate.
 var (
 	errTable   = errors.New("fsktx: no table")
 	errLevel   = errors.New("fsktx: level out of range")
@@ -106,8 +93,6 @@ var (
 	errRamp    = errors.New("fsktx: ramp out of range")
 )
 
-// shaperMAC is the shaping state of the Tier0 modulators: the last
-// maxTaps symbols, twice in a row so that a window of them is contiguous.
 type shaperMAC struct {
 	t    AudioTable
 	ring [2 * maxTaps]int8
@@ -115,15 +100,10 @@ type shaperMAC struct {
 	buf  [maxSamples]int32
 }
 
-// reset fills the ring with symbols 0.
 func (k *shaperMAC) reset(t AudioTable) {
 	*k = shaperMAC{t: t}
 }
 
-// symbol puts the symbol s in the ring and writes the deviation of the
-// samples of the symbol period that it completes to buf, in output units.
-// It returns the number of samples, 0 before reset. A symbol other than
-// -3, -1, +1 and +3 counts as 0.
 func (k *shaperMAC) symbol(s int8) int {
 	if k.t.shape == nil {
 		return 0

@@ -8,54 +8,44 @@ import (
 	"unsafe"
 )
 
-// Output kinds of the variants.
 const (
 	kindAudio = "audio"
 	kindIQ    = "iq"
 )
 
-// sweepGain is the int16 units per symbol unit of the shapers of the
-// sweep: 15000 units for the 1944 Hz of symbol +3, which leaves room for
-// the overshoot of the pulse, up to 1.9 times.
 const sweepGain = 5000
 
-// spec is one modulator of the sweep.
 type spec struct {
-	Kind   string  `json:"kind"`
-	Algo   string  `json:"algo"`
-	Span   int     `json:"span"`
-	Win    window  `json:"win"`
-	Beta   float64 `json:"beta,omitempty"`
-	Hz     int     `json:"hz"`
-	G      uint    `json:"g,omitempty"`
-	Half   bool    `json:"half,omitempty"`
-	Shift  uint    `json:"shift,omitempty"`
-	Up     int     `json:"up,omitempty"`
-	UpK    int     `json:"upk,omitempty"`
-	UpTaps int     `json:"uptaps,omitempty"`
-	Order  int     `json:"order,omitempty"`
-	Bits12 bool    `json:"bits12,omitempty"`
-	Comp   bool    `json:"comp,omitempty"`
-	// I/Q settings.
-	Rate    int  `json:"rate,omitempty"`
-	IQUp    int  `json:"iqup,omitempty"`
-	NCO     int  `json:"nco,omitempty"`
-	Bits    uint `json:"bits,omitempty"`
-	Iters   int  `json:"iters,omitempty"`
-	Out8    bool `json:"out8,omitempty"`
-	RefIQ   bool `json:"refiq,omitempty"`
-	OutRate int  `json:"outrate"`
-	// Tier is the library tier of Algo "tier".
-	Tier Tier `json:"tier,omitempty"`
+	Kind    string  `json:"kind"`
+	Algo    string  `json:"algo"`
+	Span    int     `json:"span"`
+	Win     window  `json:"win"`
+	Beta    float64 `json:"beta,omitempty"`
+	Hz      int     `json:"hz"`
+	G       uint    `json:"g,omitempty"`
+	Half    bool    `json:"half,omitempty"`
+	Shift   uint    `json:"shift,omitempty"`
+	Up      int     `json:"up,omitempty"`
+	UpK     int     `json:"upk,omitempty"`
+	UpTaps  int     `json:"uptaps,omitempty"`
+	Order   int     `json:"order,omitempty"`
+	Bits12  bool    `json:"bits12,omitempty"`
+	Comp    bool    `json:"comp,omitempty"`
+	Rate    int     `json:"rate,omitempty"`
+	IQUp    int     `json:"iqup,omitempty"`
+	NCO     int     `json:"nco,omitempty"`
+	Bits    uint    `json:"bits,omitempty"`
+	Iters   int     `json:"iters,omitempty"`
+	Out8    bool    `json:"out8,omitempty"`
+	RefIQ   bool    `json:"refiq,omitempty"`
+	OutRate int     `json:"outrate"`
+	Tier    Tier    `json:"tier,omitempty"`
 }
 
-// tierAudio runs an Audio of the library as a shaper.
 type tierAudio struct{ a *Audio }
 
 func (t tierAudio) appendSymbol(dst []int16, s int8) []int16 { return t.a.AppendSymbol(dst, s) }
 
-// tierIQ runs an IQ of the library as a shaper of interleaved I/Q, in
-// 8-bit values when s8 is set.
 type tierIQ struct {
 	q  *IQ
 	s8 bool
@@ -79,9 +69,6 @@ var upNames = map[int]string{stageHold: "hold", stageLinear: "linear", stageFIR:
 
 var ncoNames = map[int]string{ncoTable: "table", ncoTableInterp: "tablei", ncoCORDIC: "cordic", ncoF64: "f64", ncoRotF32: "rot32"}
 
-// rfKey returns the name of s less what does not change its samples
-// beyond rounding: the arithmetic of the shaper and the groups and halving
-// of a lookup table.
 func (s spec) rfKey() string {
 	c := s
 	if c.Algo != "lut8" && c.Algo != "tier" {
@@ -91,7 +78,6 @@ func (s spec) rfKey() string {
 	return c.name()
 }
 
-// name returns a short name of the modulator.
 func (s spec) name() string {
 	var b strings.Builder
 	if s.Algo == "tier" {
@@ -160,7 +146,6 @@ func (s spec) name() string {
 	return b.String()
 }
 
-// pulse returns the pulse of s.
 func (s spec) pulse() pulse {
 	p := pulse{span: s.Span, win: s.Win, beta: s.Beta}
 	if s.Comp {
@@ -169,7 +154,6 @@ func (s spec) pulse() pulse {
 	return p
 }
 
-// shaper returns a new shaper of s, at the rate Hz, and its output rate.
 func (s spec) shaper() (shaper, int) {
 	var k shaper
 	switch s.Algo {
@@ -207,7 +191,6 @@ func (s spec) shaper() (shaper, int) {
 	return k, hz
 }
 
-// dac12 rounds the samples of a shaper to 12 bits.
 type dac12 struct{ in shaper }
 
 func (d dac12) appendSymbol(dst []int16, s int8) []int16 {
@@ -219,8 +202,6 @@ func (d dac12) appendSymbol(dst []int16, s int8) []int16 {
 	return dst
 }
 
-// quantizeLUT rounds the table entries of k to multiples of 2^shift, as
-// a table of narrower entries holds them.
 func quantizeLUT(k *lutQ15, shift uint) *lutQ15 {
 	for i, v := range k.tab {
 		k.tab[i] = int16(((int32(v) + 1<<shift>>1) >> shift) << shift)
@@ -228,7 +209,6 @@ func quantizeLUT(k *lutQ15, shift uint) *lutQ15 {
 	return k
 }
 
-// mcuIQ is the I/Q modulator of the microcontroller: a lut8 and an nco.
 type mcuIQ struct {
 	sh  *lut8
 	o   *nco
@@ -245,7 +225,6 @@ func (m *mcuIQ) appendSymbol(dst []int16, s int8) []int16 {
 	return dst
 }
 
-// iq returns a new I/Q modulator of s.
 func (s spec) iq() shaper {
 	amp := 0.9 * 32767
 	if s.Out8 {
@@ -270,9 +249,6 @@ func (s spec) iq() shaper {
 	return newIQPipe(sh, float64(hz), sweepGain, s.Rate, s.IQUp, s.NCO, s.Bits, s.Iters, 0, amp)
 }
 
-// tableBytes returns the read-only bytes of the tables of s, which a
-// microcontroller keeps in flash, and stateBytes the bytes of its mutable
-// state.
 func (s spec) memory() (tables, state int) {
 	if s.Algo == "tier" {
 		return s.tierMemory()
@@ -328,7 +304,6 @@ func (s spec) memory() (tables, state int) {
 	return tables, state
 }
 
-// tierMemory returns the tables and state bytes of a tier of the library.
 func (s spec) tierMemory() (tables, state int) {
 	switch {
 	case s.Kind == kindAudio && s.Tier == Tier0:
@@ -360,7 +335,6 @@ func (s spec) tierMemory() (tables, state int) {
 	return tables, state + int(unsafe.Sizeof(IQ{})) + 8*(l+1)
 }
 
-// sweepSpecs returns the modulators of the sweep.
 func sweepSpecs() []spec {
 	var out []spec
 	add := func(s spec) {
@@ -381,12 +355,10 @@ func sweepSpecs() []spec {
 	return out
 }
 
-// audioSpecs adds the audio modulators of the sweep.
 func audioSpecs(add func(spec)) {
 	audio := func(algo string, span int, w window, beta float64, hz int) spec {
 		return spec{Kind: kindAudio, Algo: algo, Span: span, Win: w, Beta: beta, Hz: hz}
 	}
-	// Pulse length and taper, float64 at 48 kHz.
 	for _, span := range []int{2, 3, 4, 6, 8, 12, 16} {
 		add(audio("poly64", span, winRect, 0, 48000))
 	}
@@ -396,18 +368,15 @@ func audioSpecs(add func(spec)) {
 		add(audio("poly64", span, winKaiser, 4, 48000))
 		add(audio("poly64", span, winKaiser, 8, 48000))
 	}
-	// Output rate.
 	for _, hz := range []int{8000, 9600, 12000, 16000, 19200, 24000} {
 		add(audio("poly32", 8, winRect, 0, hz))
 	}
-	// Arithmetic.
 	for _, hz := range []int{24000, 48000} {
 		add(audio("poly32", 8, winRect, 0, hz))
 		add(audio("polyq15", 8, winRect, 0, hz))
 		add(audio("polyq15", 4, winKaiser, 4, hz))
 		add(audio("poly32", 4, winKaiser, 4, hz))
 	}
-	// Lookup tables.
 	for _, hz := range []int{9600, 24000, 48000} {
 		for _, span := range []int{3, 4, 6, 8} {
 			for _, g := range []uint{1, 2, 4} {
@@ -426,13 +395,11 @@ func audioSpecs(add func(spec)) {
 	}
 	add(spec{Kind: kindAudio, Algo: "lut", Span: 4, Win: winKaiser, Beta: 4, Hz: 24000, G: 4, Bits12: true})
 	add(spec{Kind: kindAudio, Algo: "lut", Span: 4, Win: winKaiser, Beta: 4, Hz: 48000, G: 4, Bits12: true})
-	// Making up for the droop of the hold of the DAC.
 	for _, hz := range []int{9600, 12000, 24000, 48000} {
 		add(spec{Kind: kindAudio, Algo: "polyq15", Span: 4, Win: winKaiser, Beta: 4, Hz: hz, Comp: true})
 		add(spec{Kind: kindAudio, Algo: "polyq15", Span: 4, Win: winKaiser, Beta: 4, Hz: hz})
 		add(spec{Kind: kindAudio, Algo: "lut", Span: 4, Win: winKaiser, Beta: 4, Hz: hz, G: 4, Comp: true})
 	}
-	// Two stages: a shaper at a low rate and an interpolation.
 	for _, st := range []struct{ hz, k int }{{9600, 5}, {24000, 2}, {12000, 2}, {12000, 4}} {
 		for _, up := range []int{stageHold, stageLinear, stageFIR, stageCIC} {
 			s := spec{Kind: kindAudio, Algo: "lut", Span: 4, Win: winKaiser, Beta: 4, Hz: st.hz, G: 4, Up: up, UpK: st.k, Order: 3}
@@ -449,13 +416,10 @@ func audioSpecs(add func(spec)) {
 	}
 }
 
-// iqSpecs adds the I/Q modulators of the sweep, and the tiers of the
-// library of both kinds.
 func iqSpecs(add func(spec)) {
 	audio := func(algo string, span int, w window, beta float64, hz int) spec {
 		return spec{Kind: kindAudio, Algo: algo, Span: span, Win: w, Beta: beta, Hz: hz}
 	}
-	// I/Q: the reference path, then shapers, interpolations and NCOs.
 	iq := func(algo string, span int, hz, rate, up, nco int, bits uint, iters int, out8 bool) spec {
 		s := spec{Kind: kindIQ, Algo: algo, Span: span, Win: winKaiser, Beta: 4, Hz: hz, Rate: rate, IQUp: up, NCO: nco, Bits: bits, Iters: iters, Out8: out8}
 		if algo == "lut" {

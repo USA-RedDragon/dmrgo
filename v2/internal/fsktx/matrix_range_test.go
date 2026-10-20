@@ -8,13 +8,6 @@ import (
 	"testing"
 )
 
-// TestTxMatrixRange runs every symbol pattern through every modulator, at
-// every level and offset of the audio modulators and every carrier offset
-// and ramp of the I/Q ones, and checks the bounds of the output: audio
-// within the bounds of the worst run of symbols, which that run reaches,
-// and at rest on the offset after the pulse; I/Q at full power within its
-// amplitude, at the frequency of the deviation about the carrier, and
-// without a jump of phase between samples or calls.
 func TestTxMatrixRange(t *testing.T) {
 	t.Parallel()
 	full := txFull()
@@ -44,8 +37,6 @@ func TestTxMatrixRange(t *testing.T) {
 	}
 }
 
-// checkAudioRange checks the output raw of the pattern p of the audio
-// unit u.
 func checkAudioRange(t *testing.T, u txUnit, p int, raw []int16) {
 	t.Helper()
 	lo, hi := u.audioBounds()
@@ -77,8 +68,6 @@ func checkAudioRange(t *testing.T, u txUnit, p int, raw []int16) {
 	}
 }
 
-// checkIQRange checks the output raw of the symbols syms of the pattern
-// p of the I/Q unit u, keyed up from the start.
 func checkIQRange(t *testing.T, u txUnit, p int, syms []int8, raw []int16) {
 	t.Helper()
 	a := u.amplitude()
@@ -103,8 +92,6 @@ func checkIQRange(t *testing.T, u txUnit, p int, syms []int8, raw []int16) {
 			break
 		}
 	}
-	// The frequency over each 1/48000 s, against the deviation of the
-	// pulse about the carrier, wherever the power is up.
 	w := max(u.rate/rxRate, 1)
 	peak := u.peakHz()
 	up := func(i int) float64 { return min(cmplx.Abs(x[i]), cmplx.Abs(x[i+w])) / a }
@@ -121,8 +108,6 @@ func checkIQRange(t *testing.T, u txUnit, p int, syms []int8, raw []int16) {
 			break
 		}
 	}
-	// No jump of phase between two samples: the step stays within the
-	// most frequency.
 	w = 1
 	for i := 0; i+1 < len(x); i++ {
 		r := up(i)

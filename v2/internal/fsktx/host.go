@@ -23,20 +23,13 @@ const (
 	Tier2
 )
 
-// The errors of the constructors.
 var (
 	errTier = errors.New("fsktx: unknown tier")
 	errHz   = errors.New("fsktx: sample rate out of range")
 )
 
-// polyMaxPhases is the most phases of a polyphase shaper: the output rate
-// in samples per symbol is l/m in lowest terms with l at most this.
 const polyMaxPhases = 1024
 
-// poly shapes symbols by multiply and accumulate over polyphase taps, in
-// float32 when taps32 is set and in float64 otherwise, into the deviation
-// in Hz of each output sample. peak is the most deviation of any run of
-// symbols, in Hz.
 type poly struct {
 	taps32 []float32
 	taps64 []float64
@@ -49,7 +42,6 @@ type poly struct {
 	peak   float64
 }
 
-// newPoly returns a poly of the pulse pu at hz samples per second.
 func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 	l, m := ratio(hz)
 	if l > polyMaxPhases || hz < 8000 {
@@ -81,7 +73,6 @@ func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 	return k, nil
 }
 
-// push puts the symbol s in the ring.
 func (k *poly) push(s int8) {
 	switch s {
 	case -3, -1, 1, 3:
@@ -101,9 +92,6 @@ func (k *poly) push(s int8) {
 	}
 }
 
-// symbol puts s in the ring and writes the deviation of the samples of the
-// symbol period that it completes to dst, which has room for count of
-// them, and returns their number.
 func (k *poly) symbol(dst []float64, s int8) int {
 	k.push(s)
 	n := 0
@@ -270,11 +258,8 @@ type IQ struct {
 	on    bool
 }
 
-// iqShaperHz is the rate of the shaper of the IQ tiers above Tier0.
 const iqShaperHz = 48000
 
-// iqTableBits is the log2 of the number of entries of the cosine table of
-// Tier1.
 const iqTableBits = 10
 
 // NewIQ returns an IQ for cfg. It allocates the IQ, once.
@@ -360,8 +345,6 @@ func (q *IQ) AppendS16(dst []int16, s int8) []int16 {
 	return append(dst, q.out[:n]...)
 }
 
-// symbol writes the 16-bit I/Q of the symbol s to out and returns the
-// number of values.
 func (q *IQ) symbol(s int8) int {
 	if q.k == nil {
 		return q.mcu.Symbol(q.out, s)
@@ -383,7 +366,6 @@ func (q *IQ) symbol(s int8) int {
 	return j
 }
 
-// sample returns the I/Q of one output sample, with the carrier at hz.
 func (q *IQ) sample(hz float64) (i, qd int16) {
 	a := 0.9 * 32767.0
 	if q.on && q.env < q.ramp || !q.on && q.env > 0 {
@@ -417,7 +399,6 @@ func (q *IQ) sample(hz float64) (i, qd int16) {
 	return sat16(c * a), sat16(s * a)
 }
 
-// sat16 rounds x to the nearest int16, saturated.
 func sat16(x float64) int16 {
 	switch {
 	case x >= math.MaxInt16:

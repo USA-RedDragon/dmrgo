@@ -32,16 +32,12 @@ func (b Built) Signals(fm, env []float64, offsetHz float64) []Carrier {
 	return out
 }
 
-// siteChannel is a logical channel of the t3site sequence: its channel
-// definition, with the MS transmit and receive frequencies (ETSI TS 102 361-4
-// Annex C.1.1.4), and its offset from the control channel.
+// ETSI TS 102 361-4 Annex C.1.1.4
 type siteChannel struct {
 	parms  layer3.CdefParms
 	offset float64
 }
 
-// Values of the t3site sequence. The control channel is the tuned frequency
-// of the file, and the MS transmits 5 MHz below the BS.
 const (
 	siteRXMHz       = 446
 	siteTXMHz       = 441
@@ -63,10 +59,6 @@ func siteChannels() (control, traffic siteChannel) {
 	return control, traffic
 }
 
-// siteBursts builds the TS1 bursts of a Tier III control channel up to
-// frame end: C_ALOHA and C_BCAST Chan_Freq MBCs for both channels, from
-// frame lead a TV_GRANT and its absolute MBC form, then a late entry
-// TV_GRANT every siteRegrant frames until frame callEnd.
 func siteBursts(cfg SeqConfig, lead, callEnd, end int) ([]layer2.RawBurst, error) {
 	sys, err := siteSysCode().Pack()
 	if err != nil {
@@ -118,10 +110,7 @@ func siteBursts(cfg SeqConfig, lead, callEnd, end int) ([]layer2.RawBurst, error
 	return out, nil
 }
 
-// controlStream lays the control channel bursts out on TS1 with idle bursts
-// on TS2. Every CACH carries a C_SYS_Parms Short LC with the site's system
-// code and a Common_Slot_Counter that increments every Short LC. The TACT AT
-// bit is 0 (idle) in every CACH. (ETSI TS 102 361-4 clause 5.1.3)
+// ETSI TS 102 361-4 clause 5.1.3
 func controlStream(bursts []layer2.RawBurst, cc enums.ColorCode) ([]BSSlot, error) {
 	idle, err := IdleBurst(cc)
 	if err != nil {
@@ -151,9 +140,6 @@ func controlStream(bursts []layer2.RawBurst, cc enums.ColorCode) ([]BSSlot, erro
 	return out, nil
 }
 
-// siteSequence builds the t3site sequence: a Tier III control channel at
-// the tuned frequency and a traffic channel siteTrafficStep above it that
-// keys up after the grant and carries the granted talkgroup call on TS2.
 func siteSequence(cfg SeqConfig) (Built, error) {
 	cfg.Group, cfg.Slot = true, 1
 	voice, info, err := voiceBursts(cfg, false)

@@ -13,17 +13,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// fuzzOp is one call of a fuzzed run: the symbol, the key and the room of
-// dst for the call.
 type fuzzOp struct {
 	sym  int8
 	key  bool
 	room int
 }
 
-// fuzzOps turns fuzz bytes into calls, up to most of them: each byte
-// pair is a symbol, any int8, and a control byte whose low bit keys the
-// carrier and whose upper bits set the room of dst.
 func fuzzOps(data []byte, most int) []fuzzOp {
 	ops := make([]fuzzOp, 0, len(data)/2)
 	for i := 0; i+1 < len(data) && len(ops) < most; i += 2 {
@@ -32,9 +27,6 @@ func fuzzOps(data []byte, most int) []fuzzOp {
 	return ops
 }
 
-// checkPhase fails when the I/Q x of amplitude a at rate jumps in phase
-// between two samples by more than the most frequency hz allows, with
-// tolerance tol in radians.
 func checkPhase(t *testing.T, x []complex128, a, rate, hz, tol float64) {
 	t.Helper()
 	for i := 1; i < len(x); i++ {
@@ -49,9 +41,6 @@ func checkPhase(t *testing.T, x []complex128, a, rate, hz, tol float64) {
 	}
 }
 
-// FuzzAudioConfig checks that NewAudio returns an error or a modulator for
-// any config, and that a modulator it returns keeps the worst run of
-// symbols within int16 and its bounds.
 func FuzzAudioConfig(f *testing.F) {
 	f.Add(48000, 15000, 0, int8(1))
 	f.Add(24000, 1100, 2048, int8(0))
@@ -81,9 +70,6 @@ func FuzzAudioConfig(f *testing.F) {
 	})
 }
 
-// FuzzIQConfig checks that NewIQ returns an error or a modulator for any
-// config, and that a modulator it returns writes I/Q within its amplitude
-// and without a jump of phase.
 func FuzzIQConfig(f *testing.F) {
 	f.Add(2400000, 1200.0, 1e-3, int8(1))
 	f.Add(48000, 11999.0, 0.0, int8(0))
@@ -124,10 +110,6 @@ func FuzzIQConfig(f *testing.F) {
 	})
 }
 
-// FuzzMCUAudio runs any stream of symbols, valid or not, through an
-// MCUAudio with any room in dst, and checks that it allocates nothing,
-// that a short dst takes nothing, that a symbol other than -3, -1, +1 and
-// +3 counts as 0, and that the output stays within its bounds.
 func FuzzMCUAudio(f *testing.F) {
 	f.Add(false, 15000, 0, []byte{3, 20, 0xfd, 20, 1, 20, 0xff, 20, 0x7f, 20})
 	f.Add(true, 1080, 2048, []byte{3, 0, 3, 2, 3, 30, 0xfd, 30})
@@ -151,8 +133,6 @@ func FuzzMCUAudio(f *testing.F) {
 		var buf, rbuf [64]int16
 		got := make([]int16, 0, len(ops)*len(buf))
 		want := make([]int16, 0, len(ops)*len(buf))
-		// Four runs, so that an allocation of the fuzzing engine in another
-		// goroutine does not count as one of the modulator.
 		allocs := testing.AllocsPerRun(4, func() {
 			got, want = got[:0], want[:0]
 			_ = m.Init(tab, level, offset)
@@ -183,8 +163,6 @@ func FuzzMCUAudio(f *testing.F) {
 	})
 }
 
-// FuzzMCUIQ is FuzzMCUAudio for MCUIQ, with keying: the I/Q stays within
-// its amplitude and continuous in phase.
 func FuzzMCUIQ(f *testing.F) {
 	f.Add(uint8(0), 1200, 48, []byte{3, 81, 0xfd, 81, 1, 80, 0xff, 80, 0x7f, 81})
 	f.Add(uint8(1), -23999, 1, []byte{3, 1, 3, 3, 3, 21, 0xfd, 41})
@@ -199,8 +177,6 @@ func FuzzMCUIQ(f *testing.F) {
 		var buf, rbuf [2 * maxSamples << 3]int16
 		got := make([]int16, 0, len(ops)*len(buf))
 		want := make([]int16, 0, len(ops)*len(buf))
-		// Four runs, so that an allocation of the fuzzing engine in another
-		// goroutine does not count as one of the modulator.
 		allocs := testing.AllocsPerRun(4, func() {
 			got, want = got[:0], want[:0]
 			_ = m.Init(rate, off, ramp)
@@ -235,8 +211,6 @@ func FuzzMCUIQ(f *testing.F) {
 	})
 }
 
-// fuzzAudioUnits and fuzzIQUnits are the modulators that FuzzAudio and
-// FuzzIQ pick from.
 func fuzzAudioUnits() []txUnit {
 	return []txUnit{
 		{tier: Tier0, format: fmtAudio, rate: 24000, level: tableUnits},
@@ -261,10 +235,6 @@ func fuzzIQUnits() []txUnit {
 	}
 }
 
-// FuzzAudio runs any stream of symbols through an Audio, appending to a
-// dst of any length and capacity, and checks that the output is that of
-// the valid symbols appended to one buffer, after the prefix of dst, and
-// within its bounds.
 func FuzzAudio(f *testing.F) {
 	f.Add(uint8(0), []byte{3, 0, 0xfd, 7, 1, 255, 0xff, 3, 0x7f, 1})
 	f.Add(uint8(4), []byte{3, 1, 3, 2, 3, 3, 0xfd, 4})
@@ -299,11 +269,6 @@ func FuzzAudio(f *testing.F) {
 	})
 }
 
-// FuzzIQ runs any stream of symbols and keying through an IQ, as 16-bit
-// and as 8-bit I/Q, with any dst, and checks that the output does not
-// depend on dst or on invalid symbols, that the 8-bit I/Q is the 16-bit
-// I/Q rounded, and that the I/Q stays within its amplitude and continuous
-// in phase.
 func FuzzIQ(f *testing.F) {
 	f.Add(uint8(0), []byte{3, 1, 0xfd, 7, 1, 255, 0xff, 2, 0x7f, 1})
 	f.Add(uint8(3), []byte{3, 1, 3, 3, 3, 3, 0xfd, 4})
@@ -352,12 +317,6 @@ func FuzzIQ(f *testing.F) {
 	})
 }
 
-// FuzzRoundTrip modulates a BS outbound stream of any color code,
-// addresses and kind of call by any modulator, with any carrier offset
-// and lead, and checks that an rf.Receiver of Tier1 detects it bit for
-// bit at a high C/N, as checkDetect says: from the 8-bit I/Q of an I/Q
-// modulator at its rate, and from the baseband of every modulator, the FM
-// signal of an audio modulator through an ideal DAC.
 func FuzzRoundTrip(f *testing.F) {
 	f.Add(uint8(7), uint32(3191868), uint32(9), true, uint8(0), int16(1200), uint16(100))
 	f.Add(uint8(15), uint32(1), uint32(16777215), false, uint8(9), int16(-3000), uint16(0))

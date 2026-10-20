@@ -4,20 +4,15 @@ package fsktx
 
 import "math"
 
-// shaper turns each symbol into the deviation samples of its symbol
-// period, in int16 units.
 type shaper interface {
 	appendSymbol(dst []int16, s int8) []int16
 }
 
-// The frequency interpolations of iqPipe, from the rate of its shaper to
-// its output rate.
 const (
 	upHold = iota
 	upLinear
 )
 
-// The phase to I/Q conversions of iqPipe.
 const (
 	ncoTable = iota
 	ncoTableInterp
@@ -26,9 +21,6 @@ const (
 	ncoRotF32
 )
 
-// iqPipe FM-modulates the deviation of a shaper at hz1 onto I/Q at rate
-// l2/m2 times hz1, as interleaved I/Q of amplitude amp: it interpolates the
-// frequency, accumulates the phase in 32 bits and converts it to I/Q.
 type iqPipe struct {
 	sh      shaper
 	buf     []int16
@@ -51,9 +43,6 @@ type iqPipe struct {
 	outRate float64
 }
 
-// newIQPipe returns an iqPipe: the shaper sh at hz1 with gain units per
-// symbol unit, output rate rate, a table of 2^bits entries or iters
-// CORDIC iterations, and a carrier offsetHz from 0 Hz.
 func newIQPipe(sh shaper, hz1, gain float64, rate int, up, nco int, bits uint, iters int, offsetHz, amp float64) *iqPipe {
 	g := gcd(rate, int(hz1))
 	p := &iqPipe{sh: sh, up: up, l2: rate / g, m2: int(hz1) / g, nco: nco, bits: bits, iters: iters, amp: amp, outRate: float64(rate)}
@@ -93,8 +82,6 @@ func (p *iqPipe) appendSymbol(dst []int16, s int8) []int16 {
 	return dst
 }
 
-// run appends n samples whose phase steps are w, w+dw, ... in Q16 of the
-// 32-bit phase.
 func (p *iqPipe) run(dst []int16, w, dw int64, n int) []int16 {
 	switch p.nco {
 	case ncoTable:
@@ -115,7 +102,7 @@ func (p *iqPipe) run(dst []int16, w, dw int64, n int) []int16 {
 			p.phase += uint32(w >> 16)
 			w += dw
 			i := p.phase >> sh
-			f := int32(p.phase << p.bits >> 17) // 15 bits
+			f := int32(p.phase << p.bits >> 17)
 			c0, c1 := int32(p.tab[i]), int32(p.tab[i+1])
 			j := (i - q) & mask
 			s0, s1 := int32(p.tab[j]), int32(p.tab[j+1])
@@ -164,13 +151,10 @@ func roundf(x float32) float32 {
 	return float32(int32(x + 0.5))
 }
 
-// cordicAngles holds atan(2^-i) in units of 2^-32 turns.
 var cordicAngles = [...]uint32{536870912, 316933406, 167458907, 85004756, 42667331, 21354465, 10679838, 5340245, 2670163, 1335087, 667544, 333772, 166886, 83443, 41722, 20861, 10430, 5215, 2608, 1304}
 
-// cordic returns the cosine and sine of phase, in units of 2^-32 turns,
-// in Q15 after iters rotations.
 func cordic(phase uint32, iters int) (int32, int32) {
-	const k = 19898 // 32768 over the CORDIC gain, 1.6468
+	const k = 19898
 	q := phase >> 30
 	z := int32(phase - q<<30)
 	if z >= 1<<29 {

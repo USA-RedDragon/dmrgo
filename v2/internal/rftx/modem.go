@@ -264,7 +264,6 @@ func MixIQ(carriers []Carrier, rate, level float64) []byte {
 	return out
 }
 
-// s8 returns f, clamped to [-127, 127], as a two's complement octet.
 func s8(f float64) byte {
 	v := int(math.Round(math.Max(-127, math.Min(127, f))))
 	if v < 0 {

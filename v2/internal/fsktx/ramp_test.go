@@ -7,16 +7,12 @@ import (
 	"math/cmplx"
 )
 
-// The power ramp shapes of rampEnvelope.
 const (
 	rampStep = iota
 	rampLinear
 	rampCosine
 )
 
-// rampEnvelope returns the amplitude of a carrier that keys up at sample
-// on and down at sample off over n samples of the shape kind: the ramp up
-// ends at on and the ramp down starts at off.
 func rampEnvelope(length, on, off, n, kind int) []float64 {
 	e := make([]float64, length)
 	for i := range e {
@@ -34,7 +30,6 @@ func rampEnvelope(length, on, off, n, kind int) []float64 {
 	return e
 }
 
-// rampShape returns the amplitude at the share x of a ramp up.
 func rampShape(x float64, kind int) float64 {
 	switch kind {
 	case rampLinear:
@@ -46,9 +41,6 @@ func rampShape(x float64, kind int) float64 {
 	}
 }
 
-// adjacentFilter returns the power of x at rate in the adjacent channel at
-// offset Hz, within 4.25 kHz of its centre, sample by sample: x moved by
-// -offset and low-pass filtered with a Kaiser windowed sinc 90 dB down.
 func adjacentPower(x []complex128, rate, offset float64) []float64 {
 	trans := 1000.0 / rate
 	n := int(math.Ceil((90-8)/(2.285*2*math.Pi*trans))) | 1
@@ -83,10 +75,7 @@ func adjacentPower(x []complex128, rate, offset float64) []float64 {
 	return p
 }
 
-// transient returns the most power, in dBc, that x at rate puts into
-// either adjacent channel at 12.5 kHz, averaged over 0.1 ms, against its
-// mean power while keyed, carrier, as ETSI EN 300 113 clause 7.9 measures
-// the adjacent channel transient power with a peak detector.
+// ETSI EN 300 113 clause 7.9
 func transient(x []complex128, rate, carrier float64) float64 {
 	w := int(rate * 1e-4)
 	worst := 0.0

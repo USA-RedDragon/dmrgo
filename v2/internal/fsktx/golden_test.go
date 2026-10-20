@@ -2,8 +2,6 @@ package fsktx
 
 import "testing"
 
-// goldenSymbols returns n pseudo-random symbols with a run of 0 at the
-// start and the end.
 func goldenSymbols(n int) []int8 {
 	out := make([]int8, n)
 	x := uint32(12345)
@@ -16,7 +14,6 @@ func goldenSymbols(n int) []int8 {
 	return out
 }
 
-// fnv folds v into the FNV-1a hash h.
 func fnv(h uint32, v int16) uint32 {
 	for _, b := range [2]byte{byte(v), byte(uint16(v) >> 8)} {
 		h ^= uint32(b)
@@ -25,9 +22,6 @@ func fnv(h uint32, v int16) uint32 {
 	return h
 }
 
-// TestGolden checks the output of the Tier0 modulators against digests,
-// so that a change of their samples, or a difference between compilers,
-// shows.
 func TestGolden(t *testing.T) {
 	t.Parallel()
 	syms := goldenSymbols(2000)
@@ -85,12 +79,6 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-// TestGoldenLimits is TestGolden at the limits of the Tier0 modulators:
-// the least and most level with the most offset either way, the carrier
-// just within a quarter of the rate with the shortest and longest ramp,
-// invalid symbols, short dst and keying at every symbol, so that a
-// difference of the integer arithmetic between compilers shows where it
-// is closest to its bounds.
 func TestGoldenLimits(t *testing.T) {
 	t.Parallel()
 	syms := goldenSymbols(3000)

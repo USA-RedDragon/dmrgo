@@ -4,9 +4,6 @@ package fsktx
 
 import "testing"
 
-// TestAllocsMatrix checks that no modulator of the matrix allocates per
-// symbol once dst has room, through keying and ramps and invalid symbols,
-// and that Init of the MCU modulators allocates nothing.
 func TestAllocsMatrix(t *testing.T) {
 	syms := []int8{3, -1, 1, -3, 0, 3, 3, -3, 7, -128, 127, 1}
 	units := append(nominal(txFull()), offsetUnits(false)...)

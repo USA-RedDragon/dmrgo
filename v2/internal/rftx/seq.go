@@ -54,7 +54,6 @@ type Built struct {
 	Info     []string
 }
 
-// Names of the sequences that are not data packets.
 const (
 	seqWakeup   = "wakeup"
 	seqACK      = "ack"
@@ -79,7 +78,6 @@ func Sequences() []string {
 	}
 }
 
-// PI header values of the pi sequence (DMRA layout, Motorola MFID).
 const (
 	piAlgorithmID = 0x21
 	piKeyID       = 0x01
@@ -87,8 +85,6 @@ const (
 	piMFID        = 0x10
 )
 
-// srBlocks is the size of the packet the sr sequence answers, and
-// srRetry the DBSNs it asks to be sent again.
 const srBlocks = 8
 
 func srRetry() []int { return []int{1, 4, 6} }
@@ -166,9 +162,6 @@ func DataBursts(name string, cfg SeqConfig) ([]layer2.RawBurst, error) {
 	return packet.Bursts(p, cfg.ColorCode, cfg.source())
 }
 
-// responseBursts builds the response that -src sends to -dst for a
-// confirmed rate 1/2 packet of srBlocks blocks with N(S) 0: an ACK, or for
-// sack a selective retry of the srRetry blocks.
 func responseBursts(sack bool, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	to := &pdu.ConfirmedDataHeader{
 		SAP:             enums.SAPShortData,
@@ -202,9 +195,7 @@ func responseBursts(sack bool, cfg SeqConfig) ([]layer2.RawBurst, []string, erro
 	return b, info, err
 }
 
-// preambleBursts returns Preambles Pre_CSBKs followed by a confirmed rate 1/2
-// packet. The CSBK Blocks to Follow counts the preambles still to come and
-// the bursts of the packet. (ETSI TS 102 361-2 clause 7.1.2.5)
+// ETSI TS 102 361-2 clause 7.1.2.5
 func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	data, err := DataBursts("data12", cfg)
 	if err != nil {
@@ -213,10 +204,7 @@ func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	return withPreambles(cfg, data)
 }
 
-// smsBursts returns Preambles Pre_CSBKs and a DMR-format SMS: an
-// unconfirmed short data defined packet (DD_HEAD, ETSI TS 102 361-3 clause
-// 9.2.8) to SAP short data, with the message in UTF-16LE and a zero
-// terminator at rate 1/2, in the Defined Data format DefinedData.
+// ETSI TS 102 361-3 clause 9.2.8
 func smsBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	h := pdu.DataHeader{
 		Format: pdu.FormatShortDataDefined,
@@ -245,8 +233,6 @@ func smsBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	return withPreambles(cfg, data)
 }
 
-// withPreambles returns Preambles Pre_CSBKs that count down to the bursts of
-// data, then data.
 func withPreambles(cfg SeqConfig, data []layer2.RawBurst) ([]layer2.RawBurst, error) {
 	toFollow := cfg.Preambles - 1 + len(data)
 	if toFollow < 0 || toFollow > 0xFF {
@@ -276,17 +262,12 @@ func withPreambles(cfg SeqConfig, data []layer2.RawBurst) ([]layer2.RawBurst, er
 	return append(out, data...), nil
 }
 
-// Motorola FID 0x10 CSBK opcodes, as an AnyTone sends them through an XPR
-// 8400 (capture runs/moto-rc-1).
 const (
 	motoFID        = 0x10
 	motoRadioCheck = 0x24
 	motoCallAlert  = 0x1F
 )
 
-// motorolaCSBKBursts returns Preambles Pre_CSBKs and a FID 0x10 radio check
-// or call alert. The radio check carries the source before the target, the
-// call alert the target before the source.
 func motorolaCSBKBursts(alert bool, cfg SeqConfig) ([]layer2.RawBurst, error) {
 	if cfg.Preambles < 0 || cfg.Preambles > 0xFF {
 		return nil, fmt.Errorf("%d preambles, want 0 to 255", cfg.Preambles)
@@ -342,9 +323,6 @@ func TestAMBEFrame(i int) vocoder.AMBEFrame {
 	return f
 }
 
-// voiceBursts builds a voice call: the voice LC header, the PI header for
-// privacy, Superframes superframes of the AMBE test pattern and the
-// terminator with LC.
 func voiceBursts(cfg SeqConfig, privacy bool) ([]layer2.RawBurst, []string, error) {
 	lc, err := pdu.NewVoiceLC(cfg.Group, cfg.Dest, cfg.Source, layer3.ServiceOptions{IsPrivacy: privacy})
 	if err != nil {
@@ -395,8 +373,7 @@ func voiceBursts(cfg SeqConfig, privacy bool) ([]layer2.RawBurst, []string, erro
 	return append(out, b...), info, nil
 }
 
-// rcBurst returns a standalone MS-sourced reverse channel burst (ETSI TS 102
-// 361-1 clause 6.4.1) with the cease transmission command.
+// ETSI TS 102 361-1 clause 6.4.1
 func rcBurst(cfg SeqConfig) (layer2.RawBurst, error) {
 	b := layer2.Burst{
 		Kind:               layer2.KindReverseChannel,
@@ -407,7 +384,6 @@ func rcBurst(cfg SeqConfig) (layer2.RawBurst, error) {
 	return b.Encode()
 }
 
-// Tier III values of the tier3 and mbc sequences.
 const (
 	tier3SysCode = 0x1234
 	tier3Channel = 1
@@ -415,9 +391,7 @@ const (
 	tier3Steps   = 50
 )
 
-// mbcBursts returns a TV_GRANT with absolute channel parameters (ETSI TS 102
-// 361-4 clause 7.1.1.1.1): an MBC header whose physical channel is 0xFFF and
-// a CG_AP continuation with the channel frequencies.
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func mbcBursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	h := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
 		PhysicalChannel: 0xFFF, TargetAddress: cfg.Dest, SourceAddress: cfg.Source}}
@@ -439,7 +413,6 @@ func mbcBursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	return []layer2.RawBurst{r1, r2}, info, nil
 }
 
-// tier3Bursts returns C_ALOHA, TV_GRANT and C_MOVE CSBKs and the MBC grant.
 func tier3Bursts(cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
 	csbks := []*pdu.CSBK{
 		{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{SiteTSSync: true, NRandWait: 4, Backoff: 1, SysIdentCode: tier3SysCode, MSAddress: cfg.Dest}},
@@ -623,7 +596,6 @@ func AMBEValue(f vocoder.AMBEFrame) uint64 {
 	return v >> 7
 }
 
-// intList returns v as decimal numbers joined by commas.
 func intList(v []int) string {
 	s := make([]string, len(v))
 	for i, x := range v {

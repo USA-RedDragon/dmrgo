@@ -4,7 +4,6 @@ package fsktx
 
 import "math"
 
-// The interpolations of upStage.
 const (
 	stageHold = iota
 	stageLinear
@@ -12,9 +11,6 @@ const (
 	stageCIC
 )
 
-// upStage raises the rate of the samples of a shaper by k: by holding each
-// sample, by linear interpolation, by a polyphase FIR with taps coefficients
-// per phase (Kaiser windowed sinc in Q15), or by a CIC filter of the given order.
 type upStage struct {
 	in    shaper
 	buf   []int16
