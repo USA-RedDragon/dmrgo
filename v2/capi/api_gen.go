@@ -25,6 +25,7 @@ import (
 	g_layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	g_layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	g_layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	g_nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -2580,6 +2581,33 @@ func in_layer2_packet_ResponseData(s *C.dmrgo_packet_response_data_t) (d g_layer
 	return
 }
 
+type st_layer2_packet_Message struct {
+	f_Header      st_layer2_pdu_DataHeader
+	p_Proprietary g_layer2_pdu.ProprietaryHeader
+	p_Response    g_layer2_packet.ResponseData
+}
+
+func in_layer2_packet_Message(s *C.dmrgo_packet_message_t, st *st_layer2_packet_Message) (d g_layer2_packet.Message) {
+	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
+	if s.has_proprietary {
+		st.p_Proprietary = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary))
+		d.Proprietary = &st.p_Proprietary
+	} else {
+		d.Proprietary = nil
+	}
+	d.DataType = g_enums.DataType(s.data_type)
+	d.Data = unsafe.Slice((*byte)(unsafe.Pointer(s.data)), int(s.data_len))
+	d.CRC = uint32(s.crc)
+	if s.has_response {
+		st.p_Response = in_layer2_packet_ResponseData(&s.response)
+		d.Response = &st.p_Response
+	} else {
+		d.Response = nil
+	}
+	d.BadCRC = bool(s.bad_crc)
+	return
+}
+
 func in_layer2_pdu_AdjacentSiteParms(s *C.dmrgo_pdu_adjacent_site_parms_t) (d g_layer2_pdu.AdjacentSiteParms) {
 	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
 	d.AdjacentSysCode = uint16(s.adjacent_sys_code)
@@ -2758,6 +2786,25 @@ func in_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) (d
 	d.Reserved = bool(s.reserved)
 	d.PriorityLevel = uint8(s.priority_level)
 	return
+}
+
+func out_nmea_RMC(d *C.dmrgo_nmea_rmc_t, s *g_nmea.RMC, oc *outc) {
+	_ = oc
+	*(*[2]byte)(unsafe.Pointer(&d.talker)) = s.Talker
+	d.hour = C.uint8_t(s.Hour)
+	d.minute = C.uint8_t(s.Minute)
+	d.second = C.uint8_t(s.Second)
+	d.millisecond = C.uint16_t(s.Millisecond)
+	d.valid = C.bool(s.Valid)
+	d.latitude = C.double(s.Latitude)
+	d.longitude = C.double(s.Longitude)
+	d.speed = C.double(s.Speed)
+	d.course = C.double(s.Course)
+	d.day = C.uint8_t(s.Day)
+	d.month = C.uint8_t(s.Month)
+	d.year = C.uint16_t(s.Year)
+	d.magnetic_variation = C.double(s.MagneticVariation)
+	d.mode = C.uint8_t(s.Mode)
 }
 
 type cb1 struct {
@@ -3790,33 +3837,6 @@ func fromC_layer2_framer_Match(s *C.dmrgo_framer_match_t) g_layer2_framer.Match 
 	return in_layer2_framer_Match(s)
 }
 
-type st_layer2_packet_Message struct {
-	f_Header      st_layer2_pdu_DataHeader
-	p_Proprietary g_layer2_pdu.ProprietaryHeader
-	p_Response    g_layer2_packet.ResponseData
-}
-
-func in_layer2_packet_Message(s *C.dmrgo_packet_message_t, st *st_layer2_packet_Message) (d g_layer2_packet.Message) {
-	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
-	if s.has_proprietary {
-		st.p_Proprietary = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary))
-		d.Proprietary = &st.p_Proprietary
-	} else {
-		d.Proprietary = nil
-	}
-	d.DataType = g_enums.DataType(s.data_type)
-	d.Data = unsafe.Slice((*byte)(unsafe.Pointer(s.data)), int(s.data_len))
-	d.CRC = uint32(s.crc)
-	if s.has_response {
-		st.p_Response = in_layer2_packet_ResponseData(&s.response)
-		d.Response = &st.p_Response
-	} else {
-		d.Response = nil
-	}
-	d.BadCRC = bool(s.bad_crc)
-	return
-}
-
 func fromC_layer2_packet_Message(s *C.dmrgo_packet_message_t) g_layer2_packet.Message {
 	var st st_layer2_packet_Message
 	return in_layer2_packet_Message(s, &st)
@@ -4338,6 +4358,29 @@ func fromC_layer3_ServiceOptions(s *C.dmrgo_layer3_service_options_t) g_layer3.S
 
 func fromC_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) g_layer3.VoiceServiceOptions {
 	return in_layer3_VoiceServiceOptions(s)
+}
+
+func in_nmea_RMC(s *C.dmrgo_nmea_rmc_t) (d g_nmea.RMC) {
+	d.Talker = *(*[2]byte)(unsafe.Pointer(&s.talker))
+	d.Hour = uint8(s.hour)
+	d.Minute = uint8(s.minute)
+	d.Second = uint8(s.second)
+	d.Millisecond = uint16(s.millisecond)
+	d.Valid = bool(s.valid)
+	d.Latitude = float64(s.latitude)
+	d.Longitude = float64(s.longitude)
+	d.Speed = float64(s.speed)
+	d.Course = float64(s.course)
+	d.Day = uint8(s.day)
+	d.Month = uint8(s.month)
+	d.Year = uint16(s.year)
+	d.MagneticVariation = float64(s.magnetic_variation)
+	d.Mode = byte(s.mode)
+	return
+}
+
+func fromC_nmea_RMC(s *C.dmrgo_nmea_rmc_t) g_nmea.RMC {
+	return in_nmea_RMC(s)
 }
 
 func in_trunk_Access(s *C.dmrgo_trunk_access_t) (d g_trunk.Access) {
@@ -12785,6 +12828,50 @@ func dmrgo_packet_decode_response_data(c_blocks *C.dmrgo_pdu_rate12_data_t, c_bl
 	return C.DMRGO_OK
 }
 
+//export dmrgo_packet_message_udp_ipv4
+func dmrgo_packet_message_udp_ipv4(c_self *C.dmrgo_packet_message_t, c_header *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_payload *C.uint8_t, c_payload_cap C.size_t, c_payload_len *C.size_t, c_payload_need *C.size_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_packet.Message
+	var xs st_layer2_packet_Message
+	x = in_layer2_packet_Message(&(*c_self), &xs)
+	if c_payload_len == nil || (c_payload == nil && c_payload_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1, r2 := x.UDPIPv4()
+	out_layer2_packet_Message(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_header != nil {
+		*(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_header))) = r0
+	}
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_payload)), int(c_payload_cap)), c_payload_len, c_payload_need, r1, oc)
+	if c_ok != nil {
+		*c_ok = C.bool(r2)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_packet_new_assembler
 func dmrgo_packet_new_assembler(c_max_blocks C.int64_t, c_out **C.dmrgo_packet_assembler_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -20858,6 +20945,29 @@ func dmrgo_layer3_voice_service_options_string(c_self *C.dmrgo_layer3_voice_serv
 	return C.DMRGO_OK
 }
 
+//export dmrgo_nmea_parse_rmc
+func dmrgo_nmea_parse_rmc(c_s *C.uint8_t, c_s_len C.size_t, c_out *C.dmrgo_nmea_rmc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_s == nil && c_s_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_s []byte
+	a_s = unsafe.Slice((*byte)(unsafe.Pointer(c_s)), int(c_s_len))
+	r0, r1 := g_nmea.ParseRMC(a_s)
+	_ = r0
+	if c_out != nil {
+		out_nmea_RMC(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo__fn1
 //export dmrgo_trunk_access_applies
 func dmrgo_trunk_access_applies(c_self *C.dmrgo_trunk_access_t, c_ms C.uint32_t, c_emergency C.bool, c_out *C.bool) (rc C.int) {
@@ -24664,6 +24774,12 @@ func errCode(err error) C.int {
 			return -132
 		case g_layer2_pdu.ErrTalkerAliasLength:
 			return -133
+		case g_nmea.ErrChecksum:
+			return -152
+		case g_nmea.ErrField:
+			return -153
+		case g_nmea.ErrSentence:
+			return -154
 		case g_trunk.ErrBusy:
 			return -134
 		case g_trunk.ErrChannelNumber:
@@ -24847,6 +24963,12 @@ func codeErr(code C.int) error {
 		return g_layer2_pdu.ErrTalkerAliasInvalidUTF8
 	case -133:
 		return g_layer2_pdu.ErrTalkerAliasLength
+	case -152:
+		return g_nmea.ErrChecksum
+	case -153:
+		return g_nmea.ErrField
+	case -154:
+		return g_nmea.ErrSentence
 	case -134:
 		return g_trunk.ErrBusy
 	case -135:

@@ -11,6 +11,8 @@
 # Nested modules under v2/, such as the C API in v2/capi, are not checked.
 
 ignore_files:
+  - v2/nmea/errors.go
+  - v2/nmea/rmc.go
   - v2/errors.go
   - v2/internal/bits/bits.go
   - v2/internal/text/text.go
@@ -1801,6 +1803,7 @@ documents:
         title: "UDP/IPv4 header compression"
         source_files:
           - v2/layer2/pdu/udp_ipv4_compressed.go
+          - v2/layer2/packet/assembler.go
           - v2/enums/said.go
           - v2/enums/daid.go
           - v2/enums/spid.go
@@ -1810,6 +1813,12 @@ documents:
             names:
               - TestUDPIPv4CompressedHeader_RoundTrip
               - TestUDPIPv4CompressedHeader_Ports
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/packet
+            names:
+              - TestMessageUDPIPv4
+          - package: github.com/USA-RedDragon/dmrgo/v2/nmea
+            names:
+              - TestAnyTonePositionReports
 
       - section: "6.1"
         title: "Defined Data"

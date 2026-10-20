@@ -49,6 +49,9 @@ code DMRGO_ERR_VOICE_BUSY -147
 code DMRGO_ERR_VOICE_NOT_ACTIVE -148
 code DMRGO_ERR_VOICE_QUEUE_FULL -149
 code DMRGO_ERR_VOICE_TIMED_OUT -150
+code DMRGO_ERR_NMEA_CHECKSUM -152
+code DMRGO_ERR_NMEA_FIELD -153
+code DMRGO_ERR_NMEA_SENTENCE -154
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -461,6 +464,9 @@ sym #define DMRGO_ERR_LAYER2_RESERVED_DATA_TYPE (-114)
 sym #define DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE (-115)
 sym #define DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE (-116)
 sym #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-117)
+sym #define DMRGO_ERR_NMEA_CHECKSUM (-152)
+sym #define DMRGO_ERR_NMEA_FIELD (-153)
+sym #define DMRGO_ERR_NMEA_SENTENCE (-154)
 sym #define DMRGO_ERR_PACKET_BLOCKS_MISSING (-118)
 sym #define DMRGO_ERR_PACKET_FORMAT (-119)
 sym #define DMRGO_ERR_PACKET_HEADER_CRC (-120)
@@ -1068,6 +1074,7 @@ sym int dmrgo_layer3_talker_alias_data_format_string(dmrgo_layer3_talker_alias_d
 sym int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options_t *self, uint8_t out[1]);
 sym int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 sym int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 sym int dmrgo_packet_append_bursts(dmrgo_layer2_raw_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_packet_packet_t *p, dmrgo_enums_color_code_t color_code, dmrgo_layer2_sync_source_t src);
 sym int dmrgo_packet_assembler_add(dmrgo_packet_assembler_t *self, const dmrgo_layer2_data_t *d, dmrgo_packet_message_t *out0, bool *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_packet_assembler_add_burst(dmrgo_packet_assembler_t *self, dmrgo_layer2_burst_t *b, dmrgo_packet_message_t *out0, bool *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -1097,6 +1104,7 @@ sym int dmrgo_packet_builder_segment(dmrgo_packet_builder_t *self, const dmrgo_p
 sym int dmrgo_packet_builder_segment_need(dmrgo_packet_builder_t *self, const dmrgo_pdu_data_header_t *header, const uint8_t *payload, size_t payload_len, dmrgo_enums_data_type_t rate, size_t *items, size_t *arena);
 sym int dmrgo_packet_bursts(const dmrgo_packet_packet_t *p, dmrgo_enums_color_code_t color_code, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_packet_decode_response_data(const dmrgo_pdu_rate12_data_t *blocks, size_t blocks_len, dmrgo_packet_response_data_t *out);
+sym int dmrgo_packet_message_udp_ipv4(dmrgo_packet_message_t *self, dmrgo_pdu_udp_ipv4_compressed_header_t *header, uint8_t *payload, size_t payload_cap, size_t *payload_len, size_t *payload_need, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_packet_new_assembler(int64_t max_blocks, dmrgo_packet_assembler_t **out);
 sym int dmrgo_packet_new_builder(int64_t max_blocks, dmrgo_packet_builder_t **out);
 sym int dmrgo_packet_new_packet(const dmrgo_pdu_data_header_t *header, const uint8_t *payload, size_t payload_len, dmrgo_enums_data_type_t rate, dmrgo_packet_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -1698,6 +1706,7 @@ type struct dmrgo_layer3_data_service_options_t { bool is_emergency; bool is_pri
 type struct dmrgo_layer3_registration_service_options_t { bool reserved; bool is_privacy; bool ip_inform; uint8_t power_save; bool register_; };
 type struct dmrgo_layer3_service_options_t { bool is_emergency; bool is_privacy; uint8_t reserved; bool is_broadcast; bool is_open_voice_call_mode; uint8_t priority_level; };
 type struct dmrgo_layer3_voice_service_options_t { bool is_emergency; bool is_privacy; bool is_supp_data; bool is_broadcast; bool reserved; uint8_t priority_level; };
+type struct dmrgo_nmea_rmc_t { uint8_t talker[2]; uint8_t hour; uint8_t minute; uint8_t second; uint16_t millisecond; bool valid; double latitude; double longitude; double speed; double course; uint8_t day; uint8_t month; uint16_t year; double magnetic_variation; uint8_t mode; };
 type struct dmrgo_packet_message_t { dmrgo_pdu_data_header_t header; bool has_proprietary; dmrgo_pdu_proprietary_header_t proprietary; dmrgo_enums_data_type_t data_type; uint8_t *data; size_t data_len; uint32_t crc; bool has_response; dmrgo_packet_response_data_t response; bool bad_crc; };
 type struct dmrgo_packet_packet_t { dmrgo_pdu_data_header_t header; dmrgo_layer2_data_t *blocks; size_t blocks_len; };
 type struct dmrgo_packet_response_data_t { bool retry[127]; };

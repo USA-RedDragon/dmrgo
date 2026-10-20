@@ -291,6 +291,8 @@ typedef struct dmrgo_layer3_registration_service_options_t dmrgo_layer3_registra
 typedef struct dmrgo_layer3_service_options_t dmrgo_layer3_service_options_t;
 /* Go: layer3.VoiceServiceOptions. VoiceServiceOptions is the 7-bit Service_Options of a Tier III voice service request, such as a C_RAND for a talkgroup or individual voice call. */
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
+/* Go: nmea.RMC. RMC is a Recommended Minimum Specific GNSS Data sentence ($--RMC). */
+typedef struct dmrgo_nmea_rmc_t dmrgo_nmea_rmc_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
 /* Go: trunk.Channel. Channel is a logical physical channel number (LPCN) of a site with its frequencies, as an MS uses them (ETSI TS 102 361-4 Annex C). */
@@ -1481,6 +1483,17 @@ struct dmrgo_packet_message_t {
 	bool bad_crc;
 };
 
+struct dmrgo_pdu_udp_ipv4_compressed_header_t {
+	uint16_t ipv4_identification;
+	dmrgo_enums_said_t said;
+	dmrgo_enums_daid_t daid;
+	uint8_t header_compression_opcode;
+	dmrgo_enums_spid_t spid;
+	dmrgo_enums_dpid_t dpid;
+	uint16_t extended_header1;
+	uint16_t extended_header2;
+};
+
 struct dmrgo_pdu_adjacent_site_parms_t {
 	dmrgo_enums_announcement_type_t announcement_type;
 	uint16_t adjacent_sys_code;
@@ -1560,17 +1573,6 @@ struct dmrgo_pdu_data_header_bytes_t {
 	uint8_t v[12];
 };
 
-struct dmrgo_pdu_udp_ipv4_compressed_header_t {
-	uint16_t ipv4_identification;
-	dmrgo_enums_said_t said;
-	dmrgo_enums_daid_t daid;
-	uint8_t header_compression_opcode;
-	dmrgo_enums_spid_t spid;
-	dmrgo_enums_dpid_t dpid;
-	uint16_t extended_header1;
-	uint16_t extended_header2;
-};
-
 struct dmrgo_pdu_sys_code_t {
 	dmrgo_pdu_network_model_t model;
 	uint16_t net;
@@ -1602,6 +1604,24 @@ struct dmrgo_layer3_voice_service_options_t {
 	bool is_broadcast;
 	bool reserved;
 	uint8_t priority_level;
+};
+
+struct dmrgo_nmea_rmc_t {
+	uint8_t talker[2];
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+	uint16_t millisecond;
+	bool valid;
+	double latitude;
+	double longitude;
+	double speed;
+	double course;
+	uint8_t day;
+	uint8_t month;
+	uint16_t year;
+	double magnetic_variation;
+	uint8_t mode;
 };
 
 
@@ -1934,6 +1954,9 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE (-115)
 #define DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE (-116)
 #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-117)
+#define DMRGO_ERR_NMEA_CHECKSUM (-152)
+#define DMRGO_ERR_NMEA_FIELD (-153)
+#define DMRGO_ERR_NMEA_SENTENCE (-154)
 #define DMRGO_ERR_PACKET_BLOCKS_MISSING (-118)
 #define DMRGO_ERR_PACKET_FORMAT (-119)
 #define DMRGO_ERR_PACKET_HEADER_CRC (-120)
@@ -3793,6 +3816,8 @@ int dmrgo_packet_builder_segment(dmrgo_packet_builder_t *self, const dmrgo_pdu_d
 int dmrgo_packet_bursts(const dmrgo_packet_packet_t *p, dmrgo_enums_color_code_t color_code, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: packet.DecodeResponseData. DecodeResponseData decodes one or two C_RDATA blocks and checks their CRC. */
 int dmrgo_packet_decode_response_data(const dmrgo_pdu_rate12_data_t *blocks, size_t blocks_len, dmrgo_packet_response_data_t *out);
+/* Go: packet.Message.UDPIPv4. UDPIPv4 decodes the compressed UDP/IPv4 header at the start of Data and returns it with the application data that follows it, which points into Data. */
+int dmrgo_packet_message_udp_ipv4(dmrgo_packet_message_t *self, dmrgo_pdu_udp_ipv4_compressed_header_t *header, uint8_t *payload, size_t payload_cap, size_t *payload_len, size_t *payload_need, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: packet.NewAssembler. NewAssembler returns an Assembler for packets of up to maxBlocks data blocks of any rate. */
 int dmrgo_packet_new_assembler(int64_t max_blocks, dmrgo_packet_assembler_t **out);
 /* Go: packet.NewBuilder. NewBuilder returns a Builder for packets of up to maxBlocks data blocks of any rate. */
@@ -4535,6 +4560,8 @@ int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options
 int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 /* Go: layer3.VoiceServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: nmea.ParseRMC. ParseRMC decodes one RMC sentence from s, from the $ to the two hex digits of the checksum, with an optional CR LF or LF after them. */
+int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 /* dmrgo_trunk_channel_plan_new makes a zero trunk.ChannelPlan. */
