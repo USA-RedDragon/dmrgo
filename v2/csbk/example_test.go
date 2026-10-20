@@ -1,0 +1,110 @@
+package csbk_test
+
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/USA-RedDragon/dmrgo/v2/csbk"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
+)
+
+func Example() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS})
+	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS})
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+
+	if err := q.RequestOACSU(0, 1002, 1001, layer3.ServiceOptions{}, nil); err != nil {
+		panic(err)
+	}
+	out = q.Tick(0, out[:0])
+	request := out[0].Burst
+
+	out = r.Burst(0, &request, layer2.Hint{}, out[:0])
+	fmt.Println(out[0].Kind, out[0].Service, "from", out[0].Source)
+	at, _ := r.Deadline()
+	out = r.Tick(at, out[:0])
+	answer := out[0].Burst
+
+	out = q.Burst(at+30*time.Millisecond, &answer, layer2.Hint{}, out[:0])
+	fmt.Println(out[0].Kind, out[0].Result)
+	// Output:
+	// Request OACSU from 1001
+	// Done Answered
+}
+
+func ExampleRequester_RequestRadioCheck() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
+	if err := q.RequestRadioCheck(0, 3140598, 3191868, &csbk.RequestOptions{Preambles: 5}); err != nil {
+		panic(err)
+	}
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+	bursts := 0
+	for {
+		at, ok := q.Deadline()
+		if !ok {
+			break
+		}
+		out = q.Tick(at, out[:0])
+		for i := range out {
+			if out[i].Kind == csbk.OutputBurst {
+				bursts++
+			} else {
+				fmt.Println(bursts, "bursts,", out[i].Result, "at", at)
+			}
+		}
+	}
+	// Output:
+	// 6 bursts, NoAnswer at 2.3s
+}
+
+func ExamplePreambles() {
+	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Source: layer2.SyncSourceMS})
+	_ = q.RequestCallAlert(0, 3191868, 3140598, &csbk.RequestOptions{Preambles: 2})
+	p := csbk.NewPreambles(nil)
+	out := make([]csbk.Output, 0, csbk.MaxOutputs)
+	for range 3 {
+		at, _ := q.Deadline()
+		sent := q.Tick(at, nil)
+		out = p.Burst(at, &sent[0].Burst, layer2.Hint{}, out[:0])
+		for i := range out {
+			fmt.Println(out[i].Kind, "to", out[i].Target, "until", out[i].Until)
+		}
+	}
+	// Output:
+	// Announced to 3191868 until 120ms
+	// Joined to 3191868 until 0s
+}
+
+func ExampleWakeup() {
+	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 7})
+	_ = w.Wake(0, 314926, 3191868)
+	for {
+		at, ok := w.Deadline()
+		if !ok {
+			break
+		}
+		for _, o := range w.Tick(at, nil) {
+			if o.Kind == csbk.OutputDone {
+				fmt.Println(at, o.Kind, o.Result)
+			} else {
+				fmt.Println(at, o.Kind)
+			}
+		}
+	}
+	// Output:
+	// 0s Burst
+	// 360ms Burst
+	// 720ms Done NoAnswer
+}
+
+func ExampleConfigError() {
+	_, err := csbk.NewResponder(&csbk.ResponderConfig{})
+	var ce *csbk.ConfigError
+	if errors.As(err, &ce) {
+		fmt.Println(ce.Field)
+	}
+	// Output:
+	// Address
+}
