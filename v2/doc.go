@@ -76,6 +76,9 @@
 //   - layer2/framer: finds bursts in a demodulated bit stream.
 //   - bs: the base station of a two-slot carrier: a repeater, a hotspot or
 //     the slot arbiter of a network server.
+//   - data: data calls on one logical channel: a Receiver that delivers
+//     packets and answers confirmed ones, and a Sender with channel access
+//     and retries.
 //   - layer3: the layer 3 information elements that PDUs carry, such as
 //     service options and channel definitions.
 //   - csbk: the CSBK services of one logical channel, without I/O: a

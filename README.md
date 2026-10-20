@@ -107,6 +107,9 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - `Follower` hunts for a TSCC and follows its voice and data grants to the payload channels, as a scanner does, and returns on P_CLEAR, after the hang time or when the channel goes quiet. It reads UDT deliveries, and with `AcceptRAS` the CSBKs of Capacity Max sites whose CRC is a keyed MAC.
   - `MS` registers and de-registers, makes voice and packet data calls by random access with backoff, also as emergency, answers C_AHOY and P_AHOY radio checks, follows C_MOVE, P_PROTECT and P_CLEAR, keeps a denied registration list, leaves a weak TSCC, and ends its calls with P_MAINT.
   - `TSCC` runs a single site: C_ALOHA and C_SYS_Parms, AT reservation, registration, talkgroup and individual (OACSU) voice calls with grants, late entry grants, relay on the payload channels and P_CLEAR.
+- Data calls (`data`), without I/O or goroutines:
+  - `Receiver` turns the bursts of one logical channel into data events: call start at the preamble or header, each complete packet with its CRCs checked, the responses heard, the ACK, NACK or SACK bursts to send, and call end with a reason. It takes confirmed, unconfirmed, short data and UDT packets at rate 1/2, 3/4 and 1, counts a block lost on air from the transport sequence number or the slot time, drops a repeated packet, and keeps a confirmed packet for its retry.
+  - `Sender` sends a message one burst per 60 ms slot, with preamble CSBKs, polite or impolite channel access and a seeded random holdoff. For confirmed data it waits for the response, resends the blocks of a SACK or the whole packet after a NACK or no response, and keeps N(S) per link.
 - FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
 - Burst finding in a demodulated bit stream (`layer2/framer`).
 - Vocoders (`vocoder`):
@@ -142,7 +145,7 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 <!-- allocgate:end -->
 
 - Each exported function that a rule covers says in its doc when it allocates.
-- Do not copy `layer2.Burst`, `packet.Assembler`, `packet.Builder`, `voice.Receiver`, `trunk.Follower`, `trunk.MS` or `trunk.TSCC` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
+- Do not copy `layer2.Burst`, `packet.Assembler`, `packet.Builder`, `voice.Receiver`, `data.Receiver`, `data.Sender`, `trunk.Follower`, `trunk.MS` or `trunk.TSCC` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
 - A `layer2.Burst` keeps its decoded `Data` until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
 - Three checks keep this true, with no list of functions to maintain:
   - [v2/internal/allocgate](v2/internal/allocgate) follows the machine code of each exported function to the heap allocator.
