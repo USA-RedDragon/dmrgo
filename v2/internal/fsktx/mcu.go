@@ -28,8 +28,8 @@ const (
 	tapShift = 0
 )
 
-// tier0Corr adds to the samples of Table48k the correction of corr48k for
-// the context of corr48kSyms symbols that ends corr48kSkip symbols before
+// tier0Corr adds to the samples of Table48k the correction of mcuCorr for
+// the context of mcuCorrSyms symbols that ends mcuCorrSkip symbols before
 // the newest, which cuts the power of the FM signal outside the channel.
 const (
 	tier0Corr = false
@@ -188,7 +188,7 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	m.codes, m.zeros, m.corr = 0, ^uint32(0), tier0Corr && t.hz == 48000
 	m.rerr = 0
 	m.shape32 = tier0Shape && 4*int64(t.peak)*int64(scale)+1<<(15+tapShift) < math.MaxInt32
-	m.idx5 = uint32(len(corr48k) - 1)
+	m.idx5 = uint32(len(mcuCorr) - 1)
 	return nil
 }
 
@@ -210,9 +210,9 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	if tier0Shape && m.shape32 {
 		return m.shaped(dst[:n], n, s)
 	}
-	if tier0Corr && m.corr && n == len(corr48k[0]) {
+	if tier0Corr && m.corr && n == len(mcuCorr[0]) {
 		if t := m.corrRow(s); t != nil {
-			d := (*[len(corr48k[0])]int16)(dst)
+			d := (*[len(mcuCorr[0])]int16)(dst)
 			for p := range d {
 				d[p] = int16(int32((int64(buf[p]+int32(t[p]))*sc+1<<(14+tapShift))>>(15+tapShift)) + off)
 			}
@@ -232,9 +232,9 @@ func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
 	const sh = 15 + tapShift
 	const half = 1 << (sh - 1)
 	sc, off, buf, e := m.scale, m.offset, &m.k.buf, m.rerr
-	if tier0Corr && m.corr && n == len(corr48k[0]) {
+	if tier0Corr && m.corr && n == len(mcuCorr[0]) {
 		if t := m.corrRow(s); t != nil {
-			d := (*[len(corr48k[0])]int16)(dst)
+			d := (*[len(mcuCorr[0])]int16)(dst)
 			for p := range d {
 				v := (buf[p]+int32(t[p]))*sc - e + half
 				e = v&(1<<sh-1) - half
@@ -256,12 +256,12 @@ func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
 // corrRow takes the symbol s into the context and returns the correction
 // of the context, nil for a context with a symbol 0.
 func (m *MCUAudio) corrRow(s int8) *[10]int16 {
-	if corr48kBase == 5 {
+	if mcuCorrBase == 5 {
 		r := &m.k.ring
-		e := code5[(r[m.k.pos+corr48kSkip]+3)&7]
-		l := code5[(r[m.k.pos+corr48kSkip+corr48kSyms]+3)&7]
-		m.idx5 = (m.idx5-uint32(l)*corr48kTop)*5 + uint32(e)
-		return &corr48k[m.idx5]
+		e := code5[(r[m.k.pos+mcuCorrSkip]+3)&7]
+		l := code5[(r[m.k.pos+mcuCorrSkip+mcuCorrSyms]+3)&7]
+		m.idx5 = (m.idx5-uint32(l)*mcuCorrTop)*5 + uint32(e)
+		return &mcuCorr[m.idx5]
 	}
 	z := uint32(0)
 	switch s {
@@ -271,12 +271,12 @@ func (m *MCUAudio) corrRow(s int8) *[10]int16 {
 	}
 	m.codes = m.codes<<2 | uint32(s+3)>>1
 	m.zeros = m.zeros<<1 | z
-	if m.zeros>>corr48kSkip&(1<<corr48kSyms-1) != 0 {
+	if m.zeros>>mcuCorrSkip&(1<<mcuCorrSyms-1) != 0 {
 		return nil
 	}
-	return &corr48k[m.codes>>(2*corr48kSkip)&(1<<(2*corr48kSyms)-1)]
+	return &mcuCorr[m.codes>>(2*mcuCorrSkip)&(1<<(2*mcuCorrSyms)-1)]
 }
 
-// code5 is the digit of a symbol plus 3 in the index of corr48k in base
+// code5 is the digit of a symbol plus 3 in the index of mcuCorr in base
 // 5: -3, -1, +1, +3 as 0 to 3 and 0 as 4.
 var code5 = [8]uint8{0, 0, 1, 4, 2, 0, 3, 0}

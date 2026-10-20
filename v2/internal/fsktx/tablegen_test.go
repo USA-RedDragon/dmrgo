@@ -175,7 +175,7 @@ func renderTables() ([]byte, error) {
 		}
 	}
 	renderAudioCorr(&b)
-	if err := renderCorr(&b); err != nil {
+	if err := renderMCUCorr(&b); err != nil {
 		return nil, err
 	}
 	if err := renderCorrIQ(&b); err != nil {
@@ -238,19 +238,19 @@ func renderCorrIQ(b *bytes.Buffer) error {
 	return nil
 }
 
-// corrFile holds the correction of tier0Corr in Hz, fitted from the audio
+// mcuCorrFile holds the correction of tier0Corr in Hz, fitted from the audio
 // optimizer of Tier3: C symbols of context ending K symbols before the
 // newest, for a pulse of 8 symbols on each side, 10 samples a symbol.
-const corrFile = "testdata/mcorr48k-c5.json"
+const mcuCorrFile = "testdata/mcorr48k-c5.json"
 
-// renderCorr writes corr48k and its context, or an empty table when
+// renderMCUCorr writes mcuCorr and its context, or an empty table when
 // tier0Corr is off.
-func renderCorr(b *bytes.Buffer) error {
+func renderMCUCorr(b *bytes.Buffer) error {
 	if !tier0Corr {
-		b.WriteString("const (\ncorr48kSyms = 1\ncorr48kSkip = 0\ncorr48kBase = 4\ncorr48kTop = 1\n)\n\nvar corr48k [4][10]int16\n\n")
+		b.WriteString("const (\nmcuCorrSyms = 1\nmcuCorrSkip = 0\nmcuCorrBase = 4\nmcuCorrTop = 1\n)\n\nvar mcuCorr [4][10]int16\n\n")
 		return nil
 	}
-	raw, err := os.ReadFile(corrFile)
+	raw, err := os.ReadFile(mcuCorrFile)
 	if err != nil {
 		return err
 	}
@@ -271,10 +271,10 @@ func renderCorr(b *bytes.Buffer) error {
 	top = rows / c.Base
 	skip := c.K - 8 + 6
 	if skip < 0 || len(c.Hz) != 10*rows || c.Base != 4 && c.Base != 5 {
-		return fmt.Errorf("%s: bad context", corrFile)
+		return fmt.Errorf("%s: bad context", mcuCorrFile)
 	}
-	fmt.Fprintf(b, "const (\ncorr48kSyms = %d\ncorr48kSkip = %d\ncorr48kBase = %d\ncorr48kTop = %d\n)\n\n", c.C, skip, c.Base, top)
-	fmt.Fprintf(b, "var corr48k = [%d][10]int16{\n", rows)
+	fmt.Fprintf(b, "const (\nmcuCorrSyms = %d\nmcuCorrSkip = %d\nmcuCorrBase = %d\nmcuCorrTop = %d\n)\n\n", c.C, skip, c.Base, top)
+	fmt.Fprintf(b, "var mcuCorr = [%d][10]int16{\n", rows)
 	u := tableUnits * (1 << tapShift) / 1944.0
 	for i := range rows {
 		b.WriteString("{")
