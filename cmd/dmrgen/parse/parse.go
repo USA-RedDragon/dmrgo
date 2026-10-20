@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -85,6 +86,12 @@ type Field struct {
 	// When is an optional secondary guard (when:<Field><Op><Value>) that
 	// disambiguates dispatch fields sharing the same primary dispatch value.
 	When *Guard
+
+	// OnlyField and OnlyValues come from only:<Field>=<Value>[|<Value>]:
+	// decode sets an integer field only when OnlyField holds one of the
+	// constants, and leaves it zero otherwise.
+	OnlyField  string
+	OnlyValues []string
 
 	// Fallback marks a raw field that receives the dispatch payload when no
 	// dispatch variant is decoded, and is encoded when no variant is set.
@@ -584,6 +591,16 @@ func applyModifier(f *Field, mod string, seen *modifierSet) error {
 				return fmt.Errorf("empty dispatch value in %q", mod)
 			}
 		}
+	case "only":
+		field, values, ok := strings.Cut(arg, "=")
+		if !ok || field == "" || values == "" {
+			return fmt.Errorf("only modifier must be only:Field=Value[|Value]: %q", mod)
+		}
+		f.OnlyField = field
+		f.OnlyValues = strings.Split(values, "|")
+		if slices.Contains(f.OnlyValues, "") {
+			return fmt.Errorf("empty only value in %q", mod)
+		}
 	case "when":
 		g, err := parseGuard(arg)
 		if err != nil {
@@ -721,6 +738,8 @@ func validateModifiers(f *Field) error {
 		return errors.New("fallback requires raw")
 	case f.When != nil && f.Kind != FieldDispatch:
 		return errors.New("when: requires dispatch")
+	case f.OnlyField != "" && f.Kind != FieldUint && f.Kind != FieldInt && f.Kind != FieldEnum:
+		return errors.New("only: requires an integer field")
 	case f.NoEncode && f.Kind == FieldDispatch:
 		return errors.New("no_encode is not valid on dispatch fields")
 	case f.Signed && (f.Kind != FieldInt || !isSignedBase(f.BaseType)):
@@ -833,6 +852,9 @@ func validateStruct(pdu *PDUStruct, maxBit int) error {
 	if err := checkDispatch(pdu, dispatch, fallback); err != nil {
 		return err
 	}
+	if err := checkOnly(pdu); err != nil {
+		return err
+	}
 	if err := checkOverlap(pdu); err != nil {
 		return err
 	}
@@ -907,6 +929,21 @@ func checkGuard(pdu *PDUStruct, g *Guard) error {
 	isBoolLit := g.Value == "true" || g.Value == "false"
 	if (f.GoType == typeBool) != isBoolLit {
 		return fmt.Errorf("value %s does not match type %s of %s", g.Value, f.GoType, g.Field)
+	}
+	return nil
+}
+
+func checkOnly(pdu *PDUStruct) error {
+	for i, f := range pdu.Fields {
+		if f.OnlyField == "" {
+			continue
+		}
+		if err := checkGuardField(pdu, f.OnlyField); err != nil {
+			return fmt.Errorf("field %s only: %w", f.Name, err)
+		}
+		if !slices.ContainsFunc(pdu.Fields[:i], func(g Field) bool { return g.Name == f.OnlyField }) {
+			return fmt.Errorf("field %s only: %s must come before it", f.Name, f.OnlyField)
+		}
 	}
 	return nil
 }

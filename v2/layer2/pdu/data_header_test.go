@@ -1,6 +1,7 @@
 package pdu_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -589,5 +590,36 @@ func TestStatusPrecodedEncoderClearsAppendedBlocks(t *testing.T) {
 	}
 	if ab := uint8(bits.Field(hdr[:], 2, 2))<<4 | uint8(bits.Field(hdr[:], 12, 4)); ab != 0 {
 		t.Errorf("Appended Blocks = %d, want 0 (ETSI TS 102 361-1 Table 9.17A)", ab)
+	}
+}
+
+func TestDataHeader_AppendedBlocksOnlyForShortData(t *testing.T) {
+	t.Parallel()
+
+	uhead := [12]byte{0x02, 0x3b, 0x2f, 0xeb, 0xf6, 0x30, 0xb4, 0x3c, 0x88, 0x00, 0xe5, 0x00}
+	var into pdu.DataHeader
+	var p pdu.DataHeaderPayloads
+	pdu.DecodeDataHeaderInto(&into, &p, uhead)
+	for _, dh := range []pdu.DataHeader{pdu.DecodeDataHeader(uhead), into} {
+		if dh.FEC.Uncorrectable || dh.UnconfirmedDataHeader == nil {
+			t.Fatalf("U_HEAD did not decode: %s", dh.String())
+		}
+		if u := dh.UnconfirmedDataHeader; u.PadOctetCount != 11 || u.BlocksToFollow != 8 {
+			t.Fatalf("POC %d BF %d, want 11 and 8", u.PadOctetCount, u.BlocksToFollow)
+		}
+		if dh.AppendedBlocks != 0 {
+			t.Errorf("U_HEAD AppendedBlocks = %d, want 0", dh.AppendedBlocks)
+		}
+		if s := dh.String(); strings.Contains(s, "AppendedBlocks: 11") {
+			t.Errorf("String shows the POC as AppendedBlocks: %s", s)
+		}
+	}
+	for _, f := range []pdu.Format{pdu.FormatShortDataDefined, pdu.FormatShortDataRawOrStatusPrecoded} {
+		h := uhead
+		h[0] = h[0]&^0x3F | 0x20 | byte(f)
+		h[1] = h[1]&^0x0F | 0x05
+		if got := pdu.DecodeDataHeader(h).AppendedBlocks; got != 0x25 {
+			t.Errorf("format %d: AppendedBlocks = %d, want %d", f, got, 0x25)
+		}
 	}
 }
