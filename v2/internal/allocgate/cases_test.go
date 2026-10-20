@@ -4,10 +4,6 @@ package allocgate_test
 
 import "testing"
 
-// TestGateCases runs the analysis on testdata/cases, whose Alloc functions
-// allocate in ways that the escape analysis of their own body does not show
-// and whose NoAlloc functions do not allocate, and fails on each function
-// that the gate classifies wrongly.
 func TestGateCases(t *testing.T) {
 	t.Parallel()
 
@@ -29,10 +25,6 @@ func TestGateCases(t *testing.T) {
 	}
 }
 
-// TestDstGrowthCases runs the dst growth rule on testdata/growth, whose Grow
-// functions allocate only by growing dst and whose Bad functions can grow
-// another slice, or call code that the gate cannot follow, and fails on
-// each function that the rule classifies wrongly.
 func TestDstGrowthCases(t *testing.T) {
 	t.Parallel()
 

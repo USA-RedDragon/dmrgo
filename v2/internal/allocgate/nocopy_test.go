@@ -9,9 +9,6 @@ import (
 	"testing"
 )
 
-// TestVetReportsCopies runs go vet on testdata/copies, which copies each
-// library type that keeps pointers into its own storage, and fails unless
-// the copylocks check reports each copy.
 func TestVetReportsCopies(t *testing.T) {
 	t.Parallel()
 

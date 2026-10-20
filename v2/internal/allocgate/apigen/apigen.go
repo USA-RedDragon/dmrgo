@@ -81,17 +81,15 @@ func Generate(dir string) ([]byte, error) {
 	for _, i := range imports {
 		b.WriteString("\t" + i + "\n")
 	}
-	b.WriteString(")\n\n// api holds the functions and methods.\nvar api = [...]any{\n")
+	b.WriteString(")\n\nvar api = [...]any{\n")
 	for _, r := range refs {
 		b.WriteString("\t" + r + ",\n")
 	}
 	b.WriteString("}\n\nfunc main() {\n\tfor i := range api {\n\t\tuse(api[i])\n\t}\n}\n\n")
-	b.WriteString("// use keeps f in the program.\n//\n//go:noinline\nfunc use(f any) {\n\t_ = f\n}\n")
+	b.WriteString("//go:noinline\nfunc use(f any) {\n\t_ = f\n}\n")
 	return format.Source(b.Bytes())
 }
 
-// exports returns the references to the exported functions and methods of
-// the files of the package in dir, as the generated program spells them.
 func exports(dir string, files []string, alias string) ([]string, error) {
 	fset := token.NewFileSet()
 	types := map[string]bool{}

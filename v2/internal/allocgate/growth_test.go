@@ -13,27 +13,13 @@ import (
 	"strings"
 )
 
-// grower is a library function that takes a slice and returns a slice of
-// the same type, such as AppendNames(dst []string) []string or
-// appendEvent(out []Event, ...) ([]Event, *Event). The gate proves from its
-// source that every append in it grows that slice, or a value that it
-// derives from that slice, and that it passes such a value as the slice of
-// each grower it calls.
 type grower struct {
-	d *declFunc
-	// param is the index of the slice parameter and result the index of
-	// the result of the same type.
+	d             *declFunc
 	param, result int
-	// calls holds the growers that it calls by a static call.
-	calls map[string]bool
-	// appends is set when its body has an append.
-	appends bool
+	calls         map[string]bool
+	appends       bool
 }
 
-// growerShape returns the index of the slice parameter of fn and of the
-// result of the same type. A non-variadic parameter of slice type whose
-// type is also a result type is the slice parameter; when there are more
-// than one, the one named dst is.
 func growerShape(fn *types.Func) (param, result int, ok bool) {
 	sig := fn.Signature()
 	var params []int
@@ -64,10 +50,6 @@ func sliceResult(sig *types.Signature, t types.Type) int {
 	return -1
 }
 
-// growers computes the library functions that grow only their slice
-// parameter, as the greatest set of functions of grower shape whose bodies
-// pass growerCheck with the set. It returns them by symbol, and why each
-// function of grower shape is not in the set.
 func (gt *gate) growers() (map[string]*grower, map[string]string) {
 	set := map[string]*grower{}
 	for _, d := range gt.p.declaredFuncs() {
@@ -93,8 +75,6 @@ func (gt *gate) growers() (map[string]*grower, map[string]string) {
 	return set, why
 }
 
-// derivation tracks the local variables of a function that hold its slice
-// parameter or a value derived from it.
 type derivation struct {
 	gt      *gate
 	info    *types.Info
@@ -102,10 +82,6 @@ type derivation struct {
 	derived map[*types.Var]bool
 }
 
-// expr reports whether e, or result idx of the call e, is the slice
-// parameter or derived from it: a variable that holds such a value, a
-// slice expression or an append of such a value, or the result of a
-// grower called with such a value as its slice.
 func (dv *derivation) expr(e ast.Expr, idx int) bool {
 	switch e := ast.Unparen(e).(type) {
 	case *ast.Ident:
@@ -127,16 +103,11 @@ func (dv *derivation) expr(e ast.Expr, idx int) bool {
 	return false
 }
 
-// assign is a value that a function stores in a variable: result idx of
-// rhs, or a value that is not derived when rhs is nil.
 type assign struct {
 	rhs ast.Expr
 	idx int
 }
 
-// growerCheck returns why the body of g breaks the shape of a grower with
-// the growers of set, or "", with notGrower to say why a callee is not a
-// grower. It records the growers that g calls.
 func (gt *gate) growerCheck(g *grower, set map[string]*grower, notGrower map[string]string) string {
 	sc := newBodyScan(gt, g, set, notGrower)
 	sc.scan()
@@ -149,7 +120,6 @@ func (gt *gate) growerCheck(g *grower, set map[string]*grower, notGrower map[str
 	return strings.Join(sc.why, "; ")
 }
 
-// bodyScan holds what growerCheck finds in the body of a grower.
 type bodyScan struct {
 	gt        *gate
 	g         *grower
@@ -158,20 +128,16 @@ type bodyScan struct {
 	notGrower map[string]string
 	slice     *types.Var
 	root      string
-	// tracked holds the values stored in each variable of the type of the
-	// slice parameter, and poisoned the variables whose address the body
-	// takes or that a range statement sets.
-	tracked  map[*types.Var][]assign
-	poisoned map[*types.Var]bool
-	invoked  map[*ast.FuncLit]bool
-	appends  []*ast.CallExpr
-	calls    []growerCall
-	returns  []*ast.ReturnStmt
-	dv       *derivation
-	why      []string
+	tracked   map[*types.Var][]assign
+	poisoned  map[*types.Var]bool
+	invoked   map[*ast.FuncLit]bool
+	appends   []*ast.CallExpr
+	calls     []growerCall
+	returns   []*ast.ReturnStmt
+	dv        *derivation
+	why       []string
 }
 
-// growerCall is a call of a grower.
 type growerCall struct {
 	g    *grower
 	call *ast.CallExpr
@@ -209,7 +175,6 @@ func (sc *bodyScan) at(n ast.Node) string {
 	return p.String()
 }
 
-// varOf returns the tracked variable that e names, or nil.
 func (sc *bodyScan) varOf(e ast.Expr) *types.Var {
 	id, ok := ast.Unparen(e).(*ast.Ident)
 	if !ok {
@@ -226,7 +191,6 @@ func (sc *bodyScan) varOf(e ast.Expr) *types.Var {
 	return v
 }
 
-// store records the assignment of rhs to lhs.
 func (sc *bodyScan) store(lhs, rhs []ast.Expr) {
 	for i, l := range lhs {
 		v := sc.varOf(l)
@@ -246,7 +210,6 @@ func (sc *bodyScan) store(lhs, rhs []ast.Expr) {
 	}
 }
 
-// scan collects the assignments, appends, calls and returns of the body.
 func (sc *bodyScan) scan() {
 	body := sc.g.d.decl.Body
 	ast.Inspect(body, func(n ast.Node) bool {
@@ -260,8 +223,6 @@ func (sc *bodyScan) scan() {
 	ast.Inspect(body, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.FuncLit:
-			// cgo turns a C call with pointer arguments into such a call of
-			// a func literal, whose body is then checked as part of g.
 			if !sc.invoked[n] {
 				sc.why = append(sc.why, sc.at(n)+": it has a func literal that it does not call in place, whose code the gate does not follow as part of it")
 				return false
@@ -291,8 +252,6 @@ func (sc *bodyScan) scan() {
 	})
 }
 
-// inFuncLit reports whether n is in a func literal that the body calls in
-// place, whose returns return from the literal.
 func (sc *bodyScan) inFuncLit(n ast.Node) bool {
 	for fl := range sc.invoked {
 		if fl.Pos() <= n.Pos() && n.End() <= fl.End() {
@@ -318,9 +277,6 @@ func (sc *bodyScan) valueSpec(n *ast.ValueSpec) {
 	}
 }
 
-// call records an append or a call of a grower, and why the body breaks the
-// shape for a call that the gate cannot follow or of a function that can
-// allocate and is not a grower.
 func (sc *bodyScan) call(n *ast.CallExpr) {
 	tv := sc.info.Types[n.Fun]
 	switch {
@@ -354,9 +310,6 @@ func (sc *bodyScan) call(n *ast.CallExpr) {
 	sc.calls = append(sc.calls, growerCall{callee, n})
 }
 
-// derive computes the tracked variables that hold only the slice parameter
-// or values derived from it, as the greatest set whose every stored value
-// is derived with the set.
 func (sc *bodyScan) derive() {
 	sc.dv = &derivation{gt: sc.gt, info: sc.info, set: sc.set, derived: map[*types.Var]bool{}}
 	for v := range sc.tracked {
@@ -373,9 +326,6 @@ func (sc *bodyScan) derive() {
 	}
 }
 
-// verify records why the body breaks the shape: a slice parameter that
-// holds another value, an append to a value that is not derived, a call of
-// a grower with such a value as its slice, or a return of one.
 func (sc *bodyScan) verify() {
 	name := sc.slice.Name()
 	if !sc.dv.derived[sc.slice] {
@@ -408,9 +358,6 @@ func (sc *bodyScan) verify() {
 	}
 }
 
-// mayAllocate reports whether the machine code of fn, or of an
-// instantiation of a generic fn, can reach an allocator. It reports true for
-// a generic fn without instantiations, since the gate cannot see its code.
 func (gt *gate) mayAllocate(fn *types.Func) bool {
 	if sym := funcSym(fn); sym != "" {
 		return gt.allocates(sym)
@@ -433,7 +380,6 @@ func isFuncLit(e ast.Expr) bool {
 	return ok
 }
 
-// isBuiltin reports whether fun is the builtin function name.
 func isBuiltin(info *types.Info, fun ast.Expr, name string) bool {
 	id, ok := ast.Unparen(fun).(*ast.Ident)
 	if !ok {
@@ -443,9 +389,6 @@ func isBuiltin(info *types.Info, fun ast.Expr, name string) bool {
 	return ok && b.Name() == name
 }
 
-// calleeFunc returns the function or concrete method that the call of fun
-// calls, or nil for a func value, an interface method or a method
-// expression.
 func calleeFunc(info *types.Info, fun ast.Expr) *types.Func {
 	switch e := ast.Unparen(fun).(type) {
 	case *ast.IndexExpr:
@@ -469,14 +412,6 @@ func calleeFunc(info *types.Info, fun ast.Expr) *types.Func {
 	return nil
 }
 
-// growsOnlyDst reports whether the machine code of the grower sym can
-// allocate only by growing its slice parameter, and otherwise why. Every
-// function on a path from sym to an allocator must be a grower that the
-// one before it calls by a static call, directly or through growers that
-// the compiler inlined into it, and a path must end in a runtime function
-// of append in a grower whose body, or the body of a grower that it calls,
-// appends. The source checks of growerCheck then prove that each such
-// append grows the slice of sym.
 func (gt *gate) growsOnlyDst(sym string) (bool, string) {
 	if !gt.growsOnly(sym) {
 		return false, "it allocates outside slice growth:" + gt.chain(gt.noGrow, sym)
@@ -536,9 +471,6 @@ func (gt *gate) growsOnlyDst(sym string) (bool, string) {
 	return true, ""
 }
 
-// growsDst reports whether the root r is a grower whose slice parameter is
-// named dst and that can allocate only by growing it, and why not when it
-// has the shape but breaks the rule.
 func (gt *gate) growsDst(r root) (bool, string) {
 	if r.decl == nil {
 		return false, ""

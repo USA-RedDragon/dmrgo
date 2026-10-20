@@ -16,7 +16,6 @@ var (
 	mu    sync.Mutex
 )
 
-// errSentinel is a sentinel error.
 var errSentinel = errors.New("sentinel")
 
 // AllocMapWrite writes a map, which can grow it.

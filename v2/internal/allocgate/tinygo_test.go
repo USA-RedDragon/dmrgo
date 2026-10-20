@@ -17,18 +17,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/allocgate/apigen"
 )
 
-// tinyGoTargets are the targets of the TinyGo check: the pico, an ARM
-// Cortex-M0+ board, at its default stack size, and riscv-qemu, a bare-metal
-// RISC-V machine. TinyGo puts a local larger than its stack limit on the
-// heap, so it finds allocations that gc does not.
 var tinyGoTargets = []string{"pico", "riscv-qemu"}
 
-// tinyGoSiteRE matches a heap allocation site that tinygo -print-allocs
-// reports, in the form file:line.col,line.col followed by counts.
 var tinyGoSiteRE = regexp.MustCompile(`^(.+\.go):(\d+)\.\d+`)
 
-// TestAllAPIUpToDate fails when allapi_gen.go is not what the generator
-// writes for the current library.
 func TestAllAPIUpToDate(t *testing.T) {
 	t.Parallel()
 
@@ -45,15 +37,6 @@ func TestAllAPIUpToDate(t *testing.T) {
 	}
 }
 
-// TestTinyGoHeapAllocations builds the allapi program, which references
-// every exported function and method of the library, with tinygo build
-// -print-allocs for each target of tinyGoTargets. It adds each allocation
-// site that TinyGo reports in the library to the call graph of the gc
-// machine code, as an allocator that the functions with code at the site
-// call, and then applies the rules of TestHeapAllocations. It runs only with
-// DMRGO_TINYGO_ALLOCS set, as the TinyGo CI job sets it, and then fails when
-// tinygo is missing or cannot build the program, so that a toolchain change
-// cannot turn the check off.
 func TestTinyGoHeapAllocations(t *testing.T) {
 	t.Parallel()
 
@@ -68,8 +51,6 @@ func TestTinyGoHeapAllocations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// TinyGo builds the files of a build without cgo, so the gc build of
-	// the gate does too, and every site that TinyGo reports is in it.
 	gt := newGate(t, libraryPackages(t), "CGO_ENABLED=0")
 	sites := 0
 	for _, target := range tinyGoTargets {
@@ -108,10 +89,6 @@ func TestTinyGoHeapAllocations(t *testing.T) {
 	gt.check(t)
 }
 
-// addSite adds the TinyGo allocation site at line of file to the call graph,
-// as an allocator that the function that declares the line calls, and every
-// library function with machine code at the site, which the compiler
-// inlined there. It reports whether the site is in the library.
 func (gt *gate) addSite(target, file string, line int) bool {
 	var decl *declFunc
 	for _, d := range gt.p.declaredFuncs() {
@@ -137,11 +114,6 @@ func (gt *gate) addSite(target, file string, line int) bool {
 	}
 	for name, bs := range gt.g.bodies {
 		pkg := symPackage(name)
-		// objdump gives only the base name of a file, so when two library
-		// files share it, only code of the package of the site can be at
-		// the site. Code that another package inlined from the site is
-		// then missed, and the function that declares the site stands for
-		// it below.
 		if !gt.isLib(pkg) || shared > 1 && pkg != decl.lib.path {
 			continue
 		}
@@ -159,8 +131,6 @@ func (gt *gate) addSite(target, file string, line int) bool {
 	return true
 }
 
-// outsideLibrary reports whether file is in a directory of the module that
-// is not library code, such as the allapi program.
 func (gt *gate) outsideLibrary(file string) bool {
 	root, err := filepath.Abs(moduleRoot)
 	if err != nil {

@@ -18,14 +18,10 @@ import (
 	"unicode/utf8"
 )
 
-// moduleRoot is the v2 module directory, relative to this package.
 const moduleRoot = "../.."
 
-// skipDirs are the module directories that are not library code.
 var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/text/texttest", "internal/unpacked"}
 
-// libraryPackages returns the import paths of the library packages, relative
-// to the module ("./enums" and so on).
 func libraryPackages(t *testing.T) []string {
 	t.Helper()
 	var pkgs []string
@@ -53,77 +49,47 @@ func libraryPackages(t *testing.T) []string {
 	return pkgs
 }
 
-// root is a function that a program can call: an exported function or
-// method, or the initialization of a package.
 type root struct {
 	sym  string
 	decl *declFunc
 }
 
-// textPkgPath is the package of the formatting helpers of String and Error.
 const textPkgPath = "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
-// rule is one pattern that lets a root allocate.
 type rule struct {
-	name string
-	// what and when say, for the README, what the rule lets allocate and
-	// when that allocates.
+	name       string
 	what, when string
-	// match returns whether the rule covers the allocating root r, and
-	// otherwise, when r has the shape of the rule but breaks it, why.
-	match func(r root) (ok bool, broken string)
-	used  int
+	match      func(r root) (ok bool, broken string)
+	used       int
 }
 
-// gate holds the analysis of the library.
 type gate struct {
-	t       *testing.T
-	g       *callGraph
-	p       *program
-	isLib   func(string) bool
-	next    map[string]string
-	noGrow  map[string]string
-	declBy  map[string]*declFunc
-	notes   []string
-	unknown map[string]bool
-	// growth holds the runtime functions of append.
-	growth map[string]bool
-	// full is set for the configuration of the allocation table of the
-	// README: a build with every file of the library, which needs cgo for
-	// vocoder/codec2, with DMRGO_README set, as the CI job of the table
-	// sets it with the Go version of the root go.mod. Only there is a rule
-	// that exempts nothing a dead rule: elsewhere a rule can cover only code
-	// that the build leaves out, or a runtime of another Go version.
-	full bool
-	// cuts holds the cut rules: each names functions whose allocations
-	// the gate allows, so that it does not follow calls into them.
-	cuts []*cut
-	// grow holds the growers, by symbol, and notGrower why each other
-	// function of grower shape is not one. growsOnlyDst computes them.
+	t         *testing.T
+	g         *callGraph
+	p         *program
+	isLib     func(string) bool
+	next      map[string]string
+	noGrow    map[string]string
+	declBy    map[string]*declFunc
+	notes     []string
+	unknown   map[string]bool
+	growth    map[string]bool
+	full      bool
+	cuts      []*cut
 	grow      map[string]*grower
 	notGrower map[string]string
 }
 
-// cut is a rule that names functions that the gate does not follow calls
-// into.
 type cut struct {
-	name  string
-	funcs map[string]bool
-	// allocates is set when the functions allocate in fact, so that a root
-	// that reaches them must say so in its doc, and where names where.
-	allocates bool
-	where     string
-	// what and when say, for the README, what the rule lets allocate and
-	// when that allocates.
+	name       string
+	funcs      map[string]bool
+	allocates  bool
+	where      string
 	what, when string
-	// used counts the roots that allocate only through the functions.
-	used int
-	// without is next without this cut.
-	without map[string]string
+	used       int
+	without    map[string]string
 }
 
-// newGate analyzes the packages of patterns, built with env added to the
-// environment of the gate.
 func newGate(t *testing.T, patterns []string, env ...string) *gate {
 	t.Helper()
 	pkgs := listPackages(t, patterns, env...)
@@ -173,7 +139,6 @@ func newGate(t *testing.T, patterns []string, env ...string) *gate {
 	return gt
 }
 
-// paths computes the paths to the allocators of the call graph.
 func (gt *gate) paths() {
 	avoid := map[string]bool{}
 	for _, c := range gt.cuts {
@@ -195,11 +160,6 @@ func (gt *gate) paths() {
 	}
 }
 
-// resolveInterfaceCalls adds an edge from each function that calls an
-// interface method to every method that the call can reach: the methods of
-// the library types that implement the interface, and, when a type outside
-// the library can implement it, every method of the same name outside the
-// library.
 func (gt *gate) resolveInterfaceCalls() {
 	byName := map[string][]string{}
 	for name, bs := range gt.g.bodies {
@@ -242,10 +202,6 @@ func (gt *gate) resolveInterfaceCalls() {
 	}
 }
 
-// ifaceWrapper reports whether the method symbol name, such as
-// "pkg.I.M", is the wrapper that the compiler makes for a method of an
-// interface type I, which calls method M of I itself. Such a wrapper is not
-// an implementation of an interface method.
 func ifaceWrapper(name string, bs []*body) bool {
 	i := strings.LastIndexByte(name, '.')
 	prefix := "type:" + name[:i] + "+"
@@ -259,16 +215,8 @@ func ifaceWrapper(name string, bs []*body) bool {
 	return false
 }
 
-// anonymousMethodRE matches a method of the text of an anonymous interface
-// type, such as "Network() internal/poll.String".
 var anonymousMethodRE = regexp.MustCompile(`(?:^|; )(\w+)\(`)
 
-// anonymousMethod returns the name of the method of an anonymous interface
-// type that a R_USEIFACEMETHOD target such as "type:interface { A(); B() }+88"
-// names, from the text of the type, or "" for another target. The methods
-// of an interface type are in the order of their names, all exported or of
-// one package here, and the type descriptor of an anonymous interface has
-// them from offset 80, 8 bytes each.
 func anonymousMethod(arg string) string {
 	sym, off, ok := strings.Cut(strings.TrimPrefix(arg, "type:"), "+")
 	body, ok2 := strings.CutPrefix(sym, "interface { ")
@@ -287,10 +235,6 @@ func anonymousMethod(arg string) string {
 	return names[(n-80)/8]
 }
 
-// resolveFuncValueCalls adds an edge from each function with a live
-// indirect call at the position of a call of a func value in library source
-// to every function of the same signature that the library uses as a
-// value.
 func (gt *gate) resolveFuncValueCalls() {
 	calls, values := gt.p.funcValues()
 	closures := map[position][]string{}
@@ -326,8 +270,6 @@ func (gt *gate) resolveFuncValueCalls() {
 	}
 }
 
-// roots returns the exported functions and methods of the library and the
-// package initializations.
 func (gt *gate) roots() []root {
 	byPkg := map[string][]string{}
 	for name := range gt.g.bodies {
@@ -368,8 +310,6 @@ func (gt *gate) roots() []root {
 	return roots
 }
 
-// genericSymRE matches the symbols of the instantiations of a generic
-// function or of a method of a generic type.
 func genericSymRE(fn *types.Func) *regexp.Regexp {
 	pkg := regexp.QuoteMeta(fn.Pkg().Path())
 	sig := fn.Signature()
@@ -393,7 +333,6 @@ func (gt *gate) allocates(sym string) bool {
 	return ok
 }
 
-// grows reports whether sym allocates only by growing a slice.
 func (gt *gate) growsOnly(sym string) bool {
 	_, ok := gt.noGrow[sym]
 	return !ok
@@ -403,8 +342,6 @@ func (gt *gate) chain(next map[string]string, sym string) string {
 	return "\n\t\t" + strings.Join(chain(next, sym), "\n\t\t")
 }
 
-// hasPrefixWord reports whether name is prefix, or prefix followed by an
-// upper-case letter, such as New or NewBurst for New.
 func hasPrefixWord(name, prefix string) bool {
 	rest, ok := strings.CutPrefix(name, prefix)
 	if !ok {
@@ -414,14 +351,6 @@ func hasPrefixWord(name, prefix string) bool {
 	return rest == "" || unicode.IsUpper(r)
 }
 
-// twinOf returns the declaration of the allocation-free twin of d by the
-// naming rule, or nil, and, when the twin does not have the shape that its
-// name requires, why. The twin is a function of the same package, or a
-// method of the same receiver, with one of these names and shapes:
-//
-//   - AppendX(dst S, ...) (S, ...), where S is a slice type: it appends to
-//     dst and returns the extended slice;
-//   - XInto(dst *T, ...): it writes into the storage that dst points to.
 func (gt *gate) twinOf(d *declFunc) (*declFunc, string) {
 	name := d.fn.Name()
 	if tw := gt.sibling(d, "Append"+name); tw != nil {
@@ -450,16 +379,12 @@ func (gt *gate) twinOf(d *declFunc) (*declFunc, string) {
 	return nil, ""
 }
 
-// sibling returns the function or method name of the package or receiver of
-// d.
 func (gt *gate) sibling(d *declFunc, name string) *declFunc {
 	full := d.fn.FullName()
 	i := strings.LastIndexByte(full, '.')
 	return gt.declBy[full[:i+1]+name]
 }
 
-// twinDocRE matches the doc sentence of an allocating wrapper, such as "It
-// allocates the slice; AppendUnpack does not.", and captures the twin.
 var twinDocRE = regexp.MustCompile(`allocates[^.;]*; ((?:\w+\.)?\w+) does not`)
 
 func docText(fd *ast.FuncDecl) string {
@@ -539,12 +464,6 @@ func (gt *gate) rules() []*rule {
 	}
 }
 
-// nilDstTwin returns the twin of d when the whole body of d is "return
-// Twin(nil, params...)", or "return recv.Twin(nil, params...)" for a method,
-// where Twin is an exported function of the package, or method of the
-// receiver, and params are the parameters of d in order. When d returns a
-// call of a sibling with nil first but breaks the rest of the shape, it
-// returns nil and why.
 func (gt *gate) nilDstTwin(d *declFunc) (*declFunc, string) {
 	body := d.decl.Body
 	if body == nil || len(body.List) != 1 {
@@ -602,10 +521,6 @@ func (gt *gate) nilDstTwin(d *declFunc) (*declFunc, string) {
 	return tw, ""
 }
 
-// TestHeapAllocations fails on each allocation that the machine code of the
-// library can reach from an exported function or method, outside the rules
-// of gate.rules, with the call chain to the allocator, and on each rule that
-// a function breaks or that exempts nothing.
 func TestHeapAllocations(t *testing.T) {
 	t.Parallel()
 
@@ -613,16 +528,10 @@ func TestHeapAllocations(t *testing.T) {
 	checkReadme(t, gt.check(t), gt.cuts)
 }
 
-// saysAllocates reports whether the doc of r has a sentence that says when r
-// allocates: one with a word that starts with "allocat". A package
-// initialization has no doc.
 func saysAllocates(r root) bool {
 	return r.decl == nil || strings.Contains(strings.ToLower(docText(r.decl.decl)), "allocat")
 }
 
-// check reports the allocations of the roots that no rule allows, and the
-// rules that a function breaks or that cover nothing. It returns the rules
-// with their counts.
 func (gt *gate) check(t *testing.T) []*rule {
 	t.Helper()
 	rules := gt.rules()
@@ -643,9 +552,6 @@ func (gt *gate) check(t *testing.T) []*rule {
 	return rules
 }
 
-// checkRoots returns the roots that allocate outside the rules, with the
-// call chain and each rule that a root breaks, and counts the roots that
-// allocate.
 func (gt *gate) checkRoots(rules []*rule, roots []root) (bad []string, allocating int) {
 	for _, r := range roots {
 		if !gt.allocates(r.sym) {
@@ -680,8 +586,6 @@ func (gt *gate) checkRoots(rules []*rule, roots []root) (bad []string, allocatin
 	return bad, allocating
 }
 
-// checkCutDocs returns the roots that can allocate through a cut whose
-// functions allocate, and whose doc does not say when they allocate.
 func (gt *gate) checkCutDocs(roots []root) []string {
 	var bad []string
 	for _, r := range roots {
@@ -697,9 +601,6 @@ func (gt *gate) checkCutDocs(roots []root) []string {
 	return bad
 }
 
-// checkTwinDocs returns the functions whose doc names a twin, as in "It
-// allocates the slice; AppendX does not.", that is not the twin of the
-// naming or nil-dst rule, or that do not allocate, or are not exported.
 func (gt *gate) checkTwinDocs() []string {
 	var bad []string
 	for _, d := range gt.p.declaredFuncs() {
@@ -730,8 +631,6 @@ func (gt *gate) checkTwinDocs() []string {
 	return bad
 }
 
-// checkDeadRules counts the roots that each cut covers and returns the rules
-// and cuts that cover no root, in a build with every file of the library.
 func (gt *gate) checkDeadRules(t *testing.T, rules []*rule, roots []root) []string {
 	t.Helper()
 	var bad []string
@@ -760,9 +659,6 @@ func (gt *gate) checkDeadRules(t *testing.T, rules []*rule, roots []root) []stri
 	return bad
 }
 
-// checkUnknown returns the functions that call a method of an interface type
-// that the gate cannot resolve, when a root reaches them, since the gate
-// then cannot follow the call.
 func (gt *gate) checkUnknown(roots []root) []string {
 	seen := map[string]bool{}
 	var q []string
