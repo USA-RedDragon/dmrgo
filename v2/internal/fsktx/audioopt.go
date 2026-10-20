@@ -19,6 +19,12 @@ const (
 	aoptH      = optLPN / 2
 )
 
+// Every aoptAnchor blocks the audio optimizer starts again from the input
+// alone: the block before solves its window again without the past
+// correction and holds the result over the context of the next block, so
+// that the output depends on a bounded span of input only.
+const aoptAnchor = 2
+
 // Extra weight of the audio optimizer, in dB, on the power from aoptFarHz
 // from the carrier, which takes in the alternate channel.
 const (
@@ -62,6 +68,11 @@ type aoptimizer struct {
 	delay     int
 	win, ctx  int
 	step      int
+	anchor    int
+	pinLo     int
+	pinHi     int
+	indep     bool
+	p         []float64
 	hz, rhz   float64
 	k2        float64
 	wts       []float64
@@ -107,15 +118,16 @@ func aoptSettle(hz int) int {
 // takes, with iters iterations per block.
 func newAudioOpt(iters, hz int) *aoptimizer {
 	win := 64
-	for float64(win)*math.Sqrt2 < aoptWin48k*float64(hz)/48000 {
+	for float64(win)*math.Sqrt2 < aoptWin48k*float64(hz)/48000 || win < 4*(aoptSettle(hz)+aoptH) {
 		win *= 2
 	}
-	return newAudioOptWin(iters, hz, win)
+	return newAudioOptWin(iters, hz, win, aoptAnchor)
 }
 
 // newAudioOptWin returns an aoptimizer with a window of win samples, a
-// power of two.
-func newAudioOptWin(iters, hz, win int) *aoptimizer {
+// power of two, that starts again from the input every anchor blocks, or
+// never for 0.
+func newAudioOptWin(iters, hz, win, anchor int) *aoptimizer {
 	up := 1
 	for hz*up < radioHz {
 		up *= 2
@@ -125,7 +137,7 @@ func newAudioOptWin(iters, hz, win int) *aoptimizer {
 	al := w / math.Sqrt2
 	hold := 1 / float64(hz)
 	n := win * up
-	o := &aoptimizer{iters: iters, up: up, hz: float64(hz), rhz: rhz, k2: 2 * math.Pi / radioHz, win: win, ctx: win / 4, step: win / 2, settle: aoptSettle(hz)}
+	o := &aoptimizer{iters: iters, up: up, hz: float64(hz), rhz: rhz, k2: 2 * math.Pi / radioHz, win: win, ctx: win / 4, step: win / 2, settle: aoptSettle(hz), anchor: anchor}
 	free := win - o.ctx
 	if up*hz != radioHz {
 		o.k2 = 2 * math.Pi / rhz
@@ -217,7 +229,7 @@ func newAudioOptWin(iters, hz, win int) *aoptimizer {
 	o.e = make([]float64, win+o.settle)
 	o.ge = make([]float64, win+o.settle)
 	o.xv, o.g, o.d = make([]float64, free), make([]float64, free), make([]float64, free)
-	o.xn, o.gn = make([]float64, free), make([]float64, free)
+	o.xn, o.gn, o.p = make([]float64, free), make([]float64, free), make([]float64, free)
 	for i := range optMem {
 		o.s[i], o.y[i] = make([]float64, free), make([]float64, free)
 	}
@@ -284,7 +296,9 @@ func (o *aoptimizer) eval(w0 int, x, g []float64) float64 {
 		var v float64
 		switch {
 		case i < ctx:
-			v = o.x[(w0+i)&(optRing-1)]
+			if !o.indep {
+				v = o.x[(w0+i)&(optRing-1)]
+			}
 		case i < win:
 			v = x[i-ctx]
 		}
@@ -355,16 +369,37 @@ func (o *aoptimizer) eval(w0 int, x, g []float64) float64 {
 		}
 		g[i-ctx] = v
 	}
+	for i := o.pinLo; i < o.pinHi; i++ {
+		g[i] = 0
+	}
 	return j * sc
 }
 
-// block optimizes the window from sample w0.
+// block optimizes the window from sample w0, block nBlk.
 func (o *aoptimizer) block(w0 int) {
 	free := o.win - o.ctx
-	for n := range free {
-		o.xv[n] = o.x[(w0+o.ctx+n)&(optRing-1)]
+	if o.anchor > 0 && (o.nBlk+1)%o.anchor == 0 {
+		o.indep = true
+		clear(o.xv)
+		o.solve(w0)
+		o.indep = false
+		copy(o.p, o.xv)
+		for n := range free {
+			o.xv[n] = o.x[(w0+o.ctx+n)&(optRing-1)]
+		}
+		o.pinLo, o.pinHi = o.step-o.settle-aoptH-o.ctx, o.step
+		copy(o.xv[o.pinLo:o.pinHi], o.p[o.pinLo:o.pinHi])
+		o.solve(w0)
+		o.pinLo, o.pinHi = 0, 0
+	} else {
+		for n := range free {
+			o.xv[n] = o.x[(w0+o.ctx+n)&(optRing-1)]
+		}
+		if o.anchor > 0 && o.nBlk%o.anchor == 0 {
+			copy(o.xv[:o.step-o.ctx], o.p[o.step:])
+		}
+		o.solve(w0)
 	}
-	o.solve(w0)
 	for n := range free {
 		o.x[(w0+o.ctx+n)&(optRing-1)] = o.xv[n]
 	}

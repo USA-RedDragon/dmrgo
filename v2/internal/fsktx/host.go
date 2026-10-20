@@ -255,6 +255,7 @@ type Audio struct {
 	run    int
 	last   int8
 	opt    *aoptimizer
+	oc     int
 	corr   []int16
 	corrC  int
 	corrK  int
@@ -401,6 +402,12 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 		return dst
 	}
 	for _, v := range a.buf[:n] {
+		if a.opt != nil && a.opt.anchor > 0 {
+			if a.oc == 0 {
+				a.err, a.oc = [8]float64{}, a.opt.step
+			}
+			a.oc--
+		}
 		x := v*a.scale + a.offset
 		for i, f := range a.fb[:2*a.shape] {
 			x += f * a.err[i]

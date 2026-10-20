@@ -67,3 +67,37 @@ func TestAudioOptDelay(t *testing.T) {
 		}
 	}
 }
+
+func TestAudioOptBounded(t *testing.T) {
+	t.Parallel()
+	for _, hz := range []int{24000, 48000} {
+		mk := func() *Audio {
+			a, err := NewAudio(AudioConfig{Hz: hz, Tier: Tier1, Opt: 2, Shape: 2, NoiseZerosHz: [4]float64{7000, 21000}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			return a
+		}
+		rng := rand.New(rand.NewPCG(5, 6))
+		sym := func() int8 { return int8(rng.IntN(4)*2 - 3) }
+		a, b := mk(), mk()
+		for range 1024 {
+			a.AppendSymbol(nil, sym())
+		}
+		var oa, ob []int16
+		for i := range 32 + 600 {
+			s := int8(0)
+			if i >= 32 {
+				s = sym()
+			}
+			oa = a.AppendSymbol(oa, s)
+			ob = b.AppendSymbol(ob, s)
+		}
+		from := 132*hz/SymbolRate + a.opt.delay
+		for i := from; i < len(oa); i++ {
+			if oa[i] != ob[i] {
+				t.Fatalf("%d Hz: sample %d differs", hz, i)
+			}
+		}
+	}
+}

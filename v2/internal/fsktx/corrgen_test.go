@@ -154,7 +154,7 @@ func fitCorr(hz int, syms []int) []corrFit {
 	if err != nil {
 		panic(err)
 	}
-	a1.opt = newAudioOptWin(corrFitOpt, hz, 1024)
+	a1.opt = newAudioOptWin(corrFitOpt, hz, 1024, 0)
 	spp := hz / SymbolRate
 	rng := rand.New(rand.NewPCG(3, 4))
 	sy := make([]int8, corrFitSyms)
