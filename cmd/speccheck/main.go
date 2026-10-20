@@ -43,7 +43,6 @@ type testFuncGroup struct {
 	Names   []string `yaml:"names"`
 }
 
-// testEvent is the JSON output from `go test -json`.
 type testEvent struct {
 	Action  string  `json:"Action"`
 	Package string  `json:"Package"`
@@ -52,21 +51,18 @@ type testEvent struct {
 	Output  string  `json:"Output"`
 }
 
-// The section statuses, which speccheck derives from the test results.
 const (
-	statusVerified      = "verified"      // has tests, all pass
-	statusFailing       = "failing"       // has tests, some fail or not found
-	statusUntested      = "untested"      // has source files but no tests
-	statusUnimplemented = "unimplemented" // no source files, no tests
+	statusVerified      = "verified"
+	statusFailing       = "failing"
+	statusUntested      = "untested"
+	statusUnimplemented = "unimplemented"
 )
 
-// sectionKey uniquely identifies a section within a document.
 type sectionKey struct {
 	docID   string
 	section string
 }
 
-// sectionVerification holds the test execution results for one spec section.
 type sectionVerification struct {
 	total  int
 	passed int
@@ -74,20 +70,17 @@ type sectionVerification struct {
 	notRun []string
 }
 
-// testResult records whether a top-level test ran and passed.
 type testResult struct {
 	passed bool
 	ran    bool
 }
 
-// packageRun holds the parsed `go test -json` output for one package.
 type packageRun struct {
 	results    map[string]*testResult
 	testFailed bool
 	output     strings.Builder
 }
 
-// deriveStatus computes the status of a section from its YAML shape and test results.
 func deriveStatus(sec section, sv *sectionVerification) string {
 	hasSource := len(sec.SourceFiles) > 0
 	hasTests := len(sec.TestFunctions) > 0
@@ -179,7 +172,6 @@ func run() int {
 	return 0
 }
 
-// checkListedFiles reports source_files and ignore_files entries that do not exist.
 func checkListedFiles(repoRoot string, matrix specMatrix) int {
 	errCount := 0
 	for _, doc := range matrix.Documents {
@@ -201,7 +193,6 @@ func checkListedFiles(repoRoot string, matrix specMatrix) int {
 	return errCount
 }
 
-// collectPackageTests maps each Go package to the set of test names it must run.
 func collectPackageTests(matrix specMatrix) map[string]map[string]bool {
 	packageTests := make(map[string]map[string]bool)
 	for _, doc := range matrix.Documents {
@@ -221,7 +212,6 @@ func collectPackageTests(matrix specMatrix) map[string]map[string]bool {
 	return packageTests
 }
 
-// runAllTests runs the requested tests for every package in sorted order.
 func runAllTests(ctx context.Context, dir string, packageTests map[string]map[string]bool) (map[string]*packageRun, int) {
 	pkgs := make([]string, 0, len(packageTests))
 	for pkg := range packageTests {
@@ -245,7 +235,6 @@ func runAllTests(ctx context.Context, dir string, packageTests map[string]map[st
 	return pkgRuns, errCount
 }
 
-// testRegex builds a -run regex that matches exactly the given top-level test names.
 func testRegex(names map[string]bool) string {
 	nameList := make([]string, 0, len(names))
 	for name := range names {
@@ -255,9 +244,6 @@ func testRegex(names map[string]bool) string {
 	return "^(" + strings.Join(nameList, "|") + ")$"
 }
 
-// runPackageTests runs `go test -json` for one package. It returns an error
-// when go test exits non-zero for a reason other than a reported test
-// failure, such as a build error.
 func runPackageTests(ctx context.Context, dir, pkg string, names map[string]bool) (*packageRun, error) {
 	cmd := exec.CommandContext(ctx, "go", "test", "-v", "-json", "-count=1", "-run", testRegex(names), pkg)
 	cmd.Dir = dir
@@ -290,8 +276,6 @@ func runPackageTests(ctx context.Context, dir, pkg string, names map[string]bool
 		pkg, waitErr, pr.output.String(), stderr.String())
 }
 
-// parseTestEvents reads `go test -json` output and records the result of
-// each named top-level test. Non-test output is kept for error reporting.
 func parseTestEvents(r io.Reader, names map[string]bool) (*packageRun, error) {
 	pr := &packageRun{results: make(map[string]*testResult, len(names))}
 	for name := range names {
@@ -338,7 +322,6 @@ func parseTestEvents(r io.Reader, names map[string]bool) (*packageRun, error) {
 	return pr, scanner.Err()
 }
 
-// verifySection computes the verification result of one section from the package runs.
 func verifySection(sec section, pkgRuns map[string]*packageRun) *sectionVerification {
 	sv := &sectionVerification{}
 	for _, tfg := range sec.TestFunctions {
@@ -362,8 +345,6 @@ func verifySection(sec section, pkgRuns map[string]*packageRun) *sectionVerifica
 	return sv
 }
 
-// verifySections verifies every section, prints per-section results, and
-// returns the results with the number of errors found.
 func verifySections(matrix specMatrix, pkgRuns map[string]*packageRun) (map[sectionKey]*sectionVerification, int) {
 	errCount := 0
 	sectionResults := make(map[sectionKey]*sectionVerification)
@@ -394,8 +375,6 @@ func verifySections(matrix specMatrix, pkgRuns map[string]*packageRun) (map[sect
 	return sectionResults, errCount
 }
 
-// findUntracked returns non-test, non-generated Go files under v2/, other than
-// doc.go files, that are neither listed in any section's source_files nor in ignore_files.
 func findUntracked(repoRoot string, matrix specMatrix) ([]string, error) {
 	known := make(map[string]bool)
 	for _, f := range matrix.IgnoreFiles {
@@ -432,7 +411,6 @@ func findUntracked(repoRoot string, matrix specMatrix) ([]string, error) {
 	return untracked, err
 }
 
-// countStatuses tallies the derived status of each section in a document.
 func countStatuses(doc document, results map[sectionKey]*sectionVerification) map[string]int {
 	c := map[string]int{}
 	for _, sec := range doc.Sections {
@@ -441,7 +419,6 @@ func countStatuses(doc document, results map[sectionKey]*sectionVerification) ma
 	return c
 }
 
-// countTotals tallies derived statuses across all documents.
 func countTotals(docs []document, results map[sectionKey]*sectionVerification) (map[string]int, int) {
 	totals := map[string]int{}
 	n := 0
@@ -486,7 +463,6 @@ func printSummary(docs []document, results map[sectionKey]*sectionVerification, 
 	fmt.Fprintln(os.Stderr)
 }
 
-// testResultCell formats the test verification column for a section.
 func testResultCell(sv *sectionVerification) string {
 	if sv == nil || sv.total == 0 {
 		return "-"
@@ -569,8 +545,6 @@ const (
 	endMarker   = "<!-- END ETSI COVERAGE -->"
 )
 
-// replaceCoverage replaces the content between the ETSI COVERAGE sentinel
-// comments in content with md.
 func replaceCoverage(content, md string) (string, error) {
 	beginIdx := strings.Index(content, beginMarker)
 	if beginIdx == -1 {
@@ -594,7 +568,6 @@ func replaceCoverage(content, md string) (string, error) {
 	return out.String(), nil
 }
 
-// writeReadme injects md into the coverage section of README.md.
 func writeReadme(readmePath, md string) error {
 	data, err := os.ReadFile(readmePath)
 	if err != nil {
@@ -607,8 +580,6 @@ func writeReadme(readmePath, md string) error {
 	return os.WriteFile(readmePath, []byte(out), 0o600)
 }
 
-// checkReadmeFresh reports whether README.md already contains md in its
-// coverage section. It returns the number of errors found.
 func checkReadmeFresh(readmePath, md string) int {
 	data, err := os.ReadFile(readmePath)
 	if err != nil {
