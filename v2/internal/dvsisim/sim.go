@@ -50,6 +50,19 @@ type Options struct {
 	// NoParityPin starts the chip with parity fields off, as when its
 	// PARITY_ENABLE pin is low.
 	NoParityPin bool
+	// Echo decodes a frame that no pair holds to Echo(slot) in place of
+	// silence and an error.
+	Echo bool
+}
+
+// Echo returns the samples that a Device with Options.Echo decodes slot
+// to when no pair holds it.
+func Echo(slot [9]byte) [160]int16 {
+	var pcm [160]int16
+	for j := range pcm {
+		pcm[j] = int16(slot[j%9])*16 - 2048 + int16(j)
+	}
+	return pcm
 }
 
 // Product and Version are what the simulated chip reports.
@@ -121,6 +134,14 @@ func (d *Device) Parity() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.parity
+}
+
+// Snapshot returns the counts and a copy of the errors, for a test that
+// uses the Device from another goroutine.
+func (d *Device) Snapshot() (Counts, []string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.Counts, append([]string(nil), d.Errs...)
 }
 
 // Configured reports whether channel ch has the DMR rate and was
@@ -397,7 +418,9 @@ func (d *Device) channel(f []byte) {
 			break
 		}
 	}
-	if !found {
+	if !found && d.opt.Echo {
+		d.pcm = Echo(slot)
+	} else if !found {
 		d.fail("unknown frame")
 	}
 	r := d.pbuf[:0]
