@@ -127,6 +127,58 @@ func TestReceiverHalfRate(t *testing.T) {
 	}
 }
 
+func TestReceiverLowRate(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 6)
+	x := noisyBaseband(slots, 1400, 25, 3)
+	for _, hz := range []int{iq0LowHz, discRate / 2} {
+		y := lowIQ(x, hz)
+		r := mustNew(Config{BasebandHz: hz})
+		if r.iql == nil {
+			t.Fatalf("%d Hz: not the low rate receiver", hz)
+		}
+		var got []Burst
+		for k := 0; k < len(y); k += 1000 {
+			got = append(got, must(r.WriteBaseband(y[k:min(k+1000, len(y))]))...)
+		}
+		got = append(got, r.Flush()...)
+		if exact, total := exactFrames(slots, got); exact != total || total == 0 {
+			t.Errorf("%d Hz WriteBaseband: %d of %d voice frames exact", hz, exact, total)
+		}
+		for _, signed := range []bool{false, true} {
+			b := make([]byte, 2*len(y))
+			for i, v := range y {
+				for j, c := range [2]float32{real(v), imag(v)} {
+					q := min(max(c*127.5, -127), 127)
+					if signed {
+						b[2*i+j] = byte(int8(roundf(q)))
+					} else {
+						b[2*i+j] = byte(roundf(q + 127.5))
+					}
+				}
+			}
+			r = mustNew(Config{BasebandHz: hz, Signed: signed})
+			got = got[:0]
+			for k := 0; k < len(b); k += 1001 {
+				got = append(got, must(r.Write(b[k:min(k+1001, len(b))]))...)
+			}
+			got = append(got, r.Flush()...)
+			if exact, total := exactFrames(slots, got); exact != total || total == 0 {
+				t.Errorf("%d Hz Write, signed %v: %d of %d voice frames exact", hz, signed, exact, total)
+			}
+		}
+	}
+	for _, c := range []Config{
+		{Tier: Tier1, BasebandHz: iq0LowHz},
+		{BasebandHz: iq0LowHz, Rate: 2 * iq0LowHz},
+		{BasebandHz: 16000},
+	} {
+		if _, err := New(c); err == nil {
+			t.Errorf("New took %+v", c)
+		}
+	}
+}
+
 func TestReceiverOnBurst(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -312,17 +364,17 @@ func TestReceiverTwoPass(t *testing.T) {
 	fm, env, truth := directCalls(t, 4)
 	f, e := resampleFM(fm, env, 200)
 	o := tierOptions(Tier3)
-	o.TwoPass = true
+	o.TwoPass = false
 	var one, two, total int
 	for seed := range uint64(6) {
 		x := noisyFM(f, e, 1400, 5, 40+seed)
-		one += scoreMS(truth, receiveBaseband(x, Tier3))["ambe_c0c1"].Exact
 		r := mustNew(Config{Rate: basebandRate, opt: &o})
 		var got []Burst
 		for k := 0; k < len(x); k += 4096 {
 			got = append(got, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
 		}
-		sc := scoreMS(truth, append(got, r.Flush()...))["ambe_c0c1"]
+		one += scoreMS(truth, append(got, r.Flush()...))["ambe_c0c1"].Exact
+		sc := scoreMS(truth, receiveBaseband(x, Tier3))["ambe_c0c1"]
 		two += sc.Exact
 		total += sc.Truth
 	}

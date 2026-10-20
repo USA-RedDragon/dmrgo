@@ -106,8 +106,12 @@ func TestIQLowHalfRun(t *testing.T) {
 				}
 				r.q, r.n = 0, 0
 				r.halfRun(x[:])
+				tol := 2 + 6000/a
+				if iqLowRecip {
+					tol += 30
+				}
 				for i, v := range r.buf[1:] {
-					if d := float64(v) - hz*iqUnitsPerHz; math.Abs(d) > 2+6000/a {
+					if d := float64(v) - hz*iqUnitsPerHz; math.Abs(d) > tol {
 						t.Fatalf("%v Hz, amplitude %v, phase %v: sample %d is %d", hz, a, p, i+1, v)
 					}
 				}

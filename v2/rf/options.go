@@ -105,38 +105,66 @@ func softOptions(o options) options {
 func tier1Options(o options) options {
 	o = softOptions(o)
 	o.ExtAMBE, o.ExtNPML = true, true
-	o.CohExt, o.PSPGain, o.LLRScale = true, 0.2, 0.5
+	o.ExtLookback, o.ExtOSDOrder, o.ExtAMBECandidates = 4, 2, 1
+	return o
+}
+
+func tier2Options(o options) options {
+	o = softOptions(o)
+	o.ExtLookback, o.ExtAMBE, o.CohExt, o.PSPGain, o.LLRScale = 8, true, true, 0.2, 0.5
+	return o
+}
+
+func disc0Options() options {
+	o := discOptions()
+	o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, 2
+	return o
+}
+
+func iqLowOptions() options {
+	o := disc0Options()
+	o.HuntLinMid, o.StrobeTab = true, true
+	o.IQDisc, o.IQHz, o.IQFront, o.IQLow, o.IQBuf = true, iq0LowHz, 4, 1, 32
 	return o
 }
 
 func discTierOptions(t Tier) options {
-	o := discOptions()
 	switch t {
 	case Tier1:
-		o = tier1Options(o)
-		o.ExtLookback, o.CohLazy, o.CohSPS, o.CohSkipSNR, o.CohLocked = 8, true, 2, 20, true
+		return tier1Options(discOptions())
 	case Tier2:
-		o = softOptions(o)
-		o.ExtLookback, o.ExtAMBE, o.CohExt, o.PSPGain, o.LLRScale = 8, true, true, 0.2, 0.5
-	case TierDefault, Tier0, Tier3, Tier4:
+		o := tier2Options(discOptions())
+		o.CohNoCross, o.CohNoNext, o.CohBudget, o.CohSymNoise = true, true, 300, 8
+		return o
+	case Tier3:
+		o := tier2Options(discOptions())
+		o.CohDataPasses = 4
+		return o
+	case TierDefault, Tier0, Tier4:
 	}
-	return o
+	return disc0Options()
 }
 
 func tierOptions(t Tier) options {
 	o := discOptions()
 	switch t {
 	case TierDefault, Tier0:
-		o.IQDisc, o.IQHz, o.IQPullAgree = true, 12000, true
+		o.IQDisc, o.IQHz, o.IQPullAgree, o.LevelUp = true, 12000, true, true
+		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQHalfband, o.IQKaiser, o.IQAFCAvg = 2500, true, 15, 6, 3
 	case Tier1:
 		o = tier1Options(o)
-		o.IQDisc, o.IQHz, o.CohSkipSNR, o.CohSignMiss = true, 12000, 9, leanSignMiss
+		o.IQDisc, o.IQHz, o.IQPullAgree = true, 12000, true
+		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg = 2500, true, 5
 	case Tier2:
-		o = softOptions(o)
-		o.IQDisc, o.IQHz, o.ExtAMBE, o.CohExt, o.PSPGain, o.LLRScale = true, 24000, true, true, 0.2, 0.5
+		o = tier2Options(o)
+		o.IQDisc, o.IQHz, o.CohNoCross, o.CohNoNext, o.CohBudget = true, 24000, true, true, 300
+		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg = 2500, true, 5
 	case Tier3:
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, true, 52, true, 7, 0.35
+		o.TwoPass, o.TwoPassLevels, o.LogMAP, o.Comb, o.CombMode = true, 2, true, true, 12
+		o.HGate, o.ExactH, o.HGateMin = 0.01, true, 4
+		o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser, o.IQCutAuto = 2500, 6000, 6, true
 	case Tier4:
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 2, true, true, 7, 0.35

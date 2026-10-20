@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	iqLowBuf      = 32
+	iqLowBuf      = 16
 	iqLowPack     = 16
 	iqLowScale    = 4096
 	iqLowShift    = 10
 	iqLowISI      = 0.04
 	iqLowAtanNear = false
-	iqLowRecip    = false
+	iqLowRecip    = true
 )
 
 var iqLowRecip64 = [64]uint16{
@@ -47,7 +47,10 @@ type LowIQConfig struct {
 }
 
 // LowIQReceiver is the Tier 0 receiver for complex baseband at 9.6 or 12
-// kHz that is already filtered to the channel. It does not allocate.
+// kHz that is already filtered to the channel, as New makes it for a
+// BasebandHz of 9600 or 12000, in memory of the caller. It does not
+// allocate. On a Cortex-M4F at 9.6 kHz it needs about 4.3 MHz and 2 KB
+// with its stack.
 type LowIQReceiver struct {
 	r iqLowRx
 }
@@ -103,13 +106,19 @@ type iqLowRx struct {
 
 func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) error {
 	*r = iqLowRx{}
-	err := r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: opt})
+	err := r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: opt, lowIQ: true})
 	r.d.iqLow = hz == iq0LowHz
 	return err
 }
 
-func newIQLowRx(cfg Config, opt options) *iqLowRx {
-	r := &iqLowRx{}
+type iqLowNew struct {
+	iqLowRx
+	carry  byteCarry
+	signed bool
+}
+
+func newIQLowRx(cfg Config, opt options) *iqLowNew {
+	r := &iqLowNew{signed: cfg.Signed}
 	if err := r.init(cfg.BasebandHz, cfg.OnBurst, &opt); err != nil {
 		panic(err)
 	}
@@ -117,6 +126,30 @@ func newIQLowRx(cfg Config, opt options) *iqLowRx {
 		r.d.out = make([]Burst, 0, r.d.maxBursts(cfg.MaxWrite))
 	}
 	return r
+}
+
+func (r *iqLowNew) write(iq []byte) []Burst {
+	r.d.out = r.d.out[:0]
+	pair, iq := r.carry.split(iq)
+	var b [iqLowPack]uint32
+	for _, s := range [2][]byte{pair, iq} {
+		for len(s) >= 2 {
+			m := min(len(s)/2, len(b))
+			for i := range m {
+				b[i] = uint32(uint16(r.level(s[2*i]))) | uint32(r.level(s[2*i+1]))<<16
+			}
+			r.run(b[:m])
+			s = s[2*m:]
+		}
+	}
+	return r.d.out
+}
+
+func (r *iqLowNew) level(v byte) int32 {
+	if r.signed {
+		return (2*int32(int8(v)) + 1) << 4
+	}
+	return (2*int32(v) - 255) << 4
 }
 
 func (r *iqLowRx) block() int { return iqAFCBlock * r.d.hz() / basebandRate }

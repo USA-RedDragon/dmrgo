@@ -32,22 +32,26 @@ type DiscConfig struct {
 	// which then return no bursts. The burst is valid only during the call;
 	// copy it to keep it.
 	OnBurst func(*Burst)
-	// Tier is Tier0, Tier1 or Tier2. The zero value TierDefault is Tier1
-	// for NewDisc, and Tier0 for Init, which does not allocate the stages
-	// of the higher tiers, and under TinyGo, which has neither. Tier2
-	// detects each burst again coherently, on the carrier phase that it
-	// rebuilds from the samples, in place of the detection of Tier1, at
-	// about 15 times its CPU time.
-	Tier Tier
-	opt  *options
+	// Tier is Tier0, Tier1, Tier2 or Tier3. The zero value TierDefault is
+	// Tier1 for NewDisc, and Tier0 for Init, which does not allocate the
+	// stages of the higher tiers, and under TinyGo, which has neither.
+	// Tier2 detects the bursts again coherently, on the carrier phase that
+	// it rebuilds from the samples, at about 4 times the CPU time of Tier1.
+	// Tier3 adds four passes over each data burst, at about twice the CPU
+	// time of Tier2, and is measured at 24 kHz.
+	Tier  Tier
+	opt   *options
+	lowIQ bool
 }
 
 // DiscReceiver recovers DMR bursts from the output of an FM discriminator,
 // as the radio chips of hotspots and MMDVM modems give it: real samples in
 // any units, with any gain and DC offset, which the receiver measures
-// itself. With Tier0 it keeps about 1 KiB of state, for microcontrollers. A DiscReceiver that Init sets up in
-// memory of the caller, such as a package variable, uses no heap with
-// OnBurst or AppendBursts. A DiscReceiver is not safe for concurrent use.
+// itself. With Tier0 it keeps about 1.4 KB of state, for microcontrollers;
+// on a Cortex-M4F it needs about 3.7 MHz and 2 KB with its stack. A
+// DiscReceiver that Init sets up in memory of the caller, such as a package
+// variable, uses no heap with OnBurst or AppendBursts. A DiscReceiver is not
+// safe for concurrent use.
 type DiscReceiver struct {
 	leanCore
 	f audioFront
@@ -65,17 +69,21 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 	if cfg.Tier == TierDefault {
 		cfg.Tier = discDefaultTier
 	}
-	r := &DiscReceiver{}
-	tier := cfg.Tier
-	soft := (tier == Tier1 || tier == Tier2) && cfg.opt == nil
-	if soft {
-		cfg.Tier = Tier0
+	if cfg.Tier < Tier0 || cfg.Tier > Tier3 {
+		return nil, errDiscTier
 	}
+	r := &DiscReceiver{}
+	soft := cfg.opt == nil
+	opt := discTierOptions(cfg.Tier)
+	if !soft {
+		opt = *cfg.opt
+	}
+	cfg.opt = &opt
 	if err := r.Init(cfg); err != nil {
 		return nil, err
 	}
-	if soft {
-		if err := r.addSoft(tier); err != nil {
+	if soft && opt.SoftExt {
+		if err := r.addSoft(&opt); err != nil {
 			return nil, err
 		}
 	}
@@ -103,9 +111,12 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	if cfg.Tier != TierDefault && cfg.Tier != Tier0 && cfg.opt == nil {
 		return errDiscTier
 	}
-	opt := discOptions()
-	if cfg.opt != nil {
+	opt := disc0Options()
+	switch {
+	case cfg.opt != nil:
 		opt = *cfg.opt
+	case cfg.lowIQ:
+		opt = iqLowOptions()
 	}
 	*r = DiscReceiver{}
 	r.f.half = cfg.Hz == discRate

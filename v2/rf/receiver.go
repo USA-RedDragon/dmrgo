@@ -13,44 +13,48 @@ import (
 type Tier int
 
 // The tiers, from the least compute to the most. The README gives the
-// sensitivity, compute and RAM of each; Tier0 to Tier2 are its Pareto front
-// of compute, RAM and sensitivity, and every tier decodes each FEC field
-// with soft decisions.
+// sensitivity, compute and RAM of each. Every tier decodes each FEC field
+// with soft decisions, and Tier0 to Tier2 each need under 20 ms of CPU per
+// second of signal on a PC.
 const (
 	// TierDefault is the zero value: Tier0 in a Config, and in a DiscConfig
 	// Tier1 for NewDisc, or Tier0 under TinyGo and for Init.
 	TierDefault Tier = iota
 	// Tier0 slices the output of an FM discriminator and its matched
-	// filter. On I/Q an FM discriminator at 12 kHz comes before it, or at
-	// BasebandRate/2 the complex front end. It fits a microcontroller.
+	// filter. On I/Q at BasebandRate an FM discriminator at 12 kHz comes
+	// before it, and the receiver keeps about 5 KB. At a BasebandHz of 9600
+	// or 12000 it takes I/Q that a radio chip filtered to the channel and
+	// keeps about 1.6 KB; LowIQReceiver is that receiver in memory of the
+	// caller, for a microcontroller.
 	Tier0
-	// Tier1 adds to Tier0 the soft decoders of the coherent tiers: a
-	// BPTC(196,96) block whose check fails by ordered statistics, C0 and C1
-	// of each voice frame by soft ML, the embedded LC of each superframe
-	// over its four fragments and the earlier superframes of the call, and
-	// LookbackSlots slots before the first lock decoded again. It detects
-	// the bursts that they decode, and each rate 3/4 block, from the
-	// symbols of the discriminator with the correlation of their noise.
-	// Each burst of a stream that is not clear it detects again as Tier2
-	// does, on audio from the carrier phase that it sums from the
-	// discriminator samples. It costs about the CPU of Tier0 on a clear
-	// stream and of Tier2 on a weak one.
+	// Tier1 adds to Tier0 the soft decoders: a BPTC(196,96) block whose
+	// check fails by ordered statistics, C0 and C1 of each voice frame by
+	// soft ML, the embedded LC of each superframe over its four fragments
+	// and the earlier superframes of the call, and LookbackSlots slots
+	// before the first lock decoded again. It detects the bursts that they
+	// decode, and each rate 3/4 block, from the symbols of the
+	// discriminator with the correlation of their noise. It keeps about
+	// 35 KB.
 	Tier1
-	// Tier2 adds to the soft decoders of Tier1, on I/Q at BasebandRate, the
-	// detection again of every burst with a trellis over three symbols that
-	// carries the carrier phase with each survivor, from the SYNC or EMB of
-	// the burst and from the SYNC of the slots beside it, and the coherent
-	// test of the SYNC candidates of the search. It holds each burst one
-	// slot longer, and runs on a PC.
+	// Tier2 adds to the soft decoders of Tier1 the detection again of the
+	// bursts with a trellis over three symbols that carries the carrier
+	// phase with each survivor, from the SYNC or EMB of the burst, within a
+	// compute budget per slot: on I/Q from the samples at 24 kHz, on audio
+	// from the carrier phase that it sums from the discriminator samples.
+	// It holds each burst one slot longer and keeps about 500 KB.
 	Tier2
-	// Tier3 detects over a window of three symbols with one of 52 carrier
-	// phases in the trellis state, and detects each voice burst again with
-	// the bits that its FEC fixed, at about 20 times the compute of Tier2.
-	// It is for offline decoding on a PC.
+	// Tier3 on I/Q detects over a window of three symbols with one of 52
+	// carrier phases in the trellis state, in two passes, detects each
+	// voice burst again with the bits that its FEC fixed, and takes each
+	// voice frame from it or from a Tier2 receiver beside it. It needs
+	// about 70 times the compute of Tier2 and about 36 MB, for offline
+	// decoding on a PC. On audio it is Tier2 with four passes over each
+	// data burst, at about twice the compute of Tier2.
 	Tier3
-	// Tier4 is Tier3 over a window of five symbols with 200 carrier
-	// phases, the exact count for h = 0.27, at about 50 times the compute
-	// of Tier3. It is for offline decoding on a PC and needs about 100 MB.
+	// Tier4 is the trellis of Tier3 over a window of five symbols with 200
+	// carrier phases, the exact count for h = 0.27, in one pass and without
+	// a Tier2 receiver beside it, at about 50 times the compute of that
+	// trellis. It is for offline decoding on a PC and needs about 100 MB.
 	Tier4
 )
 
@@ -119,17 +123,21 @@ type Config struct {
 	Tier Tier
 	// BasebandHz is the sample rate of the complex baseband that
 	// WriteBaseband takes and that the front end of Write makes: 0 or
-	// BasebandRate, or BasebandRate/2 with Tier0 or Tier1, which selects
-	// their receiver with a complex front end in place of the FM
-	// discriminator, in about 1 KB of RAM for Tier0. 0 means BasebandRate.
+	// BasebandRate; BasebandRate/2 with Tier0 or Tier1, which selects their
+	// receiver with a complex front end in place of the FM discriminator,
+	// with about 2 KB of state for Tier0; or 9600 or 12000 with Tier0, for
+	// I/Q that a radio chip filtered to the channel, with about 1.6 KB of
+	// state. Bursts that OnBurst does not take add to the RAM. At 9600
+	// and 12000 Write takes 8-bit I/Q at BasebandHz, and Rate must be 0 or
+	// BasebandHz. 0 means BasebandRate.
 	BasebandHz int
 	// MaxWrite is the largest number of bytes in one Write, and twice the
 	// largest number of samples in one WriteBaseband. 0 means 1 << 16.
 	// When OnBurst is nil, a longer call returns ErrWriteTooLong.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
-	// locks to that the receiver keeps and decodes: 0 means 8 for Tier1
-	// and Tier2, and 16 for Tier3 and Tier4. Tier0 keeps none, and loses
+	// locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8
+	// for Tier2, and 16 for Tier3 and Tier4. Tier0 keeps none, and loses
 	// the start of a stream that it enters late.
 	LookbackSlots int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
@@ -179,7 +187,7 @@ type Receiver struct {
 	iqd      *iqRx
 	iq0      *iq0Rx
 	cb       *combRx
-	iql      *iqLowRx
+	iql      *iqLowNew
 	slot     int
 	maxWrite int
 }
@@ -294,11 +302,11 @@ func newReceiver(cfg Config) (*Receiver, error) {
 		return nil, err
 	}
 	opt := tierOptions(cfg.Tier)
-	if cfg.Tier == Tier1 || cfg.Tier == Tier2 {
+	switch {
+	case low:
+		opt = iqLowOptions()
+	case (cfg.Tier == Tier1 || cfg.Tier == Tier2) && cfg.LookbackSlots > 0:
 		opt.ExtLookback = cfg.LookbackSlots
-		if opt.ExtLookback == 0 {
-			opt.ExtLookback = 8
-		}
 	}
 	if cfg.opt != nil {
 		opt = *cfg.opt
@@ -338,7 +346,12 @@ func checkConfig(cfg *Config) (low bool, err error) {
 	if cfg.Tier < Tier0 || cfg.Tier > Tier4 {
 		return false, &ConfigError{Field: "Tier"}
 	}
-	low = cfg.opt != nil && cfg.opt.IQFront == 4 && cfg.opt.IQDisc && (cfg.BasebandHz == iq0LowHz || cfg.BasebandHz == discRate/2)
+	low = cfg.BasebandHz == iq0LowHz || cfg.BasebandHz == discRate/2
+	if cfg.opt != nil {
+		low = low && cfg.opt.IQFront == 4 && cfg.opt.IQDisc
+	} else {
+		low = low && cfg.Tier == Tier0
+	}
 	switch {
 	case cfg.BasebandHz == 0:
 		cfg.BasebandHz = basebandRate
@@ -349,7 +362,7 @@ func checkConfig(cfg *Config) (low bool, err error) {
 	switch {
 	case cfg.Rate == 0:
 		cfg.Rate = float64(cfg.BasebandHz)
-	case !(cfg.Rate >= float64(cfg.BasebandHz)) || cfg.Rate > 1e9:
+	case !(cfg.Rate >= float64(cfg.BasebandHz)) || cfg.Rate > 1e9, low && cfg.opt == nil && cfg.Rate != float64(cfg.BasebandHz):
 		return false, &ConfigError{Field: "Rate"}
 	}
 	if cfg.MaxWrite < 0 {
@@ -547,7 +560,7 @@ func (r *Receiver) write(iq []byte) []Burst {
 		return r.cb.write(iq)
 	}
 	if r.iql != nil {
-		return nil
+		return r.iql.write(iq)
 	}
 	if r.iq0 != nil {
 		return r.iq0.write(iq)

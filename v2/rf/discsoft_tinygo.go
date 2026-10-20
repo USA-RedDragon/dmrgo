@@ -4,7 +4,7 @@ package rf
 
 const discDefaultTier = Tier0
 
-func (r *DiscReceiver) addSoft(Tier) error {
+func (r *DiscReceiver) addSoft(*options) error {
 	return errDiscTier
 }
 

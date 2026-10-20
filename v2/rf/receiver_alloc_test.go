@@ -26,6 +26,7 @@ func TestAllocsReceiver(t *testing.T) {
 			bursts += len(must(r.Write(iq[pos : pos+chunk])))
 			pos += chunk
 		})
+		bursts += len(r.Flush())
 		if n != 0 || bursts == 0 {
 			t.Errorf("tier %d: %v allocations per Write, %d bursts", tier, n, bursts)
 		}
@@ -36,6 +37,7 @@ func TestAllocsReceiver(t *testing.T) {
 			bursts += len(must(r.WriteBaseband(x[pos : pos+chunk])))
 			pos += chunk
 		})
+		bursts += len(r.Flush())
 		if n != 0 || bursts == 0 {
 			t.Errorf("tier %d: %v allocations per WriteBaseband, %d bursts", tier, n, bursts)
 		}
@@ -46,6 +48,7 @@ func TestAllocsReceiver(t *testing.T) {
 			must(r.WriteBaseband(x[pos : pos+chunk]))
 			pos += chunk
 		})
+		r.Flush()
 		if n != 0 || bursts == 0 {
 			t.Errorf("tier %d: %v allocations per WriteBaseband with OnBurst, %d bursts", tier, n, bursts)
 		}
