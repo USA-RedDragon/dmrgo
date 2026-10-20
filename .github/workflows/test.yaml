@@ -220,6 +220,33 @@ jobs:
       - name: Build libdmrgo without libcodec2
         run: go build -C v2/capi -tags nocodec2 -buildmode=c-shared -o build/libdmrgo-nocodec2.so .
 
+  gr-dmrgo:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install GNU Radio and libcodec2
+        run: sudo apt-get update && sudo apt-get install -y gnuradio-dev libcodec2-dev pkg-config cmake
+
+      - run: go generate ./...
+
+      - name: Build and test the module
+        run: |
+          cmake -S gr-dmrgo -B gr-dmrgo/build -DCMAKE_INSTALL_PREFIX="$PWD/gr-dmrgo/build/prefix"
+          cmake --build gr-dmrgo/build
+          ctest --test-dir gr-dmrgo/build --output-on-failure
+          cmake --install gr-dmrgo/build
+
+      - name: Compile the example flowgraph
+        run: GRC_BLOCKS_PATH=gr-dmrgo/build/prefix/share/gnuradio/grc/blocks grcc -o gr-dmrgo/build gr-dmrgo/examples/dmrgo_rx_file.grc
+
   tinygo:
     runs-on: ubuntu-24.04
     container:
