@@ -41,6 +41,9 @@ func Generate(dir string) ([]byte, error) {
 		if d.Name() == "testdata" || slices.ContainsFunc(skipDirs, func(s string) bool { return rel == s || strings.HasPrefix(rel, s+"/") }) {
 			return filepath.SkipDir
 		}
+		if _, err := os.Stat(filepath.Join(p, "go.mod")); err == nil && rel != "." {
+			return filepath.SkipDir
+		}
 		bp, err := ctx.ImportDir(p, 0)
 		if err != nil {
 			if errors.As(err, new(*build.NoGoError)) {

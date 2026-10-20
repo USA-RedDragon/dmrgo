@@ -34,6 +34,9 @@ func libraryPackages(t *testing.T) []string {
 		if d.Name() == "testdata" || slices.ContainsFunc(skipDirs, func(s string) bool { return rel == s || strings.HasPrefix(rel, s+"/") }) {
 			return filepath.SkipDir
 		}
+		if _, err := os.Stat(filepath.Join(path, "go.mod")); err == nil && rel != "." {
+			return filepath.SkipDir
+		}
 		matches, _ := filepath.Glob(filepath.Join(path, "*.go"))
 		for _, m := range matches {
 			if !strings.HasSuffix(m, "_test.go") {
