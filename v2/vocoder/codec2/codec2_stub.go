@@ -28,7 +28,7 @@ func (c *Codec) Silence() [9]byte { return [9]byte{} }
 // Encode returns ErrUnavailable.
 func (c *Codec) Encode([]int16) ([9]byte, error) { return [9]byte{}, ErrUnavailable }
 
-// Decode returns ErrUnavailable.
+// Decode returns ErrUnavailable. It returns at most FrameSamples() samples.
 func (c *Codec) Decode([9]byte) ([]int16, error) { return nil, ErrUnavailable }
 
 // AppendDecode returns dst and ErrUnavailable.

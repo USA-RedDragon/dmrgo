@@ -37,7 +37,8 @@ type Codec interface {
 	FrameSamples() int
 	// Encode encodes exactly FrameSamples samples into one 72-bit frame.
 	Encode(pcm []int16) ([9]byte, error)
-	// Decode decodes one 72-bit frame into FrameSamples samples.
+	// Decode decodes one 72-bit frame into FrameSamples samples. It returns
+	// at most FrameSamples() samples.
 	Decode(slot [9]byte) ([]int16, error)
 	// Silence returns a frame that decodes to silence, for padding the last
 	// burst of a call.
@@ -55,8 +56,8 @@ type AppendDecoder interface {
 	Codec
 
 	// AppendDecode decodes one 72-bit frame as Decode does, appends the
-	// FrameSamples samples to dst and returns the extended slice. On error
-	// it returns dst unchanged.
+	// FrameSamples samples to dst and returns the extended slice; dst needs
+	// room for FrameSamples() samples. On error it returns dst unchanged.
 	AppendDecode(dst []int16, slot [9]byte) ([]int16, error)
 }
 
