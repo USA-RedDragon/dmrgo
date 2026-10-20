@@ -69,12 +69,14 @@ func DecodeEmbeddedWithCheck(fragments [4]uint32, check func(info [10]byte) bool
 // each row but the derived one. The run with row 7 derived keeps every
 // pattern, and a run with another row derived keeps only the patterns with 5
 // or more errors in that row, so that no pattern is found twice. Those runs
-// find nothing once the least weight is below 5.
+// find nothing once the least weight is below 5. order holds bytes, so that
+// the search is below 256 bytes, the largest local that TinyGo puts on a
+// stack of 32 KB or less.
 type embeddedLCSearch struct {
 	rows         [8]uint16
 	syndromes    [8]int
 	parity       uint16
-	order        [7]int
+	order        [7]uint8
 	derived      int
 	minRemaining [8]int
 	errors       [8]uint16
@@ -92,7 +94,7 @@ func (s *embeddedLCSearch) run(derived int) {
 	k := 0
 	for row := range s.rows {
 		if row != derived {
-			s.order[k] = row
+			s.order[k] = uint8(row)
 			k++
 		}
 	}
