@@ -526,23 +526,11 @@ const (
 )
 
 var rxKnown = map[string]string{
-	"msj/40 dB/offset -3000 Hz/iq0": rxKnownAFC,
-	"msj/12 dB/offset -3000 Hz/iq0": rxKnownAFC,
-	"msj/12 dB/late E/iq3":          rxKnownLate,
-	"ms/40 dB/late E/iq2":           rxKnownGain,
-	"ms/40 dB/jump -2 ms/iq0h":      rxKnownJump,
+	"ms/40 dB/jump -2 ms/iq0h": rxKnownJump,
 }
 
-const (
-	rxKnownAFC = "the oscillator of Tier 0 at 3 kHz off takes about three moves of 50 ms to pull in, " +
-		"and the two SYNCs of the first call of an MS come while it moves"
-	rxKnownLate = "a receiver that starts in the call misses the first SYNC for some noise at 12 dB, " +
-		"and loses the superframe after it"
-	rxKnownGain = "the DiscReceiver of Tier 2 scales its input up for each burst of an MS and down for the noise " +
-		"between them before it locks, and a scale in the SYNC of the late entry loses it, as on main"
-	rxKnownJump = "the half rate front of Tier 0 locks this seed while its AFC is still 850 Hz off, and after the jump " +
-		"the hunt fits the next SYNC at a poor timing phase and locks one superframe late; 40 other seeds lose at most 1 payload"
-)
+const rxKnownJump = "the half rate front of Tier 0 locks this seed while its AFC is still 850 Hz off, and after the jump " +
+	"the hunt fits the next SYNC at a poor timing phase and locks one superframe late; 40 other seeds lose at most 1 payload"
 
 type rxResult struct {
 	stream, cond, recv string
