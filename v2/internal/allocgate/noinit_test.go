@@ -11,9 +11,6 @@ import (
 	"testing"
 )
 
-// TestNoInit fails for an init function in a non-test file of a library
-// package. A library sets up nothing on import: a program registers what it
-// uses, such as a vocoder codec, itself.
 func TestNoInit(t *testing.T) {
 	t.Parallel()
 

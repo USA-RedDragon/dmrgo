@@ -12,15 +12,11 @@ import (
 	"testing"
 )
 
-// The markers of the allocation table in the README of the repository.
 const (
 	readmeBegin = "<!-- allocgate:begin -->"
 	readmeEnd   = "<!-- allocgate:end -->"
 )
 
-// readmeTable returns the allocation table of the README: one row for each
-// rule that lets the library allocate, with the number of exported
-// functions that the rule covers.
 func readmeTable(rules []*rule, cuts []*cut) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s\n\n| What may allocate | When | Functions |\n| --- | --- | ---: |\n", readmeBegin)
@@ -34,10 +30,6 @@ func readmeTable(rules []*rule, cuts []*cut) string {
 	return b.String()
 }
 
-// checkReadme compares the allocation table of the README with the rules,
-// when DMRGO_README is "check", or writes it, when DMRGO_README is "write".
-// The counts depend on the go version and on cgo, so only the CI job that
-// builds the README configuration sets it.
 func checkReadme(t *testing.T, rules []*rule, cuts []*cut) {
 	t.Helper()
 	mode := os.Getenv("DMRGO_README")

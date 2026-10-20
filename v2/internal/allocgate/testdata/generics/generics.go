@@ -13,13 +13,10 @@ func HoleIdentity[T any](v T) T { return v }
 
 type stringer interface{ String() string }
 
-// holeString calls a method of a type parameter.
 func holeString[T stringer](v T) string { return v.String() }
 
-// holeApply calls a func value whose signature has a type parameter.
 func holeApply[T any](v T, f func(T) T) T { return f(v) }
 
-// fineSum adds the values of s with no call.
 func fineSum[T int | int64](s []T) T {
 	var sum T
 	for _, v := range s {

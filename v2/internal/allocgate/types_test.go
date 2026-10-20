@@ -19,8 +19,6 @@ import (
 	"testing"
 )
 
-// libPackage is a library package, type-checked from the files that the
-// compiler compiled.
 type libPackage struct {
 	path  string
 	files []*ast.File
@@ -28,11 +26,9 @@ type libPackage struct {
 	info  *types.Info
 }
 
-// program holds the type information of the library and its dependencies.
 type program struct {
-	fset *token.FileSet
-	lib  map[string]*libPackage
-	// order lists the library packages in dependency order.
+	fset  *token.FileSet
+	lib   map[string]*libPackage
 	order []*libPackage
 	gc    types.Importer
 }
@@ -49,8 +45,6 @@ func (i gateImporter) Import(path string) (*types.Package, error) {
 	return i.p.gc.Import(path)
 }
 
-// loadProgram type-checks the library packages of pkgs from source and
-// imports the other packages from their export data.
 func loadProgram(t *testing.T, pkgs []listedPackage, isLib func(string) bool) *program {
 	t.Helper()
 	p := &program{fset: token.NewFileSet(), lib: map[string]*libPackage{}}
@@ -102,8 +96,6 @@ func loadProgram(t *testing.T, pkgs []listedPackage, isLib func(string) bool) *p
 	return p
 }
 
-// lookupType returns the named type path.name, from the library or from
-// export data.
 func (p *program) lookupType(path, name string) types.Type {
 	if path == "" {
 		if obj := types.Universe.Lookup(name); obj != nil {
@@ -126,9 +118,6 @@ func (p *program) lookupType(path, name string) types.Type {
 	return nil
 }
 
-// symPackage returns the package path of a symbol name, such as
-// "github.com/x/y" for "github.com/x/y.(*T).M", or "" when the name has no
-// package.
 func symPackage(sym string) string {
 	end := len(sym)
 	if i := strings.IndexAny(sym, "[("); i >= 0 {
@@ -142,9 +131,6 @@ func symPackage(sym string) string {
 	return sym[:slash+1+dot]
 }
 
-// methodSym splits a method symbol such as "pkg.(*T).M" or "pkg.T.M" into
-// its package and method name. ok is false for a symbol that is not a
-// method.
 func methodSym(sym string) (pkg, method string, ok bool) {
 	pkg = symPackage(sym)
 	if pkg == "" {
@@ -181,8 +167,6 @@ func methodSym(sym string) (pkg, method string, ok bool) {
 	return pkg, rest, true
 }
 
-// funcSym returns the symbol of the code of a declared function or method,
-// or "" for a generic one, which has only instantiations.
 func funcSym(fn *types.Func) string {
 	sig := fn.Signature()
 	if sig.TypeParams().Len() > 0 {
@@ -220,8 +204,6 @@ func funcSym(fn *types.Func) string {
 	return obj.Pkg().Path() + "." + obj.Name() + "." + fn.Name()
 }
 
-// symLess orders method names as the compiler orders the methods of an
-// interface type: exported before unexported, then by name.
 func symLess(a, b *types.Func) int {
 	if a.Exported() != b.Exported() {
 		if a.Exported() {
@@ -242,24 +224,15 @@ func symLess(a, b *types.Func) int {
 	return strings.Compare(pa, pb)
 }
 
-// ifaceMethod is a method of an interface type that code calls.
 type ifaceMethod struct {
 	iface  *types.Interface
 	method *types.Func
-	// sealed is set when the interface has an unexported method of a
-	// library package, so that only library types implement it.
 	sealed bool
-	// open is set when a type of the program that uses the library can
-	// implement the interface.
-	open bool
+	open   bool
 }
 
-// errUnresolved marks an interface method relocation whose type the gate
-// cannot find.
 var errUnresolved = errors.New("unresolved interface type")
 
-// resolveIfaceMethod resolves a R_USEIFACEMETHOD target such as
-// "type:pkg.I+104" to the method that it names.
 func (p *program) resolveIfaceMethod(arg string) (ifaceMethod, error) {
 	sym, offStr, ok := strings.Cut(strings.TrimPrefix(arg, "type:"), "+")
 	if !ok {
@@ -270,9 +243,6 @@ func (p *program) resolveIfaceMethod(arg string) (ifaceMethod, error) {
 		return ifaceMethod{}, fmt.Errorf("%s: %w", arg, err)
 	}
 	var typ types.Type
-	// An interface type descriptor is the 80-byte abi.InterfaceType, the
-	// 16-byte abi.UncommonType of a named type, and then the methods, 8
-	// bytes each.
 	base := 80
 	if strings.HasPrefix(sym, "interface {") {
 		tv, err := types.Eval(p.fset, nil, token.NoPos, sym)
@@ -316,8 +286,6 @@ func (p *program) resolveIfaceMethod(arg string) (ifaceMethod, error) {
 	return m, nil
 }
 
-// libraryImplementations returns the symbols of the methods of the library
-// types that implement m.iface, for method m.method.
 func (p *program) libraryImplementations(m ifaceMethod) []string {
 	var syms []string
 	for _, l := range p.order {
@@ -348,7 +316,6 @@ func (p *program) libraryImplementations(m ifaceMethod) []string {
 	return syms
 }
 
-// declFunc is a function or method declared in a library package.
 type declFunc struct {
 	lib  *libPackage
 	decl *ast.FuncDecl
@@ -356,7 +323,6 @@ type declFunc struct {
 	sym  string
 }
 
-// declaredFuncs returns the functions and methods declared in the library.
 func (p *program) declaredFuncs() []declFunc {
 	var fns []declFunc
 	for _, l := range p.order {
@@ -377,26 +343,17 @@ func (p *program) declaredFuncs() []declFunc {
 	return fns
 }
 
-// dynamicCall is a call of a func value in library source.
 type dynamicCall struct {
 	sig *types.Signature
 }
 
-// funcValue is a function that library code uses as a value, which a
-// dynamic call can then call.
 type funcValue struct {
-	sig *types.Signature
-	// syms holds the symbols of its code; a func literal can have more
-	// than one when the compiler inlined its enclosing function.
+	sig  *types.Signature
 	syms []string
-	// pos is the position of a func literal, whose symbols the gate
-	// finds from the first instruction of each closure.
-	pos position
-	lit bool
+	pos  position
+	lit  bool
 }
 
-// funcValues collects the dynamic calls of the library, by position, and
-// the functions that the library uses as values.
 func (p *program) funcValues() (map[position][]dynamicCall, []funcValue) {
 	calls := map[position][]dynamicCall{}
 	var values []funcValue
@@ -464,9 +421,6 @@ func (p *program) funcValues() (map[position][]dynamicCall, []funcValue) {
 	return calls, values
 }
 
-// isStatic reports whether fun names a function or a concrete method, so
-// that the call is direct, or an interface method, which the gate resolves
-// from the relocations of the machine code.
 func isStatic(info *types.Info, fun ast.Expr) bool {
 	switch e := fun.(type) {
 	case *ast.IndexExpr:

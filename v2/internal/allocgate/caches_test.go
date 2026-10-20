@@ -8,33 +8,8 @@ import (
 	"strings"
 )
 
-// semacquirePrefix starts the name of each runtime function that sync calls
-// to block a goroutine on a contended Mutex or RWMutex, such as
-// internal/sync.runtime_SemacquireMutex or sync.runtime_SemacquireRWMutexR.
 const semacquirePrefix = "runtime_Semacquire"
 
-// runtimeCaches returns the runtime functions that allocate only to fill a
-// cache whose size the program bounds, not the number of calls, so the gate
-// does not follow calls into them. It starts from these runtime functions:
-//
-//   - runtime.typeAssert and runtime.interfaceSwitch, which the compiler
-//     calls for a type assertion or a type switch to an interface type when
-//     its inline cache misses. They build the cache, and an itab in the
-//     global itab table, once for each call site and dynamic type.
-//   - the runtime_Semacquire functions of sync, which block a goroutine on a
-//     contended mutex. The goroutine takes a sudog from a per-P cache and
-//     returns it there, so the runtime allocates a sudog only when the
-//     caches are empty, at most once for each goroutine that waits at the
-//     same time. The cut also covers the other blocking operations that
-//     take a sudog, such as a channel operation.
-//
-// From each, it follows the runtime callees that reach an allocator, and are
-// not entries, to the builders: the functions whose allocating callees are
-// all entries. The entries are the allocators and the runtime functions that
-// compiled code calls, the builtins of the compiler, such as runtime.mallocgc
-// and runtime.newobject. The builders are the cut. It returns an error, which
-// fails the gate, when a start function is missing or calls an entry that
-// allocates itself, since the runtime then no longer has that shape.
 func (gt *gate) runtimeCaches(cached []string, builtins map[string]bool) (map[string]bool, error) {
 	next := gt.g.pathsToSinks(nil)
 	entry := func(f string) bool { return builtins[f] || gt.g.sinks[f] }

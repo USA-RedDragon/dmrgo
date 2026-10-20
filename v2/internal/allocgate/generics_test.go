@@ -12,9 +12,6 @@ import (
 	"testing"
 )
 
-// TestNoUnfollowedGenerics fails when the library gains generic code that
-// the gate cannot follow, so that the limit stays a known one and does not
-// become a silent hole.
 func TestNoUnfollowedGenerics(t *testing.T) {
 	t.Parallel()
 
@@ -23,8 +20,6 @@ func TestNoUnfollowedGenerics(t *testing.T) {
 	}
 }
 
-// TestGenericHolesCases checks genericHoles on testdata/generics, whose
-// Hole functions the gate cannot follow and whose Fine functions it can.
 func TestGenericHolesCases(t *testing.T) {
 	t.Parallel()
 
@@ -63,24 +58,12 @@ func loadLibrary(t *testing.T, patterns []string) *program {
 	return loadProgram(t, pkgs, func(path string) bool { return lib[path] })
 }
 
-// genericHole is generic code of the library that the gate cannot follow.
 type genericHole struct {
 	fn, why string
 }
 
 func (h genericHole) String() string { return h.fn + ": " + h.why }
 
-// genericHoles returns the generic code of the library that the gate cannot
-// follow:
-//
-//   - An exported generic function, or an exported method of a generic type,
-//     has machine code only where a caller instantiates it, so the gate,
-//     which reads the machine code of the library, cannot check it.
-//   - A generic body that calls a method of a value of type parameter type
-//     calls it through the dictionary of the instantiation, and one that
-//     calls a func value of a signature that has a type parameter calls a
-//     value that the gate cannot match by signature, so the gate cannot
-//     follow either call.
 func genericHoles(p *program) []genericHole {
 	var holes []genericHole
 	for _, d := range p.declaredFuncs() {
@@ -143,8 +126,6 @@ func isTypeParam(t types.Type) bool {
 	return ok
 }
 
-// mentionsTypeParam reports whether a parameter or result type of sig has
-// a type parameter in it.
 func mentionsTypeParam(sig *types.Signature) bool {
 	var has func(t types.Type) bool
 	has = func(t types.Type) bool {

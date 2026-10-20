@@ -29,7 +29,6 @@ import (
 	voice "github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// api holds the functions and methods.
 var api = [...]any{
 	(*dmrgo.FieldRangeError).Error,
 	(*enums.ColorCodeError).Error,
@@ -643,8 +642,6 @@ func main() {
 	}
 }
 
-// use keeps f in the program.
-//
 //go:noinline
 func use(f any) {
 	_ = f
