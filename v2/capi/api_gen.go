@@ -18,6 +18,7 @@ import (
 	g_dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	g_bs "github.com/USA-RedDragon/dmrgo/v2/bs"
 	g_csbk "github.com/USA-RedDragon/dmrgo/v2/csbk"
+	g_data "github.com/USA-RedDragon/dmrgo/v2/data"
 	g_enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	g_fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	g_layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -325,6 +326,496 @@ func in_layer3_ServiceOptions(s *C.dmrgo_layer3_service_options_t) (d g_layer3.S
 	return
 }
 
+func in_data_ConfigError(s *C.dmrgo_data_config_error_t) (d g_data.ConfigError) {
+	d.Field = C.GoStringN(s.field, C.int(s.field_len))
+	return
+}
+
+func out_data_ConfigError(d *C.dmrgo_data_config_error_t, s *g_data.ConfigError, oc *outc) {
+	_ = oc
+	d.field = arenaStr(oc, s.Field)
+	d.field_len = C.size_t(len(s.Field))
+}
+
+type st_data_ReceiverConfig struct {
+	p_ColorCode g_enums.ColorCode
+}
+
+func in_data_ReceiverConfig(s *C.dmrgo_data_receiver_config_t, st *st_data_ReceiverConfig) (d g_data.ReceiverConfig) {
+	if s.has_color_code {
+		st.p_ColorCode = g_enums.ColorCode(s.color_code)
+		d.ColorCode = &st.p_ColorCode
+	} else {
+		d.ColorCode = nil
+	}
+	d.Address = uint32(s.address)
+	d.Respond = bool(s.respond)
+	d.Source = g_layer2.SyncSource(s.source)
+	d.ResponseDelay = time.Duration(s.response_delay)
+	d.MaxBlocks = int(s.max_blocks)
+	d.MaxFragment = int(s.max_fragment)
+	d.MaxMessage = int(s.max_message)
+	d.Peers = int(s.peers)
+	d.Lost = time.Duration(s.lost)
+	d.Hang = time.Duration(s.hang)
+	d.AcceptBadCRC = bool(s.accept_bad_crc)
+	d.Scratch = nil
+	if s.scratch != nil {
+		d.Scratch = get_layer2_Burst(s.scratch).v
+	}
+	return
+}
+
+func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfig) {
+	d.ColorCode = g_enums.ColorCode(s.color_code)
+	d.Source = g_layer2.SyncSource(s.source)
+	d.Access = g_enums.Access(s.access)
+	d.Preambles = int(s.preambles)
+	d.IdleSearch = time.Duration(s.idle_search)
+	d.Holdoff = time.Duration(s.holdoff)
+	d.ResponseWait = time.Duration(s.response_wait)
+	d.TxLimit = time.Duration(s.tx_limit)
+	d.Retries = int(s.retries)
+	d.MaxBlocks = int(s.max_blocks)
+	d.Peers = int(s.peers)
+	d.Resync = bool(s.resync)
+	d.Seed = uint64(s.seed)
+	return
+}
+
+func out_data_Call(d *C.dmrgo_data_call_t, s *g_data.Call, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.target = C.uint32_t(s.Target)
+	d.source = C.uint32_t(s.Source)
+}
+
+func out_fec_Result(d *C.dmrgo_fec_result_t, s *g_fec.Result, oc *outc) {
+	_ = oc
+	d.bits_checked = C.int64_t(s.BitsChecked)
+	d.errors_corrected = C.int64_t(s.ErrorsCorrected)
+	d.uncorrectable = C.bool(s.Uncorrectable)
+}
+
+func out_layer2_pdu_UnconfirmedDataHeader(d *C.dmrgo_pdu_unconfirmed_data_header_t, s *g_layer2_pdu.UnconfirmedDataHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.reserved = C.bool(s.Reserved)
+	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
+	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
+	d.reserved2 = C.uint8_t(s.Reserved2)
+	d.fragment_sequence_number = C.uint8_t(s.FragmentSequenceNumber)
+}
+
+func out_layer2_pdu_ConfirmedDataHeader(d *C.dmrgo_pdu_confirmed_data_header_t, s *g_layer2_pdu.ConfirmedDataHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.reserved = C.bool(s.Reserved)
+	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
+	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
+	d.re_synchronize_flag = C.bool(s.ReSynchronizeFlag)
+	d.send_sequence_number = C.uint8_t(s.SendSequenceNumber)
+	d.fragment_sequence_number = C.uint8_t(s.FragmentSequenceNumber)
+}
+
+func out_layer2_pdu_ResponsePacketHeader(d *C.dmrgo_pdu_response_packet_header_t, s *g_layer2_pdu.ResponsePacketHeader, oc *outc) {
+	_ = oc
+	d.reserved = C.bool(s.Reserved)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.reserved2 = C.uint8_t(s.Reserved2)
+	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.reserved3 = C.uint8_t(s.Reserved3)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
+	d.response_class = C.uint8_t(s.ResponseClass)
+	d.response_type = C.uint8_t(s.ResponseType)
+	d.response_status = C.uint8_t(s.ResponseStatus)
+}
+
+func out_layer2_pdu_DefinedDataHeader(d *C.dmrgo_pdu_defined_data_header_t, s *g_layer2_pdu.DefinedDataHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.defined_data = C.uint8_t(s.DefinedData)
+	d.sarq = C.bool(s.SARQ)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.bit_padding = C.uint8_t(s.BitPadding)
+}
+
+func out_layer2_pdu_StatusPrecodedHeader(d *C.dmrgo_pdu_status_precoded_header_t, s *g_layer2_pdu.StatusPrecodedHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.source_port = C.uint8_t(s.SourcePort)
+	d.destination_port = C.uint8_t(s.DestinationPort)
+	d.status_precoded = C.uint16_t(s.StatusPrecoded)
+}
+
+func out_layer2_pdu_RawDataHeader(d *C.dmrgo_pdu_raw_data_header_t, s *g_layer2_pdu.RawDataHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.source_port = C.uint8_t(s.SourcePort)
+	d.destination_port = C.uint8_t(s.DestinationPort)
+	d.sarq = C.bool(s.SARQ)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.bit_padding = C.uint8_t(s.BitPadding)
+}
+
+func out_layer2_pdu_UDTHeader(d *C.dmrgo_pdu_udt_header_t, s *g_layer2_pdu.UDTHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.emergency = C.bool(s.Emergency)
+	d.option_flag = C.bool(s.OptionFlag)
+	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.udt_format = C.uint8_t(s.UDTFormat)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.pad_nibble = C.uint8_t(s.PadNibble)
+	d.reserved = C.bool(s.Reserved)
+	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.supplementary_flag = C.bool(s.SupplementaryFlag)
+	d.protect_flag = C.bool(s.ProtectFlag)
+	d.opcode = C.dmrgo_pdu_udt_opcode_t(s.Opcode)
+}
+
+func out_layer2_pdu_DataHeader(d *C.dmrgo_pdu_data_header_t, s *g_layer2_pdu.DataHeader, oc *outc) {
+	_ = oc
+	out_fec_Result(&d.fec, &s.FEC, oc)
+	d.format = C.dmrgo_pdu_format_t(s.Format)
+	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	if s.UnconfirmedDataHeader != nil {
+		d.has_unconfirmed_data_header = true
+		out_layer2_pdu_UnconfirmedDataHeader(&d.unconfirmed_data_header, &(*s.UnconfirmedDataHeader), oc)
+	} else {
+		d.has_unconfirmed_data_header = false
+		d.unconfirmed_data_header = C.dmrgo_pdu_unconfirmed_data_header_t{}
+	}
+	if s.ConfirmedDataHeader != nil {
+		d.has_confirmed_data_header = true
+		out_layer2_pdu_ConfirmedDataHeader(&d.confirmed_data_header, &(*s.ConfirmedDataHeader), oc)
+	} else {
+		d.has_confirmed_data_header = false
+		d.confirmed_data_header = C.dmrgo_pdu_confirmed_data_header_t{}
+	}
+	if s.ResponsePacketHeader != nil {
+		d.has_response_packet_header = true
+		out_layer2_pdu_ResponsePacketHeader(&d.response_packet_header, &(*s.ResponsePacketHeader), oc)
+	} else {
+		d.has_response_packet_header = false
+		d.response_packet_header = C.dmrgo_pdu_response_packet_header_t{}
+	}
+	if s.DefinedDataHeader != nil {
+		d.has_defined_data_header = true
+		out_layer2_pdu_DefinedDataHeader(&d.defined_data_header, &(*s.DefinedDataHeader), oc)
+	} else {
+		d.has_defined_data_header = false
+		d.defined_data_header = C.dmrgo_pdu_defined_data_header_t{}
+	}
+	if s.StatusPrecodedHeader != nil {
+		d.has_status_precoded_header = true
+		out_layer2_pdu_StatusPrecodedHeader(&d.status_precoded_header, &(*s.StatusPrecodedHeader), oc)
+	} else {
+		d.has_status_precoded_header = false
+		d.status_precoded_header = C.dmrgo_pdu_status_precoded_header_t{}
+	}
+	if s.RawDataHeader != nil {
+		d.has_raw_data_header = true
+		out_layer2_pdu_RawDataHeader(&d.raw_data_header, &(*s.RawDataHeader), oc)
+	} else {
+		d.has_raw_data_header = false
+		d.raw_data_header = C.dmrgo_pdu_raw_data_header_t{}
+	}
+	if s.UDTHeader != nil {
+		d.has_udt_header = true
+		out_layer2_pdu_UDTHeader(&d.udt_header, &(*s.UDTHeader), oc)
+	} else {
+		d.has_udt_header = false
+		d.udt_header = C.dmrgo_pdu_udt_header_t{}
+	}
+	if s.ProprietaryHeader != nil {
+		d.has_proprietary_header = true
+		*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&d.proprietary_header)) = (*s.ProprietaryHeader)
+	} else {
+		d.has_proprietary_header = false
+		d.proprietary_header = C.dmrgo_pdu_proprietary_header_t{}
+	}
+	*(*[10]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
+}
+
+func out_data_Message(d *C.dmrgo_data_message_t, s *g_data.Message, oc *outc) {
+	_ = oc
+	out_layer2_pdu_DataHeader(&d.header, &s.Header, oc)
+	if s.Proprietary != nil {
+		d.has_proprietary = true
+		*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&d.proprietary)) = (*s.Proprietary)
+	} else {
+		d.has_proprietary = false
+		d.proprietary = C.dmrgo_pdu_proprietary_header_t{}
+	}
+	d.rate = C.dmrgo_enums_data_type_t(s.Rate)
+	d.payload = (*C.uint8_t)(arenaCopy(oc, s.Payload))
+	d.payload_len = C.size_t(len(s.Payload))
+	d.bad_crc = C.bool(s.BadCRC)
+	d.fragmented = C.bool(s.Fragmented)
+	d.fragments = C.uint16_t(s.Fragments)
+}
+
+func out_layer2_packet_ResponseData(d *C.dmrgo_packet_response_data_t, s *g_layer2_packet.ResponseData, oc *outc) {
+	_ = oc
+	for i0 := range s.Retry {
+		d.retry[i0] = C.bool(s.Retry[i0])
+	}
+}
+
+func out_data_Event(d *C.dmrgo_data_event_t, s *g_data.Event, oc *outc) {
+	_ = oc
+	d.kind = C.dmrgo_data_event_kind_t(s.Kind)
+	out_data_Call(&d.call, &s.Call, oc)
+	out_data_Message(&d.message, &s.Message, oc)
+	d.response = C.dmrgo_packet_response_t(s.Response)
+	if s.Retry != nil {
+		d.has_retry = true
+		out_layer2_packet_ResponseData(&d.retry, &(*s.Retry), oc)
+	} else {
+		d.has_retry = false
+		d.retry = C.dmrgo_packet_response_data_t{}
+	}
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.due = C.int64_t(s.Due)
+	d.reason = C.dmrgo_data_end_reason_t(s.Reason)
+	*(*g_data.Stats)(unsafe.Pointer(&d.stats)) = s.Stats
+}
+
+func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
+	_ = oc
+	d.kind = C.dmrgo_data_output_kind_t(s.Kind)
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.due = C.int64_t(s.Due)
+	d.try_ = C.uint8_t(s.Try)
+	d.result = C.dmrgo_data_result_t(s.Result)
+	d.response = C.dmrgo_packet_response_t(s.Response)
+	d.has_response = C.bool(s.HasResponse)
+}
+
+type st_layer2_pdu_DataHeader struct {
+	p_UnconfirmedDataHeader g_layer2_pdu.UnconfirmedDataHeader
+	p_ConfirmedDataHeader   g_layer2_pdu.ConfirmedDataHeader
+	p_ResponsePacketHeader  g_layer2_pdu.ResponsePacketHeader
+	p_DefinedDataHeader     g_layer2_pdu.DefinedDataHeader
+	p_StatusPrecodedHeader  g_layer2_pdu.StatusPrecodedHeader
+	p_RawDataHeader         g_layer2_pdu.RawDataHeader
+	p_UDTHeader             g_layer2_pdu.UDTHeader
+	p_ProprietaryHeader     g_layer2_pdu.ProprietaryHeader
+}
+
+type st_data_Message struct {
+	f_Header      st_layer2_pdu_DataHeader
+	p_Proprietary g_layer2_pdu.ProprietaryHeader
+}
+
+func in_layer2_pdu_UnconfirmedDataHeader(s *C.dmrgo_pdu_unconfirmed_data_header_t) (d g_layer2_pdu.UnconfirmedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved = bool(s.reserved)
+	d.PadOctetCount = uint8(s.pad_octet_count)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.Reserved2 = uint8(s.reserved2)
+	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
+	return
+}
+
+func in_layer2_pdu_ConfirmedDataHeader(s *C.dmrgo_pdu_confirmed_data_header_t) (d g_layer2_pdu.ConfirmedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved = bool(s.reserved)
+	d.PadOctetCount = uint8(s.pad_octet_count)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.ReSynchronizeFlag = bool(s.re_synchronize_flag)
+	d.SendSequenceNumber = uint8(s.send_sequence_number)
+	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
+	return
+}
+
+func in_layer2_pdu_ResponsePacketHeader(s *C.dmrgo_pdu_response_packet_header_t) (d g_layer2_pdu.ResponsePacketHeader) {
+	d.Reserved = bool(s.reserved)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved2 = uint8(s.reserved2)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.Reserved3 = uint8(s.reserved3)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.ResponseClass = uint8(s.response_class)
+	d.ResponseType = uint8(s.response_type)
+	d.ResponseStatus = uint8(s.response_status)
+	return
+}
+
+func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_layer2_pdu.DefinedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.DefinedData = uint8(s.defined_data)
+	d.SARQ = bool(s.sarq)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BitPadding = uint8(s.bit_padding)
+	return
+}
+
+func in_layer2_pdu_StatusPrecodedHeader(s *C.dmrgo_pdu_status_precoded_header_t) (d g_layer2_pdu.StatusPrecodedHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.SourcePort = uint8(s.source_port)
+	d.DestinationPort = uint8(s.destination_port)
+	d.StatusPrecoded = uint16(s.status_precoded)
+	return
+}
+
+func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_pdu.RawDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.SourcePort = uint8(s.source_port)
+	d.DestinationPort = uint8(s.destination_port)
+	d.SARQ = bool(s.sarq)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BitPadding = uint8(s.bit_padding)
+	return
+}
+
+func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Emergency = bool(s.emergency)
+	d.OptionFlag = bool(s.option_flag)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.UDTFormat = uint8(s.udt_format)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.PadNibble = uint8(s.pad_nibble)
+	d.Reserved = bool(s.reserved)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SupplementaryFlag = bool(s.supplementary_flag)
+	d.ProtectFlag = bool(s.protect_flag)
+	d.Opcode = g_layer2_pdu.UDTOpcode(s.opcode)
+	return
+}
+
+func in_layer2_pdu_DataHeader(s *C.dmrgo_pdu_data_header_t, st *st_layer2_pdu_DataHeader) (d g_layer2_pdu.DataHeader) {
+	d.FEC = in_fec_Result(&s.fec)
+	d.Format = g_layer2_pdu.Format(s.format)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	if s.has_unconfirmed_data_header {
+		st.p_UnconfirmedDataHeader = in_layer2_pdu_UnconfirmedDataHeader(&s.unconfirmed_data_header)
+		d.UnconfirmedDataHeader = &st.p_UnconfirmedDataHeader
+	} else {
+		d.UnconfirmedDataHeader = nil
+	}
+	if s.has_confirmed_data_header {
+		st.p_ConfirmedDataHeader = in_layer2_pdu_ConfirmedDataHeader(&s.confirmed_data_header)
+		d.ConfirmedDataHeader = &st.p_ConfirmedDataHeader
+	} else {
+		d.ConfirmedDataHeader = nil
+	}
+	if s.has_response_packet_header {
+		st.p_ResponsePacketHeader = in_layer2_pdu_ResponsePacketHeader(&s.response_packet_header)
+		d.ResponsePacketHeader = &st.p_ResponsePacketHeader
+	} else {
+		d.ResponsePacketHeader = nil
+	}
+	if s.has_defined_data_header {
+		st.p_DefinedDataHeader = in_layer2_pdu_DefinedDataHeader(&s.defined_data_header)
+		d.DefinedDataHeader = &st.p_DefinedDataHeader
+	} else {
+		d.DefinedDataHeader = nil
+	}
+	if s.has_status_precoded_header {
+		st.p_StatusPrecodedHeader = in_layer2_pdu_StatusPrecodedHeader(&s.status_precoded_header)
+		d.StatusPrecodedHeader = &st.p_StatusPrecodedHeader
+	} else {
+		d.StatusPrecodedHeader = nil
+	}
+	if s.has_raw_data_header {
+		st.p_RawDataHeader = in_layer2_pdu_RawDataHeader(&s.raw_data_header)
+		d.RawDataHeader = &st.p_RawDataHeader
+	} else {
+		d.RawDataHeader = nil
+	}
+	if s.has_udt_header {
+		st.p_UDTHeader = in_layer2_pdu_UDTHeader(&s.udt_header)
+		d.UDTHeader = &st.p_UDTHeader
+	} else {
+		d.UDTHeader = nil
+	}
+	if s.has_proprietary_header {
+		st.p_ProprietaryHeader = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary_header))
+		d.ProprietaryHeader = &st.p_ProprietaryHeader
+	} else {
+		d.ProprietaryHeader = nil
+	}
+	d.RawPayload = *(*[10]byte)(unsafe.Pointer(&s.raw_payload))
+	return
+}
+
+func in_data_Message(s *C.dmrgo_data_message_t, st *st_data_Message) (d g_data.Message) {
+	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
+	if s.has_proprietary {
+		st.p_Proprietary = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary))
+		d.Proprietary = &st.p_Proprietary
+	} else {
+		d.Proprietary = nil
+	}
+	d.Rate = g_enums.DataType(s.rate)
+	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.BadCRC = bool(s.bad_crc)
+	d.Fragmented = bool(s.fragmented)
+	d.Fragments = uint16(s.fragments)
+	return
+}
+
 func out_enums_ColorCodeError(d *C.dmrgo_enums_color_code_error_t, s *g_enums.ColorCodeError, oc *outc) {
 	_ = oc
 	d.value = C.uint8_t(s.Value)
@@ -337,13 +828,6 @@ func in_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) (d g_fec.BurstFECSta
 	d.PDU = in_fec_Result(&s.pdu)
 	d.RC = in_fec_Result(&s.rc)
 	return
-}
-
-func out_fec_Result(d *C.dmrgo_fec_result_t, s *g_fec.Result, oc *outc) {
-	_ = oc
-	d.bits_checked = C.int64_t(s.BitsChecked)
-	d.errors_corrected = C.int64_t(s.ErrorsCorrected)
-	d.uncorrectable = C.bool(s.Uncorrectable)
 }
 
 func in_layer2_pdu_BCAPContinuation(s *C.dmrgo_pdu_bcap_continuation_t) (d g_layer2_pdu.BCAPContinuation) {
@@ -828,179 +1312,6 @@ func in_layer2_pdu_CSBK(s *C.dmrgo_pdu_csbk_t, st *st_layer2_pdu_CSBK) (d g_laye
 		d.MaintenancePDU = nil
 	}
 	d.RawPayload = *(*[8]byte)(unsafe.Pointer(&s.raw_payload))
-	return
-}
-
-type st_layer2_pdu_DataHeader struct {
-	p_UnconfirmedDataHeader g_layer2_pdu.UnconfirmedDataHeader
-	p_ConfirmedDataHeader   g_layer2_pdu.ConfirmedDataHeader
-	p_ResponsePacketHeader  g_layer2_pdu.ResponsePacketHeader
-	p_DefinedDataHeader     g_layer2_pdu.DefinedDataHeader
-	p_StatusPrecodedHeader  g_layer2_pdu.StatusPrecodedHeader
-	p_RawDataHeader         g_layer2_pdu.RawDataHeader
-	p_UDTHeader             g_layer2_pdu.UDTHeader
-	p_ProprietaryHeader     g_layer2_pdu.ProprietaryHeader
-}
-
-func in_layer2_pdu_UnconfirmedDataHeader(s *C.dmrgo_pdu_unconfirmed_data_header_t) (d g_layer2_pdu.UnconfirmedDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved = bool(s.reserved)
-	d.PadOctetCount = uint8(s.pad_octet_count)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.Reserved2 = uint8(s.reserved2)
-	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
-	return
-}
-
-func in_layer2_pdu_ConfirmedDataHeader(s *C.dmrgo_pdu_confirmed_data_header_t) (d g_layer2_pdu.ConfirmedDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved = bool(s.reserved)
-	d.PadOctetCount = uint8(s.pad_octet_count)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.ReSynchronizeFlag = bool(s.re_synchronize_flag)
-	d.SendSequenceNumber = uint8(s.send_sequence_number)
-	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
-	return
-}
-
-func in_layer2_pdu_ResponsePacketHeader(s *C.dmrgo_pdu_response_packet_header_t) (d g_layer2_pdu.ResponsePacketHeader) {
-	d.Reserved = bool(s.reserved)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved2 = uint8(s.reserved2)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.Reserved3 = uint8(s.reserved3)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.ResponseClass = uint8(s.response_class)
-	d.ResponseType = uint8(s.response_type)
-	d.ResponseStatus = uint8(s.response_status)
-	return
-}
-
-func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_layer2_pdu.DefinedDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.DefinedData = uint8(s.defined_data)
-	d.SARQ = bool(s.sarq)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BitPadding = uint8(s.bit_padding)
-	return
-}
-
-func in_layer2_pdu_StatusPrecodedHeader(s *C.dmrgo_pdu_status_precoded_header_t) (d g_layer2_pdu.StatusPrecodedHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.SourcePort = uint8(s.source_port)
-	d.DestinationPort = uint8(s.destination_port)
-	d.StatusPrecoded = uint16(s.status_precoded)
-	return
-}
-
-func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_pdu.RawDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.SourcePort = uint8(s.source_port)
-	d.DestinationPort = uint8(s.destination_port)
-	d.SARQ = bool(s.sarq)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BitPadding = uint8(s.bit_padding)
-	return
-}
-
-func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Emergency = bool(s.emergency)
-	d.OptionFlag = bool(s.option_flag)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.UDTFormat = uint8(s.udt_format)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.PadNibble = uint8(s.pad_nibble)
-	d.Reserved = bool(s.reserved)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SupplementaryFlag = bool(s.supplementary_flag)
-	d.ProtectFlag = bool(s.protect_flag)
-	d.Opcode = g_layer2_pdu.UDTOpcode(s.opcode)
-	return
-}
-
-func in_layer2_pdu_DataHeader(s *C.dmrgo_pdu_data_header_t, st *st_layer2_pdu_DataHeader) (d g_layer2_pdu.DataHeader) {
-	d.FEC = in_fec_Result(&s.fec)
-	d.Format = g_layer2_pdu.Format(s.format)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	if s.has_unconfirmed_data_header {
-		st.p_UnconfirmedDataHeader = in_layer2_pdu_UnconfirmedDataHeader(&s.unconfirmed_data_header)
-		d.UnconfirmedDataHeader = &st.p_UnconfirmedDataHeader
-	} else {
-		d.UnconfirmedDataHeader = nil
-	}
-	if s.has_confirmed_data_header {
-		st.p_ConfirmedDataHeader = in_layer2_pdu_ConfirmedDataHeader(&s.confirmed_data_header)
-		d.ConfirmedDataHeader = &st.p_ConfirmedDataHeader
-	} else {
-		d.ConfirmedDataHeader = nil
-	}
-	if s.has_response_packet_header {
-		st.p_ResponsePacketHeader = in_layer2_pdu_ResponsePacketHeader(&s.response_packet_header)
-		d.ResponsePacketHeader = &st.p_ResponsePacketHeader
-	} else {
-		d.ResponsePacketHeader = nil
-	}
-	if s.has_defined_data_header {
-		st.p_DefinedDataHeader = in_layer2_pdu_DefinedDataHeader(&s.defined_data_header)
-		d.DefinedDataHeader = &st.p_DefinedDataHeader
-	} else {
-		d.DefinedDataHeader = nil
-	}
-	if s.has_status_precoded_header {
-		st.p_StatusPrecodedHeader = in_layer2_pdu_StatusPrecodedHeader(&s.status_precoded_header)
-		d.StatusPrecodedHeader = &st.p_StatusPrecodedHeader
-	} else {
-		d.StatusPrecodedHeader = nil
-	}
-	if s.has_raw_data_header {
-		st.p_RawDataHeader = in_layer2_pdu_RawDataHeader(&s.raw_data_header)
-		d.RawDataHeader = &st.p_RawDataHeader
-	} else {
-		d.RawDataHeader = nil
-	}
-	if s.has_udt_header {
-		st.p_UDTHeader = in_layer2_pdu_UDTHeader(&s.udt_header)
-		d.UDTHeader = &st.p_UDTHeader
-	} else {
-		d.UDTHeader = nil
-	}
-	if s.has_proprietary_header {
-		st.p_ProprietaryHeader = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary_header))
-		d.ProprietaryHeader = &st.p_ProprietaryHeader
-	} else {
-		d.ProprietaryHeader = nil
-	}
-	d.RawPayload = *(*[10]byte)(unsafe.Pointer(&s.raw_payload))
 	return
 }
 
@@ -1770,176 +2081,6 @@ func out_layer2_pdu_CSBK(d *C.dmrgo_pdu_csbk_t, s *g_layer2_pdu.CSBK, oc *outc) 
 	*(*[8]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
 }
 
-func out_layer2_pdu_UnconfirmedDataHeader(d *C.dmrgo_pdu_unconfirmed_data_header_t, s *g_layer2_pdu.UnconfirmedDataHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.reserved = C.bool(s.Reserved)
-	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
-	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.fragment_sequence_number = C.uint8_t(s.FragmentSequenceNumber)
-}
-
-func out_layer2_pdu_ConfirmedDataHeader(d *C.dmrgo_pdu_confirmed_data_header_t, s *g_layer2_pdu.ConfirmedDataHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.reserved = C.bool(s.Reserved)
-	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
-	d.re_synchronize_flag = C.bool(s.ReSynchronizeFlag)
-	d.send_sequence_number = C.uint8_t(s.SendSequenceNumber)
-	d.fragment_sequence_number = C.uint8_t(s.FragmentSequenceNumber)
-}
-
-func out_layer2_pdu_ResponsePacketHeader(d *C.dmrgo_pdu_response_packet_header_t, s *g_layer2_pdu.ResponsePacketHeader, oc *outc) {
-	_ = oc
-	d.reserved = C.bool(s.Reserved)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.reserved3 = C.uint8_t(s.Reserved3)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
-	d.response_class = C.uint8_t(s.ResponseClass)
-	d.response_type = C.uint8_t(s.ResponseType)
-	d.response_status = C.uint8_t(s.ResponseStatus)
-}
-
-func out_layer2_pdu_DefinedDataHeader(d *C.dmrgo_pdu_defined_data_header_t, s *g_layer2_pdu.DefinedDataHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.defined_data = C.uint8_t(s.DefinedData)
-	d.sarq = C.bool(s.SARQ)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.bit_padding = C.uint8_t(s.BitPadding)
-}
-
-func out_layer2_pdu_StatusPrecodedHeader(d *C.dmrgo_pdu_status_precoded_header_t, s *g_layer2_pdu.StatusPrecodedHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.source_port = C.uint8_t(s.SourcePort)
-	d.destination_port = C.uint8_t(s.DestinationPort)
-	d.status_precoded = C.uint16_t(s.StatusPrecoded)
-}
-
-func out_layer2_pdu_RawDataHeader(d *C.dmrgo_pdu_raw_data_header_t, s *g_layer2_pdu.RawDataHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.source_port = C.uint8_t(s.SourcePort)
-	d.destination_port = C.uint8_t(s.DestinationPort)
-	d.sarq = C.bool(s.SARQ)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.bit_padding = C.uint8_t(s.BitPadding)
-}
-
-func out_layer2_pdu_UDTHeader(d *C.dmrgo_pdu_udt_header_t, s *g_layer2_pdu.UDTHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.emergency = C.bool(s.Emergency)
-	d.option_flag = C.bool(s.OptionFlag)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.udt_format = C.uint8_t(s.UDTFormat)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.pad_nibble = C.uint8_t(s.PadNibble)
-	d.reserved = C.bool(s.Reserved)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.supplementary_flag = C.bool(s.SupplementaryFlag)
-	d.protect_flag = C.bool(s.ProtectFlag)
-	d.opcode = C.dmrgo_pdu_udt_opcode_t(s.Opcode)
-}
-
-func out_layer2_pdu_DataHeader(d *C.dmrgo_pdu_data_header_t, s *g_layer2_pdu.DataHeader, oc *outc) {
-	_ = oc
-	out_fec_Result(&d.fec, &s.FEC, oc)
-	d.format = C.dmrgo_pdu_format_t(s.Format)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	if s.UnconfirmedDataHeader != nil {
-		d.has_unconfirmed_data_header = true
-		out_layer2_pdu_UnconfirmedDataHeader(&d.unconfirmed_data_header, &(*s.UnconfirmedDataHeader), oc)
-	} else {
-		d.has_unconfirmed_data_header = false
-		d.unconfirmed_data_header = C.dmrgo_pdu_unconfirmed_data_header_t{}
-	}
-	if s.ConfirmedDataHeader != nil {
-		d.has_confirmed_data_header = true
-		out_layer2_pdu_ConfirmedDataHeader(&d.confirmed_data_header, &(*s.ConfirmedDataHeader), oc)
-	} else {
-		d.has_confirmed_data_header = false
-		d.confirmed_data_header = C.dmrgo_pdu_confirmed_data_header_t{}
-	}
-	if s.ResponsePacketHeader != nil {
-		d.has_response_packet_header = true
-		out_layer2_pdu_ResponsePacketHeader(&d.response_packet_header, &(*s.ResponsePacketHeader), oc)
-	} else {
-		d.has_response_packet_header = false
-		d.response_packet_header = C.dmrgo_pdu_response_packet_header_t{}
-	}
-	if s.DefinedDataHeader != nil {
-		d.has_defined_data_header = true
-		out_layer2_pdu_DefinedDataHeader(&d.defined_data_header, &(*s.DefinedDataHeader), oc)
-	} else {
-		d.has_defined_data_header = false
-		d.defined_data_header = C.dmrgo_pdu_defined_data_header_t{}
-	}
-	if s.StatusPrecodedHeader != nil {
-		d.has_status_precoded_header = true
-		out_layer2_pdu_StatusPrecodedHeader(&d.status_precoded_header, &(*s.StatusPrecodedHeader), oc)
-	} else {
-		d.has_status_precoded_header = false
-		d.status_precoded_header = C.dmrgo_pdu_status_precoded_header_t{}
-	}
-	if s.RawDataHeader != nil {
-		d.has_raw_data_header = true
-		out_layer2_pdu_RawDataHeader(&d.raw_data_header, &(*s.RawDataHeader), oc)
-	} else {
-		d.has_raw_data_header = false
-		d.raw_data_header = C.dmrgo_pdu_raw_data_header_t{}
-	}
-	if s.UDTHeader != nil {
-		d.has_udt_header = true
-		out_layer2_pdu_UDTHeader(&d.udt_header, &(*s.UDTHeader), oc)
-	} else {
-		d.has_udt_header = false
-		d.udt_header = C.dmrgo_pdu_udt_header_t{}
-	}
-	if s.ProprietaryHeader != nil {
-		d.has_proprietary_header = true
-		*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&d.proprietary_header)) = (*s.ProprietaryHeader)
-	} else {
-		d.has_proprietary_header = false
-		d.proprietary_header = C.dmrgo_pdu_proprietary_header_t{}
-	}
-	*(*[10]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
-}
-
 func out_layer2_pdu_FLCGroupVoice(d *C.dmrgo_pdu_flc_group_voice_t, s *g_layer2_pdu.FLCGroupVoice, oc *outc) {
 	_ = oc
 	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
@@ -2525,13 +2666,6 @@ func in_layer2_packet_Packet(s *C.dmrgo_packet_packet_t, st *st_layer2_packet_Pa
 		}
 	}
 	return
-}
-
-func out_layer2_packet_ResponseData(d *C.dmrgo_packet_response_data_t, s *g_layer2_packet.ResponseData, oc *outc) {
-	_ = oc
-	for i0 := range s.Retry {
-		d.retry[i0] = C.bool(s.Retry[i0])
-	}
 }
 
 func out_layer2_packet_Message(d *C.dmrgo_packet_message_t, s *g_layer2_packet.Message, oc *outc) {
@@ -3776,6 +3910,153 @@ func fromC_csbk_WakeupConfig(s *C.dmrgo_csbk_wakeup_config_t) g_csbk.WakeupConfi
 	return in_csbk_WakeupConfig(s)
 }
 
+func in_data_Call(s *C.dmrgo_data_call_t) (d g_data.Call) {
+	d.Group = bool(s.group)
+	d.Target = uint32(s.target)
+	d.Source = uint32(s.source)
+	return
+}
+
+func fromC_data_Call(s *C.dmrgo_data_call_t) g_data.Call {
+	return in_data_Call(s)
+}
+
+func fromC_data_ConfigError(s *C.dmrgo_data_config_error_t) g_data.ConfigError {
+	return in_data_ConfigError(s)
+}
+
+type st_data_Event struct {
+	f_Message st_data_Message
+	p_Retry   g_layer2_packet.ResponseData
+}
+
+func in_data_Event(s *C.dmrgo_data_event_t, st *st_data_Event) (d g_data.Event) {
+	d.Kind = g_data.EventKind(s.kind)
+	d.Call = in_data_Call(&s.call)
+	d.Message = in_data_Message(&s.message, &st.f_Message)
+	d.Response = g_layer2_packet.Response(s.response)
+	if s.has_retry {
+		st.p_Retry = in_layer2_packet_ResponseData(&s.retry)
+		d.Retry = &st.p_Retry
+	} else {
+		d.Retry = nil
+	}
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Due = time.Duration(s.due)
+	d.Reason = g_data.EndReason(s.reason)
+	d.Stats = *(*g_data.Stats)(unsafe.Pointer(&s.stats))
+	return
+}
+
+func fromC_data_Event(s *C.dmrgo_data_event_t) g_data.Event {
+	var st st_data_Event
+	return in_data_Event(s, &st)
+}
+
+func fromC_data_Message(s *C.dmrgo_data_message_t) g_data.Message {
+	var st st_data_Message
+	return in_data_Message(s, &st)
+}
+
+func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
+	d.Kind = g_data.OutputKind(s.kind)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Due = time.Duration(s.due)
+	d.Try = uint8(s.try_)
+	d.Result = g_data.Result(s.result)
+	d.Response = g_layer2_packet.Response(s.response)
+	d.HasResponse = bool(s.has_response)
+	return
+}
+
+func fromC_data_Output(s *C.dmrgo_data_output_t) g_data.Output {
+	return in_data_Output(s)
+}
+
+func out_data_ReceiverConfig(d *C.dmrgo_data_receiver_config_t, s *g_data.ReceiverConfig, oc *outc) {
+	_ = oc
+	if s.ColorCode != nil {
+		d.has_color_code = true
+		d.color_code = C.dmrgo_enums_color_code_t((*s.ColorCode))
+	} else {
+		d.has_color_code = false
+		d.color_code = 0
+	}
+	d.address = C.uint32_t(s.Address)
+	d.respond = C.bool(s.Respond)
+	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
+	d.response_delay = C.int64_t(s.ResponseDelay)
+	d.max_blocks = C.int64_t(s.MaxBlocks)
+	d.max_fragment = C.int64_t(s.MaxFragment)
+	d.max_message = C.int64_t(s.MaxMessage)
+	d.peers = C.int64_t(s.Peers)
+	d.lost = C.int64_t(s.Lost)
+	d.hang = C.int64_t(s.Hang)
+	d.accept_bad_crc = C.bool(s.AcceptBadCRC)
+	if s.Scratch != nil {
+		panic(argPanic{})
+	}
+	d.scratch = nil
+}
+
+func fromC_data_ReceiverConfig(s *C.dmrgo_data_receiver_config_t) g_data.ReceiverConfig {
+	var st st_data_ReceiverConfig
+	return in_data_ReceiverConfig(s, &st)
+}
+
+func out_data_SenderConfig(d *C.dmrgo_data_sender_config_t, s *g_data.SenderConfig, oc *outc) {
+	_ = oc
+	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
+	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
+	d.access = C.dmrgo_enums_access_t(s.Access)
+	d.preambles = C.int64_t(s.Preambles)
+	d.idle_search = C.int64_t(s.IdleSearch)
+	d.holdoff = C.int64_t(s.Holdoff)
+	d.response_wait = C.int64_t(s.ResponseWait)
+	d.tx_limit = C.int64_t(s.TxLimit)
+	d.retries = C.int64_t(s.Retries)
+	d.max_blocks = C.int64_t(s.MaxBlocks)
+	d.peers = C.int64_t(s.Peers)
+	d.resync = C.bool(s.Resync)
+	d.seed = C.uint64_t(s.Seed)
+}
+
+func fromC_data_SenderConfig(s *C.dmrgo_data_sender_config_t) g_data.SenderConfig {
+	return in_data_SenderConfig(s)
+}
+
+func in_data_Stats(s *C.dmrgo_data_stats_t) (d g_data.Stats) {
+	d.Packets = uint16(s.packets)
+	d.Delivered = uint16(s.delivered)
+	d.Blocks = uint16(s.blocks)
+	d.Lost = uint16(s.lost)
+	d.HeaderCRC = uint16(s.header_crc)
+	d.BadCRC = uint16(s.bad_crc)
+	d.Duplicates = uint16(s.duplicates)
+	d.OutOfSequence = uint16(s.out_of_sequence)
+	d.Dropped = uint16(s.dropped)
+	d.Duration = time.Duration(s.duration)
+	return
+}
+
+func out_data_Stats(d *C.dmrgo_data_stats_t, s *g_data.Stats, oc *outc) {
+	_ = oc
+	d.packets = C.uint16_t(s.Packets)
+	d.delivered = C.uint16_t(s.Delivered)
+	d.blocks = C.uint16_t(s.Blocks)
+	d.lost = C.uint16_t(s.Lost)
+	d.header_crc = C.uint16_t(s.HeaderCRC)
+	d.bad_crc = C.uint16_t(s.BadCRC)
+	d.duplicates = C.uint16_t(s.Duplicates)
+	d.out_of_sequence = C.uint16_t(s.OutOfSequence)
+	d.dropped = C.uint16_t(s.Dropped)
+	d.duration = C.int64_t(s.Duration)
+}
+
+func fromC_data_Stats(s *C.dmrgo_data_stats_t) g_data.Stats {
+	return in_data_Stats(s)
+}
+
 func in_enums_ColorCodeError(s *C.dmrgo_enums_color_code_error_t) (d g_enums.ColorCodeError) {
 	d.Value = uint8(s.value)
 	return
@@ -4954,6 +5235,32 @@ func get_csbk_Wakeup(p *C.dmrgo_csbk_wakeup_t) *h_csbk_Wakeup {
 
 func new_csbk_Wakeup(v *g_csbk.Wakeup) *C.dmrgo_csbk_wakeup_t {
 	return (*C.dmrgo_csbk_wakeup_t)(newHandle(&h_csbk_Wakeup{v: v}))
+}
+
+type h_data_Receiver struct {
+	v   *g_data.Receiver
+	sc0 []g_data.Event
+}
+
+func get_data_Receiver(p *C.dmrgo_data_receiver_t) *h_data_Receiver {
+	return lookup[*h_data_Receiver](unsafe.Pointer(p))
+}
+
+func new_data_Receiver(v *g_data.Receiver) *C.dmrgo_data_receiver_t {
+	return (*C.dmrgo_data_receiver_t)(newHandle(&h_data_Receiver{v: v}))
+}
+
+type h_data_Sender struct {
+	v   *g_data.Sender
+	sc0 []g_data.Output
+}
+
+func get_data_Sender(p *C.dmrgo_data_sender_t) *h_data_Sender {
+	return lookup[*h_data_Sender](unsafe.Pointer(p))
+}
+
+func new_data_Sender(v *g_data.Sender) *C.dmrgo_data_sender_t {
+	return (*C.dmrgo_data_sender_t)(newHandle(&h_data_Sender{v: v}))
 }
 
 type h_fec_BERCalculator struct {
@@ -7926,6 +8233,1037 @@ func dmrgo_csbk_wakeup_state_string(c_self C.dmrgo_csbk_wakeup_state_t, c_out *C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := g_csbk.WakeupState(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_config_error_error
+func dmrgo_data_config_error_error(c_self *C.dmrgo_data_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_data.ConfigError
+	x = in_data_ConfigError(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.Error()
+	out_data_ConfigError(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_config_error_last
+func dmrgo_data_config_error_last(c_out *C.dmrgo_data_config_error_t, c_ok *C.bool) C.int {
+	l := C.dmrgo__last()
+	ok := l.kind == -168
+	if c_ok != nil {
+		*c_ok = C.bool(ok)
+	}
+	if ok && c_out != nil {
+		*c_out = *(*C.dmrgo_data_config_error_t)(unsafe.Pointer(&l.d))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_end_reason_string
+func dmrgo_data_end_reason_string(c_self C.dmrgo_data_end_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_data.EndReason(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_event_kind_string
+func dmrgo_data_event_kind_string(c_self C.dmrgo_data_event_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_data.EventKind(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_new_receiver
+func dmrgo_data_new_receiver(c_cfg *C.dmrgo_data_receiver_config_t, c_out **C.dmrgo_data_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_cfg g_data.ReceiverConfig
+	var p_cfg *g_data.ReceiverConfig
+	var s_cfg st_data_ReceiverConfig
+	if c_cfg != nil {
+		a_cfg = in_data_ReceiverConfig(&(*c_cfg), &s_cfg)
+		p_cfg = &a_cfg
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_data.NewReceiver(p_cfg)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_data_Receiver(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_new_sender
+func dmrgo_data_new_sender(c_cfg *C.dmrgo_data_sender_config_t, c_out **C.dmrgo_data_sender_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_cfg g_data.SenderConfig
+	var p_cfg *g_data.SenderConfig
+	if c_cfg != nil {
+		a_cfg = in_data_SenderConfig(&(*c_cfg))
+		p_cfg = &a_cfg
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_data.NewSender(p_cfg)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_data_Sender(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_output_kind_string
+func dmrgo_data_output_kind_string(c_self C.dmrgo_data_output_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_data.OutputKind(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_new
+func dmrgo_data_receiver_new(c_out **C.dmrgo_data_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_data_Receiver(new(g_data.Receiver))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_free
+func dmrgo_data_receiver_free(c_self *C.dmrgo_data_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_data_Receiver(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_burst_need
+func dmrgo_data_receiver_burst_need(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Receiver(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	_ = h
+	_ = a_h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxEvents)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_burst
+func dmrgo_data_receiver_burst(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	h := get_data_Receiver(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxEvents))
+	need_arena := max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16)
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if int(c_arena_cap)-oc.need < need_arena {
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_event_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Event(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_deadline
+func dmrgo_data_receiver_deadline(c_self *C.dmrgo_data_receiver_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Receiver(c_self)
+	r0, r1 := h.v.Deadline()
+	_ = r0
+	_ = r1
+	if c_at != nil {
+		*c_at = C.int64_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_decoded_need
+func dmrgo_data_receiver_decoded_need(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Receiver(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	_ = h
+	_ = a_b
+	_ = a_h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxEvents)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_decoded
+func dmrgo_data_receiver_decoded(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	h := get_data_Receiver(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxEvents))
+	need_arena := max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16)
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if int(c_arena_cap)-oc.need < need_arena {
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_h, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_event_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Event(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_lost_need
+func dmrgo_data_receiver_lost_need(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Receiver(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxEvents)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_lost
+func dmrgo_data_receiver_lost(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	h := get_data_Receiver(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxEvents))
+	need_arena := max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16)
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if int(c_arena_cap)-oc.need < need_arena {
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Lost(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_event_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Event(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_reset
+func dmrgo_data_receiver_reset(c_self *C.dmrgo_data_receiver_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Receiver(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_state
+func dmrgo_data_receiver_state(c_self *C.dmrgo_data_receiver_t, c_out *C.dmrgo_data_state_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Receiver(c_self)
+	r0 := h.v.State()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_data_state_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_tick_need
+func dmrgo_data_receiver_tick_need(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Receiver(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxEvents)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_receiver_tick
+func dmrgo_data_receiver_tick(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	h := get_data_Receiver(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxEvents))
+	need_arena := max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16)
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if int(c_arena_cap)-oc.need < need_arena {
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Tick(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_event_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Event(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_result_string
+func dmrgo_data_result_string(c_self C.dmrgo_data_result_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_data.Result(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_new
+func dmrgo_data_sender_new(c_out **C.dmrgo_data_sender_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_data_Sender(new(g_data.Sender))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_free
+func dmrgo_data_sender_free(c_self *C.dmrgo_data_sender_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_data_Sender(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_burst_need
+func dmrgo_data_sender_burst_need(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Sender(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	_ = h
+	_ = a_h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_burst
+func dmrgo_data_sender_burst(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_cancel_need
+func dmrgo_data_sender_cancel_need(c_self *C.dmrgo_data_sender_t, c_p0 C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Sender(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_cancel
+func dmrgo_data_sender_cancel(c_self *C.dmrgo_data_sender_t, c_p0 C.int64_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Cancel(time.Duration(c_p0), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_channel
+func dmrgo_data_sender_channel(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_busy C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	h.v.Channel(time.Duration(c_now), bool(c_busy))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_deadline
+func dmrgo_data_sender_deadline(c_self *C.dmrgo_data_sender_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	r0, r1 := h.v.Deadline()
+	_ = r0
+	_ = r1
+	if c_at != nil {
+		*c_at = C.int64_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_decoded_need
+func dmrgo_data_sender_decoded_need(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Sender(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_p2 == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p2 g_layer2.Hint
+	a_p2 = in_layer2_Hint(&(*c_p2))
+	_ = h
+	_ = a_b
+	_ = a_p2
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_decoded
+func dmrgo_data_sender_decoded(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_p2 == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p2 g_layer2.Hint
+	a_p2 = in_layer2_Hint(&(*c_p2))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_p2, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_reset
+func dmrgo_data_sender_reset(c_self *C.dmrgo_data_sender_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_send
+func dmrgo_data_sender_send(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_m *C.dmrgo_data_message_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	var a_m g_data.Message
+	var p_m *g_data.Message
+	var s_m st_data_Message
+	if c_m != nil {
+		a_m = in_data_Message(&(*c_m), &s_m)
+		p_m = &a_m
+	}
+	r0 := h.v.Send(time.Duration(c_now), p_m)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_state
+func dmrgo_data_sender_state(c_self *C.dmrgo_data_sender_t, c_out *C.dmrgo_data_sender_state_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	r0 := h.v.State()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_data_sender_state_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_tick_need
+func dmrgo_data_sender_tick_need(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Sender(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_tick
+func dmrgo_data_sender_tick(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Sender(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Tick(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_state_string
+func dmrgo_data_sender_state_string(c_self C.dmrgo_data_sender_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_data.SenderState(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_state_string
+func dmrgo_data_state_string(c_self C.dmrgo_data_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_data.State(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25528,6 +26866,8 @@ func errCode(err error) C.int {
 			return -108
 		case g_csbk.ErrNoAddresses:
 			return -109
+		case g_data.ErrBusy:
+			return -169
 		case g_fec.ErrUncorrectable:
 			return -110
 		case g_layer2.ErrColorCodeMismatch:
@@ -25650,6 +26990,8 @@ func errCode(err error) C.int {
 			return -101
 		case *g_csbk.ConfigError:
 			return -102
+		case *g_data.ConfigError:
+			return -168
 		case *g_enums.ColorCodeError:
 			return -103
 		case *g_trunk.ConfigError:
@@ -25703,6 +27045,14 @@ func setErr(err error) C.int {
 		}
 	}
 	{
+		var x *g_data.ConfigError
+		if errors.As(err, &x) {
+			l.kind = -168
+			out_data_ConfigError((*C.dmrgo_data_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
+			return code
+		}
+	}
+	{
 		var x *g_enums.ColorCodeError
 		if errors.As(err, &x) {
 			l.kind = -103
@@ -25743,6 +27093,8 @@ func codeErr(code C.int) error {
 		return g_csbk.ErrBusy
 	case -109:
 		return g_csbk.ErrNoAddresses
+	case -169:
+		return g_data.ErrBusy
 	case -110:
 		return g_fec.ErrUncorrectable
 	case -111:

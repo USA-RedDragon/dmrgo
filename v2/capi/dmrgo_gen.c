@@ -26,6 +26,10 @@ const char *dmrgo__gen_strerror(int status) {
 		return "csbk.ErrBusy";
 	case -109:
 		return "csbk.ErrNoAddresses";
+	case -168:
+		return "data.ConfigError";
+	case -169:
+		return "data.ErrBusy";
 	case -103:
 		return "enums.ColorCodeError";
 	case -110:
