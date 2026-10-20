@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/bs"
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -198,6 +199,10 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	gps := pdu.FLCGPSInfo{Latitude: 41.75}
 	callOpts := &voice.CallOptions{TalkerAlias: "KI5VMF JACOB", TalkerAliasFormat: layer3.TalkerAliasISOEightBit, GPS: &gps}
 
+	rep := tinyOK(bs.New(&bs.Config{ColorCode: 1, CACH: true}))
+	bsOut := make([]bs.Output, 0, bs.MaxOutputs)
+	csbk := tinyDataBurst(t, r, enums.DataTypeCSBK)
+
 	b := packet.NewBuilder(127)
 	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}}
 	p := tinyOK(b.Segment(h, make([]byte, 100), enums.DataTypeRate12))
@@ -232,6 +237,22 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 				}
 				now = max(now, at)
 				outs = vtx.Tick(now, outs[:0])
+			}
+		}},
+		{"bs.Repeater", func() {
+			rep.Reset()
+			from := bs.Source{Peer: 1}
+			bsOut, _ = rep.Inbound(now, &csbk, layer2.Hint{Slot: enums.Slot2}, from, bsOut[:0])
+			for i := range bursts {
+				bsOut, _ = rep.Inbound(now, &bursts[i], layer2.Hint{Slot: enums.Slot1}, from, bsOut[:0])
+				bsOut = rep.Tick(now, bsOut[:0])
+				now += bs.SlotTime
+				bsOut = rep.Tick(now, bsOut[:0])
+				now += bs.SlotTime
+			}
+			for range 200 {
+				bsOut = rep.Tick(now, bsOut[:0])
+				now += bs.SlotTime
 			}
 		}},
 		{"layer2.VoiceTransmitter.Reset", func() { err = tx.Reset(opts) }},
@@ -307,6 +328,7 @@ func tinyCACHOps(t *testing.T) []tinyOp {
 	}
 	var (
 		asm    layer2.ShortLCAssembler
+		gen    bs.CACH
 		slcDst pdu.ShortLC
 		slcP   pdu.ShortLCPayloads
 		err    error
@@ -315,6 +337,11 @@ func tinyCACHOps(t *testing.T) []tinyOp {
 	return []tinyOp{
 		{"layer2.DecodeCACHField", func() { cachs[0] = layer2.DecodeCACHField(fields[0]) }},
 		{"layer2.EncodeShortLCToCACH", func() { fields, err = layer2.EncodeShortLCToCACH(&slc, tact) }},
+		{"bs.CACH.Next", func() {
+			for range 4 {
+				fields[0], err = gen.Next(enums.Slot2, true, &slc)
+			}
+		}},
 		{"layer2.ShortLCAssembler.AddInto", func() {
 			for _, c := range cachs {
 				_, err = asm.AddInto(&slcDst, &slcP, c)
