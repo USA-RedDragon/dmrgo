@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -32,7 +33,7 @@ type sender struct {
 	src        layer2.SyncSource
 	idleSearch time.Duration
 	holdoffMax time.Duration
-	rng        pcg
+	rng        pcg.Source
 	busy       bool
 
 	state        sendState
@@ -113,7 +114,7 @@ func (s *sender) tick(now time.Duration, out []Output) ([]Output, sendEvent) {
 			return out, sendDenied
 		default:
 			s.state = sendHoldoff
-			s.timer += s.rng.duration(s.holdoffMax)
+			s.timer += holdoff(&s.rng, s.holdoffMax)
 		}
 	}
 	if s.state != sendBursts || now < s.due {

@@ -259,6 +259,7 @@ var api = [...]any{
 	(*internal_pcg.Source).Duration,
 	(*internal_pcg.Source).Uint32,
 	internal_pcg.New,
+	internal_pcg.NewStream,
 	internal_text.Bool,
 	internal_text.Bytes,
 	internal_text.Digits,

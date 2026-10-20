@@ -20,9 +20,16 @@ type Source struct {
 	inc   uint64
 }
 
-// New returns the Source of seed. Every seed, 0 included, is valid.
+// New returns the Source of seed on the stream of the same number, as
+// NewStream(seed, seed). Every seed, 0 included, is valid.
 func New(seed uint64) Source {
-	s := Source{inc: seed<<1 | 1}
+	return NewStream(seed, seed)
+}
+
+// NewStream returns the Source of seed on stream seq, as pcg32_srandom of
+// the PCG reference code seeds it. Every seed and stream is valid.
+func NewStream(seed, seq uint64) Source {
+	s := Source{inc: seq<<1 | 1}
 	s.Uint32()
 	s.state += seed
 	s.Uint32()

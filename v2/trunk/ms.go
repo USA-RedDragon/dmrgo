@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -142,7 +143,7 @@ type MS struct {
 	f         Follower
 	addr      uint32
 	slot      enums.Slot
-	rng       pcg
+	rng       pcg.Source
 	noReg     bool
 	randTO    time.Duration
 	callTO    time.Duration
@@ -240,7 +241,7 @@ func NewMS(cfg *MSConfig) (*MS, error) {
 	if m.maxBER == 0 {
 		m.maxBER = DefaultMaxBERPermille
 	}
-	m.rng.seed(cfg.Seed)
+	m.rng = pcg.New(cfg.Seed)
 	return m, nil
 }
 

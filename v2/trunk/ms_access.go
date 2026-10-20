@@ -15,7 +15,7 @@ func (m *MS) startAccess(now time.Duration, req request, target uint32, options 
 }
 
 func (m *MS) backoff() {
-	m.ra, m.frames = raWaitSlot, m.rng.between(m.f.ctl.site.Access.Backoff.Frames())
+	m.ra, m.frames = raWaitSlot, between(&m.rng, m.f.ctl.site.Access.Backoff.Frames())
 }
 
 func (m *MS) frame(now time.Duration, cach *layer2.CACH, out []Output) []Output {
