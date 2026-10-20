@@ -35,6 +35,13 @@ const (
 	aoptALT = 0.0
 )
 
+// Below aoptLowHz the hold images of the DAC fall into the adjacent
+// channel, and aoptACPLow, above 0, takes the place of aoptACP.
+const (
+	aoptLowHz  = 32000
+	aoptACPLow = 0.0
+)
+
 const (
 	// aoptAnyRate makes the audio optimizer take every rate: its radio
 	// model runs at the rate times the least power of two that reaches
@@ -141,6 +148,10 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 		o.lp[i] /= sum
 	}
 	o.w2 = make([]float64, n)
+	acp := aoptACP
+	if hz < aoptLowHz && aoptACPLow > 0 {
+		acp = aoptACPLow
+	}
 	o.taper = make([]float64, n)
 	for k := range n {
 		fk := float64(k) * rhz / float64(n)
@@ -153,8 +164,8 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 				db += aoptFarDb
 			}
 			o.w2[k] = math.Pow(10, db/10)
-			if aoptACP > 0 {
-				o.w2[k] += math.Pow(10, (aoptACP-optAnnexC(a, 12500))/10)
+			if acp > 0 {
+				o.w2[k] += math.Pow(10, (acp-optAnnexC(a, 12500))/10)
 			}
 			if aoptALT > 0 {
 				o.w2[k] += math.Pow(10, (aoptALT-optAnnexC(a, 25000))/10)
