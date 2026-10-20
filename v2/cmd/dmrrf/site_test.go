@@ -12,8 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// siteLoop demodulates one channel of a multi-channel I/Q file at offsetHz,
-// checks that every slot of want comes back bit for bit, and reports it.
 func siteLoop(t *testing.T, built rftx.Built, iq []byte, rate, offsetHz float64, want []rftx.BSSlot) loop {
 	t.Helper()
 	x := rftx.FromHackRF(iq)

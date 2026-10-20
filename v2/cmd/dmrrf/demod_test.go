@@ -2,7 +2,6 @@ package main
 
 import "testing"
 
-// demodulate is Demodulate that fails t on an error.
 func demodulate(t testing.TB, x []complex128, rate float64) Demodulated {
 	t.Helper()
 	d, err := Demodulate(x, rate)

@@ -40,7 +40,6 @@ func run(args []string, w io.Writer) error {
 	return fmt.Errorf("unknown command %q", args[0])
 }
 
-// idFlag defines a flag for a 24-bit radio or talkgroup ID, 0 by default.
 func idFlag(fs *flag.FlagSet, name, usage string) *uint32 {
 	id := new(uint32)
 	fs.Func(name, usage+" (default 0)", func(s string) error {

@@ -21,8 +21,6 @@ type loop struct {
 	lines []string
 }
 
-// runLoop builds a sequence, sends it through rftx.Modulate (or rftx.ModulateBS),
-// rftx.ToIQ, channel and Demodulate, and reports the bursts.
 func runLoop(t *testing.T, seq string, cfg rftx.SeqConfig) loop {
 	t.Helper()
 	return runLoopStretch(t, seq, cfg, 0)
@@ -37,7 +35,6 @@ func runLoopStretch(t *testing.T, seq string, cfg rftx.SeqConfig, ppm float64) l
 	return runBuilt(t, seq, built, cfg, ppm)
 }
 
-// runBuilt is runLoopStretch for a built sequence.
 func runBuilt(t *testing.T, seq string, built rftx.Built, cfg rftx.SeqConfig, ppm float64) loop {
 	t.Helper()
 	var fm, env []float64
@@ -176,7 +173,6 @@ func TestLoopbackVoiceSlowClock(t *testing.T) {
 	}
 }
 
-// flipSync inverts the first n bits of the SYNC field of b.
 func flipSync(b layer2.RawBurst, n int) layer2.RawBurst {
 	bits := [264]unpacked.Bit(unpacked.Unpack(b[:]))
 	for k := framer.SyncOffset; k < framer.SyncOffset+n; k++ {
@@ -185,9 +181,6 @@ func flipSync(b layer2.RawBurst, n int) layer2.RawBurst {
 	return [33]byte(unpacked.Pack(bits[:]))
 }
 
-// TestLoopbackVoiceDamagedSync damages the SYNC of every burst A of a
-// BS-sourced call, and the EMB of one burst B, and checks that the slot
-// timing still finds every superframe.
 func TestLoopbackVoiceDamagedSync(t *testing.T) {
 	t.Parallel()
 
@@ -220,10 +213,6 @@ func TestLoopbackVoiceDamagedSync(t *testing.T) {
 	l.expect(t, "elc", "checksum=ok fec=ok", 4)
 }
 
-// TestLoopbackMSVoiceDamagedSync damages the SYNC of every burst A of an
-// MS-sourced call, and checks that the slot timing from the voice LC header
-// to the terminator finds every superframe. Then it ends a call after burst
-// C with a damaged terminator SYNC, which must not decode as burst D.
 func TestLoopbackMSVoiceDamagedSync(t *testing.T) {
 	t.Parallel()
 
@@ -344,8 +333,6 @@ func TestLoopbackPreamble(t *testing.T) {
 	}
 }
 
-// activeBlocks counts the Short LCs of a BS-sourced stream whose four slots
-// carry part of the sequence.
 func activeBlocks(l loop, cfg rftx.SeqConfig) int {
 	busy := func(f int) bool { return f >= cfg.Wakeups && f-cfg.Wakeups < len(l.built.Bursts) }
 	var n int
@@ -357,9 +344,6 @@ func activeBlocks(l loop, cfg rftx.SeqConfig) int {
 	return n
 }
 
-// TestReportChannelFromTiming gives some bursts a CACH whose TC is wrong but
-// decodes clean, as two bit errors do, and checks that each burst still goes
-// to the channel of its slot time.
 func TestReportChannelFromTiming(t *testing.T) {
 	t.Parallel()
 

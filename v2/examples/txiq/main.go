@@ -7,8 +7,6 @@ package main
 
 import "github.com/USA-RedDragon/dmrgo/v2/internal/fsktx"
 
-// The modulator, a burst, its symbols and the I/Q of one symbol live in
-// static memory.
 var (
 	mod   fsktx.MCUIQ
 	burst [33]byte
@@ -17,8 +15,6 @@ var (
 	sum   int32
 )
 
-// write hands the I/Q of one symbol period to the DAC. A board writes them
-// to its DAC here, from a timer interrupt or DMA; this one sums them.
 func write(x []int16) {
 	for _, v := range x {
 		sum += int32(v)
@@ -26,7 +22,6 @@ func write(x []int16) {
 }
 
 func main() {
-	// 1 ms of ramp at 48 kHz, inside the 1.25 ms guard time of a burst.
 	if err := mod.Init(48000, 0, 48); err != nil {
 		return
 	}

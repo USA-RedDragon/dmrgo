@@ -52,7 +52,6 @@ func lcFields(lc *pdu.FullLinkControl) string {
 	return s
 }
 
-// chanState is the receive state of one TDMA channel.
 type chanState struct {
 	voice layer2.VoiceReceiver
 	asm   *packet.Assembler
@@ -204,8 +203,6 @@ func slcFields(s *pdu.ShortLC) string {
 	return fmt.Sprintf("slco=%d %s", s.SLCO, s.String())
 }
 
-// cachPayloadWord returns the 17-bit CACH payload p, packed as
-// layer2.CACH.Payload holds it, as a number.
 func cachPayloadWord(p [3]byte) uint32 {
 	return uint32(p[0])<<9 | uint32(p[1])<<1 | uint32(p[2])>>7
 }
@@ -218,7 +215,6 @@ func intList(v []int) string {
 	return strings.Join(s, ",")
 }
 
-// bitDiff returns the number of bits in which a and b differ.
 func bitDiff(a, b layer2.RawBurst) int {
 	n := 0
 	for i := range a {

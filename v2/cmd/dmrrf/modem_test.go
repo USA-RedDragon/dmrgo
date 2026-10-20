@@ -87,10 +87,6 @@ func TestBitErrorRateBySNR(t *testing.T) {
 	}
 }
 
-// TestBitErrorRateWeakBS decodes a BS outbound stream at the SNR of a weak
-// real capture, about 11 dB in the channel. There single noise samples are
-// several times the mean power, and noise pulls a mean of the discriminator
-// output toward 0 Hz.
 func TestBitErrorRateWeakBS(t *testing.T) {
 	t.Parallel()
 

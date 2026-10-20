@@ -78,8 +78,6 @@ func readCapture(t *testing.T) []rf.Burst {
 	return out
 }
 
-// TestCaptureXPR8400 reports the bursts of a real repeater capture and
-// checks them against the call that the repeater sent.
 func TestCaptureXPR8400(t *testing.T) {
 	t.Parallel()
 
@@ -109,8 +107,6 @@ func TestCaptureXPR8400(t *testing.T) {
 	checkEMB(t, l, 5)
 }
 
-// checkAMBEPattern checks that the ambe lines of l are frames 0 to n-1 of
-// the AMBE test pattern of TS2 superframes, each with good FEC.
 func checkAMBEPattern(t *testing.T, l loop, n int) {
 	t.Helper()
 	ambe := l.grep("ambe")
@@ -126,8 +122,6 @@ func checkAMBEPattern(t *testing.T, l loop, n int) {
 	}
 }
 
-// checkEMB checks that the emb lines of l are bursts B to F of n TS2
-// superframes with color code 7.
 func checkEMB(t *testing.T, l loop, n int) {
 	t.Helper()
 	emb := l.grep("emb")
@@ -144,11 +138,6 @@ func checkEMB(t *testing.T, l loop, n int) {
 	}
 }
 
-// TestCaptureXPR8400Weak decodes a voice call from a weaker capture of the
-// same repeater, about 11 dB SNR in the channel: run dmrgo-bs-voice/rec2 from
-// 0.50 s to 1.12 s, low-pass filtered and decimated by 8 to 256 kHz with a
-// gain of 4. The call is from 3191868 to TG 9 on TS2: three voice LC headers,
-// one superframe of the AMBE test pattern and a terminator.
 func TestCaptureXPR8400Weak(t *testing.T) {
 	t.Parallel()
 

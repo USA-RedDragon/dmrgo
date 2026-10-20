@@ -13,19 +13,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// captureStarts is the number of starts from which
-// TestCaptureXPR8400GainSweep decodes the capture, captureStep apart in
-// seconds. One start is one draw of the noise against the acquisition, and
-// at 7.3 dB C/N the frames that one start recovers spread widely.
 const (
 	captureStarts = 8
 	captureStep   = 0.0073
 )
 
-// TestCaptureXPR8400GainSweep decodes a voice call from the weakest capture
-// of the RTL-SDR gain sweep, about 7.3 dB C/N, from captureStarts starts,
-// and checks how many of its AMBE+2 frames each tier recovers exactly, in
-// order, over all starts.
 func TestCaptureXPR8400GainSweep(t *testing.T) {
 	t.Parallel()
 	iq, err := os.ReadFile("testdata/xpr8400_gain_sweep.cu8")
@@ -78,9 +70,6 @@ func TestCaptureXPR8400GainSweep(t *testing.T) {
 	}
 }
 
-// exactInOrder decodes the capture iq with tier and returns the number of
-// the frames of want that it recovers exactly, in order. It runs on any
-// goroutine.
 func exactInOrder(iq []byte, tier rf.Tier, want []uint64) (int, error) {
 	d, err := DemodulateBytes(iq, 256e3, false, tier)
 	if err != nil {

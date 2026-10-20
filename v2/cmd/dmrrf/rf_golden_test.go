@@ -17,8 +17,6 @@ type rfRun struct {
 	cfg       func(*rftx.SeqConfig)
 }
 
-// rfRuns returns the sequences a Motorola XPR 8400 (CC 7, ID 314926)
-// received over the air and relayed on IPSC on 2026-10-15.
 func rfRuns() []rfRun {
 	return []rfRun{
 		{"wakeup", "wakeup", func(c *rftx.SeqConfig) { c.Wakeups = 1 }},
@@ -56,9 +54,6 @@ func rfBursts(t *testing.T) map[string][]string {
 	return out
 }
 
-// TestRFGoldenBursts pins the exact bursts the repeater accepted. Set
-// DMRRF_UPDATE_GOLDEN=1 to rewrite testdata/rf_golden.txt, only after a new
-// over-the-air check.
 func TestRFGoldenBursts(t *testing.T) {
 	t.Parallel()
 
@@ -106,7 +101,6 @@ func TestRFGoldenBursts(t *testing.T) {
 	}
 }
 
-// TestRFRelayedPayloads checks the payloads the repeater relayed on IPSC.
 func TestRFRelayedPayloads(t *testing.T) {
 	t.Parallel()
 
