@@ -638,13 +638,12 @@ type IQConfig struct {
 	// it adds nothing to the lag. With Shape, the optimizer starts from
 	// it. It needs Exact and the pulse Span 16, Window 3, Beta 17, Flat.
 	ShapePred bool
-	// PredTerms, from 1 to 15, keeps only that many of the first products
-	// of symbols of ShapePred (1 linear, 5 to the second power, 15 to the
-	// third); 0 keeps all 15.
-	PredTerms int
-	// PredLen, from 1 to 200, keeps only the first PredLen samples of each
-	// kernel of ShapePred; 0 keeps all 200.
-	PredLen int
+	// PredKern picks the kernels of ShapePred: 0 fitted to the optimizer
+	// of Shape alone, 1 to the sum of the correction of kernels 0 and of
+	// the optimizer with the ACP weight that starts from it.
+	PredKern int
+	// PredGain scales the correction of ShapePred; 0 means 1.
+	PredGain float64
 	// NoiseShape is the noise shaping of the rounding to 8 bits of
 	// AppendS8: 0 rounds each value, 1 to 4 feed the rounding error of I
 	// and of Q back so that its spectrum has that many pairs of zeros, at
@@ -796,12 +795,12 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 		if !cfg.Exact || !predFits(cfg.Tier, cfg.Pulse) {
 			return nil, errPred
 		}
-		q.pred = &predictor{kern: &shapeKern, nf: predF, nk: predK}
-		if cfg.PredTerms > 0 {
-			q.pred.nf = min(cfg.PredTerms, predF)
+		q.pred = &predictor{kern: &shapeKern, gain: 1}
+		if cfg.PredKern == 1 {
+			q.pred.kern = &shapeKernB
 		}
-		if cfg.PredLen > 0 {
-			q.pred.nk = min(cfg.PredLen, predK)
+		if cfg.PredGain > 0 {
+			q.pred.gain = cfg.PredGain
 		}
 	}
 	q.rot, q.rad, q.inv = cfg.Rotate, 2*math.Pi/float64(cfg.Rate), 1/float64(cfg.Rate)

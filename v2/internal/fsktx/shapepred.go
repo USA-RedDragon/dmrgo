@@ -52,8 +52,7 @@ type predictor struct {
 	acc  [predK + predSPS]float64
 	psi  [predRing]float64
 	x    [predSpan + 1]float64
-	nf   int
-	nk   int
+	gain float64
 	nIn  int
 	nSym int
 	prev float64
@@ -72,23 +71,12 @@ func (p *predictor) process(buf []float64, s int8) {
 	if p.nSym >= predSpan {
 		ft := predFeatures(p.x)
 		a := p.acc[:predK]
-		if p.nf < predF || p.nk < predK {
-			for t := range a[:p.nk] {
-				k := &p.kern[t]
-				var v float64
-				for i, f := range ft[:p.nf] {
-					v += f * k[i]
-				}
-				a[t] += v
-			}
-		} else {
-			for t := range a {
-				k := &p.kern[t]
-				a[t] += ((ft[0]*k[0] + ft[1]*k[1]) + (ft[2]*k[2] + ft[3]*k[3])) +
-					((ft[4]*k[4] + ft[5]*k[5]) + (ft[6]*k[6] + ft[7]*k[7])) +
-					((ft[8]*k[8] + ft[9]*k[9]) + (ft[10]*k[10] + ft[11]*k[11])) +
-					((ft[12]*k[12] + ft[13]*k[13]) + ft[14]*k[14])
-			}
+		for t := range a {
+			k := &p.kern[t]
+			a[t] += ((ft[0]*k[0] + ft[1]*k[1]) + (ft[2]*k[2] + ft[3]*k[3])) +
+				((ft[4]*k[4] + ft[5]*k[5]) + (ft[6]*k[6] + ft[7]*k[7])) +
+				((ft[8]*k[8] + ft[9]*k[9]) + (ft[10]*k[10] + ft[11]*k[11])) +
+				((ft[12]*k[12] + ft[13]*k[13]) + ft[14]*k[14])
 		}
 		m := (p.nSym-predSpan)*predSPS + predLo
 		for i, v := range p.acc[:predSPS] {
@@ -103,7 +91,7 @@ func (p *predictor) process(buf []float64, s int8) {
 		v := p.psi[j]
 		p.psi[j] = 0
 		p.nIn++
-		buf[i] += (v - p.prev) * iqShaperHz / (2 * math.Pi)
+		buf[i] += p.gain * (v - p.prev) * iqShaperHz / (2 * math.Pi)
 		p.prev = v
 	}
 }

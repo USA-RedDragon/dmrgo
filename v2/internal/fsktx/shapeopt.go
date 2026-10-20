@@ -45,6 +45,7 @@ const (
 // and not the keying: the caller keys by the lag, as for the pulse.
 type optimizer struct {
 	iters      int
+	noChain    bool
 	f, psi     []float64
 	lp         []float64
 	w2, inband []float64
@@ -71,7 +72,7 @@ func newOptimizer(iters int) *optimizer {
 // newOptimizerACP is newOptimizer with acp and alt in place of optACP and
 // optALT.
 func newOptimizerACP(iters int, acp, alt float64) *optimizer {
-	o := &optimizer{iters: iters}
+	o := &optimizer{iters: iters, noChain: optNoChain}
 	o.f = make([]float64, optRing)
 	o.psi = make([]float64, optRing)
 	o.lp = make([]float64, optLPN)
@@ -245,7 +246,7 @@ func (o *optimizer) eval(w0 int, x, g []float64) float64 {
 	re, im, pr, pi := o.re, o.im, o.pr, o.pi
 	for n := range optWin {
 		p := o.psi[(w0+n)&(optRing-1)]
-		if optNoChain {
+		if o.noChain {
 			p = 0
 		}
 		if n >= optCtx {
@@ -292,7 +293,7 @@ func (o *optimizer) block(w0 int) {
 	}
 	for n := range optFree {
 		o.x[n] = o.psi[(w0+optCtx+n)&(optRing-1)]
-		if optNoChain {
+		if o.noChain {
 			o.x[n] = 0
 		}
 	}
