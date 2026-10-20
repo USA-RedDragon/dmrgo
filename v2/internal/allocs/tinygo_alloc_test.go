@@ -20,6 +20,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
@@ -469,11 +470,46 @@ func tinyDVSIOps(t *testing.T) []tinyOp {
 	return ops
 }
 
+func tinyBridgeRun(q, buf []byte) []byte {
+	b, _ := dmrd.DecodeBridge(q)
+	buf, _ = b.AppendBinary(buf[:0])
+	c := dmrd.BridgeControl{Command: dmrd.CommandBCSQ, TalkGroup: 91, Stream: 7}
+	buf, _ = c.AppendBinary(buf[:0])
+	got, _ := dmrd.DecodeBridgeControl(buf)
+	buf, _ = got.AppendBinary(buf[:0])
+	return buf
+}
+
+func tinyDMRDOps(t *testing.T) []tinyOp {
+	t.Helper()
+	d := dmrd.Data{Seq: 1, Source: 3191868, Destination: 91, Repeater: 3149999, Slot: enums.Slot2, Frame: dmrd.FrameVoice, Value: 3, Stream: 7, Size: 55}
+	pkt := tinyOK(d.AppendBinary(make([]byte, 0, 128)))
+	login := []byte("RPTK00040178cbf0e29abbd11c6573825d36a664e3064441f91fc815ac5dc5ca570d4c4a5f85")
+	opts := []byte("StartRef=4013;RelinkTime=15;UserLink=1;TS1_1=262;")
+	buf := make([]byte, 0, 128)
+	bridge := append(make([]byte, 0, 73), pkt[:53]...)
+	bridge = append(bridge, make([]byte, 20)...)
+	dmre := tinyOK((&dmrd.Bridge{Version: 5, Data: d}).AppendBinary(make([]byte, 0, 89)))
+	return []tinyOp{{"dmrd", func() {
+		got, _ := dmrd.DecodeData(pkt)
+		buf, _ = got.AppendBinary(buf[:0])
+		_ = got.Hint()
+		c, _ := dmrd.DecodeControl(login, dmrd.DialectHBRP)
+		buf, _ = c.AppendBinary(buf[:0], dmrd.DialectHBRP)
+		_ = dmrd.Classify(pkt, dmrd.DialectMMDVM)
+		o, _ := dmrd.ParseDMRPlusOptions(opts)
+		buf = o.AppendText(buf[:0])
+	}}, {"dmrd bridge", func() {
+		buf = tinyBridgeRun(dmre, buf)
+		buf = tinyBridgeRun(bridge, buf)
+	}}}
+}
+
 func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t))
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {
