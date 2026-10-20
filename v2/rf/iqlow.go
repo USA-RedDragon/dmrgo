@@ -196,10 +196,10 @@ func q15(v float32) int32 {
 func (r *iqLowRx) run(x []uint32) {
 	block := r.block()
 	if r.d.iqLow && r.d.front96 {
-		for len(x) > 0 {
-			m := min(len(x), block-int(r.afcN))
-			r.feed(x[:m])
-			x = x[m:]
+		for k := 0; k < len(x); {
+			m := min(len(x)-k, block-int(r.afcN))
+			r.feed(x[k : k+m])
+			k += m
 			r.afcN += int16(m)
 			if int(r.afcN) == block {
 				r.afcN = 0
@@ -208,10 +208,10 @@ func (r *iqLowRx) run(x []uint32) {
 		}
 		return
 	}
-	for len(x) > 0 {
-		m := min(len(x), iqLowBuf-int(r.n), block-int(r.afcN))
-		r.halfRun(x[:m])
-		x = x[m:]
+	for k := 0; k < len(x); {
+		m := min(len(x)-k, iqLowBuf-int(r.n), block-int(r.afcN))
+		r.halfRun(x[k : k+m])
+		k += m
 		r.n += uint8(m)
 		r.afcN += int16(m)
 		if r.n == iqLowBuf || int(r.afcN) == block {
@@ -229,16 +229,16 @@ func (r *iqLowRx) run(x []uint32) {
 // the slots that end, as DiscReceiver.run does.
 func (r *iqLowRx) feed(x []uint32) {
 	r.n = 0
-	j := 0
+	j, k := 0, 0
 	for {
-		i, m := r.d.run96(r.buf[:r.n], j, x)
+		i, m := r.d.run96(r.buf[:r.n], j, x[k:])
 		if !r.d.slotDue {
 			r.n = 0
 			return
 		}
 		r.d.slotDue = false
 		r.d.endSlot()
-		x, j = x[m:], i
+		k, j = k+m, i
 	}
 }
 

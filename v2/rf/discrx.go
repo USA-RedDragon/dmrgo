@@ -435,8 +435,8 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 	// put into x.
 	fed := 0
 	// n is the end of the samples in x, which fill moves up to cap(x): x
-	// itself stays one value, so that the compiler sees that run96 keeps
-	// no pointer into it.
+	// and in themselves stay one value each, so that the compiler sees that
+	// run96 keeps no pointer into them.
 	n := len(x)
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
@@ -631,11 +631,11 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 			}
 			r.n += int64(i - i0)
 			i0 = i
-			m := iqLowOf(r).fill(in)
+			m := iqLowOf(r).fill(in[fed:])
 			if m == 0 {
 				break
 			}
-			in, fed = in[m:], fed+m
+			fed += m
 			n, i, i0 = m, -1, 0
 			continue
 		}
