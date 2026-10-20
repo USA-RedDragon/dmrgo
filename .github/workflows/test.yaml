@@ -69,6 +69,10 @@ jobs:
     container:
       image: tinygo/tinygo:0.41.1@sha256:b216f534ddbf277444407b014a3328b5c1ade403cc397f3ab48a14789bf99d0e
       options: --user root
+    # The runner, not root, owns the workspace, so git refuses its status
+    # for the VCS stamp of go list and tinygo.
+    env:
+      GOFLAGS: -buildvcs=false
     defaults:
       run:
         working-directory: v2
