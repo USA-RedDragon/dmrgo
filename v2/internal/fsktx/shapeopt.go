@@ -33,6 +33,8 @@ const (
 	// dB: the power that the ACP limit counts weighs as much as that of
 	// Mask D at optACP dB.
 	optACP = 0.0
+	// optALT is optACP for the alternate channel at 25 kHz.
+	optALT = 0.0
 )
 
 // optimizer adds a phase correction to the shaped deviation that lowers
@@ -63,11 +65,12 @@ type optimizer struct {
 }
 
 func newOptimizer(iters int) *optimizer {
-	return newOptimizerACP(iters, optACP)
+	return newOptimizerACP(iters, optACP, optALT)
 }
 
-// newOptimizerACP is newOptimizer with acp in place of optACP.
-func newOptimizerACP(iters int, acp float64) *optimizer {
+// newOptimizerACP is newOptimizer with acp and alt in place of optACP and
+// optALT.
+func newOptimizerACP(iters int, acp, alt float64) *optimizer {
 	o := &optimizer{iters: iters}
 	o.f = make([]float64, optRing)
 	o.psi = make([]float64, optRing)
@@ -104,7 +107,10 @@ func newOptimizerACP(iters int, acp float64) *optimizer {
 		case a > optFromHz:
 			o.w2[k] = math.Pow(10, optMaskAttn(a)/10)
 			if acp > 0 {
-				o.w2[k] += math.Pow(10, (acp-optAnnexC(a))/10)
+				o.w2[k] += math.Pow(10, (acp-optAnnexC(a, 12500))/10)
+			}
+			if alt > 0 {
+				o.w2[k] += math.Pow(10, (alt-optAnnexC(a, 25000))/10)
 			}
 		}
 		o.taper[k] = 0.5 - 0.5*math.Cos(2*math.Pi*(float64(k)+0.5)/optWin)
@@ -154,10 +160,10 @@ func optMaskAttn(fd float64) float64 {
 }
 
 // optAnnexC is the attenuation in dB at fd Hz from the carrier of the
-// Annex C receive filter of EN 300 113 tuned to the adjacent channel at
-// 12.5 kHz, at the widest tolerances on each side.
-func optAnnexC(fd float64) float64 {
-	d := math.Abs(fd)/1000 - 12.5
+// Annex C receive filter of EN 300 113 tuned to ch Hz from the carrier, at
+// the widest tolerances on each side.
+func optAnnexC(fd, ch float64) float64 {
+	d := (math.Abs(fd) - ch) / 1000
 	x, y := [5]float64{0, 5, 6.25, 7.5, 11.5}, [5]float64{0, 2, 6, 26, 90}
 	if d < 0 {
 		d = -d

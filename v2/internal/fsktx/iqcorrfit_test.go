@@ -17,19 +17,24 @@ import (
 // 200000 random symbols (PCG 3, 4) as s+3 bytes to iq_syms.bin, and the
 // deviation of Tier2 I/Q at 96 kHz (Exact, Pulse Window 3 Beta 5) with
 // Shape 15 less that with Shape 0, at the shaper rate and aligned by
-// optDelay, as float32 to iq_corr.f32. DMRGO_IQCORR_ACP sets the optACP of
-// the optimizer (default optACP). The fit is
+// optDelay, as float32 to iq_corr.f32. DMRGO_IQCORR_ACP and
+// DMRGO_IQCORR_ALT set the optACP and optALT of the optimizer. The fit is
 // candtx/scratch/txmcorr/fitiq.py and pocs.py.
 func TestIQCorrDump(t *testing.T) {
 	dir := os.Getenv("DMRGO_IQCORR_DUMP")
 	if dir == "" {
 		t.Skip("set DMRGO_IQCORR_DUMP")
 	}
-	acp := optACP
-	if v := os.Getenv("DMRGO_IQCORR_ACP"); v != "" {
-		var err error
-		if acp, err = strconv.ParseFloat(v, 64); err != nil {
-			t.Fatal(err)
+	acp, alt := optACP, optALT
+	for _, e := range []struct {
+		name string
+		v    *float64
+	}{{"DMRGO_IQCORR_ACP", &acp}, {"DMRGO_IQCORR_ALT", &alt}} {
+		if v := os.Getenv(e.name); v != "" {
+			var err error
+			if *e.v, err = strconv.ParseFloat(v, 64); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 	cfg := IQConfig{Rate: 96000, Tier: Tier2, Exact: true, Pulse: PulseConfig{Window: 3, Beta: 5}}
@@ -42,7 +47,7 @@ func TestIQCorrDump(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	q1.opt = newOptimizerACP(cfg.Shape, acp)
+	q1.opt = newOptimizerACP(cfg.Shape, acp, alt)
 	const n = 200000
 	rng := rand.New(rand.NewPCG(3, 4))
 	sy := make([]byte, n)
