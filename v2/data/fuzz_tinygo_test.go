@@ -10,4 +10,8 @@ func TestFuzzSeeds(t *testing.T) {
 	for _, in := range rxSeeds() {
 		checkRxScript(t, in, p)
 	}
+	tp, msgs := txPool(t), txMessages()
+	for _, in := range txSeeds() {
+		checkTxScript(t, in, tp, msgs)
+	}
 }
