@@ -566,6 +566,42 @@ func ntfPeak(fb []float64) float64 {
 	return top
 }
 
+// ntfFarHz is where the far-out limits on the 8-bit rounding noise start:
+// Emission Mask D wants 70 dB in 100 kHz there at 100 W, ERC/REC 74-01
+// 70 dB beyond 62.5 kHz. Plain rounding gives about -62 dBc in 100 kHz.
+const ntfFarHz = 56250
+
+// ntfFarGain is the most gain of the noise transfer function of
+// IQConfig.NoiseShape from ntfFarHz to half the rate (0.5 dB): NewIQ drops
+// the last zeros until the gain there is at most this. Zeros without poles
+// near the channel lift the noise far from them (24 dB for two pairs at
+// 12.5 and 25 kHz at 2.4 MHz); the notches of NoisePoleR do not.
+const ntfFarGain = 1.06
+
+// ntfFarPeak returns the most gain from ntfFarHz to half of rate of the
+// noise transfer function (1 + sum of fb[i] z^-(i+1)) / (1 + sum of fbp[i]
+// z^-(i+1)), or 0 when half of rate is under ntfFarHz.
+func ntfFarPeak(fb, fbp []float64, rate float64) float64 {
+	var top float64
+	if rate/2 < ntfFarHz {
+		return 0
+	}
+	for k := range 1025 {
+		f := ntfFarHz + (rate/2-ntfFarHz)*float64(k)/1024
+		w := 2 * math.Pi * f / rate
+		nr, ni, dr, di := 1.0, 0.0, 1.0, 0.0
+		for i := range fb {
+			s, c := math.Sincos(-w * float64(i+1))
+			nr += fb[i] * c
+			ni += fb[i] * s
+			dr += fbp[i] * c
+			di += fbp[i] * s
+		}
+		top = max(top, math.Hypot(nr, ni)/math.Hypot(dr, di))
+	}
+	return top
+}
+
 // IQConfig sets up an IQ.
 type IQConfig struct {
 	// Rate is the sample rate of the I/Q, from 48000 to 20e6 Hz; 0 means
@@ -606,7 +642,7 @@ type IQConfig struct {
 	// AppendS8: 0 rounds each value, 1 to 4 feed the rounding error of I
 	// and of Q back so that its spectrum has that many pairs of zeros, at
 	// the frequencies of NoiseZerosHz, less the last ones while the gain
-	// of the noise is above 16.
+	// of the noise is above 16, or above 0.5 dB beyond 56.25 kHz.
 	NoiseShape int
 	// NoiseZerosHz are the frequencies of the zeros of the noise transfer
 	// function of NoiseShape, in Hz.
@@ -696,25 +732,27 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 		return nil, errDelay
 	}
 	q := &IQ{ramp: ramp, dn: cfg.Delay}
-	for q.shape = min(max(cfg.NoiseShape, 0), 4); q.shape > 0; q.shape-- {
-		q.fb = ntf(q.shape, cfg.NoiseZerosHz, float64(cfg.Rate))
-		if ntfPeak(q.fb[:2*q.shape]) <= ntfMaxGain {
-			break
-		}
-	}
 	if cfg.NoisePoleR < 0 || cfg.NoisePoleR >= 1 {
 		return nil, errNoise
 	}
-	if cfg.NoisePoleR > 0 && cfg.NoiseShape > 0 {
-		q.shape = min(cfg.NoiseShape, 4)
+	q.pole = cfg.NoisePoleR > 0
+	for q.shape = min(max(cfg.NoiseShape, 0), 4); q.shape > 0; q.shape-- {
 		q.fb = ntf(q.shape, cfg.NoiseZerosHz, float64(cfg.Rate))
-		q.pole = true
-		r := cfg.NoisePoleR
-		for i := range q.fbp {
-			q.fbp[i] = q.fb[i] * r
-			r *= cfg.NoisePoleR
+		m := 2 * q.shape
+		if q.pole {
+			r := cfg.NoisePoleR
+			for i := range q.fbp {
+				q.fbp[i] = q.fb[i] * r
+				r *= cfg.NoisePoleR
+			}
+		} else if ntfPeak(q.fb[:m]) > ntfMaxGain {
+			continue
+		}
+		if ntfFarPeak(q.fb[:m], q.fbp[:m], float64(cfg.Rate)) <= ntfFarGain {
+			break
 		}
 	}
+	q.pole = q.pole && q.shape > 0
 	switch cfg.Tier {
 	case Tier0:
 		if err := q.mcu.Init(cfg.Rate, int(math.Round(cfg.OffsetHz)), min(ramp, 1<<15)); err != nil {
