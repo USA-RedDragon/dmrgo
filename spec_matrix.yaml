@@ -1809,6 +1809,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestUDPIPv4CompressedHeader_RoundTrip
+              - TestUDPIPv4CompressedHeader_Ports
 
       - section: "6.1"
         title: "Defined Data"
@@ -1873,6 +1874,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestUDPIPv4CompressedHeader_RoundTrip
+              - TestUDPIPv4CompressedHeader_Ports
 
       - section: "A"
         title: "PDP timers and constants in DMR"

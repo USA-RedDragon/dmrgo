@@ -567,6 +567,8 @@ var api = [...]any{
 	(*layer2_pdu.TalkgroupVoiceGrantPDU).Encode,
 	(*layer2_pdu.TalkgroupVoiceGrantPDU).String,
 	(*layer2_pdu.UDPIPv4CompressedHeader).Encode,
+	(*layer2_pdu.UDPIPv4CompressedHeader).Octets,
+	(*layer2_pdu.UDPIPv4CompressedHeader).Ports,
 	(*layer2_pdu.UDPIPv4CompressedHeader).String,
 	(*layer2_pdu.UDTHeader).Encode,
 	(*layer2_pdu.UDTHeader).String,
