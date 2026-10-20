@@ -30,6 +30,17 @@ func TestVoiceServiceOptions_Table7_52(t *testing.T) {
 	}
 }
 
+func TestDataServiceOptions_Table7_53(t *testing.T) {
+	t.Parallel()
+	got, err := layer3.DataServiceOptions{HiRate: true, PriorityLevel: 2}.Field()
+	if err != nil || got != 0b000_1010 {
+		t.Errorf("Field() = %07b, %v, want 0001010", got, err)
+	}
+	if o := layer3.DecodeDataServiceOptions([1]byte{0b1000_1000}); !o.IsEmergency || !o.MultiItem || o.HiRate {
+		t.Errorf("DecodeDataServiceOptions = %+v", o)
+	}
+}
+
 func TestRegistrationServiceOptions_Table7_55(t *testing.T) {
 	t.Parallel()
 	got, err := layer3.RegistrationServiceOptions{Register: true}.Field()
