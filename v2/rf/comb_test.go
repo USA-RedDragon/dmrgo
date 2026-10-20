@@ -8,6 +8,7 @@ import (
 )
 
 func TestCombReleaseOnce(t *testing.T) {
+	t.Parallel()
 	var got []float64
 	c := &combRx{last: math.Inf(-1), mode: 2, on: func(b *Burst) { got = append(got, b.Seconds) }}
 	for i := range c.pend {
@@ -35,6 +36,7 @@ func TestCombReleaseOnce(t *testing.T) {
 }
 
 func TestCombModeClean(t *testing.T) {
+	t.Parallel()
 	c := &combRx{mode: 12}
 	var x, y combBurst
 	x.b.Voice, x.b.HasFixed, x.s.hasFlips = enums.VoiceBurstA, true, true

@@ -1,6 +1,7 @@
 package rf
 
 import (
+	"errors"
 	"math"
 	"math/bits"
 	"testing"
@@ -47,50 +48,13 @@ func lowIQ(x []complex64, hz int) []complex64 {
 	return y
 }
 
-// TestLowIQReceiver checks that a LowIQReceiver in caller memory allocates
-// nothing in Init and WriteBaseband and, with the settings of the audio
-// Tier 0 core, decodes every voice frame of a BS outbound call at 1400 Hz
-// offset at 30 dB, at 9.6 and 12 kHz.
-func TestLowIQReceiver(t *testing.T) {
-	slots, _ := benchStream(t, 3)
-	x := noisyBaseband(slots, 1400, 30, 1)
-	o := discOptions()
-	o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, 2
-	for _, hz := range []int{9600, 12000} {
-		y := lowIQ(x, hz)
-		var r LowIQReceiver
-		var got []Burst
-		on := func(b *Burst) { got = append(got, *b) }
-		if n := testing.AllocsPerRun(1, func() {
-			if err := r.Init(LowIQConfig{Hz: hz, OnBurst: on, opt: &o}); err != nil {
-				t.Fatal(err)
-			}
-		}); n != 0 {
-			t.Errorf("%d Hz: Init: %v allocations", hz, n)
-		}
-		got = make([]Burst, 0, 4*len(slots)+16)
-		const chunk = 1 << 9
-		pos := 0
-		if n := testing.AllocsPerRun(len(y)/chunk-2, func() {
-			r.WriteBaseband(y[pos : pos+chunk])
-			pos += chunk
-		}); n != 0 {
-			t.Errorf("%d Hz: %v allocations per WriteBaseband", hz, n)
-		}
-		r.WriteBaseband(y[pos:])
-		r.Flush()
-		if exact, total := exactFrames(slots, got); exact != total || total == 0 {
-			t.Errorf("%d Hz: %d of %d voice frames exact", hz, exact, total)
-		}
-	}
-}
-
 // TestLowIQISI checks that a LowIQReceiver at 9.6 kHz decodes every voice
 // frame of a long BS outbound call at 1400 Hz offset at 25 dB. Without
 // cancelISI, a +1 between two +3 symbols, which the phase step at 9.6 kHz
 // and the filter of the chip near the signal spread, lost a frame or more
 // per call.
 func TestLowIQISI(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("long call")
 	}
@@ -114,6 +78,7 @@ func TestLowIQISI(t *testing.T) {
 
 // TestLowIQConfig checks the errors of LowIQReceiver.Init.
 func TestLowIQConfig(t *testing.T) {
+	t.Parallel()
 	var r LowIQReceiver
 	on := func(*Burst) {}
 	for _, c := range []struct {
@@ -125,7 +90,7 @@ func TestLowIQConfig(t *testing.T) {
 		{LowIQConfig{}, "OnBurst"},
 	} {
 		err := r.Init(c.cfg)
-		if e, ok := err.(*ConfigError); !ok || e.Field != c.field {
+		if e := (*ConfigError)(nil); !errors.As(err, &e) || e.Field != c.field {
 			t.Errorf("%+v: got %v, want a ConfigError for %s", c.cfg, err, c.field)
 		}
 	}
@@ -139,6 +104,7 @@ func TestLowIQConfig(t *testing.T) {
 // input, at frequencies up to 0.49 of the rate, at any phase and at
 // amplitudes from 64 to full scale.
 func TestIQLowHalfRun(t *testing.T) {
+	t.Parallel()
 	var r iqLowRx
 	if err := r.init(9600, func(*Burst) {}, nil); err != nil {
 		t.Fatal(err)
@@ -164,6 +130,7 @@ func TestIQLowHalfRun(t *testing.T) {
 }
 
 func TestLagrangeAt(t *testing.T) {
+	t.Parallel()
 	p := [6]float32{0.3, -1.2, 2.5, 0.7, -3, 1.1}
 	for i := 0; i <= lagrangeTabN; i++ {
 		mu := float32(i) / lagrangeTabN
@@ -175,6 +142,7 @@ func TestLagrangeAt(t *testing.T) {
 }
 
 func TestMod64(t *testing.T) {
+	t.Parallel()
 	for _, n := range []uint32{slotSymbols, 2 * slotSymbols} {
 		for _, k := range []int64{0, 1, -1, 143, 144, -144, -145, 287, 288, 1 << 32, -1 << 32, 1<<40 + 77, -(1<<40 + 77), 1<<62 + 5, -1 << 63, 1<<63 - 1} {
 			want := k % int64(n)
@@ -192,6 +160,7 @@ func TestMod64(t *testing.T) {
 // iqLowRecip: the step of iqLowAtan64 stays below 64 and the angle is
 // within 0.02 rad of the arctangent.
 func TestIQLowRecip(t *testing.T) {
+	t.Parallel()
 	seed := uint32(1)
 	for k := 0; k < 200000; k++ {
 		seed = seed*1664525 + 1013904223

@@ -6,6 +6,7 @@ import "testing"
 // nearest step to the modulation index, and that the default step is that
 // of 0.27.
 func TestXTrellisSetH(t *testing.T) {
+	t.Parallel()
 	m := newCPMModel(1, 10)
 	for _, c := range []struct {
 		np, def int
@@ -29,6 +30,7 @@ func TestXTrellisSetH(t *testing.T) {
 // TestXTrellisJumpCosts checks that the fade jump cost falls with the
 // square of the lesser correlation of two symbols over the mean.
 func TestXTrellisJumpCosts(t *testing.T) {
+	t.Parallel()
 	x := newXTrellis(newCPMModel(1, 10), 52, 4)
 	x.jump, x.fade = 8, true
 	copy(x.jk, []float32{2, 2, 1, 3})

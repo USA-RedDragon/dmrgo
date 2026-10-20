@@ -10,6 +10,7 @@ import (
 // the segment correlations of the plain loop bit for bit, and that it
 // leaves a source only when neither share can reach the threshold.
 func TestScanPair(t *testing.T) {
+	t.Parallel()
 	o := tierOptions(Tier2)
 	s := newCohStageOf(&o)
 	rng := rand.New(rand.NewPCG(1, 2))

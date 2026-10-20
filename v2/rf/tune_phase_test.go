@@ -12,6 +12,7 @@ import (
 // constant phase, also when the ring does not start on a multiple of 1024
 // samples.
 func TestTunePhaseContinuous(t *testing.T) {
+	t.Parallel()
 	const hz = 1000.0
 	c := newChannelizer(8192, false, 1, false, false)
 	tone := func(i int) complex64 {

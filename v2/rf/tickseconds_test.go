@@ -6,6 +6,7 @@ import (
 )
 
 func TestTickSeconds(t *testing.T) {
+	t.Parallel()
 	rng := rand.New(rand.NewPCG(1, 2))
 	check := func(v int64) {
 		want := float64(v) * (1.0 / (basebandRate * 256))

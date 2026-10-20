@@ -9,6 +9,7 @@ import (
 // TestSignsMatch checks signsMatch and signsSource against the distances
 // of the signs to each SYNC, counted bit by bit.
 func TestSignsMatch(t *testing.T) {
+	t.Parallel()
 	rng := rand.New(rand.NewPCG(5, 6))
 	match := func(r *leanCore, s uint32) (bool, int, bool) {
 		for i := range int(r.sources) {

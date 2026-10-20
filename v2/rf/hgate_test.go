@@ -9,6 +9,7 @@ import (
 // peak of the anchor scores and that its interval is narrow only when the
 // noise is low.
 func TestHGateInterval(t *testing.T) {
+	t.Parallel()
 	g := newHGate(64, newSyncSearch(true, 1))
 	rng := uint64(1)
 	for _, c := range []struct {
