@@ -25,4 +25,9 @@
 // confirmed message are each delivered at once, and EventReassembled
 // follows the last one with the whole message (ETSI TS 102 361-1 clause
 // 9.3.25).
+//
+// Multi-fragment reassembly is tested only against the 14-fragment example
+// of ETSI TS 102 361-1 Table 8.2 and synthetic packets, as no radio at hand
+// sends fragments. A BTECH DA-7X2 sends confirmed SMS with FSN 1000 and
+// unconfirmed GPS with FSN 0000, each with N(S) 0.
 package data
