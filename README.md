@@ -206,7 +206,7 @@ The example prints its counts on the serial console once a second.
 | 5.2.2.3 | Non-time critical CSBK ACK/NACK channel access | verified | 2/2 passed | `v2/csbk/sender.go` |
 | 6.1 | Vocoder socket | verified | 23/23 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/internal/fec/ambe/ambe.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/internal/fec/golay/golay_23_12_7.go`, `v2/internal/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
 | 6.2 | Data and control | verified | 6/6 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/pi_header.go`, `v2/layer2/voice_transmitter_options.go` |
-| 6.3 | Common Announcement Channel burst | verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
+| 6.3 | Common Announcement Channel burst | verified | 7/7 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go`, `v2/bs/cach.go` |
 | 6.4 | Reverse Channel | verified | 17/17 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
 | 7.1.1 | Voice LC header | verified | 10/10 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_transmitter_options.go` |
 | 7.1.2 | Terminator with LC | verified | 7/7 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go` |
