@@ -22,3 +22,9 @@ var (
 	// ErrPlanFull is returned when a ChannelPlan or HuntList has no room.
 	ErrPlanFull = errors.New("trunk: table full")
 )
+
+var (
+	errHunt       error = &ConfigError{Field: "Hunt"}
+	errTalkgroups error = &ConfigError{Field: "Talkgroups"}
+	errSysCode    error = &ConfigError{Field: "SysCode"}
+)
