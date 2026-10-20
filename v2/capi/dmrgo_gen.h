@@ -66,6 +66,26 @@ typedef struct dmrgo_csbk_responder_config_t dmrgo_csbk_responder_config_t;
 typedef struct dmrgo_csbk_wakeup_t dmrgo_csbk_wakeup_t;
 /* Go: csbk.WakeupConfig. WakeupConfig configures NewWakeup. */
 typedef struct dmrgo_csbk_wakeup_config_t dmrgo_csbk_wakeup_config_t;
+/* Go: data.Call. Call is the parties of a data call. */
+typedef struct dmrgo_data_call_t dmrgo_data_call_t;
+/* Go: data.ConfigError. ConfigError is the error of NewReceiver, NewSender and Sender.Send for a config field or message field with a value out of range. */
+typedef struct dmrgo_data_config_error_t dmrgo_data_config_error_t;
+/* Go: data.Event. Event is one result of a Receiver. */
+typedef struct dmrgo_data_event_t dmrgo_data_event_t;
+/* Go: data.Message. Message is one data packet: its header, rate and user data. */
+typedef struct dmrgo_data_message_t dmrgo_data_message_t;
+/* Go: data.Output. Output is one result of a Sender. */
+typedef struct dmrgo_data_output_t dmrgo_data_output_t;
+/* Go: data.Receiver. Receiver turns the bursts of one logical channel into data events: the start and end of a data call, each complete packet, the responses heard and the responses to send, as the package doc describes. */
+typedef struct dmrgo_data_receiver_t dmrgo_data_receiver_t;
+/* Go: data.ReceiverConfig. ReceiverConfig configures NewReceiver. */
+typedef struct dmrgo_data_receiver_config_t dmrgo_data_receiver_config_t;
+/* Go: data.Sender. Sender sends one data message at a time on one logical channel: the preamble CSBKs, the header and the blocks of each try, one burst per Tick, 60 ms apart, after the channel access of SenderConfig.Access. */
+typedef struct dmrgo_data_sender_t dmrgo_data_sender_t;
+/* Go: data.SenderConfig. SenderConfig configures NewSender. */
+typedef struct dmrgo_data_sender_config_t dmrgo_data_sender_config_t;
+/* Go: data.Stats. Stats counts what a Receiver saw during a data call. */
+typedef struct dmrgo_data_stats_t dmrgo_data_stats_t;
 /* Go: enums.ColorCodeError. ColorCodeError is the error of NewColorCode for a value that does not fit in 4 bits. */
 typedef struct dmrgo_enums_color_code_error_t dmrgo_enums_color_code_error_t;
 /* Go: fec.BERCalculator. BERCalculator accumulates Results into an overall bit error rate. */
@@ -410,6 +430,18 @@ typedef uint8_t dmrgo_csbk_result_t;
 typedef uint8_t dmrgo_csbk_service_t;
 /* Go: csbk.WakeupState. WakeupState is the state of a Wakeup. */
 typedef uint8_t dmrgo_csbk_wakeup_state_t;
+/* Go: data.EndReason. EndReason is why a data call ended. */
+typedef uint8_t dmrgo_data_end_reason_t;
+/* Go: data.EventKind. EventKind is the kind of an Event. */
+typedef uint8_t dmrgo_data_event_kind_t;
+/* Go: data.OutputKind. OutputKind is the kind of an Output. */
+typedef uint8_t dmrgo_data_output_kind_t;
+/* Go: data.Result. Result is how a message ended. */
+typedef uint8_t dmrgo_data_result_t;
+/* Go: data.SenderState. SenderState is the state of a Sender. */
+typedef uint8_t dmrgo_data_sender_state_t;
+/* Go: data.State. State is the state of a Receiver. */
+typedef uint8_t dmrgo_data_state_t;
 /* Go: enums.Access. Access is the channel access policy of a transmission. */
 typedef uint8_t dmrgo_enums_access_t;
 /* Go: enums.AckReason. AckReason is the 8-bit Reason of a Tier III acknowledgement, such as C_ACKD, C_NACKD, C_QACKD, C_WACKD, C_ACKU and P_ACKD. */
@@ -735,6 +767,230 @@ struct dmrgo_csbk_request_options_t {
 	bool time_critical;
 	int64_t preambles;
 	int64_t retry_preambles;
+};
+
+struct dmrgo_data_call_t {
+	bool group;
+	uint32_t target;
+	uint32_t source;
+};
+
+struct dmrgo_data_config_error_t {
+	char *field;
+	size_t field_len;
+};
+
+struct dmrgo_pdu_unconfirmed_data_header_t {
+	bool group;
+	bool response_requested;
+	bool reserved;
+	uint8_t pad_octet_count;
+	dmrgo_enums_service_access_point_id_t sap;
+	uint32_t llid_destination;
+	uint32_t llid_source;
+	bool full_message_flag;
+	uint8_t blocks_to_follow;
+	uint8_t reserved2;
+	uint8_t fragment_sequence_number;
+};
+
+struct dmrgo_pdu_confirmed_data_header_t {
+	bool group;
+	bool response_requested;
+	bool reserved;
+	uint8_t pad_octet_count;
+	dmrgo_enums_service_access_point_id_t sap;
+	uint32_t llid_destination;
+	uint32_t llid_source;
+	bool full_message_flag;
+	uint8_t blocks_to_follow;
+	bool re_synchronize_flag;
+	uint8_t send_sequence_number;
+	uint8_t fragment_sequence_number;
+};
+
+struct dmrgo_pdu_response_packet_header_t {
+	bool reserved;
+	bool response_requested;
+	uint8_t reserved2;
+	dmrgo_enums_service_access_point_id_t sap;
+	uint8_t reserved3;
+	uint32_t llid_destination;
+	uint32_t llid_source;
+	bool full_message_flag;
+	uint8_t blocks_to_follow;
+	uint8_t response_class;
+	uint8_t response_type;
+	uint8_t response_status;
+};
+
+struct dmrgo_pdu_defined_data_header_t {
+	bool group;
+	bool response_requested;
+	uint8_t appended_blocks;
+	dmrgo_enums_service_access_point_id_t sap;
+	uint32_t llid_destination;
+	uint32_t llid_source;
+	uint8_t defined_data;
+	bool sarq;
+	bool full_message_flag;
+	uint8_t bit_padding;
+};
+
+struct dmrgo_pdu_status_precoded_header_t {
+	bool group;
+	bool response_requested;
+	dmrgo_enums_service_access_point_id_t sap;
+	uint32_t llid_destination;
+	uint32_t llid_source;
+	uint8_t source_port;
+	uint8_t destination_port;
+	uint16_t status_precoded;
+};
+
+struct dmrgo_pdu_raw_data_header_t {
+	bool group;
+	bool response_requested;
+	uint8_t appended_blocks;
+	dmrgo_enums_service_access_point_id_t sap;
+	uint32_t llid_destination;
+	uint32_t llid_source;
+	uint8_t source_port;
+	uint8_t destination_port;
+	bool sarq;
+	bool full_message_flag;
+	uint8_t bit_padding;
+};
+
+struct dmrgo_pdu_udt_header_t {
+	bool group;
+	bool response_requested;
+	bool emergency;
+	bool option_flag;
+	dmrgo_enums_service_access_point_id_t sap;
+	uint8_t udt_format;
+	uint32_t llid_destination;
+	uint32_t llid_source;
+	uint8_t pad_nibble;
+	bool reserved;
+	uint8_t appended_blocks;
+	bool supplementary_flag;
+	bool protect_flag;
+	dmrgo_pdu_udt_opcode_t opcode;
+};
+
+struct dmrgo_pdu_proprietary_header_t {
+	dmrgo_enums_service_access_point_id_t sap;
+	dmrgo_enums_feature_set_id_t mfid;
+	uint8_t manufacturer_data[8];
+};
+
+struct dmrgo_pdu_data_header_t {
+	dmrgo_fec_result_t fec;
+	dmrgo_pdu_format_t format;
+	uint8_t appended_blocks;
+	bool has_unconfirmed_data_header;
+	dmrgo_pdu_unconfirmed_data_header_t unconfirmed_data_header;
+	bool has_confirmed_data_header;
+	dmrgo_pdu_confirmed_data_header_t confirmed_data_header;
+	bool has_response_packet_header;
+	dmrgo_pdu_response_packet_header_t response_packet_header;
+	bool has_defined_data_header;
+	dmrgo_pdu_defined_data_header_t defined_data_header;
+	bool has_status_precoded_header;
+	dmrgo_pdu_status_precoded_header_t status_precoded_header;
+	bool has_raw_data_header;
+	dmrgo_pdu_raw_data_header_t raw_data_header;
+	bool has_udt_header;
+	dmrgo_pdu_udt_header_t udt_header;
+	bool has_proprietary_header;
+	dmrgo_pdu_proprietary_header_t proprietary_header;
+	uint8_t raw_payload[10];
+};
+
+struct dmrgo_data_message_t {
+	dmrgo_pdu_data_header_t header;
+	bool has_proprietary;
+	dmrgo_pdu_proprietary_header_t proprietary;
+	dmrgo_enums_data_type_t rate;
+	uint8_t *payload;
+	size_t payload_len;
+	bool bad_crc;
+	bool fragmented;
+	uint16_t fragments;
+};
+
+struct dmrgo_packet_response_data_t {
+	bool retry[127];
+};
+
+struct dmrgo_data_stats_t {
+	uint16_t packets;
+	uint16_t delivered;
+	uint16_t blocks;
+	uint16_t lost;
+	uint16_t header_crc;
+	uint16_t bad_crc;
+	uint16_t duplicates;
+	uint16_t out_of_sequence;
+	uint16_t dropped;
+	int64_t duration;
+};
+
+struct dmrgo_data_event_t {
+	dmrgo_data_event_kind_t kind;
+	dmrgo_data_call_t call;
+	dmrgo_data_message_t message;
+	dmrgo_packet_response_t response;
+	bool has_retry;
+	dmrgo_packet_response_data_t retry;
+	dmrgo_layer2_raw_burst_t burst;
+	int64_t due;
+	dmrgo_data_end_reason_t reason;
+	dmrgo_data_stats_t stats;
+};
+
+struct dmrgo_data_receiver_config_t {
+	bool has_color_code;
+	dmrgo_enums_color_code_t color_code;
+	uint32_t address;
+	bool respond;
+	dmrgo_layer2_sync_source_t source;
+	int64_t response_delay;
+	int64_t max_blocks;
+	int64_t max_fragment;
+	int64_t max_message;
+	int64_t peers;
+	int64_t lost;
+	int64_t hang;
+	bool accept_bad_crc;
+	dmrgo_layer2_burst_t *scratch;
+};
+
+struct dmrgo_data_sender_config_t {
+	dmrgo_enums_color_code_t color_code;
+	dmrgo_layer2_sync_source_t source;
+	dmrgo_enums_access_t access;
+	int64_t preambles;
+	int64_t idle_search;
+	int64_t holdoff;
+	int64_t response_wait;
+	int64_t tx_limit;
+	int64_t retries;
+	int64_t max_blocks;
+	int64_t peers;
+	bool resync;
+	uint64_t seed;
+};
+
+struct dmrgo_data_output_t {
+	dmrgo_data_output_kind_t kind;
+	dmrgo_layer2_raw_burst_t burst;
+	int64_t due;
+	uint8_t try_;
+	dmrgo_data_result_t result;
+	dmrgo_packet_response_t response;
+	bool has_response;
 };
 
 struct dmrgo_enums_color_code_error_t {
@@ -1090,134 +1346,6 @@ struct dmrgo_pdu_csbk_t {
 	uint8_t raw_payload[8];
 };
 
-struct dmrgo_pdu_unconfirmed_data_header_t {
-	bool group;
-	bool response_requested;
-	bool reserved;
-	uint8_t pad_octet_count;
-	dmrgo_enums_service_access_point_id_t sap;
-	uint32_t llid_destination;
-	uint32_t llid_source;
-	bool full_message_flag;
-	uint8_t blocks_to_follow;
-	uint8_t reserved2;
-	uint8_t fragment_sequence_number;
-};
-
-struct dmrgo_pdu_confirmed_data_header_t {
-	bool group;
-	bool response_requested;
-	bool reserved;
-	uint8_t pad_octet_count;
-	dmrgo_enums_service_access_point_id_t sap;
-	uint32_t llid_destination;
-	uint32_t llid_source;
-	bool full_message_flag;
-	uint8_t blocks_to_follow;
-	bool re_synchronize_flag;
-	uint8_t send_sequence_number;
-	uint8_t fragment_sequence_number;
-};
-
-struct dmrgo_pdu_response_packet_header_t {
-	bool reserved;
-	bool response_requested;
-	uint8_t reserved2;
-	dmrgo_enums_service_access_point_id_t sap;
-	uint8_t reserved3;
-	uint32_t llid_destination;
-	uint32_t llid_source;
-	bool full_message_flag;
-	uint8_t blocks_to_follow;
-	uint8_t response_class;
-	uint8_t response_type;
-	uint8_t response_status;
-};
-
-struct dmrgo_pdu_defined_data_header_t {
-	bool group;
-	bool response_requested;
-	uint8_t appended_blocks;
-	dmrgo_enums_service_access_point_id_t sap;
-	uint32_t llid_destination;
-	uint32_t llid_source;
-	uint8_t defined_data;
-	bool sarq;
-	bool full_message_flag;
-	uint8_t bit_padding;
-};
-
-struct dmrgo_pdu_status_precoded_header_t {
-	bool group;
-	bool response_requested;
-	dmrgo_enums_service_access_point_id_t sap;
-	uint32_t llid_destination;
-	uint32_t llid_source;
-	uint8_t source_port;
-	uint8_t destination_port;
-	uint16_t status_precoded;
-};
-
-struct dmrgo_pdu_raw_data_header_t {
-	bool group;
-	bool response_requested;
-	uint8_t appended_blocks;
-	dmrgo_enums_service_access_point_id_t sap;
-	uint32_t llid_destination;
-	uint32_t llid_source;
-	uint8_t source_port;
-	uint8_t destination_port;
-	bool sarq;
-	bool full_message_flag;
-	uint8_t bit_padding;
-};
-
-struct dmrgo_pdu_udt_header_t {
-	bool group;
-	bool response_requested;
-	bool emergency;
-	bool option_flag;
-	dmrgo_enums_service_access_point_id_t sap;
-	uint8_t udt_format;
-	uint32_t llid_destination;
-	uint32_t llid_source;
-	uint8_t pad_nibble;
-	bool reserved;
-	uint8_t appended_blocks;
-	bool supplementary_flag;
-	bool protect_flag;
-	dmrgo_pdu_udt_opcode_t opcode;
-};
-
-struct dmrgo_pdu_proprietary_header_t {
-	dmrgo_enums_service_access_point_id_t sap;
-	dmrgo_enums_feature_set_id_t mfid;
-	uint8_t manufacturer_data[8];
-};
-
-struct dmrgo_pdu_data_header_t {
-	dmrgo_fec_result_t fec;
-	dmrgo_pdu_format_t format;
-	uint8_t appended_blocks;
-	bool has_unconfirmed_data_header;
-	dmrgo_pdu_unconfirmed_data_header_t unconfirmed_data_header;
-	bool has_confirmed_data_header;
-	dmrgo_pdu_confirmed_data_header_t confirmed_data_header;
-	bool has_response_packet_header;
-	dmrgo_pdu_response_packet_header_t response_packet_header;
-	bool has_defined_data_header;
-	dmrgo_pdu_defined_data_header_t defined_data_header;
-	bool has_status_precoded_header;
-	dmrgo_pdu_status_precoded_header_t status_precoded_header;
-	bool has_raw_data_header;
-	dmrgo_pdu_raw_data_header_t raw_data_header;
-	bool has_udt_header;
-	dmrgo_pdu_udt_header_t udt_header;
-	bool has_proprietary_header;
-	dmrgo_pdu_proprietary_header_t proprietary_header;
-	uint8_t raw_payload[10];
-};
-
 struct dmrgo_pdu_flc_group_voice_t {
 	dmrgo_layer3_service_options_t service_options;
 	uint32_t group_address;
@@ -1477,10 +1605,6 @@ struct dmrgo_packet_packet_t {
 	dmrgo_pdu_data_header_t header;
 	dmrgo_layer2_data_t *blocks;
 	size_t blocks_len;
-};
-
-struct dmrgo_packet_response_data_t {
-	bool retry[127];
 };
 
 struct dmrgo_packet_message_t {
@@ -1967,6 +2091,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CSBK_WAKEUP_LOST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_WAKEUP_OUTBOUND_SYNC_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_WAKEUP_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+#define DMRGO_DATA_SENDER_BURST_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+#define DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+#define DMRGO_DATA_SENDER_DECODED_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+#define DMRGO_DATA_SENDER_TICK_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
 #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
 #define DMRGO_ERR_BS_CONFIG_ERROR (-101)
@@ -1978,6 +2106,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_CSBK_BUSY (-108)
 #define DMRGO_ERR_CSBK_CONFIG_ERROR (-102)
 #define DMRGO_ERR_CSBK_NO_ADDRESSES (-109)
+#define DMRGO_ERR_DATA_BUSY (-169)
+#define DMRGO_ERR_DATA_CONFIG_ERROR (-168)
 #define DMRGO_ERR_DVSI_BITS (-155)
 #define DMRGO_ERR_DVSI_CHANNEL (-156)
 #define DMRGO_ERR_DVSI_CLOSED (-157)
@@ -2408,6 +2538,88 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CSBK_WAKEUP_SENDING ((dmrgo_csbk_wakeup_state_t)1)
 /* Go: csbk.WakeupWaiting. WakeupWaiting waits T_SyncWu for the BS outbound. */
 #define DMRGO_CSBK_WAKEUP_WAITING ((dmrgo_csbk_wakeup_state_t)2)
+/* Go: data.DefaultHang. DefaultHang is the time without a burst after which a Receiver ends a data call. */
+#define DMRGO_DATA_DEFAULT_HANG 360000000
+/* Go: data.DefaultIdleSearch. DefaultIdleSearch is the time that a polite Sender waits for an idle channel before it holds off, the largest T_IdleSrch (ETSI TS 102 361-1 clause F.1). */
+#define DMRGO_DATA_DEFAULT_IDLE_SEARCH 540000000
+/* Go: data.DefaultLost. DefaultLost is the time without a burst, while a packet waits for blocks, after which a Receiver counts the blocks of the slots that passed as lost: one and a half slot periods. */
+#define DMRGO_DATA_DEFAULT_LOST 90000000
+/* Go: data.DefaultMaxFragment. DefaultMaxFragment is the largest payload of one packet that a Receiver takes when ReceiverConfig.MaxFragment is 0, n_DFragMax (ETSI TS 102 361-1 clause F.2). */
+#define DMRGO_DATA_DEFAULT_MAX_FRAGMENT 1500
+/* Go: data.DefaultMaxMessage. DefaultMaxMessage is the largest message that a Receiver joins from fragments when ReceiverConfig.MaxMessage is 0. */
+#define DMRGO_DATA_DEFAULT_MAX_MESSAGE 1500
+/* Go: data.DefaultPeers. DefaultPeers is the number of links whose sequence number a Receiver or a Sender keeps. */
+#define DMRGO_DATA_DEFAULT_PEERS 8
+/* Go: data.EndIdle. EndIdle is an idle burst after the last packet. */
+#define DMRGO_DATA_END_IDLE ((dmrgo_data_end_reason_t)2)
+/* Go: data.EndQuiet. EndQuiet is a time of ReceiverConfig.Hang without a burst. */
+#define DMRGO_DATA_END_QUIET ((dmrgo_data_end_reason_t)1)
+/* Go: data.EndSuperseded. EndSuperseded is a header or preamble of other parties. */
+#define DMRGO_DATA_END_SUPERSEDED ((dmrgo_data_end_reason_t)6)
+/* Go: data.EndSyncLost. EndSyncLost is a transport that lost the signal: Hint.SyncLost or Receiver.Lost. */
+#define DMRGO_DATA_END_SYNC_LOST ((dmrgo_data_end_reason_t)4)
+/* Go: data.EndTransport. EndTransport is the end flag of the transport, Hint.End EndStrong. */
+#define DMRGO_DATA_END_TRANSPORT ((dmrgo_data_end_reason_t)5)
+/* Go: data.EndVoice. EndVoice is a voice burst or a Voice LC Header. */
+#define DMRGO_DATA_END_VOICE ((dmrgo_data_end_reason_t)3)
+/* Go: data.EventCallEnd. EventCallEnd ends a data call. */
+#define DMRGO_DATA_EVENT_CALL_END ((dmrgo_data_event_kind_t)5)
+/* Go: data.EventCallStart. EventCallStart starts a data call, at a preamble CSBK or the first header. */
+#define DMRGO_DATA_EVENT_CALL_START ((dmrgo_data_event_kind_t)1)
+/* Go: data.EventDelivered. EventDelivered is a complete packet. */
+#define DMRGO_DATA_EVENT_DELIVERED ((dmrgo_data_event_kind_t)2)
+/* Go: data.EventReassembled. EventReassembled is a confirmed message joined from its fragments, after the EventDelivered of its last fragment. */
+#define DMRGO_DATA_EVENT_REASSEMBLED ((dmrgo_data_event_kind_t)6)
+/* Go: data.EventRespond. EventRespond is a response burst to send. */
+#define DMRGO_DATA_EVENT_RESPOND ((dmrgo_data_event_kind_t)4)
+/* Go: data.EventResponse. EventResponse is a response packet heard on the channel. */
+#define DMRGO_DATA_EVENT_RESPONSE ((dmrgo_data_event_kind_t)3)
+/* Go: data.MaxBlocks. MaxBlocks is the most data blocks of one packet, the 7 bits of the Blocks To Follow element (ETSI TS 102 361-1 clause 9.3.21). */
+#define DMRGO_DATA_MAX_BLOCKS 127
+/* Go: data.MaxEvents. MaxEvents is the most events that one call of a Receiver method appends. */
+#define DMRGO_DATA_MAX_EVENTS 14
+/* Go: data.MaxMessage. MaxMessage is the most octets of ReceiverConfig.MaxFragment and ReceiverConfig.MaxMessage. */
+#define DMRGO_DATA_MAX_MESSAGE 65535
+/* Go: data.MaxOutputs. MaxOutputs is the most outputs that one call of a Sender method appends: one burst and the end of the message. */
+#define DMRGO_DATA_MAX_OUTPUTS 2
+/* Go: data.MaxPeers. MaxPeers is the most links in the table of sequence numbers. */
+#define DMRGO_DATA_MAX_PEERS 64
+/* Go: data.MaxPreambles. MaxPreambles is the most preamble CSBKs before a header. */
+#define DMRGO_DATA_MAX_PREAMBLES 64
+/* Go: data.MaxRetries. MaxRetries is the most transmissions of one message. */
+#define DMRGO_DATA_MAX_RETRIES 64
+/* Go: data.OutputBurst. OutputBurst is a burst to send. */
+#define DMRGO_DATA_OUTPUT_BURST ((dmrgo_data_output_kind_t)1)
+/* Go: data.OutputDone. OutputDone is the end of the message. */
+#define DMRGO_DATA_OUTPUT_DONE ((dmrgo_data_output_kind_t)2)
+/* Go: data.ResultCancelled. ResultCancelled is a message that Cancel ended. */
+#define DMRGO_DATA_RESULT_CANCELLED ((dmrgo_data_result_t)6)
+/* Go: data.ResultDelivered. ResultDelivered is a confirmed message that got an ACK. */
+#define DMRGO_DATA_RESULT_DELIVERED ((dmrgo_data_result_t)2)
+/* Go: data.ResultRefused. ResultRefused is a confirmed message that got a NACK that a resend cannot fix: illegal format, memory full, undeliverable, invalid user, or FSN out of sequence. */
+#define DMRGO_DATA_RESULT_REFUSED ((dmrgo_data_result_t)3)
+/* Go: data.ResultRetryLimit. ResultRetryLimit is a confirmed message that got no ACK in SenderConfig.Retries transmissions. */
+#define DMRGO_DATA_RESULT_RETRY_LIMIT ((dmrgo_data_result_t)4)
+/* Go: data.ResultSent. ResultSent is an unconfirmed message whose last burst was sent. */
+#define DMRGO_DATA_RESULT_SENT ((dmrgo_data_result_t)1)
+/* Go: data.ResultTimeLimit. ResultTimeLimit is a message that could not finish before SenderConfig.TxLimit. */
+#define DMRGO_DATA_RESULT_TIME_LIMIT ((dmrgo_data_result_t)5)
+/* Go: data.SenderHoldoff. SenderHoldoff waits for the random holdoff after a busy channel. */
+#define DMRGO_DATA_SENDER_HOLDOFF ((dmrgo_data_sender_state_t)2)
+/* Go: data.SenderIdle. SenderIdle has no message. */
+#define DMRGO_DATA_SENDER_IDLE ((dmrgo_data_sender_state_t)0)
+/* Go: data.SenderSending. SenderSending sends the bursts of a try, one per Tick. */
+#define DMRGO_DATA_SENDER_SENDING ((dmrgo_data_sender_state_t)3)
+/* Go: data.SenderWaitResponse. SenderWaitResponse waits for the response to a confirmed packet. */
+#define DMRGO_DATA_SENDER_WAIT_RESPONSE ((dmrgo_data_sender_state_t)4)
+/* Go: data.SenderWaiting. SenderWaiting waits for an idle channel. */
+#define DMRGO_DATA_SENDER_WAITING ((dmrgo_data_sender_state_t)1)
+/* Go: data.StateCall. StateCall has a data call, between packets. */
+#define DMRGO_DATA_STATE_CALL ((dmrgo_data_state_t)1)
+/* Go: data.StateIdle. StateIdle has no data call. */
+#define DMRGO_DATA_STATE_IDLE ((dmrgo_data_state_t)0)
+/* Go: data.StateReceiving. StateReceiving has a packet that waits for blocks. */
+#define DMRGO_DATA_STATE_RECEIVING ((dmrgo_data_state_t)2)
 /* Go: enums.AccessImpolite. AccessImpolite transmits whatever the activity on the channel. */
 #define DMRGO_ENUMS_ACCESS_IMPOLITE ((dmrgo_enums_access_t)2)
 /* Go: enums.AccessPoliteAll. AccessPoliteAll waits while the channel has any activity, DMR or other. */
@@ -3447,6 +3659,82 @@ int dmrgo_csbk_wakeup_tick(dmrgo_csbk_wakeup_t *self, int64_t now, dmrgo_csbk_ou
 int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, int64_t now, uint32_t bs, uint32_t source);
 /* Go: csbk.WakeupState.String. String returns the name of the state. */
 int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: data.ConfigError.Error. Error returns the message of e. */
+int dmrgo_data_config_error_error(dmrgo_data_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_data_config_error_last sets *ok when the last error of this thread holds a data.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
+int dmrgo_data_config_error_last(dmrgo_data_config_error_t *out, bool *ok);
+/* Go: data.EndReason.String. String returns the name of the reason. */
+int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: data.EventKind.String. String returns the name of the kind. */
+int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: data.NewReceiver. NewReceiver returns a Receiver for cfg. */
+int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
+/* Go: data.NewSender. NewSender returns a Sender for cfg. */
+int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
+/* Go: data.OutputKind.String. String returns the name of the kind. */
+int dmrgo_data_output_kind_string(dmrgo_data_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_data_receiver_new makes a zero data.Receiver. */
+int dmrgo_data_receiver_new(dmrgo_data_receiver_t **out);
+/* dmrgo_data_receiver_free frees the handle. self may be NULL. */
+int dmrgo_data_receiver_free(dmrgo_data_receiver_t *self);
+/* dmrgo_data_receiver_burst_need sets *items and *arena to the room that dmrgo_data_receiver_burst needs for these arguments, without a change to the handle. */
+int dmrgo_data_receiver_burst_need(dmrgo_data_receiver_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+/* Go: data.Receiver.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Receiver as Decoded does, and appends the events to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_receiver_burst_need gives. */
+int dmrgo_data_receiver_burst(dmrgo_data_receiver_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: data.Receiver.Deadline. Deadline returns the time at which the Receiver needs a Tick. */
+int dmrgo_data_receiver_deadline(dmrgo_data_receiver_t *self, int64_t *at, bool *ok);
+/* dmrgo_data_receiver_decoded_need sets *items and *arena to the room that dmrgo_data_receiver_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_data_receiver_decoded_need(dmrgo_data_receiver_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+/* Go: data.Receiver.Decoded. Decoded runs the decoded burst b through the Receiver and appends the events to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_receiver_decoded_need gives. */
+int dmrgo_data_receiver_decoded(dmrgo_data_receiver_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_data_receiver_lost_need sets *items and *arena to the room that dmrgo_data_receiver_lost needs for these arguments, without a change to the handle. */
+int dmrgo_data_receiver_lost_need(dmrgo_data_receiver_t *self, int64_t now, size_t *items, size_t *arena);
+/* Go: data.Receiver.Lost. Lost tells the Receiver that the transport lost the signal, such as an MMDVM TAG_LOST. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_receiver_lost_need gives. */
+int dmrgo_data_receiver_lost(dmrgo_data_receiver_t *self, int64_t now, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: data.Receiver.Reset. Reset ends any data call without events and forgets the packet in progress and the sequence numbers of every link. */
+int dmrgo_data_receiver_reset(dmrgo_data_receiver_t *self);
+/* Go: data.Receiver.State. State returns the state of the Receiver. */
+int dmrgo_data_receiver_state(dmrgo_data_receiver_t *self, dmrgo_data_state_t *out);
+/* dmrgo_data_receiver_tick_need sets *items and *arena to the room that dmrgo_data_receiver_tick needs for these arguments, without a change to the handle. */
+int dmrgo_data_receiver_tick_need(dmrgo_data_receiver_t *self, int64_t now, size_t *items, size_t *arena);
+/* Go: data.Receiver.Tick. Tick runs the timers that are due at now and appends their events to dst: lost blocks after ReceiverConfig.Lost, which can complete a packet and send its SACK, and the end of the call after ReceiverConfig.Hang. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_receiver_tick_need gives. */
+int dmrgo_data_receiver_tick(dmrgo_data_receiver_t *self, int64_t now, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: data.Result.String. String returns the name of the result. */
+int dmrgo_data_result_string(dmrgo_data_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_data_sender_new makes a zero data.Sender. */
+int dmrgo_data_sender_new(dmrgo_data_sender_t **out);
+/* dmrgo_data_sender_free frees the handle. self may be NULL. */
+int dmrgo_data_sender_free(dmrgo_data_sender_t *self);
+/* dmrgo_data_sender_burst_need sets *items and *arena to the room that dmrgo_data_sender_burst needs for these arguments, without a change to the handle. */
+int dmrgo_data_sender_burst_need(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+/* Go: data.Sender.Burst. Burst decodes the burst raw and takes the response to the confirmed message in progress from it: a response packet from the target of the message to its source. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_burst_need gives (DMRGO_DATA_SENDER_BURST_MAX_ITEMS items). */
+int dmrgo_data_sender_burst(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_data_sender_cancel_need sets *items and *arena to the room that dmrgo_data_sender_cancel needs for these arguments, without a change to the handle. */
+int dmrgo_data_sender_cancel_need(dmrgo_data_sender_t *self, int64_t p0, size_t *items, size_t *arena);
+/* Go: data.Sender.Cancel. Cancel ends the message in progress with ResultCancelled and appends the output to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_cancel_need gives (DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS items). */
+int dmrgo_data_sender_cancel(dmrgo_data_sender_t *self, int64_t p0, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: data.Sender.Channel. Channel tells the Sender whether the channel is busy at now, for example from the AT bit of the CACH, the carrier, or a repeater. */
+int dmrgo_data_sender_channel(dmrgo_data_sender_t *self, int64_t now, bool busy);
+/* Go: data.Sender.Deadline. Deadline returns the time at which the Sender needs a Tick. */
+int dmrgo_data_sender_deadline(dmrgo_data_sender_t *self, int64_t *at, bool *ok);
+/* dmrgo_data_sender_decoded_need sets *items and *arena to the room that dmrgo_data_sender_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_data_sender_decoded_need(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
+/* Go: data.Sender.Decoded. Decoded takes the response to the confirmed message in progress from the decoded burst b, as Burst does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_decoded_need gives (DMRGO_DATA_SENDER_DECODED_MAX_ITEMS items). */
+int dmrgo_data_sender_decoded(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: data.Sender.Reset. Reset ends any message without outputs and forgets the sequence numbers of every link and the channel state. */
+int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
+/* Go: data.Sender.Send. Send starts the message m at now. */
+int dmrgo_data_sender_send(dmrgo_data_sender_t *self, int64_t now, const dmrgo_data_message_t *m);
+/* Go: data.Sender.State. State returns the state of the Sender. */
+int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);
+/* dmrgo_data_sender_tick_need sets *items and *arena to the room that dmrgo_data_sender_tick needs for these arguments, without a change to the handle. */
+int dmrgo_data_sender_tick_need(dmrgo_data_sender_t *self, int64_t now, size_t *items, size_t *arena);
+/* Go: data.Sender.Tick. Tick appends the next burst when now has reached its Due time, and runs the other timers that are due: the end of the idle search, the holdoff, the response wait, which starts a resend, and the transmit limit. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_tick_need gives (DMRGO_DATA_SENDER_TICK_MAX_ITEMS items). */
+int dmrgo_data_sender_tick(dmrgo_data_sender_t *self, int64_t now, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: data.SenderState.String. String returns the name of the state. */
+int dmrgo_data_sender_state_string(dmrgo_data_sender_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: data.State.String. String returns the name of the state. */
+int dmrgo_data_state_string(dmrgo_data_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.Access.String. String returns the clause 5.2.1.6 name of the policy. */
 int dmrgo_enums_access_string(dmrgo_enums_access_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.AckReason.FromTS. FromTS reports whether the d bit of r is 1: the TS sent the reason. */

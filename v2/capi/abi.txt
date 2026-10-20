@@ -65,6 +65,8 @@ code DMRGO_ERR_DVSI_START -164
 code DMRGO_ERR_DVSI_STATUS -165
 code DMRGO_ERR_DVSI_TIMEOUT -166
 code DMRGO_ERR_DVSI_TYPE -167
+code DMRGO_ERR_DATA_CONFIG_ERROR -168
+code DMRGO_ERR_DATA_BUSY -169
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -277,6 +279,51 @@ sym #define DMRGO_CSBK_WAKEUP_OUTBOUND_SYNC_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_WAKEUP_SENDING ((dmrgo_csbk_wakeup_state_t)1)
 sym #define DMRGO_CSBK_WAKEUP_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_WAKEUP_WAITING ((dmrgo_csbk_wakeup_state_t)2)
+sym #define DMRGO_DATA_DEFAULT_HANG 360000000
+sym #define DMRGO_DATA_DEFAULT_IDLE_SEARCH 540000000
+sym #define DMRGO_DATA_DEFAULT_LOST 90000000
+sym #define DMRGO_DATA_DEFAULT_MAX_FRAGMENT 1500
+sym #define DMRGO_DATA_DEFAULT_MAX_MESSAGE 1500
+sym #define DMRGO_DATA_DEFAULT_PEERS 8
+sym #define DMRGO_DATA_END_IDLE ((dmrgo_data_end_reason_t)2)
+sym #define DMRGO_DATA_END_QUIET ((dmrgo_data_end_reason_t)1)
+sym #define DMRGO_DATA_END_SUPERSEDED ((dmrgo_data_end_reason_t)6)
+sym #define DMRGO_DATA_END_SYNC_LOST ((dmrgo_data_end_reason_t)4)
+sym #define DMRGO_DATA_END_TRANSPORT ((dmrgo_data_end_reason_t)5)
+sym #define DMRGO_DATA_END_VOICE ((dmrgo_data_end_reason_t)3)
+sym #define DMRGO_DATA_EVENT_CALL_END ((dmrgo_data_event_kind_t)5)
+sym #define DMRGO_DATA_EVENT_CALL_START ((dmrgo_data_event_kind_t)1)
+sym #define DMRGO_DATA_EVENT_DELIVERED ((dmrgo_data_event_kind_t)2)
+sym #define DMRGO_DATA_EVENT_REASSEMBLED ((dmrgo_data_event_kind_t)6)
+sym #define DMRGO_DATA_EVENT_RESPOND ((dmrgo_data_event_kind_t)4)
+sym #define DMRGO_DATA_EVENT_RESPONSE ((dmrgo_data_event_kind_t)3)
+sym #define DMRGO_DATA_MAX_BLOCKS 127
+sym #define DMRGO_DATA_MAX_EVENTS 14
+sym #define DMRGO_DATA_MAX_MESSAGE 65535
+sym #define DMRGO_DATA_MAX_OUTPUTS 2
+sym #define DMRGO_DATA_MAX_PEERS 64
+sym #define DMRGO_DATA_MAX_PREAMBLES 64
+sym #define DMRGO_DATA_MAX_RETRIES 64
+sym #define DMRGO_DATA_OUTPUT_BURST ((dmrgo_data_output_kind_t)1)
+sym #define DMRGO_DATA_OUTPUT_DONE ((dmrgo_data_output_kind_t)2)
+sym #define DMRGO_DATA_RESULT_CANCELLED ((dmrgo_data_result_t)6)
+sym #define DMRGO_DATA_RESULT_DELIVERED ((dmrgo_data_result_t)2)
+sym #define DMRGO_DATA_RESULT_REFUSED ((dmrgo_data_result_t)3)
+sym #define DMRGO_DATA_RESULT_RETRY_LIMIT ((dmrgo_data_result_t)4)
+sym #define DMRGO_DATA_RESULT_SENT ((dmrgo_data_result_t)1)
+sym #define DMRGO_DATA_RESULT_TIME_LIMIT ((dmrgo_data_result_t)5)
+sym #define DMRGO_DATA_SENDER_BURST_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+sym #define DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+sym #define DMRGO_DATA_SENDER_DECODED_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+sym #define DMRGO_DATA_SENDER_HOLDOFF ((dmrgo_data_sender_state_t)2)
+sym #define DMRGO_DATA_SENDER_IDLE ((dmrgo_data_sender_state_t)0)
+sym #define DMRGO_DATA_SENDER_SENDING ((dmrgo_data_sender_state_t)3)
+sym #define DMRGO_DATA_SENDER_TICK_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+sym #define DMRGO_DATA_SENDER_WAITING ((dmrgo_data_sender_state_t)1)
+sym #define DMRGO_DATA_SENDER_WAIT_RESPONSE ((dmrgo_data_sender_state_t)4)
+sym #define DMRGO_DATA_STATE_CALL ((dmrgo_data_state_t)1)
+sym #define DMRGO_DATA_STATE_IDLE ((dmrgo_data_state_t)0)
+sym #define DMRGO_DATA_STATE_RECEIVING ((dmrgo_data_state_t)2)
 sym #define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
 sym #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
 sym #define DMRGO_DVSI_DEFAULT_TIMEOUT 500000000
@@ -497,6 +544,8 @@ sym #define DMRGO_ERR_CODEC2_UNSUPPORTED_MODE (-146)
 sym #define DMRGO_ERR_CSBK_BUSY (-108)
 sym #define DMRGO_ERR_CSBK_CONFIG_ERROR (-102)
 sym #define DMRGO_ERR_CSBK_NO_ADDRESSES (-109)
+sym #define DMRGO_ERR_DATA_BUSY (-169)
+sym #define DMRGO_ERR_DATA_CONFIG_ERROR (-168)
 sym #define DMRGO_ERR_DVSI_BITS (-155)
 sym #define DMRGO_ERR_DVSI_CHANNEL (-156)
 sym #define DMRGO_ERR_DVSI_CLOSED (-157)
@@ -895,6 +944,44 @@ sym int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out
 sym int dmrgo_csbk_wakeup_tick(dmrgo_csbk_wakeup_t *self, int64_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_csbk_wakeup_tick_need(dmrgo_csbk_wakeup_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, int64_t now, uint32_t bs, uint32_t source);
+sym int dmrgo_data_config_error_error(dmrgo_data_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_data_config_error_last(dmrgo_data_config_error_t *out, bool *ok);
+sym int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
+sym int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
+sym int dmrgo_data_output_kind_string(dmrgo_data_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_data_receiver_burst(dmrgo_data_receiver_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_data_receiver_burst_need(dmrgo_data_receiver_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+sym int dmrgo_data_receiver_deadline(dmrgo_data_receiver_t *self, int64_t *at, bool *ok);
+sym int dmrgo_data_receiver_decoded(dmrgo_data_receiver_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_data_receiver_decoded_need(dmrgo_data_receiver_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+sym int dmrgo_data_receiver_free(dmrgo_data_receiver_t *self);
+sym int dmrgo_data_receiver_lost(dmrgo_data_receiver_t *self, int64_t now, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_data_receiver_lost_need(dmrgo_data_receiver_t *self, int64_t now, size_t *items, size_t *arena);
+sym int dmrgo_data_receiver_new(dmrgo_data_receiver_t **out);
+sym int dmrgo_data_receiver_reset(dmrgo_data_receiver_t *self);
+sym int dmrgo_data_receiver_state(dmrgo_data_receiver_t *self, dmrgo_data_state_t *out);
+sym int dmrgo_data_receiver_tick(dmrgo_data_receiver_t *self, int64_t now, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_data_receiver_tick_need(dmrgo_data_receiver_t *self, int64_t now, size_t *items, size_t *arena);
+sym int dmrgo_data_result_string(dmrgo_data_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_data_sender_burst(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_data_sender_burst_need(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+sym int dmrgo_data_sender_cancel(dmrgo_data_sender_t *self, int64_t p0, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_data_sender_cancel_need(dmrgo_data_sender_t *self, int64_t p0, size_t *items, size_t *arena);
+sym int dmrgo_data_sender_channel(dmrgo_data_sender_t *self, int64_t now, bool busy);
+sym int dmrgo_data_sender_deadline(dmrgo_data_sender_t *self, int64_t *at, bool *ok);
+sym int dmrgo_data_sender_decoded(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_data_sender_decoded_need(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
+sym int dmrgo_data_sender_free(dmrgo_data_sender_t *self);
+sym int dmrgo_data_sender_new(dmrgo_data_sender_t **out);
+sym int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
+sym int dmrgo_data_sender_send(dmrgo_data_sender_t *self, int64_t now, const dmrgo_data_message_t *m);
+sym int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);
+sym int dmrgo_data_sender_state_string(dmrgo_data_sender_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_data_sender_tick(dmrgo_data_sender_t *self, int64_t now, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_data_sender_tick_need(dmrgo_data_sender_t *self, int64_t now, size_t *items, size_t *arena);
+sym int dmrgo_data_state_string(dmrgo_data_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dvsi_append_channel(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const uint8_t *data, size_t data_len, int64_t bits, bool parity);
 sym int dmrgo_dvsi_append_parity_mode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool on, bool parity);
 sym int dmrgo_dvsi_append_query(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool parity);
@@ -1713,6 +1800,12 @@ sym typedef uint8_t dmrgo_csbk_requester_state_t;
 sym typedef uint8_t dmrgo_csbk_result_t;
 sym typedef uint8_t dmrgo_csbk_service_t;
 sym typedef uint8_t dmrgo_csbk_wakeup_state_t;
+sym typedef uint8_t dmrgo_data_end_reason_t;
+sym typedef uint8_t dmrgo_data_event_kind_t;
+sym typedef uint8_t dmrgo_data_output_kind_t;
+sym typedef uint8_t dmrgo_data_result_t;
+sym typedef uint8_t dmrgo_data_sender_state_t;
+sym typedef uint8_t dmrgo_data_state_t;
 sym typedef uint8_t dmrgo_dvsi_field_t;
 sym typedef uint8_t dmrgo_dvsi_packet_type_t;
 sym typedef uint8_t dmrgo_enums_access_t;
@@ -1777,6 +1870,14 @@ type struct dmrgo_csbk_request_options_t { dmrgo_enums_access_t access; bool tim
 type struct dmrgo_csbk_requester_config_t { dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; int64_t ack_wait; int64_t retries; int64_t idle_search; int64_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_responder_config_t { uint32_t address; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; dmrgo_enums_access_t access; dmrgo_csbk_oacsu_answer_t oacsu; bool no_radio_check; bool no_call_alert; bool no_fns; int64_t idle_search; int64_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_wakeup_config_t { dmrgo_enums_color_code_t color_code; int64_t sync_wait; int64_t attempts; dmrgo_layer2_burst_t *scratch; };
+type struct dmrgo_data_call_t { bool group; uint32_t target; uint32_t source; };
+type struct dmrgo_data_config_error_t { char *field; size_t field_len; };
+type struct dmrgo_data_event_t { dmrgo_data_event_kind_t kind; dmrgo_data_call_t call; dmrgo_data_message_t message; dmrgo_packet_response_t response; bool has_retry; dmrgo_packet_response_data_t retry; dmrgo_layer2_raw_burst_t burst; int64_t due; dmrgo_data_end_reason_t reason; dmrgo_data_stats_t stats; };
+type struct dmrgo_data_message_t { dmrgo_pdu_data_header_t header; bool has_proprietary; dmrgo_pdu_proprietary_header_t proprietary; dmrgo_enums_data_type_t rate; uint8_t *payload; size_t payload_len; bool bad_crc; bool fragmented; uint16_t fragments; };
+type struct dmrgo_data_output_t { dmrgo_data_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; int64_t due; uint8_t try_; dmrgo_data_result_t result; dmrgo_packet_response_t response; bool has_response; };
+type struct dmrgo_data_receiver_config_t { bool has_color_code; dmrgo_enums_color_code_t color_code; uint32_t address; bool respond; dmrgo_layer2_sync_source_t source; int64_t response_delay; int64_t max_blocks; int64_t max_fragment; int64_t max_message; int64_t peers; int64_t lost; int64_t hang; bool accept_bad_crc; dmrgo_layer2_burst_t *scratch; };
+type struct dmrgo_data_sender_config_t { dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; dmrgo_enums_access_t access; int64_t preambles; int64_t idle_search; int64_t holdoff; int64_t response_wait; int64_t tx_limit; int64_t retries; int64_t max_blocks; int64_t peers; bool resync; uint64_t seed; };
+type struct dmrgo_data_stats_t { uint16_t packets; uint16_t delivered; uint16_t blocks; uint16_t lost; uint16_t header_crc; uint16_t bad_crc; uint16_t duplicates; uint16_t out_of_sequence; uint16_t dropped; int64_t duration; };
 type struct dmrgo_dvsi_config_t { int64_t channel; int64_t timeout; bool no_reset; bool no_parity; };
 type struct dmrgo_dvsi_packet_t { dmrgo_dvsi_packet_type_t type_; uint8_t *fields; size_t fields_len; };
 type struct dmrgo_dvsi_port_vtable_t { uintptr_t user; int (*read)(uintptr_t user, uint8_t *p, size_t p_len, int64_t *out); int (*write)(uintptr_t user, const uint8_t *p, size_t p_len, int64_t *out); };
