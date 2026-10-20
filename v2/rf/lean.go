@@ -294,7 +294,7 @@ func newLean(cfg Config, opt options) *leanRx {
 	r.dc.init(float64(cfg.BasebandHz))
 	r.init(cfg.OnBurst, opt, float32(discSPS)/2)
 	if cfg.OnBurst == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
+		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+16)
 	}
 	if cfg.Rate != float64(cfg.BasebandHz) {
 		r.fe = newFrontEnd(cfg.Rate, cfg.Signed, float64(cfg.BasebandHz))

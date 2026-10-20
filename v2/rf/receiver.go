@@ -117,7 +117,9 @@ type Config struct {
 	// their receiver with a complex front end in place of the FM
 	// discriminator, in about 1 KB of RAM for Tier0. 0 means BasebandRate.
 	BasebandHz int
-	// MaxWrite is the largest number of bytes in one Write. 0 means 1 << 16.
+	// MaxWrite is the largest number of bytes in one Write, and twice the
+	// largest number of samples in one WriteBaseband. 0 means 1 << 16. A
+	// longer call can lose bursts when OnBurst is nil.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
 	// locks to that the receiver keeps and decodes: 0 means 8 for Tier1
@@ -431,7 +433,7 @@ func newEngine(cfg Config, opt options) *engine {
 		r.tk.elc = r.rep.embeddedLC
 	}
 	if cfg.OnBurst == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+2*len(r.slots)+16)
+		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+2*len(r.slots)+16)
 	}
 	return r
 }

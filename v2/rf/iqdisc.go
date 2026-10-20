@@ -311,7 +311,7 @@ func newIQRx(cfg Config, opt options) *iqRx {
 	r.audio = make([]int16, 0, n)
 	on := cfg.OnBurst
 	if on == nil {
-		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(int(cfg.Rate*slotSeconds)*2)+16)
+		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+16)
 		on = func(b *Burst) {
 			if n := len(r.out); n < cap(r.out) {
 				r.out = r.out[:n+1]
