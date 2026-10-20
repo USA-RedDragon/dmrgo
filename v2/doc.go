@@ -81,6 +81,8 @@
 //   - csbk: the CSBK services of one logical channel, without I/O: a
 //     request with its answer and retries, the answers of a radio,
 //     Pre_CSBKs and the wakeup of a BS.
+//   - trunk: the Tier III channel tables, a Follower that follows the
+//     calls of a trunked site, and an MS that registers and makes calls.
 //   - vocoder: the Codec interface and the AMBE+2 FEC of a voice slot.
 //   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
 //
