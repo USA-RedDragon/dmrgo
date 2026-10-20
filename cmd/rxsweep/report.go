@@ -12,7 +12,6 @@ import (
 	"strings"
 )
 
-// Keys of the payload types in the results.
 const (
 	keyAMBE   = "ambe"
 	keyRate12 = "rate12"
@@ -22,13 +21,10 @@ const (
 	keySync   = "sync"
 )
 
-// lossPayloads returns the payload types of the worst loss column and the
-// default fine grid.
 func lossPayloads() []string {
 	return []string{keyAMBE, keyRate12, keyRate34, keyCSBK, keyELC, keySync}
 }
 
-// reportPayloads returns the payload types of the report: key and name.
 func reportPayloads() [][2]string {
 	return [][2]string{
 		{keyAMBE, "Voice frame (AMBE+2)"},
@@ -47,17 +43,11 @@ func reportPayloads() [][2]string {
 	}
 }
 
-// keyAMBEU is the payload of the bits u2 and u3 of the AMBE+2 frames,
-// which no FEC protects, and levelAMBEU the share of them that its
-// Eb/N0 is at: an exact frame needs all 25, so the 90% of the frames
-// gives the bursty errors of a receiver the edge over its bit errors.
 const (
 	keyAMBEU   = "ambe_u"
 	levelAMBEU = 0.99
 )
 
-// level returns the recovery at which the report takes the Eb/N0 of
-// payload k.
 func level(k string) float64 {
 	if k == keyAMBEU {
 		return levelAMBEU
@@ -65,13 +55,11 @@ func level(k string) float64 {
 	return 0.9
 }
 
-// The targets of the smallest tier.
 const (
 	targetRAM = 1024
 	targetMHz = 4
 )
 
-// floorCurve and floorPair are the curves of testdata/rxbench_floor.json.
 type floorCurve struct {
 	EbN0  []float64 `json:"ebn0"`
 	Truth []int     `json:"truth"`
@@ -94,7 +82,6 @@ func (c floorCurve) recovery() []float64 {
 	return y
 }
 
-// floorRef is the 90% point of the two floors of a payload, in Eb/N0.
 type floorRef struct {
 	any, dmr    crossing
 	status      string
@@ -132,21 +119,18 @@ func loadFloors(path string) (map[string]floorRef, error) {
 	return out, nil
 }
 
-// row is the report of one variant.
 type row struct {
-	rec      variantRecord
-	pts      []point
-	ebn0     map[string]crossing
-	cost     *costRecord
-	m4       map[string]json.RawMessage
-	cpuMS    float64 // ms of host CPU per second, locked at 10 dB
-	searchMS float64
-	ram      int
-	// mhz and mhzSearch are the Cortex-M4F MHz, locked and on noise, and
-	// flash the code bytes, from the -m4 command; 0 when none.
+	rec                     variantRecord
+	pts                     []point
+	ebn0                    map[string]crossing
+	cost                    *costRecord
+	m4                      map[string]json.RawMessage
+	cpuMS                   float64
+	searchMS                float64
+	ram                     int
 	mhz, mhzSearch, mhzWeak float64
 	flash                   int
-	worst                   float64 // worst loss over the space payloads, dB
+	worst                   float64
 }
 
 func report(out, floorPath string) error {
@@ -196,7 +180,6 @@ func report(out, floorPath string) error {
 	return nil
 }
 
-// loadRows reads the results of the output directory out and the floors.
 func loadRows(out, floorPath string) ([]*row, map[string]floorRef, error) {
 	recs, err := readLines[variantRecord](filepath.Join(out, variantsFile))
 	if err != nil {
@@ -277,8 +260,6 @@ func loadRows(out, floorPath string) ([]*row, map[string]floorRef, error) {
 	return rows, floors, nil
 }
 
-// spacePayloads returns the payloads of the worst-loss column: those of the
-// report that every variant has a crossing for, from the space defaults.
 func spacePayloads(rows []*row) []string {
 	var out []string
 	for _, k := range lossPayloads() {
@@ -292,8 +273,6 @@ func spacePayloads(rows []*row) []string {
 	return out
 }
 
-// loss returns the Eb/N0 of payload k of r above its DMR floor, or above
-// the 4FSK floor where the DMR floor is not computed.
 func loss(r *row, floors map[string]floorRef, k string) (float64, bool) {
 	c := r.ebn0[k]
 	f, ok := floors[k]
@@ -309,7 +288,6 @@ func loss(r *row, floors map[string]floorRef, k string) (float64, bool) {
 	return 0, false
 }
 
-// costKind selects the cost axis of a scatter.
 type costKind int
 
 const (
@@ -340,26 +318,13 @@ func (k costKind) title() string {
 	return "Host CPU, ms per second of signal, locked at 10 dB"
 }
 
-// Tolerances of the multi-objective front: a variant dominates another
-// only when it is better by more than the noise of the sweep.
 const (
-	// frontCPUTol is the share of the CPU time within which two variants
-	// cost the same.
-	frontCPUTol = 0.1
-	// frontEbN0Tol is the Eb/N0 difference, in dB, within which two
-	// variants are as sensitive.
-	frontEbN0Tol = 0.1
-	// frontRAMFactor is the ratio of RAM within which two variants cost
-	// the same: 19 and 22 KB are the same cost to a PC, 1 and 19 KB are
-	// not to a microcontroller.
+	frontCPUTol    = 0.1
+	frontEbN0Tol   = 0.1
 	frontRAMFactor = 2
-	// keyC0C1 is the payload type of C0 and C1 of the voice frames.
-	keyC0C1 = keyAMBE + "_c0c1"
+	keyC0C1        = keyAMBE + "_c0c1"
 )
 
-// objectiveKeys returns the payload types of the multi-objective front:
-// those of the report and C0 and C1 of the voice frames, where any row
-// has a 90% crossing.
 func objectiveKeys(rows []*row) []string {
 	var keys []string
 	for _, k := range append([]string{keyC0C1}, payloadKeys()...) {
@@ -373,7 +338,6 @@ func objectiveKeys(rows []*row) []string {
 	return keys
 }
 
-// payloadKeys returns the keys of reportPayloads.
 func payloadKeys() []string {
 	payloads := reportPayloads()
 	out := make([]string, 0, len(payloads))
@@ -383,9 +347,6 @@ func payloadKeys() []string {
 	return out
 }
 
-// objectives returns the values of r to minimize: host CPU, RAM, and the
-// 90% Eb/N0 of each payload of keys, +Inf where r has none. A crossing
-// below the first C/N counts at that C/N.
 func objectives(r *row, keys []string) []float64 {
 	v := []float64{r.cpuMS, float64(r.ram)}
 	for _, k := range keys {
@@ -399,9 +360,6 @@ func objectives(r *row, keys []string) []float64 {
 	return v
 }
 
-// dominates reports whether the objectives a are no worse than b in each
-// and better in one, beyond the tolerances: a share of the CPU time, a
-// factor of RAM, a fixed Eb/N0.
 func dominates(a, b []float64) bool {
 	better := false
 	for i := range a {
@@ -422,10 +380,6 @@ func dominates(a, b []float64) bool {
 	return better
 }
 
-// multiFront returns, for each row, the index of the cheapest row in host
-// CPU that dominates it, or -1 for a row on the multi-objective front. A
-// row competes only with the rows of its input, discriminator audio or
-// I/Q: a radio gives one or the other.
 func multiFront(rows []*row, keys []string) []int {
 	obj := make([][]float64, len(rows))
 	for i, r := range rows {
@@ -443,8 +397,6 @@ func multiFront(rows []*row, keys []string) []int {
 	return out
 }
 
-// front returns the indexes of the points of xs and ys that no other point
-// beats in both, in increasing x.
 func front(xs, ys []float64) []int {
 	idx := make([]int, len(xs))
 	for i := range idx {
@@ -467,8 +419,6 @@ func front(xs, ys []float64) []int {
 	return out
 }
 
-// scatter returns the chart of the 90% Eb/N0 of payload p of each variant
-// against cost k, with the Pareto front, or nil when no variant has both.
 func scatter(rows []*row, floors map[string]floorRef, p [2]string, k costKind) *chart {
 	var xs, ys []float64
 	var names []string
@@ -532,8 +482,6 @@ func scatter(rows []*row, floors map[string]floorRef, p [2]string, k costKind) *
 	return ch
 }
 
-// curves returns the chart of the frame error rate of payload p of the
-// variants on the CPU Pareto front, with both floors.
 func curves(rows []*row, floors map[string]floorRef, p [2]string) *chart {
 	var xs, ys []float64
 	var cand []*row
@@ -585,7 +533,6 @@ func curves(rows []*row, floors map[string]floorRef, p [2]string) *chart {
 	return ch
 }
 
-// fmtCross returns the cell of crossing c.
 func fmtCross(c crossing) string {
 	switch {
 	case !c.OK:

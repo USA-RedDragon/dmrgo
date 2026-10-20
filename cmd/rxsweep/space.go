@@ -15,44 +15,24 @@ import (
 	"strings"
 )
 
-// variant is one receiver to measure: a base tier and what replaces its
-// settings.
 type variant struct {
-	// Name labels the variant in the tables and graphs.
-	Name string `json:"name"`
-	// Tier is the base tier, the discriminator core for 0 and Tier0+n of
-	// package rf for n above it, Lookback Config.LookbackSlots and Hz
-	// Config.BasebandHz (0 means 48000).
-	Tier     int `json:"tier"`
-	Lookback int `json:"lookback,omitempty"`
-	Hz       int `json:"hz,omitempty"`
-	// Disc receives the stream as FM discriminator audio with
-	// rf.DiscReceiver, which runs the settings of the discriminator core
-	// and the opt of the variant.
-	Disc bool `json:"disc,omitempty"`
-	// Opt holds options fields of package rf that replace those of the
-	// tier, by field name.
-	Opt map[string]json.RawMessage `json:"opt,omitempty"`
-	// Consts holds constants of package rf to set, by file and name, as Go
-	// expressions.
-	Consts map[string]map[string]string `json:"consts,omitempty"`
-	// Edits holds source replacements of package rf, by file: each old text
-	// must occur once.
-	Edits map[string][][2]string `json:"edits,omitempty"`
+	Name     string                       `json:"name"`
+	Tier     int                          `json:"tier"`
+	Lookback int                          `json:"lookback,omitempty"`
+	Hz       int                          `json:"hz,omitempty"`
+	Disc     bool                         `json:"disc,omitempty"`
+	Opt      map[string]json.RawMessage   `json:"opt,omitempty"`
+	Consts   map[string]map[string]string `json:"consts,omitempty"`
+	Edits    map[string][][2]string       `json:"edits,omitempty"`
 }
 
-// family generates variants from a base: Mode "each" changes one key at a
-// time, Mode "product" takes every combination of the keys.
 type family struct {
-	Name string  `json:"name"`
-	Base variant `json:"base"`
-	Mode string  `json:"mode"`
-	// Vary lists the values of each key: "tier", "lookback", "hz", "disc",
-	// "opt.<Field>" or "consts.<file>.<Name>".
+	Name string                       `json:"name"`
+	Base variant                      `json:"base"`
+	Mode string                       `json:"mode"`
 	Vary map[string][]json.RawMessage `json:"vary"`
 }
 
-// grid is a set of C/N points and noise seeds.
 type grid struct {
 	Lo    float64 `json:"lo"`
 	Hi    float64 `json:"hi"`
@@ -60,22 +40,15 @@ type grid struct {
 	Seeds int     `json:"seeds"`
 }
 
-// space is the content of a space file.
 type space struct {
-	// Superframes is the voice call length of the stream and Offset its
-	// carrier offset in Hz.
-	Superframes int     `json:"superframes"`
-	Offset      float64 `json:"offset"`
-	// Stream is the traffic of the stream: "" for the BS stream of the
-	// sweep, "ms" for direct mode traffic of Superframes/3 rounds.
-	Stream string `json:"stream,omitempty"`
-	// Coarse is the first grid of every variant. Fine is a grid of
-	// relative C/N, Lo to Hi around the 90% point of each of Payloads.
-	Coarse   grid      `json:"coarse"`
-	Fine     grid      `json:"fine"`
-	Payloads []string  `json:"payloads"`
-	Variants []variant `json:"variants"`
-	Families []family  `json:"families"`
+	Superframes int       `json:"superframes"`
+	Offset      float64   `json:"offset"`
+	Stream      string    `json:"stream,omitempty"`
+	Coarse      grid      `json:"coarse"`
+	Fine        grid      `json:"fine"`
+	Payloads    []string  `json:"payloads"`
+	Variants    []variant `json:"variants"`
+	Families    []family  `json:"families"`
 }
 
 func loadSpace(path string) (*space, error) {
@@ -109,7 +82,6 @@ func loadSpace(path string) (*space, error) {
 	return sp, nil
 }
 
-// expand returns the variants of f.
 func (f family) expand() ([]variant, error) {
 	keys := make([]string, 0, len(f.Vary))
 	for k := range f.Vary {
@@ -163,7 +135,6 @@ func (f family) expand() ([]variant, error) {
 	return out, nil
 }
 
-// label returns the name part of key k at value val.
 func label(k string, val json.RawMessage) string {
 	k = k[strings.LastIndexByte(k, '.')+1:]
 	return k + "=" + strings.Trim(string(val), `"`)
@@ -180,7 +151,6 @@ func (v variant) clone() variant {
 	return c
 }
 
-// set sets key k of v to val.
 func (v *variant) set(k string, val json.RawMessage) error {
 	switch {
 	case k == "tier":
@@ -219,10 +189,8 @@ func (v *variant) set(k string, val json.RawMessage) error {
 	return fmt.Errorf("unknown key %q", k)
 }
 
-// patched reports whether v changes the sources.
 func (v *variant) patched() bool { return len(v.Consts) > 0 || len(v.Edits) > 0 }
 
-// patchKey names the source tree of the patches of v.
 func (v *variant) patchKey() string {
 	h := sha256.New()
 	for _, f := range slices.Sorted(maps.Keys(v.Consts)) {
@@ -238,8 +206,6 @@ func (v *variant) patchKey() string {
 	return hex.EncodeToString(h.Sum(nil)[:6])
 }
 
-// apply writes the constants and edits of v into the package rf of the v2
-// tree at dir.
 func (v *variant) apply(dir string) error {
 	files := map[string]bool{}
 	for f := range v.Consts {
@@ -275,7 +241,6 @@ func (v *variant) apply(dir string) error {
 	return nil
 }
 
-// jobOpt returns the opt JSON of the worker job of v.
 func (v *variant) jobOpt() json.RawMessage {
 	if len(v.Opt) == 0 {
 		return nil
@@ -287,8 +252,6 @@ func (v *variant) jobOpt() json.RawMessage {
 	return b
 }
 
-// treeHash returns the hash of the Go sources and go.mod files of the v2
-// tree at dir.
 func treeHash(dir string) (string, error) {
 	root, err := os.OpenRoot(dir)
 	if err != nil {

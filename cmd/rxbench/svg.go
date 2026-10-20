@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-// Layout of a chart, in pixels, and its axes: Eb/N0 in dB on x and the
-// error rate from 10^yMinExp to 1 on a log scale on y.
 const (
 	chartW, chartH       = 700, 420
 	padL, padR           = 76, 190
@@ -19,9 +17,6 @@ const (
 	legendX, legendStepY = chartW - padR + 16, 22
 )
 
-// svgSeries is one line of a chart. A y value of zero or under 10^yMinExp
-// breaks the line. A series with a dash pattern is a reference curve, drawn
-// without point marks.
 type svgSeries struct {
 	name  string
 	x, y  []float64
@@ -33,10 +28,8 @@ func px(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) }
 
 func sx(x float64) float64 { return padL + (x-xMin)/(xMax-xMin)*plotW }
 
-// sy returns the pixel row of the error rate y, which is above 0.
 func sy(y float64) float64 { return padT + math.Log10(y)/yMinExp*plotH }
 
-// decadeLabel returns the y axis label of 10^e.
 func decadeLabel(e int) string {
 	switch e {
 	case 0:
@@ -47,9 +40,6 @@ func decadeLabel(e int) string {
 	return "1e" + strconv.Itoa(e)
 }
 
-// svgChart draws the series as an error rate on a log scale against Eb/N0
-// in dB, with a transparent background, a decade grid, axis titles and a
-// legend. yTitle names the error rate.
 func svgChart(title, yTitle string, series []svgSeries) []byte {
 	var b strings.Builder
 	b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="` + strconv.Itoa(chartW) + `" height="` + strconv.Itoa(chartH) +

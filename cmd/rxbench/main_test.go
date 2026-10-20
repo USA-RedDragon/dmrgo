@@ -7,10 +7,6 @@ import (
 	"testing"
 )
 
-// TestNoTierUnderFloor checks that at every Eb/N0 of the sweep data no tier
-// makes fewer errors than its DMR floor allows: the chance of seeing so few
-// errors from a tier as good as the floor, by the binomial tail, must stay
-// above 1e-4.
 func TestNoTierUnderFloor(t *testing.T) {
 	t.Parallel()
 	checkUnder(t, func(d data) map[string]curve {
@@ -22,21 +18,13 @@ func TestNoTierUnderFloor(t *testing.T) {
 	}, 0)
 }
 
-// awareMargin is the Eb/N0, in dB, by which TestNoTierUnderAware shifts
-// the code-aware curve to lower error rates: the code-aware receiver is
-// measured, not a bound, on as few seeds as the tiers.
 const awareMargin = 0.25
 
-// TestNoTierUnderAware checks, as TestNoTierUnderFloor, that no tier makes
-// fewer errors than the code-aware receiver at awareMargin dB more Eb/N0.
 func TestNoTierUnderAware(t *testing.T) {
 	t.Parallel()
 	checkUnder(t, func(d data) map[string]curve { return d.aware.Payloads }, awareMargin)
 }
 
-// checkUnder fails when a tier makes fewer errors at some point of the
-// sweep data than the reference curves of ref allow at margin dB more
-// Eb/N0, with a binomial tail chance under 1e-4.
 func checkUnder(t *testing.T, ref func(data) map[string]curve, margin float64) {
 	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
@@ -67,12 +55,6 @@ func checkUnder(t *testing.T, ref func(data) map[string]curve, margin float64) {
 	}
 }
 
-// floorAt returns the error rate of reference curve c at Eb/N0 x, by
-// linear interpolation of its logarithm between the points on either side,
-// and false outside the curve or where a side has no errors. The curves
-// are Monte Carlo counts, so each point gives its lower confidence bound at
-// refConfidence in place of its error rate: a floor of 56 frames all in
-// error does not show an error rate of 1.
 func floorAt(c curve, x float64) (float64, bool) {
 	for i := 1; i < len(c.EbN0); i++ {
 		x0, x1 := c.EbN0[i-1], c.EbN0[i]
@@ -90,12 +72,8 @@ func floorAt(c curve, x float64) (float64, bool) {
 	return 0, false
 }
 
-// refConfidence is the chance that errorLower is above the true error rate.
 const refConfidence = 1e-3
 
-// errorLower returns the Clopper-Pearson lower bound, at refConfidence, of
-// the error rate of k errors in n trials: the p at which k or more errors
-// have that chance. Above 1000 errors it takes the normal approximation.
 func errorLower(k, n int) float64 {
 	if k == 0 {
 		return 0
@@ -116,8 +94,6 @@ func errorLower(k, n int) float64 {
 	return lo
 }
 
-// binomialAtMost returns the chance of at most k successes in n trials of
-// chance p.
 func binomialAtMost(k, n int, p float64) float64 {
 	if k >= n {
 		return 1

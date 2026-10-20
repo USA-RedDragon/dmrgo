@@ -29,7 +29,6 @@ const (
 	endMarker   = "<!-- rxbench:end -->"
 )
 
-// Keys of the payload types in the sweep data.
 const (
 	keyAMBE   = "ambe"
 	keyRate12 = "rate12"
@@ -60,7 +59,6 @@ func main() {
 	}
 }
 
-// errStale reports a README block or graph that differs from the data.
 var errStale = errors.New("out of date: run go run -C cmd/rxbench . -update-readme")
 
 func run(ctx context.Context, root string, update, sweep bool) error {
@@ -113,19 +111,16 @@ func run(ctx context.Context, root string, update, sweep bool) error {
 	return os.WriteFile(readmePath, next, 0o600)
 }
 
-// score counts the frames of one payload type at one C/N.
 type score struct {
 	Truth int `json:"truth"`
 	Exact int `json:"exact"`
 }
 
-// point is the score of every payload type at one C/N.
 type point struct {
 	CN       float64           `json:"cn"`
 	Payloads map[string]*score `json:"payloads"`
 }
 
-// tier is the sweep of one receiver tier.
 type tier struct {
 	Mode         string  `json:"mode"`
 	Tier         int     `json:"tier"`
@@ -136,14 +131,11 @@ type tier struct {
 	FalsePerHour float64 `json:"false_per_hour"`
 }
 
-// bench is testdata/rxbench.json.
 type bench struct {
 	Machine string `json:"machine"`
 	Tiers   []tier `json:"tiers"`
 }
 
-// curve is a reference curve: the frames and the frames recovered exactly
-// at each Eb/N0, and the kind of bound or receiver it is.
 type curve struct {
 	EbN0  []float64 `json:"ebn0"`
 	Truth []int     `json:"truth"`
@@ -151,7 +143,6 @@ type curve struct {
 	Bound string    `json:"bound"`
 }
 
-// recovery returns the frame recovery at each Eb/N0 of c.
 func (c curve) recovery() []float64 {
 	y := make([]float64, len(c.EbN0))
 	for i := range y {
@@ -162,38 +153,27 @@ func (c curve) recovery() []float64 {
 	return y
 }
 
-// The status of a DMR floor in testdata/rxbench_floor.json. Any other
-// status marks a DMR floor that the generator cannot compute.
 const (
-	// statusExact marks a DMR floor that tests every value of the payload.
 	statusExact = "exact"
-	// statusLower marks a DMR floor that tests the values of a search, a
-	// lower bound on it.
 	statusLower = "lower bound"
 )
 
-// floorPair is the two floors of one payload: the 4FSK floor of any code
-// of its size and the DMR floor of its DMR code, with the status of the
-// DMR floor.
 type floorPair struct {
 	Any    curve  `json:"any"`
 	DMR    curve  `json:"dmr"`
 	Status string `json:"status"`
 }
 
-// floors is testdata/rxbench_floor.json.
 type floors struct {
 	Source   string               `json:"source"`
 	Payloads map[string]floorPair `json:"payloads"`
 }
 
-// curves is testdata/rxbench_aware.json, the code-aware receiver.
 type curves struct {
 	Source   string           `json:"source"`
 	Payloads map[string]curve `json:"payloads"`
 }
 
-// recording is one real capture of testdata/rxbench_recordings.json.
 type recording struct {
 	Name  string  `json:"name"`
 	CN    float64 `json:"cn"`
@@ -201,7 +181,6 @@ type recording struct {
 	Exact []int   `json:"exact"`
 }
 
-// data is everything a block renders.
 type data struct {
 	bench      bench
 	floor      floors
@@ -223,10 +202,8 @@ func load(dir string) (data, error) {
 	return d, nil
 }
 
-// cnToEbN0 converts C/N in 12.5 kHz to Eb/N0 per channel bit at 9600 bit/s.
 func cnToEbN0(cn float64) float64 { return cn + 10*math.Log10(12500.0/9600) }
 
-// payloadNames lists the rows of the sensitivity table: data key and name.
 func payloadNames() [][2]string {
 	return [][2]string{
 		{keyAMBE, "Voice frame (AMBE+2, 49 bits)"},
@@ -244,19 +221,15 @@ func payloadNames() [][2]string {
 	}
 }
 
-// The input modes of a tier: FM discriminator audio, or I/Q samples.
 const (
 	modeAudio = "audio"
 	modeIQ    = "iq"
 )
 
-// modes lists the input modes in the order of the README: the mode, the
-// title of its graphs, and its short name.
 func modes() [][3]string {
 	return [][3]string{{modeAudio, "FM discriminator audio", "Audio"}, {modeIQ, "I/Q", "I/Q"}}
 }
 
-// modeLabel returns the short README name of mode m.
 func modeLabel(m string) string {
 	for _, v := range modes() {
 		if v[0] == m {
@@ -266,12 +239,10 @@ func modeLabel(m string) string {
 	return m
 }
 
-// shortName returns the name of tier t in the tables and the graphs.
 func shortName(t tier) string {
 	return modeLabel(t.Mode) + " tier " + strconv.Itoa(t.Tier)
 }
 
-// inputName returns the input and the stages of tier t.
 func inputName(t tier) string {
 	return map[string]string{
 		modeAudio + "0": "FM audio, 9.6 kHz, core",
@@ -284,15 +255,11 @@ func inputName(t tier) string {
 	}[t.Mode+strconv.Itoa(t.Tier)]
 }
 
-// crossing is the Eb/N0 where a curve first reaches 90% recovery. below
-// marks a curve that is already there at its first point, Eb/N0.
 type crossing struct {
 	ebn0      float64
 	ok, below bool
 }
 
-// at90 returns the Eb/N0 where the curve first reaches 90% recovery, by
-// linear interpolation.
 func at90(x, y []float64) crossing {
 	if len(y) > 0 && y[0] >= 0.9 {
 		return crossing{x[0], true, true}
@@ -305,7 +272,6 @@ func at90(x, y []float64) crossing {
 	return crossing{}
 }
 
-// tierCurve returns the Eb/N0 and recovery of payload k of tier t.
 func tierCurve(t tier, k string) (x, y []float64) {
 	for _, p := range t.Full {
 		if s := p.Payloads[k]; s != nil && s.Truth > 0 {
@@ -316,8 +282,6 @@ func tierCurve(t tier, k string) (x, y []float64) {
 	return x, y
 }
 
-// grouped returns n with a comma between each group of three digits.
-// ramCell formats n bytes: in bytes below 10 KiB, in KiB above.
 func ramCell(n int) string {
 	switch {
 	case n < 10<<10:
@@ -336,7 +300,6 @@ func grouped(n int64) string {
 	return s
 }
 
-// f1 formats v with one decimal, with no sign on a value that rounds to 0.
 func f1(v float64) string { return strconv.FormatFloat(math.Round(v*10)/10+0, 'f', 1, 64) }
 
 func renderBlock(d data) []byte {
@@ -414,9 +377,6 @@ func renderBlock(d data) []byte {
 	return []byte(b.String())
 }
 
-// renderSensitivity writes the sensitivity details: the Eb/N0 at 90%
-// recovery of each payload for the floors, the code-aware receiver and
-// each tier.
 func renderSensitivity(b *strings.Builder, d data) {
 	b.WriteString("<details><summary>Sensitivity per payload type</summary>\n\n")
 	b.WriteString("Eb/N0 in dB for 90% recovery. [docs/rx](docs/rx/README.md) defines the floors.\n\n")
@@ -454,7 +414,6 @@ func renderSensitivity(b *strings.Builder, d data) {
 	b.WriteString("\n</details>\n\n")
 }
 
-// dmrCell returns the DMR floor cell of the sensitivity table.
 func dmrCell(f floorPair) string {
 	c := at90(f.DMR.EbN0, f.DMR.recovery())
 	switch {
@@ -466,14 +425,11 @@ func dmrCell(f floorPair) string {
 	return "-"
 }
 
-// span is a range of dB, from lo to hi, either end missing when not ok.
 type span struct {
 	lo, hi     float64
 	loOK, hiOK bool
 }
 
-// text formats s with unit after each number: one value when the ends
-// agree to 0.1, a range, or one end as "at least" or "at most".
 func (s span) text(unit string) string {
 	switch {
 	case s.loOK && s.hiOK:
@@ -490,15 +446,10 @@ func (s span) text(unit string) string {
 	return "-"
 }
 
-// gap returns the Eb/N0 of crossing a less that of b, and whether both are
-// found and inside their curves.
 func gap(a, b crossing) (float64, bool) {
 	return a.ebn0 - b.ebn0, a.ok && b.ok && !a.below && !b.below
 }
 
-// referenceCrossings returns the 90% crossings of payload k for the DMR
-// floor, the 4FSK floor and the code-aware receiver, the status of the DMR
-// floor, and false when k has no floors.
 func referenceCrossings(d data, k string) (dmr, anyCode, aware crossing, status string, ok bool) {
 	f, ok := d.floor.Payloads[k]
 	if !ok {
@@ -510,9 +461,6 @@ func referenceCrossings(d data, k string) (dmr, anyCode, aware crossing, status 
 	return at90(f.DMR.EbN0, f.DMR.recovery()), at90(f.Any.EbN0, f.Any.recovery()), aware, f.Status, true
 }
 
-// costCell returns the code cost of payload k: the DMR floor less the 4FSK
-// floor, a range up to the code-aware receiver when the DMR floor is not
-// exact.
 func costCell(d data, k string) string {
 	dmr, anyCode, aware, status, ok := referenceCrossings(d, k)
 	if !ok {
@@ -532,8 +480,6 @@ func costCell(d data, k string) string {
 	return s.text("")
 }
 
-// dbCell formats an Eb/N0 at 90%, as an upper limit for a curve that
-// starts above 90%.
 func dbCell(c crossing) string {
 	if !c.ok {
 		return "-"
@@ -544,8 +490,6 @@ func dbCell(c crossing) string {
 	return f1(c.ebn0) + " dB"
 }
 
-// msCell formats a CPU time per second of signal, in ns, in milliseconds
-// with two significant digits.
 func msCell(ns float64) string {
 	ms := ns / 1e6
 	switch {
@@ -557,12 +501,10 @@ func msCell(ns float64) string {
 	return strconv.FormatFloat(math.Round(ms*100)/100, 'f', 2, 64) + " ms"
 }
 
-// graph is a README graph: data key, title and error rate name.
 type graph struct {
 	key, title, rate string
 }
 
-// graphs lists the README graphs.
 func graphs() []graph {
 	const fer = "Frame error rate"
 	return []graph{
@@ -571,7 +513,6 @@ func graphs() []graph {
 	}
 }
 
-// errorRate returns 1 minus each recovery of y.
 func errorRate(y []float64) []float64 {
 	out := make([]float64, len(y))
 	for i, v := range y {
@@ -580,9 +521,6 @@ func errorRate(y []float64) []float64 {
 	return out
 }
 
-// renderGraphs returns one SVG per graph and input mode, by its path under
-// docs/rx: the error rate against Eb/N0 on a log scale, the 4FSK floor
-// dashed and each tier of the mode solid.
 func renderGraphs(d data) map[string][]byte {
 	out := map[string][]byte{}
 	for _, m := range modes() {
@@ -593,7 +531,6 @@ func renderGraphs(d data) map[string][]byte {
 	return out
 }
 
-// renderGraph returns the SVG of graph g for the tiers of mode m.
 func renderGraph(d data, g graph, m string) []byte {
 	var series []svgSeries
 	if f, ok := d.floor.Payloads[g.key]; ok {

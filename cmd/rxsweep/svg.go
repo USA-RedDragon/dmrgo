@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-// Chart geometry, in pixels.
 const (
 	chartW = 900
 	chartH = 560
@@ -18,12 +17,10 @@ const (
 	padB   = 56
 )
 
-// palette returns the series colors.
 func palette() []string {
 	return []string{"#1f6fb2", "#c2541b", "#2b8a3e", "#8e44ad", "#b8860b", "#d6336c", "#0b7285", "#5c5f66"}
 }
 
-// axis is a linear or log10 chart axis.
 type axis struct {
 	title    string
 	lo, hi   float64
@@ -38,7 +35,6 @@ func (a axis) pos(v float64) float64 {
 	return a.from + (v-a.lo)/(a.hi-a.lo)*(a.to-a.from)
 }
 
-// ticks returns the tick values of a.
 func (a axis) ticks() []float64 {
 	var out []float64
 	if a.log {
@@ -80,19 +76,16 @@ func tickLabel(v float64, log bool) string {
 	return strconv.FormatFloat(v, 'g', 4, 64)
 }
 
-// chartSeries is a set of marks of one chart.
 type chartSeries struct {
-	name  string
-	x, y  []float64
-	label []string
-	// line joins the points; dots marks them.
+	name       string
+	x, y       []float64
+	label      []string
 	line, dots bool
 	dash       string
 	color      string
 	width      float64
 }
 
-// refLine is a horizontal (or, with vertical, vertical) reference line.
 type refLine struct {
 	name     string
 	at       float64
@@ -101,7 +94,6 @@ type refLine struct {
 	color    string
 }
 
-// chart is one SVG chart.
 type chart struct {
 	title  string
 	x, y   axis

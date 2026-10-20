@@ -21,7 +21,6 @@ import (
 	"time"
 )
 
-// runner runs the variants of a space.
 type runner struct {
 	root, out string
 	jobs      int
@@ -29,21 +28,17 @@ type runner struct {
 	m4        string
 	cost      bool
 
-	app  appender
-	logm sync.Mutex
-	// done holds the cases in resultsFile, by variant ID.
-	done map[string]map[sweepKey]bool
-	// buildm serializes the builds of the test binaries.
+	app    appender
+	logm   sync.Mutex
+	done   map[string]map[sweepKey]bool
 	buildm sync.Mutex
 }
 
-// sweepKey is one case of a variant.
 type sweepKey struct {
 	cn   float64
 	seed uint64
 }
 
-// prepared is a variant with its source tree and test binary.
 type prepared struct {
 	v      variant
 	id     string
@@ -52,7 +47,6 @@ type prepared struct {
 	binary string
 }
 
-// workerCase and workerJob are the job file of TestSweepWorker.
 type workerCase struct {
 	CN   float64 `json:"cn"`
 	Seed uint64  `json:"seed"`
@@ -174,11 +168,8 @@ feed:
 	return nil
 }
 
-// cores returns the cores of one worker.
 func (r *runner) cores() int { return max(runtime.NumCPU()/r.jobs, 1) }
 
-// commit returns the HEAD commit of the checkout, with "+dirty" when the
-// v2 tree has changes.
 func (r *runner) commit(ctx context.Context) string {
 	rev := exec.CommandContext(ctx, "git", "rev-parse", "--short=12", "HEAD")
 	rev.Dir = r.root
@@ -195,7 +186,6 @@ func (r *runner) commit(ctx context.Context) string {
 	return c
 }
 
-// prepare makes the source tree and test binary of v.
 func (r *runner) prepare(ctx context.Context, v variant) (*prepared, error) {
 	r.buildm.Lock()
 	defer r.buildm.Unlock()
@@ -211,7 +201,6 @@ func (r *runner) prepare(ctx context.Context, v variant) (*prepared, error) {
 		if err := v.apply(dir); err != nil {
 			return nil, err
 		}
-		// The tables of package rf are generated from its constants.
 		gen := exec.CommandContext(ctx, "go", "test", "./rf", "-run", "^TestTablesGenerated$", "-update", "-count", "1")
 		gen.Dir = dir
 		gen.Env = append(os.Environ(), "GOFLAGS=-buildvcs=false")
@@ -251,7 +240,6 @@ func (r *runner) prepare(ctx context.Context, v variant) (*prepared, error) {
 	return &prepared{v: v, id: hex.EncodeToString(h[:8]), dir: dir, tree: tree, binary: bin}, nil
 }
 
-// work runs the test binary of p on the cases with GOMAXPROCS procs.
 func (r *runner) work(ctx context.Context, p *prepared, cases []workerCase, cost bool, procs int) (*workerResult, error) {
 	job := workerJob{Tier: p.v.Tier, Opt: p.v.jobOpt(), Lookback: p.v.Lookback, Hz: p.v.Hz, Superframes: r.space.Superframes, Offset: r.space.Offset, Cases: cases, Cost: cost, Disc: p.v.Disc, Stream: r.space.Stream}
 	b, err := json.Marshal(job)
@@ -290,8 +278,6 @@ func (r *runner) work(ctx context.Context, p *prepared, cases []workerCase, cost
 	return &res, nil
 }
 
-// receive runs the cases of p that resultsFile does not hold and appends
-// their results.
 func (r *runner) receive(ctx context.Context, p *prepared, cases []workerCase) error {
 	var todo []workerCase
 	r.logm.Lock()
@@ -327,7 +313,6 @@ func (r *runner) receive(ctx context.Context, p *prepared, cases []workerCase) e
 	return nil
 }
 
-// gridCases returns the cases of g, with C/N offset by at.
 func gridCases(g grid, at float64) []workerCase {
 	var out []workerCase
 	for i := 0; ; i++ {
@@ -342,8 +327,6 @@ func gridCases(g grid, at float64) []workerCase {
 	return out
 }
 
-// sensitivity runs the coarse grid of p, then the fine grid around the 90%
-// point of each payload of the space.
 func (r *runner) sensitivity(ctx context.Context, p *prepared) error {
 	if err := r.receive(ctx, p, gridCases(r.space.Coarse, 0)); err != nil {
 		return err
@@ -372,7 +355,6 @@ func (r *runner) sensitivity(ctx context.Context, p *prepared) error {
 	return r.receive(ctx, p, fine)
 }
 
-// cases returns the results of variant id in resultsFile.
 func (r *runner) cases(id string) ([]caseResult, error) {
 	r.app.mu.Lock()
 	defer r.app.mu.Unlock()
@@ -389,8 +371,6 @@ func (r *runner) cases(id string) ([]caseResult, error) {
 	return out, nil
 }
 
-// costs measures each variant that costFile does not hold, one at a time,
-// on one core.
 func (r *runner) costs(ctx context.Context, ps []*prepared) error {
 	prev, err := readLines[costRecord](filepath.Join(r.out, costFile))
 	if err != nil {
@@ -423,8 +403,6 @@ func (r *runner) costs(ctx context.Context, ps []*prepared) error {
 	return nil
 }
 
-// m4Costs runs the -m4 command for each variant that m4File does not hold,
-// one at a time.
 func (r *runner) m4Costs(ctx context.Context, ps []*prepared) error {
 	prev, err := readLines[m4Record](filepath.Join(r.out, m4File))
 	if err != nil {

@@ -51,7 +51,6 @@ func usage() {
 	os.Exit(2)
 }
 
-// repoRoot returns the root of the dmrgo checkout that holds this source.
 func repoRoot() (string, error) {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
