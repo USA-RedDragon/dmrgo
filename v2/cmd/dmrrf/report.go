@@ -76,6 +76,7 @@ type Reporter struct {
 	ref    bool
 	votes  [2]int
 	stream int
+	audio  *audioOut
 }
 
 // NewReporter returns a Reporter that writes to w.
@@ -156,6 +157,9 @@ func (p *Reporter) Burst(r rf.Burst) {
 			f, res := vocoder.DecodeAMBE72(slot)
 			p.printf("ambe %s pos=%s seq=%d n=%d 0x%013x fec=%s", t, b.VoiceBurst, ch.ambe, i, rftx.AMBEValue(f), fecString(res))
 			ch.ambe++
+			if p.audio != nil {
+				p.audio.decode(slot)
+			}
 		}
 	}
 	switch {

@@ -170,15 +170,39 @@ func readIQ(path string, signed bool) ([]complex128, error) {
 	return rftx.FromRTL(b), nil
 }
 
-func runRX(args []string, w io.Writer) error {
+func runRX(args []string, w io.Writer) (err error) {
 	fs := flag.NewFlagSet("rx", flag.ContinueOnError)
 	in := fs.String("i", "", "input file (rtl_sdr unsigned 8-bit I/Q)")
 	rate := fs.Float64("rate", 2.048e6, "sample rate in Hz")
 	freq := fs.Float64("freq", 0, "tuned frequency in Hz, for the ppm figure")
 	signed := fs.Bool("signed", false, "input is signed 8-bit (HackRF) instead of rtl_sdr unsigned")
 	tier := fs.Int("tier", 3, "receiver tier 0 to 4: 0 discriminator, 1 with the soft stages, 2 coherent, 3 with the phase in the trellis state, 4 as 3 over a longer window")
+	ambeSpec := fs.String("ambe", "", ambeUsage)
+	pcmPath := fs.String("pcm", "", "write the decoded AMBE+2 voice as 8 kHz 16-bit little-endian PCM to this file (needs -ambe)")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+	if *pcmPath != "" && *ambeSpec == "" {
+		return errors.New("-pcm needs -ambe")
+	}
+	var audio *audioOut
+	if *ambeSpec != "" {
+		a, err := openAMBE(*ambeSpec)
+		if err != nil {
+			return err
+		}
+		defer func() { err = errors.Join(err, a.close()) }()
+		out := io.Discard
+		if *pcmPath != "" {
+			f, err := os.Create(*pcmPath)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			out = f
+		}
+		audio = &audioOut{codec: a.codec, w: out}
+		fmt.Fprintf(w, "ambe: %s\n", a.desc)
 	}
 	b, err := os.ReadFile(*in)
 	if err != nil {
@@ -197,8 +221,15 @@ func runRX(args []string, w io.Writer) error {
 	}
 	fmt.Fprintf(w, "carrier offset %+.0f Hz%s, outer deviation %.0f Hz, %d bursts\n", d.OffsetHz, ppm, d.DeviationHz, len(d.Bursts))
 	rep := NewReporter(w)
+	rep.audio = audio
 	for _, r := range d.Bursts {
 		rep.Burst(r)
+	}
+	if audio != nil {
+		if audio.err != nil {
+			return audio.err
+		}
+		fmt.Fprintf(w, "audio: %d frames, %.2f s\n", audio.frames, float64(audio.frames)*0.02)
 	}
 	return nil
 }
