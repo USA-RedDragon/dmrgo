@@ -441,7 +441,7 @@ func newEngine(cfg Config, opt options) *engine {
 	size := (cfg.LookbackSlots + opt.passSlots() + maxGapSlots + 4) * slotSamplesN
 	dec := 2
 	if r.opt.Coherent {
-		dec = max(r.opt.ChanDecimation, 1)
+		dec = max(int(r.opt.ChanDecimation), 1)
 	}
 	r.chz = newChannelizer(size, !r.opt.Coherent, dec, r.opt.CompactChannel, half)
 	if r.opt.Coherent && (r.opt.IQTaps > 0 || r.opt.IQKaiser > 0 || r.opt.IQCutHz > 0) {
@@ -454,7 +454,7 @@ func newEngine(cfg Config, opt options) *engine {
 	r.spec = newSpectrum(float64(cfg.BasebandHz))
 	r.search = newSyncSearch(r.opt.Coherent, dec)
 	if r.opt.Coherent {
-		d := r.opt.Window
+		d := int(r.opt.Window)
 		r.model = newCPMModel(d, r.opt.TrellisSPS)
 		r.maxRun = (maxGapSlots + 1) * slotSymbols
 		if r.opt.ExactPhase {
@@ -470,7 +470,7 @@ func newEngine(cfg Config, opt options) *engine {
 			}
 			r.xt.jump, r.xt.fade, r.xt.below = r.opt.PhaseJump, r.opt.PhaseJumpFade, r.opt.PhaseJumpBelow
 			if r.opt.DriftSteps > 0 {
-				r.xt.drifts = r.opt.DriftSteps
+				r.xt.drifts = int(r.opt.DriftSteps)
 			}
 			r.lp, r.slp = r.xt.lp, r.xt.slp
 			r.buf = make([]complex64, r.maxRun*r.opt.TrellisSPS)

@@ -30,6 +30,18 @@ type options struct {
 	// CombBudget sets the CohBudget of the Tier2 receiver of Comb: 0
 	// means 350, below 0 no limit.
 	CombBudget float64
+	// CohVerifyScan, when above 0, is the least share of the power of the
+	// ring samples that the waveform of a SYNC must explain, in the
+	// segments of the coherent SYNC scan, at the timing of the core, for
+	// the coherent stage to verify that SYNC. On noise it leaves most
+	// candidates of the search for a few correlations instead of the
+	// interpolation that the test of the levels takes.
+	CohVerifyScan float64
+	// HGate, when above 0, estimates the modulation index of a stream from
+	// the SYNC fields of the anchors of the first pass of TwoPass, and sets
+	// it for the second pass only when the 95% bootstrap interval of the
+	// estimate is more than HGate away from 0.27.
+	HGate float64
 	// IQTaps, IQKaiser and IQCutHz set the channel filter of iqDisc: its
 	// length, the beta of its Kaiser window and its cutoff. 0 means
 	// iqTaps, a Hamming window and discCutHz. On the coherent tiers they
@@ -51,9 +63,6 @@ type options struct {
 	// bit off the coherent one while such clean frames are over
 	// combCleanShare of the frames in which the two differ (combRx.clean).
 	CombMode int
-	// Window is the number of symbols on each side of a symbol that the
-	// trellis models, 1 or 2.
-	Window int
 	// TrellisSPS is the number of samples per symbol that the trellis
 	// correlates, 5 or 10.
 	TrellisSPS int
@@ -62,6 +71,19 @@ type options struct {
 	// phases round the phase turn of each symbol and cost proportionally
 	// less.
 	PhaseStates int
+	// HGateMin is the fewest anchors for an estimate of HGate; 0 means
+	// hGateMin.
+	HGateMin int
+	// DriftPenalty is the cost in nats of a step of one phase state of the
+	// ExactPhase trellis; 0 means driftPenalty.
+	DriftPenalty float32
+	// PhaseJump, when above 0, lets a path of the ExactPhase trellis jump
+	// to any carrier phase after a symbol at this cost in nats, so that it
+	// can follow the phase through a deep fade.
+	PhaseJump float32
+	// PhaseJumpBelow, when above 0, allows the fade jump only where the
+	// amplitude over its mean is under it.
+	PhaseJumpBelow float32
 	// PSPGain is the gain of the phase tracking of each trellis survivor.
 	PSPGain float32
 	// KnownPrior is the log prior, in nats, of the expected symbols of the
@@ -76,9 +98,6 @@ type options struct {
 	// its ratios too confident. The priors that a detection again adds
 	// enter the trellis divided by it. 0 means 1.
 	LLRScale float32
-	// ChanDecimation is the factor, 1 or 2, by which the channel ring of
-	// the coherent tiers runs below basebandRate; 0 means 1.
-	ChanDecimation int
 	// Sources is the number of SYNC sources the search tries: 2 for BS
 	// and MS, 4 with both direct mode slots.
 	Sources int
@@ -148,16 +167,12 @@ type options struct {
 	// DataPasses is the number of times a coherent tier detects a
 	// BPTC(196,96) data burst that fails its check again, with the
 	// extrinsic information of its grid decode as priors weighed by
-	// DataPrior. DataUnchecked does so also for a burst without a check
-	// whose decode corrected bits.
-	DataPasses    int
-	DataPrior     float32
-	DataUnchecked bool
-	// IQDisc runs the streaming receiver on I/Q as iqRx, iqDisc before a
-	// DiscReceiver at IQHz, 12000 or 24000, in place of leanRx. 0 means
-	// 24000.
-	IQHz   int
-	IQDisc bool
+	// DataPrior.
+	DataPasses int
+	DataPrior  float32
+	// IQHz is the rate of the DiscReceiver of IQDisc, 12000 or 24000; 0
+	// means 24000.
+	IQHz int
 	// TwoPass detects each stream of a coherent tier twice: a first pass
 	// measures the anchors and the carrier of up to TwoPassSlots slots (0
 	// means twoPassSlots), and a second pass detects them again with the
@@ -213,29 +228,10 @@ type options struct {
 	// ExactH turns the phase of the ExactPhase trellis by the nearest step
 	// to the modulation index that TrackH estimates instead of 0.27.
 	ExactH bool
-	// HGate, when above 0, estimates the modulation index of a stream from
-	// the SYNC fields of the anchors of the first pass of TwoPass, and sets
-	// it for the second pass only when the 95% bootstrap interval of the
-	// estimate is more than HGate away from 0.27. HGateMin is the fewest
-	// anchors for an estimate; 0 means hGateMin.
-	HGate    float64
-	HGateMin int
-	// DriftPenalty is the cost in nats of a step of one phase state of the
-	// ExactPhase trellis; 0 means driftPenalty. DriftSteps is the number
-	// of such steps a path can take after each symbol; 0 means 1.
-	DriftPenalty float32
-	DriftSteps   int
-	// PhaseJump, when above 0, lets a path of the ExactPhase trellis jump
-	// to any carrier phase after a symbol at this cost in nats, so that it
-	// can follow the phase through a deep fade.
-	PhaseJump float32
 	// PhaseJumpFade scales the PhaseJump cost after each symbol by the
 	// square of the signal amplitude there over its mean, so that a path
 	// jumps in a deep fade.
 	PhaseJumpFade bool
-	// PhaseJumpBelow, when above 0, allows the fade jump only where the
-	// amplitude over its mean is under it.
-	PhaseJumpBelow float32
 	// CompactChannel holds the channel ring of the coherent tiers as 8-bit
 	// block floating point and keeps no copy of the wide input: a retune
 	// rotates the samples it holds instead of filtering the input again.
@@ -295,13 +291,6 @@ type options struct {
 	// wanted one, and chanFilterTaps otherwise. IQTaps must then be 0 or
 	// chanTaps, so that the delay of the channel stays the same.
 	IQCutAuto bool
-	// CohVerifyScan, when above 0, is the least share of the power of the
-	// ring samples that the waveform of a SYNC must explain, in the
-	// segments of the coherent SYNC scan, at the timing of the core, for
-	// the coherent stage to verify that SYNC. On noise it leaves most
-	// candidates of the search for a few correlations instead of the
-	// interpolation that the test of the levels takes.
-	CohVerifyScan float64
 	// CohVoiceOnly leaves every burst but a voice burst to the ratios of
 	// the core: the coherent stage only fits the carrier and timing on
 	// the others.
@@ -343,6 +332,21 @@ type options struct {
 	// lock in a call that leaves the locals of run96 alone, unless a SYNC
 	// of the hunt matches or the slot ends.
 	RawSearch uint8
+	// DataUnchecked detects a data burst without a check whose decode
+	// corrected bits again as DataPasses does.
+	DataUnchecked bool
+	// IQDisc runs the streaming receiver on I/Q as iqRx, iqDisc before a
+	// DiscReceiver at IQHz, in place of leanRx.
+	IQDisc bool
+	// Window is the number of symbols on each side of a symbol that the
+	// trellis models, 1 or 2.
+	Window uint8
+	// ChanDecimation is the factor, 1 or 2, by which the channel ring of
+	// the coherent tiers runs below basebandRate; 0 means 1.
+	ChanDecimation uint8
+	// DriftSteps is the number of drift steps of DriftPenalty a path of
+	// the ExactPhase trellis can take after each symbol; 0 means 1.
+	DriftSteps uint8
 }
 
 // discOptions returns the settings of the FM discriminator core alone:
