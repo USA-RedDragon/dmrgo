@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Jacob McSwain
+
+id: dmrgo_rx
+label: DMR Receiver
+category: '[dmrgo]'
+flags: [python]
+
+parameters:
+- id: input_type
+  label: Input Type
+  dtype: enum
+  default: complex
+  options: [complex, float]
+  option_labels: [I/Q, FM Discriminator]
+  option_attributes:
+    type: [complex, float]
+  hide: part
+- id: samp_rate
+  label: Sample Rate
+  dtype: int
+  default: '48000'
+- id: tier
+  label: Tier
+  dtype: enum
+  default: '2'
+  options: ['0', '1', '2', '3', '4']
+  option_labels: [Tier 0 (MCU), Tier 1, Tier 2, Tier 3 (offline), Tier 4 (offline)]
+- id: codec2_mode
+  label: Codec2 Mode
+  dtype: enum
+  default: '2400'
+  options: ['2400', '3200', '-1']
+  option_labels: ['2400', '3200', 'Off']
+- id: audio_slot
+  label: Audio Timeslot
+  dtype: enum
+  default: '0'
+  options: ['0', '1', '2']
+  option_labels: [Both, TS1, TS2]
+- id: lib_path
+  label: libdmrgo Path
+  dtype: string
+  default: ''
+  hide: part
+- id: ambe_lib
+  label: AMBE Decoder Library
+  dtype: string
+  default: ''
+  hide: part
+
+asserts:
+- ${ input_type != 'float' or int(samp_rate) in (24000, 12000, 9600) }
+- ${ input_type != 'float' or int(tier) <= 2 }
+- ${ input_type != 'complex' or int(samp_rate) == 48000 or (int(samp_rate) == 24000 and int(tier) <= 1) }
+
+inputs:
+- domain: stream
+  dtype: ${ input_type.type }
+
+outputs:
+- label: audio
+  domain: stream
+  dtype: float
+  optional: true
+- id: bursts
+  domain: message
+  optional: true
+- id: voice
+  domain: message
+  optional: true
+
+templates:
+  imports: from gnuradio import dmrgo
+  make: dmrgo.rx(input_type='${ input_type }', samp_rate=${ samp_rate }, tier=${ tier }, codec2_mode=${ codec2_mode },
+    audio_slot=${ audio_slot }, lib_path=${ lib_path }, ambe_lib=${ ambe_lib })
+
+documentation: |-
+  DMR receiver of dmrgo (libdmrgo).
+
+  Input: complex baseband at 48000 Hz (24000 Hz with tier 0 or 1), or FM discriminator audio at 24000, 12000 or 9600 Hz. Put a resampler before the block for other rates.
+
+  bursts: one PDU per burst, the 33 burst bytes and a dict with timeslot, color_code, kind, data_type, voice_pos, sync_distance, fec_corrected, fec_bad, and src, dst, flco, fid and group when the call LC is known.
+
+  voice: one PDU per AMBE+2 frame, the 7 frame bytes and a dict with timeslot, voice_pos, index, bad, errors and the call LC.
+
+  audio: 8 kHz audio of Codec2 calls (FID 0xC2), and of other calls when AMBE Decoder Library names a separately installed decoder. Silence between calls.
+
+  The tier sets the detection and its compute, from Tier 0 to Tier 4.
+
+file_format: 1
