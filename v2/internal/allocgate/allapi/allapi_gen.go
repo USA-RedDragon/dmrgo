@@ -13,6 +13,7 @@ import (
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	internal_bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	internal_crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
+	internal_dvsisim "github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
 	internal_fec_ambe "github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	internal_fec_bptc "github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	internal_fec_golay "github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
@@ -30,6 +31,7 @@ import (
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
+	vocoder_dvsi "github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
 	voice "github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
@@ -183,6 +185,12 @@ var api = [...]any{
 	internal_crc.CheckCRC9,
 	internal_crc.CheckChecksum5,
 	internal_crc.Checksum5,
+	(*internal_dvsisim.Device).Configured,
+	(*internal_dvsisim.Device).Parity,
+	(*internal_dvsisim.Device).Read,
+	(*internal_dvsisim.Device).Write,
+	internal_dvsisim.New,
+	internal_dvsisim.Pairs,
 	internal_fec_ambe.Decode,
 	internal_fec_ambe.Encode,
 	internal_fec_bptc.Decode196,
@@ -770,6 +778,26 @@ var api = [...]any{
 	(*vocoder_codec2.Codec).Silence,
 	vocoder_codec2.New,
 	vocoder_codec2.NewFactory,
+	(*vocoder_dvsi.Codec).AppendDecode,
+	(*vocoder_dvsi.Codec).Close,
+	(*vocoder_dvsi.Codec).Decode,
+	(*vocoder_dvsi.Codec).Encode,
+	(*vocoder_dvsi.Codec).FID,
+	(*vocoder_dvsi.Codec).FrameSamples,
+	(*vocoder_dvsi.Codec).Product,
+	(*vocoder_dvsi.Codec).Silence,
+	(*vocoder_dvsi.Codec).Version,
+	vocoder_dvsi.AppendChannel,
+	vocoder_dvsi.AppendParityMode,
+	vocoder_dvsi.AppendQuery,
+	vocoder_dvsi.AppendRateDMR,
+	vocoder_dvsi.AppendReset,
+	vocoder_dvsi.AppendSpeech,
+	vocoder_dvsi.New,
+	vocoder_dvsi.Packet.AppendChannelData,
+	vocoder_dvsi.Packet.AppendSamples,
+	vocoder_dvsi.Packet.Response,
+	vocoder_dvsi.Parse,
 	(*voice.ConfigError).Error,
 	(*voice.Receiver).Burst,
 	(*voice.Receiver).Deadline,

@@ -518,6 +518,151 @@ static void test_arena(void) {
 	CHECK(ml == 3 && mneed == strlen("invalid handle") + 1 && strcmp(small, "inv") == 0);
 }
 
+struct chip {
+	uint8_t in[1024];
+	size_t in_n;
+	uint8_t out[4096];
+	size_t out_n;
+	int parity;
+	int decodes, encodes;
+};
+
+static const uint8_t chip_slot[9] = {0xB9, 0xE8, 0x81, 0x52, 0x61, 0x73, 0x00, 0x2A, 0x6B};
+
+static void chip_reply(struct chip *c, uint8_t type, const uint8_t *f, size_t n) {
+	size_t len = n + (c->parity ? 2 : 0);
+	uint8_t *b = c->out + c->out_n;
+	b[0] = 0x61;
+	b[1] = (uint8_t)(len >> 8);
+	b[2] = (uint8_t)len;
+	b[3] = type;
+	memcpy(b + 4, f, n);
+	if (c->parity) {
+		uint8_t x = 0;
+		b[4 + n] = 0x2F;
+		for (size_t i = 1; i < 5 + n; i++)
+			x ^= b[i];
+		b[5 + n] = x;
+	}
+	c->out_n += 4 + len;
+}
+
+static void chip_packet(struct chip *c) {
+	dmrgo_dvsi_packet_t p;
+	int64_t n = 0;
+	uint8_t arena[1024];
+	size_t used = 0;
+	if (dmrgo_dvsi_parse(c->in, c->in_n, c->parity, &p, &n, arena, sizeof arena, &used, NULL) != DMRGO_OK) {
+		failures++;
+		return;
+	}
+	CHECK((size_t)n == c->in_n);
+	if (p.type_ == DMRGO_DVSI_TYPE_CONTROL && p.fields_len > 0) {
+		static const uint8_t ready[] = {0x39};
+		static const uint8_t query[] = "\x30" "AMBE3000R\0" "\x31" "V120\0";
+		static const uint8_t rate[] = {0x0A, 0x00, 0x0B, 0x00};
+		uint8_t pm[2] = {0x3F, 0x00};
+		switch (p.fields[0]) {
+		case DMRGO_DVSI_FIELD_RESET:
+			c->parity = 1;
+			chip_reply(c, 0, ready, sizeof ready);
+			break;
+		case DMRGO_DVSI_FIELD_PARITY_MODE:
+			c->parity = p.fields[1];
+			chip_reply(c, 0, pm, sizeof pm);
+			break;
+		case DMRGO_DVSI_FIELD_PROD_ID:
+			chip_reply(c, 0, query, sizeof query - 1);
+			break;
+		case DMRGO_DVSI_FIELD_RATE_P:
+			CHECK(p.fields_len == 15 && p.fields[1] == 0x04 && p.fields[2] == 0x31);
+			chip_reply(c, 0, rate, sizeof rate);
+			break;
+		default:
+			failures++;
+		}
+		return;
+	}
+	size_t len = 0;
+	if (p.type_ == DMRGO_DVSI_TYPE_CHANNEL) {
+		uint8_t data[24];
+		size_t dn = 0;
+		int64_t bits = 0, ch = -1;
+		OK(dmrgo_dvsi_packet_append_channel_data(&p, data, sizeof data, &dn, NULL, &bits, &ch));
+		CHECK(bits == 72 && ch == 0 && dn == 9 && memcmp(data, chip_slot, 9) == 0);
+		int16_t pcm[160];
+		for (int i = 0; i < 160; i++)
+			pcm[i] = (int16_t)(i * 100 - 8000);
+		OK(dmrgo_dvsi_append_speech(c->out + c->out_n, sizeof c->out - c->out_n, &len, NULL, 0, pcm, 160, c->parity));
+		c->decodes++;
+	} else {
+		int16_t pcm[164];
+		size_t pn = 0;
+		int64_t ch = -1;
+		OK(dmrgo_dvsi_packet_append_samples(&p, pcm, 164, &pn, NULL, &ch));
+		CHECK(pn == 160 && ch == 0 && pcm[1] == 7);
+		OK(dmrgo_dvsi_append_channel(c->out + c->out_n, sizeof c->out - c->out_n, &len, NULL, 0, chip_slot, 9, 72, c->parity));
+		c->encodes++;
+	}
+	c->out_n += len;
+}
+
+static int chip_write(uintptr_t user, const uint8_t *p, size_t n, int64_t *out) {
+	struct chip *c = (struct chip *)user;
+	for (size_t i = 0; i < n; i++) {
+		if (c->in_n == 0 && p[i] != 0x61)
+			continue;
+		c->in[c->in_n++] = p[i];
+		if (c->in_n >= 4 && c->in_n == 4 + (size_t)(c->in[1] << 8 | c->in[2])) {
+			chip_packet(c);
+			c->in_n = 0;
+		}
+	}
+	*out = (int64_t)n;
+	return DMRGO_OK;
+}
+
+static int chip_read(uintptr_t user, uint8_t *p, size_t n, int64_t *out) {
+	struct chip *c = (struct chip *)user;
+	size_t k = c->out_n < n ? c->out_n : n;
+	if (k > 7)
+		k = 7;
+	memcpy(p, c->out, k);
+	memmove(c->out, c->out + k, c->out_n - k);
+	c->out_n -= k;
+	*out = (int64_t)k;
+	return DMRGO_OK;
+}
+
+static void test_dvsi(void) {
+	static struct chip c;
+	dmrgo_dvsi_port_vtable_t vt = {(uintptr_t)&c, chip_read, chip_write};
+	dmrgo_dvsi_port_t *port = NULL;
+	OK(dmrgo_dvsi_port_from_vtable(&vt, &port));
+	dmrgo_dvsi_config_t cfg = {0};
+	dmrgo_dvsi_codec_t *codec = NULL;
+	OK(dmrgo_dvsi_new(port, &cfg, &codec));
+	char name[DMRGO_DVSI_MAX_PRODUCT_LEN + 1];
+	size_t nl = 0;
+	OK(dmrgo_dvsi_codec_product(codec, name, sizeof name, &nl, NULL));
+	CHECK(nl == 9 && strcmp(name, "AMBE3000R") == 0);
+	int16_t pcm[160];
+	size_t n = 0;
+	OK(dmrgo_dvsi_codec_decode(codec, chip_slot, pcm, 160, &n, NULL));
+	CHECK(n == 160 && pcm[0] == -8000 && pcm[159] == 7900);
+	for (int i = 0; i < 160; i++)
+		pcm[i] = (int16_t)(7 * i);
+	uint8_t slot[9];
+	OK(dmrgo_dvsi_codec_encode(codec, pcm, 160, slot));
+	CHECK(memcmp(slot, chip_slot, 9) == 0);
+	CHECK(dmrgo_dvsi_codec_encode(codec, pcm, 100, slot) == DMRGO_ERR_DVSI_SAMPLES);
+	CHECK(c.decodes == 1 && c.encodes == 1 && c.parity == 1);
+	OK(dmrgo_dvsi_codec_close(codec));
+	CHECK(dmrgo_dvsi_codec_decode(codec, chip_slot, pcm, 160, &n, NULL) == DMRGO_ERR_DVSI_CLOSED);
+	OK(dmrgo_dvsi_codec_free(codec));
+	OK(dmrgo_dvsi_port_free(port));
+}
+
 int main(int argc, char **argv) {
 	if (argc != 3) {
 		fprintf(stderr, "usage: %s weak.cu8 parrot_kerchunk.bin\n", argv[0]);
@@ -536,6 +681,7 @@ int main(int argc, char **argv) {
 	test_small_user();
 	test_arena();
 	test_liar();
+	test_dvsi();
 	if (failures) {
 		fprintf(stderr, "%d checks failed\n", failures);
 		return 1;

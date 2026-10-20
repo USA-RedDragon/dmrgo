@@ -10,12 +10,14 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
@@ -288,4 +290,32 @@ func TestAllocsFramer(t *testing.T) {
 			dst = f.AppendBursts(dst[:0], chunk, 8*len(chunk))
 		}
 	})
+}
+
+func TestAllocsDVSI(t *testing.T) {
+	pairs := dvsisim.Pairs(4)
+	for _, opt := range []dvsisim.Options{{}, {Chunk: 3}, {Datagram: true}} {
+		d := dvsisim.New(pairs, opt)
+		c, err := dvsi.New(d, dvsi.Config{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		pcm := make([]int16, 0, dvsi.FrameSamples)
+		pkt := make([]byte, 0, dvsi.MaxPacketLen)
+		assertZero(t, "dvsi", func() {
+			for _, p := range pairs {
+				pcm, _ = c.AppendDecode(pcm[:0], p.Slot)
+				_, _ = c.Encode(p.PCM[:])
+				pkt, _ = dvsi.AppendSpeech(pkt[:0], 1, p.PCM[:], true)
+				q, _, _ := dvsi.Parse(pkt, true)
+				pcm, _, _ = q.AppendSamples(pcm[:0])
+				pkt, _ = dvsi.AppendChannel(pkt[:0], 2, p.Slot[:], dvsi.FrameBits, false)
+				q, _, _ = dvsi.Parse(pkt, false)
+				pkt, _, _, _ = q.AppendChannelData(pkt[:0])
+			}
+		})
+		if len(d.Errs) > 0 {
+			t.Errorf("%+v: device errors %q", opt, d.Errs)
+		}
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"runtime"
 	"slices"
+	"strconv"
 	"testing"
 	"time"
 
@@ -13,12 +14,14 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
@@ -436,11 +439,41 @@ func tinyAlloc(run func()) (bytes, mallocs float64) {
 	return float64(after.TotalAlloc-before.TotalAlloc) / tinyRuns, float64(after.Mallocs-before.Mallocs) / tinyRuns
 }
 
+func tinyDVSIOps(t *testing.T) []tinyOp {
+	t.Helper()
+	pairs := dvsisim.Pairs(2)
+	var ops []tinyOp
+	for _, opt := range []dvsisim.Options{{}, {Chunk: 3}, {Datagram: true}} {
+		d := dvsisim.New(pairs, opt)
+		c := tinyOK(dvsi.New(d, dvsi.Config{}))
+		pcm := make([]int16, 0, dvsi.FrameSamples)
+		_, _ = c.AppendDecode(pcm, pairs[0].Slot)
+		_, _ = c.Encode(pairs[0].PCM[:])
+		ops = append(ops, tinyOp{"dvsi.Codec " + strconv.Itoa(opt.Chunk), func() {
+			for i := range pairs {
+				pcm, _ = c.AppendDecode(pcm[:0], pairs[i].Slot)
+				_, _ = c.Encode(pairs[i].PCM[:])
+			}
+		}})
+	}
+	pkt := make([]byte, 0, dvsi.MaxPacketLen)
+	pcm := make([]int16, 0, dvsi.FrameSamples)
+	ops = append(ops, tinyOp{"dvsi packets", func() {
+		pkt, _ = dvsi.AppendSpeech(pkt[:0], 1, pairs[0].PCM[:], true)
+		q, _, _ := dvsi.Parse(pkt, true)
+		pcm, _, _ = q.AppendSamples(pcm[:0])
+		pkt, _ = dvsi.AppendChannel(pkt[:0], 2, pairs[0].Slot[:], dvsi.FrameBits, false)
+		q, _, _ = dvsi.Parse(pkt, false)
+		pkt, _, _, _ = q.AppendChannelData(pkt[:0])
+	}})
+	return ops
+}
+
 func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t))
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {

@@ -112,6 +112,7 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 - Vocoders (`vocoder`):
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
   - A `Codec` interface with a registry, and a Codec2 codec (`vocoder/codec2`).
+  - AMBE+2 on a DVSI AMBE-3000R or AMBE-3003 chip (`vocoder/dvsi`), such as a ThumbDV, a DVstick or an AMBEserver. See [DVSI](#dvsi).
 - No cgo outside `vocoder/codec2`.
 - No allocation on the hot path: see [Allocation](#allocation).
 
@@ -128,11 +129,12 @@ The table lists every place where the library can allocate. [v2/internal/allocga
 | The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 2 |
 | A String, GoString or Error method | When the text is built, for a person to read. | 124 |
 | A function of internal/text, which formats the values of String and Error methods | When the text is built, for a person to read. | 7 |
-| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 26 |
-| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 57 |
-| An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 21 |
+| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 27 |
+| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 66 |
+| An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 22 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
-| A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 3 |
+| A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 4 |
+| A method of an interface that the library declares for the caller to implement, such as the Read and Write of a dvsi.Port | When the method of the caller allocates. The code of the library on the path does not. | 1 |
 | The runtime print functions, which the runtime calls on its debug paths | Never: they format into fixed buffers that the gate cannot prove are large enough. | 1 |
 
 The counts are of exported functions and methods, for linux/amd64 with cgo. `DMRGO_README=write go test -run TestHeapAllocations ./internal/allocgate` in v2 writes the table.
@@ -168,6 +170,27 @@ enc, err := vocoder.New(codec2.Name)
 | Silence | `Silence()` is 20 ms of silence in the encode mode |
 
 Nothing on the air identifies the mode, so `ModeAuto` detects it from the padding: `Mode2400` leaves bytes 6 to 8 of each slot zero, and `Mode3200` only byte 8. Five clean frames (100 ms) decide the mode, and `DecodeMode()` reports it. Call `Reset()` at the start of each call. A decoder in a fixed mode decodes only that mode.
+
+## DVSI
+
+`vocoder/dvsi` builds and parses the packets of the DVSI AMBE-3000R and AMBE-3003 vocoder chips, and `dvsi.New` returns a `vocoder.Codec` that decodes and encodes DMR AMBE+2 frames on such a chip. The package does no I/O: the caller opens the port, which can be any `io.ReadWriter`.
+
+```go
+conn, err := (&net.Dialer{}).DialContext(ctx, "udp", "ambeserver.local:2460")
+if err != nil {
+	return err
+}
+codec, err := dvsi.New(conn, dvsi.Config{})
+```
+
+| Port | Settings |
+| --- | --- |
+| DVSI USB-3000 (DVstick 30), ThumbDV | Serial, 460800 baud (230400 for early ThumbDV units), 8N1, RTS/CTS |
+| DVSI USB-3003 (DVstick 33) | Serial, 921600 baud, 8N1, RTS/CTS; channels 0 to 2 |
+| AMBEserver | UDP, port 2460, one packet per datagram |
+| Microcontroller UART | Any type with `Read` and `Write`; the package builds with TinyGo |
+
+`New` resets the chip, turns on the parity field, reads the product name and version, and sets the rate 3600 bit/s with 2450 bit/s of speech (rate index 33). The chip does the AMBE+2 FEC, so `Decode` takes the 72 on-air bits of a vocoder slot, as `layer2.RawBurst.VoiceSlots` returns them.
 
 ## TinyGo
 
