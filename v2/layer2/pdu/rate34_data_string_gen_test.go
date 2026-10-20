@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *Rate34Data) fmtString() string {
 	return fmt.Sprintf("Rate34Data{ Data: %v }", s.Data)
 }

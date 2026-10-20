@@ -58,8 +58,6 @@ func (s *EmbeddedSignalling) String() string {
 	return "EmbeddedSignalling{ ColorCode: " + text.Int(int64(s.ColorCode)) + ", PreemptionAndPowerControlIndicator: " + text.Bool(s.PreemptionAndPowerControlIndicator) + ", LCSS: " + s.LCSS.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errEmbeddedSignallingColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  4,

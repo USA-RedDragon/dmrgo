@@ -20,9 +20,7 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// decodeUnconfirmedDataHeader decodes an UnconfirmedDataHeader. data holds
-// the 80 bits of the PDU packed, the first bit in the most significant bit
-// of data[0]. (ETSI TS 102 361-1 clause 9.2.6)
+// ETSI TS 102 361-1 clause 9.2.6
 func decodeUnconfirmedDataHeader(data [10]byte) UnconfirmedDataHeader {
 	var result UnconfirmedDataHeader
 	result.Group = data[0]&0x80 != 0
@@ -390,9 +388,7 @@ func (s *DataHeader) String() string {
 	return _ret
 }
 
-// decodeConfirmedDataHeader decodes a ConfirmedDataHeader. data holds the 80
-// bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-1 clause 9.2.1, Table 9.10)
+// ETSI TS 102 361-1 clause 9.2.1, Table 9.10
 func decodeConfirmedDataHeader(data [10]byte) ConfirmedDataHeader {
 	var result ConfirmedDataHeader
 	result.Group = data[0]&0x80 != 0
@@ -480,9 +476,7 @@ func (s *ConfirmedDataHeader) String() string {
 	return "ConfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(int64(s.PadOctetCount)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + ", FragmentSequenceNumber: " + text.Int(int64(s.FragmentSequenceNumber)) + " }"
 }
 
-// decodeResponsePacketHeader decodes a ResponsePacketHeader. data holds the
-// 80 bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-1 clause 9.2.4, Table 9.13)
+// ETSI TS 102 361-1 clause 9.2.4, Table 9.13
 func decodeResponsePacketHeader(data [10]byte) ResponsePacketHeader {
 	var result ResponsePacketHeader
 	result.Reserved = data[0]&0x80 != 0
@@ -566,9 +560,7 @@ func (s *ResponsePacketHeader) String() string {
 	return "ResponsePacketHeader{ Reserved: " + text.Bool(s.Reserved) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", SAP: " + text.Int(int64(s.SAP)) + ", Reserved3: " + text.Int(int64(s.Reserved3)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", ResponseClass: " + text.Int(int64(s.ResponseClass)) + ", ResponseType: " + text.Int(int64(s.ResponseType)) + ", ResponseStatus: " + text.Int(int64(s.ResponseStatus)) + " }"
 }
 
-// decodeDefinedDataHeader decodes a DefinedDataHeader. data holds the 80
-// bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C)
+// ETSI TS 102 361-1 clause 9.2.12, Table 9.17C
 func decodeDefinedDataHeader(data [10]byte) DefinedDataHeader {
 	var result DefinedDataHeader
 	result.Group = data[0]&0x80 != 0
@@ -644,9 +636,7 @@ func (s *DefinedDataHeader) String() string {
 	return "DefinedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", DefinedData: " + text.Int(int64(s.DefinedData)) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
-// decodeRawDataHeader decodes a RawDataHeader. data holds the 80 bits of the
-// PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B)
+// ETSI TS 102 361-1 clause 9.2.11, Table 9.17B
 func decodeRawDataHeader(data [10]byte) RawDataHeader {
 	var result RawDataHeader
 	result.Group = data[0]&0x80 != 0
@@ -727,9 +717,7 @@ func (s *RawDataHeader) String() string {
 	return "RawDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", SourcePort: " + text.Int(int64(s.SourcePort)) + ", DestinationPort: " + text.Int(int64(s.DestinationPort)) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
-// decodeStatusPrecodedHeader decodes a StatusPrecodedHeader. data holds the
-// 80 bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A)
+// ETSI TS 102 361-1 clause 9.2.10, Table 9.17A
 func decodeStatusPrecodedHeader(data [10]byte) StatusPrecodedHeader {
 	var result StatusPrecodedHeader
 	result.Group = data[0]&0x80 != 0
@@ -799,10 +787,7 @@ func (s *StatusPrecodedHeader) String() string {
 	return "StatusPrecodedHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", SourcePort: " + text.Int(int64(s.SourcePort)) + ", DestinationPort: " + text.Int(int64(s.DestinationPort)) + ", StatusPrecoded: " + text.Int(int64(s.StatusPrecoded)) + " }"
 }
 
-// decodeUDTHeader decodes a UDTHeader. data holds the 80 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D,
-// ETSI TS 102 361-4 Tables 7.24 and 7.28)
+// ETSI TS 102 361-1 clause 9.2.13, Table 9.17D, ETSI TS 102 361-4 Tables 7.24 and 7.28
 func decodeUDTHeader(data [10]byte) UDTHeader {
 	var result UDTHeader
 	result.Group = data[0]&0x80 != 0
@@ -892,9 +877,7 @@ func (s *UDTHeader) String() string {
 	return "UDTHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Emergency: " + text.Bool(s.Emergency) + ", OptionFlag: " + text.Bool(s.OptionFlag) + ", SAP: " + text.Int(int64(s.SAP)) + ", UDTFormat: " + text.Int(int64(s.UDTFormat)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", PadNibble: " + text.Int(int64(s.PadNibble)) + ", Reserved: " + text.Bool(s.Reserved) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SupplementaryFlag: " + text.Bool(s.SupplementaryFlag) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + " }"
 }
 
-// decodeProprietaryHeader decodes a ProprietaryHeader. data holds the 80
-// bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-1 clause 9.2.9, Table 9.17)
+// ETSI TS 102 361-1 clause 9.2.9, Table 9.17
 func decodeProprietaryHeader(data [10]byte) ProprietaryHeader {
 	var result ProprietaryHeader
 	result.SAP = enums.ServiceAccessPointID(uint64(data[0]) >> 4)
@@ -927,8 +910,6 @@ func (s *ProprietaryHeader) String() string {
 	return "ProprietaryHeader{ SAP: " + text.Int(int64(s.SAP)) + ", MFID: " + text.Int(int64(s.MFID)) + ", ManufacturerData: " + text.Bytes(s.ManufacturerData[:]) + " }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errUnconfirmedDataHeaderPadOctetCountRange = &dmrgo.FieldRangeError{
 		Bits:  5,

@@ -60,8 +60,6 @@ func (s *PIHeader) String() string {
 	return "PIHeader{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, AlgorithmID: " + text.Int(int64(s.AlgorithmID)) + ", MFID: " + text.Int(int64(s.MFID)) + ", KeyID: " + text.Int(int64(s.KeyID)) + ", MessageIndicator: " + text.Int(int64(s.MessageIndicator)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Raw: " + text.Hex(s.Raw[:]) + " }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errPIHeaderMFIDRange = &dmrgo.FieldRangeError{
 		Bits:  8,

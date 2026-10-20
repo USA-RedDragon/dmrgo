@@ -815,8 +815,6 @@ type T struct {
 	}
 }
 
-// TestParseV2Sources parses every tagged struct of the v2 module, so that a
-// tag error such as an uncovered bit fails here as well as in go generate.
 func TestParseV2Sources(t *testing.T) {
 	t.Parallel()
 

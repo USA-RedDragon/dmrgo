@@ -7,9 +7,6 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// decodeMotorolaRadioCheckPDU decodes a MotorolaRadioCheckPDU. data holds
-// the 64 bits of the PDU packed, the first bit in the most significant bit
-// of data[0].
 func decodeMotorolaRadioCheckPDU(data [8]byte) MotorolaRadioCheckPDU {
 	var result MotorolaRadioCheckPDU
 	result.Reserved = uint8(uint64(data[0]))
@@ -54,10 +51,6 @@ func (s *MotorolaRadioCheckPDU) Encode() ([8]byte, error) {
 func (s *MotorolaRadioCheckPDU) String() string {
 	return "MotorolaRadioCheckPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", Answer: " + text.Bool(s.Answer) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", RequesterAddress: " + text.Int(int64(s.RequesterAddress)) + ", CheckedAddress: " + text.Int(int64(s.CheckedAddress)) + " }"
 }
-
-// decodeMotorolaCallAlertPDU decodes a MotorolaCallAlertPDU. data holds the
-// 64 bits of the PDU packed, the first bit in the most significant bit of
-// data[0].
 func decodeMotorolaCallAlertPDU(data [8]byte) MotorolaCallAlertPDU {
 	var result MotorolaCallAlertPDU
 	result.Reserved = uint16(uint64(data[0])<<8 | uint64(data[1]))
@@ -95,10 +88,6 @@ func (s *MotorolaCallAlertPDU) Encode() ([8]byte, error) {
 func (s *MotorolaCallAlertPDU) String() string {
 	return "MotorolaCallAlertPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
-
-// decodeMotorolaCallAlertAckPDU decodes a MotorolaCallAlertAckPDU. data
-// holds the 64 bits of the PDU packed, the first bit in the most significant
-// bit of data[0].
 func decodeMotorolaCallAlertAckPDU(data [8]byte) MotorolaCallAlertAckPDU {
 	var result MotorolaCallAlertAckPDU
 	result.Request = uint8(uint64(data[0]))
@@ -137,8 +126,6 @@ func (s *MotorolaCallAlertAckPDU) String() string {
 	return "MotorolaCallAlertAckPDU{ Request: " + text.Int(int64(s.Request)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errMotorolaRadioCheckPDUReserved2Range = &dmrgo.FieldRangeError{
 		Bits:  7,

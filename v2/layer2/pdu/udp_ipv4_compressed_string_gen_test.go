@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *UDPIPv4CompressedHeader) fmtString() string {
 	return fmt.Sprintf("UDPIPv4CompressedHeader{ IPv4Identification: %d, SAID: %d, DAID: %d, HeaderCompressionOpcode: %d, SPID: %d, DPID: %d, ExtendedHeader1: %d, ExtendedHeader2: %d }", s.IPv4Identification, s.SAID, s.DAID, s.HeaderCompressionOpcode, s.SPID, s.DPID, s.ExtendedHeader1, s.ExtendedHeader2)
 }

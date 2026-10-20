@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *TACT) fmtString() string {
 	return fmt.Sprintf("TACT{ AccessType: %t, TDMAChannel: %t, LCSS: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.AccessType, s.TDMAChannel, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

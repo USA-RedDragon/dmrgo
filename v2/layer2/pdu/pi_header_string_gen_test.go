@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *PIHeader) fmtString() string {
 	return fmt.Sprintf("PIHeader{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, AlgorithmID: %d, MFID: %d, KeyID: %d, MessageIndicator: %d, Destination: %d, Raw: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.AlgorithmID, s.MFID, s.KeyID, s.MessageIndicator, s.Destination, s.Raw)
 }

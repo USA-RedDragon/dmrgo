@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *FullLinkControl) fmtString() string {
 	_ret := "FullLinkControl{ "
 	_ret += fmt.Sprintf("BurstDataType: %v, ProtectFlag: %t, Reserved: %t, FLCO: %v, FID: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.BurstDataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
@@ -37,7 +36,6 @@ func TestFullLinkControlStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*FullLinkControl).String, (*FullLinkControl).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *FLCGroupVoice) fmtString() string {
 	return fmt.Sprintf("FLCGroupVoice{ ServiceOptions: %s, GroupAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.GroupAddress, s.SourceAddress)
 }
@@ -47,7 +45,6 @@ func TestFLCGroupVoiceStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*FLCGroupVoice).String, (*FLCGroupVoice).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *FLCUnitToUnit) fmtString() string {
 	return fmt.Sprintf("FLCUnitToUnit{ ServiceOptions: %s, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.TargetAddress, s.SourceAddress)
 }
@@ -57,7 +54,6 @@ func TestFLCUnitToUnitStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*FLCUnitToUnit).String, (*FLCUnitToUnit).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *FLCGPSInfo) fmtString() string {
 	return fmt.Sprintf("FLCGPSInfo{ Reserved: %d, PositionError: %s, Longitude: %f, Latitude: %f }", s.Reserved, s.PositionError, s.Longitude, s.Latitude)
 }
@@ -67,7 +63,6 @@ func TestFLCGPSInfoStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*FLCGPSInfo).String, (*FLCGPSInfo).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *FLCTalkerAliasHeader) fmtString() string {
 	return fmt.Sprintf("FLCTalkerAliasHeader{ TalkerAliasDataFormat: %s, TalkerAliasDataLength: %d, TalkerAliasData: %d }", s.TalkerAliasDataFormat, s.TalkerAliasDataLength, s.TalkerAliasData)
 }
@@ -77,7 +72,6 @@ func TestFLCTalkerAliasHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*FLCTalkerAliasHeader).String, (*FLCTalkerAliasHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *FLCTalkerAliasBlock) fmtString() string {
 	return fmt.Sprintf("FLCTalkerAliasBlock{ TalkerAliasData: %v }", s.TalkerAliasData)
 }
@@ -87,7 +81,6 @@ func TestFLCTalkerAliasBlockStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*FLCTalkerAliasBlock).String, (*FLCTalkerAliasBlock).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *FLCTerminatorDataLinkControl) fmtString() string {
 	return fmt.Sprintf("FLCTerminatorDataLinkControl{ LLIDDestination: %d, LLIDSource: %d, GroupOrIndividual: %t, ResponseRequested: %t, FullMessageFlag: %t, Reserved: %t, ReSynchronizeFlag: %t, SendSequenceNumber: %d }", s.LLIDDestination, s.LLIDSource, s.GroupOrIndividual, s.ResponseRequested, s.FullMessageFlag, s.Reserved, s.ReSynchronizeFlag, s.SendSequenceNumber)
 }

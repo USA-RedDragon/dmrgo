@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *MotorolaRadioCheckPDU) fmtString() string {
 	return fmt.Sprintf("MotorolaRadioCheckPDU{ Reserved: %d, Answer: %t, Reserved2: %d, RequesterAddress: %d, CheckedAddress: %d }", s.Reserved, s.Answer, s.Reserved2, s.RequesterAddress, s.CheckedAddress)
 }
@@ -18,7 +17,6 @@ func TestMotorolaRadioCheckPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*MotorolaRadioCheckPDU).String, (*MotorolaRadioCheckPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *MotorolaCallAlertPDU) fmtString() string {
 	return fmt.Sprintf("MotorolaCallAlertPDU{ Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.TargetAddress, s.SourceAddress)
 }
@@ -28,7 +26,6 @@ func TestMotorolaCallAlertPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*MotorolaCallAlertPDU).String, (*MotorolaCallAlertPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *MotorolaCallAlertAckPDU) fmtString() string {
 	return fmt.Sprintf("MotorolaCallAlertAckPDU{ Request: %d, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.Request, s.Reserved, s.TargetAddress, s.SourceAddress)
 }

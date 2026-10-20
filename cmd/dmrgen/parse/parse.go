@@ -47,7 +47,6 @@ var CRCWidths = map[string]int{
 	"crc_8":     8,
 }
 
-// specRefRe matches the first parenthesized ETSI citation of a doc comment.
 var specRefRe = regexp.MustCompile(`\((ETSI TS [^()]*)\)`)
 
 // Guard is a comparison of a struct field against a literal value.
@@ -524,7 +523,6 @@ func parseGuard(spec string) (*Guard, error) {
 	return &g, nil
 }
 
-// parseTag parses a single dmr struct tag into a Field.
 func parseTag(fieldName, tag, goType string, baseTypes map[string]string) (Field, error) {
 	f := Field{Name: fieldName}
 	resolveType(&f, goType, baseTypes)
@@ -547,7 +545,6 @@ func parseTag(fieldName, tag, goType string, baseTypes map[string]string) (Field
 	return f, validateField(&f)
 }
 
-// modifierSet records modifiers whose validity depends on the final kind.
 type modifierSet struct {
 	semType bool
 }
@@ -734,7 +731,6 @@ func validateModifiers(f *Field) error {
 	return nil
 }
 
-// allowsNonContiguous reports whether a field kind supports A+S-E ranges.
 func allowsNonContiguous(f *Field) bool {
 	switch f.Kind {
 	case FieldUint, FieldInt, FieldEnum:
@@ -915,8 +911,6 @@ func checkGuard(pdu *PDUStruct, g *Guard) error {
 	return nil
 }
 
-// checkGuardField verifies that name is set before the dispatch switch runs:
-// either a regular decoded field or a declared dmr:input.
 func checkGuardField(pdu *PDUStruct, name string) error {
 	f := pdu.FieldByName(name)
 	switch {
@@ -958,8 +952,6 @@ func checkOverlap(pdu *PDUStruct) error {
 	return nil
 }
 
-// checkCoverage verifies that a field, the CRC or a dmr:const covers every
-// input bit, so that decode then encode keeps every bit.
 func checkCoverage(pdu *PDUStruct) error {
 	covered := make([]bool, pdu.InputSize)
 	mark := func(r [2]int) {
@@ -1005,8 +997,6 @@ func checkCoverage(pdu *PDUStruct) error {
 	return nil
 }
 
-// checkFECField verifies that a PDU has an FEC fec.Result field exactly
-// when a dmr:fec or dmr:crc directive gives its decoder a result to report.
 func checkFECField(pdu *PDUStruct) error {
 	f := pdu.FieldByName("FEC")
 	hasField := f != nil && f.Skip && f.GoType == "fec.Result"
@@ -1050,7 +1040,6 @@ func checkCRCRange(pdu *PDUStruct) error {
 	return nil
 }
 
-// parseBitRange parses "S-E" into (start, end) or a single number "N" into (N, N).
 func parseBitRange(s string) (int, int, error) {
 	startStr, endStr, isRange := strings.Cut(s, "-")
 	start, err := strconv.Atoi(startStr)
@@ -1073,7 +1062,6 @@ func parseBitRange(s string) (int, int, error) {
 	return start, end, nil
 }
 
-// classifyFieldKind picks the default FieldKind from the resolved base type.
 func classifyFieldKind(baseType string) FieldKind {
 	switch {
 	case baseType == typeBool:
@@ -1153,8 +1141,6 @@ func resolveBase(name string, baseTypes map[string]string) string {
 	return ""
 }
 
-// packageBaseTypes collects "type X Y" declarations (Y an identifier) from
-// every non-test Go file in the directory of filePath.
 func packageBaseTypes(filePath string, node *ast.File) map[string]string {
 	types := map[string]string{}
 	collectBaseTypes(node, types)
@@ -1199,7 +1185,6 @@ func collectBaseTypes(node *ast.File, types map[string]string) {
 	}
 }
 
-// typeString converts an ast.Expr to a Go type string.
 func typeString(expr ast.Expr) string {
 	switch t := expr.(type) {
 	case *ast.Ident:

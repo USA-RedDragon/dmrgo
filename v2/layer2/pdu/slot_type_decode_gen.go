@@ -56,8 +56,6 @@ func (s *SlotType) String() string {
 	return "SlotType{ ColorCode: " + text.Int(int64(s.ColorCode)) + ", DataType: " + s.DataType.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errSlotTypeColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  4,

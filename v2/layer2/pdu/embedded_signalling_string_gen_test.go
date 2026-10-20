@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *EmbeddedSignalling) fmtString() string {
 	return fmt.Sprintf("EmbeddedSignalling{ ColorCode: %d, PreemptionAndPowerControlIndicator: %t, LCSS: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.PreemptionAndPowerControlIndicator, s.LCSS, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

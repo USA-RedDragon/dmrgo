@@ -47,8 +47,6 @@ func (s *UnifiedSingleBlockData) String() string {
 	return "UnifiedSingleBlockData{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, ServiceType: " + text.Int(int64(s.ServiceType)) + ", Payload: " + text.Hex(s.Payload[:]) + " }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errUnifiedSingleBlockDataServiceTypeRange = &dmrgo.FieldRangeError{
 		Bits:  4,

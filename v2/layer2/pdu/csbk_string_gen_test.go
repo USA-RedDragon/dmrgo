@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *BSOutboundActivationPDU) fmtString() string {
 	return fmt.Sprintf("BSOutboundActivationPDU{ Reserved: %d, BSAddress: %d, SourceAddress: %d }", s.Reserved, s.BSAddress, s.SourceAddress)
 }
@@ -18,7 +17,6 @@ func TestBSOutboundActivationPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*BSOutboundActivationPDU).String, (*BSOutboundActivationPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *UnitToUnitVoiceServiceRequestPDU) fmtString() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: %s, Reserved: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.Reserved, s.TargetAddress, s.SourceAddress)
 }
@@ -28,7 +26,6 @@ func TestUnitToUnitVoiceServiceRequestPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*UnitToUnitVoiceServiceRequestPDU).String, (*UnitToUnitVoiceServiceRequestPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *UnitToUnitVoiceServiceAnswerResponsePDU) fmtString() string {
 	return fmt.Sprintf("UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: %s, AnswerResponse: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions.String(), s.AnswerResponse, s.TargetAddress, s.SourceAddress)
 }
@@ -38,7 +35,6 @@ func TestUnitToUnitVoiceServiceAnswerResponsePDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*UnitToUnitVoiceServiceAnswerResponsePDU).String, (*UnitToUnitVoiceServiceAnswerResponsePDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *NegativeAcknowledgementPDU) fmtString() string {
 	return fmt.Sprintf("NegativeAcknowledgementPDU{ AdditionalInfo: %s, SourceType: %s, ServiceType: %d, ReasonCode: %d, SourceAddress: %d, TargetAddress: %d }", s.AdditionalInfo, s.SourceType, s.ServiceType, s.ReasonCode, s.SourceAddress, s.TargetAddress)
 }
@@ -48,7 +44,6 @@ func TestNegativeAcknowledgementPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*NegativeAcknowledgementPDU).String, (*NegativeAcknowledgementPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *PreamblePDU) fmtString() string {
 	return fmt.Sprintf("PreamblePDU{ Data: %t, Group: %t, Reserved: %d, CSBKBlocksToFollow: %d, TargetAddress: %d, SourceAddress: %d }", s.Data, s.Group, s.Reserved, s.CSBKBlocksToFollow, s.TargetAddress, s.SourceAddress)
 }
@@ -58,7 +53,6 @@ func TestPreamblePDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*PreamblePDU).String, (*PreamblePDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ChannelTimingPDU) fmtString() string {
 	return fmt.Sprintf("ChannelTimingPDU{ SyncAge: %d, Generation: %d, LeaderIdentifier: %d, NewLeader: %t, LeaderDynamicIdentifier: %d, ChannelTimingOp1: %t, SourceIdentifier: %d, Reserved: %t, SourceDynamicIdentifier: %d, ChannelTimingOp0: %t }", s.SyncAge, s.Generation, s.LeaderIdentifier, s.NewLeader, s.LeaderDynamicIdentifier, s.ChannelTimingOp1, s.SourceIdentifier, s.Reserved, s.SourceDynamicIdentifier, s.ChannelTimingOp0)
 }
@@ -68,7 +62,6 @@ func TestChannelTimingPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ChannelTimingPDU).String, (*ChannelTimingPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *PrivateVoiceGrantPDU) fmtString() string {
 	return fmt.Sprintf("PrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -78,7 +71,6 @@ func TestPrivateVoiceGrantPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*PrivateVoiceGrantPDU).String, (*PrivateVoiceGrantPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *TalkgroupVoiceGrantPDU) fmtString() string {
 	return fmt.Sprintf("TalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -88,7 +80,6 @@ func TestTalkgroupVoiceGrantPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*TalkgroupVoiceGrantPDU).String, (*TalkgroupVoiceGrantPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *BroadcastTalkgroupVoiceGrantPDU) fmtString() string {
 	return fmt.Sprintf("BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, LateEntry: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.LateEntry, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -98,7 +89,6 @@ func TestBroadcastTalkgroupVoiceGrantPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*BroadcastTalkgroupVoiceGrantPDU).String, (*BroadcastTalkgroupVoiceGrantPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *PrivateDataGrantPDU) fmtString() string {
 	return fmt.Sprintf("PrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -108,7 +98,6 @@ func TestPrivateDataGrantPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*PrivateDataGrantPDU).String, (*PrivateDataGrantPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *TalkgroupDataGrantPDU) fmtString() string {
 	return fmt.Sprintf("TalkgroupDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -118,7 +107,6 @@ func TestTalkgroupDataGrantPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*TalkgroupDataGrantPDU).String, (*TalkgroupDataGrantPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *DuplexPrivateVoiceGrantPDU) fmtString() string {
 	return fmt.Sprintf("DuplexPrivateVoiceGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, Reserved: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.Reserved, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
@@ -128,7 +116,6 @@ func TestDuplexPrivateVoiceGrantPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*DuplexPrivateVoiceGrantPDU).String, (*DuplexPrivateVoiceGrantPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *DuplexPrivateDataGrantPDU) fmtString() string {
 	return fmt.Sprintf("DuplexPrivateDataGrantPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, CallDirection: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.CallDirection, s.TargetAddress, s.SourceAddress)
 }
@@ -138,7 +125,6 @@ func TestDuplexPrivateDataGrantPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*DuplexPrivateDataGrantPDU).String, (*DuplexPrivateDataGrantPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *PrivateDataGrantMultiItemPDU) fmtString() string {
 	return fmt.Sprintf("PrivateDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -148,7 +134,6 @@ func TestPrivateDataGrantMultiItemPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*PrivateDataGrantMultiItemPDU).String, (*PrivateDataGrantMultiItemPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *TalkgroupDataGrantMultiItemPDU) fmtString() string {
 	return fmt.Sprintf("TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: %d, LogicalChannel: %t, HiRate: %t, Emergency: %t, Offset: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.LogicalChannel, s.HiRate, s.Emergency, s.Offset, s.TargetAddress, s.SourceAddress)
 }
@@ -158,7 +143,6 @@ func TestTalkgroupDataGrantMultiItemPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*TalkgroupDataGrantMultiItemPDU).String, (*TalkgroupDataGrantMultiItemPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *MovePDU) fmtString() string {
 	return fmt.Sprintf("MovePDU{ Reserved1: %d, Mask: %d, Reserved2: %d, Reg: %t, Backoff: %d, Reserved3: %d, PhysicalChannel: %d, MSAddress: %d }", s.Reserved1, s.Mask, s.Reserved2, s.Reg, s.Backoff, s.Reserved3, s.PhysicalChannel, s.MSAddress)
 }
@@ -168,7 +152,6 @@ func TestMovePDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*MovePDU).String, (*MovePDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *AlohaPDU) fmtString() string {
 	return fmt.Sprintf("AlohaPDU{ Reserved1: %t, TSCCAS: %t, SiteTSSync: %t, Version: %d, Offset: %t, ActiveConn: %t, Mask: %d, ServiceFunc: %d, NRandWait: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSAddress: %d }", s.Reserved1, s.TSCCAS, s.SiteTSSync, s.Version, s.Offset, s.ActiveConn, s.Mask, s.ServiceFunc, s.NRandWait, s.Reg, s.Backoff, s.SysIdentCode, s.MSAddress)
 }
@@ -178,7 +161,6 @@ func TestAlohaPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*AlohaPDU).String, (*AlohaPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *BroadcastPDU) fmtString() string {
 	return fmt.Sprintf("BroadcastPDU{ AnnouncementType: %v, BroadcastParms1: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, BroadcastParms2: %d }", s.AnnouncementType, s.BroadcastParms1, s.Reg, s.Backoff, s.SysIdentCode, s.BroadcastParms2)
 }
@@ -188,7 +170,6 @@ func TestBroadcastPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*BroadcastPDU).String, (*BroadcastPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ClearPDU) fmtString() string {
 	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
@@ -198,7 +179,6 @@ func TestClearPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ClearPDU).String, (*ClearPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ProtectPDU) fmtString() string {
 	return fmt.Sprintf("ProtectPDU{ Reserved: %d, ProtectKind: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.ProtectKind, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
 }
@@ -208,7 +188,6 @@ func TestProtectPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ProtectPDU).String, (*ProtectPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *AhoyPDU) fmtString() string {
 	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, GroupIndividual: %t, AppendedBlocks: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.GroupIndividual, s.AppendedBlocks, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
@@ -218,7 +197,6 @@ func TestAhoyPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*AhoyPDU).String, (*AhoyPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *AckOutboundPDU) fmtString() string {
 	return fmt.Sprintf("AckOutboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -228,7 +206,6 @@ func TestAckOutboundPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*AckOutboundPDU).String, (*AckOutboundPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *AckInboundPDU) fmtString() string {
 	return fmt.Sprintf("AckInboundPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -238,7 +215,6 @@ func TestAckInboundPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*AckInboundPDU).String, (*AckInboundPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *AckOutboundPayloadPDU) fmtString() string {
 	return fmt.Sprintf("AckOutboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -248,7 +224,6 @@ func TestAckOutboundPayloadPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*AckOutboundPayloadPDU).String, (*AckOutboundPayloadPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *AckInboundPayloadPDU) fmtString() string {
 	return fmt.Sprintf("AckInboundPayloadPDU{ ResponseInfo: %d, ReasonCode: %d, Reserved: %t, TargetAddress: %d, AdditionalInfo: %d }", s.ResponseInfo, s.ReasonCode, s.Reserved, s.TargetAddress, s.AdditionalInfo)
 }
@@ -258,7 +233,6 @@ func TestAckInboundPayloadPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*AckInboundPayloadPDU).String, (*AckInboundPayloadPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *RandomAccessPDU) fmtString() string {
 	return fmt.Sprintf("RandomAccessPDU{ ServiceOptions: %d, ProxyFlag: %t, Reserved: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptions, s.ProxyFlag, s.Reserved, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
@@ -268,7 +242,6 @@ func TestRandomAccessPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*RandomAccessPDU).String, (*RandomAccessPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *AckvitationPDU) fmtString() string {
 	return fmt.Sprintf("AckvitationPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, Reserved: %d, UAB: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.Reserved, s.UAB, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
@@ -278,7 +251,6 @@ func TestAckvitationPDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*AckvitationPDU).String, (*AckvitationPDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *MaintenancePDU) fmtString() string {
 	return fmt.Sprintf("MaintenancePDU{ Reserved: %d, MaintKind: %d, Reserved2: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.MaintKind, s.Reserved2, s.TargetAddress, s.SourceAddress)
 }
@@ -288,7 +260,6 @@ func TestMaintenancePDUStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*MaintenancePDU).String, (*MaintenancePDU).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *CSBK) fmtString() string {
 	_ret := "CSBK{ "
 	_ret += fmt.Sprintf("LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.LastBlock, s.ProtectFlag, s.Opcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)

@@ -33,9 +33,7 @@ import (
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// decodeBSOutboundActivationPDU decodes a BSOutboundActivationPDU. data
-// holds the 64 bits of the PDU packed, the first bit in the most significant
-// bit of data[0]. (ETSI TS 102 361-2 clause 7.1.2.1)
+// ETSI TS 102 361-2 clause 7.1.2.1
 func decodeBSOutboundActivationPDU(data [8]byte) BSOutboundActivationPDU {
 	var result BSOutboundActivationPDU
 	result.Reserved = uint16(uint64(data[0])<<8 | uint64(data[1]))
@@ -75,10 +73,7 @@ func (s *BSOutboundActivationPDU) String() string {
 	return "BSOutboundActivationPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", BSAddress: " + text.Int(int64(s.BSAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeUnitToUnitVoiceServiceRequestPDU decodes a
-// UnitToUnitVoiceServiceRequestPDU. data holds the 64 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-2 clause 7.1.2.2)
+// ETSI TS 102 361-2 clause 7.1.2.2
 func decodeUnitToUnitVoiceServiceRequestPDU(data [8]byte) UnitToUnitVoiceServiceRequestPDU {
 	var result UnitToUnitVoiceServiceRequestPDU
 	var _serviceOptionsBytes [1]byte
@@ -124,10 +119,7 @@ func (s *UnitToUnitVoiceServiceRequestPDU) String() string {
 	return "UnitToUnitVoiceServiceRequestPDU{ ServiceOptions: " + s.ServiceOptions.String() + ", Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeUnitToUnitVoiceServiceAnswerResponsePDU decodes a
-// UnitToUnitVoiceServiceAnswerResponsePDU. data holds the 64 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-2 clause 7.1.2.3)
+// ETSI TS 102 361-2 clause 7.1.2.3
 func decodeUnitToUnitVoiceServiceAnswerResponsePDU(data [8]byte) UnitToUnitVoiceServiceAnswerResponsePDU {
 	var result UnitToUnitVoiceServiceAnswerResponsePDU
 	var _serviceOptionsBytes [1]byte
@@ -173,9 +165,7 @@ func (s *UnitToUnitVoiceServiceAnswerResponsePDU) String() string {
 	return "UnitToUnitVoiceServiceAnswerResponsePDU{ ServiceOptions: " + s.ServiceOptions.String() + ", AnswerResponse: " + text.Int(int64(s.AnswerResponse)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeNegativeAcknowledgementPDU decodes a NegativeAcknowledgementPDU.
-// data holds the 64 bits of the PDU packed, the first bit in the most
-// significant bit of data[0]. (ETSI TS 102 361-2 clause 7.1.2.4)
+// ETSI TS 102 361-2 clause 7.1.2.4
 func decodeNegativeAcknowledgementPDU(data [8]byte) NegativeAcknowledgementPDU {
 	var result NegativeAcknowledgementPDU
 	result.AdditionalInfo = layer3.AdditionalInformationField(uint64(data[0]) >> 7)
@@ -228,9 +218,7 @@ func (s *NegativeAcknowledgementPDU) String() string {
 	return "NegativeAcknowledgementPDU{ AdditionalInfo: " + s.AdditionalInfo.String() + ", SourceType: " + s.SourceType.String() + ", ServiceType: " + text.Int(int64(s.ServiceType)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + " }"
 }
 
-// decodePreamblePDU decodes a PreamblePDU. data holds the 64 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-2 clause 7.1.2.5)
+// ETSI TS 102 361-2 clause 7.1.2.5
 func decodePreamblePDU(data [8]byte) PreamblePDU {
 	var result PreamblePDU
 	result.Data = data[0]&0x80 != 0
@@ -280,9 +268,7 @@ func (s *PreamblePDU) String() string {
 	return "PreamblePDU{ Data: " + text.Bool(s.Data) + ", Group: " + text.Bool(s.Group) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", CSBKBlocksToFollow: " + text.Int(int64(s.CSBKBlocksToFollow)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeChannelTimingPDU decodes a ChannelTimingPDU. data holds the 64 bits
-// of the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8)
+// ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8
 func decodeChannelTimingPDU(data [8]byte) ChannelTimingPDU {
 	var result ChannelTimingPDU
 	result.SyncAge = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 5)
@@ -356,9 +342,7 @@ func (s *ChannelTimingPDU) String() string {
 	return "ChannelTimingPDU{ SyncAge: " + text.Int(int64(s.SyncAge)) + ", Generation: " + text.Int(int64(s.Generation)) + ", LeaderIdentifier: " + text.Int(int64(s.LeaderIdentifier)) + ", NewLeader: " + text.Bool(s.NewLeader) + ", LeaderDynamicIdentifier: " + text.Int(int64(s.LeaderDynamicIdentifier)) + ", ChannelTimingOp1: " + text.Bool(s.ChannelTimingOp1) + ", SourceIdentifier: " + text.Int(int64(s.SourceIdentifier)) + ", Reserved: " + text.Bool(s.Reserved) + ", SourceDynamicIdentifier: " + text.Int(int64(s.SourceDynamicIdentifier)) + ", ChannelTimingOp0: " + text.Bool(s.ChannelTimingOp0) + " }"
 }
 
-// decodePrivateVoiceGrantPDU decodes a PrivateVoiceGrantPDU. data holds the
-// 64 bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodePrivateVoiceGrantPDU(data [8]byte) PrivateVoiceGrantPDU {
 	var result PrivateVoiceGrantPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -417,9 +401,7 @@ func (s *PrivateVoiceGrantPDU) String() string {
 	return "PrivateVoiceGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", Reserved: " + text.Bool(s.Reserved) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeTalkgroupVoiceGrantPDU decodes a TalkgroupVoiceGrantPDU. data holds
-// the 64 bits of the PDU packed, the first bit in the most significant bit
-// of data[0]. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodeTalkgroupVoiceGrantPDU(data [8]byte) TalkgroupVoiceGrantPDU {
 	var result TalkgroupVoiceGrantPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -478,10 +460,7 @@ func (s *TalkgroupVoiceGrantPDU) String() string {
 	return "TalkgroupVoiceGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", LateEntry: " + text.Bool(s.LateEntry) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeBroadcastTalkgroupVoiceGrantPDU decodes a
-// BroadcastTalkgroupVoiceGrantPDU. data holds the 64 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodeBroadcastTalkgroupVoiceGrantPDU(data [8]byte) BroadcastTalkgroupVoiceGrantPDU {
 	var result BroadcastTalkgroupVoiceGrantPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -540,9 +519,7 @@ func (s *BroadcastTalkgroupVoiceGrantPDU) String() string {
 	return "BroadcastTalkgroupVoiceGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", LateEntry: " + text.Bool(s.LateEntry) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodePrivateDataGrantPDU decodes a PrivateDataGrantPDU. data holds the 64
-// bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodePrivateDataGrantPDU(data [8]byte) PrivateDataGrantPDU {
 	var result PrivateDataGrantPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -601,9 +578,7 @@ func (s *PrivateDataGrantPDU) String() string {
 	return "PrivateDataGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeTalkgroupDataGrantPDU decodes a TalkgroupDataGrantPDU. data holds
-// the 64 bits of the PDU packed, the first bit in the most significant bit
-// of data[0]. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodeTalkgroupDataGrantPDU(data [8]byte) TalkgroupDataGrantPDU {
 	var result TalkgroupDataGrantPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -662,9 +637,7 @@ func (s *TalkgroupDataGrantPDU) String() string {
 	return "TalkgroupDataGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeDuplexPrivateVoiceGrantPDU decodes a DuplexPrivateVoiceGrantPDU.
-// data holds the 64 bits of the PDU packed, the first bit in the most
-// significant bit of data[0]. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodeDuplexPrivateVoiceGrantPDU(data [8]byte) DuplexPrivateVoiceGrantPDU {
 	var result DuplexPrivateVoiceGrantPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -723,9 +696,7 @@ func (s *DuplexPrivateVoiceGrantPDU) String() string {
 	return "DuplexPrivateVoiceGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", Reserved: " + text.Bool(s.Reserved) + ", Emergency: " + text.Bool(s.Emergency) + ", CallDirection: " + text.Bool(s.CallDirection) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeDuplexPrivateDataGrantPDU decodes a DuplexPrivateDataGrantPDU. data
-// holds the 64 bits of the PDU packed, the first bit in the most significant
-// bit of data[0]. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodeDuplexPrivateDataGrantPDU(data [8]byte) DuplexPrivateDataGrantPDU {
 	var result DuplexPrivateDataGrantPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -784,9 +755,7 @@ func (s *DuplexPrivateDataGrantPDU) String() string {
 	return "DuplexPrivateDataGrantPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", CallDirection: " + text.Bool(s.CallDirection) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodePrivateDataGrantMultiItemPDU decodes a PrivateDataGrantMultiItemPDU.
-// data holds the 64 bits of the PDU packed, the first bit in the most
-// significant bit of data[0]. (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodePrivateDataGrantMultiItemPDU(data [8]byte) PrivateDataGrantMultiItemPDU {
 	var result PrivateDataGrantMultiItemPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -845,10 +814,7 @@ func (s *PrivateDataGrantMultiItemPDU) String() string {
 	return "PrivateDataGrantMultiItemPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeTalkgroupDataGrantMultiItemPDU decodes a
-// TalkgroupDataGrantMultiItemPDU. data holds the 64 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
+// ETSI TS 102 361-4 clause 7.1.1.1.1
 func decodeTalkgroupDataGrantMultiItemPDU(data [8]byte) TalkgroupDataGrantMultiItemPDU {
 	var result TalkgroupDataGrantMultiItemPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -907,9 +873,7 @@ func (s *TalkgroupDataGrantMultiItemPDU) String() string {
 	return "TalkgroupDataGrantMultiItemPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", LogicalChannel: " + text.Bool(s.LogicalChannel) + ", HiRate: " + text.Bool(s.HiRate) + ", Emergency: " + text.Bool(s.Emergency) + ", Offset: " + text.Bool(s.Offset) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeMovePDU decodes a MovePDU. data holds the 64 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.3)
+// ETSI TS 102 361-4 clause 7.1.1.1.3
 func decodeMovePDU(data [8]byte) MovePDU {
 	var result MovePDU
 	result.Reserved1 = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 7)
@@ -976,9 +940,7 @@ func (s *MovePDU) String() string {
 	return "MovePDU{ Reserved1: " + text.Int(int64(s.Reserved1)) + ", Mask: " + text.Int(int64(s.Mask)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", Reserved3: " + text.Int(int64(s.Reserved3)) + ", PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", MSAddress: " + text.Int(int64(s.MSAddress)) + " }"
 }
 
-// decodeAlohaPDU decodes an AlohaPDU. data holds the 64 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.4)
+// ETSI TS 102 361-4 clause 7.1.1.1.4
 func decodeAlohaPDU(data [8]byte) AlohaPDU {
 	var result AlohaPDU
 	result.Reserved1 = data[0]&0x80 != 0
@@ -1061,9 +1023,7 @@ func (s *AlohaPDU) String() string {
 	return "AlohaPDU{ Reserved1: " + text.Bool(s.Reserved1) + ", TSCCAS: " + text.Bool(s.TSCCAS) + ", SiteTSSync: " + text.Bool(s.SiteTSSync) + ", Version: " + text.Int(int64(s.Version)) + ", Offset: " + text.Bool(s.Offset) + ", ActiveConn: " + text.Bool(s.ActiveConn) + ", Mask: " + text.Int(int64(s.Mask)) + ", ServiceFunc: " + text.Int(int64(s.ServiceFunc)) + ", NRandWait: " + text.Int(int64(s.NRandWait)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", MSAddress: " + text.Int(int64(s.MSAddress)) + " }"
 }
 
-// decodeBroadcastPDU decodes a BroadcastPDU. data holds the 64 bits of the
-// PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20, clause 7.2.19)
+// ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20, clause 7.2.19
 func decodeBroadcastPDU(data [8]byte) BroadcastPDU {
 	var result BroadcastPDU
 	result.AnnouncementType = enums.AnnouncementType(uint64(data[0]) >> 3)
@@ -1117,9 +1077,7 @@ func (s *BroadcastPDU) String() string {
 	return "BroadcastPDU{ AnnouncementType: " + s.AnnouncementType.String() + ", BroadcastParms1: " + text.Int(int64(s.BroadcastParms1)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", BroadcastParms2: " + text.Int(int64(s.BroadcastParms2)) + " }"
 }
 
-// decodeClearPDU decodes a ClearPDU. data holds the 64 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.3.2)
+// ETSI TS 102 361-4 clause 7.1.1.3.2
 func decodeClearPDU(data [8]byte) ClearPDU {
 	var result ClearPDU
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -1174,9 +1132,7 @@ func (s *ClearPDU) String() string {
 	return "ClearPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", Reserved1: " + text.Bool(s.Reserved1) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeProtectPDU decodes a ProtectPDU. data holds the 64 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.3.3)
+// ETSI TS 102 361-4 clause 7.1.1.3.3
 func decodeProtectPDU(data [8]byte) ProtectPDU {
 	var result ProtectPDU
 	result.Reserved = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -1228,9 +1184,7 @@ func (s *ProtectPDU) String() string {
 	return "ProtectPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", ProtectKind: " + text.Int(int64(s.ProtectKind)) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeAhoyPDU decodes an AhoyPDU. data holds the 64 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4)
+// ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4
 func decodeAhoyPDU(data [8]byte) AhoyPDU {
 	var result AhoyPDU
 	result.ServiceOptsMirror = uint8(uint64(data[0]) >> 1)
@@ -1293,9 +1247,7 @@ func (s *AhoyPDU) String() string {
 	return "AhoyPDU{ ServiceOptsMirror: " + text.Int(int64(s.ServiceOptsMirror)) + ", ServiceKindFlag: " + text.Bool(s.ServiceKindFlag) + ", ALS: " + text.Bool(s.ALS) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", ServiceKind: " + text.Int(int64(s.ServiceKind)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeAckOutboundPDU decodes an AckOutboundPDU. data holds the 64 bits of
-// the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.7)
+// ETSI TS 102 361-4 clause 7.1.1.1.7
 func decodeAckOutboundPDU(data [8]byte) AckOutboundPDU {
 	var result AckOutboundPDU
 	result.ResponseInfo = uint8(uint64(data[0]) >> 1)
@@ -1344,9 +1296,7 @@ func (s *AckOutboundPDU) String() string {
 	return "AckOutboundPDU{ ResponseInfo: " + text.Int(int64(s.ResponseInfo)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", AdditionalInfo: " + text.Int(int64(s.AdditionalInfo)) + " }"
 }
 
-// decodeAckInboundPDU decodes an AckInboundPDU. data holds the 64 bits of
-// the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.2.3)
+// ETSI TS 102 361-4 clause 7.1.1.2.3
 func decodeAckInboundPDU(data [8]byte) AckInboundPDU {
 	var result AckInboundPDU
 	result.ResponseInfo = uint8(uint64(data[0]) >> 1)
@@ -1395,9 +1345,7 @@ func (s *AckInboundPDU) String() string {
 	return "AckInboundPDU{ ResponseInfo: " + text.Int(int64(s.ResponseInfo)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", AdditionalInfo: " + text.Int(int64(s.AdditionalInfo)) + " }"
 }
 
-// decodeAckOutboundPayloadPDU decodes an AckOutboundPayloadPDU. data holds
-// the 64 bits of the PDU packed, the first bit in the most significant bit
-// of data[0]. (ETSI TS 102 361-4 clause 7.1.1.3.5)
+// ETSI TS 102 361-4 clause 7.1.1.3.5
 func decodeAckOutboundPayloadPDU(data [8]byte) AckOutboundPayloadPDU {
 	var result AckOutboundPayloadPDU
 	result.ResponseInfo = uint8(uint64(data[0]) >> 1)
@@ -1446,9 +1394,7 @@ func (s *AckOutboundPayloadPDU) String() string {
 	return "AckOutboundPayloadPDU{ ResponseInfo: " + text.Int(int64(s.ResponseInfo)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", AdditionalInfo: " + text.Int(int64(s.AdditionalInfo)) + " }"
 }
 
-// decodeAckInboundPayloadPDU decodes an AckInboundPayloadPDU. data holds the
-// 64 bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-4 clause 7.1.1.4.2)
+// ETSI TS 102 361-4 clause 7.1.1.4.2
 func decodeAckInboundPayloadPDU(data [8]byte) AckInboundPayloadPDU {
 	var result AckInboundPayloadPDU
 	result.ResponseInfo = uint8(uint64(data[0]) >> 1)
@@ -1497,9 +1443,7 @@ func (s *AckInboundPayloadPDU) String() string {
 	return "AckInboundPayloadPDU{ ResponseInfo: " + text.Int(int64(s.ResponseInfo)) + ", ReasonCode: " + text.Int(int64(s.ReasonCode)) + ", Reserved: " + text.Bool(s.Reserved) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", AdditionalInfo: " + text.Int(int64(s.AdditionalInfo)) + " }"
 }
 
-// decodeRandomAccessPDU decodes a RandomAccessPDU. data holds the 64 bits of
-// the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.2.1)
+// ETSI TS 102 361-4 clause 7.1.1.2.1
 func decodeRandomAccessPDU(data [8]byte) RandomAccessPDU {
 	var result RandomAccessPDU
 	result.ServiceOptions = uint8(uint64(data[0]) >> 1)
@@ -1554,9 +1498,7 @@ func (s *RandomAccessPDU) String() string {
 	return "RandomAccessPDU{ ServiceOptions: " + text.Int(int64(s.ServiceOptions)) + ", ProxyFlag: " + text.Bool(s.ProxyFlag) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", ServiceKind: " + text.Int(int64(s.ServiceKind)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeAckvitationPDU decodes an AckvitationPDU. data holds the 64 bits of
-// the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.2.2)
+// ETSI TS 102 361-4 clause 7.1.1.2.2
 func decodeAckvitationPDU(data [8]byte) AckvitationPDU {
 	var result AckvitationPDU
 	result.ServiceOptsMirror = uint8(uint64(data[0]) >> 1)
@@ -1616,9 +1558,7 @@ func (s *AckvitationPDU) String() string {
 	return "AckvitationPDU{ ServiceOptsMirror: " + text.Int(int64(s.ServiceOptsMirror)) + ", ServiceKindFlag: " + text.Bool(s.ServiceKindFlag) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", UAB: " + text.Int(int64(s.UAB)) + ", ServiceKind: " + text.Int(int64(s.ServiceKind)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeMaintenancePDU decodes a MaintenancePDU. data holds the 64 bits of
-// the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.4.3)
+// ETSI TS 102 361-4 clause 7.1.1.4.3
 func decodeMaintenancePDU(data [8]byte) MaintenancePDU {
 	var result MaintenancePDU
 	result.Reserved = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -2374,8 +2314,6 @@ func (s *CSBK) String() string {
 	return _ret
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errBSOutboundActivationPDUBSAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,

@@ -38,9 +38,6 @@ type sourceFile struct {
 	n     int
 }
 
-// run parses every source file under v2Root, marks the sub-PDUs of each
-// package, which needs all files of the package, and then writes the
-// generated file of each source file.
 func run(v2Root string) error {
 	var files []sourceFile
 	pkgs := map[string][]parse.PDUStruct{}
