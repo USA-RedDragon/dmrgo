@@ -97,8 +97,11 @@ class qa_rx(gr_unittest.TestCase):
             self.skipTest("libdmrgo built without libcodec2")
         sink = blocks.vector_sink_f()
         self.tb.connect(rx, sink)
-        _, voice = self.run_rx(src, rx)
+        bursts, voice = self.run_rx(src, rx)
 
+        modes = [pmt.to_long(pmt.dict_ref(pmt.car(m), pmt.intern("codec2_mode"), pmt.PMT_NIL))
+                 for m in bursts if pmt.symbol_to_string(pmt.dict_ref(pmt.car(m), pmt.intern("kind"), pmt.PMT_NIL)) == "voice"]
+        self.assertEqual(modes, [0] + [2400] * 17)
         self.assertEqual(len(voice), 54)
         for m in voice:
             fid = pmt.to_long(pmt.dict_ref(pmt.car(m), pmt.intern("fid"), pmt.PMT_NIL))

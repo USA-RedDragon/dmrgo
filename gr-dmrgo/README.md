@@ -8,7 +8,7 @@ GNU Radio 3.10 blocks of [dmrgo](../README.md). The module is licensed under the
 
 `DMR Receiver` (`gnuradio.dmrgo.rx`) takes complex baseband at 48 kHz, or the output of an FM discriminator at 24, 12 or 9.6 kHz, and has these outputs:
 
-- `bursts`: one PDU per burst, with its timeslot, color code, kind, data type, superframe position, FEC results and call LC.
+- `bursts`: one PDU per burst, with its timeslot, color code, kind, data type, superframe position, FEC results, Codec2 mode and call LC.
 - `voice`: one PDU per AMBE+2 frame, with its bad-frame flag.
 - `audio`: 8 kHz audio of Codec2 calls (FID 0xC2, as QRadioLink sends). The block detects the Codec2 mode, 2400 or 3200, of each call. This output is optional.
 

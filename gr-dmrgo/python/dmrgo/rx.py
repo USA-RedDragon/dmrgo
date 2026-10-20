@@ -12,6 +12,7 @@ from . import ambe, libdmrgo
 AUDIO_RATE = 8000
 AUDIO_DELAY = 0.3
 KINDS = {libdmrgo.KIND_UNKNOWN: "unknown", libdmrgo.KIND_VOICE: "voice", libdmrgo.KIND_DATA: "data"}
+CODEC2_RATES = {libdmrgo.CODEC2_2400: 2400, libdmrgo.CODEC2_3200: 3200}
 
 
 class rx(gr.basic_block):
@@ -25,8 +26,9 @@ class rx(gr.basic_block):
     after FEC, and a dict with seconds, stream, slot, timeslot (1, 2 or 0
     when unknown), color_code (-1 when none), kind ("voice", "data" or
     "unknown"), data_type, voice_pos (0 to 5 for A to F, or -1),
-    sync_distance, fec_corrected, fec_bad, flags, and for a burst of a call
-    with a known LC src, dst, flco, fid and group.
+    sync_distance, fec_corrected, fec_bad, flags, codec2_mode (2400 or 3200
+    for a voice burst of a Codec2 call once the mode is known, else 0), and
+    for a burst of a call with a known LC src, dst, flco, fid and group.
 
     The "voice" message port sends one PDU per AMBE+2 frame of a voice
     burst: the 7 frame bytes, and a dict with timeslot, voice_pos, index (0
@@ -142,6 +144,7 @@ class rx(gr.basic_block):
             ("data_type", pmt.from_long(b.data_type)), ("voice_pos", pmt.from_long(b.voice_pos)),
             ("sync_distance", pmt.from_long(b.sync_distance)), ("fec_corrected", pmt.from_long(b.fec_corrected)),
             ("fec_bad", pmt.from_bool(bool(b.flags & libdmrgo.FLAG_FEC_BAD))), ("flags", pmt.from_long(b.flags)),
+            ("codec2_mode", pmt.from_long(CODEC2_RATES.get(b.codec2_mode, 0))),
         ] + lc
         for k, v in fields:
             meta = pmt.dict_add(meta, pmt.intern(k), v)

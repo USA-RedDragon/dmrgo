@@ -364,8 +364,10 @@ blocks:
               if src is not None:
                   group = "TG" if get("group", False) else "ID"
                   line += f"  {src} > {group} {dst}"
+                  c2 = get("codec2_mode", 0)
+                  codec = f"  Codec2 {c2}" if c2 else ""
                   self._relay.call.emit(ts, f"TS{ts}  {ccs}  {time.strftime('%H:%M:%S')}\nsrc {src}  ->  {group} {dst}\n"
-                                            f"FID 0x{get('fid', 0):02X}  {what}")
+                                            f"FID 0x{get('fid', 0):02X}{codec}  {what}")
               self._relay.line.emit(line)
   states:
     coordinate:

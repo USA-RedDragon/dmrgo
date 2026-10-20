@@ -26,6 +26,10 @@ FLAG_GROUP = 1 << 5
 FLAG_FEC_BAD = 1 << 6
 FLAG_END = 1 << 7
 
+CODEC2_NONE = 0
+CODEC2_2400 = 1
+CODEC2_3200 = 2
+
 
 class RxConfig(ctypes.Structure):
 
@@ -62,7 +66,7 @@ class Burst(ctypes.Structure):
         ("ambe_bad", ctypes.c_uint8 * 3),
         ("bits", ctypes.c_uint8 * 33),
         ("ambe", (ctypes.c_uint8 * 7) * 3),
-        ("reserved", ctypes.c_uint8),
+        ("codec2_mode", ctypes.c_uint8),
         ("ambe_errors", ctypes.c_int32 * 3),
         ("pcm_len", ctypes.c_int32),
         ("pcm", ctypes.c_int16 * PCM_SAMPLES),

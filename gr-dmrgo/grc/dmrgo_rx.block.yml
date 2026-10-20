@@ -80,7 +80,7 @@ documentation: |-
 
   Input: complex baseband at 48000 Hz (24000 Hz with tier 0 or 1), or FM discriminator audio at 24000, 12000 or 9600 Hz. Put a resampler before the block for other rates.
 
-  bursts: one PDU per burst, the 33 burst bytes and a dict with timeslot, color_code, kind, data_type, voice_pos, sync_distance, fec_corrected, fec_bad, and src, dst, flco, fid and group when the call LC is known.
+  bursts: one PDU per burst, the 33 burst bytes and a dict with timeslot, color_code, kind, data_type, voice_pos, sync_distance, fec_corrected, fec_bad, codec2_mode (2400 or 3200 when known, else 0), and src, dst, flco, fid and group when the call LC is known.
 
   voice: one PDU per AMBE+2 frame, the 7 frame bytes and a dict with timeslot, voice_pos, index, bad, errors and the call LC.
 
