@@ -5,10 +5,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// The single burst BPTC has a 2×16 encode matrix (ETSI TS 102 361-1 clause
-// B.2.2). Row 0 holds 11 information bits and 5 Hamming(16,11,4) parity bits,
-// and row 1 holds the column parity: even, or odd for the Reverse Channel.
-// Matrix index i goes to transmit index i×17 mod 32 (formula B.2).
+// ETSI TS 102 361-1 clause B.2.2
 
 // DecodeSingleBurst decodes the 11 information bits from the 32-bit embedded
 // data field of one burst. Set oddParity for a Reverse Channel burst. It
@@ -29,11 +26,7 @@ func DecodeSingleBurst(txBits [32]unpacked.Bit, oddParity bool) ([11]unpacked.Bi
 		matrix[row][col] = deinterleaved[i]
 	}
 
-	// Row 1 is a copy of row 0 (clause B.2.2.1) or its complement (clause
-	// B.2.2.2), so the burst carries two copies of one Hamming(16,11,4)
-	// codeword and the pair has minimum distance 8. Any codeword within
-	// distance 3 of the pair is within distance 1 of one copy, so single-error
-	// decoding of each copy finds every candidate.
+	// clause B.2.2.1; clause B.2.2.2
 	row1 := matrix[1]
 	if oddParity {
 		for col := range row1 {
@@ -101,8 +94,6 @@ func EncodeSingleBurst(info [11]unpacked.Bit, oddParity bool) [32]unpacked.Bit {
 	return txBits
 }
 
-// correctHamming16_11 corrects up to one bit error in a Hamming(16,11,4)
-// codeword. ok is false when the syndrome does not match a single-bit error.
 func correctHamming16_11(row [16]unpacked.Bit) ([16]unpacked.Bit, bool) {
 	s := calculateSyndrome16_11(row)
 	if s == 0 {

@@ -2,7 +2,6 @@ package bits
 
 import "testing"
 
-// fieldByBits returns the n bits of b from bit start, read one at a time.
 func fieldByBits(b []byte, start, n int) uint64 {
 	var v uint64
 	for i := range n {
@@ -11,7 +10,6 @@ func fieldByBits(b []byte, start, n int) uint64 {
 	return v
 }
 
-// fieldSeed is one seed of FuzzField.
 type fieldSeed struct {
 	buf   []byte
 	start uint16
@@ -20,7 +18,6 @@ type fieldSeed struct {
 	dst   uint16
 }
 
-// fieldSeeds returns the seeds of FuzzField.
 func fieldSeeds() []fieldSeed {
 	return []fieldSeed{
 		{[]byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x0F}, uint16(3), uint8(57), uint64(0xFFFFFFFFFFFFFFFF), uint16(5)},
@@ -29,7 +26,6 @@ func fieldSeeds() []fieldSeed {
 	}
 }
 
-// checkField checks the properties of FuzzField for one input.
 func checkField(t testing.TB, buf []byte, start uint16, width uint8, v uint64, dst uint16) {
 	t.Helper()
 	total := 8 * len(buf)
@@ -104,11 +100,6 @@ func checkField(t testing.TB, buf []byte, start uint16, width uint8, v uint64, d
 	}
 }
 
-// FuzzField reads, writes and copies fuzzed fields of fuzzed bytes. Field
-// and Field64 read what Bit reads one bit at a time, SetField and
-// SetField64 write the low bits of the value and no other bit, SetBit sets
-// one bit, and Copy copies the bits that Bit reads from the source and no
-// other bit.
 func FuzzField(f *testing.F) {
 	for _, s := range fieldSeeds() {
 		f.Add(s.buf, s.start, s.width, s.v, s.dst)

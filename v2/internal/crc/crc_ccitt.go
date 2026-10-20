@@ -24,8 +24,6 @@ func CCITTUpdate(reg uint16, data []byte) uint16 {
 	return reg
 }
 
-// ccittNibbles returns the CRC-CCITT register change of each 4-bit value
-// shifted out, which takes 32 bytes where a byte table takes 512.
 func ccittNibbles() [16]uint16 {
 	return [16]uint16{
 		0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,

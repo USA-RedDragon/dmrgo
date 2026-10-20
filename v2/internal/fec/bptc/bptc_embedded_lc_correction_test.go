@@ -16,8 +16,6 @@ func fragmentsFromBytes(b [4][4]byte) [4][32]unpacked.Bit {
 	return fr
 }
 
-// TestEmbeddedLC_CapturedSuperframe decodes the embedded LC fragments of
-// voice bursts B..E from layer2/testdata/voice.bin.
 func TestEmbeddedLC_CapturedSuperframe(t *testing.T) {
 	t.Parallel()
 	fr := fragmentsFromBytes([4][4]byte{
@@ -30,8 +28,7 @@ func TestEmbeddedLC_CapturedSuperframe(t *testing.T) {
 	if res.Uncorrectable || res.ErrorsCorrected != 0 {
 		t.Fatalf("captured superframe: result=%+v, want clean", res)
 	}
-	// Rows 0 and 1 hold 11 LC bits, and rows 2 to 6 hold 10 LC bits and one
-	// checksum bit (ETSI TS 102 361-1 Figure B.3).
+	// ETSI TS 102 361-1 Figure B.3
 	var lc []unpacked.Bit
 	var cs []unpacked.Bit
 	for row := 0; row < 7; row++ {
@@ -91,7 +88,6 @@ func TestEmbeddedLC_ParityRowErrorCorrected(t *testing.T) {
 	info := embeddedLCInfo()
 	fr := encodeEmbedded(info)
 	for col := 0; col < 16; col++ {
-		// Stream index col*8+7 is row 7 (the column parity row) of that column.
 		got, res := decodeEmbedded(flipEmbedded(fr, col*8+7))
 		if got != info || res.Uncorrectable || res.ErrorsCorrected != 1 {
 			t.Fatalf("PC row col %d: data match=%v result=%+v", col, got == info, res)
@@ -99,10 +95,6 @@ func TestEmbeddedLC_ParityRowErrorCorrected(t *testing.T) {
 	}
 }
 
-// TestEmbeddedLC_TieResolvedByCheck puts 4 errors on a row codeword in row
-// 0, so the received bits are as near to the codeword with that row codeword
-// added to rows 0 and 7. DecodeEmbedded rejects the tie and a check that
-// accepts only one of the two information words resolves it.
 func TestEmbeddedLC_TieResolvedByCheck(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()
@@ -122,8 +114,6 @@ func TestEmbeddedLC_TieResolvedByCheck(t *testing.T) {
 	}
 }
 
-// TestEmbeddedLC_RandomWordsRejected checks that random words, which are
-// mostly more than EmbeddedMaxErrors from every codeword, are rejected.
 func TestEmbeddedLC_RandomWordsRejected(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(3))
@@ -145,9 +135,6 @@ func TestEmbeddedLC_RandomWordsRejected(t *testing.T) {
 	}
 }
 
-// TestEmbeddedLCStrict_RowErrors checks the MMDVMHost rules: one error in
-// each of rows 0..6 is corrected, and an error in row 7 or two errors in one
-// row make the LC uncorrectable. Stream index col*8+row is that matrix bit.
 func TestEmbeddedLCStrict_RowErrors(t *testing.T) {
 	t.Parallel()
 	info := embeddedLCInfo()

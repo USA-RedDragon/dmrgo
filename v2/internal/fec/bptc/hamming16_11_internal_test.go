@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// tableB16 returns ETSI TS 102 361-1 Table B.16, the Hamming (16,11,4) generator matrix.
+// ETSI TS 102 361-1 Table B.16
 func tableB16() [11]string {
 	return [11]string{
 		"1000000000010011",
@@ -32,7 +32,6 @@ func hamming16_11Codeword(d int) [16]unpacked.Bit {
 	return cw
 }
 
-// syndrome16_11 returns the syndrome of a row given one unpacked.Bit per column.
 func syndrome16_11(cw [16]unpacked.Bit) int {
 	var row uint16
 	for i, b := range cw {

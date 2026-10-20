@@ -8,9 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// row returns the QR (16,7,6) codeword of data bit k, packed the first bit
-// most significant. A switch, not an array, so that no copy of the rows
-// goes on the stack.
 func row(k int) uint16 {
 	switch k {
 	case 0:
@@ -53,9 +50,6 @@ func Decode(cw uint16) (uint16, fec.Result) {
 		result.ErrorsCorrected = bits.OnesCount16(c ^ cw)
 		return c, result
 	}
-	// The code has distance 6, so at most one codeword is within 2 bits of
-	// cw. Search the 128 codewords, one data bit change per step in Gray
-	// code order, instead of a syndrome table.
 	var c uint16
 	for i := 1; ; i++ {
 		if e := bits.OnesCount16(c ^ cw); e <= 2 {

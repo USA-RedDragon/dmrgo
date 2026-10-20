@@ -13,14 +13,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// The BPTC(196,96) grid has 13 rows of 15 columns after a leading bit R(3)
-// (ETSI TS 102 361-1 clause B.1.1). Grid index i, information bit dm[i] on
-// air, is row (i-1)/15 and column (i-1)%15. A row is a uint16 with column c
-// in bit c. Rows 0 to 8 are Hamming(15,11,3) codewords with data and
-// reserved bits in columns 0 to 10, and rows 9 to 12 hold the Hamming(13,9,3)
-// parity of each column.
+// ETSI TS 102 361-1 clause B.1.1
 
-// Masks of the columns that each Hamming(15,11,3) parity check covers.
 const (
 	h1511Check0 = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<5 | 1<<7 | 1<<8 | 1<<11
 	h1511Check1 = 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<6 | 1<<8 | 1<<9 | 1<<12
@@ -28,18 +22,13 @@ const (
 	h1511Check3 = 1<<0 | 1<<1 | 1<<2 | 1<<4 | 1<<6 | 1<<7 | 1<<10 | 1<<14
 )
 
-// gridRowMask covers the 15 columns of a row.
 const gridRowMask = 1<<15 - 1
 
-// rowSyndrome15_11 returns the 4-bit Hamming(15,11,3) syndrome of a row,
-// check k in bit k.
 func rowSyndrome15_11(row uint16) int {
 	return bits.OnesCount16(row&h1511Check0)&1 | bits.OnesCount16(row&h1511Check1)&1<<1 |
 		bits.OnesCount16(row&h1511Check2)&1<<2 | bits.OnesCount16(row&h1511Check3)&1<<3
 }
 
-// columnSyndromes returns the Hamming(13,9,3) syndromes of the 15 columns:
-// bit c of element k is check k of column c.
 func columnSyndromes(rows *[13]uint16) [4]uint16 {
 	r := rows
 	return [4]uint16{
@@ -118,11 +107,9 @@ func DecodeRows(grid *[13]uint16) ([12]byte, uint8, fec.Result) {
 	return data, reserved, result
 }
 
-// Recode corrects the rows of a BPTC(196,96) grid in place as DecodeRows
-// does, writes the data bits that DecodeRows returns into data, puts the
-// codeword that EncodeRows returns for them in place of the rows and
-// returns the reserved bits. It needs no copy of the rows, for
-// microcontrollers.
+// Recode corrects the rows of a BPTC(196,96) grid in place, writes the
+// data bits into data, re-encodes the rows from them and returns the
+// reserved bits.
 //
 //go:noinline
 func Recode(rows *[13]uint16, data *[12]byte) uint8 {
@@ -132,8 +119,6 @@ func Recode(rows *[13]uint16, data *[12]byte) uint8 {
 	return reserved
 }
 
-// rowsData writes the data bits of the rows of a BPTC(196,96) grid into
-// data and returns its reserved bits.
 func rowsData(rows *[13]uint16, data *[12]byte) uint8 {
 	var head, tail uint64
 	head = uint64(bits.Reverse16(rows[0]) >> 5 & 0xFF)
@@ -148,13 +133,6 @@ func rowsData(rows *[13]uint16, data *[12]byte) uint8 {
 	return uint8((rows[0]>>2&1 | rows[0]>>1&1<<1 | rows[0]&1<<2) & 0x7)
 }
 
-// hammingCorrect corrects the BPTC(196,96) grid with the column
-// Hamming(13,9,3) and row Hamming(15,11,3) codes, columns first in each pass
-// as MMDVMHost does. The column parity rows are also row codewords, so all
-// 13 rows are row-decoded. It reports whether a row or column syndrome is
-// still nonzero. The corrections of the columns of one pass touch different
-// columns, and those of the rows different rows, so each step computes its
-// syndromes once.
 func hammingCorrect(rows *[13]uint16) bool {
 	for range 5 {
 		fixing := false
@@ -221,7 +199,6 @@ func EncodeRows(data *[12]byte, reserved uint8) [13]uint16 {
 	return rows
 }
 
-// encodeRows writes the codeword of EncodeRows into rows.
 func encodeRows(rows *[13]uint16, data *[12]byte, reserved uint8) {
 	head := binary.BigEndian.Uint64(data[:8])
 	tail := uint64(binary.BigEndian.Uint32(data[8:]))

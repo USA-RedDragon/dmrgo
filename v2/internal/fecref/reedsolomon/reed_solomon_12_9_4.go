@@ -17,12 +17,11 @@ const (
 
 type poly [polyMaxDeg]uint8
 
-// decodeResult is the result of a Reed-Solomon decode.
 type decodeResult struct {
-	Data          [dataSize]byte // Corrected data
-	ErrorsFound   int            // Number of symbol (byte) errors found and corrected
-	BitsCorrected int            // Number of bits the correction flipped
-	Uncorrectable bool           // True if errors could not be corrected
+	Data          [dataSize]byte
+	ErrorsFound   int
+	BitsCorrected int
+	Uncorrectable bool
 }
 
 func bitDistance(a, b *[dataSize + checksumSize]byte) int {
@@ -33,8 +32,6 @@ func bitDistance(a, b *[dataSize + checksumSize]byte) int {
 	return n
 }
 
-// workspace holds reusable scratch buffers for zero-allocation decode paths.
-// A workspace must not be shared between goroutines.
 type workspace struct {
 	locator   poly
 	evaluator poly
@@ -43,8 +40,6 @@ type workspace struct {
 	psi2      [polyMaxDeg]uint8
 }
 
-// decode corrects a 12-byte codeword (9 data bytes and 3 parity bytes) and
-// returns the data bytes and the error counts.
 func decode(data [dataSize + checksumSize]byte) decodeResult {
 	var result decodeResult
 
@@ -77,8 +72,7 @@ func Encode(data [9]byte) [12]byte {
 	var codeword [12]byte
 	copy(codeword[:], data[:])
 
-	// Systematic encoding by division by g(x) = x^3 + 0x0E x^2 + 0x38 x + 0x40
-	// (ETSI TS 102 361-1 equation B.10).
+	// ETSI TS 102 361-1 equation B.10
 	var r0, r1, r2 uint8
 	for i := 0; i < dataSize; i++ {
 		fb := codeword[i] ^ r0
@@ -113,7 +107,6 @@ func Check(cw [12]byte) bool {
 	return !syndromeHasErrors(&syndrome)
 }
 
-// calcSyndrome computes the 3 syndromes of a 12-byte codeword.
 func calcSyndrome(data *[dataSize + checksumSize]byte, syndrome *poly) {
 	var i, j uint8
 	for i = 0; i < 3; i++ {
@@ -127,7 +120,6 @@ func calcSyndrome(data *[dataSize + checksumSize]byte, syndrome *poly) {
 	}
 }
 
-// syndromeHasErrors reports whether any syndrome value is nonzero.
 func syndromeHasErrors(syndrome *poly) bool {
 	for _, v := range syndrome {
 		if v != 0 {
@@ -178,8 +170,6 @@ func mulPolysWithTmp(p1, p2 *poly, dst, tmp []uint8) {
 	}
 }
 
-// galoisInv returns the multiplicative inverse of elt in GF(2^8).
-// The second result is false when elt is zero, which has no inverse.
 func galoisInv(elt uint8) (uint8, bool) {
 	if elt == 0 {
 		return 0, false
@@ -194,7 +184,6 @@ func galoisMul(a, b uint8) uint8 {
 	return galois_exp_table[(int(galois_log_table[a])+int(galois_log_table[b]))%255]
 }
 
-// mulPolyZ multiplies poly by z, a shift right by one coefficient.
 func mulPolyZ(poly *poly) {
 	for i := polyMaxDeg - 1; i > 0; i-- {
 		poly[i] = poly[i-1]
@@ -220,8 +209,6 @@ func correct(data *[dataSize + checksumSize]byte, syndrome *poly) (int, error) {
 
 	calcWithScratch(syndrome, &ws.locator, &ws.evaluator, ws.psi2[:], ws.product[:], ws.tmp[:])
 
-	// With d=4 the code corrects one symbol error, so only a degree-1 locator
-	// with one root inside the shortened codeword is acceptable.
 	if ws.locator[1] == 0 {
 		return 0, fec.ErrUncorrectable
 	}
@@ -235,8 +222,6 @@ func correct(data *[dataSize + checksumSize]byte, syndrome *poly) (int, error) {
 		return 0, fec.ErrUncorrectable
 	}
 
-	// Forney: the error value is the evaluator over the locator derivative,
-	// both evaluated at alpha^(-i).
 	var num, denom uint8
 	for j := 0; j < polyMaxDeg; j++ {
 		idx := (255 - int(i)) * j % 255
@@ -265,8 +250,6 @@ func correct(data *[dataSize + checksumSize]byte, syndrome *poly) (int, error) {
 	return 1, nil
 }
 
-// findRoots returns the first root of the error locator polynomial and the
-// number of roots, found with a Chien search over the powers of alpha.
 func findRoots(locator *poly) (first uint8, n int) {
 	var k, r uint16
 	for r = 1; r < 256; r++ {
@@ -286,9 +269,6 @@ func findRoots(locator *poly) (first uint8, n int) {
 	return first, n
 }
 
-// calcWithScratch finds the error locator polynomial with the
-// Berlekamp-Massey algorithm and then the error evaluator polynomial (Clark
-// and Cain, "Error-Correction Coding for Digital Communications", p. 216).
 func calcWithScratch(
 	syndrome, locator, evaluator *poly,
 	psi2 []uint8, product []uint8, tmp []uint8,

@@ -8,13 +8,11 @@ import (
 	ref "github.com/USA-RedDragon/dmrgo/v2/internal/fecref/reedsolomon"
 )
 
-// reedSolomonSeed is one seed of FuzzReedSolomon.
 type reedSolomonSeed struct {
 	data []byte
 	mask []byte
 }
 
-// reedSolomonSeeds returns the seeds of FuzzReedSolomon.
 func reedSolomonSeeds() []reedSolomonSeed {
 	return []reedSolomonSeed{
 		{[]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x00, 0x30, 0x39}, []byte{}},
@@ -24,7 +22,6 @@ func reedSolomonSeeds() []reedSolomonSeed {
 	}
 }
 
-// checkReedSolomon checks the properties of FuzzReedSolomon for one input.
 func checkReedSolomon(t testing.TB, data []byte, mask []byte) {
 	t.Helper()
 	var d [9]byte
@@ -78,13 +75,6 @@ func checkReedSolomon(t testing.TB, data []byte, mask []byte) {
 	}
 }
 
-// FuzzReedSolomon encodes fuzzed data with RS(12,9), adds the error pattern
-// mask, one byte per symbol, and decodes. One symbol error decodes to the
-// data with ErrorsCorrected equal to its bit count, and 2 set
-// Uncorrectable. An uncorrectable decode returns the received data, and
-// another returns data whose codeword is one symbol and ErrorsCorrected bits
-// from the received one. Encode, Decode and Check agree with the reference
-// codec.
 func FuzzReedSolomon(f *testing.F) {
 	for _, s := range reedSolomonSeeds() {
 		f.Add(s.data, s.mask)

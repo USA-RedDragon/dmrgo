@@ -14,9 +14,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// captureBlocks returns the BPTC(196,96) data of the bursts in the captures
-// of layer2/testdata whose information bits decode without an uncorrectable
-// error: the 98 bits before and the 98 bits after the center 68 bits.
 func captureBlocks(tb testing.TB) [][12]byte {
 	tb.Helper()
 	files, err := filepath.Glob("../../../layer2/testdata/*.bin")
@@ -41,8 +38,6 @@ func captureBlocks(tb testing.TB) [][12]byte {
 	return out
 }
 
-// gridDistance returns the number of grid bits, all but R(3), in which the
-// BPTC(196,96) blocks a and b differ.
 func gridDistance(a, b [25]byte) int {
 	ra, rb := bptc.Rows(a), bptc.Rows(b)
 	n := 0
@@ -52,14 +47,12 @@ func gridDistance(a, b [25]byte) int {
 	return n
 }
 
-// bptc196Seed is one seed of FuzzBPTC196.
 type bptc196Seed struct {
 	data     []byte
 	reserved uint8
 	mask     []byte
 }
 
-// bptc196Seeds returns the seeds of FuzzBPTC196.
 func bptc196Seeds(tb testing.TB) []bptc196Seed {
 	blocks := captureBlocks(tb)
 	seeds := make([]bptc196Seed, 0, len(blocks)+1)
@@ -75,7 +68,6 @@ func bptc196Seeds(tb testing.TB) []bptc196Seed {
 	return seeds
 }
 
-// checkBPTC196 checks the properties of FuzzBPTC196 for one input.
 func checkBPTC196(t testing.TB, data []byte, reserved uint8, mask []byte) {
 	t.Helper()
 	var d [12]byte
@@ -117,11 +109,6 @@ func checkBPTC196(t testing.TB, data []byte, reserved uint8, mask []byte) {
 	}
 }
 
-// FuzzBPTC196 encodes fuzzed data and reserved bits, adds the error pattern
-// mask and decodes. Up to 2 grid errors decode to the data with
-// ErrorsCorrected equal to their count. A block that is not uncorrectable is
-// a codeword ErrorsCorrected grid bits from the received block. Encode196
-// and Decode196 agree with the reference codec on every block.
 func FuzzBPTC196(f *testing.F) {
 	for _, s := range bptc196Seeds(f) {
 		f.Add(s.data, s.reserved, s.mask)
@@ -131,8 +118,6 @@ func FuzzBPTC196(f *testing.F) {
 	})
 }
 
-// embeddedDistance returns the number of bits in which the fragments a and
-// b differ.
 func embeddedDistance(a, b [4]uint32) int {
 	n := 0
 	for i := range a {
@@ -141,7 +126,6 @@ func embeddedDistance(a, b [4]uint32) int {
 	return n
 }
 
-// unpackFragments returns the fragments with one unpacked.Bit per bit.
 func unpackFragments(w [4]uint32) [4][32]unpacked.Bit {
 	var out [4][32]unpacked.Bit
 	for i := range w {
@@ -150,21 +134,18 @@ func unpackFragments(w [4]uint32) [4][32]unpacked.Bit {
 	return out
 }
 
-// packEmbeddedInfo packs 77 reference information bits.
 func packEmbeddedInfo(info [77]unpacked.Bit) [10]byte {
 	var p [10]byte
 	unpacked.PackAt(p[:], 0, info[:])
 	return p
 }
 
-// embeddedLCSeed is one seed of FuzzEmbeddedLC.
 type embeddedLCSeed struct {
 	data   []byte
 	mask   []byte
 	parity bool
 }
 
-// embeddedLCSeeds returns the seeds of FuzzEmbeddedLC.
 func embeddedLCSeeds(tb testing.TB) []embeddedLCSeed {
 	var seeds []embeddedLCSeed
 	for i, d := range captureBlocks(tb) {
@@ -175,12 +156,9 @@ func embeddedLCSeeds(tb testing.TB) []embeddedLCSeed {
 		}
 		seeds = append(seeds, embeddedLCSeed{d[:10], mask, i%2 == 0})
 	}
-	// Testdata 11fdda4b86eb35a8: 6 errors, 5 of them in row 4, at the same
-	// distance from the sent LC and another one.
 	return append(seeds, embeddedLCSeed{[]byte{0x30}, []byte{0x08, 0x08, 0x08, 0x08, 0x08, 0x20}, false})
 }
 
-// checkEmbeddedLC checks the properties of FuzzEmbeddedLC for one input.
 func checkEmbeddedLC(t testing.TB, data []byte, mask []byte, parity bool) {
 	t.Helper()
 	var info [10]byte
@@ -245,13 +223,6 @@ func checkEmbeddedLC(t testing.TB, data []byte, mask []byte, parity bool) {
 	}
 }
 
-// FuzzEmbeddedLC encodes fuzzed embedded LC information bits, adds the
-// error pattern mask and decodes. Up to 3 errors decode to the information
-// bits. A decode that is not uncorrectable returns a codeword
-// ErrorsCorrected bits from the received fragments, no farther than the
-// sent one when at most EmbeddedMaxErrors errors were added, and the sent
-// one at the same distance. DecodeEmbedded, DecodeEmbeddedWithCheck and
-// DecodeEmbeddedStrict agree with the reference codec.
 func FuzzEmbeddedLC(f *testing.F) {
 	for _, s := range embeddedLCSeeds(f) {
 		f.Add(s.data, s.mask, s.parity)
@@ -261,13 +232,11 @@ func FuzzEmbeddedLC(f *testing.F) {
 	})
 }
 
-// cachSeed is one seed of FuzzCACH.
 type cachSeed struct {
 	info uint64
 	mask []byte
 }
 
-// cachSeeds returns the seeds of FuzzCACH.
 func cachSeeds(tb testing.TB) []cachSeed {
 	blocks := captureBlocks(tb)
 	seeds := make([]cachSeed, 0, len(blocks)+1)
@@ -282,7 +251,6 @@ func cachSeeds(tb testing.TB) []cachSeed {
 	return seeds
 }
 
-// checkCACH checks the properties of FuzzCACH for one input.
 func checkCACH(t testing.TB, info uint64, mask []byte) {
 	t.Helper()
 	info &= 1<<36 - 1
@@ -328,12 +296,6 @@ func checkCACH(t testing.TB, info uint64, mask []byte) {
 	}
 }
 
-// FuzzCACH encodes a fuzzed Short LC with the CACH BPTC, adds the error
-// pattern mask to the 68 coded bits and junk above them, and decodes. Up to
-// 2 errors decode to the Short LC, and 3 errors decode to it or set
-// Uncorrectable. A decode that is not uncorrectable returns a codeword
-// ErrorsCorrected bits from the received payloads. DecodeCACH ignores the
-// bits above the 17th and agrees with the reference codec.
 func FuzzCACH(f *testing.F) {
 	for _, s := range cachSeeds(f) {
 		f.Add(s.info, s.mask)
@@ -343,14 +305,12 @@ func FuzzCACH(f *testing.F) {
 	})
 }
 
-// singleBurstSeed is one seed of FuzzSingleBurst.
 type singleBurstSeed struct {
 	info uint16
 	odd  bool
 	mask uint32
 }
 
-// singleBurstSeeds returns the seeds of FuzzSingleBurst.
 func singleBurstSeeds(tb testing.TB) []singleBurstSeed {
 	blocks := captureBlocks(tb)
 	seeds := make([]singleBurstSeed, 0, len(blocks)+1)
@@ -364,7 +324,6 @@ func singleBurstSeeds(tb testing.TB) []singleBurstSeed {
 	return seeds
 }
 
-// checkSingleBurst checks the properties of FuzzSingleBurst for one input.
 func checkSingleBurst(t testing.TB, info uint16, odd bool, mask uint32) {
 	t.Helper()
 	info &= 0x7FF
@@ -400,11 +359,6 @@ func checkSingleBurst(t testing.TB, info uint16, odd bool, mask uint32) {
 	}
 }
 
-// FuzzSingleBurst encodes fuzzed information bits with the single burst
-// BPTC, even or odd parity, adds the error pattern mask and decodes. Up to 3
-// errors decode to the information bits, and 4 set Uncorrectable. A decode
-// that is not uncorrectable returns a codeword ErrorsCorrected bits from the
-// received word. Both codecs agree with the reference codec.
 func FuzzSingleBurst(f *testing.F) {
 	for _, s := range singleBurstSeeds(f) {
 		f.Add(s.info, s.odd, s.mask)

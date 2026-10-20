@@ -1,6 +1,6 @@
 package crc
 
-const crc8Poly = 0x07 // x² + x + 1 (low 8 bits of G₈(x))
+const crc8Poly = 0x07
 
 // CRC8 computes the CRC-8 of the first n bits of data, the first bit most
 // significant, with the generator polynomial x⁸ + x² + x + 1, initial value

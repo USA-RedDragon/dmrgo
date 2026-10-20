@@ -9,13 +9,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// qr1676Seed is one seed of FuzzQR1676.
 type qr1676Seed struct {
 	data uint8
 	mask uint16
 }
 
-// qr1676Seeds returns the seeds of FuzzQR1676.
 func qr1676Seeds() []qr1676Seed {
 	return []qr1676Seed{
 		{uint8(0x10), uint16(0)},
@@ -24,7 +22,6 @@ func qr1676Seeds() []qr1676Seed {
 	}
 }
 
-// checkQR1676 checks the properties of FuzzQR1676 for one input.
 func checkQR1676(t testing.TB, data uint8, mask uint16) {
 	t.Helper()
 	data &= 0x7F
@@ -50,12 +47,6 @@ func checkQR1676(t testing.TB, data uint8, mask uint16) {
 	}
 }
 
-// FuzzQR1676 encodes fuzzed data with QR (16,7,6), adds the error pattern
-// mask and decodes. Up to 2 errors decode to the codeword with
-// ErrorsCorrected equal to their count. A decode without Uncorrectable
-// returns a codeword at most 2 and exactly ErrorsCorrected bits away, and an
-// uncorrectable one the received word. Decode and Check agree with the
-// reference codec.
 func FuzzQR1676(f *testing.F) {
 	for _, s := range qr1676Seeds() {
 		f.Add(s.data, s.mask)

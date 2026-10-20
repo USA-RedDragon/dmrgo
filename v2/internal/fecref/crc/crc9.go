@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	crc9Poly      = uint16(0x59)  // x⁶ + x⁴ + x³ + 1 (low 9 bits of G₉(x) without x⁹)
-	crc9Inversion = uint16(0x1FF) // all 9 bits set
+	crc9Poly      = uint16(0x59)
+	crc9Inversion = uint16(0x1FF)
 )
 
 // CRC9 computes the CRC-9 of bits with the generator polynomial

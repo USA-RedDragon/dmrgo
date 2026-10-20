@@ -8,8 +8,6 @@ import (
 	"testing"
 )
 
-// FuzzInt checks Int, Uint and Bool against the %d and %t verbs, and that
-// Int and Uint parse back to the value.
 func FuzzInt(f *testing.F) {
 	for _, v := range []int64{0, 1, -1, 9, 10, -10, math.MaxInt64, math.MinInt64} {
 		f.Add(v, v < 0)
@@ -35,8 +33,6 @@ func FuzzInt(f *testing.F) {
 	})
 }
 
-// FuzzBytes checks Hex and Bytes against the %x and %v verbs, and that Hex
-// decodes back to the bytes.
 func FuzzBytes(f *testing.F) {
 	f.Add([]byte{})
 	f.Add([]byte{0})
@@ -59,9 +55,6 @@ func FuzzBytes(f *testing.F) {
 	})
 }
 
-// FuzzDigits checks Digits for shift 1 to 4 and n 0 to 70: the result has
-// at least n digits and at least one, has no extra leading zero, and parses
-// back to v in base 1<<shift. For shift 1 and 4 it equals the %0nb and %0nx verbs.
 func FuzzDigits(f *testing.F) {
 	f.Add(uint64(0), uint8(0), uint8(1))
 	f.Add(uint64(0xA5), uint8(8), uint8(1))
@@ -92,10 +85,6 @@ func FuzzDigits(f *testing.F) {
 	})
 }
 
-// FuzzFixed checks Fixed against the %f verb for any float64, and Float
-// against the %v verb where Float documents that they agree: 0, or a
-// magnitude from 1e-4 to 1e6 with at most six decimals. Float is always
-// Fixed without trailing zeros.
 func FuzzFixed(f *testing.F) {
 	for _, v := range []float64{
 		0, math.Copysign(0, -1), 1, -1, 0.5, 0.0078125, 2.5e-7, 5e-7, 0.9999995, 0.99999949,

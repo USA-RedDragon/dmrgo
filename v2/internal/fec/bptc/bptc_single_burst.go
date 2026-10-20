@@ -6,13 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// The single burst BPTC has a 2×16 encode matrix (ETSI TS 102 361-1 clause
-// B.2.2). Row 0 holds 11 information bits and 5 Hamming(16,11,4) parity bits,
-// and row 1 holds the column parity: even, or odd for the Reverse Channel.
-// Matrix index i goes to transmit index i×17 mod 32 (formula B.2), so column
-// c of row 0 is transmit bit 2c and column c of row 1 is transmit bit
-// (2c+17) mod 32: the odd transmit bits rotated by 8 columns. A row is a
-// uint16 with column c in bit c.
+// ETSI TS 102 361-1 clause B.2.2
 
 // DecodeSingleBurst decodes the 11 information bits from the 32-bit embedded
 // data field tx of one burst, transmit bit 0 most significant, and returns
@@ -28,11 +22,7 @@ func DecodeSingleBurst(tx uint32, oddParity bool) (uint16, fec.Result) {
 		row1 = ^row1
 	}
 
-	// Row 1 is a copy of row 0 (clause B.2.2.1) or its complement (clause
-	// B.2.2.2), so the burst carries two copies of one Hamming(16,11,4)
-	// codeword and the pair has minimum distance 8. Any codeword within
-	// distance 3 of the pair is within distance 1 of one copy, so single-error
-	// decoding of each copy finds every candidate.
+	// clause B.2.2.1; clause B.2.2.2
 	best, bestDist := row0, 33
 	for _, row := range [2]uint16{row0, row1} {
 		candidate, ok := correctHamming16_11(row)
@@ -66,7 +56,6 @@ func EncodeSingleBurst(info uint16, oddParity bool) uint32 {
 	return bits.Reverse32(spreadEven(row0) | spreadEven(bits.RotateLeft16(row1, 8))<<1)
 }
 
-// compactEven returns bits 0, 2, 4 and so on to 30 of x as bits 0 to 15.
 func compactEven(x uint32) uint16 {
 	x &= 0x55555555
 	x = (x | x>>1) & 0x33333333
@@ -75,7 +64,6 @@ func compactEven(x uint32) uint16 {
 	return uint16((x | x>>8) & 0xFFFF)
 }
 
-// spreadEven returns bits 0 to 15 of x as bits 0, 2, 4 and so on to 30.
 func spreadEven(x uint16) uint32 {
 	v := uint32(x)
 	v = (v | v<<8) & 0x00FF00FF
@@ -84,8 +72,6 @@ func spreadEven(x uint16) uint32 {
 	return (v | v<<1) & 0x55555555
 }
 
-// correctHamming16_11 corrects up to one bit error in a Hamming(16,11,4)
-// codeword. ok is false when the syndrome does not match a single-bit error.
 func correctHamming16_11(row uint16) (uint16, bool) {
 	s := rowSyndrome16_11(row)
 	if s == 0 {
@@ -98,8 +84,7 @@ func correctHamming16_11(row uint16) (uint16, bool) {
 	return row ^ 1<<errPos, true
 }
 
-// Masks of the columns that each Hamming(16,11,4) parity check covers, column
-// c in bit c (ETSI TS 102 361-1 clause B.3.4, Table B.16).
+// ETSI TS 102 361-1 clause B.3.4, Table B.16
 const (
 	h1611Check0 = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<5 | 1<<7 | 1<<8 | 1<<11
 	h1611Check1 = 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<6 | 1<<8 | 1<<9 | 1<<12
@@ -108,16 +93,12 @@ const (
 	h1611Check4 = 1<<0 | 1<<2 | 1<<5 | 1<<6 | 1<<8 | 1<<9 | 1<<10 | 1<<15
 )
 
-// rowSyndrome16_11 returns the 5-bit Hamming(16,11,4) syndrome of a row,
-// check k in bit k.
 func rowSyndrome16_11(row uint16) int {
 	return bits.OnesCount16(row&h1611Check0)&1 | bits.OnesCount16(row&h1611Check1)&1<<1 |
 		bits.OnesCount16(row&h1611Check2)&1<<2 | bits.OnesCount16(row&h1611Check3)&1<<3 |
 		bits.OnesCount16(row&h1611Check4)&1<<4
 }
 
-// rowParity16_11 returns the row with its parity columns 11 to 15 set from
-// its information columns 0 to 10.
 func rowParity16_11(row uint16) uint16 {
 	row &= 1<<11 - 1
 	s := rowSyndrome16_11(row)

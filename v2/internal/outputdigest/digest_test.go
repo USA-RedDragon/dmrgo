@@ -1,6 +1,3 @@
-// Package outputdigest_test pins the decode and encode output of the library
-// for many random and corrupted inputs, as one SHA-256 digest per category,
-// so that a change of internals that changes any output fails.
 package outputdigest_test
 
 import (
@@ -47,29 +44,22 @@ func randBits(r *rand.Rand, dst []unpacked.Bit) {
 	}
 }
 
-// pack returns b packed, the first bit in the most significant bit of byte 0.
 func pack(b []unpacked.Bit) []byte {
 	p := make([]byte, (len(b)+7)/8)
 	unpacked.PackAt(p, 0, b)
 	return p
 }
 
-// unpack returns the first n bits of p, one unpacked.Bit per bit, the form that
-// the digests print.
 func unpack(p []byte, n int) []unpacked.Bit {
 	b := make([]unpacked.Bit, n)
 	unpacked.UnpackAt(b, p, 0)
 	return b
 }
 
-// reserved returns the BPTC reserved bits res, R(i) in bit i, as the digests
-// print them: R(i) at index i.
 func reserved(res uint8) [3]unpacked.Bit {
 	return [3]unpacked.Bit{unpacked.Bit(res & 1), unpacked.Bit(res >> 1 & 1), unpacked.Bit(res >> 2 & 1)}
 }
 
-// slotBits returns the three voice slots s as the digests print them: 72
-// unpacked.Bit values each.
 func slotBits(s [layer2.VoiceSlotsPerBurst][9]byte) [layer2.VoiceSlotsPerBurst][]unpacked.Bit {
 	var out [layer2.VoiceSlotsPerBurst][]unpacked.Bit
 	for i := range s {
@@ -78,8 +68,6 @@ func slotBits(s [layer2.VoiceSlotsPerBurst][9]byte) [layer2.VoiceSlotsPerBurst][
 	return out
 }
 
-// frameBits returns the three AMBE+2 frames f as the digests print them: 49
-// unpacked.Bit values each.
 func frameBits(f [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) [layer2.VoiceSlotsPerBurst][]unpacked.Bit {
 	var out [layer2.VoiceSlotsPerBurst][]unpacked.Bit
 	for i := range f {
@@ -88,13 +76,10 @@ func frameBits(f [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) [layer2.VoiceSlot
 	return out
 }
 
-// cachString returns c in the form that %+v printed when CACH.Payload held
-// one unpacked.Bit per bit.
 func cachString(c layer2.CACH) string {
 	return fmt.Sprintf("{TACT:%+v Payload:%v}", c.TACT, unpack(c.Payload[:], layer2.CACHPayloadBits))
 }
 
-// corrupt flips up to max random bits of b.
 func corrupt(r *rand.Rand, b []byte, maxFlips int) {
 	for range r.Intn(maxFlips + 1) {
 		i := r.Intn(len(b) * 8)
@@ -117,8 +102,6 @@ func dataString(d layer2.Data) string {
 	return fmt.Sprintf("%T %s enc=%x err=%s", d, d.String(), enc, errString(err))
 }
 
-// encodeData returns the packed bits of the Encode method of d as a slice,
-// or nil and the error of Encode.
 func encodeData(d layer2.Data) ([]byte, error) {
 	var enc []byte
 	var err error

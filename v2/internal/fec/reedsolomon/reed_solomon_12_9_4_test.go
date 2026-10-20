@@ -98,7 +98,6 @@ func TestReedSolomon1294DecodeResultFields(t *testing.T) {
 	}
 }
 
-// BenchmarkReedSolomon1294CalcSyndrome benchmarks syndrome calculation
 func BenchmarkReedSolomon1294CalcSyndrome(b *testing.B) {
 	var data [dataSize + checksumSize]byte
 	for i := range data {
@@ -112,7 +111,6 @@ func BenchmarkReedSolomon1294CalcSyndrome(b *testing.B) {
 	}
 }
 
-// BenchmarkReedSolomon1294Decode benchmarks the full decode operation
 func BenchmarkReedSolomon1294Decode(b *testing.B) {
 	var data [dataSize + checksumSize]byte
 	for i := range data {
@@ -127,7 +125,6 @@ func BenchmarkReedSolomon1294Decode(b *testing.B) {
 	}
 }
 
-// BenchmarkReedSolomon1294GaloisMul benchmarks Galois field multiplication
 func BenchmarkReedSolomon1294GaloisMul(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		galoisMul(byte(i), byte(i+1))

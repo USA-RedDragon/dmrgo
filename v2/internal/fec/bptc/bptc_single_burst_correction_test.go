@@ -6,7 +6,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// forEachErrorPattern calls fn with every set of k distinct positions in [0, n).
 func forEachErrorPattern(n, k int, fn func(pos []int)) {
 	pos := make([]int, k)
 	var rec func(start, depth int)
@@ -75,7 +74,6 @@ func TestSingleBurstBPTC_ParityRowErrorCorrected(t *testing.T) {
 	for _, rc := range []bool{false, true} {
 		info := singleBurstInfo(0x021)
 		tx := encodeSingleBurst(info, rc)
-		// Transmit bit 17 holds encode matrix index 1 (row 1, column 0).
 		tx[17] ^= 1
 		got, res := decodeSingleBurst(tx, rc)
 		if got != info || res.Uncorrectable || res.ErrorsCorrected != 1 {

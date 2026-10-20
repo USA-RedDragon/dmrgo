@@ -7,8 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// parityBits returns the 9 parity bits of 7 data bits, from the generator
-// matrix of ETSI TS 102 361-1 clause B.3.2.
+// ETSI TS 102 361-1 clause B.3.2
 func parityBits(bits [7]unpacked.Bit) [9]unpacked.Bit {
 	unpacked.Mask(bits[:])
 	parity := [9]unpacked.Bit{}
@@ -87,8 +86,6 @@ func Encode(dataBits [7]unpacked.Bit) [16]unpacked.Bit {
 	var bits [16]unpacked.Bit
 	data := uint8(unpacked.Uint(dataBits[:7]) & 0xFF)
 
-	// Bits 15 to 9 of a table entry are data[0] to data[6], and bits 8 to 0
-	// are parity[0] to parity[8].
 	codeword := qr16_7_6_encoding_table[data&0x7F]
 
 	for i := 0; i < 16; i++ {

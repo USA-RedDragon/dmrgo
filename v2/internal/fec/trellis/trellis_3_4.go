@@ -19,8 +19,6 @@ const (
 	high  = 0x8080808080808080
 )
 
-// deinterleave returns the 98 received dibits of info in trellis order, as
-// pairs (first<<2 | second) of the 49 trellis steps.
 func deinterleave(info *[25]byte) [tribits]byte {
 	var d [dibits]byte
 	for i, j := range interleave_matrix {
@@ -33,8 +31,6 @@ func deinterleave(info *[25]byte) [tribits]byte {
 	return pairs
 }
 
-// less returns 0xFF in each byte where a is less than b, and 0 elsewhere.
-// Every byte of a and b must be below 0x80.
 func less(a, b uint64) uint64 {
 	return (^((a | high) - b) & high) >> 7 * 0xFF
 }
@@ -55,9 +51,6 @@ func less(a, b uint64) uint64 {
 func Decode(info [25]byte) ([18]byte, fec.Result) {
 	rx := deinterleave(&info)
 
-	// Byte t of metric is the path metric of state t. Each step subtracts
-	// the least metric, so a metric stays at most the largest branch metric,
-	// 20, and the sum of a metric and a branch metric stays below 0x80.
 	metric := trellis34BranchMetric[rx[0]][0]
 	var tied uint8
 	var prev [tribits]uint32

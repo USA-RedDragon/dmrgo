@@ -40,7 +40,6 @@ func TestCACHBPTC_ParityRowErrorCorrected(t *testing.T) {
 	info := cachInfo()
 	fr := encodeCACH(info)
 	for col := 0; col < 17; col++ {
-		// Stream index col*4+3 is row 3 (the column parity row) of that column.
 		got, res := decodeCACH(flipCACH(fr, col*4+3))
 		if got != info || res.Uncorrectable || res.ErrorsCorrected != 1 {
 			t.Fatalf("PC row col %d: data match=%v result=%+v", col, got == info, res)

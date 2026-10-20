@@ -47,7 +47,7 @@ func TestCRC7_CheckValid_WithMask(t *testing.T) {
 	t.Parallel()
 
 	data := []unpacked.Bit{1, 0, 1, 1}
-	// 0x7A is the Reverse Channel CRC mask (ETSI TS 102 361-1 clause B.3.12).
+	// ETSI TS 102 361-1 clause B.3.12
 	c := crc7Of(data) ^ 0x7A
 
 	withCRC := make([]unpacked.Bit, 11)

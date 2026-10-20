@@ -110,8 +110,6 @@ func TestDecodeGolay24128UncorrectableReturnsNearest23127(t *testing.T) {
 	}
 }
 
-// The Golay (23,12,7) codeword is divisible by g(x) = 0xC75, and the
-// Golay (24,12,8) codeword appends an even overall parity bit to it.
 func TestEncodeGolay24128ExtendsGolay23127(t *testing.T) {
 	t.Parallel()
 

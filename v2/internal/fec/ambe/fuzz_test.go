@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// frameBits returns the 49 vocoder bits of frame, the first most
-// significant.
 func frameBits(frame [7]byte) uint64 {
 	var v uint64
 	for _, b := range frame {
@@ -19,7 +17,6 @@ func frameBits(frame [7]byte) uint64 {
 	return v >> 7
 }
 
-// checkAMBE checks the properties of FuzzAMBE for one input.
 func checkAMBE(t testing.TB, frame [7]byte, mask [9]byte) {
 	t.Helper()
 	frame[6] &= 0x80
@@ -75,14 +72,6 @@ func checkAMBE(t testing.TB, frame [7]byte, mask [9]byte) {
 	}
 }
 
-// FuzzAMBE encodes a fuzzed 49-bit frame into a 72-bit slot, adds the
-// error pattern mask and decodes. Encode and Decode agree with the
-// reference codec, and an error-free slot decodes to the frame. Up to 3
-// errors in each Golay section decode to the frame with ErrorsCorrected
-// equal to their count, and errors in the unprotected bits pass through.
-// 4 errors in the Golay(24,12) section set Uncorrectable. A decode without
-// Uncorrectable re-encodes to a slot exactly ErrorsCorrected bits from the
-// received slot.
 func FuzzAMBE(f *testing.F) {
 	f.Add([]byte{0xF8, 0x01, 0xA9, 0x9F, 0x8C, 0xE0, 0x80}, []byte{})
 	f.Add([]byte{0xF8, 0x01, 0xA9, 0x9F, 0x8C, 0xE0, 0x80}, []byte{0x80, 0, 0, 0, 0, 0, 0, 0, 0x01})

@@ -29,8 +29,6 @@ func Uint(v uint64) string {
 	return string(b[putUint(b[:], v):])
 }
 
-// putUint writes v in decimal at the end of b and returns the index of the
-// first digit.
 func putUint(b []byte, v uint64) int {
 	i := len(b)
 	for {
@@ -123,7 +121,6 @@ func Fixed(v float64) string {
 	} else {
 		mant |= 1 << 52
 	}
-	// v is mant * 2^e.
 	e := exp - 1075
 	if e >= 0 {
 		return sign + shiftDecimal(mant, e) + ".000000"
@@ -135,7 +132,6 @@ func Fixed(v float64) string {
 	} else {
 		fr = mant
 	}
-	// The fraction is fr / 2^n. Round fr * 10^6 / 2^n half to even.
 	hi, lo := bits.Mul64(fr, 1e6)
 	var q uint64
 	if n < 128 {
@@ -155,9 +151,6 @@ func Fixed(v float64) string {
 	return sign + string(b[i:20]) + string(b[20:])
 }
 
-// shift128 returns the 128-bit value hi:lo shifted right by n, which must be
-// less than 128 and leave a result that fits in 64 bits, and whether any of
-// the bits shifted out is 1.
 func shift128(hi, lo uint64, n uint) (uint64, bool) {
 	switch {
 	case n == 0:
@@ -169,9 +162,7 @@ func shift128(hi, lo uint64, n uint) (uint64, bool) {
 	}
 }
 
-// shiftDecimal returns mant * 2^e in decimal.
 func shiftDecimal(mant uint64, e int) string {
-	// Little-endian decimal digits.
 	d := make([]byte, 0, 330)
 	for ; mant > 0; mant /= 10 {
 		d = append(d, byte(mant%10))

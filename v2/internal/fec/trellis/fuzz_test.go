@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// oneStepError reports whether e changes exactly one dibit of sent, and that
-// dibit by one deviation step.
 func oneStepError(sent, e *[25]byte) bool {
 	changed := -1
 	for i := range dibits {
@@ -34,13 +32,11 @@ func oneStepError(sent, e *[25]byte) bool {
 	return d == 2 || d == -2
 }
 
-// trellisSeed is one seed of FuzzTrellis.
 type trellisSeed struct {
 	data []byte
 	mask []byte
 }
 
-// trellisSeeds returns the seeds of FuzzTrellis.
 func trellisSeeds(tb testing.TB) []trellisSeed {
 	var seeds []trellisSeed
 	files, err := filepath.Glob("../../../layer2/testdata/*.bin")
@@ -66,7 +62,6 @@ func trellisSeeds(tb testing.TB) []trellisSeed {
 	return seeds
 }
 
-// checkTrellis checks the properties of FuzzTrellis for one input.
 func checkTrellis(t testing.TB, data []byte, mask []byte) {
 	t.Helper()
 	var d [18]byte
@@ -109,12 +104,6 @@ func checkTrellis(t testing.TB, data []byte, mask []byte) {
 	}
 }
 
-// FuzzTrellis encodes fuzzed data with the rate 3/4 trellis code, adds the
-// error pattern mask and decodes. Encode agrees with the reference encoder.
-// A clean block or one 1-step dibit error decodes to the data. Every decode
-// counts the bits between the received and the decoded block, has a path
-// metric no higher than that of the sent block, and sets Uncorrectable when
-// it returns another block with the same metric.
 func FuzzTrellis(f *testing.F) {
 	for _, s := range trellisSeeds(f) {
 		f.Add(s.data, s.mask)

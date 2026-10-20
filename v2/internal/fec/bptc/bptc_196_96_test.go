@@ -33,7 +33,6 @@ func TestBPTC19696Decode(t *testing.T) {
 
 		encodedErr := encoded
 		pos := rand.Intn(196)
-		// dm[0] is grid position 0, an unused corner, so a flip there has no effect.
 		for pos == int(dm[0]) {
 			pos = rand.Intn(196)
 		}

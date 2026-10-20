@@ -7,10 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// The embedded LC BPTC has an 8×16 encode matrix (ETSI TS 102 361-1 clause
-// B.2.1). Rows 0 to 6 hold 11 information bits and 5 Hamming(16,11,4) parity
-// bits, and row 7 holds the even parity of each column. The columns, top to
-// bottom and left to right, make 4 fragments of 32 bits for 4 voice bursts.
+// ETSI TS 102 361-1 clause B.2.1
 
 // DecodeEmbedded decodes the 77 information bits (72 LC bits and a 5-bit
 // checksum) from the fragments of voice bursts B to E, in that order. They
@@ -57,15 +54,6 @@ func DecodeEmbeddedWithCheck(fragments [4][32]unpacked.Bit, check func(info [77]
 	return s.info, result
 }
 
-// embeddedLCSearch is a branch and bound search for the error patterns of
-// least weight. The errors of 7 rows fix the errors of the eighth, the
-// derived row, because the column parity of the errors must equal the column
-// parity of the received rows. A pattern of up to EmbeddedMaxErrors errors
-// has more than 4 errors in at most one row, so a run takes up to 4 errors in
-// each row but the derived one. The run with row 7 derived keeps every
-// pattern, and a run with another row derived keeps only the patterns with 5
-// or more errors in that row, so that no pattern is found twice. Those runs
-// find nothing once the least weight is below 5.
 type embeddedLCSearch struct {
 	rows         [8]uint16
 	syndromes    [8]int
@@ -81,8 +69,6 @@ type embeddedLCSearch struct {
 	info         [77]unpacked.Bit
 }
 
-// run searches the error patterns whose errors in row derived the errors of
-// the other rows fix.
 func (s *embeddedLCSearch) run(derived int) {
 	s.derived = derived
 	k := 0
@@ -184,8 +170,6 @@ func DecodeEmbeddedStrict(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.
 	return embeddedLCInfo(&matrix), result
 }
 
-// embeddedLCMatrix reassembles the 8×16 encode matrix from the 4 fragments.
-// The interleaving writes the columns top to bottom, left to right.
 func embeddedLCMatrix(fragments [4][32]unpacked.Bit) [8][16]unpacked.Bit {
 	var matrix [8][16]unpacked.Bit
 	for col := 0; col < 16; col++ {
@@ -207,8 +191,6 @@ func embeddedLCResult(matrix, received *[8][16]unpacked.Bit) fec.Result {
 	return result
 }
 
-// embeddedLCInfo returns the 77 information bits, rows 0..6 and columns
-// 0..10 of the matrix in row-major order.
 func embeddedLCInfo(matrix *[8][16]unpacked.Bit) [77]unpacked.Bit {
 	var info [77]unpacked.Bit
 	for row := 0; row < 7; row++ {
@@ -273,8 +255,7 @@ func EncodeEmbedded(info [77]unpacked.Bit) [4][32]unpacked.Bit {
 	return fragments
 }
 
-// calculateSyndrome16_11 returns the 5-bit Hamming(16,11,4) syndrome of a
-// 16-bit row (ETSI TS 102 361-1 clause B.3.4).
+// ETSI TS 102 361-1 clause B.3.4
 func calculateSyndrome16_11(bits [16]unpacked.Bit) int {
 	s0 := bits[0] ^ bits[1] ^ bits[2] ^ bits[3] ^ bits[5] ^ bits[7] ^ bits[8] ^ bits[11]
 	s1 := bits[1] ^ bits[2] ^ bits[3] ^ bits[4] ^ bits[6] ^ bits[8] ^ bits[9] ^ bits[12]
@@ -284,8 +265,7 @@ func calculateSyndrome16_11(bits [16]unpacked.Bit) int {
 	return int(s0) | int(s1)<<1 | int(s2)<<2 | int(s3)<<3 | int(s4)<<4
 }
 
-// parityHamming16_11 returns the 5 Hamming(16,11,4) parity bits of 11 data
-// bits (ETSI TS 102 361-1 clause B.3.4, Table B.16).
+// ETSI TS 102 361-1 clause B.3.4, Table B.16
 func parityHamming16_11(data [11]unpacked.Bit) [5]unpacked.Bit {
 	return [5]unpacked.Bit{
 		data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[5] ^ data[7] ^ data[8],

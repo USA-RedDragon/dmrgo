@@ -65,11 +65,6 @@ func Decode196WithReserved(bits [196]unpacked.Bit) ([96]unpacked.Bit, [3]unpacke
 	return temp, reserved, result
 }
 
-// hammingCorrect corrects the BPTC(196,96) grid with the column
-// Hamming(13,9,3) and row Hamming(15,11,3) codes, columns first in each pass
-// as MMDVMHost does. The column parity rows are also row codewords, so all
-// 13 rows are row-decoded. It returns the corrected grid, the number of
-// flipped bits, and whether a row or column syndrome is still nonzero.
 func hammingCorrect(bits [196]unpacked.Bit) ([196]unpacked.Bit, int, bool) {
 	corrected := bits
 

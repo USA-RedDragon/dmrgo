@@ -7,8 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// parity743 returns the 3 Hamming(7,4,3) parity bits of 4 data bits, from
-// the generator matrix [I₄ | P] of ETSI TS 102 361-1 clause B.3.5.
+// ETSI TS 102 361-1 clause B.3.5
 func parity743(data [4]unpacked.Bit) [3]unpacked.Bit {
 	unpacked.Mask(data[:])
 	return [3]unpacked.Bit{
@@ -36,7 +35,6 @@ func Decode743(bits [7]unpacked.Bit) ([7]unpacked.Bit, fec.Result) {
 
 	errPos := hamming743_syndrome_table[syndrome]
 	if errPos < 0 {
-		// Should not happen for a 3-bit syndrome in Hamming(7,4,3)
 		result.Uncorrectable = true
 		return bits, result
 	}

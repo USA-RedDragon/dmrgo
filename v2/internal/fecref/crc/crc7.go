@@ -4,7 +4,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-const crc7Poly = 0x27 // x⁵ + x² + x + 1 (low 7 bits of G₇(x))
+const crc7Poly = 0x27
 
 // CRC7 computes the CRC-7 of bits with the generator polynomial x⁷ + x⁵ + x²
 // + x + 1, initial value 0 and no final inversion. The caller applies the CRC

@@ -6,14 +6,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// encodeSingleBurst calls bptc.EncodeSingleBurst with one unpacked.Bit per bit.
 func encodeSingleBurst(info [11]unpacked.Bit, oddParity bool) [32]unpacked.Bit {
 	var tx [32]unpacked.Bit
 	unpacked.PutUint(tx[:], uint64(bptc.EncodeSingleBurst(uint16(unpacked.Uint(info[:])), oddParity)))
 	return tx
 }
 
-// decodeSingleBurst calls bptc.DecodeSingleBurst with one unpacked.Bit per bit.
 func decodeSingleBurst(tx [32]unpacked.Bit, oddParity bool) ([11]unpacked.Bit, fec.Result) {
 	info, res := bptc.DecodeSingleBurst(uint32(unpacked.Uint(tx[:])), oddParity)
 	var out [11]unpacked.Bit
@@ -21,7 +19,6 @@ func decodeSingleBurst(tx [32]unpacked.Bit, oddParity bool) ([11]unpacked.Bit, f
 	return out, res
 }
 
-// encodeCACH calls bptc.EncodeCACH with one unpacked.Bit per bit.
 func encodeCACH(info [36]unpacked.Bit) [4][17]unpacked.Bit {
 	var out [4][17]unpacked.Bit
 	for i, f := range bptc.EncodeCACH(unpacked.Uint(info[:])) {
@@ -30,7 +27,6 @@ func encodeCACH(info [36]unpacked.Bit) [4][17]unpacked.Bit {
 	return out
 }
 
-// decodeCACH calls bptc.DecodeCACH with one unpacked.Bit per bit.
 func decodeCACH(fragments [4][17]unpacked.Bit) ([36]unpacked.Bit, fec.Result) {
 	var words [4]uint32
 	for i := range fragments {
@@ -56,7 +52,6 @@ func unpackEmbeddedInfo(p [10]byte) [77]unpacked.Bit {
 	return info
 }
 
-// encodeEmbedded calls bptc.EncodeEmbedded with one unpacked.Bit per bit.
 func encodeEmbedded(info [77]unpacked.Bit) [4][32]unpacked.Bit {
 	var p [10]byte
 	unpacked.PackAt(p[:], 0, info[:])
@@ -67,21 +62,16 @@ func encodeEmbedded(info [77]unpacked.Bit) [4][32]unpacked.Bit {
 	return out
 }
 
-// decodeEmbedded calls bptc.DecodeEmbedded with one unpacked.Bit per bit.
 func decodeEmbedded(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.Result) {
 	info, res := bptc.DecodeEmbedded(embeddedWords(fragments))
 	return unpackEmbeddedInfo(info), res
 }
 
-// decodeEmbeddedStrict calls bptc.DecodeEmbeddedStrict with one unpacked.Bit per
-// bit.
 func decodeEmbeddedStrict(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.Result) {
 	info, res := bptc.DecodeEmbeddedStrict(embeddedWords(fragments))
 	return unpackEmbeddedInfo(info), res
 }
 
-// decodeEmbeddedWithCheck calls bptc.DecodeEmbeddedWithCheck with one
-// unpacked.Bit per bit.
 func decodeEmbeddedWithCheck(fragments [4][32]unpacked.Bit, check func([77]unpacked.Bit) bool) ([77]unpacked.Bit, fec.Result) {
 	info, res := bptc.DecodeEmbeddedWithCheck(embeddedWords(fragments), func(p [10]byte) bool { return check(unpackEmbeddedInfo(p)) })
 	return unpackEmbeddedInfo(info), res

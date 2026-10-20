@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// evenInfo accepts the information bits whose first 72 bits have even
-// weight, a stand-in for the LC checksum that splits ties.
 func evenInfo(info [10]byte) bool {
 	w := 0
 	for _, b := range info[:9] {

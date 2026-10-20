@@ -8,7 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// tableB7 returns ETSI TS 102 361-1 Table B.7, indexed by [FSM state][input tribit].
+// ETSI TS 102 361-1 Table B.7
 func tableB7() [8][8]byte {
 	return [8][8]byte{
 		{0, 8, 4, 12, 2, 10, 6, 14},
@@ -22,7 +22,7 @@ func tableB7() [8][8]byte {
 	}
 }
 
-// tableB8 returns ETSI TS 102 361-1 Table B.8, constellation point to dibit pair.
+// ETSI TS 102 361-1 Table B.8
 func tableB8() [16][2]int8 {
 	return [16][2]int8{
 		{1, -1}, {-1, -1}, {3, -3}, {-3, -3}, {-3, -1}, {3, -1}, {-1, -3}, {1, -3},
@@ -30,13 +30,11 @@ func tableB8() [16][2]int8 {
 	}
 }
 
-// symbolBits maps a ±1/±3 dibit symbol to its two bits (ETSI TS 102 361-1
-// Table 10.3).
+// ETSI TS 102 361-1 Table 10.3
 func symbolBits(d int8) byte {
 	return map[int8]byte{3: 0b01, 1: 0b00, -1: 0b10, -3: 0b11}[d]
 }
 
-// level returns the deviation level of a 2-bit dibit value.
 func level(d byte) int {
 	return [4]int{1, 3, -1, -3}[d&3]
 }
@@ -76,9 +74,6 @@ func setDibit(info *[25]byte, i int, d byte) {
 	info[i/4] = info[i/4]&^(3<<sh) | d<<sh
 }
 
-// cost returns the path metric of the block sent as info if rx was
-// received: the sum over the 98 dibits of the cost of the deviation steps
-// between them, as the decoder's branch metric counts them.
 func cost(rx, sent *[25]byte) int {
 	stepCost := [4]int{0, 7, 10, 9}
 	total := 0
@@ -131,9 +126,6 @@ func TestTrellis34_CleanDecode(t *testing.T) {
 	}
 }
 
-// A 1-step error, such as +1 received as +3 or -1, is the most likely
-// symbol error of a 4FSK receiver, and changes one bit. The decoder corrects
-// every single 1-step error.
 func TestTrellis34_SingleOneStepErrorsCorrected(t *testing.T) {
 	t.Parallel()
 
@@ -157,9 +149,6 @@ func TestTrellis34_SingleOneStepErrorsCorrected(t *testing.T) {
 	}
 }
 
-// The decoder returns a block with the least path metric: no block, the
-// sent one included, has a lower metric, and an equal one sets
-// Uncorrectable.
 func TestTrellis34_MaximumLikelihood(t *testing.T) {
 	t.Parallel()
 
@@ -185,10 +174,6 @@ func TestTrellis34_MaximumLikelihood(t *testing.T) {
 	}
 }
 
-// Two blocks can differ in only 2 dibits, so a single dibit error that is
-// not a 1-step error can make the received block as close to another block,
-// or closer. The decoder flags the ties and decodes the rest to the block
-// with the lower metric.
 func TestTrellis34_SingleDibitErrors(t *testing.T) {
 	t.Parallel()
 
@@ -221,9 +206,6 @@ func TestTrellis34_SingleDibitErrors(t *testing.T) {
 	t.Logf("single dibit errors: %d corrected, %d flagged, %d decoded to a closer block", ok, flagged, closer)
 }
 
-// Two blocks that differ in exactly 2 dibits: from state 0, tribits 0 then 0
-// send the points (1,-1) (1,-1), and tribits 2 then 0 send (-3,-1) (-1,-1).
-// A received (-3,-1) (1,-1) is one dibit from each.
 func TestTrellis34_TwoDibitDistance(t *testing.T) {
 	t.Parallel()
 

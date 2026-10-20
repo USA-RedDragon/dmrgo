@@ -59,8 +59,7 @@ func TestCRC9_CheckValid_WithMask(t *testing.T) {
 	data[50] = 1
 	data[100] = 1
 
-	// 0x1FF is the rate 3/4 data continuation mask (ETSI TS 102 361-1 clause
-	// B.3.12).
+	// ETSI TS 102 361-1 clause B.3.12
 	c := crc9Of(data) ^ 0x1FF
 
 	withCRC := make([]unpacked.Bit, 144)

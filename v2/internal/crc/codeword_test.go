@@ -20,8 +20,6 @@ func checkCRC9Of(bits []unpacked.Bit, want uint16) bool {
 	return crc.CheckCRC9(unpacked.Pack(bits), len(bits), want)
 }
 
-// The helpers check a codeword whose last bits hold the CRC XORed with mask.
-
 func checkCRC7Codeword(bits []unpacked.Bit, mask uint8) bool {
 	n := len(bits)
 	if n < 8 {
