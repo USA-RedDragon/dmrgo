@@ -121,8 +121,9 @@ type Config struct {
 	// exact SYNC, and a negative value means layer2.DefaultSyncThreshold.
 	Threshold int
 	// Period is the number of bits from one burst to the next while
-	// locked. 0 means OutboundPeriod. Use SlotPeriod for the bursts of a
-	// single TDMA channel, such as one inbound or direct mode channel.
+	// locked. 0 means OutboundPeriod, and a Period under layer2.BurstBits
+	// means layer2.BurstBits. Use SlotPeriod for the bursts of a single
+	// TDMA channel, such as one inbound or direct mode channel.
 	Period int
 	// CACH decodes the 24 bits before each burst as a CACH, for a BS
 	// outbound stream.
@@ -156,8 +157,11 @@ func New(cfg Config) *Framer {
 	if cfg.Threshold < 0 {
 		cfg.Threshold = layer2.DefaultSyncThreshold
 	}
-	if cfg.Period <= 0 {
+	switch {
+	case cfg.Period <= 0:
 		cfg.Period = OutboundPeriod
+	case cfg.Period < layer2.BurstBits:
+		cfg.Period = layer2.BurstBits
 	}
 	if cfg.MaxMisses <= 0 {
 		cfg.MaxMisses = DefaultMaxMisses
