@@ -87,6 +87,7 @@ type gen struct {
 	usedHandles map[*tinfo]bool
 	scratch     map[*tinfo][]string
 	curMethod   *types.Func
+	fillBuf     bool
 	curRecv     *tinfo
 	unbounded   []string
 	lock        *abiLock
@@ -310,9 +311,9 @@ func (g *gen) typeObject(o *types.TypeName, gn string) error {
 		if why != "" {
 			me.Err = why
 		} else {
-			g.curMethod, g.curRecv = m, ti
+			g.curMethod, g.curRecv, g.fillBuf = m, ti, isRead(m)
 			err := g.addFunc(&me, ti.base+"_"+snake(m.Name()), g.doc(m, gn+"."+m.Name()), ti, rk, m.Name(), m.Signature(), nil)
-			g.curMethod, g.curRecv = nil, nil
+			g.curMethod, g.curRecv, g.fillBuf = nil, nil, false
 			if err != nil {
 				return err
 			}
