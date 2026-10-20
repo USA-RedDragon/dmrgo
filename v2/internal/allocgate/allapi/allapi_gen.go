@@ -7,6 +7,7 @@ package main
 
 import (
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
+	bs "github.com/USA-RedDragon/dmrgo/v2/bs"
 	csbk "github.com/USA-RedDragon/dmrgo/v2/csbk"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -32,6 +33,26 @@ import (
 
 var api = [...]any{
 	(*dmrgo.FieldRangeError).Error,
+	(*bs.CACH).First,
+	(*bs.CACH).Next,
+	(*bs.CACH).Reset,
+	(*bs.ConfigError).Error,
+	(*bs.Repeater).Deadline,
+	(*bs.Repeater).Inbound,
+	(*bs.Repeater).Lost,
+	(*bs.Repeater).Reject,
+	(*bs.Repeater).Reset,
+	(*bs.Repeater).SlotState,
+	(*bs.Repeater).State,
+	(*bs.Repeater).Tick,
+	bs.Activation.String,
+	bs.Mode.String,
+	bs.New,
+	bs.OutputKind.String,
+	bs.Reason.String,
+	bs.Service.String,
+	bs.SlotState.String,
+	bs.State.String,
 	(*csbk.ConfigError).Error,
 	(*csbk.Preambles).Burst,
 	(*csbk.Preambles).Deadline,
