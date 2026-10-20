@@ -62,6 +62,11 @@ type FollowerConfig struct {
 	// after which the Follower leaves the TSCC. 0 means
 	// constants.NSysErrDefault.
 	SysErrors int
+	// AcceptRAS takes a CSBK whose CRC fails as valid when its BPTC needed
+	// no correction and its BPTC reserved bit R(2) flags RAS. The CRC of a
+	// Motorola Capacity Max system with RAS is a MAC with the key of the
+	// system, which the Follower cannot check.
+	AcceptRAS bool
 	// Scratch, when set, is the Burst that the Follower decodes into, as
 	// for voice.ReceiverConfig.Scratch. Nil means the Follower makes its
 	// own.
@@ -131,6 +136,7 @@ func (f *Follower) init(cfg *FollowerConfig) error {
 	f.talk, f.talkLen, f.indiv, f.data, f.noFollow = cfg.Talkgroups, cfg.TalkgroupsLen, cfg.Individual, cfg.Data, cfg.NoFollow
 	f.noSignal, f.inactive, f.hangtime, f.sysErrMax = cfg.NoSignal, cfg.Inactive, cfg.Hangtime, cfg.SysErrors
 	f.ctl.b = cfg.Scratch
+	f.ctl.acceptRAS = cfg.AcceptRAS
 	if cfg.SysCode != nil {
 		if _, err := cfg.SysCode.Pack(); err != nil {
 			return errSysCode
@@ -329,9 +335,15 @@ func (f *Follower) control(now time.Duration, h *layer2.Hint, out []Output) []Ou
 			return f.lose(now, ReasonSysCode, out)
 		}
 		return out
-	case eventTSCC:
+	case eventTSCC, eventMove:
 		if f.state == StateControl {
 			f.lastTSCC = now
+		}
+		return out
+	case eventUDT:
+		if f.state == StateControl {
+			f.lastTSCC = now
+			out = append(out, Output{Kind: OutputUDT})
 		}
 		return out
 	case eventSystem, eventSiteNews, eventGrant:
@@ -417,13 +429,45 @@ func (f *Follower) payload(now time.Duration, ok bool, h *layer2.Hint, out []Out
 		f.inHang = false
 	case enums.DataTypeCSBK:
 		c, isCSBK := b.Data.(*pdu.CSBK)
-		if isCSBK && !b.FEC.PDU.Uncorrectable && c.FID == enums.FIDStandardized && c.ClearPDU != nil {
+		if isCSBK && f.ctl.dataOK() && c.FID == enums.FIDStandardized && c.ClearPDU != nil && f.clears(c.ClearPDU) {
 			f.cleared, f.clearedAt, f.hasClear = f.call, now, true
-			return f.leave(now, ReasonClear, out)
+			out = f.leave(now, ReasonClear, out)
+			if ch := c.ClearPDU.PhysicalChannel; ch != ChannelNull && ch != ChannelAbsolute && ch != f.ctl.site.Channel {
+				out = out[:len(out)-1]
+				out = f.moveTo(now, ch, out)
+			}
+			return out
 		}
 	default:
 	}
 	return out
+}
+
+func (f *Follower) clears(p *pdu.ClearPDU) bool {
+	if p.TargetAddress == constants.GatewayALLMSI || p.TargetAddress == constants.AllMSID {
+		return true
+	}
+	if p.GroupIndividual {
+		return f.call.Group && p.TargetAddress == f.call.Target
+	}
+	return !f.call.Group && (p.TargetAddress == f.call.Target || p.TargetAddress == f.call.Source)
+}
+
+func (f *Follower) moveTo(now time.Duration, ch uint16, out []Output) []Output {
+	t := Tune{Channel: ch}
+	if c, ok := f.ctl.plan.Lookup(ch); ok {
+		t.RXHz, t.TXHz = c.RXHz, c.TXHz
+	}
+	f.ctl.forget()
+	f.ctl.site.Channel = ch
+	f.state, f.started, f.dwellEnd, f.sysErrs = StateHunting, true, now+f.noSignal, 0
+	return append(out, Output{Kind: OutputTune, Tune: t})
+}
+
+// UDT returns the UDT delivery of the last OutputUDT. It points into the
+// Follower and holds until the next call of a method of the Follower.
+func (f *Follower) UDT() *UDT {
+	return &f.ctl.udt
 }
 
 func (f *Follower) leave(now time.Duration, reason Reason, out []Output) []Output {

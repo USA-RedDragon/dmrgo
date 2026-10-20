@@ -10,6 +10,8 @@ import (
 
 const repeatHold = time.Second
 
+const rasFlag = 0x4
+
 type pendingKind uint8
 
 const (
@@ -27,6 +29,8 @@ const (
 	eventOther
 	eventSiteNews
 	eventGrant
+	eventUDT
+	eventMove
 )
 
 type control struct {
@@ -50,6 +54,12 @@ type control struct {
 	lastGrantT time.Duration
 	hasLast    bool
 	cs         pdu.CSBK
+	acceptRAS  bool
+	udt        UDT
+	udtWant    int
+	udtSlot    enums.Slot
+	udtOn      bool
+	move       pdu.MovePDU
 }
 
 func (c *control) decode(raw *layer2.RawBurst, h *layer2.Hint) bool {
@@ -80,14 +90,19 @@ func (c *control) cach(cc *layer2.CACH) bool {
 }
 
 func (c *control) okData() bool {
+	return c.dataOK() && (!c.site.HasSysCode || c.b.SlotType.ColorCode == c.site.ColorCode)
+}
+
+func (c *control) dataOK() bool {
 	b := c.b
-	if b.Kind != layer2.KindData || b.FEC.SlotType.Uncorrectable || b.FEC.Payload.Uncorrectable || b.FEC.PDU.Uncorrectable {
+	if b.Kind != layer2.KindData || b.FEC.SlotType.Uncorrectable || b.FEC.Payload.Uncorrectable {
 		return false
 	}
-	if b.SyncPattern != enums.SyncBSSourcedData && b.SyncPattern != enums.SyncNone {
+	ras := c.acceptRAS && b.BPTCReserved&rasFlag != 0 && b.FEC.Payload.ErrorsCorrected == 0
+	if b.FEC.PDU.Uncorrectable && !ras {
 		return false
 	}
-	return !c.site.HasSysCode || b.SlotType.ColorCode == c.site.ColorCode
+	return b.SyncPattern == enums.SyncBSSourcedData || b.SyncPattern == enums.SyncNone
 }
 
 func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
@@ -109,8 +124,34 @@ func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
 		return c.mbcHeader(d, slot)
 	case *pdu.MBCContinuation:
 		return c.mbcContinuation(now, d, slot)
+	case *pdu.DataHeader:
+		c.pending, c.udtOn = pendingNone, false
+		if h := d.UDTHeader; h != nil && h.Opcode == pdu.UDTOpcodeOutboundHeader {
+			c.udt = UDT{Header: *h}
+			c.udtWant, c.udtSlot, c.udtOn = int(h.AppendedBlocks)+1, slot, true
+		}
+		return eventTSCC
+	case *pdu.Rate12Data:
+		return c.udtBlock(d, slot)
 	}
 	return eventNone
+}
+
+func (c *control) udtBlock(d *pdu.Rate12Data, slot enums.Slot) tsccEvent {
+	if !c.udtOn || slot != c.udtSlot {
+		return eventNone
+	}
+	u := &c.udt
+	u.blocks[u.n] = d.Data
+	copy(u.Data[u.n*12:], d.Data[:])
+	u.n++
+	if u.n < c.udtWant {
+		return eventTSCC
+	}
+	c.udtOn = false
+	u.Len = u.n*12 - 2
+	u.CRCOK = pdu.MBCLastBlockCRCOK(u.blocks[:u.n]...)
+	return eventUDT
 }
 
 func (c *control) csbk(now time.Duration, d *pdu.CSBK) tsccEvent {
@@ -119,6 +160,9 @@ func (c *control) csbk(now time.Duration, d *pdu.CSBK) tsccEvent {
 		return c.aloha(d.AlohaPDU)
 	case d.BroadcastPDU != nil:
 		return c.broadcast(d.BroadcastPDU)
+	case d.MovePDU != nil:
+		c.move = *d.MovePDU
+		return eventMove
 	}
 	g, ok, absolute := grantOf(d)
 	if !ok {

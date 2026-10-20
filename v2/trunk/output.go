@@ -47,6 +47,15 @@ const (
 	// Output.Grant: an individual call that the MS answers, or a radio
 	// check.
 	OutputAhoy
+	// OutputUDT reports a UDT delivery, which UDT returns until the next
+	// call of the machine.
+	OutputUDT
+	// OutputProtect reports a P_PROTECT for the MS on its payload channel,
+	// with its kind in Output.Protect.
+	OutputProtect
+	// OutputPowerOff reports that the MS de-registered, or gave up after
+	// T_Dereg, and may be switched off.
+	OutputPowerOff
 )
 
 // String returns the name of the OutputKind.
@@ -70,6 +79,12 @@ func (k OutputKind) String() string {
 		return "Refused"
 	case OutputAhoy:
 		return "Ahoy"
+	case OutputUDT:
+		return "UDT"
+	case OutputProtect:
+		return "Protect"
+	case OutputPowerOff:
+		return "PowerOff"
 	}
 	return unknownName
 }
@@ -232,6 +247,8 @@ type Output struct {
 	Slot enums.Slot
 	// Due is the time at which to transmit OutputBurst.
 	Due time.Duration
+	// Protect is the kind of OutputProtect.
+	Protect enums.ProtectKind
 }
 
 // State is the state of a Follower or an MS.
@@ -261,3 +278,20 @@ func (s State) String() string {
 }
 
 const unknownName = "Unknown"
+
+// UDT is a Unified Data Transport delivery of a TSCC: a C_UDTHD header
+// and its 1 to 4 appended rate 1/2 blocks (ETSI TS 102 361-4 clause 6.5).
+type UDT struct {
+	// Header is the C_UDTHD header.
+	Header pdu.UDTHeader
+	// Data holds the Len octets of the appended blocks before the CRC of
+	// the last block.
+	Data [4 * 12]byte
+	// Len is the number of octets of Data in use.
+	Len int
+	// CRCOK reports whether the CRC of the last block checks.
+	CRCOK bool
+
+	blocks [4][12]byte
+	n      int
+}
