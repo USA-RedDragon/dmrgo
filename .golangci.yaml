@@ -140,6 +140,10 @@ linters:
         linters:
           - paralleltest
         text: ^Function TestAllocs\w* missing the call to method parallel
+      - path: v2/capi/go\.mod$
+        linters:
+          - gomoddirectives
+        text: local replacement
       # jennifer's DSL is written with a dot import.
       - path: cmd/dmrgen/emit/
         linters:
