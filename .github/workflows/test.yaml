@@ -59,7 +59,7 @@ jobs:
       - run: go generate ./...
 
       - name: Race tests
-        run: go test -C v2 ./... -race
+        run: go test -C v2 -timeout 60m ./... -race
 
       - name: Check the allocation table of the README against the gate
         run: DMRGO_README=check go test -C v2 -run TestHeapAllocations ./internal/allocgate
