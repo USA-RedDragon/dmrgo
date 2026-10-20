@@ -32,12 +32,12 @@ func TestAudioOptGradient(t *testing.T) {
 		o.f[i] = 1944 * float64(rng.IntN(4)*2-3) / 3
 		o.x[i] = rng.NormFloat64() * 20
 	}
-	x := make([]float64, aoptFree)
+	x := make([]float64, o.win-o.ctx)
 	for i := range x {
 		x[i] = rng.NormFloat64() * 20
 	}
-	g := make([]float64, aoptFree)
-	gn := make([]float64, aoptFree)
+	g := make([]float64, o.win-o.ctx)
+	gn := make([]float64, o.win-o.ctx)
 	o.jscale = 1
 	o.eval(1000, x, g)
 	var gmax float64
@@ -54,6 +54,16 @@ func TestAudioOptGradient(t *testing.T) {
 		num := (jp - jm) / (2 * h)
 		if math.Abs(num-g[i]) > 1e-4*gmax {
 			t.Errorf("sample %d: gradient %g, numeric %g", i, g[i], num)
+		}
+	}
+}
+
+func TestAudioOptDelay(t *testing.T) {
+	t.Parallel()
+	for _, hz := range []int{20000, 22050, 24000, 32000, 44100, 48000, 96000} {
+		o := newAudioOpt(1, hz)
+		if d := float64(o.delay) * SymbolRate / float64(hz); d < 60 || d > 140 {
+			t.Errorf("%d Hz: delay %.1f symbols", hz, d)
 		}
 	}
 }

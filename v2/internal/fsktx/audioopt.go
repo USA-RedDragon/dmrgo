@@ -10,13 +10,13 @@ const (
 	radioLowpassHz = 8000.0
 )
 
-// Sizes of the audio optimizer, in samples at the audio rate.
+// The window of the audio optimizer is the power of two of samples at
+// the audio rate nearest to aoptWin48k times the rate over 48000 Hz, so
+// that its delay in symbols is about the same at every rate. Its context
+// is a quarter and its step a half of it.
 const (
-	aoptWin  = 1024
-	aoptCtx  = 256
-	aoptStep = 512
-	aoptFree = aoptWin - aoptCtx
-	aoptH    = optLPN / 2
+	aoptWin48k = 1024
+	aoptH      = optLPN / 2
 )
 
 // Extra weight of the audio optimizer, in dB, on the power from aoptFarHz
@@ -60,6 +60,8 @@ type aoptimizer struct {
 	up        int
 	settle    int
 	delay     int
+	win, ctx  int
+	step      int
 	hz, rhz   float64
 	k2        float64
 	wts       []float64
@@ -94,22 +96,40 @@ func aoptRate(hz int) bool {
 	return up&(up-1) == 0
 }
 
+// aoptSettle returns the length in samples at hz of the response of the
+// radio model to one sample.
+func aoptSettle(hz int) int {
+	al := 2 * math.Pi * radioLowpassHz / math.Sqrt2
+	return int(math.Ceil((36/al+1/float64(hz))*float64(hz))) + 1
+}
+
 // newAudioOpt returns an aoptimizer for audio at hz, which aoptRate
 // takes, with iters iterations per block.
 func newAudioOpt(iters, hz int) *aoptimizer {
+	win := 64
+	for float64(win)*math.Sqrt2 < aoptWin48k*float64(hz)/48000 {
+		win *= 2
+	}
+	return newAudioOptWin(iters, hz, win)
+}
+
+// newAudioOptWin returns an aoptimizer with a window of win samples, a
+// power of two.
+func newAudioOptWin(iters, hz, win int) *aoptimizer {
 	up := 1
 	for hz*up < radioHz {
 		up *= 2
 	}
 	rhz := float64(hz * up)
-	n := aoptWin * up
-	o := &aoptimizer{iters: iters, up: up, hz: float64(hz), rhz: rhz, k2: 2 * math.Pi / radioHz}
-	if up*hz != radioHz {
-		o.k2 = 2 * math.Pi / rhz
-	}
 	w := 2 * math.Pi * radioLowpassHz
 	al := w / math.Sqrt2
 	hold := 1 / float64(hz)
+	n := win * up
+	o := &aoptimizer{iters: iters, up: up, hz: float64(hz), rhz: rhz, k2: 2 * math.Pi / radioHz, win: win, ctx: win / 4, step: win / 2, settle: aoptSettle(hz)}
+	free := win - o.ctx
+	if up*hz != radioHz {
+		o.k2 = 2 * math.Pi / rhz
+	}
 	ramp := func(t float64) float64 {
 		if t <= 0 {
 			return 0
@@ -117,7 +137,6 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 		return t - (1-math.Exp(-al*t)*math.Cos(al*t))/al
 	}
 	rise := func(t float64) float64 { return ramp(t) - ramp(t-hold) }
-	o.settle = int(math.Ceil((36/al+hold)*float64(hz))) + 1
 	o.wts = make([]float64, up*o.settle)
 	for p := range up {
 		end := float64(p+1) / rhz
@@ -127,7 +146,7 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 		}
 	}
 	sym := hz / gcd(hz, 4800)
-	o.delay = (aoptWin - aoptCtx - 1 + aoptH + sym - 1) / sym * sym
+	o.delay = (win - o.ctx - 1 + aoptH + sym - 1) / sym * sym
 	o.f = make([]float64, optRing)
 	o.x = make([]float64, optRing)
 	o.lp = make([]float64, optLPN)
@@ -194,13 +213,13 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 	}
 	o.re, o.im = make([]float64, n), make([]float64, n)
 	o.gout = make([]float64, n)
-	o.xa = make([]float64, aoptWin+2*aoptH+o.settle)
-	o.e = make([]float64, aoptWin+o.settle)
-	o.ge = make([]float64, aoptWin+o.settle)
-	o.xv, o.g, o.d = make([]float64, aoptFree), make([]float64, aoptFree), make([]float64, aoptFree)
-	o.xn, o.gn = make([]float64, aoptFree), make([]float64, aoptFree)
+	o.xa = make([]float64, win+2*aoptH+o.settle)
+	o.e = make([]float64, win+o.settle)
+	o.ge = make([]float64, win+o.settle)
+	o.xv, o.g, o.d = make([]float64, free), make([]float64, free), make([]float64, free)
+	o.xn, o.gn = make([]float64, free), make([]float64, free)
 	for i := range optMem {
-		o.s[i], o.y[i] = make([]float64, aoptFree), make([]float64, aoptFree)
+		o.s[i], o.y[i] = make([]float64, free), make([]float64, free)
 	}
 	return o
 }
@@ -212,8 +231,8 @@ func (o *aoptimizer) process(buf []float64) {
 		o.f[o.nIn&(optRing-1)] = v
 		o.x[o.nIn&(optRing-1)] = 0
 		o.nIn++
-		if o.nIn == o.nBlk*aoptStep+aoptWin-aoptCtx {
-			o.block(o.nBlk*aoptStep - aoptCtx)
+		if o.nIn == o.nBlk*o.step+o.win-o.ctx {
+			o.block(o.nBlk*o.step - o.ctx)
 			o.nBlk++
 		}
 		m := o.nIn - 1 - o.delay
@@ -259,19 +278,19 @@ func (o *aoptimizer) fft(re, im []float64, inv bool) {
 // and its gradient in g.
 func (o *aoptimizer) eval(w0 int, x, g []float64) float64 {
 	L, H := o.settle, aoptH
+	win, ctx := o.win, o.ctx
 	base := L + H
-	for i := -base; i < aoptWin+H; i++ {
+	for i := -base; i < win+H; i++ {
 		var v float64
 		switch {
-		case i < aoptCtx:
+		case i < ctx:
 			v = o.x[(w0+i)&(optRing-1)]
-		case i < aoptWin:
-			v = x[i-aoptCtx]
+		case i < win:
+			v = x[i-ctx]
 		}
 		o.xa[i+base] = v
 	}
-	// e[i+L] is the deviation with the high-passed correction at i, from -L.
-	for i := -L; i < aoptWin; i++ {
+	for i := -L; i < win; i++ {
 		var acc float64
 		for k, c := range o.lp {
 			acc += c * o.xa[i+H-k+base]
@@ -313,7 +332,7 @@ func (o *aoptimizer) eval(w0 int, x, g []float64) float64 {
 	for i := range o.ge {
 		o.ge[i] = 0
 	}
-	for k := -L + 1; k < aoptWin; k++ {
+	for k := -L + 1; k < win; k++ {
 		var v float64
 		for p := range o.up {
 			w := o.wts[p*L : p*L+L]
@@ -329,21 +348,31 @@ func (o *aoptimizer) eval(w0 int, x, g []float64) float64 {
 		}
 		o.ge[k+L] = v
 	}
-	for i := aoptCtx; i < aoptWin; i++ {
+	for i := ctx; i < win; i++ {
 		v := o.ge[i+L]
-		for m := max(i-H, -L+1); m <= min(i+H, aoptWin-1); m++ {
+		for m := max(i-H, -L+1); m <= min(i+H, win-1); m++ {
 			v -= o.ge[m+L] * o.lp[m+H-i]
 		}
-		g[i-aoptCtx] = v
+		g[i-ctx] = v
 	}
 	return j * sc
 }
 
 // block optimizes the window from sample w0.
 func (o *aoptimizer) block(w0 int) {
-	for n := range aoptFree {
-		o.xv[n] = o.x[(w0+aoptCtx+n)&(optRing-1)]
+	free := o.win - o.ctx
+	for n := range free {
+		o.xv[n] = o.x[(w0+o.ctx+n)&(optRing-1)]
 	}
+	o.solve(w0)
+	for n := range free {
+		o.x[(w0+o.ctx+n)&(optRing-1)] = o.xv[n]
+	}
+}
+
+// solve runs the iterations on the free correction xv of the window from
+// sample w0.
+func (o *aoptimizer) solve(w0 int) {
 	o.jscale = 1
 	j := o.eval(w0, o.xv, o.g)
 	if !(j > 1e-14) {
@@ -413,8 +442,5 @@ func (o *aoptimizer) block(w0 int) {
 			o.rho[k] = 1 / sy
 			m++
 		}
-	}
-	for n := range aoptFree {
-		o.x[(w0+aoptCtx+n)&(optRing-1)] = o.xv[n]
 	}
 }
