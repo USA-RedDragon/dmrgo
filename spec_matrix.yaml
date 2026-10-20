@@ -73,6 +73,10 @@ ignore_files:
   - v2/csbk/nocopy.go
   - v2/csbk/output.go
   - v2/csbk/rand.go
+  - v2/bs/errors.go
+  - v2/bs/nocopy.go
+  - v2/bs/repeater.go
+  - v2/bs/types.go
 
 documents:
   - id: "TS-102-361-1"
@@ -167,6 +171,7 @@ documents:
         source_files:
           - v2/layer2/cach.go
           - v2/layer2/pdu/tact.go
+          - v2/bs/cach.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
@@ -175,6 +180,10 @@ documents:
               - TestCACH_EncodeDecodeRoundTrip
               - TestCACH_Constants
               - TestCACH_TACTErrorCorrection
+          - package: github.com/USA-RedDragon/dmrgo/v2/bs
+            names:
+              - TestCACH
+              - TestXPR8400Outbound
 
       - section: "6.4"
         title: "Reverse Channel"
