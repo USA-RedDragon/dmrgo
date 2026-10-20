@@ -19,6 +19,12 @@ func (c *Codec) FrameSamples() int { return FrameSamples }
 // Mode returns zero.
 func (c *Codec) Mode() Mode { return 0 }
 
+// DecodeMode returns zero.
+func (c *Codec) DecodeMode() Mode { return 0 }
+
+// Reset does nothing.
+func (c *Codec) Reset() {}
+
 // FID returns zero.
 func (c *Codec) FID() enums.FeatureSetID { return 0 }
 

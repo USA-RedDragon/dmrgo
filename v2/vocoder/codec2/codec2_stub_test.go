@@ -29,6 +29,10 @@ func TestStubUnavailable(t *testing.T) {
 	if _, err := c.Decode([9]byte{}); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("Decode error = %v", err)
 	}
+	c.Reset()
+	if c.DecodeMode() != 0 {
+		t.Errorf("DecodeMode = %d", c.DecodeMode())
+	}
 	if err := c.Close(); err != nil {
 		t.Errorf("Close error = %v", err)
 	}

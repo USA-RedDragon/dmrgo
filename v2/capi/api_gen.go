@@ -23616,6 +23616,22 @@ func dmrgo_codec2_codec_decode(c_self *C.dmrgo_codec2_codec_t, c_slot *C.uint8_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_codec2_codec_decode_mode
+func dmrgo_codec2_codec_decode_mode(c_self *C.dmrgo_codec2_codec_t, c_out *C.dmrgo_codec2_mode_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_codec2_Codec(c_self)
+	r0 := h.v.DecodeMode()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_codec2_mode_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_codec2_codec_encode
 func dmrgo_codec2_codec_encode(c_self *C.dmrgo_codec2_codec_t, c_pcm *C.int16_t, c_pcm_len C.size_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23682,6 +23698,18 @@ func dmrgo_codec2_codec_mode(c_self *C.dmrgo_codec2_codec_t, c_out *C.dmrgo_code
 	if c_out != nil {
 		*c_out = C.dmrgo_codec2_mode_t(r0)
 	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_codec2_codec_reset
+func dmrgo_codec2_codec_reset(c_self *C.dmrgo_codec2_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_codec2_Codec(c_self)
+	h.v.Reset()
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

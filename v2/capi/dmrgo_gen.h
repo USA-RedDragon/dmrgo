@@ -3043,6 +3043,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CODEC2_MODE2400 ((dmrgo_codec2_mode_t)2400)
 /* Go: codec2.Mode3200. 3200 bit/s, 8 bytes per frame */
 #define DMRGO_CODEC2_MODE3200 ((dmrgo_codec2_mode_t)3200)
+/* Go: codec2.ModeAuto. decode the mode that the frames of each call show, encode Mode2400 */
+#define DMRGO_CODEC2_MODE_AUTO ((dmrgo_codec2_mode_t)0)
 /* Go: codec2.Name. Name is the name to register the codec under in the vocoder registry. */
 #define DMRGO_CODEC2_NAME "codec2"
 /* Go: voice.DefaultLost. DefaultLost is the time without a burst after which a Receiver ends a call, when ReceiverConfig.Lost is 0. */
@@ -4812,15 +4814,19 @@ int dmrgo_codec2_codec_close(dmrgo_codec2_codec_t *self);
 int dmrgo_codec2_codec_decode_need(dmrgo_codec2_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 /* Go: codec2.Codec.Decode. Decode decodes one 72-bit frame into FrameSamples samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_codec2_codec_decode_need gives. */
 int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: codec2.Codec.Encode. Encode encodes exactly FrameSamples samples into one 72-bit frame. */
+/* Go: codec2.Codec.DecodeMode. DecodeMode returns the mode of the frames of the current call: the configured mode, or for ModeAuto the detected mode. */
+int dmrgo_codec2_codec_decode_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
+/* Go: codec2.Codec.Encode. Encode encodes exactly FrameSamples samples into one 72-bit frame, in Mode2400 for ModeAuto. */
 int dmrgo_codec2_codec_encode(dmrgo_codec2_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 /* Go: codec2.Codec.FID. FID returns the configured Feature set ID. */
 int dmrgo_codec2_codec_fid(dmrgo_codec2_codec_t *self, dmrgo_enums_feature_set_id_t *out);
 /* Go: codec2.Codec.FrameSamples. FrameSamples returns FrameSamples. */
 int dmrgo_codec2_codec_frame_samples(dmrgo_codec2_codec_t *self, int64_t *out);
-/* Go: codec2.Codec.Mode. Mode returns the configured Codec2 mode. */
+/* Go: codec2.Codec.Mode. Mode returns the configured Codec2 mode, ModeAuto for a Codec that detects the mode. */
 int dmrgo_codec2_codec_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
-/* Go: codec2.Codec.Silence. Silence returns 20 ms of digital silence encoded with a fresh encoder state in the configured mode. */
+/* Go: codec2.Codec.Reset. Reset starts a new call: a ModeAuto Codec detects the mode again from the next frame. */
+int dmrgo_codec2_codec_reset(dmrgo_codec2_codec_t *self);
+/* Go: codec2.Codec.Silence. Silence returns 20 ms of digital silence encoded with a fresh encoder state in the mode that Encode uses. */
 int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
 /* Go: codec2.New. New creates a Codec2 codec with the given configuration. */
 int dmrgo_codec2_new(const dmrgo_codec2_config_t *cfg, dmrgo_codec2_codec_t **out);

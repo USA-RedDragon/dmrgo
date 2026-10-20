@@ -20,8 +20,6 @@ import (
 
 var registerOnce sync.Once
 
-func allModes() []Mode { return []Mode{Mode2400, Mode3200} }
-
 func newCodec(t *testing.T, cfg Config) *Codec {
 	t.Helper()
 	c, err := New(cfg)
@@ -103,12 +101,15 @@ func TestNew(t *testing.T) {
 	t.Parallel()
 
 	c := newCodec(t, Config{})
-	if c.Mode() != Mode2400 || c.FID() != 0xC2 || c.FrameSamples() != 160 {
-		t.Errorf("defaults: mode %d FID %#x samples %d", c.Mode(), c.FID(), c.FrameSamples())
+	if c.Mode() != ModeAuto || c.DecodeMode() != ModeAuto || c.FID() != 0xC2 || c.FrameSamples() != 160 {
+		t.Errorf("defaults: mode %d decode mode %d FID %#x samples %d", c.Mode(), c.DecodeMode(), c.FID(), c.FrameSamples())
+	}
+	if s := newCodec(t, Config{Mode: Mode2400}).Silence(); c.Silence() != s {
+		t.Errorf("ModeAuto Silence %x, Mode2400 %x", c.Silence(), s)
 	}
 	c = newCodec(t, Config{Mode: Mode3200, FID: 0x81})
-	if c.Mode() != Mode3200 || c.FID() != 0x81 {
-		t.Errorf("explicit: mode %d FID %#x", c.Mode(), c.FID())
+	if c.Mode() != Mode3200 || c.DecodeMode() != Mode3200 || c.FID() != 0x81 {
+		t.Errorf("explicit: mode %d decode mode %d FID %#x", c.Mode(), c.DecodeMode(), c.FID())
 	}
 	if _, err := New(Config{Mode: 1600}); !errors.Is(err, ErrUnsupportedMode) {
 		t.Errorf("New(1600) error = %v, want ErrUnsupportedMode", err)
@@ -128,7 +129,7 @@ func TestRegistered(t *testing.T) {
 		t.Fatalf("vocoder.New returned %T", c)
 	}
 	defer func() { _ = cc.Close() }()
-	if cc.Mode() != Mode2400 || cc.FID() != DefaultFID {
+	if cc.Mode() != ModeAuto || cc.FID() != DefaultFID {
 		t.Errorf("registered codec: mode %d FID %#x", cc.Mode(), cc.FID())
 	}
 }
@@ -401,23 +402,27 @@ func TestMatchesC2Dec(t *testing.T) {
 		if b, err := exec.CommandContext(t.Context(), "c2dec", strconv.Itoa(int(mode)), bits, wantPath).CombinedOutput(); err != nil {
 			t.Fatalf("c2dec: %v: %s", err, b)
 		}
-		gotPath := filepath.Join(dir, "go-"+strconv.Itoa(int(mode))+".raw")
-		cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestMatchesC2Dec$")
-		cmd.Env = append(os.Environ(),
-			"CODEC2_C2DEC_HELPER=1",
-			"CODEC2_C2DEC_MODE="+strconv.Itoa(int(mode)),
-			"CODEC2_C2DEC_IN="+bits,
-			"CODEC2_C2DEC_OUT="+gotPath)
-		if b, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("helper: %v: %s", err, b)
-		}
-		got, want := readRaw(t, gotPath), readRaw(t, wantPath)
-		if len(got) != len(want) {
-			t.Fatalf("mode %d: %d samples, c2dec %d", mode, len(got), len(want))
-		}
-		for i := range got {
-			if got[i] != want[i] {
-				t.Fatalf("mode %d: sample %d is %d, c2dec %d", mode, i, got[i], want[i])
+		want := readRaw(t, wantPath)
+		for _, decMode := range []Mode{mode, ModeAuto} {
+			gotPath := filepath.Join(dir, "go-"+strconv.Itoa(int(mode))+"-"+strconv.Itoa(int(decMode))+".raw")
+			cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestMatchesC2Dec$")
+			cmd.Env = append(os.Environ(),
+				"CODEC2_C2DEC_HELPER=1",
+				"CODEC2_C2DEC_MODE="+strconv.Itoa(int(mode)),
+				"CODEC2_C2DEC_DECODE="+strconv.Itoa(int(decMode)),
+				"CODEC2_C2DEC_IN="+bits,
+				"CODEC2_C2DEC_OUT="+gotPath)
+			if b, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("helper: %v: %s", err, b)
+			}
+			got := readRaw(t, gotPath)
+			if len(got) != len(want) {
+				t.Fatalf("mode %d, decoder %d: %d samples, c2dec %d", mode, decMode, len(got), len(want))
+			}
+			for i := range got {
+				if got[i] != want[i] {
+					t.Fatalf("mode %d, decoder %d: sample %d is %d, c2dec %d", mode, decMode, i, got[i], want[i])
+				}
 			}
 		}
 	}
@@ -433,7 +438,11 @@ func c2decHelper(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := Mode(mode)
-	c := newCodec(t, Config{Mode: m})
+	dec, err := strconv.Atoi(os.Getenv("CODEC2_C2DEC_DECODE"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := newCodec(t, Config{Mode: Mode(dec)})
 	var slots [][9]byte
 	for off := 0; off+m.frameBytes() <= len(frames); off += m.frameBytes() {
 		var slot [9]byte
@@ -441,4 +450,38 @@ func c2decHelper(t *testing.T) {
 		slots = append(slots, slot)
 	}
 	writeRaw(t, os.Getenv("CODEC2_C2DEC_OUT"), decodeAll(t, c, slots))
+}
+
+func TestAutoDecode(t *testing.T) {
+	t.Parallel()
+
+	pcm := append(make([]int16, 10*FrameSamples), voiced(40)...)
+	for _, mode := range allModes() {
+		slots := encodeAll(t, newCodec(t, Config{Mode: mode}), pcm)
+		slots = append(slots, make([][9]byte, 18)...)
+		c := newCodec(t, Config{})
+		for call := range 2 {
+			var out []int16
+			for i, slot := range slots {
+				var err error
+				if out, err = c.AppendDecode(out, slot); err != nil {
+					t.Fatal(err)
+				}
+				want := mode
+				if call == 0 && i+1 < detectDecide {
+					want = ModeAuto
+				}
+				if got := c.DecodeMode(); got != want {
+					t.Fatalf("mode %d call %d frame %d: DecodeMode %d, want %d", mode, call, i, got, want)
+				}
+			}
+			if lag := pitchLag(out[20*FrameSamples : 50*FrameSamples]); lag < 50 || lag > 57 {
+				t.Errorf("mode %d call %d: pitch lag %d samples, want about 53 (150 Hz)", mode, call, lag)
+			}
+		}
+		c.Reset()
+		if c.DecodeMode() != ModeAuto {
+			t.Errorf("mode %d: DecodeMode after Reset %d", mode, c.DecodeMode())
+		}
+	}
 }

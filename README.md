@@ -163,10 +163,11 @@ enc, err := vocoder.New(codec2.Name)
 | Item | Value |
 | --- | --- |
 | Modes | `Mode2400`, `Mode3200`, one 20 ms frame per 72-bit voice slot, MSB first, zero padded, no FEC |
+| Default mode | `ModeAuto`: decode detects the mode of each call, encode uses `Mode2400` |
 | Feature set ID | `0xC2` in the Full LC (self-assigned, compatible with QRadioLink) |
-| Silence | `Silence()` is 20 ms of silence in the selected mode |
+| Silence | `Silence()` is 20 ms of silence in the encode mode |
 
-Both ends must agree on the mode, because the FID does not identify it.
+Nothing on the air identifies the mode, so `ModeAuto` detects it from the padding: `Mode2400` leaves bytes 6 to 8 of each slot zero, and `Mode3200` only byte 8. Five clean frames (100 ms) decide the mode, and `DecodeMode()` reports it. Call `Reset()` at the start of each call. A decoder in a fixed mode decodes only that mode.
 
 ## TinyGo
 
